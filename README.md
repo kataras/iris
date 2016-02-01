@@ -1,10 +1,11 @@
 # Gapi
+version 0.0.2
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/kataras/gapi?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 ## Table of Contents
 
 - [Install](#install)
-- [Principles](#principles-of-mysql-live)
+- [Principles](#principles-of-gapi)
 - [Introduction](#introduction)
 - [Contributors](#contributors)
 - [Community](#community)
@@ -31,35 +32,54 @@ A very minimal but flexible golang web application framework, providing a robust
 package main
 
 import (
+	"fmt"
 	"github.com/kataras/gapi"
 	"net/http"
+	"strconv"
+	"time"
 )
 
 func main() {
 	server, router := gapi.New()
+	
+	//Register middlewares
+	server.Use("/home", log1Home, log2Home)
 
-	router.
-		If("/home").Then(homeHandler()).
-		If("/about").Then(aboutHandler()).
-		If("/contact").Then(return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		res.Write([]byte("<h1>Chat with the gapi at https://gitter.im/kataras/gapi  | /contact </h1>"))
-		}))
+	//Register routes
+	router.If("/home").Then(homeHandler).
+		If("/about").Then(aboutHandler)
 
-	server.Listen(8080) //or server.Listen(":8080")
+	fmt.Println("Server is running at ", server.Options.Host+":"+strconv.Itoa(server.Options.Port))
+	
+	server.Listen(80)
 
 }
 
-func homeHandler() http.Handler {
+func log1Home(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		res.Write([]byte("<h1>Hello world, from gapi | /home </h1>"))
+		fmt.Println("log1 Home here !!")
+		time.Sleep(time.Duration(2) * time.Second)
+		next.ServeHTTP(res, req)
 	})
 }
 
-func aboutHandler() http.Handler {
+func log2Home(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		res.Write([]byte("<h1> About gapi | /about </h1>"))
+		fmt.Println("After 2 seconds -> log2 Home here !!")
+		time.Sleep(time.Duration(1) * time.Second)
+		next.ServeHTTP(res, req)
 	})
 }
+
+func homeHandler(res http.ResponseWriter, req *http.Request) {
+	fmt.Println("And after 1 second from log2Home, render it: ")
+	res.Write([]byte("<h1>Hello from ROUTER ON /home </h1>"))
+}
+
+func aboutHandler(res http.ResponseWriter, req *http.Request) {
+	res.Write([]byte("<h1> Hello from ROUTER ON /about </h1>"))
+}
+
 ```
 
 ## Contributors
@@ -79,7 +99,7 @@ of the following:
 * **Chat**: https://gitter.im/kataras/gapi
 
 
-## This is my first golang package, so ... Todo
+## Todo
 *  Middlewares, default and custom.
 *  Provide all kind of servers, not only http.
 *  Create examples in this repository

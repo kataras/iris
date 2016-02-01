@@ -1,13 +1,12 @@
 package router
 
 import (
-	"net/http"
+
 )
 
 type HttpRouterBuilder struct {
 	//This can be nil and it is when gapi.New() or gapi.NewRouter() .
 	router *HttpRouter
-
 }
 
 func NewHttpRouterBuilder(startRouter *HttpRouter) *HttpRouterBuilder {
@@ -17,7 +16,6 @@ func NewHttpRouterBuilder(startRouter *HttpRouter) *HttpRouterBuilder {
 	builder := &HttpRouterBuilder{router: startRouter}
 	return builder
 }
-
 
 type RouterThenBuilder struct {
 	builder *HttpRouterBuilder
@@ -33,11 +31,11 @@ func (this *HttpRouterBuilder) If(paths ...string) *RouterThenBuilder {
 
 //THEN
 
-func (this RouterThenBuilder) Then(handle http.Handler) *HttpRouterBuilder {
+func (this RouterThenBuilder) Then(handler Handler) *HttpRouterBuilder {
 	for _, path := range this.paths {
 		///TODO: /home to /home,/home/ but if not already exists, cuz dev can do it manually and then we will have multiple unnessecary handles
 		//as t oaknw edw oxi sto HttpRouter.Route.
-		this.builder.router.Route(path, handle)
+		this.builder.router.Route(path, handler)
 	}
 	return this.builder
 }
