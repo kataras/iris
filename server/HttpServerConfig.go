@@ -1,15 +1,10 @@
 package server
 
-import (
-	. "github.com/kataras/gapi/router"
-)
-
 var DefaultPort = 8080
 
 type HttpServerConfig struct {
-	Port   int    // default is 8080
-	Host   string `default:":"`
-	Router *HttpRouter
+	Port int    // default is 8080
+	Host string `default:":"`
 }
 
 func NewHttpServerConfig(host string, port int) *HttpServerConfig {

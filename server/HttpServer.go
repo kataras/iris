@@ -6,21 +6,22 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kataras/gapi/middleware"
 	"github.com/kataras/gapi/router"
 )
 
 ///TODO: na mhn ksexasw sto use na valw an 9elei mono sigekrimea methods opws px GET,POST,PUT,DELETE ktlp
+type Middleware func(http.Handler) http.Handler
+
 type HttpServer struct {
 	Options     *HttpServerConfig
-	middlewares map[string]*middleware.Middleware
+	Router      *router.HttpRouter
+	middlewares []Middleware
 	isRunning   bool
 }
 
 func NewHttpServer() *HttpServer {
 	_server := new(HttpServer)
 	_server.Options = DefaultHttpConfig()
-	_server.middlewares = make(map[string]*middleware.Middleware)
 
 	return _server
 }
@@ -38,51 +39,13 @@ func (this *HttpServer) Port(port int) *HttpServer {
 }
 
 func (this *HttpServer) SetRouter(_router *router.HttpRouter) *HttpServer {
-	this.Options.Router = _router
+	this.Router = _router
 	return this
 }
 
-func (this *HttpServer) Router() *router.HttpRouter {
-	return this.Options.Router
-}
-
 func (this *HttpServer) Start() {
-	this.initialize()
 	this.isRunning = true
-
-	//OR for custom handle errors, css files and e.t.c	this.mux.Handle("/", this.Options.Router.Middleware())
-
-	/*	if this.Options.Router != nil && this.Options.Router.Routes != nil {
-
-		this.mux.Handle("/", http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-			var route = this.Options.Router.Routes[req.URL.Path]
-
-			if route == nil {
-				///TODO: return custom, defined by developer not found handler.
-				http.NotFound(res, req)
-			} else if route.Method == req.Method {
-				if _middleware := this.middlewares[req.URL.Path]; _middleware != nil && _middleware.Method == route.Method {
-					var last http.Handler = http.HandlerFunc(route.Handler)
-					for i := len(_middleware.Handlers) - 1; i >= 0; i-- {
-						last = _middleware.Handlers[i](last)
-					}
-					last.ServeHTTP(res, req)
-
-				} else {
-					route.Handler(res, req)
-				}
-
-			} else {
-				http.Error(res, "Error 405  Method Not Allowed", 405)
-			}
-		}))
-	}*/
-
-	//fmt.Println("Server is running at ", this.Options.Host+":"+strconv.Itoa(this.Options.Port))
-	//this.Mux or ?, this.Options.Router.Middleware()
-	//this.
 	http.ListenAndServe(this.Options.Host+strconv.Itoa(this.Options.Port), this)
-
 }
 
 func (this *HttpServer) Listen(fullHostOrPort interface{}) {
@@ -106,54 +69,28 @@ func (this *HttpServer) Listen(fullHostOrPort interface{}) {
 
 }
 
-func (this *HttpServer) initialize() {
-
-}
-
 func (this *HttpServer) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	var route = this.Options.Router.Routes[req.URL.Path]
+	var route = this.Router.Routes[req.URL.Path]
 
 	if route == nil {
 		///TODO: return custom, defined by developer not found handler.
 		http.NotFound(res, req)
 	} else if route.Method == req.Method {
-		if _middleware := this.middlewares[req.URL.Path]; _middleware != nil && _middleware.Method == route.Method {
-			var last http.Handler = http.HandlerFunc(route.Handler)
-			for i := len(_middleware.Handlers) - 1; i >= 0; i-- {
-				last = _middleware.Handlers[i](last)
-			}
-			last.ServeHTTP(res, req)
-		} else {
-			route.Handler(res, req)
+		var last http.Handler = http.HandlerFunc(route.Handler)
+		for i := len(this.middlewares) - 1; i >= 0; i-- {
+			last = this.middlewares[i](last)
 		}
+		last.ServeHTTP(res, req)
 
 	} else {
 		http.Error(res, "Error 405  Method Not Allowed", 405)
 	}
 }
 
-func (this *HttpServer) handle(urlPath string, handler http.Handler) *HttpServer {
-	http.Handle(urlPath, handler)
-	return this
-}
-
-func (this *HttpServer) Unuse(urlPath string) *HttpServer {
-	this.middlewares[urlPath] = nil //remove handler
-	return this
-}
-
-func (this *HttpServer) Use(urlPath string, handlers ...middleware.Handler) *HttpServer {
-	if urlPath == "" {
-		urlPath = "*" //Future: All registed routes
+func (this *HttpServer) Use(handlers ...Middleware) *HttpServer {
+	if len(handlers) > 0 {
+		this.middlewares = append(this.middlewares, handlers...)
 	}
-	this.middlewares[urlPath] = &middleware.Middleware{Method: router.HttpMethods.GET, Handlers: handlers}
-	return this
-}
 
-//Future
-func (this *HttpServer) UseGlobal(handlers ...middleware.Handler) *HttpServer {
-	//Means to all paths, not only registed routes but all paths the user will try to request from server, this is good for logging purpose.
-	this.middlewares["**"] = &middleware.Middleware{Method: router.HttpMethods.GET, Handlers: handlers}
 	return this
-
 }
