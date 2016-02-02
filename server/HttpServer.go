@@ -1,12 +1,13 @@
 package server
 
 import (
-	"github.com/kataras/gapi/middleware"
-	"github.com/kataras/gapi/router"
 	"net/http"
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/kataras/gapi/middleware"
+	"github.com/kataras/gapi/router"
 )
 
 ///TODO: na mhn ksexasw sto use na valw an 9elei mono sigekrimea methods opws px GET,POST,PUT,DELETE ktlp
@@ -14,14 +15,13 @@ type HttpServer struct {
 	Options     *HttpServerConfig
 	middlewares map[string]*middleware.Middleware
 	isRunning   bool
-	mux         *http.ServeMux
 }
 
 func NewHttpServer() *HttpServer {
 	_server := new(HttpServer)
 	_server.Options = DefaultHttpConfig()
-	_server.mux = http.DefaultServeMux
 	_server.middlewares = make(map[string]*middleware.Middleware)
+
 	return _server
 }
 
@@ -37,19 +37,13 @@ func (this *HttpServer) Port(port int) *HttpServer {
 	return this
 }
 
-func (this *HttpServer) Router(_router interface{}) *HttpServer {
-	var obj = reflect.ValueOf(&_router)
-	switch obj.Elem().Interface().(type) {
-	case *router.HttpRouter:
-		this.Options.Router = _router.(*router.HttpRouter)
-	case *router.HttpRouterBuilder:
-		this.Options.Router = _router.(*router.HttpRouterBuilder).Build()
-	default:
-		panic("Please use gapi.NewRouter().If('/path').Then(handle) \nOr pass the gapi.router.NewHttpRouter() ")
-
-	}
-
+func (this *HttpServer) SetRouter(_router *router.HttpRouter) *HttpServer {
+	this.Options.Router = _router
 	return this
+}
+
+func (this *HttpServer) Router() *router.HttpRouter {
+	return this.Options.Router
 }
 
 func (this *HttpServer) Start() {
@@ -58,7 +52,7 @@ func (this *HttpServer) Start() {
 
 	//OR for custom handle errors, css files and e.t.c	this.mux.Handle("/", this.Options.Router.Middleware())
 
-	if this.Options.Router != nil && this.Options.Router.Routes != nil {
+	/*	if this.Options.Router != nil && this.Options.Router.Routes != nil {
 
 		this.mux.Handle("/", http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 			var route = this.Options.Router.Routes[req.URL.Path]
@@ -67,7 +61,7 @@ func (this *HttpServer) Start() {
 				///TODO: return custom, defined by developer not found handler.
 				http.NotFound(res, req)
 			} else if route.Method == req.Method {
-				if _middleware := this.middlewares[req.URL.Path]; _middleware != nil && _middleware.Method == route.Method{
+				if _middleware := this.middlewares[req.URL.Path]; _middleware != nil && _middleware.Method == route.Method {
 					var last http.Handler = http.HandlerFunc(route.Handler)
 					for i := len(_middleware.Handlers) - 1; i >= 0; i-- {
 						last = _middleware.Handlers[i](last)
@@ -82,12 +76,12 @@ func (this *HttpServer) Start() {
 				http.Error(res, "Error 405  Method Not Allowed", 405)
 			}
 		}))
-	}
+	}*/
 
 	//fmt.Println("Server is running at ", this.Options.Host+":"+strconv.Itoa(this.Options.Port))
 	//this.Mux or ?, this.Options.Router.Middleware()
-
-	http.ListenAndServe(this.Options.Host+strconv.Itoa(this.Options.Port), this.mux)
+	//this.
+	http.ListenAndServe(this.Options.Host+strconv.Itoa(this.Options.Port), this)
 
 }
 
@@ -114,6 +108,28 @@ func (this *HttpServer) Listen(fullHostOrPort interface{}) {
 
 func (this *HttpServer) initialize() {
 
+}
+
+func (this *HttpServer) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	var route = this.Options.Router.Routes[req.URL.Path]
+
+	if route == nil {
+		///TODO: return custom, defined by developer not found handler.
+		http.NotFound(res, req)
+	} else if route.Method == req.Method {
+		if _middleware := this.middlewares[req.URL.Path]; _middleware != nil && _middleware.Method == route.Method {
+			var last http.Handler = http.HandlerFunc(route.Handler)
+			for i := len(_middleware.Handlers) - 1; i >= 0; i-- {
+				last = _middleware.Handlers[i](last)
+			}
+			last.ServeHTTP(res, req)
+		} else {
+			route.Handler(res, req)
+		}
+
+	} else {
+		http.Error(res, "Error 405  Method Not Allowed", 405)
+	}
 }
 
 func (this *HttpServer) handle(urlPath string, handler http.Handler) *HttpServer {

@@ -7,10 +7,10 @@ import (
 //The router is handled on BOTTOM of the default mux.
 
 //type Handler func(http.Handler) http.Handler
-type Handler func(http.ResponseWriter,*http.Request)
+type Handler func(http.ResponseWriter, *http.Request)
 
 type HttpRoute struct {
-	Method   string
+	Method  string
 	Handler Handler
 }
 
@@ -29,24 +29,13 @@ func (this *HttpRouter) Unroute(urlPath string) *HttpRouter {
 	return this
 }
 
-func (this *HttpRouter) Route(urlPath string, handler Handler) *HttpRouter {
+func (this *HttpRouter) Route(method string, urlPath string, handler Handler) *HttpRouter {
 	if urlPath == "" {
 		urlPath = "/"
 	}
-	this.Routes[urlPath] = &HttpRoute{Method: HttpMethods.GET, Handler: handler}
+	if method == "" {
+		method = HttpMethods.GET
+	}
+	this.Routes[urlPath] = &HttpRoute{Method: method, Handler: handler}
 	return this
-}
-
-func (this *HttpRouter) Middleware() http.Handler {
-	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		_route := this.Routes[req.URL.Path]
-		if _route == nil {
-			NotFoundRoute().ServeHTTP(res, req)
-			return
-		}
-		//http.ServeFile(res,req,"edw vazw to directory as poume kia to kanei serve mazi me ta checks gia conten types ktlp prostoparwn omws edw den 9elw auto")
-
-		//	_route.ServeHTTP(res, req)
-		//	_route.Handler.ServeHTTP(res, req)
-	})
 }

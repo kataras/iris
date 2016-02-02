@@ -1,11 +1,6 @@
 package router
 
-import (
-	"reflect"
-)
-
-//type HttpMethod string
-
+/* as ENUM, maybe at the Future
 type HttpMethodType struct {
 	GET    string
 	POST   string
@@ -19,3 +14,8 @@ func (c *HttpMethodType) GetName(i int) string {
 
 var HttpMethods = HttpMethodType{"GET", "POST", "PUT", "DELETE"}
 var HttpMethodReflectType = reflect.TypeOf(HttpMethods)
+*/
+
+var HttpMethods = struct {
+	GET, POST, PUT, DELETE, CONNECT, HEAD, PATCH, OPTIONS, TRACE string
+}{"GET", "POST", "PUT", "DELETE", "CONNECT", "HEAD", "PATCH", "OPTIONS", "TRACE"}

@@ -32,47 +32,51 @@ A very minimal but flexible golang web application framework, providing a robust
 package main
 
 import (
-	"fmt"
-	"github.com/kataras/gapi"
 	"net/http"
-	"strconv"
-	"time"
+
+	"github.com/kataras/gapi"
 )
 
 func main() {
-	server, router := gapi.New()
-	
+	api := gapi.New()
+
 	//Register middlewares
-	server.Use("/home", log1Home, log2Home)
+	api.Use("/home", log1Home, log2Home)
 
 	//Register routes
-	router.If("/home").Then(homeHandler).
-		If("/about").Then(aboutHandler)
+	api.Get("/home", homeHandler).
+		Get("/about", aboutHandler)
 
-	fmt.Println("Server is running at ", server.Options.Host+":"+strconv.Itoa(server.Options.Port))
-	
-	server.Listen(80)
+	api.Post("/register", func(res http.ResponseWriter, req *http.Request) {
+		println("Message from [POST] /register")
+		res.Write([]byte("<h1>Hello from ROUTER ON /register </h1>"))
+	})
+
+	println("Server is running at :80")
+
+	//Listen to
+	api.Listen(80)
+
+	//Use gapi as middleware is possible too:
+	//log.Fatal(http.ListenAndServe(":80", api))
 
 }
 
 func log1Home(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		fmt.Println("log1 Home here !!")
-		time.Sleep(time.Duration(2) * time.Second)
+		println("log1 Home middleware here !!")
 		next.ServeHTTP(res, req)
 	})
 }
 
 func log2Home(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		fmt.Println("After 2 seconds -> log2 Home here !!")
-		time.Sleep(time.Duration(1) * time.Second)
+		println("log2 Home middleware here !!")
 		next.ServeHTTP(res, req)
 	})
 }
 
 func homeHandler(res http.ResponseWriter, req *http.Request) {
-	fmt.Println("And after 1 second from log2Home, render it: ")
 	res.Write([]byte("<h1>Hello from ROUTER ON /home </h1>"))
 }
 
