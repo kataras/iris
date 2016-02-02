@@ -41,7 +41,7 @@ func main() {
 	api := gapi.New()
 
 	//Register middlewares
-	api.Use("/home", log1Home, log2Home)
+	api.Use(log1, log2)
 
 	//Register routes
 	api.Get("/home", homeHandler).
@@ -54,24 +54,22 @@ func main() {
 
 	println("Server is running at :80")
 
-	//Listen to
-	api.Listen(80)
+    log.Fatal(http.ListenAndServe(":80", api))
 
-	//Use gapi as middleware is possible too:
-	//log.Fatal(http.ListenAndServe(":80", api))
-
+	//Use gapi as standalone server is possible too, listen to port
+	//api.Listen(80)
 }
 
-func log1Home(next http.Handler) http.Handler {
+func log1(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		println("log1 Home middleware here !!")
+		println("log1 middleware here !!")
 		next.ServeHTTP(res, req)
 	})
 }
 
-func log2Home(next http.Handler) http.Handler {
+func log2(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		println("log2 Home middleware here !!")
+		println("log2 middleware here !!!!!")
 		next.ServeHTTP(res, req)
 	})
 }
