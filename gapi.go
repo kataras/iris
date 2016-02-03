@@ -91,3 +91,9 @@ func (this *Gapi) Trace(path string, handler router.Handler) *Gapi {
 	this.server.Router.Route(router.HttpMethods.TRACE, path, handler)
 	return this
 }
+
+/* Router's params */
+
+func (this *Gapi) Params(req *http.Request) router.Parameters {
+	return router.GetParameters(req)
+}

@@ -70,12 +70,15 @@ func (this *HttpServer) Listen(fullHostOrPort interface{}) {
 }
 
 func (this *HttpServer) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	var route = this.Router.Routes[req.URL.Path]
-
+	//var route = this.Router.Routes[req.URL.Path]
+	var route = this.Router.Find(req)
 	if route == nil {
 		///TODO: return custom, defined by developer not found handler.
 		http.NotFound(res, req)
 	} else if route.Method == req.Method {
+		//if this.Router.Match(req.URL.Path, route) {
+
+		//}
 		var last http.Handler = http.HandlerFunc(route.Handler)
 		for i := len(this.middlewares) - 1; i >= 0; i-- {
 			last = this.middlewares[i](last)

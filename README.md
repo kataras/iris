@@ -1,5 +1,4 @@
-# Gapi
-version 0.0.2
+# Gapi  (beta)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/kataras/gapi?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 ## Table of Contents
@@ -32,45 +31,48 @@ A very minimal but flexible golang web application framework, providing a robust
 package main
 
 import (
-	"net/http"
-
 	"github.com/kataras/gapi"
+	"log"
+	"net/http"
 )
 
+var api = gapi.New()
+
 func main() {
-	api := gapi.New()
 
 	//Register middlewares
 	api.Use(log1, log2)
 
 	//Register routes
 	api.Get("/home", homeHandler).
-		Get("/about", aboutHandler)
-
-	api.Post("/register", func(res http.ResponseWriter, req *http.Request) {
-		println("Message from [POST] /register")
-		res.Write([]byte("<h1>Hello from ROUTER ON /register </h1>"))
+		Post("/register", func(res http.ResponseWriter, req *http.Request) {
+		res.Write([]byte("<h1>Hello from ROUTER ON Post request /register </h1>"))
 	})
+
+	api.Get("/profile/{name}", profileHandler) // Parameters
 
 	println("Server is running at :80")
 
-    log.Fatal(http.ListenAndServe(":80", api))
-
-	//Use gapi as standalone server is possible too, listen to port
+	//Listen to
 	//api.Listen(80)
+
+	//Use gapi as middleware is possible too:
+	log.Fatal(http.ListenAndServe(":80", api))
+
 }
 
 func log1(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		println("log1 middleware here !!")
+		println("log1  middleware here !!")
 		next.ServeHTTP(res, req)
 	})
 }
 
 func log2(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		println("log2 middleware here !!!!!")
+		println("log2  middleware here !!")
 		next.ServeHTTP(res, req)
+
 	})
 }
 
@@ -78,8 +80,16 @@ func homeHandler(res http.ResponseWriter, req *http.Request) {
 	res.Write([]byte("<h1>Hello from ROUTER ON /home </h1>"))
 }
 
-func aboutHandler(res http.ResponseWriter, req *http.Request) {
-	res.Write([]byte("<h1> Hello from ROUTER ON /about </h1>"))
+func profileHandler(res http.ResponseWriter, req *http.Request) {
+	
+	params := api.Params(req)
+	var name string
+	//on this example, we have only one /profile... router, because of that the params will be always NOT NIL, if no params given from the requested url then the router will give 404 not found error.	
+	//if params != nil {
+		 name = params.Get("name") // or params["name"]
+	//}
+
+	res.Write([]byte("<h1> Hello from ROUTER ON /profile/"+name+" </h1>"))
 }
 
 ```
