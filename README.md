@@ -50,7 +50,8 @@ func main() {
 	})
 
 	api.Get("/profile/{name}", profileHandler) // Parameters
-
+    //api.Get("/profile/{name}/friends", userFriendsHandler) // A parameter can followed by other /path too
+    //api.Get("/profile/{name}/friends/{friendId}",userProfileFriendHandler) // Two parameters with path parts also possible 
 	println("Server is running at :80")
 
 	//Listen to
@@ -81,13 +82,12 @@ func homeHandler(res http.ResponseWriter, req *http.Request) {
 }
 
 func profileHandler(res http.ResponseWriter, req *http.Request) {
-	
+	//two ways to get the parameters from:
 	params := api.Params(req)
-	var name string
-	//on this example, we have only one /profile... router, because of that the params will be always NOT NIL, if no params given from the requested url then the router will give 404 not found error.	
-	//if params != nil {
-		 name = params.Get("name") // or params["name"]
-	//}
+	name := params.Get("name") // or params["name"]
+   //OR
+   //name := api.Param(req,"name")
+   
 
 	res.Write([]byte("<h1> Hello from ROUTER ON /profile/"+name+" </h1>"))
 }

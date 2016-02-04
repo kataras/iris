@@ -97,3 +97,12 @@ func (this *Gapi) Trace(path string, handler router.Handler) *Gapi {
 func (this *Gapi) Params(req *http.Request) router.Parameters {
 	return router.GetParameters(req)
 }
+
+func (this *Gapi) Param(req *http.Request, key string) string {
+	params := this.Params(req)
+	param := ""
+	if params != nil {
+		param = params[key]
+	}
+	return param
+}

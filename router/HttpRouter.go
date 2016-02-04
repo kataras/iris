@@ -2,11 +2,14 @@ package router
 
 import (
 	"net/http"
+	"regexp"
 	"strings"
-	//"regexp"
 )
 
-const COOKIE_NAME = "____gapi____"
+const (
+	COOKIE_NAME            = "____gapi____"
+	REGEX_BRACKETS_CONTENT = "{(.*?)}"
+)
 
 type Handler func(http.ResponseWriter, *http.Request)
 
@@ -17,21 +20,25 @@ func (params Parameters) Get(key string) string {
 }
 
 type HttpRoute struct {
-	Method  string
-	Handler Handler
-	Pattern string
+	Method    string
+	Path      string
+	Handler   Handler
+	Pattern   *regexp.Regexp
+	ParamKeys []string
 }
 
 type HttpRouter struct {
-	routes map[string]*HttpRoute
+	//routes map[string]*HttpRoute, I dont need this anymore because I will have to iterate to all of them to check the regex pattern vs request url..
+	routes []*HttpRoute
 }
 
 func NewHttpRouter() *HttpRouter {
-	return &HttpRouter{routes: make(map[string]*HttpRoute)}
+	return &HttpRouter{routes: make([]*HttpRoute, 0)}
 }
 
 func (this *HttpRouter) Unroute(urlPath string) *HttpRouter {
-	delete(this.routes, urlPath)
+	//delete(this.routes, urlPath)
+	///TODO
 	return this
 }
 
@@ -44,87 +51,72 @@ func (this *HttpRouter) Route(method string, registedPath string, handler Handle
 		method = HttpMethods.GET
 	}
 	if handler != nil {
-		_path, _pattern := this.parseRoutePath(registedPath)
-		//println("path: ",_path ," pattern: " , _pattern)
-		this.routes[_path] = &HttpRoute{Method: method, Handler: handler, Pattern: _pattern}
+		//this.routes[registedPath] = NewHttpRoute(method, registedPath, handler)
+		this.routes = append(this.routes, NewHttpRoute(method, registedPath, handler))
 	}
 	return this
 }
 
-/*
-/home/thisIsStatic , if no match then:
-/home/{name} set the var name to this
-/home/{name:regexp  patter} set the var name to this if the regexp is matches with the requested url
-*/
+//Global to package router.
+func NewHttpRoute(method string, registedPath string, handler Handler) *HttpRoute {
+	httpRoute := &HttpRoute{Method: method, Handler: handler, Path: registedPath}
 
-//called only one time per route registration.
-//returns the full pattern /home/{paramKey}/{paramKey2}...
-//for now works only with /home/{paramKey}
-//returns the path and the pattern, ex : /home/{name}  path = /home pattern = {name}
-func (this *HttpRouter) parseRoutePath(registedPath string) (string, string) {
-	var pattern string
-	var thePath string = registedPath
-	startPatternIndex := strings.Index(registedPath, "{")
-	finishPatternIndex := strings.Index(registedPath, "}")
+	pattern := regexp.MustCompile(REGEX_BRACKETS_CONTENT)                  //fint all {key}
+	var regexpRoute = pattern.ReplaceAllString(registedPath, "\\w+") + "$" //replace that {key} with /w+ and on the finish $
+	regexpRoute = strings.Replace(regexpRoute, "/", "\\/", -1)             //escape / character for regex
+	routePattern := regexp.MustCompile(regexpRoute)
 
-	//must have slash/ before the {
-	if startPatternIndex > 1 && finishPatternIndex > startPatternIndex {
-		thePath = registedPath[:startPatternIndex-1] //get the /path not the /path/{name}
-		if len(thePath) > 0 {
-			pattern = registedPath[startPatternIndex : finishPatternIndex+1]
+	httpRoute.Pattern = routePattern
+	httpRoute.ParamKeys = pattern.FindAllString(registedPath, -1)
+
+	return httpRoute
+}
+
+func (route *HttpRoute) Match(urlPath string) bool {
+	return route.Pattern.MatchString(urlPath)
+}
+
+func (this *HttpRouter) getRouteByRegistedPath(registedPath string) *HttpRoute {
+
+	for _, route := range this.routes {
+		if route.Path == registedPath {
+			return route
+			break
 		}
-
-		//println("startPatternIndex ", startPatternIndex, " finishPatternIndex ", finishPatternIndex, " theSlash is: ", theSlash, " and the pattern: ",pattern)
 	}
+	return nil
 
-	return thePath, pattern
 }
-
-//Unexported - no regexp yet.
-func (this *HttpRouter) match(urlPath string, route HttpRoute) bool {
-	return false
-}
-
-func (this *HttpRouter) getRoute(s string) *HttpRoute {
-	return this.routes[s]
-}
-
+//the req.Method check goes to the HttpServer, in order to provide the correct http error  405 Method not allowed.
 func (this *HttpRouter) Find(req *http.Request) *HttpRoute {
-	//reqUrlPath = /home/dsadsa
 	reqUrlPath := req.URL.Path
-	route := this.getRoute(reqUrlPath)
+	for _, route := range this.routes {
+		if route.Match(reqUrlPath) {
+			reqPathSplited := strings.Split(reqUrlPath, "/")
+			routePathSplited := strings.Split(route.Path, "/")
+			/*if len(reqPathSplited) != len(reqPathSplited) {
+				panic("This error has no excuse, line 99 gapi/router/HttpRouter.go")
+				continue
+			}*/
 
-	if route != nil && route.Pattern != "" {
-		//means registed route: /home/{name} , reqUri : /home , but if no /name then the routing is not valid .
-		return nil
-	}
+			for _, key := range route.ParamKeys {
 
-	if route == nil {
-		//check the /home/...
+				for splitIndex, pathPart := range routePathSplited {
+					if pathPart == key {
+						param := key + "=" + reqPathSplited[splitIndex]
+						_cookie := &http.Cookie{Name: COOKIE_NAME, Value: param}
+						req.AddCookie(_cookie)
+					}
 
-		var path = reqUrlPath[:strings.LastIndex(reqUrlPath, "/")]
-		route = this.getRoute(path) //we get the first part of the path , and the route now must be ok
-
-		if route != nil && route.Pattern != "" { //route.Pattern != "" maybe not nessecary here, but for safety....
-
-			paramValue := reqUrlPath[len(path)+1:] // +1 because of: /test -> test
-
-			if paramValue == "" { //in case of /home/
-				return nil
+				}
 			}
 
-			paramKey := route.Pattern[1 : len(route.Pattern)-1]
-			//var paramMap = make(map[string]string)
-			//paramMap[paramKey] = paramValue
-			param := paramKey + "=" + paramValue
-			_cookie := &http.Cookie{Name: COOKIE_NAME, Value: param}
-
-			req.AddCookie(_cookie)
-			//println(paramKey," = ", paramValue) //name = test
-
+			//break
+			return route
 		}
 	}
-	return route
+	
+	return nil
 }
 
 //Global to package router.
