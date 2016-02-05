@@ -1,22 +1,20 @@
 package server
 
 import (
+	"github.com/kataras/gapi/router"
 	"net/http"
 	"reflect"
 	"strconv"
 	"strings"
-
-	"github.com/kataras/gapi/router"
+	"sync"
 )
 
-///TODO: na mhn ksexasw sto use na valw an 9elei mono sigekrimea methods opws px GET,POST,PUT,DELETE ktlp
-type Middleware func(http.Handler) http.Handler
+var once sync.Once
 
 type HttpServer struct {
-	Options     *HttpServerConfig
-	Router      *router.HttpRouter
-	middlewares []Middleware
-	isRunning   bool
+	Options   *HttpServerConfig
+	Router    *router.HttpRouter
+	isRunning bool
 }
 
 func NewHttpServer() *HttpServer {
@@ -69,31 +67,38 @@ func (this *HttpServer) Listen(fullHostOrPort interface{}) {
 
 }
 
+///TODO: na kanw kai ta global middleware kai routes, auto 9a ginete me to '*'
 func (this *HttpServer) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	//var route = this.Router.Routes[req.URL.Path]
-	var route = this.Router.Find(req)
-	if route == nil {
-		///TODO: return custom, defined by developer not found handler.
-		http.NotFound(res, req)
-	} else if route.Method == req.Method {
-		//if this.Router.Match(req.URL.Path, route) {
 
-		//}
-		var last http.Handler = http.HandlerFunc(route.Handler)
+	var route,errCode = this.Router.Find(req)
+	
+	if errCode > 0 {
+		switch errCode {
+			case 405 :
+			http.Error(res, "Error 405  Method Not Allowed", 405)
+			
+			default :
+			http.NotFound(res, req)
+		}
+	}else {
+			/*var last http.Handler = http.HandlerFunc(route.Handler)
 		for i := len(this.middlewares) - 1; i >= 0; i-- {
 			last = this.middlewares[i](last)
 		}
-		last.ServeHTTP(res, req)
+		last.ServeHTTP(res, req)*/
 
-	} else {
-		http.Error(res, "Error 405  Method Not Allowed", 405)
+		//this.middleware.ServeHTTP(res,req)
+		//and after middlewares executed, run
+		//edw omws to next an dn kaleite tote auto to route
+		//kanei execute alla to 9ema einai na min kanei
+		//an kapio middleware den to pei
+		//me auta p ekana ws twra mono metaksu tous ta middleware
+		//apofasizoun an 9a ginei next i oxi sto epomeno middleware
+		//oxi sto route omws..
+		//xmm na to dw...
+		//route.Handler(res,req)
+		route.ServeHTTP(res,req)
 	}
-}
-
-func (this *HttpServer) Use(handlers ...Middleware) *HttpServer {
-	if len(handlers) > 0 {
-		this.middlewares = append(this.middlewares, handlers...)
-	}
-
-	return this
+	
 }

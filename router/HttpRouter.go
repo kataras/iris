@@ -2,13 +2,11 @@ package router
 
 import (
 	"net/http"
-	"regexp"
 	"strings"
 )
 
 const (
-	COOKIE_NAME            = "____gapi____"
-	REGEX_BRACKETS_CONTENT = "{(.*?)}"
+	COOKIE_NAME = "____gapi____"
 )
 
 type Handler func(http.ResponseWriter, *http.Request)
@@ -17,14 +15,6 @@ type Parameters map[string]string
 
 func (params Parameters) Get(key string) string {
 	return params[key]
-}
-
-type HttpRoute struct {
-	Method    string
-	Path      string
-	Handler   Handler
-	Pattern   *regexp.Regexp
-	ParamKeys []string
 }
 
 type HttpRouter struct {
@@ -43,7 +33,8 @@ func (this *HttpRouter) Unroute(urlPath string) *HttpRouter {
 }
 
 //registedPath is the name of the route + the pattern
-func (this *HttpRouter) Route(method string, registedPath string, handler Handler) *HttpRouter {
+func (this *HttpRouter) Route(method string, registedPath string, handler Handler) *HttpRoute {
+	var route *HttpRoute
 	if registedPath == "" {
 		registedPath = "/"
 	}
@@ -51,25 +42,10 @@ func (this *HttpRouter) Route(method string, registedPath string, handler Handle
 		method = HttpMethods.GET
 	}
 	if handler != nil {
-		//this.routes[registedPath] = NewHttpRoute(method, registedPath, handler)
-		this.routes = append(this.routes, NewHttpRoute(method, registedPath, handler))
+		route = NewHttpRoute(method, registedPath, handler)
+		this.routes = append(this.routes, route)
 	}
-	return this
-}
-
-//Global to package router.
-func NewHttpRoute(method string, registedPath string, handler Handler) *HttpRoute {
-	httpRoute := &HttpRoute{Method: method, Handler: handler, Path: registedPath}
-
-	pattern := regexp.MustCompile(REGEX_BRACKETS_CONTENT)                  //fint all {key}
-	var regexpRoute = pattern.ReplaceAllString(registedPath, "\\w+") + "$" //replace that {key} with /w+ and on the finish $
-	regexpRoute = strings.Replace(regexpRoute, "/", "\\/", -1)             //escape / character for regex
-	routePattern := regexp.MustCompile(regexpRoute)
-
-	httpRoute.Pattern = routePattern
-	httpRoute.ParamKeys = pattern.FindAllString(registedPath, -1)
-
-	return httpRoute
+	return route
 }
 
 func (route *HttpRoute) Match(urlPath string) bool {
@@ -87,11 +63,19 @@ func (this *HttpRouter) getRouteByRegistedPath(registedPath string) *HttpRoute {
 	return nil
 
 }
-//the req.Method check goes to the HttpServer, in order to provide the correct http error  405 Method not allowed.
-func (this *HttpRouter) Find(req *http.Request) *HttpRoute {
+
+//Here returns the error code if no route found
+func (this *HttpRouter) Find(req *http.Request) (*HttpRoute, int) {
 	reqUrlPath := req.URL.Path
+	wrongMethod := false
 	for _, route := range this.routes {
 		if route.Match(reqUrlPath) {
+
+			if req.Method != route.Method {
+				wrongMethod = true
+				continue
+			}
+
 			reqPathSplited := strings.Split(reqUrlPath, "/")
 			routePathSplited := strings.Split(route.Path, "/")
 			/*if len(reqPathSplited) != len(reqPathSplited) {
@@ -112,11 +96,17 @@ func (this *HttpRouter) Find(req *http.Request) *HttpRoute {
 			}
 
 			//break
-			return route
+			return route, 0
 		}
 	}
-	
-	return nil
+
+	//if route has found but with wrong method, we must continue it because maybe the next route has the correct method, but
+	//here if no method found
+	if wrongMethod {
+		return nil, 405
+	}
+	//not found
+	return nil, 404
 }
 
 //Global to package router.
