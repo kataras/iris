@@ -16,7 +16,7 @@ var HttpMethods = HttpMethodType{"GET", "POST", "PUT", "DELETE"}
 var HttpMethodReflectType = reflect.TypeOf(HttpMethods)
 */
 
-var HttpMethods = struct {
+var HTTPMethods = struct {
 	GET, POST, PUT, DELETE, CONNECT, HEAD, PATCH, OPTIONS, TRACE string
 	ALL                                                          []string
 }{"GET", "POST", "PUT", "DELETE", "CONNECT", "HEAD", "PATCH", "OPTIONS", "TRACE",

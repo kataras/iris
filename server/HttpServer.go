@@ -11,14 +11,14 @@ import (
 
 var once sync.Once
 
-type HttpServer struct {
-	Options   *HttpServerConfig
-	Router    *router.HttpRouter
+type HTTPServer struct {
+	Options   *HTTPServerConfig
+	Router    *router.HTTPRouter
 	isRunning bool
 }
 
-func NewHttpServer() *HttpServer {
-	_server := new(HttpServer)
+func NewHTTPServer() *HTTPServer {
+	_server := new(HTTPServer)
 	_server.Options = DefaultHttpConfig()
 
 	return _server
@@ -26,27 +26,27 @@ func NewHttpServer() *HttpServer {
 
 //options
 
-func (this *HttpServer) Host(host string) *HttpServer {
+func (this *HTTPServer) Host(host string) *HTTPServer {
 	this.Options.Host = host
 	return this
 }
 
-func (this *HttpServer) Port(port int) *HttpServer {
+func (this *HTTPServer) Port(port int) *HTTPServer {
 	this.Options.Port = port
 	return this
 }
 
-func (this *HttpServer) SetRouter(_router *router.HttpRouter) *HttpServer {
+func (this *HTTPServer) SetRouter(_router *router.HTTPRouter) *HTTPServer {
 	this.Router = _router
 	return this
 }
 
-func (this *HttpServer) Start() {
+func (this *HTTPServer) Start() {
 	this.isRunning = true
 	http.ListenAndServe(this.Options.Host+strconv.Itoa(this.Options.Port), this)
 }
 
-func (this *HttpServer) Listen(fullHostOrPort interface{}) {
+func (this *HTTPServer) Listen(fullHostOrPort interface{}) {
 
 	switch reflect.ValueOf(fullHostOrPort).Interface().(type) {
 	case string:
@@ -68,7 +68,7 @@ func (this *HttpServer) Listen(fullHostOrPort interface{}) {
 }
 
 ///TODO: na kanw kai ta global middleware kai routes, auto 9a ginete me to '*'
-func (this *HttpServer) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+func (this *HTTPServer) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	//var route = this.Router.Routes[req.URL.Path]
 
 	var route, errCode = this.Router.Find(req)

@@ -17,25 +17,25 @@ func (params Parameters) Get(key string) string {
 	return params[key]
 }
 
-type HttpRouter struct {
+type HTTPRouter struct {
 	MiddlewareSupporter
 	//routes map[string]*HttpRoute, I dont need this anymore because I will have to iterate to all of them to check the regex pattern vs request url..
-	routes []*HttpRoute
+	routes []*HTTPRoute
 }
 
-func NewHttpRouter() *HttpRouter {
-	return &HttpRouter{routes: make([]*HttpRoute, 0)}
+func NewHTTPRouter() *HTTPRouter {
+	return &HTTPRouter{routes: make([]*HTTPRoute, 0)}
 }
 
-func (this *HttpRouter) Unroute(urlPath string) *HttpRouter {
+func (this *HTTPRouter) Unroute(urlPath string) *HTTPRouter {
 	//delete(this.routes, urlPath)
 	///TODO
 	return this
 }
 
 //registedPath is the name of the route + the pattern
-func (this *HttpRouter) Route(registedPath string, handler Handler, methods ...string) *HttpRoute {
-	var route *HttpRoute
+func (this *HTTPRouter) Route(registedPath string, handler Handler, methods ...string) *HTTPRoute {
+	var route *HTTPRoute
 	if registedPath == "" {
 		registedPath = "/"
 	}
@@ -46,7 +46,7 @@ func (this *HttpRouter) Route(registedPath string, handler Handler, methods ...s
 		//			methods = []string{HttpMethods.GET}
 		//		}
 
-		route = NewHttpRoute(registedPath, handler, methods...)
+		route = NewHTTPRoute(registedPath, handler, methods...)
 
 		if len(this.middlewareHandlers) > 0 {
 			//if global middlewares are registed then push them to this route.
@@ -58,7 +58,7 @@ func (this *HttpRouter) Route(registedPath string, handler Handler, methods ...s
 	return route
 }
 
-func (this *HttpRouter) getRouteByRegistedPath(registedPath string) *HttpRoute {
+func (this *HTTPRouter) getRouteByRegistedPath(registedPath string) *HTTPRoute {
 
 	for _, route := range this.routes {
 		if route.Path == registedPath {
@@ -72,7 +72,7 @@ func (this *HttpRouter) getRouteByRegistedPath(registedPath string) *HttpRoute {
 
 /* GLOBAL MIDDLEWARE */
 
-func (this *HttpRouter) Use(handler MiddlewareHandler) *HttpRouter {
+func (this *HTTPRouter) Use(handler MiddlewareHandler) *HTTPRouter {
 	this.MiddlewareSupporter.Use(handler)
 	//IF this is called after the routes
 	if len(this.routes) > 0 {
@@ -86,7 +86,7 @@ func (this *HttpRouter) Use(handler MiddlewareHandler) *HttpRouter {
 //
 
 //Here returns the error code if no route found
-func (this *HttpRouter) Find(req *http.Request) (*HttpRoute, int) {
+func (this *HTTPRouter) Find(req *http.Request) (*HTTPRoute, int) {
 	reqUrlPath := req.URL.Path
 	wrongMethod := false
 	for _, route := range this.routes {

@@ -11,7 +11,7 @@ const (
 	MATCH_EVERYTHING       = "*"
 )
 
-type HttpRoute struct {
+type HTTPRoute struct {
 	//Middleware
 	MiddlewareSupporter
 
@@ -24,11 +24,11 @@ type HttpRoute struct {
 	isReady bool
 }
 
-func NewHttpRoute(registedPath string, handler Handler, methods ...string) *HttpRoute {
+func NewHTTPRoute(registedPath string, handler Handler, methods ...string) *HTTPRoute {
 	if methods == nil {
 		methods = make([]string, 0)
 	}
-	httpRoute := &HttpRoute{Handler: handler, Path: registedPath, methods: methods, isReady: false}
+	httpRoute := &HTTPRoute{Handler: handler, Path: registedPath, methods: methods, isReady: false}
 	if registedPath != MATCH_EVERYTHING {
 		pattern := regexp.MustCompile(REGEX_BRACKETS_CONTENT)                  //fint all {key}
 		var regexpRoute = pattern.ReplaceAllString(registedPath, "\\w+") + "$" //replace that {key} with /w+ and on the finish $
@@ -40,7 +40,7 @@ func NewHttpRoute(registedPath string, handler Handler, methods ...string) *Http
 	return httpRoute
 }
 
-func (this *HttpRoute) ContainsMethod(method string) bool {
+func (this *HTTPRoute) ContainsMethod(method string) bool {
 	for _, m := range this.methods {
 		if m == method {
 			return true
@@ -49,17 +49,17 @@ func (this *HttpRoute) ContainsMethod(method string) bool {
 	return false
 }
 
-func (this *HttpRoute) Methods(methods ...string) *HttpRoute {
+func (this *HTTPRoute) Methods(methods ...string) *HTTPRoute {
 	this.methods = append(this.methods, methods...)
 	return this
 }
 
-func (route *HttpRoute) Match(urlPath string) bool {
+func (route *HTTPRoute) Match(urlPath string) bool {
 	return route.Path == MATCH_EVERYTHING || route.Pattern.MatchString(urlPath)
 }
 
 //Runs once before the first ServeHTTP
-func (this *HttpRoute) Prepare() {
+func (this *HTTPRoute) Prepare() {
 	if this.Handler != nil {
 		convertedMiddleware := MiddlewareHandlerFunc(func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
 			this.Handler(res, req)
@@ -71,7 +71,7 @@ func (this *HttpRoute) Prepare() {
 	
 	//here if no methods are defined at all, then use GET by default.
 	if this.methods == nil {
-		this.methods = []string{HttpMethods.GET}
+		this.methods = []string{HTTPMethods.GET}
 	}
 
 	this.isReady = true
@@ -79,7 +79,7 @@ func (this *HttpRoute) Prepare() {
 
 //
 
-func (this *HttpRoute) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+func (this *HTTPRoute) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	if this.isReady == false && this.Handler != nil {
 		this.Prepare()
 	}

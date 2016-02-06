@@ -9,19 +9,19 @@ import (
 )
 
 var (
-	HttpMethods = router.HttpMethods
+	HTTPMethods = router.HTTPMethods
 )
 
-func NewRouter() *router.HttpRouter {
-	return router.NewHttpRouter()
+func NewRouter() *router.HTTPRouter {
+	return router.NewHTTPRouter()
 }
 
-func NewServer() *server.HttpServer {
-	return server.NewHttpServer()
+func NewServer() *server.HTTPServer {
+	return server.NewHTTPServer()
 }
 
 type Gapi struct {
-	server *server.HttpServer
+	server *server.HTTPServer
 }
 
 func New() *Gapi {
@@ -37,7 +37,7 @@ func (this *Gapi) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 /* STANDALONE SERVER */
 
-func (this *Gapi) Listen(fullHostOrPort interface{}) *server.HttpServer {
+func (this *Gapi) Listen(fullHostOrPort interface{}) *server.HTTPServer {
 	this.server.Listen(fullHostOrPort)
 	return this.server
 }
@@ -60,44 +60,44 @@ func (this *Gapi) UseHandler(handler http.Handler) *Gapi {
 }
 
 /* ROUTER */
-func (this *Gapi) Route(path string, handler router.Handler) *router.HttpRoute {
+func (this *Gapi) Route(path string, handler router.Handler) *router.HTTPRoute {
 	return this.server.Router.Route(path, handler)
 }
 
-func (this *Gapi) Get(path string, handler router.Handler) *router.HttpRoute {
-	return this.server.Router.Route(path, handler, router.HttpMethods.GET)
+func (this *Gapi) Get(path string, handler router.Handler) *router.HTTPRoute {
+	return this.server.Router.Route(path, handler, router.HTTPMethods.GET)
 }
 
-func (this *Gapi) Post(path string, handler router.Handler) *router.HttpRoute {
-	return this.server.Router.Route(path, handler, router.HttpMethods.POST)
+func (this *Gapi) Post(path string, handler router.Handler) *router.HTTPRoute {
+	return this.server.Router.Route(path, handler, router.HTTPMethods.POST)
 }
 
-func (this *Gapi) Put(path string, handler router.Handler) *router.HttpRoute {
-	return this.server.Router.Route(path, handler, router.HttpMethods.PUT)
+func (this *Gapi) Put(path string, handler router.Handler) *router.HTTPRoute {
+	return this.server.Router.Route(path, handler, router.HTTPMethods.PUT)
 }
 
-func (this *Gapi) Delete(path string, handler router.Handler) *router.HttpRoute {
-	return this.server.Router.Route(path, handler, router.HttpMethods.DELETE)
+func (this *Gapi) Delete(path string, handler router.Handler) *router.HTTPRoute {
+	return this.server.Router.Route(path, handler, router.HTTPMethods.DELETE)
 }
 
-func (this *Gapi) Connect(path string, handler router.Handler) *router.HttpRoute {
-	return this.server.Router.Route(path, handler, router.HttpMethods.CONNECT)
+func (this *Gapi) Connect(path string, handler router.Handler) *router.HTTPRoute {
+	return this.server.Router.Route(path, handler, router.HTTPMethods.CONNECT)
 }
 
-func (this *Gapi) Head(path string, handler router.Handler) *router.HttpRoute {
-	return this.server.Router.Route(path, handler, router.HttpMethods.HEAD)
+func (this *Gapi) Head(path string, handler router.Handler) *router.HTTPRoute {
+	return this.server.Router.Route(path, handler, router.HTTPMethods.HEAD)
 }
 
-func (this *Gapi) Options(path string, handler router.Handler) *router.HttpRoute {
-	return this.server.Router.Route(path, handler, router.HttpMethods.OPTIONS)
+func (this *Gapi) Options(path string, handler router.Handler) *router.HTTPRoute {
+	return this.server.Router.Route(path, handler, router.HTTPMethods.OPTIONS)
 }
 
-func (this *Gapi) Patch(path string, handler router.Handler) *router.HttpRoute {
-	return this.server.Router.Route(path, handler, router.HttpMethods.PATCH)
+func (this *Gapi) Patch(path string, handler router.Handler) *router.HTTPRoute {
+	return this.server.Router.Route(path, handler, router.HTTPMethods.PATCH)
 }
 
-func (this *Gapi) Trace(path string, handler router.Handler) *router.HttpRoute {
-	return this.server.Router.Route(path, handler, router.HttpMethods.TRACE)
+func (this *Gapi) Trace(path string, handler router.Handler) *router.HTTPRoute {
+	return this.server.Router.Route(path, handler, router.HTTPMethods.TRACE)
 }
 
 /* Router's params */
