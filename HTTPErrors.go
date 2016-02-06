@@ -1,4 +1,4 @@
-package router
+package gapi
 
 import (
 	"net/http"

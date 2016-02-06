@@ -1,7 +1,8 @@
-package router
+package gapi
 
 import (
 	"net/http"
+	"reflect"
 	"regexp"
 	"strings"
 )
@@ -17,14 +18,15 @@ type HTTPRoute struct {
 
 	methods   []string
 	Path      string
-	Handler   Handler
+	Handler   HTTPHandler
 	Pattern   *regexp.Regexp
 	ParamKeys []string
 
-	isReady bool
+	handlerAcceptsContext bool
+	isReady               bool
 }
 
-func NewHTTPRoute(registedPath string, handler Handler, methods ...string) *HTTPRoute {
+func NewHTTPRoute(registedPath string, handler HTTPHandler, methods ...string) *HTTPRoute {
 	if methods == nil {
 		methods = make([]string, 0)
 	}
@@ -58,17 +60,46 @@ func (route *HTTPRoute) Match(urlPath string) bool {
 	return route.Path == MATCH_EVERYTHING || route.Pattern.MatchString(urlPath)
 }
 
+//Here to check for parameters passed to the Handler with ...interface{}
+
+// 1. function has Parameters type check if the request has parameters then pass them or pass empty map.
+// 2. If no res, req (classic http handler) then we check if
+
+//This has to run in every ServeHTTP but we are writing on one place on Prepare() function inside the convertedMiddleware which is running at every request.
+//NO  this will run one time, it will create some fields ex: isClassicHttp=true if res,req are the only params
+// isWaitingForParameters = true if gapi.Parameters passsed as an argument.
+//or no? Compared to a disk seek or network transfer, the cost of reflection will be negligible ... I have to think about it.
+//na pernw ta types kai ta parameters mia fora px typeparamSomething =1 //1 position of .In(i)
+func (this *HTTPRoute) run(res http.ResponseWriter, req *http.Request) {
+	//var some []reflect.Value
+
+	if this.handlerAcceptsContext {
+		this.Handler.(func(context *Context))(NewContext(res,req))
+	}else {
+		this.Handler.(func(res http.ResponseWriter, req *http.Request))(res,req)
+	}
+
+}
+
 //Runs once before the first ServeHTTP
 func (this *HTTPRoute) Prepare() {
 	if this.Handler != nil {
+		typeFn := reflect.TypeOf(this.Handler)
+		countParams := typeFn.NumIn()
+
+		if countParams == 1 && strings.Contains(typeFn.In(0).String(), "Context") {
+			this.handlerAcceptsContext = true
+		}
+
 		convertedMiddleware := MiddlewareHandlerFunc(func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
-			this.Handler(res, req)
+			//this.Handler(res, req) :->
+			this.run(res, req)
 			next(res, req)
 		})
 
 		this.Use(convertedMiddleware)
 	}
-	
+
 	//here if no methods are defined at all, then use GET by default.
 	if this.methods == nil {
 		this.methods = []string{HTTPMethods.GET}

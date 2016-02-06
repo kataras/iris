@@ -1,4 +1,4 @@
-package router
+package gapi
 
 /* as ENUM, maybe at the Future
 type HttpMethodType struct {

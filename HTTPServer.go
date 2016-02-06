@@ -1,7 +1,6 @@
-package server
+package gapi
 
 import (
-	"github.com/kataras/gapi/router"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -13,7 +12,7 @@ var once sync.Once
 
 type HTTPServer struct {
 	Options   *HTTPServerConfig
-	Router    *router.HTTPRouter
+	Router    *HTTPRouter
 	isRunning bool
 }
 
@@ -36,7 +35,7 @@ func (this *HTTPServer) Port(port int) *HTTPServer {
 	return this
 }
 
-func (this *HTTPServer) SetRouter(_router *router.HTTPRouter) *HTTPServer {
+func (this *HTTPServer) SetRouter(_router *HTTPRouter) *HTTPServer {
 	this.Router = _router
 	return this
 }

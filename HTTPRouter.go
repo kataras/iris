@@ -1,4 +1,4 @@
-package router
+package gapi
 
 import (
 	"net/http"
@@ -9,7 +9,8 @@ const (
 	COOKIE_NAME = "____gapi____"
 )
 
-type Handler func(http.ResponseWriter, *http.Request)
+//type HTTPHandler func(http.ResponseWriter, *http.Request)
+type HTTPHandler interface {}//func(...interface{}) //[]reflect.Value
 
 type Parameters map[string]string
 
@@ -34,7 +35,7 @@ func (this *HTTPRouter) Unroute(urlPath string) *HTTPRouter {
 }
 
 //registedPath is the name of the route + the pattern
-func (this *HTTPRouter) Route(registedPath string, handler Handler, methods ...string) *HTTPRoute {
+func (this *HTTPRouter) Route(registedPath string, handler HTTPHandler, methods ...string) *HTTPRoute {
 	var route *HTTPRoute
 	if registedPath == "" {
 		registedPath = "/"
@@ -108,7 +109,7 @@ func (this *HTTPRouter) Find(req *http.Request) (*HTTPRoute, int) {
 
 				for splitIndex, pathPart := range routePathSplited {
 					if pathPart == key {
-						param := key + "=" + reqPathSplited[splitIndex]
+						param := key[1:len(key)-1] + "=" + reqPathSplited[splitIndex]
 						_cookie := &http.Cookie{Name: COOKIE_NAME, Value: param}
 						req.AddCookie(_cookie)
 					}
@@ -130,8 +131,8 @@ func (this *HTTPRouter) Find(req *http.Request) (*HTTPRoute, int) {
 	return nil, 404
 }
 
-//Global to package router.
-func GetParameters(req *http.Request) Parameters {
+//Global to package
+func Params(req *http.Request) Parameters {
 	_cookie, _err := req.Cookie(COOKIE_NAME)
 	if _err != nil {
 		return nil
@@ -150,3 +151,13 @@ func GetParameters(req *http.Request) Parameters {
 
 	return params
 }
+
+func Param(req *http.Request, key string) string {
+	params := Params(req)
+	param := ""
+	if params != nil {
+		param = params[key]
+	}
+	return param
+}
+
