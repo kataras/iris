@@ -71,18 +71,18 @@ func (this *HttpServer) Listen(fullHostOrPort interface{}) {
 func (this *HttpServer) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	//var route = this.Router.Routes[req.URL.Path]
 
-	var route,errCode = this.Router.Find(req)
-	
+	var route, errCode = this.Router.Find(req)
+
 	if errCode > 0 {
 		switch errCode {
-			case 405 :
+		case 405:
 			http.Error(res, "Error 405  Method Not Allowed", 405)
-			
-			default :
+
+		default:
 			http.NotFound(res, req)
 		}
-	}else {
-			/*var last http.Handler = http.HandlerFunc(route.Handler)
+	} else {
+		/*var last http.Handler = http.HandlerFunc(route.Handler)
 		for i := len(this.middlewares) - 1; i >= 0; i-- {
 			last = this.middlewares[i](last)
 		}
@@ -98,7 +98,7 @@ func (this *HttpServer) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		//oxi sto route omws..
 		//xmm na to dw...
 		//route.Handler(res,req)
-		route.ServeHTTP(res,req)
+		route.ServeHTTP(res, req)
 	}
-	
+
 }

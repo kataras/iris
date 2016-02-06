@@ -18,6 +18,7 @@ func (params Parameters) Get(key string) string {
 }
 
 type HttpRouter struct {
+	MiddlewareSupporter
 	//routes map[string]*HttpRoute, I dont need this anymore because I will have to iterate to all of them to check the regex pattern vs request url..
 	routes []*HttpRoute
 }
@@ -33,23 +34,28 @@ func (this *HttpRouter) Unroute(urlPath string) *HttpRouter {
 }
 
 //registedPath is the name of the route + the pattern
-func (this *HttpRouter) Route(method string, registedPath string, handler Handler) *HttpRoute {
+func (this *HttpRouter) Route(registedPath string, handler Handler, methods ...string) *HttpRoute {
 	var route *HttpRoute
 	if registedPath == "" {
 		registedPath = "/"
 	}
-	if method == "" {
-		method = HttpMethods.GET
-	}
-	if handler != nil {
-		route = NewHttpRoute(method, registedPath, handler)
+
+	if handler != nil || registedPath == MATCH_EVERYTHING {
+		//I will do it inside the Prepare, because maybe developer don't wants the GET if methods not defined yet.
+		//		if methods == nil {
+		//			methods = []string{HttpMethods.GET}
+		//		}
+
+		route = NewHttpRoute(registedPath, handler, methods...)
+
+		if len(this.middlewareHandlers) > 0 {
+			//if global middlewares are registed then push them to this route.
+			route.middlewareHandlers = this.middlewareHandlers
+		}
+
 		this.routes = append(this.routes, route)
 	}
 	return route
-}
-
-func (route *HttpRoute) Match(urlPath string) bool {
-	return route.Pattern.MatchString(urlPath)
 }
 
 func (this *HttpRouter) getRouteByRegistedPath(registedPath string) *HttpRoute {
@@ -64,6 +70,21 @@ func (this *HttpRouter) getRouteByRegistedPath(registedPath string) *HttpRoute {
 
 }
 
+/* GLOBAL MIDDLEWARE */
+
+func (this *HttpRouter) Use(handler MiddlewareHandler) *HttpRouter {
+	this.MiddlewareSupporter.Use(handler)
+	//IF this is called after the routes
+	if len(this.routes) > 0 {
+		for _, route := range this.routes {
+			route.Use(handler)
+		}
+	}
+	return this
+}
+
+//
+
 //Here returns the error code if no route found
 func (this *HttpRouter) Find(req *http.Request) (*HttpRoute, int) {
 	reqUrlPath := req.URL.Path
@@ -71,7 +92,7 @@ func (this *HttpRouter) Find(req *http.Request) (*HttpRoute, int) {
 	for _, route := range this.routes {
 		if route.Match(reqUrlPath) {
 
-			if req.Method != route.Method {
+			if route.ContainsMethod(req.Method) == false {
 				wrongMethod = true
 				continue
 			}

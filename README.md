@@ -31,27 +31,33 @@ A very minimal but flexible golang web application framework, providing a robust
 package main
 
 import (
-	"github.com/kataras/gapi"
 	"log"
 	"net/http"
+
+	"github.com/kataras/gapi"
 )
 
 var api = gapi.New()
 
 func main() {
+	//register global middleware
+	api.UseFunc(globalLog)
 
-	//Register middlewares
-	api.Use(log1, log2)
-
-	//Register routes
-	api.Get("/home", homeHandler).
-		Post("/register", func(res http.ResponseWriter, req *http.Request) {
+	api.Post("/register", func(res http.ResponseWriter, req *http.Request) {
 		res.Write([]byte("<h1>Hello from ROUTER ON Post request /register </h1>"))
 	})
 
-	api.Get("/profile/{name}", profileHandler) // Parameters
-    //api.Get("/profile/{name}/friends", userFriendsHandler) // A parameter can followed by other /path too
-    //api.Get("/profile/{name}/friends/{friendId}",userProfileFriendHandler) // Two parameters with path parts also possible 
+	api.Get("/profile/user/{name}/details/{something}", profileHandler) // Parameters
+	//or if you want a route to listen to more than one method than one you can do that:
+	api.Route("/api/json/user/{userId}", func(res http.ResponseWriter, req *http.Request) {
+
+	}).Methods(gapi.HttpMethods.GET,gapi.HttpMethods.POST) // or .ALL if you want all (get,post,head,put,options,delete,patch...)
+
+	//register route, it's 'controller' homeHandler and its middleware log1,
+	//middleware will run first and if next fn is exists and executed
+	//or no next fn exists in middleware then will continue to homeHandler
+	api.Get("/home", homeHandler).UseFunc(log1)
+
 	println("Server is running at :80")
 
 	//Listen to
@@ -62,17 +68,21 @@ func main() {
 
 }
 
-func log1(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		println("log1  middleware here !!")
-		next.ServeHTTP(res, req)
-	})
+func globalLog(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
+	println("GLOBAL LOG  middleware here !!")
+	next.ServeHTTP(res, req)
 }
 
-func log2(next http.Handler) http.Handler {
+func log1(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
+	println("log1  middleware here !!")
+	next.ServeHTTP(res, req)
+
+}
+
+func log2() http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		println("log2  middleware here !!")
-		next.ServeHTTP(res, req)
+		//next.ServeHTTP(res, req)
 
 	})
 }
@@ -82,14 +92,12 @@ func homeHandler(res http.ResponseWriter, req *http.Request) {
 }
 
 func profileHandler(res http.ResponseWriter, req *http.Request) {
-	//two ways to get the parameters from:
+
 	params := api.Params(req)
 	name := params.Get("name") // or params["name"]
-   //OR
-   //name := api.Param(req,"name")
-   
+	//or name := api.Param(req,"name")
 
-	res.Write([]byte("<h1> Hello from ROUTER ON /profile/"+name+" </h1>"))
+	res.Write([]byte("<h1> Hello from ROUTER ON /profile/" + name + " </h1>"))
 }
 
 ```
