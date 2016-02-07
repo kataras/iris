@@ -8,20 +8,21 @@ import (
 )
 
 const (
-	REGEX_BRACKETS_CONTENT = "{(.*?)}"
-	MATCH_EVERYTHING       = "*"
+	REGEX_BRACKETS_CONTENT    = "{(.*?)}" //{(.*?)}
+	REGEX_PARENTHESIS_CONTENT = "((.*?))"
+	MATCH_EVERYTHING          = "*"
 )
 
 type HTTPRoute struct {
 	//Middleware
 	MiddlewareSupporter
 
-	methods   []string
-	Path      string
-	Handler   HTTPHandler
-	Pattern   *regexp.Regexp
-	ParamKeys []string
-
+	methods []string
+	Path    string
+	Handler HTTPHandler
+	Pattern *regexp.Regexp
+	//ParamKeys map[string]*regexp.Regexp
+	ParamKeys             []string
 	handlerAcceptsContext bool
 	isReady               bool
 }
@@ -32,14 +33,47 @@ func NewHTTPRoute(registedPath string, handler HTTPHandler, methods ...string) *
 	}
 	httpRoute := &HTTPRoute{Handler: handler, Path: registedPath, methods: methods, isReady: false}
 	if registedPath != MATCH_EVERYTHING {
-		pattern := regexp.MustCompile(REGEX_BRACKETS_CONTENT)                  //fint all {key}
-		var regexpRoute = pattern.ReplaceAllString(registedPath, "\\w+") + "$" //replace that {key} with /w+ and on the finish $
-		regexpRoute = strings.Replace(regexpRoute, "/", "\\/", -1)             //escape / character for regex
+		regexpRoute := registedPath 
+		pattern := regexp.MustCompile(REGEX_BRACKETS_CONTENT) //fint all {key}
+		keys := pattern.FindAllString(registedPath, -1)
+		for indexKey, key := range keys {
+			backupKey := key // the full {name(regex)} we will need it for the replace.
+			key = key[1 : len(key)-1]
+			keys[indexKey] = key
+			startParenthesisIndex := strings.Index(key, "(")
+			finishParenthesisIndex := strings.LastIndex(key, ")") // checks only the first (), if more than one (regex) exists for one key then the application will be fail and I dont care :)
+			//I did LastIndex because the custom regex maybe has ()parenthesis too.
+			if startParenthesisIndex > 0 && finishParenthesisIndex > startParenthesisIndex {
+				keyPattern := key[startParenthesisIndex+1 : finishParenthesisIndex]
+				key = key[0:startParenthesisIndex] //remove the (regex) from key and  the {, }
+
+				keys[indexKey] = key
+				if isSupportedType(keyPattern) {
+					//if it is (string) or (int) inside contents
+					keyPattern = toPattern(keyPattern)
+				}
+				regexpRoute = strings.Replace(registedPath, backupKey, keyPattern,-1)
+				//println("regex found for "+key)
+			}else {
+
+				//if no regex found in this key then add the w+ 
+				regexpRoute = strings.Replace(regexpRoute, backupKey, "\\w+",-1)
+
+			}
+		}
+	
+		//regexpRoute = pattern.ReplaceAllString(registedPath, "\\w+") + "$" //replace that {key} with /w+ and on the finish $
+		regexpRoute = strings.Replace(regexpRoute, "/", "\\/", -1)+"$"         ///escape / character for regex and finish it with $, if route/{name} and req url is route/{name}/somethingelse then it will not be matched
 		routePattern := regexp.MustCompile(regexpRoute)
 		httpRoute.Pattern = routePattern
-		httpRoute.ParamKeys = pattern.FindAllString(registedPath, -1)
+
+		httpRoute.ParamKeys = keys
 	}
 	return httpRoute
+}
+
+func makeKeyRegex(keyPattern string) *regexp.Regexp {
+	return nil
 }
 
 func (this *HTTPRoute) ContainsMethod(method string) bool {
@@ -74,9 +108,9 @@ func (this *HTTPRoute) run(res http.ResponseWriter, req *http.Request) {
 	//var some []reflect.Value
 
 	if this.handlerAcceptsContext {
-		this.Handler.(func(context *Context))(NewContext(res,req))
-	}else {
-		this.Handler.(func(res http.ResponseWriter, req *http.Request))(res,req)
+		this.Handler.(func(context *Context))(NewContext(res, req))
+	} else {
+		this.Handler.(func(res http.ResponseWriter, req *http.Request))(res, req)
 	}
 
 }
@@ -87,6 +121,7 @@ func (this *HTTPRoute) Prepare() {
 		typeFn := reflect.TypeOf(this.Handler)
 		countParams := typeFn.NumIn()
 
+		///Maybe at the future change it to a static type check no just a string because developer may use other Context from other package... I dont know lawl
 		if countParams == 1 && strings.Contains(typeFn.In(0).String(), "Context") {
 			this.handlerAcceptsContext = true
 		}

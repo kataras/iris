@@ -4,7 +4,6 @@ import (
 	"net/http"
 )
 
-
 func ErrorHandler(message string, errCode ...int) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		if errCode == nil {
@@ -18,6 +17,5 @@ func ErrorHandler(message string, errCode ...int) http.Handler {
 }
 
 func NotFoundRoute() http.Handler {
-	return ErrorHandler("<h1> Sorry the route was not found! </h1>",404)
+	return ErrorHandler("<h1> Sorry the route was not found! </h1>", 404)
 }
-

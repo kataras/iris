@@ -50,9 +50,9 @@ func main() {
 
 	api.Get("/profile/user/{name}/details/{something}", profileHandler) // Parameters
 	//or if you want a route to listen to more than one method than one you can do that:
-	api.Route("/api/json/user/{userId}", func(res http.ResponseWriter, req *http.Request) {
-
-	}).Methods(gapi.HTTPMethods.GET,gapi.HTTPMethods.POST) // or .ALL if you want all (get,post,head,put,options,delete,patch...)
+	api.Route("/api/user/{userId(int)}", func(c *gapi.Context) { //the default pattern for each key if no () exists is string ( w+)
+		c.ResponseWriter.Write([]byte("<h1> TEST CONTEXT userId =  " + c.Params.Get("userId") + " </h1>"))
+	}).Methods(gapi.HTTPMethods.GET, gapi.HTTPMethods.POST) // or .ALL if you want all (get,post,head,put,options,delete,patch...)
 
 	//register route, it's 'controller' homeHandler and its middleware log1,
 	//middleware will run first and if next fn is exists and executed

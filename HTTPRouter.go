@@ -2,6 +2,7 @@ package gapi
 
 import (
 	"net/http"
+	"reflect"
 	"strings"
 )
 
@@ -10,7 +11,7 @@ const (
 )
 
 //type HTTPHandler func(http.ResponseWriter, *http.Request)
-type HTTPHandler interface {}//func(...interface{}) //[]reflect.Value
+type HTTPHandler interface{} //func(...interface{}) //[]reflect.Value
 
 type Parameters map[string]string
 
@@ -42,6 +43,13 @@ func (this *HTTPRouter) Route(registedPath string, handler HTTPHandler, methods 
 	}
 
 	if handler != nil || registedPath == MATCH_EVERYTHING {
+
+		//validate the handler to be a func
+
+		if reflect.TypeOf(handler).Kind() != reflect.Func {
+			panic("gapi | HTTPRouter.go:50 -- Handler HAS TO BE A func")
+		}
+
 		//I will do it inside the Prepare, because maybe developer don't wants the GET if methods not defined yet.
 		//		if methods == nil {
 		//			methods = []string{HttpMethods.GET}
@@ -92,7 +100,6 @@ func (this *HTTPRouter) Find(req *http.Request) (*HTTPRoute, int) {
 	wrongMethod := false
 	for _, route := range this.routes {
 		if route.Match(reqUrlPath) {
-
 			if route.ContainsMethod(req.Method) == false {
 				wrongMethod = true
 				continue
@@ -108,10 +115,14 @@ func (this *HTTPRouter) Find(req *http.Request) (*HTTPRoute, int) {
 			for _, key := range route.ParamKeys {
 
 				for splitIndex, pathPart := range routePathSplited {
-					if pathPart == key {
-						param := key[1:len(key)-1] + "=" + reqPathSplited[splitIndex]
+					//	pathPart = pathPart. //here must be replace {name(dsadsa)} to name in order to comprae it with the key
+					hasRegex := strings.Contains(pathPart, "(") // polu proxeira...
+					if (hasRegex && strings.Contains(pathPart, "{"+key+"(")) || (!hasRegex && strings.Contains(pathPart, "{"+key)) {
+
+						param := key + "=" + reqPathSplited[splitIndex]
 						_cookie := &http.Cookie{Name: COOKIE_NAME, Value: param}
 						req.AddCookie(_cookie)
+				
 					}
 
 				}
@@ -160,4 +171,3 @@ func Param(req *http.Request, key string) string {
 	}
 	return param
 }
-
