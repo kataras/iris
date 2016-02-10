@@ -6,7 +6,7 @@ import (
 
 type MiddlewareSupporter struct {
 	middleware         Middleware
-	middlewareHandlers []MiddlewareHandler
+	middlewareHandlers []MiddlewareHandler //at the HTTPRoute the route handler is the last empty-next 'MiddlewareHandler'.
 }
 
 func (this *MiddlewareSupporter) Use(handler MiddlewareHandler) {

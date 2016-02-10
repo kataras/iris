@@ -32,10 +32,9 @@ A very minimal but flexible golang web application framework, providing a robust
 package main
 
 import (
+    "github.com/kataras/gapi"
 	"log"
 	"net/http"
-
-	"github.com/kataras/gapi"
 )
 
 var api = gapi.New()
@@ -50,8 +49,8 @@ func main() {
 
 	api.Get("/profile/user/{name}/details/{something}", profileHandler) // Parameters
 	//or if you want a route to listen to more than one method than one you can do that:
-	api.Route("/api/user/{userId(int)}", func(c *gapi.Context) { //the default pattern for each key if no () exists is string ( w+)
-		c.ResponseWriter.Write([]byte("<h1> TEST CONTEXT userId =  " + c.Params.Get("userId") + " </h1>"))
+	api.Route("/api/user/{userId(int)}", func(c *gapi.Context) {
+		c.Write("<h1> TEST CONTEXT userId =  " + c.Param("userId") + " </h1>")
 	}).Methods(gapi.HTTPMethods.GET, gapi.HTTPMethods.POST) // or .ALL if you want all (get,post,head,put,options,delete,patch...)
 
 	//register route, it's 'controller' homeHandler and its middleware log1,
@@ -148,7 +147,8 @@ of the following:
 
 
 ## Todo
-*  Middlewares, default and custom.
+*  Query parameters
+*  Provide a way to define a content Renderer in the Context
 *  Provide all kind of servers, not only http.
 *  Create examples in this repository
 

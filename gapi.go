@@ -2,7 +2,15 @@ package gapi
 
 //This file just exposes the server and it's router & middlewares
 import (
+	"errors"
 	"net/http"
+	"reflect"
+	"strconv"
+	"strings"
+)
+
+var (
+	avalaibleMethodsStr = strings.Join(HTTPMethods.ALL, ",")
 )
 
 func NewRouter() *HTTPRouter {
@@ -54,8 +62,12 @@ func (this *Gapi) UseHandler(handler http.Handler) *Gapi {
 
 /* ROUTER */
 func (this *Gapi) Route(path string, handler HTTPHandler) *HTTPRoute {
-	
+
 	return this.server.Router.Route(path, handler)
+}
+//same as Gapi.Route
+func (this *Gapi) Handle(path string, handler HTTPHandler) *HTTPRoute {
+	return this.Route(path, handler)
 }
 
 func (this *Gapi) Get(path string, handler HTTPHandler) *HTTPRoute {
@@ -92,4 +104,62 @@ func (this *Gapi) Patch(path string, handler HTTPHandler) *HTTPRoute {
 
 func (this *Gapi) Trace(path string, handler HTTPHandler) *HTTPRoute {
 	return this.server.Router.Route(path, handler, HTTPMethods.TRACE)
+}
+
+func (this *Gapi) RegisterHandler(gapiHandler Handler) error {
+
+	var methods []string
+	var path string
+	var err error = errors.New("")
+
+	val := reflect.ValueOf(gapiHandler).Elem()
+
+	for i := 0; i < val.NumField(); i++ {
+		typeField := val.Type().Field(i)
+
+		if typeField.Name == "Handler" {
+			tag := typeField.Tag
+
+			idx := strings.Index(string(tag), ":")
+
+			tagName := string(tag[:idx])
+			tagValue, unqerr := strconv.Unquote(string(tag[idx+1:]))
+
+			if unqerr != nil {
+				err = errors.New(err.Error() + "\ngapi.RegisterHandler: Error on getting path: " + unqerr.Error())
+				continue
+			}
+			
+			path = tagValue
+
+			if strings.Index(tagName, ",") != -1 {
+				//has multi methods seperate by commas
+
+				if !strings.Contains(avalaibleMethodsStr, tagName) {
+					//wrong methods passed
+					err = errors.New(err.Error() + "\ngapi.RegisterHandler: Wrong methods passed to Handler -> " + tagName)
+					continue
+				}
+
+				methods = strings.Split(tagName, ",")
+				err = nil
+				break
+			} else {
+				//it is single 'GET','POST' .... method
+				methods = []string{tagName}
+				err = nil
+				break
+
+			}
+
+
+		}
+
+	}
+	
+	if err == nil {
+		this.server.Router.Route(path, gapiHandler.Handle, methods...)
+	}
+
+	return err
 }

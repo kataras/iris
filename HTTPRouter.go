@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
+	"sync"
 )
 
 const (
@@ -23,6 +24,7 @@ type HTTPRouter struct {
 	MiddlewareSupporter
 	//routes map[string]*HttpRoute, I dont need this anymore because I will have to iterate to all of them to check the regex pattern vs request url..
 	routes []*HTTPRoute
+	mu     sync.RWMutex
 }
 
 func NewHTTPRouter() *HTTPRouter {
@@ -37,6 +39,8 @@ func (this *HTTPRouter) Unroute(urlPath string) *HTTPRouter {
 
 //registedPath is the name of the route + the pattern
 func (this *HTTPRouter) Route(registedPath string, handler HTTPHandler, methods ...string) *HTTPRoute {
+	this.mu.Lock()
+	defer this.mu.Unlock()
 	var route *HTTPRoute
 	if registedPath == "" {
 		registedPath = "/"
@@ -70,7 +74,7 @@ func (this *HTTPRouter) Route(registedPath string, handler HTTPHandler, methods 
 func (this *HTTPRouter) getRouteByRegistedPath(registedPath string) *HTTPRoute {
 
 	for _, route := range this.routes {
-		if route.Path == registedPath {
+		if route.path == registedPath {
 			return route
 			break
 		}
@@ -106,7 +110,7 @@ func (this *HTTPRouter) Find(req *http.Request) (*HTTPRoute, int) {
 			}
 
 			reqPathSplited := strings.Split(reqUrlPath, "/")
-			routePathSplited := strings.Split(route.Path, "/")
+			routePathSplited := strings.Split(route.path, "/")
 			/*if len(reqPathSplited) != len(reqPathSplited) {
 				panic("This error has no excuse, line 99 gapi/router/HttpRouter.go")
 				continue
@@ -118,11 +122,10 @@ func (this *HTTPRouter) Find(req *http.Request) (*HTTPRoute, int) {
 					//	pathPart = pathPart. //here must be replace {name(dsadsa)} to name in order to comprae it with the key
 					hasRegex := strings.Contains(pathPart, "(") // polu proxeira...
 					if (hasRegex && strings.Contains(pathPart, "{"+key+"(")) || (!hasRegex && strings.Contains(pathPart, "{"+key)) {
-
 						param := key + "=" + reqPathSplited[splitIndex]
 						_cookie := &http.Cookie{Name: COOKIE_NAME, Value: param}
 						req.AddCookie(_cookie)
-				
+
 					}
 
 				}

@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+	"sync"
 )
 
 const (
@@ -14,14 +15,14 @@ const (
 )
 
 type HTTPRoute struct {
+
 	//Middleware
 	MiddlewareSupporter
-
-	methods []string
-	Path    string
-	Handler HTTPHandler
-	Pattern *regexp.Regexp
-	//ParamKeys map[string]*regexp.Regexp
+	mu                    sync.RWMutex
+	methods               []string
+	path                  string
+	handler               HTTPHandler
+	Pattern               *regexp.Regexp
 	ParamKeys             []string
 	handlerAcceptsContext bool
 	isReady               bool
@@ -31,9 +32,26 @@ func NewHTTPRoute(registedPath string, handler HTTPHandler, methods ...string) *
 	if methods == nil {
 		methods = make([]string, 0)
 	}
-	httpRoute := &HTTPRoute{Handler: handler, Path: registedPath, methods: methods, isReady: false}
+	httpRoute := &HTTPRoute{handler: handler, path: registedPath, methods: methods, isReady: false}
+	makePathPattern(httpRoute)
+
+	if httpRoute.handler != nil {
+		typeFn := reflect.TypeOf(httpRoute.handler)
+		countParams := typeFn.NumIn()
+
+		///Maybe at the future change it to a static type check no just a string because developer may use other Context from other package... I dont know lawl
+		if countParams == 1 && strings.Contains(typeFn.In(0).String(), "Context") {
+			httpRoute.handlerAcceptsContext = true
+		}
+	}
+
+	return httpRoute
+}
+
+func makePathPattern(httpRoute *HTTPRoute) {
+	registedPath := httpRoute.path
 	if registedPath != MATCH_EVERYTHING {
-		regexpRoute := registedPath 
+		regexpRoute := registedPath
 		pattern := regexp.MustCompile(REGEX_BRACKETS_CONTENT) //fint all {key}
 		keys := pattern.FindAllString(registedPath, -1)
 		for indexKey, key := range keys {
@@ -52,28 +70,23 @@ func NewHTTPRoute(registedPath string, handler HTTPHandler, methods ...string) *
 					//if it is (string) or (int) inside contents
 					keyPattern = toPattern(keyPattern)
 				}
-				regexpRoute = strings.Replace(registedPath, backupKey, keyPattern,-1)
+				regexpRoute = strings.Replace(registedPath, backupKey, keyPattern, -1)
 				//println("regex found for "+key)
-			}else {
+			} else {
 
-				//if no regex found in this key then add the w+ 
-				regexpRoute = strings.Replace(regexpRoute, backupKey, "\\w+",-1)
+				//if no regex found in this key then add the w+
+				regexpRoute = strings.Replace(regexpRoute, backupKey, "\\w+", -1)
 
 			}
 		}
-	
+
 		//regexpRoute = pattern.ReplaceAllString(registedPath, "\\w+") + "$" //replace that {key} with /w+ and on the finish $
-		regexpRoute = strings.Replace(regexpRoute, "/", "\\/", -1)+"$"         ///escape / character for regex and finish it with $, if route/{name} and req url is route/{name}/somethingelse then it will not be matched
+		regexpRoute = strings.Replace(regexpRoute, "/", "\\/", -1) + "$" ///escape / character for regex and finish it with $, if route/{name} and req url is route/{name}/somethingelse then it will not be matched
 		routePattern := regexp.MustCompile(regexpRoute)
 		httpRoute.Pattern = routePattern
 
 		httpRoute.ParamKeys = keys
 	}
-	return httpRoute
-}
-
-func makeKeyRegex(keyPattern string) *regexp.Regexp {
-	return nil
 }
 
 func (this *HTTPRoute) ContainsMethod(method string) bool {
@@ -91,7 +104,7 @@ func (this *HTTPRoute) Methods(methods ...string) *HTTPRoute {
 }
 
 func (route *HTTPRoute) Match(urlPath string) bool {
-	return route.Path == MATCH_EVERYTHING || route.Pattern.MatchString(urlPath)
+	return route.path == MATCH_EVERYTHING || route.Pattern.MatchString(urlPath)
 }
 
 //Here to check for parameters passed to the Handler with ...interface{}
@@ -108,24 +121,18 @@ func (this *HTTPRoute) run(res http.ResponseWriter, req *http.Request) {
 	//var some []reflect.Value
 
 	if this.handlerAcceptsContext {
-		this.Handler.(func(context *Context))(NewContext(res, req))
+		this.handler.(func(context *Context))(NewContext(res, req))
 	} else {
-		this.Handler.(func(res http.ResponseWriter, req *http.Request))(res, req)
+		this.handler.(func(res http.ResponseWriter, req *http.Request))(res, req)
 	}
 
 }
 
 //Runs once before the first ServeHTTP
 func (this *HTTPRoute) Prepare() {
-	if this.Handler != nil {
-		typeFn := reflect.TypeOf(this.Handler)
-		countParams := typeFn.NumIn()
-
-		///Maybe at the future change it to a static type check no just a string because developer may use other Context from other package... I dont know lawl
-		if countParams == 1 && strings.Contains(typeFn.In(0).String(), "Context") {
-			this.handlerAcceptsContext = true
-		}
-
+	this.mu.Lock()
+	defer this.mu.Unlock()
+	if this.handler != nil {
 		convertedMiddleware := MiddlewareHandlerFunc(func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
 			//this.Handler(res, req) :->
 			this.run(res, req)
@@ -146,7 +153,7 @@ func (this *HTTPRoute) Prepare() {
 //
 
 func (this *HTTPRoute) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	if this.isReady == false && this.Handler != nil {
+	if this.isReady == false && this.handler != nil {
 		this.Prepare()
 	}
 	this.middleware.ServeHTTP(res, req)
