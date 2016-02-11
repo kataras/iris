@@ -38,9 +38,8 @@ func (this *Gapi) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 /* STANDALONE SERVER */
 
-func (this *Gapi) Listen(fullHostOrPort interface{}) *HTTPServer {
-	this.server.Listen(fullHostOrPort)
-	return this.server
+func (this *Gapi) Listen(fullHostOrPort interface{}) error {
+	return this.server.Listen(fullHostOrPort)
 }
 
 /* GLOBAL MIDDLEWARE(S) */
@@ -106,14 +105,15 @@ func (this *Gapi) Trace(path string, handler HTTPHandler) *HTTPRoute {
 	return this.server.Router.Route(path, handler, HTTPMethods.TRACE)
 }
 
-func (this *Gapi) RegisterHandler(gapiHandler Handler) error {
-
+func (this *Gapi) RegisterHandler(gapiHandler Handler) (*HTTPRoute, error) {
+	var route *HTTPRoute
 	var methods []string
 	var path string
 	var err error = errors.New("")
 
 	val := reflect.ValueOf(gapiHandler).Elem()
-
+	
+	
 	for i := 0; i < val.NumField(); i++ {
 		typeField := val.Type().Field(i)
 
@@ -158,8 +158,8 @@ func (this *Gapi) RegisterHandler(gapiHandler Handler) error {
 	}
 	
 	if err == nil {
-		this.server.Router.Route(path, gapiHandler.Handle, methods...)
+		route = this.server.Router.Route(path, gapiHandler.Handle, methods...)
 	}
 
-	return err
+	return route,err
 }

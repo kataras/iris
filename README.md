@@ -60,11 +60,10 @@ func main() {
 
 	println("Server is running at :80")
 
-	//Listen to
-	//api.Listen(80)
-
-	//Use gapi as middleware is possible too:
-	log.Fatal(http.ListenAndServe(":80", api))
+	//Listen to (runs on top of the http.NewServeMux())
+	log.Fatal(api.Listen(80))
+	//Use gapi as middleware is possible too (runs independed):
+	//log.Fatal(http.ListenAndServe(":80", api))
 
 }
 

@@ -40,12 +40,14 @@ func (this *HTTPServer) SetRouter(_router *HTTPRouter) *HTTPServer {
 	return this
 }
 
-func (this *HTTPServer) Start() {
+func (this *HTTPServer) Start() error {
 	this.isRunning = true
-	http.ListenAndServe(this.Options.Host+strconv.Itoa(this.Options.Port), this)
+	mux := http.NewServeMux()
+	mux.Handle("/", this)
+	return http.ListenAndServe(this.Options.Host+strconv.Itoa(this.Options.Port), mux)
 }
 
-func (this *HTTPServer) Listen(fullHostOrPort interface{}) {
+func (this *HTTPServer) Listen(fullHostOrPort interface{}) error {
 
 	switch reflect.ValueOf(fullHostOrPort).Interface().(type) {
 	case string:
@@ -62,7 +64,7 @@ func (this *HTTPServer) Listen(fullHostOrPort interface{}) {
 		this.Options.Port = fullHostOrPort.(int)
 	}
 
-	this.Start()
+	return this.Start()
 
 }
 
@@ -101,3 +103,5 @@ func (this *HTTPServer) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	}
 
 }
+
+

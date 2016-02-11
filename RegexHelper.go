@@ -12,7 +12,7 @@ func toPattern(theType string) string {
 	
 	switch theType {
 		case "string":
-			thePattern = "\\w+"
+			thePattern = "\\w+" //xmmm or  [a-zA-Z0-9]+ 
 		
 		case "int":
 			thePattern = "[0-9]+"
