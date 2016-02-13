@@ -26,6 +26,7 @@ type HTTPRoute struct {
 	ParamKeys             []string
 	handlerAcceptsContext bool
 	isReady               bool
+	templates              *TemplateCache
 }
 
 func NewHTTPRoute(registedPath string, handler HTTPHandler, methods ...string) *HTTPRoute {
@@ -107,6 +108,13 @@ func (route *HTTPRoute) Match(urlPath string) bool {
 	return route.path == MATCH_EVERYTHING || route.Pattern.MatchString(urlPath)
 }
 
+func (route *HTTPRoute) Template() *TemplateCache {
+	if route.templates == nil {
+		route.templates = NewTemplateCache()
+	}
+	return route.templates
+}
+
 //Here to check for parameters passed to the Handler with ...interface{}
 
 // 1. function has Parameters type check if the request has parameters then pass them or pass empty map.
@@ -121,7 +129,11 @@ func (this *HTTPRoute) run(res http.ResponseWriter, req *http.Request) {
 	//var some []reflect.Value
 
 	if this.handlerAcceptsContext {
-		this.handler.(func(context *Context))(NewContext(res, req))
+		ctx := NewContext(res, req)
+		if this.templates != nil {
+			ctx.templateCache = this.templates
+		}
+		this.handler.(func(context *Context))(ctx)
 	} else {
 		this.handler.(func(res http.ResponseWriter, req *http.Request))(res, req)
 	}

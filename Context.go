@@ -49,9 +49,17 @@ func (this *Context) ServeFile(path string) {
 	http.ServeFile(this.ResponseWriter, this.Request,path)
 }
 
-func (this *Context) Render(file string, pageContext interface{}) error {
+func (this *Context) RenderFile(file string, pageContext interface{}) error {
 	if this.templateCache != nil {
 		return this.templateCache.ExecuteTemplate(this.ResponseWriter,file,pageContext)
+	}
+	
+	return errors.New("gapi:Error on Context.Render() : No Template Cache was created yet, please refer to docs at github.com/kataras/gapi.")
+}
+
+func (this *Context) Render(pageContext interface{}) error {
+	if this.templateCache != nil {
+		return this.templateCache.Execute(this.ResponseWriter,pageContext)
 	}
 	
 	return errors.New("gapi:Error on Context.Render() : No Template Cache was created yet, please refer to docs at github.com/kataras/gapi.")
