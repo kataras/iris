@@ -17,6 +17,8 @@ var (
 func init() {
 	//Context.go
 	contextType = reflect.TypeOf(Context{})
+	//Renderer.go
+	rendererType = reflect.TypeOf(Renderer{})
 	//TemplateCache.go
 	templatesDirectory = getCurrentDir()
 }
@@ -137,10 +139,10 @@ func (this *Gapi) RegisterHandler(gapiHandler Handler) (*HTTPRoute, error) {
 	var route *HTTPRoute
 	var methods []string
 	var path string
+	var handleFunc reflect.Value
 	var template string
 	var templateIsGLob bool = false
 	var err error = errors.New("")
-
 	val := reflect.ValueOf(gapiHandler).Elem()
 
 	for i := 0; i < val.NumField(); i++ {
@@ -214,17 +216,28 @@ func (this *Gapi) RegisterHandler(gapiHandler Handler) (*HTTPRoute, error) {
 	}
 
 	if err == nil {
-		route = this.server.Router.Route(path, gapiHandler.Handle, methods...)
+		//route = this.server.Router.Route(path, gapiHandler.Handle, methods...)
 
-		//check if Template has given
+		//now check/get the Handle method from the gapiHandler 'obj'.
+		handleFunc = reflect.ValueOf(gapiHandler).MethodByName("Handle")
 
-		if template != "" {
-			if templateIsGLob {
-				route.Template().SetGlob(template)
-			} else {
-				route.Template().Add(template)
+		if !handleFunc.IsValid() {
+			err = errors.New("Missing Handle function inside gapi.Handler")
+		}
+
+		if err == nil {
+			route = this.server.Router.Route(path, handleFunc.Interface(), methods...)
+			//check if template string has stored by the tag ( look before this block )
+
+			if template != "" {
+				if templateIsGLob {
+					route.Template().SetGlob(template)
+				} else {
+					route.Template().Add(template)
+				}
 			}
 		}
+
 	}
 
 	return route, err

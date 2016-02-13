@@ -15,6 +15,11 @@ type UserHandler struct {
 }
 
 func (u *UserHandler) Handle(ctx *gapi.Context) {
+//or
+//Handle(ctx *Context, renderer *Renderer)
+//Handle(res http.ResponseWriter, req *http.Request)
+//Handle(renderer *Renderer)
+
 	defer ctx.Close()
 	var userId, _ = ctx.ParamInt("userId")
 
@@ -30,8 +35,20 @@ registerError := api.RegisterHandler(new(UserHandler))
 */
 
 type Handler interface {
+	/*must provide one of those: 
+	Handle(ctx *Context, renderer *Renderer)
+	Handle(res http.ResponseWriter, req *http.Request)
 	Handle(ctx *Context)
+	Handle(renderer *Renderer)
+	
+	golang does'nt provide a way for overloading methods, and I can't find a quick solution right now for this
+	//...interface doesn't work it gives me a runtime panic exception*
+	because of this I will get the Handle method via reflect inside the gapi.go -> RegisterHandler
+	this will runs before the server gets up only once, so I don't think this is a problem for now.
+	Ofc using reflection too much is not a good idea...
+	*/
 }
+
 /*
 type GapiHandler struct {
 	Handler
