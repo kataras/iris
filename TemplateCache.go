@@ -7,11 +7,7 @@ import (
 	"os"
 	"path"
 )
-var TEMPLATES_DIRECTORY string
-
-func init(){
-	TEMPLATES_DIRECTORY = getCurrentDir()
-}
+var templatesDirectory string
 
 func getCurrentDir() string {
 	pwd, err := os.Getwd()
@@ -20,6 +16,14 @@ func getCurrentDir() string {
 		os.Exit(1)
 	}
 	return pwd
+}
+
+func SetTemplatesDirectory(dir string) {
+	templatesDirectory = dir
+}
+
+func AppendTemplatesDirectory(dir string) {
+	templatesDirectory = path.Join(templatesDirectory,dir)
 }
 
 /* Use on HTTPServer */
@@ -37,13 +41,13 @@ func NewTemplateCache() *TemplateCache {
 
 func (tc *TemplateCache) Add(files ...string) {
 	for i:=0;i<len(files);i++ {
-		files[0] = path.Join(TEMPLATES_DIRECTORY,files[0])
+		files[0] = path.Join(templatesDirectory,files[0])
 	}
 	tc.filesTemp = append(tc.filesTemp, files...)
 }
 
 func (tc *TemplateCache) SetGlob(filesPattern string) {
-	tc.filesGlobTemp = path.Join(TEMPLATES_DIRECTORY,filesPattern)
+	tc.filesGlobTemp = path.Join(templatesDirectory,filesPattern)
 }
 
 func (tc *TemplateCache) template() *template.Template {
@@ -75,7 +79,7 @@ func (tc *TemplateCache) ExecuteTemplate(writer http.ResponseWriter, fileTmplPat
 	if !strings.HasSuffix(fileTmplPath, ".html") {
 		fileTmplPath += ".html"
 	}
-	return tc.template().ExecuteTemplate(writer, path.Join(TEMPLATES_DIRECTORY,fileTmplPath), page)
+	return tc.template().ExecuteTemplate(writer, path.Join(templatesDirectory,fileTmplPath), page)
 }
 
 func (tc *TemplateCache) Execute(writer http.ResponseWriter,page interface{}) error {

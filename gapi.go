@@ -13,6 +13,14 @@ var (
 	avalaibleMethodsStr = strings.Join(HTTPMethods.ALL, ",")
 )
 
+//only one init to the whole package
+func init() {
+	//Context.go
+	contextType = reflect.TypeOf(Context{})
+	//TemplateCache.go
+	templatesDirectory = getCurrentDir()
+}
+
 func NewRouter() *HTTPRouter {
 	return NewHTTPRouter()
 }
@@ -70,16 +78,16 @@ func (this *Gapi) UseHandler(handler http.Handler) *Gapi {
 func (this *Gapi) Route(params ...interface{}) *HTTPRoute {
 	//poor, but means path, custom HTTPhandler
 	if len(params) == 2 {
-		return this.server.Router.Route(params[0].(string),params[1].(HTTPHandler))
-	}else {
-		route,err := this.RegisterHandler(params[0].(Handler))
-		
+		return this.server.Router.Route(params[0].(string), params[1].(HTTPHandler))
+	} else {
+		route, err := this.RegisterHandler(params[0].(Handler))
+
 		if err != nil {
 			panic(err.Error())
 		}
-		
+
 		return route
-		
+
 	}
 
 }
@@ -150,13 +158,13 @@ func (this *Gapi) RegisterHandler(gapiHandler Handler) (*HTTPRoute, error) {
 				templateIdx := strings.Index(string(secondTag), ":")
 
 				templateTagName := strings.ToUpper(string(secondTag[:templateIdx]))
-				
+
 				//check if it's regex pattern
-				
+
 				if templateTagName == "TEMPLATE-GLOB" {
 					templateIsGLob = true
 				}
-				
+
 				temlateTagValue, templateUnqerr := strconv.Unquote(string(secondTag[templateIdx+1:]))
 
 				if templateUnqerr != nil {
@@ -207,13 +215,13 @@ func (this *Gapi) RegisterHandler(gapiHandler Handler) (*HTTPRoute, error) {
 
 	if err == nil {
 		route = this.server.Router.Route(path, gapiHandler.Handle, methods...)
-		
+
 		//check if Template has given
-		
+
 		if template != "" {
 			if templateIsGLob {
 				route.Template().SetGlob(template)
-			}else{
+			} else {
 				route.Template().Add(template)
 			}
 		}

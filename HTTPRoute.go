@@ -38,10 +38,9 @@ func NewHTTPRoute(registedPath string, handler HTTPHandler, methods ...string) *
 
 	if httpRoute.handler != nil {
 		typeFn := reflect.TypeOf(httpRoute.handler)
-		countParams := typeFn.NumIn()
 
 		///Maybe at the future change it to a static type check no just a string because developer may use other Context from other package... I dont know lawl
-		if countParams == 1 && strings.Contains(typeFn.In(0).String(), "Context") {
+		if hasContextParam(typeFn) {
 			httpRoute.handlerAcceptsContext = true
 		}
 	}
@@ -116,15 +115,6 @@ func (route *HTTPRoute) Template() *TemplateCache {
 }
 
 //Here to check for parameters passed to the Handler with ...interface{}
-
-// 1. function has Parameters type check if the request has parameters then pass them or pass empty map.
-// 2. If no res, req (classic http handler) then we check if
-
-//This has to run in every ServeHTTP but we are writing on one place on Prepare() function inside the convertedMiddleware which is running at every request.
-//NO  this will run one time, it will create some fields ex: isClassicHttp=true if res,req are the only params
-// isWaitingForParameters = true if gapi.Parameters passsed as an argument.
-//or no? Compared to a disk seek or network transfer, the cost of reflection will be negligible ... I have to think about it.
-//na pernw ta types kai ta parameters mia fora px typeparamSomething =1 //1 position of .In(i)
 func (this *HTTPRoute) run(res http.ResponseWriter, req *http.Request) {
 	//var some []reflect.Value
 
