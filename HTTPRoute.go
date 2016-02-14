@@ -4,14 +4,7 @@ import (
 	"net/http"
 	"reflect"
 	"regexp"
-	"strings"
 	"sync"
-)
-
-const (
-	REGEX_BRACKETS_CONTENT    = "{(.*?)}" //{(.*?)}
-	REGEX_PARENTHESIS_CONTENT = "((.*?))"
-	MATCH_EVERYTHING          = "*"
 )
 
 type HTTPRoute struct {
@@ -40,7 +33,7 @@ func NewHTTPRoute(registedPath string, handler HTTPHandler, methods ...string) *
 		methods = make([]string, 0)
 	}
 	httpRoute := &HTTPRoute{handler: handler, path: registedPath, methods: methods, isReady: false}
-	makePathPattern(httpRoute)
+	makePathPattern(httpRoute) //moved to RegexHelper.go
 
 	if httpRoute.handler != nil {
 		typeFn := reflect.TypeOf(httpRoute.handler)
@@ -64,47 +57,6 @@ func NewHTTPRoute(registedPath string, handler HTTPHandler, methods ...string) *
 	}
 
 	return httpRoute
-}
-
-func makePathPattern(httpRoute *HTTPRoute) {
-	registedPath := httpRoute.path
-	if registedPath != MATCH_EVERYTHING {
-		regexpRoute := registedPath
-		pattern := regexp.MustCompile(REGEX_BRACKETS_CONTENT) //fint all {key}
-		keys := pattern.FindAllString(registedPath, -1)
-		for indexKey, key := range keys {
-			backupKey := key // the full {name(regex)} we will need it for the replace.
-			key = key[1 : len(key)-1]
-			keys[indexKey] = key
-			startParenthesisIndex := strings.Index(key, "(")
-			finishParenthesisIndex := strings.LastIndex(key, ")") // checks only the first (), if more than one (regex) exists for one key then the application will be fail and I dont care :)
-			//I did LastIndex because the custom regex maybe has ()parenthesis too.
-			if startParenthesisIndex > 0 && finishParenthesisIndex > startParenthesisIndex {
-				keyPattern := key[startParenthesisIndex+1 : finishParenthesisIndex]
-				key = key[0:startParenthesisIndex] //remove the (regex) from key and  the {, }
-
-				keys[indexKey] = key
-				if isSupportedType(keyPattern) {
-					//if it is (string) or (int) inside contents
-					keyPattern = toPattern(keyPattern)
-				}
-				regexpRoute = strings.Replace(registedPath, backupKey, keyPattern, -1)
-				//println("regex found for "+key)
-			} else {
-
-				//if no regex found in this key then add the w+
-				regexpRoute = strings.Replace(regexpRoute, backupKey, "\\w+", -1)
-
-			}
-		}
-
-		//regexpRoute = pattern.ReplaceAllString(registedPath, "\\w+") + "$" //replace that {key} with /w+ and on the finish $
-		regexpRoute = strings.Replace(regexpRoute, "/", "\\/", -1) + "$" ///escape / character for regex and finish it with $, if route/{name} and req url is route/{name}/somethingelse then it will not be matched
-		routePattern := regexp.MustCompile(regexpRoute)
-		httpRoute.Pattern = routePattern
-
-		httpRoute.ParamKeys = keys
-	}
 }
 
 func (this *HTTPRoute) ContainsMethod(method string) bool {

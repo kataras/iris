@@ -62,7 +62,6 @@ func (this *HTTPRouter) getRouteByRegistedPath(registedPath string) *HTTPRoute {
 	for _, route := range this.routes {
 		if route.path == registedPath {
 			return route
-			break
 		}
 	}
 	return nil
@@ -105,9 +104,10 @@ func (this *HTTPRouter) Find(req *http.Request) (*HTTPRoute, int) {
 			for _, key := range route.ParamKeys {
 
 				for splitIndex, pathPart := range routePathSplited {
-					//	pathPart = pathPart. //here must be replace {name(dsadsa)} to name in order to comprae it with the key
-					hasRegex := strings.Contains(pathPart, "(") // polu proxeira...
-					if (hasRegex && strings.Contains(pathPart, "{"+key+"(")) || (!hasRegex && strings.Contains(pathPart, "{"+key)) {
+					//	pathPart = pathPart. //here must be replace :name(dsadsa) to name in order to comprae it with the key
+					hasRegex := strings.Contains(pathPart, PARAMETER_PATTERN_START) // polu proxeira...
+
+					if (hasRegex && strings.Contains(pathPart, PARAMETER_START+key+PARAMETER_PATTERN_START)) || (!hasRegex && strings.Contains(pathPart, PARAMETER_START+key)) {
 						param := key + "=" + reqPathSplited[splitIndex]
 						_cookie := &http.Cookie{Name: COOKIE_NAME, Value: param}
 						req.AddCookie(_cookie)

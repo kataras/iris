@@ -47,9 +47,9 @@ func main() {
 		res.Write([]byte("<h1>Hello from ROUTER ON Post request /register </h1>"))
 	})
 
-	api.Get("/profile/user/{name}/details/{something}", profileHandler) // Parameters
+	api.Get("/profile/user/:name/details/:something", profileHandler) // Parameters
 	//or if you want a route to listen to more than one method than one you can do that:
-	api.Route("/api/user/{userId(int)}", func(c *gapi.Context) {
+	api.Route("/api/user/:userId(int)", func(c *gapi.Context) {
 		c.Write("<h1> TEST CONTEXT userId =  " + c.Param("userId") + " </h1>")
 	}).Methods(gapi.HTTPMethods.GET, gapi.HTTPMethods.POST) // or .ALL if you want all (get,post,head,put,options,delete,patch...)
 
