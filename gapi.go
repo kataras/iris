@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	avalaibleMethodsStr = strings.Join(HTTPMethods.ALL, ",")
+	avalaibleMethodsStr = strings.Join(HTTPMethods.ANY, ",")
 	mainGapi            *Gapi
 )
 

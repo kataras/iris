@@ -53,7 +53,7 @@ func main() {
 	//or if you want a route to listen to more than one method than one you can do that:
 	gapi.Handle("/api/user/:userId(int)", func(c *gapi.Context) {
 		c.Write("<h1> TEST CONTEXT userId =  " + c.Param("userId") + " </h1>")
-	}).Methods(gapi.HTTPMethods.GET, gapi.HTTPMethods.POST) // or .ALL if you want all (get,post,head,put,options,delete,patch...)
+	}).Methods(gapi.HTTPMethods.GET, gapi.HTTPMethods.POST) // or .ANY if you want all (get,post,head,put,options,delete,patch...)
 
 	//register route, it's 'controller' homeHandler and its middleware log1,
 	//middleware will run first and if next fn is exists and executed
@@ -149,8 +149,6 @@ of the following:
 
 ## Todo
 *  Query parameters
-*  Provide a way to define a content Renderer in the Context
-*  Provide all kind of servers, not only http.
 *  Create examples in this repository
 
 ## Licence
