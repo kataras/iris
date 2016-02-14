@@ -37,33 +37,35 @@ import (
 	"net/http"
 )
 
-var api = gapi.New()
+//You can always use multiple gapi instances => multi server instances listen to different ports.
+//var server1 = gapi.New(); server1.Get... server1.Listen(8888)
+//var server2 = gapi.New(); server2.Get... server2.Listen(9999)
 
 func main() {
 	//register global middleware
-	api.UseFunc(globalLog)
+	gapi.UseFunc(globalLog)
 
-	api.Post("/register", func(res http.ResponseWriter, req *http.Request) {
+	gapi.Post("/register", func(res http.ResponseWriter, req *http.Request) {
 		res.Write([]byte("<h1>Hello from ROUTER ON Post request /register </h1>"))
 	})
 
-	api.Get("/profile/user/:name/details/:something", profileHandler) // Parameters
+	gapi.Get("/profile/user/:name/details/:something", profileHandler) // Parameters
 	//or if you want a route to listen to more than one method than one you can do that:
-	api.Route("/api/user/:userId(int)", func(c *gapi.Context) {
+	gapi.Route("/api/user/:userId(int)", func(c *gapi.Context) {
 		c.Write("<h1> TEST CONTEXT userId =  " + c.Param("userId") + " </h1>")
 	}).Methods(gapi.HTTPMethods.GET, gapi.HTTPMethods.POST) // or .ALL if you want all (get,post,head,put,options,delete,patch...)
 
 	//register route, it's 'controller' homeHandler and its middleware log1,
 	//middleware will run first and if next fn is exists and executed
 	//or no next fn exists in middleware then will continue to homeHandler
-	api.Get("/home", homeHandler).UseFunc(log1)
+	gapi.Get("/home", homeHandler).UseFunc(log1)
 
 	println("Server is running at :80")
 
 	//Listen to (runs on top of the http.NewServeMux())
-	log.Fatal(api.Listen(80))
+	log.Fatal(gapi.Listen(80))
 	//Use gapi as middleware is possible too (runs independed):
-	//log.Fatal(http.ListenAndServe(":80", api))
+	//log.Fatal(http.ListenAndServe(":80", gapi))
 
 }
 
@@ -92,9 +94,9 @@ func homeHandler(res http.ResponseWriter, req *http.Request) {
 
 func profileHandler(res http.ResponseWriter, req *http.Request) {
 
-	params := api.Params(req)
+	params := gapi.Params(req)
 	name := params.Get("name") // or params["name"]
-	//or name := api.Param(req,"name")
+	//or name := gapi.Param(req,"name")
 
 	res.Write([]byte("<h1> Hello from ROUTER ON /profile/" + name + " </h1>"))
 }

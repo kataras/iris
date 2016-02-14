@@ -11,6 +11,7 @@ import (
 
 var (
 	avalaibleMethodsStr = strings.Join(HTTPMethods.ALL, ",")
+	mainGapi            *Gapi
 )
 
 //only one init to the whole package
@@ -21,18 +22,13 @@ func init() {
 	rendererType = reflect.TypeOf(Renderer{})
 	//TemplateCache.go
 	templatesDirectory = getCurrentDir()
+	
+	mainGapi = nil //I don't want to store in the memory a New() gapi because user maybe wants to use the form of api := gapi.New(); api.Get... instead of gapi.Get..
 }
 
-func NewRouter() *HTTPRouter {
-	return NewHTTPRouter()
-}
-
-func NewServer() *HTTPServer {
-	return NewHTTPServer()
-}
 
 type Gapi struct {
-	server *HTTPServer
+	server *Server
 }
 
 func New() *Gapi {
@@ -70,17 +66,17 @@ func (this *Gapi) UseHandler(handler http.Handler) *Gapi {
 }
 
 /* ROUTER */
-/*func (this *Gapi) Route(path string, handler HTTPHandler) *HTTPRoute {
+/*func (this *Gapi) Route(path string, handler HTTPHandler) *Route {
 
 	return this.server.Router.Route(path, handler)
 }*/
 
 //path string, handler HTTPHandler OR
 //any struct implements the custom gapi Handler interface.
-func (this *Gapi) Route(params ...interface{}) *HTTPRoute {
-	//poor, but means path, custom HTTPhandler
+func (this *Gapi) Handle(params ...interface{}) *Route {
+		//poor, but means path, custom HTTPhandler
 	if len(params) == 2 {
-		return this.server.Router.Route(params[0].(string), params[1].(HTTPHandler))
+		return this.server.Router.Handle(params[0].(string), params[1].(HTTPHandler))
 	} else {
 		route, err := this.RegisterHandler(params[0].(Handler))
 
@@ -91,52 +87,46 @@ func (this *Gapi) Route(params ...interface{}) *HTTPRoute {
 		return route
 
 	}
-
 }
 
-//same as Gapi.Route but with typed parameters
-func (this *Gapi) Handle(path string, handler HTTPHandler) *HTTPRoute {
-	return this.Route(path, handler)
+func (this *Gapi) Get(path string, handler HTTPHandler) *Route {
+	return this.server.Router.Handle(path, handler, HTTPMethods.GET)
 }
 
-func (this *Gapi) Get(path string, handler HTTPHandler) *HTTPRoute {
-	return this.server.Router.Route(path, handler, HTTPMethods.GET)
+func (this *Gapi) Post(path string, handler HTTPHandler) *Route {
+	return this.server.Router.Handle(path, handler, HTTPMethods.POST)
 }
 
-func (this *Gapi) Post(path string, handler HTTPHandler) *HTTPRoute {
-	return this.server.Router.Route(path, handler, HTTPMethods.POST)
+func (this *Gapi) Put(path string, handler HTTPHandler) *Route {
+	return this.server.Router.Handle(path, handler, HTTPMethods.PUT)
 }
 
-func (this *Gapi) Put(path string, handler HTTPHandler) *HTTPRoute {
-	return this.server.Router.Route(path, handler, HTTPMethods.PUT)
+func (this *Gapi) Delete(path string, handler HTTPHandler) *Route {
+	return this.server.Router.Handle(path, handler, HTTPMethods.DELETE)
 }
 
-func (this *Gapi) Delete(path string, handler HTTPHandler) *HTTPRoute {
-	return this.server.Router.Route(path, handler, HTTPMethods.DELETE)
+func (this *Gapi) Connect(path string, handler HTTPHandler) *Route {
+	return this.server.Router.Handle(path, handler, HTTPMethods.CONNECT)
 }
 
-func (this *Gapi) Connect(path string, handler HTTPHandler) *HTTPRoute {
-	return this.server.Router.Route(path, handler, HTTPMethods.CONNECT)
+func (this *Gapi) Head(path string, handler HTTPHandler) *Route {
+	return this.server.Router.Handle(path, handler, HTTPMethods.HEAD)
 }
 
-func (this *Gapi) Head(path string, handler HTTPHandler) *HTTPRoute {
-	return this.server.Router.Route(path, handler, HTTPMethods.HEAD)
+func (this *Gapi) Options(path string, handler HTTPHandler) *Route {
+	return this.server.Router.Handle(path, handler, HTTPMethods.OPTIONS)
 }
 
-func (this *Gapi) Options(path string, handler HTTPHandler) *HTTPRoute {
-	return this.server.Router.Route(path, handler, HTTPMethods.OPTIONS)
+func (this *Gapi) Patch(path string, handler HTTPHandler) *Route {
+	return this.server.Router.Handle(path, handler, HTTPMethods.PATCH)
 }
 
-func (this *Gapi) Patch(path string, handler HTTPHandler) *HTTPRoute {
-	return this.server.Router.Route(path, handler, HTTPMethods.PATCH)
+func (this *Gapi) Trace(path string, handler HTTPHandler) *Route {
+	return this.server.Router.Handle(path, handler, HTTPMethods.TRACE)
 }
 
-func (this *Gapi) Trace(path string, handler HTTPHandler) *HTTPRoute {
-	return this.server.Router.Route(path, handler, HTTPMethods.TRACE)
-}
-
-func (this *Gapi) RegisterHandler(gapiHandler Handler) (*HTTPRoute, error) {
-	var route *HTTPRoute
+func (this *Gapi) RegisterHandler(gapiHandler Handler) (*Route, error) {
+	var route *Route
 	var methods []string
 	var path string
 	var handleFunc reflect.Value
@@ -226,7 +216,7 @@ func (this *Gapi) RegisterHandler(gapiHandler Handler) (*HTTPRoute, error) {
 		}
 
 		if err == nil {
-			route = this.server.Router.Route(path, handleFunc.Interface(), methods...)
+			route = this.server.Router.Handle(path, handleFunc.Interface(), methods...)
 			//check if template string has stored by the tag ( look before this block )
 
 			if template != "" {
@@ -241,4 +231,100 @@ func (this *Gapi) RegisterHandler(gapiHandler Handler) (*HTTPRoute, error) {
 	}
 
 	return route, err
+}
+
+
+/////////////////////////////////
+//for standalone instance of gapi
+/////////////////////////////////
+
+func check() {
+	if mainGapi == nil {
+		mainGapi = New()
+	}
+}
+/* ServeHTTP, use as middleware only in already http server. */
+func ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	check()
+	mainGapi.server.ServeHTTP(res, req)
+}
+
+
+func Listen(fullHostOrPort interface{}) error {
+	check()
+	return mainGapi.server.Listen(fullHostOrPort)
+}
+
+func Use(handler MiddlewareHandler) *Gapi {
+	check()
+	mainGapi.server.Router.Use(handler)
+	return mainGapi
+}
+
+func UseFunc(handlerFunc func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc)) *Gapi {
+	check()
+	mainGapi.server.Router.UseFunc(handlerFunc)
+	return mainGapi
+}
+
+func UseHandler(handler http.Handler) *Gapi {
+	check()
+	mainGapi.server.Router.UseHandler(handler)
+	return mainGapi
+}
+
+func Handle(params ...interface{}) *Route {
+	check()
+	return mainGapi.Handle(params...)
+
+}
+
+func Get(path string, handler HTTPHandler) *Route {
+	check()
+	return mainGapi.Get(path, handler)
+}
+
+func Post(path string, handler HTTPHandler) *Route {
+	check()
+	return mainGapi.Post(path, handler)
+}
+
+func Put(path string, handler HTTPHandler) *Route {
+	check()
+	return mainGapi.Put(path, handler)
+}
+
+func Delete(path string, handler HTTPHandler) *Route {
+	check()
+	return mainGapi.Delete(path, handler)
+}
+
+func Connect(path string, handler HTTPHandler) *Route {
+	check()
+	return mainGapi.Connect(path, handler)
+}
+
+func Head(path string, handler HTTPHandler) *Route {
+	check()
+	return mainGapi.Head(path, handler)
+}
+
+func Options(path string, handler HTTPHandler) *Route {
+	check()
+	return mainGapi.Options(path, handler)
+}
+
+func Patch(path string, handler HTTPHandler) *Route {
+	check()
+	return mainGapi.Patch(path, handler)
+}
+
+func Trace(path string, handler HTTPHandler) *Route {
+	check()
+	return mainGapi.Trace(path, handler)
+}
+
+func RegisterHandler(gapiHandler Handler) (*Route, error) {
+	check()
+	return mainGapi.RegisterHandler(gapiHandler)
 }

@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-type HTTPRoute struct {
+type Route struct {
 
 	//Middleware
 	MiddlewareSupporter
@@ -28,38 +28,38 @@ type HTTPRoute struct {
 
 }
 
-func NewHTTPRoute(registedPath string, handler HTTPHandler, methods ...string) *HTTPRoute {
+func NewRoute(registedPath string, handler HTTPHandler, methods ...string) *Route {
 	if methods == nil {
 		methods = make([]string, 0)
 	}
-	httpRoute := &HTTPRoute{handler: handler, path: registedPath, methods: methods, isReady: false}
-	makePathPattern(httpRoute) //moved to RegexHelper.go
+	Route := &Route{handler: handler, path: registedPath, methods: methods, isReady: false}
+	makePathPattern(Route) //moved to RegexHelper.go
 
-	if httpRoute.handler != nil {
-		typeFn := reflect.TypeOf(httpRoute.handler)
+	if Route.handler != nil {
+		typeFn := reflect.TypeOf(Route.handler)
 		if typeFn.NumIn() == 0 {
 			//no parameters passed to the route, then panic.
-			panic("gapi: HTTPRoute handler: Provide parameters to the handler, otherwise the route cannot be served")
+			panic("gapi: Route handler: Provide parameters to the handler, otherwise the route cannot be served")
 		}
 		///Maybe at the future change it to a static type check no just a string because developer may use other Context from other package... I dont know lawl
 		if hasContextAndRenderer(typeFn) {
-			httpRoute.handlerAcceptsBothContextRenderer = true
+			Route.handlerAcceptsBothContextRenderer = true
 		} else if typeFn.NumIn() == 2 { //has two parameters but they are not context and render
-			httpRoute.handlerAcceptsBothResponseRequest = true
+			Route.handlerAcceptsBothResponseRequest = true
 		} else if hasContextParam(typeFn) { //has only one parameter which is *Context
-			httpRoute.handlerAcceptsOnlyContext = true
+			Route.handlerAcceptsOnlyContext = true
 		} else if hasRendererParam(typeFn) { //has one parameter, it's not *Context, then maybe it's Renderer
-			httpRoute.handlerAcceptsOnlyRenderer = true
+			Route.handlerAcceptsOnlyRenderer = true
 		} else {
 			//panic wrong parameters passed
-			panic("gapi: HTTPRoute handler: Wrong parameters passed to the handler, pelase refer to the docs")
+			panic("gapi: Route handler: Wrong parameters passed to the handler, pelase refer to the docs")
 		}
 	}
 
-	return httpRoute
+	return Route
 }
 
-func (this *HTTPRoute) ContainsMethod(method string) bool {
+func (this *Route) ContainsMethod(method string) bool {
 	for _, m := range this.methods {
 		if m == method {
 			return true
@@ -68,16 +68,16 @@ func (this *HTTPRoute) ContainsMethod(method string) bool {
 	return false
 }
 
-func (this *HTTPRoute) Methods(methods ...string) *HTTPRoute {
+func (this *Route) Methods(methods ...string) *Route {
 	this.methods = append(this.methods, methods...)
 	return this
 }
 
-func (route *HTTPRoute) Match(urlPath string) bool {
+func (route *Route) Match(urlPath string) bool {
 	return route.path == MATCH_EVERYTHING || route.Pattern.MatchString(urlPath)
 }
 
-func (route *HTTPRoute) Template() *TemplateCache {
+func (route *Route) Template() *TemplateCache {
 	if route.templates == nil {
 		route.templates = NewTemplateCache()
 	}
@@ -85,7 +85,7 @@ func (route *HTTPRoute) Template() *TemplateCache {
 }
 
 //Here to check for parameters passed to the Handler with ...interface{}
-func (this *HTTPRoute) run(res http.ResponseWriter, req *http.Request) {
+func (this *Route) run(res http.ResponseWriter, req *http.Request) {
 	//var some []reflect.Value
 
 	if this.handlerAcceptsBothContextRenderer {
@@ -112,7 +112,7 @@ func (this *HTTPRoute) run(res http.ResponseWriter, req *http.Request) {
 }
 
 //Runs once before the first ServeHTTP
-func (this *HTTPRoute) Prepare() {
+func (this *Route) Prepare() {
 	this.mu.Lock()
 	defer this.mu.Unlock()
 	if this.handler != nil {
@@ -135,7 +135,7 @@ func (this *HTTPRoute) Prepare() {
 
 //
 
-func (this *HTTPRoute) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+func (this *Route) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	if this.isReady == false && this.handler != nil {
 		this.Prepare()
 	}

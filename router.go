@@ -11,23 +11,23 @@ const (
 	COOKIE_NAME = "____gapi____"
 )
 
-type HTTPRouter struct {
+type Router struct {
 	MiddlewareSupporter
-	//routes map[string]*HttpRoute, I dont need this anymore because I will have to iterate to all of them to check the regex pattern vs request url..
-	routes []*HTTPRoute
+	//routes map[string]*Route, I dont need this anymore because I will have to iterate to all of them to check the regex pattern vs request url..
+	routes []*Route
 	mu     sync.RWMutex
 }
 
-func NewHTTPRouter() *HTTPRouter {
-	return &HTTPRouter{routes: make([]*HTTPRoute, 0)}
+func NewRouter() *Router {
+	return &Router{routes: make([]*Route, 0)}
 }
 
 
 //registedPath is the name of the route + the pattern
-func (this *HTTPRouter) Route(registedPath string, handler HTTPHandler, methods ...string) *HTTPRoute {
+func (this *Router) Handle(registedPath string, handler HTTPHandler, methods ...string) *Route {
 	this.mu.Lock()
 	defer this.mu.Unlock()
-	var route *HTTPRoute
+	var route *Route
 	if registedPath == "" {
 		registedPath = "/"
 	}
@@ -37,7 +37,7 @@ func (this *HTTPRouter) Route(registedPath string, handler HTTPHandler, methods 
 		//validate the handler to be a func
 
 		if reflect.TypeOf(handler).Kind() != reflect.Func {
-			panic("gapi | HTTPRouter.go:50 -- Handler HAS TO BE A func")
+			panic("gapi | Router.go:50 -- Handler HAS TO BE A func")
 		}
 
 		//I will do it inside the Prepare, because maybe developer don't wants the GET if methods not defined yet.
@@ -45,7 +45,7 @@ func (this *HTTPRouter) Route(registedPath string, handler HTTPHandler, methods 
 		//			methods = []string{HttpMethods.GET}
 		//		}
 
-		route = NewHTTPRoute(registedPath, handler, methods...)
+		route = NewRoute(registedPath, handler, methods...)
 
 		if len(this.middlewareHandlers) > 0 {
 			//if global middlewares are registed then push them to this route.
@@ -57,7 +57,7 @@ func (this *HTTPRouter) Route(registedPath string, handler HTTPHandler, methods 
 	return route
 }
 
-func (this *HTTPRouter) getRouteByRegistedPath(registedPath string) *HTTPRoute {
+func (this *Router) getRouteByRegistedPath(registedPath string) *Route {
 
 	for _, route := range this.routes {
 		if route.path == registedPath {
@@ -70,7 +70,7 @@ func (this *HTTPRouter) getRouteByRegistedPath(registedPath string) *HTTPRoute {
 
 /* GLOBAL MIDDLEWARE */
 
-func (this *HTTPRouter) Use(handler MiddlewareHandler) *HTTPRouter {
+func (this *Router) Use(handler MiddlewareHandler) *Router {
 	this.MiddlewareSupporter.Use(handler)
 	//IF this is called after the routes
 	if len(this.routes) > 0 {
@@ -84,7 +84,7 @@ func (this *HTTPRouter) Use(handler MiddlewareHandler) *HTTPRouter {
 //
 
 //Here returns the error code if no route found
-func (this *HTTPRouter) Find(req *http.Request) (*HTTPRoute, int) {
+func (this *Router) Find(req *http.Request) (*Route, int) {
 	reqUrlPath := req.URL.Path
 	wrongMethod := false
 	for _, route := range this.routes {
@@ -97,7 +97,7 @@ func (this *HTTPRouter) Find(req *http.Request) (*HTTPRoute, int) {
 			reqPathSplited := strings.Split(reqUrlPath, "/")
 			routePathSplited := strings.Split(route.path, "/")
 			/*if len(reqPathSplited) != len(reqPathSplited) {
-				panic("This error has no excuse, line 99 gapi/router/HttpRouter.go")
+				panic("This error has no excuse, line 99 gapi/router/Router.go")
 				continue
 			}*/
 

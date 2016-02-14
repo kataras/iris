@@ -10,14 +10,14 @@ import (
 
 var once sync.Once
 
-type HTTPServer struct {
-	Options   *HTTPServerConfig
-	Router    *HTTPRouter
+type Server struct {
+	Options   *ServerConfig
+	Router    *Router
 	isRunning bool
 }
 
-func NewHTTPServer() *HTTPServer {
-	_server := new(HTTPServer)
+func NewServer() *Server {
+	_server := new(Server)
 	_server.Options = DefaultHttpConfig()
 
 	return _server
@@ -25,29 +25,29 @@ func NewHTTPServer() *HTTPServer {
 
 //options
 
-func (this *HTTPServer) Host(host string) *HTTPServer {
+func (this *Server) Host(host string) *Server {
 	this.Options.Host = host
 	return this
 }
 
-func (this *HTTPServer) Port(port int) *HTTPServer {
+func (this *Server) Port(port int) *Server {
 	this.Options.Port = port
 	return this
 }
 
-func (this *HTTPServer) SetRouter(_router *HTTPRouter) *HTTPServer {
+func (this *Server) SetRouter(_router *Router) *Server {
 	this.Router = _router
 	return this
 }
 
-func (this *HTTPServer) Start() error {
+func (this *Server) Start() error {
 	this.isRunning = true
 	mux := http.NewServeMux()
 	mux.Handle("/", this)
 	return http.ListenAndServe(this.Options.Host+strconv.Itoa(this.Options.Port), mux)
 }
 
-func (this *HTTPServer) Listen(fullHostOrPort interface{}) error {
+func (this *Server) Listen(fullHostOrPort interface{}) error {
 
 	switch reflect.ValueOf(fullHostOrPort).Interface().(type) {
 	case string:
@@ -69,7 +69,7 @@ func (this *HTTPServer) Listen(fullHostOrPort interface{}) error {
 }
 
 ///TODO: na kanw kai ta global middleware kai routes, auto 9a ginete me to '*'
-func (this *HTTPServer) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+func (this *Server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	//var route = this.Router.Routes[req.URL.Path]
 
 	var route, errCode = this.Router.Find(req)

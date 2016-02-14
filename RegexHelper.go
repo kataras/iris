@@ -51,8 +51,8 @@ func isSupportedType(theType string) bool {
 //giati me to regex p exw twra an o developer valei :name(antregexhere:/w+) 9a bei sta keys[] kai to /w+
 //FIXED
 //finds and stores pattern for /something/:name(string)
-func makePathPattern(httpRoute *HTTPRoute) {
-	registedPath := httpRoute.path
+func makePathPattern(Route *Route) {
+	registedPath := Route.path
 	if registedPath != MATCH_EVERYTHING {
 		regexpRoute := registedPath
 
@@ -96,16 +96,16 @@ func makePathPattern(httpRoute *HTTPRoute) {
 		regexpRoute = strings.Replace(regexpRoute, "/", "\\/", -1) + "$" ///escape / character for regex and finish it with $, if route/:name and req url is route/:name:/somethingelse then it will not be matched
 
 		routePattern := regexp.MustCompile(regexpRoute)
-		httpRoute.Pattern = routePattern
+		Route.Pattern = routePattern
 
-		httpRoute.ParamKeys = keys
+		Route.ParamKeys = keys
 	}
 }
 
 
 //finds and stores the pattern for /something/{name(string)}
-func makePathPatternOld(httpRoute *HTTPRoute) {
-	registedPath := httpRoute.path
+func makePathPatternOld(Route *Route) {
+	registedPath := Route.path
 	if registedPath != MATCH_EVERYTHING {
 		regexpRoute := registedPath
 		pattern := regexp.MustCompile(REGEX_BRACKETS_CONTENT) //fint all {key}
@@ -141,8 +141,8 @@ func makePathPatternOld(httpRoute *HTTPRoute) {
 		//regexpRoute = pattern.ReplaceAllString(registedPath, "\\w+") + "$" //replace that {key} with /w+ and on the finish $
 		regexpRoute = strings.Replace(regexpRoute, "/", "\\/", -1) + "$" ///escape / character for regex and finish it with $, if route/{name} and req url is route/{name}/somethingelse then it will not be matched
 		routePattern := regexp.MustCompile(regexpRoute)
-		httpRoute.Pattern = routePattern
+		Route.Pattern = routePattern
 
-		httpRoute.ParamKeys = keys
+		Route.ParamKeys = keys
 	}
 }

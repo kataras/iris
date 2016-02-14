@@ -1,7 +1,7 @@
 package gapi
 
 import (
-	//"reflect"
+	"reflect"
 )
 
 /*Example
@@ -48,26 +48,80 @@ type Handler interface {
 	Ofc using reflection too much is not a good idea...
 	*/
 }
+//
+type HTTPHandler interface{} //func(...interface{}) //[]reflect.Value
 
-/*
-type GapiHandler struct {
-	Handler
-	methodRoutes []func(ctx *Context) string //string -> returns the path of the handler
-}
+//4 possibilities
+//1. http.ResponseWriter, *http.Request
+//2. *gapi.Context
+//3. *gapi.Renderer
+//4. *gapi.Context, *gapi.Renderer
 
-func (h *GapiHandler) Handle(ctx *Context) {
-	if h.methodRoutes == nil {
-		h.methodRoutes = make([]func(ctx *Context) string,0)
-		//get the correct functions interfaces on the first call only
-		val := reflect.ValueOf(h).Elem()
-		for i := 0; i < val.NumMethod(); i++ {
-			method := val.Method(i)
-			if method.Type().Name() != "methodRoutes" {
-				methodInterface := method.Call([]reflect.Value{})[0].Interface()
-				h.methodRoutes = append(h.methodRoutes,methodInterface.(func(ctx *Context) string))
-			}
-
-		}
+//check the first parameter only for Context
+//check if the handler needs a Context , has the first parameter as type of *Context
+//use in NewHTTPRoute inside HTTPRoute.go
+func hasContextParam(handlerType reflect.Type) bool {
+	//if the handler doesn't take arguments, false
+	if handlerType.NumIn() == 0 {
+		return false
 	}
 
-}*/
+	//if the first argument is not a pointer, false
+	p1 := handlerType.In(0)
+	if p1.Kind() != reflect.Ptr {
+		return false
+	}
+	//but if the first argument is a context, true
+	if p1.Elem() == contextType {
+		return true
+	}
+
+	return false
+}
+
+//check the first parameter only for Renderer
+func hasRendererParam(handlerType reflect.Type) bool {
+	//if the handler doesn't take arguments, false
+	if handlerType.NumIn() == 0 {
+		return false
+	}
+
+	//if the first argument is not a pointer, false
+	p1 := handlerType.In(0)
+	if p1.Kind() != reflect.Ptr {
+		return false
+	}
+	//but if the first argument is a renderer, true
+	if p1.Elem() == rendererType {
+		return true
+	}
+
+	return false
+}
+
+func hasContextAndRenderer(handlerType reflect.Type) bool {
+
+	//first check if we have pass 2 arguments
+	if handlerType.NumIn() < 2 {
+		return false
+	}
+
+	
+	firstParamIsContext := hasContextParam(handlerType)
+	
+	//the first argument/parameter is always context if exists otherwise it's only Renderer or ResponseWriter,Request.
+	if firstParamIsContext == false {
+		return false
+	}
+	
+	p2 := handlerType.In(1)
+	if p2.Kind() != reflect.Ptr {
+		return false
+	}
+	//but if the first argument is a context, true
+	if p2.Elem() == rendererType {
+		return true
+	}
+	
+	return false
+}
