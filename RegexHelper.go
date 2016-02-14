@@ -6,14 +6,14 @@ import (
 )
 
 const (
-	PARAMETER_START = ":"
-	PARAMETER_PATTERN_START ="("
-	PARAMETER_PATTERN_END = ")"
-	REGEX_PARENTHESIS_AND_CONTENT = "\\([^)]*\\)"//"\\([^\\)]*\\)"
-	REGEX_BRACKETS_CONTENT    = "{(.*?)}" //not used any more, for now. //{(.*?)} -> is /g (global) on pattern.findAllString
-	REGEX_ROUTE_NAMED_PARAMETER ="("+PARAMETER_START+"\\w+)" //finds words starts with : . It used as /g (global) on pattern.findAllString
-	REGEX_PARENTHESIS_CONTENT = PARAMETER_PATTERN_START+"(.*?)"+PARAMETER_PATTERN_END
-	MATCH_EVERYTHING          = "*"
+	PARAMETER_START               = ":"
+	PARAMETER_PATTERN_START       = "("
+	PARAMETER_PATTERN_END         = ")"
+	REGEX_PARENTHESIS_AND_CONTENT = "\\([^)]*\\)"                   //"\\([^\\)]*\\)"
+	REGEX_BRACKETS_CONTENT        = "{(.*?)}"                       //not used any more, for now. //{(.*?)} -> is /g (global) on pattern.findAllString
+	REGEX_ROUTE_NAMED_PARAMETER   = "(" + PARAMETER_START + "\\w+)" //finds words starts with : . It used as /g (global) on pattern.findAllString
+	REGEX_PARENTHESIS_CONTENT     = PARAMETER_PATTERN_START + "(.*?)" + PARAMETER_PATTERN_END
+	MATCH_EVERYTHING              = "*"
 )
 
 var (
@@ -59,10 +59,9 @@ func makePathPattern(Route *Route) {
 		routeWithoutParenthesis := regexp.MustCompile(REGEX_PARENTHESIS_AND_CONTENT).ReplaceAllString(registedPath, "")
 
 		pattern := regexp.MustCompile(REGEX_ROUTE_NAMED_PARAMETER)
-		
+
 		//find only :keys without parenthesis if any
 		keys := pattern.FindAllString(routeWithoutParenthesis, -1)
-
 
 		for keyIndex, key := range keys {
 			backupKey := key // the full :name we will need it for the replace.
@@ -71,28 +70,25 @@ func makePathPattern(Route *Route) {
 
 			a1 := strings.Index(registedPath, key) + len(key)
 
-			if len(registedPath) > a1 {
+			if len(registedPath) > a1 && string(registedPath[a1]) == PARAMETER_PATTERN_START {
 				//check if first character, of the ending of the key from the original full registedPath, is parenthesis
-				if string(registedPath[a1]) == PARAMETER_PATTERN_START {
-					keyPattern1 := registedPath[a1:] //here we take all string after a1, which maybe be follow up with other paths, we will substring it in the next line
-					lastParIndex := strings.Index(keyPattern1, PARAMETER_PATTERN_END) //find last parenthesis index of the keyPattern1
-					keyPattern1 = keyPattern1[0 : lastParIndex+1] // find contents and it's parenthesis, we will need it for replace
-					keyPatternReg := keyPattern1[1 : len(keyPattern1)-1] //find the contents between parenthesis
-					if isSupportedType(keyPatternReg) {
-						//if it is (string) or (int) inside contents
-						keyPatternReg = toPattern(keyPatternReg)
-					}
-					//replace the whole :key+(pattern) with just  the converted pattern from int,string or the contents of the parenthesis which is a custom user's regex pattern
-					regexpRoute = strings.Replace(registedPath, backupKey+keyPattern1, keyPatternReg, -1)
-					
 
-				} else {
-					regexpRoute = strings.Replace(regexpRoute, backupKey, "\\w+", -1)
+				keyPattern1 := registedPath[a1:]                                  //here we take all string after a1, which maybe be follow up with other paths, we will substring it in the next line
+				lastParIndex := strings.Index(keyPattern1, PARAMETER_PATTERN_END) //find last parenthesis index of the keyPattern1
+				keyPattern1 = keyPattern1[0 : lastParIndex+1]                     // find contents and it's parenthesis, we will need it for replace
+				keyPatternReg := keyPattern1[1 : len(keyPattern1)-1]              //find the contents between parenthesis
+				if isSupportedType(keyPatternReg) {
+					//if it is (string) or (int) inside contents
+					keyPatternReg = toPattern(keyPatternReg)
 				}
+				//replace the whole :key+(pattern) with just  the converted pattern from int,string or the contents of the parenthesis which is a custom user's regex pattern
+				regexpRoute = strings.Replace(regexpRoute, backupKey+keyPattern1, keyPatternReg, -1)
 
+			} else {
+				regexpRoute = strings.Replace(regexpRoute, backupKey, "\\w+", -1)
 			}
-		}
 
+		}
 		regexpRoute = strings.Replace(regexpRoute, "/", "\\/", -1) + "$" ///escape / character for regex and finish it with $, if route/:name and req url is route/:name:/somethingelse then it will not be matched
 
 		routePattern := regexp.MustCompile(regexpRoute)
@@ -101,7 +97,6 @@ func makePathPattern(Route *Route) {
 		Route.ParamKeys = keys
 	}
 }
-
 
 //finds and stores the pattern for /something/{name(string)}
 func makePathPatternOld(Route *Route) {
