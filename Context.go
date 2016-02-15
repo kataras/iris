@@ -38,6 +38,7 @@ func (this *Context) NotFound() {
 	http.NotFound(this.ResponseWriter, this.Request)
 }
 
+///TODO: CHECK FOR REQUEST CLOSED IN ORDER TO FIX SOME ERRORS HERE
 func (this *Context) Close() {
 	this.Request.Body.Close()
 }
