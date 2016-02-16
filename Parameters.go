@@ -19,9 +19,11 @@ func Params(req *http.Request) Parameters {
 		return nil
 	}
 	value := _cookie.Value
+
 	params := make(Parameters)
 
 	paramsStr := strings.Split(value, ",")
+
 	for _, _fullVarStr := range paramsStr {
 		vars := strings.Split(_fullVarStr, "=")
 		if len(vars) != 2 { //check if key=val=somethingelse here ,is wrong, only key=value allowed, then just ignore this
@@ -41,6 +43,5 @@ func Param(req *http.Request, key string) string {
 	}
 	return param
 }
-
 
 //

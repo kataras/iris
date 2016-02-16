@@ -44,6 +44,7 @@ func (this *Server) Start() error {
 	this.isRunning = true
 	mux := http.NewServeMux()
 	mux.Handle("/", this)
+	
 	return http.ListenAndServe(this.Options.Host+strconv.Itoa(this.Options.Port), mux)
 }
 

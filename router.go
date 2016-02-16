@@ -22,7 +22,6 @@ func NewRouter() *Router {
 	return &Router{routes: make([]*Route, 0)}
 }
 
-
 //registedPath is the name of the route + the pattern
 func (this *Router) Handle(registedPath string, handler HTTPHandler, methods ...string) *Route {
 	this.mu.Lock()
@@ -100,7 +99,7 @@ func (this *Router) Find(req *http.Request) (*Route, int) {
 				panic("This error has no excuse, line 99 gapi/router/Router.go")
 				continue
 			}*/
-
+			var cookieFullValue string
 			for _, key := range route.ParamKeys {
 
 				for splitIndex, pathPart := range routePathSplited {
@@ -109,12 +108,13 @@ func (this *Router) Find(req *http.Request) (*Route, int) {
 
 					if (hasRegex && strings.Contains(pathPart, PARAMETER_START+key+PARAMETER_PATTERN_START)) || (!hasRegex && strings.Contains(pathPart, PARAMETER_START+key)) {
 						param := key + "=" + reqPathSplited[splitIndex]
-						_cookie := &http.Cookie{Name: COOKIE_NAME, Value: param}
-						req.AddCookie(_cookie)
-
+						cookieFullValue += "," + param
 					}
-
 				}
+			}
+			if cookieFullValue != "" {
+				_cookie := &http.Cookie{Name: COOKIE_NAME, Value: cookieFullValue[1:]} //remove the first comma
+				req.AddCookie(_cookie)
 			}
 
 			//break
@@ -130,5 +130,3 @@ func (this *Router) Find(req *http.Request) (*Route, int) {
 	//not found
 	return nil, 404
 }
-
-

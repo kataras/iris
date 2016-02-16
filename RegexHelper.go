@@ -90,7 +90,6 @@ func makePathPattern(Route *Route) {
 
 		}
 		regexpRoute = strings.Replace(regexpRoute, "/", "\\/", -1) + "$" ///escape / character for regex and finish it with $, if route/:name and req url is route/:name:/somethingelse then it will not be matched
-
 		routePattern := regexp.MustCompile(regexpRoute)
 		Route.Pattern = routePattern
 
