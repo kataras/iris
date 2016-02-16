@@ -29,7 +29,7 @@ type TestRoute struct {
 }
 
 var (
-	api        *Gapi
+	api        *Server
 	testServer *httptest.Server
 	server     = struct {
 		URL, IP string

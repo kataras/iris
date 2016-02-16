@@ -1,8 +1,10 @@
 package gapi
 
 import (
+	"errors"
 	"net/http"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 )
@@ -54,6 +56,113 @@ func (this *Router) Handle(registedPath string, handler HTTPHandler, methods ...
 		this.routes = append(this.routes, route)
 	}
 	return route
+}
+func (this *Router) RegisterHandler(gapiHandler Handler) (*Route, error) {
+	var route *Route
+	var methods []string
+	var path string
+	var handleFunc reflect.Value
+	var template string
+	var templateIsGLob bool = false
+	var err error = errors.New("")
+	val := reflect.ValueOf(gapiHandler).Elem()
+
+	for i := 0; i < val.NumField(); i++ {
+		typeField := val.Type().Field(i)
+
+		if typeField.Name == "Handler" {
+			tags := strings.Split(strings.TrimSpace(string(typeField.Tag)), " ")
+			//we can have two keys, one is the tag starts with the method (GET,POST: "/user/api/{userId(int)}")
+			//and the other if exists is the OPTIONAL TEMPLATE/TEMPLATE-GLOB: "file.html"
+
+			//check for Template first because on the method we break and return error if no method found , for now.
+			if len(tags) > 1 {
+				secondTag := tags[1]
+
+				templateIdx := strings.Index(string(secondTag), ":")
+
+				templateTagName := strings.ToUpper(string(secondTag[:templateIdx]))
+
+				//check if it's regex pattern
+
+				if templateTagName == "TEMPLATE-GLOB" {
+					templateIsGLob = true
+				}
+
+				temlateTagValue, templateUnqerr := strconv.Unquote(string(secondTag[templateIdx+1:]))
+
+				if templateUnqerr != nil {
+					err = errors.New(err.Error() + "\ngapi.RegisterHandler: Error on getting template: " + templateUnqerr.Error())
+					continue
+				}
+
+				template = temlateTagValue
+			}
+
+			firstTag := tags[0]
+
+			idx := strings.Index(string(firstTag), ":")
+
+			tagName := strings.ToUpper(string(firstTag[:idx]))
+			tagValue, unqerr := strconv.Unquote(string(firstTag[idx+1:]))
+
+			if unqerr != nil {
+				err = errors.New(err.Error() + "\ngapi.RegisterHandler: Error on getting path: " + unqerr.Error())
+				continue
+			}
+
+			path = tagValue
+
+			if strings.Index(tagName, ",") != -1 {
+				//has multi methods seperate by commas
+
+				if !strings.Contains(avalaibleMethodsStr, tagName) {
+					//wrong methods passed
+					err = errors.New(err.Error() + "\ngapi.RegisterHandler: Wrong methods passed to Handler -> " + tagName)
+					continue
+				}
+
+				methods = strings.Split(tagName, ",")
+				err = nil
+				break
+			} else {
+				//it is single 'GET','POST' .... method
+				methods = []string{tagName}
+				err = nil
+				break
+
+			}
+
+		}
+
+	}
+
+	if err == nil {
+		//route = this.server.Router.Route(path, gapiHandler.Handle, methods...)
+
+		//now check/get the Handle method from the gapiHandler 'obj'.
+		handleFunc = reflect.ValueOf(gapiHandler).MethodByName("Handle")
+
+		if !handleFunc.IsValid() {
+			err = errors.New("Missing Handle function inside gapi.Handler")
+		}
+
+		if err == nil {
+			route = this.Handle(path, handleFunc.Interface(), methods...)
+			//check if template string has stored by the tag ( look before this block )
+
+			if template != "" {
+				if templateIsGLob {
+					route.Template().SetGlob(template)
+				} else {
+					route.Template().Add(template)
+				}
+			}
+		}
+
+	}
+
+	return route, err
 }
 
 func (this *Router) getRouteByRegistedPath(registedPath string) *Route {

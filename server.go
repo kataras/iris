@@ -1,6 +1,7 @@
 package gapi
 
 import (
+	"net"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -11,27 +12,28 @@ import (
 var once sync.Once
 
 type Server struct {
-	Options   *ServerConfig
-	Router    *Router
-	isRunning bool
+	Config      *ServerConfig
+	Router      *Router
+	listenerTCP net.Listener
+	isRunning   bool
 }
 
 func NewServer() *Server {
 	_server := new(Server)
-	_server.Options = DefaultHttpConfig()
-
+	_server.Config = DefaultServerConfig()
+	_server.Router = NewRouter()
 	return _server
 }
 
-//options
+//options/config
 
 func (this *Server) Host(host string) *Server {
-	this.Options.Host = host
+	this.Config.Host = host
 	return this
 }
 
 func (this *Server) Port(port int) *Server {
-	this.Options.Port = port
+	this.Config.Port = port
 	return this
 }
 
@@ -41,28 +43,47 @@ func (this *Server) SetRouter(_router *Router) *Server {
 }
 
 func (this *Server) Start() error {
-	this.isRunning = true
+
 	mux := http.NewServeMux()
 	mux.Handle("/", this)
-	
-	return http.ListenAndServe(this.Options.Host+strconv.Itoa(this.Options.Port), mux)
+
+	//return http.ListenAndServe(this.Config.Host+strconv.Itoa(this.Config.Port), mux)
+	fullAddr := this.Config.Host + ":" + strconv.Itoa(this.Config.Port)
+	listener, err := net.Listen("tcp", fullAddr)
+
+	if err != nil {
+		panic("Cannot run the server [problem with tcp listener on host:port]: " + fullAddr)
+	}
+
+	this.listenerTCP = listener //we need this because I think that we have to 'have' a Close() method on the server instance
+	err = http.Serve(this.listenerTCP, mux)
+	this.listenerTCP.Close()
+	this.isRunning = true
+	return err
+}
+
+func (this *Server) Close() {
+	if this.isRunning && this.listenerTCP != nil {
+		this.listenerTCP.Close()
+		this.isRunning = false
+	}
 }
 
 func (this *Server) Listen(fullHostOrPort interface{}) error {
 
 	switch reflect.ValueOf(fullHostOrPort).Interface().(type) {
 	case string:
-		options := strings.Split(fullHostOrPort.(string), ":")
+		config := strings.Split(fullHostOrPort.(string), ":")
 
-		if strings.TrimSpace(options[0]) != "" {
-			this.Options.Host = options[0]
+		if strings.TrimSpace(config[0]) != "" {
+			this.Config.Host = config[0]
 		}
 
-		if len(options) > 1 {
-			this.Options.Port, _ = strconv.Atoi(options[1])
+		if len(config) > 1 {
+			this.Config.Port, _ = strconv.Atoi(config[1])
 		}
 	default:
-		this.Options.Port = fullHostOrPort.(int)
+		this.Config.Port = fullHostOrPort.(int)
 	}
 
 	return this.Start()
@@ -104,5 +125,3 @@ func (this *Server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	}
 
 }
-
-
