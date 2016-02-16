@@ -1,10 +1,10 @@
-# Gapi  (beta)
-[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/kataras/gapi?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+# iris  (beta)
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/kataras/iris?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 ## Table of Contents
 
 - [Install](#install)
-- [Principles](#principles-of-gapi)
+- [Principles](#principles-of-iris)
 - [Introduction](#introduction)
 - [Third Party Middleware](#third-party-middleware)
 - [Contributors](#contributors)
@@ -14,58 +14,58 @@
 ## Install
 
 ```sh
-$ go get github.com/kataras/gapi
+$ go get github.com/kataras/iris
 ```
-## Principles of Gapi
+## Principles of iris
 
 - Easy to use
 
 - Robust
 
-- Simplicity Equals Productivity. The best way to make something seem simple is to have it actually be simple. Gapi's main functionality has clean, classically beautiful APIs
+- Simplicity Equals Productivity. The best way to make something seem simple is to have it actually be simple. iris's main functionality has clean, classically beautiful APIs
 
 ## Introduction
-
-A very minimal but flexible golang web application framework, providing a robust set of features for building single & multi-page, web applications.
+The word iris means "rainbow" in Greek. Iris was the name of the Greek goddess of the rainbow. 
+Iris is a very minimal but flexible golang http middleware & standalone web application framework, providing a robust set of features for building single & multi-page, web applications.
 
 ```go
 package main
 
 import (
-    "github.com/kataras/gapi"
+    "github.com/kataras/iris"
 	"log"
 	"net/http"
 )
 
-//You can always use multiple gapi instances => multi server instances listen to different ports.
-//var server1 = gapi.New(); server1.Get... server1.Listen(8888)
-//var server2 = gapi.New(); server2.Get... server2.Listen(9999)
+//You can always use multiple iris instances => multi server instances listen to different ports.
+//var server1 = iris.New(); server1.Get... server1.Listen(8888)
+//var server2 = iris.New(); server2.Get... server2.Listen(9999)
 
 func main() {
 	//register global middleware
-	gapi.UseFunc(globalLog)
+	iris.UseFunc(globalLog)
 
-	gapi.Post("/register", func(res http.ResponseWriter, req *http.Request) {
+	iris.Post("/register", func(res http.ResponseWriter, req *http.Request) {
 		res.Write([]byte("<h1>Hello from ROUTER ON Post request /register </h1>"))
 	})
 
-	gapi.Get("/profile/user/:name/details/:something", profileHandler) // Parameters
+	iris.Get("/profile/user/:name/details/:something", profileHandler) // Parameters
 	//or if you want a route to listen to more than one method than one you can do that:
-	gapi.Handle("/api/user/:userId(int)", func(c *gapi.Context) {
+	iris.Handle("/api/user/:userId(int)", func(c *iris.Context) {
 		c.Write("<h1> TEST CONTEXT userId =  " + c.Param("userId") + " </h1>")
-	}).Methods(gapi.HTTPMethods.GET, gapi.HTTPMethods.POST) // or .ANY if you want all (get,post,head,put,options,delete,patch...)
+	}).Methods(iris.HTTPMethods.GET, iris.HTTPMethods.POST) // or .ANY if you want all (get,post,head,put,options,delete,patch...)
 
 	//register route, it's 'controller' homeHandler and its middleware log1,
 	//middleware will run first and if next fn is exists and executed
 	//or no next fn exists in middleware then will continue to homeHandler
-	gapi.Get("/home", homeHandler).UseFunc(log1)
+	iris.Get("/home", homeHandler).UseFunc(log1)
 
 	println("Server is running at :80")
 
 	//Listen to (runs on top of the http.NewServeMux())
-	log.Fatal(gapi.Listen(80))
-	//Use gapi as middleware is possible too (runs independed):
-	//log.Fatal(http.ListenAndServe(":80", gapi))
+	log.Fatal(iris.Listen(80))
+	//Use iris as middleware is possible too (runs independed):
+	//log.Fatal(http.ListenAndServe(":80", iris))
 
 }
 
@@ -94,9 +94,9 @@ func homeHandler(res http.ResponseWriter, req *http.Request) {
 
 func profileHandler(res http.ResponseWriter, req *http.Request) {
 
-	params := gapi.Params(req)
+	params := iris.Params(req)
 	name := params.Get("name") // or params["name"]
-	//or name := gapi.Param(req,"name")
+	//or name := iris.Param(req,"name")
 
 	res.Write([]byte("<h1> Hello from ROUTER ON /profile/" + name + " </h1>"))
 }
@@ -105,7 +105,7 @@ func profileHandler(res http.ResponseWriter, req *http.Request) {
 
 
 ## Third Party Middleware
-*The gapi is re-written in order to support all middlewares that are already exists for [Negroni](https://github.com/codegangsta/negroni) middleware*
+*The iris is re-written in order to support all middlewares that are already exists for [Negroni](https://github.com/codegangsta/negroni) middleware*
  
 Here is a current list of compatible middlware.
 
@@ -135,7 +135,7 @@ Here is a current list of compatible middlware.
 Thanks goes to the people who have contributed code to this package, see the
 [GitHub Contributors page][].
 
-[GitHub Contributors page]: https://github.com/kataras/gapi/graphs/contributors
+[GitHub Contributors page]: https://github.com/kataras/iris/graphs/contributors
 
 
 
@@ -144,7 +144,7 @@ Thanks goes to the people who have contributed code to this package, see the
 If you'd like to discuss this package, or ask questions about it, please use one
 of the following:
 
-* **Chat**: https://gitter.im/kataras/gapi
+* **Chat**: https://gitter.im/kataras/iris
 
 
 ## Todo

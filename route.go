@@ -1,4 +1,4 @@
-package gapi
+package iris
 
 import (
 	"net/http"
@@ -39,7 +39,7 @@ func NewRoute(registedPath string, handler HTTPHandler, methods ...string) *Rout
 		typeFn := reflect.TypeOf(Route.handler)
 		if typeFn.NumIn() == 0 {
 			//no parameters passed to the route, then panic.
-			panic("gapi: Route handler: Provide parameters to the handler, otherwise the route cannot be served")
+			panic("iris: Route handler: Provide parameters to the handler, otherwise the route cannot be served")
 		}
 		///Maybe at the future change it to a static type check no just a string because developer may use other Context from other package... I dont know lawl
 		if hasContextAndRenderer(typeFn) {
@@ -52,7 +52,7 @@ func NewRoute(registedPath string, handler HTTPHandler, methods ...string) *Rout
 			Route.handlerAcceptsOnlyRenderer = true
 		} else {
 			//panic wrong parameters passed
-			panic("gapi: Route handler: Wrong parameters passed to the handler, pelase refer to the docs")
+			panic("iris: Route handler: Wrong parameters passed to the handler, pelase refer to the docs")
 		}
 	}
 

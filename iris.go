@@ -1,4 +1,4 @@
-package gapi
+package iris
 
 //This file just exposes the server and it's router & middlewares
 import (
@@ -9,7 +9,7 @@ import (
 
 var (
 	avalaibleMethodsStr = strings.Join(HTTPMethods.ANY, ",")
-	mainGapi            *Server
+	mainIris            *Server
 )
 
 //only one init to the whole package
@@ -21,7 +21,7 @@ func init() {
 	//TemplateCache.go
 	templatesDirectory = getCurrentDir()
 
-	mainGapi = nil //I don't want to store in the memory a New() gapi because user maybe wants to use the form of api := gapi.New(); api.Get... instead of gapi.Get..
+	mainIris = nil //I don't want to store in the memory a New() Iris because user maybe wants to use the form of api := Iris.New(); api.Get... instead of Iris.Get..
 }
 
 func New() *Server {
@@ -46,13 +46,13 @@ func (this *Server) UseHandler(handler http.Handler) *Server {
 }
 
 /* ROUTER */
-/*func (this *Gapi) Route(path string, handler HTTPHandler) *Route {
+/*func (this *Iris) Route(path string, handler HTTPHandler) *Route {
 
 	return this.server.Router.Route(path, handler)
 }*/
 
 //path string, handler HTTPHandler OR
-//any struct implements the custom gapi Handler interface.
+//any struct implements the custom Iris Handler interface.
 func (this *Server) Handle(params ...interface{}) *Route {
 	//poor, but means path, custom HTTPhandler
 	if len(params) == 2 {
@@ -105,103 +105,103 @@ func (this *Server) Trace(path string, handler HTTPHandler) *Route {
 	return this.Router.Handle(path, handler, HTTPMethods.TRACE)
 }
 
-func (this *Server) RegisterHandler(gapiHandler Handler) (*Route, error) {
-	return this.Router.RegisterHandler(gapiHandler)
+func (this *Server) RegisterHandler(irisHandler Handler) (*Route, error) {
+	return this.Router.RegisterHandler(irisHandler)
 }
 
 /////////////////////////////////
-//for standalone instance of gapi
+//for standalone instance of iris
 /////////////////////////////////
 
 func check() {
-	if mainGapi == nil {
-		mainGapi = New()
+	if mainIris == nil {
+		mainIris = New()
 	}
 }
 
 /* ServeHTTP, use as middleware only in already http server. */
 func ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	check()
-	mainGapi.ServeHTTP(res, req)
+	mainIris.ServeHTTP(res, req)
 }
 
 func Listen(fullHostOrPort interface{}) error {
 	check()
-	return mainGapi.Listen(fullHostOrPort)
+	return mainIris.Listen(fullHostOrPort)
 }
 
 func Use(handler MiddlewareHandler) *Server {
 	check()
-	mainGapi.Router.Use(handler)
-	return mainGapi
+	mainIris.Router.Use(handler)
+	return mainIris
 }
 
 func UseFunc(handlerFunc func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc)) *Server {
 	check()
-	mainGapi.Router.UseFunc(handlerFunc)
-	return mainGapi
+	mainIris.Router.UseFunc(handlerFunc)
+	return mainIris
 }
 
 func UseHandler(handler http.Handler) *Server {
 	check()
-	mainGapi.Router.UseHandler(handler)
-	return mainGapi
+	mainIris.Router.UseHandler(handler)
+	return mainIris
 }
 
 func Handle(params ...interface{}) *Route {
 	check()
-	return mainGapi.Handle(params...)
+	return mainIris.Handle(params...)
 
 }
 
 func Get(path string, handler HTTPHandler) *Route {
 	check()
-	return mainGapi.Get(path, handler)
+	return mainIris.Get(path, handler)
 }
 
 func Post(path string, handler HTTPHandler) *Route {
 	check()
-	return mainGapi.Post(path, handler)
+	return mainIris.Post(path, handler)
 }
 
 func Put(path string, handler HTTPHandler) *Route {
 	check()
-	return mainGapi.Put(path, handler)
+	return mainIris.Put(path, handler)
 }
 
 func Delete(path string, handler HTTPHandler) *Route {
 	check()
-	return mainGapi.Delete(path, handler)
+	return mainIris.Delete(path, handler)
 }
 
 func Connect(path string, handler HTTPHandler) *Route {
 	check()
-	return mainGapi.Connect(path, handler)
+	return mainIris.Connect(path, handler)
 }
 
 func Head(path string, handler HTTPHandler) *Route {
 	check()
-	return mainGapi.Head(path, handler)
+	return mainIris.Head(path, handler)
 }
 
 func Options(path string, handler HTTPHandler) *Route {
 	check()
-	return mainGapi.Options(path, handler)
+	return mainIris.Options(path, handler)
 }
 
 func Patch(path string, handler HTTPHandler) *Route {
 	check()
-	return mainGapi.Patch(path, handler)
+	return mainIris.Patch(path, handler)
 }
 
 func Trace(path string, handler HTTPHandler) *Route {
 	check()
-	return mainGapi.Trace(path, handler)
+	return mainIris.Trace(path, handler)
 }
 
-func RegisterHandler(gapiHandler Handler) (*Route, error) {
+func RegisterHandler(irisHandler Handler) (*Route, error) {
 	check()
-	return mainGapi.RegisterHandler(gapiHandler)
+	return mainIris.RegisterHandler(irisHandler)
 }
 
-func Close() { mainGapi.Close() }
+func Close() { mainIris.Close() }

@@ -1,4 +1,4 @@
-package gapi
+package iris
 
 import (
 	"errors"
@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	COOKIE_NAME = "____gapi____"
+	COOKIE_NAME = "____iris____"
 )
 
 type Router struct {
@@ -38,7 +38,7 @@ func (this *Router) Handle(registedPath string, handler HTTPHandler, methods ...
 		//validate the handler to be a func
 
 		if reflect.TypeOf(handler).Kind() != reflect.Func {
-			panic("gapi | Router.go:50 -- Handler HAS TO BE A func")
+			panic("iris | Router.go:50 -- Handler HAS TO BE A func")
 		}
 
 		//I will do it inside the Prepare, because maybe developer don't wants the GET if methods not defined yet.
@@ -57,7 +57,7 @@ func (this *Router) Handle(registedPath string, handler HTTPHandler, methods ...
 	}
 	return route
 }
-func (this *Router) RegisterHandler(gapiHandler Handler) (*Route, error) {
+func (this *Router) RegisterHandler(irisHandler Handler) (*Route, error) {
 	var route *Route
 	var methods []string
 	var path string
@@ -65,7 +65,7 @@ func (this *Router) RegisterHandler(gapiHandler Handler) (*Route, error) {
 	var template string
 	var templateIsGLob bool = false
 	var err error = errors.New("")
-	val := reflect.ValueOf(gapiHandler).Elem()
+	val := reflect.ValueOf(irisHandler).Elem()
 
 	for i := 0; i < val.NumField(); i++ {
 		typeField := val.Type().Field(i)
@@ -92,7 +92,7 @@ func (this *Router) RegisterHandler(gapiHandler Handler) (*Route, error) {
 				temlateTagValue, templateUnqerr := strconv.Unquote(string(secondTag[templateIdx+1:]))
 
 				if templateUnqerr != nil {
-					err = errors.New(err.Error() + "\ngapi.RegisterHandler: Error on getting template: " + templateUnqerr.Error())
+					err = errors.New(err.Error() + "\niris.RegisterHandler: Error on getting template: " + templateUnqerr.Error())
 					continue
 				}
 
@@ -107,7 +107,7 @@ func (this *Router) RegisterHandler(gapiHandler Handler) (*Route, error) {
 			tagValue, unqerr := strconv.Unquote(string(firstTag[idx+1:]))
 
 			if unqerr != nil {
-				err = errors.New(err.Error() + "\ngapi.RegisterHandler: Error on getting path: " + unqerr.Error())
+				err = errors.New(err.Error() + "\niris.RegisterHandler: Error on getting path: " + unqerr.Error())
 				continue
 			}
 
@@ -118,7 +118,7 @@ func (this *Router) RegisterHandler(gapiHandler Handler) (*Route, error) {
 
 				if !strings.Contains(avalaibleMethodsStr, tagName) {
 					//wrong methods passed
-					err = errors.New(err.Error() + "\ngapi.RegisterHandler: Wrong methods passed to Handler -> " + tagName)
+					err = errors.New(err.Error() + "\niris.RegisterHandler: Wrong methods passed to Handler -> " + tagName)
 					continue
 				}
 
@@ -138,13 +138,13 @@ func (this *Router) RegisterHandler(gapiHandler Handler) (*Route, error) {
 	}
 
 	if err == nil {
-		//route = this.server.Router.Route(path, gapiHandler.Handle, methods...)
+		//route = this.server.Router.Route(path, irisHandler.Handle, methods...)
 
-		//now check/get the Handle method from the gapiHandler 'obj'.
-		handleFunc = reflect.ValueOf(gapiHandler).MethodByName("Handle")
+		//now check/get the Handle method from the irisHandler 'obj'.
+		handleFunc = reflect.ValueOf(irisHandler).MethodByName("Handle")
 
 		if !handleFunc.IsValid() {
-			err = errors.New("Missing Handle function inside gapi.Handler")
+			err = errors.New("Missing Handle function inside iris.Handler")
 		}
 
 		if err == nil {
@@ -205,7 +205,7 @@ func (this *Router) Find(req *http.Request) (*Route, int) {
 			reqPathSplited := strings.Split(reqUrlPath, "/")
 			routePathSplited := strings.Split(route.path, "/")
 			/*if len(reqPathSplited) != len(reqPathSplited) {
-				panic("This error has no excuse, line 99 gapi/router/Router.go")
+				panic("This error has no excuse, line 99 iris/router/Router.go")
 				continue
 			}*/
 			var cookieFullValue string

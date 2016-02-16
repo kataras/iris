@@ -1,4 +1,4 @@
-package gapi
+package iris
 
 import (
 	"reflect"
@@ -7,14 +7,14 @@ import (
 /*Example
 
 import (
-	"github.com/kataras/gapi"
+	"github.com/kataras/iris"
 )
 
 type UserHandler struct {
-	gapi.Handler `GET:"/api/users/{userId(int)}"`
+	iris.Handler `GET:"/api/users/{userId(int)}"`
 }
 
-func (u *UserHandler) Handle(ctx *gapi.Context) {
+func (u *UserHandler) Handle(ctx *iris.Context) {
 //or
 //Handle(ctx *Context, renderer *Renderer)
 //Handle(res http.ResponseWriter, req *http.Request)
@@ -29,7 +29,7 @@ func (u *UserHandler) Handle(ctx *gapi.Context) {
 
 ...
 
-api:= gapi.New()
+api:= iris.New()
 registerError := api.RegisterHandler(new(UserHandler))
 
 */
@@ -43,7 +43,7 @@ type Handler interface {
 	
 	golang does'nt provide a way for overloading methods, and I can't find a quick solution right now for this
 	//...interface doesn't work it gives me a runtime panic exception*
-	because of this I will get the Handle method via reflect inside the gapi.go -> RegisterHandler
+	because of this I will get the Handle method via reflect inside the iris.go -> RegisterHandler
 	this will runs before the server gets up only once, so I don't think this is a problem for now.
 	Ofc using reflection too much is not a good idea...
 	*/
@@ -53,9 +53,9 @@ type HTTPHandler interface{} //func(...interface{}) //[]reflect.Value
 
 //4 possibilities
 //1. http.ResponseWriter, *http.Request
-//2. *gapi.Context
-//3. *gapi.Renderer
-//4. *gapi.Context, *gapi.Renderer
+//2. *iris.Context
+//3. *iris.Renderer
+//4. *iris.Context, *iris.Renderer
 
 //check the first parameter only for Context
 //check if the handler needs a Context , has the first parameter as type of *Context

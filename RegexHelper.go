@@ -1,4 +1,4 @@
-package gapi
+package iris
 
 import (
 	"regexp"

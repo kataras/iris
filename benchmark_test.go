@@ -1,5 +1,5 @@
 ///This is my first 'benchmark' excuse me if it is fail I will fix it when I learn more for these things*
-package gapi
+package iris
 
 import (
 	"net/http"

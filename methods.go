@@ -1,4 +1,4 @@
-package gapi
+package iris
 
 /* as ENUM, maybe at the Future
 type HttpMethodType struct {

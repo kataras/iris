@@ -1,4 +1,4 @@
-package gapi
+package iris
 
 var DefaultPort = 8080
 

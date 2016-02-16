@@ -1,4 +1,4 @@
-package gapi
+package iris
 
 import (
 	"encoding/json"
@@ -24,7 +24,7 @@ const (
 var rendererType reflect.Type
 
 type Renderer struct {
-	//Only one TemplateCache per app/router/gapi instance.
+	//Only one TemplateCache per app/router/iris instance.
 	//and for now Renderer writer content-type  doesn't checks for methods (get,post...)
 	templateCache  *TemplateCache
 	responseWriter http.ResponseWriter
@@ -37,7 +37,7 @@ func NewRenderer(writer http.ResponseWriter) *Renderer {
 
 func (r *Renderer) check() error {
 	if r.templateCache == nil {
-		return errors.New("gapi:Error on Renderer : No Template Cache was created yet, please refer to docs at github.com/kataras/gapi.")
+		return errors.New("iris:Error on Renderer : No Template Cache was created yet, please refer to docs at github.com/kataras/iris.")
 	}
 	return nil
 }
