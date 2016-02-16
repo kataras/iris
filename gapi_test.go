@@ -3,6 +3,8 @@ package gapi
 import (
 	"errors"
 	"fmt"
+	"bytes"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -137,6 +139,32 @@ func checkParams(c *Context, expected map[string]string) error {
 	return nil
 }
 
+func checkBody(c *Context, expectedBody []byte) error {
+	reqBody, err := ioutil.ReadAll(c.Request.Body)
+
+	if err != nil {
+		msg := fmt.Sprintf("Error reading body for the request url ( "+c.Request.URL.Path+" ) but it was expected  %v . Error message: ", string(expectedBody), err.Error())
+		return errors.New(msg)
+	}
+
+	if reqBody == nil && expectedBody != nil {
+		msg := fmt.Sprintf("Expecting body ( " + string(expectedBody) + " )but the request has not sent a body ")
+		return errors.New(msg)
+	}
+
+	if reqBody != nil && expectedBody == nil {
+		msg := fmt.Sprintf("The request didn't expect any body but the request has sent a body: ")
+		return errors.New(msg)
+	}
+
+	if string(reqBody) != string(expectedBody) {
+		msg := fmt.Sprintf("The Expecting body IS NOT EQUAL to the requested body %v != %v", string(expectedBody), string(reqBody))
+		return errors.New(msg)
+	}
+
+	return nil
+}
+
 //tests are not working here, I tried with recorder on request and also sily passing the testing.T here but doesnt work too so I will use the normal 'log' package for errors
 func handleRoute(route TestRoute) func(c *Context) {
 	return func(c *Context) {
@@ -153,6 +181,10 @@ func handleRoute(route TestRoute) func(c *Context) {
 		}
 
 		if err := checkParams(c, requestRoute.ExpectedParameters); err != nil {
+			log.Fatal(err.Error())
+		}
+
+		if err := checkBody(c, requestRoute.Body); err != nil {
 			log.Fatal(err.Error())
 		}
 
@@ -183,8 +215,13 @@ func TestRoutesServerSide(t *testing.T) {
 func TestRoutesClientSide(t *testing.T) {
 	for _, route := range tests {
 		for _, requestRoute := range route.Requests {
-			//	client := &http.Client{}
-			req, err := http.NewRequest(requestRoute.Method, server.URL+requestRoute.Path, nil)
+			buffer :=  new(bytes.Buffer)
+			_,err := buffer.Write(requestRoute.Body)
+			if err != nil {
+				t.Fatal("Error creating the buffer for Route's body : ", route.Path+" Error: ", err.Error())
+			}
+			req, err := http.NewRequest(requestRoute.Method, server.URL+requestRoute.Path,buffer)
+
 			if err != nil {
 				t.Fatal("Error creating the NewRequest for Route: ", route.Path+" Error with url: ", err.Error())
 			} else {
