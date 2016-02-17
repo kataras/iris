@@ -62,14 +62,14 @@ func (r *Renderer) Render(pageContext interface{}) error {
 }
 
 ///TODO or I will think to pass an interface on handlers as second parameter near to the Context, with developer's custom Renderer package .. I will think about it.
-func (r *Renderer) WriteHTML(httpStatus int, htmlContents string, pageContext interface{}) {
+func (r *Renderer) WriteHTML(httpStatus int, htmlContents string) {
 	r.responseWriter.Header().Set(CONTENT_TYPE, CONTENT_HTML)
 	r.responseWriter.WriteHeader(httpStatus)
 	r.responseWriter.Write([]byte(htmlContents))
 }
 
-func (r *Renderer) HTML(htmlContents string, pageContext interface{}) {
-	r.WriteHTML(http.StatusOK, htmlContents, pageContext)
+func (r *Renderer) HTML(htmlContents string) {
+	r.WriteHTML(http.StatusOK, htmlContents)
 }
 
 func (r *Renderer) WriteData(httpStatus int, binaryData []byte) {

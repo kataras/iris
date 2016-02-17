@@ -36,7 +36,7 @@ var (
 		PORT    int
 	}{URL: "http://localhost", PORT: 80, IP: "127.0.0.1"}
 
-	tests = [...]TestRoute{
+	inlineRoutes = [...]TestRoute{
 		{
 			Methods: HTTPMethods.ANY, Path: "/api/users/:userId(int)",
 			Requests: []TestRequestRoute{{
@@ -192,7 +192,7 @@ func handleRoute(route TestRoute) func(c *Context) {
 }
 
 func TestRoutesServerSide(t *testing.T) {
-	for _, route := range tests {
+	for _, route := range inlineRoutes {
 		api.Handle(route.Path, handleRoute(route)).Methods(route.Methods...)
 	}
 
@@ -213,7 +213,7 @@ func TestRoutesServerSide(t *testing.T) {
 }
 
 func TestRoutesClientSide(t *testing.T) {
-	for _, route := range tests {
+	for _, route := range inlineRoutes {
 		for _, requestRoute := range route.Requests {
 			buffer :=  new(bytes.Buffer)
 			_,err := buffer.Write(requestRoute.Body)
