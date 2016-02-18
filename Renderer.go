@@ -101,7 +101,7 @@ func (r *Renderer) WriteJSON(httpStatus int, jsonStructs ...interface{}) error {
 			//http.Error(r.responseWriter, err.Error(), http.StatusInternalServerError)
 			return err
 		}
-		_json += string(theJson)+"\n"
+		_json += string(theJson) + "\n"
 	}
 
 	//keep in mind http.DetectContentType(data)
@@ -134,7 +134,7 @@ func (r *Renderer) WriteXML(httpStatus int, xmlStructs ...interface{}) error {
 		if err != nil {
 			return err
 		}
-		_xmlDoc += string(theDoc)+"\n"
+		_xmlDoc += string(theDoc) + "\n"
 	}
 	r.responseWriter.Header().Set(CONTENT_TYPE, CONTENT_XML)
 	r.responseWriter.WriteHeader(httpStatus)

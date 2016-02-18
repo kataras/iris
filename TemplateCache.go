@@ -3,10 +3,11 @@ package iris
 import (
 	"html/template"
 	"net/http"
-	"strings"
 	"os"
 	"path"
+	"strings"
 )
+
 var templatesDirectory string
 
 func getCurrentDir() string {
@@ -23,7 +24,7 @@ func SetTemplatesDirectory(dir string) {
 }
 
 func AppendTemplatesDirectory(dir string) {
-	templatesDirectory = path.Join(templatesDirectory,dir)
+	templatesDirectory = path.Join(templatesDirectory, dir)
 }
 
 /* Use on HTTPServer */
@@ -40,21 +41,21 @@ func NewTemplateCache() *TemplateCache {
 }
 
 func (tc *TemplateCache) Add(files ...string) {
-	for i:=0;i<len(files);i++ {
-		files[0] = path.Join(templatesDirectory,files[0])
+	for i := 0; i < len(files); i++ {
+		files[0] = path.Join(templatesDirectory, files[0])
 	}
 	tc.filesTemp = append(tc.filesTemp, files...)
 }
 
 func (tc *TemplateCache) SetGlob(filesPattern string) {
-	tc.filesGlobTemp = path.Join(templatesDirectory,filesPattern)
+	tc.filesGlobTemp = path.Join(templatesDirectory, filesPattern)
 }
 
 func (tc *TemplateCache) template() *template.Template {
-	
+
 	if tc.templates == nil {
 		if len(tc.filesTemp) > 0 {
-		
+
 			tc.templates = template.Must(template.ParseFiles(tc.filesTemp...))
 		}
 
@@ -66,7 +67,7 @@ func (tc *TemplateCache) template() *template.Template {
 				tc.templates.ParseGlob(tc.filesGlobTemp)
 			}
 		}
-		
+
 		tc.filesTemp = nil
 		tc.filesGlobTemp = ""
 
@@ -79,9 +80,9 @@ func (tc *TemplateCache) ExecuteTemplate(writer http.ResponseWriter, fileTmplPat
 	if !strings.HasSuffix(fileTmplPath, ".html") {
 		fileTmplPath += ".html"
 	}
-	return tc.template().ExecuteTemplate(writer, path.Join(templatesDirectory,fileTmplPath), page)
+	return tc.template().ExecuteTemplate(writer, path.Join(templatesDirectory, fileTmplPath), page)
 }
 
-func (tc *TemplateCache) Execute(writer http.ResponseWriter,page interface{}) error {
-	return tc.template().Execute(writer,page)
+func (tc *TemplateCache) Execute(writer http.ResponseWriter, page interface{}) error {
+	return tc.template().Execute(writer, page)
 }

@@ -4,62 +4,59 @@ import (
 	"reflect"
 )
 
-/*Example
-
-import (
-	"github.com/kataras/iris"
-)
-
-type UserHandler struct {
-	iris.Handler `GET:"/api/users/{userId(int)}"`
-}
-
-func (u *UserHandler) Handle(ctx *iris.Context) {
-//or
-//Handle(ctx *Context, renderer *Renderer)
-//Handle(res http.ResponseWriter, req *http.Request)
-//Handle(renderer *Renderer)
-
-	defer ctx.Close()
-	var userId, _ = ctx.ParamInt("userId")
-
-	println(userId)
-
-}
-
-...
-
-api:= iris.New()
-registerError := api.RegisterHandler(new(UserHandler))
-
+/*
+Handler is the interface which is used of the structed-routes and be passed to the Router's RegisterHandler,
+struct implements this Handler MUST have a function which has the form one of them:
+Handle(ctx *Context, renderer *Renderer)
+Handle(res http.ResponseWriter, req *http.Request)
+Handle(ctx *Context)
+Handle(renderer *Renderer)
 */
-
 type Handler interface {
-	/*must provide one of those: 
-	Handle(ctx *Context, renderer *Renderer)
-	Handle(res http.ResponseWriter, req *http.Request)
-	Handle(ctx *Context)
-	Handle(renderer *Renderer)
-	
-	golang does'nt provide a way for overloading methods, and I can't find a quick solution right now for this
-	//...interface doesn't work it gives me a runtime panic exception*
-	because of this I will get the Handle method via reflect inside the iris.go -> RegisterHandler
-	this will runs before the server gets up only once, so I don't think this is a problem for now.
-	Ofc using reflection too much is not a good idea...
+	/*Example
+
+	  import (
+	  	"github.com/kataras/iris"
+	  )
+
+	  type UserHandler struct {
+	  	iris.Handler `get:"/api/users/{userId(int)}"`
+	  }
+
+	  func (u *UserHandler) Handle(ctx *iris.Context) {
+	  //or
+	  //Handle(ctx *Context, renderer *Renderer)
+	  //Handle(res http.ResponseWriter, req *http.Request)
+	  //Handle(renderer *Renderer)
+
+	  	defer ctx.Close()
+	  	var userId, _ = ctx.ParamInt("userId")
+
+	  	println(userId)
+
+	  }
+
+	  ...
+
+	  api:= iris.New()
+	  registerError := api.RegisterHandler(new(UserHandler))
+
 	*/
 }
-//
-type HTTPHandler interface{} //func(...interface{}) //[]reflect.Value
 
-//4 possibilities
-//1. http.ResponseWriter, *http.Request
-//2. *iris.Context
-//3. *iris.Renderer
-//4. *iris.Context, *iris.Renderer
+/*
+HTTPHandler is the function which is passed a second parameter/argument to the API methods (Get,Post...)
+It has got one the following forms:
+1. http.ResponseWriter, *http.Request
+2. *iris.Context
+3. *iris.Renderer
+4. *iris.Context, *iris.Renderer
+*/
+type HTTPHandler interface{}
 
-//check the first parameter only for Context
+//check the first parameter, true if it wants only a *Context
 //check if the handler needs a Context , has the first parameter as type of *Context
-//use in NewHTTPRoute inside HTTPRoute.go
+//it's usefuly in NewRoute inside route.go
 func hasContextParam(handlerType reflect.Type) bool {
 	//if the handler doesn't take arguments, false
 	if handlerType.NumIn() == 0 {
@@ -79,7 +76,7 @@ func hasContextParam(handlerType reflect.Type) bool {
 	return false
 }
 
-//check the first parameter only for Renderer
+//check the first parameter, true if it wants only a *Renderer
 func hasRendererParam(handlerType reflect.Type) bool {
 	//if the handler doesn't take arguments, false
 	if handlerType.NumIn() == 0 {
@@ -99,6 +96,7 @@ func hasRendererParam(handlerType reflect.Type) bool {
 	return false
 }
 
+//check if two parameters, true if it wants *Context following by a *Renderer
 func hasContextAndRenderer(handlerType reflect.Type) bool {
 
 	//first check if we have pass 2 arguments
@@ -106,14 +104,13 @@ func hasContextAndRenderer(handlerType reflect.Type) bool {
 		return false
 	}
 
-	
 	firstParamIsContext := hasContextParam(handlerType)
-	
+
 	//the first argument/parameter is always context if exists otherwise it's only Renderer or ResponseWriter,Request.
 	if firstParamIsContext == false {
 		return false
 	}
-	
+
 	p2 := handlerType.In(1)
 	if p2.Kind() != reflect.Ptr {
 		return false
@@ -122,6 +119,6 @@ func hasContextAndRenderer(handlerType reflect.Type) bool {
 	if p2.Elem() == rendererType {
 		return true
 	}
-	
+
 	return false
 }

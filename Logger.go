@@ -6,16 +6,21 @@ import (
 	"os"
 )
 
+/*
+Logger is a future feature, it has not been used at the moment,
+it's usage will be to optionaly logs the server's requests
+*/
 type Logger struct {
 	FilePath string
 }
 
-func (this Logger) Log(next http.Handler) http.Handler {
+//Log just writes to a file the requests
+func (l Logger) Log(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		message := req.Method + " " + req.URL.RequestURI()
-		_file, _ := os.OpenFile(this.FilePath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
+		_file, _ := os.OpenFile(l.FilePath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
 		if _, err := _file.Write([]byte(message + "\r\n")); err != nil {
-			fmt.Println("Logger.log(): Error writing to the file ", this.FilePath, err)
+			fmt.Println("Logger.log(): Error writing to the file ", l.FilePath, err)
 			return
 		}
 
