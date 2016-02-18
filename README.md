@@ -1,4 +1,4 @@
-# iris  (beta)
+# iris
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/kataras/iris?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 ## Table of Contents
@@ -6,6 +6,9 @@
 - [Install](#install)
 - [Principles](#principles-of-iris)
 - [Introduction](#introduction)
+- [Features](#features)
+- [API](#api)
+- [Named Parameters](#named-parameters)
 - [Third Party Middleware](#third-party-middleware)
 - [Contributors](#contributors)
 - [Community](#community)
@@ -31,78 +34,115 @@ Iris is a very minimal but flexible golang http middleware & standalone web appl
 ```go
 package main
 
-import (
-    "github.com/kataras/iris"
-	"log"
-	"net/http"
-)
-
-//You can always use multiple iris instances => multi server instances listen to different ports.
-//var server1 = iris.New(); server1.Get... server1.Listen(8888)
-//var server2 = iris.New(); server2.Get... server2.Listen(9999)
+import "github.com/kataras/iris"
 
 func main() {
-	//register global middleware
-	iris.UseFunc(globalLog)
-
-	iris.Post("/register", func(res http.ResponseWriter, req *http.Request) {
-		res.Write([]byte("<h1>Hello from ROUTER ON Post request /register </h1>"))
+	iris.Get("/hello", func(r *iris.Renderer) {
+		r.HTML("<b> Hello </b>")
 	})
-
-	iris.Get("/profile/user/:name/details/:something", profileHandler) // Parameters
-	//or if you want a route to listen to more than one method than one you can do that:
-	iris.Handle("/api/user/:userId(int)", func(c *iris.Context) {
-		c.Write("<h1> TEST CONTEXT userId =  " + c.Param("userId") + " </h1>")
-	}).Methods(iris.HTTPMethods.GET, iris.HTTPMethods.POST) // or .ANY if you want all (get,post,head,put,options,delete,patch...)
-
-	//register route, it's 'controller' homeHandler and its middleware log1,
-	//middleware will run first and if next fn is exists and executed
-	//or no next fn exists in middleware then will continue to homeHandler
-	iris.Get("/home", homeHandler).UseFunc(log1)
-
-	println("Server is running at :80")
-
-	//Listen to (runs on top of the http.NewServeMux())
-	log.Fatal(iris.Listen(80))
-	//Use iris as middleware is possible too (runs independed):
-	//log.Fatal(http.ListenAndServe(":80", iris))
-
-}
-
-func globalLog(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
-	println("GLOBAL LOG  middleware here !!")
-	next.ServeHTTP(res, req)
-}
-
-func log1(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
-	println("log1  middleware here !!")
-	next.ServeHTTP(res, req)
-
-}
-
-func log2() http.Handler {
-	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		println("log2  middleware here !!")
-		//next.ServeHTTP(res, req)
-
-	})
-}
-
-func homeHandler(res http.ResponseWriter, req *http.Request) {
-	res.Write([]byte("<h1>Hello from ROUTER ON /home </h1>"))
-}
-
-func profileHandler(res http.ResponseWriter, req *http.Request) {
-
-	params := iris.Params(req)
-	name := params.Get("name") // or params["name"]
-	//or name := iris.Param(req,"name")
-
-	res.Write([]byte("<h1> Hello from ROUTER ON /profile/" + name + " </h1>"))
+	iris.Listen(8080)
 }
 
 ```
 
+## Features 
+
+**Only explicit matches:** With other routers, like http.ServeMux, a requested URL path could match multiple patterns. Therefore they have some awkward pattern priority rules, like longest match or first registered, first matched. By design of this router, a request can only match exactly one or no route. As a result, there are also no unintended matches, which makes it great for SEO and improves the user experience.
+
+**Parameters in your routing pattern:** Stop parsing the requested URL path, just give the path segment a name and the router delivers the dynamic value to you. Because of the design of the router, path parameters are very cheap.
+
+**Perfect for APIs:** The router design encourages to build sensible, hierarchical RESTful APIs. Moreover it has builtin native support for OPTIONS requests and 405 Method Not Allowed replies.
+
+**Compatible:** At the end the iris is just a middleware which acts like router and a small simply web framework, this means that you can you use it side-by-side with your favorite big and well-tested web framework. Iris is fully compatible with the **net/http package.**
+
+**Miltiple servers :** Besides the fact that iris has a default main server, which only created only if you call any global function (e.x iris.Get). You can declare a new iris using the iris.New() func. server1:= iris.New(); server1.Get(....); server1.Listen(9999)
+
+
+
+## API
+**Use of GET,  POST,  PUT,  DELETE, HEAD, PATCH & OPTIONS**
+
+```go
+package main
+
+import (
+	"github.com/kataras/iris"
+	"net/http"
+)
+
+func main() {
+	iris.Get("/home", testGet)
+	iris.Post("/login",testPost)
+	iris.Put("/add",testPut)
+	iris.Delete("/remove",testDelete)
+	iris.Head("/testHead",testHead)
+	iris.Patch("/testPatch",testPatch)
+	iris.Options("/testOptions",testOptions)
+	
+	iris.Listen(8080)	
+}
+
+//iris is fully compatible with net/http package
+func testGet(res http.ResponseWriter, req *http.Request) {
+	//...
+}
+
+func testPost(c *iris.Context) {
+	//...
+}
+
+func testPut(r *iris.Renderer) {
+	//...
+}
+
+func testDelete(c *iris.Context, r *iris.Renderer) {
+	//...
+}
+//and so on....
+```
+
+## Named Parameters 
+
+Named parameters are just custom paths to your routes, you can access them for each request using context's **c.Param("nameoftheparameter")** or **iris.Param(request,"nameoftheparam")**. Get all, as pair (**map[string]string**) using **c.Params()** or **iris.Params(request)**
+
+By default the :name is matched to any word, you can use custom regex using parenthesis after the parameter example: /user/:name([a-z]+) this will match the route only if the second part of the route after /user/ is a word which it's letters are lowercase only.
+
+No limit on how long a path can be.
+
+Usage: 
+
+
+```go
+package main
+
+import "github.com/kataras/iris"
+
+func main() {
+	// MATCH to /hello/anywordhere
+	// NOT match to /hello or /hello/ or /hello/anywordhere/something
+	iris.Get("/hello/:name", func(c *iris.Context) {
+		name := c.Param("name")
+		c.Write("Hello " + name)
+	})
+	
+	// MATCH to /profile/kataras/friends/1
+	// NOT match to /profile/ , /profile/kataras ,
+	// /profile/kataras/friends,  /profile/kataras/friends ,
+	// /profile/kataras/friends/string , /profile/anumb3r/friends/1
+	iris.Get("/users/:fullname([a-zA-Z]+)/friends/:friendId(int)",
+		func(c *iris.Context, r *iris.Renderer){
+			name:= c.Param("fullname")
+			friendId := c.ParamInt("friendId")
+			r.HTML("<b> Hello </b>"+name)
+		})
+
+	iris.Listen(8080)
+	//or log.Fatal(http.ListenAndServe(":8080", iris))
+}
+
+```
+
+**Note:** Since this router has only explicit matches, you can not register static routes and parameters for the same path segment. For example you can not register the patterns /user/new and /user/:user for the same request method at the same time. The routing of different request methods is independent from each other.
 
 ## Third Party Middleware
 *The iris is re-written in order to support all middlewares that are already exists for [Negroni](https://github.com/codegangsta/negroni) middleware*
@@ -148,10 +188,12 @@ of the following:
 
 
 ## Todo
+*  Complete the documents
 *  Query parameters
 *  Create examples in this repository
 
 ## Licence
 
 This project is licensed under the MIT license.
+
 
