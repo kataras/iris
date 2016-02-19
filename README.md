@@ -1,5 +1,5 @@
 # iris
-<img align="right" src="http://nodets.com/iris_logo.gif">
+<img align="right" width="248" src="http://nodets.com/iris_logo.gif">
 [![Build Status](https://travis-ci.org/kataras/iris.svg)](https://travis-ci.org/kataras/iris)
 [![GoDoc](https://godoc.org/github.com/kataras/iris?status.svg)](https://godoc.org/github.com/kataras/iris)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/kataras/iris?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
