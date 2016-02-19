@@ -1,5 +1,10 @@
 # iris
+<img align="right" src="http://nodets.com/iris_logo.gif">
+[![Build Status](https://travis-ci.org/kataras/iris.svg)](https://travis-ci.org/kataras/iris)
+[![GoDoc](https://godoc.org/github.com/kataras/iris?status.svg)](https://godoc.org/github.com/kataras/iris)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/kataras/iris?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+
+Iris is a very minimal but flexible web framework written in go, providing a robust set of features for building single & multi-page, web applications.
 
 ## Table of Contents
 
@@ -28,7 +33,7 @@ $ go get github.com/kataras/iris
 - Simplicity Equals Productivity. The best way to make something seem simple is to have it actually be simple. iris's main functionality has clean, classically beautiful APIs
 
 ## Introduction
-The word iris means "rainbow" in Greek. Iris was the name of the Greek goddess of the rainbow. 
+The word iris means "rainbow" in Greek. Iris was the name of the Greek goddess of the rainbow.
 Iris is a very minimal but flexible golang http middleware & standalone web application framework, providing a robust set of features for building single & multi-page, web applications.
 
 ```go
@@ -45,7 +50,7 @@ func main() {
 
 ```
 
-## Features 
+## Features
 
 **Only explicit matches:** With other routers, like http.ServeMux, a requested URL path could match multiple patterns. Therefore they have some awkward pattern priority rules, like longest match or first registered, first matched. By design of this router, a request can only match exactly one or no route. As a result, there are also no unintended matches, which makes it great for SEO and improves the user experience.
 
@@ -78,8 +83,8 @@ func main() {
 	iris.Head("/testHead",testHead)
 	iris.Patch("/testPatch",testPatch)
 	iris.Options("/testOptions",testOptions)
-	
-	iris.Listen(8080)	
+
+	iris.Listen(8080)
 }
 
 //iris is fully compatible with net/http package
@@ -101,7 +106,7 @@ func testDelete(c *iris.Context, r *iris.Renderer) {
 //and so on....
 ```
 
-## Named Parameters 
+## Named Parameters
 
 Named parameters are just custom paths to your routes, you can access them for each request using context's **c.Param("nameoftheparameter")** or **iris.Param(request,"nameoftheparam")**. Get all, as pair (**map[string]string**) using **c.Params()** or **iris.Params(request)**
 
@@ -109,7 +114,7 @@ By default the :name is matched to any word, you can use custom regex using pare
 
 No limit on how long a path can be.
 
-Usage: 
+Usage:
 
 
 ```go
@@ -124,7 +129,7 @@ func main() {
 		name := c.Param("name")
 		c.Write("Hello " + name)
 	})
-	
+
 	// MATCH to /profile/kataras/friends/1
 	// NOT match to /profile/ , /profile/kataras ,
 	// /profile/kataras/friends,  /profile/kataras/friends ,
@@ -146,7 +151,7 @@ func main() {
 
 ## Third Party Middleware
 *The iris is re-written in order to support all middlewares that are already exists for [Negroni](https://github.com/codegangsta/negroni) middleware*
- 
+
 Here is a current list of compatible middlware.
 
 
@@ -195,5 +200,3 @@ of the following:
 ## Licence
 
 This project is licensed under the MIT license.
-
-
