@@ -4,25 +4,30 @@ import (
 	"net/http"
 )
 
+// MiddlewareSupporter is been 'injected-oop' in other struct,
+// which usage is to support, manage and handle middleware
 type MiddlewareSupporter struct {
 	middleware         Middleware
-	middlewareHandlers []MiddlewareHandler //at the HTTPRoute the route handler is the last empty-next 'MiddlewareHandler'.
+	middlewareHandlers []MiddlewareHandler //at the Route the route handler is the last empty-next 'MiddlewareHandler'.
 }
 
-func (this *MiddlewareSupporter) Use(handler MiddlewareHandler) {
-	if this.middlewareHandlers == nil {
-		this.middlewareHandlers = make([]MiddlewareHandler, 0)
+// Use creates and adds a MiddlewareHandler (with next) to the middlewareHandlers collection
+func (ms *MiddlewareSupporter) Use(handler MiddlewareHandler) {
+	if ms.middlewareHandlers == nil {
+		ms.middlewareHandlers = make([]MiddlewareHandler, 0)
 	}
 
-	this.middlewareHandlers = append(this.middlewareHandlers, handler)
-	this.middleware = makeMiddlewareFor(this.middlewareHandlers)
+	ms.middlewareHandlers = append(ms.middlewareHandlers, handler)
+	ms.middleware = makeMiddlewareFor(ms.middlewareHandlers)
 }
 
-func (this *MiddlewareSupporter) UseFunc(handlerFunc func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc)) {
-	this.Use(MiddlewareHandlerFunc(handlerFunc))
+// UseFunc creates and adds a function to the middlewareHandlers collection
+func (ms *MiddlewareSupporter) UseFunc(handlerFunc func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc)) {
+	ms.Use(MiddlewareHandlerFunc(handlerFunc))
 }
 
-func (this *MiddlewareSupporter) UseHandler(handler http.Handler) {
+// UseHandler creates and adds a http.Handler to the middlewareHandlers collection
+func (ms *MiddlewareSupporter) UseHandler(handler http.Handler) {
 	convertedMiddleware := MiddlewareHandlerFunc(func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
 		handler.ServeHTTP(res, req)
 		//run the next automatically after this handler finished
@@ -30,29 +35,31 @@ func (this *MiddlewareSupporter) UseHandler(handler http.Handler) {
 
 	})
 
-	this.Use(convertedMiddleware)
+	ms.Use(convertedMiddleware)
 }
 
-//
+// MiddlewareHandler is an interface which expects a ServeHTTP function with response,request and a next http.HandlerFunc
 type MiddlewareHandler interface {
 	ServeHTTP(res http.ResponseWriter, req *http.Request, next http.HandlerFunc)
 }
 
+// MiddlewareHandlerFunc is just the type of the function which is been expected on the MiddlewareHandler interface
 type MiddlewareHandlerFunc func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc)
 
-func (this MiddlewareHandlerFunc) ServeHTTP(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
-	this(res, req, next)
+// ServeHTTP here is just useful to the MiddlewareHandlerFunc acts like a normal net/http handler
+func (mh MiddlewareHandlerFunc) ServeHTTP(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
+	mh(res, req, next)
 }
 
+// Middleware is the struct which holds a MiddlewareHandler and the next *Middleware of it
 type Middleware struct {
 	Handler MiddlewareHandler
 	Next    *Middleware
 }
 
-func (this Middleware) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	//println("what is nil [check this.Handler is nil]?", this.Handler == nil)
-	///TODO: provlima edw einai nil to handler kai to next, kati pezei, dokimazw na valw pointer sto this *MiddlewareUser, nai telika auto eftege.
-	this.Handler.ServeHTTP(res, req, this.Next.ServeHTTP)
+// ServeHTTP here is just useful to the Middleware acts like a normal net/http handler
+func (m Middleware) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	m.Handler.ServeHTTP(res, req, m.Next.ServeHTTP)
 }
 
 func makeMiddlewareFor(handlers []MiddlewareHandler) Middleware {
@@ -69,6 +76,7 @@ func makeMiddlewareFor(handlers []MiddlewareHandler) Middleware {
 	return Middleware{handlers[0], &next}
 }
 
+// emptyMiddleware creates a Middleware which as an empty Next Middleware, is been used to define the Handler at the route
 func emptyMiddleware() Middleware {
 	return Middleware{
 		Handler: MiddlewareHandlerFunc(func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {}),

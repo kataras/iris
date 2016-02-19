@@ -5,16 +5,17 @@ import (
 	"strings"
 )
 
-//Route's Parameters
+// Parameters is just a type of pair (map[string]string) which contains the request's path parameters
 type Parameters map[string]string
 
+// Get gets a value from a key inside this Parameters map
 func (params Parameters) Get(key string) string {
 	return params[key]
 }
 
-//Global to package
+// Params returns all parameters (if any) from a request
 func Params(req *http.Request) Parameters {
-	_cookie, _err := req.Cookie(COOKIE_NAME)
+	_cookie, _err := req.Cookie(CookieName)
 	if _err != nil {
 		return nil
 	}
@@ -35,6 +36,7 @@ func Params(req *http.Request) Parameters {
 	return params
 }
 
+// Param receives a request and a key and returns the value of the parameter inside request
 func Param(req *http.Request, key string) string {
 	params := Params(req)
 	param := ""
@@ -43,5 +45,3 @@ func Param(req *http.Request, key string) string {
 	}
 	return param
 }
-
-//

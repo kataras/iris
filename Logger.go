@@ -6,15 +6,13 @@ import (
 	"os"
 )
 
-/*
-Logger is a future feature, it has not been used at the moment,
-it's usage will be to optionaly logs the server's requests
-*/
+// Logger is a future feature, it has not been used at the moment,
+// it's usage will be to optionaly logs the server's requests
 type Logger struct {
 	FilePath string
 }
 
-//Log just writes to a file the requests
+// Log just writes to a file the requests
 func (l Logger) Log(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		message := req.Method + " " + req.URL.RequestURI()

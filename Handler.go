@@ -4,14 +4,13 @@ import (
 	"reflect"
 )
 
-/*
-Handler is the interface which is used of the structed-routes and be passed to the Router's RegisterHandler,
-struct implements this Handler MUST have a function which has the form one of them:
-Handle(ctx *Context, renderer *Renderer)
-Handle(res http.ResponseWriter, req *http.Request)
-Handle(ctx *Context)
-Handle(renderer *Renderer)
-*/
+// Handler is the interface which is used of the structed-routes and be passed to the Router's RegisterHandler,
+// struct implements this Handler MUST have a function which has the form one of them:
+//
+// Handle(ctx *Context, renderer *Renderer)
+// Handle(res http.ResponseWriter, req *http.Request)
+// Handle(ctx *Context)
+// Handle(renderer *Renderer)
 type Handler interface {
 	/*Example
 
@@ -44,19 +43,18 @@ type Handler interface {
 	*/
 }
 
-/*
-HTTPHandler is the function which is passed a second parameter/argument to the API methods (Get,Post...)
-It has got one the following forms:
-1. http.ResponseWriter, *http.Request
-2. *iris.Context
-3. *iris.Renderer
-4. *iris.Context, *iris.Renderer
-*/
+// HTTPHandler is the function which is passed a second parameter/argument to the API methods (Get,Post...)
+// It has got one the following forms:
+//
+// 1. http.ResponseWriter, *http.Request
+// 2. *iris.Context
+// 3. *iris.Renderer
+// 4. *iris.Context, *iris.Renderer
 type HTTPHandler interface{}
 
-//check the first parameter, true if it wants only a *Context
-//check if the handler needs a Context , has the first parameter as type of *Context
-//it's usefuly in NewRoute inside route.go
+// check the first parameter, true if it wants only a *Context
+// check if the handler needs a Context , has the first parameter as type of *Context
+// it's usefuly in NewRoute inside route.go
 func hasContextParam(handlerType reflect.Type) bool {
 	//if the handler doesn't take arguments, false
 	if handlerType.NumIn() == 0 {
@@ -76,7 +74,7 @@ func hasContextParam(handlerType reflect.Type) bool {
 	return false
 }
 
-//check the first parameter, true if it wants only a *Renderer
+// check the first parameter, true if it wants only a *Renderer
 func hasRendererParam(handlerType reflect.Type) bool {
 	//if the handler doesn't take arguments, false
 	if handlerType.NumIn() == 0 {
@@ -96,7 +94,7 @@ func hasRendererParam(handlerType reflect.Type) bool {
 	return false
 }
 
-//check if two parameters, true if it wants *Context following by a *Renderer
+// check if two parameters, true if it wants *Context following by a *Renderer
 func hasContextAndRenderer(handlerType reflect.Type) bool {
 
 	//first check if we have pass 2 arguments

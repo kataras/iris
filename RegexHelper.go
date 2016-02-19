@@ -6,18 +6,27 @@ import (
 )
 
 const (
-	PARAMETER_START               = ":"
-	PARAMETER_PATTERN_START       = "("
-	PARAMETER_PATTERN_END         = ")"
-	REGEX_PARENTHESIS_AND_CONTENT = "\\([^)]*\\)"                   //"\\([^\\)]*\\)"
-	REGEX_BRACKETS_CONTENT        = "{(.*?)}"                       //not used any more, for now. //{(.*?)} -> is /g (global) on pattern.findAllString
-	REGEX_ROUTE_NAMED_PARAMETER   = "(" + PARAMETER_START + "\\w+)" //finds words starts with : . It used as /g (global) on pattern.findAllString
-	REGEX_PARENTHESIS_CONTENT     = PARAMETER_PATTERN_START + "(.*?)" + PARAMETER_PATTERN_END
-	MATCH_EVERYTHING              = "*"
+	// ParameterStart the character which the named path is starting
+	ParameterStart = ":"
+	// ParameterPatternStart the character which the regex custom pattern of a named parameter starts
+	ParameterPatternStart = "("
+	// ParameterPatternEnd the character which the regex custom pattern of a named parameter ends
+	ParameterPatternEnd = ")"
+	// RegexParenthesisAndContent a str regex which returns all []contents inside parenthesis
+	RegexParenthesisAndContent = "\\([^)]*\\)" //"\\([^\\)]*\\)"
+	// RegexBracketsContent a str regex which returns all []contents inside brackets
+	RegexBracketsContent = "{(.*?)}" //not used any more, for now. //{(.*?)} -> is /g (global) on pattern.findAllString
+	// RegexRouteNamedParameter finds the whole word of the regex str pattern inside a named parameter
+	RegexRouteNamedParameter = "(" + ParameterStart + "\\w+)" //finds words starts with : . It used as /g (global) on pattern.findAllString
+	// RegexParenthesisContent finds whatever inside parenthesis
+	RegexParenthesisContent = ParameterPatternStart + "(.*?)" + ParameterPatternEnd
+	// MatchEverything is used for routes, is the character which match everything to a specific handler
+	MatchEverything = "*"
 )
 
 var (
-	SUPPORTED_TYPES = [2]string{"string", "int"}
+	// supportedRegexTypes the available types of string which can be converted to a regex str pattern
+	supportedRegexTypes = [2]string{"string", "int"}
 )
 
 //for now, supported: string,int
@@ -38,7 +47,7 @@ func toPattern(theType string) string {
 }
 
 func isSupportedType(theType string) bool {
-	for _, supportedType := range SUPPORTED_TYPES {
+	for _, supportedType := range supportedRegexTypes {
 		if theType == supportedType {
 			return true
 		}
@@ -53,12 +62,12 @@ func isSupportedType(theType string) bool {
 //finds and stores pattern for /something/:name(string)
 func makePathPattern(Route *Route) {
 	registedPath := Route.path
-	if registedPath != MATCH_EVERYTHING {
+	if registedPath != MatchEverything {
 		regexpRoute := registedPath
 
-		routeWithoutParenthesis := regexp.MustCompile(REGEX_PARENTHESIS_AND_CONTENT).ReplaceAllString(registedPath, "")
+		routeWithoutParenthesis := regexp.MustCompile(RegexParenthesisAndContent).ReplaceAllString(registedPath, "")
 
-		pattern := regexp.MustCompile(REGEX_ROUTE_NAMED_PARAMETER)
+		pattern := regexp.MustCompile(RegexRouteNamedParameter)
 
 		//find only :keys without parenthesis if any
 		keys := pattern.FindAllString(routeWithoutParenthesis, -1)
@@ -70,13 +79,13 @@ func makePathPattern(Route *Route) {
 
 			a1 := strings.Index(registedPath, key) + len(key)
 
-			if len(registedPath) > a1 && string(registedPath[a1]) == PARAMETER_PATTERN_START {
+			if len(registedPath) > a1 && string(registedPath[a1]) == ParameterPatternStart {
 				//check if first character, of the ending of the key from the original full registedPath, is parenthesis
 
-				keyPattern1 := registedPath[a1:]                                  //here we take all string after a1, which maybe be follow up with other paths, we will substring it in the next line
-				lastParIndex := strings.Index(keyPattern1, PARAMETER_PATTERN_END) //find last parenthesis index of the keyPattern1
-				keyPattern1 = keyPattern1[0 : lastParIndex+1]                     // find contents and it's parenthesis, we will need it for replace
-				keyPatternReg := keyPattern1[1 : len(keyPattern1)-1]              //find the contents between parenthesis
+				keyPattern1 := registedPath[a1:]                                //here we take all string after a1, which maybe be follow up with other paths, we will substring it in the next line
+				lastParIndex := strings.Index(keyPattern1, ParameterPatternEnd) //find last parenthesis index of the keyPattern1
+				keyPattern1 = keyPattern1[0 : lastParIndex+1]                   // find contents and it's parenthesis, we will need it for replace
+				keyPatternReg := keyPattern1[1 : len(keyPattern1)-1]            //find the contents between parenthesis
 				if isSupportedType(keyPatternReg) {
 					//if it is (string) or (int) inside contents
 					keyPatternReg = toPattern(keyPatternReg)
@@ -90,50 +99,6 @@ func makePathPattern(Route *Route) {
 
 		}
 		regexpRoute = strings.Replace(regexpRoute, "/", "\\/", -1) + "$" ///escape / character for regex and finish it with $, if route/:name and req url is route/:name:/somethingelse then it will not be matched
-		routePattern := regexp.MustCompile(regexpRoute)
-		Route.Pattern = routePattern
-
-		Route.ParamKeys = keys
-	}
-}
-
-//finds and stores the pattern for /something/{name(string)}
-func makePathPatternOld(Route *Route) {
-	registedPath := Route.path
-	if registedPath != MATCH_EVERYTHING {
-		regexpRoute := registedPath
-		pattern := regexp.MustCompile(REGEX_BRACKETS_CONTENT) //fint all {key}
-		keys := pattern.FindAllString(registedPath, -1)
-		println("keys: ", strings.Join(keys, ","))
-		for indexKey, key := range keys {
-			backupKey := key // the full {name(regex)} we will need it for the replace.
-			key = key[1 : len(key)-1]
-			println(key)
-			keys[indexKey] = key
-			startParenthesisIndex := strings.Index(key, "(")
-			finishParenthesisIndex := strings.LastIndex(key, ")") // checks only the first (), if more than one (regex) exists for one key then the application will be fail and I dont care :)
-			//I did LastIndex because the custom regex maybe has ()parenthesis too.
-			if startParenthesisIndex > 0 && finishParenthesisIndex > startParenthesisIndex {
-				keyPattern := key[startParenthesisIndex+1 : finishParenthesisIndex]
-				key = key[0:startParenthesisIndex] //remove the (regex) from key and  the {, }
-
-				keys[indexKey] = key
-				if isSupportedType(keyPattern) {
-					//if it is (string) or (int) inside contents
-					keyPattern = toPattern(keyPattern)
-				}
-				regexpRoute = strings.Replace(registedPath, backupKey, keyPattern, -1)
-				//println("regex found for "+key)
-			} else {
-
-				//if no regex found in this key then add the w+
-				regexpRoute = strings.Replace(regexpRoute, backupKey, "\\w+", -1)
-
-			}
-		}
-
-		//regexpRoute = pattern.ReplaceAllString(registedPath, "\\w+") + "$" //replace that {key} with /w+ and on the finish $
-		regexpRoute = strings.Replace(regexpRoute, "/", "\\/", -1) + "$" ///escape / character for regex and finish it with $, if route/{name} and req url is route/{name}/somethingelse then it will not be matched
 		routePattern := regexp.MustCompile(regexpRoute)
 		Route.Pattern = routePattern
 

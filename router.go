@@ -10,9 +10,12 @@ import (
 )
 
 const (
-	COOKIE_NAME = "____iris____"
+	// CookieName is the name of the cookie which this frameworks sends to the temporary request in order to get the named parameters
+	CookieName = "____iris____"
 )
 
+// Router is the router , one router per server.
+// Router contains the global middleware, the routes and a Mutex for lock and unlock on route prepare
 type Router struct {
 	MiddlewareSupporter
 	//routes map[string]*Route, I dont need this anymore because I will have to iterate to all of them to check the regex pattern vs request url..
@@ -20,20 +23,24 @@ type Router struct {
 	mu     sync.RWMutex
 }
 
-func NewRouter() *Router {
+// NewRouter creates and returns an empty Router
+func newRouter() *Router {
 	return &Router{routes: make([]*Route, 0)}
 }
 
-//registedPath is the name of the route + the pattern
-func (this *Router) Handle(registedPath string, handler HTTPHandler, methods ...string) *Route {
-	this.mu.Lock()
-	defer this.mu.Unlock()
+// Handle registers and returns a route with a path string, a handler and optinally methods as parameters
+// registedPath is the name of the route + the pattern
+//
+// Handle is exported for the future, not being used outside of the iris package yet, some of other functions also.
+func (r *Router) Handle(registedPath string, handler HTTPHandler, methods ...string) *Route {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	var route *Route
 	if registedPath == "" {
 		registedPath = "/"
 	}
 
-	if handler != nil || registedPath == MATCH_EVERYTHING {
+	if handler != nil || registedPath == MatchEverything {
 
 		//validate the handler to be a func
 
@@ -46,25 +53,30 @@ func (this *Router) Handle(registedPath string, handler HTTPHandler, methods ...
 		//			methods = []string{HttpMethods.GET}
 		//		}
 
-		route = NewRoute(registedPath, handler, methods...)
+		route = newRoute(registedPath, handler, methods...)
 
-		if len(this.middlewareHandlers) > 0 {
+		if len(r.middlewareHandlers) > 0 {
 			//if global middlewares are registed then push them to this route.
-			route.middlewareHandlers = this.middlewareHandlers
+			route.middlewareHandlers = r.middlewareHandlers
 		}
 
-		this.routes = append(this.routes, route)
+		r.routes = append(r.routes, route)
 	}
 	return route
 }
-func (this *Router) RegisterHandler(irisHandler Handler) (*Route, error) {
+
+// RegisterHandler registers a route handler using a Struct
+// implements Handle() function and has iris.Handler anonymous property
+// which it's metadata has the form of
+// `method:"path" template:"file.html"` and returns the route and an error if any occurs
+func (r *Router) RegisterHandler(irisHandler Handler) (*Route, error) {
 	var route *Route
 	var methods []string
 	var path string
 	var handleFunc reflect.Value
 	var template string
-	var templateIsGLob bool = false
-	var err error = errors.New("")
+	var templateIsGLob = false
+	var err = errors.New("")
 	val := reflect.ValueOf(irisHandler).Elem()
 
 	for i := 0; i < val.NumField(); i++ {
@@ -138,7 +150,7 @@ func (this *Router) RegisterHandler(irisHandler Handler) (*Route, error) {
 	}
 
 	if err == nil {
-		//route = this.server.Router.Route(path, irisHandler.Handle, methods...)
+		//route = r.server.Router.Route(path, irisHandler.Handle, methods...)
 
 		//now check/get the Handle method from the irisHandler 'obj'.
 		handleFunc = reflect.ValueOf(irisHandler).MethodByName("Handle")
@@ -148,7 +160,7 @@ func (this *Router) RegisterHandler(irisHandler Handler) (*Route, error) {
 		}
 
 		if err == nil {
-			route = this.Handle(path, handleFunc.Interface(), methods...)
+			route = r.Handle(path, handleFunc.Interface(), methods...)
 			//check if template string has stored by the tag ( look before this block )
 
 			if template != "" {
@@ -165,9 +177,9 @@ func (this *Router) RegisterHandler(irisHandler Handler) (*Route, error) {
 	return route, err
 }
 
-func (this *Router) getRouteByRegistedPath(registedPath string) *Route {
+func (r *Router) getRouteByRegistedPath(registedPath string) *Route {
 
-	for _, route := range this.routes {
+	for _, route := range r.routes {
 		if route.path == registedPath {
 			return route
 		}
@@ -176,33 +188,34 @@ func (this *Router) getRouteByRegistedPath(registedPath string) *Route {
 
 }
 
-/* GLOBAL MIDDLEWARE */
+///////////////////
+//global middleware
+///////////////////
 
-func (this *Router) Use(handler MiddlewareHandler) *Router {
-	this.MiddlewareSupporter.Use(handler)
+// Use registers a a custom handler, with next, as a global middleware
+func (r *Router) Use(handler MiddlewareHandler) *Router {
+	r.MiddlewareSupporter.Use(handler)
 	//IF this is called after the routes
-	if len(this.routes) > 0 {
-		for _, route := range this.routes {
+	if len(r.routes) > 0 {
+		for _, route := range r.routes {
 			route.Use(handler)
 		}
 	}
-	return this
+	return r
 }
 
-//
-
-//Here returns the error code if no route found
-func (this *Router) Find(req *http.Request) (*Route, int) {
-	reqUrlPath := req.URL.Path
+//find returns the correct/matched route, if any, for  the request passed as parameter
+func (r *Router) find(req *http.Request) (*Route, int) {
+	reqURLPath := req.URL.Path
 	wrongMethod := false
-	for _, route := range this.routes {
-		if route.Match(reqUrlPath) {
-			if route.ContainsMethod(req.Method) == false {
+	for _, route := range r.routes {
+		if route.match(reqURLPath) {
+			if route.containsMethod(req.Method) == false {
 				wrongMethod = true
 				continue
 			}
 
-			reqPathSplited := strings.Split(reqUrlPath, "/")
+			reqPathSplited := strings.Split(reqURLPath, "/")
 			routePathSplited := strings.Split(route.path, "/")
 			/*if len(reqPathSplited) != len(reqPathSplited) {
 				panic("This error has no excuse, line 99 iris/router/Router.go")
@@ -213,16 +226,16 @@ func (this *Router) Find(req *http.Request) (*Route, int) {
 
 				for splitIndex, pathPart := range routePathSplited {
 					//	pathPart = pathPart. //here must be replace :name(dsadsa) to name in order to comprae it with the key
-					hasRegex := strings.Contains(pathPart, PARAMETER_PATTERN_START) // polu proxeira...
+					hasRegex := strings.Contains(pathPart, ParameterPatternStart) // polu proxeira...
 
-					if (hasRegex && strings.Contains(pathPart, PARAMETER_START+key+PARAMETER_PATTERN_START)) || (!hasRegex && strings.Contains(pathPart, PARAMETER_START+key)) {
+					if (hasRegex && strings.Contains(pathPart, ParameterStart+key+ParameterPatternStart)) || (!hasRegex && strings.Contains(pathPart, ParameterStart+key)) {
 						param := key + "=" + reqPathSplited[splitIndex]
 						cookieFullValue += "," + param
 					}
 				}
 			}
 			if cookieFullValue != "" {
-				_cookie := &http.Cookie{Name: COOKIE_NAME, Value: cookieFullValue[1:]} //remove the first comma
+				_cookie := &http.Cookie{Name: CookieName, Value: cookieFullValue[1:]} //remove the first comma
 				req.AddCookie(_cookie)
 			}
 

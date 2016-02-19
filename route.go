@@ -7,6 +7,9 @@ import (
 	"sync"
 )
 
+// Route contains its middleware, handler, pattern , it's path string, http methods and a template cache
+// Used to determinate which handler on which path must call
+// Used on router.go
 type Route struct {
 
 	//Middleware
@@ -28,7 +31,8 @@ type Route struct {
 
 }
 
-func NewRoute(registedPath string, handler HTTPHandler, methods ...string) *Route {
+// newRoute creates, from a path string, handler and optional http methods and returns a new route pointer
+func newRoute(registedPath string, handler HTTPHandler, methods ...string) *Route {
 	if methods == nil {
 		methods = make([]string, 0)
 	}
@@ -59,8 +63,9 @@ func NewRoute(registedPath string, handler HTTPHandler, methods ...string) *Rout
 	return Route
 }
 
-func (this *Route) ContainsMethod(method string) bool {
-	for _, m := range this.methods {
+// containsMethod determinates if this route contains a http method
+func (r *Route) containsMethod(method string) bool {
+	for _, m := range r.methods {
 		if m == method {
 			return true
 		}
@@ -68,76 +73,80 @@ func (this *Route) ContainsMethod(method string) bool {
 	return false
 }
 
-func (this *Route) Methods(methods ...string) *Route {
-	this.methods = append(this.methods, methods...)
-	return this
+// Methods adds methods to its registed http methods
+func (r *Route) Methods(methods ...string) *Route {
+	r.methods = append(r.methods, methods...)
+	return r
 }
 
-func (route *Route) Match(urlPath string) bool {
-	return route.path == MATCH_EVERYTHING || route.Pattern.MatchString(urlPath)
+// Match determinates if this route match with a url
+func (r *Route) match(urlPath string) bool {
+	return r.path == MatchEverything || r.Pattern.MatchString(urlPath)
 }
 
-func (route *Route) Template() *TemplateCache {
-	if route.templates == nil {
-		route.templates = NewTemplateCache()
+// Template creates (if not exists) and returns the template cache for this route
+func (r *Route) Template() *TemplateCache {
+	if r.templates == nil {
+		r.templates = NewTemplateCache()
 	}
-	return route.templates
+	return r.templates
 }
 
-//Here to check for parameters passed to the Handler with ...interface{}
-func (this *Route) run(res http.ResponseWriter, req *http.Request) {
+// run runs the route, this means response to the client's Request.
+// Here is the place for checking for parameters passed to the Handler with ...interface{}
+func (r *Route) run(res http.ResponseWriter, req *http.Request) {
 	//var some []reflect.Value
 
-	if this.handlerAcceptsBothContextRenderer {
+	if r.handlerAcceptsBothContextRenderer {
 		ctx := NewContext(res, req)
 		renderer := NewRenderer(res)
-		if this.templates != nil {
-			renderer.templateCache = this.templates
+		if r.templates != nil {
+			renderer.templateCache = r.templates
 		}
 
-		this.handler.(func(context *Context, renderer *Renderer))(ctx, renderer)
-	} else if this.handlerAcceptsBothResponseRequest {
-		this.handler.(func(res http.ResponseWriter, req *http.Request))(res, req)
-	} else if this.handlerAcceptsOnlyContext {
+		r.handler.(func(context *Context, renderer *Renderer))(ctx, renderer)
+	} else if r.handlerAcceptsBothResponseRequest {
+		r.handler.(func(res http.ResponseWriter, req *http.Request))(res, req)
+	} else if r.handlerAcceptsOnlyContext {
 		ctx := NewContext(res, req)
-		this.handler.(func(context *Context))(ctx)
-	} else if this.handlerAcceptsOnlyRenderer {
+		r.handler.(func(context *Context))(ctx)
+	} else if r.handlerAcceptsOnlyRenderer {
 		renderer := NewRenderer(res)
-		if this.templates != nil {
-			renderer.templateCache = this.templates
+		if r.templates != nil {
+			renderer.templateCache = r.templates
 		}
-		this.handler.(func(context *Renderer))(renderer)
+		r.handler.(func(context *Renderer))(renderer)
 	}
 
 }
 
-//Runs once before the first ServeHTTP
-func (this *Route) Prepare() {
-	this.mu.Lock()
-	defer this.mu.Unlock()
-	if this.handler != nil {
+// prepare prepares the route's handler , places it to the last middleware , handler acts like a middleware too.
+// Runs once before the first ServeHTTP
+func (r *Route) prepare() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.handler != nil {
 		convertedMiddleware := MiddlewareHandlerFunc(func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
-			//this.Handler(res, req) :->
-			this.run(res, req)
+			//r.Handler(res, req) :->
+			r.run(res, req)
 			next(res, req)
 		})
 
-		this.Use(convertedMiddleware)
+		r.Use(convertedMiddleware)
 	}
 
 	//here if no methods are defined at all, then use GET by default.
-	if this.methods == nil {
-		this.methods = []string{HTTPMethods.GET}
+	if r.methods == nil {
+		r.methods = []string{HTTPMethods.GET}
 	}
 
-	this.isReady = true
+	r.isReady = true
 }
 
-//
-
-func (this *Route) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	if this.isReady == false && this.handler != nil {
-		this.Prepare()
+// ServeHTTP serves this route and it's middleware
+func (r *Route) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	if r.isReady == false && r.handler != nil {
+		r.prepare()
 	}
-	this.middleware.ServeHTTP(res, req)
+	r.middleware.ServeHTTP(res, req)
 }

@@ -1,9 +1,9 @@
 package iris
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
-	"bytes"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -199,7 +199,7 @@ func TestRoutesServerSide(t *testing.T) {
 	testServer = httptest.NewUnstartedServer(api)
 	/*recorder := httptest.NewRecorder()
 	testServer = httptest.NewUnstartedServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		route, errCode := api.server.Router.Find(req)
+		route, errCode := api.server.router.find(req)
 		if route == nil {
 			res.WriteHeader(errCode)
 			res.Write([]byte("from the handler"))
@@ -215,12 +215,12 @@ func TestRoutesServerSide(t *testing.T) {
 func TestRoutesClientSide(t *testing.T) {
 	for _, route := range inlineRoutes {
 		for _, requestRoute := range route.Requests {
-			buffer :=  new(bytes.Buffer)
-			_,err := buffer.Write(requestRoute.Body)
+			buffer := new(bytes.Buffer)
+			_, err := buffer.Write(requestRoute.Body)
 			if err != nil {
 				t.Fatal("Error creating the buffer for Route's body : ", route.Path+" Error: ", err.Error())
 			}
-			req, err := http.NewRequest(requestRoute.Method, server.URL+requestRoute.Path,buffer)
+			req, err := http.NewRequest(requestRoute.Method, server.URL+requestRoute.Path, buffer)
 
 			if err != nil {
 				t.Fatal("Error creating the NewRequest for Route: ", route.Path+" Error with url: ", err.Error())

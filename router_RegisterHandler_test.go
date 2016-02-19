@@ -5,11 +5,11 @@ import (
 	"testing"
 )
 
-type testApiUsersHandler struct {
+type testAPIUsersHandler struct {
 	Handler `get:"/api/users/:userId(int)" template:"user.html"`
 }
 
-func (t *testApiUsersHandler) Handle(ctx *Context, renderer *Renderer) {}
+func (t *testAPIUsersHandler) Handle(ctx *Context, renderer *Renderer) {}
 
 type testStructedRoute struct {
 	handler                  Handler
@@ -19,7 +19,7 @@ type testStructedRoute struct {
 }
 
 var structedTests = [...]testStructedRoute{{
-	handler:                  new(testApiUsersHandler),
+	handler:                  new(testAPIUsersHandler),
 	expectedMethods:          []string{"GET"},
 	expectedPath:             "/api/users/:userId(int)",
 	expectedTemplateFilename: "/user.html",
