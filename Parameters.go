@@ -2,10 +2,11 @@ package iris
 
 import (
 	"net/http"
+	"net/url"
 	"strings"
 )
 
-// Parameters is just a type of pair (map[string]string) which contains the request's path parameters
+// Parameters is just a type of pair (map[string]string) which contains the request's path parameters only
 type Parameters map[string]string
 
 // Get gets a value from a key inside this Parameters map
@@ -13,7 +14,7 @@ func (params Parameters) Get(key string) string {
 	return params[key]
 }
 
-// Params returns all parameters (if any) from a request
+// Params returns all path named parameters (if any) from a request
 func Params(req *http.Request) Parameters {
 	_cookie, _err := req.Cookie(CookieName)
 	if _err != nil {
@@ -36,7 +37,7 @@ func Params(req *http.Request) Parameters {
 	return params
 }
 
-// Param receives a request and a key and returns the value of the parameter inside request
+// Param receives a request and a key and returns the value of the path named parameter inside request
 func Param(req *http.Request, key string) string {
 	params := Params(req)
 	param := ""
@@ -44,4 +45,14 @@ func Param(req *http.Request, key string) string {
 		param = params[key]
 	}
 	return param
+}
+
+// URLParams the URL.Query() is a complete function which returns the url get parameters from the url query, We don't have to do anything else here.
+func URLParams(req *http.Request) url.Values {
+	return req.URL.Query()
+}
+
+// URLParam returns the get parameter from a request , if any
+func URLParam(req *http.Request, key string) string {
+	return req.URL.Query().Get(key)
 }

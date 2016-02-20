@@ -2,3 +2,4 @@
 .git
 .settings
 .vscode/*
+.atom-build.json

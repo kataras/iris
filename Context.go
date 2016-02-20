@@ -26,15 +26,25 @@ func NewContext(res http.ResponseWriter, req *http.Request) *Context {
 	return &Context{ResponseWriter: res, Request: req, Params: params}
 }
 
-// Param returns the string representation of the key's value
+// Param returns the string representation of the key's path named parameter's value
 func (ctx *Context) Param(key string) string {
 	return ctx.Params.Get(key)
 }
 
-// ParamInt returns the int representation of the key's value
+// ParamInt returns the int representation of the key's path named parameter's value
 func (ctx *Context) ParamInt(key string) (int, error) {
 	val, err := strconv.Atoi(ctx.Params.Get(key))
 	return val, err
+}
+
+// URLParam returns the get parameter from a request , if any
+func (ctx *Context) URLParam(key string) string {
+	return URLParam(ctx.Request, key)
+}
+
+// URLParamInt returns the get parameter int value from a request , if any
+func (ctx *Context) URLParamInt(key string) (int, error) {
+	return strconv.Atoi(URLParam(ctx.Request, key))
 }
 
 // Write writes a string via the context's ResponseWriter

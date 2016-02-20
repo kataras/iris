@@ -1,4 +1,4 @@
-# iris
+# Iris Web Framework
 <img align="right" width="248" src="http://nodets.com/iris_logo.gif">
 [![Build Status](https://travis-ci.org/kataras/iris.svg)](https://travis-ci.org/kataras/iris)
 [![GoDoc](https://godoc.org/github.com/kataras/iris?status.svg)](https://godoc.org/github.com/kataras/iris)
@@ -195,6 +195,7 @@ of the following:
 ## Todo
 *  Complete the documents
 *  Query parameters
+*  Recover on panic support
 *  Create examples in this repository
 
 ## Licence
