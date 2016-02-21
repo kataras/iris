@@ -33,6 +33,7 @@ func New() *Server {
 	_server := new(Server)
 	_server.config = DefaultServerConfig()
 	_server.router = newRouter()
+	_server.Errors = DefaultHTTPErrors()
 	return _server
 }
 

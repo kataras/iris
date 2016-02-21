@@ -15,6 +15,8 @@ import (
 //
 // Server's New() located at the iris.go file
 type Server struct {
+	// Errors the meaning of these is that the developer can change the default handlers for http errors
+	Errors      *HTTPErrors
 	config      *ServerConfig
 	router      *Router
 	listenerTCP net.Listener
@@ -89,23 +91,31 @@ func (s *Server) Listen(fullHostOrPort interface{}) error {
 // ServeHTTP serves an http request,
 // with this function iris can be used also as  a middleware into other already defined http server
 func (s *Server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	var route, errCode = s.router.find(req)
+	//I thing it's better to keep the main serve to the server, this is the meaning of the Server struct .so delete: s.router.ServeHTTP(res, req)
+	route, errCode := s.router.find(req)
 
-	if errCode > 0 {
-		switch errCode {
-		case 405:
-			http.Error(res, "Error 405  Method Not Allowed", 405)
-		default:
-			http.NotFound(res, req)
-		}
-	} else {
+	switch errCode {
+	case http.StatusOK:
 		route.ServeHTTP(res, req)
-	}
+	case http.StatusMethodNotAllowed:
+		s.Errors.MethodNotAllowed.ServeHTTP(res, req)
+	case http.StatusNotFound:
+		s.Errors.NotFound.ServeHTTP(res, req)
+	default:
+		//get the handler for this error
+		errHandler := s.Errors.other[errCode]
 
+		if errHandler != nil {
+			errHandler.ServeHTTP(res,req)
+		}else {
+			//if not a handler for this error exists, then just: 
+			http.Error(res,"An unexcpecting error occurs ("+strconv.Itoa(errCode)+")",errCode)
+		}
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
-//expose some methods as public on the Server struct, more of them are from server's router
+//expose some methods as public on the Server struct, most of them are from server's router
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 /* global middleware */

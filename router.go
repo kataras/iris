@@ -204,7 +204,8 @@ func (r *Router) Use(handler MiddlewareHandler) *Router {
 	return r
 }
 
-//find returns the correct/matched route, if any, for  the request passed as parameter
+// find returns the correct/matched route, if any, for  the request passed as parameter
+// if error route != nil , then the errorcode will be 200 OK
 func (r *Router) find(req *http.Request) (*Route, int) {
 	reqURLPath := req.URL.Path
 	wrongMethod := false
@@ -239,16 +240,16 @@ func (r *Router) find(req *http.Request) (*Route, int) {
 				req.AddCookie(_cookie)
 			}
 
-			//break
-			return route, 0
+			//break. found
+			return route, http.StatusOK
 		}
 	}
 
 	//if route has found but with wrong method, we must continue it because maybe the next route has the correct method, but
 	//here if no method found
 	if wrongMethod {
-		return nil, 405
+		return nil, http.StatusMethodNotAllowed
 	}
 	//not found
-	return nil, 404
+	return nil, http.StatusNotFound
 }
