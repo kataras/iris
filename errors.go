@@ -2,6 +2,7 @@ package iris
 
 import (
 	"net/http"
+	"reflect"
 )
 
 // ErrorHandler creates a handler which is responsible to send a particular error to the client
@@ -25,32 +26,45 @@ func NotFoundRoute() http.Handler {
 // HTTPErrors is the struct which contains the handlers which will execute if http error occurs
 // One struct per Server instance, the meaning of this is that the developer can change the default error message and replace them with his/her own completely custom handlers
 type HTTPErrors struct {
-	NotFound         http.Handler
-	MethodNotAllowed http.Handler
-
-	// other errors, developer can do Errors.On(500, new http.Handler here...)
-	other map[int]http.Handler
+	//developer can do Errors.On(500, a  http.Handler || func(res,req)
+	errorHander map[int]http.Handler
 }
 
 // DefaultHTTPErrors creates and returns an instance of HTTPErrors with default handlers
 func DefaultHTTPErrors() *HTTPErrors {
 	httperrors := new(HTTPErrors)
-	httperrors.NotFound = http.NotFoundHandler()
-	httperrors.MethodNotAllowed = http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+	httperrors.errorHander = make(map[int]http.Handler, 0)
+	httperrors.NotFound(http.NotFoundHandler())
+	httperrors.MethodNotAllowed(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, "405 method not allowed", http.StatusMethodNotAllowed)
-	})
-	httperrors.other = make(map[int]http.Handler,0)
-	return httperrors
+	}))
 
+	return httperrors
 }
 
 // On Registers a handler for a specific http error status ( overrides the NotFound and MethodNotAllowed)
-func (he *HTTPErrors) On(httpStatus int, handler http.Handler) {
-	he.other[httpStatus] = handler
-	// if one of the pre-defined errors setted here then replace them too
-	if httpStatus == http.StatusNotFound {
-		he.NotFound = handler
-	} else if httpStatus == http.StatusMethodNotAllowed {
-		he.MethodNotAllowed = handler
+// Possible parameter: http.Handler || func(http.ResponseWriter,req *http.Request)
+func (he *HTTPErrors) On(httpStatus int, handler HTTPHandler) {
+	if httpStatus == http.StatusOK {
+		return
 	}
+
+	httpHandlerOfficialType := reflect.TypeOf((*http.Handler)(nil)).Elem()
+	if !reflect.TypeOf(handler).Implements(httpHandlerOfficialType) {
+		//it is not a http.Handler
+		//it is func(res,req) we will convert it to a handler using http.HandlerFunc
+		handler = http.HandlerFunc(handler.(func(res http.ResponseWriter, req *http.Request)))
+	}
+	he.errorHander[httpStatus] = handler.(http.Handler)
+}
+
+// NotFound Sets a StatusNotFound error 404 handler
+// Possible parameter: http.Handler || func(http.ResponseWriter,req *http.Request)
+func (he *HTTPErrors) NotFound(handler HTTPHandler) {
+	he.On(http.StatusNotFound, handler)
+}
+
+// MethodNotAllowed Sets a StatusMethodNotAllowed error 405 handler
+func (he *HTTPErrors) MethodNotAllowed(handler HTTPHandler) {
+	he.On(http.StatusMethodNotAllowed, handler)
 }

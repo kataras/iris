@@ -94,24 +94,20 @@ func (s *Server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	//I thing it's better to keep the main serve to the server, this is the meaning of the Server struct .so delete: s.router.ServeHTTP(res, req)
 	route, errCode := s.router.find(req)
 
-	switch errCode {
-	case http.StatusOK:
+	if errCode == http.StatusOK {
 		route.ServeHTTP(res, req)
-	case http.StatusMethodNotAllowed:
-		s.Errors.MethodNotAllowed.ServeHTTP(res, req)
-	case http.StatusNotFound:
-		s.Errors.NotFound.ServeHTTP(res, req)
-	default:
+	} else {
 		//get the handler for this error
-		errHandler := s.Errors.other[errCode]
+		errHandler := s.Errors.errorHander[errCode]
 
 		if errHandler != nil {
-			errHandler.ServeHTTP(res,req)
-		}else {
-			//if not a handler for this error exists, then just: 
-			http.Error(res,"An unexcpecting error occurs ("+strconv.Itoa(errCode)+")",errCode)
+			errHandler.ServeHTTP(res, req)
+		} else {
+			//if not a handler for this error exists, then just:
+			http.Error(res, "An unexcpecting error occurs ("+strconv.Itoa(errCode)+")", errCode)
 		}
 	}
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////

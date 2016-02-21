@@ -45,7 +45,7 @@ func (r *Router) Handle(registedPath string, handler HTTPHandler, methods ...str
 		//validate the handler to be a func
 
 		if reflect.TypeOf(handler).Kind() != reflect.Func {
-			panic("iris | Router.go:50 -- Handler HAS TO BE A func")
+			panic("iris | Router.go:50 -- Inline Handler HAS TO BE A func")
 		}
 
 		//I will do it inside the Prepare, because maybe developer don't wants the GET if methods not defined yet.

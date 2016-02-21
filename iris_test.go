@@ -12,6 +12,10 @@ import (
 	"testing"
 )
 
+const (
+	CustomNotFoundErrorMessage = "custom error 404"
+)
+
 type TestRequestRoute struct {
 	Method             string
 	Path               string
@@ -111,9 +115,9 @@ func teardown() {
 	testServer.Close()
 }
 
-func getRequestRoute(route TestRoute, reqUrl string) *TestRequestRoute {
+func getRequestRoute(route TestRoute, reqURL string) *TestRequestRoute {
 	for _, reqRoute := range route.Requests {
-		if reqRoute.Path == reqUrl {
+		if reqRoute.Path == reqURL {
 			return &reqRoute
 		}
 	}
@@ -172,8 +176,8 @@ func handleRoute(route TestRoute) func(c *Context) {
 
 		c.Write("Response from server to the client for route: " + route.Path + " client req url: " + c.Request.URL.Path)
 
-		reqUrl := c.Request.URL.Path
-		requestRoute := getRequestRoute(route, reqUrl)
+		reqURL := c.Request.URL.Path
+		requestRoute := getRequestRoute(route, reqURL)
 
 		if requestRoute == nil {
 			log.Fatal("No test-registed request url found for route ", route.Path)
@@ -195,6 +199,11 @@ func TestRoutesServerSide(t *testing.T) {
 	for _, route := range inlineRoutes {
 		api.Handle(route.Path, handleRoute(route)).Methods(route.Methods...)
 	}
+
+	// Set custom error messages
+	api.Errors.On(http.StatusNotFound, func(res http.ResponseWriter, req *http.Request) {
+		http.Error(res, CustomNotFoundErrorMessage, http.StatusNotFound)
+	})
 
 	testServer = httptest.NewUnstartedServer(api)
 	/*recorder := httptest.NewRecorder()
@@ -237,6 +246,22 @@ func TestRoutesClientSide(t *testing.T) {
 
 					if res.StatusCode != requestRoute.ExpectedStatusCode {
 						t.Fatal("Expecting StatusCode: ", requestRoute.ExpectedStatusCode, " but we got: ", res.StatusCode, " for Route: "+route.Path)
+					} else {
+						customErrHandler := api.Errors.errorHander[res.StatusCode]
+						//if we get the status we want and it was error  read the body to see if the error message is the same as setted as custom error message
+
+						if customErrHandler != nil {
+							//we have an error and we have setted a custom error message for this error status code.
+							responseBodyBytes, err := ioutil.ReadAll(res.Body)
+							responseBody := string(bytes.TrimSpace(responseBodyBytes))
+							if err == nil {
+								if responseBody != CustomNotFoundErrorMessage {
+									//if the body of the error page is different that we have setted, then the test failed
+									t.Fatal("Excpecting custom message '", CustomNotFoundErrorMessage, "' for the Status Code ", res.StatusCode, " but we got '", responseBody, "' from response.")
+								}
+							}
+						}
+
 					}
 
 				}
