@@ -1,26 +1,19 @@
 package iris
 
 import (
+	"fmt"
 	"net/http"
 	"reflect"
 )
 
 // ErrorHandler creates a handler which is responsible to send a particular error to the client
-func ErrorHandler(message string, errCode ...int) http.Handler {
+func ErrorHandler(message string, errCode int) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		if errCode == nil {
-			errCode = make([]int, 1)
-			errCode[0] = 404
-		}
-		res.WriteHeader(errCode[0])
-		res.Header().Add("Content Type", "text/html")
-		res.Write([]byte(message))
+		res.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		res.Header().Set("X-Content-Type-Options", "nosniff")
+		res.WriteHeader(errCode)
+		fmt.Fprintln(res, message)
 	})
-}
-
-// NotFoundRoute a custom error handler for 404 not found error, it has not be used yet.
-func NotFoundRoute() http.Handler {
-	return ErrorHandler("<h1> Sorry the route was not found! </h1>", 404)
 }
 
 // ErrorHandlers just a dictionary map[int] http.Handler
@@ -37,10 +30,8 @@ type HTTPErrors struct {
 func DefaultHTTPErrors() *HTTPErrors {
 	httperrors := new(HTTPErrors)
 	httperrors.errorHanders = make(ErrorHandlers, 0)
-	httperrors.SetNotFound(http.NotFoundHandler())
-	httperrors.SetMethodNotAllowed(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		http.Error(res, "405 method not allowed", http.StatusMethodNotAllowed)
-	}))
+	httperrors.SetNotFound(ErrorHandler("404 not found", http.StatusNotFound))
+	httperrors.SetMethodNotAllowed(ErrorHandler("405 method not allowed", http.StatusMethodNotAllowed))
 
 	return httperrors
 }

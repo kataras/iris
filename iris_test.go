@@ -247,7 +247,7 @@ func TestRoutesClientSide(t *testing.T) {
 					if res.StatusCode != requestRoute.ExpectedStatusCode {
 						t.Fatal("Expecting StatusCode: ", requestRoute.ExpectedStatusCode, " but we got: ", res.StatusCode, " for Route: "+route.Path)
 					} else {
-						customErrHandler := api.Errors.errorHander[res.StatusCode]
+						customErrHandler := api.Errors.errorHanders[res.StatusCode]
 						//if we get the status we want and it was error  read the body to see if the error message is the same as setted as custom error message
 
 						if customErrHandler != nil {

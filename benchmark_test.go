@@ -1,56 +1,102 @@
-///This is my first 'benchmark' excuse me if it is fail I will fix it when I learn more for these things*
 package iris
 
 import (
 	"net/http"
-	"strconv"
 	"testing"
 )
 
+// used ONLY in benchmark test
+type fakeResponseWriter struct{}
 
-//For now: run the example first and after go test -run=XXX -bench=.
+func (f *fakeResponseWriter) Header() (h http.Header) {
+	return http.Header{}
+}
+
+func (f *fakeResponseWriter) Write(p []byte) (n int, err error) {
+	return len(p), nil
+}
+
+func (f *fakeResponseWriter) WriteString(s string) (n int, err error) {
+	return len(s), nil
+}
+
+func (f *fakeResponseWriter) WriteHeader(int) {}
+
+// go test -bench BenchmarkTheRouter -run XXX
+// go test -run=XXX -bench=.
+// working: go test -bench BenchmarkTheRouter
 func BenchmarkRouter(b *testing.B) {
+	api := New()
+	for _, route := range inlineRoutes {
+		api.Handle(route.Path, func(res http.ResponseWriter, req *http.Request) {
 
-	for i := 0; i <= b.N; i++ {
-		println("Test ", i, " Started")
-		resp, err := http.Get("http://localhost/api/user/" + strconv.Itoa(i))
-		defer resp.Body.Close()
-		if err != nil {
-			b.Fatal("error on req ", err)
+		}).Methods(route.Methods...)
+	}
+	go http.ListenAndServe(":8080", api)
+	server.URL = "http://localhost:8080"
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for _, route := range inlineRoutes {
+			for _, requestRoute := range route.Requests {
+				res := new(fakeResponseWriter)
+				req, err := http.NewRequest(requestRoute.Method, server.URL+requestRoute.Path, nil)
 
-		}
-		if resp.StatusCode != 200 {
-			b.Fatalf("Received non-200 response: %d\n", resp.StatusCode)
-		}
-
-		//
-
-		resp, err = http.Get("http://localhost/profile/user/kataras/details/dsadsa" + strconv.Itoa(i))
-
-		if err != nil {
-			//b.Fatal("error on req ", err)
-			println("error on req ", err)
-			//	resp.Body.Close()
-
-		}
-		if resp.StatusCode != 200 {
-			b.Fatalf("Received non-200 response: %d\n", resp.StatusCode)
-		}
-
-		//
-
-		resp, err = http.Get("http://localhost/register")
-
-		if err != nil {
-			b.Fatal("error on req ", err)
+				if err != nil {
+					b.Fatal("Error creating the NewRequest for Route: ", route.Path+" Error with url: ", err.Error())
+				} else {
+					api.ServeHTTP(res, req)
+					if err != nil {
+						b.Fatal("Error on do client request to the server for Route: ", route.Path+" ERR: ", err.Error())
+					}
+				}
+			}
 
 		}
-		if resp.StatusCode != 200 {
-			b.Fatalf("Received non-200 response: %d\n", resp.StatusCode)
-		}
-
-		//
 
 	}
-
 }
+
+/* Results :
+PASS
+BenchmarkRouter-8          50000             35582 ns/op            9961 B/op        121 allocs/op
+*/
+
+// Other backup
+// With the testing server and all checks, not a good idea but keep it.
+// go test -bench BenchmarkTheRouter -run XXX
+// go test -run=XXX -bench=.
+/*func BenchmarkRouter(b *testing.B) {
+	setup()
+	TestRoutesServerSide(nil)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for _, route := range inlineRoutes {
+			for _, requestRoute := range route.Requests {
+				buffer := new(bytes.Buffer)
+				_, err := buffer.Write(requestRoute.Body)
+				if err != nil {
+					b.Fatal("Error creating the buffer for Route's body : ", route.Path+" Error: ", err.Error())
+				}
+				req, err := http.NewRequest(requestRoute.Method, server.URL+requestRoute.Path, buffer)
+
+				if err != nil {
+					b.Fatal("Error creating the NewRequest for Route: ", route.Path+" Error with url: ", err.Error())
+				} else {
+					//	res, err := client.Do(req)
+					res, err := http.DefaultClient.Do(req)
+					res.Close = true
+
+					if err != nil {
+						b.Fatal("Error on do client request to the server for Route: ", route.Path+" ERR: ", err.Error())
+					} else {
+					}
+				}
+			}
+
+		}
+
+	}
+	teardown()
+}*/
