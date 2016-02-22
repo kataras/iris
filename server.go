@@ -3,6 +3,7 @@ package iris
 import (
 	"net"
 	"net/http"
+	_ "net/http/pprof"
 	"reflect"
 	"strconv"
 	"strings"
@@ -37,8 +38,12 @@ func (s *Server) Port(port int) *Server {
 
 // Starts the http server ,tcp listening to the config's host and port
 func (s *Server) start() error {
+	//mux := http.NewServeMux()
+	mux := http.DefaultServeMux
+	if !Debug {
+		mux = http.NewServeMux()
+	}
 
-	mux := http.NewServeMux()
 	mux.Handle("/", s)
 
 	//return http.ListenAndServe(s.config.Host+strconv.Itoa(s.config.Port), mux)

@@ -28,6 +28,15 @@ func init() {
 	mainIris = nil
 }
 
+//Debug Setting to true you enable the go profiling tool
+// Memory profile (http://localhost:PORT/debug/pprof/heap)
+// CPU profile (http://localhost:PORT/debug/pprof/profile)
+// Goroutine blocking profile (http://localhost:PORT/debug/pprof/block)
+//
+// Debug its the the only one option which is global and shared between multiple server instance will be the Debug
+// Used in the server.go file when starting to the server and initialize the Mux.
+var Debug = false
+
 // New returns a new iris/server
 func New() *Server {
 	_server := new(Server)
