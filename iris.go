@@ -34,6 +34,9 @@ func New() *Server {
 	_server.config = DefaultServerConfig()
 	_server.router = newRouter()
 	_server.Errors = DefaultHTTPErrors()
+	// the only usage:  server -> router -> route -> context -> context has directly access to emit http errors
+	// like NotFound (no from Errors object because we are travel only the map of errors with their handlers)
+	_server.router.errorHandlers = _server.Errors.errorHanders
 	return _server
 }
 

@@ -19,8 +19,9 @@ const (
 type Router struct {
 	MiddlewareSupporter
 	//routes map[string]*Route, I dont need this anymore because I will have to iterate to all of them to check the regex pattern vs request url..
-	routes []*Route
-	mu     sync.RWMutex
+	routes        []*Route
+	mu            sync.RWMutex
+	errorHandlers ErrorHandlers //the only need of this is to pass into the route, which it need it to  passed it to Context, in order to  developer get the ability to perfom emit errors (eg NotFound) directly from context
 }
 
 // NewRouter creates and returns an empty Router
@@ -62,6 +63,9 @@ func (r *Router) Handle(registedPath string, handler HTTPHandler, methods ...str
 
 		r.routes = append(r.routes, route)
 	}
+
+	route.errorHandlers = r.errorHandlers
+
 	return route
 }
 

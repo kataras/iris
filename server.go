@@ -98,7 +98,7 @@ func (s *Server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		route.ServeHTTP(res, req)
 	} else {
 		//get the handler for this error
-		errHandler := s.Errors.errorHander[errCode]
+		errHandler := s.Errors.errorHanders[errCode]
 
 		if errHandler != nil {
 			errHandler.ServeHTTP(res, req)

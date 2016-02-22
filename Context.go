@@ -18,12 +18,13 @@ type Context struct {
 	ResponseWriter http.ResponseWriter
 	Request        *http.Request
 	Params         Parameters
+	errorHandlers  ErrorHandlers
 }
 
-// NewContext creates and returns a new Context pointer
-func NewContext(res http.ResponseWriter, req *http.Request) *Context {
+// newContext creates and returns a new Context pointer
+func newContext(res http.ResponseWriter, req *http.Request, errorHandlers ErrorHandlers) *Context {
 	params := Params(req)
-	return &Context{ResponseWriter: res, Request: req, Params: params}
+	return &Context{ResponseWriter: res, Request: req, Params: params, errorHandlers: errorHandlers}
 }
 
 // Param returns the string representation of the key's path named parameter's value
@@ -52,11 +53,6 @@ func (ctx *Context) Write(contents string) {
 	ctx.ResponseWriter.Write([]byte(contents))
 }
 
-// NotFound sends a http.NotFound response to the client
-func (ctx *Context) NotFound() {
-	http.NotFound(ctx.ResponseWriter, ctx.Request)
-}
-
 // Close is used to close the body of the request
 ///TODO: CHECK FOR REQUEST CLOSED IN ORDER TO FIX SOME ERRORS HERE
 func (ctx *Context) Close() {
@@ -66,4 +62,30 @@ func (ctx *Context) Close() {
 // ServeFile is used to serve a file, via the http.ServeFile
 func (ctx *Context) ServeFile(path string) {
 	http.ServeFile(ctx.ResponseWriter, ctx.Request, path)
+}
+
+// GetCookie get cookie's value by it's name
+func (ctx *Context) GetCookie(name string) string {
+	_cookie, _err := ctx.Request.Cookie(CookieName)
+	if _err != nil {
+		return ""
+	}
+	return _cookie.Value
+}
+
+// SetCookie adds a cookie to the request
+func (ctx *Context) SetCookie(name string, value string) {
+	c := &http.Cookie{Name: name, Value: value}
+	ctx.Request.AddCookie(c)
+}
+
+// I though about to do it at the Renderer struct, but I think it is better to have the Renderer struct only for
+// bigger things, because the word Render does not mean just write, but here in context we have a 'low level' write operators (?)
+// I will do it like that, and we'll see
+
+// NotFound emits an error 404 to the client, using the custom http errors
+// if no custom errors provided then use the default http.NotFound
+// which is already registed nothing special to do here
+func (ctx *Context) NotFound() {
+	ctx.errorHandlers[http.StatusNotFound].ServeHTTP(ctx.ResponseWriter, ctx.Request)
 }

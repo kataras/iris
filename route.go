@@ -14,14 +14,15 @@ type Route struct {
 
 	//Middleware
 	MiddlewareSupporter
-	mu        sync.RWMutex
-	methods   []string
-	path      string
-	handler   HTTPHandler
-	Pattern   *regexp.Regexp
-	ParamKeys []string
-	isReady   bool
-	templates *TemplateCache //this is passed to the Renderer
+	mu            sync.RWMutex
+	methods       []string
+	path          string
+	handler       HTTPHandler
+	Pattern       *regexp.Regexp
+	ParamKeys     []string
+	isReady       bool
+	templates     *TemplateCache //this is passed to the Renderer
+	errorHandlers ErrorHandlers  //the only need of this is to pass into the Context, in order to  developer get the ability to perfom emit errors (eg NotFound) directly from context
 	//
 	handlerAcceptsOnlyContext         bool
 	handlerAcceptsOnlyRenderer        bool
@@ -98,8 +99,8 @@ func (r *Route) run(res http.ResponseWriter, req *http.Request) {
 	//var some []reflect.Value
 
 	if r.handlerAcceptsBothContextRenderer {
-		ctx := NewContext(res, req)
-		renderer := NewRenderer(res)
+		ctx := newContext(res, req, r.errorHandlers)
+		renderer := newRenderer(res)
 		if r.templates != nil {
 			renderer.templateCache = r.templates
 		}
@@ -108,10 +109,10 @@ func (r *Route) run(res http.ResponseWriter, req *http.Request) {
 	} else if r.handlerAcceptsBothResponseRequest {
 		r.handler.(func(res http.ResponseWriter, req *http.Request))(res, req)
 	} else if r.handlerAcceptsOnlyContext {
-		ctx := NewContext(res, req)
+		ctx := newContext(res, req, r.errorHandlers)
 		r.handler.(func(context *Context))(ctx)
 	} else if r.handlerAcceptsOnlyRenderer {
-		renderer := NewRenderer(res)
+		renderer := newRenderer(res)
 		if r.templates != nil {
 			renderer.templateCache = r.templates
 		}

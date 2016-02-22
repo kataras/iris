@@ -40,9 +40,9 @@ type Renderer struct {
 	responseWriter http.ResponseWriter
 }
 
-// NewRenderer creates and returns a new Renderer pointer
+// newRenderer creates and returns a new Renderer pointer
 // Used at route.run
-func NewRenderer(writer http.ResponseWriter) *Renderer {
+func newRenderer(writer http.ResponseWriter) *Renderer {
 	return &Renderer{responseWriter: writer}
 }
 
