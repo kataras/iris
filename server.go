@@ -3,11 +3,49 @@ package iris
 import (
 	"net"
 	"net/http"
-	_ "net/http/pprof" // for testing purpose
+	"net/http/pprof" // for testing purpose
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 )
+
+var (
+	DebugPath = "/debug/pprof"
+)
+
+// Add paths for debug manually linked (alternative of using DefaultServeMux)
+func attachProfiler(theMux *http.ServeMux) {
+	theMux.HandleFunc(DebugPath+"/", pprof.Index)
+	theMux.HandleFunc(DebugPath+"/cmdline", pprof.Cmdline)
+	theMux.HandleFunc(DebugPath+"/profile", pprof.Profile)
+	theMux.HandleFunc(DebugPath+"/symbol", pprof.Symbol)
+
+	theMux.Handle(DebugPath+"/goroutine", pprof.Handler("goroutine"))
+	theMux.Handle(DebugPath+"/heap", pprof.Handler("heap"))
+	theMux.Handle(DebugPath+"/threadcreate", pprof.Handler("threadcreate"))
+	theMux.Handle(DebugPath+"/pprof/block", pprof.Handler("block"))
+}
+
+// tcpKeepAliveListener sets TCP keep-alive timeouts on accepted
+// connections. It's used by ListenAndServe and ListenAndServeTLS so
+// dead TCP connections (e.g. closing laptop mid-download) eventually
+// go away.
+//
+// this is excatcly a copy of the Go Source (net/http) server.go
+type tcpKeepAliveListener struct {
+	*net.TCPListener
+}
+
+func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
+	tc, err := ln.AcceptTCP()
+	if err != nil {
+		return
+	}
+	tc.SetKeepAlive(true)
+	tc.SetKeepAlivePeriod(3 * time.Minute)
+	return tc, nil
+}
 
 // Server is the container of the tcp listener used to start an http server,
 //
@@ -20,7 +58,7 @@ type Server struct {
 	Errors      *HTTPErrors
 	config      *ServerConfig
 	router      *Router
-	listenerTCP net.Listener
+	listenerTCP *tcpKeepAliveListener
 	isRunning   bool
 }
 
@@ -39,12 +77,17 @@ func (s *Server) Port(port int) *Server {
 // Starts the http server ,tcp listening to the config's host and port
 func (s *Server) start() error {
 	//mux := http.NewServeMux()
-	mux := http.DefaultServeMux
-	if !Debug {
-		mux = http.NewServeMux()
-	}
+	//mux := http.DefaultServeMux
+	//if !Debug {
+	//	mux = http.NewServeMux()
+	//}
+	mux := http.NewServeMux()
 
 	mux.Handle("/", s)
+
+	if Debug {
+		attachProfiler(mux)
+	}
 
 	//return http.ListenAndServe(s.config.Host+strconv.Itoa(s.config.Port), mux)
 	fullAddr := s.config.Host + ":" + strconv.Itoa(s.config.Port)
@@ -54,9 +97,10 @@ func (s *Server) start() error {
 		panic("Cannot run the server [problem with tcp listener on host:port]: " + fullAddr)
 	}
 
-	s.listenerTCP = listener //we need this because I think that we have to 'have' a Close() method on the server instance
+	s.listenerTCP = &tcpKeepAliveListener{listener.(*net.TCPListener)} //we need this because I think that we have to 'have' a Close() method on the server instance
+	defer s.listenerTCP.Close()
 	err = http.Serve(s.listenerTCP, mux)
-	s.listenerTCP.Close()
+
 	s.isRunning = true
 	return err
 }
@@ -88,7 +132,6 @@ func (s *Server) Listen(fullHostOrPort interface{}) error {
 	default:
 		s.config.Port = fullHostOrPort.(int)
 	}
-
 	return s.start()
 
 }

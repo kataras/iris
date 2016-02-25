@@ -3,3 +3,4 @@
 .settings
 .vscode/*
 .atom-build.json
+benchmark_results

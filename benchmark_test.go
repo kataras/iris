@@ -1,6 +1,7 @@
 package iris
 
 import (
+	"github.com/pkg/profile"
 	"net/http"
 	"testing"
 )
@@ -26,6 +27,7 @@ func (f *fakeResponseWriter) WriteHeader(int) {}
 // go test -run=XXX -bench=.
 // working: go test -bench BenchmarkRouter
 func BenchmarkRouter(b *testing.B) {
+	
 	api := New()
 	for _, route := range inlineRoutes {
 		api.Handle(route.Path, func(res http.ResponseWriter, req *http.Request) {
@@ -34,8 +36,10 @@ func BenchmarkRouter(b *testing.B) {
 	}
 	go http.ListenAndServe(":8080", api)
 	server.URL = "http://localhost:8080"
+	
 	b.ReportAllocs()
 	b.ResetTimer()
+	defer profile.Start().Stop()
 	for i := 0; i < b.N; i++ {
 		for _, route := range inlineRoutes {
 			for _, requestRoute := range route.Requests {
