@@ -17,27 +17,18 @@ type Route struct {
 	mu            sync.RWMutex
 	methods       []string
 	path          string
-	handler       HTTPHandler
+	handler       Handler
 	Pattern       *regexp.Regexp
 	ParamKeys     []string
 	isReady       bool
 	templates     *TemplateCache //this is passed to the Renderer
 	errorHandlers ErrorHandlers  //the only need of this is to pass into the Context, in order to  developer get the ability to perfom emit errors (eg NotFound) directly from context
-	//
-	handlerAcceptsOnlyContext         bool
-	handlerAcceptsOnlyRenderer        bool
-	handlerAcceptsBothContextRenderer bool
-	handlerAcceptsBothResponseRequest bool
-	//
 
 }
 
 // newRoute creates, from a path string, handler and optional http methods and returns a new route pointer
-func newRoute(registedPath string, handler HTTPHandler, methods ...string) *Route {
-	if methods == nil {
-		methods = make([]string, 0)
-	}
-	Route := &Route{handler: handler, path: registedPath, methods: methods, isReady: false}
+func newRoute(registedPath string, handler Handler) *Route {
+	Route := &Route{handler: handler, path: registedPath, isReady: false}
 	makePathPattern(Route) //moved to RegexHelper.go
 
 	if Route.handler != nil {
@@ -45,19 +36,6 @@ func newRoute(registedPath string, handler HTTPHandler, methods ...string) *Rout
 		if typeFn.NumIn() == 0 {
 			//no parameters passed to the route, then panic.
 			panic("iris: Route handler: Provide parameters to the handler, otherwise the route cannot be served")
-		}
-		///Maybe at the future change it to a static type check no just a string because developer may use other Context from other package... I dont know lawl
-		if hasContextAndRenderer(typeFn) {
-			Route.handlerAcceptsBothContextRenderer = true
-		} else if typeFn.NumIn() == 2 { //has two parameters but they are not context and render
-			Route.handlerAcceptsBothResponseRequest = true
-		} else if hasContextParam(typeFn) { //has only one parameter which is *Context
-			Route.handlerAcceptsOnlyContext = true
-		} else if hasRendererParam(typeFn) { //has one parameter, it's not *Context, then maybe it's Renderer
-			Route.handlerAcceptsOnlyRenderer = true
-		} else {
-			//panic wrong parameters passed
-			panic("iris: Route handler: Wrong parameters passed to the handler, pelase refer to the docs")
 		}
 	}
 
@@ -71,12 +49,22 @@ func (r *Route) containsMethod(method string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
 // Methods adds methods to its registed http methods
 func (r *Route) Methods(methods ...string) *Route {
+	if r.methods == nil {
+		r.methods = make([]string, 0)
+	}
 	r.methods = append(r.methods, methods...)
+	return r
+}
+
+// Method SETS a method to its registed http methods, overrides the previous methods registed (if any)
+func (r *Route) Method(method string) *Route {
+	r.methods = []string{HTTPMethods.GET}
 	return r
 }
 
@@ -98,27 +86,27 @@ func (r *Route) Template() *TemplateCache {
 func (r *Route) run(res http.ResponseWriter, req *http.Request) {
 	//var some []reflect.Value
 
-	if r.handlerAcceptsBothContextRenderer {
-		ctx := newContext(res, req, r.errorHandlers)
-		renderer := newRenderer(res)
-		if r.templates != nil {
-			renderer.templateCache = r.templates
-		}
+	/*	if r.handlerAcceptsBothContextRenderer {
+			ctx := newContext(res, req, r.errorHandlers)
+			renderer := newRenderer(res)
+			if r.templates != nil {
+				renderer.templateCache = r.templates
+			}
 
-		r.handler.(func(context *Context, renderer *Renderer))(ctx, renderer)
-	} else if r.handlerAcceptsBothResponseRequest {
-		r.handler.(func(res http.ResponseWriter, req *http.Request))(res, req)
-	} else if r.handlerAcceptsOnlyContext {
-		ctx := newContext(res, req, r.errorHandlers)
-		r.handler.(func(context *Context))(ctx)
-	} else if r.handlerAcceptsOnlyRenderer {
-		renderer := newRenderer(res)
-		if r.templates != nil {
-			renderer.templateCache = r.templates
+			r.handler.(func(context *Context, renderer *Renderer))(ctx, renderer)
+		} else if r.handlerAcceptsBothResponseRequest {
+			r.handler.(func(res http.ResponseWriter, req *http.Request))(res, req)
+		} else if r.handlerAcceptsOnlyContext {
+			ctx := newContext(res, req, r.errorHandlers)
+			r.handler.(func(context *Context))(ctx)
+		} else if r.handlerAcceptsOnlyRenderer {
+			renderer := newRenderer(res)
+			if r.templates != nil {
+				renderer.templateCache = r.templates
+			}
+			r.handler.(func(context *Renderer))(renderer)
 		}
-		r.handler.(func(context *Renderer))(renderer)
-	}
-
+	*/
 }
 
 // prepare prepares the route's handler , places it to the last middleware , handler acts like a middleware too.
@@ -129,7 +117,8 @@ func (r *Route) prepare() {
 	if r.handler != nil {
 		convertedMiddleware := MiddlewareHandlerFunc(func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
 			//r.Handler(res, req) :->
-			r.run(res, req)
+			//r.run(res, req)
+			r.handler.run(r, res, req)
 			next(res, req)
 		})
 

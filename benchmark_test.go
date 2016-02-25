@@ -24,7 +24,7 @@ func (f *fakeResponseWriter) WriteHeader(int) {}
 
 // go test -bench BenchmarkTheRouter -run XXX
 // go test -run=XXX -bench=.
-// working: go test -bench BenchmarkTheRouter
+// working: go test -bench BenchmarkRouter
 func BenchmarkRouter(b *testing.B) {
 	api := New()
 	for _, route := range inlineRoutes {

@@ -29,11 +29,11 @@ func newRouter() *Router {
 	return &Router{routes: make([]*Route, 0)}
 }
 
-// Handle registers and returns a route with a path string, a handler and optinally methods as parameters
+// HandleFunc registers and returns a route with a path string, a handler and optinally methods as parameters
 // registedPath is the name of the route + the pattern
 //
-// Handle is exported for the future, not being used outside of the iris package yet, some of other functions also.
-func (r *Router) Handle(registedPath string, handler HTTPHandler, methods ...string) *Route {
+// HandleFunc is exported for the future, not being used outside of the iris package yet, some of other functions also.
+func (r *Router) HandleFunc(registedPath string, handler Handler) *Route {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	var route *Route
@@ -46,15 +46,10 @@ func (r *Router) Handle(registedPath string, handler HTTPHandler, methods ...str
 		//validate the handler to be a func
 
 		if reflect.TypeOf(handler).Kind() != reflect.Func {
-			panic("iris | Router.go:50 -- Inline Handler HAS TO BE A func")
+			panic("iris | Router.go:50 -- On " + registedPath + " Inline Handler HAS TO BE A func BUT IT WAS " + reflect.TypeOf(handler).Kind().String())
 		}
 
-		//I will do it inside the Prepare, because maybe developer don't wants the GET if methods not defined yet.
-		//		if methods == nil {
-		//			methods = []string{HttpMethods.GET}
-		//		}
-
-		route = newRoute(registedPath, handler, methods...)
+		route = newRoute(registedPath, handler)
 
 		if len(r.middlewareHandlers) > 0 {
 			//if global middlewares are registed then push them to this route.
@@ -69,24 +64,24 @@ func (r *Router) Handle(registedPath string, handler HTTPHandler, methods ...str
 	return route
 }
 
-// RegisterHandler registers a route handler using a Struct
-// implements Handle() function and has iris.Handler anonymous property
+// HandleAnnotated registers a route handler using a Struct
+// implements Handle() function and has iris.Annotated anonymous property
 // which it's metadata has the form of
 // `method:"path" template:"file.html"` and returns the route and an error if any occurs
-func (r *Router) RegisterHandler(irisHandler Handler) (*Route, error) {
+func (r *Router) HandleAnnotated(irisHandler Annotated) (*Route, error) {
 	var route *Route
 	var methods []string
 	var path string
 	var handleFunc reflect.Value
 	var template string
 	var templateIsGLob = false
-	var err = errors.New("")
+	var errMessage = ""
 	val := reflect.ValueOf(irisHandler).Elem()
 
 	for i := 0; i < val.NumField(); i++ {
 		typeField := val.Type().Field(i)
 
-		if typeField.Name == "Handler" {
+		if typeField.Anonymous && typeField.Name == "Annotated" {
 			tags := strings.Split(strings.TrimSpace(string(typeField.Tag)), " ")
 			//we can have two keys, one is the tag starts with the method (GET,POST: "/user/api/{userId(int)}")
 			//and the other if exists is the OPTIONAL TEMPLATE/TEMPLATE-GLOB: "file.html"
@@ -108,7 +103,9 @@ func (r *Router) RegisterHandler(irisHandler Handler) (*Route, error) {
 				temlateTagValue, templateUnqerr := strconv.Unquote(string(secondTag[templateIdx+1:]))
 
 				if templateUnqerr != nil {
-					err = errors.New(err.Error() + "\niris.RegisterHandler: Error on getting template: " + templateUnqerr.Error())
+					//err = errors.New(err.Error() + "\niris.RegisterHandler: Error on getting template: " + templateUnqerr.Error())
+					errMessage = errMessage + "\niris.HandleAnnotated: Error on getting template: " + templateUnqerr.Error()
+
 					continue
 				}
 
@@ -123,7 +120,7 @@ func (r *Router) RegisterHandler(irisHandler Handler) (*Route, error) {
 			tagValue, unqerr := strconv.Unquote(string(firstTag[idx+1:]))
 
 			if unqerr != nil {
-				err = errors.New(err.Error() + "\niris.RegisterHandler: Error on getting path: " + unqerr.Error())
+				errMessage = errMessage + "\niris.HandleAnnotated: Error on getting path: " + unqerr.Error()
 				continue
 			}
 
@@ -134,37 +131,37 @@ func (r *Router) RegisterHandler(irisHandler Handler) (*Route, error) {
 
 				if !strings.Contains(avalaibleMethodsStr, tagName) {
 					//wrong methods passed
-					err = errors.New(err.Error() + "\niris.RegisterHandler: Wrong methods passed to Handler -> " + tagName)
+					errMessage = errMessage + "\niris.HandleAnnotated: Wrong methods passed to Handler -> " + tagName
 					continue
 				}
 
 				methods = strings.Split(tagName, ",")
-				err = nil
 				break
 			} else {
 				//it is single 'GET','POST' .... method
 				methods = []string{tagName}
-				err = nil
 				break
 
 			}
 
+		}else {
+			errMessage = "\nError on Iris on HandleAnnotated: Struct passed but it doesn't have an anonymous property of type iris.Annotated, please refer to docs\n"
 		}
 
 	}
 
-	if err == nil {
+	if errMessage == "" {
 		//route = r.server.Router.Route(path, irisHandler.Handle, methods...)
 
 		//now check/get the Handle method from the irisHandler 'obj'.
 		handleFunc = reflect.ValueOf(irisHandler).MethodByName("Handle")
-
 		if !handleFunc.IsValid() {
-			err = errors.New("Missing Handle function inside iris.Handler")
+			errMessage = "Missing Handle function inside iris.Annotated"
 		}
 
-		if err == nil {
-			route = r.Handle(path, handleFunc.Interface(), methods...)
+		if errMessage == "" {
+			route = r.HandleFunc(path, convertToHandler(handleFunc.Interface()))
+			route.Methods(methods...)
 			//check if template string has stored by the tag ( look before this block )
 
 			if template != "" {
@@ -176,6 +173,11 @@ func (r *Router) RegisterHandler(irisHandler Handler) (*Route, error) {
 			}
 		}
 
+	}
+
+	var err error = nil
+	if errMessage != "" {
+		err = errors.New(errMessage)
 	}
 
 	return route, err

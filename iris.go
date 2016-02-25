@@ -10,7 +10,7 @@ import (
 
 var (
 	avalaibleMethodsStr = strings.Join(HTTPMethods.ANY, ",")
-	mainIris            *Server
+	DefaultServer       *Server
 )
 
 // The one and only init to the whole package
@@ -24,8 +24,7 @@ func init() {
 	//TemplateCache.go
 	templatesDirectory = getCurrentDir()
 
-	//I don't want to store in the memory a New() Iris because user maybe wants to use the form of api := Iris.New(); api.Get... instead of Iris.Get... (yet)
-	mainIris = nil
+	DefaultServer = New()
 }
 
 //Debug Setting to true you enable the go profiling tool
@@ -53,124 +52,93 @@ func New() *Server {
 //for standalone instance of iris
 /////////////////////////////////
 
-func check() {
-	if mainIris == nil {
-		mainIris = New()
-	}
-}
-
 // ServeHTTP serves an http request,
 // with this function iris can be used also as  a middleware into other already defined http server
 func ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	check()
-	mainIris.ServeHTTP(res, req)
+	DefaultServer.ServeHTTP(res, req)
 }
 
 // Listen starts the standalone http server
 // which listens to the fullHostOrPort parameter which as the form of
 // host:port or just port
 func Listen(fullHostOrPort interface{}) error {
-	check()
-	return mainIris.Listen(fullHostOrPort)
+
+	return DefaultServer.Listen(fullHostOrPort)
 }
 
 // Use registers a a custom handler, with next, as a global middleware
 func Use(handler MiddlewareHandler) *Server {
-	check()
-	mainIris.router.Use(handler)
-	return mainIris
+
+	DefaultServer.router.Use(handler)
+	return DefaultServer
 }
 
 // UseFunc registers a function which is a handler, with next, as a global middleware
 func UseFunc(handlerFunc func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc)) *Server {
-	check()
-	mainIris.router.UseFunc(handlerFunc)
-	return mainIris
+	DefaultServer.router.UseFunc(handlerFunc)
+	return DefaultServer
 }
 
 // UseHandler registers a simple http.Handler as global middleware
 func UseHandler(handler http.Handler) *Server {
-	check()
-	mainIris.router.UseHandler(handler)
-	return mainIris
+	DefaultServer.router.UseHandler(handler)
+	return DefaultServer
 }
 
-// Handle registers a handler in the Router and returns a Route
-// Parameters (path string, handler HTTPHandler OR any struct implements the custom Iris Handler interface.)
+// Handle receives a struct ( look Router.HandleAnnotated) OR a path and an iris.Handler as second parameter ( look Router.HandleFunc)
 func Handle(params ...interface{}) *Route {
-	check()
-	return mainIris.Handle(params...)
-
+	return DefaultServer.Handle(params...)
 }
 
 // Get registers a route for the Get http method
-func Get(path string, handler HTTPHandler) *Route {
-	check()
-	return mainIris.Get(path, handler)
+func Get(path string, handler interface{}) *Route {
+	return DefaultServer.Get(path, handler)
 }
 
 // Post registers a route for the Post http method
-func Post(path string, handler HTTPHandler) *Route {
-	check()
-	return mainIris.Post(path, handler)
+func Post(path string, handler interface{}) *Route {
+	return DefaultServer.Post(path, handler)
 }
 
 // Put registers a route for the Put http method
-func Put(path string, handler HTTPHandler) *Route {
-	check()
-	return mainIris.Put(path, handler)
+func Put(path string, handler interface{}) *Route {
+	return DefaultServer.Put(path, handler)
 }
 
 // Delete registers a route for the Delete http method
-func Delete(path string, handler HTTPHandler) *Route {
-	check()
-	return mainIris.Delete(path, handler)
+func Delete(path string, handler interface{}) *Route {
+	return DefaultServer.Delete(path, handler)
 }
 
 // Connect registers a route for the Connect http method
-func Connect(path string, handler HTTPHandler) *Route {
-	check()
-	return mainIris.Connect(path, handler)
+func Connect(path string, handler interface{}) *Route {
+	return DefaultServer.Connect(path, handler)
 }
 
 // Head registers a route for the Head http method
-func Head(path string, handler HTTPHandler) *Route {
-	check()
-	return mainIris.Head(path, handler)
+func Head(path string, handler interface{}) *Route {
+	return DefaultServer.Head(path, handler)
 }
 
 // Options registers a route for the Options http method
-func Options(path string, handler HTTPHandler) *Route {
-	check()
-	return mainIris.Options(path, handler)
+func Options(path string, handler interface{}) *Route {
+	return DefaultServer.Options(path, handler)
 }
 
 // Patch registers a route for the Patch http method
-func Patch(path string, handler HTTPHandler) *Route {
-	check()
-	return mainIris.Patch(path, handler)
+func Patch(path string, handler interface{}) *Route {
+	return DefaultServer.Patch(path, handler)
 }
 
 // Trace registers a route for the Trace http methodd
-func Trace(path string, handler HTTPHandler) *Route {
-	check()
-	return mainIris.Trace(path, handler)
+func Trace(path string, handler interface{}) *Route {
+	return DefaultServer.Trace(path, handler)
 }
 
 // Any registers a route for ALL of the http methods (Get,Post,Put,Head,Patch,Options,Connect,Delete)
-func Any(path string, handler HTTPHandler) *Route {
-	check()
-	return mainIris.Any(path, handler)
-}
-
-// RegisterHandler registers a route handler using a Struct
-// implements Handle() function and has iris.Handler anonymous property
-// which it's metadata has the form of
-// `method:"path" template:"file.html"` and returns the route and an error if any occurs
-func RegisterHandler(irisHandler Handler) (*Route, error) {
-	check()
-	return mainIris.RegisterHandler(irisHandler)
+func Any(path string, handler interface{}) *Route {
+	return DefaultServer.Any(path, handler)
 }
 
 // Close is used to close the net.Listener of the standalone http server which has already running via .Listen
-func Close() { mainIris.Close() }
+func Close() { DefaultServer.Close() }

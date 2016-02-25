@@ -6,13 +6,13 @@ import (
 )
 
 type testAPIUsersHandler struct {
-	Handler `get:"/api/users/:userId(int)" template:"user.html"`
+	Annotated `get:"/api/users/:userId(int)" template:"user.html"`
 }
 
 func (t *testAPIUsersHandler) Handle(ctx *Context, renderer *Renderer) {}
 
 type testStructedRoute struct {
-	handler                  Handler
+	handler                  Annotated
 	expectedMethods          []string
 	expectedPath             string
 	expectedTemplateFilename string
@@ -25,13 +25,14 @@ var structedTests = [...]testStructedRoute{{
 	expectedTemplateFilename: "/user.html",
 }}
 
-func TestRouterRegisterHandler(t *testing.T) {
+func TestRouterHandleAnnotated(t *testing.T) {
 	iris := New()
 	for _, sr := range structedTests {
-		route, err := iris.router.RegisterHandler(sr.handler)
-
+		route, err := iris.router.HandleAnnotated(sr.handler)
+		//var err error
+		//route := iris.Handle(sr.handler)
 		if err != nil {
-			t.Fatal("Error on RegisterHandler: " + err.Error())
+			t.Fatal("Error on TestRouterHandleAnnotated: " + err.Error())
 		} else {
 			if !slicesAreEqual(sr.expectedMethods, route.methods) {
 				t.Fatal("Error on compare Methods: " + strings.Join(sr.expectedMethods, ",") + " != " + strings.Join(route.methods, ","))

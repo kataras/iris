@@ -3,7 +3,7 @@ package iris
 import (
 	"net"
 	"net/http"
-	_ "net/http/pprof"
+	_ "net/http/pprof" // for testing purpose
 	"reflect"
 	"strconv"
 	"strings"
@@ -139,77 +139,133 @@ func (s *Server) UseHandler(handler http.Handler) *Server {
 	return s
 }
 
+// I KEEP THIS FOR FUTURE USE MAYBE.
 // Handle registers a handler in the router and returns a Route
-// Parameters (path string, handler HTTPHandler OR any struct implements the custom Iris Handler interface.)
-func (s *Server) Handle(params ...interface{}) *Route {
-	//poor, but means path, custom HTTPhandler
-	if len(params) == 2 {
-		return s.router.Handle(params[0].(string), params[1].(HTTPHandler))
-	}
-	route, err := s.RegisterHandler(params[0].(Handler))
+// Parameters (path string, handler HTTPHandler (or middlewares and the last is the handler ...HTTPHandler) OR any struct implements the custom Iris Handler interface.)
+// This doesnt provide a way to predefine the httpmethod, we use the .Methods() to set methods after this Handle method returns the route
+/*func (s *Server) Handle(params ...interface{}) *Route {
+	//means custom struct for handler
+	var route *Route
+	var err error
+	argsLen := len(params)
+	if argsLen == 1 {
+		route, err = s.RegisterHandler(params[0].(Handler))
+	} else if argsLen >= 2 {
+		//means that we have a path string and the handler or handlers (as slice) OR just multiple arguments if this .Handle called directly.
+		var handlers []interface{}
+		// CARE IF the .Handle called directly the second parameter maybe not be a standalone slice
+		// it is always slice if get called by iris.Get,iris.Post and e.t.c but not if it's called directly, so we check it first.
+		//because that I removed the HTTPHandler and replace it with just an interface{} we had runtime errors on conversation between the []HTTPHandler and []interface{} when run the tests (which are call the .Handle directly)
+		// or I can make it no visible to the public ?
+		if reflect.TypeOf(params[1]).Kind() == reflect.Slice {
+			handlers = params[1].([]interface{})
+		} else {
+			//called directly so maybe have more than two params and the second parameter(params[1]) is not a slice
+			handlers = params[1:argsLen]
+		}
+		handlersLen := len(handlers)
 
+		if handlersLen == 1 {
+			//params[1].([]HTTPHandler)[0] (or handlers[0] )because the second parameter will be a slice using the handlers... at the Get, Post e.t.c... so we have to take the first of this slice
+			route = s.router.Handle(params[0].(string), handlers[0].(HTTPHandler))
+		} else {
+			//means that we have path string, some middlewares and the last of these is the handler
+			theHandler := handlers[handlersLen-1].(HTTPHandler) // get the last function, which is the  actual handler of the route
+			theMiddlewares := handlers[:handlersLen-1]          //get all except the last
+			route = s.router.Handle(params[0].(string), theHandler)
+			for _, theMiddleware := range theMiddlewares {
+				route.UseFunc(theMiddleware.(func(http.ResponseWriter, *http.Request, http.HandlerFunc)))
+			}
+
+		}
+
+	} else {
+		err = errors.New("Not supported parameters passed to the Handle[Get,Post...] please refer to the docs")
+	}
 	if err != nil {
 		panic(err.Error())
 	}
-
 	return route
+}*/
 
+//HandleFunc handle without methods, if not method given before the Listen then the http methods will be []{"GET"}
+func (s *Server) HandleFunc(path string, handler Handler) *Route {
+	return s.router.HandleFunc(path, handler)
+}
+
+// HandleAnnotated registers a route handler using a Struct
+// implements Handle() function and has iris.Annotated anonymous property
+// which it's metadata has the form of
+// `method:"path" template:"file.html"` and returns the route and an error if any occurs
+func (s *Server) HandleAnnotated(irisHandler Annotated) (*Route, error) {
+	return s.router.HandleAnnotated(irisHandler)
+}
+
+func (s *Server) Handle(params ...interface{}) *Route {
+	paramsLen := len(params)
+	if paramsLen == 0 {
+		panic("No arguments given to the Handle function, please refer to docs")
+	}
+
+	if reflect.TypeOf(params[0]).Kind() == reflect.String {
+		//menas first parameter is the path, wich means it is a simple path with handler -> HandleFunc
+		return s.HandleFunc(params[0].(string), convertToHandler(params[1]))
+	} else {
+		//means it's a struct which implements the iris.Annotated and have a Handle func inside it -> HandleAnnotated
+		r, err := s.HandleAnnotated(params[0].(Annotated))
+		if err != nil {
+			panic(err.Error())
+		}
+		return r
+	}
 }
 
 // Get registers a route for the Get http method
-func (s *Server) Get(path string, handler HTTPHandler) *Route {
-	return s.router.Handle(path, handler, HTTPMethods.GET)
+func (s *Server) Get(path string, handler interface{}) *Route {
+	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.GET)
 }
 
 // Post registers a route for the Post http method
-func (s *Server) Post(path string, handler HTTPHandler) *Route {
-	return s.router.Handle(path, handler, HTTPMethods.POST)
+func (s *Server) Post(path string, handler interface{}) *Route {
+	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.POST)
 }
 
 // Put registers a route for the Put http method
-func (s *Server) Put(path string, handler HTTPHandler) *Route {
-	return s.router.Handle(path, handler, HTTPMethods.PUT)
+func (s *Server) Put(path string, handler interface{}) *Route {
+	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.PUT)
 }
 
 // Delete registers a route for the Delete http method
-func (s *Server) Delete(path string, handler HTTPHandler) *Route {
-	return s.router.Handle(path, handler, HTTPMethods.DELETE)
+func (s *Server) Delete(path string, handler interface{}) *Route {
+	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.DELETE)
 }
 
 // Connect registers a route for the Connect http method
-func (s *Server) Connect(path string, handler HTTPHandler) *Route {
-	return s.router.Handle(path, handler, HTTPMethods.CONNECT)
+func (s *Server) Connect(path string, handler interface{}) *Route {
+	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.CONNECT)
 }
 
 // Head registers a route for the Head http method
-func (s *Server) Head(path string, handler HTTPHandler) *Route {
-	return s.router.Handle(path, handler, HTTPMethods.HEAD)
+func (s *Server) Head(path string, handler interface{}) *Route {
+	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.HEAD)
 }
 
 // Options registers a route for the Options http method
-func (s *Server) Options(path string, handler HTTPHandler) *Route {
-	return s.router.Handle(path, handler, HTTPMethods.OPTIONS)
+func (s *Server) Options(path string, handler interface{}) *Route {
+	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.OPTIONS)
 }
 
 // Patch registers a route for the Patch http method
-func (s *Server) Patch(path string, handler HTTPHandler) *Route {
-	return s.router.Handle(path, handler, HTTPMethods.PATCH)
+func (s *Server) Patch(path string, handler interface{}) *Route {
+	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.PATCH)
 }
 
 // Trace registers a route for the Trace http method
-func (s *Server) Trace(path string, handler HTTPHandler) *Route {
-	return s.router.Handle(path, handler, HTTPMethods.TRACE)
+func (s *Server) Trace(path string, handler interface{}) *Route {
+	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.TRACE)
 }
 
 // Any registers a route for ALL of the http methods (Get,Post,Put,Head,Patch,Options,Connect,Delete)
-func (s *Server) Any(path string, handler HTTPHandler) *Route {
-	return s.router.Handle(path, handler, HTTPMethods.ALL...)
-}
-
-// RegisterHandler registers a route handler using a Struct
-// implements Handle() function and has iris.Handler anonymous property
-// which it's metadata has the form of
-// `method:"path" template:"file.html"` and returns the route and an error if any occurs
-func (s *Server) RegisterHandler(irisHandler Handler) (*Route, error) {
-	return s.router.RegisterHandler(irisHandler)
+func (s *Server) Any(path string, handler interface{}) *Route {
+	return s.HandleFunc(path, convertToHandler(handler)).Methods(HTTPMethods.ALL...)
 }
