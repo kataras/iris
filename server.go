@@ -3,28 +3,32 @@ package iris
 import (
 	"net"
 	"net/http"
-	"net/http/pprof" // for testing purpose
+	"net/http/pprof" // for profiling purpose
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
 )
 
-var (
-	DebugPath = "/debug/pprof"
+const (
+	DefaultDebugPath = "/debug/pprof"
 )
 
 // Add paths for debug manually linked (alternative of using DefaultServeMux)
-func attachProfiler(theMux *http.ServeMux) {
-	theMux.HandleFunc(DebugPath+"/", pprof.Index)
-	theMux.HandleFunc(DebugPath+"/cmdline", pprof.Cmdline)
-	theMux.HandleFunc(DebugPath+"/profile", pprof.Profile)
-	theMux.HandleFunc(DebugPath+"/symbol", pprof.Symbol)
+func attachProfiler(r *Router, debugPath string) {
+	if len(debugPath) == 0 {
+		debugPath = DefaultDebugPath
+	}
+	r.HandleFunc(debugPath+"/", HandlerFunc(pprof.Index)).Method(HTTPMethods.GET)
+	r.HandleFunc(debugPath+"/cmdline", HandlerFunc(pprof.Cmdline)).Method(HTTPMethods.GET)
+	r.HandleFunc(debugPath+"/profile", HandlerFunc(pprof.Profile)).Method(HTTPMethods.GET)
+	r.HandleFunc(debugPath+"/symbol", HandlerFunc(pprof.Symbol)).Method(HTTPMethods.GET)
 
-	theMux.Handle(DebugPath+"/goroutine", pprof.Handler("goroutine"))
-	theMux.Handle(DebugPath+"/heap", pprof.Handler("heap"))
-	theMux.Handle(DebugPath+"/threadcreate", pprof.Handler("threadcreate"))
-	theMux.Handle(DebugPath+"/pprof/block", pprof.Handler("block"))
+	r.Handle(debugPath+"/goroutine", pprof.Handler("goroutine")).Method(HTTPMethods.GET)
+	r.Handle(debugPath+"/heap", pprof.Handler("heap")).Method(HTTPMethods.GET)
+	r.Handle(debugPath+"/threadcreate", pprof.Handler("threadcreate")).Method(HTTPMethods.GET)
+	r.Handle(debugPath+"/pprof/block", pprof.Handler("block")).Method(HTTPMethods.GET)
+
 }
 
 // tcpKeepAliveListener sets TCP keep-alive timeouts on accepted
@@ -55,38 +59,60 @@ func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
 // Server's New() located at the iris.go file
 type Server struct {
 	// Errors the meaning of these is that the developer can change the default handlers for http errors
-	Errors      *HTTPErrors
+	Errors *HTTPErrors
+
+	// Debug Setting to true you enable the go profiling tool
+	// Default Debug path (can changed via server.DebugPath = "/path/to/debug")
+	// Memory profile (http://localhost:PORT/debug/pprof/heap)
+	// CPU profile (http://localhost:PORT/debug/pprof/profile)
+	// Goroutine blocking profile (http://localhost:PORT/debug/pprof/block)
+	//
+	// Used in the server.go file when starting to the server and initialize the Mux.
+	debugEnabled bool
+	// DebugPath set this to change the default http paths for the profiler
+	debugPath   string
 	config      *ServerConfig
 	router      *Router
 	listenerTCP *tcpKeepAliveListener
 	isRunning   bool
 }
 
-// Host usage is to set the "host" of the server
-func (s *Server) Host(host string) *Server {
-	s.config.Host = host
-	return s
+// Debug Setting to true you enable the go profiling tool
+// Default Debug path (can changed via server.DebugPath = "/path/to/debug")
+// Memory profile (http://localhost:PORT/debug/pprof/heap)
+// CPU profile (http://localhost:PORT/debug/pprof/profile)
+// Goroutine blocking profile (http://localhost:PORT/debug/pprof/block)
+//
+// Second parameter is the DebugPath set this to change the default http paths for the profiler
+//
+// Used in the server.go file when starting to the server and initialize the Mux.
+func (s *Server) Debug(val bool, customPath ...string) {
+	s.debugEnabled = val
+	if customPath != nil && len(customPath) == 1 {
+		s.debugPath = customPath[0]
+	}
 }
 
-// Port usage is to set the port of the server
-func (s *Server) Port(port int) *Server {
-	s.config.Port = port
-	return s
+// Debug Setting to true you enable the go profiling tool
+// Default Debug path (can changed via server.DebugPath = "/path/to/debug")
+// Memory profile (http://localhost:PORT/debug/pprof/heap)
+// CPU profile (http://localhost:PORT/debug/pprof/profile)
+// Goroutine blocking profile (http://localhost:PORT/debug/pprof/block)
+//
+// Second parameter is the DebugPath set this to change the default http paths for the profiler
+//
+// Used in the server.go file when starting to the server and initialize the Mux.
+func Debug(val bool, customPath ...string) {
+	DefaultServer.Debug(val)
 }
 
 // Starts the http server ,tcp listening to the config's host and port
 func (s *Server) start() error {
-	//mux := http.NewServeMux()
-	//mux := http.DefaultServeMux
-	//if !Debug {
-	//	mux = http.NewServeMux()
-	//}
-	mux := http.NewServeMux()
+	mux := http.NewServeMux() //we use the http's ServeMux for now as the top- middleware of the server, for now.
 
 	mux.Handle("/", s)
-
-	if Debug {
-		attachProfiler(mux)
+	if s.debugEnabled  {
+		attachProfiler(s.router,s.debugPath)
 	}
 
 	//return http.ListenAndServe(s.config.Host+strconv.Itoa(s.config.Port), mux)
@@ -103,14 +129,6 @@ func (s *Server) start() error {
 
 	s.isRunning = true
 	return err
-}
-
-// Close is used to close the net.Listener of the standalone http server which has already running via .Listen
-func (s *Server) Close() {
-	if s.isRunning && s.listenerTCP != nil {
-		s.listenerTCP.Close()
-		s.isRunning = false
-	}
 }
 
 // Listen starts the standalone http server
@@ -136,6 +154,14 @@ func (s *Server) Listen(fullHostOrPort interface{}) error {
 
 }
 
+// Listen starts the standalone http server
+// which listens to the fullHostOrPort parameter which as the form of
+// host:port or just port
+func Listen(fullHostOrPort interface{}) error {
+
+	return DefaultServer.Listen(fullHostOrPort)
+}
+
 // ServeHTTP serves an http request,
 // with this function iris can be used also as  a middleware into other already defined http server
 func (s *Server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
@@ -158,92 +184,129 @@ func (s *Server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 }
 
+// ServeHTTP serves an http request,
+// with this function iris can be used also as  a middleware into other already defined http server
+func ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	DefaultServer.ServeHTTP(res, req)
+}
+
+// Close is used to close the net.Listener of the standalone http server which has already running via .Listen
+func (s *Server) Close() {
+	if s.isRunning && s.listenerTCP != nil {
+		s.listenerTCP.Close()
+		s.isRunning = false
+	}
+}
+
+// Close is used to close the net.Listener of the standalone http server which has already running via .Listen
+func Close() { DefaultServer.Close() }
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 //expose some methods as public on the Server struct, most of them are from server's router
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-/* global middleware */
-
-// Use registers a a custom handler, with next, as a global middleware
-func (s *Server) Use(handler MiddlewareHandler) *Server {
-	s.router.Use(handler)
-	return s
+// Get registers a route for the Get http method
+func (s *Server) Get(path string, handler interface{}) *Route {
+	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.GET)
 }
 
-// UseFunc registers a function which is a handler, with next, as a global middleware
-func (s *Server) UseFunc(handlerFunc func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc)) *Server {
-	s.router.UseFunc(handlerFunc)
-	return s
+// Get registers a route for the Get http method
+func Get(path string, handler interface{}) *Route {
+	return DefaultServer.Get(path, handler)
 }
 
-// UseHandler registers a simple http.Handler as global middleware
-func (s *Server) UseHandler(handler http.Handler) *Server {
-	s.router.UseHandler(handler)
-	return s
+// Post registers a route for the Post http method
+func (s *Server) Post(path string, handler interface{}) *Route {
+	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.POST)
 }
 
-// I KEEP THIS FOR FUTURE USE MAYBE.
-// Handle registers a handler in the router and returns a Route
-// Parameters (path string, handler HTTPHandler (or middlewares and the last is the handler ...HTTPHandler) OR any struct implements the custom Iris Handler interface.)
-// This doesnt provide a way to predefine the httpmethod, we use the .Methods() to set methods after this Handle method returns the route
-/*func (s *Server) Handle(params ...interface{}) *Route {
-	//means custom struct for handler
-	var route *Route
-	var err error
-	argsLen := len(params)
-	if argsLen == 1 {
-		route, err = s.RegisterHandler(params[0].(Handler))
-	} else if argsLen >= 2 {
-		//means that we have a path string and the handler or handlers (as slice) OR just multiple arguments if this .Handle called directly.
-		var handlers []interface{}
-		// CARE IF the .Handle called directly the second parameter maybe not be a standalone slice
-		// it is always slice if get called by iris.Get,iris.Post and e.t.c but not if it's called directly, so we check it first.
-		//because that I removed the HTTPHandler and replace it with just an interface{} we had runtime errors on conversation between the []HTTPHandler and []interface{} when run the tests (which are call the .Handle directly)
-		// or I can make it no visible to the public ?
-		if reflect.TypeOf(params[1]).Kind() == reflect.Slice {
-			handlers = params[1].([]interface{})
-		} else {
-			//called directly so maybe have more than two params and the second parameter(params[1]) is not a slice
-			handlers = params[1:argsLen]
-		}
-		handlersLen := len(handlers)
-
-		if handlersLen == 1 {
-			//params[1].([]HTTPHandler)[0] (or handlers[0] )because the second parameter will be a slice using the handlers... at the Get, Post e.t.c... so we have to take the first of this slice
-			route = s.router.Handle(params[0].(string), handlers[0].(HTTPHandler))
-		} else {
-			//means that we have path string, some middlewares and the last of these is the handler
-			theHandler := handlers[handlersLen-1].(HTTPHandler) // get the last function, which is the  actual handler of the route
-			theMiddlewares := handlers[:handlersLen-1]          //get all except the last
-			route = s.router.Handle(params[0].(string), theHandler)
-			for _, theMiddleware := range theMiddlewares {
-				route.UseFunc(theMiddleware.(func(http.ResponseWriter, *http.Request, http.HandlerFunc)))
-			}
-
-		}
-
-	} else {
-		err = errors.New("Not supported parameters passed to the Handle[Get,Post...] please refer to the docs")
-	}
-	if err != nil {
-		panic(err.Error())
-	}
-	return route
-}*/
-
-//HandleFunc handle without methods, if not method given before the Listen then the http methods will be []{"GET"}
-func (s *Server) HandleFunc(path string, handler Handler) *Route {
-	return s.router.HandleFunc(path, handler)
+// Post registers a route for the Post http method
+func Post(path string, handler interface{}) *Route {
+	return DefaultServer.Post(path, handler)
 }
 
-// HandleAnnotated registers a route handler using a Struct
-// implements Handle() function and has iris.Annotated anonymous property
-// which it's metadata has the form of
-// `method:"path" template:"file.html"` and returns the route and an error if any occurs
-func (s *Server) HandleAnnotated(irisHandler Annotated) (*Route, error) {
-	return s.router.HandleAnnotated(irisHandler)
+// Put registers a route for the Put http method
+func (s *Server) Put(path string, handler interface{}) *Route {
+	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.PUT)
 }
 
+// Put registers a route for the Put http method
+func Put(path string, handler interface{}) *Route {
+	return DefaultServer.Put(path, handler)
+}
+
+// Delete registers a route for the Delete http method
+func (s *Server) Delete(path string, handler interface{}) *Route {
+	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.DELETE)
+}
+
+// Delete registers a route for the Delete http method
+func Delete(path string, handler interface{}) *Route {
+	return DefaultServer.Delete(path, handler)
+}
+
+// Connect registers a route for the Connect http method
+func (s *Server) Connect(path string, handler interface{}) *Route {
+	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.CONNECT)
+}
+
+// Connect registers a route for the Connect http method
+func Connect(path string, handler interface{}) *Route {
+	return DefaultServer.Connect(path, handler)
+}
+
+// Head registers a route for the Head http method
+func (s *Server) Head(path string, handler interface{}) *Route {
+	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.HEAD)
+}
+
+// Head registers a route for the Head http method
+func Head(path string, handler interface{}) *Route {
+	return DefaultServer.Head(path, handler)
+}
+
+// Options registers a route for the Options http method
+func (s *Server) Options(path string, handler interface{}) *Route {
+	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.OPTIONS)
+}
+
+// Options registers a route for the Options http method
+func Options(path string, handler interface{}) *Route {
+	return DefaultServer.Options(path, handler)
+}
+
+// Patch registers a route for the Patch http method
+func (s *Server) Patch(path string, handler interface{}) *Route {
+	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.PATCH)
+}
+
+// Patch registers a route for the Patch http method
+func Patch(path string, handler interface{}) *Route {
+	return DefaultServer.Patch(path, handler)
+}
+
+// Trace registers a route for the Trace http method
+func (s *Server) Trace(path string, handler interface{}) *Route {
+	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.TRACE)
+}
+
+// Trace registers a route for the Trace http methodd
+func Trace(path string, handler interface{}) *Route {
+	return DefaultServer.Trace(path, handler)
+}
+
+// Any registers a route for ALL of the http methods (Get,Post,Put,Head,Patch,Options,Connect,Delete)
+func (s *Server) Any(path string, handler interface{}) *Route {
+	return s.HandleFunc(path, convertToHandler(handler)).Methods(HTTPMethods.ALL...)
+}
+
+// Any registers a route for ALL of the http methods (Get,Post,Put,Head,Patch,Options,Connect,Delete)
+func Any(path string, handler interface{}) *Route {
+	return DefaultServer.Any(path, handler)
+}
+
+// Handle registers a route to the server's router, pass a struct -implements iris.Annotated as parameter 
+// Or pass just a http.Handler or TypicalHandlerFunc or ContextedHandlerFunc or  RendereredHandlerFunc or ContextedRendererHandlerFunc or already an iris.Handler
 func (s *Server) Handle(params ...interface{}) *Route {
 	paramsLen := len(params)
 	if paramsLen == 0 {
@@ -252,10 +315,11 @@ func (s *Server) Handle(params ...interface{}) *Route {
 
 	if reflect.TypeOf(params[0]).Kind() == reflect.String {
 		//menas first parameter is the path, wich means it is a simple path with handler -> HandleFunc
+		// means: http.Handler or TypicalHandlerFunc or ContextedHandlerFunc or  RendereredHandlerFunc or ContextedRendererHandlerFunc or already an iris.Handler
 		return s.HandleFunc(params[0].(string), convertToHandler(params[1]))
 	} else {
-		//means it's a struct which implements the iris.Annotated and have a Handle func inside it -> HandleAnnotated
-		r, err := s.HandleAnnotated(params[0].(Annotated))
+		//means it's a struct which implements the iris.Annotated and have a Handle func inside it -> handleAnnotated
+		r, err := s.handleAnnotated(params[0].(Annotated))
 		if err != nil {
 			panic(err.Error())
 		}
@@ -263,52 +327,8 @@ func (s *Server) Handle(params ...interface{}) *Route {
 	}
 }
 
-// Get registers a route for the Get http method
-func (s *Server) Get(path string, handler interface{}) *Route {
-	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.GET)
-}
-
-// Post registers a route for the Post http method
-func (s *Server) Post(path string, handler interface{}) *Route {
-	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.POST)
-}
-
-// Put registers a route for the Put http method
-func (s *Server) Put(path string, handler interface{}) *Route {
-	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.PUT)
-}
-
-// Delete registers a route for the Delete http method
-func (s *Server) Delete(path string, handler interface{}) *Route {
-	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.DELETE)
-}
-
-// Connect registers a route for the Connect http method
-func (s *Server) Connect(path string, handler interface{}) *Route {
-	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.CONNECT)
-}
-
-// Head registers a route for the Head http method
-func (s *Server) Head(path string, handler interface{}) *Route {
-	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.HEAD)
-}
-
-// Options registers a route for the Options http method
-func (s *Server) Options(path string, handler interface{}) *Route {
-	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.OPTIONS)
-}
-
-// Patch registers a route for the Patch http method
-func (s *Server) Patch(path string, handler interface{}) *Route {
-	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.PATCH)
-}
-
-// Trace registers a route for the Trace http method
-func (s *Server) Trace(path string, handler interface{}) *Route {
-	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.TRACE)
-}
-
-// Any registers a route for ALL of the http methods (Get,Post,Put,Head,Patch,Options,Connect,Delete)
-func (s *Server) Any(path string, handler interface{}) *Route {
-	return s.HandleFunc(path, convertToHandler(handler)).Methods(HTTPMethods.ALL...)
+// Handle registers a route to the server's router, pass a struct -implements iris.Annotated as parameter 
+// Or pass just a http.Handler or TypicalHandlerFunc or ContextedHandlerFunc or  RendereredHandlerFunc or ContextedRendererHandlerFunc or already an iris.Handler
+func Handle(params ...interface{}) *Route {
+	return DefaultServer.Handle(params...)
 }

@@ -46,7 +46,7 @@ func (r *Router) HandleFunc(registedPath string, handler Handler) *Route {
 		//validate the handler to be a func
 
 		if reflect.TypeOf(handler).Kind() != reflect.Func {
-			panic("iris | Router.go:50 -- On " + registedPath + " Inline Handler HAS TO BE A func BUT IT WAS " + reflect.TypeOf(handler).Kind().String())
+			panic("iris | router.go:50 -- On " + registedPath + " Inline Handler HAS TO BE A func BUT IT WAS " + reflect.TypeOf(handler).Kind().String())
 		}
 
 		route = newRoute(registedPath, handler)
@@ -64,11 +64,21 @@ func (r *Router) HandleFunc(registedPath string, handler Handler) *Route {
 	return route
 }
 
-// HandleAnnotated registers a route handler using a Struct
+//HandleFunc handle without methods, if not method given before the Listen then the http methods will be []{"GET"}
+func (s *Server) HandleFunc(path string, handler Handler) *Route {
+	return s.router.HandleFunc(path, handler)
+}
+
+// Handle in the route registers a normal http.Handler
+func (r *Router) Handle(registedPath string, httpHandler http.Handler) *Route {
+	return r.HandleFunc(registedPath, HandlerFunc(httpHandler))
+}
+
+// handleAnnotated registers a route handler using a Struct
 // implements Handle() function and has iris.Annotated anonymous property
 // which it's metadata has the form of
 // `method:"path" template:"file.html"` and returns the route and an error if any occurs
-func (r *Router) HandleAnnotated(irisHandler Annotated) (*Route, error) {
+func (r *Router) handleAnnotated(irisHandler Annotated) (*Route, error) {
 	var route *Route
 	var methods []string
 	var path string
@@ -144,7 +154,7 @@ func (r *Router) HandleAnnotated(irisHandler Annotated) (*Route, error) {
 
 			}
 
-		}else {
+		} else {
 			errMessage = "\nError on Iris on HandleAnnotated: Struct passed but it doesn't have an anonymous property of type iris.Annotated, please refer to docs\n"
 		}
 
@@ -183,6 +193,14 @@ func (r *Router) HandleAnnotated(irisHandler Annotated) (*Route, error) {
 	return route, err
 }
 
+// HandleAnnotated registers a route handler using a Struct
+// implements Handle() function and has iris.Annotated anonymous property
+// which it's metadata has the form of
+// `method:"path" template:"file.html"` and returns the route and an error if any occurs
+func (s *Server) handleAnnotated(irisHandler Annotated) (*Route, error) {
+	return s.router.handleAnnotated(irisHandler)
+}
+
 func (r *Router) getRouteByRegistedPath(registedPath string) *Route {
 
 	for _, route := range r.routes {
@@ -208,6 +226,43 @@ func (r *Router) Use(handler MiddlewareHandler) *Router {
 		}
 	}
 	return r
+}
+
+// Use registers a a custom handler, with next, as a global middleware
+func (s *Server) Use(handler MiddlewareHandler) *Server {
+	s.router.Use(handler)
+	return s
+}
+
+// Use registers a a custom handler, with next, as a global middleware
+func Use(handler MiddlewareHandler) *Server {
+
+	DefaultServer.router.Use(handler)
+	return DefaultServer
+}
+
+// UseFunc registers a function which is a handler, with next, as a global middleware
+func (s *Server) UseFunc(handlerFunc func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc)) *Server {
+	s.router.UseFunc(handlerFunc)
+	return s
+}
+
+// UseFunc registers a function which is a handler, with next, as a global middleware
+func UseFunc(handlerFunc func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc)) *Server {
+	DefaultServer.router.UseFunc(handlerFunc)
+	return DefaultServer
+}
+
+// UseHandler registers a simple http.Handler as global middleware
+func (s *Server) UseHandler(handler http.Handler) *Server {
+	s.router.UseHandler(handler)
+	return s
+}
+
+// UseHandler registers a simple http.Handler as global middleware
+func UseHandler(handler http.Handler) *Server {
+	DefaultServer.router.UseHandler(handler)
+	return DefaultServer
 }
 
 // find returns the correct/matched route, if any, for  the request passed as parameter

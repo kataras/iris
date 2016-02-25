@@ -61,8 +61,6 @@ type Annotated interface {
 // 4. *iris.Context, *iris.Renderer
 type HTTPHandler interface{}
 
-
-
 //
 type Handler interface {
 	run(r *Route, res http.ResponseWriter, req *http.Request)
@@ -105,11 +103,18 @@ func (h TypicalHandlerFunc) run(r *Route, res http.ResponseWriter, req *http.Req
 	h(res, req)
 }
 
+func HandlerFunc(handler interface{}) Handler {
+	return convertToHandler(handler)
+}
+
 func convertToHandler(handler interface{}) Handler {
 	switch handler.(type) {
 	case Handler:
 		//it's already handler?
 		return handler.(Handler)
+	case http.Handler:
+		//it's a http.Handler which this implements the TypicalHandler (res,req) so its a TypicalHandlerFunc
+		return TypicalHandlerFunc(handler.(http.Handler).ServeHTTP)
 	case func(http.ResponseWriter, *http.Request):
 		return TypicalHandlerFunc(handler.(func(http.ResponseWriter, *http.Request)))
 	case func(*Context):
