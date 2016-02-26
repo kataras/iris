@@ -189,7 +189,7 @@ Iris framework has four (4) different forms of functions in order to declare a r
 	})
 ```
  3. Renderer parameter in function-declaration
-	 * **func(r *iris.Renderer) **
+	 * **func(r *iris.Renderer)**
 
 ```go
 	iris.Get("/profile/user/:userId(int)", func(r *iris.Renderer) {
