@@ -3,9 +3,10 @@ package iris
 import (
 	"net/http"
 	"reflect"
+	"strings"
 )
 
-// Annotated is the interface which is used of the structed-routes and be passed to the Router's RegisterHandler,
+// Annotated is the interface which is used of the structed-routes and be passed to the Router's Handle,
 // struct implements this Handler MUST have a function which has the form one of them:
 //
 // Handle(ctx *Context, renderer *Renderer)
@@ -38,7 +39,7 @@ import (
   ...
 
   api:= iris.New()
-  registerError := api.RegisterHandler(new(UserHandler))
+  registerError := api.Handle(&UserHandler{})
 
 */
 //or AnnotatedRoute  but its too big 'iris.AnnotatedRoute' 'iris.Annotated' is better but not the best, f* my eng vocabulary?
@@ -101,6 +102,48 @@ type TypicalHandlerFunc func(http.ResponseWriter, *http.Request)
 
 func (h TypicalHandlerFunc) run(r *Route, res http.ResponseWriter, req *http.Request) {
 	h(res, req)
+}
+
+// Static receives a path and returns an http.Handler which is handling the static files
+// The FileServer receives a directory and serves all it's children folders and files too
+// This maybe not the safest way to do it but we are ok for now.
+// When/if at the future I want more lower level & safier approach I can use ServeFile, ServeContent or much 'lower level', this :
+// http.ServeContent(res, req, "thefile", time.Now(), bytes.NewReader(data))
+/*var Static = func(dirpath string) http.Handler {
+	path := http.Dir(dirpath)
+	fs := http.FileServer(path)
+	return fs
+}*/
+
+type staticServer struct {
+	directory    string
+	fileServer   http.Handler
+	finalHandler http.Handler
+}
+
+func (s staticServer) run(r *Route, res http.ResponseWriter, req *http.Request) {
+	//example: iris.Get("/public/*",iris.Static("./static/files/") we need to strip the public
+	//we have access to the route's registed path via this run func, because of that we don't return just the simple http.Handler
+	if s.finalHandler == nil {
+		pathToStrip := r.path[:strings.LastIndex(r.path, "/")+1]
+		if len(pathToStrip) > 2 { // 2 because of slashes '/'public'/'
+			//[the stripPrefix makes some checks but I want the users of iris to use this format /public/* and no public/*]
+			s.finalHandler = http.StripPrefix(pathToStrip, s.fileServer)
+		} else {
+			s.finalHandler = s.fileServer
+		}
+
+	}
+	s.finalHandler.ServeHTTP(res, req)
+}
+
+// Static used as middleware to make a static file serving route
+// Static receives a directory/path of the filesystem and returns a handler which can be used inside a route
+func Static(dirpath string) staticServer {
+	path := http.Dir(dirpath)
+	fs := http.FileServer(path)
+	staticHandlerServer := staticServer{dirpath, fs, nil}
+	return staticHandlerServer
 }
 
 func HandlerFunc(handler interface{}) Handler {

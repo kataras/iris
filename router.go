@@ -44,10 +44,17 @@ func (r *Router) HandleFunc(registedPath string, handler Handler) *Route {
 	if handler != nil || registedPath == MatchEverything {
 
 		//validate the handler to be a func
+		//if reflect.TypeOf(handler).Kind() == reflect.Ptr {
+		//	//if it's a pointer of , then take it's value
+		//	println("its pointer so")
+		//	handler = reflect.ValueOf(handler).Elem().Interface().(Handler)
+		//}
 
-		if reflect.TypeOf(handler).Kind() != reflect.Func {
-			panic("iris | router.go:50 -- On " + registedPath + " Inline Handler HAS TO BE A func BUT IT WAS " + reflect.TypeOf(handler).Kind().String())
-		}
+		//if reflect.TypeOf(handler).Kind() != reflect.Func {
+		//	panic("iris | router.go:~49 -- On " + registedPath + " Inline Handler HAS TO BE A func BUT IT WAS " + reflect.TypeOf(handler).Kind().String())
+		//but handler can be a struct too, the run() is all we care...xmm
+		//}
+		//26-02-2016let the golang see if it's handler ( have the .run() method) no error checking.
 
 		route = newRoute(registedPath, handler)
 

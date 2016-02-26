@@ -111,8 +111,8 @@ func (s *Server) start() error {
 	mux := http.NewServeMux() //we use the http's ServeMux for now as the top- middleware of the server, for now.
 
 	mux.Handle("/", s)
-	if s.debugEnabled  {
-		attachProfiler(s.router,s.debugPath)
+	if s.debugEnabled {
+		attachProfiler(s.router, s.debugPath)
 	}
 
 	//return http.ListenAndServe(s.config.Host+strconv.Itoa(s.config.Port), mux)
@@ -305,7 +305,7 @@ func Any(path string, handler interface{}) *Route {
 	return DefaultServer.Any(path, handler)
 }
 
-// Handle registers a route to the server's router, pass a struct -implements iris.Annotated as parameter 
+// Handle registers a route to the server's router, pass a struct -implements iris.Annotated as parameter
 // Or pass just a http.Handler or TypicalHandlerFunc or ContextedHandlerFunc or  RendereredHandlerFunc or ContextedRendererHandlerFunc or already an iris.Handler
 func (s *Server) Handle(params ...interface{}) *Route {
 	paramsLen := len(params)
@@ -327,7 +327,7 @@ func (s *Server) Handle(params ...interface{}) *Route {
 	}
 }
 
-// Handle registers a route to the server's router, pass a struct -implements iris.Annotated as parameter 
+// Handle registers a route to the server's router, pass a struct -implements iris.Annotated as parameter
 // Or pass just a http.Handler or TypicalHandlerFunc or ContextedHandlerFunc or  RendereredHandlerFunc or ContextedRendererHandlerFunc or already an iris.Handler
 func Handle(params ...interface{}) *Route {
 	return DefaultServer.Handle(params...)

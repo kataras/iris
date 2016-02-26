@@ -2,7 +2,6 @@ package iris
 
 import (
 	"net/http"
-	"reflect"
 	"regexp"
 	"sync"
 )
@@ -31,13 +30,14 @@ func newRoute(registedPath string, handler Handler) *Route {
 	Route := &Route{handler: handler, path: registedPath, isReady: false}
 	makePathPattern(Route) //moved to RegexHelper.go
 
-	if Route.handler != nil {
+	//26-02-2016 handler can be a struct too which have a run(*route,response,request) method
+	/*if Route.handler != nil {
 		typeFn := reflect.TypeOf(Route.handler)
 		if typeFn.NumIn() == 0 {
 			//no parameters passed to the route, then panic.
 			panic("iris: Route handler: Provide parameters to the handler, otherwise the route cannot be served")
 		}
-	}
+	}*/
 
 	return Route
 }

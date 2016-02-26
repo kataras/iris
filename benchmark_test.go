@@ -9,6 +9,7 @@ import (
 const (
 	BenchmarkProfiler = false
 )
+
 // used ONLY in benchmark test
 type fakeResponseWriter struct{}
 
@@ -31,7 +32,7 @@ func (f *fakeResponseWriter) WriteHeader(int) {}
 // working: go test -bench BenchmarkRouter
 // add -benchtime 5s for example to see how much perfomance on 5 seconds instead of the 1s (default)
 func BenchmarkRouter(b *testing.B) {
-	
+
 	api := New()
 	for _, route := range inlineRoutes {
 		api.Handle(route.Path, func(res http.ResponseWriter, req *http.Request) {
@@ -40,13 +41,13 @@ func BenchmarkRouter(b *testing.B) {
 	}
 	go http.ListenAndServe(":8080", api)
 	server.URL = "http://localhost:8080"
-	
+
 	b.ReportAllocs()
 	b.ResetTimer()
 	if BenchmarkProfiler {
 		defer profile.Start().Stop()
 	}
-	
+
 	for i := 0; i < b.N; i++ {
 		for _, route := range inlineRoutes {
 			for _, requestRoute := range route.Requests {

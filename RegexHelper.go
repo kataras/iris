@@ -64,6 +64,30 @@ func makePathPattern(Route *Route) {
 	registedPath := Route.path
 	if registedPath != MatchEverything {
 		regexpRoute := registedPath
+		//it's not *
+		//but maybe it is /something/*
+
+		//so check the last character if it's '*'
+
+		//	if strings.Index("*",registedPath) == len(registedPath-1) {
+		if strings.HasSuffix(registedPath, "*") {
+			//the last character is '*'
+			regexpRoute = regexpRoute[:len(regexpRoute)-1] //we dont remove THE slash / before it (it would be -2)
+			//if we  remove the slash too then the :
+			// /test/*
+			// will match to the /testdsadsadsa not only to the /test and test/dsadsa
+			//but if we don't remove the slash and dont put other regex like slash but one word after a slash
+			//then the /test/*
+			// will not be mach to the /test
+			//but only to the /test/ or /test/something
+			//this is better we make sure that the user is using a full path and no just the /test but a /test/astyleforexample.css
+			regexpRoute += ".*" //only the last character can be *
+
+			//we can have /something/:name/*
+			// or /*
+			// or /something/else/*
+			//because of that we don't return/stop this function now, we continue to see if any named parameters exists and create regex for them too
+		}
 
 		routeWithoutParenthesis := regexp.MustCompile(RegexParenthesisAndContent).ReplaceAllString(registedPath, "")
 

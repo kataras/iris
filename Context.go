@@ -53,12 +53,6 @@ func (ctx *Context) Write(contents string) {
 	ctx.ResponseWriter.Write([]byte(contents))
 }
 
-// Close is used to close the body of the request
-///TODO: CHECK FOR REQUEST CLOSED IN ORDER TO FIX SOME ERRORS HERE
-func (ctx *Context) Close() {
-	ctx.Request.Body.Close()
-}
-
 // ServeFile is used to serve a file, via the http.ServeFile
 func (ctx *Context) ServeFile(path string) {
 	http.ServeFile(ctx.ResponseWriter, ctx.Request, path)
@@ -88,4 +82,15 @@ func (ctx *Context) SetCookie(name string, value string) {
 // which is already registed nothing special to do here
 func (ctx *Context) NotFound() {
 	ctx.errorHandlers[http.StatusNotFound].ServeHTTP(ctx.ResponseWriter, ctx.Request)
+}
+
+// Close is used to close the body of the request
+///TODO: CHECK FOR REQUEST CLOSED IN ORDER TO FIX SOME ERRORS HERE
+func (ctx *Context) Close() {
+	ctx.Request.Body.Close()
+}
+
+// End same as Close, end the response process.
+func (ctx *Context) End() {
+	ctx.Request.Body.Close()
 }
