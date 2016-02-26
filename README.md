@@ -35,7 +35,7 @@ $ go get github.com/kataras/iris
 - Simplicity Equals Productivity. The best way to make something seem simple is to have it actually be simple. iris's main functionality has clean, classically beautiful APIs
 
 ## Introduction
-The word iris means "rainbow" in Greek. Iris was the name of the Greek goddess of the rainbow. 
+The name of this framework came from **Greek mythology**, **Iris** was the name of the Greek goddess of the **rainbow**.
 Iris is a very minimal but flexible golang http middleware & standalone web application framework, providing a robust set of features for building single & multi-page, web applications.
 
 ```go
@@ -62,7 +62,7 @@ func main() {
 
 **Compatible:** At the end the iris is just a middleware which acts like router and a small simply web framework, this means that you can you use it side-by-side with your favorite big and well-tested web framework. Iris is fully compatible with the **net/http package.**
 
-**Miltiple servers :** Besides the fact that iris has a default main server, which only created only if you call any global function (e.x iris.Get). You can declare a new iris using the iris.New() func. server1:= iris.New(); server1.Get(....); server1.Listen(9999)
+**Miltiple servers :** Besides the fact that iris has a default main server. You can declare a new iris using the iris.New() func. example: server1:= iris.New(); server1.Get(....); server1.Listen(9999)
 
 
 
@@ -170,7 +170,7 @@ iris.Any("/public/*", iris.Static("./static/resources/")) //or Get
 //Note: strip of the /public/ is handled so don't worry 
 ```
 ## Declaring routes
-Iris framework has four (4) different forms of functions in order to declare a route's handler and a one(1) form of a struct to declare a complete route.
+Iris framework has four (4) different forms of functions in order to declare a route's handler and one(1) form of a struct to declare a complete route.
 
 
  1. Typical classic handler function, compatible with net/http and other frameworks
@@ -188,8 +188,8 @@ Iris framework has four (4) different forms of functions in order to declare a r
 	
 	})
 ```
- 3. Rederer parameter in function-declaration
-	 * **func(r *iris.Renderer)* **
+ 3. Renderer parameter in function-declaration
+	 * **func(r *iris.Renderer) **
 
 ```go
 	iris.Get("/profile/user/:userId(int)", func(r *iris.Renderer) {
@@ -231,7 +231,7 @@ func (u *UserHandler) Handle(ctx *iris.Context, r *iris.Renderer) {
 
 ```
 Personally I use the external struct and the func(ctx *iris.Context, r *iris.Renderer) form .
- At the next chapter you will learn what are the benefits of having the **Context** and the **Renderer ** as arguments/parameters to the Route handlers.
+ At the next chapter you will learn what are the benefits of having the  **Context**  and the  **Renderer**  as arguments/parameters to the Route handlers.
 
 **The next chapter is written at this time, will be published soon.**
 
