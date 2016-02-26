@@ -14,6 +14,8 @@ Iris is a very minimal but flexible web framework written in go, providing a rob
 - [Features](#features)
 - [API](#api)
 - [Named Parameters](#named-parameters)
+- [Match anything and the Static serve handler](#match-anything-and-the-static-serve-handler)
+- [Declaring routes](#declaring-routes)
 - [Third Party Middleware](#third-party-middleware)
 - [Contributors](#contributors)
 - [Community](#community)
@@ -33,7 +35,7 @@ $ go get github.com/kataras/iris
 - Simplicity Equals Productivity. The best way to make something seem simple is to have it actually be simple. iris's main functionality has clean, classically beautiful APIs
 
 ## Introduction
-The word iris means "rainbow" in Greek. Iris was the name of the Greek goddess of the rainbow.
+The word iris means "rainbow" in Greek. Iris was the name of the Greek goddess of the rainbow. 
 Iris is a very minimal but flexible golang http middleware & standalone web application framework, providing a robust set of features for building single & multi-page, web applications.
 
 ```go
@@ -50,7 +52,7 @@ func main() {
 
 ```
 
-## Features
+## Features 
 
 **Only explicit matches:** With other routers, like http.ServeMux, a requested URL path could match multiple patterns. Therefore they have some awkward pattern priority rules, like longest match or first registered, first matched. By design of this router, a request can only match exactly one or no route. As a result, there are also no unintended matches, which makes it great for SEO and improves the user experience.
 
@@ -83,8 +85,8 @@ func main() {
 	iris.Head("/testHead",testHead)
 	iris.Patch("/testPatch",testPatch)
 	iris.Options("/testOptions",testOptions)
-
-	iris.Listen(8080)
+	
+	iris.Listen(8080)	
 }
 
 //iris is fully compatible with net/http package
@@ -106,7 +108,7 @@ func testDelete(c *iris.Context, r *iris.Renderer) {
 //and so on....
 ```
 
-## Named Parameters
+## Named Parameters 
 
 Named parameters are just custom paths to your routes, you can access them for each request using context's **c.Param("nameoftheparameter")** or **iris.Param(request,"nameoftheparam")**. Get all, as pair (**map[string]string**) using **c.Params()** or **iris.Params(request)**
 
@@ -114,7 +116,7 @@ By default the :name is matched to any word, you can use custom regex using pare
 
 No limit on how long a path can be.
 
-Usage:
+Usage: 
 
 
 ```go
@@ -129,7 +131,7 @@ func main() {
 		name := c.Param("name")
 		c.Write("Hello " + name)
 	})
-
+	
 	// MATCH to /profile/kataras/friends/1
 	// NOT match to /profile/ , /profile/kataras ,
 	// /profile/kataras/friends,  /profile/kataras/friends ,
@@ -149,9 +151,93 @@ func main() {
 
 **Note:** Since this router has only explicit matches, you can not register static routes and parameters for the same path segment. For example you can not register the patterns /user/new and /user/:user for the same request method at the same time. The routing of different request methods is independent from each other.
 
+## Match anything and the Static serve handler
+
+Match everything/anything (symbol * (asterix))
+```go
+// Will match any request which url's preffix is "/anything/"
+iris.Get("/anything/*", func(ctx *iris.Context) { } )  
+// Match: /anything/whateverhere , /anything/blablabla
+// Not Match: /anything , /anything/ , /something
+```
+Pure http static  file server as handler using **iris.Static("./path/to/the/resources/directory/")**
+```go
+// Will match any request which url's preffix is "/public/" 
+/* and continues with a file whith it's extension which exists inside the os.Gwd()(dot means working directory)+ /static/resources/
+*/
+iris.Any("/public/*", iris.Static("./static/resources/")) //or Get
+//so simple
+//Note: strip of the /public/ is handled so don't worry 
+```
+## Declaring routes
+Iris framework has four (4) different forms of functions in order to declare a route's handler and a one(1) form of a struct to declare a complete route.
+
+
+ 1. Typical classic handler function, compatible with net/http and other frameworks
+	 *  **func(res http.ResponseWriter, req *http.Request)**
+```go
+	iris.Get("/profile/user/:userId(int)", func(res http.ResponseWriter, req *http.Request) {
+		
+	})
+```
+ 2. Context parameter in function-declaration
+	 * **func(ctx *iris.Context)**
+
+```go
+	iris.Get("/profile/user/:userId(int)", func(ctx *iris.Context) {
+	
+	})
+```
+ 3. Rederer parameter in function-declaration
+	 * **func(r *iris.Renderer)* **
+
+```go
+	iris.Get("/profile/user/:userId(int)", func(r *iris.Renderer) {
+	
+	})
+```
+ 4. Context & Renderer parameters in function-declaration
+	 * **func(c *iris.Context, r *iris.Renderer)**
+
+```go
+	iris.Get("/profile/user/:userId(int)", func(ctx *iris.Context, r *iris.Renderer) {
+	
+	})
+```
+ 5. **'External' struct** which implements the Iris Annotated interface
+
+
+
+```go
+///file: userhandler.go
+import "github.com/kataras/iris"
+
+type UserRoute struct {
+	iris.Annotated `get:"/profile/user/:userId(int)"`
+}
+
+func (u *UserHandler) Handle(ctx *iris.Context, r *iris.Renderer) {
+	defer ctx.Close()
+	userId, err := ctx.ParamInt("userId")
+	//or just userId := ctx.Param("userId") and use it as string
+} 
+
+
+///file: main.go
+
+//...
+	iris.Handle(&UserRoute{})
+//...
+
+```
+Personally I use the external struct and the func(ctx *iris.Context, r *iris.Renderer) form .
+ At the next chapter you will learn what are the benefits of having the **Context** and the **Renderer ** as arguments/parameters to the Route handlers.
+
+**The next chapter is written at this time, will be published soon.**
+
 ## Third Party Middleware
 *The iris is re-written in order to support all middlewares that are already exists for [Negroni](https://github.com/codegangsta/negroni) middleware*
-
+ 
 Here is a current list of compatible middlware.
 
 
@@ -195,7 +281,6 @@ of the following:
 ## Todo
 *  Complete the documents
 *  Query parameters
-*  Recover on panic support
 *  Create examples in this repository
 
 ## Licence
