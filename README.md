@@ -240,8 +240,8 @@ func (u *UserHandler) Handle(ctx *iris.Context, r *iris.Renderer) {
 //...
 
 ```
-Personally I use the external struct and the func(ctx *iris.Context, r *iris.Renderer) form .
- At the next chapter you will learn what are the benefits of having the  **Context**  and the  **Renderer**  as arguments/parameters to the Route handlers.
+Personally I use the external struct and the **func(ctx *iris.Context, r *iris.Renderer)** form .
+ At the next chapter you will learn what are the benefits of having the  **Context**  and the  ***Renderer**  as arguments/parameters to the Route handlers.
 
 
 ## Context
@@ -253,7 +253,7 @@ Personally I use the external struct and the func(ctx *iris.Context, r *iris.Ren
  2. **Request**
 	 - The Request is the pointer of the *Request, is the exactly the same as you used to use with the standar http library.
  3. **Params**
-	 - Contains the Named path Parameters, imagine in as a map[string]string which contains all parameters of a request.
+	 - Contains the Named path Parameters, imagine it as a map[string]string which contains all parameters of a request.
  
 >Functions
 
