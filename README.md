@@ -16,6 +16,8 @@ Iris is a very minimal but flexible web framework written in go, providing a rob
 - [Named Parameters](#named-parameters)
 - [Match anything and the Static serve handler](#match-anything-and-the-static-serve-handler)
 - [Declaring routes](#declaring-routes)
+- [Context](#context)
+- [Renderer](#renderer)
 - [Third Party Middleware](#third-party-middleware)
 - [Contributors](#contributors)
 - [Community](#community)
@@ -170,7 +172,7 @@ iris.Any("/public/*", iris.Static("./static/resources/")) //or Get
 //Note: strip of the /public/ is handled so don't worry 
 ```
 ## Declaring routes
-Iris framework has four (4) different forms of functions in order to declare a route's handler and one(1) form of a struct to declare a complete route.
+Iris framework has four (4) different forms of functions in order to declare a route's handler,  the typical http.Handler and one(1) annotated struct to declare a complete route.
 
 
  1. Typical classic handler function, compatible with net/http and other frameworks
@@ -204,7 +206,15 @@ Iris framework has four (4) different forms of functions in order to declare a r
 	
 	})
 ```
- 5. **'External' struct** which implements the Iris Annotated interface
+ 5. http.Handler
+	 * **http.Handler**
+
+```go
+	iris.Get("/profile/user/:userId(int)", http.HandlerFunc(func(res http.Response, req *req.Request) {
+	
+	}))
+```
+ 6. **'External' annotated struct** which directly implements the Iris Annotated interface
 
 
 
@@ -233,8 +243,68 @@ func (u *UserHandler) Handle(ctx *iris.Context, r *iris.Renderer) {
 Personally I use the external struct and the func(ctx *iris.Context, r *iris.Renderer) form .
  At the next chapter you will learn what are the benefits of having the  **Context**  and the  **Renderer**  as arguments/parameters to the Route handlers.
 
-**The next chapter is written at this time, will be published soon.**
 
+## Context
+
+> Variables
+
+ 1. **ResponseWriter**
+	 - The ResponseWriter is the exactly the same as you used to use with the standar http library.
+ 2. **Request**
+	 - The Request is the pointer of the *Request, is the exactly the same as you used to use with the standar http library.
+ 3. **Params**
+	 - Contains the Named path Parameters, imagine in as a map[string]string which contains all parameters of a request.
+ 
+>Functions
+
+ 1. **Write(contents string)**
+	 - Writes a pure string to the ResponseWriter and sends to the client.
+ 2. **Param(key string)** returns string
+	 - Returns the string representation of the key's  named parameter's value. Registed path= /profile/:name) Requested url is /profile/something where the key argument is the named parameter's key, returns the value  which is 'something' here.
+ 3. **ParamInt(key string)** returns integer, error
+	 - Returns the int representation of the key's  named parameter's value, if something goes wrong the second return value, the error is not nil.
+ 4. **URLParam(key string)** returns string
+	 - Returns the string representation of a requested url parameter (?key=something) where the key argument is the name of, something is the returned value.
+ 5. **URLParamInt(key string)** returns integer, error
+	 - Returns the int representation of  a requested url parameter
+ 6. **SetCookie(name string, value string)**
+	 - Adds a cookie to the request.
+ 7. **GetCookie(name string)** returns string
+	 - Get the cookie value, as string, of a cookie.
+ 8. **ServeFile(path string)**
+	 - This just calls the http.ServeFile, which serves a file given by the path argument  to the client.
+ 9. **NotFound()**
+	 - Sends a http.StatusNotFound with a custom template you defined (if any otherwise the default template is there) to the client.
+	 --- *Note: We will learn all about Custom Error Handlers later*.
+ 10. **Close()**
+	 - Calls the Request.Body.Close().
+
+## Renderer
+>Functions
+
+1. **WriteHTML(status int, contents string) & HTML(contents string)**
+	- WriteHTML: Writes html string with a given http status to the client, it sets the Header with the correct content-type.
+	- HTML: Same as WriteHTML but you don't have to pass a status, it's defaulted to http.StatusOK (200). 
+2. **WriteData(status int, binaryData []byte) & Data(binaryData []byte)**
+	- WriteData: Writes binary data with a given http status to the client, it sets the Header with the correct content-type.
+	- Data : Same as WriteData but you don't have to pass a status, it's defaulted to http.StatusOK (200). 
+3. **WriteText(status int, contents string) & Text(contents string)**
+	- WriteText: Writes plain text with a given http status to the client, it sets the Header with the correct content-type.
+	- Text: Same as WriteTextbut you don't have to pass a status, it's defaulted to http.StatusOK (200). 
+4. **WriteJSON(status int, jsonStructs ...interface{}) & JSON(jsonStructs ...interface{}) returns error**
+	- WriteJSON: Writes json which is converted from struct(s) with a given http status to the client, it sets the Header with the correct content-type. If something goes wrong then it's returned value which is an error type is not nil.
+	- JSON: Same as WriteJSON but you don't have to pass a status, it's defaulted to http.StatusOK (200). 
+5. **WriteXML(status int, xmlStructs ...interface{}) & XML(xmlStructs ...interface{}) returns error**
+	- WriteXML: Writes writes xml which is converted from struct(s) with a given http status to the client, it sets the Header with the correct content-type. If something goes wrong then it's returned value which is an error type is not nil.
+	- XML: Same as WriteXML but you don't have to pass a status, it's defaulted to http.StatusOK (200). 
+6. **RenderFile(file string, pageContext interface{}) returns error**
+	- RenderFile: Renders a file by its name (which a file is saved to the template cache) and a context passed to the function, default http status is http.StatusOK(200) if the template was found, otherwise http.StatusNotFound(404),  If something goes wrong then it's returned value which is an error type is not nil.
+7. **Render(pageContext interface{})  returns error**
+	- Render: Renders the registed and cached by the template cache file template from this particular route (if it's has children  it will render them too) file  and a context passed to the function, default http status is http.StatusOK(200) if the template was found, otherwise http.StatusNotFound(404),  If something goes wrong then it's returned value which is an error type is not nil.
+	--- *Note:  We will learn how to add a template to the template cache for a route at the next chapters*.
+
+
+**The next chapters are being written this time, they will be published soon, check the docs later [[TODO chapters: Register custom error handlers, Add templates to the route, Declare middlewares]]**
 ## Third Party Middleware
 *The iris is re-written in order to support all middlewares that are already exists for [Negroni](https://github.com/codegangsta/negroni) middleware*
  

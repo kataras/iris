@@ -53,7 +53,7 @@ func (r *Renderer) check() error {
 	return nil
 }
 
-// RenderFile renders a file by its path with it's context passed to the function
+// RenderFile renders a file by its path and a context passed to the function
 func (r *Renderer) RenderFile(file string, pageContext interface{}) error {
 	err := r.check()
 	if err != nil {
@@ -111,7 +111,7 @@ func (r *Renderer) Text(text string) {
 	r.WriteText(http.StatusOK, text)
 }
 
-// WriteJSON writes json by  converted from struct(s) with a http status which they passed to the function via parameters
+// WriteJSON writes which is converted from struct(s) with a http status which they passed to the function via parameters
 func (r *Renderer) WriteJSON(httpStatus int, jsonStructs ...interface{}) error {
 
 	//	return json.NewEncoder(r.responseWriter).Encode(obj)
@@ -150,7 +150,7 @@ func (r *Renderer) JSONP(obj interface{}) {
 	r.WriteJSONP(http.StatusOK, obj)
 }
 
-// WriteXML writes xml by  converted from struct(s) with a http status which they passed to the function via parameters
+// WriteXML writes xml which is converted from struct(s) with a http status which they passed to the function via parameters
 func (r *Renderer) WriteXML(httpStatus int, xmlStructs ...interface{}) error {
 
 	var _xmlDoc string
