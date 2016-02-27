@@ -27,6 +27,7 @@ func (f *fakeResponseWriter) WriteString(s string) (n int, err error) {
 
 func (f *fakeResponseWriter) WriteHeader(int) {}
 
+// BenchmarkRouter tests the router using contexted handler and a middleware
 // go test -bench BenchmarkRouter -run XXX
 // go test -run=XXX -bench=.
 // working: go test -bench BenchmarkRouter
@@ -35,9 +36,13 @@ func BenchmarkRouter(b *testing.B) {
 
 	api := New()
 	for _, route := range inlineRoutes {
-		api.Handle(route.Path, func(res http.ResponseWriter, req *http.Request) {
+		r := api.Handle(route.Path, func(c *Context) {
+			c.Close()
+		})
+		r.UseFunc(func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
 
-		}).Methods(route.Methods...)
+		})
+		r.Methods(route.Methods...)
 	}
 	go http.ListenAndServe(":8080", api)
 	server.URL = "http://localhost:8080"
@@ -70,8 +75,9 @@ func BenchmarkRouter(b *testing.B) {
 }
 
 /* Results :
-PASS
-BenchmarkRouter-8          50000             35582 ns/op            9961 B/op        121 allocs/op
+BenchmarkRouter            50000             32881 ns/op            9828 B/op        117 allocs/op
+BenchmarkRouter-8          50000             33521 ns/op            9834 B/op        117 allocs/op
+//Almost no difference between them, I have to look it.
 */
 
 // Other backup

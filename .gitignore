@@ -1,4 +1,5 @@
 .project
+.idea
 .git
 .settings
 .vscode/*

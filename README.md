@@ -18,6 +18,7 @@ Iris is a very minimal but flexible web framework written in go, providing a rob
 - [Declaring routes](#declaring-routes)
 - [Context](#context)
 - [Renderer](#renderer)
+- [Benchmark](#benchmark)
 - [Third Party Middleware](#third-party-middleware)
 - [Contributors](#contributors)
 - [Community](#community)
@@ -305,6 +306,17 @@ Personally I use the external struct and the **func(ctx *iris.Context, r *iris.R
 
 
 **The next chapters are being written this time, they will be published soon, check the docs later [[TODO chapters: Register custom error handlers, Add templates to the route, Declare middlewares]]**
+
+## Benchmark
+Benchmark tests were written by 'the standar' way of benchmarking and comparing perfomance of other routers and frameworks, see [go-http-routing-benchmark](https://github.com/julienschmidt/go-http-routing-benchmark/) .
+
+Results: 
+
+ #GithubAPI Routes: 203
+	Iris: 435800 Bytes
+Pass
+	BenchmarkIris_GithubALL 	200		6255357 ns/op		148693 B/op		1349 allocs/op
+
 ## Third Party Middleware
 *The iris is re-written in order to support all middlewares that are already exists for [Negroni](https://github.com/codegangsta/negroni) middleware*
  

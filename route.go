@@ -112,8 +112,9 @@ func (r *Route) run(res http.ResponseWriter, req *http.Request) {
 // prepare prepares the route's handler , places it to the last middleware , handler acts like a middleware too.
 // Runs once before the first ServeHTTP
 func (r *Route) prepare() {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	//r.mu.Lock()
+	//look why on router ->HandleFunc defer r.mu.Unlock()
+	//but wait... do we need locking here?
 	if r.handler != nil {
 		convertedMiddleware := MiddlewareHandlerFunc(func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
 			//r.Handler(res, req) :->

@@ -34,8 +34,11 @@ func newRouter() *Router {
 //
 // HandleFunc is exported for the future, not being used outside of the iris package yet, some of other functions also.
 func (r *Router) HandleFunc(registedPath string, handler Handler) *Route {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	//r.mu.Lock()
+	//defer is 5 times slower only some nanosecconds difference but let's make it faster unlock it at the end of the function manually  or not?
+	//defer r.mu.Unlock()
+	//but wait... do we need locking here?
+
 	var route *Route
 	if registedPath == "" {
 		registedPath = "/"
@@ -65,9 +68,7 @@ func (r *Router) HandleFunc(registedPath string, handler Handler) *Route {
 
 		r.routes = append(r.routes, route)
 	}
-
 	route.errorHandlers = r.errorHandlers
-
 	return route
 }
 
@@ -86,6 +87,8 @@ func (r *Router) Handle(registedPath string, httpHandler http.Handler) *Route {
 // which it's metadata has the form of
 // `method:"path" template:"file.html"` and returns the route and an error if any occurs
 func (r *Router) handleAnnotated(irisHandler Annotated) (*Route, error) {
+	//r.mu.Lock()
+	//defer r.mu.Unlock()
 	var route *Route
 	var methods []string
 	var path string
