@@ -348,7 +348,7 @@ func benchRoutes(b *testing.B, router http.Handler, routes []routeTest) {
 		reqPath := strings.Replace(route.path, ":", "", -1)
 		routeReqPaths = append(routeReqPaths, reqPath)
 	}
-	//without the 'custom stuff' the results are:
+	//without the 'custom stuff' and the route.preffix the result was:
 	//
 	//#GithubAPI Routes: 203
 	//	Iris: 435800 Bytes
@@ -380,7 +380,7 @@ func BenchmarkIris_GithubAll(b *testing.B) {
 //Results ( one proccessor )
 //
 //#GithubAPI Routes: 203
-//	Iris: 435816 Bytes
+//	Iris: 439128 Bytes
 //Pass
-//BenchmarkIris_GithubALL 	300		4403585 ns/op		172152 B/op		1421 allocs/op
+//BenchmarkIris_GithubALL    				2000     540030 ns/op      172168 B/op     1421 allocs/op
 //

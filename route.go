@@ -3,6 +3,7 @@ package iris
 import (
 	"net/http"
 	"regexp"
+	"strings"
 	"sync"
 )
 
@@ -22,12 +23,20 @@ type Route struct {
 	isReady       bool
 	templates     *TemplateCache //this is passed to the Renderer
 	errorHandlers ErrorHandlers  //the only need of this is to pass into the Context, in order to  developer get the ability to perfom emit errors (eg NotFound) directly from context
-
+	preffix       string         // this is to make a little faster the match, before regexp Match runs, it's the path before the first path parameter :
 }
 
 // newRoute creates, from a path string, handler and optional http methods and returns a new route pointer
 func newRoute(registedPath string, handler Handler) *Route {
 	Route := &Route{handler: handler, path: registedPath, isReady: false}
+
+	firstPathParamIndex := strings.Index(registedPath, ":")
+	if firstPathParamIndex != -1 {
+		Route.preffix = registedPath[:firstPathParamIndex]
+	} else {
+		Route.preffix = registedPath
+	}
+
 	makePathPattern(Route) //moved to RegexHelper.go
 
 	//26-02-2016 handler can be a struct too which have a run(*route,response,request) method
@@ -70,7 +79,19 @@ func (r *Route) Method(method string) *Route {
 
 // Match determinates if this route match with a url
 func (r *Route) match(urlPath string) bool {
-	return r.path == MatchEverything || r.Pattern.MatchString(urlPath)
+	if r.path == MatchEverything {
+		return true
+	}
+	//Before that strings.HasPrefix benchmark resutlt was:
+	//BenchmarkIris_GithubALL    				 300    4403585 ns/op      172152 B/op     1421 allocs/op
+	//and After
+	//BenchmarkIris_GithubALL    				2000     540030 ns/op      172168 B/op     1421 allocs/op
+	// so this little change makes big difference!
+	if strings.HasPrefix(urlPath, r.preffix) {
+		return r.Pattern.MatchString(urlPath)
+	}
+
+	return false
 }
 
 // Template creates (if not exists) and returns the template cache for this route
