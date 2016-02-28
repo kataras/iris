@@ -337,7 +337,6 @@ func (s *Server) SortRoutes() {
 	s.router.methodsRoutes = make(map[string][]*Route, len(s.router.routes))
 	for _, m := range HTTPMethods.ANY {
 		s.router.methodsRoutes[m] = make([]*Route, 0)
-		s.router.methodsRoutes[m] = make([]*Route, 0)
 	}
 
 	for _, r := range s.router.routes {
