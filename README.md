@@ -313,9 +313,10 @@ Benchmark tests were written by 'the standar' way of benchmarking and comparing 
 Results: 
 
  #GithubAPI Routes: 203
-	Iris: 435800 Bytes
-Pass
-	BenchmarkIris_GithubALL 	200		6255357 ns/op		148693 B/op		1349 allocs/op
+ 
+	Iris: 435816 Bytes
+	
+	BenchmarkIris_GithubALL 	300		4403585 ns/op		172152 B/op		1421 allocs/op
 
 ## Third Party Middleware
 *The iris is re-written in order to support all middlewares that are already exists for [Negroni](https://github.com/codegangsta/negroni) middleware*
