@@ -20,6 +20,7 @@ type Router struct {
 	MiddlewareSupporter
 	//routes map[string]*Route, I dont need this anymore because I will have to iterate to all of them to check the regex pattern vs request url..
 	routes        []*Route
+	methodsRoutes map[string][]*Route
 	mu            sync.RWMutex
 	errorHandlers ErrorHandlers //the only need of this is to pass into the route, which it need it to  passed it to Context, in order to  developer get the ability to perfom emit errors (eg NotFound) directly from context
 }
@@ -278,11 +279,23 @@ func UseHandler(handler http.Handler) *Server {
 // find returns the correct/matched route, if any, for  the request passed as parameter
 // if error route != nil , then the errorcode will be 200 OK
 func (r *Router) find(req *http.Request) (*Route, int) {
+	var routes []*Route
+	isSorted := r.methodsRoutes != nil
+	if isSorted {
+		//means routes are sorted
+		routes = r.methodsRoutes[req.Method]
+	} else {
+		routes = r.routes
+	}
+
 	reqURLPath := req.URL.Path
 	wrongMethod := false
-	for _, route := range r.routes {
+	for _, route := range routes {
 		if route.match(reqURLPath) {
-			if route.containsMethod(req.Method) == false {
+			if isSorted {
+				//if it's already sorted then we have to correct routes for this req method
+
+			} else if route.containsMethod(req.Method) == false {
 				wrongMethod = true
 				continue
 			}

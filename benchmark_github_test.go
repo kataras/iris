@@ -322,6 +322,7 @@ func calcMem(name string, load func()) {
 
 func irisHandleTest(c *Context) {
 	io.WriteString(c.ResponseWriter, c.Request.RequestURI)
+	c.Close()
 }
 
 func loadIris(routes []routeTest) http.Handler {
@@ -331,6 +332,7 @@ func loadIris(routes []routeTest) http.Handler {
 	for _, route := range routes {
 		api.Handle(route.path, h).Method(route.method)
 	}
+	api.SortRoutes() //NEW Feature for performance, I am thinking to make it by-default it was so easy to make the performance even better!
 	return api
 }
 
@@ -348,14 +350,6 @@ func benchRoutes(b *testing.B, router http.Handler, routes []routeTest) {
 		reqPath := strings.Replace(route.path, ":", "", -1)
 		routeReqPaths = append(routeReqPaths, reqPath)
 	}
-	//without the 'custom stuff' and the route.preffix the result was:
-	//
-	//#GithubAPI Routes: 203
-	//	Iris: 435800 Bytes
-	//Pass
-	//BenchmarkIris_GithubALL 	200		6255357 ns/op		148693 B/op		1349 allocs/op
-	//
-
 	//end of custom stuff
 
 	b.ReportAllocs()
@@ -380,7 +374,7 @@ func BenchmarkIris_GithubAll(b *testing.B) {
 //Results ( one proccessor )
 //
 //#GithubAPI Routes: 203
-//	Iris: 439064 Bytes
+//	Iris: 453448 Bytes
 //Pass
-//BenchmarkIris_GithubALL    				2000     530530 ns/op      172168 B/op     1421 allocs/op
+//BenchmarkIris_GithubALL    				3000     432024 ns/op      172168 B/op     1421 allocs/op
 //

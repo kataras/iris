@@ -166,8 +166,8 @@ func Listen(fullHostOrPort interface{}) error {
 // with this function iris can be used also as  a middleware into other already defined http server
 func (s *Server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	//I thing it's better to keep the main serve to the server, this is the meaning of the Server struct .so delete: s.router.ServeHTTP(res, req)
-	route, errCode := s.router.find(req)
 
+	route, errCode := s.router.find(req)
 	if errCode == http.StatusOK {
 		route.ServeHTTP(res, req)
 	} else {
@@ -181,7 +181,6 @@ func (s *Server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 			http.Error(res, "An unexcpecting error occurs ("+strconv.Itoa(errCode)+")", errCode)
 		}
 	}
-
 }
 
 // ServeHTTP serves an http request,
@@ -331,4 +330,21 @@ func (s *Server) Handle(params ...interface{}) *Route {
 // Or pass just a http.Handler or TypicalHandlerFunc or ContextedHandlerFunc or  RendereredHandlerFunc or ContextedRendererHandlerFunc or already an iris.Handler
 func Handle(params ...interface{}) *Route {
 	return DefaultServer.Handle(params...)
+}
+
+//for test and... it worked , +1k executions and -100k nanoseconds to operate
+func (s *Server) SortRoutes() {
+	s.router.methodsRoutes = make(map[string][]*Route, len(s.router.routes))
+	for _, m := range HTTPMethods.ANY {
+		s.router.methodsRoutes[m] = make([]*Route, 0)
+		s.router.methodsRoutes[m] = make([]*Route, 0)
+	}
+
+	for _, r := range s.router.routes {
+		for _, m := range r.methods {
+			s.router.methodsRoutes[m] = append(s.router.methodsRoutes[m], r)
+		}
+
+	}
+
 }

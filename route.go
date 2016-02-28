@@ -95,15 +95,29 @@ func (r *Route) match(urlPath string) bool {
 	//BenchmarkIris_GithubALL    				 300    4403585 ns/op      172152 B/op     1421 allocs/op
 	//and After
 	//BenchmarkIris_GithubALL    				2000     530530 ns/op      172168 B/op     1421 allocs/op
+	//and After the SortRoutes which I will make it by default at the end of the day
+	//BenchmarkIris_GithubALL    				3000     432024 ns/op      172168 B/op     1421 allocs/op
 	// so this little change makes big difference!
 
-	hasPreffix := strings.HasPrefix(urlPath, r.preffix)
-	if hasPreffix {
+	if strings.HasPrefix(urlPath, r.preffix) {
 		if r.preffix == r.path && urlPath == r.path { // it's route without path parameters or * symbol, and if the request url has preffix of it  and it's the same as the whole preffix which is the path itself returns true without checking for regexp pattern
 			return true
 		}
 		return r.Pattern.MatchString(urlPath)
 	}
+	/*Note
+	//this doesn't make the performance better, opossite its adds 7000 nannoseconds more to the total github operations
+
+		if r.preffix == r.path && urlPath == r.path { // it's route without path parameters or * symbol, and if the request url has preffix of it  and it's the same as the whole preffix which is the path itself returns true without checking for regexp pattern
+		return true
+	}
+
+	if strings.HasPrefix(urlPath, r.preffix) {
+
+		return r.Pattern.MatchString(urlPath)
+	}
+
+	*/
 
 	return false
 }

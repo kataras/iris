@@ -31,7 +31,7 @@ func (f *fakeResponseWriter) WriteHeader(int) {}
 // go test -bench BenchmarkRouter -run XXX
 // go test -run=XXX -bench=.
 // working: go test -bench BenchmarkRouter
-// add -benchtime 5s for example to see how much perfomance on 5 seconds instead of the 1s (default)
+// add -benchtime 5s for example to see how much performance on 5 seconds instead of the 1s (default)
 func BenchmarkRouter(b *testing.B) {
 
 	api := New()
