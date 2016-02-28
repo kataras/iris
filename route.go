@@ -30,11 +30,20 @@ type Route struct {
 func newRoute(registedPath string, handler Handler) *Route {
 	Route := &Route{handler: handler, path: registedPath, isReady: false}
 
-	firstPathParamIndex := strings.Index(registedPath, ":")
+	firstPathParamIndex := strings.Index(registedPath, ParameterStart)
 	if firstPathParamIndex != -1 {
 		Route.preffix = registedPath[:firstPathParamIndex]
 	} else {
-		Route.preffix = registedPath
+		//check for *
+		firstPathParamIndex = strings.Index(registedPath, MatchEverything)
+
+		if firstPathParamIndex != -1 {
+			Route.preffix = registedPath[:firstPathParamIndex]
+		} else {
+			//else no path parameter or match everything symbol so use the whole path as preffix it will be faster at the check for static routes too!
+			Route.preffix = registedPath
+		}
+
 	}
 
 	makePathPattern(Route) //moved to RegexHelper.go
@@ -85,9 +94,14 @@ func (r *Route) match(urlPath string) bool {
 	//Before that strings.HasPrefix benchmark resutlt was:
 	//BenchmarkIris_GithubALL    				 300    4403585 ns/op      172152 B/op     1421 allocs/op
 	//and After
-	//BenchmarkIris_GithubALL    				2000     540030 ns/op      172168 B/op     1421 allocs/op
+	//BenchmarkIris_GithubALL    				2000     530530 ns/op      172168 B/op     1421 allocs/op
 	// so this little change makes big difference!
-	if strings.HasPrefix(urlPath, r.preffix) {
+
+	hasPreffix := strings.HasPrefix(urlPath, r.preffix)
+	if hasPreffix {
+		if r.preffix == r.path && urlPath == r.path { // it's route without path parameters or * symbol, and if the request url has preffix of it  and it's the same as the whole preffix which is the path itself returns true without checking for regexp pattern
+			return true
+		}
 		return r.Pattern.MatchString(urlPath)
 	}
 
