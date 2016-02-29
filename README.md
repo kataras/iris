@@ -308,6 +308,9 @@ Personally I use the external struct and the **func(ctx *iris.Context, r *iris.R
 **The next chapters are being written this time, they will be published soon, check the docs later [[TODO chapters: Register custom error handlers, Add templates to the route, Declare middlewares]]**
 
 ## Benchmark
+## THESE ARE FALSE, I HAD PROBLEM.
+## ON BENCHMARKING: EMPTY REQUESTS SO THESE RESULTS ARE NOT REAL
+## THE FRAMEWORK IS RE-WRITTING BECAUSE IT'S PERFORMANCE IS NOT CLEAR ENOUGH.
 Benchmark tests were written by 'the standar' way of benchmarking and comparing performance of other routers and frameworks, see [go-http-routing-benchmark](https://github.com/julienschmidt/go-http-routing-benchmark/) .
 
 Results: 
