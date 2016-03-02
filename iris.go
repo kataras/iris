@@ -3,7 +3,6 @@ package iris
 // This file's usage is just to expose the server and it's router functionality
 // But the fact is that it has got the only one init func in the project also
 import (
-	"reflect"
 	"strings"
 )
 
@@ -17,9 +16,9 @@ var (
 
 func init() {
 	//Context.go
-	contextType = reflect.TypeOf(Context{})
+	//contextType = reflect.TypeOf(Context{})
 	//Renderer.go
-	rendererType = reflect.TypeOf(Renderer{})
+	//rendererType = reflect.TypeOf(Renderer{})
 	//TemplateCache.go
 	templatesDirectory = getCurrentDir()
 

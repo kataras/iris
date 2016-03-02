@@ -47,7 +47,7 @@ package main
 import "github.com/kataras/iris"
 
 func main() {
-	iris.Get("/hello", func(r *iris.Renderer) {
+	iris.Get("/hello", func(r iris.Renderer) {
 		r.HTML("<b> Hello </b>")
 	})
 	iris.Listen(8080)
@@ -97,15 +97,15 @@ func testGet(res http.ResponseWriter, req *http.Request) {
 	//...
 }
 
-func testPost(c *iris.Context) {
+func testPost(c iris.Context) {
 	//...
 }
 
-func testPut(r *iris.Renderer) {
+func testPut(r iris.Renderer) {
 	//...
 }
 
-func testDelete(c *iris.Context, r *iris.Renderer) {
+func testDelete(c iris.Context, r iris.Renderer) {
 	//...
 }
 //and so on....
@@ -113,7 +113,7 @@ func testDelete(c *iris.Context, r *iris.Renderer) {
 
 ## Named Parameters 
 
-Named parameters are just custom paths to your routes, you can access them for each request using context's **c.Param("nameoftheparameter")** or **iris.Param(request,"nameoftheparam")**. Get all, as array (**{Key,Value}**) using **c.Params()**.
+Named parameters are just custom paths to your routes, you can access them for each request using context's **c.Param("nameoftheparameter")**. Get all, as array (**{Key,Value}**) using **c.Params** property.
 
 No limit on how long a path can be.
 
@@ -128,7 +128,7 @@ import "github.com/kataras/iris"
 func main() {
 	// MATCH to /hello/anywordhere
 	// NOT match to /hello or /hello/ or /hello/anywordhere/something
-	iris.Get("/hello/:name", func(c *iris.Context) {
+	iris.Get("/hello/:name", func(c iris.Context) {
 		name := c.Param("name")
 		c.Write("Hello " + name)
 	})
@@ -138,7 +138,7 @@ func main() {
 	// NOT match to /profile/kataras/friends,  /profile/kataras/friends ,
 	// NOT match to /profile/kataras/friends/2/something 
 	iris.Get("/users/:fullname/friends/:friendId",
-		func(c *iris.Context, r *iris.Renderer){
+		func(c iris.Context, r iris.Renderer){
 			name:= c.Param("fullname")
 			friendId := c.ParamInt("friendId")
 			r.HTML("<b> Hello </b>"+name)
@@ -157,7 +157,7 @@ func main() {
 Match everything/anything (symbol * (asterix))
 ```go
 // Will match any request which url's preffix is "/anything/"
-iris.Get("/anything/*", func(ctx *iris.Context) { } )  
+iris.Get("/anything/*", func(ctx iris.Context) { } )  
 // Match: /anything/whateverhere , /anything/blablabla
 // Not Match: /anything , /anything/ , /something
 ```
@@ -182,26 +182,26 @@ Iris framework has four (4) different forms of functions in order to declare a r
 	})
 ```
  2. Context parameter in function-declaration
-	 * **func(ctx *iris.Context)**
+	 * **func(ctx iris.Context)**
 
 ```go
-	iris.Get("/profile/user/:userId", func(ctx *iris.Context) {
+	iris.Get("/profile/user/:userId", func(ctx iris.Context) {
 	
 	})
 ```
  3. Renderer parameter in function-declaration
-	 * **func(r *iris.Renderer)**
+	 * **func(r iris.Renderer)**
 
 ```go
-	iris.Get("/profile/user/:userId", func(r *iris.Renderer) {
+	iris.Get("/profile/user/:userId", func(r iris.Renderer) {
 	
 	})
 ```
  4. Context & Renderer parameters in function-declaration
-	 * **func(c *iris.Context, r *iris.Renderer)**
+	 * **func(c iris.Context, r iris.Renderer)**
 
 ```go
-	iris.Get("/profile/user/:userId", func(ctx *iris.Context, r *iris.Renderer) {
+	iris.Get("/profile/user/:userId", func(ctx iris.Context, r iris.Renderer) {
 	
 	})
 ```
@@ -225,7 +225,7 @@ type UserRoute struct {
 	iris.Annotated `get:"/profile/user/:userId"`
 }
 
-func (u *UserHandler) Handle(ctx *iris.Context, r *iris.Renderer) {
+func (u *UserHandler) Handle(ctx iris.Context, r iris.Renderer) {
 	defer ctx.Close()
 	userId, err := ctx.ParamInt("userId")
 	//or just userId := ctx.Param("userId") and use it as string
@@ -239,8 +239,8 @@ func (u *UserHandler) Handle(ctx *iris.Context, r *iris.Renderer) {
 //...
 
 ```
-Personally I use the external struct and the **func(ctx *iris.Context, r *iris.Renderer)** form .
- At the next chapter you will learn what are the benefits of having the  **Context**  and the  ***Renderer**  as arguments/parameters to the Route handlers.
+Personally I use the external struct and the **func(ctx iris.Context, r iris.Renderer)** form .
+ At the next chapter you will learn what are the benefits of having the  **Context**  and the  **Renderer**  as arguments/parameters to the Route handlers.
 
 
 ## Context

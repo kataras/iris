@@ -67,36 +67,69 @@ type Handler interface {
 	run(r *Route, res http.ResponseWriter, req *http.Request)
 }
 
-type FullHandlerFunc func(*Context, *Renderer)
+type FullHandlerFunc func(Context, Renderer)
 
 func (h FullHandlerFunc) run(r *Route, res http.ResponseWriter, req *http.Request) {
-	ctx := newContext(res, req, r.httpErrors)
+	ctx := GetContext(res, req, r.httpErrors)
 	ctx.Params = Params(r, req.URL.Path)
-	renderer := newRenderer(res)
+	renderer := GetRenderer(res)
 
 	if r.templates != nil {
 		renderer.templateCache = r.templates
 	}
 
 	h(ctx, renderer)
+	ResetContext()
+	ResetRenderer()
 }
 
-type RendereredHandlerFunc func(*Renderer)
+type RendereredHandlerFunc func(Renderer)
 
 func (h RendereredHandlerFunc) run(r *Route, res http.ResponseWriter, req *http.Request) {
-	renderer := newRenderer(res)
+	renderer := GetRenderer(res)
 	if r.templates != nil {
 		renderer.templateCache = r.templates
 	}
 	h(renderer)
+	ResetRenderer()
 }
 
-type ContextedHandlerFunc func(*Context)
+var _context = Context{}
+var _renderer = Renderer{}
+
+func GetContext(res http.ResponseWriter, req *http.Request, httpErrors *HTTPErrors) Context {
+	_context.ResponseWriter = res
+	_context.Request = req
+	_context.httpErrors = httpErrors
+
+	return _context
+}
+
+func ResetContext() {
+	_context.ResponseWriter = nil
+	_context.Request = nil
+	_context.httpErrors = nil
+	_context.Params = nil
+}
+
+func GetRenderer(res http.ResponseWriter) Renderer {
+	_renderer.responseWriter = res
+	return _renderer
+}
+
+func ResetRenderer() {
+	_renderer.responseWriter = nil
+	_renderer.templateCache = nil
+}
+
+type ContextedHandlerFunc func(Context)
 
 func (h ContextedHandlerFunc) run(r *Route, res http.ResponseWriter, req *http.Request) {
-	ctx := newContext(res, req, r.httpErrors)
+	//ctx := newContext(res, req, r.httpErrors)
+	ctx := GetContext(res, req, r.httpErrors)
 	ctx.Params = Params(r, req.URL.Path)
 	h(ctx)
+	ResetContext()
 }
 
 //=HandlerFunc
@@ -162,12 +195,12 @@ func convertToHandler(handler interface{}) Handler {
 		return TypicalHandlerFunc(handler.(http.Handler).ServeHTTP)
 	case func(http.ResponseWriter, *http.Request):
 		return TypicalHandlerFunc(handler.(func(http.ResponseWriter, *http.Request)))
-	case func(*Context):
-		return ContextedHandlerFunc(handler.(func(*Context)))
-	case func(*Renderer):
-		return RendereredHandlerFunc(handler.(func(*Renderer)))
-	case func(*Context, *Renderer):
-		return FullHandlerFunc(handler.(func(*Context, *Renderer)))
+	case func(Context):
+		return ContextedHandlerFunc(handler.(func(Context)))
+	case func(Renderer):
+		return RendereredHandlerFunc(handler.(func(Renderer)))
+	case func(Context, Renderer):
+		return FullHandlerFunc(handler.(func(Context, Renderer)))
 	default:
 		panic("Error on Iris -> convertToHandler handler is not TypicalHandlerFunc or ContextedHandlerFunc or RendereredHandlerFunc or FullHandlerFunc")
 		return nil

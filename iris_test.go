@@ -274,7 +274,7 @@ func getRequestRoute(route TestRoute, reqURL string) *TestRequestRoute {
 	return nil
 }
 
-func checkParams(c *Context, expected map[string]string) error {
+func checkParams(c Context, expected map[string]string) error {
 	if expected != nil {
 		for key, value := range expected {
 			contextParamValue := c.Param(key)
@@ -293,7 +293,7 @@ func checkParams(c *Context, expected map[string]string) error {
 	return nil
 }
 
-func checkBody(c *Context, expectedBody []byte) error {
+func checkBody(c Context, expectedBody []byte) error {
 	reqBody, err := ioutil.ReadAll(c.Request.Body)
 
 	if err != nil {
@@ -320,8 +320,8 @@ func checkBody(c *Context, expectedBody []byte) error {
 }
 
 //tests are not working here, I tried with recorder on request and also sily passing the testing.T here but doesnt work too so I will use the normal 'log' package for errors
-func handleRoute(route TestRoute) func(c *Context) {
-	return func(c *Context) {
+func handleRoute(route TestRoute) func(c Context) {
+	return func(c Context) {
 		defer c.Close()
 
 		c.Write("Response from server to the client for route: " + route.Path + " client req url: " + c.Request.URL.Path)

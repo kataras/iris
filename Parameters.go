@@ -38,9 +38,9 @@ func URLParam(req *http.Request, key string) string {
 
 func Params(r *Route, urlPath string) (params PathParameters) {
 	//params := make(PathParameters, 0, partsLen)
-	if params == nil {
-		params = make(PathParameters, 0, len(r.parts))
-	}
+	//if params == nil {
+	//	params = make(PathParameters, 0, len(r.parts))
+	//}
 	for i := 0; i < len(r.parts); i++ {
 
 		if r.parts[i][0] == ParameterStartByte { //strings.IndexByte(r.parts[i], ParameterStartByte) == 0 { //r.parts[i][0] == ParameterStartByte { //strings.Index(r.parts[i], ParameterStart) == 0 { //r.parts[i][0:1] == ParameterStart { //takes the first character and check if it's parameter part
@@ -48,7 +48,7 @@ func Params(r *Route, urlPath string) (params PathParameters) {
 			//paramValue := reqParts[i]
 			indexOfVal := -1
 			if i == 0 {
-				indexOfVal = strings.IndexByte(r.fullpath, r.parts[i][0]) //or just IndexByte(...,r.parts[i][0]
+				indexOfVal = strings.IndexByte(r.fullpath, r.parts[i][0])
 			} else {
 				indexOfVal = strings.Index(r.fullpath, r.parts[i]) - 2 // -slash -:
 
@@ -69,18 +69,8 @@ func Params(r *Route, urlPath string) (params PathParameters) {
 				//println("parts len:", len(r.parts))
 				params = append(params, p)
 				//println("new params len: ", len(params))
-			} else {
-				//println(len(urlPath), " is slower than indexOfVal: ", indexOfVal)
 			}
 
-			//user/profile/:username/test
-			//user/profile/kataras/test
-			// :username -> kataras theloume to kataras
-			// /test -> /test
-			//params = append(params, PathParameter{r.parts[i][1:], reqParts[i]})
-			//params[i] = PathParameter{r.parts[i][1:], reqParts[i]} //no perfomance difference so keep it with append
-		} else {
-			//println(r.parts[i] + " doesnt start with : ")
 		}
 	}
 	return

@@ -31,8 +31,13 @@ func newRoute(registedPath string, handler Handler) *Route {
 	hasPathParameters := false
 	firstPathParamIndex := strings.IndexByte(registedPath, ParameterStartByte)
 	if firstPathParamIndex != -1 {
-		r.pathPrefix = registedPath[:firstPathParamIndex] ///api/users  to /api/users/
+		r.pathPrefix = registedPath[:firstPathParamIndex]
 		hasPathParameters = true
+
+		if strings.HasSuffix(registedPath, MatchEverything) {
+			r.hasWildcard = true
+		}
+
 	} else {
 		//check for only for* , here no path parameters registed.
 		firstPathParamIndex = strings.IndexByte(registedPath, MatchEverythingByte)
@@ -46,7 +51,6 @@ func newRoute(registedPath string, handler Handler) *Route {
 				//has some prefix and sufix of *
 				r.pathPrefix = registedPath[:firstPathParamIndex] //+1
 				r.hasWildcard = true
-				hasPathParameters = true
 			}
 
 		} else {
@@ -56,7 +60,7 @@ func newRoute(registedPath string, handler Handler) *Route {
 
 	}
 
-	if hasPathParameters || (hasPathParameters && r.hasWildcard) {
+	if hasPathParameters || r.hasWildcard {
 		r.parts = strings.Split(registedPath[len(r.pathPrefix):], "/")
 		r.fullpath = registedPath //we need this only to take Params so set it if has path parameters.
 	}
@@ -100,6 +104,7 @@ func (r *Route) match(urlPath string) bool {
 		//so it's just a path without named parameters
 		return true
 
+		//kapws kai to sufix na vlepw an den einai parameter, an einai idio kai meta na sunexizei sto path parameters.
 	} else if r.parts != nil {
 		partsLen := len(r.parts)
 		// count the slashes after the prefix, we start from one because we will have at least one slash.

@@ -7,3 +7,15 @@ go tool pprof -pdf ./iris.test.exe ./cpu_test.out > cpu_test_output.pdf
 or
 [.svg ext default to firefox]
 go tool pprof --web ./iris.test.exe ./cpu_test.out 
+
+
+for memprofile allocation:
+
+go test -memprofile mem_test.out -bench="Iris" -run=^a
+
+and to see 
+go tool pprof --alloc_space ./iris.test.exe ./mem_test.out
+inside write:
+lines
+and after
+web

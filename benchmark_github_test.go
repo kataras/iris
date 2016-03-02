@@ -337,7 +337,7 @@ func calcMem(name string, load func()) {
 
 //
 
-func irisHandleTestContexted(c *Context) {
+func irisHandleTestContexted(c Context) {
 	io.WriteString(c.ResponseWriter, c.Request.RequestURI)
 }
 
@@ -346,14 +346,17 @@ func irisHandleTestTypical(res http.ResponseWriter, req *http.Request) {
 }
 
 func loadIris(routes []routeTest) http.Handler {
-	h := irisHandleTestContexted //irisHandleTestTypical
+	h := irisHandleTestTypical //irisHandleTestContexted //irisHandleTestTypical
 
 	api := New()
 
 	for _, route := range routes {
 		api.Handle(route.path, h).Method(route.method)
 	}
-
+	/*println("routes: ", len(api.router.routes))
+	for d, r := range api.router.routes {
+		println(d, ": ", r.prefix+" contains ", len(r.routes), " routes")
+	}*/
 	return api
 }
 
@@ -397,6 +400,6 @@ func BenchmarkIris_GithubAll(b *testing.B) {
 //
 //With (func (ctx *Context))
 //
-//BenchmarkIris_GithubALL    				5000     332416 ns/op      69448 B/op     1001 allocs/op
+//BenchmarkIris_GithubALL    				5000     307416 ns/op      69448 B/op     955 allocs/op
 //
 //

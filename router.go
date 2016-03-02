@@ -15,6 +15,7 @@ const (
 
 type prefixRoute struct {
 	prefix string
+	//lastStaticPart string
 	routes []*Route
 }
 
@@ -57,20 +58,37 @@ func (r *Router) HandleFunc(registedPath string, handler Handler) *Route {
 			route.middlewareHandlers = r.middlewareHandlers
 		}
 
-		//r.routes = append(r.routes, route)
+		//means that the registed path has a siffux which is not a parameter or *
+		/*theLastStaticPart := ""
+
+		if route.parts != nil {
+			for i := 0; i < len(route.parts); i++ {
+				p := route.parts[i]
+				if p[0] != MatchEverythingByte && p[0] != ParameterStartByte {
+					//theSiffux += "/" + p //edw pernei kai to path parameter an einai sto telos giauto einai lathos .
+					theLastStaticPart = p //apla pare to teleuteo pou den einai parameter.
+				}
+			}
+
+		}*/
+
 		ok := false
 
 		for index, _prefRoute := range r.routes {
 			if _prefRoute.prefix == route.pathPrefix {
-				//edw ginete h zhmia pleon,prepei kapws na to kanw
+				//	if len(theLastStaticPart) > 0 && theLastStaticPart == _prefRoute.lastStaticPart {
 				r.routes[index].routes = append(_prefRoute.routes, route)
-				//println("add a route to the prefix " + _prefRoute.prefix + " registedPath: " + registedPath)
 				ok = true
+				//	}
 			}
 		}
 
 		if !ok {
 			registedPR := prefixRoute{prefix: route.pathPrefix, routes: make([]*Route, 0)}
+			/*if len(theLastStaticPart) > 0 {
+				registedPR.lastStaticPart = theLastStaticPart
+
+			}*/
 			//println("register new prefixRoute with prefix: " + route.pathPrefix + " and registedPath : " + registedPath)
 			registedPR.routes = append(registedPR.routes, route)
 			r.routes = append(r.routes, registedPR)
@@ -92,12 +110,6 @@ func (r *Router) HandleFunc(registedPath string, handler Handler) *Route {
 			registedRoutePrefix.routes = append(registedRoutePrefix.routes, route)
 			r.routes = append(r.routes, *registedRoutePrefix)
 		*/
-		/*
-
-			if r.routes[route.pathPrefix] == nil {
-				r.routes[route.pathPrefix] = make([]*Route, 0)
-			}
-			r.routes[route.pathPrefix] = append(r.routes[route.pathPrefix], route)*/
 
 	}
 	route.httpErrors = r.httpErrors
@@ -304,7 +316,7 @@ func UseHandler(handler http.Handler) *Server {
 func (r *Router) find(req *http.Request) (*Route, int) {
 
 	for _, prefRoute := range r.routes {
-		if strings.HasPrefix(req.URL.Path, prefRoute.prefix) {
+		if strings.HasPrefix(req.URL.Path, prefRoute.prefix) { // no it is not faster, so f it.. && (len(prefRoute.suffix) == 0 || (len(prefRoute.suffix) > 0 && strings.Contains(req.URL.Path, prefRoute.suffix))) {
 
 			wrongMethod := false
 
