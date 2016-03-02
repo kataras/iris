@@ -214,12 +214,39 @@ var (
 				ExpectedParameters: nil,
 			}},
 		},
+		{
+			Methods: HTTPMethods.ANY, Path: "/wildcard/:username/any/*",
+			Requests: []TestRequestRoute{{
+				Method: "GET", Path: "/wildcard/kataras/any/blablabla/bleleblelbe",
+				Body:               []byte("body for the /wildcard/any/*"),
+				ExpectedStatusCode: 200,
+				ExpectedParameters: map[string]string{"username": "kataras"},
+			}, {
+				Method: "GET", Path: "/wildcard/kataras/any",
+				Body:               []byte("body for the /wildcard/kataras/any"),
+				ExpectedStatusCode: 404,
+				ExpectedParameters: nil,
+			}},
+		},
+		{
+			Methods: HTTPMethods.ANY, Path: "/wildcard2/*",
+			Requests: []TestRequestRoute{{
+				Method: "GET", Path: "/wildcard2/kataras/dsadsadsa/dsasasa",
+				Body:               []byte("body for the /wildcard2/*"),
+				ExpectedStatusCode: 200,
+				ExpectedParameters: nil,
+			}, {
+				Method: "GET", Path: "/wildcard2",
+				Body:               []byte("body for the /wildcard"),
+				ExpectedStatusCode: 404,
+				ExpectedParameters: nil,
+			}},
+		},
 	}
 )
 
 func TestMain(m *testing.M) {
 	//println("iris_test.go TestMain started")
-
 	setup()
 
 	result := m.Run()

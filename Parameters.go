@@ -38,6 +38,9 @@ func URLParam(req *http.Request, key string) string {
 
 func Params(r *Route, urlPath string) (params PathParameters) {
 	//params := make(PathParameters, 0, partsLen)
+	if params == nil {
+		params = make(PathParameters, 0, len(r.parts))
+	}
 	for i := 0; i < len(r.parts); i++ {
 
 		if r.parts[i][0] == ParameterStartByte { //strings.IndexByte(r.parts[i], ParameterStartByte) == 0 { //r.parts[i][0] == ParameterStartByte { //strings.Index(r.parts[i], ParameterStart) == 0 { //r.parts[i][0:1] == ParameterStart { //takes the first character and check if it's parameter part

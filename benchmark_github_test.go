@@ -346,7 +346,7 @@ func irisHandleTestTypical(res http.ResponseWriter, req *http.Request) {
 }
 
 func loadIris(routes []routeTest) http.Handler {
-	h := irisHandleTestTypical
+	h := irisHandleTestContexted //irisHandleTestTypical
 
 	api := New()
 
@@ -397,6 +397,6 @@ func BenchmarkIris_GithubAll(b *testing.B) {
 //
 //With (func (ctx *Context))
 //
-//BenchmarkIris_GithubALL    				5000     332416 ns/op      69448 B/op     1086 allocs/op
+//BenchmarkIris_GithubALL    				5000     332416 ns/op      69448 B/op     1001 allocs/op
 //
 //

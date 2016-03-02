@@ -22,7 +22,8 @@ const (
 	// RegexParenthesisContent finds whatever inside parenthesis
 	RegexParenthesisContent = ParameterPatternStart + "(.*?)" + ParameterPatternEnd
 	// MatchEverything is used for routes, is the character which match everything to a specific handler
-	MatchEverything = "*"
+	MatchEverything     = "*"
+	MatchEverythingByte = byte('*')
 )
 
 var (
