@@ -1,0 +1,9 @@
+To create the iris.test.exe:
+go test -cpuprofile cpu_test.out -bench="Iris" -run=^a
+
+to analyze the results: 
+go tool pprof -pdf ./iris.test.exe ./cpu_test.out > cpu_test_output.pdf
+
+or
+[.svg ext default to firefox]
+go tool pprof --web ./iris.test.exe ./cpu_test.out 

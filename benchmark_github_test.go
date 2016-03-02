@@ -4,7 +4,6 @@ import (
 	"io"
 	"net/http"
 	"runtime"
-	"strings"
 	"testing"
 )
 
@@ -13,6 +12,23 @@ import (
 // I THINK THIS IS THE STANDAR WAY TO BENCHMARK ROUTERS AND WEB FRAMEWORKS,
 // BECAUSE THIS I AM USING EXACTLY THE SAME ARCHITECTURE IN ORDER TO IRIS BE COMPARED TO OTHER FRAMEWORKS AND ROUTERS TOO.
 //
+// used ONLY in benchmark test
+type fakeResponseWriter struct{}
+
+func (f *fakeResponseWriter) Header() (h http.Header) {
+	return http.Header{}
+}
+
+func (f *fakeResponseWriter) Write(p []byte) (n int, err error) {
+	return len(p), nil
+}
+
+func (f *fakeResponseWriter) WriteString(s string) (n int, err error) {
+	return len(s), nil
+}
+
+func (f *fakeResponseWriter) WriteHeader(int) {}
+
 type routeTest struct {
 	method string
 	path   string
@@ -82,6 +98,7 @@ var githubAPI = []routeTest{
 	{"DELETE", "/gists/:id"},
 
 	// Git Data
+	///TODO NOT FOUND ALL BELLOW THAT LAWL na dw line 60 isws exei sxesh ekeino to route.
 	{"GET", "/repos/:owner/:repo/git/blobs/:sha"},
 	{"POST", "/repos/:owner/:repo/git/blobs"},
 	{"GET", "/repos/:owner/:repo/git/commits/:sha"},
@@ -320,19 +337,23 @@ func calcMem(name string, load func()) {
 
 //
 
-func irisHandleTest(c *Context) {
+func irisHandleTestContexted(c *Context) {
 	io.WriteString(c.ResponseWriter, c.Request.RequestURI)
-	c.Close()
+}
+
+func irisHandleTestTypical(res http.ResponseWriter, req *http.Request) {
+	io.WriteString(res, req.RequestURI)
 }
 
 func loadIris(routes []routeTest) http.Handler {
-	h := irisHandleTest
+	h := irisHandleTestTypical
 
 	api := New()
+
 	for _, route := range routes {
 		api.Handle(route.path, h).Method(route.method)
 	}
-	api.SortRoutes() //NEW Feature for performance, I am thinking to make it by-default it was so easy to make the performance even better!
+
 	return api
 }
 
@@ -342,24 +363,13 @@ func benchRoutes(b *testing.B, router http.Handler, routes []routeTest) {
 	u := r.URL
 	rq := u.RawQuery
 
-	//custom stuff
-	//convert /something/:name to /something/name
-	routeReqPaths := make([]string, len(routes))
-	for _, route := range routes {
-		//pure implemention but 404 on the /something/:name, it has to be request url: /something/name
-		reqPath := strings.Replace(route.path, ":", "", -1)
-		routeReqPaths = append(routeReqPaths, reqPath)
-	}
-	//end of custom stuff
-
 	b.ReportAllocs()
 	b.ResetTimer()
-
 	for i := 0; i < b.N; i++ {
-		for routeIndex, route := range routes {
+		for _, route := range routes {
 			r.Method = route.method
-			r.RequestURI = routeReqPaths[routeIndex] //route.path
-			u.Path = routeReqPaths[routeIndex]       //route.path
+			r.RequestURI = route.path
+			u.Path = route.path
 			u.RawQuery = rq
 			router.ServeHTTP(w, r)
 		}
@@ -367,14 +377,26 @@ func benchRoutes(b *testing.B, router http.Handler, routes []routeTest) {
 }
 
 //run: go test -bench="Iris"
+//run(2): go test-bench BenchmarkIris_GithubAll -run=XXX
+//run(3): go test-bench BenchmarkIris_GithubAll -run=^a
 func BenchmarkIris_GithubAll(b *testing.B) {
+	//if BenchmarkProfiler {
+	//	defer profile.Start().Stop()
+	//}
 	benchRoutes(b, githubIris, githubAPI)
 }
 
-//Results ( one proccessor )
+//Results ( one 2.5GHz core )
 //
 //#GithubAPI Routes: 203
-//	Iris: 453448 Bytes
-//Pass
-//BenchmarkIris_GithubALL    				3000     432024 ns/op      172168 B/op     1421 allocs/op
+//	Iris: 52120 Bytes
+//With typical http handler
+//
+//BenchmarkIris_GithubALL    				5000     285416 ns/op      69448 B/op     766 allocs/op
+//
+//
+//With (func (ctx *Context))
+//
+//BenchmarkIris_GithubALL    				5000     332416 ns/op      69448 B/op     1086 allocs/op
+//
 //

@@ -2,9 +2,7 @@ package iris
 
 import (
 	"net/http"
-	"regexp"
 	"strings"
-	"sync"
 )
 
 // Route contains its middleware, handler, pattern , it's path string, http methods and a template cache
@@ -14,50 +12,52 @@ type Route struct {
 
 	//Middleware
 	MiddlewareSupporter
-	mu            sync.RWMutex
-	methods       []string
-	path          string
-	handler       Handler
-	Pattern       *regexp.Regexp
-	ParamKeys     []string
-	isReady       bool
-	templates     *TemplateCache //this is passed to the Renderer
-	errorHandlers ErrorHandlers  //the only need of this is to pass into the Context, in order to  developer get the ability to perfom emit errors (eg NotFound) directly from context
-	preffix       string         // this is to make a little faster the match, before regexp Match runs, it's the path before the first path parameter :
+	//mu            sync.RWMutex
+	methods    []string
+	pathPrefix string // this is to make a little faster the match, before regexp Match runs, it's the path before the first path parameter :
+	//the pathPrefix is with the last / if parameters exists.
+	parts []string //stores the string path AFTER the pathPrefix, without the pathPrefix. no need to that but no problem also.
+	//test
+	fullpath string
+	//
+	handler    Handler
+	isReady    bool
+	templates  *TemplateCache //this is passed to the Renderer
+	httpErrors *HTTPErrors    //the only need of this is to pass into the Context, in order to  developer get the ability to perfom emit errors (eg NotFound) directly from context
 }
 
 // newRoute creates, from a path string, handler and optional http methods and returns a new route pointer
 func newRoute(registedPath string, handler Handler) *Route {
-	Route := &Route{handler: handler, path: registedPath, isReady: false}
-
+	r := &Route{handler: handler}
+	hasPathParameters := false
 	firstPathParamIndex := strings.Index(registedPath, ParameterStart)
 	if firstPathParamIndex != -1 {
-		Route.preffix = registedPath[:firstPathParamIndex]
+		r.pathPrefix = registedPath[:firstPathParamIndex] ///api/users  to /api/users/
+		hasPathParameters = true
 	} else {
-		//check for *
+		//check for only for* , here no path parameters registed.
 		firstPathParamIndex = strings.Index(registedPath, MatchEverything)
 
 		if firstPathParamIndex != -1 {
-			Route.preffix = registedPath[:firstPathParamIndex]
+			if firstPathParamIndex <= 1 { // set to '*' to pathPrefix if no prefix exists except the slash / if any [Get("/*",..) or Get("*",...]
+				r.pathPrefix = MatchEverything
+			} else {
+				r.pathPrefix = registedPath[:firstPathParamIndex+1]
+			}
+
 		} else {
-			//else no path parameter or match everything symbol so use the whole path as preffix it will be faster at the check for static routes too!
-			Route.preffix = registedPath
+			//else no path parameter or match everything symbol so use the whole path as prefix it will be faster at the check for static routes too!
+			r.pathPrefix = registedPath
 		}
 
 	}
 
-	makePathPattern(Route) //moved to RegexHelper.go
+	if hasPathParameters {
+		r.parts = strings.Split(registedPath[len(r.pathPrefix):], "/")
 
-	//26-02-2016 handler can be a struct too which have a run(*route,response,request) method
-	/*if Route.handler != nil {
-		typeFn := reflect.TypeOf(Route.handler)
-		if typeFn.NumIn() == 0 {
-			//no parameters passed to the route, then panic.
-			panic("iris: Route handler: Provide parameters to the handler, otherwise the route cannot be served")
-		}
-	}*/
-
-	return Route
+	}
+	r.fullpath = registedPath
+	return r
 }
 
 // containsMethod determinates if this route contains a http method
@@ -86,40 +86,99 @@ func (r *Route) Method(method string) *Route {
 	return r
 }
 
-// Match determinates if this route match with a url
+var removePunctuation = func(r rune) rune {
+	if strings.ContainsRune("/", r) {
+		return -1
+	} else {
+		return r
+	}
+}
+
+func (r *Route) getRegistedPath() string {
+	if r.parts != nil {
+		return r.pathPrefix + strings.Join(r.parts, "/")
+	}
+	return r.pathPrefix
+}
+
+//var routeBuff = make([]byte,40)
+// Match determinates if this route match with the request, returns bool as first value and PathParameters as second value, if any
 func (r *Route) match(urlPath string) bool {
-	if r.path == MatchEverything {
+	//an to kanw me prefix sto router adi gia ta methods
+	//tote ta 2 prwta if == MatchEv... auto 9a elenxete sto router kai to r.pathPrefix == urlPath  9a einai autonoito ara dn 9a xreiastei.
+	//test:
+	//return true, nil
+
+	//for tests
+	//testUrl := "/repos/owner/repo/git/blobs/sha"
+	//if urlPath == testUrl {
+	//	println("match this route ? ")
+	//	println("route's .prefix: ", r.pathPrefix)
+
+	//}
+	//end for tests
+	if r.pathPrefix == MatchEverything {
 		return true
 	}
-	//Before that strings.HasPrefix benchmark resutlt was:
-	//BenchmarkIris_GithubALL    				 300    4403585 ns/op      172152 B/op     1421 allocs/op
-	//and After
-	//BenchmarkIris_GithubALL    				2000     530530 ns/op      172168 B/op     1421 allocs/op
-	//and After the SortRoutes which I will make it by default at the end of the day
-	//BenchmarkIris_GithubALL    				3000     432024 ns/op      172168 B/op     1421 allocs/op
-	// so this little change makes big difference!
+	//println(r.pathPrefix + " and urlPath: " + urlPath)
+	if r.pathPrefix == urlPath {
+		//it's route without path parameters or * symbol, and if the request url has prefix of it  and it's the same as the whole preffix which is the path itself returns true without checking for regexp pattern
+		//so it's just a path without named parameters
+		return true
 
-	if strings.HasPrefix(urlPath, r.preffix) {
-		if r.preffix == r.path && urlPath == r.path { // it's route without path parameters or * symbol, and if the request url has preffix of it  and it's the same as the whole preffix which is the path itself returns true without checking for regexp pattern
-			return true
+	} else if r.parts != nil {
+		//	if urlPath == testUrl {
+		//		println("route has parts ")
+		//		println("route's len(parts) : ", len(r.parts))
+		//
+		//	}
+		//it's not a static route it has parameters,and the url has the right prefix [taken from router's map] so check for it
+		//reqParts := strings.Split(urlPath[len(r.pathPrefix):], "/")
+
+		//it's even slower than split ...
+		//s := strings.Map(removePunctuation, urlPath[len(r.pathPrefix):])
+		//reqParts := strings.Fields(s)
+		partsLen := len(r.parts)
+		reqPartsLen := 1
+		s := urlPath[len(r.pathPrefix):]
+		for i := 0; i < len(s); i++ {
+			if s[i] == SlashByte {
+				reqPartsLen++
+			}
 		}
-		return r.Pattern.MatchString(urlPath)
-	}
-	/*Note
-	//this doesn't make the performance better, opossite its adds 7000 nannoseconds more to the total github operations
 
-		if r.preffix == r.path && urlPath == r.path { // it's route without path parameters or * symbol, and if the request url has preffix of it  and it's the same as the whole preffix which is the path itself returns true without checking for regexp pattern
+		//reqPartsLen := strings.Count(urlPath[len(r.pathPrefix):], "/") + 1 //auto apodiktike polu pio fast twra mono ta parameters mas menoun
+		//reqParts := strings.Split(urlPath[len(r.pathPrefix):], "/")
+		//reqParts := strings.SplitN(urlPath[len(r.pathPrefix):], "/", partsLen+1) // +1 because if it's more than partsLen we want to return false and no match to the closest route.
+
+		//reqParts := re.FindAllString(urlPath[len(r.pathPrefix):], partsLen+1)
+		if reqPartsLen != partsLen {
+			//if urlPath == testUrl && len(r.parts) == 5 {
+
+			//println("req parts ", len(reqParts), " are not the same as parts len ", partsLen)
+			//println("route's path: " + r.getRegistedPath() + " req path: " + urlPath)
+			//	println("routes parts: ")
+			//	for _, _ppart := range r.parts {
+			//		println(_ppart)
+			//	}
+
+			//	println("req parts: ")
+
+			//for _, _ppart := range reqParts {
+			//		println(_ppart)
+			//	}
+			//}
+			return false // request has not the correct number of passed parameters to the route.
+		}
+		//edw ta allocs pernoun fwtia kai ta nanoseconds sto mellon na to ftiaksw. otan telewisw to pws a9 ginonte match ta routes..
+		//reqParts := strings.Split(urlPath[len(r.pathPrefix):], "/")
+
 		return true
+
+	} else {
+		return false
 	}
 
-	if strings.HasPrefix(urlPath, r.preffix) {
-
-		return r.Pattern.MatchString(urlPath)
-	}
-
-	*/
-
-	return false
 }
 
 // Template creates (if not exists) and returns the template cache for this route
@@ -130,34 +189,6 @@ func (r *Route) Template() *TemplateCache {
 	return r.templates
 }
 
-// run runs the route, this means response to the client's Request.
-// Here is the place for checking for parameters passed to the Handler with ...interface{}
-func (r *Route) run(res http.ResponseWriter, req *http.Request) {
-	//var some []reflect.Value
-
-	/*	if r.handlerAcceptsBothContextRenderer {
-			ctx := newContext(res, req, r.errorHandlers)
-			renderer := newRenderer(res)
-			if r.templates != nil {
-				renderer.templateCache = r.templates
-			}
-
-			r.handler.(func(context *Context, renderer *Renderer))(ctx, renderer)
-		} else if r.handlerAcceptsBothResponseRequest {
-			r.handler.(func(res http.ResponseWriter, req *http.Request))(res, req)
-		} else if r.handlerAcceptsOnlyContext {
-			ctx := newContext(res, req, r.errorHandlers)
-			r.handler.(func(context *Context))(ctx)
-		} else if r.handlerAcceptsOnlyRenderer {
-			renderer := newRenderer(res)
-			if r.templates != nil {
-				renderer.templateCache = r.templates
-			}
-			r.handler.(func(context *Renderer))(renderer)
-		}
-	*/
-}
-
 // prepare prepares the route's handler , places it to the last middleware , handler acts like a middleware too.
 // Runs once before the first ServeHTTP
 func (r *Route) prepare() {
@@ -166,8 +197,6 @@ func (r *Route) prepare() {
 	//but wait... do we need locking here?
 	if r.handler != nil {
 		convertedMiddleware := MiddlewareHandlerFunc(func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
-			//r.Handler(res, req) :->
-			//r.run(res, req)
 			r.handler.run(r, res, req)
 			next(res, req)
 		})

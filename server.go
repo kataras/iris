@@ -71,7 +71,6 @@ type Server struct {
 	debugEnabled bool
 	// DebugPath set this to change the default http paths for the profiler
 	debugPath   string
-	config      *ServerConfig
 	router      *Router
 	listenerTCP *tcpKeepAliveListener
 	isRunning   bool
@@ -107,7 +106,7 @@ func Debug(val bool, customPath ...string) {
 }
 
 // Starts the http server ,tcp listening to the config's host and port
-func (s *Server) start() error {
+func (s *Server) start(fulladdr string) error {
 	mux := http.NewServeMux() //we use the http's ServeMux for now as the top- middleware of the server, for now.
 
 	mux.Handle("/", s)
@@ -116,18 +115,19 @@ func (s *Server) start() error {
 	}
 
 	//return http.ListenAndServe(s.config.Host+strconv.Itoa(s.config.Port), mux)
-	fullAddr := s.config.Host + ":" + strconv.Itoa(s.config.Port)
-	listener, err := net.Listen("tcp", fullAddr)
+
+	listener, err := net.Listen("tcp", fulladdr)
 
 	if err != nil {
-		panic("Cannot run the server [problem with tcp listener on host:port]: " + fullAddr)
+		panic("Cannot run the server [problem with tcp listener on host:port]: " + fulladdr)
 	}
 
 	s.listenerTCP = &tcpKeepAliveListener{listener.(*net.TCPListener)} //we need this because I think that we have to 'have' a Close() method on the server instance
-	defer s.listenerTCP.Close()
+	//defer s.listenerTCP.Close()
 	err = http.Serve(s.listenerTCP, mux)
 
 	s.isRunning = true
+	s.listenerTCP.Close()
 	return err
 }
 
@@ -135,22 +135,28 @@ func (s *Server) start() error {
 // which listens to the fullHostOrPort parameter which as the form of
 // host:port or just port
 func (s *Server) Listen(fullHostOrPort interface{}) error {
+	addr := "127.0.0.1:8080"
+	if fullHostOrPort != nil {
 
-	switch reflect.ValueOf(fullHostOrPort).Interface().(type) {
-	case string:
-		config := strings.Split(fullHostOrPort.(string), ":")
+		switch reflect.ValueOf(fullHostOrPort).Interface().(type) {
+		case string:
+			config := strings.Split(fullHostOrPort.(string), ":")
 
-		if strings.TrimSpace(config[0]) != "" {
-			s.config.Host = config[0]
+			if config[0] != "" {
+				addr = config[0]
+			}
+
+			if len(config) > 1 {
+				addr += config[1]
+			} else {
+				addr += ":8080"
+			}
+		case int:
+			addr = "127.0.0.1:" + strconv.Itoa(fullHostOrPort.(int))
 		}
-
-		if len(config) > 1 {
-			s.config.Port, _ = strconv.Atoi(config[1])
-		}
-	default:
-		s.config.Port = fullHostOrPort.(int)
 	}
-	return s.start()
+
+	return s.start(addr)
 
 }
 
@@ -172,13 +178,12 @@ func (s *Server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		route.ServeHTTP(res, req)
 	} else {
 		//get the handler for this error
-		errHandler := s.Errors.errorHanders[errCode]
-
-		if errHandler != nil {
-			errHandler.ServeHTTP(res, req)
-		} else {
+		errHandler := s.Errors.getByCode(errCode)
+		if errHandler == nil {
 			//if not a handler for this error exists, then just:
 			http.Error(res, "An unexcpecting error occurs ("+strconv.Itoa(errCode)+")", errCode)
+		} else {
+			errHandler.handler.ServeHTTP(res, req)
 		}
 	}
 }
@@ -332,18 +337,33 @@ func Handle(params ...interface{}) *Route {
 	return DefaultServer.Handle(params...)
 }
 
+/*
 //for test and... it worked , +1k executions and -100k nanoseconds to operate
 func (s *Server) SortRoutes() {
-	s.router.methodsRoutes = make(map[string][]*Route, len(s.router.routes))
+	s.router.methodsRoutes = make(map[string][]*Route, 0) // len(s.router.routes))
+
 	for _, m := range HTTPMethods.ANY {
 		s.router.methodsRoutes[m] = make([]*Route, 0)
 	}
 
 	for _, r := range s.router.routes {
+		//r.prepare()
 		for _, m := range r.methods {
 			s.router.methodsRoutes[m] = append(s.router.methodsRoutes[m], r)
 		}
+	}
+}
+
+//for test and...
+func (s *Server) SortRoutes2() {
+	s.router.pathRoutes = make(map[string][]*Route, 0) //len(s.router.routes))
+
+	for _, r := range s.router.routes {
+		if s.router.pathRoutes[r.pathPrefix] == nil {
+			s.router.pathRoutes[r.pathPrefix] = make([]*Route, 0)
+		}
+		s.router.pathRoutes[r.pathPrefix] = append(s.router.pathRoutes[r.pathPrefix], r)
 
 	}
-
 }
+*/

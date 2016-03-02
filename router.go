@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-	"sync"
 )
 
 const (
@@ -14,20 +13,25 @@ const (
 	CookieName = "____iris____"
 )
 
+type prefixRoute struct {
+	prefix string
+	routes []*Route
+}
+
 // Router is the router , one router per server.
 // Router contains the global middleware, the routes and a Mutex for lock and unlock on route prepare
 type Router struct {
 	MiddlewareSupporter
-	//routes map[string]*Route, I dont need this anymore because I will have to iterate to all of them to check the regex pattern vs request url..
-	routes        []*Route
-	methodsRoutes map[string][]*Route
-	mu            sync.RWMutex
-	errorHandlers ErrorHandlers //the only need of this is to pass into the route, which it need it to  passed it to Context, in order to  developer get the ability to perfom emit errors (eg NotFound) directly from context
+	//no routes map[string]map[string][]*Route // key = path prefix, value a map which key = method and the vaulue an array of the routes starts with that prefix and method
+	//routes map[string][]*Route // key = path prefix, value an array of the routes starts with that prefix
+	routes []prefixRoute
+	//mu            sync.RWMutex
+	httpErrors *HTTPErrors //the only need of this is to pass into the route, which it need it to  passed it to Context, in order to  developer get the ability to perfom emit errors (eg NotFound) directly from context
 }
 
 // NewRouter creates and returns an empty Router
 func newRouter() *Router {
-	return &Router{routes: make([]*Route, 0)}
+	return &Router{routes: make([]prefixRoute, 0)}
 }
 
 // HandleFunc registers and returns a route with a path string, a handler and optinally methods as parameters
@@ -45,21 +49,7 @@ func (r *Router) HandleFunc(registedPath string, handler Handler) *Route {
 		registedPath = "/"
 	}
 
-	if handler != nil || registedPath == MatchEverything {
-
-		//validate the handler to be a func
-		//if reflect.TypeOf(handler).Kind() == reflect.Ptr {
-		//	//if it's a pointer of , then take it's value
-		//	println("its pointer so")
-		//	handler = reflect.ValueOf(handler).Elem().Interface().(Handler)
-		//}
-
-		//if reflect.TypeOf(handler).Kind() != reflect.Func {
-		//	panic("iris | router.go:~49 -- On " + registedPath + " Inline Handler HAS TO BE A func BUT IT WAS " + reflect.TypeOf(handler).Kind().String())
-		//but handler can be a struct too, the run() is all we care...xmm
-		//}
-		//26-02-2016let the golang see if it's handler ( have the .run() method) no error checking.
-
+	if handler != nil {
 		route = newRoute(registedPath, handler)
 
 		if len(r.middlewareHandlers) > 0 {
@@ -67,9 +57,50 @@ func (r *Router) HandleFunc(registedPath string, handler Handler) *Route {
 			route.middlewareHandlers = r.middlewareHandlers
 		}
 
-		r.routes = append(r.routes, route)
+		//r.routes = append(r.routes, route)
+		ok := false
+
+		for index, _prefRoute := range r.routes {
+			if _prefRoute.prefix == route.pathPrefix {
+				//edw ginete h zhmia pleon,prepei kapws na to kanw
+				r.routes[index].routes = append(_prefRoute.routes, route)
+				//println("add a route to the prefix " + _prefRoute.prefix + " registedPath: " + registedPath)
+				ok = true
+			}
+		}
+
+		if !ok {
+			registedPR := prefixRoute{prefix: route.pathPrefix, routes: make([]*Route, 0)}
+			//println("register new prefixRoute with prefix: " + route.pathPrefix + " and registedPath : " + registedPath)
+			registedPR.routes = append(registedPR.routes, route)
+			r.routes = append(r.routes, registedPR)
+		}
+
+		/*
+			var registedRoutePrefix *prefixRoute
+			for _, prefixRoute := range r.routes {
+				if prefixRoute.prefix == route.pathPrefix {
+					registedRoutePrefix = &prefixRoute
+				}
+			}
+
+			if registedRoutePrefix == nil {
+				registedRoutePrefix = &prefixRoute{prefix: route.pathPrefix, routes: make([]*Route, 0)}
+
+
+			}
+			registedRoutePrefix.routes = append(registedRoutePrefix.routes, route)
+			r.routes = append(r.routes, *registedRoutePrefix)
+		*/
+		/*
+
+			if r.routes[route.pathPrefix] == nil {
+				r.routes[route.pathPrefix] = make([]*Route, 0)
+			}
+			r.routes[route.pathPrefix] = append(r.routes[route.pathPrefix], route)*/
+
 	}
-	route.errorHandlers = r.errorHandlers
+	route.httpErrors = r.httpErrors
 	return route
 }
 
@@ -212,17 +243,6 @@ func (s *Server) handleAnnotated(irisHandler Annotated) (*Route, error) {
 	return s.router.handleAnnotated(irisHandler)
 }
 
-func (r *Router) getRouteByRegistedPath(registedPath string) *Route {
-
-	for _, route := range r.routes {
-		if route.path == registedPath {
-			return route
-		}
-	}
-	return nil
-
-}
-
 ///////////////////
 //global middleware
 ///////////////////
@@ -232,8 +252,11 @@ func (r *Router) Use(handler MiddlewareHandler) *Router {
 	r.MiddlewareSupporter.Use(handler)
 	//IF this is called after the routes
 	if len(r.routes) > 0 {
-		for _, route := range r.routes {
-			route.Use(handler)
+		for _, routes := range r.routes {
+			for _, route := range routes.routes {
+				route.Use(handler)
+			}
+
 		}
 	}
 	return r
@@ -276,64 +299,34 @@ func UseHandler(handler http.Handler) *Server {
 	return DefaultServer
 }
 
-// find returns the correct/matched route, if any, for  the request passed as parameter
+// find returns the correct/matched route, if any, for  the request
 // if error route != nil , then the errorcode will be 200 OK
 func (r *Router) find(req *http.Request) (*Route, int) {
-	var routes []*Route
-	isSorted := r.methodsRoutes != nil
-	if isSorted {
-		//means routes are sorted
-		routes = r.methodsRoutes[req.Method]
-	} else {
-		routes = r.routes
-	}
 
-	reqURLPath := req.URL.Path
-	wrongMethod := false
-	for _, route := range routes {
-		if route.match(reqURLPath) {
-			if isSorted {
-				//if it's already sorted then we have to correct routes for this req method
+	for _, prefRoute := range r.routes {
+		if strings.HasPrefix(req.URL.Path, prefRoute.prefix) {
 
-			} else if route.containsMethod(req.Method) == false {
-				wrongMethod = true
-				continue
-			}
+			wrongMethod := false
 
-			reqPathSplited := strings.Split(reqURLPath, "/")
-			routePathSplited := strings.Split(route.path, "/")
-			/*if len(reqPathSplited) != len(reqPathSplited) {
-				panic("This error has no excuse, line 99 iris/router/Router.go")
-				continue
-			}*/
-			var cookieFullValue string
-			for _, key := range route.ParamKeys {
+			for _, route := range prefRoute.routes {
 
-				for splitIndex, pathPart := range routePathSplited {
-					//	pathPart = pathPart. //here must be replace :name(dsadsa) to name in order to comprae it with the key
-					hasRegex := strings.Contains(pathPart, ParameterPatternStart) // polu proxeira...
-
-					if (hasRegex && strings.Contains(pathPart, ParameterStart+key+ParameterPatternStart)) || (!hasRegex && strings.Contains(pathPart, ParameterStart+key)) {
-						param := key + "=" + reqPathSplited[splitIndex]
-						cookieFullValue += "," + param
+				if route.match(req.URL.Path) {
+					if route.containsMethod(req.Method) == false {
+						//if route has found but with wrong method, we must continue it because maybe the next route has the correct method, but
+						wrongMethod = true
+						continue //the for _, route
 					}
-				}
-			}
-			if cookieFullValue != "" {
-				_cookie := &http.Cookie{Name: CookieName, Value: cookieFullValue[1:]} //remove the first comma
-				req.AddCookie(_cookie)
-			}
+					return route, http.StatusOK
 
-			//break. found
-			return route, http.StatusOK
+				}
+
+			}
+			if wrongMethod {
+				return nil, http.StatusMethodNotAllowed
+			}
 		}
 	}
 
-	//if route has found but with wrong method, we must continue it because maybe the next route has the correct method, but
 	//here if no method found
-	if wrongMethod {
-		return nil, http.StatusMethodNotAllowed
-	}
-	//not found
 	return nil, http.StatusNotFound
 }

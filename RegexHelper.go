@@ -1,13 +1,14 @@
 package iris
 
-import (
-	"regexp"
-	"strings"
-)
+// THIS FILE HAS NOT ANY USE ANYMORE, I DROP THE SUPPORT FOR REGEX PATTERNS FOR ROUTE PATH
+// ONLY USAGE IS FOR CONSTS, AND MAYBE SOME FUTURE WORK ON PRE_DEFINED TYPES OF PATH PARAMETERS.
+import ()
 
 const (
 	// ParameterStart the character which the named path is starting
-	ParameterStart = ":"
+	ParameterStart     = ":"
+	ParameterStartByte = byte(':')
+	SlashByte          = byte('/')
 	// ParameterPatternStart the character which the regex custom pattern of a named parameter starts
 	ParameterPatternStart = "("
 	// ParameterPatternEnd the character which the regex custom pattern of a named parameter ends
@@ -35,7 +36,7 @@ func toPattern(theType string) string {
 
 	switch theType {
 	case "string":
-		thePattern = "\\w+" //xmmm or  [a-zA-Z0-9]+
+		thePattern = "[a-zA-Z]+" //"\\w+" //xmmm or  [a-zA-Z0-9]+
 
 	case "int":
 		thePattern = "[0-9]+"
@@ -53,79 +54,4 @@ func isSupportedType(theType string) bool {
 		}
 	}
 	return false
-}
-
-///TODO: na xrisimopoisw to regex pou vriskei auta p einai stin paren9esi kai ta svinei
-//meta to keys := wste ta keys na min exoun mesa ta regex
-//giati me to regex p exw twra an o developer valei :name(antregexhere:/w+) 9a bei sta keys[] kai to /w+
-//FIXED
-//finds and stores pattern for /something/:name(string)
-func makePathPattern(Route *Route) {
-	registedPath := Route.path
-	if registedPath != MatchEverything {
-		regexpRoute := registedPath
-		//it's not *
-		//but maybe it is /something/*
-
-		//so check the last character if it's '*'
-
-		//	if strings.Index("*",registedPath) == len(registedPath-1) {
-		if strings.HasSuffix(registedPath, "*") {
-			//the last character is '*'
-			regexpRoute = regexpRoute[:len(regexpRoute)-1] //we dont remove THE slash / before it (it would be -2)
-			//if we  remove the slash too then the :
-			// /test/*
-			// will match to the /testdsadsadsa not only to the /test and test/dsadsa
-			//but if we don't remove the slash and dont put other regex like slash but one word after a slash
-			//then the /test/*
-			// will not be mach to the /test
-			//but only to the /test/ or /test/something
-			//this is better we make sure that the user is using a full path and no just the /test but a /test/astyleforexample.css
-			regexpRoute += ".*" //only the last character can be *
-
-			//we can have /something/:name/*
-			// or /*
-			// or /something/else/*
-			//because of that we don't return/stop this function now, we continue to see if any named parameters exists and create regex for them too
-		}
-
-		routeWithoutParenthesis := regexp.MustCompile(RegexParenthesisAndContent).ReplaceAllString(registedPath, "")
-
-		pattern := regexp.MustCompile(RegexRouteNamedParameter)
-
-		//find only :keys without parenthesis if any
-		keys := pattern.FindAllString(routeWithoutParenthesis, -1)
-
-		for keyIndex, key := range keys {
-			backupKey := key // the full :name we will need it for the replace.
-			key = key[1:len(key)]
-			keys[keyIndex] = key // :name is name now.
-
-			a1 := strings.Index(registedPath, key) + len(key)
-
-			if len(registedPath) > a1 && string(registedPath[a1]) == ParameterPatternStart {
-				//check if first character, of the ending of the key from the original full registedPath, is parenthesis
-
-				keyPattern1 := registedPath[a1:]                                //here we take all string after a1, which maybe be follow up with other paths, we will substring it in the next line
-				lastParIndex := strings.Index(keyPattern1, ParameterPatternEnd) //find last parenthesis index of the keyPattern1
-				keyPattern1 = keyPattern1[0 : lastParIndex+1]                   // find contents and it's parenthesis, we will need it for replace
-				keyPatternReg := keyPattern1[1 : len(keyPattern1)-1]            //find the contents between parenthesis
-				if isSupportedType(keyPatternReg) {
-					//if it is (string) or (int) inside contents
-					keyPatternReg = toPattern(keyPatternReg)
-				}
-				//replace the whole :key+(pattern) with just  the converted pattern from int,string or the contents of the parenthesis which is a custom user's regex pattern
-				regexpRoute = strings.Replace(regexpRoute, backupKey+keyPattern1, keyPatternReg, -1)
-
-			} else {
-				regexpRoute = strings.Replace(regexpRoute, backupKey, "\\w+", -1)
-			}
-
-		}
-		regexpRoute = strings.Replace(regexpRoute, "/", "\\/", -1) + "$" ///escape / character for regex and finish it with $, if route/:name and req url is route/:name:/somethingelse then it will not be matched
-		routePattern := regexp.MustCompile(regexpRoute)
-		Route.Pattern = routePattern
-
-		Route.ParamKeys = keys
-	}
 }

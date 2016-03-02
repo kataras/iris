@@ -39,32 +39,163 @@ var (
 		URL, IP string
 		PORT    int
 	}{URL: "http://localhost", PORT: 80, IP: "127.0.0.1"}
+	/*
+	   	inlineRoutes = [...]TestRoute{
+	   		{
+	   			Methods: HTTPMethods.ANY, Path: "/simple",
+	   			Requests: []TestRequestRoute{{
+	   				Method: "GET", Path: "/simple",
+	   				Body:               []byte("body for the /simple"),
+	   				ExpectedStatusCode: 200,
+	   				ExpectedParameters: nil,
+	   			}, {
+	   				Method: "GET", Path: "/simple/wrongpath",
+	   				Body:               []byte("body for the /simple but wrongpath"),
+	   				ExpectedStatusCode: 404,
+	   				ExpectedParameters: nil,
+	   			}},
+	   		},
+	   		{
+	   			Methods: HTTPMethods.ANY, Path: "/api/users/:userId(int)",
+	   			Requests: []TestRequestRoute{{
+	   				Method: "GET", Path: "/api/users/1",
+	   				Body:               []byte("body for the api/users/:userId(int)"),
+	   				ExpectedStatusCode: 200,
+	   				ExpectedParameters: map[string]string{"userId": "1"},
+	   			}, {
+	   				Method: "GET", Path: "/api/users/thisisastringnotanumb3r",
+	   				Body:               []byte("body for the api/users/:userId(int)"),
+	   				ExpectedStatusCode: 404,
+	   				ExpectedParameters: nil,
+	   			}},
+	   		},
+	   		{
+	   			Methods: HTTPMethods.ANY, Path: "/profile/:username/friends/:friendId(int)",
+	   			Requests: []TestRequestRoute{{
+	   				Method: "GET", Path: "/profile/kataras/friends/2",
+	   				Body:               []byte("body for the /profile/:username/friends/:friendId"),
+	   				ExpectedStatusCode: 200,
+	   				ExpectedParameters: map[string]string{"username": "kataras", "friendId": "2"},
+	   			}, {
+	   				Method: "GET", Path: "/profile/kataras/friends/stringerrorisnotanumberman",
+	   				Body:               []byte("body for the  /profile/:username/friends/:friendId(int)"),
+	   				ExpectedStatusCode: 404,
+	   				ExpectedParameters: nil,
+	   			}},
+	   		},
+	   		{
+	   			Methods: HTTPMethods.ANY, Path: "/profile/:username/friends/somethinghere/:friendId(int)/something/here",
+	   			Requests: []TestRequestRoute{{
+	   				Method: "GET", Path: "/profile/kataras/friends/somethinghere/2/something/here",
+	   				Body:               []byte("body for the /profile/:username/friends/somethinghere/:friendId(int)/something/here"),
+	   				ExpectedStatusCode: 200,
+	   				ExpectedParameters: map[string]string{"username": "kataras", "friendId": "2"},
+	   			}, {
+	   				Method: "GET", Path: "/profile/kataras/friends/somethinghere/stringerrorisnotanumberman/something/here",
+	   				Body:               []byte("body for the /profile/:username/friends/somethinghere/:friendId(int)/something/here"),
+	   				ExpectedStatusCode: 404,
+	   				ExpectedParameters: nil,
+	   			}},
+	   		},
+	   		{
+	   			Methods: HTTPMethods.ANY, Path: "/profile/:username/friends/:friendId(int)/something/here/:thirdParam",
+	   			Requests: []TestRequestRoute{{
+	   				Method: "GET", Path: "/profile/kataras/friends/2/something/here/thethirdparameter",
+	   				Body:               []byte("body for the /profile/:username/friends/:friendId(int)/something/here/:thirdParam"),
+	   				ExpectedStatusCode: 200,
+	   				ExpectedParameters: map[string]string{"username": "kataras", "friendId": "2", "thirdParam": "thethirdparameter"},
+	   			}, {
+	   				Method: "GET", Path: "/profile/kataras/friends/2/something/here",
+	   				Body:               []byte("body for the /profile/:username/friends/:friendId(int)/something/here/:thirdParam"),
+	   				ExpectedStatusCode: 404,
+	   				ExpectedParameters: nil,
+	   			}},
+	   		},
+	   		{
+	   			Methods: HTTPMethods.ANY, Path: "/profile/:username",
+	   			Requests: []TestRequestRoute{{
+	   				Method: "GET", Path: "/profile/kataras",
+	   				Body:               []byte("body for the profile/:username"),
+	   				ExpectedStatusCode: 200,
+	   				ExpectedParameters: map[string]string{"username": "kataras"},
+	   			}, {
+	   				Method: "GET", Path: "/profile/kataras/somethingelsehere",
+	   				Body:               []byte("body for the profile/:username"),
+	   				ExpectedStatusCode: 404,
+	   				ExpectedParameters: nil,
+	   			}},
+	   		},
+	   		{
+	   			Methods: HTTPMethods.ANY, Path: "/home/:username([a-zA-Z]+)",
+	   			Requests: []TestRequestRoute{{
+	   				Method: "GET", Path: "/home/Kataras",
+	   				Body:               []byte("body for the /home/:username([a-zA-Z]+)"),
+	   				ExpectedStatusCode: 200,
+	   				ExpectedParameters: map[string]string{"username": "Kataras"},
+	   			}, {
+	   				Method: "GET", Path: "/home/shouldN0tF0und",
+	   				Body:               []byte("body for the /home/:username([a-zA-Z]+)"),
+	   				ExpectedStatusCode: 404,
+	   				ExpectedParameters: nil,
+	   			}},
+	   		},
+	   	}
+	   )
+	*/
 
 	inlineRoutes = [...]TestRoute{
 		{
-			Methods: HTTPMethods.ANY, Path: "/api/users/:userId(int)",
+			Methods: HTTPMethods.ANY, Path: "/simple",
 			Requests: []TestRequestRoute{{
-				Method: "GET", Path: "/api/users/1",
-				Body:               []byte("body for the api/users/:userId(int)"),
+				Method: "GET", Path: "/simple",
+				Body:               []byte("body for the /simple"),
 				ExpectedStatusCode: 200,
-				ExpectedParameters: map[string]string{"userId": "1"},
+				ExpectedParameters: nil,
 			}, {
-				Method: "GET", Path: "/api/users/thisisastringnotanumb3r",
-				Body:               []byte("body for the api/users/:userId(int)"),
+				Method: "GET", Path: "/simple/wrongpath",
+				Body:               []byte("body for the /simple but wrongpath"),
 				ExpectedStatusCode: 404,
 				ExpectedParameters: nil,
 			}},
 		},
 		{
-			Methods: HTTPMethods.ANY, Path: "/profile/:username/friends/:friendId(int)",
+			Methods: HTTPMethods.ANY, Path: "/api/users/:userId",
+			Requests: []TestRequestRoute{{
+				Method: "GET", Path: "/api/users/1",
+				Body:               []byte("body for the api/users/:userId"),
+				ExpectedStatusCode: 200,
+				ExpectedParameters: map[string]string{"userId": "1"},
+			}, {
+				Method: "GET", Path: "/api/users",
+				Body:               []byte("body for the api/users/:userId"),
+				ExpectedStatusCode: 404,
+				ExpectedParameters: nil,
+			}},
+		},
+		{
+			Methods: HTTPMethods.ANY, Path: "/profile/:username/friends/:friendId",
 			Requests: []TestRequestRoute{{
 				Method: "GET", Path: "/profile/kataras/friends/2",
 				Body:               []byte("body for the /profile/:username/friends/:friendId"),
 				ExpectedStatusCode: 200,
 				ExpectedParameters: map[string]string{"username": "kataras", "friendId": "2"},
 			}, {
-				Method: "GET", Path: "/profile/kataras/friends/stringerrorisnotanumberman",
-				Body:               []byte("body for the  /profile/:username/friends/:friendId(int)"),
+				Method: "GET", Path: "/profile/kataras/friends/dsadsad/sadsa",
+				Body:               []byte("body for the  /profile/:username/friends/:friendId"),
+				ExpectedStatusCode: 404,
+				ExpectedParameters: nil,
+			}},
+		},
+		{
+			Methods: HTTPMethods.ANY, Path: "/profile/:username/friends/somethinghere/:friendId/something/here",
+			Requests: []TestRequestRoute{{
+				Method: "GET", Path: "/profile/kataras/friends/somethinghere/2/something/here",
+				Body:               []byte("body for the /profile/:username/friends/somethinghere/:friendId/something/here"),
+				ExpectedStatusCode: 200,
+				ExpectedParameters: map[string]string{"username": "kataras", "friendId": "2"},
+			}, {
+				Method: "GET", Path: "/profile/kataras/friends/somethinghere/stringerrorisnotanumberman/something",
+				Body:               []byte("body for the /profile/:username/friends/somethinghere/:friendId/something/here"),
 				ExpectedStatusCode: 404,
 				ExpectedParameters: nil,
 			}},
@@ -83,25 +214,14 @@ var (
 				ExpectedParameters: nil,
 			}},
 		},
-		{
-			Methods: HTTPMethods.ANY, Path: "/home/:username([a-zA-Z]+)",
-			Requests: []TestRequestRoute{{
-				Method: "GET", Path: "/home/Kataras",
-				Body:               []byte("body for the /home/:username([a-zA-Z]+)"),
-				ExpectedStatusCode: 200,
-				ExpectedParameters: map[string]string{"username": "Kataras"},
-			}, {
-				Method: "GET", Path: "/home/shouldN0tF0und",
-				Body:               []byte("body for the /home/:username([a-zA-Z]+)"),
-				ExpectedStatusCode: 404,
-				ExpectedParameters: nil,
-			}},
-		},
 	}
 )
 
 func TestMain(m *testing.M) {
+	//println("iris_test.go TestMain started")
+
 	setup()
+
 	result := m.Run()
 	teardown()
 	os.Exit(result)
@@ -112,7 +232,10 @@ func setup() {
 }
 
 func teardown() {
-	testServer.Close()
+	if testServer != nil {
+		testServer.Close()
+	}
+
 }
 
 func getRequestRoute(route TestRoute, reqURL string) *TestRequestRoute {
@@ -134,7 +257,7 @@ func checkParams(c *Context, expected map[string]string) error {
 			}
 
 			if contextParamValue != value {
-				msg := fmt.Sprintf("Expected parameter ( "+key+" ) value ( %v ) is not equal to the Context's parameter value: "+contextParamValue, value)
+				msg := fmt.Sprintf(c.Request.URL.Path+" Expected parameter ( "+key+" ) value ( %v ) is not equal to the Context's parameter value: "+contextParamValue, value)
 				return errors.New(msg)
 			}
 		}
@@ -247,7 +370,7 @@ func TestRoutesClientSide(t *testing.T) {
 					if res.StatusCode != requestRoute.ExpectedStatusCode {
 						t.Fatal("Expecting StatusCode: ", requestRoute.ExpectedStatusCode, " but we got: ", res.StatusCode, " for Route: "+route.Path)
 					} else {
-						customErrHandler := api.Errors.errorHanders[res.StatusCode]
+						customErrHandler := api.Errors.getByCode(res.StatusCode)
 						//if we get the status we want and it was error  read the body to see if the error message is the same as setted as custom error message
 
 						if customErrHandler != nil {

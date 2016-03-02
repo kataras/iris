@@ -113,9 +113,7 @@ func testDelete(c *iris.Context, r *iris.Renderer) {
 
 ## Named Parameters 
 
-Named parameters are just custom paths to your routes, you can access them for each request using context's **c.Param("nameoftheparameter")** or **iris.Param(request,"nameoftheparam")**. Get all, as pair (**map[string]string**) using **c.Params()** or **iris.Params(request)**
-
-By default the :name is matched to any word, you can use custom regex using parenthesis after the parameter example: /user/:name([a-z]+) this will match the route only if the second part of the route after /user/ is a word which it's letters are lowercase only.
+Named parameters are just custom paths to your routes, you can access them for each request using context's **c.Param("nameoftheparameter")** or **iris.Param(request,"nameoftheparam")**. Get all, as array (**{Key,Value}**) using **c.Params()**.
 
 No limit on how long a path can be.
 
@@ -137,9 +135,9 @@ func main() {
 	
 	// MATCH to /profile/kataras/friends/1
 	// NOT match to /profile/ , /profile/kataras ,
-	// /profile/kataras/friends,  /profile/kataras/friends ,
-	// /profile/kataras/friends/string , /profile/anumb3r/friends/1
-	iris.Get("/users/:fullname([a-zA-Z]+)/friends/:friendId(int)",
+	// NOT match to /profile/kataras/friends,  /profile/kataras/friends ,
+	// NOT match to /profile/kataras/friends/2/something 
+	iris.Get("/users/:fullname/friends/:friendId",
 		func(c *iris.Context, r *iris.Renderer){
 			name:= c.Param("fullname")
 			friendId := c.ParamInt("friendId")
@@ -179,7 +177,7 @@ Iris framework has four (4) different forms of functions in order to declare a r
  1. Typical classic handler function, compatible with net/http and other frameworks
 	 *  **func(res http.ResponseWriter, req *http.Request)**
 ```go
-	iris.Get("/profile/user/:userId(int)", func(res http.ResponseWriter, req *http.Request) {
+	iris.Get("/profile/user/:userId", func(res http.ResponseWriter, req *http.Request) {
 		
 	})
 ```
@@ -187,7 +185,7 @@ Iris framework has four (4) different forms of functions in order to declare a r
 	 * **func(ctx *iris.Context)**
 
 ```go
-	iris.Get("/profile/user/:userId(int)", func(ctx *iris.Context) {
+	iris.Get("/profile/user/:userId", func(ctx *iris.Context) {
 	
 	})
 ```
@@ -195,7 +193,7 @@ Iris framework has four (4) different forms of functions in order to declare a r
 	 * **func(r *iris.Renderer)**
 
 ```go
-	iris.Get("/profile/user/:userId(int)", func(r *iris.Renderer) {
+	iris.Get("/profile/user/:userId", func(r *iris.Renderer) {
 	
 	})
 ```
@@ -203,7 +201,7 @@ Iris framework has four (4) different forms of functions in order to declare a r
 	 * **func(c *iris.Context, r *iris.Renderer)**
 
 ```go
-	iris.Get("/profile/user/:userId(int)", func(ctx *iris.Context, r *iris.Renderer) {
+	iris.Get("/profile/user/:userId", func(ctx *iris.Context, r *iris.Renderer) {
 	
 	})
 ```
@@ -211,7 +209,7 @@ Iris framework has four (4) different forms of functions in order to declare a r
 	 * **http.Handler**
 
 ```go
-	iris.Get("/profile/user/:userId(int)", http.HandlerFunc(func(res http.Response, req *req.Request) {
+	iris.Get("/profile/user/:userId", http.HandlerFunc(func(res http.Response, req *req.Request) {
 	
 	}))
 ```
@@ -224,7 +222,7 @@ Iris framework has four (4) different forms of functions in order to declare a r
 import "github.com/kataras/iris"
 
 type UserRoute struct {
-	iris.Annotated `get:"/profile/user/:userId(int)"`
+	iris.Annotated `get:"/profile/user/:userId"`
 }
 
 func (u *UserHandler) Handle(ctx *iris.Context, r *iris.Renderer) {
@@ -308,18 +306,15 @@ Personally I use the external struct and the **func(ctx *iris.Context, r *iris.R
 **The next chapters are being written this time, they will be published soon, check the docs later [[TODO chapters: Register custom error handlers, Add templates to the route, Declare middlewares]]**
 
 ## Benchmark
-## THESE ARE FALSE, I HAD PROBLEM.
-## ON BENCHMARKING: EMPTY REQUESTS SO THESE RESULTS ARE NOT REAL
-## THE FRAMEWORK IS RE-WRITTING BECAUSE IT'S PERFORMANCE IS NOT CLEAR ENOUGH.
 Benchmark tests were written by 'the standar' way of benchmarking and comparing performance of other routers and frameworks, see [go-http-routing-benchmark](https://github.com/julienschmidt/go-http-routing-benchmark/) .
 
 Results: 
 
  #GithubAPI Routes: 203
  
-	Iris: 453448 Bytes
+	Iris: 52120 Bytes
 	
-	BenchmarkIris_GithubALL    				3000     432024 ns/op      172168 B/op     1421 allocs/op
+	BenchmarkIris_GithubALL    				5000     285416 ns/op      69448 B/op     766 allocs/op
 
 ## Third Party Middleware
 *The iris is re-written in order to support all middlewares that are already exists for [Negroni](https://github.com/codegangsta/negroni) middleware*

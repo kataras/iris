@@ -6,7 +6,7 @@ import (
 )
 
 type testAPIUsersHandler struct {
-	Annotated `get:"/api/users/:userId(int)" template:"user.html"`
+	Annotated `get:"/api/users/:userId" template:"user.html"`
 }
 
 func (t *testAPIUsersHandler) Handle(ctx *Context, renderer *Renderer) {}
@@ -14,14 +14,14 @@ func (t *testAPIUsersHandler) Handle(ctx *Context, renderer *Renderer) {}
 type testStructedRoute struct {
 	handler                  Annotated
 	expectedMethods          []string
-	expectedPath             string
+	expectedPathPrefix       string
 	expectedTemplateFilename string
 }
 
 var structedTests = [...]testStructedRoute{{
 	handler:                  new(testAPIUsersHandler),
 	expectedMethods:          []string{"GET"},
-	expectedPath:             "/api/users/:userId(int)",
+	expectedPathPrefix:       "/api/users/",
 	expectedTemplateFilename: "/user.html",
 }}
 
@@ -38,8 +38,8 @@ func TestRouterHandleAnnotated(t *testing.T) {
 				t.Fatal("Error on compare Methods: " + strings.Join(sr.expectedMethods, ",") + " != " + strings.Join(route.methods, ","))
 			}
 
-			if sr.expectedPath != route.path {
-				t.Fatal("Error on compare Path: " + sr.expectedPath + " != " + route.path)
+			if sr.expectedPathPrefix != route.pathPrefix {
+				t.Fatal("Error on compare pathPrefix: " + sr.expectedPathPrefix + " != " + route.pathPrefix)
 			}
 
 			if templatesDirectory+sr.expectedTemplateFilename != route.templates.filesTemp[0] {

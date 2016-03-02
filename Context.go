@@ -17,14 +17,16 @@ var contextType reflect.Type
 type Context struct {
 	ResponseWriter http.ResponseWriter
 	Request        *http.Request
-	Params         Parameters
-	errorHandlers  ErrorHandlers
+	Params         PathParameters
+	httpErrors     *HTTPErrors
 }
 
 // newContext creates and returns a new Context pointer
-func newContext(res http.ResponseWriter, req *http.Request, errorHandlers ErrorHandlers) *Context {
-	params := Params(req)
-	return &Context{ResponseWriter: res, Request: req, Params: params, errorHandlers: errorHandlers}
+//func newContext(res http.ResponseWriter, req *http.Request, httpErrors *HTTPErrors) *Context {
+func newContext(res http.ResponseWriter, req *http.Request, httpErrors *HTTPErrors) *Context {
+
+	///TODO: params := Params(req)
+	return &Context{ResponseWriter: res, Request: req, httpErrors: httpErrors}
 }
 
 // Param returns the string representation of the key's path named parameter's value
@@ -81,7 +83,8 @@ func (ctx *Context) SetCookie(name string, value string) {
 // if no custom errors provided then use the default http.NotFound
 // which is already registed nothing special to do here
 func (ctx *Context) NotFound() {
-	ctx.errorHandlers[http.StatusNotFound].ServeHTTP(ctx.ResponseWriter, ctx.Request)
+	//ctx.errorHandlers[http.StatusNotFound].ServeHTTP(ctx.ResponseWriter, ctx.Request)
+	ctx.httpErrors.NotFound(ctx.ResponseWriter)
 }
 
 // Close is used to close the body of the request

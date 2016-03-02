@@ -70,7 +70,8 @@ type Handler interface {
 type FullHandlerFunc func(*Context, *Renderer)
 
 func (h FullHandlerFunc) run(r *Route, res http.ResponseWriter, req *http.Request) {
-	ctx := newContext(res, req, r.errorHandlers)
+	ctx := newContext(res, req, r.httpErrors)
+	ctx.Params = Params(r, req.URL.Path)
 	renderer := newRenderer(res)
 
 	if r.templates != nil {
@@ -93,7 +94,8 @@ func (h RendereredHandlerFunc) run(r *Route, res http.ResponseWriter, req *http.
 type ContextedHandlerFunc func(*Context)
 
 func (h ContextedHandlerFunc) run(r *Route, res http.ResponseWriter, req *http.Request) {
-	ctx := newContext(res, req, r.errorHandlers)
+	ctx := newContext(res, req, r.httpErrors)
+	ctx.Params = Params(r, req.URL.Path)
 	h(ctx)
 }
 
@@ -125,7 +127,7 @@ func (s staticServer) run(r *Route, res http.ResponseWriter, req *http.Request) 
 	//example: iris.Get("/public/*",iris.Static("./static/files/") we need to strip the public
 	//we have access to the route's registed path via this run func, because of that we don't return just the simple http.Handler
 	if s.finalHandler == nil {
-		pathToStrip := r.path[:strings.LastIndex(r.path, "/")+1]
+		pathToStrip := r.pathPrefix[:strings.LastIndex(r.pathPrefix, "/")+1]
 		if len(pathToStrip) > 2 { // 2 because of slashes '/'public'/'
 			//[the stripPrefix makes some checks but I want the users of iris to use this format /public/* and no public/*]
 			s.finalHandler = http.StripPrefix(pathToStrip, s.fileServer)

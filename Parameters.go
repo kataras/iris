@@ -6,45 +6,24 @@ import (
 	"strings"
 )
 
-// Parameters is just a type of pair (map[string]string) which contains the request's path parameters only
-type Parameters map[string]string
-
-// Get gets a value from a key inside this Parameters map
-func (params Parameters) Get(key string) string {
-	return params[key]
+type PathParameter struct {
+	Key   string
+	Value string
 }
 
-// Params returns all path named parameters (if any) from a request
-func Params(req *http.Request) Parameters {
-	_cookie, _err := req.Cookie(CookieName)
-	if _err != nil {
-		return nil
-	}
-	value := _cookie.Value
+// PathParameters type for path parameters
+// Tt's a slice of PathParameter type, because it's faster than map
+type PathParameters []PathParameter
 
-	params := make(Parameters)
-
-	paramsStr := strings.Split(value, ",")
-
-	for _, _fullVarStr := range paramsStr {
-		vars := strings.Split(_fullVarStr, "=")
-		if len(vars) != 2 { //check if key=val=somethingelse here ,is wrong, only key=value allowed, then just ignore this
-			continue
+// Get returns a value from a key inside this Parameters
+// If no parameter with this key given then it returns an empty string
+func (params PathParameters) Get(key string) string {
+	for _, p := range params {
+		if p.Key == key {
+			return p.Value
 		}
-		params[vars[0]] = vars[1]
 	}
-
-	return params
-}
-
-// Param receives a request and a key and returns the value of the path named parameter inside request
-func Param(req *http.Request, key string) string {
-	params := Params(req)
-	param := ""
-	if params != nil {
-		param = params[key]
-	}
-	return param
+	return ""
 }
 
 // URLParams the URL.Query() is a complete function which returns the url get parameters from the url query, We don't have to do anything else here.
@@ -55,4 +34,51 @@ func URLParams(req *http.Request) url.Values {
 // URLParam returns the get parameter from a request , if any
 func URLParam(req *http.Request, key string) string {
 	return req.URL.Query().Get(key)
+}
+
+func Params(r *Route, urlPath string) (params PathParameters) {
+	//params := make(PathParameters, 0, partsLen)
+	for i := 0; i < len(r.parts); i++ {
+
+		if r.parts[i][0] == ParameterStartByte { //strings.IndexByte(r.parts[i], ParameterStartByte) == 0 { //r.parts[i][0] == ParameterStartByte { //strings.Index(r.parts[i], ParameterStart) == 0 { //r.parts[i][0:1] == ParameterStart { //takes the first character and check if it's parameter part
+			//paramKey := r.parts[i][1:]
+			//paramValue := reqParts[i]
+			indexOfVal := -1
+			if i == 0 {
+				indexOfVal = strings.IndexByte(r.fullpath, r.parts[i][0]) //or just IndexByte(...,r.parts[i][0]
+			} else {
+				indexOfVal = strings.Index(r.fullpath, r.parts[i]) - 2 // -slash -:
+
+			}
+
+			if len(urlPath) >= indexOfVal {
+
+				val := urlPath[indexOfVal:]
+				//println("val ? " + val)
+				valIndexFinish := strings.IndexByte(val, SlashByte)
+				if valIndexFinish != -1 {
+					val = val[:valIndexFinish]
+					//val = val[valIndexFinish+1:]
+				}
+				//println("2 val ? " + val)
+				p := PathParameter{r.parts[i][1:], val}
+				//println(i, " path param key: "+p.Key+" Value: "+p.Value)
+				//println("parts len:", len(r.parts))
+				params = append(params, p)
+				//println("new params len: ", len(params))
+			} else {
+				//println(len(urlPath), " is slower than indexOfVal: ", indexOfVal)
+			}
+
+			//user/profile/:username/test
+			//user/profile/kataras/test
+			// :username -> kataras theloume to kataras
+			// /test -> /test
+			//params = append(params, PathParameter{r.parts[i][1:], reqParts[i]})
+			//params[i] = PathParameter{r.parts[i][1:], reqParts[i]} //no perfomance difference so keep it with append
+		} else {
+			//println(r.parts[i] + " doesnt start with : ")
+		}
+	}
+	return
 }
