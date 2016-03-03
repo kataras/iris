@@ -36,11 +36,19 @@ func URLParam(req *http.Request, key string) string {
 	return req.URL.Query().Get(key)
 }
 
-func Params(r *Route, urlPath string) (params PathParameters) {
+//I use these in order to make 0 allocs and 0 bytes use even with params, and it worked :)
+var _theParams = make(PathParameters, 0)
+
+func resetParams() {
+	_theParams = append(_theParams[:0], _theParams[:0]...)
+}
+
+func params(r *Route, urlPath string) PathParameters {
 	//params := make(PathParameters, 0, partsLen)
 	//if params == nil {
 	//	params = make(PathParameters, 0, len(r.parts))
 	//}
+	//moved to handler.run on contexted handlers resetParams()
 	for i := 0; i < len(r.parts); i++ {
 
 		if r.parts[i][0] == ParameterStartByte { //strings.IndexByte(r.parts[i], ParameterStartByte) == 0 { //r.parts[i][0] == ParameterStartByte { //strings.Index(r.parts[i], ParameterStart) == 0 { //r.parts[i][0:1] == ParameterStart { //takes the first character and check if it's parameter part
@@ -67,11 +75,11 @@ func Params(r *Route, urlPath string) (params PathParameters) {
 				p := PathParameter{r.parts[i][1:], val}
 				//println(i, " path param key: "+p.Key+" Value: "+p.Value)
 				//println("parts len:", len(r.parts))
-				params = append(params, p)
+				_theParams = append(_theParams, p)
 				//println("new params len: ", len(params))
 			}
 
 		}
 	}
-	return
+	return _theParams
 }

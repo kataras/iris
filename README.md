@@ -312,7 +312,7 @@ Results:
 
  #GithubAPI Routes: 203
  
-	Iris: 48872 Bytes
+	Iris: 45624 Bytes
 	
 	BenchmarkIris_GithubALL    				20000     102655 ns/op      0 B/op     0 allocs/op
 

@@ -399,8 +399,8 @@ func BenchmarkIris_GithubAll(b *testing.B) {
 //BenchmarkIris_GithubALL    				20000     102655 ns/op      0 B/op     0 allocs/op
 //
 //
-//With (func (ctx *Context))
+//With (func (ctx *Context)) yes even with parameters 0 allocs & 0 bytes, and parameters can be used inside handlers (tested)
 //
-//BenchmarkIris_GithubALL    				10000     17059 ns/op      17504 B/op     321 allocs/op
+//BenchmarkIris_GithubALL    				10000     124007 ns/op      0 B/op     0 allocs/op
 //
 //
