@@ -19,10 +19,10 @@ type Route struct {
 	parts       []string //stores the string path AFTER the pathPrefix, without the pathPrefix. no need to that but no problem also.
 	fullpath    string   // need only on parameters.Params(...)
 	handler     Handler
-	isReady     bool
 	templates   *TemplateCache //this is passed to the Renderer
 	httpErrors  *HTTPErrors    //the only need of this is to pass into the Context, in order to  developer get the ability to perfom emit errors (eg NotFound) directly from context
 	hasWildcard bool
+	isReady     bool
 }
 
 // newRoute creates, from a path string, handler and optional http methods and returns a new route pointer
@@ -71,11 +71,20 @@ func newRoute(registedPath string, handler Handler) *Route {
 
 // containsMethod determinates if this route contains a http method
 func (r *Route) containsMethod(method string) bool {
-	/*for _, m := range r.methods {
-		if m == method {
-			return true
-		}
-	}*/
+	//if no method defined then all are accepted
+	if r.GET == false && r.POST == false && r.PUT == false && r.DELETE == false && r.CONNECT == false && r.HEAD == false && r.PATCH == false && r.OPTIONS == false && r.TRACE == false {
+		r.GET = true
+		r.POST = true
+		r.PUT = true
+		r.DELETE = true
+		r.CONNECT = true
+		r.HEAD = true
+		r.PATCH = true
+		r.OPTIONS = true
+		r.TRACE = true
+		return true
+	}
+
 	switch method {
 	case "GET":
 		return r.GET
@@ -224,26 +233,30 @@ func (r *Route) Template() *TemplateCache {
 
 // prepare prepares the route's handler , places it to the last middleware , handler acts like a middleware too.
 // Runs once before the first ServeHTTP
+// MUST REMOVE IT SOME DAY AND MAKE MIDDLEWARE MORE LIGHTER
 func (r *Route) prepare() {
 	//r.mu.Lock()
 	//look why on router ->HandleFunc defer r.mu.Unlock()
 	//but wait... do we need locking here?
-	if r.handler != nil {
-		convertedMiddleware := MiddlewareHandlerFunc(func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
-			r.handler.run(r, res, req)
-			next(res, req)
-		})
 
-		r.Use(convertedMiddleware)
-	}
+	convertedMiddleware := MiddlewareHandlerFunc(func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
+		r.handler.run(r, res, req)
+		next(res, req)
+	})
 
+	r.Use(convertedMiddleware)
 	r.isReady = true
+
 }
 
 // ServeHTTP serves this route and it's middleware
 func (r *Route) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	if r.isReady == false && r.handler != nil {
-		r.prepare()
+	if r.middlewareHandlers != nil {
+		if !r.isReady {
+			r.prepare()
+		}
+		r.middleware.ServeHTTP(res, req)
+	} else {
+		r.handler.run(r, res, req)
 	}
-	r.middleware.ServeHTTP(res, req)
 }

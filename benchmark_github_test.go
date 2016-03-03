@@ -346,7 +346,7 @@ func irisHandleTestTypical(res http.ResponseWriter, req *http.Request) {
 }
 
 func loadIris(routes []routeTest) http.Handler {
-	h := irisHandleTestTypical //irisHandleTestContexted //irisHandleTestTypical
+	h := irisHandleTestContexted //irisHandleTestTypical
 
 	api := New()
 
@@ -357,6 +357,7 @@ func loadIris(routes []routeTest) http.Handler {
 	for d, r := range api.router.routes {
 		println(d, ": ", r.prefix+" contains ", len(r.routes), " routes")
 	}*/
+	//api.Prepare()
 	return api
 }
 
@@ -392,14 +393,14 @@ func BenchmarkIris_GithubAll(b *testing.B) {
 //Results ( one 2.5GHz core )
 //
 //#GithubAPI Routes: 203
-//	Iris: 48872 Bytes
+//	Iris: 45624 Bytes
 //With typical http handler
 //
-//BenchmarkIris_GithubALL    				10000     111506 ns/op      12992 B/op     406 allocs/op
+//BenchmarkIris_GithubALL    				20000     102655 ns/op      0 B/op     0 allocs/op
 //
 //
 //With (func (ctx *Context))
 //
-//BenchmarkIris_GithubALL    				10000     202811 ns/op      30496 B/op     727 allocs/op
+//BenchmarkIris_GithubALL    				10000     17059 ns/op      17504 B/op     321 allocs/op
 //
 //

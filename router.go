@@ -315,31 +315,20 @@ func UseHandler(handler http.Handler) *Server {
 // if error route != nil , then the errorcode will be 200 OK
 func (r *Router) find(req *http.Request) (*Route, int) {
 
-	for _, prefRoute := range r.routes {
-		if strings.HasPrefix(req.URL.Path, prefRoute.prefix) { // no it is not faster, so f it.. && (len(prefRoute.suffix) == 0 || (len(prefRoute.suffix) > 0 && strings.Contains(req.URL.Path, prefRoute.suffix))) {
+	//for _, prefRoute := range r.routes {
+	var route *Route
+	for i := 0; i < len(r.routes); i++ {
+		if strings.HasPrefix(req.URL.Path, r.routes[i].prefix) { // no it is not faster, so f it.. && (len(prefRoute.suffix) == 0 || (len(prefRoute.suffix) > 0 && strings.Contains(req.URL.Path, prefRoute.suffix))) {
 
 			wrongMethod := false
 
-			for _, route := range prefRoute.routes {
-
+			for j := 0; j < len(r.routes[i].routes); j++ {
+				route = r.routes[i].routes[j]
 				if route.match(req.URL.Path) {
-					//if route.methods != nil && !route.methods[req.Method] {
-					if route.GET == false && route.POST == false && route.PUT == false && route.DELETE == false && route.CONNECT == false && route.HEAD == false && route.PATCH == false && route.OPTIONS == false && route.TRACE == false {
-						//by default
-						//						r.GET = true
-						//						r.POST = true
-						//						r.PUT = true
-						//						r.DELETE = true
-						//						r.CONNECT = true
-						//						r.HEAD = true
-						//						r.PATCH = true
-						//						r.OPTIONS = true
-						//						r.TRACE = true
-					} else if !route.containsMethod(req.Method) {
+					if !route.containsMethod(req.Method) {
 						//if route has found but with wrong method, we must continue it because maybe the next route has the correct method, but
-
 						wrongMethod = true
-						continue //the for _, route
+						continue //the for route
 					}
 					return route, http.StatusOK
 
