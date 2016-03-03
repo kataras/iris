@@ -83,3 +83,9 @@ func emptyMiddleware() Middleware {
 		Next:    &Middleware{},
 	}
 }
+
+/* no difference at the heap size...
+var emptyMiddleware = Middleware{
+	Handler: MiddlewareHandlerFunc(func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {}),
+	Next:    &Middleware{},
+}*/

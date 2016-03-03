@@ -9,11 +9,11 @@ import (
 // Used to determinate which handler on which path must call
 // Used on router.go
 type Route struct {
-
+	GET, POST, PUT, DELETE, CONNECT, HEAD, PATCH, OPTIONS, TRACE bool //tried with []string, very slow, tried with map[string]bool gives 10k executions but +20k bytes, with this approact we have to code more but only 1k byte to space and make it 2.2 times faster than before!
 	//Middleware
 	MiddlewareSupporter
 	//mu            sync.RWMutex
-	methods    []string
+
 	pathPrefix string // this is to make a little faster the match, before regexp Match runs, it's the path before the first path parameter :
 	//the pathPrefix is with the last / if parameters exists.
 	parts       []string //stores the string path AFTER the pathPrefix, without the pathPrefix. no need to that but no problem also.
@@ -28,6 +28,7 @@ type Route struct {
 // newRoute creates, from a path string, handler and optional http methods and returns a new route pointer
 func newRoute(registedPath string, handler Handler) *Route {
 	r := &Route{handler: handler}
+
 	hasPathParameters := false
 	firstPathParamIndex := strings.IndexByte(registedPath, ParameterStartByte)
 	if firstPathParamIndex != -1 {
@@ -70,27 +71,108 @@ func newRoute(registedPath string, handler Handler) *Route {
 
 // containsMethod determinates if this route contains a http method
 func (r *Route) containsMethod(method string) bool {
-	for _, m := range r.methods {
+	/*for _, m := range r.methods {
 		if m == method {
 			return true
 		}
-	}
+	}*/
+	switch method {
+	case "GET":
+		return r.GET
+	case "POST":
+		return r.POST
+	case "PUT":
+		return r.PUT
+	case "DELETE":
+		return r.DELETE
+	case "CONNECT":
+		return r.CONNECT
+	case "HEAD":
+		return r.HEAD
+	case "PATCH":
+		return r.PATCH
+	case "OPTIONS":
+		return r.OPTIONS
+	case "TRACE":
+		return r.TRACE
 
+	}
 	return false
 }
 
 // Methods adds methods to its registed http methods
 func (r *Route) Methods(methods ...string) *Route {
-	if r.methods == nil {
-		r.methods = make([]string, 0)
+	//if r.methods == nil {
+	//	r.methods = make([]string, 0)
+	//}
+	//r.methods = append(r.methods, methods...)
+	for i := 0; i < len(methods); i++ {
+		switch methods[i] {
+		case "GET":
+			r.GET = true
+			break
+		case "POST":
+			r.POST = true
+			break
+		case "PUT":
+			r.PUT = true
+			break
+		case "DELETE":
+			r.DELETE = true
+			break
+		case "CONNECT":
+			r.CONNECT = true
+			break
+		case "HEAD":
+			r.HEAD = true
+			break
+		case "PATCH":
+			r.PATCH = true
+			break
+		case "OPTIONS":
+			r.OPTIONS = true
+			break
+		case "TRACE":
+			r.TRACE = true
+			break
+
+		}
 	}
-	r.methods = append(r.methods, methods...)
 	return r
 }
 
 // Method SETS a method to its registed http methods, overrides the previous methods registed (if any)
 func (r *Route) Method(method string) *Route {
-	r.methods = []string{HTTPMethods.GET}
+	switch method {
+	case "GET":
+		r.GET = true
+		break
+	case "POST":
+		r.POST = true
+		break
+	case "PUT":
+		r.PUT = true
+		break
+	case "DELETE":
+		r.DELETE = true
+		break
+	case "CONNECT":
+		r.CONNECT = true
+		break
+	case "HEAD":
+		r.HEAD = true
+		break
+	case "PATCH":
+		r.PATCH = true
+		break
+	case "OPTIONS":
+		r.OPTIONS = true
+		break
+	case "TRACE":
+		r.TRACE = true
+		break
+
+	}
 	return r
 }
 
@@ -153,11 +235,6 @@ func (r *Route) prepare() {
 		})
 
 		r.Use(convertedMiddleware)
-	}
-
-	//here if no methods are defined at all, then use GET by default.
-	if r.methods == nil {
-		r.methods = []string{HTTPMethods.GET}
 	}
 
 	r.isReady = true

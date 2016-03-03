@@ -392,14 +392,14 @@ func BenchmarkIris_GithubAll(b *testing.B) {
 //Results ( one 2.5GHz core )
 //
 //#GithubAPI Routes: 203
-//	Iris: 52120 Bytes
+//	Iris: 48872 Bytes
 //With typical http handler
 //
-//BenchmarkIris_GithubALL    				5000     285416 ns/op      69448 B/op     766 allocs/op
+//BenchmarkIris_GithubALL    				10000     111506 ns/op      12992 B/op     406 allocs/op
 //
 //
 //With (func (ctx *Context))
 //
-//BenchmarkIris_GithubALL    				5000     307416 ns/op      69448 B/op     955 allocs/op
+//BenchmarkIris_GithubALL    				10000     202811 ns/op      30496 B/op     727 allocs/op
 //
 //

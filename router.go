@@ -323,8 +323,21 @@ func (r *Router) find(req *http.Request) (*Route, int) {
 			for _, route := range prefRoute.routes {
 
 				if route.match(req.URL.Path) {
-					if route.containsMethod(req.Method) == false {
+					//if route.methods != nil && !route.methods[req.Method] {
+					if route.GET == false && route.POST == false && route.PUT == false && route.DELETE == false && route.CONNECT == false && route.HEAD == false && route.PATCH == false && route.OPTIONS == false && route.TRACE == false {
+						//by default
+						//						r.GET = true
+						//						r.POST = true
+						//						r.PUT = true
+						//						r.DELETE = true
+						//						r.CONNECT = true
+						//						r.HEAD = true
+						//						r.PATCH = true
+						//						r.OPTIONS = true
+						//						r.TRACE = true
+					} else if !route.containsMethod(req.Method) {
 						//if route has found but with wrong method, we must continue it because maybe the next route has the correct method, but
+
 						wrongMethod = true
 						continue //the for _, route
 					}
