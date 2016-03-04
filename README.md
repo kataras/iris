@@ -101,7 +101,7 @@ With Intel(R) Core(TM) i7-4710HQ CPU @ 2.50GHz 2.50 HGz and 8GB Ram:
 
 ![enter image description here](http://nodets.com/benchmarks_results_output.png)
 
-* Sometimes it goes to 50169 ns/op but even then it's faster than all other.
+* Sometimes it goes to ~50969 ns/op but even then it's faster than all other.
 
 * Note that the Iris framework does not have copied source (other than the benchmark test )  from other routers ( **I don't mean that is bad if someone do that, I love open source!**).
 
