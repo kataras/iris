@@ -312,9 +312,9 @@ Results:
 
  #GithubAPI Routes: 203
  
-	Iris: 45624 Bytes
+	Iris: 44648 Bytes
 	
-	BenchmarkIris_GithubALL    				20000     102655 ns/op      0 B/op     0 allocs/op
+	BenchmarkIris_GithubALL    				30000     50169 ns/op      0 B/op     0 allocs/op
 
 ## Third Party Middleware
 *The iris is re-written in order to support all middlewares that are already exists for [Negroni](https://github.com/codegangsta/negroni) middleware*

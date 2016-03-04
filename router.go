@@ -13,9 +13,8 @@ const (
 	CookieName = "____iris____"
 )
 
-type prefixRoute struct {
+type node struct {
 	prefix string
-	//lastStaticPart string
 	routes []*Route
 }
 
@@ -25,21 +24,21 @@ type Router struct {
 	MiddlewareSupporter
 	//no routes map[string]map[string][]*Route // key = path prefix, value a map which key = method and the vaulue an array of the routes starts with that prefix and method
 	//routes map[string][]*Route // key = path prefix, value an array of the routes starts with that prefix
-	routes []prefixRoute
+	nodes map[string][]*node
 	//mu            sync.RWMutex
 	httpErrors *HTTPErrors //the only need of this is to pass into the route, which it need it to  passed it to Context, in order to  developer get the ability to perfom emit errors (eg NotFound) directly from context
 }
 
 // NewRouter creates and returns an empty Router
 func newRouter() *Router {
-	return &Router{routes: make([]prefixRoute, 0)}
+	return &Router{nodes: make(map[string][]*node, 0)}
 }
 
 // HandleFunc registers and returns a route with a path string, a handler and optinally methods as parameters
 // registedPath is the name of the route + the pattern
 //
 // HandleFunc is exported for the future, not being used outside of the iris package yet, some of other functions also.
-func (r *Router) HandleFunc(registedPath string, handler Handler) *Route {
+func (r *Router) HandleFunc(registedPath string, handler Handler, method string) *Route {
 	//r.mu.Lock()
 	//defer is 5 times slower only some nanosecconds difference but let's make it faster unlock it at the end of the function manually  or not?
 	//defer r.mu.Unlock()
@@ -71,45 +70,23 @@ func (r *Router) HandleFunc(registedPath string, handler Handler) *Route {
 			}
 
 		}*/
+		_nodes := r.nodes[method]
 
+		if _nodes == nil {
+			_nodes = make([]*node, 0)
+		}
 		ok := false
-
-		for index, _prefRoute := range r.routes {
-			if _prefRoute.prefix == route.pathPrefix {
-				//	if len(theLastStaticPart) > 0 && theLastStaticPart == _prefRoute.lastStaticPart {
-				r.routes[index].routes = append(_prefRoute.routes, route)
+		for index, _node := range _nodes {
+			if _node.prefix == route.pathPrefix {
+				r.nodes[method][index].routes = append(_node.routes, route)
 				ok = true
-				//	}
 			}
 		}
-
 		if !ok {
-			registedPR := prefixRoute{prefix: route.pathPrefix, routes: make([]*Route, 0)}
-			/*if len(theLastStaticPart) > 0 {
-				registedPR.lastStaticPart = theLastStaticPart
-
-			}*/
-			//println("register new prefixRoute with prefix: " + route.pathPrefix + " and registedPath : " + registedPath)
-			registedPR.routes = append(registedPR.routes, route)
-			r.routes = append(r.routes, registedPR)
+			_node := &node{prefix: route.pathPrefix, routes: make([]*Route, 0)}
+			_node.routes = append(_node.routes, route)
+			r.nodes[method] = append(r.nodes[method], _node)
 		}
-
-		/*
-			var registedRoutePrefix *prefixRoute
-			for _, prefixRoute := range r.routes {
-				if prefixRoute.prefix == route.pathPrefix {
-					registedRoutePrefix = &prefixRoute
-				}
-			}
-
-			if registedRoutePrefix == nil {
-				registedRoutePrefix = &prefixRoute{prefix: route.pathPrefix, routes: make([]*Route, 0)}
-
-
-			}
-			registedRoutePrefix.routes = append(registedRoutePrefix.routes, route)
-			r.routes = append(r.routes, *registedRoutePrefix)
-		*/
 
 	}
 	route.httpErrors = r.httpErrors
@@ -117,13 +94,13 @@ func (r *Router) HandleFunc(registedPath string, handler Handler) *Route {
 }
 
 //HandleFunc handle without methods, if not method given before the Listen then the http methods will be []{"GET"}
-func (s *Server) HandleFunc(path string, handler Handler) *Route {
-	return s.router.HandleFunc(path, handler)
+func (s *Server) HandleFunc(path string, handler Handler, method string) *Route {
+	return s.router.HandleFunc(path, handler, method)
 }
 
 // Handle in the route registers a normal http.Handler
-func (r *Router) Handle(registedPath string, httpHandler http.Handler) *Route {
-	return r.HandleFunc(registedPath, HandlerFunc(httpHandler))
+func (r *Router) Handle(registedPath string, httpHandler http.Handler, method string) *Route {
+	return r.HandleFunc(registedPath, HandlerFunc(httpHandler), method)
 }
 
 // handleAnnotated registers a route handler using a Struct
@@ -134,7 +111,7 @@ func (r *Router) handleAnnotated(irisHandler Annotated) (*Route, error) {
 	//r.mu.Lock()
 	//defer r.mu.Unlock()
 	var route *Route
-	var methods []string
+	var method string
 	var path string
 	var handleFunc reflect.Value
 	var template string
@@ -190,23 +167,15 @@ func (r *Router) handleAnnotated(irisHandler Annotated) (*Route, error) {
 
 			path = tagValue
 
-			if strings.Index(tagName, ",") != -1 {
-				//has multi methods seperate by commas
+			//has multi methods seperate by commas
 
-				if !strings.Contains(avalaibleMethodsStr, tagName) {
-					//wrong methods passed
-					errMessage = errMessage + "\niris.HandleAnnotated: Wrong methods passed to Handler -> " + tagName
-					continue
-				}
-
-				methods = strings.Split(tagName, ",")
-				break
-			} else {
-				//it is single 'GET','POST' .... method
-				methods = []string{tagName}
-				break
-
+			if !strings.Contains(avalaibleMethodsStr, tagName) {
+				//wrong methods passed
+				errMessage = errMessage + "\niris.HandleAnnotated: Wrong methods passed to Handler -> " + tagName
+				continue
 			}
+			//it is single 'GET','POST' .... method
+			method = tagName
 
 		} else {
 			errMessage = "\nError on Iris on HandleAnnotated: Struct passed but it doesn't have an anonymous property of type iris.Annotated, please refer to docs\n"
@@ -224,8 +193,7 @@ func (r *Router) handleAnnotated(irisHandler Annotated) (*Route, error) {
 		}
 
 		if errMessage == "" {
-			route = r.HandleFunc(path, convertToHandler(handleFunc.Interface()))
-			route.Methods(methods...)
+			route = r.HandleFunc(path, convertToHandler(handleFunc.Interface()), method)
 			//check if template string has stored by the tag ( look before this block )
 
 			if template != "" {
@@ -263,10 +231,13 @@ func (s *Server) handleAnnotated(irisHandler Annotated) (*Route, error) {
 func (r *Router) Use(handler MiddlewareHandler) *Router {
 	r.MiddlewareSupporter.Use(handler)
 	//IF this is called after the routes
-	if len(r.routes) > 0 {
-		for _, routes := range r.routes {
-			for _, route := range routes.routes {
-				route.Use(handler)
+	if len(r.nodes) > 0 {
+		for _, _nodes := range r.nodes {
+			for _, v := range _nodes {
+				for _, route := range v.routes {
+					route.Use(handler)
+				}
+
 			}
 
 		}
@@ -316,31 +287,43 @@ func UseHandler(handler http.Handler) *Server {
 func (r *Router) find(req *http.Request) (*Route, int) {
 
 	//for _, prefRoute := range r.routes {
-	var route *Route
-	for i := 0; i < len(r.routes); i++ {
-		if strings.HasPrefix(req.URL.Path, r.routes[i].prefix) { // no it is not faster, so f it.. && (len(prefRoute.suffix) == 0 || (len(prefRoute.suffix) > 0 && strings.Contains(req.URL.Path, prefRoute.suffix))) {
+	var _route *Route
+	var _nodes = r.nodes[req.Method]
+	var _node *node
+	//wrongMethod := false
+	if _nodes != nil {
+		for i := 0; i < len(_nodes); i++ {
+			_node = _nodes[i]
 
-			wrongMethod := false
+			if strings.HasPrefix(req.URL.Path, _node.prefix) {
 
-			for j := 0; j < len(r.routes[i].routes); j++ {
-				route = r.routes[i].routes[j]
-				if route.match(req.URL.Path) {
-					if !route.containsMethod(req.Method) {
-						//if route has found but with wrong method, we must continue it because maybe the next route has the correct method, but
-						wrongMethod = true
-						continue //the for route
+				///TODO: wrongMethod := false
+
+				for j := 0; j < len(_node.routes); j++ {
+					_route = _node.routes[j]
+					if _route.match(req.URL.Path) {
+						//if !route.containsMethod(req.Method) {
+						//	//if route has found but with wrong method, we must continue it because maybe the next route has the correct method, but
+						//	wrongMethod = true
+						//	continue //the for route
+						//}
+						return _route, http.StatusOK
+
 					}
-					return route, http.StatusOK
 
 				}
 
 			}
-			if wrongMethod {
-				return nil, http.StatusMethodNotAllowed
-			}
 		}
+		//DROP THE SUPPORT FOR WRONG METHOD 405. wrongMethod = true
+		//means we found a route but didn't  match?
+		//if wrongMethod {
+		//	println("xmm _route:", _route.pathPrefix)
+		//	return nil, http.StatusMethodNotAllowed
+		//}
 	}
 
 	//here if no method found
+	//println(req.URL.Path)
 	return nil, http.StatusNotFound
 }

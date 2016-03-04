@@ -351,13 +351,12 @@ func loadIris(routes []routeTest) http.Handler {
 	api := New()
 
 	for _, route := range routes {
-		api.Handle(route.path, h).Method(route.method)
+		api.Handle(route.path, h, route.method)
 	}
-	/*println("routes: ", len(api.router.routes))
-	for d, r := range api.router.routes {
+	/*println("nodes: ", len(api.router.tree.nodes))
+	for d, r := range api.router.tree.nodes {
 		println(d, ": ", r.prefix+" contains ", len(r.routes), " routes")
 	}*/
-	//api.Prepare()
 	return api
 }
 
@@ -393,14 +392,14 @@ func BenchmarkIris_GithubAll(b *testing.B) {
 //Results ( one 2.5GHz core )
 //
 //#GithubAPI Routes: 203
-//	Iris: 45624 Bytes
+//	Iris: 44648 Bytes
 //With typical http handler
 //
-//BenchmarkIris_GithubALL    				20000     102655 ns/op      0 B/op     0 allocs/op
+//BenchmarkIris_GithubALL    				30000     50169 ns/op      0 B/op     0 allocs/op
 //
 //
 //With (func (ctx *Context)) yes even with parameters 0 allocs & 0 bytes, and parameters can be used inside handlers (tested)
 //
-//BenchmarkIris_GithubALL    				10000     124007 ns/op      0 B/op     0 allocs/op
+//BenchmarkIris_GithubALL    				20000     75354 ns/op      0 B/op     0 allocs/op
 //
 //

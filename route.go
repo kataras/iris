@@ -9,7 +9,7 @@ import (
 // Used to determinate which handler on which path must call
 // Used on router.go
 type Route struct {
-	GET, POST, PUT, DELETE, CONNECT, HEAD, PATCH, OPTIONS, TRACE bool //tried with []string, very slow, tried with map[string]bool gives 10k executions but +20k bytes, with this approact we have to code more but only 1k byte to space and make it 2.2 times faster than before!
+	//GET, POST, PUT, DELETE, CONNECT, HEAD, PATCH, OPTIONS, TRACE bool //tried with []string, very slow, tried with map[string]bool gives 10k executions but +20k bytes, with this approact we have to code more but only 1k byte to space and make it 2.2 times faster than before!
 	//Middleware
 	MiddlewareSupporter
 	//mu            sync.RWMutex
@@ -70,120 +70,6 @@ func newRoute(registedPath string, handler Handler) *Route {
 }
 
 // containsMethod determinates if this route contains a http method
-func (r *Route) containsMethod(method string) bool {
-	//if no method defined then all are accepted
-	if r.GET == false && r.POST == false && r.PUT == false && r.DELETE == false && r.CONNECT == false && r.HEAD == false && r.PATCH == false && r.OPTIONS == false && r.TRACE == false {
-		r.GET = true
-		r.POST = true
-		r.PUT = true
-		r.DELETE = true
-		r.CONNECT = true
-		r.HEAD = true
-		r.PATCH = true
-		r.OPTIONS = true
-		r.TRACE = true
-		return true
-	}
-
-	switch method {
-	case "GET":
-		return r.GET
-	case "POST":
-		return r.POST
-	case "PUT":
-		return r.PUT
-	case "DELETE":
-		return r.DELETE
-	case "CONNECT":
-		return r.CONNECT
-	case "HEAD":
-		return r.HEAD
-	case "PATCH":
-		return r.PATCH
-	case "OPTIONS":
-		return r.OPTIONS
-	case "TRACE":
-		return r.TRACE
-
-	}
-	return false
-}
-
-// Methods adds methods to its registed http methods
-func (r *Route) Methods(methods ...string) *Route {
-	//if r.methods == nil {
-	//	r.methods = make([]string, 0)
-	//}
-	//r.methods = append(r.methods, methods...)
-	for i := 0; i < len(methods); i++ {
-		switch methods[i] {
-		case "GET":
-			r.GET = true
-			break
-		case "POST":
-			r.POST = true
-			break
-		case "PUT":
-			r.PUT = true
-			break
-		case "DELETE":
-			r.DELETE = true
-			break
-		case "CONNECT":
-			r.CONNECT = true
-			break
-		case "HEAD":
-			r.HEAD = true
-			break
-		case "PATCH":
-			r.PATCH = true
-			break
-		case "OPTIONS":
-			r.OPTIONS = true
-			break
-		case "TRACE":
-			r.TRACE = true
-			break
-
-		}
-	}
-	return r
-}
-
-// Method SETS a method to its registed http methods, overrides the previous methods registed (if any)
-func (r *Route) Method(method string) *Route {
-	switch method {
-	case "GET":
-		r.GET = true
-		break
-	case "POST":
-		r.POST = true
-		break
-	case "PUT":
-		r.PUT = true
-		break
-	case "DELETE":
-		r.DELETE = true
-		break
-	case "CONNECT":
-		r.CONNECT = true
-		break
-	case "HEAD":
-		r.HEAD = true
-		break
-	case "PATCH":
-		r.PATCH = true
-		break
-	case "OPTIONS":
-		r.OPTIONS = true
-		break
-	case "TRACE":
-		r.TRACE = true
-		break
-
-	}
-	return r
-}
 
 // match determinates if this route match with the request, returns bool as first value and PathParameters as second value, if any
 func (r *Route) match(urlPath string) bool {

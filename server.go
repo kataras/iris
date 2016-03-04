@@ -19,15 +19,15 @@ func attachProfiler(r *Router, debugPath string) {
 	if len(debugPath) == 0 {
 		debugPath = DefaultDebugPath
 	}
-	r.HandleFunc(debugPath+"/", HandlerFunc(pprof.Index)).Method(HTTPMethods.GET)
-	r.HandleFunc(debugPath+"/cmdline", HandlerFunc(pprof.Cmdline)).Method(HTTPMethods.GET)
-	r.HandleFunc(debugPath+"/profile", HandlerFunc(pprof.Profile)).Method(HTTPMethods.GET)
-	r.HandleFunc(debugPath+"/symbol", HandlerFunc(pprof.Symbol)).Method(HTTPMethods.GET)
+	r.HandleFunc(debugPath+"/", HandlerFunc(pprof.Index), HTTPMethods.GET)
+	r.HandleFunc(debugPath+"/cmdline", HandlerFunc(pprof.Cmdline), HTTPMethods.GET)
+	r.HandleFunc(debugPath+"/profile", HandlerFunc(pprof.Profile), HTTPMethods.GET)
+	r.HandleFunc(debugPath+"/symbol", HandlerFunc(pprof.Symbol), HTTPMethods.GET)
 
-	r.Handle(debugPath+"/goroutine", pprof.Handler("goroutine")).Method(HTTPMethods.GET)
-	r.Handle(debugPath+"/heap", pprof.Handler("heap")).Method(HTTPMethods.GET)
-	r.Handle(debugPath+"/threadcreate", pprof.Handler("threadcreate")).Method(HTTPMethods.GET)
-	r.Handle(debugPath+"/pprof/block", pprof.Handler("block")).Method(HTTPMethods.GET)
+	r.Handle(debugPath+"/goroutine", pprof.Handler("goroutine"), HTTPMethods.GET)
+	r.Handle(debugPath+"/heap", pprof.Handler("heap"), HTTPMethods.GET)
+	r.Handle(debugPath+"/threadcreate", pprof.Handler("threadcreate"), HTTPMethods.GET)
+	r.Handle(debugPath+"/pprof/block", pprof.Handler("block"), HTTPMethods.GET)
 
 }
 
@@ -211,7 +211,7 @@ func Close() { DefaultServer.Close() }
 
 // Get registers a route for the Get http method
 func (s *Server) Get(path string, handler interface{}) *Route {
-	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.GET)
+	return s.HandleFunc(path, convertToHandler(handler), HTTPMethods.GET)
 }
 
 // Get registers a route for the Get http method
@@ -221,7 +221,7 @@ func Get(path string, handler interface{}) *Route {
 
 // Post registers a route for the Post http method
 func (s *Server) Post(path string, handler interface{}) *Route {
-	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.POST)
+	return s.HandleFunc(path, convertToHandler(handler), HTTPMethods.POST)
 }
 
 // Post registers a route for the Post http method
@@ -231,7 +231,7 @@ func Post(path string, handler interface{}) *Route {
 
 // Put registers a route for the Put http method
 func (s *Server) Put(path string, handler interface{}) *Route {
-	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.PUT)
+	return s.HandleFunc(path, convertToHandler(handler), HTTPMethods.PUT)
 }
 
 // Put registers a route for the Put http method
@@ -241,7 +241,7 @@ func Put(path string, handler interface{}) *Route {
 
 // Delete registers a route for the Delete http method
 func (s *Server) Delete(path string, handler interface{}) *Route {
-	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.DELETE)
+	return s.HandleFunc(path, convertToHandler(handler), HTTPMethods.DELETE)
 }
 
 // Delete registers a route for the Delete http method
@@ -251,7 +251,7 @@ func Delete(path string, handler interface{}) *Route {
 
 // Connect registers a route for the Connect http method
 func (s *Server) Connect(path string, handler interface{}) *Route {
-	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.CONNECT)
+	return s.HandleFunc(path, convertToHandler(handler), HTTPMethods.CONNECT)
 }
 
 // Connect registers a route for the Connect http method
@@ -261,7 +261,7 @@ func Connect(path string, handler interface{}) *Route {
 
 // Head registers a route for the Head http method
 func (s *Server) Head(path string, handler interface{}) *Route {
-	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.HEAD)
+	return s.HandleFunc(path, convertToHandler(handler), HTTPMethods.HEAD)
 }
 
 // Head registers a route for the Head http method
@@ -271,7 +271,7 @@ func Head(path string, handler interface{}) *Route {
 
 // Options registers a route for the Options http method
 func (s *Server) Options(path string, handler interface{}) *Route {
-	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.OPTIONS)
+	return s.HandleFunc(path, convertToHandler(handler), HTTPMethods.OPTIONS)
 }
 
 // Options registers a route for the Options http method
@@ -281,7 +281,7 @@ func Options(path string, handler interface{}) *Route {
 
 // Patch registers a route for the Patch http method
 func (s *Server) Patch(path string, handler interface{}) *Route {
-	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.PATCH)
+	return s.HandleFunc(path, convertToHandler(handler), HTTPMethods.PATCH)
 }
 
 // Patch registers a route for the Patch http method
@@ -291,7 +291,7 @@ func Patch(path string, handler interface{}) *Route {
 
 // Trace registers a route for the Trace http method
 func (s *Server) Trace(path string, handler interface{}) *Route {
-	return s.HandleFunc(path, convertToHandler(handler)).Method(HTTPMethods.TRACE)
+	return s.HandleFunc(path, convertToHandler(handler), HTTPMethods.TRACE)
 }
 
 // Trace registers a route for the Trace http methodd
@@ -301,7 +301,7 @@ func Trace(path string, handler interface{}) *Route {
 
 // Any registers a route for ALL of the http methods (Get,Post,Put,Head,Patch,Options,Connect,Delete)
 func (s *Server) Any(path string, handler interface{}) *Route {
-	return s.HandleFunc(path, convertToHandler(handler)).Methods(HTTPMethods.ALL...)
+	return s.HandleFunc(path, convertToHandler(handler), "")
 }
 
 // Any registers a route for ALL of the http methods (Get,Post,Put,Head,Patch,Options,Connect,Delete)
@@ -318,9 +318,9 @@ func (s *Server) Handle(params ...interface{}) *Route {
 	}
 
 	if reflect.TypeOf(params[0]).Kind() == reflect.String {
-		//menas first parameter is the path, wich means it is a simple path with handler -> HandleFunc
+		//means first parameter is the path, wich means it is a simple path with handler -> HandleFunc and method
 		// means: http.Handler or TypicalHandlerFunc or ContextedHandlerFunc or  RendereredHandlerFunc or ContextedRendererHandlerFunc or already an iris.Handler
-		return s.HandleFunc(params[0].(string), convertToHandler(params[1]))
+		return s.HandleFunc(params[0].(string), convertToHandler(params[1]), params[2].(string))
 	} else {
 		//means it's a struct which implements the iris.Annotated and have a Handle func inside it -> handleAnnotated
 		r, err := s.handleAnnotated(params[0].(Annotated))

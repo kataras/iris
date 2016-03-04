@@ -347,9 +347,10 @@ func handleRoute(route TestRoute) func(c Context) {
 
 func TestRoutesServerSide(t *testing.T) {
 	for _, route := range inlineRoutes {
-		api.Handle(route.Path, handleRoute(route)).Methods(route.Methods...)
+		api.Handle(route.Path, handleRoute(route), route.Methods[0])
 	}
 
+	//println("first: ", len(api.router.nodes), " nodes of ", len(api.router.nodes["GET"][0].routes), " routes")
 	// Set custom error messages
 	api.Errors.On(http.StatusNotFound, func(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, CustomNotFoundErrorMessage, http.StatusNotFound)
