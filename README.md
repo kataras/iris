@@ -60,10 +60,10 @@ Benchmark tests were written by 'the standar' way of benchmarking and comparing 
 
 In order to have safe results, this table was taken from [different source](https://raw.githubusercontent.com/gin-gonic/gin/develop/BENCHMARKS.md) than Iris. 
 
-**1**: Total Operations
-**2**: Nanoseconds per Operation (ns/op)  
-**3**: Heap Memory (B/op)  
-**4**: Average Allocations per Operation (allocs/op)
+ 1. Total Operations
+ 2. Nanoseconds per Operation (ns/op)  
+ 3. Heap Memory (B/op)  
+ 4. Average Allocations per Operation (allocs/op)
 
 Benchmark name 					| 1 		| 2 		| 3 		| 4
 --------------------------------|----------:|----------:|----------:|------:
