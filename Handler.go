@@ -100,7 +100,9 @@ var _renderer = Renderer{}
 func GetContext(res http.ResponseWriter, req *http.Request, httpErrors *HTTPErrors) Context {
 	_context.ResponseWriter = res
 	_context.Request = req
-	_context.httpErrors = httpErrors
+	if _context.httpErrors == nil {
+		_context.httpErrors = httpErrors
+	}
 
 	return _context
 }
@@ -108,7 +110,7 @@ func GetContext(res http.ResponseWriter, req *http.Request, httpErrors *HTTPErro
 func ResetContext() {
 	_context.ResponseWriter = nil
 	_context.Request = nil
-	_context.httpErrors = nil
+	//	_context.httpErrors = nil
 	_context.Params = nil
 	resetParams()
 }

@@ -51,13 +51,14 @@ func params(r *Route, urlPath string) PathParameters {
 	//moved to handler.run on contexted handlers resetParams()
 	for i := 0; i < len(r.parts); i++ {
 
-		if r.parts[i][0] == ParameterStartByte { //strings.IndexByte(r.parts[i], ParameterStartByte) == 0 { //r.parts[i][0] == ParameterStartByte { //strings.Index(r.parts[i], ParameterStart) == 0 { //r.parts[i][0:1] == ParameterStart { //takes the first character and check if it's parameter part
+		if r.parts[i][0] == ParameterStartByte { //ParameterStartByte  //strings.IndexByte(r.parts[i], ParameterStartByte) == 0 { //r.parts[i][0] == ParameterStartByte { //strings.Index(r.parts[i], ParameterStart) == 0 { //r.parts[i][0:1] == ParameterStart { //takes the first character and check if it's parameter part
 			//paramKey := r.parts[i][1:]
 			//paramValue := reqParts[i]
 			indexOfVal := -1
 			if i == 0 {
 				indexOfVal = strings.IndexByte(r.fullpath, r.parts[i][0])
 			} else {
+				///TODO;
 				indexOfVal = strings.Index(r.fullpath, r.parts[i]) - 2 // -slash -:
 
 			}

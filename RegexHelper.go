@@ -28,7 +28,9 @@ const (
 
 var (
 	// supportedRegexTypes the available types of string which can be converted to a regex str pattern
-	supportedRegexTypes = [2]string{"string", "int"}
+	supportedRegexTypes  = [2]string{"string", "int"}
+	MatchEverythingBytes = []byte("*")
+	SlashBytes           = []byte("/")
 )
 
 //for now, supported: string,int

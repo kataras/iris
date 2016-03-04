@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"errors"
+	"io"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -79,7 +80,7 @@ func (r *Renderer) Render(pageContext interface{}) error {
 func (r *Renderer) WriteHTML(httpStatus int, htmlContents string) {
 	r.responseWriter.Header().Set(ContentType, ContentHTML)
 	r.responseWriter.WriteHeader(httpStatus)
-	r.responseWriter.Write([]byte(htmlContents))
+	io.WriteString(r.responseWriter, htmlContents)
 }
 
 //HTML calls the WriteHTML with the 200 http status ok
@@ -104,6 +105,7 @@ func (r *Renderer) Data(binaryData []byte) {
 func (r *Renderer) WriteText(httpStatus int, text string) {
 	r.responseWriter.Header().Set(ContentType, ContentTEXT)
 	r.responseWriter.WriteHeader(httpStatus)
+	io.WriteString(r.responseWriter, text)
 }
 
 //Text calls the WriteText with the 200 http status ok
@@ -129,7 +131,7 @@ func (r *Renderer) WriteJSON(httpStatus int, jsonStructs ...interface{}) error {
 	//also we don't check if already header's content-type exists.
 	r.responseWriter.Header().Set(ContentType, ContentJSON)
 	r.responseWriter.WriteHeader(httpStatus)
-	r.responseWriter.Write([]byte(_json))
+	io.WriteString(r.responseWriter, _json)
 	return nil
 }
 
@@ -163,8 +165,7 @@ func (r *Renderer) WriteXML(httpStatus int, xmlStructs ...interface{}) error {
 	}
 	r.responseWriter.Header().Set(ContentType, ContentXML)
 	r.responseWriter.WriteHeader(httpStatus)
-	r.responseWriter.Write([]byte(xml.Header + _xmlDoc))
-
+	io.WriteString(r.responseWriter, xml.Header+_xmlDoc)
 	return nil
 }
 

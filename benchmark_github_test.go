@@ -346,7 +346,7 @@ func irisHandleTestTypical(res http.ResponseWriter, req *http.Request) {
 }
 
 func loadIris(routes []routeTest) http.Handler {
-	h := irisHandleTestContexted //irisHandleTestTypical
+	h := irisHandleTestTypical //irisHandleTestContexted //irisHandleTestTypical
 
 	api := New()
 
@@ -395,11 +395,11 @@ func BenchmarkIris_GithubAll(b *testing.B) {
 //	Iris: 44648 Bytes
 //With typical http handler
 //
-//BenchmarkIris_GithubALL    				30000     50169 ns/op      0 B/op     0 allocs/op
+//BenchmarkIris_GithubALL    				30000     43069 ns/op      0 B/op     0 allocs/op
 //
 //
 //With (func (ctx *Context)) yes even with parameters 0 allocs & 0 bytes, and parameters can be used inside handlers (tested)
 //
-//BenchmarkIris_GithubALL    				20000     75354 ns/op      0 B/op     0 allocs/op
+//BenchmarkIris_GithubALL    				20000     62159 ns/op      0 B/op     0 allocs/op
 //
 //

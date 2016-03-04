@@ -11,6 +11,7 @@ Iris is a very minimal but flexible web framework written in go, providing a rob
 - [Install](#install)
 - [Principles](#principles-of-iris)
 - [Introduction](#introduction)
+- [Benchmarks](#benchmarks)
 - [Features](#features)
 - [API](#api)
 - [Named Parameters](#named-parameters)
@@ -18,7 +19,6 @@ Iris is a very minimal but flexible web framework written in go, providing a rob
 - [Declaring routes](#declaring-routes)
 - [Context](#context)
 - [Renderer](#renderer)
-- [Benchmark](#benchmark)
 - [Third Party Middleware](#third-party-middleware)
 - [Contributors](#contributors)
 - [Community](#community)
@@ -54,6 +54,55 @@ func main() {
 }
 
 ```
+
+## Benchmarks
+Benchmark tests were written by 'the standar' way of benchmarking and comparing performance of other routers and frameworks, see [go-http-routing-benchmark](https://github.com/julienschmidt/go-http-routing-benchmark/) .
+
+In order to have safe results, this table was taken from [different source](https://raw.githubusercontent.com/gin-gonic/gin/develop/BENCHMARKS.md) than Iris. 
+
+**1**: Total Operations
+**2**: Nanoseconds per Operation (ns/op)  
+**3**: Heap Memory (B/op)  
+**4**: Average Allocations per Operation (allocs/op)
+
+Benchmark name 					| 1 		| 2 		| 3 		| 4
+--------------------------------|----------:|----------:|----------:|------:
+BenchmarkAce_GithubAll 			| 10000 	| 109482 	| 13792 	| 167
+BenchmarkBear_GithubAll 		| 10000 	| 287490 	| 79952 	| 943
+BenchmarkBeego_GithubAll 		| 3000 		| 562184 	| 146272 	| 2092
+BenchmarkBone_GithubAll 		| 500 		| 2578716 	| 648016 	| 8119
+BenchmarkDenco_GithubAll 		| 20000 	| 94955 	| 20224 	| 167
+BenchmarkEcho_GithubAll 		| 30000 	| 58705 	| 0 		| 0
+BenchmarkGin_GithubAll 		| 30000 | 50991| 0 	| 0
+BenchmarkGocraftWeb_GithubAll 	| 5000 		| 449648 	| 133280 	| 1889
+BenchmarkGoji_GithubAll 		| 2000 		| 689748 	| 56113 	| 334
+BenchmarkGoJsonRest_GithubAll 	| 5000 		| 537769 	| 135995 	| 2940
+BenchmarkGoRestful_GithubAll 	| 100 		| 18410628 	| 797236 	| 7725
+BenchmarkGorillaMux_GithubAll 	| 200 		| 8036360 	| 153137 	| 1791
+BenchmarkHttpRouter_GithubAll 	| 20000 	| 63506 	| 13792 	| 167
+BenchmarkHttpTreeMux_GithubAll 	| 10000 	| 165927 	| 56112 	| 334
+**BenchmarkIris_GithubAll** 		| **30000** | **43069** | **0** 	| **0**
+BenchmarkKocha_GithubAll 		| 10000 	| 171362 	| 23304 	| 843
+BenchmarkMacaron_GithubAll 		| 2000 		| 817008 	| 224960 	| 2315
+BenchmarkMartini_GithubAll 		| 100 		| 12609209 	| 237952 	| 2686
+BenchmarkPat_GithubAll 			| 300 		| 4830398 	| 1504101 	| 32222
+BenchmarkPossum_GithubAll 		| 10000 	| 301716 	| 97440 	| 812
+BenchmarkR2router_GithubAll 	| 10000 	| 270691 	| 77328 	| 1182
+BenchmarkRevel_GithubAll 		| 1000 		| 1491919 	| 345553 	| 5918
+BenchmarkRivet_GithubAll 		| 10000 	| 283860 	| 84272 	| 1079
+BenchmarkTango_GithubAll 		| 5000 		| 473821 	| 87078 	| 2470
+BenchmarkTigerTonic_GithubAll 	| 2000 		| 1120131 	| 241088 	| 6052
+BenchmarkTraffic_GithubAll 		| 200 		| 8708979 	| 2664762 	| 22390
+BenchmarkVulcan_GithubAll 		| 5000 		| 353392 	| 19894 	| 609
+BenchmarkZeus_GithubAll 		| 2000 		| 944234 	| 300688 	| 2648
+
+With Intel(R) Core(TM) i7-4710HQ CPU @ 2.50GHz 2.50 HGz and 8GB Ram: 
+
+![enter image description here](http://nodets.com/benchmarks_results_output.png)
+
+* Sometimes it goes to 50169 ns/op but even then it's faster than all other.
+* Note that the Iris framework does not have copied source (other than the benchmark test )  from other routers ( **I don't mean that is bad if someone do that, I love open source!**).
+*  Also Iris framework doesn't uses the famous and fast enough [httprouter package](https://github.com/julienschmidt/httprouter),  Iris' approach seems to be simplier and faster. To be honesty, as I'm new to golang, I  learnt about this router a few minutes before publish this document.
 
 ## Features 
 
@@ -305,16 +354,6 @@ Personally I use the external struct and the **func(ctx iris.Context, r iris.Ren
 
 **The next chapters are being written this time, they will be published soon, check the docs later [[TODO chapters: Register custom error handlers, Add templates to the route, Declare middlewares]]**
 
-## Benchmark
-Benchmark tests were written by 'the standar' way of benchmarking and comparing performance of other routers and frameworks, see [go-http-routing-benchmark](https://github.com/julienschmidt/go-http-routing-benchmark/) .
-
-Results: 
-
- #GithubAPI Routes: 203
- 
-	Iris: 44648 Bytes
-	
-	BenchmarkIris_GithubALL    				30000     50169 ns/op      0 B/op     0 allocs/op
 
 ## Third Party Middleware
 *The iris is re-written in order to support all middlewares that are already exists for [Negroni](https://github.com/codegangsta/negroni) middleware*
@@ -367,3 +406,4 @@ of the following:
 ## Licence
 
 This project is licensed under the MIT license.
+

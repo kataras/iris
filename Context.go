@@ -1,6 +1,7 @@
 package iris
 
 import (
+	"io"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -52,7 +53,7 @@ func (ctx *Context) URLParamInt(key string) (int, error) {
 
 // Write writes a string via the context's ResponseWriter
 func (ctx *Context) Write(contents string) {
-	ctx.ResponseWriter.Write([]byte(contents))
+	io.WriteString(ctx.ResponseWriter, contents)
 }
 
 // ServeFile is used to serve a file, via the http.ServeFile

@@ -88,7 +88,7 @@ func (r *Route) match(urlPath string) bool {
 		reqPartsLen := 1
 		s := urlPath[len(r.pathPrefix):]
 		for i := 0; i < len(s); i++ {
-			if s[i] == SlashByte {
+			if s[i] == '/' { //SlashByte
 				reqPartsLen++
 			}
 		}
