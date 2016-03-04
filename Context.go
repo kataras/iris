@@ -2,9 +2,11 @@ package iris
 
 import (
 	"io"
+	"net"
 	"net/http"
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 var contextType reflect.Type
@@ -86,6 +88,14 @@ func (ctx *Context) SetCookie(name string, value string) {
 func (ctx *Context) NotFound() {
 	//ctx.errorHandlers[http.StatusNotFound].ServeHTTP(ctx.ResponseWriter, ctx.Request)
 	ctx.httpErrors.NotFound(ctx.ResponseWriter)
+}
+
+// RequestIP gets just the Remote Address from the client.
+func (c *Context) RequestIP() string {
+	if ip, _, err := net.SplitHostPort(strings.TrimSpace(c.Request.RemoteAddr)); err == nil {
+		return ip
+	}
+	return ""
 }
 
 // Close is used to close the body of the request

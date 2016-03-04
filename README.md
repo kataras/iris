@@ -12,7 +12,7 @@ Iris is a very minimal but flexible web framework written in go, providing a rob
 - [Principles](#principles-of-iris)
 - [Introduction](#introduction)
 - [Benchmarks](#benchmarks)
-- [Alternatives](#compare-benchmarks)
+- [Alternatives](#alternatives)
 - [Features](#features)
 - [API](#api)
 - [Named Parameters](#named-parameters)
@@ -106,6 +106,7 @@ With Intel(R) Core(TM) i7-4710HQ CPU @ 2.50GHz 2.50 HGz and 8GB Ram:
 * Note that the Iris framework does not have copied source (other than the benchmark test )  from other routers ( **I don't mean that is bad if someone do that, I love open source!**).
 
 *  Also Iris framework doesn't uses the famous and fast enough [httprouter package](https://github.com/julienschmidt/httprouter),  Iris' approach seems to be simplier and faster. To be honesty, as I'm new to golang, I  learnt about this router a few minutes before publish this document.
+
 ## Alternatives 
 
 Iris is not the only one framework which is fast and easy to use, [Gin](https://github.com/gin-gonic/gin) which is x40 times faster than [Martini](https://github.com/go-martini/martini)  is very good 'competitor' so I write the excact same benchmark test in order to compare Iris vs Gin.
