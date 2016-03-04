@@ -299,7 +299,9 @@ var githubAPI = []routeTest{
 	{"DELETE", "/user/keys/:id"},
 }
 
-var githubIris http.Handler
+var (
+	githubIris http.Handler
+)
 
 func isTested(name string) bool {
 	return true

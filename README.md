@@ -12,6 +12,7 @@ Iris is a very minimal but flexible web framework written in go, providing a rob
 - [Principles](#principles-of-iris)
 - [Introduction](#introduction)
 - [Benchmarks](#benchmarks)
+- [Alternatives](#compare-benchmarks)
 - [Features](#features)
 - [API](#api)
 - [Named Parameters](#named-parameters)
@@ -101,8 +102,24 @@ With Intel(R) Core(TM) i7-4710HQ CPU @ 2.50GHz 2.50 HGz and 8GB Ram:
 ![enter image description here](http://nodets.com/benchmarks_results_output.png)
 
 * Sometimes it goes to 50169 ns/op but even then it's faster than all other.
+
 * Note that the Iris framework does not have copied source (other than the benchmark test )  from other routers ( **I don't mean that is bad if someone do that, I love open source!**).
+
 *  Also Iris framework doesn't uses the famous and fast enough [httprouter package](https://github.com/julienschmidt/httprouter),  Iris' approach seems to be simplier and faster. To be honesty, as I'm new to golang, I  learnt about this router a few minutes before publish this document.
+## Alternatives 
+
+Iris is not the only one framework which is fast and easy to use, [Gin](https://github.com/gin-gonic/gin) which is x40 times faster than [Martini](https://github.com/go-martini/martini)  is very good 'competitor' so I write the excact same benchmark test in order to compare Iris vs Gin.
+Let's take a look at the results: 
+
+![enter image description here](http://nodets.com/iris_vs_gin.png)
+
+Gin: **54.636 ns/op **
+Iris: **50.969 ns/op**
+Both of them with zero memory allocation!
+
+So, Iris **is a bit faster than Gin**.
+I wish Gin has compatibility with the Martini's middleware ecosystem, as Iris provides out of the box. 
+**Gin is a complete web framework and the only good alternative over Iris** (that I know)  so if you don't care about performance so much (not a big difference, gin is ~4.000 nanoseconds slower only) or somehow you don't like Iris then you should get your self some [Gin](https://github.com/gin-gonic/gin). 
 
 ## Features 
 
