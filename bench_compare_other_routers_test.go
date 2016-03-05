@@ -4,7 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"io"
 	"net/http"
-	"runtime"
+	_ "runtime"
 	"testing"
 )
 
@@ -14,14 +14,14 @@ var (
 
 //this goes to the benchmark_github.test.go which have the init() func.
 func init() {
-	runtime.GOMAXPROCS(1)
-	println("#GithubAPI Routes:", len(githubAPI))
+	if loadOtherBenchmarks {
+		calcMem("Gin", func() {
+			githubGin = loadGin(githubAPI)
+		})
 
-	calcMem("Gin", func() {
-		githubGin = loadGin(githubAPI)
-	})
+		println()
+	}
 
-	println()
 }
 
 //Gin doesn't provide typical handle

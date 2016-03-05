@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 )
 
 const (
@@ -18,20 +20,99 @@ type node struct {
 	routes []*Route
 }
 
+//The cache code is wrriten very poor, I will re-write it when I wake up.
+var (
+	// Cache enables or disables the cache system for the router
+	// All Cache options are global and shared between,if any other, multiple Iris servers,
+	// but each router has it's own cache
+	Cache = true
+	// MaxCache max number of total cached routes, 500 = +~20000 bytes = ~0.019073MB
+	// Default is 0
+	// If <=0 then memory clean happens when router rests
+	// Auto-memory clean is happening after 5 minutes the last request serve, you can change this number by 'CacheCleanAfter' property
+	MaxCache = 0 //500 = +~20000 bytes = ~0.019073MB
+	// CacheCleanAfter change this duration to determinate how much duration after last request serving the cache must be cleaned
+	// Default is 5 * time.Minute , Minimum is 30 seconds
+	//
+	// In order this to work the MaxCache must be zero (0)
+	CacheCleanAfter = 5 * time.Minute
+)
+
 // Router is the router , one router per server.
 // Router contains the global middleware, the routes and a Mutex for lock and unlock on route prepare
 type Router struct {
 	MiddlewareSupporter
 	//no routes map[string]map[string][]*Route // key = path prefix, value a map which key = method and the vaulue an array of the routes starts with that prefix and method
 	//routes map[string][]*Route // key = path prefix, value an array of the routes starts with that prefix
-	nodes map[string][]*node
-	//mu            sync.RWMutex
-	httpErrors *HTTPErrors //the only need of this is to pass into the route, which it need it to  passed it to Context, in order to  developer get the ability to perfom emit errors (eg NotFound) directly from context
+	nodes        map[string][]*node
+	memCache     map[string]map[string]*Route
+	cacheStarted bool
+	mu           *sync.Mutex
+	httpErrors   *HTTPErrors //the only need of this is to pass into the route, which it need it to  passed it to Context, in order to  developer get the ability to perfom emit errors (eg NotFound) directly from context
 }
 
 // NewRouter creates and returns an empty Router
 func newRouter() *Router {
-	return &Router{nodes: make(map[string][]*node, 0)}
+	r := &Router{mu: &sync.Mutex{}, nodes: make(map[string][]*node, 0)}
+	return r
+}
+
+func startCache(r *Router) {
+	if r.cacheStarted {
+		return
+	}
+
+	if Cache {
+		r.memCache = make(map[string]map[string]*Route, 0)
+		r.resetCache()
+
+		if MaxCache <= 0 {
+			// if less than 30 seconds, put it to the default 5 minutes.
+			if CacheCleanAfter.Seconds() < 30 {
+				CacheCleanAfter = 5 * time.Minute
+			}
+
+			cacheTimer := time.NewTicker(CacheCleanAfter) //NewTimer() with for {}
+			//auto kaleite 2 fores gt exw kai to default iris sto iris.go kapws prepei na to diwr9wsw auto
+			//na ginete enable mono an exei ginei estw ena .HandleFunc ?
+			//fixed
+			go func() {
+				//for {
+				for t := range cacheTimer.C {
+					//	<-cacheTimer.C with NewTimer()
+					_ = t
+					/*println(t.String(), ": Old len: ", len(r.memCache))
+					for _, m := range HTTPMethods.ANY {
+						println(m, ": ", len(r.memCache[m]))
+					}*/
+					r.mu.Lock()
+
+					r.resetCache()
+
+					// with NewTimer() cacheTimer.Reset(CacheCleanAfter)
+
+					//In the meanwhile if dev setted Cache = false ( it is not recommented)
+					if Cache == false {
+						cacheTimer.Stop()
+						r.cacheStarted = false
+					}
+					r.mu.Unlock()
+
+					/*println("\n\n----------------\nNew len: ", len(r.memCache))
+					for _, m := range HTTPMethods.ANY {
+						println(m, ": ", len(r.memCache[m]))
+					}*/
+					//	}
+				}
+			}()
+		}
+		r.cacheStarted = true
+	}
+}
+func (r *Router) resetCache() {
+	for _, m := range HTTPMethods.ANY {
+		r.memCache[m] = make(map[string]*Route, 0)
+	}
 }
 
 // HandleFunc registers and returns a route with a path string, a handler and optinally methods as parameters
@@ -88,6 +169,8 @@ func (r *Router) HandleFunc(registedPath string, handler Handler, method string)
 			r.nodes[method] = append(r.nodes[method], _node)
 		}
 
+		//start the cache when at least one route is registed to the router
+		startCache(r)
 	}
 	route.httpErrors = r.httpErrors
 	return route
@@ -282,10 +365,30 @@ func UseHandler(handler http.Handler) *Server {
 	return DefaultServer
 }
 
+func (r *Router) addToCache(_urlpath, _methodReq string, _theroute *Route) {
+	r.mu.Lock()
+	if !r.cacheStarted { //runs this only if no cache timer has started.
+		if len(r.memCache) > MaxCache {
+			r.resetCache()
+		}
+	}
+
+	r.memCache[_methodReq][_urlpath] = _theroute
+	r.mu.Unlock()
+}
+
 // find returns the correct/matched route, if any, for  the request
 // if error route != nil , then the errorcode will be 200 OK
 func (r *Router) find(req *http.Request) (*Route, int) {
-
+	if Cache {
+		//defer r.mu.Unlock() defer is slow.
+		r.mu.Lock()
+		if v := r.memCache[req.Method][req.URL.Path]; v != nil {
+			r.mu.Unlock()
+			return v, http.StatusOK
+		}
+		r.mu.Unlock()
+	}
 	//for _, prefRoute := range r.routes {
 	var _route *Route
 	var _nodes = r.nodes[req.Method]
@@ -307,6 +410,10 @@ func (r *Router) find(req *http.Request) (*Route, int) {
 						//	wrongMethod = true
 						//	continue //the for route
 						//}
+						if Cache {
+							go r.addToCache(req.URL.Path, req.Method, _route)
+						}
+
 						return _route, http.StatusOK
 
 					}
@@ -325,5 +432,6 @@ func (r *Router) find(req *http.Request) (*Route, int) {
 
 	//here if no method found
 	//println(req.URL.Path)
+
 	return nil, http.StatusNotFound
 }

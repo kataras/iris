@@ -16,8 +16,10 @@ type Route struct {
 
 	pathPrefix string // this is to make a little faster the match, before regexp Match runs, it's the path before the first path parameter :
 	//the pathPrefix is with the last / if parameters exists.
-	parts       []string //stores the string path AFTER the pathPrefix, without the pathPrefix. no need to that but no problem also.
-	fullpath    string   // need only on parameters.Params(...)
+	parts []string //stores the string path AFTER the pathPrefix, without the pathPrefix. no need to that but no problem also.
+	//if parts != nil means that this route has no params
+	fullpath string // need only on parameters.Params(...)
+	//fullparts   []string
 	handler     Handler
 	templates   *TemplateCache //this is passed to the Renderer
 	httpErrors  *HTTPErrors    //the only need of this is to pass into the Context, in order to  developer get the ability to perfom emit errors (eg NotFound) directly from context
@@ -63,16 +65,19 @@ func newRoute(registedPath string, handler Handler) *Route {
 
 	if hasPathParameters || r.hasWildcard {
 		r.parts = strings.Split(registedPath[len(r.pathPrefix):], "/")
-		r.fullpath = registedPath //we need this only to take Params so set it if has path parameters.
+		//r.fullparts = strings.Split(registedPath[1:], "/")
 	}
+	r.fullpath = registedPath //we need this only to take Params so set it if has path parameters.
 
 	return r
 }
 
 // containsMethod determinates if this route contains a http method
-
 // match determinates if this route match with the request, returns bool as first value and PathParameters as second value, if any
 func (r *Route) match(urlPath string) bool {
+	/* we do it on r.pathPrefix == urlPath if r.parts == nil { //if this route doesn't support params
+		return r.fullpath == urlPath
+	}*/
 	if r.pathPrefix == MatchEverything {
 		return true
 	}
@@ -80,33 +85,111 @@ func (r *Route) match(urlPath string) bool {
 		//it's route without path parameters or * symbol, and if the request url has prefix of it  and it's the same as the whole preffix which is the path itself returns true without checking for regexp pattern
 		//so it's just a path without named parameters
 		return true
+	}
 
-		//kapws kai to sufix na vlepw an den einai parameter, an einai idio kai meta na sunexizei sto path parameters.
-	} else if r.parts != nil {
-		partsLen := len(r.parts)
-		// count the slashes after the prefix, we start from one because we will have at least one slash.
-		reqPartsLen := 1
-		s := urlPath[len(r.pathPrefix):]
-		for i := 0; i < len(s); i++ {
-			if s[i] == '/' { //SlashByte
-				reqPartsLen++
+	//kapws kai to sufix na vlepw an den einai parameter, an einai idio kai meta na sunexizei sto path parameters.
+
+	s := urlPath[len(r.pathPrefix):]
+	if s[0] == '/' { //it's whrong by the way, the after pathPrefix can't be start with /, because the route'spathPrefix ends with '/'
+		return false
+	}
+	urlPathLen := len(s)
+	partsLen := len(r.parts)
+	lastStartPart := 1
+	partIndex := 0
+	urlPathMin := urlPathLen - 1
+	var reqPart string
+	for i := 0; i < urlPathLen; i++ {
+		if i == urlPathMin || s[i] == '/' { //to prwto einai to slash panta giauto to pernaw  //an exoume part i eimaste sto telos
+			isTheLastPart := partIndex == partsLen-1
+			if r.hasWildcard && isTheLastPart {
+				//means we are at the last part
+				//if r.parts[partsLen-1][0] == '*' {
+
+				return true //it ends with /home/test/*
+				//}
 			}
+			if partsLen <= partIndex {
+				return false
+			}
+			iplus := i + 1
+			if r.parts[partIndex][0] == ':' {
+				//if isTheLastPart && iplus == urlPathMin {
+				//works but no so much difference at the perfomance.
+				//return true //it ends with /home/test/:name
+				//}
+				partIndex++
+				lastStartPart = iplus
+				continue
+			}
+			if i == urlPathMin { //last part
+				reqPart = s[lastStartPart:iplus]
+			} else {
+				reqPart = s[lastStartPart:i]
+			}
+
+			lastStartPart = iplus
+
+			if r.parts[partIndex] != reqPart {
+				return false
+			}
+			partIndex++
 		}
 
-		//if request has more parts than the route, but the route has finish with * symbol then it's wildcard
-		//maybe it's a little confusing , why dont u use just reqPartsLen < partsLen return false ? it doesnt work this way :)
-		if reqPartsLen >= partsLen && r.hasWildcard { // r.parts[partsLen-1][0] == MatchEverythingByte { // >= and no != because we check for matchEveryting *
-			return true
-		} else if reqPartsLen != partsLen {
-			return false
+	}
+
+	if partIndex < partsLen {
+		return false
+	}
+	//go func(url string, route *Route) {
+	//exists := route.cache[url] == true
+	//if !exists {
+	//	if len(route.cache) > 4 {
+	//		route.cache = append(route.cache[:0], url)
+	//	} else {
+	//		println("cache ", url)
+	//route.cache = append(route.cache, url)
+	//	}
+
+	//}
+
+	//}(urlPath, r)
+
+	return true
+
+}
+
+func getMiddle(str string) string {
+	if (len(str) % 2) == 0 {
+		// Even length
+
+		if len(str) > 2 {
+
+			return str[len(str)/2-1 : len(str)/2+1]
+
 		}
 
-		return true
+	}
 
-	} else {
+	// Odd length
+	return str[len(str)/2 : len(str)/2+1]
+}
+
+func strEqual(s string, s2 string) bool {
+	slen := len(s)
+	if len(s2) != slen {
 		return false
 	}
 
+	if s[0] != s2[0] || s[slen-1] != s2[slen-1] {
+		return false
+	}
+
+	if getMiddle(s) != getMiddle(s2) {
+		return false
+	}
+
+	return s == s2
 }
 
 // Template creates (if not exists) and returns the template cache for this route

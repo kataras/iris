@@ -4,6 +4,7 @@ import (
 	"io"
 	"net/http"
 	"runtime"
+	//"strings"
 	"testing"
 )
 
@@ -300,7 +301,8 @@ var githubAPI = []routeTest{
 }
 
 var (
-	githubIris http.Handler
+	githubIris          http.Handler
+	loadOtherBenchmarks = false
 )
 
 func isTested(name string) bool {
@@ -347,6 +349,8 @@ func irisHandleTestTypical(res http.ResponseWriter, req *http.Request) {
 	io.WriteString(res, req.RequestURI)
 }
 
+var requestRoutes []routeTest
+
 func loadIris(routes []routeTest) http.Handler {
 	h := irisHandleTestTypical //irisHandleTestContexted //irisHandleTestTypical
 
@@ -355,6 +359,7 @@ func loadIris(routes []routeTest) http.Handler {
 	for _, route := range routes {
 		api.Handle(route.path, h, route.method)
 	}
+
 	/*println("nodes: ", len(api.router.tree.nodes))
 	for d, r := range api.router.tree.nodes {
 		println(d, ": ", r.prefix+" contains ", len(r.routes), " routes")
@@ -379,6 +384,7 @@ func benchRoutes(b *testing.B, router http.Handler, routes []routeTest) {
 			router.ServeHTTP(w, r)
 		}
 	}
+
 }
 
 //run: go test -bench="Iris"

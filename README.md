@@ -123,6 +123,10 @@ So, Iris **is a bit faster than Gin**.
 I wish Gin has compatibility with the Martini's middleware ecosystem, as Iris provides out of the box. 
 **Gin is a complete web framework and the only good alternative over Iris** (that I know)  so if you don't care about performance so much (not a big difference, gin is ~4.000 nanoseconds slower only) or somehow you don't like Iris then you should get your self some [Gin](https://github.com/gin-gonic/gin). 
 
+
+Do you want to see more?
+When Cache (with automatic cleanup) is enabled (by default, change it with iris.Cache = false), results are these: 
+![enter image description here](http://nodets.com/iris_cached_new.png)
 ## Features 
 
 **Only explicit matches:** With other routers, like http.ServeMux, a requested URL path could match multiple patterns. Therefore they have some awkward pattern priority rules, like longest match or first registered, first matched. By design of this router, a request can only match exactly one or no route. As a result, there are also no unintended matches, which makes it great for SEO and improves the user experience.
