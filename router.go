@@ -14,14 +14,16 @@ const (
 )
 
 ///TODO: continue IRouter
-/*
+
 type IRouter interface {
-	NewRouter() *Router
+	Use(handler MiddlewareHandler)
+	UseFunc(handlerFunc func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc))
+	UseHandler(handler http.Handler)
 	HandleFunc(registedPath string, handler Handler, method string) *Route
 	HandleAnnotated(handler Annotated) (*Route, error)
+	SetErrors(errs *HTTPErrors)
 	Find(req *http.Request) *Route
-	Cache(mustEnable bool)
-}*/
+}
 
 // Router is the router , one router per server.
 // Router contains the global middleware, the routes and a Mutex for lock and unlock on route prepare
@@ -30,41 +32,17 @@ type Router struct {
 	//no routes map[string]map[string][]*Route // key = path prefix, value a map which key = method and the vaulue an array of the routes starts with that prefix and method
 	//routes map[string][]*Route // key = path prefix, value an array of the routes starts with that prefix
 	nodes      tree
-	cache      *MemoryRouterCache
+	cache      *IRouterCache
 	httpErrors *HTTPErrors //the only reason of this is to pass into the route, which it need it to  passed it to Context, in order to  developer get the ability to perfom emit errors (eg NotFound) directly from context
-	// find is setted at the first HandleFunc(.startCache) of this route,
-	// if Cache is true then the find  sets to _findCache, if not then find = _find
-	// I did it for better perfomance, no check if Cache so many times inside .find
-	///TODO: 1. remove it and replace the whole Router with two types of routers, one CachedRouter and the SimpleRouter or something like that
-	///TODO: 2. but first create an interface named IRouter to hold the nessecary functions
-	find func(req *http.Request) (_route *Route)
 }
 
 // NewRouter creates and returns an empty Router
-func newRouter() *Router {
-	r := &Router{nodes: make(tree, 0), cache: &MemoryRouterCache{}}
-	r.find = r._findCache //by default it is to the normal find. this is changing to the startCache
-	return r
+func NewRouter() *Router {
+	return &Router{nodes: make(tree, 0)}
 }
 
-// Cache receives a boolean value
-// If false then disables the memory cache
-// If true then enables the memory cache, which it's by default
-//
-// Returns the MemoryRouterCache pointer reference in order to optionally set it's options using .Cache(true).SetOptions(...)
-func (r *Router) Cache(enable bool) *MemoryRouterCache {
-	if enable {
-		r.cache.Enable()
-		r.find = r._findCache
-	} else {
-		r.cache.Disable()
-		r.find = r._find
-	}
-	return r.cache
-}
-
-func Cache(enable bool) *MemoryRouterCache {
-	return DefaultServer.router.Cache(enable)
+func (r *Router) SetErrors(httperr *HTTPErrors) {
+	r.httpErrors = httperr
 }
 
 // HandleFunc registers and returns a route with a path string, a handler and optinally methods as parameters
@@ -92,9 +70,6 @@ func (r *Router) HandleFunc(registedPath string, handler Handler, method string)
 
 		r.nodes.addRoute(method, route)
 
-		//start the cache when at least one route is registed to the router
-		//already started? no problem it handles it.
-		r.cache.TryStart()
 	}
 	route.httpErrors = r.httpErrors
 	return route
@@ -235,7 +210,7 @@ func (s *Server) HandleAnnotated(irisHandler Annotated) (*Route, error) {
 ///////////////////
 
 // Use registers a a custom handler, with next, as a global middleware
-func (r *Router) Use(handler MiddlewareHandler) *Router {
+func (r *Router) Use(handler MiddlewareHandler) {
 	r.MiddlewareSupporter.Use(handler)
 	//IF this is called after the routes
 	if len(r.nodes) > 0 {
@@ -249,82 +224,47 @@ func (r *Router) Use(handler MiddlewareHandler) *Router {
 
 		}
 	}
-	return r
+
 }
 
 // Use registers a a custom handler, with next, as a global middleware
-func (s *Server) Use(handler MiddlewareHandler) *Server {
+func (s *Server) Use(handler MiddlewareHandler) {
 	s.router.Use(handler)
-	return s
+
 }
 
 // Use registers a a custom handler, with next, as a global middleware
-func Use(handler MiddlewareHandler) *Server {
+func Use(handler MiddlewareHandler) {
 
 	DefaultServer.router.Use(handler)
-	return DefaultServer
 }
 
 // UseFunc registers a function which is a handler, with next, as a global middleware
-func (s *Server) UseFunc(handlerFunc func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc)) *Server {
+func (s *Server) UseFunc(handlerFunc func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc)) {
 	s.router.UseFunc(handlerFunc)
-	return s
+
 }
 
 // UseFunc registers a function which is a handler, with next, as a global middleware
-func UseFunc(handlerFunc func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc)) *Server {
+func UseFunc(handlerFunc func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc)) {
 	DefaultServer.router.UseFunc(handlerFunc)
-	return DefaultServer
+
 }
 
 // UseHandler registers a simple http.Handler as global middleware
-func (s *Server) UseHandler(handler http.Handler) *Server {
+func (s *Server) UseHandler(handler http.Handler) {
 	s.router.UseHandler(handler)
-	return s
+
 }
 
 // UseHandler registers a simple http.Handler as global middleware
-func UseHandler(handler http.Handler) *Server {
+func UseHandler(handler http.Handler) {
 	DefaultServer.router.UseHandler(handler)
-	return DefaultServer
-}
 
-func (r *Router) _findCache(req *http.Request) *Route {
-	//defer r.mu.Unlock() defer is slow.
-	if v := r.cache.GetItem(req.Method, req.URL.Path); v != nil {
-		return v
-	}
-
-	var _node *node
-	var _route *Route
-	var _nodes = r.nodes[req.Method]
-
-	if _nodes != nil {
-		for i := 0; i < len(_nodes); i++ {
-			_node = _nodes[i]
-
-			if strings.HasPrefix(req.URL.Path, _node.prefix) {
-				for j := 0; j < len(_node.routes); j++ {
-					_route = _node.routes[j]
-					if _route.Match(req.URL.Path) {
-						r.cache.AddItem(req.Method, req.URL.Path, _route)
-						return _route
-
-					}
-
-				}
-			}
-		}
-	}
-
-	//println(req.URL.Path)
-
-	return nil
 }
 
 // find returns the correct/matched route, if any, for  the request
-// if error route != nil , then the errorcode will be 200 OK
-func (r *Router) _find(req *http.Request) *Route {
+func (r *Router) Find(req *http.Request) *Route {
 	var _node *node
 	var _route *Route
 	var _nodes = r.nodes[req.Method]

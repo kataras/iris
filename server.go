@@ -15,7 +15,7 @@ const (
 )
 
 // Add paths for debug manually linked (alternative of using DefaultServeMux)
-func attachProfiler(r *Router, debugPath string) {
+func attachProfiler(r IRouter, debugPath string) {
 	if len(debugPath) == 0 {
 		debugPath = DefaultDebugPath
 	}
@@ -71,7 +71,7 @@ type Server struct {
 	debugEnabled bool
 	// DebugPath set this to change the default http paths for the profiler
 	debugPath   string
-	router      *Router
+	router      IRouter
 	listenerTCP *tcpKeepAliveListener
 	isRunning   bool
 }
@@ -172,7 +172,7 @@ func Listen(fullHostOrPort interface{}) error {
 // with this function iris can be used also as  a middleware into other already defined http server
 func (s *Server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	//I thing it's better to keep the main serve to the server, this is the meaning of the Server struct .so delete: s.router.ServeHTTP(res, req)
-	if route := s.router.find(req); route != nil {
+	if route := s.router.Find(req); route != nil {
 		route.ServeHTTP(res, req)
 	} else {
 		s.Errors.NotFound(res)

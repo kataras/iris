@@ -354,8 +354,8 @@ var requestRoutes []routeTest
 func loadIris(routes []routeTest) http.Handler {
 	h := irisHandleTestTypical //irisHandleTestContexted //irisHandleTestTypical
 
+	//disableed cached api := New(IrisOptions{Cache: false})
 	api := New()
-
 	for _, route := range routes {
 		api.Handle(route.path, h, route.method)
 	}
