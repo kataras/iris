@@ -63,6 +63,10 @@ func (r *Router) Cache(enable bool) *MemoryRouterCache {
 	return r.cache
 }
 
+func Cache(enable bool) *MemoryRouterCache {
+	return DefaultServer.router.Cache(enable)
+}
+
 // HandleFunc registers and returns a route with a path string, a handler and optinally methods as parameters
 // registedPath is the name of the route + the pattern
 //
