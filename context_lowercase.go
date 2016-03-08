@@ -4,12 +4,14 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"reflect"
 	"strconv"
 	"strings"
 )
 
-var contextType reflect.Type
+const (
+	// CookieName is the name of the cookie which this frameworks sends to the temporary request in order to get the named parameters
+	CookieName = "____iris____"
+)
 
 // Context is created every time a request is coming to the server,
 // it holds a pointer to the http.Request, the ResponseWriter

@@ -3,7 +3,6 @@ package iris
 import (
 	"net/http"
 	"net/url"
-	"strings"
 )
 
 type PathParameter struct {
@@ -28,6 +27,7 @@ func (params PathParameters) Get(key string) string {
 
 // URLParams the URL.Query() is a complete function which returns the url get parameters from the url query, We don't have to do anything else here.
 func URLParams(req *http.Request) url.Values {
+
 	return req.URL.Query()
 }
 
@@ -42,7 +42,11 @@ var _theParams = make(PathParameters, 0)
 func resetParams() {
 	_theParams = append(_theParams[:0], _theParams[:0]...)
 }
+func params(r *Route, urlPath string) PathParameters {
+	return nil
+}
 
+/*
 func params(r *Route, urlPath string) PathParameters {
 	//params := make(PathParameters, 0, partsLen)
 	//if params == nil {
@@ -83,4 +87,4 @@ func params(r *Route, urlPath string) PathParameters {
 		}
 	}
 	return _theParams
-}
+}*/

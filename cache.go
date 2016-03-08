@@ -4,54 +4,6 @@ import (
 	"sync"
 )
 
-/* My Greek notes for nearly future features
-//edw 9a ew ta options gia to cache
-//auta ta options 9a einai genika
-//meta 9a kanw akoma ena func i struct
-//pou 9a einai to memory cache giati isws
-//sto mellon valw kai kati san to redis
-//h na borei o xristis mesw nosqlh otidipote
-//to default tha einai to memory cache gia to router
-//episis sto router na suenxisw tin fash me to interface
-//kai na exw 2 structs me
-//GenericRouter i SimpleRouter
-// kai CachedRouter
-//h efoson to cache einai mono sto find
-//isws kanw sto find kati na to kanw type
-// kai na tou valw functions ? kai auto ginete
-//opws ekana sto iris Handler 9a dw.
-
-//telika apofasisa oti to cache 9a exei timer
-// sto AddItem dn 9a xreiazezete na vlepoume to len kai na kanoume reset
-//to reset 9a ginete mono sto timer me vasi twn maxitems an einai panw apo 0 aliws ola clear.*/
-//
-//type CacheOptions struct {
-//	// MaxItems max number of total cached routes, 500 = +~20000 bytes = ~0.019073MB
-//	// Every time the cache timer reach this number it will reset/clean itself
-//	// Default is 0
-//	// If <=0 then cache cleans all of items (bag)
-//	// Auto cache clean is happening after 5 minutes the last request serve, you can change this number by 'ResetDuration' property
-//	// Carefuly MaxItems doesn't means that the items never reach this lengh, only on timer tick this number is checked/consider.
-//	MaxItems int
-//
-//	// ResetDuration change this time.value to determinate how much duration after last request serving the cache must be reseted/cleaned
-//	// Default is 5 * time.Minute , Minimum is 30 seconds
-//	//
-//	// If MaxItems <= 0 then it clears the whole cache bag at this duration.
-//	ResetDuration time.Duration
-//
-//	// Every tick from ticker from ResetDuration
-//	// the cache creates a temp items list from cache
-//	// and is checking if this is the same as it was before
-//	// the ResetDuration time, if yes then does nothing
-//	// if is larger then it makes the reset/clean.
-//	// This operation/algorithm is handled by each instance byself, which implements the cache.
-//}
-
-//func DefaultCacheOptions() CacheOptions {
-//	return CacheOptions{0, 5 * time.Minute}
-//}
-
 type IRouterCache interface {
 	OnTick()
 	AddItem(method, url string, route *Route)
@@ -64,9 +16,11 @@ type IRouterCache interface {
 type MemoryRouterCache struct {
 	//1. map[string] ,key is HTTP Method(GET,POST...)
 	//2. map[string]*Route ,key is The Request URL Path
+	//the map in this case is the faster way, I tried with array of structs but it's 100 times slower on > 1 core because of async goroutes on addItem I sugges, so we keep the map
 	items    map[string]map[string]*Route
 	MaxItems int
-	mu       *sync.Mutex
+	//we need this mutex if we have running the iris at > 1 core, because we use map but maybe at the future I will change it.
+	mu *sync.Mutex
 }
 
 func (mc *MemoryRouterCache) SetMaxItems(_itemslen int) {

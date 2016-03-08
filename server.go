@@ -58,9 +58,6 @@ func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
 //
 // Server's New() located at the iris.go file
 type Server struct {
-	// Errors the meaning of these is that the developer can change the default handlers for http errors
-	Errors *HTTPErrors
-
 	// Debug Setting to true you enable the go profiling tool
 	// Default Debug path (can changed via server.DebugPath = "/path/to/debug")
 	// Memory profile (http://localhost:PORT/debug/pprof/heap)
@@ -103,6 +100,15 @@ func (s *Server) Debug(val bool, customPath ...string) {
 // Used in the server.go file when starting to the server and initialize the Mux.
 func Debug(val bool, customPath ...string) {
 	DefaultServer.Debug(val)
+}
+
+// Errors the meaning of these is that the developer can change the default handlers for http errors
+func (s *Server) Errors() *HTTPErrors {
+	return s.router.GetErrors()
+}
+
+func Errors() *HTTPErrors {
+	return DefaultServer.router.GetErrors()
 }
 
 // Starts the http server ,tcp listening to the config's host and port
@@ -172,25 +178,7 @@ func Listen(fullHostOrPort interface{}) error {
 // with this function iris can be used also as  a middleware into other already defined http server
 func (s *Server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	//I thing it's better to keep the main serve to the server, this is the meaning of the Server struct .so delete: s.router.ServeHTTP(res, req)
-	if route := s.router.Find(req); route != nil {
-		route.ServeHTTP(res, req)
-	} else {
-		s.Errors.NotFound(res)
-	}
-
-	//route, errCode := s.router.find(req)
-	/*	if errCode == http.StatusOK {
-			route.ServeHTTP(res, req)
-		} else {
-			//get the handler for this error
-			errHandler := s.Errors.getByCode(errCode)
-			if errHandler == nil {
-				//if not a handler for this error exists, then just:
-				http.Error(res, "An unexcpecting error occurs ("+strconv.Itoa(errCode)+")", errCode)
-			} else {
-				errHandler.handler.ServeHTTP(res, req)
-			}
-		}*/
+	s.router.ServeHTTP(res, req)
 }
 
 // ServeHTTP serves an http request,

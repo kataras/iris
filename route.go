@@ -5,6 +5,12 @@ import (
 	"strings"
 )
 
+const (
+	ParameterStartByte  = byte(':')
+	SlashByte           = byte('/')
+	MatchEverythingByte = byte('*')
+)
+
 type Part struct {
 	Position          int    // the position of this Part by the total slashes, starts from 1. Position = 2 means that this Part is  starting at the second slash of the registedPath, maybe not useful here.
 	Prefix            byte   //the first character
@@ -15,14 +21,6 @@ type Part struct {
 	isMatchEverything bool //if this is true then the isLast = true and the isParam = false
 }
 
-type routeType uint8
-
-const (
-	isStatic routeType = iota
-	hasParams
-	hasWildcard
-)
-
 // Route contains its middleware, handler, pattern , it's path string, http methods and a template cache
 // Used to determinate which handler on which path must call
 // Used on router.go
@@ -32,14 +30,13 @@ type Route struct {
 	MiddlewareSupporter
 	//mu            sync.RWMutex
 	paramsLength        uint8
-	pathParts           []*Part
+	pathParts           []Part
 	partsLen            uint8
-	rType               routeType
+	isStatic            bool
 	lastStaticPartIndex uint8  // when( how much slashes we have before) the dynamic path, the start of the dynamic path in words of slashes /
 	pathPrefix          string // this is to make a little faster the match, before regexp Match runs, it's the path before the first path parameter :
 	//the pathPrefix is with the last / if parameters exists.
-	parts []string //stores the string path AFTER the pathPrefix, without the pathPrefix. no need to that but no problem also.
-	//if parts != nil means that this route has no params
+
 	fullpath string // need only on parameters.Params(...)
 	//fullparts   []string
 	handler    Handler
@@ -50,7 +47,7 @@ type Route struct {
 
 // newRoute creates, from a path string, handler and optional http methods and returns a new route pointer
 func newRoute(registedPath string, handler Handler) *Route {
-	r := &Route{handler: handler, pathParts: make([]*Part, 0)}
+	r := &Route{handler: handler, pathParts: make([]Part, 0)}
 
 	r.fullpath = registedPath
 	r.processPath()
@@ -58,7 +55,9 @@ func newRoute(registedPath string, handler Handler) *Route {
 }
 
 func (r *Route) processPath() {
-	var part *Part
+	var part Part
+	var hasParams bool
+	var hasWildcard bool
 	splitted := strings.Split(r.fullpath, "/")
 	r.partsLen = uint8(len(splitted) - 1) // dont count the first / splitted item
 
@@ -66,7 +65,7 @@ func (r *Route) processPath() {
 		if val == "" {
 			continue
 		}
-		part = &Part{}
+		part = Part{}
 		letter := val[0]
 
 		if idx == len(splitted)-1 {
@@ -76,7 +75,7 @@ func (r *Route) processPath() {
 				//println(r.fullpath + " has wildcard and it's part has")
 				//we have finish it with *
 				part.isMatchEverything = true
-				r.rType = hasWildcard
+				hasWildcard = true
 
 			}
 		}
@@ -85,7 +84,7 @@ func (r *Route) processPath() {
 		} else {
 			part.isParam = true
 			val = val[1:] //drop the :
-			r.rType = hasParams
+			hasParams = true
 			r.paramsLength++
 		}
 
@@ -96,7 +95,7 @@ func (r *Route) processPath() {
 
 		if !part.isParam && !part.isMatchEverything {
 			part.isStatic = true
-			if r.rType != hasParams && r.rType != hasWildcard { // it's the last static path.
+			if !hasParams && !hasWildcard { // it's the last static path.
 				r.lastStaticPartIndex = uint8(idx)
 				//println(r.lastStaticPartIndex, "for ", r.fullpath)
 			}
@@ -110,9 +109,8 @@ func (r *Route) processPath() {
 	//if len(r.pathParts) > 0 {
 	//r.pathPrefix = "/" + r.pathParts[0].Value
 
-	if r.rType != hasWildcard && r.rType != hasParams {
-		r.rType = isStatic
-
+	if !hasParams && !hasWildcard {
+		r.isStatic = true
 	}
 
 	//find the prefix which is the path which ends on the first :,* if exists otherwise the first /
@@ -144,7 +142,7 @@ func (r *Route) processPath() {
 }
 
 func (r *Route) Match(urlPath string) bool {
-	if r.rType == isStatic {
+	if r.isStatic {
 		return urlPath == r.fullpath
 	} else if len(urlPath) < len(r.pathPrefix) {
 
@@ -153,7 +151,7 @@ func (r *Route) Match(urlPath string) bool {
 	reqPath := urlPath[len(r.pathPrefix):] //we start from there to make it faster
 	rest := reqPath
 	var pathIndex = r.lastStaticPartIndex
-	var part *Part
+	var part Part
 	var endSlash int
 	var reqPart string
 	for pathIndex < r.partsLen {

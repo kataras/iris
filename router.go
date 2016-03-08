@@ -8,21 +8,52 @@ import (
 	"strings"
 )
 
-const (
-	// CookieName is the name of the cookie which this frameworks sends to the temporary request in order to get the named parameters
-	CookieName = "____iris____"
-)
-
 ///TODO: continue IRouter
 
 type IRouter interface {
-	Use(handler MiddlewareHandler)
-	UseFunc(handlerFunc func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc))
-	UseHandler(handler http.Handler)
-	HandleFunc(registedPath string, handler Handler, method string) *Route
-	HandleAnnotated(handler Annotated) (*Route, error)
-	SetErrors(errs *HTTPErrors)
-	Find(req *http.Request) *Route
+	Use(MiddlewareHandler)
+	UseFunc(func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc))
+	UseHandler(http.Handler)
+	HandleFunc(string, Handler, string) *Route
+	HandleAnnotated(Annotated) (*Route, error)
+	GetErrors() *HTTPErrors
+	// ServeHTTP finds and serves a route by it's request
+	// If no route found, it sends an http status 404
+	ServeHTTP(http.ResponseWriter, *http.Request)
+}
+
+// node is just a collection of routes group by path's prefix, used inside Router.
+type node struct {
+	prefix string
+	routes []*Route
+}
+
+type tree map[string][]*node
+
+func (tr tree) addRoute(method string, route *Route) {
+	_nodes := tr[method]
+
+	if _nodes == nil {
+		_nodes = make([]*node, 0)
+	}
+	ok := false
+	var _node *node
+	index := 0
+	for index, _node = range _nodes {
+		//check if route has parameters or * after the prefix, if yes then add a slash to the end
+		routePref := route.pathPrefix
+		if _node.prefix == routePref {
+			tr[method][index].routes = append(_node.routes, route)
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		_node = &node{prefix: route.pathPrefix, routes: make([]*Route, 0)}
+		_node.routes = append(_node.routes, route)
+		//_node.makePriority(route)
+		tr[method] = append(tr[method], _node)
+	}
 }
 
 // Router is the router , one router per server.
@@ -38,11 +69,15 @@ type Router struct {
 
 // NewRouter creates and returns an empty Router
 func NewRouter() *Router {
-	return &Router{nodes: make(tree, 0)}
+	return &Router{nodes: make(tree, 0), httpErrors: DefaultHTTPErrors()}
 }
 
 func (r *Router) SetErrors(httperr *HTTPErrors) {
 	r.httpErrors = httperr
+}
+
+func (r *Router) GetErrors() *HTTPErrors {
+	return r.httpErrors
 }
 
 // HandleFunc registers and returns a route with a path string, a handler and optinally methods as parameters
@@ -148,7 +183,7 @@ func (r *Router) HandleAnnotated(irisHandler Annotated) (*Route, error) {
 			}
 
 			path = tagValue
-
+			avalaibleMethodsStr := strings.Join(HTTPMethods.ANY, ",")
 			//has multi methods seperate by commas
 
 			if !strings.Contains(avalaibleMethodsStr, tagName) {
@@ -184,6 +219,7 @@ func (r *Router) HandleAnnotated(irisHandler Annotated) (*Route, error) {
 				} else {
 					route.Template().Add(template)
 				}
+
 			}
 		}
 
@@ -263,8 +299,10 @@ func UseHandler(handler http.Handler) {
 
 }
 
-// find returns the correct/matched route, if any, for  the request
-func (r *Router) Find(req *http.Request) *Route {
+// ServeHTTP finds and serves a route by it's request
+// If no route found, it sends an http status 404
+func (r *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+
 	var _node *node
 	var _route *Route
 	var _nodes = r.nodes[req.Method]
@@ -276,16 +314,17 @@ func (r *Router) Find(req *http.Request) *Route {
 			if strings.HasPrefix(req.URL.Path, _node.prefix) {
 				for j := 0; j < len(_node.routes); j++ {
 					_route = _node.routes[j]
-					if _route.Match(req.URL.Path) {
-						return _route
+					if !_route.Match(req.URL.Path) {
+						continue
 					}
+					_route.ServeHTTP(res, req)
+					return
 
 				}
 			}
 		}
 	}
+	//not found
+	r.httpErrors.NotFound(res)
 
-	//println(req.URL.Path)
-
-	return nil
 }
