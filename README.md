@@ -125,7 +125,7 @@ I wish Gin has compatibility with the Martini's middleware ecosystem, as Iris pr
 
 
 Do you want to see more?
-When Cache (with automatic cleanup) is enabled (by default, change it with iris.Cache = false), results are these: 
+When Cache (with automatic cleanup) is enabled (by default, change it with iris.New(iris.IrisOptions{Cache: false}) instead of iris.New(), results are these: 
 ![enter image description here](http://nodets.com/iris_with_cach_latest.png)
 ## Features 
 
