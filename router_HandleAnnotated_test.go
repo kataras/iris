@@ -28,7 +28,7 @@ var structedTests = [...]testStructedRoute{{
 func TestRouterHandleAnnotated(t *testing.T) {
 	iris := New()
 	for _, sr := range structedTests {
-		route, err := iris.router.handleAnnotated(sr.handler)
+		route, err := iris.router.HandleAnnotated(sr.handler)
 		//var err error
 		//route := iris.Handle(sr.handler)
 		if err != nil {

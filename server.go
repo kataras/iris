@@ -24,10 +24,10 @@ func attachProfiler(r *Router, debugPath string) {
 	r.HandleFunc(debugPath+"/profile", HandlerFunc(pprof.Profile), HTTPMethods.GET)
 	r.HandleFunc(debugPath+"/symbol", HandlerFunc(pprof.Symbol), HTTPMethods.GET)
 
-	r.Handle(debugPath+"/goroutine", pprof.Handler("goroutine"), HTTPMethods.GET)
-	r.Handle(debugPath+"/heap", pprof.Handler("heap"), HTTPMethods.GET)
-	r.Handle(debugPath+"/threadcreate", pprof.Handler("threadcreate"), HTTPMethods.GET)
-	r.Handle(debugPath+"/pprof/block", pprof.Handler("block"), HTTPMethods.GET)
+	r.HandleFunc(debugPath+"/goroutine", HandlerFunc(pprof.Handler("goroutine")), HTTPMethods.GET)
+	r.HandleFunc(debugPath+"/heap", HandlerFunc(pprof.Handler("heap")), HTTPMethods.GET)
+	r.HandleFunc(debugPath+"/threadcreate", HandlerFunc(pprof.Handler("threadcreate")), HTTPMethods.GET)
+	r.HandleFunc(debugPath+"/pprof/block", HandlerFunc(pprof.Handler("block")), HTTPMethods.GET)
 
 }
 
@@ -172,20 +172,25 @@ func Listen(fullHostOrPort interface{}) error {
 // with this function iris can be used also as  a middleware into other already defined http server
 func (s *Server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	//I thing it's better to keep the main serve to the server, this is the meaning of the Server struct .so delete: s.router.ServeHTTP(res, req)
-
-	route, errCode := s.router.find(req)
-	if errCode == http.StatusOK {
+	if route := s.router.find(req); route != nil {
 		route.ServeHTTP(res, req)
 	} else {
-		//get the handler for this error
-		errHandler := s.Errors.getByCode(errCode)
-		if errHandler == nil {
-			//if not a handler for this error exists, then just:
-			http.Error(res, "An unexcpecting error occurs ("+strconv.Itoa(errCode)+")", errCode)
-		} else {
-			errHandler.handler.ServeHTTP(res, req)
-		}
+		s.Errors.NotFound(res)
 	}
+
+	//route, errCode := s.router.find(req)
+	/*	if errCode == http.StatusOK {
+			route.ServeHTTP(res, req)
+		} else {
+			//get the handler for this error
+			errHandler := s.Errors.getByCode(errCode)
+			if errHandler == nil {
+				//if not a handler for this error exists, then just:
+				http.Error(res, "An unexcpecting error occurs ("+strconv.Itoa(errCode)+")", errCode)
+			} else {
+				errHandler.handler.ServeHTTP(res, req)
+			}
+		}*/
 }
 
 // ServeHTTP serves an http request,
@@ -323,7 +328,7 @@ func (s *Server) Handle(params ...interface{}) *Route {
 		return s.HandleFunc(params[0].(string), convertToHandler(params[1]), params[2].(string))
 	} else {
 		//means it's a struct which implements the iris.Annotated and have a Handle func inside it -> handleAnnotated
-		r, err := s.handleAnnotated(params[0].(Annotated))
+		r, err := s.HandleAnnotated(params[0].(Annotated))
 		if err != nil {
 			panic(err.Error())
 		}
@@ -336,34 +341,3 @@ func (s *Server) Handle(params ...interface{}) *Route {
 func Handle(params ...interface{}) *Route {
 	return DefaultServer.Handle(params...)
 }
-
-/*
-//for test and... it worked , +1k executions and -100k nanoseconds to operate
-func (s *Server) SortRoutes() {
-	s.router.methodsRoutes = make(map[string][]*Route, 0) // len(s.router.routes))
-
-	for _, m := range HTTPMethods.ANY {
-		s.router.methodsRoutes[m] = make([]*Route, 0)
-	}
-
-	for _, r := range s.router.routes {
-		//r.prepare()
-		for _, m := range r.methods {
-			s.router.methodsRoutes[m] = append(s.router.methodsRoutes[m], r)
-		}
-	}
-}
-
-//for test and...
-func (s *Server) SortRoutes2() {
-	s.router.pathRoutes = make(map[string][]*Route, 0) //len(s.router.routes))
-
-	for _, r := range s.router.routes {
-		if s.router.pathRoutes[r.pathPrefix] == nil {
-			s.router.pathRoutes[r.pathPrefix] = make([]*Route, 0)
-		}
-		s.router.pathRoutes[r.pathPrefix] = append(s.router.pathRoutes[r.pathPrefix], r)
-
-	}
-}
-*/

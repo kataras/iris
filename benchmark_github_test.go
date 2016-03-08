@@ -360,9 +360,14 @@ func loadIris(routes []routeTest) http.Handler {
 		api.Handle(route.path, h, route.method)
 	}
 
-	/*println("nodes: ", len(api.router.tree.nodes))
-	for d, r := range api.router.tree.nodes {
-		println(d, ": ", r.prefix+" contains ", len(r.routes), " routes")
+	/*println("nodes: ", len(api.router.nodes))
+	for k, v := range api.router.nodes {
+
+		println(k, " contains ", len(v), " nodes")
+		for idx, r := range v {
+			println(idx, " : prefix: ", r.prefix, " routes contains:", len(r.routes))
+		}
+		//println(d, ": ", r.prefix+" contains ", len(r.routes), " routes")
 	}*/
 	return api
 }
