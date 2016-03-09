@@ -38,6 +38,7 @@ func attachProfiler(r IRouter, debugPath string) {
 // go away.
 //
 // this is excatcly a copy of the Go Source (net/http) server.go
+// and it used only on non-tsl server (HTTP/1.1)
 type tcpKeepAliveListener struct {
 	*net.TCPListener
 }
@@ -68,10 +69,12 @@ type Server struct {
 	// Used in the server.go file when starting to the server and initialize the Mux.
 	debugEnabled bool
 	// DebugPath set this to change the default http paths for the profiler
-	debugPath   string
-	router      IRouter
-	listenerTCP *tcpKeepAliveListener
-	isRunning   bool
+	debugPath string
+	router    IRouter
+	listener  net.Listener
+	isRunning bool
+	// isSecure true if ListenTLS (https/http2)
+	isSecure bool
 }
 
 // Debug Setting to true you enable the go profiling tool
@@ -149,21 +152,21 @@ func (s *Server) Listen(fullHostOrPort interface{}) error {
 	}
 
 	//return http.ListenAndServe(s.config.Host+strconv.Itoa(s.config.Port), mux)
-
 	listener, err := net.Listen("tcp", fulladdr)
 
 	if err != nil {
-		panic("Cannot run the server [problem with tcp listener on host:port]: " + fulladdr + " err:" + err.Error())
+		//panic("Cannot run the server [problem with tcp listener on host:port]: " + fulladdr + " err:" + err.Error())
+		return err
 	}
-
-	s.listenerTCP = &tcpKeepAliveListener{listener.(*net.TCPListener)} //we need this because I think that we have to 'have' a Close() method on the server instance
-	//defer s.listenerTCP.Close()
-	err = http.Serve(s.listenerTCP, mux)
-
-	s.isRunning = true
-	s.listenerTCP.Close()
+	s.listener = &tcpKeepAliveListener{listener.(*net.TCPListener)}
+	err = http.Serve(s.listener, mux)
+	if err == nil {
+		s.isRunning = true
+		s.isSecure = false
+	}
+	listener.Close()
+	//s.listener.Close()
 	return err
-
 }
 
 // ListenTLS Starts a httpS/http2 server with certificates,
@@ -172,6 +175,7 @@ func (s *Server) Listen(fullHostOrPort interface{}) error {
 // which listens to the fullHostOrPort parameter which as the form of
 // host:port or just port
 func (s *Server) ListenTLS(fullHostOrPort interface{}, certFile, keyFile string) error {
+	var err error
 	fulladdr := parseAddr(fullHostOrPort)
 	httpServer := http.Server{
 		Addr:    fulladdr,
@@ -183,24 +187,23 @@ func (s *Server) ListenTLS(fullHostOrPort interface{}, certFile, keyFile string)
 	config := &tls.Config{}
 
 	configHasCert := len(config.Certificates) > 0 || config.GetCertificate != nil
-	if !configHasCert {
-		var err error
+	if !configHasCert && certFile != "" && keyFile != "" {
 		config.Certificates = make([]tls.Certificate, 1)
 		config.Certificates[0], err = tls.LoadX509KeyPair(certFile, keyFile)
-		if err != nil {
-			return err
-		}
 	}
 	httpServer.TLSConfig = config
-	listener, err := tls.Listen("tcp", fulladdr, httpServer.TLSConfig)
+	s.listener, err = tls.Listen("tcp", fulladdr, httpServer.TLSConfig)
 	if err != nil {
 		panic("Cannot run the server [problem with tcp listener on host:port]: " + fulladdr + " err:" + err.Error())
 	}
 
-	err = httpServer.Serve(listener)
+	err = httpServer.Serve(s.listener)
 
-	s.isRunning = true
-
+	if err == nil {
+		s.isRunning = true
+		s.isSecure = true
+	}
+	//s.listener.Close()
 	return err
 }
 
@@ -224,6 +227,20 @@ func ListenTLS(fullHostOrPort interface{}, certFile, keyFile string) error {
 // with this function iris can be used also as  a middleware into other already defined http server
 func (s *Server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	//I thing it's better to keep the main serve to the server, this is the meaning of the Server struct .so delete: s.router.ServeHTTP(res, req)
+
+	//the Server is HTTPS/HTTP2 but the request is 'http'
+	//redirect the url to the https version
+	//doesn't work because of line 1406 of the net/http/server.go
+	//the tls http.Serve is handle this via low-level connection, it logs an error on the console and returns
+	//and doesn't continue here to the ServeHTTP
+
+	///TODO: I must find another way to do something like that
+	/*if s.isSecure && req.TLS == nil {
+		//req.URL.Scheme = "https://"
+		http.Redirect(res, req, "https://"+req.Host+req.URL.Path, http.StatusOK)
+		return
+	}*/
+
 	s.router.ServeHTTP(res, req)
 }
 
@@ -235,8 +252,8 @@ func ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 // Close is used to close the net.Listener of the standalone http server which has already running via .Listen
 func (s *Server) Close() {
-	if s.isRunning && s.listenerTCP != nil {
-		s.listenerTCP.Close()
+	if s.isRunning && s.listener != nil {
+		s.listener.Close()
 		s.isRunning = false
 	}
 }
