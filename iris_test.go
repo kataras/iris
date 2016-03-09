@@ -22,7 +22,7 @@ type TestRequestRoute struct {
 	Body               []byte
 	ExpectedStatusCode int
 
-	ExpectedParameters map[string]string //used on server, inside handler
+	ExpectedParameters map[string]string
 }
 
 type TestRoute struct {
@@ -39,109 +39,6 @@ var (
 		URL, IP string
 		PORT    int
 	}{URL: "http://localhost", PORT: 80, IP: "127.0.0.1"}
-	/*
-	   	inlineRoutes = [...]TestRoute{
-	   		{
-	   			Methods: HTTPMethods.ANY, Path: "/simple",
-	   			Requests: []TestRequestRoute{{
-	   				Method: "GET", Path: "/simple",
-	   				Body:               []byte("body for the /simple"),
-	   				ExpectedStatusCode: 200,
-	   				ExpectedParameters: nil,
-	   			}, {
-	   				Method: "GET", Path: "/simple/wrongpath",
-	   				Body:               []byte("body for the /simple but wrongpath"),
-	   				ExpectedStatusCode: 404,
-	   				ExpectedParameters: nil,
-	   			}},
-	   		},
-	   		{
-	   			Methods: HTTPMethods.ANY, Path: "/api/users/:userId(int)",
-	   			Requests: []TestRequestRoute{{
-	   				Method: "GET", Path: "/api/users/1",
-	   				Body:               []byte("body for the api/users/:userId(int)"),
-	   				ExpectedStatusCode: 200,
-	   				ExpectedParameters: map[string]string{"userId": "1"},
-	   			}, {
-	   				Method: "GET", Path: "/api/users/thisisastringnotanumb3r",
-	   				Body:               []byte("body for the api/users/:userId(int)"),
-	   				ExpectedStatusCode: 404,
-	   				ExpectedParameters: nil,
-	   			}},
-	   		},
-	   		{
-	   			Methods: HTTPMethods.ANY, Path: "/profile/:username/friends/:friendId(int)",
-	   			Requests: []TestRequestRoute{{
-	   				Method: "GET", Path: "/profile/kataras/friends/2",
-	   				Body:               []byte("body for the /profile/:username/friends/:friendId"),
-	   				ExpectedStatusCode: 200,
-	   				ExpectedParameters: map[string]string{"username": "kataras", "friendId": "2"},
-	   			}, {
-	   				Method: "GET", Path: "/profile/kataras/friends/stringerrorisnotanumberman",
-	   				Body:               []byte("body for the  /profile/:username/friends/:friendId(int)"),
-	   				ExpectedStatusCode: 404,
-	   				ExpectedParameters: nil,
-	   			}},
-	   		},
-	   		{
-	   			Methods: HTTPMethods.ANY, Path: "/profile/:username/friends/somethinghere/:friendId(int)/something/here",
-	   			Requests: []TestRequestRoute{{
-	   				Method: "GET", Path: "/profile/kataras/friends/somethinghere/2/something/here",
-	   				Body:               []byte("body for the /profile/:username/friends/somethinghere/:friendId(int)/something/here"),
-	   				ExpectedStatusCode: 200,
-	   				ExpectedParameters: map[string]string{"username": "kataras", "friendId": "2"},
-	   			}, {
-	   				Method: "GET", Path: "/profile/kataras/friends/somethinghere/stringerrorisnotanumberman/something/here",
-	   				Body:               []byte("body for the /profile/:username/friends/somethinghere/:friendId(int)/something/here"),
-	   				ExpectedStatusCode: 404,
-	   				ExpectedParameters: nil,
-	   			}},
-	   		},
-	   		{
-	   			Methods: HTTPMethods.ANY, Path: "/profile/:username/friends/:friendId(int)/something/here/:thirdParam",
-	   			Requests: []TestRequestRoute{{
-	   				Method: "GET", Path: "/profile/kataras/friends/2/something/here/thethirdparameter",
-	   				Body:               []byte("body for the /profile/:username/friends/:friendId(int)/something/here/:thirdParam"),
-	   				ExpectedStatusCode: 200,
-	   				ExpectedParameters: map[string]string{"username": "kataras", "friendId": "2", "thirdParam": "thethirdparameter"},
-	   			}, {
-	   				Method: "GET", Path: "/profile/kataras/friends/2/something/here",
-	   				Body:               []byte("body for the /profile/:username/friends/:friendId(int)/something/here/:thirdParam"),
-	   				ExpectedStatusCode: 404,
-	   				ExpectedParameters: nil,
-	   			}},
-	   		},
-	   		{
-	   			Methods: HTTPMethods.ANY, Path: "/profile/:username",
-	   			Requests: []TestRequestRoute{{
-	   				Method: "GET", Path: "/profile/kataras",
-	   				Body:               []byte("body for the profile/:username"),
-	   				ExpectedStatusCode: 200,
-	   				ExpectedParameters: map[string]string{"username": "kataras"},
-	   			}, {
-	   				Method: "GET", Path: "/profile/kataras/somethingelsehere",
-	   				Body:               []byte("body for the profile/:username"),
-	   				ExpectedStatusCode: 404,
-	   				ExpectedParameters: nil,
-	   			}},
-	   		},
-	   		{
-	   			Methods: HTTPMethods.ANY, Path: "/home/:username([a-zA-Z]+)",
-	   			Requests: []TestRequestRoute{{
-	   				Method: "GET", Path: "/home/Kataras",
-	   				Body:               []byte("body for the /home/:username([a-zA-Z]+)"),
-	   				ExpectedStatusCode: 200,
-	   				ExpectedParameters: map[string]string{"username": "Kataras"},
-	   			}, {
-	   				Method: "GET", Path: "/home/shouldN0tF0und",
-	   				Body:               []byte("body for the /home/:username([a-zA-Z]+)"),
-	   				ExpectedStatusCode: 404,
-	   				ExpectedParameters: nil,
-	   			}},
-	   		},
-	   	}
-	   )
-	*/
 
 	inlineRoutes = [...]TestRoute{
 		{
@@ -278,9 +175,7 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	//println("iris_test.go TestMain started")
 	setup()
-
 	result := m.Run()
 	teardown()
 	os.Exit(result)
@@ -301,14 +196,13 @@ func getRequestRoute(route TestRoute, reqURL string) *TestRequestRoute {
 	for _, reqRoute := range route.Requests {
 		if reqRoute.Path == reqURL {
 			return &reqRoute
-		} else {
-			//println("reqRoute.Path != reqURL", reqRoute.Path, " != ", reqURL)
 		}
 	}
 	return nil
 }
 
 func checkParams(c Context, expected map[string]string) error {
+	//time.AfterFunc(3*time.Second, func() { ok  each context has its own parameters
 	if expected != nil {
 		for key, value := range expected {
 			contextParamValue := c.Param(key)
@@ -323,6 +217,7 @@ func checkParams(c Context, expected map[string]string) error {
 			}
 		}
 	}
+	//})
 
 	return nil
 }
@@ -353,7 +248,6 @@ func checkBody(c Context, expectedBody []byte) error {
 	return nil
 }
 
-//tests are not working here, I tried with recorder on request and also sily passing the testing.T here but doesnt work too so I will use the normal 'log' package for errors
 func handleRoute(route TestRoute) func(c Context) {
 	return func(c Context) {
 		defer c.Close()
@@ -367,11 +261,13 @@ func handleRoute(route TestRoute) func(c Context) {
 			log.Fatal("No test-registed request url found for route ", route.Path)
 			return
 		}
+		go func(cc Context) {
 
-		///TODO:
-		//if err := checkParams(c, requestRoute.ExpectedParameters); err != nil {
-		//	log.Fatal(err.Error())
-		//}
+			if err := checkParams(cc, requestRoute.ExpectedParameters); err != nil {
+				log.Fatal(err.Error())
+			}
+
+		}(c)
 
 		if err := checkBody(c, requestRoute.Body); err != nil {
 			log.Fatal(err.Error())
@@ -381,33 +277,23 @@ func handleRoute(route TestRoute) func(c Context) {
 }
 
 func TestRoutesServerSide(t *testing.T) {
+
 	for _, route := range inlineRoutes {
 		api.Handle(route.Path, handleRoute(route), route.Methods[0])
 	}
-
-	//println("first: ", len(api.router.nodes), " nodes of ", len(api.router.nodes["GET"][0].routes), " routes")
 	// Set custom error messages
 	api.Errors().On(http.StatusNotFound, func(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, CustomNotFoundErrorMessage, http.StatusNotFound)
 	})
 
 	testServer = httptest.NewUnstartedServer(api)
-	/*recorder := httptest.NewRecorder()
-	testServer = httptest.NewUnstartedServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		route, errCode := api.server.router.find(req)
-		if route == nil {
-			res.WriteHeader(errCode)
-			res.Write([]byte("from the handler"))
-			req.Body.Close()
-		} else {
-			route.ServeHTTP(recorder, req)
-		}
-	}))*/
+
 	testServer.Start()
 	server.URL = testServer.URL
 }
 
 func TestRoutesClientSide(t *testing.T) {
+	t.Parallel()
 	for _, route := range inlineRoutes {
 		for _, requestRoute := range route.Requests {
 			buffer := new(bytes.Buffer)
@@ -420,7 +306,6 @@ func TestRoutesClientSide(t *testing.T) {
 			if err != nil {
 				t.Fatal("Error creating the NewRequest for Route: ", route.Path+" Error with url: ", err.Error())
 			} else {
-				//	res, err := client.Do(req)
 				res, err := http.DefaultClient.Do(req)
 				res.Close = true
 
