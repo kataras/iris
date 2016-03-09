@@ -52,6 +52,9 @@ func main() {
 		r.HTML("<b> Hello </b>")
 	})
 	iris.Listen(8080)
+	//or for https and http2 
+	//iris.ListenTLS(8080,"localhost.cert","localhost.key")
+	//the cert and key must be in the same path of the executable main server file
 }
 
 ```

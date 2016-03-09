@@ -1,6 +1,7 @@
 package iris
 
 import (
+	"crypto/tls"
 	"net"
 	"net/http"
 	"net/http/pprof" // for profiling purpose
@@ -111,36 +112,7 @@ func Errors() *HTTPErrors {
 	return DefaultServer.router.GetErrors()
 }
 
-// Starts the http server ,tcp listening to the config's host and port
-func (s *Server) start(fulladdr string) error {
-	mux := http.NewServeMux() //we use the http's ServeMux for now as the top- middleware of the server, for now.
-
-	mux.Handle("/", s)
-	if s.debugEnabled {
-		attachProfiler(s.router, s.debugPath)
-	}
-
-	//return http.ListenAndServe(s.config.Host+strconv.Itoa(s.config.Port), mux)
-
-	listener, err := net.Listen("tcp", fulladdr)
-
-	if err != nil {
-		panic("Cannot run the server [problem with tcp listener on host:port]: " + fulladdr)
-	}
-
-	s.listenerTCP = &tcpKeepAliveListener{listener.(*net.TCPListener)} //we need this because I think that we have to 'have' a Close() method on the server instance
-	//defer s.listenerTCP.Close()
-	err = http.Serve(s.listenerTCP, mux)
-
-	s.isRunning = true
-	s.listenerTCP.Close()
-	return err
-}
-
-// Listen starts the standalone http server
-// which listens to the fullHostOrPort parameter which as the form of
-// host:port or just port
-func (s *Server) Listen(fullHostOrPort interface{}) error {
+func parseAddr(fullHostOrPort interface{}) string {
 	addr := "127.0.0.1:8080"
 	if fullHostOrPort != nil {
 
@@ -161,17 +133,91 @@ func (s *Server) Listen(fullHostOrPort interface{}) error {
 			addr = "127.0.0.1:" + strconv.Itoa(fullHostOrPort.(int))
 		}
 	}
+	return addr
+}
 
-	return s.start(addr)
+// Listen starts the standalone http server
+// which listens to the fullHostOrPort parameter which as the form of
+// host:port or just port
+func (s *Server) Listen(fullHostOrPort interface{}) error {
+	fulladdr := parseAddr(fullHostOrPort)
+	mux := http.NewServeMux() //we use the http's ServeMux for now as the top- middleware of the server, for now.
 
+	mux.Handle("/", s)
+	if s.debugEnabled {
+		attachProfiler(s.router, s.debugPath)
+	}
+
+	//return http.ListenAndServe(s.config.Host+strconv.Itoa(s.config.Port), mux)
+
+	listener, err := net.Listen("tcp", fulladdr)
+
+	if err != nil {
+		panic("Cannot run the server [problem with tcp listener on host:port]: " + fulladdr + " err:" + err.Error())
+	}
+
+	s.listenerTCP = &tcpKeepAliveListener{listener.(*net.TCPListener)} //we need this because I think that we have to 'have' a Close() method on the server instance
+	//defer s.listenerTCP.Close()
+	err = http.Serve(s.listenerTCP, mux)
+
+	s.isRunning = true
+	s.listenerTCP.Close()
+	return err
+
+}
+
+// ListenTLS Starts a httpS/http2 server with certificates,
+// if you use this method the requests of the form of 'http://' will fail
+// only https:// connections are allowed
+// which listens to the fullHostOrPort parameter which as the form of
+// host:port or just port
+func (s *Server) ListenTLS(fullHostOrPort interface{}, certFile, keyFile string) error {
+	fulladdr := parseAddr(fullHostOrPort)
+	httpServer := http.Server{
+		Addr:    fulladdr,
+		Handler: s,
+	}
+	if s.debugEnabled {
+		attachProfiler(s.router, s.debugPath)
+	}
+	config := &tls.Config{}
+
+	configHasCert := len(config.Certificates) > 0 || config.GetCertificate != nil
+	if !configHasCert {
+		var err error
+		config.Certificates = make([]tls.Certificate, 1)
+		config.Certificates[0], err = tls.LoadX509KeyPair(certFile, keyFile)
+		if err != nil {
+			return err
+		}
+	}
+	httpServer.TLSConfig = config
+	listener, err := tls.Listen("tcp", fulladdr, httpServer.TLSConfig)
+	if err != nil {
+		panic("Cannot run the server [problem with tcp listener on host:port]: " + fulladdr + " err:" + err.Error())
+	}
+
+	err = httpServer.Serve(listener)
+
+	s.isRunning = true
+
+	return err
 }
 
 // Listen starts the standalone http server
 // which listens to the fullHostOrPort parameter which as the form of
 // host:port or just port
 func Listen(fullHostOrPort interface{}) error {
-
 	return DefaultServer.Listen(fullHostOrPort)
+}
+
+// ListenTLS Starts a httpS/http2 server with certificates,
+// if you use this method the requests of the form of 'http://' will fail
+// only https:// connections are allowed
+// which listens to the fullHostOrPort parameter which as the form of
+// host:port or just port
+func ListenTLS(fullHostOrPort interface{}, certFile, keyFile string) error {
+	return DefaultServer.ListenTLS(fullHostOrPort, certFile, keyFile)
 }
 
 // ServeHTTP serves an http request,
