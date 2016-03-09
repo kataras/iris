@@ -1,4 +1,0 @@
-To create the iris.test.exe:
-go test -cpuprofile/or/-heapprofile/or/-memprofile/or/-coverprofile/or/-blockprofile cpu_test.out -bench="Iris" -run=^a
-
-go tool cover -html=./cover_profile_test.out
