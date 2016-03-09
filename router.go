@@ -314,7 +314,7 @@ func (r *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 			if strings.HasPrefix(req.URL.Path, _node.prefix) {
 				for j := 0; j < len(_node.routes); j++ {
 					_route = _node.routes[j]
-					if !_route.Match(req.URL.Path) {
+					if !_route.Verify(req.URL.Path) {
 						continue
 					}
 					_route.ServeHTTP(res, req)

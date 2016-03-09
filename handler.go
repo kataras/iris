@@ -70,7 +70,7 @@ type FullHandlerFunc func(Context, Renderer)
 
 func (h FullHandlerFunc) run(r *Route, res http.ResponseWriter, req *http.Request) {
 	ctx := GetContext(res, req, r.httpErrors)
-	ctx.Params = params(r, req.URL.Path)
+	ctx.Params = TryGetParameters(r, req.URL.Path)
 	renderer := GetRenderer(res)
 
 	if r.templates != nil {
@@ -129,7 +129,7 @@ type ContextedHandlerFunc func(Context)
 func (h ContextedHandlerFunc) run(r *Route, res http.ResponseWriter, req *http.Request) {
 	//ctx := newContext(res, req, r.httpErrors)
 	ctx := GetContext(res, req, r.httpErrors)
-	//TODOctx.Params = params(r, req.URL.Path)
+	ctx.Params = TryGetParameters(r, req.URL.Path)
 	h(ctx)
 	ResetContext()
 }

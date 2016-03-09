@@ -141,19 +141,25 @@ func (r *Route) processPath() {
 
 }
 
-func (r *Route) Match(urlPath string) bool {
+// Verify checks if this route is matching with the urlPath parameter
+//
+// Returns true if matched, otherwise false
+func (r *Route) Verify(urlPath string) bool {
 	if r.isStatic {
 		return urlPath == r.fullpath
 	} else if len(urlPath) < len(r.pathPrefix) {
 
 		return false
 	}
-	reqPath := urlPath[len(r.pathPrefix):] //we start from there to make it faster
-	rest := reqPath
 	var pathIndex = r.lastStaticPartIndex
 	var part Part
 	var endSlash int
 	var reqPart string
+	//var params PathParameters = nil
+	//var paramsBuff bytes.Buffer
+	var rest string
+	reqPath := urlPath[len(r.pathPrefix):] //we start from there to make it faster
+	rest = reqPath
 	for pathIndex < r.partsLen {
 
 		endSlash = 1
@@ -164,24 +170,29 @@ func (r *Route) Match(urlPath string) bool {
 
 			return false
 		}
-		if r.lastStaticPartIndex == r.partsLen-1 {
-			reqPart = rest[0:endSlash] // the forward slash was inside prefix, then here we don't have slash, if lastStatic part index is near to the end, then thats means this: /api/users/1
-		} else {
-			reqPart = rest[1:endSlash] //remove the forward slash
-		}
+		reqPart = rest[0:endSlash]
 
 		if len(reqPart) == 0 { // if the reqPart is "" it means that the requested url is SMALLER than the registed
 			return false
 		}
 
-		rest = rest[endSlash:]
-
 		part = r.pathParts[pathIndex] //edw argei alla dn kserw gt.. siga ti kanei
 		pathIndex++
 
+		if pathIndex == 0 || pathIndex >= r.partsLen || len(rest) <= endSlash {
+			rest = rest[endSlash:]
+		} else {
+			//if this is the not first, and it is safe to concat, forget the forward slash because it was from the prefix/or/and static part
+			//but also checks if this is not the end of the url because if it is then we will have error on +1
+			//it is used to take the correct parameter if any otherwise we will have
+			//the first parameter with no forward slash
+			//but the others begins with a forward slash
+			rest = rest[endSlash+1:]
+		}
+
 		if part.isStatic {
 			if part.Value != reqPart {
-				return false //fast return
+				return false
 			} else {
 				if part.isLast {
 					//it's the last registed part
@@ -197,16 +208,29 @@ func (r *Route) Match(urlPath string) bool {
 
 			}
 		} else if part.isParam {
+			//stfu that, too much memory allocations because it searches to the params until false or true
+			// i will do the excactly thing I am doing here at the context handler if registed as handler
+			//if params == nil {
+			//	params = PathParameters{}
+			//}
 			//TODO: save the parameters and continue
+			//params.Set(part.Value, reqPart) TOO MUCH MEM ALLOCATIONS I HAVE TO FIND A WAY FOR ROUTES THAT DONT MATCH DONT COME HERE..xmm
+			//println("setting parameter: ", part.Value, " = ", reqPart)
+			//paramsBuff.WriteString(part.Value)
+			//paramsBuff.WriteRune('=')
+			//paramsBuff.WriteString(reqPart)
 			if part.isLast {
 				//it's the last registed part
 				if len(rest) > 0 {
 					//but the request path is bigger than this
 					return false
 				}
+
 				return true
 
 			}
+
+			//paramsBuff.WriteRune(',')
 			continue
 
 		} else if part.isMatchEverything {

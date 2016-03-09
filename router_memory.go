@@ -40,7 +40,6 @@ func (r *MemoryRouter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	var _node *node
 	var _route *Route
 	var _nodes = r.nodes[req.Method]
-
 	if _nodes != nil {
 		for i := 0; i < len(_nodes); i++ {
 			_node = _nodes[i]
@@ -48,9 +47,10 @@ func (r *MemoryRouter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 			if strings.HasPrefix(req.URL.Path, _node.prefix) {
 				for j := 0; j < len(_node.routes); j++ {
 					_route = _node.routes[j]
-					if !_route.Match(req.URL.Path) {
+					if !_route.Verify(req.URL.Path) {
 						continue
 					}
+
 					_route.ServeHTTP(res, req)
 					r.cache.AddItem(req.Method, req.URL.Path, _route)
 					return
@@ -60,7 +60,7 @@ func (r *MemoryRouter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		}
 	}
 	//not found
-	println(req.URL.Path)
+	//println(req.URL.Path)
 
 	r.httpErrors.NotFound(res)
 }
