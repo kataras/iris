@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -22,16 +23,57 @@ type IRouter interface {
 	ServeHTTP(http.ResponseWriter, *http.Request)
 }
 
-// node is just a collection of routes group by path's prefix, used inside Router.
-type node struct {
-	prefix string
-	routes []*Route
+type Routes []*Route
+
+//implementing the sort.Interface for type 'Routes'
+
+func (routes Routes) Len() int {
+	return len(routes)
 }
 
-type tree map[string][]*node
+func (routes Routes) Less(r1, r2 int) bool {
+	//sort by longest path parts no  longest fullpath, longest first.
+	return len(routes[r1].pathParts) > len(routes[r2].pathParts)
+}
+
+func (routes Routes) Swap(r1, r2 int) {
+	routes[r1], routes[r2] = routes[r2], routes[r1]
+}
+
+//end
+
+// node is just a collection of routes group by path's prefix, used inside Router.
+type node struct {
+	prefix           string
+	routes           Routes
+	prioritySetTimes int // full is 100, this will be incremented and zero again every time a sort is done, sort is done when this number react to 100
+	//that menas that every 100 requests the routes will sort itself via the route.priority
+}
+
+type prefixNodes []*node
+
+//implementing the sort.Interface for type 'prefixNodes'
+
+func (nodes prefixNodes) Len() int {
+	return len(nodes)
+}
+
+func (nodes prefixNodes) Less(r1, r2 int) bool {
+	//sort by longest path prefix, longest first.
+	return len(nodes[r1].prefix) > len(nodes[r2].prefix)
+}
+
+func (nodes prefixNodes) Swap(r1, r2 int) {
+	nodes[r1], nodes[r2] = nodes[r2], nodes[r1]
+}
+
+//end
+
+type tree map[string]prefixNodes
 
 func (tr tree) addRoute(method string, route *Route) {
 	_nodes := tr[method]
+	//route.pathPrefix = strings.TrimSpace(route.pathPrefix)
 
 	if _nodes == nil {
 		_nodes = make([]*node, 0)
@@ -42,8 +84,11 @@ func (tr tree) addRoute(method string, route *Route) {
 	for index, _node = range _nodes {
 		//check if route has parameters or * after the prefix, if yes then add a slash to the end
 		routePref := route.pathPrefix
+
 		if _node.prefix == routePref {
 			tr[method][index].routes = append(_node.routes, route)
+			//sort routes by the most larger path parts
+			sort.Sort(tr[method][index].routes)
 			ok = true
 			break
 		}
@@ -51,9 +96,14 @@ func (tr tree) addRoute(method string, route *Route) {
 	if !ok {
 		_node = &node{prefix: route.pathPrefix, routes: make([]*Route, 0)}
 		_node.routes = append(_node.routes, route)
+		//sort routes by the most larger path parts
+		sort.Sort(_node.routes)
 		//_node.makePriority(route)
 		tr[method] = append(tr[method], _node)
 	}
+
+	//sort nodes by the longest prefix
+	sort.Sort(tr[method])
 }
 
 // Router is the router , one router per server.
@@ -306,25 +356,36 @@ func (r *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	var _node *node
 	var _route *Route
 	var _nodes = r.nodes[req.Method]
-	//wrongMethod := false
 	if _nodes != nil {
 		for i := 0; i < len(_nodes); i++ {
 			_node = _nodes[i]
-
-			if strings.HasPrefix(req.URL.Path, _node.prefix) {
+			if len(req.URL.Path) < len(_node.prefix) {
+				continue
+			}
+			hasPrefix := req.URL.Path[0:len(_node.prefix)] == _node.prefix
+			if hasPrefix {
 				for j := 0; j < len(_node.routes); j++ {
 					_route = _node.routes[j]
 					if !_route.Verify(req.URL.Path) {
 						continue
+
 					}
 					_route.ServeHTTP(res, req)
 					return
 
 				}
+				//if the prefix was found, so we are 100% at the correct node, because I make it to end with slashes
+				//so no need to check other prefixes any more, just return 404 and exit from here.
+				//println(req.URL.Path, " NOT found")
+				r.httpErrors.NotFound(res)
+				return
+
 			}
+
 		}
 	}
-	//not found
+	//no nodes or routes found
+	//println(req.URL.Path, " NOT found")
 	r.httpErrors.NotFound(res)
 
 }

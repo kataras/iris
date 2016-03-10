@@ -36,7 +36,10 @@ type Route struct {
 	lastStaticPartIndex uint8  // when( how much slashes we have before) the dynamic path, the start of the dynamic path in words of slashes /
 	pathPrefix          string // this is to make a little faster the match, before regexp Match runs, it's the path before the first path parameter :
 	//the pathPrefix is with the last / if parameters exists.
-
+	//the priority used on the Routes sort.Interface implementation
+	//less is more important than a bigger number
+	// TODO:
+	//priority int
 	fullpath string // need only on parameters.Params(...)
 	//fullparts   []string
 	handler    Handler
@@ -126,8 +129,8 @@ func (r *Route) processPath() {
 		if endPrefixIndex != -1 {
 			r.pathPrefix = r.fullpath[:endPrefixIndex]
 		} else {
-			//check for first slash
-			endPrefixIndex = strings.IndexByte(r.fullpath, SlashByte)
+			//check for the last slash
+			endPrefixIndex = strings.LastIndexByte(r.fullpath, SlashByte)
 			if endPrefixIndex != -1 {
 				r.pathPrefix = r.fullpath[:endPrefixIndex]
 			} else {
@@ -137,8 +140,25 @@ func (r *Route) processPath() {
 		}
 	}
 
+	//1.check if pathprefix is empty ( it's empty when we have just '/' as fullpath) so make it '/'
+	//2. check if it's not ending with '/', ( it is not ending with '/' when the next part is parameter or *)
+
+	lastIndexOfSlash := strings.LastIndexByte(r.pathPrefix, SlashByte)
+	//if r.pathPrefix[len(r.pathPrefix)-1:][0] != SlashByte {
+	if lastIndexOfSlash != len(r.pathPrefix)-1 || r.pathPrefix == "" {
+		r.pathPrefix += "/"
+	}
+
 	//}
 
+	//for path prefix result :
+	//all routes which has only one static part the pathPrefix is just a slash, so all routes with one static part like /users ,/home will be at the same treenode prefix '/'
+	//else the route prefix is when the first ':', or '*' or last slash '/' index found
+	//on each handlefunc on the router the Routes collections is sorted with the priority of the biggest
+	//path prefix to the smaller: first longest path prefix.
+	//this is done with each register route because we don't have a mechanism yet that we can understand
+	//when the developer stop routing, we could make it at .Listen but because Iris can run as
+	//just a handler with ServeHTTP this is can't be done on .Listen.
 }
 
 // Verify checks if this route is matching with the urlPath parameter
