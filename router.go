@@ -9,14 +9,28 @@ import (
 	"strings"
 )
 
-///TODO: continue IRouter
+type IRouteRegister interface {
+	Get(path string, handler interface{}) *Route
+	Post(path string, handler interface{}) *Route
+	Put(path string, handler interface{}) *Route
+	Delete(path string, handler interface{}) *Route
+	Connect(path string, handler interface{}) *Route
+	Head(path string, handler interface{}) *Route
+	Options(path string, handler interface{}) *Route
+	Patch(path string, handler interface{}) *Route
+	Trace(path string, handler interface{}) *Route
+	Any(path string, handler interface{}) *Route
+	HandleAnnotated(irisHandler Annotated) (*Route, error)
+	Handle(params ...interface{}) *Route
+	HandleFunc(path string, handler Handler, method string) *Route
+}
 
+//the IRouter is IRouteRegisted and a routes serving service.
 type IRouter interface {
+	IRouteRegister
 	Use(MiddlewareHandler)
 	UseFunc(func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc))
 	UseHandler(http.Handler)
-	HandleFunc(string, Handler, string) *Route
-	HandleAnnotated(Annotated) (*Route, error)
 	GetErrors() *HTTPErrors
 	// ServeHTTP finds and serves a route by it's request
 	// If no route found, it sends an http status 404
@@ -130,10 +144,14 @@ func (r *Router) GetErrors() *HTTPErrors {
 	return r.httpErrors
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//expose common methods as public on the Router, and the  Server struct, also as global used from global iris server.
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 // HandleFunc registers and returns a route with a path string, a handler and optinally methods as parameters
-// registedPath is the name of the route + the pattern
-//
-// HandleFunc is exported for the future, not being used outside of the iris package yet, some of other functions also.
+// registedPath is the relative url path
+// handler is the iris.Handler which you can pass anything you want via iris.HandlerFunc(func(res,req){})... or just use func(c iris.Context),func(r iris.Renderer), func(c Context,r Renderer) or func(res http.ResponseWriter, req *http.Request)
+// method is the last parameter, pass the http method ex: "GET","POST".. iris.HTTPMethods.PUT, or empty string to match all methods
 func (r *Router) HandleFunc(registedPath string, handler Handler, method string) *Route {
 	//r.mu.Lock()
 	//defer is 5 times slower only some nanosecconds difference but let's make it faster unlock it at the end of the function manually  or not?
@@ -160,17 +178,23 @@ func (r *Router) HandleFunc(registedPath string, handler Handler, method string)
 	return route
 }
 
-//HandleFunc handle without methods, if not method given before the Listen then the http methods will be []{"GET"}
+// HandleFunc registers and returns a route with a path string, a handler and optinally methods as parameters
+// registedPath is the relative url path
+// handler is the iris.Handler which you can pass anything you want via iris.HandlerFunc(func(res,req){})... or just use func(c iris.Context),func(r iris.Renderer), func(c Context,r Renderer) or func(res http.ResponseWriter, req *http.Request)
+// method is the last parameter, pass the http method ex: "GET","POST".. iris.HTTPMethods.PUT, or empty string to match all methods
 func (s *Server) HandleFunc(path string, handler Handler, method string) *Route {
 	return s.router.HandleFunc(path, handler, method)
 }
 
-// Handle in the route registers a normal http.Handler
-//func (r *Router) Handle(registedPath string, httpHandler http.Handler, method string) *Route {
-//	return r.HandleFunc(registedPath, HandlerFunc(httpHandler), method)
-//}
+// HandleFunc registers and returns a route with a path string, a handler and optinally methods as parameters
+// registedPath is the relative url path
+// handler is the iris.Handler which you can pass anything you want via iris.HandlerFunc(func(res,req){})... or just use func(c iris.Context),func(r iris.Renderer), func(c Context,r Renderer) or func(res http.ResponseWriter, req *http.Request)
+// method is the last parameter, pass the http method ex: "GET","POST".. iris.HTTPMethods.PUT, or empty string to match all methods
+func HandleFunc(path string, handler Handler, method string) *Route {
+	return DefaultServer.router.HandleFunc(path, handler, method)
+}
 
-// handleAnnotated registers a route handler using a Struct
+// HandleAnnotated registers a route handler using a Struct
 // implements Handle() function and has iris.Annotated anonymous property
 // which it's metadata has the form of
 // `method:"path" template:"file.html"` and returns the route and an error if any occurs
@@ -291,6 +315,64 @@ func (s *Server) HandleAnnotated(irisHandler Annotated) (*Route, error) {
 	return s.router.HandleAnnotated(irisHandler)
 }
 
+// HandleAnnotated registers a route handler using a Struct
+// implements Handle() function and has iris.Annotated anonymous property
+// which it's metadata has the form of
+// `method:"path" template:"file.html"` and returns the route and an error if any occurs
+func HandleAnnotated(irisHandler Annotated) (*Route, error) {
+	return DefaultServer.router.HandleAnnotated(irisHandler)
+}
+
+// Handle registers a route to the server's router, pass a struct -implements iris.Annotated as parameter
+// Or pass just a http.Handler or TypicalHandlerFunc or ContextedHandlerFunc or  RendereredHandlerFunc or ContextedRendererHandlerFunc or already an iris.Handler
+func (r *Router) Handle(params ...interface{}) *Route {
+	paramsLen := len(params)
+	if paramsLen == 0 {
+		panic("No arguments given to the Handle function, please refer to docs")
+	}
+
+	if reflect.TypeOf(params[0]).Kind() == reflect.String {
+		//means first parameter is the path, wich means it is a simple path with handler -> HandleFunc and method
+		// means: http.Handler or TypicalHandlerFunc or ContextedHandlerFunc or  RendereredHandlerFunc or ContextedRendererHandlerFunc or already an iris.Handler
+		return r.HandleFunc(params[0].(string), convertToHandler(params[1]), params[2].(string))
+	} else {
+		//means it's a struct which implements the iris.Annotated and have a Handle func inside it -> handleAnnotated
+		route, err := r.HandleAnnotated(params[0].(Annotated))
+		if err != nil {
+			panic(err.Error())
+		}
+		return route
+	}
+}
+
+// Handle registers a route to the server's router, pass a struct -implements iris.Annotated as parameter
+// Or pass just a http.Handler or TypicalHandlerFunc or ContextedHandlerFunc or  RendereredHandlerFunc or ContextedRendererHandlerFunc or already an iris.Handler
+func (s *Server) Handle(params ...interface{}) *Route {
+	paramsLen := len(params)
+	if paramsLen == 0 {
+		panic("No arguments given to the Handle function, please refer to docs")
+	}
+
+	if reflect.TypeOf(params[0]).Kind() == reflect.String {
+		//means first parameter is the path, wich means it is a simple path with handler -> HandleFunc and method
+		// means: http.Handler or TypicalHandlerFunc or ContextedHandlerFunc or  RendereredHandlerFunc or ContextedRendererHandlerFunc or already an iris.Handler
+		return s.HandleFunc(params[0].(string), convertToHandler(params[1]), params[2].(string))
+	} else {
+		//means it's a struct which implements the iris.Annotated and have a Handle func inside it -> handleAnnotated
+		r, err := s.HandleAnnotated(params[0].(Annotated))
+		if err != nil {
+			panic(err.Error())
+		}
+		return r
+	}
+}
+
+// Handle registers a route to the server's router, pass a struct -implements iris.Annotated as parameter
+// Or pass just a http.Handler or TypicalHandlerFunc or ContextedHandlerFunc or  RendereredHandlerFunc or ContextedRendererHandlerFunc or already an iris.Handler
+func Handle(params ...interface{}) *Route {
+	return DefaultServer.Handle(params...)
+}
+
 ///////////////////
 //global middleware
 ///////////////////
@@ -349,8 +431,164 @@ func UseHandler(handler http.Handler) {
 
 }
 
+///////////////////////////////
+//expose some methods as public
+///////////////////////////////
+
+// Get registers a route for the Get http method
+func (r *Router) Get(path string, handler interface{}) *Route {
+	return r.HandleFunc(path, convertToHandler(handler), HTTPMethods.GET)
+}
+
+// Get registers a route for the Get http method
+func (s *Server) Get(path string, handler interface{}) *Route {
+	return s.HandleFunc(path, convertToHandler(handler), HTTPMethods.GET)
+}
+
+// Get registers a route for the Get http method
+func Get(path string, handler interface{}) *Route {
+	return DefaultServer.Get(path, handler)
+}
+
+// Post registers a route for the Post http method
+func (r *Router) Post(path string, handler interface{}) *Route {
+	return r.HandleFunc(path, convertToHandler(handler), HTTPMethods.POST)
+}
+
+// Post registers a route for the Post http method
+func (s *Server) Post(path string, handler interface{}) *Route {
+	return s.HandleFunc(path, convertToHandler(handler), HTTPMethods.POST)
+}
+
+// Post registers a route for the Post http method
+func Post(path string, handler interface{}) *Route {
+	return DefaultServer.Post(path, handler)
+}
+
+// Put registers a route for the Put http method
+func (r *Router) Put(path string, handler interface{}) *Route {
+	return r.HandleFunc(path, convertToHandler(handler), HTTPMethods.PUT)
+}
+
+// Put registers a route for the Put http method
+func (s *Server) Put(path string, handler interface{}) *Route {
+	return s.HandleFunc(path, convertToHandler(handler), HTTPMethods.PUT)
+}
+
+// Put registers a route for the Put http method
+func Put(path string, handler interface{}) *Route {
+	return DefaultServer.Put(path, handler)
+}
+
+// Delete registers a route for the Delete http method
+func (r *Router) Delete(path string, handler interface{}) *Route {
+	return r.HandleFunc(path, convertToHandler(handler), HTTPMethods.DELETE)
+}
+
+// Delete registers a route for the Delete http method
+func (s *Server) Delete(path string, handler interface{}) *Route {
+	return s.HandleFunc(path, convertToHandler(handler), HTTPMethods.DELETE)
+}
+
+// Delete registers a route for the Delete http method
+func Delete(path string, handler interface{}) *Route {
+	return DefaultServer.Delete(path, handler)
+}
+
+// Connect registers a route for the Connect http method
+func (r *Router) Connect(path string, handler interface{}) *Route {
+	return r.HandleFunc(path, convertToHandler(handler), HTTPMethods.CONNECT)
+}
+
+// Connect registers a route for the Connect http method
+func (s *Server) Connect(path string, handler interface{}) *Route {
+	return s.HandleFunc(path, convertToHandler(handler), HTTPMethods.CONNECT)
+}
+
+// Connect registers a route for the Connect http method
+func Connect(path string, handler interface{}) *Route {
+	return DefaultServer.Connect(path, handler)
+}
+
+// Head registers a route for the Head http method
+func (r *Router) Head(path string, handler interface{}) *Route {
+	return r.HandleFunc(path, convertToHandler(handler), HTTPMethods.HEAD)
+}
+
+// Head registers a route for the Head http method
+func (s *Server) Head(path string, handler interface{}) *Route {
+	return s.HandleFunc(path, convertToHandler(handler), HTTPMethods.HEAD)
+}
+
+// Head registers a route for the Head http method
+func Head(path string, handler interface{}) *Route {
+	return DefaultServer.Head(path, handler)
+}
+
+// Options registers a route for the Options http method
+func (r *Router) Options(path string, handler interface{}) *Route {
+	return r.HandleFunc(path, convertToHandler(handler), HTTPMethods.OPTIONS)
+}
+
+// Options registers a route for the Options http method
+func (s *Server) Options(path string, handler interface{}) *Route {
+	return s.HandleFunc(path, convertToHandler(handler), HTTPMethods.OPTIONS)
+}
+
+// Options registers a route for the Options http method
+func Options(path string, handler interface{}) *Route {
+	return DefaultServer.Options(path, handler)
+}
+
+// Patch registers a route for the Patch http method
+func (r *Router) Patch(path string, handler interface{}) *Route {
+	return r.HandleFunc(path, convertToHandler(handler), HTTPMethods.PATCH)
+}
+
+// Patch registers a route for the Patch http method
+func (s *Server) Patch(path string, handler interface{}) *Route {
+	return s.HandleFunc(path, convertToHandler(handler), HTTPMethods.PATCH)
+}
+
+// Patch registers a route for the Patch http method
+func Patch(path string, handler interface{}) *Route {
+	return DefaultServer.Patch(path, handler)
+}
+
+// Trace registers a route for the Trace http method
+func (r *Router) Trace(path string, handler interface{}) *Route {
+	return r.HandleFunc(path, convertToHandler(handler), HTTPMethods.TRACE)
+}
+
+// Trace registers a route for the Trace http method
+func (s *Server) Trace(path string, handler interface{}) *Route {
+	return s.HandleFunc(path, convertToHandler(handler), HTTPMethods.TRACE)
+}
+
+// Trace registers a route for the Trace http methodd
+func Trace(path string, handler interface{}) *Route {
+	return DefaultServer.Trace(path, handler)
+}
+
+// Any registers a route for ALL of the http methods (Get,Post,Put,Head,Patch,Options,Connect,Delete)
+func (r *Router) Any(path string, handler interface{}) *Route {
+	return r.HandleFunc(path, convertToHandler(handler), "")
+}
+
+// Any registers a route for ALL of the http methods (Get,Post,Put,Head,Patch,Options,Connect,Delete)
+func (s *Server) Any(path string, handler interface{}) *Route {
+	return s.HandleFunc(path, convertToHandler(handler), "")
+}
+
+// Any registers a route for ALL of the http methods (Get,Post,Put,Head,Patch,Options,Connect,Delete)
+func Any(path string, handler interface{}) *Route {
+	return DefaultServer.Any(path, handler)
+}
+
 // ServeHTTP finds and serves a route by it's request
 // If no route found, it sends an http status 404
+///TODO: make the HEAD match the GET requests too, HEAD is used mostly by browsers to check their cache, as far as I know.
+//		 but also we have to seperate head from get, because developer maybe want to allow only HEAD methods for a route...
 func (r *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 	var _node *node
@@ -363,6 +601,7 @@ func (r *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 				continue
 			}
 			hasPrefix := req.URL.Path[0:len(_node.prefix)] == _node.prefix
+			//println("check url prefix: ", req.URL.Path[0:len(_node.prefix)]+" with node's:  ", _node.prefix)
 			if hasPrefix {
 				for j := 0; j < len(_node.routes); j++ {
 					_route = _node.routes[j]
@@ -387,5 +626,4 @@ func (r *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	//no nodes or routes found
 	//println(req.URL.Path, " NOT found")
 	r.httpErrors.NotFound(res)
-
 }

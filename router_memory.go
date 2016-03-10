@@ -24,7 +24,6 @@ func NewMemoryRouter(maxitems int, resetDuration time.Duration) *MemoryRouter {
 }
 
 func (r *MemoryRouter) HandleFunc(registedPath string, handler Handler, method string) *Route {
-
 	return r.Router.HandleFunc(registedPath, handler, method)
 }
 

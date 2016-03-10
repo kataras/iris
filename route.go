@@ -159,6 +159,10 @@ func (r *Route) processPath() {
 	//this is done with each register route because we don't have a mechanism yet that we can understand
 	//when the developer stop routing, we could make it at .Listen but because Iris can run as
 	//just a handler with ServeHTTP this is can't be done on .Listen.
+
+	//note:
+	//if the /home,/about e.t.c doesn't have path prefix just the '/' but the /home/ then we had a problem
+	//it's better to have all that just to one prefix node '/'.
 }
 
 // Verify checks if this route is matching with the urlPath parameter
