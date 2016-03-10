@@ -32,6 +32,7 @@ type IRouter interface {
 	UseFunc(func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc))
 	UseHandler(http.Handler)
 	GetErrors() *HTTPErrors
+	Party(path string) IRouteRegister
 	// ServeHTTP finds and serves a route by it's request
 	// If no route found, it sends an http status 404
 	ServeHTTP(http.ResponseWriter, *http.Request)
@@ -429,6 +430,40 @@ func (s *Server) UseHandler(handler http.Handler) {
 func UseHandler(handler http.Handler) {
 	DefaultServer.router.UseHandler(handler)
 
+}
+
+// Party is just a group joiner of routes which have the same prefix, for the future same middleware(s) also.
+// Party can also be named as 'Join' or 'Node' or 'Group' I choose Party because it has more fun
+//
+// Nothing special done here, no registed prefix other way that normal tree node makes by default, it's exists only for for code readability
+// For now, to have the same middleware too you have to do it manually, something like that:
+// iris.UseFunc(func(res,req) { if strings.HasPrefix(req.URL.Path, "/yourparty/") { do the work here} }
+// but on the near future it will be available to register a common middleware using party(...).Use()..
+// and that's because the Party returns a new route register but behind that, all methods reflects to the same server.router instance
+func (r *Router) Party(rootPath string) IRouteRegister {
+	return newRouteParty(rootPath, r)
+}
+
+// Party is just a group joiner of routes which have the same prefix, for the future same middleware(s) also.
+// Party can also be named as 'Join' or 'Node' or 'Group' I choose Party because it has more fun
+//
+// Nothing special done here, no registed prefix other way that normal tree node makes by default, it's exists only for for code readability
+// For now, to have the same middleware too you have to do it manually, something like that:
+// iris.UseFunc(func(res,req) { if strings.HasPrefix(req.URL.Path, "/yourparty/") { do the work here} }
+// and that's because the Party returns a new route register but behind that, all methods reflects to the same server.router instance
+func (s *Server) Party(rootPath string) IRouteRegister {
+	return s.router.Party(rootPath)
+}
+
+// Party is just a group joiner of routes which have the same prefix, for the future same middleware(s) also.
+// Party can also be named as 'Join' or 'Node' or 'Group' I choose Party because it has more fun
+//
+// Nothing special done here, no registed prefix other way that normal tree node makes by default, it's exists only for for code readability
+// For now, to have the same middleware too you have to do it manually, something like that:
+// iris.UseFunc(func(res,req) { if strings.HasPrefix(req.URL.Path, "/yourparty/") { do the work here} }
+// and that's because the Party returns a new route register but behind that, all methods reflects to the same server.router instance
+func Party(rootPath string) IRouteRegister {
+	return DefaultServer.router.Party(rootPath)
 }
 
 ///////////////////////////////
