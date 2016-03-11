@@ -64,7 +64,6 @@ func ParseParams(str string) PathParameters {
 		key := _paramsstr[i][:idxOfEq]
 		val := _paramsstr[i][idxOfEq:]
 		params = append(params, PathParameter{key, val})
-
 	}
 	return params
 }
@@ -136,46 +135,3 @@ func TryGetParameters(r *Route, urlPath string) PathParameters {
 	}
 	return _theParams
 }
-
-/*
-func params(r *Route, urlPath string) PathParameters {
-	//params := make(PathParameters, 0, partsLen)
-	//if params == nil {
-	//	params = make(PathParameters, 0, len(r.parts))
-	//}
-	//moved to handler.run on contexted handlers resetParams()
-	for i := 0; i < len(r.parts); i++ {
-
-		if r.parts[i][0] == ParameterStartByte { //ParameterStartByte  //strings.IndexByte(r.parts[i], ParameterStartByte) == 0 { //r.parts[i][0] == ParameterStartByte { //strings.Index(r.parts[i], ParameterStart) == 0 { //r.parts[i][0:1] == ParameterStart { //takes the first character and check if it's parameter part
-			//paramKey := r.parts[i][1:]
-			//paramValue := reqParts[i]
-			indexOfVal := -1
-			if i == 0 {
-				indexOfVal = strings.IndexByte(r.fullpath, r.parts[i][0])
-			} else {
-				///TODO;
-				indexOfVal = strings.Index(r.fullpath, r.parts[i]) - 2 // -slash -:
-
-			}
-
-			if len(urlPath) >= indexOfVal {
-
-				val := urlPath[indexOfVal:]
-				//println("val ? " + val)
-				valIndexFinish := strings.IndexByte(val, SlashByte)
-				if valIndexFinish != -1 {
-					val = val[:valIndexFinish]
-					//val = val[valIndexFinish+1:]
-				}
-				//println("2 val ? " + val)
-				p := PathParameter{r.parts[i][1:], val}
-				//println(i, " path param key: "+p.Key+" Value: "+p.Value)
-				//println("parts len:", len(r.parts))
-				_theParams = append(_theParams, p)
-				//println("new params len: ", len(params))
-			}
-
-		}
-	}
-	return _theParams
-}*/

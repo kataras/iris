@@ -11,30 +11,14 @@ import (
 
 ///TODO: fix the path if no ending with '/' ? or it must be not ending with '/' but handle requests with last '/' redirect to non '/' ? I will think about it.
 
-type IRouteRegister interface {
-	Get(path string, handler interface{}) *Route
-	Post(path string, handler interface{}) *Route
-	Put(path string, handler interface{}) *Route
-	Delete(path string, handler interface{}) *Route
-	Connect(path string, handler interface{}) *Route
-	Head(path string, handler interface{}) *Route
-	Options(path string, handler interface{}) *Route
-	Patch(path string, handler interface{}) *Route
-	Trace(path string, handler interface{}) *Route
-	Any(path string, handler interface{}) *Route
+//the IRouter is IRouteRegisted and a routes serving service.
+type IRouter interface {
+	IMiddlewareSupporter
+	Party(path string) IParty
 	HandleAnnotated(irisHandler Annotated) (*Route, error)
 	Handle(params ...interface{}) *Route
 	HandleFunc(path string, handler Handler, method string) *Route
-	Use(MiddlewareHandler)
-	UseFunc(func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc)) //at the main Router struct this is managed by the MiddlewareSupporter
-	UseHandler(http.Handler)                                                         //at the main Router struct this is managed by the MiddlewareSupporter
-	Party(path string) IRouteRegister
-}
-
-//the IRouter is IRouteRegisted and a routes serving service.
-type IRouter interface {
-	IRouteRegister
-	GetErrors() *HTTPErrors
+	GetErrors() *HTTPErrors //at the main Router struct this is managed by the MiddlewareSupporter
 	// ServeHTTP finds and serves a route by it's request
 	// If no route found, it sends an http status 404
 	ServeHTTP(http.ResponseWriter, *http.Request)
@@ -126,9 +110,10 @@ func (tr tree) addRoute(method string, route *Route) {
 // Router is the router , one router per server.
 // Router contains the global middleware, the routes and a Mutex for lock and unlock on route prepare
 type Router struct {
-	MiddlewareSupporter
 	//no routes map[string]map[string][]*Route // key = path prefix, value a map which key = method and the vaulue an array of the routes starts with that prefix and method
 	//routes map[string][]*Route // key = path prefix, value an array of the routes starts with that prefix
+	MiddlewareSupporter
+
 	nodes      tree
 	cache      *IRouterCache
 	httpErrors *HTTPErrors //the only reason of this is to pass into the route, which it need it to  passed it to Context, in order to  developer get the ability to perfom emit errors (eg NotFound) directly from context
@@ -436,19 +421,19 @@ func UseHandler(handler http.Handler) {
 
 // Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
 // Party can also be named as 'Join' or 'Node' or 'Group' , Party choosen because it has more fun
-func (r *Router) Party(rootPath string) IRouteRegister {
-	return newRouteParty(rootPath, r)
+func (r *Router) Party(rootPath string) IParty {
+	return newParty(rootPath, r)
 }
 
 // Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
 // Party can also be named as 'Join' or 'Node' or 'Group' , Party choosen because it has more fun
-func (s *Server) Party(rootPath string) IRouteRegister {
+func (s *Server) Party(rootPath string) IParty {
 	return s.router.Party(rootPath)
 }
 
 // Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
 // Party can also be named as 'Join' or 'Node' or 'Group' , Party choosen because it has more fun
-func Party(rootPath string) IRouteRegister {
+func Party(rootPath string) IParty {
 	return DefaultServer.router.Party(rootPath)
 }
 

@@ -132,6 +132,7 @@ func (r *Renderer) WriteJSON(httpStatus int, jsonStructs ...interface{}) error {
 	r.responseWriter.Header().Set(ContentType, ContentJSON)
 	r.responseWriter.WriteHeader(httpStatus)
 	io.WriteString(r.responseWriter, _json)
+
 	return nil
 }
 

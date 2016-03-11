@@ -4,9 +4,16 @@ import (
 	"net/http"
 )
 
+type IMiddlewareSupporter interface {
+	Use(handler MiddlewareHandler)
+	UseFunc(handlerFunc func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc))
+	UseHandler(handler http.Handler)
+}
+
 // MiddlewareSupporter is been 'injected-oop' in other struct,
 // which usage is to support, manage and handle middleware
 type MiddlewareSupporter struct {
+	IMiddlewareSupporter
 	middleware         Middleware
 	middlewareHandlers []MiddlewareHandler //at the Route the route handler is the last empty-next 'MiddlewareHandler'.
 }

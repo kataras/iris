@@ -217,20 +217,19 @@ func (r *Route) Verify(urlPath string) bool {
 		if part.isStatic {
 			if part.Value != reqPart {
 				return false
-			} else {
-				if part.isLast {
-					//it's the last registed part
-					if len(rest) > 0 {
-						//but the request path is bigger than this
-						return false
-					}
-					return true
-
+			}
+			if part.isLast {
+				//it's the last registed part
+				if len(rest) > 0 {
+					//but the request path is bigger than this
+					return false
 				}
-
-				continue
+				return true
 
 			}
+
+			continue
+
 		} else if part.isParam {
 			//stfu that, too much memory allocations because it searches to the params until false or true
 			// i will do the excactly thing I am doing here at the context handler if registed as handler
@@ -243,6 +242,7 @@ func (r *Route) Verify(urlPath string) bool {
 			//paramsBuff.WriteString(part.Value)
 			//paramsBuff.WriteRune('=')
 			//paramsBuff.WriteString(reqPart)
+
 			if part.isLast {
 				//it's the last registed part
 				if len(rest) > 0 {
