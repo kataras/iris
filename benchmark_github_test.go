@@ -4,7 +4,6 @@ import (
 	"io"
 	"net/http"
 	"runtime"
-	//"strings"
 	"testing"
 )
 
@@ -352,23 +351,16 @@ func irisHandleTestTypical(res http.ResponseWriter, req *http.Request) {
 var requestRoutes []routeTest
 
 func loadIris(routes []routeTest) http.Handler {
-	h := irisHandleTestTypical //irisHandleTestContexted //irisHandleTestTypical
+	h := irisHandleTestContexted //irisHandleTestContexted //irisHandleTestTypical
 
-	//disableed cached api := New(IrisOptions{Cache: false})
-	api := New()
+	//disable cache with api := Custom(StationOptions{Cache: false})
+	//api := New()
+	api := Custom(StationOptions{Cache: false})
+
 	for _, route := range routes {
 		api.Handle(route.path, h, route.method)
 	}
 
-	/*println("nodes: ", len(api.router.nodes))
-	for k, v := range api.router.nodes {
-
-		println(k, " contains ", len(v), " nodes")
-		for idx, r := range v {
-			println(idx, " : prefix: ", r.prefix, " routes contains:", len(r.routes))
-		}
-		//println(d, ": ", r.prefix+" contains ", len(r.routes), " routes")
-	}*/
 	return api
 }
 
@@ -377,7 +369,6 @@ func benchRoutes(b *testing.B, router http.Handler, routes []routeTest) {
 	r, _ := http.NewRequest("GET", "/", nil)
 	u := r.URL
 	rq := u.RawQuery
-
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

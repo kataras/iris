@@ -10,9 +10,10 @@ type MemoryRouter struct {
 	cache IRouterCache
 }
 
-func NewMemoryRouter(maxitems int, resetDuration time.Duration) *MemoryRouter {
+func NewMemoryRouter(underlineRouter *Router, maxitems int, resetDuration time.Duration) *MemoryRouter {
 	r := &MemoryRouter{}
-	r.Router = NewRouter() // extends all methods from the standar router
+	r.Router = underlineRouter
+	//moved to the station.go r.Router = NewRouter(station) // extends all methods from the standar router
 	r.cache = NewMemoryRouterCache()
 	r.cache.SetMaxItems(maxitems) //no max items just clear every 5 minutes
 	ticker := NewTicker()

@@ -20,6 +20,7 @@ const (
 // Context is transfering to the frontend dev via the handler,
 // from the route.go 's Prepare -> convert handler as middleware and use route.run -> ServeHTTP.
 type Context struct {
+	station        *Station
 	ResponseWriter http.ResponseWriter
 	Request        *http.Request
 	Params         PathParameters

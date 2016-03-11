@@ -35,22 +35,14 @@ adminSettings.UseFunc(func(res http.ResponseWriter, req *http.Request, next http
 })
 
 */
-
+type IPartyHoster interface {
+	Party(path string) IParty
+}
 type IParty interface {
 	IMiddlewareSupporter
-	Get(path string, handler interface{}) *Route
-	Post(path string, handler interface{}) *Route
-	Put(path string, handler interface{}) *Route
-	Delete(path string, handler interface{}) *Route
-	Connect(path string, handler interface{}) *Route
-	Head(path string, handler interface{}) *Route
-	Options(path string, handler interface{}) *Route
-	Patch(path string, handler interface{}) *Route
-	Trace(path string, handler interface{}) *Route
-	Any(path string, handler interface{}) *Route
-
+	IRouterMethods
+	IPartyHoster
 	// Each party can have a party too
-	Party(path string) IParty
 }
 
 // maybe at the future this will be by-default to all routes, and no need to handle it at different struct

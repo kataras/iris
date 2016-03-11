@@ -33,7 +33,7 @@ type TestRoute struct {
 }
 
 var (
-	api        *Server
+	api        *Station
 	testServer *httptest.Server
 	server     = struct {
 		URL, IP string

@@ -21,6 +21,7 @@ type MemoryRouterCache struct {
 	MaxItems int
 	//we need this mutex if we have running the iris at > 1 core, because we use map but maybe at the future I will change it.
 	mu *sync.Mutex
+	//pool *sync.Pool
 }
 
 func (mc *MemoryRouterCache) SetMaxItems(_itemslen int) {
@@ -30,6 +31,7 @@ func (mc *MemoryRouterCache) SetMaxItems(_itemslen int) {
 func NewMemoryRouterCache() *MemoryRouterCache {
 	mc := &MemoryRouterCache{mu: &sync.Mutex{}, items: make(map[string]map[string]*Route, 0)}
 	mc.resetBag()
+	//mc.pool = &sync.Pool{New: func() *Route { return &Route{} }}
 	return mc
 }
 
