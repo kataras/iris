@@ -83,7 +83,11 @@ func URLParam(req *http.Request, key string) string {
 var _theParams = make(PathParameters, 0)
 
 func resetParams() {
-	_theParams = append(_theParams[:0], _theParams[:0]...)
+	_theParams = append(_theParams[:0], _theParams[:0]...) //append(_theParams[:0], _theParams[:0]...) //fix problem when try to access params after some time but allocs done here make(PathParameters, 0) //append(_theParams[:0], _theParams[:0]...)
+	/*for i := 0; i < len(_theParams); i++ {
+		_theParams[i].Key = ""
+		_theParams[i].Value = ""
+	}*/
 }
 func TryGetParameters(r *Route, urlPath string) PathParameters {
 	//check these because the developer pass Context to the handler without nessecary have params to the route
@@ -96,7 +100,7 @@ func TryGetParameters(r *Route, urlPath string) PathParameters {
 	var part Part
 	var endSlash int
 	var reqPart string
-	//var params PathParameters = _theParams
+	//too much allocs ofc... var params PathParameters = append(_theParams[:0], _theParams[:0]...)
 	//var paramsBuff bytes.Buffer
 	var rest string
 	reqPath := urlPath[len(r.pathPrefix):] //we start from there to make it faster

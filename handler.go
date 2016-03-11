@@ -106,6 +106,17 @@ func GetContext(res http.ResponseWriter, req *http.Request, httpErrors *HTTPErro
 	return _context
 }
 
+func GetContextPointer(res http.ResponseWriter, req *http.Request, httpErrors *HTTPErrors) *Context {
+	c := _context
+	c.ResponseWriter = res
+	c.Request = req
+	if c.httpErrors == nil {
+		c.httpErrors = httpErrors
+	}
+
+	return &c
+}
+
 func ResetContext() {
 	_context.ResponseWriter = nil
 	_context.Request = nil
@@ -131,6 +142,26 @@ func (h ContextedHandlerFunc) run(r *Route, res http.ResponseWriter, req *http.R
 	ctx := GetContext(res, req, r.httpErrors)
 	ctx.Params = TryGetParameters(r, req.URL.Path)
 	h(ctx)
+	ResetContext()
+}
+
+// PointerContextedHandlerFunc use that instead of (c Context) if you need to use the parameters after a while
+// example:
+// api.Get("/user/:id", func(c *iris.Context) {
+//		time.AfterFunc(20 * time.Second, func() {
+//			println(" 20 secs after: from user with id:", c.Param("id"), " context req path:", c.Request.URL.Path)
+//		})
+//	})
+type PointerContextedHandlerFunc func(*Context)
+
+func (h PointerContextedHandlerFunc) run(r *Route, res http.ResponseWriter, req *http.Request) {
+	ctx := GetContextPointer(res, req, r.httpErrors)
+	s := TryGetParameters(r, req.URL.Path)
+	t := make(PathParameters, len(s), (cap(s)+1)*2)
+	copy(t, s)
+	ctx.Params = t
+	h(ctx)
+
 	ResetContext()
 }
 
@@ -199,6 +230,8 @@ func convertToHandler(handler interface{}) Handler {
 		return TypicalHandlerFunc(handler.(func(http.ResponseWriter, *http.Request)))
 	case func(Context):
 		return ContextedHandlerFunc(handler.(func(Context)))
+	case func(*Context):
+		return PointerContextedHandlerFunc(handler.(func(*Context)))
 	case func(Renderer):
 		return RendereredHandlerFunc(handler.(func(Renderer)))
 	case func(Context, Renderer):
