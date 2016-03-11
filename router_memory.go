@@ -2,7 +2,6 @@ package iris
 
 import (
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -36,26 +35,49 @@ func (r *MemoryRouter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	var _node *node
+	var _branch *branch
 	var _route *Route
-	var _nodes = r.nodes[req.Method]
-	if _nodes != nil {
-		for i := 0; i < len(_nodes); i++ {
-			_node = _nodes[i]
+	var _method = req.Method
 
-			if strings.HasPrefix(req.URL.Path, _node.prefix) {
-				for j := 0; j < len(_node.routes); j++ {
-					_route = _node.routes[j]
-					if !_route.Verify(req.URL.Path) {
-						continue
+search:
+	{
+		isHead := _method == "HEAD"
+		_tree := r.trees[_method]
+		if _tree != nil {
+			for i := 0; i < len(_tree); i++ {
+				_branch = _tree[i]
+				if len(req.URL.Path) < len(_branch.prefix) {
+					continue
+				}
+				hasPrefix := req.URL.Path[0:len(_branch.prefix)] == _branch.prefix
+				//println("check url prefix: ", req.URL.Path[0:len(_branch.prefix)]+" with node's:  ", _branch.prefix)
+				if hasPrefix {
+					for j := 0; j < len(_branch.routes); j++ {
+						_route = _branch.routes[j]
+						if !_route.Verify(req.URL.Path) {
+							continue
+
+						}
+						_route.ServeHTTP(res, req)
+						r.cache.AddItem(_method, req.URL.Path, _route)
+						return
+
 					}
 
-					_route.ServeHTTP(res, req)
-					r.cache.AddItem(req.Method, req.URL.Path, _route)
+					//if prefix found on head but no route no route found, then search to the GET tree also
+					if isHead {
+						_method = HTTPMethods.GET
+						goto search
+					}
+					r.httpErrors.NotFound(res)
 					return
 
 				}
+
 			}
+		} else if isHead { //if no any branches with routes found for the HEAD then try to search on GET tree
+			_method = HTTPMethods.GET
+			goto search
 		}
 	}
 	//not found

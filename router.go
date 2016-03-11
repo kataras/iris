@@ -4,7 +4,6 @@ import (
 	"errors"
 	"net/http"
 	"reflect"
-	"sort"
 	"strconv"
 	"strings"
 )
@@ -24,89 +23,6 @@ type IRouter interface {
 	ServeHTTP(http.ResponseWriter, *http.Request)
 }
 
-type Routes []*Route
-
-//implementing the sort.Interface for type 'Routes'
-
-func (routes Routes) Len() int {
-	return len(routes)
-}
-
-func (routes Routes) Less(r1, r2 int) bool {
-	//sort by longest path parts no  longest fullpath, longest first.
-	return len(routes[r1].pathParts) > len(routes[r2].pathParts)
-}
-
-func (routes Routes) Swap(r1, r2 int) {
-	routes[r1], routes[r2] = routes[r2], routes[r1]
-}
-
-//end
-
-// node is just a collection of routes group by path's prefix, used inside Router.
-type node struct {
-	prefix           string
-	routes           Routes
-	prioritySetTimes int // full is 100, this will be incremented and zero again every time a sort is done, sort is done when this number react to 100
-	//that menas that every 100 requests the routes will sort itself via the route.priority
-}
-
-type prefixNodes []*node
-
-//implementing the sort.Interface for type 'prefixNodes'
-
-func (nodes prefixNodes) Len() int {
-	return len(nodes)
-}
-
-func (nodes prefixNodes) Less(r1, r2 int) bool {
-	//sort by longest path prefix, longest first.
-	return len(nodes[r1].prefix) > len(nodes[r2].prefix)
-}
-
-func (nodes prefixNodes) Swap(r1, r2 int) {
-	nodes[r1], nodes[r2] = nodes[r2], nodes[r1]
-}
-
-//end
-
-type tree map[string]prefixNodes
-
-func (tr tree) addRoute(method string, route *Route) {
-	_nodes := tr[method]
-	//route.pathPrefix = strings.TrimSpace(route.pathPrefix)
-
-	if _nodes == nil {
-		_nodes = make([]*node, 0)
-	}
-	ok := false
-	var _node *node
-	index := 0
-	for index, _node = range _nodes {
-		//check if route has parameters or * after the prefix, if yes then add a slash to the end
-		routePref := route.pathPrefix
-
-		if _node.prefix == routePref {
-			tr[method][index].routes = append(_node.routes, route)
-			//sort routes by the most larger path parts
-			sort.Sort(tr[method][index].routes)
-			ok = true
-			break
-		}
-	}
-	if !ok {
-		_node = &node{prefix: route.pathPrefix, routes: make([]*Route, 0)}
-		_node.routes = append(_node.routes, route)
-		//sort routes by the most larger path parts
-		sort.Sort(_node.routes)
-		//_node.makePriority(route)
-		tr[method] = append(tr[method], _node)
-	}
-
-	//sort nodes by the longest prefix
-	sort.Sort(tr[method])
-}
-
 // Router is the router , one router per server.
 // Router contains the global middleware, the routes and a Mutex for lock and unlock on route prepare
 type Router struct {
@@ -114,14 +30,14 @@ type Router struct {
 	//routes map[string][]*Route // key = path prefix, value an array of the routes starts with that prefix
 	MiddlewareSupporter
 
-	nodes      tree
+	trees      Trees
 	cache      *IRouterCache
 	httpErrors *HTTPErrors //the only reason of this is to pass into the route, which it need it to  passed it to Context, in order to  developer get the ability to perfom emit errors (eg NotFound) directly from context
 }
 
 // NewRouter creates and returns an empty Router
 func NewRouter() *Router {
-	return &Router{nodes: make(tree, 0), httpErrors: DefaultHTTPErrors()}
+	return &Router{trees: make(Trees, 0), httpErrors: DefaultHTTPErrors()}
 }
 
 func (r *Router) SetErrors(httperr *HTTPErrors) {
@@ -159,7 +75,7 @@ func (r *Router) HandleFunc(registedPath string, handler Handler, method string)
 			route.middlewareHandlers = r.middlewareHandlers
 		}
 
-		r.nodes.addRoute(method, route)
+		r.trees.addRoute(method, route)
 
 	}
 	route.httpErrors = r.httpErrors
@@ -369,10 +285,10 @@ func Handle(params ...interface{}) *Route {
 func (r *Router) Use(handler MiddlewareHandler) {
 	r.MiddlewareSupporter.Use(handler)
 	//IF this is called after the routes
-	if len(r.nodes) > 0 {
-		for _, _nodes := range r.nodes {
-			for _, v := range _nodes {
-				for _, route := range v.routes {
+	if len(r.trees) > 0 {
+		for _, _tree := range r.trees {
+			for _, _branch := range _tree {
+				for _, route := range _branch.routes {
 					route.Use(handler)
 				}
 
@@ -593,43 +509,56 @@ func Any(path string, handler interface{}) *Route {
 
 // ServeHTTP finds and serves a route by it's request
 // If no route found, it sends an http status 404
-///TODO: make the HEAD match the GET requests too, HEAD is used mostly by browsers to check their cache, as far as I know.
-//		 but also we have to seperate head from get, because developer maybe want to allow only HEAD methods for a route...
 func (r *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
-	var _node *node
+	var _branch *branch
 	var _route *Route
-	var _nodes = r.nodes[req.Method]
-	if _nodes != nil {
-		for i := 0; i < len(_nodes); i++ {
-			_node = _nodes[i]
-			if len(req.URL.Path) < len(_node.prefix) {
-				continue
-			}
-			hasPrefix := req.URL.Path[0:len(_node.prefix)] == _node.prefix
-			//println("check url prefix: ", req.URL.Path[0:len(_node.prefix)]+" with node's:  ", _node.prefix)
-			if hasPrefix {
-				for j := 0; j < len(_node.routes); j++ {
-					_route = _node.routes[j]
-					if !_route.Verify(req.URL.Path) {
-						continue
+	var _method = req.Method
+
+search:
+	{
+		isHead := _method == "HEAD"
+		_tree := r.trees[_method]
+		if _tree != nil {
+			for i := 0; i < len(_tree); i++ {
+				_branch = _tree[i]
+				if len(req.URL.Path) < len(_branch.prefix) {
+					continue
+				}
+				hasPrefix := req.URL.Path[0:len(_branch.prefix)] == _branch.prefix
+				//println("check url prefix: ", req.URL.Path[0:len(_branch.prefix)]+" with node's:  ", _branch.prefix)
+				if hasPrefix {
+					for j := 0; j < len(_branch.routes); j++ {
+						_route = _branch.routes[j]
+						if !_route.Verify(req.URL.Path) {
+							continue
+
+						}
+						_route.ServeHTTP(res, req)
+						return
 
 					}
-					_route.ServeHTTP(res, req)
+					//if the prefix was found, so we are 100% at the correct node, because I make it to end with slashes
+					//so no need to check other prefixes any more, just return 404 and exit from here.
+					//println(req.URL.Path, " NOT found")
+
+					//if prefix found on head but no route no route found, then search to the GET tree also
+					if isHead {
+						_method = HTTPMethods.GET
+						goto search
+					}
+					r.httpErrors.NotFound(res)
 					return
 
 				}
-				//if the prefix was found, so we are 100% at the correct node, because I make it to end with slashes
-				//so no need to check other prefixes any more, just return 404 and exit from here.
-				//println(req.URL.Path, " NOT found")
-				r.httpErrors.NotFound(res)
-				return
 
 			}
-
+		} else if isHead { //if no any branches with routes found for the HEAD then try to search on GET tree
+			_method = HTTPMethods.GET
+			goto search
 		}
 	}
-	//no nodes or routes found
+	//nothing found, usualy if _tree == nil and branches for this method not found
 	//println(req.URL.Path, " NOT found")
 	r.httpErrors.NotFound(res)
 }

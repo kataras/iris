@@ -127,10 +127,10 @@ func (p party) Party(path string) IParty {
 
 // Use registers middleware for all routes which inside this party, which the node's prefix starts with the rootPath +"/" because all prefix ends with slash
 func (p party) Use(handler MiddlewareHandler) {
-	for _, _nodes := range p._router.nodes {
-		for _, v := range _nodes {
-			if v.prefix == p._rootPath+"/" {
-				for _, route := range v.routes {
+	for _, _tree := range p._router.trees {
+		for _, _branch := range _tree {
+			if _branch.prefix == p._rootPath+"/" {
+				for _, route := range _branch.routes {
 					route.Use(handler)
 				}
 			}
