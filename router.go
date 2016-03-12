@@ -93,6 +93,7 @@ func (r *Router) HandleFunc(registedPath string, handler Handler, method string)
 
 	}
 	route.httpErrors = r.httpErrors
+	route.station = r.station
 	return route
 }
 
@@ -341,6 +342,7 @@ search:
 						}
 						_route.ServeHTTP(res, req)
 						return
+						//println("must never come here.")
 
 					}
 					//if the prefix was found, so we are 100% at the correct node, because I make it to end with slashes

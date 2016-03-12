@@ -62,7 +62,7 @@ func ParseParams(str string) PathParameters {
 		}
 
 		key := _paramsstr[i][:idxOfEq]
-		val := _paramsstr[i][idxOfEq:]
+		val := _paramsstr[i][idxOfEq+1:]
 		params = append(params, PathParameter{key, val})
 	}
 	return params
@@ -79,22 +79,13 @@ func URLParam(req *http.Request, key string) string {
 	return req.URL.Query().Get(key)
 }
 
-//I use these in order to make 0 allocs and 0 bytes use even with params, and it worked :)
-var _theParams = make(PathParameters, 0)
-
-func resetParams() {
-	_theParams = append(_theParams[:0], _theParams[:0]...) //append(_theParams[:0], _theParams[:0]...) //fix problem when try to access params after some time but allocs done here make(PathParameters, 0) //append(_theParams[:0], _theParams[:0]...)
-	/*for i := 0; i < len(_theParams); i++ {
-		_theParams[i].Key = ""
-		_theParams[i].Value = ""
-	}*/
-}
-func TryGetParameters(r *Route, urlPath string) PathParameters {
+func SetParametersTo(c *Context, urlPath string) {
 	//check these because the developer pass Context to the handler without nessecary have params to the route
+	r := c.route
 	if r.isStatic {
-		return nil
+		return
 	} else if len(urlPath) < len(r.pathPrefix) {
-		return nil
+		return
 	}
 	var pathIndex = r.lastStaticPartIndex
 	var part Part
@@ -105,7 +96,7 @@ func TryGetParameters(r *Route, urlPath string) PathParameters {
 	var rest string
 	reqPath := urlPath[len(r.pathPrefix):] //we start from there to make it faster
 	rest = reqPath
-	//pIndex := 0
+	pIndex := 0
 	for pathIndex < r.partsLen {
 
 		endSlash = 1
@@ -125,17 +116,17 @@ func TryGetParameters(r *Route, urlPath string) PathParameters {
 		}
 
 		if part.isParam {
-			//if params == nil {
-			//	params = make(PathParameters, r.paramsLength, r.paramsLength)
-			//	}
+
 			//save the parameters and continue
 
-			_theParams = append(_theParams, PathParameter{part.Value, reqPart})
-			//params[pIndex] = PathParameter{part.Value, reqPart}
-			//pIndex++
+			//_theParams = append(_theParams, PathParameter{part.Value, reqPart})
+			//println("len of params: ", len(c.Params), " len of pIndex: ", pIndex)
+			c.Params[pIndex] = PathParameter{part.Value, reqPart}
+			//c.Params = append(c.Params, PathParameter{part.Value, reqPart})// 140ms
+			pIndex++
 
 		}
 
 	}
-	return _theParams
+	//return _theParams
 }

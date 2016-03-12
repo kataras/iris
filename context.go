@@ -15,24 +15,17 @@ const (
 
 // Context is created every time a request is coming to the server,
 // it holds a pointer to the http.Request, the ResponseWriter
-// and the Named Parameters (if any) of the requested path.
+// the Named Parameters (if any) of the requested path and an underline Renderer.
 //
-// Context is transfering to the frontend dev via the handler,
+// Context is transfering to the frontend dev via the ContextedHandlerFunc at the handler.go,
 // from the route.go 's Prepare -> convert handler as middleware and use route.run -> ServeHTTP.
 type Context struct {
-	station        *Station
+	*Renderer
 	ResponseWriter http.ResponseWriter
 	Request        *http.Request
 	Params         PathParameters
 	httpErrors     *HTTPErrors
-}
-
-// newContext creates and returns a new Context pointer
-//func newContext(res http.ResponseWriter, req *http.Request, httpErrors *HTTPErrors) *Context {
-func newContext(res http.ResponseWriter, req *http.Request, httpErrors *HTTPErrors) *Context {
-
-	///TODO: params := Params(req)
-	return &Context{ResponseWriter: res, Request: req, httpErrors: httpErrors}
+	route          *Route
 }
 
 // Param returns the string representation of the key's path named parameter's value
@@ -110,4 +103,23 @@ func (ctx *Context) Close() {
 // End same as Close, end the response process.
 func (ctx *Context) End() {
 	ctx.Request.Body.Close()
+}
+
+// Clone before we had (c Context) inscope and  (c *Context) for outscope like goroutines
+// now we have (c *Context) for both sittuations ,and call .Clone() if we need to pass the context in a gorotoune or to a time func
+// example:
+// api.Get("/user/:id", func(ctx *iris.Context) {
+//		c:= ctx.Clone()
+//		time.AfterFunc(20 * time.Second, func() {
+//			println(" 20 secs after: from user with id:", c.Param("id"), " context req path:", c.Request.URL.Path)
+//		})
+//	})
+func (ctx *Context) Clone() *Context {
+	cloneContext := *ctx
+	params := cloneContext.Params
+	cpP := make(PathParameters, len(params), len(params))
+	copy(cpP, params)
+	cloneContext.Params = cpP
+	//cloneContext.Params = ParseParams(params.String())
+	return &cloneContext
 }

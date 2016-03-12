@@ -46,6 +46,7 @@ type Route struct {
 	templates  *TemplateCache //this is passed to the Renderer
 	httpErrors *HTTPErrors    //the only need of this is to pass into the Context, in order to  developer get the ability to perfom emit errors (eg NotFound) directly from context
 	isReady    bool
+	station    *Station
 }
 
 // newRoute creates, from a path string, handler and optional http methods and returns a new route pointer
@@ -175,6 +176,8 @@ func (r *Route) Verify(urlPath string) bool {
 
 		return false
 	}
+	reqPath := urlPath[len(r.pathPrefix):] //we start from there to make it faste
+
 	var pathIndex = r.lastStaticPartIndex
 	var part Part
 	var endSlash int
@@ -182,11 +185,12 @@ func (r *Route) Verify(urlPath string) bool {
 	//var params PathParameters = nil
 	//var paramsBuff bytes.Buffer
 	var rest string
-	reqPath := urlPath[len(r.pathPrefix):] //we start from there to make it faster
+
 	rest = reqPath
 	for pathIndex < r.partsLen {
 
 		endSlash = 1
+		//println(rest)
 		for endSlash < len(rest) && rest[endSlash] != '/' {
 			endSlash++
 		}
@@ -200,7 +204,7 @@ func (r *Route) Verify(urlPath string) bool {
 			return false
 		}
 
-		part = r.pathParts[pathIndex] //edw argei alla dn kserw gt.. siga ti kanei
+		part = r.pathParts[pathIndex] //edw argei alla dn kserw gt.. siga ti kanei edw exw thema megalo apoti fenete? 12 03 2016
 		pathIndex++
 
 		if pathIndex == 0 || pathIndex >= r.partsLen || len(rest) <= endSlash {

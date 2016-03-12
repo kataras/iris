@@ -6,7 +6,6 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"reflect"
 	"strconv"
 )
 
@@ -30,8 +29,6 @@ const (
 	// ContentXML is the  string of text/xml response headers
 	ContentXML = "text/xml" + "; " + DefaultCharset
 )
-
-var rendererType reflect.Type
 
 // Renderer is the container of the template cache which developer creates for EACH route
 type Renderer struct {

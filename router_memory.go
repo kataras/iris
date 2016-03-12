@@ -31,7 +31,7 @@ func (r *MemoryRouter) HandleFunc(registedPath string, handler Handler, method s
 // If no route found, it sends an http status 404
 func (r *MemoryRouter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	//defer r.mu.Unlock() defer is slow.
-	if v := r.cache.GetItem(req.Method, req.URL.Path); v != nil {
+	if v := r.cache.GetItem(req.Method, req.URL.Path); v != nil { //TODO: edw 700ms
 		v.ServeHTTP(res, req)
 		return
 	}

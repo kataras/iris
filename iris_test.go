@@ -201,7 +201,7 @@ func getRequestRoute(route TestRoute, reqURL string) *TestRequestRoute {
 	return nil
 }
 
-func checkParams(c Context, expected map[string]string) error {
+func checkParams(c *Context, expected map[string]string) error {
 	//time.AfterFunc(3*time.Second, func() { ok  each context has its own parameters
 	if expected != nil {
 		for key, value := range expected {
@@ -222,7 +222,7 @@ func checkParams(c Context, expected map[string]string) error {
 	return nil
 }
 
-func checkBody(c Context, expectedBody []byte) error {
+func checkBody(c *Context, expectedBody []byte) error {
 	reqBody, err := ioutil.ReadAll(c.Request.Body)
 
 	if err != nil {
@@ -248,8 +248,8 @@ func checkBody(c Context, expectedBody []byte) error {
 	return nil
 }
 
-func handleRoute(route TestRoute) func(c Context) {
-	return func(c Context) {
+func handleRoute(route TestRoute) func(c *Context) {
+	return func(c *Context) {
 		defer c.Close()
 
 		c.Write("Response from server to the client for route: " + route.Path + " client req url: " + c.Request.URL.Path)
@@ -261,13 +261,13 @@ func handleRoute(route TestRoute) func(c Context) {
 			log.Fatal("No test-registed request url found for route ", route.Path)
 			return
 		}
-		go func(cc Context) {
+		go func(cc *Context) {
 
 			if err := checkParams(cc, requestRoute.ExpectedParameters); err != nil {
 				log.Fatal(err.Error())
 			}
 
-		}(c)
+		}(c.Clone())
 
 		if err := checkBody(c, requestRoute.Body); err != nil {
 			log.Fatal(err.Error())

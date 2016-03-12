@@ -9,7 +9,7 @@ type testAPIUsersHandler struct {
 	Annotated `get:"/api/users/:userId" template:"user.html"`
 }
 
-func (t *testAPIUsersHandler) Handle(ctx Context, renderer Renderer) {}
+func (t *testAPIUsersHandler) Handle(ctx *Context) {}
 
 type testStructedRoute struct {
 	handler                  Annotated

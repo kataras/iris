@@ -8,10 +8,8 @@ import (
 // Annotated is the interface which is used of the structed-routes and be passed to the Router's Handle,
 // struct implements this Handler MUST have a function which has the form one of them:
 //
-// Handle(ctx *Context, renderer *Renderer)
-// Handle(res http.ResponseWriter, req *http.Request)
 // Handle(ctx *Context)
-// Handle(renderer *Renderer)
+// Handle(res http.ResponseWriter, req *http.Request)
 /*Example
 
   import (
@@ -22,11 +20,9 @@ import (
   	iris.Annotated `get:"/api/users/:userId"`
   }
 
-  func (u *UserHandler) Handle(ctx iris.Context) {
+  func (u *UserHandler) Handle(ctx *iris.Context) {
   //or
-  //Handle(ctx Context, renderer Renderer)
   //Handle(res http.ResponseWriter, req *http.Request)
-  //Handle(renderer Renderer)
 
   	defer ctx.Close()
   	var userId, _ = ctx.ParamInt("userId")
@@ -43,22 +39,17 @@ import (
 */
 //or AnnotatedRoute  but its too big 'iris.AnnotatedRoute' 'iris.Annotated' is better but not the best, f* my eng vocabulary?
 type Annotated interface {
-	//must implement func Handle(
-	//FullHandlerFunc or
-	//RendereredHandlerFunc or
-	//ContextedHandlerFunc or
-	//TypicalHandlerFunc)
+	//must implement func Handle() with supported parameters:
+	//ctx *Context or
+	//res http.ResponseWriter, req *http.Request
 }
-
-//}
 
 // HTTPHandler is the function which is passed a second parameter/argument to the API methods (Get,Post...)
 // It has got one the following forms:
 //
 // 1. http.ResponseWriter, *http.Request
-// 2. iris.Context
-// 3. iris.Renderer
-// 4. iris.Context, iris.Renderer
+// 2. http.Handler
+// 3. *iris.Context
 type HTTPHandler interface{}
 
 //
@@ -66,66 +57,9 @@ type Handler interface {
 	run(r *Route, res http.ResponseWriter, req *http.Request)
 }
 
-type FullHandlerFunc func(Context, Renderer)
+var _renderer = &Renderer{}
 
-func (h FullHandlerFunc) run(r *Route, res http.ResponseWriter, req *http.Request) {
-	ctx := GetContext(res, req, r.httpErrors)
-	ctx.Params = TryGetParameters(r, req.URL.Path)
-	renderer := GetRenderer(res)
-
-	if r.templates != nil {
-		renderer.templateCache = r.templates
-	}
-
-	h(ctx, renderer)
-	ResetContext()
-	ResetRenderer()
-}
-
-type RendereredHandlerFunc func(Renderer)
-
-func (h RendereredHandlerFunc) run(r *Route, res http.ResponseWriter, req *http.Request) {
-	renderer := GetRenderer(res)
-	if r.templates != nil {
-		renderer.templateCache = r.templates
-	}
-	h(renderer)
-	ResetRenderer()
-}
-
-var _context = Context{}
-var _renderer = Renderer{}
-
-func GetContext(res http.ResponseWriter, req *http.Request, httpErrors *HTTPErrors) Context {
-	_context.ResponseWriter = res
-	_context.Request = req
-	if _context.httpErrors == nil {
-		_context.httpErrors = httpErrors
-	}
-
-	return _context
-}
-
-func GetContextPointer(res http.ResponseWriter, req *http.Request, httpErrors *HTTPErrors) *Context {
-	c := _context
-	c.ResponseWriter = res
-	c.Request = req
-	if c.httpErrors == nil {
-		c.httpErrors = httpErrors
-	}
-
-	return &c
-}
-
-func ResetContext() {
-	_context.ResponseWriter = nil
-	_context.Request = nil
-	//	_context.httpErrors = nil
-	_context.Params = nil
-	resetParams()
-}
-
-func GetRenderer(res http.ResponseWriter) Renderer {
+func GetRenderer(res http.ResponseWriter) *Renderer {
 	_renderer.responseWriter = res
 	return _renderer
 }
@@ -135,53 +69,41 @@ func ResetRenderer() {
 	_renderer.templateCache = nil
 }
 
-type ContextedHandlerFunc func(Context)
+type ContextedHandlerFunc func(*Context)
 
 func (h ContextedHandlerFunc) run(r *Route, res http.ResponseWriter, req *http.Request) {
-	//ctx := newContext(res, req, r.httpErrors)
-	ctx := GetContext(res, req, r.httpErrors)
-	ctx.Params = TryGetParameters(r, req.URL.Path)
-	h(ctx)
-	ResetContext()
-}
-
-// PointerContextedHandlerFunc use that instead of (c Context) if you need to use the parameters after a while
-// example:
-// api.Get("/user/:id", func(c *iris.Context) {
-//		time.AfterFunc(20 * time.Second, func() {
-//			println(" 20 secs after: from user with id:", c.Param("id"), " context req path:", c.Request.URL.Path)
-//		})
-//	})
-type PointerContextedHandlerFunc func(*Context)
-
-func (h PointerContextedHandlerFunc) run(r *Route, res http.ResponseWriter, req *http.Request) {
-	ctx := GetContextPointer(res, req, r.httpErrors)
+	/*ctx := GetContextPointer(res, req, r.httpErrors)
 	s := TryGetParameters(r, req.URL.Path)
 	t := make(PathParameters, len(s), (cap(s)+1)*2)
 	copy(t, s)
 	ctx.Params = t
 	h(ctx)
 
-	ResetContext()
+	ResetContext()*/
+
+	ctx := r.station.pool.Get().(*Context)
+
+	ctx.ResponseWriter = res
+	ctx.Request = req
+	ctx.route = r
+	if int(r.paramsLength) > len(ctx.Params) {
+		ctx.Params = append(ctx.Params, ctx.Params...) //double the cap of the params
+	}
+	ctx.Params = ctx.Params[0:r.paramsLength]
+	SetParametersTo(ctx, req.URL.Path)
+	ctx.Renderer = GetRenderer(res)
+
+	h(ctx)
+	ResetRenderer()
+	r.station.pool.Put(ctx)
+
 }
 
-//=HandlerFunc
 type TypicalHandlerFunc func(http.ResponseWriter, *http.Request)
 
 func (h TypicalHandlerFunc) run(r *Route, res http.ResponseWriter, req *http.Request) {
 	h(res, req)
 }
-
-// Static receives a path and returns an http.Handler which is handling the static files
-// The FileServer receives a directory and serves all it's children folders and files too
-// This maybe not the safest way to do it but we are ok for now.
-// When/if at the future I want more lower level & safier approach I can use ServeFile, ServeContent or much 'lower level', this :
-// http.ServeContent(res, req, "thefile", time.Now(), bytes.NewReader(data))
-/*var Static = func(dirpath string) http.Handler {
-	path := http.Dir(dirpath)
-	fs := http.FileServer(path)
-	return fs
-}*/
 
 type staticServer struct {
 	directory    string
@@ -228,15 +150,9 @@ func convertToHandler(handler interface{}) Handler {
 		return TypicalHandlerFunc(handler.(http.Handler).ServeHTTP)
 	case func(http.ResponseWriter, *http.Request):
 		return TypicalHandlerFunc(handler.(func(http.ResponseWriter, *http.Request)))
-	case func(Context):
-		return ContextedHandlerFunc(handler.(func(Context)))
 	case func(*Context):
-		return PointerContextedHandlerFunc(handler.(func(*Context)))
-	case func(Renderer):
-		return RendereredHandlerFunc(handler.(func(Renderer)))
-	case func(Context, Renderer):
-		return FullHandlerFunc(handler.(func(Context, Renderer)))
+		return ContextedHandlerFunc(handler.(func(*Context)))
 	default:
-		panic("Error on Iris -> convertToHandler handler is not TypicalHandlerFunc or ContextedHandlerFunc or RendereredHandlerFunc or FullHandlerFunc")
+		panic("Error on Iris -> convertToHandler handler is not TypicalHandlerFunc or ContextedHandlerFunc")
 	}
 }

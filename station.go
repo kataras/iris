@@ -118,5 +118,5 @@ func (s *Station) Close() {
 }
 
 func (s *Station) makeContext() *Context {
-	return &Context{station: s}
+	return &Context{Params: make([]PathParameter, 6), httpErrors: s.Errors()}
 }
