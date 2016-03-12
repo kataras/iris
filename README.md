@@ -128,15 +128,15 @@ When Cache (with automatic cleanup) is enabled (by default, change it with iris.
 ![enter image description here](http://nodets.com/iris_with_cach_latest.png)
 ## Features
 
-**Parameters in your routing pattern:** Stop parsing the requested URL path, just give the path segment a name and the router delivers the dynamic value to you. Because of the design of the router, path parameters are very cheap.
+**Parameters in your routing pattern:** Stop parsing the requested URL path, just give the path segment a name and the iris' router delivers the dynamic value to you. Really, path parameters are very cheap.
 
-**Can have static & parametized matches:** With other routers, like http.ServeMux, a requested URL path could match multiple patterns. Therefore they have some awkward pattern priority rules, like longest match or first registered, first matched. By design of this framework, a request can match to a static and parameterized routes at the same time, at any order you register them, the Iris' router is clever enough to understand  the correct route for a request, so don't care just write your wonderful web app.
+**Can have static & parameterized  matches:** With other routers, like http.ServeMux, a requested URL path could match multiple patterns. Therefore they have some awkward pattern priority rules, like longest match or first registered, first matched. By design of this framework, a request can match to a static and parameterized routes at the same time, at any order you register them, the Iris' router is clever enough to understand  the correct route for a request, so don't care just write your wonderful web app.
 
 **Party of routes:** Combine routes where have same prefix, provide a middleware to this Party, a Party can have other Party too.
 
 **Compatible:** At the end the Iris is just a middleware which acts like router and a small simply web framework, this means that you can you use it side-by-side with your favorite big and well-tested web framework. Iris is fully compatible with the **net/http package.**
 
-**Miltiple servers :** Besides the fact that iris has a default main server. You can declare a new iris using the iris.New() func. example: server1:= iris.New(); server1.Get(....); server1.Listen(9999)
+**Multi servers:** Besides the fact that iris has a default main server. You can declare a new iris using the iris.New() func. example: server1:= iris.New(); server1.Get(....); server1.Listen(9999)
 
 
 
