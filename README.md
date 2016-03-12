@@ -16,6 +16,7 @@ Iris is a very minimal but flexible web framework written in go, providing a rob
 - [Alternatives](#alternatives)
 - [Features](#features)
 - [API](#api)
+- [Party](#party)
 - [Named Parameters](#named-parameters)
 - [Match anything and the Static serve handler](#match-anything-and-the-static-serve-handler)
 - [Declaring routes](#declaring-routes)
@@ -104,7 +105,7 @@ With Intel(R) Core(TM) i7-4710HQ CPU @ 2.50GHz 2.50 HGz and 8GB Ram:
 
 ![enter image description here](http://nodets.com/benchmarks_results_output.png)
 
-* Sometimes it goes to 50169 ns/op but even then it's faster than all other.
+* Sometimes it goes to 50969 ns/op but even then it's faster than all other.
 
 ## Alternatives
 
@@ -127,11 +128,11 @@ When Cache (with automatic cleanup) is enabled (by default, change it with iris.
 ![enter image description here](http://nodets.com/iris_with_cach_latest.png)
 ## Features
 
-**Can have static & dynamic matches:** With other routers, like http.ServeMux, a requested URL path could match multiple patterns. Therefore they have some awkward pattern priority rules, like longest match or first registered, first matched. By design of this framework, a request can match to a static and parameterized routes at the same time, at any order you register them, the Iris' router is clever enough to understand  the correct route for a request, so don't care just write your wonderful web app.
-
 **Parameters in your routing pattern:** Stop parsing the requested URL path, just give the path segment a name and the router delivers the dynamic value to you. Because of the design of the router, path parameters are very cheap.
 
-**Perfect for APIs:** The router design encourages to build sensible, hierarchical RESTful APIs. Moreover it has builtin native support for OPTIONS requests and 405 Method Not Allowed replies.
+**Can have static & parametized matches:** With other routers, like http.ServeMux, a requested URL path could match multiple patterns. Therefore they have some awkward pattern priority rules, like longest match or first registered, first matched. By design of this framework, a request can match to a static and parameterized routes at the same time, at any order you register them, the Iris' router is clever enough to understand  the correct route for a request, so don't care just write your wonderful web app.
+
+**Party of routes:** Combine routes where have same prefix, provide a middleware to this Party, a Party can have other Party too.
 
 **Compatible:** At the end the Iris is just a middleware which acts like router and a small simply web framework, this means that you can you use it side-by-side with your favorite big and well-tested web framework. Iris is fully compatible with the **net/http package.**
 
@@ -174,6 +175,46 @@ func testPost(c *iris.Context) {
 
 //and so on....
 ```
+## Party
+
+Let's party with Iris web framework!
+
+```go
+func main() {
+    
+    // manage all /users
+    users := iris.Party("/users")
+    {
+		users.Post("/login", loginHandler)
+        users.Get("/:userId", singleUserHandler)
+        users.Delete("/:userId", userAccountRemoveUserHandler)  
+    }
+    
+    // Party inside an existing Party example: 
+    
+    beta:= iris.Party("/beta") 
+    
+
+    admin := beta.Party("/admin")
+    {
+/// GET: /beta/admin/    
+		admin.Get("/",adminIndexHandler)
+/// POST: /beta/admin/signin
+        admin.Post("/signin", adminSigninHandler)
+/// GET: /beta/admin/dashboard
+        admin.Get("/dashboard", admindashboardHandler)
+/// PUT: /beta/admin/users/add
+        admin.Put("/users/add", adminAddUserHandler)
+    }
+
+  
+
+    iris.Listen(8080)
+}
+```
+
+
+
 
 ## Named Parameters
 
@@ -233,13 +274,13 @@ iris.Any("/public/*", iris.Static("./static/resources/")) //or Get
 //Note: strip of the /public/ is handled so don't worry
 ```
 ## Declaring routes
-Iris framework has four (3) different forms of functions in order to declare a route's handler and one(1) annotated struct to declare a complete route.
+Iris framework has three (3) different forms of functions in order to declare a route's handler and one(1) annotated struct to declare a complete route.
 
 
  1. Typical classic handler function, compatible with net/http and other frameworks
 	 *  **func(res http.ResponseWriter, req *http.Request)**
 ```go
-	iris.Get("/profile/user/:userId", func(res http.ResponseWriter, req *http.Request) {
+	iris.Get("/user/add", func(res http.ResponseWriter, req *http.Request) {
 
 	})
 ```
@@ -247,7 +288,7 @@ Iris framework has four (3) different forms of functions in order to declare a r
 	 * **func(c *iris.Context)**
 
 ```go
-	iris.Get("/profile/user/:userId", func(c *iris.Context) {
+	iris.Get("/user/:userId", func(c *iris.Context) {
 
 	})
 ```
@@ -256,7 +297,7 @@ Iris framework has four (3) different forms of functions in order to declare a r
 	 * **http.Handler**
 
 ```go
-	iris.Get("/profile/user/:userId", http.HandlerFunc(func(res http.Response, req *req.Request) {
+	iris.Get("/about", http.HandlerFunc(func(res http.Response, req *req.Request) {
 
 	}))
 ```
@@ -407,4 +448,5 @@ of the following:
 ## Licence
 
 This project is licensed under the MIT license.
+
 
