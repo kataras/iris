@@ -23,7 +23,6 @@ type IRouterMethods interface {
 	Any(path string, handler interface{}) *Route
 }
 
-//the IRouter is IRouteRegisted and a routes serving service.
 type IRouter interface {
 	IMiddlewareSupporter
 	IRouterMethods
@@ -45,7 +44,6 @@ type Router struct {
 	MiddlewareSupporter
 	station    *Station
 	trees      Trees
-	cache      *IRouterCache
 	httpErrors *HTTPErrors //the only reason of this is to pass into the route, which it need it to  passed it to Context, in order to  developer get the ability to perfom emit errors (eg NotFound) directly from context
 }
 
