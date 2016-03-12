@@ -319,7 +319,7 @@ type UserRoute struct {
 	iris.Annotated `get:"/profile/user/:userId"`
 }
 
-func (u *UserHandler) Handle(c *iris.Context) {
+func (u *UserRoute) Handle(c *iris.Context) {
 	defer c.Close()
 	userId := c.Param("userId")
 	c.RenderFile("user.html", struct{ Message string }{Message: "Hello User with ID: " + userId})
