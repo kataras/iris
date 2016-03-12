@@ -1,6 +1,7 @@
 package iris
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 )
@@ -141,6 +142,9 @@ func HandlerFunc(handler interface{}) Handler {
 }
 
 func convertToHandler(handler interface{}) Handler {
+	if handler == nil {
+		panic("Error on Iris -> convertToHandler handler is nil")
+	}
 	switch handler.(type) {
 	case Handler:
 		//it's already handler?
@@ -153,6 +157,6 @@ func convertToHandler(handler interface{}) Handler {
 	case func(*Context):
 		return ContextedHandlerFunc(handler.(func(*Context)))
 	default:
-		panic("Error on Iris -> convertToHandler handler is not TypicalHandlerFunc or ContextedHandlerFunc")
+		panic(fmt.Sprintf("Error on Iris -> convertToHandler handler is not TypicalHandlerFunc or ContextedHandlerFunc, is %T Point to: %v:", handler, handler))
 	}
 }

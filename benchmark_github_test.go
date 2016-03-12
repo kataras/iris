@@ -7,6 +7,8 @@ import (
 	"testing"
 )
 
+const loadOtherBenchmarks = true
+
 //
 // THIS TYPE OF BENCHMARKING WAS TAKEN BY https://github.com/julienschmidt/go-http-routing-benchmark
 // I THINK THIS IS THE STANDAR WAY TO BENCHMARK ROUTERS AND WEB FRAMEWORKS,
@@ -300,8 +302,7 @@ var githubAPI = []routeTest{
 }
 
 var (
-	githubIris          http.Handler
-	loadOtherBenchmarks = false
+	githubIris http.Handler
 )
 
 func isTested(name string) bool {
@@ -340,7 +341,7 @@ func calcMem(name string, load func()) {
 
 //
 
-func irisHandleTestContexted(c Context) {
+func irisHandleTestContexted(c *Context) {
 	io.WriteString(c.ResponseWriter, c.Request.RequestURI)
 }
 
@@ -351,7 +352,7 @@ func irisHandleTestTypical(res http.ResponseWriter, req *http.Request) {
 var requestRoutes []routeTest
 
 func loadIris(routes []routeTest) http.Handler {
-	h := irisHandleTestContexted //irisHandleTestContexted //irisHandleTestTypical
+	h := irisHandleTestTypical //irisHandleTestContexted //irisHandleTestTypical
 
 	//disable cache with api := Custom(StationOptions{Cache: false})
 	//api := New()
