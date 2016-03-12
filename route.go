@@ -42,11 +42,9 @@ type Route struct {
 	//priority int
 	fullpath string // need only on parameters.Params(...)
 	//fullparts   []string
-	handler    Handler
-	templates  *TemplateCache //this is passed to the Renderer
-	httpErrors *HTTPErrors    //the only need of this is to pass into the Context, in order to  developer get the ability to perfom emit errors (eg NotFound) directly from context
-	isReady    bool
-	station    *Station
+	handler Handler
+	isReady bool
+	station *Station
 }
 
 // newRoute creates, from a path string, handler and optional http methods and returns a new route pointer
@@ -268,14 +266,6 @@ func (r *Route) Verify(urlPath string) bool {
 
 	}
 	return true
-}
-
-// Template creates (if not exists) and returns the template cache for this route
-func (r *Route) Template() *TemplateCache {
-	if r.templates == nil {
-		r.templates = NewTemplateCache()
-	}
-	return r.templates
 }
 
 // prepare prepares the route's handler , places it to the last middleware , handler acts like a middleware too.

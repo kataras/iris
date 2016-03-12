@@ -90,7 +90,6 @@ func (r *Router) HandleFunc(registedPath string, handler Handler, method string)
 		r.trees.addRoute(method, route)
 
 	}
-	route.httpErrors = r.httpErrors
 	route.station = r.station
 	return route
 }
@@ -98,7 +97,7 @@ func (r *Router) HandleFunc(registedPath string, handler Handler, method string)
 // HandleAnnotated registers a route handler using a Struct
 // implements Handle() function and has iris.Annotated anonymous property
 // which it's metadata has the form of
-// `method:"path" template:"file.html"` and returns the route and an error if any occurs
+// `method:"path"` and returns the route and an error if any occurs
 func (r *Router) HandleAnnotated(irisHandler Annotated) (*Route, error) {
 	//r.mu.Lock()
 	//defer r.mu.Unlock()
@@ -106,8 +105,6 @@ func (r *Router) HandleAnnotated(irisHandler Annotated) (*Route, error) {
 	var method string
 	var path string
 	var handleFunc reflect.Value
-	var template string
-	var templateIsGLob = false
 	var errMessage = ""
 	val := reflect.ValueOf(irisHandler).Elem()
 
@@ -118,32 +115,6 @@ func (r *Router) HandleAnnotated(irisHandler Annotated) (*Route, error) {
 			tags := strings.Split(strings.TrimSpace(string(typeField.Tag)), " ")
 			//we can have two keys, one is the tag starts with the method (GET,POST: "/user/api/{userId(int)}")
 			//and the other if exists is the OPTIONAL TEMPLATE/TEMPLATE-GLOB: "file.html"
-
-			//check for Template first because on the method we break and return error if no method found , for now.
-			if len(tags) > 1 {
-				secondTag := tags[1]
-
-				templateIdx := strings.Index(string(secondTag), ":")
-
-				templateTagName := strings.ToUpper(string(secondTag[:templateIdx]))
-
-				//check if it's regex pattern
-
-				if templateTagName == "TEMPLATE-GLOB" {
-					templateIsGLob = true
-				}
-
-				temlateTagValue, templateUnqerr := strconv.Unquote(string(secondTag[templateIdx+1:]))
-
-				if templateUnqerr != nil {
-					//err = errors.New(err.Error() + "\niris.RegisterHandler: Error on getting template: " + templateUnqerr.Error())
-					errMessage = errMessage + "\niris.HandleAnnotated: Error on getting template: " + templateUnqerr.Error()
-
-					continue
-				}
-
-				template = temlateTagValue
-			}
 
 			firstTag := tags[0]
 
@@ -186,15 +157,6 @@ func (r *Router) HandleAnnotated(irisHandler Annotated) (*Route, error) {
 		if errMessage == "" {
 			route = r.HandleFunc(path, convertToHandler(handleFunc.Interface()), method)
 			//check if template string has stored by the tag ( look before this block )
-
-			if template != "" {
-				if templateIsGLob {
-					route.Template().SetGlob(template)
-				} else {
-					route.Template().Add(template)
-				}
-
-			}
 		}
 
 	}

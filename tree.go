@@ -14,7 +14,14 @@ func (routes Routes) Len() int {
 
 func (routes Routes) Less(r1, r2 int) bool {
 	//sort by longest path parts no  longest fullpath, longest first.
-	return len(routes[r1].pathParts) > len(routes[r2].pathParts)
+	r1Len := len(routes[r1].pathParts)
+	r2Len := len(routes[r2].pathParts)
+	if r1Len == r2Len { //if same len then static path is first.
+		return routes[r1].isStatic
+	}
+
+	return r1Len > r2Len
+
 }
 
 func (routes Routes) Swap(r1, r2 int) {

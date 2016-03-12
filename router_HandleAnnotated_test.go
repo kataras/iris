@@ -6,7 +6,7 @@ import (
 )
 
 type testAPIUsersHandler struct {
-	Annotated `get:"/api/users/:userId" template:"user.html"`
+	Annotated `get:"/api/users/:userId"`
 }
 
 func (t *testAPIUsersHandler) Handle(ctx *Context) {}

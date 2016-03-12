@@ -67,7 +67,6 @@ func GetRenderer(res http.ResponseWriter) *Renderer {
 
 func ResetRenderer() {
 	_renderer.responseWriter = nil
-	_renderer.templateCache = nil
 }
 
 type ContextedHandlerFunc func(*Context)
@@ -93,9 +92,11 @@ func (h ContextedHandlerFunc) run(r *Route, res http.ResponseWriter, req *http.R
 	ctx.Params = ctx.Params[0:r.paramsLength]
 	SetParametersTo(ctx, req.URL.Path)
 	ctx.Renderer = GetRenderer(res)
+	if ctx.Renderer.templates == nil {
+		ctx.Renderer.templates = r.station.htmlTemplates
+	}
 
 	h(ctx)
-	ResetRenderer()
 	r.station.pool.Put(ctx)
 
 }

@@ -1,7 +1,9 @@
 package iris
 
 import (
+	"html/template"
 	"net/http/pprof"
+	"os"
 	"sync"
 	"time"
 )
@@ -46,9 +48,10 @@ type (
 	// Station is the container of all, server, router, cache and the sync.Pool
 	Station struct {
 		IRouter
-		server  *Server
-		pool    sync.Pool
-		options StationOptions
+		server        *Server
+		htmlTemplates *template.Template
+		pool          sync.Pool
+		options       StationOptions
 	}
 )
 
@@ -118,5 +121,27 @@ func (s *Station) Close() {
 }
 
 func (s *Station) makeContext() *Context {
-	return &Context{Params: make([]PathParameter, 6), httpErrors: s.Errors()}
+	return &Context{Params: make([]PathParameter, 6), Renderer: &Renderer{responseWriter: nil, templates: s.htmlTemplates}}
+}
+
+// Templates sets the templates glob path for the web app
+func (s *Station) Templates(pathGlob string) {
+	var err error
+	//s.htmlTemplates = template.Must(template.ParseGlob(pathGlob))
+	s.htmlTemplates, err = template.ParseGlob(pathGlob)
+
+	if err != nil {
+		//if err then try to load the same path but with the current directory prefix
+		// and if not success again then just panic with the first error
+		pwd, cerr := os.Getwd()
+		if cerr != nil {
+			panic(err.Error())
+
+		}
+		s.htmlTemplates, cerr = template.ParseGlob(pwd + pathGlob)
+		if cerr != nil {
+			panic(err.Error())
+		}
+	}
+
 }

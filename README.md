@@ -321,18 +321,15 @@ type UserRoute struct {
 
 func (u *UserHandler) Handle(c *iris.Context) {
 	defer c.Close()
-	userId, err := c.ParamInt("userId")
-    if err == nil{
-        c.NotFound()
-    }
-    println(userId)
-	//or just userId := ctx.Param("userId") and use it as string
+	userId := c.Param("userId")
+	c.RenderFile("user.html", struct{ Message string }{Message: "Hello User with ID: " + userId})
 }
 
 
 ///file: main.go
 
 //...
+	iris.Templates("src/iristests/templates/*")
 	iris.Handle(&UserRoute{})
 //...
 
@@ -394,10 +391,10 @@ Personally I use the external struct and the **func(c *iris.Context)** form .
 	 - WriteXML: Writes writes xml which is converted from struct(s) with a given http status to the client, it sets the Header with the correct content-type. If something goes wrong then it's returned value which is an error type is not nil.
 	 - XML: Same as WriteXML but you don't have to pass a status, it's defaulted to http.StatusOK (200).
  16. **RenderFile(file string, pageContext interface{}) returns error**
-	 - RenderFile: Renders a file by its name (which a file is saved to the template cache) and a context passed to the function, default http status is http.StatusOK(200) if the template was found, otherwise http.StatusNotFound(404),  If something goes wrong then it's returned value which is an error type is not nil.
+	 - RenderFile: Renders a file by its name (which a file is saved to the template cache) and a page context passed to the function, default http status is http.StatusOK(200) if the template was found, otherwise http.StatusNotFound(404). If something goes wrong then it's returned value which is an error type is not nil.
  17. **Render(pageContext interface{})  returns error**
-	 - Render: Renders the registed and cached by the template cache file template from this particular route (if it's has children  it will render them too) file  and a context passed to the function, default http status is http.StatusOK(200) if the template was found, otherwise http.StatusNotFound(404),  If something goes wrong then it's returned value which is an error type is not nil.
-	--- *Note:  We will learn how to add a template to the template cache for a route at the next chapters*.
+	 - Render: Renders the registed and cached by the template cache file template  and a context passed to the function, default http status is http.StatusOK(200) if the template was found, otherwise http.StatusNotFound(404). If something goes wrong then it's returned value which is an error type is not nil.
+	--- *Note:  We will learn how to add templates at the next chapters*.
 
 
 **The next chapters are being written this time, they will be published soon, check the docs later [[TODO chapters: Register custom error handlers, Add templates to the route, Declare middlewares]]**

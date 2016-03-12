@@ -24,7 +24,6 @@ type Context struct {
 	ResponseWriter http.ResponseWriter
 	Request        *http.Request
 	Params         PathParameters
-	httpErrors     *HTTPErrors
 	route          *Route
 }
 
@@ -83,7 +82,7 @@ func (ctx *Context) SetCookie(name string, value string) {
 // which is already registed nothing special to do here
 func (ctx *Context) NotFound() {
 	//ctx.errorHandlers[http.StatusNotFound].ServeHTTP(ctx.ResponseWriter, ctx.Request)
-	ctx.httpErrors.NotFound(ctx.ResponseWriter)
+	ctx.route.station.Errors().NotFound(ctx.ResponseWriter)
 }
 
 // RequestIP gets just the Remote Address from the client.

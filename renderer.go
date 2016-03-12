@@ -3,7 +3,7 @@ package iris
 import (
 	"encoding/json"
 	"encoding/xml"
-	"errors"
+	"html/template"
 	"io"
 	"net/http"
 	"strconv"
@@ -34,41 +34,19 @@ const (
 type Renderer struct {
 	//Only one TemplateCache per app/router/iris instance.
 	//and for now Renderer writer content-type  doesn't checks for methods (get,post...)
-	templateCache  *TemplateCache
+	templates      *template.Template
 	responseWriter http.ResponseWriter
-}
-
-// newRenderer creates and returns a new Renderer pointer
-// Used at route.run
-func newRenderer(writer http.ResponseWriter) *Renderer {
-	return &Renderer{responseWriter: writer}
-}
-
-func (r *Renderer) check() error {
-	if r.templateCache == nil {
-		return errors.New("iris:Error on Renderer : No Template Cache was created yet, please refer to docs at github.com/kataras/iris")
-	}
-	return nil
 }
 
 // RenderFile renders a file by its path and a context passed to the function
 func (r *Renderer) RenderFile(file string, pageContext interface{}) error {
-	err := r.check()
-	if err != nil {
-		return err
-	}
-
-	return r.templateCache.ExecuteTemplate(r.responseWriter, file, pageContext)
+	return r.templates.ExecuteTemplate(r.responseWriter, file, pageContext)
 
 }
 
 // Render renders the template file html which is already registed to the template cache, with it's pageContext passed to the function
 func (r *Renderer) Render(pageContext interface{}) error {
-	err := r.check()
-	if err != nil {
-		return err
-	}
-	return r.templateCache.Execute(r.responseWriter, pageContext)
+	return r.templates.Execute(r.responseWriter, pageContext)
 
 }
 
@@ -136,18 +114,6 @@ func (r *Renderer) WriteJSON(httpStatus int, jsonStructs ...interface{}) error {
 //JSON calls the WriteJSON with the 200 http status ok
 func (r *Renderer) JSON(jsonStructs ...interface{}) error {
 	return r.WriteJSON(http.StatusOK, jsonStructs)
-}
-
-// WriteJSONP writes jsonp by  converted from struct(s) with a http status which they passed to the function via parameters
-///TODO: NOT READY YET
-func (r *Renderer) WriteJSONP(httpStatus int, obj interface{}) {
-	r.responseWriter.Header().Set(ContentType, ContentJSONP)
-	r.responseWriter.WriteHeader(httpStatus)
-}
-
-//JSONP calls the WriteJSONP with the 200 http status ok
-func (r *Renderer) JSONP(obj interface{}) {
-	r.WriteJSONP(http.StatusOK, obj)
 }
 
 // WriteXML writes xml which is converted from struct(s) with a http status which they passed to the function via parameters

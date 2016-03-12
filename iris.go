@@ -12,8 +12,6 @@ var (
 
 // The one and only init to the whole package
 func init() {
-	templatesDirectory = getCurrentDir()
-
 	DefaultStation = New()
 }
 
@@ -158,4 +156,9 @@ func ServeHTTP(res http.ResponseWriter, req *http.Request) {
 // Errors sets and gets custom error handlers or responses
 func Errors() *HTTPErrors {
 	return DefaultStation.Errors()
+}
+
+// Templates sets the templates glob path for the web app
+func Templates(pathGlob string) {
+	DefaultStation.Templates(pathGlob)
 }
