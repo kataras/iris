@@ -189,6 +189,12 @@ func main() {
         users.Get("/:userId", singleUserHandler)
         users.Delete("/:userId", userAccountRemoveUserHandler)  
     }
+	
+	// provide a simply middleware for this party 
+	users.UseFunc(func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
+		println("LOG [/users...] This is the middleware for: ", req.URL.Path)
+		next(res, req)
+	})
     
     // Party inside an existing Party example: 
     
