@@ -102,7 +102,7 @@ BenchmarkZeus_GithubAll 		| 2000 		| 944234 	| 300688 	| 2648
 
 With Intel(R) Core(TM) i7-4710HQ CPU @ 2.50GHz 2.50 HGz and 8GB Ram:
 
-![Benchmark Wizzard Iris vs gin vs martini](http://kataras.github.io/iris/assets/56e4da5eafc17571579c908d_Wizard%20data.png)
+![Benchmark Wizzard Iris vs gin vs martini](http://kataras.github.io/iris/assets/benchmarks_all.png)
 
 ## Features
 
