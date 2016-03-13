@@ -15,22 +15,45 @@ func init() {
 	DefaultStation = New()
 }
 
-// New creates and returns a new iris Station with recommented options
-func New() *Station {
-	defaultOptions := StationOptions{
+// defaultOptions returns the default options for the Station
+func defaultOptions() StationOptions {
+	return StationOptions{
 		Profile:            false,
 		ProfilePath:        DefaultProfilePath,
 		Cache:              true,
 		CacheMaxItems:      0,
 		CacheResetDuration: 5 * time.Minute,
 	}
+}
+
+// New creates and returns a new iris Station with recommented options
+func New() *Station {
+	defaultOptions := defaultOptions()
 	return newStation(defaultOptions)
 }
 
 // Custom is used for iris-experienced developers
 // creates and returns a new iris Station with custom StationOptions
+//
+// Note that if an option doesn't exist then the default value will be used instead
 func Custom(options StationOptions) *Station {
-	return newStation(options)
+	opt := defaultOptions()
+	//check the given options one by one
+	if options.Profile != opt.Profile {
+		opt.Profile = options.Profile
+	}
+	if options.ProfilePath != "" {
+		opt.ProfilePath = options.ProfilePath
+	}
+	if options.Cache != opt.Cache {
+		opt.Cache = options.Cache
+	}
+	opt.CacheMaxItems = options.CacheMaxItems
+	if options.CacheResetDuration > 30*time.Second { // 30 secs is the minimum value
+		opt.CacheResetDuration = options.CacheResetDuration
+	}
+
+	return newStation(opt)
 }
 
 // Listen starts the standalone http server

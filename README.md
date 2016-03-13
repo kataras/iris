@@ -14,6 +14,7 @@ Iris is a very minimal but flexible web framework written in go, providing a rob
 - [Introduction](#introduction)
 - [Benchmarks](#benchmarks)
 - [Features](#features)
+- [Startup & Options](#startup)
 - [API](#api)
 - [Party](#party)
 - [Named Parameters](#named-parameters)
@@ -116,7 +117,80 @@ With Intel(R) Core(TM) i7-4710HQ CPU @ 2.50GHz 2.50 HGz and 8GB Ram:
 
 **Multi servers:** Besides the fact that iris has a default main server. You can declare a new iris using the iris.New() func. example: server1:= iris.New(); server1.Get(....); server1.Listen(9999)
 
+## Startup
 
+As a developer you have three (3) methods to start with Iris.
+
+ 1. default standalone **iris.** 
+ 2. set a new iris with variable  = iris **.New()**
+ 3. set a new iris with custom options with variable = iris **.Custom(options)**
+
+
+```go
+import "github.com/kataras/iris"
+
+// 1.
+func methodFirst() {
+	
+	iris.Get("/home",func( *Context){})
+	iris.Listen(8080)
+	//iris.ListenTLS(8080,"yourcertfile.cert","yourkeyfile.key"	
+}
+// 2.	
+func methodSecond() {
+	
+	api := iris.New()
+	api.Get("/home",func( *Context){})
+	api.Listen(8080)
+}
+// 3.
+func methodThree() {
+	
+	options := iris.StationOptions{
+		Profile:            false,
+		ProfilePath:        iris.DefaultProfilePath,
+		Cache:              true,
+		CacheMaxItems:      0,
+		CacheResetDuration: 5 * time.Minute,
+	}//these are the default values that you can change
+	//DefaultProfilePath = "/debug/pprof"
+	
+	api := iris.Custom(options)
+	api.Get("/home",func( *Context){})
+	api.Listen(8080)
+}
+
+```
+
+> Note that with 2. & 3. you **can define and use more than one Iris container** in the
+> same app, when it's necessary.
+
+As you can see there are some options that you can chage at your iris declaration, you cannot change them after. If a value not setted then the default used instead.
+
+For example if we do that...
+```go
+import "github.com/kataras/iris"
+func main() {
+	options := iris.StationOptions{
+		Profile:            true,
+		ProfilePath:        "/mypath/debug",
+	}
+
+	api := iris.Custom(options)
+	api.Listen(8080)
+}
+```
+run it, then you can open your browser, type '**localhost:8080/mypath/debug/profile**' at the location input field and you should see a webpage  shows you informations about CPU.
+
+For profiling & debug there are seven (7) generated pages ('/debug/pprof/' is the default profile path, which on previous example we changed it to '/mypath/debug'):
+
+ 1. /debug/pprof/cmdline
+ 2. /debug/pprof/profile
+ 3. /debug/pprof/symbol
+ 4. /debug/pprof/goroutine
+ 5. /debug/pprof/heap
+ 6. /debug/pprof/threadcreate
+ 7. /debug/pprof/pprof/block
 
 ## API
 **Use of GET,  POST,  PUT,  DELETE, HEAD, PATCH & OPTIONS**

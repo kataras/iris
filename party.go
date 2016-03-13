@@ -51,7 +51,7 @@ type IParty interface {
 // we have the router_memory which is just a IRouter and has underline router the Router also
 // and the route_party which exists on both router and router_memory ofcourse
 
-// RouteParty is used inside Router.Party method
+// party is used inside Router.Party method
 type party struct {
 	IParty
 	_router   *Router
