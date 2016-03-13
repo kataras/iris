@@ -13,7 +13,6 @@ Iris is a very minimal but flexible web framework written in go, providing a rob
 - [Principles](#principles-of-iris)
 - [Introduction](#introduction)
 - [Benchmarks](#benchmarks)
-- [Alternatives](#alternatives)
 - [Features](#features)
 - [API](#api)
 - [Party](#party)
@@ -86,7 +85,7 @@ BenchmarkGoRestful_GithubAll 	| 100 		| 18410628 	| 797236 	| 7725
 BenchmarkGorillaMux_GithubAll 	| 200 		| 8036360 	| 153137 	| 1791
 BenchmarkHttpRouter_GithubAll 	| 20000 	| 63506 	| 13792 	| 167
 BenchmarkHttpTreeMux_GithubAll 	| 10000 	| 165927 	| 56112 	| 334
-**BenchmarkIris_GithubAll** 		| **30000** | **43069** | **0** 	| **0**
+**BenchmarkIris_GithubAll** 		| **100000** | **19591** | **0** 	| **0**
 BenchmarkKocha_GithubAll 		| 10000 	| 171362 	| 23304 	| 843
 BenchmarkMacaron_GithubAll 		| 2000 		| 817008 	| 224960 	| 2315
 BenchmarkMartini_GithubAll 		| 100 		| 12609209 	| 237952 	| 2686
@@ -103,29 +102,8 @@ BenchmarkZeus_GithubAll 		| 2000 		| 944234 	| 300688 	| 2648
 
 With Intel(R) Core(TM) i7-4710HQ CPU @ 2.50GHz 2.50 HGz and 8GB Ram:
 
-![enter image description here](http://nodets.com/benchmarks_results_output.png)
+![Benchmark Wizzard Iris vs gin vs martini](http://kataras.github.io/iris/assets/56e4da5eafc17571579c908d_Wizard%20data.png)
 
-* Sometimes it goes to 50969 ns/op but even then it's faster than all other.
-
-## Alternatives
-
-Iris is not the only one framework which is fast and easy to use, [Gin](https://github.com/gin-gonic/gin) which is x40 times faster than [Martini](https://github.com/go-martini/martini)  is very good 'competitor' so I write the exact same benchmark test in order to compare Gin over Iris with Intel(R) Core(TM) i7-4710HQ CPU @ 2.50GHz 2.50 HGz and 8GB Ram, also note that Iris can use http.Handler and be more faster than it is with Context but Gin doesn't accept http.Handler as handler so both of them have their own Context as parameter to the handlers.
-Let's take a look at the results:
-
-![enter image description here](http://nodets.com/iris_vs_gin.png)
-
- - Gin:   **54.636 ns/op**
- - Iris:  **50.969 ns/op**
- - Both of them with zero memory allocation!
-
-So, Iris **is a bit faster than Gin**.
-I wish Gin has compatibility with the Martini's middleware ecosystem, as Iris provides out of the box.
-**Gin is a complete web framework unlike the Iris which is still under heavy development**  so if you don't care about performance so much (not a big difference, gin is ~4.000 nanoseconds slower only) or somehow you don't like Iris then you should get yourself some [Gin](https://github.com/gin-gonic/gin).
-
-
-Do you want to see more?
-When Cache (with automatic cleanup) is enabled (by default, change it with iris.Custom(iris.StationOptions{Cache: false}) instead of iris.New(), results are these:
-![enter image description here](http://nodets.com/iris_with_cach_latest.png)
 ## Features
 
 **Parameters in your routing pattern:** Stop parsing the requested URL path, just give the path segment a name and the iris' router delivers the dynamic value to you. Really, path parameters are very cheap.
@@ -437,19 +415,15 @@ Thanks goes to the people who have contributed code to this package, see the
 
 ## Community
 
-If you'd like to discuss this package, or ask questions about it, please use one
-of the following:
+If you'd like to discuss this package, or ask questions about it, feel free to
 
 * **Chat**: https://gitter.im/kataras/iris
 
 
 ## Todo
 *  Complete the documents
-*  Query parameters
 *  Create examples in this repository
 
 ## Licence
 
 This project is licensed under the MIT license.
-
-
