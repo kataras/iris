@@ -132,7 +132,7 @@ import "github.com/kataras/iris"
 // 1.
 func methodFirst() {
 	
-	iris.Get("/home",func(c *Context){})
+	iris.Get("/home",func(c *iris.Context){})
 	iris.Listen(8080)
 	//iris.ListenTLS(8080,"yourcertfile.cert","yourkeyfile.key"	
 }
@@ -140,7 +140,7 @@ func methodFirst() {
 func methodSecond() {
 	
 	api := iris.New()
-	api.Get("/home",func(c *Context){})
+	api.Get("/home",func(c *iris.Context){})
 	api.Listen(8080)
 }
 // 3.
@@ -156,7 +156,7 @@ func methodThree() {
 	//DefaultProfilePath = "/debug/pprof"
 	
 	api := iris.Custom(options)
-	api.Get("/home",func(c *Context){})
+	api.Get("/home",func(c *iris.Context){})
 	api.Listen(8080)
 }
 
