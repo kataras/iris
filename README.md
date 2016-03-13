@@ -121,9 +121,9 @@ With Intel(R) Core(TM) i7-4710HQ CPU @ 2.50GHz 2.50 HGz and 8GB Ram:
 
 As a developer you have three (3) methods to start with Iris.
 
- 1. default standalone **iris.** 
- 2. set a new iris with variable  = iris **.New()**
- 3. set a new iris with custom options with variable = iris **.Custom(options)**
+ 1. global **iris.** 
+ 2. set a new iris with variable  = iris**.New()**
+ 3. set a new iris with custom options with variable = iris**.Custom(options)**
 
 
 ```go
@@ -132,7 +132,7 @@ import "github.com/kataras/iris"
 // 1.
 func methodFirst() {
 	
-	iris.Get("/home",func( *Context){})
+	iris.Get("/home",func(c *Context){})
 	iris.Listen(8080)
 	//iris.ListenTLS(8080,"yourcertfile.cert","yourkeyfile.key"	
 }
@@ -140,7 +140,7 @@ func methodFirst() {
 func methodSecond() {
 	
 	api := iris.New()
-	api.Get("/home",func( *Context){})
+	api.Get("/home",func(c *Context){})
 	api.Listen(8080)
 }
 // 3.
@@ -156,7 +156,7 @@ func methodThree() {
 	//DefaultProfilePath = "/debug/pprof"
 	
 	api := iris.Custom(options)
-	api.Get("/home",func( *Context){})
+	api.Get("/home",func(c *Context){})
 	api.Listen(8080)
 }
 
