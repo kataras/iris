@@ -8,11 +8,17 @@ import (
 
 func main() {
 
+	// Match to /hello/iris
+	// Not match to /hello or /hello/ or /hello/iris/something
 	iris.Get("/hello/:name", func(c *iris.Context) {
 		name := c.Param("name")
 		c.Write("Hello " + name)
 	})
 
+	// Match to /profile/iris/friends/1
+	// Not match to /profile/ , /profile/iris ,
+	// Not match to /profile/iris/friends,  /profile/iris/friends ,
+	// Not match to /profile/iris/friends/2/something
 	iris.Get("/profile/:fullname/friends/:friendID", func(c *iris.Context) {
 
 		fullname := c.Param("fullname")
