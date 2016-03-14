@@ -31,5 +31,5 @@ func main() {
 	})
 
 	// Listen to port 8080 for example localhost:8080
-	iris.Listen(":8080")
+	iris.Listen("8080")
 }
