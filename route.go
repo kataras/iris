@@ -35,8 +35,7 @@ type Route struct {
 	isStatic            bool
 	hasMiddleware       bool
 	lastStaticPartIndex uint8  // when( how much slashes we have before) the dynamic path, the start of the dynamic path in words of slashes /
-	pathPrefix          string // this is to make a little faster the match, before regexp Match runs, it's the path before the first path parameter :
-	//the pathPrefix is with the last / if parameters exists.
+	PathPrefix          string //the pathPrefix is with the last / if parameters or * exists.
 	//the priority used on the Routes sort.Interface implementation
 	//less is more important than a bigger number
 	// TODO:
@@ -99,17 +98,13 @@ func (r *Route) processPath() {
 			part.isStatic = true
 			if !hasParams && !hasWildcard { // it's the last static path.
 				r.lastStaticPartIndex = uint8(idx)
-				//println(r.lastStaticPartIndex, "for ", r.fullpath)
 			}
 
 		}
 
-		//fmt.Printf("%s : Part value '%s' %v \n\n", r.fullpath, part.Value, part)
 		r.pathParts = append(r.pathParts, part)
 
 	}
-	//if len(r.pathParts) > 0 {
-	//r.pathPrefix = "/" + r.pathParts[0].Value
 
 	if !hasParams && !hasWildcard {
 		r.isStatic = true
@@ -120,21 +115,21 @@ func (r *Route) processPath() {
 	endPrefixIndex := strings.IndexByte(r.fullpath, ParameterStartByte)
 
 	if endPrefixIndex != -1 {
-		r.pathPrefix = r.fullpath[:endPrefixIndex]
+		r.PathPrefix = r.fullpath[:endPrefixIndex]
 
 	} else {
 		//check for *
 		endPrefixIndex = strings.IndexByte(r.fullpath, MatchEverythingByte)
 		if endPrefixIndex != -1 {
-			r.pathPrefix = r.fullpath[:endPrefixIndex]
+			r.PathPrefix = r.fullpath[:endPrefixIndex]
 		} else {
 			//check for the last slash
 			endPrefixIndex = strings.LastIndexByte(r.fullpath, SlashByte)
 			if endPrefixIndex != -1 {
-				r.pathPrefix = r.fullpath[:endPrefixIndex]
+				r.PathPrefix = r.fullpath[:endPrefixIndex]
 			} else {
 				//we don't have ending slash ? then it is the whole r.fullpath
-				r.pathPrefix = r.fullpath
+				r.PathPrefix = r.fullpath
 			}
 		}
 	}
@@ -142,10 +137,9 @@ func (r *Route) processPath() {
 	//1.check if pathprefix is empty ( it's empty when we have just '/' as fullpath) so make it '/'
 	//2. check if it's not ending with '/', ( it is not ending with '/' when the next part is parameter or *)
 
-	lastIndexOfSlash := strings.LastIndexByte(r.pathPrefix, SlashByte)
-	//if r.pathPrefix[len(r.pathPrefix)-1:][0] != SlashByte {
-	if lastIndexOfSlash != len(r.pathPrefix)-1 || r.pathPrefix == "" {
-		r.pathPrefix += "/"
+	lastIndexOfSlash := strings.LastIndexByte(r.PathPrefix, SlashByte)
+	if lastIndexOfSlash != len(r.PathPrefix)-1 || r.PathPrefix == "" {
+		r.PathPrefix += "/"
 	}
 
 	//}
@@ -170,11 +164,11 @@ func (r *Route) processPath() {
 func (r *Route) Verify(urlPath string) bool {
 	if r.isStatic {
 		return urlPath == r.fullpath
-	} else if len(urlPath) < len(r.pathPrefix) {
+	} else if len(urlPath) < len(r.PathPrefix) {
 
 		return false
 	}
-	reqPath := urlPath[len(r.pathPrefix):] //we start from there to make it faste
+	reqPath := urlPath[len(r.PathPrefix):] //we start from there to make it faste
 
 	var pathIndex = r.lastStaticPartIndex
 	var part Part

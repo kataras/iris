@@ -36,7 +36,7 @@ type IPlugin interface {
 
 	// PreBuild it's being called only one time, BEFORE the Build state, this is the most useful event
 	PreBuild(*Station)
-	// PostBuild it's being called only one time, AFTER the Build state finished
+	// PostBuild it's being called only one time, AFTER the Build state finished, BEFORE the Listen
 	PostBuild(*Station)
 
 	// PostListen it's being called only one time, AFTER the Server is started (if .Listen called)
@@ -75,6 +75,23 @@ func (p *PluginContainer) Plugin(plugin IPlugin) error {
 	return nil
 }
 
+// RemovePlugin DOES NOT calls the plugin.PreClose method but it removes it completely from the plugins list
+func (p *PluginContainer) RemovePlugin(pluginName string) {
+	if p.activatedPlugins == nil {
+		return
+	}
+	indexToRemove := -1
+	for i := 0; i < len(p.activatedPlugins); i++ {
+		if p.activatedPlugins[i].GetName() == pluginName {
+			indexToRemove = i
+		}
+	}
+
+	if indexToRemove != -1 {
+		p.activatedPlugins = append(p.activatedPlugins[:indexToRemove], p.activatedPlugins[indexToRemove+1:]...)
+	}
+}
+
 // GetByName returns a plugin instance by it's name
 func (p *PluginContainer) GetByName(pluginName string) IPlugin {
 	if p.activatedPlugins == nil {
@@ -88,6 +105,12 @@ func (p *PluginContainer) GetByName(pluginName string) IPlugin {
 	}
 
 	return nil
+}
+
+// Printf sends plain text to any registed logger (future), some plugins maybe want use this method
+// maybe at the future I change it, instead of sync even-driven to async channels...
+func (p *PluginContainer) Printf(format string, a ...interface{}) {
+	fmt.Printf(format, a...) //for now just this.
 }
 
 // These methods are the callers for all plugins' events

@@ -65,7 +65,7 @@ func (_trees Trees) addRoute(method string, route *Route) {
 	index := 0
 	for index, _branch = range _trees[method] {
 		//check if route has parameters or * after the prefix, if yes then add a slash to the end
-		routePref := route.pathPrefix
+		routePref := route.PathPrefix
 
 		if _branch.prefix == routePref {
 			_trees[method][index].routes = append(_branch.routes, route)
@@ -74,7 +74,7 @@ func (_trees Trees) addRoute(method string, route *Route) {
 		}
 	}
 	if !ok {
-		_branch = &branch{prefix: route.pathPrefix, routes: make([]*Route, 0)}
+		_branch = &branch{prefix: route.PathPrefix, routes: make([]*Route, 0)}
 		_branch.routes = append(_branch.routes, route)
 		_trees[method] = append(_trees[method], _branch)
 	}

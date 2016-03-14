@@ -117,7 +117,7 @@ func (s staticServer) run(r *Route, res http.ResponseWriter, req *http.Request) 
 	//example: iris.Get("/public/*",iris.Static("./static/files/") we need to strip the public
 	//we have access to the route's registed path via this run func, because of that we don't return just the simple http.Handler
 	if s.finalHandler == nil {
-		pathToStrip := r.pathPrefix[:strings.LastIndex(r.pathPrefix, "/")+1]
+		pathToStrip := r.PathPrefix[:strings.LastIndex(r.PathPrefix, "/")+1]
 		if len(pathToStrip) > 2 { // 2 because of slashes '/'public'/'
 			//[the stripPrefix makes some checks but I want the users of iris to use this format /public/* and no public/*]
 			s.finalHandler = http.StripPrefix(pathToStrip, s.fileServer)

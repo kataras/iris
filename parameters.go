@@ -84,7 +84,7 @@ func SetParametersTo(c *Context, urlPath string) {
 	r := c.route
 	if r.isStatic {
 		return
-	} else if len(urlPath) < len(r.pathPrefix) {
+	} else if len(urlPath) < len(r.PathPrefix) {
 		return
 	}
 	var pathIndex = r.lastStaticPartIndex
@@ -94,7 +94,7 @@ func SetParametersTo(c *Context, urlPath string) {
 	//too much allocs ofc... var params PathParameters = append(_theParams[:0], _theParams[:0]...)
 	//var paramsBuff bytes.Buffer
 	var rest string
-	reqPath := urlPath[len(r.pathPrefix):] //we start from there to make it faster
+	reqPath := urlPath[len(r.PathPrefix):] //we start from there to make it faster
 	rest = reqPath
 	pIndex := 0
 	for pathIndex < r.partsLen {

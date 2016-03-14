@@ -33,8 +33,8 @@ func TestRouterHandleAnnotated(t *testing.T) {
 			t.Fatal("Error on TestRouterHandleAnnotated: " + err.Error())
 		} else {
 
-			if sr.expectedPathPrefix != route.pathPrefix {
-				t.Fatal("Error on compare pathPrefix: " + sr.expectedPathPrefix + " != " + route.pathPrefix)
+			if sr.expectedPathPrefix != route.PathPrefix {
+				t.Fatal("Error on compare pathPrefix: " + sr.expectedPathPrefix + " != " + route.PathPrefix)
 			}
 
 		}
