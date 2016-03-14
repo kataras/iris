@@ -93,7 +93,7 @@ BenchmarkGoRestful_GithubAll 	| 100 		| 18410628 	| 797236 	| 7725
 BenchmarkGorillaMux_GithubAll 	| 200 		| 8036360 	| 153137 	| 1791
 BenchmarkHttpRouter_GithubAll 	| 20000 	| 63506 	| 13792 	| 167
 BenchmarkHttpTreeMux_GithubAll 	| 10000 	| 165927 	| 56112 	| 334
-**BenchmarkIris_GithubAll** 		| **100000** | **20011** | **0** 	| **0**
+**BenchmarkIris_GithubAll** 		| **100000** | **19691** | **0** 	| **0**
 **BenchmarkIrisNoCache_GithubAll** 		| **30000** | **37833** | **0** 	| **0**
 BenchmarkKocha_GithubAll 		| 10000 	| 171362 	| 23304 	| 843
 BenchmarkMacaron_GithubAll 		| 2000 		| 817008 	| 224960 	| 2315
@@ -248,7 +248,7 @@ func main() {
     
     //log everything middleware
     
-    UseFunc(func(c *iris.Context, next iris.Handler) {
+    iris.UseFunc(func(c *iris.Context, next iris.Handler) {
 		println("[Global log] the requested url path is: ", c.Request.URL.Path)
 		next.Serve(c)
 	})

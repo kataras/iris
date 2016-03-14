@@ -387,9 +387,9 @@ func BenchmarkIris_GithubAll(b *testing.B) {
 //	Iris: 39217 Bytes
 //With .New()
 //
-//BenchmarkIris_GithubAL				   100000	  19691 ns/op	   0 B/op	  0 allocs/op
+//BenchmarkIris_GithubAll				   100000	  19691 ns/op	   0 B/op	  0 allocs/op
 //
 //With .Custom(..{Cache:false})
 //
-//BenchmarkIris_GithubALL    				30000     37833 ns/op      0 B/op     0 allocs/op
+//BenchmarkIris_GithubAll    				30000     37833 ns/op      0 B/op     0 allocs/op
 //
