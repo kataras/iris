@@ -342,13 +342,14 @@ iris.Get("/anything/*randomName", func(c *iris.Context) { } )
 // c.Params("randomName") will be /whateverhere/whateveragain, blablabla
 // Not Match: /anything , /anything/ , /something
 ```
-Pure http static  file server as handler using **iris.Static("./path/to/the/resources/directory/",true)**
+Pure http static  file server as handler using **iris.Static("./path/to/the/resources/directory/","path_to_strip_or_nothing")**
 ```go
 // Will match any request which url's preffix is "/public/"
 /* and continues with a file whith it's extension which exists inside the os.Gwd()(dot means working directory)+ /static/resources/
 */
-iris.Get("/public/*assets", iris.Static("./static/resources/",true))
-//Note: strip of the /public/ is handled  by passing the last argument to true
+iris.Get("/public/*assets", iris.Static("./static/resources/","/public/"))
+//Note: strip of the /public/ is handled  by passing the last argument to "/public/"
+//you can pass only the first two arguments for no strip path.
 ```
 ## Declaring routes
 Iris framework has three (3) different forms of functions in order to declare a route's handler and one(1) annotated struct to declare a complete route.

@@ -3,7 +3,6 @@ package iris
 import (
 	"fmt"
 	"net/http"
-	"strings"
 )
 
 // Annotated is the interface which is used of the structed-routes and be passed to the Router's Handle,
@@ -52,13 +51,12 @@ func (h HandlerFunc) Serve(ctx *Context) {
 
 // Static is just a function which returns a HandlerFunc with the standar http's fileserver's handler
 // It is not a middleware, it just returns a HandlerFunc to use anywhere we want
-func Static(SystemPath string, StripPrefix bool) HandlerFunc {
+func Static(SystemPath string, PathToStrip ...string) HandlerFunc {
 	//runs only once to start the file server
 	path := http.Dir(SystemPath)
 	underlineFileserver := http.FileServer(path)
-	if StripPrefix {
-		pathToStrip := SystemPath[:strings.LastIndex(SystemPath, "/")+1]
-		underlineFileserver = http.StripPrefix(pathToStrip, underlineFileserver)
+	if PathToStrip != nil && len(PathToStrip) == 1 {
+		underlineFileserver = http.StripPrefix(PathToStrip[0], underlineFileserver)
 	}
 
 	return ToHandlerFunc(underlineFileserver.ServeHTTP)
