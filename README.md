@@ -121,7 +121,7 @@ With Intel(R) Core(TM) i7-4710HQ CPU @ 2.50GHz 2.50 HGz and 8GB Ram:
 
 As a developer you have three (3) methods to start with Iris.
 
- 1. global **iris.** 
+ 1. global **iris.**
  2. set a new iris with variable  = iris**.New()**
  3. set a new iris with custom options with variable = iris**.Custom(options)**
 
@@ -131,21 +131,21 @@ import "github.com/kataras/iris"
 
 // 1.
 func methodFirst() {
-	
+
 	iris.Get("/home",func(c *iris.Context){})
 	iris.Listen(":8080")
-	//iris.ListenTLS(":8080","yourcertfile.cert","yourkeyfile.key"	
+	//iris.ListenTLS(":8080","yourcertfile.cert","yourkeyfile.key"
 }
-// 2.	
+// 2.
 func methodSecond() {
-	
+
 	api := iris.New()
 	api.Get("/home",func(c *iris.Context){})
 	api.Listen(":8080")
 }
 // 3.
 func methodThree() {
-	
+
 	options := iris.StationOptions{
 		Profile:            false,
 		ProfilePath:        iris.DefaultProfilePath,
@@ -154,7 +154,7 @@ func methodThree() {
 		CacheResetDuration: 5 * time.Minute,
 	}//these are the default values that you can change
 	//DefaultProfilePath = "/debug/pprof"
-	
+
 	api := iris.Custom(options)
 	api.Get("/home",func(c *iris.Context){})
 	api.Listen(":8080")
@@ -233,29 +233,29 @@ Let's party with Iris web framework!
 
 ```go
 func main() {
-    
+
     // manage all /users
     users := iris.Party("/users")
     {
 		users.Post("/login", loginHandler)
         users.Get("/:userId", singleUserHandler)
-        users.Delete("/:userId", userAccountRemoveUserHandler)  
+        users.Delete("/:userId", userAccountRemoveUserHandler)
     }
-	
-	// provide a simply middleware for this party 
+
+	// provide a simply middleware for this party
 	users.UseFunc(func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
 		println("LOG [/users...] This is the middleware for: ", req.URL.Path)
 		next(res, req)
 	})
-    
-    // Party inside an existing Party example: 
-    
-    beta:= iris.Party("/beta") 
-    
+
+    // Party inside an existing Party example:
+
+    beta:= iris.Party("/beta")
+
 
     admin := beta.Party("/admin")
     {
-/// GET: /beta/admin/    
+/// GET: /beta/admin/
 		admin.Get("/",adminIndexHandler)
 /// POST: /beta/admin/signin
         admin.Post("/signin", adminSigninHandler)
@@ -265,7 +265,7 @@ func main() {
         admin.Put("/users/add", adminAddUserHandler)
     }
 
-  
+
 
     iris.Listen(":8080")
 }
@@ -300,7 +300,7 @@ func main() {
 	// NOT match to /profile/ , /profile/kataras ,
 	// NOT match to /profile/kataras/friends,  /profile/kataras/friends ,
 	// NOT match to /profile/kataras/friends/2/something
-	iris.Get("/users/:fullname/friends/:friendId",
+	iris.Get("/profile/:fullname/friends/:friendId",
 		func(c *iris.Context){
 			name:= c.Param("fullname")
 			//friendId := c.ParamInt("friendId")
