@@ -517,10 +517,10 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 
 
 ## Todo
-[/] Complete the documents.
-[/] Create examples in this repository.
-[ ] Create a mechanism that scan for Typescript files, combile them on startup and serve them.
-[ ] Convert useful middlewares out there into Iris middlewares, or contact with their authors to do so.
+- [ ] Never stop writing the docs.
+- [x] Create examples in this repository.
+- [ ] Create a mechanism that scan for Typescript files, combile them on startup and serve them.
+- [ ] Convert useful middlewares out there into Iris middlewares, or contact with their authors to do so.
 ## Licence
 
 This project is licensed under the MIT license.
