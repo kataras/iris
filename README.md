@@ -128,7 +128,7 @@ With Intel(R) Core(TM) i7-4710HQ CPU @ 2.50GHz 2.50 HGz and 8GB Ram:
 
 As a developer you have three (3) methods to start with Iris.
 
- 1. global **iris.** 
+ 1. global **iris.**
  2. set a new iris with variable  = iris**.New()**
  3. set a new iris with custom options with variable = iris**.Custom(options)**
 
@@ -138,21 +138,21 @@ import "github.com/kataras/iris"
 
 // 1.
 func methodFirst() {
-	
+
 	iris.Get("/home",func(c *iris.Context){})
 	iris.Listen(":8080")
-	//iris.ListenTLS(":8080","yourcertfile.cert","yourkeyfile.key"	
+	//iris.ListenTLS(":8080","yourcertfile.cert","yourkeyfile.key"
 }
-// 2.	
+// 2.
 func methodSecond() {
-	
+
 	api := iris.New()
 	api.Get("/home",func(c *iris.Context){})
 	api.Listen(":8080")
 }
 // 3.
 func methodThree() {
-	
+
 	options := iris.StationOptions{
 		Profile:            false,
 		ProfilePath:        iris.DefaultProfilePath,
@@ -161,7 +161,7 @@ func methodThree() {
 		CacheResetDuration: 5 * time.Minute,
 	}//these are the default values that you can change
 	//DefaultProfilePath = "/debug/pprof"
-	
+
 	api := iris.Custom(options)
 	api.Get("/home",func(c *iris.Context){})
 	api.Listen(":8080")
@@ -240,39 +240,39 @@ Let's party with Iris web framework!
 
 ```go
 func main() {
-    
+
     // manage all /users
     users := iris.Party("/users")
     {
 		users.Post("/login", loginHandler)
         users.Get("/:userId", singleUserHandler)
-        users.Delete("/:userId", userAccountRemoveUserHandler)  
+        users.Delete("/:userId", userAccountRemoveUserHandler)
     }
-	
-	// provide a simply middleware for this party 
+
+	// provide a simply middleware for this party
 	users.UseFunc(func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
 		println("LOG [/users...] This is the middleware for: ", req.URL.Path)
 		next(res, req)
 	})
-    
-    // Party inside an existing Party example: 
-    
-    beta:= iris.Party("/beta") 
-    
+
+    // Party inside an existing Party example:
+
+    beta:= iris.Party("/beta")
+
 
     admin := beta.Party("/admin")
     {
-/// GET: /beta/admin/    
+		// GET: /beta/admin/
 		admin.Get("/",adminIndexHandler)
-/// POST: /beta/admin/signin
+		// POST: /beta/admin/signin
         admin.Post("/signin", adminSigninHandler)
-/// GET: /beta/admin/dashboard
+		// GET: /beta/admin/dashboard
         admin.Get("/dashboard", admindashboardHandler)
-/// PUT: /beta/admin/users/add
+		// PUT: /beta/admin/users/add
         admin.Put("/users/add", adminAddUserHandler)
     }
 
-  
+
 
     iris.Listen(":8080")
 }
@@ -323,6 +323,7 @@ func main() {
 ## Match anything and the Static serve handler
 
 Match everything/anything (symbol * (asterix))
+
 ```go
 // Will match any request which url's preffix is "/anything/"
 iris.Get("/anything/*", func(c *iris.Context) { } )
@@ -330,6 +331,7 @@ iris.Get("/anything/*", func(c *iris.Context) { } )
 // Not Match: /anything , /anything/ , /something
 ```
 Pure http static  file server as handler using **iris.Static("./path/to/the/resources/directory/")**
+
 ```go
 // Will match any request which url's preffix is "/public/"
 /* and continues with a file whith it's extension which exists inside the os.Gwd()(dot means working directory)+ /static/resources/
@@ -341,58 +343,56 @@ iris.Any("/public/*", iris.Static("./static/resources/")) //or Get
 ## Declaring routes
 Iris framework has three (3) different forms of functions in order to declare a route's handler and one(1) annotated struct to declare a complete route.
 
-
  1. Typical classic handler function, compatible with net/http and other frameworks
 	 *  **func(res http.ResponseWriter, req *http.Request)**
-```go
+	
+	```go
 	iris.Get("/user/add", func(res http.ResponseWriter, req *http.Request) {
 
 	})
-```
- 2. Context parameter in function-declaration
-	 * **func(c *iris.Context)**
+	```
 
-```go
+ 2. Context parameter in function-declaration
+	 - **func(c *iris.Context)**
+
+	```go
 	iris.Get("/user/:userId", func(c *iris.Context) {
 
 	})
-```
+	```
 
  3. http.Handler
-	 * **http.Handler**
+	 - **http.Handler**
 
-```go
+	```go
 	iris.Get("/about", http.HandlerFunc(func(res http.Response, req *req.Request) {
 
 	}))
-```
+	```
+
  4. **'External' annotated struct** which directly implements the Iris Annotated interface
 
+	```go
+	//file: userhandler.go
+	import "github.com/kataras/iris"
 
+	type UserRoute struct {
+		iris.Annotated `get:"/profile/user/:userId"`
+	}
 
-```go
-///file: userhandler.go
-import "github.com/kataras/iris"
+	func (u *UserRoute) Handle(c *iris.Context) {
+		defer c.Close()
+		userId := c.Param("userId")
+		c.RenderFile("user.html", struct{ Message string }{Message: "Hello User with ID: " + userId})
+	}
 
-type UserRoute struct {
-	iris.Annotated `get:"/profile/user/:userId"`
-}
+	//file: main.go
 
-func (u *UserRoute) Handle(c *iris.Context) {
-	defer c.Close()
-	userId := c.Param("userId")
-	c.RenderFile("user.html", struct{ Message string }{Message: "Hello User with ID: " + userId})
-}
-
-
-///file: main.go
-
-//...
-	iris.Templates("src/iristests/templates/*")
-	iris.Handle(&UserRoute{})
-//...
-
-```
+	//...
+		iris.Templates("src/iristests/templates/*")
+		iris.Handle(&UserRoute{})
+	//...
+	```
 Personally I use the external struct and the **func(c *iris.Context)** form .
  At the next chapter you will learn what are the benefits of having the  **Context** as parameter to the handler.
 
@@ -508,3 +508,5 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 ## Licence
 
 This project is licensed under the MIT license.
+
+
