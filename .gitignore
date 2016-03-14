@@ -20,3 +20,4 @@ _examples/*.so
 *.o
 *.a
 *.so
+build.bat

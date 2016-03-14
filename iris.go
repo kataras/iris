@@ -98,7 +98,7 @@ func Party(rootPath string) IParty {
 // registedPath is the relative url path
 // handler is the iris.Handler which you can pass anything you want via iris.HandlerFunc(func(res,req){})... or just use func(c iris.Context),func(r iris.Renderer), func(c Context,r Renderer) or func(res http.ResponseWriter, req *http.Request)
 // method is the last parameter, pass the http method ex: "GET","POST".. iris.HTTPMethods.PUT, or empty string to match all methods
-func HandleFunc(path string, handler Handler, method string) *Route {
+func HandleFunc(path string, handler HandlerFunc, method string) *Route {
 	return DefaultStation.HandleFunc(path, handler, method)
 }
 
@@ -122,62 +122,57 @@ func Use(handler MiddlewareHandler) {
 }
 
 // UseFunc registers a function which is a handler, with next, as a global middleware
-func UseFunc(handlerFunc func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc)) {
+func UseFunc(handlerFunc func(ctx *Context, next Handler)) {
 	DefaultStation.UseFunc(handlerFunc)
 }
 
-// UseHandler registers a simple http.Handler as global middleware
-func UseHandler(handler http.Handler) {
-	DefaultStation.UseHandler(handler)
-}
-
 // Get registers a route for the Get http method
-func Get(path string, handler interface{}) *Route {
+func Get(path string, handler HandlerFunc) *Route {
 	return DefaultStation.Get(path, handler)
 }
 
 // Post registers a route for the Post http method
-func Post(path string, handler interface{}) *Route {
+func Post(path string, handler HandlerFunc) *Route {
 	return DefaultStation.Post(path, handler)
 }
 
 // Put registers a route for the Put http method
-func Put(path string, handler interface{}) *Route {
+func Put(path string, handler HandlerFunc) *Route {
 	return DefaultStation.Put(path, handler)
 }
 
 // Delete registers a route for the Delete http method
-func Delete(path string, handler interface{}) *Route {
+func Delete(path string, handler HandlerFunc) *Route {
 	return DefaultStation.Delete(path, handler)
 }
 
 // Connect registers a route for the Connect http method
-func Connect(path string, handler interface{}) *Route {
+func Connect(path string, handler HandlerFunc) *Route {
 	return DefaultStation.Connect(path, handler)
 }
 
 // Head registers a route for the Head http method
-func Head(path string, handler interface{}) *Route {
+func Head(path string, handler HandlerFunc) *Route {
 	return DefaultStation.Head(path, handler)
 }
 
 // Options registers a route for the Options http method
-func Options(path string, handler interface{}) *Route {
+func Options(path string, handler HandlerFunc) *Route {
 	return DefaultStation.Options(path, handler)
 }
 
 // Patch registers a route for the Patch http method
-func Patch(path string, handler interface{}) *Route {
+func Patch(path string, handler HandlerFunc) *Route {
 	return DefaultStation.Patch(path, handler)
 }
 
 // Trace registers a route for the Trace http methodd
-func Trace(path string, handler interface{}) *Route {
+func Trace(path string, handler HandlerFunc) *Route {
 	return DefaultStation.Trace(path, handler)
 }
 
 // Any registers a route for ALL of the http methods (Get,Post,Put,Head,Patch,Options,Connect,Delete)
-func Any(path string, handler interface{}) *Route {
+func Any(path string, handler HandlerFunc) *Route {
 	return DefaultStation.Any(path, handler)
 }
 

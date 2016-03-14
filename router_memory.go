@@ -23,66 +23,44 @@ func NewMemoryRouter(underlineRouter *Router, maxitems int, resetDuration time.D
 	return r
 }
 
-func (r *MemoryRouter) HandleFunc(registedPath string, handler Handler, method string) *Route {
-	return r.Router.HandleFunc(registedPath, handler, method)
+func (r *MemoryRouter) HandleFunc(registedPath string, handlerFn HandlerFunc, method string) *Route {
+	return r.Router.HandleFunc(registedPath, handlerFn, method)
 }
 
 // ServeHTTP finds and serves a route by it's request
 // If no route found, it sends an http status 404
 func (r *MemoryRouter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	//defer r.mu.Unlock() defer is slow.
-	if v := r.cache.GetItem(req.Method, req.URL.Path); v != nil { //TODO: edw 700ms
-		v.ServeHTTP(res, req)
+	if ctx := r.cache.GetItem(req.Method, req.URL.Path); ctx != nil { //TODO: edw 700ms
+		ctx.Request = req
+		ctx.ResponseWriter = res
+		ctx.Renderer.responseWriter = res
+		ctx.handler.Serve(ctx)
 		return
 	}
 
-	var _branch *branch
-	var _route *Route
-	var _method = req.Method
+	var reqPath = req.URL.Path
+	var method = req.Method
+	ctx := r.station.pool.Get().(*Context)
+	ctx.Request = req
+	ctx.handler = nil
+	ctx.ResponseWriter = res
+	ctx.Params = ctx.Params[0:0]
+	_root := r.garden[method]
+	if _root != nil {
 
-search:
-	{
-		isHead := _method == "HEAD"
-		_tree := r.trees[_method]
-		if _tree != nil {
-			for i := 0; i < len(_tree); i++ {
-				_branch = _tree[i]
-				if len(req.URL.Path) < len(_branch.prefix) {
-					continue
-				}
-				hasPrefix := req.URL.Path[0:len(_branch.prefix)] == _branch.prefix
-				//println("check url prefix: ", req.URL.Path[0:len(_branch.prefix)]+" with node's:  ", _branch.prefix)
-				if hasPrefix {
-					for j := 0; j < len(_branch.routes); j++ {
-						_route = _branch.routes[j]
-						if !_route.Verify(req.URL.Path) {
-							continue
+		handler, params, _ := _root.getValue(reqPath, ctx.Params) // pass the parameters here for 0 allocation
+		if handler != nil {
 
-						}
-						_route.ServeHTTP(res, req)
-						r.cache.AddItem(_method, req.URL.Path, _route)
-						return
-
-					}
-
-					//if prefix found on head but no route no route found, then search to the GET tree also
-					if isHead {
-						_method = HTTPMethods.GET
-						goto search
-					}
-					r.httpErrors.NotFound(res)
-					return
-
-				}
-
-			}
-		} else if isHead { //if no any branches with routes found for the HEAD then try to search on GET tree
-			_method = HTTPMethods.GET
-			goto search
+			ctx.Params = params
+			ctx.Renderer.responseWriter = ctx.ResponseWriter
+			ctx.handler = handler
+			handler.Serve(ctx)
+			r.station.pool.Put(ctx)
+			r.cache.AddItem(method, reqPath, ctx)
+			return
 		}
-	}
-	//not found
-	//println(req.URL.Path)
 
+	}
 	r.httpErrors.NotFound(res)
 }

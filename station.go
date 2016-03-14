@@ -76,15 +76,15 @@ func newStation(options StationOptions) *Station {
 	// set the debug profiling handlers if enabled
 	if options.Profile {
 		debugPath := options.ProfilePath
-		r.HandleFunc(debugPath+"/", HandlerFunc(pprof.Index), HTTPMethods.GET)
-		r.HandleFunc(debugPath+"/cmdline", HandlerFunc(pprof.Cmdline), HTTPMethods.GET)
-		r.HandleFunc(debugPath+"/profile", HandlerFunc(pprof.Profile), HTTPMethods.GET)
-		r.HandleFunc(debugPath+"/symbol", HandlerFunc(pprof.Symbol), HTTPMethods.GET)
+		r.Handle(debugPath+"/", ToHandler(pprof.Index), HTTPMethods.GET)
+		r.Handle(debugPath+"/cmdline", ToHandler(pprof.Cmdline), HTTPMethods.GET)
+		r.Handle(debugPath+"/profile", ToHandler(pprof.Profile), HTTPMethods.GET)
+		r.Handle(debugPath+"/symbol", ToHandler(pprof.Symbol), HTTPMethods.GET)
 
-		r.HandleFunc(debugPath+"/goroutine", HandlerFunc(pprof.Handler("goroutine")), HTTPMethods.GET)
-		r.HandleFunc(debugPath+"/heap", HandlerFunc(pprof.Handler("heap")), HTTPMethods.GET)
-		r.HandleFunc(debugPath+"/threadcreate", HandlerFunc(pprof.Handler("threadcreate")), HTTPMethods.GET)
-		r.HandleFunc(debugPath+"/pprof/block", HandlerFunc(pprof.Handler("block")), HTTPMethods.GET)
+		r.Handle(debugPath+"/goroutine", ToHandler(pprof.Handler("goroutine")), HTTPMethods.GET)
+		r.Handle(debugPath+"/heap", ToHandler(pprof.Handler("heap")), HTTPMethods.GET)
+		r.Handle(debugPath+"/threadcreate", ToHandler(pprof.Handler("threadcreate")), HTTPMethods.GET)
+		r.Handle(debugPath+"/pprof/block", ToHandler(pprof.Handler("block")), HTTPMethods.GET)
 	}
 
 	// set the router
@@ -146,7 +146,7 @@ func (s *Station) Close() {
 }
 
 func (s *Station) makeContext() *Context {
-	return &Context{Params: make([]PathParameter, 6), Renderer: &Renderer{responseWriter: nil, templates: s.htmlTemplates}}
+	return &Context{station: s, Params: make([]PathParameter, 6), Renderer: &Renderer{responseWriter: nil, templates: s.htmlTemplates}}
 }
 
 // Templates sets the templates glob path for the web app

@@ -24,7 +24,10 @@ type Context struct {
 	ResponseWriter http.ResponseWriter
 	Request        *http.Request
 	Params         PathParameters
-	route          *Route
+	route          *node
+	station        *Station
+	//handler for now is useful only on the cache, maybe at the future make the Context on top of the handler.
+	handler *Middleware
 }
 
 // Param returns the string representation of the key's path named parameter's value
@@ -81,8 +84,7 @@ func (ctx *Context) SetCookie(name string, value string) {
 // if no custom errors provided then use the default http.NotFound
 // which is already registed nothing special to do here
 func (ctx *Context) NotFound() {
-	//ctx.errorHandlers[http.StatusNotFound].ServeHTTP(ctx.ResponseWriter, ctx.Request)
-	ctx.route.station.Errors().NotFound(ctx.ResponseWriter)
+	ctx.station.Errors().NotFound(ctx.ResponseWriter)
 }
 
 // RequestIP gets just the Remote Address from the client.

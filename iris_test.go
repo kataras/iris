@@ -107,14 +107,14 @@ var (
 			}},
 		},
 		{
-			Methods: HTTPMethods.ANY, Path: "/profile/:username/friends/somethinghere/:friendId/something/here",
+			Methods: HTTPMethods.ANY, Path: "/profile/:username/friends/:friendId/something/here",
 			Requests: []TestRequestRoute{{
-				Method: "GET", Path: "/profile/kataras/friends/somethinghere/2/something/here",
+				Method: "GET", Path: "/profile/kataras/friends/2/something/here",
 				Body:               []byte("body for the /profile/:username/friends/somethinghere/:friendId/something/here"),
 				ExpectedStatusCode: 200,
 				ExpectedParameters: map[string]string{"username": "kataras", "friendId": "2"},
 			}, {
-				Method: "GET", Path: "/profile/kataras/friends/somethinghere/stringerrorisnotanumberman/something",
+				Method: "GET", Path: "/profile/kataras/friends/stringerrorisnotanumberman/something",
 				Body:               []byte("body for the /profile/:username/friends/somethinghere/:friendId/something/here"),
 				ExpectedStatusCode: 404,
 				ExpectedParameters: nil,
@@ -135,7 +135,7 @@ var (
 			}},
 		},
 		{
-			Methods: HTTPMethods.ANY, Path: "/wildcard/:username/any/*",
+			Methods: HTTPMethods.ANY, Path: "/wildcard/:username/any/*anyusername",
 			Requests: []TestRequestRoute{{
 				Method: "GET", Path: "/wildcard/kataras/any/blablabla/bleleblelbe",
 				Body:               []byte("body for the /wildcard/any/*"),
@@ -149,7 +149,7 @@ var (
 			}},
 		},
 		{
-			Methods: HTTPMethods.ANY, Path: "/wildcard2/*",
+			Methods: HTTPMethods.ANY, Path: "/wildcard2/*anything",
 			Requests: []TestRequestRoute{{
 				Method: "GET", Path: "/wildcard2/kataras/dsadsadsa/dsasasa",
 				Body:               []byte("body for the /wildcard2/*"),
@@ -173,7 +173,8 @@ func TestMain(m *testing.M) {
 }
 
 func setup() {
-	api = New()
+	//api = New()
+	api = Custom(StationOptions{Cache: false})
 }
 
 func teardown() {
@@ -268,7 +269,7 @@ func handleRoute(route TestRoute) func(c *Context) {
 func TestRoutesServerSide(t *testing.T) {
 
 	for _, route := range inlineRoutes {
-		api.Handle(route.Path, handleRoute(route), route.Methods[0])
+		api.HandleFunc(route.Path, handleRoute(route), route.Methods[0])
 	}
 	// Set custom error messages
 	api.Errors().On(http.StatusNotFound, func(res http.ResponseWriter, req *http.Request) {

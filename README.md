@@ -93,7 +93,8 @@ BenchmarkGoRestful_GithubAll 	| 100 		| 18410628 	| 797236 	| 7725
 BenchmarkGorillaMux_GithubAll 	| 200 		| 8036360 	| 153137 	| 1791
 BenchmarkHttpRouter_GithubAll 	| 20000 	| 63506 	| 13792 	| 167
 BenchmarkHttpTreeMux_GithubAll 	| 10000 	| 165927 	| 56112 	| 334
-**BenchmarkIris_GithubAll** 		| **100000** | **19591** | **0** 	| **0**
+**BenchmarkIris_GithubAll** 		| **100000** | **20011** | **0** 	| **0**
+**BenchmarkIrisNoCache_GithubAll** 		| **30000** | **37833** | **0** 	| **0**
 BenchmarkKocha_GithubAll 		| 10000 	| 171362 	| 23304 	| 843
 BenchmarkMacaron_GithubAll 		| 2000 		| 817008 	| 224960 	| 2315
 BenchmarkMartini_GithubAll 		| 100 		| 12609209 	| 237952 	| 2686
@@ -116,13 +117,13 @@ With Intel(R) Core(TM) i7-4710HQ CPU @ 2.50GHz 2.50 HGz and 8GB Ram:
 
 **Parameters in your routing pattern:** Stop parsing the requested URL path, just give the path segment a name and the iris' router delivers the dynamic value to you. Really, path parameters are very cheap.
 
-**Can have static & parameterized  matches:** With other routers, like http.ServeMux, a requested URL path could match multiple patterns. Therefore they have some awkward pattern priority rules, like longest match or first registered, first matched. By design of this framework, a request can match to a static and parameterized routes at the same time, at any order you register them, the Iris' router is clever enough to understand  the correct route for a request, so don't care just write your wonderful web app.
+**Only explicit matches:** With other routers, like http.ServeMux, a requested URL path could match multiple patterns. Therefore they have some awkward pattern priority rules, like longest match or first registered, first matched. By design of this router, a request can only match exactly one or no route. As a result, there are also no unintended matches, which makes it great for SEO and improves the user experience.
 
 **Party of routes:** Combine routes where have same prefix, provide a middleware to this Party, a Party can have other Party too.
 
 **Compatible:** At the end the Iris is just a middleware which acts like router and a small simply web framework, this means that you can you use it side-by-side with your favorite big and well-tested web framework. Iris is fully compatible with the **net/http package.**
 
-**Multi servers:** Besides the fact that iris has a default main server. You can declare a new iris using the iris.New() func. example: server1:= iris.New(); server1.Get(....); server1.Listen(":9999")
+**Multi server instances:** Besides the fact that iris has a default main server. You can declare a new iris using the iris.New() func. example: server1:= iris.New(); server1.Get(....); server1.Listen(":9999")
 
 ## Startup
 
@@ -211,7 +212,8 @@ import (
 )
 
 func main() {
-	iris.Get("/home", testGet)
+
+	iris.Get("/home", iris.ToHandlerFunc(testGet))
 	iris.Post("/login",testPost)
 	iris.Put("/add",testPut)
 	iris.Delete("/remove",testDelete)
@@ -219,27 +221,37 @@ func main() {
 	iris.Patch("/testPatch",testPatch)
 	iris.Options("/testOptions",testOptions)
 
+
+
 	iris.Listen(":8080")
 }
 
-//iris is fully compatible with net/http package
 func testGet(res http.ResponseWriter, req *http.Request) {
 	//...
 }
 
-//iris.Context gives more information and control of the route, as named parameters, redirect, error handling and render.
+//iris.Context gives more information and control of the route, named parameters, redirect, error handling and render.
 func testPost(c *iris.Context) {
 	//...
 }
 
 //and so on....
 ```
+> Iris is compatible with net/http package over iris.ToHandlerFunc(...) or iris.ToHandler(...) if you wanna use a whole iris.Handler interface. You can use any method you like but, believe me it's easier to pass just a func(c *Context).
+
 ## Party
 
 Let's party with Iris web framework!
 
 ```go
 func main() {
+    
+    //log everything middleware
+    
+    UseFunc(func(c *iris.Context, next iris.Handler) {
+		println("[Global log] the requested url path is: ", c.Request.URL.Path)
+		next.Serve(c)
+	})
     
     // manage all /users
     users := iris.Party("/users")
@@ -250,9 +262,9 @@ func main() {
     }
 	
 	// provide a simply middleware for this party 
-	users.UseFunc(func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
-		println("LOG [/users...] This is the middleware for: ", req.URL.Path)
-		next(res, req)
+	users.UseFunc(func(c *iris.Context, next iris.Handler) {
+		println("LOG [/users...] This is the middleware for: ", c.Request.URL.Path)
+		next.Serve(c)
 	})
     
     // Party inside an existing Party example: 
@@ -262,13 +274,13 @@ func main() {
 
     admin := beta.Party("/admin")
     {
-/// GET: /beta/admin/    
+		/// GET: /beta/admin/    
 		admin.Get("/",adminIndexHandler)
-/// POST: /beta/admin/signin
+		/// POST: /beta/admin/signin
         admin.Post("/signin", adminSigninHandler)
-/// GET: /beta/admin/dashboard
+		/// GET: /beta/admin/dashboard
         admin.Get("/dashboard", admindashboardHandler)
-/// PUT: /beta/admin/users/add
+		/// PUT: /beta/admin/users/add
         admin.Put("/users/add", adminAddUserHandler)
     }
 
@@ -322,30 +334,30 @@ func main() {
 
 ## Match anything and the Static serve handler
 
-Match everything/anything (symbol * (asterix))
+Match everything/anything (symbol *withAKeyLikeParameters)
 ```go
-// Will match any request which url's preffix is "/anything/"
-iris.Get("/anything/*", func(c *iris.Context) { } )
-// Match: /anything/whateverhere , /anything/blablabla
+// Will match any request which url's preffix is "/anything/" and has content after that
+iris.Get("/anything/*randomName", func(c *iris.Context) { } )
+// Match: /anything/whateverhere/whateveragain , /anything/blablabla
+// c.Params("randomName") will be /whateverhere/whateveragain, blablabla
 // Not Match: /anything , /anything/ , /something
 ```
-Pure http static  file server as handler using **iris.Static("./path/to/the/resources/directory/")**
+Pure http static  file server as handler using **iris.Static("./path/to/the/resources/directory/",true)**
 ```go
 // Will match any request which url's preffix is "/public/"
 /* and continues with a file whith it's extension which exists inside the os.Gwd()(dot means working directory)+ /static/resources/
 */
-iris.Any("/public/*", iris.Static("./static/resources/")) //or Get
-//so simple
-//Note: strip of the /public/ is handled so don't worry
+iris.Get("/public/*assets", iris.Static("./static/resources/",true))
+//Note: strip of the /public/ is handled  by passing the last argument to true
 ```
 ## Declaring routes
 Iris framework has three (3) different forms of functions in order to declare a route's handler and one(1) annotated struct to declare a complete route.
 
 
- 1. Typical classic handler function, compatible with net/http and other frameworks
+ 1. Typical classic handler function, compatible with net/http and other frameworks using iris.ToHandlerFunc
 	 *  **func(res http.ResponseWriter, req *http.Request)**
 ```go
-	iris.Get("/user/add", func(res http.ResponseWriter, req *http.Request) {
+	iris.Get("/user/add", iris.ToHandlerFunc(func(res http.ResponseWriter, req *http.Request)) {
 
 	})
 ```
@@ -358,14 +370,15 @@ Iris framework has three (3) different forms of functions in order to declare a 
 	})
 ```
 
- 3. http.Handler
+ 3. http.Handler again it can be converted by ToHandlerFunc
 	 * **http.Handler**
 
 ```go
-	iris.Get("/about", http.HandlerFunc(func(res http.Response, req *req.Request) {
+	iris.Get("/about", iris.ToHandlerFunc(http.HandlerFunc(func(res http.Response, req *req.Request)) {
 
 	}))
 ```
+> Note that all .Get,.Post takes a func(c *Context) as parameter, to pass an iris.Handler use the iris.Handle("/path",handler,"GET")
  4. **'External' annotated struct** which directly implements the Iris Annotated interface
 
 
@@ -443,16 +456,18 @@ Personally I use the external struct and the **func(c *iris.Context)** form .
  13. **WriteText(status int, contents string) & Text(contents string)**
 	 - WriteText: Writes plain text with a given http status to the client, it sets the Header with the correct content-type.
 	 - Text: Same as WriteTextbut you don't have to pass a status, it's defaulted to http.StatusOK (200).
- 14. **WriteJSON(status int, jsonStructs ...interface{}) & JSON(jsonStructs ...interface{}) returns error**
-	 - WriteJSON: Writes json which is converted from struct(s) with a given http status to the client, it sets the Header with the correct content-type. If something goes wrong then it's returned value which is an error type is not nil.
+ 14. **WriteJSON(status int, jsonObject interface{}) & JSON(jsonObject interface{}) returns error**
+	 - WriteJSON: Writes json which is converted from structed object(s) with a given http status to the client, it sets the Header with the correct content-type. If something goes wrong then it's returned value which is an error type is not nil. No indent.
+ 15.  **RenderJSON(jsonObjects ...interface{}) returns error**
+	 - RenderJSON: Same as WriteJSON & JSON but with Indent (formated json)	 
 	 - JSON: Same as WriteJSON but you don't have to pass a status, it's defaulted to http.StatusOK (200).
- 15. **WriteXML(status int, xmlStructs ...interface{}) & XML(xmlStructs ...interface{}) returns error**
+ 16. **WriteXML(status int, xmlStructs ...interface{}) & XML(xmlStructs ...interface{}) returns error**
 	 - WriteXML: Writes writes xml which is converted from struct(s) with a given http status to the client, it sets the Header with the correct content-type. If something goes wrong then it's returned value which is an error type is not nil.
 	 - XML: Same as WriteXML but you don't have to pass a status, it's defaulted to http.StatusOK (200).
- 16. **RenderFile(file string, pageContext interface{}) returns error**
+ 17. **RenderFile(file string, pageContext interface{}) returns error**
 	 - RenderFile: Renders a file by its name (which a file is saved to the template cache) and a page context passed to the function, default http status is http.StatusOK(200) if the template was found, otherwise http.StatusNotFound(404). If something goes wrong then it's returned value which is an error type is not nil.
- 17. **Render(pageContext interface{})  returns error**
-	 - Render: Renders the registed and cached by the template cache file template  and a context passed to the function, default http status is http.StatusOK(200) if the template was found, otherwise http.StatusNotFound(404). If something goes wrong then it's returned value which is an error type is not nil.
+ 18. **Render(pageContext interface{})  returns error**
+	 - Render: Renders the root file template and a context passed to the function, default http status is http.StatusOK(200) if the template was found, otherwise http.StatusNotFound(404). If something goes wrong then it's returned value which is an error type is not nil.
 	--- *Note:  We will learn how to add templates at the next chapters*.
 
 
@@ -460,7 +475,7 @@ Personally I use the external struct and the **func(c *iris.Context)** form .
 
 
 ## Third Party Middleware
-*The iris is re-written in order to support all middlewares that are already exists for [Negroni](https://github.com/codegangsta/negroni) middleware*
+*The iris supports all kind of 'standar' middlewares, you can use them by parsing their handlers, for example:  iris.Use(ToHandler(...themMiddlewareHere))*
 
 Here is a current list of compatible middlware.
 

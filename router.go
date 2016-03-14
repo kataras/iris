@@ -11,16 +11,16 @@ import (
 ///TODO: fix the path if no ending with '/' ? or it must be not ending with '/' but handle requests with last '/' redirect to non '/' ? I will think about it.
 
 type IRouterMethods interface {
-	Get(path string, handler interface{}) *Route
-	Post(path string, handler interface{}) *Route
-	Put(path string, handler interface{}) *Route
-	Delete(path string, handler interface{}) *Route
-	Connect(path string, handler interface{}) *Route
-	Head(path string, handler interface{}) *Route
-	Options(path string, handler interface{}) *Route
-	Patch(path string, handler interface{}) *Route
-	Trace(path string, handler interface{}) *Route
-	Any(path string, handler interface{}) *Route
+	Get(path string, handler HandlerFunc) *Route
+	Post(path string, handler HandlerFunc) *Route
+	Put(path string, handler HandlerFunc) *Route
+	Delete(path string, handler HandlerFunc) *Route
+	Connect(path string, handler HandlerFunc) *Route
+	Head(path string, handler HandlerFunc) *Route
+	Options(path string, handler HandlerFunc) *Route
+	Patch(path string, handler HandlerFunc) *Route
+	Trace(path string, handler HandlerFunc) *Route
+	Any(path string, handler HandlerFunc) *Route
 }
 
 type IRouter interface {
@@ -29,7 +29,7 @@ type IRouter interface {
 	IPartyHoster
 	HandleAnnotated(irisHandler Annotated) (*Route, error)
 	Handle(params ...interface{}) *Route
-	HandleFunc(path string, handler Handler, method string) *Route
+	HandleFunc(path string, handler HandlerFunc, method string) *Route
 	Errors() *HTTPErrors //at the main Router struct this is managed by the MiddlewareSupporter
 	// ServeHTTP finds and serves a route by it's request
 	// If no route found, it sends an http status 404
@@ -44,13 +44,14 @@ type Router struct {
 	//routes map[string][]*Route // key = path prefix, value an array of the routes starts with that prefix
 	MiddlewareSupporter
 	station    *Station
-	trees      Trees
+	tempTrees  trees
+	garden     Garden
 	httpErrors *HTTPErrors //the only reason of this is to pass into the route, which it need it to  passed it to Context, in order to  developer get the ability to perfom emit errors (eg NotFound) directly from context
 }
 
 // NewRouter creates and returns an empty Router
 func NewRouter(station *Station) *Router {
-	return &Router{station: station, trees: make(Trees, 0), httpErrors: DefaultHTTPErrors()}
+	return &Router{station: station, tempTrees: make(trees, 0), garden: make(Garden, len(HTTPMethods.ANY)), httpErrors: DefaultHTTPErrors()}
 }
 
 func (r *Router) SetErrors(httperr *HTTPErrors) {
@@ -69,7 +70,7 @@ func (r *Router) Errors() *HTTPErrors {
 // registedPath is the relative url path
 // handler is the iris.Handler which you can pass anything you want via iris.HandlerFunc(func(res,req){})... or just use func(c iris.Context),func(r iris.Renderer), func(c Context,r Renderer) or func(res http.ResponseWriter, req *http.Request)
 // method is the last parameter, pass the http method ex: "GET","POST".. iris.HTTPMethods.PUT, or empty string to match all methods
-func (r *Router) HandleFunc(registedPath string, handler Handler, method string) *Route {
+func (r *Router) HandleFunc(registedPath string, handler HandlerFunc, method string) *Route {
 	var route *Route
 	if registedPath == "" {
 		registedPath = "/"
@@ -85,7 +86,7 @@ func (r *Router) HandleFunc(registedPath string, handler Handler, method string)
 
 		r.station.pluginContainer.doPreHandle(method, route)
 
-		r.trees.addRoute(method, route)
+		r.tempTrees.addRoute(method, route)
 
 		r.station.pluginContainer.doPostHandle(method, route)
 
@@ -155,7 +156,7 @@ func (r *Router) HandleAnnotated(irisHandler Annotated) (*Route, error) {
 		}
 
 		if errMessage == "" {
-			route = r.HandleFunc(path, convertToHandler(handleFunc.Interface()), method)
+			route = r.HandleFunc(path, HandlerFunc(handleFunc.Interface().(func(*Context))), method)
 			//check if template string has stored by the tag ( look before this block )
 		}
 
@@ -169,18 +170,32 @@ func (r *Router) HandleAnnotated(irisHandler Annotated) (*Route, error) {
 	return route, err
 }
 
-// Handle registers a route to the server's router, pass a struct -implements iris.Annotated as parameter
-// Or pass just a http.Handler or TypicalHandlerFunc or ContextedHandlerFunc or  RendereredHandlerFunc or ContextedRendererHandlerFunc or already an iris.Handler
+// Handle registers a route to the server's router, pass a struct -implements iris.Annotated as parameter or just a handler
+// Handle is not the primary handler , the primary is HandleFunc because this, the .Handle calls .HandleFunc
 func (r *Router) Handle(params ...interface{}) *Route {
 	paramsLen := len(params)
+	var handlerFn HandlerFunc
 	if paramsLen == 0 {
 		panic("No arguments given to the Handle function, please refer to docs")
 	}
-
+	//when the first parameter is string, the Path then the second should be a Handler
 	if reflect.TypeOf(params[0]).Kind() == reflect.String {
-		//means first parameter is the path, wich means it is a simple path with handler -> HandleFunc and method
-		// means: http.Handler or TypicalHandlerFunc or ContextedHandlerFunc or  RendereredHandlerFunc or ContextedRendererHandlerFunc or already an iris.Handler
-		return r.HandleFunc(params[0].(string), convertToHandler(params[1]), params[2].(string))
+		handlerType := reflect.TypeOf((*Handler)(nil)).Elem()
+
+		if reflect.TypeOf(params[1]).Implements(handlerType) {
+			handlerFn = params[1].(Handler).Serve
+		} else {
+			//it's http.Handler
+			httpHandlerOfficialType := reflect.TypeOf((*http.Handler)(nil)).Elem()
+			if reflect.TypeOf(params[1]).Implements(httpHandlerOfficialType) {
+				//it is not a http.Handler
+				//it is func(res,req) we will convert it to a handler using http.HandlerFunc
+				handlerFn = ToHandlerFunc(params[1].(func(res http.ResponseWriter, req *http.Request)))
+			}
+
+		}
+
+		return r.HandleFunc(params[0].(string), handlerFn, params[2].(string))
 	} else {
 		//means it's a struct which implements the iris.Annotated and have a Handle func inside it -> handleAnnotated
 		route, err := r.HandleAnnotated(params[0].(Annotated))
@@ -199,15 +214,11 @@ func (r *Router) Handle(params ...interface{}) *Route {
 func (r *Router) Use(handler MiddlewareHandler) {
 	r.MiddlewareSupporter.Use(handler)
 	//IF this is called after the routes
-	if len(r.trees) > 0 {
-		for _, _tree := range r.trees {
-			for _, _branch := range _tree {
-				for _, route := range _branch.routes {
-					route.Use(handler)
-				}
-
+	if len(r.tempTrees) > 0 {
+		for _, _tree := range r.tempTrees {
+			for _, _route := range _tree {
+				_route.Use(handler)
 			}
-
 		}
 	}
 
@@ -224,123 +235,110 @@ func (r *Router) Party(rootPath string) IParty {
 ///////////////////////////////
 
 // Get registers a route for the Get http method
-func (r *Router) Get(path string, handler interface{}) *Route {
-	return r.HandleFunc(path, convertToHandler(handler), HTTPMethods.GET)
+func (r *Router) Get(path string, handler HandlerFunc) *Route {
+	return r.HandleFunc(path, handler, HTTPMethods.GET)
 }
 
 // Post registers a route for the Post http method
-func (r *Router) Post(path string, handler interface{}) *Route {
-	return r.HandleFunc(path, convertToHandler(handler), HTTPMethods.POST)
+func (r *Router) Post(path string, handler HandlerFunc) *Route {
+	return r.HandleFunc(path, handler, HTTPMethods.POST)
 }
 
 // Put registers a route for the Put http method
-func (r *Router) Put(path string, handler interface{}) *Route {
-	return r.HandleFunc(path, convertToHandler(handler), HTTPMethods.PUT)
+func (r *Router) Put(path string, handler HandlerFunc) *Route {
+	return r.HandleFunc(path, handler, HTTPMethods.PUT)
 }
 
 // Delete registers a route for the Delete http method
-func (r *Router) Delete(path string, handler interface{}) *Route {
-	return r.HandleFunc(path, convertToHandler(handler), HTTPMethods.DELETE)
+func (r *Router) Delete(path string, handler HandlerFunc) *Route {
+	return r.HandleFunc(path, handler, HTTPMethods.DELETE)
 }
 
 // Connect registers a route for the Connect http method
-func (r *Router) Connect(path string, handler interface{}) *Route {
-	return r.HandleFunc(path, convertToHandler(handler), HTTPMethods.CONNECT)
+func (r *Router) Connect(path string, handler HandlerFunc) *Route {
+	return r.HandleFunc(path, handler, HTTPMethods.CONNECT)
 }
 
 // Head registers a route for the Head http method
-func (r *Router) Head(path string, handler interface{}) *Route {
-	return r.HandleFunc(path, convertToHandler(handler), HTTPMethods.HEAD)
+func (r *Router) Head(path string, handler HandlerFunc) *Route {
+	return r.HandleFunc(path, handler, HTTPMethods.HEAD)
 }
 
 // Options registers a route for the Options http method
-func (r *Router) Options(path string, handler interface{}) *Route {
-	return r.HandleFunc(path, convertToHandler(handler), HTTPMethods.OPTIONS)
+func (r *Router) Options(path string, handler HandlerFunc) *Route {
+	return r.HandleFunc(path, handler, HTTPMethods.OPTIONS)
 }
 
 // Patch registers a route for the Patch http method
-func (r *Router) Patch(path string, handler interface{}) *Route {
-	return r.HandleFunc(path, convertToHandler(handler), HTTPMethods.PATCH)
+func (r *Router) Patch(path string, handler HandlerFunc) *Route {
+	return r.HandleFunc(path, handler, HTTPMethods.PATCH)
 }
 
 // Trace registers a route for the Trace http method
-func (r *Router) Trace(path string, handler interface{}) *Route {
-	return r.HandleFunc(path, convertToHandler(handler), HTTPMethods.TRACE)
+func (r *Router) Trace(path string, handler HandlerFunc) *Route {
+	return r.HandleFunc(path, handler, HTTPMethods.TRACE)
 }
 
 // Any registers a route for ALL of the http methods (Get,Post,Put,Head,Patch,Options,Connect,Delete)
-func (r *Router) Any(path string, handler interface{}) *Route {
-	return r.HandleFunc(path, convertToHandler(handler), "")
+func (r *Router) Any(path string, handler HandlerFunc) *Route {
+	return r.HandleFunc(path, handler, "")
 }
 
-// Build prepares the Router before ServeHTTP.
-// is beeing called one time before .Listen, at the Build state
+// Build prepares the routes before Serve
+// is beeing called one time before .Listen from the Station
 func (r *Router) Build() {
-	//sort the trees by the longest prefix and longest route path
-	r.trees.sort()
-	//prepare each route, check if middlewares are exists, if yes then do the mapping
-	for method, _tree := range r.trees {
-		for index, _branch := range _tree {
-			for indexRoute, _ := range _branch.routes {
-				//'full' in order to understand better what we are doing here.
-				r.trees[method][index].routes[indexRoute].prepare()
-			}
+	//prepare the temp routes firsts
+	for method, _ := range r.tempTrees {
+		for i := 0; i < len(r.tempTrees[method]); i++ {
+			r.tempTrees[method][i].prepare()
 		}
 	}
+
+	//and plant them to the radix tree
+	r.garden.plant(r.tempTrees)
+	//and clear the trees?
+	r.tempTrees = nil
+}
+
+func calculateParts(path string) (partsLen uint8) {
+	for len(path) > 0 {
+
+		endSlash := 1
+		for endSlash < len(path) && path[endSlash] != '/' {
+			endSlash++
+		}
+		if endSlash > len(path) {
+			break
+		}
+		partsLen++
+		path = path[endSlash:]
+
+	}
+	return
 }
 
 // ServeHTTP finds and serves a route by it's request
 // If no route found, it sends an http status 404
 func (r *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	var reqPath = req.URL.Path
+	var method = req.Method
+	ctx := r.station.pool.Get().(*Context)
+	ctx.Request = req
+	ctx.ResponseWriter = res
+	ctx.Params = ctx.Params[0:0]
+	_root := r.garden[method]
+	if _root != nil {
 
-	var _branch *branch
-	var _route *Route
-	var _method = req.Method
-
-search:
-	{
-		isHead := _method == "HEAD"
-		_tree := r.trees[_method]
-		if _tree != nil {
-			for i := 0; i < len(_tree); i++ {
-				_branch = _tree[i]
-				if len(req.URL.Path) < len(_branch.prefix) {
-					continue
-				}
-				hasPrefix := req.URL.Path[0:len(_branch.prefix)] == _branch.prefix
-				//println("check url prefix: ", req.URL.Path[0:len(_branch.prefix)]+" with node's:  ", _branch.prefix)
-				if hasPrefix {
-					for j := 0; j < len(_branch.routes); j++ {
-						_route = _branch.routes[j]
-						if !_route.Verify(req.URL.Path) {
-							continue
-
-						}
-						_route.ServeHTTP(res, req)
-						return
-						//println("must never come here.")
-
-					}
-					//if the prefix was found, so we are 100% at the correct node, because I make it to end with slashes
-					//so no need to check other prefixes any more, just return 404 and exit from here.
-
-					//if prefix found on head but no route no route found, then search to the GET tree also
-					if isHead {
-						_method = HTTPMethods.GET
-						goto search
-					}
-					r.httpErrors.NotFound(res)
-					return
-
-				}
-
-			}
-		} else if isHead { //if no any branches with routes found for the HEAD then try to search on GET tree
-			_method = HTTPMethods.GET
-			goto search
+		handler, params, _ := _root.getValue(reqPath, ctx.Params) // pass the parameters here for 0 allocation
+		if handler != nil {
+			ctx.Params = params
+			ctx.Renderer.responseWriter = ctx.ResponseWriter
+			handler.Serve(ctx)
+			r.station.pool.Put(ctx)
+			return
 		}
+
 	}
-	//nothing found, usualy if _tree == nil and branches for this method not found
-	//println(req.URL.Path, " NOT found")
 	r.httpErrors.NotFound(res)
+
 }

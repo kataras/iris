@@ -1,7 +1,6 @@
 package iris
 
 import (
-	"io"
 	"net/http"
 	"runtime"
 	"testing"
@@ -342,23 +341,17 @@ func calcMem(name string, load func()) {
 //
 
 func irisHandleTestContexted(c *Context) {
-	io.WriteString(c.ResponseWriter, c.Request.RequestURI)
+	///TODO: something
 }
-
-func irisHandleTestTypical(res http.ResponseWriter, req *http.Request) {
-	io.WriteString(res, req.RequestURI)
-}
-
-var requestRoutes []routeTest
 
 func loadIris(routes []routeTest) http.Handler {
-	h := irisHandleTestContexted //irisHandleTestTypical
+	h := irisHandleTestContexted
 
-	//disable cache with api := Custom(StationOptions{Cache: false})
+	//disable cache with: api := Custom(StationOptions{Cache: false})
 	api := New()
 
 	for _, route := range routes {
-		api.Handle(route.path, h, route.method)
+		api.HandleFunc(route.path, h, route.method)
 	}
 	api.Build()
 	return api
@@ -383,27 +376,20 @@ func benchRoutes(b *testing.B, router http.Handler, routes []routeTest) {
 
 }
 
-//run: go test -bench="Iris"
-//run(2): go test-bench BenchmarkIris_GithubAll -run=XXX
-//run(3): go test-bench BenchmarkIris_GithubAll -run=^a
+//run with profiling: go test -bench="Iris" -run=XXX -cpuprofile ./cpu_test.out
 func BenchmarkIris_GithubAll(b *testing.B) {
-	//if BenchmarkProfiler {
-	//	defer profile.Start().Stop()
-	//}
 	benchRoutes(b, githubIris, githubAPI)
 }
 
-//Results ( one 2.5GHz core )
+//Results ( one core 2.5GHz )
 //
 //#GithubAPI Routes: 203
-//	Iris: 44648 Bytes
-//With typical http handler
+//	Iris: 39217 Bytes
+//With .New()
 //
-//BenchmarkIris_GithubALL    				30000     43069 ns/op      0 B/op     0 allocs/op
+//BenchmarkIris_GithubAL				   100000	  19691 ns/op	   0 B/op	  0 allocs/op
 //
+//With .Custom(..{Cache:false})
 //
-//With (func (ctx *Context)) yes even with parameters 0 allocs & 0 bytes, and parameters can be used inside handlers (tested)
-//
-//BenchmarkIris_GithubALL    				20000     62159 ns/op      0 B/op     0 allocs/op
-//
+//BenchmarkIris_GithubALL    				30000     37833 ns/op      0 B/op     0 allocs/op
 //
