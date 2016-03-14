@@ -17,17 +17,17 @@ const (
 	// ContentLength represents the header["Content-Length"]
 	ContentLength = "Content-Length"
 	// ContentHTML is the  string of text/html response headers
-	ContentHTML = "text/html" + "; " + DefaultCharset
+	ContentHTML = "text/html" + "; charset=" + DefaultCharset
 	// ContentJSON is the  string of application/json response headers
-	ContentJSON = "application/json" + "; " + DefaultCharset
+	ContentJSON = "application/json" + "; charset=" + DefaultCharset
 	// ContentJSONP is the  string of application/javascript response headers
 	ContentJSONP = "application/javascript"
 	// ContentBINARY is the  string of "application/octet-stream response headers
 	ContentBINARY = "application/octet-stream"
 	// ContentTEXT is the  string of text/plain response headers
-	ContentTEXT = "text/plain" + "; " + DefaultCharset
+	ContentTEXT = "text/plain" + "; charset=" + DefaultCharset
 	// ContentXML is the  string of text/xml response headers
-	ContentXML = "text/xml" + "; " + DefaultCharset
+	ContentXML = "text/xml" + "; charset=" + DefaultCharset
 )
 
 // Renderer is the container of the template cache which developer creates for EACH route
