@@ -90,35 +90,32 @@ func (r *Renderer) Text(text string) {
 
 // WriteJSON writes which is converted from struct(s) with a http status which they passed to the function via parameters
 func (r *Renderer) WriteJSON(httpStatus int, jsonStructs ...interface{}) error {
+	var _json []byte
 
-	//	return json.NewEncoder(r.responseWriter).Encode(obj)
-	var _json string
 	for _, jsonStruct := range jsonStructs {
+
 		theJSON, err := json.MarshalIndent(jsonStruct, "", "  ")
 		if err != nil {
-			//http.Error(r.responseWriter, err.Error(), http.StatusInternalServerError)
 			return err
 		}
-		_json += string(theJSON) + "\n"
+		_json = append(_json, theJSON...)
 	}
 
 	//keep in mind http.DetectContentType(data)
-	//also we don't check if already header's content-type exists.
 	r.responseWriter.Header().Set(ContentType, ContentJSON)
 	r.responseWriter.WriteHeader(httpStatus)
-	io.WriteString(r.responseWriter, _json)
+	r.responseWriter.Write(_json)
 
 	return nil
 }
 
 //JSON calls the WriteJSON with the 200 http status ok
 func (r *Renderer) JSON(jsonStructs ...interface{}) error {
-	return r.WriteJSON(http.StatusOK, jsonStructs)
+	return r.WriteJSON(http.StatusOK, jsonStructs...)
 }
 
 // WriteXML writes xml which is converted from struct(s) with a http status which they passed to the function via parameters
 func (r *Renderer) WriteXML(httpStatus int, xmlStructs ...interface{}) error {
-
 	var _xmlDoc string
 	for _, xmlStruct := range xmlStructs {
 		theDoc, err := xml.MarshalIndent(xmlStruct, "", "  ")
@@ -135,5 +132,5 @@ func (r *Renderer) WriteXML(httpStatus int, xmlStructs ...interface{}) error {
 
 //XML calls the WriteXML with the 200 http status ok
 func (r *Renderer) XML(xmlStructs ...interface{}) error {
-	return r.WriteXML(http.StatusOK, xmlStructs)
+	return r.WriteXML(http.StatusOK, xmlStructs...)
 }
