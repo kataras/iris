@@ -14,3 +14,9 @@ heap_test.out
 cpu_test.txt
 cover_profile_test.txt
 build.bat
+_examples/*.o
+_examples/*.a
+_examples/*.so
+*.o
+*.a
+*.so
