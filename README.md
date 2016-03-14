@@ -31,6 +31,13 @@ Iris is a very minimal but flexible web framework written in go, providing a rob
 ```sh
 $ go get github.com/kataras/iris
 ```
+
+### Update
+Iris is still in development status, in order to have the latest version update the package every 2-3 days
+```sh
+$ go get -u github.com/kataras/iris
+```
+
 ## Principles of iris
 
 - Easy to use
