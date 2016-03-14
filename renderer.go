@@ -88,8 +88,8 @@ func (r *Renderer) Text(text string) {
 	r.WriteText(http.StatusOK, text)
 }
 
-// WriteJSON writes which is converted from struct(s) with a http status which they passed to the function via parameters
-func (r *Renderer) WriteJSON(httpStatus int, jsonStructs ...interface{}) error {
+// RenderJSON renders json objects with indent
+func (r *Renderer) RenderJSON(httpStatus int, jsonStructs ...interface{}) error {
 	var _json []byte
 
 	for _, jsonStruct := range jsonStructs {
@@ -109,9 +109,17 @@ func (r *Renderer) WriteJSON(httpStatus int, jsonStructs ...interface{}) error {
 	return nil
 }
 
+// WriteJSON writes JSON which is encoded from a single json object or array with no Indent
+func (r *Renderer) WriteJSON(httpStatus int, jsonObjectOrArray interface{}) error {
+	r.responseWriter.Header().Set(ContentType, ContentJSON)
+	r.responseWriter.WriteHeader(httpStatus)
+
+	return json.NewEncoder(r.responseWriter).Encode(jsonObjectOrArray)
+}
+
 //JSON calls the WriteJSON with the 200 http status ok
-func (r *Renderer) JSON(jsonStructs ...interface{}) error {
-	return r.WriteJSON(http.StatusOK, jsonStructs...)
+func (r *Renderer) JSON(jsonObjectOrArray interface{}) error {
+	return r.WriteJSON(http.StatusOK, jsonObjectOrArray)
 }
 
 // WriteXML writes xml which is converted from struct(s) with a http status which they passed to the function via parameters
