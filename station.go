@@ -102,8 +102,8 @@ func newStation(options StationOptions) *Station {
 // Listen starts the standalone http server
 // which listens to the fullHostOrPort parameter which as the form of
 // host:port or just port
-func (s *Station) Listen(fullHostOrPort interface{}) error {
-	return s.server.listen(fullHostOrPort)
+func (s *Station) Listen(fullHostOrPort ...string) error {
+	return s.server.listen(fullHostOrPort...)
 }
 
 // ListenTLS Starts a httpS/http2 server with certificates,
@@ -111,8 +111,8 @@ func (s *Station) Listen(fullHostOrPort interface{}) error {
 // only https:// connections are allowed
 // which listens to the fullHostOrPort parameter which as the form of
 // host:port or just port
-func (s *Station) ListenTLS(fullHostOrPort interface{}, certFile, keyFile string) error {
-	return s.server.listenTLS(fullHostOrPort, certFile, keyFile)
+func (s *Station) ListenTLS(fullAddress string, certFile, keyFile string) error {
+	return s.server.listenTLS(fullAddress, certFile, keyFile)
 }
 
 // Close is used to close the tcp listener from the server

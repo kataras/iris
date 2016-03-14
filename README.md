@@ -52,7 +52,7 @@ func main() {
 	iris.Get("/hello", func(c *iris.Context) {
 		c.HTML("<b> Hello </b>")
 	})
-	iris.Listen(8080)
+	iris.Listen(":8080")
 	//or for https and http2
 	//iris.ListenTLS(8080,"localhost.cert","localhost.key")
 	//the cert and key must be in the same path of the executable main server file
@@ -115,7 +115,7 @@ With Intel(R) Core(TM) i7-4710HQ CPU @ 2.50GHz 2.50 HGz and 8GB Ram:
 
 **Compatible:** At the end the Iris is just a middleware which acts like router and a small simply web framework, this means that you can you use it side-by-side with your favorite big and well-tested web framework. Iris is fully compatible with the **net/http package.**
 
-**Multi servers:** Besides the fact that iris has a default main server. You can declare a new iris using the iris.New() func. example: server1:= iris.New(); server1.Get(....); server1.Listen(9999)
+**Multi servers:** Besides the fact that iris has a default main server. You can declare a new iris using the iris.New() func. example: server1:= iris.New(); server1.Get(....); server1.Listen(":9999")
 
 ## Startup
 
@@ -133,15 +133,15 @@ import "github.com/kataras/iris"
 func methodFirst() {
 	
 	iris.Get("/home",func(c *iris.Context){})
-	iris.Listen(8080)
-	//iris.ListenTLS(8080,"yourcertfile.cert","yourkeyfile.key"	
+	iris.Listen(":8080")
+	//iris.ListenTLS(":8080","yourcertfile.cert","yourkeyfile.key"	
 }
 // 2.	
 func methodSecond() {
 	
 	api := iris.New()
 	api.Get("/home",func(c *iris.Context){})
-	api.Listen(8080)
+	api.Listen(":8080")
 }
 // 3.
 func methodThree() {
@@ -157,7 +157,7 @@ func methodThree() {
 	
 	api := iris.Custom(options)
 	api.Get("/home",func(c *iris.Context){})
-	api.Listen(8080)
+	api.Listen(":8080")
 }
 
 ```
@@ -177,7 +177,7 @@ func main() {
 	}
 
 	api := iris.Custom(options)
-	api.Listen(8080)
+	api.Listen(":8080")
 }
 ```
 run it, then you can open your browser, type '**localhost:8080/mypath/debug/profile**' at the location input field and you should see a webpage  shows you informations about CPU.
@@ -212,7 +212,7 @@ func main() {
 	iris.Patch("/testPatch",testPatch)
 	iris.Options("/testOptions",testOptions)
 
-	iris.Listen(8080)
+	iris.Listen(":8080")
 }
 
 //iris is fully compatible with net/http package
@@ -267,7 +267,7 @@ func main() {
 
   
 
-    iris.Listen(8080)
+    iris.Listen(":8080")
 }
 ```
 
@@ -307,7 +307,7 @@ func main() {
 			c.HTML("<b> Hello </b>"+name)
 		})
 
-	iris.Listen(8080)
+	iris.Listen(":8080")
 	//or log.Fatal(http.ListenAndServe(":8080", iris))
 }
 

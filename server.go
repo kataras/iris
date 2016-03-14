@@ -4,8 +4,7 @@ import (
 	"crypto/tls"
 	"net"
 	"net/http"
-	"reflect"
-	"strconv"
+	"os"
 	"strings"
 	"time"
 )
@@ -46,34 +45,36 @@ type Server struct {
 	isSecure bool
 }
 
-func parseAddr(fullHostOrPort interface{}) string {
-	addr := "127.0.0.1:8080"
-	if fullHostOrPort != nil {
+func parseAddr(fullHostOrPort []string) string {
+	//means only port is given
+	hlen := len(fullHostOrPort)
 
-		switch reflect.ValueOf(fullHostOrPort).Interface().(type) {
-		case string:
-			config := strings.Split(fullHostOrPort.(string), ":")
+	//wrong parameters
+	if hlen > 1 {
+		panic("Iris: Max parameters length is 2, pass a host:port or port")
+	}
+	addr := ":8080" // default address
+	// if nothing passed, then use environment's port (if any) or just :8080
+	if hlen == 0 {
+		if envPort := os.Getenv("PORT"); len(envPort) > 0 {
+			addr = ":" + envPort
+		}
 
-			if config[0] != "" {
-				addr = config[0]
-			}
-
-			if len(config) > 1 {
-				addr += config[1]
-			} else {
-				addr += ":8080"
-			}
-		case int:
-			addr = "127.0.0.1:" + strconv.Itoa(fullHostOrPort.(int))
+	} else if hlen == 1 {
+		addr = fullHostOrPort[0]
+		if strings.IndexRune(addr, ':') == -1 {
+			//: doesn't found on the given address, so maybe it's only a port
+			addr = ":" + addr
 		}
 	}
+
 	return addr
 }
 
 // listen starts the standalone http server
 // which listens to the fullHostOrPort parameter which as the form of
 // host:port or just port
-func (s *Server) listen(fullHostOrPort interface{}) error {
+func (s *Server) listen(fullHostOrPort ...string) error {
 	fulladdr := parseAddr(fullHostOrPort)
 	mux := http.NewServeMux() //we use the http's ServeMux for now as the top- middleware of the server, for now.
 
@@ -102,9 +103,8 @@ func (s *Server) listen(fullHostOrPort interface{}) error {
 // only https:// connections are allowed
 // which listens to the fullHostOrPort parameter which as the form of
 // host:port or just port
-func (s *Server) listenTLS(fullHostOrPort interface{}, certFile, keyFile string) error {
+func (s *Server) listenTLS(fulladdr string, certFile, keyFile string) error {
 	var err error
-	fulladdr := parseAddr(fullHostOrPort)
 	httpServer := http.Server{
 		Addr:    fulladdr,
 		Handler: s.handler,

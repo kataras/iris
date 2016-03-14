@@ -58,18 +58,18 @@ func Custom(options StationOptions) *Station {
 
 // Listen starts the standalone http server
 // which listens to the fullHostOrPort parameter which as the form of
-// host:port or just port
-func Listen(fullHostOrPort interface{}) error {
-	return DefaultStation.Listen(fullHostOrPort)
+// host:port or just port or empty, the default is 127.0.0.1:8080
+func Listen(fullHostOrPort ...string) error {
+	return DefaultStation.Listen(fullHostOrPort...)
 }
 
 // ListenTLS Starts a httpS/http2 server with certificates,
 // if you use this method the requests of the form of 'http://' will fail
 // only https:// connections are allowed
 // which listens to the fullHostOrPort parameter which as the form of
-// host:port or just port
-func ListenTLS(fullHostOrPort interface{}, certFile, keyFile string) error {
-	return DefaultStation.ListenTLS(fullHostOrPort, certFile, keyFile)
+// host:port
+func ListenTLS(fullAddress string, certFile, keyFile string) error {
+	return DefaultStation.ListenTLS(fullAddress, certFile, keyFile)
 }
 
 // Close is used to close the net.Listener of the standalone http server which has already running via .Listen

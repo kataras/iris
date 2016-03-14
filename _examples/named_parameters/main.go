@@ -9,5 +9,5 @@ func main() {
 		c.Write("Hello " + name)
 	})
 
-	iris.Listen(8080)
+	iris.Listen(":8080")
 }
