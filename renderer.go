@@ -116,17 +116,17 @@ func (r *Renderer) JSON(jsonStructs ...interface{}) error {
 
 // WriteXML writes xml which is converted from struct(s) with a http status which they passed to the function via parameters
 func (r *Renderer) WriteXML(httpStatus int, xmlStructs ...interface{}) error {
-	var _xmlDoc string
+	var _xmlDoc []byte
 	for _, xmlStruct := range xmlStructs {
 		theDoc, err := xml.MarshalIndent(xmlStruct, "", "  ")
 		if err != nil {
 			return err
 		}
-		_xmlDoc += string(theDoc) + "\n"
+		_xmlDoc = append(_xmlDoc, theDoc...)
 	}
 	r.responseWriter.Header().Set(ContentType, ContentXML)
 	r.responseWriter.WriteHeader(httpStatus)
-	io.WriteString(r.responseWriter, xml.Header+_xmlDoc)
+	r.responseWriter.Write(_xmlDoc)
 	return nil
 }
 

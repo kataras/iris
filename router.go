@@ -33,6 +33,7 @@ type IRouter interface {
 	Errors() *HTTPErrors //at the main Router struct this is managed by the MiddlewareSupporter
 	// ServeHTTP finds and serves a route by it's request
 	// If no route found, it sends an http status 404
+	Build()
 	ServeHTTP(http.ResponseWriter, *http.Request)
 }
 
@@ -273,6 +274,22 @@ func (r *Router) Any(path string, handler interface{}) *Route {
 	return r.HandleFunc(path, convertToHandler(handler), "")
 }
 
+// Build prepares the Router before ServeHTTP.
+// is beeing called one time before .Listen, at the Build state
+func (r *Router) Build() {
+	//sort the trees by the longest prefix and longest route path
+	r.trees.sort()
+	//prepare each route, check if middlewares are exists, if yes then do the mapping
+	for method, _tree := range r.trees {
+		for index, _branch := range _tree {
+			for indexRoute, _ := range _branch.routes {
+				//'full' in order to understand better what we are doing here.
+				r.trees[method][index].routes[indexRoute].prepare()
+			}
+		}
+	}
+}
+
 // ServeHTTP finds and serves a route by it's request
 // If no route found, it sends an http status 404
 func (r *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
@@ -307,7 +324,6 @@ search:
 					}
 					//if the prefix was found, so we are 100% at the correct node, because I make it to end with slashes
 					//so no need to check other prefixes any more, just return 404 and exit from here.
-					//println(req.URL.Path, " NOT found")
 
 					//if prefix found on head but no route no route found, then search to the GET tree also
 					if isHead {

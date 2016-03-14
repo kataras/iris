@@ -69,8 +69,6 @@ func (_trees Trees) addRoute(method string, route *Route) {
 
 		if _branch.prefix == routePref {
 			_trees[method][index].routes = append(_branch.routes, route)
-			//sort routes by the most larger path parts
-			sort.Sort(_trees[method][index].routes)
 			ok = true
 			break
 		}
@@ -78,12 +76,19 @@ func (_trees Trees) addRoute(method string, route *Route) {
 	if !ok {
 		_branch = &branch{prefix: route.pathPrefix, routes: make([]*Route, 0)}
 		_branch.routes = append(_branch.routes, route)
-		//sort routes by the most larger path parts
-		sort.Sort(_branch.routes)
-		//_node.makePriority(route)
 		_trees[method] = append(_trees[method], _branch)
 	}
 
-	//sort nodes by the longest prefix
-	sort.Sort(_trees[method])
+}
+
+// sort is used one time before the Listen, at the Build state
+func (_trees Trees) sort() {
+	for method, _tree := range _trees {
+		for index, _ := range _tree {
+			// sort the routes by the biggest path parts
+			sort.Sort(_trees[method][index].routes)
+		}
+		// sort the branches by the longest prefix
+		sort.Sort(_trees[method])
+	}
 }

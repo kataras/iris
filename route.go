@@ -33,6 +33,7 @@ type Route struct {
 	pathParts           []Part
 	partsLen            uint8
 	isStatic            bool
+	hasMiddleware       bool
 	lastStaticPartIndex uint8  // when( how much slashes we have before) the dynamic path, the start of the dynamic path in words of slashes /
 	pathPrefix          string // this is to make a little faster the match, before regexp Match runs, it's the path before the first path parameter :
 	//the pathPrefix is with the last / if parameters exists.
@@ -43,7 +44,6 @@ type Route struct {
 	fullpath string // need only on parameters.Params(...)
 	//fullparts   []string
 	handler Handler
-	isReady bool
 	station *Station
 }
 
@@ -269,29 +269,22 @@ func (r *Route) Verify(urlPath string) bool {
 }
 
 // prepare prepares the route's handler , places it to the last middleware , handler acts like a middleware too.
-// Runs once before the first ServeHTTP
-// MUST REMOVE IT SOME DAY AND MAKE MIDDLEWARE MORE LIGHTER
+// Runs once at the BuildRouter state, which is part of the Build state at the station.
 func (r *Route) prepare() {
-	//r.mu.Lock()
-	//look why on router ->HandleFunc defer r.mu.Unlock()
-	//but wait... do we need locking here?
+	if r.middlewareHandlers != nil && r.hasMiddleware == false { // hasMiddleware check to false because we want to see if the prepare proccess is already do its work.
+		convertedMiddleware := MiddlewareHandlerFunc(func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
+			r.handler.run(r, res, req)
+			next(res, req)
+		})
 
-	convertedMiddleware := MiddlewareHandlerFunc(func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
-		r.handler.run(r, res, req)
-		next(res, req)
-	})
-
-	r.Use(convertedMiddleware)
-	r.isReady = true
-
+		r.Use(convertedMiddleware)
+		r.hasMiddleware = true
+	}
 }
 
 // ServeHTTP serves this route and it's middleware
 func (r *Route) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	if r.middlewareHandlers != nil {
-		if !r.isReady {
-			r.prepare()
-		}
+	if r.hasMiddleware {
 		r.middleware.ServeHTTP(res, req)
 	} else {
 		r.handler.run(r, res, req)

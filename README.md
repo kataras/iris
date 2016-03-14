@@ -300,7 +300,7 @@ func main() {
 	// NOT match to /profile/ , /profile/kataras ,
 	// NOT match to /profile/kataras/friends,  /profile/kataras/friends ,
 	// NOT match to /profile/kataras/friends/2/something
-	iris.Get("/users/:fullname/friends/:friendId",
+	iris.Get("/profile/:fullname/friends/:friendId",
 		func(c *iris.Context){
 			name:= c.Param("fullname")
 			//friendId := c.ParamInt("friendId")
@@ -308,7 +308,7 @@ func main() {
 		})
 
 	iris.Listen(":8080")
-	//or log.Fatal(http.ListenAndServe(":8080", iris))
+	//or iris.Build(); log.Fatal(http.ListenAndServe(":8080", iris))
 }
 
 ```

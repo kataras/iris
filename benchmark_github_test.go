@@ -360,7 +360,7 @@ func loadIris(routes []routeTest) http.Handler {
 	for _, route := range routes {
 		api.Handle(route.path, h, route.method)
 	}
-
+	api.Build()
 	return api
 }
 

@@ -55,15 +55,6 @@ var (
 				ExpectedParameters: nil,
 			}},
 		},
-		/*	{
-			Methods: HTTPMethods.ANY, Path: "/test/others/:something",
-			Requests: []TestRequestRoute{{
-				Method: "GET", Path: "/test/others/any",
-				Body:               []byte("body for the test/others/:something"),
-				ExpectedStatusCode: 200,
-				ExpectedParameters: map[string]string{"something": "any"},
-			}},
-		},*/
 		{
 			Methods: HTTPMethods.ANY, Path: "/test/others/:something/work/path/muchmore/biggest",
 			Requests: []TestRequestRoute{{
@@ -202,7 +193,6 @@ func getRequestRoute(route TestRoute, reqURL string) *TestRequestRoute {
 }
 
 func checkParams(c *Context, expected map[string]string) error {
-	//time.AfterFunc(3*time.Second, func() { ok  each context has its own parameters
 	if expected != nil {
 		for key, value := range expected {
 			contextParamValue := c.Param(key)
@@ -217,7 +207,6 @@ func checkParams(c *Context, expected map[string]string) error {
 			}
 		}
 	}
-	//})
 
 	return nil
 }
@@ -286,6 +275,7 @@ func TestRoutesServerSide(t *testing.T) {
 		http.Error(res, CustomNotFoundErrorMessage, http.StatusNotFound)
 	})
 
+	api.Build()
 	testServer = httptest.NewUnstartedServer(api)
 
 	testServer.Start()
