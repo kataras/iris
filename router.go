@@ -70,11 +70,6 @@ func (r *Router) Errors() *HTTPErrors {
 // handler is the iris.Handler which you can pass anything you want via iris.HandlerFunc(func(res,req){})... or just use func(c iris.Context),func(r iris.Renderer), func(c Context,r Renderer) or func(res http.ResponseWriter, req *http.Request)
 // method is the last parameter, pass the http method ex: "GET","POST".. iris.HTTPMethods.PUT, or empty string to match all methods
 func (r *Router) HandleFunc(registedPath string, handler Handler, method string) *Route {
-	//r.mu.Lock()
-	//defer is 5 times slower only some nanosecconds difference but let's make it faster unlock it at the end of the function manually  or not?
-	//defer r.mu.Unlock()
-	//but wait... do we need locking here?
-
 	var route *Route
 	if registedPath == "" {
 		registedPath = "/"
@@ -88,7 +83,11 @@ func (r *Router) HandleFunc(registedPath string, handler Handler, method string)
 			route.middlewareHandlers = r.middlewareHandlers
 		}
 
+		r.station.pluginContainer.doPreHandle(method, route)
+
 		r.trees.addRoute(method, route)
+
+		r.station.pluginContainer.doPostHandle(method, route)
 
 	}
 	route.station = r.station

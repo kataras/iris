@@ -56,6 +56,17 @@ func Custom(options StationOptions) *Station {
 	return newStation(opt)
 }
 
+// Plugin activates the plugins and if succeed then adds it to the activated plugins list
+func Plugin(plugin IPlugin) error {
+	return DefaultStation.Plugin(plugin)
+}
+
+// Build is executed before the Listen automatically, if .Listen is not used then you should
+// call .Build manually.
+func Build() {
+	DefaultStation.Build()
+}
+
 // Listen starts the standalone http server
 // which listens to the fullHostOrPort parameter which as the form of
 // host:port or just port or empty, the default is 127.0.0.1:8080
