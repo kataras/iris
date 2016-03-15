@@ -23,8 +23,12 @@ func NewMemoryRouter(underlineRouter *Router, maxitems int, resetDuration time.D
 	return r
 }
 
-func (r *MemoryRouter) HandleFunc(registedPath string, handlerFn HandlerFunc, method string) *Route {
-	return r.Router.HandleFunc(registedPath, handlerFn, method)
+func (r *MemoryRouter) HandleFunc(method string, registedPath string, handlerFn HandlerFunc) *Route {
+	return r.Router.HandleFunc(method, registedPath, handlerFn)
+}
+
+func (r *MemoryRouter) Handle(method string, registedPath string, handler Handler) *Route {
+	return r.Router.Handle(method, registedPath, handler)
 }
 
 // ServeHTTP finds and serves a route by it's request

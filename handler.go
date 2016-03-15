@@ -16,10 +16,10 @@ import (
   )
 
   type UserHandler struct {
-  	iris.Annotated `get:"/api/users/:userId"`
+  	iris.Handler `get:"/api/users/:userId"`
   }
 
-  func (u *UserHandler) Handle(ctx *iris.Context) {
+  func (u *UserHandler) Serve(ctx *iris.Context) {
 
   	defer ctx.Close()
   	var userId, _ = ctx.ParamInt("userId")
@@ -31,18 +31,19 @@ import (
   ...
 
   api:= iris.New()
-  registerError := api.Handle(&UserHandler{})
+  registerError := api.HandleAnnotated(&UserHandler{})
 
 */
-///TODO: to Annotated na to kanw Handler me Serve
-type Annotated interface {
-	//must implement func Handle() with a *Context as parameter
-}
 
-// the main Iris Handler interface.
+// Handler the main Iris Handler interface.
 type Handler interface {
 	Serve(ctx *Context)
 }
+
+// The HandlerFunc type is an adapter to allow the use of
+// ordinary functions as HTTP handlers.  If f is a function
+// with the appropriate signature, HandlerFunc(f) is a
+// Handler that calls f.
 type HandlerFunc func(*Context)
 
 func (h HandlerFunc) Serve(ctx *Context) {
@@ -63,6 +64,7 @@ func Static(SystemPath string, PathToStrip ...string) HandlerFunc {
 
 }
 
+// ToHandler converts http.Handler or func(http.ResponseWriter, *http.Request) to an iris.Handler
 func ToHandler(handler interface{}) Handler {
 	switch handler.(type) {
 	case http.Handler:
@@ -75,11 +77,12 @@ func ToHandler(handler interface{}) Handler {
 			handler.(func(http.ResponseWriter, *http.Request))(c.ResponseWriter, c.Request)
 		}))
 	default:
-		panic(fmt.Sprintf("Error on Iris.ToHandler: handler is not func(*Context) either an object which implements the iris.Handler interface\n It seems to be a  %T Point to: %v:", handler, handler))
+		panic(fmt.Sprintf("Error on Iris: handler is not func(*Context) either an object which implements the iris.Handler with  func Serve(ctx *Context)\n It seems to be a  %T Point to: %v:", handler, handler))
 	}
 	return nil
 }
 
+// ToHandlerFunc converts http.Handler or func(http.ResponseWriter, *http.Request) to an iris.HandlerFunc func (ctx *Context)
 func ToHandlerFunc(handler interface{}) HandlerFunc {
 	return ToHandler(handler).Serve
 }

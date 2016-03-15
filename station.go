@@ -76,15 +76,15 @@ func newStation(options StationOptions) *Station {
 	// set the debug profiling handlers if enabled
 	if options.Profile {
 		debugPath := options.ProfilePath
-		r.Handle(debugPath+"/", ToHandler(pprof.Index), HTTPMethods.GET)
-		r.Handle(debugPath+"/cmdline", ToHandler(pprof.Cmdline), HTTPMethods.GET)
-		r.Handle(debugPath+"/profile", ToHandler(pprof.Profile), HTTPMethods.GET)
-		r.Handle(debugPath+"/symbol", ToHandler(pprof.Symbol), HTTPMethods.GET)
+		r.Get(debugPath+"/", ToHandlerFunc(pprof.Index))
+		r.Get(debugPath+"/cmdline", ToHandlerFunc(pprof.Cmdline))
+		r.Get(debugPath+"/profile", ToHandlerFunc(pprof.Profile))
+		r.Get(debugPath+"/symbol", ToHandlerFunc(pprof.Symbol))
 
-		r.Handle(debugPath+"/goroutine", ToHandler(pprof.Handler("goroutine")), HTTPMethods.GET)
-		r.Handle(debugPath+"/heap", ToHandler(pprof.Handler("heap")), HTTPMethods.GET)
-		r.Handle(debugPath+"/threadcreate", ToHandler(pprof.Handler("threadcreate")), HTTPMethods.GET)
-		r.Handle(debugPath+"/pprof/block", ToHandler(pprof.Handler("block")), HTTPMethods.GET)
+		r.Get(debugPath+"/goroutine", ToHandlerFunc(pprof.Handler("goroutine")))
+		r.Get(debugPath+"/heap", ToHandlerFunc(pprof.Handler("heap")))
+		r.Get(debugPath+"/threadcreate", ToHandlerFunc(pprof.Handler("threadcreate")))
+		r.Get(debugPath+"/pprof/block", ToHandlerFunc(pprof.Handler("block")))
 	}
 
 	// set the router

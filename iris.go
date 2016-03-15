@@ -94,26 +94,22 @@ func Party(rootPath string) IParty {
 	return DefaultStation.Party(rootPath)
 }
 
-// HandleFunc registers and returns a route with a path string, a handler and optinally methods as parameters
-// registedPath is the relative url path
-// handler is the iris.Handler which you can pass anything you want via iris.HandlerFunc(func(res,req){})... or just use func(c iris.Context),func(r iris.Renderer), func(c Context,r Renderer) or func(res http.ResponseWriter, req *http.Request)
-// method is the last parameter, pass the http method ex: "GET","POST".. iris.HTTPMethods.PUT, or empty string to match all methods
-func HandleFunc(path string, handler HandlerFunc, method string) *Route {
-	return DefaultStation.HandleFunc(path, handler, method)
+// Handle registers a route to the server's router
+func Handle(method string, registedPath string, handler Handler) *Route {
+	return DefaultStation.Handle(method, registedPath, handler)
 }
 
-// HandleAnnotated registers a route handler using a Struct
-// implements Handle() function and has iris.Annotated anonymous property
+// HandleFunc registers a route with a method, path string, and a handler
+func HandleFunc(method string, path string, handler HandlerFunc) *Route {
+	return DefaultStation.HandleFunc(method, path, handler)
+}
+
+// HandleAnnotated registers a route handler using a Struct implements iris.Handler (as anonymous property)
 // which it's metadata has the form of
-// `method:"path" template:"file.html"` and returns the route and an error if any occurs
-func HandleAnnotated(irisHandler Annotated) (*Route, error) {
+// `method:"path"` and returns the route and an error if any occurs
+// handler is passed by func(urstruct MyStruct) Serve(ctx *Context) {}
+func HandleAnnotated(irisHandler Handler) (*Route, error) {
 	return DefaultStation.HandleAnnotated(irisHandler)
-}
-
-// Handle registers a route to the server's router, pass a struct -implements iris.Annotated as parameter
-// Or pass just a http.Handler or TypicalHandlerFunc or ContextedHandlerFunc or  RendereredHandlerFunc or ContextedRendererHandlerFunc or already an iris.Handler
-func Handle(params ...interface{}) *Route {
-	return DefaultStation.Handle(params...)
 }
 
 // Use registers a a custom handler, with next, as a global middleware

@@ -27,9 +27,9 @@ type IRouter interface {
 	IMiddlewareSupporter
 	IRouterMethods
 	IPartyHoster
-	HandleAnnotated(irisHandler Annotated) (*Route, error)
-	Handle(params ...interface{}) *Route
-	HandleFunc(path string, handler HandlerFunc, method string) *Route
+	HandleAnnotated(Handler) (*Route, error)
+	Handle(string, string, Handler) *Route
+	HandleFunc(string, string, HandlerFunc) *Route
 	Errors() *HTTPErrors //at the main Router struct this is managed by the MiddlewareSupporter
 	// ServeHTTP finds and serves a route by it's request
 	// If no route found, it sends an http status 404
@@ -63,60 +63,57 @@ func (r *Router) Errors() *HTTPErrors {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//expose common methods as public on the Router, and the  Server struct, also as global used from global iris server.
+//expose common methods as public on the Router, also as global used from global iris server.
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Handle registers a route to the server's router
+func (r *Router) Handle(method string, registedPath string, handler Handler) *Route {
+	if registedPath == "" {
+		registedPath = "/"
+	}
+	if handler == nil {
+		panic("Iris.Handle: nil passed as handler!")
+	}
+	route := newRoute(registedPath, handler)
+
+	if len(r.middlewareHandlers) > 0 {
+		//if global middlewares are registed then push them to this route.
+		route.middlewareHandlers = r.middlewareHandlers
+	}
+
+	r.station.pluginContainer.doPreHandle(method, route)
+
+	r.tempTrees.addRoute(method, route)
+
+	r.station.pluginContainer.doPostHandle(method, route)
+
+	return route
+}
 
 // HandleFunc registers and returns a route with a path string, a handler and optinally methods as parameters
 // registedPath is the relative url path
 // handler is the iris.Handler which you can pass anything you want via iris.HandlerFunc(func(res,req){})... or just use func(c iris.Context),func(r iris.Renderer), func(c Context,r Renderer) or func(res http.ResponseWriter, req *http.Request)
 // method is the last parameter, pass the http method ex: "GET","POST".. iris.HTTPMethods.PUT, or empty string to match all methods
-func (r *Router) HandleFunc(registedPath string, handler HandlerFunc, method string) *Route {
-	var route *Route
-	if registedPath == "" {
-		registedPath = "/"
-	}
-
-	if handler != nil {
-		route = newRoute(registedPath, handler)
-
-		if len(r.middlewareHandlers) > 0 {
-			//if global middlewares are registed then push them to this route.
-			route.middlewareHandlers = r.middlewareHandlers
-		}
-
-		r.station.pluginContainer.doPreHandle(method, route)
-
-		r.tempTrees.addRoute(method, route)
-
-		r.station.pluginContainer.doPostHandle(method, route)
-
-	}
-	route.station = r.station
-	return route
+func (r *Router) HandleFunc(method string, registedPath string, handler HandlerFunc) *Route {
+	return r.Handle(method, registedPath, handler)
 }
 
-// HandleAnnotated registers a route handler using a Struct
-// implements Handle() function and has iris.Annotated anonymous property
+// HandleAnnotated registers a route handler using a Struct implements iris.Handler (as anonymous property)
 // which it's metadata has the form of
 // `method:"path"` and returns the route and an error if any occurs
-func (r *Router) HandleAnnotated(irisHandler Annotated) (*Route, error) {
-	//r.mu.Lock()
-	//defer r.mu.Unlock()
+// handler is passed by func(urstruct MyStruct) Serve(ctx *Context) {}
+func (r *Router) HandleAnnotated(irisHandler Handler) (*Route, error) {
 	var route *Route
 	var method string
 	var path string
-	var handleFunc reflect.Value
 	var errMessage = ""
 	val := reflect.ValueOf(irisHandler).Elem()
 
 	for i := 0; i < val.NumField(); i++ {
 		typeField := val.Type().Field(i)
 
-		if typeField.Anonymous && typeField.Name == "Annotated" {
+		if typeField.Anonymous && typeField.Name == "Handler" {
 			tags := strings.Split(strings.TrimSpace(string(typeField.Tag)), " ")
-			//we can have two keys, one is the tag starts with the method (GET,POST: "/user/api/{userId(int)}")
-			//and the other if exists is the OPTIONAL TEMPLATE/TEMPLATE-GLOB: "file.html"
-
 			firstTag := tags[0]
 
 			idx := strings.Index(string(firstTag), ":")
@@ -135,31 +132,20 @@ func (r *Router) HandleAnnotated(irisHandler Annotated) (*Route, error) {
 
 			if !strings.Contains(avalaibleMethodsStr, tagName) {
 				//wrong methods passed
-				errMessage = errMessage + "\niris.HandleAnnotated: Wrong methods passed to Handler -> " + tagName
+				errMessage = errMessage + "\niris.HandleAnnotated: Wrong method passed to the anonymous property iris.Handler -> " + tagName
 				continue
 			}
-			//it is single 'GET','POST' .... method
+
 			method = tagName
 
 		} else {
-			errMessage = "\nError on Iris on HandleAnnotated: Struct passed but it doesn't have an anonymous property of type iris.Annotated, please refer to docs\n"
+			errMessage = "\nError on Iris.HandleAnnotated: Struct passed but it doesn't have an anonymous property of type iris.Hanndler, please refer to docs\n"
 		}
 
 	}
 
 	if errMessage == "" {
-
-		//now check/get the Handle method from the irisHandler 'obj'.
-		handleFunc = reflect.ValueOf(irisHandler).MethodByName("Handle")
-		if !handleFunc.IsValid() {
-			errMessage = "Missing Handle function inside iris.Annotated"
-		}
-
-		if errMessage == "" {
-			route = r.HandleFunc(path, HandlerFunc(handleFunc.Interface().(func(*Context))), method)
-			//check if template string has stored by the tag ( look before this block )
-		}
-
+		route = r.Handle(method, path, irisHandler)
 	}
 
 	var err error = nil
@@ -168,42 +154,6 @@ func (r *Router) HandleAnnotated(irisHandler Annotated) (*Route, error) {
 	}
 
 	return route, err
-}
-
-// Handle registers a route to the server's router, pass a struct -implements iris.Annotated as parameter or just a handler
-// Handle is not the primary handler , the primary is HandleFunc because this, the .Handle calls .HandleFunc
-func (r *Router) Handle(params ...interface{}) *Route {
-	paramsLen := len(params)
-	var handlerFn HandlerFunc
-	if paramsLen == 0 {
-		panic("No arguments given to the Handle function, please refer to docs")
-	}
-	//when the first parameter is string, the Path then the second should be a Handler
-	if reflect.TypeOf(params[0]).Kind() == reflect.String {
-		handlerType := reflect.TypeOf((*Handler)(nil)).Elem()
-
-		if reflect.TypeOf(params[1]).Implements(handlerType) {
-			handlerFn = params[1].(Handler).Serve
-		} else {
-			//it's http.Handler
-			httpHandlerOfficialType := reflect.TypeOf((*http.Handler)(nil)).Elem()
-			if reflect.TypeOf(params[1]).Implements(httpHandlerOfficialType) {
-				//it is not a http.Handler
-				//it is func(res,req) we will convert it to a handler using http.HandlerFunc
-				handlerFn = ToHandlerFunc(params[1].(func(res http.ResponseWriter, req *http.Request)))
-			}
-
-		}
-
-		return r.HandleFunc(params[0].(string), handlerFn, params[2].(string))
-	} else {
-		//means it's a struct which implements the iris.Annotated and have a Handle func inside it -> handleAnnotated
-		route, err := r.HandleAnnotated(params[0].(Annotated))
-		if err != nil {
-			panic(err.Error())
-		}
-		return route
-	}
 }
 
 ///////////////////
@@ -236,52 +186,52 @@ func (r *Router) Party(rootPath string) IParty {
 
 // Get registers a route for the Get http method
 func (r *Router) Get(path string, handler HandlerFunc) *Route {
-	return r.HandleFunc(path, handler, HTTPMethods.GET)
+	return r.HandleFunc(HTTPMethods.GET, path, handler)
 }
 
 // Post registers a route for the Post http method
 func (r *Router) Post(path string, handler HandlerFunc) *Route {
-	return r.HandleFunc(path, handler, HTTPMethods.POST)
+	return r.HandleFunc(HTTPMethods.POST, path, handler)
 }
 
 // Put registers a route for the Put http method
 func (r *Router) Put(path string, handler HandlerFunc) *Route {
-	return r.HandleFunc(path, handler, HTTPMethods.PUT)
+	return r.HandleFunc(HTTPMethods.PUT, path, handler)
 }
 
 // Delete registers a route for the Delete http method
 func (r *Router) Delete(path string, handler HandlerFunc) *Route {
-	return r.HandleFunc(path, handler, HTTPMethods.DELETE)
+	return r.HandleFunc(HTTPMethods.DELETE, path, handler)
 }
 
 // Connect registers a route for the Connect http method
 func (r *Router) Connect(path string, handler HandlerFunc) *Route {
-	return r.HandleFunc(path, handler, HTTPMethods.CONNECT)
+	return r.HandleFunc(HTTPMethods.CONNECT, path, handler)
 }
 
 // Head registers a route for the Head http method
 func (r *Router) Head(path string, handler HandlerFunc) *Route {
-	return r.HandleFunc(path, handler, HTTPMethods.HEAD)
+	return r.HandleFunc(HTTPMethods.HEAD, path, handler)
 }
 
 // Options registers a route for the Options http method
 func (r *Router) Options(path string, handler HandlerFunc) *Route {
-	return r.HandleFunc(path, handler, HTTPMethods.OPTIONS)
+	return r.HandleFunc(HTTPMethods.OPTIONS, path, handler)
 }
 
 // Patch registers a route for the Patch http method
 func (r *Router) Patch(path string, handler HandlerFunc) *Route {
-	return r.HandleFunc(path, handler, HTTPMethods.PATCH)
+	return r.HandleFunc(HTTPMethods.PATCH, path, handler)
 }
 
 // Trace registers a route for the Trace http method
 func (r *Router) Trace(path string, handler HandlerFunc) *Route {
-	return r.HandleFunc(path, handler, HTTPMethods.TRACE)
+	return r.HandleFunc(HTTPMethods.TRACE, path, handler)
 }
 
 // Any registers a route for ALL of the http methods (Get,Post,Put,Head,Patch,Options,Connect,Delete)
 func (r *Router) Any(path string, handler HandlerFunc) *Route {
-	return r.HandleFunc(path, handler, "")
+	return r.HandleFunc("", path, handler)
 }
 
 // Build prepares the routes before Serve
@@ -298,23 +248,6 @@ func (r *Router) Build() {
 	r.garden.plant(r.tempTrees)
 	//and clear the trees?
 	r.tempTrees = nil
-}
-
-func calculateParts(path string) (partsLen uint8) {
-	for len(path) > 0 {
-
-		endSlash := 1
-		for endSlash < len(path) && path[endSlash] != '/' {
-			endSlash++
-		}
-		if endSlash > len(path) {
-			break
-		}
-		partsLen++
-		path = path[endSlash:]
-
-	}
-	return
 }
 
 // ServeHTTP finds and serves a route by it's request

@@ -6,13 +6,13 @@ import (
 )
 
 type testAPIUsersHandler struct {
-	Annotated `get:"/api/users/:userId"`
+	Handler `get:"/api/users/:userId"`
 }
 
-func (t *testAPIUsersHandler) Handle(ctx *Context) {}
+func (t *testAPIUsersHandler) Serve(ctx *Context) {}
 
 type testStructedRoute struct {
-	handler                  Annotated
+	handler                  Handler
 	expectedMethod           string
 	expectedPathPrefix       string
 	expectedTemplateFilename string

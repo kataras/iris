@@ -66,7 +66,7 @@ func main() {
 }
 
 ```
->Note: for macOS, If you are having problems on .Listen thenp pass only the port "8080" without ':'
+>Note: for macOS, If you are having problems on .Listen then pass only the port "8080" without ':'
 ## Benchmarks
 Benchmark tests were written by 'the standar' way of benchmarking and comparing performance of other routers and frameworks, see [go-http-routing-benchmark](https://github.com/julienschmidt/go-http-routing-benchmark/) .
 
@@ -380,7 +380,7 @@ Iris framework has three (3) different forms of functions in order to declare a 
 	}))
 ```
 > Note that all .Get,.Post takes a func(c *Context) as parameter, to pass an iris.Handler use the iris.Handle("/path",handler,"GET")
- 4. **'External' annotated struct** which directly implements the Iris Annotated interface
+ 4. **'External' annotated struct** which directly implements the Iris Handler interface
 
 
 
@@ -389,10 +389,10 @@ Iris framework has three (3) different forms of functions in order to declare a 
 import "github.com/kataras/iris"
 
 type UserRoute struct {
-	iris.Annotated `get:"/profile/user/:userId"`
+	iris.Handler `get:"/profile/user/:userId"`
 }
 
-func (u *UserRoute) Handle(c *iris.Context) {
+func (u *UserRoute) Serve(c *iris.Context) {
 	defer c.Close()
 	userId := c.Param("userId")
 	c.RenderFile("user.html", struct{ Message string }{Message: "Hello User with ID: " + userId})
@@ -401,10 +401,11 @@ func (u *UserRoute) Handle(c *iris.Context) {
 
 ///file: main.go
 
-//...
-	iris.Templates("src/iristests/templates/*")
-	iris.Handle(&UserRoute{})
-//...
+	//...cache the html files
+	iris.Templates("src/iristests/templates/**/*.html")
+	//...register the handler
+	iris.HandleAnnotated(&UserRoute{})
+	//...continue writing your wonderful API
 
 ```
 Personally I use the external struct and the **func(c *iris.Context)** form .
@@ -531,7 +532,7 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 - [x] Create examples in this repository.
 - [ ] Convert useful middlewares out there into Iris middlewares, or contact with their authors to do so.
 - [ ] Create an easy websocket api also.
-- [ ] Create a mechanism that scan for Typescript files, combile them on startup and serve them.
+- [ ] Create a mechanism that scan for Typescript files, compile them on server startup and serve them.
 
 ## Licence
 

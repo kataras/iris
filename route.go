@@ -4,19 +4,13 @@ import (
 	"strings"
 )
 
-// Route contains its middleware, handler, pattern , it's path string, http methods and a template cache
-// Used to determinate which handler on which path must call
-// Used on router.go
+// Route contains basic and temporary info about the route, it is nil after iris.Listen called
+// contains all middleware and prepare them for execution
+// Used to create a node at the Router's Build state
 type Route struct {
-	//GET, POST, PUT, DELETE, CONNECT, HEAD, PATCH, OPTIONS, TRACE bool //tried with []string, very slow, tried with map[string]bool gives 10k executions but +20k bytes, with this approact we have to code more but only 1k byte to space and make it 2.2 times faster than before!
-	//Middleware
 	MiddlewareSupporter
-	isStatic      bool
-	hasMiddleware bool
-	fullpath      string // need only on parameters.Params(...)
-	//fullparts   []string
+	fullpath   string
 	handler    Handler
-	station    *Station
 	PathPrefix string
 }
 
@@ -62,9 +56,6 @@ func (r *Route) processPath() {
 // prepare prepares the route's handler , places it to the last middleware , handler acts like a middleware too.
 // Runs once at the BuildRouter state, which is part of the Build state at the station.
 func (r *Route) prepare() {
-	if r.middlewareHandlers != nil {
-		r.hasMiddleware = true
-	}
 	convertedMiddleware := MiddlewareHandlerFunc(func(ctx *Context, next Handler) {
 		r.handler.Serve(ctx)
 		//except itself

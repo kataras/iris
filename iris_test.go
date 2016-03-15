@@ -269,7 +269,7 @@ func handleRoute(route TestRoute) func(c *Context) {
 func TestRoutesServerSide(t *testing.T) {
 
 	for _, route := range inlineRoutes {
-		api.HandleFunc(route.Path, handleRoute(route), route.Methods[0])
+		api.HandleFunc(route.Methods[0], route.Path, handleRoute(route))
 	}
 	// Set custom error messages
 	api.Errors().On(http.StatusNotFound, HandlerFunc(func(c *Context) {

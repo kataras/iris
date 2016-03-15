@@ -351,7 +351,7 @@ func loadIris(routes []routeTest) http.Handler {
 	api := New()
 
 	for _, route := range routes {
-		api.HandleFunc(route.path, h, route.method)
+		api.HandleFunc(route.method, route.path, h)
 	}
 	api.Build()
 	return api

@@ -102,14 +102,14 @@ func (p party) Trace(path string, handlerFn HandlerFunc) *Route {
 func (p party) Any(path string, handlerFn HandlerFunc) *Route {
 	return p._router.Any(p._rootPath+path, handlerFn)
 }
-func (p party) HandleAnnotated(irisHandler Annotated) (*Route, error) {
+func (p party) HandleAnnotated(irisHandler Handler) (*Route, error) {
 	return p._router.HandleAnnotated(irisHandler)
 }
-func (p party) Handle(params ...interface{}) *Route {
-	return p._router.Handle(params)
+func (p party) Handle(method string, registedPath string, handler Handler) *Route {
+	return p._router.Handle(method, registedPath, handler)
 }
-func (p party) HandleFunc(path string, handlerFn HandlerFunc, method string) *Route {
-	return p._router.HandleFunc(p._rootPath+path, handlerFn, method)
+func (p party) HandleFunc(method string, path string, handlerFn HandlerFunc) *Route {
+	return p._router.HandleFunc(method, p._rootPath+path, handlerFn)
 }
 
 func (p party) Party(path string) IParty {
