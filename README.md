@@ -476,9 +476,12 @@ Personally I use the external struct and the **func(c *iris.Context)** form .
 
 
 ## Third Party Middleware
-*The iris supports all kind of 'standar' middleware, you can use them by parsing their handlers, for example:  iris.Use(ToHandler(...themMiddlewareHere))*
 
-Some of this, current list of middlware, may not being work, a lot of them are especially for Negroni and nothing more. Iris is at a state which tries to find persons who are be willing to convert them to Iris middleware, contact or open an issue if you are interesting.
+*The iris tries to supports a lot of middleware out there, you can use them by parsing their handlers, for example:  iris.Use(ToHandler(...themMiddlewareHere))*
+
+>Note: Some of these, may not be work, a lot of them are especially for Negroni and nothing more.
+
+Iris has a middleware system to create it's own middleware and is at a state which tries to find person who are be willing to convert them to Iris middleware or create new. Contact or open an issue if you are interesting.
 
 
 | Middleware | Author | Description |
