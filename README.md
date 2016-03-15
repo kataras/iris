@@ -61,12 +61,12 @@ func main() {
 	})
 	iris.Listen(":8080")
 	//or for https and http2
-	//iris.ListenTLS(8080,"localhost.cert","localhost.key")
+	//iris.ListenTLS(":8080","localhost.cert","localhost.key")
 	//the cert and key must be in the same path of the executable main server file
 }
 
 ```
-
+>Note: for macOS, If you are having problems on .Listen thenp pass only the port "8080" without ':'
 ## Benchmarks
 Benchmark tests were written by 'the standar' way of benchmarking and comparing performance of other routers and frameworks, see [go-http-routing-benchmark](https://github.com/julienschmidt/go-http-routing-benchmark/) .
 
@@ -529,8 +529,10 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 ## Todo
 - [ ] Never stop writing the docs.
 - [x] Create examples in this repository.
-- [ ] Create a mechanism that scan for Typescript files, combile them on startup and serve them.
 - [ ] Convert useful middlewares out there into Iris middlewares, or contact with their authors to do so.
+- [ ] Create an easy websocket api also.
+- [ ] Create a mechanism that scan for Typescript files, combile them on startup and serve them.
+
 ## Licence
 
 This project is licensed under the MIT license.
