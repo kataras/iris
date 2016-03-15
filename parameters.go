@@ -7,12 +7,13 @@ import (
 	"strings"
 )
 
+// PathParameter is a struct which contains Key and Value, used for named path parameters
 type PathParameter struct {
 	Key   string
 	Value string
 }
 
-// PathParameters type for path parameters
+// PathParameters type for a slice of PathParameter
 // Tt's a slice of PathParameter type, because it's faster than map
 type PathParameters []PathParameter
 
@@ -27,11 +28,13 @@ func (params PathParameters) Get(key string) string {
 	return ""
 }
 
+// Set sets a PathParameter to the PathParameters , it's not used anywhere.
 func (params PathParameters) Set(key string, value string) {
 	params = append(params, PathParameter{key, value})
-
 }
 
+// String returns a string implementation of all parameters that this PathParameters object keeps
+// hasthe form of key1=value1,key2=value2...
 func (params PathParameters) String() string {
 	var buff bytes.Buffer
 	for i := 0; i < len(params); i++ {
@@ -46,6 +49,8 @@ func (params PathParameters) String() string {
 	return buff.String()
 }
 
+// ParseParams receives a string and returns PathParameters (slice of PathParameter)
+// received string must have this form:  key1=value1,key2=value2...
 func ParseParams(str string) PathParameters {
 	_paramsstr := strings.Split(str, ",")
 	if len(_paramsstr) == 0 {

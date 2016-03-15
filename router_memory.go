@@ -5,11 +5,14 @@ import (
 	"time"
 )
 
+// MemoryRouter is the cached version of the Router
 type MemoryRouter struct {
 	*Router
 	cache IRouterCache
 }
 
+// NewMemoryRouter returns a MemoryRouter
+// receives an underline *Router object and int options like MaxItems and ResetDurationTime
 func NewMemoryRouter(underlineRouter *Router, maxitems int, resetDuration time.Duration) *MemoryRouter {
 	r := &MemoryRouter{}
 	r.Router = underlineRouter
@@ -23,10 +26,12 @@ func NewMemoryRouter(underlineRouter *Router, maxitems int, resetDuration time.D
 	return r
 }
 
+// HandleFunc same as Router.HandleFunc
 func (r *MemoryRouter) HandleFunc(method string, registedPath string, handlerFn HandlerFunc) *Route {
 	return r.Router.HandleFunc(method, registedPath, handlerFn)
 }
 
+// Handle same as Router.Handle
 func (r *MemoryRouter) Handle(method string, registedPath string, handler Handler) *Route {
 	return r.Router.Handle(method, registedPath, handler)
 }
@@ -42,26 +47,25 @@ func (r *MemoryRouter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		ctx.handler.Serve(ctx)
 		return
 	}
-
-	var reqPath = req.URL.Path
-	var method = req.Method
 	ctx := r.station.pool.Get().(*Context)
-	ctx.Request = req
-	ctx.handler = nil
-	ctx.ResponseWriter = res
-	ctx.Params = ctx.Params[0:0]
-	_root := r.garden[method]
+	_root := r.garden[req.Method]
 	if _root != nil {
 
-		handler, params, _ := _root.getValue(reqPath, ctx.Params) // pass the parameters here for 0 allocation
+		ctx.Request = req
+		ctx.ResponseWriter = res
+		ctx.Renderer.responseWriter = ctx.ResponseWriter
+		handler, params, _ := _root.getValue(req.URL.Path, ctx.Params) // pass the parameters here for 0 allocation
 		if handler != nil {
 
-			ctx.Params = params
-			ctx.Renderer.responseWriter = ctx.ResponseWriter
 			ctx.handler = handler
+			ctx.Params = params
 			handler.Serve(ctx)
+
+			r.cache.AddItem(req.Method, req.URL.Path, ctx.Clone())
+			ctx.ResponseWriter = nil
+			ctx.Renderer.responseWriter = nil
+			ctx.Params = ctx.Params[0:0]
 			r.station.pool.Put(ctx)
-			r.cache.AddItem(method, reqPath, ctx)
 			return
 		}
 

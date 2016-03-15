@@ -89,7 +89,7 @@ func Close() { DefaultStation.Close() }
 // Router implementation
 
 // Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
-// Party can also be named as 'Join' or 'Node' or 'Group' , Party choosen because it has more fun
+// Party can also be named as 'Join' or 'Node' or 'Group' , Party chosen because it has more fun
 func Party(rootPath string) IParty {
 	return DefaultStation.Party(rootPath)
 }

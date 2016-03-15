@@ -8,8 +8,7 @@ import (
 	"strings"
 )
 
-///TODO: fix the path if no ending with '/' ? or it must be not ending with '/' but handle requests with last '/' redirect to non '/' ? I will think about it.
-
+// IRouterMethods is the interface for method routing
 type IRouterMethods interface {
 	Get(path string, handler HandlerFunc) *Route
 	Post(path string, handler HandlerFunc) *Route
@@ -23,6 +22,7 @@ type IRouterMethods interface {
 	Any(path string, handler HandlerFunc) *Route
 }
 
+// IRouter is the interface of which any Iris router must implement
 type IRouter interface {
 	IMiddlewareSupporter
 	IRouterMethods
@@ -54,10 +54,12 @@ func NewRouter(station *Station) *Router {
 	return &Router{station: station, tempTrees: make(trees, 0), garden: make(Garden, len(HTTPMethods.ANY)), httpErrors: DefaultHTTPErrors()}
 }
 
+// SetErrors sets a HTTPErrors object to the router
 func (r *Router) SetErrors(httperr *HTTPErrors) {
 	r.httpErrors = httperr
 }
 
+// Errors get the HTTPErrors from the router
 func (r *Router) Errors() *HTTPErrors {
 	return r.httpErrors
 }
@@ -90,10 +92,9 @@ func (r *Router) Handle(method string, registedPath string, handler Handler) *Ro
 	return route
 }
 
-// HandleFunc registers and returns a route with a path string, a handler and optinally methods as parameters
+// HandleFunc registers and returns a route with a method string, path string and a handler
 // registedPath is the relative url path
-// handler is the iris.Handler which you can pass anything you want via iris.HandlerFunc(func(res,req){})... or just use func(c iris.Context),func(r iris.Renderer), func(c Context,r Renderer) or func(res http.ResponseWriter, req *http.Request)
-// method is the last parameter, pass the http method ex: "GET","POST".. iris.HTTPMethods.PUT, or empty string to match all methods
+// handler is the iris.Handler which you can pass anything you want via iris.ToHandlerFunc(func(res,req){})... or just use func(c *iris.Context)
 func (r *Router) HandleFunc(method string, registedPath string, handler HandlerFunc) *Route {
 	return r.Handle(method, registedPath, handler)
 }
@@ -128,10 +129,9 @@ func (r *Router) HandleAnnotated(irisHandler Handler) (*Route, error) {
 
 			path = tagValue
 			avalaibleMethodsStr := strings.Join(HTTPMethods.ANY, ",")
-			//has multi methods seperate by commas
 
 			if !strings.Contains(avalaibleMethodsStr, tagName) {
-				//wrong methods passed
+				//wrong method passed
 				errMessage = errMessage + "\niris.HandleAnnotated: Wrong method passed to the anonymous property iris.Handler -> " + tagName
 				continue
 			}
@@ -148,7 +148,7 @@ func (r *Router) HandleAnnotated(irisHandler Handler) (*Route, error) {
 		route = r.Handle(method, path, irisHandler)
 	}
 
-	var err error = nil
+	var err error
 	if errMessage != "" {
 		err = errors.New(errMessage)
 	}
@@ -247,7 +247,7 @@ func (r *Router) Build() {
 	//and plant them to the radix tree
 	r.garden.plant(r.tempTrees)
 	//and clear the trees?
-	r.tempTrees = nil
+	//r.tempTrees = nil
 }
 
 // ServeHTTP finds and serves a route by it's request

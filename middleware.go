@@ -1,5 +1,6 @@
 package iris
 
+// IMiddlewareSupporter is the interface of the middleware 'manager'
 type IMiddlewareSupporter interface {
 	Use(handler MiddlewareHandler)
 	UseFunc(handlerFunc func(ctx *Context, next Handler))

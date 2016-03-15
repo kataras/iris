@@ -34,9 +34,13 @@ adminSettings.UseFunc(func(res http.ResponseWriter, req *http.Request, next http
 })
 
 */
+
+// IPartyHoster is the interface which implements the Party func
 type IPartyHoster interface {
 	Party(path string) IParty
 }
+
+// IParty is the interface which implements the whole Party of routes
 type IParty interface {
 	IMiddlewareSupporter
 	IRouterMethods

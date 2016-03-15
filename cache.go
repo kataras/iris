@@ -4,6 +4,7 @@ import (
 	"sync"
 )
 
+// IRouterCache is the interface which the MemoryRouter implements
 type IRouterCache interface {
 	OnTick()
 	AddItem(method, url string, ctx *Context)
@@ -11,7 +12,6 @@ type IRouterCache interface {
 	SetMaxItems(maxItems int)
 }
 
-//
 // MemoryRouterCache creation done with just &MemoryRouterCache{}
 type MemoryRouterCache struct {
 	//1. map[string] ,key is HTTP Method(GET,POST...)
@@ -23,10 +23,12 @@ type MemoryRouterCache struct {
 	mu *sync.Mutex
 }
 
+// SetMaxItems receives int and set max cached items to this number
 func (mc *MemoryRouterCache) SetMaxItems(_itemslen int) {
 	mc.MaxItems = _itemslen
 }
 
+// NewMemoryRouterCache returns the cache for a router, is used on the MemoryRouter
 func NewMemoryRouterCache() *MemoryRouterCache {
 	mc := &MemoryRouterCache{mu: &sync.Mutex{}, items: make(map[string]map[string]*Context, 0)}
 	mc.resetBag()
@@ -35,7 +37,6 @@ func NewMemoryRouterCache() *MemoryRouterCache {
 
 // AddItem adds an item to the bag/cache, is a goroutine.
 func (mc *MemoryRouterCache) AddItem(method, url string, ctx *Context) {
-	//don't check for timer or nil items, just panic if something goes whrong.
 	go func(method, url string, context *Context) { //for safety on multiple fast calls
 		mc.mu.Lock()
 		mc.items[method][url] = context
@@ -55,6 +56,8 @@ func (mc *MemoryRouterCache) GetItem(method, url string) *Context {
 	return nil
 }
 
+// OnTick is the implementation of the ITick
+// it makes the MemoryRouterCache a ticker's listener
 func (mc *MemoryRouterCache) OnTick() {
 
 	mc.mu.Lock()
@@ -74,6 +77,7 @@ func (mc *MemoryRouterCache) OnTick() {
 	mc.mu.Unlock()
 }
 
+// resetBag clears the cached items
 func (mc *MemoryRouterCache) resetBag() {
 	for _, m := range HTTPMethods.ANY {
 		mc.items[m] = make(map[string]*Context, 0)

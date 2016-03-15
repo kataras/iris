@@ -58,10 +58,7 @@ func (r *Route) processPath() {
 func (r *Route) prepare() {
 	convertedMiddleware := MiddlewareHandlerFunc(func(ctx *Context, next Handler) {
 		r.handler.Serve(ctx)
-		//except itself
-		if r.middlewareHandlers != nil && len(r.middlewareHandlers) > 1 {
-			next.Serve(ctx)
-		}
+		//prepare called after middleware setted, so it's always last,no need for next
 	})
 
 	r.Use(convertedMiddleware)

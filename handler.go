@@ -40,12 +40,13 @@ type Handler interface {
 	Serve(ctx *Context)
 }
 
-// The HandlerFunc type is an adapter to allow the use of
+// HandlerFunc type is an adapter to allow the use of
 // ordinary functions as HTTP handlers.  If f is a function
 // with the appropriate signature, HandlerFunc(f) is a
 // Handler that calls f.
 type HandlerFunc func(*Context)
 
+// Serve serves the handler, is like ServeHTTP for Iris
 func (h HandlerFunc) Serve(ctx *Context) {
 	h(ctx)
 }

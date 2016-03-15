@@ -4,15 +4,14 @@ import (
 	"time"
 )
 
-// Ticker
-//
-//
+// Ticker is the timer which is used in cache
 type Ticker struct {
 	ticker       *time.Ticker
 	started      bool
 	tickHandlers []func()
 }
 
+// NewTicker returns a new Ticker
 func NewTicker() *Ticker {
 	return &Ticker{tickHandlers: make([]func(), 0), started: false}
 }
@@ -53,6 +52,7 @@ func (c *Ticker) Start(duration time.Duration) {
 	c.started = true
 }
 
+// Stop stops the ticker
 func (c *Ticker) Stop() {
 	if c.started {
 		c.ticker.Stop()
@@ -60,6 +60,7 @@ func (c *Ticker) Stop() {
 	}
 }
 
+// ITick is the interface which all ticker's listeners must implement
 type ITick interface {
 	OnTick()
 }

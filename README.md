@@ -529,6 +529,7 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 
 ## Todo
 - [ ] Never stop writing the docs.
+- [ ] Provide a lighter, with less using bytes,  to save middleware for a route.
 - [x] Create examples in this repository.
 - [ ] Convert useful middlewares out there into Iris middlewares, or contact with their authors to do so.
 - [ ] Create an easy websocket api also.

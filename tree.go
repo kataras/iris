@@ -1,7 +1,9 @@
 package iris
 
+// Routes is just a slice of Route pointers
 type Routes []*Route
 type trees map[string]Routes //key is the HTTPMethod, value is an array of Routes now.
+// Garden is the main area which trees are planted/placed
 type Garden map[string]*node // node here is the root node
 
 func (_trees trees) addRoute(method string, route *Route) {

@@ -6,8 +6,11 @@ import (
 )
 
 const (
-	ParameterStartByte  = byte(':')
-	SlashByte           = byte('/')
+	// ParameterStartByte is very used on the node, it's just contains the byte for the ':' rune/char
+	ParameterStartByte = byte(':')
+	// SlashByte is just a byte of '/' rune/char
+	SlashByte = byte('/')
+	// MatchEverythingByte is just a byte of '*" rune/char
 	MatchEverythingByte = byte('*')
 )
 

@@ -9,10 +9,12 @@ import (
 )
 
 const (
+	// DefaultProfilePath is the default path for the web pprof '/debug/pprof'
 	DefaultProfilePath = "/debug/pprof"
 )
 
 type (
+	// StationOptions is the struct which contains all Iris' settings/options
 	StationOptions struct {
 		// Profile set to true to enable web pprof (debug profiling)
 		// Default is false, enabling makes available these 7 routes:
@@ -90,7 +92,7 @@ func newStation(options StationOptions) *Station {
 	// set the router
 	s.IRouter = r
 
-	// set the server whith the server handler
+	// set the server with the server handler
 	s.server = &Server{handler: s}
 
 	s.pool = sync.Pool{New: func() interface{} {

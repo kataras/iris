@@ -17,7 +17,7 @@ const (
 // it holds a pointer to the http.Request, the ResponseWriter
 // the Named Parameters (if any) of the requested path and an underline Renderer.
 //
-// Context is transfering to the frontend dev via the ContextedHandlerFunc at the handler.go,
+// Context is transferring to the frontend dev via the ContextedHandlerFunc at the handler.go,
 // from the route.go 's Prepare -> convert handler as middleware and use route.run -> ServeHTTP.
 type Context struct {
 	*Renderer
@@ -88,8 +88,8 @@ func (ctx *Context) NotFound() {
 }
 
 // RequestIP gets just the Remote Address from the client.
-func (c *Context) RequestIP() string {
-	if ip, _, err := net.SplitHostPort(strings.TrimSpace(c.Request.RemoteAddr)); err == nil {
+func (ctx *Context) RequestIP() string {
+	if ip, _, err := net.SplitHostPort(strings.TrimSpace(ctx.Request.RemoteAddr)); err == nil {
 		return ip
 	}
 	return ""
