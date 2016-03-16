@@ -114,33 +114,40 @@ func (ctx *Context) End() {
 //	})
 func (ctx *Context) Clone() *Context {
 	cloneContext := *ctx
+	cloneContext.middleware = nil
 	//copy params
 	params := cloneContext.Params
 	cpP := make(PathParameters, len(params))
 	copy(cpP, params)
-	//copy middleware stack
-	//cpM := make(Middleware, len(ctx.middleware))
-	//copy(cpM, cloneContext.middleware)
-
+	//copy middleware
+	middleware := ctx.middleware
+	cpM := make(Middleware, len(middleware))
+	copy(cpM, middleware)
+	cloneContext.middleware = middleware
 	return &cloneContext
 }
 
-// Do calls all the handlers from the middleware stack, it used inside a middleware and on the router's ServeHTTP ( there we use .Do but it's the same).
-func (ctx *Context) Do() {
+// Next calls all the  remeaning handlers from the middleware stack, it used inside a middleware
+func (ctx *Context) Next() {
+	//set position to the next
+	ctx.pos++
 	midLen := uint8(len(ctx.middleware)) // max 255 handlers, we don't except more than these logically ...
-	//run all remeaning handlers with this context
-	for ctx.pos < midLen {
-
+	//run the next
+	if ctx.pos < midLen {
 		ctx.middleware[ctx.pos].Serve(ctx)
-		//step to the next
-		ctx.pos++
 	}
+
+}
+
+// do calls the first handler only, it's like Next with negative pos, used only on Router&MemoryRouter
+func (ctx *Context) do() {
+	ctx.pos = 0 //reset the position to re-run
+	ctx.middleware[0].Serve(ctx)
 }
 
 func (ctx *Context) clear() {
 	ctx.Params = ctx.Params[0:0]
-	ctx.ResponseWriter = nil
-	ctx.Renderer.responseWriter = nil
 	ctx.Request = nil
 	ctx.middleware = nil
+	ctx.pos = 0
 }

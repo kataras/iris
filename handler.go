@@ -68,6 +68,8 @@ func Static(SystemPath string, PathToStrip ...string) HandlerFunc {
 // ToHandler converts http.Handler or func(http.ResponseWriter, *http.Request) to an iris.Handler
 func ToHandler(handler interface{}) Handler {
 	switch handler.(type) {
+	case Handler:
+		return handler.(Handler)
 	case http.Handler:
 		return HandlerFunc((func(c *Context) {
 			handler.(http.Handler).ServeHTTP(c.ResponseWriter, c.Request)

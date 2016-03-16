@@ -69,15 +69,13 @@ func (w *AdminWebInterface) PreHandle(method string, r *iris.Route) {}
 
 func (w *AdminWebInterface) PostHandle(method string, r *iris.Route) {}
 
-func (w *AdminWebInterface) PreBuild(s *iris.Station) {
+func (w *AdminWebInterface) PreListen(s *iris.Station) {
 	if w.failed {
 		w.pluginContainer.RemovePlugin(w.GetName()) //removes itself
 	} else {
 		w.registerHandlers(s)
 	}
 }
-
-func (w *AdminWebInterface) PostBuild(s *iris.Station) {}
 
 func (w *AdminWebInterface) PostListen(s *iris.Station, err error) {}
 

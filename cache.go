@@ -37,9 +37,9 @@ func NewMemoryRouterCache() *MemoryRouterCache {
 
 // AddItem adds an item to the bag/cache, is a goroutine.
 func (mc *MemoryRouterCache) AddItem(method, url string, ctx *Context) {
-	go func(method, url string, context *Context) { //for safety on multiple fast calls
+	go func(method, url string, c *Context) { //for safety on multiple fast calls
 		mc.mu.Lock()
-		mc.items[method][url] = context
+		mc.items[method][url] = c
 		mc.mu.Unlock()
 	}(method, url, ctx)
 }

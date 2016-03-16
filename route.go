@@ -8,7 +8,7 @@ import (
 // contains all middleware and prepare them for execution
 // Used to create a node at the Router's Build state
 type Route struct {
-	MiddlewareSupporter
+	middleware Middleware
 	fullpath   string
 	PathPrefix string
 }

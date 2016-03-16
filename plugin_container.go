@@ -33,12 +33,9 @@ type IPlugin interface {
 	// first parameter is the HTTP method
 	// second is the Route
 	PostHandle(string, *Route)
-
-	// PreBuild it's being called only one time, BEFORE the Build state, this is the most useful event
-	PreBuild(*Station)
-	// PostBuild it's being called only one time, AFTER the Build state finished, BEFORE the Listen
-	PostBuild(*Station)
-
+	// PreListen it's being called only one time, BEFORE the Server is started (if .Listen called)
+	// is used to do work at the time all other things are ready to go
+	PreListen(*Station)
 	// PostListen it's being called only one time, AFTER the Server is started (if .Listen called)
 	// is used to do work when the server is running
 	PostListen(*Station, error)
@@ -127,15 +124,9 @@ func (p *PluginContainer) doPostHandle(method string, route *Route) {
 	}
 }
 
-func (p *PluginContainer) doPreBuild(station *Station) {
+func (p *PluginContainer) doPreListen(station *Station) {
 	for i := 0; i < len(p.activatedPlugins); i++ {
-		p.activatedPlugins[i].PreBuild(station)
-	}
-}
-
-func (p *PluginContainer) doPostBuild(station *Station) {
-	for i := 0; i < len(p.activatedPlugins); i++ {
-		p.activatedPlugins[i].PostBuild(station)
+		p.activatedPlugins[i].PreListen(station)
 	}
 }
 

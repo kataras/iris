@@ -248,9 +248,9 @@ func main() {
     
     //log everything middleware
     
-    iris.UseFunc(func(c *iris.Context, next iris.Handler) {
+    iris.UseFunc(func(c *iris.Context) {
 		println("[Global log] the requested url path is: ", c.Request.URL.Path)
-		next.Serve(c)
+		c.Next()
 	})
     
     // manage all /users
@@ -261,10 +261,13 @@ func main() {
         users.Delete("/:userId", userAccountRemoveUserHandler)  
     }
 	
-	// provide a simply middleware for this party 
-	users.UseFunc(func(c *iris.Context, next iris.Handler) {
+	// provide a two simply middleware for this party 
+	users.UseFunc(func(c *iris.Context) {
 		println("LOG [/users...] This is the middleware for: ", c.Request.URL.Path)
-		next.Serve(c)
+		c.Next()
+	},func(c *iris.Context) {
+		println("SECOND LOGGER [/users...] This is the second middleware for: ", c.Request.URL.Path)
+		c.Next()
 	})
     
     // Party inside an existing Party example: 
@@ -327,7 +330,7 @@ func main() {
 		})
 
 	iris.Listen(":8080")
-	//or iris.Build(); log.Fatal(http.ListenAndServe(":8080", iris))
+	//or log.Fatal(http.ListenAndServe(":8080", iris))
 }
 
 ```
@@ -480,9 +483,9 @@ Personally I use the external struct and the **func(c *iris.Context)** form .
 
 *The iris tries to supports a lot of middleware out there, you can use them by parsing their handlers, for example: *
 ```go
-iris.UseFunc(func(c *iris.Context, next iris.Handler) {
+iris.UseFunc(func(c *iris.Context) {
 		//run the middleware here
-		next.Serve(c)
+		c.Next()
 	})
 ```
 

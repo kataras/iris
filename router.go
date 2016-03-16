@@ -33,7 +33,6 @@ type IRouter interface {
 	Errors() *HTTPErrors //at the main Router struct this is managed by the MiddlewareSupporter
 	// ServeHTTP finds and serves a route by it's request
 	// If no route found, it sends an http status 404
-	Build()
 	ServeHTTP(http.ResponseWriter, *http.Request)
 }
 
@@ -42,14 +41,13 @@ type IRouter interface {
 type Router struct {
 	MiddlewareSupporter
 	station    *Station
-	tempTrees  trees
 	garden     Garden
 	httpErrors *HTTPErrors //the only reason of this is to pass into the route, which it need it to  passed it to Context, in order to  developer get the ability to perfom emit errors (eg NotFound) directly from context
 }
 
 // NewRouter creates and returns an empty Router
 func NewRouter(station *Station) *Router {
-	return &Router{station: station, tempTrees: make(trees, 0), garden: make(Garden, len(HTTPMethods.ANY)), httpErrors: DefaultHTTPErrors()}
+	return &Router{station: station, garden: make(Garden, len(HTTPMethods.ANY)), httpErrors: DefaultHTTPErrors()}
 }
 
 // SetErrors sets a HTTPErrors object to the router
@@ -74,16 +72,17 @@ func (r *Router) Handle(method string, registedPath string, handlers ...Handler)
 	if len(handlers) == 0 {
 		panic("Iris.Handle: zero handler to " + method + ":" + registedPath)
 	}
-	route := newRoute(registedPath, handlers)
 
 	if len(r.middleware) > 0 {
 		//if global middlewares are registed then push them to this route.
-		route.middleware = r.middleware
+		handlers = append(r.middleware, handlers...)
 	}
+
+	route := newRoute(registedPath, handlers)
 
 	r.station.pluginContainer.doPreHandle(method, route)
 
-	r.tempTrees.addRoute(method, route)
+	r.garden.plant(method, route)
 
 	r.station.pluginContainer.doPostHandle(method, route)
 
@@ -158,28 +157,6 @@ func (r *Router) HandleAnnotated(irisHandler Handler) (*Route, error) {
 //global middleware
 ///////////////////
 
-// Use appends a middleware to the route or to the router if it's called from router
-func (r *Router) Use(handlers ...Handler) {
-	r.MiddlewareSupporter.Use(handlers...)
-	//IF this is called after the routes
-	if len(r.tempTrees) > 0 {
-		for _, _tree := range r.tempTrees {
-			for _, _route := range _tree {
-				_route.Use(handlers...)
-			}
-		}
-	}
-
-}
-
-// UseFunc is the same as Use but it receives of ...HandlerFunc instead of ...Handler as parameter(s)
-// form of acceptable: func(c *iris.Context){//first middleware}, func(c *iris.Context){//second middleware}
-func (r *Router) UseFunc(handlersFn ...HandlerFunc) {
-	for _, h := range handlersFn {
-		r.Use(Handler(h))
-	}
-}
-
 // Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
 // Party can also be named as 'Join' or 'Node' or 'Group' , Party choosen because it has more fun
 func (r *Router) Party(rootPath string) IParty {
@@ -240,15 +217,6 @@ func (r *Router) Any(path string, handlersFn ...HandlerFunc) *Route {
 	return r.HandleFunc("", path, handlersFn...)
 }
 
-// Build prepares the routes before Serve
-// is beeing called one time before .Listen from the Station
-func (r *Router) Build() {
-	//plant the trees to the radix tree
-	r.garden.plant(r.tempTrees)
-	//and clear the trees?
-	//r.tempTrees = nil
-}
-
 //we use that to the router_memory also
 func (r *Router) poolContextFor(res http.ResponseWriter, req *http.Request) *Context {
 	ctx := r.station.pool.Get().(*Context)
@@ -284,7 +252,7 @@ func (r *Router) processRequest(ctx *Context) bool {
 			ctx.middleware = middleware
 			///TODO: fix this shit
 			ctx.Renderer.responseWriter = ctx.ResponseWriter
-			ctx.Do()
+			ctx.do()
 
 			return true
 		}

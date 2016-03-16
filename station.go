@@ -107,20 +107,11 @@ func (s *Station) Plugin(plugin IPlugin) error {
 	return s.pluginContainer.Plugin(plugin)
 }
 
-// Build is executed before the Listen automatically, if .Listen is not used then you should
-// call .Build manually.
-func (s *Station) Build() {
-	s.pluginContainer.doPreBuild(s)
-	s.IRouter.Build()
-	s.pluginContainer.doPostBuild(s)
-}
-
 // Listen starts the standalone http server
 // which listens to the fullHostOrPort parameter which as the form of
 // host:port or just port
 func (s *Station) Listen(fullHostOrPort ...string) error {
-	s.Build()
-
+	s.pluginContainer.doPreListen(s)
 	err := s.server.listen(fullHostOrPort...)
 	s.pluginContainer.doPostListen(s, err)
 
@@ -133,8 +124,6 @@ func (s *Station) Listen(fullHostOrPort ...string) error {
 // which listens to the fullHostOrPort parameter which as the form of
 // host:port or just port
 func (s *Station) ListenTLS(fullAddress string, certFile, keyFile string) error {
-	s.Build()
-
 	err := s.server.listenTLS(fullAddress, certFile, keyFile)
 	s.pluginContainer.doPostListen(s, err)
 
