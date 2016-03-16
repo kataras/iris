@@ -60,7 +60,7 @@ func (p *PluginContainer) Plugin(plugin IPlugin) error {
 
 	// Check if the plugin already exists
 	if p.GetByName(plugin.GetName()) != nil {
-		return fmt.Errorf("[Iris] Error on Plugin: %s is already exists: %s", plugin.GetName(), plugin.GetDescription)
+		return fmt.Errorf("[Iris] Error on Plugin: %s is already exists: %s", plugin.GetName(), plugin.GetDescription())
 	}
 	// Activate the plugin, if no error then add it to the plugins
 	err := plugin.Activate(p)
