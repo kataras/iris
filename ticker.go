@@ -21,6 +21,7 @@ func (c *Ticker) OnTick(h func()) {
 	c.tickHandlers = append(c.tickHandlers, h)
 }
 
+// Start starts the timer and execute all listener's when tick
 func (c *Ticker) Start(duration time.Duration) {
 	if c.started {
 		return

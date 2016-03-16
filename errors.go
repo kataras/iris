@@ -92,7 +92,7 @@ func (he *HTTPErrors) Emit(errCode int, res http.ResponseWriter) {
 	}
 }
 
-// Emit executes the handler of the given error http status code
+// EmitWithContext executes the handler of the given error code to the context's response writer
 func (he *HTTPErrors) EmitWithContext(errCode int, ctx *Context) {
 	if errHandler := he.getByCode(errCode); errHandler != nil {
 		errHandler.handler.Serve(ctx)

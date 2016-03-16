@@ -3,11 +3,13 @@ package iris
 // Middleware is just a slice of Handler []func(c *Context)
 type Middleware []Handler
 
+//IMiddlewareSupporter is an interface which all routers must implement
 type IMiddlewareSupporter interface {
 	Use(handlers ...Handler)
 	UseFunc(handlersFn ...HandlerFunc)
 }
 
+//MiddlewareSupporter is the struch which make the Imiddlewaresupporter's works, is useful only to no repeat the code of middleware
 type MiddlewareSupporter struct {
 	middleware Middleware
 }
