@@ -81,7 +81,15 @@ func (ctx *Context) SetCookie(name string, value string) {
 // if no custom errors provided then use the default http.NotFound
 // which is already registed nothing special to do here
 func (ctx *Context) NotFound() {
-	ctx.station.Errors().NotFound(ctx.ResponseWriter)
+	ctx.station.Errors().EmitWithContext(404, ctx)
+}
+
+// SendStatus sends a status with a plain text message
+func (ctx *Context) SendStatus(statusCode int, message string) {
+	ctx.ResponseWriter.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	ctx.ResponseWriter.Header().Set("X-Content-Type-Options", "nosniff")
+	ctx.ResponseWriter.WriteHeader(statusCode)
+	io.WriteString(ctx.ResponseWriter, message)
 }
 
 // RequestIP gets just the Remote Address from the client.

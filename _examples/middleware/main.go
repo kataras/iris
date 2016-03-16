@@ -31,6 +31,7 @@ func main() {
 	// register a structed iris.Handler as middleware to the route
 	iris.Get("/hello", iris.ToHandlerFunc(myglobal))
 
+	println("Iris is listening on :8080")
 	iris.Listen("8080")
 }
 

@@ -4,37 +4,6 @@ import (
 	"strings"
 )
 
-/*Usage
-admin := api.Party("/admin")
-{
-	admin.Get("/", func(c iris.Context) {
-		c.Write("Hello from /admin/")
-	})
-	admin.Get("/hello", func(c iris.Context) {
-		c.Write("Hello from /admin/hello")
-	})
-
-}
-
-adminSettings := admin.Party("/settings")
-{
-	adminSettings.Get("/security", func(c iris.Context) {
-		c.Write("Hello to /settings/security")
-	})
-}
-
-admin.UseFunc(func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
-	println("[/admin] This is the middleware for: ", req.URL.Path)
-	next(res, req)
-})
-
-adminSettings.UseFunc(func(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
-	println("[/admin/settings] This is the middleware for: ", req.URL.Path)
-	next(res, req)
-})
-
-*/
-
 // IPartyHoster is the interface which implements the Party func
 type IPartyHoster interface {
 	Party(path string) IParty
@@ -44,6 +13,7 @@ type IPartyHoster interface {
 type IParty interface {
 	IRouterMethods
 	IPartyHoster
+	IMiddlewareSupporter
 	SetParentHosterMiddleware(m Middleware)
 	// Each party can have a party too
 }
@@ -57,10 +27,10 @@ type IParty interface {
 // party is used inside Router.Party method
 type party struct {
 	IParty
-	MiddlewareSupporter
-	_router   *Router
-	_routes   []*Route // contains all the temporary routes for this party, it is used only from the .Use and .UseFunc to find pathprefixes
-	_rootPath string
+	middleware Middleware
+	_router    *Router
+	_routes    []*Route // contains all the temporary routes for this party, it is used only from the .Use and .UseFunc to find pathprefixes
+	_rootPath  string
 }
 
 func newParty(rootPath string, underlineMainRouter *Router) IParty {
@@ -136,4 +106,17 @@ func (p party) Party(path string) IParty {
 	joinedParty := newParty(p._rootPath+path, p._router)
 	joinedParty.SetParentHosterMiddleware(p.middleware)
 	return joinedParty
+}
+
+// Use appends handler(s) to the route or to the router if it's called from router
+func (p party) Use(handlers ...Handler) {
+	p.middleware = append(p.middleware, handlers...)
+}
+
+// UseFunc is the same as Use but it receives HandlerFunc instead of iris.Handler as parameter(s)
+// form of acceptable: func(c *iris.Context){//first middleware}, func(c *iris.Context){//second middleware}
+func (p party) UseFunc(handlersFn ...HandlerFunc) {
+	for _, h := range handlersFn {
+		p.Use(Handler(h))
+	}
 }
