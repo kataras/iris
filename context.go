@@ -8,11 +8,6 @@ import (
 	"strings"
 )
 
-const (
-	// CookieName is the name of the cookie which this frameworks sends to the temporary request in order to get the named parameters
-	CookieName = "____iris____"
-)
-
 // Context is created every time a request is coming to the server,
 // it holds a pointer to the http.Request, the ResponseWriter
 // the Named Parameters (if any) of the requested path and an underline Renderer.
@@ -24,10 +19,11 @@ type Context struct {
 	ResponseWriter http.ResponseWriter
 	Request        *http.Request
 	Params         PathParameters
-	route          *node
 	station        *Station
-	//handler for now is useful only on the cache, maybe at the future make the Context on top of the handler.
-	handler *Middleware
+	//keep track all registed middleware (handlers)
+	middleware Middleware
+	// pos is the position number of the Context, look .Next to understand
+	pos uint8
 }
 
 // Param returns the string representation of the key's path named parameter's value
@@ -61,9 +57,10 @@ func (ctx *Context) ServeFile(path string) {
 	http.ServeFile(ctx.ResponseWriter, ctx.Request, path)
 }
 
-// GetCookie get cookie's value by it's name
+// GetCookie returns cookie's value by it's name
 func (ctx *Context) GetCookie(name string) string {
-	_cookie, _err := ctx.Request.Cookie(CookieName)
+	//thanks to  @wsantos fix cookieName to name
+	_cookie, _err := ctx.Request.Cookie(name)
 	if _err != nil {
 		return ""
 	}
@@ -117,10 +114,33 @@ func (ctx *Context) End() {
 //	})
 func (ctx *Context) Clone() *Context {
 	cloneContext := *ctx
+	//copy params
 	params := cloneContext.Params
-	cpP := make(PathParameters, len(params), len(params))
+	cpP := make(PathParameters, len(params))
 	copy(cpP, params)
-	cloneContext.Params = cpP
-	//cloneContext.Params = ParseParams(params.String())
+	//copy middleware stack
+	//cpM := make(Middleware, len(ctx.middleware))
+	//copy(cpM, cloneContext.middleware)
+
 	return &cloneContext
+}
+
+// Do calls all the handlers from the middleware stack, it used inside a middleware and on the router's ServeHTTP ( there we use .Do but it's the same).
+func (ctx *Context) Do() {
+	midLen := uint8(len(ctx.middleware)) // max 255 handlers, we don't except more than these logically ...
+	//run all remeaning handlers with this context
+	for ctx.pos < midLen {
+
+		ctx.middleware[ctx.pos].Serve(ctx)
+		//step to the next
+		ctx.pos++
+	}
+}
+
+func (ctx *Context) clear() {
+	ctx.Params = ctx.Params[0:0]
+	ctx.ResponseWriter = nil
+	ctx.Renderer.responseWriter = nil
+	ctx.Request = nil
+	ctx.middleware = nil
 }

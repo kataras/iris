@@ -1,75 +1,48 @@
 package iris
 
-// IMiddlewareSupporter is the interface of the middleware 'manager'
+// Middleware is just a slice of Handler []func(c *Context)
+type Middleware []Handler
+
+// getLast returns the last registed Handler, for a route this is the route's main handler
+func (m Middleware) getLast() Handler {
+	if m == nil || len(m) == 0 {
+		return nil
+	}
+
+	return m[len(m)-1]
+}
+
 type IMiddlewareSupporter interface {
-	Use(handler MiddlewareHandler)
-	UseFunc(handlerFunc func(ctx *Context, next Handler))
+	Use(handlers ...Handler)
+	UseFunc(handlersFn ...HandlerFunc)
 }
 
-// MiddlewareSupporter is been 'injected-oop' in other struct,
-// which usage is to support, manage and handle middleware
 type MiddlewareSupporter struct {
-	IMiddlewareSupporter
-	middleware         Middleware
-	middlewareHandlers []MiddlewareHandler //at the Route the route handler is the last empty-next 'MiddlewareHandler'.
+	middleware Middleware
 }
 
-// Use creates and adds a MiddlewareHandler (with next) to the middlewareHandlers collection
-func (ms *MiddlewareSupporter) Use(handler MiddlewareHandler) {
-	if ms.middlewareHandlers == nil {
-		ms.middlewareHandlers = make([]MiddlewareHandler, 0)
-	}
-
-	ms.middlewareHandlers = append(ms.middlewareHandlers, handler)
-	ms.middleware = makeMiddlewareFor(ms.middlewareHandlers)
+// joinMiddleware uses to create a copy of all middleware and return them in order to use inside the node
+func (m MiddlewareSupporter) joinMiddleware(middleware Middleware) Middleware {
+	nowLen := len(m.middleware)
+	totalLen := nowLen + len(middleware)
+	// create a new slice of middleware in order to store all handlers, the already handlers(middleware) and the new
+	newMiddleware := make(Middleware, totalLen)
+	//copy the already middleware to the just created
+	copy(newMiddleware, m.middleware)
+	//start from there we finish, and store the new middleware too
+	copy(newMiddleware[nowLen:], middleware)
+	return newMiddleware
 }
 
-// UseFunc creates and adds a function to the middlewareHandlers collection
-func (ms *MiddlewareSupporter) UseFunc(handlerFunc func(ctx *Context, next Handler)) {
-	ms.Use(MiddlewareHandlerFunc(handlerFunc))
+// Use appends handler(s) to the route or to the router if it's called from router
+func (m MiddlewareSupporter) Use(handlers ...Handler) {
+	m.middleware = append(m.middleware, handlers...)
 }
 
-// MiddlewareHandler is an interface which expects a ServeHTTP function with response,request and a next iris.HandlerFunc
-type MiddlewareHandler interface {
-	Serve(ctx *Context, next Handler)
-}
-
-// MiddlewareHandlerFunc is just the type of the function which is been expected on the MiddlewareHandler interface
-type MiddlewareHandlerFunc func(ctx *Context, next Handler)
-
-func (mh MiddlewareHandlerFunc) Serve(ctx *Context, next Handler) {
-	mh(ctx, next)
-}
-
-// Middleware is the struct which holds a MiddlewareHandler and the next *Middleware of it
-type Middleware struct {
-	Handler MiddlewareHandler
-	Next    *Middleware
-}
-
-// This is being called from a succeed request
-func (m Middleware) Serve(ctx *Context) {
-	m.Handler.Serve(ctx, m.Next)
-}
-
-func makeMiddlewareFor(handlers []MiddlewareHandler) Middleware {
-	var next Middleware
-
-	if len(handlers) == 0 {
-		return emptyMiddleware()
-	} else if len(handlers) > 1 {
-		next = makeMiddlewareFor(handlers[1:])
-	} else {
-		next = emptyMiddleware()
-	}
-
-	return Middleware{handlers[0], &next}
-}
-
-// emptyMiddleware creates a Middleware which as an empty Next Middleware, is been used to define the Handler at the route
-func emptyMiddleware() Middleware {
-	return Middleware{
-		Handler: MiddlewareHandlerFunc(func(ctx *Context, next Handler) {}),
-		Next:    &Middleware{},
+// UseFunc is the same as Use but it receives HandlerFunc instead of iris.Handler as parameter(s)
+// form of acceptable: func(c *iris.Context){//first middleware}, func(c *iris.Context){//second middleware}
+func (m MiddlewareSupporter) UseFunc(handlersFn ...HandlerFunc) {
+	for _, h := range handlersFn {
+		m.Use(Handler(h))
 	}
 }

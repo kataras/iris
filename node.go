@@ -51,7 +51,7 @@ type node struct {
 	maxParams uint8
 	indices   string
 	children  []*node
-	handler   *Middleware // a list of []ContextedHandler but with next, if no middlewares then next is empty function
+	handler   Middleware // a list of []HandlerFunc
 	priority  uint32
 }
 
@@ -83,7 +83,7 @@ func (n *node) incrementChildPrio(pos int) int {
 
 // addRoute adds a node with the given handle to the path.
 // here we set a Middleware because we have  to transfer all route's middlewares (it's a chain of functions) (with it's handler) to the node
-func (n *node) addRoute(path string, handler *Middleware) {
+func (n *node) addRoute(path string, handler Middleware) {
 	fullPath := path
 	n.priority++
 	numParams := countParams(path)
@@ -205,7 +205,7 @@ func (n *node) addRoute(path string, handler *Middleware) {
 	}
 }
 
-func (n *node) insertChild(numParams uint8, path string, fullPath string, handler *Middleware) {
+func (n *node) insertChild(numParams uint8, path string, fullPath string, handler Middleware) {
 	var offset int // already handled bytes of the path
 
 	// find prefix until first wildcard (beginning with ParameterStartByte' or MatchEverythingByte')
@@ -323,7 +323,7 @@ func (n *node) insertChild(numParams uint8, path string, fullPath string, handle
 // If no handle can be found, a TSR (trailing slash redirect) recommendation is
 // made if a handle exists with an extra (without the) trailing slash for the
 // given path.
-func (n *node) getValue(path string, po PathParameters) (handler *Middleware, p PathParameters, tsr bool) {
+func (n *node) getValue(path string, po PathParameters) (handler Middleware, p PathParameters, tsr bool) {
 	p = po
 walk: // Outer loop for walking the tree
 	for {

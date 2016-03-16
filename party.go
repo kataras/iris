@@ -42,7 +42,6 @@ type IPartyHoster interface {
 
 // IParty is the interface which implements the whole Party of routes
 type IParty interface {
-	IMiddlewareSupporter
 	IRouterMethods
 	IPartyHoster
 	// Each party can have a party too
@@ -57,6 +56,7 @@ type IParty interface {
 // party is used inside Router.Party method
 type party struct {
 	IParty
+	IMiddlewareSupporter
 	_router   *Router
 	_rootPath string
 }
@@ -76,44 +76,44 @@ func newParty(rootPath string, underlineMainRouter *Router) IParty {
 	return p
 }
 
-func (p party) Get(path string, handlerFn HandlerFunc) *Route {
-	return p._router.Get(p._rootPath+path, handlerFn)
+func (p party) Get(path string, handlerFn ...HandlerFunc) *Route {
+	return p._router.Get(p._rootPath+path, handlerFn...)
 }
-func (p party) Post(path string, handlerFn HandlerFunc) *Route {
-	return p._router.Post(p._rootPath+path, handlerFn)
+func (p party) Post(path string, handlerFn ...HandlerFunc) *Route {
+	return p._router.Post(p._rootPath+path, handlerFn...)
 }
-func (p party) Put(path string, handlerFn HandlerFunc) *Route {
-	return p._router.Put(p._rootPath+path, handlerFn)
+func (p party) Put(path string, handlerFn ...HandlerFunc) *Route {
+	return p._router.Put(p._rootPath+path, handlerFn...)
 }
-func (p party) Delete(path string, handlerFn HandlerFunc) *Route {
-	return p._router.Delete(p._rootPath+path, handlerFn)
+func (p party) Delete(path string, handlerFn ...HandlerFunc) *Route {
+	return p._router.Delete(p._rootPath+path, handlerFn...)
 }
-func (p party) Connect(path string, handlerFn HandlerFunc) *Route {
-	return p._router.Connect(p._rootPath+path, handlerFn)
+func (p party) Connect(path string, handlerFn ...HandlerFunc) *Route {
+	return p._router.Connect(p._rootPath+path, handlerFn...)
 }
-func (p party) Head(path string, handlerFn HandlerFunc) *Route {
-	return p._router.Head(p._rootPath+path, handlerFn)
+func (p party) Head(path string, handlerFn ...HandlerFunc) *Route {
+	return p._router.Head(p._rootPath+path, handlerFn...)
 }
-func (p party) Options(path string, handlerFn HandlerFunc) *Route {
-	return p._router.Options(p._rootPath+path, handlerFn)
+func (p party) Options(path string, handlerFn ...HandlerFunc) *Route {
+	return p._router.Options(p._rootPath+path, handlerFn...)
 }
-func (p party) Patch(path string, handlerFn HandlerFunc) *Route {
-	return p._router.Patch(p._rootPath+path, handlerFn)
+func (p party) Patch(path string, handlerFn ...HandlerFunc) *Route {
+	return p._router.Patch(p._rootPath+path, handlerFn...)
 }
-func (p party) Trace(path string, handlerFn HandlerFunc) *Route {
-	return p._router.Trace(p._rootPath+path, handlerFn)
+func (p party) Trace(path string, handlerFn ...HandlerFunc) *Route {
+	return p._router.Trace(p._rootPath+path, handlerFn...)
 }
-func (p party) Any(path string, handlerFn HandlerFunc) *Route {
-	return p._router.Any(p._rootPath+path, handlerFn)
+func (p party) Any(path string, handlerFn ...HandlerFunc) *Route {
+	return p._router.Any(p._rootPath+path, handlerFn...)
 }
 func (p party) HandleAnnotated(irisHandler Handler) (*Route, error) {
 	return p._router.HandleAnnotated(irisHandler)
 }
-func (p party) Handle(method string, registedPath string, handler Handler) *Route {
-	return p._router.Handle(method, registedPath, handler)
+func (p party) Handle(method string, registedPath string, handlers ...Handler) *Route {
+	return p._router.Handle(method, registedPath, handlers...)
 }
-func (p party) HandleFunc(method string, path string, handlerFn HandlerFunc) *Route {
-	return p._router.HandleFunc(method, p._rootPath+path, handlerFn)
+func (p party) HandleFunc(method string, path string, handlerFn ...HandlerFunc) *Route {
+	return p._router.HandleFunc(method, p._rootPath+path, handlerFn...)
 }
 
 func (p party) Party(path string) IParty {
@@ -121,11 +121,11 @@ func (p party) Party(path string) IParty {
 }
 
 // Use registers middleware for all routes which inside this party, which the node's prefix starts with the rootPath +"/" because all prefix ends with slash
-func (p party) Use(handler MiddlewareHandler) {
+func (p party) Use(handlers ...Handler) {
 	for _, _tree := range p._router.tempTrees {
 		for _, _route := range _tree {
 			if _route.PathPrefix == p._rootPath+"/" {
-				_route.Use(handler)
+				_route.Use(handlers...)
 			}
 
 		}
@@ -133,6 +133,9 @@ func (p party) Use(handler MiddlewareHandler) {
 	}
 }
 
-func (p party) UseFunc(handlerFunc func(ctx *Context, next Handler)) {
-	p.Use(MiddlewareHandlerFunc(handlerFunc))
+// UseFunc same as Use but it receives ...HandlerFunc instead of ...Handler as parameter(s)
+func (p party) UseFunc(handlers ...Handler) {
+	for _, h := range handlers {
+		p.Use(Handler(h))
+	}
 }

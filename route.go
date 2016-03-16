@@ -10,13 +10,13 @@ import (
 type Route struct {
 	MiddlewareSupporter
 	fullpath   string
-	handler    Handler
 	PathPrefix string
 }
 
-// newRoute creates, from a path string, handler and optional http methods and returns a new route pointer
-func newRoute(registedPath string, handler Handler) *Route {
-	r := &Route{handler: handler, fullpath: registedPath}
+// newRoute creates, from a path string, and a slice of HandlerFunc
+func newRoute(registedPath string, middleware Middleware) *Route {
+	r := &Route{fullpath: registedPath}
+	r.middleware = middleware
 	r.processPath()
 	return r
 }
@@ -51,21 +51,4 @@ func (r *Route) processPath() {
 	if lastIndexOfSlash != len(r.PathPrefix)-1 || r.PathPrefix == "" {
 		r.PathPrefix += "/"
 	}
-}
-
-// prepare prepares the route's handler , places it to the last middleware , handler acts like a middleware too.
-// Runs once at the BuildRouter state, which is part of the Build state at the station.
-func (r *Route) prepare() {
-	convertedMiddleware := MiddlewareHandlerFunc(func(ctx *Context, next Handler) {
-		r.handler.Serve(ctx)
-		//prepare called after middleware setted, so it's always last,no need for next
-	})
-
-	r.Use(convertedMiddleware)
-
-}
-
-// Serve serves this route and it's middleware, anyway it acts like middleware executor
-func (r *Route) Serve(ctx *Context) {
-	r.middleware.Serve(ctx)
 }

@@ -87,3 +87,14 @@ func ToHandler(handler interface{}) Handler {
 func ToHandlerFunc(handler interface{}) HandlerFunc {
 	return ToHandler(handler).Serve
 }
+
+// convertToHandlers accepts list of HandlerFunc and returns list of Handler
+// this can be renamed to convertToMiddleware also because it returns a list of []Handler which is what Middleware is
+func convertToHandlers(handlersFn []HandlerFunc) []Handler {
+	hlen := len(handlersFn)
+	mlist := make([]Handler, hlen)
+	for i := 0; i < hlen; i++ {
+		mlist[i] = Handler(handlersFn[i])
+	}
+	return mlist
+}

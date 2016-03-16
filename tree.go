@@ -14,13 +14,15 @@ func (_trees trees) addRoute(method string, route *Route) {
 }
 
 // called only one at the Router's Build state
+///TODO: to remove this I need to handle the route's middleware inside the router's HandleFunc
+//xmm so I can pass a slice of HandlerFunc(Middleware) to the handlerfunc,ok .
 func (g Garden) plant(tempTrees trees) {
 	for method, routes := range tempTrees {
 		for _, _route := range routes {
 			if g[method] == nil {
 				g[method] = new(node)
 			}
-			g[method].addRoute(_route.fullpath, &_route.middleware)
+			g[method].addRoute(_route.fullpath, _route.middleware)
 		}
 	}
 }

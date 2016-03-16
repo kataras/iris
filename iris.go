@@ -112,14 +112,15 @@ func HandleAnnotated(irisHandler Handler) (*Route, error) {
 	return DefaultStation.HandleAnnotated(irisHandler)
 }
 
-// Use registers a a custom handler, with next, as a global middleware
-func Use(handler MiddlewareHandler) {
-	DefaultStation.Use(handler)
+// Use appends a middleware to the route or to the router if it's called from router
+func Use(handlers ...Handler) {
+	DefaultStation.Use(handlers...)
 }
 
-// UseFunc registers a function which is a handler, with next, as a global middleware
-func UseFunc(handlerFunc func(ctx *Context, next Handler)) {
-	DefaultStation.UseFunc(handlerFunc)
+// UseFunc same as Use but it accepts/receives ...HandlerFunc instead of ...Handler
+// form of acceptable: func(c *iris.Context){//first middleware}, func(c *iris.Context){//second middleware}
+func UseFunc(handlersFn ...HandlerFunc) {
+	DefaultStation.UseFunc(handlersFn...)
 }
 
 // Get registers a route for the Get http method

@@ -10,16 +10,16 @@ import (
 
 // IRouterMethods is the interface for method routing
 type IRouterMethods interface {
-	Get(path string, handler HandlerFunc) *Route
-	Post(path string, handler HandlerFunc) *Route
-	Put(path string, handler HandlerFunc) *Route
-	Delete(path string, handler HandlerFunc) *Route
-	Connect(path string, handler HandlerFunc) *Route
-	Head(path string, handler HandlerFunc) *Route
-	Options(path string, handler HandlerFunc) *Route
-	Patch(path string, handler HandlerFunc) *Route
-	Trace(path string, handler HandlerFunc) *Route
-	Any(path string, handler HandlerFunc) *Route
+	Get(path string, handlersFn ...HandlerFunc) *Route
+	Post(path string, handlersFn ...HandlerFunc) *Route
+	Put(path string, handlersFn ...HandlerFunc) *Route
+	Delete(path string, handlersFn ...HandlerFunc) *Route
+	Connect(path string, handlersFn ...HandlerFunc) *Route
+	Head(path string, handlersFn ...HandlerFunc) *Route
+	Options(path string, handlersFn ...HandlerFunc) *Route
+	Patch(path string, handlersFn ...HandlerFunc) *Route
+	Trace(path string, handlersFn ...HandlerFunc) *Route
+	Any(path string, handlersFn ...HandlerFunc) *Route
 }
 
 // IRouter is the interface of which any Iris router must implement
@@ -28,8 +28,8 @@ type IRouter interface {
 	IRouterMethods
 	IPartyHoster
 	HandleAnnotated(Handler) (*Route, error)
-	Handle(string, string, Handler) *Route
-	HandleFunc(string, string, HandlerFunc) *Route
+	Handle(string, string, ...Handler) *Route
+	HandleFunc(string, string, ...HandlerFunc) *Route
 	Errors() *HTTPErrors //at the main Router struct this is managed by the MiddlewareSupporter
 	// ServeHTTP finds and serves a route by it's request
 	// If no route found, it sends an http status 404
@@ -40,8 +40,6 @@ type IRouter interface {
 // Router is the router , one router per server.
 // Router contains the global middleware, the routes and a Mutex for lock and unlock on route prepare
 type Router struct {
-	//no routes map[string]map[string][]*Route // key = path prefix, value a map which key = method and the vaulue an array of the routes starts with that prefix and method
-	//routes map[string][]*Route // key = path prefix, value an array of the routes starts with that prefix
 	MiddlewareSupporter
 	station    *Station
 	tempTrees  trees
@@ -69,18 +67,18 @@ func (r *Router) Errors() *HTTPErrors {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Handle registers a route to the server's router
-func (r *Router) Handle(method string, registedPath string, handler Handler) *Route {
+func (r *Router) Handle(method string, registedPath string, handlers ...Handler) *Route {
 	if registedPath == "" {
 		registedPath = "/"
 	}
-	if handler == nil {
-		panic("Iris.Handle: nil passed as handler!")
+	if len(handlers) == 0 {
+		panic("Iris.Handle: zero handler to " + method + ":" + registedPath)
 	}
-	route := newRoute(registedPath, handler)
+	route := newRoute(registedPath, handlers)
 
-	if len(r.middlewareHandlers) > 0 {
+	if len(r.middleware) > 0 {
 		//if global middlewares are registed then push them to this route.
-		route.middlewareHandlers = r.middlewareHandlers
+		route.middleware = r.middleware
 	}
 
 	r.station.pluginContainer.doPreHandle(method, route)
@@ -95,8 +93,8 @@ func (r *Router) Handle(method string, registedPath string, handler Handler) *Ro
 // HandleFunc registers and returns a route with a method string, path string and a handler
 // registedPath is the relative url path
 // handler is the iris.Handler which you can pass anything you want via iris.ToHandlerFunc(func(res,req){})... or just use func(c *iris.Context)
-func (r *Router) HandleFunc(method string, registedPath string, handler HandlerFunc) *Route {
-	return r.Handle(method, registedPath, handler)
+func (r *Router) HandleFunc(method string, registedPath string, handlersFn ...HandlerFunc) *Route {
+	return r.Handle(method, registedPath, convertToHandlers(handlersFn)...)
 }
 
 // HandleAnnotated registers a route handler using a Struct implements iris.Handler (as anonymous property)
@@ -160,18 +158,26 @@ func (r *Router) HandleAnnotated(irisHandler Handler) (*Route, error) {
 //global middleware
 ///////////////////
 
-// Use registers a a custom handler, with next, as a global middleware
-func (r *Router) Use(handler MiddlewareHandler) {
-	r.MiddlewareSupporter.Use(handler)
+// Use appends a middleware to the route or to the router if it's called from router
+func (r *Router) Use(handlers ...Handler) {
+	r.MiddlewareSupporter.Use(handlers...)
 	//IF this is called after the routes
 	if len(r.tempTrees) > 0 {
 		for _, _tree := range r.tempTrees {
 			for _, _route := range _tree {
-				_route.Use(handler)
+				_route.Use(handlers...)
 			}
 		}
 	}
 
+}
+
+// UseFunc is the same as Use but it receives of ...HandlerFunc instead of ...Handler as parameter(s)
+// form of acceptable: func(c *iris.Context){//first middleware}, func(c *iris.Context){//second middleware}
+func (r *Router) UseFunc(handlersFn ...HandlerFunc) {
+	for _, h := range handlersFn {
+		r.Use(Handler(h))
+	}
 }
 
 // Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
@@ -185,93 +191,105 @@ func (r *Router) Party(rootPath string) IParty {
 ///////////////////////////////
 
 // Get registers a route for the Get http method
-func (r *Router) Get(path string, handler HandlerFunc) *Route {
-	return r.HandleFunc(HTTPMethods.GET, path, handler)
+func (r *Router) Get(path string, handlersFn ...HandlerFunc) *Route {
+	return r.HandleFunc(HTTPMethods.GET, path, handlersFn...)
 }
 
 // Post registers a route for the Post http method
-func (r *Router) Post(path string, handler HandlerFunc) *Route {
-	return r.HandleFunc(HTTPMethods.POST, path, handler)
+func (r *Router) Post(path string, handlersFn ...HandlerFunc) *Route {
+	return r.HandleFunc(HTTPMethods.POST, path, handlersFn...)
 }
 
 // Put registers a route for the Put http method
-func (r *Router) Put(path string, handler HandlerFunc) *Route {
-	return r.HandleFunc(HTTPMethods.PUT, path, handler)
+func (r *Router) Put(path string, handlersFn ...HandlerFunc) *Route {
+	return r.HandleFunc(HTTPMethods.PUT, path, handlersFn...)
 }
 
 // Delete registers a route for the Delete http method
-func (r *Router) Delete(path string, handler HandlerFunc) *Route {
-	return r.HandleFunc(HTTPMethods.DELETE, path, handler)
+func (r *Router) Delete(path string, handlersFn ...HandlerFunc) *Route {
+	return r.HandleFunc(HTTPMethods.DELETE, path, handlersFn...)
 }
 
 // Connect registers a route for the Connect http method
-func (r *Router) Connect(path string, handler HandlerFunc) *Route {
-	return r.HandleFunc(HTTPMethods.CONNECT, path, handler)
+func (r *Router) Connect(path string, handlersFn ...HandlerFunc) *Route {
+	return r.HandleFunc(HTTPMethods.CONNECT, path, handlersFn...)
 }
 
 // Head registers a route for the Head http method
-func (r *Router) Head(path string, handler HandlerFunc) *Route {
-	return r.HandleFunc(HTTPMethods.HEAD, path, handler)
+func (r *Router) Head(path string, handlersFn ...HandlerFunc) *Route {
+	return r.HandleFunc(HTTPMethods.HEAD, path, handlersFn...)
 }
 
 // Options registers a route for the Options http method
-func (r *Router) Options(path string, handler HandlerFunc) *Route {
-	return r.HandleFunc(HTTPMethods.OPTIONS, path, handler)
+func (r *Router) Options(path string, handlersFn ...HandlerFunc) *Route {
+	return r.HandleFunc(HTTPMethods.OPTIONS, path, handlersFn...)
 }
 
 // Patch registers a route for the Patch http method
-func (r *Router) Patch(path string, handler HandlerFunc) *Route {
-	return r.HandleFunc(HTTPMethods.PATCH, path, handler)
+func (r *Router) Patch(path string, handlersFn ...HandlerFunc) *Route {
+	return r.HandleFunc(HTTPMethods.PATCH, path, handlersFn...)
 }
 
 // Trace registers a route for the Trace http method
-func (r *Router) Trace(path string, handler HandlerFunc) *Route {
-	return r.HandleFunc(HTTPMethods.TRACE, path, handler)
+func (r *Router) Trace(path string, handlersFn ...HandlerFunc) *Route {
+	return r.HandleFunc(HTTPMethods.TRACE, path, handlersFn...)
 }
 
 // Any registers a route for ALL of the http methods (Get,Post,Put,Head,Patch,Options,Connect,Delete)
-func (r *Router) Any(path string, handler HandlerFunc) *Route {
-	return r.HandleFunc("", path, handler)
+func (r *Router) Any(path string, handlersFn ...HandlerFunc) *Route {
+	return r.HandleFunc("", path, handlersFn...)
 }
 
 // Build prepares the routes before Serve
 // is beeing called one time before .Listen from the Station
 func (r *Router) Build() {
-	//prepare the temp routes firsts
-	for method, _ := range r.tempTrees {
-		for i := 0; i < len(r.tempTrees[method]); i++ {
-			r.tempTrees[method][i].prepare()
-		}
-	}
-
-	//and plant them to the radix tree
+	//plant the trees to the radix tree
 	r.garden.plant(r.tempTrees)
 	//and clear the trees?
 	//r.tempTrees = nil
 }
 
+//we use that to the router_memory also
+func (r *Router) poolContextFor(res http.ResponseWriter, req *http.Request) *Context {
+	ctx := r.station.pool.Get().(*Context)
+	ctx.clear()
+
+	ctx.Request = req
+	ctx.ResponseWriter = res
+	return ctx
+}
+
 // ServeHTTP finds and serves a route by it's request
 // If no route found, it sends an http status 404
 func (r *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	var reqPath = req.URL.Path
-	var method = req.Method
-	ctx := r.station.pool.Get().(*Context)
-	ctx.Request = req
-	ctx.ResponseWriter = res
-	ctx.Params = ctx.Params[0:0]
-	_root := r.garden[method]
+
+	ctx := r.poolContextFor(res, req)
+	//defer r.station.pool.Put(ctx)
+	// defer is too slow it adds 10k nanoseconds to the benchmarks...so I will wrap the below to a function
+	r.processRequest(ctx)
+
+	r.station.pool.Put(ctx)
+
+}
+
+//we use that to the router_memory also
+//returns true if it actualy find serve something
+func (r *Router) processRequest(ctx *Context) bool {
+	_root := r.garden[ctx.Request.Method]
 	if _root != nil {
 
-		handler, params, _ := _root.getValue(reqPath, ctx.Params) // pass the parameters here for 0 allocation
-		if handler != nil {
+		middleware, params, _ := _root.getValue(ctx.Request.URL.Path, ctx.Params) // pass the parameters here for 0 allocation
+		if middleware != nil {
 			ctx.Params = params
+			ctx.middleware = middleware
+			///TODO: fix this shit
 			ctx.Renderer.responseWriter = ctx.ResponseWriter
-			handler.Serve(ctx)
-			r.station.pool.Put(ctx)
-			return
+			ctx.Do()
+
+			return true
 		}
 
 	}
-	r.httpErrors.NotFound(res)
-
+	ctx.NotFound()
+	return false
 }
