@@ -82,7 +82,6 @@ func ToHandler(handler interface{}) Handler {
 	default:
 		panic(fmt.Sprintf("Error on Iris: handler is not func(*Context) either an object which implements the iris.Handler with  func Serve(ctx *Context)\n It seems to be a  %T Point to: %v:", handler, handler))
 	}
-	return nil
 }
 
 // ToHandlerFunc converts http.Handler or func(http.ResponseWriter, *http.Request) to an iris.HandlerFunc func (ctx *Context)

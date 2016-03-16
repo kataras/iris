@@ -28,7 +28,7 @@ type IPlugin interface {
 	// first parameter is the HTTP method
 	// second is the Route
 	PreHandle(string, *Route)
-	// PostHandle it's being called every time AFTER a Route successfuly registed to the Router
+	// PostHandle it's being called every time AFTER a Route successfully registed to the Router
 	//
 	// first parameter is the HTTP method
 	// second is the Route
@@ -47,6 +47,7 @@ type IPlugin interface {
 	PreClose(*Station)
 }
 
+// PluginContainer is the base container of all Iris, registed plugins
 type PluginContainer struct {
 	activatedPlugins []IPlugin
 }

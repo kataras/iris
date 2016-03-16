@@ -158,7 +158,7 @@ func (r *Router) HandleAnnotated(irisHandler Handler) (*Route, error) {
 ///////////////////
 
 // Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
-// Party can also be named as 'Join' or 'Node' or 'Group' , Party choosen because it has more fun
+// Party can also be named as 'Join' or 'Node' or 'Group' , Party chosen because it has more fun
 func (r *Router) Party(rootPath string) IParty {
 	return newParty(rootPath, r)
 }
@@ -241,7 +241,7 @@ func (r *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 }
 
 //we use that to the router_memory also
-//returns true if it actualy find serve something
+//returns true if it actually find serve something
 func (r *Router) processRequest(ctx *Context) bool {
 	_root := r.garden[ctx.Request.Method]
 	if _root != nil {
