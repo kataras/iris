@@ -256,35 +256,32 @@ func main() {
     // manage all /users
     users := iris.Party("/users")
     {
+  	    // provide a  middleware
+		users.UseFunc(func(c *iris.Context) {
+			println("LOG [/users...] This is the middleware for: ", c.Request.URL.Path)
+			c.Next()
+		})
 		users.Post("/login", loginHandler)
         users.Get("/:userId", singleUserHandler)
         users.Delete("/:userId", userAccountRemoveUserHandler)  
     }
 	
-	// provide a two simply middleware for this party 
-	users.UseFunc(func(c *iris.Context) {
-		println("LOG [/users...] This is the middleware for: ", c.Request.URL.Path)
-		c.Next()
-	},func(c *iris.Context) {
-		println("SECOND LOGGER [/users...] This is the second middleware for: ", c.Request.URL.Path)
-		c.Next()
-	})
+	
     
     // Party inside an existing Party example: 
     
     beta:= iris.Party("/beta") 
     
-
     admin := beta.Party("/admin")
     {
 		/// GET: /beta/admin/    
-		admin.Get("/",adminIndexHandler)
+		admin.Get("/", func(c *iris.Context){})
 		/// POST: /beta/admin/signin
-        admin.Post("/signin", adminSigninHandler)
+        admin.Post("/signin", func(c *iris.Context){})
 		/// GET: /beta/admin/dashboard
-        admin.Get("/dashboard", admindashboardHandler)
+        admin.Get("/dashboard", func(c *iris.Context){})
 		/// PUT: /beta/admin/users/add
-        admin.Put("/users/add", adminAddUserHandler)
+        admin.Put("/users/add", func(c *iris.Context){})
     }
 
   
