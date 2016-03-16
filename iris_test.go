@@ -276,7 +276,6 @@ func TestRoutesServerSide(t *testing.T) {
 		http.Error(c.ResponseWriter, CustomNotFoundErrorMessage, http.StatusNotFound)
 	}))
 
-	api.Build()
 	testServer = httptest.NewUnstartedServer(api)
 
 	testServer.Start()

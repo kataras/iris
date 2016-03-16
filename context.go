@@ -8,11 +8,6 @@ import (
 	"strings"
 )
 
-const (
-	// CookieName is the name of the cookie which this frameworks sends to the temporary request in order to get the named parameters
-	CookieName = "____iris____"
-)
-
 // Context is created every time a request is coming to the server,
 // it holds a pointer to the http.Request, the ResponseWriter
 // the Named Parameters (if any) of the requested path and an underline Renderer.
@@ -24,10 +19,11 @@ type Context struct {
 	ResponseWriter http.ResponseWriter
 	Request        *http.Request
 	Params         PathParameters
-	route          *node
 	station        *Station
-	//handler for now is useful only on the cache, maybe at the future make the Context on top of the handler.
-	handler *Middleware
+	//keep track all registed middleware (handlers)
+	middleware Middleware
+	// pos is the position number of the Context, look .Next to understand
+	pos uint8
 }
 
 // Param returns the string representation of the key's path named parameter's value
@@ -61,8 +57,9 @@ func (ctx *Context) ServeFile(path string) {
 	http.ServeFile(ctx.ResponseWriter, ctx.Request, path)
 }
 
-// GetCookie get cookie's value by it's name
+// GetCookie returns cookie's value by it's name
 func (ctx *Context) GetCookie(name string) string {
+	//thanks to  @wsantos fix cookieName to name
 	_cookie, _err := ctx.Request.Cookie(name)
 	if _err != nil {
 		return ""
@@ -84,7 +81,15 @@ func (ctx *Context) SetCookie(name string, value string) {
 // if no custom errors provided then use the default http.NotFound
 // which is already registed nothing special to do here
 func (ctx *Context) NotFound() {
-	ctx.station.Errors().NotFound(ctx.ResponseWriter)
+	ctx.station.Errors().EmitWithContext(404, ctx)
+}
+
+// SendStatus sends a status with a plain text message
+func (ctx *Context) SendStatus(statusCode int, message string) {
+	ctx.ResponseWriter.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	ctx.ResponseWriter.Header().Set("X-Content-Type-Options", "nosniff")
+	ctx.ResponseWriter.WriteHeader(statusCode)
+	io.WriteString(ctx.ResponseWriter, message)
 }
 
 // RequestIP gets just the Remote Address from the client.
@@ -117,10 +122,40 @@ func (ctx *Context) End() {
 //	})
 func (ctx *Context) Clone() *Context {
 	cloneContext := *ctx
+	cloneContext.middleware = nil
+	//copy params
 	params := cloneContext.Params
-	cpP := make(PathParameters, len(params), len(params))
+	cpP := make(PathParameters, len(params))
 	copy(cpP, params)
-	cloneContext.Params = cpP
-	//cloneContext.Params = ParseParams(params.String())
+	//copy middleware
+	middleware := ctx.middleware
+	cpM := make(Middleware, len(middleware))
+	copy(cpM, middleware)
+	cloneContext.middleware = middleware
 	return &cloneContext
+}
+
+// Next calls all the  remeaning handlers from the middleware stack, it used inside a middleware
+func (ctx *Context) Next() {
+	//set position to the next
+	ctx.pos++
+	midLen := uint8(len(ctx.middleware)) // max 255 handlers, we don't except more than these logically ...
+	//run the next
+	if ctx.pos < midLen {
+		ctx.middleware[ctx.pos].Serve(ctx)
+	}
+
+}
+
+// do calls the first handler only, it's like Next with negative pos, used only on Router&MemoryRouter
+func (ctx *Context) do() {
+	ctx.pos = 0 //reset the position to re-run
+	ctx.middleware[0].Serve(ctx)
+}
+
+func (ctx *Context) clear() {
+	ctx.Params = ctx.Params[0:0]
+	ctx.Request = nil
+	ctx.middleware = nil
+	ctx.pos = 0
 }

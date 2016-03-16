@@ -248,40 +248,40 @@ func main() {
     
     //log everything middleware
     
-    iris.UseFunc(func(c *iris.Context, next iris.Handler) {
+    iris.UseFunc(func(c *iris.Context) {
 		println("[Global log] the requested url path is: ", c.Request.URL.Path)
-		next.Serve(c)
+		c.Next()
 	})
     
     // manage all /users
     users := iris.Party("/users")
     {
+  	    // provide a  middleware
+		users.UseFunc(func(c *iris.Context) {
+			println("LOG [/users...] This is the middleware for: ", c.Request.URL.Path)
+			c.Next()
+		})
 		users.Post("/login", loginHandler)
         users.Get("/:userId", singleUserHandler)
         users.Delete("/:userId", userAccountRemoveUserHandler)  
     }
 	
-	// provide a simply middleware for this party 
-	users.UseFunc(func(c *iris.Context, next iris.Handler) {
-		println("LOG [/users...] This is the middleware for: ", c.Request.URL.Path)
-		next.Serve(c)
-	})
+	
     
     // Party inside an existing Party example: 
     
     beta:= iris.Party("/beta") 
     
-
     admin := beta.Party("/admin")
     {
 		/// GET: /beta/admin/    
-		admin.Get("/",adminIndexHandler)
+		admin.Get("/", func(c *iris.Context){})
 		/// POST: /beta/admin/signin
-        admin.Post("/signin", adminSigninHandler)
+        admin.Post("/signin", func(c *iris.Context){})
 		/// GET: /beta/admin/dashboard
-        admin.Get("/dashboard", admindashboardHandler)
+        admin.Get("/dashboard", func(c *iris.Context){})
 		/// PUT: /beta/admin/users/add
-        admin.Put("/users/add", adminAddUserHandler)
+        admin.Put("/users/add", func(c *iris.Context){})
     }
 
   
@@ -327,7 +327,7 @@ func main() {
 		})
 
 	iris.Listen(":8080")
-	//or iris.Build(); log.Fatal(http.ListenAndServe(":8080", iris))
+	//or log.Fatal(http.ListenAndServe(":8080", iris))
 }
 
 ```
@@ -480,9 +480,9 @@ Personally I use the external struct and the **func(c *iris.Context)** form .
 
 *The iris tries to supports a lot of middleware out there, you can use them by parsing their handlers, for example: *
 ```go
-iris.UseFunc(func(c *iris.Context, next iris.Handler) {
+iris.UseFunc(func(c *iris.Context) {
 		//run the middleware here
-		next.Serve(c)
+		c.Next()
 	})
 ```
 
@@ -529,7 +529,7 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 
 ## Todo
 - [ ] Never stop writing the docs.
-- [ ] Provide a lighter, with less using bytes,  to save middleware for a route.
+- [x] Provide a lighter, with less using bytes,  to save middleware for a route.
 - [x] Create examples in this repository.
 - [ ] Convert useful middlewares out there into Iris middlewares, or contact with their authors to do so.
 - [ ] Create an easy websocket api also.
