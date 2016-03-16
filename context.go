@@ -63,7 +63,7 @@ func (ctx *Context) ServeFile(path string) {
 
 // GetCookie get cookie's value by it's name
 func (ctx *Context) GetCookie(name string) string {
-	_cookie, _err := ctx.Request.Cookie(CookieName)
+	_cookie, _err := ctx.Request.Cookie(name)
 	if _err != nil {
 		return ""
 	}
