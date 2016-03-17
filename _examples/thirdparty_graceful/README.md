@@ -5,6 +5,12 @@ This package is third-party, it is not build'n Iris package, it's working out of
 More can be found here: 
 [https://github.com/tylerb/graceful](https://github.com/tylerb/graceful)
 
+
+## Description
+
+Graceful is a Go 1.3+ package enabling graceful shutdown of http.Handler servers.
+
+
 ## Behaviour
 
 When Graceful is sent a SIGINT or SIGTERM (possibly from ^C or a kill command), it:
