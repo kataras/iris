@@ -26,7 +26,7 @@ func main() {
 		session.Save(c)
 
 		//write anthing
-		c.Write("All ok session setted to: ", session.Get("name"))
+		c.Write("All ok session setted to: %s", session.Get("name"))
 	})
 
 	iris.Get("/get", func(c *iris.Context) {
@@ -40,7 +40,7 @@ func main() {
 		//get the session value
 		name := session.GetString("name") // .Get or .GetInt
 
-		c.Write("The name on the /set was: ", name)
+		c.Write("The name on the /set was: %s", name)
 	})
 
 	iris.Get("/clear", func(c *iris.Context) {

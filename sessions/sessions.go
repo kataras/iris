@@ -90,6 +90,13 @@ func (s *Session) Save(ctx *iris.Context) error {
 	return s.store.Save(ctx.Request, ctx.ResponseWriter, s)
 }
 
+// SaveClassic is a convenience method to save this session. It is the same as calling
+// store.Save(request, response, session). You should call Save before writing to
+// the response or returning from the handler.
+func (s *Session) SaveClassic(req *http.Request, res http.ResponseWriter) error {
+	return s.store.Save(req, res, s)
+}
+
 // Name returns the name used to register the session.
 func (s *Session) Name() string {
 	return s.name
