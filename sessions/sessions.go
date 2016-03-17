@@ -23,7 +23,7 @@ type Options struct {
 	// MaxAge>0 means Max-Age attribute present and given in seconds.
 	MaxAge   int
 	Secure   bool
-	HttpOnly bool
+	HTTPOnly bool
 }
 
 // Session --------------------------------------------------------------------
@@ -191,7 +191,7 @@ func NewCookie(name, value string, options *Options) *http.Cookie {
 		Domain:   options.Domain,
 		MaxAge:   options.MaxAge,
 		Secure:   options.Secure,
-		HttpOnly: options.HttpOnly,
+		HttpOnly: options.HTTPOnly,
 	}
 	if options.MaxAge > 0 {
 		d := time.Duration(options.MaxAge) * time.Second

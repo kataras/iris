@@ -223,7 +223,7 @@ func (s *SecureCookie) BlockFunc(f func([]byte) (cipher.Block, error)) *SecureCo
 	return s
 }
 
-// Encoding sets the encoding/serialization method for cookies.
+// SetSerializer sets the encoding/serialization method for cookies.
 //
 // Default is encoding/gob.  To encode special structures using encoding/gob,
 // they must be registered first using gob.Register().
@@ -571,8 +571,13 @@ func DecodeMulti(name string, value string, dst interface{}, codecs ...Codec) er
 // MultiError groups multiple errors.
 type MultiError []error
 
-func (m MultiError) IsUsage() bool    { return m.any(func(e Error) bool { return e.IsUsage() }) }
-func (m MultiError) IsDecode() bool   { return m.any(func(e Error) bool { return e.IsDecode() }) }
+// IsUsage returns if any error is usage
+func (m MultiError) IsUsage() bool { return m.any(func(e Error) bool { return e.IsUsage() }) }
+
+// IsDecode returns if any error is is decoded
+func (m MultiError) IsDecode() bool { return m.any(func(e Error) bool { return e.IsDecode() }) }
+
+// IsInternal returns if any error is internal
 func (m MultiError) IsInternal() bool { return m.any(func(e Error) bool { return e.IsInternal() }) }
 
 // Cause returns nil for MultiError; there is no unique underlying cause in the

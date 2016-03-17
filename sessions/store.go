@@ -74,7 +74,7 @@ func (s *CookieStore) Get(r *http.Request, name string) (*Session, error) {
 	return GetRegistry(r).Get(s, name)
 }
 
-// New returns a session for the given name without adding it to the registry.
+// NewStore returns a session store for the given name without adding it to the registry.
 //
 // The difference between NewStore() and Get() is that calling NewStore() twice will
 // decode the session data twice, while Get() registers and reuses the same
@@ -177,7 +177,7 @@ func (s *FilesystemStore) Get(r *http.Request, name string) (*Session, error) {
 	return GetRegistry(r).Get(s, name)
 }
 
-// New returns a session for the given name without adding it to the registry.
+// NewStore returns a session store for the given name without adding it to the registry.
 //
 // See CookieStore.NewStore().
 func (s *FilesystemStore) NewStore(r *http.Request, name string) (*Session, error) {
