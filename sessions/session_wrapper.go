@@ -202,7 +202,7 @@ func (s SessionWrapper) Get(ctx *iris.Context) (*Session, error) {
 // GetSession returns a session by it's context
 // same as Get
 func (s SessionWrapper) GetSession(ctx *iris.Context) (*Session, error) {
-	return s.Get(ctx.Request)
+	return s.Get(ctx)
 }
 
 // Clear remove all items from this handler's session

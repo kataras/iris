@@ -13,7 +13,7 @@ func main() {
 
 	iris.Get("/set", func(c *iris.Context) {
 		//get the session for this context
-		session, err := mySessions.Get(c)
+		session, err := mySessions.Get(c) // or .GetSession(c), it's the same
 
 		if err != nil {
 			c.SendStatus(500, err.Error())
