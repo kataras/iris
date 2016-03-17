@@ -249,7 +249,7 @@ func (r *Router) processRequest(ctx *Context, res http.ResponseWriter) bool {
 			ctx.Params = params
 			ctx.middleware = middleware
 			///TODO: fix this shit
-			ctx.ResponseWriter = NewResponseWriter(res)
+			ctx.ResponseWriter = res
 			ctx.Renderer.responseWriter = ctx.ResponseWriter
 			ctx.do()
 

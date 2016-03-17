@@ -16,7 +16,7 @@ import (
 // from the route.go 's Prepare -> convert handler as middleware and use route.run -> ServeHTTP.
 type Context struct {
 	*Renderer
-	ResponseWriter ResponseWriter
+	ResponseWriter http.ResponseWriter
 	Request        *http.Request
 	Params         PathParameters
 	station        *Station
@@ -50,10 +50,11 @@ func (ctx *Context) URLParamInt(key string) (int, error) {
 	return strconv.Atoi(URLParam(ctx.Request, key))
 }
 
+///TODO: Find a way not too memory allocations as I did with context
 // PreWrite adds a response handler, these handlers are run before the first .Write from the ResponseWriter
-func (ctx *Context) PreWrite(m ...ResponseHandler) {
-	ctx.ResponseWriter.PreWrite(m)
-}
+//func (ctx *Context) PreWrite(m ...ResponseHandler) {
+//	ctx.ResponseWriter.PreWrite(m)
+//}
 
 // Write writes a string via the context's ResponseWriter
 func (ctx *Context) Write(contents string) {
