@@ -87,7 +87,7 @@ func (he *HTTPErrors) SetMethodNotAllowed(handler Handler) {
 // Emit executes the handler of the given error http status code
 func (he *HTTPErrors) Emit(errCode int, res http.ResponseWriter) {
 	if errHandler := he.getByCode(errCode); errHandler != nil {
-		errHandler.handler.Serve(&Context{ResponseWriter: res})
+		errHandler.handler.Serve(&Context{ResponseWriter: NewResponseWriter(res)})
 
 	}
 }
