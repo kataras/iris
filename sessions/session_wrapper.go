@@ -194,8 +194,15 @@ func New(name string, store Store) SessionWrapper {
 }
 
 // Get returns a session by it's context
+// same as GetSession
 func (s SessionWrapper) Get(ctx *iris.Context) (*Session, error) {
 	return s.store.Get(ctx.Request, s.name)
+}
+
+// GetSession returns a session by it's context
+// same as Get
+func (s SessionWrapper) GetSession(ctx *iris.Context) (*Session, error) {
+	return s.Get(ctx.Request)
 }
 
 // Clear remove all items from this handler's session
