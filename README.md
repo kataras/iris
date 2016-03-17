@@ -3,8 +3,8 @@
 <img align="right" width="132" src="http://kataras.github.io/iris/assets/56e4b048f1ee49764ddd78fe_iris_favicon.ico">
 [![Build Status](https://travis-ci.org/kataras/iris.svg)](https://travis-ci.org/kataras/iris)
 [![GoDoc](https://godoc.org/github.com/kataras/iris?status.svg)]
-[![Go Report Card](https://goreportcard.com/badge/github.com/kataras/iris)](https://goreportcard.com/report/github.com/kataras/iris)
 (https://godoc.org/github.com/kataras/iris)
+[![Go Report Card](https://goreportcard.com/badge/github.com/kataras/iris)](https://goreportcard.com/report/github.com/kataras/iris)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/kataras/iris?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 Iris is a very minimal but flexible web framework written in go, providing a robust set of features for building single & multi-page, web applications.
