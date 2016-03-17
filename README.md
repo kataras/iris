@@ -2,9 +2,8 @@
      This project is under heavy development
 <img align="right" width="132" src="http://kataras.github.io/iris/assets/56e4b048f1ee49764ddd78fe_iris_favicon.ico">
 [![Build Status](https://travis-ci.org/kataras/iris.svg)](https://travis-ci.org/kataras/iris)
-[![GoDoc](https://godoc.org/github.com/kataras/iris?status.svg)]
-(https://godoc.org/github.com/kataras/iris)
 [![Go Report Card](https://goreportcard.com/badge/github.com/kataras/iris)](https://goreportcard.com/report/github.com/kataras/iris)
+[![GoDoc](https://godoc.org/github.com/kataras/iris?status.svg)](https://godoc.org/github.com/kataras/iris)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/kataras/iris?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 Iris is a very minimal but flexible web framework written in go, providing a robust set of features for building single & multi-page, web applications.
@@ -12,12 +11,12 @@ Iris is a very minimal but flexible web framework written in go, providing a rob
 ## Table of Contents
 
 - [Install](#install)
-- [Principles](#principles-of-iris)
-- [Introduction](#introduction)
 - [Benchmarks](#benchmarks)
+- [Principles](#principles-of-iris)
 - [Features](#features)
-- [Startup & Options](#startup)
+- [Introduction](#introduction)
 - [API](#api)
+- [Declaration & Options](#declaration)
 - [Party](#party)
 - [Named Parameters](#named-parameters)
 - [Match anything and the Static serve handler](#match-anything-and-the-static-serve-handler)
@@ -40,35 +39,6 @@ Iris is still in development status, in order to have the latest version update 
 $ go get -u github.com/kataras/iris
 ```
 
-## Principles of iris
-
-- Easy to use
-
-- Robust
-
-- Simplicity Equals Productivity. The best way to make something seem simple is to have it actually be simple. iris's main functionality has clean, classically beautiful APIs
-
-## Introduction
-The name of this framework came from **Greek mythology**, **Iris** was the name of the Greek goddess of the **rainbow**.
-Iris is a very minimal but flexible golang http middleware & standalone web application framework, providing a robust set of features for building single & multi-page, web applications.
-
-```go
-package main
-
-import "github.com/kataras/iris"
-
-func main() {
-	iris.Get("/hello", func(c *iris.Context) {
-		c.HTML("<b> Hello </b>")
-	})
-	iris.Listen(":8080")
-	//or for https and http2
-	//iris.ListenTLS(":8080","localhost.cert","localhost.key")
-	//the cert and key must be in the same path of the executable main server file
-}
-
-```
->Note: for macOS, If you are having problems on .Listen then pass only the port "8080" without ':'
 ## Benchmarks
 Benchmark tests were written by 'the standar' way of benchmarking and comparing performance of other routers and frameworks, see [go-http-routing-benchmark](https://github.com/julienschmidt/go-http-routing-benchmark/) .
 
@@ -115,6 +85,16 @@ With Intel(R) Core(TM) i7-4710HQ CPU @ 2.50GHz 2.50 HGz and 8GB Ram:
 
 ![Benchmark Wizzard Iris vs gin vs martini](http://kataras.github.io/iris/assets/benchmarks_all.png)
 
+
+## Principles of iris
+
+- Easy to use
+
+- Robust
+
+- Simplicity Equals Productivity. The best way to make something seem simple is to have it actually be simple. iris's main functionality has clean, classically beautiful APIs
+
+
 ## Features
 
 **Parameters in your routing pattern:** Stop parsing the requested URL path, just give the path segment a name and the iris' router delivers the dynamic value to you. Really, path parameters are very cheap.
@@ -127,9 +107,72 @@ With Intel(R) Core(TM) i7-4710HQ CPU @ 2.50GHz 2.50 HGz and 8GB Ram:
 
 **Multi server instances:** Besides the fact that iris has a default main server. You can declare a new iris using the iris.New() func. example: server1:= iris.New(); server1.Get(....); server1.Listen(":9999")
 
-## Startup
 
-As a developer you have three (3) methods to start with Iris.
+## Introduction
+The name of this framework came from **Greek mythology**, **Iris** was the name of the Greek goddess of the **rainbow**.
+Iris is a very minimal but flexible golang http middleware & standalone web application framework, providing a robust set of features for building single & multi-page, web applications.
+
+```go
+package main
+
+import "github.com/kataras/iris"
+
+func main() {
+	iris.Get("/hello", func(c *iris.Context) {
+		c.HTML("<b> Hello </b>")
+	})
+	iris.Listen(":8080")
+	//or for https and http2
+	//iris.ListenTLS(":8080","localhost.cert","localhost.key")
+	//the cert and key must be in the same path of the executable main server file
+}
+
+```
+>Note: for macOS, If you are having problems on .Listen then pass only the port "8080" without ':'
+
+
+
+## API
+**Use of GET,  POST,  PUT,  DELETE, HEAD, PATCH & OPTIONS**
+
+```go
+package main
+
+import (
+	"github.com/kataras/iris"
+	"net/http"
+)
+
+func main() {
+	iris.Get("/home", iris.ToHandlerFunc(testGet))
+	iris.Post("/login",testPost)
+	iris.Put("/add",testPut)
+	iris.Delete("/remove",testDelete)
+	iris.Head("/testHead",testHead)
+	iris.Patch("/testPatch",testPatch)
+	iris.Options("/testOptions",testOptions)
+	iris.Listen(":8080")
+}
+
+func testGet(res http.ResponseWriter, req *http.Request) {
+	//...
+}
+
+//iris.Context gives more information and control of the route, named parameters, redirect, error handling and render.
+func testPost(c *iris.Context) {
+	//...
+}
+
+//and so on....
+```
+> Iris is compatible with net/http package over iris.ToHandlerFunc(...) or iris.ToHandler(...) if you wanna use a whole iris.Handler interface. You can use any method you like but, believe me it's easier to pass just a func(c *Context).
+
+## Declaration
+
+Let's make a pause,
+
+- Q: Why you use iris package declaration? other frameworks needs more lines to start a server
+- A: Iris gives you the freedom to choose between three methods/ways to use Iris
 
  1. global **iris.** 
  2. set a new iris with variable  = iris**.New()**
@@ -202,44 +245,7 @@ For profiling & debug there are seven (7) generated pages ('/debug/pprof/' is th
  6. /debug/pprof/threadcreate
  7. /debug/pprof/pprof/block
 
-## API
-**Use of GET,  POST,  PUT,  DELETE, HEAD, PATCH & OPTIONS**
 
-```go
-package main
-
-import (
-	"github.com/kataras/iris"
-	"net/http"
-)
-
-func main() {
-
-	iris.Get("/home", iris.ToHandlerFunc(testGet))
-	iris.Post("/login",testPost)
-	iris.Put("/add",testPut)
-	iris.Delete("/remove",testDelete)
-	iris.Head("/testHead",testHead)
-	iris.Patch("/testPatch",testPatch)
-	iris.Options("/testOptions",testOptions)
-
-
-
-	iris.Listen(":8080")
-}
-
-func testGet(res http.ResponseWriter, req *http.Request) {
-	//...
-}
-
-//iris.Context gives more information and control of the route, named parameters, redirect, error handling and render.
-func testPost(c *iris.Context) {
-	//...
-}
-
-//and so on....
-```
-> Iris is compatible with net/http package over iris.ToHandlerFunc(...) or iris.ToHandler(...) if you wanna use a whole iris.Handler interface. You can use any method you like but, believe me it's easier to pass just a func(c *Context).
 
 ## Party
 
@@ -291,8 +297,6 @@ func main() {
     iris.Listen(":8080")
 }
 ```
-
-
 
 
 ## Named Parameters
@@ -540,3 +544,4 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 ## Licence
 
 This project is licensed under the MIT license.
+
