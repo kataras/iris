@@ -1,6 +1,9 @@
 package iris
 
 import (
+	"bufio"
+	"io"
+	"net"
 	"net/http"
 )
 
@@ -24,6 +27,7 @@ type ResponseWriter interface {
 	Size() int
 	PreWrite(ResponseMiddleware)
 	apply(res http.ResponseWriter)
+	WriteString(message string) (s int, err error)
 }
 
 //implement the ResponseWriter
@@ -60,15 +64,14 @@ func (res *responseWriter) apply(underlineResponseWriter http.ResponseWriter) {
 }
 
 // ForceWriteHeader runs the responseWriter's middleware and after write the header
-func (res *responseWriter) ForceWriteHeader(status int) {
-	mlen := len(res.middleware) - 1
+func (res *responseWriter) ForceWriteHeader() {
+	mlen := len(res.middleware)
 	if res.middleware != nil {
 		for i := 0; i < mlen; i++ {
 			res.middleware[i](res)
 		}
 	}
-	res.size = 0
-	res.WriteHeader(status)
+	res.WriteHeader(res.status)
 }
 
 // WriteHeader sends an HTTP response header with status code.
@@ -78,7 +81,6 @@ func (res *responseWriter) ForceWriteHeader(status int) {
 // send error codes.
 func (res *responseWriter) WriteHeader(status int) {
 	res.status = status
-	res.ResponseWriter.WriteHeader(status)
 }
 
 // Written checks if status already written
@@ -96,12 +98,19 @@ func (res *responseWriter) Written() bool {
 func (res *responseWriter) Write(b []byte) (int, error) {
 	//if headers not setted we assume that's it's 200
 	if !res.Written() {
-		res.ForceWriteHeader(http.StatusOK)
+		res.ForceWriteHeader()
 	}
 	//write to the underline http.ResponseWriter
 	size, err := res.ResponseWriter.Write(b)
 	res.size += size
 	return size, err
+}
+
+func (res *responseWriter) WriteString(message string) (s int, err error) {
+	res.ForceWriteHeader()
+	s, err = io.WriteString(res.ResponseWriter, message)
+	res.size += s
+	return
 }
 
 func (res *responseWriter) Status() int {
@@ -118,4 +127,12 @@ func (res *responseWriter) CloseNotify() <-chan bool {
 
 func (res *responseWriter) Flush() {
 	res.ResponseWriter.(http.Flusher).Flush()
+}
+
+// Implements the http.Hijacker interface
+func (res *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	if res.size < 0 {
+		res.size = 0
+	}
+	return res.ResponseWriter.(http.Hijacker).Hijack()
 }

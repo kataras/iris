@@ -39,12 +39,13 @@ func NewSession(store Store, name string) *Session {
 
 // Session stores the values and optional configuration for a session.
 type Session struct {
-	ID      string
-	Values  map[interface{}]interface{}
-	Options *Options
-	IsNew   bool
-	store   Store
-	name    string
+	ID             string
+	Values         map[interface{}]interface{}
+	Options        *Options
+	IsNew          bool
+	store          Store
+	name           string
+	writeInThisReq bool
 }
 
 // Flashes returns a slice of flash messages from the session.
@@ -184,21 +185,28 @@ func Save(r *http.Request, w http.ResponseWriter) error {
 // the Expires field calculated based on the MaxAge value, for Internet
 // Explorer compatibility.
 func NewCookie(name, value string, options *Options) *http.Cookie {
-	cookie := &http.Cookie{
-		Name:     name,
-		Value:    value,
-		Path:     options.Path,
-		Domain:   options.Domain,
-		MaxAge:   options.MaxAge,
-		Secure:   options.Secure,
-		HttpOnly: options.HTTPOnly,
+	var cookie *http.Cookie
+	if options != nil {
+		cookie = &http.Cookie{
+			Name:     name,
+			Value:    value,
+			Path:     options.Path,
+			Domain:   options.Domain,
+			MaxAge:   options.MaxAge,
+			Secure:   options.Secure,
+			HttpOnly: options.HTTPOnly,
+		}
+
+		if options.MaxAge > 0 {
+			d := time.Duration(options.MaxAge) * time.Second
+			cookie.Expires = time.Now().Add(d)
+		} else if options.MaxAge < 0 {
+			// Set it to the past to expire now.
+			cookie.Expires = time.Unix(1, 0)
+		}
+	} else {
+		cookie = &http.Cookie{Name: name, Value: value}
 	}
-	if options.MaxAge > 0 {
-		d := time.Duration(options.MaxAge) * time.Second
-		cookie.Expires = time.Now().Add(d)
-	} else if options.MaxAge < 0 {
-		// Set it to the past to expire now.
-		cookie.Expires = time.Unix(1, 0)
-	}
+
 	return cookie
 }

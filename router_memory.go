@@ -32,7 +32,8 @@ func (r *MemoryRouter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	//16/03/2016 Tried to get/pass only middlewares but it slow me 8k nanoseconds, so I re-do it as I had before.
 	if ctx := r.cache.GetItem(req.Method, req.URL.Path); ctx != nil {
 		ctx.Request = req
-		ctx.writer.apply(res)
+		//ctx.writer.apply(res)
+		ctx.ResponseWriter = res
 		ctx.Renderer.responseWriter = res
 		ctx.do()
 		return

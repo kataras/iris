@@ -1,5 +1,8 @@
 > This package is converted to work with Iris but it was originaly created by Gorila team, the original package is gorilla/sessions
 
+## Warning
+
+Sessions are not working currently, I am trying to find a way to make them ligher than it's.
 
 ## Features
 

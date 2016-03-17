@@ -220,7 +220,8 @@ func (r *Router) Any(path string, handlersFn ...HandlerFunc) *Route {
 //we use that to the router_memory also
 func (r *Router) poolContextFor(res http.ResponseWriter, req *http.Request) *Context {
 	ctx := r.station.pool.Get().(*Context)
-	ctx.writer.apply(res)
+	//ctx.writer.apply(res)
+	ctx.ResponseWriter = res
 	ctx.Request = req
 	ctx.clear()
 

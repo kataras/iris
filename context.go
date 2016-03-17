@@ -16,8 +16,8 @@ import (
 // from the route.go 's Prepare -> convert handler as middleware and use route.run -> ServeHTTP.
 type Context struct {
 	*Renderer
-	writer         responseWriter
-	ResponseWriter ResponseWriter
+	//writer         responseWriter
+	ResponseWriter http.ResponseWriter
 	Request        *http.Request
 	Params         PathParameters
 	station        *Station
@@ -52,9 +52,9 @@ func (ctx *Context) URLParamInt(key string) (int, error) {
 }
 
 // PreWrite adds a response handler, these handlers are run before the first .Write from the ResponseWriter
-func (ctx *Context) PreWrite(m ...ResponseHandler) {
-	ctx.ResponseWriter.PreWrite(m)
-}
+//func (ctx *Context) PreWrite(m ...ResponseHandler) {
+//	ctx.ResponseWriter.PreWrite(m)
+//}
 
 // Write writes a string via the context's ResponseWriter
 func (ctx *Context) Write(contents string) {
@@ -99,6 +99,7 @@ func (ctx *Context) SendStatus(statusCode int, message string) {
 	ctx.ResponseWriter.Header().Set("X-Content-Type-Options", "nosniff")
 	ctx.ResponseWriter.WriteHeader(statusCode)
 	io.WriteString(ctx.ResponseWriter, message)
+
 }
 
 // RequestIP gets just the Remote Address from the client.
@@ -166,7 +167,8 @@ func (ctx *Context) clear() {
 	ctx.Params = ctx.Params[0:0]
 	ctx.middleware = nil
 	ctx.pos = 0
-	ctx.ResponseWriter = &ctx.writer
+	//ctx.ResponseWriter = &ctx.writer
+	//ctx.responseWriter = ctx.ResponseWriter
 }
 
 ///////////// for sessions //////////////
