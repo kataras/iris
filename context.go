@@ -16,7 +16,7 @@ import (
 // from the route.go 's Prepare -> convert handler as middleware and use route.run -> ServeHTTP.
 type Context struct {
 	*Renderer
-	ResponseWriter ResponseWriter
+	ResponseWriter http.ResponseWriter
 	Request        *http.Request
 	Params         PathParameters
 	station        *Station
@@ -24,9 +24,6 @@ type Context struct {
 	middleware Middleware
 	// pos is the position number of the Context, look .Next to understand
 	pos uint8
-	// these values are reseting on each request, are useful only between middleware,
-	// use iris/sessions for cookie/filesystem storage
-	values map[string]interface{}
 }
 
 // Param returns the string representation of the key's path named parameter's value
@@ -48,11 +45,6 @@ func (ctx *Context) URLParam(key string) string {
 // URLParamInt returns the get parameter int value from a request , if any
 func (ctx *Context) URLParamInt(key string) (int, error) {
 	return strconv.Atoi(URLParam(ctx.Request, key))
-}
-
-// PreWrite adds a response handler, these handlers are run before the first .Write from the ResponseWriter
-func (ctx *Context) PreWrite(m ...ResponseHandler) {
-	ctx.ResponseWriter.PreWrite(m)
 }
 
 // Write writes a string via the context's ResponseWriter
@@ -166,42 +158,4 @@ func (ctx *Context) clear() {
 	ctx.Request = nil
 	ctx.middleware = nil
 	ctx.pos = 0
-}
-
-///////////// for sessions //////////////
-
-// Get returns a value from a key
-// if doesn't exists returns nil
-func (ctx *Context) Get(key string) interface{} {
-	if ctx.values == nil {
-		return nil
-	}
-
-	return ctx.values[key]
-}
-
-// GetString same as Get but returns the value as string
-func (ctx *Context) GetString(key string) (value string) {
-	if v := ctx.Get(key); v != nil {
-		value = v.(string)
-	}
-
-	return
-}
-
-// GetInt same as Get but returns the value as int
-func (ctx *Context) GetInt(key string) (value int) {
-	if v := ctx.Get(key); v != nil {
-		value = v.(int)
-	}
-
-	return
-}
-
-// Set sets a value to a key in the values map
-func (ctx *Context) Set(key string, value interface{}) {
-	if ctx.values == nil {
-		ctx.values = make(map[string]interface{})
-	}
-	ctx.values[key] = value
 }

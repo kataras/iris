@@ -31,7 +31,7 @@ type (
 		// Default is /debug/pprof , which means yourhost.com/debug/pprof
 		ProfilePath string
 
-		// Cache for Router, change it to false if you don't want to use the cache mechanism that Iris provides for your routes
+		// Cache change it to false if you don't want to use the cache mechanism that Iris provides for your routes
 		Cache bool
 		// CacheMaxItems max number of total cached routes, 500 = +~20000 bytes = ~0.019073MB
 		// Every time the cache timer reach this number it will reset/clean itself

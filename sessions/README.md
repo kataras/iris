@@ -11,10 +11,10 @@ The key features are:
     Convenient way to switch session persistency (aka "remember me") and set other attributes.
     Mechanism to rotate authentication and encryption keys.
     Multiple sessions per request, even using different backends.
-    Interfaces and infrastructure for custom session backends: sessions from different stores can be 	retrieved and batch-saved using a common API.
+    Interfaces and infrastructure for custom session backends: sessions from different stores can be retrieved and batch-saved using a common API.
 
     
-## Usage
+## Low-Level usage
 
 ```go
 
@@ -26,43 +26,30 @@ import (
 )
 
 func main() {
+	store := sessions.NewCookieStore([]byte("myIrisSecretKey"))
+	//iris.Use(sessions.Session("my_session", store))
 
-	var store = sessions.NewCookieStore([]byte("myIrisSecretKey"))
-	var sessionName = "user_sessions"
+	iris.UseFunc(func(c *iris.Context) {
+		// Get a session. We're ignoring the error resulted from decoding an
+		// existing session: Get() always returns a session, even if empty.
 
-	iris.Use(sessions.New(sessionName, store))
-
-	iris.Get("/set", func(c *iris.Context) {
-		session := sessions.GetSession(sessionName)
-		session.Set("foo", "bar")
-		c.Write("foo setted to: " + session.GetString("foo"))
+		session, _ := store.Get(c.Request, "my_session")
+		// Set some session values.
+		session.Values["foo"] = "bar"
+		session.Values[42] = 2032
+		// Save it before we write to the response/return from the handler.
+		session.Save(c.Request, c.ResponseWriter)
+		c.Next()
 	})
 
-	iris.Get("/get", func(c *iris.Context) {
-		var foo string = " no session key given "
-		session := sessions.GetSession(sessionName)
-		if session != nil {
-			foo = session.GetString("foo")
-		}
-		c.Write(foo)
+	iris.Get("/home", func(c *iris.Context) {
+		session, _ := store.Get(c.Request, "my_session")
+		c.Write(session.Values["foo"].(string))
 	})
-
-	iris.Get("/clear", func(c *iris.Context) {
-		session := sessions.GetSession(sessionName)
-		if session != nil {
-			//Clear clears all
-			//session.Clear()
-			session.Delete("foo")
-		}
-	})
-
-	// Use global sessions.Clear() to clear ALL sessions and stores if it's necessary
-	//sessions.Clear()
 
 	println("Iris is listening on :8080")
 	iris.Listen("8080")
 }
-
 
 
 ```
