@@ -52,8 +52,6 @@ func (res *responseWriter) apply(underlineResponseWriter http.ResponseWriter) {
 }
 
 func (res *responseWriter) ForceWriteHeader(status int) {
-
-	res.status = status
 	mlen := len(res.middleware) - 1
 	if res.middleware != nil {
 		for i := 0; i < mlen; i++ {
@@ -61,12 +59,12 @@ func (res *responseWriter) ForceWriteHeader(status int) {
 		}
 	}
 	res.size = 0
-	res.ResponseWriter.WriteHeader(status)
-
+	res.WriteHeader(status)
 }
 
 func (res *responseWriter) WriteHeader(status int) {
 	res.status = status
+	res.ResponseWriter.WriteHeader(status)
 }
 
 func (res *responseWriter) Written() bool {
