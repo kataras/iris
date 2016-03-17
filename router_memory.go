@@ -31,15 +31,13 @@ func NewMemoryRouter(underlineRouter *Router, maxitems int, resetDuration time.D
 func (r *MemoryRouter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	//16/03/2016 Tried to get/pass only middlewares but it slow me 8k nanoseconds, so I re-do it as I had before.
 	method := req.Method
-	isGet := method == HTTPMethods.GET
-	if isGet {
-		if ctx := r.cache.GetItem(method, req.URL.Path); ctx != nil {
-			ctx.Request = req
-			ctx.ResponseWriter = res
-			ctx.do()
+	path := req.URL.Path
+	if ctx := r.cache.GetItem(method, path); ctx != nil {
+		ctx.Request = req
+		ctx.ResponseWriter = res
+		ctx.do()
 
-			return
-		}
+		return
 	}
 	ctx := r.station.pool.Get().(*Context)
 	ctx.ResponseWriter = res
@@ -47,13 +45,10 @@ func (r *MemoryRouter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	ctx.clear()
 
 	if r.processRequest(ctx) {
-		// only if it's GET request, no put,no post, no header. For security,
-		// although all of them execute their handlers and all authentication should be there...
-		// but for best and bad, let's accept only GET Requests
-		if isGet {
-			//if something found and served then add it's clone to the cache
-			r.cache.AddItem(method, req.URL.Path, ctx.Clone())
-		}
+		//TODO: if isGet { we lose 8k nanoseconds here(100k operations 28knanoseconds per op), it is not important for now, I will find a way to automative it
+		//if something found and served then add it's clone to the cache
+		r.cache.AddItem(method, path, ctx.Clone())
+		//}
 	}
 
 	r.station.pool.Put(ctx)
