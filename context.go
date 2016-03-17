@@ -11,6 +11,8 @@ import (
 	"strings"
 )
 
+// Charset is defaulted to UTF-8, you can change it
+// all render methods will have this charset
 var Charset = DefaultCharset
 
 const (
@@ -109,6 +111,8 @@ func (ctx *Context) NotFound() {
 	ctx.station.Errors().Emit(404, ctx)
 }
 
+// SendStatus sends a http status to the client
+// it receives status code (int) and a message (string)
 func (ctx *Context) SendStatus(statusCode int, message string) {
 	r := ctx.ResponseWriter
 	r.Header().Set("Content-Type", "text/plain"+" ;charset="+Charset)

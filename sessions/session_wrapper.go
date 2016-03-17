@@ -1,7 +1,6 @@
 package sessions
 
 import (
-	_ "fmt"
 	"github.com/kataras/iris"
 	"net/http"
 	"sync"
@@ -176,13 +175,14 @@ func (s *Session) Delete(key interface{}) {
 // Clear remove all pairs from the session
 func (s *Session) Clear() {
 	if s.Values != nil && len(s.Values) > 0 {
-		for k, _ := range s.Values {
+		for k := range s.Values {
 			s.Delete(k)
 		}
 	}
 }
 
-// implement the session middleware
+// SessionWrapper is the Iris' session wrapper for the session
+// it contains the name of the session and the Store
 type SessionWrapper struct {
 	name  string
 	store Store

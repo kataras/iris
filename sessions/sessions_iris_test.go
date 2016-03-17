@@ -93,10 +93,10 @@ func TestSessionsWithIris(t *testing.T) {
 			return
 		}
 
-		for k, _ := range testValues {
+		for k := range testValues {
 			session.Delete(k)
 		}
-		for k, _ := range testValues {
+		for k := range testValues {
 			if p := session.GetString(k); p != "" {
 				t.Fatal("Sessions error: on test_clear, values are not deleted, this should be nil " + k + " == " + p + "?")
 			}
