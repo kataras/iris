@@ -51,20 +51,22 @@ func (res *responseWriter) apply(underlineResponseWriter http.ResponseWriter) {
 
 }
 
-func (res *responseWriter) WriteHeader(status int) {
-	//if the write header not called then we assume that the status will be 200
-	if !res.Written() {
-		res.status = status
-		mlen := len(res.middleware) - 1
-		if res.middleware != nil {
-			for i := 0; i < mlen; i++ {
-				res.middleware[i](res)
-			}
-		}
-		res.size = 0
-		res.ResponseWriter.WriteHeader(status)
-	}
+func (res *responseWriter) ForceWriteHeader(status int) {
 
+	res.status = status
+	mlen := len(res.middleware) - 1
+	if res.middleware != nil {
+		for i := 0; i < mlen; i++ {
+			res.middleware[i](res)
+		}
+	}
+	res.size = 0
+	res.ResponseWriter.WriteHeader(status)
+
+}
+
+func (res *responseWriter) WriteHeader(status int) {
+	res.status = status
 }
 
 func (res *responseWriter) Written() bool {
@@ -74,9 +76,10 @@ func (res *responseWriter) Written() bool {
 //implement the http.ResponseWriter
 
 func (res *responseWriter) Write(b []byte) (int, error) {
-
-	res.WriteHeader(http.StatusOK)
-
+	//if headers not setted we assume that's it's 200
+	if !res.Written() {
+		res.ForceWriteHeader(http.StatusOK)
+	}
 	//write to the underline http.ResponseWriter
 	size, err := res.ResponseWriter.Write(b)
 	res.size += size
