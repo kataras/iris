@@ -218,10 +218,12 @@ func (r *Router) Any(path string, handlersFn ...HandlerFunc) *Route {
 }
 
 //we use that to the router_memory also
-func (r *Router) poolContextFor(req *http.Request) *Context {
+func (r *Router) poolContextFor(res http.ResponseWriter, req *http.Request) *Context {
 	ctx := r.station.pool.Get().(*Context)
-	ctx.clear()
+	ctx.writer.apply(res)
 	ctx.Request = req
+	ctx.clear()
+
 	return ctx
 }
 
@@ -229,7 +231,8 @@ func (r *Router) poolContextFor(req *http.Request) *Context {
 // If no route found, it sends an http status 404
 func (r *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
-	ctx := r.poolContextFor(req)
+	ctx := r.poolContextFor(res, req)
+
 	//defer r.station.pool.Put(ctx)
 	// defer is too slow it adds 10k nanoseconds to the benchmarks...so I will wrap the below to a function
 	r.processRequest(ctx, res)
@@ -249,8 +252,7 @@ func (r *Router) processRequest(ctx *Context, res http.ResponseWriter) bool {
 			ctx.Params = params
 			ctx.middleware = middleware
 			///TODO: fix this shit
-			ctx.ResponseWriter = res
-			ctx.Renderer.responseWriter = ctx.ResponseWriter
+			ctx.Renderer.responseWriter = res
 			ctx.do()
 
 			return true

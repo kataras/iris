@@ -11,11 +11,11 @@ type ResponseMiddleware []ResponseHandler
 type ResponseWriter interface {
 	http.ResponseWriter
 	http.Flusher
-
 	Status() int
 	Written() bool
 	Size() int
 	PreWrite(ResponseMiddleware)
+	apply(res http.ResponseWriter)
 }
 
 //implement the ResponseWriter
@@ -37,13 +37,32 @@ func (res *responseWriter) PreWrite(m ResponseMiddleware) {
 	res.middleware = append(m, res.middleware...)
 }
 
+func (res *responseWriter) clear() {
+	res.size = 0
+	res.status = 0
+	res.middleware = res.middleware[0:0]
+	res.ResponseWriter = nil
+}
+
+func (res *responseWriter) apply(underlineResponseWriter http.ResponseWriter) {
+	res.size = 0
+	res.status = 0
+	res.ResponseWriter = underlineResponseWriter
+
+}
+
 func (res *responseWriter) WriteHeader(status int) {
-	res.status = status
-	mlen := len(res.middleware) - 1
-	if res.middleware != nil {
-		for i := 0; i < mlen; i++ {
-			res.middleware[i](res)
+	//if the write header not called then we assume that the status will be 200
+	if !res.Written() {
+		res.status = status
+		mlen := len(res.middleware) - 1
+		if res.middleware != nil {
+			for i := 0; i < mlen; i++ {
+				res.middleware[i](res)
+			}
 		}
+		res.size = 0
+		res.ResponseWriter.WriteHeader(status)
 	}
 
 }
@@ -55,10 +74,9 @@ func (res *responseWriter) Written() bool {
 //implement the http.ResponseWriter
 
 func (res *responseWriter) Write(b []byte) (int, error) {
-	if !res.Written() {
-		//if the write header not called then we assume that the status will be 200
-		res.WriteHeader(http.StatusOK)
-	}
+
+	res.WriteHeader(http.StatusOK)
+
 	//write to the underline http.ResponseWriter
 	size, err := res.ResponseWriter.Write(b)
 	res.size += size
@@ -78,8 +96,5 @@ func (res *responseWriter) CloseNotify() <-chan bool {
 }
 
 func (res *responseWriter) Flush() {
-	flusher, ok := res.ResponseWriter.(http.Flusher)
-	if ok {
-		flusher.Flush()
-	}
+	res.ResponseWriter.(http.Flusher).Flush()
 }

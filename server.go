@@ -76,9 +76,9 @@ func parseAddr(fullHostOrPort []string) string {
 // host:port or just port
 func (s *Server) listen(fullHostOrPort ...string) error {
 	fulladdr := parseAddr(fullHostOrPort)
-	mux := http.NewServeMux() //we use the http's ServeMux for now as the top- middleware of the server, for now.
+	//mux := http.NewServeMux() //we use the http's ServeMux for now as the top- middleware of the server, for now.
 
-	mux.Handle("/", s.handler)
+	//mux.Handle("/", s.handler)
 
 	//return http.ListenAndServe(s.config.Host+strconv.Itoa(s.config.Port), mux)
 	listener, err := net.Listen("tcp", fulladdr)
@@ -88,7 +88,7 @@ func (s *Server) listen(fullHostOrPort ...string) error {
 		return err
 	}
 	s.listener = &tcpKeepAliveListener{listener.(*net.TCPListener)}
-	err = http.Serve(s.listener, mux)
+	err = http.Serve(s.listener, s.handler)
 	if err == nil {
 		s.isRunning = true
 		s.isSecure = false
