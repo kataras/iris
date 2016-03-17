@@ -493,7 +493,7 @@ Iris has a middleware system to create it's own middleware and is at a state whi
 
 | Middleware | Author | Description |
 | -----------|--------|-------------|
-| [sessions](https://github.com/kataras/iris/sessions) | [Ported to Iris](https://github.com/kataras/iris/sessions) | Session Management |
+| [sessions](https://github.com/kataras/iris/tree/master/sessions) | [Ported to Iris](https://github.com/kataras/iris/tree/master/sessions) | Session Management |
 | [RestGate](https://github.com/pjebs/restgate) | [Prasanga Siripala](https://github.com/pjebs) | Secure authentication for REST API endpoints |
 | [Graceful](https://github.com/stretchr/graceful) | [Tyler Bunnell](https://github.com/tylerb) | Graceful HTTP Shutdown |
 | [secure](https://github.com/unrolled/secure) | [Cory Jacobsen](https://github.com/unrolled) | Middleware that implements a few quick security wins |
