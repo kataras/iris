@@ -49,7 +49,7 @@ func Custom(options StationOptions) *Station {
 		opt.Cache = options.Cache
 	}
 	opt.CacheMaxItems = options.CacheMaxItems
-	if options.CacheResetDuration > 30*time.Second { // 30 secs is the minimum value
+	if options.CacheResetDuration < 30*time.Second { // 30 secs is the minimum value
 		opt.CacheResetDuration = options.CacheResetDuration
 	}
 

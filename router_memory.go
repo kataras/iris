@@ -52,7 +52,7 @@ func (r *MemoryRouter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		// but for best and bad, let's accept only GET Requests
 		if isGet {
 			//if something found and served then add it's clone to the cache
-			r.cache.AddItem(req.Method, req.URL.Path, ctx.Clone())
+			r.cache.AddItem(method, req.URL.Path, ctx.Clone())
 		}
 	}
 
