@@ -1,12 +1,14 @@
 # Iris Web Framework
-     This project is under heavy development
 <img align="right" width="132" src="http://kataras.github.io/iris/assets/56e4b048f1ee49764ddd78fe_iris_favicon.ico">
 [![Build Status](https://travis-ci.org/kataras/iris.svg)](https://travis-ci.org/kataras/iris)
 [![Go Report Card](https://goreportcard.com/badge/github.com/kataras/iris)](https://goreportcard.com/report/github.com/kataras/iris)
 [![GoDoc](https://godoc.org/github.com/kataras/iris?status.svg)](https://godoc.org/github.com/kataras/iris)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/kataras/iris?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-Iris is a very minimal but flexible web framework written in go, providing a robust set of features for building single & multi-page, web applications.
+Iris is a very minimal but flexible go web framework  providing arobust set of features for building shiny web applications.
+
+>This project is under extremely development
+
 
 ## Table of Contents
 
@@ -22,6 +24,7 @@ Iris is a very minimal but flexible web framework written in go, providing a rob
 - [Match anything and the Static serve handler](#match-anything-and-the-static-serve-handler)
 - [Declaring routes](#declaring-routes)
 - [Context](#context)
+- [Examples](https://github.com/kataras/iris/tree/master/_examples)
 - [Third Party Middleware](#third-party-middleware)
 - [Contributors](#contributors)
 - [Community](#community)
@@ -431,55 +434,65 @@ Personally I use the external struct and the **func(c *iris.Context)** form .
 
 >Functions
 
- 0. **Clone()**
+ 1. **Clone()**
 	 - Returns a clone of the Context, useful when you want to use the context outscoped for example in goroutines.
- 1. **Write(contents string)**
+ 2. **Write(contents string)**
 	 - Writes a pure string to the ResponseWriter and sends to the client.
- 2. **Param(key string)** returns string
+ 3. **Param(key string)** returns string
 	 - Returns the string representation of the key's  named parameter's value. Registed path= /profile/:name) Requested url is /profile/something where the key argument is the named parameter's key, returns the value  which is 'something' here.
- 3. **ParamInt(key string)** returns integer, error
+ 4. **ParamInt(key string)** returns integer, error
 	 - Returns the int representation of the key's  named parameter's value, if something goes wrong the second return value, the error is not nil.
- 4. **URLParam(key string)** returns string
+ 5. **URLParam(key string)** returns string
 	 - Returns the string representation of a requested url parameter (?key=something) where the key argument is the name of, something is the returned value.
- 5. **URLParamInt(key string)** returns integer, error
+ 6. **URLParamInt(key string)** returns integer, error
 	 - Returns the int representation of  a requested url parameter
- 6. **SetCookie(name string, value string)**
+ 7. **SetCookie(name string, value string)**
 	 - Adds a cookie to the request.
- 7. **GetCookie(name string)** returns string
+ 8. **GetCookie(name string)** returns string
 	 - Get the cookie value, as string, of a cookie.
- 8. **ServeFile(path string)**
+ 9. **ServeFile(path string)**
 	 - This just calls the http.ServeFile, which serves a file given by the path argument  to the client.
- 9. **NotFound()**
+ 10. **NotFound()**
 	 - Sends a http.StatusNotFound with a custom template you defined (if any otherwise the default template is there) to the client.
 	 --- *Note: We will learn all about Custom Error Handlers later*.
- 10. **Close()**
+ 11. **Close()**
 	 - Calls the Request.Body.Close().
 
- 11. **WriteHTML(status int, contents string) & HTML(contents string)**
+ 12. **WriteHTML(status int, contents string) & HTML(contents string)**
 	 - WriteHTML: Writes html string with a given http status to the client, it sets the Header with the correct content-type.
 	 - HTML: Same as WriteHTML but you don't have to pass a status, it's defaulted to http.StatusOK (200).
- 12. **WriteData(status int, binaryData []byte) & Data(binaryData []byte)**
+ 13. **WriteData(status int, binaryData []byte) & Data(binaryData []byte)**
 	 - WriteData: Writes binary data with a given http status to the client, it sets the Header with the correct content-type.
 	 - Data : Same as WriteData but you don't have to pass a status, it's defaulted to http.StatusOK (200).
- 13. **WriteText(status int, contents string) & Text(contents string)**
+ 14. **WriteText(status int, contents string) & Text(contents string)**
 	 - WriteText: Writes plain text with a given http status to the client, it sets the Header with the correct content-type.
 	 - Text: Same as WriteTextbut you don't have to pass a status, it's defaulted to http.StatusOK (200).
- 14. **WriteJSON(status int, jsonObject interface{}) & JSON(jsonObject interface{}) returns error**
+ 15. **WriteJSON(status int, jsonObject interface{}) & JSON(jsonObject interface{}) returns error**
 	 - WriteJSON: Writes json which is converted from structed object(s) with a given http status to the client, it sets the Header with the correct content-type. If something goes wrong then it's returned value which is an error type is not nil. No indent.
- 15.  **RenderJSON(jsonObjects ...interface{}) returns error**
+ 16.  **RenderJSON(jsonObjects ...interface{}) returns error**
 	 - RenderJSON: Same as WriteJSON & JSON but with Indent (formated json)	 
 	 - JSON: Same as WriteJSON but you don't have to pass a status, it's defaulted to http.StatusOK (200).
- 16. **WriteXML(status int, xmlStructs ...interface{}) & XML(xmlStructs ...interface{}) returns error**
+ 17. **WriteXML(status int, xmlStructs ...interface{}) & XML(xmlStructs ...interface{}) returns error**
 	 - WriteXML: Writes writes xml which is converted from struct(s) with a given http status to the client, it sets the Header with the correct content-type. If something goes wrong then it's returned value which is an error type is not nil.
 	 - XML: Same as WriteXML but you don't have to pass a status, it's defaulted to http.StatusOK (200).
- 17. **RenderFile(file string, pageContext interface{}) returns error**
+ 18. **RenderFile(file string, pageContext interface{}) returns error**
 	 - RenderFile: Renders a file by its name (which a file is saved to the template cache) and a page context passed to the function, default http status is http.StatusOK(200) if the template was found, otherwise http.StatusNotFound(404). If something goes wrong then it's returned value which is an error type is not nil.
- 18. **Render(pageContext interface{})  returns error**
+ 19. **Render(pageContext interface{})  returns error**
 	 - Render: Renders the root file template and a context passed to the function, default http status is http.StatusOK(200) if the template was found, otherwise http.StatusNotFound(404). If something goes wrong then it's returned value which is an error type is not nil.
-	--- *Note:  We will learn how to add templates at the next chapters*.
+--- *Note:  We will learn how to add templates at the next chapters*. 
+
+ 20. **Next()**
+	 - Next: calls all the next handler from the middleware stack, it used inside a middleware
+
+ 21. **SendStatus(statusCode int, message string)** 
+	 - SendStatus:  writes a http statusCode with a text/plain message
 
 
-**The next chapters are being written this time, they will be published soon, check the docs later [[TODO chapters: Register custom error handlers, Add templates to the route, Declare middlewares]]**
+**[[TODO chapters: Register custom error handlers, cache templates , create & use middleware]]**
+
+Inside the _[examples](https://github.com/kataras/iris/tree/master/_examples) folder you will find practical examples
+
+.
 
 
 ## Third Party Middleware

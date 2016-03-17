@@ -165,7 +165,7 @@ func (ctx *Context) Clone() *Context {
 	return &cloneContext
 }
 
-// Next calls all the  remeaning handlers from the middleware stack, it used inside a middleware
+// Next calls all the next handler from the middleware stack, it used inside a middleware
 func (ctx *Context) Next() {
 	//set position to the next
 	ctx.pos++
