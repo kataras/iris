@@ -8,12 +8,6 @@ import (
 	"time"
 )
 
-type sessionWrapper struct {
-	sessionName string
-	req         *http.Request
-	store       Store
-}
-
 var (
 	mutex sync.RWMutex
 	data  = make(map[*http.Request]map[interface{}]interface{})
@@ -137,20 +131,15 @@ func Purge(maxAge int) int {
 	return count
 }
 
-// GetSession returns a session by it's name
-func GetSession(ctx *iris.Context, name string) *Session {
-	//it's always not nil
-	if s := Get(ctx.Request, name); s != nil {
-		return s.(*Session)
-	}
-
-	return nil
-}
+// add some functionality to the *Session
 
 // Set sets a value to a session with it's key
 func (s *Session) Set(key interface{}, val interface{}) {
 	if s.Values == nil {
-		s.Values = make(map[interface{}]interface{})
+		// OH MY GOD  I WAS FORGOT TO WRITE THE ,0 AND SHIT 9 HOURS OF MY LIFE
+		// TRYING TO MAKE MY OWN SESSION MANAGER WTF...
+		// LETS USE THE GORILAS BETTER ITS WORKING NOW WITH THE BUFFER ,0 !!!
+		s.Values = make(map[interface{}]interface{}, 0)
 	}
 	s.writeInThisReq = true
 	s.Values[key] = val
@@ -193,52 +182,23 @@ func (s *Session) Clear() {
 	}
 }
 
-type sessionMiddlewareWrapper struct {
+// implement the session middleware
+type SessionWrapper struct {
 	name  string
 	store Store
 }
 
 // New creates the session by it's name and returns a new ready-to-use iris.Handler
-func New(name string, store *CookieStore) sessionMiddlewareWrapper {
-	m := sessionMiddlewareWrapper{name, store}
+func New(name string, store Store) SessionWrapper {
+	return SessionWrapper{name, store}
+}
 
-	return m
+// Get returns a session by it's context
+func (s SessionWrapper) Get(ctx *iris.Context) (*Session, error) {
+	return s.store.Get(ctx.Request, s.name)
 }
 
 // Clear remove all items from this handler's session
-func (m sessionMiddlewareWrapper) Clear(req *http.Request) {
-	Clear(req)
-}
-
-// Serve is the Middleware handler
-func (m sessionMiddlewareWrapper) Serve(ctx *iris.Context) {
-	//care here maybe error if you use the middleware without a session
-	var s *Session = NewSession(m.store, m.name)
-	st := GetSession(ctx, m.name)
-	if st == nil {
-		Set(ctx.Request, m.name, s)
-	} else {
-		//s = st
-	}
-	//s := NewSession(m.store, m.name)
-	//Set(ctx.Request, m.name, s)
-
-	/*if st := Get(ctx.Request, m.name); st != nil {
-		s = st.(*Session)
-	} else {
-		s = NewSession(m.store, m.name)
-		Set(ctx.Request, m.name, s)
-	}*/
-
-	// Use before hook to save out the session
-	/*ctx.PreWrite(func(iris.ResponseWriter) {
-		if s.writeInThisReq {
-			fmt.Println("\nsave")
-			m.store.Save(ctx.Request, ctx.ResponseWriter, s)
-			fmt.Printf("\nAfter save Store: %T Point to: %v %s", m.store, m.store, m.store)
-		}
-	})*/
-	s.writeInThisReq = false
-
-	ctx.Next()
+func (s SessionWrapper) Clear(ctx *iris.Context) {
+	Clear(ctx.Request)
 }

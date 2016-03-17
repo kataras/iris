@@ -51,7 +51,7 @@ type (
 	Station struct {
 		IRouter
 		server          *Server
-		htmlTemplates   *template.Template
+		templates       *template.Template
 		pool            sync.Pool
 		options         StationOptions
 		pluginContainer *PluginContainer
@@ -137,14 +137,14 @@ func (s *Station) Close() {
 }
 
 func (s *Station) makeContext() *Context {
-	return &Context{station: s, Params: make([]PathParameter, 6), Renderer: &Renderer{responseWriter: nil, templates: s.htmlTemplates}}
+	return &Context{station: s, Params: make([]PathParameter, 6)}
 }
 
 // Templates sets the templates glob path for the web app
 func (s *Station) Templates(pathGlob string) {
 	var err error
 	//s.htmlTemplates = template.Must(template.ParseGlob(pathGlob))
-	s.htmlTemplates, err = template.ParseGlob(pathGlob)
+	s.templates, err = template.ParseGlob(pathGlob)
 
 	if err != nil {
 		//if err then try to load the same path but with the current directory prefix
@@ -154,7 +154,7 @@ func (s *Station) Templates(pathGlob string) {
 			panic(err.Error())
 
 		}
-		s.htmlTemplates, cerr = template.ParseGlob(pwd + pathGlob)
+		s.templates, cerr = template.ParseGlob(pwd + pathGlob)
 		if cerr != nil {
 			panic(err.Error())
 		}

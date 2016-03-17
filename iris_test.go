@@ -272,9 +272,9 @@ func TestRoutesServerSide(t *testing.T) {
 		api.HandleFunc(route.Methods[0], route.Path, handleRoute(route))
 	}
 	// Set custom error messages
-	api.Errors().On(http.StatusNotFound, HandlerFunc(func(c *Context) {
-		http.Error(c.ResponseWriter, CustomNotFoundErrorMessage, http.StatusNotFound)
-	}))
+	api.Errors().On(http.StatusNotFound, func(c *Context) {
+		c.SendStatus(404, CustomNotFoundErrorMessage)
+	})
 
 	testServer = httptest.NewUnstartedServer(api)
 

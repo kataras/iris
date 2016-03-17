@@ -1,9 +1,5 @@
 > This package is converted to work with Iris but it was originaly created by Gorila team, the original package is gorilla/sessions
 
-## Warning
-
-Sessions are not working currently, I am trying to find a way to make them ligher than it's.
-
 ## Features
 
 The key features are:
@@ -28,35 +24,54 @@ import (
 	"github.com/kataras/iris/sessions"
 )
 
+//there is no middleware, use the sessions anywhere you want
 func main() {
 
 	var store = sessions.NewCookieStore([]byte("myIrisSecretKey"))
-	var sessionName = "user_sessions"
-
-	iris.Use(sessions.New(sessionName, store))
+	var mySessions = sessions.New("user_sessions", store)
 
 	iris.Get("/set", func(c *iris.Context) {
-		session := sessions.GetSession(sessionName)
-		session.Set("foo", "bar")
-		c.Write("foo setted to: " + session.GetString("foo"))
+		//get the session for this context
+		session, err := mySessions.Get(c)
+
+		if err != nil {
+			c.SendStatus(500, err.Error())
+			return
+		}
+		//set session values
+		session.Set("name", "kataras")
+
+		//save them
+		session.Save(c)
+
+		//write anthing
+		c.Write("All ok session setted to: ", session.Get("name"))
 	})
 
 	iris.Get("/get", func(c *iris.Context) {
-		var foo string = " no session key given "
-		session := sessions.GetSession(sessionName)
-		if session != nil {
-			foo = session.GetString("foo")
+		//again get the session for this context
+		session, err := mySessions.Get(c)
+
+		if err != nil {
+			c.SendStatus(500, err.Error())
+			return
 		}
-		c.Write(foo)
+		//get the session value
+		name := session.GetString("name") // .Get or .GetInt
+
+		c.Write("The name on the /set was: ", name)
 	})
 
 	iris.Get("/clear", func(c *iris.Context) {
-		session := sessions.GetSession(sessionName)
-		if session != nil {
-			//Clear clears all
-			//session.Clear()
-			session.Delete("foo")
+		session, err := mySessions.Get(c)
+		if err != nil {
+			c.SendStatus(500, err.Error())
+			return
 		}
+		//Clear clears all
+		//session.Clear()
+		session.Delete("name")
+
 	})
 
 	// Use global sessions.Clear() to clear ALL sessions and stores if it's necessary
@@ -64,6 +79,7 @@ func main() {
 
 	println("Iris is listening on :8080")
 	iris.Listen("8080")
+
 }
 
 

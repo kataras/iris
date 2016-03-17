@@ -3,24 +3,20 @@ package iris
 ///TODO: I must re-write this file
 
 import (
-	"fmt"
 	"net/http"
 )
 
 // ErrorHandler creates a handler which is responsible to send a particular error to the client
-func ErrorHandler(message string, errCode int) Handler {
-	return HandlerFunc(func(ctx *Context) {
-		ctx.ResponseWriter.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		ctx.ResponseWriter.Header().Set("X-Content-Type-Options", "nosniff")
-		ctx.ResponseWriter.WriteHeader(errCode)
-		fmt.Fprintln(ctx.ResponseWriter, message)
-	})
+func ErrorHandler(statusCode int, message string) HandlerFunc {
+	return func(ctx *Context) {
+		ctx.SendStatus(statusCode, message)
+	}
 }
 
 // ErrorHandlers just an array of struct{ code int, handler http.Handler}
 type errorHandler struct {
 	code    int
-	handler Handler
+	handler HandlerFunc
 }
 
 // HTTPErrors is the struct which contains the handlers which will execute if http error occurs
@@ -34,9 +30,7 @@ type HTTPErrors struct {
 func DefaultHTTPErrors() *HTTPErrors {
 	httperrors := new(HTTPErrors)
 	httperrors.ErrorHanders = make([]*errorHandler, 0)
-	httperrors.SetNotFound(ErrorHandler("404 not found", http.StatusNotFound))
-	httperrors.SetMethodNotAllowed(ErrorHandler("405 method not allowed", http.StatusMethodNotAllowed))
-
+	httperrors.SetNotFound(ErrorHandler(http.StatusNotFound, "404 not found"))
 	return httperrors
 }
 
@@ -53,7 +47,7 @@ func (he *HTTPErrors) getByCode(httpStatus int) *errorHandler {
 }
 
 // On Registers a handler for a specific http error status ( overrides the NotFound and MethodNotAllowed)
-func (he *HTTPErrors) On(httpStatus int, handler Handler) {
+func (he *HTTPErrors) On(httpStatus int, handler HandlerFunc) {
 	if httpStatus == http.StatusOK {
 		return
 	}
@@ -75,32 +69,19 @@ func (he *HTTPErrors) On(httpStatus int, handler Handler) {
 
 // SetNotFound this func could named it OnNotFound also, registers a custom StatusNotFound error 404 handler
 // Possible parameter: iris.Handler or iris.HandlerFunc(func(ctx *Context){})
-func (he *HTTPErrors) SetNotFound(handler Handler) {
+func (he *HTTPErrors) SetNotFound(handler HandlerFunc) {
 	he.On(http.StatusNotFound, handler)
 }
 
-// SetMethodNotAllowed this func could named it OnMethodNotAllowed also, registers a custom StatusMethodNotAllowed error 405 handler
-func (he *HTTPErrors) SetMethodNotAllowed(handler Handler) {
-	he.On(http.StatusMethodNotAllowed, handler)
-}
-
 // Emit executes the handler of the given error http status code
-func (he *HTTPErrors) Emit(errCode int, res http.ResponseWriter) {
-	if errHandler := he.getByCode(errCode); errHandler != nil {
-		errHandler.handler.Serve(&Context{ResponseWriter: NewResponseWriter(res)})
+func (he *HTTPErrors) Emit(errCode int, ctx *Context) {
 
-	}
-}
-
-// EmitWithContext executes the handler of the given error code to the context's response writer
-func (he *HTTPErrors) EmitWithContext(errCode int, ctx *Context) {
 	if errHandler := he.getByCode(errCode); errHandler != nil {
 		errHandler.handler.Serve(ctx)
-
 	}
 }
 
 // NotFound emits the registed NotFound (404) custom (or not) handler
-func (he *HTTPErrors) NotFound(res http.ResponseWriter) {
-	he.Emit(http.StatusNotFound, res)
+func (he *HTTPErrors) NotFound(ctx *Context) {
+	he.Emit(http.StatusNotFound, ctx)
 }
