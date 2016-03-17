@@ -312,7 +312,7 @@ func main() {
 	// NOT match to /hello or /hello/ or /hello/anywordhere/something
 	iris.Get("/hello/:name", func(c *iris.Context) {
 		name := c.Param("name")
-		c.Write("Hello " + name)
+		c.Write("Hello %s", name)
 	})
 
 	// MATCH to /profile/kataras/friends/1

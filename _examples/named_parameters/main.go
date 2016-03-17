@@ -13,7 +13,7 @@ func main() {
 	iris.Get("/hello/:name", func(c *iris.Context) {
 		// Retrieve the parameter name
 		name := c.Param("name")
-		c.Write("Hello " + name)
+		c.Write("Hello %s", name)
 	})
 
 	// Match to /profile/iris/friends/1
