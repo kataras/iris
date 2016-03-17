@@ -30,22 +30,30 @@ func NewMemoryRouter(underlineRouter *Router, maxitems int, resetDuration time.D
 // If no route found, it sends an http status 404
 func (r *MemoryRouter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	//16/03/2016 Tried to get/pass only middlewares but it slow me 8k nanoseconds, so I re-do it as I had before.
-	if ctx := r.cache.GetItem(req.Method, req.URL.Path); ctx != nil {
-		ctx.Request = req
-		ctx.ResponseWriter = res
-		ctx.do()
+	method := req.Method
+	isGet := method == HTTPMethods.GET
+	if isGet {
+		if ctx := r.cache.GetItem(method, req.URL.Path); ctx != nil {
+			ctx.Request = req
+			ctx.ResponseWriter = res
+			ctx.do()
 
-		return
+			return
+		}
 	}
-
 	ctx := r.station.pool.Get().(*Context)
 	ctx.ResponseWriter = res
 	ctx.Request = req
 	ctx.clear()
 
 	if r.processRequest(ctx) {
-		//if something found and served then add it's clone to the cache
-		r.cache.AddItem(req.Method, req.URL.Path, ctx.Clone())
+		// only if it's GET request, no put,no post, no header. For security,
+		// although all of them execute their handlers and all authentication should be there...
+		// but for best and bad, let's accept only GET Requests
+		if isGet {
+			//if something found and served then add it's clone to the cache
+			r.cache.AddItem(req.Method, req.URL.Path, ctx.Clone())
+		}
 	}
 
 	r.station.pool.Put(ctx)

@@ -11,6 +11,8 @@ import (
 	"strings"
 )
 
+var Charset = DefaultCharset
+
 const (
 	// DefaultCharset represents the default charset for content headers
 	DefaultCharset = "UTF-8"
@@ -19,17 +21,17 @@ const (
 	// ContentLength represents the header["Content-Length"]
 	ContentLength = "Content-Length"
 	// ContentHTML is the  string of text/html response headers
-	ContentHTML = "text/html" + "; " + DefaultCharset
+	ContentHTML = "text/html"
 	// ContentJSON is the  string of application/json response headers
-	ContentJSON = "application/json" + "; " + DefaultCharset
+	ContentJSON = "application/json"
 	// ContentJSONP is the  string of application/javascript response headers
 	ContentJSONP = "application/javascript"
 	// ContentBINARY is the  string of "application/octet-stream response headers
 	ContentBINARY = "application/octet-stream"
 	// ContentTEXT is the  string of text/plain response headers
-	ContentTEXT = "text/plain" + "; " + DefaultCharset
+	ContentTEXT = "text/plain"
 	// ContentXML is the  string of text/xml response headers
-	ContentXML = "text/xml" + "; " + DefaultCharset
+	ContentXML = "text/xml"
 )
 
 // Context is created every time a request is coming to the server,
@@ -109,7 +111,7 @@ func (ctx *Context) NotFound() {
 
 func (ctx *Context) SendStatus(statusCode int, message string) {
 	r := ctx.ResponseWriter
-	r.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	r.Header().Set("Content-Type", "text/plain"+" ;charset="+Charset)
 	r.Header().Set("X-Content-Type-Options", "nosniff")
 	r.WriteHeader(statusCode)
 	io.WriteString(r, message)
@@ -237,7 +239,7 @@ func (ctx *Context) Render(pageContext interface{}) error {
 // WriteHTML writes html string with a http status
 ///TODO or I will think to pass an interface on handlers as second parameter near to the Context, with developer's custom Renderer package .. I will think about it.
 func (ctx *Context) WriteHTML(httpStatus int, htmlContents string) {
-	ctx.ResponseWriter.Header().Set(ContentType, ContentHTML)
+	ctx.ResponseWriter.Header().Set(ContentType, ContentHTML+" ;charset="+Charset)
 	ctx.ResponseWriter.WriteHeader(httpStatus)
 	io.WriteString(ctx.ResponseWriter, htmlContents)
 }
@@ -262,7 +264,7 @@ func (ctx *Context) Data(binaryData []byte) {
 
 // WriteText writes text with a http status
 func (ctx *Context) WriteText(httpStatus int, text string) {
-	ctx.ResponseWriter.Header().Set(ContentType, ContentTEXT)
+	ctx.ResponseWriter.Header().Set(ContentType, ContentTEXT+" ;charset="+Charset)
 	ctx.ResponseWriter.WriteHeader(httpStatus)
 	io.WriteString(ctx.ResponseWriter, text)
 }
@@ -286,7 +288,7 @@ func (ctx *Context) RenderJSON(httpStatus int, jsonStructs ...interface{}) error
 	}
 
 	//keep in mind http.DetectContentType(data)
-	ctx.ResponseWriter.Header().Set(ContentType, ContentJSON)
+	ctx.ResponseWriter.Header().Set(ContentType, ContentJSON+" ;charset="+Charset)
 	ctx.ResponseWriter.WriteHeader(httpStatus)
 	ctx.ResponseWriter.Write(_json)
 
@@ -316,7 +318,7 @@ func (ctx *Context) WriteXML(httpStatus int, xmlStructs ...interface{}) error {
 		}
 		_xmlDoc = append(_xmlDoc, theDoc...)
 	}
-	ctx.ResponseWriter.Header().Set(ContentType, ContentXML)
+	ctx.ResponseWriter.Header().Set(ContentType, ContentXML+" ;charset="+Charset)
 	ctx.ResponseWriter.WriteHeader(httpStatus)
 	ctx.ResponseWriter.Write(_xmlDoc)
 	return nil
