@@ -1,14 +1,12 @@
 package main
 
 import (
-	"strconv"
-
 	"github.com/kataras/iris"
+	"strconv"
 )
 
 func main() {
-
-	// Match to /hello/iris
+	// Match to /hello/iris,  (if PathCorrection:true match also /hello/iris/)
 	// Not match to /hello or /hello/ or /hello/iris/something
 	iris.Get("/hello/:name", func(c *iris.Context) {
 		// Retrieve the parameter name
@@ -16,7 +14,7 @@ func main() {
 		c.Write("Hello %s", name)
 	})
 
-	// Match to /profile/iris/friends/1
+	// Match to /profile/iris/friends/1, (if PathCorrection:true match also /profile/iris/friends/1/)
 	// Not match to /profile/ , /profile/iris ,
 	// Not match to /profile/iris/friends,  /profile/iris/friends ,
 	// Not match to /profile/iris/friends/2/something

@@ -138,12 +138,12 @@ var (
 			Methods: HTTPMethods.ANY, Path: "/wildcard/:username/any/*anyusername",
 			Requests: []TestRequestRoute{{
 				Method: "GET", Path: "/wildcard/kataras/any/blablabla/bleleblelbe",
-				Body:               []byte("body for the /wildcard/any/*"),
+				Body:               []byte("body for the /wildcard/any/*anyusername"),
 				ExpectedStatusCode: 200,
-				ExpectedParameters: map[string]string{"username": "kataras"},
+				ExpectedParameters: map[string]string{"username": "kataras", "anyusername": "/blablabla/bleleblelbe"},
 			}, {
-				Method: "GET", Path: "/wildcard/kataras/any",
-				Body:               []byte("body for the /wildcard/kataras/any"),
+				Method: "GET", Path: "/wildcard/kataras/",
+				Body:               []byte("body for the /wildcard/kataras/"),
 				ExpectedStatusCode: 404,
 				ExpectedParameters: nil,
 			}},
@@ -156,8 +156,47 @@ var (
 				ExpectedStatusCode: 200,
 				ExpectedParameters: nil,
 			}, {
-				Method: "GET", Path: "/wildcard2",
-				Body:               []byte("body for the /wildcard"),
+				Method: "GET", Path: "/wildcard2/nowitsworkwiththeslashwhenthepathcorrectionisstrue",
+				Body:               []byte("/wildcard2/nowitsworkwiththeslashwhenthepathcorrectionisstrue"),
+				ExpectedStatusCode: 200,
+				ExpectedParameters: nil,
+			}},
+		},
+		//here we will test the path correction from req /path/ to registed /path
+		{
+			Methods: HTTPMethods.ANY, Path: "/pathcorrection1",
+			Requests: []TestRequestRoute{{
+				Method: "GET", Path: "/pathcorrection1",
+				Body:               []byte(""),
+				ExpectedStatusCode: 200,
+				ExpectedParameters: nil,
+			}, {
+				Method: "GET", Path: "/pathcorrection1/",
+				Body:               []byte(""),
+				ExpectedStatusCode: 200,
+				ExpectedParameters: nil,
+			}, {
+				Method: "GET", Path: "/pathcorrection1/notfound",
+				Body:               []byte("body for the /pathcorrection1/notfound"),
+				ExpectedStatusCode: 404,
+				ExpectedParameters: nil,
+			}},
+		},
+		{ //and here the oposite from req /path to registed /path/
+			Methods: HTTPMethods.ANY, Path: "/pathcorrection2/",
+			Requests: []TestRequestRoute{{
+				Method: "GET", Path: "/pathcorrection2/",
+				Body:               []byte(""),
+				ExpectedStatusCode: 200,
+				ExpectedParameters: nil,
+			}, {
+				Method: "GET", Path: "/pathcorrection2",
+				Body:               []byte(""),
+				ExpectedStatusCode: 200,
+				ExpectedParameters: nil,
+			}, {
+				Method: "GET", Path: "/pathcorrection2/notfound",
+				Body:               []byte("body for the /pathcorrection2/notfound"),
 				ExpectedStatusCode: 404,
 				ExpectedParameters: nil,
 			}},
@@ -173,8 +212,7 @@ func TestMain(m *testing.M) {
 }
 
 func setup() {
-	//api = New()
-	api = Custom(StationOptions{Cache: false})
+	api = New()
 }
 
 func teardown() {

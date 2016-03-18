@@ -177,7 +177,7 @@ Let's make a pause,
 - Q: Why you use iris package declaration? other frameworks needs more lines to start a server
 - A: Iris gives you the freedom to choose between three methods/ways to use Iris
 
- 1. global **iris.** 
+ 1. global **iris.**
  2. set a new iris with variable  = iris**.New()**
  3. set a new iris with custom options with variable = iris**.Custom(options)**
 
@@ -187,30 +187,31 @@ import "github.com/kataras/iris"
 
 // 1.
 func methodFirst() {
-	
+
 	iris.Get("/home",func(c *iris.Context){})
 	iris.Listen(":8080")
-	//iris.ListenTLS(":8080","yourcertfile.cert","yourkeyfile.key"	
+	//iris.ListenTLS(":8080","yourcertfile.cert","yourkeyfile.key"
 }
-// 2.	
+// 2.
 func methodSecond() {
-	
+
 	api := iris.New()
 	api.Get("/home",func(c *iris.Context){})
 	api.Listen(":8080")
 }
 // 3.
 func methodThree() {
-	
+	//these are the default options' values
 	options := iris.StationOptions{
 		Profile:            false,
 		ProfilePath:        iris.DefaultProfilePath,
 		Cache:              true,
 		CacheMaxItems:      0,
 		CacheResetDuration: 5 * time.Minute,
+		PathCorrection: 	true, //explanation at the end of this chapter
 	}//these are the default values that you can change
 	//DefaultProfilePath = "/debug/pprof"
-	
+
 	api := iris.Custom(options)
 	api.Get("/home",func(c *iris.Context){})
 	api.Listen(":8080")
@@ -221,13 +222,15 @@ func methodThree() {
 > Note that with 2. & 3. you **can define and use more than one Iris container** in the
 > same app, when it's necessary.
 
-As you can see there are some options that you can chage at your iris declaration, you cannot change them after. If a value not setted then the default used instead.
+As you can see there are some options that you can chage at your iris declaration, you cannot change them after.
+**If an option value not passed then it considers to be false if bool or the default if string.**
 
 For example if we do that...
 ```go
 import "github.com/kataras/iris"
 func main() {
 	options := iris.StationOptions{
+		Cache:				true,
 		Profile:            true,
 		ProfilePath:        "/mypath/debug",
 	}
@@ -249,6 +252,11 @@ For profiling & debug there are seven (7) generated pages ('/debug/pprof/' is th
  7. /debug/pprof/pprof/block
 
 
+**PathCorrection**
+corrects and redirects the requested path to the registed path
+for example, if /home/ path is requested but no handler for this Route found,
+then the Router checks if /home handler exists, if yes, redirects the client to the correct path /home
+and VISA - VERSA if /home/ is registed but /home is requested then it redirects to /home/
 
 ## Party
 
@@ -256,14 +264,14 @@ Let's party with Iris web framework!
 
 ```go
 func main() {
-    
+
     //log everything middleware
-    
+
     iris.UseFunc(func(c *iris.Context) {
 		println("[Global log] the requested url path is: ", c.Request.URL.Path)
 		c.Next()
 	})
-    
+
     // manage all /users
     users := iris.Party("/users")
     {
@@ -274,18 +282,18 @@ func main() {
 		})
 		users.Post("/login", loginHandler)
         users.Get("/:userId", singleUserHandler)
-        users.Delete("/:userId", userAccountRemoveUserHandler)  
+        users.Delete("/:userId", userAccountRemoveUserHandler)
     }
-	
-	
-    
-    // Party inside an existing Party example: 
-    
-    beta:= iris.Party("/beta") 
-    
+
+
+
+    // Party inside an existing Party example:
+
+    beta:= iris.Party("/beta")
+
     admin := beta.Party("/admin")
     {
-		/// GET: /beta/admin/    
+		/// GET: /beta/admin/
 		admin.Get("/", func(c *iris.Context){})
 		/// POST: /beta/admin/signin
         admin.Post("/signin", func(c *iris.Context){})
@@ -295,7 +303,7 @@ func main() {
         admin.Put("/users/add", func(c *iris.Context){})
     }
 
-  
+
 
     iris.Listen(":8080")
 }
@@ -317,17 +325,17 @@ package main
 import "github.com/kataras/iris"
 
 func main() {
-	// MATCH to /hello/anywordhere
+	// MATCH to /hello/anywordhere  (if PathCorrection:true match also /hello/anywordhere/)
 	// NOT match to /hello or /hello/ or /hello/anywordhere/something
 	iris.Get("/hello/:name", func(c *iris.Context) {
 		name := c.Param("name")
 		c.Write("Hello %s", name)
 	})
 
-	// MATCH to /profile/kataras/friends/1
-	// NOT match to /profile/ , /profile/kataras ,
-	// NOT match to /profile/kataras/friends,  /profile/kataras/friends ,
-	// NOT match to /profile/kataras/friends/2/something
+	// MATCH to /profile/iris/friends/42  (if PathCorrection:true matches also /profile/iris/friends/42/ ,otherwise not match)
+	// NOT match to /profile/ , /profile/something ,
+	// NOT match to /profile/something/friends,  /profile/something/friends ,
+	// NOT match to /profile/anything/friends/42/something
 	iris.Get("/profile/:fullname/friends/:friendId",
 		func(c *iris.Context){
 			name:= c.Param("fullname")
@@ -470,7 +478,7 @@ Personally I use the external struct and the **func(c *iris.Context)** form .
  15. **WriteJSON(status int, jsonObject interface{}) & JSON(jsonObject interface{}) returns error**
 	 - WriteJSON: Writes json which is converted from structed object(s) with a given http status to the client, it sets the Header with the correct content-type. If something goes wrong then it's returned value which is an error type is not nil. No indent.
  16.  **RenderJSON(jsonObjects ...interface{}) returns error**
-	 - RenderJSON: Same as WriteJSON & JSON but with Indent (formated json)	 
+	 - RenderJSON: Same as WriteJSON & JSON but with Indent (formated json)
 	 - JSON: Same as WriteJSON but you don't have to pass a status, it's defaulted to http.StatusOK (200).
  17. **WriteXML(status int, xmlStructs ...interface{}) & XML(xmlStructs ...interface{}) returns error**
 	 - WriteXML: Writes writes xml which is converted from struct(s) with a given http status to the client, it sets the Header with the correct content-type. If something goes wrong then it's returned value which is an error type is not nil.
@@ -479,12 +487,12 @@ Personally I use the external struct and the **func(c *iris.Context)** form .
 	 - RenderFile: Renders a file by its name (which a file is saved to the template cache) and a page context passed to the function, default http status is http.StatusOK(200) if the template was found, otherwise http.StatusNotFound(404). If something goes wrong then it's returned value which is an error type is not nil.
  19. **Render(pageContext interface{})  returns error**
 	 - Render: Renders the root file template and a context passed to the function, default http status is http.StatusOK(200) if the template was found, otherwise http.StatusNotFound(404). If something goes wrong then it's returned value which is an error type is not nil.
---- *Note:  We will learn how to add templates at the next chapters*. 
+--- *Note:  We will learn how to add templates at the next chapters*.
 
  20. **Next()**
 	 - Next: calls all the next handler from the middleware stack, it used inside a middleware
 
- 21. **SendStatus(statusCode int, message string)** 
+ 21. **SendStatus(statusCode int, message string)**
 	 - SendStatus:  writes a http statusCode with a text/plain message
 
 

@@ -3,6 +3,8 @@ package iris
 import (
 	"errors"
 	"net/http"
+	"net/url"
+	"path"
 	"reflect"
 	"strconv"
 	"strings"
@@ -60,9 +62,23 @@ func (r *Router) Errors() *HTTPErrors {
 	return r.httpErrors
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//expose common methods as public on the Router, also as global used from global iris server.
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+var htmlReplacer = strings.NewReplacer(
+	"&", "&amp;",
+	"<", "&lt;",
+	">", "&gt;",
+	// "&#34;" is shorter than "&quot;".
+	`"`, "&#34;",
+	// "&#39;" is shorter than "&apos;" and apos was not in HTML until HTML5.
+	"'", "&#39;",
+)
+
+func htmlEscape(s string) string {
+	return htmlReplacer.Replace(s)
+}
+
+/////////////////////////////////
+//expose common methods as public
+/////////////////////////////////
 
 // Handle registers a route to the server's router
 func (r *Router) Handle(method string, registedPath string, handlers ...Handler) *Route {
@@ -236,20 +252,61 @@ func (r *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 //we use that to the router_memory also
 //returns true if it actually find serve something
 func (r *Router) processRequest(ctx *Context) bool {
+	reqPath := ctx.Request.URL.Path
+	method := ctx.Request.Method
+
 	_root := r.garden[ctx.Request.Method]
 	if _root != nil {
 
-		middleware, params, _ := _root.getValue(ctx.Request.URL.Path, ctx.Params) // pass the parameters here for 0 allocation
+		middleware, params, mustRedirect := _root.getValue(reqPath, ctx.Params) // pass the parameters here for 0 allocation
 		if middleware != nil {
 			ctx.Params = params
 			ctx.middleware = middleware
 			///TODO: fix this shit
 			//ctx.Renderer.responseWriter = res
 			ctx.do()
-
 			return true
-		}
+		} else if mustRedirect && r.station.options.PathCorrection {
+			pathLen := len(reqPath)
+			//first of all checks if it's the index only slash /
+			if pathLen <= 1 {
+				reqPath = "/"
+				//check if the req path ends with slash
+			} else if reqPath[pathLen-1] == '/' {
+				reqPath = reqPath[:pathLen-1] //remove the last /
+			} else {
+				//it has path prefix, it doesn't ends with / and it hasn't be found, then just add the slash
+				reqPath = reqPath + "/"
+			}
+			ctx.Request.URL.Path = reqPath
+			urlToRedirect := ctx.Request.URL.String()
+			if u, err := url.Parse(urlToRedirect); err == nil {
 
+				if u.Scheme == "" && u.Host == "" {
+					//The http://yourserver is done automatically by all browsers today
+					//so just clean the path
+					trailing := strings.HasSuffix(urlToRedirect, "/")
+					urlToRedirect = path.Clean(urlToRedirect)
+					//check after clean if we had a slash but after we don't, we have to do that otherwise we will get forever redirects if path is /home but the registed is /home/
+					if trailing && !strings.HasSuffix(urlToRedirect, "/") {
+						urlToRedirect += "/"
+					}
+
+				}
+
+				ctx.ResponseWriter.Header().Set("Location", urlToRedirect)
+				ctx.ResponseWriter.WriteHeader(http.StatusMovedPermanently)
+
+				// RFC2616 recommends that a short note "SHOULD" be included in the
+				// response because older user agents may not understand 301/307.
+				// Shouldn't send the response for POST or HEAD; that leaves GET.
+				if method == HTTPMethods.GET {
+					note := "<a href=\"" + htmlEscape(urlToRedirect) + "\">Moved Permanently</a>.\n"
+					ctx.Write(note)
+				}
+				return false
+			}
+		}
 	}
 	ctx.NotFound()
 	return false

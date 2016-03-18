@@ -23,6 +23,7 @@ func defaultOptions() StationOptions {
 		Cache:              true,
 		CacheMaxItems:      0,
 		CacheResetDuration: 5 * time.Minute,
+		PathCorrection:     true,
 	}
 }
 
