@@ -34,26 +34,17 @@ func New() *Station {
 
 // Custom is used for iris-experienced developers
 // creates and returns a new iris Station with custom StationOptions
-//
-// Note that if an option doesn't exist then the default value will be used instead
 func Custom(options StationOptions) *Station {
-	opt := defaultOptions()
-	//check the given options one by one
-	if options.Profile != opt.Profile {
-		opt.Profile = options.Profile
-	}
+
 	if options.ProfilePath != "" {
-		opt.ProfilePath = options.ProfilePath
-	}
-	if options.Cache != opt.Cache {
-		opt.Cache = options.Cache
-	}
-	opt.CacheMaxItems = options.CacheMaxItems
-	if options.CacheResetDuration < 30*time.Second { // 30 secs is the minimum value
-		opt.CacheResetDuration = options.CacheResetDuration
+		options.ProfilePath = DefaultProfilePath
 	}
 
-	return newStation(opt)
+	if options.CacheResetDuration < 30*time.Second { // 30 secs is the minimum value, if not then set it to 5minutes
+		options.CacheResetDuration = 5 * time.Minute
+	}
+
+	return newStation(options)
 }
 
 // Plugin activates the plugins and if succeed then adds it to the activated plugins list
