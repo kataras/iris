@@ -255,7 +255,7 @@ func (r *Router) processRequest(ctx *Context) bool {
 	reqPath := ctx.Request.URL.Path
 	method := ctx.Request.Method
 
-	_root := r.garden[ctx.Request.Method]
+	_root := r.garden[method]
 	if _root != nil {
 
 		middleware, params, mustRedirect := _root.getValue(reqPath, ctx.Params) // pass the parameters here for 0 allocation
