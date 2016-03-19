@@ -1,6 +1,7 @@
 package iris
 
 import (
+	"io"
 	"net/http"
 	"runtime"
 	"testing"
@@ -338,10 +339,8 @@ func calcMem(name string, load func()) {
 	println("   "+name+":", after-before, "Bytes")
 }
 
-//
-
 func irisHandleTestContexted(c *Context) {
-	///TODO: something
+	io.WriteString(c.ResponseWriter, c.Request.RequestURI)
 }
 
 func loadIris(routes []routeTest) http.Handler {

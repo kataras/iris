@@ -1,15 +1,18 @@
 package iris
 
 import (
-	"github.com/gin-gonic/gin"
 	"io"
 	"net/http"
 	_ "runtime"
 	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/go-playground/lars"
 )
 
 var (
-	githubGin http.Handler
+	githubGin  http.Handler
+	githubLARS http.Handler
 )
 
 //this goes to the benchmark_github.test.go which have the init() func.
@@ -20,8 +23,50 @@ func init() {
 		})
 
 		println()
+
+		calcMem("lars", func() {
+			githubLARS = loadLARS(githubAPI)
+		})
+
+		println()
 	}
 
+}
+
+func larsHandleTest(c lars.Context) {
+	io.WriteString(c.Response(), c.Request().RequestURI)
+}
+
+func larsHandleTestTypical(res http.ResponseWriter, req *http.Request) {
+	io.WriteString(res, req.RequestURI)
+}
+
+func loadLARS(routes []routeTest) http.Handler {
+	h := larsHandleTest
+
+	l := lars.New()
+
+	for _, r := range routes {
+		switch r.method {
+		case lars.GET:
+			l.Get(r.path, h)
+		case lars.POST:
+			l.Post(r.path, h)
+		case lars.PUT:
+			l.Put(r.path, h)
+		case lars.PATCH:
+			l.Patch(r.path, h)
+		case lars.DELETE:
+			l.Delete(r.path, h)
+		default:
+			panic("Unknow HTTP method: " + r.method)
+		}
+	}
+	return l.Serve()
+}
+
+func BenchmarkLARS_GithubAll(b *testing.B) {
+	benchRoutes(b, githubLARS, githubAPI)
 }
 
 //Gin doesn't provide typical handle
