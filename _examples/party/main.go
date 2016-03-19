@@ -13,7 +13,7 @@ func main() {
 			if authorized {
 				c.Next()
 			} else {
-				c.SendStatus(401, c.Request.URL.Path, " is not authorized for you")
+				c.SendStatus(401, c.Request.URL.Path + " is not authorized for you")
 			}
 
 		})
