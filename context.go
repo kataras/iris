@@ -204,22 +204,24 @@ func (ctx *Context) NotFound() {
 	ctx.station.Errors().Emit(404, ctx)
 }
 
+func (ctx *Context) Status(statusCode int) {
+	ctx.memoryResponseWriter.WriteHeader(statusCode)
+}
+
 // SendStatus sends a http status to the client
 // it receives status code (int) and a message (string)
 func (ctx *Context) SendStatus(statusCode int, message string) {
-	r := ctx.ResponseWriter
+	r := ctx.memoryResponseWriter
 	r.Header().Set("Content-Type", "text/plain"+" ;charset="+Charset)
 	r.Header().Set("X-Content-Type-Options", "nosniff")
-	r.WriteHeader(statusCode)
-	io.WriteString(r, message)
-	//	ctx.ResponseWriter.ForceHeader()
+	ctx.Status(statusCode)
+	r.WriteString(message)
 }
 
 // Panic stops the executions of the context and returns a http status to the client
 func (ctx *Context) Panic() {
 	ctx.pos = stopExecutionPosition
 	ctx.SendStatus(http.StatusInternalServerError, "The server encountered an unexpected condition which prevented it from fulfilling the request.")
-
 }
 
 // RequestIP gets just the Remote Address from the client.

@@ -41,9 +41,8 @@ type recovery struct {
 func (r recovery) Serve(ctx *iris.Context) {
 	defer func() {
 		if err := recover(); err != nil {
-			ctx.Panic()
 			r.out.Write([]byte("[" + time.Now().String() + "]Recovery from panic \n"))
-
+			ctx.Panic()
 		}
 	}()
 	ctx.Next()

@@ -112,7 +112,7 @@ func ConvertToHandlers(handlersFn []HandlerFunc) []Handler {
 }
 
 // joinMiddleware uses to create a copy of all middleware and return them in order to use inside the node
-func (m MiddlewareSupporter) JoinMiddleware(middleware Middleware) Middleware {
+func (m *MiddlewareSupporter) JoinMiddleware(middleware Middleware) Middleware {
 	nowLen := len(m.Middleware)
 	totalLen := nowLen + len(middleware)
 	// create a new slice of middleware in order to store all handlers, the already handlers(middleware) and the new
@@ -125,17 +125,17 @@ func (m MiddlewareSupporter) JoinMiddleware(middleware Middleware) Middleware {
 }
 
 // Use appends handler(s) to the route or to the router if it's called from router
-func (m MiddlewareSupporter) Use(handlers ...Handler) {
+func (m *MiddlewareSupporter) Use(handlers ...Handler) {
 	m.Middleware = append(m.Middleware, handlers...)
 	//care here the new handlers will be added to the last, so run Use first for handlers you want to run first
 }
 
 // UseFunc is the same as Use but it receives HandlerFunc instead of iris.Handler as parameter(s)
 // form of acceptable: func(c *iris.Context){//first middleware}, func(c *iris.Context){//second middleware}
-func (m MiddlewareSupporter) UseFunc(handlersFn ...HandlerFunc) {
+func (m *MiddlewareSupporter) UseFunc(handlersFn ...HandlerFunc) {
 	for _, h := range handlersFn {
 		m.Use(Handler(h))
 	}
 }
 
-var _ IMiddlewareSupporter = MiddlewareSupporter{}
+var _ IMiddlewareSupporter = &MiddlewareSupporter{}

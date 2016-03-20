@@ -298,7 +298,6 @@ func (r *Router) processRequest(ctx *Context) bool {
 				ctx.Params = params
 				ctx.middleware = middleware
 				ctx.Do()
-				ctx.memoryResponseWriter.ForceHeader()
 				return true
 			} else if mustRedirect && r.station.options.PathCorrection {
 				pathLen := len(reqPath)

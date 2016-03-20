@@ -32,16 +32,19 @@ import (
 )
 
 func main() {
-	i := 0
 	//iris.Use(middleware.Recovery(os.Stdout)) // this is an optional parameter, you can skip it, the default is os.Stderr
 	iris.Use(middleware.Recovery())
+	i := 0
 	iris.Get("/", func(ctx *iris.Context) {
 		i++
 		if i%2 == 0 {
 			panic("a panic here")
+			return
 
 		}
+
 		ctx.Next()
+
 	}, func(ctx *iris.Context) {
 		ctx.Write("something here at the end")
 	})
