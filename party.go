@@ -51,11 +51,11 @@ type IParty interface {
 // and the route_party which exists on both router and router_memory ofcourse
 
 // party is used inside Router.Party method
+
 type party struct {
 	IParty
 	middleware Middleware
 	_router    IRouter
-	_routes    []IRoute // contains all the temporary routes for this party, it is used only from the .Use and .UseFunc to find pathprefixes
 	_rootPath  string
 }
 
@@ -81,6 +81,10 @@ func (p party) prepared(_route IRoute) *Route {
 		_route.SetMiddleware(append(p.middleware, _route.GetMiddleware()...))
 	}
 	return _route.(*Route)
+}
+
+func (p party) SetParentHosterMiddleware(m Middleware) {
+	p.middleware = m
 }
 
 func (p party) Get(path string, handlerFn ...HandlerFunc) IRoute {

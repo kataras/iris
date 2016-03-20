@@ -27,7 +27,8 @@
 package iris
 
 type IGarden interface {
-	GetByMethod(method string) IBranch
+	GetTreeByMethod(method string) ITree
+	GetRootByMethod(method string) IBranch
 	Plant(method string, _route IRoute) IGarden
 	Get(index int) ITree
 	Len() int
@@ -57,7 +58,16 @@ var _ ITree = tree{}
 type Garden []tree // node here is the root node
 // plant plants/adds a route to the garden
 
-func (g Garden) GetByMethod(method string) IBranch {
+func (g Garden) GetTreeByMethod(method string) ITree {
+	for _, _tree := range g {
+		if _tree.Method == method {
+			return _tree
+		}
+	}
+	return nil
+}
+
+func (g Garden) GetRootByMethod(method string) IBranch {
 	for _, _tree := range g {
 		if _tree.Method == method {
 			return _tree.Node
@@ -65,16 +75,17 @@ func (g Garden) GetByMethod(method string) IBranch {
 	}
 	return nil
 }
+
 func (g Garden) Plant(method string, _route IRoute) IGarden {
-	theNode := g.GetByMethod(method)
+	theRoot := g.GetRootByMethod(method)
 	//no tree with that method has found
-	if theNode == nil {
-		theNode = new(Branch)
-		g = append(g, tree{method, theNode.(*Branch)})
+	if theRoot == nil {
+		theRoot = new(Branch)
+		g = append(g, tree{method, theRoot.(*Branch)})
 
 	}
 
-	theNode.AddBranch(_route.GetPath(), _route.GetMiddleware())
+	theRoot.AddBranch(_route.GetPath(), _route.GetMiddleware())
 	return g
 }
 
@@ -87,3 +98,8 @@ func (g Garden) Get(index int) ITree {
 }
 
 var _ IGarden = Garden{}
+
+/*
+type GardenMap map[string][]tree
+
+func (g GardenMap) GetByMethod(method string) Branch*/
