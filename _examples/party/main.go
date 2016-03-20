@@ -48,6 +48,9 @@ func main() {
 		admin.Delete("/delete/:userId", func(c *iris.Context) {})
 	}
 
+	beta := admin.Party("/beta")
+	beta.Get("/hey", func(c *iris.Context) {})
+
 	println("Iris is listening on :8080")
 	iris.Listen("8080")
 
