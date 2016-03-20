@@ -531,5 +531,5 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 ## Licence
 
 This project is licensed under the [BSD 3-Clause License](https://opensource.org/licenses/BSD-3-Clause).
-License can be found [here](https://github.com/kataras/iris/blob/current/LICENSE). 
+License can be found [here](https://github.com/kataras/iris/blob/master/LICENSE). 
 
