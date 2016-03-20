@@ -213,7 +213,6 @@ func (ctx *Context) SendStatus(statusCode int, message string) {
 	r.WriteHeader(statusCode)
 	io.WriteString(r, message)
 	//	ctx.ResponseWriter.ForceHeader()
-	r.Flush()
 }
 
 // Panic stops the executions of the context and returns a http status to the client

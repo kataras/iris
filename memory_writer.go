@@ -37,7 +37,6 @@ type IMemoryWriter interface {
 	http.ResponseWriter
 	http.Hijacker
 	http.CloseNotifier
-	http.Flusher
 
 	//implement http response writer
 
@@ -99,7 +98,10 @@ func (m *MemoryWriter) Size() int {
 }
 
 func (m *MemoryWriter) Flush() {
-	m.ResponseWriter.(http.Flusher).Flush()
+	flusher, done := m.ResponseWriter.(http.Flusher)
+	if done {
+		flusher.Flush()
+	}
 }
 
 func (m *MemoryWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
