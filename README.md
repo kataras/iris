@@ -513,13 +513,19 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 
 * **Chat**: https://gitter.im/kataras/iris
 
+## Guidelines
+- Never stop writing the docs.
+- Provide full README for _examples and thirdparty middleware examples.
+- Before any commit run -count 50 -benchtime 30s , if performance stays on top then commit else find other way to do the same thing.
+- Notice the author of any thirdparty package before I try to port into iris myself, maybe they can do it better.
+- Notice author's of middleware, which I'm writing examples for,to take a look, if they don't want to exists in the Iris community, I have to respect them.
 
 ## Todo
-- [ ] Never stop writing the docs.
 - [x] Provide a lighter, with less using bytes,  to save middleware for a route.
 - [x] Create examples in this repository.
+- [ ] Subdomains supports with the same syntax as iris.Get, iris.Post ...
 - [ ] Convert useful middlewares out there into Iris middlewares, or contact with their authors to do so.
-- [ ] Create an easy websocket api also.
+- [ ] Create an easy websocket api.
 - [ ] Create a mechanism that scan for Typescript files, compile them on server startup and serve them.
 
 ## Licence

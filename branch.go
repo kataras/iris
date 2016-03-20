@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Gerasimos Maropoulos
+// Copyright (c) 2016, Julien Schmidt & Gerasimos Maropoulos
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification,
@@ -24,7 +24,6 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE indexSIBILITY OF SUCH DAMAGE.
-//
 package iris
 
 import (
