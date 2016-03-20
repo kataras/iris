@@ -29,6 +29,7 @@ package iris
 import (
 	"bufio"
 	"github.com/kataras/iris/domain"
+	"io"
 	"net"
 	"net/http"
 )
@@ -37,7 +38,7 @@ type IMemoryWriter interface {
 	http.ResponseWriter
 	http.Hijacker
 	http.CloseNotifier
-
+	WriteString(s string) (int, error)
 	//implement http response writer
 
 	Size() int
@@ -81,12 +82,22 @@ func (m *MemoryWriter) Write(data []byte) (int, error) {
 func (m *MemoryWriter) ForceHeader() {
 	if !m.IsWritten() {
 		m.size = 0
-		m.ResponseWriter.WriteHeader(m.status)
 	}
 }
 
 func (m *MemoryWriter) WriteHeader(statusCode int) {
-	m.status = statusCode
+	if statusCode > 0 && statusCode != m.status {
+		m.status = statusCode
+		m.ResponseWriter.WriteHeader(statusCode)
+	}
+
+}
+
+func (m *MemoryWriter) WriteString(s string) (size int, err error) {
+	m.ForceHeader()
+	size, err = io.WriteString(m.ResponseWriter, s)
+	m.size += size
+	return
 }
 
 func (m *MemoryWriter) Status() int {

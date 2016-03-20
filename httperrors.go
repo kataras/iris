@@ -130,6 +130,7 @@ func (he *HTTPErrors) Emit(errCode int, ctx *Context) {
 
 	if errHandler := he.GetByCode(errCode); errHandler != nil {
 		errHandler.GetHandler().Serve(ctx)
+
 	}
 }
 
