@@ -82,14 +82,13 @@ func (m *MemoryWriter) Write(data []byte) (int, error) {
 func (m *MemoryWriter) ForceHeader() {
 	if !m.IsWritten() {
 		m.size = 0
-		m.ResponseWriter.WriteHeader(m.status)
 	}
 }
 
 func (m *MemoryWriter) WriteHeader(statusCode int) {
 	if statusCode > 0 && statusCode != m.status {
 		m.status = statusCode
-		//m.ResponseWriter.WriteHeader(statusCode)
+		m.ResponseWriter.WriteHeader(statusCode)
 	}
 
 }
