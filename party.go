@@ -5,7 +5,7 @@
 // are permitted provided that the following conditions are met:
 //
 // 1. Redistributions of source code must retain the above copyright notice,
-//    this list of conditions and the following disclaimer.
+//    this list of conditions and the following disclaimep.
 //
 // 2. Redistributions in binary form must reproduce the above copyright notice,
 //	  this list of conditions and the following disclaimer
@@ -26,129 +26,256 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package iris
 
+// The party holds memory to find the Root, I could make it with other design pattern but I choose this
+// because I want to the future to be able to remove a Party and routes at the runtime
+// this will be useful when I introduce the dynamic creation of subdomains parties ( the only one framework which will have this feature, as far as I know)
+// this dynamic subdomains can created at the runtime and removed at runtime
+// this is practial an example of create a user with a subdomain and when user deletes his account or his repo
+// then delete the subdomain also without if else inside their handlers
+
 import (
+	"errors"
+	"reflect"
+	"strconv"
 	"strings"
 )
 
-// IPartyHoster is the interface which implements the Party func
-type IPartyHoster interface {
-	Party(path string) IParty
-}
-
 // IParty is the interface which implements the whole Party of routes
 type IParty interface {
-	IRouterMethods
-	IPartyHoster
 	IMiddlewareSupporter
-	SetParentHosterMiddleware(m Middleware)
-	// Each party can have a party too
+	Handle(method string, registedPath string, handlers ...Handler)
+	HandleFunc(method string, registedPath string, handlersFn ...HandlerFunc)
+	HandleAnnotated(irisHandler Handler) error
+	Get(path string, handlersFn ...HandlerFunc)
+	Post(path string, handlersFn ...HandlerFunc)
+	Put(path string, handlersFn ...HandlerFunc)
+	Delete(path string, handlersFn ...HandlerFunc)
+	Connect(path string, handlersFn ...HandlerFunc)
+	Head(path string, handlersFn ...HandlerFunc)
+	Options(path string, handlersFn ...HandlerFunc)
+	Patch(path string, handlersFn ...HandlerFunc)
+	Trace(path string, handlersFn ...HandlerFunc)
+	Any(path string, handlersFn ...HandlerFunc)
+	Party(path string) IParty // Each party can have a party too
+	getRoot() IParty
+	isTheRoot() bool
+	getMiddleware() Middleware
 }
 
-// maybe at the future this will be by-default to all routes, and no need to handle it at different struct
-// but this is unnecessary because both nodesprefix and tree are auto-sorted on the tree struct.
-// so we will have the main router which is the router.go and all logic implementation is there,
-// we have the router_memory which is just a IRouter and has underline router the Router also
-// and the route_party which exists on both router and router_memory ofcourse
-
-// party is used inside Router.Party method
-
-type party struct {
-	IParty
-	middleware Middleware
-	_router    IRouter
-	_rootPath  string
+// GardenParty TODO: inline docs
+type GardenParty struct {
+	MiddlewareSupporter
+	station  *Station // this station is where the party is happening, this station's Garden is the same for all Parties per Station & Router instance
+	rootPath string
+	hoster   *GardenParty
 }
 
-func NewParty(rootPath string, underlineMainRouter IRouter) IParty {
-	p := party{}
-	p._router = underlineMainRouter
+var _ IParty = &GardenParty{}
 
-	//we don't want the root path ends with /
-	lastSlashIndex := strings.LastIndexByte(rootPath, SlashByte)
+func NewParty(path string, station *Station, hoster *GardenParty) IParty {
+	p := &GardenParty{}
+	p.station = station
 
-	if lastSlashIndex == len(rootPath)-1 {
-		rootPath = rootPath[0:lastSlashIndex]
+	//if this party is comes from other party
+	if hoster != nil {
+		p.hoster = hoster
+		path = p.hoster.rootPath + path
+		p.Middleware = p.hoster.Middleware
+		lastSlashIndex := strings.LastIndexByte(path, SlashByte)
+
+		if lastSlashIndex == len(path)-1 {
+			path = path[0:lastSlashIndex]
+		}
 	}
 
-	p._rootPath = rootPath
+	p.rootPath = path
 	return p
 }
 
-//prepared returns a prepared route, just append to the route's the party's middleware([]Handler)
-func (p party) prepared(_route IRoute) *Route {
-	if len(p.middleware) > 0 {
-		//swap them, the party's handlers go first ofc...
-		_route.SetMiddleware(append(p.middleware, _route.GetMiddleware()...))
+// fixPath fix the double slashes, (because of root,I just do that before the .Handle no need for anything else special)
+func fixPath(str string) string {
+	return strings.Replace(str, "//", "/", -1)
+}
+
+// GetRoot find the root hoster of the parties, the root is this when the hoster is nil ( it's the  rootPath '/')
+func (p *GardenParty) getRoot() IParty {
+	if p.hoster != nil {
+		return p.hoster.getRoot()
+	} else {
+		return p
 	}
-	return _route.(*Route)
+
 }
 
-func (p party) SetParentHosterMiddleware(m Middleware) {
-	p.middleware = m
+func (p *GardenParty) isTheRoot() bool {
+	return p.hoster == nil
 }
 
-func (p party) Get(path string, handlerFn ...HandlerFunc) IRoute {
-	return p.prepared(p._router.Get(p._rootPath+path, handlerFn...))
+func (p *GardenParty) getMiddleware() Middleware {
+	return p.Middleware
 }
-func (p party) Post(path string, handlerFn ...HandlerFunc) IRoute {
-	return p.prepared(p._router.Post(p._rootPath+path, handlerFn...))
-}
-func (p party) Put(path string, handlerFn ...HandlerFunc) IRoute {
-	return p.prepared(p._router.Put(p._rootPath+path, handlerFn...))
-}
-func (p party) Delete(path string, handlerFn ...HandlerFunc) IRoute {
-	return p.prepared(p._router.Delete(p._rootPath+path, handlerFn...))
-}
-func (p party) Connect(path string, handlerFn ...HandlerFunc) IRoute {
-	return p.prepared(p._router.Connect(p._rootPath+path, handlerFn...))
-}
-func (p party) Head(path string, handlerFn ...HandlerFunc) IRoute {
-	return p._router.Head(p._rootPath+path, handlerFn...)
-}
-func (p party) Options(path string, handlerFn ...HandlerFunc) IRoute {
-	return p.prepared(p._router.Options(p._rootPath+path, handlerFn...))
-}
-func (p party) Patch(path string, handlerFn ...HandlerFunc) IRoute {
-	return p.prepared(p._router.Patch(p._rootPath+path, handlerFn...))
-}
-func (p party) Trace(path string, handlerFn ...HandlerFunc) IRoute {
-	return p._router.Trace(p._rootPath+path, handlerFn...)
-}
-func (p party) Any(path string, handlerFn ...HandlerFunc) IRoute {
-	return p.prepared(p._router.Any(p._rootPath+path, handlerFn...))
-}
-func (p party) HandleAnnotated(irisHandler Handler) (IRoute, error) {
-	route, err := p._router.HandleAnnotated(irisHandler)
-	if err != nil {
-		return nil, err
+
+// Handle registers a route to the server's router
+func (p *GardenParty) Handle(method string, registedPath string, handlers ...Handler) {
+	registedPath = p.rootPath + registedPath
+	if registedPath == "" {
+		registedPath = "/"
 	}
-	return p.prepared(route), nil
-}
-func (p party) Handle(method string, registedPath string, handlers ...Handler) IRoute {
-	return p.prepared(p._router.Handle(method, registedPath, handlers...))
-}
-func (p party) HandleFunc(method string, path string, handlerFn ...HandlerFunc) IRoute {
-	return p.prepared(p._router.HandleFunc(method, p._rootPath+path, handlerFn...))
-}
+	registedPath = fixPath(registedPath)
 
-// Party returns a party of this party, it passes the middleware also
-func (p party) Party(path string) IParty {
-	joinedParty := NewParty(p._rootPath+path, p._router)
-	joinedParty.SetParentHosterMiddleware(p.middleware)
-	return joinedParty
-}
-
-// Use appends handler(s) to the route or to the router if it's called from router
-func (p party) Use(handlers ...Handler) {
-	p.middleware = append(p.middleware, handlers...)
-}
-
-// UseFunc is the same as Use but it receives HandlerFunc instead of iris.Handler as parameter(s)
-// form of acceptable: func(c *iris.Context){//first middleware}, func(c *iris.Context){//second middleware}
-func (p party) UseFunc(handlersFn ...HandlerFunc) {
-	for _, h := range handlersFn {
-		p.Use(Handler(h))
+	if len(handlers) == 0 {
+		panic("Iris.Handle: zero handler to " + method + ":" + registedPath)
 	}
+
+	rootParty := p.getRoot()
+
+	tempHandlers := p.Middleware
+
+	// from top to bottom -->||<--
+	//check for root-global middleware WHEN THIS PARTY IS NOT THE ROOT, because if it's the Middleware already setted on the constructor NewParty)
+	if p.isTheRoot() == false && len(rootParty.getMiddleware()) > 0 {
+		//if global middlewares are registed then push them to this route.
+		tempHandlers = append(rootParty.getMiddleware(), tempHandlers...)
+	}
+	//the party's middleware were setted on NewParty already, no need to check them.
+
+	if len(tempHandlers) > 0 {
+		handlers = append(tempHandlers, handlers...)
+	}
+
+	route := NewRoute(registedPath, handlers)
+
+	p.station.GetPluginContainer().DoPreHandle(method, route)
+
+	p.station.IRouter.setGarden(p.station.getGarden().Plant(method, route))
+
+	p.station.GetPluginContainer().DoPostHandle(method, route)
+
 }
 
-var _ IParty = party{}
+// HandleFunc registers and returns a route with a method string, path string and a handler
+// registedPath is the relative url path
+// handler is the iris.Handler which you can pass anything you want via iris.ToHandlerFunc(func(res,req){})... or just use func(c *iris.Context)
+func (p *GardenParty) HandleFunc(method string, registedPath string, handlersFn ...HandlerFunc) {
+	p.Handle(method, registedPath, ConvertToHandlers(handlersFn)...)
+}
+
+// HandleAnnotated registers a route handler using a Struct implements iris.Handler (as anonymous property)
+// which it's metadata has the form of
+// `method:"path"` and returns the route and an error if any occurs
+// handler is passed by func(urstruct MyStruct) Serve(ctx *Context) {}
+func (p *GardenParty) HandleAnnotated(irisHandler Handler) error {
+	var method string
+	var path string
+	var errMessage = ""
+	val := reflect.ValueOf(irisHandler).Elem()
+
+	for i := 0; i < val.NumField(); i++ {
+		typeField := val.Type().Field(i)
+
+		if typeField.Anonymous && typeField.Name == "Handler" {
+			tags := strings.Split(strings.TrimSpace(string(typeField.Tag)), " ")
+			firstTag := tags[0]
+
+			idx := strings.Index(string(firstTag), ":")
+
+			tagName := strings.ToUpper(string(firstTag[:idx]))
+			tagValue, unqerr := strconv.Unquote(string(firstTag[idx+1:]))
+
+			if unqerr != nil {
+				errMessage = errMessage + "\niris.HandleAnnotated: Error on getting path: " + unqerr.Error()
+				continue
+			}
+
+			path = tagValue
+			avalaibleMethodsStr := strings.Join(HTTPMethods.ANY, ",")
+
+			if !strings.Contains(avalaibleMethodsStr, tagName) {
+				//wrong method passed
+				errMessage = errMessage + "\niris.HandleAnnotated: Wrong method passed to the anonymous property iris.Handler -> " + tagName
+				continue
+			}
+
+			method = tagName
+
+		} else {
+			errMessage = "\nError on Iris.HandleAnnotated: Struct passed but it doesn't have an anonymous property of type iris.Hanndler, please refer to docs\n"
+		}
+
+	}
+
+	if errMessage == "" {
+		p.Handle(method, path, irisHandler)
+	}
+
+	var err error
+	if errMessage != "" {
+		err = errors.New(errMessage)
+	}
+
+	return err
+}
+
+///////////////////
+//global middleware
+///////////////////
+
+// Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
+// Party can also be named as 'Join' or 'Node' or 'Group' , Party chosen because it has more fun
+func (p *GardenParty) Party(path string) IParty {
+	return NewParty(path, p.station, p)
+}
+
+///////////////////////////////
+//expose some methods as public
+///////////////////////////////
+
+// Get registers a route for the Get http method
+func (p *GardenParty) Get(path string, handlersFn ...HandlerFunc) {
+	p.HandleFunc(HTTPMethods.GET, path, handlersFn...)
+}
+
+// Post registers a route for the Post http method
+func (p *GardenParty) Post(path string, handlersFn ...HandlerFunc) {
+	p.HandleFunc(HTTPMethods.POST, path, handlersFn...)
+}
+
+// Put registers a route for the Put http method
+func (p *GardenParty) Put(path string, handlersFn ...HandlerFunc) {
+	p.HandleFunc(HTTPMethods.PUT, path, handlersFn...)
+}
+
+// Delete registers a route for the Delete http method
+func (p *GardenParty) Delete(path string, handlersFn ...HandlerFunc) {
+	p.HandleFunc(HTTPMethods.DELETE, path, handlersFn...)
+}
+
+// Connect registers a route for the Connect http method
+func (p *GardenParty) Connect(path string, handlersFn ...HandlerFunc) {
+	p.HandleFunc(HTTPMethods.CONNECT, path, handlersFn...)
+}
+
+// Head registers a route for the Head http method
+func (p *GardenParty) Head(path string, handlersFn ...HandlerFunc) {
+	p.HandleFunc(HTTPMethods.HEAD, path, handlersFn...)
+}
+
+// Options registers a route for the Options http method
+func (p *GardenParty) Options(path string, handlersFn ...HandlerFunc) {
+	p.HandleFunc(HTTPMethods.OPTIONS, path, handlersFn...)
+}
+
+// Patch registers a route for the Patch http method
+func (p *GardenParty) Patch(path string, handlersFn ...HandlerFunc) {
+	p.HandleFunc(HTTPMethods.PATCH, path, handlersFn...)
+}
+
+// Trace registers a route for the Trace http method
+func (p *GardenParty) Trace(path string, handlersFn ...HandlerFunc) {
+	p.HandleFunc(HTTPMethods.TRACE, path, handlersFn...)
+}
+
+// Any registers a route for ALL of the http methods (Get,Post,Put,Head,Patch,Options,Connect,Delete)
+func (p *GardenParty) Any(path string, handlersFn ...HandlerFunc) {
+	p.HandleFunc("", path, handlersFn...)
+}

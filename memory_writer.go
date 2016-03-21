@@ -28,7 +28,6 @@ package iris
 
 import (
 	"bufio"
-	"github.com/kataras/iris/domain"
 	"io"
 	"net"
 	"net/http"
@@ -56,6 +55,8 @@ type MemoryWriter struct {
 	size   int
 	status int
 }
+
+var _ IMemoryWriter = &MemoryWriter{}
 
 func (m *MemoryWriter) New(underlineRes http.ResponseWriter) {
 	m.ResponseWriter = underlineRes
@@ -125,5 +126,3 @@ func (m *MemoryWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 func (m *MemoryWriter) CloseNotify() <-chan bool {
 	return m.ResponseWriter.(http.CloseNotifier).CloseNotify()
 }
-
-var _ domain.IMemoryWriter = &MemoryWriter{}

@@ -371,8 +371,8 @@ func irisHandleTestContexted(c *Context) {
 func loadIris(routes []routeTest) http.Handler {
 	h := irisHandleTestContexted
 	//disable cache with: api := Custom(StationOptions{Cache: false, PathCorrection: true})
-	//api := New()
-	api := Custom(StationOptions{Cache: false, PathCorrection: true})
+	api := New()
+
 	for _, route := range routes {
 		api.HandleFunc(route.method, route.path, h)
 	}

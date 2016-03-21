@@ -43,7 +43,6 @@ type IStation interface {
 	IRouter
 	Plugin(IPlugin) error
 	GetPluginContainer() IPluginContainer
-	GetPool() *sync.Pool
 	GetTemplates() *template.Template
 }
 
@@ -94,7 +93,7 @@ type (
 		IRouter
 		server          *Server
 		templates       *template.Template
-		pool            *sync.Pool
+		pool            sync.Pool
 		options         StationOptions
 		pluginContainer *PluginContainer
 	}
@@ -135,10 +134,10 @@ func newStation(options StationOptions) *Station {
 	s.IRouter = r
 
 	// set the server with the server handler
-	s.server = &Server{handler: s}
+	s.server = &Server{handler: r}
 
-	s.pool = &sync.Pool{New: func() interface{} {
-		return &Context{station: s}
+	s.pool = sync.Pool{New: func() interface{} {
+		return &Context{station: s, Params: make([]PathParameter, 0)}
 	}}
 
 	return s
@@ -151,10 +150,6 @@ func (s *Station) Plugin(plugin IPlugin) error {
 
 func (s Station) GetPluginContainer() IPluginContainer {
 	return s.pluginContainer
-}
-
-func (s Station) GetPool() *sync.Pool {
-	return s.pool
 }
 
 func (s Station) GetTemplates() *template.Template {

@@ -51,7 +51,6 @@ func (h HandlerFunc) Serve(ctx *Context) {
 type IMiddlewareSupporter interface {
 	Use(handlers ...Handler)
 	UseFunc(handlersFn ...HandlerFunc)
-	JoinMiddleware(middleware Middleware) Middleware
 }
 
 // Middleware is just a slice of Handler []func(c *Context)
@@ -112,15 +111,15 @@ func ConvertToHandlers(handlersFn []HandlerFunc) []Handler {
 }
 
 // joinMiddleware uses to create a copy of all middleware and return them in order to use inside the node
-func (m *MiddlewareSupporter) JoinMiddleware(middleware Middleware) Middleware {
-	nowLen := len(m.Middleware)
-	totalLen := nowLen + len(middleware)
+func JoinMiddleware(middleware1 Middleware, middleware2 Middleware) Middleware {
+	nowLen := len(middleware1)
+	totalLen := nowLen + len(middleware2)
 	// create a new slice of middleware in order to store all handlers, the already handlers(middleware) and the new
 	newMiddleware := make(Middleware, totalLen)
 	//copy the already middleware to the just created
-	copy(newMiddleware, m.Middleware)
+	copy(newMiddleware, middleware1)
 	//start from there we finish, and store the new middleware too
-	copy(newMiddleware[nowLen:], middleware)
+	copy(newMiddleware[nowLen:], middleware2)
 	return newMiddleware
 }
 

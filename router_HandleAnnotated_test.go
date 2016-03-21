@@ -54,15 +54,9 @@ var structedTests = [...]testStructedRoute{{
 func TestRouterHandleAnnotated(t *testing.T) {
 	iris := New()
 	for _, sr := range structedTests {
-		route, err := iris.HandleAnnotated(sr.handler)
+		err := iris.HandleAnnotated(sr.handler)
 		if err != nil {
 			t.Fatal("Error on TestRouterHandleAnnotated: " + err.Error())
-		} else {
-
-			if sr.expectedPathPrefix != route.GetPathPrefix() {
-				t.Fatal("Error on compare pathPrefix: " + sr.expectedPathPrefix + " != " + route.GetPathPrefix())
-			}
-
 		}
 	}
 

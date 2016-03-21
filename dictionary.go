@@ -24,17 +24,12 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-package domain
+package iris
 
-import (
-	"html/template"
-	"sync"
-)
+import ()
 
-type IStation interface {
-	IRouter
-	Plugin(IPlugin) error
-	GetPluginContainer() IPluginContainer
-	GetPool() *sync.Pool
-	GetTemplates() *template.Template
+type IDictionary interface {
+	Get(key string) string
+	Set(key string, value string)
+	String() string
 }

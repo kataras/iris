@@ -26,65 +26,41 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package iris
 
-type IGarden interface {
-	GetTreeByMethod(method string) ITree
-	GetRootByMethod(method string) IBranch
-	Plant(method string, _route IRoute) IGarden
-	Get(index int) ITree
-	Len() int
-}
-
-type ITree interface {
-	GetMethod() string
-	GetNode() IBranch
-}
-
 type tree struct {
-	Method string
-	Node   *Branch
+	method     string
+	rootBranch *Branch
 }
-
-func (t tree) GetMethod() string {
-	return t.Method
-}
-
-func (t tree) GetNode() IBranch {
-	return t.Node
-}
-
-var _ ITree = tree{}
 
 // Garden is the main area which routes are planted/placed
-type Garden []tree // node here is the root node
-// plant plants/adds a route to the garden
+type Garden []tree
 
-func (g Garden) GetTreeByMethod(method string) ITree {
+func (g Garden) GetTreeByMethod(method string) *tree {
 	for _, _tree := range g {
-		if _tree.Method == method {
-			return _tree
+		if _tree.method == method {
+			return &_tree
 		}
 	}
 	return nil
 }
 
-func (g Garden) GetRootByMethod(method string) IBranch {
+func (g Garden) GetRootByMethod(method string) *Branch {
 	for _, _tree := range g {
-		if _tree.Method == method {
-			return _tree.Node
+		if _tree.method == method {
+			return _tree.rootBranch
 		}
 	}
 	return nil
 }
 
-func (g Garden) Plant(method string, _route IRoute) IGarden {
+// Plant plants/adds a route to the garden
+func (g Garden) Plant(method string, _route IRoute) Garden {
 	theRoot := g.GetRootByMethod(method)
 	//no tree with that method has found
 	if theRoot == nil {
 		theRoot = new(Branch)
-		g = append(g, tree{method, theRoot.(*Branch)})
+		g = append(g, tree{method, theRoot})
 
 	}
-
 	theRoot.AddBranch(_route.GetPath(), _route.GetMiddleware())
 	return g
 }
@@ -93,13 +69,6 @@ func (g Garden) Len() int {
 	return len(g)
 }
 
-func (g Garden) Get(index int) ITree {
+func (g Garden) Get(index int) tree {
 	return g[index]
 }
-
-var _ IGarden = Garden{}
-
-/*
-type GardenMap map[string][]tree
-
-func (g GardenMap) GetByMethod(method string) Branch*/

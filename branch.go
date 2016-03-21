@@ -28,7 +28,6 @@ package iris
 
 import (
 	"bytes"
-	"github.com/kataras/iris/domain"
 	"net/http"
 	"net/url"
 	"strings"
@@ -83,7 +82,7 @@ func (params PathParameters) String() string {
 	return buff.String()
 }
 
-var _ domain.IDictionary = PathParameters{}
+var _ IDictionary = PathParameters{}
 
 // ParseParams receives a string and returns PathParameters (slice of PathParameter)
 // received string must have this form:  key1=value1,key2=value2...

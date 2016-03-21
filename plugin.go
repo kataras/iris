@@ -90,6 +90,8 @@ type PluginContainer struct {
 	activatedPlugins []IPlugin
 }
 
+var _ IPluginContainer = &PluginContainer{}
+
 // Plugin activates the plugins and if succeed then adds it to the activated plugins list
 func (p *PluginContainer) Plugin(plugin IPlugin) error {
 	if p.activatedPlugins == nil {
@@ -180,5 +182,3 @@ func (p *PluginContainer) DoPreClose(station *Station) { //tood IStation
 		p.activatedPlugins[i].PreClose(station)
 	}
 }
-
-var _ IPluginContainer = &PluginContainer{}

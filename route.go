@@ -47,6 +47,8 @@ type Route struct {
 	PathPrefix string
 }
 
+var _ IRoute = &Route{}
+
 // newRoute creates, from a path string, and a slice of HandlerFunc
 func NewRoute(registedPath string, middleware Middleware) *Route {
 	r := &Route{fullpath: registedPath}
@@ -102,5 +104,3 @@ func (r *Route) ProcessPath() {
 		r.PathPrefix += "/"
 	}
 }
-
-var _ IRoute = &Route{}

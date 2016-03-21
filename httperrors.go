@@ -78,6 +78,8 @@ type HTTPErrors struct {
 	ErrorHanders []IErrorHandler
 }
 
+var _ IHTTPErrors = &HTTPErrors{}
+
 // DefaultHTTPErrors creates and returns an instance of HTTPErrors with default handlers
 func DefaultHTTPErrors() IHTTPErrors {
 	httperrors := new(HTTPErrors)
@@ -138,5 +140,3 @@ func (he *HTTPErrors) Emit(errCode int, ctx *Context) {
 func (he *HTTPErrors) NotFound(ctx *Context) {
 	he.Emit(http.StatusNotFound, ctx)
 }
-
-var _ IHTTPErrors = &HTTPErrors{}

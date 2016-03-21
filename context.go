@@ -116,7 +116,7 @@ type Context struct {
 	ResponseWriter       IMemoryWriter
 	Request              *http.Request
 	Params               PathParameters
-	station              IStation
+	station              *Station
 	//keep track all registed middleware (handlers)
 	middleware Middleware
 	// pos is the position number of the Context, look .Next to understand
@@ -125,6 +125,8 @@ type Context struct {
 	// use iris/sessions for cookie/filesystem storage
 	values map[string]interface{}
 }
+
+var _ IContext = &Context{}
 
 func (ctx *Context) GetResponseWriter() IMemoryWriter {
 	return ctx.ResponseWriter
@@ -288,13 +290,13 @@ func (ctx *Context) Next() {
 
 // do calls the first handler only, it's like Next with negative pos, used only on Router&MemoryRouter
 func (ctx *Context) Do() {
+	ctx.pos = 0
 	ctx.middleware[0].Serve(ctx)
 }
 
 func (ctx *Context) New() {
 	ctx.Params = ctx.Params[0:0]
 	ctx.middleware = nil
-	ctx.pos = 0
 	ctx.ResponseWriter = &ctx.memoryResponseWriter
 }
 
@@ -443,5 +445,3 @@ func (ctx *Context) XML(xmlStructs ...interface{}) error {
 }
 
 /* END OF RENDERER */
-
-var _ IContext = &Context{}
