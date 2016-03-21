@@ -37,6 +37,7 @@ type IMemoryWriter interface {
 	http.ResponseWriter
 	http.Hijacker
 	http.CloseNotifier
+	Reset(underlineRes http.ResponseWriter)
 	WriteString(s string) (int, error)
 	//implement http response writer
 
@@ -58,7 +59,7 @@ type MemoryWriter struct {
 
 var _ IMemoryWriter = &MemoryWriter{}
 
-func (m *MemoryWriter) New(underlineRes http.ResponseWriter) {
+func (m *MemoryWriter) Reset(underlineRes http.ResponseWriter) {
 	m.ResponseWriter = underlineRes
 	//we have 3 possibilities
 	//1 > nothing has written , isWritten() = false, is size -1

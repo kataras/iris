@@ -38,9 +38,9 @@ import (
 )
 
 type IContext interface {
-	New()
+	Reset(http.ResponseWriter, *http.Request)
 	Do()
-	Redo(req *http.Request, res http.ResponseWriter)
+	Redo(http.ResponseWriter, *http.Request)
 	Next()
 	GetResponseWriter() IMemoryWriter
 	GetRequest() *http.Request
@@ -144,9 +144,9 @@ func (ctx *Context) SetResponseWriter(res IMemoryWriter) {
 	ctx.ResponseWriter = res
 }
 
-func (ctx *Context) Redo(req *http.Request, res http.ResponseWriter) {
+func (ctx *Context) Redo(res http.ResponseWriter, req *http.Request) {
+	ctx.memoryResponseWriter.Reset(res)
 	ctx.Request = req
-	ctx.memoryResponseWriter.New(res)
 	ctx.pos = 0
 	ctx.Do()
 }
@@ -294,10 +294,12 @@ func (ctx *Context) Do() {
 	ctx.middleware[0].Serve(ctx)
 }
 
-func (ctx *Context) New() {
+func (ctx *Context) Reset(res http.ResponseWriter, req *http.Request) {
 	ctx.Params = ctx.Params[0:0]
 	ctx.middleware = nil
+	ctx.memoryResponseWriter.Reset(res)
 	ctx.ResponseWriter = &ctx.memoryResponseWriter
+	ctx.Request = req
 }
 
 // Get returns a value from a key

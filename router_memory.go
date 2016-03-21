@@ -66,14 +66,12 @@ func (r *MemoryRouter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 	path := req.URL.Path
 	if ctx := r.cache.GetItem(method, path); ctx != nil {
-		ctx.Redo(req, res)
+		ctx.Redo(res, req)
 		return
 	}
 
 	ctx := r.station.pool.Get().(*Context)
-	ctx.memoryResponseWriter.New(res)
-	ctx.Request = req
-	ctx.New()
+	ctx.Reset(res, req)
 
 	if r.processRequest(ctx) {
 		//if something found and served then add it's clone to the cache
@@ -171,14 +169,12 @@ func (r *MemoryRouterDomain) ServeHTTP(res http.ResponseWriter, req *http.Reques
 	//change at 21/03/2016, now we are caching all routes either they are attached to the domain or no, with their host all of them.
 
 	if ctx := r.cache.GetItem(method, path); ctx != nil {
-		ctx.Redo(req, res)
+		ctx.Redo(res, req)
 		return
 	}
 
 	ctx := r.station.pool.Get().(*Context)
-	ctx.memoryResponseWriter.New(res)
-	ctx.Request = req
-	ctx.New()
+	ctx.Reset(res, req)
 
 	if r.processRequest(ctx) {
 		//if something found and served then add it's clone to the cache

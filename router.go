@@ -105,9 +105,7 @@ func (r *Router) Errors() IHTTPErrors {
 // If no route found, it sends an http status 404
 func (r *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	ctx := r.station.pool.Get().(*Context)
-	ctx.memoryResponseWriter.New(res)
-	ctx.Request = req
-	ctx.New()
+	ctx.Reset(res, req)
 
 	//defer r.station.pool.Put(ctx)
 	// defer is too slow it adds 10k nanoseconds to the benchmarks...so I will wrap the below to a function
@@ -193,9 +191,7 @@ func (r RouterDomain) getType() RouterType {
 
 func (r *RouterDomain) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	ctx := r.station.pool.Get().(*Context)
-	ctx.memoryResponseWriter.New(res)
-	ctx.Request = req
-	ctx.New()
+	ctx.Reset(res, req)
 
 	//defer r.station.pool.Put(ctx)
 	// defer is too slow it adds 10k nanoseconds to the benchmarks...so I will wrap the below to a function
@@ -214,7 +210,7 @@ func (r *RouterDomain) processRequest(ctx *Context) bool {
 		if r.garden[i].hosts {
 			//it's expecting host
 			if r.garden[i].domain != ctx.Request.Host {
-				//but this is not the host we are waiting, so just continue
+				//but this is not the host we were expecting, so just continue to the next
 				continue
 			}
 			reqPath = ctx.Request.Host + reqPath
