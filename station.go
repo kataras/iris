@@ -133,12 +133,11 @@ func newStation(options StationOptions) *Station {
 	// set the router
 	s.IRouter = r
 
-	// set the server with the server handler
-	s.server = &Server{handler: r}
-
 	s.pool = sync.Pool{New: func() interface{} {
 		return &Context{station: s, Params: make([]PathParameter, 0)}
 	}}
+
+	s.Plugin(preparePlugin{})
 
 	return s
 }
@@ -161,6 +160,9 @@ func (s Station) GetTemplates() *template.Template {
 // host:port or just port
 func (s *Station) Listen(fullHostOrPort ...string) error {
 	s.pluginContainer.DoPreListen(s)
+	// I moved the s.Server here because we want to be able to change the Router before listen (with plugins)
+	// set the server with the server handler
+	s.server = &Server{handler: s.IRouter}
 	err := s.server.listen(fullHostOrPort...)
 	s.pluginContainer.DoPostListen(s, err)
 
@@ -173,6 +175,10 @@ func (s *Station) Listen(fullHostOrPort ...string) error {
 // which listens to the fullHostOrPort parameter which as the form of
 // host:port or just port
 func (s *Station) ListenTLS(fullAddress string, certFile, keyFile string) error {
+	s.pluginContainer.DoPreListen(s)
+	// I moved the s.Server here because we want to be able to change the Router before listen (with plugins)
+	// set the server with the server handler
+	s.server = &Server{handler: s.IRouter}
 	err := s.server.listenTLS(fullAddress, certFile, keyFile)
 	s.pluginContainer.DoPostListen(s, err)
 

@@ -28,6 +28,7 @@ package iris
 
 import (
 	"fmt"
+	"reflect"
 )
 
 // IPlugin is the interface which all Plugins must implement.
@@ -103,6 +104,11 @@ func (p *PluginContainer) Plugin(plugin IPlugin) error {
 		return fmt.Errorf("[Iris] Error on Plugin: %s is already exists: %s", plugin.GetName(), plugin.GetDescription())
 	}
 	// Activate the plugin, if no error then add it to the plugins
+	st := reflect.TypeOf(plugin)
+	_, ok := st.MethodByName("Activate")
+	if !ok {
+		return fmt.Errorf("[Iris] Error on Plugin: %s doesn't implement the Active method", plugin.GetName())
+	}
 	err := plugin.Activate(p)
 	if err != nil {
 		return err
@@ -151,34 +157,74 @@ func (p *PluginContainer) Printf(format string, a ...interface{}) {
 	fmt.Printf(format, a...) //for now just this.
 }
 
-// These methods are the callers for all plugins' events
-
 func (p *PluginContainer) DoPreHandle(method string, route IRoute) {
 	for i := 0; i < len(p.activatedPlugins); i++ {
-		p.activatedPlugins[i].PreHandle(method, route)
+		//TODO: check if this method exists on our plugin obj, these are optionaly
+		//this check doesn't work because all plugins are IPlugin I can't see if they are actualy declare these but I will find an easier way.
+		if p.activatedPlugins[i].PreHandle != nil {
+			if _, ok := p.activatedPlugins[i].(interface {
+				PreHandle(string, IRoute)
+			}); ok {
+				p.activatedPlugins[i].PreHandle(method, route)
+			}
+
+		}
+
 	}
 }
 
 func (p *PluginContainer) DoPostHandle(method string, route IRoute) {
 	for i := 0; i < len(p.activatedPlugins); i++ {
-		p.activatedPlugins[i].PostHandle(method, route)
+		//check if this method exists on our plugin obj, these are optionaly
+		if p.activatedPlugins[i].PreHandle != nil {
+			if _, ok := p.activatedPlugins[i].(interface {
+				PostHandle(string, IRoute)
+			}); ok {
+				p.activatedPlugins[i].PostHandle(method, route)
+			}
+
+		}
 	}
 }
 
 func (p *PluginContainer) DoPreListen(station *Station) {
 	for i := 0; i < len(p.activatedPlugins); i++ {
-		p.activatedPlugins[i].PreListen(station)
+		//check if this method exists on our plugin obj, these are optionaly
+		if p.activatedPlugins[i].PreHandle != nil {
+			if _, ok := p.activatedPlugins[i].(interface {
+				PreListen(*Station)
+			}); ok {
+				p.activatedPlugins[i].PreListen(station)
+			}
+
+		}
 	}
 }
 
 func (p *PluginContainer) DoPostListen(station *Station, err error) {
 	for i := 0; i < len(p.activatedPlugins); i++ {
-		p.activatedPlugins[i].PostListen(station, err)
+		//check if this method exists on our plugin obj, these are optionaly
+		if p.activatedPlugins[i].PreHandle != nil {
+			if _, ok := p.activatedPlugins[i].(interface {
+				PostListen(*Station, error)
+			}); ok {
+				p.activatedPlugins[i].PostListen(station, err)
+			}
+
+		}
 	}
 }
 
 func (p *PluginContainer) DoPreClose(station *Station) { //tood IStation
 	for i := 0; i < len(p.activatedPlugins); i++ {
-		p.activatedPlugins[i].PreClose(station)
+		//check if this method exists on our plugin obj, these are optionaly
+		if p.activatedPlugins[i].PreHandle != nil {
+			if _, ok := p.activatedPlugins[i].(interface {
+				PreClose(*Station)
+			}); ok {
+				p.activatedPlugins[i].PreClose(station)
+			}
+
+		}
 	}
 }

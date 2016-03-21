@@ -42,15 +42,26 @@ const (
 	MatchEverythingByte = byte('*')
 )
 
+type RouterType uint8
+
+const (
+	Normal RouterType = iota
+	Memory
+	NormalDomain
+	MemoryDomain
+)
+
 // IRouter is the interface of which any Iris router must implement
 type IRouter interface {
 	IParty
 	getGarden() Garden
 	setGarden(g Garden)
+	getType() RouterType
 	Errors() IHTTPErrors //at the main Router struct this is managed by the MiddlewareSupporter
 	// ServeHTTP finds and serves a route by it's request
 	// If no route found, it sends an http status 404
 	ServeHTTP(http.ResponseWriter, *http.Request)
+	processRequest(*Context) bool
 }
 
 // Router is the router , one router per server.
@@ -72,6 +83,10 @@ func NewRouter(station *Station) *Router {
 }
 func (r *Router) getGarden() Garden  { return r.garden }
 func (r *Router) setGarden(g Garden) { r.garden = g } //every plant the garden is set itself
+func (r Router) getType() RouterType {
+	return Normal
+}
+
 // SetErrors sets a HTTPErrors object to the router
 func (r *Router) SetErrors(httperr IHTTPErrors) {
 	r.httpErrors = httperr
@@ -158,6 +173,103 @@ func (r *Router) processRequest(ctx *Context) bool {
 				}
 			}
 		}
+	}
+	ctx.NotFound()
+	return false
+}
+
+// RouterDomain same as Router but it's override the ServeHTTP and proccessPath.
+type RouterDomain struct {
+	*Router
+}
+
+func NewRouterDomain(underlineRouter *Router) *RouterDomain {
+	return &RouterDomain{underlineRouter}
+}
+
+func (r RouterDomain) getType() RouterType {
+	return NormalDomain
+}
+
+func (r *RouterDomain) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	ctx := r.station.pool.Get().(*Context)
+	ctx.memoryResponseWriter.New(res)
+	ctx.Request = req
+	ctx.New()
+
+	//defer r.station.pool.Put(ctx)
+	// defer is too slow it adds 10k nanoseconds to the benchmarks...so I will wrap the below to a function
+	r.processRequest(ctx)
+
+	r.station.pool.Put(ctx)
+
+}
+
+// all these dublicates for this if: if r.garden[i].hosts { but it's 3k nanoseconds faster on non-domain routers, so I keep it FOR NOW I WILL FIND BETTER WAY
+func (r *RouterDomain) processRequest(ctx *Context) bool {
+	reqPath := ctx.Request.URL.Path
+	method := ctx.Request.Method
+	gLen := len(r.garden)
+	for i := 0; i < gLen; i++ {
+		if r.garden[i].hosts {
+			//it's expecting host
+			if r.garden[i].domain != ctx.Request.Host {
+				//but this is not the host we are waiting, so just continue
+				continue
+			}
+			reqPath = ctx.Request.Host + reqPath
+		}
+
+		if r.garden[i].method == method {
+			middleware, params, mustRedirect := r.garden[i].rootBranch.GetBranch(reqPath, ctx.Params) // pass the parameters here for 0 allocation
+			if middleware != nil {
+				ctx.Params = params
+				ctx.middleware = middleware
+				ctx.Do()
+				return true
+			} else if mustRedirect && r.station.options.PathCorrection {
+				pathLen := len(reqPath)
+				//first of all checks if it's the index only slash /
+				if pathLen <= 1 {
+					reqPath = "/"
+					//check if the req path ends with slash
+				} else if reqPath[pathLen-1] == '/' {
+					reqPath = reqPath[:pathLen-1] //remove the last /
+				} else {
+					//it has path prefix, it doesn't ends with / and it hasn't be found, then just add the slash
+					reqPath = reqPath + "/"
+				}
+				ctx.Request.URL.Path = reqPath
+				urlToRedirect := ctx.Request.URL.String()
+				if u, err := url.Parse(urlToRedirect); err == nil {
+
+					if u.Scheme == "" && u.Host == "" {
+						//The http://yourserver is done automatically by all browsers today
+						//so just clean the path
+						trailing := strings.HasSuffix(urlToRedirect, "/")
+						urlToRedirect = path.Clean(urlToRedirect)
+						//check after clean if we had a slash but after we don't, we have to do that otherwise we will get forever redirects if path is /home but the registed is /home/
+						if trailing && !strings.HasSuffix(urlToRedirect, "/") {
+							urlToRedirect += "/"
+						}
+
+					}
+
+					ctx.ResponseWriter.Header().Set("Location", urlToRedirect)
+					ctx.ResponseWriter.WriteHeader(http.StatusMovedPermanently)
+
+					// RFC2616 recommends that a short note "SHOULD" be included in the
+					// response because older user agents may not understand 301/307.
+					// Shouldn't send the response for POST or HEAD; that leaves GET.
+					if method == HTTPMethods.GET {
+						note := "<a href=\"" + htmlEscape(urlToRedirect) + "\">Moved Permanently</a>.\n"
+						ctx.Write(note)
+					}
+					return false
+				}
+			}
+		}
+
 	}
 	ctx.NotFound()
 	return false
