@@ -38,9 +38,9 @@ import (
 )
 
 type IContext interface {
-	New()
+	Reset(http.ResponseWriter, *http.Request)
 	Do()
-	Redo(req *http.Request, res http.ResponseWriter)
+	Redo(http.ResponseWriter, *http.Request)
 	Next()
 	GetResponseWriter() IMemoryWriter
 	GetRequest() *http.Request
@@ -116,7 +116,7 @@ type Context struct {
 	ResponseWriter       IMemoryWriter
 	Request              *http.Request
 	Params               PathParameters
-	station              IStation
+	station              *Station
 	//keep track all registed middleware (handlers)
 	middleware Middleware
 	// pos is the position number of the Context, look .Next to understand
@@ -125,6 +125,8 @@ type Context struct {
 	// use iris/sessions for cookie/filesystem storage
 	values map[string]interface{}
 }
+
+var _ IContext = &Context{}
 
 func (ctx *Context) GetResponseWriter() IMemoryWriter {
 	return ctx.ResponseWriter
@@ -142,9 +144,9 @@ func (ctx *Context) SetResponseWriter(res IMemoryWriter) {
 	ctx.ResponseWriter = res
 }
 
-func (ctx *Context) Redo(req *http.Request, res http.ResponseWriter) {
+func (ctx *Context) Redo(res http.ResponseWriter, req *http.Request) {
+	ctx.memoryResponseWriter.Reset(res)
 	ctx.Request = req
-	ctx.memoryResponseWriter.New(res)
 	ctx.pos = 0
 	ctx.Do()
 }
@@ -288,14 +290,16 @@ func (ctx *Context) Next() {
 
 // do calls the first handler only, it's like Next with negative pos, used only on Router&MemoryRouter
 func (ctx *Context) Do() {
+	ctx.pos = 0
 	ctx.middleware[0].Serve(ctx)
 }
 
-func (ctx *Context) New() {
+func (ctx *Context) Reset(res http.ResponseWriter, req *http.Request) {
 	ctx.Params = ctx.Params[0:0]
 	ctx.middleware = nil
-	ctx.pos = 0
+	ctx.memoryResponseWriter.Reset(res)
 	ctx.ResponseWriter = &ctx.memoryResponseWriter
+	ctx.Request = req
 }
 
 // Get returns a value from a key
@@ -443,5 +447,3 @@ func (ctx *Context) XML(xmlStructs ...interface{}) error {
 }
 
 /* END OF RENDERER */
-
-var _ IContext = &Context{}

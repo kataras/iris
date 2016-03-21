@@ -35,6 +35,7 @@ func main() {
 		// add a silly middleware
 		admin.UseFunc(func(c *iris.Context) {
 			//your authentication logic here...
+			println("from ", c.Request.URL.Path)
 			authorized := true
 			if authorized {
 				c.Next()
@@ -43,13 +44,21 @@ func main() {
 			}
 
 		})
-		admin.Get("/", func(c *iris.Context) {})
-		admin.Get("/dashboard", func(c *iris.Context) {})
-		admin.Delete("/delete/:userId", func(c *iris.Context) {})
+		admin.Get("/", func(c *iris.Context) {
+			c.Write("from /admin/ or /admin if you pathcorrection on")
+		})
+		admin.Get("/dashboard", func(c *iris.Context) {
+			c.Write("/admin/dashboard")
+		})
+		admin.Delete("/delete/:userId", func(c *iris.Context) {
+			c.Write("admin/delete/%s", c.Param("userId"))
+		})
 	}
 
 	beta := admin.Party("/beta")
-	beta.Get("/hey", func(c *iris.Context) {})
+	beta.Get("/hey", func(c *iris.Context) { c.Write("hey from /admin/beta/hey") })
+
+	//for subdomains look at the: _examples/subdomains_simple/main.go
 
 	println("Iris is listening on :8080")
 	iris.Listen("8080")

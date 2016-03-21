@@ -32,6 +32,7 @@ import (
 
 type IRoute interface {
 	ProcessPath()
+	GetDomain() string
 	GetPath() string
 	GetPathPrefix() string
 	GetMiddleware() Middleware
@@ -43,18 +44,50 @@ type IRoute interface {
 // Used to create a node at the Router's Build state
 type Route struct {
 	middleware Middleware
+	domain     string
 	fullpath   string
 	PathPrefix string
 }
 
+var _ IRoute = &Route{}
+
 // newRoute creates, from a path string, and a slice of HandlerFunc
 func NewRoute(registedPath string, middleware Middleware) *Route {
-	r := &Route{fullpath: registedPath}
+	domain := ""
+	if strings.Contains(registedPath, ".") {
+		//means that is a path with domain
+		//we have to extract the domain
+
+		//find the first '/'
+		firstSlashIndex := strings.IndexByte(registedPath, SlashByte)
+
+		//firt of all remove the first '/' if that exists and we have domain
+		if firstSlashIndex == 0 {
+			//e.g /admin.ideopod.com/hey
+			//then just remove the first slash and re-execute the NewRoute and return it
+			registedPath = registedPath[1:]
+			return NewRoute(registedPath, middleware)
+		}
+		//if it's just the domain, then set it(registedPath) as the domain
+		//and after set the registedPath to a slash '/' for the path part
+		if firstSlashIndex == -1 {
+			domain = registedPath
+			registedPath = "/"
+		} else {
+			//we have a domain + path
+			domain = registedPath[0:firstSlashIndex]
+			registedPath = registedPath[len(domain):]
+		}
+
+	}
+	r := &Route{fullpath: registedPath, domain: domain}
 	r.middleware = middleware
 	r.ProcessPath()
 	return r
 }
-
+func (r Route) GetDomain() string {
+	return r.domain
+}
 func (r Route) GetPath() string {
 	return r.fullpath
 }
@@ -102,5 +135,3 @@ func (r *Route) ProcessPath() {
 		r.PathPrefix += "/"
 	}
 }
-
-var _ IRoute = &Route{}

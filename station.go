@@ -43,7 +43,6 @@ type IStation interface {
 	IRouter
 	Plugin(IPlugin) error
 	GetPluginContainer() IPluginContainer
-	GetPool() *sync.Pool
 	GetTemplates() *template.Template
 }
 
@@ -94,7 +93,7 @@ type (
 		IRouter
 		server          *Server
 		templates       *template.Template
-		pool            *sync.Pool
+		pool            sync.Pool
 		options         StationOptions
 		pluginContainer *PluginContainer
 	}
@@ -134,12 +133,11 @@ func newStation(options StationOptions) *Station {
 	// set the router
 	s.IRouter = r
 
-	// set the server with the server handler
-	s.server = &Server{handler: s}
-
-	s.pool = &sync.Pool{New: func() interface{} {
-		return &Context{station: s}
+	s.pool = sync.Pool{New: func() interface{} {
+		return &Context{station: s, Params: make([]PathParameter, 0)}
 	}}
+
+	s.Plugin(preparePlugin{})
 
 	return s
 }
@@ -153,10 +151,6 @@ func (s Station) GetPluginContainer() IPluginContainer {
 	return s.pluginContainer
 }
 
-func (s Station) GetPool() *sync.Pool {
-	return s.pool
-}
-
 func (s Station) GetTemplates() *template.Template {
 	return s.templates
 }
@@ -166,6 +160,9 @@ func (s Station) GetTemplates() *template.Template {
 // host:port or just port
 func (s *Station) Listen(fullHostOrPort ...string) error {
 	s.pluginContainer.DoPreListen(s)
+	// I moved the s.Server here because we want to be able to change the Router before listen (with plugins)
+	// set the server with the server handler
+	s.server = &Server{handler: s.IRouter}
 	err := s.server.listen(fullHostOrPort...)
 	s.pluginContainer.DoPostListen(s, err)
 
@@ -178,6 +175,10 @@ func (s *Station) Listen(fullHostOrPort ...string) error {
 // which listens to the fullHostOrPort parameter which as the form of
 // host:port or just port
 func (s *Station) ListenTLS(fullAddress string, certFile, keyFile string) error {
+	s.pluginContainer.DoPreListen(s)
+	// I moved the s.Server here because we want to be able to change the Router before listen (with plugins)
+	// set the server with the server handler
+	s.server = &Server{handler: s.IRouter}
 	err := s.server.listenTLS(fullAddress, certFile, keyFile)
 	s.pluginContainer.DoPostListen(s, err)
 

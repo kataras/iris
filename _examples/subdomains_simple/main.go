@@ -24,45 +24,36 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-package domain
+package main
 
 import (
-	"net/http"
+	"github.com/kataras/iris"
 )
 
-const (
-	// ParameterStartByte is very used on the node, it's just contains the byte for the ':' rune/char
-	ParameterStartByte = byte(':')
-	// SlashByte is just a byte of '/' rune/char
-	SlashByte = byte('/')
-	// MatchEverythingByte is just a byte of '*" rune/char
-	MatchEverythingByte = byte('*')
-)
+func main() {
+	api := iris.New()
+	//api := iris.Custom(iris.StationOptions{Cache: false})
+	//ok it's working both cached and normal router, optimization done before listen
 
-// IRouterMethods is the interface for method routing
-type IRouterMethods interface {
-	Get(path string, handlersFn ...HandlerFunc) IRoute
-	Post(path string, handlersFn ...HandlerFunc) IRoute
-	Put(path string, handlersFn ...HandlerFunc) IRoute
-	Delete(path string, handlersFn ...HandlerFunc) IRoute
-	Connect(path string, handlersFn ...HandlerFunc) IRoute
-	Head(path string, handlersFn ...HandlerFunc) IRoute
-	Options(path string, handlersFn ...HandlerFunc) IRoute
-	Patch(path string, handlersFn ...HandlerFunc) IRoute
-	Trace(path string, handlersFn ...HandlerFunc) IRoute
-	Any(path string, handlersFn ...HandlerFunc) IRoute
-}
+	//the subdomains are working like parties, the only difference is that you CANNOT HAVE party of party with both of them subdomains
+	//YOU CANNOT DO THAT AND YOU MUSTN'T DO IT DIRECTLY: api.Party("admin.yourhost.com").Party("other.admin.yuorhost.com")
+	//Do that: api.Party("other.admin.yourhost.com") .... and different/new party with api.Party("admin.yourhost.com")
+	admin := api.Party("admin.yourhost.com")
+	{
+		//this will only success on admin.yourhost.com/hey
+		admin.Get("/hey", func(c *iris.Context) {
+			c.Write("HEY FROM admin.omicronware.com")
+		})
+		//this will only success on admin.yourhost.com/hey2
+		admin.Get("/hey2", func(c *iris.Context) {
+			c.Write("HEY SECOND FROM admin.omicronware.com")
+		})
+	}
 
-// IRouter is the interface of which any Iris router must implement
-type IRouter interface {
-	IMiddlewareSupporter
-	IRouterMethods
-	IPartyHoster
-	HandleAnnotated(Handler) (IRoute, error)
-	Handle(string, string, ...Handler) IRoute
-	HandleFunc(string, string, ...HandlerFunc) IRoute
-	Errors() IHTTPErrors //at the main Router struct this is managed by the MiddlewareSupporter
-	// ServeHTTP finds and serves a route by it's request
-	// If no route found, it sends an http status 404
-	ServeHTTP(http.ResponseWriter, *http.Request)
+	// this will serve on yourhost.com/hey and not on admin.yourhost.com/hey
+	api.Get("/hey", func(c *iris.Context) {
+		c.Write("HEY FROM no-subdomain hey")
+	})
+
+	api.Listen(":80")
 }

@@ -115,6 +115,7 @@ func (s *Server) listen(fullHostOrPort ...string) error {
 	}
 	s.listener = &tcpKeepAliveListener{listener.(*net.TCPListener)}
 	err = http.Serve(s.listener, s.handler)
+
 	if err == nil {
 		s.isRunning = true
 		s.isSecure = false
@@ -124,6 +125,21 @@ func (s *Server) listen(fullHostOrPort ...string) error {
 	return err
 }
 
+/*///TODO: MANUAL HOOK THE LISTENER, BECAUSE STANDAR NET/HTTP PACKAGE MAKES SO MANY CHECKS MAYBE I CAN DO IT WORKS EVEN FASTER
+func (s *Server) accept(l net.Listener) error {
+	for {
+		rw, e := l.Accept()
+		if e != nil {
+			return e
+		}
+
+		tempDelay = 0
+		c := s.newConn(rw)
+		c.setState(c.rwc, StateNew) // before Serve can return
+		go c.serve()
+	}
+}
+*/
 // listenTLS Starts a httpS/http2 server with certificates,
 // if you use this method the requests of the form of 'http://' will fail
 // only https:// connections are allowed

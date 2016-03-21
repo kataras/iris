@@ -1,3 +1,29 @@
+// Copyright (c) 2016, Gerasimos Maropoulos
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without modification,
+// are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice,
+//    this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright notice,
+//	  this list of conditions and the following disclaimer
+//    in the documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse
+//    or promote products derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL JULIEN SCHMIDT BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package iris
 
 import (
@@ -81,20 +107,20 @@ func Party(rootPath string) IParty {
 }
 
 // Handle registers a route to the server's router
-func Handle(method string, registedPath string, handlers ...Handler) IRoute {
-	return DefaultStation.Handle(method, registedPath, handlers...)
+func Handle(method string, registedPath string, handlers ...Handler) {
+	DefaultStation.Handle(method, registedPath, handlers...)
 }
 
 // HandleFunc registers a route with a method, path string, and a handler
-func HandleFunc(method string, path string, handlersFn ...HandlerFunc) IRoute {
-	return DefaultStation.HandleFunc(method, path, handlersFn...)
+func HandleFunc(method string, path string, handlersFn ...HandlerFunc) {
+	DefaultStation.HandleFunc(method, path, handlersFn...)
 }
 
 // HandleAnnotated registers a route handler using a Struct implements iris.Handler (as anonymous property)
 // which it's metadata has the form of
 // `method:"path"` and returns the route and an error if any occurs
 // handler is passed by func(urstruct MyStruct) Serve(ctx *Context) {}
-func HandleAnnotated(irisHandler Handler) (IRoute, error) {
+func HandleAnnotated(irisHandler Handler) error {
 	return DefaultStation.HandleAnnotated(irisHandler)
 }
 
@@ -110,53 +136,53 @@ func UseFunc(handlersFn ...HandlerFunc) {
 }
 
 // Get registers a route for the Get http method
-func Get(path string, handlersFn ...HandlerFunc) IRoute {
-	return DefaultStation.Get(path, handlersFn...)
+func Get(path string, handlersFn ...HandlerFunc) {
+	DefaultStation.Get(path, handlersFn...)
 }
 
 // Post registers a route for the Post http method
-func Post(path string, handlersFn ...HandlerFunc) IRoute {
-	return DefaultStation.Post(path, handlersFn...)
+func Post(path string, handlersFn ...HandlerFunc) {
+	DefaultStation.Post(path, handlersFn...)
 }
 
 // Put registers a route for the Put http method
-func Put(path string, handlersFn ...HandlerFunc) IRoute {
-	return DefaultStation.Put(path, handlersFn...)
+func Put(path string, handlersFn ...HandlerFunc) {
+	DefaultStation.Put(path, handlersFn...)
 }
 
 // Delete registers a route for the Delete http method
-func Delete(path string, handlersFn ...HandlerFunc) IRoute {
-	return DefaultStation.Delete(path, handlersFn...)
+func Delete(path string, handlersFn ...HandlerFunc) {
+	DefaultStation.Delete(path, handlersFn...)
 }
 
 // Connect registers a route for the Connect http method
-func Connect(path string, handlersFn ...HandlerFunc) IRoute {
-	return DefaultStation.Connect(path, handlersFn...)
+func Connect(path string, handlersFn ...HandlerFunc) {
+	DefaultStation.Connect(path, handlersFn...)
 }
 
 // Head registers a route for the Head http method
-func Head(path string, handlersFn ...HandlerFunc) IRoute {
-	return DefaultStation.Head(path, handlersFn...)
+func Head(path string, handlersFn ...HandlerFunc) {
+	DefaultStation.Head(path, handlersFn...)
 }
 
 // Options registers a route for the Options http method
-func Options(path string, handlersFn ...HandlerFunc) IRoute {
-	return DefaultStation.Options(path, handlersFn...)
+func Options(path string, handlersFn ...HandlerFunc) {
+	DefaultStation.Options(path, handlersFn...)
 }
 
 // Patch registers a route for the Patch http method
-func Patch(path string, handlersFn ...HandlerFunc) IRoute {
-	return DefaultStation.Patch(path, handlersFn...)
+func Patch(path string, handlersFn ...HandlerFunc) {
+	DefaultStation.Patch(path, handlersFn...)
 }
 
 // Trace registers a route for the Trace http methodd
-func Trace(path string, handlersFn ...HandlerFunc) IRoute {
-	return DefaultStation.Trace(path, handlersFn...)
+func Trace(path string, handlersFn ...HandlerFunc) {
+	DefaultStation.Trace(path, handlersFn...)
 }
 
 // Any registers a route for ALL of the http methods (Get,Post,Put,Head,Patch,Options,Connect,Delete)
-func Any(path string, handlersFn ...HandlerFunc) IRoute {
-	return DefaultStation.Any(path, handlersFn...)
+func Any(path string, handlersFn ...HandlerFunc) {
+	DefaultStation.Any(path, handlersFn...)
 }
 
 // ServeHTTP serves an http request,
