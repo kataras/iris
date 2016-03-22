@@ -530,10 +530,10 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 - Notice author's of middleware, which I'm writing examples for,to take a look, if they don't want to exists in the Iris community, I have to respect them.
 
 ## Todo
-- [x] Provide a lighter, with less using bytes,  to save middleware for a route.
-- [x] Create examples in this repository.
-- [x] Subdomains supports with the same syntax as iris.Get, iris.Post ...
-- [ ] Provide a more detailed benchmark table to the README with all go web frameworks that I know, no just the 6 most famous
+- [x] [Provide a lighter, with less using bytes,  to save middleware for a route.](https://github.com/kataras/iris/tree/development/handler.go)
+- [x] [Create examples in this repository.](https://github.com/kataras/iris/tree/development/_examples)
+- [x] [Subdomains supports with the same syntax as iris.Get, iris.Post ...](https://github.com/kataras/iris/tree/development/_examples/subdomains_simple)
+- [x] [Provide a more detailed benchmark table to the README with all go web frameworks that I know, no just the 6 most famous](https://github.com/kataras/iris/tree/development/benchmark)
 - [ ] Convert useful middlewares out there into Iris middlewares, or contact with their authors to do so.
 - [ ] Create an easy websocket api.
 - [ ] Create a mechanism that scan for Typescript files, compile them on server startup and serve them.
