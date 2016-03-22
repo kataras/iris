@@ -19,8 +19,8 @@ pongo2 is the successor of pongo, a Django-syntax like templating-language.
    3. Complex function calls within expressions.
    4. Easy API to create new filters and tags (including parsing arguments)
    5. Additional features:
-        1. Macros including importing macros from other files (see template_tests/macro.tpl)
-        2. Template sandboxing (directory patterns, banned tags/filters)
+        	1. Macros including importing macros from other files (see template_tests/macro.tpl)
+        	2. Template sandboxing (directory patterns, banned tags/filters)
 
 
 ## Notes
