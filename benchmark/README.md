@@ -26,8 +26,8 @@ At this folder (iris/benchmark)  you can see that we have 14 .png files, these a
 ### Explanation of the letters you will see
 
 
-1. Name
-	- The first left part is the name of the framework/router
+1. Framework Name + test name
+	- The first left part is the name of the framework/router + the test name
 2. Total Operations( Executions )
 	- The second left part is how many Total Operations gets on x time ( Bigger the best )
 3. ns/op 
