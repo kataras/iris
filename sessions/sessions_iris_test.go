@@ -136,6 +136,7 @@ func TestSessionsWithIris(t *testing.T) {
 
 	res := new(fakeResponseWriter)
 	req, _ := http.NewRequest("GET", "/", nil)
+	iris.OptimusPrime()
 	iris.ServeHTTP(res, mockReq(req, "GET", "/test_set"))
 	iris.ServeHTTP(res, mockReq(req, "GET", "/test_get"))
 	iris.ServeHTTP(res, mockReq(req, "GET", "/test_clear"))

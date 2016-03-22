@@ -1,4 +1,5 @@
-// Copyright (c) 2016, Julien Schmidt & Gerasimos Maropoulos
+// Copyright (c) 2013, Julien Schmidt
+// Copyright (c) 2016, Gerasimos Maropoulos
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification,
