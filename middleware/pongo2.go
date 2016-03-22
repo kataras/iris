@@ -24,56 +24,68 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-package iris
+package middleware
 
 import (
-	"net/http"
-	"strings"
-	"testing"
+	"github.com/flosch/pongo2"
+	"github.com/kataras/iris"
 )
 
-// from @wsantos
-func TestContext_GetCookie(t *testing.T) {
+type pongo2Middleware struct {
+}
 
-	request, _ := http.NewRequest("GET", "/", nil)
+func (p *pongo2Middleware) Serve(ctx *iris.Context) {
+	ctx.Next()
 
-	cookie := &http.Cookie{Name: "cookie-name", Value: "cookie-value"}
-	request.AddCookie(cookie)
+	templateName := ctx.GetString("template")
+	if templateName != "" {
+		templateData := ctx.Get("data")
+		if templateData != nil {
+			var template = pongo2.Must(pongo2.FromFile(templateName))
+			err := template.ExecuteWriter(getPongoContext(templateData), ctx.ResponseWriter)
+			if err != nil {
+				ctx.SendStatus(500, err.Error())
+			}
+		}
 
-	context := &Context{Request: request}
-
-	value := context.GetCookie("cookie-name")
-
-	if value != "cookie-value" {
-		t.Fatal("GetCookie should return \"cookie-value\", but returned: \"", value, "\"")
 	}
 
 }
 
-// from @wsantos
-func TestContext_GetCookie_Err(t *testing.T) {
-
-	request, _ := http.NewRequest("GET", "/", nil)
-	context := &Context{Request: request}
-
-	value := context.GetCookie("cookie-name")
-
-	if value != "" {
-		t.Fatal("GetCookie should be empty, but returned: \"", value, "\"")
+func getPongoContext(templateData interface{}) pongo2.Context {
+	if templateData == nil {
+		return nil
 	}
-
+	contextData, isMap := templateData.(map[string]interface{})
+	if isMap {
+		return contextData
+	}
+	return nil
 }
 
-// from @keuller
-func TestContext_ReadJSON(t *testing.T) {
-
-	content := strings.NewReader(`{"first_name":"John", "last_name": "Doe"}`)
-	request, _ := http.NewRequest("POST", "/", content)
-	context := &Context{Request: request}
-
-	var obj map[string]string
-	context.ReadJSON(&obj)
-	if obj["first_name"] != "John" || obj["last_name"] != "Doe" {
-		t.Fatalf("ReadJSON should return \"John\" and \"Doe\", but returned: %s and %s", obj["first_name"], obj["last_name"])
-	}
+func Pongo2() *pongo2Middleware {
+	return &pongo2Middleware{}
 }
+
+/* example */
+/*
+
+package main
+
+import (
+    "github.com/kataras/iris"
+    "github.com/kataras/iris/middleware"
+)
+
+func main() {
+    iris.Use(middleware.Pongo2())
+
+    iris.Get("/", func(ctx *iris.Context) {
+        ctx.Set("template", "index.html")
+        ctx.Set("data", map[string]interface{}{"message": "Hello World!"})
+    })
+
+    iris.Listen(":8080")
+}
+
+*/
