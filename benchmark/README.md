@@ -1,6 +1,6 @@
-## Benchmarks
+## Benchmark
 
-Run the benchmarks by yourself and check which is the faster framework out there.
+Run the benchmark by yourself and check which is the faster framework out there.
 
 1. Clone/Download the [https://github.com/kataras/go-http-routing-benchmark](https://github.com/kataras/go-http-routing-benchmark)
 2. Open a terminal window inside the directory you saved it
@@ -21,7 +21,7 @@ Run the benchmarks by yourself and check which is the faster framework out there
 
 ## Console Output 
 
-At this folder (iris/benchmarks)  you can see that we have 14 .png files, these are the images from my output when I ran  all the benchmarks (22 March 2016), check them if you can't run your benchmarks by yourself. Note that on Output log: the last line is the next's first line. The first 2 images is just the loading of the frameworks, you can skip them.
+At this folder (iris/benchmark)  you can see that we have 14 .png files, these are the images from my output when I ran  full benchmark (22 March 2016), check them if you can't run your benchmark by yourself. Note that on Output log: the last line is the next's first line. The first 2 images is just the loading of the frameworks, you can skip them.
 
 ### Explanation of the letters you will see
 

@@ -15,7 +15,7 @@ Iris is a very minimal but flexible go web framework  providing arobust set of f
 ## Table of Contents
 
 - [Install](#install)
-- [Benchmarks](#benchmarks)
+- [Benchmark](#benchmark)
 - [Principles](#principles-of-iris)
 - [Features](#features)
 - [Introduction](#introduction)
@@ -44,7 +44,7 @@ Iris is still in development status, in order to have the latest version update 
 $ go get -u github.com/kataras/iris
 ```
 
-## Benchmarks
+## Benchmark
 
 With Intel(R) Core(TM) i7-4710HQ CPU @ 2.50GHz 2.50 HGz and 8GB Ram:
 
@@ -52,7 +52,7 @@ With Intel(R) Core(TM) i7-4710HQ CPU @ 2.50GHz 2.50 HGz and 8GB Ram:
 
 
 
-This graph was maden by comparison of the 6 most famous frameworks, if you want to see comparison of all known web go frameworks you have to visit [this folder](https://github.com/kataras/iris/tree/development/benchmarks) 
+This graph was maden by comparison of the 6 most famous frameworks, if you want to see comparison of all known web go frameworks you have to visit [this folder](https://github.com/kataras/iris/tree/development/benchmark) 
 
 ## Principles of iris
 
