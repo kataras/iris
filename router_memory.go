@@ -34,6 +34,10 @@ import (
 	"time"
 )
 
+type IMemoryRouter interface {
+	SetCache(IRouterCache)
+}
+
 // MemoryRouter is the cached version of the Router
 type MemoryRouter struct {
 	*Router

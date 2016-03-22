@@ -215,8 +215,9 @@ func (r *RouterDomain) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 // all these dublicates for this if: if r.garden[i].hosts { but it's 3k nanoseconds faster on non-domain routers, so I keep it FOR NOW I WILL FIND BETTER WAY
 func (r *RouterDomain) processRequest(ctx *Context) bool {
 	reqPath := ctx.Request.URL.Path
-	method := ctx.Request.Method
 	gLen := len(r.garden)
+	method := ctx.Request.Method
+
 	for i := 0; i < gLen; i++ {
 		if r.garden[i].hosts {
 			//it's expecting host
@@ -276,7 +277,6 @@ func (r *RouterDomain) processRequest(ctx *Context) bool {
 				}
 			}
 		}
-
 	}
 	ctx.NotFound()
 	return false
