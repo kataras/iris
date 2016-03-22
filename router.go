@@ -116,7 +116,9 @@ func (r *Router) find(_tree tree, reqPath string, ctx *Context) bool {
 		ctx.Do()
 		return true
 	} else if mustRedirect && r.station.options.PathCorrection {
+		reqPath = ctx.Request.URL.Path // we re-assign it because reqPath maybe is with the domain/host prefix, with this we made the domain prefix routes works with path correction also
 		pathLen := len(reqPath)
+
 		//first of all checks if it's the index only slash /
 		if pathLen <= 1 {
 			reqPath = "/"
@@ -129,6 +131,7 @@ func (r *Router) find(_tree tree, reqPath string, ctx *Context) bool {
 		}
 		ctx.Request.URL.Path = reqPath
 		urlToRedirect := ctx.Request.URL.String()
+
 		if u, err := url.Parse(urlToRedirect); err == nil {
 
 			if u.Scheme == "" && u.Host == "" {
