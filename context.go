@@ -31,6 +31,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"strconv"
@@ -73,6 +74,7 @@ type IContext interface {
 	WriteText(httpStatus int, text string)
 	Text(text string)
 	RenderJSON(httpStatus int, jsonStructs ...interface{}) error
+	ReadJSON(jsonObject interface{}) error
 	WriteJSON(httpStatus int, jsonObjectOrArray interface{}) error
 	JSON(jsonObjectOrArray interface{}) error
 	WriteXML(httpStatus int, xmlStructs ...interface{}) error
@@ -408,6 +410,24 @@ func (ctx *Context) RenderJSON(httpStatus int, jsonStructs ...interface{}) error
 	ctx.ResponseWriter.Header().Set(ContentType, ContentJSON+" ;charset="+Charset)
 	ctx.ResponseWriter.WriteHeader(httpStatus)
 	ctx.ResponseWriter.Write(_json)
+
+	return nil
+}
+
+// ReadJSON reads JSON from request's body
+func (ctx *Context) ReadJSON(jsonObject interface{}) error {
+	data, err := ioutil.ReadAll(ctx.Request.Body)
+	if err != nil {
+		return err
+	}
+	defer ctx.Close()
+
+	decoder := json.NewDecoder(strings.NewReader(string(data)))
+	err = decoder.Decode(jsonObject)
+
+	if err != io.EOF {
+		return err
+	}
 
 	return nil
 }
