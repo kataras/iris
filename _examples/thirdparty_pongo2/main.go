@@ -5,14 +5,12 @@ import (
 	"github.com/kataras/iris/middleware"
 )
 
-//This example doesn't contain any real pongo2 templates, just the basic code  for the middleware
-
 func main() {
 	iris.Use(middleware.Pongo2())
 
 	iris.Get("/", func(ctx *iris.Context) {
-		ctx.Set("template", "index.html")
-		ctx.Set("data", map[string]interface{}{"message": "Hello World!"})
+		ctx.Set("template", "./_examples/thirdparty_pongo2/index.html")
+		ctx.Set("data", map[string]interface{}{"is_admin": true})
 	})
 
 	iris.Listen(":8080")
