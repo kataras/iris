@@ -188,8 +188,16 @@ func (s *Station) OptimusPrime() {
 		}
 
 		//check for memoryrouter and use syncmemoryrouter if cores > 1
-		if s.IRouter.getType() == Memory || s.IRouter.getType() == MemoryDomain {
-			r := s.IRouter.(*MemoryRouter)
+		var r IMemoryRouter
+		routerType := s.IRouter.getType()
+		if routerType == Memory || routerType == MemoryDomain {
+			if routerType == Memory {
+				r = s.IRouter.(*MemoryRouter)
+			} else if routerType == MemoryDomain {
+				r = s.IRouter.(*MemoryRouterDomain)
+			} else {
+				panic("[Iris] From Station.OptimisPrime, unsupported Router, please post this as issue at github.com/kataras/iris")
+			}
 			var cache IRouterCache
 
 			cache = NewMemoryRouterCache()
