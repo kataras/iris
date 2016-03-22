@@ -108,6 +108,74 @@ func (r *Router) Errors() IHTTPErrors {
 	return r.httpErrors
 }
 
+func (r *Router) find(_tree tree, reqPath string, ctx *Context) bool {
+	middleware, params, mustRedirect := _tree.rootBranch.GetBranch(reqPath, ctx.Params) // pass the parameters here for 0 allocation
+	if middleware != nil {
+		ctx.Params = params
+		ctx.middleware = middleware
+		ctx.Do()
+		return true
+	} else if mustRedirect && r.station.options.PathCorrection {
+		pathLen := len(reqPath)
+		//first of all checks if it's the index only slash /
+		if pathLen <= 1 {
+			reqPath = "/"
+			//check if the req path ends with slash
+		} else if reqPath[pathLen-1] == '/' {
+			reqPath = reqPath[:pathLen-1] //remove the last /
+		} else {
+			//it has path prefix, it doesn't ends with / and it hasn't be found, then just add the slash
+			reqPath = reqPath + "/"
+		}
+		ctx.Request.URL.Path = reqPath
+		urlToRedirect := ctx.Request.URL.String()
+		if u, err := url.Parse(urlToRedirect); err == nil {
+
+			if u.Scheme == "" && u.Host == "" {
+				//The http://yourserver is done automatically by all browsers today
+				//so just clean the path
+				trailing := strings.HasSuffix(urlToRedirect, "/")
+				urlToRedirect = path.Clean(urlToRedirect)
+				//check after clean if we had a slash but after we don't, we have to do that otherwise we will get forever redirects if path is /home but the registed is /home/
+				if trailing && !strings.HasSuffix(urlToRedirect, "/") {
+					urlToRedirect += "/"
+				}
+
+			}
+
+			ctx.ResponseWriter.Header().Set("Location", urlToRedirect)
+			ctx.ResponseWriter.WriteHeader(http.StatusMovedPermanently)
+
+			// RFC2616 recommends that a short note "SHOULD" be included in the
+			// response because older user agents may not understand 301/307.
+			// Shouldn't send the response for POST or HEAD; that leaves GET.
+			if _tree.method == HTTPMethods.GET {
+				note := "<a href=\"" + htmlEscape(urlToRedirect) + "\">Moved Permanently</a>.\n"
+				ctx.Write(note)
+			}
+			return false
+		}
+	}
+	ctx.NotFound()
+	return false
+
+}
+
+//we use that to the router_memory also
+//returns true if it actually find serve something
+func (r *Router) processRequest(ctx *Context) bool {
+	reqPath := ctx.Request.URL.Path
+	method := ctx.Request.Method
+	gLen := len(r.garden)
+	for i := 0; i < gLen; i++ {
+		if r.garden[i].method == method {
+			return r.find(r.garden[i], reqPath, ctx)
+		}
+	}
+	ctx.NotFound()
+	return false
+}
+
 ///////////////////////////////
 //expose some methods as public
 ///////////////////////////////
@@ -124,67 +192,6 @@ func (r *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 	r.station.pool.Put(ctx)
 
-}
-
-//we use that to the router_memory also
-//returns true if it actually find serve something
-func (r *Router) processRequest(ctx *Context) bool {
-	reqPath := ctx.Request.URL.Path
-	method := ctx.Request.Method
-	gLen := len(r.garden)
-	for i := 0; i < gLen; i++ {
-		if r.garden[i].method == method {
-			middleware, params, mustRedirect := r.garden[i].rootBranch.GetBranch(reqPath, ctx.Params) // pass the parameters here for 0 allocation
-			if middleware != nil {
-				ctx.Params = params
-				ctx.middleware = middleware
-				ctx.Do()
-				return true
-			} else if mustRedirect && r.station.options.PathCorrection {
-				pathLen := len(reqPath)
-				//first of all checks if it's the index only slash /
-				if pathLen <= 1 {
-					reqPath = "/"
-					//check if the req path ends with slash
-				} else if reqPath[pathLen-1] == '/' {
-					reqPath = reqPath[:pathLen-1] //remove the last /
-				} else {
-					//it has path prefix, it doesn't ends with / and it hasn't be found, then just add the slash
-					reqPath = reqPath + "/"
-				}
-				ctx.Request.URL.Path = reqPath
-				urlToRedirect := ctx.Request.URL.String()
-				if u, err := url.Parse(urlToRedirect); err == nil {
-
-					if u.Scheme == "" && u.Host == "" {
-						//The http://yourserver is done automatically by all browsers today
-						//so just clean the path
-						trailing := strings.HasSuffix(urlToRedirect, "/")
-						urlToRedirect = path.Clean(urlToRedirect)
-						//check after clean if we had a slash but after we don't, we have to do that otherwise we will get forever redirects if path is /home but the registed is /home/
-						if trailing && !strings.HasSuffix(urlToRedirect, "/") {
-							urlToRedirect += "/"
-						}
-
-					}
-
-					ctx.ResponseWriter.Header().Set("Location", urlToRedirect)
-					ctx.ResponseWriter.WriteHeader(http.StatusMovedPermanently)
-
-					// RFC2616 recommends that a short note "SHOULD" be included in the
-					// response because older user agents may not understand 301/307.
-					// Shouldn't send the response for POST or HEAD; that leaves GET.
-					if method == HTTPMethods.GET {
-						note := "<a href=\"" + htmlEscape(urlToRedirect) + "\">Moved Permanently</a>.\n"
-						ctx.Write(note)
-					}
-					return false
-				}
-			}
-		}
-	}
-	ctx.NotFound()
-	return false
 }
 
 // RouterDomain same as Router but it's override the ServeHTTP and proccessPath.
@@ -216,8 +223,6 @@ func (r *RouterDomain) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 func (r *RouterDomain) processRequest(ctx *Context) bool {
 	reqPath := ctx.Request.URL.Path
 	gLen := len(r.garden)
-	method := ctx.Request.Method
-
 	for i := 0; i < gLen; i++ {
 		if r.garden[i].hosts {
 			//it's expecting host
@@ -227,56 +232,11 @@ func (r *RouterDomain) processRequest(ctx *Context) bool {
 			}
 			reqPath = ctx.Request.Host + reqPath
 		}
+		if r.garden[i].method == ctx.Request.Method {
 
-		if r.garden[i].method == method {
-			middleware, params, mustRedirect := r.garden[i].rootBranch.GetBranch(reqPath, ctx.Params) // pass the parameters here for 0 allocation
-			if middleware != nil {
-				ctx.Params = params
-				ctx.middleware = middleware
-				ctx.Do()
-				return true
-			} else if mustRedirect && r.station.options.PathCorrection {
-				pathLen := len(reqPath)
-				//first of all checks if it's the index only slash /
-				if pathLen <= 1 {
-					reqPath = "/"
-					//check if the req path ends with slash
-				} else if reqPath[pathLen-1] == '/' {
-					reqPath = reqPath[:pathLen-1] //remove the last /
-				} else {
-					//it has path prefix, it doesn't ends with / and it hasn't be found, then just add the slash
-					reqPath = reqPath + "/"
-				}
-				ctx.Request.URL.Path = reqPath
-				urlToRedirect := ctx.Request.URL.String()
-				if u, err := url.Parse(urlToRedirect); err == nil {
-
-					if u.Scheme == "" && u.Host == "" {
-						//The http://yourserver is done automatically by all browsers today
-						//so just clean the path
-						trailing := strings.HasSuffix(urlToRedirect, "/")
-						urlToRedirect = path.Clean(urlToRedirect)
-						//check after clean if we had a slash but after we don't, we have to do that otherwise we will get forever redirects if path is /home but the registed is /home/
-						if trailing && !strings.HasSuffix(urlToRedirect, "/") {
-							urlToRedirect += "/"
-						}
-
-					}
-
-					ctx.ResponseWriter.Header().Set("Location", urlToRedirect)
-					ctx.ResponseWriter.WriteHeader(http.StatusMovedPermanently)
-
-					// RFC2616 recommends that a short note "SHOULD" be included in the
-					// response because older user agents may not understand 301/307.
-					// Shouldn't send the response for POST or HEAD; that leaves GET.
-					if method == HTTPMethods.GET {
-						note := "<a href=\"" + htmlEscape(urlToRedirect) + "\">Moved Permanently</a>.\n"
-						ctx.Write(note)
-					}
-					return false
-				}
-			}
+			return r.find(r.garden[i], reqPath, ctx)
 		}
+
 	}
 	ctx.NotFound()
 	return false
