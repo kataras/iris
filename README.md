@@ -15,7 +15,7 @@ Iris is a very minimal but flexible go web framework  providing arobust set of f
 ## Table of Contents
 
 - [Install](#install)
-- [Benchmarks](#benchmarks)
+- [Benchmark](#benchmark)
 - [Principles](#principles-of-iris)
 - [Features](#features)
 - [Introduction](#introduction)
@@ -44,12 +44,15 @@ Iris is still in development status, in order to have the latest version update 
 $ go get -u github.com/kataras/iris
 ```
 
-## Benchmarks
+## Benchmark
 
 With Intel(R) Core(TM) i7-4710HQ CPU @ 2.50GHz 2.50 HGz and 8GB Ram:
 
 ![Benchmark Wizzard Iris vs gin vs martini](http://kataras.github.io/iris/assets/benchmarks_all.png)
 
+
+
+This graph was maden by comparison of the 6 most famous frameworks, if you want to see comparison of all known web go frameworks you have to visit [this folder](https://github.com/kataras/iris/tree/development/benchmark) 
 
 ## Principles of iris
 
@@ -436,6 +439,7 @@ Personally I use the external struct and the **func(c *iris.Context)** form .
  14. **WriteText(status int, contents string) & Text(contents string)**
 	 - WriteText: Writes plain text with a given http status to the client, it sets the Header with the correct content-type.
 	 - Text: Same as WriteTextbut you don't have to pass a status, it's defaulted to http.StatusOK (200).
+ 15. **ReadJSON(jsonObject interface{})
  15. **WriteJSON(status int, jsonObject interface{}) & JSON(jsonObject interface{}) returns error**
 	 - WriteJSON: Writes json which is converted from structed object(s) with a given http status to the client, it sets the Header with the correct content-type. If something goes wrong then it's returned value which is an error type is not nil. No indent.
  16.  **RenderJSON(jsonObjects ...interface{}) returns error**
