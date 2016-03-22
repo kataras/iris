@@ -37,7 +37,9 @@ import (
 // MemoryRouter is the cached version of the Router
 type MemoryRouter struct {
 	*Router
-	cache *MemoryRouterCache
+	cache         IRouterCache
+	maxitems      int
+	resetDuration time.Duration
 }
 
 // NewMemoryRouter returns a MemoryRouter
@@ -45,15 +47,20 @@ type MemoryRouter struct {
 func NewMemoryRouter(underlineRouter *Router, maxitems int, resetDuration time.Duration) *MemoryRouter {
 	r := &MemoryRouter{}
 	r.Router = underlineRouter
-	//moved to the station.go r.Router = NewRouter(station) // extends all methods from the standar router
-	r.cache = NewMemoryRouterCache()
-	r.cache.SetMaxItems(maxitems) //no max items just clear every 5 minutes
-	ticker := NewTicker()
-	ticker.OnTick(r.cache.OnTick) // registers the cache to the ticker
-	ticker.Start(resetDuration)   //starts the ticker now
-
+	r.maxitems = maxitems
+	r.resetDuration = resetDuration
+	// CACHE IS CREATED DYNAMICLY BEFORE THE LISTEN ON THE STATION_PREPARE_PLUGIN
 	return r
 }
+
+func (r *MemoryRouter) SetCache(cache IRouterCache) {
+	r.cache = cache
+	r.cache.SetMaxItems(r.maxitems)
+	ticker := NewTicker()
+	ticker.OnTick(r.cache.OnTick) // registers the cache to the ticker
+	ticker.Start(r.resetDuration) //starts the ticker now
+}
+
 func (r MemoryRouter) getType() RouterType {
 	return Memory
 }
@@ -70,7 +77,7 @@ func (r *MemoryRouter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ctx := r.station.pool.Get().(*Context)
+	ctx := r.getStation().pool.Get().(*Context)
 	ctx.Reset(res, req)
 
 	if r.processRequest(ctx) {
@@ -78,7 +85,8 @@ func (r *MemoryRouter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		r.cache.AddItem(method, path, ctx.Clone())
 	}
 
-	r.station.pool.Put(ctx)
+	r.getStation().pool.Put(ctx)
+
 }
 
 type MemoryRouterDomain struct {
@@ -95,25 +103,25 @@ func (r MemoryRouterDomain) getType() RouterType {
 func (r *MemoryRouterDomain) processRequest(ctx *Context) bool {
 	reqPath := ctx.Request.URL.Path
 	method := ctx.Request.Method
-	gLen := len(r.garden)
+	gLen := len(r.getGarden())
 	for i := 0; i < gLen; i++ {
-		if r.garden[i].hosts {
+		if r.getGarden()[i].hosts {
 			//it's expecting host
-			if r.garden[i].domain != ctx.Request.Host {
+			if r.getGarden()[i].domain != ctx.Request.Host {
 				//but this is not the host we are waiting, so just continue
 				continue
 			}
 			reqPath = ctx.Request.Host + reqPath
 		}
 
-		if r.garden[i].method == method {
-			middleware, params, mustRedirect := r.garden[i].rootBranch.GetBranch(reqPath, ctx.Params) // pass the parameters here for 0 allocation
+		if r.getGarden()[i].method == method {
+			middleware, params, mustRedirect := r.getGarden()[i].rootBranch.GetBranch(reqPath, ctx.Params) // pass the parameters here for 0 allocation
 			if middleware != nil {
 				ctx.Params = params
 				ctx.middleware = middleware
 				ctx.Do()
 				return true
-			} else if mustRedirect && r.station.options.PathCorrection {
+			} else if mustRedirect && r.getStation().options.PathCorrection {
 				pathLen := len(reqPath)
 				//first of all checks if it's the index only slash /
 				if pathLen <= 1 {
@@ -162,24 +170,21 @@ func (r *MemoryRouterDomain) processRequest(ctx *Context) bool {
 }
 
 func (r *MemoryRouterDomain) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	//16/03/2016 Tried to get/pass only middlewares but it slow me 8k nanoseconds, so I re-do it as I had before.
 	method := req.Method
 
-	path := req.URL.Path + req.Host //5k nanoseconds down from this oparation
-	//change at 21/03/2016, now we are caching all routes either they are attached to the domain or no, with their host all of them.
-
+	path := req.URL.Path + req.Host
 	if ctx := r.cache.GetItem(method, path); ctx != nil {
 		ctx.Redo(res, req)
 		return
 	}
 
-	ctx := r.station.pool.Get().(*Context)
+	ctx := r.getStation().pool.Get().(*Context)
 	ctx.Reset(res, req)
 
 	if r.processRequest(ctx) {
-		//if something found and served then add it's clone to the cache
+		//if something found and served then add it's context's clone to the cache
 		r.cache.AddItem(method, path, ctx.Clone())
 	}
 
-	r.station.pool.Put(ctx)
+	r.getStation().pool.Put(ctx)
 }

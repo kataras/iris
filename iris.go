@@ -200,3 +200,15 @@ func Errors() IHTTPErrors {
 func Templates(pathGlob string) {
 	DefaultStation.Templates(pathGlob)
 }
+
+// OptimusPrime, YOU MUST RUN IT ONLY IF YOU DON'T USE iris.Listen or iris.Serve() method
+func OptimusPrime() {
+	DefaultStation.OptimusPrime()
+}
+
+// Serve is used instead of the iris.Listen
+// eg  http.ListenAndServe(":80",iris.Serve()) if you don't want to use iris.Listen(":80") ( you can't use iris because its package variable it's golang limitation)
+func Serve() http.Handler {
+	OptimusPrime()
+	return DefaultStation.IRouter
+}
