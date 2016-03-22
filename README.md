@@ -51,6 +51,9 @@ With Intel(R) Core(TM) i7-4710HQ CPU @ 2.50GHz 2.50 HGz and 8GB Ram:
 ![Benchmark Wizzard Iris vs gin vs martini](http://kataras.github.io/iris/assets/benchmarks_all.png)
 
 
+
+This graph was maden by comparison of the 6 most famous frameworks, if you want to see comparison of all known web go frameworks you have to visit [this folder](https://github.com/kataras/iris/tree/development/benchmarks) 
+
 ## Principles of iris
 
 - Easy to use
