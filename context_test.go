@@ -29,6 +29,7 @@ package iris
 import (
 	"net/http"
 	"testing"
+	"strings"
 )
 
 func TestContext_GetCookie(t *testing.T) {
@@ -59,4 +60,17 @@ func TestContext_GetCookie_Err(t *testing.T) {
 		t.Fatal("GetCookie should be empty, but returned: \"", value, "\"")
 	}
 
+}
+
+func TestContext_ReadJSON(t *testing.T) {
+
+	content := strings.NewReader(`{"first_name":"John", "last_name": "Doe"}`)
+	request, _ := http.NewRequest("POST", "/", content)
+	context := &Context{Request: request}
+
+	var obj map[string]string
+	context.ReadJSON(&obj)
+	if obj["first_name"] != "John" || obj["last_name"] != "Doe" {
+		t.Fatalf("ReadJSON should return \"John\" and \"Doe\", but returned: %s and %s", obj["first_name"], obj["last_name"])
+	}
 }

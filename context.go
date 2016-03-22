@@ -31,6 +31,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"strconv"
@@ -73,6 +74,7 @@ type IContext interface {
 	WriteText(httpStatus int, text string)
 	Text(text string)
 	RenderJSON(httpStatus int, jsonStructs ...interface{}) error
+	ReadJSON(jsonObject interface{}) error
 	WriteJSON(httpStatus int, jsonObjectOrArray interface{}) error
 	JSON(jsonObjectOrArray interface{}) error
 	WriteXML(httpStatus int, xmlStructs ...interface{}) error
@@ -423,6 +425,20 @@ func (ctx *Context) WriteJSON(httpStatus int, jsonObjectOrArray interface{}) err
 //JSON calls the WriteJSON with the 200 http status ok
 func (ctx *Context) JSON(jsonObjectOrArray interface{}) error {
 	return ctx.WriteJSON(http.StatusOK, jsonObjectOrArray)
+}
+
+// ReadJSON reads JSON from request's body
+func (ctx *Context) ReadJSON(jsonObject interface{}) error {
+	data, err := ioutil.ReadAll(ctx.Request.Body)
+	if err != nil { return err }
+
+	defer ctx.Request.Body.Close()
+
+	decoder := json.NewDecoder(strings.NewReader(string(data)))
+	err = decoder.Decode(jsonObject)
+  if err != io.EOF { return err	}
+
+	return nil
 }
 
 // WriteXML writes xml which is converted from struct(s) with a http status which they passed to the function via parameters
