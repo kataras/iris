@@ -50,3 +50,38 @@ Intel(R) Core(TM) i7-4710HQ CPU @ 2.50Ghz 2.50Ghz
 8.00 GB RAM
 
 64-bit Operating System
+
+---------------------------------------
+
+> Note that on Output log: the last line is the next's first line. You can skip the first 2 images, they show the loading of the frameworks, . 
+
+---------------------------------------
+![1](https://raw.githubusercontent.com/kataras/iris/development/benchmark/1.png)
+
+![2](https://raw.githubusercontent.com/kataras/iris/development/benchmark/2.png)
+
+![3](https://raw.githubusercontent.com/kataras/iris/development/benchmark/3.png)
+
+![4](https://raw.githubusercontent.com/kataras/iris/development/benchmark/4.png)
+
+![5](https://raw.githubusercontent.com/kataras/iris/development/benchmark/5.png)
+
+![6](https://raw.githubusercontent.com/kataras/iris/development/benchmark/6.png)
+
+![7](https://raw.githubusercontent.com/kataras/iris/development/benchmark/7.png)
+
+![8](https://raw.githubusercontent.com/kataras/iris/development/benchmark/8.png)
+
+![9](https://raw.githubusercontent.com/kataras/iris/development/benchmark/9.png)
+
+![10](https://raw.githubusercontent.com/kataras/iris/development/benchmark/10.png)
+
+![11](https://raw.githubusercontent.com/kataras/iris/development/benchmark/11.png)
+
+![12](https://raw.githubusercontent.com/kataras/iris/development/benchmark/12.png)
+
+![13](https://raw.githubusercontent.com/kataras/iris/development/benchmark/13.png)
+
+![14](https://raw.githubusercontent.com/kataras/iris/development/benchmark/14.png)
+
+
