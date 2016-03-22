@@ -304,7 +304,8 @@ func main() {
 		})
 
 	iris.Listen(":8080")
-	//or log.Fatal(http.ListenAndServe(":8080", iris))
+	//or 
+	//log.Fatal(http.ListenAndServe(":8080", iris.Serve()))
 }
 
 ```

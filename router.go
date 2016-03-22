@@ -57,6 +57,7 @@ type IRouter interface {
 	getGarden() Garden
 	setGarden(g Garden)
 	getType() RouterType
+	getStation() *Station
 	Errors() IHTTPErrors //at the main Router struct this is managed by the MiddlewareSupporter
 	// ServeHTTP finds and serves a route by it's request
 	// If no route found, it sends an http status 404
@@ -81,10 +82,20 @@ func NewRouter(station *Station) *Router {
 	r.IParty = NewParty("/", r.station, nil)
 	return r
 }
-func (r *Router) getGarden() Garden  { return r.garden }
-func (r *Router) setGarden(g Garden) { r.garden = g } //every plant the garden is set itself
-func (r Router) getType() RouterType {
+func (r *Router) getGarden() Garden {
+	return r.garden
+}
+
+func (r *Router) setGarden(g Garden) {
+	r.garden = g
+} //every plant we make to the garden, garden sets itself
+
+func (r *Router) getType() RouterType {
 	return Normal
+}
+
+func (r *Router) getStation() *Station {
+	return r.station
 }
 
 // SetErrors sets a HTTPErrors object to the router

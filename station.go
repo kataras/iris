@@ -28,8 +28,10 @@ package iris
 
 import (
 	"html/template"
+	"net/http"
 	"net/http/pprof"
 	"os"
+	"runtime"
 	"sync"
 	"time"
 )
@@ -44,6 +46,9 @@ type IStation interface {
 	Plugin(IPlugin) error
 	GetPluginContainer() IPluginContainer
 	GetTemplates() *template.Template
+	//yes we need that again if no .Listen called and you use other server, you have to call .Build() before
+	OptimusPrime()
+	HasOptimized() bool
 }
 
 type (
@@ -96,6 +101,8 @@ type (
 		pool            sync.Pool
 		options         StationOptions
 		pluginContainer *PluginContainer
+		//it's true if OptimusPrime has run one time
+		optimized bool
 	}
 )
 
@@ -137,8 +144,6 @@ func newStation(options StationOptions) *Station {
 		return &Context{station: s, Params: make([]PathParameter, 0)}
 	}}
 
-	s.Plugin(preparePlugin{})
-
 	return s
 }
 
@@ -155,10 +160,70 @@ func (s Station) GetTemplates() *template.Template {
 	return s.templates
 }
 
+// OptimusPrime make the best last optimizations to make iris the faster framework out there
+// This function is called automatically on .Listen, but if you don't use .Listen or .Serve,
+// then YOU MUST CALL .OptimusPrime before run a server
+func (s *Station) OptimusPrime() {
+	if !s.optimized {
+		routerHasHosts := func() bool {
+			gLen := len(s.IRouter.getGarden())
+			for i := 0; i < gLen; i++ {
+				if s.IRouter.getGarden()[i].hosts {
+					return true
+				}
+			}
+			return false
+		}()
+
+		// For performance only,in order to not check at runtime for hosts and subdomains, I think it's better to do this:
+		if routerHasHosts {
+			switch s.IRouter.getType() {
+			case Normal:
+				s.IRouter = NewRouterDomain(s.IRouter.(*Router))
+				break
+			case Memory:
+				s.IRouter = NewMemoryRouterDomain(s.IRouter.(*MemoryRouter))
+				break
+			}
+		}
+
+		//check for memoryrouter and use syncmemoryrouter if cores > 1
+		if s.IRouter.getType() == Memory || s.IRouter.getType() == MemoryDomain {
+			r := s.IRouter.(*MemoryRouter)
+			var cache IRouterCache
+
+			cache = NewMemoryRouterCache()
+			//check if we have more than one core then use theMemoryRouterCache,otherwise use the SyncMemoryRouterCache and it's underline MemoryRouterCache
+			if runtime.GOMAXPROCS(-1) > 1 {
+				cache = NewSyncMemoryRouterCache(cache.(*MemoryRouterCache))
+				//println("SYNCED MULTI_CORE CACHE WITH CORES: ", runtime.GOMAXPROCS(-1))
+			}
+
+			r.SetCache(cache)
+		}
+
+		s.optimized = true
+	}
+
+}
+
+// HasOptimized returns if the station has optimized ( OptimusPrime run once)
+func (s *Station) HasOptimized() bool {
+	return s.optimized
+}
+
+// Serve is used instead of the iris.Listen
+// eg  http.ListenAndServe(":80",iris.Serve()) if you don't want to use iris.Listen(":80") ( you can't use iris because its package variable it's golang limitation)
+func (s *Station) Serve() http.Handler {
+	s.OptimusPrime()
+	return s.IRouter
+}
+
 // Listen starts the standalone http server
 // which listens to the fullHostOrPort parameter which as the form of
 // host:port or just port
 func (s *Station) Listen(fullHostOrPort ...string) error {
+	s.OptimusPrime()
 	s.pluginContainer.DoPreListen(s)
 	// I moved the s.Server here because we want to be able to change the Router before listen (with plugins)
 	// set the server with the server handler
@@ -175,6 +240,7 @@ func (s *Station) Listen(fullHostOrPort ...string) error {
 // which listens to the fullHostOrPort parameter which as the form of
 // host:port or just port
 func (s *Station) ListenTLS(fullAddress string, certFile, keyFile string) error {
+	s.OptimusPrime()
 	s.pluginContainer.DoPreListen(s)
 	// I moved the s.Server here because we want to be able to change the Router before listen (with plugins)
 	// set the server with the server handler

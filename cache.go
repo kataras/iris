@@ -45,11 +45,16 @@ type MemoryRouterCache struct {
 	//the map in this case is the faster way, I tried with array of structs but it's 100 times slower on > 1 core because of async goroutes on addItem I sugges, so we keep the map
 	items    map[string]map[string]*Context
 	MaxItems int
+}
+
+type SyncMemoryRouterCache struct {
+	*MemoryRouterCache
 	//we need this mutex if we have running the iris at > 1 core, because we use map but maybe at the future I will change it.
-	mu *sync.Mutex
+	mu sync.Mutex
 }
 
 var _ IRouterCache = &MemoryRouterCache{}
+var _ IRouterCache = &SyncMemoryRouterCache{}
 
 // SetMaxItems receives int and set max cached items to this number
 func (mc *MemoryRouterCache) SetMaxItems(_itemslen int) {
@@ -58,13 +63,25 @@ func (mc *MemoryRouterCache) SetMaxItems(_itemslen int) {
 
 // NewMemoryRouterCache returns the cache for a router, is used on the MemoryRouter
 func NewMemoryRouterCache() *MemoryRouterCache {
-	mc := &MemoryRouterCache{mu: &sync.Mutex{}, items: make(map[string]map[string]*Context, 0)}
+	mc := &MemoryRouterCache{items: make(map[string]map[string]*Context, 0)}
+	mc.resetBag()
+	return mc
+}
+
+// NewMemoryRouterCache returns the cache for a router, it's based on the one-thread MemoryRouterCache
+func NewSyncMemoryRouterCache(underlineCache *MemoryRouterCache) *SyncMemoryRouterCache {
+	mc := &SyncMemoryRouterCache{MemoryRouterCache: underlineCache, mu: sync.Mutex{}}
 	mc.resetBag()
 	return mc
 }
 
 // AddItem adds an item to the bag/cache, is a goroutine.
 func (mc *MemoryRouterCache) AddItem(method, url string, ctx *Context) {
+	mc.items[method][url] = ctx
+}
+
+// AddItem adds an item to the bag/cache, is a goroutine.
+func (mc *SyncMemoryRouterCache) AddItem(method, url string, ctx *Context) {
 	go func(method, url string, c *Context) { //for safety on multiple fast calls
 		mc.mu.Lock()
 		mc.items[method][url] = c
@@ -74,7 +91,15 @@ func (mc *MemoryRouterCache) AddItem(method, url string, ctx *Context) {
 
 // GetItem returns an item from the bag/cache, if not exists it returns just nil.
 func (mc *MemoryRouterCache) GetItem(method, url string) *Context {
-	//Don't check for anything else, make it as fast as it can be.
+	if ctx := mc.items[method][url]; ctx != nil {
+		return ctx
+	}
+
+	return nil
+}
+
+// GetItem returns an item from the bag/cache, if not exists it returns just nil.
+func (mc *SyncMemoryRouterCache) GetItem(method, url string) *Context {
 	mc.mu.Lock()
 	if ctx := mc.items[method][url]; ctx != nil {
 		mc.mu.Unlock()
@@ -84,11 +109,8 @@ func (mc *MemoryRouterCache) GetItem(method, url string) *Context {
 	return nil
 }
 
-// OnTick is the implementation of the ITick
-// it makes the MemoryRouterCache a ticker's listener
-func (mc *MemoryRouterCache) OnTick() {
+func (mc *MemoryRouterCache) DoOnTick() {
 
-	mc.mu.Lock()
 	if mc.MaxItems == 0 {
 		//just reset to complete new maps all methods
 		mc.resetBag()
@@ -101,7 +123,19 @@ func (mc *MemoryRouterCache) OnTick() {
 			}
 		}
 	}
+}
 
+// OnTick is the implementation of the ITick
+// it makes the MemoryRouterCache a ticker's listener
+func (mc *MemoryRouterCache) OnTick() {
+	mc.DoOnTick()
+}
+
+// OnTick is the implementation of the ITick
+// it makes the MemoryRouterCache a ticker's listener
+func (mc *SyncMemoryRouterCache) OnTick() {
+	mc.mu.Lock()
+	mc.DoOnTick()
 	mc.mu.Unlock()
 }
 
