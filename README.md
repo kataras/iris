@@ -15,7 +15,7 @@ Iris is a very minimal but flexible go web framework  providing arobust set of f
 ## Table of Contents
 
 - [Install](#install)
-- [Benchmarks](#benchmarks)
+- [Benchmark](#benchmark)
 - [Principles](#principles-of-iris)
 - [Features](#features)
 - [Introduction](#introduction)
@@ -44,12 +44,15 @@ Iris is still in development status, in order to have the latest version update 
 $ go get -u github.com/kataras/iris
 ```
 
-## Benchmarks
+## Benchmark
 
 With Intel(R) Core(TM) i7-4710HQ CPU @ 2.50GHz 2.50 HGz and 8GB Ram:
 
 ![Benchmark Wizzard Iris vs gin vs martini](http://kataras.github.io/iris/assets/benchmarks_all.png)
 
+
+
+This graph was maden by comparison of the 6 most famous frameworks, if you want to see comparison of all known web go frameworks you have to visit [this folder](https://github.com/kataras/iris/tree/development/benchmark) 
 
 ## Principles of iris
 
@@ -525,7 +528,8 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 ## Todo
 - [x] Provide a lighter, with less using bytes,  to save middleware for a route.
 - [x] Create examples in this repository.
-- [ ] Subdomains supports with the same syntax as iris.Get, iris.Post ...
+- [x] Subdomains supports with the same syntax as iris.Get, iris.Post ...
+- [ ] Provide a more detailed benchmark table to the README with all go web frameworks that I know, no just the 6 most famous
 - [ ] Convert useful middlewares out there into Iris middlewares, or contact with their authors to do so.
 - [ ] Create an easy websocket api.
 - [ ] Create a mechanism that scan for Typescript files, compile them on server startup and serve them.
