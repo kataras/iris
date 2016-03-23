@@ -57,9 +57,13 @@ type IContext interface {
 	ServeFile(path string)
 	GetCookie(name string) string
 	SetCookie(name string, value string)
+	// Errors
 	NotFound()
-	SendStatus(statusCode int, message string)
 	Panic()
+	EmitError(statusCode int)
+	StopExecution()
+	//
+	SendStatus(statusCode int, message string)
 	RequestIP() string
 	Close()
 	End()
@@ -177,7 +181,6 @@ func (ctx *Context) URLParamInt(key string) (int, error) {
 
 // Write writes a string via the context's ResponseWriter
 func (ctx *Context) Write(format string, a ...interface{}) {
-
 	io.WriteString(ctx.ResponseWriter, fmt.Sprintf(format, a...))
 }
 
@@ -202,12 +205,34 @@ func (ctx *Context) SetCookie(name string, value string) {
 	ctx.Request.AddCookie(c)
 }
 
+// Error handling
+
 // NotFound emits an error 404 to the client, using the custom http errors
-// if no custom errors provided then use the default http.NotFound
-// which is already registed nothing special to do here
+// if no custom errors provided then it sends the default http.NotFound
 func (ctx *Context) NotFound() {
-	ctx.station.Errors().Emit(404, ctx)
+	ctx.StopExecution()
+	ctx.station.EmitError(404, ctx)
 }
+
+// Panic stops the executions of the context and returns the registed panic handler
+// or if not, the default which is  500 http status to the client
+//
+// This function is useful when you use the recovery middleware, which is auto-executing the (custom, registed) 500 internal server error.
+func (ctx *Context) Panic() {
+	ctx.StopExecution()
+	ctx.station.EmitError(500, ctx)
+}
+
+// EmitError executes the custom error by the http status code passed to the function
+func (ctx *Context) EmitError(statusCode int) {
+	ctx.station.EmitError(statusCode, ctx)
+}
+
+func (ctx *Context) StopExecution() {
+	ctx.pos = stopExecutionPosition
+}
+
+//
 
 func (ctx *Context) Status(statusCode int) {
 	ctx.memoryResponseWriter.WriteHeader(statusCode)
@@ -221,12 +246,6 @@ func (ctx *Context) SendStatus(statusCode int, message string) {
 	r.Header().Set("X-Content-Type-Options", "nosniff")
 	ctx.Status(statusCode)
 	r.WriteString(message)
-}
-
-// Panic stops the executions of the context and returns a http status to the client
-func (ctx *Context) Panic() {
-	ctx.pos = stopExecutionPosition
-	ctx.SendStatus(http.StatusInternalServerError, "The server encountered an unexpected condition which prevented it from fulfilling the request.")
 }
 
 // RequestIP gets just the Remote Address from the client.

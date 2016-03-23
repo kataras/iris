@@ -39,9 +39,7 @@ type IErrorHandler interface {
 type IHTTPErrors interface {
 	GetByCode(httpStatus int) IErrorHandler
 	On(httpStatus int, handler HandlerFunc)
-	SetNotFound(handler HandlerFunc)
 	Emit(errCode int, ctx *Context)
-	NotFound(ctx *Context)
 }
 
 // ErrorHandler creates a handler which is responsible to send a particular error to the client
@@ -73,6 +71,13 @@ var _ IErrorHandler = &ErrorHandler{}
 
 // HTTPErrors is the struct which contains the handlers which will execute if http error occurs
 // One struct per Server instance, the meaning of this is that the developer can change the default error message and replace them with his/her own completely custom handlers
+//
+// Example of usage:
+// iris.OnError(405, func (ctx *iris.Context){ c.SendStatus(405,"Method not allowed!!!")})
+// and inside the handler which you have access to the current Context:
+// ctx.EmitError(405)
+// that is the circle, the httpErrors variable stays at the Station(via it's Router), sets from there and emits from a context,
+// but you can also emit directly from iris.Errors().Emit(405,ctx) if that's necessary
 type HTTPErrors struct {
 	//developer can do Errors.On(500, iris.Handler)
 	ErrorHanders []IErrorHandler
@@ -80,14 +85,16 @@ type HTTPErrors struct {
 
 var _ IHTTPErrors = &HTTPErrors{}
 
-// DefaultHTTPErrors creates and returns an instance of HTTPErrors with default handlers
-func DefaultHTTPErrors() IHTTPErrors {
+// defaultHTTPErrors creates and returns an instance of HTTPErrors with default handlers
+func defaultHTTPErrors() *HTTPErrors {
 	httperrors := new(HTTPErrors)
 	httperrors.ErrorHanders = make([]IErrorHandler, 0)
-	httperrors.SetNotFound(ErrorHandlerFunc(http.StatusNotFound, "404 not found"))
+	httperrors.On(http.StatusNotFound, ErrorHandlerFunc(http.StatusNotFound, "404 not found"))
+	httperrors.On(http.StatusInternalServerError, ErrorHandlerFunc(http.StatusInternalServerError, "The server encountered an unexpected condition which prevented it from fulfilling the request."))
 	return httperrors
 }
 
+// GetByCode returns the error handler by it's http status code
 func (he *HTTPErrors) GetByCode(httpStatus int) IErrorHandler {
 	if he == nil {
 		return nil
@@ -106,25 +113,12 @@ func (he *HTTPErrors) On(httpStatus int, handler HandlerFunc) {
 		return
 	}
 
-	/*	httpHandlerOfficialType := reflect.TypeOf((*http.Handler)(nil)).Elem()
-		if !reflect.TypeOf(handler).Implements(httpHandlerOfficialType) {
-			//it is not a http.Handler
-			//it is func(res,req) we will convert it to a handler using http.HandlerFunc
-			handler = ToHandlerFunc(handler.(func(res http.ResponseWriter, req *http.Request)))
-		}
-	*/
 	if errH := he.GetByCode(httpStatus); errH != nil {
 		errH.SetHandler(handler)
 	} else {
 		he.ErrorHanders = append(he.ErrorHanders, &ErrorHandler{code: httpStatus, handler: handler})
 	}
 
-}
-
-// SetNotFound this func could named it OnNotFound also, registers a custom StatusNotFound error 404 handler
-// Possible parameter: iris.Handler or iris.HandlerFunc(func(ctx *Context){})
-func (he *HTTPErrors) SetNotFound(handler HandlerFunc) {
-	he.On(http.StatusNotFound, handler)
 }
 
 // Emit executes the handler of the given error http status code
@@ -134,9 +128,4 @@ func (he *HTTPErrors) Emit(errCode int, ctx *Context) {
 		errHandler.GetHandler().Serve(ctx)
 
 	}
-}
-
-// NotFound emits the registed NotFound (404) custom (or not) handler
-func (he *HTTPErrors) NotFound(ctx *Context) {
-	he.Emit(http.StatusNotFound, ctx)
 }
