@@ -58,9 +58,18 @@ type IRouter interface {
 	setGarden(g Garden)
 	getType() RouterType
 	getStation() *Station
-	Errors() IHTTPErrors //at the main Router struct this is managed by the MiddlewareSupporter
-	// ServeHTTP finds and serves a route by it's request
-	// If no route found, it sends an http status 404
+	// Errors
+	Errors() IHTTPErrors
+	OnError(statusCode int, handlerFunc HandlerFunc)
+	// EmitError emits an error with it's http status code and the iris Context passed to the function
+	EmitError(statusCode int, ctx *Context)
+	// OnNotFound sets the handler for http status 404,
+	// default is a response with text: 'Not Found' and status: 404
+	OnNotFound(handlerFunc HandlerFunc)
+	// OnPanic sets the handler for http status 500,
+	// default is a response with text: The server encountered an unexpected condition which prevented it from fulfilling the request. and status: 500
+	OnPanic(handlerFunc HandlerFunc)
+	//
 	ServeHTTP(http.ResponseWriter, *http.Request)
 	processRequest(*Context) bool
 }
@@ -68,20 +77,21 @@ type IRouter interface {
 // Router is the router , one router per server.
 // Router contains the global middleware, the routes and a Mutex for lock and unlock on route prepare
 type Router struct {
-	station *Station
+	station    *Station
+	httpErrors *HTTPErrors
 	IParty
-	garden     Garden
-	httpErrors IHTTPErrors //the only reason of this is to pass into the route, which it need it to  passed it to Context, in order to  developer get the ability to perfom emit errors (eg NotFound) directly from context
+	garden Garden
 }
 
 var _ IRouter = &Router{}
 
 // NewRouter creates and returns an empty Router
 func NewRouter(station *Station) *Router {
-	r := &Router{station: station, httpErrors: DefaultHTTPErrors(), garden: make([]tree, 0, len(HTTPMethods.ANY))} // TODO: maybe +1 for any which is just empty tree ""
+	r := &Router{station: station, httpErrors: defaultHTTPErrors(), garden: make([]tree, 0, len(HTTPMethods.ANY))} // TODO: maybe +1 for any which is just empty tree ""
 	r.IParty = NewParty("/", r.station, nil)
 	return r
 }
+
 func (r *Router) getGarden() Garden {
 	return r.garden
 }
@@ -98,15 +108,35 @@ func (r *Router) getStation() *Station {
 	return r.station
 }
 
-// SetErrors sets a HTTPErrors object to the router
-func (r *Router) SetErrors(httperr IHTTPErrors) {
-	r.httpErrors = httperr
-}
+// Error handling
 
-// Errors get the HTTPErrors from the router
+// Errors returns the object which is resposible for the error(s) handler(s)
 func (r *Router) Errors() IHTTPErrors {
 	return r.httpErrors
 }
+
+func (r *Router) OnError(statusCode int, handlerFunc HandlerFunc) {
+	r.httpErrors.On(statusCode, handlerFunc)
+}
+
+// EmitError emits an error with it's http status code and the iris Context passed to the function
+func (r *Router) EmitError(statusCode int, ctx *Context) {
+	r.httpErrors.Emit(statusCode, ctx)
+}
+
+// OnNotFound sets the handler for http status 404,
+// default is a response with text: 'Not Found' and status: 404
+func (r *Router) OnNotFound(handlerFunc HandlerFunc) {
+	r.OnError(http.StatusNotFound, handlerFunc)
+}
+
+// OnPanic sets the handler for http status 500,
+// default is a response with text: The server encountered an unexpected condition which prevented it from fulfilling the request. and status: 500
+func (r *Router) OnPanic(handlerFunc HandlerFunc) {
+	r.OnError(http.StatusInternalServerError, handlerFunc)
+}
+
+//
 
 func (r *Router) find(_tree tree, reqPath string, ctx *Context) bool {
 	middleware, params, mustRedirect := _tree.rootBranch.GetBranch(reqPath, ctx.Params) // pass the parameters here for 0 allocation

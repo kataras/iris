@@ -27,10 +27,11 @@
 package middleware
 
 import (
-	"github.com/kataras/iris"
 	"io"
 	"os"
 	"time"
+
+	"github.com/kataras/iris"
 )
 
 type recovery struct {
@@ -42,6 +43,7 @@ func (r recovery) Serve(ctx *iris.Context) {
 	defer func() {
 		if err := recover(); err != nil {
 			r.out.Write([]byte("[" + time.Now().String() + "]Recovery from panic \n"))
+			//ctx.Panic just sends  http status 500 by default, but you can change it by: iris.OnPanic(func( c *iris.Context){})
 			ctx.Panic()
 		}
 	}()

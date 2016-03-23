@@ -58,6 +58,7 @@ type IParty interface {
 	Any(path string, handlersFn ...HandlerFunc)
 	Party(path string) IParty // Each party can have a party too
 	getRoot() IParty
+	getPath() string
 	isTheRoot() bool
 	getMiddleware() Middleware
 }
@@ -115,6 +116,10 @@ func (p *GardenParty) getMiddleware() Middleware {
 	return p.Middleware
 }
 
+func (p GardenParty) getPath() string {
+	return p.rootPath
+}
+
 // Handle registers a route to the server's router
 func (p *GardenParty) Handle(method string, registedPath string, handlers ...Handler) {
 	registedPath = p.rootPath + registedPath
@@ -131,9 +136,12 @@ func (p *GardenParty) Handle(method string, registedPath string, handlers ...Han
 
 	tempHandlers := p.Middleware
 
+	//println(registedPath, " party middleware len : ", len(tempHandlers))
+
 	// from top to bottom -->||<--
 	//check for root-global middleware WHEN THIS PARTY IS NOT THE ROOT, because if it's the Middleware already setted on the constructor NewParty)
-	if p.isTheRoot() == false && len(rootParty.getMiddleware()) > 0 {
+	if rootParty.isTheRoot() == false && p.isTheRoot() == false && len(rootParty.getMiddleware()) > 0 {
+		//println(registedPath, " is not the root and it's rootParty which is: ", rootParty.getPath(), "has ", len(rootParty.getMiddleware()), " handlers")
 		//if global middlewares are registed then push them to this route.
 		tempHandlers = append(rootParty.getMiddleware(), tempHandlers...)
 	}
@@ -143,6 +151,7 @@ func (p *GardenParty) Handle(method string, registedPath string, handlers ...Han
 		handlers = append(tempHandlers, handlers...)
 	}
 
+	//println(" so the len of registed ", registedPath, " of handlers is: ", len(handlers))
 	route := NewRoute(registedPath, handlers)
 
 	p.station.GetPluginContainer().DoPreHandle(method, route)
