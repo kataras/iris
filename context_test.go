@@ -28,6 +28,7 @@ package iris
 
 import (
 	"net/http"
+	"encoding/xml"
 	"strings"
 	"testing"
 )
@@ -75,5 +76,31 @@ func TestContext_ReadJSON(t *testing.T) {
 	context.ReadJSON(&obj)
 	if obj["first_name"] != "John" || obj["last_name"] != "Doe" {
 		t.Fatalf("ReadJSON should return \"John\" and \"Doe\", but returned: %s and %s", obj["first_name"], obj["last_name"])
+	}
+}
+
+func TestContext_ReadXML(t *testing.T) {
+
+	type Contact struct {
+		XMLName xml.Name `xml:"contact"`
+		FirstName string `xml:"first_name"`
+		LastName  string `xml:"last_name"`
+	}
+
+	content := strings.NewReader(`
+		<?xml version="1.0"?>
+		<contact>
+			<first_name>John</first_name>
+			<last_name>Doe</last_name>
+		</contact>
+	`)
+
+	request, _ := http.NewRequest("POST", "/", content)
+	context := &Context{Request: request}
+
+	var obj Contact
+	context.ReadXML(&obj)
+	if obj.FirstName != "John" || obj.LastName != "Doe" {
+		t.Fatalf("ReadXML should return \"John\" and \"Doe\", but returned: %s and %s", obj.FirstName, obj.LastName)
 	}
 }
