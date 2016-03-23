@@ -32,7 +32,8 @@ import (
 )
 
 type IMemoryRouter interface {
-	SetCache(IRouterCache)
+	setCache(IRouterCache)
+	hasCache() bool
 }
 
 // MemoryRouter is the cached version of the Router
@@ -41,6 +42,7 @@ type MemoryRouter struct {
 	cache         IRouterCache
 	maxitems      int
 	resetDuration time.Duration
+	hasStarted    bool
 }
 
 // NewMemoryRouter returns a MemoryRouter
@@ -54,12 +56,17 @@ func NewMemoryRouter(underlineRouter *Router, maxitems int, resetDuration time.D
 	return r
 }
 
-func (r *MemoryRouter) SetCache(cache IRouterCache) {
+func (r *MemoryRouter) setCache(cache IRouterCache) {
 	r.cache = cache
 	r.cache.SetMaxItems(r.maxitems)
 	ticker := NewTicker()
 	ticker.OnTick(r.cache.OnTick) // registers the cache to the ticker
 	ticker.Start(r.resetDuration) //starts the ticker now
+	r.hasStarted = true
+}
+
+func (r *MemoryRouter) hasCache() bool {
+	return r.cache != nil && r.hasStarted
 }
 
 func (r MemoryRouter) getType() RouterType {

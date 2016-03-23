@@ -160,44 +160,42 @@ func (s Station) GetTemplates() *template.Template {
 	return s.templates
 }
 
-// OptimusPrime make the best last optimizations to make iris the faster framework out there
-// This function is called automatically on .Listen, but if you don't use .Listen or .Serve,
-// then YOU MUST CALL .OptimusPrime before run a server
-func (s *Station) OptimusPrime() {
-	if !s.optimized {
-		routerHasHosts := func() bool {
-			gLen := len(s.IRouter.getGarden())
-			for i := 0; i < gLen; i++ {
-				if s.IRouter.getGarden()[i].hosts {
-					return true
-				}
-			}
-			return false
-		}()
-
-		// For performance only,in order to not check at runtime for hosts and subdomains, I think it's better to do this:
-		if routerHasHosts {
-			switch s.IRouter.getType() {
-			case Normal:
-				s.IRouter = NewRouterDomain(s.IRouter.(*Router))
-				break
-			case Memory:
-				s.IRouter = NewMemoryRouterDomain(s.IRouter.(*MemoryRouter))
-				break
+func (s *Station) forceOptimusPrime() {
+	routerHasHosts := func() bool {
+		gLen := len(s.IRouter.getGarden())
+		for i := 0; i < gLen; i++ {
+			if s.IRouter.getGarden()[i].hosts {
+				return true
 			}
 		}
+		return false
+	}()
 
-		//check for memoryrouter and use syncmemoryrouter if cores > 1
-		var r IMemoryRouter
-		routerType := s.IRouter.getType()
-		if routerType == Memory || routerType == MemoryDomain {
-			if routerType == Memory {
-				r = s.IRouter.(*MemoryRouter)
-			} else if routerType == MemoryDomain {
-				r = s.IRouter.(*MemoryRouterDomain)
-			} else {
-				panic("[Iris] From Station.OptimisPrime, unsupported Router, please post this as issue at github.com/kataras/iris")
-			}
+	// For performance only,in order to not check at runtime for hosts and subdomains, I think it's better to do this:
+	if routerHasHosts {
+		switch s.IRouter.getType() {
+		case Normal:
+			s.IRouter = NewRouterDomain(s.IRouter.(*Router))
+			break
+		case Memory:
+			s.IRouter = NewMemoryRouterDomain(s.IRouter.(*MemoryRouter))
+			break
+		}
+	}
+
+	//check for memoryrouter and use syncmemoryrouter if cores > 1
+	var r IMemoryRouter
+	routerType := s.IRouter.getType()
+	if routerType == Memory || routerType == MemoryDomain {
+		if routerType == Memory {
+			r = s.IRouter.(*MemoryRouter)
+		} else if routerType == MemoryDomain {
+			r = s.IRouter.(*MemoryRouterDomain)
+		} else {
+			panic("[Iris] From Station.OptimisPrime, unsupported Router, please post this as issue at github.com/kataras/iris")
+		}
+
+		if !r.hasCache() {
 			var cache IRouterCache
 
 			cache = NewMemoryRouterCache()
@@ -207,10 +205,18 @@ func (s *Station) OptimusPrime() {
 				//println("SYNCED MULTI_CORE CACHE WITH CORES: ", runtime.GOMAXPROCS(-1))
 			}
 
-			r.SetCache(cache)
+			r.setCache(cache)
 		}
+	}
+	s.optimized = true
+}
 
-		s.optimized = true
+// OptimusPrime make the best last optimizations to make iris the faster framework out there
+// This function is called automatically on .Listen, but if you don't use .Listen or .Serve,
+// then YOU MUST CALL .OptimusPrime before run a server
+func (s *Station) OptimusPrime() {
+	if !s.optimized {
+		s.forceOptimusPrime()
 	}
 
 }
