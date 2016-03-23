@@ -439,24 +439,28 @@ Personally I use the external struct and the **func(c *iris.Context)** form .
  14. **WriteText(status int, contents string) & Text(contents string)**
 	 - WriteText: Writes plain text with a given http status to the client, it sets the Header with the correct content-type.
 	 - Text: Same as WriteTextbut you don't have to pass a status, it's defaulted to http.StatusOK (200).
- 15. **WriteJSON(status int, jsonObject interface{}) & JSON(jsonObject interface{}) returns error**
+ 15. **ReadJSON(jsonObject interface{}) error**
+ 	 - ReadJSON: reads the request's body content and parses it, assigning the result into jsonObject passed by argument. Don't forget to pass the argument as reference.
+ 16. **WriteJSON(status int, jsonObject interface{}) & JSON(jsonObject interface{}) returns error**
 	 - WriteJSON: Writes json which is converted from structed object(s) with a given http status to the client, it sets the Header with the correct content-type. If something goes wrong then it's returned value which is an error type is not nil. No indent.
- 16.  **RenderJSON(jsonObjects ...interface{}) returns error**
+ 17.  **RenderJSON(jsonObjects ...interface{}) returns error**
 	 - RenderJSON: Same as WriteJSON & JSON but with Indent (formated json)
 	 - JSON: Same as WriteJSON but you don't have to pass a status, it's defaulted to http.StatusOK (200).
- 17. **WriteXML(status int, xmlStructs ...interface{}) & XML(xmlStructs ...interface{}) returns error**
+ 18. **ReadXML(xmlObject interface{}) error**
+ 	 - ReadXML: reads the request's body and parses it, assigin the result into xmlObject passed by argument.
+ 19. **WriteXML(status int, xmlStructs ...interface{}) & XML(xmlStructs ...interface{}) returns error**
 	 - WriteXML: Writes writes xml which is converted from struct(s) with a given http status to the client, it sets the Header with the correct content-type. If something goes wrong then it's returned value which is an error type is not nil.
 	 - XML: Same as WriteXML but you don't have to pass a status, it's defaulted to http.StatusOK (200).
- 18. **RenderFile(file string, pageContext interface{}) returns error**
+ 20. **RenderFile(file string, pageContext interface{}) returns error**
 	 - RenderFile: Renders a file by its name (which a file is saved to the template cache) and a page context passed to the function, default http status is http.StatusOK(200) if the template was found, otherwise http.StatusNotFound(404). If something goes wrong then it's returned value which is an error type is not nil.
- 19. **Render(pageContext interface{})  returns error**
+ 21. **Render(pageContext interface{})  returns error**
 	 - Render: Renders the root file template and a context passed to the function, default http status is http.StatusOK(200) if the template was found, otherwise http.StatusNotFound(404). If something goes wrong then it's returned value which is an error type is not nil.
 --- *Note:  We will learn how to add templates at the next chapters*.
 
- 20. **Next()**
+ 22. **Next()**
 	 - Next: calls all the next handler from the middleware stack, it used inside a middleware
 
- 21. **SendStatus(statusCode int, message string)**
+ 23. **SendStatus(statusCode int, message string)**
 	 - SendStatus:  writes a http statusCode with a text/plain message
 
 

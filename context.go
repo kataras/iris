@@ -445,6 +445,24 @@ func (ctx *Context) JSON(jsonObjectOrArray interface{}) error {
 	return ctx.WriteJSON(http.StatusOK, jsonObjectOrArray)
 }
 
+// ReadXML reads XML from request's body
+func (ctx Context) ReadXML(xmlObject interface{}) error {
+	data, err := ioutil.ReadAll(ctx.Request.Body)
+	if err != nil {
+		return err
+	}
+	defer ctx.Close()
+
+	decoder := xml.NewDecoder(strings.NewReader(string(data)))
+	err = decoder.Decode(xmlObject)
+
+	if err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
 // WriteXML writes xml which is converted from struct(s) with a http status which they passed to the function via parameters
 func (ctx *Context) WriteXML(httpStatus int, xmlStructs ...interface{}) error {
 	var _xmlDoc []byte
