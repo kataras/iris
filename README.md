@@ -26,7 +26,7 @@ Iris is a very minimal but flexible go web framework  providing arobust set of f
 - [Match anything and the Static serve handler](#match-anything-and-the-static-serve-handler)
 - [Declaring routes](#declaring-routes)
 - [Context](#context)
-- [Examples](https://github.com/kataras/iris/tree/master/_examples)
+- [Examples](https://github.com/kataras/iris/tree/examples)
 - [Third Party Middleware](#third-party-middleware)
 - [Contributors](#contributors)
 - [Community](#community)
@@ -52,7 +52,7 @@ With Intel(R) Core(TM) i7-4710HQ CPU @ 2.50GHz 2.50 HGz and 8GB Ram:
 
 
 
-This graph was maden by comparison of the 6 most famous frameworks, if you want to see comparison of all known web go frameworks you have to visit [this folder](https://github.com/kataras/iris/tree/development/benchmark) 
+This graph was maden by comparison of the 6 most famous frameworks, if you want to see comparison of all known web go frameworks you have to visit [this branch](https://github.com/kataras/iris/tree/benchmark) 
 
 ## Principles of iris
 
@@ -466,7 +466,7 @@ Personally I use the external struct and the **func(c *iris.Context)** form .
 
 **[[TODO chapters: Register custom error handlers, cache templates , create & use middleware]]**
 
-Inside the _[examples](https://github.com/kataras/iris/tree/master/_examples) folder you will find practical examples
+Inside the [examples](https://github.com/kataras/iris/tree/examples) branch you will find practical examples
 
 .
 
@@ -489,16 +489,16 @@ Iris has a middleware system to create it's own middleware and is at a state whi
 | Middleware | Author | Description | Tested |
 | -----------|--------|-------------|--------|
 | [sessions](https://github.com/kataras/iris/tree/master/sessions) | [Ported to Iris](https://github.com/kataras/iris/tree/master/sessions) | Session Management | [Yes](https://github.com/kataras/iris/tree/master/sessions) |
-| [Graceful](https://github.com/tylerb/graceful) | [Tyler Bunnell](https://github.com/tylerb) | Graceful HTTP Shutdown | [Yes](https://github.com/kataras/iris/tree/master/_examples/thirdparty_graceful) |
-| [gzip](https://github.com/kataras/iris/tree/master/middleware/gzip.go) | [Iris](https://github.com/kataras/iris) | GZIP response compression | [Yes](https://github.com/kataras/iris/tree/master/_examples/middleware_compression_gzip) |
+| [Graceful](https://github.com/tylerb/graceful) | [Tyler Bunnell](https://github.com/tylerb) | Graceful HTTP Shutdown | [Yes](https://github.com/kataras/iris/tree/examples/thirdparty_graceful) |
+| [gzip](https://github.com/kataras/iris/tree/master/middleware/gzip.go) | [Iris](https://github.com/kataras/iris) | GZIP response compression | [Yes](https://github.com/kataras/iris/tree/examples//middleware_compression_gzip) |
 | [RestGate](https://github.com/pjebs/restgate) | [Prasanga Siripala](https://github.com/pjebs) | Secure authentication for REST API endpoints | No |
-| [secure](https://github.com/unrolled/secure) | [Cory Jacobsen](https://github.com/unrolled) | Middleware that implements a few quick security wins | [Yes](https://github.com/kataras/iris/tree/master/_examples/thirdparty_secure) |
+| [secure](https://github.com/unrolled/secure) | [Cory Jacobsen](https://github.com/unrolled) | Middleware that implements a few quick security wins | [Yes](https://github.com/kataras/iris/tree/examples/thirdparty_secure) |
 | [JWT Middleware](https://github.com/auth0/go-jwt-middleware) | [Auth0](https://github.com/auth0) | Middleware checks for a JWT on the `Authorization` header on incoming requests and decodes it| No |
 | [binding](https://github.com/mholt/binding) | [Matt Holt](https://github.com/mholt) | Data binding from HTTP requests into structs | No |
 | [logrus](https://github.com/meatballhat/negroni-logrus) | [Dan Buch](https://github.com/meatballhat) | Logrus-based logger | No |
 | [render](https://github.com/unrolled/render) | [Cory Jacobsen](https://github.com/unrolled) | Render JSON, XML and HTML templates | No |
 | [gorelic](https://github.com/jingweno/negroni-gorelic) | [Jingwen Owen Ou](https://github.com/jingweno) | New Relic agent for Go runtime | No |
-| [pongo2](https://github.com/kataras/iris/tree/master/middleware/gzip.go) | [Iris](https://github.com/kataras/iris) | Middleware for [pongo2 templates](https://github.com/flosch/pongo2)| [Yes](https://github.com/kataras/iris/tree/master/_examples/pongo2_templates) |
+| [pongo2](https://github.com/kataras/iris/tree/master/middleware/gzip.go) | [Iris](https://github.com/kataras/iris) | Middleware for [pongo2 templates](https://github.com/flosch/pongo2)| [Yes](https://github.com/kataras/iris/tree/examples/pongo2_templates) |
 | [oauth2](https://github.com/goincremental/negroni-oauth2) | [David Bochenski](https://github.com/bochenski) | oAuth2 middleware | No |
 | [permissions2](https://github.com/xyproto/permissions2) | [Alexander Rødseth](https://github.com/xyproto) | Cookies, users and permissions | No |
 | [onthefly](https://github.com/xyproto/onthefly) | [Alexander Rødseth](https://github.com/xyproto) | Generate TinySVG, HTML and CSS on the fly | No |
@@ -524,16 +524,16 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 
 ## Guidelines
 - Never stop writing the docs.
-- Provide full README for _examples and thirdparty middleware examples.
+- Provide full README for examples branch and thirdparty middleware examples.
 - Before any commit run -count 50 -benchtime 30s , if performance stays on top then commit else find other way to do the same thing.
 - Notice the author of any thirdparty package before I try to port into iris myself, maybe they can do it better.
 - Notice author's of middleware, which I'm writing examples for,to take a look, if they don't want to exists in the Iris community, I have to respect them.
 
 ## Todo
 - [x] [Provide a lighter, with less using bytes,  to save middleware for a route.](https://github.com/kataras/iris/tree/development/handler.go)
-- [x] [Create examples in this repository.](https://github.com/kataras/iris/tree/development/_examples)
-- [x] [Subdomains supports with the same syntax as iris.Get, iris.Post ...](https://github.com/kataras/iris/tree/development/_examples/subdomains_simple)
-- [x] [Provide a more detailed benchmark table to the README with all go web frameworks that I know, no just the 6 most famous](https://github.com/kataras/iris/tree/development/benchmark)
+- [x] [Create examples.](https://github.com/kataras/iris/tree/examples)
+- [x] [Subdomains supports with the same syntax as iris.Get, iris.Post ...](https://github.com/kataras/iris/tree/examples/subdomains_simple)
+- [x] [Provide a more detailed benchmark table to the README with all go web frameworks that I know, no just the 6 most famous](https://github.com/kataras/iris/tree/benchmark)
 - [ ] Convert useful middlewares out there into Iris middlewares, or contact with their authors to do so.
 - [ ] Create an easy websocket api.
 - [ ] Create a mechanism that scan for Typescript files, compile them on server startup and serve them.

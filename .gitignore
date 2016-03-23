@@ -4,7 +4,6 @@
 .settings
 .vscode/*
 .atom-build.json
-benchmark_results
 iris.test.exe
 cpu_test.out
 mem_test.out
