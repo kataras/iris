@@ -24,38 +24,68 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-package middleware
+package pongo2
 
 import (
-	"io"
-	"os"
-	"time"
-
+	pongo "github.com/flosch/pongo2"
 	"github.com/kataras/iris"
 )
 
-type recovery struct {
-	//out optional output to log any panics
-	out io.Writer
+type pongo2Middleware struct {
 }
 
-func (r recovery) Serve(ctx *iris.Context) {
-	defer func() {
-		if err := recover(); err != nil {
-			r.out.Write([]byte("[" + time.Now().String() + "]Recovery from panic \n"))
-			//ctx.Panic just sends  http status 500 by default, but you can change it by: iris.OnPanic(func( c *iris.Context){})
-			ctx.Panic()
-		}
-	}()
+func (p *pongo2Middleware) Serve(ctx *iris.Context) {
 	ctx.Next()
+
+	templateName := ctx.GetString("template")
+	if templateName != "" {
+		templateData := ctx.Get("data")
+		if templateData != nil {
+			var template = pongo.Must(pongo.FromFile(templateName))
+			err := template.ExecuteWriter(getPongoContext(templateData), ctx.ResponseWriter)
+			if err != nil {
+				ctx.SendStatus(500, err.Error())
+			}
+		}
+
+	}
+
 }
 
-// Recovery restores the server on internal server errors (panics)
-// receives an optional writer, the default is the os.Stderr if no out writer given
-func Recovery(out ...io.Writer) iris.Handler {
-	r := recovery{os.Stderr}
-	if out != nil && len(out) == 1 {
-		r.out = out[0]
+func getPongoContext(templateData interface{}) pongo.Context {
+	if templateData == nil {
+		return nil
 	}
-	return r
+	contextData, isMap := templateData.(map[string]interface{})
+	if isMap {
+		return contextData
+	}
+	return nil
 }
+
+func Pongo2() *pongo2Middleware {
+	return &pongo2Middleware{}
+}
+
+/* example */
+/*
+
+package main
+
+import (
+    "github.com/kataras/iris"
+    "github.com/kataras/iris/middleware/pongo2"
+)
+
+func main() {
+    iris.Use(pongo2.Pongo2())
+
+    iris.Get("/", func(ctx *iris.Context) {
+        ctx.Set("template", "index.html")
+        ctx.Set("data", map[string]interface{}{"message": "Hello World!"})
+    })
+
+    iris.Listen(":8080")
+}
+
+*/

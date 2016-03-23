@@ -24,15 +24,15 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-package middleware
+package cors
 
 import (
 	"github.com/kataras/iris"
 	"net/http"
 	"os"
 	"strconv"
-  "log"
-  "strings"
+	"log"
+	"strings"
 )
 
 const toLower = 'a' - 'A'
@@ -78,12 +78,12 @@ type CorsOptions struct {
 	Debug bool
 }
 
-type Cors struct {
+type cors struct {
   Log *log.Logger
   Options CorsOptions
 }
 
-func (c *Cors) Serve(ctx *iris.Context) {
+func (c *cors) Serve(ctx *iris.Context) {
   if ctx.Request.Method == "OPTIONS" {
 		c.handlePreflight(ctx)
 		// Preflight requests are standalone and should stop the chain as some other
@@ -100,8 +100,8 @@ func (c *Cors) Serve(ctx *iris.Context) {
 	ctx.Next()
 }
 
-func New(opts CorsOptions) *Cors {
-  c := &Cors{nil, opts}
+func New(opts CorsOptions) *cors {
+  c := &cors{nil, opts}
 
 	if opts.Debug {
 		c.Log = log.New(os.Stdout, "[iris::cors] ", log.LstdFlags)
@@ -134,12 +134,16 @@ func New(opts CorsOptions) *Cors {
   return c
 }
 
-func DefaultCors() *Cors {
+func DefaultCors() *cors {
 	return New(CorsOptions{})
 }
 
+func Cors() *cors {
+	return DefaultCors()
+}
+
 // handlePreflight handles pre-flight CORS requests
-func (c *Cors) handlePreflight(ctx *iris.Context) {
+func (c *cors) handlePreflight(ctx *iris.Context) {
   r := ctx.Request
 	headers := ctx.ResponseWriter.Header()
 	origin := r.Header.Get("Origin")
@@ -192,7 +196,7 @@ func (c *Cors) handlePreflight(ctx *iris.Context) {
 }
 
 // handleActualRequest handles simple cross-origin requests, actual request or redirects
-func (c *Cors) handleActualRequest(ctx *iris.Context) {
+func (c *cors) handleActualRequest(ctx *iris.Context) {
   r := ctx.Request
 	headers := ctx.ResponseWriter.Header()
 	origin := ctx.Request.Header.Get("Origin")
@@ -235,7 +239,7 @@ func (c *Cors) handleActualRequest(ctx *iris.Context) {
 }
 
 // convenience method. checks if debugging is turned on before printing
-func (c *Cors) logf(format string, a ...interface{}) {
+func (c *cors) logf(format string, a ...interface{}) {
 	if c.Log != nil {
 		c.Log.Printf(format, a...)
 	}
@@ -243,7 +247,7 @@ func (c *Cors) logf(format string, a ...interface{}) {
 
 // isOriginAllowed checks if a given origin is allowed to perform cross-domain requests
 // on the endpoint
-func (c *Cors) isOriginAllowed(origin string) bool {
+func (c *cors) isOriginAllowed(origin string) bool {
 	if c.Options.AllowOriginFunc != nil {
 		return c.Options.AllowOriginFunc(origin)
 	}
@@ -266,7 +270,7 @@ func (c *Cors) isOriginAllowed(origin string) bool {
 
 // isMethodAllowed checks if a given method can be used as part of a cross-domain request
 // on the endpoing
-func (c *Cors) isMethodAllowed(method string) bool {
+func (c *cors) isMethodAllowed(method string) bool {
 	if len(c.Options.AllowedMethods) == 0 {
 		// If no method allowed, always return false, even for preflight request
 		return false
@@ -286,7 +290,7 @@ func (c *Cors) isMethodAllowed(method string) bool {
 
 // areHeadersAllowed checks if a given list of headers are allowed to used within
 // a cross-domain request.
-func (c *Cors) areHeadersAllowed(requestedHeaders []string) bool {
+func (c *cors) areHeadersAllowed(requestedHeaders []string) bool {
 	if c.Options.AllowedHeadersAll || len(requestedHeaders) == 0 {
 		return true
 	}
