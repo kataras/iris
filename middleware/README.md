@@ -20,8 +20,7 @@ import (
 )
 ```
 
-Each middleware must export only one Function which returns an object which implements the iris.Handler (func Serve(ctx *iris.Context){})
-
+Each middleware is recommending that exports only one Function which returns an object which implements the iris.Handler (func Serve(ctx *iris.Context){}). [Look here for an example](https://github.com/kataras/iris/blob/master/middleware/gzip/gzip.go#L79)
 
 ----------------------------
 
@@ -44,7 +43,7 @@ type Page struct {
 func main() {
 	iris.Templates("./_examples/compression_gzip/templates/*.html")
 	// here is How to use a middleware
-	iris.Use(gzip.Gzip(middleware.DefaultCompression))
+	iris.Use(gzip.Gzip(gzip.DefaultCompression))
 	//
 	iris.Get("/public/*static", iris.Static("./_examples/compression_gzip/static/", "/public/"))
 
