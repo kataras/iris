@@ -24,10 +24,10 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-package middleware
+package gzip
 
 import (
-	"compress/gzip"
+	compressGzip "compress/gzip"
 	"github.com/kataras/iris"
 	"io/ioutil"
 	"net/http"
@@ -46,10 +46,10 @@ const (
 	headerSecWebSocketKey = "Sec-WebSocket-Key"
 	// check https://golang.org/src/compress/gzip/gzip.go and compress/flate package
 	// for the values of these
-	BestCompression    = gzip.BestCompression
-	BestSpeed          = gzip.BestSpeed
-	DefaultCompression = gzip.DefaultCompression
-	NoCompression      = gzip.NoCompression
+	BestCompression    = compressGzip.BestCompression
+	BestSpeed          = compressGzip.BestSpeed
+	DefaultCompression = compressGzip.DefaultCompression
+	NoCompression      = compressGzip.NoCompression
 )
 
 type gzipMiddleware struct {
@@ -58,7 +58,7 @@ type gzipMiddleware struct {
 
 type responseWriter struct {
 	iris.IMemoryWriter
-	gzipWriter *gzip.Writer
+	gzipWriter *compressGzip.Writer
 }
 
 // Writes to the gzipWriter, we need this in order to the gzip writer acts like a  ResponseWriter
@@ -79,7 +79,7 @@ func (res responseWriter) Write(b []byte) (int, error) {
 func Gzip(compLevel int) *gzipMiddleware {
 	m := &gzipMiddleware{}
 	m.pool.New = func() interface{} {
-		writer, err := gzip.NewWriterLevel(ioutil.Discard, compLevel)
+		writer, err := compressGzip.NewWriterLevel(ioutil.Discard, compLevel)
 		if err != nil {
 			panic(err)
 		}
@@ -112,7 +112,7 @@ func (g *gzipMiddleware) Serve(ctx *iris.Context) {
 	}
 
 	//get the gzip writer from the pool clear it's contents and get the new responsewriter's
-	writer := g.pool.Get().(*gzip.Writer)
+	writer := g.pool.Get().(*compressGzip.Writer)
 	writer.Reset(res)
 
 	//set the headers of the gzip writer

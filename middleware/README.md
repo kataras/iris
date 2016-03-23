@@ -7,14 +7,7 @@ middleware is also the package name.
 
 
 
-
-Each middleware is written to file(s) but no to different folder(s),
-that's means that iris/middleware doesn't have any children folder.
-
-
-
-All middleware(s) have share code via the same package name so be carefuly when you write a midleware, we need sharing between them but no conficts.
-
+Each middleware is written to it's own folder.
 
 ----------------------------
 
@@ -32,11 +25,6 @@ Each middleware must export only one Function which returns an object which impl
 
 ----------------------------
 
-# Why? Three reasons
-
-1. Easier import path for all middleware(s) (e.g github.com/kataras/iris/middleware vs github.com/kataras/iris/middleware/gzip github.com/kataras/iris/middleware/othermiddleware and so on)
-2. Minimize the code that Iris middleware(s) will re-uses
-3. Protect ourself from import circles between middleware(s).
 
 # How to use a middleware
 
@@ -46,7 +34,7 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/middleware"
+	"github.com/kataras/iris/middleware/gzip"
 )
 
 type Page struct {
@@ -56,7 +44,7 @@ type Page struct {
 func main() {
 	iris.Templates("./_examples/compression_gzip/templates/*.html")
 	// here is How to use a middleware
-	iris.Use(middleware.Gzip(middleware.DefaultCompression))
+	iris.Use(gzip.Gzip(middleware.DefaultCompression))
 	//
 	iris.Get("/public/*static", iris.Static("./_examples/compression_gzip/static/", "/public/"))
 

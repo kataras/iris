@@ -24,15 +24,15 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-package middleware
+package cors
 
 import (
 	"github.com/kataras/iris"
 	"net/http"
 	"os"
 	"strconv"
-  "log"
-  "strings"
+	"log"
+	"strings"
 )
 
 const toLower = 'a' - 'A'
@@ -136,6 +136,10 @@ func New(opts CorsOptions) *Cors {
 
 func DefaultCors() *Cors {
 	return New(CorsOptions{})
+}
+
+func Cors() *Cors {
+	return DefaultCors()
 }
 
 // handlePreflight handles pre-flight CORS requests
