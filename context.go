@@ -79,6 +79,7 @@ type IContext interface {
 	JSON(jsonObjectOrArray interface{}) error
 	WriteXML(httpStatus int, xmlStructs ...interface{}) error
 	XML(xmlStructs ...interface{}) error
+	ReadXML(xmlObject interface{}) error
 }
 
 // Charset is defaulted to UTF-8, you can change it
