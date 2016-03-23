@@ -3,7 +3,7 @@ language: go
 go:
     - go1.6
     - tip
-	
+
 script:
   - go test -coverprofile=coverage.txt -covermode=atomic
   
