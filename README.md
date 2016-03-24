@@ -12,7 +12,7 @@ Iris is a very minimal but flexible go web framework  providing arobust set of f
 >This project is under extreme development
 
 
-![Benchmark Wizzard Iris vs gin vs martini](http://kataras.github.io/iris/assets/benchmarks_all.png)
+![Benchmark Wizzard 24 March 2016 - comparing the fasters](http://kataras.github.io/iris/assets/benchmark_all_24Match_2016.png)
 
 [See all benchmarks](https://github.com/kataras/go-http-routing-benchmark)
 
