@@ -30,12 +30,16 @@ import (
 	"sync"
 )
 
+// max items on the cache, if its not defined
+const MAX_ITEMS int = 9999999
+
 // IRouterCache is the interface which the MemoryRouter implements
 type IRouterCache interface {
 	OnTick()
 	AddItem(method, url string, ctx *Context)
 	GetItem(method, url string) *Context
 	SetMaxItems(maxItems int)
+	GetMaxItems() int
 }
 
 // MemoryRouterCache creation done with just &MemoryRouterCache{}
@@ -44,6 +48,9 @@ type MemoryRouterCache struct {
 	//2. map[string]*Context ,key is The Request URL Path
 	//the map in this case is the faster way, I tried with array of structs but it's 100 times slower on > 1 core because of async goroutes on addItem I sugges, so we keep the map
 	items    map[string]map[string]*Context
+	// stores the total items cached
+	TotalItems int
+	// set the limit of items that could be cached
 	MaxItems int
 }
 
@@ -61,9 +68,15 @@ func (mc *MemoryRouterCache) SetMaxItems(_itemslen int) {
 	mc.MaxItems = _itemslen
 }
 
+// GetMaxItems returns the limit of cache items
+func (mc MemoryRouterCache) GetMaxItems() int {
+	return mc.MaxItems
+}
+
 // NewMemoryRouterCache returns the cache for a router, is used on the MemoryRouter
 func NewMemoryRouterCache() *MemoryRouterCache {
-	mc := &MemoryRouterCache{items: make(map[string]map[string]*Context, 0)}
+	mc := &MemoryRouterCache{items: make(map[string]map[string]*Context, 0), TotalItems: 0}
+	mc.MaxItems = MAX_ITEMS
 	mc.resetBag()
 	return mc
 }
@@ -71,21 +84,28 @@ func NewMemoryRouterCache() *MemoryRouterCache {
 // NewMemoryRouterCache returns the cache for a router, it's based on the one-thread MemoryRouterCache
 func NewSyncMemoryRouterCache(underlineCache *MemoryRouterCache) *SyncMemoryRouterCache {
 	mc := &SyncMemoryRouterCache{MemoryRouterCache: underlineCache, mu: sync.Mutex{}}
+	mc.TotalItems = 0
 	mc.resetBag()
 	return mc
 }
 
 // AddItem adds an item to the bag/cache, is a goroutine.
 func (mc *MemoryRouterCache) AddItem(method, url string, ctx *Context) {
-	mc.items[method][url] = ctx
+	if mc.TotalItems < mc.MaxItems {
+		mc.TotalItems++
+		mc.items[method][url] = ctx
+	}
 }
 
 // AddItem adds an item to the bag/cache, is a goroutine.
 func (mc *SyncMemoryRouterCache) AddItem(method, url string, ctx *Context) {
 	go func(method, url string, c *Context) { //for safety on multiple fast calls
-		mc.mu.Lock()
-		mc.items[method][url] = c
-		mc.mu.Unlock()
+		if mc.TotalItems < mc.MaxItems {
+			mc.mu.Lock()
+			mc.items[method][url] = c
+			mc.TotalItems++
+			mc.mu.Unlock()
+		}
 	}(method, url, ctx)
 }
 
@@ -114,13 +134,14 @@ func (mc *MemoryRouterCache) DoOnTick() {
 	if mc.MaxItems == 0 {
 		//just reset to complete new maps all methods
 		mc.resetBag()
-	} else {
-		//loop each method on bag and clear it if it's len is more than MaxItems
-		for k, v := range mc.items {
-			if len(v) >= mc.MaxItems {
-				//we just create a new map, no delete each manualy because this number maybe be very long.
-				mc.items[k] = make(map[string]*Context, 0)
-			}
+		return
+	}
+
+	//loop each method on bag and clear it if it's len is more than MaxItems
+	for k, v := range mc.items {
+		if len(v) >= mc.MaxItems {
+			//we just create a new map, no delete each manualy because this number maybe be very long.
+			mc.items[k] = make(map[string]*Context, 0)
 		}
 	}
 }
