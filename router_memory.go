@@ -52,7 +52,7 @@ func NewMemoryRouter(underlineRouter *Router, maxitems int, resetDuration time.D
 	r.Router = underlineRouter
 	r.maxitems = maxitems
 	r.resetDuration = resetDuration
-	// CACHE IS CREATED DYNAMICLY BEFORE THE LISTEN ON THE STATION_PREPARE_PLUGIN
+	// CACHE IS CREATED and SETTED BEFORE AT THE OPTIMUSPRIME FUNCTION
 	return r
 }
 
@@ -76,11 +76,7 @@ func (r MemoryRouter) getType() RouterType {
 // ServeHTTP calls processRequest which finds and serves a route by it's request
 // If no route found, it sends an http status 404 with a custom error middleware, if setted
 func (r *MemoryRouter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	//16/03/2016 Tried to get/pass only middlewares but it slow me 8k nanoseconds, so I re-do it as I had before.
-	method := req.Method
-
-	path := req.URL.Path
-	if ctx := r.cache.GetItem(method, path); ctx != nil {
+	if ctx := r.cache.GetItem(req.Method, req.URL.Path); ctx != nil {
 		ctx.Redo(res, req)
 		return
 	}
@@ -90,11 +86,10 @@ func (r *MemoryRouter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 	if r.processRequest(ctx) {
 		//if something found and served then add it's clone to the cache
-		r.cache.AddItem(method, path, ctx.Clone())
+		r.cache.AddItem(req.Method, req.URL.Path, ctx.Clone())
 	}
 
 	r.getStation().pool.Put(ctx)
-
 }
 
 type MemoryRouterDomain struct {
@@ -108,6 +103,7 @@ func NewMemoryRouterDomain(underlineRouter *MemoryRouter) *MemoryRouterDomain {
 func (r MemoryRouterDomain) getType() RouterType {
 	return MemoryDomain
 }
+
 func (r *MemoryRouterDomain) processRequest(ctx *Context) bool {
 	reqPath := ctx.Request.URL.Path
 	gLen := len(r.garden)
@@ -121,7 +117,6 @@ func (r *MemoryRouterDomain) processRequest(ctx *Context) bool {
 			reqPath = ctx.Request.Host + reqPath
 		}
 		if r.garden[i].method == ctx.Request.Method {
-
 			return r.find(r.garden[i], reqPath, ctx)
 		}
 
@@ -132,7 +127,6 @@ func (r *MemoryRouterDomain) processRequest(ctx *Context) bool {
 
 func (r *MemoryRouterDomain) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	method := req.Method
-
 	path := req.URL.Path + req.Host
 	if ctx := r.cache.GetItem(method, path); ctx != nil {
 		ctx.Redo(res, req)

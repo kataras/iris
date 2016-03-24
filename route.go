@@ -31,10 +31,11 @@ import (
 )
 
 type IRoute interface {
-	ProcessPath()
+	GetMethod() string
 	GetDomain() string
 	GetPath() string
 	GetPathPrefix() string
+	ProcessPath()
 	GetMiddleware() Middleware
 	SetMiddleware(m Middleware)
 }
@@ -43,16 +44,17 @@ type IRoute interface {
 // contains all middleware and prepare them for execution
 // Used to create a node at the Router's Build state
 type Route struct {
-	middleware Middleware
+	method     string
 	domain     string
 	fullpath   string
 	PathPrefix string
+	middleware Middleware
 }
 
 var _ IRoute = &Route{}
 
 // newRoute creates, from a path string, and a slice of HandlerFunc
-func NewRoute(registedPath string, middleware Middleware) *Route {
+func NewRoute(method string, registedPath string, middleware Middleware) *Route {
 	domain := ""
 	if registedPath[0] != SlashByte && strings.Contains(registedPath, ".") && strings.IndexByte(registedPath, SlashByte) > strings.IndexByte(registedPath, '.') {
 		//means that is a path with domain
@@ -66,7 +68,7 @@ func NewRoute(registedPath string, middleware Middleware) *Route {
 			//e.g /admin.ideopod.com/hey
 			//then just remove the first slash and re-execute the NewRoute and return it
 			registedPath = registedPath[1:]
-			return NewRoute(registedPath, middleware)
+			return NewRoute(method, registedPath, middleware)
 		}
 		//if it's just the domain, then set it(registedPath) as the domain
 		//and after set the registedPath to a slash '/' for the path part
@@ -80,14 +82,18 @@ func NewRoute(registedPath string, middleware Middleware) *Route {
 		}
 
 	}
-	r := &Route{fullpath: registedPath, domain: domain}
-	r.middleware = middleware
+	r := &Route{method: method, domain: domain, fullpath: registedPath, middleware: middleware}
 	r.ProcessPath()
 	return r
 }
+func (r Route) GetMethod() string {
+	return r.method
+}
+
 func (r Route) GetDomain() string {
 	return r.domain
 }
+
 func (r Route) GetPath() string {
 	return r.fullpath
 }

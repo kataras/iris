@@ -152,13 +152,18 @@ func (p *GardenParty) Handle(method string, registedPath string, handlers ...Han
 	}
 
 	//println(" so the len of registed ", registedPath, " of handlers is: ", len(handlers))
-	route := NewRoute(registedPath, handlers)
+	route := NewRoute(method, registedPath, handlers)
 
-	p.station.GetPluginContainer().DoPreHandle(method, route)
+	p.station.GetPluginContainer().DoPreHandle(route)
 
-	p.station.IRouter.setGarden(p.station.getGarden().Plant(method, route))
+	p.station.IRouter.setGarden(p.station.getGarden().Plant(route))
 
-	p.station.GetPluginContainer().DoPostHandle(method, route)
+	p.station.GetPluginContainer().DoPostHandle(route)
+
+	//force OptimusPrime everytime a route added, this is not nessecery, it runs only once
+	//but many developers maybe use external server and FORGET to use the iris.Serve() and use just the 'iris'
+	//so
+	p.station.forceOptimusPrime()
 
 	//force OptimusPrime everytime a route added, this is not nessecery, it runs only once
 	//but many developers maybe use external server and FORGET to use the iris.Serve() and use just the 'iris'
@@ -292,4 +297,14 @@ func (p *GardenParty) Trace(path string, handlersFn ...HandlerFunc) {
 // Any registers a route for ALL of the http methods (Get,Post,Put,Head,Patch,Options,Connect,Delete)
 func (p *GardenParty) Any(path string, handlersFn ...HandlerFunc) {
 	p.HandleFunc("", path, handlersFn...)
+}
+
+// Use pass the middleware here
+// it overrides the MiddlewareSupporter's Use only in order to be able to call forceOptimusPrime
+func (p *GardenParty) Use(handlers ...Handler) {
+	//force OptimusPrime everytime a route added, this is not nessecery, it runs only once
+	//but many developers maybe use external server and FORGET to use the iris.Serve() and use just the 'iris'
+	//so
+	p.station.forceOptimusPrime()
+	p.MiddlewareSupporter.Use(handlers...)
 }

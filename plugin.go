@@ -31,58 +31,64 @@ import (
 	"reflect"
 )
 
-// IPlugin is the interface which all Plugins must implement.
-//
-// A Plugin can register other plugins also from it's Activate state
-type IPlugin interface {
-
-	// GetName has to returns the name of the plugin, a name is unique
-	// name has to be not dependent from other methods of the plugin,
-	// because it is being called even before the Activate
-	GetName() string
-	// GetDescription has to returns the description of what the plugins is used for
-	GetDescription() string
-
-	// Activate called BEFORE the plugin being added to the plugins list,
-	// if Activate returns none nil error then the plugin is not being added to the list
-	// it is being called only one time
+type (
+	// IPlugin is the interface which all Plugins must implement.
 	//
-	// PluginContainer parameter used to add other plugins if that's necessary by the plugin
-	Activate(IPluginContainer) error
+	// A Plugin can register other plugins also from it's Activate state
+	IPlugin interface {
+		// GetName has to returns the name of the plugin, a name is unique
+		// name has to be not dependent from other methods of the plugin,
+		// because it is being called even before the Activate
+		GetName() string
+		// GetDescription has to returns the description of what the plugins is used for
+		GetDescription() string
 
-	// PreHandle it's being called every time BEFORE a Route is registed to the Router
-	//
-	// first parameter is the HTTP method
-	// second is the Route
-	PreHandle(string, IRoute)
-	// PostHandle it's being called every time AFTER a Route successfully registed to the Router
-	//
-	// first parameter is the HTTP method
-	// second is the Route
-	PostHandle(string, IRoute)
-	// PreListen it's being called only one time, BEFORE the Server is started (if .Listen called)
-	// is used to do work at the time all other things are ready to go
-	PreListen(*Station)
-	// PostListen it's being called only one time, AFTER the Server is started (if .Listen called)
-	// is used to do work when the server is running
-	PostListen(*Station, error)
+		// Activate called BEFORE the plugin being added to the plugins list,
+		// if Activate returns none nil error then the plugin is not being added to the list
+		// it is being called only one time
+		//
+		// PluginContainer parameter used to add other plugins if that's necessary by the plugin
+		Activate(IPluginContainer) error
+	}
 
-	// PreClose it's being called only one time, BEFORE the Iris .Close method
-	// any plugin cleanup/clear memory happens here
-	//
-	// The plugin is deactivated after this state
-	PreClose(*Station)
-}
+	IPluginPreHandle interface {
+		// PreHandle it's being called every time BEFORE a Route is registed to the Router
+		//
+		//  parameter is the Route
+		PreHandle(IRoute)
+	}
+
+	IPluginPostHandle interface {
+		// PostHandle it's being called every time AFTER a Route successfully registed to the Router
+		//
+		// parameter is the Route
+		PostHandle(IRoute)
+	}
+
+	IPluginPreListen interface {
+		// PreListen it's being called only one time, BEFORE the Server is started (if .Listen called)
+		// is used to do work at the time all other things are ready to go
+		//  parameter is the station
+		PreListen(*Station)
+	}
+
+	IPluginPreClose interface {
+		// PreClose it's being called only one time, BEFORE the Iris .Close method
+		// any plugin cleanup/clear memory happens here
+		//
+		// The plugin is deactivated after this state
+		PreClose(*Station)
+	}
+)
 
 type IPluginContainer interface {
 	Plugin(plugin IPlugin) error
 	RemovePlugin(pluginName string)
 	GetByName(pluginName string) IPlugin
 	Printf(format string, a ...interface{})
-	DoPreHandle(method string, route IRoute)
-	DoPostHandle(method string, route IRoute)
+	DoPreHandle(route IRoute)
+	DoPostHandle(route IRoute)
 	DoPreListen(station *Station)
-	DoPostListen(station *Station, err error)
 	DoPreClose(station *Station)
 }
 
@@ -157,74 +163,38 @@ func (p *PluginContainer) Printf(format string, a ...interface{}) {
 	fmt.Printf(format, a...) //for now just this.
 }
 
-func (p *PluginContainer) DoPreHandle(method string, route IRoute) {
+func (p *PluginContainer) DoPreHandle(route IRoute) {
 	for i := 0; i < len(p.activatedPlugins); i++ {
-		//TODO: check if this method exists on our plugin obj, these are optionaly
-		//this check doesn't work because all plugins are IPlugin I can't see if they are actualy declare these but I will find an easier way.
-		if p.activatedPlugins[i].PreHandle != nil {
-			if _, ok := p.activatedPlugins[i].(interface {
-				PreHandle(string, IRoute)
-			}); ok {
-				p.activatedPlugins[i].PreHandle(method, route)
-			}
-
+		// check if this method exists on our plugin obj, these are optionaly and call it
+		if pluginObj, ok := p.activatedPlugins[i].(IPluginPreHandle); ok {
+			pluginObj.PreHandle(route)
 		}
-
 	}
 }
 
-func (p *PluginContainer) DoPostHandle(method string, route IRoute) {
+func (p *PluginContainer) DoPostHandle(route IRoute) {
 	for i := 0; i < len(p.activatedPlugins); i++ {
-		//check if this method exists on our plugin obj, these are optionaly
-		if p.activatedPlugins[i].PreHandle != nil {
-			if _, ok := p.activatedPlugins[i].(interface {
-				PostHandle(string, IRoute)
-			}); ok {
-				p.activatedPlugins[i].PostHandle(method, route)
-			}
-
+		// check if this method exists on our plugin obj, these are optionaly and call it
+		if pluginObj, ok := p.activatedPlugins[i].(IPluginPostHandle); ok {
+			pluginObj.PostHandle(route)
 		}
 	}
 }
 
 func (p *PluginContainer) DoPreListen(station *Station) {
 	for i := 0; i < len(p.activatedPlugins); i++ {
-		//check if this method exists on our plugin obj, these are optionaly
-		if p.activatedPlugins[i].PreHandle != nil {
-			if _, ok := p.activatedPlugins[i].(interface {
-				PreListen(*Station)
-			}); ok {
-				p.activatedPlugins[i].PreListen(station)
-			}
-
-		}
-	}
-}
-
-func (p *PluginContainer) DoPostListen(station *Station, err error) {
-	for i := 0; i < len(p.activatedPlugins); i++ {
-		//check if this method exists on our plugin obj, these are optionaly
-		if p.activatedPlugins[i].PreHandle != nil {
-			if _, ok := p.activatedPlugins[i].(interface {
-				PostListen(*Station, error)
-			}); ok {
-				p.activatedPlugins[i].PostListen(station, err)
-			}
-
+		// check if this method exists on our plugin obj, these are optionaly and call it
+		if pluginObj, ok := p.activatedPlugins[i].(IPluginPreListen); ok {
+			pluginObj.PreListen(station)
 		}
 	}
 }
 
 func (p *PluginContainer) DoPreClose(station *Station) { //tood IStation
 	for i := 0; i < len(p.activatedPlugins); i++ {
-		//check if this method exists on our plugin obj, these are optionaly
-		if p.activatedPlugins[i].PreHandle != nil {
-			if _, ok := p.activatedPlugins[i].(interface {
-				PreClose(*Station)
-			}); ok {
-				p.activatedPlugins[i].PreClose(station)
-			}
-
+		// check if this method exists on our plugin obj, these are optionaly and call it
+		if pluginObj, ok := p.activatedPlugins[i].(IPluginPreClose); ok {
+			pluginObj.PreClose(station)
 		}
 	}
 }

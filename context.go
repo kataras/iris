@@ -34,6 +34,8 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"net/url"
+	"path"
 	"strconv"
 	"strings"
 )
@@ -63,6 +65,7 @@ type IContext interface {
 	EmitError(statusCode int)
 	StopExecution()
 	//
+	Redirect(path string) error
 	SendStatus(statusCode int, message string)
 	RequestIP() string
 	Close()
@@ -233,6 +236,29 @@ func (ctx *Context) StopExecution() {
 }
 
 //
+
+func (ctx *Context) Redirect(urlToRedirect string) error {
+	var u *url.URL
+	var err error
+	if u, err = url.Parse(urlToRedirect); err == nil {
+		ctx.StopExecution()
+		if u.Scheme == "" && u.Host == "" {
+			//The http://yourserver is done automatically by all browsers today
+			//so just clean the path
+			trailing := strings.HasSuffix(urlToRedirect, "/")
+			urlToRedirect = path.Clean(urlToRedirect)
+			//check after clean if we had a slash but after we don't, we have to do that otherwise we will get forever redirects if path is /home but the registed is /home/
+			if trailing && !strings.HasSuffix(urlToRedirect, "/") {
+				urlToRedirect += "/"
+			}
+
+		}
+
+		ctx.ResponseWriter.Header().Set("Location", urlToRedirect)
+		ctx.ResponseWriter.WriteHeader(http.StatusMovedPermanently)
+	}
+	return err
+}
 
 func (ctx *Context) Status(statusCode int) {
 	ctx.memoryResponseWriter.WriteHeader(statusCode)
