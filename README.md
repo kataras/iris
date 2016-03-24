@@ -20,6 +20,8 @@ Iris is a very minimal but flexible go web framework  providing arobust set of f
 package main
 
 import "github.com/kataras/iris"
+
+func main() {
 	iris.Get("/hello", func(c *iris.Context) {
 		c.HTML("<b> Hello </b>")
 	})
@@ -134,6 +136,8 @@ Iris is a very minimal but flexible golang http middleware & standalone web appl
 package main
 
 import "github.com/kataras/iris"
+
+func main() {
 	iris.Get("/hello", func(c *iris.Context) {
 		c.HTML("<b> Hello </b>")
 	})
