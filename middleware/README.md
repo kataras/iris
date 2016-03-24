@@ -2,12 +2,12 @@
 Iris has it's build'n small middleware(s) here
 
 # Structure
-**All Iris build'n middleware(s)* belong here, to this folder 'iris/middleware' **
+**All Iris build'n middleware(s)* belong here, to this folder 'iris/middleware'**
 middleware is also the package name.
 
 
 
-Each middleware is written to it's own folder.
+Each middleware must be written to it's own folder.
 
 ----------------------------
 
@@ -20,7 +20,7 @@ import (
 )
 ```
 
-Each middleware is recommending that exports only one Function which returns an object which implements the iris.Handler (func Serve(ctx *iris.Context){}). [Look here for an example](https://github.com/kataras/iris/blob/master/middleware/gzip/gzip.go#L79)
+Notice: We recommend that each middleware exports only one Function which returns an object that implements the ```iris.Handler (func Serve(ctx *iris.Context){})```. [Look here for an example](https://github.com/kataras/iris/blob/master/middleware/gzip/gzip.go#L79)
 
 ----------------------------
 
@@ -42,9 +42,10 @@ type Page struct {
 
 func main() {
 	iris.Templates("./_examples/compression_gzip/templates/*.html")
-	// here is How to use a middleware
+	
+	// here is how to use a middleware
 	iris.Use(gzip.Gzip(gzip.DefaultCompression))
-	//
+	
 	iris.Get("/public/*static", iris.Static("./_examples/compression_gzip/static/", "/public/"))
 
 	iris.Get("/", func(c *iris.Context) {

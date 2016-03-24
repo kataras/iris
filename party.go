@@ -160,6 +160,11 @@ func (p *GardenParty) Handle(method string, registedPath string, handlers ...Han
 
 	p.station.GetPluginContainer().DoPostHandle(method, route)
 
+	//force OptimusPrime everytime a route added, this is not nessecery, it runs only once
+	//but many developers maybe use external server and FORGET to use the iris.Serve() and use just the 'iris'
+	//so
+	p.station.forceOptimusPrime()
+
 }
 
 // HandleFunc registers and returns a route with a method string, path string and a handler

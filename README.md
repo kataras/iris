@@ -12,6 +12,24 @@ Iris is a very minimal but flexible go web framework  providing arobust set of f
 >This project is under extreme development
 
 
+![Benchmark Wizzard 24 March 2016 - comparing the fasters](http://kataras.github.io/iris/assets/benchmark_all_24Match_2016.png)
+
+[See all benchmarks](https://github.com/kataras/go-http-routing-benchmark)
+
+```go
+package main
+
+import "github.com/kataras/iris"
+
+func main() {
+	iris.Get("/hello", func(c *iris.Context) {
+		c.HTML("<b> Hello </b>")
+	})
+	iris.Listen(":8080")
+}
+
+```
+
 ## Table of Contents
 
 - [Install](#install)
@@ -48,11 +66,47 @@ $ go get -u github.com/kataras/iris
 
 With Intel(R) Core(TM) i7-4710HQ CPU @ 2.50GHz 2.50 HGz and 8GB Ram:
 
-![Benchmark Wizzard Iris vs gin vs martini](http://kataras.github.io/iris/assets/benchmarks_all.png)
+[See all benchmarks](https://github.com/kataras/go-http-routing-benchmark)
+
+1. Total Operations (Executions)
+2. Nanoseconds per operation ns/op
+3. Heap Memory B/op
+4. Allocations per operation allocs/op
 
 
 
-This graph was maden by comparison of the 6 most famous frameworks, if you want to see comparison of all known web go frameworks you have to visit [this branch](https://github.com/kataras/iris/tree/benchmark) 
+Benchmark name 					| Total Operations 		| ns/op 		| B/op 		| allocs/op
+--------------------------------|----------:|----------:|----------:|------:
+BenchmarkAce_GithubAll 			| 10000 	| 121206 	| 13792 	| 167
+BenchmarkBear_GithubAll 		| 10000 	| 348919 	| 86448 	| 943
+BenchmarkBeego_GithubAll 		| 5000 		| 296816 	| 16608 	| 524
+BenchmarkBone_GithubAll 		| 500 		| 2502143 	| 548736 	| 7241
+BenchmarkDenco_GithubAll 		| 20000 	| 99705 	| 20224 	| 167
+BenchmarkEcho_GithubAll 		| 30000 	| 45469 	| 0 		| 0
+BenchmarkGin_GithubAll 		| 50000     | 39402     | 0 	    | 0
+BenchmarkGocraftWeb_GithubAll 	| 5000 		| 446025 	| 131656 	| 1686
+BenchmarkGoji_GithubAll 		| 2000 		| 547698 	| 56112 	| 334
+BenchmarkGojiv2_GithubAll 		| 2000 		| 763043 	| 118864 	| 3103
+BenchmarkGoJsonRest_GithubAll 	| 5000 		| 538030 	| 134371 	| 2737
+BenchmarkGoRestful_GithubAll 	| 100 		| 14870850 	| 837832 	| 6913
+BenchmarkGorillaMux_GithubAll 	| 200 		| 6690383 	| 144464 	| 1588
+BenchmarkHttpRouter_GithubAll 	| 20000 	| 65653 	| 13792 	| 167
+BenchmarkHttpTreeMux_GithubAll 	| 10000 	| 215312 	| 65856 	| 671
+**BenchmarkIris_GithubAll** 	| **100000** 	| **20731** 	| **0** 	| **0**
+BenchmarkKocha_GithubAll 		| 10000 	| 167209 	| 23304 	| 843
+BenchmarkLARS_GithubAll 		| 30000 		| 41069 	| 0 	| 0
+BenchmarkMacaron_GithubAll 		| 2000 	| 665038 	| 201138 	| 1803
+BenchmarkMartini_GithubAll 		| 100 		| 5433644 	| 228213 	| 2483
+BenchmarkPat_GithubAll 			| 300 		| 4210240 	| 1499569 	| 27435
+BenchmarkPossum_GithubAll 		| 10000 	| 255114 	| 84448 	| 609
+BenchmarkR2router_GithubAll 	| 10000 	| 237113 	| 77328 	| 979
+BenchmarkRevel_GithubAll 		| 2000 		| 1150565 	| 337424 	| 5512
+BenchmarkRivet_GithubAll 		| 20000 	| 96555 	| 16272 	| 167
+BenchmarkTango_GithubAll 		| 5000 		| 417423 	| 87075 	| 2267
+BenchmarkTigerTonic_GithubAll 	| 2000 		| 994556 	| 233680 	| 5035
+BenchmarkTraffic_GithubAll 		| 200 		| 7770444 	| 2659331 	| 21848
+BenchmarkVulcan_GithubAll 		| 5000 		| 292216 	| 19894 	| 609
+
 
 ## Principles of iris
 
@@ -88,9 +142,6 @@ func main() {
 		c.HTML("<b> Hello </b>")
 	})
 	iris.Listen(":8080")
-	//or for https and http2
-	//iris.ListenTLS(":8080","localhost.cert","localhost.key")
-	//the cert and key must be in the same path of the executable main server file
 }
 
 ```
@@ -542,4 +593,5 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 
 This project is licensed under the [BSD 3-Clause License](https://opensource.org/licenses/BSD-3-Clause).
 License can be found [here](https://github.com/kataras/iris/blob/master/LICENSE). 
+
 
