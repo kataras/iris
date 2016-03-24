@@ -44,7 +44,7 @@ func (i irisControlPlugin) GetName() string {
 }
 
 func (i irisControlPlugin) GetDescription() string {
-	return Name + " is just a web interface to control your iris server"
+	return Name + " is just a web interface which gives you control of your Iris.\n"
 }
 
 //
