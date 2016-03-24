@@ -48,8 +48,6 @@ type MemoryRouterCache struct {
 	//2. map[string]*Context ,key is The Request URL Path
 	//the map in this case is the faster way, I tried with array of structs but it's 100 times slower on > 1 core because of async goroutes on addItem I sugges, so we keep the map
 	items    map[string]map[string]*Context
-	// stores the total items cached
-	TotalItems int
 	// set the limit of items that could be cached
 	MaxItems int
 }
@@ -75,7 +73,7 @@ func (mc MemoryRouterCache) GetMaxItems() int {
 
 // NewMemoryRouterCache returns the cache for a router, is used on the MemoryRouter
 func NewMemoryRouterCache() *MemoryRouterCache {
-	mc := &MemoryRouterCache{items: make(map[string]map[string]*Context, 0), TotalItems: 0}
+	mc := &MemoryRouterCache{items: make(map[string]map[string]*Context, 0)}
 	mc.MaxItems = MAX_ITEMS
 	mc.resetBag()
 	return mc
@@ -84,15 +82,13 @@ func NewMemoryRouterCache() *MemoryRouterCache {
 // NewMemoryRouterCache returns the cache for a router, it's based on the one-thread MemoryRouterCache
 func NewSyncMemoryRouterCache(underlineCache *MemoryRouterCache) *SyncMemoryRouterCache {
 	mc := &SyncMemoryRouterCache{MemoryRouterCache: underlineCache, mu: sync.Mutex{}}
-	mc.TotalItems = 0
 	mc.resetBag()
 	return mc
 }
 
 // AddItem adds an item to the bag/cache, is a goroutine.
 func (mc *MemoryRouterCache) AddItem(method, url string, ctx *Context) {
-	if mc.TotalItems < mc.MaxItems {
-		mc.TotalItems++
+	if len(mc.items[method]) < mc.MaxItems {
 		mc.items[method][url] = ctx
 	}
 }
@@ -100,10 +96,9 @@ func (mc *MemoryRouterCache) AddItem(method, url string, ctx *Context) {
 // AddItem adds an item to the bag/cache, is a goroutine.
 func (mc *SyncMemoryRouterCache) AddItem(method, url string, ctx *Context) {
 	go func(method, url string, c *Context) { //for safety on multiple fast calls
-		if mc.TotalItems < mc.MaxItems {
+		if len(mc.items[method]) < mc.MaxItems {
 			mc.mu.Lock()
 			mc.items[method][url] = c
-			mc.TotalItems++
 			mc.mu.Unlock()
 		}
 	}(method, url, ctx)
@@ -114,7 +109,6 @@ func (mc *MemoryRouterCache) GetItem(method, url string) *Context {
 	if ctx := mc.items[method][url]; ctx != nil {
 		return ctx
 	}
-
 	return nil
 }
 
@@ -130,7 +124,6 @@ func (mc *SyncMemoryRouterCache) GetItem(method, url string) *Context {
 }
 
 func (mc *MemoryRouterCache) DoOnTick() {
-
 	if mc.MaxItems == 0 {
 		//just reset to complete new maps all methods
 		mc.resetBag()

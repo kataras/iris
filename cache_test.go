@@ -49,8 +49,8 @@ func TestMemoryRouterCacheAddItems(t *testing.T) {
   memoryCache.SetMaxItems(1)
   memoryCache.AddItem("GET", "/", nil)
   memoryCache.AddItem("POST", "/", nil)
-  if memoryCache.TotalItems > memoryCache.MaxItems  {
-    t.Errorf("MaxItems would be %d, but has %d", memoryCache.MaxItems, memoryCache.TotalItems)
+  if 1 > memoryCache.MaxItems  {
+    t.Errorf("MaxItems would be %d, but has %d", 1, memoryCache.MaxItems)
   }
 }
 
@@ -91,8 +91,8 @@ func TestSyncMemoryRouterCacheAddItems(t *testing.T) {
   // waits 500ms to goroutine process
   time.Sleep(500 * time.Millisecond)
 
-  if syncMemCache.TotalItems != syncMemCache.MaxItems {
-    t.Errorf("MaxItems would be %d, but has %d", syncMemCache.MaxItems, syncMemCache.TotalItems)
+  if 1 != syncMemCache.MaxItems {
+    t.Errorf("MaxItems would be %d, but has %d", 1, syncMemCache.MaxItems)
   }
 }
 
