@@ -340,7 +340,7 @@ func TestRoutesServerSide(t *testing.T) {
 		c.SendStatus(404, CustomNotFoundErrorMessage)
 	})
 
-	testServer = httptest.NewUnstartedServer(api.Serve())
+	testServer = httptest.NewUnstartedServer(api)
 
 	testServer.Start()
 	server.URL = testServer.URL
