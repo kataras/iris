@@ -74,13 +74,13 @@ func (g Garden) GetRootByMethodAndDomain(method string, domain string) *Branch {
 }
 
 // Plant plants/adds a route to the garden
-func (g Garden) Plant(method string, _route IRoute) Garden {
+func (g Garden) Plant(_route IRoute) Garden {
 
 	//we have a domain to assign too
-	theRoot := g.GetRootByMethodAndDomain(method, _route.GetDomain())
+	theRoot := g.GetRootByMethodAndDomain(_route.GetMethod(), _route.GetDomain())
 	if theRoot == nil {
 		theRoot = new(Branch)
-		g = append(g, tree{method, theRoot, _route.GetDomain(), _route.GetDomain() != ""})
+		g = append(g, tree{_route.GetMethod(), theRoot, _route.GetDomain(), _route.GetDomain() != ""})
 
 	}
 	theRoot.AddBranch(_route.GetDomain()+_route.GetPath(), _route.GetMiddleware())

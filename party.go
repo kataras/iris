@@ -152,13 +152,13 @@ func (p *GardenParty) Handle(method string, registedPath string, handlers ...Han
 	}
 
 	//println(" so the len of registed ", registedPath, " of handlers is: ", len(handlers))
-	route := NewRoute(registedPath, handlers)
+	route := NewRoute(method, registedPath, handlers)
 
-	p.station.GetPluginContainer().DoPreHandle(method, route)
+	p.station.GetPluginContainer().DoPreHandle(route)
 
-	p.station.IRouter.setGarden(p.station.getGarden().Plant(method, route))
+	p.station.IRouter.setGarden(p.station.getGarden().Plant(route))
 
-	p.station.GetPluginContainer().DoPostHandle(method, route)
+	p.station.GetPluginContainer().DoPostHandle(route)
 
 	//force OptimusPrime everytime a route added, this is not nessecery, it runs only once
 	//but many developers maybe use external server and FORGET to use the iris.Serve() and use just the 'iris'
