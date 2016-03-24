@@ -26,12 +26,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package iris
 
-import (
-	"net/http"
-	"net/url"
-	"path"
-	"strings"
-)
+import "net/http"
 
 const (
 	// ParameterStartByte is very used on the node, it's just contains the byte for the ':' rune/char
@@ -162,23 +157,7 @@ func (r *Router) find(_tree tree, reqPath string, ctx *Context) bool {
 		ctx.Request.URL.Path = reqPath
 		urlToRedirect := ctx.Request.URL.String()
 
-		if u, err := url.Parse(urlToRedirect); err == nil {
-
-			if u.Scheme == "" && u.Host == "" {
-				//The http://yourserver is done automatically by all browsers today
-				//so just clean the path
-				trailing := strings.HasSuffix(urlToRedirect, "/")
-				urlToRedirect = path.Clean(urlToRedirect)
-				//check after clean if we had a slash but after we don't, we have to do that otherwise we will get forever redirects if path is /home but the registed is /home/
-				if trailing && !strings.HasSuffix(urlToRedirect, "/") {
-					urlToRedirect += "/"
-				}
-
-			}
-
-			ctx.ResponseWriter.Header().Set("Location", urlToRedirect)
-			ctx.ResponseWriter.WriteHeader(http.StatusMovedPermanently)
-
+		if err := ctx.Redirect(urlToRedirect); err == nil {
 			// RFC2616 recommends that a short note "SHOULD" be included in the
 			// response because older user agents may not understand 301/307.
 			// Shouldn't send the response for POST or HEAD; that leaves GET.
@@ -186,8 +165,9 @@ func (r *Router) find(_tree tree, reqPath string, ctx *Context) bool {
 				note := "<a href=\"" + htmlEscape(urlToRedirect) + "\">Moved Permanently</a>.\n"
 				ctx.Write(note)
 			}
-			return false
 		}
+
+		return false
 	}
 	ctx.NotFound()
 	return false

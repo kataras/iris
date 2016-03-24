@@ -293,3 +293,13 @@ func (p *GardenParty) Trace(path string, handlersFn ...HandlerFunc) {
 func (p *GardenParty) Any(path string, handlersFn ...HandlerFunc) {
 	p.HandleFunc("", path, handlersFn...)
 }
+
+// Use pass the middleware here
+// it overrides the MiddlewareSupporter's Use only in order to be able to call forceOptimusPrime
+func (p *GardenParty) Use(handlers ...Handler) {
+	//force OptimusPrime everytime a route added, this is not nessecery, it runs only once
+	//but many developers maybe use external server and FORGET to use the iris.Serve() and use just the 'iris'
+	//so
+	p.station.forceOptimusPrime()
+	p.MiddlewareSupporter.Use(handlers...)
+}

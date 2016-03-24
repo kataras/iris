@@ -41,17 +41,18 @@ const (
 	DefaultProfilePath = "/debug/pprof"
 )
 
-type IStation interface {
-	IRouter
-	Plugin(IPlugin) error
-	GetPluginContainer() IPluginContainer
-	GetTemplates() *template.Template
-	//yes we need that again if no .Listen called and you use other server, you have to call .Build() before
-	OptimusPrime()
-	HasOptimized() bool
-}
-
 type (
+	IStation interface {
+		IRouter
+		Serve() http.Handler
+		Plugin(IPlugin) error
+		GetPluginContainer() IPluginContainer
+		GetTemplates() *template.Template
+		//yes we need that again if no .Listen called and you use other server, you have to call .Build() before
+		OptimusPrime()
+		HasOptimized() bool
+	}
+
 	// StationOptions is the struct which contains all Iris' settings/options
 	StationOptions struct {
 		// Profile set to true to enable web pprof (debug profiling)
@@ -226,12 +227,17 @@ func (s *Station) HasOptimized() bool {
 	return s.optimized
 }
 
-// Serve is used instead of the iris.Listen
-// eg  http.ListenAndServe(":80",iris.Serve()) if you don't want to use iris.Listen(":80") ( you can't use iris because its package variable it's golang limitation)
-func (s *Station) Serve() http.Handler {
-	s.OptimusPrime()
-	return s.IRouter
-}
+// ServeHTTP returns the correct http.Handler for your machine and configuration, ready to use.
+// it's a little hack I though in order to call OptimusPrime automatically,
+// and without need of checking things every time a route added to the router
+/*func (s *Station) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	s.once.Do(func() {
+		//println("ServeHTTP: This ServeHTTP wrapper runs only once")
+		s.OptimusPrime()
+	})
+
+	s.IRouter.ServeHTTP(res, req)
+}*/
 
 // Listen starts the standalone http server
 // which listens to the fullHostOrPort parameter which as the form of
@@ -263,6 +269,13 @@ func (s *Station) ListenTLS(fullAddress string, certFile, keyFile string) error 
 	s.pluginContainer.DoPostListen(s, err)
 
 	return err
+}
+
+// Serve is used instead of the iris.Listen
+// eg  http.ListenAndServe(":80",iris.Serve()) if you don't want to use iris.Listen(":80")
+func (s *Station) Serve() http.Handler {
+	s.OptimusPrime()
+	return s.IRouter
 }
 
 // Close is used to close the tcp listener from the server
