@@ -97,7 +97,7 @@ type (
 	// Station is the container of all, server, router, cache and the sync.Pool
 	Station struct {
 		IRouter
-		server          *Server
+		Server          *Server
 		templates       *template.Template
 		pool            sync.Pool
 		options         StationOptions
@@ -244,12 +244,12 @@ func (s *Station) HasOptimized() bool {
 // host:port or just port
 func (s *Station) Listen(fullHostOrPort ...string) error {
 	s.OptimusPrime()
+
 	s.pluginContainer.DoPreListen(s)
 	// I moved the s.Server here because we want to be able to change the Router before listen (with plugins)
 	// set the server with the server handler
-	s.server = &Server{handler: s.IRouter}
-	err := s.server.listen(fullHostOrPort...)
-	s.pluginContainer.DoPostListen(s, err)
+	s.Server = &Server{handler: s.IRouter}
+	err := s.Server.listen(fullHostOrPort...)
 
 	return err
 }
@@ -264,9 +264,8 @@ func (s *Station) ListenTLS(fullAddress string, certFile, keyFile string) error 
 	s.pluginContainer.DoPreListen(s)
 	// I moved the s.Server here because we want to be able to change the Router before listen (with plugins)
 	// set the server with the server handler
-	s.server = &Server{handler: s.IRouter}
-	err := s.server.listenTLS(fullAddress, certFile, keyFile)
-	s.pluginContainer.DoPostListen(s, err)
+	s.Server = &Server{handler: s.IRouter}
+	err := s.Server.listenTLS(fullAddress, certFile, keyFile)
 
 	return err
 }
@@ -281,7 +280,7 @@ func (s *Station) Serve() http.Handler {
 // Close is used to close the tcp listener from the server
 func (s *Station) Close() {
 	s.pluginContainer.DoPreClose(s)
-	s.server.closeServer()
+	s.Server.closeServer()
 }
 
 // Templates sets the templates glob path for the web app

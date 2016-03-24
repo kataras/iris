@@ -68,13 +68,8 @@ type (
 	IPluginPreListen interface {
 		// PreListen it's being called only one time, BEFORE the Server is started (if .Listen called)
 		// is used to do work at the time all other things are ready to go
+		//  parameter is the station
 		PreListen(*Station)
-	}
-
-	IPluginPostListen interface {
-		// PostListen it's being called only one time, AFTER the Server is started (if .Listen called)
-		// is used to do work when the server is running
-		PostListen(*Station, error)
 	}
 
 	IPluginPreClose interface {
@@ -94,7 +89,6 @@ type IPluginContainer interface {
 	DoPreHandle(route IRoute)
 	DoPostHandle(route IRoute)
 	DoPreListen(station *Station)
-	DoPostListen(station *Station, err error)
 	DoPreClose(station *Station)
 }
 
@@ -192,15 +186,6 @@ func (p *PluginContainer) DoPreListen(station *Station) {
 		// check if this method exists on our plugin obj, these are optionaly and call it
 		if pluginObj, ok := p.activatedPlugins[i].(IPluginPreListen); ok {
 			pluginObj.PreListen(station)
-		}
-	}
-}
-
-func (p *PluginContainer) DoPostListen(station *Station, err error) {
-	for i := 0; i < len(p.activatedPlugins); i++ {
-		// check if this method exists on our plugin obj, these are optionaly and call it
-		if pluginObj, ok := p.activatedPlugins[i].(IPluginPostListen); ok {
-			pluginObj.PostListen(station, err)
 		}
 	}
 }

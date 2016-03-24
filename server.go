@@ -64,14 +64,16 @@ func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
 // Server's New() located at the iris.go file
 type Server struct {
 	// the handler which comes from the station which comes from the router.
-	handler   http.Handler
-	listener  net.Listener
-	isRunning bool
-	// isSecure true if ListenTLS (https/http2)
-	isSecure bool
+	handler       http.Handler
+	listener      net.Listener
+	IsRunning     bool
+	ListeningAddr string
+	// IsSecure true if ListenTLS (https/http2)
+	IsSecure          bool
+	CertFile, KeyFile string
 }
 
-func parseAddr(fullHostOrPort []string) string {
+func ParseAddr(fullHostOrPort []string) string {
 	//means only port is given
 	hlen := len(fullHostOrPort)
 
@@ -101,7 +103,7 @@ func parseAddr(fullHostOrPort []string) string {
 // which listens to the fullHostOrPort parameter which as the form of
 // host:port or just port
 func (s *Server) listen(fullHostOrPort ...string) error {
-	fulladdr := parseAddr(fullHostOrPort)
+	fulladdr := ParseAddr(fullHostOrPort)
 	//mux := http.NewServeMux() //we use the http's ServeMux for now as the top- middleware of the server, for now.
 
 	//mux.Handle("/", s.handler)
@@ -117,8 +119,11 @@ func (s *Server) listen(fullHostOrPort ...string) error {
 	err = http.Serve(s.listener, s.handler)
 
 	if err == nil {
-		s.isRunning = true
-		s.isSecure = false
+		s.ListeningAddr = fulladdr
+		s.IsRunning = true
+		s.IsSecure = false
+		s.CertFile = ""
+		s.KeyFile = ""
 	}
 	listener.Close()
 	//s.listener.Close()
@@ -168,8 +173,11 @@ func (s *Server) listenTLS(fulladdr string, certFile, keyFile string) error {
 	err = httpServer.Serve(s.listener)
 
 	if err == nil {
-		s.isRunning = true
-		s.isSecure = true
+		s.IsRunning = true
+		s.IsSecure = true
+		s.ListeningAddr = fulladdr
+		s.CertFile = certFile
+		s.KeyFile = keyFile
 	}
 	//s.listener.Close()
 	return err
@@ -177,8 +185,8 @@ func (s *Server) listenTLS(fulladdr string, certFile, keyFile string) error {
 
 // closeServer is used to close the net.Listener of the standalone http server which has already running via .Listen
 func (s *Server) closeServer() {
-	if s.isRunning && s.listener != nil {
+	if s.IsRunning && s.listener != nil {
 		s.listener.Close()
-		s.isRunning = false
+		s.IsRunning = false
 	}
 }
