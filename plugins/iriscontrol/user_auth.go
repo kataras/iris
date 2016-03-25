@@ -62,7 +62,7 @@ func (u *userAuth) login(ctx *iris.Context) {
 	if err != nil {
 		println("\nerror on session: ", err.Error())
 		//re redirect to the login
-		ctx.Write("fail")
+		ctx.Write(err.Error())
 		return
 	}
 	username := ctx.Request.PostFormValue("username")

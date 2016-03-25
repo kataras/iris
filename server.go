@@ -116,8 +116,10 @@ func (s *Server) listen(fullHostOrPort ...string) error {
 		return err
 	}
 	s.listener = &tcpKeepAliveListener{listener.(*net.TCPListener)}
-	err = http.Serve(s.listener, s.handler)
-
+	//err = http.Serve(s.listener, s.handler)
+	//TODO: MAKE IT RETURN A CHANNEL WITH AN ERROR IF NOT NIL THEN THE USER MUST KNOW .
+	//I changed that because we need PostListen on the plugins, the blocking is made at the station level now.
+	go http.Serve(s.listener, s.handler)
 	if err == nil {
 		s.ListeningAddr = fulladdr
 		s.IsRunning = true
@@ -125,8 +127,9 @@ func (s *Server) listen(fullHostOrPort ...string) error {
 		s.CertFile = ""
 		s.KeyFile = ""
 	}
-	listener.Close()
-	//s.listener.Close()
+
+	//listener.Close()
+
 	return err
 }
 
@@ -169,9 +172,9 @@ func (s *Server) listenTLS(fulladdr string, certFile, keyFile string) error {
 	if err != nil {
 		panic("Cannot run the server [problem with tcp listener on host:port]: " + fulladdr + " err:" + err.Error())
 	}
-
-	err = httpServer.Serve(s.listener)
-
+	//TODO: MAKE IT RETURN A CHANNEL WITH AN ERROR IF NOT NIL THEN THE USER MUST KNOW .
+	//err = httpServer.Serve(s.listener)
+	go httpServer.Serve(s.listener)
 	if err == nil {
 		s.IsRunning = true
 		s.IsSecure = true

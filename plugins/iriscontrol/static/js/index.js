@@ -17,7 +17,7 @@ $(".login").submit(function(){
 				  $("input").css({"border-color":"#2ecc71"});
 				  window.location="/"
 		  }else{
-			  alert("Try again.")
+			  alert("Try again. "+data + " .\nClear your browser's cookies if you cannot login.")
 		  }
 
 	    
