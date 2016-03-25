@@ -1,10 +1,42 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Iris Control - Login</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Iris Control">
+    <title>Iris Control - Login</title>
+    <link rel="stylesheet" href="css/pure/pure-min.css">
+    <link rel="stylesheet" href="css/iris-control.css">
+    <!--[if lte IE 8]>
+    <link rel="stylesheet" href="css/pure/grids-responsive-old-ie-min.css">
+    <link rel="stylesheet" href="css/layouts/side-menu-old-ie.css">
+    <![endif]-->
+    <!--[if gt IE 8]><!-->
+    <link rel="stylesheet" href="css/layouts/side-menu.css">
+    <link rel="stylesheet" href="css/pure/grids-responsive-min.css">
+    <!--<![endif]-->
 </head>
 <body>
-<h1>LOGIN</h1>
+<div class="iris-control-login">
+    <div class="pure-g">
+        <div class="pure-u-1-5 pure-u-md-1-3"></div>
+        <div class="pure-u-3-5 pure-u-md-1-3">
+            <form class="pure-form">
+                <div class="pure-g">
+                    <div class="pure-u-1 iris-icon"><h2>Iris Framework</h2></div>
+                </div>
+                <legend>
+                    Iris Control Login
+                </legend>
+                <fieldset class="pure-group">
+                    <input type="text" class="pure-input-1" placeholder="Username">
+                    <input type="text" class="pure-input-1" placeholder="Password">
+                </fieldset>
+                <button type="submit" class="pure-button pure-input-1 pure-button-primary">Sign in</button>
+            </form>
+        </div>
+        <div class="pure-u-1-5 pure-u-md-1-3"></div>
+    </div>
+</div>
 </body>
 </html>
