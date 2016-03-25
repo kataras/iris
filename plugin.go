@@ -121,7 +121,6 @@ func (p *PluginContainer) Plugin(plugin IPlugin) error {
 	}
 	// All ok, add it to the plugins list
 	p.activatedPlugins = append(p.activatedPlugins, plugin)
-
 	return nil
 }
 

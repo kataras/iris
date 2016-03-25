@@ -65,7 +65,7 @@ type IContext interface {
 	EmitError(statusCode int)
 	StopExecution()
 	//
-	Redirect(path string) error
+	Redirect(path string, statusHeader ...int) error
 	SendStatus(statusCode int, message string)
 	RequestIP() string
 	Close()
@@ -237,7 +237,11 @@ func (ctx *Context) StopExecution() {
 
 //
 
-func (ctx *Context) Redirect(urlToRedirect string) error {
+func (ctx *Context) Redirect(urlToRedirect string, statusHeader ...int) error {
+	httpStatus := 302 // temporary redirect
+	if statusHeader != nil && len(statusHeader) > 0 && statusHeader[0] > 0 {
+		httpStatus = statusHeader[0]
+	}
 	var u *url.URL
 	var err error
 	if u, err = url.Parse(urlToRedirect); err == nil {
@@ -253,9 +257,8 @@ func (ctx *Context) Redirect(urlToRedirect string) error {
 			}
 
 		}
-
 		ctx.ResponseWriter.Header().Set("Location", urlToRedirect)
-		ctx.ResponseWriter.WriteHeader(http.StatusMovedPermanently)
+		ctx.ResponseWriter.WriteHeader(httpStatus)
 	}
 	return err
 }
