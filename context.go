@@ -36,6 +36,8 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"reflect"
+	"runtime"
 	"strconv"
 	"strings"
 )
@@ -87,6 +89,7 @@ type IContext interface {
 	WriteXML(httpStatus int, xmlStructs ...interface{}) error
 	XML(xmlStructs ...interface{}) error
 	ReadXML(xmlObject interface{}) error
+	GetHandlerName() string
 }
 
 // Charset is defaulted to UTF-8, you can change it
@@ -534,3 +537,8 @@ func (ctx *Context) XML(xmlStructs ...interface{}) error {
 }
 
 /* END OF RENDERER */
+
+func (ctx *Context) GetHandlerName() string {
+	return runtime.FuncForPC(reflect.ValueOf(ctx.middleware[len(ctx.middleware)-1]).Pointer()).Name()
+
+}
