@@ -29,6 +29,7 @@ package iriscontrol
 import (
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/sessions"
+	"strings"
 )
 
 var store = sessions.NewCookieStore([]byte(RandStringBytesMaskImprSrc(10)))
@@ -59,16 +60,25 @@ func newUserAuth(usersMap map[string]string) *userAuth {
 func (u *userAuth) login(ctx *iris.Context) {
 	session, err := panelSessions.Get(ctx)
 	if err != nil {
+		println("\nerror on session: ", err.Error())
 		//re redirect to the login
-		ctx.Redirect("/login")
+		ctx.Write("fail")
 		return
 	}
 	username := ctx.Request.PostFormValue("username")
 	password := ctx.Request.PostFormValue("password")
 
-	session.Set("user", user{username, password})
-	session.Save(ctx)
-	ctx.Redirect("/")
+	for _, authenticatedUser := range u.authenticatedUsers {
+		if authenticatedUser.username == username && authenticatedUser.password == password {
+			session.Set("username", username)
+			session.Set("password", password)
+			session.Save(ctx)
+			ctx.Write("success")
+			return
+		}
+	}
+	ctx.Write("fail")
+
 }
 
 func (u *userAuth) logout(ctx *iris.Context) {
@@ -85,23 +95,29 @@ func (u *userAuth) logout(ctx *iris.Context) {
 
 // check if session stored, then check if this user is the correct, everytime, then continue, else not
 func (u *userAuth) Serve(ctx *iris.Context) {
-	if ctx.Request.URL.Path == "/login" {
-
+	if ctx.Request.URL.Path == "/login" || strings.HasPrefix(ctx.Request.URL.Path, "/public") {
 		ctx.Next()
 		return
 	}
 	session, err := panelSessions.Get(ctx)
 	if err != nil {
+		println("error on session(2): ", err.Error())
 		return
 	}
-	if sessionVal := session.Get("user"); sessionVal != nil {
-		loggedUser := sessionVal.(user)
+	if sessionVal := session.Get("username"); sessionVal != nil {
+		username := sessionVal.(string)
+		password := session.GetString("password")
+		if username != "" && password != "" {
 
-		for _, authenticatedUser := range u.authenticatedUsers {
-			if authenticatedUser.username == loggedUser.username && authenticatedUser.password == loggedUser.password {
-				ctx.Next()
+			for _, authenticatedUser := range u.authenticatedUsers {
+				if authenticatedUser.username == username && authenticatedUser.password == password {
+					ctx.Next()
+
+					return
+				}
 			}
 		}
+
 	}
 	//if not logged in the redirect to the /login
 	ctx.Redirect("/login")

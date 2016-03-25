@@ -36,7 +36,14 @@ type RouteInfo struct {
 	Path   string `json:"path"`
 }
 
+type PluginInfo struct {
+	Name        string
+	Description string
+}
+
 func (i irisControlPlugin) getRoutes(ctx *iris.Context) {
 	ctx.WriteJSON(200, i.routes)
 	ctx.End()
 }
+
+//func getPluginlist...

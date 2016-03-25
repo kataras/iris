@@ -52,11 +52,7 @@ type DashboardPage struct {
 
 func (i *irisControlPlugin) setPanelRoutes() {
 
-	i.server.Use(i.auth)
-
-	i.server.Get("/", func(ctx *iris.Context) {
-		ctx.RenderFile("index.html", DashboardPage{ServerIsRunning: i.station.Server.IsRunning, Routes: i.routes})
-	})
+	i.server.Get("/public/*assets", iris.Static(os.Getenv("GOPATH")+"/src/github.com/kataras/iris/plugins/iriscontrol/static/", "/public/"))
 
 	i.server.Get("/login", func(ctx *iris.Context) {
 		ctx.RenderFile("login.html", nil)
@@ -64,6 +60,11 @@ func (i *irisControlPlugin) setPanelRoutes() {
 
 	i.server.Post("/login", func(ctx *iris.Context) {
 		i.auth.login(ctx)
+	})
+
+	i.server.Use(i.auth)
+	i.server.Get("/", func(ctx *iris.Context) {
+		ctx.RenderFile("index.html", DashboardPage{ServerIsRunning: i.station.Server.IsRunning, Routes: i.routes})
 	})
 
 	i.server.Post("/logout", func(ctx *iris.Context) {

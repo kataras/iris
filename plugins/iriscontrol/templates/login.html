@@ -2,9 +2,47 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Iris Control - Login</title>
+<title>Iris Control Panel - Login</title>
+<script src="public/js/modernizr.js" type="text/javascript"></script>
+
+<link rel="stylesheet" href="public/css/reset.css">
+<link rel='stylesheet prefetch'	href='public/css/font-awesome.min.css'>
+<link rel="stylesheet" href="public/css/style.css">
+
 </head>
+
 <body>
-<h1>LOGIN</h1>
+
+	<form class="login">
+
+		<fieldset>
+
+			<legend class="legend">Login</legend>
+
+			<div class="input">
+				<input id="usernameTxt" type=text placeholder="Username" required /> <span><i
+					class="fa fa-user"></i></span>
+			</div>
+
+			<div class="input">
+				<input id="passwordTxt" type="password" placeholder="Password" required /> <span><i
+					class="fa fa-lock"></i></span>
+			</div>
+
+			<button type="submit" class="submit">
+				<i class="fa fa-long-arrow-right"></i>
+			</button>
+
+		</fieldset>
+
+		<div class="feedback">
+			login successful <br /> redirecting...
+		</div>
+
+	</form>
+	
+	<script	src='public/js/jquery.min.js'></script>
+	<script src="public/js/index.js"></script>
+
 </body>
 </html>
