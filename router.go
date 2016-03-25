@@ -157,7 +157,7 @@ func (r *Router) find(_tree tree, reqPath string, ctx *Context) bool {
 		ctx.Request.URL.Path = reqPath
 		urlToRedirect := ctx.Request.URL.String()
 
-		if err := ctx.Redirect(urlToRedirect); err == nil {
+		if err := ctx.Redirect(urlToRedirect, http.StatusMovedPermanently); err == nil {
 			// RFC2616 recommends that a short note "SHOULD" be included in the
 			// response because older user agents may not understand 301/307.
 			// Shouldn't send the response for POST or HEAD; that leaves GET.
