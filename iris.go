@@ -185,6 +185,11 @@ func Any(path string, handlersFn ...HandlerFunc) {
 	DefaultStation.Any(path, handlersFn...)
 }
 
+// Ws registers a websocket route
+func Ws(path string, handler Handler) {
+	DefaultStation.Ws(path, handler)
+}
+
 // ServeHTTP serves an http request,
 // with this function iris can be used also as  a middleware into other already defined http server
 func ServeHTTP(res http.ResponseWriter, req *http.Request) {

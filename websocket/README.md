@@ -26,7 +26,7 @@ func echoHandler(ws *websocket.Conn) {
 }
 
 func main() {
-	iris.Handle("/echo", websocket.Handler(echoHandler))
+	iris.Ws("/echo", websocket.Handler(echoHandler))
 	iris.Get("/*files", iris.Static("."))
 	err := iris.Listen(":8080")
 	if err != nil {
