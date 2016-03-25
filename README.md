@@ -19,13 +19,16 @@ Iris is a very minimal but flexible go web framework  providing arobust set of f
 ```go
 package main
 
-import "github.com/kataras/iris"
+import (
+  "github.com/kataras/iris"
+  "log"
+)
 
 func main() {
 	iris.Get("/hello", func(c *iris.Context) {
 		c.HTML("<b> Hello </b>")
 	})
-	iris.Listen(":8080")
+	log.Fatal(iris.Listen(":8082"))
 }
 
 ```
