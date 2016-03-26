@@ -132,6 +132,7 @@ type HandleFunc func(*Context)
 func (h HandlerFunc) Serve(c *Context) {
 	h(c)
 }
+
 ```
 HandlerFuncs shoud have this function signature:
 ```go
@@ -178,10 +179,14 @@ ris.HandleAnnotated(&UserHandler{})
 
 ### Using native http.Handler
 > Note that using native http handler you cannot access url params.
+
+
+
 ```go
+
 type nativehandler struct {}
 
-func (_ nativehandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (_ nativehandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 }
 
