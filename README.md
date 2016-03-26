@@ -127,7 +127,7 @@ HandlerFuncs should implement the Serve(*Context) func.
 HandlerFunc is most simple method to register a route or a middleware, but under the hoods it's acts like a Handler. It's implements the Handler interface as well:
 
 ```go
-type HandleFunc func(*Context)
+type HandlerFunc func(*Context)
 
 func (h HandlerFunc) Serve(c *Context) {
 	h(c)
@@ -140,6 +140,9 @@ func handlerFunc(c *iris.Context)  {
 	c.Write("Hello")
 }
 
+
+iris.HandleFunc("GET","/letsgetit",handlerFunc)
+//OR
 iris.Get("/get", handlerFunc)
 iris.Post("/post", handlerFunc)
 iris.Put("/put", handlerFunc)
@@ -201,7 +204,6 @@ func main() {
 #### Using native http.Handler via *iris.ToHandlerFunc()*
 
 ```go
-
 iris.Get("/letsget", iris.ToHandlerFunc(nativehandler{}))
 iris.Post("/letspost", iris.ToHandlerFunc(nativehandler{}))
 iris.Put("/letsput", iris.ToHandlerFunc(nativehandler{}))
@@ -855,6 +857,8 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 - [x] [Subdomains supports with the same syntax as iris.Get, iris.Post ...](https://github.com/kataras/iris/tree/examples/subdomains_simple)
 - [x] [Provide a more detailed benchmark table to the README with all go web frameworks that I know, no just the 6 most famous](https://github.com/kataras/iris/tree/benchmark)
 - [ ] Convert useful middlewares out there into Iris middlewares, or contact with their authors to do so.
+- [ ] Provide automatic HTTPS using https://letsencrypt.org/how-it-works/.
+- [ ] Create administration web interface as plugin.
 - [ ] Create an easy websocket api.
 - [ ] Create a mechanism that scan for Typescript files, compile them on server startup and serve them.
 
