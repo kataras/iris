@@ -28,7 +28,7 @@ body {
   position: relative;
   width: 100%;
   display: block;
-  background: #FF7052;
+  background: #3daac7;
   padding: 15px;
   color: #fff;
   font-size: 20px;
@@ -71,7 +71,7 @@ body {
 .input input:focus {
   padding: 10px 5px 10px 10px;
   outline: 0;
-  border-color: #FF7052;
+  border-color: #3daac7;
 }
 .submit {
   width: 45px;
@@ -80,8 +80,8 @@ body {
   margin: 0 auto -15px auto;
   background: #fff;
   border-radius: 100%;
-  border: 1px solid #FF7052;
-  color: #FF7052;
+  border: 1px solid #3daac7;
+  color: #3daac7;
   font-size: 24px;
   cursor: pointer;
   box-shadow: 0px 0px 0px 7px #fff;
@@ -89,7 +89,7 @@ body {
 }
 .submit:hover,
 .submit:focus {
-  background: #FF7052;
+  background: #3daac7;
   color: #fff;
   outline: 0;
 }

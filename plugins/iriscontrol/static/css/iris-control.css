@@ -1,0 +1,89 @@
+.iris-control-login {
+    margin-top: 2em;
+}
+
+.iris-icon {
+    background: url('http://kataras.github.io/iris/assets/56e4b048f1ee49764ddd78fe_iris_favicon.ico') no-repeat center center;
+    background-size: contain;
+}
+
+.full-table {
+    width: 100%;
+}
+
+.server-status {
+    margin-top: 15px;
+    padding: 5px 0px;
+}
+
+.server-status span {
+    display: inline-block;
+    font-size: 16px;
+}
+
+.server-status a {
+
+}
+
+.server-status-green {
+    background-color: green;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.server-status-red {
+    background-color: red;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.server-last-op-time {
+    padding: 5px;
+}
+
+.button-xsmall {
+    font-size: 70%;
+}
+
+.button-small {
+    font-size: 85%;
+}
+
+.button-large {
+    font-size: 110%;
+}
+
+.button-xlarge {
+    font-size: 125%;
+}
+
+.button-success,
+.button-error,
+.button-warning,
+.button-secondary {
+    color: white;
+    border-radius: 4px;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+.button-success {
+    background: rgb(28, 184, 65); /* this is a green */
+}
+
+.button-error {
+    background: rgb(202, 60, 60); /* this is a maroon */
+}
+
+.button-warning {
+    background: rgb(223, 117, 20); /* this is an orange */
+}
+
+.button-secondary {
+    background: rgb(66, 184, 221); /* this is a light blue */
+}
