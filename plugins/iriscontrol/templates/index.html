@@ -1,11 +1,108 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Iris Control - Interface</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Iris Control">
+    <title>Iris Control - Index</title>
+    <link rel="stylesheet" href="../static/css/pure/pure-min.css">
+    <link rel="stylesheet" href="../static/css/iris-control.css">
+    <!--[if lte IE 8]>
+    <link rel="stylesheet" href="../static/css/pure/grids-responsive-old-ie-min.css">
+    <link rel="stylesheet" href="../static/css/layouts/side-menu-old-ie.css">
+    <![endif]-->
+    <!--[if gt IE 8]><!-->
+    <link rel="stylesheet" href="../static/css/layouts/side-menu.css">
+    <link rel="stylesheet" href="../static/css/pure/grids-responsive-min.css">
+    <!--<![endif]-->
 </head>
 <body>
- Is Server Running? {{.ServerIsRunning}} <br/>
- Routes len: {{len .Routes}}
+<div id="layout">
+    <!-- Menu toggle -->
+    <a href="#menu" id="menuLink" class="menu-link">
+        <!-- Hamburger icon -->
+        <span></span>
+    </a>
+    <div id="menu">
+        <div class="pure-menu">
+            <a class="pure-menu-heading" href="#">Iris Control</a>
+            <div class="server-status">
+                <span class="server-status-green"></span>
+                <button class="pure-button button-small">Stop Service</button>
+                <p class="server-last-op-time"> Last op: 03-25-2016 21:57:01</p>
+            </div>
+            <div class="server-status" style="display: none">
+                <span class="server-status-red"></span>
+                <button class="pure-button button-small">Start Service</button>
+                <p class="server-last-op-time"> Last op: 03-25-2016 21:57:01</p>
+            </div>
+            <ul class="pure-menu-list">
+                <li class="pure-menu-item"><a href="#" class="pure-menu-link">Registed routers</a></li>
+                <li class="pure-menu-item"><a href="#" class="pure-menu-link">Activated plugins</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="main">
+        <div class="header iris-icon">
+        </div>
+        <p></p>
+        <div class="content">
+            <h2>There are {{24}} Registed routers</h2>
+            <table class="pure-table pure-table-striped full-table">
+                <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Method</th>
+                    <th>Path</th>
+                    <th>Domain</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>POST</td>
+                    <td>/user/login</td>
+                    <td>localhost</td>
+                </tr>
+
+                <tr>
+                    <td>2</td>
+                    <td>GET</td>
+                    <td>/user/list</td>
+                    <td>admin.localhost</td>
+                </tr>
+                </tbody>
+            </table>
+            <p></p>
+            <h2>There are {{6}} Registed routers</h2>
+            <table class="pure-table pure-table-striped full-table">
+                <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>plugin1</td>
+                    <td>the description of plugin1</td>
+                </tr>
+
+                <tr>
+                    <td>2</td>
+                    <td>plugin2</td>
+                    <td>the description of plugin2</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script src="../static/js/ui.js"></script>
 </body>
 </html>
