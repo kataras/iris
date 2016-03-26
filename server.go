@@ -79,7 +79,7 @@ func ParseAddr(fullHostOrPort []string) string {
 
 	//wrong parameters
 	if hlen > 1 {
-		panic("Iris: Max parameters length is 2, pass a host:port or port")
+		panic("Iris: Max parameters length is 2, please pass only one string: 'localhost:8080' or ':8080'")
 	}
 	addr := ":8080" // default address
 	// if nothing passed, then use environment's port (if any) or just :8080

@@ -97,6 +97,7 @@ type IPluginContainer interface {
 	DoPreListen(station *Station)
 	DoPostListen(station *Station)
 	DoPreClose(station *Station)
+	GetAll() []IPlugin
 }
 
 // PluginContainer is the base container of all Iris, registed plugins
@@ -161,6 +162,11 @@ func (p *PluginContainer) GetByName(pluginName string) IPlugin {
 	}
 
 	return nil
+}
+
+// GetAll returns all activated plugins
+func (p *PluginContainer) GetAll() []IPlugin {
+	return p.activatedPlugins
 }
 
 // Printf sends plain text to any registed logger (future), some plugins maybe want use this method

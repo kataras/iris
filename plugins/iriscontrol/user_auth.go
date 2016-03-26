@@ -123,3 +123,8 @@ func (u *userAuth) Serve(ctx *iris.Context) {
 	ctx.Redirect("/login")
 
 }
+
+// Destroy clears all sessions and stores, this is called on PreClose by the iriscontrol.go
+func (u *userAuth) Destroy() {
+	sessions.ClearAll()
+}

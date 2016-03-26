@@ -49,7 +49,9 @@ type irisControlPlugin struct {
 	server *iris.Station
 	//
 	//infos
-	routes []RouteInfo
+	routes  []RouteInfo
+	plugins []PluginInfo
+	//
 
 	auth *userAuth
 }
@@ -125,6 +127,7 @@ func (i *irisControlPlugin) Destroy() {
 	i.station = nil
 	i.server.Close()
 	i.pluginContainer = nil
-
+	i.auth.Destroy()
+	i.auth = nil
 	i.pluginContainer.Printf("[%s] %s is turned off", time.Now().UTC().String(), Name)
 }

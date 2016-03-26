@@ -37,7 +37,7 @@ import (
 func (i *irisControlPlugin) startControlPanel() {
 	i.server = iris.Custom(iris.StationOptions{Cache: false, Profile: false, PathCorrection: true})
 	i.server.Templates(os.Getenv("GOPATH") + "/src/github.com/kataras/iris/plugins/iriscontrol/templates/*")
-
+	i.setPluginsInfo()
 	i.setPanelRoutes()
 
 	go i.server.Listen(strconv.Itoa(i.options.Port))
@@ -48,6 +48,15 @@ func (i *irisControlPlugin) startControlPanel() {
 type DashboardPage struct {
 	ServerIsRunning bool
 	Routes          []RouteInfo
+	Plugins         []PluginInfo
+}
+
+func (i *irisControlPlugin) setPluginsInfo() {
+	plugins := i.pluginContainer.GetAll()
+	i.plugins = make([]PluginInfo, 0, len(plugins))
+	for _, plugin := range plugins {
+		i.plugins = append(i.plugins, PluginInfo{Name: plugin.GetName(), Description: plugin.GetDescription()})
+	}
 }
 
 func (i *irisControlPlugin) setPanelRoutes() {
@@ -64,7 +73,7 @@ func (i *irisControlPlugin) setPanelRoutes() {
 
 	i.server.Use(i.auth)
 	i.server.Get("/", func(ctx *iris.Context) {
-		ctx.RenderFile("index.html", DashboardPage{ServerIsRunning: i.station.Server.IsRunning, Routes: i.routes})
+		ctx.RenderFile("index.html", DashboardPage{ServerIsRunning: i.station.Server.IsRunning, Routes: i.routes, Plugins: i.plugins})
 	})
 
 	i.server.Post("/logout", func(ctx *iris.Context) {
