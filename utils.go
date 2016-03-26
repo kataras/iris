@@ -141,6 +141,8 @@ func downloadZip(zipUrl string, newDir string) (string, error) {
 }
 
 // unzip extracts a zipped file to the target location
+//
+// it removes the zipped file after succesfuly completion
 func unzip(archive string, target string) error {
 	reader, err := zip.OpenReader(archive)
 	if err != nil {
@@ -174,6 +176,5 @@ func unzip(archive string, target string) error {
 			return err
 		}
 	}
-
 	return nil
 }
