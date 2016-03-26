@@ -62,18 +62,18 @@ func findLower(a, b int) int {
 
 // these are experimentals, will be used inside plugins to extend their power.
 
-// DirectoryExists returns true if a directory(or file) exists, otherwise false
-func DirectoryExists(dir string) bool {
+// directoryExists returns true if a directory(or file) exists, otherwise false
+func directoryExists(dir string) bool {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		return false
 	}
 	return true
 }
 
-// DownloadZip downloads a zip file returns the downloaded filename and an error.
+// downloadZip downloads a zip file returns the downloaded filename and an error.
 //
 // An indicator is always shown up to the terminal, so the user will know if (a plugin) try to download something
-func DownloadZip(zipUrl string, newDir string) (string, error) {
+func downloadZip(zipUrl string, newDir string) (string, error) {
 	var err error
 	var size int64
 	finish := false
@@ -140,8 +140,8 @@ func DownloadZip(zipUrl string, newDir string) (string, error) {
 
 }
 
-// Unzip extracts a zipped file to the target location
-func Unzip(archive, target string) error {
+// unzip extracts a zipped file to the target location
+func unzip(archive string, target string) error {
 	reader, err := zip.OpenReader(archive)
 	if err != nil {
 		return err

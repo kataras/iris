@@ -85,26 +85,65 @@ type (
 		// The plugin is deactivated after this state
 		PreClose(*Station)
 	}
+
+	// IPluginPreDownload It's for the future, not being used, I need to create
+	// and return an ActivatedPlugin type which will have it's methods, and pass it on .Activate
+	// but now we return the whole pluginContainer, which I can't determinate which plugin tries to
+	// download something, so we will leave it here for the future.
+	IPluginPreDownload interface {
+		// PreDownload it's being called every time a plugin tries to download something
+		//
+		// first parameter is the plugin
+		// second parameter is the download url
+		// must return a boolean, if false then the plugin is not permmited to download this file
+		PreDownload(plugin IPlugin, downloadUrl string) // bool
+	}
+
+	IPluginContainer interface {
+		Plugin(plugin IPlugin) error
+		RemovePlugin(pluginName string)
+		GetByName(pluginName string) IPlugin
+		Printf(format string, a ...interface{})
+		DoPreHandle(route IRoute)
+		DoPostHandle(route IRoute)
+		DoPreListen(station *Station)
+		DoPostListen(station *Station)
+		DoPreClose(station *Station)
+		DoPreDownload(pluginTryToDownload IPlugin, downloadUrl string)
+		GetAll() []IPlugin
+		// GetDownloader is the only one module that is used and fire listeners at the same time in this file
+		GetDownloader() IDownloadManager
+	}
+
+	IDownloadManager interface {
+		DirectoryExists(dir string) bool
+		DownloadZip(zipUrl string, targetDir string) (string, error)
+		Unzip(archive string, target string) error
+	}
 )
 
-type IPluginContainer interface {
-	Plugin(plugin IPlugin) error
-	RemovePlugin(pluginName string)
-	GetByName(pluginName string) IPlugin
-	Printf(format string, a ...interface{})
-	DoPreHandle(route IRoute)
-	DoPostHandle(route IRoute)
-	DoPreListen(station *Station)
-	DoPostListen(station *Station)
-	DoPreClose(station *Station)
-	GetAll() []IPlugin
+type DownloadManager struct {
+}
+
+func (d *DownloadManager) DirectoryExists(dir string) bool {
+	return directoryExists(dir)
+}
+
+func (d *DownloadManager) DownloadZip(zipUrl string, targetDir string) (string, error) {
+	return downloadZip(zipUrl, targetDir)
+}
+
+func (d *DownloadManager) Unzip(archive string, target string) error {
+	return unzip(archive, target)
 }
 
 // PluginContainer is the base container of all Iris, registed plugins
 type PluginContainer struct {
 	activatedPlugins []IPlugin
+	downloader       *DownloadManager
 }
 
+var _ IDownloadManager = &DownloadManager{}
 var _ IPluginContainer = &PluginContainer{}
 
 // Plugin activates the plugins and if succeed then adds it to the activated plugins list
@@ -169,6 +208,15 @@ func (p *PluginContainer) GetAll() []IPlugin {
 	return p.activatedPlugins
 }
 
+// GetDownloader returns the download manager
+func (p *PluginContainer) GetDownloader() IDownloadManager {
+	// create it if and only if it used somewhere
+	if p.downloader == nil {
+		p.downloader = &DownloadManager{}
+	}
+	return p.downloader
+}
+
 // Printf sends plain text to any registed logger (future), some plugins maybe want use this method
 // maybe at the future I change it, instead of sync even-driven to async channels...
 func (p *PluginContainer) Printf(format string, a ...interface{}) {
@@ -211,11 +259,20 @@ func (p *PluginContainer) DoPostListen(station *Station) {
 	}
 }
 
-func (p *PluginContainer) DoPreClose(station *Station) { //tood IStation
+func (p *PluginContainer) DoPreClose(station *Station) {
 	for i := 0; i < len(p.activatedPlugins); i++ {
 		// check if this method exists on our plugin obj, these are optionaly and call it
 		if pluginObj, ok := p.activatedPlugins[i].(IPluginPreClose); ok {
 			pluginObj.PreClose(station)
+		}
+	}
+}
+
+func (p *PluginContainer) DoPreDownload(pluginTryToDownload IPlugin, downloadUrl string) {
+	for i := 0; i < len(p.activatedPlugins); i++ {
+		// check if this method exists on our plugin obj, these are optionaly and call it
+		if pluginObj, ok := p.activatedPlugins[i].(IPluginPreDownload); ok {
+			pluginObj.PreDownload(pluginTryToDownload, downloadUrl)
 		}
 	}
 }
