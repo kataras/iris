@@ -33,11 +33,26 @@ import (
 	"time"
 )
 
+var pathSeperator = string(os.PathSeparator)
+var pluginPath = os.Getenv("GOPATH") + pathSeperator + "src" + pathSeperator + "github.com" + pathSeperator + "kataras" + pathSeperator + "iris" + pathSeperator + "plugins" + pathSeperator + "iriscontrol" + pathSeperator
+var assetsUrl = "https://github.com/iris-contrib/iris-control-assets/archive/master.zip"
+var zipPath = pluginPath + "master.zip"
+var assetsFolderName = "iris-control-assets-master"
+var installationPath = pluginPath + assetsFolderName + pathSeperator
+
 // for the plugin server
 func (i *irisControlPlugin) startControlPanel() {
-	i.server = iris.Custom(iris.StationOptions{Cache: false, Profile: false, PathCorrection: true})
-	i.server.Templates(os.Getenv("GOPATH") + "/src/github.com/kataras/iris/plugins/iriscontrol/templates/*")
 
+	// install the assets first
+	if err := i.installAssets(); err != nil {
+		i.pluginContainer.Printf("[%s] %s Error %s: Couldn't install the assets from the internet,\n make sure you are connecting to the internet the first time running the iris-control plugin", time.Now().UTC().String(), Name, err.Error())
+		i.Destroy()
+		return
+	}
+
+	i.server = iris.Custom(iris.StationOptions{Cache: false, Profile: false, PathCorrection: true})
+	i.server.Templates(installationPath + "templates/*")
+	i.setPluginsInfo()
 	i.setPanelRoutes()
 
 	go i.server.Listen(strconv.Itoa(i.options.Port))
@@ -48,15 +63,49 @@ func (i *irisControlPlugin) startControlPanel() {
 type DashboardPage struct {
 	ServerIsRunning bool
 	Routes          []RouteInfo
+	Plugins         []PluginInfo
+}
+
+func (i *irisControlPlugin) setPluginsInfo() {
+	plugins := i.pluginContainer.GetAll()
+	i.plugins = make([]PluginInfo, 0, len(plugins))
+	for _, plugin := range plugins {
+		i.plugins = append(i.plugins, PluginInfo{Name: plugin.GetName(), Description: plugin.GetDescription()})
+	}
+}
+
+// installAssets checks if must install ,if yes download the zip and unzip it, returns error.
+func (i *irisControlPlugin) installAssets() error {
+	downloader := i.pluginContainer.GetDownloader()
+	// if the directory exists then the assets already installed, just  return a nil error.
+	if downloader.DirectoryExists(installationPath) {
+		//remove here the  previous downloaded zip file if exists
+		if downloader.DirectoryExists(zipPath) {
+			os.Remove(zipPath)
+		}
+
+		return nil
+	}
+	var zipFile string
+	var err error
+	zipFile, err = downloader.DownloadZip(assetsUrl, pluginPath)
+	if err == nil {
+		err = downloader.Unzip(zipFile, pluginPath)
+		if err == nil {
+			// delete the master.zip after unzip
+			// on windows I have problem because file is still open  (although I'm closing it inside the utils.unzip).
+			// on linux could work without a sleep because linux can delete files even if they are open
+			// so I move the os.Remove to the start of this server, so to the next start this zip (500kb) will be removed
+			// os.Remove(zipFile)
+		}
+	}
+	return err
+
 }
 
 func (i *irisControlPlugin) setPanelRoutes() {
 
-	i.server.Use(i.auth)
-
-	i.server.Get("/", func(ctx *iris.Context) {
-		ctx.RenderFile("index.html", DashboardPage{ServerIsRunning: i.station.Server.IsRunning, Routes: i.routes})
-	})
+	i.server.Get("/public/*assets", iris.Static(installationPath+"static"+pathSeperator, "/public/"))
 
 	i.server.Get("/login", func(ctx *iris.Context) {
 		ctx.RenderFile("login.html", nil)
@@ -64,6 +113,11 @@ func (i *irisControlPlugin) setPanelRoutes() {
 
 	i.server.Post("/login", func(ctx *iris.Context) {
 		i.auth.login(ctx)
+	})
+
+	i.server.Use(i.auth)
+	i.server.Get("/", func(ctx *iris.Context) {
+		ctx.RenderFile("index.html", DashboardPage{ServerIsRunning: i.station.Server.IsRunning, Routes: i.routes, Plugins: i.plugins})
 	})
 
 	i.server.Post("/logout", func(ctx *iris.Context) {

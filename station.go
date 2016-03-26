@@ -250,6 +250,12 @@ func (s *Station) Listen(fullHostOrPort ...string) error {
 	// set the server with the server handler
 	s.Server = &Server{handler: s.IRouter}
 	err := s.Server.listen(fullHostOrPort...)
+	if err == nil {
+		s.pluginContainer.DoPostListen(s)
+		ch := make(chan os.Signal)
+		<-ch
+		s.Close()
+	}
 
 	return err
 }
@@ -266,6 +272,12 @@ func (s *Station) ListenTLS(fullAddress string, certFile, keyFile string) error 
 	// set the server with the server handler
 	s.Server = &Server{handler: s.IRouter}
 	err := s.Server.listenTLS(fullAddress, certFile, keyFile)
+	if err == nil {
+		s.pluginContainer.DoPostListen(s)
+		ch := make(chan os.Signal)
+		<-ch
+		s.Close()
+	}
 
 	return err
 }
@@ -281,6 +293,7 @@ func (s *Station) Serve() http.Handler {
 func (s *Station) Close() {
 	s.pluginContainer.DoPreClose(s)
 	s.Server.closeServer()
+
 }
 
 // Templates sets the templates glob path for the web app

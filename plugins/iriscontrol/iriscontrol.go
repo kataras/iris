@@ -49,13 +49,16 @@ type irisControlPlugin struct {
 	server *iris.Station
 	//
 	//infos
-	routes []RouteInfo
+	routes  []RouteInfo
+	plugins []PluginInfo
+	//
 
 	auth *userAuth
 }
 
-// Web set the options for the plugin and return the plugin which is ready-to-use inside iris.Plugin method
-func Web(options IrisControlOptions) iris.IPlugin {
+// Web returns the plugin which is ready-to-use inside iris.Plugin method
+// parameter is IrisControlOptions
+func New(options IrisControlOptions) iris.IPlugin {
 	i := &irisControlPlugin{}
 	i.options = options
 	if auth := newUserAuth(options.Users); auth != nil {
@@ -65,6 +68,13 @@ func Web(options IrisControlOptions) iris.IPlugin {
 	}
 
 	return i
+}
+
+// Web set the options for the plugin and return the plugin which is ready-to-use inside iris.Plugin method
+// first parameter is port
+// second parameter is map of users (username:password)
+func Web(port int, users map[string]string) iris.IPlugin {
+	return New(IrisControlOptions{port, users})
 }
 
 // implement the base IPlugin
@@ -96,10 +106,14 @@ func (i *irisControlPlugin) PostHandle(route iris.IRoute) {
 
 // PreListen sets the station object before the main server starts
 // and starts the actual work of the plugin
-func (i *irisControlPlugin) PreListen(s *iris.Station) {
+func (i *irisControlPlugin) PostListen(s *iris.Station) {
 	i.station = s
 	i.startControlPanel()
 
+}
+
+func (i *irisControlPlugin) PreClose(s *iris.Station) {
+	i.Destroy()
 }
 
 //
@@ -113,6 +127,7 @@ func (i *irisControlPlugin) Destroy() {
 	i.station = nil
 	i.server.Close()
 	i.pluginContainer = nil
-
+	i.auth.Destroy()
+	i.auth = nil
 	i.pluginContainer.Printf("[%s] %s is turned off", time.Now().UTC().String(), Name)
 }

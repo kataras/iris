@@ -130,6 +130,13 @@ func clear(r *http.Request) {
 	delete(datat, r)
 }
 
+func ClearAll() {
+	mutex.Lock()
+	data = make(map[*http.Request]map[interface{}]interface{})
+	datat = make(map[*http.Request]int64)
+	mutex.Unlock()
+}
+
 // Purge removes request data stored for longer than maxAge, in seconds.
 // It returns the amount of requests removed.
 //

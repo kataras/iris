@@ -56,6 +56,7 @@ type IParty interface {
 	Patch(path string, handlersFn ...HandlerFunc)
 	Trace(path string, handlersFn ...HandlerFunc)
 	Any(path string, handlersFn ...HandlerFunc)
+	Ws(path string, handler Handler)
 	Party(path string) IParty // Each party can have a party too
 	getRoot() IParty
 	getPath() string
@@ -297,6 +298,11 @@ func (p *GardenParty) Trace(path string, handlersFn ...HandlerFunc) {
 // Any registers a route for ALL of the http methods (Get,Post,Put,Head,Patch,Options,Connect,Delete)
 func (p *GardenParty) Any(path string, handlersFn ...HandlerFunc) {
 	p.HandleFunc("", path, handlersFn...)
+}
+
+// Ws registers a websocket route
+func (p *GardenParty) Ws(path string, handler Handler) {
+	p.Handle("", path, handler)
 }
 
 // Use pass the middleware here
