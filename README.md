@@ -173,7 +173,7 @@ func (u *UserHandler) Serve(c *iris.Context) {
 //...cache the html files
 iris.Templates("src/iristests/templates/**/*.html")
 //...register the handler
-ris.HandleAnnotated(&UserHandler{})
+iris.HandleAnnotated(&UserHandler{})
 //...continue writing your wonderful API
 
 ```
@@ -258,6 +258,27 @@ func myMiddleware(c *iris.Context){
 }
 
 iris.UseFunc(myMiddleware)
+
+```
+
+HandlerFunc middleware for a specific route:
+
+```go
+
+func mySecondMiddleware(c *iris.Context){
+	c.Next()
+}
+
+iris.Get("/dashboard", func(c *iris.Context) {
+    loggedIn := true
+    if loggedIn {
+        c.Next()
+    }
+}, mySecondMiddleware, func (c *iris.Context){
+    c.Write("The last HandlerFunc is the main handler, all before that are the middlewares for this route /dashboard")
+})
+
+iris.Listen(":8080")
 
 ```
 
