@@ -6,7 +6,7 @@
 [![GoDoc](https://godoc.org/github.com/kataras/iris?status.svg)](https://godoc.org/github.com/kataras/iris)
 [![License](https://img.shields.io/badge/license-BSD3-blue.svg?style=flat-square)](LICENSE)
 
-Iris is the [fastest](#benchmarks)  go web framework which provides robust set of features for building modern & shiny web applications.
+The [fastest](#benchmarks)  go web framework which provides robust set of features for building modern & shiny web applications.
 
 ![Hi Iris GIF](http://kataras.github.io/iris/assets/hi_iris_march.gif)
 
@@ -587,7 +587,7 @@ Inside the [examples](https://github.com/kataras/iris/tree/examples) branch you 
 
 
 ## Plugins
-Plugins are modules that you can build to inject the Iris' flow. Think it like a middleware for the Iris framework itself, not only the requests. Middlewares starts actions after the server listen, Plugins on the other hand start working when you registed them, from the begin, to the end. Look how it's interface looks:
+Plugins are modules that you can build to inject the Iris' flow. Think it like a middleware for the Iris framework itself, not only the requests. Middleware starts it's actions after the server listen, Plugin on the other hand starts working when you registed them, from the begin, to the end. Look how it's interface looks:
 
 ```go
 type (
@@ -708,7 +708,7 @@ func (i *myPlugin) PostHandle(route iris.IRoute) {
 	i.routes = append(i.routes, myRouteInfo)
 }
 
-// PostListens called after the server is started, here you can do a lot of staff
+// PostListen called after the server is started, here you can do a lot of staff
 // you have the right to access the whole iris' Station also, here you can add more routes and do anything you want, for example start a second server too, an admin web interface!
 // for example let's print to the server's stdout the routes we collected...
 func (i *myPlugin) PostListen(s *iris.Station) {
