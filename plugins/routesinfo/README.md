@@ -2,6 +2,18 @@
 
 This plugin collects & stores all registed routes and gives information about them.
 
+#### The RouteInfo
+
+```go
+
+type RouteInfo struct {
+	Method     string
+	Domain     string
+	Path       string
+	RegistedAt time.Time
+}
+
+```
 ## How to use
 
 ```go
