@@ -38,6 +38,7 @@ The [fastest](#benchmarks)  go web framework which provides robust set of featur
 - [Party](#party)
 - [Named Parameters](#named-parameters)
 - [Catch all and Static serving](#match-anything-and-the-static-serve-handler)
+- [Custom HTTP Errors](#custom-http-errors)
 - [Context](#context)
 - [Plugins](#plugins)
 - [Examples](https://github.com/kataras/iris/tree/examples)
@@ -116,7 +117,18 @@ type Handler interface {
 ### Using Handlers
 
 ```go
-iris.Handle("GET", "/get", get)
+
+type myHandlerGet struct {
+}
+
+func (m myHandlerGet) Serve(c *iris.Context) {
+    c.Write("From %s",c.Request.URL.Path)
+}
+
+//and so on
+
+
+iris.Handle("GET", "/get", myHandlerGet)
 iris.Handle("POST", "/post", post)
 iris.Handle("PUT", "/put", put)
 iris.Handle("DELETE", "/delete", del)
@@ -533,7 +545,38 @@ iris.Get("/public/*assets", iris.Static("./static/resources/","/public/"))
 // Visible URL-> /public/assets/favicon.ico
 ```
 
+## Custom HTTP Errors
 
+You can define your own handlers for http errors, which can render an html file for example. e.g for for 404 not found:
+
+```go
+package main
+
+import "github.com/kataras/iris"
+func main() {
+	iris.OnError(404,func (c *iris.Context){
+		c.HTML("<h1> The page you looking doesn't exists </h1>")
+		c.Status(404)
+	})
+	//or OnNotFound(func (c *iris.Context){})... for 404 only.
+	//or OnPanic(func (c *iris.Context){})... for 500 only.
+
+	//...
+}
+
+```
+
+We saw how to declare a custom error for a http status code, now let's look for how to send/emit an error to the client manually  , for example let's emit the 404 we defined before, simple:
+
+```go
+
+iris.Get("/thenotfound",func (c *iris.Context) {
+	c.EmitError(404)
+	//or c.NotFound() for 404 only.
+	//and c.Panic() for 500 only.
+})
+
+```
 
 ## Context
 
@@ -600,12 +643,17 @@ iris.Get("/public/*assets", iris.Static("./static/resources/","/public/"))
 --- *Note:  We will learn how to add templates at the next chapters*.
 
  22. **Next()**
-	 - Next: calls all the next handler from the middleware stack, it used inside a middleware
+	 - Next: calls all the next handler from the middleware stack, it used inside a middleware.
 
  23. **SendStatus(statusCode int, message string)**
-	 - SendStatus:  writes a http statusCode with a text/plain message
+	 - SendStatus:  writes a http statusCode with a text/plain message.
  24. **Redirect(url string, statusCode...int)**
-	- Redirect: redirects the client to a specific relative path, if statusCode is empty then 302 is used (temporary redirect)
+	- Redirect: redirects the client to a specific relative path, if statusCode is empty then 302 is used (temporary redirect).
+ 25. **EmitError(statusCode int)**
+     - EmitError: sends the custom error to the client by it's status code ( see Custom HTTP Errors chapter).
+ 26. **Panic()**
+     - Panic: sends the 500 internal server (custom) error to the client.
+
 
 
 **[[TODO chapters: Register custom error handlers, cache templates , create & use middleware]]**
@@ -887,6 +935,4 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 
 This project is licensed under the [BSD 3-Clause License](https://opensource.org/licenses/BSD-3-Clause).
 License can be found [here](https://github.com/kataras/iris/blob/master/LICENSE).
-
-
 
