@@ -38,7 +38,6 @@ func main() {
 		c.Write("other post path")
 	})
 
-	println("Your routes info: ")
 	all := info.All()
 	// allget := info.ByMethod("GET") -> slice
 	// alllocalhost := info.ByDomain("localhost") -> slice
@@ -47,7 +46,13 @@ func main() {
 	// bymethodandpath:= info.ByMethodAndPath("GET","/yourpath") -> single (it could be slice for all domains too but it's not)
 
 	println("The first registed route was: ", all[0].Path, "registed at: ", all[0].RegistedAt.String())
-
+	println("All routes info:")
+	for i:=0; i<len(all); i ++ {
+		println(all[i].String())
+		//outputs->
+		// Domain: localhost Method: GET Path: /yourpath RegistedAt: 2016/03/27 15:27:05:029 ...
+		// Domain: localhost Method: POST Path: /otherpostpath RegistedAt: 2016/03/27 15:27:05:030 ...
+	}
 	iris.Listen(":8080")
 	
 }

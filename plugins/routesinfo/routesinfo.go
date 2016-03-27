@@ -1,6 +1,7 @@
 package routesinfo
 
 import (
+	"fmt"
 	"github.com/kataras/iris"
 	"strings"
 	"time"
@@ -14,6 +15,13 @@ type RouteInfo struct {
 	Domain     string
 	Path       string
 	RegistedAt time.Time
+}
+
+func (ri RouteInfo) String() string {
+	if ri.Domain == "" {
+		ri.Domain = "localhost" // only for printing, this doesn't save it, no pointer.
+	}
+	return fmt.Sprintf("Domain: %s Method: %s Path: %s RegistedAt: %s", ri.Domain, ri.Method, ri.Path, ri.RegistedAt.String())
 }
 
 type routesinfoPlugin struct {
