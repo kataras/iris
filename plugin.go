@@ -118,7 +118,19 @@ type (
 	IDownloadManager interface {
 		DirectoryExists(dir string) bool
 		DownloadZip(zipUrl string, targetDir string) (string, error)
-		Unzip(archive string, target string) error
+		Unzip(archive string, target string) (string, error)
+		Remove(filePath string) error
+		// install is just the flow of: downloadZip -> unzip -> removeFile(zippedFile)
+		// accepts 2 parameters
+		//
+		// first parameter is the remote url file zip
+		// second parameter is the target directory
+		// returns a string(installedDirectory) and an error
+		//
+		// (string) installedDirectory is the directory which the zip file had, this is the real installation path, you don't need to know what it's because these things maybe change to the future let's keep it to return the correct path.
+		// the installedDirectory is not empty when the installation is succed, the targetDirectory is not already exists and no error happens
+		// the installedDirectory is empty when the installation is already done by previous time or an error happens
+		Install(remoteFileZip string, targetDirectory string) (string, error)
 	}
 )
 
@@ -133,8 +145,16 @@ func (d *DownloadManager) DownloadZip(zipUrl string, targetDir string) (string, 
 	return downloadZip(zipUrl, targetDir)
 }
 
-func (d *DownloadManager) Unzip(archive string, target string) error {
+func (d *DownloadManager) Unzip(archive string, target string) (string, error) {
 	return unzip(archive, target)
+}
+
+func (d *DownloadManager) Remove(filePath string) error {
+	return removeFile(filePath)
+}
+
+func (d *DownloadManager) Install(remoteFileZip string, targetDirectory string) (string, error) {
+	return install(remoteFileZip, targetDirectory)
 }
 
 // PluginContainer is the base container of all Iris, registed plugins

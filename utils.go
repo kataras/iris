@@ -143,38 +143,86 @@ func downloadZip(zipUrl string, newDir string) (string, error) {
 // unzip extracts a zipped file to the target location
 //
 // it removes the zipped file after succesfuly completion
-func unzip(archive string, target string) error {
+// returns a string with the path of the created folder (if any) and an error (if any)
+func unzip(archive string, target string) (string, error) {
 	reader, err := zip.OpenReader(archive)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	if err := os.MkdirAll(target, 0755); err != nil {
-		return err
+		return "", err
 	}
-
+	createdFolder := ""
 	for _, file := range reader.File {
 		path := filepath.Join(target, file.Name)
 		if file.FileInfo().IsDir() {
 			os.MkdirAll(path, file.Mode())
+			if createdFolder == "" {
+				// this is the new directory that zip has
+				createdFolder = path
+			}
 			continue
 		}
 
 		fileReader, err := file.Open()
 		if err != nil {
-			return err
+			return "", err
 		}
 		defer fileReader.Close()
 
 		targetFile, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, file.Mode())
 		if err != nil {
-			return err
+			return "", err
 		}
 		defer targetFile.Close()
 
 		if _, err := io.Copy(targetFile, fileReader); err != nil {
-			return err
+			return "", err
+		}
+
+	}
+
+	reader.Close()
+	return createdFolder, nil
+}
+
+// removeFile removes a file and returns an error, if any
+func removeFile(filePath string) error {
+	return os.Remove(filePath)
+}
+
+// install is just the flow of: downloadZip -> unzip -> removeFile(zippedFile)
+// accepts 2 parameters
+//
+// first parameter is the remote url file zip
+// second parameter is the target directory
+// returns a string(installedDirectory) and an error
+//
+// (string) installedDirectory is the directory which the zip file had, this is the real installation path, you don't need to know what it's because these things maybe change to the future let's keep it to return the correct path.
+// the installedDirectory is not empty when the installation is succed, the targetDirectory is not already exists and no error happens
+// the installedDirectory is empty when the installation is already done by previous time or an error happens
+func install(remoteFileZip string, targetDirectory string) (installedDirectory string, err error) {
+	var zipFile string
+
+	zipFile, err = downloadZip(remoteFileZip, targetDirectory)
+	if err == nil {
+		installedDirectory, err = unzip(zipFile, targetDirectory)
+		if err == nil {
+			installedDirectory += string(os.PathSeparator)
+			removeFile(zipFile)
 		}
 	}
-	return nil
+	return
+}
+
+func getParrentDir(targetDirectory string) string {
+	lastSlashIndex := strings.LastIndexByte(targetDirectory, os.PathSeparator)
+	//check if the slash is at the end , if yes then re- check without the last slash, we don't want /path/to/ , we want /path/to in order to get the /path/ which is the parent directory of the /path/to
+	if lastSlashIndex == len(targetDirectory)-1 {
+		lastSlashIndex = strings.LastIndexByte(targetDirectory[0:lastSlashIndex], os.PathSeparator)
+	}
+
+	parentDirectory := targetDirectory[0:lastSlashIndex]
+	return parentDirectory
 }

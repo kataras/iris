@@ -36,7 +36,6 @@ import (
 var pathSeperator = string(os.PathSeparator)
 var pluginPath = os.Getenv("GOPATH") + pathSeperator + "src" + pathSeperator + "github.com" + pathSeperator + "kataras" + pathSeperator + "iris" + pathSeperator + "plugins" + pathSeperator + "iriscontrol" + pathSeperator
 var assetsUrl = "https://github.com/iris-contrib/iris-control-assets/archive/master.zip"
-var zipPath = pluginPath + "master.zip"
 var assetsFolderName = "iris-control-assets-master"
 var installationPath = pluginPath + assetsFolderName + pathSeperator
 
@@ -75,30 +74,13 @@ func (i *irisControlPlugin) setPluginsInfo() {
 }
 
 // installAssets checks if must install ,if yes download the zip and unzip it, returns error.
-func (i *irisControlPlugin) installAssets() error {
-	downloader := i.pluginContainer.GetDownloader()
-	// if the directory exists then the assets already installed, just  return a nil error.
-	if downloader.DirectoryExists(installationPath) {
-		//remove here the  previous downloaded zip file if exists
-		if downloader.DirectoryExists(zipPath) {
-			os.Remove(zipPath)
-		}
-
-		return nil
+func (i *irisControlPlugin) installAssets() (err error) {
+	//we know already what is the zip folder inside it, so we can check if it's exists, if yes then don't install it again.
+	if i.pluginContainer.GetDownloader().DirectoryExists(installationPath) {
+		return
 	}
-	var zipFile string
-	var err error
-	zipFile, err = downloader.DownloadZip(assetsUrl, pluginPath)
-	if err == nil {
-		err = downloader.Unzip(zipFile, pluginPath)
-		if err == nil {
-			// delete the master.zip after unzip
-			// on windows I have problem because file is still open  (although I'm closing it inside the utils.unzip).
-			// on linux could work without a sleep because linux can delete files even if they are open
-			// so I move the os.Remove to the start of this server, so to the next start this zip (500kb) will be removed
-			// os.Remove(zipFile)
-		}
-	}
+	//set the installationPath ,although we know it but do it here too
+	installationPath, err = i.pluginContainer.GetDownloader().Install(assetsUrl, pluginPath)
 	return err
 
 }
