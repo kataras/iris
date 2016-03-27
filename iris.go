@@ -196,11 +196,35 @@ func ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	DefaultStation.ServeHTTP(res, req)
 }
 
-// Errors sets and gets custom error handlers or responses
+// Error handling
+
+// Errors returns the object which is resposible for the error(s) handler(s)
 func Errors() IHTTPErrors {
 	return DefaultStation.Errors()
 }
 
+func OnError(statusCode int, handlerFunc HandlerFunc) {
+	DefaultStation.OnError(statusCode, handlerFunc)
+}
+
+// EmitError emits an error with it's http status code and the iris Context passed to the function
+func EmitError(statusCode int, ctx *Context) {
+	DefaultStation.EmitError(statusCode, ctx)
+}
+
+// OnNotFound sets the handler for http status 404,
+// default is a response with text: 'Not Found' and status: 404
+func OnNotFound(handlerFunc HandlerFunc) {
+	DefaultStation.OnNotFound(handlerFunc)
+}
+
+// OnPanic sets the handler for http status 500,
+// default is a response with text: The server encountered an unexpected condition which prevented it from fulfilling the request. and status: 500
+func OnPanic(handlerFunc HandlerFunc) {
+	DefaultStation.OnPanic(handlerFunc)
+}
+
+//
 // Templates sets the templates glob path for the web app
 func Templates(pathGlob string) {
 	DefaultStation.Templates(pathGlob)
