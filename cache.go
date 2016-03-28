@@ -82,11 +82,11 @@ func (mc *MemoryRouterCache) AddItem(method, url string, ctx *Context) {
 
 // AddItem adds an item to the bag/cache, is a goroutine.
 func (mc *SyncMemoryRouterCache) AddItem(method, url string, ctx *Context) {
-	go func(method, url string, c *Context) { //for safety on multiple fast calls
-		mc.mu.Lock()
-		mc.items[method][url] = c
-		mc.mu.Unlock()
-	}(method, url, ctx)
+	//go func(method, url string, c *Context) { //for safety on multiple fast calls
+	mc.mu.Lock()
+	mc.items[method][url] = ctx
+	mc.mu.Unlock()
+	//}(method, url, ctx)
 }
 
 // GetItem returns an item from the bag/cache, if not exists it returns just nil.

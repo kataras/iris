@@ -379,7 +379,7 @@ func loadIris(routes []routeTest) http.Handler {
 		api.HandleFunc(route.method, route.path, h)
 	}
 
-	return api
+	return api.IRouter
 }
 
 func benchRoutes(b *testing.B, router http.Handler, routes []routeTest) {

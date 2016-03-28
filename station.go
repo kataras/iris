@@ -31,7 +31,7 @@ import (
 	"net/http"
 	"net/http/pprof"
 	"os"
-	_ "runtime"
+	"runtime"
 	"sync"
 	"time"
 )
@@ -196,7 +196,7 @@ func (s *Station) forceOptimusPrime() {
 			panic("[Iris] From Station.OptimisPrime, unsupported Router, please post this as issue at github.com/kataras/iris")
 		}
 
-		/*if !r.hasCache() {
+		if !r.hasCache() {
 			var cache IRouterCache
 
 			cache = NewMemoryRouterCache()
@@ -207,13 +207,18 @@ func (s *Station) forceOptimusPrime() {
 			}
 
 			r.setCache(cache)
-		}*/
-		//temp solution, wait for answer on this: https://github.com/kataras/iris/issues/44
-		if !r.hasCache() {
-
-			cache := NewSyncMemoryRouterCache(NewMemoryRouterCache())
-			r.setCache(cache)
 		}
+
+		// temp solution, wait for answer on this: https://github.com/kataras/iris/issues/44
+		// wrk -t16 -c100 -d30s http://127.0.0.1:8080/rest/hello
+		// no the problem is from net/http package:
+		// https://github.com/golang/go/issues/14940
+		// tries to modify the header after ServeHTTP
+		// The problem is not Iris' router
+		//if !r.hasCache() {
+		//	cache := NewSyncMemoryRouterCache(NewMemoryRouterCache())
+		//	r.setCache(cache)
+		//}
 	}
 	s.optimized = true
 }
