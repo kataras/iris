@@ -301,37 +301,6 @@ func (ctx *Context) IsStopped() bool {
 	return ctx.pos == stopExecutionPosition
 }
 
-// Clone before we had (c Context) inscope and  (c *Context) for outscope like goroutines
-// now we have (c *Context) for both sittuations ,and call .Clone() if we need to pass the context in a gorotoune or to a time func
-// example:
-// api.Get("/user/:id", func(ctx *iris.Context) {
-//		c:= ctx.Clone()
-//		time.AfterFunc(20 * time.Second, func() {
-//			println(" 20 secs after: from user with id:", c.Param("id"), " context req path:", c.Request.URL.Path)
-//		})
-//	})
-func (ctx *Context) Clone() *Context {
-	cloneContext := *ctx
-	cloneContext.pos = 0
-
-	//copy params
-	params := cloneContext.Params
-	cpP := make(PathParameters, len(params))
-	copy(cpP, params)
-	//copy middleware
-	middleware := ctx.middleware
-	cpM := make(Middleware, len(middleware))
-	copy(cpM, middleware)
-	cloneContext.middleware = middleware
-	//no need for this what I was though lol.. it costs me an hour to solve the f* logs
-	//cloneContext.memoryResponseWriter.ResponseWriter = nil
-	//cloneContext.ResponseWriter = &cloneContext.memoryResponseWriter
-
-	cloneContext.memoryResponseWriter = MemoryWriter{nil, -1, 200}
-	cloneContext.ResponseWriter = &cloneContext.memoryResponseWriter
-	return &cloneContext
-}
-
 // Next calls all the next handler from the middleware stack, it used inside a middleware
 func (ctx *Context) Next() {
 	//set position to the next
@@ -358,13 +327,42 @@ func (ctx *Context) Reset(res http.ResponseWriter, req *http.Request) {
 	ctx.Request = req
 }
 
-func (ctx *Context) Redo(res http.ResponseWriter, req *http.Request) {
-	ctx.memoryResponseWriter.Reset(res)
-	//ctx.memoryResponseWriter = MemoryWriter{res, -1, 200}
+//no pointer don't change anything.
+func (ctx Context) Redo(res http.ResponseWriter, req *http.Request) {
+	ctx.memoryResponseWriter = MemoryWriter{res, -1, 200}
 	ctx.ResponseWriter = &ctx.memoryResponseWriter
 	ctx.Request = req
 	ctx.Do()
+	ctx.memoryResponseWriter.ForceHeader()
 
+}
+
+// Clone before we had (c Context) inscope and  (c *Context) for outscope like goroutines
+// now we have (c *Context) for both sittuations ,and call .Clone() if we need to pass the context in a gorotoune or to a time func
+// example:
+// api.Get("/user/:id", func(ctx *iris.Context) {
+//		c:= ctx.Clone()
+//		time.AfterFunc(20 * time.Second, func() {
+//			println(" 20 secs after: from user with id:", c.Param("id"), " context req path:", c.Request.URL.Path)
+//		})
+//	})
+func (ctx *Context) Clone() *Context {
+	var cloneContext = *ctx
+	cloneContext.pos = 0
+
+	//copy params
+	params := cloneContext.Params
+	cpP := make(PathParameters, len(params))
+	copy(cpP, params)
+	//copy middleware
+	middleware := ctx.middleware
+	cpM := make(Middleware, len(middleware))
+	copy(cpM, middleware)
+	cloneContext.middleware = middleware
+
+	cloneContext.memoryResponseWriter.ResponseWriter = nil
+	cloneContext.ResponseWriter = &cloneContext.memoryResponseWriter
+	return &cloneContext
 }
 
 // Get returns a value from a key
