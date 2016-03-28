@@ -167,15 +167,6 @@ func (ctx *Context) SetResponseWriter(res IMemoryWriter) {
 	ctx.ResponseWriter = res
 }
 
-func (ctx *Context) Redo(res http.ResponseWriter, req *http.Request) {
-	ctx.ResponseWriter.ForceHeader()
-	ctx.memoryResponseWriter.Reset(res)
-	ctx.Request = req
-	ctx.pos = 0
-	ctx.Do()
-
-}
-
 // Param returns the string representation of the key's path named parameter's value
 func (ctx *Context) Param(key string) string {
 	return ctx.Params.Get(key)
@@ -335,6 +326,9 @@ func (ctx *Context) Clone() *Context {
 	//no need for this what I was though lol.. it costs me an hour to solve the f* logs
 	//cloneContext.memoryResponseWriter.ResponseWriter = nil
 	//cloneContext.ResponseWriter = &cloneContext.memoryResponseWriter
+
+	cloneContext.memoryResponseWriter = MemoryWriter{nil, -1, 200}
+	cloneContext.ResponseWriter = &cloneContext.memoryResponseWriter
 	return &cloneContext
 }
 
@@ -362,6 +356,15 @@ func (ctx *Context) Reset(res http.ResponseWriter, req *http.Request) {
 	ctx.memoryResponseWriter.Reset(res)
 	ctx.ResponseWriter = &ctx.memoryResponseWriter
 	ctx.Request = req
+}
+
+func (ctx *Context) Redo(res http.ResponseWriter, req *http.Request) {
+	ctx.memoryResponseWriter.Reset(res)
+	//ctx.memoryResponseWriter = MemoryWriter{res, -1, 200}
+	ctx.ResponseWriter = &ctx.memoryResponseWriter
+	ctx.Request = req
+	ctx.Do()
+
 }
 
 // Get returns a value from a key
