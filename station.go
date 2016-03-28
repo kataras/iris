@@ -142,7 +142,7 @@ func newStation(options StationOptions) *Station {
 	s.IRouter = r
 
 	s.pool = sync.Pool{New: func() interface{} {
-		return &Context{station: s, Params: make([]PathParameter, 0)}
+		return &Context{station: s, Params: make([]PathParameter, 0), mu: sync.Mutex{}}
 	}}
 
 	return s
