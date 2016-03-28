@@ -50,6 +50,8 @@ type IContext interface {
 	Next()
 	GetResponseWriter() IMemoryWriter
 	GetRequest() *http.Request
+	GetMemoryResponseWriter() MemoryWriter
+	SetMemoryResponseWriter(MemoryWriter)
 	Param(key string) string
 	ParamInt(key string) (int, error)
 	URLParam(key string) string
@@ -122,8 +124,10 @@ const (
 	ContentBINARY = "application/octet-stream"
 	// ContentTEXT is the  string of text/plain response headers
 	ContentTEXT = "text/plain"
-	// ContentXML is the  string of text/xml response headers
-	ContentXML = "text/xml"
+	// ContentXML is the  string of application/xml response headers
+	ContentXML = "application/xml"
+	// ContentXMLText is the  string of text/xml response headers
+	ContentXMLText = "text/xml"
 
 	// stopExecutionPosition the number which shows us that the context's middleware manualy stop the execution
 	stopExecutionPosition = 255 // is the biggest uint8
@@ -165,6 +169,15 @@ func (ctx *Context) SetRequest(req *http.Request) {
 
 func (ctx *Context) SetResponseWriter(res IMemoryWriter) {
 	ctx.ResponseWriter = res
+}
+
+func (ctx *Context) GetMemoryResponseWriter() MemoryWriter {
+	return ctx.memoryResponseWriter
+}
+
+func (ctx *Context) SetMemoryResponseWriter(res MemoryWriter) {
+	ctx.memoryResponseWriter = res
+	ctx.ResponseWriter = &ctx.memoryResponseWriter
 }
 
 // Param returns the string representation of the key's path named parameter's value
@@ -275,7 +288,8 @@ func (ctx *Context) SendStatus(statusCode int, message string) {
 	r.Header().Set("Content-Type", "text/plain"+" ;charset="+Charset)
 	r.Header().Set("X-Content-Type-Options", "nosniff")
 	ctx.Status(statusCode)
-	r.WriteString(message)
+	//r.WriteString(message)
+	r.Write([]byte(message))
 }
 
 // RequestIP gets just the Remote Address from the client.
@@ -425,7 +439,8 @@ func (ctx *Context) WriteHTML(httpStatus int, htmlContents string) {
 	ctx.SetContentType([]string{ContentHTML + " ;charset=" + Charset})
 	ctx.WriteStatus(httpStatus)
 	//io.WriteString(ctx.ResponseWriter, htmlContents)
-	ctx.ResponseWriter.WriteString(htmlContents)
+	//ctx.ResponseWriter.WriteString(htmlContents)
+	ctx.ResponseWriter.Write([]byte(htmlContents))
 }
 
 //HTML calls the WriteHTML with the 200 http status ok
@@ -451,7 +466,8 @@ func (ctx *Context) Data(binaryData []byte) {
 
 // Write writes a string via the context's ResponseWriter
 func (ctx *Context) Write(format string, a ...interface{}) {
-	io.WriteString(ctx.ResponseWriter, fmt.Sprintf(format, a...))
+	//this doesn't work with gzip, so just write the []byte better |ctx.ResponseWriter.WriteString(fmt.Sprintf(format, a...))
+	ctx.ResponseWriter.Write([]byte(fmt.Sprintf(format, a...)))
 }
 
 //fix https://github.com/kataras/iris/issues/44
@@ -487,7 +503,8 @@ func (ctx *Context) WriteText(httpStatus int, text string) {
 	ctx.SetContentType([]string{ContentTEXT + " ;charset=" + Charset})
 	ctx.WriteStatus(httpStatus)
 	//io.WriteString(ctx.ResponseWriter, text)
-	ctx.ResponseWriter.WriteString(text)
+	//ctx.ResponseWriter.WriteString(text)
+	ctx.ResponseWriter.Write([]byte(text))
 }
 
 //Text calls the WriteText with the 200 http status ok
@@ -583,6 +600,7 @@ func (ctx *Context) WriteXML(httpStatus int, xmlStructs ...interface{}) error {
 	ctx.SetContentType([]string{ContentXML + " ;charset=" + Charset})
 	ctx.WriteStatus(httpStatus)
 	ctx.ResponseWriter.Write(_xmlDoc)
+	//xml.NewEncoder(w).Encode(r.Data)
 	return nil
 }
 

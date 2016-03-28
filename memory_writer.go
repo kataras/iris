@@ -33,6 +33,13 @@ import (
 	"net/http"
 )
 
+/*
+var (
+	encodingGzip = "gzip"
+
+	headerAcceptEncoding = "Accept-Encoding"
+)*/
+
 type IMemoryWriter interface {
 	http.ResponseWriter
 	http.Hijacker
@@ -97,6 +104,13 @@ func (m *MemoryWriter) WriteHeader(statusCode int) {
 
 func (m *MemoryWriter) WriteString(s string) (size int, err error) {
 	m.ForceHeader()
+	/* doesn't work and it's stupid to make it here, let it for now.. if strings.Contains(header.Get(headerAcceptEncoding), encodingGzip) {
+		b := []byte(s)
+		size = len(b)
+		m.size += size
+		m.ResponseWriter.Write(b)
+		return
+	}*/
 	size, err = io.WriteString(m.ResponseWriter, s)
 	m.size += size
 	return

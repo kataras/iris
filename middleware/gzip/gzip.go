@@ -69,7 +69,6 @@ func (res responseWriter) Write(b []byte) (int, error) {
 	if len(res.Header().Get(headerContentType)) == 0 {
 		res.Header().Set(headerContentType, http.DetectContentType(b))
 	}
-
 	return res.gzipWriter.Write(b)
 }
 
@@ -116,11 +115,10 @@ func (g *gzipMiddleware) Serve(ctx *iris.Context) {
 	writer.Reset(res)
 
 	//set the headers of the gzip writer
-	ctx.ResponseWriter.Header().Set(headerContentEncoding, encodingGzip)
-	ctx.ResponseWriter.Header().Set(headerVary, headerAcceptEncoding)
-
+	ctx.SetHeader(headerContentEncoding, []string{encodingGzip}) // "true" kai doulevei kapws
+	ctx.SetHeader(headerVary, []string{headerAcceptEncoding})
 	//set the wrapper
-	newResponseWriter := responseWriter{ctx.ResponseWriter, writer}
+	newResponseWriter := responseWriter{res, writer}
 	//set the ResponseWriter to this, for the serving
 	ctx.ResponseWriter = newResponseWriter
 
