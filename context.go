@@ -172,6 +172,7 @@ func (ctx *Context) Redo(res http.ResponseWriter, req *http.Request) {
 	ctx.Request = req
 	ctx.pos = 0
 	ctx.Do()
+	ctx.ResponseWriter.ForceHeader()
 }
 
 // Param returns the string representation of the key's path named parameter's value
