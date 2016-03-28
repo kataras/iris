@@ -31,7 +31,7 @@ import (
 	"net/http"
 	"net/http/pprof"
 	"os"
-	"runtime"
+	_ "runtime"
 	"sync"
 	"time"
 )
@@ -196,7 +196,7 @@ func (s *Station) forceOptimusPrime() {
 			panic("[Iris] From Station.OptimisPrime, unsupported Router, please post this as issue at github.com/kataras/iris")
 		}
 
-		if !r.hasCache() {
+		/*if !r.hasCache() {
 			var cache IRouterCache
 
 			cache = NewMemoryRouterCache()
@@ -206,6 +206,12 @@ func (s *Station) forceOptimusPrime() {
 				//println("SYNCED MULTI_CORE CACHE WITH CORES: ", runtime.GOMAXPROCS(-1))
 			}
 
+			r.setCache(cache)
+		}*/
+		//temp solution, wait for answer on this: https://github.com/kataras/iris/issues/44
+		if !r.hasCache() {
+
+			cache := NewSyncMemoryRouterCache(NewMemoryRouterCache())
 			r.setCache(cache)
 		}
 	}
