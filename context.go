@@ -168,11 +168,12 @@ func (ctx *Context) SetResponseWriter(res IMemoryWriter) {
 }
 
 func (ctx *Context) Redo(res http.ResponseWriter, req *http.Request) {
+	ctx.ResponseWriter.ForceHeader()
 	ctx.memoryResponseWriter.Reset(res)
 	ctx.Request = req
 	ctx.pos = 0
 	ctx.Do()
-	ctx.ResponseWriter.ForceHeader()
+
 }
 
 // Param returns the string representation of the key's path named parameter's value
@@ -331,8 +332,9 @@ func (ctx *Context) Clone() *Context {
 	cpM := make(Middleware, len(middleware))
 	copy(cpM, middleware)
 	cloneContext.middleware = middleware
-	cloneContext.memoryResponseWriter.ResponseWriter = nil
-	cloneContext.ResponseWriter = &cloneContext.memoryResponseWriter
+	//no need for this what I was though lol.. it costs me an hour to solve the f* logs
+	//cloneContext.memoryResponseWriter.ResponseWriter = nil
+	//cloneContext.ResponseWriter = &cloneContext.memoryResponseWriter
 	return &cloneContext
 }
 
