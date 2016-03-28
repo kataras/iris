@@ -166,11 +166,6 @@ func (p *GardenParty) Handle(method string, registedPath string, handlers ...Han
 	//so
 	p.station.forceOptimusPrime()
 
-	//force OptimusPrime everytime a route added, this is not nessecery, it runs only once
-	//but many developers maybe use external server and FORGET to use the iris.Serve() and use just the 'iris'
-	//so
-	p.station.forceOptimusPrime()
-
 }
 
 // HandleFunc registers and returns a route with a method string, path string and a handler
