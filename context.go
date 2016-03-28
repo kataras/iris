@@ -40,6 +40,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 type IContext interface {
@@ -76,6 +77,14 @@ type IContext interface {
 	Clone() *Context ///todo IContext again
 	RenderFile(file string, pageContext interface{}) error
 	Render(pageContext interface{}) error
+	//
+	// WriteStatus writes http status code to the header
+	WriteStatus(statusCode int)
+	// SetContentType sets the "Content-Type" header, receives the values
+	SetContentType(s []string)
+	// SetHeader sets the response headers first parameter is the key, second is the values
+	SetHeader(k string, s []string)
+	//
 	WriteHTML(httpStatus int, htmlContents string)
 	HTML(htmlContents string)
 	WriteData(httpStatus int, binaryData []byte)
@@ -137,6 +146,7 @@ type Context struct {
 	// these values are reseting on each request, are useful only between middleware,
 	// use iris/sessions for cookie/filesystem storage
 	values map[string]interface{}
+	mu     sync.Mutex
 }
 
 var _ IContext = &Context{}
@@ -162,6 +172,7 @@ func (ctx *Context) Redo(res http.ResponseWriter, req *http.Request) {
 	ctx.Request = req
 	ctx.pos = 0
 	ctx.Do()
+	ctx.ResponseWriter.ForceHeader()
 }
 
 // Param returns the string representation of the key's path named parameter's value
@@ -183,11 +194,6 @@ func (ctx *Context) URLParam(key string) string {
 // URLParamInt returns the get parameter int value from a request , if any
 func (ctx *Context) URLParamInt(key string) (int, error) {
 	return strconv.Atoi(URLParam(ctx.Request, key))
-}
-
-// Write writes a string via the context's ResponseWriter
-func (ctx *Context) Write(format string, a ...interface{}) {
-	io.WriteString(ctx.ResponseWriter, fmt.Sprintf(format, a...))
 }
 
 // ServeFile is used to serve a file, via the http.ServeFile
@@ -410,9 +416,12 @@ func (ctx *Context) Render(pageContext interface{}) error {
 // WriteHTML writes html string with a http status
 ///TODO or I will think to pass an interface on handlers as second parameter near to the Context, with developer's custom Renderer package .. I will think about it.
 func (ctx *Context) WriteHTML(httpStatus int, htmlContents string) {
-	ctx.ResponseWriter.Header().Set(ContentType, ContentHTML+" ;charset="+Charset)
-	ctx.ResponseWriter.WriteHeader(httpStatus)
-	io.WriteString(ctx.ResponseWriter, htmlContents)
+	//ctx.ResponseWriter.Header().Set(ContentType, ContentHTML+" ;charset="+Charset)
+	//ctx.ResponseWriter.WriteHeader(httpStatus)
+	ctx.SetContentType([]string{ContentHTML + " ;charset=" + Charset})
+	ctx.WriteStatus(httpStatus)
+	//io.WriteString(ctx.ResponseWriter, htmlContents)
+	ctx.ResponseWriter.WriteString(htmlContents)
 }
 
 //HTML calls the WriteHTML with the 200 http status ok
@@ -422,9 +431,12 @@ func (ctx *Context) HTML(htmlContents string) {
 
 // WriteData writes binary data with a http status
 func (ctx *Context) WriteData(httpStatus int, binaryData []byte) {
-	ctx.ResponseWriter.Header().Set(ContentType, ContentBINARY)
-	ctx.ResponseWriter.Header().Set(ContentLength, strconv.Itoa(len(binaryData)))
-	ctx.ResponseWriter.WriteHeader(httpStatus)
+	//ctx.ResponseWriter.Header().Set(ContentType, ContentBINARY)
+	//ctx.ResponseWriter.Header().Set(ContentLength, strconv.Itoa(len(binaryData)))
+	//ctx.ResponseWriter.WriteHeader(httpStatus)
+	ctx.SetHeader(ContentType, []string{ContentBINARY + " ;charset=" + Charset})
+	ctx.SetHeader(ContentLength, []string{strconv.Itoa(len(binaryData))})
+	ctx.WriteStatus(httpStatus)
 	ctx.ResponseWriter.Write(binaryData)
 }
 
@@ -433,11 +445,45 @@ func (ctx *Context) Data(binaryData []byte) {
 	ctx.WriteData(http.StatusOK, binaryData)
 }
 
+// Write writes a string via the context's ResponseWriter
+func (ctx *Context) Write(format string, a ...interface{}) {
+	io.WriteString(ctx.ResponseWriter, fmt.Sprintf(format, a...))
+}
+
+//fix https://github.com/kataras/iris/issues/44
+
+func (ctx *Context) WriteStatus(statusCode int) {
+	ctx.memoryResponseWriter.WriteHeader(statusCode)
+}
+
+func (ctx *Context) SetContentType(s []string) {
+	ctx.mu.Lock()
+	h := ctx.ResponseWriter.Header()
+	if ss := h[ContentType]; len(ss) == 0 {
+		h[ContentType] = s
+	}
+	ctx.mu.Unlock()
+}
+
+func (ctx *Context) SetHeader(k string, s []string) {
+	ctx.mu.Lock()
+	h := ctx.ResponseWriter.Header()
+	if ss := h[k]; len(ss) == 0 {
+		h[k] = s
+	}
+	ctx.mu.Unlock()
+}
+
+//
 // WriteText writes text with a http status
 func (ctx *Context) WriteText(httpStatus int, text string) {
-	ctx.ResponseWriter.Header().Set(ContentType, ContentTEXT+" ;charset="+Charset)
-	ctx.ResponseWriter.WriteHeader(httpStatus)
-	io.WriteString(ctx.ResponseWriter, text)
+
+	//ctx.ResponseWriter.Header().Set(ContentType, ContentTEXT+" ;charset="+Charset)
+	//ctx.ResponseWriter.WriteHeader(httpStatus)
+	ctx.SetContentType([]string{ContentTEXT + " ;charset=" + Charset})
+	ctx.WriteStatus(httpStatus)
+	//io.WriteString(ctx.ResponseWriter, text)
+	ctx.ResponseWriter.WriteString(text)
 }
 
 //Text calls the WriteText with the 200 http status ok
@@ -459,8 +505,10 @@ func (ctx *Context) RenderJSON(httpStatus int, jsonStructs ...interface{}) error
 	}
 
 	//keep in mind http.DetectContentType(data)
-	ctx.ResponseWriter.Header().Set(ContentType, ContentJSON+" ;charset="+Charset)
-	ctx.ResponseWriter.WriteHeader(httpStatus)
+	//ctx.ResponseWriter.Header().Set(ContentType, ContentJSON+" ;charset="+Charset)
+	//ctx.ResponseWriter.WriteHeader(httpStatus)
+	ctx.SetContentType([]string{ContentJSON + " ;charset=" + Charset})
+	ctx.WriteStatus(httpStatus)
 	ctx.ResponseWriter.Write(_json)
 
 	return nil
@@ -486,9 +534,10 @@ func (ctx *Context) ReadJSON(jsonObject interface{}) error {
 
 // WriteJSON writes JSON which is encoded from a single json object or array with no Indent
 func (ctx *Context) WriteJSON(httpStatus int, jsonObjectOrArray interface{}) error {
-	ctx.ResponseWriter.Header().Set(ContentType, ContentJSON)
-	ctx.ResponseWriter.WriteHeader(httpStatus)
-
+	//ctx.ResponseWriter.Header().Set(ContentType, ContentJSON)
+	//ctx.ResponseWriter.WriteHeader(httpStatus)
+	ctx.SetContentType([]string{ContentJSON + " ;charset=" + Charset})
+	ctx.WriteStatus(httpStatus)
 	return json.NewEncoder(ctx.ResponseWriter).Encode(jsonObjectOrArray)
 }
 
@@ -525,8 +574,10 @@ func (ctx *Context) WriteXML(httpStatus int, xmlStructs ...interface{}) error {
 		}
 		_xmlDoc = append(_xmlDoc, theDoc...)
 	}
-	ctx.ResponseWriter.Header().Set(ContentType, ContentXML+" ;charset="+Charset)
-	ctx.ResponseWriter.WriteHeader(httpStatus)
+	//ctx.ResponseWriter.Header().Set(ContentType, ContentXML+" ;charset="+Charset)
+	//ctx.ResponseWriter.WriteHeader(httpStatus)
+	ctx.SetContentType([]string{ContentXML + " ;charset=" + Charset})
+	ctx.WriteStatus(httpStatus)
 	ctx.ResponseWriter.Write(_xmlDoc)
 	return nil
 }

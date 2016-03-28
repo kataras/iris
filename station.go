@@ -142,7 +142,7 @@ func newStation(options StationOptions) *Station {
 	s.IRouter = r
 
 	s.pool = sync.Pool{New: func() interface{} {
-		return &Context{station: s, Params: make([]PathParameter, 0)}
+		return &Context{station: s, Params: make([]PathParameter, 0), mu: sync.Mutex{}}
 	}}
 
 	return s
@@ -208,6 +208,17 @@ func (s *Station) forceOptimusPrime() {
 
 			r.setCache(cache)
 		}
+
+		// temp solution, wait for answer on this: https://github.com/kataras/iris/issues/44
+		// wrk -t16 -c100 -d30s http://127.0.0.1:8080/rest/hello
+		// no the problem is from net/http package:
+		// https://github.com/golang/go/issues/14940
+		// tries to modify the header after ServeHTTP
+		// The problem is not Iris' router
+		//if !r.hasCache() {
+		//	cache := NewSyncMemoryRouterCache(NewMemoryRouterCache())
+		//	r.setCache(cache)
+		//}
 	}
 	s.optimized = true
 }
