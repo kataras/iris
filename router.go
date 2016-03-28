@@ -41,9 +41,11 @@ type RouterType uint8
 
 const (
 	Normal RouterType = iota
-	Memory
+	//both of these are for the memory router only, the normal router doesn't need synchronization on mutli cores
+	Memory     // this is the MemoryRouter
+	SyncRouter // this is the SyncMemoryRouter
 	NormalDomain
-	MemoryDomain
+	MemoryDomain // this is the MemoryDomainRouter
 )
 
 // IRouter is the interface of which any Iris router must implement

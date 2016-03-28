@@ -219,6 +219,9 @@ func (s *Station) forceOptimusPrime() {
 		//	cache := NewSyncMemoryRouterCache(NewMemoryRouterCache())
 		//	r.setCache(cache)
 		//}
+		if runtime.GOMAXPROCS(-1) > 1 {
+			s.IRouter = NewSyncRouter(r)
+		}
 	}
 	s.optimized = true
 }

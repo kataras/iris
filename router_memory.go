@@ -28,12 +28,16 @@ package iris
 
 import (
 	"net/http"
+	"sync"
 	"time"
 )
 
 type IMemoryRouter interface {
+	IRouter
 	setCache(IRouterCache)
 	hasCache() bool
+	getCache() IRouterCache
+	ServeWithPath(string, http.ResponseWriter, *http.Request)
 }
 
 // MemoryRouter is the cached version of the Router
@@ -65,6 +69,10 @@ func (r *MemoryRouter) setCache(cache IRouterCache) {
 	r.hasStarted = true
 }
 
+func (r *MemoryRouter) getCache() IRouterCache {
+	return r.cache
+}
+
 func (r *MemoryRouter) hasCache() bool {
 	return r.cache != nil && r.hasStarted
 }
@@ -73,10 +81,9 @@ func (r MemoryRouter) getType() RouterType {
 	return Memory
 }
 
-// ServeHTTP calls processRequest which finds and serves a route by it's request
-// If no route found, it sends an http status 404 with a custom error middleware, if setted
-func (r *MemoryRouter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	if ctx := r.cache.GetItem(req.Method, req.URL.Path); ctx != nil {
+// The only use of this is to no dublicate this particular code inside the other 2 memory routers.
+func (r *MemoryRouter) ServeWithPath(path string, res http.ResponseWriter, req *http.Request) {
+	if ctx := r.cache.GetItem(req.Method, path); ctx != nil {
 		ctx.Redo(res, req)
 		return
 	}
@@ -86,10 +93,16 @@ func (r *MemoryRouter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 	if r.processRequest(ctx) {
 		//if something found and served then add it's clone to the cache
-		r.cache.AddItem(req.Method, req.URL.Path, ctx.Clone())
+		r.cache.AddItem(req.Method, path, ctx.Clone())
 	}
 
 	r.getStation().pool.Put(ctx)
+}
+
+// ServeHTTP calls processRequest which finds and serves a route by it's request
+// If no route found, it sends an http status 404 with a custom error middleware, if setted
+func (r *MemoryRouter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	r.ServeWithPath(req.URL.Path, res, req)
 }
 
 type MemoryRouterDomain struct {
@@ -126,20 +139,32 @@ func (r *MemoryRouterDomain) processRequest(ctx *Context) bool {
 }
 
 func (r *MemoryRouterDomain) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	method := req.Method
 	path := req.URL.Path + req.Host
-	if ctx := r.cache.GetItem(method, path); ctx != nil {
-		ctx.Redo(res, req)
-		return
+	r.ServeWithPath(path, res, req)
+}
+
+type SyncMemoryRouter struct {
+	IMemoryRouter
+	mu sync.Mutex
+}
+
+func NewSyncRouter(underlineRouter IMemoryRouter) *SyncMemoryRouter {
+	return &SyncMemoryRouter{underlineRouter, sync.Mutex{}}
+}
+
+func (r SyncMemoryRouter) getType() RouterType {
+	return SyncRouter
+}
+
+func (r *SyncMemoryRouter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	r.mu.Lock()
+
+	path := req.URL.Path
+	if r.IMemoryRouter.getType() == MemoryDomain {
+		path += req.Host
 	}
+	r.ServeWithPath(path, res, req)
 
-	ctx := r.getStation().pool.Get().(*Context)
-	ctx.Reset(res, req)
+	r.mu.Unlock()
 
-	if r.processRequest(ctx) {
-		//if something found and served then add it's context's clone to the cache
-		r.cache.AddItem(method, path, ctx.Clone())
-	}
-
-	r.getStation().pool.Put(ctx)
 }
