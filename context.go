@@ -327,9 +327,10 @@ func (ctx *Context) Reset(res http.ResponseWriter, req *http.Request) {
 	ctx.Request = req
 }
 
-//no pointer don't change anything.
-func (ctx Context) Redo(res http.ResponseWriter, req *http.Request) {
-	ctx.memoryResponseWriter = MemoryWriter{res, -1, 200}
+//no pointer don't change anything. it works with the 1kkk requests no multiple write header but we have cost at memory, I must find other way to solve that.
+func (ctx *Context) Redo(res http.ResponseWriter, req *http.Request) {
+	//ctx.memoryResponseWriter = MemoryWriter{res, -1, 200}
+	ctx.memoryResponseWriter.Reset(res)
 	ctx.ResponseWriter = &ctx.memoryResponseWriter
 	ctx.Request = req
 	ctx.Do()
