@@ -97,8 +97,9 @@ type IContext interface {
 	ReadJSON(jsonObject interface{}) error
 	WriteJSON(httpStatus int, jsonObjectOrArray interface{}) error
 	JSON(jsonObjectOrArray interface{}) error
-	WriteXML(httpStatus int, xmlStructs ...interface{}) error
-	XML(xmlStructs ...interface{}) error
+	WriteXML(httpStatus int, xmlB []byte) error
+	XML(xmlB []byte) error
+	RenderXML(hhttpStatus int, xmlStructs ...interface{}) error
 	ReadXML(xmlObject interface{}) error
 	GetHandlerName() string
 }
@@ -585,8 +586,23 @@ func (ctx Context) ReadXML(xmlObject interface{}) error {
 	return nil
 }
 
-// WriteXML writes xml which is converted from struct(s) with a http status which they passed to the function via parameters
-func (ctx *Context) WriteXML(httpStatus int, xmlStructs ...interface{}) error {
+//XML calls the WriteXML with the 200 http status ok
+func (ctx *Context) XML(xmlBytes []byte) error {
+	return ctx.WriteXML(http.StatusOK, xmlBytes)
+}
+
+// WriteXML writes xml which from []byte
+func (ctx *Context) WriteXML(httpStatus int, xmlB []byte) error {
+	ctx.WriteStatus(httpStatus)
+	ctx.SetContentType([]string{ContentXML + " ;charset=" + Charset})
+
+	ctx.ResponseWriter.Write(xmlB)
+	return nil
+	//This is maybe better but it doesn't works as I want, so let it for other func at the future return xml.NewEncoder(ctx.ResponseWriter).Encode(xmlB)
+}
+
+// RenderXML writes xml which is converted from struct(s) with a http status which they passed to the function via parameters
+func (ctx *Context) RenderXML(httpStatus int, xmlStructs ...interface{}) error {
 	var _xmlDoc []byte
 	for _, xmlStruct := range xmlStructs {
 		theDoc, err := xml.MarshalIndent(xmlStruct, "", "  ")
@@ -597,16 +613,12 @@ func (ctx *Context) WriteXML(httpStatus int, xmlStructs ...interface{}) error {
 	}
 	//ctx.ResponseWriter.Header().Set(ContentType, ContentXML+" ;charset="+Charset)
 	//ctx.ResponseWriter.WriteHeader(httpStatus)
-	ctx.SetContentType([]string{ContentXML + " ;charset=" + Charset})
 	ctx.WriteStatus(httpStatus)
+	ctx.SetContentType([]string{ContentXMLText + " ;charset=" + Charset})
+
 	ctx.ResponseWriter.Write(_xmlDoc)
 	//xml.NewEncoder(w).Encode(r.Data)
 	return nil
-}
-
-//XML calls the WriteXML with the 200 http status ok
-func (ctx *Context) XML(xmlStructs ...interface{}) error {
-	return ctx.WriteXML(http.StatusOK, xmlStructs...)
 }
 
 /* END OF RENDERER */

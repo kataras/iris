@@ -633,8 +633,8 @@ iris.Get("/thenotfound",func (c *iris.Context) {
 	 - JSON: Same as WriteJSON but you don't have to pass a status, it's defaulted to http.StatusOK (200).
  18. **ReadXML(xmlObject interface{}) error**
  	 - ReadXML: reads the request's body and parses it, assigin the result into xmlObject passed by argument.
- 19. **WriteXML(status int, xmlStructs ...interface{}) & XML(xmlStructs ...interface{}) returns error**
-	 - WriteXML: Writes writes xml which is converted from struct(s) with a given http status to the client, it sets the Header with the correct content-type. If something goes wrong then it's returned value which is an error type is not nil.
+ 19. **WriteXML(status int, xmlBytes []byte) & XML(xmlBytes []byte) returns error**
+	 - WriteXML: Writes writes xml which is converted from []byte( usualy string)  with a given http status to the client, it sets the Header with the correct content-type. If something goes wrong then it's returned value which is an error type is not nil.
 	 - XML: Same as WriteXML but you don't have to pass a status, it's defaulted to http.StatusOK (200).
  20. **RenderFile(file string, pageContext interface{}) returns error**
 	 - RenderFile: Renders a file by its name (which a file is saved to the template cache) and a page context passed to the function, default http status is http.StatusOK(200) if the template was found, otherwise http.StatusNotFound(404). If something goes wrong then it's returned value which is an error type is not nil.
