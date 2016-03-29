@@ -109,7 +109,6 @@ func (g *gzipMiddleware) Serve(ctx *iris.Context) {
 		ctx.Next()
 		return
 	}
-
 	//get the gzip writer from the pool clear it's contents and get the new responsewriter's
 	writer := g.pool.Get().(*compressGzip.Writer)
 	writer.Reset(res)

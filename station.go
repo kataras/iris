@@ -300,6 +300,7 @@ func (s *Station) ListenTLS(fullAddress string, certFile, keyFile string) error 
 // eg  http.ListenAndServe(":80",iris.Serve()) if you don't want to use iris.Listen(":80")
 func (s *Station) Serve() http.Handler {
 	s.OptimusPrime()
+	s.pluginContainer.DoPreListen(s)
 	return s.IRouter
 }
 
