@@ -19,8 +19,8 @@ The [fastest](#benchmarks)  go web framework which provides robust set of featur
 * **Multi server instances**: Besides the fact that Iris has a default main server. You can declare as many as you need[*](#declaration).
 * **Compatible**: Iris is compatible with the native net/http package.
 
-## Q: What makes iris significantly faster?
-#### A: These are the QNIQUE features that Iris brings
+### Q: What makes iris significantly [faster](#benchmarks)?
+##### A: These are the QNIQUE features that Iris brings
 
 *    Iris uses the same algorithm as the BSD's kernel does for routing (call it Trie)
 
