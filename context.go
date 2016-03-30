@@ -293,16 +293,16 @@ func (ctx *Context) SendStatus(statusCode int, message string) {
 	r.Write([]byte(message))
 }
 
-// RemoteAddr gets just the Remote Address from the client.
-func (ctx *Context) RemoteAddr() string {
+// RequestIP gets just the Remote Address from the client.
+func (ctx *Context) RequestIP() string {
 	if ip, _, err := net.SplitHostPort(strings.TrimSpace(ctx.Request.RemoteAddr)); err == nil {
 		return ip
 	}
 	return ""
 }
 
-// RequestIP is like RemoteAddr but it checks for proxy servers also, tries to get the real client's request IP
-func (ctx *Context) RequestIP() string {
+// RemoteAddr is like RequestIP but it checks for proxy servers also, tries to get the real client's request IP
+func (ctx *Context) RemoteAddr() string {
 	header := ctx.Request.Header.Get("X-Real-Ip")
 	realIP := strings.TrimSpace(header)
 	if realIP != "" {
@@ -317,7 +317,7 @@ func (ctx *Context) RequestIP() string {
 	if realIP != "" {
 		return realIP
 	} else {
-		return ctx.RemoteAddr()
+		return ctx.RequestIP()
 	}
 }
 
