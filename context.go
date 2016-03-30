@@ -417,6 +417,16 @@ func (ctx *Context) Get(key string) interface{} {
 	return ctx.values[key]
 }
 
+// GetFmt returns a value which has this format: func(format string, args ...interface{}) string
+// if doesn't exists returns nil
+func (ctx *Context) GetFmt(key string) func(format string, args ...interface{}) string {
+	if ctx.values == nil {
+		return nil
+	}
+
+	return ctx.values[key].(func(format string, args ...interface{}) string)
+}
+
 // GetString same as Get but returns the value as string
 func (ctx *Context) GetString(key string) (value string) {
 	if v := ctx.Get(key); v != nil {
