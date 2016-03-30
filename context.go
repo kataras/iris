@@ -303,11 +303,12 @@ func (ctx *Context) RemoteAddr() string {
 
 // RequestIP is like RemoteAddr but it checks for proxy servers also, tries to get the real client's request IP
 func (ctx *Context) RequestIP() string {
-	realIP := strings.TrimSpace(c.requestHeader("X-Real-Ip"))
+	header := ctx.Request.Header.Get("X-Real-Ip")
+	realIP := strings.TrimSpace(header)
 	if realIP != "" {
 		return realIP
 	}
-	realIP = c.requestHeader("X-Forwarded-For")
+	realIP = ctx.Request.Header.Get("X-Forwarded-For")
 	idx := strings.IndexByte(realIP, ',')
 	if idx >= 0 {
 		realIP = realIP[0:idx]
