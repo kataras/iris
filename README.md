@@ -53,6 +53,7 @@ The [fastest](#benchmarks)  go web framework which provides robust set of featur
 - [Custom HTTP Errors](#custom-http-errors)
 - [Context](#context)
 - [Plugins](#plugins)
+- [Internationalization and Localization](https://github.com/kataras/iris/tree/examples/middleware_internationalization_i18n)
 - [Examples](https://github.com/kataras/iris/tree/examples)
 - [Benchmarks](#benchmarks)
 - [Third Party Middlewares](#third-party-middlewares)
@@ -898,6 +899,7 @@ Iris has a middleware system to create it's own middleware and is at a state whi
 | [secure](https://github.com/unrolled/secure) | [Cory Jacobsen](https://github.com/unrolled) | Middleware that implements a few quick security wins | [Yes](https://github.com/kataras/iris/tree/examples/thirdparty_secure) |
 | [JWT Middleware](https://github.com/auth0/go-jwt-middleware) | [Auth0](https://github.com/auth0) | Middleware checks for a JWT on the `Authorization` header on incoming requests and decodes it| No |
 | [binding](https://github.com/mholt/binding) | [Matt Holt](https://github.com/mholt) | Data binding from HTTP requests into structs | No |
+| [i18n](https://github.com/kataras/iris/tree/development/middleware/i18n) | [Iris](https://github.com/kataras/iris) | Internationalization and Localization | [Yes](https://github.com/kataras/iris/tree/examples/middleware_internationalization_i18n) |
 | [logrus](https://github.com/meatballhat/negroni-logrus) | [Dan Buch](https://github.com/meatballhat) | Logrus-based logger | No |
 | [render](https://github.com/unrolled/render) | [Cory Jacobsen](https://github.com/unrolled) | Render JSON, XML and HTML templates | No |
 | [gorelic](https://github.com/jingweno/negroni-gorelic) | [Jingwen Owen Ou](https://github.com/jingweno) | New Relic agent for Go runtime | No |
