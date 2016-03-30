@@ -293,12 +293,31 @@ func (ctx *Context) SendStatus(statusCode int, message string) {
 	r.Write([]byte(message))
 }
 
-// RequestIP gets just the Remote Address from the client.
-func (ctx *Context) RequestIP() string {
+// RemoteAddr gets just the Remote Address from the client.
+func (ctx *Context) RemoteAddr() string {
 	if ip, _, err := net.SplitHostPort(strings.TrimSpace(ctx.Request.RemoteAddr)); err == nil {
 		return ip
 	}
 	return ""
+}
+
+// RequestIP is like RemoteAddr but it checks for proxy servers also, tries to get the real client's request IP
+func (ctx *Context) RequestIP() string {
+	realIP := strings.TrimSpace(c.requestHeader("X-Real-Ip"))
+	if realIP != "" {
+		return realIP
+	}
+	realIP = c.requestHeader("X-Forwarded-For")
+	idx := strings.IndexByte(realIP, ',')
+	if idx >= 0 {
+		realIP = realIP[0:idx]
+	}
+	realIP = strings.TrimSpace(realIP)
+	if realIP != "" {
+		return realIP
+	} else {
+		return ctx.RemoteAddr()
+	}
 }
 
 // Close is used to close the body of the request
@@ -340,6 +359,12 @@ func (ctx *Context) Reset(res http.ResponseWriter, req *http.Request) {
 	ctx.memoryResponseWriter.Reset(res)
 	ctx.ResponseWriter = &ctx.memoryResponseWriter
 	ctx.Request = req
+	/*if len(ctx.values) > 0 {
+		for k, _ := range ctx.values {
+			delete(ctx.values, k)
+		}
+	}*/
+
 }
 
 //no pointer don't change anything. it works with the 1kkk requests no multiple write header but we have cost at memory, I must find other way to solve that.
