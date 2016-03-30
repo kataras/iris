@@ -31,33 +31,36 @@ hi = Гейб, %s
 
 ```go
 
-	package main
+package main
 
-	import (
-		"fmt"
-		"github.com/kataras/iris"
-		"github.com/kataras/iris/middleware/i18n"
-	)
+import (
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/middleware/i18n"
+)
 
-	func main() {
+func main() {
 
-		iris.Use(i18n.I18nHandler(i18n.Options{Default: "en-US",
-			Languages: map[string]string{
-				"en-US": "./locales/locale_en-US.ini",
-				"el-GR": "./locales/locale_el-GR.ini",
-				"zh-CN": "./locales/locale_zh-CN.ini"}}))	
-		// or iris.UseFunc(i18n.I18n(....))
-		// or iris.Get("/",i18n.I18n(....), func (ctx *iris.Context){}) 
+	iris.Use(i18n.I18nHandler(i18n.Options{Default: "en-US",
+		Languages: map[string]string{
+			"en-US": "./locales/locale_en-US.ini",
+			"el-GR": "./locales/locale_el-GR.ini",
+			"zh-CN": "./locales/locale_zh-CN.ini"}}))	
+	// or iris.UseFunc(i18n.I18n(....))
+	// or iris.Get("/",i18n.I18n(....), func (ctx *iris.Context){}) 
 		
-		iris.Get("/", func(ctx *iris.Context) {
-			hi := ctx.GetFmt("translate")("hi", "maki") // hi is the key, 'maki' is the %s, the second parameter is optional
-			language := ctx.Get("language") // language is the language key, example 'en-US'
+	iris.Get("/", func(ctx *iris.Context) {
+		hi := ctx.GetFmt("translate")("hi", "maki") // hi is the key, 'maki' is the %s, the second parameter is optional
+		language := ctx.Get("language") // language is the language key, example 'en-US'
 
-			ctx.Write("From the language %s translated output: %s", language, hi)
-		})
+		ctx.Write("From the language %s translated output: %s", language, hi)
+	})
+	
+	
+	println("Server is running at :8080")
+	iris.Listen(":8080")
 
-		iris.Listen(":8080")
-
-    }
+}
 
 ```
+
+### [For a working example, click here](https://github.com/kataras/iris/tree/examples/middleware_internationalization_i18n)
