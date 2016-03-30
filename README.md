@@ -838,7 +838,7 @@ An example of one plugin which is under development is the Iris control, a web i
 
 With Intel(R) Core(TM) i7-4710HQ CPU @ 2.50GHz 2.50 HGz and 8GB Ram:
 
-![Benchmark Wizzard 24 March 2016 - comparing the fasters](http://kataras.github.io/iris/assets/benchmark_all_24Match_2016.png)
+![Benchmark Wizzard 24 March 2016 - comparing the fasters](http://kataras.github.io/iris/assets/benchmarks_all.png)
 
 [See all benchmarks](https://github.com/iris-contrib/go-http-routing-benchmark)
 
