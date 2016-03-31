@@ -231,11 +231,11 @@ func (b *Branch) AddBranch(path string, middleware Middleware) {
 					b.precedence++
 					continue loop
 				}
-
-				for j := 0; j < len(b.tokens); j++ {
-					if c == b.tokens[j] {
-						i = b.GivePrecedenceTo(j)
-						b = b.nodes[j]
+				//we need the i here to be re-setting, so use the same i variable as we declare it on line 176
+				for i := 0; i < len(b.tokens); i++ {
+					if c == b.tokens[i] {
+						i = b.GivePrecedenceTo(i)
+						b = b.nodes[i]
 						continue loop
 					}
 				}
