@@ -42,6 +42,7 @@ const (
 )
 
 type (
+	// IStation is the interface which the Station should implements
 	IStation interface {
 		IRouter
 		Serve() http.Handler
@@ -51,6 +52,7 @@ type (
 		//yes we need that again if no .Listen called and you use other server, you have to call .Build() before
 		OptimusPrime()
 		HasOptimized() bool
+		GetLogger() *Logger
 	}
 
 	// StationOptions is the struct which contains all Iris' settings/options
@@ -104,6 +106,7 @@ type (
 		pluginContainer *PluginContainer
 		//it's true if OptimusPrime has run one time
 		optimized bool
+		logger    *Logger
 	}
 )
 
@@ -153,12 +156,22 @@ func (s *Station) Plugin(plugin IPlugin) error {
 	return s.pluginContainer.Plugin(plugin)
 }
 
+// GetPluginContainer returns the pluginContainer
 func (s Station) GetPluginContainer() IPluginContainer {
 	return s.pluginContainer
 }
 
+// GetTemplates returns the *template.Template registed to this station, if any
 func (s Station) GetTemplates() *template.Template {
 	return s.templates
+}
+
+// GetLogger returns ( or creates if not exists already) the logger
+func (s *Station) GetLogger() *Logger {
+	if s.logger == nil {
+		s.logger = NewLogger(LoggerOutTerminal, "", 0)
+	}
+	return s.logger
 }
 
 func (s *Station) forceOptimusPrime() {
@@ -187,22 +200,22 @@ func (s *Station) forceOptimusPrime() {
 	//check for memoryrouter and use syncmemoryrouter if cores > 1
 	var r IMemoryRouter
 	routerType := s.IRouter.getType()
-	if routerType == Memory || routerType == MemoryDomain {
+	if routerType == Memory || routerType == DomainMemory {
 		if routerType == Memory {
 			r = s.IRouter.(*MemoryRouter)
-		} else if routerType == MemoryDomain {
+		} else if routerType == DomainMemory {
 			r = s.IRouter.(*MemoryRouterDomain)
 		} else {
 			panic("[Iris] From Station.OptimisPrime, unsupported Router, please post this as issue at github.com/kataras/iris")
 		}
 
 		if !r.hasCache() {
-			var cache IRouterCache
+			var cache IContextCache
 
-			cache = NewMemoryRouterCache()
+			cache = NewContextCache()
 			//check if we have more than one core then use theMemoryRouterCache,otherwise use the SyncMemoryRouterCache and it's underline MemoryRouterCache
 			if runtime.GOMAXPROCS(-1) > 1 {
-				cache = NewSyncMemoryRouterCache(cache.(*MemoryRouterCache))
+				cache = NewSyncContextCache(cache.(*ContextCache))
 				//println("SYNCED MULTI_CORE CACHE WITH CORES: ", runtime.GOMAXPROCS(-1))
 			}
 

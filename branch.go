@@ -120,6 +120,7 @@ func URLParam(req *http.Request, key string) string {
 	return req.URL.Query().Get(key)
 }
 
+// GetParamsLen returns the parameters length from a given path
 func GetParamsLen(path string) uint8 {
 	var n uint
 	for i := 0; i < len(path); i++ {
@@ -134,8 +135,10 @@ func GetParamsLen(path string) uint8 {
 	return uint8(n)
 }
 
+// BranchCase is the type which the type of Branch using in order to determinate what type (parameterized, anything, static...) is the perticular node
 type BranchCase uint8
 
+// IBranch is the interface which the type Branch must implement
 type IBranch interface {
 	AddBranch(string, Middleware)
 	AddNode(uint8, string, string, Middleware)
@@ -143,6 +146,9 @@ type IBranch interface {
 	GivePrecedenceTo(index int) int
 }
 
+// Branch is the node of a tree of the routes,
+// in order to learn how this is working, google 'trie' or watch this lecture: https://www.youtube.com/watch?v=uhAUk63tLRM
+// this method is used by the BSD's kernel also
 type Branch struct {
 	part        string
 	BranchCase  BranchCase
@@ -154,6 +160,7 @@ type Branch struct {
 	paramsLen   uint8
 }
 
+// AddBranch adds a branch to the existing branch or to the tree if no branch has the prefix of
 func (b *Branch) AddBranch(path string, middleware Middleware) {
 	fullPath := path
 	b.precedence++
@@ -225,10 +232,10 @@ func (b *Branch) AddBranch(path string, middleware Middleware) {
 					continue loop
 				}
 
-				for i := 0; i < len(b.tokens); i++ {
-					if c == b.tokens[i] {
-						i = b.GivePrecedenceTo(i)
-						b = b.nodes[i]
+				for j := 0; j < len(b.tokens); j++ {
+					if c == b.tokens[j] {
+						i = b.GivePrecedenceTo(j)
+						b = b.nodes[j]
 						continue loop
 					}
 				}
@@ -260,6 +267,7 @@ func (b *Branch) AddBranch(path string, middleware Middleware) {
 	}
 }
 
+// AddNode adds a branch as children to other Branch
 func (b *Branch) AddNode(numParams uint8, path string, fullPath string, middleware Middleware) {
 	var offset int
 
@@ -359,6 +367,7 @@ func (b *Branch) AddNode(numParams uint8, path string, fullPath string, middlewa
 	b.middleware = middleware
 }
 
+// GetBranch is used by the Router, it finds and returns the correct branch for a path
 func (b *Branch) GetBranch(path string, _params PathParameters) (middleware Middleware, params PathParameters, mustRedirect bool) {
 	params = _params
 loop:
@@ -376,7 +385,7 @@ loop:
 						}
 					}
 
-					mustRedirect = (path == "/" && b.middleware != nil)
+					mustRedirect = (path == Slash && b.middleware != nil)
 					return
 				}
 
@@ -412,7 +421,7 @@ loop:
 						return
 					} else if len(b.nodes) == 1 {
 						b = b.nodes[0]
-						mustRedirect = (b.part == "/" && b.middleware != nil)
+						mustRedirect = (b.part == Slash && b.middleware != nil)
 					}
 
 					return
@@ -438,7 +447,7 @@ loop:
 				return
 			}
 
-			if path == "/" && b.hasWildNode && b.BranchCase != isRoot {
+			if path == Slash && b.hasWildNode && b.BranchCase != isRoot {
 				mustRedirect = true
 				return
 			}
@@ -455,13 +464,14 @@ loop:
 			return
 		}
 
-		mustRedirect = (path == "/") ||
+		mustRedirect = (path == Slash) ||
 			(len(b.part) == len(path)+1 && b.part[len(path)] == '/' &&
 				path == b.part[:len(b.part)-1] && b.middleware != nil)
 		return
 	}
 }
 
+// GivePrecedenceTo just adds the priority of this branch by an index
 func (b *Branch) GivePrecedenceTo(index int) int {
 	b.nodes[index].precedence++
 	_precedence := b.nodes[index].precedence

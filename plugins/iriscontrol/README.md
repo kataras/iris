@@ -1,5 +1,7 @@
 ## Iris Control
 
+### THIS IS NOT READY YET
+
 This plugin will give you remotely ( and local ) access to your iris server's information via a web interface
 
 

@@ -36,7 +36,8 @@ type tree struct {
 // Garden is the main area which routes are planted/placed
 type Garden []tree
 
-func (g Garden) GetTreeByMethod(method string) *tree {
+// getTreeByMethod returns the correct tree which it's method is equal to the given method, from the garden
+func (g Garden) getTreeByMethod(method string) *tree {
 	for _, _tree := range g {
 		if _tree.method == method {
 			return &_tree
@@ -45,7 +46,8 @@ func (g Garden) GetTreeByMethod(method string) *tree {
 	return nil
 }
 
-func (g Garden) GetTreeByMethodAndDomain(method string, domain string) *tree {
+// getTreeByMethodAndDomain returns the correct tree which it's method&domain is equal to the given method&domain, from the garden
+func (g Garden) getTreeByMethodAndDomain(method string, domain string) *tree {
 	for _, _tree := range g {
 		if _tree.domain == domain && _tree.method == method {
 			return &_tree
@@ -54,7 +56,7 @@ func (g Garden) GetTreeByMethodAndDomain(method string, domain string) *tree {
 	return nil
 }
 
-func (g Garden) GetRootByMethod(method string) *Branch {
+func (g Garden) getRootByMethod(method string) *Branch {
 	for _, _tree := range g {
 		if _tree.method == method {
 			return _tree.rootBranch
@@ -63,8 +65,9 @@ func (g Garden) GetRootByMethod(method string) *Branch {
 	return nil
 }
 
+// getRootByMethodAndDomain returns the correct branch which it's method&domain is equal to the given method&domain, from a garden's tree
 // trees with  no domain means that their domain==""
-func (g Garden) GetRootByMethodAndDomain(method string, domain string) *Branch {
+func (g Garden) getRootByMethodAndDomain(method string, domain string) *Branch {
 	for _, _tree := range g {
 		if _tree.domain == domain && _tree.method == method {
 			return _tree.rootBranch
@@ -77,7 +80,7 @@ func (g Garden) GetRootByMethodAndDomain(method string, domain string) *Branch {
 func (g Garden) Plant(_route IRoute) Garden {
 
 	//we have a domain to assign too
-	theRoot := g.GetRootByMethodAndDomain(_route.GetMethod(), _route.GetDomain())
+	theRoot := g.getRootByMethodAndDomain(_route.GetMethod(), _route.GetDomain())
 	if theRoot == nil {
 		theRoot = new(Branch)
 		g = append(g, tree{_route.GetMethod(), theRoot, _route.GetDomain(), _route.GetDomain() != ""})
@@ -88,10 +91,12 @@ func (g Garden) Plant(_route IRoute) Garden {
 	return g
 }
 
-func (g Garden) Len() int {
+// len returns the lengh of the trees inside this garden
+func (g Garden) len() int {
 	return len(g)
 }
 
-func (g Garden) Get(index int) tree {
+// get returns a tree from this garden by index
+func (g Garden) get(index int) tree {
 	return g[index]
 }

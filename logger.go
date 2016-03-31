@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Gerasimos Maropoulos
+// Copyright (c) 2016, Gerasimos Maropoulos and Go Authors using for the 'log,io,os' packages
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification,
@@ -26,10 +26,32 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package iris
 
-// IDictionary is the interface which PathParameters using
-// it's just a Get(key), Set(key,value) pair store
-type IDictionary interface {
-	Get(key string) string
-	Set(key string, value string)
-	String() string
+import (
+	"io"
+	"log"
+	"os"
+)
+
+const (
+	// LoggerIrisPrefix is the prefix of the logger '[IRIS] '
+	LoggerIrisPrefix = "[IRIS] "
+)
+
+// LoggerOutTerminal os.Stdout , it's the default io.Writer to the Iris' logger
+var LoggerOutTerminal = os.Stdout
+
+// Logger is just a log.Logger
+type Logger struct {
+	*log.Logger
+}
+
+// NewLogger creates a new Logger.   The out variable sets the
+// destination to which log data will be written.
+// The prefix appears at the beginning of each generated log line.
+// The flag argument defines the logging properties.
+func NewLogger(out io.Writer, prefix string, flag int) *Logger {
+	if out == nil {
+		out = LoggerOutTerminal
+	}
+	return &Logger{log.New(out, LoggerIrisPrefix+prefix, flag)}
 }

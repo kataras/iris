@@ -74,6 +74,7 @@ type GardenParty struct {
 
 var _ IParty = &GardenParty{}
 
+// NewParty creates and return a new Party, it shouldn't used outside this package but capital because
 func NewParty(path string, station *Station, hoster *GardenParty) IParty {
 	p := &GardenParty{}
 	p.station = station
@@ -96,16 +97,15 @@ func NewParty(path string, station *Station, hoster *GardenParty) IParty {
 
 // fixPath fix the double slashes, (because of root,I just do that before the .Handle no need for anything else special)
 func fixPath(str string) string {
-	return strings.Replace(str, "//", "/", -1)
+	return strings.Replace(str, "//", Slash, -1)
 }
 
 // GetRoot find the root hoster of the parties, the root is this when the hoster is nil ( it's the  rootPath '/')
 func (p *GardenParty) getRoot() IParty {
 	if p.hoster != nil {
 		return p.hoster.getRoot()
-	} else {
-		return p
 	}
+	return p
 
 }
 
@@ -125,7 +125,7 @@ func (p GardenParty) getPath() string {
 func (p *GardenParty) Handle(method string, registedPath string, handlers ...Handler) {
 	registedPath = p.rootPath + registedPath
 	if registedPath == "" {
-		registedPath = "/"
+		registedPath = Slash
 	}
 	registedPath = fixPath(registedPath)
 

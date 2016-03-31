@@ -51,33 +51,34 @@ type (
 		Activate(IPluginContainer) error
 	}
 
+	// IPluginPreHandle implements the PreHandle(IRoute) method
 	IPluginPreHandle interface {
 		// PreHandle it's being called every time BEFORE a Route is registed to the Router
 		//
 		//  parameter is the Route
 		PreHandle(IRoute)
 	}
-
+	// IPluginPostHandle implements the PostHandle(IRoute) method
 	IPluginPostHandle interface {
 		// PostHandle it's being called every time AFTER a Route successfully registed to the Router
 		//
 		// parameter is the Route
 		PostHandle(IRoute)
 	}
-
+	// IPluginPreListen implements the PreListen(*Station) method
 	IPluginPreListen interface {
 		// PreListen it's being called only one time, BEFORE the Server is started (if .Listen called)
 		// is used to do work at the time all other things are ready to go
 		//  parameter is the station
 		PreListen(*Station)
 	}
-
+	// IPluginPostListen implements the PostListen(*Station) method
 	IPluginPostListen interface {
 		// PostListen it's being called only one time, AFTER the Server is started (if .Listen called)
 		// parameter is the station
 		PostListen(*Station)
 	}
-
+	// IPluginPreClose implements the PreClose(*Station) method
 	IPluginPreClose interface {
 		// PreClose it's being called only one time, BEFORE the Iris .Close method
 		// any plugin cleanup/clear memory happens here
@@ -96,9 +97,10 @@ type (
 		// first parameter is the plugin
 		// second parameter is the download url
 		// must return a boolean, if false then the plugin is not permmited to download this file
-		PreDownload(plugin IPlugin, downloadUrl string) // bool
+		PreDownload(plugin IPlugin, downloadURL string) // bool
 	}
 
+	// IPluginContainer is the interface which the PluginContainer should implements
 	IPluginContainer interface {
 		Plugin(plugin IPlugin) error
 		RemovePlugin(pluginName string)
@@ -109,15 +111,15 @@ type (
 		DoPreListen(station *Station)
 		DoPostListen(station *Station)
 		DoPreClose(station *Station)
-		DoPreDownload(pluginTryToDownload IPlugin, downloadUrl string)
+		DoPreDownload(pluginTryToDownload IPlugin, downloadURL string)
 		GetAll() []IPlugin
 		// GetDownloader is the only one module that is used and fire listeners at the same time in this file
 		GetDownloader() IDownloadManager
 	}
-
+	// IDownloadManager is the interface which the DownloadManager should implements
 	IDownloadManager interface {
 		DirectoryExists(dir string) bool
-		DownloadZip(zipUrl string, targetDir string) (string, error)
+		DownloadZip(zipURL string, targetDir string) (string, error)
 		Unzip(archive string, target string) (string, error)
 		Remove(filePath string) error
 		// install is just the flow of: downloadZip -> unzip -> removeFile(zippedFile)
@@ -134,25 +136,31 @@ type (
 	}
 )
 
+// DownloadManager is just a struch which exports the util's downloadZip, directoryExists, unzip methods, used by the plugins via the PluginContainer
 type DownloadManager struct {
 }
 
+// DirectoryExists returns true if a given local directory exists
 func (d *DownloadManager) DirectoryExists(dir string) bool {
 	return directoryExists(dir)
 }
 
-func (d *DownloadManager) DownloadZip(zipUrl string, targetDir string) (string, error) {
-	return downloadZip(zipUrl, targetDir)
+// DownloadZip downlodas a zip to the given local path location
+func (d *DownloadManager) DownloadZip(zipURL string, targetDir string) (string, error) {
+	return downloadZip(zipURL, targetDir)
 }
 
+// Unzip unzips a zip to the given local path location
 func (d *DownloadManager) Unzip(archive string, target string) (string, error) {
 	return unzip(archive, target)
 }
 
+// Remove deletes/removes/rm a file
 func (d *DownloadManager) Remove(filePath string) error {
 	return removeFile(filePath)
 }
 
+// Install is just the flow of the: DownloadZip->Unzip->Remove the zip
 func (d *DownloadManager) Install(remoteFileZip string, targetDirectory string) (string, error) {
 	return install(remoteFileZip, targetDirectory)
 }
@@ -243,6 +251,7 @@ func (p *PluginContainer) Printf(format string, a ...interface{}) {
 	fmt.Printf(format, a...) //for now just this.
 }
 
+// DoPreHandle raise all plugins which has the PreHandle method
 func (p *PluginContainer) DoPreHandle(route IRoute) {
 	for i := 0; i < len(p.activatedPlugins); i++ {
 		// check if this method exists on our plugin obj, these are optionaly and call it
@@ -252,6 +261,7 @@ func (p *PluginContainer) DoPreHandle(route IRoute) {
 	}
 }
 
+// DoPostHandle raise all plugins which has the DoPostHandle method
 func (p *PluginContainer) DoPostHandle(route IRoute) {
 	for i := 0; i < len(p.activatedPlugins); i++ {
 		// check if this method exists on our plugin obj, these are optionaly and call it
@@ -261,6 +271,7 @@ func (p *PluginContainer) DoPostHandle(route IRoute) {
 	}
 }
 
+// DoPreListen raise all plugins which has the DoPreListen method
 func (p *PluginContainer) DoPreListen(station *Station) {
 	for i := 0; i < len(p.activatedPlugins); i++ {
 		// check if this method exists on our plugin obj, these are optionaly and call it
@@ -270,6 +281,7 @@ func (p *PluginContainer) DoPreListen(station *Station) {
 	}
 }
 
+// DoPostListen raise all plugins which has the DoPostListen method
 func (p *PluginContainer) DoPostListen(station *Station) {
 	for i := 0; i < len(p.activatedPlugins); i++ {
 		// check if this method exists on our plugin obj, these are optionaly and call it
@@ -279,6 +291,7 @@ func (p *PluginContainer) DoPostListen(station *Station) {
 	}
 }
 
+// DoPreClose raise all plugins which has the DoPreClose method
 func (p *PluginContainer) DoPreClose(station *Station) {
 	for i := 0; i < len(p.activatedPlugins); i++ {
 		// check if this method exists on our plugin obj, these are optionaly and call it
@@ -288,11 +301,12 @@ func (p *PluginContainer) DoPreClose(station *Station) {
 	}
 }
 
-func (p *PluginContainer) DoPreDownload(pluginTryToDownload IPlugin, downloadUrl string) {
+// DoPreDownload raise all plugins which has the DoPreDownload method
+func (p *PluginContainer) DoPreDownload(pluginTryToDownload IPlugin, downloadURL string) {
 	for i := 0; i < len(p.activatedPlugins); i++ {
 		// check if this method exists on our plugin obj, these are optionaly and call it
 		if pluginObj, ok := p.activatedPlugins[i].(IPluginPreDownload); ok {
-			pluginObj.PreDownload(pluginTryToDownload, downloadUrl)
+			pluginObj.PreDownload(pluginTryToDownload, downloadURL)
 		}
 	}
 }

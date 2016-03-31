@@ -40,12 +40,12 @@ import (
 
 func main() {
 
-	iris.Use(i18n.I18nHandler(i18n.Options{Default: "en-US",
+	iris.UseFunc(i18n.I18n(i18n.Options{Default: "en-US",
 		Languages: map[string]string{
 			"en-US": "./locales/locale_en-US.ini",
 			"el-GR": "./locales/locale_el-GR.ini",
 			"zh-CN": "./locales/locale_zh-CN.ini"}}))	
-	// or iris.UseFunc(i18n.I18n(....))
+	// or iris.Use(i18n.I18nHandler(....))
 	// or iris.Get("/",i18n.I18n(....), func (ctx *iris.Context){}) 
 		
 	iris.Get("/", func(ctx *iris.Context) {

@@ -28,7 +28,6 @@ package iris
 
 import (
 	"archive/zip"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -73,7 +72,7 @@ func directoryExists(dir string) bool {
 // downloadZip downloads a zip file returns the downloaded filename and an error.
 //
 // An indicator is always shown up to the terminal, so the user will know if (a plugin) try to download something
-func downloadZip(zipUrl string, newDir string) (string, error) {
+func downloadZip(zipURL string, newDir string) (string, error) {
 	var err error
 	var size int64
 	finish := false
@@ -109,10 +108,10 @@ func downloadZip(zipUrl string, newDir string) (string, error) {
 	}()
 
 	os.MkdirAll(newDir, os.ModeDir)
-	tokens := strings.Split(zipUrl, "/")
+	tokens := strings.Split(zipURL, "/")
 	fileName := newDir + tokens[len(tokens)-1]
 	if !strings.HasSuffix(fileName, ".zip") {
-		err = errors.New(fmt.Sprintf("Error while creating %s ,is not a zip", fileName))
+		err = fmt.Errorf("Error while creating %s ,is not a zip", fileName)
 		return "", err
 	}
 
@@ -122,16 +121,16 @@ func downloadZip(zipUrl string, newDir string) (string, error) {
 		return "", nil
 	}
 	defer output.Close()
-	response, err := http.Get(zipUrl)
+	response, err := http.Get(zipURL)
 	if err != nil {
-		fmt.Println("Error while downloading", zipUrl, "-", err)
+		fmt.Println("Error while downloading", zipURL, "-", err)
 		return "", nil
 	}
 	defer response.Body.Close()
 
 	size, err = io.Copy(output, response.Body)
 	if err != nil {
-		fmt.Println("Error while downloading", zipUrl, "-", err)
+		fmt.Println("Error while downloading", zipURL, "-", err)
 		return "", nil
 	}
 	finish = true

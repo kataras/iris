@@ -32,18 +32,19 @@ import (
 	"time"
 )
 
+// IMemoryRouter is the in-memory cached version of the Router
 type IMemoryRouter interface {
 	IRouter
-	setCache(IRouterCache)
+	setCache(IContextCache)
+	getCache() IContextCache
 	hasCache() bool
-	getCache() IRouterCache
 	ServeWithPath(string, http.ResponseWriter, *http.Request)
 }
 
 // MemoryRouter is the cached version of the Router
 type MemoryRouter struct {
 	*Router
-	cache         IRouterCache
+	cache         IContextCache
 	maxitems      int
 	resetDuration time.Duration
 	hasStarted    bool
@@ -60,7 +61,7 @@ func NewMemoryRouter(underlineRouter *Router, maxitems int, resetDuration time.D
 	return r
 }
 
-func (r *MemoryRouter) setCache(cache IRouterCache) {
+func (r *MemoryRouter) setCache(cache IContextCache) {
 	r.cache = cache
 	r.cache.SetMaxItems(r.maxitems)
 	ticker := NewTicker()
@@ -69,7 +70,7 @@ func (r *MemoryRouter) setCache(cache IRouterCache) {
 	r.hasStarted = true
 }
 
-func (r *MemoryRouter) getCache() IRouterCache {
+func (r *MemoryRouter) getCache() IContextCache {
 	return r.cache
 }
 
@@ -81,6 +82,7 @@ func (r MemoryRouter) getType() RouterType {
 	return Memory
 }
 
+// ServeWithPath serves a request
 // The only use of this is to no dublicate this particular code inside the other 2 memory routers.
 func (r *MemoryRouter) ServeWithPath(path string, res http.ResponseWriter, req *http.Request) {
 	if ctx := r.cache.GetItem(req.Method, path); ctx != nil {
@@ -105,16 +107,18 @@ func (r *MemoryRouter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	r.ServeWithPath(req.URL.Path, res, req)
 }
 
+// MemoryRouterDomain is the MemoryRouter which is responsible and selected if and only if routes has at least one domain route
 type MemoryRouterDomain struct {
 	*MemoryRouter
 }
 
+// NewMemoryRouterDomain creates a MemoryRouterDomain and returns it
 func NewMemoryRouterDomain(underlineRouter *MemoryRouter) *MemoryRouterDomain {
 	return &MemoryRouterDomain{underlineRouter}
 }
 
 func (r MemoryRouterDomain) getType() RouterType {
-	return MemoryDomain
+	return DomainMemory
 }
 
 func (r *MemoryRouterDomain) processRequest(ctx *Context) bool {
@@ -143,24 +147,26 @@ func (r *MemoryRouterDomain) ServeHTTP(res http.ResponseWriter, req *http.Reques
 	r.ServeWithPath(path, res, req)
 }
 
+// SyncMemoryRouter is the Router which is routine-thread-safe version of MemoryRouter, used only and only if running cores are > 1
 type SyncMemoryRouter struct {
 	IMemoryRouter
 	mu sync.Mutex
 }
 
+// NewSyncRouter creates and returns a new SyncRouter object, from an underline IMemoryRouter
 func NewSyncRouter(underlineRouter IMemoryRouter) *SyncMemoryRouter {
 	return &SyncMemoryRouter{underlineRouter, sync.Mutex{}}
 }
 
-func (r SyncMemoryRouter) getType() RouterType {
-	return SyncRouter
+func (r *SyncMemoryRouter) getType() RouterType {
+	return MemorySync
 }
 
 func (r *SyncMemoryRouter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	r.mu.Lock()
 
 	path := req.URL.Path
-	if r.IMemoryRouter.getType() == MemoryDomain {
+	if r.IMemoryRouter.getType() == DomainMemory {
 		path += req.Host
 	}
 	r.ServeWithPath(path, res, req)

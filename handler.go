@@ -99,7 +99,7 @@ func ToHandlerFunc(handler interface{}) HandlerFunc {
 	return ToHandler(handler).Serve
 }
 
-// convertToHandlers accepts list of HandlerFunc and returns list of Handler
+// ConvertToHandlers accepts list of HandlerFunc and returns list of Handler
 // this can be renamed to convertToMiddleware also because it returns a list of []Handler which is what Middleware is
 func ConvertToHandlers(handlersFn []HandlerFunc) []Handler {
 	hlen := len(handlersFn)
@@ -110,7 +110,7 @@ func ConvertToHandlers(handlersFn []HandlerFunc) []Handler {
 	return mlist
 }
 
-// joinMiddleware uses to create a copy of all middleware and return them in order to use inside the node
+// JoinMiddleware uses to create a copy of all middleware and return them in order to use inside the node
 func JoinMiddleware(middleware1 Middleware, middleware2 Middleware) Middleware {
 	nowLen := len(middleware1)
 	totalLen := nowLen + len(middleware2)

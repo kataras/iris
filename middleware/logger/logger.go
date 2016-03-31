@@ -24,12 +24,53 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-package iris
+package logger
 
-// IDictionary is the interface which PathParameters using
-// it's just a Get(key), Set(key,value) pair store
-type IDictionary interface {
-	Get(key string) string
-	Set(key string, value string)
-	String() string
+import (
+	"github.com/kataras/iris"
+	"io"
+)
+
+type Options struct {
+}
+
+func DefaultOptions() Options {
+	return Options{}
+}
+
+type loggerMiddleware struct {
+	*iris.Logger
+	options Options
+}
+
+func (l *loggerMiddleware) Serve(ctx *iris.Context) {
+
+}
+
+func newLoggerMiddleware(writer io.Writer, prefix string, flag int, options ...Options) *loggerMiddleware {
+	l := &loggerMiddleware{Logger: iris.NewLogger(writer, prefix, flag)}
+
+	if len(options) > 0 {
+		l.options = options[0]
+	} else {
+		l.options = DefaultOptions()
+	}
+
+	return l
+}
+
+func DefaultHandler(options ...Options) iris.Handler {
+	return newLoggerMiddleware(iris.LoggerOutTerminal, "", 0)
+}
+
+func Default(options ...Options) iris.HandlerFunc {
+	return DefaultHandler(options...).Serve
+}
+
+func CustomHandler(writer io.Writer, prefix string, flag int, options ...Options) iris.Handler {
+	return newLoggerMiddleware(writer, prefix, flag, options...)
+}
+
+func Custom(writer io.Writer, prefix string, flag int, options ...Options) iris.HandlerFunc {
+	return CustomHandler(writer, prefix, flag, options...).Serve
 }

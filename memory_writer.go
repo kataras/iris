@@ -40,6 +40,7 @@ var (
 	headerAcceptEncoding = "Accept-Encoding"
 )*/
 
+// IMemoryWriter is the interface which the MemoryWriter should implement, implements the http.ResponseWriter
 type IMemoryWriter interface {
 	http.ResponseWriter
 	http.Hijacker
@@ -58,6 +59,8 @@ type IMemoryWriter interface {
 	ForceHeader()
 }
 
+// MemoryWriter is used inside Context instead of the http.ResponseWriter, used to have the maximum access and modification via middlewares to the ResponseWriter
+// also offers faster produce of each request's response writer
 type MemoryWriter struct {
 	http.ResponseWriter
 	size   int
@@ -66,6 +69,7 @@ type MemoryWriter struct {
 
 var _ IMemoryWriter = &MemoryWriter{}
 
+// Reset takes an underline http.ResponseWriter and resets the particular MemoryWriter with this underline http.ResponseWriter
 func (m *MemoryWriter) Reset(underlineRes http.ResponseWriter) {
 	m.ResponseWriter = underlineRes
 	//we have 3 possibilities
@@ -77,6 +81,7 @@ func (m *MemoryWriter) Reset(underlineRes http.ResponseWriter) {
 	m.status = http.StatusOK
 }
 
+// IsWritten returns true if we already wrote to the MemoryWriter
 func (m *MemoryWriter) IsWritten() bool {
 	return m.size != -1
 }
@@ -88,12 +93,14 @@ func (m *MemoryWriter) Write(data []byte) (int, error) {
 	return size, err
 }
 
+// ForceHeader forces  to write the header and reset's the size of the ResponseWriter
 func (m *MemoryWriter) ForceHeader() {
 	if !m.IsWritten() {
 		m.size = 0
 	}
 }
 
+// WriteHeader writes an http status code
 func (m *MemoryWriter) WriteHeader(statusCode int) {
 	if statusCode > 0 && statusCode != m.status {
 		m.status = statusCode
@@ -102,6 +109,7 @@ func (m *MemoryWriter) WriteHeader(statusCode int) {
 
 }
 
+// WriteString using io.WriteString to write a string
 func (m *MemoryWriter) WriteString(s string) (size int, err error) {
 	m.ForceHeader()
 	/* doesn't work and it's stupid to make it here, let it for now.. if strings.Contains(header.Get(headerAcceptEncoding), encodingGzip) {
@@ -116,14 +124,17 @@ func (m *MemoryWriter) WriteString(s string) (size int, err error) {
 	return
 }
 
+// Status returns the http status code
 func (m *MemoryWriter) Status() int {
 	return m.status
 }
 
+// Size returns the size of the writer
 func (m *MemoryWriter) Size() int {
 	return m.size
 }
 
+// Flush flushes the contents of the writer
 func (m *MemoryWriter) Flush() {
 	flusher, done := m.ResponseWriter.(http.Flusher)
 	if done {
@@ -131,6 +142,7 @@ func (m *MemoryWriter) Flush() {
 	}
 }
 
+// Hijack look inside net/http package
 func (m *MemoryWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	if m.size == -1 {
 		m.size = 0
@@ -138,6 +150,7 @@ func (m *MemoryWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	return m.ResponseWriter.(http.Hijacker).Hijack()
 }
 
+// CloseNotify look inside net/http package
 func (m *MemoryWriter) CloseNotify() <-chan bool {
 	return m.ResponseWriter.(http.CloseNotifier).CloseNotify()
 }

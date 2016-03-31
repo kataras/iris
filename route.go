@@ -30,6 +30,8 @@ import (
 	"strings"
 )
 
+// IRoute is the interface which the Route should implements
+// it useful to have it as an interface because this interface is passed to the plugins
 type IRoute interface {
 	GetMethod() string
 	GetDomain() string
@@ -53,7 +55,7 @@ type Route struct {
 
 var _ IRoute = &Route{}
 
-// newRoute creates, from a path string, and a slice of HandlerFunc
+// NewRoute creates, from a path string, and a slice of HandlerFunc
 func NewRoute(method string, registedPath string, middleware Middleware) *Route {
 	domain := ""
 	if registedPath[0] != SlashByte && strings.Contains(registedPath, ".") && strings.IndexByte(registedPath, SlashByte) > strings.IndexByte(registedPath, '.') {
@@ -74,7 +76,7 @@ func NewRoute(method string, registedPath string, middleware Middleware) *Route 
 		//and after set the registedPath to a slash '/' for the path part
 		if firstSlashIndex == -1 {
 			domain = registedPath
-			registedPath = "/"
+			registedPath = Slash
 		} else {
 			//we have a domain + path
 			domain = registedPath[0:firstSlashIndex]
@@ -86,30 +88,38 @@ func NewRoute(method string, registedPath string, middleware Middleware) *Route 
 	r.ProcessPath()
 	return r
 }
+
+// GetMethod returns the http method
 func (r Route) GetMethod() string {
 	return r.method
 }
 
+// GetDomain returns the registed domain which this route is ( if none, is "" which is means "localhost"/127.0.0.1)
 func (r Route) GetDomain() string {
 	return r.domain
 }
 
+// GetPath returns the full registed path
 func (r Route) GetPath() string {
 	return r.fullpath
 }
 
+// GetPathPrefix returns the path prefix, this is the static part before any parameter or *any
 func (r Route) GetPathPrefix() string {
 	return r.PathPrefix
 }
 
+// GetMiddleware returns the chain of the []HandlerFunc registed to this Route
 func (r Route) GetMiddleware() Middleware {
 	return r.middleware
 }
 
+// SetMiddleware sets the middleware(s)
 func (r Route) SetMiddleware(m Middleware) {
 	r.middleware = m
 }
 
+// ProcessPath modifie the path in order to set the path prefix of this Route
 func (r *Route) ProcessPath() {
 	endPrefixIndex := strings.IndexByte(r.fullpath, ParameterStartByte)
 

@@ -73,6 +73,7 @@ type Server struct {
 	CertFile, KeyFile string
 }
 
+// ParseAddr gets a slice of string and returns the address of which the Iris' server can listen
 func ParseAddr(fullHostOrPort []string) string {
 	//means only port is given
 	hlen := len(fullHostOrPort)

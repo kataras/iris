@@ -30,39 +30,44 @@ import (
 	"net/http"
 )
 
+// IErrorHandler is the interface which an http error handler should implement
 type IErrorHandler interface {
 	GetCode() int
 	GetHandler() HandlerFunc
 	SetHandler(h HandlerFunc)
 }
 
+// IHTTPErrors is the interface which the HTTPErrors using
 type IHTTPErrors interface {
 	GetByCode(httpStatus int) IErrorHandler
 	On(httpStatus int, handler HandlerFunc)
 	Emit(errCode int, ctx *Context)
 }
 
-// ErrorHandler creates a handler which is responsible to send a particular error to the client
+// ErrorHandlerFunc creates a handler which is responsible to send a particular error to the client
 func ErrorHandlerFunc(statusCode int, message string) HandlerFunc {
 	return func(ctx *Context) {
 		ctx.SendStatus(statusCode, message)
 	}
 }
 
-// ErrorHandlers just an array of struct{ code int, handler http.Handler}
+// ErrorHandler is just an object which stores a http status code and a handler
 type ErrorHandler struct {
 	code    int
 	handler HandlerFunc
 }
 
+// GetCode returns the http status code value
 func (e ErrorHandler) GetCode() int {
 	return e.code
 }
 
+// GetHandler returns the handler which is type of HandlerFunc
 func (e ErrorHandler) GetHandler() HandlerFunc {
 	return e.handler
 }
 
+// SetHandler sets the handler (type of HandlerFunc) to this particular ErrorHandler
 func (e *ErrorHandler) SetHandler(h HandlerFunc) {
 	e.handler = h
 }
@@ -107,7 +112,7 @@ func (he *HTTPErrors) GetByCode(httpStatus int) IErrorHandler {
 	return nil
 }
 
-// On Registers a handler for a specific http error status ( overrides the NotFound and MethodNotAllowed)
+// On Registers a handler for a specific http error status
 func (he *HTTPErrors) On(httpStatus int, handler HandlerFunc) {
 	if httpStatus == http.StatusOK {
 		return

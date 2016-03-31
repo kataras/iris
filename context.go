@@ -43,6 +43,7 @@ import (
 	"sync"
 )
 
+// IContext is the domain-driven interface for the iris Context
 type IContext interface {
 	Reset(http.ResponseWriter, *http.Request)
 	Do()
@@ -156,26 +157,36 @@ type Context struct {
 
 var _ IContext = &Context{}
 
+// GetResponseWriter returns the MemoryWriter of the Context
 func (ctx *Context) GetResponseWriter() IMemoryWriter {
 	return ctx.ResponseWriter
 }
 
+// GetRequest returns the *http.Request of the Context
 func (ctx *Context) GetRequest() *http.Request {
 	return ctx.Request
 }
 
+// SetRequest sets a particular *http.Request to the Context
+//
+// this can be useful on the middlewares which they have access to change the request object itself
 func (ctx *Context) SetRequest(req *http.Request) {
 	ctx.Request = req
 }
 
+// SetResponseWriter sets the MemoryWriter of the Context
 func (ctx *Context) SetResponseWriter(res IMemoryWriter) {
 	ctx.ResponseWriter = res
 }
 
+// GetMemoryResponseWriter returns the MemoryWriter of the Context
 func (ctx *Context) GetMemoryResponseWriter() MemoryWriter {
 	return ctx.memoryResponseWriter
 }
 
+// SetMemoryResponseWriter sets a particular iris.MemoryWriter to the Context
+//
+// this can be useful on the middlewares which they have access to change the response object itself (the gzip middleware does it)
 func (ctx *Context) SetMemoryResponseWriter(res MemoryWriter) {
 	ctx.memoryResponseWriter = res
 	ctx.ResponseWriter = &ctx.memoryResponseWriter
@@ -246,12 +257,17 @@ func (ctx *Context) EmitError(statusCode int) {
 	ctx.station.EmitError(statusCode, ctx)
 }
 
+// StopExecution just sets the .pos to 255 in order to  not move to the next middlewares(if any)
 func (ctx *Context) StopExecution() {
 	ctx.pos = stopExecutionPosition
 }
 
 //
 
+// Redirect redirect sends a redirect response the client
+// accepts 2 parameters string and an optional int
+// first parameter is the url to redirect
+// second parameter is the http status should send, default is 302 (Temporary redirect), you can set it to 301 (Permant redirect), if that's nessecery
 func (ctx *Context) Redirect(urlToRedirect string, statusHeader ...int) error {
 	httpStatus := 302 // temporary redirect
 	if statusHeader != nil && len(statusHeader) > 0 && statusHeader[0] > 0 {
@@ -268,7 +284,7 @@ func (ctx *Context) Redirect(urlToRedirect string, statusHeader ...int) error {
 			urlToRedirect = path.Clean(urlToRedirect)
 			//check after clean if we had a slash but after we don't, we have to do that otherwise we will get forever redirects if path is /home but the registed is /home/
 			if trailing && !strings.HasSuffix(urlToRedirect, "/") {
-				urlToRedirect += "/"
+				urlToRedirect += Slash
 			}
 
 		}
@@ -278,17 +294,13 @@ func (ctx *Context) Redirect(urlToRedirect string, statusHeader ...int) error {
 	return err
 }
 
-func (ctx *Context) Status(statusCode int) {
-	ctx.memoryResponseWriter.WriteHeader(statusCode)
-}
-
 // SendStatus sends a http status to the client
 // it receives status code (int) and a message (string)
 func (ctx *Context) SendStatus(statusCode int, message string) {
 	r := ctx.memoryResponseWriter
 	r.Header().Set("Content-Type", "text/plain"+" ;charset="+Charset)
 	r.Header().Set("X-Content-Type-Options", "nosniff")
-	ctx.Status(statusCode)
+	ctx.WriteStatus(statusCode)
 	//r.WriteString(message)
 	r.Write([]byte(message))
 }
@@ -316,9 +328,9 @@ func (ctx *Context) RemoteAddr() string {
 	realIP = strings.TrimSpace(realIP)
 	if realIP != "" {
 		return realIP
-	} else {
-		return ctx.RequestIP()
 	}
+	return ctx.RequestIP()
+
 }
 
 // Close is used to close the body of the request
@@ -332,6 +344,7 @@ func (ctx *Context) End() {
 	ctx.Request.Body.Close()
 }
 
+// IsStopped checks and returns true if the current position of the Context is 255, means that the StopExecution has called
 func (ctx *Context) IsStopped() bool {
 	return ctx.pos == stopExecutionPosition
 }
@@ -348,12 +361,15 @@ func (ctx *Context) Next() {
 
 }
 
-// do calls the first handler only, it's like Next with negative pos, used only on Router&MemoryRouter
+// Do calls the first handler only, it's like Next with negative pos, used only on Router&MemoryRouter
 func (ctx *Context) Do() {
 	ctx.pos = 0
 	ctx.middleware[0].Serve(ctx)
 }
 
+// Reset resets the Context with a given http.ResponseWriter and *http.request
+// the context is ready-to-use after that, just like a new Context
+// I use it for zero rellocation memory
 func (ctx *Context) Reset(res http.ResponseWriter, req *http.Request) {
 	ctx.Params = ctx.Params[0:0]
 	ctx.middleware = nil
@@ -368,7 +384,7 @@ func (ctx *Context) Reset(res http.ResponseWriter, req *http.Request) {
 
 }
 
-//no pointer don't change anything. it works with the 1kkk requests no multiple write header but we have cost at memory, I must find other way to solve that.
+// Redo is used inside the MemoryRouter from a cached Context, do whatever Do does but it sets the newresponsewriter and the request before that
 func (ctx *Context) Redo(res http.ResponseWriter, req *http.Request) {
 	//ctx.memoryResponseWriter = MemoryWriter{res, -1, 200}
 	ctx.memoryResponseWriter.Reset(res)
@@ -509,10 +525,12 @@ func (ctx *Context) Write(format string, a ...interface{}) {
 
 //fix https://github.com/kataras/iris/issues/44
 
+// WriteStatus write/or/and/sends to client, to the response writer a given status code
 func (ctx *Context) WriteStatus(statusCode int) {
 	ctx.memoryResponseWriter.WriteHeader(statusCode)
 }
 
+// SetContentType sets the response writer's header key 'Content-Type' to a given value(s)
 func (ctx *Context) SetContentType(s []string) {
 	ctx.mu.Lock()
 	h := ctx.ResponseWriter.Header()
@@ -522,6 +540,7 @@ func (ctx *Context) SetContentType(s []string) {
 	ctx.mu.Unlock()
 }
 
+// SetHeader write to the response writer's header to a given key the given value(s)
 func (ctx *Context) SetHeader(k string, s []string) {
 	ctx.mu.Lock()
 	h := ctx.ResponseWriter.Header()
@@ -605,7 +624,7 @@ func (ctx *Context) JSON(jsonObjectOrArray interface{}) error {
 }
 
 // ReadXML reads XML from request's body
-func (ctx Context) ReadXML(xmlObject interface{}) error {
+func (ctx *Context) ReadXML(xmlObject interface{}) error {
 	data, err := ioutil.ReadAll(ctx.Request.Body)
 	if err != nil {
 		return err
@@ -659,6 +678,7 @@ func (ctx *Context) RenderXML(httpStatus int, xmlStructs ...interface{}) error {
 
 /* END OF RENDERER */
 
+// GetHandlerName as requested returns the stack-name of the function which the Middleware is setted from
 func (ctx *Context) GetHandlerName() string {
 	return runtime.FuncForPC(reflect.ValueOf(ctx.middleware[len(ctx.middleware)-1]).Pointer()).Name()
 

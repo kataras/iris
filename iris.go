@@ -203,6 +203,9 @@ func Errors() IHTTPErrors {
 	return DefaultStation.Errors()
 }
 
+// OnError registers an error to the http custom errors
+// first parameter is the http status code ( int )
+// second parameter is the actual handler which called when this status code occured, type of HandlerFunc
 func OnError(statusCode int, handlerFunc HandlerFunc) {
 	DefaultStation.OnError(statusCode, handlerFunc)
 }
@@ -230,7 +233,7 @@ func Templates(pathGlob string) {
 	DefaultStation.Templates(pathGlob)
 }
 
-// OptimusPrime, YOU MUST RUN IT ONLY IF YOU DON'T USE iris.Listen or iris.Serve() method
+// OptimusPrime , YOU MUST RUN IT ONLY IF YOU DON'T USE iris.Listen or iris.Serve() method
 func OptimusPrime() {
 	DefaultStation.OptimusPrime()
 }

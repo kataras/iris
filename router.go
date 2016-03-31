@@ -33,19 +33,26 @@ const (
 	ParameterStartByte = byte(':')
 	// SlashByte is just a byte of '/' rune/char
 	SlashByte = byte('/')
+	// Slash is just a string of "/"
+	Slash = "/"
 	// MatchEverythingByte is just a byte of '*" rune/char
 	MatchEverythingByte = byte('*')
 )
 
+// RouterType is just the type which the Router uses to indentify what type is (Normal,Memory,MemorySync,Domain,DomainMemory )
 type RouterType uint8
 
 const (
+	// Normal is the Router
 	Normal RouterType = iota
-	//both of these are for the memory router only, the normal router doesn't need synchronization on mutli cores
-	Memory     // this is the MemoryRouter
-	SyncRouter // this is the SyncMemoryRouter
-	NormalDomain
-	MemoryDomain // this is the MemoryDomainRouter
+	// Memory is the MemoryRouter , used when cache is enabled
+	Memory // this is the MemoryRouter
+	// MemorySync is the SyncMemoryRouter which is used when cache is enabled and cores > 1
+	MemorySync // this is the SyncMemoryRouter
+	// Domain is the RouterDomain, used when at least one route has domains
+	Domain
+	// DomainMemory is the MemoryDomainRouter, used when Domain is used and cache is enabled
+	DomainMemory // this is the MemoryDomainRouter
 )
 
 // IRouter is the interface of which any Iris router must implement
@@ -112,6 +119,7 @@ func (r *Router) Errors() IHTTPErrors {
 	return r.httpErrors
 }
 
+// OnError registers a handler ( type of HandlerFunc) for a specific http error status
 func (r *Router) OnError(statusCode int, handlerFunc HandlerFunc) {
 	r.httpErrors.On(statusCode, handlerFunc)
 }
@@ -215,12 +223,13 @@ type RouterDomain struct {
 	*Router
 }
 
+// NewRouterDomain creates a RouterDomain from an underline (normal) Router and returns it
 func NewRouterDomain(underlineRouter *Router) *RouterDomain {
 	return &RouterDomain{underlineRouter}
 }
 
 func (r RouterDomain) getType() RouterType {
-	return NormalDomain
+	return Domain
 }
 
 func (r *RouterDomain) ServeHTTP(res http.ResponseWriter, req *http.Request) {
