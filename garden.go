@@ -31,6 +31,7 @@ type tree struct {
 	rootBranch *Branch
 	domain     string
 	hosts      bool //if domain != "" we set it directly on .Plant
+	cors       bool // if cross domain allow enabled
 }
 
 // Garden is the main area which routes are planted/placed
@@ -83,7 +84,7 @@ func (g Garden) Plant(_route IRoute) Garden {
 	theRoot := g.getRootByMethodAndDomain(_route.GetMethod(), _route.GetDomain())
 	if theRoot == nil {
 		theRoot = new(Branch)
-		g = append(g, tree{_route.GetMethod(), theRoot, _route.GetDomain(), _route.GetDomain() != ""})
+		g = append(g, tree{_route.GetMethod(), theRoot, _route.GetDomain(), _route.GetDomain() != "", hasCors(_route)}) //hasCors is inside utils.go
 
 	}
 	theRoot.AddBranch(_route.GetDomain()+_route.GetPath(), _route.GetMiddleware())

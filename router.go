@@ -75,6 +75,7 @@ type IRouter interface {
 	OnPanic(handlerFunc HandlerFunc)
 	//
 	ServeHTTP(http.ResponseWriter, *http.Request)
+	setMethodMatch(func(m1, m2 string) bool)
 	processRequest(*Context) bool
 }
 
@@ -84,14 +85,28 @@ type Router struct {
 	station    *Station
 	httpErrors *HTTPErrors
 	IParty
-	garden Garden
+	garden      Garden
+	methodMatch func(m1, m2 string) bool
 }
 
 var _ IRouter = &Router{}
 
+// CorsMethodMatch is sets the methodMatch when cors enabled (look OptimusPrime), it's allowing OPTIONS method to all other methods except GET
+//just this
+func CorsMethodMatch(m1, m2 string) bool {
+	return m1 == m2 || m1 == HTTPMethods.OPTIONS
+}
+
+// MethodMatch for normal method match
+func MethodMatch(m1, m2 string) bool {
+	return m1 == m2
+}
+
 // NewRouter creates and returns an empty Router
 func NewRouter(station *Station) *Router {
 	r := &Router{station: station, httpErrors: defaultHTTPErrors(), garden: make([]tree, 0, len(HTTPMethods.ANY))} // TODO: maybe +1 for any which is just empty tree ""
+	r.methodMatch = MethodMatch
+
 	r.IParty = NewParty("/", r.station, nil)
 	return r
 }
@@ -110,6 +125,10 @@ func (r *Router) getType() RouterType {
 
 func (r *Router) getStation() *Station {
 	return r.station
+}
+
+func (r *Router) setMethodMatch(f func(m1, m2 string) bool) {
+	r.methodMatch = f
 }
 
 // Error handling
@@ -151,7 +170,7 @@ func (r *Router) find(_tree tree, reqPath string, ctx *Context) bool {
 		ctx.Do()
 		ctx.memoryResponseWriter.ForceHeader()
 		return true
-	} else if mustRedirect && r.station.options.PathCorrection {
+	} else if mustRedirect && r.station.options.PathCorrection && ctx.Request.Method != HTTPMethods.CONNECT {
 		reqPath = ctx.Request.URL.Path // we re-assign it because reqPath maybe is with the domain/host prefix, with this we made the domain prefix routes works with path correction also
 		pathLen := len(reqPath)
 
@@ -192,7 +211,7 @@ func (r *Router) processRequest(ctx *Context) bool {
 	method := ctx.Request.Method
 	gLen := len(r.garden)
 	for i := 0; i < gLen; i++ {
-		if r.garden[i].method == method {
+		if r.methodMatch(r.garden[i].method, method) {
 			return r.find(r.garden[i], reqPath, ctx)
 		}
 	}
@@ -228,7 +247,7 @@ func NewRouterDomain(underlineRouter *Router) *RouterDomain {
 	return &RouterDomain{underlineRouter}
 }
 
-func (r RouterDomain) getType() RouterType {
+func (r *RouterDomain) getType() RouterType {
 	return Domain
 }
 
@@ -257,8 +276,8 @@ func (r *RouterDomain) processRequest(ctx *Context) bool {
 			}
 			reqPath = ctx.Request.Host + reqPath
 		}
-		if r.garden[i].method == ctx.Request.Method {
 
+		if r.methodMatch(r.garden[i].method, ctx.Request.Method) {
 			return r.find(r.garden[i], reqPath, ctx)
 		}
 

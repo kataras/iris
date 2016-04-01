@@ -185,6 +185,16 @@ func (s *Station) forceOptimusPrime() {
 		return false
 	}()
 
+	routerHasCors := func() bool {
+		gLen := len(s.IRouter.getGarden())
+		for i := 0; i < gLen; i++ {
+			if s.IRouter.getGarden()[i].cors {
+				return true
+			}
+		}
+		return false
+	}()
+
 	// For performance only,in order to not check at runtime for hosts and subdomains, I think it's better to do this:
 	if routerHasHosts {
 		switch s.IRouter.getType() {
@@ -195,9 +205,12 @@ func (s *Station) forceOptimusPrime() {
 			s.IRouter = NewMemoryRouterDomain(s.IRouter.(*MemoryRouter))
 			break
 		}
+		// just this no new router
+	} else if routerHasCors {
+		s.IRouter.setMethodMatch(CorsMethodMatch)
 	}
 
-	//check for memoryrouter and use syncmemoryrouter if cores > 1
+	//check for memoryrouter and use syncmemoryrouter & synccontextcache if cores > 1
 	var r IMemoryRouter
 	routerType := s.IRouter.getType()
 	if routerType == Memory || routerType == DomainMemory {
