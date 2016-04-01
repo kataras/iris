@@ -175,20 +175,27 @@ func (s *Station) GetLogger() *Logger {
 }
 
 func (s *Station) forceOptimusPrime() {
-	routerHasHosts := func() bool {
+
+	//check if any route has cors setted to true
+	routerHasCors := func() bool {
 		gLen := len(s.IRouter.getGarden())
 		for i := 0; i < gLen; i++ {
-			if s.IRouter.getGarden()[i].hosts {
+			if s.IRouter.getGarden()[i].cors {
 				return true
 			}
 		}
 		return false
 	}()
 
-	routerHasCors := func() bool {
+	if routerHasCors {
+		s.IRouter.setMethodMatch(CorsMethodMatch)
+	}
+
+	// check if any route has subdomains
+	routerHasHosts := func() bool {
 		gLen := len(s.IRouter.getGarden())
 		for i := 0; i < gLen; i++ {
-			if s.IRouter.getGarden()[i].cors {
+			if s.IRouter.getGarden()[i].hosts {
 				return true
 			}
 		}
@@ -206,8 +213,6 @@ func (s *Station) forceOptimusPrime() {
 			break
 		}
 		// just this no new router
-	} else if routerHasCors {
-		s.IRouter.setMethodMatch(CorsMethodMatch)
 	}
 
 	//check for memoryrouter and use syncmemoryrouter & synccontextcache if cores > 1
