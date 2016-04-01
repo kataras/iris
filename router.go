@@ -93,8 +93,8 @@ var _ IRouter = &Router{}
 
 // CorsMethodMatch is sets the methodMatch when cors enabled (look OptimusPrime), it's allowing OPTIONS method to all other methods except GET
 //just this
-func CorsMethodMatch(m1, m2 string) bool {
-	return m1 == m2 || m1 == HTTPMethods.OPTIONS
+func CorsMethodMatch(m1, reqMethod string) bool {
+	return m1 == reqMethod || (m1 != HTTPMethods.GET && reqMethod == HTTPMethods.OPTIONS)
 }
 
 // MethodMatch for normal method match
