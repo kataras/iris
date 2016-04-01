@@ -169,7 +169,7 @@ func (c *cors) handlePreflight(ctx *iris.Context) {
 	}
 
 	reqMethod := r.Header.Get("Access-Control-Request-Method")
-	if !c.isMethodAllowed(reqMethod) {
+	if !c.IsMethodAllowed(reqMethod) {
 		// c.logf("  Preflight aborted: method '%s' not allowed", reqMethod)
 		return
 	}
@@ -222,7 +222,7 @@ func (c *cors) handleActualRequest(ctx *iris.Context) {
 	// POST. Access-Control-Allow-Methods is only used for pre-flight requests and the
 	// spec doesn't instruct to check the allowed methods for simple cross-origin requests.
 	// We think it's a nice feature to be able to have control on those methods though.
-	if !c.isMethodAllowed(r.Method) {
+	if !c.IsMethodAllowed(r.Method) {
 		c.logf("  Actual request no headers added: method '%s' not allowed", r.Method)
 		return
 	}
@@ -268,9 +268,9 @@ func (c *cors) isOriginAllowed(origin string) bool {
 	return false
 }
 
-// isMethodAllowed checks if a given method can be used as part of a cross-domain request
+// IsMethodAllowed checks if a given method can be used as part of a cross-domain request
 // on the endpoing
-func (c *cors) isMethodAllowed(method string) bool {
+func (c *cors) IsMethodAllowed(method string) bool {
 	if len(c.Options.AllowedMethods) == 0 {
 		// If no method allowed, always return false, even for preflight request
 		return false
