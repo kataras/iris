@@ -127,6 +127,9 @@ func newStation(options StationOptions) *Station {
 		r = NewRouter(s)
 	}
 
+	// set the router
+	s.IRouter = r
+
 	// set the debug profiling handlers if enabled
 	if options.Profile {
 		debugPath := options.ProfilePath
@@ -140,9 +143,6 @@ func newStation(options StationOptions) *Station {
 		r.Get(debugPath+"/threadcreate", ToHandlerFunc(pprof.Handler("threadcreate")))
 		r.Get(debugPath+"/pprof/block", ToHandlerFunc(pprof.Handler("block")))
 	}
-
-	// set the router
-	s.IRouter = r
 
 	s.pool = sync.Pool{New: func() interface{} {
 		return &Context{station: s, Params: make([]PathParameter, 0), mu: sync.Mutex{}}
