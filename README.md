@@ -954,7 +954,7 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 
 * +1 pending article waiting, after writer's holidays
 
-## Licence
+## License
 
 This project is licensed under the [BSD 3-Clause License](https://opensource.org/licenses/BSD-3-Clause).
 License can be found [here](https://github.com/kataras/iris/blob/master/LICENSE).
