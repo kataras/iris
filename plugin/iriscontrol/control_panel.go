@@ -110,11 +110,20 @@ func (i *irisControlPlugin) setPanelRoutes() {
 
 	//the controls
 	i.server.Post("/start_server", func(ctx *iris.Context) {
+		//println("server start")
+		old := i.stationServer
+		if !old.IsSecure {
+			i.station.Listen(old.ListeningAddr)
+			//yes but here it does re- post listen to this plugin so ...
+		} else {
+			i.station.ListenTLS(old.ListeningAddr, old.CertFile, old.KeyFile)
+		}
 
 	})
 
 	i.server.Post("/stop_server", func(ctx *iris.Context) {
-
+		//println("server stop")
+		i.station.Close()
 	})
 
 }

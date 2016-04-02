@@ -46,6 +46,9 @@ type irisControlPlugin struct {
 	pluginContainer iris.IPluginContainer
 	// the station object of the main  user's iris instance
 	station *iris.Station
+	//a copy of the server which the main user's iris is listening for
+	stationServer iris.Server
+
 	// the server is this plugin's server object, it is managed by this plugin only
 	server *iris.Station
 	//
@@ -107,13 +110,17 @@ func (i *irisControlPlugin) PostHandle(route iris.IRoute) {
 // PreListen sets the station object before the main server starts
 // and starts the actual work of the plugin
 func (i *irisControlPlugin) PostListen(s *iris.Station) {
-	i.station = s
-	i.startControlPanel()
+	//if the first time, because other times start/stop of the server so listen and no listen will be only from the control panel
+	if i.station == nil {
+		i.station = s
+		i.stationServer = *i.station.Server
+		i.startControlPanel()
+	}
 
 }
 
 func (i *irisControlPlugin) PreClose(s *iris.Station) {
-	i.Destroy()
+	// Do nothing. This is a wrapper of the main server if we destroy when users stop the main server then we cannot continue the control panel i.Destroy()
 }
 
 //

@@ -30,7 +30,7 @@ The [fastest](#benchmarks)  go web framework which provides robust set of featur
 
 *    Iris can detect how much cores the machine using at runtime and optimize itself
 
-*    Middlewares and Plugins are 'light' and that is, a principle. 
+*    Middlewares and Plugins are 'light' and that is, a principle.
 
 
 ## Table of Contents
@@ -60,6 +60,8 @@ The [fastest](#benchmarks)  go web framework which provides robust set of featur
 - [Contributors](#contributors)
 - [Community](#community)
 - [Todo](#todo)
+- [External source articles](#articles)
+- [License](#license)
 
 
 ### Install
@@ -945,8 +947,14 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 - [ ] Create an easy websocket api.
 - [ ] Create a mechanism that scan for Typescript files, compile them on server startup and serve them.
 
-## Licence
+## Articles
+
+* [Ultra-wide framework Go Http routing performance comparison](https://translate.google.com/translate?sl=auto&tl=en&js=y&prev=_t&hl=el&ie=UTF-8&u=http%3A%2F%2Fcolobu.com%2F2016%2F03%2F23%2FGo-HTTP-request-router-and-web-framework-benchmark%2F&edit-text=&act=url)
+> According to my  article ( comparative ultra wide frame Go Http routing performance ) on a variety of relatively Go http routing framework, Iris clear winner, its performance far exceeds other Golang http routing framework.
+
+* +1 pending article waiting, after writer's holidays
+
+## License
 
 This project is licensed under the [BSD 3-Clause License](https://opensource.org/licenses/BSD-3-Clause).
 License can be found [here](https://github.com/kataras/iris/blob/master/LICENSE).
-
