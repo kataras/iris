@@ -121,7 +121,8 @@ func newStation(options StationOptions) *Station {
 	// create the router
 	var r IRouter
 	//for now, we can't directly use NewRouter and after NewMemoryRouter, types are not the same.
-	if options.Cache {
+	// in order to fix a bug add the second conditional && runtime...temporary solution
+	if options.Cache && runtime.GOMAXPROCS(-1) == 1 {
 		r = NewMemoryRouter(NewRouter(s), options.CacheMaxItems, options.CacheResetDuration)
 	} else {
 		r = NewRouter(s)
@@ -215,45 +216,41 @@ func (s *Station) forceOptimusPrime() {
 		// just this no new router
 	}
 
-	//check for memoryrouter and use syncmemoryrouter & synccontextcache if cores > 1
-	var r IMemoryRouter
-	routerType := s.IRouter.getType()
-	if routerType == Memory || routerType == DomainMemory {
-		if routerType == Memory {
-			r = s.IRouter.(*MemoryRouter)
-		} else if routerType == DomainMemory {
-			r = s.IRouter.(*MemoryRouterDomain)
-		} else {
-			panic("[Iris] From Station.OptimisPrime, unsupported Router, please post this as issue at github.com/kataras/iris")
-		}
+	//check for memoryrouter //bug for now disabled this line: and use syncmemoryrouter & synccontextcache if cores > 1
+	//comment of the  sync router and sync cache  made on 02/04/2016 (GR) in order to prevent a bug which I believe soon fixed.
+	//also check on the NewStation for it.
+	if runtime.GOMAXPROCS(-1) == 1 {
 
-		if !r.hasCache() {
-			var cache IContextCache
-
-			cache = NewContextCache()
-			//check if we have more than one core then use theMemoryRouterCache,otherwise use the SyncMemoryRouterCache and it's underline MemoryRouterCache
-			if runtime.GOMAXPROCS(-1) > 1 {
-				cache = NewSyncContextCache(cache.(*ContextCache))
-				//println("SYNCED MULTI_CORE CACHE WITH CORES: ", runtime.GOMAXPROCS(-1))
+		var r IMemoryRouter
+		routerType := s.IRouter.getType()
+		if routerType == Memory || routerType == DomainMemory {
+			if routerType == Memory {
+				r = s.IRouter.(*MemoryRouter)
+			} else if routerType == DomainMemory {
+				r = s.IRouter.(*MemoryRouterDomain)
+			} else {
+				panic("[Iris] From Station.OptimisPrime, unsupported Router, please post this as issue at github.com/kataras/iris")
 			}
 
-			r.setCache(cache)
-		}
+			if !r.hasCache() {
+				var cache IContextCache
 
-		// temp solution, wait for answer on this: https://github.com/kataras/iris/issues/44
-		// wrk -t16 -c100 -d30s http://127.0.0.1:8080/rest/hello
-		// no the problem is from net/http package:
-		// https://github.com/golang/go/issues/14940
-		// tries to modify the header after ServeHTTP
-		// The problem is not Iris' router
-		//if !r.hasCache() {
-		//	cache := NewSyncMemoryRouterCache(NewMemoryRouterCache())
-		//	r.setCache(cache)
-		//}
-		if runtime.GOMAXPROCS(-1) > 1 {
-			s.IRouter = NewSyncRouter(r)
+				cache = NewContextCache()
+				//check if we have more than one core then use theMemoryRouterCache,otherwise use the SyncMemoryRouterCache and it's underline MemoryRouterCache
+				// if runtime.GOMAXPROCS(-1) > 1 {
+				// 	cache = NewSyncContextCache(cache.(*ContextCache))
+				//println("SYNCED MULTI_CORE CACHE WITH CORES: ", runtime.GOMAXPROCS(-1))
+				// }
+
+				r.setCache(cache)
+			}
+
+			//	if runtime.GOMAXPROCS(-1) > 1 {
+			//		s.IRouter = NewSyncRouter(r)
+			//	}
 		}
 	}
+
 	s.optimized = true
 }
 
