@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Gerasimos Maropoulos
+// Copyright (c) 2016, Iris Team
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification,
@@ -24,11 +24,13 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+// context_test.go credits goes to @keuller & @wsantos
 package iris
 
 import (
-	"net/http"
 	"encoding/xml"
+	"net/http"
 	"strings"
 	"testing"
 )
@@ -82,9 +84,9 @@ func TestContext_ReadJSON(t *testing.T) {
 func TestContext_ReadXML(t *testing.T) {
 
 	type Contact struct {
-		XMLName xml.Name `xml:"contact"`
-		FirstName string `xml:"first_name"`
-		LastName  string `xml:"last_name"`
+		XMLName   xml.Name `xml:"contact"`
+		FirstName string   `xml:"first_name"`
+		LastName  string   `xml:"last_name"`
 	}
 
 	content := strings.NewReader(`

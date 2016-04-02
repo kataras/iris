@@ -69,6 +69,7 @@ func findLower(a, b int) int {
 func hasCors(route IRoute) bool {
 	for _, h := range route.GetMiddleware() {
 		if _, ok := h.(interface {
+			// Capitalize fix of isMethodAllowed by @thesyncim
 			IsMethodAllowed(method string) bool
 		}); ok {
 			return true
