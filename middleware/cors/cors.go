@@ -24,14 +24,16 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+// Cors credits goes to @keuller
 package cors
 
 import (
 	"github.com/kataras/iris"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
-	"log"
 	"strings"
 )
 
@@ -60,7 +62,7 @@ type CorsOptions struct {
 	// Default value is [] but "Origin" is always appended to the list.
 	AllowedHeaders []string
 
-  AllowedHeadersAll bool
+	AllowedHeadersAll bool
 
 	// ExposedHeaders indicates which headers are safe to expose to the API of a CORS
 	// API specification
@@ -79,12 +81,12 @@ type CorsOptions struct {
 }
 
 type cors struct {
-  Log *log.Logger
-  Options CorsOptions
+	Log     *log.Logger
+	Options CorsOptions
 }
 
 func (c *cors) Serve(ctx *iris.Context) {
-  if ctx.Request.Method == "OPTIONS" {
+	if ctx.Request.Method == "OPTIONS" {
 		c.handlePreflight(ctx)
 		// Preflight requests are standalone and should stop the chain as some other
 		// middleware may not handle OPTIONS requests correctly. One typical example
@@ -93,7 +95,7 @@ func (c *cors) Serve(ctx *iris.Context) {
 		if c.Options.OptionsPassthrough {
 			ctx.Next()
 		}
-    return
+		return
 	}
 
 	c.handleActualRequest(ctx)
@@ -101,13 +103,13 @@ func (c *cors) Serve(ctx *iris.Context) {
 }
 
 func New(opts CorsOptions) *cors {
-  c := &cors{nil, opts}
+	c := &cors{nil, opts}
 
 	if opts.Debug {
 		c.Log = log.New(os.Stdout, "[iris::cors] ", log.LstdFlags)
 	}
 
-  // Allowed Headers
+	// Allowed Headers
 	if len(opts.AllowedHeaders) == 0 {
 		// Use sensible defaults
 		c.Options.AllowedHeaders = []string{"Origin", "Accept", "Content-Type"}
@@ -131,7 +133,7 @@ func New(opts CorsOptions) *cors {
 		c.Options.AllowedMethods = convert(opts.AllowedMethods, strings.ToUpper)
 	}
 
-  return c
+	return c
 }
 
 func DefaultCors() *cors {
@@ -144,7 +146,7 @@ func Cors() *cors {
 
 // handlePreflight handles pre-flight CORS requests
 func (c *cors) handlePreflight(ctx *iris.Context) {
-  r := ctx.Request
+	r := ctx.Request
 	headers := ctx.ResponseWriter.Header()
 	origin := r.Header.Get("Origin")
 
@@ -197,7 +199,7 @@ func (c *cors) handlePreflight(ctx *iris.Context) {
 
 // handleActualRequest handles simple cross-origin requests, actual request or redirects
 func (c *cors) handleActualRequest(ctx *iris.Context) {
-  r := ctx.Request
+	r := ctx.Request
 	headers := ctx.ResponseWriter.Header()
 	origin := ctx.Request.Header.Get("Origin")
 
@@ -270,6 +272,7 @@ func (c *cors) isOriginAllowed(origin string) bool {
 
 // IsMethodAllowed checks if a given method can be used as part of a cross-domain request
 // on the endpoing
+// Capitalize by @thesyncim
 func (c *cors) IsMethodAllowed(method string) bool {
 	if len(c.Options.AllowedMethods) == 0 {
 		// If no method allowed, always return false, even for preflight request
