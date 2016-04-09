@@ -1,6 +1,6 @@
 # Iris Web Framework
 <img align="right" width="132" src="http://kataras.github.io/iris/assets/56e4b048f1ee49764ddd78fe_iris_favicon.ico">
-[![Build Status](https://travis-ci.org/kataras/iris.svg?branch=development&style=flat-square)](https://travis-ci.org/kataras/iris)
+[![Build Status](https://travis-ci.org/kataras/iris.svg?branch=master&style=flat-square)](https://travis-ci.org/kataras/iris)
 [![Go Report Card](https://goreportcard.com/badge/github.com/kataras/iris?style=flat-square)](https://goreportcard.com/report/github.com/kataras/iris)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/kataras/iris?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![GoDoc](https://godoc.org/github.com/kataras/iris?status.svg)](https://godoc.org/github.com/kataras/iris)
@@ -9,6 +9,17 @@
 The [fastest](#benchmarks)  go web framework which provides robust set of features for building modern & shiny web applications.
 
 ![Hi Iris GIF](http://kataras.github.io/iris/assets/hi_iris_march.gif)
+
+## News: 8 April 2016
+
+Iris decided to move on to the next version with fasthttp as base, because, after some benchmark tests on my [personal repository](https://github.com/kataras/golang_iris_experiments/tree/master/channels4) I saw that Iris can be (even more) faster using fasthttp. 
+
+
+The default branch changed to 'master' because I am comming the converstion changes to the 'development' branch.
+
+
+Stay tuned, Iris v1.1 will be ready soon!
+
 
 ## Features
 
