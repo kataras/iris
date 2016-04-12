@@ -24,10 +24,10 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package iris
 
 import (
-	"html/template"
 	"net/http/pprof"
 	"os"
 )
@@ -43,11 +43,11 @@ type (
 		IRouter
 		Plugin(IPlugin) error
 		GetPluginContainer() IPluginContainer
-		GetTemplates() *template.Template
+		GetTemplates() *HTMLTemplates
 		//yes we need that again if no .Listen called and you use other server, you have to call .Build() before
 		OptimusPrime()
 		HasOptimized() bool
-		GetLogger() *Logger
+		Logger() *Logger
 	}
 
 	// StationOptions is the struct which contains all Iris' settings/options
@@ -74,13 +74,17 @@ type (
 		//
 		// Default is true
 		PathCorrection bool
+
+		// Log turn it to false if you want to disable logger,
+		// Iris prints/logs ONLY errors, so be careful when you disable it
+		Log bool
 	}
 
 	// Station is the container of all, server, router, cache and the sync.Pool
 	Station struct {
 		IRouter
 		Server          *Server
-		templates       *template.Template
+		templates       *HTMLTemplates
 		options         StationOptions
 		pluginContainer *PluginContainer
 		//it's true when hosts(domain) and cors middleware has optimized or when Listen occured
@@ -100,17 +104,7 @@ var _ IStation = &Station{}
 func newStation(options StationOptions) *Station {
 	// create the station
 	s := &Station{options: options, pluginContainer: &PluginContainer{}}
-	// create the router
-	//var r IRouter
-	//for now, we can't directly use NewRouter and after NewMemoryRouter, types are not the same.
-	// in order to fix a bug add the second conditional && runtime...temporary solution
-	//TODO AGAIN if options.Cache { // && runtime.GOMAXPROCS(-1) == 1 {
-	//r = NewMemoryRouter(NewRouter(s), options.CacheMaxItems, options.CacheResetDuration)
-	//} else {
-	//r =
-	//	}
-
-	// set the router
+	// create & set the router
 	s.IRouter = NewRouter(s)
 
 	// set the debug profiling handlers if enabled
@@ -127,6 +121,9 @@ func newStation(options StationOptions) *Station {
 		s.IRouter.Get(debugPath+"/pprof/block", ToHandlerFunc(pprof.Handler("block")))
 	}
 
+	//set the logger
+	s.logger = NewLogger(LoggerOutTerminal, "", 0)
+
 	return s
 }
 
@@ -141,15 +138,12 @@ func (s Station) GetPluginContainer() IPluginContainer {
 }
 
 // GetTemplates returns the *template.Template registed to this station, if any
-func (s Station) GetTemplates() *template.Template {
+func (s Station) GetTemplates() *HTMLTemplates {
 	return s.templates
 }
 
-// GetLogger returns ( or creates if not exists already) the logger
-func (s *Station) GetLogger() *Logger {
-	if s.logger == nil {
-		s.logger = NewLogger(LoggerOutTerminal, "", 0)
-	}
+// Logger returns the station's logger
+func (s *Station) Logger() *Logger {
 	return s.logger
 }
 
@@ -288,24 +282,15 @@ func (s *Station) Close() {
 
 }
 
-// Templates sets the templates glob path for the web app
+// Templates loads HTML templates
+// receives one parameter
+//
+// pathGlob the local directory, it can be a pattern (string)
 func (s *Station) Templates(pathGlob string) {
-	var err error
-	//s.htmlTemplates = template.Must(template.ParseGlob(pathGlob))
-	s.templates, err = template.ParseGlob(pathGlob)
-
-	if err != nil {
-		//if err then try to load the same path but with the current directory prefix
-		// and if not success again then just panic with the first error
-		pwd, cerr := os.Getwd()
-		if cerr != nil {
-			panic(err.Error())
-
-		}
-		s.templates, cerr = template.ParseGlob(pwd + pathGlob)
-		if cerr != nil {
-			panic(err.Error())
-		}
+	if s.templates == nil {
+		s.templates = NewHTMLTemplates(s.logger)
 	}
+
+	s.templates.Load(pathGlob)
 
 }

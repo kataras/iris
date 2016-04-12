@@ -38,6 +38,7 @@ var LoggerOutTerminal = os.Stdout
 // Logger is just a log.Logger
 type Logger struct {
 	*log.Logger
+	enabled bool
 }
 
 // NewLogger creates a new Logger.   The out variable sets the
@@ -48,5 +49,13 @@ func NewLogger(out io.Writer, prefix string, flag int) *Logger {
 	if out == nil {
 		out = LoggerOutTerminal
 	}
-	return &Logger{log.New(out, LoggerIrisPrefix+prefix, flag)}
+	return &Logger{log.New(out, LoggerIrisPrefix+prefix, flag), true}
+}
+
+func (l *Logger) SetEnable(enable bool) {
+	l.enabled = enable
+}
+
+func (l *Logger) IsEnabled() bool {
+	return l.enabled
 }
