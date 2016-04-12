@@ -411,6 +411,7 @@ func methodSecond() {
 func methodThree() {
 	//these are the default options' values
 	options := iris.StationOptions{
+	    Log:				true,
 		Profile:            false,
 		ProfilePath:        iris.DefaultProfilePath,
 		PathCorrection: 	true, //explanation at the end of this chapter

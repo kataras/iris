@@ -397,13 +397,15 @@ func (ctx *Context) Set(key interface{}, value interface{}) {
 
 // RenderFile renders a file by its path and a context passed to the function
 func (ctx *Context) RenderFile(file string, pageContext interface{}) error {
-	return ctx.station.GetTemplates().ExecuteTemplate(ctx.RequestCtx.Response.BodyWriter(), file, pageContext)
+	ctx.RequestCtx.SetContentType(ContentHTML + " ;charset=" + Charset)
+	return ctx.station.GetTemplates().Templates.ExecuteTemplate(ctx.RequestCtx.Response.BodyWriter(), file, pageContext)
 
 }
 
 // Render renders the template file html which is already registed to the template cache, with it's pageContext passed to the function
 func (ctx *Context) Render(pageContext interface{}) error {
-	return ctx.station.GetTemplates().Execute(ctx.RequestCtx.Response.BodyWriter(), pageContext)
+	ctx.RequestCtx.SetContentType(ContentHTML + " ;charset=" + Charset)
+	return ctx.station.GetTemplates().Templates.Execute(ctx.RequestCtx.Response.BodyWriter(), pageContext)
 
 }
 
