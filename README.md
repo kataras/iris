@@ -20,17 +20,25 @@ Iris now has [fasthttp](https://github.com/valyala/fasthttp) as it's base, stand
 
 
 [Examples](https://github.com/kataras/iris/tree/examples) are not yet updated with the new version, stay tunned!
+
 ----			
 				
 
 ## Features
+
 * **FastHTTP**: Iris uses [fasthttp](https://github.com/valyala/fasthttp) package as it's default base [*](#declaration)
+
 * **Context**: Iris uses [Context](#context) for storing route params, sharing variables between middlewares and render rich content to the client.
+
 * **Plugins**: You can build your own plugins to  inject the Iris framework[*](#plugins).
+
 * **Full API**: All http methods are supported, you can group routes and sharing resources together[*](#api).
+
 * **Zero allocations**: Iris generates zero garbage.
+
 * **Multi server instances**: Besides the fact that Iris has a default main server. You can declare as many as you need[*](#declaration).
-* **Middlewares**: Create and use middlewares easly with the Iris' simplicity[*](#middlewares). 
+
+* **Middlewares**: Create and use global or per route middlewares with the Iris' simplicity[*](#middlewares). 
 
 ### Q: What makes iris significantly [faster](#benchmarks)?
 ##### A: These are the QNIQUE features that Iris brings
@@ -76,7 +84,7 @@ Iris now has [fasthttp](https://github.com/valyala/fasthttp) as it's base, stand
 
 
 ### Install
-Iris is still in development status, in order to have the latest version update the package one per week
+In order to have the latest version update the package one per week
 ```sh
 $ go get -u github.com/kataras/iris
 ```
@@ -144,7 +152,7 @@ type myHandlerGet struct {
 }
 
 func (m myHandlerGet) Serve(c *iris.Context) {
-    c.Write("From %s",c.PathString())
+    c.Write("From %s", c.PathString())
 }
 
 //and so on
@@ -196,7 +204,6 @@ type UserHandler struct {
 }
 
 func (u *UserHandler) Serve(c *iris.Context) {
-	defer c.Close()
 	userId := c.Param("userId")
 	c.RenderFile("user.html", struct{ Message string }{Message: "Hello User with ID: " + userId})
 }
@@ -269,7 +276,7 @@ func (m *myMiddleware) Serve(c *iris.Context){
 	if shouldContinueToTheNextHandler {
 		c.Next()
 	}else{
-	    c.SendStatus(403,"Forbidden !!")
+	    c.WriteText(403,"Forbidden !!")
 	}
 
 }
@@ -555,10 +562,10 @@ iris.Get("/anything/*randomName", func(c *iris.Context) { } )
 // c.Params("randomName") will be /whateverhere/whateveragain, blablabla
 // Not Match: /anything , /anything/ , /something
 ```
-#### Static handler using *iris.Static("./path/to/the/resources/directory/", "path_to_strip_or_nothing")*
+#### Static handler using *iris.Static(""/public",./path/to/the/resources/directory/", 1)*
 ```go
-iris.Get("/public/*assets", iris.Static("./static/resources/","/public/"))
-// Visible URL-> /public/assets/favicon.ico
+iris.Static("/public", "./static/resources/",1))
+//-> /public/assets/favicon.ico
 ```
 
 ## Custom HTTP Errors
@@ -572,7 +579,7 @@ import "github.com/kataras/iris"
 func main() {
 	iris.OnError(404,func (c *iris.Context){
 		c.HTML("<h1> The page you looking doesn't exists </h1>")
-		c.Status(404)
+		c.SetStatusCode(404)
 	})
 	//or OnNotFound(func (c *iris.Context){})... for 404 only.
 	//or OnPanic(func (c *iris.Context){})... for 500 only.
@@ -596,6 +603,8 @@ iris.Get("/thenotfound",func (c *iris.Context) {
 
 ## Context
 ![Iris Context Outline view](http://kataras.github.io/iris/assets/context_view.png)
+
+
 
 Inside the [examples](https://github.com/kataras/iris/tree/examples) branch you will find practical examples
 
