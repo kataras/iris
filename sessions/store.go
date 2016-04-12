@@ -31,8 +31,8 @@ package sessions
 
 import (
 	"encoding/base32"
+	"github.com/valyala/fasthttp"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -44,16 +44,16 @@ import (
 // See CookieStore and FilesystemStore for examples.
 type Store interface {
 	// Get should return a cached session.
-	Get(r *http.Request, name string) (*Session, error)
+	Get(r fasthttp.Request, name string) (*Session, error)
 
 	// New should create and return a new session.
 	//
 	// Note that New should never return a nil session, even in the case of
 	// an error if using the Registry infrastructure to cache the session.
-	NewStore(r *http.Request, name string) (*Session, error)
+	NewStore(r fasthttp.Request, name string) (*Session, error)
 
 	// Save should persist session to the underlying store implementation.
-	Save(r *http.Request, w http.ResponseWriter, s *Session) error
+	Save(r fasthttp.Request, w fasthttp.Response, s *Session) error
 }
 
 // CookieStore ----------------------------------------------------------------
@@ -99,7 +99,7 @@ type CookieStore struct {
 //
 // It returns a new session and an error if the session exists but could
 // not be decoded.
-func (s *CookieStore) Get(r *http.Request, name string) (*Session, error) {
+func (s *CookieStore) Get(r fasthttp.Request, name string) (*Session, error) {
 	return GetRegistry(r).Get(s, name)
 }
 
@@ -108,14 +108,14 @@ func (s *CookieStore) Get(r *http.Request, name string) (*Session, error) {
 // The difference between NewStore() and Get() is that calling NewStore() twice will
 // decode the session data twice, while Get() registers and reuses the same
 // decoded session after the first call.
-func (s *CookieStore) NewStore(r *http.Request, name string) (*Session, error) {
+func (s *CookieStore) NewStore(r fasthttp.Request, name string) (*Session, error) {
 	session := NewSession(s, name)
 	opts := *s.Options
 	session.Options = &opts
 	session.IsNew = true
 	var err error
-	if c, errCookie := r.Cookie(name); errCookie == nil {
-		err = DecodeMulti(name, c.Value, &session.Values,
+	if value := string(r.Header.Cookie(name)); value != "" {
+		err = DecodeMulti(name, value, &session.Values,
 			s.Codecs...)
 		if err == nil {
 			session.IsNew = false
@@ -125,14 +125,14 @@ func (s *CookieStore) NewStore(r *http.Request, name string) (*Session, error) {
 }
 
 // Save adds a single session to the response.
-func (s *CookieStore) Save(r *http.Request, w http.ResponseWriter,
+func (s *CookieStore) Save(r fasthttp.Request, w fasthttp.Response,
 	session *Session) error {
 	encoded, err := EncodeMulti(session.Name(), session.Values,
 		s.Codecs...)
 	if err != nil {
 		return err
 	}
-	http.SetCookie(w, NewCookie(session.Name(), encoded, session.Options))
+	w.Header.SetCookie(NewCookie(session.Name(), encoded, session.Options))
 	return nil
 }
 
@@ -202,21 +202,21 @@ func (s *FilesystemStore) MaxLength(l int) {
 // Get returns a session for the given name after adding it to the registry.
 //
 // See CookieStore.Get().
-func (s *FilesystemStore) Get(r *http.Request, name string) (*Session, error) {
+func (s *FilesystemStore) Get(r fasthttp.Request, name string) (*Session, error) {
 	return GetRegistry(r).Get(s, name)
 }
 
 // NewStore returns a session store for the given name without adding it to the registry.
 //
 // See CookieStore.NewStore().
-func (s *FilesystemStore) NewStore(r *http.Request, name string) (*Session, error) {
+func (s *FilesystemStore) NewStore(r fasthttp.Request, name string) (*Session, error) {
 	session := NewSession(s, name)
 	opts := *s.Options
 	session.Options = &opts
 	session.IsNew = true
 	var err error
-	if c, errCookie := r.Cookie(name); errCookie == nil {
-		err = DecodeMulti(name, c.Value, &session.ID, s.Codecs...)
+	if value := string(r.Header.Cookie(name)); value != "" {
+		err = DecodeMulti(name, value, &session.ID, s.Codecs...)
 		if err == nil {
 			err = s.load(session)
 			if err == nil {
@@ -228,7 +228,7 @@ func (s *FilesystemStore) NewStore(r *http.Request, name string) (*Session, erro
 }
 
 // Save adds a single session to the response.
-func (s *FilesystemStore) Save(r *http.Request, w http.ResponseWriter,
+func (s *FilesystemStore) Save(r fasthttp.Request, w fasthttp.Response,
 	session *Session) error {
 	if session.ID == "" {
 		// Because the ID is used in the filename, encode it to
@@ -245,7 +245,9 @@ func (s *FilesystemStore) Save(r *http.Request, w http.ResponseWriter,
 	if err != nil {
 		return err
 	}
-	http.SetCookie(w, NewCookie(session.Name(), encoded, session.Options))
+
+	w.Header.SetCookie(NewCookie(session.Name(), encoded, session.Options))
+
 	return nil
 }
 

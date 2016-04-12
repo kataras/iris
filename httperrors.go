@@ -26,35 +26,50 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package iris
 
-import (
-	"net/http"
+type (
+	// IErrorHandler is the interface which an http error handler should implement
+	IErrorHandler interface {
+		GetCode() int
+		GetHandler() HandlerFunc
+		SetHandler(h HandlerFunc)
+	}
+
+	// IHTTPErrors is the interface which the HTTPErrors using
+	IHTTPErrors interface {
+		GetByCode(httpStatus int) IErrorHandler
+		On(httpStatus int, handler HandlerFunc)
+		Emit(errCode int, ctx *Context)
+	}
+
+	// ErrorHandler is just an object which stores a http status code and a handler
+	ErrorHandler struct {
+		code    int
+		handler HandlerFunc
+	}
+
+	// HTTPErrors is the struct which contains the handlers which will execute if http error occurs
+	// One struct per Server instance, the meaning of this is that the developer can change the default error message and replace them with his/her own completely custom handlers
+	//
+	// Example of usage:
+	// iris.OnError(405, func (ctx *iris.Context){ c.SendStatus(405,"Method not allowed!!!")})
+	// and inside the handler which you have access to the current Context:
+	// ctx.EmitError(405)
+	// that is the circle, the httpErrors variable stays at the Station(via it's Router), sets from there and emits from a context,
+	// but you can also emit directly from iris.Errors().Emit(405,ctx) if that's necessary
+	HTTPErrors struct {
+		//developer can do Errors.On(500, iris.Handler)
+		ErrorHanders []IErrorHandler
+	}
 )
 
-// IErrorHandler is the interface which an http error handler should implement
-type IErrorHandler interface {
-	GetCode() int
-	GetHandler() HandlerFunc
-	SetHandler(h HandlerFunc)
-}
-
-// IHTTPErrors is the interface which the HTTPErrors using
-type IHTTPErrors interface {
-	GetByCode(httpStatus int) IErrorHandler
-	On(httpStatus int, handler HandlerFunc)
-	Emit(errCode int, ctx *Context)
-}
+var _ IErrorHandler = &ErrorHandler{}
+var _ IHTTPErrors = &HTTPErrors{}
 
 // ErrorHandlerFunc creates a handler which is responsible to send a particular error to the client
 func ErrorHandlerFunc(statusCode int, message string) HandlerFunc {
 	return func(ctx *Context) {
-		ctx.SendStatus(statusCode, message)
+		ctx.WriteText(statusCode, message)
 	}
-}
-
-// ErrorHandler is just an object which stores a http status code and a handler
-type ErrorHandler struct {
-	code    int
-	handler HandlerFunc
 }
 
 // GetCode returns the http status code value
@@ -72,30 +87,12 @@ func (e *ErrorHandler) SetHandler(h HandlerFunc) {
 	e.handler = h
 }
 
-var _ IErrorHandler = &ErrorHandler{}
-
-// HTTPErrors is the struct which contains the handlers which will execute if http error occurs
-// One struct per Server instance, the meaning of this is that the developer can change the default error message and replace them with his/her own completely custom handlers
-//
-// Example of usage:
-// iris.OnError(405, func (ctx *iris.Context){ c.SendStatus(405,"Method not allowed!!!")})
-// and inside the handler which you have access to the current Context:
-// ctx.EmitError(405)
-// that is the circle, the httpErrors variable stays at the Station(via it's Router), sets from there and emits from a context,
-// but you can also emit directly from iris.Errors().Emit(405,ctx) if that's necessary
-type HTTPErrors struct {
-	//developer can do Errors.On(500, iris.Handler)
-	ErrorHanders []IErrorHandler
-}
-
-var _ IHTTPErrors = &HTTPErrors{}
-
 // defaultHTTPErrors creates and returns an instance of HTTPErrors with default handlers
 func defaultHTTPErrors() *HTTPErrors {
 	httperrors := new(HTTPErrors)
 	httperrors.ErrorHanders = make([]IErrorHandler, 0)
-	httperrors.On(http.StatusNotFound, ErrorHandlerFunc(http.StatusNotFound, "404 not found"))
-	httperrors.On(http.StatusInternalServerError, ErrorHandlerFunc(http.StatusInternalServerError, "The server encountered an unexpected condition which prevented it from fulfilling the request."))
+	httperrors.On(404, ErrorHandlerFunc(404, "404 not found"))
+	httperrors.On(505, ErrorHandlerFunc(500, "The server encountered an unexpected condition which prevented it from fulfilling the request."))
 	return httperrors
 }
 
@@ -114,7 +111,7 @@ func (he *HTTPErrors) GetByCode(httpStatus int) IErrorHandler {
 
 // On Registers a handler for a specific http error status
 func (he *HTTPErrors) On(httpStatus int, handler HandlerFunc) {
-	if httpStatus == http.StatusOK {
+	if httpStatus == 200 {
 		return
 	}
 
@@ -134,7 +131,7 @@ func (he *HTTPErrors) Emit(errCode int, ctx *Context) {
 
 	if errHandler := he.GetByCode(errCode); errHandler != nil {
 		// I do that because before the user should to: ctx.WriteStatus(404) in order to send the actual error code, maybe this is ok but I changed my mind let's do this here automatically
-		ctx.WriteStatus(errCode)
+		ctx.SetStatusCode(errCode)
 		errHandler.GetHandler().Serve(ctx)
 	}
 }

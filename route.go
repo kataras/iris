@@ -30,28 +30,30 @@ import (
 	"strings"
 )
 
-// IRoute is the interface which the Route should implements
-// it useful to have it as an interface because this interface is passed to the plugins
-type IRoute interface {
-	GetMethod() string
-	GetDomain() string
-	GetPath() string
-	GetPathPrefix() string
-	ProcessPath()
-	GetMiddleware() Middleware
-	SetMiddleware(m Middleware)
-}
+type (
+	// IRoute is the interface which the Route should implements
+	// it useful to have it as an interface because this interface is passed to the plugins
+	IRoute interface {
+		GetMethod() string
+		GetDomain() string
+		GetPath() string
+		GetPathPrefix() string
+		ProcessPath()
+		GetMiddleware() Middleware
+		SetMiddleware(m Middleware)
+	}
 
-// Route contains basic and temporary info about the route, it is nil after iris.Listen called
-// contains all middleware and prepare them for execution
-// Used to create a node at the Router's Build state
-type Route struct {
-	method     string
-	domain     string
-	fullpath   string
-	PathPrefix string
-	middleware Middleware
-}
+	// Route contains basic and temporary info about the route, it is nil after iris.Listen called
+	// contains all middleware and prepare them for execution
+	// Used to create a node at the Router's Build state
+	Route struct {
+		method     string
+		domain     string
+		fullpath   string
+		PathPrefix string
+		middleware Middleware
+	}
+)
 
 var _ IRoute = &Route{}
 

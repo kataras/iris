@@ -1,6 +1,6 @@
 # Iris Web Framework
 <img align="right" width="132" src="http://kataras.github.io/iris/assets/56e4b048f1ee49764ddd78fe_iris_favicon.ico">
-[![Build Status](https://travis-ci.org/kataras/iris.svg?branch=master&style=flat-square)](https://travis-ci.org/kataras/iris)
+[![Build Status](https://travis-ci.org/kataras/iris.svg?branch=development&style=flat-square)](https://travis-ci.org/kataras/iris)
 [![Go Report Card](https://goreportcard.com/badge/github.com/kataras/iris?style=flat-square)](https://goreportcard.com/report/github.com/kataras/iris)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/kataras/iris?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![GoDoc](https://godoc.org/github.com/kataras/iris?status.svg)](https://godoc.org/github.com/kataras/iris)
@@ -10,36 +10,36 @@ The [fastest](#benchmarks)  go web framework which provides robust set of featur
 
 ![Hi Iris GIF](http://kataras.github.io/iris/assets/hi_iris_march.gif)
 
-## News: 8 April 2016
-
-Iris decided to move on to the next version with fasthttp as base, because, after some benchmark tests on my [personal repository](https://github.com/kataras/golang_iris_experiments/tree/master/channels4) I saw that Iris can be (even more) faster using fasthttp. 
 
 
-The default branch changed to 'master' because I am comming the converstion changes to the 'development' branch.
+## News: 12 April 2016 
+V1.1
 
 
-Stay tuned, Iris v1.1 will be ready soon!
+Iris now has [fasthttp](https://github.com/valyala/fasthttp) as it's base, standar API didn't changed but Context has some additional things and other things works different than before.[*](#context)
 
+
+[Examples](https://github.com/kataras/iris/tree/examples) are not yet updated with the new version, stay tunned!
+----			
+				
 
 ## Features
-
+* **FastHTTP**: Iris uses [fasthttp](https://github.com/valyala/fasthttp) package as it's default base [*](#declaration)
 * **Context**: Iris uses [Context](#context) for storing route params, sharing variables between middlewares and render rich content to the client.
 * **Plugins**: You can build your own plugins to  inject the Iris framework[*](#plugins).
 * **Full API**: All http methods are supported, you can group routes and sharing resources together[*](#api).
-* **Zero allocations**: Iris generates zero garbage[*](#benchmarks).
+* **Zero allocations**: Iris generates zero garbage.
 * **Multi server instances**: Besides the fact that Iris has a default main server. You can declare as many as you need[*](#declaration).
-* **Compatible**: Iris is compatible with the native net/http package.
+* **Middlewares**: Create and use middlewares easly with the Iris' simplicity[*](#middlewares). 
 
 ### Q: What makes iris significantly [faster](#benchmarks)?
 ##### A: These are the QNIQUE features that Iris brings
 
+*    First of all Iris uses [fasthttp](https://github.com/valyala/fasthttp) as it's  base 
+
 *    Iris uses the same algorithm as the BSD's kernel does for routing (call it Trie)
 
-*    Iris has 5 different types of Routers, which are optimized and auto-selected before the server listen
-
-*    The more you use it, more faster it becomes. Because Iris (can) use cache for routing, it's optional. If you disable it it stills the fastest but only with a small difference from other routers/frameworks
-
-*    Iris can detect how much cores the machine using at runtime and optimize itself
+*    Iris can detect what features are used and what don't and optimized itself before server run.
 
 *    Middlewares and Plugins are 'light' and that is, a principle.
 
@@ -108,10 +108,6 @@ func main() {
 iris.Listen()
 //2
 log.Fatal(iris.Listen(":8080"))
-//3
-http.ListenAndServe(":8080",iris.Serve())
-//4
-log.Fatal(http.ListenAndServe(":8080",iris.Serve()))
 
 ```
 
@@ -148,7 +144,7 @@ type myHandlerGet struct {
 }
 
 func (m myHandlerGet) Serve(c *iris.Context) {
-    c.Write("From %s",c.Request.URL.Path)
+    c.Write("From %s",c.PathString())
 }
 
 //and so on
@@ -327,7 +323,7 @@ package main
 
 import (
  "github.com/kataras/iris"
- "github.com/kataras/iris/middleware/gzip"
+ "github.com/kataras/iris/middleware/logger"
 )
 
 type Page struct {
@@ -336,7 +332,7 @@ type Page struct {
 
 iris.Templates("./yourpath/templates/*")
 
-iris.Use(gzip.Gzip(gzip.DefaultCompression))
+iris.Use(logger.Logger())
 
 iris.Get("/", func(c *iris.Context) {
 		c.RenderFile("index.html", Page{"My Index Title"})
@@ -408,11 +404,9 @@ func methodSecond() {
 func methodThree() {
 	//these are the default options' values
 	options := iris.StationOptions{
+		FastHTTP:			true,
 		Profile:            false,
 		ProfilePath:        iris.DefaultProfilePath,
-		Cache:              true,
-		CacheMaxItems:      0,
-		CacheResetDuration: 5 * time.Minute,
 		PathCorrection: 	true, //explanation at the end of this chapter
 	}//these are the default values that you can change
 	//DefaultProfilePath = "/debug/pprof"
@@ -435,7 +429,6 @@ For example if we do that...
 import "github.com/kataras/iris"
 func main() {
 	options := iris.StationOptions{
-		Cache:				true,
 		Profile:            true,
 		ProfilePath:        "/mypath/debug",
 	}
@@ -473,7 +466,7 @@ func main() {
     //log everything middleware
 
     iris.UseFunc(func(c *iris.Context) {
-		println("[Global log] the requested url path is: ", c.Request.URL.Path)
+		println("[Global log] the requested url path is: ", c.PathString())
 		c.Next()
 	})
 
@@ -482,7 +475,7 @@ func main() {
     {
   	    // provide a  middleware
 		users.UseFunc(func(c *iris.Context) {
-			println("LOG [/users...] This is the middleware for: ", c.Request.URL.Path)
+			println("LOG [/users...] This is the middleware for: ", c.PathString())
 			c.Next()
 		})
 		users.Post("/login", loginHandler)
@@ -549,8 +542,6 @@ func main() {
 		})
 
 	iris.Listen(":8080")
-	//or
-	//log.Fatal(http.ListenAndServe(":8080", iris.Serve()))
 }
 
 ```
@@ -605,84 +596,7 @@ iris.Get("/thenotfound",func (c *iris.Context) {
 ```
 
 ## Context
-
-> Variables
-
- 1. **ResponseWriter**
-	 - The ResponseWriter is the exactly the same as you used to use with the standar http library.
- 2. **Request**
-	 - The Request is the pointer of the *Request, is the exactly the same as you used to use with the standar http library.
- 3. **Params**
-	 - Contains the Named path Parameters, imagine it as a map[string]string which contains all parameters of a request.
-
->Functions
-
- 1. **Clone()**
-	 - Returns a clone of the Context, useful when you want to use the context outscoped for example in goroutines.
- 2. **Write(contents string)**
-	 - Writes a pure string to the ResponseWriter and sends to the client.
- 3. **Param(key string)** returns string
-	 - Returns the string representation of the key's  named parameter's value. Registed path= /profile/:name) Requested url is /profile/something where the key argument is the named parameter's key, returns the value  which is 'something' here.
- 4. **ParamInt(key string)** returns integer, error
-	 - Returns the int representation of the key's  named parameter's value, if something goes wrong the second return value, the error is not nil.
- 5. **URLParam(key string)** returns string
-	 - Returns the string representation of a requested url parameter (?key=something) where the key argument is the name of, something is the returned value.
- 6. **URLParamInt(key string)** returns integer, error
-	 - Returns the int representation of  a requested url parameter
- 7. **SetCookie(name string, value string)**
-	 - Adds a cookie to the request.
- 8. **GetCookie(name string)** returns string
-	 - Get the cookie value, as string, of a cookie.
- 9. **ServeFile(path string)**
-	 - This just calls the http.ServeFile, which serves a file given by the path argument  to the client.
- 10. **NotFound()**
-	 - Sends a http.StatusNotFound with a custom template you defined (if any otherwise the default template is there) to the client.
-	 --- *Note: We will learn all about Custom Error Handlers later*.
- 11. **Close()**
-	 - Calls the Request.Body.Close().
-
- 12. **WriteHTML(status int, contents string) & HTML(contents string)**
-	 - WriteHTML: Writes html string with a given http status to the client, it sets the Header with the correct content-type.
-	 - HTML: Same as WriteHTML but you don't have to pass a status, it's defaulted to http.StatusOK (200).
- 13. **WriteData(status int, binaryData []byte) & Data(binaryData []byte)**
-	 - WriteData: Writes binary data with a given http status to the client, it sets the Header with the correct content-type.
-	 - Data : Same as WriteData but you don't have to pass a status, it's defaulted to http.StatusOK (200).
- 14. **WriteText(status int, contents string) & Text(contents string)**
-	 - WriteText: Writes plain text with a given http status to the client, it sets the Header with the correct content-type.
-	 - Text: Same as WriteTextbut you don't have to pass a status, it's defaulted to http.StatusOK (200).
- 15. **ReadJSON(jsonObject interface{}) error**
- 	 - ReadJSON: reads the request's body content and parses it, assigning the result into jsonObject passed by argument. Don't forget to pass the argument as reference.
- 16. **WriteJSON(status int, jsonObject interface{}) & JSON(jsonObject interface{}) returns error**
-	 - WriteJSON: Writes json which is converted from structed object(s) with a given http status to the client, it sets the Header with the correct content-type. If something goes wrong then it's returned value which is an error type is not nil. No indent.
- 17.  **RenderJSON(jsonObjects ...interface{}) returns error**
-	 - RenderJSON: Same as WriteJSON & JSON but with Indent (formated json)
-	 - JSON: Same as WriteJSON but you don't have to pass a status, it's defaulted to http.StatusOK (200).
- 18. **ReadXML(xmlObject interface{}) error**
- 	 - ReadXML: reads the request's body and parses it, assigin the result into xmlObject passed by argument.
- 19. **WriteXML(status int, xmlBytes []byte) & XML(xmlBytes []byte) returns error**
-	 - WriteXML: Writes writes xml which is converted from []byte( usualy string)  with a given http status to the client, it sets the Header with the correct content-type. If something goes wrong then it's returned value which is an error type is not nil.
-	 - XML: Same as WriteXML but you don't have to pass a status, it's defaulted to http.StatusOK (200).
- 20. **RenderFile(file string, pageContext interface{}) returns error**
-	 - RenderFile: Renders a file by its name (which a file is saved to the template cache) and a page context passed to the function, default http status is http.StatusOK(200) if the template was found, otherwise http.StatusNotFound(404). If something goes wrong then it's returned value which is an error type is not nil.
- 21. **Render(pageContext interface{})  returns error**
-	 - Render: Renders the root file template and a context passed to the function, default http status is http.StatusOK(200) if the template was found, otherwise http.StatusNotFound(404). If something goes wrong then it's returned value which is an error type is not nil.
---- *Note:  We will learn how to add templates at the next chapters*.
-
- 22. **Next()**
-	 - Next: calls all the next handler from the middleware stack, it used inside a middleware.
-
- 23. **SendStatus(statusCode int, message string)**
-	 - SendStatus:  writes a http statusCode with a text/plain message.
- 24. **Redirect(url string, statusCode...int)**
-	- Redirect: redirects the client to a specific relative path, if statusCode is empty then 302 is used (temporary redirect).
- 25. **EmitError(statusCode int)**
-     - EmitError: sends the custom error to the client by it's status code ( see Custom HTTP Errors chapter).
- 26. **Panic()**
-     - Panic: sends the 500 internal server (custom) error to the client.
-
-
-
-**[[TODO chapters: Register custom error handlers, cache templates , create & use middleware]]**
+![Iris Context Outline view](http://kataras.github.io/iris/assets/context_view.png)
 
 Inside the [examples](https://github.com/kataras/iris/tree/examples) branch you will find practical examples
 
@@ -898,16 +812,15 @@ BenchmarkVulcan_GithubAll 		| 5000 		| 292216 	| 19894 	| 609
 ## Third Party Middlewares
 
 
->Note: Some of these, may not be work.
-
-Iris has a middleware system to create it's own middleware and is at a state which tries to find person who are be willing to convert them to Iris middleware or create new. Contact or open an issue if you are interesting.
+>Note: After v1.1 most of the third party middlewares are incompatible, I'm putting a big effort to convert all of these to work with Iris,
+if you want to help please do so (pr).
 
 
 | Middleware | Author | Description | Tested |
 | -----------|--------|-------------|--------|
 | [sessions](https://github.com/kataras/iris/tree/development/sessions) | [Ported to Iris](https://github.com/kataras/iris/tree/development/sessions) | Session Management | [Yes](https://github.com/kataras/iris/tree/development/sessions) |
 | [Graceful](https://github.com/tylerb/graceful) | [Tyler Bunnell](https://github.com/tylerb) | Graceful HTTP Shutdown | [Yes](https://github.com/kataras/iris/tree/examples/thirdparty_graceful) |
-| [gzip](https://github.com/kataras/iris/tree/development/middleware/gzip/) | [Iris](https://github.com/kataras/iris) | GZIP response compression | [Yes](https://github.com/kataras/iris/tree/examples/middleware_compression_gzip) |
+| [gzip](https://github.com/kataras/iris/tree/development/middleware/gzip/) | [Iris](https://github.com/kataras/iris) | GZIP response compression | [Yes](https://github.com/kataras/iris/tree/development/middleware/gzip/README.md) |
 | [RestGate](https://github.com/pjebs/restgate) | [Prasanga Siripala](https://github.com/pjebs) | Secure authentication for REST API endpoints | No |
 | [secure](https://github.com/unrolled/secure) | [Cory Jacobsen](https://github.com/unrolled) | Middleware that implements a few quick security wins | [Yes](https://github.com/kataras/iris/tree/examples/thirdparty_secure) |
 | [JWT Middleware](https://github.com/auth0/go-jwt-middleware) | [Auth0](https://github.com/auth0) | Middleware checks for a JWT on the `Authorization` header on incoming requests and decodes it| No |
@@ -952,7 +865,7 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 - [x] [Create examples.](https://github.com/kataras/iris/tree/examples)
 - [x] [Subdomains supports with the same syntax as iris.Get, iris.Post ...](https://github.com/kataras/iris/tree/examples/subdomains_simple)
 - [x] [Provide a more detailed benchmark table to the README with all go web frameworks that I know, no just the 6 most famous](https://github.com/kataras/iris/tree/benchmark)
-- [ ] Convert useful middlewares out there into Iris middlewares, or contact with their authors to do so.
+- [x] Convert useful middlewares out there into Iris middlewares, or contact with their authors to do so.
 - [ ] Provide automatic HTTPS using https://letsencrypt.org/how-it-works/.
 - [ ] Create administration web interface as plugin.
 - [ ] Create an easy websocket api.

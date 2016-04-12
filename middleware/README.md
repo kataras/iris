@@ -1,5 +1,5 @@
 # Middleware
-Iris has it's build'n small middleware(s) here
+Iris has it's small middleware(s) here
 
 # Structure
 **All Iris build'n middleware(s)* belong here, to this folder 'iris/middleware'**
@@ -33,7 +33,7 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/middleware/gzip"
+	"github.com/kataras/iris/middleware/logger"
 )
 
 type Page struct {
@@ -44,7 +44,7 @@ func main() {
 	iris.Templates("./_examples/compression_gzip/templates/*.html")
 	
 	// here is how to use a middleware
-	iris.Use(gzip.Gzip(gzip.DefaultCompression))
+	iris.Use(logger.Logger())
 	
 	iris.Get("/public/*static", iris.Static("./_examples/compression_gzip/static/", "/public/"))
 

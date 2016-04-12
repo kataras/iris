@@ -32,11 +32,6 @@ import (
 	"os"
 )
 
-const (
-	// LoggerIrisPrefix is the prefix of the logger '[IRIS] '
-	LoggerIrisPrefix = "[IRIS] "
-)
-
 // LoggerOutTerminal os.Stdout , it's the default io.Writer to the Iris' logger
 var LoggerOutTerminal = os.Stdout
 

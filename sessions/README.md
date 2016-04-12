@@ -1,5 +1,7 @@
 > This package is converted to work with Iris but it was originaly created by Gorila team, the original package is gorilla/sessions
 
+The package was fully ported to work with fasthttp, by @kataras.
+
 
 The key features are:
 

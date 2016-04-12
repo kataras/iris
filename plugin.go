@@ -134,11 +134,14 @@ type (
 		// the installedDirectory is empty when the installation is already done by previous time or an error happens
 		Install(remoteFileZip string, targetDirectory string) (string, error)
 	}
+
+	// DownloadManager is just a struch which exports the util's downloadZip, directoryExists, unzip methods, used by the plugins via the PluginContainer
+	DownloadManager struct {
+	}
 )
 
-// DownloadManager is just a struch which exports the util's downloadZip, directoryExists, unzip methods, used by the plugins via the PluginContainer
-type DownloadManager struct {
-}
+var _ IDownloadManager = &DownloadManager{}
+var _ IPluginContainer = &PluginContainer{}
 
 // DirectoryExists returns true if a given local directory exists
 func (d *DownloadManager) DirectoryExists(dir string) bool {
@@ -170,9 +173,6 @@ type PluginContainer struct {
 	activatedPlugins []IPlugin
 	downloader       *DownloadManager
 }
-
-var _ IDownloadManager = &DownloadManager{}
-var _ IPluginContainer = &PluginContainer{}
 
 // Plugin activates the plugins and if succeed then adds it to the activated plugins list
 func (p *PluginContainer) Plugin(plugin IPlugin) error {

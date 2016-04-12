@@ -28,12 +28,8 @@ package iris
 
 import (
 	"html/template"
-	"net/http"
 	"net/http/pprof"
 	"os"
-	"runtime"
-	"sync"
-	"time"
 )
 
 const (
@@ -45,7 +41,6 @@ type (
 	// IStation is the interface which the Station should implements
 	IStation interface {
 		IRouter
-		Serve() http.Handler
 		Plugin(IPlugin) error
 		GetPluginContainer() IPluginContainer
 		GetTemplates() *template.Template
@@ -72,21 +67,6 @@ type (
 		// Default is /debug/pprof , which means yourhost.com/debug/pprof
 		ProfilePath string
 
-		// Cache for Router, change it to false if you don't want to use the cache mechanism that Iris provides for your routes
-		Cache bool
-		// CacheMaxItems max number of total cached routes, 500 = +~20000 bytes = ~0.019073MB
-		// Every time the cache timer reach this number it will reset/clean itself
-		// Default is 0
-		// If <=0 then cache cleans all of items (bag)
-		// Auto cache clean is happening after 5 minutes the last request serve, you can change this number by 'ResetDuration' property
-		// Note that MaxItems doesn't means that the items never reach this lengh, only on timer tick this number is checked/consider.
-		CacheMaxItems int
-		// CacheResetDuration change this time.value to determinate how much duration after last request serving the cache must be reseted/cleaned
-		// Default is 5 * time.Minute , Minimum is 30 seconds
-		//
-		// If CacheMaxItems <= 0 then it clears the whole cache bag at this duration.
-		CacheResetDuration time.Duration
-
 		// PathCorrection corrects and redirects the requested path to the registed path
 		// for example, if /home/ path is requested but no handler for this Route found,
 		// then the Router checks if /home handler exists, if yes, redirects the client to the correct path /home
@@ -101,12 +81,14 @@ type (
 		IRouter
 		Server          *Server
 		templates       *template.Template
-		pool            sync.Pool
 		options         StationOptions
 		pluginContainer *PluginContainer
-		//it's true if OptimusPrime has run one time
-		optimized bool
-		logger    *Logger
+		//it's true when hosts(domain) and cors middleware has optimized or when Listen occured
+		optimized      bool
+		optimizedHosts bool
+		optimizedCors  bool
+
+		logger *Logger
 	}
 )
 
@@ -119,35 +101,31 @@ func newStation(options StationOptions) *Station {
 	// create the station
 	s := &Station{options: options, pluginContainer: &PluginContainer{}}
 	// create the router
-	var r IRouter
+	//var r IRouter
 	//for now, we can't directly use NewRouter and after NewMemoryRouter, types are not the same.
 	// in order to fix a bug add the second conditional && runtime...temporary solution
-	if options.Cache && runtime.GOMAXPROCS(-1) == 1 {
-		r = NewMemoryRouter(NewRouter(s), options.CacheMaxItems, options.CacheResetDuration)
-	} else {
-		r = NewRouter(s)
-	}
+	//TODO AGAIN if options.Cache { // && runtime.GOMAXPROCS(-1) == 1 {
+	//r = NewMemoryRouter(NewRouter(s), options.CacheMaxItems, options.CacheResetDuration)
+	//} else {
+	//r =
+	//	}
 
 	// set the router
-	s.IRouter = r
+	s.IRouter = NewRouter(s)
 
 	// set the debug profiling handlers if enabled
 	if options.Profile {
 		debugPath := options.ProfilePath
-		r.Get(debugPath+"/", ToHandlerFunc(pprof.Index))
-		r.Get(debugPath+"/cmdline", ToHandlerFunc(pprof.Cmdline))
-		r.Get(debugPath+"/profile", ToHandlerFunc(pprof.Profile))
-		r.Get(debugPath+"/symbol", ToHandlerFunc(pprof.Symbol))
+		s.IRouter.Get(debugPath+"/", ToHandlerFunc(pprof.Index))
+		s.IRouter.Get(debugPath+"/cmdline", ToHandlerFunc(pprof.Cmdline))
+		s.IRouter.Get(debugPath+"/profile", ToHandlerFunc(pprof.Profile))
+		s.IRouter.Get(debugPath+"/symbol", ToHandlerFunc(pprof.Symbol))
 
-		r.Get(debugPath+"/goroutine", ToHandlerFunc(pprof.Handler("goroutine")))
-		r.Get(debugPath+"/heap", ToHandlerFunc(pprof.Handler("heap")))
-		r.Get(debugPath+"/threadcreate", ToHandlerFunc(pprof.Handler("threadcreate")))
-		r.Get(debugPath+"/pprof/block", ToHandlerFunc(pprof.Handler("block")))
+		s.IRouter.Get(debugPath+"/goroutine", ToHandlerFunc(pprof.Handler("goroutine")))
+		s.IRouter.Get(debugPath+"/heap", ToHandlerFunc(pprof.Handler("heap")))
+		s.IRouter.Get(debugPath+"/threadcreate", ToHandlerFunc(pprof.Handler("threadcreate")))
+		s.IRouter.Get(debugPath+"/pprof/block", ToHandlerFunc(pprof.Handler("block")))
 	}
-
-	s.pool = sync.Pool{New: func() interface{} {
-		return &Context{station: s, Params: make([]PathParameter, 0), mu: sync.Mutex{}}
-	}}
 
 	return s
 }
@@ -175,91 +153,68 @@ func (s *Station) GetLogger() *Logger {
 	return s.logger
 }
 
-func (s *Station) forceOptimusPrime() {
-
-	//check if any route has cors setted to true
-	routerHasCors := func() bool {
-		gLen := len(s.IRouter.getGarden())
-		for i := 0; i < gLen; i++ {
-			if s.IRouter.getGarden()[i].cors {
-				return true
-			}
-		}
-		return false
-	}()
-
-	if routerHasCors {
-		s.IRouter.setMethodMatch(CorsMethodMatch)
-	}
-
-	// check if any route has subdomains
-	routerHasHosts := func() bool {
-		gLen := len(s.IRouter.getGarden())
-		for i := 0; i < gLen; i++ {
-			if s.IRouter.getGarden()[i].hosts {
-				return true
-			}
-		}
-		return false
-	}()
-
-	// For performance only,in order to not check at runtime for hosts and subdomains, I think it's better to do this:
-	if routerHasHosts {
-		switch s.IRouter.getType() {
-		case Normal:
-			s.IRouter = NewRouterDomain(s.IRouter.(*Router))
-			break
-		case Memory:
-			s.IRouter = NewMemoryRouterDomain(s.IRouter.(*MemoryRouter))
-			break
-		}
-		// just this no new router
-	}
-
-	//check for memoryrouter //bug for now disabled this line: and use syncmemoryrouter & synccontextcache if cores > 1
-	//comment of the  sync router and sync cache  made on 02/04/2016 (GR) in order to prevent a bug which I believe soon fixed.
-	//also check on the NewStation for it.
-	if runtime.GOMAXPROCS(-1) == 1 {
-
-		var r IMemoryRouter
-		routerType := s.IRouter.getType()
-		if routerType == Memory || routerType == DomainMemory {
-			if routerType == Memory {
-				r = s.IRouter.(*MemoryRouter)
-			} else if routerType == DomainMemory {
-				r = s.IRouter.(*MemoryRouterDomain)
-			} else {
-				panic("[Iris] From Station.OptimisPrime, unsupported Router, please post this as issue at github.com/kataras/iris")
-			}
-
-			if !r.hasCache() {
-				var cache IContextCache
-
-				cache = NewContextCache()
-				//check if we have more than one core then use theMemoryRouterCache,otherwise use the SyncMemoryRouterCache and it's underline MemoryRouterCache
-				// if runtime.GOMAXPROCS(-1) > 1 {
-				// 	cache = NewSyncContextCache(cache.(*ContextCache))
-				//println("SYNCED MULTI_CORE CACHE WITH CORES: ", runtime.GOMAXPROCS(-1))
-				// }
-
-				r.setCache(cache)
-			}
-
-			//	if runtime.GOMAXPROCS(-1) > 1 {
-			//		s.IRouter = NewSyncRouter(r)
-			//	}
-		}
-	}
-
-	s.optimized = true
-}
-
 // OptimusPrime make the best last optimizations to make iris the faster framework out there
-// This function is called automatically on .Listen, but if you don't use .Listen or .Serve,
-// then YOU MUST CALL .OptimusPrime before run a server
+// This function is called automatically on .Listen, and all Router's Handle functions
 func (s *Station) OptimusPrime() {
-	if !s.optimized {
-		s.forceOptimusPrime()
+	if s.optimized {
+		return
+	}
+
+	if !s.optimizedCors {
+		//check if any route has cors setted to true
+		routerHasCors := func() (has bool) {
+			/*gLen := len(s.IRouter.getGarden())
+			for i := 0; i < gLen; i++ {
+				if s.IRouter.getGarden()[i].cors {
+					return true
+				}
+			}*/
+			s.IRouter.getGarden().visitAll(func(i int, tree *tree) {
+				if tree.cors {
+					has = true
+				}
+			})
+			return
+		}()
+
+		if routerHasCors {
+			s.IRouter.setMethodMatch(CorsMethodMatch)
+			s.optimizedCors = true
+		}
+
+	}
+	if !s.optimizedHosts {
+		// check if any route has subdomains
+		routerHasHosts := func() (has bool) {
+			/*gLen := len(s.IRouter.getGarden())
+			for i := 0; i < gLen; i++ {
+				if s.IRouter.getGarden()[i].hosts {
+					return true
+				}
+			}*/
+			s.IRouter.getGarden().visitAll(func(i int, tree *tree) {
+				if tree.hosts {
+					has = true
+				}
+			})
+			return
+		}()
+
+		// For performance only,in order to not check at runtime for hosts and subdomains, I think it's better to do this:
+		if routerHasHosts {
+			switch s.IRouter.getType() {
+			case Normal:
+				s.IRouter = NewRouterDomain(s.IRouter.(*Router))
+				s.optimizedHosts = true
+				break
+			}
+			// just this no new router
+		}
+
+	}
+
+	if s.optimizedCors && s.optimizedHosts {
+		s.optimized = true
 	}
 
 }
@@ -269,37 +224,27 @@ func (s *Station) HasOptimized() bool {
 	return s.optimized
 }
 
-// ServeHTTP returns the correct http.Handler for your machine and configuration, ready to use.
-// it's a little hack I though in order to call OptimusPrime automatically,
-// and without need of checking things every time a route added to the router
-/*func (s *Station) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	s.once.Do(func() {
-		//println("ServeHTTP: This ServeHTTP wrapper runs only once")
-		s.OptimusPrime()
-	})
-
-	s.IRouter.ServeHTTP(res, req)
-}*/
-
 // Listen starts the standalone http server
 // which listens to the fullHostOrPort parameter which as the form of
 // host:port or just port
-func (s *Station) Listen(fullHostOrPort ...string) error {
+func (s *Station) Listen(fullHostOrPort ...string) (err error) {
 	s.OptimusPrime()
 
 	s.pluginContainer.DoPreListen(s)
-	// I moved the s.Server here because we want to be able to change the Router before listen (with plugins)
-	// set the server with the server handler
-	s.Server = &Server{handler: s.IRouter}
-	err := s.Server.listen(fullHostOrPort...)
+	opt := ServerOptions{ListeningAddr: ParseAddr(fullHostOrPort...)}
+	server := NewServer(opt)
+	server.SetHandler(s.IRouter.ServeRequest)
+	s.Server = server
+	err = server.Listen()
 	if err == nil {
+		s.Server = server
 		s.pluginContainer.DoPostListen(s)
 		ch := make(chan os.Signal)
 		<-ch
-		s.Close()
+		s.Server.CloseServer()
 	}
 
-	return err
+	return
 }
 
 // ListenTLS Starts a httpS/http2 server with certificates,
@@ -312,9 +257,13 @@ func (s *Station) ListenTLS(fullAddress string, certFile, keyFile string) error 
 	s.pluginContainer.DoPreListen(s)
 	// I moved the s.Server here because we want to be able to change the Router before listen (with plugins)
 	// set the server with the server handler
-	s.Server = &Server{handler: s.IRouter}
-	err := s.Server.listenTLS(fullAddress, certFile, keyFile)
+	opt := ServerOptions{ListeningAddr: ParseAddr(fullAddress), CertFile: certFile, KeyFile: keyFile}
+	server := NewServer(opt)
+	server.SetHandler(s.IRouter.ServeRequest)
+
+	err := server.ListenTLS()
 	if err == nil {
+		s.Server = server
 		s.pluginContainer.DoPostListen(s)
 		ch := make(chan os.Signal)
 		<-ch
@@ -326,16 +275,16 @@ func (s *Station) ListenTLS(fullAddress string, certFile, keyFile string) error 
 
 // Serve is used instead of the iris.Listen
 // eg  http.ListenAndServe(":80",iris.Serve()) if you don't want to use iris.Listen(":80")
-func (s *Station) Serve() http.Handler {
-	s.OptimusPrime()
-	s.pluginContainer.DoPreListen(s)
-	return s.IRouter
-}
+//func (s *Station) Serve() http.Handler {
+//	s.OptimusPrime()
+//	s.pluginContainer.DoPreListen(s)
+//	return s.IRouter
+//}
 
 // Close is used to close the tcp listener from the server
 func (s *Station) Close() {
 	s.pluginContainer.DoPreClose(s)
-	s.Server.closeServer()
+	s.Server.CloseServer()
 
 }
 

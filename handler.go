@@ -28,75 +28,89 @@ package iris
 
 import (
 	"fmt"
+	"github.com/valyala/fasthttp"
+	"github.com/valyala/fasthttp/fasthttpadaptor"
 	"net/http"
 )
 
-// Handler the main Iris Handler interface.
-type Handler interface {
-	Serve(ctx *Context)
-}
+type (
 
-// HandlerFunc type is an adapter to allow the use of
-// ordinary functions as HTTP handlers.  If f is a function
-// with the appropriate signature, HandlerFunc(f) is a
-// Handler that calls f.
-type HandlerFunc func(*Context)
+	// RequestHandler it used for Server instance, may be used from plugins, it's no useful outside
+	RequestHandler interface {
+		ServeRequest(*fasthttp.RequestCtx)
+	}
+
+	//it's the same as fasthttp.RequestHandler
+	RequestHandlerFunc func(*fasthttp.RequestCtx)
+
+	// Handler the main Iris Handler interface.
+	Handler interface {
+		Serve(ctx *Context)
+	}
+
+	// HandlerFunc type is an adapter to allow the use of
+	// ordinary functions as HTTP handlers.  If f is a function
+	// with the appropriate signature, HandlerFunc(f) is a
+	// Handler that calls f.
+	HandlerFunc func(*Context)
+
+	//IMiddlewareSupporter is an interface which all routers must implement
+	IMiddlewareSupporter interface {
+		Use(handlers ...Handler)
+		UseFunc(handlersFn ...HandlerFunc)
+	}
+
+	// Middleware is just a slice of Handler []func(c *Context)
+	Middleware []Handler
+
+	//MiddlewareSupporter is the struch which make the Imiddlewaresupporter's works, is useful only to no repeat the code of middleware
+	MiddlewareSupporter struct {
+		Middleware Middleware
+	}
+)
+
+var _ IMiddlewareSupporter = &MiddlewareSupporter{}
 
 // Serve serves the handler, is like ServeHTTP for Iris
 func (h HandlerFunc) Serve(ctx *Context) {
 	h(ctx)
 }
 
-//IMiddlewareSupporter is an interface which all routers must implement
-type IMiddlewareSupporter interface {
-	Use(handlers ...Handler)
-	UseFunc(handlersFn ...HandlerFunc)
+func (h RequestHandlerFunc) ServeRequest(reqCtx *fasthttp.RequestCtx) {
+	h(reqCtx)
 }
 
-// Middleware is just a slice of Handler []func(c *Context)
-type Middleware []Handler
-
-//MiddlewareSupporter is the struch which make the Imiddlewaresupporter's works, is useful only to no repeat the code of middleware
-type MiddlewareSupporter struct {
-	Middleware Middleware
-}
-
-// Static is just a function which returns a HandlerFunc with the standar http's fileserver's handler
-// It is not a middleware, it just returns a HandlerFunc to use anywhere we want
-func Static(SystemPath string, PathToStrip ...string) HandlerFunc {
-	//runs only once to start the file server
-	path := http.Dir(SystemPath)
-	underlineFileserver := http.FileServer(path)
-	if PathToStrip != nil && len(PathToStrip) == 1 {
-		underlineFileserver = http.StripPrefix(PathToStrip[0], underlineFileserver)
-	}
-
-	return ToHandlerFunc(underlineFileserver.ServeHTTP)
-
-}
-
-// ToHandler converts http.Handler or func(http.ResponseWriter, *http.Request) to an iris.Handler
+// ToHandler converts an http.Handler or http.HandlerFunc to an iris.Handler
 func ToHandler(handler interface{}) Handler {
+	//this is not the best way to do it, but I dont have any options right now.
 	switch handler.(type) {
 	case Handler:
+		//it's already an iris handler
 		return handler.(Handler)
 	case http.Handler:
-		return HandlerFunc((func(ctx *Context) {
-			handler.(http.Handler).ServeHTTP(ctx.GetResponseWriter(), ctx.GetRequest())
-		}))
+		//it's http.Handler
+		h := fasthttpadaptor.NewFastHTTPHandlerFunc(handler.(http.Handler).ServeHTTP)
 
+		return ToHandlerFastHTTP(h)
 	case func(http.ResponseWriter, *http.Request):
-		return HandlerFunc((func(ctx *Context) {
-			handler.(func(http.ResponseWriter, *http.Request))(ctx.GetResponseWriter(), ctx.GetRequest())
-		}))
+		//it's http.HandlerFunc
+		h := fasthttpadaptor.NewFastHTTPHandlerFunc(handler.(func(http.ResponseWriter, *http.Request)))
+		return ToHandlerFastHTTP(h)
 	default:
 		panic(fmt.Sprintf("Error on Iris: handler is not func(*Context) either an object which implements the iris.Handler with  func Serve(ctx *Context)\n It seems to be a  %T Point to: %v:", handler, handler))
 	}
 }
 
-// ToHandlerFunc converts http.Handler or func(http.ResponseWriter, *http.Request) to an iris.HandlerFunc func (ctx *Context)
+// ToHandlerFunc converts an http.Handler or http.HandlerFunc to an iris.HandlerFunc
 func ToHandlerFunc(handler interface{}) HandlerFunc {
 	return ToHandler(handler).Serve
+}
+
+// ToHandlerFastHTTP converts an fasthttp.RequestHandler to an iris.Handler
+func ToHandlerFastHTTP(h fasthttp.RequestHandler) Handler {
+	return HandlerFunc((func(ctx *Context) {
+		h(ctx.RequestCtx)
+	}))
 }
 
 // ConvertToHandlers accepts list of HandlerFunc and returns list of Handler
@@ -136,5 +150,3 @@ func (m *MiddlewareSupporter) UseFunc(handlersFn ...HandlerFunc) {
 		m.Use(Handler(h))
 	}
 }
-
-var _ IMiddlewareSupporter = &MiddlewareSupporter{}

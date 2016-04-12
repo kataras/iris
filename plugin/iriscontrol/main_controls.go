@@ -28,19 +28,19 @@ package iriscontrol
 
 // for the main server
 func (i *irisControlPlugin) StartServer() {
-	if i.station.Server.IsRunning == false {
-		if i.station.Server.IsSecure {
+	if i.station.Server.IsListening() == false {
+		if i.station.Server.IsSecure() {
 			//listen with ListenTLS
-			i.station.ListenTLS(i.station.Server.ListeningAddr, i.station.Server.CertFile, i.station.Server.KeyFile)
+			i.station.ListenTLS(i.station.Server.Options().ListeningAddr, i.station.Server.Options().CertFile, i.station.Server.Options().KeyFile)
 		} else {
 			//listen normal
-			i.station.Listen(i.station.Server.ListeningAddr)
+			i.station.Listen(i.station.Server.Options().ListeningAddr)
 		}
 	}
 }
 
 func (i *irisControlPlugin) StopServer() {
-	if i.station.Server.IsRunning {
+	if i.station.Server.IsListening() {
 		i.station.Close()
 	}
 }

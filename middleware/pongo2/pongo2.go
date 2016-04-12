@@ -42,9 +42,9 @@ func (p *pongo2Middleware) Serve(ctx *iris.Context) {
 		templateData := ctx.Get("data")
 		if templateData != nil {
 			var template = pongo.Must(pongo.FromFile(templateName))
-			err := template.ExecuteWriter(getPongoContext(templateData), ctx.ResponseWriter)
+			err := template.ExecuteWriter(getPongoContext(templateData), ctx.Response.BodyWriter())
 			if err != nil {
-				ctx.SendStatus(500, err.Error())
+				ctx.WriteText(500, err.Error())
 			}
 		}
 

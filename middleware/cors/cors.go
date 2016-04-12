@@ -26,6 +26,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // Cors credits goes to @keuller
+
 package cors
 
 import (
@@ -86,7 +87,7 @@ type cors struct {
 }
 
 func (c *cors) Serve(ctx *iris.Context) {
-	if ctx.Request.Method == "OPTIONS" {
+	if ctx.MethodString() == "OPTIONS" {
 		c.handlePreflight(ctx)
 		// Preflight requests are standalone and should stop the chain as some other
 		// middleware may not handle OPTIONS requests correctly. One typical example
@@ -146,11 +147,11 @@ func Cors() *cors {
 
 // handlePreflight handles pre-flight CORS requests
 func (c *cors) handlePreflight(ctx *iris.Context) {
-	r := ctx.Request
-	headers := ctx.ResponseWriter.Header()
-	origin := r.Header.Get("Origin")
+	r := ctx.RequestCtx.Request
+	headers := ctx.RequestCtx.Response.Header
+	origin := iris.BytesToString(r.Header.Peek("Origin"))
 
-	if r.Method != "OPTIONS" {
+	if ctx.MethodString() != "OPTIONS" {
 		// c.logf("  Preflight aborted: %s!=OPTIONS", r.Method)
 		return
 	}
@@ -170,12 +171,12 @@ func (c *cors) handlePreflight(ctx *iris.Context) {
 		return
 	}
 
-	reqMethod := r.Header.Get("Access-Control-Request-Method")
+	reqMethod := iris.BytesToString(r.Header.Peek("Access-Control-Request-Method"))
 	if !c.IsMethodAllowed(reqMethod) {
 		// c.logf("  Preflight aborted: method '%s' not allowed", reqMethod)
 		return
 	}
-	reqHeaders := parseHeaderList(r.Header.Get("Access-Control-Request-Headers"))
+	reqHeaders := parseHeaderList(iris.BytesToString(r.Header.Peek("Access-Control-Request-Headers")))
 	if !c.areHeadersAllowed(reqHeaders) {
 		// c.logf("  Preflight aborted: headers '%v' not allowed", reqHeaders)
 		return
@@ -200,11 +201,11 @@ func (c *cors) handlePreflight(ctx *iris.Context) {
 // handleActualRequest handles simple cross-origin requests, actual request or redirects
 func (c *cors) handleActualRequest(ctx *iris.Context) {
 	r := ctx.Request
-	headers := ctx.ResponseWriter.Header()
-	origin := ctx.Request.Header.Get("Origin")
+	headers := ctx.RequestCtx.Response.Header
+	origin := iris.BytesToString(r.Header.Peek("Origin"))
 
-	if r.Method == "OPTIONS" {
-		c.logf("  Actual request no headers added: method == %s", r.Method)
+	if ctx.MethodString() == "OPTIONS" {
+		c.logf("  Actual request no headers added: method == %s", ctx.MethodString())
 		return
 	}
 
@@ -224,8 +225,8 @@ func (c *cors) handleActualRequest(ctx *iris.Context) {
 	// POST. Access-Control-Allow-Methods is only used for pre-flight requests and the
 	// spec doesn't instruct to check the allowed methods for simple cross-origin requests.
 	// We think it's a nice feature to be able to have control on those methods though.
-	if !c.IsMethodAllowed(r.Method) {
-		c.logf("  Actual request no headers added: method '%s' not allowed", r.Method)
+	if !c.IsMethodAllowed(ctx.MethodString()) {
+		c.logf("  Actual request no headers added: method '%s' not allowed", ctx.MethodString())
 		return
 	}
 

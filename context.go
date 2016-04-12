@@ -30,208 +30,197 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"github.com/valyala/fasthttp"
+	"golang.org/x/net/context"
 	"io"
-	"io/ioutil"
 	"net"
-	"net/http"
-	"net/url"
+	"os"
 	"path"
 	"reflect"
 	"runtime"
 	"strconv"
 	"strings"
-	"sync"
+	"time"
 )
-
-// IContext is the domain-driven interface for the iris Context
-type IContext interface {
-	Reset(http.ResponseWriter, *http.Request)
-	Do()
-	Redo(http.ResponseWriter, *http.Request)
-	Next()
-	GetResponseWriter() IMemoryWriter
-	GetRequest() *http.Request
-	GetMemoryResponseWriter() MemoryWriter
-	SetMemoryResponseWriter(MemoryWriter)
-	Param(key string) string
-	ParamInt(key string) (int, error)
-	URLParam(key string) string
-	URLParamInt(key string) (int, error)
-	Get(key string) interface{}
-	GetString(key string) (value string)
-	GetInt(key string) (value int)
-	Set(key string, value interface{})
-	Write(format string, a ...interface{})
-	ServeFile(path string)
-	GetCookie(name string) string
-	SetCookie(name string, value string)
-	// Errors
-	NotFound()
-	Panic()
-	EmitError(statusCode int)
-	StopExecution()
-	//
-	Redirect(path string, statusHeader ...int) error
-	SendStatus(statusCode int, message string)
-	RequestIP() string
-	Close()
-	End()
-	IsStopped() bool
-	Clone() *Context ///todo IContext again
-	RenderFile(file string, pageContext interface{}) error
-	Render(pageContext interface{}) error
-	//
-	// WriteStatus writes http status code to the header
-	WriteStatus(statusCode int)
-	// SetContentType sets the "Content-Type" header, receives the values
-	SetContentType(s []string)
-	// SetHeader sets the response headers first parameter is the key, second is the values
-	SetHeader(k string, s []string)
-	//
-	WriteHTML(httpStatus int, htmlContents string)
-	HTML(htmlContents string)
-	WriteData(httpStatus int, binaryData []byte)
-	Data(binaryData []byte)
-	WriteText(httpStatus int, text string)
-	Text(text string)
-	RenderJSON(httpStatus int, jsonStructs ...interface{}) error
-	ReadJSON(jsonObject interface{}) error
-	WriteJSON(httpStatus int, jsonObjectOrArray interface{}) error
-	JSON(jsonObjectOrArray interface{}) error
-	WriteXML(httpStatus int, xmlB []byte) error
-	XML(xmlB []byte) error
-	RenderXML(hhttpStatus int, xmlStructs ...interface{}) error
-	ReadXML(xmlObject interface{}) error
-	GetHandlerName() string
-}
 
 // Charset is defaulted to UTF-8, you can change it
 // all render methods will have this charset
 var Charset = DefaultCharset
 
-const (
-	// DefaultCharset represents the default charset for content headers
-	DefaultCharset = "UTF-8"
-	// ContentType represents the header["Content-Type"]
-	ContentType = "Content-Type"
-	// ContentLength represents the header["Content-Length"]
-	ContentLength = "Content-Length"
-	// ContentHTML is the  string of text/html response headers
-	ContentHTML = "text/html"
-	// ContentJSON is the  string of application/json response headers
-	ContentJSON = "application/json"
-	// ContentJSONP is the  string of application/javascript response headers
-	ContentJSONP = "application/javascript"
-	// ContentBINARY is the  string of "application/octet-stream response headers
-	ContentBINARY = "application/octet-stream"
-	// ContentTEXT is the  string of text/plain response headers
-	ContentTEXT = "text/plain"
-	// ContentXML is the  string of application/xml response headers
-	ContentXML = "application/xml"
-	// ContentXMLText is the  string of text/xml response headers
-	ContentXMLText = "text/xml"
+type (
 
-	// stopExecutionPosition the number which shows us that the context's middleware manualy stop the execution
-	stopExecutionPosition = 255 // is the biggest uint8
+	// IContext is the interface for the iris/Context
+	// it's implements the /x/net/context, the fasthttp's RequestCtx
+	// and some other useful methods
+	IContext interface {
+		context.Context
+		Reset(*fasthttp.RequestCtx)
+		Next()
+		Param(string) string
+		ParamInt(string) (int, error)
+		URLParam(string) string
+		URLParamInt(string) (int, error)
+		URLParams() map[string][]string
+		MethodString() string
+		PathString() string
+		Get(interface{}) interface{}
+		GetString(interface{}) string
+		GetInt(interface{}) int
+		Set(interface{}, interface{})
+		Write(string, ...interface{})
+		GetCookie(string) string
+		SetCookie(string, string)
+		AddCookie(*fasthttp.Cookie)
+		// Errors
+		NotFound()
+		Panic()
+		EmitError(int)
+		StopExecution()
+		//
+
+		Redirect(string, ...int)
+		RequestIP() string
+		IsStopped() bool
+		Clone() *Context
+		RenderFile(string, interface{}) error
+		Render(interface{}) error
+		// SetContentType sets the "Content-Type" header, receives the values
+		SetContentType([]string)
+		// SetHeader sets the response headers first parameter is the key, second is the values
+		SetHeader(string, []string)
+		RequestHeader(k string) string
+		//
+		WriteHTML(int, string)
+		HTML(string)
+		WriteData(int, []byte)
+		Data([]byte)
+		WriteText(int, string)
+		Text(string)
+		RenderJSON(int, ...interface{}) error
+		ReadJSON(interface{}) error
+		WriteJSON(int, interface{}) error
+		JSON(interface{}) error
+		WriteXML(int, []byte) error
+		XML([]byte) error
+		RenderXML(int, ...interface{}) error
+		ReadXML(interface{}) error
+		ServeContent(io.ReadSeeker, string, time.Time) error
+		ServeFile(string) error
+		//
+		PostFormValue(string) string
+		//
+		GetHandlerName() string
+	}
+
+	// Context is resetting every time a request is coming to the server
+	// it is not good practice to use this object in goroutines, for these cases use the .Clone()
+	Context struct {
+		*fasthttp.RequestCtx
+		Params  PathParameters
+		station *Station
+		//keep track all registed middleware (handlers)
+		middleware Middleware
+		// pos is the position number of the Context, look .Next to understand
+		pos uint8
+		// these values are reseting on each request, are useful only between middleware,
+		// use iris/sessions for cookie/filesystem storage
+		values map[interface{}]interface{}
+	}
 )
-
-// Context is resetting every time a request is coming to the server,
-// it holds a pointer to the http.Request, the ResponseWriter
-// the Named Parameters (if any) of the requested path and an underline Renderer.
-//
-type Context struct {
-	memoryResponseWriter MemoryWriter
-	ResponseWriter       IMemoryWriter
-	Request              *http.Request
-	Params               PathParameters
-	station              *Station
-	//keep track all registed middleware (handlers)
-	middleware Middleware
-	// pos is the position number of the Context, look .Next to understand
-	pos uint8
-	// these values are reseting on each request, are useful only between middleware,
-	// use iris/sessions for cookie/filesystem storage
-	values map[string]interface{}
-	mu     sync.Mutex
-}
 
 var _ IContext = &Context{}
 
-// GetResponseWriter returns the MemoryWriter of the Context
-func (ctx *Context) GetResponseWriter() IMemoryWriter {
-	return ctx.ResponseWriter
+// Implement the golang.org/x/net/context , as requested by the community, which is used inside app engine
+// also this will give me the ability to use appengine's memcache with this context, if this needed.
+
+// Deadline returns the time when this Context will be canceled, if any.
+func (ctx *Context) Deadline() (deadline time.Time, ok bool) {
+	return
 }
 
-// GetRequest returns the *http.Request of the Context
-func (ctx *Context) GetRequest() *http.Request {
-	return ctx.Request
+// Done returns a channel that is closed when this Context is canceled
+// or times out.
+func (ctx *Context) Done() <-chan struct{} {
+	return nil
 }
 
-// SetRequest sets a particular *http.Request to the Context
+// Err indicates why this context was canceled, after the Done channel
+// is closed.
+func (ctx *Context) Err() error {
+	return nil
+}
+
+// Value returns the value associated with key or nil if none.
+func (ctx *Context) Value(key interface{}) interface{} {
+	if key == 0 {
+		return ctx.Request
+	}
+	if keyAsString, ok := key.(string); ok {
+		val := ctx.GetString(keyAsString)
+		return val
+	}
+	return nil
+}
+
 //
-// this can be useful on the middlewares which they have access to change the request object itself
-func (ctx *Context) SetRequest(req *http.Request) {
-	ctx.Request = req
-}
-
-// SetResponseWriter sets the MemoryWriter of the Context
-func (ctx *Context) SetResponseWriter(res IMemoryWriter) {
-	ctx.ResponseWriter = res
-}
-
-// GetMemoryResponseWriter returns the MemoryWriter of the Context
-func (ctx *Context) GetMemoryResponseWriter() MemoryWriter {
-	return ctx.memoryResponseWriter
-}
-
-// SetMemoryResponseWriter sets a particular iris.MemoryWriter to the Context
-//
-// this can be useful on the middlewares which they have access to change the response object itself (the gzip middleware does it)
-func (ctx *Context) SetMemoryResponseWriter(res MemoryWriter) {
-	ctx.memoryResponseWriter = res
-	ctx.ResponseWriter = &ctx.memoryResponseWriter
-}
+// For PathParameters note:
+//  here we return their values as pointer, so be careful
 
 // Param returns the string representation of the key's path named parameter's value
 func (ctx *Context) Param(key string) string {
-	return ctx.Params.Get(key)
+	return BytesToString(ctx.Params.Get(StringToBytes(key)))
 }
 
 // ParamInt returns the int representation of the key's path named parameter's value
 func (ctx *Context) ParamInt(key string) (int, error) {
-	val, err := strconv.Atoi(ctx.Params.Get(key))
+	val, err := strconv.Atoi(ctx.Param(key))
 	return val, err
 }
 
 // URLParam returns the get parameter from a request , if any
 func (ctx *Context) URLParam(key string) string {
-	return URLParam(ctx.Request, key)
+	return string(ctx.RequestCtx.Request.URI().QueryArgs().Peek(key))
+}
+
+// URLParams returns a map of a list of each url(query) parameter
+func (ctx *Context) URLParams() map[string][]string {
+	urlparams := make(map[string][]string)
+	ctx.RequestCtx.Request.URI().QueryArgs().VisitAll(func(key, value []byte) {
+		urlparams[string(key)] = []string{string(value)}
+	})
+	return urlparams
 }
 
 // URLParamInt returns the get parameter int value from a request , if any
 func (ctx *Context) URLParamInt(key string) (int, error) {
-	return strconv.Atoi(URLParam(ctx.Request, key))
+	return strconv.Atoi(ctx.URLParam(key))
 }
 
-// ServeFile is used to serve a file, via the http.ServeFile
-func (ctx *Context) ServeFile(path string) {
-	http.ServeFile(ctx.ResponseWriter, ctx.Request, path)
+func (ctx *Context) MethodString() string {
+	return BytesToString(ctx.Method())
+}
+
+func (ctx *Context) PathString() string {
+	return BytesToString(ctx.Path())
 }
 
 // GetCookie returns cookie's value by it's name
 func (ctx *Context) GetCookie(name string) string {
-	//thanks to  @wsantos fix cookieName to name
-	_cookie, _err := ctx.Request.Cookie(name)
-	if _err != nil {
-		return ""
-	}
-	return _cookie.Value
+	return string(ctx.RequestCtx.Request.Header.Cookie(name))
 }
 
 // SetCookie adds a cookie to the request
 func (ctx *Context) SetCookie(name string, value string) {
-	c := &http.Cookie{Name: name, Value: value}
-	ctx.Request.AddCookie(c)
+	ctx.RequestCtx.Request.Header.SetCookie(name, value)
+}
+
+func (ctx *Context) AddCookie(cookie *fasthttp.Cookie) {
+	s := fmt.Sprintf("%s=%s", string(cookie.Key()), string(cookie.Value()))
+	if c := string(ctx.RequestCtx.Request.Header.Peek("Cookie")); c != "" {
+		ctx.RequestCtx.Request.Header.Set("Cookie", c+"; "+s)
+	} else {
+		ctx.RequestCtx.Request.Header.Set("Cookie", s)
+	}
 }
 
 // Error handling
@@ -268,46 +257,18 @@ func (ctx *Context) StopExecution() {
 // accepts 2 parameters string and an optional int
 // first parameter is the url to redirect
 // second parameter is the http status should send, default is 302 (Temporary redirect), you can set it to 301 (Permant redirect), if that's nessecery
-func (ctx *Context) Redirect(urlToRedirect string, statusHeader ...int) error {
+func (ctx *Context) Redirect(urlToRedirect string, statusHeader ...int) {
 	httpStatus := 302 // temporary redirect
 	if statusHeader != nil && len(statusHeader) > 0 && statusHeader[0] > 0 {
 		httpStatus = statusHeader[0]
 	}
-	var u *url.URL
-	var err error
-	if u, err = url.Parse(urlToRedirect); err == nil {
-		ctx.StopExecution()
-		if u.Scheme == "" && u.Host == "" {
-			//The http://yourserver is done automatically by all browsers today
-			//so just clean the path
-			trailing := strings.HasSuffix(urlToRedirect, "/")
-			urlToRedirect = path.Clean(urlToRedirect)
-			//check after clean if we had a slash but after we don't, we have to do that otherwise we will get forever redirects if path is /home but the registed is /home/
-			if trailing && !strings.HasSuffix(urlToRedirect, "/") {
-				urlToRedirect += Slash
-			}
 
-		}
-		ctx.ResponseWriter.Header().Set("Location", urlToRedirect)
-		ctx.ResponseWriter.WriteHeader(httpStatus)
-	}
-	return err
-}
-
-// SendStatus sends a http status to the client
-// it receives status code (int) and a message (string)
-func (ctx *Context) SendStatus(statusCode int, message string) {
-	r := ctx.memoryResponseWriter
-	r.Header().Set("Content-Type", "text/plain"+" ;charset="+Charset)
-	r.Header().Set("X-Content-Type-Options", "nosniff")
-	ctx.WriteStatus(statusCode)
-	//r.WriteString(message)
-	r.Write([]byte(message))
+	ctx.RequestCtx.Redirect(urlToRedirect, httpStatus)
 }
 
 // RequestIP gets just the Remote Address from the client.
 func (ctx *Context) RequestIP() string {
-	if ip, _, err := net.SplitHostPort(strings.TrimSpace(ctx.Request.RemoteAddr)); err == nil {
+	if ip, _, err := net.SplitHostPort(strings.TrimSpace(ctx.RequestCtx.RemoteAddr().String())); err == nil {
 		return ip
 	}
 	return ""
@@ -315,12 +276,12 @@ func (ctx *Context) RequestIP() string {
 
 // RemoteAddr is like RequestIP but it checks for proxy servers also, tries to get the real client's request IP
 func (ctx *Context) RemoteAddr() string {
-	header := ctx.Request.Header.Get("X-Real-Ip")
+	header := string(ctx.RequestCtx.Request.Header.Peek("X-Real-Ip"))
 	realIP := strings.TrimSpace(header)
 	if realIP != "" {
 		return realIP
 	}
-	realIP = ctx.Request.Header.Get("X-Forwarded-For")
+	realIP = string(ctx.RequestCtx.Request.Header.Peek("X-Forwarded-For"))
 	idx := strings.IndexByte(realIP, ',')
 	if idx >= 0 {
 		realIP = realIP[0:idx]
@@ -331,17 +292,6 @@ func (ctx *Context) RemoteAddr() string {
 	}
 	return ctx.RequestIP()
 
-}
-
-// Close is used to close the body of the request
-///TODO: CHECK FOR REQUEST CLOSED IN ORDER TO FIX SOME ERRORS HERE
-func (ctx *Context) Close() {
-	ctx.Request.Body.Close()
-}
-
-// End same as Close, end the response process.
-func (ctx *Context) End() {
-	ctx.Request.Body.Close()
 }
 
 // IsStopped checks and returns true if the current position of the Context is 255, means that the StopExecution has called
@@ -367,43 +317,15 @@ func (ctx *Context) Do() {
 	ctx.middleware[0].Serve(ctx)
 }
 
-// Reset resets the Context with a given http.ResponseWriter and *http.request
+// Reset resets the Context with a given domain.Response and domain.Request
 // the context is ready-to-use after that, just like a new Context
 // I use it for zero rellocation memory
-func (ctx *Context) Reset(res http.ResponseWriter, req *http.Request) {
+func (ctx *Context) Reset(reqCtx *fasthttp.RequestCtx) {
 	ctx.Params = ctx.Params[0:0]
 	ctx.middleware = nil
-	ctx.memoryResponseWriter.Reset(res)
-	ctx.ResponseWriter = &ctx.memoryResponseWriter
-	ctx.Request = req
-	/*if len(ctx.values) > 0 {
-		for k, _ := range ctx.values {
-			delete(ctx.values, k)
-		}
-	}*/
-
+	ctx.RequestCtx = reqCtx
 }
 
-// Redo is used inside the MemoryRouter from a cached Context, do whatever Do does but it sets the newresponsewriter and the request before that
-func (ctx *Context) Redo(res http.ResponseWriter, req *http.Request) {
-	//ctx.memoryResponseWriter = MemoryWriter{res, -1, 200}
-	ctx.memoryResponseWriter.Reset(res)
-	ctx.ResponseWriter = &ctx.memoryResponseWriter
-	ctx.Request = req
-	ctx.Do()
-	ctx.memoryResponseWriter.ForceHeader()
-
-}
-
-// Clone before we had (c Context) inscope and  (c *Context) for outscope like goroutines
-// now we have (c *Context) for both sittuations ,and call .Clone() if we need to pass the context in a gorotoune or to a time func
-// example:
-// api.Get("/user/:id", func(ctx *iris.Context) {
-//		c:= ctx.Clone()
-//		time.AfterFunc(20 * time.Second, func() {
-//			println(" 20 secs after: from user with id:", c.Param("id"), " context req path:", c.Request.URL.Path)
-//		})
-//	})
 func (ctx *Context) Clone() *Context {
 	var cloneContext = *ctx
 	cloneContext.pos = 0
@@ -418,14 +340,15 @@ func (ctx *Context) Clone() *Context {
 	cpM := make(Middleware, len(m))
 	copy(cpM, m)
 	cloneContext.middleware = cpM
-	cloneContext.memoryResponseWriter.ResponseWriter = nil
-	cloneContext.ResponseWriter = &cloneContext.memoryResponseWriter
+	//cloneContext.memoryResponseWriter.ResponseWriter = nil
+	//cloneContext.ResponseWriter = &cloneContext.memoryResponseWriter
+	///TODO: maybe in we have errors on multiple status code send: cloneContext.ResponseWriter = nil
 	return &cloneContext
 }
 
 // Get returns a value from a key
 // if doesn't exists returns nil
-func (ctx *Context) Get(key string) interface{} {
+func (ctx *Context) Get(key interface{}) interface{} {
 	if ctx.values == nil {
 		return nil
 	}
@@ -435,7 +358,7 @@ func (ctx *Context) Get(key string) interface{} {
 
 // GetFmt returns a value which has this format: func(format string, args ...interface{}) string
 // if doesn't exists returns nil
-func (ctx *Context) GetFmt(key string) func(format string, args ...interface{}) string {
+func (ctx *Context) GetFmt(key interface{}) func(format string, args ...interface{}) string {
 	if ctx.values == nil {
 		return nil
 	}
@@ -444,7 +367,7 @@ func (ctx *Context) GetFmt(key string) func(format string, args ...interface{}) 
 }
 
 // GetString same as Get but returns the value as string
-func (ctx *Context) GetString(key string) (value string) {
+func (ctx *Context) GetString(key interface{}) (value string) {
 	if v := ctx.Get(key); v != nil {
 		value = v.(string)
 	}
@@ -453,7 +376,7 @@ func (ctx *Context) GetString(key string) (value string) {
 }
 
 // GetInt same as Get but returns the value as int
-func (ctx *Context) GetInt(key string) (value int) {
+func (ctx *Context) GetInt(key interface{}) (value int) {
 	if v := ctx.Get(key); v != nil {
 		value = v.(int)
 	}
@@ -462,9 +385,9 @@ func (ctx *Context) GetInt(key string) (value int) {
 }
 
 // Set sets a value to a key in the values map
-func (ctx *Context) Set(key string, value interface{}) {
+func (ctx *Context) Set(key interface{}, value interface{}) {
 	if ctx.values == nil {
-		ctx.values = make(map[string]interface{})
+		ctx.values = make(map[interface{}]interface{})
 	}
 
 	ctx.values[key] = value
@@ -474,13 +397,13 @@ func (ctx *Context) Set(key string, value interface{}) {
 
 // RenderFile renders a file by its path and a context passed to the function
 func (ctx *Context) RenderFile(file string, pageContext interface{}) error {
-	return ctx.station.GetTemplates().ExecuteTemplate(ctx.GetResponseWriter(), file, pageContext)
+	return ctx.station.GetTemplates().ExecuteTemplate(ctx.RequestCtx.Response.BodyWriter(), file, pageContext)
 
 }
 
 // Render renders the template file html which is already registed to the template cache, with it's pageContext passed to the function
 func (ctx *Context) Render(pageContext interface{}) error {
-	return ctx.station.GetTemplates().Execute(ctx.GetResponseWriter(), pageContext)
+	return ctx.station.GetTemplates().Execute(ctx.RequestCtx.Response.BodyWriter(), pageContext)
 
 }
 
@@ -490,15 +413,15 @@ func (ctx *Context) WriteHTML(httpStatus int, htmlContents string) {
 	//ctx.ResponseWriter.Header().Set(ContentType, ContentHTML+" ;charset="+Charset)
 	//ctx.ResponseWriter.WriteHeader(httpStatus)
 	ctx.SetContentType([]string{ContentHTML + " ;charset=" + Charset})
-	ctx.WriteStatus(httpStatus)
+	ctx.RequestCtx.SetStatusCode(httpStatus)
 	//io.WriteString(ctx.ResponseWriter, htmlContents)
-	//ctx.ResponseWriter.WriteString(htmlContents)
-	ctx.ResponseWriter.Write([]byte(htmlContents))
+	//ctx.Responseriter.WriteString(htmlContents)
+	ctx.RequestCtx.WriteString(htmlContents)
 }
 
 //HTML calls the WriteHTML with the 200 http status ok
 func (ctx *Context) HTML(htmlContents string) {
-	ctx.WriteHTML(http.StatusOK, htmlContents)
+	ctx.WriteHTML(StatusOK, htmlContents)
 }
 
 // WriteData writes binary data with a http status
@@ -508,64 +431,54 @@ func (ctx *Context) WriteData(httpStatus int, binaryData []byte) {
 	//ctx.ResponseWriter.WriteHeader(httpStatus)
 	ctx.SetHeader(ContentType, []string{ContentBINARY + " ;charset=" + Charset})
 	ctx.SetHeader(ContentLength, []string{strconv.Itoa(len(binaryData))})
-	ctx.WriteStatus(httpStatus)
-	ctx.ResponseWriter.Write(binaryData)
+	ctx.RequestCtx.SetStatusCode(httpStatus)
+	ctx.RequestCtx.Write(binaryData)
 }
 
 //Data calls the WriteData with the 200 http status ok
 func (ctx *Context) Data(binaryData []byte) {
-	ctx.WriteData(http.StatusOK, binaryData)
+	ctx.WriteData(StatusOK, binaryData)
 }
 
 // Write writes a string via the context's ResponseWriter
 func (ctx *Context) Write(format string, a ...interface{}) {
 	//this doesn't work with gzip, so just write the []byte better |ctx.ResponseWriter.WriteString(fmt.Sprintf(format, a...))
-	ctx.ResponseWriter.Write([]byte(fmt.Sprintf(format, a...)))
+	ctx.RequestCtx.WriteString(fmt.Sprintf(format, a...))
 }
 
 //fix https://github.com/kataras/iris/issues/44
 
-// WriteStatus write/or/and/sends to client, to the response writer a given status code
-func (ctx *Context) WriteStatus(statusCode int) {
-	ctx.memoryResponseWriter.WriteHeader(statusCode)
-}
-
 // SetContentType sets the response writer's header key 'Content-Type' to a given value(s)
 func (ctx *Context) SetContentType(s []string) {
-	ctx.mu.Lock()
-	h := ctx.ResponseWriter.Header()
-	if ss := h[ContentType]; len(ss) == 0 {
-		h[ContentType] = s
+	for _, hv := range s {
+		ctx.RequestCtx.Response.Header.Set(ContentType, hv)
 	}
-	ctx.mu.Unlock()
+
 }
 
 // SetHeader write to the response writer's header to a given key the given value(s)
 func (ctx *Context) SetHeader(k string, s []string) {
-	ctx.mu.Lock()
-	h := ctx.ResponseWriter.Header()
-	if ss := h[k]; len(ss) == 0 {
-		h[k] = s
+	for _, hv := range s {
+		ctx.RequestCtx.Response.Header.Set(k, hv)
 	}
-	ctx.mu.Unlock()
+}
+
+func (ctx *Context) RequestHeader(k string) string {
+	return BytesToString(ctx.RequestCtx.Request.Header.Peek(k))
 }
 
 //
 // WriteText writes text with a http status
 func (ctx *Context) WriteText(httpStatus int, text string) {
-
-	//ctx.ResponseWriter.Header().Set(ContentType, ContentTEXT+" ;charset="+Charset)
-	//ctx.ResponseWriter.WriteHeader(httpStatus)
 	ctx.SetContentType([]string{ContentTEXT + " ;charset=" + Charset})
-	ctx.WriteStatus(httpStatus)
-	//io.WriteString(ctx.ResponseWriter, text)
-	//ctx.ResponseWriter.WriteString(text)
-	ctx.ResponseWriter.Write([]byte(text))
+	ctx.RequestCtx.SetStatusCode(httpStatus)
+
+	ctx.RequestCtx.Write([]byte(text))
 }
 
 //Text calls the WriteText with the 200 http status ok
 func (ctx *Context) Text(text string) {
-	ctx.WriteText(http.StatusOK, text)
+	ctx.WriteText(StatusOK, text)
 }
 
 // RenderJSON renders json objects with indent
@@ -585,22 +498,20 @@ func (ctx *Context) RenderJSON(httpStatus int, jsonStructs ...interface{}) error
 	//ctx.ResponseWriter.Header().Set(ContentType, ContentJSON+" ;charset="+Charset)
 	//ctx.ResponseWriter.WriteHeader(httpStatus)
 	ctx.SetContentType([]string{ContentJSON + " ;charset=" + Charset})
-	ctx.WriteStatus(httpStatus)
-	ctx.ResponseWriter.Write(_json)
+	ctx.RequestCtx.SetStatusCode(httpStatus)
+
+	ctx.RequestCtx.Write(_json)
 
 	return nil
 }
 
 // ReadJSON reads JSON from request's body
 func (ctx *Context) ReadJSON(jsonObject interface{}) error {
-	data, err := ioutil.ReadAll(ctx.Request.Body)
-	if err != nil {
-		return err
-	}
-	defer ctx.Close()
+
+	data := ctx.RequestCtx.Request.Body()
 
 	decoder := json.NewDecoder(strings.NewReader(string(data)))
-	err = decoder.Decode(jsonObject)
+	err := decoder.Decode(jsonObject)
 
 	if err != io.EOF {
 		return err
@@ -614,25 +525,21 @@ func (ctx *Context) WriteJSON(httpStatus int, jsonObjectOrArray interface{}) err
 	//ctx.ResponseWriter.Header().Set(ContentType, ContentJSON)
 	//ctx.ResponseWriter.WriteHeader(httpStatus)
 	ctx.SetContentType([]string{ContentJSON + " ;charset=" + Charset})
-	ctx.WriteStatus(httpStatus)
-	return json.NewEncoder(ctx.ResponseWriter).Encode(jsonObjectOrArray)
+	ctx.RequestCtx.SetStatusCode(httpStatus)
+	return json.NewEncoder(ctx.Response.BodyWriter()).Encode(jsonObjectOrArray)
 }
 
 //JSON calls the WriteJSON with the 200 http status ok
 func (ctx *Context) JSON(jsonObjectOrArray interface{}) error {
-	return ctx.WriteJSON(http.StatusOK, jsonObjectOrArray)
+	return ctx.WriteJSON(StatusOK, jsonObjectOrArray)
 }
 
 // ReadXML reads XML from request's body
 func (ctx *Context) ReadXML(xmlObject interface{}) error {
-	data, err := ioutil.ReadAll(ctx.Request.Body)
-	if err != nil {
-		return err
-	}
-	defer ctx.Close()
+	data := ctx.RequestCtx.Request.Body()
 
 	decoder := xml.NewDecoder(strings.NewReader(string(data)))
-	err = decoder.Decode(xmlObject)
+	err := decoder.Decode(xmlObject)
 
 	if err != io.EOF {
 		return err
@@ -643,15 +550,15 @@ func (ctx *Context) ReadXML(xmlObject interface{}) error {
 
 //XML calls the WriteXML with the 200 http status ok
 func (ctx *Context) XML(xmlBytes []byte) error {
-	return ctx.WriteXML(http.StatusOK, xmlBytes)
+	return ctx.WriteXML(StatusOK, xmlBytes)
 }
 
 // WriteXML writes xml which from []byte
 func (ctx *Context) WriteXML(httpStatus int, xmlB []byte) error {
-	ctx.WriteStatus(httpStatus)
+	ctx.RequestCtx.SetStatusCode(httpStatus)
 	ctx.SetContentType([]string{ContentXML + " ;charset=" + Charset})
 
-	ctx.ResponseWriter.Write(xmlB)
+	ctx.RequestCtx.Write(xmlB)
 	return nil
 	//This is maybe better but it doesn't works as I want, so let it for other func at the future return xml.NewEncoder(ctx.ResponseWriter).Encode(xmlB)
 }
@@ -668,15 +575,61 @@ func (ctx *Context) RenderXML(httpStatus int, xmlStructs ...interface{}) error {
 	}
 	//ctx.ResponseWriter.Header().Set(ContentType, ContentXML+" ;charset="+Charset)
 	//ctx.ResponseWriter.WriteHeader(httpStatus)
-	ctx.WriteStatus(httpStatus)
+	ctx.RequestCtx.SetStatusCode(httpStatus)
 	ctx.SetContentType([]string{ContentXMLText + " ;charset=" + Charset})
 
-	ctx.ResponseWriter.Write(_xmlDoc)
+	ctx.RequestCtx.Write(_xmlDoc)
 	//xml.NewEncoder(w).Encode(r.Data)
 	return nil
 }
 
+// ServeContent serves content, headers are autoset
+// receives three parameters, it's low-level function, instead you can use .ServeFile(string)
+func (ctx *Context) ServeContent(content io.ReadSeeker, filename string, modtime time.Time) error {
+	req := ctx.RequestCtx.Request
+	res := ctx.RequestCtx.Response
+
+	if t, err := time.Parse(TimeFormat, string(req.Header.Peek(IfModifiedSince))); err == nil && modtime.Before(t.Add(1*time.Second)) {
+		res.Header.Del(ContentType)
+		res.Header.Del(ContentLength)
+		ctx.RequestCtx.SetStatusCode(304) //NotModified
+		return nil
+	}
+
+	res.Header.Set(ContentType, TypeByExtension(filename))
+	res.Header.Set(LastModified, modtime.UTC().Format(TimeFormat))
+	ctx.RequestCtx.SetStatusCode(200)
+	_, err := io.Copy(res.BodyWriter(), content)
+	return err
+}
+
+// ServeFile serves a file
+// receives one parameter
+// filename (string)
+func (ctx *Context) ServeFile(filename string) error {
+	f, err := os.Open(filename)
+	if err != nil {
+		return fmt.Errorf("%d", 404)
+	}
+	defer f.Close()
+
+	fi, _ := f.Stat()
+	if fi.IsDir() {
+		filename = path.Join(filename, "index.html")
+		f, err = os.Open(filename)
+		if err != nil {
+			return fmt.Errorf("%d", 404)
+		}
+		fi, _ = f.Stat()
+	}
+	return ctx.ServeContent(f, fi.Name(), fi.ModTime())
+}
+
 /* END OF RENDERER */
+
+func (ctx *Context) PostFormValue(name string) string {
+	return string(ctx.RequestCtx.PostArgs().Peek(name))
+}
 
 // GetHandlerName as requested returns the stack-name of the function which the Middleware is setted from
 func (ctx *Context) GetHandlerName() string {

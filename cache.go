@@ -26,36 +26,37 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package iris
 
-///TODO:
-// Change the whole cache with a pipe-pool-job-workers pattern, sometime I have to find time to do that.
+// cache.go: from the version 1, we don't need this atm, but we keep it.
 
 import (
 	"sync"
 )
 
-// IContextCache is the interface of the ContextCache & SyncContextCache
-type IContextCache interface {
-	OnTick()
-	AddItem(method, url string, ctx *Context) // This is the faster method, just set&return just a *Context, I tried to return only params and middleware but it's add 10.000 nanoseconds, also +2k bytes of memory . So let's keep it as I did thee first time, I don't know what do do to make it's performance even better... It doesn't go much best, can't use channels because the performance will be get very low, locks are better for this purpose.
-	GetItem(method, url string) *Context
-	SetMaxItems(maxItems int)
-}
+type (
+	// IContextCache is the interface of the ContextCache & SyncContextCache
+	IContextCache interface {
+		OnTick()
+		AddItem(method, url string, ctx *Context) // This is the faster method, just set&return just a *Context, I tried to return only params and middleware but it's add 10.000 nanoseconds, also +2k bytes of memory . So let's keep it as I did thee first time, I don't know what do do to make it's performance even better... It doesn't go much best, can't use channels because the performance will be get very low, locks are better for this purpose.
+		GetItem(method, url string) *Context
+		SetMaxItems(maxItems int)
+	}
 
-// ContextCache creation done with just &ContextCache{}
-type ContextCache struct {
-	//1. map[string] ,key is HTTP Method(GET,POST...)
-	//2. map[string]*Context ,key is The Request URL Path
-	//the map in this case is the faster way, I tried with array of structs but it's 100 times slower on > 1 core because of async goroutes on addItem I sugges, so we keep the map
-	items    map[string]map[string]*Context
-	MaxItems int
-}
+	// ContextCache creation done with just &ContextCache{}
+	ContextCache struct {
+		//1. map[string] ,key is HTTP Method(GET,POST...)
+		//2. map[string]*Context ,key is The Request URL Path
+		//the map in this case is the faster way, I tried with array of structs but it's 100 times slower on > 1 core because of async goroutes on addItem I sugges, so we keep the map
+		items    map[string]map[string]*Context
+		MaxItems int
+	}
 
-// SyncContextCache is the cache version of routine-thread-safe ContextCache
-type SyncContextCache struct {
-	*ContextCache
-	//we need this mutex if we have running the iris at > 1 core, because we use map but maybe at the future I will change it.
-	mu *sync.RWMutex
-}
+	// SyncContextCache is the cache version of routine-thread-safe ContextCache
+	SyncContextCache struct {
+		*ContextCache
+		//we need this mutex if we have running the iris at > 1 core, because we use map but maybe at the future I will change it.
+		mu *sync.RWMutex
+	}
+)
 
 var _ IContextCache = &ContextCache{}
 var _ IContextCache = &SyncContextCache{}

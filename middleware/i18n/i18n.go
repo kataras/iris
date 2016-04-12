@@ -67,7 +67,7 @@ func (i *i18nMiddleware) Serve(ctx *iris.Context) {
 			wasByCookie = true
 		} else {
 			// try to get by the request headers(?)
-			if langHeader := ctx.Request.Header.Get(AcceptLanguage); i18n.IsExist(langHeader) {
+			if langHeader := ctx.RequestHeader(AcceptLanguage); i18n.IsExist(langHeader) {
 				language = langHeader
 			}
 		}

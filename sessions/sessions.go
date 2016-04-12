@@ -33,7 +33,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"github.com/kataras/iris"
-	"net/http"
+	"github.com/valyala/fasthttp"
 	"time"
 )
 
@@ -116,13 +116,13 @@ func (s *Session) AddFlash(value interface{}, vars ...string) {
 // store.Save(request, response, session). You should call Save before writing to
 // the response or returning from the handler.
 func (s *Session) Save(ctx *iris.Context) error {
-	return s.store.Save(ctx.Request, ctx.ResponseWriter, s)
+	return s.store.Save(ctx.Request, ctx.Response, s)
 }
 
 // SaveClassic is a convenience method to save this session. It is the same as calling
 // store.Save(request, response, session). You should call Save before writing to
 // the response or returning from the handler.
-func (s *Session) SaveClassic(req *http.Request, res http.ResponseWriter) error {
+func (s *Session) SaveClassic(req fasthttp.Request, res fasthttp.Response) error {
 	return s.store.Save(req, res, s)
 }
 
@@ -151,7 +151,7 @@ type contextKey int
 const registryKey contextKey = 0
 
 // GetRegistry returns a registry instance for the current request.
-func GetRegistry(r *http.Request) *Registry {
+func GetRegistry(r fasthttp.Request) *Registry {
 	registry := Get(r, registryKey) //get from context
 	if registry != nil {
 		return registry.(*Registry)
@@ -166,7 +166,7 @@ func GetRegistry(r *http.Request) *Registry {
 
 // Registry stores sessions used during a request.
 type Registry struct {
-	request  *http.Request
+	request  fasthttp.Request
 	sessions map[string]sessionInfo
 }
 
@@ -189,7 +189,7 @@ func (s *Registry) Get(store Store, name string) (session *Session, err error) {
 }
 
 // Save saves all sessions registered for the current request.
-func (s *Registry) Save(w http.ResponseWriter) error {
+func (s *Registry) Save(w fasthttp.Response) error {
 	var errMulti MultiError
 	for name, info := range s.sessions {
 		session := info.s
@@ -214,35 +214,35 @@ func init() {
 }
 
 // Save saves all sessions used during the current request.
-func Save(r *http.Request, w http.ResponseWriter) error {
+func Save(r fasthttp.Request, w fasthttp.Response) error {
 	return GetRegistry(r).Save(w)
 }
 
 // NewCookie returns an http.Cookie with the options set. It also sets
 // the Expires field calculated based on the MaxAge value, for Internet
 // Explorer compatibility.
-func NewCookie(name, value string, options *Options) *http.Cookie {
-	var cookie *http.Cookie
+func NewCookie(name, value string, options *Options) *fasthttp.Cookie {
+	var cookie *fasthttp.Cookie
 	if options != nil {
-		cookie = &http.Cookie{
-			Name:     name,
-			Value:    value,
-			Path:     options.Path,
-			Domain:   options.Domain,
-			MaxAge:   options.MaxAge,
-			Secure:   options.Secure,
-			HttpOnly: options.HTTPOnly,
-		}
+		cookie = &fasthttp.Cookie{}
+		cookie.SetKey(name)
+		cookie.SetValue(value)
+		cookie.SetPath(options.Path)
+		cookie.SetDomain(options.Domain)
+		cookie.SetSecure(options.Secure)
+		cookie.SetHTTPOnly(options.HTTPOnly)
 
 		if options.MaxAge > 0 {
 			d := time.Duration(options.MaxAge) * time.Second
-			cookie.Expires = time.Now().Add(d)
+			cookie.SetExpire(time.Now().Add(d))
 		} else if options.MaxAge < 0 {
 			// Set it to the past to expire now.
-			cookie.Expires = time.Unix(1, 0)
+			cookie.SetExpire(time.Unix(1, 0))
 		}
 	} else {
-		cookie = &http.Cookie{Name: name, Value: value}
+		cookie = &fasthttp.Cookie{}
+		cookie.SetKey(name)
+		cookie.SetValue(value)
 	}
 
 	return cookie

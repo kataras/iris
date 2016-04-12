@@ -17,8 +17,8 @@
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 // ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 // WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER AND CONTRIBUTOR, GERASIMOS MAROPOULOS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER AND CONTRIBUTOR, GERASIMOS MAROPOULOS
+// BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 // (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 // LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -27,69 +27,204 @@
 package iris
 
 import (
-	"crypto/tls"
+	"github.com/valyala/fasthttp"
 	"net"
-	"net/http"
 	"os"
 	"strings"
-	"time"
 )
 
-// tcpKeepAliveListener sets TCP keep-alive timeouts on accepted
-// connections. It's used by ListenAndServe and ListenAndServeTLS so
-// dead TCP connections (e.g. closing laptop mid-download) eventually
-// go away.
-//
-// this is excatcly a copy of the Go Source (net/http) server.go
-// and it used only on non-tsl server (HTTP/1.1)
-type tcpKeepAliveListener struct {
-	*net.TCPListener
+type (
+	// ServerOptions used inside server for listening
+	ServerOptions struct {
+		// ListenningAddr the addr that server listens to
+		ListeningAddr string
+		CertFile      string
+		KeyFile       string
+	}
+
+	IServer interface {
+		SetOptions(ServerOptions)
+		Options() ServerOptions
+		SetHandler(fasthttp.RequestHandler)
+		Handler() fasthttp.RequestHandler
+		IsListening() bool
+		IsSecure() bool
+		// Listen starts and listens to the server, it's no-blocking
+		Listen() error
+		ListenUnix(os.FileMode) error
+		// ListenTLS starts the server using CertFile and KeyFile from the passed Options
+		///TODO: if no CertFile or KeyFile passed then use a self-random certificate
+		ListenTLS() error
+		CloseServer() error
+	}
+
+	Server struct {
+		*fasthttp.Server
+		listener net.Listener
+		options  ServerOptions
+		started  bool
+		tls      bool
+		handler  fasthttp.RequestHandler
+	}
+)
+
+var _ IServer = &Server{}
+
+// NewServer returns a pointer to a Server object, and set it's options if any,  nothing more
+func NewServer(opt ...ServerOptions) *Server {
+	s := &Server{Server: &fasthttp.Server{}}
+	if opt != nil && len(opt) > 0 {
+		s.SetOptions(opt[0])
+	}
+	return s
 }
 
-func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
-	tc, err := ln.AcceptTCP()
-	if err != nil {
+func DefaultServerOptions() ServerOptions {
+	return ServerOptions{DefaultServerAddr, "", ""}
+}
+
+// DefaultServerSecureOptions does nothing now
+///TODO: make it to generate self-signed certificate: CertFile,KeyFile options for ListenTLS
+func DefaultServerSecureOptions() ServerOptions { return DefaultServerOptions() }
+
+func (s *Server) SetOptions(options ServerOptions) {
+	options.ListeningAddr = ParseAddr(options.ListeningAddr)
+	s.options = options
+}
+
+func (s *Server) Options() ServerOptions {
+	return s.options
+}
+
+func (s *Server) SetHandler(h fasthttp.RequestHandler) {
+	s.handler = h
+}
+
+func (s *Server) Handler() fasthttp.RequestHandler {
+	return s.handler
+}
+
+func (s *Server) IsListening() bool {
+	return s.started
+}
+
+func (s *Server) IsSecure() bool {
+	return s.tls
+}
+
+func (s *Server) Listen() (err error) {
+
+	if s.started {
+		err = ErrServerAlreadyStarted
 		return
 	}
-	tc.SetKeepAlive(true)
-	tc.SetKeepAlivePeriod(3 * time.Minute)
-	return tc, nil
+	s.listener, err = net.Listen("tcp", s.options.ListeningAddr)
+
+	if err != nil {
+		err = ErrServerPortAlreadyUsed
+		return
+	}
+
+	s.Server.Handler = s.handler
+	//Non-block way here because I want the plugin's PostListen ability...
+	go s.Server.Serve(s.listener)
+
+	s.started = true
+	s.tls = false
+
+	return
 }
 
-// Server is the container of the tcp listener used to start an http server,
-//
-// it holds it's router and it's config,
-// also a property named isRunning which can be used to see if the server is already running or not.
-//
-// Server's New() located at the iris.go file
-type Server struct {
-	// the handler which comes from the station which comes from the router.
-	handler       http.Handler
-	listener      net.Listener
-	IsRunning     bool
-	ListeningAddr string
-	// IsSecure true if ListenTLS (https/http2)
-	IsSecure          bool
-	CertFile, KeyFile string
+func (s *Server) ListenTLS() (err error) {
+
+	if s.started {
+		err = ErrServerAlreadyStarted
+		return
+	}
+
+	if s.options.CertFile == "" || s.options.KeyFile == "" {
+		err = ErrServerTlsOptionsMissing
+		return
+	}
+
+	s.listener, err = net.Listen("tcp", s.options.ListeningAddr)
+
+	if err != nil {
+		err = ErrServerPortAlreadyUsed
+		return
+	}
+
+	s.Server.Handler = s.handler
+
+	go s.Server.ServeTLS(s.listener, s.options.CertFile, s.options.KeyFile)
+
+	s.started = true
+	s.tls = true
+
+	return
+}
+
+func (s *Server) ListenUnix(mode os.FileMode) (err error) {
+
+	if s.started {
+		err = ErrServerAlreadyStarted
+		return
+	}
+
+	//this code is from fasthttp ListenAndServeUNIX, I extracted it because we need the tcp.Listener
+	if errOs := os.Remove(s.options.ListeningAddr); errOs != nil && !os.IsNotExist(errOs) {
+		err = NewError("Server: Unexpected error when trying to remove unix socket file %s: %s", s.options.ListeningAddr, errOs)
+		return
+	}
+	s.listener, err = net.Listen("unix", s.options.ListeningAddr)
+
+	if err != nil {
+		err = ErrServerPortAlreadyUsed
+		return
+	}
+
+	if err = os.Chmod(s.options.ListeningAddr, mode); err != nil {
+		err = NewError("Server: Cannot chmod %#o for %q: %s", mode, s.options.ListeningAddr, err)
+		return
+	}
+
+	s.Server.Handler = s.handler
+	go s.Server.Serve(s.listener)
+
+	s.started = true
+	s.tls = false
+
+	return
+
+}
+
+// CloseServer closes the server
+func (s *Server) CloseServer() error {
+
+	if !s.started {
+		return ErrServerIsClosed
+	}
+
+	if s.listener != nil {
+		return s.listener.Close()
+	}
+	return nil
 }
 
 // ParseAddr gets a slice of string and returns the address of which the Iris' server can listen
-func ParseAddr(fullHostOrPort []string) string {
-	//means only port is given
-	hlen := len(fullHostOrPort)
+func ParseAddr(fullHostOrPort ...string) string {
 
-	//wrong parameters
-	if hlen > 1 {
-		panic("Iris: Max parameters length is 2, please pass only one string: 'localhost:8080' or ':8080'")
+	if len(fullHostOrPort) > 1 {
+		fullHostOrPort = fullHostOrPort[0:1]
 	}
-	addr := ":8080" // default address
+	addr := DefaultServerAddr // default address
 	// if nothing passed, then use environment's port (if any) or just :8080
-	if hlen == 0 {
+	if len(fullHostOrPort) == 0 {
 		if envPort := os.Getenv("PORT"); len(envPort) > 0 {
 			addr = ":" + envPort
 		}
 
-	} else if hlen == 1 {
+	} else if len(fullHostOrPort) == 1 {
 		addr = fullHostOrPort[0]
 		if strings.IndexRune(addr, ':') == -1 {
 			//: doesn't found on the given address, so maybe it's only a port
@@ -98,99 +233,4 @@ func ParseAddr(fullHostOrPort []string) string {
 	}
 
 	return addr
-}
-
-// listen starts the standalone http server
-// which listens to the fullHostOrPort parameter which as the form of
-// host:port or just port
-func (s *Server) listen(fullHostOrPort ...string) error {
-	fulladdr := ParseAddr(fullHostOrPort)
-	//mux := http.NewServeMux() //we use the http's ServeMux for now as the top- middleware of the server, for now.
-
-	//mux.Handle("/", s.handler)
-
-	//return http.ListenAndServe(s.config.Host+strconv.Itoa(s.config.Port), mux)
-	listener, err := net.Listen("tcp", fulladdr)
-
-	if err != nil {
-		//panic("Cannot run the server [problem with tcp listener on host:port]: " + fulladdr + " err:" + err.Error())
-		return err
-	}
-	s.listener = &tcpKeepAliveListener{listener.(*net.TCPListener)}
-	//err = http.Serve(s.listener, s.handler)
-	//TODO: MAKE IT RETURN A CHANNEL WITH AN ERROR IF NOT NIL THEN THE USER MUST KNOW .
-	//I changed that because we need PostListen on the plugins, the blocking is made at the station level now.
-	go http.Serve(s.listener, s.handler)
-	if err == nil {
-		s.ListeningAddr = fulladdr
-		s.IsRunning = true
-		s.IsSecure = false
-		s.CertFile = ""
-		s.KeyFile = ""
-	}
-
-	//listener.Close()
-
-	return err
-}
-
-/*///TODO: MANUAL HOOK THE LISTENER, BECAUSE STANDAR NET/HTTP PACKAGE MAKES SO MANY CHECKS MAYBE I CAN DO IT WORKS EVEN FASTER
-func (s *Server) accept(l net.Listener) error {
-	for {
-		rw, e := l.Accept()
-		if e != nil {
-			return e
-		}
-
-		tempDelay = 0
-		c := s.newConn(rw)
-		c.setState(c.rwc, StateNew) // before Serve can return
-		go c.serve()
-	}
-}
-*/
-// listenTLS Starts a httpS/http2 server with certificates,
-// if you use this method the requests of the form of 'http://' will fail
-// only https:// connections are allowed
-// which listens to the fullHostOrPort parameter which as the form of
-// host:port or just port
-func (s *Server) listenTLS(fulladdr string, certFile, keyFile string) error {
-	var err error
-	httpServer := http.Server{
-		Addr:    fulladdr,
-		Handler: s.handler,
-	}
-
-	config := &tls.Config{}
-
-	configHasCert := len(config.Certificates) > 0 || config.GetCertificate != nil
-	if !configHasCert && certFile != "" && keyFile != "" {
-		config.Certificates = make([]tls.Certificate, 1)
-		config.Certificates[0], err = tls.LoadX509KeyPair(certFile, keyFile)
-	}
-	httpServer.TLSConfig = config
-	s.listener, err = tls.Listen("tcp", fulladdr, httpServer.TLSConfig)
-	if err != nil {
-		panic("Cannot run the server [problem with tcp listener on host:port]: " + fulladdr + " err:" + err.Error())
-	}
-	//TODO: MAKE IT RETURN A CHANNEL WITH AN ERROR IF NOT NIL THEN THE USER MUST KNOW .
-	//err = httpServer.Serve(s.listener)
-	go httpServer.Serve(s.listener)
-	if err == nil {
-		s.IsRunning = true
-		s.IsSecure = true
-		s.ListeningAddr = fulladdr
-		s.CertFile = certFile
-		s.KeyFile = keyFile
-	}
-	//s.listener.Close()
-	return err
-}
-
-// closeServer is used to close the net.Listener of the standalone http server which has already running via .Listen
-func (s *Server) closeServer() {
-	if s.IsRunning && s.listener != nil {
-		s.listener.Close()
-		s.IsRunning = false
-	}
 }

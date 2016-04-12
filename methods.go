@@ -26,11 +26,12 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package iris
 
-// HTTPMethods is just a representation of the available http methods, use to make API.
-// I know they are already exist in the http package, ex: http.MethodConnect, maybe at the future I will remove them from here and keep only the ANY.
 var HTTPMethods = struct {
-	GET, POST, PUT, DELETE, CONNECT, HEAD, PATCH, OPTIONS, TRACE string
-	ALL, ANY                                                     []string //ALL and ANY are exctactly the same I keep both keys, no problem no big array :P
+	GET, POST, PUT, DELETE, CONNECT, HEAD, PATCH, OPTIONS, TRACE                                                       string
+	ALL, ANY                                                                                                           []string
+	GET_BYTES, POST_BYTES, PUT_BYTES, DELETE_BYTES, CONNECT_BYTES, HEAD_BYTES, PATCH_BYTES, OPTIONS_BYTES, TRACE_BYTES []byte
 }{"GET", "POST", "PUT", "DELETE", "CONNECT", "HEAD", "PATCH", "OPTIONS", "TRACE",
 	[]string{"GET", "POST", "PUT", "DELETE", "CONNECT", "HEAD", "PATCH", "OPTIONS", "TRACE"},
-	[]string{"GET", "POST", "PUT", "DELETE", "CONNECT", "HEAD", "PATCH", "OPTIONS", "TRACE"}}
+	[]string{"GET", "POST", "PUT", "DELETE", "CONNECT", "HEAD", "PATCH", "OPTIONS", "TRACE"},
+	[]byte("GET"), []byte("POST"), []byte("PUT"), []byte("DELETE"), []byte("CONNECT"), []byte("HEAD"), []byte("PATCH"), []byte("OPTIONS"), []byte("TRACE"),
+}

@@ -40,37 +40,39 @@ import (
 	"strings"
 )
 
-// IParty is the interface which implements the whole Party of routes
-type IParty interface {
-	IMiddlewareSupporter
-	Handle(method string, registedPath string, handlers ...Handler)
-	HandleFunc(method string, registedPath string, handlersFn ...HandlerFunc)
-	HandleAnnotated(irisHandler Handler) error
-	Get(path string, handlersFn ...HandlerFunc)
-	Post(path string, handlersFn ...HandlerFunc)
-	Put(path string, handlersFn ...HandlerFunc)
-	Delete(path string, handlersFn ...HandlerFunc)
-	Connect(path string, handlersFn ...HandlerFunc)
-	Head(path string, handlersFn ...HandlerFunc)
-	Options(path string, handlersFn ...HandlerFunc)
-	Patch(path string, handlersFn ...HandlerFunc)
-	Trace(path string, handlersFn ...HandlerFunc)
-	Any(path string, handlersFn ...HandlerFunc)
-	Ws(path string, handler Handler)
-	Party(path string) IParty // Each party can have a party too
-	getRoot() IParty
-	getPath() string
-	isTheRoot() bool
-	getMiddleware() Middleware
-}
+type (
+	// IParty is the interface which implements the whole Party of routes
+	IParty interface {
+		IMiddlewareSupporter
+		Handle(method string, registedPath string, handlers ...Handler)
+		HandleFunc(method string, registedPath string, handlersFn ...HandlerFunc)
+		HandleAnnotated(irisHandler Handler) error
+		Get(path string, handlersFn ...HandlerFunc)
+		Post(path string, handlersFn ...HandlerFunc)
+		Put(path string, handlersFn ...HandlerFunc)
+		Delete(path string, handlersFn ...HandlerFunc)
+		Connect(path string, handlersFn ...HandlerFunc)
+		Head(path string, handlersFn ...HandlerFunc)
+		Options(path string, handlersFn ...HandlerFunc)
+		Patch(path string, handlersFn ...HandlerFunc)
+		Trace(path string, handlersFn ...HandlerFunc)
+		Any(path string, handlersFn ...HandlerFunc)
+		//TODO: Ws(path string, handler Handler)
+		Party(path string) IParty // Each party can have a party too
+		getRoot() IParty
+		getPath() string
+		isTheRoot() bool
+		getMiddleware() Middleware
+	}
 
-// GardenParty TODO: inline docs
-type GardenParty struct {
-	MiddlewareSupporter
-	station  *Station // this station is where the party is happening, this station's Garden is the same for all Parties per Station & Router instance
-	rootPath string
-	hoster   *GardenParty
-}
+	// GardenParty TODO: inline docs
+	GardenParty struct {
+		MiddlewareSupporter
+		station  *Station // this station is where the party is happening, this station's Garden is the same for all Parties per Station & Router instance
+		rootPath string
+		hoster   *GardenParty
+	}
+)
 
 var _ IParty = &GardenParty{}
 
@@ -157,14 +159,12 @@ func (p *GardenParty) Handle(method string, registedPath string, handlers ...Han
 
 	p.station.GetPluginContainer().DoPreHandle(route)
 
-	p.station.IRouter.setGarden(p.station.getGarden().Plant(route))
+	p.station.IRouter.getGarden().Plant(p.station, route)
 
 	p.station.GetPluginContainer().DoPostHandle(route)
 
-	//force OptimusPrime everytime a route added, this is not nessecery, it runs only once
-	//but many developers maybe use external server and FORGET to use the iris.Serve() and use just the 'iris'
-	//so
-	p.station.forceOptimusPrime()
+	//force OptimusPrime everytime a route added
+	p.station.OptimusPrime()
 
 }
 
@@ -295,10 +295,11 @@ func (p *GardenParty) Any(path string, handlersFn ...HandlerFunc) {
 	p.HandleFunc("", path, handlersFn...)
 }
 
+// After last changes ( 9 April 2016) websockets are not supported, yet.
 // Ws registers a websocket route
-func (p *GardenParty) Ws(path string, handler Handler) {
-	p.Handle("", path, handler)
-}
+//func (p *GardenParty) Ws(path string, handler Handler) {
+//	p.Handle("", path, handler)
+//}
 
 // Use pass the middleware here
 // it overrides the MiddlewareSupporter's Use only in order to be able to call forceOptimusPrime
@@ -306,6 +307,6 @@ func (p *GardenParty) Use(handlers ...Handler) {
 	//force OptimusPrime everytime a route added, this is not nessecery, it runs only once
 	//but many developers maybe use external server and FORGET to use the iris.Serve() and use just the 'iris'
 	//so
-	p.station.forceOptimusPrime()
+	p.station.OptimusPrime()
 	p.MiddlewareSupporter.Use(handlers...)
 }

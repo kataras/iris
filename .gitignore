@@ -4,6 +4,7 @@
 .settings
 .vscode/*
 .atom-build.json
+github/*
 iris.test.exe
 cpu_test.out
 mem_test.out
@@ -20,4 +21,3 @@ _examples/*.so
 *.a
 *.so
 build.bat
-ab

@@ -65,8 +65,9 @@ func (u *userAuth) login(ctx *iris.Context) {
 		ctx.Write(err.Error())
 		return
 	}
-	username := ctx.Request.PostFormValue("username")
-	password := ctx.Request.PostFormValue("password")
+
+	username := ctx.PostFormValue("username")
+	password := ctx.PostFormValue("password")
 
 	for _, authenticatedUser := range u.authenticatedUsers {
 		if authenticatedUser.username == username && authenticatedUser.password == password {
@@ -95,7 +96,7 @@ func (u *userAuth) logout(ctx *iris.Context) {
 
 // check if session stored, then check if this user is the correct, everytime, then continue, else not
 func (u *userAuth) Serve(ctx *iris.Context) {
-	if ctx.Request.URL.Path == "/login" || strings.HasPrefix(ctx.Request.URL.Path, "/public") {
+	if ctx.PathString() == "/login" || strings.HasPrefix(ctx.PathString(), "/public") {
 		ctx.Next()
 		return
 	}
