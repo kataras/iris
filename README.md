@@ -603,6 +603,8 @@ iris.Get("/thenotfound",func (c *iris.Context) {
 
 ## Context
 ![Iris Context Outline view](http://kataras.github.io/iris/assets/context_view.png)
+![Iris Context Outline view2](http://kataras.github.io/iris/assets/context_view2.png)
+![Iris Context Outline view3](http://kataras.github.io/iris/assets/context_view3.png)
 
 
 
