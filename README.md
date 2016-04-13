@@ -565,7 +565,7 @@ iris.Get("/anything/*randomName", func(c *iris.Context) { } )
 ```
 #### Static handler using *iris.Static(""/public",./path/to/the/resources/directory/", 1)*
 ```go
-iris.Static("/public", "./static/resources/",1))
+iris.Static("/public", "./static/assets/", 1))
 //-> /public/assets/favicon.ico
 ```
 
