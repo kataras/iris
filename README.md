@@ -783,9 +783,9 @@ This is the most realistic benchmark suite than you will find for Go Web Framewo
 April 13 2016
 
 
-![Benchmark Wizzard Basic 13 April 2016](https://github.com/smallnest/go-web-framework-benchmark/raw/master/benchmark.png)
+![Benchmark Wizzard Basic 13 April 2016](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/master/benchmark.png)
 
-[click here to see all benchmarks](https://github.com/smallnest/go-web-framework-benchmark), 
+[click here to see all benchmarks](https://github.com/smallnest/go-web-framework-benchmark)
 
 ## Third Party Middlewares
 
