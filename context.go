@@ -168,7 +168,7 @@ func (ctx *Context) Value(key interface{}) interface{} {
 
 // Param returns the string representation of the key's path named parameter's value
 func (ctx *Context) Param(key string) string {
-	return BytesToString(ctx.Params.Get(StringToBytes(key)))
+	return ctx.Params.Get(key)
 }
 
 // ParamInt returns the int representation of the key's path named parameter's value

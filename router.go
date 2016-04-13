@@ -27,7 +27,6 @@
 package iris
 
 import (
-	"bytes"
 	"github.com/valyala/fasthttp"
 	"net/http"
 )
@@ -81,7 +80,7 @@ type (
 		// * stripSlashes = 1, original path: "/foo/bar", result: "/bar"
 		// * stripSlashes = 2, original path: "/foo/bar", result: ""
 		Static(string, string, int)
-		setMethodMatch(func([]byte, []byte) bool)
+		setMethodMatch(func(string, string) bool)
 	}
 
 	// Router is the router , one router per server.
@@ -91,7 +90,7 @@ type (
 		httpErrors *HTTPErrors
 		IParty
 		garden      *Garden
-		methodMatch func(m1, m2 []byte) bool
+		methodMatch func(m1, m2 string) bool
 	}
 )
 
@@ -99,13 +98,13 @@ var _ IRouter = &Router{}
 
 // CorsMethodMatch is sets the methodMatch when cors enabled (look OptimusPrime), it's allowing OPTIONS method to all other methods except GET
 //just this
-func CorsMethodMatch(m1, reqMethod []byte) bool {
-	return bytes.Equal(m1, reqMethod) || (!bytes.Equal(m1, HTTPMethods.GET_BYTES) && bytes.Equal(reqMethod, HTTPMethods.OPTIONS_BYTES))
+func CorsMethodMatch(m1, reqMethod string) bool {
+	return m1 == reqMethod || (m1 != HTTPMethods.GET && reqMethod == HTTPMethods.OPTIONS)
 }
 
 // MethodMatch for normal method match
-func MethodMatch(m1, m2 []byte) bool {
-	return bytes.Equal(m1, m2)
+func MethodMatch(m1, m2 string) bool {
+	return m1 == m2
 }
 
 // NewRouter creates and returns an empty Router
@@ -132,7 +131,7 @@ func (r *Router) getStation() *Station {
 	return r.station
 }
 
-func (r *Router) setMethodMatch(f func(m1, m2 []byte) bool) {
+func (r *Router) setMethodMatch(f func(m1, m2 string) bool) {
 	r.methodMatch = f
 }
 
@@ -171,13 +170,13 @@ func (r *Router) OnPanic(handlerFunc HandlerFunc) {
 
 func (r *Router) Static(requestPath string, systemPath string, stripSlashes int) {
 	handler := ToHandlerFastHTTP(fasthttp.FSHandler(systemPath, stripSlashes))
-	r.Get(requestPath, handler.Serve)
+	r.Get(requestPath+"/*filepath", handler.Serve)
 }
 
 // ServeRequest finds and serves a route by it's request context
 // If no route found, it sends an http status 404
 func (r *Router) ServeRequest(reqCtx *fasthttp.RequestCtx) {
-	method := reqCtx.Method()
+	method := BytesToString(reqCtx.Method())
 	tree := r.garden.first
 	for tree != nil {
 		if r.methodMatch(tree.method, method) {
@@ -211,7 +210,7 @@ func (r *RouterDomain) getType() RouterType {
 
 func (r *RouterDomain) ServeRequest(reqCtx *fasthttp.RequestCtx) {
 
-	method := reqCtx.Method()
+	method := BytesToString(reqCtx.Method())
 	tree := r.garden.first
 	for tree != nil {
 		if tree.hosts {
