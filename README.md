@@ -775,50 +775,17 @@ An example of one plugin which is under development is the Iris control, a web i
 
 ## Benchmarks
 
-With Intel(R) Core(TM) i7-4710HQ CPU @ 2.50GHz 2.50 HGz and 8GB Ram:
 
-![Benchmark Wizzard 24 March 2016 - comparing the fasters](http://kataras.github.io/iris/assets/benchmarks_all.png)
+Benchmarks results taken [from external source](https://github.com/smallnest/go-web-framework-benchmark), created by [@smallnest](https://github.com/smallnest).
 
-[See all benchmarks](https://github.com/iris-contrib/go-http-routing-benchmark)
+This is the most realistic benchmark suite than you will find for Go Web Frameworks. Give attention to it's readme.md.
 
-1. Total Operations (Executions)
-2. Nanoseconds per operation ns/op
-3. Heap Memory B/op
-4. Allocations per operation allocs/op
+April 13 2016
 
 
+![Benchmark Wizzard Basic 13 April 2016](https://github.com/smallnest/go-web-framework-benchmark/raw/master/benchmark.png)
 
-Benchmark name 					| Total Operations 		| ns/op 		| B/op 		| allocs/op
---------------------------------|----------:|----------:|----------:|------:
-BenchmarkAce_GithubAll 			| 10000 	| 121206 	| 13792 	| 167
-BenchmarkBear_GithubAll 		| 10000 	| 348919 	| 86448 	| 943
-BenchmarkBeego_GithubAll 		| 5000 		| 296816 	| 16608 	| 524
-BenchmarkBone_GithubAll 		| 500 		| 2502143 	| 548736 	| 7241
-BenchmarkDenco_GithubAll 		| 20000 	| 99705 	| 20224 	| 167
-BenchmarkEcho_GithubAll 		| 30000 	| 45469 	| 0 		| 0
-BenchmarkGin_GithubAll 		| 50000     | 39402     | 0 	    | 0
-BenchmarkGocraftWeb_GithubAll 	| 5000 		| 446025 	| 131656 	| 1686
-BenchmarkGoji_GithubAll 		| 2000 		| 547698 	| 56112 	| 334
-BenchmarkGojiv2_GithubAll 		| 2000 		| 763043 	| 118864 	| 3103
-BenchmarkGoJsonRest_GithubAll 	| 5000 		| 538030 	| 134371 	| 2737
-BenchmarkGoRestful_GithubAll 	| 100 		| 14870850 	| 837832 	| 6913
-BenchmarkGorillaMux_GithubAll 	| 200 		| 6690383 	| 144464 	| 1588
-BenchmarkHttpRouter_GithubAll 	| 20000 	| 65653 	| 13792 	| 167
-BenchmarkHttpTreeMux_GithubAll 	| 10000 	| 215312 	| 65856 	| 671
-**BenchmarkIris_GithubAll** 	| **100000** 	| **20731** 	| **0** 	| **0**
-BenchmarkKocha_GithubAll 		| 10000 	| 167209 	| 23304 	| 843
-BenchmarkLARS_GithubAll 		| 30000 		| 41069 	| 0 	| 0
-BenchmarkMacaron_GithubAll 		| 2000 	| 665038 	| 201138 	| 1803
-BenchmarkMartini_GithubAll 		| 100 		| 5433644 	| 228213 	| 2483
-BenchmarkPat_GithubAll 			| 300 		| 4210240 	| 1499569 	| 27435
-BenchmarkPossum_GithubAll 		| 10000 	| 255114 	| 84448 	| 609
-BenchmarkR2router_GithubAll 	| 10000 	| 237113 	| 77328 	| 979
-BenchmarkRevel_GithubAll 		| 2000 		| 1150565 	| 337424 	| 5512
-BenchmarkRivet_GithubAll 		| 20000 	| 96555 	| 16272 	| 167
-BenchmarkTango_GithubAll 		| 5000 		| 417423 	| 87075 	| 2267
-BenchmarkTigerTonic_GithubAll 	| 2000 		| 994556 	| 233680 	| 5035
-BenchmarkTraffic_GithubAll 		| 200 		| 7770444 	| 2659331 	| 21848
-BenchmarkVulcan_GithubAll 		| 5000 		| 292216 	| 19894 	| 609
+[click here to see all benchmarks](https://github.com/smallnest/go-web-framework-benchmark), 
 
 ## Third Party Middlewares
 
