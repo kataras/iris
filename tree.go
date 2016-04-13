@@ -35,9 +35,9 @@ import (
 type (
 	tree struct {
 		station    *Station
-		method     []byte
+		method     string
 		rootBranch *Branch
-		domain     []byte
+		domain     string
 		hosts      bool //if domain != "" we set it directly on .Plant
 		cors       bool // if cross domain allow enabled
 		pool       sync.Pool
@@ -85,9 +85,9 @@ func (g *Garden) last() (t *tree) {
 
 // getRootByMethodAndDomain returns the correct branch which it's method&domain is equal to the given method&domain, from a garden's tree
 // trees with  no domain means that their domain==""
-func (g *Garden) getRootByMethodAndDomain(method []byte, domain []byte) (b *Branch) {
+func (g *Garden) getRootByMethodAndDomain(method string, domain string) (b *Branch) {
 	g.visitAll(func(i int, t *tree) {
-		if bytes.Equal(t.domain, domain) && bytes.Equal(t.method, method) {
+		if t.domain == domain && t.method == method {
 			b = t.rootBranch
 		}
 	})
@@ -97,14 +97,14 @@ func (g *Garden) getRootByMethodAndDomain(method []byte, domain []byte) (b *Bran
 
 // Plant plants/adds a route to the garden
 func (g *Garden) Plant(station *Station, _route IRoute) {
-	methodBytes := StringToBytes(_route.GetMethod())
-	domainBytes := StringToBytes(_route.GetDomain())
-	pathBytes := StringToBytes(_route.GetPath())
+	method := _route.GetMethod()
+	domain := _route.GetDomain()
+	path := _route.GetPath()
 
-	theRoot := g.getRootByMethodAndDomain(methodBytes, domainBytes)
+	theRoot := g.getRootByMethodAndDomain(method, domain)
 	if theRoot == nil {
 		theRoot = new(Branch)
-		theNewTree := newTree(station, methodBytes, theRoot, domainBytes, len(domainBytes) > 0, hasCors(_route))
+		theNewTree := newTree(station, method, theRoot, domain, len(domain) > 0, hasCors(_route))
 		if g.first == nil {
 			g.first = theNewTree
 		} else {
@@ -112,14 +112,14 @@ func (g *Garden) Plant(station *Station, _route IRoute) {
 		}
 
 	}
-	theRoot.AddBranch(append(domainBytes, pathBytes...), _route.GetMiddleware())
+	theRoot.AddBranch(domain+path, _route.GetMiddleware())
 
 }
 
 // tree
 
-func newTree(station *Station, methodBytes []byte, theRoot *Branch, domainBytes []byte, hosts bool, hasCors bool) *tree {
-	t := &tree{station: station, method: methodBytes, rootBranch: theRoot, domain: domainBytes, hosts: hosts, cors: hasCors, pool: sync.Pool{New: func() interface{} {
+func newTree(station *Station, method string, theRoot *Branch, domain string, hosts bool, hasCors bool) *tree {
+	t := &tree{station: station, method: method, rootBranch: theRoot, domain: domain, hosts: hosts, cors: hasCors, pool: sync.Pool{New: func() interface{} {
 		return &Context{station: station}
 	}}}
 	return t
@@ -129,7 +129,7 @@ func newTree(station *Station, methodBytes []byte, theRoot *Branch, domainBytes 
 func (_tree *tree) serve(reqCtx *fasthttp.RequestCtx) {
 	ctx := _tree.pool.Get().(*Context)
 	ctx.Reset(reqCtx)
-	middleware, params, mustRedirect := _tree.rootBranch.GetBranch(reqCtx.Path(), ctx.Params) // pass the parameters here for 0 allocation
+	middleware, params, mustRedirect := _tree.rootBranch.GetBranch(ctx.PathString(), ctx.Params) // pass the parameters here for 0 allocation
 	if middleware != nil {
 		ctx.Params = params
 		ctx.middleware = middleware
@@ -159,7 +159,7 @@ func (_tree *tree) serve(reqCtx *fasthttp.RequestCtx) {
 		// RFC2616 recommends that a short note "SHOULD" be included in the
 		// response because older user agents may not understand 301/307.
 		// Shouldn't send the response for POST or HEAD; that leaves GET.
-		if bytes.Equal(_tree.method, HTTPMethods.GET_BYTES) {
+		if _tree.method == HTTPMethods.GET {
 			note := "<a href=\"" + htmlEscape(urlToRedirect) + "\">Moved Permanently</a>.\n"
 			ctx.Write(note)
 		}

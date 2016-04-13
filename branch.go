@@ -40,19 +40,11 @@ const (
 )
 
 type (
-
-	// IDictionary is the interface
-	// it's just a Get(key), Set(key,value) pair store
-	IDictionary interface {
-		Get(key []byte) []byte
-		Set(key []byte, value []byte)
-		String() string
-	}
-
 	// PathParameter is a struct which contains Key and Value, used for named path parameters
+
 	PathParameter struct {
-		Key   []byte
-		Value []byte
+		Key   string
+		Value string
 	}
 
 	// PathParameters type for a slice of PathParameter
@@ -64,9 +56,9 @@ type (
 
 	// IBranch is the interface which the type Branch must implement
 	IBranch interface {
-		AddBranch([]byte, Middleware)
-		AddNode(uint8, []byte, []byte, Middleware)
-		GetBranch([]byte, PathParameters) (Middleware, PathParameters, bool)
+		AddBranch(string, Middleware)
+		AddNode(uint8, string, string, Middleware)
+		GetBranch(string, PathParameters) (Middleware, PathParameters, bool)
 		GivePrecedenceTo(index int) int
 	}
 
@@ -74,7 +66,7 @@ type (
 	// in order to learn how this is working, google 'trie' or watch this lecture: https://www.youtube.com/watch?v=uhAUk63tLRM
 	// this method is used by the BSD's kernel also
 	Branch struct {
-		part        []byte
+		part        string
 		BranchCase  BranchCase
 		hasWildNode bool
 		tokens      string
@@ -85,22 +77,21 @@ type (
 	}
 )
 
-var _ IDictionary = PathParameters{}
 var _ IBranch = &Branch{}
 
 // Get returns a value from a key inside this Parameters
-// If no parameter with this key given then it returns nil
-func (params PathParameters) Get(key []byte) []byte {
+// If no parameter with this key given then it returns an empty string
+func (params PathParameters) Get(key string) string {
 	for _, p := range params {
-		if bytes.Equal(p.Key, key) {
+		if p.Key == key {
 			return p.Value
 		}
 	}
-	return nil
+	return ""
 }
 
 // Set sets a PathParameter to the PathParameters , it's not used anywhere.
-func (params PathParameters) Set(key []byte, value []byte) {
+func (params PathParameters) Set(key string, value string) {
 	params = append(params, PathParameter{key, value})
 }
 
@@ -109,9 +100,9 @@ func (params PathParameters) Set(key []byte, value []byte) {
 func (params PathParameters) String() string {
 	var buff bytes.Buffer
 	for i := range params {
-		buff.Write(params[i].Key)
+		buff.WriteString(params[i].Key)
 		buff.WriteString("=")
-		buff.Write(params[i].Value)
+		buff.WriteString(params[i].Value)
 		if i < len(params)-1 {
 			buff.WriteString(",")
 		}
@@ -138,15 +129,15 @@ func ParseParams(str string) PathParameters {
 			return nil
 		}
 
-		key := StringToBytes(_paramsstr[i][:idxOfEq])
-		val := StringToBytes(_paramsstr[i][idxOfEq+1:])
+		key := _paramsstr[i][:idxOfEq]
+		val := _paramsstr[i][idxOfEq+1:]
 		params = append(params, PathParameter{key, val})
 	}
 	return params
 }
 
 // GetParamsLen returns the parameters length from a given path
-func GetParamsLen(path []byte) uint8 {
+func GetParamsLen(path string) uint8 {
 	var n uint
 	for i := 0; i < len(path); i++ {
 		if path[i] != ':' && path[i] != '*' { // ParameterStartByte & MatchEverythingByte
@@ -161,7 +152,7 @@ func GetParamsLen(path []byte) uint8 {
 }
 
 // AddBranch adds a branch to the existing branch or to the tree if no branch has the prefix of
-func (b *Branch) AddBranch(path []byte, middleware Middleware) {
+func (b *Branch) AddBranch(path string, middleware Middleware) {
 	fullPath := path
 	b.precedence++
 	numParams := GetParamsLen(path)
@@ -196,7 +187,7 @@ func (b *Branch) AddBranch(path []byte, middleware Middleware) {
 				}
 
 				b.nodes = []*Branch{&node}
-				b.tokens = string(b.part[i])
+				b.tokens = string([]byte{b.part[i]})
 				b.part = path[:i]
 				b.middleware = nil
 				b.hasWildNode = false
@@ -214,7 +205,7 @@ func (b *Branch) AddBranch(path []byte, middleware Middleware) {
 					}
 					numParams--
 
-					if len(path) >= len(b.part) && bytes.Equal(b.part, path[:len(b.part)]) {
+					if len(path) >= len(b.part) && b.part == path[:len(b.part)] {
 
 						if len(b.part) >= len(path) || path[len(b.part)] == '/' {
 							continue loop
@@ -242,7 +233,7 @@ func (b *Branch) AddBranch(path []byte, middleware Middleware) {
 
 				if c != ParameterStartByte && c != MatchEverythingByte {
 
-					b.tokens += string(c)
+					b.tokens += string([]byte{c})
 					node := &Branch{
 						paramsLen: numParams,
 					}
@@ -268,7 +259,7 @@ func (b *Branch) AddBranch(path []byte, middleware Middleware) {
 }
 
 // AddNode adds a branch as children to other Branch
-func (b *Branch) AddNode(numParams uint8, path []byte, fullPath []byte, middleware Middleware) {
+func (b *Branch) AddNode(numParams uint8, path string, fullPath string, middleware Middleware) {
 	var offset int
 
 	for i, max := 0, len(path); numParams > 0; i++ {
@@ -346,7 +337,7 @@ func (b *Branch) AddNode(numParams uint8, path []byte, fullPath []byte, middlewa
 				paramsLen:   1,
 			}
 			b.nodes = []*Branch{child}
-			b.tokens = string(path[i:i])
+			b.tokens = string(path[i])
 			b = child
 			b.precedence++
 
@@ -368,12 +359,12 @@ func (b *Branch) AddNode(numParams uint8, path []byte, fullPath []byte, middlewa
 }
 
 // GetBranch is used by the Router, it finds and returns the correct branch for a path
-func (b *Branch) GetBranch(path []byte, _params PathParameters) (middleware Middleware, params PathParameters, mustRedirect bool) {
+func (b *Branch) GetBranch(path string, _params PathParameters) (middleware Middleware, params PathParameters, mustRedirect bool) {
 	params = _params
 loop:
 	for {
 		if len(path) > len(b.part) {
-			if bytes.Equal(path[:len(b.part)], b.part) {
+			if path[:len(b.part)] == b.part {
 				path = path[len(b.part):]
 
 				if !b.hasWildNode {
@@ -385,7 +376,7 @@ loop:
 						}
 					}
 
-					mustRedirect = (len(path) == 1 && path[0] == SlashByte && b.middleware != nil)
+					mustRedirect = (path == Slash && b.middleware != nil)
 					return
 				}
 
@@ -421,7 +412,7 @@ loop:
 						return
 					} else if len(b.nodes) == 1 {
 						b = b.nodes[0]
-						mustRedirect = (len(b.part) == 1 && b.part[0] == SlashByte && b.middleware != nil)
+						mustRedirect = (b.part == Slash && b.middleware != nil)
 					}
 
 					return
@@ -442,12 +433,12 @@ loop:
 					return
 				}
 			}
-		} else if bytes.Equal(path, b.part) {
+		} else if path == b.part {
 			if middleware = b.middleware; middleware != nil {
 				return
 			}
 
-			if len(path) == 1 && path[0] == SlashByte && b.hasWildNode && b.BranchCase != isRoot {
+			if path == Slash && b.hasWildNode && b.BranchCase != isRoot {
 				mustRedirect = true
 				return
 			}
@@ -464,9 +455,9 @@ loop:
 			return
 		}
 
-		mustRedirect = (len(path) == 1 && path[0] == SlashByte) ||
+		mustRedirect = (path == Slash) ||
 			(len(b.part) == len(path)+1 && b.part[len(path)] == '/' &&
-				bytes.Equal(path, b.part[:len(b.part)-1]) && b.middleware != nil)
+				path == b.part[:len(b.part)-1] && b.middleware != nil)
 		return
 	}
 }
