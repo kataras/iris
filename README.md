@@ -209,10 +209,11 @@ func (u *UserHandler) Serve(c *iris.Context) {
 }
 
 ```
+
 ```go
 ///file: main.go
-//...cache the html files
-iris.Templates("src/iristests/templates/**/*.html")
+//...cache the html files, if you the content of any html file changed, the templates are auto-reloading
+iris.Templates("src/iristests/templates/*.html")
 //...register the handler
 iris.HandleAnnotated(&UserHandler{})
 //...continue writing your wonderful API
@@ -846,7 +847,7 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 - [x] Convert useful middlewares out there into Iris middlewares, or contact with their authors to do so.
 - [ ] Provide automatic HTTPS using https://letsencrypt.org/how-it-works/.
 - [ ] Create administration web interface as plugin.
-- [ ] Create an easy websocket api.
+- [x] Create an easy websocket api.
 - [ ] Create a mechanism that scan for Typescript files, compile them on server startup and serve them.
 
 ## Articles

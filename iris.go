@@ -54,9 +54,7 @@ const (
 	// IfModifiedSince "If-Modified-Since"
 	IfModifiedSince = "If-Modified-Since"
 
-	//statuses
-	StatusOK         = 200
-	MethodNotAllowed = 503
+	//statuses inside httperrors.go
 
 	//other
 

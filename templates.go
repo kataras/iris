@@ -59,12 +59,10 @@
 package iris
 
 import (
-	"github.com/fsnotify/fsnotify"
 	"html/template"
 	"os"
 	"strings"
 	"sync"
-	"time"
 )
 
 type (
@@ -119,7 +117,7 @@ func (html *HTMLTemplates) Load(globPathExp string) {
 
 }
 
-func (html *HTMLTemplates) reload() {
+func (html *HTMLTemplates) Reload() {
 	var err error
 	html.Templates, err = html.Templates.ParseGlob(html.directory + string(os.PathSeparator) + html.ext) //template.ParseGlob(html.directory + string(os.PathSeparator) + html.ext)
 
@@ -128,47 +126,11 @@ func (html *HTMLTemplates) reload() {
 	}
 }
 
-///TODO: After breakfast continue this.
-//func (html *HTMLTemplates) Add(globPathExp string) {
-//
-//}
-
 func (html *HTMLTemplates) startWatch(rootPath string) {
-	watcher, err := fsnotify.NewWatcher()
-
-	if err != nil {
-		Printf(html.logger, ErrTemplateWatch, err.Error())
-		return
-	}
-
-	go func() {
-		var lastChange = time.Now()
-		var i = 0
-		for {
-			select {
-			case event := <-watcher.Events:
-				if event.Op&fsnotify.Write == fsnotify.Write {
-					//this is received two times, the last time is the real changed file, so
-					html.mu.Lock()
-					i++
-					if i%2 == 0 {
-						if time.Now().After(lastChange.Add(time.Duration(1) * time.Second)) {
-							lastChange = time.Now()
-							html.reload() //reload all html templates, no just the .html file [ for now ]
-						}
-					}
-					html.mu.Unlock()
-
-				}
-			case err := <-watcher.Errors:
-				Printf(html.logger, err)
-			}
-		}
-	}()
-
-	err = watcher.Add(rootPath)
-	if err != nil {
-		Printf(html.logger, err)
-	}
+	watchDirectoryChanges(rootPath, func(fname string) {
+		html.mu.Lock()
+		html.Reload() //reload all html templates, no just the .html file [ for now ]
+		html.mu.Unlock()
+	}, html.logger)
 
 }
