@@ -209,10 +209,11 @@ func (u *UserHandler) Serve(c *iris.Context) {
 }
 
 ```
+
 ```go
 ///file: main.go
-//...cache the html files
-iris.Templates("src/iristests/templates/**/*.html")
+//...cache the html files, if you the content of any html file changed, the templates are auto-reloading
+iris.Templates("src/iristests/templates/*.html")
 //...register the handler
 iris.HandleAnnotated(&UserHandler{})
 //...continue writing your wonderful API
@@ -565,7 +566,7 @@ iris.Get("/anything/*randomName", func(c *iris.Context) { } )
 ```
 #### Static handler using *iris.Static(""/public",./path/to/the/resources/directory/", 1)*
 ```go
-iris.Static("/public", "./static/resources/",1))
+iris.Static("/public", "./static/assets/", 1))
 //-> /public/assets/favicon.ico
 ```
 
@@ -783,9 +784,9 @@ This is the most realistic benchmark suite than you will find for Go Web Framewo
 April 13 2016
 
 
-![Benchmark Wizzard Basic 13 April 2016](https://github.com/smallnest/go-web-framework-benchmark/raw/master/benchmark.png)
+![Benchmark Wizzard Basic 13 April 2016](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/master/benchmark.png)
 
-[click here to see all benchmarks](https://github.com/smallnest/go-web-framework-benchmark), 
+[click here to see all benchmarks](https://github.com/smallnest/go-web-framework-benchmark)
 
 ## Third Party Middlewares
 
@@ -846,7 +847,7 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 - [x] Convert useful middlewares out there into Iris middlewares, or contact with their authors to do so.
 - [ ] Provide automatic HTTPS using https://letsencrypt.org/how-it-works/.
 - [ ] Create administration web interface as plugin.
-- [ ] Create an easy websocket api.
+- [x] Create an easy websocket api.
 - [ ] Create a mechanism that scan for Typescript files, compile them on server startup and serve them.
 
 ## Articles

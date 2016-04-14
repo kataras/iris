@@ -17,7 +17,7 @@ var (
 	// Template
 	ErrTemplateParse    = NewError("Couldn't load templates %s")
 	ErrTemplateWatch    = NewError("Templates watcher couldn't be started, error: %s")
-	ErrTemplateWatching = NewError("Error when watching templates :%s")
+	ErrTemplateWatching = NewError("Error when watching templates: %s")
 )
 
 func NewError(format string, args ...interface{}) error {

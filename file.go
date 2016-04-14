@@ -1,8 +1,35 @@
+// Copyright (c) 2016, Gerasimos Maropoulos
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without modification,
+// are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice,
+//    this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright notice,
+//	  this list of conditions and the following disclaimer
+//    in the documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse
+//    or promote products derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER AND CONTRIBUTOR, GERASIMOS MAROPOULOS
+// BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package iris
 
 import (
 	"archive/zip"
 	"fmt"
+	"github.com/fsnotify/fsnotify"
 	"io"
 	"mime"
 	"net/http"
@@ -199,4 +226,51 @@ func getParrentDir(targetDirectory string) string {
 
 	parentDirectory := targetDirectory[0:lastSlashIndex]
 	return parentDirectory
+}
+
+// 3-BSD License for package fsnotify/fsnotify
+// Copyright (c) 2012 The Go Authors. All rights reserved.
+// Copyright (c) 2012 fsnotify Authors. All rights reserved.
+func watchDirectoryChanges(rootPath string, evt func(filename string), logger ...*Logger) {
+	watcher, err := fsnotify.NewWatcher()
+
+	if err != nil {
+		if len(logger) > 0 {
+			Printf(logger[0], err)
+		}
+		return
+	}
+
+	go func() {
+		var lastChange = time.Now()
+		var i = 0
+		for {
+			select {
+			case event := <-watcher.Events:
+				if event.Op&fsnotify.Write == fsnotify.Write {
+					//this is received two times, the last time is the real changed file, so
+					i++
+					if i%2 == 0 {
+						if time.Now().After(lastChange.Add(time.Duration(1) * time.Second)) {
+							lastChange = time.Now()
+							evt(event.Name)
+						}
+					}
+
+				}
+			case err := <-watcher.Errors:
+				if len(logger) > 0 {
+					Printf(logger[0], err)
+				}
+			}
+		}
+	}()
+
+	err = watcher.Add(rootPath)
+	if err != nil {
+		if len(logger) > 0 {
+			Printf(logger[0], err)
+		}
+	}
+
 }
