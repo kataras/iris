@@ -123,7 +123,7 @@ func newStation(options StationOptions) *Station {
 
 	//set the logger
 	s.logger = NewLogger(LoggerOutTerminal, "", 0)
-
+	s.logger.SetEnable(options.Log)
 	return s
 }
 
@@ -231,11 +231,10 @@ func (s *Station) Listen(fullHostOrPort ...string) (err error) {
 	s.Server = server
 	err = server.Listen()
 	if err == nil {
-		s.Server = server
 		s.pluginContainer.DoPostListen(s)
 		ch := make(chan os.Signal)
 		<-ch
-		s.Server.CloseServer()
+		s.Close()
 	}
 
 	return
@@ -254,10 +253,9 @@ func (s *Station) ListenTLS(fullAddress string, certFile, keyFile string) error 
 	opt := ServerOptions{ListeningAddr: ParseAddr(fullAddress), CertFile: certFile, KeyFile: keyFile}
 	server := NewServer(opt)
 	server.SetHandler(s.IRouter.ServeRequest)
-
+	s.Server = server
 	err := server.ListenTLS()
 	if err == nil {
-		s.Server = server
 		s.pluginContainer.DoPostListen(s)
 		ch := make(chan os.Signal)
 		<-ch

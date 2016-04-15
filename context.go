@@ -27,6 +27,7 @@
 package iris
 
 import (
+	"bufio"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
@@ -107,6 +108,7 @@ type (
 		ReadXML(interface{}) error
 		ServeContent(io.ReadSeeker, string, time.Time) error
 		ServeFile(string) error
+		Stream(func(*bufio.Writer))
 		//
 		PostFormValue(string) string
 		//
@@ -634,6 +636,12 @@ func (ctx *Context) ServeFile(filename string) error {
 		fi, _ = f.Stat()
 	}
 	return ctx.ServeContent(f, fi.Name(), fi.ModTime())
+}
+
+// Stream , steaming any type of contents to the client
+// it's just calls the SetBodyStreamWriter
+func (ctx *Context) Stream(cb func(writer *bufio.Writer)) {
+	ctx.RequestCtx.SetBodyStreamWriter(cb)
 }
 
 /* END OF RENDERER */

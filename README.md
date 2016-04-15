@@ -70,6 +70,7 @@ Iris now has [fasthttp](https://github.com/valyala/fasthttp) as it's base, stand
 - [Named Parameters](#named-parameters)
 - [Catch all and Static serving](#match-anything-and-the-static-serve-handler)
 - [Custom HTTP Errors](#custom-http-errors)
+- [Streaming](#streaming)
 - [Graceful](#graceful)
 - [Context](#context)
 - [Plugins](#plugins)
@@ -603,7 +604,42 @@ iris.Get("/thenotfound",func (c *iris.Context) {
 })
 
 ```
+## Streaming
 
+Fasthttp has very good support for doing progressive rendering via multiple flushes, streaming. Here is an example, taken from [here](https://github.com/valyala/fasthttp/blob/05949704db9b49a6fc7aa30220c983cc1c5f97a6/requestctx_setbodystreamwriter_example_test.go)
+
+```go
+
+package main
+
+import(
+	"github.com/kataras/iris"
+	"bufio"
+	"time"
+	"fmt"
+)
+
+func main() {
+	iris.Any("/stream",func (ctx *iris.Context){
+		ctx.Stream(stream)
+	})
+
+	iris.Listen()
+}
+
+func stream(w *bufio.Writer) {
+	for i := 0; i < 10; i++ {
+			fmt.Fprintf(w, "this is a message number %d", i)
+
+			// Do not forget flushing streamed data to the client.
+			if err := w.Flush(); err != nil {
+				return
+			}
+			time.Sleep(time.Second)
+		}
+}
+
+```
 
 ## Graceful
 Graceful package is not part of the Iris, it's not a Middleware neither a Plugin, so a new repository created,
