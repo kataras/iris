@@ -27,10 +27,11 @@
 package iris
 
 import (
-	"github.com/valyala/fasthttp"
 	"net"
 	"os"
 	"strings"
+
+	"github.com/valyala/fasthttp"
 )
 
 type (
@@ -49,6 +50,7 @@ type (
 		Handler() fasthttp.RequestHandler
 		IsListening() bool
 		IsSecure() bool
+		Serve(l net.Listener) error
 		// Listen starts and listens to the server, it's no-blocking
 		Listen() error
 		ListenUnix(os.FileMode) error
@@ -56,6 +58,8 @@ type (
 		///TODO: if no CertFile or KeyFile passed then use a self-random certificate
 		ListenTLS() error
 		CloseServer() error
+
+		Listener() net.Listener
 	}
 
 	Server struct {
@@ -98,6 +102,9 @@ func (s *Server) Options() ServerOptions {
 
 func (s *Server) SetHandler(h fasthttp.RequestHandler) {
 	s.handler = h
+	if s.Server != nil {
+		s.Server.Handler = s.handler
+	}
 }
 
 func (s *Server) Handler() fasthttp.RequestHandler {
@@ -110,6 +117,16 @@ func (s *Server) IsListening() bool {
 
 func (s *Server) IsSecure() bool {
 	return s.tls
+}
+
+func (s *Server) Listener() net.Listener {
+	return s.listener
+}
+
+//Serve just serves a listener, it is a blocking action, plugin.PostListen is not fired here.
+func (s *Server) Serve(l net.Listener) error {
+	s.listener = l
+	return s.Server.Serve(l)
 }
 
 func (s *Server) Listen() (err error) {
@@ -125,7 +142,6 @@ func (s *Server) Listen() (err error) {
 		return
 	}
 
-	s.Server.Handler = s.handler
 	//Non-block way here because I want the plugin's PostListen ability...
 	go s.Server.Serve(s.listener)
 
@@ -153,8 +169,6 @@ func (s *Server) ListenTLS() (err error) {
 		err = ErrServerPortAlreadyUsed
 		return
 	}
-
-	s.Server.Handler = s.handler
 
 	go s.Server.ServeTLS(s.listener, s.options.CertFile, s.options.KeyFile)
 
