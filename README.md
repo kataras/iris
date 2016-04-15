@@ -6,50 +6,33 @@
 [![GoDoc](https://godoc.org/github.com/kataras/iris?status.svg)](https://godoc.org/github.com/kataras/iris)
 [![License](https://img.shields.io/badge/license-BSD3-blue.svg?style=flat-square)](LICENSE)
 
-The [fastest](#benchmarks)  go web framework which provides robust set of features for building modern & shiny web applications.
+A Community driven Web framework written in Go. Seems to be the [fastest](#benchmarks). Simplicity equals productivity.
+
+What are you waiting, start using Iris Web Framework today. Easy to learn, provides robust set of features for building modern & shiny web applications.
 
 ![Hi Iris GIF](http://kataras.github.io/iris/assets/hi_iris_march.gif)
-
-
-
-## News: 12 April 2016
-V1.1
-
-
-Iris now has [fasthttp](https://github.com/valyala/fasthttp) as it's base, standar API didn't changed but Context has some additional things and other things works different than before.[*](#context)
-
-
-[Examples](https://github.com/kataras/iris/tree/examples) are not yet updated with the new version, stay tunned!
 
 ----
 
 
 ## Features
 
-* **FastHTTP**: Iris uses [fasthttp](https://github.com/valyala/fasthttp) package as it's default base [*](#declaration)
-
-* **Context**: Iris uses [Context](#context) for storing route params, sharing variables between middlewares and render rich content to the client.
-
-* **Plugins**: You can build your own plugins to  inject the Iris framework[*](#plugins).
-
-* **Full API**: All http methods are supported, you can group routes and sharing resources together[*](#api).
-
-* **Zero allocations**: Iris generates zero garbage.
-
-* **Multi server instances**: Besides the fact that Iris has a default main server. You can declare as many as you need[*](#declaration).
-
+* **FastHTTP**: Iris is builded on top of the [fasthttp](https://github.com/valyala/fasthttp)
+* **Streaming**: You have only one option when streaming comes in game[*](#streaming)
+* **Sessions**: Gorilla Sessions modified to work with Iris[*](https://github.com/kataras/iris/tree/development/sessions)
+* **Websockets**: Gorilla Websockets modified to work with Iris[*](https://github.com/kataras/iris/tree/development/websocket)
+* **Context**: Iris uses [Context](#context) for storing route params, sharing variables between middlewares and render rich content to the client
+* **Plugins**: You can build your own plugins to  inject the Iris framework[*](#plugins)
+* **Full API**: All http methods are supported, you can group routes and sharing resources together[*](#api)
+* **Zero allocations**: Iris generates zero garbage
+* **Multi server instances**: Besides the fact that Iris has a default main server. You can declare as many as you need[*](#declaration)
 * **Middlewares**: Create and use global or per route middlewares with the Iris' simplicity[*](#middlewares).
 
 ### Q: What makes iris significantly [faster](#benchmarks)?
-##### A: These are the QNIQUE features that Iris brings
-
-*    First of all Iris uses [fasthttp](https://github.com/valyala/fasthttp) as it's  base
-
+*    First of all Iris is builded on top of the [fasthttp](https://github.com/valyala/fasthttp)
 *    Iris uses the same algorithm as the BSD's kernel does for routing (call it Trie)
-
 *    Iris can detect what features are used and what don't and optimized itself before server run.
-
-*    Middlewares and Plugins are 'light' and that is, a principle.
+*    Middlewares and Plugins are 'light' , that's a principle.
 
 
 ## Table of Contents
@@ -86,9 +69,10 @@ Iris now has [fasthttp](https://github.com/valyala/fasthttp) as it's base, stand
 
 
 ### Install
-In order to have the latest version update the package one per week
+In order to have the latest version update the package once per week
 ```sh
-$ go get -u github.com/kataras/iris
+$ rm -rf $GOPATH/github.com/kataras/iris
+$ go get github.com/kataras/iris
 ```
 
 
@@ -122,7 +106,7 @@ log.Fatal(iris.Listen(":8080"))
 ```
 
 ## TLS
-TLS for https:// and http2:
+TLS for https://
 
 ```go
 ListenTLS(fulladdr string, certFile, keyFile string) error
