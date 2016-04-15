@@ -12,7 +12,7 @@ The [fastest](#benchmarks)  go web framework which provides robust set of featur
 
 
 
-## News: 12 April 2016 
+## News: 12 April 2016
 V1.1
 
 
@@ -21,8 +21,8 @@ Iris now has [fasthttp](https://github.com/valyala/fasthttp) as it's base, stand
 
 [Examples](https://github.com/kataras/iris/tree/examples) are not yet updated with the new version, stay tunned!
 
-----			
-				
+----
+
 
 ## Features
 
@@ -38,12 +38,12 @@ Iris now has [fasthttp](https://github.com/valyala/fasthttp) as it's base, stand
 
 * **Multi server instances**: Besides the fact that Iris has a default main server. You can declare as many as you need[*](#declaration).
 
-* **Middlewares**: Create and use global or per route middlewares with the Iris' simplicity[*](#middlewares). 
+* **Middlewares**: Create and use global or per route middlewares with the Iris' simplicity[*](#middlewares).
 
 ### Q: What makes iris significantly [faster](#benchmarks)?
 ##### A: These are the QNIQUE features that Iris brings
 
-*    First of all Iris uses [fasthttp](https://github.com/valyala/fasthttp) as it's  base 
+*    First of all Iris uses [fasthttp](https://github.com/valyala/fasthttp) as it's  base
 
 *    Iris uses the same algorithm as the BSD's kernel does for routing (call it Trie)
 
@@ -70,6 +70,7 @@ Iris now has [fasthttp](https://github.com/valyala/fasthttp) as it's base, stand
 - [Named Parameters](#named-parameters)
 - [Catch all and Static serving](#match-anything-and-the-static-serve-handler)
 - [Custom HTTP Errors](#custom-http-errors)
+- [Graceful](#graceful)
 - [Context](#context)
 - [Plugins](#plugins)
 - [Internationalization and Localization](https://github.com/kataras/iris/tree/examples/middleware_internationalization_i18n)
@@ -602,6 +603,37 @@ iris.Get("/thenotfound",func (c *iris.Context) {
 })
 
 ```
+
+
+## Graceful
+Graceful package is not part of the Iris, it's not a Middleware neither a Plugin, so a new repository created,
+which it's a fork of [https://github.com/tylerb/graceful](https://github.com/tylerb/graceful).
+
+
+
+How to use:
+```go
+
+package main
+
+import (
+	"time"
+
+	"github.com/kataras/graceful"
+	"github.com/kataras/iris"
+)
+
+func main() {
+	api := iris.New()
+	api.Get("/", func(c *iris.Context) {
+		c.Write("Welcome to the home page!")
+	})
+
+	graceful.Run(":3001", time.Duration(10)*time.Second, api)
+}
+
+
+````
 
 ## Context
 ![Iris Context Outline view](http://kataras.github.io/iris/assets/context_view.png)
