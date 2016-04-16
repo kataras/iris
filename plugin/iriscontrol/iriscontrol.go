@@ -107,8 +107,8 @@ func (i *irisControlPlugin) PostHandle(route iris.IRoute) {
 
 }
 
-// PreListen sets the station object before the main server starts
-// and starts the actual work of the plugin
+// PostListen sets the station object after the main server starts
+// starts the actual work of the plugin
 func (i *irisControlPlugin) PostListen(s *iris.Station) {
 	//if the first time, because other times start/stop of the server so listen and no listen will be only from the control panel
 	if i.station == nil {

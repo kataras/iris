@@ -88,7 +88,6 @@ func New() *Station {
 // Custom is used for iris-experienced developers
 // creates and returns a new iris Station with custom StationOptions
 func Custom(options StationOptions) *Station {
-
 	if options.ProfilePath != "" {
 		options.ProfilePath = DefaultProfilePath
 	}

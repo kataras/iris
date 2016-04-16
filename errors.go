@@ -25,8 +25,5 @@ func NewError(format string, args ...interface{}) error {
 }
 
 func Printf(logger *Logger, err error, args ...interface{}) {
-	if logger.IsEnabled() {
-		logger.Printf(err.Error(), args...)
-	}
-
+	logger.Printf(err.Error(), args...)
 }

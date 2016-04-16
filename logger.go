@@ -59,3 +59,9 @@ func (l *Logger) SetEnable(enable bool) {
 func (l *Logger) IsEnabled() bool {
 	return l.enabled
 }
+
+func (l *Logger) Printf(format string, a ...interface{}) {
+	if l.enabled {
+		l.Logger.Printf(format, a...)
+	}
+}
