@@ -900,7 +900,7 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 - [ ] Provide automatic HTTPS using https://letsencrypt.org/how-it-works/.
 - [ ] Create administration web interface as plugin.
 - [x] Create an easy websocket api.
-- [ ] Create a mechanism that scan for Typescript files, compile them on server startup and serve them.
+- [x] [Create a mechanism that scan for Typescript files, compile them on server startup and serve them.](https://github.com/kataras/iris/tree/development/plugin/typescript)
 
 ## Articles
 

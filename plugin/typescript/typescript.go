@@ -1,6 +1,11 @@
 package typescript
 
+///TODO: implement the Watch
 import (
+	"errors"
+	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -8,42 +13,83 @@ import (
 	"github.com/kataras/iris/cli"
 )
 
-// Options the struct which holds the TypescriptPlugin options
-// Has 3 fields
-//
-// 1. Dir:     string, Dir set the root, where to search for typescript files/project. Default "./"
-// 2. Ignore:  string, comma separated ignore typescript files/project from these directories. Default "" (node_modules are always ignored)
-// 3. Watch:	 boolean, watch for any changes and re-build if true/. Default true
-type Options struct {
-	Dir    string
-	Ignore string
-	Watch  bool
+var (
+	node_modules = cli.ToDir("node_modules")
+	Name         = "TypescriptPlugin"
+)
+
+type (
+	// Options the struct which holds the TypescriptPlugin options
+	// Has four (4) fields
+	//
+	// 1. Bin: 	string, the typescript installation directory/bin (where the tsc or tsc.cmd are exists), if empty it will search inside global npm modules
+	// 2. Dir:     string, Dir set the root, where to search for typescript files/project. Default "./"
+	// 3. Ignore:  string, comma separated ignore typescript files/project from these directories. Default "" (node_modules are always ignored)
+	// 4. Watch:	 boolean, watch for any changes and re-build if true/. Default true
+	Options struct {
+		Bin    string
+		Dir    string
+		Ignore string
+		Watch  bool
+	}
+	// TypescriptPlugin the struct of the plugin, holds all necessary fields & methods
+	TypescriptPlugin struct {
+		options Options
+		logger  *iris.Logger
+	}
+)
+
+func getTypescriptBinary() (typescriptBin string) {
+	out, err := cli.Command("npm", "root", "-g")
+	if err != nil {
+		//println(err.Error())
+		return
+	}
+
+	npmDir := out[0:strings.LastIndexByte(out, os.PathSeparator)]
+	//println("Npm directory: ", npmDir)
+	typescriptBin = npmDir + cli.PathSeparator + "tsc"
+	if runtime.GOOS == "windows" {
+		typescriptBin += ".cmd"
+	}
+
+	return
 }
 
-var node_modules = cli.ToDir("node_modules")
-var Name = "TypescriptPlugin"
+// DefaultOptions returns the default Options of the TypescriptPlugin
+func DefaultOptions() Options {
+	root, err := os.Getwd()
+	if err != nil {
+		panic("Typescript Plugin: Cannot get the Current Working Directory !!! [os.getwd()]")
+	}
+	opt := Options{Dir: root + cli.PathSeparator, Ignore: node_modules, Watch: true}
 
-// TypescriptPlugin the struct of the plugin, holds all necessary fields & methods
-type TypescriptPlugin struct {
-	options Options
-	logger  *iris.Logger
+	opt.Bin = getTypescriptBinary()
+
+	return opt
+
 }
 
-// defaultOptions returns the default Options of the TypescriptPlugin
-func defaultOptions() Options {
-	return Options{Dir: "." + cli.PathSeparator, Ignore: node_modules, Watch: true}
-}
+// TypescriptPlugin
 
 // New creates & returns a new instnace typescript plugin
 func New(_opt ...Options) *TypescriptPlugin {
-	var options = defaultOptions()
+	var options = DefaultOptions()
 
 	if _opt != nil && len(_opt) > 0 { //not nil always but I like this way :)
 		opt := _opt[0]
-		options.Dir = opt.Dir
+
+		if opt.Bin != "" {
+			options.Bin = opt.Bin
+		}
+		if opt.Dir != "" {
+			options.Dir = opt.Dir
+		}
+
 		if !strings.Contains(opt.Ignore, "node_modules") {
 			opt.Ignore += "," + node_modules
 		}
+
 		options.Ignore = opt.Ignore
 		options.Watch = opt.Watch
 	}
@@ -74,7 +120,73 @@ func (t *TypescriptPlugin) PostListen(s *iris.Station) {
 // implementation
 
 func (t *TypescriptPlugin) start() {
+	if t.hasTypescriptFiles() {
 
+		//Can't check if permission denied returns always exists = true....
+		//typescriptModule := out + string(os.PathSeparator) + "typescript" + string(os.PathSeparator) + "bin"
+
+		if !cli.Exists(t.options.Bin) {
+			//t.logger.Println("Typescript is not installed, please wait installing typescript")
+			t.installTypescript()
+			t.options.Bin = getTypescriptBinary()
+		}
+
+		dirs := t.getTypescriptProjects()
+		if len(dirs) > 0 {
+			//typescript project (.tsconfig) found
+			for _, dir := range dirs {
+
+				_, err := cli.Command("tsc", "-p", dir)
+				if err != nil {
+					t.logger.Println(err.Error())
+					return
+				}
+
+			}
+		} else {
+			//search for standalone typescript (.ts) files and combile them
+			files := t.getTypescriptFiles()
+			if len(files) > 0 {
+				//it must be always > 0 if we came here, because of if hasTypescriptFiles == true.
+				for _, file := range files {
+
+					_, err := cli.Command("tsc", file)
+					if err != nil {
+						t.logger.Println(err.Error())
+						return
+					}
+
+				}
+			}
+
+		}
+
+	}
+}
+
+func (t *TypescriptPlugin) hasTypescriptFiles() bool {
+	root := t.options.Dir
+	ignoreFolders := strings.Split(t.options.Ignore, ",")
+	hasTs := false
+
+	filepath.Walk(root, func(path string, fi os.FileInfo, err error) error {
+		if fi.IsDir() {
+			return nil
+		}
+		for i := range ignoreFolders {
+			if strings.Contains(path, ignoreFolders[i]) {
+				return nil
+			}
+		}
+
+		if strings.HasSuffix(path, ".ts") {
+			hasTs = true
+			return errors.New("Typescript found, hope that will stop here")
+		}
+
+		return nil
+	})
+	return hasTs
 }
 
 func (t *TypescriptPlugin) installTypescript() {
@@ -119,4 +231,62 @@ func (t *TypescriptPlugin) installTypescript() {
 
 }
 
+func (t *TypescriptPlugin) getTypescriptProjects() []string {
+	projects := make([]string, 0)
+	ignoreFolders := strings.Split(t.options.Ignore, ",")
+
+	root := t.options.Dir
+	//t.logger.Printf("\nSearching for typescript projects in %s", root)
+
+	filepath.Walk(root, func(path string, fi os.FileInfo, err error) error {
+		if fi.IsDir() {
+			return nil
+		}
+		for i := range ignoreFolders {
+			if strings.Contains(path, ignoreFolders[i]) {
+				//t.logger.Println(path + " ignored")
+				return nil
+			}
+		}
+
+		if strings.HasSuffix(path, cli.PathSeparator+"tsconfig.json") {
+			//t.logger.Printf("\nTypescript project found in %s", path)
+			projects = append(projects, path)
+		}
+
+		return nil
+	})
+	return projects
+}
+
+// this is being called if getTypescriptProjects return 0 len, then we are searching for files using that:
+func (t *TypescriptPlugin) getTypescriptFiles() []string {
+	files := make([]string, 0)
+	ignoreFolders := strings.Split(t.options.Ignore, ",")
+
+	root := t.options.Dir
+	//t.logger.Printf("\nSearching for typescript files in %s", root)
+
+	filepath.Walk(root, func(path string, fi os.FileInfo, err error) error {
+		if fi.IsDir() {
+			return nil
+		}
+		for i := range ignoreFolders {
+			if strings.Contains(path, ignoreFolders[i]) {
+				//t.logger.Println(path + " ignored")
+				return nil
+			}
+		}
+
+		if strings.HasSuffix(path, ".ts") {
+			//t.logger.Printf("\nTypescript file found in %s", path)
+			files = append(files, path)
+		}
+
+		return nil
+	})
+	return files
+}
+
+//
 //

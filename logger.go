@@ -65,3 +65,9 @@ func (l *Logger) Printf(format string, a ...interface{}) {
 		l.Logger.Printf(format, a...)
 	}
 }
+
+func (l *Logger) Println(a ...interface{}) {
+	if l.enabled {
+		l.Logger.Println(a...)
+	}
+}

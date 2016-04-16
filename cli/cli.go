@@ -33,3 +33,11 @@ func Command(command string, a ...string) (output string, err error) {
 
 	return
 }
+
+// Exists, returns true if directory||file exists
+func Exists(dir string) bool {
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		return false
+	}
+	return true
+}
