@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Gerasimos Maropoulos and Go Authors using for the 'log,io,os' packages
+// Copyright (c) 2016, Gerasimos Maropoulos
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification,
@@ -17,57 +17,53 @@
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 // ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 // WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER AND CONTRIBUTOR, GERASIMOS MAROPOULOS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER AND CONTRIBUTOR, GERASIMOS MAROPOULOS
+// BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 // (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 // LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-package iris
+package cli
 
 import (
-	"io"
-	"log"
 	"os"
+	"os/exec"
+	"strings"
 )
 
-// LoggerOutTerminal os.Stdout , it's the default io.Writer to the Iris' logger
-var LoggerOutTerminal = os.Stdout
+// PathSeparator is the string of os.PathSeparator
+var PathSeparator = string(os.PathSeparator)
 
-// Logger is just a log.Logger
-type Logger struct {
-	*log.Logger
-	enabled bool
+// ToDir converts & returns 'something' to PathSeparator+'something'+PathSeparator
+func ToDir(folderWithoutSeparators string) string {
+	return PathSeparator + folderWithoutSeparators + PathSeparator
 }
 
-// NewLogger creates a new Logger.   The out variable sets the
-// destination to which log data will be written.
-// The prefix appears at the beginning of each generated log line.
-// The flag argument defines the logging properties.
-func NewLogger(out io.Writer, prefix string, flag int) *Logger {
-	if out == nil {
-		out = LoggerOutTerminal
+// Command executes a command in shell and returns it's output, it's block version
+func Command(command string, a ...string) (output string, err error) {
+	var out []byte
+	args := strings.Split(command, " ")
+	if len(args) > 1 {
+		command = args[0]
+		args = append(args[1:], a...)
+	} else {
+		args = a
 	}
-	return &Logger{log.New(out, LoggerIrisPrefix+prefix, flag), true}
-}
 
-func (l *Logger) SetEnable(enable bool) {
-	l.enabled = enable
-}
+	out, err = exec.Command(command, args...).Output()
 
-func (l *Logger) IsEnabled() bool {
-	return l.enabled
-}
-
-func (l *Logger) Printf(format string, a ...interface{}) {
-	if l.enabled {
-		l.Logger.Printf(format, a...)
+	if err == nil {
+		output = string(out)
 	}
+
+	return
 }
 
-func (l *Logger) Println(a ...interface{}) {
-	if l.enabled {
-		l.Logger.Println(a...)
+// Exists, returns true if directory||file exists
+func Exists(dir string) bool {
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		return false
 	}
+	return true
 }

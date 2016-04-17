@@ -6,50 +6,33 @@
 [![GoDoc](https://godoc.org/github.com/kataras/iris?status.svg)](https://godoc.org/github.com/kataras/iris)
 [![License](https://img.shields.io/badge/license-BSD3-blue.svg?style=flat-square)](LICENSE)
 
-The [fastest](#benchmarks)  go web framework which provides robust set of features for building modern & shiny web applications.
+A Community driven Web framework written in Go. Seems to be the [fastest](#benchmarks). Simplicity equals productivity.
+
+What are you waiting, start using Iris Web Framework today. Easy to learn, provides robust set of features for building modern & shiny web applications.
 
 ![Hi Iris GIF](http://kataras.github.io/iris/assets/hi_iris_march.gif)
 
+----
 
-
-## News: 12 April 2016 
-V1.1
-
-
-Iris now has [fasthttp](https://github.com/valyala/fasthttp) as it's base, standar API didn't changed but Context has some additional things and other things works different than before.[*](#context)
-
-
-[Examples](https://github.com/kataras/iris/tree/examples) are not yet updated with the new version, stay tunned!
-
-----			
-				
 
 ## Features
 
-* **FastHTTP**: Iris uses [fasthttp](https://github.com/valyala/fasthttp) package as it's default base [*](#declaration)
-
-* **Context**: Iris uses [Context](#context) for storing route params, sharing variables between middlewares and render rich content to the client.
-
-* **Plugins**: You can build your own plugins to  inject the Iris framework[*](#plugins).
-
-* **Full API**: All http methods are supported, you can group routes and sharing resources together[*](#api).
-
-* **Zero allocations**: Iris generates zero garbage.
-
-* **Multi server instances**: Besides the fact that Iris has a default main server. You can declare as many as you need[*](#declaration).
-
-* **Middlewares**: Create and use global or per route middlewares with the Iris' simplicity[*](#middlewares). 
+* **FastHTTP**: Iris is builded on top of the [fasthttp](https://github.com/valyala/fasthttp)
+* **Streaming**: You have only one option when streaming comes in game[*](#streaming)
+* **Sessions**: Gorilla Sessions modified to work with Iris[*](https://github.com/kataras/iris/tree/development/sessions)
+* **Websockets**: Gorilla Websockets modified to work with Iris[*](https://github.com/kataras/iris/tree/development/websocket)
+* **Context**: Iris uses [Context](#context) for storing route params, sharing variables between middlewares and render rich content to the client
+* **Plugins**: You can build your own plugins to  inject the Iris framework[*](#plugins)
+* **Full API**: All http methods are supported, you can group routes and sharing resources together[*](#api)
+* **Zero allocations**: Iris generates zero garbage
+* **Multi server instances**: Besides the fact that Iris has a default main server. You can declare as many as you need[*](#declaration)
+* **Middlewares**: Create and use global or per route middlewares with the Iris' simplicity[*](#middlewares).
 
 ### Q: What makes iris significantly [faster](#benchmarks)?
-##### A: These are the QNIQUE features that Iris brings
-
-*    First of all Iris uses [fasthttp](https://github.com/valyala/fasthttp) as it's  base 
-
+*    First of all Iris is builded on top of the [fasthttp](https://github.com/valyala/fasthttp)
 *    Iris uses the same algorithm as the BSD's kernel does for routing (call it Trie)
-
 *    Iris can detect what features are used and what don't and optimized itself before server run.
-
-*    Middlewares and Plugins are 'light' and that is, a principle.
+*    Middlewares and Plugins are 'light' , that's a principle.
 
 
 ## Table of Contents
@@ -70,10 +53,12 @@ Iris now has [fasthttp](https://github.com/valyala/fasthttp) as it's base, stand
 - [Named Parameters](#named-parameters)
 - [Catch all and Static serving](#match-anything-and-the-static-serve-handler)
 - [Custom HTTP Errors](#custom-http-errors)
+- [Streaming](#streaming)
+- [Graceful](#graceful)
 - [Context](#context)
 - [Plugins](#plugins)
-- [Internationalization and Localization](https://github.com/kataras/iris/tree/examples/middleware_internationalization_i18n)
-- [Examples](https://github.com/kataras/iris/tree/examples)
+- [Internationalization and Localization](https://github.com/iris-contrib/examples/tree/master/middleware_internationalization_i18n)
+- [Examples](https://github.com/iris-contrib/examples)
 - [Benchmarks](#benchmarks)
 - [Third Party Middlewares](#third-party-middlewares)
 - [Contributors](#contributors)
@@ -84,9 +69,10 @@ Iris now has [fasthttp](https://github.com/valyala/fasthttp) as it's base, stand
 
 
 ### Install
-In order to have the latest version update the package one per week
+In order to have the latest version update the package once per week
 ```sh
-$ go get -u github.com/kataras/iris
+$ rm -rf $GOPATH/github.com/kataras/iris
+$ go get github.com/kataras/iris
 ```
 
 
@@ -120,7 +106,7 @@ log.Fatal(iris.Listen(":8080"))
 ```
 
 ## TLS
-TLS for https:// and http2:
+TLS for https://
 
 ```go
 ListenTLS(fulladdr string, certFile, keyFile string) error
@@ -324,7 +310,7 @@ iris.Listen(":8080")
 
 ```
 
-Uses one of build'n Iris [middlewares](https://github.com/kataras/iris/tree/development/middleware), view practical [examples here](https://github.com/kataras/iris/tree/examples)
+Uses one of build'n Iris [middlewares](https://github.com/kataras/iris/tree/development/middleware), view practical [examples here](https://github.com/iris-contrib/examples)
 
 ```go
 package main
@@ -602,6 +588,72 @@ iris.Get("/thenotfound",func (c *iris.Context) {
 })
 
 ```
+## Streaming
+
+Fasthttp has very good support for doing progressive rendering via multiple flushes, streaming. Here is an example, taken from [here](https://github.com/valyala/fasthttp/blob/05949704db9b49a6fc7aa30220c983cc1c5f97a6/requestctx_setbodystreamwriter_example_test.go)
+
+```go
+
+package main
+
+import(
+	"github.com/kataras/iris"
+	"bufio"
+	"time"
+	"fmt"
+)
+
+func main() {
+	iris.Any("/stream",func (ctx *iris.Context){
+		ctx.Stream(stream)
+	})
+
+	iris.Listen()
+}
+
+func stream(w *bufio.Writer) {
+	for i := 0; i < 10; i++ {
+			fmt.Fprintf(w, "this is a message number %d", i)
+
+			// Do not forget flushing streamed data to the client.
+			if err := w.Flush(); err != nil {
+				return
+			}
+			time.Sleep(time.Second)
+		}
+}
+
+```
+
+## Graceful
+Graceful package is not part of the Iris, it's not a Middleware neither a Plugin, so a new repository created,
+which it's a fork of [https://github.com/tylerb/graceful](https://github.com/tylerb/graceful).
+
+
+
+How to use:
+```go
+
+package main
+
+import (
+	"time"
+
+	"github.com/iris-contrib/graceful"
+	"github.com/kataras/iris"
+)
+
+func main() {
+	api := iris.New()
+	api.Get("/", func(c *iris.Context) {
+		c.Write("Welcome to the home page!")
+	})
+
+	graceful.Run(":3001", time.Duration(10)*time.Second, api)
+}
+
+
+````
 
 ## Context
 ![Iris Context Outline view](http://kataras.github.io/iris/assets/context_view.png)
@@ -610,7 +662,7 @@ iris.Get("/thenotfound",func (c *iris.Context) {
 
 
 
-Inside the [examples](https://github.com/kataras/iris/tree/examples) branch you will find practical examples
+Inside the [examples](https://github.com/iris-contrib/examples) branch you will find practical examples
 
 
 
@@ -798,17 +850,17 @@ if you want to help please do so (pr).
 | Middleware | Author | Description | Tested |
 | -----------|--------|-------------|--------|
 | [sessions](https://github.com/kataras/iris/tree/development/sessions) | [Ported to Iris](https://github.com/kataras/iris/tree/development/sessions) | Session Management | [Yes](https://github.com/kataras/iris/tree/development/sessions) |
-| [Graceful](https://github.com/tylerb/graceful) | [Tyler Bunnell](https://github.com/tylerb) | Graceful HTTP Shutdown | [Yes](https://github.com/kataras/iris/tree/examples/thirdparty_graceful) |
+| [Graceful](https://github.com/iris-contrib/graceful) | [Ported to iris](https://github.com/iris-contrib/graceful) | Graceful HTTP Shutdown | [Yes](https://github.com/iris-contrib/examples/tree/master/graceful) |
 | [gzip](https://github.com/kataras/iris/tree/development/middleware/gzip/) | [Iris](https://github.com/kataras/iris) | GZIP response compression | [Yes](https://github.com/kataras/iris/tree/development/middleware/gzip/README.md) |
 | [RestGate](https://github.com/pjebs/restgate) | [Prasanga Siripala](https://github.com/pjebs) | Secure authentication for REST API endpoints | No |
-| [secure](https://github.com/unrolled/secure) | [Cory Jacobsen](https://github.com/unrolled) | Middleware that implements a few quick security wins | [Yes](https://github.com/kataras/iris/tree/examples/thirdparty_secure) |
+| [secure](https://github.com/kataras/iris/tree/development/middleware/secure) | [Ported to Iris](https://github.com/kataras/iris/tree/development/middleware/secure) | Middleware that implements a few quick security wins | [Yes](https://github.com/iris-contrib/examples/tree/master/secure) |
 | [JWT Middleware](https://github.com/auth0/go-jwt-middleware) | [Auth0](https://github.com/auth0) | Middleware checks for a JWT on the `Authorization` header on incoming requests and decodes it| No |
 | [binding](https://github.com/mholt/binding) | [Matt Holt](https://github.com/mholt) | Data binding from HTTP requests into structs | No |
-| [i18n](https://github.com/kataras/iris/tree/development/middleware/i18n) | [Iris](https://github.com/kataras/iris) | Internationalization and Localization | [Yes](https://github.com/kataras/iris/tree/examples/middleware_internationalization_i18n) |
+| [i18n](https://github.com/kataras/iris/tree/development/middleware/i18n) | [Iris](https://github.com/kataras/iris) | Internationalization and Localization | [Yes](https://github.com/iris-contrib/examples/tree/master/middleware_internationalization_i18n) |
 | [logrus](https://github.com/meatballhat/negroni-logrus) | [Dan Buch](https://github.com/meatballhat) | Logrus-based logger | No |
 | [render](https://github.com/unrolled/render) | [Cory Jacobsen](https://github.com/unrolled) | Render JSON, XML and HTML templates | No |
 | [gorelic](https://github.com/jingweno/negroni-gorelic) | [Jingwen Owen Ou](https://github.com/jingweno) | New Relic agent for Go runtime | No |
-| [pongo2](https://github.com/kataras/iris/middleware/pongo2) | [Iris](https://github.com/kataras/iris) | Middleware for [pongo2 templates](https://github.com/flosch/pongo2)| [Yes](https://github.com/kataras/iris/middleware/pongo2/README.md) |
+| [pongo2](https://github.com/iris-contrib/examples/tree/master/middleware_pongo2) | [Iris](https://github.com/kataras/iris) | Middleware for [pongo2 templates](https://github.com/flosch/pongo2)| [Yes](https://github.com/iris-contrib/examples/tree/master/middleware_pongo2) |
 | [oauth2](https://github.com/goincremental/negroni-oauth2) | [David Bochenski](https://github.com/bochenski) | oAuth2 middleware | No |
 | [permissions2](https://github.com/xyproto/permissions2) | [Alexander Rødseth](https://github.com/xyproto) | Cookies, users and permissions | No |
 | [onthefly](https://github.com/xyproto/onthefly) | [Alexander Rødseth](https://github.com/xyproto) | Generate TinySVG, HTML and CSS on the fly | No |
@@ -832,23 +884,16 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 
 * **Chat**: https://gitter.im/kataras/iris
 
-## Guidelines
-- Never stop writing the docs.
-- Provide full README for examples branch and thirdparty middleware examples.
-- Before any commit run -count 50 -benchtime 30s , if performance stays on top then commit else find other way to do the same thing.
-- Notice the author of any thirdparty package before I try to port into iris myself, maybe they can do it better.
-- Notice author's of middleware, which I'm writing examples for,to take a look, if they don't want to exists in the Iris community, I have to respect them.
-
 ## Todo
 - [x] [Provide a lighter, with less using bytes,  to save middleware for a route.](https://github.com/kataras/iris/tree/development/handler.go)
-- [x] [Create examples.](https://github.com/kataras/iris/tree/examples)
-- [x] [Subdomains supports with the same syntax as iris.Get, iris.Post ...](https://github.com/kataras/iris/tree/examples/subdomains_simple)
-- [x] [Provide a more detailed benchmark table to the README with all go web frameworks that I know, no just the 6 most famous](https://github.com/kataras/iris/tree/benchmark)
+- [x] [Create examples.](https://github.com/iris-contrib/examples)
+- [x] [Subdomains supports with the same syntax as iris.Get, iris.Post ...](https://github.com/iris-contrib/examples/tree/master/subdomains_simple)
+- [x] [Provide a more detailed benchmark table](https://github.com/smallnest/go-web-framework-benchmark)
 - [x] Convert useful middlewares out there into Iris middlewares, or contact with their authors to do so.
 - [ ] Provide automatic HTTPS using https://letsencrypt.org/how-it-works/.
 - [ ] Create administration web interface as plugin.
 - [x] Create an easy websocket api.
-- [ ] Create a mechanism that scan for Typescript files, compile them on server startup and serve them.
+- [x] [Create a mechanism that scan for Typescript files, compile them on server startup and serve them.](https://github.com/kataras/iris/tree/development/plugin/typescript)
 
 ## Articles
 

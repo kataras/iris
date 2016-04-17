@@ -27,11 +27,10 @@
 package iris
 
 import (
+	"bufio"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"github.com/valyala/fasthttp"
-	"golang.org/x/net/context"
 	"io"
 	"net"
 	"os"
@@ -41,6 +40,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/valyala/fasthttp"
+	"golang.org/x/net/context"
 )
 
 // Charset is defaulted to UTF-8, you can change it
@@ -106,6 +108,7 @@ type (
 		ReadXML(interface{}) error
 		ServeContent(io.ReadSeeker, string, time.Time) error
 		ServeFile(string) error
+		Stream(func(*bufio.Writer))
 		//
 		PostFormValue(string) string
 		//
@@ -531,9 +534,13 @@ func (ctx *Context) WriteJSON(httpStatus int, jsonObjectOrArray interface{}) err
 	return json.NewEncoder(ctx.Response.BodyWriter()).Encode(jsonObjectOrArray)
 }
 
-//JSON calls the WriteJSON with the 200 http status ok
+//JSON calls the WriteJSON with the 200 http status ok if no previous status code setted
 func (ctx *Context) JSON(jsonObjectOrArray interface{}) error {
-	return ctx.WriteJSON(StatusOK, jsonObjectOrArray)
+	statusCode := ctx.Response.StatusCode()
+	if statusCode <= 0 {
+		statusCode = StatusOK
+	}
+	return ctx.WriteJSON(statusCode, jsonObjectOrArray)
 }
 
 // ReadXML reads XML from request's body
@@ -550,9 +557,13 @@ func (ctx *Context) ReadXML(xmlObject interface{}) error {
 	return nil
 }
 
-//XML calls the WriteXML with the 200 http status ok
+//XML calls the WriteXML with the 200 http status ok if no previous status setted
 func (ctx *Context) XML(xmlBytes []byte) error {
-	return ctx.WriteXML(StatusOK, xmlBytes)
+	statusCode := ctx.Response.StatusCode()
+	if statusCode <= 0 {
+		statusCode = StatusOK
+	}
+	return ctx.WriteXML(statusCode, xmlBytes)
 }
 
 // WriteXML writes xml which from []byte
@@ -625,6 +636,12 @@ func (ctx *Context) ServeFile(filename string) error {
 		fi, _ = f.Stat()
 	}
 	return ctx.ServeContent(f, fi.Name(), fi.ModTime())
+}
+
+// Stream , steaming any type of contents to the client
+// it's just calls the SetBodyStreamWriter
+func (ctx *Context) Stream(cb func(writer *bufio.Writer)) {
+	ctx.RequestCtx.SetBodyStreamWriter(cb)
 }
 
 /* END OF RENDERER */
