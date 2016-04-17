@@ -31,9 +31,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
-	"time"
 
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/cli"
@@ -62,25 +60,9 @@ type (
 	TypescriptPlugin struct {
 		options Options
 		logger  *iris.Logger
+		module  *cli.NpmModule
 	}
 )
-
-func getTypescriptBinary() (typescriptBin string) {
-	out, err := cli.Command("npm", "root", "-g")
-	if err != nil {
-		//println(err.Error())
-		return
-	}
-
-	npmDir := out[0:strings.LastIndexByte(out, os.PathSeparator)]
-	//println("Npm directory: ", npmDir)
-	typescriptBin = npmDir + cli.PathSeparator + "tsc"
-	if runtime.GOOS == "windows" {
-		typescriptBin += ".cmd"
-	}
-
-	return
-}
 
 // DefaultOptions returns the default Options of the TypescriptPlugin
 func DefaultOptions() Options {
@@ -90,8 +72,6 @@ func DefaultOptions() Options {
 	}
 	opt := Options{Dir: root + cli.PathSeparator, Ignore: node_modules, Watch: true}
 
-	opt.Bin = getTypescriptBinary()
-
 	return opt
 
 }
@@ -100,7 +80,9 @@ func DefaultOptions() Options {
 
 // New creates & returns a new instnace typescript plugin
 func New(_opt ...Options) *TypescriptPlugin {
+	var module = cli.NewNpmModule("typescript", "tsc", nil)
 	var options = DefaultOptions()
+	options.Bin = module.GetExecutable()
 
 	if _opt != nil && len(_opt) > 0 { //not nil always but I like this way :)
 		opt := _opt[0]
@@ -120,7 +102,7 @@ func New(_opt ...Options) *TypescriptPlugin {
 		options.Watch = opt.Watch
 	}
 
-	return &TypescriptPlugin{options: options}
+	return &TypescriptPlugin{options: options, module: module}
 }
 
 // implement the IPlugin & IPluginPostListen
@@ -138,6 +120,7 @@ func (t *TypescriptPlugin) GetDescription() string {
 
 func (t *TypescriptPlugin) PostListen(s *iris.Station) {
 	t.logger = s.Logger()
+	t.module.SetLogger(s.Logger())
 	t.start()
 }
 
@@ -147,14 +130,13 @@ func (t *TypescriptPlugin) PostListen(s *iris.Station) {
 
 func (t *TypescriptPlugin) start() {
 	if t.hasTypescriptFiles() {
-
 		//Can't check if permission denied returns always exists = true....
 		//typescriptModule := out + string(os.PathSeparator) + "typescript" + string(os.PathSeparator) + "bin"
+		if !t.module.Exists() {
+			t.logger.Println("Typescript is not installed, please wait while installing typescript")
+			t.module.Install()
+			t.options.Bin = t.getBin()
 
-		if !cli.Exists(t.options.Bin) {
-			//t.logger.Println("Typescript is not installed, please wait installing typescript")
-			t.installTypescript()
-			t.options.Bin = getTypescriptBinary()
 		}
 
 		dirs := t.getTypescriptProjects()
@@ -169,6 +151,7 @@ func (t *TypescriptPlugin) start() {
 				}
 
 			}
+			t.logger.Printf("%d Typescript project(s) compiled", len(dirs))
 		} else {
 			//search for standalone typescript (.ts) files and combile them
 			files := t.getTypescriptFiles()
@@ -183,11 +166,16 @@ func (t *TypescriptPlugin) start() {
 					}
 
 				}
+				t.logger.Printf("%d Typescript file(s) compiled", len(files))
 			}
 
 		}
 
 	}
+}
+
+func (t *TypescriptPlugin) getBin() (typescriptBin string) {
+	return t.module.GetExecutable()
 }
 
 func (t *TypescriptPlugin) hasTypescriptFiles() bool {
@@ -196,6 +184,7 @@ func (t *TypescriptPlugin) hasTypescriptFiles() bool {
 	hasTs := false
 
 	filepath.Walk(root, func(path string, fi os.FileInfo, err error) error {
+
 		if fi.IsDir() {
 			return nil
 		}
@@ -204,7 +193,6 @@ func (t *TypescriptPlugin) hasTypescriptFiles() bool {
 				return nil
 			}
 		}
-
 		if strings.HasSuffix(path, ".ts") {
 			hasTs = true
 			return errors.New("Typescript found, hope that will stop here")
@@ -213,48 +201,6 @@ func (t *TypescriptPlugin) hasTypescriptFiles() bool {
 		return nil
 	})
 	return hasTs
-}
-
-func (t *TypescriptPlugin) installTypescript() {
-	finish := false
-
-	go func() {
-		i := 0
-		print("\n|")
-		print("_")
-		print("|")
-
-	printer:
-		{
-			i++
-
-			print("\010\010-")
-			time.Sleep(time.Second / 2)
-			print("\010\\")
-			time.Sleep(time.Second / 2)
-			print("\010|")
-			time.Sleep(time.Second / 2)
-			print("\010/")
-			time.Sleep(time.Second / 2)
-			print("\010-")
-			time.Sleep(time.Second / 2)
-			print("|")
-			if finish {
-				goto ok
-			}
-			goto printer
-		}
-
-	ok:
-	}()
-	out, err := cli.Command("npm", "install", "typescript", "-g")
-	finish = true
-	if err != nil {
-		t.logger.Printf("\nError installing typescript %s", err.Error())
-	} else {
-		t.logger.Printf("\nTypescript installed %s", out)
-	}
-
 }
 
 func (t *TypescriptPlugin) getTypescriptProjects() []string {

@@ -27,6 +27,7 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -50,12 +51,34 @@ func Command(command string, a ...string) (output string, err error) {
 	} else {
 		args = a
 	}
-
 	out, err = exec.Command(command, args...).Output()
 
 	if err == nil {
 		output = string(out)
 	}
+
+	return
+}
+
+// MustCommand executes a command in shell and returns it's output, it's block version. It panics on an error
+func MustCommand(command string, a ...string) (output string) {
+	var out []byte
+	var err error
+	args := strings.Split(command, " ")
+	if len(args) > 1 {
+		command = args[0]
+		args = append(args[1:], a...)
+	} else {
+		args = a
+	}
+
+	out, err = exec.Command(command, args...).Output()
+	if err != nil {
+		argsToString := strings.Join(args, " ")
+		panic(fmt.Sprintf(ErrCommand.Error(), command+" "+argsToString))
+	}
+
+	output = string(out)
 
 	return
 }

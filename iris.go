@@ -81,7 +81,7 @@ func init() {
 
 // New creates and returns a new iris Station with default options
 func New() *Station {
-	defaultOptions := defaultOptions()
+	defaultOptions := DefaultOptions()
 	return newStation(defaultOptions)
 }
 
