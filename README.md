@@ -853,7 +853,7 @@ if you want to help please do so (pr).
 | [Graceful](https://github.com/iris-contrib/graceful) | [Ported to iris](https://github.com/iris-contrib/graceful) | Graceful HTTP Shutdown | [Yes](https://github.com/iris-contrib/examples/tree/master/graceful) |
 | [gzip](https://github.com/kataras/iris/tree/development/middleware/gzip/) | [Iris](https://github.com/kataras/iris) | GZIP response compression | [Yes](https://github.com/kataras/iris/tree/development/middleware/gzip/README.md) |
 | [RestGate](https://github.com/pjebs/restgate) | [Prasanga Siripala](https://github.com/pjebs) | Secure authentication for REST API endpoints | No |
-| [secure](https://github.com/iris-contrib/secure) | [Ported to Iris](https://github.com/iris-contrib/secure) | Middleware that implements a few quick security wins | [Yes](https://github.com/iris-contrib/examples/tree/master/secure) |
+| [secure](https://github.com/kataras/iris/tree/development/middleware/secure) | [Ported to Iris](https://github.com/kataras/iris/tree/development/middleware/secure) | Middleware that implements a few quick security wins | [Yes](https://github.com/iris-contrib/examples/tree/master/secure) |
 | [JWT Middleware](https://github.com/auth0/go-jwt-middleware) | [Auth0](https://github.com/auth0) | Middleware checks for a JWT on the `Authorization` header on incoming requests and decodes it| No |
 | [binding](https://github.com/mholt/binding) | [Matt Holt](https://github.com/mholt) | Data binding from HTTP requests into structs | No |
 | [i18n](https://github.com/kataras/iris/tree/development/middleware/i18n) | [Iris](https://github.com/kataras/iris) | Internationalization and Localization | [Yes]https://github.com/iris-contrib/examples/tree/master/middleware_internationalization_i18n) |
