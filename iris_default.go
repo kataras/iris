@@ -27,11 +27,12 @@
 package iris
 
 // defaultOptions returns the default options for the Station
-func defaultOptions() StationOptions {
+func DefaultOptions() StationOptions {
 	return StationOptions{
 		Profile:        false,
 		ProfilePath:    DefaultProfilePath,
 		PathCorrection: true,
+		Log:            true,
 	}
 }
 
