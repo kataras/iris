@@ -57,8 +57,8 @@ What are you waiting, start using Iris Web Framework today. Easy to learn, provi
 - [Graceful](#graceful)
 - [Context](#context)
 - [Plugins](#plugins)
-- [Internationalization and Localization](https://github.com/iris-contrib/examples/middleware_internationalization_i18n)
-- [Examples](https://github.com/iris-contrib)
+- [Internationalization and Localization](https://github.com/iris-contrib/examples/tree/master/middleware_internationalization_i18n)
+- [Examples](https://github.com/iris-contrib/examples)
 - [Benchmarks](#benchmarks)
 - [Third Party Middlewares](#third-party-middlewares)
 - [Contributors](#contributors)
@@ -856,7 +856,7 @@ if you want to help please do so (pr).
 | [secure](https://github.com/kataras/iris/tree/development/middleware/secure) | [Ported to Iris](https://github.com/kataras/iris/tree/development/middleware/secure) | Middleware that implements a few quick security wins | [Yes](https://github.com/iris-contrib/examples/tree/master/secure) |
 | [JWT Middleware](https://github.com/auth0/go-jwt-middleware) | [Auth0](https://github.com/auth0) | Middleware checks for a JWT on the `Authorization` header on incoming requests and decodes it| No |
 | [binding](https://github.com/mholt/binding) | [Matt Holt](https://github.com/mholt) | Data binding from HTTP requests into structs | No |
-| [i18n](https://github.com/kataras/iris/tree/development/middleware/i18n) | [Iris](https://github.com/kataras/iris) | Internationalization and Localization | [Yes]https://github.com/iris-contrib/examples/tree/master/middleware_internationalization_i18n) |
+| [i18n](https://github.com/kataras/iris/tree/development/middleware/i18n) | [Iris](https://github.com/kataras/iris) | Internationalization and Localization | [Yes](https://github.com/iris-contrib/examples/tree/master/middleware_internationalization_i18n) |
 | [logrus](https://github.com/meatballhat/negroni-logrus) | [Dan Buch](https://github.com/meatballhat) | Logrus-based logger | No |
 | [render](https://github.com/unrolled/render) | [Cory Jacobsen](https://github.com/unrolled) | Render JSON, XML and HTML templates | No |
 | [gorelic](https://github.com/jingweno/negroni-gorelic) | [Jingwen Owen Ou](https://github.com/jingweno) | New Relic agent for Go runtime | No |
