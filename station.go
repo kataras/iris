@@ -48,6 +48,7 @@ type (
 		OptimusPrime()
 		HasOptimized() bool
 		Logger() *Logger
+		SetMaxRequestBodySize(int)
 	}
 
 	// StationOptions is the struct which contains all Iris' settings/options
@@ -291,4 +292,13 @@ func (s *Station) Templates(pathGlob string) {
 
 	s.templates.Load(pathGlob)
 
+}
+
+//SetMaxRequestBodySize sets the maximum request body size.
+//
+// The server rejects requests with bodies exceeding this limit.
+//
+// By default request body size is unlimited.
+func (s *Station) SetMaxRequestBodySize(size int) {
+	s.Server.MaxRequestBodySize = size
 }
