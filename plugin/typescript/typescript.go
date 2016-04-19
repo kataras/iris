@@ -35,8 +35,15 @@ import (
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/cli/npm"
 	"github.com/kataras/iris/cli/system"
+	"github.com/kataras/iris/plugin/editor"
 )
 
+/* Notes
+Editor is not ready yet, when it does:
+The editor is working when the typescript plugin finds a typescript project (tsconfig.json),
+also working only if one typescript project found (normaly is one for client-side).
+
+*/
 var (
 	node_modules = system.PathSeparator + "node_modules" + system.PathSeparator
 	Name         = "TypescriptPlugin"
@@ -44,24 +51,35 @@ var (
 
 type (
 	// Options the struct which holds the TypescriptPlugin options
-	// Has four (4) fields
+	// Has five (5) fields
 	//
 	// 1. Bin: 	string, the typescript installation directory/typescript/lib/tsc.js, if empty it will search inside global npm modules
 	// 2. Dir:     string, Dir set the root, where to search for typescript files/project. Default "./"
 	// 3. Ignore:  string, comma separated ignore typescript files/project from these directories. Default "" (node_modules are always ignored)
-	// 4. Tsconfig:  &TsConfig{}, here you can set all compilerOptions if no tsconfig.json exists inside the 'Dir'
+	// 4. Tsconfig:  &typescript.Tsconfig{}, here you can set all compilerOptions if no tsconfig.json exists inside the 'Dir'
+	// 5. Editor: 	typescript.Editor("username","password"), if setted then alm-tools browser-based typescript IDE will be available. Defailt is nil
 	Options struct {
 		Bin      string
 		Dir      string
 		Ignore   string
 		Tsconfig *Tsconfig
+		Editor   *editor.EditorPlugin // the editor is just a plugin also
 	}
 	// TypescriptPlugin the struct of the plugin, holds all necessary fields & methods
 	TypescriptPlugin struct {
 		options Options
-		logger  *iris.Logger
+		// taken from Activate
+		pluginContainer iris.IPluginContainer
+		// taken at the PreListen
+		logger *iris.Logger
 	}
 )
+
+// Editor is just a shortcut for github.com/kataras/iris/plugin/editor.New()
+// returns a new EditorPlugin, it's exists here because the typescript plugin has direct interest with the EditorPlugin
+func Editor(username, password string) *editor.EditorPlugin {
+	return editor.New(username, password)
+}
 
 // DefaultOptions returns the default Options of the TypescriptPlugin
 func DefaultOptions() Options {
@@ -107,6 +125,7 @@ func New(_opt ...Options) *TypescriptPlugin {
 
 // implement the IPlugin & IPluginPreListen
 func (t *TypescriptPlugin) Activate(container iris.IPluginContainer) error {
+	t.pluginContainer = container
 	return nil
 }
 
@@ -133,10 +152,13 @@ func (t *TypescriptPlugin) start() {
 		//Can't check if permission denied returns always exists = true....
 		//typescriptModule := out + string(os.PathSeparator) + "typescript" + string(os.PathSeparator) + "bin"
 		if !npm.Exists(t.options.Bin) {
-			t.logger.Println("Typescript is not installed, please wait while installing typescript")
+			t.logger.Println("Installing typescript, please wait...")
 			res := npm.Install("typescript")
-
-			t.logger.Print(res.Output())
+			if res.Error != nil {
+				t.logger.Print(res.Error.Error())
+				return
+			}
+			t.logger.Print(res.Message)
 
 		}
 
@@ -150,7 +172,7 @@ func (t *TypescriptPlugin) start() {
 
 				if projectConfig.CompilerOptions.Watch {
 					watchedProjects++
-					// if has watch : true then we have to wrap the command to a goroutine.
+					// if has watch : true then we have to wrap the command to a goroutine (I don't want to use the .Start here)
 					go func() {
 						_, err := cmd.Output()
 						if err != nil {
@@ -195,6 +217,13 @@ func (t *TypescriptPlugin) start() {
 				t.logger.Printf("%d Typescript file(s) compiled ( %d monitored by a background file watcher )", len(files), watchedFiles)
 			}
 
+		}
+
+		//editor activation
+		if len(projects) == 1 && t.options.Editor != nil {
+			dir := projects[0][0:strings.LastIndex(projects[0], system.PathSeparator)]
+			t.options.Editor.Dir(dir)
+			t.pluginContainer.Plugin(t.options.Editor)
 		}
 
 	}

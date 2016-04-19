@@ -16,10 +16,11 @@ This is an Iris and typescript bridge plugin.
 ## Options
 
 This plugin has **optionally** options
-1.  Bin:    string, the typescript installation path/bin/tsc or tsc.cmd, if empty then it will search to the global npm modules
+1. Bin:    string, the typescript installation path/bin/tsc or tsc.cmd, if empty then it will search to the global npm modules
 2. Dir:     string, Dir set the root, where to search for typescript files/project. Default "./"
 3. Ignore:  string, comma separated ignore typescript files/project from these directories. Default "" (node_modules are always ignored)
-4. Watch:	 boolean, watch for any changes and re-build if true/. Default true -- This is not ready yet
+4. Tsconfig:  &typescript.Tsconfig{}, here you can set all compilerOptions if no tsconfig.json exists inside the 'Dir'
+5. Editor: 	typescript.Editor(), if setted then alm-tools browser-based typescript IDE will be available. Defailt is nil
 
 > Note: if any string in Ignore doesn't start with './' then it will ignore all files which contains this path string.
 For example /node_modules/ will ignore all typescript files that are inside at ANY '/node_modules/', that means and the submodules.
@@ -41,7 +42,8 @@ func main(){
 	Bin ->  		  the typescript installation path/bin/tsc or tsc.cmd, if empty then it will search to the global npm modules
 	Dir    ->		   where to search for typescript files/project. Default "./"
 	Ignore ->        comma separated ignore typescript files/project from these directories (/node_modules/ are always ignored). Default ""
-   Tsconfig -> 		&typescript.TsConfig{}, here you can set all compilerOptions if no tsconfig.json exists inside the 'Dir'
+    Tsconfig -> 		&typescript.Tsconfig{}, here you can set all compilerOptions if no tsconfig.json exists inside the 'Dir'
+    Editor ->			typescript.Editor(), if setted then alm-tools browser-based typescript IDE will be available. Default is nil - NOT READY YET
 	*/
 
 	ts := typescript.Options {
@@ -63,3 +65,19 @@ func main(){
 
 ```
 
+## Editor - NOT READY YET
+
+[alm-tools](http://alm.tools) is a typescript online IDE/Editor, made by [@basarat](https://twitter.com/basarat) one of the top contributors of the [Typescript](http://www.typescriptlang.org).
+
+Iris gives you the opportunity to edit your client-side using the alm-tools editor, via the editor plugin.
+With typescript plugin you have to set the Editor option and you're ready:
+
+```go
+typescript.Options {
+	//...
+	Editor: typescript.Editor("username","passowrd").AddUser("username2","password2").Port(4242)
+	//...
+}
+```
+
+> [Read more](https://github.com/kataras/iris/tree/development/plugin/editor) for Editor
