@@ -39,7 +39,7 @@ import (
 )
 
 /* Notes
-Editor is not ready yet, when it does:
+
 The editor is working when the typescript plugin finds a typescript project (tsconfig.json),
 also working only if one typescript project found (normaly is one for client-side).
 

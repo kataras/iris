@@ -25,7 +25,6 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// editor package is not ready
 package editor
 
 /* Notes for Auth
@@ -52,14 +51,14 @@ var (
 
 type (
 	EditorPlugin struct {
-		logger    *iris.Logger
-		enabled   bool              // default true
-		host      string            // default 127.0.0.1
-		port      int               // default 4444
-		users     map[string]string // [username]password -> based on Basic Auth, // default -nothing, for security reasons you have to set it otherwise editor is not opening.
-		keyfile   string
-		certfile  string
-		directory string // working directory
+		logger             *iris.Logger
+		enabled            bool   // default true
+		host               string // default 127.0.0.1
+		port               int    // default 4444
+		username, password string // based on Basic Auth, // default -nothing, for security reasons you have to set it otherwise editor is not opening.
+		keyfile            string
+		certfile           string
+		directory          string // working directory
 
 		// after alm started
 		process *os.Process
@@ -68,19 +67,14 @@ type (
 
 func New(username string, password string) *EditorPlugin {
 	e := &EditorPlugin{enabled: true, port: 4444}
-	if username != "" && password != "" {
-		e.AddUser(username, password)
-	}
-
+	e.username = username
+	e.password = password
 	return e
 }
 
-func (e *EditorPlugin) AddUser(username string, password string) *EditorPlugin {
-	if e.users == nil {
-		e.users = make(map[string]string, 0)
-	}
-
-	e.users[username] = password
+func (e *EditorPlugin) User(username string, password string) *EditorPlugin {
+	e.username = username
+	e.password = password
 	return e
 }
 
@@ -95,9 +89,6 @@ func (e *EditorPlugin) Port(port int) *EditorPlugin {
 }
 
 //
-func (e *EditorPlugin) SetUsers(users map[string]string) {
-	e.users = users
-}
 
 func (e *EditorPlugin) SetEnabled(enable bool) {
 	e.enabled = enable
@@ -143,6 +134,12 @@ func (e *EditorPlugin) PreClose(s *iris.Station) {
 }
 
 func (e *EditorPlugin) start() {
+
+	if e.username == "" || e.password == "" {
+		e.logger.Println("Error before running alm-tools. You have to set username & password for security reasons, otherwise this plugin won't run.")
+		return
+	}
+
 	if !npm.Exists("alm/bin/alm") {
 		e.logger.Println("Installing alm-tools, please wait...")
 		res := npm.Install("alm")
@@ -168,27 +165,24 @@ func (e *EditorPlugin) start() {
 	// third, cross platform for sure :)
 	cmd := system.CommandBuilder("node", npm.Abs("alm/bin/alm"))
 
-	cmd.AppendArguments("-d " + e.directory)
 	cmd.AppendArguments("--host " + e.host)
 	cmd.AppendArguments("-t " + strconv.Itoa(e.port))
+	cmd.AppendArguments("--user "+e.username, "--pass "+e.password)
+	cmd.AppendArguments("-d " + e.directory)
+	//cmd.AppendArguments("-d ./")
 	// for auto-start in the browser: cmd.AppendArguments("-o")
 	if e.keyfile != "" && e.certfile != "" {
 		cmd.AppendArguments("--httpskey "+e.keyfile, "--httpscert "+e.certfile)
 	}
 
-	//println("[DEBUG] alm-tools arguments: " + strings.Join(cmd.Args, " "))
-
+	//println("[DEBUG]" + strings.Join(cmd.Args, " "))
 	err := cmd.Start()
 	if err != nil {
 		e.logger.Println("Error while running alm-tools. Trace: " + err.Error())
 		return
 	}
 
+	//we lose the internal error handling but ok...
 	e.logger.Printf("Editor is running at %s:%d | %s", e.host, e.port, e.directory)
-
-	///TODO: make the basic auth, I though I could run alm without it's server, but I can't. I have to ask
-	// from @basarat to add basic auth in the command arguments and/or tsconfig.json (it would be nice for multiple users but impossible via command arguments)
-	// example: alm -u "username,password"
-	// -u stands for user(?)
 
 }

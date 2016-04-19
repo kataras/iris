@@ -43,7 +43,7 @@ func main(){
 	Dir    ->		   where to search for typescript files/project. Default "./"
 	Ignore ->        comma separated ignore typescript files/project from these directories (/node_modules/ are always ignored). Default ""
     Tsconfig -> 		&typescript.Tsconfig{}, here you can set all compilerOptions if no tsconfig.json exists inside the 'Dir'
-    Editor ->			typescript.Editor(), if setted then alm-tools browser-based typescript IDE will be available. Default is nil - NOT READY YET
+    Editor ->			typescript.Editor(), if setted then alm-tools browser-based typescript IDE will be available. Default is nil.
 	*/
 
 	ts := typescript.Options {
@@ -65,7 +65,7 @@ func main(){
 
 ```
 
-## Editor - NOT READY YET
+## Editor
 
 [alm-tools](http://alm.tools) is a typescript online IDE/Editor, made by [@basarat](https://twitter.com/basarat) one of the top contributors of the [Typescript](http://www.typescriptlang.org).
 

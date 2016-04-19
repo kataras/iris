@@ -4,13 +4,14 @@
 package websocket
 
 import (
-	"github.com/kataras/iris"
-	"github.com/valyala/fasthttp"
 	"net"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/kataras/iris"
+	"github.com/valyala/fasthttp"
 )
 
 // HandshakeError describes an error with the handshake from the peer.
@@ -243,6 +244,10 @@ func (u *Upgrader) Upgrade(ctx *iris.Context) error {
 	*/
 	ctx.Hijack(func(conn net.Conn) {
 		c := newConn(conn, true, u.ReadBufferSize, u.WriteBufferSize)
+		h := &fasthttp.RequestHeader{}
+		ctx.Request.Header.CopyTo(h)
+		//copy request headers in order to have access inside the Conn
+		c.SetHeaders(h)
 		c.subprotocol = subprotocol
 		u.Receiver(c)
 

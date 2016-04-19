@@ -1,5 +1,3 @@
-## Not ready yet.
-
 ## Package information
 
 Editor Plugin is just a bridge between Iris and [alm-tools](http://alm.tools).
@@ -24,7 +22,7 @@ import (
 )
 
 func main(){
-	e := editor.New("username","password").Adduser("otheruser","otherpassword").Port(4444).Dir("/path/to/the/client/side/directory")
+	e := editor.New("username","password").Port(4444).Dir("/path/to/the/client/side/directory")
 
 	iris.Plugin(e)
 
@@ -36,7 +34,7 @@ func main(){
 
 ```
 
-> Note for AddUser: The Authorization specifies the authentication mechanism (in this case Basic) followed by the username and password.
+> Note for username, password: The Authorization specifies the authentication mechanism (in this case Basic) followed by the username and password.
 Although, the string aHR0cHdhdGNoOmY= may look encrypted it is simply a base64 encoded version of <username>:<password>.
 Would be readily available to anyone who could intercept the HTTP request. [Read more.](https://www.httpwatch.com/httpgallery/authentication/)
 
