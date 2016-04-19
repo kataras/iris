@@ -24,40 +24,55 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-package cli
+
+package npm
 
 import (
-	"runtime"
+	"fmt"
 	"strings"
 	"time"
 
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/cli/system"
+)
+
+var (
+	NodeModules string
 )
 
 type (
-	// Npm service for global nodejs modules
-	// use: npm = &Npm{logger{
-	// 		npm.Install("typescript")
-	Npm struct {
-		logger *iris.Logger
-	}
-	// NpmModule is just an easy way to run Npm's commands when this module is using many times in the code base
-	//use: module := NewNpmModule("typescript", logger)
-	// 	   module.Install()
-	NpmModule struct {
-		Name    string
-		Bin     string
-		service *Npm
+	NpmResult struct {
+		Message string
+		Error   error
 	}
 )
 
-// maybe it's bad practise to use a logger here, we could just return a message and an error with message if error happens, we will see at the future maybe this will change.
-func (npm *Npm) SetLogger(logger *iris.Logger) {
-	npm.logger = logger
+// init sets the root directory for the node_modules
+func init() {
+	NodeModules = system.MustCommand("npm", "root", "-g") //here it ends with \n we have to remove it
+	NodeModules = NodeModules[0 : len(NodeModules)-1]
+}
+
+///TODO: na dw pws grafete swsta
+func success(output string, a ...interface{}) NpmResult {
+	return NpmResult{fmt.Sprintf(output, a...), nil}
+}
+
+func fail(errMsg string, a ...interface{}) NpmResult {
+	return NpmResult{"", fmt.Errorf("\n"+errMsg, a...)}
+}
+
+// Output returns the error message if result.Error exists, otherwise returns the result.Message
+func (res NpmResult) Output() (out string) {
+	if res.Error != nil {
+		out = res.Error.Error()
+	} else {
+		out = res.Message
+	}
+	return
 }
 
 // Install installs a module
-func (npm *Npm) Install(moduleName string) error {
+func Install(moduleName string) NpmResult {
 	finish := make(chan bool)
 
 	go func() {
@@ -92,77 +107,39 @@ func (npm *Npm) Install(moduleName string) error {
 		}
 
 	}()
-	out, err := Command("npm", "install", moduleName, "-g")
+	out, err := system.Command("npm", "install", moduleName, "-g")
 	finish <- true
 	if err != nil {
-		return Printf(npm.logger, ErrInstallingModule, moduleName, err.Error())
+		return fail("Error installing module %s. Trace: %s", moduleName, err.Error())
 	} else {
-		npm.logger.Printf("%s installed %s", moduleName, out)
-		return nil
+		return success("\n%s installed %s", moduleName, out)
 	}
 }
 
 // Unistall removes a module
-func (npm *Npm) Unistall(moduleName string) error {
-	out, err := Command("npm", "unistall", "-g", moduleName)
+func Unistall(moduleName string) NpmResult {
+	out, err := system.Command("npm", "unistall", "-g", moduleName)
 	if err != nil {
-		return Printf(npm.logger, ErrUnistallingModule, moduleName, err.Error())
+		return fail("Error unstalling module %s. Trace: %s", moduleName, err.Error())
 	} else {
-		npm.logger.Printf("\n %s unistalled %s", moduleName, out)
-		return nil
+		return success("\n %s unistalled %s", moduleName, out)
 	}
+}
+
+// Abs returns the absolute path of the global node_modules directory + relative
+func Abs(relativePath string) string {
+	return NodeModules + system.PathSeparator + strings.Replace(relativePath, "/", system.PathSeparator, -1)
 }
 
 // Exists returns true if a module exists
 // here we have two options
 //1 . search by command something like npm -ls -g --depth=x
 //2.  search on files, we choosen the second
-func (npm *Npm) Exists(moduleNameExecFile string) bool {
-	binfile := npm.GetExecutable(moduleNameExecFile)
-	if binfile == "" {
+func Exists(executableRelativePath string) bool {
+	execAbsPath := Abs(executableRelativePath)
+	if execAbsPath == "" {
 		return false
 	}
 
-	return Exists(binfile)
-}
-
-// GetExecutable returns the absolute path of a module's binary(executable) file
-// it doesn't checks for errors or if the file exists, it justs returns a string which can be empty too
-func (npm *Npm) GetExecutable(moduleNameExecFile string) (absPath string) {
-	out := MustCommand("npm", "root", "-g")
-
-	npmDir := out[0:strings.LastIndex(out, PathSeparator)]
-	absPath = npmDir + PathSeparator + moduleNameExecFile
-	if runtime.GOOS == "windows" {
-		absPath += ".cmd"
-	}
-
-	return
-}
-
-// NpmModule
-
-func NewNpmModule(name string, binName string, logger *iris.Logger) *NpmModule {
-	service := &Npm{logger: logger}
-	return &NpmModule{name, binName, service}
-}
-
-func (module *NpmModule) SetLogger(logger *iris.Logger) {
-	module.service.SetLogger(logger)
-}
-
-func (module *NpmModule) Install() error {
-	return module.service.Install(module.Name)
-}
-
-func (module *NpmModule) Unistall() error {
-	return module.service.Unistall(module.Name)
-}
-
-func (module *NpmModule) Exists() bool {
-	return module.service.Exists(module.Bin)
-}
-
-func (module *NpmModule) GetExecutable() string {
-	return module.service.GetExecutable(module.Bin)
+	return system.Exists(execAbsPath)
 }

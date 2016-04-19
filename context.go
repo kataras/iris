@@ -625,7 +625,6 @@ func (ctx *Context) ServeFile(filename string) error {
 		return fmt.Errorf("%d", 404)
 	}
 	defer f.Close()
-
 	fi, _ := f.Stat()
 	if fi.IsDir() {
 		filename = path.Join(filename, "index.html")

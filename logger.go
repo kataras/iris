@@ -60,6 +60,12 @@ func (l *Logger) IsEnabled() bool {
 	return l.enabled
 }
 
+func (l *Logger) Print(v ...interface{}) {
+	if l.enabled {
+		l.Logger.Print(v...)
+	}
+}
+
 func (l *Logger) Printf(format string, a ...interface{}) {
 	if l.enabled {
 		l.Logger.Printf(format, a...)
