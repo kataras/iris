@@ -41,16 +41,16 @@ func main(){
 	Bin ->  		  the typescript installation path/bin/tsc or tsc.cmd, if empty then it will search to the global npm modules
 	Dir    ->		   where to search for typescript files/project. Default "./"
 	Ignore ->        comma separated ignore typescript files/project from these directories (/node_modules/ are always ignored). Default ""
-	Watch	->        watch for any changes and re-build if true/. Default true -- This is not ready yet
+   Tsconfig -> 		&typescript.TsConfig{}, here you can set all compilerOptions if no tsconfig.json exists inside the 'Dir'
 	*/
 
 	ts := typescript.Options {
-		Dir: "./scripts/src"
+		Dir: "./scripts/src",
+		Tsconfig: &typescript.Tsconfig{Module: "commonjs", Target: "es5"}, // or typescript.DefaultTsconfig()
 	}
 
 	//if you want to change only certain option(s) but you want default to all others then you have to do this:
 	ts = typescript.DefaultOptions()
-	ts.Watch = false
 	//
 
 	iris.Plugin(typescript.New(ts)) //or with the default options just: typescript.New()

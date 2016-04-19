@@ -50,7 +50,19 @@ type (
 //
 // In typical use, both Path and args are set by calling Command.
 func (cmd *Cmd) Arguments(args ...string) *Cmd {
-	cmd.Cmd.Args = args // maybe for the first time append([]string{cmd.Name}, args...), if Name
+	cmd.Cmd.Args = append(cmd.Cmd.Args[0:1], args...) //we need the first argument which is the command
+	return cmd
+}
+
+// AppendArguments appends the arguments to the exists
+func (cmd *Cmd) AppendArguments(args ...string) *Cmd {
+	cmd.Cmd.Args = append(cmd.Cmd.Args, args...)
+	return cmd
+}
+
+// ResetArguments resets the arguments
+func (cmd *Cmd) ResetArguments() *Cmd {
+	cmd.Args = cmd.Args[0:1] //keep only the first because is the command
 	return cmd
 }
 
@@ -62,14 +74,8 @@ func (cmd *Cmd) Directory(workingDirectory string) *Cmd {
 	return cmd
 }
 
-// Command sets the terminal/cmd command
-func (cmd *Cmd) Command(command string) *Cmd {
-	cmd.Cmd.Path = command
-	return cmd
-}
-
-func CommandBuilder(command string) *Cmd {
-	return &Cmd{Cmd: &exec.Cmd{Path: command}}
+func CommandBuilder(command string, args ...string) *Cmd {
+	return &Cmd{Cmd: exec.Command(command, args...)}
 }
 
 //the below is just for exec.Command:

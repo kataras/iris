@@ -26,13 +26,6 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package typescript
 
-/* Notes
-17 April 2016:
-According to: https://github.com/Microsoft/TypeScript/issues/2375
-tsc.exe --watch doesn't works on windows but node tsc.js --watch works
-so instead of the tsc.exe we will use node $global_node_modules\typescript\lib\tsc.js as the host/executable/bin file
-*/
-///TODO: check if nodejs is installed before the check for typescript.
 import (
 	"errors"
 	"os"
@@ -53,15 +46,15 @@ type (
 	// Options the struct which holds the TypescriptPlugin options
 	// Has four (4) fields
 	//
-	// 1. Bin: 	string, the typescript installation directory/bin (where the tsc or tsc.cmd are exists), if empty it will search inside global npm modules
+	// 1. Bin: 	string, the typescript installation directory/typescript/lib/tsc.js, if empty it will search inside global npm modules
 	// 2. Dir:     string, Dir set the root, where to search for typescript files/project. Default "./"
 	// 3. Ignore:  string, comma separated ignore typescript files/project from these directories. Default "" (node_modules are always ignored)
-	// 4. Watch:	 boolean, watch for any changes and re-build if true/. Default true
+	// 4. Tsconfig:  &TsConfig{}, here you can set all compilerOptions if no tsconfig.json exists inside the 'Dir'
 	Options struct {
-		Bin    string
-		Dir    string
-		Ignore string
-		Watch  bool
+		Bin      string
+		Dir      string
+		Ignore   string
+		Tsconfig *Tsconfig
 	}
 	// TypescriptPlugin the struct of the plugin, holds all necessary fields & methods
 	TypescriptPlugin struct {
@@ -76,7 +69,7 @@ func DefaultOptions() Options {
 	if err != nil {
 		panic("Typescript Plugin: Cannot get the Current Working Directory !!! [os.getwd()]")
 	}
-	opt := Options{Dir: root + system.PathSeparator, Ignore: node_modules, Watch: true}
+	opt := Options{Dir: root + system.PathSeparator, Ignore: node_modules, Tsconfig: DefaultTsconfig()}
 	opt.Bin = npm.Abs("typescript/lib/tsc.js")
 	return opt
 
@@ -102,8 +95,11 @@ func New(_opt ...Options) *TypescriptPlugin {
 			opt.Ignore += "," + node_modules
 		}
 
+		if opt.Tsconfig != nil {
+			options.Tsconfig = opt.Tsconfig
+		}
+
 		options.Ignore = opt.Ignore
-		options.Watch = opt.Watch
 	}
 
 	return &TypescriptPlugin{options: options}
@@ -132,10 +128,11 @@ func (t *TypescriptPlugin) PreListen(s *iris.Station) {
 // implementation
 
 func (t *TypescriptPlugin) start() {
+	defaultCompilerArgs := t.options.Tsconfig.CompilerArgs() //these will be used if no .tsconfig found.
 	if t.hasTypescriptFiles() {
 		//Can't check if permission denied returns always exists = true....
 		//typescriptModule := out + string(os.PathSeparator) + "typescript" + string(os.PathSeparator) + "bin"
-		if !npm.Exists("typescript/lib/tsc.js") {
+		if !npm.Exists(t.options.Bin) {
 			t.logger.Println("Typescript is not installed, please wait while installing typescript")
 			res := npm.Install("typescript")
 
@@ -143,34 +140,59 @@ func (t *TypescriptPlugin) start() {
 
 		}
 
-		dirs := t.getTypescriptProjects()
-		if len(dirs) > 0 {
+		projects := t.getTypescriptProjects()
+		if len(projects) > 0 {
+			watchedProjects := 0
 			//typescript project (.tsconfig) found
-			for _, dir := range dirs {
-				_, err := system.Command("node", npm.Abs("typescript/lib/tsc.js"), "-p", dir)
+			for _, project := range projects {
+				cmd := system.CommandBuilder("node", t.options.Bin, "-p", project[0:strings.LastIndex(project, system.PathSeparator)]) //remove the /tsconfig.json)
+				projectConfig := FromFile(project)
 
-				if err != nil {
-					t.logger.Println(err.Error())
-					return
-				}
+				if projectConfig.CompilerOptions.Watch {
+					watchedProjects++
+					// if has watch : true then we have to wrap the command to a goroutine.
+					go func() {
+						_, err := cmd.Output()
+						if err != nil {
+							t.logger.Println(err.Error())
+							return
+						}
+					}()
+				} else {
 
-			}
-			t.logger.Printf("%d Typescript project(s) compiled", len(dirs))
-		} else {
-			//search for standalone typescript (.ts) files and combile them
-			files := t.getTypescriptFiles()
-			if len(files) > 0 {
-				//it must be always > 0 if we came here, because of if hasTypescriptFiles == true.
-				for _, file := range files {
-
-					_, err := system.Command("node ", npm.Abs("typescript/lib/tsc.js"), file)
+					_, err := cmd.Output()
 					if err != nil {
 						t.logger.Println(err.Error())
 						return
 					}
 
 				}
-				t.logger.Printf("%d Typescript file(s) compiled", len(files))
+
+			}
+			t.logger.Printf("%d Typescript project(s) compiled ( %d monitored by a background file watcher ) ", len(projects), watchedProjects)
+		} else {
+			//search for standalone typescript (.ts) files and compile them
+			files := t.getTypescriptFiles()
+
+			if len(files) > 0 {
+				watchedFiles := 0
+				if t.options.Tsconfig.CompilerOptions.Watch {
+					watchedFiles = len(files)
+				}
+				//it must be always > 0 if we came here, because of if hasTypescriptFiles == true.
+				for _, file := range files {
+					cmd := system.CommandBuilder("node", t.options.Bin)
+					cmd.AppendArguments(defaultCompilerArgs...)
+					cmd.AppendArguments(file)
+					_, err := cmd.Output()
+					cmd.Args = cmd.Args[0 : len(cmd.Args)-1] //remove the last, which is the file
+					if err != nil {
+						t.logger.Println(err.Error())
+						return
+					}
+
+				}
+				t.logger.Printf("%d Typescript file(s) compiled ( %d monitored by a background file watcher )", len(files), watchedFiles)
 			}
 
 		}
@@ -223,7 +245,7 @@ func (t *TypescriptPlugin) getTypescriptProjects() []string {
 
 		if strings.HasSuffix(path, system.PathSeparator+"tsconfig.json") {
 			//t.logger.Printf("\nTypescript project found in %s", path)
-			projects = append(projects, path[0:strings.LastIndex(path, system.PathSeparator)]) //remove the /tsconfig.json, it can run with it but it's better to have only the directory
+			projects = append(projects, path)
 		}
 
 		return nil
