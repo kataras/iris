@@ -106,6 +106,7 @@ type (
 		XML([]byte) error
 		RenderXML(int, ...interface{}) error
 		ReadXML(interface{}) error
+		ReadForm(formObject interface{}) error
 		ServeContent(io.ReadSeeker, string, time.Time) error
 		ServeFile(string) error
 		Stream(func(*bufio.Writer))
@@ -594,6 +595,28 @@ func (ctx *Context) RenderXML(httpStatus int, xmlStructs ...interface{}) error {
 	ctx.RequestCtx.Write(_xmlDoc)
 	//xml.NewEncoder(w).Encode(r.Data)
 	return nil
+}
+
+// ReadForm binds the formObject with request's form data (if exists, otherwise returns an error)
+func (ctx *Context) ReadForm(formObject interface{}) error {
+
+	// first check if we have multipart form
+	form, err := ctx.RequestCtx.MultipartForm()
+	if err == nil {
+		//we have multipart form
+		return mapForm(formObject, form.Value)
+	}
+	// if no multipart and post arguments ( means normal form)
+	if ctx.RequestCtx.PostArgs().Len() > 0 {
+		form := make(map[string][]string, ctx.RequestCtx.PostArgs().Len())
+		ctx.Request.PostArgs().VisitAll(func(k []byte, v []byte) {
+			form[BytesToString(k)] = []string{BytesToString(v)}
+		})
+
+		return mapForm(formObject, form)
+	}
+
+	return fmt.Errorf("Error on ReadForm: request doesn't contains form data")
 }
 
 // ServeContent serves content, headers are autoset
