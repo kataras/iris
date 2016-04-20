@@ -225,10 +225,6 @@ func CopyFile(source string, destination string) error {
 	return nil
 }
 
-var otherMimeTypes = map[string]string{
-	".zip": "application/zip",
-}
-
 // TypeByExtension returns the MIME type associated with the file extension ext.
 // The extension ext should begin with a leading dot, as in ".html".
 // When ext has no associated type, TypeByExtension returns "".
