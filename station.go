@@ -48,6 +48,7 @@ type (
 		OptimusPrime()
 		HasOptimized() bool
 		Logger() *Logger
+		SetMaxRequestBodySize(int)
 	}
 
 	// StationOptions is the struct which contains all Iris' settings/options
@@ -223,12 +224,11 @@ func (s *Station) HasOptimized() bool {
 // host:port or just port
 func (s *Station) Listen(fullHostOrPort ...string) (err error) {
 	s.OptimusPrime()
-
-	s.pluginContainer.DoPreListen(s)
 	opt := ServerOptions{ListeningAddr: ParseAddr(fullHostOrPort...)}
 	server := NewServer(opt)
 	server.SetHandler(s.IRouter.ServeRequest)
 	s.Server = server
+	s.pluginContainer.DoPreListen(s)
 	err = server.Listen()
 	if err == nil {
 		s.pluginContainer.DoPostListen(s)
@@ -247,13 +247,11 @@ func (s *Station) Listen(fullHostOrPort ...string) (err error) {
 // host:port or just port
 func (s *Station) ListenTLS(fullAddress string, certFile, keyFile string) error {
 	s.OptimusPrime()
-	s.pluginContainer.DoPreListen(s)
-	// I moved the s.Server here because we want to be able to change the Router before listen (with plugins)
-	// set the server with the server handler
 	opt := ServerOptions{ListeningAddr: ParseAddr(fullAddress), CertFile: certFile, KeyFile: keyFile}
 	server := NewServer(opt)
 	server.SetHandler(s.IRouter.ServeRequest)
 	s.Server = server
+	s.pluginContainer.DoPreListen(s)
 	err := server.ListenTLS()
 	if err == nil {
 		s.pluginContainer.DoPostListen(s)
@@ -291,4 +289,13 @@ func (s *Station) Templates(pathGlob string) {
 
 	s.templates.Load(pathGlob)
 
+}
+
+//SetMaxRequestBodySize sets the maximum request body size.
+//
+// The server rejects requests with bodies exceeding this limit.
+//
+// By default request body size is unlimited.
+func (s *Station) SetMaxRequestBodySize(size int) {
+	s.Server.MaxRequestBodySize = size
 }

@@ -200,3 +200,12 @@ func Templates(pathGlob string) {
 func OptimusPrime() {
 	DefaultStation.OptimusPrime()
 }
+
+//SetMaxRequestBodySize sets the maximum request body size.
+//
+// The server rejects requests with bodies exceeding this limit.
+//
+// By default request body size is unlimited.
+func SetMaxRequestBodySize(size int) {
+	DefaultStation.SetMaxRequestBodySize(size)
+}

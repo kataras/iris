@@ -14,6 +14,8 @@ import (
 	"net"
 	"strconv"
 	"time"
+
+	"github.com/valyala/fasthttp"
 )
 
 const (
@@ -229,6 +231,9 @@ type Conn struct {
 	handlePong    func(string) error
 	handlePing    func(string) error
 	readErrCount  int
+
+	//request headers
+	headers *fasthttp.RequestHeader
 }
 
 func newConn(conn net.Conn, isServer bool, readBufferSize, writeBufferSize int) *Conn {
@@ -912,4 +917,19 @@ func FormatCloseMessage(closeCode int, text string) []byte {
 	binary.BigEndian.PutUint16(buf, uint16(closeCode))
 	copy(buf[2:], text)
 	return buf
+}
+
+// SetHeaders sets request headers
+func (c *Conn) SetHeaders(h *fasthttp.RequestHeader) {
+	c.headers = h
+}
+
+// Header returns header by key
+func (c *Conn) Header(key string) (value string) {
+	return string(c.headers.Peek(key))
+}
+
+// Headers returns the RequestHeader struct
+func (c *Conn) Headers() *fasthttp.RequestHeader {
+	return c.headers
 }

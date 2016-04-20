@@ -26,7 +26,6 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package typescript
 
-///TODO: implement the Watch
 import (
 	"errors"
 	"os"
@@ -34,35 +33,53 @@ import (
 	"strings"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/cli"
+	"github.com/kataras/iris/cli/npm"
+	"github.com/kataras/iris/cli/system"
+	"github.com/kataras/iris/plugin/editor"
 )
 
+/* Notes
+
+The editor is working when the typescript plugin finds a typescript project (tsconfig.json),
+also working only if one typescript project found (normaly is one for client-side).
+
+*/
 var (
-	node_modules = cli.ToDir("node_modules")
+	node_modules = system.PathSeparator + "node_modules" + system.PathSeparator
 	Name         = "TypescriptPlugin"
 )
 
 type (
 	// Options the struct which holds the TypescriptPlugin options
-	// Has four (4) fields
+	// Has five (5) fields
 	//
-	// 1. Bin: 	string, the typescript installation directory/bin (where the tsc or tsc.cmd are exists), if empty it will search inside global npm modules
+	// 1. Bin: 	string, the typescript installation directory/typescript/lib/tsc.js, if empty it will search inside global npm modules
 	// 2. Dir:     string, Dir set the root, where to search for typescript files/project. Default "./"
 	// 3. Ignore:  string, comma separated ignore typescript files/project from these directories. Default "" (node_modules are always ignored)
-	// 4. Watch:	 boolean, watch for any changes and re-build if true/. Default true
+	// 4. Tsconfig:  &typescript.Tsconfig{}, here you can set all compilerOptions if no tsconfig.json exists inside the 'Dir'
+	// 5. Editor: 	typescript.Editor("username","password"), if setted then alm-tools browser-based typescript IDE will be available. Defailt is nil
 	Options struct {
-		Bin    string
-		Dir    string
-		Ignore string
-		Watch  bool
+		Bin      string
+		Dir      string
+		Ignore   string
+		Tsconfig *Tsconfig
+		Editor   *editor.EditorPlugin // the editor is just a plugin also
 	}
 	// TypescriptPlugin the struct of the plugin, holds all necessary fields & methods
 	TypescriptPlugin struct {
 		options Options
-		logger  *iris.Logger
-		module  *cli.NpmModule
+		// taken from Activate
+		pluginContainer iris.IPluginContainer
+		// taken at the PreListen
+		logger *iris.Logger
 	}
 )
+
+// Editor is just a shortcut for github.com/kataras/iris/plugin/editor.New()
+// returns a new EditorPlugin, it's exists here because the typescript plugin has direct interest with the EditorPlugin
+func Editor(username, password string) *editor.EditorPlugin {
+	return editor.New(username, password)
+}
 
 // DefaultOptions returns the default Options of the TypescriptPlugin
 func DefaultOptions() Options {
@@ -70,8 +87,8 @@ func DefaultOptions() Options {
 	if err != nil {
 		panic("Typescript Plugin: Cannot get the Current Working Directory !!! [os.getwd()]")
 	}
-	opt := Options{Dir: root + cli.PathSeparator, Ignore: node_modules, Watch: true}
-
+	opt := Options{Dir: root + system.PathSeparator, Ignore: node_modules, Tsconfig: DefaultTsconfig()}
+	opt.Bin = npm.Abs("typescript/lib/tsc.js")
 	return opt
 
 }
@@ -80,9 +97,7 @@ func DefaultOptions() Options {
 
 // New creates & returns a new instnace typescript plugin
 func New(_opt ...Options) *TypescriptPlugin {
-	var module = cli.NewNpmModule("typescript", "tsc", nil)
 	var options = DefaultOptions()
-	options.Bin = module.GetExecutable()
 
 	if _opt != nil && len(_opt) > 0 { //not nil always but I like this way :)
 		opt := _opt[0]
@@ -98,15 +113,19 @@ func New(_opt ...Options) *TypescriptPlugin {
 			opt.Ignore += "," + node_modules
 		}
 
+		if opt.Tsconfig != nil {
+			options.Tsconfig = opt.Tsconfig
+		}
+
 		options.Ignore = opt.Ignore
-		options.Watch = opt.Watch
 	}
 
-	return &TypescriptPlugin{options: options, module: module}
+	return &TypescriptPlugin{options: options}
 }
 
-// implement the IPlugin & IPluginPostListen
+// implement the IPlugin & IPluginPreListen
 func (t *TypescriptPlugin) Activate(container iris.IPluginContainer) error {
+	t.pluginContainer = container
 	return nil
 }
 
@@ -115,12 +134,11 @@ func (t *TypescriptPlugin) GetName() string {
 }
 
 func (t *TypescriptPlugin) GetDescription() string {
-	return Name + " is a helper for client-side typescript projects.\n"
+	return Name + " scans and compile typescript files with ease. \n"
 }
 
-func (t *TypescriptPlugin) PostListen(s *iris.Station) {
+func (t *TypescriptPlugin) PreListen(s *iris.Station) {
 	t.logger = s.Logger()
-	t.module.SetLogger(s.Logger())
 	t.start()
 }
 
@@ -129,53 +147,86 @@ func (t *TypescriptPlugin) PostListen(s *iris.Station) {
 // implementation
 
 func (t *TypescriptPlugin) start() {
+	defaultCompilerArgs := t.options.Tsconfig.CompilerArgs() //these will be used if no .tsconfig found.
 	if t.hasTypescriptFiles() {
 		//Can't check if permission denied returns always exists = true....
 		//typescriptModule := out + string(os.PathSeparator) + "typescript" + string(os.PathSeparator) + "bin"
-		if !t.module.Exists() {
-			t.logger.Println("Typescript is not installed, please wait while installing typescript")
-			t.module.Install()
-			t.options.Bin = t.getBin()
+		if !npm.Exists(t.options.Bin) {
+			t.logger.Println("Installing typescript, please wait...")
+			res := npm.Install("typescript")
+			if res.Error != nil {
+				t.logger.Print(res.Error.Error())
+				return
+			}
+			t.logger.Print(res.Message)
 
 		}
 
-		dirs := t.getTypescriptProjects()
-		if len(dirs) > 0 {
+		projects := t.getTypescriptProjects()
+		if len(projects) > 0 {
+			watchedProjects := 0
 			//typescript project (.tsconfig) found
-			for _, dir := range dirs {
+			for _, project := range projects {
+				cmd := system.CommandBuilder("node", t.options.Bin, "-p", project[0:strings.LastIndex(project, system.PathSeparator)]) //remove the /tsconfig.json)
+				projectConfig := FromFile(project)
 
-				_, err := cli.Command("tsc", "-p", dir)
-				if err != nil {
-					t.logger.Println(err.Error())
-					return
-				}
+				if projectConfig.CompilerOptions.Watch {
+					watchedProjects++
+					// if has watch : true then we have to wrap the command to a goroutine (I don't want to use the .Start here)
+					go func() {
+						_, err := cmd.Output()
+						if err != nil {
+							t.logger.Println(err.Error())
+							return
+						}
+					}()
+				} else {
 
-			}
-			t.logger.Printf("%d Typescript project(s) compiled", len(dirs))
-		} else {
-			//search for standalone typescript (.ts) files and combile them
-			files := t.getTypescriptFiles()
-			if len(files) > 0 {
-				//it must be always > 0 if we came here, because of if hasTypescriptFiles == true.
-				for _, file := range files {
-
-					_, err := cli.Command("tsc", file)
+					_, err := cmd.Output()
 					if err != nil {
 						t.logger.Println(err.Error())
 						return
 					}
 
 				}
-				t.logger.Printf("%d Typescript file(s) compiled", len(files))
+
+			}
+			t.logger.Printf("%d Typescript project(s) compiled ( %d monitored by a background file watcher ) ", len(projects), watchedProjects)
+		} else {
+			//search for standalone typescript (.ts) files and compile them
+			files := t.getTypescriptFiles()
+
+			if len(files) > 0 {
+				watchedFiles := 0
+				if t.options.Tsconfig.CompilerOptions.Watch {
+					watchedFiles = len(files)
+				}
+				//it must be always > 0 if we came here, because of if hasTypescriptFiles == true.
+				for _, file := range files {
+					cmd := system.CommandBuilder("node", t.options.Bin)
+					cmd.AppendArguments(defaultCompilerArgs...)
+					cmd.AppendArguments(file)
+					_, err := cmd.Output()
+					cmd.Args = cmd.Args[0 : len(cmd.Args)-1] //remove the last, which is the file
+					if err != nil {
+						t.logger.Println(err.Error())
+						return
+					}
+
+				}
+				t.logger.Printf("%d Typescript file(s) compiled ( %d monitored by a background file watcher )", len(files), watchedFiles)
 			}
 
 		}
 
-	}
-}
+		//editor activation
+		if len(projects) == 1 && t.options.Editor != nil {
+			dir := projects[0][0:strings.LastIndex(projects[0], system.PathSeparator)]
+			t.options.Editor.Dir(dir)
+			t.pluginContainer.Plugin(t.options.Editor)
+		}
 
-func (t *TypescriptPlugin) getBin() (typescriptBin string) {
-	return t.module.GetExecutable()
+	}
 }
 
 func (t *TypescriptPlugin) hasTypescriptFiles() bool {
@@ -221,7 +272,7 @@ func (t *TypescriptPlugin) getTypescriptProjects() []string {
 			}
 		}
 
-		if strings.HasSuffix(path, cli.PathSeparator+"tsconfig.json") {
+		if strings.HasSuffix(path, system.PathSeparator+"tsconfig.json") {
 			//t.logger.Printf("\nTypescript project found in %s", path)
 			projects = append(projects, path)
 		}
