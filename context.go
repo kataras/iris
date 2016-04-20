@@ -109,6 +109,7 @@ type (
 		ReadForm(formObject interface{}) error
 		ServeContent(io.ReadSeeker, string, time.Time) error
 		ServeFile(string) error
+		SendFile(filename string, destinationName string) error
 		Stream(func(*bufio.Writer))
 		//
 		PostFormValue(string) string
@@ -621,27 +622,28 @@ func (ctx *Context) ReadForm(formObject interface{}) error {
 
 // ServeContent serves content, headers are autoset
 // receives three parameters, it's low-level function, instead you can use .ServeFile(string)
+//
+// You can define your own "Content-Type" header also
 func (ctx *Context) ServeContent(content io.ReadSeeker, filename string, modtime time.Time) error {
-	req := ctx.RequestCtx.Request
-	res := ctx.RequestCtx.Response
-
-	if t, err := time.Parse(TimeFormat, string(req.Header.Peek(IfModifiedSince))); err == nil && modtime.Before(t.Add(1*time.Second)) {
-		res.Header.Del(ContentType)
-		res.Header.Del(ContentLength)
+	if t, err := time.Parse(TimeFormat, ctx.RequestHeader(IfModifiedSince)); err == nil && modtime.Before(t.Add(1*time.Second)) {
+		ctx.RequestCtx.Response.Header.Del(ContentType)
+		ctx.RequestCtx.Response.Header.Del(ContentLength)
 		ctx.RequestCtx.SetStatusCode(304) //NotModified
 		return nil
 	}
 
-	res.Header.Set(ContentType, TypeByExtension(filename))
-	res.Header.Set(LastModified, modtime.UTC().Format(TimeFormat))
+	ctx.RequestCtx.Response.Header.Set(ContentType, TypeByExtension(filename))
+	ctx.RequestCtx.Response.Header.Set(LastModified, modtime.UTC().Format(TimeFormat))
 	ctx.RequestCtx.SetStatusCode(200)
-	_, err := io.Copy(res.BodyWriter(), content)
+	_, err := io.Copy(ctx.RequestCtx.Response.BodyWriter(), content)
 	return err
 }
 
-// ServeFile serves a file
+// ServeFile serves a view file, to send a file ( zip for example) to the client you should use the SendFile(serverfilename,clientfilename)
 // receives one parameter
 // filename (string)
+//
+// You can define your own "Content-Type" header also
 func (ctx *Context) ServeFile(filename string) error {
 	f, err := os.Open(filename)
 	if err != nil {
@@ -658,6 +660,20 @@ func (ctx *Context) ServeFile(filename string) error {
 		fi, _ = f.Stat()
 	}
 	return ctx.ServeContent(f, fi.Name(), fi.ModTime())
+}
+
+// SendFile sends file for force-download to the client
+//
+// You can define your own "Content-Type" header also
+// ctx.Response.Header.Set("Content-Type","thecontent/type")
+func (ctx *Context) SendFile(filename string, destinationName string) error {
+	err := ctx.ServeFile(filename)
+	if err != nil {
+		return err
+	}
+
+	ctx.RequestCtx.Response.Header.Set(ContentDisposition, "attachment;filename="+destinationName)
+	return nil
 }
 
 // Stream , steaming any type of contents to the client
