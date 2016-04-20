@@ -150,32 +150,38 @@ func (e *EditorPlugin) start() {
 		e.logger.Print(res.Message)
 	}
 
-	/* first option:
-	binary := "alm"
-	if runtime.GOOS == "windows" {
-		binary += ".cmd"
+	//now, because of some errors happenning I edit two files in order to work with Iris
+	//we will copy them EACH TIME the iris is running.
+
+	// the path of alm-files:  $GOPATH/src/github.com/kataras/iris/plugin/editor/alm-files/
+	almFiles := os.Getenv("GOPATH") + system.PathSeparator + "src" + system.PathSeparator + "github.com" + system.PathSeparator + "kataras" + system.PathSeparator + "iris" + system.PathSeparator + "plugin" + system.PathSeparator + "editor" + system.PathSeparator + "alm-files" + system.PathSeparator
+	// $GOPATH/src/github.com/kataras/iris/plugin/editor/alm-files/src/server/
+	almFilesServer := almFiles + "src" + system.PathSeparator + "server" + system.PathSeparator
+	// copy the server/commandLine.js
+	ferr := iris.CopyFile(almFilesServer+"commandLine.js", npm.Abs("alm/src/server/commandLine.js"))
+	if ferr != nil {
+		e.logger.Println("Error while building alm-tools for Iris - file: commandLine.js. Trace: " + ferr.Error())
+		return
 	}
-	rootNpm := npm.NodeModules[0:strings.LastIndex(npm.NodeModules, system.PathSeparator)]
-	cmd := system.CommandBuilder(rootNpm + system.PathSeparator + binary)
-	*/
+	// copy the server/disk/workingDir.js
+	ferr = iris.CopyFile(almFilesServer+system.PathSeparator+"disk"+system.PathSeparator+"workingDir.js", npm.Abs("alm/src/server/disk/workingDir.js"))
+	if ferr != nil {
+		e.logger.Println("Error while building alm-tools for Iris - file: workingDir.js" + ferr.Error())
+		return
+	}
+	//if all ok then start it
+	cmd := system.CommandBuilder("node", npm.Abs("alm/src/server.js"))
+	cmd.AppendArguments("-a "+e.username+":"+e.password, "-h "+e.host, "-t "+strconv.Itoa(e.port), "-d "+e.directory[0:len(e.directory)-1])
 
-	// second option:
-	//cmd := system.CommandBuilder("alm")
-
-	// third, cross platform for sure :)
-	cmd := system.CommandBuilder("node", npm.Abs("alm/bin/alm"))
-
-	cmd.AppendArguments("--host " + e.host)
-	cmd.AppendArguments("-t " + strconv.Itoa(e.port))
-	cmd.AppendArguments("--user "+e.username, "--pass "+e.password)
-	cmd.AppendArguments("-d " + e.directory)
-	//cmd.AppendArguments("-d ./")
 	// for auto-start in the browser: cmd.AppendArguments("-o")
 	if e.keyfile != "" && e.certfile != "" {
-		cmd.AppendArguments("--httpskey "+e.keyfile, "--httpscert "+e.certfile)
+		cmd.AppendArguments("-k "+e.keyfile, "-c "+e.certfile)
 	}
 
-	//println("[DEBUG]" + strings.Join(cmd.Args, " "))
+	//cmd.Stdout = os.Stdout
+	//cmd.Stderr = os.Stderr
+	//os.Stdin = os.Stdin
+
 	err := cmd.Start()
 	if err != nil {
 		e.logger.Println("Error while running alm-tools. Trace: " + err.Error())

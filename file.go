@@ -29,7 +29,6 @@ package iris
 import (
 	"archive/zip"
 	"fmt"
-	"github.com/fsnotify/fsnotify"
 	"io"
 	"mime"
 	"net/http"
@@ -37,6 +36,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/fsnotify/fsnotify"
 )
 
 // directoryExists returns true if a directory(or file) exists, otherwise false
@@ -191,6 +192,37 @@ func install(remoteFileZip string, targetDirectory string) (installedDirectory s
 		}
 	}
 	return
+}
+
+// CopyFile copy a file, accepts full path of the source and full path of destination, if file exists it's overrides it
+// this function doesn't checks for permissions and all that, it returns an error if didn't worked
+func CopyFile(source string, destination string) error {
+	reader, err := os.Open(source)
+
+	if err != nil {
+		return err
+	}
+
+	defer reader.Close()
+
+	writer, err := os.Create(destination)
+	if err != nil {
+		return err
+	}
+
+	defer writer.Close()
+
+	_, err = io.Copy(writer, reader)
+	if err != nil {
+		return err
+	}
+
+	err = writer.Sync()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // TypeByExtension returns the MIME type associated with the file extension ext.
