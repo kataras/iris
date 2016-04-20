@@ -75,7 +75,7 @@ With typescript plugin you have to set the Editor option and you're ready:
 ```go
 typescript.Options {
 	//...
-	Editor: typescript.Editor("username","passowrd").AddUser("username2","password2").Port(4242)
+	Editor: typescript.Editor("username","passowrd")
 	//...
 }
 ```
