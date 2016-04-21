@@ -24,6 +24,7 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package iris
 
 import (
@@ -76,10 +77,11 @@ var _ IServer = &Server{}
 
 // NewServer returns a pointer to a Server object, and set it's options if any,  nothing more
 func NewServer(opt ...ServerOptions) *Server {
-	s := &Server{Server: &fasthttp.Server{}}
+	s := &Server{Server: &fasthttp.Server{Name: DefaultServerName}}
 	if opt != nil && len(opt) > 0 {
 		s.SetOptions(opt[0])
 	}
+
 	return s
 }
 

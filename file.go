@@ -24,6 +24,7 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package iris
 
 import (
@@ -54,36 +55,39 @@ func directoryExists(dir string) bool {
 func downloadZip(zipURL string, newDir string) (string, error) {
 	var err error
 	var size int64
-	finish := false
+	finish := make(chan bool)
 
 	go func() {
-		i := 0
 		print("\n|")
 		print("_")
 		print("|")
 
-	printer:
-		{
-			i++
+		for {
+			select {
+			case v := <-finish:
+				{
+					if v {
+						print("\010\010\010") //remove the loading chars
+						close(finish)
+						return
+					}
 
-			print("\010\010-")
-			time.Sleep(time.Second / 2)
-			print("\010\\")
-			time.Sleep(time.Second / 2)
-			print("\010|")
-			time.Sleep(time.Second / 2)
-			print("\010/")
-			time.Sleep(time.Second / 2)
-			print("\010-")
-			time.Sleep(time.Second / 2)
-			print("|")
-			if finish {
-				goto ok
+				}
+			default:
+				print("\010\010-")
+				time.Sleep(time.Second / 2)
+				print("\010\\")
+				time.Sleep(time.Second / 2)
+				print("\010|")
+				time.Sleep(time.Second / 2)
+				print("\010/")
+				time.Sleep(time.Second / 2)
+				print("\010-")
+				time.Sleep(time.Second / 2)
+				print("|")
 			}
-			goto printer
 		}
 
-	ok:
 	}()
 
 	os.MkdirAll(newDir, os.ModeDir)
@@ -112,8 +116,8 @@ func downloadZip(zipURL string, newDir string) (string, error) {
 		fmt.Println("Error while downloading", zipURL, "-", err)
 		return "", nil
 	}
-	finish = true
-	println("\010\010\010\010\010\010OK ", size, " bytes downloaded")
+	finish <- true
+	print("OK ", size, " bytes downloaded")
 	return fileName, nil
 
 }

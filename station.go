@@ -94,6 +94,8 @@ type (
 		optimizedCors  bool
 
 		logger *Logger
+		// hold the max size in order to set it on server listen
+		MaxRequestBodySize int
 	}
 )
 
@@ -228,6 +230,7 @@ func (s *Station) Listen(fullHostOrPort ...string) (err error) {
 	server := NewServer(opt)
 	server.SetHandler(s.IRouter.ServeRequest)
 	s.Server = server
+	s.Server.MaxRequestBodySize = s.MaxRequestBodySize
 	s.pluginContainer.DoPreListen(s)
 	err = server.Listen()
 	if err == nil {
@@ -251,6 +254,7 @@ func (s *Station) ListenTLS(fullAddress string, certFile, keyFile string) error 
 	server := NewServer(opt)
 	server.SetHandler(s.IRouter.ServeRequest)
 	s.Server = server
+	s.Server.MaxRequestBodySize = s.MaxRequestBodySize
 	s.pluginContainer.DoPreListen(s)
 	err := server.ListenTLS()
 	if err == nil {
@@ -297,5 +301,5 @@ func (s *Station) Templates(pathGlob string) {
 //
 // By default request body size is unlimited.
 func (s *Station) SetMaxRequestBodySize(size int) {
-	s.Server.MaxRequestBodySize = size
+	s.MaxRequestBodySize = size
 }

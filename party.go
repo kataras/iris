@@ -24,14 +24,8 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-package iris
 
-// The party holds memory to find the Root, I could make it with other design pattern but I choose this
-// because I want to the future to be able to remove a Party and routes at the runtime
-// this will be useful when I introduce the dynamic creation of subdomains parties ( the only one framework which will have this feature, as far as I know)
-// this dynamic subdomains can created at the runtime and removed at runtime
-// this is practial an example of create a user with a subdomain and when user deletes his account or his repo
-// then delete the subdomain also without if else inside their handlers
+package iris
 
 import (
 	"errors"

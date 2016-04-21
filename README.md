@@ -900,8 +900,6 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 * [Ultra-wide framework Go Http routing performance comparison](https://translate.google.com/translate?sl=auto&tl=en&js=y&prev=_t&hl=el&ie=UTF-8&u=http%3A%2F%2Fcolobu.com%2F2016%2F03%2F23%2FGo-HTTP-request-router-and-web-framework-benchmark%2F&edit-text=&act=url)
 > According to my  article ( comparative ultra wide frame Go Http routing performance ) on a variety of relatively Go http routing framework, Iris clear winner, its performance far exceeds other Golang http routing framework.
 
-* +1 pending article waiting, after writer's holidays
-
 ## License
 
 This project is licensed under the [BSD 3-Clause License](https://opensource.org/licenses/BSD-3-Clause).

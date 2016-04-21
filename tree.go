@@ -24,12 +24,14 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package iris
 
 import (
 	"bytes"
-	"github.com/valyala/fasthttp"
 	"sync"
+
+	"github.com/valyala/fasthttp"
 )
 
 type (
@@ -133,6 +135,7 @@ func (_tree *tree) serve(reqCtx *fasthttp.RequestCtx) {
 	if middleware != nil {
 		ctx.Params = params
 		ctx.middleware = middleware
+		ctx.Request.Header.SetUserAgentBytes(DefaultUserAgent)
 		ctx.Do()
 		_tree.pool.Put(ctx)
 		return

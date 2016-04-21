@@ -26,6 +26,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // Third party package "github.com/monoculum/formam" is protected by the Apache License
+
 package iris
 
 import (
@@ -207,14 +208,17 @@ func (ctx *Context) URLParamInt(key string) (int, error) {
 	return strconv.Atoi(ctx.URLParam(key))
 }
 
+// MethodString returns the HTTP Method
 func (ctx *Context) MethodString() string {
 	return BytesToString(ctx.Method())
 }
 
+// HostString returns the Host of the request( the url as string )
 func (ctx *Context) HostString() string {
 	return BytesToString(ctx.Host())
 }
 
+// PathString returns the full path as string
 func (ctx *Context) PathString() string {
 	return BytesToString(ctx.Path())
 }
@@ -229,6 +233,7 @@ func (ctx *Context) SetCookie(name string, value string) {
 	ctx.RequestCtx.Request.Header.SetCookie(name, value)
 }
 
+// AddCookie sets a specific cookie to the response header
 func (ctx *Context) AddCookie(cookie *fasthttp.Cookie) {
 	s := fmt.Sprintf("%s=%s", string(cookie.Key()), string(cookie.Value()))
 	if c := string(ctx.RequestCtx.Request.Header.Peek("Cookie")); c != "" {
@@ -341,6 +346,7 @@ func (ctx *Context) Reset(reqCtx *fasthttp.RequestCtx) {
 	ctx.RequestCtx = reqCtx
 }
 
+// Clone use that method if you want to use the context inside a goroutine
 func (ctx *Context) Clone() *Context {
 	var cloneContext = *ctx
 	cloneContext.pos = 0
@@ -355,9 +361,6 @@ func (ctx *Context) Clone() *Context {
 	cpM := make(Middleware, len(m))
 	copy(cpM, m)
 	cloneContext.middleware = cpM
-	//cloneContext.memoryResponseWriter.ResponseWriter = nil
-	//cloneContext.ResponseWriter = &cloneContext.memoryResponseWriter
-	///TODO: maybe in we have errors on multiple status code send: cloneContext.ResponseWriter = nil
 	return &cloneContext
 }
 
@@ -430,14 +433,9 @@ func (ctx *Context) Render(pageContext interface{}) error {
 }
 
 // WriteHTML writes html string with a http status
-///TODO or I will think to pass an interface on handlers as second parameter near to the Context, with developer's custom Renderer package .. I will think about it.
 func (ctx *Context) WriteHTML(httpStatus int, htmlContents string) {
-	//ctx.ResponseWriter.Header().Set(ContentType, ContentHTML+" ;charset="+Charset)
-	//ctx.ResponseWriter.WriteHeader(httpStatus)
 	ctx.SetContentType([]string{ContentHTML + " ;charset=" + Charset})
 	ctx.RequestCtx.SetStatusCode(httpStatus)
-	//io.WriteString(ctx.ResponseWriter, htmlContents)
-	//ctx.Responseriter.WriteString(htmlContents)
 	ctx.RequestCtx.WriteString(htmlContents)
 }
 
@@ -448,9 +446,6 @@ func (ctx *Context) HTML(htmlContents string) {
 
 // WriteData writes binary data with a http status
 func (ctx *Context) WriteData(httpStatus int, binaryData []byte) {
-	//ctx.ResponseWriter.Header().Set(ContentType, ContentBINARY)
-	//ctx.ResponseWriter.Header().Set(ContentLength, strconv.Itoa(len(binaryData)))
-	//ctx.ResponseWriter.WriteHeader(httpStatus)
 	ctx.SetHeader(ContentType, []string{ContentBINARY + " ;charset=" + Charset})
 	ctx.SetHeader(ContentLength, []string{strconv.Itoa(len(binaryData))})
 	ctx.RequestCtx.SetStatusCode(httpStatus)
@@ -467,8 +462,6 @@ func (ctx *Context) Write(format string, a ...interface{}) {
 	//this doesn't work with gzip, so just write the []byte better |ctx.ResponseWriter.WriteString(fmt.Sprintf(format, a...))
 	ctx.RequestCtx.WriteString(fmt.Sprintf(format, a...))
 }
-
-//fix https://github.com/kataras/iris/issues/44
 
 // SetContentType sets the response writer's header key 'Content-Type' to a given value(s)
 func (ctx *Context) SetContentType(s []string) {
@@ -516,9 +509,6 @@ func (ctx *Context) RenderJSON(httpStatus int, jsonStructs ...interface{}) error
 		_json = append(_json, theJSON...)
 	}
 
-	//keep in mind http.DetectContentType(data)
-	//ctx.ResponseWriter.Header().Set(ContentType, ContentJSON+" ;charset="+Charset)
-	//ctx.ResponseWriter.WriteHeader(httpStatus)
 	ctx.SetContentType([]string{ContentJSON + " ;charset=" + Charset})
 	ctx.RequestCtx.SetStatusCode(httpStatus)
 
@@ -544,8 +534,6 @@ func (ctx *Context) ReadJSON(jsonObject interface{}) error {
 
 // WriteJSON writes JSON which is encoded from a single json object or array with no Indent
 func (ctx *Context) WriteJSON(httpStatus int, jsonObjectOrArray interface{}) error {
-	//ctx.ResponseWriter.Header().Set(ContentType, ContentJSON)
-	//ctx.ResponseWriter.WriteHeader(httpStatus)
 	ctx.SetContentType([]string{ContentJSON + " ;charset=" + Charset})
 	ctx.RequestCtx.SetStatusCode(httpStatus)
 	return json.NewEncoder(ctx.Response.BodyWriter()).Encode(jsonObjectOrArray)
@@ -603,13 +591,10 @@ func (ctx *Context) RenderXML(httpStatus int, xmlStructs ...interface{}) error {
 		}
 		_xmlDoc = append(_xmlDoc, theDoc...)
 	}
-	//ctx.ResponseWriter.Header().Set(ContentType, ContentXML+" ;charset="+Charset)
-	//ctx.ResponseWriter.WriteHeader(httpStatus)
 	ctx.RequestCtx.SetStatusCode(httpStatus)
 	ctx.SetContentType([]string{ContentXMLText + " ;charset=" + Charset})
 
 	ctx.RequestCtx.Write(_xmlDoc)
-	//xml.NewEncoder(w).Encode(r.Data)
 	return nil
 }
 
@@ -633,13 +618,13 @@ func (ctx *Context) ReadForm(formObject interface{}) error {
 
 		return formam.Decode(form, formObject)
 	}
-	return fmt.Errorf("Error on ReadForm: request doesn't contains form data")
+	return ErrNoForm
 }
 
 // ServeContent serves content, headers are autoset
 // receives three parameters, it's low-level function, instead you can use .ServeFile(string)
 //
-// You can define your own "Content-Type" header also
+// You can define your own "Content-Type" header also, after this function call
 func (ctx *Context) ServeContent(content io.ReadSeeker, filename string, modtime time.Time) error {
 	if t, err := time.Parse(TimeFormat, ctx.RequestHeader(IfModifiedSince)); err == nil && modtime.Before(t.Add(1*time.Second)) {
 		ctx.RequestCtx.Response.Header.Del(ContentType)
@@ -659,7 +644,7 @@ func (ctx *Context) ServeContent(content io.ReadSeeker, filename string, modtime
 // receives one parameter
 // filename (string)
 //
-// You can define your own "Content-Type" header also
+// You can define your own "Content-Type" header also, after this function call
 func (ctx *Context) ServeFile(filename string) error {
 	f, err := os.Open(filename)
 	if err != nil {
@@ -680,8 +665,8 @@ func (ctx *Context) ServeFile(filename string) error {
 
 // SendFile sends file for force-download to the client
 //
-// You can define your own "Content-Type" header also
-// ctx.Response.Header.Set("Content-Type","thecontent/type")
+// You can define your own "Content-Type" header also, after this function call
+// for example: ctx.Response.Header.Set("Content-Type","thecontent/type")
 func (ctx *Context) SendFile(filename string, destinationName string) error {
 	err := ctx.ServeFile(filename)
 	if err != nil {
@@ -692,14 +677,14 @@ func (ctx *Context) SendFile(filename string, destinationName string) error {
 	return nil
 }
 
-// Stream , steaming any type of contents to the client
-// it's just calls the SetBodyStreamWriter
+// Stream use that to do data steaming
 func (ctx *Context) Stream(cb func(writer *bufio.Writer)) {
 	ctx.RequestCtx.SetBodyStreamWriter(cb)
 }
 
 /* END OF RENDERER */
 
+// PostFormValue returns a single value from post request's data
 func (ctx *Context) PostFormValue(name string) string {
 	return string(ctx.RequestCtx.PostArgs().Peek(name))
 }
@@ -707,5 +692,4 @@ func (ctx *Context) PostFormValue(name string) string {
 // GetHandlerName as requested returns the stack-name of the function which the Middleware is setted from
 func (ctx *Context) GetHandlerName() string {
 	return runtime.FuncForPC(reflect.ValueOf(ctx.middleware[len(ctx.middleware)-1]).Pointer()).Name()
-
 }

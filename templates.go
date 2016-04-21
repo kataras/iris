@@ -87,8 +87,12 @@ func (html *HTMLTemplates) Load(globPathExp string) {
 	var err error
 	var rootPath string
 	if html.loaded == false {
-		html.Templates, err = template.ParseGlob(globPathExp)
 
+		if strings.LastIndexByte(globPathExp, MatchEverythingByte) == len(globPathExp)-1 {
+			globPathExp += ".html" // ./* -> ./*.html
+		}
+
+		html.Templates, err = template.ParseGlob(globPathExp)
 		if err != nil {
 			//if err then try to load the same path but with the current directory prefix
 			// and if not success again then just panic with the first error
