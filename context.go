@@ -31,6 +31,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"html/template"
 	"io"
 	"net"
 	"os"
@@ -85,6 +86,7 @@ type (
 		RequestIP() string
 		IsStopped() bool
 		Clone() *Context
+		ExecuteTemplate(*template.Template, interface{}) error
 		RenderFile(string, interface{}) error
 		Render(interface{}) error
 		// SetContentType sets the "Content-Type" header, receives the values
@@ -404,6 +406,11 @@ func (ctx *Context) Set(key interface{}, value interface{}) {
 }
 
 /* RENDERER */
+
+func (ctx *Context) ExecuteTemplate(tmpl *template.Template, pageContext interface{}) error {
+	ctx.RequestCtx.SetContentType(ContentHTML + " ;charset=" + Charset)
+	return tmpl.Execute(ctx.RequestCtx.Response.BodyWriter(), pageContext)
+}
 
 // RenderFile renders a file by its path and a context passed to the function
 func (ctx *Context) RenderFile(file string, pageContext interface{}) error {
