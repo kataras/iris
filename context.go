@@ -64,6 +64,7 @@ type (
 		URLParamInt(string) (int, error)
 		URLParams() map[string][]string
 		MethodString() string
+		HostString() string
 		PathString() string
 		Get(interface{}) interface{}
 		GetString(interface{}) string
@@ -203,6 +204,10 @@ func (ctx *Context) URLParamInt(key string) (int, error) {
 
 func (ctx *Context) MethodString() string {
 	return BytesToString(ctx.Method())
+}
+
+func (ctx *Context) HostString() string {
+	return BytesToString(ctx.Host())
 }
 
 func (ctx *Context) PathString() string {
