@@ -172,7 +172,9 @@ func (u *Upgrader) Upgrade(ctx *iris.Context) error {
 	ctx.Response.Header.Set("Sec-Websocket-Accept", computeAcceptKey(challengeKey))
 
 	subprotocol := u.selectSubprotocol(ctx)
-
+	h := &fasthttp.RequestHeader{}
+	//copy request headers in order to have access inside the Conn after
+	ctx.Request.Header.CopyTo(h)
 	/*
 
 		var (
@@ -244,9 +246,6 @@ func (u *Upgrader) Upgrade(ctx *iris.Context) error {
 	*/
 	ctx.Hijack(func(conn net.Conn) {
 		c := newConn(conn, true, u.ReadBufferSize, u.WriteBufferSize)
-		h := &fasthttp.RequestHeader{}
-		ctx.Request.Header.CopyTo(h)
-		//copy request headers in order to have access inside the Conn
 		c.SetHeaders(h)
 		c.subprotocol = subprotocol
 		u.Receiver(c)
