@@ -24,6 +24,8 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+// Third party package "github.com/monoculum/formam" is protected by the Apache License
 package iris
 
 import (
@@ -42,6 +44,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/monoculum/formam"
 	"github.com/valyala/fasthttp"
 	"golang.org/x/net/context"
 )
@@ -610,14 +613,16 @@ func (ctx *Context) RenderXML(httpStatus int, xmlStructs ...interface{}) error {
 	return nil
 }
 
-// ReadForm binds the formObject with request's form data (if exists, otherwise returns an error)
+// ReadForm binds the formObject  with the form data
+// it supports any kind of struct
 func (ctx *Context) ReadForm(formObject interface{}) error {
 
 	// first check if we have multipart form
 	form, err := ctx.RequestCtx.MultipartForm()
 	if err == nil {
 		//we have multipart form
-		return mapForm(formObject, form.Value)
+
+		return formam.Decode(form.Value, formObject)
 	}
 	// if no multipart and post arguments ( means normal form)
 	if ctx.RequestCtx.PostArgs().Len() > 0 {
@@ -626,9 +631,8 @@ func (ctx *Context) ReadForm(formObject interface{}) error {
 			form[BytesToString(k)] = []string{BytesToString(v)}
 		})
 
-		return mapForm(formObject, form)
+		return formam.Decode(form, formObject)
 	}
-
 	return fmt.Errorf("Error on ReadForm: request doesn't contains form data")
 }
 
