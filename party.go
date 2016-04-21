@@ -28,7 +28,6 @@
 package iris
 
 import (
-	"errors"
 	"reflect"
 	"strconv"
 	"strings"
@@ -192,7 +191,7 @@ func (p *GardenParty) HandleAnnotated(irisHandler Handler) error {
 			tagValue, unqerr := strconv.Unquote(string(firstTag[idx+1:]))
 
 			if unqerr != nil {
-				errMessage = errMessage + "\niris.HandleAnnotated: Error on getting path: " + unqerr.Error()
+				errMessage = errMessage + "\non getting path: " + unqerr.Error()
 				continue
 			}
 
@@ -201,14 +200,14 @@ func (p *GardenParty) HandleAnnotated(irisHandler Handler) error {
 
 			if !strings.Contains(avalaibleMethodsStr, tagName) {
 				//wrong method passed
-				errMessage = errMessage + "\niris.HandleAnnotated: Wrong method passed to the anonymous property iris.Handler -> " + tagName
+				errMessage = errMessage + "\nWrong method passed to the anonymous property iris.Handler -> " + tagName
 				continue
 			}
 
 			method = tagName
 
 		} else {
-			errMessage = "\nError on Iris.HandleAnnotated: Struct passed but it doesn't have an anonymous property of type iris.Hanndler, please refer to docs\n"
+			errMessage = "\nStruct passed but it doesn't have an anonymous property of type iris.Hanndler, please refer to docs\n"
 		}
 
 	}
@@ -219,7 +218,7 @@ func (p *GardenParty) HandleAnnotated(irisHandler Handler) error {
 
 	var err error
 	if errMessage != "" {
-		err = errors.New(errMessage)
+		err = ErrHandleAnnotated.Format(errMessage)
 	}
 
 	return err

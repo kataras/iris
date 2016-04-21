@@ -44,6 +44,7 @@ type (
 		Plugin(IPlugin) error
 		GetPluginContainer() IPluginContainer
 		GetTemplates() *HTMLTemplates
+		Templates(pathGlob string) error
 		//yes we need that again if no .Listen called and you use other server, you have to call .Build() before
 		OptimusPrime()
 		HasOptimized() bool
@@ -160,12 +161,6 @@ func (s *Station) OptimusPrime() {
 	if !s.optimizedCors {
 		//check if any route has cors setted to true
 		routerHasCors := func() (has bool) {
-			/*gLen := len(s.IRouter.getGarden())
-			for i := 0; i < gLen; i++ {
-				if s.IRouter.getGarden()[i].cors {
-					return true
-				}
-			}*/
 			s.IRouter.getGarden().visitAll(func(i int, tree *tree) {
 				if tree.cors {
 					has = true
@@ -183,12 +178,6 @@ func (s *Station) OptimusPrime() {
 	if !s.optimizedHosts {
 		// check if any route has subdomains
 		routerHasHosts := func() (has bool) {
-			/*gLen := len(s.IRouter.getGarden())
-			for i := 0; i < gLen; i++ {
-				if s.IRouter.getGarden()[i].hosts {
-					return true
-				}
-			}*/
 			s.IRouter.getGarden().visitAll(func(i int, tree *tree) {
 				if tree.hosts {
 					has = true
@@ -205,7 +194,6 @@ func (s *Station) OptimusPrime() {
 				s.optimizedHosts = true
 				break
 			}
-			// just this no new router
 		}
 
 	}
@@ -267,32 +255,22 @@ func (s *Station) ListenTLS(fullAddress string, certFile, keyFile string) error 
 	return err
 }
 
-// Serve is used instead of the iris.Listen
-// eg  http.ListenAndServe(":80",iris.Serve()) if you don't want to use iris.Listen(":80")
-//func (s *Station) Serve() http.Handler {
-//	s.OptimusPrime()
-//	s.pluginContainer.DoPreListen(s)
-//	return s.IRouter
-//}
-
 // Close is used to close the tcp listener from the server
 func (s *Station) Close() {
 	s.pluginContainer.DoPreClose(s)
 	s.Server.CloseServer()
-
 }
 
 // Templates loads HTML templates
 // receives one parameter
 //
 // pathGlob the local directory, it can be a pattern (string)
-func (s *Station) Templates(pathGlob string) {
+func (s *Station) Templates(pathGlob string) error {
 	if s.templates == nil {
 		s.templates = NewHTMLTemplates(s.logger)
 	}
 
-	s.templates.Load(pathGlob)
-
+	return s.templates.Load(pathGlob)
 }
 
 //SetMaxRequestBodySize sets the maximum request body size.

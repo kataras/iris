@@ -411,24 +411,43 @@ func (ctx *Context) Set(key interface{}, value interface{}) {
 	ctx.values[key] = value
 }
 
+// SetContentType sets the response writer's header key 'Content-Type' to a given value(s)
+func (ctx *Context) SetContentType(s []string) {
+	for _, hv := range s {
+		ctx.RequestCtx.Response.Header.Set(ContentType, hv)
+	}
+
+}
+
+// SetHeader write to the response writer's header to a given key the given value(s)
+func (ctx *Context) SetHeader(k string, s []string) {
+	for _, hv := range s {
+		ctx.RequestCtx.Response.Header.Set(k, hv)
+	}
+}
+
+func (ctx *Context) RequestHeader(k string) string {
+	return BytesToString(ctx.RequestCtx.Request.Header.Peek(k))
+}
+
 /* RENDERER */
 
 func (ctx *Context) ExecuteTemplate(tmpl *template.Template, pageContext interface{}) error {
 	ctx.RequestCtx.SetContentType(ContentHTML + " ;charset=" + Charset)
-	return tmpl.Execute(ctx.RequestCtx.Response.BodyWriter(), pageContext)
+	return ErrTemplateExecute.With(tmpl.Execute(ctx.RequestCtx.Response.BodyWriter(), pageContext))
 }
 
 // RenderFile renders a file by its path and a context passed to the function
 func (ctx *Context) RenderFile(file string, pageContext interface{}) error {
 	ctx.RequestCtx.SetContentType(ContentHTML + " ;charset=" + Charset)
-	return ctx.station.GetTemplates().Templates.ExecuteTemplate(ctx.RequestCtx.Response.BodyWriter(), file, pageContext)
+	return ErrTemplateExecute.With(ctx.station.GetTemplates().Templates.ExecuteTemplate(ctx.RequestCtx.Response.BodyWriter(), file, pageContext))
 
 }
 
 // Render renders the template file html which is already registed to the template cache, with it's pageContext passed to the function
 func (ctx *Context) Render(pageContext interface{}) error {
 	ctx.RequestCtx.SetContentType(ContentHTML + " ;charset=" + Charset)
-	return ctx.station.GetTemplates().Templates.Execute(ctx.RequestCtx.Response.BodyWriter(), pageContext)
+	return ErrTemplateExecute.With(ctx.station.GetTemplates().Templates.Execute(ctx.RequestCtx.Response.BodyWriter(), pageContext))
 
 }
 
@@ -463,26 +482,6 @@ func (ctx *Context) Write(format string, a ...interface{}) {
 	ctx.RequestCtx.WriteString(fmt.Sprintf(format, a...))
 }
 
-// SetContentType sets the response writer's header key 'Content-Type' to a given value(s)
-func (ctx *Context) SetContentType(s []string) {
-	for _, hv := range s {
-		ctx.RequestCtx.Response.Header.Set(ContentType, hv)
-	}
-
-}
-
-// SetHeader write to the response writer's header to a given key the given value(s)
-func (ctx *Context) SetHeader(k string, s []string) {
-	for _, hv := range s {
-		ctx.RequestCtx.Response.Header.Set(k, hv)
-	}
-}
-
-func (ctx *Context) RequestHeader(k string) string {
-	return BytesToString(ctx.RequestCtx.Request.Header.Peek(k))
-}
-
-//
 // WriteText writes text with a http status
 func (ctx *Context) WriteText(httpStatus int, text string) {
 	ctx.SetContentType([]string{ContentTEXT + " ;charset=" + Charset})
@@ -496,6 +495,22 @@ func (ctx *Context) Text(text string) {
 	ctx.WriteText(StatusOK, text)
 }
 
+// WriteJSON writes JSON which is encoded from a single json object or array with no Indent
+func (ctx *Context) WriteJSON(httpStatus int, jsonObjectOrArray interface{}) error {
+	ctx.SetContentType([]string{ContentJSON + " ;charset=" + Charset})
+	ctx.RequestCtx.SetStatusCode(httpStatus)
+	return ErrWriteJSON.With(json.NewEncoder(ctx.Response.BodyWriter()).Encode(jsonObjectOrArray))
+}
+
+//JSON calls the WriteJSON with the 200 http status ok if no previous status code setted
+func (ctx *Context) JSON(jsonObjectOrArray interface{}) error {
+	statusCode := ctx.Response.StatusCode()
+	if statusCode <= 0 {
+		statusCode = StatusOK
+	}
+	return ctx.WriteJSON(statusCode, jsonObjectOrArray)
+}
+
 // RenderJSON renders json objects with indent
 func (ctx *Context) RenderJSON(httpStatus int, jsonStructs ...interface{}) error {
 	var _json []byte
@@ -504,7 +519,7 @@ func (ctx *Context) RenderJSON(httpStatus int, jsonStructs ...interface{}) error
 
 		theJSON, err := json.MarshalIndent(jsonStruct, "", "  ")
 		if err != nil {
-			return err
+			return ErrRenderMarshalled.Format("JSON", err.Error())
 		}
 		_json = append(_json, theJSON...)
 	}
@@ -526,39 +541,18 @@ func (ctx *Context) ReadJSON(jsonObject interface{}) error {
 	err := decoder.Decode(jsonObject)
 
 	if err != io.EOF {
-		return err
+		return ErrReadBody.Format("JSON", err.Error())
 	}
 
 	return nil
 }
 
-// WriteJSON writes JSON which is encoded from a single json object or array with no Indent
-func (ctx *Context) WriteJSON(httpStatus int, jsonObjectOrArray interface{}) error {
-	ctx.SetContentType([]string{ContentJSON + " ;charset=" + Charset})
+// WriteXML writes xml which from []byte
+func (ctx *Context) WriteXML(httpStatus int, xmlB []byte) error {
 	ctx.RequestCtx.SetStatusCode(httpStatus)
-	return json.NewEncoder(ctx.Response.BodyWriter()).Encode(jsonObjectOrArray)
-}
+	ctx.SetContentType([]string{ContentXML + " ;charset=" + Charset})
 
-//JSON calls the WriteJSON with the 200 http status ok if no previous status code setted
-func (ctx *Context) JSON(jsonObjectOrArray interface{}) error {
-	statusCode := ctx.Response.StatusCode()
-	if statusCode <= 0 {
-		statusCode = StatusOK
-	}
-	return ctx.WriteJSON(statusCode, jsonObjectOrArray)
-}
-
-// ReadXML reads XML from request's body
-func (ctx *Context) ReadXML(xmlObject interface{}) error {
-	data := ctx.RequestCtx.Request.Body()
-
-	decoder := xml.NewDecoder(strings.NewReader(string(data)))
-	err := decoder.Decode(xmlObject)
-
-	if err != io.EOF {
-		return err
-	}
-
+	ctx.RequestCtx.Write(xmlB)
 	return nil
 }
 
@@ -571,14 +565,18 @@ func (ctx *Context) XML(xmlBytes []byte) error {
 	return ctx.WriteXML(statusCode, xmlBytes)
 }
 
-// WriteXML writes xml which from []byte
-func (ctx *Context) WriteXML(httpStatus int, xmlB []byte) error {
-	ctx.RequestCtx.SetStatusCode(httpStatus)
-	ctx.SetContentType([]string{ContentXML + " ;charset=" + Charset})
+// ReadXML reads XML from request's body
+func (ctx *Context) ReadXML(xmlObject interface{}) error {
+	data := ctx.RequestCtx.Request.Body()
 
-	ctx.RequestCtx.Write(xmlB)
+	decoder := xml.NewDecoder(strings.NewReader(string(data)))
+	err := decoder.Decode(xmlObject)
+
+	if err != io.EOF {
+		return ErrReadBody.Format("XML", err.Error())
+	}
+
 	return nil
-	//This is maybe better but it doesn't works as I want, so let it for other func at the future return xml.NewEncoder(ctx.ResponseWriter).Encode(xmlB)
 }
 
 // RenderXML writes xml which is converted from struct(s) with a http status which they passed to the function via parameters
@@ -587,7 +585,7 @@ func (ctx *Context) RenderXML(httpStatus int, xmlStructs ...interface{}) error {
 	for _, xmlStruct := range xmlStructs {
 		theDoc, err := xml.MarshalIndent(xmlStruct, "", "  ")
 		if err != nil {
-			return err
+			return ErrRenderMarshalled.Format("XML", err.Error())
 		}
 		_xmlDoc = append(_xmlDoc, theDoc...)
 	}
@@ -607,7 +605,7 @@ func (ctx *Context) ReadForm(formObject interface{}) error {
 	if err == nil {
 		//we have multipart form
 
-		return formam.Decode(form.Value, formObject)
+		return ErrReadBody.With(formam.Decode(form.Value, formObject))
 	}
 	// if no multipart and post arguments ( means normal form)
 	if ctx.RequestCtx.PostArgs().Len() > 0 {
@@ -616,9 +614,9 @@ func (ctx *Context) ReadForm(formObject interface{}) error {
 			form[BytesToString(k)] = []string{BytesToString(v)}
 		})
 
-		return formam.Decode(form, formObject)
+		return ErrReadBody.With(formam.Decode(form, formObject))
 	}
-	return ErrNoForm
+	return ErrReadBody.With(ErrNoForm.Return())
 }
 
 // ServeContent serves content, headers are autoset
@@ -637,7 +635,7 @@ func (ctx *Context) ServeContent(content io.ReadSeeker, filename string, modtime
 	ctx.RequestCtx.Response.Header.Set(LastModified, modtime.UTC().Format(TimeFormat))
 	ctx.RequestCtx.SetStatusCode(200)
 	_, err := io.Copy(ctx.RequestCtx.Response.BodyWriter(), content)
-	return err
+	return ErrServeContent.With(err)
 }
 
 // ServeFile serves a view file, to send a file ( zip for example) to the client you should use the SendFile(serverfilename,clientfilename)

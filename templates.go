@@ -67,7 +67,6 @@ import (
 
 type (
 	HTMLTemplates struct {
-		logger *Logger
 		// Templates contains all the html templates it's type of *template.Template from standar API
 		Templates *template.Template
 		rootPath  string
@@ -75,6 +74,7 @@ type (
 		ext       string
 		directory string
 		pattern   string
+		logger    *Logger
 		mu        *sync.Mutex
 	}
 )
@@ -83,7 +83,7 @@ func NewHTMLTemplates(logger *Logger) *HTMLTemplates {
 	return &HTMLTemplates{logger: logger, mu: &sync.Mutex{}}
 }
 
-func (html *HTMLTemplates) Load(globPathExp string) {
+func (html *HTMLTemplates) Load(globPathExp string) error {
 	var err error
 	var rootPath string
 	if html.loaded == false {
@@ -98,14 +98,11 @@ func (html *HTMLTemplates) Load(globPathExp string) {
 			// and if not success again then just panic with the first error
 			pwd, cerr := os.Getwd()
 			if cerr != nil {
-				Printf(html.logger, ErrTemplateParse, cerr.Error())
-				return
+				return ErrTemplateParse.With(err)
 			}
 			html.Templates, err = template.ParseGlob(pwd + globPathExp)
 			if err != nil {
-				Printf(html.logger, ErrTemplateParse, err.Error())
-				return
-
+				return ErrTemplateParse.With(err)
 			}
 
 			rootPath = pwd + globPathExp
@@ -118,16 +115,14 @@ func (html *HTMLTemplates) Load(globPathExp string) {
 		html.startWatch(html.directory)
 		html.loaded = true
 	}
+	return nil
 
 }
 
-func (html *HTMLTemplates) Reload() {
+func (html *HTMLTemplates) Reload() error {
 	var err error
 	html.Templates, err = html.Templates.ParseGlob(html.directory + string(os.PathSeparator) + html.ext) //template.ParseGlob(html.directory + string(os.PathSeparator) + html.ext)
-
-	if err != nil {
-		Printf(html.logger, ErrTemplateParse, err.Error())
-	}
+	return ErrTemplateParse.With(err)
 }
 
 func (html *HTMLTemplates) startWatch(rootPath string) {

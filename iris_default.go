@@ -193,8 +193,8 @@ func OnPanic(handlerFunc HandlerFunc) {
 
 //
 // Templates sets the templates glob path for the web app
-func Templates(pathGlob string) {
-	DefaultStation.Templates(pathGlob)
+func Templates(pathGlob string) error {
+	return DefaultStation.Templates(pathGlob)
 }
 
 // OptimusPrime , YOU MUST RUN IT ONLY IF YOU DON'T USE iris.Listen or iris.Serve() method

@@ -134,13 +134,13 @@ func (s *Server) Serve(l net.Listener) error {
 func (s *Server) Listen() (err error) {
 
 	if s.started {
-		err = ErrServerAlreadyStarted
+		err = ErrServerAlreadyStarted.Return()
 		return
 	}
 	s.listener, err = net.Listen("tcp", s.options.ListeningAddr)
 
 	if err != nil {
-		err = ErrServerPortAlreadyUsed
+		err = ErrServerPortAlreadyUsed.Return()
 		return
 	}
 
@@ -156,19 +156,19 @@ func (s *Server) Listen() (err error) {
 func (s *Server) ListenTLS() (err error) {
 
 	if s.started {
-		err = ErrServerAlreadyStarted
+		err = ErrServerAlreadyStarted.Return()
 		return
 	}
 
 	if s.options.CertFile == "" || s.options.KeyFile == "" {
-		err = ErrServerTlsOptionsMissing
+		err = ErrServerTlsOptionsMissing.Return()
 		return
 	}
 
 	s.listener, err = net.Listen("tcp", s.options.ListeningAddr)
 
 	if err != nil {
-		err = ErrServerPortAlreadyUsed
+		err = ErrServerPortAlreadyUsed.Return()
 		return
 	}
 
@@ -183,24 +183,24 @@ func (s *Server) ListenTLS() (err error) {
 func (s *Server) ListenUnix(mode os.FileMode) (err error) {
 
 	if s.started {
-		err = ErrServerAlreadyStarted
+		err = ErrServerAlreadyStarted.Return()
 		return
 	}
 
 	//this code is from fasthttp ListenAndServeUNIX, I extracted it because we need the tcp.Listener
 	if errOs := os.Remove(s.options.ListeningAddr); errOs != nil && !os.IsNotExist(errOs) {
-		err = NewError("Server: Unexpected error when trying to remove unix socket file %s: %s", s.options.ListeningAddr, errOs)
+		err = ErrServerRemoveUnix.Format(s.options.ListeningAddr, errOs.Error())
 		return
 	}
 	s.listener, err = net.Listen("unix", s.options.ListeningAddr)
 
 	if err != nil {
-		err = ErrServerPortAlreadyUsed
+		err = ErrServerPortAlreadyUsed.Return()
 		return
 	}
 
 	if err = os.Chmod(s.options.ListeningAddr, mode); err != nil {
-		err = NewError("Server: Cannot chmod %#o for %q: %s", mode, s.options.ListeningAddr, err)
+		err = ErrServerChmod.Format(mode, s.options.ListeningAddr, err.Error())
 		return
 	}
 
@@ -218,7 +218,7 @@ func (s *Server) ListenUnix(mode os.FileMode) (err error) {
 func (s *Server) CloseServer() error {
 
 	if !s.started {
-		return ErrServerIsClosed
+		return ErrServerIsClosed.Return()
 	}
 
 	if s.listener != nil {

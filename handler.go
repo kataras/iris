@@ -28,7 +28,6 @@
 package iris
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/valyala/fasthttp"
@@ -99,7 +98,7 @@ func ToHandler(handler interface{}) Handler {
 		h := fasthttpadaptor.NewFastHTTPHandlerFunc(handler.(func(http.ResponseWriter, *http.Request)))
 		return ToHandlerFastHTTP(h)
 	default:
-		panic(fmt.Sprintf("Error on Iris: handler is not func(*Context) either an object which implements the iris.Handler with  func Serve(ctx *Context)\n It seems to be a  %T Point to: %v:", handler, handler))
+		panic(ErrHandler.Format(handler, handler))
 	}
 }
 

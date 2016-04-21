@@ -24,6 +24,7 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package typescript
 
 import (
@@ -130,7 +131,7 @@ func (t *TypescriptPlugin) Activate(container iris.IPluginContainer) error {
 }
 
 func (t *TypescriptPlugin) GetName() string {
-	return Name
+	return Name + "[" + iris.RandomString(10) + "]" // this allows the specific plugin to be registed more than one time
 }
 
 func (t *TypescriptPlugin) GetDescription() string {
