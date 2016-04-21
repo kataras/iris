@@ -53,6 +53,8 @@ const (
 	LastModified = "Last-Modified"
 	// IfModifiedSince "If-Modified-Since"
 	IfModifiedSince = "If-Modified-Since"
+	// Content-Disposition
+	ContentDisposition = "Content-Disposition"
 
 	//statuses inside httperrors.go
 

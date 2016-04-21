@@ -243,8 +243,23 @@ func CopyFile(source string, destination string) error {
 //
 // Text types have the charset parameter set to "utf-8" by default.
 func TypeByExtension(fullfilename string) (t string) {
-	if t = mime.TypeByExtension(filepath.Ext(fullfilename)); t == "" {
-		t = ContentBINARY
+	ext := filepath.Ext(fullfilename)
+	//these should be found by the windows(registry) and unix(apache) but on windows some machines have problems on this part.
+	if t = mime.TypeByExtension(ext); t == "" {
+		// no use of map here because we will have to lock/unlock it, by hand is better, no problem:
+		if ext == ".zip" {
+			t = "application/zip"
+		} else if ext == ".3gp" {
+			t = "video/3gpp"
+		} else if ext == ".7z" {
+			t = "application/x-7z-compressed"
+		} else if ext == ".ace" {
+			t = "application/x-ace-compressed"
+		} else if ext == ".aac" {
+			t = "audio/x-aac"
+		} else {
+			t = ContentBINARY
+		}
 	}
 	return
 }

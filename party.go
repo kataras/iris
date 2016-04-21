@@ -292,7 +292,10 @@ func (p *GardenParty) Trace(path string, handlersFn ...HandlerFunc) {
 
 // Any registers a route for ALL of the http methods (Get,Post,Put,Head,Patch,Options,Connect,Delete)
 func (p *GardenParty) Any(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc("", path, handlersFn...)
+	for _, k := range HTTPMethods.ALL {
+		p.HandleFunc(k, path, handlersFn...)
+	}
+
 }
 
 // After last changes ( 9 April 2016) websockets are not supported, yet.

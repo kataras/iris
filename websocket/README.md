@@ -1,5 +1,8 @@
 > This package is converted to work with Iris but it was originaly created by Gorila team, the original package is gorilla/websocket
 
+
+You can find working examples [here](https://github.com/iris-contrib/examples), folders starts with websocket_ are these you are looking for.
+
 ## How to use
 
 ### From
@@ -17,21 +20,21 @@ var upgrader = websocket.Upgrader{} // use default options
 // here is the http handler
 func myChatHandler(w http.ResponseWriter, r *http.Request) {
 	c, err := upgrader.Upgrade(w, r, nil)
-	
+
 	//here is the websocket connection actions
 	// defer c.Close()
 	// mt, message, err := c.ReadMessage()
 	// c.WriteMessage(mt, message)
 	//....
-	
-}	
-	
-http.HandleFunc("/chat_back", myChatHandler)
-	
-```	
-### To 
 
-```go 
+}
+
+http.HandleFunc("/chat_back", myChatHandler)
+
+```
+### To
+
+```go
 
 import (
 	"github.com/kataras/iris/websocket"
@@ -51,16 +54,16 @@ var upgrader = websocket.New(chat) // use default options
 
 //here is the http handler
 func myChatHandler(ctx *iris.Context) {
-	err := upgrader.Upgrade(ctx)// returns only error, executes the handler you defined on the websocket.New before (the 'chat' function)	
+	err := upgrader.Upgrade(ctx)// returns only error, executes the handler you defined on the websocket.New before (the 'chat' function)
 }
 
 iris.Get("/chat_back", myChatHandler)
 
 ```
 
-Difference, 
+Difference,
 
-1.  websocket logic is outside of the normal http handler, has it's own function 
+1.  websocket logic is outside of the normal http handler, has it's own function
 
 2.  return an```Upgrader``` using websocket.New/.Custom but also you can return using weboskcet.Upgrader{Receiver:chat}. Note thatwebsocket.Upgrader{} will be fail at runtime.
 
@@ -121,7 +124,7 @@ subdirectory](https://github.com/gorilla/websocket/tree/master/examples/autobahn
 <tr><td>Write message using io.WriteCloser</td><td><a href="http://godoc.org/github.com/gorilla/websocket#Conn.NextWriter">Yes</a></td><td>No, see note 3</td></tr>
 </table>
 
-Notes: 
+Notes:
 
 1. Large messages are fragmented in [Chrome's new WebSocket implementation](http://www.ietf.org/mail-archive/web/hybi/current/msg10503.html).
 2. The application can get the type of a received data message by implementing
