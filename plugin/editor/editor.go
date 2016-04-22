@@ -150,34 +150,14 @@ func (e *EditorPlugin) start() {
 		e.logger.Print(res.Message)
 	}
 
-	//now, because of some errors happenning I edit two files in order to work with Iris
-	//we will copy them EACH TIME the iris is running.
-
-	// the path of alm-files:  $GOPATH/src/github.com/kataras/iris/plugin/editor/alm-files/
-	almFiles := os.Getenv("GOPATH") + system.PathSeparator + "src" + system.PathSeparator + "github.com" + system.PathSeparator + "kataras" + system.PathSeparator + "iris" + system.PathSeparator + "plugin" + system.PathSeparator + "editor" + system.PathSeparator + "alm-files" + system.PathSeparator
-	// $GOPATH/src/github.com/kataras/iris/plugin/editor/alm-files/src/server/
-	almFilesServer := almFiles + "src" + system.PathSeparator + "server" + system.PathSeparator
-	// copy the server/commandLine.js
-	ferr := iris.CopyFile(almFilesServer+"commandLine.js", npm.Abs("alm/src/server/commandLine.js"))
-	if ferr != nil {
-		e.logger.Println("Error while building alm-tools for Iris - file: commandLine.js. Trace: " + ferr.Error())
-		return
-	}
-	// copy the server/disk/workingDir.js
-	ferr = iris.CopyFile(almFilesServer+system.PathSeparator+"disk"+system.PathSeparator+"workingDir.js", npm.Abs("alm/src/server/disk/workingDir.js"))
-	if ferr != nil {
-		e.logger.Println("Error while building alm-tools for Iris - file: workingDir.js" + ferr.Error())
-		return
-	}
-	//if all ok then start it
 	cmd := system.CommandBuilder("node", npm.Abs("alm/src/server.js"))
-	cmd.AppendArguments("-a "+e.username+":"+e.password, "-h "+e.host, "-t "+strconv.Itoa(e.port), "-d "+e.directory[0:len(e.directory)-1])
-
+	cmd.AppendArguments("-a", e.username+":"+e.password, "-h", e.host, "-t", strconv.Itoa(e.port), "-d", e.directory[0:len(e.directory)-1])
 	// for auto-start in the browser: cmd.AppendArguments("-o")
 	if e.keyfile != "" && e.certfile != "" {
-		cmd.AppendArguments("-k "+e.keyfile, "-c "+e.certfile)
+		cmd.AppendArguments("--httpskey", e.keyfile, "--httpscert", e.certfile)
 	}
 
+	//For debug only:
 	//cmd.Stdout = os.Stdout
 	//cmd.Stderr = os.Stderr
 	//os.Stdin = os.Stdin
