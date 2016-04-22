@@ -6,7 +6,7 @@
 [![GoDoc](https://godoc.org/github.com/kataras/iris?status.svg)](https://godoc.org/github.com/kataras/iris)
 [![License](https://img.shields.io/badge/license-BSD3-blue.svg?style=flat-square)](LICENSE)
 
-A Community driven Web framework written in Go. Its performance is unique, seems to be the [fastest](#benchmarks) golang web framework created so far.
+A Community driven Web framework written in Go. Its performance is unique, seems to be the [fastest](#benchmarks) golang web framework was ever created.
 
 Start using Iris Web Framework today. Iris is easy-to-learn while providing robust set of features for building modern & shiny web applications.
 
