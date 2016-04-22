@@ -24,11 +24,13 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package iris
 
 import (
-	"github.com/valyala/fasthttp"
 	"net/http"
+
+	"github.com/valyala/fasthttp"
 )
 
 const (
@@ -40,13 +42,15 @@ const (
 	Slash = "/"
 	// MatchEverythingByte is just a byte of '*" rune/char
 	MatchEverythingByte = byte('*')
-)
 
-const (
 	// Normal is the Router
 	Normal RouterType = iota
 	Domain
 )
+
+const ()
+
+var DefaultUserAgent = []byte("iris")
 
 type (
 	// RouterType is just the type which the Router uses to indentify what type is (Normal,Memory,MemorySync,Domain,DomainMemory )

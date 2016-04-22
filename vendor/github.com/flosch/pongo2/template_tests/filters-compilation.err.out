@@ -1,0 +1,5 @@
+.*Expected either a number, string, keyword or identifier\.
+.*Closing bracket expected after expression
+.*Filter parameter required after ':'.*
+.*Filter 'non_existent_filter' does not exist\.
+.*Filter name must be an identifier\.

@@ -1,0 +1,13 @@
+{{ 1 }}
+{{ -5 }}
+{{ "hallo" }}
+{{ true }}
+{{ false }}
+{{ simple.uint }}
+{{ simple.nil }}
+{{ simple.str }}
+{{ simple.bool_false }}
+{{ simple.bool_true }}
+{{ simple.uint }}
+{{ simple.uint|integer }}
+{{ simple.uint|float }}

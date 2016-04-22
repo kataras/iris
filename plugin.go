@@ -24,11 +24,11 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package iris
 
 import (
 	"fmt"
-	"reflect"
 )
 
 type (
@@ -180,19 +180,16 @@ func (p *PluginContainer) Plugin(plugin IPlugin) error {
 		p.activatedPlugins = make([]IPlugin, 0)
 	}
 
+	// Check if it's a plugin first, has Activate GetName
+
 	// Check if the plugin already exists
 	if p.GetByName(plugin.GetName()) != nil {
-		return fmt.Errorf("[Iris] Error on Plugin: %s is already exists: %s", plugin.GetName(), plugin.GetDescription())
+		return ErrPluginAlreadyExists.Format(plugin.GetName(), plugin.GetDescription())
 	}
 	// Activate the plugin, if no error then add it to the plugins
-	st := reflect.TypeOf(plugin)
-	_, ok := st.MethodByName("Activate")
-	if !ok {
-		return fmt.Errorf("[Iris] Error on Plugin: %s doesn't implement the Active method", plugin.GetName())
-	}
 	err := plugin.Activate(p)
 	if err != nil {
-		return err
+		return ErrPluginActivate.Format(plugin.GetName(), err.Error())
 	}
 	// All ok, add it to the plugins list
 	p.activatedPlugins = append(p.activatedPlugins, plugin)

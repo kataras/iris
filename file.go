@@ -24,11 +24,11 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package iris
 
 import (
 	"archive/zip"
-	"fmt"
 	"io"
 	"mime"
 	"net/http"
@@ -54,66 +54,65 @@ func directoryExists(dir string) bool {
 func downloadZip(zipURL string, newDir string) (string, error) {
 	var err error
 	var size int64
-	finish := false
+	finish := make(chan bool)
 
 	go func() {
-		i := 0
 		print("\n|")
 		print("_")
 		print("|")
 
-	printer:
-		{
-			i++
+		for {
+			select {
+			case v := <-finish:
+				{
+					if v {
+						print("\010\010\010") //remove the loading chars
+						close(finish)
+						return
+					}
 
-			print("\010\010-")
-			time.Sleep(time.Second / 2)
-			print("\010\\")
-			time.Sleep(time.Second / 2)
-			print("\010|")
-			time.Sleep(time.Second / 2)
-			print("\010/")
-			time.Sleep(time.Second / 2)
-			print("\010-")
-			time.Sleep(time.Second / 2)
-			print("|")
-			if finish {
-				goto ok
+				}
+			default:
+				print("\010\010-")
+				time.Sleep(time.Second / 2)
+				print("\010\\")
+				time.Sleep(time.Second / 2)
+				print("\010|")
+				time.Sleep(time.Second / 2)
+				print("\010/")
+				time.Sleep(time.Second / 2)
+				print("\010-")
+				time.Sleep(time.Second / 2)
+				print("|")
 			}
-			goto printer
 		}
 
-	ok:
 	}()
 
 	os.MkdirAll(newDir, os.ModeDir)
 	tokens := strings.Split(zipURL, "/")
 	fileName := newDir + tokens[len(tokens)-1]
 	if !strings.HasSuffix(fileName, ".zip") {
-		err = fmt.Errorf("Error while creating %s ,is not a zip", fileName)
-		return "", err
+		return "", ErrNoZip.Format(fileName)
 	}
 
 	output, err := os.Create(fileName)
 	if err != nil {
-		fmt.Println("Error while creating", fileName, "-", err)
-		return "", nil
+		return "", ErrFileCreate.Format(err.Error())
 	}
 	defer output.Close()
 	response, err := http.Get(zipURL)
 	if err != nil {
-		fmt.Println("Error while downloading", zipURL, "-", err)
-		return "", nil
+		return "", ErrFileDownload.Format(zipURL, err.Error())
 	}
 	defer response.Body.Close()
 
 	size, err = io.Copy(output, response.Body)
 	if err != nil {
-		fmt.Println("Error while downloading", zipURL, "-", err)
-		return "", nil
+		return "", ErrFileCopy.Format(err.Error())
 	}
-	finish = true
-	println("\010\010\010\010\010\010OK ", size, " bytes downloaded")
+	finish <- true
+	print("OK ", size, " bytes downloaded") //we keep that here so developer will always see in the terminal if a plugin downloads something
 	return fileName, nil
 
 }
@@ -129,7 +128,7 @@ func unzip(archive string, target string) (string, error) {
 	}
 
 	if err := os.MkdirAll(target, 0755); err != nil {
-		return "", err
+		return "", ErrDirCreate.Format(target, err.Error())
 	}
 	createdFolder := ""
 	for _, file := range reader.File {
@@ -145,18 +144,18 @@ func unzip(archive string, target string) (string, error) {
 
 		fileReader, err := file.Open()
 		if err != nil {
-			return "", err
+			return "", ErrFileOpen.Format(err.Error())
 		}
 		defer fileReader.Close()
 
 		targetFile, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, file.Mode())
 		if err != nil {
-			return "", err
+			return "", ErrFileOpen.Format(err.Error())
 		}
 		defer targetFile.Close()
 
 		if _, err := io.Copy(targetFile, fileReader); err != nil {
-			return "", err
+			return "", ErrFileCopy.Format(err.Error())
 		}
 
 	}
@@ -167,7 +166,7 @@ func unzip(archive string, target string) (string, error) {
 
 // removeFile removes a file and returns an error, if any
 func removeFile(filePath string) error {
-	return os.Remove(filePath)
+	return ErrFileRemove.With(os.Remove(filePath))
 }
 
 // install is just the flow of: downloadZip -> unzip -> removeFile(zippedFile)
@@ -200,26 +199,26 @@ func CopyFile(source string, destination string) error {
 	reader, err := os.Open(source)
 
 	if err != nil {
-		return err
+		return ErrFileOpen.Format(err.Error())
 	}
 
 	defer reader.Close()
 
 	writer, err := os.Create(destination)
 	if err != nil {
-		return err
+		return ErrFileCreate.Format(err.Error())
 	}
 
 	defer writer.Close()
 
 	_, err = io.Copy(writer, reader)
 	if err != nil {
-		return err
+		return ErrFileCopy.Format(err.Error())
 	}
 
 	err = writer.Sync()
 	if err != nil {
-		return err
+		return ErrFileCopy.Format(err.Error())
 	}
 
 	return nil

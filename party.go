@@ -24,17 +24,10 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package iris
 
-// The party holds memory to find the Root, I could make it with other design pattern but I choose this
-// because I want to the future to be able to remove a Party and routes at the runtime
-// this will be useful when I introduce the dynamic creation of subdomains parties ( the only one framework which will have this feature, as far as I know)
-// this dynamic subdomains can created at the runtime and removed at runtime
-// this is practial an example of create a user with a subdomain and when user deletes his account or his repo
-// then delete the subdomain also without if else inside their handlers
-
 import (
-	"errors"
 	"reflect"
 	"strconv"
 	"strings"
@@ -198,7 +191,7 @@ func (p *GardenParty) HandleAnnotated(irisHandler Handler) error {
 			tagValue, unqerr := strconv.Unquote(string(firstTag[idx+1:]))
 
 			if unqerr != nil {
-				errMessage = errMessage + "\niris.HandleAnnotated: Error on getting path: " + unqerr.Error()
+				errMessage = errMessage + "\non getting path: " + unqerr.Error()
 				continue
 			}
 
@@ -207,14 +200,14 @@ func (p *GardenParty) HandleAnnotated(irisHandler Handler) error {
 
 			if !strings.Contains(avalaibleMethodsStr, tagName) {
 				//wrong method passed
-				errMessage = errMessage + "\niris.HandleAnnotated: Wrong method passed to the anonymous property iris.Handler -> " + tagName
+				errMessage = errMessage + "\nWrong method passed to the anonymous property iris.Handler -> " + tagName
 				continue
 			}
 
 			method = tagName
 
 		} else {
-			errMessage = "\nError on Iris.HandleAnnotated: Struct passed but it doesn't have an anonymous property of type iris.Hanndler, please refer to docs\n"
+			errMessage = "\nStruct passed but it doesn't have an anonymous property of type iris.Hanndler, please refer to docs\n"
 		}
 
 	}
@@ -225,7 +218,7 @@ func (p *GardenParty) HandleAnnotated(irisHandler Handler) error {
 
 	var err error
 	if errMessage != "" {
-		err = errors.New(errMessage)
+		err = ErrHandleAnnotated.Format(errMessage)
 	}
 
 	return err

@@ -32,7 +32,7 @@ import (
 	"strings"
 )
 
-var store = sessions.NewCookieStore([]byte(RandStringBytesMaskImprSrc(10)))
+var store = sessions.NewCookieStore([]byte(iris.RandomString(10)))
 var panelSessions = sessions.New("user_sessions", store)
 
 type user struct {

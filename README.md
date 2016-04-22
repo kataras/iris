@@ -6,9 +6,9 @@
 [![GoDoc](https://godoc.org/github.com/kataras/iris?status.svg)](https://godoc.org/github.com/kataras/iris)
 [![License](https://img.shields.io/badge/license-BSD3-blue.svg?style=flat-square)](LICENSE)
 
-A Community driven Web framework written in Go. Seems to be the [fastest](#benchmarks). Simplicity equals productivity.
+A Community driven Web framework written in Go. Its performance is unique, seems to be the [fastest](#benchmarks) golang web framework was ever created.
 
-What are you waiting, start using Iris Web Framework today. Easy to learn, provides robust set of features for building modern & shiny web applications.
+Start using Iris Web Framework today. Iris is easy-to-learn while providing robust set of features for building modern & shiny web applications.
 
 ![Hi Iris GIF](http://kataras.github.io/iris/assets/hi_iris_march.gif)
 
@@ -16,17 +16,26 @@ What are you waiting, start using Iris Web Framework today. Easy to learn, provi
 
 
 ## Features
-
-* **FastHTTP**: Iris is builded on top of the [fasthttp](https://github.com/valyala/fasthttp)
+* **Typescript**: Auto-compile & Watch your client side code via the [typescript plugin](https://github.com/kataras/iris/tree/development/plugin/typescript)
+* **Online IDE**: Edit & Compile your client side code when you are not home via the [editor plugin](https://github.com/kataras/iris/tree/development/plugin/editor)
+* **Iris Online Control**: Web-based interface to control the basics functionalities of your server via the [iriscontrol plugin](https://github.com/kataras/iris/tree/development/plugin/iriscontrol). Note that Iris control is still young
+* **Subdomains**: Easy way to express your api via custom and dynamic subdomains[*](https://github.com/iris-contrib/examples/blob/master/subdomains_simple)
+* **Named Path Parameters**: Probably you already know what that means. If not, [It's easy to learn about](#named-parameters)
+* **Custom HTTP Errors**: Define your own html templates or plain messages when http errors occurs[*](#custom-http-errors)
+* **I18n**: [Internationalization](https://github.com/iris-contrib/examples/tree/master/middleware_internationalization_i18n)
+* **Bindings**: Need a fast way to convert data from body or form into an object? Take a look [here](https://github.com/iris-contrib/examples/tree/master/bind_form_simple)
 * **Streaming**: You have only one option when streaming comes in game[*](#streaming)
-* **Sessions**: Gorilla Sessions modified to work with Iris[*](https://github.com/kataras/iris/tree/development/sessions)
-* **Websockets**: Gorilla Websockets modified to work with Iris[*](https://github.com/kataras/iris/tree/development/websocket)
-* **Context**: Iris uses [Context](#context) for storing route params, sharing variables between middlewares and render rich content to the client
+* **Middlewares**: Create and/or use global or per route middlewares with the Iris' simplicity[*](#middlewares)
+* **Sessions**:  Sessions and secure cookies to provide a secure way to authenticate your clients/users [*](https://github.com/kataras/iris/tree/development/sessions)
+* **Realtime**: Realtime is fun when you use websockets[*](https://github.com/kataras/iris/tree/development/websocket)
+* **Context**: [Context](#context) is used for storing route params, storing handlers, sharing variables between middlewares, render rich content, send file and much more[*](#context)
 * **Plugins**: You can build your own plugins to  inject the Iris framework[*](#plugins)
-* **Full API**: All http methods are supported, you can group routes and sharing resources together[*](#api)
-* **Zero allocations**: Iris generates zero garbage
+* **Full API**: All http methods are supported[*](#api)
+* **Party**:  Group routes when sharing the same resources or middlewares. You can organise a party with domains too! [*](#party)
+* **Transport Layer Security**: Provide privacy and data integrity between your server and the client[*](#tls)
 * **Multi server instances**: Besides the fact that Iris has a default main server. You can declare as many as you need[*](#declaration)
-* **Middlewares**: Create and use global or per route middlewares with the Iris' simplicity[*](#middlewares).
+* **Zero allocations**: Iris generates zero garbage
+* **Community features**: The most important 'feature' of all is that the 100% ,so far, of your suggestions were implemented, so if you think something is missing don't hesitate to post it :) [*](https://github.com/kataras/iris/issues?q=is%3Aissue+label%3A%22feature+has+implemented%22)
 
 ### Q: What makes iris significantly [faster](#benchmarks)?
 *    First of all Iris is builded on top of the [fasthttp](https://github.com/valyala/fasthttp)
@@ -65,16 +74,20 @@ What are you waiting, start using Iris Web Framework today. Easy to learn, provi
 - [Community](#community)
 - [Todo](#todo)
 - [External source articles](#articles)
+- [Versioning](#versioning)
 - [License](#license)
 
 
-### Install
-In order to have the latest version update the package once per week
+## Install
+Iris is in active development status, I recommend you to check for new features and [versions](#versioning) once per week. Iris is compatible with the latest go version: go1.6+
+```sh
+$ go get -u github.com/kataras/iris
+```
+If update doesn't works for you, try this
 ```sh
 $ rm -rf $GOPATH/github.com/kataras/iris
 $ go get github.com/kataras/iris
 ```
-
 
 ## Introduction
 The name of this framework came from **Greek mythology**, **Iris** was the name of the Greek goddess of the **rainbow**.
@@ -831,14 +844,14 @@ An example of one plugin which is under development is the Iris control, a web i
 
 Benchmarks results taken [from external source](https://github.com/smallnest/go-web-framework-benchmark), created by [@smallnest](https://github.com/smallnest).
 
-This is the most realistic benchmark suite than you will find for Go Web Frameworks. Give attention to it's readme.md.
+This is the most realistic benchmark suite than you will find for Go Web Frameworks. Give attention to its readme.md.
 
 April 13 2016
 
 
-![Benchmark Wizzard Basic 13 April 2016](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/master/benchmark.png)
+![Benchmark Wizzard Basic 13 April 2016](http://kataras.github.io/iris/assets/benchmarks_April_13_2016-copy.png)
 
-[click here to see all benchmarks](https://github.com/smallnest/go-web-framework-benchmark)
+[click here to view detailed tables with all kind of different benchmarks](https://github.com/smallnest/go-web-framework-benchmark)
 
 ## Third Party Middlewares
 
@@ -900,7 +913,15 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 * [Ultra-wide framework Go Http routing performance comparison](https://translate.google.com/translate?sl=auto&tl=en&js=y&prev=_t&hl=el&ie=UTF-8&u=http%3A%2F%2Fcolobu.com%2F2016%2F03%2F23%2FGo-HTTP-request-router-and-web-framework-benchmark%2F&edit-text=&act=url)
 > According to my  article ( comparative ultra wide frame Go Http routing performance ) on a variety of relatively Go http routing framework, Iris clear winner, its performance far exceeds other Golang http routing framework.
 
-* +1 pending article waiting, after writer's holidays
+## Versioning
+
+Current: **v1.1.3**
+
+Read more about Semantic Versioning 2.0.0
+
+ - http://semver.org/
+ - https://en.wikipedia.org/wiki/Software_versioning
+ - https://wiki.debian.org/UpstreamGuide#Releases_and_Versions
 
 ## License
 

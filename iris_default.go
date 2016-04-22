@@ -24,6 +24,7 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package iris
 
 // defaultOptions returns the default options for the Station
@@ -192,8 +193,8 @@ func OnPanic(handlerFunc HandlerFunc) {
 
 //
 // Templates sets the templates glob path for the web app
-func Templates(pathGlob string) {
-	DefaultStation.Templates(pathGlob)
+func Templates(pathGlob string) error {
+	return DefaultStation.Templates(pathGlob)
 }
 
 // OptimusPrime , YOU MUST RUN IT ONLY IF YOU DON'T USE iris.Listen or iris.Serve() method

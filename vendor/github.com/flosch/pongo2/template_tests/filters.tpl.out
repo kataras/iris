@@ -1,0 +1,318 @@
+add
+7
+47
+5
+5test
+hello john doe
+hello john doe
+
+addslashes
+plain text
+This is \\a Test. \"Yep\". \'Yep\'.
+
+capfirst
+
+
+H
+Hello there!
+你好世界
+
+cut
+1
+Helloworld
+
+default
+n/a
+42
+42
+5
+
+default_if_none
+n/a
+
+n/a
+
+get_digit
+1234567890
+1234567890
+9
+7
+1
+1234567890
+
+safe
+&lt;script&gt;
+<script>
+
+escape
+&lt;script&gt;
+
+title
+
+
+H
+Hello There!
+Hello There!
+Hello There!
+你好世界
+
+truncatechars
+Joel i...
+Joel is a ...
+Joel is a slug
+你
+你好
+
+divisibleby
+True
+True
+True
+False
+False
+True
+
+striptags
+Hello!
+
+removetags
+<strong>Hello!</strong>
+
+yesno
+yes
+no
+maybe
+maybe
+ja
+nein
+maybe
+
+pluralize
+customers
+customer
+customers
+cherries
+cherry
+cherries
+walruses
+walrus
+walruses
+
+random
+5
+
+h
+99
+
+first
+T
+<pongo2_test.comment Value>
+
+
+
+你
+
+last
+t
+<pongo2_test.comment Value>
+
+
+
+界
+
+urlencode
+http%3A%2F%2Fwww.example.org%2Ffoo%3Fa%3Db%26c%3Dd
+
+linebreaksbr
+this is a text&lt;br /&gt;with a new line in it
+
+hallo
+
+length_is
+True
+False
+True
+False
+False
+True
+False
+False
+
+integer
+0
+0
+5
+5
+5
+6
+-100
+
+float
+0.000000
+0.000000
+5.500000
+5.000000
+5.000000
+-100.000000
+5.5 is 5.500000
+5.5 is not 5.500001
+
+floatformat
+34.2
+34
+34.3
+34.2
+34
+34.3
+34.232
+34.000
+34.260
+34
+34
+40
+34.232
+34
+34.260
+
+join
+Hello, 99, 3.140000, good
+
+stringformat
+3.14
+Test: 8
+Chinese: 你好世界
+
+make_list
+j, o, h, n,  , d, o, e
+john doe
+
+center
+'test'
+'        test       '
+'        test        '
+20
+'       test2       '
+'        test2       '
+20
+'        你好世界        '
+
+ljust
+'test'
+'test                '
+20
+'你好世界      '
+
+rjust
+'test'
+'                test'
+20
+'      你好世界'
+
+wordcount
+0
+25
+
+wordwrap
+
+Lorem ipsum dolor sit amet,
+consectetur adipisici elit, sed eiusmod
+tempor incidunt ut labore et
+dolore magna aliqua. Ut enim
+ad minim veniam, quis nostrud
+exercitation
+
+iriencode
+?foo=123&amp;bar=yes
+
+linebreaks
+
+<p>this is a text<br />with a new line in it</p>
+<p>This is a simple text.</p><p>This too, as a paragraph.<br />Right?</p><p>Yep!</p>
+<p>john doe</p>
+
+linenumbers
+1. Lorem ipsum dolor sit amet, consectetur adipisici elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquid ex ea commodi consequat. Quis aute iure reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint obcaecat cupiditat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+2. Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi. Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.
+3. Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat. Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi.
+4. Nam liber tempor cum soluta nobis eleifend option congue nihil imperdiet doming id quod mazim placerat facer possim assum. Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat. Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat.
+5. Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis.
+6. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, At accusam aliquyam diam diam dolore dolores duo eirmod eos erat, et nonumy sed tempor et et invidunt justo labore Stet clita ea et gubergren, kasd magna no rebum. sanctus sea sed takimata ut vero voluptua. est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat.
+7. Consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
+8. Lorem ipsum dolor sit amet, consectetur adipisici elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquid ex ea commodi consequat. Quis aute iure reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint obcaecat cupiditat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+9. Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi. Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.
+10. Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat. Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi.
+
+phone2numeric
+999-766462
+
+truncatewords
+Lorem ipsum dolor sit amet, consectetur adipisici elit, sed ...
+10
+
+你好世界
+你好世界
+
+urlize
+<a href="http://www.florian-schlachter.de" rel="nofollow">http://www.florian-schlachter.de</a>
+<a href="http://www.florian-schlachter.de" rel="nofollow">www.florian-schlachter.de</a>
+<a href="http://florian-schlachter.de" rel="nofollow">florian-schlachter.de</a>
+
+Please mail me at <a href="mailto:demo@example.com">demo@example.com</a> or visit mit on:
+- lorem ipsum <a href="http://github.com/flosch/pongo2" rel="nofollow">github.com/flosch/pongo2</a> lorem ipsum
+- lorem ipsum <a href="http://www.florian-schlachter.de" rel="nofollow">http://www.florian-schlachter.de</a> lorem ipsum
+- lorem ipsum <a href="https://www.florian-schlachter.de" rel="nofollow">https://www.florian-schlachter.de</a> lorem ipsum
+- lorem ipsum <a href="https://www.florian-schlachter.de" rel="nofollow">https://www.florian-schlachter.de</a> lorem ipsum
+- lorem ipsum <a href="http://www.florian-schlachter.de" rel="nofollow">www.florian-schlachter.de</a> lorem ipsum
+- lorem ipsum <a href="http://www.florian-schlachter.de/test=%22test%22" rel="nofollow">www.florian-schlachter.de/test=&quot;test&quot;</a> lorem ipsum
+
+--
+
+Please mail me at <a href="mailto:demo@example.com">demo@example.com</a> or visit mit on:
+- lorem ipsum <a href="http://github.com/flosch/pongo2" rel="nofollow">github.com/flosch/pongo2</a> lorem ipsum
+- lorem ipsum <a href="http://www.florian-schlachter.de" rel="nofollow">http://www.florian-schlachter.de</a> lorem ipsum
+- lorem ipsum <a href="https://www.florian-schlachter.de" rel="nofollow">https://www.florian-schlachter.de</a> lorem ipsum
+- lorem ipsum <a href="https://www.florian-schlachter.de" rel="nofollow">https://www.florian-schlachter.de</a> lorem ipsum
+- lorem ipsum <a href="http://www.florian-schlachter.de" rel="nofollow">www.florian-schlachter.de</a> lorem ipsum
+- lorem ipsum <a href="http://www.florian-schlachter.de/test=%22test%22" rel="nofollow">www.florian-schlachter.de/test="test"</a> lorem ipsum
+
+
+urlizetrunc
+
+Please mail me at <a href="mailto:demo@example.com">demo@example...</a> or visit mit on:
+- lorem ipsum <a href="http://github.com/flosch/pongo2" rel="nofollow">github.com/f...</a> lorem ipsum
+- lorem ipsum <a href="http://www.florian-schlachter.de" rel="nofollow">http://www.f...</a> lorem ipsum
+- lorem ipsum <a href="https://www.florian-schlachter.de" rel="nofollow">https://www....</a> lorem ipsum
+- lorem ipsum <a href="https://www.florian-schlachter.de" rel="nofollow">https://www....</a> lorem ipsum
+- lorem ipsum <a href="http://www.florian-schlachter.de" rel="nofollow">www.florian-...</a> lorem ipsum
+- lorem ipsum <a href="http://www.florian-schlachter.de/test=%22test%22" rel="nofollow">www.florian-...</a> lorem ipsum
+
+
+escapejs
+escape sequences \u000D\u000A\u005C\u0027\u005C\u0022 special chars \u0022\u003F\u0021\u003D\u0024\u003C\u003E
+
+slice
+1,1,2,3,5,8,13,21,34,55
+
+1,1,2
+3,5
+2,3,5,8,13,21,34,55
+2
+2,3,5,8,13,21,34,55
+es
+好世
+
+truncatechars_html
+This is a long test wh...
+<div class="foo"><ul class="foo"><li class="foo"><p class="foo">This is a long test wh...</p></li></ul></div>
+<p class='test' id='foo'>This is a long test wh...</p>
+<a name='link'><p>This </a>is a long test wh...</p>
+<p>This </a>is a long test wh...</p>
+<p>This...</p>
+
+truncatewords_html
+This is a long test which will be cutted after some words.
+<div class="foo"><ul class="foo"><li class="foo"><p class="foo">This is a long test ...</p></li></ul></div>
+<p>This. is. a. long test. Test test, test....</p>
+<a name='link' href="https://...."><p class="foo">This </a>is a long test,...</p>
+<p>This </a>is a long test,...</p>
+<p>This is ...</p>
+...

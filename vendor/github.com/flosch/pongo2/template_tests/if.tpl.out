@@ -1,0 +1,18 @@
+true
+simple != nil
+uint != 0
+float != 0.0
+!simple
+!simple.uint
+!simple.float
+text field in complex.post
+5 in simple.intmap
+!0.0
+!0
+false
+42
+yes
+yes
+true
+simple.float
+Elseif with no else

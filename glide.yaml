@@ -1,0 +1,27 @@
+package: github.com/kataras/iris
+homepage: http://kataras.github.io/iris
+license: BSD 3-Clause
+owners:
+- name: Gerasimos Makis Maropoulos
+  email: makis@ideopod.com
+  homepage: https://github.com/kataras
+import:
+- package: github.com/Unknwon/i18n
+  subpackages:
+  - github.com\Unknwon\i18n
+- package: github.com/flosch/pongo2
+  subpackages:
+  - github.com\flosch\pongo2
+- package: github.com/fsnotify/fsnotify
+  subpackages:
+  - github.com\fsnotify\fsnotify
+- package: github.com/monoculum/formam
+  subpackages:
+  - github.com\monoculum\formam
+- package: github.com/valyala/fasthttp
+  subpackages:
+  - github.com\valyala\fasthttp
+  - github.com\valyala\fasthttp\fasthttpadaptor
+- package: golang.org/x/net
+  subpackages:
+  - golang.org\x\net\context
