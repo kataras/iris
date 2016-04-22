@@ -840,14 +840,14 @@ An example of one plugin which is under development is the Iris control, a web i
 
 Benchmarks results taken [from external source](https://github.com/smallnest/go-web-framework-benchmark), created by [@smallnest](https://github.com/smallnest).
 
-This is the most realistic benchmark suite than you will find for Go Web Frameworks. Give attention to it's readme.md.
+This is the most realistic benchmark suite than you will find for Go Web Frameworks. Give attention to its readme.md.
 
 April 13 2016
 
 
-![Benchmark Wizzard Basic 13 April 2016](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/master/benchmark.png)
+![Benchmark Wizzard Basic 13 April 2016](http://kataras.github.io/iris/assets/benchmarks_April_13_2016-copy.png)
 
-[click here to see all benchmarks](https://github.com/smallnest/go-web-framework-benchmark)
+[click here to view detailed tables with all kind of different benchmarks](https://github.com/smallnest/go-web-framework-benchmark)
 
 ## Third Party Middlewares
 
