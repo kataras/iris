@@ -51,6 +51,15 @@ type Upgrader struct {
 	Receiver func(*Conn)
 }
 
+// DontCheckOrigin set Upgrader.CheckOrigin to a function which always returns true
+// returns itself
+func (u *Upgrader) DontCheckOrigin() *Upgrader {
+	u.CheckOrigin = func(ctx *iris.Context) bool {
+		return true
+	}
+	return u
+}
+
 func (u *Upgrader) returnError(ctx *iris.Context, status int, reason string) error {
 	err := HandshakeError{reason}
 	if u.Error != nil {
