@@ -1,0 +1,2 @@
+{% macro imported_macro(foo) export %}<p>Hey {{ foo }}!</p>{% endmacro %}
+{% macro imported_macro_void() export %}<p>Hello mate!</p>{% endmacro %}

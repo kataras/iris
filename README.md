@@ -74,16 +74,20 @@ Start using Iris Web Framework today. Iris is easy-to-learn while providing robu
 - [Community](#community)
 - [Todo](#todo)
 - [External source articles](#articles)
+- [Versioning](#versioning)
 - [License](#license)
 
 
-### Install
-In order to have the latest version update the package once per week
+## Install
+Iris is in active development status, I recommend you to check for new features and [versions](#versioning) once per week. Iris is compatible with the latest go version: go1.6+
+```sh
+$ go get -u github.com/kataras/iris
+```
+If update doesn't works for you, try this
 ```sh
 $ rm -rf $GOPATH/github.com/kataras/iris
 $ go get github.com/kataras/iris
 ```
-
 
 ## Introduction
 The name of this framework came from **Greek mythology**, **Iris** was the name of the Greek goddess of the **rainbow**.
@@ -908,6 +912,16 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 
 * [Ultra-wide framework Go Http routing performance comparison](https://translate.google.com/translate?sl=auto&tl=en&js=y&prev=_t&hl=el&ie=UTF-8&u=http%3A%2F%2Fcolobu.com%2F2016%2F03%2F23%2FGo-HTTP-request-router-and-web-framework-benchmark%2F&edit-text=&act=url)
 > According to my  article ( comparative ultra wide frame Go Http routing performance ) on a variety of relatively Go http routing framework, Iris clear winner, its performance far exceeds other Golang http routing framework.
+
+## Versioning
+
+Current: **v1.1.3**
+
+Read more about Semantic Versioning 2.0.0
+
+ - http://semver.org/
+ - https://en.wikipedia.org/wiki/Software_versioning
+ - https://wiki.debian.org/UpstreamGuide#Releases_and_Versions
 
 ## License
 

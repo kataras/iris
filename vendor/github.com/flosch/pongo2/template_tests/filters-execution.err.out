@@ -1,0 +1,4 @@
+.*where: execution.*Negative sign on a non\-number expression
+.*Function input argument 0 of 'simple.func_add' must be of type int or \*pongo2.Value \(not string\).
+.*Function input argument 0 of 'simple.func_add' must be of type int or \*pongo2.Value \(not string\).
+.*Function variadic input argument of 'simple.func_variadic_sum_int' must be of type int or \*pongo2.Value \(not string\).
