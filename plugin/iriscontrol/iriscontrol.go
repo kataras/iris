@@ -53,7 +53,7 @@ type irisControlPlugin struct {
 	server *iris.Station
 	//
 	//infos
-	routes  *routesinfo.RoutesInfoPlugin
+	routes  *routesinfo.Plugin
 	plugins []PluginInfo
 	//
 

@@ -1,6 +1,6 @@
 ## Middleware information
 
-This was out-of-the-box iris supported before, but after Iris V1.1 it's not, so I had to modify it.
+This was out-of-the-box iris supported before, but after Iris V1.1.0 it's not, so I had to modify it.
 
 
 This folder contains a middleware ported to Iris from a third-party middleware named secure.
@@ -38,7 +38,7 @@ func main() {
 		FrameDeny:               true,                                                                                                                                                // If FrameDeny is set to true, adds the X-Frame-Options header with the value of `DENY`. Default is false.
 		CustomFrameOptionsValue: "SAMEORIGIN",                                                                                                                                        // CustomFrameOptionsValue allows the X-Frame-Options header value to be set with a custom value. This overrides the FrameDeny option.
 		ContentTypeNosniff:      true,                                                                                                                                                // If ContentTypeNosniff is true, adds the X-Content-Type-Options header with the value `nosniff`. Default is false.
-		BrowserXssFilter:        true,                                                                                                                                                // If BrowserXssFilter is true, adds the X-XSS-Protection header with the value `1; mode=block`. Default is false.
+		BrowserXSSFilter:        true,                                                                                                                                                // If BrowserXssFilter is true, adds the X-XSS-Protection header with the value `1; mode=block`. Default is false.
 		ContentSecurityPolicy:   "default-src 'self'",                                                                                                                                // ContentSecurityPolicy allows the Content-Security-Policy header value to be set with a custom value. Default is "".
 		PublicKey:               `pin-sha256="base64+primary=="; pin-sha256="base64+backup=="; max-age=5184000; includeSubdomains; report-uri="https://www.example.com/hpkp-report"`, // PublicKey implements HPKP to prevent MITM attacks with forged certificates. Default is "".
 
@@ -57,10 +57,10 @@ func main() {
 	})
 
 	iris.Get("/home", func(c *iris.Context) {
-		c.Write("Hello from /home ?")
+		c.Write("Hello from /home")
 	})
 
-	println("Iris is listening on :8080")
+	println("Server is running at :8080")
 	iris.Listen(":8080")
 
 }

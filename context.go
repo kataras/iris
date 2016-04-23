@@ -426,12 +426,21 @@ func (ctx *Context) SetHeader(k string, s []string) {
 	}
 }
 
+// RequestHeader returns the request header's value
+// accepts one parameter, the key of the header (string)
+// returns string
 func (ctx *Context) RequestHeader(k string) string {
 	return BytesToString(ctx.RequestCtx.Request.Header.Peek(k))
 }
 
 /* RENDERER */
 
+// ExecuteTemplate executes a simple html template, you can use that if you already have the cached templates
+// the recommended way to render is to use iris.Templates("./templates/path/*.html") and ctx.RenderFile("filename.html",struct{})
+// accepts 2 parameters
+// the first parameter is the template (*template.Template)
+// the second parameter is the page context (interfac{})
+// returns an error if any errors occurs while executing this template
 func (ctx *Context) ExecuteTemplate(tmpl *template.Template, pageContext interface{}) error {
 	ctx.RequestCtx.SetContentType(ContentHTML + " ;charset=" + Charset)
 	return ErrTemplateExecute.With(tmpl.Execute(ctx.RequestCtx.Response.BodyWriter(), pageContext))
@@ -609,13 +618,17 @@ func (ctx *Context) ReadForm(formObject interface{}) error {
 	}
 	// if no multipart and post arguments ( means normal form)
 	if ctx.RequestCtx.PostArgs().Len() > 0 {
-		form := make(map[string][]string, ctx.RequestCtx.PostArgs().Len())
-		ctx.Request.PostArgs().VisitAll(func(k []byte, v []byte) {
+		form := make(map[string][]string, ctx.RequestCtx.PostArgs().Len()+ctx.RequestCtx.QueryArgs().Len())
+		ctx.RequestCtx.PostArgs().VisitAll(func(k []byte, v []byte) {
+			form[BytesToString(k)] = []string{BytesToString(v)}
+		})
+		ctx.RequestCtx.QueryArgs().VisitAll(func(k []byte, v []byte) {
 			form[BytesToString(k)] = []string{BytesToString(v)}
 		})
 
 		return ErrReadBody.With(formam.Decode(form, formObject))
 	}
+
 	return ErrReadBody.With(ErrNoForm.Return())
 }
 

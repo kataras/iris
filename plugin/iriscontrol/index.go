@@ -24,8 +24,12 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package iriscontrol
 
+// NOT READY YET
+
+// PluginInfo holds the Name and the description of the registed plugins
 type PluginInfo struct {
 	Name        string
 	Description string

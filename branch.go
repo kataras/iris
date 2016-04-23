@@ -42,7 +42,6 @@ const (
 
 type (
 	// PathParameter is a struct which contains Key and Value, used for named path parameters
-
 	PathParameter struct {
 		Key   string
 		Value string

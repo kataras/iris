@@ -2,7 +2,7 @@
 
 This folder contains a middleware ported to Iris for a third-party package named pongo2.
 
-More can be found here: 
+More can be found here:
 [https://github.com/flosch/pongo2](https://github.com/flosch/pongo2)
 
 
@@ -82,13 +82,14 @@ import (
 )
 
 func main() {
-	iris.Use(pongo2.Pongo2())
+	iris.Use(pongo2.New())
 
 	iris.Get("/", func(ctx *iris.Context) {
 		ctx.Set("template", "index.html")
 		ctx.Set("data", map[string]interface{}{"message": "Hello World!"})
 	})
 
+	println("Server is running at :8080")
 	iris.Listen(":8080")
 }
 

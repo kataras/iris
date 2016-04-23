@@ -1,6 +1,7 @@
 /*
 This has been modified to work with Iris, credits goes to https://github.com/unrolled/secure
 */
+
 package secure
 
 import (
@@ -54,8 +55,8 @@ type Options struct {
 	CustomFrameOptionsValue string
 	// If ContentTypeNosniff is true, adds the X-Content-Type-Options header with the value `nosniff`. Default is false.
 	ContentTypeNosniff bool
-	// If BrowserXssFilter is true, adds the X-XSS-Protection header with the value `1; mode=block`. Default is false.
-	BrowserXssFilter bool
+	// BrowserXSSFilter If it's true, adds the X-XSS-Protection header with the value `1; mode=block`. Default is false.
+	BrowserXSSFilter bool
 	// ContentSecurityPolicy allows the Content-Security-Policy header value to be set with a custom value. Default is "".
 	ContentSecurityPolicy string
 	// PublicKey implements HPKP to prevent MITM attacks with forged certificates. Default is "".
@@ -186,7 +187,7 @@ func (s *Secure) Process(ctx *iris.Context) error {
 	}
 
 	// XSS Protection header.
-	if s.opt.BrowserXssFilter {
+	if s.opt.BrowserXSSFilter {
 		ctx.Response.Header.Add(xssProtectionHeader, xssProtectionValue)
 	}
 

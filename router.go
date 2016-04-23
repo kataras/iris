@@ -45,11 +45,13 @@ const (
 
 	// Normal is the Router
 	Normal RouterType = iota
+	// Domain is a router which accepts more than one host aka subdomain
 	Domain
 )
 
 const ()
 
+// DefaultUserAgent default to 'iris' but it is not used anywhere yet
 var DefaultUserAgent = []byte("iris")
 
 type (
@@ -103,7 +105,7 @@ var _ IRouter = &Router{}
 // CorsMethodMatch is sets the methodMatch when cors enabled (look OptimusPrime), it's allowing OPTIONS method to all other methods except GET
 //just this
 func CorsMethodMatch(m1, reqMethod string) bool {
-	return m1 == reqMethod || (m1 != HTTPMethods.GET && reqMethod == HTTPMethods.OPTIONS)
+	return m1 == reqMethod || (m1 != HTTPMethods.Get && reqMethod == HTTPMethods.Options)
 }
 
 // MethodMatch for normal method match
@@ -172,6 +174,7 @@ func (r *Router) OnPanic(handlerFunc HandlerFunc) {
 //expose some methods as public
 ///////////////////////////////
 
+// Static registers a route which serves a system directory
 func (r *Router) Static(requestPath string, systemPath string, stripSlashes int) {
 	handler := ToHandlerFastHTTP(fasthttp.FSHandler(systemPath, stripSlashes))
 	r.Get(requestPath+"/*filepath", handler.Serve)
@@ -212,6 +215,8 @@ func (r *RouterDomain) getType() RouterType {
 	return Domain
 }
 
+// ServeRequest finds and serves a route by it's request context
+// If no route found, it sends an http status 404
 func (r *RouterDomain) ServeRequest(reqCtx *fasthttp.RequestCtx) {
 
 	method := BytesToString(reqCtx.Method())

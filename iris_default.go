@@ -27,7 +27,7 @@
 
 package iris
 
-// defaultOptions returns the default options for the Station
+// DefaultOptions returns the default options for the Station
 func DefaultOptions() StationOptions {
 	return StationOptions{
 		Profile:        false,

@@ -135,11 +135,11 @@ func (_tree *tree) serve(reqCtx *fasthttp.RequestCtx) {
 	if middleware != nil {
 		ctx.Params = params
 		ctx.middleware = middleware
-		ctx.Request.Header.SetUserAgentBytes(DefaultUserAgent)
+		//ctx.Request.Header.SetUserAgentBytes(DefaultUserAgent)
 		ctx.Do()
 		_tree.pool.Put(ctx)
 		return
-	} else if mustRedirect && _tree.station.options.PathCorrection && !bytes.Equal(reqCtx.Method(), HTTPMethods.CONNECT_BYTES) {
+	} else if mustRedirect && _tree.station.options.PathCorrection && !bytes.Equal(reqCtx.Method(), HTTPMethods.ConnectBytes) {
 
 		reqPath := string(ctx.Path()) // we allocate it because path maybe is with the domain/host + path, with this we made the domain prefix routes works with path correction also
 		pathLen := len(reqPath)
@@ -162,7 +162,7 @@ func (_tree *tree) serve(reqCtx *fasthttp.RequestCtx) {
 		// RFC2616 recommends that a short note "SHOULD" be included in the
 		// response because older user agents may not understand 301/307.
 		// Shouldn't send the response for POST or HEAD; that leaves GET.
-		if _tree.method == HTTPMethods.GET {
+		if _tree.method == HTTPMethods.Get {
 			note := "<a href=\"" + htmlEscape(urlToRedirect) + "\">Moved Permanently</a>.\n"
 			ctx.Write(note)
 		}

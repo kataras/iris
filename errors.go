@@ -41,8 +41,8 @@ var (
 	ErrServerAlreadyStarted = NewError("Server is already started and listening")
 	// ErrServerOptionsMissing returns an error with message: 'You have to pass iris.ServerOptions'
 	ErrServerOptionsMissing = NewError("You have to pass iris.ServerOptions")
-	// ErrServerTlsOptionsMissing returns an error with message: 'You have to set CertFile and KeyFile to iris.ServerOptions before ListenTLS'
-	ErrServerTlsOptionsMissing = NewError("You have to set CertFile and KeyFile to iris.ServerOptions before ListenTLS")
+	// ErrServerTLSOptionsMissing returns an error with message: 'You have to set CertFile and KeyFile to iris.ServerOptions before ListenTLS'
+	ErrServerTLSOptionsMissing = NewError("You have to set CertFile and KeyFile to iris.ServerOptions before ListenTLS")
 	// ErrServerIsClosed returns an error with message: 'Can't close the server, propably is already closed or never started'
 	ErrServerIsClosed = NewError("Can't close the server, propably is already closed or never started")
 	// ErrServerUnknown returns an error with message: 'Unknown reason from Server, please report this as bug!'
@@ -113,14 +113,17 @@ var (
 	ErrDirCreate = NewError("Unable to create directory on '%s'. Trace: %s")
 )
 
+// Error holds the error
 type Error struct {
 	err error
 }
 
+// Error returns the message of the actual error
 func (e *Error) Error() string {
 	return e.err.Error()
 }
 
+// Format returns a formatted new error based on the arguments
 func (e *Error) Format(args ...interface{}) error {
 	return fmt.Errorf(e.err.Error(), args...)
 }
@@ -134,6 +137,7 @@ func (e *Error) With(err error) error {
 	return e.Format(err.Error())
 }
 
+// Return returns the actual error as it is
 func (e *Error) Return() error {
 	return e.err
 }

@@ -38,19 +38,24 @@ import (
 	"strconv"
 	"strings"
 
-	_ "runtime"
-
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/cli/npm"
 	"github.com/kataras/iris/cli/system"
 )
 
-var (
+const (
+	// Name the name of the Plugin, which is "EditorPlugin"
 	Name = "EditorPlugin"
 )
 
 type (
-	EditorPlugin struct {
+	// Plugin is an Editor Plugin the struct which implements the iris.IPlugin
+	// it holds a logger from the iris' station
+	// username,password for basic auth
+	// directory which the client side code is
+	// keyfile,certfile for TLS listening
+	// and a host which is listening for
+	Plugin struct {
 		logger             *iris.Logger
 		enabled            bool   // default true
 		host               string // default 127.0.0.1
@@ -65,49 +70,61 @@ type (
 	}
 )
 
-func New(username string, password string) *EditorPlugin {
-	e := &EditorPlugin{enabled: true, port: 4444}
+// New creates and returns a new (Editor)Plugin object
+// accepts username and password, these are not optionally, you have to use that otherwise the editor will never actual run
+// for security reasons and only
+func New(username string, password string) *Plugin {
+	e := &Plugin{enabled: true, port: 4444}
 	e.username = username
 	e.password = password
 	return e
 }
 
-func (e *EditorPlugin) User(username string, password string) *EditorPlugin {
+// User set a user, accepts two parameters: username (string), string (string)
+func (e *Plugin) User(username string, password string) *Plugin {
 	e.username = username
 	e.password = password
 	return e
 }
 
-func (e *EditorPlugin) Dir(workingDir string) *EditorPlugin {
+// Dir sets the directory which the client side source code alive
+func (e *Plugin) Dir(workingDir string) *Plugin {
 	e.directory = workingDir
 	return e
 }
 
-func (e *EditorPlugin) Port(port int) *EditorPlugin {
+// Port sets the port (int) for the editor plugin's standalone server
+func (e *Plugin) Port(port int) *Plugin {
 	e.port = port
 	return e
 }
 
 //
 
-func (e *EditorPlugin) SetEnabled(enable bool) {
+// SetEnable if true enables the editor plugin, otherwise disables it
+func (e *Plugin) SetEnable(enable bool) {
 	e.enabled = enable
 }
 
 // implement the IPlugin, IPluginPreListen & IPluginPreClose
-func (e *EditorPlugin) Activate(container iris.IPluginContainer) error {
+
+// Activate ...
+func (e *Plugin) Activate(container iris.IPluginContainer) error {
 	return nil
 }
 
-func (e *EditorPlugin) GetName() string {
+// GetName returns the name of the Plugin
+func (e *Plugin) GetName() string {
 	return Name
 }
 
-func (e *EditorPlugin) GetDescription() string {
-	return Name + " a bridge between Iris and the alm-tools, the browser-based IDE for client-side sources. \n"
+// GetDescription EditorPlugin is a bridge between Iris and the alm-tools, the browser-based IDE for client-side sources.
+func (e *Plugin) GetDescription() string {
+	return Name + " is a bridge between Iris and the alm-tools, the browser-based IDE for client-side sources. \n"
 }
 
-func (e *EditorPlugin) PreListen(s *iris.Station) {
+// PreListen runs before the server's listens, saves the keyfile,certfile and the host from the Iris station to listen for
+func (e *Plugin) PreListen(s *iris.Station) {
 	e.logger = s.Logger()
 	e.keyfile = s.Server.Options().KeyFile
 	e.certfile = s.Server.Options().CertFile
@@ -124,16 +141,17 @@ func (e *EditorPlugin) PreListen(s *iris.Station) {
 }
 
 // PreClose kills the editor's server when Iris is closed
-func (e *EditorPlugin) PreClose(s *iris.Station) {
+func (e *Plugin) PreClose(s *iris.Station) {
 	if e.process != nil {
 		err := e.process.Kill()
 		if err != nil {
-			e.logger.Printf("\nError while trying to terminate the EditorPlugin, please kill this process by yourself, process id: %s", e.process.Pid)
+			e.logger.Printf("\nError while trying to terminate the (Editor)Plugin, please kill this process by yourself, process id: %s", e.process.Pid)
 		}
 	}
 }
 
-func (e *EditorPlugin) start() {
+// start starts the job
+func (e *Plugin) start() {
 
 	if e.username == "" || e.password == "" {
 		e.logger.Println("Error before running alm-tools. You have to set username & password for security reasons, otherwise this plugin won't run.")

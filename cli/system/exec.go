@@ -40,6 +40,7 @@ var (
 )
 
 type (
+	// Cmd is a custom struch which 'implements' the *exec.Cmd
 	Cmd struct {
 		*exec.Cmd
 	}
@@ -74,6 +75,12 @@ func (cmd *Cmd) Directory(workingDirectory string) *Cmd {
 	return cmd
 }
 
+// CommandBuilder creates a Cmd object and returns it
+// accepts 2 parameters, one is optionally
+// first parameter is the command (string)
+// second variatic parameter is the argument(s) (slice of string)
+//
+// the difference from the normal Command function is that you can re-use this Cmd, it doesn't execute until you  call its Command function
 func CommandBuilder(command string, args ...string) *Cmd {
 	return &Cmd{Cmd: exec.Command(command, args...)}
 }
@@ -125,7 +132,7 @@ func MustCommand(command string, a ...string) (output string) {
 	return
 }
 
-// Exists, returns true if directory||file exists
+// Exists returns true if directory||file exists
 func Exists(dir string) bool {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		return false

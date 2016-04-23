@@ -24,6 +24,7 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package recovery
 
 import (
@@ -52,10 +53,20 @@ func (r recovery) Serve(ctx *iris.Context) {
 
 // Recovery restores the server on internal server errors (panics)
 // receives an optional writer, the default is the os.Stderr if no out writer given
+// returns the middleware as iris.Handler
+// same as New(...)
 func Recovery(out ...io.Writer) iris.Handler {
 	r := recovery{os.Stderr}
 	if out != nil && len(out) == 1 {
 		r.out = out[0]
 	}
 	return r
+}
+
+// New restores the server on internal server errors (panics)
+// receives an optional writer, the default is the os.Stderr if no out writer given
+// returns the middleware as iris.Handler
+// same as Recovery(...)
+func New(out ...io.Writer) iris.Handler {
+	return Recovery(out...)
 }

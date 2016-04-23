@@ -196,7 +196,7 @@ func (p *GardenParty) HandleAnnotated(irisHandler Handler) error {
 			}
 
 			path = tagValue
-			avalaibleMethodsStr := strings.Join(HTTPMethods.ANY, ",")
+			avalaibleMethodsStr := strings.Join(HTTPMethods.Any, ",")
 
 			if !strings.Contains(avalaibleMethodsStr, tagName) {
 				//wrong method passed
@@ -240,52 +240,52 @@ func (p *GardenParty) Party(path string) IParty {
 
 // Get registers a route for the Get http method
 func (p *GardenParty) Get(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(HTTPMethods.GET, path, handlersFn...)
+	p.HandleFunc(HTTPMethods.Get, path, handlersFn...)
 }
 
 // Post registers a route for the Post http method
 func (p *GardenParty) Post(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(HTTPMethods.POST, path, handlersFn...)
+	p.HandleFunc(HTTPMethods.Post, path, handlersFn...)
 }
 
 // Put registers a route for the Put http method
 func (p *GardenParty) Put(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(HTTPMethods.PUT, path, handlersFn...)
+	p.HandleFunc(HTTPMethods.Put, path, handlersFn...)
 }
 
 // Delete registers a route for the Delete http method
 func (p *GardenParty) Delete(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(HTTPMethods.DELETE, path, handlersFn...)
+	p.HandleFunc(HTTPMethods.Delete, path, handlersFn...)
 }
 
 // Connect registers a route for the Connect http method
 func (p *GardenParty) Connect(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(HTTPMethods.CONNECT, path, handlersFn...)
+	p.HandleFunc(HTTPMethods.Connect, path, handlersFn...)
 }
 
 // Head registers a route for the Head http method
 func (p *GardenParty) Head(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(HTTPMethods.HEAD, path, handlersFn...)
+	p.HandleFunc(HTTPMethods.Head, path, handlersFn...)
 }
 
 // Options registers a route for the Options http method
 func (p *GardenParty) Options(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(HTTPMethods.OPTIONS, path, handlersFn...)
+	p.HandleFunc(HTTPMethods.Options, path, handlersFn...)
 }
 
 // Patch registers a route for the Patch http method
 func (p *GardenParty) Patch(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(HTTPMethods.PATCH, path, handlersFn...)
+	p.HandleFunc(HTTPMethods.Patch, path, handlersFn...)
 }
 
 // Trace registers a route for the Trace http method
 func (p *GardenParty) Trace(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(HTTPMethods.TRACE, path, handlersFn...)
+	p.HandleFunc(HTTPMethods.Trace, path, handlersFn...)
 }
 
 // Any registers a route for ALL of the http methods (Get,Post,Put,Head,Patch,Options,Connect,Delete)
 func (p *GardenParty) Any(path string, handlersFn ...HandlerFunc) {
-	for _, k := range HTTPMethods.ALL {
+	for _, k := range HTTPMethods.All {
 		p.HandleFunc(k, path, handlersFn...)
 	}
 

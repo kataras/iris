@@ -1,4 +1,4 @@
-// Cors credits goes to @keuller who make this for Iris
+// Cors credits goes to @keuller who made this middleware for Iris
 
 package cors
 
@@ -16,7 +16,8 @@ const toLower = 'a' - 'A'
 
 type converter func(string) string
 
-type CorsOptions struct {
+// Options are the options for the cors middleware
+type Options struct {
 	// AllowedOrigins is a list of origins a cross-domain request can be executed from.
 	// If the special "*" value is present in the list, all origins will be allowed.
 	// An origin may contain a wildcard (*) to replace 0 or more characters
@@ -55,12 +56,14 @@ type CorsOptions struct {
 	Debug bool
 }
 
-type cors struct {
+// Cors is the middleware struct for cors
+type Cors struct {
 	Log     *log.Logger
-	Options CorsOptions
+	Options Options
 }
 
-func (c *cors) Serve(ctx *iris.Context) {
+// Serve do the middle job
+func (c *Cors) Serve(ctx *iris.Context) {
 	if ctx.MethodString() == "OPTIONS" {
 		c.handlePreflight(ctx)
 		// Preflight requests are standalone and should stop the chain as some other
@@ -77,11 +80,12 @@ func (c *cors) Serve(ctx *iris.Context) {
 	ctx.Next()
 }
 
-func New(opts CorsOptions) *cors {
-	c := &cors{nil, opts}
+// New creates and returns a new *cors object by passed Options
+func New(opts Options) *Cors {
+	c := &Cors{nil, opts}
 
 	if opts.Debug {
-		c.Log = log.New(os.Stdout, "[iris::cors] ", log.LstdFlags)
+		c.Log = log.New(os.Stdout, "[Iris::Cors middleware] ", log.LstdFlags)
 	}
 
 	// Allowed Headers
@@ -111,16 +115,13 @@ func New(opts CorsOptions) *cors {
 	return c
 }
 
-func DefaultCors() *cors {
-	return New(CorsOptions{})
-}
-
-func Cors() *cors {
-	return DefaultCors()
+// DefaultCors returns a Cors middleware with the default Options
+func DefaultCors() *Cors {
+	return New(Options{})
 }
 
 // handlePreflight handles pre-flight CORS requests
-func (c *cors) handlePreflight(ctx *iris.Context) {
+func (c *Cors) handlePreflight(ctx *iris.Context) {
 	r := ctx.RequestCtx.Request
 	headers := ctx.RequestCtx.Response.Header
 	origin := iris.BytesToString(r.Header.Peek("Origin"))
@@ -173,7 +174,7 @@ func (c *cors) handlePreflight(ctx *iris.Context) {
 }
 
 // handleActualRequest handles simple cross-origin requests, actual request or redirects
-func (c *cors) handleActualRequest(ctx *iris.Context) {
+func (c *Cors) handleActualRequest(ctx *iris.Context) {
 	r := ctx.Request
 	headers := ctx.RequestCtx.Response.Header
 	origin := iris.BytesToString(r.Header.Peek("Origin"))
@@ -216,7 +217,7 @@ func (c *cors) handleActualRequest(ctx *iris.Context) {
 }
 
 // convenience method. checks if debugging is turned on before printing
-func (c *cors) logf(format string, a ...interface{}) {
+func (c *Cors) logf(format string, a ...interface{}) {
 	if c.Log != nil {
 		c.Log.Printf(format, a...)
 	}
@@ -224,7 +225,7 @@ func (c *cors) logf(format string, a ...interface{}) {
 
 // isOriginAllowed checks if a given origin is allowed to perform cross-domain requests
 // on the endpoint
-func (c *cors) isOriginAllowed(origin string) bool {
+func (c *Cors) isOriginAllowed(origin string) bool {
 	if c.Options.AllowOriginFunc != nil {
 		return c.Options.AllowOriginFunc(origin)
 	}
@@ -248,7 +249,7 @@ func (c *cors) isOriginAllowed(origin string) bool {
 // IsMethodAllowed checks if a given method can be used as part of a cross-domain request
 // on the endpoing
 // Capitalize by @thesyncim
-func (c *cors) IsMethodAllowed(method string) bool {
+func (c *Cors) IsMethodAllowed(method string) bool {
 	if len(c.Options.AllowedMethods) == 0 {
 		// If no method allowed, always return false, even for preflight request
 		return false
@@ -268,7 +269,7 @@ func (c *cors) IsMethodAllowed(method string) bool {
 
 // areHeadersAllowed checks if a given list of headers are allowed to used within
 // a cross-domain request.
-func (c *cors) areHeadersAllowed(requestedHeaders []string) bool {
+func (c *Cors) areHeadersAllowed(requestedHeaders []string) bool {
 	if c.Options.AllowedHeadersAll || len(requestedHeaders) == 0 {
 		return true
 	}

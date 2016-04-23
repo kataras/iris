@@ -27,7 +27,7 @@ import (
 
 func main() {
 
-	info := routesinfo.RoutesInfo()
+	info := routesinfo.New()
 	iris.Plugin(info)
 
 	iris.Get("/yourpath", func(c *iris.Context) {
