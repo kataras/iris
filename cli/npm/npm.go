@@ -140,7 +140,7 @@ func Abs(relativePath string) string {
 // Exists returns true if a module exists
 // here we have two options
 //1 . search by command something like npm -ls -g --depth=x
-//2.  search on files, we choosen the second
+//2.  search on files, we choose the second
 func Exists(executableRelativePath string) bool {
 	execAbsPath := Abs(executableRelativePath)
 	if execAbsPath == "" {

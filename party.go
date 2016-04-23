@@ -156,7 +156,7 @@ func (p *GardenParty) Handle(method string, registedPath string, handlers ...Han
 
 	p.station.GetPluginContainer().DoPostHandle(route)
 
-	//force OptimusPrime everytime a route added
+	//force OptimusPrime each time a route added
 	p.station.OptimusPrime()
 
 }
@@ -300,7 +300,7 @@ func (p *GardenParty) Any(path string, handlersFn ...HandlerFunc) {
 // Use pass the middleware here
 // it overrides the MiddlewareSupporter's Use only in order to be able to call forceOptimusPrime
 func (p *GardenParty) Use(handlers ...Handler) {
-	//force OptimusPrime everytime a route added, this is not nessecery, it runs only once
+	//force OptimusPrime each time a route added, this is not nessecery, it runs only once
 	//but many developers maybe use external server and FORGET to use the iris.Serve() and use just the 'iris'
 	//so
 	p.station.OptimusPrime()

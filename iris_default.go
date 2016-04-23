@@ -169,7 +169,7 @@ func Errors() IHTTPErrors {
 
 // OnError registers an error to the http custom errors
 // first parameter is the http status code ( int )
-// second parameter is the actual handler which called when this status code occured, type of HandlerFunc
+// second parameter is the actual handler which called when this status code occurred, type of HandlerFunc
 func OnError(statusCode int, handlerFunc HandlerFunc) {
 	DefaultStation.OnError(statusCode, handlerFunc)
 }

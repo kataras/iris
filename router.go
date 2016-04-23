@@ -201,7 +201,7 @@ func (r *Router) ServeRequest(reqCtx *fasthttp.RequestCtx) {
 
 }
 
-// RouterDomain same as Router but it's override the ServeHTTP and proccessPath.
+// RouterDomain same as Router but it's override the ServeHTTP and processPath.
 type RouterDomain struct {
 	*Router
 }

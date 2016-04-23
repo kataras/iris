@@ -145,7 +145,7 @@ func (e *Plugin) PreClose(s *iris.Station) {
 	if e.process != nil {
 		err := e.process.Kill()
 		if err != nil {
-			e.logger.Printf("\nError while trying to terminate the (Editor)Plugin, please kill this process by yourself, process id: %s", e.process.Pid)
+			e.logger.Printf("\nError while trying to terminate the (Editor)Plugin, please kill this process by yourself, process id: %d", e.process.Pid)
 		}
 	}
 }

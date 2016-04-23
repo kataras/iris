@@ -27,14 +27,16 @@
 //
 // This source code file is based on the Gorilla's sessions package.
 //
+
 package sessions
 
 import (
 	"encoding/gob"
 	"fmt"
+	"time"
+
 	"github.com/kataras/iris"
 	"github.com/valyala/fasthttp"
-	"time"
 )
 
 // Default flashes key.
