@@ -29,7 +29,6 @@ package typescript
 import (
 	"encoding/json"
 	"io/ioutil"
-	"os"
 	"reflect"
 )
 
