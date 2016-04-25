@@ -45,11 +45,13 @@ const (
 
 	// Normal is the Router
 	Normal RouterType = iota
+	// Domain is a router which accepts more than one host aka subdomain
 	Domain
 )
 
 const ()
 
+// DefaultUserAgent default to 'iris' but it is not used anywhere yet
 var DefaultUserAgent = []byte("iris")
 
 type (
@@ -103,7 +105,7 @@ var _ IRouter = &Router{}
 // CorsMethodMatch is sets the methodMatch when cors enabled (look OptimusPrime), it's allowing OPTIONS method to all other methods except GET
 //just this
 func CorsMethodMatch(m1, reqMethod string) bool {
-	return m1 == reqMethod || (m1 != HTTPMethods.GET && reqMethod == HTTPMethods.OPTIONS)
+	return m1 == reqMethod || (m1 != HTTPMethods.Get && reqMethod == HTTPMethods.Options)
 }
 
 // MethodMatch for normal method match
@@ -172,6 +174,7 @@ func (r *Router) OnPanic(handlerFunc HandlerFunc) {
 //expose some methods as public
 ///////////////////////////////
 
+// Static registers a route which serves a system directory
 func (r *Router) Static(requestPath string, systemPath string, stripSlashes int) {
 	handler := ToHandlerFastHTTP(fasthttp.FSHandler(systemPath, stripSlashes))
 	r.Get(requestPath+"/*filepath", handler.Serve)
@@ -198,7 +201,7 @@ func (r *Router) ServeRequest(reqCtx *fasthttp.RequestCtx) {
 
 }
 
-// RouterDomain same as Router but it's override the ServeHTTP and proccessPath.
+// RouterDomain same as Router but it's override the ServeHTTP and processPath.
 type RouterDomain struct {
 	*Router
 }
@@ -212,23 +215,29 @@ func (r *RouterDomain) getType() RouterType {
 	return Domain
 }
 
+// ServeRequest finds and serves a route by it's request context
+// If no route found, it sends an http status 404
 func (r *RouterDomain) ServeRequest(reqCtx *fasthttp.RequestCtx) {
 
 	method := BytesToString(reqCtx.Method())
+	domain := BytesToString(reqCtx.Host())
+	path := reqCtx.Path()
 	tree := r.garden.first
 	for tree != nil {
-		if tree.hosts {
-			reqCtx.Request.URI().SetPathBytes(append(reqCtx.Host(), reqCtx.Path()...))
+		if tree.hosts && tree.domain == domain {
+			// here we have an issue, at fasthttp/uri.go 273-274 line normalize path it adds a '/' slash at the beggining, it doesn't checks for subdomains
+			// I could fix it but i leave it as it is, I just create a new function inside tree named 'serveReturn' which accepts a path too. ->
+			//-> reqCtx.Request.URI().SetPathBytes(append(reqCtx.Host(), reqCtx.Path()...)) <-
+			path = append(reqCtx.Host(), reqCtx.Path()...)
 		}
-
 		if r.methodMatch(tree.method, method) {
-			tree.serve(reqCtx)
-			return
+			if tree.serveReturn(reqCtx, BytesToString(path)) {
+				return
+			}
 		}
 		tree = tree.next
 	}
 	//not found, get the first's pool and use that  to send a custom http error(if setted)
-
 	ctx := r.garden.first.pool.Get().(*Context)
 	ctx.Reset(reqCtx)
 	ctx.NotFound()

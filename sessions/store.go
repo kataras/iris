@@ -27,16 +27,18 @@
 //
 // This source code file is based on the Gorilla's sessions package.
 //
+
 package sessions
 
 import (
 	"encoding/base32"
-	"github.com/valyala/fasthttp"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/valyala/fasthttp"
 )
 
 // Store is an interface for custom session stores.

@@ -27,10 +27,11 @@
 
 package iris
 
+// HTTPMethods contains all the available http methods as field="VALUE"
 var HTTPMethods = struct {
-	GET, POST, PUT, DELETE, CONNECT, HEAD, PATCH, OPTIONS, TRACE                                                       string
-	ALL, ANY                                                                                                           []string
-	GET_BYTES, POST_BYTES, PUT_BYTES, DELETE_BYTES, CONNECT_BYTES, HEAD_BYTES, PATCH_BYTES, OPTIONS_BYTES, TRACE_BYTES []byte
+	Get, Post, Put, Delete, Connect, Head, Patch, Options, Trace                                              string
+	All, Any                                                                                                  []string
+	GetBytes, PostBytes, PutBytes, DeleteBytes, ConnectBytes, HeadBytes, PatchBytes, OptionsBytes, TraceBytes []byte
 }{"GET", "POST", "PUT", "DELETE", "CONNECT", "HEAD", "PATCH", "OPTIONS", "TRACE",
 	[]string{"GET", "POST", "PUT", "DELETE", "CONNECT", "HEAD", "PATCH", "OPTIONS", "TRACE"},
 	[]string{"GET", "POST", "PUT", "DELETE", "CONNECT", "HEAD", "PATCH", "OPTIONS", "TRACE"},

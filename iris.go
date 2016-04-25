@@ -25,14 +25,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-//v1.1.3
+//Package iris v1.1.3
 package iris
 
 const (
-	// Server
+	// DefaultServerName the response header of the 'Server' value when writes to the client
 	DefaultServerName = "iris"
 
-	//mime types and headers
 	// DefaultCharset represents the default charset for content headers
 	DefaultCharset = "UTF-8"
 	// ContentType represents the header["Content-Type"]
@@ -58,13 +57,10 @@ const (
 	LastModified = "Last-Modified"
 	// IfModifiedSince "If-Modified-Since"
 	IfModifiedSince = "If-Modified-Since"
-	// Content-Disposition
+	// ContentDisposition "Content-Disposition"
 	ContentDisposition = "Content-Disposition"
 
-	//statuses inside httperrors.go
-
-	//other
-
+	// TimeFormat default time format for any kind of datetime parsing
 	TimeFormat = "Mon, 02 Jan 2006 15:04:05 GMT"
 
 	// stopExecutionPosition used inside the Context, is the number which shows us that the context's middleware manualy stop the execution
@@ -78,6 +74,7 @@ const (
 )
 
 var (
+	// DefaultStation in order to use iris.Get(...,...) we need a default server on the package level
 	DefaultStation *Station
 )
 

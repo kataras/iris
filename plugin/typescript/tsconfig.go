@@ -29,7 +29,6 @@ package typescript
 import (
 	"encoding/json"
 	"io/ioutil"
-	"os"
 	"reflect"
 )
 
@@ -106,7 +105,6 @@ func FromFile(tsConfigAbsPath string) *Tsconfig {
 	file, err := ioutil.ReadFile(tsConfigAbsPath)
 	if err != nil {
 		panic("[IRIS TypescriptPlugin.FromConfig]" + err.Error())
-		os.Exit(1) //we have to exit at this point, we don't want to messup with the typescript files of the user if something goes wrong here...
 	}
 	config := &Tsconfig{}
 	json.Unmarshal(file, config)

@@ -22,7 +22,7 @@ func TestPipeConnsCloseWhileReadWriteConcurrent(t *testing.T) {
 	for i := 0; i < concurrency; i++ {
 		select {
 		case <-ch:
-		case <-time.After(3*time.Second):
+		case <-time.After(3 * time.Second):
 			t.Fatalf("timeout")
 		}
 	}

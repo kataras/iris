@@ -42,7 +42,6 @@ const (
 
 type (
 	// PathParameter is a struct which contains Key and Value, used for named path parameters
-
 	PathParameter struct {
 		Key   string
 		Value string
@@ -89,11 +88,6 @@ func (params PathParameters) Get(key string) string {
 		}
 	}
 	return ""
-}
-
-// Set sets a PathParameter to the PathParameters , it's not used anywhere.
-func (params PathParameters) Set(key string, value string) {
-	params = append(params, PathParameter{key, value})
 }
 
 // String returns a string implementation of all parameters that this PathParameters object keeps

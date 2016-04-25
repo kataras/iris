@@ -50,7 +50,7 @@ func chat(c *websocket.Conn) {
 
 var upgrader = websocket.New(chat) // use default options
 //var upgrader = websocket.Custom(chat, 1024, 1024) // customized options, read and write buffer sizes (int). Default: 4096
-
+// var upgrader = websocket.New(chat).DontCheckOrigin() // it's useful when you have the websocket server on a different machine
 
 //here is the http handler
 func myChatHandler(ctx *iris.Context) {

@@ -45,10 +45,11 @@ The editor is working when the typescript plugin finds a typescript project (tsc
 also working only if one typescript project found (normaly is one for client-side).
 
 */
-var (
-	node_modules = system.PathSeparator + "node_modules" + system.PathSeparator
-	Name         = "TypescriptPlugin"
-)
+
+// Name the name of the plugin, is "TypescriptPlugin"
+const Name = "TypescriptPlugin"
+
+var nodeModules = system.PathSeparator + "node_modules" + system.PathSeparator
 
 type (
 	// Options the struct which holds the TypescriptPlugin options
@@ -64,10 +65,10 @@ type (
 		Dir      string
 		Ignore   string
 		Tsconfig *Tsconfig
-		Editor   *editor.EditorPlugin // the editor is just a plugin also
+		Editor   *editor.Plugin // the editor is just a plugin also
 	}
-	// TypescriptPlugin the struct of the plugin, holds all necessary fields & methods
-	TypescriptPlugin struct {
+	// Plugin the struct of the Typescript Plugin, holds all necessary fields & methods
+	Plugin struct {
 		options Options
 		// taken from Activate
 		pluginContainer iris.IPluginContainer
@@ -77,27 +78,27 @@ type (
 )
 
 // Editor is just a shortcut for github.com/kataras/iris/plugin/editor.New()
-// returns a new EditorPlugin, it's exists here because the typescript plugin has direct interest with the EditorPlugin
-func Editor(username, password string) *editor.EditorPlugin {
+// returns a new (Editor)Plugin, it's exists here because the typescript plugin has direct interest with the EditorPlugin
+func Editor(username, password string) *editor.Plugin {
 	return editor.New(username, password)
 }
 
-// DefaultOptions returns the default Options of the TypescriptPlugin
+// DefaultOptions returns the default Options of the Plugin
 func DefaultOptions() Options {
 	root, err := os.Getwd()
 	if err != nil {
 		panic("Typescript Plugin: Cannot get the Current Working Directory !!! [os.getwd()]")
 	}
-	opt := Options{Dir: root + system.PathSeparator, Ignore: node_modules, Tsconfig: DefaultTsconfig()}
+	opt := Options{Dir: root + system.PathSeparator, Ignore: nodeModules, Tsconfig: DefaultTsconfig()}
 	opt.Bin = npm.Abs("typescript/lib/tsc.js")
 	return opt
 
 }
 
-// TypescriptPlugin
+// Plugin
 
 // New creates & returns a new instnace typescript plugin
-func New(_opt ...Options) *TypescriptPlugin {
+func New(_opt ...Options) *Plugin {
 	var options = DefaultOptions()
 
 	if _opt != nil && len(_opt) > 0 { //not nil always but I like this way :)
@@ -110,8 +111,8 @@ func New(_opt ...Options) *TypescriptPlugin {
 			options.Dir = opt.Dir
 		}
 
-		if !strings.Contains(opt.Ignore, "node_modules") {
-			opt.Ignore += "," + node_modules
+		if !strings.Contains(opt.Ignore, nodeModules) {
+			opt.Ignore += "," + nodeModules
 		}
 
 		if opt.Tsconfig != nil {
@@ -121,24 +122,29 @@ func New(_opt ...Options) *TypescriptPlugin {
 		options.Ignore = opt.Ignore
 	}
 
-	return &TypescriptPlugin{options: options}
+	return &Plugin{options: options}
 }
 
 // implement the IPlugin & IPluginPreListen
-func (t *TypescriptPlugin) Activate(container iris.IPluginContainer) error {
+
+// Activate ...
+func (t *Plugin) Activate(container iris.IPluginContainer) error {
 	t.pluginContainer = container
 	return nil
 }
 
-func (t *TypescriptPlugin) GetName() string {
+// GetName ...
+func (t *Plugin) GetName() string {
 	return Name + "[" + iris.RandomString(10) + "]" // this allows the specific plugin to be registed more than one time
 }
 
-func (t *TypescriptPlugin) GetDescription() string {
+// GetDescription TypescriptPlugin scans and compile typescript files with ease
+func (t *Plugin) GetDescription() string {
 	return Name + " scans and compile typescript files with ease. \n"
 }
 
-func (t *TypescriptPlugin) PreListen(s *iris.Station) {
+// PreListen ...
+func (t *Plugin) PreListen(s *iris.Station) {
 	t.logger = s.Logger()
 	t.start()
 }
@@ -147,7 +153,7 @@ func (t *TypescriptPlugin) PreListen(s *iris.Station) {
 
 // implementation
 
-func (t *TypescriptPlugin) start() {
+func (t *Plugin) start() {
 	defaultCompilerArgs := t.options.Tsconfig.CompilerArgs() //these will be used if no .tsconfig found.
 	if t.hasTypescriptFiles() {
 		//Can't check if permission denied returns always exists = true....
@@ -230,7 +236,7 @@ func (t *TypescriptPlugin) start() {
 	}
 }
 
-func (t *TypescriptPlugin) hasTypescriptFiles() bool {
+func (t *Plugin) hasTypescriptFiles() bool {
 	root := t.options.Dir
 	ignoreFolders := strings.Split(t.options.Ignore, ",")
 	hasTs := false
@@ -255,8 +261,8 @@ func (t *TypescriptPlugin) hasTypescriptFiles() bool {
 	return hasTs
 }
 
-func (t *TypescriptPlugin) getTypescriptProjects() []string {
-	projects := make([]string, 0)
+func (t *Plugin) getTypescriptProjects() []string {
+	var projects []string
 	ignoreFolders := strings.Split(t.options.Ignore, ",")
 
 	root := t.options.Dir
@@ -284,8 +290,8 @@ func (t *TypescriptPlugin) getTypescriptProjects() []string {
 }
 
 // this is being called if getTypescriptProjects return 0 len, then we are searching for files using that:
-func (t *TypescriptPlugin) getTypescriptFiles() []string {
-	files := make([]string, 0)
+func (t *Plugin) getTypescriptFiles() []string {
+	var files []string
 	ignoreFolders := strings.Split(t.options.Ignore, ",")
 
 	root := t.options.Dir

@@ -27,13 +27,15 @@
 //
 // This source code file is based on the Gorilla's sessions package.
 //
+
 package sessions
 
 import (
-	"github.com/kataras/iris"
-	"github.com/valyala/fasthttp"
 	"sync"
 	"time"
+
+	"github.com/kataras/iris"
+	"github.com/valyala/fasthttp"
 )
 
 var (

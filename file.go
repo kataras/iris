@@ -119,7 +119,7 @@ func downloadZip(zipURL string, newDir string) (string, error) {
 
 // unzip extracts a zipped file to the target location
 //
-// it removes the zipped file after succesfuly completion
+// it removes the zipped file after successfully completion
 // returns a string with the path of the created folder (if any) and an error (if any)
 func unzip(archive string, target string) (string, error) {
 	reader, err := zip.OpenReader(archive)

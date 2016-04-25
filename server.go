@@ -44,6 +44,7 @@ type (
 		KeyFile       string
 	}
 
+	// IServer the interface for the Server
 	IServer interface {
 		SetOptions(ServerOptions)
 		Options() ServerOptions
@@ -63,6 +64,8 @@ type (
 		Listener() net.Listener
 	}
 
+	// Server is the IServer's implementation, holds the fasthttp's Server, a net.Listener, the ServerOptions, and the handler
+	// handler is registed at the Station level
 	Server struct {
 		*fasthttp.Server
 		listener net.Listener
@@ -85,6 +88,7 @@ func NewServer(opt ...ServerOptions) *Server {
 	return s
 }
 
+// DefaultServerOptions returns the default options for the server
 func DefaultServerOptions() ServerOptions {
 	return ServerOptions{DefaultServerAddr, "", ""}
 }
@@ -93,15 +97,18 @@ func DefaultServerOptions() ServerOptions {
 ///TODO: make it to generate self-signed certificate: CertFile,KeyFile options for ListenTLS
 func DefaultServerSecureOptions() ServerOptions { return DefaultServerOptions() }
 
+// SetOptions sets the server's options
 func (s *Server) SetOptions(options ServerOptions) {
 	options.ListeningAddr = ParseAddr(options.ListeningAddr)
 	s.options = options
 }
 
+// Options returns the server's options
 func (s *Server) Options() ServerOptions {
 	return s.options
 }
 
+// SetHandler sets the handler in order to listen on new requests, this is done at the Station level
 func (s *Server) SetHandler(h fasthttp.RequestHandler) {
 	s.handler = h
 	if s.Server != nil {
@@ -109,18 +116,22 @@ func (s *Server) SetHandler(h fasthttp.RequestHandler) {
 	}
 }
 
+// Handler returns the fasthttp.RequestHandler which is registed to the Server
 func (s *Server) Handler() fasthttp.RequestHandler {
 	return s.handler
 }
 
+// IsListening returns true if server is listening/started, otherwise false
 func (s *Server) IsListening() bool {
 	return s.started
 }
 
+// IsSecure returns true if server uses TLS, otherwise false
 func (s *Server) IsSecure() bool {
 	return s.tls
 }
 
+// Listener returns the net.Listener which this server (is) listening to
 func (s *Server) Listener() net.Listener {
 	return s.listener
 }
@@ -131,6 +142,7 @@ func (s *Server) Serve(l net.Listener) error {
 	return s.Server.Serve(l)
 }
 
+// Listen starts the process of listening to the new requests
 func (s *Server) Listen() (err error) {
 
 	if s.started {
@@ -153,6 +165,7 @@ func (s *Server) Listen() (err error) {
 	return
 }
 
+// ListenTLS starts the process of listening to the new requests using TLS, keyfile and certfile are given before this method fires
 func (s *Server) ListenTLS() (err error) {
 
 	if s.started {
@@ -161,7 +174,7 @@ func (s *Server) ListenTLS() (err error) {
 	}
 
 	if s.options.CertFile == "" || s.options.KeyFile == "" {
-		err = ErrServerTlsOptionsMissing.Return()
+		err = ErrServerTLSOptionsMissing.Return()
 		return
 	}
 
@@ -180,6 +193,7 @@ func (s *Server) ListenTLS() (err error) {
 	return
 }
 
+// ListenUnix  starts the process of listening to the new requests using a 'socket file', this works only on unix
 func (s *Server) ListenUnix(mode os.FileMode) (err error) {
 
 	if s.started {

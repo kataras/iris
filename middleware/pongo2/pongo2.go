@@ -24,6 +24,7 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package pongo2
 
 import (
@@ -63,8 +64,14 @@ func getPongoContext(templateData interface{}) pongo.Context {
 	return nil
 }
 
+// Pongo2 creates and returns the middleware, same as New()
 func Pongo2() *pongo2Middleware {
 	return &pongo2Middleware{}
+}
+
+// New creates and returns the middleware, same as Pongo2()
+func New() *pongo2Middleware {
+	return Pongo2()
 }
 
 /* example */

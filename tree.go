@@ -115,7 +115,6 @@ func (g *Garden) Plant(station *Station, _route IRoute) {
 
 	}
 	theRoot.AddBranch(domain+path, _route.GetMiddleware())
-
 }
 
 // tree
@@ -127,6 +126,54 @@ func newTree(station *Station, method string, theRoot *Branch, domain string, ho
 	return t
 }
 
+// serveReturn returns a bool if the route has found, it is useful only on Domain router class which must check all possible domains, no just the paths...
+// the contents are exactly the same as .serve(reqCtx) but it accepts a different path for searching than the requestCtx (look at router.go line:228) and returns a boolean
+func (_tree *tree) serveReturn(reqCtx *fasthttp.RequestCtx, path string) bool {
+	ctx := _tree.pool.Get().(*Context)
+	ctx.Reset(reqCtx)
+	middleware, params, mustRedirect := _tree.rootBranch.GetBranch(path, ctx.Params) // pass the parameters here for 0 allocation
+	if middleware != nil {
+		ctx.Params = params
+		ctx.middleware = middleware
+		//ctx.Request.Header.SetUserAgentBytes(DefaultUserAgent)
+		ctx.Do()
+		_tree.pool.Put(ctx)
+		return true
+	} else if mustRedirect && _tree.station.options.PathCorrection && !bytes.Equal(reqCtx.Method(), HTTPMethods.ConnectBytes) {
+
+		reqPath := path
+		pathLen := len(reqPath)
+
+		//first of all checks if it's the index only slash /
+		if pathLen <= 1 {
+			reqPath = "/"
+			//check if the req path ends with slash
+		} else if reqPath[pathLen-1] == '/' {
+			reqPath = reqPath[:pathLen-1] //remove the last /
+		} else {
+			//it has path prefix, it doesn't ends with / and it hasn't be found, then just add the slash
+			reqPath = reqPath + "/"
+		}
+
+		ctx.Request.URI().SetPath(reqPath)
+		urlToRedirect := BytesToString(ctx.Request.RequestURI())
+
+		ctx.Redirect(urlToRedirect, 301) //	StatusMovedPermanently
+		// RFC2616 recommends that a short note "SHOULD" be included in the
+		// response because older user agents may not understand 301/307.
+		// Shouldn't send the response for POST or HEAD; that leaves GET.
+		if _tree.method == HTTPMethods.Get {
+			note := "<a href=\"" + htmlEscape(urlToRedirect) + "\">Moved Permanently</a>.\n"
+			ctx.Write(note)
+		}
+		_tree.pool.Put(ctx)
+		return false
+	}
+
+	_tree.pool.Put(ctx)
+	return false
+}
+
 //we pass method and path here because fasthttp's Path() and Method() have if statement inside these funcs
 func (_tree *tree) serve(reqCtx *fasthttp.RequestCtx) {
 	ctx := _tree.pool.Get().(*Context)
@@ -135,11 +182,11 @@ func (_tree *tree) serve(reqCtx *fasthttp.RequestCtx) {
 	if middleware != nil {
 		ctx.Params = params
 		ctx.middleware = middleware
-		ctx.Request.Header.SetUserAgentBytes(DefaultUserAgent)
+		//ctx.Request.Header.SetUserAgentBytes(DefaultUserAgent)
 		ctx.Do()
 		_tree.pool.Put(ctx)
 		return
-	} else if mustRedirect && _tree.station.options.PathCorrection && !bytes.Equal(reqCtx.Method(), HTTPMethods.CONNECT_BYTES) {
+	} else if mustRedirect && _tree.station.options.PathCorrection && !bytes.Equal(reqCtx.Method(), HTTPMethods.ConnectBytes) {
 
 		reqPath := string(ctx.Path()) // we allocate it because path maybe is with the domain/host + path, with this we made the domain prefix routes works with path correction also
 		pathLen := len(reqPath)
@@ -162,7 +209,7 @@ func (_tree *tree) serve(reqCtx *fasthttp.RequestCtx) {
 		// RFC2616 recommends that a short note "SHOULD" be included in the
 		// response because older user agents may not understand 301/307.
 		// Shouldn't send the response for POST or HEAD; that leaves GET.
-		if _tree.method == HTTPMethods.GET {
+		if _tree.method == HTTPMethods.Get {
 			note := "<a href=\"" + htmlEscape(urlToRedirect) + "\">Moved Permanently</a>.\n"
 			ctx.Write(note)
 		}

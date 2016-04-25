@@ -92,7 +92,15 @@ func NewParty(path string, station *Station, hoster *GardenParty) IParty {
 
 // fixPath fix the double slashes, (because of root,I just do that before the .Handle no need for anything else special)
 func fixPath(str string) string {
-	return strings.Replace(str, "//", Slash, -1)
+
+	strafter := strings.Replace(str, "//", Slash, -1)
+
+	if strafter[0] == SlashByte && strings.Count(strafter, ".") >= 2 {
+		//it's domain, remove the first slash
+		strafter = strafter[1:]
+	}
+
+	return strafter
 }
 
 // GetRoot find the root hoster of the parties, the root is this when the hoster is nil ( it's the  rootPath '/')
@@ -127,17 +135,13 @@ func (p *GardenParty) Handle(method string, registedPath string, handlers ...Han
 	if len(handlers) == 0 {
 		panic("Iris.Handle: zero handler to " + method + ":" + registedPath)
 	}
-
 	rootParty := p.getRoot()
 
 	tempHandlers := p.Middleware
 
-	//println(registedPath, " party middleware len : ", len(tempHandlers))
-
 	// from top to bottom -->||<--
 	//check for root-global middleware WHEN THIS PARTY IS NOT THE ROOT, because if it's the Middleware already setted on the constructor NewParty)
 	if rootParty.isTheRoot() == false && p.isTheRoot() == false && len(rootParty.getMiddleware()) > 0 {
-		//println(registedPath, " is not the root and it's rootParty which is: ", rootParty.getPath(), "has ", len(rootParty.getMiddleware()), " handlers")
 		//if global middlewares are registed then push them to this route.
 		tempHandlers = append(rootParty.getMiddleware(), tempHandlers...)
 	}
@@ -147,7 +151,6 @@ func (p *GardenParty) Handle(method string, registedPath string, handlers ...Han
 		handlers = append(tempHandlers, handlers...)
 	}
 
-	//println(" so the len of registed ", registedPath, " of handlers is: ", len(handlers))
 	route := NewRoute(method, registedPath, handlers)
 
 	p.station.GetPluginContainer().DoPreHandle(route)
@@ -156,7 +159,7 @@ func (p *GardenParty) Handle(method string, registedPath string, handlers ...Han
 
 	p.station.GetPluginContainer().DoPostHandle(route)
 
-	//force OptimusPrime everytime a route added
+	//force OptimusPrime each time a route added
 	p.station.OptimusPrime()
 
 }
@@ -196,7 +199,7 @@ func (p *GardenParty) HandleAnnotated(irisHandler Handler) error {
 			}
 
 			path = tagValue
-			avalaibleMethodsStr := strings.Join(HTTPMethods.ANY, ",")
+			avalaibleMethodsStr := strings.Join(HTTPMethods.Any, ",")
 
 			if !strings.Contains(avalaibleMethodsStr, tagName) {
 				//wrong method passed
@@ -231,7 +234,12 @@ func (p *GardenParty) HandleAnnotated(irisHandler Handler) error {
 // Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
 // Party can also be named as 'Join' or 'Node' or 'Group' , Party chosen because it has more fun
 func (p *GardenParty) Party(path string) IParty {
+	if path[0] != SlashByte && strings.Contains(path, ".") {
+		//propably domain
+		return NewParty(path, p.station, nil) //nil as the hoster, the domains are individual
+	}
 	return NewParty(path, p.station, p)
+
 }
 
 ///////////////////////////////
@@ -240,52 +248,52 @@ func (p *GardenParty) Party(path string) IParty {
 
 // Get registers a route for the Get http method
 func (p *GardenParty) Get(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(HTTPMethods.GET, path, handlersFn...)
+	p.HandleFunc(HTTPMethods.Get, path, handlersFn...)
 }
 
 // Post registers a route for the Post http method
 func (p *GardenParty) Post(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(HTTPMethods.POST, path, handlersFn...)
+	p.HandleFunc(HTTPMethods.Post, path, handlersFn...)
 }
 
 // Put registers a route for the Put http method
 func (p *GardenParty) Put(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(HTTPMethods.PUT, path, handlersFn...)
+	p.HandleFunc(HTTPMethods.Put, path, handlersFn...)
 }
 
 // Delete registers a route for the Delete http method
 func (p *GardenParty) Delete(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(HTTPMethods.DELETE, path, handlersFn...)
+	p.HandleFunc(HTTPMethods.Delete, path, handlersFn...)
 }
 
 // Connect registers a route for the Connect http method
 func (p *GardenParty) Connect(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(HTTPMethods.CONNECT, path, handlersFn...)
+	p.HandleFunc(HTTPMethods.Connect, path, handlersFn...)
 }
 
 // Head registers a route for the Head http method
 func (p *GardenParty) Head(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(HTTPMethods.HEAD, path, handlersFn...)
+	p.HandleFunc(HTTPMethods.Head, path, handlersFn...)
 }
 
 // Options registers a route for the Options http method
 func (p *GardenParty) Options(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(HTTPMethods.OPTIONS, path, handlersFn...)
+	p.HandleFunc(HTTPMethods.Options, path, handlersFn...)
 }
 
 // Patch registers a route for the Patch http method
 func (p *GardenParty) Patch(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(HTTPMethods.PATCH, path, handlersFn...)
+	p.HandleFunc(HTTPMethods.Patch, path, handlersFn...)
 }
 
 // Trace registers a route for the Trace http method
 func (p *GardenParty) Trace(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(HTTPMethods.TRACE, path, handlersFn...)
+	p.HandleFunc(HTTPMethods.Trace, path, handlersFn...)
 }
 
 // Any registers a route for ALL of the http methods (Get,Post,Put,Head,Patch,Options,Connect,Delete)
 func (p *GardenParty) Any(path string, handlersFn ...HandlerFunc) {
-	for _, k := range HTTPMethods.ALL {
+	for _, k := range HTTPMethods.All {
 		p.HandleFunc(k, path, handlersFn...)
 	}
 
@@ -300,7 +308,7 @@ func (p *GardenParty) Any(path string, handlersFn ...HandlerFunc) {
 // Use pass the middleware here
 // it overrides the MiddlewareSupporter's Use only in order to be able to call forceOptimusPrime
 func (p *GardenParty) Use(handlers ...Handler) {
-	//force OptimusPrime everytime a route added, this is not nessecery, it runs only once
+	//force OptimusPrime each time a route added, this is not nessecery, it runs only once
 	//but many developers maybe use external server and FORGET to use the iris.Serve() and use just the 'iris'
 	//so
 	p.station.OptimusPrime()

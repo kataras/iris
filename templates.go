@@ -66,6 +66,7 @@ import (
 )
 
 type (
+	// HTMLTemplates are used to cache the templates and watch for file changes on these
 	HTMLTemplates struct {
 		// Templates contains all the html templates it's type of *template.Template from standar API
 		Templates *template.Template
@@ -79,10 +80,15 @@ type (
 	}
 )
 
+// NewHTMLTemplates creates and returns a new HTMLTemplates object, using a logger
 func NewHTMLTemplates(logger *Logger) *HTMLTemplates {
 	return &HTMLTemplates{logger: logger, mu: &sync.Mutex{}}
 }
 
+// Load loads and saves/cache the templates
+// accepts one parameter
+// globPathExp the path which the html files are, for example .Load("./frontend/templates/*.html")
+// returns an error if something bad happens during the loading
 func (html *HTMLTemplates) Load(globPathExp string) error {
 	var err error
 	var rootPath string
@@ -119,12 +125,14 @@ func (html *HTMLTemplates) Load(globPathExp string) error {
 
 }
 
+// Reload reloads the templates, it just calls templates.ParseGlob again
 func (html *HTMLTemplates) Reload() error {
 	var err error
 	html.Templates, err = html.Templates.ParseGlob(html.directory + string(os.PathSeparator) + html.ext) //template.ParseGlob(html.directory + string(os.PathSeparator) + html.ext)
 	return ErrTemplateParse.With(err)
 }
 
+// startWatch start watching for template-file changes and reload them if needed
 func (html *HTMLTemplates) startWatch(rootPath string) {
 	watchDirectoryChanges(rootPath, func(fname string) {
 		html.mu.Lock()

@@ -24,16 +24,20 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package i18n
 
 import (
+	"strings"
+
 	"github.com/Unknwon/i18n"
 	"github.com/kataras/iris"
-	"strings"
 )
 
-var AcceptLanguage = "Accept-Language"
+// AcceptLanguage is the Header key "Accept-Language"
+const AcceptLanguage = "Accept-Language"
 
+// Options the i18n options
 type Options struct {
 	// Default set it if you want a default language
 	//
@@ -85,6 +89,7 @@ func (i *i18nMiddleware) Serve(ctx *iris.Context) {
 	ctx.Next()
 }
 
+// I18nHandler returns the middleware which is just an iris.handler
 func I18nHandler(_options ...Options) *i18nMiddleware {
 	i := &i18nMiddleware{}
 	if len(_options) == 0 || (len(_options) > 0 && len(_options[0].Languages) == 0) {
@@ -115,6 +120,7 @@ func I18nHandler(_options ...Options) *i18nMiddleware {
 	return i
 }
 
+// I18n returns the middleware as iris.HandlerFunc with the passed options
 func I18n(_options ...Options) iris.HandlerFunc {
 	return I18nHandler(_options...).Serve
 }

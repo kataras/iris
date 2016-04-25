@@ -846,12 +846,12 @@ Benchmarks results taken [from external source](https://github.com/smallnest/go-
 
 This is the most realistic benchmark suite than you will find for Go Web Frameworks. Give attention to its readme.md.
 
-April 13 2016
+April 22 2016
 
 
-![Benchmark Wizzard Basic 13 April 2016](http://kataras.github.io/iris/assets/benchmarks_April_13_2016-copy.png)
+![Benchmark Wizzard Basic 22 April 2016](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/master/concurrency-pipeline.png)
 
-[click here to view detailed tables with all kind of different benchmarks](https://github.com/smallnest/go-web-framework-benchmark)
+[click here to view detailed tables from all kind of different benchmark results](https://github.com/smallnest/go-web-framework-benchmark)
 
 ## Third Party Middlewares
 
@@ -915,7 +915,7 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 
 ## Versioning
 
-Current: **v1.1.3**
+Current: **v1.1.4**
 
 Read more about Semantic Versioning 2.0.0
 

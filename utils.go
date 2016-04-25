@@ -52,13 +52,20 @@ func hasCors(route IRoute) bool {
 
 // these are experimentals, will be used inside plugins to extend their power.
 
-//this helps on 0 memory allocations
+// BytesToString accepts bytes and returns their string presentation
+// instead of string() this method doesn't generate memory allocations,
+// BUT it is not safe to use anywhere because it points
+// this helps on 0 memory allocations
 func BytesToString(b []byte) string {
 	bh := (*reflect.SliceHeader)(unsafe.Pointer(&b))
 	sh := reflect.StringHeader{bh.Data, bh.Len}
 	return *(*string)(unsafe.Pointer(&sh))
 }
 
+// StringToBytes accepts string and returns their []byte presentation
+// instead of byte() this method doesn't generate memory allocations,
+// BUT it is not safe to use anywhere because it points
+// this helps on 0 memory allocations
 func StringToBytes(s string) []byte {
 	sh := (*reflect.StringHeader)(unsafe.Pointer(&s))
 	bh := reflect.SliceHeader{sh.Data, sh.Len, 0}
@@ -75,6 +82,7 @@ const (
 
 var src = rand.NewSource(time.Now().UnixNano())
 
+// RandomString accepts a number(10 for example) and returns a random string using simple but fairly safe random algorithm
 func RandomString(n int) string {
 	b := make([]byte, n)
 	// A src.Int63() generates 63 random bits, enough for letterIdxMax characters!

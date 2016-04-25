@@ -27,9 +27,10 @@
 package iriscontrol
 
 import (
+	"strings"
+
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/sessions"
-	"strings"
 )
 
 var store = sessions.NewCookieStore([]byte(iris.RandomString(10)))
@@ -94,7 +95,7 @@ func (u *userAuth) logout(ctx *iris.Context) {
 	ctx.Redirect("/login")
 }
 
-// check if session stored, then check if this user is the correct, everytime, then continue, else not
+// check if session stored, then check if this user is the correct, each time, then continue, else not
 func (u *userAuth) Serve(ctx *iris.Context) {
 	if ctx.PathString() == "/login" || strings.HasPrefix(ctx.PathString(), "/public") {
 		ctx.Next()

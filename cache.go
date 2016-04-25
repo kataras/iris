@@ -148,7 +148,7 @@ func (mc *SyncContextCache) OnTick() {
 
 // resetBag clears the cached items
 func (mc *ContextCache) resetBag() {
-	for _, m := range HTTPMethods.ANY {
+	for _, m := range HTTPMethods.All {
 		mc.items[m] = make(map[string]*Context, 0)
 	}
 }

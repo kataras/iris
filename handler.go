@@ -41,7 +41,7 @@ type (
 		ServeRequest(*fasthttp.RequestCtx)
 	}
 
-	//it's the same as fasthttp.RequestHandler
+	// RequestHandlerFunc it's the same as fasthttp.RequestHandler, used inside server
 	RequestHandlerFunc func(*fasthttp.RequestCtx)
 
 	// Handler the main Iris Handler interface.
@@ -77,6 +77,7 @@ func (h HandlerFunc) Serve(ctx *Context) {
 	h(ctx)
 }
 
+// ServeRequest match the request to a tree, it is used inside the Router
 func (h RequestHandlerFunc) ServeRequest(reqCtx *fasthttp.RequestCtx) {
 	h(reqCtx)
 }

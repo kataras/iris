@@ -89,7 +89,7 @@ type (
 		templates       *HTMLTemplates
 		options         StationOptions
 		pluginContainer *PluginContainer
-		//it's true when hosts(domain) and cors middleware has optimized or when Listen occured
+		//it's true when hosts(domain) and cors middleware has optimized or when Listen occurred
 		optimized      bool
 		optimizedHosts bool
 		optimizedCors  bool
@@ -191,9 +191,9 @@ func (s *Station) OptimusPrime() {
 			switch s.IRouter.getType() {
 			case Normal:
 				s.IRouter = NewRouterDomain(s.IRouter.(*Router))
-				s.optimizedHosts = true
 				break
 			}
+			s.optimizedHosts = true
 		}
 
 	}

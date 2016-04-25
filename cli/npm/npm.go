@@ -36,13 +36,18 @@ import (
 )
 
 var (
+	// NodeModules is the path of the root npm modules
+	// Ex: C:\\Users\\kataras\\AppData\\Roaming\\npm\\node_modules
 	NodeModules string
 )
 
 type (
-	NpmResult struct {
+	// Result holds Message and Error, if error != nil then the npm command has failed
+	Result struct {
+		// Message the message (string)
 		Message string
-		Error   error
+		// Error the error (if any)
+		Error error
 	}
 )
 
@@ -53,16 +58,16 @@ func init() {
 }
 
 ///TODO: na dw pws grafete swsta
-func success(output string, a ...interface{}) NpmResult {
-	return NpmResult{fmt.Sprintf(output, a...), nil}
+func success(output string, a ...interface{}) Result {
+	return Result{fmt.Sprintf(output, a...), nil}
 }
 
-func fail(errMsg string, a ...interface{}) NpmResult {
-	return NpmResult{"", fmt.Errorf("\n"+errMsg, a...)}
+func fail(errMsg string, a ...interface{}) Result {
+	return Result{"", fmt.Errorf("\n"+errMsg, a...)}
 }
 
 // Output returns the error message if result.Error exists, otherwise returns the result.Message
-func (res NpmResult) Output() (out string) {
+func (res Result) Output() (out string) {
 	if res.Error != nil {
 		out = res.Error.Error()
 	} else {
@@ -72,7 +77,7 @@ func (res NpmResult) Output() (out string) {
 }
 
 // Install installs a module
-func Install(moduleName string) NpmResult {
+func Install(moduleName string) Result {
 	finish := make(chan bool)
 
 	go func() {
@@ -111,19 +116,20 @@ func Install(moduleName string) NpmResult {
 	finish <- true
 	if err != nil {
 		return fail("Error installing module %s. Trace: %s", moduleName, err.Error())
-	} else {
-		return success("\n%s installed %s", moduleName, out)
 	}
+
+	return success("\n%s installed %s", moduleName, out)
+
 }
 
 // Unistall removes a module
-func Unistall(moduleName string) NpmResult {
+func Unistall(moduleName string) Result {
 	out, err := system.Command("npm", "unistall", "-g", moduleName)
 	if err != nil {
 		return fail("Error unstalling module %s. Trace: %s", moduleName, err.Error())
-	} else {
-		return success("\n %s unistalled %s", moduleName, out)
 	}
+	return success("\n %s unistalled %s", moduleName, out)
+
 }
 
 // Abs returns the absolute path of the global node_modules directory + relative
@@ -134,7 +140,7 @@ func Abs(relativePath string) string {
 // Exists returns true if a module exists
 // here we have two options
 //1 . search by command something like npm -ls -g --depth=x
-//2.  search on files, we choosen the second
+//2.  search on files, we choose the second
 func Exists(executableRelativePath string) bool {
 	execAbsPath := Abs(executableRelativePath)
 	if execAbsPath == "" {
