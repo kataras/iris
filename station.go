@@ -191,9 +191,9 @@ func (s *Station) OptimusPrime() {
 			switch s.IRouter.getType() {
 			case Normal:
 				s.IRouter = NewRouterDomain(s.IRouter.(*Router))
-				s.optimizedHosts = true
 				break
 			}
+			s.optimizedHosts = true
 		}
 
 	}

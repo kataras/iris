@@ -915,7 +915,7 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 
 ## Versioning
 
-Current: **v1.1.3**
+Current: **v1.1.4**
 
 Read more about Semantic Versioning 2.0.0
 

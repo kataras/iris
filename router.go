@@ -220,20 +220,24 @@ func (r *RouterDomain) getType() RouterType {
 func (r *RouterDomain) ServeRequest(reqCtx *fasthttp.RequestCtx) {
 
 	method := BytesToString(reqCtx.Method())
+	domain := BytesToString(reqCtx.Host())
+	path := reqCtx.Path()
 	tree := r.garden.first
 	for tree != nil {
-		if tree.hosts {
-			reqCtx.Request.URI().SetPathBytes(append(reqCtx.Host(), reqCtx.Path()...))
+		if tree.hosts && tree.domain == domain {
+			// here we have an issue, at fasthttp/uri.go 273-274 line normalize path it adds a '/' slash at the beggining, it doesn't checks for subdomains
+			// I could fix it but i leave it as it is, I just create a new function inside tree named 'serveReturn' which accepts a path too. ->
+			//-> reqCtx.Request.URI().SetPathBytes(append(reqCtx.Host(), reqCtx.Path()...)) <-
+			path = append(reqCtx.Host(), reqCtx.Path()...)
 		}
-
 		if r.methodMatch(tree.method, method) {
-			tree.serve(reqCtx)
-			return
+			if tree.serveReturn(reqCtx, BytesToString(path)) {
+				return
+			}
 		}
 		tree = tree.next
 	}
 	//not found, get the first's pool and use that  to send a custom http error(if setted)
-
 	ctx := r.garden.first.pool.Get().(*Context)
 	ctx.Reset(reqCtx)
 	ctx.NotFound()

@@ -92,7 +92,15 @@ func NewParty(path string, station *Station, hoster *GardenParty) IParty {
 
 // fixPath fix the double slashes, (because of root,I just do that before the .Handle no need for anything else special)
 func fixPath(str string) string {
-	return strings.Replace(str, "//", Slash, -1)
+
+	strafter := strings.Replace(str, "//", Slash, -1)
+
+	if strafter[0] == SlashByte && strings.Count(strafter, ".") >= 2 {
+		//it's domain, remove the first slash
+		strafter = strafter[1:]
+	}
+
+	return strafter
 }
 
 // GetRoot find the root hoster of the parties, the root is this when the hoster is nil ( it's the  rootPath '/')
@@ -127,17 +135,13 @@ func (p *GardenParty) Handle(method string, registedPath string, handlers ...Han
 	if len(handlers) == 0 {
 		panic("Iris.Handle: zero handler to " + method + ":" + registedPath)
 	}
-
 	rootParty := p.getRoot()
 
 	tempHandlers := p.Middleware
 
-	//println(registedPath, " party middleware len : ", len(tempHandlers))
-
 	// from top to bottom -->||<--
 	//check for root-global middleware WHEN THIS PARTY IS NOT THE ROOT, because if it's the Middleware already setted on the constructor NewParty)
 	if rootParty.isTheRoot() == false && p.isTheRoot() == false && len(rootParty.getMiddleware()) > 0 {
-		//println(registedPath, " is not the root and it's rootParty which is: ", rootParty.getPath(), "has ", len(rootParty.getMiddleware()), " handlers")
 		//if global middlewares are registed then push them to this route.
 		tempHandlers = append(rootParty.getMiddleware(), tempHandlers...)
 	}
@@ -147,7 +151,6 @@ func (p *GardenParty) Handle(method string, registedPath string, handlers ...Han
 		handlers = append(tempHandlers, handlers...)
 	}
 
-	//println(" so the len of registed ", registedPath, " of handlers is: ", len(handlers))
 	route := NewRoute(method, registedPath, handlers)
 
 	p.station.GetPluginContainer().DoPreHandle(route)
@@ -231,7 +234,12 @@ func (p *GardenParty) HandleAnnotated(irisHandler Handler) error {
 // Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
 // Party can also be named as 'Join' or 'Node' or 'Group' , Party chosen because it has more fun
 func (p *GardenParty) Party(path string) IParty {
+	if path[0] != SlashByte && strings.Contains(path, ".") {
+		//propably domain
+		return NewParty(path, p.station, nil) //nil as the hoster, the domains are individual
+	}
 	return NewParty(path, p.station, p)
+
 }
 
 ///////////////////////////////
