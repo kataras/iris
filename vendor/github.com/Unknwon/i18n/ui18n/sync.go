@@ -19,7 +19,7 @@ import (
 	"os"
 
 	"github.com/Unknwon/com"
-	"gopkg.in/ini.v0"
+	"gopkg.in/ini.v1"
 )
 
 var cmdSync = &Command{

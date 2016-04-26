@@ -42,6 +42,8 @@ type (
 		ListeningAddr string
 		CertFile      string
 		KeyFile       string
+		// Mode this is for unix only
+		Mode os.FileMode
 	}
 
 	// IServer the interface for the Server
@@ -53,12 +55,13 @@ type (
 		IsListening() bool
 		IsSecure() bool
 		Serve(l net.Listener) error
-		// Listen starts and listens to the server, it's no-blocking
-		Listen() error
-		ListenUnix(os.FileMode) error
-		// ListenTLS starts the server using CertFile and KeyFile from the passed Options
+		// listen starts and listens to the server, it's no-blocking
+		listen() error
+		listenUnix() error
+		// listenTLS starts the server using CertFile and KeyFile from the passed Options
 		///TODO: if no CertFile or KeyFile passed then use a self-random certificate
-		ListenTLS() error
+		listenTLS() error
+		OpenServer() error
 		CloseServer() error
 
 		Listener() net.Listener
@@ -90,7 +93,7 @@ func NewServer(opt ...ServerOptions) *Server {
 
 // DefaultServerOptions returns the default options for the server
 func DefaultServerOptions() ServerOptions {
-	return ServerOptions{DefaultServerAddr, "", ""}
+	return ServerOptions{DefaultServerAddr, "", "", 0}
 }
 
 // DefaultServerSecureOptions does nothing now
@@ -142,8 +145,8 @@ func (s *Server) Serve(l net.Listener) error {
 	return s.Server.Serve(l)
 }
 
-// Listen starts the process of listening to the new requests
-func (s *Server) Listen() (err error) {
+// listen starts the process of listening to the new requests
+func (s *Server) listen() (err error) {
 
 	if s.started {
 		err = ErrServerAlreadyStarted.Return()
@@ -165,8 +168,8 @@ func (s *Server) Listen() (err error) {
 	return
 }
 
-// ListenTLS starts the process of listening to the new requests using TLS, keyfile and certfile are given before this method fires
-func (s *Server) ListenTLS() (err error) {
+// listenTLS starts the process of listening to the new requests using TLS, keyfile and certfile are given before this method fires
+func (s *Server) listenTLS() (err error) {
 
 	if s.started {
 		err = ErrServerAlreadyStarted.Return()
@@ -193,13 +196,15 @@ func (s *Server) ListenTLS() (err error) {
 	return
 }
 
-// ListenUnix  starts the process of listening to the new requests using a 'socket file', this works only on unix
-func (s *Server) ListenUnix(mode os.FileMode) (err error) {
+// listenUnix  starts the process of listening to the new requests using a 'socket file', this works only on unix
+func (s *Server) listenUnix() (err error) {
 
 	if s.started {
 		err = ErrServerAlreadyStarted.Return()
 		return
 	}
+
+	mode := s.options.Mode
 
 	//this code is from fasthttp ListenAndServeUNIX, I extracted it because we need the tcp.Listener
 	if errOs := os.Remove(s.options.ListeningAddr); errOs != nil && !os.IsNotExist(errOs) {
@@ -226,6 +231,20 @@ func (s *Server) ListenUnix(mode os.FileMode) (err error) {
 
 	return
 
+}
+
+// OpenServer opens/starts/runs/listens (to) the server, listenTLS if Cert && Key is registed, listenUnix if Mode is registed, otherwise listen
+// instead of return an error this is panics on any server's error
+func (s *Server) OpenServer() (err error) {
+	if s.options.CertFile != "" && s.options.KeyFile != "" {
+		err = s.listenTLS()
+	} else if s.options.Mode > 0 {
+		err = s.listenUnix()
+	} else {
+		err = s.listen()
+	}
+
+	return
 }
 
 // CloseServer closes the server

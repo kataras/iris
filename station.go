@@ -50,6 +50,9 @@ type (
 		HasOptimized() bool
 		Logger() *Logger
 		SetMaxRequestBodySize(int)
+		Listen(fullHostOrPort ...string) error
+		ListenTLS(fullAddress string, certFile, keyFile string) error
+		Close() error
 	}
 
 	// StationOptions is the struct which contains all Iris' settings/options
@@ -209,56 +212,53 @@ func (s *Station) HasOptimized() bool {
 	return s.optimized
 }
 
-// Listen starts the standalone http server
-// which listens to the fullHostOrPort parameter which as the form of
-// host:port or just port
-func (s *Station) Listen(fullHostOrPort ...string) (err error) {
+// openServer is internal method, open the server with specific options passed by the Listen and ListenTLS
+// TODO: move that to the server.go to a new func .Start()
+func (s *Station) openServer(opt ServerOptions) (err error) {
 	s.OptimusPrime()
-	opt := ServerOptions{ListeningAddr: ParseAddr(fullHostOrPort...)}
 	server := NewServer(opt)
 	server.SetHandler(s.IRouter.ServeRequest)
 	s.Server = server
 	s.Server.MaxRequestBodySize = s.MaxRequestBodySize
 	s.pluginContainer.DoPreListen(s)
-	err = server.Listen()
-	if err == nil {
+
+	if err = s.Server.OpenServer(); err == nil {
 		s.pluginContainer.DoPostListen(s)
 		ch := make(chan os.Signal)
 		<-ch
 		s.Close()
 	}
-
 	return
 }
 
-// ListenTLS Starts a httpS/http2 server with certificates,
+// Listen starts the standalone http server
+// which listens to the fullHostOrPort parameter which as the form of
+// host:port or just port
+//
+// It returns an error you are responsible how to handle this
+// ex: log.Fatal(iris.Listen(":8080"))
+func (s *Station) Listen(fullHostOrPort ...string) error {
+	opt := ServerOptions{ListeningAddr: ParseAddr(fullHostOrPort...)}
+	return s.openServer(opt)
+}
+
+// ListenTLS Starts a https server with certificates,
 // if you use this method the requests of the form of 'http://' will fail
 // only https:// connections are allowed
 // which listens to the fullHostOrPort parameter which as the form of
 // host:port or just port
+//
+// It returns an error you are responsible how to handle this
+// ex: log.Fatal(iris.ListenTLS(":8080","yourfile.cert","yourfile.key"))
 func (s *Station) ListenTLS(fullAddress string, certFile, keyFile string) error {
-	s.OptimusPrime()
 	opt := ServerOptions{ListeningAddr: ParseAddr(fullAddress), CertFile: certFile, KeyFile: keyFile}
-	server := NewServer(opt)
-	server.SetHandler(s.IRouter.ServeRequest)
-	s.Server = server
-	s.Server.MaxRequestBodySize = s.MaxRequestBodySize
-	s.pluginContainer.DoPreListen(s)
-	err := server.ListenTLS()
-	if err == nil {
-		s.pluginContainer.DoPostListen(s)
-		ch := make(chan os.Signal)
-		<-ch
-		s.Close()
-	}
-
-	return err
+	return s.openServer(opt)
 }
 
 // Close is used to close the tcp listener from the server
-func (s *Station) Close() {
+func (s *Station) Close() error {
 	s.pluginContainer.DoPreClose(s)
-	s.Server.CloseServer()
+	return s.Server.CloseServer()
 }
 
 // Templates loads HTML templates

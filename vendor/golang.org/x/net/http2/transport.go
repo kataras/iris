@@ -683,7 +683,6 @@ func (cc *ClientConn) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 
 	readLoopResCh := cs.resc
-	requestCanceledCh := requestCancel(req)
 	bodyWritten := false
 
 	for {
@@ -717,7 +716,7 @@ func (cc *ClientConn) RoundTrip(req *http.Request) (*http.Response, error) {
 				cs.abortRequestBodyWrite(errStopReqBodyWriteAndCancel)
 			}
 			return nil, errTimeout
-		case <-requestCanceledCh:
+		case <-req.Cancel:
 			cc.forgetStreamID(cs.ID)
 			if !hasBody || bodyWritten {
 				cc.writeStreamReset(cs.ID, ErrCodeCancel, nil)
@@ -1285,7 +1284,7 @@ func (rl *clientConnReadLoop) handleResponse(cs *clientStream, f *MetaHeadersFra
 	cs.bufPipe = pipe{b: buf}
 	cs.bytesRemain = res.ContentLength
 	res.Body = transportResponseBody{cs}
-	go cs.awaitRequestCancel(requestCancel(cs.req))
+	go cs.awaitRequestCancel(cs.req.Cancel)
 
 	if cs.requestedGzip && res.Header.Get("Content-Encoding") == "gzip" {
 		res.Header.Del("Content-Encoding")
