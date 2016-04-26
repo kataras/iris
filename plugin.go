@@ -36,13 +36,28 @@ type (
 	//
 	// A Plugin can register other plugins also from it's Activate state
 	IPlugin interface {
+		///TODO:
+		IPluginGetName
+		IPluginGetDescription
+		IPluginActivate
+	}
+
+	// IPluginGetName implements the GetName() string method
+	IPluginGetName interface {
 		// GetName has to returns the name of the plugin, a name is unique
 		// name has to be not dependent from other methods of the plugin,
 		// because it is being called even before the Activate
 		GetName() string
+	}
+
+	// IPluginGetDescription implements the GetDescription() string method
+	IPluginGetDescription interface {
 		// GetDescription has to returns the description of what the plugins is used for
 		GetDescription() string
+	}
 
+	// IPluginGetDescription implements the Activate(IPluginContainer) error method
+	IPluginActivate interface {
 		// Activate called BEFORE the plugin being added to the plugins list,
 		// if Activate returns none nil error then the plugin is not being added to the list
 		// it is being called only one time
