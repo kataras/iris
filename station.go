@@ -114,20 +114,6 @@ func newStation(options StationOptions) *Station {
 	// create & set the router
 	s.IRouter = NewRouter(s)
 
-	// set the debug profiling handlers if enabled
-	if options.Profile {
-		debugPath := options.ProfilePath
-		s.IRouter.Get(debugPath+"/", ToHandlerFunc(pprof.Index))
-		s.IRouter.Get(debugPath+"/cmdline", ToHandlerFunc(pprof.Cmdline))
-		s.IRouter.Get(debugPath+"/profile", ToHandlerFunc(pprof.Profile))
-		s.IRouter.Get(debugPath+"/symbol", ToHandlerFunc(pprof.Symbol))
-
-		s.IRouter.Get(debugPath+"/goroutine", ToHandlerFunc(pprof.Handler("goroutine")))
-		s.IRouter.Get(debugPath+"/heap", ToHandlerFunc(pprof.Handler("heap")))
-		s.IRouter.Get(debugPath+"/threadcreate", ToHandlerFunc(pprof.Handler("threadcreate")))
-		s.IRouter.Get(debugPath+"/pprof/block", ToHandlerFunc(pprof.Handler("block")))
-	}
-
 	//set the logger
 	s.logger = NewLogger(LoggerOutTerminal, "", 0)
 	s.logger.SetEnable(options.Log)
@@ -216,6 +202,21 @@ func (s *Station) HasOptimized() bool {
 // TODO: move that to the server.go to a new func .Start()
 func (s *Station) openServer(opt ServerOptions) (err error) {
 	s.OptimusPrime()
+
+	// set the debug profiling handlers if Profile enabled, before the server startup, not earlier
+	if s.options.Profile {
+		debugPath := s.options.ProfilePath
+		s.IRouter.Get(debugPath+"/", ToHandlerFunc(pprof.Index))
+		s.IRouter.Get(debugPath+"/cmdline", ToHandlerFunc(pprof.Cmdline))
+		s.IRouter.Get(debugPath+"/profile", ToHandlerFunc(pprof.Profile))
+		s.IRouter.Get(debugPath+"/symbol", ToHandlerFunc(pprof.Symbol))
+
+		s.IRouter.Get(debugPath+"/goroutine", ToHandlerFunc(pprof.Handler("goroutine")))
+		s.IRouter.Get(debugPath+"/heap", ToHandlerFunc(pprof.Handler("heap")))
+		s.IRouter.Get(debugPath+"/threadcreate", ToHandlerFunc(pprof.Handler("threadcreate")))
+		s.IRouter.Get(debugPath+"/pprof/block", ToHandlerFunc(pprof.Handler("block")))
+	}
+
 	server := NewServer(opt)
 	server.SetHandler(s.IRouter.ServeRequest)
 	s.Server = server
