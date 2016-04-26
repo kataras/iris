@@ -82,7 +82,12 @@ var (
 	ErrPluginAlreadyExists = NewError("Cannot use the same plugin again, '%s[%s]' is already exists")
 	// ErrPluginActivate returns an error with message: 'While trying to activate plugin '+plugin name'. Trace: +specific error'
 	ErrPluginActivate = NewError("While trying to activate plugin '%s'. Trace: %s")
-
+	// ErrPluginRemoveNoPlugins returns an error with message: 'No plugins are registed yet, you cannot remove a plugin from an empty list!'
+	ErrPluginRemoveNoPlugins = NewError("No plugins are registed yet, you cannot remove a plugin from an empty list!")
+	// ErrPluginRemoveEmptyName returns an error with message: 'Plugin with an empty name cannot be removed'
+	ErrPluginRemoveEmptyName = NewError("Plugin with an empty name cannot be removed")
+	// ErrPluginRemoveNotFound returns an error with message: 'Cannot remove a plugin which doesn't exists'
+	ErrPluginRemoveNotFound = NewError("Cannot remove a plugin which doesn't exists")
 	// Context other
 
 	// ErrNoForm returns an error with message: 'Request has no any valid form'
