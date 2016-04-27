@@ -92,7 +92,6 @@ type (
 		Clone() *Context
 		ExecuteTemplate(*template.Template, interface{}) error
 		RenderFile(string, interface{}) error
-		Render(interface{}) error
 		// SetContentType sets the "Content-Type" header, receives the values
 		SetContentType([]string)
 		// SetHeader sets the response headers first parameter is the key, second is the values
@@ -453,13 +452,6 @@ func (ctx *Context) RenderFile(file string, pageContext interface{}) error {
 
 }
 
-// Render renders the template file html which is already registed to the template cache, with it's pageContext passed to the function
-func (ctx *Context) Render(pageContext interface{}) error {
-	ctx.RequestCtx.SetContentType(ContentHTML + " ;charset=" + Charset)
-	return ErrTemplateExecute.With(ctx.station.GetTemplates().Templates.Execute(ctx.RequestCtx.Response.BodyWriter(), pageContext))
-
-}
-
 // WriteHTML writes html string with a http status
 func (ctx *Context) WriteHTML(httpStatus int, htmlContents string) {
 	ctx.SetContentType([]string{ContentHTML + " ;charset=" + Charset})
@@ -549,7 +541,8 @@ func (ctx *Context) ReadJSON(jsonObject interface{}) error {
 	decoder := json.NewDecoder(strings.NewReader(string(data)))
 	err := decoder.Decode(jsonObject)
 
-	if err != io.EOF {
+	//err != nil fix by @shiena
+	if err != nil && err != io.EOF {
 		return ErrReadBody.Format("JSON", err.Error())
 	}
 
@@ -580,8 +573,8 @@ func (ctx *Context) ReadXML(xmlObject interface{}) error {
 
 	decoder := xml.NewDecoder(strings.NewReader(string(data)))
 	err := decoder.Decode(xmlObject)
-
-	if err != io.EOF {
+	//err != nil fix by @shiena
+	if err != nil && err != io.EOF {
 		return ErrReadBody.Format("XML", err.Error())
 	}
 

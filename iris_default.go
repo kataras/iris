@@ -199,11 +199,6 @@ func Templates(pathGlob string) error {
 	return DefaultStation.Templates(pathGlob)
 }
 
-// OptimusPrime , YOU MUST RUN IT ONLY IF YOU DON'T USE iris.Listen or iris.Serve() method
-func OptimusPrime() {
-	DefaultStation.OptimusPrime()
-}
-
 //SetMaxRequestBodySize sets the maximum request body size.
 //
 // The server rejects requests with bodies exceeding this limit.

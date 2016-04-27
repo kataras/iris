@@ -69,7 +69,7 @@ const (
 	// LoggerIrisPrefix is the prefix of the logger '[IRIS] '
 	LoggerIrisPrefix = "[IRIS] "
 
-	// DefaultServerAddr the default server addr if nothing passed
+	// DefaultServerAddr the default server addr
 	DefaultServerAddr = ":8080"
 )
 
