@@ -210,3 +210,8 @@ func OptimusPrime() {
 func SetMaxRequestBodySize(size int) {
 	DefaultStation.SetMaxRequestBodySize(size)
 }
+
+// GetTemplates returns the *template.Template registed to this station, if any
+func GetTemplates() *HTMLTemplates {
+	return DefaultStation.GetTemplates()
+}
