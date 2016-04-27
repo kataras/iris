@@ -891,6 +891,7 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 - [x] [Create a mechanism that scan for Typescript files, compile them on server startup and serve them.](https://github.com/kataras/iris/tree/development/plugin/typescript)
 - [x] Simplify the plugin mechanism.
 - [ ] Implement an Iris updater and add the specific entry(bool) on StationOptions.
+- [ ] Re-Implement the sessions from zero.
 
 ## Articles
 
