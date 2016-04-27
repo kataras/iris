@@ -28,6 +28,7 @@
 package iris
 
 import (
+	"html/template"
 	"net/http/pprof"
 	"os"
 )
@@ -44,6 +45,7 @@ type (
 		Plugin(IPlugin) error
 		GetPluginContainer() IPluginContainer
 		GetTemplates() *HTMLTemplates
+		TemplateFuncs(template.FuncMap) *template.Template
 		Templates(pathGlob string) error
 		//yes we need that again if no .Listen called and you use other server, you have to call .Build() before
 		OptimusPrime()
@@ -131,8 +133,16 @@ func (s Station) GetPluginContainer() IPluginContainer {
 }
 
 // GetTemplates returns the *template.Template registed to this station, if any
-func (s Station) GetTemplates() *HTMLTemplates {
+func (s *Station) GetTemplates() *HTMLTemplates {
 	return s.templates
+}
+
+// TemplateFuncs is alias for .GetTemplates().Templates.Funcs
+func (s *Station) TemplateFuncs(f template.FuncMap) *template.Template {
+	if !s.templates.loaded {
+		return nil
+	}
+	return s.templates.Templates.Funcs(f)
 }
 
 // Logger returns the station's logger
