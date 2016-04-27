@@ -30,6 +30,7 @@ package iris
 
 import (
 	"fmt"
+	"runtime"
 )
 
 var (
@@ -52,7 +53,7 @@ var (
 	// See Dial for more details about address syntax'
 	ErrParsedAddr = NewError("ListeningAddr error, for TCP and UDP, the syntax of ListeningAddr is host:port, like 127.0.0.1:8080. If host is omitted, as in :8080, Listen listens on all available interfaces instead of just the interface with the given host address. See Dial for more details about address syntax")
 	// ErrServerRemoveUnix returns an error with message: 'Unexpected error when trying to remove unix socket file +filename: +specific error"'
-	ErrServerRemoveUnix = NewError("Unexpected error when trying to remove unix socket file %s: %s")
+	ErrServerRemoveUnix = NewError("Unexpected error when trying to remove unix socket file. Addr: %s | Trace: %s")
 	// ErrServerChmod returns an error with message: 'Cannot chmod +mode for +host:+specific error
 	ErrServerChmod = NewError("Cannot chmod %#o for %q: %s")
 
@@ -81,7 +82,12 @@ var (
 	ErrPluginAlreadyExists = NewError("Cannot use the same plugin again, '%s[%s]' is already exists")
 	// ErrPluginActivate returns an error with message: 'While trying to activate plugin '+plugin name'. Trace: +specific error'
 	ErrPluginActivate = NewError("While trying to activate plugin '%s'. Trace: %s")
-
+	// ErrPluginRemoveNoPlugins returns an error with message: 'No plugins are registed yet, you cannot remove a plugin from an empty list!'
+	ErrPluginRemoveNoPlugins = NewError("No plugins are registed yet, you cannot remove a plugin from an empty list!")
+	// ErrPluginRemoveEmptyName returns an error with message: 'Plugin with an empty name cannot be removed'
+	ErrPluginRemoveEmptyName = NewError("Plugin with an empty name cannot be removed")
+	// ErrPluginRemoveNotFound returns an error with message: 'Cannot remove a plugin which doesn't exists'
+	ErrPluginRemoveNotFound = NewError("Cannot remove a plugin which doesn't exists")
 	// Context other
 
 	// ErrNoForm returns an error with message: 'Request has no any valid form'
@@ -140,6 +146,14 @@ func (e *Error) With(err error) error {
 // Return returns the actual error as it is
 func (e *Error) Return() error {
 	return e.err
+}
+
+// Panic output the message and after panics
+func (e *Error) Panic() {
+	_, fn, line, _ := runtime.Caller(1)
+	errMsg := e.Error()
+	errMsg = "\nCaller was: " + fmt.Sprintf("%s:%d", fn, line)
+	panic(errMsg)
 }
 
 //

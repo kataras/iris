@@ -1,5 +1,5 @@
-hash: c440178b8e4ccac53c4083e9d39244890f29d090a65c814609a13f3ddef0e4ca
-updated: 2016-04-22T16:49:29.216234+03:00
+hash: d2cd5b5acb033c90a47821d4c8df5d634c2f8ddf6269004abbe571cb2deb4b36
+updated: 2016-04-27T01:10:06.4932795+03:00
 imports:
 - name: github.com/flosch/pongo2
   version: 7f5515449ea9bbeb00256d9cbb654c556e7d0146
@@ -12,6 +12,7 @@ imports:
 - name: github.com/klauspost/compress
   version: 14eb9c4951195779ecfbec34431a976de7335b0a
   subpackages:
+  - flate
   - github.com\klauspost\compress\flate
   - github.com\klauspost\compress\gzip
   - github.com\klauspost\compress\zlib
@@ -37,12 +38,13 @@ imports:
   - github.com\valyala\fasthttp
   - github.com\valyala\fasthttp\fasthttpadaptor
 - name: golang.org/x/net
-  version: 815d315ead425c4365077d904a2331ee9e179820
+  version: b797637b7aeeed133049c7281bfa31dcc9ca42d6
   subpackages:
   - golang.org\x\net\context
 - name: golang.org/x/sys
   version: f64b50fbea64174967a8882830d621a18ee1548e
   subpackages:
+  - unix
   - golang.org\x\sys\unix
 - name: gopkg.in/ini.v1
   version: 12f418cc7edc5a618a51407b7ac1f1f512139df3

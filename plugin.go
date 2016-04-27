@@ -32,17 +32,26 @@ import (
 )
 
 type (
-	// IPlugin is the interface which all Plugins must implement.
-	//
-	// A Plugin can register other plugins also from it's Activate state
+	// IPlugin just an empty base for plugins
 	IPlugin interface {
+	}
+
+	// IPluginGetName implements the GetName() string method
+	IPluginGetName interface {
 		// GetName has to returns the name of the plugin, a name is unique
 		// name has to be not dependent from other methods of the plugin,
 		// because it is being called even before the Activate
 		GetName() string
+	}
+
+	// IPluginGetDescription implements the GetDescription() string method
+	IPluginGetDescription interface {
 		// GetDescription has to returns the description of what the plugins is used for
 		GetDescription() string
+	}
 
+	// IPluginGetDescription implements the Activate(IPluginContainer) error method
+	IPluginActivate interface {
 		// Activate called BEFORE the plugin being added to the plugins list,
 		// if Activate returns none nil error then the plugin is not being added to the list
 		// it is being called only one time
@@ -103,7 +112,9 @@ type (
 	// IPluginContainer is the interface which the PluginContainer should implements
 	IPluginContainer interface {
 		Plugin(plugin IPlugin) error
-		RemovePlugin(pluginName string)
+		RemovePlugin(pluginName string) error
+		GetName(plugin IPlugin) string
+		GetDescription(plugin IPlugin) string
 		GetByName(pluginName string) IPlugin
 		Printf(format string, a ...interface{})
 		DoPreHandle(route IRoute)
@@ -183,34 +194,63 @@ func (p *PluginContainer) Plugin(plugin IPlugin) error {
 	// Check if it's a plugin first, has Activate GetName
 
 	// Check if the plugin already exists
-	if p.GetByName(plugin.GetName()) != nil {
-		return ErrPluginAlreadyExists.Format(plugin.GetName(), plugin.GetDescription())
+	pName := p.GetName(plugin)
+	if pName != "" && p.GetByName(pName) != nil {
+		return ErrPluginAlreadyExists.Format(pName, p.GetDescription(plugin))
 	}
 	// Activate the plugin, if no error then add it to the plugins
-	err := plugin.Activate(p)
-	if err != nil {
-		return ErrPluginActivate.Format(plugin.GetName(), err.Error())
+	if pluginObj, ok := plugin.(IPluginActivate); ok {
+		err := pluginObj.Activate(p)
+		if err != nil {
+			return ErrPluginActivate.Format(pName, err.Error())
+		}
 	}
+
 	// All ok, add it to the plugins list
 	p.activatedPlugins = append(p.activatedPlugins, plugin)
 	return nil
 }
 
-// RemovePlugin DOES NOT calls the plugin.PreClose method but it removes it completely from the plugins list
-func (p *PluginContainer) RemovePlugin(pluginName string) {
+// RemovePlugin it removes a plugin by it's name, if pluginName is empty "" or no plugin found with this name, then nothing is removed and a specific error is returned.
+// This doesn't calls the PreClose method
+func (p *PluginContainer) RemovePlugin(pluginName string) error {
 	if p.activatedPlugins == nil {
-		return
+		return ErrPluginRemoveNoPlugins.Return()
 	}
+
+	if pluginName == "" {
+		//return error: cannot delete an unamed plugin
+		return ErrPluginRemoveEmptyName.Return()
+	}
+
 	indexToRemove := -1
 	for i := range p.activatedPlugins {
-		if p.activatedPlugins[i].GetName() == pluginName {
+		if p.GetName(p.activatedPlugins[i]) == pluginName { // Note: if GetName is not implemented then the name is "" which is != with the plugiName, we checked this before.
 			indexToRemove = i
 		}
 	}
-
-	if indexToRemove != -1 {
+	if indexToRemove == -1 { //if index stills -1 then no plugin was found with this name, just return an error. it is not a critical error.
+		return ErrPluginRemoveNotFound.Return()
+	} else {
 		p.activatedPlugins = append(p.activatedPlugins[:indexToRemove], p.activatedPlugins[indexToRemove+1:]...)
 	}
+	return nil
+}
+
+// GetName returns the name of a plugin, if no GetName() implemented it returns an empty string ""
+func (p *PluginContainer) GetName(plugin IPlugin) string {
+	if pluginObj, ok := plugin.(IPluginGetName); ok {
+		return pluginObj.GetName()
+	}
+	return ""
+}
+
+// GetDescription returns the name of a plugin, if no GetDescription() implemented it returns an empty string ""
+func (p *PluginContainer) GetDescription(plugin IPlugin) string {
+	if pluginObj, ok := plugin.(IPluginGetDescription); ok {
+		return pluginObj.GetDescription()
+	}
+	return ""
 }
 
 // GetByName returns a plugin instance by it's name
@@ -220,8 +260,10 @@ func (p *PluginContainer) GetByName(pluginName string) IPlugin {
 	}
 
 	for i := range p.activatedPlugins {
-		if p.activatedPlugins[i].GetName() == pluginName {
-			return p.activatedPlugins[i]
+		if pluginObj, ok := p.activatedPlugins[i].(IPluginGetName); ok {
+			if pluginObj.GetName() == pluginName {
+				return pluginObj
+			}
 		}
 	}
 

@@ -27,6 +27,8 @@
 
 package iris
 
+import "html/template"
+
 // DefaultOptions returns the default options for the Station
 func DefaultOptions() StationOptions {
 	return StationOptions{
@@ -209,4 +211,14 @@ func OptimusPrime() {
 // By default request body size is unlimited.
 func SetMaxRequestBodySize(size int) {
 	DefaultStation.SetMaxRequestBodySize(size)
+}
+
+// GetTemplates returns the *template.Template registed to this station, if any
+func GetTemplates() *HTMLTemplates {
+	return DefaultStation.GetTemplates()
+}
+
+// TemplateFuncs is alias for .GetTemplates().Templates.Funcs
+func TemplateFuncs(f template.FuncMap) *template.Template {
+	return DefaultStation.TemplateFuncs(f)
 }

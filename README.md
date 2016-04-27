@@ -761,7 +761,6 @@ type RouteInfo struct {
 }
 
 type myPlugin struct {
-	container iris.IPluginContainer
 	routes    []RouteInfo
 }
 
@@ -769,27 +768,10 @@ func NewMyPlugin() *myPlugin {
 	return &myPlugin{routes: make([]RouteInfo, 0)}
 }
 
-// All plugins must at least implements these 3 functions
-
-func (i *myPlugin) Activate(container iris.IPluginContainer) error {
-	// use the container if you want to register other plugins to the server, yes it's possible a plugin can registers other plugins too.
-	// here we set the container in order to use it's printf later at the PostListen.
-	i.container = container
-	return nil
-}
-
-func (i myPlugin) GetName() string {
-	return "MyPlugin"
-}
-
-func (i myPlugin) GetDescription() string {
-	return "My Plugin is just a simple Iris plugin.\n"
-}
-
 //
 // Implement our plugin, you can view your inject points - listeners on the /kataras/iris/plugin.go too.
 //
-// Implement the PostHandle, because this is what we need now, we need to add a listener after a route is registed to our server so we do:
+// Implement the PostHandle, because this is what we need now, we need to collect the information after a route is registed to our server so we do:
 func (i *myPlugin) PostHandle(route iris.IRoute) {
 	myRouteInfo := &RouteInfo{}
 	myRouteInfo.Method = route.GetMethod()
@@ -805,8 +787,8 @@ func (i *myPlugin) PostHandle(route iris.IRoute) {
 // you have the right to access the whole iris' Station also, here you can add more routes and do anything you want, for example start a second server too, an admin web interface!
 // for example let's print to the server's stdout the routes we collected...
 func (i *myPlugin) PostListen(s *iris.Station) {
-	i.container.Printf("From MyPlugin: You have registed %d routes ", len(i.routes))
-	//do what ever you want, if you have imagination you can do a lot
+	s.Logger().Printf("From MyPlugin: You have registed %d routes ", len(i.routes))
+	//do what ever you want, you have imagination do more than this!
 }
 
 //
@@ -907,6 +889,8 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 - [ ] Create administration web interface as plugin.
 - [x] Create an easy websocket api.
 - [x] [Create a mechanism that scan for Typescript files, compile them on server startup and serve them.](https://github.com/kataras/iris/tree/development/plugin/typescript)
+- [x] Simplify the plugin mechanism.
+- [ ] Implement an Iris updater and add the specific entry(bool) on StationOptions.
 
 ## Articles
 
@@ -915,7 +899,7 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 
 ## Versioning
 
-Current: **v1.1.4**
+Current: **v1.1.5**
 
 Read more about Semantic Versioning 2.0.0
 

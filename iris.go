@@ -25,7 +25,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-//Package iris v1.1.3
+//Package iris v1.1.5
 package iris
 
 const (
@@ -92,7 +92,7 @@ func New() *Station {
 // Custom is used for iris-experienced developers
 // creates and returns a new iris Station with custom StationOptions
 func Custom(options StationOptions) *Station {
-	if options.ProfilePath != "" {
+	if options.ProfilePath == "" {
 		options.ProfilePath = DefaultProfilePath
 	}
 

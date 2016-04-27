@@ -29,6 +29,7 @@ package iris
 
 import (
 	"net/http"
+	"sync"
 
 	"github.com/valyala/fasthttp"
 )
@@ -97,6 +98,8 @@ type (
 		IParty
 		garden      *Garden
 		methodMatch func(m1, m2 string) bool
+		// errorPool is responsible to  get the Context to handle not found errors
+		errorPool sync.Pool
 	}
 )
 
@@ -118,6 +121,9 @@ func NewRouter(station *Station) *Router {
 	r := &Router{station: station, httpErrors: defaultHTTPErrors(), garden: &Garden{}} // TODO: maybe +1 for any which is just empty tree ""
 	r.methodMatch = MethodMatch
 	r.IParty = NewParty("/", r.station, nil)
+	r.errorPool = sync.Pool{New: func() interface{} {
+		return &Context{station: station}
+	}}
 	return r
 }
 
@@ -194,10 +200,10 @@ func (r *Router) ServeRequest(reqCtx *fasthttp.RequestCtx) {
 	}
 	//not found, get the first's pool and use that  to send a custom http error(if setted)
 
-	ctx := r.garden.first.pool.Get().(*Context)
+	ctx := r.errorPool.Get().(*Context)
 	ctx.Reset(reqCtx)
 	ctx.NotFound()
-	r.garden.first.pool.Put(ctx)
+	r.errorPool.Put(ctx)
 
 }
 
@@ -238,9 +244,9 @@ func (r *RouterDomain) ServeRequest(reqCtx *fasthttp.RequestCtx) {
 		tree = tree.next
 	}
 	//not found, get the first's pool and use that  to send a custom http error(if setted)
-	ctx := r.garden.first.pool.Get().(*Context)
+	ctx := r.errorPool.Get().(*Context)
 	ctx.Reset(reqCtx)
 	ctx.NotFound()
-	r.garden.first.pool.Put(ctx)
+	r.errorPool.Put(ctx)
 
 }

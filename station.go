@@ -28,6 +28,7 @@
 package iris
 
 import (
+	"html/template"
 	"net/http/pprof"
 	"os"
 )
@@ -44,12 +45,16 @@ type (
 		Plugin(IPlugin) error
 		GetPluginContainer() IPluginContainer
 		GetTemplates() *HTMLTemplates
+		TemplateFuncs(template.FuncMap) *template.Template
 		Templates(pathGlob string) error
 		//yes we need that again if no .Listen called and you use other server, you have to call .Build() before
 		OptimusPrime()
 		HasOptimized() bool
 		Logger() *Logger
 		SetMaxRequestBodySize(int)
+		Listen(fullHostOrPort ...string) error
+		ListenTLS(fullAddress string, certFile, keyFile string) error
+		Close() error
 	}
 
 	// StationOptions is the struct which contains all Iris' settings/options
@@ -111,20 +116,6 @@ func newStation(options StationOptions) *Station {
 	// create & set the router
 	s.IRouter = NewRouter(s)
 
-	// set the debug profiling handlers if enabled
-	if options.Profile {
-		debugPath := options.ProfilePath
-		s.IRouter.Get(debugPath+"/", ToHandlerFunc(pprof.Index))
-		s.IRouter.Get(debugPath+"/cmdline", ToHandlerFunc(pprof.Cmdline))
-		s.IRouter.Get(debugPath+"/profile", ToHandlerFunc(pprof.Profile))
-		s.IRouter.Get(debugPath+"/symbol", ToHandlerFunc(pprof.Symbol))
-
-		s.IRouter.Get(debugPath+"/goroutine", ToHandlerFunc(pprof.Handler("goroutine")))
-		s.IRouter.Get(debugPath+"/heap", ToHandlerFunc(pprof.Handler("heap")))
-		s.IRouter.Get(debugPath+"/threadcreate", ToHandlerFunc(pprof.Handler("threadcreate")))
-		s.IRouter.Get(debugPath+"/pprof/block", ToHandlerFunc(pprof.Handler("block")))
-	}
-
 	//set the logger
 	s.logger = NewLogger(LoggerOutTerminal, "", 0)
 	s.logger.SetEnable(options.Log)
@@ -142,8 +133,16 @@ func (s Station) GetPluginContainer() IPluginContainer {
 }
 
 // GetTemplates returns the *template.Template registed to this station, if any
-func (s Station) GetTemplates() *HTMLTemplates {
+func (s *Station) GetTemplates() *HTMLTemplates {
 	return s.templates
+}
+
+// TemplateFuncs is alias for .GetTemplates().Templates.Funcs
+func (s *Station) TemplateFuncs(f template.FuncMap) *template.Template {
+	if !s.templates.loaded {
+		return nil
+	}
+	return s.templates.Templates.Funcs(f)
 }
 
 // Logger returns the station's logger
@@ -209,56 +208,68 @@ func (s *Station) HasOptimized() bool {
 	return s.optimized
 }
 
-// Listen starts the standalone http server
-// which listens to the fullHostOrPort parameter which as the form of
-// host:port or just port
-func (s *Station) Listen(fullHostOrPort ...string) (err error) {
+// openServer is internal method, open the server with specific options passed by the Listen and ListenTLS
+// TODO: move that to the server.go to a new func .Start()
+func (s *Station) openServer(opt ServerOptions) (err error) {
 	s.OptimusPrime()
-	opt := ServerOptions{ListeningAddr: ParseAddr(fullHostOrPort...)}
+
+	// set the debug profiling handlers if Profile enabled, before the server startup, not earlier
+	if s.options.Profile {
+		debugPath := s.options.ProfilePath
+		s.IRouter.Get(debugPath+"/", ToHandlerFunc(pprof.Index))
+		s.IRouter.Get(debugPath+"/cmdline", ToHandlerFunc(pprof.Cmdline))
+		s.IRouter.Get(debugPath+"/profile", ToHandlerFunc(pprof.Profile))
+		s.IRouter.Get(debugPath+"/symbol", ToHandlerFunc(pprof.Symbol))
+
+		s.IRouter.Get(debugPath+"/goroutine", ToHandlerFunc(pprof.Handler("goroutine")))
+		s.IRouter.Get(debugPath+"/heap", ToHandlerFunc(pprof.Handler("heap")))
+		s.IRouter.Get(debugPath+"/threadcreate", ToHandlerFunc(pprof.Handler("threadcreate")))
+		s.IRouter.Get(debugPath+"/pprof/block", ToHandlerFunc(pprof.Handler("block")))
+	}
+
 	server := NewServer(opt)
 	server.SetHandler(s.IRouter.ServeRequest)
 	s.Server = server
 	s.Server.MaxRequestBodySize = s.MaxRequestBodySize
 	s.pluginContainer.DoPreListen(s)
-	err = server.Listen()
-	if err == nil {
+
+	if err = s.Server.OpenServer(); err == nil {
 		s.pluginContainer.DoPostListen(s)
 		ch := make(chan os.Signal)
 		<-ch
 		s.Close()
 	}
-
 	return
 }
 
-// ListenTLS Starts a httpS/http2 server with certificates,
+// Listen starts the standalone http server
+// which listens to the fullHostOrPort parameter which as the form of
+// host:port or just port
+//
+// It returns an error you are responsible how to handle this
+// ex: log.Fatal(iris.Listen(":8080"))
+func (s *Station) Listen(fullHostOrPort ...string) error {
+	opt := ServerOptions{ListeningAddr: ParseAddr(fullHostOrPort...)}
+	return s.openServer(opt)
+}
+
+// ListenTLS Starts a https server with certificates,
 // if you use this method the requests of the form of 'http://' will fail
 // only https:// connections are allowed
 // which listens to the fullHostOrPort parameter which as the form of
 // host:port or just port
+//
+// It returns an error you are responsible how to handle this
+// ex: log.Fatal(iris.ListenTLS(":8080","yourfile.cert","yourfile.key"))
 func (s *Station) ListenTLS(fullAddress string, certFile, keyFile string) error {
-	s.OptimusPrime()
 	opt := ServerOptions{ListeningAddr: ParseAddr(fullAddress), CertFile: certFile, KeyFile: keyFile}
-	server := NewServer(opt)
-	server.SetHandler(s.IRouter.ServeRequest)
-	s.Server = server
-	s.Server.MaxRequestBodySize = s.MaxRequestBodySize
-	s.pluginContainer.DoPreListen(s)
-	err := server.ListenTLS()
-	if err == nil {
-		s.pluginContainer.DoPostListen(s)
-		ch := make(chan os.Signal)
-		<-ch
-		s.Close()
-	}
-
-	return err
+	return s.openServer(opt)
 }
 
 // Close is used to close the tcp listener from the server
-func (s *Station) Close() {
+func (s *Station) Close() error {
 	s.pluginContainer.DoPreClose(s)
-	s.Server.CloseServer()
+	return s.Server.CloseServer()
 }
 
 // Templates loads HTML templates

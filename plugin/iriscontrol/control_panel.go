@@ -51,7 +51,7 @@ func (i *irisControlPlugin) startControlPanel() {
 		return
 	}
 
-	i.server = iris.Custom(iris.StationOptions{Profile: false, PathCorrection: true})
+	i.server = iris.New()
 	i.server.Templates(installationPath + "templates/*")
 	i.setPluginsInfo()
 	i.setPanelRoutes()
@@ -71,7 +71,7 @@ func (i *irisControlPlugin) setPluginsInfo() {
 	plugins := i.pluginContainer.GetAll()
 	i.plugins = make([]PluginInfo, 0, len(plugins))
 	for _, plugin := range plugins {
-		i.plugins = append(i.plugins, PluginInfo{Name: plugin.GetName(), Description: plugin.GetDescription()})
+		i.plugins = append(i.plugins, PluginInfo{Name: i.pluginContainer.GetName(plugin), Description: i.pluginContainer.GetDescription(plugin)})
 	}
 }
 
