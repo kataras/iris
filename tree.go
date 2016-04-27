@@ -144,30 +144,29 @@ func (_tree *tree) serveReturn(reqCtx *fasthttp.RequestCtx, path string) bool {
 		reqPath := path
 		pathLen := len(reqPath)
 
-		//first of all checks if it's the index only slash /
-		if pathLen <= 1 {
-			reqPath = "/"
-			//check if the req path ends with slash
-		} else if reqPath[pathLen-1] == '/' {
-			reqPath = reqPath[:pathLen-1] //remove the last /
-		} else {
-			//it has path prefix, it doesn't ends with / and it hasn't be found, then just add the slash
-			reqPath = reqPath + "/"
-		}
+		if pathLen > 1 {
 
-		ctx.Request.URI().SetPath(reqPath)
-		urlToRedirect := BytesToString(ctx.Request.RequestURI())
+			if reqPath[pathLen-1] == '/' {
+				reqPath = reqPath[:pathLen-1] //remove the last /
+			} else {
+				//it has path prefix, it doesn't ends with / and it hasn't be found, then just add the slash
+				reqPath = reqPath + "/"
+			}
 
-		ctx.Redirect(urlToRedirect, 301) //	StatusMovedPermanently
-		// RFC2616 recommends that a short note "SHOULD" be included in the
-		// response because older user agents may not understand 301/307.
-		// Shouldn't send the response for POST or HEAD; that leaves GET.
-		if _tree.method == HTTPMethods.Get {
-			note := "<a href=\"" + htmlEscape(urlToRedirect) + "\">Moved Permanently</a>.\n"
-			ctx.Write(note)
+			ctx.Request.URI().SetPath(reqPath)
+			urlToRedirect := BytesToString(ctx.Request.RequestURI())
+
+			ctx.Redirect(urlToRedirect, 301) //	StatusMovedPermanently
+			// RFC2616 recommends that a short note "SHOULD" be included in the
+			// response because older user agents may not understand 301/307.
+			// Shouldn't send the response for POST or HEAD; that leaves GET.
+			if _tree.method == HTTPMethods.Get {
+				note := "<a href=\"" + htmlEscape(urlToRedirect) + "\">Moved Permanently</a>.\n"
+				ctx.Write(note)
+			}
+			_tree.pool.Put(ctx)
+			return true
 		}
-		_tree.pool.Put(ctx)
-		return false
 	}
 
 	_tree.pool.Put(ctx)
@@ -190,31 +189,29 @@ func (_tree *tree) serve(reqCtx *fasthttp.RequestCtx) {
 
 		reqPath := string(ctx.Path()) // we allocate it because path maybe is with the domain/host + path, with this we made the domain prefix routes works with path correction also
 		pathLen := len(reqPath)
+		if pathLen > 1 {
 
-		//first of all checks if it's the index only slash /
-		if pathLen <= 1 {
-			reqPath = "/"
-			//check if the req path ends with slash
-		} else if reqPath[pathLen-1] == '/' {
-			reqPath = reqPath[:pathLen-1] //remove the last /
-		} else {
-			//it has path prefix, it doesn't ends with / and it hasn't be found, then just add the slash
-			reqPath = reqPath + "/"
+			if reqPath[pathLen-1] == '/' {
+				reqPath = reqPath[:pathLen-1] //remove the last /
+			} else {
+				//it has path prefix, it doesn't ends with / and it hasn't be found, then just add the slash
+				reqPath = reqPath + "/"
+			}
+
+			ctx.Request.URI().SetPath(reqPath)
+			urlToRedirect := BytesToString(ctx.Request.RequestURI())
+
+			ctx.Redirect(urlToRedirect, 301) //	StatusMovedPermanently
+			// RFC2616 recommends that a short note "SHOULD" be included in the
+			// response because older user agents may not understand 301/307.
+			// Shouldn't send the response for POST or HEAD; that leaves GET.
+			if _tree.method == HTTPMethods.Get {
+				note := "<a href=\"" + htmlEscape(urlToRedirect) + "\">Moved Permanently</a>.\n"
+				ctx.Write(note)
+			}
+			_tree.pool.Put(ctx)
+			return
 		}
-
-		ctx.Request.URI().SetPath(reqPath)
-		urlToRedirect := BytesToString(ctx.Request.RequestURI())
-
-		ctx.Redirect(urlToRedirect, 301) //	StatusMovedPermanently
-		// RFC2616 recommends that a short note "SHOULD" be included in the
-		// response because older user agents may not understand 301/307.
-		// Shouldn't send the response for POST or HEAD; that leaves GET.
-		if _tree.method == HTTPMethods.Get {
-			note := "<a href=\"" + htmlEscape(urlToRedirect) + "\">Moved Permanently</a>.\n"
-			ctx.Write(note)
-		}
-		_tree.pool.Put(ctx)
-		return
 	}
 
 	ctx.NotFound()
