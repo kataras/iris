@@ -197,7 +197,6 @@ func (ctx *Context) ExecuteTemplate(tmpl *template.Template, pageContext interfa
 func (ctx *Context) RenderFile(file string, pageContext interface{}) error {
 	ctx.RequestCtx.SetContentType(ContentHTML + " ;charset=" + Charset)
 	return ErrTemplateExecute.With(ctx.station.GetTemplates().Templates.ExecuteTemplate(ctx.RequestCtx.Response.BodyWriter(), file, pageContext))
-
 }
 
 // ServeContent serves content, headers are autoset

@@ -116,6 +116,9 @@ func newStation(options StationOptions) *Station {
 	//set the logger
 	s.logger = NewLogger(LoggerOutTerminal, "", 0)
 	s.logger.SetEnable(options.Log)
+
+	//set the html templates engine
+	s.templates = NewHTMLTemplates(s.logger)
 	return s
 }
 
@@ -140,6 +143,11 @@ func (s *Station) TemplateFuncs(f template.FuncMap) *template.Template {
 		return nil
 	}
 	return s.templates.Templates.Funcs(f)
+}
+
+// Template delims sets the custom delims before the template loading/parsing process
+func (s *Station) TemplateDelims(left string, right string) {
+	s.templates.Delims(left, right)
 }
 
 // Logger returns the station's logger
@@ -268,10 +276,6 @@ func (s *Station) Close() error {
 //
 // pathGlob the local directory, it can be a pattern (string)
 func (s *Station) Templates(pathGlob string) error {
-	if s.templates == nil {
-		s.templates = NewHTMLTemplates(s.logger)
-	}
-
 	return s.templates.Load(pathGlob)
 }
 

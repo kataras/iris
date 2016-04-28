@@ -69,20 +69,39 @@ type (
 	// HTMLTemplates are used to cache the templates and watch for file changes on these
 	HTMLTemplates struct {
 		// Templates contains all the html templates it's type of *template.Template from standar API
-		Templates *template.Template
-		rootPath  string
-		loaded    bool
-		ext       string
-		directory string
-		pattern   string
-		logger    *Logger
-		mu        *sync.Mutex
+		Templates   *template.Template
+		rootPath    string
+		loaded      bool
+		ext         string
+		directory   string
+		pattern     string
+		delimsLeft  string
+		delimsRight string
+		logger      *Logger
+		mu          *sync.Mutex
 	}
 )
 
 // NewHTMLTemplates creates and returns a new HTMLTemplates object, using a logger
 func NewHTMLTemplates(logger *Logger) *HTMLTemplates {
 	return &HTMLTemplates{logger: logger, mu: &sync.Mutex{}}
+}
+
+// Delims set custom Delims before the Load
+func (html *HTMLTemplates) Delims(left string, right string) {
+	html.delimsLeft = left
+	html.delimsRight = right
+}
+
+// inline method for parseglob, just tries to parse the templates
+func (html *HTMLTemplates) parseGlob(globPathExp string) (template *template.Template, err error) {
+	if html.delimsLeft != "" && html.delimsRight != "" {
+		template, err = template.New("").Delims(html.delimsLeft, html.delimsRight).ParseGlob(globPathExp)
+	} else {
+		template, err = template.ParseGlob(globPathExp)
+	}
+
+	return template, err
 }
 
 // Load loads and saves/cache the templates
@@ -98,7 +117,8 @@ func (html *HTMLTemplates) Load(globPathExp string) error {
 			globPathExp += ".html" // ./* -> ./*.html
 		}
 
-		html.Templates, err = template.ParseGlob(globPathExp)
+		html.Templates, err = html.parseGlob(globPathExp)
+
 		if err != nil {
 			//if err then try to load the same path but with the current directory prefix
 			// and if not success again then just panic with the first error
@@ -106,7 +126,7 @@ func (html *HTMLTemplates) Load(globPathExp string) error {
 			if cerr != nil {
 				return ErrTemplateParse.With(err)
 			}
-			html.Templates, err = template.ParseGlob(pwd + globPathExp)
+			html.Templates, err = html.parseGlob(pwd + globPathExp)
 			if err != nil {
 				return ErrTemplateParse.With(err)
 			}
@@ -115,8 +135,9 @@ func (html *HTMLTemplates) Load(globPathExp string) error {
 		} else {
 			rootPath = globPathExp
 		}
-
-		html.directory = strings.Replace(rootPath[0:strings.LastIndexByte(rootPath, SlashByte)], "/", string(os.PathSeparator), -1)
+		if strings.Contains(html.directory, "/") {
+			html.directory = strings.Replace(rootPath[0:strings.LastIndexByte(rootPath, SlashByte)], "/", string(os.PathSeparator), -1)
+		}
 		html.ext = rootPath[strings.IndexByte(rootPath, MatchEverythingByte):]
 		html.startWatch(html.directory)
 		html.loaded = true

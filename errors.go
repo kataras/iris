@@ -74,7 +74,7 @@ var (
 	// ErrTemplateWatching returns an error with message: 'While watching templates: +specific error'
 	ErrTemplateWatching = NewError("While watching templates: %s")
 	// ErrTemplateExecute returns an error with message:'Unable to execute a template. Trace: +specific error'
-	ErrTemplateExecute = NewError("Unable to execute a template. Trace: %s")
+	ErrTemplateExecute = NewError("Unable to execute a template. Trace: %q")
 
 	// Plugin
 
