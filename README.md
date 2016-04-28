@@ -323,7 +323,10 @@ iris.Listen(":8080")
 
 ```
 
-Uses one of build'n Iris [middlewares](https://github.com/kataras/iris/tree/development/middleware), view practical [examples here](https://github.com/iris-contrib/examples)
+> Note that middlewares must come before route declaration.
+
+
+Make use one of build'n Iris [middlewares](https://github.com/kataras/iris/tree/development/middleware), view practical [examples here](https://github.com/iris-contrib/examples)
 
 ```go
 package main
@@ -337,7 +340,7 @@ type Page struct {
 	Title string
 }
 
-iris.Templates("./yourpath/templates/*")
+iris.Templates("./yourpath/templates/*.html")
 
 iris.Use(logger.Logger())
 
@@ -345,7 +348,7 @@ iris.Get("/", func(c *iris.Context) {
 		c.RenderFile("index.html", Page{"My Index Title"})
 })
 
-iris.Listen(":8080") // .Listen() listens to TCP port 8080 by default
+iris.Listen(":8080")
 ```
 
 ## API
