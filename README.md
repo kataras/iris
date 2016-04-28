@@ -26,7 +26,7 @@ Start using Iris Web Framework today. Iris is easy-to-learn while providing robu
 * **Bindings**: Need a fast way to convert data from body or form into an object? Take a look [here](https://github.com/iris-contrib/examples/tree/master/bind_form_simple)
 * **Streaming**: You have only one option when streaming comes in game[*](#streaming)
 * **Middlewares**: Create and/or use global or per route middlewares with the Iris' simplicity[*](#middlewares)
-* **Sessions**:  Sessions and secure cookies to provide a secure way to authenticate your clients/users [*](https://github.com/kataras/iris/tree/development/sessions)
+* **Sessions**:  Sessions provides a secure way to authenticate your clients/users [*](https://github.com/kataras/iris/tree/development/sessions)
 * **Realtime**: Realtime is fun when you use websockets[*](https://github.com/kataras/iris/tree/development/websocket)
 * **Context**: [Context](#context) is used for storing route params, storing handlers, sharing variables between middlewares, render rich content, send file and much more[*](#context)
 * **Plugins**: You can build your own plugins to  inject the Iris framework[*](#plugins)
@@ -254,6 +254,28 @@ iris.Delete("/letsdelete", iris.ToHandlerFunc(nativehandler{}))
 
 ## Middlewares
 
+**Quick view**
+
+```go
+// First point on the static files
+iris.Static("/assets/", "./public/assets/", 1)
+
+// Then declare which midleware to use (custom or not)
+iris.Use(myMiddleware)
+iris.UseFunc(myFunc)
+
+// Now declare routes
+iris.Get("/myroute", func(c *iris.Context) {
+    // do stuff
+})
+iris.Get("/secondroute", myMiddlewareFunc(), myRouteHandlerfunc)
+
+// Now run our server
+iris.Listen(":8080")
+
+```
+
+
 Middlewares in Iris are not complicated, imagine them as simple Handlers.
 They should implement the Handler interface as well:
 
@@ -323,7 +345,10 @@ iris.Listen(":8080")
 
 ```
 
-Uses one of build'n Iris [middlewares](https://github.com/kataras/iris/tree/development/middleware), view practical [examples here](https://github.com/iris-contrib/examples)
+> Note that middlewares must come before route declaration.
+
+
+Make use one of build'n Iris [middlewares](https://github.com/kataras/iris/tree/development/middleware), view practical [examples here](https://github.com/iris-contrib/examples)
 
 ```go
 package main
@@ -337,7 +362,7 @@ type Page struct {
 	Title string
 }
 
-iris.Templates("./yourpath/templates/*")
+iris.Templates("./yourpath/templates/*.html")
 
 iris.Use(logger.Logger())
 
@@ -345,7 +370,7 @@ iris.Get("/", func(c *iris.Context) {
 		c.RenderFile("index.html", Page{"My Index Title"})
 })
 
-iris.Listen(":8080") // .Listen() listens to TCP port 8080 by default
+iris.Listen(":8080")
 ```
 
 ## API
@@ -844,7 +869,6 @@ if you want to help please do so (pr).
 
 | Middleware | Author | Description | Tested |
 | -----------|--------|-------------|--------|
-| [sessions](https://github.com/kataras/iris/tree/development/sessions) | [Ported to Iris](https://github.com/kataras/iris/tree/development/sessions) | Session Management | [Yes](https://github.com/kataras/iris/tree/development/sessions) |
 | [Graceful](https://github.com/iris-contrib/graceful) | [Ported to iris](https://github.com/iris-contrib/graceful) | Graceful HTTP Shutdown | [Yes](https://github.com/iris-contrib/examples/tree/master/graceful) |
 | [gzip](https://github.com/kataras/iris/tree/development/middleware/gzip/) | [Iris](https://github.com/kataras/iris) | GZIP response compression | [Yes](https://github.com/kataras/iris/tree/development/middleware/gzip/README.md) |
 | [RestGate](https://github.com/pjebs/restgate) | [Prasanga Siripala](https://github.com/pjebs) | Secure authentication for REST API endpoints | No |
@@ -891,6 +915,7 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 - [x] [Create a mechanism that scan for Typescript files, compile them on server startup and serve them.](https://github.com/kataras/iris/tree/development/plugin/typescript)
 - [x] Simplify the plugin mechanism.
 - [ ] Implement an Iris updater and add the specific entry(bool) on StationOptions.
+- [x] Re-Implement the sessions from zero.
 
 ## Articles
 
@@ -899,7 +924,7 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 
 ## Versioning
 
-Current: **v1.1.5**
+Current: **v1.2.1**
 
 Read more about Semantic Versioning 2.0.0
 

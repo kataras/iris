@@ -1430,7 +1430,7 @@ func TestRequestCtxHijack(t *testing.T) {
 func TestRequestCtxInit(t *testing.T) {
 	var ctx RequestCtx
 	var logger customLogger
-	globalCtxID = 0x123456
+	globalConnID = 0x123456
 	ctx.Init(&ctx.Request, zeroTCPAddr, &logger)
 	ip := ctx.RemoteIP()
 	if !ip.IsUnspecified() {
@@ -1979,7 +1979,7 @@ func TestServerLogger(t *testing.T) {
 		},
 	}
 
-	globalCtxID = 0
+	globalConnID = 0
 	ch := make(chan error)
 	go func() {
 		ch <- s.ServeConn(rwx)

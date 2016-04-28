@@ -25,7 +25,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-//Package iris v1.1.5
+//Package iris v1.2.1
 package iris
 
 const (
@@ -69,7 +69,7 @@ const (
 	// LoggerIrisPrefix is the prefix of the logger '[IRIS] '
 	LoggerIrisPrefix = "[IRIS] "
 
-	// DefaultServerAddr the default server addr if nothing passed
+	// DefaultServerAddr the default server addr
 	DefaultServerAddr = ":8080"
 )
 

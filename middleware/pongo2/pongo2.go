@@ -42,11 +42,19 @@ func (p *pongo2Middleware) Serve(ctx *iris.Context) {
 	if templateName != "" {
 		templateData := ctx.Get("data")
 		if templateData != nil {
+
 			var template = pongo.Must(pongo.FromFile(templateName))
-			err := template.ExecuteWriter(getPongoContext(templateData), ctx.Response.BodyWriter())
+			//	err := template.ExecuteWriter(getPongoContext(templateData), ctx.RequestCtx.Response.BodyWriter())
+			// same thing here:
+			contents, err := template.Execute(getPongoContext(templateData))
 			if err != nil {
 				ctx.WriteText(500, err.Error())
+				return
 			}
+			// set the content to html
+			ctx.SetContentType([]string{iris.ContentHTML + " ;charset=" + iris.Charset})
+			ctx.SetBodyString(contents)
+
 		}
 
 	}

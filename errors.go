@@ -74,7 +74,7 @@ var (
 	// ErrTemplateWatching returns an error with message: 'While watching templates: +specific error'
 	ErrTemplateWatching = NewError("While watching templates: %s")
 	// ErrTemplateExecute returns an error with message:'Unable to execute a template. Trace: +specific error'
-	ErrTemplateExecute = NewError("Unable to execute a template. Trace: %s")
+	ErrTemplateExecute = NewError("Unable to execute a template. Trace: %q")
 
 	// Plugin
 
@@ -152,6 +152,14 @@ func (e *Error) Return() error {
 func (e *Error) Panic() {
 	_, fn, line, _ := runtime.Caller(1)
 	errMsg := e.Error()
+	errMsg = "\nCaller was: " + fmt.Sprintf("%s:%d", fn, line)
+	panic(errMsg)
+}
+
+// Panicf output the formatted message and after panics
+func (e *Error) Panicf(args ...interface{}) {
+	_, fn, line, _ := runtime.Caller(1)
+	errMsg := e.Format(args...).Error()
 	errMsg = "\nCaller was: " + fmt.Sprintf("%s:%d", fn, line)
 	panic(errMsg)
 }

@@ -182,8 +182,10 @@ func (r *Router) OnPanic(handlerFunc HandlerFunc) {
 
 // Static registers a route which serves a system directory
 func (r *Router) Static(requestPath string, systemPath string, stripSlashes int) {
-	handler := ToHandlerFastHTTP(fasthttp.FSHandler(systemPath, stripSlashes))
-	r.Get(requestPath+"/*filepath", handler.Serve)
+	h := fasthttp.FSHandler(systemPath, stripSlashes)
+	r.Get(requestPath+"/*filepath", func(c *Context) {
+		h(c.RequestCtx)
+	})
 }
 
 // ServeRequest finds and serves a route by it's request context
@@ -191,20 +193,29 @@ func (r *Router) Static(requestPath string, systemPath string, stripSlashes int)
 func (r *Router) ServeRequest(reqCtx *fasthttp.RequestCtx) {
 	method := BytesToString(reqCtx.Method())
 	tree := r.garden.first
+	path := BytesToString(reqCtx.Path())
 	for tree != nil {
 		if r.methodMatch(tree.method, method) {
-			tree.serve(reqCtx)
+			if !tree.serve(reqCtx, path) {
+				r.notFoundCtx(reqCtx)
+			}
 			return
 		}
 		tree = tree.next
 	}
 	//not found, get the first's pool and use that  to send a custom http error(if setted)
 
+	r.notFoundCtx(reqCtx)
+
+}
+
+// internal method, it justs takes the context from pool ( in order to have the custom errors available) and procedure a Not Found 404 error
+// this is being called when no route was found used on the ServeRequest.
+func (r *Router) notFoundCtx(reqCtx *fasthttp.RequestCtx) {
 	ctx := r.errorPool.Get().(*Context)
 	ctx.Reset(reqCtx)
 	ctx.NotFound()
 	r.errorPool.Put(ctx)
-
 }
 
 // RouterDomain same as Router but it's override the ServeHTTP and processPath.
@@ -237,16 +248,12 @@ func (r *RouterDomain) ServeRequest(reqCtx *fasthttp.RequestCtx) {
 			path = append(reqCtx.Host(), reqCtx.Path()...)
 		}
 		if r.methodMatch(tree.method, method) {
-			if tree.serveReturn(reqCtx, BytesToString(path)) {
+			if tree.serve(reqCtx, BytesToString(path)) {
 				return
 			}
 		}
 		tree = tree.next
 	}
 	//not found, get the first's pool and use that  to send a custom http error(if setted)
-	ctx := r.errorPool.Get().(*Context)
-	ctx.Reset(reqCtx)
-	ctx.NotFound()
-	r.errorPool.Put(ctx)
-
+	r.notFoundCtx(reqCtx)
 }

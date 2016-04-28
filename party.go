@@ -158,10 +158,6 @@ func (p *GardenParty) Handle(method string, registedPath string, handlers ...Han
 	p.station.IRouter.getGarden().Plant(p.station, route)
 
 	p.station.GetPluginContainer().DoPostHandle(route)
-
-	//force OptimusPrime each time a route added
-	p.station.OptimusPrime()
-
 }
 
 // HandleFunc registers and returns a route with a method string, path string and a handler
@@ -297,20 +293,4 @@ func (p *GardenParty) Any(path string, handlersFn ...HandlerFunc) {
 		p.HandleFunc(k, path, handlersFn...)
 	}
 
-}
-
-// After last changes ( 9 April 2016) websockets are not supported, yet.
-// Ws registers a websocket route
-//func (p *GardenParty) Ws(path string, handler Handler) {
-//	p.Handle("", path, handler)
-//}
-
-// Use pass the middleware here
-// it overrides the MiddlewareSupporter's Use only in order to be able to call forceOptimusPrime
-func (p *GardenParty) Use(handlers ...Handler) {
-	//force OptimusPrime each time a route added, this is not nessecery, it runs only once
-	//but many developers maybe use external server and FORGET to use the iris.Serve() and use just the 'iris'
-	//so
-	p.station.OptimusPrime()
-	p.MiddlewareSupporter.Use(handlers...)
 }

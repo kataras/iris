@@ -193,17 +193,6 @@ func OnPanic(handlerFunc HandlerFunc) {
 	DefaultStation.OnPanic(handlerFunc)
 }
 
-//
-// Templates sets the templates glob path for the web app
-func Templates(pathGlob string) error {
-	return DefaultStation.Templates(pathGlob)
-}
-
-// OptimusPrime , YOU MUST RUN IT ONLY IF YOU DON'T USE iris.Listen or iris.Serve() method
-func OptimusPrime() {
-	DefaultStation.OptimusPrime()
-}
-
 //SetMaxRequestBodySize sets the maximum request body size.
 //
 // The server rejects requests with bodies exceeding this limit.
@@ -211,6 +200,12 @@ func OptimusPrime() {
 // By default request body size is unlimited.
 func SetMaxRequestBodySize(size int) {
 	DefaultStation.SetMaxRequestBodySize(size)
+}
+
+// Templates sets the templates glob path for the web app
+// panics on error
+func Templates(pathGlob string) {
+	DefaultStation.Templates(pathGlob)
 }
 
 // GetTemplates returns the *template.Template registed to this station, if any
@@ -221,4 +216,9 @@ func GetTemplates() *HTMLTemplates {
 // TemplateFuncs is alias for .GetTemplates().Templates.Funcs
 func TemplateFuncs(f template.FuncMap) *template.Template {
 	return DefaultStation.TemplateFuncs(f)
+}
+
+// Template delims sets the custom delims before the template loading/parsing process
+func TemplateDelims(left string, right string) {
+	DefaultStation.TemplateDelims(left, right)
 }

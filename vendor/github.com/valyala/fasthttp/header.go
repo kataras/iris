@@ -929,21 +929,53 @@ func (h *ResponseHeader) SetCookie(cookie *Cookie) {
 
 // SetCookie sets 'key: value' cookies.
 func (h *RequestHeader) SetCookie(key, value string) {
-	h.bufKV.key = append(h.bufKV.key[:0], key...)
-	h.SetCookieBytesK(h.bufKV.key, value)
+	h.parseRawHeaders()
+	h.collectCookies()
+	h.cookies = setArg(h.cookies, key, value)
 }
 
 // SetCookieBytesK sets 'key: value' cookies.
 func (h *RequestHeader) SetCookieBytesK(key []byte, value string) {
-	h.bufKV.value = append(h.bufKV.value[:0], value...)
-	h.SetCookieBytesKV(key, h.bufKV.value)
+	h.SetCookie(b2s(key), value)
 }
 
 // SetCookieBytesKV sets 'key: value' cookies.
 func (h *RequestHeader) SetCookieBytesKV(key, value []byte) {
+	h.SetCookie(b2s(key), b2s(value))
+}
+
+// DelCookie removes cookie under the given key.
+func (h *ResponseHeader) DelCookie(key string) {
+	h.cookies = delAllArgs(h.cookies, key)
+}
+
+// DelCookieBytes removes cookie under the given key.
+func (h *ResponseHeader) DelCookieBytes(key []byte) {
+	h.DelCookie(b2s(key))
+}
+
+// DelCookie removes cookie under the given key.
+func (h *RequestHeader) DelCookie(key string) {
 	h.parseRawHeaders()
 	h.collectCookies()
-	h.cookies = setArgBytes(h.cookies, key, value)
+	h.cookies = delAllArgs(h.cookies, key)
+}
+
+// DelCookieBytes removes cookie under the given key.
+func (h *RequestHeader) DelCookieBytes(key []byte) {
+	h.DelCookie(b2s(key))
+}
+
+// DelAllCookies removes all the cookies from response headers.
+func (h *ResponseHeader) DelAllCookies() {
+	h.cookies = h.cookies[:0]
+}
+
+// DelAllCookies removes all the cookies from request headers.
+func (h *RequestHeader) DelAllCookies() {
+	h.parseRawHeaders()
+	h.collectCookies()
+	h.cookies = h.cookies[:0]
 }
 
 // Add adds the given 'key: value' header.

@@ -46,9 +46,8 @@ type (
 		GetPluginContainer() IPluginContainer
 		GetTemplates() *HTMLTemplates
 		TemplateFuncs(template.FuncMap) *template.Template
-		Templates(pathGlob string) error
-		//yes we need that again if no .Listen called and you use other server, you have to call .Build() before
-		OptimusPrime()
+		Templates(pathGlob string)
+		optimusPrime()
 		HasOptimized() bool
 		Logger() *Logger
 		SetMaxRequestBodySize(int)
@@ -94,10 +93,8 @@ type (
 		templates       *HTMLTemplates
 		options         StationOptions
 		pluginContainer *PluginContainer
-		//it's true when hosts(domain) and cors middleware has optimized or when Listen occurred
-		optimized      bool
-		optimizedHosts bool
-		optimizedCors  bool
+		//it's true when listen->optimusPrime has already called once
+		optimized bool
 
 		logger *Logger
 		// hold the max size in order to set it on server listen
@@ -119,6 +116,9 @@ func newStation(options StationOptions) *Station {
 	//set the logger
 	s.logger = NewLogger(LoggerOutTerminal, "", 0)
 	s.logger.SetEnable(options.Log)
+
+	//set the html templates engine
+	s.templates = NewHTMLTemplates(s.logger)
 	return s
 }
 
@@ -130,6 +130,17 @@ func (s *Station) Plugin(plugin IPlugin) error {
 // GetPluginContainer returns the pluginContainer
 func (s Station) GetPluginContainer() IPluginContainer {
 	return s.pluginContainer
+}
+
+// Templates loads HTML templates
+// receives one parameter
+//
+// pathGlob the local directory, it can be a pattern (string)
+// panics on error
+func (s *Station) Templates(pathGlob string) {
+	if err := s.templates.Load(pathGlob); err != nil {
+		panic(err)
+	}
 }
 
 // GetTemplates returns the *template.Template registed to this station, if any
@@ -145,61 +156,57 @@ func (s *Station) TemplateFuncs(f template.FuncMap) *template.Template {
 	return s.templates.Templates.Funcs(f)
 }
 
+// Template delims sets the custom delims before the template loading/parsing process
+func (s *Station) TemplateDelims(left string, right string) {
+	s.templates.Delims(left, right)
+}
+
 // Logger returns the station's logger
 func (s *Station) Logger() *Logger {
 	return s.logger
 }
 
-// OptimusPrime make the best last optimizations to make iris the faster framework out there
+// optimusPrime make the best last optimizations to make iris the faster framework out there
 // This function is called automatically on .Listen, and all Router's Handle functions
-func (s *Station) OptimusPrime() {
+func (s *Station) optimusPrime() {
 	if s.optimized {
 		return
 	}
 
-	if !s.optimizedCors {
-		//check if any route has cors setted to true
-		routerHasCors := func() (has bool) {
-			s.IRouter.getGarden().visitAll(func(i int, tree *tree) {
-				if tree.cors {
-					has = true
-				}
-			})
-			return
-		}()
-
-		if routerHasCors {
-			s.IRouter.setMethodMatch(CorsMethodMatch)
-			s.optimizedCors = true
-		}
-
-	}
-	if !s.optimizedHosts {
-		// check if any route has subdomains
-		routerHasHosts := func() (has bool) {
-			s.IRouter.getGarden().visitAll(func(i int, tree *tree) {
-				if tree.hosts {
-					has = true
-				}
-			})
-			return
-		}()
-
-		// For performance only,in order to not check at runtime for hosts and subdomains, I think it's better to do this:
-		if routerHasHosts {
-			switch s.IRouter.getType() {
-			case Normal:
-				s.IRouter = NewRouterDomain(s.IRouter.(*Router))
-				break
+	//check if any route has cors setted to true
+	routerHasCors := func() (has bool) {
+		s.IRouter.getGarden().visitAll(func(i int, tree *tree) {
+			if tree.cors {
+				has = true
 			}
-			s.optimizedHosts = true
+		})
+		return
+	}()
+
+	if routerHasCors {
+		s.IRouter.setMethodMatch(CorsMethodMatch)
+	}
+
+	// check if any route has subdomains
+	routerHasHosts := func() (has bool) {
+		s.IRouter.getGarden().visitAll(func(i int, tree *tree) {
+			if tree.hosts {
+				has = true
+			}
+		})
+		return
+	}()
+
+	// For performance only,in order to not check at runtime for hosts and subdomains, I think it's better to do this:
+	if routerHasHosts {
+		switch s.IRouter.getType() {
+		case Normal:
+			s.IRouter = NewRouterDomain(s.IRouter.(*Router))
+			break
 		}
-
 	}
 
-	if s.optimizedCors && s.optimizedHosts {
-		s.optimized = true
-	}
+	s.optimized = true
 
 }
 
@@ -208,23 +215,26 @@ func (s *Station) HasOptimized() bool {
 	return s.optimized
 }
 
+// initPprof set the routes for web pprof, called from the openServer
+func (s *Station) initPprof() {
+	debugPath := s.options.ProfilePath
+	s.IRouter.Get(debugPath+"/", ToHandlerFunc(pprof.Index))
+	s.IRouter.Get(debugPath+"/cmdline", ToHandlerFunc(pprof.Cmdline))
+	s.IRouter.Get(debugPath+"/profile", ToHandlerFunc(pprof.Profile))
+	s.IRouter.Get(debugPath+"/symbol", ToHandlerFunc(pprof.Symbol))
+
+	s.IRouter.Get(debugPath+"/goroutine", ToHandlerFunc(pprof.Handler("goroutine")))
+	s.IRouter.Get(debugPath+"/heap", ToHandlerFunc(pprof.Handler("heap")))
+	s.IRouter.Get(debugPath+"/threadcreate", ToHandlerFunc(pprof.Handler("threadcreate")))
+	s.IRouter.Get(debugPath+"/pprof/block", ToHandlerFunc(pprof.Handler("block")))
+}
+
 // openServer is internal method, open the server with specific options passed by the Listen and ListenTLS
-// TODO: move that to the server.go to a new func .Start()
 func (s *Station) openServer(opt ServerOptions) (err error) {
-	s.OptimusPrime()
-
+	s.optimusPrime()
 	// set the debug profiling handlers if Profile enabled, before the server startup, not earlier
-	if s.options.Profile {
-		debugPath := s.options.ProfilePath
-		s.IRouter.Get(debugPath+"/", ToHandlerFunc(pprof.Index))
-		s.IRouter.Get(debugPath+"/cmdline", ToHandlerFunc(pprof.Cmdline))
-		s.IRouter.Get(debugPath+"/profile", ToHandlerFunc(pprof.Profile))
-		s.IRouter.Get(debugPath+"/symbol", ToHandlerFunc(pprof.Symbol))
-
-		s.IRouter.Get(debugPath+"/goroutine", ToHandlerFunc(pprof.Handler("goroutine")))
-		s.IRouter.Get(debugPath+"/heap", ToHandlerFunc(pprof.Handler("heap")))
-		s.IRouter.Get(debugPath+"/threadcreate", ToHandlerFunc(pprof.Handler("threadcreate")))
-		s.IRouter.Get(debugPath+"/pprof/block", ToHandlerFunc(pprof.Handler("block")))
+	if s.options.Profile && s.options.ProfilePath != "" {
+		s.initPprof()
 	}
 
 	server := NewServer(opt)
@@ -270,18 +280,6 @@ func (s *Station) ListenTLS(fullAddress string, certFile, keyFile string) error 
 func (s *Station) Close() error {
 	s.pluginContainer.DoPreClose(s)
 	return s.Server.CloseServer()
-}
-
-// Templates loads HTML templates
-// receives one parameter
-//
-// pathGlob the local directory, it can be a pattern (string)
-func (s *Station) Templates(pathGlob string) error {
-	if s.templates == nil {
-		s.templates = NewHTMLTemplates(s.logger)
-	}
-
-	return s.templates.Load(pathGlob)
 }
 
 //SetMaxRequestBodySize sets the maximum request body size.

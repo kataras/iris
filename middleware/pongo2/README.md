@@ -95,3 +95,23 @@ func main() {
 
 
 ```
+
+
+## Using Static files with pongo2
+
+
+```go
+//...
+iris.Static("/img", "./public/img", 1)
+iris.Static("/js", "./public/js", 1)
+iris.Static("/css", "./public/css", 1)
+
+iris.Use(pongo2.Pongo2()) //after this
+//...
+```
+
+and on the template file add a style this way:
+
+```html
+<link rel="stylesheet" type="text/css" href="./css/yourstyle.css">
+```

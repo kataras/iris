@@ -31,10 +31,15 @@ import (
 
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/sessions"
+	_ "github.com/kataras/iris/sessions/providers/memory"
+	"time"
 )
 
-var store = sessions.NewCookieStore([]byte(iris.RandomString(10)))
-var panelSessions = sessions.New("user_sessions", store)
+var panelSessions *sessions.Manager
+
+func init() {
+	panelSessions = sessions.New("memory", "irisControlPanel$", time.Duration(time.Minute)*60)
+}
 
 type user struct {
 	username string
@@ -59,13 +64,7 @@ func newUserAuth(usersMap map[string]string) *userAuth {
 }
 
 func (u *userAuth) login(ctx *iris.Context) {
-	session, err := panelSessions.Get(ctx)
-	if err != nil {
-		println("\nerror on session: ", err.Error())
-		//re redirect to the login
-		ctx.Write(err.Error())
-		return
-	}
+	session := panelSessions.Start(ctx)
 
 	username := ctx.PostFormValue("username")
 	password := ctx.PostFormValue("password")
@@ -74,7 +73,6 @@ func (u *userAuth) login(ctx *iris.Context) {
 		if authenticatedUser.username == username && authenticatedUser.password == password {
 			session.Set("username", username)
 			session.Set("password", password)
-			session.Save(ctx)
 			ctx.Write("success")
 			return
 		}
@@ -84,14 +82,9 @@ func (u *userAuth) login(ctx *iris.Context) {
 }
 
 func (u *userAuth) logout(ctx *iris.Context) {
-	session, err := panelSessions.Get(ctx)
-	if err != nil {
-		//re redirect to the login
-		ctx.Redirect("/login")
-		return
-	}
+	session := panelSessions.Start(ctx)
 	session.Set("user", nil)
-	session.Save(ctx)
+
 	ctx.Redirect("/login")
 }
 
@@ -101,11 +94,8 @@ func (u *userAuth) Serve(ctx *iris.Context) {
 		ctx.Next()
 		return
 	}
-	session, err := panelSessions.Get(ctx)
-	if err != nil {
-		println("error on session(2): ", err.Error())
-		return
-	}
+	session := panelSessions.Start(ctx)
+
 	if sessionVal := session.Get("username"); sessionVal != nil {
 		username := sessionVal.(string)
 		password := session.GetString("password")
@@ -126,7 +116,7 @@ func (u *userAuth) Serve(ctx *iris.Context) {
 
 }
 
-// Destroy clears all sessions and stores, this is called on PreClose by the iriscontrol.go
+// Destroy this is called on PreClose by the iriscontrol.go
 func (u *userAuth) Destroy() {
-	sessions.ClearAll()
+
 }

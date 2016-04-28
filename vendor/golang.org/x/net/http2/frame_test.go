@@ -202,6 +202,37 @@ func TestWriteHeaders(t *testing.T) {
 				headerFragBuf: []byte("abc"),
 			},
 		},
+		{
+			"with priority stream dep zero", // golang.org/issue/15444
+			HeadersFrameParam{
+				StreamID:      42,
+				BlockFragment: []byte("abc"),
+				EndStream:     true,
+				EndHeaders:    true,
+				PadLength:     2,
+				Priority: PriorityParam{
+					StreamDep: 0,
+					Exclusive: true,
+					Weight:    127,
+				},
+			},
+			"\x00\x00\v\x01-\x00\x00\x00*\x02\x80\x00\x00\x00\u007fabc\x00\x00",
+			&HeadersFrame{
+				FrameHeader: FrameHeader{
+					valid:    true,
+					StreamID: 42,
+					Type:     FrameHeaders,
+					Flags:    FlagHeadersEndStream | FlagHeadersEndHeaders | FlagHeadersPadded | FlagHeadersPriority,
+					Length:   uint32(1 + 5 + len("abc") + 2), // pad length + priority + contents + padding
+				},
+				Priority: PriorityParam{
+					StreamDep: 0,
+					Exclusive: true,
+					Weight:    127,
+				},
+				headerFragBuf: []byte("abc"),
+			},
+		},
 	}
 	for _, tt := range tests {
 		fr, buf := testFramer()
@@ -220,6 +251,24 @@ func TestWriteHeaders(t *testing.T) {
 		if !reflect.DeepEqual(f, tt.wantFrame) {
 			t.Errorf("test %q: mismatch.\n got: %#v\nwant: %#v\n", tt.name, f, tt.wantFrame)
 		}
+	}
+}
+
+func TestWriteInvalidStreamDep(t *testing.T) {
+	fr, _ := testFramer()
+	err := fr.WriteHeaders(HeadersFrameParam{
+		StreamID: 42,
+		Priority: PriorityParam{
+			StreamDep: 1 << 31,
+		},
+	})
+	if err != errDepStreamID {
+		t.Errorf("header error = %v; want %q", err, errDepStreamID)
+	}
+
+	err = fr.WritePriority(2, PriorityParam{StreamDep: 1 << 31})
+	if err != errDepStreamID {
+		t.Errorf("priority error = %v; want %q", err, errDepStreamID)
 	}
 }
 
