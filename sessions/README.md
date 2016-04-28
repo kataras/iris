@@ -1,110 +1,113 @@
-> This package is converted to work with Iris but it was originaly created by Gorila team, the original package is gorilla/sessions
+## Package information
 
-The package has fully ported to work with fasthttp and iris. It's the first attempt for session with fasthttp, which I know of, so if you find any bugs please post an [issue here](https://github.com/kataras/iris/issues) 
-
-The key features are:
-
-* Simple API: use it as an easy way to set signed (and optionally
-  encrypted) cookies.
-* Built-in backends to store sessions in cookies or the filesystem.
-* Flash messages: session values that last until read.
-* Convenient way to switch session persistency (aka "remember me") and set
-  other attributes.
-* Mechanism to rotate authentication and encryption keys.
-* Multiple sessions per request, even using different backends.
-* Interfaces and infrastructure for custom session backends: sessions from
-  different stores can be retrieved and batch-saved using a common API.
+This package is totally new, if you find any bugs please [post an issue here](https://github.com/kataras/iris/issues)
 
 
-## Usage
+## Usage: Low-level
 
 ```go
 
 package main
 
 import (
+	"time"
+
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/sessions"
+
+	_ "github.com/kataras/iris/sessions/providers/memory" // here we add the memory session store
 )
 
-//there is no middleware, use the sessions anywhere you want
-func main() {
+var sess *sessions.Manager
 
-	var store = sessions.NewCookieStore([]byte("myIrisSecretKey"))
-	var mySessions = sessions.New("user_sessions", store)
+func init() {
+	sess = sessions.New("memory", "irissessionid", time.Duration(time.Minute)*60)
+}
+
+func main() {
 
 	iris.Get("/set", func(c *iris.Context) {
 		//get the session for this context
-		session, err := mySessions.Get(c) // or .GetSession(c), it's the same 
+		session := sess.Start(c)
 
-		if err != nil {
-			c.SendStatus(500, err.Error())
-			return
-		}
 		//set session values
 		session.Set("name", "kataras")
 
-		//save them
-		session.Save(c)
-
-		//write anthing
+		//test if setted here
 		c.Write("All ok session setted to: %s", session.Get("name"))
 	})
 
 	iris.Get("/get", func(c *iris.Context) {
-		//again get the session for this context
-		session, err := mySessions.Get(c)
+		//get the session for this context
+		session := sess.Start(c)
 
-		if err != nil {
-			c.SendStatus(500, err.Error())
-			return
-		}
+		var name string
+
 		//get the session value
-		name := session.GetString("name") // .Get or .GetInt
+		if v := session.Get("name"); v != nil {
+			name = v.(string)
+		}
+		// OR just name = session.GetString("name")
 
 		c.Write("The name on the /set was: %s", name)
 	})
 
 	iris.Get("/clear", func(c *iris.Context) {
-		session, err := mySessions.Get(c)
-		if err != nil {
-			c.SendStatus(500, err.Error())
-			return
-		}
-		//Clear clears all
-		//session.Clear()
+		//get the session for this context
+		session := sess.Start(c)
+
 		session.Delete("name")
 
 	})
 
-	// Use global sessions.Clear() to clear ALL sessions and stores if it's necessary
-	//sessions.Clear()
-
-	println("Iris is listening on :8080")
+	println("Server is listening at :8080")
 	iris.Listen("8080")
 
 }
 
 
+
 ```
 
-## Store Implementations
 
-Other implementations of the `sessions.Store` interface:
+## Security: Prevent session hijacking
 
-* [github.com/starJammer/gorilla-sessions-arangodb](https://github.com/starJammer/gorilla-sessions-arangodb) - ArangoDB
-* [github.com/yosssi/boltstore](https://github.com/yosssi/boltstore) - Bolt
-* [github.com/srinathgs/couchbasestore](https://github.com/srinathgs/couchbasestore) - Couchbase
-* [github.com/denizeren/dynamostore](https://github.com/denizeren/dynamostore) - Dynamodb on AWS
-* [github.com/bradleypeabody/gorilla-sessions-memcache](https://github.com/bradleypeabody/gorilla-sessions-memcache) - Memcache
-* [github.com/hnakamur/gaesessions](https://github.com/hnakamur/gaesessions) - Memcache on GAE
-* [github.com/kidstuff/mongostore](https://github.com/kidstuff/mongostore) - MongoDB
-* [github.com/srinathgs/mysqlstore](https://github.com/srinathgs/mysqlstore) - MySQL
-* [github.com/antonlindstrom/pgstore](https://github.com/antonlindstrom/pgstore) - PostgreSQL
-* [github.com/boj/redistore](https://github.com/boj/redistore) - Redis
-* [github.com/boj/rethinkstore](https://github.com/boj/rethinkstore) - RethinkDB
-* [github.com/boj/riakstore](https://github.com/boj/riakstore) - Riak
-* [github.com/michaeljs1990/sqlitestore](https://github.com/michaeljs1990/sqlitestore) - SQLite
-* [github.com/wader/gormstore](https://github.com/wader/gormstore) - GORM (MySQL, PostgreSQL, SQLite)
+> This section  was originally written on a book
 
 
+**cookie only and token**
+
+Through this simple example of hijacking a session, you can see that it's very dangerous because it allows attackers to do whatever they want. So how can we prevent session hijacking?
+
+The first step is to only set session ids in cookies, instead of in URL rewrites. Also, we should set the httponly cookie property to true. This restricts client side scripts that want access to the session id. Using these techniques, cookies cannot be accessed by XSS and it won't be as easy as we showed to get a session id from a cookie manager.
+
+The second step is to add a token to every request. Similar to the way we dealt with repeat forms in previous sections, we add a hidden field that contains a token. When a request is sent to the server, we can verify this token to prove that the request is unique.
+
+```go
+h := md5.New()
+salt:="astaxie%^7&8888"
+io.WriteString(h,salt+time.Now().String())
+token:=fmt.Sprintf("%x",h.Sum(nil))
+if r.Form["token"]!=token{
+    // ask to log in
+}
+session.Set("token",token)
+
+```
+
+
+**Session id timeout**
+
+Another solution is to add a create time for every session, and to replace expired session ids with new ones. This can prevent session hijacking under certain circumstances.
+
+createtime := session.Get("createtime")
+if createtime == nil {
+    session.Set("createtime", time.Now().Unix())
+} else if (createtime.(int64) + 60) < (time.Now().Unix()) {
+    sess.Destroy(c)
+    session = sess.Start(c)
+}
+
+We set a value to save the create time and check if it's expired (I set 60 seconds here). This step can often thwart session hijacking attempts.
+
+Combine the two solutions above and you will be able to prevent most session hijacking attempts from succeeding. On the one hand, session ids that are frequently reset will result in an attacker always getting expired and useless session ids; on the other hand, by setting the httponly property on cookies and ensuring that session ids can only be passed via cookies, all URL based attacks are mitigated.

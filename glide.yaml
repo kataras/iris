@@ -18,10 +18,7 @@ import:
 - package: github.com/monoculum/formam
   subpackages:
   - github.com\monoculum\formam
-- package: github.com/valyala/fasthttp
-  subpackages:
-  - github.com\valyala\fasthttp
-  - github.com\valyala\fasthttp\fasthttpadaptor
 - package: golang.org/x/net
   subpackages:
   - golang.org\x\net\context
+- package: github.com/valyala/fasthttp

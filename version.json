@@ -1,4 +1,4 @@
 {
-	"versions": ["1.1.5","1.1.4"],
-	"changelogs":["Print caller on iris' panics, remove some tests from /vendor","Fix subdomains"]
+	"versions": ["1.2.0","1.1.5","1.1.4"],
+	"changelogs":["Re-implement the whole sessions and split context.go","Print caller on iris' panics, remove some tests from /vendor","Fix subdomains"]
 }

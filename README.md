@@ -26,7 +26,7 @@ Start using Iris Web Framework today. Iris is easy-to-learn while providing robu
 * **Bindings**: Need a fast way to convert data from body or form into an object? Take a look [here](https://github.com/iris-contrib/examples/tree/master/bind_form_simple)
 * **Streaming**: You have only one option when streaming comes in game[*](#streaming)
 * **Middlewares**: Create and/or use global or per route middlewares with the Iris' simplicity[*](#middlewares)
-* **Sessions**:  Sessions and secure cookies to provide a secure way to authenticate your clients/users [*](https://github.com/kataras/iris/tree/development/sessions)
+* **Sessions**:  Sessions provides a secure way to authenticate your clients/users [*](https://github.com/kataras/iris/tree/development/sessions)
 * **Realtime**: Realtime is fun when you use websockets[*](https://github.com/kataras/iris/tree/development/websocket)
 * **Context**: [Context](#context) is used for storing route params, storing handlers, sharing variables between middlewares, render rich content, send file and much more[*](#context)
 * **Plugins**: You can build your own plugins to  inject the Iris framework[*](#plugins)
@@ -844,7 +844,6 @@ if you want to help please do so (pr).
 
 | Middleware | Author | Description | Tested |
 | -----------|--------|-------------|--------|
-| [sessions](https://github.com/kataras/iris/tree/development/sessions) | [Ported to Iris](https://github.com/kataras/iris/tree/development/sessions) | Session Management | [Yes](https://github.com/kataras/iris/tree/development/sessions) |
 | [Graceful](https://github.com/iris-contrib/graceful) | [Ported to iris](https://github.com/iris-contrib/graceful) | Graceful HTTP Shutdown | [Yes](https://github.com/iris-contrib/examples/tree/master/graceful) |
 | [gzip](https://github.com/kataras/iris/tree/development/middleware/gzip/) | [Iris](https://github.com/kataras/iris) | GZIP response compression | [Yes](https://github.com/kataras/iris/tree/development/middleware/gzip/README.md) |
 | [RestGate](https://github.com/pjebs/restgate) | [Prasanga Siripala](https://github.com/pjebs) | Secure authentication for REST API endpoints | No |
@@ -891,7 +890,7 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 - [x] [Create a mechanism that scan for Typescript files, compile them on server startup and serve them.](https://github.com/kataras/iris/tree/development/plugin/typescript)
 - [x] Simplify the plugin mechanism.
 - [ ] Implement an Iris updater and add the specific entry(bool) on StationOptions.
-- [ ] Re-Implement the sessions from zero.
+- [x] Re-Implement the sessions from zero.
 
 ## Articles
 
@@ -900,7 +899,7 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 
 ## Versioning
 
-Current: **v1.1.5**
+Current: **v1.2.0**
 
 Read more about Semantic Versioning 2.0.0
 

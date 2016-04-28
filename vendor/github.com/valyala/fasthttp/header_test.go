@@ -1117,6 +1117,8 @@ func TestResponseHeaderCookie(t *testing.T) {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
+	h.DelAllCookies()
+
 	var h1 ResponseHeader
 	br := bufio.NewReader(w)
 	if err := h1.Read(br); err != nil {
@@ -1131,12 +1133,28 @@ func TestResponseHeaderCookie(t *testing.T) {
 		t.Fatalf("unexpected cookie\n%v\nExpected\n%v\n", &c, &expectedC1)
 	}
 
+	h1.DelCookie("foobar")
+	if h.Cookie(&c) {
+		t.Fatalf("Unexpected cookie found: %v", &c)
+	}
+	if h1.Cookie(&c) {
+		t.Fatalf("Unexpected cookie found: %v", &c)
+	}
+
 	c.SetKey("йцук")
 	if !h1.Cookie(&c) {
 		t.Fatalf("cannot find cookie %q", c.Key())
 	}
 	if !equalCookie(&expectedC2, &c) {
 		t.Fatalf("unexpected cookie\n%v\nExpected\n%v\n", &c, &expectedC2)
+	}
+
+	h1.DelCookie("йцук")
+	if h.Cookie(&c) {
+		t.Fatalf("Unexpected cookie found: %v", &c)
+	}
+	if h1.Cookie(&c) {
+		t.Fatalf("Unexpected cookie found: %v", &c)
 	}
 }
 
@@ -1192,8 +1210,24 @@ func TestRequestHeaderCookie(t *testing.T) {
 	if !bytes.Equal(h1.Cookie("foo"), h.Cookie("foo")) {
 		t.Fatalf("Unexpected cookie value %q. Exepcted %q", h1.Cookie("foo"), h.Cookie("foo"))
 	}
+	h1.DelCookie("foo")
+	if len(h1.Cookie("foo")) > 0 {
+		t.Fatalf("Unexpected cookie found: %q", h1.Cookie("foo"))
+	}
 	if !bytes.Equal(h1.Cookie("привет"), h.Cookie("привет")) {
 		t.Fatalf("Unexpected cookie value %q. Expected %q", h1.Cookie("привет"), h.Cookie("привет"))
+	}
+	h1.DelCookie("привет")
+	if len(h1.Cookie("привет")) > 0 {
+		t.Fatalf("Unexpected cookie found: %q", h1.Cookie("привет"))
+	}
+
+	h.DelAllCookies()
+	if len(h.Cookie("foo")) > 0 {
+		t.Fatalf("Unexpected cookie found: %q", h.Cookie("foo"))
+	}
+	if len(h.Cookie("привет")) > 0 {
+		t.Fatalf("Unexpected cookie found: %q", h.Cookie("привет"))
 	}
 }
 

@@ -156,6 +156,14 @@ func (e *Error) Panic() {
 	panic(errMsg)
 }
 
+// Panicf output the formatted message and after panics
+func (e *Error) Panicf(args ...interface{}) {
+	_, fn, line, _ := runtime.Caller(1)
+	errMsg := e.Format(args...).Error()
+	errMsg = "\nCaller was: " + fmt.Sprintf("%s:%d", fn, line)
+	panic(errMsg)
+}
+
 //
 
 // NewError creates and returns an Error with a message

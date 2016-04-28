@@ -367,10 +367,9 @@ type RequestCtx struct {
 
 	userValues userData
 
-	id uint64
-
 	lastReadDuration time.Duration
 
+	connID         uint64
 	connRequestNum uint64
 	connTime       time.Time
 
@@ -535,7 +534,15 @@ var zeroTCPAddr = &net.TCPAddr{
 
 // ID returns unique ID of the request.
 func (ctx *RequestCtx) ID() uint64 {
-	return ctx.id
+	return (ctx.connID << 32) | ctx.connRequestNum
+}
+
+// ConnID returns unique connection ID.
+//
+// This ID may be used to match distinct requests to the same incoming
+// connection.
+func (ctx *RequestCtx) ConnID() uint64 {
+	return ctx.connID
 }
 
 // Time returns RequestHandler call time.
@@ -1336,10 +1343,17 @@ func (s *Server) getConcurrency() int {
 	return n
 }
 
+var globalConnID uint64
+
+func nextConnID() uint64 {
+	return atomic.AddUint64(&globalConnID, 1)
+}
+
 func (s *Server) serveConn(c net.Conn) error {
+	connRequestNum := uint64(0)
+	connID := nextConnID()
 	currentTime := time.Now()
 	connTime := currentTime
-	connRequestNum := uint64(0)
 
 	ctx := s.acquireCtx(c)
 	ctx.connTime = connTime
@@ -1358,7 +1372,6 @@ func (s *Server) serveConn(c net.Conn) error {
 		isHTTP11        bool
 	)
 	for {
-		ctx.id++
 		connRequestNum++
 		ctx.time = currentTime
 
@@ -1432,6 +1445,7 @@ func (s *Server) serveConn(c net.Conn) error {
 		connectionClose = s.DisableKeepalive || ctx.Request.Header.connectionCloseFast()
 		isHTTP11 = ctx.Request.Header.IsHTTP11()
 
+		ctx.connID = connID
 		ctx.connRequestNum = connRequestNum
 		ctx.connTime = connTime
 		ctx.time = currentTime
@@ -1751,14 +1765,10 @@ func (s *Server) acquireCtx(c net.Conn) *RequestCtx {
 	v := s.ctxPool.Get()
 	var ctx *RequestCtx
 	if v == nil {
-		ctx = &RequestCtx{
+		v = &RequestCtx{
 			s: s,
-			c: c,
 		}
-		ctx.initID()
-		return ctx
 	}
-
 	ctx = v.(*RequestCtx)
 	ctx.c = c
 	return ctx
@@ -1779,9 +1789,9 @@ func (ctx *RequestCtx) Init(req *Request, remoteAddr net.Addr, logger Logger) {
 	if logger == nil {
 		logger = defaultLogger
 	}
+	ctx.connID = nextConnID()
 	ctx.logger.logger = logger
 	ctx.s = &fakeServer
-	ctx.initID()
 	req.CopyTo(&ctx.Request)
 	ctx.Response.Reset()
 	ctx.connRequestNum = 0
@@ -1814,12 +1824,6 @@ func (fa *fakeAddrer) Write(p []byte) (int, error) {
 
 func (fa *fakeAddrer) Close() error {
 	panic("BUG: unexpected Close call")
-}
-
-var globalCtxID uint64
-
-func (ctx *RequestCtx) initID() {
-	ctx.id = (atomic.AddUint64(&globalCtxID, 1)) << 32
 }
 
 func (s *Server) releaseCtx(ctx *RequestCtx) {
