@@ -94,14 +94,14 @@ func (html *HTMLTemplates) Delims(left string, right string) {
 }
 
 // inline method for parseglob, just tries to parse the templates
-func (html *HTMLTemplates) parseGlob(globPathExp string) (template *template.Template, err error) {
+func (html *HTMLTemplates) parseGlob(globPathExp string) (tmp *template.Template, err error) {
 	if html.delimsLeft != "" && html.delimsRight != "" {
-		template, err = template.New("").Delims(html.delimsLeft, html.delimsRight).ParseGlob(globPathExp)
+		tmp, err = template.New("").Delims(html.delimsLeft, html.delimsRight).ParseGlob(globPathExp)
 	} else {
-		template, err = template.ParseGlob(globPathExp)
+		tmp, err = template.ParseGlob(globPathExp)
 	}
 
-	return template, err
+	return tmp, err
 }
 
 // Load loads and saves/cache the templates
