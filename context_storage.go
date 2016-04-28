@@ -28,6 +28,7 @@
 package iris
 
 import (
+	"encoding/base64"
 	"fmt"
 	"time"
 
@@ -44,40 +45,13 @@ type (
 		SetCookie(string, string)
 		AddCookie(*fasthttp.Cookie)
 		RemoveCookie(string)
+		// Flash messages
+		GetFlash(string) string
+		GetFlashBytes(string) ([]byte, error)
+		SetFlash(string, string)
+		SetFlashBytes(string, []byte)
 	}
 )
-
-// GetCookie returns cookie's value by it's name
-func (ctx *Context) GetCookie(name string) string {
-	return string(ctx.RequestCtx.Request.Header.Cookie(name))
-}
-
-// SetCookie adds a cookie to the request
-func (ctx *Context) SetCookie(name string, value string) {
-	ctx.RequestCtx.Request.Header.SetCookie(name, value)
-}
-
-// AddCookie sets a specific cookie to the response header
-func (ctx *Context) AddCookie(cookie *fasthttp.Cookie) {
-	s := fmt.Sprintf("%s=%s", string(cookie.Key()), string(cookie.Value()))
-	if c := string(ctx.RequestCtx.Request.Header.Peek("Cookie")); c != "" {
-		ctx.RequestCtx.Request.Header.Set("Cookie", c+"; "+s)
-	} else {
-		ctx.RequestCtx.Request.Header.Set("Cookie", s)
-	}
-}
-
-// RemoveCookie deletes a cookie by it's name/key
-func (ctx *Context) RemoveCookie(name string) {
-	cookie := &fasthttp.Cookie{}
-	cookie.SetKey(name)
-	cookie.SetValue("")
-	cookie.SetPath("/")
-	cookie.SetHTTPOnly(true)
-	exp := time.Now().Add(-time.Duration(1) * time.Minute)
-	cookie.SetExpire(exp)
-	ctx.Response.Header.SetCookie(cookie)
-}
 
 // Get returns a value from a key
 // if doesn't exists returns nil
@@ -124,4 +98,78 @@ func (ctx *Context) Set(key interface{}, value interface{}) {
 	}
 
 	ctx.values[key] = value
+}
+
+// GetCookie returns cookie's value by it's name
+func (ctx *Context) GetCookie(name string) string {
+	return string(ctx.RequestCtx.Request.Header.Cookie(name))
+}
+
+// SetCookie adds a cookie to the request
+func (ctx *Context) SetCookie(name string, value string) {
+	ctx.RequestCtx.Request.Header.SetCookie(name, value)
+}
+
+// AddCookie sets a specific cookie to the response header
+func (ctx *Context) AddCookie(cookie *fasthttp.Cookie) {
+	s := fmt.Sprintf("%s=%s", string(cookie.Key()), string(cookie.Value()))
+	if c := string(ctx.RequestCtx.Request.Header.Peek("Cookie")); c != "" {
+		ctx.RequestCtx.Request.Header.Set("Cookie", c+"; "+s)
+	} else {
+		ctx.RequestCtx.Request.Header.Set("Cookie", s)
+	}
+}
+
+// RemoveCookie deletes a cookie by it's name/key
+func (ctx *Context) RemoveCookie(name string) {
+	cookie := &fasthttp.Cookie{}
+	cookie.SetKey(name)
+	cookie.SetValue("")
+	cookie.SetPath("/")
+	cookie.SetHTTPOnly(true)
+	exp := time.Now().Add(-time.Duration(1) * time.Minute)
+	cookie.SetExpire(exp)
+	ctx.Response.Header.SetCookie(cookie)
+}
+
+// GetFlash get a flash message by it's key ( and after remove it, because it's flash!)
+// returns string, if the cookie doesn't exists the string is empty
+func (ctx *Context) GetFlash(key string) string {
+	val, err := ctx.GetFlashBytes(key)
+	if err != nil {
+		return ""
+	}
+	return string(val)
+}
+
+// GetFlashBytes get a flash message by it's key ( and after remove it, because it's flash!)
+// returns []byte along with an error if the cookie doesn't exists or decode fails
+func (ctx *Context) GetFlashBytes(key string) (value []byte, err error) {
+	cookieValue := string(ctx.RequestCtx.Request.Header.Cookie(key))
+	if cookieValue == "" {
+		err = ErrFlashNotFound.Return()
+	} else {
+		value, err = base64.URLEncoding.DecodeString(cookieValue)
+
+		//remove the message
+		c := &fasthttp.Cookie{}
+		c.SetKey(key)
+		c.SetExpire(time.Now().Add(-time.Duration(1) * time.Minute)) //RFC says 1 second, but make sure 1 minute because we are using fasthttp
+		ctx.RequestCtx.Response.Header.SetCookie(c)
+	}
+	return
+}
+
+// SetFlash sets a flash message, accepts 2 parameters the key and the value (string)
+func (ctx *Context) SetFlash(key string, value string) {
+	ctx.SetFlashBytes(key, StringToBytes(value))
+
+}
+
+// SetFlash sets a flash message, accepts 2 parameters the key and the value ([]byte)
+func (ctx *Context) SetFlashBytes(key string, value []byte) {
+	c := &fasthttp.Cookie{}
+	c.SetKey(key)
+	c.SetValue(base64.URLEncoding.EncodeToString(value))
+	ctx.RequestCtx.Response.Header.SetCookie(c)
 }

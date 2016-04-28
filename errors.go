@@ -117,6 +117,10 @@ var (
 	ErrFileDownload = NewError("While downloading from %s. Trace: %s")
 	// ErrDirCreate returns an error with message: 'Unable to create directory on '+root dir'. Trace: +specific error
 	ErrDirCreate = NewError("Unable to create directory on '%s'. Trace: %s")
+
+	// Storage
+	// ErrFlashNotFound returns an error with message: 'Unable to get flash message. Trace: Cookie does not exists'
+	ErrFlashNotFound = NewError("Unable to get flash message. Trace: Cookie does not exists")
 )
 
 // Error holds the error
