@@ -130,7 +130,6 @@ func (ctx *Context) RemoveCookie(name string) {
 	exp := time.Now().Add(-time.Duration(1) * time.Minute) //RFC says 1 second, but make sure 1 minute because we are using fasthttp
 	cookie.SetExpire(exp)
 	ctx.Response.Header.SetCookie(cookie)
-	ctx.Request.Header.SetCookie(name, "")
 }
 
 // GetFlash get a flash message by it's key ( and after remove it, because it's flash!)
@@ -153,6 +152,7 @@ func (ctx *Context) GetFlashBytes(key string) (value []byte, err error) {
 		value, err = base64.URLEncoding.DecodeString(cookieValue)
 		//remove the message
 		ctx.RemoveCookie(key)
+		//it should'b be removed until the next reload, so we don't do that: ctx.Request.Header.SetCookie(key, "")
 	}
 	return
 }
@@ -170,5 +170,4 @@ func (ctx *Context) SetFlashBytes(key string, value []byte) {
 	c.SetPath("/")
 	c.SetHTTPOnly(true)
 	ctx.RequestCtx.Response.Header.SetCookie(c)
-	ctx.RequestCtx.Request.Header.SetCookie(key, string(value))
 }
