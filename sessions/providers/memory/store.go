@@ -41,6 +41,18 @@ type Store struct {
 
 var _ sessions.ISession = &Store{}
 
+// GetAll returns all values
+func (s *Store) GetAll() map[interface{}]interface{} {
+	return s.values
+}
+
+// VisitAll loop each one entry and calls the callback function func(key,value)
+func (s *Store) VisitAll(cb func(k interface{}, v interface{})) {
+	for key := range s.values {
+		cb(key, s.values[key])
+	}
+}
+
 // Get returns the value of an entry by its key
 func (s *Store) Get(key interface{}) interface{} {
 	provider.Update(s.sid)
@@ -82,6 +94,16 @@ func (s *Store) Set(key interface{}, value interface{}) error {
 // returns an error, which is always nil
 func (s *Store) Delete(key interface{}) error {
 	delete(s.values, key)
+	provider.Update(s.sid)
+	return nil
+}
+
+// Delete removes all entries
+// returns an error, which is always nil
+func (s *Store) Clear() error {
+	for key := range s.values {
+		delete(s.values, key)
+	}
 	provider.Update(s.sid)
 	return nil
 }

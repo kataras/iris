@@ -33,5 +33,8 @@ type ISession interface {
 	GetInt(key interface{}) int
 	Set(interface{}, interface{}) error
 	Delete(interface{}) error
+	Clear() error
+	VisitAll(func(interface{}, interface{}))
+	GetAll() map[interface{}]interface{}
 	ID() string
 }
