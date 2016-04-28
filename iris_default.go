@@ -203,8 +203,9 @@ func SetMaxRequestBodySize(size int) {
 }
 
 // Templates sets the templates glob path for the web app
-func Templates(pathGlob string) error {
-	return DefaultStation.Templates(pathGlob)
+// panics on error
+func Templates(pathGlob string) {
+	DefaultStation.Templates(pathGlob)
 }
 
 // GetTemplates returns the *template.Template registed to this station, if any

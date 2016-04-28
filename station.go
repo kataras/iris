@@ -46,7 +46,7 @@ type (
 		GetPluginContainer() IPluginContainer
 		GetTemplates() *HTMLTemplates
 		TemplateFuncs(template.FuncMap) *template.Template
-		Templates(pathGlob string) error
+		Templates(pathGlob string)
 		optimusPrime()
 		HasOptimized() bool
 		Logger() *Logger
@@ -130,6 +130,17 @@ func (s *Station) Plugin(plugin IPlugin) error {
 // GetPluginContainer returns the pluginContainer
 func (s Station) GetPluginContainer() IPluginContainer {
 	return s.pluginContainer
+}
+
+// Templates loads HTML templates
+// receives one parameter
+//
+// pathGlob the local directory, it can be a pattern (string)
+// panics on error
+func (s *Station) Templates(pathGlob string) {
+	if err := s.templates.Load(pathGlob); err != nil {
+		panic(err)
+	}
 }
 
 // GetTemplates returns the *template.Template registed to this station, if any
@@ -269,14 +280,6 @@ func (s *Station) ListenTLS(fullAddress string, certFile, keyFile string) error 
 func (s *Station) Close() error {
 	s.pluginContainer.DoPreClose(s)
 	return s.Server.CloseServer()
-}
-
-// Templates loads HTML templates
-// receives one parameter
-//
-// pathGlob the local directory, it can be a pattern (string)
-func (s *Station) Templates(pathGlob string) error {
-	return s.templates.Load(pathGlob)
 }
 
 //SetMaxRequestBodySize sets the maximum request body size.
