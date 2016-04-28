@@ -254,6 +254,28 @@ iris.Delete("/letsdelete", iris.ToHandlerFunc(nativehandler{}))
 
 ## Middlewares
 
+**Quick view**
+
+```go
+// First point on the static files
+iris.Static("/assets/", "./public/assets/", 1)
+
+// Then declare which midleware to use (custom or not)
+iris.Use(myMiddleware)
+iris.UseFunc(myFunc)
+
+// Now declare routes
+iris.Get("/myroute", func(c *iris.Context) {
+    // do stuff
+})
+iris.Get("/secondroute", myMiddlewareFunc(), myRouteHandlerfunc)
+
+// Now run our server
+iris.Listen(":8080")
+
+```
+
+
 Middlewares in Iris are not complicated, imagine them as simple Handlers.
 They should implement the Handler interface as well:
 
