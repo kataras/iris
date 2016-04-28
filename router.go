@@ -182,8 +182,10 @@ func (r *Router) OnPanic(handlerFunc HandlerFunc) {
 
 // Static registers a route which serves a system directory
 func (r *Router) Static(requestPath string, systemPath string, stripSlashes int) {
-	handler := ToHandlerFastHTTP(fasthttp.FSHandler(systemPath, stripSlashes))
-	r.Get(requestPath+"/*filepath", handler.Serve)
+	h := fasthttp.FSHandler(systemPath, stripSlashes)
+	r.Get(requestPath+"/*filepath", func(c *Context) {
+		h(c.RequestCtx)
+	})
 }
 
 // ServeRequest finds and serves a route by it's request context
