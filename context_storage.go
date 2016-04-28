@@ -127,9 +127,10 @@ func (ctx *Context) RemoveCookie(name string) {
 	cookie.SetValue("")
 	cookie.SetPath("/")
 	cookie.SetHTTPOnly(true)
-	exp := time.Now().Add(-time.Duration(1) * time.Minute)
+	exp := time.Now().Add(-time.Duration(1) * time.Minute) //RFC says 1 second, but make sure 1 minute because we are using fasthttp
 	cookie.SetExpire(exp)
 	ctx.Response.Header.SetCookie(cookie)
+	ctx.Request.Header.SetCookie(name, "")
 }
 
 // GetFlash get a flash message by it's key ( and after remove it, because it's flash!)
@@ -150,12 +151,8 @@ func (ctx *Context) GetFlashBytes(key string) (value []byte, err error) {
 		err = ErrFlashNotFound.Return()
 	} else {
 		value, err = base64.URLEncoding.DecodeString(cookieValue)
-
 		//remove the message
-		c := &fasthttp.Cookie{}
-		c.SetKey(key)
-		c.SetExpire(time.Now().Add(-time.Duration(1) * time.Minute)) //RFC says 1 second, but make sure 1 minute because we are using fasthttp
-		ctx.RequestCtx.Response.Header.SetCookie(c)
+		ctx.RemoveCookie(key)
 	}
 	return
 }
@@ -163,7 +160,6 @@ func (ctx *Context) GetFlashBytes(key string) (value []byte, err error) {
 // SetFlash sets a flash message, accepts 2 parameters the key and the value (string)
 func (ctx *Context) SetFlash(key string, value string) {
 	ctx.SetFlashBytes(key, StringToBytes(value))
-
 }
 
 // SetFlash sets a flash message, accepts 2 parameters the key and the value ([]byte)
@@ -171,5 +167,8 @@ func (ctx *Context) SetFlashBytes(key string, value []byte) {
 	c := &fasthttp.Cookie{}
 	c.SetKey(key)
 	c.SetValue(base64.URLEncoding.EncodeToString(value))
+	c.SetPath("/")
+	c.SetHTTPOnly(true)
 	ctx.RequestCtx.Response.Header.SetCookie(c)
+	ctx.RequestCtx.Request.Header.SetCookie(key, string(value))
 }
