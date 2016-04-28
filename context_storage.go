@@ -29,6 +29,7 @@ package iris
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/valyala/fasthttp"
 )
@@ -42,6 +43,7 @@ type (
 		GetCookie(string) string
 		SetCookie(string, string)
 		AddCookie(*fasthttp.Cookie)
+		RemoveCookie(string)
 	}
 )
 
@@ -63,6 +65,18 @@ func (ctx *Context) AddCookie(cookie *fasthttp.Cookie) {
 	} else {
 		ctx.RequestCtx.Request.Header.Set("Cookie", s)
 	}
+}
+
+// RemoveCookie deletes a cookie by it's name/key
+func (ctx *Context) RemoveCookie(name string) {
+	cookie := &fasthttp.Cookie{}
+	cookie.SetKey(name)
+	cookie.SetValue("")
+	cookie.SetPath("/")
+	cookie.SetHTTPOnly(true)
+	exp := time.Now().Add(-time.Duration(1) * time.Minute)
+	cookie.SetExpire(exp)
+	ctx.Response.Header.SetCookie(cookie)
 }
 
 // Get returns a value from a key

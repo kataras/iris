@@ -21,7 +21,7 @@ import (
 var sess *sessions.Manager
 
 func init() {
-	sess = sessions.New("memory", "irissessionid", time.Duration(time.Minute)*60)
+	sess = sessions.New("memory", "irissessionid", time.Duration(60)*time.Minute)
 }
 
 func main() {
@@ -57,7 +57,11 @@ func main() {
 		session := sess.Start(c)
 
 		session.Delete("name")
+	})
 
+	iris.Get("/destroy", func(c *iris.Context) {
+		//destroy, removes the entire session and cookie
+		sess.Destroy(c)
 	})
 
 	println("Server is listening at :8080")

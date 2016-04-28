@@ -151,8 +151,13 @@ func (m *Manager) Destroy(ctx *iris.Context) {
 
 	m.mu.Lock()
 	m.provider.Destroy(cookieValue)
-	ctx.Response.Header.DelCookie(m.cookieName)
-	ctx.Request.Header.DelCookie(m.cookieName) // maybe unnecessary
+	// new fasthttp .DelCookie isnt working.
+	//ctx.Response.Header.DelCookie(m.cookieName)
+	//ctx.Request.Header.DelCookie(m.cookieName) // maybe unnecessary
+	// so:
+
+	ctx.RemoveCookie(m.cookieName)
+
 	m.mu.Unlock()
 }
 
