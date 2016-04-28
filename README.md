@@ -924,7 +924,7 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 
 ## Versioning
 
-Current: **v1.2.0**
+Current: **v1.2.1**
 
 Read more about Semantic Versioning 2.0.0
 
