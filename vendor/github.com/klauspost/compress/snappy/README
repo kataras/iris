@@ -1,9 +1,0 @@
-The Snappy compression format in the Go programming language.
-
-Forked by Klaus Post 2016.
-
-To download and install from source:
-$ go get github.com/klauspost/compress/snappy
-
-Unless otherwise noted, the Snappy-Go source files are distributed
-under the BSD-style license found in the LICENSE file.

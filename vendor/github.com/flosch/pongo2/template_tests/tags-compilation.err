@@ -1,6 +1,0 @@
-{% if true %}
-{% if (1) . %}{% endif %}
-{% block test %}{% block test %}{% endblock %}{% endblock %}
-{% block test %}{% block test %}{% endblock %}{% endblock test2 %}
-{% block test %}{% block test2 %}{% endblock xy %}{% endblock test %}
-{% block test %}{% block test2 %}{% endblock test2 test3 %}{% endblock test %}
