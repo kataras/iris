@@ -82,6 +82,29 @@ Start using Iris Web Framework today. Iris is easy-to-learn while providing robu
 
 Current: **v2.0.0-alpha**
 
+### Changelog v1.3.0 -> v2.0.0-alpha
+
+Global: 
+
+- .Templates("path") -> .Templates().Load("path")
+- .TemplateFuncs(...) -> .Templates().Templates.Funcs(...)
+- .TemplateDelims("left","right") -> .Templates().Delims("left","right")
+- .GetTemplates() -> .Templates()
+- .Plugin(plugin) -> .Plugins().Add(plugin)
+- .StationOptions -> IrisConfig
+- .Custom -> .New(...IrisConfig)
+- .Listen(...string) -> .Listen(string)
+
+Context: 
+
+- .SetCookie(string,string) -> .SetCookie(*fasthttp.Cookie{})  
+-  Added: .SetCookieKV(string,string)
+
+
+### Added
+- IrisConfig { ... MaxRequestBodySize int }
+
+
 Read more about Semantic Versioning 2.0.0
 
  - http://semver.org/
