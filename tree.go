@@ -47,7 +47,8 @@ type (
 	}
 	// Garden is the main area which routes are planted/placed
 	Garden struct {
-		first *tree
+		first   *tree
+		station *Station
 	}
 )
 
@@ -98,7 +99,7 @@ func (g *Garden) getRootByMethodAndDomain(method string, domain string) (b *Bran
 }
 
 // Plant plants/adds a route to the garden
-func (g *Garden) Plant(station *Station, _route IRoute) {
+func (g *Garden) Plant(_route IRoute) {
 	method := _route.GetMethod()
 	domain := _route.GetDomain()
 	path := _route.GetPath()
@@ -106,7 +107,7 @@ func (g *Garden) Plant(station *Station, _route IRoute) {
 	theRoot := g.getRootByMethodAndDomain(method, domain)
 	if theRoot == nil {
 		theRoot = new(Branch)
-		theNewTree := newTree(station, method, theRoot, domain, len(domain) > 0, hasCors(_route))
+		theNewTree := newTree(g.station, method, theRoot, domain, len(domain) > 0, hasCors(_route))
 		if g.first == nil {
 			g.first = theNewTree
 		} else {

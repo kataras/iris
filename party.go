@@ -66,11 +66,6 @@ type (
 
 var _ IParty = &GardenParty{}
 
-// newParty creates and return a new Party, it shouldn't used outside this package but capital because
-func newParty(path string, station *Station, middleware Middleware) *GardenParty {
-	return &GardenParty{relativePath: path, station: station, middleware: middleware}
-}
-
 // IsRoot returns true if this is the root party ("/")
 func (p *GardenParty) IsRoot() bool {
 	return p.root
@@ -81,68 +76,11 @@ func (p *GardenParty) Handle(method string, registedPath string, handlers ...Han
 	path := absPath(p.relativePath, registedPath)
 	middleware := JoinMiddleware(p.middleware, handlers)
 	route := NewRoute(method, path, middleware)
-	p.station.getGarden().Plant(p.station, route) ///TODO: make it more pretty wtf is that two times station?
-}
-
-/*
-func (p *GardenParty) Handle(method string, registedPath string, handlers ...Handler) {
-	registedPath = p.rootPath + registedPath
-	if registedPath == "" {
-		registedPath = Slash
-	}
-	registedPath = fixPath(registedPath)
-
-	if len(handlers) == 0 {
-		panic("Iris.Handle: zero handler to " + method + ":" + registedPath)
-	}
-	rootParty := p.getRoot()
-
-	tempHandlers := p.Middleware
-	println("p.Middleware len: ", len(p.Middleware))
-	// from top to bottom -->||<--
-	//check for root-global middleware WHEN THIS PARTY IS NOT THE ROOT, because if it's the Middleware already setted on the constructor NewParty)
-	if rootParty.isTheRoot() == false && p.isTheRoot() == false && len(rootParty.getMiddleware()) > 0 {
-		//if global middlewares are registed then push them to this route.
-		tempHandlers = append(rootParty.getMiddleware(), tempHandlers...)
-		println("tempHandlers setted")
-	}
-	//the party's middleware were setted on NewParty already, no need to check them.
-
-	if len(tempHandlers) > 0 {
-		handlers = append(tempHandlers, handlers...)
-	}
-
-	route := NewRoute(method, registedPath, handlers)
-	println("register route: "+method+" path: "+registedPath+" len handlers: ", len(handlers))
-
 	p.station.GetPluginContainer().DoPreHandle(route)
-
-	p.station.IRouter.getGarden().Plant(p.station, route)
-
+	p.station.getGarden().Plant(route)
 	p.station.GetPluginContainer().DoPostHandle(route)
-	println("execute handler: ")
-	handlers[len(handlers)-1].Serve(nil)
-	println("execute last middleware- should be the handler:")
-	l := len(p.station.IRouter.getGarden().last().rootBranch.middleware)
-
-	p.station.IRouter.getGarden().last().rootBranch.middleware[l-1].Serve(nil)
-
-	println("execute all gardens")
-	tree := p.station.IRouter.getGarden().first
-	for tree != nil {
-		println("len tree middleware: ", len(tree.rootBranch.middleware))
-		println("first: ")
-		tree.rootBranch.middleware[0].Serve(nil)
-		println("second: ")
-		tree.rootBranch.middleware[1].Serve(nil)
-		println("third: ")
-		tree.rootBranch.middleware[2].Serve(nil)
-		println("last : ")
-		tree.rootBranch.middleware[len(tree.rootBranch.middleware)-1].Serve(nil)
-		tree = tree.next
-	}
 }
-*/
+
 // HandleFunc registers and returns a route with a method string, path string and a handler
 // registedPath is the relative url path
 // handler is the iris.Handler which you can pass anything you want via iris.ToHandlerFunc(func(res,req){})... or just use func(c *iris.Context)
@@ -283,14 +221,14 @@ func (p *GardenParty) Party(path string, handlersFn ...HandlerFunc) IParty {
 	middleware := ConvertToHandlers(handlersFn)
 	if path[0] != SlashByte && strings.Contains(path, ".") {
 		//it's domain so no handlers share (even the global ) or path, nothing.
-		return newParty(path, p.station, middleware)
+	} else {
+		// set path to parent+child
+		path = absPath(p.relativePath, path)
+		// append the parent's +child's handlers
+		middleware = JoinMiddleware(p.middleware, middleware)
 	}
-	// set path to parent+child
-	path = absPath(p.relativePath, path)
-	// append the parent's +child's handlers
-	middleware = JoinMiddleware(p.middleware, middleware)
-	return newParty(path, p.station, middleware)
 
+	return &GardenParty{relativePath: path, station: p.station, middleware: middleware}
 }
 
 func absPath(rootPath string, relativePath string) (absPath string) {
