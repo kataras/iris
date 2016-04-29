@@ -28,6 +28,7 @@
 package iris
 
 import (
+	"path"
 	"reflect"
 	"strconv"
 	"strings"
@@ -36,95 +37,54 @@ import (
 type (
 	// IParty is the interface which implements the whole Party of routes
 	IParty interface {
-		IMiddlewareSupporter
-		Handle(method string, registedPath string, handlers ...Handler)
-		HandleFunc(method string, registedPath string, handlersFn ...HandlerFunc)
-		HandleAnnotated(irisHandler Handler) error
-		Get(path string, handlersFn ...HandlerFunc)
-		Post(path string, handlersFn ...HandlerFunc)
-		Put(path string, handlersFn ...HandlerFunc)
-		Delete(path string, handlersFn ...HandlerFunc)
-		Connect(path string, handlersFn ...HandlerFunc)
-		Head(path string, handlersFn ...HandlerFunc)
-		Options(path string, handlersFn ...HandlerFunc)
-		Patch(path string, handlersFn ...HandlerFunc)
-		Trace(path string, handlersFn ...HandlerFunc)
-		Any(path string, handlersFn ...HandlerFunc)
-		//TODO: Ws(path string, handler Handler)
-		Party(path string) IParty // Each party can have a party too
-		getRoot() IParty
-		getPath() string
-		isTheRoot() bool
-		getMiddleware() Middleware
+		Handle(string, string, ...Handler)
+		HandleFunc(string, string, ...HandlerFunc)
+		HandleAnnotated(Handler) error
+		Get(string, ...HandlerFunc)
+		Post(string, ...HandlerFunc)
+		Put(string, ...HandlerFunc)
+		Delete(string, ...HandlerFunc)
+		Connect(string, ...HandlerFunc)
+		Head(string, ...HandlerFunc)
+		Options(string, ...HandlerFunc)
+		Patch(string, ...HandlerFunc)
+		Trace(string, ...HandlerFunc)
+		Any(string, ...HandlerFunc)
+		Use(...Handler)
+		UseFunc(...HandlerFunc)
+		Party(string, ...HandlerFunc) IParty // Each party can have a party too
+		IsRoot() bool
 	}
 
-	// GardenParty TODO: inline docs
 	GardenParty struct {
-		MiddlewareSupporter
-		station  *Station // this station is where the party is happening, this station's Garden is the same for all Parties per Station & Router instance
-		rootPath string
-		hoster   *GardenParty
+		relativePath string
+		station      *Station // this station is where the party is happening, this station's Garden is the same for all Parties per Station & Router instance
+		middleware   Middleware
+		root         bool
 	}
 )
 
 var _ IParty = &GardenParty{}
 
-// NewParty creates and return a new Party, it shouldn't used outside this package but capital because
-func NewParty(path string, station *Station, hoster *GardenParty) IParty {
-	p := &GardenParty{}
-	p.station = station
-
-	//if this party is comes from other party
-	if hoster != nil {
-		p.hoster = hoster
-		path = p.hoster.rootPath + path
-		p.Middleware = p.hoster.Middleware
-		lastSlashIndex := strings.LastIndexByte(path, SlashByte)
-
-		if lastSlashIndex == len(path)-1 {
-			path = path[0:lastSlashIndex]
-		}
-	}
-
-	p.rootPath = path
-	return p
+// newParty creates and return a new Party, it shouldn't used outside this package but capital because
+func newParty(path string, station *Station, middleware Middleware) *GardenParty {
+	return &GardenParty{relativePath: path, station: station, middleware: middleware}
 }
 
-// fixPath fix the double slashes, (because of root,I just do that before the .Handle no need for anything else special)
-func fixPath(str string) string {
-
-	strafter := strings.Replace(str, "//", Slash, -1)
-
-	if strafter[0] == SlashByte && strings.Count(strafter, ".") >= 2 {
-		//it's domain, remove the first slash
-		strafter = strafter[1:]
-	}
-
-	return strafter
-}
-
-// GetRoot find the root hoster of the parties, the root is this when the hoster is nil ( it's the  rootPath '/')
-func (p *GardenParty) getRoot() IParty {
-	if p.hoster != nil {
-		return p.hoster.getRoot()
-	}
-	return p
-
-}
-
-func (p *GardenParty) isTheRoot() bool {
-	return p.hoster == nil
-}
-
-func (p *GardenParty) getMiddleware() Middleware {
-	return p.Middleware
-}
-
-func (p GardenParty) getPath() string {
-	return p.rootPath
+// IsRoot returns true if this is the root party ("/")
+func (p *GardenParty) IsRoot() bool {
+	return p.root
 }
 
 // Handle registers a route to the server's router
+func (p *GardenParty) Handle(method string, registedPath string, handlers ...Handler) {
+	path := absPath(p.relativePath, registedPath)
+	middleware := JoinMiddleware(p.middleware, handlers)
+	route := NewRoute(method, path, middleware)
+	p.station.getGarden().Plant(p.station, route) ///TODO: make it more pretty wtf is that two times station?
+}
+
+/*
 func (p *GardenParty) Handle(method string, registedPath string, handlers ...Handler) {
 	registedPath = p.rootPath + registedPath
 	if registedPath == "" {
@@ -138,12 +98,13 @@ func (p *GardenParty) Handle(method string, registedPath string, handlers ...Han
 	rootParty := p.getRoot()
 
 	tempHandlers := p.Middleware
-
+	println("p.Middleware len: ", len(p.Middleware))
 	// from top to bottom -->||<--
 	//check for root-global middleware WHEN THIS PARTY IS NOT THE ROOT, because if it's the Middleware already setted on the constructor NewParty)
 	if rootParty.isTheRoot() == false && p.isTheRoot() == false && len(rootParty.getMiddleware()) > 0 {
 		//if global middlewares are registed then push them to this route.
 		tempHandlers = append(rootParty.getMiddleware(), tempHandlers...)
+		println("tempHandlers setted")
 	}
 	//the party's middleware were setted on NewParty already, no need to check them.
 
@@ -152,14 +113,36 @@ func (p *GardenParty) Handle(method string, registedPath string, handlers ...Han
 	}
 
 	route := NewRoute(method, registedPath, handlers)
+	println("register route: "+method+" path: "+registedPath+" len handlers: ", len(handlers))
 
 	p.station.GetPluginContainer().DoPreHandle(route)
 
 	p.station.IRouter.getGarden().Plant(p.station, route)
 
 	p.station.GetPluginContainer().DoPostHandle(route)
-}
+	println("execute handler: ")
+	handlers[len(handlers)-1].Serve(nil)
+	println("execute last middleware- should be the handler:")
+	l := len(p.station.IRouter.getGarden().last().rootBranch.middleware)
 
+	p.station.IRouter.getGarden().last().rootBranch.middleware[l-1].Serve(nil)
+
+	println("execute all gardens")
+	tree := p.station.IRouter.getGarden().first
+	for tree != nil {
+		println("len tree middleware: ", len(tree.rootBranch.middleware))
+		println("first: ")
+		tree.rootBranch.middleware[0].Serve(nil)
+		println("second: ")
+		tree.rootBranch.middleware[1].Serve(nil)
+		println("third: ")
+		tree.rootBranch.middleware[2].Serve(nil)
+		println("last : ")
+		tree.rootBranch.middleware[len(tree.rootBranch.middleware)-1].Serve(nil)
+		tree = tree.next
+	}
+}
+*/
 // HandleFunc registers and returns a route with a method string, path string and a handler
 // registedPath is the relative url path
 // handler is the iris.Handler which you can pass anything you want via iris.ToHandlerFunc(func(res,req){})... or just use func(c *iris.Context)
@@ -227,17 +210,6 @@ func (p *GardenParty) HandleAnnotated(irisHandler Handler) error {
 //global middleware
 ///////////////////
 
-// Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
-// Party can also be named as 'Join' or 'Node' or 'Group' , Party chosen because it has more fun
-func (p *GardenParty) Party(path string) IParty {
-	if path[0] != SlashByte && strings.Contains(path, ".") {
-		//propably domain
-		return NewParty(path, p.station, nil) //nil as the hoster, the domains are individual
-	}
-	return NewParty(path, p.station, p)
-
-}
-
 ///////////////////////////////
 //expose some methods as public
 ///////////////////////////////
@@ -293,4 +265,55 @@ func (p *GardenParty) Any(path string, handlersFn ...HandlerFunc) {
 		p.HandleFunc(k, path, handlersFn...)
 	}
 
+}
+
+// Use registers a Handler middleware
+func (p *GardenParty) Use(handlers ...Handler) {
+	p.middleware = append(p.middleware, handlers...)
+}
+
+// UseFunc registers a HandlerFunc middleware
+func (p *GardenParty) UseFunc(handlersFn ...HandlerFunc) {
+	p.Use(ConvertToHandlers(handlersFn)...)
+}
+
+// Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
+// Party can also be named as 'Join' or 'Node' or 'Group' , Party chosen because it has more fun
+func (p *GardenParty) Party(path string, handlersFn ...HandlerFunc) IParty {
+	middleware := ConvertToHandlers(handlersFn)
+	if path[0] != SlashByte && strings.Contains(path, ".") {
+		//it's domain so no handlers share (even the global ) or path, nothing.
+		return newParty(path, p.station, middleware)
+	}
+	// set path to parent+child
+	path = absPath(p.relativePath, path)
+	// append the parent's +child's handlers
+	middleware = JoinMiddleware(p.middleware, middleware)
+	return newParty(path, p.station, middleware)
+
+}
+
+func absPath(rootPath string, relativePath string) (absPath string) {
+
+	if relativePath == "" {
+		absPath = rootPath
+	} else {
+
+		absPath = path.Join(rootPath, relativePath)
+	}
+
+	return
+}
+
+// fixPath fix the double slashes, (because of root,I just do that before the .Handle no need for anything else special)
+func fixPath(str string) string {
+
+	strafter := strings.Replace(str, "//", Slash, -1)
+
+	if strafter[0] == SlashByte && strings.Count(strafter, ".") >= 2 {
+		//it's domain, remove the first slash
+		strafter = strafter[1:]
+	}
+
+	return strafter
 }

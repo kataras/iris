@@ -63,14 +63,7 @@ type (
 
 	// Middleware is just a slice of Handler []func(c *Context)
 	Middleware []Handler
-
-	//MiddlewareSupporter is the struch which make the Imiddlewaresupporter's works, is useful only to no repeat the code of middleware
-	MiddlewareSupporter struct {
-		Middleware Middleware
-	}
 )
-
-var _ IMiddlewareSupporter = &MiddlewareSupporter{}
 
 // Serve serves the handler, is like ServeHTTP for Iris
 func (h HandlerFunc) Serve(ctx *Context) {
@@ -137,18 +130,4 @@ func JoinMiddleware(middleware1 Middleware, middleware2 Middleware) Middleware {
 	//start from there we finish, and store the new middleware too
 	copy(newMiddleware[nowLen:], middleware2)
 	return newMiddleware
-}
-
-// Use appends handler(s) to the route or to the router if it's called from router
-func (m *MiddlewareSupporter) Use(handlers ...Handler) {
-	m.Middleware = append(m.Middleware, handlers...)
-	//care here the new handlers will be added to the last, so run Use first for handlers you want to run first
-}
-
-// UseFunc is the same as Use but it receives HandlerFunc instead of iris.Handler as parameter(s)
-// form of acceptable: func(c *iris.Context){//first middleware}, func(c *iris.Context){//second middleware}
-func (m *MiddlewareSupporter) UseFunc(handlersFn ...HandlerFunc) {
-	for _, h := range handlersFn {
-		m.Use(Handler(h))
-	}
 }

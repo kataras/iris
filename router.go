@@ -120,7 +120,7 @@ func MethodMatch(m1, m2 string) bool {
 func NewRouter(station *Station) *Router {
 	r := &Router{station: station, httpErrors: defaultHTTPErrors(), garden: &Garden{}} // TODO: maybe +1 for any which is just empty tree ""
 	r.methodMatch = MethodMatch
-	r.IParty = NewParty("/", r.station, nil)
+	r.IParty = newParty("/", r.station, nil)
 	r.errorPool = sync.Pool{New: func() interface{} {
 		return &Context{station: station}
 	}}

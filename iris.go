@@ -64,7 +64,7 @@ const (
 	TimeFormat = "Mon, 02 Jan 2006 15:04:05 GMT"
 
 	// stopExecutionPosition used inside the Context, is the number which shows us that the context's middleware manualy stop the execution
-	stopExecutionPosition = 255 // is the biggest uint8
+	stopExecutionPosition = 255
 
 	// LoggerIrisPrefix is the prefix of the logger '[IRIS] '
 	LoggerIrisPrefix = "[IRIS] "
