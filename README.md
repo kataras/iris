@@ -46,6 +46,7 @@ Start using Iris Web Framework today. Iris is easy-to-learn while providing robu
 
 ## Table of Contents
 
+- [Versioning](#versioning)
 - [Install](#install)
 - [Introduction](#introduction)
 - [TLS](#tls)
@@ -74,10 +75,19 @@ Start using Iris Web Framework today. Iris is easy-to-learn while providing robu
 - [Community](#community)
 - [Todo](#todo)
 - [External source articles](#articles)
-- [Versioning](#versioning)
 - [License](#license)
 
 
+## Versioning
+
+Current: **v2.0.0-alpha**
+
+Read more about Semantic Versioning 2.0.0
+
+ - http://semver.org/
+ - https://en.wikipedia.org/wiki/Software_versioning
+ - https://wiki.debian.org/UpstreamGuide#Releases_and_Versions
+ 
 ## Install
 Iris is in active development status, I recommend you to check for new features and [versions](#versioning) once per week. Iris is compatible with the latest go version: go1.6+
 ```sh
@@ -88,7 +98,7 @@ If update doesn't works for you, try this
 $ rm -rf $GOPATH/github.com/kataras/iris
 $ go get github.com/kataras/iris
 ```
-
+ 
 ## Introduction
 The name of this framework came from **Greek mythology**, **Iris** was the name of the Greek goddess of the **rainbow**.
 Iris is a very minimal but flexible golang http middleware & standalone web application framework, providing a robust set of features for building single & multi-page, web applications.
@@ -108,26 +118,14 @@ func main() {
 ```
 >Note: for macOS, If you are having problems on .Listen then pass only the port "8080" without ':'
 
-#### Listening
-
-```go
-//1  defaults to tcp 8080
-iris.Listen()
-//2
-log.Fatal(iris.Listen(":8080"))
-
-```
 
 ## TLS
-TLS for https://
+
 
 ```go
 ListenTLS(fulladdr string, certFile, keyFile string) error
 ```
 ```go
-//1
-iris.ListenTLS(":8080", "myCERTfile.cert", "myKEYfile.key")
-//2
 log.Fatal(iris.ListenTLS(":8080", "myCERTfile.cert", "myKEYfile.key"))
 
 ```
@@ -309,7 +307,7 @@ iris.Get("/home", func (c *iris.Context){
 	c.HTML("<h1>Hello from /home </h1>")
 })
 
-iris.Listen()
+iris.Listen(":8080")
 ```
 
 HandlerFunc middleware example:
@@ -362,7 +360,7 @@ type Page struct {
 	Title string
 }
 
-iris.Templates("./yourpath/templates/*.html")
+iris.Templates().Load("./yourpath/templates/*.html")
 
 iris.Use(logger.Logger())
 
@@ -408,64 +406,109 @@ func testPost(c *iris.Context) {
 Let's make a pause,
 
 - Q: Other frameworks needs more lines to start a server, why Iris is different?
-- A: Iris gives you the freedom to choose between three methods/ways to use Iris
+- A: Iris gives you the freedom to choose between three ways to declare to use Iris
 
  1. global **iris.**
- 2. set a new iris with variable  = iris**.New()**
- 3. set a new iris with custom options with variable = iris**.Custom(options)**
+ 2. declare a new iris station with default config: **iris.New()**
+ 3. declare a new iris station with custom config: **iris.New(iris.Config{...})**
+
 
 
 ```go
 import "github.com/kataras/iris"
 
 // 1.
-func methodFirst() {
+func firstWay() {
 
 	iris.Get("/home",func(c *iris.Context){})
 	iris.Listen(":8080")
-	//iris.ListenTLS(":8080","yourcertfile.cert","yourkeyfile.key"
 }
 // 2.
-func methodSecond() {
+func secondWay() {
 
 	api := iris.New()
 	api.Get("/home",func(c *iris.Context){})
 	api.Listen(":8080")
 }
+```
+
+Before 3rd way, let's take a quick look at the **iris.IrisConfig**:
+```go
+IrisConfig struct {
+		// MaxRequestBodySize Maximum request body size.
+		//
+		// The server rejects requests with bodies exceeding this limit.
+		//
+		// By default request body size is unlimited.
+		MaxRequestBodySize int
+		// PathCorrection corrects and redirects the requested path to the registed path
+		// for example, if /home/ path is requested but no handler for this Route found,
+		// then the Router checks if /home handler exists, if yes, redirects the client to the correct path /home
+		// and VICE - VERSA if /home/ is registed but /home is requested then it redirects to /home/
+		//
+		// Default is true
+		PathCorrection bool
+
+		// Log turn it to false if you want to disable logger,
+		// Iris prints/logs ONLY errors, so be careful when you disable it
+		Log bool
+
+		// Profile set to true to enable web pprof (debug profiling)
+		// Default is false, enabling makes available these 7 routes:
+		// /debug/pprof/cmdline
+		// /debug/pprof/profile
+		// /debug/pprof/symbol
+		// /debug/pprof/goroutine
+		// /debug/pprof/heap
+		// /debug/pprof/threadcreate
+		// /debug/pprof/pprof/block
+		Profile bool
+
+		// ProfilePath change it if you want other url path than the default
+		// Default is /debug/pprof , which means yourhost.com/debug/pprof
+		ProfilePath string
+	}
+
+```
+```go
 // 3.
-func methodThree() {
-	//these are the default options' values
-	options := iris.StationOptions{
+func thirdMethod() {
+
+	config := iris.IrisConfig{
+	    MaxRequestBodySize: -1,
+		PathCorrection: 	true,
 	    Log:				true,
 		Profile:            false,
 		ProfilePath:        iris.DefaultProfilePath,
-		PathCorrection: 	true, //explanation at the end of this chapter
+
 	}//these are the default values that you can change
 	//DefaultProfilePath = "/debug/pprof"
 
-	api := iris.Custom(options)
+	api := iris.New(config)
 	api.Get("/home",func(c *iris.Context){})
 	api.Listen(":8080")
 }
 
 ```
 
-> Note that with 2. & 3. you **can define and use more than one Iris container** in the
+> Note that with 2. & 3. you **can define and use more than one Iris station** in the
 > same app, when it's necessary.
 
-As you can see there are some options that you can chage at your iris declaration, you cannot change them after.
-**If an option value not passed then it considers to be false if bool or the default if string.**
+As you can see there are some options that you can chage at your iris declaration.
 
 For example if we do that...
 ```go
+package main
+
 import "github.com/kataras/iris"
+
 func main() {
-	options := iris.StationOptions{
+	config := iris.IrisConfig{
 		Profile:            true,
 		ProfilePath:        "/mypath/debug",
 	}
 
-	api := iris.Custom(options)
+	api := iris.New(config)
 	api.Listen(":8080")
 }
 ```
@@ -503,13 +546,12 @@ func main() {
 	})
 
     // manage all /users
-    users := iris.Party("/users")
-    {
-  	    // provide a  middleware
-		users.UseFunc(func(c *iris.Context) {
+    users := iris.Party("/users",func(c *iris.Context) {
 			println("LOG [/users...] This is the middleware for: ", c.PathString())
 			c.Next()
-		})
+		}))
+    {
+
 		users.Post("/login", loginHandler)
         users.Get("/:userId", singleUserHandler)
         users.Delete("/:userId", userAccountRemoveUserHandler)
@@ -599,18 +641,12 @@ iris.Static("/public", "./static/assets/", 1))
 You can define your own handlers for http errors, which can render an html file for example. e.g for for 404 not found:
 
 ```go
-package main
-
-import "github.com/kataras/iris"
-func main() {
 	iris.OnError(404,func (c *iris.Context){
 		c.HTML("<h1> The page you looking doesn't exists </h1>")
 		c.SetStatusCode(404)
 	})
 	//or OnNotFound(func (c *iris.Context){})... for 404 only.
 	//or OnPanic(func (c *iris.Context){})... for 500 only.
-
-	//...
 }
 
 ```
@@ -646,7 +682,7 @@ func main() {
 		ctx.Stream(stream)
 	})
 
-	iris.Listen()
+	iris.Listen(":8080")
 }
 
 func stream(w *bufio.Writer) {
@@ -670,6 +706,7 @@ which it's a fork of [https://github.com/tylerb/graceful](https://github.com/tyl
 
 
 How to use:
+
 ```go
 
 package main
@@ -691,7 +728,7 @@ func main() {
 }
 
 
-````
+```
 
 ## Context
 ![Iris Context Outline view](http://kataras.github.io/iris/assets/context_view.png)
@@ -708,18 +745,22 @@ Inside the [examples](https://github.com/iris-contrib/examples) branch you will 
 Plugins are modules that you can build to inject the Iris' flow. Think it like a middleware for the Iris framework itself, not only the requests. Middleware starts it's actions after the server listen, Plugin on the other hand starts working when you registed them, from the begin, to the end. Look how it's interface looks:
 
 ```go
-type (
-	// IPlugin is the interface which all Plugins must implement.
-	//
-	// A Plugin can register other plugins also from it's Activate state
-	IPlugin interface {
+	// IPluginGetName implements the GetName() string method
+	IPluginGetName interface {
 		// GetName has to returns the name of the plugin, a name is unique
 		// name has to be not dependent from other methods of the plugin,
 		// because it is being called even before the Activate
 		GetName() string
+	}
+
+	// IPluginGetDescription implements the GetDescription() string method
+	IPluginGetDescription interface {
 		// GetDescription has to returns the description of what the plugins is used for
 		GetDescription() string
+	}
 
+	// IPluginGetDescription implements the Activate(IPluginContainer) error method
+	IPluginActivate interface {
 		// Activate called BEFORE the plugin being added to the plugins list,
 		// if Activate returns none nil error then the plugin is not being added to the list
 		// it is being called only one time
@@ -728,33 +769,34 @@ type (
 		Activate(IPluginContainer) error
 	}
 
+	// IPluginPreHandle implements the PreHandle(IRoute) method
 	IPluginPreHandle interface {
 		// PreHandle it's being called every time BEFORE a Route is registed to the Router
 		//
 		//  parameter is the Route
 		PreHandle(IRoute)
 	}
-
+	// IPluginPostHandle implements the PostHandle(IRoute) method
 	IPluginPostHandle interface {
 		// PostHandle it's being called every time AFTER a Route successfully registed to the Router
 		//
 		// parameter is the Route
 		PostHandle(IRoute)
 	}
-
+	// IPluginPreListen implements the PreListen(*Station) method
 	IPluginPreListen interface {
 		// PreListen it's being called only one time, BEFORE the Server is started (if .Listen called)
 		// is used to do work at the time all other things are ready to go
 		//  parameter is the station
 		PreListen(*Station)
 	}
-
+	// IPluginPostListen implements the PostListen(*Station) method
 	IPluginPostListen interface {
 		// PostListen it's being called only one time, AFTER the Server is started (if .Listen called)
 		// parameter is the station
 		PostListen(*Station)
 	}
-
+	// IPluginPreClose implements the PreClose(*Station) method
 	IPluginPreClose interface {
 		// PreClose it's being called only one time, BEFORE the Iris .Close method
 		// any plugin cleanup/clear memory happens here
@@ -762,8 +804,6 @@ type (
 		// The plugin is deactivated after this state
 		PreClose(*Station)
 	}
-)
-
 ```
 
 A small example, imagine that you want to get all routes registered to your server (OR modify them at runtime),  with their time registed, methods, (sub)domain  and the path, what whould you do on other frameworks when you want something from the framework which it doesn't supports out of the box? and what you can do with Iris:
@@ -812,7 +852,7 @@ func (i *myPlugin) PostHandle(route iris.IRoute) {
 // you have the right to access the whole iris' Station also, here you can add more routes and do anything you want, for example start a second server too, an admin web interface!
 // for example let's print to the server's stdout the routes we collected...
 func (i *myPlugin) PostListen(s *iris.Station) {
-	s.Logger().Printf("From MyPlugin: You have registed %d routes ", len(i.routes))
+	s.Logger.Printf("From MyPlugin: You have registed %d routes ", len(i.routes))
 	//do what ever you want, you have imagination do more than this!
 }
 
@@ -828,14 +868,14 @@ package main
 import "github.com/kataras/iris"
 
 func main() {
-   iris.Plugin(NewMyPlugin())
-   //the plugin is running and caching all these routes
+   iris.Plugins().Add(NewMyPlugin())
+   //the plugin is running and saves all these routes
    iris.Get("/", func(c *iris.Context){})
    iris.Post("/login", func(c *iris.Context){})
    iris.Get("/login", func(c *iris.Context){})
    iris.Get("/something", func(c *iris.Context){})
 
-   iris.Listen()
+   iris.Listen(":8080")
 }
 
 
@@ -922,15 +962,6 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 * [Ultra-wide framework Go Http routing performance comparison](https://translate.google.com/translate?sl=auto&tl=en&js=y&prev=_t&hl=el&ie=UTF-8&u=http%3A%2F%2Fcolobu.com%2F2016%2F03%2F23%2FGo-HTTP-request-router-and-web-framework-benchmark%2F&edit-text=&act=url)
 > According to my  article ( comparative ultra wide frame Go Http routing performance ) on a variety of relatively Go http routing framework, Iris clear winner, its performance far exceeds other Golang http routing framework.
 
-## Versioning
-
-Current: **v1.2.1**
-
-Read more about Semantic Versioning 2.0.0
-
- - http://semver.org/
- - https://en.wikipedia.org/wiki/Software_versioning
- - https://wiki.debian.org/UpstreamGuide#Releases_and_Versions
 
 ## License
 

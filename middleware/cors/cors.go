@@ -3,13 +3,13 @@
 package cors
 
 import (
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/utils"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
-
-	"github.com/kataras/iris"
 )
 
 const toLower = 'a' - 'A'
@@ -124,7 +124,7 @@ func DefaultCors() *Cors {
 func (c *Cors) handlePreflight(ctx *iris.Context) {
 	r := ctx.RequestCtx.Request
 	headers := ctx.RequestCtx.Response.Header
-	origin := iris.BytesToString(r.Header.Peek("Origin"))
+	origin := utils.BytesToString(r.Header.Peek("Origin"))
 
 	if ctx.MethodString() != "OPTIONS" {
 		// c.logf("  Preflight aborted: %s!=OPTIONS", r.Method)
@@ -146,12 +146,12 @@ func (c *Cors) handlePreflight(ctx *iris.Context) {
 		return
 	}
 
-	reqMethod := iris.BytesToString(r.Header.Peek("Access-Control-Request-Method"))
+	reqMethod := utils.BytesToString(r.Header.Peek("Access-Control-Request-Method"))
 	if !c.IsMethodAllowed(reqMethod) {
 		// c.logf("  Preflight aborted: method '%s' not allowed", reqMethod)
 		return
 	}
-	reqHeaders := parseHeaderList(iris.BytesToString(r.Header.Peek("Access-Control-Request-Headers")))
+	reqHeaders := parseHeaderList(utils.BytesToString(r.Header.Peek("Access-Control-Request-Headers")))
 	if !c.areHeadersAllowed(reqHeaders) {
 		// c.logf("  Preflight aborted: headers '%v' not allowed", reqHeaders)
 		return
@@ -177,7 +177,7 @@ func (c *Cors) handlePreflight(ctx *iris.Context) {
 func (c *Cors) handleActualRequest(ctx *iris.Context) {
 	r := ctx.Request
 	headers := ctx.RequestCtx.Response.Header
-	origin := iris.BytesToString(r.Header.Peek("Origin"))
+	origin := utils.BytesToString(r.Header.Peek("Origin"))
 
 	if ctx.MethodString() == "OPTIONS" {
 		c.logf("  Actual request no headers added: method == %s", ctx.MethodString())

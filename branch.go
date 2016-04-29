@@ -31,6 +31,8 @@ package iris
 import (
 	"bytes"
 	"strings"
+
+	"github.com/kataras/iris/utils"
 )
 
 const (
@@ -160,7 +162,7 @@ func (b *Branch) AddBranch(path string, middleware Middleware) {
 			}
 
 			i := 0
-			max := findLower(len(path), len(b.part))
+			max := utils.FindLower(len(path), len(b.part))
 			for i < max && path[i] == b.part[i] {
 				i++
 			}

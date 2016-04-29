@@ -52,7 +52,7 @@ func (i *irisControlPlugin) startControlPanel() {
 	}
 
 	i.server = iris.New()
-	i.server.Templates(installationPath + "templates/*")
+	i.server.Templates.Load(installationPath + "templates/*")
 	i.setPluginsInfo()
 	i.setPanelRoutes()
 
@@ -113,10 +113,10 @@ func (i *irisControlPlugin) setPanelRoutes() {
 		//println("server start")
 		old := i.stationServer
 		if !old.IsSecure() {
-			i.station.Listen(old.Options().ListeningAddr)
+			i.station.Listen(old.Config.ListeningAddr)
 			//yes but here it does re- post listen to this plugin so ...
 		} else {
-			i.station.ListenTLS(old.Options().ListeningAddr, old.Options().CertFile, old.Options().KeyFile)
+			i.station.ListenTLS(old.Config.ListeningAddr, old.Config.CertFile, old.Config.KeyFile)
 		}
 
 	})

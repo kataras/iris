@@ -31,6 +31,7 @@ import (
 
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/plugin/routesinfo"
+	"github.com/kataras/iris/server"
 )
 
 const Name = "Iris Control"
@@ -47,7 +48,7 @@ type irisControlPlugin struct {
 	// the station object of the main  user's iris instance
 	station *iris.Station
 	//a copy of the server which the main user's iris is listening for
-	stationServer iris.Server
+	stationServer *server.Server
 
 	// the server is this plugin's server object, it is managed by this plugin only
 	server *iris.Station
@@ -86,7 +87,7 @@ func Web(port int, users map[string]string) iris.IPlugin {
 
 func (i *irisControlPlugin) Activate(container iris.IPluginContainer) error {
 	i.pluginContainer = container
-	container.Plugin(i.routes) // add the routesinfo plugin to the main server
+	container.Add(i.routes) // add the routesinfo plugin to the main server
 	return nil
 }
 
@@ -113,7 +114,7 @@ func (i *irisControlPlugin) PostListen(s *iris.Station) {
 	//if the first time, because other times start/stop of the server so listen and no listen will be only from the control panel
 	if i.station == nil {
 		i.station = s
-		i.stationServer = *i.station.Server
+		i.stationServer = i.station.Server
 		i.startControlPanel()
 	}
 
@@ -127,7 +128,7 @@ func (i *irisControlPlugin) PreClose(s *iris.Station) {
 
 // Destroy removes entirely the plugin, the options and all of these properties, you cannot re-use this plugin after this method.
 func (i *irisControlPlugin) Destroy() {
-	i.pluginContainer.RemovePlugin(Name)
+	i.pluginContainer.Remove(Name)
 
 	i.options = IrisControlOptions{}
 	i.routes = nil

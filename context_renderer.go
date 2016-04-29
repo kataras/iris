@@ -38,6 +38,10 @@ import (
 	"path"
 	"strconv"
 	"time"
+
+	_template "github.com/kataras/iris/template"
+
+	"github.com/kataras/iris/utils"
 )
 
 type (
@@ -190,13 +194,13 @@ func (ctx *Context) RenderXML(httpStatus int, xmlStructs ...interface{}) error {
 // returns an error if any errors occurs while executing this template
 func (ctx *Context) ExecuteTemplate(tmpl *template.Template, pageContext interface{}) error {
 	ctx.RequestCtx.SetContentType(ContentHTML + " ;charset=" + Charset)
-	return ErrTemplateExecute.With(tmpl.Execute(ctx.RequestCtx.Response.BodyWriter(), pageContext))
+	return _template.ErrTemplateExecute.With(tmpl.Execute(ctx.RequestCtx.Response.BodyWriter(), pageContext))
 }
 
 // RenderFile renders a file by its path and a context passed to the function
 func (ctx *Context) RenderFile(file string, pageContext interface{}) error {
 	ctx.RequestCtx.SetContentType(ContentHTML + " ;charset=" + Charset)
-	return ErrTemplateExecute.With(ctx.station.GetTemplates().Templates.ExecuteTemplate(ctx.RequestCtx.Response.BodyWriter(), file, pageContext))
+	return _template.ErrTemplateExecute.With(ctx.station.Templates.Templates.ExecuteTemplate(ctx.RequestCtx.Response.BodyWriter(), file, pageContext))
 }
 
 // ServeContent serves content, headers are autoset
@@ -211,7 +215,7 @@ func (ctx *Context) ServeContent(content io.ReadSeeker, filename string, modtime
 		return nil
 	}
 
-	ctx.RequestCtx.Response.Header.Set(ContentType, TypeByExtension(filename))
+	ctx.RequestCtx.Response.Header.Set(ContentType, utils.TypeByExtension(filename))
 	ctx.RequestCtx.Response.Header.Set(LastModified, modtime.UTC().Format(TimeFormat))
 	ctx.RequestCtx.SetStatusCode(200)
 	_, err := io.Copy(ctx.RequestCtx.Response.BodyWriter(), content)

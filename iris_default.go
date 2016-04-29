@@ -27,37 +27,37 @@
 
 package iris
 
-import "html/template"
+import (
+	"github.com/kataras/iris/logger"
+	"github.com/kataras/iris/server"
+	"github.com/kataras/iris/template"
+)
 
-// DefaultOptions returns the default options for the Station
-func DefaultOptions() StationOptions {
-	return StationOptions{
-		Profile:        false,
-		ProfilePath:    DefaultProfilePath,
-		PathCorrection: true,
-		Log:            true,
+// DefaultConfig returns the default iris.Config for the Station
+func DefaultConfig() IrisConfig {
+	return IrisConfig{
+		PathCorrection:     true,
+		MaxRequestBodySize: -1,
+		Log:                true,
+		Profile:            false,
+		ProfilePath:        DefaultProfilePath,
 	}
 }
 
-// Plugin activates the plugins and if succeed then adds it to the activated plugins list
-func Plugin(plugin IPlugin) error {
-	return DefaultStation.Plugin(plugin)
-}
-
 // Listen starts the standalone http server
-// which listens to the fullHostOrPort parameter which as the form of
+// which listens to the addr parameter which as the form of
 // host:port or just port or empty, the default is 127.0.0.1:8080
-func Listen(fullHostOrPort ...string) error {
-	return DefaultStation.Listen(fullHostOrPort...)
+func Listen(addr string) error {
+	return DefaultStation.Listen(addr)
 }
 
 // ListenTLS Starts a httpS/http2 server with certificates,
 // if you use this method the requests of the form of 'http://' will fail
 // only https:// connections are allowed
-// which listens to the fullHostOrPort parameter which as the form of
+// which listens to the addr parameter which as the form of
 // host:port
-func ListenTLS(fullAddress string, certFile, keyFile string) error {
-	return DefaultStation.ListenTLS(fullAddress, certFile, keyFile)
+func ListenTLS(addr string, certFile, keyFile string) error {
+	return DefaultStation.ListenTLS(addr, certFile, keyFile)
 }
 
 // Close is used to close the net.Listener of the standalone http server which has already running via .Listen
@@ -162,23 +162,14 @@ func Static(requestPath string, systemPath string, stripSlashes int) {
 	DefaultStation.Static(requestPath, systemPath, stripSlashes)
 }
 
-// Error handling
-
-// Errors returns the object which is resposible for the error(s) handler(s)
-func Errors() IHTTPErrors {
-	return DefaultStation.Errors()
+// OnError Registers a handler for a specific http error status
+func OnError(httpStatus int, handler HandlerFunc) {
+	DefaultStation.OnError(httpStatus, handler)
 }
 
-// OnError registers an error to the http custom errors
-// first parameter is the http status code ( int )
-// second parameter is the actual handler which called when this status code occurred, type of HandlerFunc
-func OnError(statusCode int, handlerFunc HandlerFunc) {
-	DefaultStation.OnError(statusCode, handlerFunc)
-}
-
-// EmitError emits an error with it's http status code and the iris Context passed to the function
-func EmitError(statusCode int, ctx *Context) {
-	DefaultStation.EmitError(statusCode, ctx)
+// EmitError executes the handler of the given error http status code
+func EmitError(httpStatus int, ctx *Context) {
+	DefaultStation.EmitError(httpStatus, ctx)
 }
 
 // OnNotFound sets the handler for http status 404,
@@ -193,32 +184,40 @@ func OnPanic(handlerFunc HandlerFunc) {
 	DefaultStation.OnPanic(handlerFunc)
 }
 
-//SetMaxRequestBodySize sets the maximum request body size.
+// ***********************
+// Export DefaultStation's  exported properties
+// ***********************
+
+// Server returns the DefaultStation.Server
+func Server() *server.Server {
+	return DefaultStation.Server
+}
+
+// Plugins returns the plugin container,  DefaultStation.Plugins
+func Plugins() *PluginContainer {
+	return DefaultStation.Plugins
+}
+
+// Templates returns the html template container, DefaultStation.Templates
+func Templates() *template.HTMLContainer {
+	return DefaultStation.Templates
+}
+
+// Config returns the DefaultStation.Config
+func Config() IrisConfig {
+	return DefaultStation.Config
+}
+
+// Logger returns the DefaultStation.Logger
+func Logger() *logger.Logger {
+	return DefaultStation.Logger
+}
+
+// SetMaxRequestBodySize Maximum request body size.
 //
 // The server rejects requests with bodies exceeding this limit.
 //
 // By default request body size is unlimited.
 func SetMaxRequestBodySize(size int) {
 	DefaultStation.SetMaxRequestBodySize(size)
-}
-
-// Templates sets the templates glob path for the web app
-// panics on error
-func Templates(pathGlob string) {
-	DefaultStation.Templates(pathGlob)
-}
-
-// GetTemplates returns the *template.Template registed to this station, if any
-func GetTemplates() *HTMLTemplates {
-	return DefaultStation.GetTemplates()
-}
-
-// TemplateFuncs is alias for .GetTemplates().Templates.Funcs
-func TemplateFuncs(f template.FuncMap) *template.Template {
-	return DefaultStation.TemplateFuncs(f)
-}
-
-// Template delims sets the custom delims before the template loading/parsing process
-func TemplateDelims(left string, right string) {
-	DefaultStation.TemplateDelims(left, right)
 }

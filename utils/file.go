@@ -25,7 +25,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package iris
+package utils
 
 import (
 	"archive/zip"
@@ -38,20 +38,27 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/kataras/iris/errors"
+	"github.com/kataras/iris/logger"
 )
 
-// directoryExists returns true if a directory(or file) exists, otherwise false
-func directoryExists(dir string) bool {
+const (
+	// ContentBINARY is the  string of "application/octet-stream response headers
+	ContentBINARY = "application/octet-stream"
+)
+
+// DirectoryExists returns true if a directory(or file) exists, otherwise false
+func DirectoryExists(dir string) bool {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		return false
 	}
 	return true
 }
 
-// downloadZip downloads a zip file returns the downloaded filename and an error.
+// DownloadZip downloads a zip file returns the downloaded filename and an error.
 //
 // An indicator is always shown up to the terminal, so the user will know if (a plugin) try to download something
-func downloadZip(zipURL string, newDir string) (string, error) {
+func DownloadZip(zipURL string, newDir string) (string, error) {
 	var err error
 	var size int64
 	finish := make(chan bool)
@@ -117,11 +124,11 @@ func downloadZip(zipURL string, newDir string) (string, error) {
 
 }
 
-// unzip extracts a zipped file to the target location
+// Unzip extracts a zipped file to the target location
 //
 // it removes the zipped file after successfully completion
 // returns a string with the path of the created folder (if any) and an error (if any)
-func unzip(archive string, target string) (string, error) {
+func Unzip(archive string, target string) (string, error) {
 	reader, err := zip.OpenReader(archive)
 	if err != nil {
 		return "", err
@@ -164,12 +171,12 @@ func unzip(archive string, target string) (string, error) {
 	return createdFolder, nil
 }
 
-// removeFile removes a file and returns an error, if any
-func removeFile(filePath string) error {
+// RemoveFile removes a file and returns an error, if any
+func RemoveFile(filePath string) error {
 	return ErrFileRemove.With(os.Remove(filePath))
 }
 
-// install is just the flow of: downloadZip -> unzip -> removeFile(zippedFile)
+// Install is just the flow of: downloadZip -> unzip -> removeFile(zippedFile)
 // accepts 2 parameters
 //
 // first parameter is the remote url file zip
@@ -179,15 +186,15 @@ func removeFile(filePath string) error {
 // (string) installedDirectory is the directory which the zip file had, this is the real installation path, you don't need to know what it's because these things maybe change to the future let's keep it to return the correct path.
 // the installedDirectory is not empty when the installation is succed, the targetDirectory is not already exists and no error happens
 // the installedDirectory is empty when the installation is already done by previous time or an error happens
-func install(remoteFileZip string, targetDirectory string) (installedDirectory string, err error) {
+func Install(remoteFileZip string, targetDirectory string) (installedDirectory string, err error) {
 	var zipFile string
 
-	zipFile, err = downloadZip(remoteFileZip, targetDirectory)
+	zipFile, err = DownloadZip(remoteFileZip, targetDirectory)
 	if err == nil {
-		installedDirectory, err = unzip(zipFile, targetDirectory)
+		installedDirectory, err = Unzip(zipFile, targetDirectory)
 		if err == nil {
 			installedDirectory += string(os.PathSeparator)
-			removeFile(zipFile)
+			RemoveFile(zipFile)
 		}
 	}
 	return
@@ -263,7 +270,8 @@ func TypeByExtension(fullfilename string) (t string) {
 	return
 }
 
-func getParrentDir(targetDirectory string) string {
+// GetParentDir returns the parent directory(string) of the passed targetDirectory (string)
+func GetParrentDir(targetDirectory string) string {
 	lastSlashIndex := strings.LastIndexByte(targetDirectory, os.PathSeparator)
 	//check if the slash is at the end , if yes then re- check without the last slash, we don't want /path/to/ , we want /path/to in order to get the /path/ which is the parent directory of the /path/to
 	if lastSlashIndex == len(targetDirectory)-1 {
@@ -277,12 +285,12 @@ func getParrentDir(targetDirectory string) string {
 // 3-BSD License for package fsnotify/fsnotify
 // Copyright (c) 2012 The Go Authors. All rights reserved.
 // Copyright (c) 2012 fsnotify Authors. All rights reserved.
-func watchDirectoryChanges(rootPath string, evt func(filename string), logger ...*Logger) {
+func WatchDirectoryChanges(rootPath string, evt func(filename string), logger ...*logger.Logger) {
 	watcher, err := fsnotify.NewWatcher()
 
 	if err != nil {
 		if len(logger) > 0 {
-			Printf(logger[0], err)
+			errors.Printf(logger[0], err)
 		}
 		return
 	}
@@ -306,7 +314,7 @@ func watchDirectoryChanges(rootPath string, evt func(filename string), logger ..
 				}
 			case err := <-watcher.Errors:
 				if len(logger) > 0 {
-					Printf(logger[0], err)
+					errors.Printf(logger[0], err)
 				}
 			}
 		}
@@ -315,7 +323,7 @@ func watchDirectoryChanges(rootPath string, evt func(filename string), logger ..
 	err = watcher.Add(rootPath)
 	if err != nil {
 		if len(logger) > 0 {
-			Printf(logger[0], err)
+			errors.Printf(logger[0], err)
 		}
 	}
 

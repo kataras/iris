@@ -32,6 +32,8 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/valyala/fasthttp"
 )
 
 type (
@@ -52,6 +54,15 @@ type (
 		Any(string, ...HandlerFunc)
 		Use(...Handler)
 		UseFunc(...HandlerFunc)
+		// Static serves a directory
+		// accepts three parameters
+		// first parameter is the request url path (string)
+		// second parameter is the system directory (string)
+		// third parameter is the level (int) of stripSlashes
+		// * stripSlashes = 0, original path: "/foo/bar", result: "/foo/bar"
+		// * stripSlashes = 1, original path: "/foo/bar", result: "/bar"
+		// * stripSlashes = 2, original path: "/foo/bar", result: ""
+		Static(string, string, int)
 		Party(string, ...HandlerFunc) IParty // Each party can have a party too
 		IsRoot() bool
 	}
@@ -73,12 +84,12 @@ func (p *GardenParty) IsRoot() bool {
 
 // Handle registers a route to the server's router
 func (p *GardenParty) Handle(method string, registedPath string, handlers ...Handler) {
-	path := absPath(p.relativePath, registedPath)
+	path := fixPath(absPath(p.relativePath, registedPath))
 	middleware := JoinMiddleware(p.middleware, handlers)
 	route := NewRoute(method, path, middleware)
-	p.station.GetPluginContainer().DoPreHandle(route)
-	p.station.getGarden().Plant(route)
-	p.station.GetPluginContainer().DoPostHandle(route)
+	p.station.Plugins.DoPreHandle(route)
+	p.station.addRoute(route)
+	p.station.Plugins.DoPostHandle(route)
 }
 
 // HandleFunc registers and returns a route with a method string, path string and a handler
@@ -116,7 +127,7 @@ func (p *GardenParty) HandleAnnotated(irisHandler Handler) error {
 			}
 
 			path = tagValue
-			avalaibleMethodsStr := strings.Join(HTTPMethods.Any, ",")
+			avalaibleMethodsStr := strings.Join(AllMethods[0:], ",")
 
 			if !strings.Contains(avalaibleMethodsStr, tagName) {
 				//wrong method passed
@@ -154,52 +165,52 @@ func (p *GardenParty) HandleAnnotated(irisHandler Handler) error {
 
 // Get registers a route for the Get http method
 func (p *GardenParty) Get(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(HTTPMethods.Get, path, handlersFn...)
+	p.HandleFunc(MethodGet, path, handlersFn...)
 }
 
 // Post registers a route for the Post http method
 func (p *GardenParty) Post(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(HTTPMethods.Post, path, handlersFn...)
+	p.HandleFunc(MethodPost, path, handlersFn...)
 }
 
 // Put registers a route for the Put http method
 func (p *GardenParty) Put(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(HTTPMethods.Put, path, handlersFn...)
+	p.HandleFunc(MethodPut, path, handlersFn...)
 }
 
 // Delete registers a route for the Delete http method
 func (p *GardenParty) Delete(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(HTTPMethods.Delete, path, handlersFn...)
+	p.HandleFunc(MethodDelete, path, handlersFn...)
 }
 
 // Connect registers a route for the Connect http method
 func (p *GardenParty) Connect(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(HTTPMethods.Connect, path, handlersFn...)
+	p.HandleFunc(MethodConnect, path, handlersFn...)
 }
 
 // Head registers a route for the Head http method
 func (p *GardenParty) Head(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(HTTPMethods.Head, path, handlersFn...)
+	p.HandleFunc(MethodHead, path, handlersFn...)
 }
 
 // Options registers a route for the Options http method
 func (p *GardenParty) Options(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(HTTPMethods.Options, path, handlersFn...)
+	p.HandleFunc(MethodOptions, path, handlersFn...)
 }
 
 // Patch registers a route for the Patch http method
 func (p *GardenParty) Patch(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(HTTPMethods.Patch, path, handlersFn...)
+	p.HandleFunc(MethodPatch, path, handlersFn...)
 }
 
 // Trace registers a route for the Trace http method
 func (p *GardenParty) Trace(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(HTTPMethods.Trace, path, handlersFn...)
+	p.HandleFunc(MethodTrace, path, handlersFn...)
 }
 
 // Any registers a route for ALL of the http methods (Get,Post,Put,Head,Patch,Options,Connect,Delete)
 func (p *GardenParty) Any(path string, handlersFn ...HandlerFunc) {
-	for _, k := range HTTPMethods.All {
+	for _, k := range AllMethods {
 		p.HandleFunc(k, path, handlersFn...)
 	}
 
@@ -213,6 +224,14 @@ func (p *GardenParty) Use(handlers ...Handler) {
 // UseFunc registers a HandlerFunc middleware
 func (p *GardenParty) UseFunc(handlersFn ...HandlerFunc) {
 	p.Use(ConvertToHandlers(handlersFn)...)
+}
+
+// Static registers a route which serves a system directory
+func (p *GardenParty) Static(relative string, systemPath string, stripSlashes int) {
+	h := fasthttp.FSHandler(systemPath, stripSlashes)
+	p.Get(relative+"/*filepath", func(c *Context) {
+		h(c.RequestCtx)
+	})
 }
 
 // Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
@@ -236,7 +255,6 @@ func absPath(rootPath string, relativePath string) (absPath string) {
 	if relativePath == "" {
 		absPath = rootPath
 	} else {
-
 		absPath = path.Join(rootPath, relativePath)
 	}
 

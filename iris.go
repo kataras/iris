@@ -25,13 +25,21 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-//Package iris v1.2.1
+//Package iris v2.0.0-alpha
 package iris
 
-const (
-	// DefaultServerName the response header of the 'Server' value when writes to the client
-	DefaultServerName = "iris"
+import (
+	"github.com/kataras/iris/errors"
+)
 
+const (
+	// DefaultProfilePath is the default path for the web pprof '/debug/pprof'
+	DefaultProfilePath = "/debug/pprof"
+
+	// Content & Header
+
+	// DefaultUserAgent default to 'iris' but it is not used anywhere yet
+	DefaultUserAgent = "iris"
 	// DefaultCharset represents the default charset for content headers
 	DefaultCharset = "UTF-8"
 	// ContentType represents the header["Content-Type"]
@@ -66,35 +74,81 @@ const (
 	// stopExecutionPosition used inside the Context, is the number which shows us that the context's middleware manualy stop the execution
 	stopExecutionPosition = 255
 
-	// LoggerIrisPrefix is the prefix of the logger '[IRIS] '
-	LoggerIrisPrefix = "[IRIS] "
+	// ParameterStartByte is very used on the node, it's just contains the byte for the ':' rune/char
+	ParameterStartByte = byte(':')
+	// SlashByte is just a byte of '/' rune/char
+	SlashByte = byte('/')
+	// Slash is just a string of "/"
+	Slash = "/"
+	// MatchEverythingByte is just a byte of '*" rune/char
+	MatchEverythingByte = byte('*')
 
-	// DefaultServerAddr the default server addr
-	DefaultServerAddr = ":8080"
+	// HTTP Methods(1)
+
+	MethodGet     = "GET"
+	MethodPost    = "POST"
+	MethodPut     = "PUT"
+	MethodDelete  = "DELETE"
+	MethodConnect = "CONNECT"
+	MethodHead    = "HEAD"
+	MethodPatch   = "PATCH"
+	MethodOptions = "OPTIONS"
+	MethodTrace   = "TRACE"
 )
 
 var (
 	// DefaultStation in order to use iris.Get(...,...) we need a default server on the package level
 	DefaultStation *Station
+
+	// Errors
+
+	// Router, Party & Handler
+
+	// ErrHandler returns na error with message: 'Passed argument is not func(*Context) neither an object which implements the iris.Handler with Serve(ctx *Context)
+	// It seems to be a  +type Points to: +pointer.'
+	ErrHandler = errors.NewError("Passed argument is not func(*Context) neither an object which implements the iris.Handler with Serve(ctx *Context)\n It seems to be a  %T Points to: %v.")
+	// ErrHandleAnnotated returns an error with message: 'HandleAnnotated parse: +specific error(s)'
+	ErrHandleAnnotated = errors.NewError("HandleAnnotated parse: %s")
+
+	// Plugin
+
+	// ErrPluginAlreadyExists returns an error with message: 'Cannot activate the same plugin again, plugin '+plugin name[+plugin description]' is already exists'
+	ErrPluginAlreadyExists = errors.NewError("Cannot use the same plugin again, '%s[%s]' is already exists")
+	// ErrPluginActivate returns an error with message: 'While trying to activate plugin '+plugin name'. Trace: +specific error'
+	ErrPluginActivate = errors.NewError("While trying to activate plugin '%s'. Trace: %s")
+	// ErrPluginRemoveNoPlugins returns an error with message: 'No plugins are registed yet, you cannot remove a plugin from an empty list!'
+	ErrPluginRemoveNoPlugins = errors.NewError("No plugins are registed yet, you cannot remove a plugin from an empty list!")
+	// ErrPluginRemoveEmptyName returns an error with message: 'Plugin with an empty name cannot be removed'
+	ErrPluginRemoveEmptyName = errors.NewError("Plugin with an empty name cannot be removed")
+	// ErrPluginRemoveNotFound returns an error with message: 'Cannot remove a plugin which doesn't exists'
+	ErrPluginRemoveNotFound = errors.NewError("Cannot remove a plugin which doesn't exists")
+	// Context other
+
+	// ErrNoForm returns an error with message: 'Request has no any valid form'
+	ErrNoForm = errors.NewError("Request has no any valid form")
+	// ErrWriteJSON returns an error with message: 'Before JSON be written to the body, JSON Encoder returned an error. Trace: +specific error'
+	ErrWriteJSON = errors.NewError("Before JSON be written to the body, JSON Encoder returned an error. Trace: %s")
+	// ErrRenderMarshalled returns an error with message: 'Before +type Rendering, MarshalIndent retured an error. Trace: +specific error'
+	ErrRenderMarshalled = errors.NewError("Before +type Rendering, MarshalIndent returned an error. Trace: %s")
+	// ErrReadBody returns an error with message: 'While trying to read +type from the request body. Trace +specific error'
+	ErrReadBody = errors.NewError("While trying to read %s from the request body. Trace %s")
+	// ErrServeContent returns an error with message: 'While trying to serve content to the client. Trace +specific error'
+	ErrServeContent = errors.NewError("While trying to serve content to the client. Trace %s")
+
+	// File & Dir
+
+	// Storage
+	// ErrFlashNotFound returns an error with message: 'Unable to get flash message. Trace: Cookie does not exists'
+	ErrFlashNotFound = errors.NewError("Unable to get flash message. Trace: Cookie does not exists")
+
+	// HTTP Methods(2)
+
+	MethodConnectBytes = []byte(MethodConnect)
+
+	AllMethods = [...]string{"GET", "POST", "PUT", "DELETE", "CONNECT", "HEAD", "PATCH", "OPTIONS", "TRACE"}
 )
 
-// The one and only init to the whole package
+// init the only one.
 func init() {
 	DefaultStation = New()
-}
-
-// New creates and returns a new iris Station with default options
-func New() *Station {
-	defaultOptions := DefaultOptions()
-	return newStation(defaultOptions)
-}
-
-// Custom is used for iris-experienced developers
-// creates and returns a new iris Station with custom StationOptions
-func Custom(options StationOptions) *Station {
-	if options.ProfilePath == "" {
-		options.ProfilePath = DefaultProfilePath
-	}
-
-	return newStation(options)
 }

@@ -36,7 +36,9 @@ import (
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/cli/npm"
 	"github.com/kataras/iris/cli/system"
+	"github.com/kataras/iris/logger"
 	"github.com/kataras/iris/plugin/editor"
+	"github.com/kataras/iris/utils"
 )
 
 /* Notes
@@ -73,7 +75,7 @@ type (
 		// taken from Activate
 		pluginContainer iris.IPluginContainer
 		// taken at the PreListen
-		logger *iris.Logger
+		logger *logger.Logger
 	}
 )
 
@@ -135,7 +137,7 @@ func (t *Plugin) Activate(container iris.IPluginContainer) error {
 
 // GetName ...
 func (t *Plugin) GetName() string {
-	return Name + "[" + iris.RandomString(10) + "]" // this allows the specific plugin to be registed more than one time
+	return Name + "[" + utils.RandomString(10) + "]" // this allows the specific plugin to be registed more than one time
 }
 
 // GetDescription TypescriptPlugin scans and compile typescript files with ease
@@ -145,7 +147,7 @@ func (t *Plugin) GetDescription() string {
 
 // PreListen ...
 func (t *Plugin) PreListen(s *iris.Station) {
-	t.logger = s.Logger()
+	t.logger = s.Logger
 	t.start()
 }
 
@@ -230,7 +232,7 @@ func (t *Plugin) start() {
 		if len(projects) == 1 && t.options.Editor != nil {
 			dir := projects[0][0:strings.LastIndex(projects[0], system.PathSeparator)]
 			t.options.Editor.Dir(dir)
-			t.pluginContainer.Plugin(t.options.Editor)
+			t.pluginContainer.Add(t.options.Editor)
 		}
 
 	}

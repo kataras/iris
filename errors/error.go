@@ -25,72 +25,68 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// ticker.go: from the version 1, we don't need this atm, but we keep it.
-
-package iris
+package errors
 
 import (
-	"time"
+	"fmt"
+	"runtime"
+
+	"github.com/kataras/iris/logger"
 )
 
-// Ticker is the timer which is used in cache
-type Ticker struct {
-	ticker       *time.Ticker
-	started      bool
-	tickHandlers []func()
+// Error holds the error
+type Error struct {
+	err error
 }
 
-// NewTicker returns a new Ticker
-func NewTicker() *Ticker {
-	return &Ticker{tickHandlers: make([]func(), 0), started: false}
+// Error returns the message of the actual error
+func (e *Error) Error() string {
+	return e.err.Error()
 }
 
-// OnTick add event handlers/ callbacks which are called on each timer's tick
-func (c *Ticker) OnTick(h func()) {
-	c.tickHandlers = append(c.tickHandlers, h)
+// Format returns a formatted new error based on the arguments
+func (e *Error) Format(args ...interface{}) error {
+	return fmt.Errorf(e.err.Error(), args...)
 }
 
-// Start starts the timer and execute all listener's when tick
-func (c *Ticker) Start(duration time.Duration) {
-	if c.started {
-		return
+// With does the same thing as Format but it receives an error type which if it's nil it returns a nil error
+func (e *Error) With(err error) error {
+	if err == nil {
+		return nil
 	}
 
-	if c.ticker != nil {
-		panic("Iris Ticker: Cannot re-start a cache timer, if you stop it, it is not recommented to resume it,\n Just create a new CacheTimer.")
-	}
-
-	if duration.Seconds() <= 30 {
-		//c.duration = 5 * time.Minute
-		panic("Iris Ticker: Please provide a duration that it's longer than 30 seconds.")
-	}
-
-	c.ticker = time.NewTicker(duration)
-
-	go func() {
-		for t := range c.ticker.C {
-			_ = t
-			//			c.mu.Lock()
-			//			c.mu.Unlock()
-			//I can make it a clojure to handle only handlers that are registed before .start() but we are ok with this, it is not map no need to Lock, for now.
-			for i := range c.tickHandlers {
-				c.tickHandlers[i]()
-			}
-		}
-	}()
-
-	c.started = true
+	return e.Format(err.Error())
 }
 
-// Stop stops the ticker
-func (c *Ticker) Stop() {
-	if c.started {
-		c.ticker.Stop()
-		c.started = false
-	}
+// Return returns the actual error as it is
+func (e *Error) Return() error {
+	return e.err
 }
 
-// ITick is the interface which all ticker's listeners must implement
-type ITick interface {
-	OnTick()
+// Panic output the message and after panics
+func (e *Error) Panic() {
+	_, fn, line, _ := runtime.Caller(1)
+	errMsg := e.Error()
+	errMsg = "\nCaller was: " + fmt.Sprintf("%s:%d", fn, line)
+	panic(errMsg)
+}
+
+// Panicf output the formatted message and after panics
+func (e *Error) Panicf(args ...interface{}) {
+	_, fn, line, _ := runtime.Caller(1)
+	errMsg := e.Format(args...).Error()
+	errMsg = "\nCaller was: " + fmt.Sprintf("%s:%d", fn, line)
+	panic(errMsg)
+}
+
+//
+
+// NewError creates and returns an Error with a message
+func NewError(errMsg string) *Error {
+	return &Error{fmt.Errorf("\n" + logger.Prefix + "Error: " + errMsg)}
+}
+
+// Printf prints to the logger a specific error with optionally arguments
+func Printf(logger *logger.Logger, err error, args ...interface{}) {
+	logger.Printf(err.Error(), args...)
 }

@@ -31,6 +31,7 @@ import (
 	"bytes"
 	"sync"
 
+	"github.com/kataras/iris/utils"
 	"github.com/valyala/fasthttp"
 )
 
@@ -45,10 +46,10 @@ type (
 		pool       sync.Pool
 		next       *tree
 	}
+
 	// Garden is the main area which routes are planted/placed
 	Garden struct {
-		first   *tree
-		station *Station
+		first *tree
 	}
 )
 
@@ -99,7 +100,7 @@ func (g *Garden) getRootByMethodAndDomain(method string, domain string) (b *Bran
 }
 
 // Plant plants/adds a route to the garden
-func (g *Garden) Plant(_route IRoute) {
+func (g *Garden) Plant(station *Station, _route IRoute) {
 	method := _route.GetMethod()
 	domain := _route.GetDomain()
 	path := _route.GetPath()
@@ -107,7 +108,7 @@ func (g *Garden) Plant(_route IRoute) {
 	theRoot := g.getRootByMethodAndDomain(method, domain)
 	if theRoot == nil {
 		theRoot = new(Branch)
-		theNewTree := newTree(g.station, method, theRoot, domain, len(domain) > 0, hasCors(_route))
+		theNewTree := newTree(station, method, theRoot, domain, len(domain) > 0, _route.HasCors())
 		if g.first == nil {
 			g.first = theNewTree
 		} else {
@@ -139,7 +140,7 @@ func (_tree *tree) serve(reqCtx *fasthttp.RequestCtx, path string) bool {
 		ctx.Do()
 		_tree.pool.Put(ctx)
 		return true
-	} else if mustRedirect && _tree.station.options.PathCorrection && !bytes.Equal(reqCtx.Method(), HTTPMethods.ConnectBytes) {
+	} else if mustRedirect && _tree.station.Config.PathCorrection && !bytes.Equal(reqCtx.Method(), MethodConnectBytes) {
 
 		reqPath := path
 		pathLen := len(reqPath)
@@ -154,14 +155,14 @@ func (_tree *tree) serve(reqCtx *fasthttp.RequestCtx, path string) bool {
 			}
 
 			ctx.Request.URI().SetPath(reqPath)
-			urlToRedirect := BytesToString(ctx.Request.RequestURI())
+			urlToRedirect := utils.BytesToString(ctx.Request.RequestURI())
 
 			ctx.Redirect(urlToRedirect, 301) //	StatusMovedPermanently
 			// RFC2616 recommends that a short note "SHOULD" be included in the
 			// response because older user agents may not understand 301/307.
 			// Shouldn't send the response for POST or HEAD; that leaves GET.
-			if _tree.method == HTTPMethods.Get {
-				note := "<a href=\"" + htmlEscape(urlToRedirect) + "\">Moved Permanently</a>.\n"
+			if _tree.method == MethodGet {
+				note := "<a href=\"" + utils.HtmlEscape(urlToRedirect) + "\">Moved Permanently</a>.\n"
 				ctx.Write(note)
 			}
 			_tree.pool.Put(ctx)

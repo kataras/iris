@@ -29,9 +29,9 @@ package iris
 
 import (
 	"encoding/base64"
-	"fmt"
 	"time"
 
+	"github.com/kataras/iris/utils"
 	"github.com/valyala/fasthttp"
 )
 
@@ -41,9 +41,8 @@ type (
 		GetString(interface{}) string
 		GetInt(interface{}) int
 		Set(interface{}, interface{})
-		GetCookie(string) string
-		SetCookie(string, string)
-		AddCookie(*fasthttp.Cookie)
+		SetCookie(*fasthttp.Cookie)
+		SetCookieKV(string, string)
 		RemoveCookie(string)
 		// Flash messages
 		GetFlash(string) string
@@ -105,19 +104,19 @@ func (ctx *Context) GetCookie(name string) string {
 	return string(ctx.RequestCtx.Request.Header.Cookie(name))
 }
 
-// SetCookie adds a cookie to the request
-func (ctx *Context) SetCookie(name string, value string) {
-	ctx.RequestCtx.Request.Header.SetCookie(name, value)
+// SetCookie adds a cookie
+func (ctx *Context) SetCookie(cookie *fasthttp.Cookie) {
+	ctx.RequestCtx.Response.Header.SetCookie(cookie)
 }
 
-// AddCookie sets a specific cookie to the response header
-func (ctx *Context) AddCookie(cookie *fasthttp.Cookie) {
-	s := fmt.Sprintf("%s=%s", string(cookie.Key()), string(cookie.Value()))
-	if c := string(ctx.RequestCtx.Request.Header.Peek("Cookie")); c != "" {
-		ctx.RequestCtx.Request.Header.Set("Cookie", c+"; "+s)
-	} else {
-		ctx.RequestCtx.Request.Header.Set("Cookie", s)
-	}
+// SetCookieKV adds a cookie, receives just a key(string) and a value(string)
+func (ctx *Context) SetCookieKV(key, value string) {
+	c := &fasthttp.Cookie{}
+	c.SetKey(key)
+	c.SetValue(value)
+	c.SetHTTPOnly(true)
+	c.SetExpire(time.Now().Add(time.Duration(120) * time.Minute))
+	ctx.SetCookie(c)
 }
 
 // RemoveCookie deletes a cookie by it's name/key
@@ -159,7 +158,7 @@ func (ctx *Context) GetFlashBytes(key string) (value []byte, err error) {
 
 // SetFlash sets a flash message, accepts 2 parameters the key and the value (string)
 func (ctx *Context) SetFlash(key string, value string) {
-	ctx.SetFlashBytes(key, StringToBytes(value))
+	ctx.SetFlashBytes(key, utils.StringToBytes(value))
 }
 
 // SetFlash sets a flash message, accepts 2 parameters the key and the value ([]byte)

@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Gerasimos Maropoulos and Go Authors using for the 'log,io,os' packages
+// Copyright (c) 2016, Gerasimos Maropoulos
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification,
@@ -25,7 +25,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package iris
+package logger
 
 import (
 	"io"
@@ -33,8 +33,12 @@ import (
 	"os"
 )
 
-// LoggerOutTerminal os.Stdout , it's the default io.Writer to the Iris' logger
-var LoggerOutTerminal = os.Stdout
+var (
+	// Output os.Stdout , it's the default io.Writer to the Iris' logger
+	Output = os.Stdout
+	// Prefix is the prefix for the logger, it's default is [IRIS]
+	Prefix = "[IRIS]"
+)
 
 // Logger is just a log.Logger
 type Logger struct {
@@ -42,15 +46,20 @@ type Logger struct {
 	enabled bool
 }
 
-// NewLogger creates a new Logger.   The out variable sets the
+// Custom creates a new Logger.   The out variable sets the
 // destination to which log data will be written.
 // The prefix appears at the beginning of each generated log line.
 // The flag argument defines the logging properties.
-func NewLogger(out io.Writer, prefix string, flag int) *Logger {
+func Custom(out io.Writer, prefix string, flag int) *Logger {
 	if out == nil {
-		out = LoggerOutTerminal
+		out = Output
 	}
-	return &Logger{Logger: log.New(out, LoggerIrisPrefix+prefix, flag), enabled: true}
+	return &Logger{Logger: log.New(out, Prefix+prefix, flag), enabled: true}
+}
+
+// New creates and returns a logger with the default options
+func New() *Logger {
+	return Custom(Output, "", 0)
 }
 
 // SetEnable true enables, false disables the Logger

@@ -29,6 +29,8 @@ package iris
 
 import (
 	"fmt"
+
+	"github.com/kataras/iris/utils"
 )
 
 type (
@@ -111,8 +113,8 @@ type (
 
 	// IPluginContainer is the interface which the PluginContainer should implements
 	IPluginContainer interface {
-		Plugin(plugin IPlugin) error
-		RemovePlugin(pluginName string) error
+		Add(plugin IPlugin) error
+		Remove(pluginName string) error
 		GetName(plugin IPlugin) string
 		GetDescription(plugin IPlugin) string
 		GetByName(pluginName string) IPlugin
@@ -156,27 +158,27 @@ var _ IPluginContainer = &PluginContainer{}
 
 // DirectoryExists returns true if a given local directory exists
 func (d *DownloadManager) DirectoryExists(dir string) bool {
-	return directoryExists(dir)
+	return utils.DirectoryExists(dir)
 }
 
 // DownloadZip downlodas a zip to the given local path location
 func (d *DownloadManager) DownloadZip(zipURL string, targetDir string) (string, error) {
-	return downloadZip(zipURL, targetDir)
+	return utils.DownloadZip(zipURL, targetDir)
 }
 
 // Unzip unzips a zip to the given local path location
 func (d *DownloadManager) Unzip(archive string, target string) (string, error) {
-	return unzip(archive, target)
+	return utils.Unzip(archive, target)
 }
 
 // Remove deletes/removes/rm a file
 func (d *DownloadManager) Remove(filePath string) error {
-	return removeFile(filePath)
+	return utils.RemoveFile(filePath)
 }
 
 // Install is just the flow of the: DownloadZip->Unzip->Remove the zip
 func (d *DownloadManager) Install(remoteFileZip string, targetDirectory string) (string, error) {
-	return install(remoteFileZip, targetDirectory)
+	return utils.Install(remoteFileZip, targetDirectory)
 }
 
 // PluginContainer is the base container of all Iris, registed plugins
@@ -185,8 +187,8 @@ type PluginContainer struct {
 	downloader       *DownloadManager
 }
 
-// Plugin activates the plugins and if succeed then adds it to the activated plugins list
-func (p *PluginContainer) Plugin(plugin IPlugin) error {
+// Add activates the plugins and if succeed then adds it to the activated plugins list
+func (p *PluginContainer) Add(plugin IPlugin) error {
 	if p.activatedPlugins == nil {
 		p.activatedPlugins = make([]IPlugin, 0)
 	}
@@ -213,7 +215,7 @@ func (p *PluginContainer) Plugin(plugin IPlugin) error {
 
 // RemovePlugin it removes a plugin by it's name, if pluginName is empty "" or no plugin found with this name, then nothing is removed and a specific error is returned.
 // This doesn't calls the PreClose method
-func (p *PluginContainer) RemovePlugin(pluginName string) error {
+func (p *PluginContainer) Remove(pluginName string) error {
 	if p.activatedPlugins == nil {
 		return ErrPluginRemoveNoPlugins.Return()
 	}

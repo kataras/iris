@@ -24,23 +24,20 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-package iriscontrol
 
-// for the main server
-func (i *irisControlPlugin) StartServer() {
-	if i.station.Server.IsListening() == false {
-		if i.station.Server.IsSecure() {
-			//listen with ListenTLS
-			i.station.ListenTLS(i.station.Server.Config.ListeningAddr, i.station.Server.Config.CertFile, i.station.Server.Config.KeyFile)
-		} else {
-			//listen normal
-			i.station.Listen(i.station.Server.Config.ListeningAddr)
-		}
-	}
-}
+package template
 
-func (i *irisControlPlugin) StopServer() {
-	if i.station.Server.IsListening() {
-		i.station.Close()
-	}
-}
+import (
+	"github.com/kataras/iris/errors"
+)
+
+var (
+	// ErrTemplateParse returns an error with message: 'Couldn't load templates +specific error'
+	ErrTemplateParse = errors.NewError("Couldn't load templates %s")
+	// ErrTemplateWatch returns an error with message: 'Templates watcher couldn't be started, error: +specific error'
+	ErrTemplateWatch = errors.NewError("Templates watcher couldn't be started, error: %s")
+	// ErrTemplateWatching returns an error with message: 'While watching templates: +specific error'
+	ErrTemplateWatching = errors.NewError("While watching templates: %s")
+	// ErrTemplateExecute returns an error with message:'Unable to execute a template. Trace: +specific error'
+	ErrTemplateExecute = errors.NewError("Unable to execute a template. Trace: %q")
+)

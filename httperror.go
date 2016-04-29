@@ -143,27 +143,14 @@ func StatusText(code int) string {
 //
 
 type (
-	// IErrorHandler is the interface which an http error handler should implement
-	IErrorHandler interface {
-		GetCode() int
-		GetHandler() HandlerFunc
-		SetHandler(h HandlerFunc)
-	}
 
-	// IHTTPErrors is the interface which the HTTPErrors using
-	IHTTPErrors interface {
-		GetByCode(httpStatus int) IErrorHandler
-		On(httpStatus int, handler HandlerFunc)
-		Emit(errCode int, ctx *Context)
-	}
-
-	// ErrorHandler is just an object which stores a http status code and a handler
-	ErrorHandler struct {
+	// HTTPErrorHandler is just an object which stores a http status code and a handler
+	HTTPErrorHandler struct {
 		code    int
 		handler HandlerFunc
 	}
 
-	// HTTPErrors is the struct which contains the handlers which will execute if http error occurs
+	// HTTPErrorContainer is the struct which contains the handlers which will execute if http error occurs
 	// One struct per Server instance, the meaning of this is that the developer can change the default error message and replace them with his/her own completely custom handlers
 	//
 	// Example of usage:
@@ -172,69 +159,67 @@ type (
 	// ctx.EmitError(405)
 	// that is the circle, the httpErrors variable stays at the Station(via it's Router), sets from there and emits from a context,
 	// but you can also emit directly from iris.Errors().Emit(405,ctx) if that's necessary
-	HTTPErrors struct {
-		//developer can do Errors.On(500, iris.Handler)
-		ErrorHanders []IErrorHandler
+	HTTPErrorContainer struct {
+		// Errors contains all the httperrorhandlers
+		Errors []*HTTPErrorHandler
 	}
 )
 
-var _ IErrorHandler = &ErrorHandler{}
-var _ IHTTPErrors = &HTTPErrors{}
-
-// ErrorHandlerFunc creates a handler which is responsible to send a particular error to the client
-func ErrorHandlerFunc(statusCode int, message string) HandlerFunc {
+// HTTPErrorHandlerFunc creates a handler which is responsible to send a particular error to the client
+func HTTPErrorHandlerFunc(statusCode int, message string) HandlerFunc {
 	return func(ctx *Context) {
 		ctx.WriteText(statusCode, message)
 	}
 }
 
 // GetCode returns the http status code value
-func (e ErrorHandler) GetCode() int {
+func (e *HTTPErrorHandler) GetCode() int {
 	return e.code
 }
 
 // GetHandler returns the handler which is type of HandlerFunc
-func (e ErrorHandler) GetHandler() HandlerFunc {
+func (e *HTTPErrorHandler) GetHandler() HandlerFunc {
 	return e.handler
 }
 
 // SetHandler sets the handler (type of HandlerFunc) to this particular ErrorHandler
-func (e *ErrorHandler) SetHandler(h HandlerFunc) {
+func (e *HTTPErrorHandler) SetHandler(h HandlerFunc) {
 	e.handler = h
 }
 
-// defaultHTTPErrors creates and returns an instance of HTTPErrors with default handlers
-func defaultHTTPErrors() *HTTPErrors {
-	httperrors := new(HTTPErrors)
-	httperrors.ErrorHanders = make([]IErrorHandler, 0)
-	httperrors.On(StatusNotFound, ErrorHandlerFunc(StatusNotFound, "404 not found"))
-	httperrors.On(StatusInternalServerError, ErrorHandlerFunc(StatusInternalServerError, "The server encountered an unexpected condition which prevented it from fulfilling the request."))
+// defaultHTTPErrors creates and returns an instance of HTTPErrorContainer with default handlers
+func defaultHTTPErrors() *HTTPErrorContainer {
+	httperrors := new(HTTPErrorContainer)
+	httperrors.Errors = make([]*HTTPErrorHandler, 0)
+	httperrors.OnError(StatusNotFound, HTTPErrorHandlerFunc(StatusNotFound, "404 not found"))
+	httperrors.OnError(StatusInternalServerError, HTTPErrorHandlerFunc(StatusInternalServerError, "The server encountered an unexpected condition which prevented it from fulfilling the request."))
 	return httperrors
 }
 
 // GetByCode returns the error handler by it's http status code
-func (he *HTTPErrors) GetByCode(httpStatus int) IErrorHandler {
-	if he == nil {
-		return nil
-	}
-	for _, h := range he.ErrorHanders {
-		if h.GetCode() == httpStatus {
-			return h
+func (he *HTTPErrorContainer) GetByCode(httpStatus int) *HTTPErrorHandler {
+	if he != nil {
+		for _, h := range he.Errors {
+			if h.GetCode() == httpStatus {
+				return h
+			}
 		}
 	}
+
 	return nil
 }
 
-// On Registers a handler for a specific http error status
-func (he *HTTPErrors) On(httpStatus int, handler HandlerFunc) {
+// OnError Registers a handler for a specific http error status
+func (he *HTTPErrorContainer) OnError(httpStatus int, handler HandlerFunc) {
 	if httpStatus == StatusOK {
 		return
 	}
 
 	if errH := he.GetByCode(httpStatus); errH != nil {
+
 		errH.SetHandler(handler)
 	} else {
-		he.ErrorHanders = append(he.ErrorHanders, &ErrorHandler{code: httpStatus, handler: handler})
+		he.Errors = append(he.Errors, &HTTPErrorHandler{code: httpStatus, handler: handler})
 	}
 
 }
@@ -242,8 +227,8 @@ func (he *HTTPErrors) On(httpStatus int, handler HandlerFunc) {
 ///TODO: the errors must have .Next too, as middlewares inside the Context, if I let it as it is then we have problem
 // we cannot set a logger and a custom handler at one error because now the error handler takes only one handelrFunc and executes there from here...
 
-// Emit executes the handler of the given error http status code
-func (he *HTTPErrors) Emit(errCode int, ctx *Context) {
+// EmitError executes the handler of the given error http status code
+func (he *HTTPErrorContainer) EmitError(errCode int, ctx *Context) {
 
 	if errHandler := he.GetByCode(errCode); errHandler != nil {
 		// I do that because before the user should to: ctx.WriteStatus(404) in order to send the actual error code, maybe this is ok but I changed my mind let's do this here automatically
@@ -251,9 +236,21 @@ func (he *HTTPErrors) Emit(errCode int, ctx *Context) {
 		errHandler.GetHandler().Serve(ctx)
 	} else {
 		//if no error is registed, then register it with the default http error text, and re-run the Emit
-		he.On(errCode, func(c *Context) {
+		he.OnError(errCode, func(c *Context) {
 			c.WriteText(errCode, StatusText(errCode))
 		})
-		he.Emit(errCode, ctx)
+		he.EmitError(errCode, ctx)
 	}
+}
+
+// OnNotFound sets the handler for http status 404,
+// default is a response with text: 'Not Found' and status: 404
+func (he *HTTPErrorContainer) OnNotFound(handlerFunc HandlerFunc) {
+	he.OnError(StatusNotFound, handlerFunc)
+}
+
+// OnPanic sets the handler for http status 500,
+// default is a response with text: The server encountered an unexpected condition which prevented it from fulfilling the request. and status: 500
+func (he *HTTPErrorContainer) OnPanic(handlerFunc HandlerFunc) {
+	he.OnError(StatusInternalServerError, handlerFunc)
 }

@@ -41,7 +41,7 @@ type Page struct {
 }
 
 func main() {
-	iris.Templates("./_examples/compression_gzip/templates/*.html")
+	iris.Templates().Load("./_examples/compression_gzip/templates/*.html")
 	
 	// here is how to use a middleware
 	iris.Use(logger.Logger())

@@ -28,36 +28,35 @@
 package iris
 
 import (
-	"html/template"
-	"net/http/pprof"
 	"os"
-)
 
-const (
-	// DefaultProfilePath is the default path for the web pprof '/debug/pprof'
-	DefaultProfilePath = "/debug/pprof"
+	"github.com/kataras/iris/logger"
+	"github.com/kataras/iris/server"
+	"github.com/kataras/iris/template"
 )
 
 type (
-	// IStation is the interface which the Station should implements
-	IStation interface {
-		IRouter
-		Plugin(IPlugin) error
-		GetPluginContainer() IPluginContainer
-		GetTemplates() *HTMLTemplates
-		TemplateFuncs(template.FuncMap) *template.Template
-		Templates(pathGlob string)
-		optimusPrime()
-		HasOptimized() bool
-		Logger() *Logger
-		SetMaxRequestBodySize(int)
-		Listen(fullHostOrPort ...string) error
-		ListenTLS(fullAddress string, certFile, keyFile string) error
-		Close() error
-	}
+	// IrisConfig options for iris before server listen
+	// MaxRequestBodySize  is the only option that can be changed after server listen - using SetMaxRequestBodySize(int)
+	IrisConfig struct {
+		// MaxRequestBodySize Maximum request body size.
+		//
+		// The server rejects requests with bodies exceeding this limit.
+		//
+		// By default request body size is unlimited.
+		MaxRequestBodySize int
+		// PathCorrection corrects and redirects the requested path to the registed path
+		// for example, if /home/ path is requested but no handler for this Route found,
+		// then the Router checks if /home handler exists, if yes, redirects the client to the correct path /home
+		// and VICE - VERSA if /home/ is registed but /home is requested then it redirects to /home/
+		//
+		// Default is true
+		PathCorrection bool
 
-	// StationOptions is the struct which contains all Iris' settings/options
-	StationOptions struct {
+		// Log turn it to false if you want to disable logger,
+		// Iris prints/logs ONLY errors, so be careful when you disable it
+		Log bool
+
 		// Profile set to true to enable web pprof (debug profiling)
 		// Default is false, enabling makes available these 7 routes:
 		// /debug/pprof/cmdline
@@ -72,179 +71,74 @@ type (
 		// ProfilePath change it if you want other url path than the default
 		// Default is /debug/pprof , which means yourhost.com/debug/pprof
 		ProfilePath string
-
-		// PathCorrection corrects and redirects the requested path to the registed path
-		// for example, if /home/ path is requested but no handler for this Route found,
-		// then the Router checks if /home handler exists, if yes, redirects the client to the correct path /home
-		// and VICE - VERSA if /home/ is registed but /home is requested then it redirects to /home/
-		//
-		// Default is true
-		PathCorrection bool
-
-		// Log turn it to false if you want to disable logger,
-		// Iris prints/logs ONLY errors, so be careful when you disable it
-		Log bool
 	}
 
 	// Station is the container of all, server, router, cache and the sync.Pool
 	Station struct {
-		IRouter
-		Server          *Server
-		templates       *HTMLTemplates
-		options         StationOptions
-		pluginContainer *PluginContainer
-		//it's true when listen->optimusPrime has already called once
-		optimized bool
-
-		logger *Logger
-		// hold the max size in order to set it on server listen
-		MaxRequestBodySize int
+		*router
+		Server    *server.Server
+		Plugins   *PluginContainer
+		Templates *template.HTMLContainer
+		//we want options exported, Options but Options is an http method also, so we make a big change here
+		// and rename the iris.StationOptions to simple 'iris.Config'
+		Config IrisConfig
+		Logger *logger.Logger
 	}
 )
 
-// check at the compile time if Station implements correct the IRouter interface
-// which it comes from the *Router or MemoryRouter which again it comes from *Router
-var _ IStation = &Station{}
+// New creates and returns a new iris Station. If config is empty then default config is used
+//
+// Receives an optional iris.IrisConfig as parameter
+// If empty then iris.DefaultConfig() are used
+func New(configs ...IrisConfig) *Station {
+	config := DefaultConfig()
+	if configs != nil && len(configs) > 0 {
+		config = configs[0]
+	}
 
-// newStation creates and returns a station, is used only inside main file iris.go
-func newStation(options StationOptions) *Station {
+	if config.ProfilePath == "" {
+		config.ProfilePath = DefaultProfilePath
+	}
+
 	// create the station
-	s := &Station{options: options, pluginContainer: &PluginContainer{}}
+	s := &Station{Config: config, Plugins: &PluginContainer{}}
 	// create & set the router
-	s.IRouter = NewRouter(s)
+	s.router = newRouter(s)
 
-	//set the logger
-	s.logger = NewLogger(LoggerOutTerminal, "", 0)
-	s.logger.SetEnable(options.Log)
+	//set the Logger
+	s.Logger = logger.New()
+	s.Logger.SetEnable(config.Log)
 
 	//set the html templates engine
-	s.templates = NewHTMLTemplates(s.logger)
+	s.Templates = template.NewHTMLContainer(s.Logger)
 	return s
 }
 
-// Plugin activates the plugins and if succeed then adds it to the activated plugins list
-func (s *Station) Plugin(plugin IPlugin) error {
-	return s.pluginContainer.Plugin(plugin)
-}
-
-// GetPluginContainer returns the pluginContainer
-func (s Station) GetPluginContainer() IPluginContainer {
-	return s.pluginContainer
-}
-
-// Templates loads HTML templates
-// receives one parameter
+// SetMaxRequestBodySize Maximum request body size.
 //
-// pathGlob the local directory, it can be a pattern (string)
-// panics on error
-func (s *Station) Templates(pathGlob string) {
-	if err := s.templates.Load(pathGlob); err != nil {
-		panic(err)
-	}
-}
-
-// GetTemplates returns the *template.Template registed to this station, if any
-func (s *Station) GetTemplates() *HTMLTemplates {
-	return s.templates
-}
-
-// TemplateFuncs is alias for .GetTemplates().Templates.Funcs
-func (s *Station) TemplateFuncs(f template.FuncMap) *template.Template {
-	if !s.templates.loaded {
-		return nil
-	}
-	return s.templates.Templates.Funcs(f)
-}
-
-// Template delims sets the custom delims before the template loading/parsing process
-func (s *Station) TemplateDelims(left string, right string) {
-	s.templates.Delims(left, right)
-}
-
-// Logger returns the station's logger
-func (s *Station) Logger() *Logger {
-	return s.logger
-}
-
-// optimusPrime make the best last optimizations to make iris the faster framework out there
-// This function is called automatically on .Listen, and all Router's Handle functions
-func (s *Station) optimusPrime() {
-	if s.optimized {
-		return
-	}
-
-	//check if any route has cors setted to true
-	routerHasCors := func() (has bool) {
-		s.IRouter.getGarden().visitAll(func(i int, tree *tree) {
-			if tree.cors {
-				has = true
-			}
-		})
-		return
-	}()
-
-	if routerHasCors {
-		s.IRouter.setMethodMatch(CorsMethodMatch)
-	}
-
-	// check if any route has subdomains
-	routerHasHosts := func() (has bool) {
-		s.IRouter.getGarden().visitAll(func(i int, tree *tree) {
-			if tree.hosts {
-				has = true
-			}
-		})
-		return
-	}()
-
-	// For performance only,in order to not check at runtime for hosts and subdomains, I think it's better to do this:
-	if routerHasHosts {
-		switch s.IRouter.getType() {
-		case Normal:
-			s.IRouter = NewRouterDomain(s.IRouter.(*Router))
-			break
-		}
-	}
-
-	s.optimized = true
-
-}
-
-// HasOptimized returns if the station has optimized ( OptimusPrime run once)
-func (s *Station) HasOptimized() bool {
-	return s.optimized
-}
-
-// initPprof set the routes for web pprof, called from the openServer
-func (s *Station) initPprof() {
-	debugPath := s.options.ProfilePath
-	s.IRouter.Get(debugPath+"/", ToHandlerFunc(pprof.Index))
-	s.IRouter.Get(debugPath+"/cmdline", ToHandlerFunc(pprof.Cmdline))
-	s.IRouter.Get(debugPath+"/profile", ToHandlerFunc(pprof.Profile))
-	s.IRouter.Get(debugPath+"/symbol", ToHandlerFunc(pprof.Symbol))
-
-	s.IRouter.Get(debugPath+"/goroutine", ToHandlerFunc(pprof.Handler("goroutine")))
-	s.IRouter.Get(debugPath+"/heap", ToHandlerFunc(pprof.Handler("heap")))
-	s.IRouter.Get(debugPath+"/threadcreate", ToHandlerFunc(pprof.Handler("threadcreate")))
-	s.IRouter.Get(debugPath+"/pprof/block", ToHandlerFunc(pprof.Handler("block")))
+// The server rejects requests with bodies exceeding this limit.
+//
+// By default request body size is unlimited.
+// this is the only option that can be changed after server listen
+func (s *Station) SetMaxRequestBodySize(size int) {
+	s.Config.MaxRequestBodySize = size
 }
 
 // openServer is internal method, open the server with specific options passed by the Listen and ListenTLS
-func (s *Station) openServer(opt ServerOptions) (err error) {
-	s.optimusPrime()
-	// set the debug profiling handlers if Profile enabled, before the server startup, not earlier
-	if s.options.Profile && s.options.ProfilePath != "" {
-		s.initPprof()
+func (s *Station) openServer(opt server.Config) (err error) {
+	s.router.optimize()
+
+	s.Server = server.New(opt)
+	s.Server.SetHandler(s.router.ServeRequest)
+
+	if s.Config.MaxRequestBodySize > 0 {
+		s.Server.MaxRequestBodySize = s.Config.MaxRequestBodySize
 	}
 
-	server := NewServer(opt)
-	server.SetHandler(s.IRouter.ServeRequest)
-	s.Server = server
-	s.Server.MaxRequestBodySize = s.MaxRequestBodySize
-	s.pluginContainer.DoPreListen(s)
+	s.Plugins.DoPreListen(s)
 
 	if err = s.Server.OpenServer(); err == nil {
-		s.pluginContainer.DoPostListen(s)
+		s.Plugins.DoPostListen(s)
 		ch := make(chan os.Signal)
 		<-ch
 		s.Close()
@@ -253,40 +147,31 @@ func (s *Station) openServer(opt ServerOptions) (err error) {
 }
 
 // Listen starts the standalone http server
-// which listens to the fullHostOrPort parameter which as the form of
+// which listens to the addr parameter which as the form of
 // host:port or just port
 //
 // It returns an error you are responsible how to handle this
 // ex: log.Fatal(iris.Listen(":8080"))
-func (s *Station) Listen(fullHostOrPort ...string) error {
-	opt := ServerOptions{ListeningAddr: ParseAddr(fullHostOrPort...)}
+func (s *Station) Listen(addr string) error {
+	opt := server.Config{ListeningAddr: addr}
 	return s.openServer(opt)
 }
 
 // ListenTLS Starts a https server with certificates,
 // if you use this method the requests of the form of 'http://' will fail
 // only https:// connections are allowed
-// which listens to the fullHostOrPort parameter which as the form of
+// which listens to the addr parameter which as the form of
 // host:port or just port
 //
 // It returns an error you are responsible how to handle this
 // ex: log.Fatal(iris.ListenTLS(":8080","yourfile.cert","yourfile.key"))
-func (s *Station) ListenTLS(fullAddress string, certFile, keyFile string) error {
-	opt := ServerOptions{ListeningAddr: ParseAddr(fullAddress), CertFile: certFile, KeyFile: keyFile}
+func (s *Station) ListenTLS(addr string, certFile, keyFile string) error {
+	opt := server.Config{ListeningAddr: addr, CertFile: certFile, KeyFile: keyFile}
 	return s.openServer(opt)
 }
 
 // Close is used to close the tcp listener from the server
 func (s *Station) Close() error {
-	s.pluginContainer.DoPreClose(s)
+	s.Plugins.DoPreClose(s)
 	return s.Server.CloseServer()
-}
-
-//SetMaxRequestBodySize sets the maximum request body size.
-//
-// The server rejects requests with bodies exceeding this limit.
-//
-// By default request body size is unlimited.
-func (s *Station) SetMaxRequestBodySize(size int) {
-	s.MaxRequestBodySize = size
 }

@@ -25,7 +25,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package iris
+package server
 
 import (
 	"net"
@@ -35,81 +35,43 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-type (
-	// ServerOptions used inside server for listening
-	ServerOptions struct {
-		// ListenningAddr the addr that server listens to
-		ListeningAddr string
-		CertFile      string
-		KeyFile       string
-		// Mode this is for unix only
-		Mode os.FileMode
-	}
-
-	// IServer the interface for the Server
-	IServer interface {
-		SetOptions(ServerOptions)
-		Options() ServerOptions
-		SetHandler(fasthttp.RequestHandler)
-		Handler() fasthttp.RequestHandler
-		IsListening() bool
-		IsSecure() bool
-		Serve(l net.Listener) error
-		// listen starts and listens to the server, it's no-blocking
-		listen() error
-		listenUnix() error
-		// listenTLS starts the server using CertFile and KeyFile from the passed Options
-		///TODO: if no CertFile or KeyFile passed then use a self-random certificate
-		listenTLS() error
-		OpenServer() error
-		CloseServer() error
-
-		Listener() net.Listener
-	}
-
-	// Server is the IServer's implementation, holds the fasthttp's Server, a net.Listener, the ServerOptions, and the handler
-	// handler is registed at the Station level
-	Server struct {
-		*fasthttp.Server
-		listener net.Listener
-		options  ServerOptions
-		started  bool
-		tls      bool
-		handler  fasthttp.RequestHandler
-	}
+const (
+	// DefaultServerAddr the default server addr
+	DefaultServerAddr = ":8080"
+	// DefaultServerName the response header of the 'Server' value when writes to the client
+	DefaultServerName = "iris"
 )
 
-var _ IServer = &Server{}
+// Server is the IServer's implementation, holds the fasthttp's Server, a net.Listener, the ServerOptions, and the handler
+// handler is registed at the Station level
+type Server struct {
+	*fasthttp.Server
+	listener net.Listener
+	Config   Config
+	started  bool
+	tls      bool
+	handler  fasthttp.RequestHandler
+}
 
-// NewServer returns a pointer to a Server object, and set it's options if any,  nothing more
-func NewServer(opt ...ServerOptions) *Server {
+// New returns a pointer to a Server object, and set it's options if any,  nothing more
+func New(opt ...Config) *Server {
 	s := &Server{Server: &fasthttp.Server{Name: DefaultServerName}}
 	if opt != nil && len(opt) > 0 {
-		s.SetOptions(opt[0])
+		s.Config = opt[0]
 	}
+	s.Config.ListeningAddr = parseAddr(s.Config.ListeningAddr)
 
 	return s
 }
 
-// DefaultServerOptions returns the default options for the server
-func DefaultServerOptions() ServerOptions {
-	return ServerOptions{DefaultServerAddr, "", "", 0}
+// DefaultConfig returns the default options for the server
+func DefaultConfig() Config {
+	return Config{DefaultServerAddr, "", "", 0}
 }
 
 // DefaultServerSecureOptions does nothing now
 ///TODO: make it to generate self-signed certificate: CertFile,KeyFile options for ListenTLS
-func DefaultServerSecureOptions() ServerOptions { return DefaultServerOptions() }
-
-// SetOptions sets the server's options
-func (s *Server) SetOptions(options ServerOptions) {
-	options.ListeningAddr = ParseAddr(options.ListeningAddr)
-	s.options = options
-}
-
-// Options returns the server's options
-func (s *Server) Options() ServerOptions {
-	return s.options
-}
+func DefaultServerSecureOptions() Config { return DefaultConfig() }
 
 // SetHandler sets the handler in order to listen on new requests, this is done at the Station level
 func (s *Server) SetHandler(h fasthttp.RequestHandler) {
@@ -152,7 +114,7 @@ func (s *Server) listen() (err error) {
 		err = ErrServerAlreadyStarted.Return()
 		return
 	}
-	s.listener, err = net.Listen("tcp", s.options.ListeningAddr)
+	s.listener, err = net.Listen("tcp", s.Config.ListeningAddr)
 
 	if err != nil {
 		err = ErrServerPortAlreadyUsed.Return()
@@ -176,19 +138,19 @@ func (s *Server) listenTLS() (err error) {
 		return
 	}
 
-	if s.options.CertFile == "" || s.options.KeyFile == "" {
+	if s.Config.CertFile == "" || s.Config.KeyFile == "" {
 		err = ErrServerTLSOptionsMissing.Return()
 		return
 	}
 
-	s.listener, err = net.Listen("tcp", s.options.ListeningAddr)
+	s.listener, err = net.Listen("tcp", s.Config.ListeningAddr)
 
 	if err != nil {
 		err = ErrServerPortAlreadyUsed.Return()
 		return
 	}
 
-	go s.Server.ServeTLS(s.listener, s.options.CertFile, s.options.KeyFile)
+	go s.Server.ServeTLS(s.listener, s.Config.CertFile, s.Config.KeyFile)
 
 	s.started = true
 	s.tls = true
@@ -204,22 +166,22 @@ func (s *Server) listenUnix() (err error) {
 		return
 	}
 
-	mode := s.options.Mode
+	mode := s.Config.Mode
 
 	//this code is from fasthttp ListenAndServeUNIX, I extracted it because we need the tcp.Listener
-	if errOs := os.Remove(s.options.ListeningAddr); errOs != nil && !os.IsNotExist(errOs) {
-		err = ErrServerRemoveUnix.Format(s.options.ListeningAddr, errOs.Error())
+	if errOs := os.Remove(s.Config.ListeningAddr); errOs != nil && !os.IsNotExist(errOs) {
+		err = ErrServerRemoveUnix.Format(s.Config.ListeningAddr, errOs.Error())
 		return
 	}
-	s.listener, err = net.Listen("unix", s.options.ListeningAddr)
+	s.listener, err = net.Listen("unix", s.Config.ListeningAddr)
 
 	if err != nil {
 		err = ErrServerPortAlreadyUsed.Return()
 		return
 	}
 
-	if err = os.Chmod(s.options.ListeningAddr, mode); err != nil {
-		err = ErrServerChmod.Format(mode, s.options.ListeningAddr, err.Error())
+	if err = os.Chmod(s.Config.ListeningAddr, mode); err != nil {
+		err = ErrServerChmod.Format(mode, s.Config.ListeningAddr, err.Error())
 		return
 	}
 
@@ -236,9 +198,9 @@ func (s *Server) listenUnix() (err error) {
 // OpenServer opens/starts/runs/listens (to) the server, listenTLS if Cert && Key is registed, listenUnix if Mode is registed, otherwise listen
 // instead of return an error this is panics on any server's error
 func (s *Server) OpenServer() (err error) {
-	if s.options.CertFile != "" && s.options.KeyFile != "" {
+	if s.Config.CertFile != "" && s.Config.KeyFile != "" {
 		err = s.listenTLS()
-	} else if s.options.Mode > 0 {
+	} else if s.Config.Mode > 0 {
 		err = s.listenUnix()
 	} else {
 		err = s.listen()
@@ -260,8 +222,8 @@ func (s *Server) CloseServer() error {
 	return nil
 }
 
-// ParseAddr gets a slice of string and returns the address of which the Iris' server can listen
-func ParseAddr(fullHostOrPort ...string) string {
+// parseAddr gets a slice of string and returns the address of which the Iris' server can listen
+func parseAddr(fullHostOrPort ...string) string {
 
 	if len(fullHostOrPort) > 1 {
 		fullHostOrPort = fullHostOrPort[0:1]

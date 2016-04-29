@@ -36,14 +36,6 @@ import (
 
 type (
 
-	// RequestHandler it used for Server instance, may be used from plugins, it's no useful outside
-	RequestHandler interface {
-		ServeRequest(*fasthttp.RequestCtx)
-	}
-
-	// RequestHandlerFunc it's the same as fasthttp.RequestHandler, used inside server
-	RequestHandlerFunc func(*fasthttp.RequestCtx)
-
 	// Handler the main Iris Handler interface.
 	Handler interface {
 		Serve(ctx *Context)
@@ -68,11 +60,6 @@ type (
 // Serve serves the handler, is like ServeHTTP for Iris
 func (h HandlerFunc) Serve(ctx *Context) {
 	h(ctx)
-}
-
-// ServeRequest match the request to a tree, it is used inside the Router
-func (h RequestHandlerFunc) ServeRequest(reqCtx *fasthttp.RequestCtx) {
-	h(reqCtx)
 }
 
 // ToHandler converts an http.Handler or http.HandlerFunc to an iris.Handler
