@@ -414,7 +414,7 @@ Let's make a pause,
 
  1. global **iris.**
  2. declare a new iris station with default config: **iris.New()**
- 3. declare a new iris station with custom config: **iris.New(iris.Config{...})**
+ 3. declare a new iris station with custom config: **iris.New(iris.IrisConfig{...})**
 
 
 
@@ -965,12 +965,13 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 - [x] Create an easy websocket api.
 - [x] [Create a mechanism that scan for Typescript files, compile them on server startup and serve them.](https://github.com/kataras/iris/tree/development/plugin/typescript)
 - [x] Simplify the plugin mechanism.
-- [ ] Implement an Iris updater and add the specific entry(bool) on StationOptions.
-- [x] Re-Implement the sessions from zero.
+- [ ] Implement an Iris updater and add the specific entry -bool on IrisConfig.
+- [x] [Re-Implement the sessions from zero.](https://github.com/kataras/iris/tree/development/sessions)
 
 ## Articles
 
 * [Ultra-wide framework Go Http routing performance comparison](https://translate.google.com/translate?sl=auto&tl=en&js=y&prev=_t&hl=el&ie=UTF-8&u=http%3A%2F%2Fcolobu.com%2F2016%2F03%2F23%2FGo-HTTP-request-router-and-web-framework-benchmark%2F&edit-text=&act=url)
+
 > According to my  article ( comparative ultra wide frame Go Http routing performance ) on a variety of relatively Go http routing framework, Iris clear winner, its performance far exceeds other Golang http routing framework.
 
 

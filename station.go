@@ -80,7 +80,7 @@ type (
 		Plugins   *PluginContainer
 		Templates *template.HTMLContainer
 		//we want options exported, Options but Options is an http method also, so we make a big change here
-		// and rename the iris.StationOptions to simple 'iris.Config'
+		// and rename the iris.StationOptions to simple 'iris.IrisConfig' - no iris.Config because of the default func Config()
 		Config IrisConfig
 		Logger *logger.Logger
 	}
