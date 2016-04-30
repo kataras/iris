@@ -49,6 +49,7 @@ type (
 		pattern     string
 		delimsLeft  string
 		delimsRight string
+		funcMap     template.FuncMap
 		logger      *logger.Logger
 		mu          *sync.Mutex
 	}
@@ -56,22 +57,29 @@ type (
 
 // NewHTMLContainer creates and returns a new NewHTMLContainer object, using a logger
 func NewHTMLContainer(logger *logger.Logger) *HTMLContainer {
-	return &HTMLContainer{logger: logger, mu: &sync.Mutex{}}
+	return &HTMLContainer{logger: logger, mu: &sync.Mutex{}, delimsLeft: "{{", delimsRight: "}}"}
 }
 
 // Delims set custom Delims before the Load
-func (html *HTMLContainer) Delims(left string, right string) {
+func (html *HTMLContainer) Delims(left string, right string) *HTMLContainer {
 	html.delimsLeft = left
 	html.delimsRight = right
+	return html
+}
+
+// Funcs adds the elements of the argument map to the template's function map.
+// It panics if a value in the map is not a function with appropriate return
+// type. However, it is legal to overwrite elements of the map. The return
+// value is the template, so calls can be chained.
+func (html *HTMLContainer) Funcs(funcMap template.FuncMap) *HTMLContainer {
+	html.funcMap = funcMap
+	return html
 }
 
 // inline method for parseglob, just tries to parse the templates
 func (html *HTMLContainer) parseGlob(globPathExp string) (tmp *template.Template, err error) {
-	if html.delimsLeft != "" && html.delimsRight != "" {
-		tmp, err = template.New("").Delims(html.delimsLeft, html.delimsRight).ParseGlob(globPathExp)
-	} else {
-		tmp, err = template.ParseGlob(globPathExp)
-	}
+
+	tmp, err = template.New("").Delims(html.delimsLeft, html.delimsRight).Funcs(html.funcMap).ParseGlob(globPathExp)
 
 	return tmp, err
 }
@@ -96,17 +104,20 @@ func (html *HTMLContainer) Load(globPathExp string) {
 			// and if not success again then just panic with the first error
 			pwd, cerr := os.Getwd()
 			if cerr != nil {
-				err = ErrTemplateParse.With(err)
-			} else {
-				html.Templates, err = html.parseGlob(pwd + globPathExp)
-				if err != nil {
-					err = ErrTemplateParse.With(err)
-				} else {
-					rootPath = pwd + globPathExp
+				html.logger.Panic(ErrTemplateParse.With(err).Error() + " \nSecond try: \n" + cerr.Error())
+			}
+			//try with current directory + path
+			html.Templates, cerr = html.parseGlob(pwd + globPathExp)
+			if cerr != nil {
+				//this will fail if path starts with '.', so try again without the first letter
+				//we do that and no html.Load again because we want to keep the first error
+				html.Templates, cerr = html.parseGlob(pwd + globPathExp[1:])
+				if cerr != nil {
+					html.logger.Panic(ErrTemplateParse.With(err).Error() + " \n and second try: \n" + cerr.Error())
 				}
-
 			}
 
+			rootPath = pwd + globPathExp
 		} else {
 			rootPath = globPathExp
 		}

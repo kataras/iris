@@ -33,11 +33,11 @@ import (
 
 var (
 	// ErrTemplateParse returns an error with message: 'Couldn't load templates +specific error'
-	ErrTemplateParse = errors.NewError("Couldn't load templates %s")
+	ErrTemplateParse = errors.New("Couldn't load templates %s \nTry to build your source code first")
 	// ErrTemplateWatch returns an error with message: 'Templates watcher couldn't be started, error: +specific error'
-	ErrTemplateWatch = errors.NewError("Templates watcher couldn't be started, error: %s")
+	ErrTemplateWatch = errors.New("Templates watcher couldn't be started, error: %s")
 	// ErrTemplateWatching returns an error with message: 'While watching templates: +specific error'
-	ErrTemplateWatching = errors.NewError("While watching templates: %s")
+	ErrTemplateWatching = errors.New("While watching templates: %s")
 	// ErrTemplateExecute returns an error with message:'Unable to execute a template. Trace: +specific error'
-	ErrTemplateExecute = errors.NewError("Unable to execute a template. Trace: %q")
+	ErrTemplateExecute = errors.New("Unable to execute a template. Trace: %q")
 )

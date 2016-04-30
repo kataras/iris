@@ -61,8 +61,8 @@ type (
 		RenderXML(int, ...interface{}) error
 
 		ExecuteTemplate(*template.Template, interface{}) error
+		Render(string, interface{}) error
 		RenderFile(string, interface{}) error
-
 		ServeContent(io.ReadSeeker, string, time.Time) error
 		ServeFile(string) error
 		SendFile(filename string, destinationName string) error
@@ -197,10 +197,16 @@ func (ctx *Context) ExecuteTemplate(tmpl *template.Template, pageContext interfa
 	return _template.ErrTemplateExecute.With(tmpl.Execute(ctx.RequestCtx.Response.BodyWriter(), pageContext))
 }
 
-// RenderFile renders a file by its path and a context passed to the function
-func (ctx *Context) RenderFile(file string, pageContext interface{}) error {
+// Render  renders a file by its path and a context passed to the function
+func (ctx *Context) Render(file string, pageContext interface{}) error {
 	ctx.RequestCtx.SetContentType(ContentHTML + " ;charset=" + Charset)
 	return _template.ErrTemplateExecute.With(ctx.station.Templates.Templates.ExecuteTemplate(ctx.RequestCtx.Response.BodyWriter(), file, pageContext))
+}
+
+// RenderFile  same as Render
+// this will be deprecated please use .Render
+func (ctx *Context) RenderFile(file string, pageContext interface{}) error {
+	return ctx.Render(file, pageContext)
 }
 
 // ServeContent serves content, headers are autoset

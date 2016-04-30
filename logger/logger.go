@@ -37,7 +37,7 @@ var (
 	// Output os.Stdout , it's the default io.Writer to the Iris' logger
 	Output = os.Stdout
 	// Prefix is the prefix for the logger, it's default is [IRIS]
-	Prefix = "[IRIS]"
+	Prefix = "[IRIS] "
 )
 
 // Logger is just a log.Logger

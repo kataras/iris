@@ -33,17 +33,17 @@ import (
 
 var (
 	// ErrNoZip returns an error with message: 'While creating file '+filename'. It's not a zip'
-	ErrNoZip = errors.NewError("While installing file '%s'. It's not a zip")
+	ErrNoZip = errors.New("While installing file '%s'. It's not a zip")
 	// ErrFileOpen returns an error with message: 'While opening a file. Trace: +specific error'
-	ErrFileOpen = errors.NewError("While opening a file. Trace: %s")
+	ErrFileOpen = errors.New("While opening a file. Trace: %s")
 	// ErrFileCreate returns an error with message: 'While creating a file. Trace: +specific error'
-	ErrFileCreate = errors.NewError("While creating a file. Trace: %s")
+	ErrFileCreate = errors.New("While creating a file. Trace: %s")
 	// ErrFileRemove returns an error with message: 'While removing a file. Trace: +specific error'
-	ErrFileRemove = errors.NewError("While removing a file. Trace: %s")
+	ErrFileRemove = errors.New("While removing a file. Trace: %s")
 	// ErrFileCopy returns an error with message: 'While copying files. Trace: +specific error'
-	ErrFileCopy = errors.NewError("While copying files. Trace: %s")
+	ErrFileCopy = errors.New("While copying files. Trace: %s")
 	// ErrFileDownload returns an error with message: 'While downloading from +specific url. Trace: +specific error'
-	ErrFileDownload = errors.NewError("While downloading from %s. Trace: %s")
+	ErrFileDownload = errors.New("While downloading from %s. Trace: %s")
 	// ErrDirCreate returns an error with message: 'Unable to create directory on '+root dir'. Trace: +specific error
-	ErrDirCreate = errors.NewError("Unable to create directory on '%s'. Trace: %s")
+	ErrDirCreate = errors.New("Unable to create directory on '%s'. Trace: %s")
 )

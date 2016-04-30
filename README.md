@@ -84,10 +84,10 @@ Current: **v2.0.0-alpha**
 
 ### Changelog v1.3.0 -> v2.0.0-alpha
 
-Global: 
+Global:
 
 - .Templates("path") -> .Templates().Load("path")
-- .TemplateFuncs(...) -> .Templates().Templates.Funcs(...)
+- .TemplateFuncs(...) -> .Templates().Funcs(...)
 - .TemplateDelims("left","right") -> .Templates().Delims("left","right")
 - .GetTemplates() -> .Templates()
 - .Plugin(plugin) -> .Plugins().Add(plugin)
@@ -95,10 +95,11 @@ Global:
 - .Custom -> .New(...IrisConfig)
 - .Listen(...string) -> .Listen(string)
 
-Context: 
+Context:
 
-- .SetCookie(string,string) -> .SetCookie(*fasthttp.Cookie{})  
--  Added: .SetCookieKV(string,string)
+- .SetCookie(string,string) -> .SetCookie(*fasthttp.Cookie{})
+- Added: .SetCookieKV(string,string)
+- .RenderFile(string,interface{}) error -> .Render(string,interface{}) error
 
 
 ### Added
@@ -110,7 +111,7 @@ Read more about Semantic Versioning 2.0.0
  - http://semver.org/
  - https://en.wikipedia.org/wiki/Software_versioning
  - https://wiki.debian.org/UpstreamGuide#Releases_and_Versions
- 
+
 ## Install
 Iris is in active development status, I recommend you to check for new features and [versions](#versioning) once per week. Iris is compatible with the latest go version: go1.6+
 ```sh
@@ -121,7 +122,7 @@ If update doesn't works for you, try this
 $ rm -rf $GOPATH/github.com/kataras/iris
 $ go get github.com/kataras/iris
 ```
- 
+
 ## Introduction
 The name of this framework came from **Greek mythology**, **Iris** was the name of the Greek goddess of the **rainbow**.
 Iris is a very minimal but flexible golang http middleware & standalone web application framework, providing a robust set of features for building single & multi-page, web applications.
@@ -755,15 +756,10 @@ func main() {
 
 ## Context
 ![Iris Context Outline view](http://kataras.github.io/iris/assets/context_viewv2_1.PNG)
-
 ![Iris Context Outline view](http://kataras.github.io/iris/assets/context_viewv2_2.PNG)
-
 ![Iris Context Outline view](http://kataras.github.io/iris/assets/context_viewv2_3.PNG)
-
 ![Iris Context Outline view](http://kataras.github.io/iris/assets/context_viewv2_4.PNG)
-
 ![Iris Context Outline view](http://kataras.github.io/iris/assets/context_viewv2_5.PNG)
-
 ![Iris Context Outline view](http://kataras.github.io/iris/assets/context_viewv2_6.PNG)
 
 

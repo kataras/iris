@@ -155,14 +155,6 @@ func (p *GardenParty) HandleAnnotated(irisHandler Handler) error {
 	return err
 }
 
-///////////////////
-//global middleware
-///////////////////
-
-///////////////////////////////
-//expose some methods as public
-///////////////////////////////
-
 // Get registers a route for the Get http method
 func (p *GardenParty) Get(path string, handlersFn ...HandlerFunc) {
 	p.HandleFunc(MethodGet, path, handlersFn...)
