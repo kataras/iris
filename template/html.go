@@ -77,9 +77,9 @@ func (html *HTMLContainer) Funcs(funcMap template.FuncMap) *HTMLContainer {
 }
 
 // inline method for parseglob, just tries to parse the templates
-func (html *HTMLContainer) parseGlob(globPathExp string) (tmp *template.Template, err error) {
+func (html *HTMLContainer) parseGlob(globPathExp, namespace string) (tmp *template.Template, err error) {
 
-	tmp, err = template.New("").Delims(html.delimsLeft, html.delimsRight).Funcs(html.funcMap).ParseGlob(globPathExp)
+	tmp, err = template.New(namespace).Delims(html.delimsLeft, html.delimsRight).Funcs(html.funcMap).ParseGlob(globPathExp)
 
 	return tmp, err
 }
@@ -88,16 +88,21 @@ func (html *HTMLContainer) parseGlob(globPathExp string) (tmp *template.Template
 // accepts one parameter
 // globPathExp the path which the html files are, for example .Load("./frontend/templates/*.html")
 // panics if something bad happens during the loading
-func (html *HTMLContainer) Load(globPathExp string) {
+func (html *HTMLContainer) Load(globPathExp string, namespace ...string) {
 	var err error
 	var rootPath string
+	var ns = ""
+	if namespace != nil && len(namespace) > 0 {
+		ns = namespace[0]
+	}
+
 	if html.loaded == false {
 
 		if strings.LastIndexByte(globPathExp, '*') == len(globPathExp)-1 {
 			globPathExp += ".html" // ./* -> ./*.html
 		}
 
-		html.Templates, err = html.parseGlob(globPathExp)
+		html.Templates, err = html.parseGlob(globPathExp, ns)
 
 		if err != nil {
 			//if err then try to load the same path but with the current directory prefix
@@ -107,11 +112,11 @@ func (html *HTMLContainer) Load(globPathExp string) {
 				html.logger.Panic(ErrTemplateParse.With(err).Error() + " \nSecond try: \n" + cerr.Error())
 			}
 			//try with current directory + path
-			html.Templates, cerr = html.parseGlob(pwd + globPathExp)
+			html.Templates, cerr = html.parseGlob(pwd+globPathExp, ns)
 			if cerr != nil {
 				//this will fail if path starts with '.', so try again without the first letter
 				//we do that and no html.Load again because we want to keep the first error
-				html.Templates, cerr = html.parseGlob(pwd + globPathExp[1:])
+				html.Templates, cerr = html.parseGlob(pwd+globPathExp[1:], ns)
 				if cerr != nil {
 					html.logger.Panic(ErrTemplateParse.With(err).Error() + " \n and second try: \n" + cerr.Error())
 				}

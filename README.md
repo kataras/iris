@@ -86,7 +86,7 @@ Current: **v2.0.0-alpha**
 
 Global:
 
-- .Templates("path") -> .Templates().Load("path")
+- .Templates("./path/*.html") -> .Templates().Load("./path/*.html","yourNamespace") //namespace is optionally
 - .TemplateFuncs(...) -> .Templates().Funcs(...)
 - .TemplateDelims("left","right") -> .Templates().Delims("left","right")
 - .GetTemplates() -> .Templates()
@@ -97,13 +97,14 @@ Global:
 
 Context:
 
-- .SetCookie(string,string) -> .SetCookie(*fasthttp.Cookie{})
-- Added: .SetCookieKV(string,string)
+- .SetCookie(string,string) -> .SetCookie(*fasthttp.Cookie{}) ['Added SetCookieKV' for conversion]
 - .RenderFile(string,interface{}) error -> .Render(string,interface{}) error
 
 
 ### Added
 - IrisConfig { ... MaxRequestBodySize int }
+- Context.SetCookieKV(string,string)
+- Context.RenderNS(namespace string, file string, pageContext interface{}) error
 
 
 Read more about Semantic Versioning 2.0.0

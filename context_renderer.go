@@ -62,6 +62,7 @@ type (
 
 		ExecuteTemplate(*template.Template, interface{}) error
 		Render(string, interface{}) error
+		RenderNS(namespace string, file string, pageContext interface{}) error
 		RenderFile(string, interface{}) error
 		ServeContent(io.ReadSeeker, string, time.Time) error
 		ServeFile(string) error
@@ -197,10 +198,16 @@ func (ctx *Context) ExecuteTemplate(tmpl *template.Template, pageContext interfa
 	return _template.ErrTemplateExecute.With(tmpl.Execute(ctx.RequestCtx.Response.BodyWriter(), pageContext))
 }
 
-// Render  renders a file by its path and a context passed to the function
+// Render  renders a file by its path and a page context passed to the function
 func (ctx *Context) Render(file string, pageContext interface{}) error {
 	ctx.RequestCtx.SetContentType(ContentHTML + " ;charset=" + Charset)
 	return _template.ErrTemplateExecute.With(ctx.station.Templates.Templates.ExecuteTemplate(ctx.RequestCtx.Response.BodyWriter(), file, pageContext))
+}
+
+// RenderNS  renders a file by its namespace and path, a page context passed to the function
+func (ctx *Context) RenderNS(namespace string, file string, pageContext interface{}) error {
+	ctx.RequestCtx.SetContentType(ContentHTML + " ;charset=" + Charset)
+	return _template.ErrTemplateExecute.With(ctx.station.Templates.Templates.Lookup(namespace).ExecuteTemplate(ctx.RequestCtx.Response.BodyWriter(), file, pageContext))
 }
 
 // RenderFile  same as Render
