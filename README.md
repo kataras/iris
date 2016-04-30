@@ -756,12 +756,17 @@ func main() {
 ```
 
 ## Context
-![Iris Context Outline view](http://kataras.github.io/iris/assets/context_viewv2_1.PNG)
-![Iris Context Outline view](http://kataras.github.io/iris/assets/context_viewv2_2.PNG)
-![Iris Context Outline view](http://kataras.github.io/iris/assets/context_viewv2_3.PNG)
-![Iris Context Outline view](http://kataras.github.io/iris/assets/context_viewv2_4.PNG)
-![Iris Context Outline view](http://kataras.github.io/iris/assets/context_viewv2_5.PNG)
-![Iris Context Outline view](http://kataras.github.io/iris/assets/context_viewv2_6.PNG)
+![Iris Context Outline view](http://kataras.github.io/iris/assets/ctx1.png)
+
+![Iris Context Outline view](http://kataras.github.io/iris/assets/ctx2.png)
+
+![Iris Context Outline view](http://kataras.github.io/iris/assets/ctx3.png)
+
+![Iris Context Outline view](http://kataras.github.io/iris/assets/ctx4.png)
+
+![Iris Context Outline view](http://kataras.github.io/iris/assets/ctx5.png)
+
+![Iris Context Outline view](http://kataras.github.io/iris/assets/ctx6.png)
 
 
 Inside the [examples](https://github.com/iris-contrib/examples) branch you will find practical examples
