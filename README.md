@@ -10,7 +10,7 @@ A Community driven Web framework written in Go. Its performance is unique, seems
 
 Start using Iris Web Framework today. Iris is easy-to-learn while providing robust set of features for building modern & shiny web applications.
 
-![Hi Iris GIF](http://kataras.github.io/iris/assets/hi_iris_march.gif)
+![Hi Iris GIF](http://kataras.github.io/iris/assets/hi_iris_april.gif)
 
 ----
 
