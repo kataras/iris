@@ -227,7 +227,7 @@ type UserHandler struct {
 
 func (u *UserHandler) Serve(c *iris.Context) {
 	userId := c.Param("userId")
-	c.RenderFile("user.html", struct{ Message string }{Message: "Hello User with ID: " + userId})
+	c.Render("user.html", struct{ Message string }{Message: "Hello User with ID: " + userId})
 }
 
 ```
@@ -235,7 +235,7 @@ func (u *UserHandler) Serve(c *iris.Context) {
 ```go
 ///file: main.go
 //...cache the html files, if you the content of any html file changed, the templates are auto-reloading
-iris.Templates("src/iristests/templates/*.html")
+iris.Templates().Load("./templates/*.html")
 //...register the handler
 iris.HandleAnnotated(&UserHandler{})
 //...continue writing your wonderful API
@@ -244,7 +244,8 @@ iris.HandleAnnotated(&UserHandler{})
 
 
 
-### Using native http.Handler
+### Using native http.Handler 
+> Not recommended.
 > Note that using native http handler you cannot access url params.
 
 
@@ -390,7 +391,7 @@ iris.Templates().Load("./yourpath/templates/*.html")
 iris.Use(logger.Logger())
 
 iris.Get("/", func(c *iris.Context) {
-		c.RenderFile("index.html", Page{"My Index Title"})
+		c.Render("index.html", Page{"My Index Title"})
 })
 
 iris.Listen(":8080")
