@@ -220,6 +220,10 @@ iris.HandleAnnotated(&UserHandler{})
 
 ```
 
+> Want more render features?
+
+Go [here](https://github.com/iris-contrib/render) 
+
 
 
 ### Using native http.Handler 
@@ -928,7 +932,7 @@ if you want to help please do so (pr).
 | [binding](https://github.com/mholt/binding) | [Matt Holt](https://github.com/mholt) | Data binding from HTTP requests into structs | No |
 | [i18n](https://github.com/kataras/iris/tree/development/middleware/i18n) | [Iris](https://github.com/kataras/iris) | Internationalization and Localization | [Yes](https://github.com/iris-contrib/examples/tree/master/middleware_internationalization_i18n) |
 | [logrus](https://github.com/meatballhat/negroni-logrus) | [Dan Buch](https://github.com/meatballhat) | Logrus-based logger | No |
-| [render](https://github.com/unrolled/render) | [Cory Jacobsen](https://github.com/unrolled) | Render JSON, XML and HTML templates | No |
+| [render](https://github.com/iris-contrib/render) | [Ported to iris](https://github.com/kataras/iris) | Render JSON, XML and HTML templates | [Yes](https://github.com/iris-contrib/render) |
 | [gorelic](https://github.com/jingweno/negroni-gorelic) | [Jingwen Owen Ou](https://github.com/jingweno) | New Relic agent for Go runtime | No |
 | [pongo2](https://github.com/iris-contrib/examples/tree/master/middleware_pongo2) | [Iris](https://github.com/kataras/iris) | Middleware for [pongo2 templates](https://github.com/flosch/pongo2)| [Yes](https://github.com/iris-contrib/examples/tree/master/middleware_pongo2) |
 | [oauth2](https://github.com/goincremental/negroni-oauth2) | [David Bochenski](https://github.com/bochenski) | oAuth2 middleware | No |

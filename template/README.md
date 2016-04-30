@@ -11,4 +11,9 @@ context.Response.BodyWriter()
 
 ```
 
+## Want more render features?
+
+Go [here](https://github.com/iris-contrib/render) 
+
+
 > It's code will be replaced to work with [quicktemplate](https://github.com/valyala/quicktemplate) someday.
