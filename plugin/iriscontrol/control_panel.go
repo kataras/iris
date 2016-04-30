@@ -52,7 +52,8 @@ func (i *irisControlPlugin) startControlPanel() {
 	}
 
 	i.server = iris.New()
-	i.server.Templates.Load(installationPath + "templates/*")
+	i.server.Config.Render.Layout = installationPath + "templates"
+	i.server.SetRenderConfig(i.server.Config.Render)
 	i.setPluginsInfo()
 	i.setPanelRoutes()
 
@@ -92,7 +93,7 @@ func (i *irisControlPlugin) setPanelRoutes() {
 	iris.Static("/public/*assets", installationPath+"static"+pathSeperator, 1)
 
 	i.server.Get("/login", func(ctx *iris.Context) {
-		ctx.Render("login.html", nil)
+		ctx.Render("login", nil)
 	})
 
 	i.server.Post("/login", func(ctx *iris.Context) {
@@ -101,7 +102,7 @@ func (i *irisControlPlugin) setPanelRoutes() {
 
 	i.server.Use(i.auth)
 	i.server.Get("/", func(ctx *iris.Context) {
-		ctx.Render("index.html", DashboardPage{ServerIsRunning: i.station.Server.IsListening(), Routes: i.routes.All(), Plugins: i.plugins})
+		ctx.Render("index", DashboardPage{ServerIsRunning: i.station.Server.IsListening(), Routes: i.routes.All(), Plugins: i.plugins})
 	})
 
 	i.server.Post("/logout", func(ctx *iris.Context) {

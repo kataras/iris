@@ -80,7 +80,7 @@ Start using Iris Web Framework today. Iris is easy-to-learn while providing robu
 
 ## Versioning
 
-Current: **v2.0.0-alpha**
+Current: **v2.0.0-beta1**
 
 ##### [Changelog v1.2.1 -> v2.0.0](https://github.com/kataras/iris/blob/development/CHANGELOG.md)
 
@@ -113,7 +113,7 @@ import "github.com/kataras/iris"
 
 func main() {
 	iris.Get("/hello", func(c *iris.Context) {
-		c.HTML("<b> Hello </b>")
+		c.WriteHTML(iris.StatusOK, "<b> Hello </b>")
 	})
 	iris.Listen(":8080")
 }
@@ -205,7 +205,7 @@ type UserHandler struct {
 
 func (u *UserHandler) Serve(c *iris.Context) {
 	userId := c.Param("userId")
-	c.Render("user.html", struct{ Message string }{Message: "Hello User with ID: " + userId})
+	c.Render("user", struct{ Message string }{Message: "Hello User with ID: " + userId})
 }
 
 ```
@@ -213,20 +213,16 @@ func (u *UserHandler) Serve(c *iris.Context) {
 ```go
 ///file: main.go
 //...cache the html files, if you the content of any html file changed, the templates are auto-reloading
-iris.Templates().Load("./templates/*.html")
+iris.Config().Render.Directory = "./templates"
 //...register the handler
 iris.HandleAnnotated(&UserHandler{})
 //...continue writing your wonderful API
 
 ```
 
-> Want more render features?
-
-Go [here](https://github.com/iris-contrib/render) 
 
 
-
-### Using native http.Handler 
+### Using native http.Handler
 > Not recommended.
 > Note that using native http handler you cannot access url params.
 
@@ -312,7 +308,7 @@ func (m *myMiddleware) Serve(c *iris.Context){
 iris.Use(&myMiddleware{})
 
 iris.Get("/home", func (c *iris.Context){
-	c.HTML("<h1>Hello from /home </h1>")
+	c.WriteHTML(iris.StatusOK,"<h1>Hello from /home </h1>")
 })
 
 iris.Listen(":8080")
@@ -368,12 +364,12 @@ type Page struct {
 	Title string
 }
 
-iris.Templates().Load("./yourpath/templates/*.html")
+iris.Config().Render.Directory = "./yourpath/templates"
 
 iris.Use(logger.Logger())
 
 iris.Get("/", func(c *iris.Context) {
-		c.Render("index.html", Page{"My Index Title"})
+		c.Render("index", Page{"My Index Title"})
 })
 
 iris.Listen(":8080")
@@ -475,6 +471,8 @@ IrisConfig struct {
 		// ProfilePath change it if you want other url path than the default
 		// Default is /debug/pprof , which means yourhost.com/debug/pprof
 		ProfilePath string
+		// Render specify configs for rendering
+		Render iris.RenderConfig
 	}
 
 ```
@@ -482,15 +480,34 @@ IrisConfig struct {
 // 3.
 func thirdMethod() {
 
-	config := iris.IrisConfig{
-	    MaxRequestBodySize: -1,
-		PathCorrection: 	true,
-	    Log:				true,
+	config := &IrisConfig{
+		PathCorrection:     true,
+		MaxRequestBodySize: -1,
+		Log:                true,
 		Profile:            false,
-		ProfilePath:        iris.DefaultProfilePath,
-
-	}//these are the default values that you can change
-	//DefaultProfilePath = "/debug/pprof"
+		ProfilePath:        DefaultProfilePath,
+		Render: &RenderConfig{
+			Directory:                 "templates",
+			Asset:                     nil,
+			AssetNames:                nil,
+			Layout:                    "",
+			Extensions:                []string{".html"},
+			Funcs:                     []template.FuncMap{},
+			Delims:                    Delims{"{{", "}}"},
+			Charset:                   DefaultCharset,
+			IndentJSON:                false,
+			IndentXML:                 false,
+			PrefixJSON:                []byte(""),
+			PrefixXML:                 []byte(""),
+			HTMLContentType:           "text/html",
+			IsDevelopment:             false,
+			UnEscapeHTML:              false,
+			StreamingJSON:             false,
+			RequirePartials:           false,
+			DisableHTTPErrorRendering: false,
+		}}//these are the default values that you can change
+	// DefaultProfilePath = "/debug/pprof"
+	// DefaultCharset = "UTF-8"
 
 	api := iris.New(config)
 	api.Get("/home",func(c *iris.Context){})
@@ -620,7 +637,7 @@ func main() {
 		func(c *iris.Context){
 			name:= c.Param("fullname")
 			//friendId := c.ParamInt("friendId")
-			c.HTML("<b> Hello </b>"+name)
+			c.WriteHTML(iris.StatusOK,"<b> Hello </b>"+name)
 		})
 
 	iris.Listen(":8080")
@@ -650,7 +667,7 @@ You can define your own handlers for http errors, which can render an html file 
 
 ```go
 	iris.OnError(404,func (c *iris.Context){
-		c.HTML("<h1> The page you looking doesn't exists </h1>")
+		c.WriteHTML(iris.StatusOK, "<h1> The page you looking doesn't exists </h1>")
 		c.SetStatusCode(404)
 	})
 	//or OnNotFound(func (c *iris.Context){})... for 404 only.

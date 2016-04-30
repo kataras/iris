@@ -26,7 +26,7 @@ const (
 )
 
 func defaultBadHostHandler(ctx *iris.Context) {
-	ctx.WriteText(iris.StatusInternalServerError, "Bad Host")
+	ctx.Text(iris.StatusInternalServerError, "Bad Host")
 }
 
 // Options is a struct for specifying configuration options for the secure.Secure middleware.

@@ -48,7 +48,7 @@ func (p *pongo2Middleware) Serve(ctx *iris.Context) {
 			// same thing here:
 			contents, err := template.Execute(getPongoContext(templateData))
 			if err != nil {
-				ctx.WriteText(500, err.Error())
+				ctx.Text(500, err.Error())
 				return
 			}
 			// set the content to html

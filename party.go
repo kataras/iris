@@ -69,7 +69,7 @@ type (
 
 	GardenParty struct {
 		relativePath string
-		station      *Station // this station is where the party is happening, this station's Garden is the same for all Parties per Station & Router instance
+		station      *Iris // this station is where the party is happening, this station's Garden is the same for all Parties per Station & Router instance
 		middleware   Middleware
 		root         bool
 	}

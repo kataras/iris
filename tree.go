@@ -37,7 +37,7 @@ import (
 
 type (
 	tree struct {
-		station    *Station
+		station    *Iris
 		method     string
 		rootBranch *Branch
 		domain     string
@@ -100,7 +100,7 @@ func (g *Garden) getRootByMethodAndDomain(method string, domain string) (b *Bran
 }
 
 // Plant plants/adds a route to the garden
-func (g *Garden) Plant(station *Station, _route IRoute) {
+func (g *Garden) Plant(station *Iris, _route IRoute) {
 	method := _route.GetMethod()
 	domain := _route.GetDomain()
 	path := _route.GetPath()
@@ -121,10 +121,8 @@ func (g *Garden) Plant(station *Station, _route IRoute) {
 
 // tree
 
-func newTree(station *Station, method string, theRoot *Branch, domain string, hosts bool, hasCors bool) *tree {
-	t := &tree{station: station, method: method, rootBranch: theRoot, domain: domain, hosts: hosts, cors: hasCors, pool: sync.Pool{New: func() interface{} {
-		return &Context{station: station}
-	}}}
+func newTree(station *Iris, method string, theRoot *Branch, domain string, hosts bool, hasCors bool) *tree {
+	t := &tree{station: station, method: method, rootBranch: theRoot, domain: domain, hosts: hosts, cors: hasCors, pool: station.newContextPool()}
 	return t
 }
 

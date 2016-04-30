@@ -157,8 +157,6 @@ type (
 	// iris.OnError(405, func (ctx *iris.Context){ c.SendStatus(405,"Method not allowed!!!")})
 	// and inside the handler which you have access to the current Context:
 	// ctx.EmitError(405)
-	// that is the circle, the httpErrors variable stays at the Station(via it's Router), sets from there and emits from a context,
-	// but you can also emit directly from iris.Errors().Emit(405,ctx) if that's necessary
 	HTTPErrorContainer struct {
 		// Errors contains all the httperrorhandlers
 		Errors []*HTTPErrorHandler
@@ -168,7 +166,7 @@ type (
 // HTTPErrorHandlerFunc creates a handler which is responsible to send a particular error to the client
 func HTTPErrorHandlerFunc(statusCode int, message string) HandlerFunc {
 	return func(ctx *Context) {
-		ctx.WriteText(statusCode, message)
+		ctx.Text(statusCode, message)
 	}
 }
 
@@ -237,7 +235,7 @@ func (he *HTTPErrorContainer) EmitError(errCode int, ctx *Context) {
 	} else {
 		//if no error is registed, then register it with the default http error text, and re-run the Emit
 		he.OnError(errCode, func(c *Context) {
-			c.WriteText(errCode, StatusText(errCode))
+			c.Text(errCode, StatusText(errCode))
 		})
 		he.EmitError(errCode, ctx)
 	}

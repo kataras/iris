@@ -29,46 +29,47 @@ package iris
 
 import (
 	"bufio"
-	"encoding/json"
-	"encoding/xml"
 	"fmt"
+	"github.com/kataras/iris/utils"
 	"html/template"
 	"io"
 	"os"
 	"path"
-	"strconv"
 	"time"
-
-	_template "github.com/kataras/iris/template"
-
-	"github.com/kataras/iris/utils"
 )
 
 type (
 	IContextRenderer interface {
 		Write(string, ...interface{})
 		WriteHTML(int, string)
-		HTML(string)
-		WriteData(int, []byte)
-		Data([]byte)
-		WriteText(int, string)
-		Text(string)
-		RenderJSON(int, ...interface{}) error
-		WriteJSON(int, interface{}) error
-		JSON(interface{}) error
-		WriteXML(int, []byte) error
-		XML([]byte) error
-		RenderXML(int, ...interface{}) error
+		// Data writes out the raw bytes as binary data.
+		Data(status int, v []byte) error
+		// HTML builds up the response from the specified template and bindings.
+		HTML(status int, name string, binding interface{}, htmlOpt ...HTMLOptions) error
+		// Render same as .HTML but with status to iris.StatusOK (200)
+		Render(name string, binding interface{}, htmlOpt ...HTMLOptions) error
+		// JSON marshals the given interface object and writes the JSON response.
+		JSON(status int, v interface{}) error
+		// JSONP marshals the given interface object and writes the JSON response.
+		JSONP(status int, callback string, v interface{}) error
+		// Text writes out a string as plain text.
+		Text(status int, v string) error
+		// XML marshals the given interface object and writes the XML response.
+		XML(status int, v interface{}) error
 
 		ExecuteTemplate(*template.Template, interface{}) error
-		Render(string, interface{}) error
-		RenderNS(namespace string, file string, pageContext interface{}) error
 		ServeContent(io.ReadSeeker, string, time.Time) error
 		ServeFile(string) error
 		SendFile(filename string, destinationName string) error
 		Stream(func(*bufio.Writer))
 	}
 )
+
+// Write writes a string via the context's ResponseWriter
+func (ctx *Context) Write(format string, a ...interface{}) {
+	//this doesn't work with gzip, so just write the []byte better |ctx.ResponseWriter.WriteString(fmt.Sprintf(format, a...))
+	ctx.RequestCtx.WriteString(fmt.Sprintf(format, a...))
+}
 
 // WriteHTML writes html string with a http status
 func (ctx *Context) WriteHTML(httpStatus int, htmlContents string) {
@@ -77,113 +78,40 @@ func (ctx *Context) WriteHTML(httpStatus int, htmlContents string) {
 	ctx.RequestCtx.WriteString(htmlContents)
 }
 
-//HTML calls the WriteHTML with the 200 http status ok
-func (ctx *Context) HTML(htmlContents string) {
-	ctx.WriteHTML(StatusOK, htmlContents)
+// Data writes out the raw bytes as binary data.
+func (ctx *Context) Data(status int, v []byte) error {
+	return ctx.station.render.Data(ctx.RequestCtx, status, v)
 }
 
-// WriteData writes binary data with a http status
-func (ctx *Context) WriteData(httpStatus int, binaryData []byte) {
-	ctx.SetHeader(ContentType, []string{ContentBINARY + " ;charset=" + Charset})
-	ctx.SetHeader(ContentLength, []string{strconv.Itoa(len(binaryData))})
-	ctx.RequestCtx.SetStatusCode(httpStatus)
-	ctx.RequestCtx.Write(binaryData)
+// HTML builds up the response from the specified template and bindings.
+func (ctx *Context) HTML(status int, name string, binding interface{}, htmlOpt ...HTMLOptions) error {
+	opt := parseHTMLOptions(htmlOpt...)
+	return ctx.station.render.HTML(ctx.RequestCtx, status, name, binding, opt...)
 }
 
-//Data calls the WriteData with the 200 http status ok
-func (ctx *Context) Data(binaryData []byte) {
-	ctx.WriteData(StatusOK, binaryData)
+// Render same as .HTML but with status to iris.StatusOK (200)
+func (ctx *Context) Render(name string, binding interface{}, htmlOpt ...HTMLOptions) error {
+	return ctx.HTML(StatusOK, name, binding, htmlOpt...)
 }
 
-// Write writes a string via the context's ResponseWriter
-func (ctx *Context) Write(format string, a ...interface{}) {
-	//this doesn't work with gzip, so just write the []byte better |ctx.ResponseWriter.WriteString(fmt.Sprintf(format, a...))
-	ctx.RequestCtx.WriteString(fmt.Sprintf(format, a...))
+// JSON marshals the given interface object and writes the JSON response.
+func (ctx *Context) JSON(status int, v interface{}) error {
+	return ctx.station.render.JSON(ctx.RequestCtx, status, v)
 }
 
-// WriteText writes text with a http status
-func (ctx *Context) WriteText(httpStatus int, text string) {
-	ctx.SetContentType([]string{ContentTEXT + " ;charset=" + Charset})
-	ctx.RequestCtx.SetStatusCode(httpStatus)
-
-	ctx.RequestCtx.Write([]byte(text))
+// JSONP marshals the given interface object and writes the JSON response.
+func (ctx *Context) JSONP(status int, callback string, v interface{}) error {
+	return ctx.station.render.JSONP(ctx.RequestCtx, status, callback, v)
 }
 
-//Text calls the WriteText with the 200 http status ok
-func (ctx *Context) Text(text string) {
-	ctx.WriteText(StatusOK, text)
+// Text writes out a string as plain text.
+func (ctx *Context) Text(status int, v string) error {
+	return ctx.station.render.Text(ctx.RequestCtx, status, v)
 }
 
-// WriteJSON writes JSON which is encoded from a single json object or array with no Indent
-func (ctx *Context) WriteJSON(httpStatus int, jsonObjectOrArray interface{}) error {
-	ctx.SetContentType([]string{ContentJSON + " ;charset=" + Charset})
-	ctx.RequestCtx.SetStatusCode(httpStatus)
-	return ErrWriteJSON.With(json.NewEncoder(ctx.Response.BodyWriter()).Encode(jsonObjectOrArray))
-}
-
-//JSON calls the WriteJSON with the 200 http status ok if no previous status code setted
-func (ctx *Context) JSON(jsonObjectOrArray interface{}) error {
-	statusCode := ctx.Response.StatusCode()
-	if statusCode <= 0 {
-		statusCode = StatusOK
-	}
-	return ctx.WriteJSON(statusCode, jsonObjectOrArray)
-}
-
-// RenderJSON renders json objects with indent
-func (ctx *Context) RenderJSON(httpStatus int, jsonStructs ...interface{}) error {
-	var _json []byte
-
-	for _, jsonStruct := range jsonStructs {
-
-		theJSON, err := json.MarshalIndent(jsonStruct, "", "  ")
-		if err != nil {
-			return ErrRenderMarshalled.Format("JSON", err.Error())
-		}
-		_json = append(_json, theJSON...)
-	}
-
-	ctx.SetContentType([]string{ContentJSON + " ;charset=" + Charset})
-	ctx.RequestCtx.SetStatusCode(httpStatus)
-
-	ctx.RequestCtx.Write(_json)
-
-	return nil
-}
-
-// WriteXML writes xml which from []byte
-func (ctx *Context) WriteXML(httpStatus int, xmlB []byte) error {
-	ctx.RequestCtx.SetStatusCode(httpStatus)
-	ctx.SetContentType([]string{ContentXML + " ;charset=" + Charset})
-
-	ctx.RequestCtx.Write(xmlB)
-	return nil
-}
-
-//XML calls the WriteXML with the 200 http status ok if no previous status setted
-func (ctx *Context) XML(xmlBytes []byte) error {
-	statusCode := ctx.Response.StatusCode()
-	if statusCode <= 0 {
-		statusCode = StatusOK
-	}
-	return ctx.WriteXML(statusCode, xmlBytes)
-}
-
-// RenderXML writes xml which is converted from struct(s) with a http status which they passed to the function via parameters
-func (ctx *Context) RenderXML(httpStatus int, xmlStructs ...interface{}) error {
-	var _xmlDoc []byte
-	for _, xmlStruct := range xmlStructs {
-		theDoc, err := xml.MarshalIndent(xmlStruct, "", "  ")
-		if err != nil {
-			return ErrRenderMarshalled.Format("XML", err.Error())
-		}
-		_xmlDoc = append(_xmlDoc, theDoc...)
-	}
-	ctx.RequestCtx.SetStatusCode(httpStatus)
-	ctx.SetContentType([]string{ContentXMLText + " ;charset=" + Charset})
-
-	ctx.RequestCtx.Write(_xmlDoc)
-	return nil
+// XML marshals the given interface object and writes the XML response.
+func (ctx *Context) XML(status int, v interface{}) error {
+	return ctx.station.render.XML(ctx.RequestCtx, status, v)
 }
 
 // ExecuteTemplate executes a simple html template, you can use that if you already have the cached templates
@@ -194,19 +122,7 @@ func (ctx *Context) RenderXML(httpStatus int, xmlStructs ...interface{}) error {
 // returns an error if any errors occurs while executing this template
 func (ctx *Context) ExecuteTemplate(tmpl *template.Template, pageContext interface{}) error {
 	ctx.RequestCtx.SetContentType(ContentHTML + " ;charset=" + Charset)
-	return _template.ErrTemplateExecute.With(tmpl.Execute(ctx.RequestCtx.Response.BodyWriter(), pageContext))
-}
-
-// Render  renders a file by its path and a page context passed to the function
-func (ctx *Context) Render(file string, pageContext interface{}) error {
-	ctx.RequestCtx.SetContentType(ContentHTML + " ;charset=" + Charset)
-	return _template.ErrTemplateExecute.With(ctx.station.Templates.Templates.ExecuteTemplate(ctx.RequestCtx.Response.BodyWriter(), file, pageContext))
-}
-
-// RenderNS  renders a file by its namespace and path, a page context passed to the function
-func (ctx *Context) RenderNS(namespace string, file string, pageContext interface{}) error {
-	ctx.RequestCtx.SetContentType(ContentHTML + " ;charset=" + Charset)
-	return _template.ErrTemplateExecute.With(ctx.station.Templates.Templates.Lookup(namespace).ExecuteTemplate(ctx.RequestCtx.Response.BodyWriter(), file, pageContext))
+	return ErrTemplateExecute.With(tmpl.Execute(ctx.RequestCtx.Response.BodyWriter(), pageContext))
 }
 
 // ServeContent serves content, headers are autoset

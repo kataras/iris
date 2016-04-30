@@ -43,7 +43,7 @@ const (
 )
 
 // Server is the IServer's implementation, holds the fasthttp's Server, a net.Listener, the ServerOptions, and the handler
-// handler is registed at the Station level
+// handler is registed at the Station/Iris level
 type Server struct {
 	*fasthttp.Server
 	listener net.Listener
@@ -73,7 +73,7 @@ func DefaultConfig() Config {
 ///TODO: make it to generate self-signed certificate: CertFile,KeyFile options for ListenTLS
 func DefaultServerSecureOptions() Config { return DefaultConfig() }
 
-// SetHandler sets the handler in order to listen on new requests, this is done at the Station level
+// SetHandler sets the handler in order to listen on new requests, this is done at the Station/Iris level
 func (s *Server) SetHandler(h fasthttp.RequestHandler) {
 	s.handler = h
 	if s.Server != nil {

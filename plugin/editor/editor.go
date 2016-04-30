@@ -125,7 +125,7 @@ func (e *Plugin) GetDescription() string {
 }
 
 // PreListen runs before the server's listens, saves the keyfile,certfile and the host from the Iris station to listen for
-func (e *Plugin) PreListen(s *iris.Station) {
+func (e *Plugin) PreListen(s *iris.Iris) {
 	e.logger = s.Logger
 	e.keyfile = s.Server.Config.KeyFile
 	e.certfile = s.Server.Config.CertFile
@@ -142,7 +142,7 @@ func (e *Plugin) PreListen(s *iris.Station) {
 }
 
 // PreClose kills the editor's server when Iris is closed
-func (e *Plugin) PreClose(s *iris.Station) {
+func (e *Plugin) PreClose(s *iris.Iris) {
 	if e.process != nil {
 		err := e.process.Kill()
 		if err != nil {

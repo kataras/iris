@@ -76,26 +76,26 @@ type (
 		// parameter is the Route
 		PostHandle(IRoute)
 	}
-	// IPluginPreListen implements the PreListen(*Station) method
+	// IPluginPreListen implements the PreListen(*Iris) method
 	IPluginPreListen interface {
 		// PreListen it's being called only one time, BEFORE the Server is started (if .Listen called)
 		// is used to do work at the time all other things are ready to go
 		//  parameter is the station
-		PreListen(*Station)
+		PreListen(*Iris)
 	}
-	// IPluginPostListen implements the PostListen(*Station) method
+	// IPluginPostListen implements the PostListen(*Iris) method
 	IPluginPostListen interface {
 		// PostListen it's being called only one time, AFTER the Server is started (if .Listen called)
 		// parameter is the station
-		PostListen(*Station)
+		PostListen(*Iris)
 	}
-	// IPluginPreClose implements the PreClose(*Station) method
+	// IPluginPreClose implements the PreClose(*Iris) method
 	IPluginPreClose interface {
 		// PreClose it's being called only one time, BEFORE the Iris .Close method
 		// any plugin cleanup/clear memory happens here
 		//
 		// The plugin is deactivated after this state
-		PreClose(*Station)
+		PreClose(*Iris)
 	}
 
 	// IPluginPreDownload It's for the future, not being used, I need to create
@@ -121,9 +121,9 @@ type (
 		Printf(format string, a ...interface{})
 		DoPreHandle(route IRoute)
 		DoPostHandle(route IRoute)
-		DoPreListen(station *Station)
-		DoPostListen(station *Station)
-		DoPreClose(station *Station)
+		DoPreListen(station *Iris)
+		DoPostListen(station *Iris)
+		DoPreClose(station *Iris)
 		DoPreDownload(pluginTryToDownload IPlugin, downloadURL string)
 		GetAll() []IPlugin
 		// GetDownloader is the only one module that is used and fire listeners at the same time in this file
@@ -313,7 +313,7 @@ func (p *PluginContainer) DoPostHandle(route IRoute) {
 }
 
 // DoPreListen raise all plugins which has the DoPreListen method
-func (p *PluginContainer) DoPreListen(station *Station) {
+func (p *PluginContainer) DoPreListen(station *Iris) {
 	for i := range p.activatedPlugins {
 		// check if this method exists on our plugin obj, these are optionaly and call it
 		if pluginObj, ok := p.activatedPlugins[i].(IPluginPreListen); ok {
@@ -323,7 +323,7 @@ func (p *PluginContainer) DoPreListen(station *Station) {
 }
 
 // DoPostListen raise all plugins which has the DoPostListen method
-func (p *PluginContainer) DoPostListen(station *Station) {
+func (p *PluginContainer) DoPostListen(station *Iris) {
 	for i := range p.activatedPlugins {
 		// check if this method exists on our plugin obj, these are optionaly and call it
 		if pluginObj, ok := p.activatedPlugins[i].(IPluginPostListen); ok {
@@ -333,7 +333,7 @@ func (p *PluginContainer) DoPostListen(station *Station) {
 }
 
 // DoPreClose raise all plugins which has the DoPreClose method
-func (p *PluginContainer) DoPreClose(station *Station) {
+func (p *PluginContainer) DoPreClose(station *Iris) {
 	for i := range p.activatedPlugins {
 		// check if this method exists on our plugin obj, these are optionaly and call it
 		if pluginObj, ok := p.activatedPlugins[i].(IPluginPreClose); ok {

@@ -35,11 +35,42 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
+const (
+	// DefaultProfilePath is the default path for the web pprof '/debug/pprof'
+	DefaultProfilePath = "/debug/pprof"
+
+	// ParameterStartByte is very used on the node, it's just contains the byte for the ':' rune/char
+	ParameterStartByte = byte(':')
+	// SlashByte is just a byte of '/' rune/char
+	SlashByte = byte('/')
+	// Slash is just a string of "/"
+	Slash = "/"
+	// MatchEverythingByte is just a byte of '*" rune/char
+	MatchEverythingByte = byte('*')
+
+	// HTTP Methods(1)
+	MethodGet     = "GET"
+	MethodPost    = "POST"
+	MethodPut     = "PUT"
+	MethodDelete  = "DELETE"
+	MethodConnect = "CONNECT"
+	MethodHead    = "HEAD"
+	MethodPatch   = "PATCH"
+	MethodOptions = "OPTIONS"
+	MethodTrace   = "TRACE"
+)
+
+var (
+	// HTTP Methods(2)
+	MethodConnectBytes = []byte(MethodConnect)
+	AllMethods         = [...]string{"GET", "POST", "PUT", "DELETE", "CONNECT", "HEAD", "PATCH", "OPTIONS", "TRACE"}
+)
+
 // router internal is the route serving service, one router per server
 type router struct {
 	*GardenParty
 	*HTTPErrorContainer
-	station      *Station
+	station      *Iris
 	garden       *Garden
 	methodMatch  func(m1, m2 string) bool
 	ServeRequest func(reqCtx *fasthttp.RequestCtx)
@@ -60,16 +91,14 @@ func methodMatchFunc(m1, m2 string) bool {
 }
 
 // newRouter creates and returns an empty router
-func newRouter(station *Station) *router {
+func newRouter(station *Iris) *router {
 	r := &router{
 		station:            station,
 		garden:             &Garden{},
 		methodMatch:        methodMatchFunc,
 		HTTPErrorContainer: defaultHTTPErrors(),
 		GardenParty:        &GardenParty{relativePath: "/", station: station, root: true},
-		errorPool: sync.Pool{New: func() interface{} {
-			return &Context{station: station}
-		}}}
+		errorPool:          station.newContextPool()}
 
 	r.ServeRequest = r.serveFunc
 
