@@ -82,7 +82,7 @@ Start using Iris Web Framework today. Iris is easy-to-learn while providing robu
 
 Current: **v2.0.0-alpha**
 
-### Changelog v1.3.0 -> v2.0.0-alpha
+### [Changelog v1.2.1 -> v2.0.0](https://github.com/kataras/iris/blob/development/CHANGELOG.md)
 
 Global:
 
@@ -96,15 +96,16 @@ Global:
 - .Listen(...string) -> .Listen(string)
 
 Context:
-
-- .SetCookie(string,string) -> .SetCookie(*fasthttp.Cookie{}) ['Added SetCookieKV' for conversion]
+- .AddCookie(*fasthttp.Cookie{}) -> .SetCookie(*fasthttp.Cookie{})
+- .SetCookie(string,string) -> .SetCookieKV(string,string)
 - .RenderFile(string,interface{}) error -> .Render(string,interface{}) error
 
 
-### Added
+#### Added
 - IrisConfig { ... MaxRequestBodySize int }
-- Context.SetCookieKV(string,string)
+- .Plugins() []Plugin
 - Context.RenderNS(namespace string, file string, pageContext interface{}) error
+- Context.SetCookieKV(string,string)
 
 
 Read more about Semantic Versioning 2.0.0
