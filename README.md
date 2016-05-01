@@ -61,7 +61,8 @@ Start using Iris Web Framework today. Iris is easy-to-learn while providing robu
 - [Declaration & Options](#declaration)
 - [Party](#party)
 - [Named Parameters](#named-parameters)
-- [Catch all and Static serving](#match-anything-and-the-static-serve-handler)
+- [Static files](#static-files)
+- [Send files](#send-files)
 - [Custom HTTP Errors](#custom-http-errors)
 - [Streaming](#streaming)
 - [Graceful](#graceful)
@@ -82,7 +83,7 @@ Start using Iris Web Framework today. Iris is easy-to-learn while providing robu
 
 Current: **v2.0.0-beta1**
 
-##### [Changelog v1.2.1 -> v2.0.0](https://github.com/kataras/iris/blob/development/CHANGELOG.md)
+##### [Changelog v1.2.1 -> v2.0.0](https://github.com/kataras/iris/blob/development/HISTORY.md)
 
 
 Read more about Semantic Versioning 2.0.0
@@ -92,7 +93,7 @@ Read more about Semantic Versioning 2.0.0
  - https://wiki.debian.org/UpstreamGuide#Releases_and_Versions
 
 ## Install
-Iris is in active development status, Check for updates once per week. Iris is compatible with go1.6+
+Iris is in active development status, check for updates once per week. **Compatible with go1.6+ **.
 ```sh
 $ go get -u github.com/iris-contrib/iris
 ```
@@ -105,7 +106,6 @@ $ iris install
 
 ## Introduction
 The name of this framework came from **Greek mythology**, **Iris** was the name of the Greek goddess of the **rainbow**.
-Iris is a very minimal but flexible golang http middleware & standalone web application framework, providing a robust set of features for building single & multi-page, web applications.
 
 ```go
 package main
@@ -159,7 +159,7 @@ func (m myHandlerGet) Serve(c *iris.Context) {
 //and so on
 
 
-iris.Handle("GET", "/get", myHandlerGet)
+iris.Handle("GET", "/get", myHandlerGet{})
 iris.Handle("POST", "/post", post)
 iris.Handle("PUT", "/put", put)
 iris.Handle("DELETE", "/delete", del)
@@ -261,7 +261,7 @@ iris.Delete("/letsdelete", iris.ToHandlerFunc(nativehandler{}))
 
 ```go
 // First point on the static files
-iris.Static("/assets/", "./public/assets/", 1)
+iris.Static("/assets", "./public/assets", 1)
 
 // Then declare which midleware to use (custom or not)
 iris.Use(myMiddleware)
@@ -271,7 +271,7 @@ iris.UseFunc(myFunc)
 iris.Get("/myroute", func(c *iris.Context) {
     // do stuff
 })
-iris.Get("/secondroute", myMiddlewareFunc(), myRouteHandlerfunc)
+iris.Get("/secondroute", myMiddlewareFunc, myRouteHandlerfunc)
 
 // Now run our server
 iris.Listen(":8080")
@@ -645,21 +645,102 @@ func main() {
 }
 
 ```
+### Match anything
 
-## Match anything and the Static serve handler
-
-####Catch all
 ```go
 // Will match any request which url's preffix is "/anything/" and has content after that
 iris.Get("/anything/*randomName", func(c *iris.Context) { } )
 // Match: /anything/whateverhere/whateveragain , /anything/blablabla
-// c.Params("randomName") will be /whateverhere/whateveragain, blablabla
+// c.Param("randomName") will be /whateverhere/whateveragain, blablabla
 // Not Match: /anything , /anything/ , /something
 ```
-#### Static handler using *iris.Static(""/public",./path/to/the/resources/directory/", 1)*
+
+
+## Static files
+
+Serve a static directory
+
 ```go
-iris.Static("/public", "./static/assets/", 1))
+// first parameter is the request url path (string)
+// second parameter is the system directory (string)
+// third parameter is the level (int) of stripSlashes
+// * stripSlashes = 0, original path: "/foo/bar", result: "/foo/bar"
+// * stripSlashes = 1, original path: "/foo/bar", result: "/bar"
+// * stripSlashes = 2, original path: "/foo/bar", result: ""
+
+iris.Static("/public", "./static/assets/", 1)
 //-> /public/assets/favicon.ico
+```
+
+Serve static individual file
+
+```go
+
+iris.Get("/txt", func(ctx *iris.Context) {
+	ctx.ServeFile("./myfolder/staticfile.txt")
+}
+
+```
+
+Putting all together, serve static individual files dynamically
+
+```go
+package main
+
+import (
+	"strings"
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/utils"
+)
+
+func main() {
+
+	iris.Get("/*file", func(ctx *iris.Context) {
+	  	   requestpath := ctx.Param("file")
+
+			path := strings.Replace(requestpath, "/", utils.PathSeperator, -1)
+
+			if !utils.DirectoryExists(path) {
+				ctx.NotFound()
+				return
+			}
+
+			ctx.ServeFile(path)
+	}
+}
+
+iris.Listen(":8080")
+
+```
+
+## Send file
+
+Send a file, force-download to the client
+```go
+// You can define your own "Content-Type" header also, after this function call
+// for example: ctx.Response.Header.Set("Content-Type","thecontent/type")
+sendFile(filename string, destinationName string) error
+```
+
+```go
+package main
+
+import "github.com/kataras/iris"
+
+func main() {
+
+	iris.Get("/servezip", func(c *iris.Context) {
+		file := "./files/first.zip"
+		err := c.SendFile(file, "saveAsName.zip")
+		if err != nil {
+			println("error: " + err.Error())
+		}
+	})
+
+	iris.Listen(":8080")
+}
+
+
 ```
 
 ## Custom HTTP Errors
