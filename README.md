@@ -10,7 +10,7 @@ A Community driven Web framework written in Go. Its performance is unique, seems
 
 Start using Iris Web Framework today. Iris is easy-to-learn while providing robust set of features for building modern & shiny web applications.
 
-![Hi Iris GIF](http://kataras.github.io/iris/assets/hi_iris_april.gif)
+![Hi Iris GIF](http://kataras.github.io/iris/assets/hi_iris_may.gif)
 
 ----
 
@@ -81,7 +81,7 @@ Start using Iris Web Framework today. Iris is easy-to-learn while providing robu
 
 ## Versioning
 
-Current: **v2.0.0-beta1**
+Current: **v2.0.0**
 
 ##### [Changelog v1.2.1 -> v2.0.0](https://github.com/kataras/iris/blob/development/HISTORY.md)
 
@@ -98,12 +98,6 @@ Iris is in active development status, check for updates once per week. **Compati
 $ go get -u github.com/iris-contrib/iris
 ```
 
-### Upgrade
-```sh
-$ iris install
-```
-> Note that for ```iris install``` you need to have $GOPATH/bin to your $PATH system variable.
-
 ## Introduction
 The name of this framework came from **Greek mythology**, **Iris** was the name of the Greek goddess of the **rainbow**.
 
@@ -114,17 +108,14 @@ import "github.com/kataras/iris"
 
 func main() {
 	iris.Get("/hello", func(c *iris.Context) {
-		c.WriteHTML(iris.StatusOK, "<b> Hello </b>")
+		c.Write("Hi %s", "iris")
 	})
 	iris.Listen(":8080")
 }
 
 ```
->Note: for macOS, If you are having problems on .Listen then pass only the port "8080" without ':'
-
 
 ## TLS
-
 
 ```go
 ListenTLS(fulladdr string, certFile, keyFile string) error
