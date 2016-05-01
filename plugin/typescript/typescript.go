@@ -34,9 +34,8 @@ import (
 	"strings"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/cli/npm"
-	"github.com/kataras/iris/cli/system"
 	"github.com/kataras/iris/logger"
+	"github.com/kataras/iris/npm"
 	"github.com/kataras/iris/plugin/editor"
 	"github.com/kataras/iris/utils"
 )
@@ -51,7 +50,7 @@ also working only if one typescript project found (normaly is one for client-sid
 // Name the name of the plugin, is "TypescriptPlugin"
 const Name = "TypescriptPlugin"
 
-var nodeModules = system.PathSeparator + "node_modules" + system.PathSeparator
+var nodeModules = utils.PathSeparator + "node_modules" + utils.PathSeparator
 
 type (
 	// Options the struct which holds the TypescriptPlugin options
@@ -91,7 +90,7 @@ func DefaultOptions() Options {
 	if err != nil {
 		panic("Typescript Plugin: Cannot get the Current Working Directory !!! [os.getwd()]")
 	}
-	opt := Options{Dir: root + system.PathSeparator, Ignore: nodeModules, Tsconfig: DefaultTsconfig()}
+	opt := Options{Dir: root + utils.PathSeparator, Ignore: nodeModules, Tsconfig: DefaultTsconfig()}
 	opt.Bin = npm.Abs("typescript/lib/tsc.js")
 	return opt
 
@@ -176,7 +175,7 @@ func (t *Plugin) start() {
 			watchedProjects := 0
 			//typescript project (.tsconfig) found
 			for _, project := range projects {
-				cmd := system.CommandBuilder("node", t.options.Bin, "-p", project[0:strings.LastIndex(project, system.PathSeparator)]) //remove the /tsconfig.json)
+				cmd := utils.CommandBuilder("node", t.options.Bin, "-p", project[0:strings.LastIndex(project, utils.PathSeparator)]) //remove the /tsconfig.json)
 				projectConfig := FromFile(project)
 
 				if projectConfig.CompilerOptions.Watch {
@@ -212,7 +211,7 @@ func (t *Plugin) start() {
 				}
 				//it must be always > 0 if we came here, because of if hasTypescriptFiles == true.
 				for _, file := range files {
-					cmd := system.CommandBuilder("node", t.options.Bin)
+					cmd := utils.CommandBuilder("node", t.options.Bin)
 					cmd.AppendArguments(defaultCompilerArgs...)
 					cmd.AppendArguments(file)
 					_, err := cmd.Output()
@@ -230,7 +229,7 @@ func (t *Plugin) start() {
 
 		//editor activation
 		if len(projects) == 1 && t.options.Editor != nil {
-			dir := projects[0][0:strings.LastIndex(projects[0], system.PathSeparator)]
+			dir := projects[0][0:strings.LastIndex(projects[0], utils.PathSeparator)]
 			t.options.Editor.Dir(dir)
 			t.pluginContainer.Add(t.options.Editor)
 		}
@@ -281,7 +280,7 @@ func (t *Plugin) getTypescriptProjects() []string {
 			}
 		}
 
-		if strings.HasSuffix(path, system.PathSeparator+"tsconfig.json") {
+		if strings.HasSuffix(path, utils.PathSeparator+"tsconfig.json") {
 			//t.logger.Printf("\nTypescript project found in %s", path)
 			projects = append(projects, path)
 		}

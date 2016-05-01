@@ -32,7 +32,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kataras/iris/cli/system"
+	"github.com/kataras/iris/utils"
 )
 
 var (
@@ -53,11 +53,10 @@ type (
 
 // init sets the root directory for the node_modules
 func init() {
-	NodeModules = system.MustCommand("npm", "root", "-g") //here it ends with \n we have to remove it
+	NodeModules = utils.MustCommand("npm", "root", "-g") //here it ends with \n we have to remove it
 	NodeModules = NodeModules[0 : len(NodeModules)-1]
 }
 
-///TODO: na dw pws grafete swsta
 func success(output string, a ...interface{}) Result {
 	return Result{fmt.Sprintf(output, a...), nil}
 }
@@ -112,7 +111,7 @@ func Install(moduleName string) Result {
 		}
 
 	}()
-	out, err := system.Command("npm", "install", moduleName, "-g")
+	out, err := utils.Command("npm", "install", moduleName, "-g")
 	finish <- true
 	if err != nil {
 		return fail("Error installing module %s. Trace: %s", moduleName, err.Error())
@@ -124,7 +123,7 @@ func Install(moduleName string) Result {
 
 // Unistall removes a module
 func Unistall(moduleName string) Result {
-	out, err := system.Command("npm", "unistall", "-g", moduleName)
+	out, err := utils.Command("npm", "unistall", "-g", moduleName)
 	if err != nil {
 		return fail("Error unstalling module %s. Trace: %s", moduleName, err.Error())
 	}
@@ -134,7 +133,7 @@ func Unistall(moduleName string) Result {
 
 // Abs returns the absolute path of the global node_modules directory + relative
 func Abs(relativePath string) string {
-	return NodeModules + system.PathSeparator + strings.Replace(relativePath, "/", system.PathSeparator, -1)
+	return NodeModules + utils.PathSeparator + strings.Replace(relativePath, "/", utils.PathSeparator, -1)
 }
 
 // Exists returns true if a module exists
@@ -147,5 +146,5 @@ func Exists(executableRelativePath string) bool {
 		return false
 	}
 
-	return system.Exists(execAbsPath)
+	return utils.Exists(execAbsPath)
 }

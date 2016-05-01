@@ -92,15 +92,16 @@ Read more about Semantic Versioning 2.0.0
  - https://wiki.debian.org/UpstreamGuide#Releases_and_Versions
 
 ## Install
-Iris is in active development status, I recommend you to check for new features and [versions](#versioning) once per week. Iris is compatible with the latest go version: go1.6+
+Iris is in active development status, Check for updates once per week. Iris is compatible with go1.6+
 ```sh
-$ go get -u github.com/kataras/iris
+$ go get -u github.com/iris-contrib/iris
 ```
-If update doesn't works for you, try this
+
+### Upgrade
 ```sh
-$ rm -rf $GOPATH/github.com/kataras/iris
-$ go get github.com/kataras/iris
+$ iris install
 ```
+> Note that for ```iris install``` you need to have $GOPATH/bin to your $PATH system variable.
 
 ## Introduction
 The name of this framework came from **Greek mythology**, **Iris** was the name of the Greek goddess of the **rainbow**.

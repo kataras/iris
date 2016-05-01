@@ -253,7 +253,9 @@ func TypeByExtension(fullfilename string) (t string) {
 	//these should be found by the windows(registry) and unix(apache) but on windows some machines have problems on this part.
 	if t = mime.TypeByExtension(ext); t == "" {
 		// no use of map here because we will have to lock/unlock it, by hand is better, no problem:
-		if ext == ".zip" {
+		if ext == ".json" {
+			t = "application/json"
+		} else if ext == ".zip" {
 			t = "application/zip"
 		} else if ext == ".3gp" {
 			t = "video/3gpp"

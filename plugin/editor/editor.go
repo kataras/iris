@@ -39,9 +39,9 @@ import (
 	"strings"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/cli/npm"
-	"github.com/kataras/iris/cli/system"
 	"github.com/kataras/iris/logger"
+	"github.com/kataras/iris/npm"
+	"github.com/kataras/iris/utils"
 )
 
 const (
@@ -169,7 +169,7 @@ func (e *Plugin) start() {
 		e.logger.Print(res.Message)
 	}
 
-	cmd := system.CommandBuilder("node", npm.Abs("alm/src/server.js"))
+	cmd := utils.CommandBuilder("node", npm.Abs("alm/src/server.js"))
 	cmd.AppendArguments("-a", e.username+":"+e.password, "-h", e.host, "-t", strconv.Itoa(e.port), "-d", e.directory[0:len(e.directory)-1])
 	// for auto-start in the browser: cmd.AppendArguments("-o")
 	if e.keyfile != "" && e.certfile != "" {

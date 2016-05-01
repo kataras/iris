@@ -29,8 +29,9 @@ package errors
 
 import (
 	"fmt"
-	"github.com/kataras/iris/logger"
 	"runtime"
+
+	"github.com/kataras/iris/logger"
 )
 
 // Error holds the error
@@ -64,6 +65,9 @@ func (e *Error) Return() error {
 
 // Panic output the message and after panics
 func (e *Error) Panic() {
+	if e == nil {
+		return
+	}
 	_, fn, line, _ := runtime.Caller(1)
 	errMsg := e.message
 	errMsg = "\nCaller was: " + fmt.Sprintf("%s:%d", fn, line)
@@ -72,6 +76,9 @@ func (e *Error) Panic() {
 
 // Panicf output the formatted message and after panics
 func (e *Error) Panicf(args ...interface{}) {
+	if e == nil {
+		return
+	}
 	_, fn, line, _ := runtime.Caller(1)
 	errMsg := e.Format(args...).Error()
 	errMsg = "\nCaller was: " + fmt.Sprintf("%s:%d", fn, line)
