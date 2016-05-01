@@ -37,6 +37,33 @@ import (
 	"golang.org/x/net/context"
 )
 
+const (
+	// DefaultUserAgent default to 'iris' but it is not used anywhere yet
+	DefaultUserAgent = "iris"
+	// DefaultCharset represents the default charset for content headers
+	DefaultCharset = "UTF-8"
+	// ContentType represents the header["Content-Type"]
+	ContentType = "Content-Type"
+	// ContentLength represents the header["Content-Length"]
+	ContentLength = "Content-Length"
+	// ContentHTML is the  string of text/html response headers
+	ContentHTML   = "text/html"
+	ContentBINARY = "application/octet-stream"
+
+	// LastModified "Last-Modified"
+	LastModified = "Last-Modified"
+	// IfModifiedSince "If-Modified-Since"
+	IfModifiedSince = "If-Modified-Since"
+	// ContentDisposition "Content-Disposition"
+	ContentDisposition = "Content-Disposition"
+
+	// TimeFormat default time format for any kind of datetime parsing
+	TimeFormat = "Mon, 02 Jan 2006 15:04:05 GMT"
+
+	// stopExecutionPosition used inside the Context, is the number which shows us that the context's middleware manualy stop the execution
+	stopExecutionPosition = 255
+)
+
 // Charset is defaulted to UTF-8, you can change it
 // all render methods will have this charset
 var Charset = DefaultCharset
@@ -66,7 +93,7 @@ type (
 	Context struct {
 		*fasthttp.RequestCtx
 		Params  PathParameters
-		station *Station
+		station *Iris
 		//keep track all registed middleware (handlers)
 		middleware Middleware
 		// pos is the position number of the Context, look .Next to understand

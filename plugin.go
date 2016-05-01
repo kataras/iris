@@ -29,6 +29,8 @@ package iris
 
 import (
 	"fmt"
+
+	"github.com/kataras/iris/utils"
 )
 
 type (
@@ -74,26 +76,26 @@ type (
 		// parameter is the Route
 		PostHandle(IRoute)
 	}
-	// IPluginPreListen implements the PreListen(*Station) method
+	// IPluginPreListen implements the PreListen(*Iris) method
 	IPluginPreListen interface {
 		// PreListen it's being called only one time, BEFORE the Server is started (if .Listen called)
 		// is used to do work at the time all other things are ready to go
 		//  parameter is the station
-		PreListen(*Station)
+		PreListen(*Iris)
 	}
-	// IPluginPostListen implements the PostListen(*Station) method
+	// IPluginPostListen implements the PostListen(*Iris) method
 	IPluginPostListen interface {
 		// PostListen it's being called only one time, AFTER the Server is started (if .Listen called)
 		// parameter is the station
-		PostListen(*Station)
+		PostListen(*Iris)
 	}
-	// IPluginPreClose implements the PreClose(*Station) method
+	// IPluginPreClose implements the PreClose(*Iris) method
 	IPluginPreClose interface {
 		// PreClose it's being called only one time, BEFORE the Iris .Close method
 		// any plugin cleanup/clear memory happens here
 		//
 		// The plugin is deactivated after this state
-		PreClose(*Station)
+		PreClose(*Iris)
 	}
 
 	// IPluginPreDownload It's for the future, not being used, I need to create
@@ -111,17 +113,17 @@ type (
 
 	// IPluginContainer is the interface which the PluginContainer should implements
 	IPluginContainer interface {
-		Plugin(plugin IPlugin) error
-		RemovePlugin(pluginName string) error
+		Add(plugin IPlugin) error
+		Remove(pluginName string) error
 		GetName(plugin IPlugin) string
 		GetDescription(plugin IPlugin) string
 		GetByName(pluginName string) IPlugin
 		Printf(format string, a ...interface{})
 		DoPreHandle(route IRoute)
 		DoPostHandle(route IRoute)
-		DoPreListen(station *Station)
-		DoPostListen(station *Station)
-		DoPreClose(station *Station)
+		DoPreListen(station *Iris)
+		DoPostListen(station *Iris)
+		DoPreClose(station *Iris)
 		DoPreDownload(pluginTryToDownload IPlugin, downloadURL string)
 		GetAll() []IPlugin
 		// GetDownloader is the only one module that is used and fire listeners at the same time in this file
@@ -156,27 +158,27 @@ var _ IPluginContainer = &PluginContainer{}
 
 // DirectoryExists returns true if a given local directory exists
 func (d *DownloadManager) DirectoryExists(dir string) bool {
-	return directoryExists(dir)
+	return utils.DirectoryExists(dir)
 }
 
 // DownloadZip downlodas a zip to the given local path location
 func (d *DownloadManager) DownloadZip(zipURL string, targetDir string) (string, error) {
-	return downloadZip(zipURL, targetDir)
+	return utils.DownloadZip(zipURL, targetDir)
 }
 
 // Unzip unzips a zip to the given local path location
 func (d *DownloadManager) Unzip(archive string, target string) (string, error) {
-	return unzip(archive, target)
+	return utils.Unzip(archive, target)
 }
 
 // Remove deletes/removes/rm a file
 func (d *DownloadManager) Remove(filePath string) error {
-	return removeFile(filePath)
+	return utils.RemoveFile(filePath)
 }
 
 // Install is just the flow of the: DownloadZip->Unzip->Remove the zip
 func (d *DownloadManager) Install(remoteFileZip string, targetDirectory string) (string, error) {
-	return install(remoteFileZip, targetDirectory)
+	return utils.Install(remoteFileZip, targetDirectory)
 }
 
 // PluginContainer is the base container of all Iris, registed plugins
@@ -185,8 +187,8 @@ type PluginContainer struct {
 	downloader       *DownloadManager
 }
 
-// Plugin activates the plugins and if succeed then adds it to the activated plugins list
-func (p *PluginContainer) Plugin(plugin IPlugin) error {
+// Add activates the plugins and if succeed then adds it to the activated plugins list
+func (p *PluginContainer) Add(plugin IPlugin) error {
 	if p.activatedPlugins == nil {
 		p.activatedPlugins = make([]IPlugin, 0)
 	}
@@ -213,7 +215,7 @@ func (p *PluginContainer) Plugin(plugin IPlugin) error {
 
 // RemovePlugin it removes a plugin by it's name, if pluginName is empty "" or no plugin found with this name, then nothing is removed and a specific error is returned.
 // This doesn't calls the PreClose method
-func (p *PluginContainer) RemovePlugin(pluginName string) error {
+func (p *PluginContainer) Remove(pluginName string) error {
 	if p.activatedPlugins == nil {
 		return ErrPluginRemoveNoPlugins.Return()
 	}
@@ -311,7 +313,7 @@ func (p *PluginContainer) DoPostHandle(route IRoute) {
 }
 
 // DoPreListen raise all plugins which has the DoPreListen method
-func (p *PluginContainer) DoPreListen(station *Station) {
+func (p *PluginContainer) DoPreListen(station *Iris) {
 	for i := range p.activatedPlugins {
 		// check if this method exists on our plugin obj, these are optionaly and call it
 		if pluginObj, ok := p.activatedPlugins[i].(IPluginPreListen); ok {
@@ -321,7 +323,7 @@ func (p *PluginContainer) DoPreListen(station *Station) {
 }
 
 // DoPostListen raise all plugins which has the DoPostListen method
-func (p *PluginContainer) DoPostListen(station *Station) {
+func (p *PluginContainer) DoPostListen(station *Iris) {
 	for i := range p.activatedPlugins {
 		// check if this method exists on our plugin obj, these are optionaly and call it
 		if pluginObj, ok := p.activatedPlugins[i].(IPluginPostListen); ok {
@@ -331,7 +333,7 @@ func (p *PluginContainer) DoPostListen(station *Station) {
 }
 
 // DoPreClose raise all plugins which has the DoPreClose method
-func (p *PluginContainer) DoPreClose(station *Station) {
+func (p *PluginContainer) DoPreClose(station *Iris) {
 	for i := range p.activatedPlugins {
 		// check if this method exists on our plugin obj, these are optionaly and call it
 		if pluginObj, ok := p.activatedPlugins[i].(IPluginPreClose); ok {

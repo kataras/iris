@@ -28,13 +28,17 @@
 package iris
 
 import (
-	"net/http"
+	"net/http/pprof"
 	"sync"
 
+	"github.com/kataras/iris/utils"
 	"github.com/valyala/fasthttp"
 )
 
 const (
+	// DefaultProfilePath is the default path for the web pprof '/debug/pprof'
+	DefaultProfilePath = "/debug/pprof"
+
 	// ParameterStartByte is very used on the node, it's just contains the byte for the ':' rune/char
 	ParameterStartByte = byte(':')
 	// SlashByte is just a byte of '/' rune/char
@@ -44,160 +48,145 @@ const (
 	// MatchEverythingByte is just a byte of '*" rune/char
 	MatchEverythingByte = byte('*')
 
-	// Normal is the Router
-	Normal RouterType = iota
-	// Domain is a router which accepts more than one host aka subdomain
-	Domain
+	// HTTP Methods(1)
+	MethodGet     = "GET"
+	MethodPost    = "POST"
+	MethodPut     = "PUT"
+	MethodDelete  = "DELETE"
+	MethodConnect = "CONNECT"
+	MethodHead    = "HEAD"
+	MethodPatch   = "PATCH"
+	MethodOptions = "OPTIONS"
+	MethodTrace   = "TRACE"
 )
 
-const ()
-
-// DefaultUserAgent default to 'iris' but it is not used anywhere yet
-var DefaultUserAgent = []byte("iris")
-
-type (
-	// RouterType is just the type which the Router uses to indentify what type is (Normal,Memory,MemorySync,Domain,DomainMemory )
-	RouterType uint8
-
-	// IRouter is the interface of which any Iris router must implement
-	IRouter interface {
-		IParty
-		RequestHandler
-		getGarden() *Garden
-		setGarden(g *Garden)
-		getType() RouterType
-		getStation() *Station
-		// Errors
-		Errors() IHTTPErrors
-		OnError(int, HandlerFunc)
-		// EmitError emits an error with it's http status code and the iris Context passed to the function
-		EmitError(int, *Context)
-		// OnNotFound sets the handler for http status 404,
-		// default is a response with text: 'Not Found' and status: 404
-		OnNotFound(HandlerFunc)
-		// OnPanic sets the handler for http status 500,
-		// default is a response with text: The server encountered an unexpected condition which prevented it from fulfilling the request. and status: 500
-		OnPanic(HandlerFunc)
-		// Static serves a directory
-		// accepts three parameters
-		// first parameter is the request url path (string)
-		// second parameter is the system directory (string)
-		// third parameter is the level (int) of stripSlashes
-		// * stripSlashes = 0, original path: "/foo/bar", result: "/foo/bar"
-		// * stripSlashes = 1, original path: "/foo/bar", result: "/bar"
-		// * stripSlashes = 2, original path: "/foo/bar", result: ""
-		Static(string, string, int)
-		setMethodMatch(func(string, string) bool)
-	}
-
-	// Router is the router , one router per server.
-	// Router contains the global middleware, the routes and a Mutex for lock and unlock on route prepare
-	Router struct {
-		station    *Station
-		httpErrors *HTTPErrors
-		IParty
-		garden      *Garden
-		methodMatch func(m1, m2 string) bool
-		// errorPool is responsible to  get the Context to handle not found errors
-		errorPool sync.Pool
-	}
+var (
+	// HTTP Methods(2)
+	MethodConnectBytes = []byte(MethodConnect)
+	AllMethods         = [...]string{"GET", "POST", "PUT", "DELETE", "CONNECT", "HEAD", "PATCH", "OPTIONS", "TRACE"}
 )
 
-var _ IRouter = &Router{}
-
-// CorsMethodMatch is sets the methodMatch when cors enabled (look OptimusPrime), it's allowing OPTIONS method to all other methods except GET
-//just this
-func CorsMethodMatch(m1, reqMethod string) bool {
-	return m1 == reqMethod || (m1 != HTTPMethods.Get && reqMethod == HTTPMethods.Options)
+// router internal is the route serving service, one router per server
+type router struct {
+	*GardenParty
+	*HTTPErrorContainer
+	station      *Iris
+	garden       *Garden
+	methodMatch  func(m1, m2 string) bool
+	ServeRequest func(reqCtx *fasthttp.RequestCtx)
+	// errorPool is responsible to  get the Context to handle not found errors
+	errorPool sync.Pool
+	//it's true when optimize already ran
+	optimized bool
 }
 
-// MethodMatch for normal method match
-func MethodMatch(m1, m2 string) bool {
+// methodMatchCorsFunc is sets the methodMatch when cors enabled (look router.optimize), it's allowing OPTIONS method to all other methods except GET
+func methodMatchCorsFunc(m1, reqMethod string) bool {
+	return m1 == reqMethod || (m1 != MethodGet && reqMethod == MethodOptions)
+}
+
+// methodMatchFunc for normal method match
+func methodMatchFunc(m1, m2 string) bool {
 	return m1 == m2
 }
 
-// NewRouter creates and returns an empty Router
-func NewRouter(station *Station) *Router {
-	r := &Router{station: station, httpErrors: defaultHTTPErrors(), garden: &Garden{}} // TODO: maybe +1 for any which is just empty tree ""
-	r.methodMatch = MethodMatch
-	r.IParty = NewParty("/", r.station, nil)
-	r.errorPool = sync.Pool{New: func() interface{} {
-		return &Context{station: station}
-	}}
+// newRouter creates and returns an empty router
+func newRouter(station *Iris) *router {
+	r := &router{
+		station:            station,
+		garden:             &Garden{},
+		methodMatch:        methodMatchFunc,
+		HTTPErrorContainer: defaultHTTPErrors(),
+		GardenParty:        &GardenParty{relativePath: "/", station: station, root: true},
+		errorPool:          station.newContextPool()}
+
+	r.ServeRequest = r.serveFunc
+
 	return r
+
 }
 
-func (r *Router) getGarden() *Garden {
-	return r.garden
+// addRoute calls the Plant, is created to set the router's station
+func (r *router) addRoute(route IRoute) {
+	r.garden.Plant(r.station, route)
 }
 
-func (r *Router) setGarden(g *Garden) {
-	r.garden = g
-} //every plant we make to the garden, garden sets itself
-
-func (r *Router) getType() RouterType {
-	return Normal
-}
-
-func (r *Router) getStation() *Station {
-	return r.station
-}
-
-func (r *Router) setMethodMatch(f func(m1, m2 string) bool) {
-	r.methodMatch = f
-}
-
-// Error handling
-
-// Errors returns the object which is resposible for the error(s) handler(s)
-func (r *Router) Errors() IHTTPErrors {
-	return r.httpErrors
-}
-
-// OnError registers a handler ( type of HandlerFunc) for a specific http error status
-func (r *Router) OnError(statusCode int, handlerFunc HandlerFunc) {
-	r.httpErrors.On(statusCode, handlerFunc)
-}
-
-// EmitError emits an error with it's http status code and the iris Context passed to the function
-func (r *Router) EmitError(statusCode int, ctx *Context) {
-	r.httpErrors.Emit(statusCode, ctx)
-}
-
-// OnNotFound sets the handler for http status 404,
-// default is a response with text: 'Not Found' and status: 404
-func (r *Router) OnNotFound(handlerFunc HandlerFunc) {
-	r.OnError(http.StatusNotFound, handlerFunc)
-}
-
-// OnPanic sets the handler for http status 500,
-// default is a response with text: The server encountered an unexpected condition which prevented it from fulfilling the request. and status: 500
-func (r *Router) OnPanic(handlerFunc HandlerFunc) {
-	r.OnError(http.StatusInternalServerError, handlerFunc)
-}
-
-///////////////////////////////
-//expose some methods as public
-///////////////////////////////
-
-// Static registers a route which serves a system directory
-func (r *Router) Static(requestPath string, systemPath string, stripSlashes int) {
-	h := fasthttp.FSHandler(systemPath, stripSlashes)
-	r.Get(requestPath+"/*filepath", func(c *Context) {
-		h(c.RequestCtx)
+//check if any tree has cors setted to true, means that cors middleware is added
+func (r *router) cors() (has bool) {
+	r.garden.visitAll(func(i int, tree *tree) {
+		if tree.cors {
+			has = true
+		}
 	})
+	return
 }
 
-// ServeRequest finds and serves a route by it's request context
+// check if any tree has subdomains
+func (r *router) hosts() (has bool) {
+	r.garden.visitAll(func(i int, tree *tree) {
+		if tree.hosts {
+			has = true
+		}
+	})
+	return
+}
+
+// optimize runs once before listen, it checks if cors or hosts enabled and make the nessecary changes to the Router itself
+func (r *router) optimize() {
+	if r.optimized {
+		return
+	}
+
+	if r.cors() {
+		r.methodMatch = methodMatchCorsFunc
+	}
+
+	// For performance only,in order to not check at runtime for hosts and subdomains, I think it's better to do this:
+	if r.hosts() {
+		r.ServeRequest = r.serveDomainFunc
+	}
+
+	// set the debug profiling handlers if Profile enabled, before the server startup, not earlier
+	if r.station.Config.Profile && r.station.Config.ProfilePath != "" {
+		debugPath := r.station.Config.ProfilePath
+		r.Get(debugPath+"/", ToHandlerFunc(pprof.Index))
+		r.Get(debugPath+"/cmdline", ToHandlerFunc(pprof.Cmdline))
+		r.Get(debugPath+"/profile", ToHandlerFunc(pprof.Profile))
+		r.Get(debugPath+"/symbol", ToHandlerFunc(pprof.Symbol))
+
+		r.Get(debugPath+"/goroutine", ToHandlerFunc(pprof.Handler("goroutine")))
+		r.Get(debugPath+"/heap", ToHandlerFunc(pprof.Handler("heap")))
+		r.Get(debugPath+"/threadcreate", ToHandlerFunc(pprof.Handler("threadcreate")))
+		r.Get(debugPath+"/pprof/block", ToHandlerFunc(pprof.Handler("block")))
+	}
+
+	r.optimized = true
+}
+
+// notFound internal method, it justs takes the context from pool ( in order to have the custom errors available) and procedure a Not Found 404 error
+// this is being called when no route was found used on the ServeRequest.
+func (r *router) notFound(reqCtx *fasthttp.RequestCtx) {
+	ctx := r.errorPool.Get().(*Context)
+	ctx.Reset(reqCtx)
+	ctx.NotFound()
+	r.errorPool.Put(ctx)
+}
+
+//************************************************************************************
+// serveFunc & serveDomainFunc selected on router.optimize, which runs before station's listen
+// they are not used directly.
+//************************************************************************************
+
+// serve finds and serves a route by it's request context
 // If no route found, it sends an http status 404
-func (r *Router) ServeRequest(reqCtx *fasthttp.RequestCtx) {
-	method := BytesToString(reqCtx.Method())
+func (r *router) serveFunc(reqCtx *fasthttp.RequestCtx) {
+	method := utils.BytesToString(reqCtx.Method())
 	tree := r.garden.first
-	path := BytesToString(reqCtx.Path())
+	path := utils.BytesToString(reqCtx.Path())
 	for tree != nil {
 		if r.methodMatch(tree.method, method) {
 			if !tree.serve(reqCtx, path) {
-				r.notFoundCtx(reqCtx)
+				r.notFound(reqCtx)
 			}
 			return
 		}
@@ -205,39 +194,15 @@ func (r *Router) ServeRequest(reqCtx *fasthttp.RequestCtx) {
 	}
 	//not found, get the first's pool and use that  to send a custom http error(if setted)
 
-	r.notFoundCtx(reqCtx)
+	r.notFound(reqCtx)
 
 }
 
-// internal method, it justs takes the context from pool ( in order to have the custom errors available) and procedure a Not Found 404 error
-// this is being called when no route was found used on the ServeRequest.
-func (r *Router) notFoundCtx(reqCtx *fasthttp.RequestCtx) {
-	ctx := r.errorPool.Get().(*Context)
-	ctx.Reset(reqCtx)
-	ctx.NotFound()
-	r.errorPool.Put(ctx)
-}
-
-// RouterDomain same as Router but it's override the ServeHTTP and processPath.
-type RouterDomain struct {
-	*Router
-}
-
-// NewRouterDomain creates a RouterDomain from an underline (normal) Router and returns it
-func NewRouterDomain(underlineRouter *Router) *RouterDomain {
-	return &RouterDomain{underlineRouter}
-}
-
-func (r *RouterDomain) getType() RouterType {
-	return Domain
-}
-
-// ServeRequest finds and serves a route by it's request context
+// serveDomainFunc finds and serves a domain tree's route by it's request context
 // If no route found, it sends an http status 404
-func (r *RouterDomain) ServeRequest(reqCtx *fasthttp.RequestCtx) {
-
-	method := BytesToString(reqCtx.Method())
-	domain := BytesToString(reqCtx.Host())
+func (r *router) serveDomainFunc(reqCtx *fasthttp.RequestCtx) {
+	method := utils.BytesToString(reqCtx.Method())
+	domain := utils.BytesToString(reqCtx.Host())
 	path := reqCtx.Path()
 	tree := r.garden.first
 	for tree != nil {
@@ -248,12 +213,12 @@ func (r *RouterDomain) ServeRequest(reqCtx *fasthttp.RequestCtx) {
 			path = append(reqCtx.Host(), reqCtx.Path()...)
 		}
 		if r.methodMatch(tree.method, method) {
-			if tree.serve(reqCtx, BytesToString(path)) {
+			if tree.serve(reqCtx, utils.BytesToString(path)) {
 				return
 			}
 		}
 		tree = tree.next
 	}
 	//not found, get the first's pool and use that  to send a custom http error(if setted)
-	r.notFoundCtx(reqCtx)
+	r.notFound(reqCtx)
 }

@@ -31,6 +31,8 @@ import (
 	"net"
 	"strconv"
 	"strings"
+
+	"github.com/kataras/iris/utils"
 )
 
 type (
@@ -82,17 +84,17 @@ func (ctx *Context) URLParamInt(key string) (int, error) {
 
 // MethodString returns the HTTP Method
 func (ctx *Context) MethodString() string {
-	return BytesToString(ctx.Method())
+	return utils.BytesToString(ctx.Method())
 }
 
 // HostString returns the Host of the request( the url as string )
 func (ctx *Context) HostString() string {
-	return BytesToString(ctx.Host())
+	return utils.BytesToString(ctx.Host())
 }
 
 // PathString returns the full path as string
 func (ctx *Context) PathString() string {
-	return BytesToString(ctx.Path())
+	return utils.BytesToString(ctx.Path())
 }
 
 // RequestIP gets just the Remote Address from the client.
@@ -127,7 +129,7 @@ func (ctx *Context) RemoteAddr() string {
 // accepts one parameter, the key of the header (string)
 // returns string
 func (ctx *Context) RequestHeader(k string) string {
-	return BytesToString(ctx.RequestCtx.Request.Header.Peek(k))
+	return utils.BytesToString(ctx.RequestCtx.Request.Header.Peek(k))
 }
 
 // PostFormValue returns a single value from post request's data

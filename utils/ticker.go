@@ -25,82 +25,72 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package pongo2
+// ticker.go: after version 1, we don't need this atm, but we keep it.
+
+package utils
 
 import (
-	pongo "github.com/flosch/pongo2"
-	"github.com/kataras/iris"
+	"time"
 )
 
-type pongo2Middleware struct {
+// Ticker is the timer which is used in cache
+type Ticker struct {
+	ticker       *time.Ticker
+	started      bool
+	tickHandlers []func()
 }
 
-func (p *pongo2Middleware) Serve(ctx *iris.Context) {
-	ctx.Next()
+// NewTicker returns a new Ticker
+func NewTicker() *Ticker {
+	return &Ticker{tickHandlers: make([]func(), 0), started: false}
+}
 
-	templateName := ctx.GetString("template")
-	if templateName != "" {
-		templateData := ctx.Get("data")
-		if templateData != nil {
+// OnTick add event handlers/ callbacks which are called on each timer's tick
+func (c *Ticker) OnTick(h func()) {
+	c.tickHandlers = append(c.tickHandlers, h)
+}
 
-			var template = pongo.Must(pongo.FromFile(templateName))
-			//	err := template.ExecuteWriter(getPongoContext(templateData), ctx.RequestCtx.Response.BodyWriter())
-			// same thing here:
-			contents, err := template.Execute(getPongoContext(templateData))
-			if err != nil {
-				ctx.Text(500, err.Error())
-				return
+// Start starts the timer and execute all listener's when tick
+func (c *Ticker) Start(duration time.Duration) {
+	if c.started {
+		return
+	}
+
+	if c.ticker != nil {
+		panic("Iris Ticker: Cannot re-start a cache timer, if you stop it, it is not recommented to resume it,\n Just create a new CacheTimer.")
+	}
+
+	if duration.Seconds() <= 30 {
+		//c.duration = 5 * time.Minute
+		panic("Iris Ticker: Please provide a duration that it's longer than 30 seconds.")
+	}
+
+	c.ticker = time.NewTicker(duration)
+
+	go func() {
+		for t := range c.ticker.C {
+			_ = t
+			//			c.mu.Lock()
+			//			c.mu.Unlock()
+			//I can make it a clojure to handle only handlers that are registed before .start() but we are ok with this, it is not map no need to Lock, for now.
+			for i := range c.tickHandlers {
+				c.tickHandlers[i]()
 			}
-			// set the content to html
-			ctx.SetContentType([]string{iris.ContentHTML + " ;charset=" + iris.Charset})
-			ctx.SetBodyString(contents)
-
 		}
+	}()
 
+	c.started = true
+}
+
+// Stop stops the ticker
+func (c *Ticker) Stop() {
+	if c.started {
+		c.ticker.Stop()
+		c.started = false
 	}
-
 }
 
-func getPongoContext(templateData interface{}) pongo.Context {
-	if templateData == nil {
-		return nil
-	}
-	contextData, isMap := templateData.(map[string]interface{})
-	if isMap {
-		return contextData
-	}
-	return nil
+// ITick is the interface which all ticker's listeners must implement
+type ITick interface {
+	OnTick()
 }
-
-// Pongo2 creates and returns the middleware, same as New()
-func Pongo2() *pongo2Middleware {
-	return &pongo2Middleware{}
-}
-
-// New creates and returns the middleware, same as Pongo2()
-func New() *pongo2Middleware {
-	return Pongo2()
-}
-
-/* example */
-/*
-
-package main
-
-import (
-    "github.com/kataras/iris"
-    "github.com/kataras/iris/middleware/pongo2"
-)
-
-func main() {
-    iris.Use(pongo2.Pongo2())
-
-    iris.Get("/", func(ctx *iris.Context) {
-        ctx.Set("template", "index.html")
-        ctx.Set("data", map[string]interface{}{"message": "Hello World!"})
-    })
-
-    iris.Listen(":8080")
-}
-
-*/

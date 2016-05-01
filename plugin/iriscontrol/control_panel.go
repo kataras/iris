@@ -52,7 +52,8 @@ func (i *irisControlPlugin) startControlPanel() {
 	}
 
 	i.server = iris.New()
-	i.server.Templates(installationPath + "templates/*")
+	i.server.Config.Render.Layout = installationPath + "templates"
+	i.server.SetRenderConfig(i.server.Config.Render)
 	i.setPluginsInfo()
 	i.setPanelRoutes()
 
@@ -92,7 +93,7 @@ func (i *irisControlPlugin) setPanelRoutes() {
 	iris.Static("/public/*assets", installationPath+"static"+pathSeperator, 1)
 
 	i.server.Get("/login", func(ctx *iris.Context) {
-		ctx.RenderFile("login.html", nil)
+		ctx.Render("login", nil)
 	})
 
 	i.server.Post("/login", func(ctx *iris.Context) {
@@ -101,7 +102,7 @@ func (i *irisControlPlugin) setPanelRoutes() {
 
 	i.server.Use(i.auth)
 	i.server.Get("/", func(ctx *iris.Context) {
-		ctx.RenderFile("index.html", DashboardPage{ServerIsRunning: i.station.Server.IsListening(), Routes: i.routes.All(), Plugins: i.plugins})
+		ctx.Render("index", DashboardPage{ServerIsRunning: i.station.Server.IsListening(), Routes: i.routes.All(), Plugins: i.plugins})
 	})
 
 	i.server.Post("/logout", func(ctx *iris.Context) {
@@ -113,10 +114,10 @@ func (i *irisControlPlugin) setPanelRoutes() {
 		//println("server start")
 		old := i.stationServer
 		if !old.IsSecure() {
-			i.station.Listen(old.Options().ListeningAddr)
+			i.station.Listen(old.Config.ListeningAddr)
 			//yes but here it does re- post listen to this plugin so ...
 		} else {
-			i.station.ListenTLS(old.Options().ListeningAddr, old.Options().CertFile, old.Options().KeyFile)
+			i.station.ListenTLS(old.Config.ListeningAddr, old.Config.CertFile, old.Config.KeyFile)
 		}
 
 	})

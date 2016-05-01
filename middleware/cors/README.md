@@ -79,6 +79,7 @@ import (
 )
 
 func main() {
+
 	crs := cors.New(cors.Options{}) // same as cors.DefaultCors()
 
 	iris.Use(crs)

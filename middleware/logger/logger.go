@@ -33,6 +33,7 @@ import (
 	"time"
 
 	"github.com/kataras/iris"
+	"github.com/kataras/iris/logger"
 )
 
 // Options are the options of the logger middlweare
@@ -53,7 +54,7 @@ func DefaultOptions() Options {
 }
 
 type loggerMiddleware struct {
-	*iris.Logger
+	*logger.Logger
 	options Options
 }
 
@@ -104,7 +105,7 @@ func (l *loggerMiddleware) Serve(ctx *iris.Context) {
 }
 
 func newLoggerMiddleware(writer io.Writer, prefix string, flag int, options ...Options) *loggerMiddleware {
-	l := &loggerMiddleware{Logger: iris.NewLogger(writer, prefix, flag)}
+	l := &loggerMiddleware{Logger: logger.Custom(writer, prefix, flag)}
 
 	if len(options) > 0 {
 		l.options = options[0]
@@ -119,7 +120,7 @@ func newLoggerMiddleware(writer io.Writer, prefix string, flag int, options ...O
 
 // DefaultHandler returns the logger middleware with the default settings
 func DefaultHandler(options ...Options) iris.Handler {
-	return newLoggerMiddleware(iris.LoggerOutTerminal, "", 0)
+	return newLoggerMiddleware(logger.Output, "", 0)
 }
 
 // Default returns the logger middleware as HandlerFunc with the default settings

@@ -42,6 +42,7 @@ type (
 		ProcessPath()
 		GetMiddleware() Middleware
 		SetMiddleware(m Middleware)
+		HasCors() bool
 	}
 
 	// Route contains basic and temporary info about the route, it is nil after iris.Listen called
@@ -153,4 +154,23 @@ func (r *Route) ProcessPath() {
 	if lastIndexOfSlash != len(r.PathPrefix)-1 || r.PathPrefix == "" {
 		r.PathPrefix += "/"
 	}
+}
+
+// HasCors check if middleware passsed to a route has cors
+// this is a poor implementation which only works with the iris/middleware/cors middleware
+// it's bad and anti-pattern to check if a kind of  middleware has passed but I don't have any other options right now
+// because I don't want to check in the router if method == req.Method || method == "OPTIONS" this will be low at least 900-2000 nanoseconds
+// I made a func CorsMethodMatch, which is setted to the router.methodMatch if and only if the user passed the middleware cors on any of the routes
+// only then the  second check of || method == "OPTIONS" will be evalutated. This is the way iris is working and have the best performance, maybe poor code I don't like to do but I Have to do.
+// look at .Plant here, and on station.forceOptimusPrime
+func (r *Route) HasCors() bool {
+	for _, h := range r.middleware {
+		if _, ok := h.(interface {
+			// Capitalize fix of isMethodAllowed by @thesyncim
+			IsMethodAllowed(method string) bool
+		}); ok {
+			return true
+		}
+	}
+	return false
 }

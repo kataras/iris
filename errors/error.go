@@ -25,82 +25,75 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package pongo2
+package errors
 
 import (
-	pongo "github.com/flosch/pongo2"
-	"github.com/kataras/iris"
+	"fmt"
+	"runtime"
+
+	"github.com/kataras/iris/logger"
 )
 
-type pongo2Middleware struct {
+// Error holds the error
+type Error struct {
+	message string
 }
 
-func (p *pongo2Middleware) Serve(ctx *iris.Context) {
-	ctx.Next()
-
-	templateName := ctx.GetString("template")
-	if templateName != "" {
-		templateData := ctx.Get("data")
-		if templateData != nil {
-
-			var template = pongo.Must(pongo.FromFile(templateName))
-			//	err := template.ExecuteWriter(getPongoContext(templateData), ctx.RequestCtx.Response.BodyWriter())
-			// same thing here:
-			contents, err := template.Execute(getPongoContext(templateData))
-			if err != nil {
-				ctx.Text(500, err.Error())
-				return
-			}
-			// set the content to html
-			ctx.SetContentType([]string{iris.ContentHTML + " ;charset=" + iris.Charset})
-			ctx.SetBodyString(contents)
-
-		}
-
-	}
-
+// Error returns the message of the actual error
+func (e *Error) Error() string {
+	return e.message
 }
 
-func getPongoContext(templateData interface{}) pongo.Context {
-	if templateData == nil {
+// Format returns a formatted new error based on the arguments
+func (e *Error) Format(args ...interface{}) error {
+	return fmt.Errorf(e.message, args)
+}
+
+// With does the same thing as Format but it receives an error type which if it's nil it returns a nil error
+func (e *Error) With(err error) error {
+	if err == nil {
 		return nil
 	}
-	contextData, isMap := templateData.(map[string]interface{})
-	if isMap {
-		return contextData
+
+	return e.Format(err.Error())
+}
+
+// Return returns the actual error as it is
+func (e *Error) Return() error {
+	return fmt.Errorf(e.message)
+}
+
+// Panic output the message and after panics
+func (e *Error) Panic() {
+	if e == nil {
+		return
 	}
-	return nil
+	_, fn, line, _ := runtime.Caller(1)
+	errMsg := e.message
+	errMsg = "\nCaller was: " + fmt.Sprintf("%s:%d", fn, line)
+	panic(errMsg)
 }
 
-// Pongo2 creates and returns the middleware, same as New()
-func Pongo2() *pongo2Middleware {
-	return &pongo2Middleware{}
+// Panicf output the formatted message and after panics
+func (e *Error) Panicf(args ...interface{}) {
+	if e == nil {
+		return
+	}
+	_, fn, line, _ := runtime.Caller(1)
+	errMsg := e.Format(args...).Error()
+	errMsg = "\nCaller was: " + fmt.Sprintf("%s:%d", fn, line)
+	panic(errMsg)
 }
 
-// New creates and returns the middleware, same as Pongo2()
-func New() *pongo2Middleware {
-	return Pongo2()
+//
+
+// New creates and returns an Error with a message
+func New(errMsg string) *Error {
+	//	return &Error{fmt.Errorf("\n" + logger.Prefix + "Error: " + errMsg)}
+	return &Error{message: "\n" + logger.Prefix + " Error: " + errMsg}
 }
 
-/* example */
-/*
-
-package main
-
-import (
-    "github.com/kataras/iris"
-    "github.com/kataras/iris/middleware/pongo2"
-)
-
-func main() {
-    iris.Use(pongo2.Pongo2())
-
-    iris.Get("/", func(ctx *iris.Context) {
-        ctx.Set("template", "index.html")
-        ctx.Set("data", map[string]interface{}{"message": "Hello World!"})
-    })
-
-    iris.Listen(":8080")
+// Printf prints to the logger a specific error with optionally arguments
+func Printf(logger *logger.Logger, err error, args ...interface{}) {
+	logger.Printf(err.Error(), args...)
 }
-
-*/

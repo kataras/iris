@@ -31,10 +31,10 @@ func (i *irisControlPlugin) StartServer() {
 	if i.station.Server.IsListening() == false {
 		if i.station.Server.IsSecure() {
 			//listen with ListenTLS
-			i.station.ListenTLS(i.station.Server.Options().ListeningAddr, i.station.Server.Options().CertFile, i.station.Server.Options().KeyFile)
+			i.station.ListenTLS(i.station.Server.Config.ListeningAddr, i.station.Server.Config.CertFile, i.station.Server.Config.KeyFile)
 		} else {
 			//listen normal
-			i.station.Listen(i.station.Server.Options().ListeningAddr)
+			i.station.Listen(i.station.Server.Config.ListeningAddr)
 		}
 	}
 }

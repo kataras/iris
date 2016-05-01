@@ -39,8 +39,9 @@ import (
 	"strings"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/cli/npm"
-	"github.com/kataras/iris/cli/system"
+	"github.com/kataras/iris/logger"
+	"github.com/kataras/iris/npm"
+	"github.com/kataras/iris/utils"
 )
 
 const (
@@ -56,7 +57,7 @@ type (
 	// keyfile,certfile for TLS listening
 	// and a host which is listening for
 	Plugin struct {
-		logger             *iris.Logger
+		logger             *logger.Logger
 		enabled            bool   // default true
 		host               string // default 127.0.0.1
 		port               int    // default 4444
@@ -124,11 +125,11 @@ func (e *Plugin) GetDescription() string {
 }
 
 // PreListen runs before the server's listens, saves the keyfile,certfile and the host from the Iris station to listen for
-func (e *Plugin) PreListen(s *iris.Station) {
-	e.logger = s.Logger()
-	e.keyfile = s.Server.Options().KeyFile
-	e.certfile = s.Server.Options().CertFile
-	e.host = s.Server.Options().ListeningAddr
+func (e *Plugin) PreListen(s *iris.Iris) {
+	e.logger = s.Logger
+	e.keyfile = s.Server.Config.KeyFile
+	e.certfile = s.Server.Config.CertFile
+	e.host = s.Server.Config.ListeningAddr
 
 	if idx := strings.Index(e.host, ":"); idx >= 0 {
 		e.host = e.host[0:idx]
@@ -141,7 +142,7 @@ func (e *Plugin) PreListen(s *iris.Station) {
 }
 
 // PreClose kills the editor's server when Iris is closed
-func (e *Plugin) PreClose(s *iris.Station) {
+func (e *Plugin) PreClose(s *iris.Iris) {
 	if e.process != nil {
 		err := e.process.Kill()
 		if err != nil {
@@ -168,7 +169,7 @@ func (e *Plugin) start() {
 		e.logger.Print(res.Message)
 	}
 
-	cmd := system.CommandBuilder("node", npm.Abs("alm/src/server.js"))
+	cmd := utils.CommandBuilder("node", npm.Abs("alm/src/server.js"))
 	cmd.AppendArguments("-a", e.username+":"+e.password, "-h", e.host, "-t", strconv.Itoa(e.port), "-d", e.directory[0:len(e.directory)-1])
 	// for auto-start in the browser: cmd.AppendArguments("-o")
 	if e.keyfile != "" && e.certfile != "" {
