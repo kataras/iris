@@ -713,13 +713,13 @@ iris.Listen(":8080")
 
 ```
 
-## Send file
+## Send files
 
 Send a file, force-download to the client
 ```go
 // You can define your own "Content-Type" header also, after this function call
 // for example: ctx.Response.Header.Set("Content-Type","thecontent/type")
-sendFile(filename string, destinationName string) error
+SendFile(filename string, destinationName string) error
 ```
 
 ```go
