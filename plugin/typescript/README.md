@@ -55,11 +55,11 @@ func main(){
 	ts = typescript.DefaultOptions()
 	//
 
-	iris.Plugin(typescript.New(ts)) //or with the default options just: typescript.New()
+	iris.Plugins().Add(typescript.New(ts)) //or with the default options just: typescript.New()
 
 	iris.Get("/", func (ctx *iris.Context){})
 
-	iris.Listen()
+	iris.Listen(":8080")
 }
 
 
