@@ -143,24 +143,47 @@ func (s *Iris) newContextPool() sync.Pool {
 	}}
 }
 
-// openServer is internal method, open the server with specific options passed by the Listen and ListenTLS
-func (s *Iris) openServer(opt server.Config) (err error) {
-	s.router.optimize()
+// DoPreListen, call router's optimize, sets the server's handler and notice the plugins
+// receives the server.Config
+// returns the station's Server (*server.Server)
+// it's a non-blocking func
+func (s *Iris) DoPreListen(opt server.Config) *server.Server {
+	//runs only once even if called more than one time.
+	if !s.router.optimized {
+		s.router.optimize()
 
-	s.Server = server.New(opt)
-	s.Server.SetHandler(s.router.ServeRequest)
+		s.Server = server.New(opt)
+		s.Server.SetHandler(s.router.ServeRequest)
 
-	if s.Config.MaxRequestBodySize > 0 {
-		s.Server.MaxRequestBodySize = s.Config.MaxRequestBodySize
+		if s.Config.MaxRequestBodySize > 0 {
+			s.Server.MaxRequestBodySize = s.Config.MaxRequestBodySize
+		}
+
+		s.Plugins.DoPreListen(s)
 	}
 
-	s.Plugins.DoPreListen(s)
+	return s.Server
+}
 
-	if err = s.Server.OpenServer(); err == nil {
+// DoPostListen, sets the render and notice the plugins
+// it's a non-blocking func
+func (s *Iris) DoPostListen() {
+
+	if s.render == nil {
 		// set the render(er) now
 		s.render = newRender(s.Config.Render)
-
 		s.Plugins.DoPostListen(s)
+	}
+
+}
+
+// openServer is internal method, open the server with specific options passed by the Listen and ListenTLS
+// it's a blocking func
+func (s *Iris) openServer(opt server.Config) (err error) {
+	s.DoPreListen(opt)
+
+	if err = s.Server.OpenServer(); err == nil {
+		s.DoPostListen()
 		ch := make(chan os.Signal)
 		<-ch
 		s.Close()

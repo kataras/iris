@@ -3,13 +3,14 @@ package render
 import (
 	"bytes"
 	"fmt"
-	"github.com/valyala/fasthttp"
 	"html/template"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/valyala/fasthttp"
 )
 
 const (
