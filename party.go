@@ -63,6 +63,7 @@ type (
 		// * stripSlashes = 1, original path: "/foo/bar", result: "/bar"
 		// * stripSlashes = 2, original path: "/foo/bar", result: ""
 		Static(string, string, int)
+		StaticFS(string, string, int)
 		Party(string, ...HandlerFunc) IParty // Each party can have a party too
 		IsRoot() bool
 	}
