@@ -232,7 +232,7 @@ func (p *GardenParty) Static(relative string, systemPath string, stripSlashes in
 func (p *GardenParty) StaticFS(relative string, systemPath string, stripSlashes int) {
 	fs := &fasthttp.FS{
 		// Path to directory to serve.
-		Root: "/var/www/static-site",
+		Root: systemPath,
 
 		// Generate index pages if client requests directory contents.
 		GenerateIndexPages: true,
