@@ -3,13 +3,14 @@
 package cors
 
 import (
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/utils"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/utils"
 )
 
 const toLower = 'a' - 'A'
