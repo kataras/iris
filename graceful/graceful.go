@@ -19,7 +19,7 @@ import (
 // be constructed with the global functions in this package.
 type Server struct {
 	*server.Server
-
+	station *iris.Iris
 	// Timeout is the duration to allow outstanding requests to survive
 	// before forcefully terminating them.
 	Timeout time.Duration
@@ -76,13 +76,10 @@ func Run(addr string, timeout time.Duration, n *iris.Iris) {
 		Timeout: timeout,
 		Logger:  DefaultLogger(),
 	}
-	irisServer := server.New(server.Config{ListeningAddr: addr})
-	irisServer.SetHandler(n.ServeRequest)
+	srv.station = n
+	srv.Server = srv.station.DoPreListen(server.Config{ListeningAddr: addr})
 
-	srv.Server = irisServer
-	n.Server = irisServer
-
-	if err := srv.ListenAndServe(); err != nil {
+	if err := srv.listenAndServe(); err != nil {
 		if opErr, ok := err.(*net.OpError); !ok || (ok && opErr.Op != "accept") {
 			srv.Logger.Fatal(err)
 		}
@@ -99,26 +96,15 @@ func RunWithErr(addr string, timeout time.Duration, n *iris.Iris) error {
 		Timeout: timeout,
 		Logger:  DefaultLogger(),
 	}
-	irisServer := server.New(server.Config{ListeningAddr: addr})
-	irisServer.SetHandler(n.ServeRequest)
-
-	srv.Server = irisServer
-	n.Server = irisServer
-	return srv.ListenAndServe()
+	srv.station = n
+	srv.Server = srv.station.DoPreListen(server.Config{ListeningAddr: addr})
+	return srv.listenAndServe()
 }
 
 // ListenAndServe is equivalent to iris.Listen with graceful shutdown enabled.
-//
-// timeout is the duration to wait until killing active requests and stopping the server.
-// If timeout is 0, the server never times out. It waits for all active requests to finish.
-func ListenAndServe(server *server.Server, timeout time.Duration) error {
-	srv := &Server{Timeout: timeout, Server: server, Logger: DefaultLogger()}
-	return srv.ListenAndServe()
-}
-
-// ListenAndServe is equivalent to iris.Listen with graceful shutdown enabled.
-func (srv *Server) ListenAndServe() error {
+func (srv *Server) listenAndServe() error {
 	// Create the listener so we can control their lifetime
+
 	addr := srv.Config.ListeningAddr
 	if addr == "" {
 		addr = ":http"
@@ -127,55 +113,11 @@ func (srv *Server) ListenAndServe() error {
 	if err != nil {
 		return err
 	}
-	return srv.Serve(l)
-}
-
-// ListenAndServeTLS is equivalent to iris.ListenTLS with graceful shutdown enabled.
-//
-// timeout is the duration to wait until killing active requests and stopping the server.
-// If timeout is 0, the server never times out. It waits for all active requests to finish.
-func ListenAndServeTLS(server *server.Server, certFile, keyFile string, timeout time.Duration) error {
-	srv := &Server{Timeout: timeout, Server: server, Logger: DefaultLogger()}
-	return srv.ListenAndServeTLS(certFile, keyFile)
-}
-
-// ListenTLS is a convenience method that creates an https listener using the
-// provided cert and key files. Use this method if you need access to the
-// listener object directly. When ready, pass it to the Serve method.
-func (srv *Server) ListenTLS(certFile, keyFile string) (net.Listener, error) {
-	opt := srv.Server.Config
-	opt.CertFile = certFile
-	opt.KeyFile = keyFile
-	srv.Server.Config = opt
-	err := srv.Server.OpenServer()
-	if err != nil {
-		return nil, err
-	}
-	return srv.Server.Listener(), nil
-}
-
-// ListenAndServeTLS is equivalent to iris.Server.ListenTLS with graceful shutdown enabled.
-func (srv *Server) ListenAndServeTLS(certFile, keyFile string) error {
-
-	l, err := srv.ListenTLS(certFile, keyFile)
-	if err != nil {
-		return err
-	}
-
-	return srv.Serve(l)
+	return srv.serve(l)
 }
 
 // Serve is equivalent to iris.Server.Serve with graceful shutdown enabled.
-//
-// timeout is the duration to wait until killing active requests and stopping the server.
-// If timeout is 0, the server never times out. It waits for all active requests to finish.
-func Serve(server *server.Server, l net.Listener, timeout time.Duration) error {
-	srv := &Server{Timeout: timeout, Server: server, Logger: DefaultLogger()}
-	return srv.Serve(l)
-}
-
-// Serve is equivalent to iris.Server.Serve with graceful shutdown enabled.
-func (srv *Server) Serve(listener net.Listener) error {
+func (srv *Server) serve(listener net.Listener) error {
 
 	if srv.ListenLimit != 0 {
 		listener = netutil.LimitListener(listener, srv.ListenLimit)
@@ -200,6 +142,7 @@ func (srv *Server) Serve(listener net.Listener) error {
 
 	// Serve with graceful listener.
 	// Execution blocks here until listener.Close() is called, above.
+	srv.station.DoPostListen()
 	err := srv.Server.Serve(listener)
 	if err != nil {
 		// If the underlying listening is closed, Serve returns an error
@@ -342,5 +285,7 @@ func (srv *Server) shutdown(shutdown chan chan struct{}, kill chan struct{}) {
 	if srv.stopChan != nil {
 		close(srv.stopChan)
 	}
+	// notify the iris plugins
+	srv.station.Close()
 	srv.chanLock.Unlock()
 }
