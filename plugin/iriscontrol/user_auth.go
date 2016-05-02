@@ -29,10 +29,11 @@ package iriscontrol
 import (
 	"strings"
 
+	"time"
+
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/sessions"
 	_ "github.com/kataras/iris/sessions/providers/memory"
-	"time"
 )
 
 var panelSessions *sessions.Manager

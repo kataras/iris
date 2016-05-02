@@ -30,12 +30,13 @@ package iris
 import (
 	"bufio"
 	"fmt"
-	"github.com/kataras/iris/utils"
 	"html/template"
 	"io"
 	"os"
 	"path"
 	"time"
+
+	"github.com/kataras/iris/utils"
 )
 
 type (

@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"encoding/xml"
-	"github.com/valyala/fasthttp"
 	"html/template"
+
+	"github.com/valyala/fasthttp"
 )
 
 // Engine is the generic interface for all responses.
