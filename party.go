@@ -219,8 +219,35 @@ func (p *GardenParty) UseFunc(handlersFn ...HandlerFunc) {
 }
 
 // Static registers a route which serves a system directory
+// it doesn't generate an index page, for this look at StaticFS func
 func (p *GardenParty) Static(relative string, systemPath string, stripSlashes int) {
 	h := fasthttp.FSHandler(systemPath, stripSlashes)
+	p.Get(relative+"/*filepath", func(c *Context) {
+		h(c.RequestCtx)
+	})
+}
+
+// Static registers a route which serves a system directory
+// it generates an index page to view the directory's files
+func (p *GardenParty) StaticFS(relative string, systemPath string, stripSlashes int) {
+	fs := &fasthttp.FS{
+		// Path to directory to serve.
+		Root: "/var/www/static-site",
+
+		// Generate index pages if client requests directory contents.
+		GenerateIndexPages: true,
+
+		// Enable transparent compression to save network traffic.
+		Compress: true,
+	}
+
+	// Create request handler for serving static files.
+	h := fs.NewRequestHandler()
+
+	if stripSlashes > 0 {
+		fs.PathRewrite = fasthttp.NewPathSlashesStripper(stripSlashes)
+	}
+
 	p.Get(relative+"/*filepath", func(c *Context) {
 		h(c.RequestCtx)
 	})
