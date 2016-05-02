@@ -1,9 +1,13 @@
-## Package information
-
-This package is totally new, if you find any bugs please [post an issue here](https://github.com/kataras/iris/issues)
+# Sessions
 
 
-## Usage: Low-level
+**A session can be defined as a server-side storage of information that is desired to persist throughout the user's interaction with the web site** or web application.
+
+Instead of storing large and constantly changing information via cookies in the user's browser, **only a unique identifier is stored on the client side** (called a "session id"). This session id is passed to the web server every time the browser makes an HTTP request (ie a page link or AJAX request). The web application pairs this session id with it's internal database/memory and retrieves the stored variables for use by the requested page.
+
+----
+
+Example
 
 ```go
 
@@ -72,9 +76,7 @@ func main() {
 		sess.Destroy(c)
 	})
 
-	println("Server is listening at :8080")
 	iris.Listen("8080")
-
 }
 
 // session.GetAll() returns all values a map[interface{}]interface{}
@@ -87,9 +89,9 @@ func main() {
 ```
 
 
-## Security: Prevent session hijacking
+### Security: Prevent session hijacking
 
-> This section  was originally written on a book
+> This section  is external
 
 
 **cookie only and token**
@@ -117,6 +119,8 @@ session.Set("token",token)
 
 Another solution is to add a create time for every session, and to replace expired session ids with new ones. This can prevent session hijacking under certain circumstances.
 
+```go
+
 createtime := session.Get("createtime")
 if createtime == nil {
     session.Set("createtime", time.Now().Unix())
@@ -124,6 +128,7 @@ if createtime == nil {
     sess.Destroy(c)
     session = sess.Start(c)
 }
+```
 
 We set a value to save the create time and check if it's expired (I set 60 seconds here). This step can often thwart session hijacking attempts.
 

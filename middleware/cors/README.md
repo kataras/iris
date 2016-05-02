@@ -29,7 +29,7 @@ It does some security work for you between the requests, a brief view on what yo
 
 ```go
 
-// AllowedOrigins is a list of origins a cross-domain request can be executed from.
+    // AllowedOrigins is a list of origins a cross-domain request can be executed from.
 	// If the special "*" value is present in the list, all origins will be allowed.
 	// An origin may contain a wildcard (*) to replace 0 or more characters
 	// (i.e.: http://*.domain.com). Usage of wildcards implies a small performance penality.

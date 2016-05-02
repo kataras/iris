@@ -1,6 +1,6 @@
 ## RoutesInfo plugin
 
-This plugin collects & stores all registed routes and gives information about them.
+This plugin collects & stores all registered  routes and gives information about them.
 
 #### The RouteInfo
 
@@ -28,7 +28,7 @@ import (
 func main() {
 
 	info := routesinfo.New()
-	iris.Plugin(info)
+	iris.Plugins().Add(info)
 
 	iris.Get("/yourpath", func(c *iris.Context) {
 		c.Write("yourpath")

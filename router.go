@@ -78,6 +78,7 @@ type router struct {
 	errorPool sync.Pool
 	//it's true when optimize already ran
 	optimized bool
+	mu        sync.Mutex
 }
 
 // methodMatchCorsFunc is sets the methodMatch when cors enabled (look router.optimize), it's allowing OPTIONS method to all other methods except GET
@@ -101,6 +102,7 @@ func newRouter(station *Iris) *router {
 		errorPool:          station.newContextPool()}
 
 	r.ServeRequest = r.serveFunc
+	r.mu = sync.Mutex{}
 
 	return r
 
@@ -108,6 +110,8 @@ func newRouter(station *Iris) *router {
 
 // addRoute calls the Plant, is created to set the router's station
 func (r *router) addRoute(route IRoute) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	r.garden.Plant(r.station, route)
 }
 

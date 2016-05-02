@@ -1,7 +1,7 @@
 ## Changelog v1.2.1 -> v2.0.0
 
 Global:
-- - ```Context.RenderFile(file string, pageContext interface{}) error``` -> - ```Context.Render(file string, pageContext interface{}) error```
+- ```Context.RenderFile(file string, pageContext interface{}) error``` -> - ```Context.Render(file string, pageContext interface{}) error```
 - ```.Templates("./path/*.html")``` -> see iris.RenderConfig
 - ```.TemplateFuncs(...)``` -> see iris.RenderConfig
 - ```.TemplateDelims("left","right")``` -> see iris.RenderConfig

@@ -28,7 +28,7 @@ import (
 
 func main() {
 
-	iris.Plugin(iriscontrol.Web(9090, map[string]string{
+	iris.Plugins().Add(iriscontrol.Web(9090, map[string]string{
 		"irisusername1": "irispassword1",
 		"irisusername2": "irispassowrd2",
 	}))
@@ -40,7 +40,7 @@ func main() {
 	})
 
 	fmt.Printf("Iris is listening on :%d", 8080)
-	iris.Listen()
+	iris.Listen(":8080")
 }
 
 
