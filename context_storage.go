@@ -100,8 +100,13 @@ func (ctx *Context) Set(key interface{}, value interface{}) {
 }
 
 // GetCookie returns cookie's value by it's name
-func (ctx *Context) GetCookie(name string) string {
-	return string(ctx.RequestCtx.Request.Header.Cookie(name))
+// returns empty string if nothing was found
+func (ctx *Context) GetCookie(name string) (val string) {
+	bcookie := ctx.RequestCtx.Request.Header.Cookie(name)
+	if bcookie != nil {
+		val = string(bcookie)
+	}
+	return
 }
 
 // SetCookie adds a cookie
@@ -131,7 +136,8 @@ func (ctx *Context) RemoveCookie(name string) {
 	ctx.Response.Header.SetCookie(cookie)
 }
 
-// GetFlash get a flash message by it's key ( and after remove it, because it's flash!)
+// GetFlash get a flash message by it's key
+// after this action the messages is removed
 // returns string, if the cookie doesn't exists the string is empty
 func (ctx *Context) GetFlash(key string) string {
 	val, err := ctx.GetFlashBytes(key)
@@ -141,7 +147,8 @@ func (ctx *Context) GetFlash(key string) string {
 	return string(val)
 }
 
-// GetFlashBytes get a flash message by it's key ( and after remove it, because it's flash!)
+// GetFlashBytes get a flash message by it's key
+// after this action the messages is removed
 // returns []byte along with an error if the cookie doesn't exists or decode fails
 func (ctx *Context) GetFlashBytes(key string) (value []byte, err error) {
 	cookieValue := string(ctx.RequestCtx.Request.Header.Cookie(key))
@@ -156,12 +163,12 @@ func (ctx *Context) GetFlashBytes(key string) (value []byte, err error) {
 	return
 }
 
-// SetFlash sets a flash message, accepts 2 parameters the key and the value (string)
+// SetFlash sets a flash message, accepts 2 parameters the key(string) and the value(string)
 func (ctx *Context) SetFlash(key string, value string) {
 	ctx.SetFlashBytes(key, utils.StringToBytes(value))
 }
 
-// SetFlash sets a flash message, accepts 2 parameters the key and the value ([]byte)
+// SetFlash sets a flash message, accepts 2 parameters the key(string) and the value([]byte)
 func (ctx *Context) SetFlashBytes(key string, value []byte) {
 	c := &fasthttp.Cookie{}
 	c.SetKey(key)

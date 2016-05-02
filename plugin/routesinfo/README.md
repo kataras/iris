@@ -1,6 +1,6 @@
 ## RoutesInfo plugin
 
-This plugin collects & stores all registed routes and gives information about them.
+This plugin collects & stores all registered  routes and gives information about them.
 
 #### The RouteInfo
 
