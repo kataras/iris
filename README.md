@@ -75,8 +75,9 @@ April 22 2016
 ## Contributors
 
 Thanks goes to the people who have contributed code to this package, see the
-[Iris GitHub Contributors page][https://github.com/kataras/iris/graphs/contributors].
-[Iris Contrib GitHub Contributors page][https://github.com/iris-contrib/graphs/contributors].
+
+- [Iris GitHub Contributors page](https://github.com/kataras/iris/graphs/contributors).
+- [Iris Contrib GitHub Contributors page](https://github.com/iris-contrib/graphs/contributors).
 
 
 ## Community
