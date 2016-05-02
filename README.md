@@ -43,20 +43,17 @@ Read more about Semantic Versioning 2.0.0
 
 
 
-## 1. Install
+## Getting started
 
-```sh
-$ go get -u github.com/kataras/iris
-```
+1. Install `$ go get -u github.com/kataras/iris`
 
-## 2.  Read the [Iris book](https://www.gitbook.com/read/book/kataras/iris)
+2.  Read the [Iris book](https://www.gitbook.com/read/book/kataras/iris)
 
+3. Examples are [here](https://github.com/iris-contrib/examples)
 
-## 3. Examples are [here](https://github.com/iris-contrib/examples)
+4. Post an [issue](https://github.com/kataras/iris/issues) or [idea](https://github.com/kataras/iris/issues)
 
-## 4. Post an [issue](https://github.com/kataras/iris/issues) or [idea](https://github.com/kataras/iris/issues)
-
-## 5. Chat with the [Community](https://gitter.im/kataras/iris)
+5. Chat with the [Community](https://gitter.im/kataras/iris)
 
 
 
