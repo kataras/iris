@@ -12,8 +12,10 @@ Start using Iris Web Framework today. Iris is easy-to-learn while providing robu
 
 ![Hi Iris GIF](http://kataras.github.io/iris/assets/hi_iris_may.gif)
 
-----
-> [Build a better web, together](https://www.gitbook.com/read/book/kataras/iris)
+
+
+
+> [Build a better web, together.](https://www.gitbook.com/read/book/kataras/iris)
 
 [![https://www.gitbook.com/read/book/kataras/iris](https://raw.githubusercontent.com/kataras/iris/gh-pages/assets/book/cover_1.png)](https://www.gitbook.com/read/book/kataras/iris)
 
@@ -44,17 +46,9 @@ Iris is in active development status, check for updates once per week. **Compati
 $ go get -u github.com/kataras/iris
 ```
 
-## Table of contents
-- [Read the Iris book](https://www.gitbook.com/read/book/kataras/iris)
-- [Benchmarks](#benchmarks)
-- [Examples](https://github.com/iris-contrib/examples)
-- [Third Party Middlewares](#third-party-middlewares)
-- [Contributors](#contributors)
-- [Community](#community)
-- [Todo](#todo)
-- [External source articles](#articles)
-- [License](#license)
 
+- [Read the Iris book](https://www.gitbook.com/read/book/kataras/iris)
+- [Examples](https://github.com/iris-contrib/examples)
 
 
 ## Benchmarks
