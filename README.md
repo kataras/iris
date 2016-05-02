@@ -28,6 +28,7 @@ Start using Iris Web Framework today. Iris is easy-to-learn while providing robu
 
 
 ## Versioning
+Iris is in active development status, check for updates once per week. **Compatible with go1.6+ **.
 
 Current: **v2.0.0**
 
@@ -40,15 +41,23 @@ Read more about Semantic Versioning 2.0.0
  - https://en.wikipedia.org/wiki/Software_versioning
  - https://wiki.debian.org/UpstreamGuide#Releases_and_Versions
 
-## Install
-Iris is in active development status, check for updates once per week. **Compatible with go1.6+ **.
+
+
+## 1. Install
+
 ```sh
 $ go get -u github.com/kataras/iris
 ```
 
+## 2.  Read the [Iris book](https://www.gitbook.com/read/book/kataras/iris)
 
-- [Read the Iris book](https://www.gitbook.com/read/book/kataras/iris)
-- [Examples](https://github.com/iris-contrib/examples)
+
+## 3. Examples are [here](https://github.com/iris-contrib/examples)
+
+## 4. Post an [issue](https://github.com/kataras/iris/issues) or [idea](https://github.com/kataras/iris/issues)
+
+## 5. Chat with the [Community](https://gitter.im/kataras/iris)
+
 
 
 ## Benchmarks
@@ -61,9 +70,9 @@ This is the most realistic benchmark suite than you will find for Go Web Framewo
 April 22 2016
 
 
-![Benchmark Wizzard Basic 22 April 2016](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/master/concurrency-pipeline.png)
+![Benchmark Wizzard Concurenncy](http://kataras.github.io/iris/assets/benchmark_all_28April_2016.png)
 
-[click here to view detailed tables from all kind of different benchmark results](https://github.com/smallnest/go-web-framework-benchmark)
+[click here to view detailed tables of different benchmarks](https://github.com/smallnest/go-web-framework-benchmark)
 
 ## Third Party Middlewares
 
