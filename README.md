@@ -13,41 +13,16 @@ Start using Iris Web Framework today. Iris is easy-to-learn while providing robu
 ![Hi Iris GIF](http://kataras.github.io/iris/assets/hi_iris_may.gif)
 
 
-
-
 > [Build a better web, together.](https://www.gitbook.com/read/book/kataras/iris)
 
 [![https://www.gitbook.com/read/book/kataras/iris](https://raw.githubusercontent.com/kataras/iris/gh-pages/assets/book/cover_1.png)](https://www.gitbook.com/read/book/kataras/iris)
-
-### Q: What makes iris significantly [faster](#benchmarks)?
-*    First of all Iris is builded on top of the [fasthttp](https://github.com/valyala/fasthttp)
-*    Iris uses the same algorithm as the BSD's kernel does for routing (call it Trie)
-*    Iris can detect what features are used and what don't and optimized itself before server run.
-*    Middlewares and Plugins are 'light' , that's a principle.
-
-
-
-## Versioning
-Iris is in active development status, check for updates once per week. **Compatible with go1.6+ **.
-
-Current: **v2.0.0**
-
-##### [Changelog v1.2.1 -> v2.0.0](https://github.com/kataras/iris/blob/development/HISTORY.md)
-
-
-Read more about Semantic Versioning 2.0.0
-
- - http://semver.org/
- - https://en.wikipedia.org/wiki/Software_versioning
- - https://wiki.debian.org/UpstreamGuide#Releases_and_Versions
-
 
 
 ## Getting started
 
 1. Install `$ go get -u github.com/kataras/iris`
 
-2.  Read the [Iris book](https://www.gitbook.com/read/book/kataras/iris)
+2. Read the [Iris book](https://www.gitbook.com/book/kataras/iris/details)
 
 3. Examples are [here](https://github.com/iris-contrib/examples)
 
@@ -55,6 +30,17 @@ Read more about Semantic Versioning 2.0.0
 
 5. Chat with the [Community](https://gitter.im/kataras/iris)
 
+## Versioning
+Iris is in active development status, check for updates once per week. **Compatible only with go1.6+ **.
+
+Current: **v2.0.0**
+
+
+Read more about Semantic Versioning 2.0.0
+
+ - http://semver.org/
+ - https://en.wikipedia.org/wiki/Software_versioning
+ - https://wiki.debian.org/UpstreamGuide#Releases_and_Versions
 
 
 ## Benchmarks
@@ -71,6 +57,11 @@ April 22 2016
 
 [click here to view detailed tables of different benchmarks](https://github.com/smallnest/go-web-framework-benchmark)
 
+
+### Q: What makes iris significantly [faster](#benchmarks)?
+*    First of all Iris is builded on top of the [fasthttp](https://github.com/valyala/fasthttp)
+*    Make use of the algorithm which the BSD's kernel uses for internal routing
+*    Iris can detect what features are used and what don't and optimize itself
 
 ## Contributors
 
