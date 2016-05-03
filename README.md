@@ -61,7 +61,7 @@ April 22 2016
 ### Q: What makes iris significantly [faster](#benchmarks)?
 *    First of all Iris is builded on top of the [fasthttp](https://github.com/valyala/fasthttp)
 *    Make use of the algorithm which the BSD's kernel uses for internal routing
-*    Iris can detect what features are used and what don't and optimized itself before server run
+*    Iris can detect what features are used and what don't and optimize itself
 
 ## Contributors
 
