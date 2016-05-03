@@ -113,13 +113,6 @@ func (m *Manager) Start(ctx *iris.Context) ISession {
 	var session ISession
 	m.mu.Lock()
 
-	//
-	// uncomment only for debug
-	//reqCtx.Request.Header.VisitAllCookie(func(k []byte, v []byte) {
-	//	println(string(k) + " = " + string(v))
-	//})
-	//
-
 	cookieValue := string(ctx.Request.Header.Cookie(m.cookieName))
 
 	if cookieValue == "" { // cookie doesn't exists, let's generate a session and add set a cookie
