@@ -134,6 +134,7 @@ func (ctx *Context) RemoveCookie(name string) {
 	exp := time.Now().Add(-time.Duration(1) * time.Minute) //RFC says 1 second, but make sure 1 minute because we are using fasthttp
 	cookie.SetExpire(exp)
 	ctx.Response.Header.SetCookie(cookie)
+	fasthttp.ReleaseCookie(cookie)
 }
 
 // GetFlash get a flash message by it's key
