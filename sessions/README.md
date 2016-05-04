@@ -1,5 +1,12 @@
 # Sessions
 
+This package is new and unique, if you will any bug or issue, please [post it here](https://github.com/kataras/iris/issues)
+
+
+- Cleans the temp memory when a sessions is iddle, and re-loccate it , fast, to the temp memory when it's necessary. Also most used/regular sessions are going front in the memory's list.
+
+- Supports redisstore and normal memory routing. If redisstore is used but fails to connect then ,automatically, switching to the memory storage.
+
 
 **A session can be defined as a server-side storage of information that is desired to persist throughout the user's interaction with the web site** or web application.
 
@@ -7,7 +14,22 @@ Instead of storing large and constantly changing information via cookies in the 
 
 ----
 
-Example
+```go
+// New creates & returns a new Manager and start its GC
+// accepts 4 parameters
+// first is the providerName (string) ["memory","redis"]
+// second is the cookieName, the session's name (string) ["mysessionsecretcookieid"]
+// third is the gcDuration (time.Duration)
+// when this time passes it removes from
+// temporary memory GC the value which hasn't be used for a long time(gcDuration)
+// this is for the client's/browser's Cookie life time(expires) also
+
+New(provider string, cName string, gcDuration time.Duration) *sessions.Manager
+
+```
+
+
+Example **memory**
 
 ```go
 
@@ -19,7 +41,7 @@ import (
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/sessions"
 
-	_ "github.com/kataras/iris/sessions/providers/memory" // here we add the memory session store
+	_ "github.com/kataras/iris/sessions/providers/memory" // here we add the memory provider and store
 )
 
 var sess *sessions.Manager
@@ -88,6 +110,87 @@ func main() {
 
 ```
 
+
+Example **redis** with default configuration
+
+The default redis client points to 127.0.0.1:6379
+
+```go
+
+package main
+
+import (
+	"time"
+
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/sessions"
+
+	_ "github.com/kataras/iris/sessions/providers/redis"
+    // here we add the redis  provider and store
+    //with the default redis client points to 127.0.0.1:6379
+)
+
+var sess *sessions.Manager
+
+func init() {
+	sess = sessions.New("redis", "irissessionid", time.Duration(60)*time.Minute)
+}
+
+//... usage: same as memory
+```
+
+Example **redis** with custom configuration
+```go
+type Config struct {
+	// Network "tcp"
+	Network string
+	// Addr "127.0.01:6379"
+	Addr string
+	// Password string .If no password then no 'AUTH'. Default ""
+	Password string
+	// If Database is empty "" then no 'SELECT'. Default ""
+	Database string
+	// MaxIdle 0 no limit
+	MaxIdle int
+	// MaxActive 0 no limit
+	MaxActive int
+	// IdleTimeout 5 * time.Minute
+	IdleTimeout time.Duration
+	//Prefix "myprefix-for-this-website". Default ""
+	Prefix string
+	// MaxAgeSeconds how much long the redis should keep the session in seconds. Default 2520.0 (42minutes)
+	MaxAgeSeconds int
+}
+```
+
+```go
+package main
+
+import (
+	"time"
+
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/sessions"
+
+     "github.com/kataras/iris/sessions/providers/redis"
+    // here we add the redis  provider and store
+    //with the default redis client points to 127.0.0.1:6379
+)
+
+var sess *sessions.Manager
+
+func init() {
+    // you can config the redis after init also, but before any client's request
+    // but it's always a good idea to do it before sessions.New...
+    redis.Config.Network = "tcp"
+    redis.Config.Addr = "127.0.0.1:6379"
+    redis.Config.Prefix = "myprefix-for-this-website"
+
+	sess = sessions.New("redis", "irissessionid", time.Duration(60)*time.Minute)
+}
+
+//...usage: same as memory
+```
 
 ### Security: Prevent session hijacking
 

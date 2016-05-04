@@ -28,13 +28,108 @@
 package sessions
 
 import (
+	"container/list"
+	"sync"
 	"time"
 )
 
 type IProvider interface {
-	Init(string) (ISession, error)
-	Read(string) (ISession, error)
+	Init(string) (IStore, error)
+	Read(string) (IStore, error)
 	Destroy(string) error
 	Update(string) error
 	GC(time.Duration)
+}
+
+type (
+	// Provider implements the IProvider
+	Provider struct {
+		mu                 sync.Mutex
+		sessions           map[string]*list.Element // underline TEMPORARY memory store
+		list               *list.List               // for GC
+		NewStore           func(sessionId string, cookieLifeDuration time.Duration) IStore
+		OnDestroy          func(store IStore) // this is called when .Destroy
+		cookieLifeDuration time.Duration
+	}
+)
+
+var _ IProvider = &Provider{}
+
+// NewProvider returns a new empty Provider
+func NewProvider() *Provider {
+	provider := &Provider{list: list.New()}
+	provider.sessions = make(map[string]*list.Element, 0)
+	return provider
+}
+
+func (p *Provider) Init(sid string) (IStore, error) {
+	p.mu.Lock()
+
+	newSessionStore := p.NewStore(sid, p.cookieLifeDuration)
+
+	elem := p.list.PushBack(newSessionStore)
+	p.sessions[sid] = elem
+	p.mu.Unlock()
+	return newSessionStore, nil
+}
+
+func (p *Provider) Read(sid string) (IStore, error) {
+	if elem, found := p.sessions[sid]; found {
+		return elem.Value.(IStore), nil
+	} else {
+		// if not found
+		sessionStore, err := p.Init(sid)
+		return sessionStore, err
+	}
+
+	//if nothing was inside the sessions
+	return nil, nil
+}
+
+// Destroy always returns a nil error, for now.
+func (p *Provider) Destroy(sid string) error {
+	if elem, found := p.sessions[sid]; found {
+		elem.Value.(IStore).Destroy()
+		delete(p.sessions, sid)
+		p.list.Remove(elem)
+	}
+
+	return nil
+}
+
+// Update updates the lastAccessedTime, and moves the memory place element to the front
+// always returns a nil error, for now
+func (p *Provider) Update(sid string) error {
+	p.mu.Lock()
+
+	if elem, found := p.sessions[sid]; found {
+		elem.Value.(IStore).SetLastAccessedTime(time.Now())
+		p.list.MoveToFront(elem)
+	}
+
+	p.mu.Unlock()
+	return nil
+}
+
+// GC clears the memory
+func (p *Provider) GC(duration time.Duration) {
+	p.mu.Lock()
+	p.cookieLifeDuration = duration
+	defer p.mu.Unlock() //let's defer it and trust the go
+
+	for {
+		elem := p.list.Back()
+		if elem == nil {
+			break
+		}
+
+		// if the time has passed. session was expired, then delete the session and its memory place
+		if (elem.Value.(IStore).LastAccessedTime().Unix() + duration.Nanoseconds()) < time.Now().Unix() {
+			p.list.Remove(elem)
+			delete(p.sessions, elem.Value.(IStore).ID())
+
+		} else {
+			break
+		}
+	}
 }

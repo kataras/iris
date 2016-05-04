@@ -228,7 +228,7 @@ func (p *GardenParty) Static(relative string, systemPath string, stripSlashes in
 	})
 }
 
-// Static registers a route which serves a system directory
+// StaticFS registers a route which serves a system directory
 // it generates an index page to view the directory's files
 func (p *GardenParty) StaticFS(relative string, systemPath string, stripSlashes int) {
 	fs := &fasthttp.FS{

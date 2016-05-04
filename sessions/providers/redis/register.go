@@ -25,16 +25,45 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package sessions
+package redis
 
-type ISession interface {
-	Get(interface{}) interface{}
-	GetString(key interface{}) string
-	GetInt(key interface{}) int
-	Set(interface{}, interface{}) error
-	Delete(interface{}) error
-	Clear() error
-	VisitAll(func(interface{}, interface{}))
-	GetAll() map[interface{}]interface{}
-	ID() string
+import (
+	"time"
+
+	"github.com/kataras/iris/sessions"
+)
+
+func init() {
+	register()
+}
+
+var (
+	provider = sessions.NewProvider()
+	Redis    = Empty()
+
+// Empty() because maybe the user wants to edit the default configs.
+//the Connect goes to the first NewStore, when user ask for session, so you have the time to change the default configs
+)
+
+// register registers itself (the new provider with its memory store) to the sessions providers
+// must runs only once
+func register() {
+	// the actual work is here.
+	provider.NewStore = func(sessionId string, cookieLifeDuration time.Duration) sessions.IStore {
+		//println("memory.go:49-> requesting new memory store with sessionid: " + sessionId)
+		if !Redis.Connected {
+			Redis.Connect()
+			_, err := Redis.PingPong()
+			if err != nil {
+				if err != nil {
+					// don't use to get the logger, just prin these to the console... atm
+					println("Redis Connection error on iris/sessions/providers/redisstore.Connect: " + err.Error())
+					println("But don't panic, auto-switching to memory store right now!")
+				}
+			}
+		}
+		return NewStore(sessionId, cookieLifeDuration)
+	}
+
+	sessions.Register("redis", provider)
 }
