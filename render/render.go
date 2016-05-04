@@ -64,6 +64,8 @@ type Options struct {
 	Delims Delims
 	// Appends the given character set to the Content-Type header. Default is "UTF-8".
 	Charset string
+	// Gzip enable it if you want to render with gzip compression. Default is false
+	Gzip bool
 	// Outputs human readable JSON.
 	IndentJSON bool
 	// Outputs human readable XML. Default is false.
@@ -138,7 +140,7 @@ func (r *Render) prepareOptions() {
 		r.opt.Directory = "templates"
 	}
 	if len(r.opt.Extensions) == 0 {
-		r.opt.Extensions = []string{".tmpl"}
+		r.opt.Extensions = []string{".html"}
 	}
 	if len(r.opt.HTMLContentType) == 0 {
 		r.opt.HTMLContentType = ContentHTML
@@ -305,7 +307,13 @@ func (r *Render) prepareHTMLOptions(htmlOpt []HTMLOptions) HTMLOptions {
 
 // Render is the generic function called by XML, JSON, Data, HTML, and can be called by custom implementations.
 func (r *Render) Render(ctx *fasthttp.RequestCtx, e Engine, data interface{}) error {
-	err := e.Render(ctx, data)
+	var err error
+	if r.opt.Gzip {
+		err = e.RenderGzip(ctx, data)
+	} else {
+		err = e.Render(ctx, data)
+	}
+
 	if err != nil && !r.opt.DisableHTTPErrorRendering {
 		ctx.Response.SetBodyString(err.Error())
 		ctx.Response.SetStatusCode(fasthttp.StatusInternalServerError)

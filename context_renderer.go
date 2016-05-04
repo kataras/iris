@@ -87,6 +87,7 @@ func (ctx *Context) Data(status int, v []byte) error {
 // HTML builds up the response from the specified template and bindings.
 func (ctx *Context) HTML(status int, name string, binding interface{}, htmlOpt ...HTMLOptions) error {
 	opt := parseHTMLOptions(htmlOpt...)
+
 	return ctx.station.render.HTML(ctx.RequestCtx, status, name, binding, opt...)
 }
 
