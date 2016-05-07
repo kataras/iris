@@ -104,7 +104,6 @@ func (g *Garden) Plant(station *Iris, _route IRoute) {
 	method := _route.GetMethod()
 	domain := _route.GetDomain()
 	path := _route.GetPath()
-
 	theRoot := g.getRootByMethodAndDomain(method, domain)
 	if theRoot == nil {
 		theRoot = new(Branch)
