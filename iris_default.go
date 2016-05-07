@@ -74,18 +74,48 @@ func DefaultConfig() *IrisConfig {
 
 // Listen starts the standalone http server
 // which listens to the addr parameter which as the form of
-// host:port or just port or empty, the default is 127.0.0.1:8080
-func Listen(addr string) error {
-	return DefaultIris.Listen(addr)
+// host:port or just port
+//
+// It panics on error if you need a func to return an error use the ListenWithErr
+// ex: iris.Listen(":8080")
+func Listen(addr string) {
+	DefaultIris.Listen(addr)
 }
 
-// ListenTLS Starts a httpS/http2 server with certificates,
+// ListenWithErr starts the standalone http server
+// which listens to the addr parameter which as the form of
+// host:port or just port
+//
+// It returns an error you are responsible how to handle this
+// if you need a func to panic on error use the Listen
+// ex: log.Fatal(iris.ListenWithErr(":8080"))
+func ListenWithErr(addr string) error {
+	return DefaultIris.ListenWithErr(addr)
+}
+
+// ListenTLS Starts a https server with certificates,
 // if you use this method the requests of the form of 'http://' will fail
 // only https:// connections are allowed
 // which listens to the addr parameter which as the form of
-// host:port
-func ListenTLS(addr string, certFile, keyFile string) error {
-	return DefaultIris.ListenTLS(addr, certFile, keyFile)
+// host:port or just port
+//
+// It panics on error if you need a func to return an error use the ListenTLSWithErr
+// ex: iris.ListenTLS(":8080","yourfile.cert","yourfile.key")
+func ListenTLS(addr string, certFile, keyFile string) {
+	DefaultIris.ListenTLS(addr, certFile, keyFile)
+}
+
+// ListenTLSWithErr Starts a https server with certificates,
+// if you use this method the requests of the form of 'http://' will fail
+// only https:// connections are allowed
+// which listens to the addr parameter which as the form of
+// host:port or just port
+//
+// It returns an error you are responsible how to handle this
+// if you need a func to panic on error use the ListenTLS
+// ex: log.Fatal(iris.ListenTLS(":8080","yourfile.cert","yourfile.key"))
+func ListenTLSWithErr(addr string, certFile, keyFile string) error {
+	return DefaultIris.ListenTLSWithErr(addr, certFile, keyFile)
 }
 
 // Close is used to close the net.Listener of the standalone http server which has already running via .Listen

@@ -33,7 +33,7 @@ Start using Iris Web Framework today. Iris is easy-to-learn while providing robu
 ## Versioning
 Iris is in active development status, check for updates once per week. **Compatible only with go1.6+ **.
 
-Current: **v2.1.2**
+Current: **v2.2.0**
 
 
 Read more about Semantic Versioning 2.0.0
