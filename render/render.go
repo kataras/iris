@@ -119,7 +119,10 @@ func New(options ...Options) *Render {
 	}
 
 	r.prepareOptions()
-	r.compileTemplates()
+	if err := r.compileTemplates(); err != nil {
+		// We don't care about IsDevelopment, it's before server's run, panic
+		panic(err)
+	}
 
 	// Create a new buffer pool for writing templates into.
 	if bufPool == nil {
@@ -147,15 +150,16 @@ func (r *Render) prepareOptions() {
 	}
 }
 
-func (r *Render) compileTemplates() {
+func (r *Render) compileTemplates() error {
 	if r.opt.Asset == nil || r.opt.AssetNames == nil {
-		r.compileTemplatesFromDir()
-		return
+		return r.compileTemplatesFromDir()
+
 	}
-	r.compileTemplatesFromAsset()
+	return r.compileTemplatesFromAsset()
 }
 
-func (r *Render) compileTemplatesFromDir() {
+func (r *Render) compileTemplatesFromDir() error {
+	var templateErr error
 	dir := r.opt.Directory
 	r.templates = template.New(dir)
 	r.templates.Delims(r.opt.Delims.Left, r.opt.Delims.Right)
@@ -195,16 +199,26 @@ func (r *Render) compileTemplatesFromDir() {
 					tmpl.Funcs(funcs)
 				}
 
-				// Break out if this parsing fails. We don't want any silent server starts.
-				template.Must(tmpl.Funcs(helperFuncs).Parse(string(buf)))
+				if !r.opt.IsDevelopment {
+					//panic in production.
+					template.Must(tmpl.Funcs(helperFuncs).Parse(string(buf)))
+				} else {
+					if _, templateErr = tmpl.Funcs(helperFuncs).Parse(string(buf)); templateErr != nil {
+						break //we dont continue to the next templates
+					}
+
+				}
+
 				break
 			}
 		}
 		return nil
 	})
+	return templateErr
 }
 
-func (r *Render) compileTemplatesFromAsset() {
+func (r *Render) compileTemplatesFromAsset() error {
+	var templateErr error
 	dir := r.opt.Directory
 	r.templates = template.New(dir)
 	r.templates.Delims(r.opt.Delims.Left, r.opt.Delims.Right)
@@ -240,12 +254,19 @@ func (r *Render) compileTemplatesFromAsset() {
 					tmpl.Funcs(funcs)
 				}
 
-				// Break out if this parsing fails. We don't want any silent server starts.
-				template.Must(tmpl.Funcs(helperFuncs).Parse(string(buf)))
+				if !r.opt.IsDevelopment {
+					//panic in production.
+					template.Must(tmpl.Funcs(helperFuncs).Parse(string(buf)))
+				} else {
+					if _, templateErr = tmpl.Funcs(helperFuncs).Parse(string(buf)); templateErr != nil {
+						break //we dont continue to the next templates
+					}
+				}
 				break
 			}
 		}
 	}
+	return templateErr
 }
 
 // TemplateLookup is a wrapper around template.Lookup and returns
@@ -339,7 +360,9 @@ func (r *Render) Data(ctx *fasthttp.RequestCtx, status int, v []byte) error {
 func (r *Render) HTML(ctx *fasthttp.RequestCtx, status int, name string, binding interface{}, htmlOpt ...HTMLOptions) error {
 	// If we are in development mode, recompile the templates on every HTML request.
 	if r.opt.IsDevelopment {
-		r.compileTemplates()
+		if err := r.compileTemplates(); err != nil {
+			return err
+		}
 	}
 
 	opt := r.prepareHTMLOptions(htmlOpt)
