@@ -25,25 +25,21 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package memory
+package sessions
 
-import (
-	"container/list"
+import "time"
 
-	"github.com/kataras/iris/sessions"
-)
-
-var (
-	provider = &Provider{list: list.New()}
-)
-
-func init() {
-	register()
-}
-
-// register registers itself (the memory provider with its memory store) to the sessions providers
-// must runs only once
-func register() {
-	provider.sessions = make(map[string]*list.Element, 0)
-	sessions.Register("memory", provider)
+type IStore interface {
+	Get(interface{}) interface{}
+	GetString(key interface{}) string
+	GetInt(key interface{}) int
+	Set(interface{}, interface{}) error
+	Delete(interface{}) error
+	Clear() error
+	VisitAll(func(interface{}, interface{}))
+	GetAll() map[interface{}]interface{}
+	ID() string
+	LastAccessedTime() time.Time
+	SetLastAccessedTime(time.Time)
+	Destroy()
 }

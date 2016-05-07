@@ -190,6 +190,12 @@ func Static(requestPath string, systemPath string, stripSlashes int) {
 	DefaultIris.Static(requestPath, systemPath, stripSlashes)
 }
 
+// StaticFS registers a route which serves a system directory
+// it generates an index page to view the directory's files
+func StaticFS(requestPath string, systemPath string, stripSlashes int) {
+	DefaultIris.StaticFS(requestPath, systemPath, stripSlashes)
+}
+
 // OnError Registers a handler for a specific http error status
 func OnError(httpStatus int, handler HandlerFunc) {
 	DefaultIris.OnError(httpStatus, handler)

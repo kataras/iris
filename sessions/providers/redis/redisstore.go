@@ -26,21 +26,79 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ///TODO: add doc comments
-package memory
+package redis
 
 import (
 	"time"
 
 	"github.com/kataras/iris/sessions"
+	"github.com/kataras/iris/utils"
 )
 
+/*Notes
+--------
+Here we are setting a structure which keeps the current session's values setted by store.Set(key,value)
+this is the RedisValue struct.
+if noexists
+	RedisValue := RedisValue{sessionid,values)
+
+RedisValue.values[thekey]=thevalue
+
+
+service.Set(store.sid,RedisValue)
+
+because we are using the same redis service for all sessions, and this is the best way to separate them,
+without prefix and all that which I tried and failed to deserialize them correctly if the value is string...
+so again we will keep the current server's sessions into memory
+and fetch them(the sessions) from the redis at each first session run. Yes this is the fastest way to get/set a session
+and at the same time they are keep saved to the redis and the GC will cleanup the memory after a while like we are doing
+with the memory provider. Or just have a values field inside the Store and use just it, yes better simplier approach.
+Ok then, let's convert it again.
+*/
+type Values map[interface{}]interface{}
 type Store struct {
-	sid              string
-	lastAccessedTime time.Time
-	values           map[interface{}]interface{} // here is the real memory store
+	sid                string
+	lastAccessedTime   time.Time
+	values             Values
+	cookieLifeDuration time.Duration //used on .Set-> SETEX on redis
 }
 
 var _ sessions.IStore = &Store{}
+
+func NewStore(sid string, cookieLifeDuration time.Duration) *Store {
+	s := &Store{sid: sid, lastAccessedTime: time.Now(), cookieLifeDuration: cookieLifeDuration}
+	//fetch the values from this session id and copy-> store them
+	val, err := Redis.GetBytes(sid)
+	if err == nil {
+		err = utils.DeserializeBytes(val, &s.values)
+		if err != nil {
+			//if deserialization failed
+			s.values = Values{}
+		}
+
+	}
+	if s.values == nil {
+		//if key/sid wasn't found or was found but no entries in it(L72)
+		s.values = Values{}
+	}
+
+	return s
+}
+
+// serialize the values to be stored as strings inside the Redis, we panic at any serialization error here
+func serialize(values Values) []byte {
+	val, err := utils.SerializeBytes(values)
+	if err != nil {
+		panic("On redisstore.serialize: " + err.Error())
+	}
+
+	return val
+}
+
+// update updates the real redis store
+func (s *Store) update() {
+	go Redis.Set(s.sid, serialize(s.values), s.cookieLifeDuration.Seconds()) //set/update all the values, in goroutine
+}
 
 // GetAll returns all values
 func (s *Store) GetAll() map[interface{}]interface{} {
@@ -88,6 +146,8 @@ func (s *Store) GetInt(key interface{}) int {
 func (s *Store) Set(key interface{}, value interface{}) error {
 	s.values[key] = value
 	provider.Update(s.sid)
+
+	s.update()
 	return nil
 }
 
@@ -96,16 +156,20 @@ func (s *Store) Set(key interface{}, value interface{}) error {
 func (s *Store) Delete(key interface{}) error {
 	delete(s.values, key)
 	provider.Update(s.sid)
+	s.update()
 	return nil
 }
 
 // Delete removes all entries
 // returns an error, which is always nil
 func (s *Store) Clear() error {
+	//we are not using the Redis.Delete, I made so work for nothing.. we wanted only the .Set at the end...
 	for key := range s.values {
 		delete(s.values, key)
 	}
+
 	provider.Update(s.sid)
+	s.update()
 	return nil
 }
 
@@ -125,5 +189,6 @@ func (s *Store) SetLastAccessedTime(lastacc time.Time) {
 }
 
 func (s *Store) Destroy() {
-	// nothing
+	// remove the whole  value which is the s.values from real redis
+	Redis.Delete(s.sid)
 }

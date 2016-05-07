@@ -116,17 +116,18 @@ func (ctx *Context) SetCookie(cookie *fasthttp.Cookie) {
 
 // SetCookieKV adds a cookie, receives just a key(string) and a value(string)
 func (ctx *Context) SetCookieKV(key, value string) {
-	c := &fasthttp.Cookie{}
+	c := fasthttp.AcquireCookie() // &fasthttp.Cookie{}
 	c.SetKey(key)
 	c.SetValue(value)
 	c.SetHTTPOnly(true)
 	c.SetExpire(time.Now().Add(time.Duration(120) * time.Minute))
 	ctx.SetCookie(c)
+	fasthttp.ReleaseCookie(c)
 }
 
 // RemoveCookie deletes a cookie by it's name/key
 func (ctx *Context) RemoveCookie(name string) {
-	cookie := &fasthttp.Cookie{}
+	cookie := fasthttp.AcquireCookie()
 	cookie.SetKey(name)
 	cookie.SetValue("")
 	cookie.SetPath("/")
@@ -134,6 +135,7 @@ func (ctx *Context) RemoveCookie(name string) {
 	exp := time.Now().Add(-time.Duration(1) * time.Minute) //RFC says 1 second, but make sure 1 minute because we are using fasthttp
 	cookie.SetExpire(exp)
 	ctx.Response.Header.SetCookie(cookie)
+	fasthttp.ReleaseCookie(cookie)
 }
 
 // GetFlash get a flash message by it's key

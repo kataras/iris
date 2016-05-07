@@ -1,6 +1,9 @@
 package utils
 
 import (
+	"bytes"
+	"encoding/base64"
+	"encoding/gob"
 	"math/rand"
 	"reflect"
 	"strings"
@@ -60,8 +63,7 @@ const (
 
 var src = rand.NewSource(time.Now().UnixNano())
 
-// RandomString accepts a number(10 for example) and returns a random string using simple but fairly safe random algorithm
-func RandomString(n int) string {
+func Random(n int) []byte {
 	b := make([]byte, n)
 	// A src.Int63() generates 63 random bits, enough for letterIdxMax characters!
 	for i, cache, remain := n-1, src.Int63(), letterIdxMax; i >= 0; {
@@ -76,5 +78,36 @@ func RandomString(n int) string {
 		remain--
 	}
 
-	return string(b)
+	return b
+}
+
+// RandomString accepts a number(10 for example) and returns a random string using simple but fairly safe random algorithm
+func RandomString(n int) string {
+	return string(Random(n))
+}
+
+func Serialize(m interface{}) (string, error) {
+	b := bytes.Buffer{}
+	encoder := gob.NewEncoder(&b)
+	err := encoder.Encode(m)
+	if err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(b.Bytes()), nil
+}
+
+func Deserialize(str string, m interface{}) error {
+	by, err := base64.StdEncoding.DecodeString(str)
+	if err != nil {
+		return err
+	}
+	b := bytes.Buffer{}
+	b.Write(by)
+	d := gob.NewDecoder(&b)
+	//	d := gob.NewDecoder(bytes.NewBufferString(str))
+	err = d.Decode(&m)
+	if err != nil {
+		return err
+	}
+	return nil
 }

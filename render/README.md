@@ -51,15 +51,15 @@ The rendering functions simply wraps Go's existing functionality for marshaling 
       })
 
       iris.Get("/html", func(ctx *iris.Context) {
-          // Assumes you have a template in ./templates called "example.tmpl".
-          // $ mkdir -p templates && echo "<h1>Hello HTML world.</h1>" > templates/example.tmpl
+          // Assumes you have a template in ./templates called "example.html".
+          // $ mkdir -p templates && echo "<h1>Hello HTML world.</h1>" > templates/example.html
           ctx.HTML(iris.StatusOK, "example", nil)
       })
-      
+
       // ctx.Render is the same as ctx.HTML but with default 200 status OK
      iris.Get("/html2", func(ctx *iris.Context) {
-          // Assumes you have a template in ./templates called "example.tmpl".
-          // $ mkdir -p templates && echo "<h1>Hello HTML world.</h1>" > templates/example.tmpl
+          // Assumes you have a template in ./templates called "example.html".
+          // $ mkdir -p templates && echo "<h1>Hello HTML world.</h1>" > templates/example.html
           ctx.Render("example", nil)
       })
 
@@ -67,7 +67,7 @@ The rendering functions simply wraps Go's existing functionality for marshaling 
 ~~~
 
 ~~~ html
-<!-- templates/example.tmpl -->
+<!-- templates/example.html -->
 <h1>Hello {{.}}.</h1>
 ~~~
 
@@ -82,13 +82,14 @@ renderOptions := &iris.RenderConfig{
       return []byte("template content"), nil
     },
     AssetNames: func() []string { // Return a list of asset names for the Asset function
-      return []string{"filename.tmpl"}
+      return []string{"filename.html"}
     },
     Layout: "layout", // Specify a layout template. Layouts can call {{ yield }} to render the current template or {{ partial "css" }} to render a partial from the current template.
     Extensions: []string{".tmpl", ".html"}, // Specify extensions to load for templates.
     Funcs: []template.FuncMap{AppHelpers}, // Specify helper function maps for templates to access.
     Delims: iris.Delims{"{[{", "}]}"}, // Sets delimiters to the specified strings.
     Charset: "UTF-8", // Sets encoding for json and html content-types. Default is "UTF-8".
+    Gzip: false, // Enable it if you want to render using gzip compression. Default is false
     IndentJSON: true, // Output human readable JSON.
     IndentXML: true, // Output human readable XML.
     PrefixJSON: []byte(")]}',\n"), // Prefixes JSON responses with the given bytes.
@@ -118,6 +119,7 @@ renderOptions = &iris.RenderConfig{
     Funcs: []template.FuncMap{},
     Delims: iris.Delims{"{{", "}}"},
     Charset: "UTF-8",
+    Gzip: false,
     IndentJSON: false,
     IndentXML: false,
     PrefixJSON: []byte(""),
@@ -168,6 +170,7 @@ Render provides `yield` and `partial` functions for layouts to access:
 
 renderOptions := &iris.RenderConfig{
     Layout: "layout",
+    Gzip:true,
 }
 
 iris.SetRenderConfig(renderOptions)
@@ -249,7 +252,7 @@ type ExampleXml struct {
 func main() {
     iris.DefaultCharset = "ISO-8859-1"
     // or iris.SetRenderConfig(&iris.RenderConfig{ Charset: "ISO-8859-1"})
-  
+
 
     //...
 }
@@ -280,3 +283,74 @@ func (ctx *iris.Context) {
 
 
 ~~~
+
+### Templates
+```go
+// HTML builds up the response from the specified template and bindings.
+HTML(status int, name string, binding interface{}, htmlOpt ...HTMLOptions) error
+// Render same as .HTML but with status to iris.StatusOK (200)
+Render(name string, binding interface{}, htmlOpt ...HTMLOptions) error
+
+```
+
+### Example
+
+```go
+//
+// FILE: ./main.go
+//
+package main
+
+import (
+	"github.com/kataras/iris"
+)
+
+type mypage struct {
+	Title   string
+	Message string
+}
+
+func main() {
+
+	//optionally - before the load.
+	//iris.Config().Render.Delims = iris.Delims{Left:"${", Right: "}"} this will change the behavior of {{.Property}} to ${.Property}
+	//iris.Config().Render.Funcs = template.FuncMap(...)
+
+	iris.Config().Render.Directory = "templates" // Default "templates"
+	iris.Config().Render.Layout = "layout" // Default is ""
+	iris.Config().Render.Gzip = true       // Default is false
+    //...
+
+	iris.Get("/", func(ctx *iris.Context) {
+		ctx.Render("mypage", mypage{"My Page title", "Hello world!"}) //, iris.HTMLOptions{"otherLayout"}) <- to override
+	})
+
+	println("Server is running at :8080")
+	iris.Listen(":8080")
+}
+```
+
+```html
+<!--
+ FILE: ./templates/layout.html
+-->
+<html>
+  <head>
+    <title>My Layout</title>
+
+  </head>
+  <body>
+    <!-- Render the current template here -->
+    {{ yield }}
+  </body>
+</html>
+
+```
+
+```html
+<!--
+ FILE: ./templates/mypage.html
+-->
+<h1> Title: {{.Title}} <h1>
+<h3> Message : {{.Message}} </h3>
+```

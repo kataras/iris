@@ -29,18 +29,18 @@ package sessions
 
 import (
 	"encoding/base64"
-	// here care:  .DelCookie, is a new fasthttp function and maybe users have panics if their fasthttp package is not updating as expected.
 	"net/url"
 	"sync"
 	"time"
 
 	"github.com/kataras/iris"
+	"github.com/kataras/iris/utils"
 	"github.com/valyala/fasthttp"
 )
 
 type (
 	IManager interface {
-		Start(*iris.Context) ISession
+		Start(*iris.Context) IStore
 		Destroy(*iris.Context)
 		GC()
 	}
@@ -49,6 +49,7 @@ type (
 		cookieName   string
 		mu           sync.Mutex
 		provider     IProvider
+		gcDuration   time.Duration
 		lifeDuration time.Duration
 	}
 )
@@ -60,27 +61,56 @@ var (
 )
 
 // NewManager creates & returns a new Manager
-func NewManager(providerName string, cookieName string, lifeDuration time.Duration) (*Manager, error) {
+// accepts 4 parameters
+// first is the providerName (string) ["memory","redis"]
+// second is the cookieName, the session's name (string) ["mysessionsecretcookieid"]
+// third is the gcDuration (time.Duration) when this time passes it removes the sessions
+// which hasn't be used for a long time(gcDuration), this number is the cookie life(expires) also
+func newManager(providerName string, cookieName string, gcandlifedur ...time.Duration) (*Manager, error) {
 	provider, found := providers[providerName]
 	if !found {
 		return nil, ErrProviderNotFound.Format(providerName)
 	}
+	var gcDuration = time.Duration(60) * time.Minute
+	var lifeDuration time.Duration = time.Duration(60) * time.Hour
 
 	if cookieName == "" {
 		cookieName = "IrisCookieName"
 	}
 
+	if len(gcandlifedur) == 2 {
+		// both are defined
+		if gcdur := gcandlifedur[0]; gcdur > 0 {
+			gcDuration = gcdur
+		}
+		if lifedur := gcandlifedur[1]; lifedur > 0 {
+			lifeDuration = lifedur
+		}
+	} else {
+		//only the first defined
+		if gcdur := gcandlifedur[0]; gcdur > 0 {
+			gcDuration = gcdur
+		}
+	}
+
 	manager := &Manager{}
 	manager.provider = provider
 	manager.cookieName = cookieName
+
+	manager.gcDuration = gcDuration
 	manager.lifeDuration = lifeDuration
 
 	return manager, nil
 }
 
-// New creates & returns a new Manager, like NewManager does but it starts the GC and panics on error
-func New(providerName string, cookieName string, lifeDuration time.Duration) *Manager {
-	manager, err := NewManager(providerName, cookieName, lifeDuration)
+// New creates & returns a new Manager and start its GC
+// accepts 4 parameters
+// first is the providerName (string) ["memory","redis"]
+// second is the cookieName, the session's name (string) ["mysessionsecretcookieid"]
+// third is the gcDuration (time.Duration) when this time passes it removes the sessions
+// which hasn't be used for a long time(gcDuration), this number is the cookie life(expires) also
+func New(providerName string, cookieName string, gcDuration time.Duration) *Manager {
+	manager, err := newManager(providerName, cookieName, gcDuration)
 	if err != nil {
 		panic(err.Error()) // we have to panic here because we will start GC after and if provider is nil then many panics will come
 	}
@@ -105,41 +135,35 @@ func Register(providerName string, provider IProvider) {
 // Manager implementation
 
 func (m *Manager) generateSessionID() string {
-	return base64.URLEncoding.EncodeToString(Random(32))
+	return base64.URLEncoding.EncodeToString(utils.Random(32))
 }
 
 // Start starts the session
-func (m *Manager) Start(ctx *iris.Context) ISession {
-	var session ISession
+func (m *Manager) Start(ctx *iris.Context) IStore {
+	var store IStore
 	m.mu.Lock()
-
-	//
-	// uncomment only for debug
-	//reqCtx.Request.Header.VisitAllCookie(func(k []byte, v []byte) {
-	//	println(string(k) + " = " + string(v))
-	//})
-	//
 
 	cookieValue := string(ctx.Request.Header.Cookie(m.cookieName))
 
 	if cookieValue == "" { // cookie doesn't exists, let's generate a session and add set a cookie
 		sid := m.generateSessionID()
-		session, _ = m.provider.Init(sid)
+		store, _ = m.provider.Init(sid)
 		cookie := &fasthttp.Cookie{}
 		cookie.SetKey(m.cookieName)
 		cookie.SetValue(url.QueryEscape(sid))
 		cookie.SetPath("/")
 		cookie.SetHTTPOnly(true)
-		exp := time.Now().Add(m.lifeDuration)
+		exp := time.Now().Add(m.gcDuration)
 		cookie.SetExpire(exp)
 		ctx.Response.Header.SetCookie(cookie)
+		//println("manager.go:156-> Setting cookie with lifetime: ", m.lifeDuration.Seconds())
 	} else {
 		sid, _ := url.QueryUnescape(cookieValue)
-		session, _ = m.provider.Read(sid)
+		store, _ = m.provider.Read(sid)
 	}
 
 	m.mu.Unlock()
-	return session
+	return store
 }
 
 // Destroy kills the session and remove the associated cookie
@@ -151,10 +175,6 @@ func (m *Manager) Destroy(ctx *iris.Context) {
 
 	m.mu.Lock()
 	m.provider.Destroy(cookieValue)
-	// new fasthttp .DelCookie isnt working.
-	//ctx.Response.Header.DelCookie(m.cookieName)
-	//ctx.Request.Header.DelCookie(m.cookieName) // maybe unnecessary
-	// so:
 
 	ctx.RemoveCookie(m.cookieName)
 
@@ -166,9 +186,9 @@ func (m *Manager) Destroy(ctx *iris.Context) {
 func (m *Manager) GC() {
 	m.mu.Lock()
 
-	m.provider.GC(m.lifeDuration)
+	m.provider.GC(m.gcDuration)
 	// set a timer for the next GC
-	time.AfterFunc(m.lifeDuration, func() {
+	time.AfterFunc(m.gcDuration, func() {
 		m.GC()
 	}) // or m.expire.Unix() if Nanosecond() doesn't works here
 	m.mu.Unlock()

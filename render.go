@@ -66,6 +66,8 @@ type RenderConfig struct {
 	Delims Delims
 	// Appends the given character set to the Content-Type header. Default is "UTF-8".
 	Charset string
+	// Gzip enable it if you want to render using gzip compression. Default is false
+	Gzip bool
 	// Outputs human readable JSON.
 	IndentJSON bool
 	// Outputs human readable XML. Default is false.
@@ -104,6 +106,7 @@ func newRender(config *RenderConfig) *render.Render {
 	options.Funcs = config.Funcs
 	options.Delims = render.Delims{config.Delims.Left, config.Delims.Right}
 	options.Charset = config.Charset
+	options.Gzip = config.Gzip
 	options.IndentJSON = config.IndentJSON
 	options.IndentXML = config.IndentXML
 	options.PrefixJSON = config.PrefixJSON

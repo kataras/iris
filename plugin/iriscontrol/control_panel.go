@@ -52,8 +52,8 @@ func (i *irisControlPlugin) startControlPanel() {
 	}
 
 	i.server = iris.New()
-	i.server.Config.Render.Layout = installationPath + "templates"
-	i.server.SetRenderConfig(i.server.Config.Render)
+	i.server.Config.Render.Directory = installationPath + "templates"
+	//i.server.SetRenderConfig(i.server.Config.Render)
 	i.setPluginsInfo()
 	i.setPanelRoutes()
 
@@ -90,8 +90,7 @@ func (i *irisControlPlugin) installAssets() (err error) {
 
 func (i *irisControlPlugin) setPanelRoutes() {
 
-	iris.Static("/public/*assets", installationPath+"static"+pathSeperator, 1)
-
+	i.server.Static("/public", installationPath+"static", 1)
 	i.server.Get("/login", func(ctx *iris.Context) {
 		ctx.Render("login", nil)
 	})

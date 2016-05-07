@@ -62,7 +62,7 @@ var _ IRoute = &Route{}
 // NewRoute creates, from a path string, and a slice of HandlerFunc
 func NewRoute(method string, registedPath string, middleware Middleware) *Route {
 	domain := ""
-	if registedPath[0] != SlashByte && strings.Contains(registedPath, ".") && strings.IndexByte(registedPath, SlashByte) > strings.IndexByte(registedPath, '.') {
+	if registedPath[0] != SlashByte && strings.Contains(registedPath, ".") && (strings.IndexByte(registedPath, SlashByte) == -1 || strings.IndexByte(registedPath, SlashByte) > strings.IndexByte(registedPath, '.')) {
 		//means that is a path with domain
 		//we have to extract the domain
 
