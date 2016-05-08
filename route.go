@@ -161,6 +161,7 @@ func (r *Route) HasCors() bool {
 	return RouteConflicts(r, "httpmethod")
 }
 
+// RouteConflicts checks for route's middleware conflicts
 func RouteConflicts(r *Route, with string) bool {
 	for _, h := range r.middleware {
 		if m, ok := h.(interface {
