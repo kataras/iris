@@ -82,7 +82,7 @@ import (
 )
 
 func main() {
-	iris.Use(pongo2.New())
+	iris.Use(pongo2.Pongo2())
 
 	iris.Get("/", func(ctx *iris.Context) {
 		ctx.Set("template", "index.html")
@@ -92,6 +92,48 @@ func main() {
 	println("Server is running at :8080")
 	iris.Listen(":8080")
 }
+
+
+```
+
+## Using pongo2 with it's own directory
+
+```go
+// ./main.go
+package main
+
+import (
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/middleware/pongo2"
+)
+
+func main() {
+	iris.Use(pongo2.Pongo2("./templates"))
+
+	// target to something different that ./templates because iris' render will panic if not.
+	iris.Config().Render.Directory = "other"
+
+	iris.Get("/", func(ctx *iris.Context) {
+		ctx.Set("template", "index.html")
+		ctx.Set("data", map[string]interface{}{"message": "Hello World!"})
+	})
+
+	println("Server is running at :8080")
+	iris.Listen(":8080")
+}
+
+
+```
+
+```html
+<!-- ./templates/index.html -->
+
+<HTML>
+<head><title>Hello Pongo2 from Iris</title></head>
+<body>
+	<p>{{message}}</p>
+</body>
+</HTML>
 
 
 ```
@@ -107,6 +149,7 @@ iris.Static("/js", "./public/js", 1)
 iris.Static("/css", "./public/css", 1)
 
 iris.Use(pongo2.Pongo2()) //after this
+iris.Config().Render.Directory = "other"
 //...
 ```
 

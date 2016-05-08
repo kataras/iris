@@ -57,6 +57,8 @@ Ok then, let's convert it again.
 
 // Values is just a type of a map[interface{}]interface{}
 type Values map[interface{}]interface{}
+
+// Store the redis session store
 type Store struct {
 	sid                string
 	lastAccessedTime   time.Time

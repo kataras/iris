@@ -28,14 +28,30 @@
 package pongo2
 
 import (
+	"os"
+
 	pongo "github.com/flosch/pongo2"
 	"github.com/kataras/iris"
 )
 
-type pongo2Middleware struct {
+// Pongo2Middleware the middleware for pongo2
+// Conflicts with the render if pongo2 directory is './templates' we have issue see -> Serve ->p.once
+// so please just change the iris.Config().Render.Directory = "tosomethingdifferent"
+
+type Pongo2Middleware struct {
+	templateDir string
 }
 
-func (p *pongo2Middleware) Serve(ctx *iris.Context) {
+func (p *Pongo2Middleware) Serve(ctx *iris.Context) {
+	/*p.once.Do(func() {
+		// https://github.com/kataras/iris/issues/94
+		if ctx.GetStation().Config.Render.Directory == p.templateDir {
+			panic("[IRIS Pongo2 middleware] You cannot use the same template directory ('" + p.templateDir + "') for pongo2 and html/template")
+		}
+	})
+	// Changed my mind, let users just change the iris.Config().Render.Directory = "tosomethingdifferent"
+	*/
+
 	ctx.Next()
 
 	templateName := ctx.GetString("template")
@@ -43,9 +59,8 @@ func (p *pongo2Middleware) Serve(ctx *iris.Context) {
 		templateData := ctx.Get("data")
 		if templateData != nil {
 
-			var template = pongo.Must(pongo.FromFile(templateName))
-			//	err := template.ExecuteWriter(getPongoContext(templateData), ctx.RequestCtx.Response.BodyWriter())
-			// same thing here:
+			var template = pongo.Must(pongo.FromFile(p.templateDir + templateName))
+
 			contents, err := template.Execute(getPongoContext(templateData))
 			if err != nil {
 				ctx.Text(500, err.Error())
@@ -61,6 +76,7 @@ func (p *pongo2Middleware) Serve(ctx *iris.Context) {
 
 }
 
+// getPongoContext returns the pongo.Context from data, used internaly by the middleware
 func getPongoContext(templateData interface{}) pongo.Context {
 	if templateData == nil {
 		return nil
@@ -73,13 +89,20 @@ func getPongoContext(templateData interface{}) pongo.Context {
 }
 
 // Pongo2 creates and returns the middleware, same as New()
-func Pongo2() *pongo2Middleware {
-	return &pongo2Middleware{}
+func Pongo2(templateDirectory ...string) *Pongo2Middleware {
+	var templateDir = "." + string(os.PathSeparator)
+	if templateDirectory != nil && len(templateDirectory) > 0 {
+		templateDir = templateDirectory[0]
+	}
+	if templateDir[len(templateDir)-1] != os.PathSeparator {
+		templateDir += string(os.PathSeparator)
+	}
+	return &Pongo2Middleware{templateDir: templateDir}
 }
 
 // New creates and returns the middleware, same as Pongo2()
-func New() *pongo2Middleware {
-	return Pongo2()
+func New(templateDirectory ...string) *Pongo2Middleware {
+	return Pongo2(templateDirectory...)
 }
 
 /* example */
@@ -93,7 +116,7 @@ import (
 )
 
 func main() {
-    iris.Use(pongo2.Pongo2())
+    iris.Use(pongo2.Pongo2("./mypongo2templates")) // or .Pongo2() defaults to "./"
 
     iris.Get("/", func(ctx *iris.Context) {
         ctx.Set("template", "index.html")

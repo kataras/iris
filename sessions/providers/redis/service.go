@@ -141,8 +141,8 @@ func (r *Service) Get(key string) (interface{}, error) {
 	return redisVal, nil
 }
 
-// Get returns value, err by its key
-// you can use utils.Deserialize((.Get("yourkey"),&theobject{})
+// GetBytes returns value, err by its key
+// you can use utils.Deserialize((.GetBytes("yourkey"),&theobject{})
 //returns nil and a filled error if something wrong happens
 func (r *Service) GetBytes(key string) ([]byte, error) {
 	c := r.pool.Get()
