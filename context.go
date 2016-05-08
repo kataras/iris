@@ -25,7 +25,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// Files: context_binder.go, context_renderer.go, context_storage.go, context_request.go, context_response.go
+// Package iris Context.go  context_binder.go, context_renderer.go, context_storage.go, context_request.go, context_response.go
 package iris
 
 import (
@@ -47,7 +47,8 @@ const (
 	// ContentLength represents the header["Content-Length"]
 	ContentLength = "Content-Length"
 	// ContentHTML is the  string of text/html response headers
-	ContentHTML   = "text/html"
+	ContentHTML = "text/html"
+	// ContentBINARY is the string of application/octet-stream response headers
 	ContentBINARY = "application/octet-stream"
 
 	// LastModified "Last-Modified"

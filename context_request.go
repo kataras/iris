@@ -36,6 +36,7 @@ import (
 )
 
 type (
+	// IContextRequest is part of the IContext
 	IContextRequest interface {
 		Param(string) string
 		ParamInt(string) (int, error)

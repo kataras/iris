@@ -28,6 +28,7 @@
 package iris
 
 type (
+	// IContextResponse is part of the IContext
 	IContextResponse interface {
 		// SetContentType sets the "Content-Type" header, receives the values
 		SetContentType([]string)

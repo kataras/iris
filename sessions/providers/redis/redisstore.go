@@ -25,7 +25,6 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-///TODO: add doc comments
 package redis
 
 import (
@@ -35,7 +34,7 @@ import (
 	"github.com/kataras/iris/utils"
 )
 
-/*Notes
+/*Notes only for me
 --------
 Here we are setting a structure which keeps the current session's values setted by store.Set(key,value)
 this is the RedisValue struct.
@@ -52,9 +51,11 @@ without prefix and all that which I tried and failed to deserialize them correct
 so again we will keep the current server's sessions into memory
 and fetch them(the sessions) from the redis at each first session run. Yes this is the fastest way to get/set a session
 and at the same time they are keep saved to the redis and the GC will cleanup the memory after a while like we are doing
-with the memory provider. Or just have a values field inside the Store and use just it, yes better simplier approach.
+with the memory provider. Or just have a values field inside the Store and use just it, yes better simpler approach.
 Ok then, let's convert it again.
 */
+
+// Values is just a type of a map[interface{}]interface{}
 type Values map[interface{}]interface{}
 type Store struct {
 	sid                string
@@ -65,6 +66,7 @@ type Store struct {
 
 var _ sessions.IStore = &Store{}
 
+// NewStore creates and returns a new store based on the session id(string) and the cookie life duration (time.Duration)
 func NewStore(sid string, cookieLifeDuration time.Duration) *Store {
 	s := &Store{sid: sid, lastAccessedTime: time.Now(), cookieLifeDuration: cookieLifeDuration}
 	//fetch the values from this session id and copy-> store them
@@ -160,7 +162,7 @@ func (s *Store) Delete(key interface{}) error {
 	return nil
 }
 
-// Delete removes all entries
+// Clear removes all entries
 // returns an error, which is always nil
 func (s *Store) Clear() error {
 	//we are not using the Redis.Delete, I made so work for nothing.. we wanted only the .Set at the end...
@@ -188,6 +190,7 @@ func (s *Store) SetLastAccessedTime(lastacc time.Time) {
 	s.lastAccessedTime = lastacc
 }
 
+// Destroy deletes entirely the session, from the memory, the client's cookie and the store
 func (s *Store) Destroy() {
 	// remove the whole  value which is the s.values from real redis
 	Redis.Delete(s.sid)

@@ -25,7 +25,6 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-///TODO: add doc comments
 package memory
 
 import (
@@ -34,6 +33,7 @@ import (
 	"github.com/kataras/iris/sessions"
 )
 
+// Store the memory store, contains the session id and the values
 type Store struct {
 	sid              string
 	lastAccessedTime time.Time
@@ -99,7 +99,7 @@ func (s *Store) Delete(key interface{}) error {
 	return nil
 }
 
-// Delete removes all entries
+// Clear removes all entries
 // returns an error, which is always nil
 func (s *Store) Clear() error {
 	for key := range s.values {
@@ -124,6 +124,7 @@ func (s *Store) SetLastAccessedTime(lastacc time.Time) {
 	s.lastAccessedTime = lastacc
 }
 
+// Destory does nothing here, to destroy the session use the manager's .Destroy func
 func (s *Store) Destroy() {
 	// nothing
 }

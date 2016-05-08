@@ -24,6 +24,7 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package typescript
 
 import (
@@ -39,6 +40,7 @@ type (
 		Exclude         []string        `json:"exclude"`
 	}
 
+	// CompilerOptions contains all the compiler options used by the tsc (typescript compiler)
 	CompilerOptions struct {
 		Declaration                      bool   `json:"declaration"`
 		Module                           string `json:"module"`
@@ -101,16 +103,18 @@ func (tsconfig *Tsconfig) CompilerArgs() []string {
 	return compilerOpts
 }
 
+// FromFile reads a file & returns the Tsconfig by its contents
 func FromFile(tsConfigAbsPath string) *Tsconfig {
 	file, err := ioutil.ReadFile(tsConfigAbsPath)
 	if err != nil {
-		panic("[IRIS TypescriptPlugin.FromConfig]" + err.Error())
+		panic("[IRIS TypescriptPlugin.FromFile]" + err.Error())
 	}
 	config := &Tsconfig{}
 	json.Unmarshal(file, config)
 	return config
 }
 
+// DefaultTsconfig returns the default Tsconfig, with CompilerOptions module: commonjs, target: es5 and ignore the node_modules
 func DefaultTsconfig() *Tsconfig {
 	return &Tsconfig{
 		CompilerOptions: CompilerOptions{

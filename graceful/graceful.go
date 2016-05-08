@@ -217,7 +217,7 @@ func (srv *Server) manageConnections(add, remove chan net.Conn, shutdown chan ch
 		case <-kill:
 			for k := range srv.connections {
 				if err := k.Close(); err != nil {
-					srv.log("[ERROR] %s", err)
+					srv.log("[IRIS GRACEFUL ERROR] %s", err.Error())
 				}
 			}
 			return
@@ -251,7 +251,7 @@ func (srv *Server) handleInterrupt(interrupt chan os.Signal, quitting chan struc
 		close(quitting)
 		srv.Server.DisableKeepalive = true
 		if err := listener.Close(); err != nil {
-			srv.log("[ERROR] %s", err)
+			srv.log("[IRIS GRACEFUL ERROR] %s", err.Error())
 		}
 
 		if srv.ShutdownInitiated != nil {

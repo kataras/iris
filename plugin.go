@@ -52,7 +52,7 @@ type (
 		GetDescription() string
 	}
 
-	// IPluginGetDescription implements the Activate(IPluginContainer) error method
+	// IPluginActivate implements the Activate(IPluginContainer) error method
 	IPluginActivate interface {
 		// Activate called BEFORE the plugin being added to the plugins list,
 		// if Activate returns none nil error then the plugin is not being added to the list
@@ -213,7 +213,7 @@ func (p *PluginContainer) Add(plugin IPlugin) error {
 	return nil
 }
 
-// RemovePlugin it removes a plugin by it's name, if pluginName is empty "" or no plugin found with this name, then nothing is removed and a specific error is returned.
+// Remove removes a plugin by it's name, if pluginName is empty "" or no plugin found with this name, then nothing is removed and a specific error is returned.
 // This doesn't calls the PreClose method
 func (p *PluginContainer) Remove(pluginName string) error {
 	if p.activatedPlugins == nil {
@@ -233,9 +233,10 @@ func (p *PluginContainer) Remove(pluginName string) error {
 	}
 	if indexToRemove == -1 { //if index stills -1 then no plugin was found with this name, just return an error. it is not a critical error.
 		return ErrPluginRemoveNotFound.Return()
-	} else {
-		p.activatedPlugins = append(p.activatedPlugins[:indexToRemove], p.activatedPlugins[indexToRemove+1:]...)
 	}
+
+	p.activatedPlugins = append(p.activatedPlugins[:indexToRemove], p.activatedPlugins[indexToRemove+1:]...)
+
 	return nil
 }
 

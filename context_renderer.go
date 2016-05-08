@@ -40,6 +40,7 @@ import (
 )
 
 type (
+	// IContextRenderer is part of the IContext
 	IContextRenderer interface {
 		Write(string, ...interface{})
 		WriteHTML(int, string)

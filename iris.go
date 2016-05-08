@@ -26,7 +26,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // Package iris v2.2.0
-
+//
 // Note: When 'Station', we mean the Iris type.
 package iris
 
@@ -143,7 +143,7 @@ func (s *Iris) newContextPool() sync.Pool {
 	}}
 }
 
-// DoPreListen, call router's optimize, sets the server's handler and notice the plugins
+// DoPreListen call router's optimize, sets the server's handler and notice the plugins
 // receives the server.Config
 // returns the station's Server (*server.Server)
 // it's a non-blocking func
@@ -165,7 +165,7 @@ func (s *Iris) DoPreListen(opt server.Config) *server.Server {
 	return s.Server
 }
 
-// DoPostListen, sets the render and notice the plugins
+// DoPostListen sets the render and notice the plugins
 // it's a non-blocking func
 func (s *Iris) DoPostListen() {
 
