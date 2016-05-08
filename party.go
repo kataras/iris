@@ -68,6 +68,7 @@ type (
 		IsRoot() bool
 	}
 
+	// GardenParty  is the struct which makes all the job for registering routes and middlewares
 	GardenParty struct {
 		relativePath string
 		station      *Iris // this station is where the party is happening, this station's Garden is the same for all Parties per Station & Router instance

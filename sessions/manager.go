@@ -39,18 +39,19 @@ import (
 )
 
 type (
+	// IManager is the interface which Manager should implement
 	IManager interface {
 		Start(*iris.Context) IStore
 		Destroy(*iris.Context)
 		GC()
 	}
-
+	// Manager implements the IManager interface
+	// contains the cookie's name, the provider and a duration for GC and cookie life expire
 	Manager struct {
-		cookieName   string
-		mu           sync.Mutex
-		provider     IProvider
-		gcDuration   time.Duration
-		lifeDuration time.Duration
+		cookieName string
+		mu         sync.Mutex
+		provider   IProvider
+		gcDuration time.Duration
 	}
 )
 
@@ -60,37 +61,23 @@ var (
 	providers = make(map[string]IProvider)
 )
 
-// NewManager creates & returns a new Manager
+// newManager creates & returns a new Manager
 // accepts 4 parameters
 // first is the providerName (string) ["memory","redis"]
 // second is the cookieName, the session's name (string) ["mysessionsecretcookieid"]
 // third is the gcDuration (time.Duration) when this time passes it removes the sessions
 // which hasn't be used for a long time(gcDuration), this number is the cookie life(expires) also
-func newManager(providerName string, cookieName string, gcandlifedur ...time.Duration) (*Manager, error) {
+func newManager(providerName string, cookieName string, gcDuration time.Duration) (*Manager, error) {
 	provider, found := providers[providerName]
 	if !found {
 		return nil, ErrProviderNotFound.Format(providerName)
 	}
-	var gcDuration = time.Duration(60) * time.Minute
-	var lifeDuration time.Duration = time.Duration(60) * time.Hour
+	if gcDuration < 1 {
+		gcDuration = time.Duration(60) * time.Minute
+	}
 
 	if cookieName == "" {
 		cookieName = "IrisCookieName"
-	}
-
-	if len(gcandlifedur) == 2 {
-		// both are defined
-		if gcdur := gcandlifedur[0]; gcdur > 0 {
-			gcDuration = gcdur
-		}
-		if lifedur := gcandlifedur[1]; lifedur > 0 {
-			lifeDuration = lifedur
-		}
-	} else {
-		//only the first defined
-		if gcdur := gcandlifedur[0]; gcdur > 0 {
-			gcDuration = gcdur
-		}
 	}
 
 	manager := &Manager{}
@@ -98,7 +85,6 @@ func newManager(providerName string, cookieName string, gcandlifedur ...time.Dur
 	manager.cookieName = cookieName
 
 	manager.gcDuration = gcDuration
-	manager.lifeDuration = lifeDuration
 
 	return manager, nil
 }

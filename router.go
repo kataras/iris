@@ -49,21 +49,34 @@ const (
 	MatchEverythingByte = byte('*')
 
 	// HTTP Methods(1)
-	MethodGet     = "GET"
-	MethodPost    = "POST"
-	MethodPut     = "PUT"
-	MethodDelete  = "DELETE"
+
+	// MethodGet "GET"
+	MethodGet = "GET"
+	// MethodPost "POST"
+	MethodPost = "POST"
+	// MethodPut "PUT"
+	MethodPut = "PUT"
+	// MethodDelete "DELETE"
+	MethodDelete = "DELETE"
+	// MethodConnect "CONNECT"
 	MethodConnect = "CONNECT"
-	MethodHead    = "HEAD"
-	MethodPatch   = "PATCH"
+	// MethodHead "HEAD"
+	MethodHead = "HEAD"
+	// MethodPatch "PATCH"
+	MethodPatch = "PATCH"
+	// MethodOptions "OPTIONS"
 	MethodOptions = "OPTIONS"
-	MethodTrace   = "TRACE"
+	// MethodTrace "TRACE"
+	MethodTrace = "TRACE"
 )
 
 var (
 	// HTTP Methods(2)
+
+	// MethodConnectBytes []byte("CONNECT")
 	MethodConnectBytes = []byte(MethodConnect)
-	AllMethods         = [...]string{"GET", "POST", "PUT", "DELETE", "CONNECT", "HEAD", "PATCH", "OPTIONS", "TRACE"}
+	// AllMethods "GET", "POST", "PUT", "DELETE", "CONNECT", "HEAD", "PATCH", "OPTIONS", "TRACE"
+	AllMethods = [...]string{"GET", "POST", "PUT", "DELETE", "CONNECT", "HEAD", "PATCH", "OPTIONS", "TRACE"}
 )
 
 // router internal is the route serving service, one router per server
@@ -102,7 +115,6 @@ func newRouter(station *Iris) *router {
 		errorPool:          station.newContextPool()}
 
 	r.ServeRequest = r.serveFunc
-	r.mu = sync.Mutex{}
 
 	return r
 
@@ -135,7 +147,7 @@ func (r *router) hosts() (has bool) {
 	return
 }
 
-// optimize runs once before listen, it checks if cors or hosts enabled and make the nessecary changes to the Router itself
+// optimize runs once before listen, it checks if cors or hosts enabled and make the necessary changes to the Router itself
 func (r *router) optimize() {
 	if r.optimized {
 		return
@@ -211,7 +223,7 @@ func (r *router) serveDomainFunc(reqCtx *fasthttp.RequestCtx) {
 	tree := r.garden.first
 	for tree != nil {
 		if tree.hosts && tree.domain == domain {
-			// here we have an issue, at fasthttp/uri.go 273-274 line normalize path it adds a '/' slash at the beggining, it doesn't checks for subdomains
+			// here we have an issue, at fasthttp/uri.go 273-274 line normalize path it adds a '/' slash at the beginning, it doesn't checks for subdomains
 			// I could fix it but i leave it as it is, I just create a new function inside tree named 'serveReturn' which accepts a path too. ->
 			//-> reqCtx.Request.URI().SetPathBytes(append(reqCtx.Host(), reqCtx.Path()...)) <-
 			path = append(reqCtx.Host(), reqCtx.Path()...)

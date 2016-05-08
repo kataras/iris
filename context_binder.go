@@ -38,6 +38,7 @@ import (
 )
 
 type (
+	// IContextBinder is part of the IContext
 	IContextBinder interface {
 		ReadJSON(interface{}) error
 		ReadXML(interface{}) error

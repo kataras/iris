@@ -29,6 +29,7 @@ package sessions
 
 import "time"
 
+// IStore is the interface which all session stores should implement
 type IStore interface {
 	Get(interface{}) interface{}
 	GetString(key interface{}) string

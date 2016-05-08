@@ -39,7 +39,8 @@ func init() {
 
 var (
 	provider = sessions.NewProvider()
-	Redis    = Empty()
+	// Redis is the empty redis service, you can set configs via this object
+	Redis = Empty()
 
 // Empty() because maybe the user wants to edit the default configs.
 //the Connect goes to the first NewStore, when user ask for session, so you have the time to change the default configs

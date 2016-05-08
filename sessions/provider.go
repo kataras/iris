@@ -33,6 +33,7 @@ import (
 	"time"
 )
 
+// IProvider the type which Provider must implement
 type IProvider interface {
 	Init(string) (IStore, error)
 	Read(string) (IStore, error)
@@ -43,6 +44,7 @@ type IProvider interface {
 
 type (
 	// Provider implements the IProvider
+	// contains the temp sessions memory, the store and some options for the cookies
 	Provider struct {
 		mu                 sync.Mutex
 		sessions           map[string]*list.Element // underline TEMPORARY memory store
@@ -62,6 +64,7 @@ func NewProvider() *Provider {
 	return provider
 }
 
+// Init creates the store for the first time for this session and returns it
 func (p *Provider) Init(sid string) (IStore, error) {
 	p.mu.Lock()
 
@@ -73,17 +76,15 @@ func (p *Provider) Init(sid string) (IStore, error) {
 	return newSessionStore, nil
 }
 
+// Read returns the store which sid parameter is belongs
 func (p *Provider) Read(sid string) (IStore, error) {
 	if elem, found := p.sessions[sid]; found {
 		return elem.Value.(IStore), nil
-	} else {
-		// if not found
-		sessionStore, err := p.Init(sid)
-		return sessionStore, err
 	}
+	// if not found
+	sessionStore, err := p.Init(sid)
+	return sessionStore, err
 
-	//if nothing was inside the sessions
-	return nil, nil
 }
 
 // Destroy always returns a nil error, for now.

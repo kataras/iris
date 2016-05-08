@@ -25,7 +25,6 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-///TODO: add doc comments
 package redis
 
 import (
@@ -36,17 +35,24 @@ import (
 )
 
 const (
-	DefaultNetwork       = "tcp"
-	DefaultAddr          = "127.0.0.1:6379"
-	DefaultIdleTimeout   = 5 * time.Minute
-	DefaultMaxAgeSeconds = 2520.0
+	// DefaultNetwork the redis network option, "tcp"
+	DefaultNetwork = "tcp"
+	// DefaultAddr the redis address option, "127.0.0.1:6379"
+	DefaultAddr = "127.0.0.1:6379"
+	// DefaultIdleTimeout the redis idle timeout option, 5 * time.Minute
+	DefaultIdleTimeout = 5 * time.Minute
+	// DefaultMaxAgeSeconds the redis storage last parameter (SETEX),  2520.0 which is 42 minutes
+	DefaultMaxAgeSeconds = 2520.0 //42 minutes
 )
 
 var (
+	// ErrRedisClosed an error with message 'Redis is already closed'
 	ErrRedisClosed = errors.New("Redis is already closed")
+	// ErrKeyNotFound an error with message 'Key $thekey doesn't found'
 	ErrKeyNotFound = errors.New("Key '%s' doesn't found")
 )
 
+// Config the redis config
 type Config struct {
 	// Network "tcp"
 	Network string
@@ -68,12 +74,16 @@ type Config struct {
 	MaxAgeSeconds int
 }
 
+// Service the Redis service, contains the config and the redis pool
 type Service struct {
+	// Connected is true when the Service has already connected
 	Connected bool
-	Config    *Config
-	pool      *redis.Pool
+	// Config the redis config for this redis
+	Config *Config
+	pool   *redis.Pool
 }
 
+// PingPong sends a ping and receives a pong, if no pong received then returns false and filled error
 func (r *Service) PingPong() (bool, error) {
 	c := r.pool.Get()
 	defer c.Close()
@@ -84,6 +94,7 @@ func (r *Service) PingPong() (bool, error) {
 	return (msg == "PONG"), nil
 }
 
+// CloseConnection closes the redis connection
 func (r *Service) CloseConnection() error {
 	if r.pool != nil {
 		return r.pool.Close()
@@ -91,6 +102,7 @@ func (r *Service) CloseConnection() error {
 	return ErrRedisClosed.Return()
 }
 
+// Set sets to the redis
 // key string, value string, you can use utils.Serialize(&myobject{}) to convert an object to []byte
 func (r *Service) Set(key string, value []byte, maxageseconds ...float64) (err error) { // map[interface{}]interface{}) (err error) {
 	maxage := DefaultMaxAgeSeconds //42 minutes
@@ -198,6 +210,8 @@ func (r *Service) GetStringMap(key string) (map[string]string, error) {
 	return _map, nil
 }
 
+// GetAll returns all keys and their values from a specific key (map[string]string)
+// returns a filled error if something bad happened
 func (r *Service) GetAll(key string) (map[string]string, error) {
 	c := r.pool.Get()
 	defer c.Close()
@@ -218,6 +232,7 @@ func (r *Service) GetAll(key string) (map[string]string, error) {
 
 }
 
+// GetAllKeysByPrefix returns all []string keys by a key prefix from the redis
 func (r *Service) GetAllKeysByPrefix(prefix string) ([]string, error) {
 	c := r.pool.Get()
 	defer c.Close()
@@ -237,6 +252,7 @@ func (r *Service) GetAllKeysByPrefix(prefix string) ([]string, error) {
 
 }
 
+// Delete removes redis entry by specific key
 func (r *Service) Delete(key string) error {
 	c := r.pool.Get()
 	defer c.Close()
@@ -266,6 +282,7 @@ func dial(network string, addr string, pass string) (redis.Conn, error) {
 	return c, err
 }
 
+// Connect connects to the redis, called only once
 func (r *Service) Connect() {
 	config := r.Config
 
@@ -311,10 +328,12 @@ func (r *Service) Connect() {
 	r.pool = pool
 }
 
+// Empty returns an empty Redis service with empty redis pool
 func Empty() *Service {
 	return NewFromPool(&redis.Pool{})
 }
 
+// New returns a Redis service filled by the passed config
 func New(config *Config) *Service {
 	r := Empty()
 	r.Config = config
@@ -322,6 +341,7 @@ func New(config *Config) *Service {
 	return r
 }
 
+// NewFromPool creates and returns a new Redis service from already declared redis pool
 func NewFromPool(pool *redis.Pool) *Service {
 	return &Service{pool: pool, Config: &Config{}}
 }

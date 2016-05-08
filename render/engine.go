@@ -83,7 +83,7 @@ func (d Data) Render(ctx *fasthttp.RequestCtx, v interface{}) error {
 
 }
 
-// Render a data response using gzip compression.
+// RenderGzip a data response using gzip compression.
 func (d Data) RenderGzip(ctx *fasthttp.RequestCtx, v interface{}) error {
 	c := string(ctx.Request.Header.Peek(ContentType))
 	if c != "" {
@@ -116,7 +116,7 @@ func (h HTML) Render(ctx *fasthttp.RequestCtx, binding interface{}) error {
 	return nil
 }
 
-// Render a HTML response using Gzip compression.
+// RenderGzip a HTML response using Gzip compression.
 func (h HTML) RenderGzip(ctx *fasthttp.RequestCtx, binding interface{}) error {
 
 	// Retrieve a buffer from the pool to write to.
@@ -168,7 +168,7 @@ func (j JSON) Render(ctx *fasthttp.RequestCtx, v interface{}) error {
 	return nil
 }
 
-// Render a JSON response using gzip compression.
+// RenderGzip a JSON response using gzip compression.
 func (j JSON) RenderGzip(ctx *fasthttp.RequestCtx, v interface{}) error {
 	if j.StreamingJSON {
 		return j.renderStreamingJSONGzip(ctx, v)
@@ -253,7 +253,7 @@ func (j JSONP) Render(ctx *fasthttp.RequestCtx, v interface{}) error {
 	return nil
 }
 
-// Render a JSONP response using gzip compression.
+// RenderGzip a JSONP response using gzip compression.
 func (j JSONP) RenderGzip(ctx *fasthttp.RequestCtx, v interface{}) error {
 	var result []byte
 	var err error
@@ -295,7 +295,7 @@ func (t Text) Render(ctx *fasthttp.RequestCtx, v interface{}) error {
 	return nil
 }
 
-// Render a Text response using gzip compression.
+// RenderGzip a Text response using gzip compression.
 func (t Text) RenderGzip(ctx *fasthttp.RequestCtx, v interface{}) error {
 	c := string(ctx.Request.Header.Peek(ContentType))
 	if c != "" {
@@ -333,7 +333,7 @@ func (x XML) Render(ctx *fasthttp.RequestCtx, v interface{}) error {
 	return nil
 }
 
-// Render an XML response using gzip compression.
+// RenderGzip an XML response using gzip compression.
 func (x XML) RenderGzip(ctx *fasthttp.RequestCtx, v interface{}) error {
 	var result []byte
 	var err error

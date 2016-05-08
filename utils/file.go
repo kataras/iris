@@ -273,7 +273,7 @@ func TypeByExtension(fullfilename string) (t string) {
 }
 
 // GetParentDir returns the parent directory(string) of the passed targetDirectory (string)
-func GetParrentDir(targetDirectory string) string {
+func GetParentDir(targetDirectory string) string {
 	lastSlashIndex := strings.LastIndexByte(targetDirectory, os.PathSeparator)
 	//check if the slash is at the end , if yes then re- check without the last slash, we don't want /path/to/ , we want /path/to in order to get the /path/ which is the parent directory of the /path/to
 	if lastSlashIndex == len(targetDirectory)-1 {
@@ -284,6 +284,7 @@ func GetParrentDir(targetDirectory string) string {
 	return parentDirectory
 }
 
+// WatchDirectoryChanges watches for directory changes and calls the 'evt' callback parameter
 // 3-BSD License for package fsnotify/fsnotify
 // Copyright (c) 2012 The Go Authors. All rights reserved.
 // Copyright (c) 2012 fsnotify Authors. All rights reserved.

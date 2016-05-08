@@ -22,10 +22,12 @@ var htmlReplacer = strings.NewReplacer(
 	"'", "&#39;",
 )
 
+// HtmlEscape returns a string which has no valid html code
 func HtmlEscape(s string) string {
 	return htmlReplacer.Replace(s)
 }
 
+// FindLower returns the smaller number between a and b
 func FindLower(a, b int) int {
 	if a <= b {
 		return a
@@ -63,6 +65,8 @@ const (
 
 var src = rand.NewSource(time.Now().UnixNano())
 
+// Random takes a parameter (int) and returns random slice of byte
+// ex: var randomstrbytes []byte; randomstrbytes = utils.Random(32)
 func Random(n int) []byte {
 	b := make([]byte, n)
 	// A src.Int63() generates 63 random bits, enough for letterIdxMax characters!
@@ -86,6 +90,7 @@ func RandomString(n int) string {
 	return string(Random(n))
 }
 
+// Serialize serialize any type to gob bytes and after returns its the base64 encoded string
 func Serialize(m interface{}) (string, error) {
 	b := bytes.Buffer{}
 	encoder := gob.NewEncoder(&b)
@@ -96,6 +101,8 @@ func Serialize(m interface{}) (string, error) {
 	return base64.StdEncoding.EncodeToString(b.Bytes()), nil
 }
 
+// Deserialize accepts an encoded string and a data struct  which will be filled with the desierialized string
+// using gob decoder
 func Deserialize(str string, m interface{}) error {
 	by, err := base64.StdEncoding.DecodeString(str)
 	if err != nil {

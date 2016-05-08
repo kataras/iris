@@ -36,6 +36,7 @@ import (
 )
 
 type (
+	// IContextStorage is part of the IContext
 	IContextStorage interface {
 		Get(interface{}) interface{}
 		GetString(interface{}) string
@@ -170,7 +171,7 @@ func (ctx *Context) SetFlash(key string, value string) {
 	ctx.SetFlashBytes(key, utils.StringToBytes(value))
 }
 
-// SetFlash sets a flash message, accepts 2 parameters the key(string) and the value([]byte)
+// SetFlashBytes sets a flash message, accepts 2 parameters the key(string) and the value([]byte)
 func (ctx *Context) SetFlashBytes(key string, value []byte) {
 	c := &fasthttp.Cookie{}
 	c.SetKey(key)

@@ -65,9 +65,7 @@ var (
 
 	// ErrTemplateExecute returns an error with message:'Unable to execute a template. Trace: +specific error'
 	ErrTemplateExecute = errors.New("Unable to execute a template. Trace: %s")
-	// File & Dir
 
-	// Storage
 	// ErrFlashNotFound returns an error with message: 'Unable to get flash message. Trace: Cookie does not exists'
 	ErrFlashNotFound = errors.New("Unable to get flash message. Trace: Cookie does not exists")
 )

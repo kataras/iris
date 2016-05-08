@@ -24,6 +24,7 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package iriscontrol
 
 import (
@@ -34,10 +35,15 @@ import (
 	"github.com/kataras/iris/server"
 )
 
+// Name the name(string) of this plugin which is Iris Control
 const Name = "Iris Control"
 
+// IrisControlOptions the options which iris control needs
+// contains the port (int) and authenticated users with their passwords (map[string]string)
 type IrisControlOptions struct {
-	Port  int
+	// Port the port
+	Port int
+	// Users the authenticated users, [username]password
 	Users map[string]string
 }
 
