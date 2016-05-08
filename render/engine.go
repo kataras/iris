@@ -104,6 +104,7 @@ func (h HTML) Render(ctx *fasthttp.RequestCtx, binding interface{}) error {
 	out := bufPool.Get()
 	err := h.Templates.ExecuteTemplate(out, h.Name, binding)
 	if err != nil {
+		bufPool.Put(out)
 		return err
 	}
 	w := ctx.Response.BodyWriter()

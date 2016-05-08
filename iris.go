@@ -25,7 +25,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// Package iris v2.1.1
+// Package iris v2.2.0
 
 // Note: When 'Station', we mean the Iris type.
 package iris
@@ -195,9 +195,23 @@ func (s *Iris) openServer(opt server.Config) (err error) {
 // which listens to the addr parameter which as the form of
 // host:port or just port
 //
+// It panics on error if you need a func to return an error use the ListenWithErr
+// ex: iris.Listen(":8080")
+func (s *Iris) Listen(addr string) {
+	opt := server.Config{ListeningAddr: addr}
+	if err := s.openServer(opt); err != nil {
+		panic(err)
+	}
+}
+
+// ListenWithErr starts the standalone http server
+// which listens to the addr parameter which as the form of
+// host:port or just port
+//
 // It returns an error you are responsible how to handle this
-// ex: log.Fatal(iris.Listen(":8080"))
-func (s *Iris) Listen(addr string) error {
+// if you need a func to panic on error use the Listen
+// ex: log.Fatal(iris.ListenWithErr(":8080"))
+func (s *Iris) ListenWithErr(addr string) error {
 	opt := server.Config{ListeningAddr: addr}
 	return s.openServer(opt)
 }
@@ -208,9 +222,25 @@ func (s *Iris) Listen(addr string) error {
 // which listens to the addr parameter which as the form of
 // host:port or just port
 //
+// It panics on error if you need a func to return an error use the ListenTLSWithErr
+// ex: iris.ListenTLS(":8080","yourfile.cert","yourfile.key")
+func (s *Iris) ListenTLS(addr string, certFile, keyFile string) {
+	opt := server.Config{ListeningAddr: addr, CertFile: certFile, KeyFile: keyFile}
+	if err := s.openServer(opt); err != nil {
+		panic(err)
+	}
+}
+
+// ListenTLSWithErr Starts a https server with certificates,
+// if you use this method the requests of the form of 'http://' will fail
+// only https:// connections are allowed
+// which listens to the addr parameter which as the form of
+// host:port or just port
+//
 // It returns an error you are responsible how to handle this
-// ex: log.Fatal(iris.ListenTLS(":8080","yourfile.cert","yourfile.key"))
-func (s *Iris) ListenTLS(addr string, certFile, keyFile string) error {
+// if you need a func to panic on error use the ListenTLS
+// ex: log.Fatal(iris.ListenTLSWithErr(":8080","yourfile.cert","yourfile.key"))
+func (s *Iris) ListenTLSWithErr(addr string, certFile, keyFile string) error {
 	opt := server.Config{ListeningAddr: addr, CertFile: certFile, KeyFile: keyFile}
 	return s.openServer(opt)
 }
