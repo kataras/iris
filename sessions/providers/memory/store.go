@@ -124,7 +124,7 @@ func (s *Store) SetLastAccessedTime(lastacc time.Time) {
 	s.lastAccessedTime = lastacc
 }
 
-// Destory does nothing here, to destroy the session use the manager's .Destroy func
+// Destroy does nothing here, to destroy the session use the manager's .Destroy func
 func (s *Store) Destroy() {
 	// nothing
 }

@@ -63,6 +63,11 @@ type Cors struct {
 	Options Options
 }
 
+// Conflicts returns httpmethod is used inside iris/route.go...
+func (c Cors) Conflicts string {
+	return "httpmethod"
+}
+
 // Serve do the middle job
 func (c *Cors) Serve(ctx *iris.Context) {
 	if ctx.MethodString() == "OPTIONS" {
