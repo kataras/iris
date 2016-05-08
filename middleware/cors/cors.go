@@ -64,7 +64,7 @@ type Cors struct {
 }
 
 // Conflicts returns httpmethod is used inside iris/route.go...
-func (c Cors) Conflicts string {
+func (c Cors) Conflicts() string {
 	return "httpmethod"
 }
 
