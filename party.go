@@ -298,8 +298,8 @@ func (p *GardenParty) StaticWeb(relative string, systemPath string, stripSlashes
 		relative += "/"
 	}
 
-	serveHandler := StaticHandlerFunc(systemPath, 1, false, false)
 	hasIndex := utils.Exists(systemPath + utils.PathSeparator + "index.html")
+	serveHandler := StaticHandlerFunc(systemPath, 1, false, !hasIndex) // if not index.html exists then generate index.html which shows the list of files
 	p.Get(relative+"*filepath", func(ctx *Context) {
 		if len(ctx.Param("filepath")) < 2 && hasIndex {
 			ctx.Request.SetRequestURI("index.html")
