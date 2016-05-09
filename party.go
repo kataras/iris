@@ -240,12 +240,12 @@ func StaticHandlerFunc(systemPath string, stripSlashes int, compress bool, gener
 		Compress: compress,
 	}
 
-	// Create request handler for serving static files.
-	h := fs.NewRequestHandler()
-
 	if stripSlashes > 0 {
 		fs.PathRewrite = fasthttp.NewPathSlashesStripper(stripSlashes)
 	}
+
+	// Create request handler for serving static files.
+	h := fs.NewRequestHandler()
 
 	return func(ctx *Context) {
 		h(ctx.RequestCtx)
