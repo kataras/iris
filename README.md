@@ -21,6 +21,7 @@ a modern, **community-driven** **web** application **framework** for **Go**. Com
 ## Getting started
 
 1. Install `$ go get -u github.com/kataras/iris`
+ >If you are connected to the Internet through China [click here](https://kataras.gitbooks.io/iris/content/install.html)
 
 2. Read the [Iris book](https://www.gitbook.com/book/kataras/iris/details)
 
@@ -71,7 +72,7 @@ April 22 2016
 ## Versioning
 Iris is in active development status, check for updates once per week. Compatible only with go1.6+
 
-Current: **v2.2.1**
+Current: **v2.2.2**
 
 
 Read more about Semantic Versioning 2.0.0
@@ -104,4 +105,3 @@ From a younger age I have dedicated all my time to various open source projects,
 
 This project is licensed under the [BSD 3-Clause License](https://opensource.org/licenses/BSD-3-Clause).
 License can be found [here](https://github.com/kataras/iris/blob/master/LICENSE).
-
