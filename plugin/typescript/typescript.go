@@ -146,7 +146,7 @@ func (t *Plugin) GetDescription() string {
 
 // PreListen ...
 func (t *Plugin) PreListen(s *iris.Iris) {
-	t.logger = s.Logger
+	t.logger = s.Logger()
 	t.start()
 }
 

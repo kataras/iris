@@ -97,9 +97,9 @@ func (p *GardenParty) Handle(method string, registedPath string, handlers ...Han
 	path := fixPath(absPath(p.relativePath, registedPath))
 	middleware := JoinMiddleware(p.middleware, handlers)
 	route := NewRoute(method, path, middleware)
-	p.station.Plugins.DoPreHandle(route)
+	p.station.plugins.DoPreHandle(route)
 	p.station.addRoute(route)
-	p.station.Plugins.DoPostHandle(route)
+	p.station.plugins.DoPostHandle(route)
 }
 
 // HandleFunc registers and returns a route with a method string, path string and a handler

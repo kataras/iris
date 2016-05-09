@@ -25,7 +25,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// Package iris v2.2.2
+// Package iris v2.2.3
 //
 // Note: When 'Station', we mean the Iris type.
 package iris
@@ -85,13 +85,13 @@ type (
 	// Iris is the container of all, server, router, cache and the sync.Pool
 	Iris struct {
 		*router
-		Server  *server.Server
-		Plugins *PluginContainer
+		server  *server.Server
+		plugins *PluginContainer
 		render  *render.Render
 		//we want options exported, Options but Options is an http method also, so we make a big change here
-		// and rename the iris.IrisOptions to simple 'iris.IrisConfig' - no iris.Config because of the default func Config()
-		Config *IrisConfig
-		Logger *logger.Logger
+		// and rename the iris.IrisOptions to simple 'iris.IrisConfig' - no iris.config because of the default func Config()
+		config *IrisConfig
+		logger *logger.Logger
 	}
 )
 
@@ -110,16 +110,36 @@ func New(configs ...*IrisConfig) *Iris {
 	}
 
 	// create the Iris
-	s := &Iris{Config: config, Plugins: &PluginContainer{}}
+	s := &Iris{config: config, plugins: &PluginContainer{}}
 
 	// create & set the router
 	s.router = newRouter(s)
 
 	// set the Logger
-	s.Logger = logger.New()
-	s.Logger.SetEnable(config.Log)
+	s.logger = logger.New()
+	s.logger.SetEnable(config.Log)
 
 	return s
+}
+
+// Server returns the server
+func (s *Iris) Server() *server.Server {
+	return s.server
+}
+
+// Plugins returns the plugin container
+func (s *Iris) Plugins() *PluginContainer {
+	return s.plugins
+}
+
+// Config returns the configs
+func (s *Iris) Config() *IrisConfig {
+	return s.config
+}
+
+// Logger returns the logger
+func (s *Iris) Logger() *logger.Logger {
+	return s.logger
 }
 
 // SetMaxRequestBodySize Maximum request body size.
@@ -128,12 +148,12 @@ func New(configs ...*IrisConfig) *Iris {
 //
 // By default request body size is unlimited.
 func (s *Iris) SetMaxRequestBodySize(size int) {
-	s.Config.MaxRequestBodySize = size
+	s.config.MaxRequestBodySize = size
 }
 
 // SetRenderConfig sets the Config.Render, can be setted before server's listen, not after.
 func (s *Iris) SetRenderConfig(renderCfg *RenderConfig) {
-	s.Config.Render = renderCfg
+	s.config.Render = renderCfg
 }
 
 // newContextPool returns a new context pool, internal method used in tree and router
@@ -152,17 +172,17 @@ func (s *Iris) DoPreListen(opt server.Config) *server.Server {
 	if !s.router.optimized {
 		s.router.optimize()
 
-		s.Server = server.New(opt)
-		s.Server.SetHandler(s.router.ServeRequest)
+		s.server = server.New(opt)
+		s.server.SetHandler(s.router.ServeRequest)
 
-		if s.Config.MaxRequestBodySize > 0 {
-			s.Server.MaxRequestBodySize = s.Config.MaxRequestBodySize
+		if s.config.MaxRequestBodySize > 0 {
+			s.server.MaxRequestBodySize = s.config.MaxRequestBodySize
 		}
 
-		s.Plugins.DoPreListen(s)
+		s.plugins.DoPreListen(s)
 	}
 
-	return s.Server
+	return s.server
 }
 
 // DoPostListen sets the render and notice the plugins
@@ -171,8 +191,8 @@ func (s *Iris) DoPostListen() {
 
 	if s.render == nil {
 		// set the render(er) now
-		s.render = newRender(s.Config.Render)
-		s.Plugins.DoPostListen(s)
+		s.render = newRender(s.config.Render)
+		s.plugins.DoPostListen(s)
 	}
 
 }
@@ -182,7 +202,7 @@ func (s *Iris) DoPostListen() {
 func (s *Iris) openServer(opt server.Config) (err error) {
 	s.DoPreListen(opt)
 
-	if err = s.Server.OpenServer(); err == nil {
+	if err = s.server.OpenServer(); err == nil {
 		s.DoPostListen()
 		ch := make(chan os.Signal)
 		<-ch
@@ -247,6 +267,6 @@ func (s *Iris) ListenTLSWithErr(addr string, certFile, keyFile string) error {
 
 // Close is used to close the tcp listener from the server
 func (s *Iris) Close() error {
-	s.Plugins.DoPreClose(s)
-	return s.Server.CloseServer()
+	s.plugins.DoPreClose(s)
+	return s.server.CloseServer()
 }
