@@ -130,6 +130,7 @@ func Party(path string, handlersFn ...HandlerFunc) IParty {
 }
 
 // Handle registers a route to the server's router
+// if empty method is passed then registers handler(s) for all methods, same as .Any
 func Handle(method string, registedPath string, handlers ...Handler) {
 	DefaultIris.Handle(method, registedPath, handlers...)
 }

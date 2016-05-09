@@ -86,6 +86,7 @@ func (p *GardenParty) IsRoot() bool {
 }
 
 // Handle registers a route to the server's router
+// if empty method is passed then registers handler(s) for all methods, same as .Any
 func (p *GardenParty) Handle(method string, registedPath string, handlers ...Handler) {
 	if method == "" { // then use like it was .Any
 		for _, k := range AllMethods {
