@@ -87,6 +87,12 @@ func (p *GardenParty) IsRoot() bool {
 
 // Handle registers a route to the server's router
 func (p *GardenParty) Handle(method string, registedPath string, handlers ...Handler) {
+	if method == "" { // then use like it was .Any
+		for _, k := range AllMethods {
+			p.Handle(k, registedPath, handlers...)
+		}
+		return
+	}
 	path := fixPath(absPath(p.relativePath, registedPath))
 	middleware := JoinMiddleware(p.middleware, handlers)
 	route := NewRoute(method, path, middleware)
@@ -204,9 +210,9 @@ func (p *GardenParty) Trace(path string, handlersFn ...HandlerFunc) {
 }
 
 // Any registers a route for ALL of the http methods (Get,Post,Put,Head,Patch,Options,Connect,Delete)
-func (p *GardenParty) Any(path string, handlersFn ...HandlerFunc) {
+func (p *GardenParty) Any(registedPath string, handlersFn ...HandlerFunc) {
 	for _, k := range AllMethods {
-		p.HandleFunc(k, path, handlersFn...)
+		p.HandleFunc(k, registedPath, handlersFn...)
 	}
 
 }
