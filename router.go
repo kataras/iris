@@ -163,8 +163,8 @@ func (r *router) optimize() {
 	}
 
 	// set the debug profiling handlers if Profile enabled, before the server startup, not earlier
-	if r.station.Config.Profile && r.station.Config.ProfilePath != "" {
-		debugPath := r.station.Config.ProfilePath
+	if r.station.config.Profile && r.station.config.ProfilePath != "" {
+		debugPath := r.station.config.ProfilePath
 		r.Get(debugPath+"/", ToHandlerFunc(pprof.Index))
 		r.Get(debugPath+"/cmdline", ToHandlerFunc(pprof.Cmdline))
 		r.Get(debugPath+"/profile", ToHandlerFunc(pprof.Profile))

@@ -120,7 +120,7 @@ func (i *irisControlPlugin) PostListen(s *iris.Iris) {
 	//if the first time, because other times start/stop of the server so listen and no listen will be only from the control panel
 	if i.station == nil {
 		i.station = s
-		i.stationServer = i.station.Server
+		i.stationServer = i.station.Server()
 		i.startControlPanel()
 	}
 

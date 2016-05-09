@@ -137,7 +137,7 @@ func (_tree *tree) serve(reqCtx *fasthttp.RequestCtx, path string) bool {
 		ctx.Do()
 		_tree.pool.Put(ctx)
 		return true
-	} else if mustRedirect && _tree.station.Config.PathCorrection && !bytes.Equal(reqCtx.Method(), MethodConnectBytes) {
+	} else if mustRedirect && _tree.station.config.PathCorrection && !bytes.Equal(reqCtx.Method(), MethodConnectBytes) {
 
 		reqPath := path
 		pathLen := len(reqPath)

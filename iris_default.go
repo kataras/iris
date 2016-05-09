@@ -276,24 +276,24 @@ func OnPanic(handlerFunc HandlerFunc) {
 // Export DefaultIris's  exported properties
 // ***********************
 
-// Server returns the DefaultIris.Server
+// Server returns the server
 func Server() *server.Server {
-	return DefaultIris.Server
+	return DefaultIris.Server()
 }
 
-// Plugins returns the plugin container,  DefaultIris.Plugins
+// Plugins returns the plugin container
 func Plugins() *PluginContainer {
-	return DefaultIris.Plugins
+	return DefaultIris.Plugins()
 }
 
-// Config returns the DefaultIris.Config
+// Config returns the configs
 func Config() *IrisConfig {
-	return DefaultIris.Config
+	return DefaultIris.Config()
 }
 
-// Logger returns the DefaultIris.Logger
+// Logger returns the logger
 func Logger() *logger.Logger {
-	return DefaultIris.Logger
+	return DefaultIris.Logger()
 }
 
 // SetMaxRequestBodySize Maximum request body size.
