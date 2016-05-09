@@ -71,7 +71,7 @@ April 22 2016
 ## Versioning
 Iris is in active development status, check for updates once per week. Compatible only with go1.6+
 
-Current: **v2.2.0**
+Current: **v2.2.1**
 
 
 Read more about Semantic Versioning 2.0.0

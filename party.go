@@ -33,6 +33,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/kataras/iris/utils"
 	"github.com/valyala/fasthttp"
 )
 
@@ -220,27 +221,17 @@ func (p *GardenParty) UseFunc(handlersFn ...HandlerFunc) {
 	p.Use(ConvertToHandlers(handlersFn)...)
 }
 
-// Static registers a route which serves a system directory
-// it doesn't generate an index page, for this look at StaticFS func
-func (p *GardenParty) Static(relative string, systemPath string, stripSlashes int) {
-	h := fasthttp.FSHandler(systemPath, stripSlashes)
-	p.Get(relative+"/*filepath", func(c *Context) {
-		h(c.RequestCtx)
-	})
-}
-
-// StaticFS registers a route which serves a system directory
-// it generates an index page to view the directory's files
-func (p *GardenParty) StaticFS(relative string, systemPath string, stripSlashes int) {
+// StaticHandlerFunc returns a HandlerFunc to serve static system directory
+func StaticHandlerFunc(systemPath string, stripSlashes int, compress bool, generateIndexPages bool) HandlerFunc {
 	fs := &fasthttp.FS{
 		// Path to directory to serve.
 		Root: systemPath,
 
 		// Generate index pages if client requests directory contents.
-		GenerateIndexPages: true,
+		GenerateIndexPages: generateIndexPages,
 
 		// Enable transparent compression to save network traffic.
-		Compress: true,
+		Compress: compress,
 	}
 
 	// Create request handler for serving static files.
@@ -250,9 +241,72 @@ func (p *GardenParty) StaticFS(relative string, systemPath string, stripSlashes 
 		fs.PathRewrite = fasthttp.NewPathSlashesStripper(stripSlashes)
 	}
 
-	p.Get(relative+"/*filepath", func(c *Context) {
-		h(c.RequestCtx)
-	})
+	return func(ctx *Context) {
+		h(ctx.RequestCtx)
+	}
+}
+
+// Static registers a route which serves a system directory
+// this doesn't generates an index page which list all files
+// no compression is used also, for these features look at StaticFS func
+// accepts three parameters
+// first parameter is the request url path (string)
+// second parameter is the system directory (string)
+// third parameter is the level (int) of stripSlashes
+// * stripSlashes = 0, original path: "/foo/bar", result: "/foo/bar"
+// * stripSlashes = 1, original path: "/foo/bar", result: "/bar"
+// * stripSlashes = 2, original path: "/foo/bar", result: ""
+func (p *GardenParty) Static(relative string, systemPath string, stripSlashes int) {
+	if relative[len(relative)-1] != SlashByte { // if / then /*filepath, if /something then /something/*filepath
+		relative += "/"
+	}
+
+	h := StaticHandlerFunc(systemPath, stripSlashes, false, false)
+	p.Get(relative+"*filepath", h)
+}
+
+// StaticFS registers a route which serves a system directory
+// generates an index page which list all files
+// uses compression which file cache, if you use this method it will generate compressed files also
+// think this function as small fileserver with http
+// accepts three parameters
+// first parameter is the request url path (string)
+// second parameter is the system directory (string)
+// third parameter is the level (int) of stripSlashes
+// * stripSlashes = 0, original path: "/foo/bar", result: "/foo/bar"
+// * stripSlashes = 1, original path: "/foo/bar", result: "/bar"
+// * stripSlashes = 2, original path: "/foo/bar", result: ""
+func (p *GardenParty) StaticFS(relative string, systemPath string, stripSlashes int) {
+	if relative[len(relative)-1] != SlashByte {
+		relative += "/"
+	}
+
+	h := StaticHandlerFunc(systemPath, stripSlashes, true, true)
+	p.Get(relative+"*filepath", h)
+}
+
+// StaticWeb same as Static but if index.html exists and request uri is '/' then display the index.html's contents
+// accepts three parameters
+// first parameter is the request url path (string)
+// second parameter is the system directory (string)
+// third parameter is the level (int) of stripSlashes
+// * stripSlashes = 0, original path: "/foo/bar", result: "/foo/bar"
+// * stripSlashes = 1, original path: "/foo/bar", result: "/bar"
+// * stripSlashes = 2, original path: "/foo/bar", result: ""
+func (p *GardenParty) StaticWeb(relative string, systemPath string, stripSlashes int) {
+	if relative[len(relative)-1] != SlashByte { // if / then /*filepath, if /something then /something/*filepath
+		relative += "/"
+	}
+
+	serveHandler := StaticHandlerFunc(systemPath, 1, false, false)
+	hasIndex := utils.Exists(systemPath + utils.PathSeparator + "index.html")
+	p.Get(relative+"*filepath", func(ctx *Context) {
+		if len(ctx.Param("filepath")) < 2 && hasIndex {
+			ctx.Request.SetRequestURI("index.html")
+		}
+		ctx.Next()
+
+	}, serveHandler)
 }
 
 // Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
