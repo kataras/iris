@@ -72,7 +72,7 @@ April 22 2016
 ## Versioning
 Iris is in active development status, check for updates once per week. Compatible only with go1.6+
 
-Current: **v2.2.3**
+Current: **v2.2.4**
 
 
 Read more about Semantic Versioning 2.0.0
@@ -89,6 +89,14 @@ Thanks goes to the people who have contributed code to this package, see the
 - [Iris GitHub Contributors page](https://github.com/kataras/iris/graphs/contributors).
 - [Iris Contrib GitHub Contributors page](https://github.com/orgs/iris-contrib/people).
 
+
+## Todo
+> for the next release 'v3'
+
+- [ ] Implement a middleware or plugin for easy & secure user authentication, stored in (no)database redis/mysql and make use of [sessions](https://github.com/kataras/iris/tree/development/sessions).
+- [ ] Create server & client side (js) library for .on('event', func action(...)) / .emit('event')... (like socket.io but supports only [websocket](https://github.com/kataras/iris/tree/development/websocket)).
+- [ ] Find and provide support for the most stable template engine and be able to change it via the IrisConfig, keep html/templates  support.
+- [ ] Extend, test and publish to the public the Iris' cmd.
 
 
 ## Donations
