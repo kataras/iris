@@ -38,10 +38,10 @@ import (
 type (
 	// IContextStorage is part of the IContext
 	IContextStorage interface {
-		Get(interface{}) interface{}
-		GetString(interface{}) string
-		GetInt(interface{}) int
-		Set(interface{}, interface{})
+		Get(string) interface{}
+		GetString(string) string
+		GetInt(string) int
+		Set(string, interface{})
 		SetCookie(*fasthttp.Cookie)
 		SetCookieKV(string, string)
 		RemoveCookie(string)
@@ -53,51 +53,47 @@ type (
 	}
 )
 
-// Get returns a value from a key
-// if doesn't exists returns nil
-func (ctx *Context) Get(key interface{}) interface{} {
-	if ctx.values == nil {
-		return nil
-	}
+// After v2.2.3 Get/GetFmt/GetString/GetInt/Set are all return values from the RequestCtx.userValues they are reseting on each connection.
 
-	return ctx.values[key]
+// Get returns the user's value from a key
+// if doesn't exists returns nil
+func (ctx *Context) Get(key string) interface{} {
+	return ctx.RequestCtx.UserValue(key)
 }
 
 // GetFmt returns a value which has this format: func(format string, args ...interface{}) string
 // if doesn't exists returns nil
-func (ctx *Context) GetFmt(key interface{}) func(format string, args ...interface{}) string {
-	if ctx.values == nil {
-		return nil
+func (ctx *Context) GetFmt(key string) func(format string, args ...interface{}) string {
+	if v, ok := ctx.Get(key).(func(format string, args ...interface{}) string); ok {
+		return v
 	}
+	return func(format string, args ...interface{}) string { return "" }
 
-	return ctx.values[key].(func(format string, args ...interface{}) string)
 }
 
 // GetString same as Get but returns the value as string
-func (ctx *Context) GetString(key interface{}) (value string) {
-	if v := ctx.Get(key); v != nil {
-		value = v.(string)
+// if nothing founds returns empty string ""
+func (ctx *Context) GetString(key string) string {
+	if v, ok := ctx.Get(key).(string); ok {
+		return v
 	}
 
-	return
+	return ""
 }
 
 // GetInt same as Get but returns the value as int
-func (ctx *Context) GetInt(key interface{}) (value int) {
-	if v := ctx.Get(key); v != nil {
-		value = v.(int)
+// if nothing founds returns -1
+func (ctx *Context) GetInt(key string) int {
+	if v, ok := ctx.Get(key).(int); ok {
+		return v
 	}
 
-	return
+	return -1
 }
 
 // Set sets a value to a key in the values map
-func (ctx *Context) Set(key interface{}, value interface{}) {
-	if ctx.values == nil {
-		ctx.values = make(map[interface{}]interface{})
-	}
-
-	ctx.values[key] = value
+func (ctx *Context) Set(key string, value interface{}) {
+	ctx.RequestCtx.SetUserValue(key, value)
 }
 
 // GetCookie returns cookie's value by it's name

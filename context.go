@@ -99,9 +99,6 @@ type (
 		middleware Middleware
 		// pos is the position number of the Context, look .Next to understand
 		pos uint8
-		// these values are reseting on each request, are useful only between middleware,
-		// use iris/sessions for cookie/filesystem storage
-		values map[interface{}]interface{}
 	}
 )
 
