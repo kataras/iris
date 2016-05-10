@@ -90,6 +90,14 @@ Thanks goes to the people who have contributed code to this package, see the
 - [Iris Contrib GitHub Contributors page](https://github.com/orgs/iris-contrib/people).
 
 
+## Todo
+> for the next release 'v3'
+
+- [ ] Implement a middleware or plugin for easy & secure user authentication, stored in (no)database redis/mysql and make use of [sessions](https://github.com/kataras/iris/tree/development/sessions).
+- [ ] Create server & client side (js) library for .on('event', func action(...)) / .emit('event')... (like socket.io but supports only [websocket](https://github.com/kataras/iris/tree/development/websocket)).
+- [ ] Find and provide support for the most stable template engine and be able to change it via the IrisConfig, keep html/templates  support.
+- [ ] Extend, test and publish to the public the Iris' cmd.
+
 
 ## Donations
 
