@@ -15,5 +15,7 @@ var helperFuncs = template.FuncMap{
 	},
 	"current": func() (string, error) {
 		return "", nil
+	}, "render": func() (string, error) {
+		return "", nil
 	},
 }
