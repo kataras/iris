@@ -248,9 +248,6 @@ func StaticHandlerFunc(systemPath string, stripSlashes int, compress bool, gener
 	// Create request handler for serving static files.
 	h := fs.NewRequestHandler()
 
-	// Create request handler for serving static files.
-	h := fs.NewRequestHandler()
-
 	return func(ctx *Context) {
 		h(ctx.RequestCtx)
 	}
