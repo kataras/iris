@@ -165,15 +165,19 @@ func (r *router) optimize() {
 	// set the debug profiling handlers if Profile enabled, before the server startup, not earlier
 	if r.station.config.Profile && r.station.config.ProfilePath != "" {
 		debugPath := r.station.config.ProfilePath
-		r.Get(debugPath+"/", ToHandlerFunc(pprof.Index))
-		r.Get(debugPath+"/cmdline", ToHandlerFunc(pprof.Cmdline))
-		r.Get(debugPath+"/profile", ToHandlerFunc(pprof.Profile))
-		r.Get(debugPath+"/symbol", ToHandlerFunc(pprof.Symbol))
+		htmlMiddleware := func(ctx *Context) {
+			ctx.SetContentType([]string{ContentHTML + " ;charset=" + DefaultCharset})
+			ctx.Next()
+		}
+		r.Get(debugPath+"/", htmlMiddleware, ToHandlerFunc(pprof.Index))
+		r.Get(debugPath+"/cmdline", htmlMiddleware, ToHandlerFunc(pprof.Cmdline))
+		r.Get(debugPath+"/profile", htmlMiddleware, ToHandlerFunc(pprof.Profile))
+		r.Get(debugPath+"/symbol", htmlMiddleware, ToHandlerFunc(pprof.Symbol))
 
-		r.Get(debugPath+"/goroutine", ToHandlerFunc(pprof.Handler("goroutine")))
-		r.Get(debugPath+"/heap", ToHandlerFunc(pprof.Handler("heap")))
-		r.Get(debugPath+"/threadcreate", ToHandlerFunc(pprof.Handler("threadcreate")))
-		r.Get(debugPath+"/pprof/block", ToHandlerFunc(pprof.Handler("block")))
+		r.Get(debugPath+"/goroutine", htmlMiddleware, ToHandlerFunc(pprof.Handler("goroutine")))
+		r.Get(debugPath+"/heap", htmlMiddleware, ToHandlerFunc(pprof.Handler("heap")))
+		r.Get(debugPath+"/threadcreate", htmlMiddleware, ToHandlerFunc(pprof.Handler("threadcreate")))
+		r.Get(debugPath+"/pprof/block", htmlMiddleware, ToHandlerFunc(pprof.Handler("block")))
 	}
 
 	r.optimized = true
