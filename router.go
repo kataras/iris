@@ -169,15 +169,15 @@ func (r *router) optimize() {
 			ctx.SetContentType([]string{ContentHTML + " ;charset=" + DefaultCharset})
 			ctx.Next()
 		}
-		r.Get(debugPath+"/", htmlMiddleware, ToHandlerFunc(pprof.Index))
-		r.Get(debugPath+"/cmdline", htmlMiddleware, ToHandlerFunc(pprof.Cmdline))
-		r.Get(debugPath+"/profile", htmlMiddleware, ToHandlerFunc(pprof.Profile))
-		r.Get(debugPath+"/symbol", htmlMiddleware, ToHandlerFunc(pprof.Symbol))
+		r.Get(debugPath+"/*any", htmlMiddleware, ToHandlerFunc(pprof.Index))
+		r.Get(debugPath+"/cmdline/*any", htmlMiddleware, ToHandlerFunc(pprof.Cmdline))
+		r.Get(debugPath+"/profile/*any", htmlMiddleware, ToHandlerFunc(pprof.Profile))
+		r.Get(debugPath+"/symbol/*any", htmlMiddleware, ToHandlerFunc(pprof.Symbol))
 
-		r.Get(debugPath+"/goroutine", htmlMiddleware, ToHandlerFunc(pprof.Handler("goroutine")))
-		r.Get(debugPath+"/heap", htmlMiddleware, ToHandlerFunc(pprof.Handler("heap")))
-		r.Get(debugPath+"/threadcreate", htmlMiddleware, ToHandlerFunc(pprof.Handler("threadcreate")))
-		r.Get(debugPath+"/pprof/block", htmlMiddleware, ToHandlerFunc(pprof.Handler("block")))
+		r.Get(debugPath+"/goroutine/*any", htmlMiddleware, ToHandlerFunc(pprof.Handler("goroutine")))
+		r.Get(debugPath+"/heap/*any", htmlMiddleware, ToHandlerFunc(pprof.Handler("heap")))
+		r.Get(debugPath+"/threadcreate/*any", htmlMiddleware, ToHandlerFunc(pprof.Handler("threadcreate")))
+		r.Get(debugPath+"/pprof/block/*any", htmlMiddleware, ToHandlerFunc(pprof.Handler("block")))
 	}
 
 	r.optimized = true
