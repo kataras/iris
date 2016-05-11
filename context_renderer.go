@@ -39,34 +39,6 @@ import (
 	"github.com/kataras/iris/utils"
 )
 
-type (
-	// IContextRenderer is part of the IContext
-	IContextRenderer interface {
-		Write(string, ...interface{})
-		WriteHTML(int, string)
-		// Data writes out the raw bytes as binary data.
-		Data(status int, v []byte) error
-		// HTML builds up the response from the specified template and bindings.
-		HTML(status int, name string, binding interface{}, htmlOpt ...HTMLOptions) error
-		// Render same as .HTML but with status to iris.StatusOK (200)
-		Render(name string, binding interface{}, htmlOpt ...HTMLOptions) error
-		// JSON marshals the given interface object and writes the JSON response.
-		JSON(status int, v interface{}) error
-		// JSONP marshals the given interface object and writes the JSON response.
-		JSONP(status int, callback string, v interface{}) error
-		// Text writes out a string as plain text.
-		Text(status int, v string) error
-		// XML marshals the given interface object and writes the XML response.
-		XML(status int, v interface{}) error
-
-		ExecuteTemplate(*template.Template, interface{}) error
-		ServeContent(io.ReadSeeker, string, time.Time) error
-		ServeFile(string) error
-		SendFile(filename string, destinationName string) error
-		Stream(func(*bufio.Writer))
-	}
-)
-
 // Write writes a string via the context's ResponseWriter
 func (ctx *Context) Write(format string, a ...interface{}) {
 	//this doesn't work with gzip, so just write the []byte better |ctx.ResponseWriter.WriteString(fmt.Sprintf(format, a...))
@@ -75,7 +47,7 @@ func (ctx *Context) Write(format string, a ...interface{}) {
 
 // WriteHTML writes html string with a http status
 func (ctx *Context) WriteHTML(httpStatus int, htmlContents string) {
-	ctx.SetContentType([]string{ContentHTML + " ;charset=" + Charset})
+	ctx.SetContentType([]string{ContentHTML + " ;charset=" + DefaultCharset})
 	ctx.RequestCtx.SetStatusCode(httpStatus)
 	ctx.RequestCtx.WriteString(htmlContents)
 }
@@ -86,15 +58,13 @@ func (ctx *Context) Data(status int, v []byte) error {
 }
 
 // HTML builds up the response from the specified template and bindings.
-func (ctx *Context) HTML(status int, name string, binding interface{}, htmlOpt ...HTMLOptions) error {
-	opt := parseHTMLOptions(htmlOpt...)
-
-	return ctx.station.render.HTML(ctx.RequestCtx, status, name, binding, opt...)
+func (ctx *Context) HTML(status int, name string, binding interface{}, layout ...string) error {
+	return ctx.station.render.HTML(ctx.RequestCtx, status, name, binding, layout...)
 }
 
 // Render same as .HTML but with status to iris.StatusOK (200)
-func (ctx *Context) Render(name string, binding interface{}, htmlOpt ...HTMLOptions) error {
-	return ctx.HTML(StatusOK, name, binding, htmlOpt...)
+func (ctx *Context) Render(name string, binding interface{}, layout ...string) error {
+	return ctx.HTML(StatusOK, name, binding, layout...)
 }
 
 // JSON marshals the given interface object and writes the JSON response.
@@ -124,7 +94,7 @@ func (ctx *Context) XML(status int, v interface{}) error {
 // the second parameter is the page context (interfac{})
 // returns an error if any errors occurs while executing this template
 func (ctx *Context) ExecuteTemplate(tmpl *template.Template, pageContext interface{}) error {
-	ctx.RequestCtx.SetContentType(ContentHTML + " ;charset=" + Charset)
+	ctx.RequestCtx.SetContentType(ContentHTML + " ;charset=" + DefaultCharset)
 	return ErrTemplateExecute.With(tmpl.Execute(ctx.RequestCtx.Response.BodyWriter(), pageContext))
 }
 

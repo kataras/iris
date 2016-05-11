@@ -29,13 +29,25 @@ package iris
 
 import (
 	"html/template"
+	"time"
 
 	"github.com/kataras/iris/logger"
+	"github.com/kataras/iris/render"
 	"github.com/kataras/iris/server"
 )
 
 // DefaultIris in order to use iris.Get(...,...) we need a default Iris on the package level
 var DefaultIris *Iris
+
+var (
+	// DefaultCharset represents the default charset for content headers
+	// all render methods will have this charset
+	DefaultCharset = "UTF-8"
+	// DefaultCookieName the secret cookie's name for sessions
+	DefaultCookieName = "irissessionid"
+	// DefaultCookieDuration the cookie's life for sessions
+	DefaultCookieDuration = time.Duration(60) * time.Minute
+)
 
 // init the only one.
 func init() {
@@ -50,14 +62,15 @@ func DefaultConfig() *IrisConfig {
 		Log:                true,
 		Profile:            false,
 		ProfilePath:        DefaultProfilePath,
-		Render: &RenderConfig{
+		TemplateEngine:     TemplateHTML,
+		Render: &render.Config{
 			Directory:                 "templates",
 			Asset:                     nil,
 			AssetNames:                nil,
 			Layout:                    "",
 			Extensions:                []string{".html"},
 			Funcs:                     []template.FuncMap{},
-			Delims:                    Delims{"{{", "}}"},
+			Delims:                    render.Delims{"{{", "}}"},
 			Charset:                   DefaultCharset,
 			IndentJSON:                false,
 			IndentXML:                 false,
@@ -69,7 +82,13 @@ func DefaultConfig() *IrisConfig {
 			StreamingJSON:             false,
 			RequirePartials:           false,
 			DisableHTTPErrorRendering: false,
-		}}
+		},
+		Session: &SessionConfig{
+			Provider: "memory", // the default provider is "memory", if you set it to ""  means that sessions are disabled.
+			Secret:   DefaultCookieName,
+			Life:     DefaultCookieDuration,
+		},
+	}
 }
 
 // Listen starts the standalone http server
@@ -296,6 +315,11 @@ func Logger() *logger.Logger {
 	return DefaultIris.Logger()
 }
 
+// Render returns the render
+func Render() *render.Render {
+	return DefaultIris.Render()
+}
+
 // SetMaxRequestBodySize Maximum request body size.
 //
 // The server rejects requests with bodies exceeding this limit.
@@ -303,9 +327,4 @@ func Logger() *logger.Logger {
 // By default request body size is unlimited.
 func SetMaxRequestBodySize(size int) {
 	DefaultIris.SetMaxRequestBodySize(size)
-}
-
-// SetRenderConfig sets the Config.Render, can be setted before server's listen, not after.
-func SetRenderConfig(renderCfg *RenderConfig) {
-	DefaultIris.SetRenderConfig(renderCfg)
 }

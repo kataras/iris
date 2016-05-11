@@ -30,7 +30,7 @@ package memory
 import (
 	"time"
 
-	"github.com/kataras/iris/sessions"
+	"github.com/kataras/iris/sessions/store"
 )
 
 // Store the memory store, contains the session id and the values
@@ -40,7 +40,7 @@ type Store struct {
 	values           map[interface{}]interface{} // here is the real memory store
 }
 
-var _ sessions.IStore = &Store{}
+var _ store.IStore = &Store{}
 
 // GetAll returns all values
 func (s *Store) GetAll() map[interface{}]interface{} {
@@ -56,7 +56,7 @@ func (s *Store) VisitAll(cb func(k interface{}, v interface{})) {
 
 // Get returns the value of an entry by its key
 func (s *Store) Get(key interface{}) interface{} {
-	provider.Update(s.sid)
+	Provider.Update(s.sid)
 
 	if value, found := s.values[key]; found {
 		return value
@@ -87,7 +87,7 @@ func (s *Store) GetInt(key interface{}) int {
 // returns an error, which is always nil
 func (s *Store) Set(key interface{}, value interface{}) error {
 	s.values[key] = value
-	provider.Update(s.sid)
+	Provider.Update(s.sid)
 	return nil
 }
 
@@ -95,7 +95,7 @@ func (s *Store) Set(key interface{}, value interface{}) error {
 // returns an error, which is always nil
 func (s *Store) Delete(key interface{}) error {
 	delete(s.values, key)
-	provider.Update(s.sid)
+	Provider.Update(s.sid)
 	return nil
 }
 
@@ -105,7 +105,7 @@ func (s *Store) Clear() error {
 	for key := range s.values {
 		delete(s.values, key)
 	}
-	provider.Update(s.sid)
+	Provider.Update(s.sid)
 	return nil
 }
 

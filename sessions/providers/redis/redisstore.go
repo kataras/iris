@@ -30,7 +30,7 @@ package redis
 import (
 	"time"
 
-	"github.com/kataras/iris/sessions"
+	"github.com/kataras/iris/sessions/store"
 	"github.com/kataras/iris/utils"
 )
 
@@ -66,13 +66,13 @@ type Store struct {
 	cookieLifeDuration time.Duration //used on .Set-> SETEX on redis
 }
 
-var _ sessions.IStore = &Store{}
+var _ store.IStore = &Store{}
 
 // NewStore creates and returns a new store based on the session id(string) and the cookie life duration (time.Duration)
 func NewStore(sid string, cookieLifeDuration time.Duration) *Store {
 	s := &Store{sid: sid, lastAccessedTime: time.Now(), cookieLifeDuration: cookieLifeDuration}
 	//fetch the values from this session id and copy-> store them
-	val, err := Redis.GetBytes(sid)
+	val, err := redis.GetBytes(sid)
 	if err == nil {
 		err = utils.DeserializeBytes(val, &s.values)
 		if err != nil {
@@ -101,7 +101,7 @@ func serialize(values Values) []byte {
 
 // update updates the real redis store
 func (s *Store) update() {
-	go Redis.Set(s.sid, serialize(s.values), s.cookieLifeDuration.Seconds()) //set/update all the values, in goroutine
+	go redis.Set(s.sid, serialize(s.values), s.cookieLifeDuration.Seconds()) //set/update all the values, in goroutine
 }
 
 // GetAll returns all values
@@ -118,7 +118,7 @@ func (s *Store) VisitAll(cb func(k interface{}, v interface{})) {
 
 // Get returns the value of an entry by its key
 func (s *Store) Get(key interface{}) interface{} {
-	provider.Update(s.sid)
+	Provider.Update(s.sid)
 
 	if value, found := s.values[key]; found {
 		return value
@@ -149,7 +149,7 @@ func (s *Store) GetInt(key interface{}) int {
 // returns an error, which is always nil
 func (s *Store) Set(key interface{}, value interface{}) error {
 	s.values[key] = value
-	provider.Update(s.sid)
+	Provider.Update(s.sid)
 
 	s.update()
 	return nil
@@ -159,7 +159,7 @@ func (s *Store) Set(key interface{}, value interface{}) error {
 // returns an error, which is always nil
 func (s *Store) Delete(key interface{}) error {
 	delete(s.values, key)
-	provider.Update(s.sid)
+	Provider.Update(s.sid)
 	s.update()
 	return nil
 }
@@ -172,7 +172,7 @@ func (s *Store) Clear() error {
 		delete(s.values, key)
 	}
 
-	provider.Update(s.sid)
+	Provider.Update(s.sid)
 	s.update()
 	return nil
 }
@@ -195,5 +195,5 @@ func (s *Store) SetLastAccessedTime(lastacc time.Time) {
 // Destroy deletes entirely the session, from the memory, the client's cookie and the store
 func (s *Store) Destroy() {
 	// remove the whole  value which is the s.values from real redis
-	Redis.Delete(s.sid)
+	redis.Delete(s.sid)
 }

@@ -14,6 +14,207 @@ Instead of storing large and constantly changing information via cookies in the 
 
 ----
 
+You will see two different ways to use the sessions, I'm using the first. No performance differences.
+
+## How to use - easy way
+
+Example **memory** 
+
+```go
+
+package main
+
+import (
+	"github.com/kataras/iris"
+)
+
+func main() {
+
+	// these are  the defaults
+	//iris.Config().Session.Provider = "memory" 
+	//iris.Config().Session.Secret = "irissessionid"
+	//iris.Config().Session.Life = time.Duration(60) *time.Minute
+	
+	iris.Get("/set", func(c *iris.Context) {
+
+		//set session values
+		c.Session().Set("name", "iris")
+
+		//test if setted here
+		c.Write("All ok session setted to: %s", c.Session().GetString("name"))
+	})
+
+	iris.Get("/get", func(c *iris.Context) {
+		name := c.Session().GetString("name")
+
+		c.Write("The name on the /set was: %s", name)
+	})
+
+	iris.Get("/delete", func(c *iris.Context) {
+		//get the session for this context
+
+		c.Session().Delete("name")
+
+	})
+
+	iris.Get("/clear", func(c *iris.Context) {
+
+		// removes all entries
+		c.Session().Clear()
+	})
+
+	iris.Get("/destroy", func(c *iris.Context) {
+		//destroy, removes the entire session and cookie
+		c.SessionDestroy()
+	})
+
+	println("Server is listening at :8080")
+	iris.Listen("8080")
+}
+
+
+```
+
+Example default **redis**
+
+```go
+
+package main
+
+import (
+	"github.com/kataras/iris"
+)
+
+func main() {
+
+	iris.Config().Session.Provider = "redis"
+
+	iris.Get("/set", func(c *iris.Context) {
+
+		//set session values
+		c.Session().Set("name", "iris")
+
+		//test if setted here
+		c.Write("All ok session setted to: %s", c.Session().GetString("name"))
+	})
+
+	iris.Get("/get", func(c *iris.Context) {
+		name := c.Session().GetString("name")
+
+		c.Write("The name on the /set was: %s", name)
+	})
+
+	iris.Get("/delete", func(c *iris.Context) {
+		//get the session for this context
+
+		c.Session().Delete("name")
+
+	})
+
+	iris.Get("/clear", func(c *iris.Context) {
+
+		// removes all entries
+		c.Session().Clear()
+	})
+
+	iris.Get("/destroy", func(c *iris.Context) {
+		//destroy, removes the entire session and cookie
+		c.SessionDestroy()
+	})
+
+	println("Server is listening at :8080")
+	iris.Listen("8080")
+}
+
+```
+
+Example customized **redis**
+```go
+// Config the redis config
+type Config struct {
+	// Network "tcp"
+	Network string
+	// Addr "127.0.01:6379"
+	Addr string
+	// Password string .If no password then no 'AUTH'. Default ""
+	Password string
+	// If Database is empty "" then no 'SELECT'. Default ""
+	Database string
+	// MaxIdle 0 no limit
+	MaxIdle int
+	// MaxActive 0 no limit
+	MaxActive int
+	// IdleTimeout 5 * time.Minute
+	IdleTimeout time.Duration
+	// Prefix "myprefix-for-this-website". Default ""
+	Prefix string
+	// MaxAgeSeconds how much long the redis should keep the session in seconds. Default 2520.0 (42minutes)
+	MaxAgeSeconds int
+}
+
+```
+
+```go
+
+package main
+
+import (
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/sessions/providers/redis"
+)
+
+func init() {
+	redis.Config.Addr = "127.0.0.1:2222"
+	redis.Config.MaxAgeSeconds = 5000.0
+}
+
+func main() {
+	
+	iris.Config().Session.Provider = "redis"
+
+	iris.Get("/set", func(c *iris.Context) {
+
+		//set session values
+		c.Session().Set("name", "iris")
+
+		//test if setted here
+		c.Write("All ok session setted to: %s", c.Session().GetString("name"))
+	})
+
+	iris.Get("/get", func(c *iris.Context) {
+		name := c.Session().GetString("name")
+
+		c.Write("The name on the /set was: %s", name)
+	})
+
+	iris.Get("/delete", func(c *iris.Context) {
+		//get the session for this context
+
+		c.Session().Delete("name")
+
+	})
+
+	iris.Get("/clear", func(c *iris.Context) {
+
+		// removes all entries
+		c.Session().Clear()
+	})
+
+	iris.Get("/destroy", func(c *iris.Context) {
+		//destroy, removes the entire session and cookie
+		c.SessionDestroy()
+	})
+
+	println("Server is listening at :8080")
+	iris.Listen("8080")
+}
+
+```
+
+
+
+## How to use - hard way
+
 ```go
 // New creates & returns a new Manager and start its GC
 // accepts 4 parameters
@@ -27,7 +228,6 @@ Instead of storing large and constantly changing information via cookies in the 
 New(provider string, cName string, gcDuration time.Duration) *sessions.Manager
 
 ```
-
 
 Example **memory**
 
@@ -182,9 +382,9 @@ var sess *sessions.Manager
 func init() {
     // you can config the redis after init also, but before any client's request
     // but it's always a good idea to do it before sessions.New...
-    redis.Redis.Config.Network = "tcp"
-    redis.Redis.Config.Addr = "127.0.0.1:6379"
-    redis.Redis.Config.Prefix = "myprefix-for-this-website"
+    redis.Config.Network = "tcp"
+    redis.Config.Addr = "127.0.0.1:6379"
+    redis.Config.Prefix = "myprefix-for-this-website"
 
 	sess = sessions.New("redis", "irissessionid", time.Duration(60)*time.Minute)
 }

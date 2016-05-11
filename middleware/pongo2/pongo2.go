@@ -66,8 +66,8 @@ func (p *Pongo2Middleware) Serve(ctx *iris.Context) {
 				ctx.Text(500, err.Error())
 				return
 			}
-			// set the content to html
-			ctx.SetContentType([]string{iris.ContentHTML + " ;charset=" + iris.Charset})
+
+			ctx.SetContentType([]string{iris.ContentHTML + " ;charset=" + iris.DefaultCharset})
 			ctx.SetBodyString(contents)
 
 		}

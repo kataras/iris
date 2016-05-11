@@ -31,6 +31,7 @@ import (
 	"time"
 
 	"github.com/kataras/iris/sessions"
+	"github.com/kataras/iris/sessions/store"
 )
 
 func init() {
@@ -38,16 +39,16 @@ func init() {
 }
 
 var (
-	provider = sessions.NewProvider()
+	Provider = sessions.NewProvider("memory")
 )
 
 // register registers itself (the new provider with its memory store) to the sessions providers
 // must runs only once
 func register() {
 	// the actual work is here.
-	provider.NewStore = func(sessionId string, cookieLifeDuration time.Duration) sessions.IStore {
+	Provider.NewStore = func(sessionId string, cookieLifeDuration time.Duration) store.IStore {
 		//println("memory.go:49-> requesting new memory store with sessionid: " + sessionId)
 		return &Store{sid: sessionId, lastAccessedTime: time.Now(), values: make(map[interface{}]interface{}, 0)}
 	}
-	sessions.Register("memory", provider)
+	sessions.Register(Provider)
 }

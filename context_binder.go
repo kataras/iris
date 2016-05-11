@@ -37,15 +37,6 @@ import (
 	"github.com/monoculum/formam"
 )
 
-type (
-	// IContextBinder is part of the IContext
-	IContextBinder interface {
-		ReadJSON(interface{}) error
-		ReadXML(interface{}) error
-		ReadForm(formObject interface{}) error
-	}
-)
-
 // ReadJSON reads JSON from request's body
 func (ctx *Context) ReadJSON(jsonObject interface{}) error {
 	data := ctx.RequestCtx.Request.Body()

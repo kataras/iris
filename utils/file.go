@@ -36,10 +36,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-
-	"github.com/fsnotify/fsnotify"
-	"github.com/kataras/iris/errors"
-	"github.com/kataras/iris/logger"
 )
 
 const (
@@ -284,10 +280,18 @@ func GetParentDir(targetDirectory string) string {
 	return parentDirectory
 }
 
+/*
+	// 3-BSD License for package fsnotify/fsnotify
+	// Copyright (c) 2012 The Go Authors. All rights reserved.
+	// Copyright (c) 2012 fsnotify Authors. All rights reserved.
+	"github.com/fsnotify/fsnotify"
+	//
+	"github.com/kataras/iris/errors"
+	"github.com/kataras/iris/logger"
+
 // WatchDirectoryChanges watches for directory changes and calls the 'evt' callback parameter
-// 3-BSD License for package fsnotify/fsnotify
-// Copyright (c) 2012 The Go Authors. All rights reserved.
-// Copyright (c) 2012 fsnotify Authors. All rights reserved.
+// unused after v2 but propably I will bring it back on v3
+
 func WatchDirectoryChanges(rootPath string, evt func(filename string), logger ...*logger.Logger) {
 	watcher, err := fsnotify.NewWatcher()
 
@@ -330,4 +334,4 @@ func WatchDirectoryChanges(rootPath string, evt func(filename string), logger ..
 		}
 	}
 
-}
+}*/

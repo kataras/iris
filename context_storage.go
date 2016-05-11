@@ -31,26 +31,9 @@ import (
 	"encoding/base64"
 	"time"
 
+	"github.com/kataras/iris/sessions/store"
 	"github.com/kataras/iris/utils"
 	"github.com/valyala/fasthttp"
-)
-
-type (
-	// IContextStorage is part of the IContext
-	IContextStorage interface {
-		Get(string) interface{}
-		GetString(string) string
-		GetInt(string) int
-		Set(string, interface{})
-		SetCookie(*fasthttp.Cookie)
-		SetCookieKV(string, string)
-		RemoveCookie(string)
-		// Flash messages
-		GetFlash(string) string
-		GetFlashBytes(string) ([]byte, error)
-		SetFlash(string, string)
-		SetFlashBytes(string, []byte)
-	}
 )
 
 // After v2.2.3 Get/GetFmt/GetString/GetInt/Set are all return values from the RequestCtx.userValues they are reseting on each connection.
@@ -169,10 +152,33 @@ func (ctx *Context) SetFlash(key string, value string) {
 
 // SetFlashBytes sets a flash message, accepts 2 parameters the key(string) and the value([]byte)
 func (ctx *Context) SetFlashBytes(key string, value []byte) {
-	c := &fasthttp.Cookie{}
+	c := fasthttp.AcquireCookie()
 	c.SetKey(key)
 	c.SetValue(base64.URLEncoding.EncodeToString(value))
 	c.SetPath("/")
 	c.SetHTTPOnly(true)
 	ctx.RequestCtx.Response.Header.SetCookie(c)
+	fasthttp.ReleaseCookie(c)
+}
+
+// Sessionreturns the current session store, returns nil if provider is ""
+func (ctx *Context) Session() store.IStore {
+	if ctx.station.sessionManager == nil || ctx.station.config.Session.Provider == "" { //the second check can be changed on runtime, users are able to  turn off the sessions by setting provider to  ""
+		return nil
+	}
+
+	if ctx.sessionStore == nil {
+		ctx.sessionStore = ctx.station.sessionManager.Start(ctx)
+	}
+	return ctx.sessionStore
+}
+
+// SessionDestroy destroys the whole session, calls the provider's destory and remove the cookie
+func (ctx *Context) SessionDestroy() {
+	if ctx.station.sessionManager != nil {
+		if store := ctx.Session(); store != nil {
+			ctx.station.sessionManager.Destroy(ctx)
+		}
+	}
+
 }

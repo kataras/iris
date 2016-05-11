@@ -68,4 +68,6 @@ var (
 
 	// ErrFlashNotFound returns an error with message: 'Unable to get flash message. Trace: Cookie does not exists'
 	ErrFlashNotFound = errors.New("Unable to get flash message. Trace: Cookie does not exists")
+	// ErrSessionNil returns an error with message: 'Unable to set session, Config().Session.Provider is nil, please refer to the docs!'
+	ErrSessionNil = errors.New("Unable to set session, Config().Session.Provider is nil, please refer to the docs!")
 )

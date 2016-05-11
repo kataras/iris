@@ -33,7 +33,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/sessions/store"
 	"github.com/kataras/iris/utils"
 	"github.com/valyala/fasthttp"
 )
@@ -41,8 +42,8 @@ import (
 type (
 	// IManager is the interface which Manager should implement
 	IManager interface {
-		Start(*iris.Context) IStore
-		Destroy(*iris.Context)
+		Start(context.IContext) store.IStore
+		Destroy(context.IContext)
 		GC()
 	}
 	// Manager implements the IManager interface
@@ -58,7 +59,8 @@ type (
 var _ IManager = &Manager{}
 
 var (
-	providers = make(map[string]IProvider)
+	continueOnError = true
+	providers       = make(map[string]IProvider)
 )
 
 // newManager creates & returns a new Manager
@@ -106,13 +108,18 @@ func New(providerName string, cookieName string, gcDuration time.Duration) *Mana
 }
 
 // Register registers a provider
-func Register(providerName string, provider IProvider) {
-	if provider == nil || providerName == "" {
+func Register(provider IProvider) {
+	if provider == nil {
 		ErrProviderRegister.Panic()
 	}
+	providerName := provider.Name()
 
 	if _, exists := providers[providerName]; exists {
-		ErrProviderAlreadyExists.Panicf(providerName)
+		if !continueOnError {
+			ErrProviderAlreadyExists.Panicf(providerName)
+		} else {
+			// do nothing it's a map it will overrides the existing provider.
+		}
 	}
 
 	providers[providerName] = provider
@@ -125,23 +132,25 @@ func (m *Manager) generateSessionID() string {
 }
 
 // Start starts the session
-func (m *Manager) Start(ctx *iris.Context) IStore {
-	var store IStore
-	m.mu.Lock()
+func (m *Manager) Start(ctx context.IContext) store.IStore {
 
-	cookieValue := string(ctx.Request.Header.Cookie(m.cookieName))
+	m.mu.Lock()
+	var store store.IStore
+	requestCtx := ctx.GetRequestCtx()
+	cookieValue := string(requestCtx.Request.Header.Cookie(m.cookieName))
 
 	if cookieValue == "" { // cookie doesn't exists, let's generate a session and add set a cookie
 		sid := m.generateSessionID()
 		store, _ = m.provider.Init(sid)
-		cookie := &fasthttp.Cookie{}
+		cookie := fasthttp.AcquireCookie()
 		cookie.SetKey(m.cookieName)
 		cookie.SetValue(url.QueryEscape(sid))
 		cookie.SetPath("/")
 		cookie.SetHTTPOnly(true)
 		exp := time.Now().Add(m.gcDuration)
 		cookie.SetExpire(exp)
-		ctx.Response.Header.SetCookie(cookie)
+		requestCtx.Response.Header.SetCookie(cookie)
+		fasthttp.ReleaseCookie(cookie)
 		//println("manager.go:156-> Setting cookie with lifetime: ", m.lifeDuration.Seconds())
 	} else {
 		sid, _ := url.QueryUnescape(cookieValue)
@@ -153,8 +162,8 @@ func (m *Manager) Start(ctx *iris.Context) IStore {
 }
 
 // Destroy kills the session and remove the associated cookie
-func (m *Manager) Destroy(ctx *iris.Context) {
-	cookieValue := string(ctx.Request.Header.Cookie(m.cookieName))
+func (m *Manager) Destroy(ctx context.IContext) {
+	cookieValue := string(ctx.GetRequestCtx().Request.Header.Cookie(m.cookieName))
 	if cookieValue == "" { // nothing to destroy
 		return
 	}

@@ -35,24 +35,6 @@ import (
 	"github.com/kataras/iris/utils"
 )
 
-type (
-	// IContextRequest is part of the IContext
-	IContextRequest interface {
-		Param(string) string
-		ParamInt(string) (int, error)
-		URLParam(string) string
-		URLParamInt(string) (int, error)
-		URLParams() map[string][]string
-		MethodString() string
-		HostString() string
-		PathString() string
-		RequestIP() string
-		RemoteAddr() string
-		RequestHeader(k string) string
-		PostFormValue(string) string
-	}
-)
-
 // Param returns the string representation of the key's path named parameter's value
 func (ctx *Context) Param(key string) string {
 	return ctx.Params.Get(key)

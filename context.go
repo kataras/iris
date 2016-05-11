@@ -25,7 +25,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// Package iris Context.go  context_binder.go, context_renderer.go, context_storage.go, context_request.go, context_response.go
+// Package iris Context.go  Implements: ./context/context.go , files: context_binder.go, context_renderer.go, context_storage.go, context_request.go, context_response.go
 package iris
 
 import (
@@ -33,15 +33,14 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/sessions/store"
 	"github.com/valyala/fasthttp"
-	"golang.org/x/net/context"
 )
 
 const (
 	// DefaultUserAgent default to 'iris' but it is not used anywhere yet
 	DefaultUserAgent = "iris"
-	// DefaultCharset represents the default charset for content headers
-	DefaultCharset = "UTF-8"
 	// ContentType represents the header["Content-Type"]
 	ContentType = "Content-Type"
 	// ContentLength represents the header["Content-Length"]
@@ -65,29 +64,7 @@ const (
 	stopExecutionPosition = 255
 )
 
-// Charset is defaulted to UTF-8, you can change it
-// all render methods will have this charset
-var Charset = DefaultCharset
-
 type (
-
-	// IContext the interface for the Context
-	IContext interface {
-		context.Context
-		IContextRenderer
-		IContextStorage
-		IContextBinder
-		IContextRequest
-		IContextResponse
-
-		Reset(*fasthttp.RequestCtx)
-		Clone() *Context
-		Do()
-		Next()
-		StopExecution()
-		IsStopped() bool
-		GetHandlerName() string
-	}
 
 	// Context is resetting every time a request is coming to the server
 	// it is not good practice to use this object in goroutines, for these cases use the .Clone()
@@ -96,13 +73,19 @@ type (
 		Params  PathParameters
 		station *Iris
 		//keep track all registed middleware (handlers)
-		middleware Middleware
+		middleware   Middleware
+		sessionStore store.IStore
 		// pos is the position number of the Context, look .Next to understand
 		pos uint8
 	}
 )
 
-var _ IContext = &Context{}
+var _ context.IContext = &Context{}
+
+// GetRequestCtx returns the current fasthttp context
+func (ctx *Context) GetRequestCtx() *fasthttp.RequestCtx {
+	return ctx.RequestCtx
+}
 
 // Implement the golang.org/x/net/context , as requested by the community, which is used inside app engine
 // also this will give me the ability to use appengine's memcache with this context, if this needed.
@@ -141,12 +124,13 @@ func (ctx *Context) Value(key interface{}) interface{} {
 // I use it for zero rellocation memory
 func (ctx *Context) Reset(reqCtx *fasthttp.RequestCtx) {
 	ctx.Params = ctx.Params[0:0]
+	ctx.sessionStore = nil
 	ctx.middleware = nil
 	ctx.RequestCtx = reqCtx
 }
 
 // Clone use that method if you want to use the context inside a goroutine
-func (ctx *Context) Clone() *Context {
+func (ctx *Context) Clone() context.IContext {
 	var cloneContext = *ctx
 	cloneContext.pos = 0
 
@@ -160,6 +144,8 @@ func (ctx *Context) Clone() *Context {
 	cpM := make(Middleware, len(m))
 	copy(cpM, m)
 	cloneContext.middleware = cpM
+
+	// we don't copy the sessionStore for more than one reasons...
 	return &cloneContext
 }
 
