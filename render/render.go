@@ -283,7 +283,7 @@ func (r *Render) TemplateLookup(t string) *template.Template {
 	return r.Templates.Lookup(t)
 }
 
-func (r *Render) execute(name string, binding interface{}) (*bytes.Buffer, error) {
+func (r *Render) Execute(name string, binding interface{}) (*bytes.Buffer, error) {
 	buf := new(bytes.Buffer)
 	return buf, r.Templates.ExecuteTemplate(buf, name, binding)
 }
@@ -291,7 +291,7 @@ func (r *Render) execute(name string, binding interface{}) (*bytes.Buffer, error
 func (r *Render) addLayoutFuncs(name string, binding interface{}) {
 	funcs := template.FuncMap{
 		"yield": func() (template.HTML, error) {
-			buf, err := r.execute(name, binding)
+			buf, err := r.Execute(name, binding)
 			// Return safe HTML here since we are rendering our own template.
 			return template.HTML(buf.String()), err
 		},
@@ -302,7 +302,7 @@ func (r *Render) addLayoutFuncs(name string, binding interface{}) {
 			log.Print("Render's `block` implementation is now depericated. Use `partial` as a drop in replacement.")
 			fullPartialName := fmt.Sprintf("%s-%s", partialName, name)
 			if r.config.RequireBlocks || r.TemplateLookup(fullPartialName) != nil {
-				buf, err := r.execute(fullPartialName, binding)
+				buf, err := r.Execute(fullPartialName, binding)
 				// Return safe HTML here since we are rendering our own template.
 				return template.HTML(buf.String()), err
 			}
@@ -311,14 +311,14 @@ func (r *Render) addLayoutFuncs(name string, binding interface{}) {
 		"partial": func(partialName string) (template.HTML, error) {
 			fullPartialName := fmt.Sprintf("%s-%s", partialName, name)
 			if r.config.RequirePartials || r.TemplateLookup(fullPartialName) != nil {
-				buf, err := r.execute(fullPartialName, binding)
+				buf, err := r.Execute(fullPartialName, binding)
 				// Return safe HTML here since we are rendering our own template.
 				return template.HTML(buf.String()), err
 			}
 			return "", nil
 		},
 		"render": func(fullPartialName string) (template.HTML, error) {
-			buf, err := r.execute(fullPartialName, binding)
+			buf, err := r.Execute(fullPartialName, binding)
 			// Return safe HTML here since we are rendering our own template.
 			return template.HTML(buf.String()), err
 
