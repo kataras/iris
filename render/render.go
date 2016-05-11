@@ -317,6 +317,12 @@ func (r *Render) addLayoutFuncs(name string, binding interface{}) {
 			}
 			return "", nil
 		},
+		"render": func(fullPartialName string) (template.HTML, error) {
+			buf, err := r.execute(fullPartialName, binding)
+			// Return safe HTML here since we are rendering our own template.
+			return template.HTML(buf.String()), err
+
+		},
 	}
 	if tpl := r.Templates.Lookup(name); tpl != nil {
 		tpl.Funcs(funcs)
