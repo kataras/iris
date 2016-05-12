@@ -91,7 +91,7 @@ renderOptions := &render.Config{
     Layout: "layout", // Specify a layout template. Layouts can call {{ yield }} to render the current template or {{ partial "css" }} to render a partial from the current template.
     Extensions: []string{".tmpl", ".html"}, // Specify extensions to load for templates.
     Funcs: []template.FuncMap{AppHelpers}, // Specify helper function maps for templates to access.
-    Delims: iris.Delims{"{[{", "}]}"}, // Sets delimiters to the specified strings.
+    Delims: render.Delims{"{[{", "}]}"}, // Sets delimiters to the specified strings.
     Charset: "UTF-8", // Sets encoding for json and html content-types. Default is "UTF-8".
     Gzip: false, // Enable it if you want to render using gzip compression. Default is false
     IndentJSON: true, // Output human readable JSON.
@@ -121,7 +121,7 @@ renderOptions = &render.Config{
     Layout: "",
     Extensions: []string{".html"},
     Funcs: []template.FuncMap{},
-    Delims: iris.Delims{"{{", "}}"},
+    Delims: render.Delims{"{{", "}}"},
     Charset: "UTF-8",
     Gzip: false,
     IndentJSON: false,
