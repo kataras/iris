@@ -9,7 +9,7 @@
 
 a modern, **community-driven** **web** application **framework** for **Go**. Comes with the [highest performance](#benchmarks) which ever achieved.
 
-![Benchmark Wizzard Concurenncy](http://kataras.github.io/iris/assets/benchmark_all_28April_2016.png)
+![Benchmark Wizzard Processing Time](http://kataras.github.io/iris/assets/benchmark_11_05_2016_different_processing_time.png)
 
 
 **Easy to learn** while providing robust set of features for building **modern & shiny web applications**.
@@ -77,10 +77,10 @@ Benchmarks results taken [from external source](https://github.com/smallnest/go-
 
 This is the most realistic benchmark suite than you will find for Go Web Frameworks. Give attention to its readme.md.
 
-April 22 2016
+May 12 2016
 
 
-![Benchmark Wizzard Concurenncy](http://kataras.github.io/iris/assets/benchmark_all_28April_2016.png)
+![Benchmark Wizzard Processing Time](http://kataras.github.io/iris/assets/benchmark_11_05_2016_different_processing_time.png)
 
 [click here to view detailed tables of different benchmarks](https://github.com/smallnest/go-web-framework-benchmark)
 
