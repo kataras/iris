@@ -1,6 +1,6 @@
 <img width="32" src="http://kataras.github.io/iris/assets/56e4b048f1ee49764ddd78fe_iris_favicon.ico"> Iris
 ===========================
- [![Build Status](https://travis-ci.org/kataras/iris.svg?branch=development&style=flat-square)](https://travis-ci.org/kataras/iris)
+ [![Build Status](https://travis-ci.org/kataras/iris.svg?branch=master&style=flat-square)](https://travis-ci.org/kataras/iris)
 [![Go Report Card](https://goreportcard.com/badge/github.com/kataras/iris?style=flat-square)](https://goreportcard.com/report/github.com/kataras/iris)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/kataras/iris?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![GoDoc](https://godoc.org/github.com/kataras/iris?status.svg)](https://godoc.org/github.com/kataras/iris)
@@ -93,7 +93,7 @@ May 12 2016
 *    ...
 
 ## Versioning
-Iris is in active development status, check for updates once per week. Compatible only with go1.6+
+Compatible only with go1.6+
 
 Current: **v2.3.2**
 
@@ -123,8 +123,8 @@ Thanks goes to the people who have contributed code to this package, see the
 ## Todo
 > for the next release 'v3'
 
-- [ ] Implement a middleware or plugin for easy & secure user authentication, stored in (no)database redis/mysql and make use of [sessions](https://github.com/kataras/iris/tree/development/sessions).
-- [ ] Create server & client side (js) library for .on('event', func action(...)) / .emit('event')... (like socket.io but supports only [websocket](https://github.com/kataras/iris/tree/development/websocket)).
+- [ ] Implement a middleware or plugin for easy & secure user authentication, stored in (no)database redis/mysql and make use of [sessions](https://github.com/kataras/iris/tree/master/sessions).
+- [ ] Create server & client side (js) library for .on('event', func action(...)) / .emit('event')... (like socket.io but supports only [websocket](https://github.com/kataras/iris/tree/master/websocket)).
 - [ ] Find and provide support for the most stable template engine and be able to change it via the IrisConfig, keep html/templates  support.
 - [ ] Extend, test and publish to the public the Iris' cmd.
 
