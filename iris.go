@@ -44,13 +44,6 @@ import (
 	_ "github.com/kataras/iris/sessions/providers/redis"
 )
 
-// TemplateEngine the struct which defines the available template engines
-var TemplateEngine = struct {
-	Standar       uint8
-	Quicktemplate uint8
-	Pongo2        uint8
-}{0, 1, 2}
-
 type (
 
 	// SessionConfig the configuration for sessions
@@ -105,7 +98,7 @@ type (
 		ProfilePath string
 
 		// TemplateEngine the engine for rendering templates [No usage yet, wait for iris-v3]
-		TemplateEngine uint8
+		TemplateEngine TemplateEngine
 		// Render configs for rendering.
 		// Render has some options for rendering with html/template only, we will keep this as it is on iris-v3 too.
 		//
@@ -218,7 +211,7 @@ func (s *Iris) DoPreListen(opt server.Config) *server.Server {
 
 	s.render.PrepareConfig()
 
-	if s.config.TemplateEngine == TemplateEngine.Standar {
+	if s.config.TemplateEngine == TemplateEngines.Standar {
 		s.render.PrepareTemplates()
 	}
 

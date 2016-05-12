@@ -62,7 +62,7 @@ func DefaultConfig() *IrisConfig {
 		Log:                true,
 		Profile:            false,
 		ProfilePath:        DefaultProfilePath,
-		TemplateEngine:     TemplateEngine.Standar,
+		TemplateEngine:     TemplateEngines.Standar,
 		Render: &render.Config{
 			Directory:                 "templates",
 			Asset:                     nil,
