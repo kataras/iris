@@ -19,7 +19,7 @@ a modern, **community-driven** **web** application **framework** for **Go**. Com
 ![Hi Iris GIF](http://kataras.github.io/iris/assets/hi_iris_may.gif)
 
 
-### Features
+# Features
 
 * **Typescript**: Auto-compile & Watch your client side code via the [typescript plugin](https://kataras.gitbooks.io/iris/content/plugin-typescript.html)
 * **Online IDE**: Edit & Compile your client side code when you are not home via the [editor plugin](https://kataras.gitbooks.io/iris/content/plugin-editor.html)
@@ -41,7 +41,7 @@ a modern, **community-driven** **web** application **framework** for **Go**. Com
 * **Multi server instances**: Besides the fact that Iris has a default main server. You can declare as many as you need[*](https://kataras.gitbooks.io/iris/content/declaration.html)
 * **Zero allocations**: Iris generates zero garbage
 
-### Getting started
+## Getting started
 
 1. Install `$ go get -u github.com/kataras/iris`
  >If you are connected to the Internet through China [click here](https://kataras.gitbooks.io/iris/content/install.html)
@@ -70,7 +70,7 @@ a modern, **community-driven** **web** application **framework** for **Go**. Com
 
 
 
-### Benchmarks
+## Benchmarks
 
 
 Benchmarks results taken [from external source](https://github.com/smallnest/go-web-framework-benchmark), created by [@smallnest](https://github.com/smallnest).
@@ -92,10 +92,10 @@ April 22 2016
 *    ...
 *    ...
 
-### Versioning
+## Versioning
 Iris is in active development status, check for updates once per week. Compatible only with go1.6+
 
-Current: **v2.3.1**
+Current: **v2.3.2**
 
 
 Read more about Semantic Versioning 2.0.0
@@ -105,7 +105,7 @@ Read more about Semantic Versioning 2.0.0
  - https://wiki.debian.org/UpstreamGuide#Releases_and_Versions
 
 
-### Third party packages
+## Third party packages
 
 - [fasthttp](github.com/valyala/fasthttp)
 - [formam](github.com\monoculum\formam)
@@ -129,7 +129,7 @@ Thanks goes to the people who have contributed code to this package, see the
 - [ ] Extend, test and publish to the public the Iris' cmd.
 
 
-## Donations
+# Donations
 
 I am a student at the [University of Central Macedonia](http://teiser.gr/), therefore I have no income value.
 
