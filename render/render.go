@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/kataras/iris/utils"
 	"github.com/valyala/fasthttp"
 )
 
@@ -36,7 +37,8 @@ const (
 	defaultCharset = "UTF-8"
 )
 
-// helperFuncs had to be moved out. See helpers.go|helpers_pre16.go files.
+// bufPool represents a reusable buffer pool for executing templates into.
+var bufPool *utils.BufferPool
 
 // Delims represents a set of Left and Right delimiters for HTML template rendering.
 type Delims struct {
@@ -135,7 +137,7 @@ func (r *Render) PrepareTemplates() {
 
 	// Create a new buffer pool for writing templates into.
 	if bufPool == nil {
-		bufPool = NewBufferPool(64)
+		bufPool = utils.NewBufferPool(64)
 	}
 }
 

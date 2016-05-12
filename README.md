@@ -107,10 +107,10 @@ Read more about Semantic Versioning 2.0.0
 
 ## Third party packages
 
-- [fasthttp](github.com/valyala/fasthttp)
-- [formam](github.com\monoculum\formam)
-- [i18n](github.com/Unknwon/i18n)
-- [pongo2 middleware](github.com/flosch/pongo2)
+- [fasthttp](https://github.com/valyala/fasthttp)
+- [formam](https://github.com/monoculum/formam)
+- [i18n](https://github.com/Unknwon/i18n)
+- [pongo2 middleware](https://github.com/flosch/pongo2)
 
 ## Contributors
 
@@ -129,7 +129,7 @@ Thanks goes to the people who have contributed code to this package, see the
 - [ ] Extend, test and publish to the public the Iris' cmd.
 
 
-# Donations
+## Donations
 
 I am a student at the [University of Central Macedonia](http://teiser.gr/), therefore I have no income value.
 

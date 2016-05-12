@@ -1,3 +1,7 @@
+# Folder Information
+
+This folder contains the sessions support for Iris. The folder name is plural (session's') so the `/sessions/providers`, because you can use both of them at the same time.
+
 # Package information
 
 This package is new and unique, if you notice a bug or issue [post it here](https://github.com/kataras/iris/issues)
