@@ -5,7 +5,6 @@ package websocket
 
 import (
 	"net"
-	"net/http"
 	"net/url"
 	"strings"
 	"time"
@@ -38,8 +37,7 @@ type Upgrader struct {
 	// requested by the client.
 	Subprotocols []string
 
-	// Error specifies the function for generating HTTP error responses. If Error
-	// is nil, then http.Error is used to generate the HTTP response.
+	// Error specifies the function for generating HTTP error responses.
 	Error func(ctx *iris.Context, status int, reason error)
 
 	// CheckOrigin returns true if the request Origin header is acceptable. If
@@ -147,18 +145,18 @@ func checkSubprotocols(reqProtocols []string, resProtocols []string) string {
 // response.
 func (u *Upgrader) Upgrade(ctx *iris.Context) error {
 	if !ctx.IsGet() {
-		return u.returnError(ctx, http.StatusMethodNotAllowed, "websocket: method not GET")
+		return u.returnError(ctx, iris.StatusMethodNotAllowed, "websocket: method not GET")
 	}
 	if ctx.RequestHeader("Sec-Websocket-Version") != "13" {
-		return u.returnError(ctx, http.StatusBadRequest, "websocket: version != 13")
+		return u.returnError(ctx, iris.StatusBadRequest, "websocket: version != 13")
 	}
 
 	if !ctx.Request.Header.ConnectionUpgrade() {
-		return u.returnError(ctx, http.StatusBadRequest, "websocket: could not find connection header with token 'upgrade'")
+		return u.returnError(ctx, iris.StatusBadRequest, "websocket: could not find connection header with token 'upgrade'")
 	}
 
 	if !tokenListContainsValue(ctx.RequestHeader("Upgrade"), "websocket") {
-		return u.returnError(ctx, http.StatusBadRequest, "websocket: could not find upgrade header with token 'websocket'")
+		return u.returnError(ctx, iris.StatusBadRequest, "websocket: could not find upgrade header with token 'websocket'")
 	}
 
 	checkOrigin := u.CheckOrigin
@@ -166,16 +164,16 @@ func (u *Upgrader) Upgrade(ctx *iris.Context) error {
 		checkOrigin = checkSameOrigin
 	}
 	if !checkOrigin(ctx) {
-		return u.returnError(ctx, http.StatusForbidden, "websocket: origin not allowed")
+		return u.returnError(ctx, iris.StatusForbidden, "websocket: origin not allowed")
 	}
 
 	challengeKey := ctx.RequestHeader("Sec-Websocket-Key")
 	if challengeKey == "" {
-		return u.returnError(ctx, http.StatusBadRequest, "websocket: key missing or blank")
+		return u.returnError(ctx, iris.StatusBadRequest, "websocket: key missing or blank")
 	}
 
 	//set the headers
-	ctx.SetStatusCode(fasthttp.StatusSwitchingProtocols)
+	ctx.SetStatusCode(iris.StatusSwitchingProtocols)
 	ctx.Response.Header.Set("Upgrade", "websocket")
 	ctx.Response.Header.Set("Connection", "Upgrade")
 	ctx.Response.Header.Set("Sec-Websocket-Accept", computeAcceptKey(challengeKey))
@@ -265,16 +263,6 @@ func (u *Upgrader) Upgrade(ctx *iris.Context) error {
 }
 
 // Upgrade upgrades the HTTP server connection to the WebSocket protocol.
-//
-// This function is deprecated, use websocket.Upgrader instead.
-//
-// The application is responsible for checking the request origin before
-// calling Upgrade. An example implementation of the same origin policy is:
-//
-//	if req.Header.Get("Origin") != "http://"+req.Host {
-//		http.Error(w, "Origin not allowed", 403)
-//		return
-//	}
 //
 // If the endpoint supports subprotocols, then the application is responsible
 // for negotiating the protocol used on the connection. Use the Subprotocols()

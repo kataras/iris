@@ -85,6 +85,7 @@ func getPongoContext(templateData interface{}) pongo.Context {
 	if isMap {
 		return contextData
 	}
+
 	return nil
 }
 

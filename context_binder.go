@@ -33,7 +33,6 @@ import (
 	"io"
 	"strings"
 
-	"github.com/kataras/iris/utils"
 	"github.com/monoculum/formam"
 )
 
@@ -78,13 +77,29 @@ func (ctx *Context) ReadForm(formObject interface{}) error {
 		return ErrReadBody.With(formam.Decode(form.Value, formObject))
 	}
 	// if no multipart and post arguments ( means normal form)
+
 	if ctx.RequestCtx.PostArgs().Len() > 0 {
 		form := make(map[string][]string, ctx.RequestCtx.PostArgs().Len()+ctx.RequestCtx.QueryArgs().Len())
 		ctx.RequestCtx.PostArgs().VisitAll(func(k []byte, v []byte) {
-			form[utils.BytesToString(k)] = []string{utils.BytesToString(v)}
+			key := string(k)
+			value := string(v)
+			// for slices
+			if form[key] != nil {
+				form[key] = append(form[key], value)
+			} else {
+				form[key] = []string{value}
+			}
+
 		})
 		ctx.RequestCtx.QueryArgs().VisitAll(func(k []byte, v []byte) {
-			form[utils.BytesToString(k)] = []string{utils.BytesToString(v)}
+			key := string(k)
+			value := string(v)
+			// for slices
+			if form[key] != nil {
+				form[key] = append(form[key], value)
+			} else {
+				form[key] = []string{value}
+			}
 		})
 
 		return ErrReadBody.With(formam.Decode(form, formObject))

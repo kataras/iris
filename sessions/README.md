@@ -18,7 +18,7 @@ You will see two different ways to use the sessions, I'm using the first. No per
 
 ## How to use - easy way
 
-Example **memory** 
+Example **memory**
 
 ```go
 
@@ -31,10 +31,10 @@ import (
 func main() {
 
 	// these are  the defaults
-	//iris.Config().Session.Provider = "memory" 
+	//iris.Config().Session.Provider = "memory"
 	//iris.Config().Session.Secret = "irissessionid"
 	//iris.Config().Session.Life = time.Duration(60) *time.Minute
-	
+
 	iris.Get("/set", func(c *iris.Context) {
 
 		//set session values
@@ -169,7 +169,7 @@ func init() {
 }
 
 func main() {
-	
+
 	iris.Config().Session.Provider = "redis"
 
 	iris.Get("/set", func(c *iris.Context) {
@@ -407,7 +407,7 @@ The second step is to add a token to every request. Similar to the way we dealt 
 
 ```go
 h := md5.New()
-salt:="astaxie%^7&8888"
+salt:="secret%^7&8888"
 io.WriteString(h,salt+time.Now().String())
 token:=fmt.Sprintf("%x",h.Sum(nil))
 if r.Form["token"]!=token{

@@ -44,14 +44,14 @@ import (
 	_ "github.com/kataras/iris/sessions/providers/redis"
 )
 
-const (
-	// TemplateHTML html/template
-	TemplateHTML TemplateEngine = iota
-	//when v3 add:  TemplatePongo2
-)
+// TemplateEngine the struct which defines the available template engines
+var TemplateEngine = struct {
+	Standar       uint8
+	Quicktemplate uint8
+	Pongo2        uint8
+}{0, 1, 2}
 
 type (
-	TemplateEngine uint8
 
 	// SessionConfig the configuration for sessions
 	// We don't import the providers and make it easier with Provider = iris.Redis OR iris.Memory [iotas] and make all the rest automatically because
@@ -105,7 +105,7 @@ type (
 		ProfilePath string
 
 		// TemplateEngine the engine for rendering templates [No usage yet, wait for iris-v3]
-		TemplateEngine TemplateEngine
+		TemplateEngine uint8
 		// Render configs for rendering.
 		// Render has some options for rendering with html/template only, we will keep this as it is on iris-v3 too.
 		//
@@ -158,7 +158,7 @@ func New(configs ...*IrisConfig) *Iris {
 	s.logger = logger.New()
 	s.logger.SetEnable(config.Log)
 
-	// set the render (no build templates, to give the chance to the users to change its *Config)
+	// set the render for Data,Text, JSON, JSONP, XML and pure html/template if config.TemplateEngine == TemplateEngine.Standar (see DoPreListen)
 	s.render = render.Create(config.Render)
 	return s
 }
@@ -216,7 +216,11 @@ func (s *Iris) DoPreListen(opt server.Config) *server.Server {
 		s.render = render.New(s.config.Render)
 	}
 
-	s.render.Prepare()
+	s.render.PrepareConfig()
+
+	if s.config.TemplateEngine == TemplateEngine.Standar {
+		s.render.PrepareTemplates()
+	}
 
 	// router prepare
 	if !s.router.optimized {

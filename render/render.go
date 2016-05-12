@@ -113,7 +113,8 @@ func New(config ...*Config) *Render {
 		config: c,
 	}
 
-	r.Prepare()
+	r.PrepareConfig()
+	r.PrepareTemplates()
 
 	return r
 }
@@ -126,8 +127,7 @@ func Create(config *Config) *Render {
 // Prepare if
 // Prepare must is called once before anything else inside the New(), this exists because for example Iris doesn't want to compile
 // the templates on Render creation but after
-func (r *Render) Prepare() {
-	r.prepareConfig()
+func (r *Render) PrepareTemplates() {
 	if err := r.compileTemplates(); err != nil {
 		// We don't care about IsDevelopment, it's before server's run, panic
 		panic(err)
@@ -139,7 +139,7 @@ func (r *Render) Prepare() {
 	}
 }
 
-func (r *Render) prepareConfig() {
+func (r *Render) PrepareConfig() {
 	// Fill in the defaults if need be.
 	if len(r.config.Charset) == 0 {
 		r.config.Charset = defaultCharset
