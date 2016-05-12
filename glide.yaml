@@ -12,9 +12,6 @@ import:
 - package: github.com/flosch/pongo2
   subpackages:
   - github.com\flosch\pongo2
-- package: github.com/fsnotify/fsnotify
-  subpackages:
-  - github.com\fsnotify\fsnotify
 - package: github.com/monoculum/formam
   subpackages:
   - github.com\monoculum\formam
