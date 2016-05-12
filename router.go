@@ -96,7 +96,7 @@ type router struct {
 
 // methodMatchCorsFunc is sets the methodMatch when cors enabled (look router.optimize), it's allowing OPTIONS method to all other methods except GET
 func methodMatchCorsFunc(m1, reqMethod string) bool {
-	return m1 == reqMethod || (m1 != MethodGet && reqMethod == MethodOptions)
+	return m1 == reqMethod || reqMethod == MethodOptions //(m1 != MethodGet && reqMethod == MethodOptions)
 }
 
 // methodMatchFunc for normal method match

@@ -1,6 +1,6 @@
 ## Middleware information
 
-This is a middleware created by @keuller for Iris.
+This is a fork of the CORS middleware from [here](https://github.com/rs/cors/)
 
 
 ## Description
@@ -80,9 +80,9 @@ import (
 
 func main() {
 
-	crs := cors.New(cors.Options{}) // same as cors.DefaultCors()
+	//crs := cors.New(cors.Options{})
 
-	iris.Use(crs)
+	iris.Use(cors.Default()) // crs
 
 	iris.Get("/home", func(c *iris.Context) {
 		c.Write("Hello from /home")
