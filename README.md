@@ -107,10 +107,10 @@ Read more about Semantic Versioning 2.0.0
 
 ## Third party packages
 
-- [fasthttp](github.com/valyala/fasthttp)
-- [formam](github.com\monoculum\formam)
-- [i18n](github.com/Unknwon/i18n)
-- [pongo2 middleware](github.com/flosch/pongo2)
+- [fasthttp](https://github.com/valyala/fasthttp)
+- [formam](https://github.com/monoculum/formam)
+- [i18n](https://github.com/Unknwon/i18n)
+- [pongo2 middleware](https://github.com/flosch/pongo2)
 
 ## Contributors
 
