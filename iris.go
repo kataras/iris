@@ -147,17 +147,16 @@ type (
 	}
 )
 
-func prepareConfig(cfg []*IrisConfig) *IrisConfig {
-	config := DefaultConfig()
+func prepareConfig(cfg []*IrisConfig) (config *IrisConfig) {
+
 	if len(cfg) > 0 {
-		mergo.Merge(config, cfg[0])
+		config = cfg[0]
+		mergo.Merge(config, DefaultConfig())
+	} else {
+		config = DefaultConfig()
 	}
 
-	if config.ProfilePath == "" {
-		config.ProfilePath = DefaultProfilePath
-	}
-
-	return config
+	return
 }
 
 // New creates and returns a new iris Iris. If config is empty then default config is used
@@ -165,10 +164,10 @@ func prepareConfig(cfg []*IrisConfig) *IrisConfig {
 // Receives an optional iris.IrisConfig as parameter
 // If empty then iris.DefaultConfig() are used
 func New(configs ...*IrisConfig) *Iris {
-
+	config := prepareConfig(configs)
 	// create the Iris
-	s := &Iris{config: prepareConfig(configs), plugins: &PluginContainer{}}
-
+	s := &Iris{config: config, plugins: &PluginContainer{}}
+	println(config.ProfilePath)
 	// create & set the router
 	s.router = newRouter(s)
 
