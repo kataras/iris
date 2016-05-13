@@ -36,6 +36,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/imdario/mergo"
 	"github.com/kataras/iris/logger"
 	"github.com/kataras/iris/rest"
 	"github.com/kataras/iris/server"
@@ -146,22 +147,27 @@ type (
 	}
 )
 
-// New creates and returns a new iris Iris. If config is empty then default config is used
-//
-// Receives an optional iris.IrisConfig as parameter
-// If empty then iris.DefaultConfig() are used
-func New(configs ...*IrisConfig) *Iris {
+func prepareConfig(cfg []*IrisConfig) *IrisConfig {
 	config := DefaultConfig()
-	if configs != nil && len(configs) > 0 {
-		config = configs[0]
+	if len(cfg) > 0 {
+		mergo.Merge(config, cfg[0])
 	}
 
 	if config.ProfilePath == "" {
 		config.ProfilePath = DefaultProfilePath
 	}
 
+	return config
+}
+
+// New creates and returns a new iris Iris. If config is empty then default config is used
+//
+// Receives an optional iris.IrisConfig as parameter
+// If empty then iris.DefaultConfig() are used
+func New(configs ...*IrisConfig) *Iris {
+
 	// create the Iris
-	s := &Iris{config: config, plugins: &PluginContainer{}}
+	s := &Iris{config: prepareConfig(configs), plugins: &PluginContainer{}}
 
 	// create & set the router
 	s.router = newRouter(s)

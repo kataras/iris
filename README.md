@@ -112,6 +112,7 @@ Read more about Semantic Versioning 2.0.0
 - [formam](https://github.com/monoculum/formam)
 - [i18n](https://github.com/Unknwon/i18n)
 - [pongo2 as one of the build'n template engines](https://github.com/flosch/pongo2)
+- [mergo as struct merge for config](https://github.com/imdario/mergo)
 
 ## Contributors
 
