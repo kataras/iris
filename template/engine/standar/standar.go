@@ -152,12 +152,13 @@ func (s *Engine) buildFromDir() error {
 			if ext == extension {
 				buf, err := ioutil.ReadFile(path)
 				if err != nil {
-					panic(err)
+					templateErr = err
+					break
 				}
-
-				name := filepath.ToSlash((rel[0 : len(rel)-len(ext)]))
+				name := filepath.ToSlash(rel)
 				tmpl := s.Templates.New(name)
 
+				// for debug println("load new template with name: " + name + " from path: " + path)
 				// Add our funcmaps.
 				for _, funcs := range s.Config.Funcs {
 					tmpl.Funcs(funcs)
@@ -202,7 +203,7 @@ func (s *Engine) buildFromAsset() error {
 					panic(err)
 				}
 
-				name := filepath.ToSlash((rel[0 : len(rel)-len(ext)]))
+				name := filepath.ToSlash(rel)
 				tmpl := s.Templates.New(name)
 
 				// Add our funcmaps.
@@ -256,9 +257,6 @@ func (s *Engine) layoutFuncsFor(name string, binding interface{}) {
 }
 
 func (s *Engine) executeTemplate(out io.Writer, name string, binding interface{}, layout string) error {
-	if layout == "" {
-		layout = s.Config.Layout
-	}
 
 	if layout != "" {
 		s.layoutFuncsFor(name, binding)

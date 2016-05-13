@@ -61,6 +61,10 @@ func (t *Template) Render(ctx context.IContext, name string, bindings interface{
 	if len(layout) > 0 {
 		_layout = layout[0]
 	}
+	if _layout == "" {
+		_layout = config.Layout
+	}
+
 	//
 	if config.Gzip {
 		return t.Engine.ExecuteGzip(ctx, name, bindings, _layout)

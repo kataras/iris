@@ -48,8 +48,11 @@ import (
 	"github.com/kataras/iris/template/engine/standar"
 )
 
-//for conversional
+const (
+	Version = "v3-dev"
+)
 
+//for conversional
 var (
 	StandarEngine = engine.Standar
 	PongoEngine   = engine.Pongo
