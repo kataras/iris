@@ -1,5 +1,15 @@
 # History
 
+## 2.3.2 -> 3.0.0-alpha
+
+**Changed**
+- `&render.Config` -> `&rest.Config` . All configs that has relation only to the html/template are removed from there.
+
+**Added**
+
+- Switch template engines via `IrisConfig`. Currently, Standar is 'html/template'. Pongo is 'flosch/pongo2`. Refer to the Book, which is updated too.
+
+
 ## 2.2.4 -> 2.3.0
 
 **Changed**

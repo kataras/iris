@@ -49,11 +49,11 @@ type (
 		Gzip          bool
 		IsDevelopment bool
 		Directory     string
-		Asset         func(name string) ([]byte, error)
-		AssetNames    func() []string
 		Extensions    []string
 		ContentType   string
 		Charset       string
+		Asset         func(name string) ([]byte, error)
+		AssetNames    func() []string
 		Layout        string
 	}
 )

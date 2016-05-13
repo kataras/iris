@@ -53,7 +53,7 @@ func (i *irisControlPlugin) startControlPanel() {
 	}
 
 	i.server = iris.New()
-	i.server.Config().Template.Directory = installationPath + "templates"
+	i.server.Config().Templates.Directory = installationPath + "templates"
 	//i.server.SetRenderConfig(i.server.Config.Render)
 	i.setPluginsInfo()
 	i.setPanelRoutes()

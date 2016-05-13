@@ -21,6 +21,7 @@ a modern, **community-driven** **web** application **framework** for **Go**. Com
 
 # Features
 
+* **Switch between template engines**: Select the way you like to parse your html files, switchable via one-line-configuration, [read more](https://kataras.gitbooks.io/iris/content/render.html)
 * **Typescript**: Auto-compile & Watch your client side code via the [typescript plugin](https://kataras.gitbooks.io/iris/content/plugin-typescript.html)
 * **Online IDE**: Edit & Compile your client side code when you are not home via the [editor plugin](https://kataras.gitbooks.io/iris/content/plugin-editor.html)
 * **Iris Online Control**: Web-based interface to control the basics functionalities of your server via the [iriscontrol plugin](https://kataras.gitbooks.io/iris/content/plugin-iriscontrol.html). Note that Iris control is still young
@@ -95,7 +96,7 @@ May 12 2016
 ## Versioning
 Compatible only with go1.6+
 
-Current: **v2.3.2**
+Current: **v3.0.0-alpha**
 
 
 Read more about Semantic Versioning 2.0.0
@@ -110,7 +111,7 @@ Read more about Semantic Versioning 2.0.0
 - [fasthttp](https://github.com/valyala/fasthttp)
 - [formam](https://github.com/monoculum/formam)
 - [i18n](https://github.com/Unknwon/i18n)
-- [pongo2 middleware](https://github.com/flosch/pongo2)
+- [pongo2 as one of the build'n template engines](https://github.com/flosch/pongo2)
 
 ## Contributors
 

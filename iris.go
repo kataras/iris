@@ -25,7 +25,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// Package iris v2.3.2
+// Package iris v3.0.0-alpha
 //
 // Note: When 'Station', we mean the Iris type.
 package iris
@@ -49,7 +49,7 @@ import (
 )
 
 const (
-	Version = "v3-dev"
+	Version = "v3.0.0-alpha"
 )
 
 //for conversional
@@ -120,7 +120,7 @@ type (
 		ProfilePath string
 
 		// Template the configs for template
-		Template *TemplateConfig // inside template_config.go
+		Templates *TemplateConfig // inside template_config.go
 		// Rest configs for rendering.
 		//
 		// these options inside this config don't have any relation with the TemplateEngine
@@ -141,7 +141,7 @@ type (
 		server         *server.Server
 		plugins        *PluginContainer
 		rest           *rest.Render
-		template       *template.Template
+		templates      *template.Template
 		sessionManager *sessions.Manager
 
 		config *IrisConfig
@@ -200,9 +200,9 @@ func (s *Iris) Rest() *rest.Render {
 	return s.rest
 }
 
-// Template returns the template render
-func (s *Iris) Template() *template.Template {
-	return s.template
+// Templates returns the template render
+func (s *Iris) Templates() *template.Template {
+	return s.templates
 }
 
 // SetMaxRequestBodySize Maximum request body size.
@@ -237,16 +237,16 @@ func (s *Iris) DoPreListen(opt server.Config) *server.Server {
 	// determinate which template engine is used and set the template wrapper (for html or whatever extension was given)
 	var e engine.Engine
 
-	ct := s.config.Template
+	ct := s.config.Templates
 
-	switch s.config.Template.Engine {
+	switch s.config.Templates.Engine {
 	case engine.Pongo:
 		e = pongo.New(pongo.WrapConfig(ct.Config, ct.Pongo))
 	default:
 		e = standar.New(standar.WrapConfig(ct.Config, ct.Standar)) // default to standar
 	}
 	// I could also do a  check if Pongo's config != empty then use pongo2 but this will brings unexpecting results because the user must explicit give which engine wants via the Engine field
-	s.template = template.New(e)
+	s.templates = template.New(e)
 
 	// router prepare
 	if !s.router.optimized {

@@ -58,9 +58,10 @@ func (ctx *Context) Data(status int, v []byte) error {
 }
 
 // HTML builds up the response from the specified template and bindings.
+// Note: parameter layout has meaning only when using the iris.StandarEngine
 func (ctx *Context) HTML(status int, name string, binding interface{}, layout ...string) error {
 	ctx.SetStatusCode(status)
-	return ctx.station.template.Render(ctx, name, binding, layout...)
+	return ctx.station.templates.Render(ctx, name, binding, layout...)
 }
 
 // Render same as .HTML but with status to iris.StatusOK (200)

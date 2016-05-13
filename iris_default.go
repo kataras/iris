@@ -66,7 +66,7 @@ func DefaultConfig() *IrisConfig {
 		Profile:            false,
 		ProfilePath:        DefaultProfilePath,
 		// set the default template config both not nil and default Engine to Standar
-		Template: &TemplateConfig{
+		Templates: &TemplateConfig{
 			Engine:  engine.Standar,
 			Config:  engine.Common(),
 			Standar: standar.DefaultStandarConfig(),
@@ -319,9 +319,9 @@ func Rest() *rest.Render {
 	return DefaultIris.Rest()
 }
 
-// Template returns the template render
-func Template() *template.Template {
-	return DefaultIris.Template()
+// Templates returns the template render
+func Templates() *template.Template {
+	return DefaultIris.Templates()
 }
 
 // SetMaxRequestBodySize Maximum request body size.
