@@ -167,7 +167,6 @@ func New(configs ...*IrisConfig) *Iris {
 	config := prepareConfig(configs)
 	// create the Iris
 	s := &Iris{config: config, plugins: &PluginContainer{}}
-	println(config.ProfilePath)
 	// create & set the router
 	s.router = newRouter(s)
 

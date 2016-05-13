@@ -29,6 +29,7 @@ package iris
 
 import (
 	"net/http/pprof"
+	"strings"
 	"sync"
 
 	"github.com/kataras/iris/utils"
@@ -165,19 +166,54 @@ func (r *router) optimize() {
 	// set the debug profiling handlers if Profile enabled, before the server startup, not earlier
 	if r.station.config.Profile && r.station.config.ProfilePath != "" {
 		debugPath := r.station.config.ProfilePath
+
 		htmlMiddleware := func(ctx *Context) {
 			ctx.SetContentType([]string{ContentHTML + " ;charset=" + DefaultCharset})
 			ctx.Next()
 		}
-		r.Get(debugPath+"/*any", htmlMiddleware, ToHandlerFunc(pprof.Index))
-		r.Get(debugPath+"/cmdline/*any", htmlMiddleware, ToHandlerFunc(pprof.Cmdline))
-		r.Get(debugPath+"/profile/*any", htmlMiddleware, ToHandlerFunc(pprof.Profile))
-		r.Get(debugPath+"/symbol/*any", htmlMiddleware, ToHandlerFunc(pprof.Symbol))
 
-		r.Get(debugPath+"/goroutine/*any", htmlMiddleware, ToHandlerFunc(pprof.Handler("goroutine")))
-		r.Get(debugPath+"/heap/*any", htmlMiddleware, ToHandlerFunc(pprof.Handler("heap")))
-		r.Get(debugPath+"/threadcreate/*any", htmlMiddleware, ToHandlerFunc(pprof.Handler("threadcreate")))
-		r.Get(debugPath+"/pprof/block/*any", htmlMiddleware, ToHandlerFunc(pprof.Handler("block")))
+		indexHandler := ToHandlerFunc(pprof.Index)
+		cmdlineHandler := ToHandlerFunc(pprof.Cmdline)
+		profileHandler := ToHandlerFunc(pprof.Profile)
+		symbolHandler := ToHandlerFunc(pprof.Symbol)
+
+		goroutineHandler := ToHandlerFunc(pprof.Handler("goroutine"))
+		heapHandler := ToHandlerFunc(pprof.Handler("heap"))
+		threadcreateHandler := ToHandlerFunc(pprof.Handler("threadcreate"))
+		debugBlockHandler := ToHandlerFunc(pprof.Handler("block"))
+
+		r.Get(debugPath+"/*action", htmlMiddleware, func(ctx *Context) {
+			action := ctx.Param("action")
+			if len(action) > 1 {
+				if strings.Contains(action, "cmdline") {
+					cmdlineHandler.Serve((ctx))
+				} else if strings.Contains(action, "profile") {
+					profileHandler.Serve(ctx)
+				} else if strings.Contains(action, "symbol") {
+					symbolHandler.Serve(ctx)
+				} else if strings.Contains(action, "goroutine") {
+					goroutineHandler.Serve(ctx)
+				} else if strings.Contains(action, "heap") {
+					heapHandler.Serve(ctx)
+				} else if strings.Contains(action, "threadcreate") {
+					threadcreateHandler.Serve(ctx)
+				} else if strings.Contains(action, "debug/block") {
+					debugBlockHandler.Serve(ctx)
+				}
+			} else {
+				indexHandler.Serve(ctx)
+			}
+
+		})
+		/*r.Get(debugPath+"/cmdline", htmlMiddleware)
+		r.Get(debugPath+"/profile", htmlMiddleware)
+		r.Get(debugPath+"/symbol", htmlMiddleware)
+
+		r.Get(debugPath+"/goroutine", htmlMiddleware)
+		r.Get(debugPath+"/heap", htmlMiddleware)
+		r.Get(debugPath+"/threadcreate", htmlMiddleware)
+		r.Get(debugPath+"/debug/block", htmlMiddleware)*/
+
 	}
 
 	r.optimized = true
