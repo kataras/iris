@@ -54,12 +54,13 @@ func (ctx *Context) WriteHTML(httpStatus int, htmlContents string) {
 
 // Data writes out the raw bytes as binary data.
 func (ctx *Context) Data(status int, v []byte) error {
-	return ctx.station.render.Data(ctx.RequestCtx, status, v)
+	return ctx.station.rest.Data(ctx.RequestCtx, status, v)
 }
 
 // HTML builds up the response from the specified template and bindings.
 func (ctx *Context) HTML(status int, name string, binding interface{}, layout ...string) error {
-	return ctx.station.render.HTML(ctx.RequestCtx, status, name, binding, layout...)
+	ctx.SetStatusCode(status)
+	return ctx.station.template.Render(ctx, name, binding, layout...)
 }
 
 // Render same as .HTML but with status to iris.StatusOK (200)
@@ -69,22 +70,22 @@ func (ctx *Context) Render(name string, binding interface{}, layout ...string) e
 
 // JSON marshals the given interface object and writes the JSON response.
 func (ctx *Context) JSON(status int, v interface{}) error {
-	return ctx.station.render.JSON(ctx.RequestCtx, status, v)
+	return ctx.station.rest.JSON(ctx.RequestCtx, status, v)
 }
 
 // JSONP marshals the given interface object and writes the JSON response.
 func (ctx *Context) JSONP(status int, callback string, v interface{}) error {
-	return ctx.station.render.JSONP(ctx.RequestCtx, status, callback, v)
+	return ctx.station.rest.JSONP(ctx.RequestCtx, status, callback, v)
 }
 
 // Text writes out a string as plain text.
 func (ctx *Context) Text(status int, v string) error {
-	return ctx.station.render.Text(ctx.RequestCtx, status, v)
+	return ctx.station.rest.Text(ctx.RequestCtx, status, v)
 }
 
 // XML marshals the given interface object and writes the XML response.
 func (ctx *Context) XML(status int, v interface{}) error {
-	return ctx.station.render.XML(ctx.RequestCtx, status, v)
+	return ctx.station.rest.XML(ctx.RequestCtx, status, v)
 }
 
 // ExecuteTemplate executes a simple html template, you can use that if you already have the cached templates

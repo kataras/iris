@@ -28,22 +28,43 @@
 package template
 
 import (
-	"github.com/kataras/iris/template/engine/pongo"
-	"github.com/kataras/iris/template/engine/standar"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/template/engine"
 )
 
-// here the globals
+type (
+	Template struct {
+		Engine engine.Engine
+	}
+)
 
-func New(config *Config) *Render {
-	return newRender(config)
+func New(e engine.Engine) *Template {
+
+	if err := e.BuildTemplates(); err != nil { // first build the templates, if error panic because this is called before server's run
+		panic(err)
+	}
+
+	return &Template{e}
 }
 
-func Standar() *standar.Engine {
-	return standar.New()
-}
+func (t *Template) Render(ctx context.IContext, name string, bindings interface{}, layout ...string) error {
+	config := t.Engine.GetConfig()
+	// build templates again on each render if IsDevelopment.
+	if config.IsDevelopment {
+		if err := t.Engine.BuildTemplates(); err != nil {
+			return err
+		}
+	}
+	ctx.GetRequestCtx().Response.Header.Set("Content-Type", config.ContentType+"; charset="+config.Charset)
+	// I don't like this, something feels wrong
+	_layout := ""
+	if len(layout) > 0 {
+		_layout = layout[0]
+	}
+	//
+	if config.Gzip {
+		return t.Engine.ExecuteGzip(ctx, name, bindings, _layout)
+	}
 
-func Pongo() *pongo.Engine {
-	return pongo.New()
+	return t.Engine.Execute(ctx, name, bindings, _layout)
 }
-
-//

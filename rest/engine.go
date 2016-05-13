@@ -1,10 +1,9 @@
-package render
+package rest
 
 import (
 	"bytes"
 	"encoding/json"
 	"encoding/xml"
-	"html/template"
 
 	"github.com/klauspost/compress/gzip"
 	"github.com/valyala/fasthttp"
@@ -26,13 +25,6 @@ type Head struct {
 // Data built-in renderer.
 type Data struct {
 	Head
-}
-
-// HTML built-in renderer.
-type HTML struct {
-	Head
-	Name      string
-	Templates *template.Template
 }
 
 // JSON built-in renderer.
@@ -96,41 +88,6 @@ func (d Data) RenderGzip(ctx *fasthttp.RequestCtx, v interface{}) error {
 		ctx.Response.Header.Add("Content-Encoding", "gzip")
 	}
 	return err
-}
-
-// Render a HTML response.
-func (h HTML) Render(ctx *fasthttp.RequestCtx, binding interface{}) error {
-	// Retrieve a buffer from the pool to write to.
-	out := bufPool.Get()
-	err := h.Templates.ExecuteTemplate(out, h.Name, binding)
-	if err != nil {
-		bufPool.Put(out)
-		return err
-	}
-	w := ctx.Response.BodyWriter()
-	h.Head.Write(ctx)
-	out.WriteTo(w)
-
-	// Return the buffer to the pool.
-	bufPool.Put(out)
-	return nil
-}
-
-// RenderGzip a HTML response using Gzip compression.
-func (h HTML) RenderGzip(ctx *fasthttp.RequestCtx, binding interface{}) error {
-
-	// Retrieve a buffer from the pool to write to.
-	out := gzip.NewWriter(ctx.Response.BodyWriter())
-	err := h.Templates.ExecuteTemplate(out, h.Name, binding)
-	if err != nil {
-		return err
-	}
-	//out.Flush()
-	out.Close()
-	ctx.Response.Header.Add("Content-Encoding", "gzip")
-	h.Head.Write(ctx)
-
-	return nil
 }
 
 // Render a JSON response.

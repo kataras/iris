@@ -37,11 +37,22 @@ import (
 	"time"
 
 	"github.com/kataras/iris/logger"
-	"github.com/kataras/iris/render"
+	"github.com/kataras/iris/rest"
 	"github.com/kataras/iris/server"
 	"github.com/kataras/iris/sessions"
 	_ "github.com/kataras/iris/sessions/providers/memory"
 	_ "github.com/kataras/iris/sessions/providers/redis"
+	"github.com/kataras/iris/template"
+	"github.com/kataras/iris/template/engine"
+	"github.com/kataras/iris/template/engine/pongo"
+	"github.com/kataras/iris/template/engine/standar"
+)
+
+//for conversional
+
+var (
+	StandarEngine = engine.Standar
+	PongoEngine   = engine.Pongo
 )
 
 type (
@@ -57,6 +68,14 @@ type (
 		Secret string
 		// Life time.Duration, cookie life duration and gc duration, for example: time.Duration(60)*time.Minute
 		Life time.Duration
+	}
+
+	TemplateConfig struct {
+		Engine         engine.EngineType
+		*engine.Config // contains common configs for both standar & pongo
+
+		Standar *standar.StandarConfig // contains specific configs for standar html/template
+		Pongo   *pongo.PongoConfig     // contains specific configs for pongo2
 	}
 
 	// IrisConfig options for iris before server listen
@@ -97,14 +116,13 @@ type (
 		// Default is /debug/pprof , which means yourhost.com/debug/pprof
 		ProfilePath string
 
-		// TemplateEngine the engine for rendering templates [No usage yet, wait for iris-v3]
-		TemplateEngine TemplateEngine
-		// Render configs for rendering.
-		// Render has some options for rendering with html/template only, we will keep this as it is on iris-v3 too.
+		// Template the configs for template
+		Template *TemplateConfig // inside template_config.go
+		// Rest configs for rendering.
 		//
 		// these options inside this config don't have any relation with the TemplateEngine
-		// from github.com/kataras/iris/render
-		Render *render.Config
+		// from github.com/kataras/iris/rest
+		Rest *rest.Config
 
 		// Session the config for sessions
 		// contains 3(three) properties
@@ -119,7 +137,8 @@ type (
 		*router
 		server         *server.Server
 		plugins        *PluginContainer
-		render         *render.Render
+		rest           *rest.Render
+		template       *template.Template
 		sessionManager *sessions.Manager
 
 		config *IrisConfig
@@ -149,10 +168,7 @@ func New(configs ...*IrisConfig) *Iris {
 
 	// set the Logger
 	s.logger = logger.New()
-	s.logger.SetEnable(config.Log)
 
-	// set the render for Data,Text, JSON, JSONP, XML and pure html/template if config.TemplateEngine == TemplateEngine.Standar (see DoPreListen)
-	s.render = render.Create(config.Render)
 	return s
 }
 
@@ -176,9 +192,14 @@ func (s *Iris) Logger() *logger.Logger {
 	return s.logger
 }
 
-// Render returns the render
-func (s *Iris) Render() *render.Render {
-	return s.render
+// Render returns the rest render
+func (s *Iris) Rest() *rest.Render {
+	return s.rest
+}
+
+// Template returns the template render
+func (s *Iris) Template() *template.Template {
+	return s.template
 }
 
 // SetMaxRequestBodySize Maximum request body size.
@@ -204,16 +225,25 @@ func (s *Iris) newContextPool() sync.Pool {
 func (s *Iris) DoPreListen(opt server.Config) *server.Server {
 	//runs only once even if called more than one time.
 
-	// build/prepare the  render now.
-	if s.render == nil { // if it's nil ( that's not happening normally, it is setted on .New() )
-		s.render = render.New(s.config.Render)
-	}
+	// set the logger's state
+	s.logger.SetEnable(s.config.Log)
 
-	s.render.PrepareConfig()
+	// set the rest render (for Data, Text, JSON, JSONP, XML)
+	s.rest = rest.New(s.config.Rest)
 
-	if s.config.TemplateEngine == TemplateEngines.Standar {
-		s.render.PrepareTemplates()
+	// determinate which template engine is used and set the template wrapper (for html or whatever extension was given)
+	var e engine.Engine
+
+	ct := s.config.Template
+
+	switch s.config.Template.Engine {
+	case engine.Pongo:
+		e = pongo.New(pongo.WrapConfig(ct.Config, ct.Pongo))
+	default:
+		e = standar.New(standar.WrapConfig(ct.Config, ct.Standar)) // default to standar
 	}
+	// I could also do a  check if Pongo's config != empty then use pongo2 but this will brings unexpecting results because the user must explicit give which engine wants via the Engine field
+	s.template = template.New(e)
 
 	// router prepare
 	if !s.router.optimized {

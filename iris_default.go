@@ -28,12 +28,15 @@
 package iris
 
 import (
-	"html/template"
 	"time"
 
 	"github.com/kataras/iris/logger"
-	"github.com/kataras/iris/render"
+	"github.com/kataras/iris/rest"
 	"github.com/kataras/iris/server"
+	"github.com/kataras/iris/template"
+	"github.com/kataras/iris/template/engine"
+	"github.com/kataras/iris/template/engine/pongo"
+	"github.com/kataras/iris/template/engine/standar"
 )
 
 // DefaultIris in order to use iris.Get(...,...) we need a default Iris on the package level
@@ -62,25 +65,21 @@ func DefaultConfig() *IrisConfig {
 		Log:                true,
 		Profile:            false,
 		ProfilePath:        DefaultProfilePath,
-		TemplateEngine:     TemplateEngines.Standar,
-		Render: &render.Config{
-			Directory:                 "templates",
-			Asset:                     nil,
-			AssetNames:                nil,
-			Layout:                    "",
-			Extensions:                []string{".html"},
-			Funcs:                     []template.FuncMap{},
-			Delims:                    render.Delims{"{{", "}}"},
+		// set the default template config both not nil and default Engine to Standar
+		Template: &TemplateConfig{
+			Engine:  engine.Standar,
+			Config:  engine.Common(),
+			Standar: standar.DefaultStandarConfig(),
+			Pongo:   pongo.DefaultPongoConfig(),
+		},
+		Rest: &rest.Config{
 			Charset:                   DefaultCharset,
 			IndentJSON:                false,
 			IndentXML:                 false,
 			PrefixJSON:                []byte(""),
 			PrefixXML:                 []byte(""),
-			HTMLContentType:           "text/html",
-			IsDevelopment:             false,
 			UnEscapeHTML:              false,
 			StreamingJSON:             false,
-			RequirePartials:           false,
 			DisableHTTPErrorRendering: false,
 		},
 		Session: &SessionConfig{
@@ -315,9 +314,14 @@ func Logger() *logger.Logger {
 	return DefaultIris.Logger()
 }
 
-// Render returns the render
-func Render() *render.Render {
-	return DefaultIris.Render()
+// Rest returns the rest render
+func Rest() *rest.Render {
+	return DefaultIris.Rest()
+}
+
+// Template returns the template render
+func Template() *template.Template {
+	return DefaultIris.Template()
 }
 
 // SetMaxRequestBodySize Maximum request body size.

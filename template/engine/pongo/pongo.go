@@ -27,11 +27,16 @@
 
 package pongo
 
+/* TODO:
+1. Find if pongo2 supports layout, it should have extends or something like django but I don't know yet, if exists then do something with the layour parameter in Exeucte/Gzip.
+
+*/
 import (
 	"compress/gzip"
 
 	"github.com/flosch/pongo2"
 	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/template/engine"
 	"github.com/kataras/iris/utils"
 )
 
@@ -40,10 +45,13 @@ var (
 )
 
 type (
-	Config struct {
-		Directory string
-		// Filters for pongo2, map[name of the filter] the filter function . The filters are auto register
+	PongoConfig struct {
 		Filters map[string]pongo2.FilterFunction
+	}
+	Config struct {
+		*engine.Config
+		// Filters for pongo2, map[name of the filter] the filter function . The filters are auto register
+		*PongoConfig
 	}
 
 	Engine struct {
@@ -52,14 +60,30 @@ type (
 	}
 )
 
-func New() *Engine {
+func WrapConfig(common *engine.Config, pongo *PongoConfig) *Config {
+	return &Config{Config: common, PongoConfig: pongo}
+}
+
+// DefaultPongoConfig returns the default pongo specific options, no the whole Config
+func DefaultPongoConfig() *PongoConfig {
+	return &PongoConfig{Filters: make(map[string]pongo2.FilterFunction, 0)}
+}
+
+func New(config *Config) *Engine {
 	if buffer == nil {
 		buffer = utils.NewBufferPool(64)
 	}
-	return &Engine{Config: &Config{Directory: "templates", Filters: make(map[string]pongo2.FilterFunction, 0)}}
+	if config == nil {
+		config = WrapConfig(engine.Common(), DefaultPongoConfig())
+	}
+	return &Engine{Config: config}
 }
 
-func (p *Engine) Execute(ctx context.IContext, name string, binding interface{}) error {
+func (p *Engine) GetConfig() *engine.Config {
+	return p.Config.Config
+}
+
+func (p *Engine) Execute(ctx context.IContext, name string, binding interface{}, layout string) error {
 	// get the template from cache, I never used pongo2 but I think reading its code helps me to understand that this is the best way to do it with the best performance.
 	tmpl, err := p.Templates.FromCache(name)
 	if err != nil {
@@ -82,7 +106,7 @@ func (p *Engine) Execute(ctx context.IContext, name string, binding interface{})
 	return nil
 }
 
-func (p *Engine) ExecuteGzip(ctx context.IContext, name string, binding interface{}) error {
+func (p *Engine) ExecuteGzip(ctx context.IContext, name string, binding interface{}, layout string) error {
 	tmpl, err := p.Templates.FromCache(name)
 	if err != nil {
 		return err
