@@ -55,21 +55,14 @@ type Config struct {
 // binary data, and HTML templates out to a HTTP Response.
 type Render struct {
 	// Customize Secure with an Options struct.
-	Config          *Config
+	Config          Config
 	compiledCharset string
 }
 
 // New constructs a new Render instance with the supplied configs.
-func New(config ...*Config) *Render {
-	var c *Config
+func New(c Config) *Render {
 	if bufPool == nil {
 		bufPool = utils.NewBufferPool(64)
-	}
-
-	if len(config) == 0 {
-		c = &Config{}
-	} else {
-		c = config[0]
 	}
 
 	r := &Render{
@@ -81,14 +74,10 @@ func New(config ...*Config) *Render {
 	return r
 }
 
-func DefaultConfig() *Config {
-	return &Config{Charset: defaultCharset}
-}
-
 func (r *Render) prepareConfig() {
 	// Fill in the defaults if need be.
 	if len(r.Config.Charset) == 0 {
-		r.Config = DefaultConfig()
+		r.Config.Charset = defaultCharset
 	}
 	r.compiledCharset = "; charset=" + r.Config.Charset
 }

@@ -36,8 +36,6 @@ type (
 	EngineType uint8
 
 	Engine interface {
-		// GetConfig returns only the configs that we need which is the same-configs-for-all only
-		GetConfig() *Config
 		BuildTemplates() error
 		Execute(ctx context.IContext, name string, binding interface{}, layout string) error
 		ExecuteGzip(ctx context.IContext, name string, binding interface{}, layout string) error
@@ -63,8 +61,8 @@ const (
 	Pongo   EngineType = 1
 )
 
-func Common() *Config {
-	return &Config{
+func Common() Config {
+	return Config{
 		Gzip:          false,
 		IsDevelopment: false,
 		Directory:     "templates",

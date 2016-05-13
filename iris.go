@@ -25,7 +25,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// Package iris v3.0.0-alpha
+// Package iris v3.0.0-alpha.1
 //
 // Note: When 'Station', we mean the Iris type.
 package iris
@@ -44,19 +44,24 @@ import (
 	_ "github.com/kataras/iris/sessions/providers/redis"
 	"github.com/kataras/iris/template"
 	"github.com/kataras/iris/template/engine"
-	"github.com/kataras/iris/template/engine/pongo"
-	"github.com/kataras/iris/template/engine/standar"
 )
 
 const (
-	Version = "v3.0.0-alpha"
+	Version = "v3.0.0-alpha.1"
 )
 
-//for conversional
+// conversions
 var (
 	StandarEngine = engine.Standar
 	PongoEngine   = engine.Pongo
 )
+
+type (
+	TemplateConfig template.TemplateOptions
+	RestConfig     rest.Config
+)
+
+// end
 
 type (
 
@@ -71,14 +76,6 @@ type (
 		Secret string
 		// Life time.Duration, cookie life duration and gc duration, for example: time.Duration(60)*time.Minute
 		Life time.Duration
-	}
-
-	TemplateConfig struct {
-		Engine         engine.EngineType
-		*engine.Config // contains common configs for both standar & pongo
-
-		Standar *standar.StandarConfig // contains specific configs for standar html/template
-		Pongo   *pongo.PongoConfig     // contains specific configs for pongo2
 	}
 
 	// IrisConfig options for iris before server listen
@@ -120,12 +117,12 @@ type (
 		ProfilePath string
 
 		// Template the configs for template
-		Templates *TemplateConfig // inside template_config.go
+		Templates *TemplateConfig
 		// Rest configs for rendering.
 		//
 		// these options inside this config don't have any relation with the TemplateEngine
 		// from github.com/kataras/iris/rest
-		Rest *rest.Config
+		Rest *RestConfig
 
 		// Session the config for sessions
 		// contains 3(three) properties
@@ -232,21 +229,10 @@ func (s *Iris) DoPreListen(opt server.Config) *server.Server {
 	s.logger.SetEnable(s.config.Log)
 
 	// set the rest render (for Data, Text, JSON, JSONP, XML)
-	s.rest = rest.New(s.config.Rest)
+	s.rest = rest.New(rest.Config(*s.config.Rest))
 
-	// determinate which template engine is used and set the template wrapper (for html or whatever extension was given)
-	var e engine.Engine
-
-	ct := s.config.Templates
-
-	switch s.config.Templates.Engine {
-	case engine.Pongo:
-		e = pongo.New(pongo.WrapConfig(ct.Config, ct.Pongo))
-	default:
-		e = standar.New(standar.WrapConfig(ct.Config, ct.Standar)) // default to standar
-	}
-	// I could also do a  check if Pongo's config != empty then use pongo2 but this will brings unexpecting results because the user must explicit give which engine wants via the Engine field
-	s.templates = template.New(e)
+	// set the templates
+	s.templates = template.New(template.TemplateOptions(*s.config.Templates))
 
 	// router prepare
 	if !s.router.optimized {

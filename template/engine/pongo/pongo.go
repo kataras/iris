@@ -54,8 +54,8 @@ type (
 	}
 
 	Config struct {
-		*engine.Config
-		*PongoConfig
+		engine.Config
+		PongoConfig
 	}
 
 	Engine struct {
@@ -64,13 +64,13 @@ type (
 	}
 )
 
-func WrapConfig(common *engine.Config, pongo *PongoConfig) *Config {
+func WrapConfig(common engine.Config, pongo PongoConfig) *Config {
 	return &Config{Config: common, PongoConfig: pongo}
 }
 
 // DefaultPongoConfig returns the default pongo specific options, no the whole Config
-func DefaultPongoConfig() *PongoConfig {
-	return &PongoConfig{Filters: make(map[string]pongo2.FilterFunction, 0)}
+func DefaultPongoConfig() PongoConfig {
+	return PongoConfig{Filters: make(map[string]pongo2.FilterFunction, 0)}
 }
 
 func New(config *Config) *Engine {
@@ -84,7 +84,7 @@ func New(config *Config) *Engine {
 }
 
 func (p *Engine) GetConfig() *engine.Config {
-	return p.Config.Config
+	return &p.Config.Config
 }
 
 func (p *Engine) BuildTemplates() error {

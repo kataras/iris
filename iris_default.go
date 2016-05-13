@@ -72,7 +72,7 @@ func DefaultConfig() *IrisConfig {
 			Standar: standar.DefaultStandarConfig(),
 			Pongo:   pongo.DefaultPongoConfig(),
 		},
-		Rest: &rest.Config{
+		Rest: &RestConfig{
 			Charset:                   DefaultCharset,
 			IndentJSON:                false,
 			IndentXML:                 false,

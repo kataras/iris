@@ -96,7 +96,7 @@ May 12 2016
 ## Versioning
 Compatible only with go1.6+
 
-Current: **v3.0.0-alpha**
+Current: **v3.0.0-alpha.1**
 
 
 Read more about Semantic Versioning 2.0.0

@@ -58,8 +58,8 @@ type (
 	}
 
 	Config struct {
-		*engine.Config
-		*StandarConfig
+		engine.Config
+		StandarConfig
 	}
 
 	Engine struct {
@@ -82,13 +82,13 @@ var emptyFuncs = template.FuncMap{
 	},
 }
 
-func WrapConfig(common *engine.Config, standar *StandarConfig) *Config {
+func WrapConfig(common engine.Config, standar StandarConfig) *Config {
 	return &Config{Config: common, StandarConfig: standar}
 }
 
 // DefaultStandarConfig returns the default standar specific options, no the whole Config
-func DefaultStandarConfig() *StandarConfig {
-	return &StandarConfig{Left: "{{", Right: "}}", Funcs: make([]template.FuncMap, 0)}
+func DefaultStandarConfig() StandarConfig {
+	return StandarConfig{Left: "{{", Right: "}}", Funcs: make([]template.FuncMap, 0)}
 }
 
 // this can work as standalone also
@@ -105,7 +105,7 @@ func New(config *Config) *Engine {
 }
 
 func (s *Engine) GetConfig() *engine.Config {
-	return s.Config.Config
+	return &s.Config.Config
 }
 
 func (s *Engine) BuildTemplates() error {
