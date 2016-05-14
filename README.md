@@ -144,6 +144,6 @@ From a younger age I have dedicated all my time to various open source projects,
 
 ## License
 
-This project is licensed under the [BSD 3-Clause License](https://opensource.org/licenses/BSD-3-Clause).
+This project is licensed under the [MIT License](https://opensource.org/licenses/MIT).
 License can be found [here](https://github.com/kataras/iris/blob/master/LICENSE).
 

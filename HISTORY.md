@@ -6,7 +6,7 @@
 - `&render.Config` -> `&iris.RestConfig` . All related to the html/template are removed from there.
 - `ctx.Render("index",...)` -> `ctx.Render("index.html",...)` or any extension you have defined in iris.Config().Templates.Extensions
 - `iris.Config().Render.Layout = "layouts/layout"` -> `iris.Config().Templates.Layout = "layouts/layout.html"`
-
+- `License BSD-3 Clause Open source` -> `MIT License`
 **Added**
 
 - Switch template engines via `IrisConfig`. Currently, Standar is 'html/template'. Pongo is 'flosch/pongo2`. Refer to the Book, which is updated too, [read here](https://kataras.gitbooks.io/iris/content/render.html).
