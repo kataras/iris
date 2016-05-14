@@ -34,9 +34,6 @@ import (
 	"github.com/kataras/iris/rest"
 	"github.com/kataras/iris/server"
 	"github.com/kataras/iris/template"
-	"github.com/kataras/iris/template/engine"
-	"github.com/kataras/iris/template/engine/pongo"
-	"github.com/kataras/iris/template/engine/standar"
 )
 
 // DefaultIris in order to use iris.Get(...,...) we need a default Iris on the package level
@@ -66,12 +63,7 @@ func DefaultConfig() *IrisConfig {
 		Profile:            false,
 		ProfilePath:        DefaultProfilePath,
 		// set the default template config both not nil and default Engine to Standar
-		Templates: &TemplateConfig{
-			Engine:  engine.Standar,
-			Config:  engine.Common(),
-			Standar: standar.DefaultStandarConfig(),
-			Pongo:   pongo.DefaultPongoConfig(),
-		},
+		Templates: DefaultTemplateConfig(),
 		Rest: &RestConfig{
 			Charset:                   DefaultCharset,
 			IndentJSON:                false,

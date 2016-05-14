@@ -4,6 +4,8 @@
 
 **Changed**
 - `&render.Config` -> `&iris.RestConfig` . All related to the html/template are removed from there.
+- `ctx.Render("index",...)` -> `ctx.Render("index.html",...)` or any extension you have defined in iris.Config().Templates.Extensions
+- `iris.Config().Render.Layout = "layouts/layout"` -> `iris.Config().Templates.Layout = "layouts/layout.html"`
 
 **Added**
 

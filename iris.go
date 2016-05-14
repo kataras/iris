@@ -44,28 +44,15 @@ import (
 	_ "github.com/kataras/iris/sessions/providers/memory"
 	_ "github.com/kataras/iris/sessions/providers/redis"
 	"github.com/kataras/iris/template"
-	"github.com/kataras/iris/template/engine"
 )
 
 const (
 	Version = "v3.0.0-alpha.1"
 )
 
-// conversions
-var (
-	StandarEngine = engine.Standar
-	PongoEngine   = engine.Pongo
-)
-
 type (
-	TemplateConfig template.TemplateOptions
-	RestConfig     rest.Config
-)
-
-// end
-
-type (
-
+	// RestConfig conversion for rest.Config
+	RestConfig rest.Config
 	// SessionConfig the configuration for sessions
 	// We don't import the providers and make it easier with Provider = iris.Redis OR iris.Memory [iotas] and make all the rest automatically because
 	// we want to give the developers the functionality to change the options of each now/and future/or custom session provider they select
@@ -236,7 +223,7 @@ func (s *Iris) DoPreListen(opt server.Config) *server.Server {
 	s.rest = rest.New(rest.Config(*s.config.Rest))
 
 	// set the templates
-	s.templates = template.New(template.TemplateOptions(*s.config.Templates))
+	s.templates = template.New(s.config.Templates.Convert())
 
 	// router prepare
 	if !s.router.optimized {
