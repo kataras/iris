@@ -67,7 +67,11 @@ func (p *GardenParty) Handle(method string, registedPath string, handlers ...Han
 		}
 		return
 	}
-	path := fixPath(absPath(p.relativePath, registedPath))
+	path := fixPath(p.relativePath + registedPath) // keep the last "/" as default ex: "/xyz/"
+	if p.station.config.PathCorrection {
+		// if we have path correction remove it with absPath
+		path = fixPath(absPath(p.relativePath, registedPath)) // "/xyz"
+	}
 	middleware := JoinMiddleware(p.middleware, handlers)
 	route := NewRoute(method, path, middleware)
 	p.station.plugins.DoPreHandle(route)
