@@ -6,10 +6,12 @@ import (
 	"github.com/kataras/iris/render/template/engine/html"
 )
 
+// Engine the JadeEngine
 type Engine struct {
 	*html.Engine
 }
 
+// new creates and returns a new JadeEngine with its configs
 func New(cfg config.Template) *Engine {
 
 	underline := &Engine{Engine: html.New(cfg)}

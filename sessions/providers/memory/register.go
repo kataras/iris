@@ -12,6 +12,7 @@ func init() {
 }
 
 var (
+	// Provider the memory provider
 	Provider = sessions.NewProvider("memory")
 )
 

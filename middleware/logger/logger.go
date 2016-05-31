@@ -1,11 +1,12 @@
 package logger
 
 import (
+	"strconv"
+	"time"
+
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/logger"
-	"strconv"
-	"time"
 )
 
 // Options are the options of the logger middlweare
@@ -13,11 +14,16 @@ import (
 // Latency, Status, IP, Method, Path
 // if set to true then these will print
 type Options struct {
+	// Latency displays latency (bool)
 	Latency bool
-	Status  bool
-	IP      bool
-	Method  bool
-	Path    bool
+	// Status displays status code (bool)
+	Status bool
+	// IP displays request's remote address (bool)
+	IP bool
+	// Method displays the http method (bool)
+	Method bool
+	// Path displays the request path (bool)
+	Path bool
 }
 
 // DefaultOptions returns an options which all properties are true
@@ -30,7 +36,7 @@ type loggerMiddleware struct {
 	options Options
 }
 
-// a poor  and ugly implementation of a logger but no need to worry about this at the moment
+// Serve serves the middleware
 func (l *loggerMiddleware) Serve(ctx *iris.Context) {
 	//all except latency to string
 	var date, status, ip, method, path string

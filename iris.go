@@ -19,7 +19,9 @@ import (
 	"github.com/kataras/iris/render/template"
 	"github.com/kataras/iris/server"
 	"github.com/kataras/iris/sessions"
+	//  memory loads the memory session provider
 	_ "github.com/kataras/iris/sessions/providers/memory"
+	// _ redis loads the redis session provider
 	_ "github.com/kataras/iris/sessions/providers/redis"
 	"github.com/kataras/iris/utils"
 	"github.com/kataras/iris/websocket"
@@ -27,6 +29,7 @@ import (
 )
 
 const (
+	// Version of the iris
 	Version = "v3.0.0-beta"
 	banner  = `                        _____      _
                        |_   _|    (_)
@@ -41,14 +44,21 @@ const (
 /* for conversion */
 
 var (
-	HTMLEngine     = config.HTMLEngine
-	PongoEngine    = config.PongoEngine
+	// HTMLEngine conversion for config.HTMLEngine
+	HTMLEngine = config.HTMLEngine
+	// PongoEngine conversion for config.PongoEngine
+	PongoEngine = config.PongoEngine
+	// MarkdownEngine conversion for config.MarkdownEngine
 	MarkdownEngine = config.MarkdownEngine
-	JadeEngine     = config.JadeEngine
-	AmberEngine    = config.AmberEngine
+	// JadeEngine conversion for config.JadeEngine
+	JadeEngine = config.JadeEngine
+	// AmberEngine conversion for config.AmberEngine
+	AmberEngine = config.AmberEngine
 
+	// DefaultEngine conversion for config.DefaultEngine
 	DefaultEngine = config.DefaultEngine
-	NoEngine      = config.NoEngine
+	// NoEngine conversion for config.NoEngine
+	NoEngine = config.NoEngine
 	//
 
 	NoLayout = config.NoLayout
@@ -104,7 +114,7 @@ func (s *Iris) newContextPool() sync.Pool {
 }
 
 func (s *Iris) initTemplates() {
-	if s.templates == nil { // because if .Templates() called before server's listen, s.templates != nil
+	if s.templates == nil { // because if .Templates() called before server's listen, s.templates != nil when PreListen
 		//  init the templates
 		s.templates = template.New(s.config.Render.Template)
 	}
@@ -295,7 +305,7 @@ func (s *Iris) Logger() *logger.Logger {
 	return s.logger
 }
 
-// Render returns the rest render
+// Rest returns the rest render
 func (s *Iris) Rest() *rest.Render {
 	return s.rest
 }

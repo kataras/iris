@@ -7,10 +7,14 @@ import (
 )
 
 const (
-	DefaultBasicAuthRealm      = "Authorization Required"
+	// DefaultBasicAuth is "Authorization Required"
+	DefaultBasicAuthRealm = "Authorization Required"
+	// DefaultBasicAuthContextKey is the "auth"
+	// this key is used to do context.Set("auth", theUsernameFromBasicAuth)
 	DefaultBasicAuthContextKey = "auth"
 )
 
+// BasicAuth the configs for the basicauth middleware
 type BasicAuth struct {
 	// Users a map of login and the value (username/password)
 	Users map[string]string
@@ -27,7 +31,7 @@ func DefaultBasicAuth() BasicAuth {
 	return BasicAuth{make(map[string]string), DefaultBasicAuthRealm, DefaultBasicAuthContextKey, 0}
 }
 
-// Merge MergeSingle the default with the given config and returns the result
+// MergeSingle merges the default with the given config and returns the result
 func (c BasicAuth) MergeSingle(cfg BasicAuth) (config BasicAuth) {
 
 	config = cfg

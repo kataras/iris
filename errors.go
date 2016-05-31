@@ -9,9 +9,11 @@ var (
 	// It seems to be a  +type Points to: +pointer.'
 	ErrHandler = errors.New("Passed argument is not func(*Context) neither an object which implements the iris.Handler with Serve(ctx *Context)\n It seems to be a  %T Points to: %v.")
 	// ErrHandleAnnotated returns an error with message: 'HandleAnnotated parse: +specific error(s)'
-	ErrHandleAnnotated           = errors.New("HandleAnnotated parse: %s")
+	ErrHandleAnnotated = errors.New("HandleAnnotated parse: %s")
+	// ErrControllerContextNotFound returns an error with message: 'Context *iris.Context could not be found, the Controller won't be registed.'
 	ErrControllerContextNotFound = errors.New("Context *iris.Context could not be found, the Controller won't be registed.")
-	ErrDirectoryFileNotFound     = errors.New("Directory or file %s couldn't found. Trace: %s")
+	// ErrDirectoryFileNotFound returns an errir with message: 'Directory or file %s couldn't found. Trace: +error trace'
+	ErrDirectoryFileNotFound = errors.New("Directory or file %s couldn't found. Trace: %s")
 	// Plugin
 
 	// ErrPluginAlreadyExists returns an error with message: 'Cannot activate the same plugin again, plugin '+plugin name[+plugin description]' is already exists'

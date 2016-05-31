@@ -19,17 +19,37 @@ import (
 )
 
 type (
+	// Engine the interface that all template engines must inheritance
 	Engine interface {
+		// BuildTemplates builds the templates for a directory
 		BuildTemplates() error
+		// ExecuteWriter finds and execute a template and write its result to the out writer
 		ExecuteWriter(out io.Writer, name string, binding interface{}, layout string) error
 	}
 
+	// Template the internal configs for the common configs for the template engines
 	Template struct {
-		Engine         Engine
-		IsDevelopment  bool
-		Gzip           bool
-		ContentType    string
-		Layout         string
+		// Engine the type of the Engine
+		Engine Engine
+		// Gzip enable gzip compression
+		// default is false
+		Gzip bool
+		// IsDevelopment re-builds the templates on each request
+		// default is false
+		IsDevelopment bool
+		// Directory the system path which the templates live
+		// default is ./templates
+		Directory string
+		// Extensions the allowed file extension
+		// default is []string{".html"}
+		Extensions []string
+		// ContentType is the Content-Type response header
+		// default is text/html but you can change if if needed
+		ContentType string
+		// Layout the template file ( with its extension) which is the mother of all
+		// use it to have it as a root file, and include others with {{ yield }}, refer  the docs
+		Layout string
+
 		buffer         *utils.BufferPool // this is used only for RenderString
 		gzipWriterPool sync.Pool
 	}
@@ -77,6 +97,7 @@ func New(c config.Template) *Template {
 
 }
 
+// Render renders a template using the context's writer
 func (t *Template) Render(ctx context.IContext, name string, binding interface{}, layout ...string) (err error) {
 
 	if t == nil { // No engine was given but .Render was called
@@ -120,6 +141,7 @@ func (t *Template) Render(ctx context.IContext, name string, binding interface{}
 	return
 }
 
+// RenderString executes a template and returns its contents result (string)
 func (t *Template) RenderString(name string, binding interface{}, layout ...string) (result string, err error) {
 
 	if t == nil { // No engine was given but .Render was called

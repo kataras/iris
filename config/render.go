@@ -8,16 +8,28 @@ import (
 )
 
 const (
-	NoEngine       EngineType = -1
-	HTMLEngine     EngineType = 0
-	PongoEngine    EngineType = 1
+	// NoEngine is a Template's config for engine type
+	// when use this, the templates are disabled
+	NoEngine EngineType = -1
+	// HTMLEngine is a Template's config for engine type
+	// when use this, the templates are html/template
+	HTMLEngine EngineType = 0
+	// PongoEngine is a Template's config for engine type
+	// when use this, the templates are flosch/pongo2
+	PongoEngine EngineType = 1
+	// MarkdownEngine is a Template's config for engine type
+	// when use this, the templates are .md files
 	MarkdownEngine EngineType = 2
-	JadeEngine     EngineType = 3
-	AmberEngine    EngineType = 4
-
+	// JadeEngine is a Template's config for engine type
+	// when use this, the templates are joker/jade
+	JadeEngine EngineType = 3
+	// AmberEngine is a Template's config for engine type
+	// when use this, the templates are eknkc/amber
+	AmberEngine EngineType = 4
+	// DefaultEngine is the HTMLEngine
 	DefaultEngine EngineType = HTMLEngine
 
-	// to disable layout for a particular file
+	// NoLayout to disable layout for a particular template file
 	NoLayout = "@.|.@iris_no_layout@.|.@"
 )
 
@@ -51,42 +63,71 @@ type (
 		MarkdownSanitize bool
 	}
 
+	// EngineType is the type of template engine
 	EngineType int8
 
+	// Template the configs for templates (template/view engines)
+	// contains common configs for all template engines
 	Template struct {
-		// contains common configs for both HTMLTemplate & Pongo
+		// Engine the type of template engine
+		// default is DefaultEngine (HTMLEngine)
 		Engine EngineType
-		Gzip   bool
+		// Gzip enable gzip compression
+		// default is false
+		Gzip bool
 		// Minify minifies the html result,
 		// Note: according to this https://github.com/tdewolff/minify/issues/35, also it removes some </tags> when minify on writer, remove this from Iris until fix.
 		// Default is false
 		//Minify        bool
-		IsDevelopment bool
-		Directory     string
-		Extensions    []string
-		ContentType   string
-		Charset       string
-		Asset         func(name string) ([]byte, error)
-		AssetNames    func() []string
-		Layout        string
 
-		HTMLTemplate HTMLTemplate // contains specific configs for  HTMLTemplate standard html/template
-		Pongo        Pongo        // contains specific configs for pongo2
-		// Markdown template engine it doesn't supports Layout & binding context
-		Markdown Markdown // contains specific configs for markdown
-		Jade     Jade     // contains specific configs for Jade
-		Amber    Amber    // contains specific configs for Amber
+		// IsDevelopment re-builds the templates on each request
+		// default is false
+		IsDevelopment bool
+		// Directory the system path which the templates live
+		// default is ./templates
+		Directory string
+		// Extensions the allowed file extension
+		// default is []string{".html"}
+		Extensions []string
+		// ContentType is the Content-Type response header
+		// default is text/html but you can change if if needed
+		ContentType string
+		// Charset the charset, default is UTF-8
+		Charset string
+		// Asset is a func which returns bytes, use it to load the templates by binary
+		Asset func(name string) ([]byte, error)
+		// AssetNames should returns the template filenames, look Asset
+		AssetNames func() []string
+		// Layout the template file ( with its extension) which is the mother of all
+		// use it to have it as a root file, and include others with {{ yield }}, refer  the docs
+		Layout string
+
+		// HTMLTemplate contains specific configs for HTMLTemplate standard html/template
+		HTMLTemplate HTMLTemplate
+		// Pongo contains specific configs for  for pongo2
+		Pongo Pongo
+		// Markdown contains specific configs for  for markdown
+		// this doesn't supports Layout & binding context
+		Markdown Markdown
+		// Jade contains specific configs for jade
+		Jade Jade
+		// Amber contains specific configs for amber
+		Amber Amber
 	}
 
+	// HTMLTemplate the configs for HTMLEngine
 	HTMLTemplate struct {
+		// RequirePartials default is false
 		RequirePartials bool
 		// Delims
-		Left  string
+		// Left delimeter, default is {{
+		Left string
+		// Right delimeter, default is }}
 		Right string
 		// Funcs for HTMLTemplate html/template
 		Funcs template.FuncMap
 	}
-
+	// Pongo the configs for PongoEngine
 	Pongo struct {
 		// Filters for pongo2, map[name of the filter] the filter function . The filters are auto register
 		Filters map[string]pongo2.FilterFunction
@@ -94,15 +135,18 @@ type (
 		Globals map[string]interface{}
 	}
 
+	// Markdown the configs for MarkdownEngine
 	Markdown struct {
 		Sanitize bool // if true then returns safe html, default is false
 	}
 
+	// Jade the configs for JadeEngine
 	// Jade empty for now
 	// stay tuned
 	Jade struct {
 	}
 
+	// Amber the configs for AmberEngine
 	Amber struct {
 		// Funcs for the html/template result, amber default funcs are not overrided so use it without worries
 		Funcs template.FuncMap
@@ -147,6 +191,7 @@ func (c Rest) MergeSingle(cfg Rest) (config Rest) {
 	return
 }
 
+// DefaultTemplate returns the default template configs
 func DefaultTemplate() Template {
 	return Template{
 		Engine:        DefaultEngine, //or HTMLTemplate

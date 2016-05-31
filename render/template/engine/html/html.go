@@ -49,6 +49,7 @@ func New(c config.Template) *Engine {
 	return &Engine{Config: &c}
 }
 
+// BuildTemplates builds the templates
 func (s *Engine) BuildTemplates() error {
 
 	if s.Config.Asset == nil || s.Config.AssetNames == nil {
@@ -218,6 +219,7 @@ func (s *Engine) layoutFuncsFor(name string, binding interface{}) {
 	}
 }
 
+// ExecuteWriter executes a templates and write its results to the out writer
 func (s *Engine) ExecuteWriter(out io.Writer, name string, binding interface{}, layout string) error {
 	if layout != "" && layout != config.NoLayout {
 		s.layoutFuncsFor(name, binding)

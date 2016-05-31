@@ -95,12 +95,12 @@ func (ctx *Context) PostFormValue(name string) string {
 	return string(ctx.RequestCtx.PostArgs().Peek(name))
 }
 
-/* Credits to Manish Singh @kryptodev for URLEncode */
 // URLEncode returns the path encoded as url
 // useful when you want to pass something to a database and be valid to retrieve it via context.Param
 // use it only for special cases, when the default behavior doesn't suits you.
 //
 // http://www.blooberry.com/indexdot/html/topics/urlencoding.htm
+/* Credits to Manish Singh @kryptodev for URLEncode */
 func URLEncode(path string) string {
 	if path == "" {
 		return ""

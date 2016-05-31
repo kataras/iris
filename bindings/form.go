@@ -1,6 +1,4 @@
-/*
- File bindings/form.go source code from https://github.com/monoculum/formame.
-*/
+// Package bindings source code from https://github.com/monoculum/formame.
 package bindings
 
 import (

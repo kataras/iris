@@ -68,12 +68,19 @@ type (
 		NoImplicitUseStrict              bool   `json:"noImplicitUseStrict"`
 	}
 
+	// Typescript the configs for the Typescript plugin
 	Typescript struct {
-		Bin      string
-		Dir      string
-		Ignore   string
+		// Bin the path of the tsc binary file
+		// if empty then the plugin tries to find it
+		Bin string
+		// Dir the client side directory, which typescript (.ts) files are live
+		Dir string
+		// Ignore ignore folders, default is /node_modules/
+		Ignore string
+		// Tsconfig the typescript build configs, including the compiler's options
 		Tsconfig Tsconfig
-		Editor   Editor
+		// Editor the Editor plugin
+		Editor Editor
 	}
 )
 

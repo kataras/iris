@@ -221,10 +221,12 @@ func DefaultCors() *Cors {
 	return Default()
 }
 
+// Conflicts used by the router optimizer
 func (c *Cors) Conflicts() string {
 	return "httpmethod"
 }
 
+// Serve serves the middleware
 func (c *Cors) Serve(ctx *iris.Context) {
 	if ctx.MethodString() == "OPTIONS" {
 		c.logf("Serve: Preflight request")

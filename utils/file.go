@@ -202,8 +202,7 @@ func CopyFile(source string, destination string) error {
 	return nil
 }
 
-// CopyDir
-// Recursively copies a directory tree, attempting to preserve permissions.
+// CopyDir recursively copies a directory tree, attempting to preserve permissions.
 // Source directory must exist.
 //
 // Note: the CopyDir function was not written by me, but its working well

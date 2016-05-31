@@ -42,6 +42,7 @@ const (
 )
 
 type (
+	// Map is just a conversion for a map[string]interface{}
 	Map map[string]interface{}
 	// Context is resetting every time a request is coming to the server
 	// it is not good practice to use this object in goroutines, for these cases use the .Clone()

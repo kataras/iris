@@ -14,13 +14,17 @@ import (
 )
 
 const (
-	PackagesURL          = "https://github.com/iris-contrib/iris-command-assets/archive/master.zip"
+	// PackagesURL the url to download all the packages
+	PackagesURL = "https://github.com/iris-contrib/iris-command-assets/archive/master.zip"
+	// PackagesExportedName the folder created after unzip
 	PackagesExportedName = "iris-command-assets-master"
 )
 
 var (
-	app                *cli.App
-	SuccessPrint       = color.New(color.FgGreen).Add(color.Bold).PrintfFunc()
+	app *cli.App
+	// SuccessPrint prints with a green color
+	SuccessPrint = color.New(color.FgGreen).Add(color.Bold).PrintfFunc()
+	// InfoPrint prints with the cyan color
 	InfoPrint          = color.New(color.FgHiCyan).Add(color.Bold).PrintfFunc()
 	packagesInstallDir = os.Getenv("GOPATH") + utils.PathSeparator + "src" + utils.PathSeparator + "github.com" + utils.PathSeparator + "kataras" + utils.PathSeparator + "iris" + utils.PathSeparator + "iris" + utils.PathSeparator
 	packagesDir        = packagesInstallDir + PackagesExportedName + utils.PathSeparator
@@ -63,15 +67,15 @@ func create(flags cli.Flags) (err error) {
 }
 
 func downloadPackages() {
-	_, err := utils.Install("https://github.com/iris-contrib/iris-command-assets/archive/master.zip", packagesInstallDir)
+	_, err := utils.Install(PackagesURL, packagesInstallDir)
 	if err != nil {
 		app.Printf("\nProblem while downloading the assets from the internet for the first time. Trace: %s", err.Error())
 	}
 }
 
 func createPackage(packageName string, targetDir string) error {
-	basicDir := packagesDir + packageName
-	err := utils.CopyDir(basicDir, targetDir)
+	packageDir := packagesDir + packageName
+	err := utils.CopyDir(packageDir, targetDir)
 	if err != nil {
 		app.Printf("\nProblem while copying the %s package to the %s. Trace: %s", packageName, targetDir, err.Error())
 		return err
@@ -79,7 +83,7 @@ func createPackage(packageName string, targetDir string) error {
 
 	InfoPrint("\n%s package was installed successfully", packageName)
 
-	//run the server
+	// build & run the server
 
 	// go build
 	buildCmd := utils.CommandBuilder("go", "build")
@@ -94,7 +98,8 @@ func createPackage(packageName string, targetDir string) error {
 	}
 	buildCmd.Wait()
 	println("\n")
-	// run backend/backend.exe
+
+	// run backend/backend(.exe)
 
 	executable := "backend"
 	if runtime.GOOS == "windows" {
