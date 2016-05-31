@@ -5,6 +5,8 @@ import (
 
 	"bytes"
 
+	"strconv"
+
 	"github.com/iris-contrib/websocket"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/utils"
@@ -156,7 +158,14 @@ func (c *connection) messageReceived(data []byte) {
 			if fn, ok := listeners[i].(func()); ok { // its a simple func(){} callback
 				fn()
 			} else if fnString, ok := listeners[i].(func(string)); ok {
-				fnString(customMessage.(string))
+
+				if msgString, is := customMessage.(string); is {
+					fnString(msgString)
+				} else if msgInt, is := customMessage.(int); is {
+					// here if server side waiting for string but client side sent an int, just convert this int to a string
+					fnString(strconv.Itoa(msgInt))
+				}
+
 			} else if fnInt, ok := listeners[i].(func(int)); ok {
 				fnInt(customMessage.(int))
 			} else if fnBool, ok := listeners[i].(func(bool)); ok {
