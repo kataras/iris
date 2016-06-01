@@ -379,40 +379,42 @@ func (dec *decoder) unmarshalText(v reflect.Value) (bool, error) {
 func BindForm(ctx context.IContext, formObject interface{}) error {
 	reqCtx := ctx.GetRequestCtx()
 	// first check if we have multipart form
-	form, err := reqCtx.MultipartForm()
+	multipartForm, err := reqCtx.MultipartForm()
 	if err == nil {
 		//we have multipart form
-
-		return ErrReadBody.With(Decode(form.Value, formObject))
+		return ErrReadBody.With(Decode(multipartForm.Value, formObject))
 	}
 	// if no multipart and post arguments ( means normal form)
 
-	if reqCtx.PostArgs().Len() > 0 {
-		form := make(map[string][]string, reqCtx.PostArgs().Len()+reqCtx.QueryArgs().Len())
-		reqCtx.PostArgs().VisitAll(func(k []byte, v []byte) {
-			key := string(k)
-			value := string(v)
-			// for slices
-			if form[key] != nil {
-				form[key] = append(form[key], value)
-			} else {
-				form[key] = []string{value}
-			}
-
-		})
-		reqCtx.QueryArgs().VisitAll(func(k []byte, v []byte) {
-			key := string(k)
-			value := string(v)
-			// for slices
-			if form[key] != nil {
-				form[key] = append(form[key], value)
-			} else {
-				form[key] = []string{value}
-			}
-		})
-
-		return ErrReadBody.With(Decode(form, formObject))
+	if reqCtx.PostArgs().Len() == 0 {
+		return ErrReadBody.With(ErrNoForm.Return())
 	}
 
-	return ErrReadBody.With(ErrNoForm.Return())
+	form := make(map[string][]string, reqCtx.PostArgs().Len()+reqCtx.QueryArgs().Len())
+
+	reqCtx.PostArgs().VisitAll(func(k []byte, v []byte) {
+		key := string(k)
+		value := string(v)
+		// for slices
+		if form[key] != nil {
+			form[key] = append(form[key], value)
+		} else {
+			form[key] = []string{value}
+		}
+
+	})
+
+	reqCtx.QueryArgs().VisitAll(func(k []byte, v []byte) {
+		key := string(k)
+		value := string(v)
+		// for slices
+		if form[key] != nil {
+			form[key] = append(form[key], value)
+		} else {
+			form[key] = []string{value}
+		}
+	})
+
+	return ErrReadBody.With(Decode(form, formObject))
+
 }
