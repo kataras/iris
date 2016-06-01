@@ -38,7 +38,7 @@ func (c Logger) Merge(cfg []Logger) (config Logger) {
 	return
 }
 
-// Merge MergeSingle the default with the given config and returns the result
+// MergeSingle merges the default with the given config and returns the result
 func (c Logger) MergeSingle(cfg Logger) (config Logger) {
 
 	config = cfg

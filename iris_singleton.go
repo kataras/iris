@@ -3,6 +3,7 @@ package iris
 import (
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/logger"
+	"github.com/kataras/iris/mail"
 	"github.com/kataras/iris/render/rest"
 	"github.com/kataras/iris/render/template"
 	"github.com/kataras/iris/server"
@@ -392,4 +393,9 @@ func Templates() *template.Template {
 // Websocket returns the websocket server
 func Websocket() websocket.Server {
 	return DefaultIris.Websocket()
+}
+
+// Mail returns the mail sender service
+func Mail() mail.Service {
+	return DefaultIris.Mail()
 }

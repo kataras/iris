@@ -15,6 +15,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/logger"
+	"github.com/kataras/iris/mail"
 	"github.com/kataras/iris/render/rest"
 	"github.com/kataras/iris/render/template"
 	"github.com/kataras/iris/server"
@@ -80,6 +81,7 @@ type (
 		templates       *template.Template
 		sessionManager  *sessions.Manager
 		websocketServer websocket.Server
+		mailService     mail.Service
 		logger          *logger.Logger
 		gzipWriterPool  sync.Pool // this pool is used everywhere needed in the iris for example inside party-> StaticSimple
 	}
@@ -126,6 +128,15 @@ func (s *Iris) initWebsocketServer() {
 		// enable websocket if config.Websocket.Endpoint != ""
 		if s.config.Websocket.Endpoint != "" {
 			s.websocketServer = websocket.New(s, s.config.Websocket)
+		}
+	}
+}
+
+func (s *Iris) initMailService() {
+	if s.mailService == nil {
+		// enable mail sender  service if configs are valid
+		if s.config.Mail.Host != "" && s.config.Mail.Username != "" && s.config.Mail.Password != "" {
+			s.mailService = mail.New(s.config.Mail)
 		}
 	}
 }
@@ -320,4 +331,10 @@ func (s *Iris) Templates() *template.Template {
 func (s *Iris) Websocket() websocket.Server {
 	s.initWebsocketServer() // for any case the user called .Websocket() before server's listen
 	return s.websocketServer
+}
+
+// Mail returns the mail sender service
+func (s *Iris) Mail() mail.Service {
+	s.initMailService()
+	return s.mailService
 }

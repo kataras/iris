@@ -83,7 +83,10 @@ type (
 		// Render contains the configs for template and rest configuration
 		Render Render
 
+		// Websocket contains the configs for Websocket's server integration
 		Websocket Websocket
+		// Mail contains the config for the mail sender service
+		Mail Mail
 	}
 
 	// Render struct keeps organise all configuration about rendering, templates and rest currently.
@@ -121,6 +124,7 @@ func Default() Iris {
 		Sessions:              DefaultSessions(),
 		Render:                DefaultRender(),
 		Websocket:             DefaultWebsocket(),
+		Mail:                  DefaultMail(),
 	}
 }
 
