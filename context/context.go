@@ -48,6 +48,15 @@ type (
 		HTML(status int, name string, binding interface{}, layout ...string) error
 		// Render same as .HTML but with status to iris.StatusOK (200)
 		Render(name string, binding interface{}, layout ...string) error
+		// RenderString accepts a template filename, its context data and returns the result of the parsed template (string)
+		RenderString(name string, binding interface{}, layout ...string) (result string, err error)
+		// MarkdownString parses the (dynamic) markdown string and returns the converted html string
+		MarkdownString(markdown string) string
+		// Markdown parses and renders to the client a particular (dynamic) markdown string
+		// accepts two parameters
+		// first is the http status code
+		// second is the markdown string
+		Markdown(status int, markdown string)
 		// JSON marshals the given interface object and writes the JSON response.
 		JSON(status int, v interface{}) error
 		// JSONP marshals the given interface object and writes the JSON response.

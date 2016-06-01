@@ -18,10 +18,6 @@
 [Language]: http://golang.org
 [Platform Widget]: https://img.shields.io/badge/platform-Any--OS-gray.svg?style=flat-square
 
-Iris is 3 months baby which has succeeded to be the fastest go web framework that exists, so far, while providing a robust set of features for building web  applications.
-
-- [why v3 has 1 commit ?](https://github.com/kataras/iris/issues/162)
-
 [![Benchmark Wizzard Processing Time Horizontal Graph](https://raw.githubusercontent.com/iris-contrib/website/cf71811e6acb2f9bf1e715e25660392bf090b923/assets/benchmark_horizontal_transparent.png)](#benchmarks)
 
 ```sh
@@ -90,6 +86,7 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 
 Open debates
 
+ - [Contribute: New website and logo for Iris](https://github.com/kataras/iris/issues/153)
  - [E-book Cover - Which one you suggest?](https://github.com/kataras/iris/issues/67)
 
 **TIP** Be sure to read the [history](HISTORY.md) for Migrating from 2.x to 3.x.

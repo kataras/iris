@@ -43,7 +43,7 @@ func (ctx *Context) Render(name string, binding interface{}, layout ...string) e
 	return ctx.HTML(StatusOK, name, binding, layout...)
 }
 
-// Render accepts a template filename, its context data and returns the result of the parsed template (string)
+// RenderStrings accepts a template filename, its context data and returns the result of the parsed template (string)
 func (ctx *Context) RenderString(name string, binding interface{}, layout ...string) (result string, err error) {
 	return ctx.station.templates.RenderString(name, binding, layout...)
 }
