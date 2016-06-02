@@ -100,6 +100,7 @@ type (
 		// SetHeader sets the response headers first parameter is the key, second is the value
 		SetHeader(string, string)
 		Redirect(string, ...int)
+		RedirectTo(routeName string, args ...interface{})
 		// Errors
 		NotFound()
 		Panic()

@@ -215,6 +215,23 @@ func (r *router) optimize() {
 	r.optimized = true
 }
 
+// optimizeLookups runs AFTER server's listen
+func (r *router) optimizeLookups() {
+	// set the isTLS on all routes and the correct  full domain (if it's local its empty but we don't want that) ( we don't use Domain because it's used to the tree)
+	listeningHost := r.station.server.Listener().Addr().String()
+	for idx, _ := range r.lookups {
+		theR := r.lookups[idx]
+		theR.setTLS(r.station.server.IsSecure())
+		if theR.GetDomain() == "" { // means local, no subdomain
+			theR.setHost(listeningHost)
+		} else {
+			// it's a subdomain route
+			theR.setHost(theR.GetDomain() + "." + listeningHost)
+		}
+
+	}
+}
+
 // notFound internal method, it justs takes the context from pool ( in order to have the custom errors available) and procedure a Not Found 404 error
 // this is being called when no route was found used on the ServeRequest.
 func (r *router) notFound(reqCtx *fasthttp.RequestCtx) {

@@ -18,9 +18,18 @@ type (
 		Name(string) IRoute
 		GetMiddleware() Middleware
 		HasCors() bool
+		// internal methods
+		setTLS(bool)
+		setHost(string)
+		//
+
 		// used to check arguments with the route's named parameters and return the correct url
 		// second parameter is false when the action cannot be done
 		Parse(...interface{}) (string, bool)
+
+		// GetURI returns the GetDomain() + Parse(...optional named parameters if route is dynamic)
+		// instead of Parse it just returns an empty string if path parse is failed
+		GetURI(...interface{}) string
 	}
 
 	// RouteNameFunc is returned to from route handle
@@ -34,7 +43,10 @@ type (
 		// the name of the route, the default name is just the registed path.
 		name       string
 		middleware Middleware
-
+		// if true then https://
+		isTLS bool
+		// the real host
+		host string
 		// this is used to convert  /mypath/:aparam/:something to -> /mypath/%v/%v and /mypath/* -> mypath/%v
 		// we use %v to escape from the conversions between strings,booleans and integers.
 		// used inside custom html template func 'url'
@@ -149,6 +161,14 @@ func (r *Route) HasCors() bool {
 	return RouteConflicts(r, "httpmethod")
 }
 
+func (r *Route) setTLS(isSecure bool) {
+	r.isTLS = isSecure
+}
+
+func (r *Route) setHost(s string) {
+	r.host = s
+}
+
 func (r *Route) Parse(args ...interface{}) (string, bool) {
 	// check if arguments are not equal to the named parameters ( : = 1, * = all named parameters split to / ), if this happens then send not found err
 	///TODO: I'm thinking of making an option to disable these checks and just return a result, because they have cost when rendering an html/template, not too big compared to the render action but... we will see
@@ -188,6 +208,21 @@ func (r *Route) Parse(args ...interface{}) (string, bool) {
 	}
 
 	return fmt.Sprintf(r.formattedPath, args...), true
+}
+
+func (r *Route) GetURI(args ...interface{}) (uri string) {
+	scheme := "http://"
+	if r.isTLS {
+		scheme = "https://"
+	}
+
+	host := r.host
+	if parsedPath, ok := r.Parse(args...); ok {
+		uri = scheme + host + parsedPath
+	}
+
+	return
+
 }
 
 // RouteConflicts checks for route's middleware conflicts

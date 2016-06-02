@@ -247,6 +247,9 @@ func (s *Iris) PreListen(opt config.Server) *server.Server {
 func (s *Iris) PostListen() {
 	//if not error opening the server, then:
 
+	// prepare the route actions, these actions needs real server's access because that it's after server's listen
+	s.router.optimizeLookups()
+
 	//set the  rest (for Data, Text, JSON, JSONP, XML)
 	s.rest = rest.New(s.config.Render.Rest)
 	// set the templates

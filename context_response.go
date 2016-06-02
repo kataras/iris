@@ -13,15 +13,24 @@ func (ctx *Context) SetHeader(k string, v string) {
 // Redirect redirect sends a redirect response the client
 // accepts 2 parameters string and an optional int
 // first parameter is the url to redirect
-// second parameter is the http status should send, default is 302 (Temporary redirect), you can set it to 301 (Permant redirect), if that's nessecery
+// second parameter is the http status should send, default is 307 (Temporary redirect), you can set it to 301 (Permant redirect), if that's nessecery
 func (ctx *Context) Redirect(urlToRedirect string, statusHeader ...int) {
-	httpStatus := 302 // temporary redirect
+	httpStatus := StatusTemporaryRedirect // temporary redirect
 	if statusHeader != nil && len(statusHeader) > 0 && statusHeader[0] > 0 {
 		httpStatus = statusHeader[0]
 	}
 
 	ctx.RequestCtx.Redirect(urlToRedirect, httpStatus)
 	ctx.StopExecution()
+}
+
+// RedirectTo does the same thing as Redirect but instead of receiving a uri or path it receives a route name
+func (ctx *Context) RedirectTo(routeName string, args ...interface{}) {
+	s, ok := ctx.station.RouteByName(routeName).Parse(args...)
+	if ok {
+		ctx.Redirect(s, StatusTemporaryRedirect)
+	}
+
 }
 
 // Error handling
