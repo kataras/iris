@@ -177,9 +177,7 @@ func (s *Iris) printBanner() {
 	printTicker := utils.NewTicker()
 	i := 0
 	printTicker.OnTick(func() {
-		c.Printf("%c", banner[i])
-		i++
-		if i == len(banner) {
+		if len(banner) <= i {
 			printTicker.Stop()
 
 			c.Add(color.FgGreen)
@@ -190,7 +188,11 @@ func (s *Iris) printBanner() {
 			}
 			c.Printf("%s: Running at %s\n", time.Now().Format(config.TimeFormat), s.server.Config.ListeningAddr)
 			c.DisableColor()
+			return
 		}
+		c.Printf("%c", banner[i])
+		i++
+
 	})
 
 	printTicker.Start(time.Duration(1) * time.Millisecond)
