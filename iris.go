@@ -196,6 +196,7 @@ func (s *Iris) printBanner() {
 
 	printTicker.OnTick(func() {
 		if len(banner) <= int(atomic.LoadUint64(&i)) {
+			atomic.StoreUint64(&i, 0)
 			printTicker.Stop()
 
 			c.Add(color.FgGreen)
@@ -218,7 +219,7 @@ func (s *Iris) printBanner() {
 
 	})
 
-	printTicker.Start(time.Duration(500) * time.Nanosecond)
+	printTicker.Start(time.Duration(433) * time.Nanosecond)
 
 }
 
@@ -230,7 +231,7 @@ func (s *Iris) printBanner() {
 func (s *Iris) PreListen(opt config.Server) *server.Server {
 	// run the printBanner with nice animation until PreListen and PostListen finish
 	if !s.config.DisableBanner {
-		s.printBanner()
+		go s.printBanner()
 	}
 
 	// set the logger's state

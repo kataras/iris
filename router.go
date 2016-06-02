@@ -217,7 +217,7 @@ func (r *router) optimize() {
 
 // optimizeLookups runs AFTER server's listen
 func (r *router) optimizeLookups() {
-	// set the isTLS on all routes and the correct  full domain (if it's local its empty but we don't want that) ( we don't use Domain because it's used to the tree)
+	// set the isTLS on all routes and the listening  full host
 	listeningHost := r.station.server.Listener().Addr().String()
 	for idx, _ := range r.lookups {
 		theR := r.lookups[idx]
