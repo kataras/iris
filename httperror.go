@@ -201,7 +201,7 @@ func (he *HTTPErrorContainer) OnError(httpStatus int, handler HandlerFunc) {
 
 // EmitError executes the handler of the given error http status code
 func (he *HTTPErrorContainer) EmitError(errCode int, ctx *Context) {
-
+	ctx.ResetBody()
 	if errHandler := he.GetByCode(errCode); errHandler != nil {
 		ctx.SetStatusCode(errCode) // for any case, user can change it after if want to
 		errHandler.GetHandler().Serve(ctx)
