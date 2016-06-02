@@ -175,6 +175,13 @@ func (s *Iris) initMailService() {
 func (s *Iris) printBanner() {
 	c := color.New(color.FgHiBlue).Add(color.Bold)
 	printTicker := utils.NewTicker()
+	// for ANY case, we don't want to panic on print banner if anything goes bad
+	defer func() {
+		if r := recover(); r != nil {
+			printTicker.Stop()
+		}
+	}()
+
 	i := 0
 	printTicker.OnTick(func() {
 		if len(banner) <= i {
