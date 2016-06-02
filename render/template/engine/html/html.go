@@ -17,6 +17,9 @@ type (
 	Engine struct {
 		Config    *config.Template
 		Templates *template.Template
+		// emptyFuncs returns empty functions, contains empty result for custom LayoutFuncs
+
+		emptyFuncs template.FuncMap
 		// Middleware
 		// Note:
 		// I see that many template engines returns html/template as result
@@ -26,27 +29,26 @@ type (
 	}
 )
 
-var emptyFuncs = template.FuncMap{
-	"yield": func() (string, error) {
-		return "", fmt.Errorf("yield was called, yet no layout defined")
-	},
-	"partial": func() (string, error) {
-		return "", fmt.Errorf("block was called, yet no layout defined")
-	},
-	"current": func() (string, error) {
-		return "", nil
-	}, "render": func() (string, error) {
-		return "", nil
-	},
-	// just for test with jade
-	/*"bold": func() (string, error) {
-		return "", nil
-	},*/
-}
-
 // New creates and returns the HTMLTemplate template engine
 func New(c config.Template) *Engine {
-	return &Engine{Config: &c}
+	s := &Engine{Config: &c}
+	funcs := template.FuncMap{
+		"yield": func() (string, error) {
+			return "", fmt.Errorf("yield was called, yet no layout defined")
+		},
+		"partial": func() (string, error) {
+			return "", fmt.Errorf("block was called, yet no layout defined")
+		},
+		"current": func() (string, error) {
+			return "", nil
+		}, "render": func() (string, error) {
+			return "", nil
+		},
+	}
+
+	s.emptyFuncs = funcs
+
+	return s
 }
 
 // BuildTemplates builds the templates
@@ -123,7 +125,7 @@ func (s *Engine) buildFromDir() error {
 					tmpl.Funcs(s.Config.HTMLTemplate.Funcs)
 				}
 
-				tmpl.Funcs(emptyFuncs).Parse(contents)
+				tmpl.Funcs(s.emptyFuncs).Parse(contents)
 				break
 			}
 		}
@@ -170,7 +172,7 @@ func (s *Engine) buildFromAsset() error {
 					tmpl.Funcs(s.Config.HTMLTemplate.Funcs)
 				}
 
-				tmpl.Funcs(emptyFuncs).Parse(string(buf))
+				tmpl.Funcs(s.emptyFuncs).Parse(string(buf))
 				break
 			}
 		}
@@ -207,12 +209,13 @@ func (s *Engine) layoutFuncsFor(name string, binding interface{}) {
 			buf, err := s.executeTemplateBuf(fullPartialName, binding)
 			// Return safe HTML here since we are rendering our own template.
 			return template.HTML(buf.String()), err
-
 		},
-		// just for test with jade
-		/*"bold": func(content string) (template.HTML, error) {
-			return template.HTML("<b>" + content + "</b>"), nil
-		},*/
+	}
+	_userLayoutFuncs := s.Config.HTMLTemplate.LayoutFuncs
+	if _userLayoutFuncs != nil && len(_userLayoutFuncs) > 0 {
+		for k, v := range _userLayoutFuncs {
+			funcs[k] = v
+		}
 	}
 	if tpl := s.Templates.Lookup(name); tpl != nil {
 		tpl.Funcs(funcs)

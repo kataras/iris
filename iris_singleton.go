@@ -72,30 +72,23 @@ func Party(path string, handlersFn ...HandlerFunc) IParty {
 
 // Handle registers a route to the server's router
 // if empty method is passed then registers handler(s) for all methods, same as .Any
-func Handle(method string, registedPath string, handlers ...Handler) {
-	DefaultIris.Handle(method, registedPath, handlers...)
+func Handle(method string, registedPath string, handlers ...Handler) IRoute {
+	return DefaultIris.Handle(method, registedPath, handlers...)
 }
 
 // HandleFunc registers a route with a method, path string, and a handler
-func HandleFunc(method string, path string, handlersFn ...HandlerFunc) {
-	DefaultIris.HandleFunc(method, path, handlersFn...)
-}
-
-// HandleAnnotated registers a route handler using a Struct implements iris.Handler (as anonymous property)
-// which it's metadata has the form of
-// `method:"path"` and returns the route and an error if any occurs
-// handler is passed by func(urstruct MyStruct) Serve(ctx *Context) {}
-//
-// HandleAnnotated will be deprecated until the final v3 !
-func HandleAnnotated(irisHandler Handler) error {
-	return DefaultIris.HandleAnnotated(irisHandler)
+func HandleFunc(method string, path string, handlersFn ...HandlerFunc) IRoute {
+	return DefaultIris.HandleFunc(method, path, handlersFn...)
 }
 
 // API converts & registers a custom struct to the router
-// receives three parameters
+// receives two parameters
 // first is the request path (string)
-// second is the custom struct (interface{}) which can be anything that has a *iris.Context as field
+// second is the custom struct (interface{}) which can be anything that has a *iris.Context as field.
 // third are the common middlewares, is optional parameter
+//
+// Note that API's routes have their default-name to the full registed path,
+// no need to give a special name for it, because it's not supposed to be used inside your templates.
 //
 // Recommend to use when you retrieve data from an external database,
 // and the router-performance is not the (only) thing which slows the server's overall performance.
@@ -173,53 +166,59 @@ func UseFunc(handlersFn ...HandlerFunc) {
 }
 
 // Get registers a route for the Get http method
-func Get(path string, handlersFn ...HandlerFunc) {
-	DefaultIris.Get(path, handlersFn...)
+func Get(path string, handlersFn ...HandlerFunc) RouteNameFunc {
+	return DefaultIris.Get(path, handlersFn...)
 }
 
 // Post registers a route for the Post http method
-func Post(path string, handlersFn ...HandlerFunc) {
-	DefaultIris.Post(path, handlersFn...)
+func Post(path string, handlersFn ...HandlerFunc) RouteNameFunc {
+	return DefaultIris.Post(path, handlersFn...)
 }
 
 // Put registers a route for the Put http method
-func Put(path string, handlersFn ...HandlerFunc) {
-	DefaultIris.Put(path, handlersFn...)
+func Put(path string, handlersFn ...HandlerFunc) RouteNameFunc {
+	return DefaultIris.Put(path, handlersFn...)
 }
 
 // Delete registers a route for the Delete http method
-func Delete(path string, handlersFn ...HandlerFunc) {
-	DefaultIris.Delete(path, handlersFn...)
+func Delete(path string, handlersFn ...HandlerFunc) RouteNameFunc {
+	return DefaultIris.Delete(path, handlersFn...)
 }
 
 // Connect registers a route for the Connect http method
-func Connect(path string, handlersFn ...HandlerFunc) {
-	DefaultIris.Connect(path, handlersFn...)
+func Connect(path string, handlersFn ...HandlerFunc) RouteNameFunc {
+	return DefaultIris.Connect(path, handlersFn...)
 }
 
 // Head registers a route for the Head http method
-func Head(path string, handlersFn ...HandlerFunc) {
-	DefaultIris.Head(path, handlersFn...)
+func Head(path string, handlersFn ...HandlerFunc) RouteNameFunc {
+	return DefaultIris.Head(path, handlersFn...)
 }
 
 // Options registers a route for the Options http method
-func Options(path string, handlersFn ...HandlerFunc) {
-	DefaultIris.Options(path, handlersFn...)
+func Options(path string, handlersFn ...HandlerFunc) RouteNameFunc {
+	return DefaultIris.Options(path, handlersFn...)
 }
 
 // Patch registers a route for the Patch http method
-func Patch(path string, handlersFn ...HandlerFunc) {
-	DefaultIris.Patch(path, handlersFn...)
+func Patch(path string, handlersFn ...HandlerFunc) RouteNameFunc {
+	return DefaultIris.Patch(path, handlersFn...)
 }
 
 // Trace registers a route for the Trace http methodd
-func Trace(path string, handlersFn ...HandlerFunc) {
-	DefaultIris.Trace(path, handlersFn...)
+func Trace(path string, handlersFn ...HandlerFunc) RouteNameFunc {
+	return DefaultIris.Trace(path, handlersFn...)
 }
 
 // Any registers a route for ALL of the http methods (Get,Post,Put,Head,Patch,Options,Connect,Delete)
-func Any(path string, handlersFn ...HandlerFunc) {
-	DefaultIris.Any(path, handlersFn...)
+func Any(path string, handlersFn ...HandlerFunc) []IRoute {
+	return DefaultIris.Any(path, handlersFn...)
+}
+
+// RouteByName returns a route by its name,if not found then returns a route with empty path
+// Note that the searching is case-sensitive
+func RouteByName(lookUpName string) IRoute {
+	return DefaultIris.RouteByName(lookUpName)
 }
 
 // StaticHandlerFunc returns a HandlerFunc to serve static system directory

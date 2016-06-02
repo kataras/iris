@@ -19,20 +19,19 @@ import (
 type (
 	// IParty is the interface which implements the whole Party of routes
 	IParty interface {
-		Handle(string, string, ...Handler)
-		HandleFunc(string, string, ...HandlerFunc)
-		HandleAnnotated(Handler) error
+		Handle(string, string, ...Handler) IRoute
+		HandleFunc(string, string, ...HandlerFunc) IRoute
 		API(path string, controller HandlerAPI, middlewares ...HandlerFunc) error
-		Get(string, ...HandlerFunc)
-		Post(string, ...HandlerFunc)
-		Put(string, ...HandlerFunc)
-		Delete(string, ...HandlerFunc)
-		Connect(string, ...HandlerFunc)
-		Head(string, ...HandlerFunc)
-		Options(string, ...HandlerFunc)
-		Patch(string, ...HandlerFunc)
-		Trace(string, ...HandlerFunc)
-		Any(string, ...HandlerFunc)
+		Get(string, ...HandlerFunc) RouteNameFunc
+		Post(string, ...HandlerFunc) RouteNameFunc
+		Put(string, ...HandlerFunc) RouteNameFunc
+		Delete(string, ...HandlerFunc) RouteNameFunc
+		Connect(string, ...HandlerFunc) RouteNameFunc
+		Head(string, ...HandlerFunc) RouteNameFunc
+		Options(string, ...HandlerFunc) RouteNameFunc
+		Patch(string, ...HandlerFunc) RouteNameFunc
+		Trace(string, ...HandlerFunc) RouteNameFunc
+		Any(string, ...HandlerFunc) []IRoute
 		Use(...Handler)
 		UseFunc(...HandlerFunc)
 		StaticHandlerFunc(systemPath string, stripSlashes int, compress bool, generateIndexPages bool, indexNames []string) HandlerFunc
@@ -61,13 +60,13 @@ func (p *GardenParty) IsRoot() bool {
 }
 
 // Handle registers a route to the server's router
-// if empty method is passed then registers handler(s) for all methods, same as .Any
-func (p *GardenParty) Handle(method string, registedPath string, handlers ...Handler) {
+// if empty method is passed then registers handler(s) for all methods, same as .Any, but returns nil as result
+func (p *GardenParty) Handle(method string, registedPath string, handlers ...Handler) IRoute {
 	if method == "" { // then use like it was .Any
 		for _, k := range AllMethods {
 			p.Handle(k, registedPath, handlers...)
 		}
-		return
+		return nil
 	}
 	path := fixPath(p.relativePath + registedPath) // keep the last "/" as default ex: "/xyz/"
 	if !p.station.config.DisablePathCorrection {
@@ -79,69 +78,14 @@ func (p *GardenParty) Handle(method string, registedPath string, handlers ...Han
 	p.station.plugins.DoPreHandle(route)
 	p.station.addRoute(route)
 	p.station.plugins.DoPostHandle(route)
+	return route
 }
 
 // HandleFunc registers and returns a route with a method string, path string and a handler
 // registedPath is the relative url path
 // handler is the iris.Handler which you can pass anything you want via iris.ToHandlerFunc(func(res,req){})... or just use func(c *iris.Context)
-func (p *GardenParty) HandleFunc(method string, registedPath string, handlersFn ...HandlerFunc) {
-	p.Handle(method, registedPath, ConvertToHandlers(handlersFn)...)
-}
-
-// HandleAnnotated registers a route handler using a Struct implements iris.Handler (as anonymous property)
-// which it's metadata has the form of
-// `method:"path"` and returns the route and an error if any occurs
-// handler is passed by func(urstruct MyStruct) Serve(ctx *Context) {}
-func (p *GardenParty) HandleAnnotated(irisHandler Handler) error {
-	var method string
-	var path string
-	var errMessage = ""
-	val := reflect.ValueOf(irisHandler).Elem()
-
-	for i := 0; i < val.NumField(); i++ {
-		typeField := val.Type().Field(i)
-
-		if typeField.Anonymous && typeField.Name == "Handler" {
-			tags := strings.Split(strings.TrimSpace(string(typeField.Tag)), " ")
-			firstTag := tags[0]
-
-			idx := strings.Index(string(firstTag), ":")
-
-			tagName := strings.ToUpper(string(firstTag[:idx]))
-			tagValue, unqerr := strconv.Unquote(string(firstTag[idx+1:]))
-
-			if unqerr != nil {
-				errMessage = errMessage + "\non getting path: " + unqerr.Error()
-				continue
-			}
-
-			path = tagValue
-			avalaibleMethodsStr := strings.Join(AllMethods[0:], ",")
-
-			if !strings.Contains(avalaibleMethodsStr, tagName) {
-				//wrong method passed
-				errMessage = errMessage + "\nWrong method passed to the anonymous property iris.Handler -> " + tagName
-				continue
-			}
-
-			method = tagName
-
-		} else {
-			errMessage = "\nStruct passed but it doesn't have an anonymous property of type iris.Hanndler, please refer to docs\n"
-		}
-
-	}
-
-	if errMessage == "" {
-		p.Handle(method, path, irisHandler)
-	}
-
-	var err error
-	if errMessage != "" {
-		err = ErrHandleAnnotated.Format(errMessage)
-	}
-
-	return err
+func (p *GardenParty) HandleFunc(method string, registedPath string, handlersFn ...HandlerFunc) IRoute {
+	return p.Handle(method, registedPath, ConvertToHandlers(handlersFn)...)
 }
 
 // API converts & registers a custom struct to the router
@@ -149,6 +93,9 @@ func (p *GardenParty) HandleAnnotated(irisHandler Handler) error {
 // first is the request path (string)
 // second is the custom struct (interface{}) which can be anything that has a *iris.Context as field.
 // third are the common middlewares, is optional parameter
+//
+// Note that API's routes have their default-name to the full registed path,
+// no need to give a special name for it, because it's not supposed to be used inside your templates.
 //
 // Recommend to use when you retrieve data from an external database,
 // and the router-performance is not the (only) thing which slows the server's overall performance.
@@ -300,56 +247,59 @@ func (p *GardenParty) API(path string, controller HandlerAPI, middlewares ...Han
 }
 
 // Get registers a route for the Get http method
-func (p *GardenParty) Get(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(MethodGet, path, handlersFn...)
+func (p *GardenParty) Get(path string, handlersFn ...HandlerFunc) RouteNameFunc {
+	return p.HandleFunc(MethodGet, path, handlersFn...).Name
 }
 
 // Post registers a route for the Post http method
-func (p *GardenParty) Post(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(MethodPost, path, handlersFn...)
+func (p *GardenParty) Post(path string, handlersFn ...HandlerFunc) RouteNameFunc {
+	return p.HandleFunc(MethodPost, path, handlersFn...).Name
 }
 
 // Put registers a route for the Put http method
-func (p *GardenParty) Put(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(MethodPut, path, handlersFn...)
+func (p *GardenParty) Put(path string, handlersFn ...HandlerFunc) RouteNameFunc {
+	return p.HandleFunc(MethodPut, path, handlersFn...).Name
 }
 
 // Delete registers a route for the Delete http method
-func (p *GardenParty) Delete(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(MethodDelete, path, handlersFn...)
+func (p *GardenParty) Delete(path string, handlersFn ...HandlerFunc) RouteNameFunc {
+	return p.HandleFunc(MethodDelete, path, handlersFn...).Name
 }
 
 // Connect registers a route for the Connect http method
-func (p *GardenParty) Connect(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(MethodConnect, path, handlersFn...)
+func (p *GardenParty) Connect(path string, handlersFn ...HandlerFunc) RouteNameFunc {
+	return p.HandleFunc(MethodConnect, path, handlersFn...).Name
 }
 
 // Head registers a route for the Head http method
-func (p *GardenParty) Head(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(MethodHead, path, handlersFn...)
+func (p *GardenParty) Head(path string, handlersFn ...HandlerFunc) RouteNameFunc {
+	return p.HandleFunc(MethodHead, path, handlersFn...).Name
 }
 
 // Options registers a route for the Options http method
-func (p *GardenParty) Options(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(MethodOptions, path, handlersFn...)
+func (p *GardenParty) Options(path string, handlersFn ...HandlerFunc) RouteNameFunc {
+	return p.HandleFunc(MethodOptions, path, handlersFn...).Name
 }
 
 // Patch registers a route for the Patch http method
-func (p *GardenParty) Patch(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(MethodPatch, path, handlersFn...)
+func (p *GardenParty) Patch(path string, handlersFn ...HandlerFunc) RouteNameFunc {
+	return p.HandleFunc(MethodPatch, path, handlersFn...).Name
 }
 
 // Trace registers a route for the Trace http method
-func (p *GardenParty) Trace(path string, handlersFn ...HandlerFunc) {
-	p.HandleFunc(MethodTrace, path, handlersFn...)
+func (p *GardenParty) Trace(path string, handlersFn ...HandlerFunc) RouteNameFunc {
+	return p.HandleFunc(MethodTrace, path, handlersFn...).Name
 }
 
 // Any registers a route for ALL of the http methods (Get,Post,Put,Head,Patch,Options,Connect,Delete)
-func (p *GardenParty) Any(registedPath string, handlersFn ...HandlerFunc) {
-	for _, k := range AllMethods {
-		p.HandleFunc(k, registedPath, handlersFn...)
+func (p *GardenParty) Any(registedPath string, handlersFn ...HandlerFunc) []IRoute {
+	theRoutes := make([]IRoute, len(AllMethods), len(AllMethods))
+	for idx, k := range AllMethods {
+		r := p.HandleFunc(k, registedPath, handlersFn...)
+		theRoutes[idx] = r
 	}
 
+	return theRoutes
 }
 
 // H_ is used to convert a context.IContext handler func to iris.HandlerFunc, is used only inside iris internal package to avoid import cycles

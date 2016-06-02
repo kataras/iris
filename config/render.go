@@ -124,8 +124,13 @@ type (
 		Left string
 		// Right delimeter, default is }}
 		Right string
-		// Funcs for HTMLTemplate html/template
+		// Funcs like html/template
 		Funcs template.FuncMap
+		// Funcs like html/template
+		// the difference from Funcs is that these funcs
+		// can be used inside a layout and can override the predefined (yield,partial...) or add more custom funcs
+		// these can override the Funcs inside no-layout templates also, use it when you know what you're doing
+		LayoutFuncs template.FuncMap
 	}
 	// Pongo the configs for PongoEngine
 	Pongo struct {
@@ -202,7 +207,7 @@ func DefaultTemplate() Template {
 		ContentType:   "text/html",
 		Charset:       "UTF-8",
 		Layout:        "", // currently this is the only config which not working for pongo2 yet but I will find a way
-		HTMLTemplate:  HTMLTemplate{Left: "{{", Right: "}}", Funcs: template.FuncMap{}},
+		HTMLTemplate:  HTMLTemplate{Left: "{{", Right: "}}", Funcs: template.FuncMap{}, LayoutFuncs: template.FuncMap{}},
 		Pongo:         Pongo{Filters: make(map[string]pongo2.FilterFunction, 0), Globals: make(map[string]interface{}, 0)},
 		Markdown:      Markdown{Sanitize: false},
 		Amber:         Amber{Funcs: template.FuncMap{}},

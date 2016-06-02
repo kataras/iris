@@ -12,8 +12,11 @@ var (
 	ErrHandleAnnotated = errors.New("HandleAnnotated parse: %s")
 	// ErrControllerContextNotFound returns an error with message: 'Context *iris.Context could not be found, the Controller won't be registed.'
 	ErrControllerContextNotFound = errors.New("Context *iris.Context could not be found, the Controller won't be registed.")
-	// ErrDirectoryFileNotFound returns an errir with message: 'Directory or file %s couldn't found. Trace: +error trace'
+	// ErrDirectoryFileNotFound returns an error with message: 'Directory or file %s couldn't found. Trace: +error trace'
 	ErrDirectoryFileNotFound = errors.New("Directory or file %s couldn't found. Trace: %s")
+	// ErrRenderRouteNotFound returns an error with message 'Route with name +route_name not found', used inside 'url' template func
+	ErrRenderRouteNotFound = errors.New("Route with name %s not found")
+
 	// Plugin
 
 	// ErrPluginAlreadyExists returns an error with message: 'Cannot activate the same plugin again, plugin '+plugin name[+plugin description]' is already exists'

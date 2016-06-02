@@ -59,7 +59,10 @@ type router struct {
 	garden         *Garden
 	methodMatch    func(m1, m2 string) bool
 	getRequestPath func(*fasthttp.RequestCtx) []byte
-	ServeRequest   func(reqCtx *fasthttp.RequestCtx)
+	// routes useful information, this info can be used to make custom links inside templates
+	// the route's information (can be) changed after its registration
+	lookups      []IRoute
+	ServeRequest func(reqCtx *fasthttp.RequestCtx)
 	// errorPool is responsible to  get the Context to handle not found errors
 	errorPool sync.Pool
 	//it's true when optimize already ran
@@ -89,6 +92,7 @@ func newRouter(station *Iris) *router {
 		garden:             &Garden{},
 		methodMatch:        methodMatchFunc,
 		getRequestPath:     getRequestPathDefault,
+		lookups:            make([]IRoute, 0),
 		HTTPErrorContainer: defaultHTTPErrors(),
 		GardenParty:        &GardenParty{relativePath: "/", station: station, root: true},
 		errorPool:          station.newContextPool()}
@@ -99,11 +103,25 @@ func newRouter(station *Iris) *router {
 
 }
 
-// addRoute calls the Plant, is created to set the router's station
+// addRoute is a middleware between router and garden
+// it just calls the garden's Plant method
+// is 'thread-safe'
 func (r *router) addRoute(route IRoute) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	r.lookups = append(r.lookups, route)
 	r.garden.Plant(r.station, route)
+}
+
+// RouteByName returns a route by its name,if not found then returns a route with empty path
+// Note that the searching is case-sensitive
+func (r *router) RouteByName(lookUpName string) IRoute {
+	for _, route := range r.lookups {
+		if route.GetName() == lookUpName {
+			return route
+		}
+	}
+	return &Route{}
 }
 
 //check if any tree has cors setted to true, means that cors middleware is added

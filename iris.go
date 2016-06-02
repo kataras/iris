@@ -1,4 +1,4 @@
-// Package iris v3.0.0-beta
+// Package iris v3.0.0-beta.1
 //
 // Note: When 'Station', we mean the Iris type.
 package iris
@@ -31,15 +31,14 @@ import (
 
 const (
 	// Version of the iris
-	Version = "v3.0.0-beta"
+	Version = "v3.0.0-beta.1"
 	banner  = `                        _____      _
                        |_   _|    (_)
                          | |  ____ _  ___
                          | | | __|| |/ __|
                         _| |_| |  | |\__ \
-                       |_____|_|  |_||___/
-
-                                                 `
+                       |_____|_|  |_||___/ ` + Version + `
+                                                 				 `
 )
 
 /* for conversion */
@@ -118,7 +117,39 @@ func (s *Iris) newContextPool() sync.Pool {
 func (s *Iris) initTemplates() {
 	if s.templates == nil { // because if .Templates() called before server's listen, s.templates != nil when PreListen
 		//  init the templates
+
+		// set the custom iris-direct-integration functions, layout and no-layout  if  HTMLEngine is used
+		if s.config.Render.Template.Engine == config.HTMLEngine {
+			funcs := map[string]interface{}{
+				"url": func(routeName string, args ...interface{}) (string, error) {
+					r := s.RouteByName(routeName)
+					// check if not found
+					if r.GetPath() == "" {
+						return "", ErrRenderRouteNotFound.Format(routeName)
+					}
+
+					if result, ok := r.parse(args...); ok {
+						return result, nil
+					}
+					return "", nil
+				},
+			}
+			for k, v := range funcs {
+				// we don't want to override the user's LayoutFuncs, user should be able to override anything.
+				if s.config.Render.Template.HTMLTemplate.LayoutFuncs[k] == nil {
+					s.config.Render.Template.HTMLTemplate.LayoutFuncs[k] = v
+				}
+
+				if s.config.Render.Template.HTMLTemplate.Funcs[k] == nil {
+					s.config.Render.Template.HTMLTemplate.Funcs[k] = v
+				}
+
+			}
+
+		}
+
 		s.templates = template.New(s.config.Render.Template)
+
 	}
 
 }
@@ -153,7 +184,6 @@ func (s *Iris) printBanner() {
 
 			c.Add(color.FgGreen)
 			stationsRunning++
-
 			c.Println()
 			if stationsRunning > 1 {
 				c.Println("Server[" + strconv.Itoa(stationsRunning) + "]")
@@ -163,7 +193,7 @@ func (s *Iris) printBanner() {
 		}
 	})
 
-	printTicker.Start(time.Duration(2) * time.Millisecond)
+	printTicker.Start(time.Duration(1) * time.Millisecond)
 
 }
 

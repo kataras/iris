@@ -116,7 +116,7 @@ Iris suggests you to use [this](https://github.com/gavv/httpexpect) new  suite t
 Versioning
 ------------
 
-Current: **v3.0.0-beta**
+Current: **v3.0.0-beta.1**
 >  Iris is an active project
 
 
@@ -134,7 +134,7 @@ Todo
 - [x] Create server & client side (js) library for .on('event', func action(...)) / .emit('event')... (like socket.io but supports only websocket).
 - [x] Find and provide support for the most stable template engine and be able to change it via the configuration, keep html/templates  support.
 - [x] Extend, test and publish to the public the [Iris' cmd](https://github.com/kataras/iris/tree/master/iris).
-
+- [x] Route naming and html url func, requested [here](https://github.com/kataras/iris/issues/165).
 
 If you're willing to donate click [here](DONATIONS.md)
 
