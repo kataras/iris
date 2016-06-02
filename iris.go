@@ -8,9 +8,9 @@ import (
 
 	"sync"
 
-	"time"
-
 	"strconv"
+	"sync/atomic"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/kataras/iris/config"
@@ -192,27 +192,33 @@ func (s *Iris) printBanner() {
 		}
 	}()
 
-	i := 0
+	var i uint64 = 0
+
 	printTicker.OnTick(func() {
-		if len(banner) <= i {
+		if len(banner) <= int(atomic.LoadUint64(&i)) {
 			printTicker.Stop()
 
 			c.Add(color.FgGreen)
 			stationsRunning++
 			c.Println()
-			if stationsRunning > 1 {
-				c.Println("Server[" + strconv.Itoa(stationsRunning) + "]")
+
+			if s.server != nil && s.server.IsListening() {
+				if stationsRunning > 1 {
+					c.Println("Server[" + strconv.Itoa(stationsRunning) + "]")
+
+				}
+				c.Printf("%s: Running at %s\n", time.Now().Format(config.TimeFormat), s.server.Config.ListeningAddr)
+
 			}
-			c.Printf("%s: Running at %s\n", time.Now().Format(config.TimeFormat), s.server.Config.ListeningAddr)
 			c.DisableColor()
 			return
 		}
 		c.Printf("%c", banner[i])
-		i++
+		atomic.AddUint64(&i, 1)
 
 	})
 
-	printTicker.Start(time.Duration(1) * time.Millisecond)
+	printTicker.Start(time.Duration(500) * time.Nanosecond)
 
 }
 
@@ -222,6 +228,11 @@ func (s *Iris) printBanner() {
 // returns the station's Server (*server.Server)
 // it's a non-blocking func
 func (s *Iris) PreListen(opt config.Server) *server.Server {
+	// run the printBanner with nice animation until PreListen and PostListen finish
+	if !s.config.DisableBanner {
+		s.printBanner()
+	}
+
 	// set the logger's state
 	s.logger.SetEnable(!s.config.DisableLog)
 	// router preparation, runs only once even if called more than one time.
@@ -261,9 +272,6 @@ func (s *Iris) PostListen() {
 
 	// set the websocket
 	s.initWebsocketServer()
-	if !s.config.DisableBanner {
-		s.printBanner()
-	}
 
 	s.plugins.DoPostListen(s)
 }
