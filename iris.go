@@ -176,7 +176,7 @@ func (s *Iris) initWebsocketServer() {
 func (s *Iris) initMailService() {
 	if s.mailService == nil {
 		// enable mail sender  service if configs are valid
-		if s.config.Mail.Host != "" && s.config.Mail.Username != "" && s.config.Mail.Password != "" {
+		if s.config.Mail.IsValid() {
 			s.mailService = mail.New(s.config.Mail)
 		}
 	}

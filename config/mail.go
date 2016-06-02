@@ -22,3 +22,8 @@ type Mail struct {
 func DefaultMail() Mail {
 	return Mail{}
 }
+
+// IsValid returns true if the mail configs are valid
+func (m Mail) IsValid() bool {
+	return (m.Host != "" && m.Port > 0 && m.Username != "" && m.Password != "") || m.UseCommand
+}

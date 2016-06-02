@@ -49,8 +49,8 @@ func (m *mailer) sendSMTP(to []string, subject, body string) error {
 	defer buf.Put(buffer)
 
 	if !m.authenticated {
-		if m.config.Username == "" || m.config.Password == "" || m.config.Host == "" {
-			return fmt.Errorf("Username, Password, Host cannot be empty when using SMTP!")
+		if m.config.Username == "" || m.config.Password == "" || m.config.Host == "" || m.config.Port <= 0 {
+			return fmt.Errorf("Username, Password, Host & Port cannot be empty when using SMTP!")
 		}
 		m.auth = smtp.PlainAuth("", m.config.Username, m.config.Password, m.config.Host)
 		m.authenticated = true
@@ -75,7 +75,7 @@ func (m *mailer) sendSMTP(to []string, subject, body string) error {
 func (m *mailer) sendCmd(to []string, subject, body string) error {
 	buffer := buf.Get()
 	defer buf.Put(buffer)
-	// buffer.WriteString(body)
+
 	cmd := utils.CommandBuilder("mail", "-s", subject, strings.Join(to, ","))
 	cmd.AppendArguments("-a", "Content-type: text/html") //always html on
 
