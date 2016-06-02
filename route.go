@@ -18,8 +18,9 @@ type (
 		Name(string) IRoute
 		GetMiddleware() Middleware
 		HasCors() bool
-		// used internaly to check arguments with the route's named parameters
-		parse(...interface{}) (string, bool)
+		// used to check arguments with the route's named parameters and return the correct url
+		// second parameter is false when the action cannot be done
+		Parse(...interface{}) (string, bool)
 	}
 
 	// RouteNameFunc is returned to from route handle
@@ -148,8 +149,7 @@ func (r *Route) HasCors() bool {
 	return RouteConflicts(r, "httpmethod")
 }
 
-// used internaly to check arguments with the route's named parameters (iris.initTemplates for funcs)
-func (r *Route) parse(args ...interface{}) (string, bool) {
+func (r *Route) Parse(args ...interface{}) (string, bool) {
 	// check if arguments are not equal to the named parameters ( : = 1, * = all named parameters split to / ), if this happens then send not found err
 	///TODO: I'm thinking of making an option to disable these checks and just return a result, because they have cost when rendering an html/template, not too big compared to the render action but... we will see
 	// can also do a check if this url can be realy served (_tree.rootBranch.GetBranch(path, ctx.Params))  and if not then return a 404 or a link to a ./templates/errors/404.html

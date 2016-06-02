@@ -128,7 +128,7 @@ func (s *Iris) initTemplates() {
 						return "", ErrRenderRouteNotFound.Format(routeName)
 					}
 
-					if result, ok := r.parse(args...); ok {
+					if result, ok := r.Parse(args...); ok {
 						return result, nil
 					}
 					return "", nil
