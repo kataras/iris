@@ -134,6 +134,16 @@ func (s *Iris) initTemplates() {
 					return "", nil
 				},
 			}
+			// these should be already a non-nil map but if .New(cfg) it's not, is mergo's bug, temporary:
+			if s.config.Render.Template.HTMLTemplate.LayoutFuncs == nil {
+				s.config.Render.Template.HTMLTemplate.LayoutFuncs = make(map[string]interface{}, 1)
+			}
+
+			if s.config.Render.Template.HTMLTemplate.Funcs == nil {
+				s.config.Render.Template.HTMLTemplate.Funcs = make(map[string]interface{}, 1)
+			}
+			//
+
 			for k, v := range funcs {
 				// we don't want to override the user's LayoutFuncs, user should be able to override anything.
 				if s.config.Render.Template.HTMLTemplate.LayoutFuncs[k] == nil {
