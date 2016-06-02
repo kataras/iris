@@ -386,7 +386,7 @@ func BindForm(ctx context.IContext, formObject interface{}) error {
 	}
 	// if no multipart and post arguments ( means normal form)
 
-	if reqCtx.PostArgs().Len() == 0 {
+	if reqCtx.PostArgs().Len() == 0 && reqCtx.QueryArgs().Len() == 0 {
 		return ErrReadBody.With(ErrNoForm.Return())
 	}
 
