@@ -34,25 +34,26 @@ func New(cfg config.Mail) Service {
 	return &mailer{config: cfg}
 }
 
-func (m *mailer) authenticate() error {
-	if m.config.Username == "" || m.config.Password == "" || m.config.Host == "" {
-		return fmt.Errorf("Username, Password & Host cannot be empty!")
-	}
-	m.auth = smtp.PlainAuth("", m.config.Username, m.config.Password, m.config.Host)
-	m.authenticated = true
-	return nil
-}
-
 // Send sends a mail to recipients
 // the body can be html also
 func (m *mailer) Send(to []string, subject, body string) error {
+	if m.config.UseCommand {
+		return m.sendCmd(to, subject, body)
+	}
+
+	return m.sendSMTP(to, subject, body)
+}
+
+func (m *mailer) sendSMTP(to []string, subject, body string) error {
 	buffer := buf.Get()
 	defer buf.Put(buffer)
 
 	if !m.authenticated {
-		if err := m.authenticate(); err != nil {
-			return err
+		if m.config.Username == "" || m.config.Password == "" || m.config.Host == "" {
+			return fmt.Errorf("Username, Password, Host cannot be empty when using SMTP!")
 		}
+		m.auth = smtp.PlainAuth("", m.config.Username, m.config.Password, m.config.Host)
+		m.authenticated = true
 	}
 
 	mailArgs := map[string]string{"To": strings.Join(to, ","), "Subject": subject, "Body": body}
@@ -69,4 +70,16 @@ func (m *mailer) Send(to []string, subject, body string) error {
 		to,
 		buffer.Bytes(),
 	)
+}
+
+func (m *mailer) sendCmd(to []string, subject, body string) error {
+	buffer := buf.Get()
+	defer buf.Put(buffer)
+	// buffer.WriteString(body)
+	cmd := utils.CommandBuilder("mail", "-s", subject, strings.Join(to, ","))
+	cmd.AppendArguments("-a", "Content-type: text/html") //always html on
+
+	cmd.Stdin = buffer
+	_, err := cmd.Output()
+	return err
 }
