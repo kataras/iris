@@ -4,7 +4,7 @@ This package is the command line tool for  [../](https://github.com/kataras/iris
 
 
 ## Install
-Current version: 0.0.1
+Current version: 0.0.2
 ```sh
 
 go get -u github.com/kataras/iris/iris
@@ -26,17 +26,33 @@ $ iris [command] [-flags]
 
 **The create command** creates for you a start project in a directory
 
+
+```sh
+iris create -t basic -d ./
+```
+
+Will create the  [basic](https://github.com/iris-contrib/iris-command-assets/tree/master/basic) sample package to the current working directory and run the app.
+
+```sh
+iris create -t static  -d ./
+```
+
+Will create the [static](https://github.com/iris-contrib/iris-command-assets/tree/master/static) sample package to the current working directory and run the app.
+
+
+The default
+
 ```sh
 iris create
 ```
 
-Will create the starter/basic project structure to the current working directory and run the app.
+Will create the basic sample package to the current working directory and run the app.
 
 ```sh
 iris create -d C:\Users\kataras\Desktop\test1
 ```
 
-Will create the starter/basic project structure to the C:\Users\kataras\Desktop\test1 folder and run the app.
+Will create the basic sample package to the C:\Users\kataras\Desktop\test1 folder and run the app.
 
 
 ## Version
@@ -49,4 +65,4 @@ Will print the current iris' installed version to your machine
 
 ## TODO
 
-A lot more
+- [ ] Add more templates

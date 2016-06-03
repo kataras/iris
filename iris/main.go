@@ -31,12 +31,12 @@ var (
 )
 
 func init() {
-	app = cli.NewApp("iris", "Command line tool for Iris web framework", "0.0.1")
+	app = cli.NewApp("iris", "Command line tool for Iris web framework", "0.0.2")
 	app.Command(cli.Command("version", "\t      prints your iris version").Action(func(cli.Flags) error { app.Printf("%s", iris.Version); return nil }))
 
 	createCmd := cli.Command("create", "create a project to a given directory").
 		Flag("dir", "./", "-d ./ creates an iris starter kit to the current directory").
-		Flag("type", "basic", "creates the project based on the -t package. Available type is only 'basic', currently").
+		Flag("type", "basic", "creates the project based on the -t package. Currently, available types are 'basic' & 'static'").
 		Action(create)
 
 	app.Command(createCmd)
