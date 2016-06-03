@@ -146,7 +146,7 @@ func (ctx *Context) Session() store.IStore {
 	return ctx.sessionStore
 }
 
-// SessionDestroy destroys the whole session, calls the provider's destory and remove the cookie
+// SessionDestroy destroys the whole session, calls the provider's destroy and remove the cookie
 func (ctx *Context) SessionDestroy() {
 	if ctx.station.sessionManager != nil {
 		if store := ctx.Session(); store != nil {

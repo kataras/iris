@@ -228,7 +228,7 @@ func (c *Cors) Conflicts() string {
 
 // Serve serves the middleware
 func (c *Cors) Serve(ctx *iris.Context) {
-	if ctx.MethodString() == "OPTIONS" {
+	if ctx.MethodString() == iris.MethodOptions {
 		c.logf("Serve: Preflight request")
 		c.handlePreflight(ctx)
 		// Preflight requests are standalone and should stop the chain as some other
@@ -249,7 +249,7 @@ func (c *Cors) Serve(ctx *iris.Context) {
 func (c *Cors) handlePreflight(ctx *iris.Context) {
 	origin := ctx.RequestHeader("Origin")
 
-	if ctx.MethodString() != "OPTIONS" {
+	if ctx.MethodString() != iris.MethodOptions {
 		c.logf("  Preflight aborted: %s!=OPTIONS", ctx.MethodString())
 		return
 	}

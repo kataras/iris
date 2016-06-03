@@ -60,7 +60,7 @@ var routes = []route{
 func TestRouter(t *testing.T) {
 	api := iris.New()
 
-	for idx, _ := range routes {
+	for idx := range routes {
 		r := routes[idx]
 		if r.Register {
 			api.HandleFunc(r.Method, r.Path, func(ctx *iris.Context) {

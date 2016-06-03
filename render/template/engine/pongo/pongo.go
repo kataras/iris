@@ -1,9 +1,5 @@
 package pongo
 
-/* TODO:
-1. Find if pongo2 supports layout, it should have extends or something like django but I don't know yet, if exists then do something with the layour parameter in Exeucte/Gzip.
-
-*/
 import (
 	"io"
 	"io/ioutil"
@@ -19,6 +15,7 @@ import (
 )
 
 type (
+	// Engine the pongo2 engine
 	Engine struct {
 		Config        *config.Template
 		templateCache map[string]*pongo2.Template
@@ -31,6 +28,7 @@ func New(c config.Template) *Engine {
 	return &Engine{Config: &c, templateCache: make(map[string]*pongo2.Template)}
 }
 
+// BuildTemplates builds the templates
 func (p *Engine) BuildTemplates() error {
 	// Add our filters. first
 	for k, v := range p.Config.Pongo.Filters {
@@ -91,9 +89,8 @@ func (p *Engine) buildFromDir() (templateErr error) {
 				name := filepath.ToSlash(rel)
 				p.templateCache[name], templateErr = set.FromString(string(buf))
 
-				//_, templateErr = p.Templates.FromCache(rel) // use Relative, no from path because it calculates the basedir of the fsLoader
 				if templateErr != nil {
-					return templateErr // break the file walk(;)
+					return templateErr
 				}
 				break
 			}
@@ -137,7 +134,7 @@ func (p *Engine) buildFromAsset() error {
 					break
 				}
 				name := filepath.ToSlash(rel)
-				p.templateCache[name], err = set.FromString(string(buf)) // I don't konw if that will work, yet
+				p.templateCache[name], err = set.FromString(string(buf))
 				if err != nil {
 					templateErr = err
 					break
@@ -167,19 +164,20 @@ func getPongoContext(templateData interface{}) pongo2.Context {
 }
 
 func (p *Engine) fromCache(relativeName string) *pongo2.Template {
-	p.mu.Lock()
+	p.mu.Lock() // defer is slow
 
 	tmpl, ok := p.templateCache[relativeName]
 
 	if ok {
-		p.mu.Unlock() // defer is slow
+		p.mu.Unlock()
 		return tmpl
 	}
-	p.mu.Unlock() // defer is slow
+	p.mu.Unlock()
 	return nil
 }
 
-// layout here is unnesecery
+// ExecuteWriter executes a templates and write its results to the out writer
+// layout here is useless
 func (p *Engine) ExecuteWriter(out io.Writer, name string, binding interface{}, layout string) error {
 	if tmpl := p.fromCache(name); tmpl != nil {
 		return tmpl.ExecuteWriter(getPongoContext(binding), out)
