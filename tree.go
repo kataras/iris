@@ -132,7 +132,7 @@ func (_tree *tree) serve(reqCtx *fasthttp.RequestCtx, path string) bool {
 			// response because older user agents may not understand 301/307.
 			// Shouldn't send the response for POST or HEAD; that leaves GET.
 			if _tree.method == MethodGet {
-				note := "<a href=\"" + utils.HtmlEscape(urlToRedirect) + "\">Moved Permanently</a>.\n"
+				note := "<a href=\"" + utils.HTMLEscape(urlToRedirect) + "\">Moved Permanently</a>.\n"
 				ctx.Write(note)
 			}
 			_tree.pool.Put(ctx)

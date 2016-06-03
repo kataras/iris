@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	// DefaultBasicAuth is "Authorization Required"
+	// DefaultBasicAuthRealm is "Authorization Required"
 	DefaultBasicAuthRealm = "Authorization Required"
 	// DefaultBasicAuthContextKey is the "auth"
 	// this key is used to do context.Set("auth", theUsernameFromBasicAuth)

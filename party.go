@@ -179,7 +179,8 @@ func (p *GardenParty) API(path string, controller HandlerAPI, middlewares ...Han
 			}
 
 			func(path string, typ reflect.Type, contextField reflect.StructField, methodFunc reflect.Value, method string) {
-				handlersFn := make([]HandlerFunc, 0)
+				var handlersFn []HandlerFunc
+
 				handlersFn = append(handlersFn, middlewares...)
 				handlersFn = append(handlersFn, func(ctx *Context) {
 					newController := reflect.New(typ).Elem()
@@ -223,7 +224,8 @@ func (p *GardenParty) API(path string, controller HandlerAPI, middlewares ...Han
 			}
 
 			func(registedPath string, typ reflect.Type, contextField reflect.StructField, methodFunc reflect.Value, paramsLen int, method string) {
-				handlersFn := make([]HandlerFunc, 0)
+				var handlersFn []HandlerFunc
+
 				handlersFn = append(handlersFn, middlewares...)
 				handlersFn = append(handlersFn, func(ctx *Context) {
 					newController := reflect.New(typ).Elem()
@@ -407,7 +409,7 @@ func (p *GardenParty) StaticHandlerFunc(systemPath string, stripSlashes int, com
 // * stripSlashes = 2, original path: "/foo/bar", result: ""
 func (p *GardenParty) Static(relative string, systemPath string, stripSlashes int) {
 	if relative[len(relative)-1] != SlashByte { // if / then /*filepath, if /something then /something/*filepath
-		relative += "/"
+		relative += Slash
 	}
 
 	h := p.StaticHandlerFunc(systemPath, stripSlashes, false, false, nil)
@@ -447,7 +449,6 @@ func (p *GardenParty) StaticFS(reqPath string, systemPath string, stripSlashes i
 // * stripSlashes = 1, original path: "/foo/bar", result: "/bar"
 // * stripSlashes = 2, original path: "/foo/bar", result: ""
 // * if you don't know what to put on stripSlashes just 1
-
 func (p *GardenParty) StaticWeb(reqPath string, systemPath string, stripSlashes int) {
 	if reqPath[len(reqPath)-1] != SlashByte { // if / then /*filepath, if /something then /something/*filepath
 		reqPath += "/"

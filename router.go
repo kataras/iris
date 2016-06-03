@@ -219,7 +219,7 @@ func (r *router) optimize() {
 func (r *router) optimizeLookups() {
 	// set the isTLS on all routes and the listening  full host
 	listeningHost := r.station.server.Listener().Addr().String()
-	for idx, _ := range r.lookups {
+	for idx := range r.lookups {
 		theR := r.lookups[idx]
 		theR.setTLS(r.station.server.IsSecure())
 		if theR.GetDomain() == "" { // means local, no subdomain

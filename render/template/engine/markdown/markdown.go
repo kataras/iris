@@ -16,7 +16,9 @@ import (
 )
 
 // Supports RAW markdown only, no context binding or layout, to use dynamic markdown with other template engine use the context.Markdown/MarkdownString
+
 type (
+	// Engine the jade engine
 	Engine struct {
 		Config        *config.Template
 		templateCache map[string][]byte
@@ -29,6 +31,7 @@ func New(c config.Template) *Engine {
 	return &Engine{Config: &c, templateCache: make(map[string][]byte)}
 }
 
+// BuildTemplates builds the templates
 func (e *Engine) BuildTemplates() error {
 	if e.Config.Asset == nil || e.Config.AssetNames == nil {
 		return e.buildFromDir()
@@ -140,7 +143,8 @@ func (e *Engine) fromCache(relativeName string) []byte {
 	return nil
 }
 
-// layout here is unnesecery
+// ExecuteWriter executes a templates and write its results to the out writer
+// layout here is useless
 func (e *Engine) ExecuteWriter(out io.Writer, name string, binding interface{}, layout string) error {
 	if tmpl := e.fromCache(name); tmpl != nil {
 		_, err := out.Write(tmpl)

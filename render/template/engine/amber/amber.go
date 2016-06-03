@@ -12,16 +12,19 @@ import (
 	"github.com/kataras/iris/config"
 )
 
+// Engine the amber template engine
 type Engine struct {
 	Config        *config.Template
 	templateCache map[string]*template.Template
 	mu            sync.Mutex
 }
 
+// New creates and returns a new amber engine
 func New(cfg config.Template) *Engine {
 	return &Engine{Config: &cfg}
 }
 
+// BuildTemplates builds the amber templates
 func (e *Engine) BuildTemplates() error {
 	opt := amber.DirOptions{}
 	opt.Recursive = true
@@ -67,6 +70,7 @@ func (e *Engine) fromCache(relativeName string) *template.Template {
 	return nil
 }
 
+// ExecuteWriter executes a templates and write its results to the out writer
 func (e *Engine) ExecuteWriter(out io.Writer, name string, binding interface{}, layout string) error {
 	if tmpl := e.fromCache(name); tmpl != nil {
 		return tmpl.ExecuteTemplate(out, name, binding)

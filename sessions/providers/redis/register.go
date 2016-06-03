@@ -13,6 +13,7 @@ func init() {
 }
 
 var (
+	// Provider is the redis provider
 	Provider = sessions.NewProvider("redis")
 	// redis is the default redis service, you can set configs via this object
 	redis = service.New()

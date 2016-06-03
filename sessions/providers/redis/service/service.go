@@ -215,7 +215,7 @@ func dial(network string, addr string, pass string) (redis.Conn, error) {
 		return nil, err
 	}
 	if pass != "" {
-		if _, err := c.Do("AUTH", pass); err != nil {
+		if _, err = c.Do("AUTH", pass); err != nil {
 			c.Close()
 			return nil, err
 		}
@@ -255,7 +255,7 @@ func (r *Service) Connect() {
 			if err != nil {
 				return nil, err
 			}
-			if _, err := red.Do("SELECT", c.Database); err != nil {
+			if _, err = red.Do("SELECT", c.Database); err != nil {
 				red.Close()
 				return nil, err
 			}

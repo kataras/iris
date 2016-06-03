@@ -11,7 +11,7 @@ import (
 )
 
 // DefaultIris in order to use iris.Get(...,...) we need a default Iris on the package level
-var DefaultIris *Iris = New()
+var DefaultIris = New()
 
 // Listen starts the standalone http server
 // which listens to the addr parameter which as the form of

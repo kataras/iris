@@ -24,7 +24,7 @@ type (
 		//
 
 		// used to check arguments with the route's named parameters and return the correct url
-		// second parameter is false when the action cannot be done
+		// second return value is false when the action cannot be done
 		Parse(...interface{}) (string, bool)
 
 		// GetURI returns the GetDomain() + Parse(...optional named parameters if route is dynamic)
@@ -169,6 +169,8 @@ func (r *Route) setHost(s string) {
 	r.host = s
 }
 
+// Parse used to check arguments with the route's named parameters and return the correct url
+// second return value is false when the action cannot be done
 func (r *Route) Parse(args ...interface{}) (string, bool) {
 	// check if arguments are not equal to the named parameters ( : = 1, * = all named parameters split to / ), if this happens then send not found err
 	///TODO: I'm thinking of making an option to disable these checks and just return a result, because they have cost when rendering an html/template, not too big compared to the render action but... we will see
@@ -210,6 +212,8 @@ func (r *Route) Parse(args ...interface{}) (string, bool) {
 	return fmt.Sprintf(r.formattedPath, args...), true
 }
 
+// GetURI returns the GetDomain() + Parse(...optional named parameters if route is dynamic)
+// instead of Parse it just returns an empty string if path parse is failed
 func (r *Route) GetURI(args ...interface{}) (uri string) {
 	scheme := "http://"
 	if r.isTLS {

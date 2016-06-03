@@ -4,6 +4,7 @@ import (
 	"github.com/imdario/mergo"
 )
 
+// DefaultProfilePath is the default profile(http debug) path which is /debug/pprof
 const DefaultProfilePath = "/debug/pprof"
 
 type (
@@ -145,7 +146,7 @@ func (c Iris) Merge(cfg []Iris) (config Iris) {
 	return
 }
 
-// Merge MergeSingle the default with the given config and returns the result
+// MergeSingle merges the default with the given config and returns the result
 func (c Iris) MergeSingle(cfg Iris) (config Iris) {
 
 	config = cfg

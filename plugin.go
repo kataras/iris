@@ -45,6 +45,7 @@ type (
 		//  parameter is the Route
 		PreHandle(IRoute)
 	}
+	// PreHandleFunc implements the simple function listener for the PreHandle(IRoute)
 	PreHandleFunc func(IRoute)
 	// IPluginPostHandle implements the PostHandle(IRoute) method
 	IPluginPostHandle interface {
@@ -53,6 +54,7 @@ type (
 		// parameter is the Route
 		PostHandle(IRoute)
 	}
+	// PostHandleFunc implements the simple function listener for the PostHandle(IRoute)
 	PostHandleFunc func(IRoute)
 	// IPluginPreListen implements the PreListen(*Iris) method
 	IPluginPreListen interface {
@@ -61,6 +63,7 @@ type (
 		//  parameter is the station
 		PreListen(*Iris)
 	}
+	// PreListenFunc implements the simple function listener for the PreListen(*Iris)
 	PreListenFunc func(*Iris)
 	// IPluginPostListen implements the PostListen(*Iris) method
 	IPluginPostListen interface {
@@ -68,6 +71,7 @@ type (
 		// parameter is the station
 		PostListen(*Iris)
 	}
+	// PostListenFunc implements the simple function listener for the PostListen(*Iris)
 	PostListenFunc func(*Iris)
 	// IPluginPreClose implements the PreClose(*Iris) method
 	IPluginPreClose interface {
@@ -77,6 +81,7 @@ type (
 		// The plugin is deactivated after this state
 		PreClose(*Iris)
 	}
+	// PreCloseFunc implements the simple function listener for the PreClose(*Iris)
 	PreCloseFunc func(*Iris)
 
 	// IPluginPreDownload It's for the future, not being used, I need to create
@@ -91,6 +96,8 @@ type (
 		// must return a boolean, if false then the plugin is not permmited to download this file
 		PreDownload(plugin IPlugin, downloadURL string) // bool
 	}
+
+	// PreDownloadFunc implements the simple function listener for the PreDownload(IPlugin,string)
 	PreDownloadFunc func(IPlugin, string)
 
 	// IPluginContainer is the interface which the PluginContainer should implements
@@ -137,26 +144,46 @@ type (
 
 // convert the functions to IPlugin
 
+// PreHandle it's being called every time BEFORE a Route is registed to the Router
+//
+//  parameter is the Route
 func (fn PreHandleFunc) PreHandle(route IRoute) {
 	fn(route)
 }
 
+// PostHandle it's being called every time AFTER a Route successfully registed to the Router
+//
+// parameter is the Route
 func (fn PostHandleFunc) PostHandle(route IRoute) {
 	fn(route)
 }
 
+// PreListen it's being called only one time, BEFORE the Server is started (if .Listen called)
+// is used to do work at the time all other things are ready to go
+//  parameter is the station
 func (fn PreListenFunc) PreListen(station *Iris) {
 	fn(station)
 }
 
+// PostListen it's being called only one time, AFTER the Server is started (if .Listen called)
+// parameter is the station
 func (fn PostListenFunc) PostListen(station *Iris) {
 	fn(station)
 }
 
+// PreClose it's being called only one time, BEFORE the Iris .Close method
+// any plugin cleanup/clear memory happens here
+//
+// The plugin is deactivated after this state
 func (fn PreCloseFunc) PreClose(station *Iris) {
 	fn(station)
 }
 
+// PreDownload it's being called every time a plugin tries to download something
+//
+// first parameter is the plugin
+// second parameter is the download url
+// must return a boolean, if false then the plugin is not permmited to download this file
 func (fn PreDownloadFunc) PreDownload(pl IPlugin, downloadURL string) {
 	fn(pl, downloadURL)
 }

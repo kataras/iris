@@ -43,7 +43,7 @@ func (ctx *Context) Render(name string, binding interface{}, layout ...string) e
 	return ctx.HTML(StatusOK, name, binding, layout...)
 }
 
-// RenderStrings accepts a template filename, its context data and returns the result of the parsed template (string)
+// RenderString accepts a template filename, its context data and returns the result of the parsed template (string)
 func (ctx *Context) RenderString(name string, binding interface{}, layout ...string) (result string, err error) {
 	return ctx.station.templates.RenderString(name, binding, layout...)
 }
@@ -96,7 +96,7 @@ func (ctx *Context) ExecuteTemplate(tmpl *template.Template, pageContext interfa
 // receives three parameters, it's low-level function, instead you can use .ServeFile(string)
 //
 // You can define your own "Content-Type" header also, after this function call
-func (ctx *Context) ServeContent(content io.ReadSeeker, filename string, modtime time.Time, gzipCompression bool) (err error) {
+func (ctx *Context) ServeContent(content io.ReadSeeker, filename string, modtime time.Time, gzipCompression bool) error {
 	if t, err := time.Parse(TimeFormat, ctx.RequestHeader(IfModifiedSince)); err == nil && modtime.Before(t.Add(1*time.Second)) {
 		ctx.RequestCtx.Response.Header.Del(ContentType)
 		ctx.RequestCtx.Response.Header.Del(ContentLength)
@@ -119,7 +119,7 @@ func (ctx *Context) ServeContent(content io.ReadSeeker, filename string, modtime
 		out = ctx.RequestCtx.Response.BodyWriter()
 
 	}
-	_, err = io.Copy(out, content)
+	_, err := io.Copy(out, content)
 	return ErrServeContent.With(err)
 }
 

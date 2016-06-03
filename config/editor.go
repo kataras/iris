@@ -2,6 +2,7 @@ package config
 
 import "github.com/imdario/mergo"
 
+// Editor the configs for the Editor plugin
 type Editor struct {
 	// Host if empty used the iris server's host
 	Host string
@@ -34,7 +35,7 @@ func (c Editor) Merge(cfg []Editor) (config Editor) {
 	return
 }
 
-// Merge MergeSingle the default with the given config and returns the result
+// MergeSingle merges the default with the given config and returns the result
 func (c Editor) MergeSingle(cfg Editor) (config Editor) {
 
 	config = cfg

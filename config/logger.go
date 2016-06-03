@@ -13,6 +13,7 @@ var (
 )
 
 type (
+	// Logger contains the configs for the Logger
 	Logger struct {
 		Out    io.Writer
 		Prefix string
@@ -20,6 +21,7 @@ type (
 	}
 )
 
+// DefaultLogger returns the default configs for the Logger
 func DefaultLogger() Logger {
 	return Logger{Out: os.Stdout, Prefix: "", Flag: 0}
 }

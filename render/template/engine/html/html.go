@@ -14,6 +14,7 @@ import (
 )
 
 type (
+	// Engine the html/template engine
 	Engine struct {
 		Config    *config.Template
 		Templates *template.Template

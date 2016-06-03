@@ -14,7 +14,8 @@ var (
 
 const (
 	// DefaultCookieName the secret cookie's name for sessions
-	DefaultCookieName        = "irissessionid"
+	DefaultCookieName = "irissessionid"
+	// DefaultSessionGcDuration  is the default Session Manager's GCDuration , which is 2 hours
 	DefaultSessionGcDuration = time.Duration(2) * time.Hour
 	// DefaultRedisNetwork the redis network option, "tcp"
 	DefaultRedisNetwork = "tcp"
@@ -97,7 +98,7 @@ func (c Sessions) Merge(cfg []Sessions) (config Sessions) {
 	return
 }
 
-// Merge MergeSingle the default with the given config and returns the result
+// MergeSingle merges the default with the given config and returns the result
 func (c Sessions) MergeSingle(cfg Sessions) (config Sessions) {
 
 	config = cfg
@@ -135,7 +136,7 @@ func (c Redis) Merge(cfg []Redis) (config Redis) {
 	return
 }
 
-// Merge MergeSingle the default with the given config and returns the result
+// MergeSingle merges the default with the given config and returns the result
 func (c Redis) MergeSingle(cfg Redis) (config Redis) {
 
 	config = cfg

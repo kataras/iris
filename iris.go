@@ -59,8 +59,8 @@ var (
 	DefaultEngine = config.DefaultEngine
 	// NoEngine conversion for config.NoEngine
 	NoEngine = config.NoEngine
-	//
-
+	// NoLayout to disable layout for a particular template file
+	// conversion for config.NoLayout
 	NoLayout = config.NoLayout
 )
 
@@ -192,7 +192,7 @@ func (s *Iris) printBanner() {
 		}
 	}()
 
-	var i uint64 = 0
+	var i uint64
 
 	printTicker.OnTick(func() {
 		if len(banner) <= int(atomic.LoadUint64(&i)) {

@@ -22,8 +22,8 @@ var htmlReplacer = strings.NewReplacer(
 	"'", "&#39;",
 )
 
-// HtmlEscape returns a string which has no valid html code
-func HtmlEscape(s string) string {
+// HTMLEscape returns a string which has no valid html code
+func HTMLEscape(s string) string {
 	return htmlReplacer.Replace(s)
 }
 
