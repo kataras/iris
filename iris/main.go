@@ -30,11 +30,11 @@ var (
 )
 
 func init() {
-	app = cli.NewApp("iris", "Command line tool for Iris web framework", "0.0.2")
+	app = cli.NewApp("iris", "Command line tool for Iris web framework", "0.0.3")
 	app.Command(cli.Command("version", "\t      prints your iris version").Action(func(cli.Flags) error { app.Printf("%s", iris.Version); return nil }))
 
 	createCmd := cli.Command("create", "create a project to a given directory").
-		Flag("dev", true, "set to false to disable the packages download on each create command").
+		Flag("offline", false, "set to true to disable the packages download on each create command").
 		Flag("dir", "./", "creates an iris starter kit to the current directory").
 		Flag("type", "basic", "creates the project based on the -t package. Currently, available types are 'basic' & 'static'").
 		Action(create)
@@ -48,7 +48,7 @@ func main() {
 
 func create(flags cli.Flags) (err error) {
 
-	if !utils.DirectoryExists(packagesInstallDir) || flags.Bool("dev") {
+	if !utils.DirectoryExists(packagesInstallDir) || !flags.Bool("offline") {
 		downloadPackages()
 	}
 
@@ -67,18 +67,23 @@ func create(flags cli.Flags) (err error) {
 }
 
 func downloadPackages() {
+	errMsg := "\nProblem while downloading the assets from the internet for the first time. Trace: %s"
+
 	installedDir, err := utils.Install(PackagesURL, packagesInstallDir)
 	if err != nil {
-		app.Printf("\nProblem while downloading the assets from the internet for the first time. Trace: %s", err.Error())
+		app.Printf(errMsg, err.Error())
 		return
 	}
+
 	// installedDir is the packagesInstallDir+PackagesExportedName, we will copy these contents to the parent, to the packagesInstallDir, because of import paths.
 
 	err = utils.CopyDir(installedDir, packagesInstallDir)
 	if err != nil {
-		app.Printf("\nProblem while downloading the assets from the internet for the first time. Trace: %s", err.Error())
+		app.Printf(errMsg, err.Error())
 		return
 	}
+
+	// we don't exit on errors here.
 
 	// try to remove the unzipped folder
 	utils.RemoveFile(installedDir)

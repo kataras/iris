@@ -4,7 +4,7 @@ This package is the command line tool for  [../](https://github.com/kataras/iris
 
 
 ## Install
-Current version: 0.0.2
+Current version: 0.0.3
 ```sh
 
 go get -u github.com/kataras/iris/iris
