@@ -86,7 +86,7 @@ func downloadPackages() {
 	// we don't exit on errors here.
 
 	// try to remove the unzipped folder
-	utils.RemoveFile(installedDir)
+	utils.RemoveFile(installedDir[0 : len(installedDir)-1])
 }
 
 func createPackage(packageName string, targetDir string) error {
