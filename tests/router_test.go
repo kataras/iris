@@ -96,7 +96,7 @@ func TestRouter(t *testing.T) {
 	})
 
 	// run the tests (1)
-	for idx, _ := range routes {
+	for idx := range routes {
 		r := routes[idx]
 		e.Request(r.Method, r.RequestPath).
 			Expect().

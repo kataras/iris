@@ -172,11 +172,8 @@ func (r *Route) setHost(s string) {
 // Parse used to check arguments with the route's named parameters and return the correct url
 // second return value is false when the action cannot be done
 func (r *Route) Parse(args ...interface{}) (string, bool) {
-	// check if arguments are not equal to the named parameters ( : = 1, * = all named parameters split to / ), if this happens then send not found err
-	///TODO: I'm thinking of making an option to disable these checks and just return a result, because they have cost when rendering an html/template, not too big compared to the render action but... we will see
-	// can also do a check if this url can be realy served (_tree.rootBranch.GetBranch(path, ctx.Params))  and if not then return a 404 or a link to a ./templates/errors/404.html
-	// but we don't have access to the context itself(so we will have some memory allocations), although it's a good idea but let's keep things simple here.
 	argsLen := len(args)
+
 	// we have named parameters but arguments not given
 	if argsLen == 0 && r.formattedParts > 0 {
 		return "", false

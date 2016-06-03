@@ -43,6 +43,13 @@ func (ctx *Context) Render(name string, binding interface{}, layout ...string) e
 	return ctx.HTML(StatusOK, name, binding, layout...)
 }
 
+// MustRender same as .Render but returns 500 internal server http status (error) if rendering fail
+func (ctx *Context) MustRender(name string, binding interface{}, layout ...string) {
+	if err := ctx.Render(name, binding, layout...); err != nil {
+		ctx.Panic()
+	}
+}
+
 // RenderString accepts a template filename, its context data and returns the result of the parsed template (string)
 func (ctx *Context) RenderString(name string, binding interface{}, layout ...string) (result string, err error) {
 	return ctx.station.templates.RenderString(name, binding, layout...)

@@ -36,7 +36,7 @@ func init() {
 
 	createCmd := cli.Command("create", "create a project to a given directory").
 		Flag("dir", "./", "-d ./ creates an iris starter kit to the current directory").
-		Flag("type", "basic", "-t basic creates the project based on the t 'package'").
+		Flag("type", "basic", "creates the project based on the -t package. Available type is only 'basic', currently").
 		Action(create)
 
 	app.Command(createCmd)
@@ -48,9 +48,15 @@ func main() {
 
 func create(flags cli.Flags) (err error) {
 
-	if !utils.DirectoryExists(packagesDir) {
-		downloadPackages()
-	}
+	/*	///TODO: add a version.json and check if the repository's version is bigger than local and then do the downloadPackages.
+
+		if !utils.DirectoryExists(packagesDir) {
+			downloadPackages()
+		}
+	*/
+
+	// currently: always download packages, because I'm adding new things to the packages every day.
+	downloadPackages()
 
 	targetDir := flags.String("dir")
 
@@ -97,10 +103,9 @@ func createPackage(packageName string, targetDir string) error {
 		app.Printf("\n Failed to build the %s package. Trace: %s", packageName, err.Error())
 	}
 	buildCmd.Wait()
-	println("\n")
+	print("\n\n")
 
 	// run backend/backend(.exe)
-
 	executable := "backend"
 	if runtime.GOOS == "windows" {
 		executable += ".exe"

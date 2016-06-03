@@ -48,6 +48,8 @@ type (
 		HTML(status int, name string, binding interface{}, layout ...string) error
 		// Render same as .HTML but with status to iris.StatusOK (200)
 		Render(name string, binding interface{}, layout ...string) error
+		// MustRender same as .Render but returns 500 internal server http status (error) if rendering fail
+		MustRender(name string, binding interface{}, layout ...string)
 		// RenderString accepts a template filename, its context data and returns the result of the parsed template (string)
 		RenderString(name string, binding interface{}, layout ...string) (result string, err error)
 		// MarkdownString parses the (dynamic) markdown string and returns the converted html string
