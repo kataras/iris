@@ -195,6 +195,11 @@ func (r *Route) Parse(args ...interface{}) (string, bool) {
 					argsString[i] = strconv.Itoa(num)
 				} else if b, ok := v.(bool); ok {
 					argsString[i] = strconv.FormatBool(b)
+				} else if arr, ok := v.([]string); ok {
+					if len(arr) > 0 {
+						argsString[i] = arr[0]
+						argsString = append(argsString, arr[1:]...)
+					}
 				}
 			}
 
@@ -206,7 +211,24 @@ func (r *Route) Parse(args ...interface{}) (string, bool) {
 		return "", false
 	}
 
-	return fmt.Sprintf(r.formattedPath, args...), true
+	arguments := args[0:]
+
+	// check for arrays
+	for i, v := range arguments {
+		if arr, ok := v.([]string); ok {
+			if len(arr) > 0 {
+				interfaceArr := make([]interface{}, len(arr))
+				for j, sv := range arr {
+					interfaceArr[j] = sv
+				}
+				arguments[i] = interfaceArr[0]
+				arguments = append(arguments, interfaceArr[1:]...)
+			}
+
+		}
+	}
+
+	return fmt.Sprintf(r.formattedPath, arguments...), true
 }
 
 // GetURI returns the GetDomain() + Parse(...optional named parameters if route is dynamic)
