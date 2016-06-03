@@ -26,8 +26,7 @@ var (
 	SuccessPrint = color.New(color.FgGreen).Add(color.Bold).PrintfFunc()
 	// InfoPrint prints with the cyan color
 	InfoPrint          = color.New(color.FgHiCyan).Add(color.Bold).PrintfFunc()
-	packagesInstallDir = os.Getenv("GOPATH") + utils.PathSeparator + "src" + utils.PathSeparator + "github.com" + utils.PathSeparator + "kataras" + utils.PathSeparator + "iris" + utils.PathSeparator + "iris" + utils.PathSeparator
-	packagesDir        = packagesInstallDir + PackagesExportedName + utils.PathSeparator
+	packagesInstallDir = os.Getenv("GOPATH") + utils.PathSeparator + "src" + utils.PathSeparator + "github.com" + utils.PathSeparator + "iris-contrib" + utils.PathSeparator + "iris-command-assets" + utils.PathSeparator
 )
 
 func init() {
@@ -35,7 +34,8 @@ func init() {
 	app.Command(cli.Command("version", "\t      prints your iris version").Action(func(cli.Flags) error { app.Printf("%s", iris.Version); return nil }))
 
 	createCmd := cli.Command("create", "create a project to a given directory").
-		Flag("dir", "./", "-d ./ creates an iris starter kit to the current directory").
+		Flag("dev", true, "set to false to disable the packages download on each create command").
+		Flag("dir", "./", "creates an iris starter kit to the current directory").
 		Flag("type", "basic", "creates the project based on the -t package. Currently, available types are 'basic' & 'static'").
 		Action(create)
 
@@ -48,15 +48,9 @@ func main() {
 
 func create(flags cli.Flags) (err error) {
 
-	/*	///TODO: add a version.json and check if the repository's version is bigger than local and then do the downloadPackages.
-
-		if !utils.DirectoryExists(packagesDir) {
-			downloadPackages()
-		}
-	*/
-
-	// currently: always download packages, because I'm adding new things to the packages every day.
-	downloadPackages()
+	if !utils.DirectoryExists(packagesInstallDir) || flags.Bool("dev") {
+		downloadPackages()
+	}
 
 	targetDir := flags.String("dir")
 
@@ -73,14 +67,25 @@ func create(flags cli.Flags) (err error) {
 }
 
 func downloadPackages() {
-	_, err := utils.Install(PackagesURL, packagesInstallDir)
+	installedDir, err := utils.Install(PackagesURL, packagesInstallDir)
 	if err != nil {
 		app.Printf("\nProblem while downloading the assets from the internet for the first time. Trace: %s", err.Error())
+		return
 	}
+	// installedDir is the packagesInstallDir+PackagesExportedName, we will copy these contents to the parent, to the packagesInstallDir, because of import paths.
+
+	err = utils.CopyDir(installedDir, packagesInstallDir)
+	if err != nil {
+		app.Printf("\nProblem while downloading the assets from the internet for the first time. Trace: %s", err.Error())
+		return
+	}
+
+	// try to remove the unzipped folder
+	utils.RemoveFile(installedDir)
 }
 
 func createPackage(packageName string, targetDir string) error {
-	packageDir := packagesDir + packageName
+	packageDir := packagesInstallDir + utils.PathSeparator + packageName
 	err := utils.CopyDir(packageDir, targetDir)
 	if err != nil {
 		app.Printf("\nProblem while copying the %s package to the %s. Trace: %s", packageName, targetDir, err.Error())
