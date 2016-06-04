@@ -8,7 +8,6 @@ package iris
 import (
 	"reflect"
 	"runtime"
-	"time"
 
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/sessions/store"
@@ -63,38 +62,6 @@ var _ context.IContext = &Context{}
 // GetRequestCtx returns the current fasthttp context
 func (ctx *Context) GetRequestCtx() *fasthttp.RequestCtx {
 	return ctx.RequestCtx
-}
-
-// Implement the golang.org/x/net/context , as requested by the community, which is used inside app engine
-// also this will give me the ability to use appengine's memcache with this context, if this needed.
-
-// Deadline returns the time when this Context will be canceled, if any.
-func (ctx *Context) Deadline() (deadline time.Time, ok bool) {
-	return
-}
-
-// Done returns a channel that is closed when this Context is canceled
-// or times out.
-func (ctx *Context) Done() <-chan struct{} {
-	return nil
-}
-
-// Err indicates why this context was canceled, after the Done channel
-// is closed.
-func (ctx *Context) Err() error {
-	return nil
-}
-
-// Value returns the value associated with key or nil if none.
-func (ctx *Context) Value(key interface{}) interface{} {
-	if key == 0 {
-		return ctx.Request
-	}
-	if keyAsString, ok := key.(string); ok {
-		val := ctx.GetString(keyAsString)
-		return val
-	}
-	return nil
 }
 
 // Reset resets the Context with a given domain.Response and domain.Request

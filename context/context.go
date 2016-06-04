@@ -8,13 +8,11 @@ import (
 
 	"github.com/kataras/iris/sessions/store"
 	"github.com/valyala/fasthttp"
-	"golang.org/x/net/context"
 )
 
 type (
 	// IContext the interface for the Context
 	IContext interface {
-		context.Context
 		IContextRenderer
 		IContextStorage
 		IContextBinder
