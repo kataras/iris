@@ -240,6 +240,7 @@ func (r *Route) GetURI(args ...interface{}) (uri string) {
 	}
 
 	host := r.host
+
 	if parsedPath, ok := r.Parse(args...); ok {
 		uri = scheme + host + parsedPath
 	}

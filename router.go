@@ -19,6 +19,8 @@ const (
 	Slash = "/"
 	// MatchEverythingByte is just a byte of '*" rune/char
 	MatchEverythingByte = byte('*')
+	// PrefixDynamicSubdomain is the prefix which dynamic subdomains are registed to, as virtual. Used internaly by Iris but good to know.
+	PrefixDynamicSubdomain = "www.iris_subd0mAin.iris"
 
 	// HTTP Methods(1)
 
@@ -43,6 +45,9 @@ const (
 )
 
 var (
+	// PrefixDynamicSubdomainBytes is the prefix (as []byte) which dynamic subdomains are registed to, as virtual. Used internaly by Iris but good to know.
+	PrefixDynamicSubdomainBytes = []byte(PrefixDynamicSubdomain)
+
 	// HTTP Methods(2)
 
 	// MethodConnectBytes []byte("CONNECT")
@@ -217,19 +222,22 @@ func (r *router) optimize() {
 
 // optimizeLookups runs AFTER server's listen
 func (r *router) optimizeLookups() {
-	// set the isTLS on all routes and the listening  full host
-	listeningHost := r.station.server.Listener().Addr().String()
-	for idx := range r.lookups {
-		theR := r.lookups[idx]
-		theR.setTLS(r.station.server.IsSecure())
-		if theR.GetDomain() == "" { // means local, no subdomain
-			theR.setHost(listeningHost)
-		} else {
-			// it's a subdomain route
-			theR.setHost(theR.GetDomain() + "." + listeningHost)
-		}
+	if r.station.server != nil && r.station.server.IsListening() {
+		// set the isTLS on all routes and the listening  full host
+		listeningHost := r.station.server.Listener().Addr().String()
+		for idx := range r.lookups {
+			theR := r.lookups[idx]
+			theR.setTLS(r.station.server.IsSecure())
+			if theR.GetDomain() == "" { // means local, no subdomain
+				theR.setHost(listeningHost)
+			} else {
+				// it's a subdomain route
+				theR.setHost(theR.GetDomain() + "." + listeningHost)
+			}
 
+		}
 	}
+
 }
 
 // notFound internal method, it justs takes the context from pool ( in order to have the custom errors available) and procedure a Not Found 404 error
@@ -271,18 +279,29 @@ func (r *router) serveFunc(reqCtx *fasthttp.RequestCtx) {
 // If no route found, it sends an http status 404
 func (r *router) serveDomainFunc(reqCtx *fasthttp.RequestCtx) {
 	method := utils.BytesToString(reqCtx.Method())
-	domain := utils.BytesToString(reqCtx.Host())
-	path := r.getRequestPath(reqCtx)
+	host := utils.BytesToString(reqCtx.Host())
+	fulldomain := ""
+	if strings.Count(host, ".") >= 2 {
+		if portIdx := strings.Index(host, ":"); portIdx != -1 {
+			fulldomain = host[0:portIdx]
+		} else {
+			fulldomain = host
+		}
+	}
+	path := utils.BytesToString(r.getRequestPath(reqCtx))
 	tree := r.garden.first
 	for tree != nil {
-		if tree.hosts && tree.domain == domain {
-			// here we have an issue, at fasthttp/uri.go 273-274 line normalize path it adds a '/' slash at the beginning, it doesn't checks for subdomains
-			// I could fix it but i leave it as it is, I just create a new function inside tree named 'serveReturn' which accepts a path too. ->
-			//-> reqCtx.Request.URI().SetPathBytes(append(reqCtx.Host(), reqCtx.Path()...)) <-
-			path = append(reqCtx.Host(), path...)
+		if tree.hosts && tree.domain != "" && fulldomain != "" {
+			if tree.domain == fulldomain { // it's a static subdomain
+				path = fulldomain + path
+			} else if strings.Index(tree.domain, PrefixDynamicSubdomain) != -1 { // it's a dynamic virtual subdomain
+				path = PrefixDynamicSubdomain + path
+			}
+
 		}
+
 		if r.methodMatch(tree.method, method) {
-			if tree.serve(reqCtx, utils.BytesToString(path)) {
+			if tree.serve(reqCtx, path) {
 				return
 			}
 		}

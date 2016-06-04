@@ -1,4 +1,4 @@
-// Package iris v3.0.0-beta.1
+// Package iris v3.0.0-beta.2
 //
 // Note: When 'Station', we mean the Iris type.
 package iris
@@ -31,7 +31,7 @@ import (
 
 const (
 	// Version of the iris
-	Version = "v3.0.0-beta.1"
+	Version = "v3.0.0-beta.2"
 	banner  = `                        _____      _
                        |_   _|    (_)
                          | |  ____ _  ___

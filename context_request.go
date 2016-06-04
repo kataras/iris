@@ -95,6 +95,20 @@ func (ctx *Context) PostFormValue(name string) string {
 	return string(ctx.RequestCtx.PostArgs().Peek(name))
 }
 
+// GetSubdomain returns the subdomain if any, else empty string
+func (ctx *Context) GetSubdomain() string {
+	if ctx.subdomain == "" {
+		host := ctx.HostString()
+		if index := strings.IndexByte(host, '.'); index > 0 {
+			subdomain := host[0:index]
+			ctx.subdomain = subdomain
+		}
+	}
+
+	return ctx.subdomain
+
+}
+
 // URLEncode returns the path encoded as url
 // useful when you want to pass something to a database and be valid to retrieve it via context.Param
 // use it only for special cases, when the default behavior doesn't suits you.

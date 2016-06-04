@@ -6,7 +6,7 @@
 [Travis]: http://travis-ci.org/kataras/iris
 [License Widget]: https://img.shields.io/badge/license-Apache%20License%202.0-E91E63.svg?style=flat-square
 [License]: https://github.com/kataras/iris/blob/master/LICENSE
-[Release Widget]: https://img.shields.io/badge/release-v3.0.0--beta-blue.svg?style=flat-square
+[Release Widget]: https://img.shields.io/badge/release-v3.0.0--beta.2-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/iris/releases
 [Gitter Widget]: https://img.shields.io/badge/chat-on%20gitter-00BCD4.svg?style=flat-square
 [Gitter]: https://gitter.im/kataras/iris
@@ -116,7 +116,7 @@ Iris suggests you to use [this](https://github.com/gavv/httpexpect) new  suite t
 Versioning
 ------------
 
-Current: **v3.0.0-beta.1**
+Current: **v3.0.0-beta.2**
 >  Iris is an active project
 
 
@@ -131,10 +131,12 @@ Todo
 ------------
 > for the next release 'v3'
 
+- [x] [Dynamic/Wildcard subdomains](https://kataras.gitbooks.io/iris/content/subdomains.html).
 - [x] Create server & client side (js) library for .on('event', func action(...)) / .emit('event')... (like socket.io but supports only websocket).
 - [x] Find and provide support for the most stable template engine and be able to change it via the configuration, keep html/templates  support.
 - [x] Extend, test and publish to the public the [Iris' cmd](https://github.com/kataras/iris/tree/master/iris).
 - [x] Route naming and html url func, requested [here](https://github.com/kataras/iris/issues/165).
+
 
 If you're willing to donate click [here](DONATIONS.md)
 

@@ -21,6 +21,7 @@ type (
 	IParty interface {
 		Handle(string, string, ...Handler) IRoute
 		HandleFunc(string, string, ...HandlerFunc) IRoute
+		Wildcard(string, string, ...HandlerFunc)
 		API(path string, controller HandlerAPI, middlewares ...HandlerFunc) error
 		Get(string, ...HandlerFunc) RouteNameFunc
 		Post(string, ...HandlerFunc) RouteNameFunc
@@ -86,6 +87,20 @@ func (p *GardenParty) Handle(method string, registedPath string, handlers ...Han
 // handler is the iris.Handler which you can pass anything you want via iris.ToHandlerFunc(func(res,req){})... or just use func(c *iris.Context)
 func (p *GardenParty) HandleFunc(method string, registedPath string, handlersFn ...HandlerFunc) IRoute {
 	return p.Handle(method, registedPath, ConvertToHandlers(handlersFn)...)
+}
+
+// Wildcard same as .Party("*.")
+// registers a route for Dynamic subdomain
+// receives three parameters
+// the first is the http method
+// the second is the request path, can be a dynamic path also like others
+// the third are the handlerfuncs
+//
+// Note that this is just a global route, no party's route.
+// example: subdomains_2
+func (p *GardenParty) Wildcard(method string, registedPath string, handlersFn ...HandlerFunc) {
+	path := PrefixDynamicSubdomain + registedPath
+	p.station.router.HandleFunc(method, path, handlersFn...)
 }
 
 // API converts & registers a custom struct to the router
@@ -589,7 +604,10 @@ func (p *GardenParty) StaticContent(reqPath string, contentType string, content 
 func (p *GardenParty) Party(path string, handlersFn ...HandlerFunc) IParty {
 	middleware := ConvertToHandlers(handlersFn)
 	if path[0] != SlashByte && strings.Contains(path, ".") {
-		//it's domain so no handlers share (even the global ) or path, nothing.
+		//it's a domain so no handlers share (even the global ) or path, nothing.
+		if path[0] == MatchEverythingByte { // it's a dynamic subdomain
+			path = PrefixDynamicSubdomain
+		}
 	} else {
 		// set path to parent+child
 		path = absPath(p.relativePath, path)

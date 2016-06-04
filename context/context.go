@@ -91,6 +91,7 @@ type (
 		RemoteAddr() string
 		RequestHeader(k string) string
 		PostFormValue(string) string
+		GetSubdomain() string
 	}
 
 	// IContextResponse is part of the IContext

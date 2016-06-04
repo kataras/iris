@@ -55,6 +55,8 @@ type (
 		sessionStore store.IStore
 		// pos is the position number of the Context, look .Next to understand
 		pos uint8
+		// subdomain the subdomain (taken from the host), this is empty until GetSubdomain called
+		subdomain string
 	}
 )
 

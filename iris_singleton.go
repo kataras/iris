@@ -81,6 +81,18 @@ func HandleFunc(method string, path string, handlersFn ...HandlerFunc) IRoute {
 	return DefaultIris.HandleFunc(method, path, handlersFn...)
 }
 
+// Wildcard same as .Party("*.")
+// registers a route for Dynamic subdomain
+// receives three parameters
+// the first is the http method
+// the second is the request path, can be a dynamic path also like others
+// the third are the handlerfuncs
+//
+// example: subdomains_2
+func Wildcard(method string, registedPath string, handlersFn ...HandlerFunc) {
+	DefaultIris.Wildcard(method, registedPath, handlersFn...)
+}
+
 // API converts & registers a custom struct to the router
 // receives two parameters
 // first is the request path (string)
