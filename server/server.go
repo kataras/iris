@@ -76,7 +76,7 @@ func (s *Server) Hostname() (hostname string) {
 	} else {
 		fullhost := s.Config.ListeningAddr
 		if idx := strings.IndexByte(fullhost, ':'); idx > 1 { // at least after second char
-			hostname = hostname[0 : idx-1]
+			hostname = hostname[0:idx]
 		} else {
 			hostname = "0.0.0.0"
 		}
