@@ -5,14 +5,13 @@ package iris
 
 import (
 	"os"
-
-	"sync"
-
 	"strconv"
+	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/flosch/pongo2"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/logger"
 	"github.com/kataras/iris/mail"
@@ -119,7 +118,9 @@ func (s *Iris) initTemplates() {
 		//  init the templates
 
 		// set the custom iris-direct-integration functions, layout and no-layout  if  HTMLEngine is used
-		if s.config.Render.Template.Engine == config.HTMLEngine {
+		templateConfig := &s.config.Render.Template
+		///TODO gia AMber episis
+		if templateConfig.Engine == config.HTMLEngine || templateConfig.Engine == config.AmberEngine {
 			funcs := map[string]interface{}{
 				"url": func(routeName string, args ...interface{}) (string, error) {
 					r := s.RouteByName(routeName)
@@ -132,27 +133,61 @@ func (s *Iris) initTemplates() {
 
 				},
 			}
+
 			// these should be already a non-nil map but if .New(cfg) it's not, is mergo's bug, temporary:
-			if s.config.Render.Template.HTMLTemplate.LayoutFuncs == nil {
-				s.config.Render.Template.HTMLTemplate.LayoutFuncs = make(map[string]interface{}, 1)
+			if templateConfig.Engine == config.HTMLEngine {
+				if templateConfig.HTMLTemplate.LayoutFuncs == nil {
+					templateConfig.HTMLTemplate.LayoutFuncs = make(map[string]interface{}, 1)
+				}
+
+				if templateConfig.HTMLTemplate.Funcs == nil {
+					templateConfig.HTMLTemplate.Funcs = make(map[string]interface{}, 1)
+				}
+
+				for k, v := range funcs {
+					// we don't want to override the user's LayoutFuncs, user should be able to override anything.
+					if templateConfig.HTMLTemplate.LayoutFuncs[k] == nil {
+						templateConfig.HTMLTemplate.LayoutFuncs[k] = v
+					}
+
+					if templateConfig.HTMLTemplate.Funcs[k] == nil {
+						templateConfig.HTMLTemplate.Funcs[k] = v
+					}
+
+				}
+
+			} else if templateConfig.Engine == config.AmberEngine {
+				if templateConfig.Amber.Funcs == nil {
+					templateConfig.Amber.Funcs = make(map[string]interface{}, 1)
+				}
+
+				for k, v := range funcs {
+					if templateConfig.Amber.Funcs[k] == nil {
+						templateConfig.Amber.Funcs[k] = v
+					}
+				}
 			}
 
-			if s.config.Render.Template.HTMLTemplate.Funcs == nil {
-				s.config.Render.Template.HTMLTemplate.Funcs = make(map[string]interface{}, 1)
-			}
 			//
 
-			for k, v := range funcs {
-				// we don't want to override the user's LayoutFuncs, user should be able to override anything.
-				if s.config.Render.Template.HTMLTemplate.LayoutFuncs[k] == nil {
-					s.config.Render.Template.HTMLTemplate.LayoutFuncs[k] = v
-				}
-
-				if s.config.Render.Template.HTMLTemplate.Funcs[k] == nil {
-					s.config.Render.Template.HTMLTemplate.Funcs[k] = v
-				}
-
+		} else if templateConfig.Engine == config.PongoEngine {
+			if templateConfig.Pongo.Filters == nil {
+				templateConfig.Pongo.Filters = make(map[string]pongo2.FilterFunction, 1)
 			}
+
+			urlFunc := func(routeName string, args ...interface{}) (out *pongo2.Value) {
+
+				r := s.RouteByName(routeName)
+				// check if not found
+				if r.GetMethod() == "" {
+					return pongo2.AsValue(ErrRenderRouteNotFound.Format(routeName).Error())
+				}
+
+				return pongo2.AsValue(r.ParseURI(args...))
+			}
+
+			// register it to the global context, no as Filter.
+			templateConfig.Pongo.Globals["url"] = urlFunc
 
 		}
 
