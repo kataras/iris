@@ -95,18 +95,14 @@ func (ctx *Context) PostFormValue(name string) string {
 	return string(ctx.RequestCtx.PostArgs().Peek(name))
 }
 
-// GetSubdomain returns the subdomain if any, else empty string
-func (ctx *Context) GetSubdomain() string {
-	if ctx.subdomain == "" {
-		host := ctx.HostString()
-		if index := strings.IndexByte(host, '.'); index > 0 {
-			subdomain := host[0:index]
-			ctx.subdomain = subdomain
-		}
+// Subdomain returns the subdomain (string) of this request, if any
+func (ctx *Context) Subdomain() (subdomain string) {
+	host := ctx.HostString()
+	if index := strings.IndexByte(host, '.'); index > 0 {
+		subdomain = host[0:index]
 	}
 
-	return ctx.subdomain
-
+	return
 }
 
 // URLEncode returns the path encoded as url

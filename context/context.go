@@ -86,12 +86,12 @@ type (
 		URLParams() map[string]string
 		MethodString() string
 		HostString() string
+		Subdomain() string
 		PathString() string
 		RequestIP() string
 		RemoteAddr() string
 		RequestHeader(k string) string
 		PostFormValue(string) string
-		GetSubdomain() string
 	}
 
 	// IContextResponse is part of the IContext

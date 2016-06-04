@@ -124,14 +124,12 @@ func (s *Iris) initTemplates() {
 				"url": func(routeName string, args ...interface{}) (string, error) {
 					r := s.RouteByName(routeName)
 					// check if not found
-					if r.GetPath() == "" {
+					if r.GetMethod() == "" {
 						return "", ErrRenderRouteNotFound.Format(routeName)
 					}
 
-					if result, ok := r.Parse(args...); ok {
-						return result, nil
-					}
-					return "", nil
+					return r.ParseURI(args...), nil
+
 				},
 			}
 			// these should be already a non-nil map but if .New(cfg) it's not, is mergo's bug, temporary:
@@ -258,9 +256,6 @@ func (s *Iris) PreListen(opt config.Server) *server.Server {
 // it's a non-blocking func
 func (s *Iris) PostListen() {
 	//if not error opening the server, then:
-
-	// prepare the route actions, these actions needs real server's access because that it's after server's listen
-	s.router.optimizeLookups()
 
 	//set the  rest (for Data, Text, JSON, JSONP, XML)
 	s.rest = rest.New(s.config.Render.Rest)

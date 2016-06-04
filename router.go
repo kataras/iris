@@ -45,8 +45,6 @@ const (
 )
 
 var (
-	// PrefixDynamicSubdomainBytes is the prefix (as []byte) which dynamic subdomains are registed to, as virtual. Used internaly by Iris but good to know.
-	PrefixDynamicSubdomainBytes = []byte(PrefixDynamicSubdomain)
 
 	// HTTP Methods(2)
 
@@ -220,26 +218,6 @@ func (r *router) optimize() {
 	r.optimized = true
 }
 
-// optimizeLookups runs AFTER server's listen
-func (r *router) optimizeLookups() {
-	if r.station.server != nil && r.station.server.IsListening() {
-		// set the isTLS on all routes and the listening  full host
-		listeningHost := r.station.server.Listener().Addr().String()
-		for idx := range r.lookups {
-			theR := r.lookups[idx]
-			theR.setTLS(r.station.server.IsSecure())
-			if theR.GetDomain() == "" { // means local, no subdomain
-				theR.setHost(listeningHost)
-			} else {
-				// it's a subdomain route
-				theR.setHost(theR.GetDomain() + "." + listeningHost)
-			}
-
-		}
-	}
-
-}
-
 // notFound internal method, it justs takes the context from pool ( in order to have the custom errors available) and procedure a Not Found 404 error
 // this is being called when no route was found used on the ServeRequest.
 func (r *router) notFound(reqCtx *fasthttp.RequestCtx) {
@@ -281,13 +259,14 @@ func (r *router) serveDomainFunc(reqCtx *fasthttp.RequestCtx) {
 	method := utils.BytesToString(reqCtx.Method())
 	host := utils.BytesToString(reqCtx.Host())
 	fulldomain := ""
-	if strings.Count(host, ".") >= 2 {
+	if strings.Count(host, ".") >= 2 && host != r.station.server.Host() {
 		if portIdx := strings.Index(host, ":"); portIdx != -1 {
 			fulldomain = host[0:portIdx]
 		} else {
 			fulldomain = host
 		}
 	}
+
 	path := utils.BytesToString(r.getRequestPath(reqCtx))
 	tree := r.garden.first
 	for tree != nil {
@@ -297,7 +276,6 @@ func (r *router) serveDomainFunc(reqCtx *fasthttp.RequestCtx) {
 			} else if strings.Index(tree.domain, PrefixDynamicSubdomain) != -1 { // it's a dynamic virtual subdomain
 				path = PrefixDynamicSubdomain + path
 			}
-
 		}
 
 		if r.methodMatch(tree.method, method) {
@@ -307,6 +285,7 @@ func (r *router) serveDomainFunc(reqCtx *fasthttp.RequestCtx) {
 		}
 		tree = tree.next
 	}
+
 	//not found, get the first's pool and use that  to send a custom http error(if setted)
 	r.notFound(reqCtx)
 }

@@ -1,9 +1,16 @@
 # History
 
+## 3.0.0-beta -> 3.0.0-beta.2
+
+- NEW: Wildcard(dynamic) subdomains, read [here](https://kataras.gitbooks.io/iris/content/subdomains.html)
+
+- NEW: Implement feature request [#165](https://github.com/kataras/iris/issues/165). Routes can now be selected by `a custom name`, and this allows us to use the {{ url "custom-name" "any" "named" "parameters"}}`` inside HTMLEngine's templates. Example [here](https://github.com/iris-contrib/examples/tree/master/templates_9).
+
+
 ## 3.0.0-alpha.beta -> 3.0.0-beta
 
 
-- New [iris.API] for easy API declaration, read more [here](https://kataras.gitbooks.io/iris/content/using-handlerapi.html), example [there](https://github.com/iris-contrib/examples/tree/master/api_handler_2).
+- New iris.API for easy API declaration, read more [here](https://kataras.gitbooks.io/iris/content/using-handlerapi.html), example [there](https://github.com/iris-contrib/examples/tree/master/api_handler_2).
 
 
 - Add [example](https://github.com/iris-contrib/examples/tree/master/middleware_basicauth_2) and fix the Basic Authentication middleware

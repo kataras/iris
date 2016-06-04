@@ -75,7 +75,7 @@ func (p *GardenParty) Handle(method string, registedPath string, handlers ...Han
 		path = fixPath(absPath(p.relativePath, registedPath)) // "/xyz"
 	}
 	middleware := JoinMiddleware(p.middleware, handlers)
-	route := NewRoute(method, path, middleware)
+	route := NewRoute(method, path, middleware, p.station)
 	p.station.plugins.DoPreHandle(route)
 	p.station.addRoute(route)
 	p.station.plugins.DoPostHandle(route)
@@ -634,7 +634,7 @@ func fixPath(str string) string {
 
 	strafter := strings.Replace(str, "//", Slash, -1)
 
-	if strafter[0] == SlashByte && strings.Count(strafter, ".") >= 2 {
+	if strafter[0] == SlashByte && strings.Contains(strafter, ".") {
 		//it's domain, remove the first slash
 		strafter = strafter[1:]
 	}

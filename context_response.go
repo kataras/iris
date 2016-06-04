@@ -25,11 +25,10 @@ func (ctx *Context) Redirect(urlToRedirect string, statusHeader ...int) {
 
 // RedirectTo does the same thing as Redirect but instead of receiving a uri or path it receives a route name
 func (ctx *Context) RedirectTo(routeName string, args ...interface{}) {
-	s, ok := ctx.station.RouteByName(routeName).Parse(args...)
-	if ok {
+	s := ctx.station.RouteByName(routeName).ParseURI(args...)
+	if s != "" {
 		ctx.Redirect(s, StatusFound)
 	}
-
 }
 
 // Error handling

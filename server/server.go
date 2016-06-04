@@ -58,6 +58,33 @@ func (s *Server) Listener() net.Listener {
 	return s.listener
 }
 
+// Host returns the Listener().Addr().String(), if server is not listening it returns the config.ListeningAddr
+func (s *Server) Host() (host string) {
+	if s.IsListening() {
+		return s.Listener().Addr().String()
+	} else {
+		return s.Config.ListeningAddr
+	}
+}
+
+// Hostname returns the hostname part only, if host == 0.0.0.0:8080 it will return the 0.0.0.0
+// if server is not listening it returns the config.ListeningAddr's hostname part
+func (s *Server) Hostname() (hostname string) {
+	if s.IsListening() {
+		fullhost := s.Listener().Addr().String()
+		hostname = fullhost[0:strings.IndexByte(fullhost, ':')] // no the port
+	} else {
+		fullhost := s.Config.ListeningAddr
+		if idx := strings.IndexByte(fullhost, ':'); idx > 1 { // at least after second char
+			hostname = hostname[0 : idx-1]
+		} else {
+			hostname = "0.0.0.0"
+		}
+
+	}
+	return
+}
+
 //Serve just serves a listener, it is a blocking action, plugin.PostListen is not fired here.
 func (s *Server) Serve(l net.Listener) error {
 	s.listener = l

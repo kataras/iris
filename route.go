@@ -18,18 +18,8 @@ type (
 		Name(string) IRoute
 		GetMiddleware() Middleware
 		HasCors() bool
-		// internal methods
-		setTLS(bool)
-		setHost(string)
-		//
-
-		// used to check arguments with the route's named parameters and return the correct url
-		// second return value is false when the action cannot be done
-		Parse(...interface{}) (string, bool)
-
-		// GetURI returns the GetDomain() + Parse(...optional named parameters if route is dynamic)
-		// instead of Parse it just returns an empty string if path parse is failed
-		GetURI(...interface{}) string
+		ParsePath(...interface{}) string
+		ParseURI(...interface{}) string
 	}
 
 	// RouteNameFunc is returned to from route handle
@@ -43,10 +33,8 @@ type (
 		// the name of the route, the default name is just the registed path.
 		name       string
 		middleware Middleware
-		// if true then https://
-		isTLS bool
-		// the real host
-		host string
+		// station
+		station *Iris
 		// this is used to convert  /mypath/:aparam/:something to -> /mypath/%v/%v and /mypath/* -> mypath/%v
 		// we use %v to escape from the conversions between strings,booleans and integers.
 		// used inside custom html template func 'url'
@@ -59,7 +47,7 @@ type (
 var _ IRoute = &Route{}
 
 // NewRoute creates, from a path string, and a slice of HandlerFunc
-func NewRoute(method string, registedPath string, middleware Middleware) *Route {
+func NewRoute(method string, registedPath string, middleware Middleware, station *Iris) *Route {
 	domain := ""
 	//dirdy but I'm not touching this again:P
 	if registedPath[0] != SlashByte && strings.Contains(registedPath, ".") && (strings.IndexByte(registedPath, SlashByte) == -1 || strings.IndexByte(registedPath, SlashByte) > strings.IndexByte(registedPath, '.')) {
@@ -74,7 +62,7 @@ func NewRoute(method string, registedPath string, middleware Middleware) *Route 
 			//e.g /admin.ideopod.com/hey
 			//then just remove the first slash and re-execute the NewRoute and return it
 			registedPath = registedPath[1:]
-			return NewRoute(method, registedPath, middleware)
+			return NewRoute(method, registedPath, middleware, station)
 		}
 		//if it's just the domain, then set it(registedPath) as the domain
 		//and after set the registedPath to a slash '/' for the path part
@@ -88,9 +76,13 @@ func NewRoute(method string, registedPath string, middleware Middleware) *Route 
 		}
 
 	}
-	r := &Route{method: method, domain: domain, fullpath: registedPath, middleware: middleware, name: registedPath, formattedPath: registedPath}
+	r := &Route{method: method, domain: domain, fullpath: registedPath, middleware: middleware, name: registedPath, formattedPath: registedPath, station: station}
 	r.formatPath()
 	return r
+}
+
+func (r *Route) isWildcard() bool {
+	return r.domain != r.station.server.Hostname() && r.domain == PrefixDynamicSubdomain
 }
 
 func (r *Route) formatPath() {
@@ -161,22 +153,14 @@ func (r *Route) HasCors() bool {
 	return RouteConflicts(r, "httpmethod")
 }
 
-func (r *Route) setTLS(isSecure bool) {
-	r.isTLS = isSecure
-}
-
-func (r *Route) setHost(s string) {
-	r.host = s
-}
-
-// Parse used to check arguments with the route's named parameters and return the correct url
-// second return value is false when the action cannot be done
-func (r *Route) Parse(args ...interface{}) (string, bool) {
+// ParsePath used to check arguments with the route's named parameters and return the correct url
+// if parse failed returns empty string
+func (r *Route) ParsePath(args ...interface{}) string {
 	argsLen := len(args)
 
 	// we have named parameters but arguments not given
 	if argsLen == 0 && r.formattedParts > 0 {
-		return "", false
+		return ""
 	}
 
 	// we have arguments but they are much more than the named parameters
@@ -205,10 +189,10 @@ func (r *Route) Parse(args ...interface{}) (string, bool) {
 
 			parameter := strings.Join(argsString, Slash)
 			result := fmt.Sprintf(r.formattedPath, parameter)
-			return result, true
+			return result
 		}
 		// 2 if !1 return false
-		return "", false
+		return ""
 	}
 
 	arguments := args[0:]
@@ -228,20 +212,53 @@ func (r *Route) Parse(args ...interface{}) (string, bool) {
 		}
 	}
 
-	return fmt.Sprintf(r.formattedPath, arguments...), true
+	return fmt.Sprintf(r.formattedPath, arguments...)
 }
 
-// GetURI returns the GetDomain() + Parse(...optional named parameters if route is dynamic)
-// instead of Parse it just returns an empty string if path parse is failed
-func (r *Route) GetURI(args ...interface{}) (uri string) {
+// ParseURI returns the subdomain+ host + ParsePath(...optional named parameters if route is dynamic)
+// returns an empty string if parse is failed
+func (r *Route) ParseURI(args ...interface{}) (uri string) {
 	scheme := "http://"
-	if r.isTLS {
+	if r.station.server.IsSecure() {
 		scheme = "https://"
 	}
 
-	host := r.host
+	host := r.station.server.Host()
 
-	if parsedPath, ok := r.Parse(args...); ok {
+	arguments := args[0:]
+
+	// join arrays as arguments
+	for i, v := range arguments {
+		if arr, ok := v.([]string); ok {
+			if len(arr) > 0 {
+				interfaceArr := make([]interface{}, len(arr))
+				for j, sv := range arr {
+					interfaceArr[j] = sv
+				}
+				arguments[i] = interfaceArr[0]
+				arguments = append(arguments, interfaceArr[1:]...)
+			}
+
+		}
+	}
+
+	// if it's dynamic subdomain then the first argument is the subdomain part
+	if r.isWildcard() {
+		if len(arguments) == 0 { // it's a wildcard subdomain but not arguments
+			return
+		}
+
+		if subdomain, ok := arguments[0].(string); ok {
+			host = subdomain + "." + host
+		} else {
+			// it is not array because we join them before. if not pass a string then this is not a subdomain part, return empty uri
+			return
+		}
+
+		arguments = arguments[1:]
+	}
+
+	if parsedPath := r.ParsePath(arguments...); parsedPath != "" {
 		uri = scheme + host + parsedPath
 	}
 
