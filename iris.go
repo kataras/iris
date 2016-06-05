@@ -122,6 +122,7 @@ func (s *Iris) initTemplates() {
 		///TODO gia AMber episis
 		if templateConfig.Engine == config.HTMLEngine || templateConfig.Engine == config.AmberEngine {
 			funcs := map[string]interface{}{
+
 				"url": func(routeName string, args ...interface{}) (string, error) {
 					r := s.RouteByName(routeName)
 					// check if not found
@@ -137,11 +138,11 @@ func (s *Iris) initTemplates() {
 			// these should be already a non-nil map but if .New(cfg) it's not, is mergo's bug, temporary:
 			if templateConfig.Engine == config.HTMLEngine {
 				if templateConfig.HTMLTemplate.LayoutFuncs == nil {
-					templateConfig.HTMLTemplate.LayoutFuncs = make(map[string]interface{}, 1)
+					templateConfig.HTMLTemplate.LayoutFuncs = make(map[string]interface{}, len(funcs))
 				}
 
 				if templateConfig.HTMLTemplate.Funcs == nil {
-					templateConfig.HTMLTemplate.Funcs = make(map[string]interface{}, 1)
+					templateConfig.HTMLTemplate.Funcs = make(map[string]interface{}, len(funcs))
 				}
 
 				for k, v := range funcs {
@@ -158,7 +159,7 @@ func (s *Iris) initTemplates() {
 
 			} else if templateConfig.Engine == config.AmberEngine {
 				if templateConfig.Amber.Funcs == nil {
-					templateConfig.Amber.Funcs = make(map[string]interface{}, 1)
+					templateConfig.Amber.Funcs = make(map[string]interface{}, len(funcs))
 				}
 
 				for k, v := range funcs {
@@ -171,8 +172,8 @@ func (s *Iris) initTemplates() {
 			//
 
 		} else if templateConfig.Engine == config.PongoEngine {
-			if templateConfig.Pongo.Filters == nil {
-				templateConfig.Pongo.Filters = make(map[string]pongo2.FilterFunction, 1)
+			if templateConfig.Pongo.Globals == nil {
+				templateConfig.Pongo.Globals = make(map[string]interface{}, 1)
 			}
 
 			urlFunc := func(routeName string, args ...interface{}) (out *pongo2.Value) {

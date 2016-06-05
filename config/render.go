@@ -126,7 +126,7 @@ type (
 		Right string
 		// Funcs like html/template
 		Funcs map[string]interface{}
-		// Funcs like html/template
+		// LayoutFuncs like html/template
 		// the difference from Funcs is that these funcs
 		// can be used inside a layout and can override the predefined (yield,partial...) or add more custom funcs
 		// these can override the Funcs inside no-layout templates also, use it when you know what you're doing
@@ -146,9 +146,14 @@ type (
 	}
 
 	// Jade the configs for JadeEngine
-	// Jade empty for now
-	// stay tuned
 	Jade struct {
+		// Funcs like html/template
+		Funcs map[string]interface{}
+		// LayoutFuncs like html/template
+		// the difference from Funcs is that these funcs
+		// can be used inside a layout and can override the predefined (yield,partial...) or add more custom funcs
+		// these can override the Funcs inside no-layout templates also, use it when you know what you're doing
+		LayoutFuncs map[string]interface{}
 	}
 
 	// Amber the configs for AmberEngine
@@ -211,7 +216,7 @@ func DefaultTemplate() Template {
 		Pongo:         Pongo{Filters: make(map[string]pongo2.FilterFunction, 0), Globals: make(map[string]interface{}, 0)},
 		Markdown:      Markdown{Sanitize: false},
 		Amber:         Amber{Funcs: template.FuncMap{}},
-		Jade:          Jade{},
+		Jade:          Jade{Funcs: template.FuncMap{}, LayoutFuncs: template.FuncMap{}},
 	}
 }
 

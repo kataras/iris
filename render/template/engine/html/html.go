@@ -18,9 +18,6 @@ type (
 	Engine struct {
 		Config    *config.Template
 		Templates *template.Template
-		// emptyFuncs returns empty functions, contains empty result for custom LayoutFuncs
-
-		emptyFuncs template.FuncMap
 		// Middleware
 		// Note:
 		// I see that many template engines returns html/template as result
@@ -30,25 +27,23 @@ type (
 	}
 )
 
+var emptyFuncs = template.FuncMap{
+	"yield": func() (string, error) {
+		return "", fmt.Errorf("yield was called, yet no layout defined")
+	},
+	"partial": func() (string, error) {
+		return "", fmt.Errorf("block was called, yet no layout defined")
+	},
+	"current": func() (string, error) {
+		return "", nil
+	}, "render": func(string) (string, error) {
+		return "", nil
+	},
+}
+
 // New creates and returns the HTMLTemplate template engine
 func New(c config.Template) *Engine {
 	s := &Engine{Config: &c}
-	funcs := template.FuncMap{
-		"yield": func() (string, error) {
-			return "", fmt.Errorf("yield was called, yet no layout defined")
-		},
-		"partial": func() (string, error) {
-			return "", fmt.Errorf("block was called, yet no layout defined")
-		},
-		"current": func() (string, error) {
-			return "", nil
-		}, "render": func() (string, error) {
-			return "", nil
-		},
-	}
-
-	s.emptyFuncs = funcs
-
 	return s
 }
 
@@ -122,11 +117,11 @@ func (s *Engine) buildFromDir() error {
 				}
 
 				// Add our funcmaps.
-				if s.Config.HTMLTemplate.Funcs != nil {
-					tmpl.Funcs(s.Config.HTMLTemplate.Funcs)
-				}
+				//if s.Config.HTMLTemplate.Funcs != nil {
+				//	tmpl.Funcs(s.Config.HTMLTemplate.Funcs)
+				//}
 
-				tmpl.Funcs(s.emptyFuncs).Parse(contents)
+				tmpl.Funcs(s.Config.HTMLTemplate.Funcs).Parse(contents)
 				break
 			}
 		}
@@ -169,11 +164,11 @@ func (s *Engine) buildFromAsset() error {
 
 				// Add our funcmaps.
 				//for _, funcs := range s.Config.HTMLTemplate.Funcs {
-				if s.Config.HTMLTemplate.Funcs != nil {
+				/*if s.Config.HTMLTemplate.Funcs != nil {
 					tmpl.Funcs(s.Config.HTMLTemplate.Funcs)
-				}
+				}*/
 
-				tmpl.Funcs(s.emptyFuncs).Parse(string(buf))
+				tmpl.Funcs(emptyFuncs).Funcs(s.Config.HTMLTemplate.Funcs).Parse(string(buf))
 				break
 			}
 		}
@@ -183,8 +178,23 @@ func (s *Engine) buildFromAsset() error {
 
 func (s *Engine) executeTemplateBuf(name string, binding interface{}) (*bytes.Buffer, error) {
 	buf := new(bytes.Buffer)
+	/*
+		var err error
+		if s.Middleware != nil {
+			contents, err := s.Middleware(name, buf.String())
+			if err != nil {
+				return buf, err
+			}
+			buf.WriteString(contents)
+		}
+	*/
 	err := s.Templates.ExecuteTemplate(buf, name, binding)
+
 	return buf, err
+}
+
+func (s *Engine) ExecuteTemplateBuf(name string, binding interface{}) (*bytes.Buffer, error) {
+	return s.executeTemplateBuf(name, binding)
 }
 
 func (s *Engine) layoutFuncsFor(name string, binding interface{}) {
@@ -208,6 +218,7 @@ func (s *Engine) layoutFuncsFor(name string, binding interface{}) {
 		},
 		"render": func(fullPartialName string) (template.HTML, error) {
 			buf, err := s.executeTemplateBuf(fullPartialName, binding)
+			println("html.go:217-> " + buf.String())
 			// Return safe HTML here since we are rendering our own template.
 			return template.HTML(buf.String()), err
 		},
@@ -226,8 +237,9 @@ func (s *Engine) layoutFuncsFor(name string, binding interface{}) {
 // ExecuteWriter executes a templates and write its results to the out writer
 func (s *Engine) ExecuteWriter(out io.Writer, name string, binding interface{}, layout string) error {
 	if layout != "" && layout != config.NoLayout {
-		s.layoutFuncsFor(name, binding)
 		name = layout
 	}
+	s.layoutFuncsFor(name, binding)
+
 	return s.Templates.ExecuteTemplate(out, name, binding)
 }

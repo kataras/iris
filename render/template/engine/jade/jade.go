@@ -13,10 +13,12 @@ type Engine struct {
 
 // New creates and returns a new JadeEngine with its configs
 func New(cfg config.Template) *Engine {
-
+	cfg.HTMLTemplate.Funcs = cfg.Jade.Funcs //copy the jade's funcs to the underline HTMLEngine
+	cfg.HTMLTemplate.LayoutFuncs = cfg.Jade.LayoutFuncs
 	underline := &Engine{Engine: html.New(cfg)}
 	underline.Middleware = func(relativeName string, fileContents string) (string, error) {
 		return jade.Parse(relativeName, fileContents)
 	}
+
 	return underline
 }
