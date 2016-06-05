@@ -55,21 +55,48 @@ type (
 	}
 )
 
+// sharedFuncs the funcs should be exists in all supported view template engines
+var sharedFuncs map[string]interface{}
+
+// we do this because we don't want to override the user's funcs
+func setSharedFuncs(source map[string]interface{}, target map[string]interface{}) {
+	if source == nil {
+		return
+	}
+
+	if target == nil {
+		target = make(map[string]interface{}, len(source))
+	}
+
+	for k, v := range source {
+		if target[k] == nil {
+			target[k] = v
+		}
+	}
+}
+
 // New creates and returns a Template instance which keeps the Template Engine and helps with render
 func New(c config.Template) *Template {
+	defer func() {
+		sharedFuncs = nil
+	}()
 
 	var e Engine
 	// [ENGINE-2]
 	switch c.Engine {
 	case config.HTMLEngine:
+		setSharedFuncs(sharedFuncs, c.HTMLTemplate.Funcs)
 		e = html.New(c) //  HTMLTemplate
+	case config.JadeEngine:
+		setSharedFuncs(sharedFuncs, c.Jade.Funcs)
+		e = jade.New(c) // Jade
 	case config.PongoEngine:
+		setSharedFuncs(sharedFuncs, c.Pongo.Globals)
 		e = pongo.New(c) // Pongo2
 	case config.MarkdownEngine:
 		e = markdown.New(c) // Markdown
-	case config.JadeEngine:
-		e = jade.New(c) // Jade
 	case config.AmberEngine:
+		setSharedFuncs(sharedFuncs, c.Amber.Funcs)
 		e = amber.New(c) // Amber
 	default: // config.NoEngine
 		return nil
@@ -95,6 +122,14 @@ func New(c config.Template) *Template {
 
 	return t
 
+}
+
+// RegisterSharedFunc registers a functionality that should be inherited from all supported template engines
+func RegisterSharedFunc(name string, fn interface{}) {
+	if sharedFuncs == nil {
+		sharedFuncs = make(map[string]interface{})
+	}
+	sharedFuncs[name] = fn
 }
 
 // Render renders a template using the context's writer

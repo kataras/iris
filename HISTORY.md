@@ -1,5 +1,15 @@
 # History
 
+## 3.0.0-beta.2 -> 3.0.0-beta.3
+
+- Complete the Jade Template Engine support, {{ render }} and {{ url }} done also.
+
+- Fix Mail().Send
+
+- Iriscontrol plugin: Replace login using session to basic authentication
+
+And other not-too-important fixes
+
 ## 3.0.0-beta -> 3.0.0-beta.2
 
 - NEW: Wildcard(dynamic) subdomains, read [here](https://kataras.gitbooks.io/iris/content/subdomains.html)

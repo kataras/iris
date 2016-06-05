@@ -1,16 +1,15 @@
 package mail
 
 import (
+	"encoding/base64"
 	"fmt"
+	"net/mail"
 	"net/smtp"
 	"strings"
-	"text/template"
 
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/utils"
 )
-
-const tmpl = `From: {{.From}}<br /> To: {{.To}}<br /> Subject: {{.Subject}}<br /> MIME-version: 1.0<br /> Content-Type: text/html; charset=&quot;UTF-8&quot;<br /> <br /> {{.Body}}`
 
 var buf = utils.NewBufferPool(64)
 
@@ -24,6 +23,7 @@ type (
 
 	mailer struct {
 		config        config.Mail
+		fromAddr      mail.Address
 		auth          smtp.Auth
 		authenticated bool
 	}
@@ -31,7 +31,14 @@ type (
 
 // New creates and returns a new Service
 func New(cfg config.Mail) Service {
-	return &mailer{config: cfg}
+	m := &mailer{config: cfg}
+
+	// not necessary
+	if !cfg.UseCommand && cfg.Username != "" && strings.Contains(cfg.Username, "@") {
+		m.fromAddr = mail.Address{cfg.Username[0:strings.IndexByte(cfg.Username, '@')], cfg.Username}
+	}
+
+	return m
 }
 
 // Send sends a mail to recipients
@@ -56,19 +63,31 @@ func (m *mailer) sendSMTP(to []string, subject, body string) error {
 		m.authenticated = true
 	}
 
-	mailArgs := map[string]string{"To": strings.Join(to, ","), "Subject": subject, "Body": body}
-	template := template.Must(template.New("mailTmpl").Parse(tmpl))
+	fullhost := fmt.Sprintf("%s:%d", m.config.Host, m.config.Port)
 
-	if err := template.Execute(buffer, mailArgs); err != nil {
-		return err
+	/* START: This one helped me https://gist.github.com/andelf/5004821 */
+	header := make(map[string]string)
+	header["From"] = m.fromAddr.String()
+	header["To"] = strings.Join(to, ",")
+	header["Subject"] = subject
+	header["MIME-Version"] = "1.0"
+	header["Content-Type"] = "text/html; charset=\"utf-8\""
+	header["Content-Transfer-Encoding"] = "base64"
+
+	message := ""
+	for k, v := range header {
+		message += fmt.Sprintf("%s: %s\r\n", k, v)
 	}
+	message += "\r\n" + base64.StdEncoding.EncodeToString([]byte(body))
+
+	/* END */
 
 	return smtp.SendMail(
-		fmt.Sprintf("%s:%d", m.config.Host, m.config.Port),
+		fmt.Sprintf(fullhost),
 		m.auth,
 		m.config.Username,
 		to,
-		buffer.Bytes(),
+		[]byte(message),
 	)
 }
 

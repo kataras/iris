@@ -118,13 +118,30 @@ func (r *router) addRoute(route IRoute) {
 
 // RouteByName returns a route by its name,if not found then returns a route with empty path
 // Note that the searching is case-sensitive
-func (r *router) RouteByName(lookUpName string) IRoute {
+func (r *router) RouteByName(routeName string) IRoute {
 	for _, route := range r.lookups {
-		if route.GetName() == lookUpName {
+		if route.GetName() == routeName {
 			return route
 		}
 	}
 	return &Route{}
+}
+
+// UriOf returns the parsed URI of a route
+// receives two parameters
+// the first is the route's name (string)
+// the second is a variadic, if the route is dynamic (receives named parameters) then pass the value of these parameters here
+// overview of the result is: scheme(http or https if ListenTLS)/yourhost.com:PORT/profile/theusername/friends/theid
+//
+// example /profile/:username/friends/:friendId with name "profile" -> .UriOf("profile","kataras",8) will give http://127.0.0.1:8080/profile/kataras/friends/8
+func (r *router) UriOf(routeName string, args ...interface{}) (string, error) {
+	route := r.RouteByName(routeName)
+	// check if not found
+	if route.GetMethod() == "" {
+		return "", ErrRenderRouteNotFound.Format(routeName)
+	}
+
+	return route.ParseURI(args...), nil
 }
 
 //check if any tree has cors setted to true, means that cors middleware is added

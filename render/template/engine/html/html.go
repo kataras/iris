@@ -10,20 +10,15 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Joker/jade"
 	"github.com/kataras/iris/config"
 )
 
 type (
-	// Engine the html/template engine
+	// Engine the html/template engine & Jade
 	Engine struct {
 		Config    *config.Template
 		Templates *template.Template
-		// Middleware
-		// Note:
-		// I see that many template engines returns html/template as result
-		// so I decided that the HTMLTemplate should accept a middleware for the final string content will be parsed to the main *html/template.Template
-		// for example user of this property is Jade, currently
-		Middleware func(string, string) (string, error)
 	}
 )
 
@@ -36,7 +31,7 @@ var emptyFuncs = template.FuncMap{
 	},
 	"current": func() (string, error) {
 		return "", nil
-	}, "render": func(string) (string, error) {
+	}, "render": func() (string, error) {
 		return "", nil
 	},
 }
@@ -73,7 +68,6 @@ func (s *Engine) buildFromDir() error {
 	dir := s.Config.Directory
 	s.Templates = template.New(dir)
 	s.Templates.Delims(s.Config.HTMLTemplate.Left, s.Config.HTMLTemplate.Right)
-	hasMiddleware := s.Middleware != nil
 	// Walk the supplied directory and compile any files that match our extension list.
 	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if info == nil || info.IsDir() {
@@ -107,8 +101,8 @@ func (s *Engine) buildFromDir() error {
 				name := filepath.ToSlash(rel)
 				tmpl := s.Templates.New(name)
 
-				if hasMiddleware {
-					contents, err = s.Middleware(name, contents)
+				if s.Config.Engine == config.JadeEngine {
+					contents, err = jade.Parse(name, contents)
 				}
 
 				if err != nil {
@@ -117,11 +111,11 @@ func (s *Engine) buildFromDir() error {
 				}
 
 				// Add our funcmaps.
-				//if s.Config.HTMLTemplate.Funcs != nil {
-				//	tmpl.Funcs(s.Config.HTMLTemplate.Funcs)
-				//}
+				if s.Config.HTMLTemplate.Funcs != nil {
+					tmpl.Funcs(s.Config.HTMLTemplate.Funcs)
+				}
 
-				tmpl.Funcs(s.Config.HTMLTemplate.Funcs).Parse(contents)
+				tmpl.Funcs(emptyFuncs).Parse(contents)
 				break
 			}
 		}
@@ -159,16 +153,20 @@ func (s *Engine) buildFromAsset() error {
 				if err != nil {
 					panic(err)
 				}
+				contents := string(buf)
 				name := filepath.ToSlash(rel)
 				tmpl := s.Templates.New(name)
 
-				// Add our funcmaps.
-				//for _, funcs := range s.Config.HTMLTemplate.Funcs {
-				/*if s.Config.HTMLTemplate.Funcs != nil {
-					tmpl.Funcs(s.Config.HTMLTemplate.Funcs)
-				}*/
+				if s.Config.Engine == config.JadeEngine {
+					contents, err = jade.Parse(name, contents)
+				}
 
-				tmpl.Funcs(emptyFuncs).Funcs(s.Config.HTMLTemplate.Funcs).Parse(string(buf))
+				// Add our funcmaps.
+				if s.Config.HTMLTemplate.Funcs != nil {
+					tmpl.Funcs(s.Config.HTMLTemplate.Funcs)
+				}
+
+				tmpl.Funcs(emptyFuncs).Parse(contents)
 				break
 			}
 		}
@@ -178,23 +176,9 @@ func (s *Engine) buildFromAsset() error {
 
 func (s *Engine) executeTemplateBuf(name string, binding interface{}) (*bytes.Buffer, error) {
 	buf := new(bytes.Buffer)
-	/*
-		var err error
-		if s.Middleware != nil {
-			contents, err := s.Middleware(name, buf.String())
-			if err != nil {
-				return buf, err
-			}
-			buf.WriteString(contents)
-		}
-	*/
 	err := s.Templates.ExecuteTemplate(buf, name, binding)
 
 	return buf, err
-}
-
-func (s *Engine) ExecuteTemplateBuf(name string, binding interface{}) (*bytes.Buffer, error) {
-	return s.executeTemplateBuf(name, binding)
 }
 
 func (s *Engine) layoutFuncsFor(name string, binding interface{}) {
@@ -211,15 +195,12 @@ func (s *Engine) layoutFuncsFor(name string, binding interface{}) {
 			fullPartialName := fmt.Sprintf("%s-%s", partialName, name)
 			if s.Config.HTMLTemplate.RequirePartials || s.Templates.Lookup(fullPartialName) != nil {
 				buf, err := s.executeTemplateBuf(fullPartialName, binding)
-				// Return safe HTML here since we are rendering our own template.
 				return template.HTML(buf.String()), err
 			}
 			return "", nil
 		},
 		"render": func(fullPartialName string) (template.HTML, error) {
 			buf, err := s.executeTemplateBuf(fullPartialName, binding)
-			println("html.go:217-> " + buf.String())
-			// Return safe HTML here since we are rendering our own template.
 			return template.HTML(buf.String()), err
 		},
 	}
@@ -234,12 +215,28 @@ func (s *Engine) layoutFuncsFor(name string, binding interface{}) {
 	}
 }
 
+func (s *Engine) runtimeFuncsFor(name string, binding interface{}) {
+	funcs := template.FuncMap{
+		"render": func(fullPartialName string) (template.HTML, error) {
+			buf, err := s.executeTemplateBuf(fullPartialName, binding)
+			return template.HTML(buf.String()), err
+		},
+	}
+
+	if tpl := s.Templates.Lookup(name); tpl != nil {
+		tpl.Funcs(funcs)
+	}
+}
+
 // ExecuteWriter executes a templates and write its results to the out writer
 func (s *Engine) ExecuteWriter(out io.Writer, name string, binding interface{}, layout string) error {
 	if layout != "" && layout != config.NoLayout {
+		s.layoutFuncsFor(name, binding)
 		name = layout
+
+	} else {
+		s.runtimeFuncsFor(name, binding)
 	}
-	s.layoutFuncsFor(name, binding)
 
 	return s.Templates.ExecuteTemplate(out, name, binding)
 }

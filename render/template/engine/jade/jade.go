@@ -1,24 +1,15 @@
+// Package jade the JadeEngine's functionality lives inside ../html now
 package jade
 
 import (
-	"github.com/Joker/jade"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/render/template/engine/html"
 )
 
-// Engine the JadeEngine
-type Engine struct {
-	*html.Engine
-}
-
-// New creates and returns a new JadeEngine with its configs
-func New(cfg config.Template) *Engine {
-	cfg.HTMLTemplate.Funcs = cfg.Jade.Funcs //copy the jade's funcs to the underline HTMLEngine
-	cfg.HTMLTemplate.LayoutFuncs = cfg.Jade.LayoutFuncs
-	underline := &Engine{Engine: html.New(cfg)}
-	underline.Middleware = func(relativeName string, fileContents string) (string, error) {
-		return jade.Parse(relativeName, fileContents)
-	}
-
-	return underline
+// New creates and returns the HTMLTemplate template engine
+func New(c config.Template) *html.Engine {
+	// copy the Jade to the HTMLTemplate
+	c.HTMLTemplate = config.HTMLTemplate(c.Jade)
+	s := &html.Engine{Config: &c}
+	return s
 }

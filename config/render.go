@@ -104,13 +104,13 @@ type (
 
 		// HTMLTemplate contains specific configs for HTMLTemplate standard html/template
 		HTMLTemplate HTMLTemplate
-		// Pongo contains specific configs for  for pongo2
+		// Jade contains specific configs for Jade
+		Jade Jade
+		// Pongo contains specific configs for pongo2
 		Pongo Pongo
-		// Markdown contains specific configs for  for markdown
+		// Markdown contains specific configs for  markdown
 		// this doesn't supports Layout & binding context
 		Markdown Markdown
-		// Jade contains specific configs for jade
-		Jade Jade
 		// Amber contains specific configs for amber
 		Amber Amber
 	}
@@ -132,6 +132,8 @@ type (
 		// these can override the Funcs inside no-layout templates also, use it when you know what you're doing
 		LayoutFuncs map[string]interface{}
 	}
+	// Jade the configs for JadeEngine
+	Jade HTMLTemplate
 	// Pongo the configs for PongoEngine
 	Pongo struct {
 		// Filters for pongo2, map[name of the filter] the filter function . The filters are auto register
@@ -143,17 +145,6 @@ type (
 	// Markdown the configs for MarkdownEngine
 	Markdown struct {
 		Sanitize bool // if true then returns safe html, default is false
-	}
-
-	// Jade the configs for JadeEngine
-	Jade struct {
-		// Funcs like html/template
-		Funcs map[string]interface{}
-		// LayoutFuncs like html/template
-		// the difference from Funcs is that these funcs
-		// can be used inside a layout and can override the predefined (yield,partial...) or add more custom funcs
-		// these can override the Funcs inside no-layout templates also, use it when you know what you're doing
-		LayoutFuncs map[string]interface{}
 	}
 
 	// Amber the configs for AmberEngine
@@ -213,10 +204,10 @@ func DefaultTemplate() Template {
 		Charset:       "UTF-8",
 		Layout:        "", // currently this is the only config which not working for pongo2 yet but I will find a way
 		HTMLTemplate:  HTMLTemplate{Left: "{{", Right: "}}", Funcs: make(map[string]interface{}, 0), LayoutFuncs: make(map[string]interface{}, 0)},
+		Jade:          Jade{Left: "{{", Right: "}}", Funcs: make(map[string]interface{}, 0), LayoutFuncs: make(map[string]interface{}, 0)},
 		Pongo:         Pongo{Filters: make(map[string]pongo2.FilterFunction, 0), Globals: make(map[string]interface{}, 0)},
 		Markdown:      Markdown{Sanitize: false},
 		Amber:         Amber{Funcs: template.FuncMap{}},
-		Jade:          Jade{Funcs: template.FuncMap{}, LayoutFuncs: template.FuncMap{}},
 	}
 }
 

@@ -1,4 +1,4 @@
-// Package iris v3.0.0-beta.2
+// Package iris the fastest golang web framework, so far.
 //
 // Note: When 'Station', we mean the Iris type.
 package iris
@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/flosch/pongo2"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/logger"
 	"github.com/kataras/iris/mail"
@@ -30,7 +29,7 @@ import (
 
 const (
 	// Version of the iris
-	Version = "v3.0.0-beta.2"
+	Version = "v3.0.0-beta.3"
 	banner  = `                        _____      _
                        |_   _|    (_)
                          | |  ____ _  ___
@@ -113,85 +112,17 @@ func (s *Iris) newContextPool() sync.Pool {
 	}}
 }
 
+///TODO HERE MOVE THEM SOMEWHERE ELSE OR MAKE IT MORE BUETY->
 func (s *Iris) initTemplates() {
 	if s.templates == nil { // because if .Templates() called before server's listen, s.templates != nil when PreListen
 		//  init the templates
-
-		// set the custom iris-direct-integration functions, layout and no-layout  if  HTMLEngine is used
-		templateConfig := &s.config.Render.Template
-		///TODO gia AMber episis
-		if templateConfig.Engine == config.HTMLEngine || templateConfig.Engine == config.AmberEngine {
-			funcs := map[string]interface{}{
-
-				"url": func(routeName string, args ...interface{}) (string, error) {
-					r := s.RouteByName(routeName)
-					// check if not found
-					if r.GetMethod() == "" {
-						return "", ErrRenderRouteNotFound.Format(routeName)
-					}
-
-					return r.ParseURI(args...), nil
-
-				},
+		template.RegisterSharedFunc("url", func(routeName string, args ...interface{}) string {
+			if url, err := s.UriOf(routeName, args...); err == nil {
+				return url
+			} else {
+				return err.Error()
 			}
-
-			// these should be already a non-nil map but if .New(cfg) it's not, is mergo's bug, temporary:
-			if templateConfig.Engine == config.HTMLEngine {
-				if templateConfig.HTMLTemplate.LayoutFuncs == nil {
-					templateConfig.HTMLTemplate.LayoutFuncs = make(map[string]interface{}, len(funcs))
-				}
-
-				if templateConfig.HTMLTemplate.Funcs == nil {
-					templateConfig.HTMLTemplate.Funcs = make(map[string]interface{}, len(funcs))
-				}
-
-				for k, v := range funcs {
-					// we don't want to override the user's LayoutFuncs, user should be able to override anything.
-					if templateConfig.HTMLTemplate.LayoutFuncs[k] == nil {
-						templateConfig.HTMLTemplate.LayoutFuncs[k] = v
-					}
-
-					if templateConfig.HTMLTemplate.Funcs[k] == nil {
-						templateConfig.HTMLTemplate.Funcs[k] = v
-					}
-
-				}
-
-			} else if templateConfig.Engine == config.AmberEngine {
-				if templateConfig.Amber.Funcs == nil {
-					templateConfig.Amber.Funcs = make(map[string]interface{}, len(funcs))
-				}
-
-				for k, v := range funcs {
-					if templateConfig.Amber.Funcs[k] == nil {
-						templateConfig.Amber.Funcs[k] = v
-					}
-				}
-			}
-
-			//
-
-		} else if templateConfig.Engine == config.PongoEngine {
-			if templateConfig.Pongo.Globals == nil {
-				templateConfig.Pongo.Globals = make(map[string]interface{}, 1)
-			}
-
-			urlFunc := func(routeName string, args ...interface{}) (out *pongo2.Value) {
-
-				r := s.RouteByName(routeName)
-				// check if not found
-				if r.GetMethod() == "" {
-					return pongo2.AsValue(ErrRenderRouteNotFound.Format(routeName).Error())
-				}
-
-				return pongo2.AsValue(r.ParseURI(args...))
-			}
-
-			// register it to the global context, no as Filter.
-			templateConfig.Pongo.Globals["url"] = urlFunc
-
-		}
-
+		})
 		s.templates = template.New(s.config.Render.Template)
 
 	}

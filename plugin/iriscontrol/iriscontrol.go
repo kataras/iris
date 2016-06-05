@@ -5,6 +5,7 @@ import (
 
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/config"
+	"github.com/kataras/iris/middleware/basicauth"
 	"github.com/kataras/iris/plugin/routesinfo"
 	"github.com/kataras/iris/server"
 )
@@ -29,7 +30,7 @@ type irisControlPlugin struct {
 	plugins []PluginInfo
 	//
 
-	auth *userAuth
+	authFunc iris.HandlerFunc
 }
 
 // New returns the plugin which is ready-to-use inside iris.Plugin method
@@ -39,12 +40,13 @@ func New(cfg ...config.IrisControl) iris.IPlugin {
 	if len(cfg) > 0 {
 		c = cfg[0]
 	}
-	auth := newUserAuth(c.Users)
-	if auth == nil {
+	if c.Users == nil || len(c.Users) == 0 {
 		panic(Name + " Error: you should pass authenticated users map to the options, refer to the docs!")
 	}
 
-	return &irisControlPlugin{options: c, auth: auth, routes: routesinfo.RoutesInfo()}
+	auth := basicauth.Default(c.Users)
+
+	return &irisControlPlugin{options: c, authFunc: auth, routes: routesinfo.RoutesInfo()}
 }
 
 // Web set the options for the plugin and return the plugin which is ready-to-use inside iris.Plugin method
@@ -106,7 +108,6 @@ func (i *irisControlPlugin) Destroy() {
 	i.station = nil
 	i.server.Close()
 	i.pluginContainer = nil
-	i.auth.Destroy()
-	i.auth = nil
+	i.authFunc = nil
 	i.pluginContainer.Printf("[%s] %s is turned off", time.Now().UTC().String(), Name)
 }
