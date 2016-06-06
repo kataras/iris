@@ -75,17 +75,20 @@ func (l *loggerMiddleware) Serve(ctx *iris.Context) {
 
 	//finally print the logs
 	if l.options.Latency {
-		l.Printf("%s %v %4v %s %s %s", date, status, latency, ip, method, path)
+		l.Infof("%s %v %4v %s %s %s \n", date, status, latency, ip, method, path)
 	} else {
-		l.Printf("%s %v %s %s %s", date, status, ip, method, path)
+		l.Infof("%s %v %s %s %s \n", date, status, ip, method, path)
 	}
 
 }
 
-func newLoggerMiddleware(loggerCfg config.Logger, options ...Options) *loggerMiddleware {
-	loggerCfg = config.DefaultLogger().MergeSingle(loggerCfg)
+// Default returns the logger middleware as Handler with the default settings
+func New(theLogger *logger.Logger, options ...Options) iris.HandlerFunc {
+	if theLogger == nil {
+		theLogger = logger.New(config.DefaultLogger())
+	}
 
-	l := &loggerMiddleware{Logger: logger.New(loggerCfg)}
+	l := &loggerMiddleware{Logger: theLogger}
 
 	if len(options) > 0 {
 		l.options = options[0]
@@ -93,36 +96,5 @@ func newLoggerMiddleware(loggerCfg config.Logger, options ...Options) *loggerMid
 		l.options = DefaultOptions()
 	}
 
-	return l
-}
-
-//all bellow are just for flexibility
-
-// DefaultHandler returns the logger middleware with the default settings
-func DefaultHandler(options ...Options) iris.Handler {
-	loggerCfg := config.DefaultLogger()
-	return newLoggerMiddleware(loggerCfg, options...)
-}
-
-// Default returns the logger middleware as HandlerFunc with the default settings
-func Default(options ...Options) iris.HandlerFunc {
-	return DefaultHandler(options...).Serve
-}
-
-// CustomHandler returns the logger middleware with customized settings
-// accepts 3 parameters
-// first parameter is the writer (io.Writer)
-// second parameter is the prefix of which the message will follow up
-// third parameter is the logger.Options
-func CustomHandler(loggerCfg config.Logger, options ...Options) iris.Handler {
-	return newLoggerMiddleware(loggerCfg, options...)
-}
-
-// Custom returns the logger middleware as HandlerFunc with customized settings
-// accepts 3 parameters
-// first parameter is the writer (io.Writer)
-// second parameter is the prefix of which the message will follow up
-// third parameter is the logger.Options
-func Custom(loggerCfg config.Logger, options ...Options) iris.HandlerFunc {
-	return CustomHandler(loggerCfg, options...).Serve
+	return l.Serve
 }

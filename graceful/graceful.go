@@ -192,9 +192,9 @@ func (srv *Server) StopChan() <-chan struct{} {
 }
 
 // DefaultLogger returns the logger used by Run, RunWithErr, ListenAndServe, ListenAndServeTLS and Serve.
-// The logger outputs to STDERR by default.
+// The logger outputs to STDOUT by default.
 func DefaultLogger() *logger.Logger {
-	return logger.New()
+	return logger.New(config.DefaultLogger())
 }
 
 func (srv *Server) manageConnections(add, remove chan net.Conn, shutdown chan chan struct{}, kill chan struct{}) {

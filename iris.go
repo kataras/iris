@@ -5,12 +5,9 @@ package iris
 
 import (
 	"os"
-	"strconv"
 	"sync"
-	"sync/atomic"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/logger"
 	"github.com/kataras/iris/mail"
@@ -21,21 +18,22 @@ import (
 	//  memory loads the memory session provider
 	_ "github.com/kataras/iris/sessions/providers/memory"
 	// _ redis loads the redis session provider
+	"fmt"
+
 	_ "github.com/kataras/iris/sessions/providers/redis"
-	"github.com/kataras/iris/utils"
 	"github.com/kataras/iris/websocket"
 	"github.com/klauspost/compress/gzip"
 )
 
 const (
 	// Version of the iris
-	Version = "v3.0.0-beta.3"
-	banner  = `                        _____      _
-                       |_   _|    (_)
-                         | |  ____ _  ___
-                         | | | __|| |/ __|
-                        _| |_| |  | |\__ \
-                       |_____|_|  |_||___/ ` + Version + `
+	Version = "v3.0.0-beta.4"
+	banner  = `         _____      _
+        |_   _|    (_)
+          | |  ____ _  ___
+          | | | __|| |/ __|
+         _| |_| |  | |\__ \
+        |_____|_|  |_||___/ ` + Version + `
                                                  				 `
 )
 
@@ -63,8 +61,6 @@ var (
 )
 
 /* */
-
-var stationsRunning = 0
 
 type (
 
@@ -99,7 +95,7 @@ func New(cfg ...config.Iris) *Iris {
 	s.router = newRouter(s)
 
 	// set the Logger
-	s.logger = logger.New()
+	s.logger = logger.New(c.Logger)
 
 	//set the plugin container
 	s.plugins = &PluginContainer{logger: s.logger}
@@ -152,60 +148,12 @@ func (s *Iris) initMailService() {
 	}
 }
 
-func (s *Iris) printBanner() {
-	c := color.New(color.FgHiBlue).Add(color.Bold)
-	printTicker := utils.NewTicker()
-	// for ANY case, we don't want to panic on print banner if anything goes bad
-	defer func() {
-		if r := recover(); r != nil {
-			printTicker.Stop()
-		}
-	}()
-
-	var i uint64
-
-	printTicker.OnTick(func() {
-		if len(banner) <= int(atomic.LoadUint64(&i)) {
-			atomic.StoreUint64(&i, 0)
-			printTicker.Stop()
-
-			c.Add(color.FgGreen)
-			stationsRunning++
-			c.Println()
-
-			if s.server != nil && s.server.IsListening() {
-				if stationsRunning > 1 {
-					c.Println("Server[" + strconv.Itoa(stationsRunning) + "]")
-
-				}
-				c.Printf("%s: Running at %s\n", time.Now().Format(config.TimeFormat), s.server.Config.ListeningAddr)
-
-			}
-			c.DisableColor()
-			return
-		}
-		c.Printf("%c", banner[i])
-		atomic.AddUint64(&i, 1)
-
-	})
-
-	printTicker.Start(time.Duration(433) * time.Nanosecond)
-
-}
-
 // PreListen call router's optimize, sets the server's handler and notice the plugins
 // capital because we need it sometimes, for example inside the graceful
 // receives the config.Server
 // returns the station's Server (*server.Server)
 // it's a non-blocking func
 func (s *Iris) PreListen(opt config.Server) *server.Server {
-	// run the printBanner with nice animation until PreListen and PostListen finish
-	if !s.config.DisableBanner {
-		go s.printBanner()
-	}
-
-	// set the logger's state
-	s.logger.SetEnable(!s.config.DisableLog)
 	// router preparation, runs only once even if called more than one time.
 	if !s.router.optimized {
 		s.router.optimize()
@@ -216,6 +164,10 @@ func (s *Iris) PreListen(opt config.Server) *server.Server {
 		if s.config.MaxRequestBodySize > 0 {
 			s.server.MaxRequestBodySize = int(s.config.MaxRequestBodySize)
 		}
+	}
+
+	if !s.config.DisableBanner {
+		s.logger.PrintBanner(banner, fmt.Sprintf("%s: Running at %s\n", time.Now().Format(config.TimeFormat), s.server.Config.ListeningAddr))
 	}
 
 	s.plugins.DoPreListen(s)
