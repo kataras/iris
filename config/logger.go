@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-const DefaultLoggerPrefix = "[IRIS] "
+const DefaultLoggerPrefix = ""
 
 var (
 	// TimeFormat default time format for any kind of datetime parsing
@@ -23,6 +23,7 @@ type (
 		// Default is os.Stdout
 		Out *os.File
 		// Prefix the prefix for each message
+		// Default is ""
 		Prefix string
 		// Disabled default is false
 		Disabled bool
@@ -39,10 +40,12 @@ type (
 		ColorFgWarning int
 		// ColorFgDanger the foreground color for error messages
 		ColorFgDanger int
+		// OtherFgColor the foreground color for the rest of the message types
+		ColorFgOther int
 
 		// background colors single SGR Code
 
-		// ColorBgDefault the background color for the normal message bodies
+		// ColorBgDefault the background color for the normal messages
 		ColorBgDefault int
 		// ColorBgInfo the background  color for info messages
 		ColorBgInfo int
@@ -52,8 +55,11 @@ type (
 		ColorBgWarning int
 		// ColorBgDanger the background color for error messages
 		ColorBgDanger int
+		// OtherFgColor the background color for the rest of the message types
+		ColorBgOther int
 
 		// banners are the force printed/written messages, doesn't care about Disabled field
+
 		// ColorFgBanner the foreground color for the banner
 		ColorFgBanner int
 	}
@@ -63,21 +69,23 @@ type (
 func DefaultLogger() Logger {
 	return Logger{
 		Out:      os.Stdout,
-		Prefix:   DefaultLoggerPrefix,
+		Prefix:   "",
 		Disabled: false,
 		// foreground colors
 		ColorFgDefault: int(color.FgHiWhite),
-		ColorFgInfo:    int(color.FgCyan),
+		ColorFgInfo:    int(color.FgHiCyan),
 		ColorFgSuccess: int(color.FgHiGreen),
 		ColorFgWarning: int(color.FgHiMagenta),
 		ColorFgDanger:  int(color.FgHiRed),
+		ColorFgOther:   int(color.FgHiYellow),
 		// background colors
 		ColorBgDefault: int(color.BgHiBlack),
 		ColorBgInfo:    int(color.BgHiBlack),
 		ColorBgSuccess: int(color.BgHiBlack),
 		ColorBgWarning: int(color.BgHiBlack),
 		ColorBgDanger:  int(color.BgHiWhite),
-		// banner colors
+		ColorBgOther:   int(color.BgHiBlack),
+		// banner color
 		ColorFgBanner: int(color.FgHiBlue),
 	}
 }

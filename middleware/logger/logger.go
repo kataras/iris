@@ -75,9 +75,9 @@ func (l *loggerMiddleware) Serve(ctx *iris.Context) {
 
 	//finally print the logs
 	if l.options.Latency {
-		l.Infof("%s %v %4v %s %s %s \n", date, status, latency, ip, method, path)
+		l.Otherf("%s %v %4v %s %s %s \n", date, status, latency, ip, method, path)
 	} else {
-		l.Infof("%s %v %s %s %s \n", date, status, ip, method, path)
+		l.Otherf("%s %v %s %s %s \n", date, status, ip, method, path)
 	}
 
 }

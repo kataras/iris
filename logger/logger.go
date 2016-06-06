@@ -34,6 +34,22 @@ func New(c config.Logger) *Logger {
 	return l
 }
 
+// SetEnable true enables, false disables the Logger
+func (l *Logger) SetEnable(enable bool) {
+	l.config.Disabled = !enable
+}
+
+// IsEnabled returns true if Logger is enabled, otherwise false
+func (l *Logger) IsEnabled() bool {
+	return !l.config.Disabled
+}
+
+// ResetColors sets the colors to the default
+// this func is called every time a success, info, warning, or danger message is printed
+func (l *Logger) ResetColors() {
+	l.underline.Add(attr(l.config.ColorBgDefault), attr(l.config.ColorFgBanner), color.Bold)
+}
+
 // PrintBanner prints a text (banner) with BannerFgColor, BannerBgColor and a success message at the end
 // It doesn't cares if the logger is disabled or not, it will print this
 func (l *Logger) PrintBanner(banner string, sucessMessage string) {
@@ -55,98 +71,51 @@ func (l *Logger) PrintBanner(banner string, sucessMessage string) {
 	c = nil
 }
 
-// ResetColors sets the colors to the default
-// this func is called every time a success, info, warning, or danger message is printed
-func (l *Logger) ResetColors() {
-	l.underline.Add(attr(l.config.ColorBgDefault), attr(l.config.ColorFgBanner), color.Bold)
-}
-
-// SetEnable true enables, false disables the Logger
-func (l *Logger) SetEnable(enable bool) {
-	l.config.Disabled = !enable
-}
-
-// IsEnabled returns true if Logger is enabled, otherwise false
-func (l *Logger) IsEnabled() bool {
-	return !l.config.Disabled
-}
-
-// Print calls l.Output to print to the logger.
-// Arguments are handled in the manner of fmt.Print.
-func (l *Logger) Print(v ...interface{}) {
-	if !l.config.Disabled {
-		l.underline.Print(v...)
-	}
-}
-
 // Printf calls l.Output to print to the logger.
 // Arguments are handled in the manner of fmt.Printf.
 func (l *Logger) Printf(format string, a ...interface{}) {
 	if !l.config.Disabled {
-		l.underline.Printf(format, a...)
+		l.underline.Printf(l.config.Prefix+format, a...)
+	}
+}
+
+// Print calls l.Output to print to the logger.
+// Arguments are handled in the manner of fmt.Print.
+func (l *Logger) Print(a interface{}) {
+	if !l.config.Disabled {
+		l.Printf("%#v", a)
 	}
 }
 
 // Println calls l.Output to print to the logger.
 // Arguments are handled in the manner of fmt.Println.
-func (l *Logger) Println(a ...interface{}) {
+func (l *Logger) Println(a interface{}) {
 	if !l.config.Disabled {
-		l.underline.Println(a...)
+		l.Printf("%#v\n", a)
 	}
 }
 
-// Fatal is equivalent to l.Print() followed by a call to os.Exit(1).
-func (l *Logger) Fatal(a ...interface{}) {
-	if !l.config.Disabled {
-		l.underline.Print(a...)
-
-	}
-	os.Exit(1)
-
+// Fatal is equivalent to l.Dangerf("%#v",interface{}) followed by a call to panic().
+func (l *Logger) Fatal(a interface{}) {
+	l.Warningf("%#v", a)
+	panic("")
 }
 
-// Fatalf is equivalent to l.Printf() followed by a call to os.Exit(1).
+// Fatalf is equivalent to l.Warningf() followed by a call to os.Exit(1).
 func (l *Logger) Fatalf(format string, a ...interface{}) {
-	if !l.config.Disabled {
-		l.underline.Printf(format, a...)
-	}
-
+	l.Warningf(format, a...)
 	os.Exit(1)
-
 }
 
-// Fatalln is equivalent to l.Println() followed by a call to os.Exit(1).
-func (l *Logger) Fatalln(a ...interface{}) {
-	if !l.config.Disabled {
-		l.underline.Println(a...)
-	}
-
-	os.Exit(1)
-
-}
-
-// Panic is equivalent to l.Print() followed by a call to panic().
-func (l *Logger) Panic(a ...interface{}) {
-	if !l.config.Disabled {
-		l.underline.Print(a...)
-	}
-
+// Panic is equivalent to l.Dangerf("%#v",interface{}) followed by a call to panic().
+func (l *Logger) Panic(a interface{}) {
+	l.Dangerf("%#v", a)
 	panic("")
 }
 
-// Panicf is equivalent to l.Printf() followed by a call to panic().
+// Panicf is equivalent to l.Dangerf() followed by a call to panic().
 func (l *Logger) Panicf(format string, a ...interface{}) {
-	if !l.config.Disabled {
-		l.underline.Printf(format, a...)
-	}
-	panic("")
-}
-
-// Panicln is equivalent to l.Println() followed by a call to panic().
-func (l *Logger) Panicln(a ...interface{}) {
-	if !l.config.Disabled {
-		l.underline.Println(a...)
-	}
+	l.Dangerf(format, a...)
 	panic("")
 }
 
@@ -155,7 +124,7 @@ func (l *Logger) Panicln(a ...interface{}) {
 func (l *Logger) Sucessf(format string, a ...interface{}) {
 	if !l.config.Disabled {
 		l.underline.Add(attr(l.config.ColorBgSuccess), attr(l.config.ColorFgSuccess))
-		l.underline.Printf(format, a...)
+		l.Printf(format, a...)
 		l.ResetColors()
 	}
 }
@@ -165,7 +134,7 @@ func (l *Logger) Sucessf(format string, a ...interface{}) {
 func (l *Logger) Infof(format string, a ...interface{}) {
 	if !l.config.Disabled {
 		l.underline.Add(attr(l.config.ColorBgInfo), attr(l.config.ColorFgInfo))
-		l.underline.Printf(format, a...)
+		l.Printf(format, a...)
 		l.ResetColors()
 	}
 }
@@ -175,7 +144,7 @@ func (l *Logger) Infof(format string, a ...interface{}) {
 func (l *Logger) Warningf(format string, a ...interface{}) {
 	if !l.config.Disabled {
 		l.underline.Add(attr(l.config.ColorBgWarning), attr(l.config.ColorFgWarning))
-		l.underline.Printf(format, a...)
+		l.Printf(format, a...)
 		l.ResetColors()
 	}
 }
@@ -185,7 +154,17 @@ func (l *Logger) Warningf(format string, a ...interface{}) {
 func (l *Logger) Dangerf(format string, a ...interface{}) {
 	if !l.config.Disabled {
 		l.underline.Add(attr(l.config.ColorBgDanger), attr(l.config.ColorFgDanger))
-		l.underline.Printf(format, a...)
+		l.Printf(format, a...)
+		l.ResetColors()
+	}
+}
+
+// Otherf calls l.Output to print to the logger with the Other colors.
+// Arguments are handled in the manner of fmt.Printf.
+func (l *Logger) Otherf(format string, a ...interface{}) {
+	if !l.config.Disabled {
+		l.underline.Add(attr(l.config.ColorBgOther), attr(l.config.ColorFgOther))
+		l.Printf(format, a...)
 		l.ResetColors()
 	}
 }
