@@ -592,7 +592,6 @@ func (p *GardenParty) StaticContent(reqPath string, contentType string, content 
 		ctx.SetStatusCode(StatusOK)
 		ctx.Response.SetBody(content)
 	}
-	println("static content for reqpath: " + reqPath)
 	p.Get(reqPath, h)
 	p.Head(reqPath, h)
 }
