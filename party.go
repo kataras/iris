@@ -592,7 +592,7 @@ func (p *GardenParty) StaticContent(reqPath string, contentType string, content 
 		ctx.SetStatusCode(StatusOK)
 		ctx.Response.SetBody(content)
 	}
-
+	println("static content for reqpath: " + reqPath)
 	p.Get(reqPath, h)
 	p.Head(reqPath, h)
 }
@@ -634,7 +634,7 @@ func fixPath(str string) string {
 
 	strafter := strings.Replace(str, "//", Slash, -1)
 
-	if strafter[0] == SlashByte && strings.Contains(strafter, ".") {
+	if strafter[0] == SlashByte && strings.Count(strafter, ".") >= 2 {
 		//it's domain, remove the first slash
 		strafter = strafter[1:]
 	}
