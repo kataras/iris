@@ -10,6 +10,8 @@ type Mail struct {
 	Username string
 	// Password is the auth password for the sender
 	Password string
+	// FromAlias is the from part, if empty this is the first part before @ from the Username field
+	FromAlias string
 	// UseCommand enable it if you want to send e-mail with the mail command  instead of smtp
 	//
 	// Host,Port & Password will be ignored

@@ -28,6 +28,8 @@ type irisControlPlugin struct {
 	//infos
 	routes  *routesinfo.Plugin
 	plugins []PluginInfo
+	// last time the server was on
+	lastOperationDate time.Time
 	//
 
 	authFunc iris.HandlerFunc
@@ -88,6 +90,7 @@ func (i *irisControlPlugin) PostListen(s *iris.Iris) {
 	if i.station == nil {
 		i.station = s
 		i.stationServer = i.station.Server()
+		i.lastOperationDate = time.Now()
 		i.startControlPanel()
 	}
 
@@ -106,6 +109,7 @@ func (i *irisControlPlugin) Destroy() {
 	i.options = config.IrisControl{}
 	i.routes = nil
 	i.station = nil
+	i.lastOperationDate = config.CookieExpireNever
 	i.server.Close()
 	i.pluginContainer = nil
 	i.authFunc = nil

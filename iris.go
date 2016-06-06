@@ -93,12 +93,16 @@ func New(cfg ...config.Iris) *Iris {
 	c := config.Default().Merge(cfg)
 
 	// create the Iris
-	s := &Iris{config: &c, plugins: &PluginContainer{}}
+	s := &Iris{config: &c}
+
 	// create & set the router
 	s.router = newRouter(s)
 
 	// set the Logger
 	s.logger = logger.New()
+
+	//set the plugin container
+	s.plugins = &PluginContainer{logger: s.logger}
 
 	// set the gzip writer pool
 	s.gzipWriterPool = sync.Pool{New: func() interface{} { return &gzip.Writer{} }}
@@ -123,6 +127,7 @@ func (s *Iris) initTemplates() {
 				return err.Error()
 			}
 		})
+
 		s.templates = template.New(s.config.Render.Template)
 
 	}

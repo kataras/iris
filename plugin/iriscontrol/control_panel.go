@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/kataras/iris"
+	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/plugin/routesinfo"
 )
 
@@ -41,9 +42,10 @@ func (i *irisControlPlugin) startControlPanel() {
 // DashboardPage is the main data struct for the index
 // contains a boolean if server is running, the routes and the plugins
 type DashboardPage struct {
-	ServerIsRunning bool
-	Routes          []routesinfo.RouteInfo
-	Plugins         []PluginInfo
+	ServerIsRunning      bool
+	Routes               []routesinfo.RouteInfo
+	Plugins              []PluginInfo
+	LastOperationDateStr string
 }
 
 func (i *irisControlPlugin) setPluginsInfo() {
@@ -72,12 +74,18 @@ func (i *irisControlPlugin) setPanelRoutes() {
 
 	i.server.Use(i.authFunc)
 	i.server.Get("/", func(ctx *iris.Context) {
-		ctx.Render("index.html", DashboardPage{ServerIsRunning: i.station.Server().IsListening(), Routes: i.routes.All(), Plugins: i.plugins})
+		ctx.Render("index.html", DashboardPage{
+			ServerIsRunning:      i.station.Server().IsListening(),
+			Routes:               i.routes.All(),
+			Plugins:              i.plugins,
+			LastOperationDateStr: i.lastOperationDate.Format(config.TimeFormat),
+		})
 	})
 
 	//the controls
 	i.server.Post("/start_server", func(ctx *iris.Context) {
 		//println("server start")
+		i.lastOperationDate = time.Now()
 		old := i.stationServer
 		if !old.IsSecure() {
 			i.station.Listen(old.Config.ListeningAddr)

@@ -1,8 +1,7 @@
 package iris
 
 import (
-	"fmt"
-
+	"github.com/kataras/iris/logger"
 	"github.com/kataras/iris/utils"
 )
 
@@ -222,6 +221,7 @@ func (d *DownloadManager) Install(remoteFileZip string, targetDirectory string) 
 type PluginContainer struct {
 	activatedPlugins []IPlugin
 	downloader       *DownloadManager
+	logger           *logger.Logger
 }
 
 // Add activates the plugins and if succeed then adds it to the activated plugins list
@@ -327,7 +327,10 @@ func (p *PluginContainer) GetDownloader() IDownloadManager {
 // Printf sends plain text to any registed logger (future), some plugins maybe want use this method
 // maybe at the future I change it, instead of sync even-driven to async channels...
 func (p *PluginContainer) Printf(format string, a ...interface{}) {
-	fmt.Printf(format, a...) //for now just this.
+	if p.logger != nil {
+		p.logger.Printf(format, a...) //for now just this.
+	}
+
 }
 
 // PreHandle adds a PreHandle plugin-function to the plugin flow container

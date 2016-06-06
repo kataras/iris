@@ -157,6 +157,7 @@ func (s *Server) listenUnix() (err error) {
 		err = ErrServerRemoveUnix.Format(s.Config.ListeningAddr, errOs.Error())
 		return
 	}
+	//
 	s.listener, err = net.Listen("unix", s.Config.ListeningAddr)
 
 	if err != nil {
@@ -201,6 +202,7 @@ func (s *Server) CloseServer() error {
 	}
 
 	if s.listener != nil {
+		s.started = false
 		return s.listener.Close()
 	}
 	return nil

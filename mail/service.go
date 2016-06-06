@@ -33,9 +33,12 @@ type (
 func New(cfg config.Mail) Service {
 	m := &mailer{config: cfg}
 
-	// not necessary
-	if !cfg.UseCommand && cfg.Username != "" && strings.Contains(cfg.Username, "@") {
-		m.fromAddr = mail.Address{cfg.Username[0:strings.IndexByte(cfg.Username, '@')], cfg.Username}
+	if cfg.FromAlias == "" {
+		if !cfg.UseCommand && cfg.Username != "" && strings.Contains(cfg.Username, "@") {
+			m.fromAddr = mail.Address{cfg.Username[0:strings.IndexByte(cfg.Username, '@')], cfg.Username}
+		}
+	} else {
+		m.fromAddr = mail.Address{cfg.FromAlias, cfg.Username}
 	}
 
 	return m
