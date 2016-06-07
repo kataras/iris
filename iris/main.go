@@ -5,6 +5,7 @@ import (
 
 	"strings"
 
+	"io/ioutil"
 	"runtime"
 
 	"github.com/fatih/color"
@@ -30,13 +31,13 @@ var (
 )
 
 func init() {
-	app = cli.NewApp("iris", "Command line tool for Iris web framework", "0.0.3")
+	app = cli.NewApp("iris", "Command line tool for Iris web framework", "0.0.4")
 	app.Command(cli.Command("version", "\t      prints your iris version").Action(func(cli.Flags) error { app.Printf("%s", iris.Version); return nil }))
 
 	createCmd := cli.Command("create", "create a project to a given directory").
 		Flag("offline", false, "set to true to disable the packages download on each create command").
-		Flag("dir", "./", "creates an iris starter kit to the current directory").
-		Flag("type", "basic", "creates the project based on the -t package. Currently, available types are 'basic' & 'static'").
+		Flag("dir", "myiris", "$GOPATH/src/$dir the directory to install the sample package").
+		Flag("type", "basic", "creates a project based on the -t package. Currently, available types are 'basic' & 'static'").
 		Action(create)
 
 	app.Command(createCmd)
@@ -54,13 +55,14 @@ func create(flags cli.Flags) (err error) {
 
 	targetDir := flags.String("dir")
 
+	// remove first and last / if any
 	if strings.HasPrefix(targetDir, "./") || strings.HasPrefix(targetDir, "."+utils.PathSeparator) {
-		currentWdir, err := os.Getwd()
-		if err != nil {
-			return err
-		}
-		targetDir = currentWdir + utils.PathSeparator + targetDir[2:]
+		targetDir = targetDir[2:]
 	}
+	if targetDir[len(targetDir)-1] == '/' {
+		targetDir = targetDir[0 : len(targetDir)-1]
+	}
+	//
 
 	createPackage(flags.String("type"), targetDir)
 	return
@@ -90,11 +92,30 @@ func downloadPackages() {
 }
 
 func createPackage(packageName string, targetDir string) error {
+	installTo := os.Getenv("GOPATH") + utils.PathSeparator + "src" + utils.PathSeparator + targetDir
+
 	packageDir := packagesInstallDir + utils.PathSeparator + packageName
-	err := utils.CopyDir(packageDir, targetDir)
+	err := utils.CopyDir(packageDir, installTo)
 	if err != nil {
-		app.Printf("\nProblem while copying the %s package to the %s. Trace: %s", packageName, targetDir, err.Error())
+		app.Printf("\nProblem while copying the %s package to the %s. Trace: %s", packageName, installTo, err.Error())
 		return err
+	}
+
+	// now replace main.go's 'github.com/iris-contrib/iris-command-assets/basic/' with targetDir
+	// hardcode all that, we don't have anything special and neither will do
+	targetDir = strings.Replace(targetDir, "\\", "/", -1) // for any case
+	mainFile := installTo + utils.PathSeparator + "backend" + utils.PathSeparator + "main.go"
+
+	input, err := ioutil.ReadFile(mainFile)
+	if err != nil {
+		app.Printf("Error while preparing main file: %#v", err)
+	}
+
+	output := strings.Replace(string(input), "github.com/iris-contrib/iris-command-assets/"+packageName+"/", targetDir+"/", -1)
+
+	err = ioutil.WriteFile(mainFile, []byte(output), 0644)
+	if err != nil {
+		app.Printf("Error while preparing main file: %#v", err)
 	}
 
 	InfoPrint("\n%s package was installed successfully", packageName)
@@ -103,10 +124,10 @@ func createPackage(packageName string, targetDir string) error {
 
 	// go build
 	buildCmd := utils.CommandBuilder("go", "build")
-	if targetDir[len(targetDir)-1] != os.PathSeparator || targetDir[len(targetDir)-1] != '/' {
-		targetDir += utils.PathSeparator
+	if installTo[len(installTo)-1] != os.PathSeparator || installTo[len(installTo)-1] != '/' {
+		installTo += utils.PathSeparator
 	}
-	buildCmd.Dir = targetDir + "backend"
+	buildCmd.Dir = installTo + "backend"
 	buildCmd.Stderr = os.Stderr
 	err = buildCmd.Start()
 	if err != nil {
