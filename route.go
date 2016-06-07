@@ -223,8 +223,7 @@ func (r *Route) ParseURI(args ...interface{}) (uri string) {
 		scheme = "https://"
 	}
 
-	host := r.station.server.Host()
-
+	host := r.station.server.VirtualHost()
 	arguments := args[0:]
 
 	// join arrays as arguments

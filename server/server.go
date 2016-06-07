@@ -67,6 +67,21 @@ func (s *Server) Host() (host string) {
 	}
 }
 
+// VirtualHost returns the s.Config.ListeningAddr, if host provided else returns the Listener's (Host())
+//
+// Note: currently this is used only on iris/route.ParseURI.
+//
+func (s *Server) VirtualHost() (host string) {
+	// we always have at least the :PORT because  of parseAddr, so we just
+	// check if we have anything before PORT
+	a := s.Config.ListeningAddr
+	if len(a[0:strings.IndexByte(a, ':')]) > 0 {
+		return a
+	} else {
+		return s.Host()
+	}
+}
+
 // Hostname returns the hostname part only, if host == 0.0.0.0:8080 it will return the 0.0.0.0
 // if server is not listening it returns the config.ListeningAddr's hostname part
 func (s *Server) Hostname() (hostname string) {
