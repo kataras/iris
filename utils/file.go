@@ -92,7 +92,7 @@ func DownloadZip(zipURL string, newDir string) (string, error) {
 	if err != nil {
 		return "", ErrFileCopy.Format(err.Error())
 	}
-	finish <- true
+
 	_ = size
 	//print("OK ", size, " bytes downloaded") //we keep that here so developer will always see in the terminal if a plugin downloads something or no ?
 	return fileName, nil

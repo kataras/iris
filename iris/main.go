@@ -118,7 +118,7 @@ func createPackage(packageName string, targetDir string) error {
 		app.Printf("Error while preparing main file: %#v", err)
 	}
 
-	InfoPrint("\n%s package was installed successfully", packageName)
+	InfoPrint("%s package was installed successfully", packageName)
 
 	// build & run the server
 
