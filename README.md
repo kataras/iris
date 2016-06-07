@@ -18,6 +18,13 @@
 [Language]: http://golang.org
 [Platform Widget]: https://img.shields.io/badge/platform-Any--OS-gray.svg?style=flat-square
 
+The fastest backend web framework for Go, provides robust set of features.
+
+```sh
+$ which -a motivation-counter
+Stars | https://github.com/kataras/iris/stargazers
+```
+
 [![Benchmark Wizzard Processing Time Horizontal Graph](https://raw.githubusercontent.com/iris-contrib/website/cf71811e6acb2f9bf1e715e25660392bf090b923/assets/benchmark_horizontal_transparent.png)](#benchmarks)
 
 ```sh
