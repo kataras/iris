@@ -124,6 +124,10 @@ func (s *Iris) initTemplates() {
 			}
 		})
 
+		template.RegisterSharedFunc("urlpath", func(routeName string, args ...interface{}) string {
+			return s.RouteByName(routeName).ParsePath(args...)
+		})
+
 		s.templates = template.New(s.config.Render.Template)
 
 	}
