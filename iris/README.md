@@ -2,7 +2,9 @@
 
 This package is the command line tool for  [../](https://github.com/kataras/iris).
 
-[!Iris help screen](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iris_cli_screen.png)](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iris_cli_screen.png)
+[![Iris help screen](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iris_cli_screen.png)](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iris_cli_screen.png)
+
+[![Iris installed screen](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iris_cli_screen2.png)](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iris_cli_screen2.png)
 
 ## Install
 Current version: 0.0.4
