@@ -163,6 +163,8 @@ func (t *Template) Render(ctx context.IContext, name string, binding interface{}
 	_layout := ""
 	if len(layout) > 0 {
 		_layout = layout[0]
+	} else if layoutFromCtx := ctx.GetString(config.TemplateLayoutContextKey); layoutFromCtx != "" {
+		_layout = layoutFromCtx
 	}
 	if _layout == "" {
 		_layout = t.Layout

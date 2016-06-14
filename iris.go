@@ -108,14 +108,17 @@ type (
 	MuxAPI interface {
 		Party(string, ...HandlerFunc) MuxAPI
 
+		// middleware
 		Use(...Handler)
 		UseFunc(...HandlerFunc)
+		// main handlers
 		Handle(string, string, ...Handler) RouteNameFunc
 		HandleFunc(string, string, ...HandlerFunc) RouteNameFunc
 		// H_ is used to convert a context.IContext handler func to iris.HandlerFunc, is used only inside iris internal package to avoid import cycles
 		H_(string, string, func(context.IContext)) func(string)
 		API(string, HandlerAPI, ...HandlerFunc)
 
+		// http methods
 		Get(string, ...HandlerFunc) RouteNameFunc
 		Post(string, ...HandlerFunc) RouteNameFunc
 		Put(string, ...HandlerFunc) RouteNameFunc
@@ -127,6 +130,7 @@ type (
 		Trace(string, ...HandlerFunc) RouteNameFunc
 		Any(string, ...HandlerFunc)
 
+		// static content
 		StaticHandler(string, int, bool, bool, []string) HandlerFunc
 		Static(string, string, int) RouteNameFunc
 		StaticFS(string, string, int) RouteNameFunc
@@ -134,6 +138,9 @@ type (
 		StaticServe(string, ...string) RouteNameFunc
 		StaticContent(string, string, []byte) func(string)
 		Favicon(string, ...string) RouteNameFunc
+
+		// templates
+		Layout(string) MuxAPI // returns itself
 	}
 )
 
@@ -536,10 +543,6 @@ var (
 )
 
 var _ MuxAPI = &muxAPI{}
-
-func pathIsSubdomain(s string) bool {
-	return strings.Index(s, subdomainIndicator) != -1
-}
 
 // Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
 // Party can also be named as 'Join' or 'Node' or 'Group' , Party chosen because it has more fun
@@ -1228,4 +1231,22 @@ func (api *muxAPI) Favicon(favPath string, requestPath ...string) RouteNameFunc 
 
 	api.Head(reqPath, h)
 	return api.Get(reqPath, h)
+}
+
+// Layout oerrides the parent template layout with a more specific layout for this Party
+// returns this Party, to continue as normal
+// example:
+// my := iris.Party("/my").Layout("layouts/mylayout.html")
+// 	{
+// 		my.Get("/", func(ctx *iris.Context) {
+// 			ctx.MustRender("page1.html", nil)
+// 		})
+// 	}
+//
+func (api *muxAPI) Layout(tmplLayoutFile string) MuxAPI {
+	api.UseFunc(func(ctx *Context) {
+		ctx.Set(config.TemplateLayoutContextKey, tmplLayoutFile)
+		ctx.Next()
+	})
+	return api
 }

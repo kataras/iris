@@ -31,6 +31,8 @@ const (
 
 	// NoLayout to disable layout for a particular template file
 	NoLayout = "@.|.@iris_no_layout@.|.@"
+	// TemplateLayoutContextKey is the name of the user values which can be used to set a template layout from a middleware and override the parent's
+	TemplateLayoutContextKey = "templateLayout"
 )
 
 var (
