@@ -143,7 +143,7 @@ func (b *basicAuthMiddleware) Serve(ctx *iris.Context) {
 				auth.logged = true
 			}
 
-			if time.Now().Before(auth.expires) {
+			if time.Now().After(auth.expires) {
 				b.askForCredentials(ctx) // ask for authentication again
 				return
 			}

@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/iris-contrib/npm"
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/logger"
-	"github.com/kataras/iris/npm"
 	"github.com/kataras/iris/plugin/editor"
 	"github.com/kataras/iris/utils"
 )
@@ -46,7 +46,7 @@ type (
 	Plugin struct {
 		options Options
 		// taken from Activate
-		pluginContainer iris.IPluginContainer
+		pluginContainer iris.PluginContainer
 		// taken at the PreListen
 		logger *logger.Logger
 	}
@@ -106,7 +106,7 @@ func New(_opt ...Options) *Plugin {
 // implement the IPlugin & IPluginPreListen
 
 // Activate ...
-func (t *Plugin) Activate(container iris.IPluginContainer) error {
+func (t *Plugin) Activate(container iris.PluginContainer) error {
 	t.pluginContainer = container
 	return nil
 }
@@ -122,8 +122,8 @@ func (t *Plugin) GetDescription() string {
 }
 
 // PreListen ...
-func (t *Plugin) PreListen(s *iris.Iris) {
-	t.logger = s.Logger()
+func (t *Plugin) PreListen(s *iris.Framework) {
+	t.logger = s.Logger
 	t.start()
 }
 

@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	// DefaultServerAddr the default server addr
-	DefaultServerAddr = ":8080"
+	// DefaultServerAddr the default server addr which is: 127.0.0.1:8080
+	DefaultServerAddr = "127.0.0.1:8080"
 )
 
 // ServerName the response header of the 'Server' value when writes to the client

@@ -11,7 +11,6 @@ import (
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/logger"
-	"github.com/kataras/iris/server"
 	"golang.org/x/net/netutil"
 )
 
@@ -19,8 +18,8 @@ import (
 // It may be used directly in the same way as iris.Server, or may
 // be constructed with the global functions in this package.
 type Server struct {
-	*server.Server
-	station *iris.Iris
+	*iris.Server
+	station *iris.Framework
 	// Timeout is the duration to allow outstanding requests to survive
 	// before forcefully terminating them.
 	Timeout time.Duration
@@ -67,18 +66,18 @@ type Server struct {
 	connections map[net.Conn]struct{}
 }
 
-// Run serves the http.Handler with graceful shutdown enabled.
+// Run serves the iris.Handler with graceful shutdown enabled.
 //
 // timeout is the duration to wait until killing active requests and stopping the server.
 // If timeout is 0, the server never times out. It waits for all active requests to finish.
 // we don't pass an iris.RequestHandler , because we need iris.station.server to be setted in order the station.Close() to work
-func Run(addr string, timeout time.Duration, n *iris.Iris) {
+func Run(addr string, timeout time.Duration, s *iris.Framework) {
 	srv := &Server{
 		Timeout: timeout,
-		Logger:  DefaultLogger(),
+		Logger:  s.Logger,
+		station: s,
+		Server:  s.NoListen(),
 	}
-	srv.station = n
-	srv.Server = srv.station.PreListen(config.Server{ListeningAddr: addr})
 
 	if err := srv.listenAndServe(); err != nil {
 		if opErr, ok := err.(*net.OpError); !ok || (ok && opErr.Op != "accept") {
@@ -92,13 +91,14 @@ func Run(addr string, timeout time.Duration, n *iris.Iris) {
 //
 // Unlike Run this version will not exit the program if an error is encountered but will
 // return it instead.
-func RunWithErr(addr string, timeout time.Duration, n *iris.Iris) error {
+func RunWithErr(addr string, timeout time.Duration, s *iris.Framework) error {
 	srv := &Server{
 		Timeout: timeout,
-		Logger:  DefaultLogger(),
+		Logger:  s.Logger,
+		station: s,
+		Server:  s.NoListen(),
 	}
-	srv.station = n
-	srv.Server = srv.station.PreListen(config.Server{ListeningAddr: addr})
+
 	return srv.listenAndServe()
 }
 
@@ -143,7 +143,7 @@ func (srv *Server) serve(listener net.Listener) error {
 
 	// Serve with graceful listener.
 	// Execution blocks here until listener.Close() is called, above.
-	srv.station.PostListen()
+	srv.station.NoListen()
 	err := srv.Server.Serve(listener)
 	if err != nil {
 		// If the underlying listening is closed, Serve returns an error
@@ -218,7 +218,7 @@ func (srv *Server) manageConnections(add, remove chan net.Conn, shutdown chan ch
 		case <-kill:
 			for k := range srv.connections {
 				if err := k.Close(); err != nil {
-					srv.log("[IRIS GRACEFUL ERROR] %s", err.Error())
+					srv.log("[IRIS GRACEFUL ERROR]" + err.Error())
 				}
 			}
 			return
@@ -252,7 +252,7 @@ func (srv *Server) handleInterrupt(interrupt chan os.Signal, quitting chan struc
 		close(quitting)
 		srv.Server.DisableKeepalive = true
 		if err := listener.Close(); err != nil {
-			srv.log("[IRIS GRACEFUL ERROR] %s", err.Error())
+			srv.log("[IRIS GRACEFUL ERROR]" + err.Error())
 		}
 
 		if srv.ShutdownInitiated != nil {

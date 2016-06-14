@@ -1,5 +1,158 @@
 # History
 
+## 3.0.0-beta.3, 3.0.0-beta.4 -> 3.0.0-rc.1
+
+This version took me many days because the whole framework's underline code is rewritten after many many many 'yoga'. Iris is not so small anymore, so I (tried) to organized it a little better. Note that, today, you can just go to [iris.go](https://github.com/kataras/iris/tree/master/iris.go) and [context.go](https://github.com/kataras/iris/tree/master/context/context.go) and look what functions you can use. You had some 'bugs' to subdomains, mail service, basic authentication and logger, these are fixed also, see below...
+
+All [examples](https://github.com/iris-contrib/examples) are updated, and I tested them one by one.
+
+
+Many underline changes but the public API didn't changed much, of course this is relative to the way you use this framework, because that:
+
+- Configuration changes: **0**
+
+- iris.Iris pointer -> **iris.Framework** pointer
+
+- iris.DefaultIris -> **iris.Default**
+- iris.Config() -> **iris.Config** is field now
+- iris.Websocket() -> **iris.Websocket** is field now
+- iris.Logger() -> **iris.Logger** is field now
+- iris.Plugins() -> **iris.Plugins** is field now
+- iris.Server() -> **iris.HTTPServer** is field now
+- iris.Rest() -> **REMOVED**
+
+- iris.Mail() -> **REMOVED**
+- iris.Mail().Send() -> **iris.SendMail()**
+- iris.Templates() -> **REMOVED**
+- iris.Templates().RenderString() -> **iris.TemplateString()**
+
+- iris.StaticHandlerFunc -> **iris.StaticHandler**
+- iris.URIOf() -> **iris.URL()**
+- iris.PathOf() -> **iris.Path()**
+
+- context.RenderString() returned string,error -> **context.TemplateString() returns only string, which is empty on any parse error**
+- context.WriteHTML() -> **context.HTML()**
+- context.HTML() -> **context.RenderWithStatus()**
+
+Entirely new
+
+-  -> **iris.ListenUNIX(addr string, socket os.Mode)**
+-  -> **context.MustRender, same as Render but send response 500 and logs the error on parse error**
+-  -> **context.Log(format string, a...interface{})**
+-  -> **context.PostFormMulti(name string) []string**
+-  -> **iris.Lookups() []Route**
+-  -> **iris.Lookup(routeName string) Route**
+-  -> **iris.Plugins.On(eventName string, ...func())** and fire all by **iris.Plugins.Call(eventName)**
+
+- iris.Wildcard() **REMOVED**, subdomains and dynamic(wildcard) subdomains can only be registered with **iris.Party("mysubdomain.") && iris.Party("*.")**
+
+
+Semantic change for static subdomains
+
+**1**
+
+**BEFORE** :
+```go
+apiSubdomain := iris.Party("api.mydomain.com")
+{
+//....
+}
+iris.Listen("mydomain.com:80")
+```
+
+
+**NOW** just subdomain part, no need to duplicate ourselves:
+```go
+apiSubdomain := iris.Party("api.")
+{
+//....
+}
+iris.Listen("mydomain.com:80")
+```
+**2**
+
+Before you couldn't set dynamic subdomains and normal subdomains at the same iris station, now you can.
+**NOW, this is possible**
+
+```go
+/* admin.mydomain.com,  and for other subdomains the Party(*.) */
+
+admin := iris.Party("admin.")
+{
+	// admin.mydomain.com
+	admin.Get("/", func(c *iris.Context) {
+		c.Write("INDEX FROM admin.mydomain.com")
+	})
+	// admin.mydomain.com/hey
+	admin.Get("/hey", func(c *iris.Context) {
+		c.Write("HEY FROM admin.mydomain.com/hey")
+	})
+	// admin.mydomain.com/hey2
+	admin.Get("/hey2", func(c *iris.Context) {
+		c.Write("HEY SECOND FROM admin.mydomain.com/hey")
+	})
+}
+
+// other.mydomain.com, otadsadsadsa.mydomain.com  and so on....
+dynamicSubdomains := iris.Party("*.")
+{
+	dynamicSubdomains.Get("/", dynamicSubdomainHandler)
+
+	dynamicSubdomains.Get("/something", dynamicSubdomainHandler)
+
+	dynamicSubdomains.Get("/something/:param1", dynamicSubdomainHandlerWithParam)
+}
+```
+
+Minor change for listen
+
+
+**BEFORE you could just listen to a port**
+```go
+iris.Listen("8080")
+```
+**NOW you have set a HOSTNAME:PORT**
+```go
+iris.Listen(":8080")
+```
+
+Relative issues/features:  https://github.com/kataras/iris/issues/166 , https://github.com/kataras/iris/issues/176, https://github.com/kataras/iris/issues/183,  https://github.com/kataras/iris/issues/184
+
+
+**Plugins**
+
+PreHandle and PostHandle are removed, no need to use them anymore you can take routes by **iris.Lookups()**, but add support for custom event listeners by **iris.Plugins.On("event",func(){})** and fire all callbacks by **iris.Plugins.Call("event")** .
+
+**FOR TESTERS**
+
+**BEFORE** :
+```go
+api := iris.New()
+//...
+
+api.PreListen(config.Server{ListeningAddr: ""})
+
+e := httpexpect.WithConfig(httpexpect.Config{
+	Reporter: httpexpect.NewAssertReporter(t),
+	Client:   fasthttpexpect.NewBinder(api.ServeRequest),
+})
+
+```
+
+**NOW**:
+
+```go
+api := iris.New()
+//...
+
+e := httpexpect.WithConfig(httpexpect.Config{
+	Reporter: httpexpect.NewAssertReporter(t),
+	Client:   fasthttpexpect.NewBinder(api.NoListen().Handler),
+})
+
+
+```
+
 ## 3.0.0-beta.2 -> 3.0.0-beta.3
 
 - Complete the Jade Template Engine support, {{ render }} and {{ url }} done also.

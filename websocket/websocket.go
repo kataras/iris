@@ -9,9 +9,8 @@ import (
 // to avoid the import cycle to /kataras/iris. The ws package is used inside iris' station configuration
 // inside Iris' configuration like kataras/iris/sessions, kataras/iris/render/rest, kataras/iris/render/template, kataras/iris/server and so on.
 type irisStation interface {
-	H_(string, string, func(context.IContext))
-	StaticContent(string, string, []byte)
-	Logger() *logger.Logger
+	H_(string, string, func(context.IContext)) func(string)
+	StaticContent(string, string, []byte) func(string)
 }
 
 //
@@ -22,16 +21,34 @@ type irisStation interface {
 // This is not usable for you, unless you need more than one websocket server,
 // because iris' station already has one which you can configure and start
 //
-func New(station irisStation, cfg ...config.Websocket) Server {
-	c := config.DefaultWebsocket().Merge(cfg)
+// This is deprecated after rc-1, now we create the server and after register it
+// because I want to be able to call the Websocket via a property and no via func before iris.Listen.
+func New(station irisStation, c *config.Websocket, logger *logger.Logger) Server {
 	if c.Endpoint == "" {
-		station.Logger().Panicf("Websockets - config's Endpoint is empty, you have to set it in order to enable and start the websocket server!!. Refer to the docs if you can't figure out.")
+		//station.Logger().Panicf("Websockets - config's Endpoint is empty, you have to set it in order to enable and start the websocket server!!. Refer to the docs if you can't figure out.")
+		return nil
 	}
 	server := newServer(c)
+	RegisterServer(station, server, logger)
+	return server
+}
+
+// NewServer creates a websocket server and returns it
+func NewServer(c *config.Websocket) Server {
+	return newServer(c)
+}
+
+// RegisterServer registers the handlers for the websocket server
+// it's a bridge between station and websocket server
+func RegisterServer(station irisStation, server Server, logger *logger.Logger) {
+	c := server.Config()
+	if c.Endpoint == "" {
+		return
+	}
 
 	websocketHandler := func(ctx context.IContext) {
 		if err := server.Upgrade(ctx); err != nil {
-			station.Logger().Panic(err)
+			logger.Panic(err)
 		}
 	}
 
@@ -42,7 +59,7 @@ func New(station irisStation, cfg ...config.Websocket) Server {
 			}
 
 			if err := server.Upgrade(ctx); err != nil {
-				station.Logger().Panic(err)
+				logger.Panic(err)
 			}
 		}
 	}
@@ -51,7 +68,6 @@ func New(station irisStation, cfg ...config.Websocket) Server {
 	// serve the client side on domain:port/iris-ws.js
 	station.StaticContent("/iris-ws.js", "application/json", clientSource)
 
-	return server
 }
 
 var clientSource = []byte(`var stringMessageType = 0;

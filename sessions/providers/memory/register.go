@@ -21,7 +21,6 @@ var (
 func register() {
 	// the actual work is here.
 	Provider.NewStore = func(sessionId string, cookieLifeDuration time.Duration) store.IStore {
-		//println("memory.go:49-> requesting new memory store with sessionid: " + sessionId)
 		return &Store{sid: sessionId, lastAccessedTime: time.Now(), values: make(map[interface{}]interface{}, 0)}
 	}
 	sessions.Register(Provider)

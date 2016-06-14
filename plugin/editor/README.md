@@ -24,7 +24,7 @@ import (
 func main(){
 	e := editor.New("username","password").Port(4444).Dir("/path/to/the/client/side/directory")
 
-	iris.Plugins().Add(e)
+	iris.Plugins.Add(e)
 
 	iris.Get("/", func (ctx *iris.Context){})
 

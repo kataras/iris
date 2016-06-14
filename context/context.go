@@ -18,7 +18,8 @@ type (
 		IContextBinder
 		IContextRequest
 		IContextResponse
-
+		SendMail(string, string, ...string) error
+		Log(string, ...interface{})
 		Reset(*fasthttp.RequestCtx)
 		GetRequestCtx() *fasthttp.RequestCtx
 		Clone() IContext
@@ -39,17 +40,18 @@ type (
 	// IContextRenderer is part of the IContext
 	IContextRenderer interface {
 		Write(string, ...interface{})
-		WriteHTML(int, string)
+		HTML(int, string)
 		// Data writes out the raw bytes as binary data.
 		Data(status int, v []byte) error
-		// HTML builds up the response from the specified template and bindings.
-		HTML(status int, name string, binding interface{}, layout ...string) error
-		// Render same as .HTML but with status to iris.StatusOK (200)
+		// RenderWithStatus builds up the response from the specified template and bindings.
+		RenderWithStatus(status int, name string, binding interface{}, layout ...string) error
+		// Render same as .RenderWithStatus but with status to iris.StatusOK (200)
 		Render(name string, binding interface{}, layout ...string) error
 		// MustRender same as .Render but returns 500 internal server http status (error) if rendering fail
 		MustRender(name string, binding interface{}, layout ...string)
-		// RenderString accepts a template filename, its context data and returns the result of the parsed template (string)
-		RenderString(name string, binding interface{}, layout ...string) (result string, err error)
+		// TemplateString accepts a template filename, its context data and returns the result of the parsed template (string)
+		// if any error returns empty string
+		TemplateString(name string, binding interface{}, layout ...string) string
 		// MarkdownString parses the (dynamic) markdown string and returns the converted html string
 		MarkdownString(markdown string) string
 		// Markdown parses and renders to the client a particular (dynamic) markdown string
@@ -86,10 +88,13 @@ type (
 		HostString() string
 		Subdomain() string
 		PathString() string
+		RequestPath(bool) string
 		RequestIP() string
 		RemoteAddr() string
 		RequestHeader(k string) string
 		PostFormValue(string) string
+		// PostFormMulti returns a slice of string from post request's data
+		PostFormMulti(string) []string
 	}
 
 	// IContextResponse is part of the IContext

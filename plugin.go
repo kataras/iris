@@ -1,128 +1,133 @@
 package iris
 
 import (
+	"sync"
+
+	"github.com/kataras/iris/errors"
+
 	"github.com/kataras/iris/logger"
 	"github.com/kataras/iris/utils"
 )
 
+var (
+	// errPluginAlreadyExists returns an error with message: 'Cannot activate the same plugin again, plugin '+plugin name[+plugin description]' is already exists'
+	errPluginAlreadyExists = errors.New("Cannot use the same plugin again, '%s[%s]' is already exists")
+	// errPluginActivate returns an error with message: 'While trying to activate plugin '+plugin name'. Trace: +specific error'
+	errPluginActivate = errors.New("While trying to activate plugin '%s'. Trace: %s")
+	// errPluginRemoveNoPlugins returns an error with message: 'No plugins are registed yet, you cannot remove a plugin from an empty list!'
+	errPluginRemoveNoPlugins = errors.New("No plugins are registed yet, you cannot remove a plugin from an empty list!")
+	// errPluginRemoveEmptyName returns an error with message: 'Plugin with an empty name cannot be removed'
+	errPluginRemoveEmptyName = errors.New("Plugin with an empty name cannot be removed")
+	// errPluginRemoveNotFound returns an error with message: 'Cannot remove a plugin which doesn't exists'
+	errPluginRemoveNotFound = errors.New("Cannot remove a plugin which doesn't exists")
+)
+
 type (
-	// IPlugin just an empty base for plugins
-	// A Plugin can be added with: .Add(PreHandleFunc(func(IRoute))) and so on... or
-	// .Add(myPlugin{}) which myPlugin is  a struct with any of the methods below or
-	// .PreHandle(PreHandleFunc), .PostHandle(func(IRoute)) and so on...
-	IPlugin interface {
+	// Plugin just an empty base for plugins
+	// A Plugin can be added with: .Add(PreListenFunc(func(*Framework))) and so on... or
+	// .Add(myPlugin{},myPlugin2{}) which myPlugin is  a struct with any of the methods below or
+	// .PostListen(func(*Framework)) and so on...
+	Plugin interface {
 	}
 
-	// IPluginGetName implements the GetName() string method
-	IPluginGetName interface {
+	// pluginGetName implements the GetName() string method
+	pluginGetName interface {
 		// GetName has to returns the name of the plugin, a name is unique
 		// name has to be not dependent from other methods of the plugin,
 		// because it is being called even before the Activate
 		GetName() string
 	}
 
-	// IPluginGetDescription implements the GetDescription() string method
-	IPluginGetDescription interface {
+	// pluginGetDescription implements the GetDescription() string method
+	pluginGetDescription interface {
 		// GetDescription has to returns the description of what the plugins is used for
 		GetDescription() string
 	}
 
-	// IPluginActivate implements the Activate(IPluginContainer) error method
-	IPluginActivate interface {
+	// pluginActivate implements the Activate(pluginContainer) error method
+	pluginActivate interface {
 		// Activate called BEFORE the plugin being added to the plugins list,
 		// if Activate returns none nil error then the plugin is not being added to the list
 		// it is being called only one time
 		//
 		// PluginContainer parameter used to add other plugins if that's necessary by the plugin
-		Activate(IPluginContainer) error
+		Activate(PluginContainer) error
 	}
-
-	// IPluginPreHandle implements the PreHandle(IRoute) method
-	IPluginPreHandle interface {
-		// PreHandle it's being called every time BEFORE a Route is registed to the Router
-		//
-		//  parameter is the Route
-		PreHandle(IRoute)
-	}
-	// PreHandleFunc implements the simple function listener for the PreHandle(IRoute)
-	PreHandleFunc func(IRoute)
-	// IPluginPostHandle implements the PostHandle(IRoute) method
-	IPluginPostHandle interface {
-		// PostHandle it's being called every time AFTER a Route successfully registed to the Router
-		//
-		// parameter is the Route
-		PostHandle(IRoute)
-	}
-	// PostHandleFunc implements the simple function listener for the PostHandle(IRoute)
-	PostHandleFunc func(IRoute)
-	// IPluginPreListen implements the PreListen(*Iris) method
-	IPluginPreListen interface {
+	// pluginPreListen implements the PreListen(*Framework) method
+	pluginPreListen interface {
 		// PreListen it's being called only one time, BEFORE the Server is started (if .Listen called)
 		// is used to do work at the time all other things are ready to go
 		//  parameter is the station
-		PreListen(*Iris)
+		PreListen(*Framework)
 	}
-	// PreListenFunc implements the simple function listener for the PreListen(*Iris)
-	PreListenFunc func(*Iris)
-	// IPluginPostListen implements the PostListen(*Iris) method
-	IPluginPostListen interface {
+	// PreListenFunc implements the simple function listener for the PreListen(*Framework)
+	PreListenFunc func(*Framework)
+	// pluginPostListen implements the PostListen(*Framework) method
+	pluginPostListen interface {
 		// PostListen it's being called only one time, AFTER the Server is started (if .Listen called)
 		// parameter is the station
-		PostListen(*Iris)
+		PostListen(*Framework)
 	}
-	// PostListenFunc implements the simple function listener for the PostListen(*Iris)
-	PostListenFunc func(*Iris)
-	// IPluginPreClose implements the PreClose(*Iris) method
-	IPluginPreClose interface {
+	// PostListenFunc implements the simple function listener for the PostListen(*Framework)
+	PostListenFunc func(*Framework)
+	// pluginPreClose implements the PreClose(*Framework) method
+	pluginPreClose interface {
 		// PreClose it's being called only one time, BEFORE the Iris .Close method
 		// any plugin cleanup/clear memory happens here
 		//
 		// The plugin is deactivated after this state
-		PreClose(*Iris)
+		PreClose(*Framework)
 	}
-	// PreCloseFunc implements the simple function listener for the PreClose(*Iris)
-	PreCloseFunc func(*Iris)
+	// PreCloseFunc implements the simple function listener for the PreClose(*Framework)
+	PreCloseFunc func(*Framework)
 
-	// IPluginPreDownload It's for the future, not being used, I need to create
+	// pluginPreDownload It's for the future, not being used, I need to create
 	// and return an ActivatedPlugin type which will have it's methods, and pass it on .Activate
 	// but now we return the whole pluginContainer, which I can't determinate which plugin tries to
 	// download something, so we will leave it here for the future.
-	IPluginPreDownload interface {
+	pluginPreDownload interface {
 		// PreDownload it's being called every time a plugin tries to download something
 		//
 		// first parameter is the plugin
 		// second parameter is the download url
 		// must return a boolean, if false then the plugin is not permmited to download this file
-		PreDownload(plugin IPlugin, downloadURL string) // bool
+		PreDownload(plugin Plugin, downloadURL string) // bool
 	}
 
-	// PreDownloadFunc implements the simple function listener for the PreDownload(IPlugin,string)
-	PreDownloadFunc func(IPlugin, string)
+	// PreDownloadFunc implements the simple function listener for the PreDownload(plugin,string)
+	PreDownloadFunc func(Plugin, string)
 
-	// IPluginContainer is the interface which the PluginContainer should implements
-	IPluginContainer interface {
-		Add(plugin IPlugin) error
-		Remove(pluginName string) error
-		GetName(plugin IPlugin) string
-		GetDescription(plugin IPlugin) string
-		GetByName(pluginName string) IPlugin
-		Printf(format string, a ...interface{})
-		DoPreHandle(route IRoute)
-		DoPostHandle(route IRoute)
-		DoPreListen(station *Iris)
-		DoPostListen(station *Iris)
-		DoPreClose(station *Iris)
-		DoPreDownload(pluginTryToDownload IPlugin, downloadURL string)
-		GetAll() []IPlugin
+	// PluginContainer is the interface which the pluginContainer should implements
+	PluginContainer interface {
+		Add(...Plugin) error
+		Remove(string) error
+		GetName(Plugin) string
+		GetDescription(Plugin) string
+		GetByName(string) Plugin
+		Printf(string, ...interface{})
+		PreListen(PreListenFunc)
+		DoPreListen(*Framework)
+		DoPreListenParallel(*Framework)
+		PostListen(PostListenFunc)
+		DoPostListen(*Framework)
+		PreClose(PreCloseFunc)
+		DoPreClose(*Framework)
+		PreDownload(PreDownloadFunc)
+		DoPreDownload(Plugin, string)
+		// custom event callbacks
+		On(string, ...func())
+		Call(string)
+		//
+		GetAll() []Plugin
 		// GetDownloader is the only one module that is used and fire listeners at the same time in this file
-		GetDownloader() IDownloadManager
+		GetDownloader() PluginDownloadManager
 	}
-	// IDownloadManager is the interface which the DownloadManager should implements
-	IDownloadManager interface {
-		DirectoryExists(dir string) bool
-		DownloadZip(zipURL string, targetDir string) (string, error)
-		Unzip(archive string, target string) (string, error)
-		Remove(filePath string) error
+	// PluginDownloadManager is the interface which the DownloadManager should implements
+	PluginDownloadManager interface {
+		DirectoryExists(string) bool
+		DownloadZip(string, string) (string, error)
+		Unzip(string, string) (string, error)
+		Remove(string) error
 		// install is just the flow of: downloadZip -> unzip -> removeFile(zippedFile)
 		// accepts 2 parameters
 		//
@@ -136,37 +141,23 @@ type (
 		Install(remoteFileZip string, targetDirectory string) (string, error)
 	}
 
-	// DownloadManager is just a struch which exports the util's downloadZip, directoryExists, unzip methods, used by the plugins via the PluginContainer
-	DownloadManager struct {
+	// pluginDownloadManager is just a struch which exports the util's downloadZip, directoryExists, unzip methods, used by the plugins via the pluginContainer
+	pluginDownloadManager struct {
 	}
 )
 
-// convert the functions to IPlugin
-
-// PreHandle it's being called every time BEFORE a Route is registed to the Router
-//
-//  parameter is the Route
-func (fn PreHandleFunc) PreHandle(route IRoute) {
-	fn(route)
-}
-
-// PostHandle it's being called every time AFTER a Route successfully registed to the Router
-//
-// parameter is the Route
-func (fn PostHandleFunc) PostHandle(route IRoute) {
-	fn(route)
-}
+// convert the functions to plugin
 
 // PreListen it's being called only one time, BEFORE the Server is started (if .Listen called)
 // is used to do work at the time all other things are ready to go
 //  parameter is the station
-func (fn PreListenFunc) PreListen(station *Iris) {
+func (fn PreListenFunc) PreListen(station *Framework) {
 	fn(station)
 }
 
 // PostListen it's being called only one time, AFTER the Server is started (if .Listen called)
 // parameter is the station
-func (fn PostListenFunc) PostListen(station *Iris) {
+func (fn PostListenFunc) PostListen(station *Framework) {
 	fn(station)
 }
 
@@ -174,7 +165,7 @@ func (fn PostListenFunc) PostListen(station *Iris) {
 // any plugin cleanup/clear memory happens here
 //
 // The plugin is deactivated after this state
-func (fn PreCloseFunc) PreClose(station *Iris) {
+func (fn PreCloseFunc) PreClose(station *Framework) {
 	fn(station)
 }
 
@@ -183,83 +174,90 @@ func (fn PreCloseFunc) PreClose(station *Iris) {
 // first parameter is the plugin
 // second parameter is the download url
 // must return a boolean, if false then the plugin is not permmited to download this file
-func (fn PreDownloadFunc) PreDownload(pl IPlugin, downloadURL string) {
+func (fn PreDownloadFunc) PreDownload(pl Plugin, downloadURL string) {
 	fn(pl, downloadURL)
 }
 
 //
 
-var _ IDownloadManager = &DownloadManager{}
-var _ IPluginContainer = &PluginContainer{}
+var _ PluginDownloadManager = &pluginDownloadManager{}
+var _ PluginContainer = &pluginContainer{}
 
 // DirectoryExists returns true if a given local directory exists
-func (d *DownloadManager) DirectoryExists(dir string) bool {
+func (d *pluginDownloadManager) DirectoryExists(dir string) bool {
 	return utils.DirectoryExists(dir)
 }
 
 // DownloadZip downlodas a zip to the given local path location
-func (d *DownloadManager) DownloadZip(zipURL string, targetDir string) (string, error) {
+func (d *pluginDownloadManager) DownloadZip(zipURL string, targetDir string) (string, error) {
 	return utils.DownloadZip(zipURL, targetDir)
 }
 
 // Unzip unzips a zip to the given local path location
-func (d *DownloadManager) Unzip(archive string, target string) (string, error) {
+func (d *pluginDownloadManager) Unzip(archive string, target string) (string, error) {
 	return utils.Unzip(archive, target)
 }
 
 // Remove deletes/removes/rm a file
-func (d *DownloadManager) Remove(filePath string) error {
+func (d *pluginDownloadManager) Remove(filePath string) error {
 	return utils.RemoveFile(filePath)
 }
 
 // Install is just the flow of the: DownloadZip->Unzip->Remove the zip
-func (d *DownloadManager) Install(remoteFileZip string, targetDirectory string) (string, error) {
+func (d *pluginDownloadManager) Install(remoteFileZip string, targetDirectory string) (string, error) {
 	return utils.Install(remoteFileZip, targetDirectory)
 }
 
-// PluginContainer is the base container of all Iris, registed plugins
-type PluginContainer struct {
-	activatedPlugins []IPlugin
-	downloader       *DownloadManager
+// pluginContainer is the base container of all Iris, registed plugins
+type pluginContainer struct {
+	activatedPlugins []Plugin
+	customEvents     map[string][]func()
+	downloader       *pluginDownloadManager
 	logger           *logger.Logger
 }
 
 // Add activates the plugins and if succeed then adds it to the activated plugins list
-func (p *PluginContainer) Add(plugin IPlugin) error {
-	if p.activatedPlugins == nil {
-		p.activatedPlugins = make([]IPlugin, 0)
-	}
-
-	// Check if it's a plugin first, has Activate GetName
-
-	// Check if the plugin already exists
-	pName := p.GetName(plugin)
-	if pName != "" && p.GetByName(pName) != nil {
-		return ErrPluginAlreadyExists.Format(pName, p.GetDescription(plugin))
-	}
-	// Activate the plugin, if no error then add it to the plugins
-	if pluginObj, ok := plugin.(IPluginActivate); ok {
-		err := pluginObj.Activate(p)
-		if err != nil {
-			return ErrPluginActivate.Format(pName, err.Error())
+func (p *pluginContainer) Add(plugins ...Plugin) error {
+	for _, plugin := range plugins {
+		if p.activatedPlugins == nil {
+			p.activatedPlugins = make([]Plugin, 0)
 		}
-	}
 
-	// All ok, add it to the plugins list
-	p.activatedPlugins = append(p.activatedPlugins, plugin)
+		// Check if it's a plugin first, has Activate GetName
+
+		// Check if the plugin already exists
+		pName := p.GetName(plugin)
+		if pName != "" && p.GetByName(pName) != nil {
+			return errPluginAlreadyExists.Format(pName, p.GetDescription(plugin))
+		}
+		// Activate the plugin, if no error then add it to the plugins
+		if pluginObj, ok := plugin.(pluginActivate); ok {
+			err := pluginObj.Activate(p)
+			if err != nil {
+				return errPluginActivate.Format(pName, err.Error())
+			}
+		}
+
+		// All ok, add it to the plugins list
+		p.activatedPlugins = append(p.activatedPlugins, plugin)
+	}
 	return nil
+}
+
+func (p *pluginContainer) Reset() {
+
 }
 
 // Remove removes a plugin by it's name, if pluginName is empty "" or no plugin found with this name, then nothing is removed and a specific error is returned.
 // This doesn't calls the PreClose method
-func (p *PluginContainer) Remove(pluginName string) error {
+func (p *pluginContainer) Remove(pluginName string) error {
 	if p.activatedPlugins == nil {
-		return ErrPluginRemoveNoPlugins.Return()
+		return errPluginRemoveNoPlugins.Return()
 	}
 
 	if pluginName == "" {
 		//return error: cannot delete an unamed plugin
-		return ErrPluginRemoveEmptyName.Return()
+		return errPluginRemoveEmptyName.Return()
 	}
 
 	indexToRemove := -1
@@ -269,7 +267,7 @@ func (p *PluginContainer) Remove(pluginName string) error {
 		}
 	}
 	if indexToRemove == -1 { //if index stills -1 then no plugin was found with this name, just return an error. it is not a critical error.
-		return ErrPluginRemoveNotFound.Return()
+		return errPluginRemoveNotFound.Return()
 	}
 
 	p.activatedPlugins = append(p.activatedPlugins[:indexToRemove], p.activatedPlugins[indexToRemove+1:]...)
@@ -278,29 +276,29 @@ func (p *PluginContainer) Remove(pluginName string) error {
 }
 
 // GetName returns the name of a plugin, if no GetName() implemented it returns an empty string ""
-func (p *PluginContainer) GetName(plugin IPlugin) string {
-	if pluginObj, ok := plugin.(IPluginGetName); ok {
+func (p *pluginContainer) GetName(plugin Plugin) string {
+	if pluginObj, ok := plugin.(pluginGetName); ok {
 		return pluginObj.GetName()
 	}
 	return ""
 }
 
 // GetDescription returns the name of a plugin, if no GetDescription() implemented it returns an empty string ""
-func (p *PluginContainer) GetDescription(plugin IPlugin) string {
-	if pluginObj, ok := plugin.(IPluginGetDescription); ok {
+func (p *pluginContainer) GetDescription(plugin Plugin) string {
+	if pluginObj, ok := plugin.(pluginGetDescription); ok {
 		return pluginObj.GetDescription()
 	}
 	return ""
 }
 
 // GetByName returns a plugin instance by it's name
-func (p *PluginContainer) GetByName(pluginName string) IPlugin {
+func (p *pluginContainer) GetByName(pluginName string) Plugin {
 	if p.activatedPlugins == nil {
 		return nil
 	}
 
 	for i := range p.activatedPlugins {
-		if pluginObj, ok := p.activatedPlugins[i].(IPluginGetName); ok {
+		if pluginObj, ok := p.activatedPlugins[i].(pluginGetName); ok {
 			if pluginObj.GetName() == pluginName {
 				return pluginObj
 			}
@@ -311,114 +309,130 @@ func (p *PluginContainer) GetByName(pluginName string) IPlugin {
 }
 
 // GetAll returns all activated plugins
-func (p *PluginContainer) GetAll() []IPlugin {
+func (p *pluginContainer) GetAll() []Plugin {
 	return p.activatedPlugins
 }
 
 // GetDownloader returns the download manager
-func (p *PluginContainer) GetDownloader() IDownloadManager {
+func (p *pluginContainer) GetDownloader() PluginDownloadManager {
 	// create it if and only if it used somewhere
 	if p.downloader == nil {
-		p.downloader = &DownloadManager{}
+		p.downloader = &pluginDownloadManager{}
 	}
 	return p.downloader
 }
 
 // Printf sends plain text to any registed logger (future), some plugins maybe want use this method
 // maybe at the future I change it, instead of sync even-driven to async channels...
-func (p *PluginContainer) Printf(format string, a ...interface{}) {
+func (p *pluginContainer) Printf(format string, a ...interface{}) {
 	if p.logger != nil {
 		p.logger.Printf(format, a...) //for now just this.
 	}
 
 }
 
-// PreHandle adds a PreHandle plugin-function to the plugin flow container
-func (p *PluginContainer) PreHandle(fn PreHandleFunc) {
-	p.Add(fn)
-}
-
-// DoPreHandle raise all plugins which has the PreHandle method
-func (p *PluginContainer) DoPreHandle(route IRoute) {
-	for i := range p.activatedPlugins {
-		// check if this method exists on our plugin obj, these are optionaly and call it
-		if pluginObj, ok := p.activatedPlugins[i].(IPluginPreHandle); ok {
-			pluginObj.PreHandle(route)
-		}
-	}
-}
-
-// PostHandle adds a PostHandle plugin-function to the plugin flow container
-func (p *PluginContainer) PostHandle(fn PostHandleFunc) {
-	p.Add(fn)
-}
-
-// DoPostHandle raise all plugins which has the DoPostHandle method
-func (p *PluginContainer) DoPostHandle(route IRoute) {
-	for i := range p.activatedPlugins {
-		// check if this method exists on our plugin obj, these are optionaly and call it
-		if pluginObj, ok := p.activatedPlugins[i].(IPluginPostHandle); ok {
-			pluginObj.PostHandle(route)
-		}
-	}
-}
-
 // PreListen adds a PreListen plugin-function to the plugin flow container
-func (p *PluginContainer) PreListen(fn PreListenFunc) {
+func (p *pluginContainer) PreListen(fn PreListenFunc) {
 	p.Add(fn)
 }
 
 // DoPreListen raise all plugins which has the DoPreListen method
-func (p *PluginContainer) DoPreListen(station *Iris) {
+func (p *pluginContainer) DoPreListen(station *Framework) {
 	for i := range p.activatedPlugins {
 		// check if this method exists on our plugin obj, these are optionaly and call it
-		if pluginObj, ok := p.activatedPlugins[i].(IPluginPreListen); ok {
+		if pluginObj, ok := p.activatedPlugins[i].(pluginPreListen); ok {
 			pluginObj.PreListen(station)
 		}
 	}
 }
 
+// DoPreListenParallel raise all PreListen plugins 'at the same time'
+func (p *pluginContainer) DoPreListenParallel(station *Framework) {
+	var wg sync.WaitGroup
+
+	for _, plugin := range p.activatedPlugins {
+		wg.Add(1)
+		// check if this method exists on our plugin obj, these are optionaly and call it
+		go func(plugin Plugin) {
+			if pluginObj, ok := plugin.(pluginPreListen); ok {
+				pluginObj.PreListen(station)
+			}
+
+			wg.Done()
+
+		}(plugin)
+	}
+
+	wg.Wait()
+
+}
+
 // PostListen adds a PostListen plugin-function to the plugin flow container
-func (p *PluginContainer) PostListen(fn PostListenFunc) {
+func (p *pluginContainer) PostListen(fn PostListenFunc) {
 	p.Add(fn)
 }
 
 // DoPostListen raise all plugins which has the DoPostListen method
-func (p *PluginContainer) DoPostListen(station *Iris) {
+func (p *pluginContainer) DoPostListen(station *Framework) {
 	for i := range p.activatedPlugins {
 		// check if this method exists on our plugin obj, these are optionaly and call it
-		if pluginObj, ok := p.activatedPlugins[i].(IPluginPostListen); ok {
+		if pluginObj, ok := p.activatedPlugins[i].(pluginPostListen); ok {
 			pluginObj.PostListen(station)
 		}
 	}
 }
 
 // PreClose adds a PreClose plugin-function to the plugin flow container
-func (p *PluginContainer) PreClose(fn PreCloseFunc) {
+func (p *pluginContainer) PreClose(fn PreCloseFunc) {
 	p.Add(fn)
 }
 
 // DoPreClose raise all plugins which has the DoPreClose method
-func (p *PluginContainer) DoPreClose(station *Iris) {
+func (p *pluginContainer) DoPreClose(station *Framework) {
 	for i := range p.activatedPlugins {
 		// check if this method exists on our plugin obj, these are optionaly and call it
-		if pluginObj, ok := p.activatedPlugins[i].(IPluginPreClose); ok {
+		if pluginObj, ok := p.activatedPlugins[i].(pluginPreClose); ok {
 			pluginObj.PreClose(station)
 		}
 	}
 }
 
 // PreDownload adds a PreDownload plugin-function to the plugin flow container
-func (p *PluginContainer) PreDownload(fn PreDownloadFunc) {
+func (p *pluginContainer) PreDownload(fn PreDownloadFunc) {
 	p.Add(fn)
 }
 
 // DoPreDownload raise all plugins which has the DoPreDownload method
-func (p *PluginContainer) DoPreDownload(pluginTryToDownload IPlugin, downloadURL string) {
+func (p *pluginContainer) DoPreDownload(pluginTryToDownload Plugin, downloadURL string) {
 	for i := range p.activatedPlugins {
 		// check if this method exists on our plugin obj, these are optionaly and call it
-		if pluginObj, ok := p.activatedPlugins[i].(IPluginPreDownload); ok {
+		if pluginObj, ok := p.activatedPlugins[i].(pluginPreDownload); ok {
 			pluginObj.PreDownload(pluginTryToDownload, downloadURL)
 		}
+	}
+}
+
+// On registers a custom event
+// these are not registed as plugins, they are hidden events
+func (p *pluginContainer) On(name string, fns ...func()) {
+	if p.customEvents == nil {
+		p.customEvents = make(map[string][]func(), 0)
+	}
+	if p.customEvents[name] == nil {
+		p.customEvents[name] = make([]func(), 0)
+	}
+	p.customEvents[name] = append(p.customEvents[name], fns...)
+}
+
+// Call fires the custom event
+func (p *pluginContainer) Call(name string) {
+	if p.customEvents == nil {
+		return
+	}
+	if fns := p.customEvents[name]; fns != nil {
+		for _, fn := range fns {
+			fn()
+		}
+
 	}
 }

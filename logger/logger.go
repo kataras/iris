@@ -17,7 +17,7 @@ var (
 
 // Logger the logger
 type Logger struct {
-	config    config.Logger
+	config    *config.Logger
 	underline *color.Color
 }
 
@@ -30,7 +30,7 @@ func attr(sgr int) color.Attribute {
 func New(c config.Logger) *Logger {
 	color.Output = colorable.NewColorable(c.Out)
 
-	l := &Logger{c, color.New(attr(c.ColorBgDefault), attr(c.ColorFgDefault), color.Bold)}
+	l := &Logger{&c, color.New(attr(c.ColorBgDefault), attr(c.ColorFgDefault), color.Bold)}
 	return l
 }
 
@@ -47,7 +47,7 @@ func (l *Logger) IsEnabled() bool {
 // ResetColors sets the colors to the default
 // this func is called every time a success, info, warning, or danger message is printed
 func (l *Logger) ResetColors() {
-	l.underline.Add(attr(l.config.ColorBgDefault), attr(l.config.ColorFgBanner), color.Bold)
+	l.underline.Add(attr(l.config.ColorBgDefault), attr(l.config.ColorFgDefault))
 }
 
 // PrintBanner prints a text (banner) with BannerFgColor, BannerBgColor and a success message at the end
@@ -83,6 +83,7 @@ func (l *Logger) Printf(format string, a ...interface{}) {
 // Arguments are handled in the manner of fmt.Print.
 func (l *Logger) Print(a interface{}) {
 	if !l.config.Disabled {
+		l.ResetColors()
 		l.Printf("%#v", a)
 	}
 }
@@ -125,7 +126,6 @@ func (l *Logger) Sucessf(format string, a ...interface{}) {
 	if !l.config.Disabled {
 		l.underline.Add(attr(l.config.ColorBgSuccess), attr(l.config.ColorFgSuccess))
 		l.Printf(format, a...)
-		l.ResetColors()
 	}
 }
 
@@ -135,7 +135,6 @@ func (l *Logger) Infof(format string, a ...interface{}) {
 	if !l.config.Disabled {
 		l.underline.Add(attr(l.config.ColorBgInfo), attr(l.config.ColorFgInfo))
 		l.Printf(format, a...)
-		l.ResetColors()
 	}
 }
 
@@ -145,7 +144,6 @@ func (l *Logger) Warningf(format string, a ...interface{}) {
 	if !l.config.Disabled {
 		l.underline.Add(attr(l.config.ColorBgWarning), attr(l.config.ColorFgWarning))
 		l.Printf(format, a...)
-		l.ResetColors()
 	}
 }
 
@@ -155,7 +153,6 @@ func (l *Logger) Dangerf(format string, a ...interface{}) {
 	if !l.config.Disabled {
 		l.underline.Add(attr(l.config.ColorBgDanger), attr(l.config.ColorFgDanger))
 		l.Printf(format, a...)
-		l.ResetColors()
 	}
 }
 
@@ -165,6 +162,5 @@ func (l *Logger) Otherf(format string, a ...interface{}) {
 	if !l.config.Disabled {
 		l.underline.Add(attr(l.config.ColorBgOther), attr(l.config.ColorFgOther))
 		l.Printf(format, a...)
-		l.ResetColors()
 	}
 }

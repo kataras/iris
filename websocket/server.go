@@ -20,6 +20,8 @@ type (
 		Upgrade(context.IContext) error
 		// OnConnection registers a callback which fires when a connection/client is connected to the server
 		OnConnection(ConnectionFunc)
+		// Config returns a pointer to server's configs
+		Config() *config.Websocket
 	}
 
 	// roomPayload is used as payload from the connection to the server
@@ -57,9 +59,10 @@ var _ Server = &server{}
 
 // server implementation
 
-func newServer(c config.Websocket) *server {
+// newServer creates a websocket server and returns it
+func newServer(c *config.Websocket) *server {
 	s := &server{
-		config:                &c,
+		config:                c,
 		put:                   make(chan *connection),
 		free:                  make(chan *connection),
 		connections:           make(map[string]*connection),
@@ -72,8 +75,11 @@ func newServer(c config.Websocket) *server {
 
 	s.upgrader = websocket.New(s.handleConnection)
 	go s.serve() // start the server automatically
-
 	return s
+}
+
+func (s *server) Config() *config.Websocket {
+	return s.config
 }
 
 func (s *server) Upgrade(ctx context.IContext) error {

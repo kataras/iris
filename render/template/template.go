@@ -132,11 +132,23 @@ func RegisterSharedFunc(name string, fn interface{}) {
 	sharedFuncs[name] = fn
 }
 
+// RegisterSharedFuncs registers functionalities that should be inherited from all supported template engines
+func RegisterSharedFuncs(theFuncs map[string]interface{}) {
+	if sharedFuncs == nil || len(sharedFuncs) == 0 {
+		sharedFuncs = theFuncs
+		return
+	}
+	for k, v := range theFuncs {
+		sharedFuncs[k] = v
+	}
+
+}
+
 // Render renders a template using the context's writer
 func (t *Template) Render(ctx context.IContext, name string, binding interface{}, layout ...string) (err error) {
 
 	if t == nil { // No engine was given but .Render was called
-		ctx.WriteHTML(403, "<b> Iris </b> <br/> Templates are disabled via config.NoEngine, check your iris' configuration please.")
+		ctx.HTML(403, "<b> Iris </b> <br/> Templates are disabled via config.NoEngine, check your iris' configuration please.")
 		return fmt.Errorf("[IRIS TEMPLATES] Templates are disabled via config.NoEngine, check your iris' configuration please.\n")
 	}
 

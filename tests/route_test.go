@@ -7,7 +7,6 @@ import (
 	"github.com/gavv/httpexpect"
 	"github.com/gavv/httpexpect/fasthttpexpect"
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/config"
 )
 
 type param struct {
@@ -59,7 +58,6 @@ var routes = []route{
 
 func TestRouter(t *testing.T) {
 	api := iris.New()
-
 	for idx := range routes {
 		r := routes[idx]
 		if r.Register {
@@ -88,11 +86,10 @@ func TestRouter(t *testing.T) {
 		}
 	}
 
-	api.PreListen(config.Server{ListeningAddr: ""})
 	// create httpexpect instance that will call fasthtpp.RequestHandler directly
 	e := httpexpect.WithConfig(httpexpect.Config{
 		Reporter: httpexpect.NewAssertReporter(t),
-		Client:   fasthttpexpect.NewBinder(api.ServeRequest),
+		Client:   fasthttpexpect.NewBinder(api.NoListen().Handler),
 	})
 
 	// run the tests (1)
@@ -107,15 +104,14 @@ func TestRouter(t *testing.T) {
 
 func TestPathEscape(t *testing.T) {
 	api := iris.New()
+
 	api.Get("/details/:name", func(ctx *iris.Context) {
 		name := ctx.Param("name")
 		highlight := ctx.URLParam("highlight")
 		ctx.Text(iris.StatusOK, fmt.Sprintf("name=%s,highlight=%s", name, highlight))
 	})
 
-	api.PreListen(config.Server{ListeningAddr: ""})
-	api.PostListen()
-	e := httpexpect.WithConfig(httpexpect.Config{Reporter: httpexpect.NewAssertReporter(t), Client: fasthttpexpect.NewBinder(api.ServeRequest)})
+	e := httpexpect.WithConfig(httpexpect.Config{Reporter: httpexpect.NewAssertReporter(t), Client: fasthttpexpect.NewBinder(api.NoListen().Handler)})
 
 	e.Request("GET", "/details/Sakamoto desu ga?highlight=text").Expect().Status(iris.StatusOK).Body().Equal("name=Sakamoto desu ga,highlight=text")
 }

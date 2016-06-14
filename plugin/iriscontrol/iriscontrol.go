@@ -6,8 +6,6 @@ import (
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/middleware/basicauth"
-	"github.com/kataras/iris/plugin/routesinfo"
-	"github.com/kataras/iris/server"
 )
 
 // Name the name(string) of this plugin which is Iris Control
@@ -16,17 +14,17 @@ const Name = "Iris Control"
 type irisControlPlugin struct {
 	options config.IrisControl
 	// the pluginContainer is the container which keeps this plugin from the main user's iris instance
-	pluginContainer iris.IPluginContainer
+	pluginContainer iris.PluginContainer
 	// the station object of the main  user's iris instance
-	station *iris.Iris
+	station *iris.Framework
 	//a copy of the server which the main user's iris is listening for
-	stationServer *server.Server
+	stationServer *iris.Server
 
 	// the server is this plugin's server object, it is managed by this plugin only
-	server *iris.Iris
+	server *iris.Framework
 	//
 	//infos
-	routes  *routesinfo.Plugin
+	routes  []iris.Route
 	plugins []PluginInfo
 	// last time the server was on
 	lastOperationDate time.Time
@@ -37,7 +35,7 @@ type irisControlPlugin struct {
 
 // New returns the plugin which is ready-to-use inside iris.Plugin method
 // receives config.IrisControl
-func New(cfg ...config.IrisControl) iris.IPlugin {
+func New(cfg ...config.IrisControl) iris.Plugin {
 	c := config.DefaultIrisControl()
 	if len(cfg) > 0 {
 		c = cfg[0]
@@ -48,21 +46,20 @@ func New(cfg ...config.IrisControl) iris.IPlugin {
 
 	auth := basicauth.Default(c.Users)
 
-	return &irisControlPlugin{options: c, authFunc: auth, routes: routesinfo.RoutesInfo()}
+	return &irisControlPlugin{options: c, authFunc: auth, routes: make([]iris.Route, 0)}
 }
 
 // Web set the options for the plugin and return the plugin which is ready-to-use inside iris.Plugin method
 // first parameter is port
 // second parameter is map of users (username:password)
-func Web(port int, users map[string]string) iris.IPlugin {
-	return New(config.IrisControl{port, users})
+func Web(port int, users map[string]string) iris.Plugin {
+	return New(config.IrisControl{Port: port, Users: users})
 }
 
 // implement the base IPlugin
 
-func (i *irisControlPlugin) Activate(container iris.IPluginContainer) error {
+func (i *irisControlPlugin) Activate(container iris.PluginContainer) error {
 	i.pluginContainer = container
-	container.Add(i.routes) // add the routesinfo plugin to the main server
 	return nil
 }
 
@@ -78,25 +75,21 @@ func (i irisControlPlugin) GetDescription() string {
 
 // implement the rest of the plugin
 
-// PostHandle
-func (i *irisControlPlugin) PostHandle(route iris.IRoute) {
-
-}
-
 // PostListen sets the station object after the main server starts
 // starts the actual work of the plugin
-func (i *irisControlPlugin) PostListen(s *iris.Iris) {
+func (i *irisControlPlugin) PostListen(s *iris.Framework) {
 	//if the first time, because other times start/stop of the server so listen and no listen will be only from the control panel
 	if i.station == nil {
 		i.station = s
-		i.stationServer = i.station.Server()
+		i.stationServer = i.station.HTTPServer
 		i.lastOperationDate = time.Now()
+		i.routes = s.Lookups()
 		i.startControlPanel()
 	}
 
 }
 
-func (i *irisControlPlugin) PreClose(s *iris.Iris) {
+func (i *irisControlPlugin) PreClose(s *iris.Framework) {
 	// Do nothing. This is a wrapper of the main server if we destroy when users stop the main server then we cannot continue the control panel i.Destroy()
 }
 

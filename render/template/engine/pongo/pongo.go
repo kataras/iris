@@ -152,15 +152,11 @@ func getPongoContext(templateData interface{}) pongo2.Context {
 		return nil
 	}
 
-	if v, isMap := templateData.(map[string]interface{}); isMap {
-		return v
-	}
-
 	if contextData, isPongoContext := templateData.(pongo2.Context); isPongoContext {
 		return contextData
 	}
 
-	return nil
+	return templateData.(map[string]interface{})
 }
 
 func (p *Engine) fromCache(relativeName string) *pongo2.Template {

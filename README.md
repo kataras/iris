@@ -6,7 +6,7 @@
 [Travis]: http://travis-ci.org/kataras/iris
 [License Widget]: https://img.shields.io/badge/license-Apache%20License%202.0-E91E63.svg?style=flat-square
 [License]: https://github.com/kataras/iris/blob/master/LICENSE
-[Release Widget]: https://img.shields.io/badge/release-v3.0.0--beta.4-blue.svg?style=flat-square
+[Release Widget]: https://img.shields.io/badge/release-v3.0.0--rc.1-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/iris/releases
 [Gitter Widget]: https://img.shields.io/badge/chat-on%20gitter-00BCD4.svg?style=flat-square
 [Gitter]: https://gitter.im/kataras/iris
@@ -18,12 +18,7 @@
 [Language]: http://golang.org
 [Platform Widget]: https://img.shields.io/badge/platform-Any--OS-gray.svg?style=flat-square
 
-The fastest backend web framework for Go, provides robust set of features.
-
-```sh
-$ which -a motivation-counter
-Stars | https://github.com/kataras/iris/stargazers
-```
+the fastest backend web framework for Go, provides robust set of features.
 
 [![Benchmark Wizzard Processing Time Horizontal Graph](https://raw.githubusercontent.com/iris-contrib/website/cf71811e6acb2f9bf1e715e25660392bf090b923/assets/benchmark_horizontal_transparent.png)](#benchmarks)
 
@@ -83,7 +78,7 @@ Docs & Community
 
 - Take a look at the [examples](https://github.com/iris-contrib/examples)
 
-
+- If for some reason your old code doesn't runs, view the [HISTORY](https://github.com//kataras/iris/tree/master/HISTORY.md)
 
 
 If you'd like to discuss this package, or ask questions about it, feel free to
@@ -123,7 +118,7 @@ Iris suggests you to use [this](https://github.com/gavv/httpexpect) new  suite t
 Versioning
 ------------
 
-Current: **v3.0.0-beta.4**
+Current: **v3.0.0-rc.1**
 >  Iris is an active project
 
 

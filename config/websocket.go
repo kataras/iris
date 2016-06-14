@@ -43,8 +43,8 @@ type Websocket struct {
 }
 
 // DefaultWebsocket returns the default config for iris-ws websocket package
-func DefaultWebsocket() Websocket {
-	return Websocket{
+func DefaultWebsocket() *Websocket {
+	return &Websocket{
 		WriteTimeout:   DefaultWriteTimeout,
 		PongTimeout:    DefaultPongTimeout,
 		PingPeriod:     DefaultPingPeriod,
@@ -55,11 +55,11 @@ func DefaultWebsocket() Websocket {
 }
 
 // Merge merges the default with the given config and returns the result
-func (c Websocket) Merge(cfg []Websocket) (config Websocket) {
+func (c *Websocket) Merge(cfg []*Websocket) (config *Websocket) {
 
 	if len(cfg) > 0 {
 		config = cfg[0]
-		mergo.Merge(&config, c)
+		mergo.Merge(config, c)
 	} else {
 		_default := c
 		config = _default
@@ -69,10 +69,10 @@ func (c Websocket) Merge(cfg []Websocket) (config Websocket) {
 }
 
 // MergeSingle merges the default with the given config and returns the result
-func (c Websocket) MergeSingle(cfg Websocket) (config Websocket) {
+func (c *Websocket) MergeSingle(cfg *Websocket) (config *Websocket) {
 
 	config = cfg
-	mergo.Merge(&config, c)
+	mergo.Merge(config, c)
 
 	return
 }

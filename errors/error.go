@@ -19,7 +19,7 @@ func (e *Error) Error() string {
 
 // Format returns a formatted new error based on the arguments
 func (e *Error) Format(args ...interface{}) error {
-	return fmt.Errorf(e.message, args)
+	return fmt.Errorf(e.message, args...)
 }
 
 // With does the same thing as Format but it receives an error type which if it's nil it returns a nil error
@@ -33,7 +33,7 @@ func (e *Error) With(err error) error {
 
 // Return returns the actual error as it is
 func (e *Error) Return() error {
-	return fmt.Errorf(e.message)
+	return e.Format()
 }
 
 // Panic output the message and after panics

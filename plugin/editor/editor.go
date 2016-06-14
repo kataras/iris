@@ -11,10 +11,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/iris-contrib/npm"
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/logger"
-	"github.com/kataras/iris/npm"
 	"github.com/kataras/iris/utils"
 )
 
@@ -85,13 +85,13 @@ func (e *Plugin) GetDescription() string {
 }
 
 // PreListen runs before the server's listens, saves the keyfile,certfile and the host from the Iris station to listen for
-func (e *Plugin) PreListen(s *iris.Iris) {
-	e.logger = s.Logger()
-	e.keyfile = s.Server().Config.KeyFile
-	e.certfile = s.Server().Config.CertFile
+func (e *Plugin) PreListen(s *iris.Framework) {
+	e.logger = s.Logger
+	e.keyfile = s.Config.Server.KeyFile
+	e.certfile = s.Config.Server.CertFile
 
 	if e.config.Host == "" {
-		h := s.Server().Config.ListeningAddr
+		h := s.Config.Server.ListeningAddr
 
 		if idx := strings.Index(h, ":"); idx >= 0 {
 			h = h[0:idx]
@@ -107,7 +107,7 @@ func (e *Plugin) PreListen(s *iris.Iris) {
 }
 
 // PreClose kills the editor's server when Iris is closed
-func (e *Plugin) PreClose(s *iris.Iris) {
+func (e *Plugin) PreClose(s *iris.Framework) {
 	if e.process != nil {
 		err := e.process.Kill()
 		if err != nil {

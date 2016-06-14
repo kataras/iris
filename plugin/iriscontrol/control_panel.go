@@ -7,7 +7,6 @@ import (
 
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/config"
-	"github.com/kataras/iris/plugin/routesinfo"
 )
 
 var pathSeperator = string(os.PathSeparator)
@@ -27,13 +26,13 @@ func (i *irisControlPlugin) startControlPanel() {
 	}
 
 	i.server = iris.New()
-	i.server.Config().DisableBanner = true
-	i.server.Config().Render.Template.Directory = installationPath + "templates"
+	i.server.Config.DisableBanner = true
+	i.server.Config.Render.Template.Directory = installationPath + "templates"
 	//i.server.SetRenderConfig(i.server.Config.Render)
 	i.setPluginsInfo()
 	i.setPanelRoutes()
 
-	go i.server.Listen(strconv.Itoa(i.options.Port))
+	go i.server.Listen(":" + strconv.Itoa(i.options.Port))
 
 	i.pluginContainer.Printf("[%s] %s is running at port %d", time.Now().UTC().String(), Name, i.options.Port)
 
@@ -43,7 +42,7 @@ func (i *irisControlPlugin) startControlPanel() {
 // contains a boolean if server is running, the routes and the plugins
 type DashboardPage struct {
 	ServerIsRunning      bool
-	Routes               []routesinfo.RouteInfo
+	Routes               []iris.Route
 	Plugins              []PluginInfo
 	LastOperationDateStr string
 }
@@ -52,7 +51,18 @@ func (i *irisControlPlugin) setPluginsInfo() {
 	plugins := i.pluginContainer.GetAll()
 	i.plugins = make([]PluginInfo, 0, len(plugins))
 	for _, plugin := range plugins {
-		i.plugins = append(i.plugins, PluginInfo{Name: i.pluginContainer.GetName(plugin), Description: i.pluginContainer.GetDescription(plugin)})
+		name := i.pluginContainer.GetName(plugin)
+		desc := i.pluginContainer.GetDescription(plugin)
+		if name == "" {
+			// means an iris internaly plugin or a nameless plugin
+			name = "Internal Iris Plugin"
+		}
+		if desc == "" {
+			// means an iris internaly plugin or a descriptionless plugin
+			desc = "Propably an internal Iris Plugin - no description provided"
+		}
+
+		i.plugins = append(i.plugins, PluginInfo{Name: name, Description: desc})
 	}
 }
 
@@ -75,8 +85,8 @@ func (i *irisControlPlugin) setPanelRoutes() {
 	i.server.Use(i.authFunc)
 	i.server.Get("/", func(ctx *iris.Context) {
 		ctx.Render("index.html", DashboardPage{
-			ServerIsRunning:      i.station.Server().IsListening(),
-			Routes:               i.routes.All(),
+			ServerIsRunning:      i.station.HTTPServer.IsListening(),
+			Routes:               i.routes,
 			Plugins:              i.plugins,
 			LastOperationDateStr: i.lastOperationDate.Format(config.TimeFormat),
 		})
