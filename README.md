@@ -18,7 +18,7 @@
 [Language]: http://golang.org
 [Platform Widget]: https://img.shields.io/badge/platform-Any--OS-gray.svg?style=flat-square
 
-the fastest backend web framework for Go, provides robust set of features.
+the fastest web framework for Go while providing robust set of features for building modern web applications.
 
 [![Benchmark Wizzard Processing Time Horizontal Graph](https://raw.githubusercontent.com/iris-contrib/website/cf71811e6acb2f9bf1e715e25660392bf090b923/assets/benchmark_horizontal_transparent.png)](#benchmarks)
 
@@ -53,10 +53,15 @@ Installation
 
  >If you are connected to the Internet through China [click here](https://kataras.gitbooks.io/iris/content/install.html)
 
+FAQ
+------------
+You can find answers by exploring [these questions](https://github.com/kataras/iris/issues?q=label%3Aquestion).
+
+
 Features
 ------------
 - Focus on high performance
-- Robust routing & subdomains
+- Robust routing & static, wildcard subdomains
 - View system supporting [5+](https://kataras.gitbooks.io/iris/content/render_templates.html) template engines
 - Highly scalable Websocket API with custom events
 - Sessions support with GC, memory & redis providers
@@ -66,6 +71,7 @@ Features
 - Typescript compiler + Browser editor
 - Content negotiation & streaming
 - Transport Layer Security
+- and much more
 
 
 Docs & Community
