@@ -171,7 +171,7 @@ func (s *Framework) prepareTemplates() {
 func (s *Framework) openServer() (err error) {
 	s.initialize()
 	s.Plugins.DoPreListen(s)
-	if err = s.HTTPServer.open(); err == nil {
+	if err = s.HTTPServer.Open(); err == nil {
 		// print the banner
 		if !s.Config.DisableBanner {
 			s.Logger.PrintBanner(banner,

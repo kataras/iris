@@ -359,8 +359,8 @@ func (s *Server) serve(l net.Listener) error {
 	return s.Server.Serve(s.listener)
 }
 
-// open opens/starts/runs/listens (to) the server, listen tls if Cert && Key is registed, listenUNIX if Mode is registed, otherwise listen
-func (s *Server) open() error {
+// Open opens/starts/runs/listens (to) the server, listen tls if Cert && Key is registed, listenUNIX if Mode is registed, otherwise listen
+func (s *Server) Open() error {
 	if s.started {
 		return errServerAlreadyStarted.Return()
 	}

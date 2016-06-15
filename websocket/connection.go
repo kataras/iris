@@ -8,7 +8,6 @@ import (
 	"strconv"
 
 	"github.com/iris-contrib/websocket"
-	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/utils"
 )
 
@@ -80,12 +79,12 @@ func newConnection(websocketConn *websocket.Conn, s *server) *connection {
 }
 
 func (c *connection) write(messageType int, data []byte) error {
-	c.underline.SetWriteDeadline(time.Now().Add(config.DefaultWriteTimeout))
+	c.underline.SetWriteDeadline(time.Now().Add(c.server.config.WriteTimeout))
 	return c.underline.WriteMessage(messageType, data)
 }
 
 func (c *connection) writer() {
-	ticker := time.NewTicker(config.DefaultPingPeriod)
+	ticker := time.NewTicker(c.server.config.PingPeriod)
 	defer func() {
 		ticker.Stop()
 		c.underline.Close()
@@ -118,10 +117,10 @@ func (c *connection) reader() {
 	}()
 	conn := c.underline
 
-	conn.SetReadLimit(config.DefaultMaxMessageSize)
-	conn.SetReadDeadline(time.Now().Add(config.DefaultPongTimeout))
+	conn.SetReadLimit(c.server.config.MaxMessageSize)
+	conn.SetReadDeadline(time.Now().Add(c.server.config.PongTimeout))
 	conn.SetPongHandler(func(s string) error {
-		conn.SetReadDeadline(time.Now().Add(config.DefaultPongTimeout))
+		conn.SetReadDeadline(time.Now().Add(c.server.config.PongTimeout))
 		return nil
 	})
 
