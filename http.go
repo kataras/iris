@@ -303,6 +303,8 @@ func (s *Server) VirtualHostname() (hostname string) {
 	hostname = s.Config.ListeningAddr
 	if idx := strings.IndexByte(hostname, ':'); idx > 1 { // at least after second char
 		hostname = hostname[0:idx]
+	} else {
+		hostname = config.DefaultServerHostname
 	}
 	return
 }
@@ -378,7 +380,7 @@ func (s *Server) Open() error {
 	//check if contains hostname, we need the full host, :8080 should be : 127.0.0.1:8080
 	if portIdx := strings.IndexByte(a, ':'); portIdx == 0 {
 		// then the : is the first letter, so we dont have setted a hostname, lets set it
-		s.Config.ListeningAddr = "127.0.0.1" + a
+		s.Config.ListeningAddr = config.DefaultServerHostname + a
 	}
 
 	if s.Config.Mode > 0 {

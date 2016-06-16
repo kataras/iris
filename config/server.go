@@ -2,13 +2,21 @@ package config
 
 import (
 	"os"
+	"strconv"
 
 	"github.com/imdario/mergo"
 )
 
 const (
+	// DefaultServerHostname returns the default hostname which is 127.0.0.1
+	DefaultServerHostname = "127.0.0.1"
+	// DefaultServerPort returns the default port which is 8080
+	DefaultServerPort = 8080
+)
+
+var (
 	// DefaultServerAddr the default server addr which is: 127.0.0.1:8080
-	DefaultServerAddr = "127.0.0.1:8080"
+	DefaultServerAddr = DefaultServerHostname + ":" + strconv.Itoa(DefaultServerPort)
 )
 
 // ServerName the response header of the 'Server' value when writes to the client
