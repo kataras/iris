@@ -99,7 +99,7 @@ func New(cfg ...config.Iris) *Framework {
 		// set the websocket server
 		s.Websocket = websocket.NewServer(s.Config.Websocket)
 		// set the servemux, which will provide us the public API also, with its context pool
-		mux := newServeMux(sync.Pool{New: func() interface{} { return &Context{framework: s} }})
+		mux := newServeMux(sync.Pool{New: func() interface{} { return &Context{framework: s} }}, s.Logger)
 		// set the public router API (and party)
 		s.muxAPI = &muxAPI{mux: mux, relativePath: "/"}
 		// set the server
@@ -128,7 +128,7 @@ func (s *Framework) initialize() {
 	//  prepare the mux
 	s.mux.setCorrectPath(!s.Config.DisablePathCorrection)
 	s.mux.setEscapePath(!s.Config.DisablePathEscape)
-	s.mux.setHost(s.HTTPServer.VirtualHostname())
+	s.mux.setHostname(s.HTTPServer.VirtualHostname())
 	// set the debug profiling handlers if ProfilePath is setted
 	if debugPath := s.Config.ProfilePath; debugPath != "" {
 		s.Handle(MethodGet, debugPath+"/*action", profileMiddleware(debugPath)...)

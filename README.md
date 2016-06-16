@@ -84,7 +84,7 @@ Docs & Community
 
 - Take a look at the [examples](https://github.com/iris-contrib/examples)
 
-- If for some reason your old code doesn't runs, view the [HISTORY](https://github.com//kataras/iris/tree/master/HISTORY.md)
+- [HISTORY](https://github.com//kataras/iris/tree/master/HISTORY.md) file is your friend.
 
 
 If you'd like to discuss this package, or ask questions about it, feel free to
@@ -150,7 +150,9 @@ If you're willing to donate click [here](DONATIONS.md)
 
 People
 ------------
-The author of Iris is [@kataras](https://github.com/kataras)
+A big thanks goes to [all people](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=label%3A%22feature+request%22) who help building this framework with feature-requests, bug reports and more!
+
+The author of Iris is [@kataras](https://github.com/kataras).
 
 
 License

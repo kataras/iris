@@ -11,6 +11,7 @@ import (
 
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/errors"
+	"github.com/kataras/iris/logger"
 	"github.com/kataras/iris/utils"
 	"github.com/valyala/fasthttp"
 	"github.com/valyala/fasthttp/fasthttpadaptor"
@@ -567,6 +568,17 @@ type (
 	}
 )
 
+var (
+	errMuxEntryConflictsWildcard           = errors.New("Router: Path's part: '%s' conflicts with wildcard '%s' in the route path: '%s' !")
+	errMuxEntryMiddlewareAlreadyExists     = errors.New("Router: Middleware were already registered for the path: '%s' !")
+	errMuxEntryInvalidWildcard             = errors.New("Router: More than one wildcard found in the path part: '%s' in route's path: '%s' !")
+	errMuxEntryConflictsExistingWildcard   = errors.New("Router: Wildcard for route path: '%s' conflicts with existing children in route path: '%s' !")
+	errMuxEntryWildcardUnnamed             = errors.New("Router: Unnamed wildcard found in path: '%s' !")
+	errMuxEntryWildcardInvalidPlace        = errors.New("Router: Wildcard is only allowed at the end of the path, in the route path: '%s' !")
+	errMuxEntryWildcardConflictsMiddleware = errors.New("Router: Wildcard  conflicts with existing middleware for the route path: '%s' !")
+	errMuxEntryWildcardMissingSlash        = errors.New("Router: No slash(/) were found before wildcard in the route path: '%s' !")
+)
+
 // Get returns a value from a key inside this Parameters
 // If no parameter with this key given then it returns an empty string
 func (params PathParameters) Get(key string) string {
@@ -635,7 +647,7 @@ func getParamsLen(path string) uint8 {
 }
 
 // add adds a muxEntry to the existing muxEntry or to the tree if no muxEntry has the prefix of
-func (e *muxEntry) add(path string, middleware Middleware) {
+func (e *muxEntry) add(path string, middleware Middleware) error {
 	fullPath := path
 	e.precedence++
 	numParams := getParamsLen(path)
@@ -694,8 +706,7 @@ func (e *muxEntry) add(path string, middleware Middleware) {
 							continue loop
 						}
 					}
-
-					return
+					return errMuxEntryConflictsWildcard.Format(path, e.part, fullPath)
 				}
 
 				c := path[0]
@@ -725,24 +736,25 @@ func (e *muxEntry) add(path string, middleware Middleware) {
 					e = node
 				}
 				e.addNode(numParams, path, fullPath, middleware)
-				return
+				return nil
 
 			} else if i == len(path) {
 				if e.middleware != nil {
-					return
+					return errMuxEntryMiddlewareAlreadyExists.Format(fullPath)
 				}
 				e.middleware = middleware
 			}
-			return
+			return nil
 		}
 	} else {
 		e.addNode(numParams, path, fullPath, middleware)
 		e.entryCase = isRoot
 	}
+	return nil
 }
 
 // addNode adds a muxEntry as children to other muxEntry
-func (e *muxEntry) addNode(numParams uint8, path string, fullPath string, middleware Middleware) {
+func (e *muxEntry) addNode(numParams uint8, path string, fullPath string, middleware Middleware) error {
 	var offset int
 
 	for i, max := 0, len(path); numParams > 0; i++ {
@@ -752,21 +764,25 @@ func (e *muxEntry) addNode(numParams uint8, path string, fullPath string, middle
 		}
 
 		end := i + 1
-		for end < max && path[end] != '/' {
+		for end < max && path[end] != slashByte {
 			switch path[end] {
 			case parameterStartByte, matchEverythingByte:
-
+				/*
+				   panic("only one wildcard per path segment is allowed, has: '" +
+				   	path[i:] + "' in path '" + fullPath + "'")
+				*/
+				return errMuxEntryInvalidWildcard.Format(path[i:], fullPath)
 			default:
 				end++
 			}
 		}
 
 		if len(e.nodes) > 0 {
-			return
+			return errMuxEntryConflictsExistingWildcard.Format(path[i:end], fullPath)
 		}
 
 		if end-i < 2 {
-			return
+			return errMuxEntryWildcardUnnamed.Format(fullPath)
 		}
 
 		if c == parameterStartByte {
@@ -800,16 +816,16 @@ func (e *muxEntry) addNode(numParams uint8, path string, fullPath string, middle
 
 		} else {
 			if end != max || numParams > 1 {
-				return
+				return errMuxEntryWildcardInvalidPlace.Format(fullPath)
 			}
 
 			if len(e.part) > 0 && e.part[len(e.part)-1] == '/' {
-				return
+				return errMuxEntryWildcardConflictsMiddleware.Format(fullPath)
 			}
 
 			i--
-			if path[i] != '/' {
-				return
+			if path[i] != slashByte {
+				return errMuxEntryWildcardMissingSlash.Format(fullPath)
 			}
 
 			e.part = path[offset:i]
@@ -833,12 +849,14 @@ func (e *muxEntry) addNode(numParams uint8, path string, fullPath string, middle
 			}
 			e.nodes = []*muxEntry{child}
 
-			return
+			return nil
 		}
 	}
 
 	e.part = path[offset:]
 	e.middleware = middleware
+
+	return nil
 }
 
 // get is used by the Router, it finds and returns the correct muxEntry for a path
@@ -1081,8 +1099,9 @@ type (
 
 		api           *muxAPI
 		errorHandlers map[int]Handler
-		// the main server host, ex:  localhost, 127.0.0.1:8080, iris-go.com
-		host string
+		logger        *logger.Logger
+		// the main server host's name, ex:  localhost, 127.0.0.1, iris-go.com
+		hostname string
 		// if any of the trees contains not empty subdomain
 		hosts bool
 		// if false then searching by unescaped path
@@ -1095,21 +1114,22 @@ type (
 	}
 )
 
-func newServeMux(contextPool sync.Pool) *serveMux {
+func newServeMux(contextPool sync.Pool, logger *logger.Logger) *serveMux {
 	mux := &serveMux{
 		cPool:         &contextPool,
 		lookups:       make([]*route, 0),
 		errorHandlers: make(map[int]Handler, 0),
-		host:          config.DefaultServerAddr,
+		hostname:      "127.0.0.1",
 		escapePath:    !config.DefaultDisablePathEscape,
 		correctPath:   !config.DefaultDisablePathCorrection,
+		logger:        logger,
 	}
 
 	return mux
 }
 
-func (mux *serveMux) setHost(h string) {
-	mux.host = h
+func (mux *serveMux) setHostname(h string) {
+	mux.hostname = h
 }
 
 func (mux *serveMux) setEscapePath(b bool) {
@@ -1191,7 +1211,9 @@ func (mux *serveMux) register(method []byte, subdomain string, path string, midd
 	}
 	// I decide that it's better to explicit give subdomain and a path to it than registedPath(mysubdomain./something) now its: subdomain: mysubdomain., path: /something
 	// we have different tree for each of subdomains, now you can use everyting you can use with the normal paths ( before you couldn't set /any/*path)
-	tree.entry.add(path, middleware)
+	if err := tree.entry.add(path, middleware); err != nil {
+		mux.logger.Panic(err.Error())
+	}
 
 	// add to the lookups, it's just a collection of routes information
 	lookup := newRoute(method, subdomain, path, middleware)
@@ -1237,13 +1259,13 @@ func (mux *serveMux) ServeRequest() fasthttp.RequestHandler {
 			if mux.hosts && tree.subdomain != "" {
 				// context.VirtualHost() is a slow method because it makes string.Replaces but user can understand that if subdomain then server will have some nano/or/milleseconds performance cost
 				requestHost := context.VirtualHostname()
-				if requestHost != mux.host {
+				if requestHost != mux.hostname {
 					// we have a subdomain
 					if strings.Index(tree.subdomain, dynamicSubdomainIndicator) != -1 {
 					} else {
 						// mux.host = iris-go.com:8080, the subdomain for example is api.,
 						// so the host must be api.iris-go.com:8080
-						if tree.subdomain+mux.host != requestHost {
+						if tree.subdomain+mux.hostname != requestHost {
 							// go to the next tree, we have a subdomain but it is not the correct
 							tree = tree.next
 							continue

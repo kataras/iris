@@ -1042,7 +1042,7 @@ func StaticFS(reqPath string, systemPath string, stripSlashes int) RouteNameFunc
 // * stripSlashes = 2, original path: "/foo/bar", result: ""
 func (api *muxAPI) StaticFS(reqPath string, systemPath string, stripSlashes int) RouteNameFunc {
 	if reqPath[len(reqPath)-1] != slashByte {
-		reqPath += "/"
+		reqPath += slash
 	}
 
 	h := api.StaticHandler(systemPath, stripSlashes, true, true, nil)
@@ -1074,7 +1074,7 @@ func StaticWeb(reqPath string, systemPath string, stripSlashes int) RouteNameFun
 // * if you don't know what to put on stripSlashes just 1
 func (api *muxAPI) StaticWeb(reqPath string, systemPath string, stripSlashes int) RouteNameFunc {
 	if reqPath[len(reqPath)-1] != slashByte { // if / then /*filepath, if /something then /something/*filepath
-		reqPath += "/"
+		reqPath += slash
 	}
 
 	hasIndex := utils.Exists(systemPath + utils.PathSeparator + "index.html")
