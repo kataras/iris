@@ -66,8 +66,6 @@ func (e *Plugin) Port(port int) *Plugin {
 	return e
 }
 
-//
-
 // SetEnable if true enables the editor plugin, otherwise disables it
 func (e *Plugin) SetEnable(enable bool) {
 	e.enabled = enable
