@@ -98,9 +98,25 @@ func (c *connection) writer() {
 				return
 			}
 
-			if err := c.write(websocket.TextMessage, msg); err != nil {
+			c.underline.SetWriteDeadline(time.Now().Add(c.server.config.WriteTimeout))
+			res, err := c.underline.NextWriter(websocket.TextMessage)
+			if err != nil {
 				return
 			}
+			res.Write(msg)
+
+			n := len(c.send)
+			for i := 0; i < n; i++ {
+				res.Write(<-c.send)
+			}
+
+			if err := res.Close(); err != nil {
+				return
+			}
+
+			// if err := c.write(websocket.TextMessage, msg); err != nil {
+			// 	return
+			// }
 
 		case <-ticker.C:
 			if err := c.write(websocket.PingMessage, []byte{}); err != nil {
