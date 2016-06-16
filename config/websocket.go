@@ -40,17 +40,23 @@ type Websocket struct {
 	// Headers  the response headers before upgrader
 	// Default is empty
 	Headers map[string]string
+	// ReadBufferSize is the buffer size for the underline reader
+	ReadBufferSize int
+	// WriteBufferSize is the buffer size for the underline writer
+	WriteBufferSize int
 }
 
 // DefaultWebsocket returns the default config for iris-ws websocket package
 func DefaultWebsocket() *Websocket {
 	return &Websocket{
-		WriteTimeout:   DefaultWriteTimeout,
-		PongTimeout:    DefaultPongTimeout,
-		PingPeriod:     DefaultPingPeriod,
-		MaxMessageSize: DefaultMaxMessageSize,
-		Headers:        make(map[string]string, 0),
-		Endpoint:       "",
+		WriteTimeout:    DefaultWriteTimeout,
+		PongTimeout:     DefaultPongTimeout,
+		PingPeriod:      DefaultPingPeriod,
+		MaxMessageSize:  DefaultMaxMessageSize,
+		ReadBufferSize:  4096,
+		WriteBufferSize: 4096,
+		Headers:         make(map[string]string, 0),
+		Endpoint:        "",
 	}
 }
 

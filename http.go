@@ -311,7 +311,6 @@ func (s *Server) listen() error {
 	if s.started {
 		return errServerAlreadyStarted.Return()
 	}
-
 	listener, err := net.Listen("tcp4", s.Config.ListeningAddr)
 
 	if err != nil {
@@ -362,7 +361,7 @@ func (s *Server) serve(l net.Listener) error {
 
 // Open opens/starts/runs/listens (to) the server, listen tls if Cert && Key is registed, listenUNIX if Mode is registed, otherwise listen
 func (s *Server) Open() error {
-	if s.started {
+	if s.IsListening() {
 		return errServerAlreadyStarted.Return()
 	}
 
@@ -389,16 +388,14 @@ func (s *Server) Open() error {
 }
 
 // close closes the server
-func (s *Server) close() error {
-	if !s.started {
+func (s *Server) close() (err error) {
+	if !s.started || s.listener == nil {
 		return errServerIsClosed.Return()
 	}
+	s.started = false
+	err = s.listener.Close()
 
-	if s.listener != nil {
-		s.started = false
-		return s.listener.Close()
-	}
-	return nil
+	return
 }
 
 // errHandler returns na error with message: 'Passed argument is not func(*Context) neither an object which implements the iris.Handler with Serve(ctx *Context)

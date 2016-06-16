@@ -299,14 +299,24 @@ func (s *Framework) NoListen() *Server {
 	return s.HTTPServer
 }
 
+// CloseWithErr terminates the server and returns an error if any
+func CloseWithErr() error {
+	return Default.CloseWithErr()
+}
+
 //Close terminates the server and panic if error occurs
 func Close() {
 	Default.Close()
 }
 
+// CloseWithErr terminates the server and returns an error if any
+func (s *Framework) CloseWithErr() error {
+	return s.closeServer()
+}
+
 //Close terminates the server and panic if error occurs
 func (s *Framework) Close() {
-	s.Must(s.closeServer())
+	s.Must(s.CloseWithErr())
 }
 
 // OnError registers a custom http error handler
@@ -1143,7 +1153,6 @@ func StaticContent(reqPath string, contentType string, content []byte) RouteName
 func (api *muxAPI) StaticContent(reqPath string, cType string, content []byte) func(string) { // func(string) because we use that on websockets
 	modtime := time.Now()
 	modtimeStr := modtime.UTC().Format(config.TimeFormat)
-
 	h := func(ctx *Context) {
 		if t, err := time.Parse(config.TimeFormat, ctx.RequestHeader(ifModifiedSince)); err == nil && modtime.Before(t.Add(config.StaticCacheDuration)) {
 			ctx.Response.Header.Del(contentType)

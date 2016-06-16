@@ -73,7 +73,7 @@ func newServer(c *config.Websocket) *server {
 		onConnectionListeners: make([]ConnectionFunc, 0),
 	}
 
-	s.upgrader = websocket.New(s.handleConnection)
+	s.upgrader = websocket.Custom(s.handleConnection, s.config.ReadBufferSize, s.config.WriteBufferSize, false)
 	go s.serve() // start the server automatically
 	return s
 }
