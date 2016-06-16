@@ -9,7 +9,6 @@ Would be readily available to anyone who could intercept the HTTP request.
 import (
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/iris-contrib/npm"
 	"github.com/kataras/iris"
@@ -91,17 +90,7 @@ func (e *Plugin) PreListen(s *iris.Framework) {
 	e.certfile = s.Config.Server.CertFile
 
 	if e.config.Host == "" {
-		h := s.Config.Server.ListeningAddr
-
-		if idx := strings.Index(h, ":"); idx >= 0 {
-			h = h[0:idx]
-		}
-		if h == "" {
-			h = "127.0.0.1"
-		}
-
-		e.config.Host = h
-
+		e.config.Host = s.HTTPServer.VirtualHostname()
 	}
 	e.start()
 }

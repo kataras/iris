@@ -1,6 +1,7 @@
 package iriscontrol
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/kataras/iris"
@@ -8,103 +9,117 @@ import (
 	"github.com/kataras/iris/middleware/basicauth"
 )
 
-// Name the name(string) of this plugin which is Iris Control
-const Name = "Iris Control"
+type (
+	// IrisControl is the interface which the iriscontrol should implements
+	// it's empty for now because no need any public API
+	IrisControl interface{}
+	iriscontrol struct {
+		port  int
+		users map[string]string
 
-type irisControlPlugin struct {
-	options config.IrisControl
-	// the pluginContainer is the container which keeps this plugin from the main user's iris instance
-	pluginContainer iris.PluginContainer
-	// the station object of the main  user's iris instance
-	station *iris.Framework
-	//a copy of the server which the main user's iris is listening for
-	stationServer *iris.Server
-
-	// the server is this plugin's server object, it is managed by this plugin only
-	server *iris.Framework
-	//
-	//infos
-	routes  []iris.Route
-	plugins []PluginInfo
-	// last time the server was on
-	lastOperationDate time.Time
-	//
-
-	authFunc iris.HandlerFunc
-}
-
-// New returns the plugin which is ready-to-use inside iris.Plugin method
-// receives config.IrisControl
-func New(cfg ...config.IrisControl) iris.Plugin {
-	c := config.DefaultIrisControl()
-	if len(cfg) > 0 {
-		c = cfg[0]
-	}
-	if c.Users == nil || len(c.Users) == 0 {
-		panic(Name + " Error: you should pass authenticated users map to the options, refer to the docs!")
+		// child is the plugin's standalone station
+		child *iris.Framework
+		// the station which this plugins is registed to
+		parent       *iris.Framework
+		parentLastOp time.Time
 	}
 
-	auth := basicauth.Default(c.Users)
-
-	return &irisControlPlugin{options: c, authFunc: auth, routes: make([]iris.Route, 0)}
-}
-
-// Web set the options for the plugin and return the plugin which is ready-to-use inside iris.Plugin method
-// first parameter is port
-// second parameter is map of users (username:password)
-func Web(port int, users map[string]string) iris.Plugin {
-	return New(config.IrisControl{Port: port, Users: users})
-}
-
-// implement the base IPlugin
-
-func (i *irisControlPlugin) Activate(container iris.PluginContainer) error {
-	i.pluginContainer = container
-	return nil
-}
-
-func (i irisControlPlugin) GetName() string {
-	return Name
-}
-
-func (i irisControlPlugin) GetDescription() string {
-	return Name + " is just a web interface which gives you control of your Iris.\n"
-}
-
-//
-
-// implement the rest of the plugin
-
-// PostListen sets the station object after the main server starts
-// starts the actual work of the plugin
-func (i *irisControlPlugin) PostListen(s *iris.Framework) {
-	//if the first time, because other times start/stop of the server so listen and no listen will be only from the control panel
-	if i.station == nil {
-		i.station = s
-		i.stationServer = i.station.HTTPServer
-		i.lastOperationDate = time.Now()
-		i.routes = s.Lookups()
-		i.startControlPanel()
+	pluginInfo struct {
+		Name        string
+		Description string
 	}
+)
 
+var _ IrisControl = &iriscontrol{}
+
+func (i *iriscontrol) listen(f *iris.Framework) {
+	i.parent = f
+	i.parentLastOp = time.Now()
+	i.initializeChild()
 }
 
-func (i *irisControlPlugin) PreClose(s *iris.Framework) {
-	// Do nothing. This is a wrapper of the main server if we destroy when users stop the main server then we cannot continue the control panel i.Destroy()
+func (i *iriscontrol) initializeChild() {
+	i.child = iris.New()
+	i.child.Config.DisableBanner = true
+	i.child.Config.Render.Template.Directory = assetsPath + "templates"
+
+	// set the assets
+	i.child.Static("/public", assetsPath+"static", 1)
+
+	// set the authentication middleware
+	i.child.Use(basicauth.New(config.BasicAuth{
+		Users:      i.users,
+		ContextKey: "user",
+		Realm:      config.DefaultBasicAuthRealm,
+		Expires:    time.Duration(1) * time.Hour,
+	}))
+
+	i.child.Get("/", func(ctx *iris.Context) {
+		ctx.MustRender("index.html", iris.Map{
+			"ServerIsRunning":      i.parentIsRunning(),
+			"Routes":               i.parentLookups(),
+			"Plugins":              i.infoPlugins(),
+			"LastOperationDateStr": i.infoLastOp(),
+		})
+	})
+
+	i.child.Post("/start_server", func(ctx *iris.Context) {
+
+		if !i.parentIsRunning() {
+			// starts the server with its old configuration
+			go func() {
+				if err := i.parent.HTTPServer.Open(); err != nil {
+					i.parent.Logger.Warningf(err.Error())
+				}
+			}()
+			i.parentLastOp = time.Now()
+		}
+	})
+
+	i.child.Post("/stop_server", func(ctx *iris.Context) {
+
+		if i.parentIsRunning() {
+			i.parentLastOp = time.Now()
+
+			go func() {
+				if err := i.parent.CloseWithErr(); err != nil {
+					i.parent.Logger.Warningf(err.Error())
+				}
+			}()
+		}
+	})
+
+	go i.child.Listen(i.parent.HTTPServer.VirtualHostname() + strconv.Itoa(i.port))
 }
 
-//
+func (i *iriscontrol) parentIsRunning() bool {
+	return i.parent != nil && i.parent.HTTPServer.IsListening()
+}
 
-// Destroy removes entirely the plugin, the options and all of these properties, you cannot re-use this plugin after this method.
-func (i *irisControlPlugin) Destroy() {
-	i.pluginContainer.Remove(Name)
+func (i *iriscontrol) parentLookups() []iris.Route {
+	if i.parent == nil {
+		return nil
+	}
+	return i.parent.Lookups()
+}
 
-	i.options = config.IrisControl{}
-	i.routes = nil
-	i.station = nil
-	i.lastOperationDate = config.CookieExpireNever
-	i.server.Close()
-	i.pluginContainer = nil
-	i.authFunc = nil
-	i.pluginContainer.Printf("[%s] %s is turned off", time.Now().UTC().String(), Name)
+func (i *iriscontrol) infoPlugins() (info []pluginInfo) {
+	plugins := i.parent.Plugins
+	for _, p := range plugins.GetAll() {
+		name := plugins.GetName(p)
+		description := plugins.GetDescription(p)
+		if name == "" {
+			name = "Unknown plugin name"
+		}
+		if description == "" {
+			description = "description is not available"
+		}
+
+		info = append(info, pluginInfo{Name: name, Description: description})
+	}
+	return
+}
+
+func (i *iriscontrol) infoLastOp() string {
+	return i.parentLastOp.Format(config.TimeFormat)
 }
