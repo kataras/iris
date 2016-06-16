@@ -89,7 +89,7 @@ func (i *iriscontrol) initializeChild() {
 		}
 	})
 
-	go i.child.Listen(i.parent.HTTPServer.VirtualHostname() + strconv.Itoa(i.port))
+	go i.child.Listen(i.parent.HTTPServer.VirtualHostname() + ":" + strconv.Itoa(i.port))
 }
 
 func (i *iriscontrol) parentIsRunning() bool {

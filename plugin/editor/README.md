@@ -18,13 +18,21 @@ package main
 
 import (
 	"github.com/kataras/iris"
+	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/plugin/editor"
 )
 
 func main(){
-	e := editor.New("username","password").Port(4444).Dir("/path/to/the/client/side/directory")
+	editorConfig:= config.Editor {
+		Host: "127.0.0.1",
+		Port: 4444,
+		WorkingDir: "/path/to/the/client/side/directory",
+		Username: "myusername",
+		Password: "mypassword"
 
-	iris.Plugins.Add(e)
+	}
+
+	iris.Plugins.Add(editor.New(editorConfig))
 
 	iris.Get("/", func (ctx *iris.Context){})
 
