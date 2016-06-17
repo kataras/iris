@@ -7,6 +7,7 @@ import (
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/middleware/basicauth"
+	"github.com/kataras/iris/websocket"
 )
 
 type (
@@ -22,19 +23,70 @@ type (
 		// the station which this plugins is registed to
 		parent       *iris.Framework
 		parentLastOp time.Time
+
+		// websocket
+		clients clients
 	}
+
+	clients []websocket.Connection
 
 	pluginInfo struct {
 		Name        string
 		Description string
 	}
+
+	logInfo struct {
+		Date      string
+		Status    int
+		Latency   time.Duration
+		IP        string
+		Method    string
+		Subdomain string
+		Path      string
+	}
 )
+
+func (c clients) indexOf(connectionID string) int {
+	for i := range c {
+		if c[i].ID() == connectionID {
+			return i
+		}
+	}
+	return -1
+}
 
 var _ IrisControl = &iriscontrol{}
 
 func (i *iriscontrol) listen(f *iris.Framework) {
+	// set the path logger to the parent which will send the log via websocket to the browser
+	f.MustUseFunc(func(ctx *iris.Context) {
+		status := ctx.Response.StatusCode()
+		path := ctx.PathString()
+		method := ctx.MethodString()
+		subdomain := ctx.Subdomain()
+		ip := ctx.RemoteAddr()
+		startTime := time.Now()
+
+		ctx.Next()
+		//no time.Since in order to format it well after
+		endTime := time.Now()
+		date := endTime.Format("01/02 - 15:04:05")
+		latency := endTime.Sub(startTime)
+		info := logInfo{
+			Date:      date,
+			Status:    status,
+			Latency:   latency,
+			IP:        ip,
+			Method:    method,
+			Subdomain: subdomain,
+			Path:      path,
+		}
+		i.Emit("log", info) //send this text to the browser,
+	})
+
 	i.parent = f
 	i.parentLastOp = time.Now()
+
 	i.initializeChild()
 }
 
@@ -42,21 +94,45 @@ func (i *iriscontrol) initializeChild() {
 	i.child = iris.New()
 	i.child.Config.DisableBanner = true
 	i.child.Config.Render.Template.Directory = assetsPath + "templates"
+	i.child.Config.Websocket.Endpoint = "/ws"
 
 	// set the assets
 	i.child.Static("/public", assetsPath+"static", 1)
 
-	// set the authentication middleware
-	i.child.Use(basicauth.New(config.BasicAuth{
+	// set the authentication middleware to all except websocket
+	auth := basicauth.New(config.BasicAuth{
 		Users:      i.users,
 		ContextKey: "user",
 		Realm:      config.DefaultBasicAuthRealm,
 		Expires:    time.Duration(1) * time.Hour,
-	}))
+	})
+
+	i.child.UseFunc(func(ctx *iris.Context) {
+		///TODO: Remove this and make client-side basic auth when websocket connection.
+		if ctx.PathString() == i.child.Config.Websocket.Endpoint {
+			ctx.Next()
+			return
+		}
+		auth.Serve(ctx)
+	})
+
+	i.child.Websocket.OnConnection(func(c websocket.Connection) {
+		// add the client to the list
+		i.clients = append(i.clients, c)
+		c.OnDisconnect(func() {
+			// remove the client from the list
+			if idx := i.clients.indexOf(c.ID()); idx != -1 {
+				i.clients[idx] = i.clients[len(i.clients)-1]
+				i.clients = i.clients[:len(i.clients)-1]
+			}
+
+		})
+	})
 
 	i.child.Get("/", func(ctx *iris.Context) {
 		ctx.MustRender("index.html", iris.Map{
 			"ServerIsRunning":      i.parentIsRunning(),
+			"Host":                 i.child.Config.Server.ListeningAddr,
 			"Routes":               i.parentLookups(),
 			"Plugins":              i.infoPlugins(),
 			"LastOperationDateStr": i.infoLastOp(),
@@ -72,6 +148,7 @@ func (i *iriscontrol) initializeChild() {
 					i.parent.Logger.Warningf(err.Error())
 				}
 			}()
+
 			i.parentLastOp = time.Now()
 		}
 	})
@@ -122,4 +199,10 @@ func (i *iriscontrol) infoPlugins() (info []pluginInfo) {
 
 func (i *iriscontrol) infoLastOp() string {
 	return i.parentLastOp.Format(config.TimeFormat)
+}
+
+func (i *iriscontrol) Emit(event string, msg interface{}) {
+	for j := range i.clients {
+		i.clients[j].Emit(event, msg)
+	}
 }

@@ -92,6 +92,9 @@ type (
 		ListenUNIX(string, os.FileMode)
 		NoListen() *Server
 		Close()
+		// global middleware prepending, registers to all subdomains, to all parties, you can call it at the last also
+		MustUse(...Handler)
+		MustUseFunc(...HandlerFunc)
 		OnError(int, HandlerFunc)
 		EmitError(int, *Context)
 		Lookup(string) Route
@@ -107,10 +110,10 @@ type (
 	// MuxAPI the visible api for the serveMux
 	MuxAPI interface {
 		Party(string, ...HandlerFunc) MuxAPI
-
-		// middleware
+		// middleware serial, appending
 		Use(...Handler)
 		UseFunc(...HandlerFunc)
+
 		// main handlers
 		Handle(string, string, ...Handler) RouteNameFunc
 		HandleFunc(string, string, ...HandlerFunc) RouteNameFunc
@@ -292,11 +295,9 @@ func NoListen() *Server {
 }
 
 // NoListen is useful only when you want to test Iris, it doesn't starts the server but it configures and returns it
+// initializes the whole framework but server doesn't listens to a specific net.Listener
 func (s *Framework) NoListen() *Server {
-	s.initialize()
-	s.Plugins.DoPreListen(s)
-	s.Plugins.DoPostListen(s)
-	return s.HTTPServer
+	return s.justServe()
 }
 
 // CloseWithErr terminates the server and returns an error if any
@@ -317,6 +318,40 @@ func (s *Framework) CloseWithErr() error {
 //Close terminates the server and panic if error occurs
 func (s *Framework) Close() {
 	s.Must(s.CloseWithErr())
+}
+
+// MustUse registers Handler middleware  to the beggining, prepends them instead of append
+//
+// Use it when you want to add a global middleware to all parties, to all routes in  all subdomains
+// It can be called after other, (but before .Listen of course)
+func MustUse(handlers ...Handler) {
+	Default.MustUse(handlers...)
+}
+
+// MustUseFunc registers HandlerFunc middleware  to the beggining, prepends them instead of append
+//
+// Use it when you want to add a global middleware to all parties, to all routes in  all subdomains
+// It can be called after other, (but before .Listen of course)
+func MustUseFunc(handlersFn ...HandlerFunc) {
+	Default.MustUseFunc(handlersFn...)
+}
+
+// MustUse registers Handler middleware  to the beggining, prepends them instead of append
+//
+// Use it when you want to add a global middleware to all parties, to all routes in  all subdomains
+// It can be called after other, (but before .Listen of course)
+func (s *Framework) MustUse(handlers ...Handler) {
+	for _, r := range s.mux.lookups {
+		r.middleware = append(handlers, r.middleware...)
+	}
+}
+
+// MustUseFunc registers HandlerFunc middleware to the beggining, prepends them instead of append
+//
+// Use it when you want to add a global middleware to all parties, to all routes in  all subdomains
+// It can be called after other, (but before .Listen of course)
+func (s *Framework) MustUseFunc(handlersFn ...HandlerFunc) {
+	s.MustUse(convertToHandlers(handlersFn)...)
 }
 
 // OnError registers a custom http error handler
@@ -576,22 +611,22 @@ func (api *muxAPI) Party(relativePath string, handlersFn ...HandlerFunc) MuxAPI 
 	return &muxAPI{relativePath: fullpath, mux: api.mux, middleware: middleware}
 }
 
-// Use registers a Handler middleware
+// Use registers Handler middleware
 func Use(handlers ...Handler) {
 	Default.Use(handlers...)
 }
 
-// UseFunc registers a HandlerFunc middleware
+// UseFunc registers HandlerFunc middleware
 func UseFunc(handlersFn ...HandlerFunc) {
 	Default.UseFunc(handlersFn...)
 }
 
-// Use registers a Handler middleware
+// Use registers Handler middleware
 func (api *muxAPI) Use(handlers ...Handler) {
 	api.middleware = append(api.middleware, handlers...)
 }
 
-// UseFunc registers a HandlerFunc middleware
+// UseFunc registers HandlerFunc middleware
 func (api *muxAPI) UseFunc(handlersFn ...HandlerFunc) {
 	api.Use(convertToHandlers(handlersFn)...)
 }

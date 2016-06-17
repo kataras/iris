@@ -125,7 +125,7 @@ func (s *Framework) initialize() {
 	// listen to websocket connections
 	websocket.RegisterServer(s, s.Websocket, s.Logger)
 
-	//  prepare the mux
+	//  prepare the mux & the server
 	s.mux.setCorrectPath(!s.Config.DisablePathCorrection)
 	s.mux.setEscapePath(!s.Config.DisablePathEscape)
 	s.mux.setHostname(s.HTTPServer.VirtualHostname())
@@ -133,9 +133,6 @@ func (s *Framework) initialize() {
 	if debugPath := s.Config.ProfilePath; debugPath != "" {
 		s.Handle(MethodGet, debugPath+"/*action", profileMiddleware(debugPath)...)
 	}
-
-	// prepare the server
-	s.HTTPServer.SetHandler(s.mux)
 
 	if s.Config.MaxRequestBodySize > 0 {
 		s.HTTPServer.MaxRequestBodySize = int(s.Config.MaxRequestBodySize)
@@ -171,6 +168,8 @@ func (s *Framework) prepareTemplates() {
 func (s *Framework) openServer() (err error) {
 	s.initialize()
 	s.Plugins.DoPreListen(s)
+	// set the server's handler now, in order to give the chance to the plugins to add their own middlewares and routes to this station
+	s.HTTPServer.SetHandler(s.mux)
 	if err = s.HTTPServer.Open(); err == nil {
 		// print the banner
 		if !s.Config.DisableBanner {
@@ -190,4 +189,13 @@ func (s *Framework) openServer() (err error) {
 func (s *Framework) closeServer() error {
 	s.Plugins.DoPreClose(s)
 	return s.HTTPServer.close()
+}
+
+// justServe initializes the whole framework but server doesn't listens to a specific net.Listener
+func (s *Framework) justServe() *Server {
+	s.initialize()
+	s.Plugins.DoPreListen(s)
+	s.HTTPServer.SetHandler(s.mux)
+	s.Plugins.DoPostListen(s)
+	return s.HTTPServer
 }

@@ -1004,18 +1004,32 @@ type (
 		// if no name given then it's the subdomain+path
 		name           string
 		subdomain      string
-		method         string
+		method         []byte
+		methodStr      string
 		path           string
 		middleware     Middleware
 		formattedPath  string
 		formattedParts int
 	}
+
+	bySubdomain []*route
 )
+
+// Sorting happens when the mux's request handler initialized
+func (s bySubdomain) Len() int {
+	return len(s)
+}
+func (s bySubdomain) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+func (s bySubdomain) Less(i, j int) bool {
+	return len(s[i].Subdomain()) > len(s[j].Subdomain())
+}
 
 var _ Route = &route{}
 
 func newRoute(method []byte, subdomain string, path string, middleware Middleware) *route {
-	r := &route{name: path + subdomain, method: string(method), subdomain: subdomain, path: path, middleware: middleware}
+	r := &route{name: path + subdomain, method: method, subdomain: subdomain, path: path, middleware: middleware}
 	r.formatPath()
 	return r
 }
@@ -1063,7 +1077,10 @@ func (r route) Subdomain() string {
 }
 
 func (r route) Method() string {
-	return r.method
+	if r.methodStr == "" {
+		r.methodStr = string(r.method)
+	}
+	return r.methodStr
 }
 
 func (r route) Path() string {
@@ -1188,31 +1205,6 @@ func (mux *serveMux) register(method []byte, subdomain string, path string, midd
 	if subdomain != "" {
 		mux.hosts = true
 	}
-	// add to the registry tree
-	tree := mux.getTree(method, subdomain)
-	if tree == nil {
-		//first time we register a route to this method with this domain
-		tree = &muxTree{method: method, subdomain: subdomain, entry: &muxEntry{}, next: nil}
-		if mux.tree == nil {
-			// it's the first entry
-			mux.tree = tree
-		} else {
-			// find the last tree and make the .next to the tree we created before
-			lastTree := mux.tree
-			for lastTree != nil {
-				if lastTree.next == nil {
-					lastTree.next = tree
-					break
-				}
-				lastTree = lastTree.next
-			}
-		}
-	}
-	// I decide that it's better to explicit give subdomain and a path to it than registedPath(mysubdomain./something) now its: subdomain: mysubdomain., path: /something
-	// we have different tree for each of subdomains, now you can use everyting you can use with the normal paths ( before you couldn't set /any/*path)
-	if err := tree.entry.add(path, middleware); err != nil {
-		mux.logger.Panic(err.Error())
-	}
 
 	// add to the lookups, it's just a collection of routes information
 	lookup := newRoute(method, subdomain, path, middleware)
@@ -1220,6 +1212,39 @@ func (mux *serveMux) register(method []byte, subdomain string, path string, midd
 
 	return lookup
 
+}
+
+// build collects all routes info and adds them to the registry in order to be served from the request handler
+// this happens once when server is setting the mux's handler.
+func (mux *serveMux) build() {
+	routes := bySubdomain(mux.lookups)
+	for _, r := range routes {
+		// add to the registry tree
+		tree := mux.getTree(r.method, r.subdomain)
+		if tree == nil {
+			//first time we register a route to this method with this domain
+			tree = &muxTree{method: r.method, subdomain: r.subdomain, entry: &muxEntry{}, next: nil}
+			if mux.tree == nil {
+				// it's the first entry
+				mux.tree = tree
+			} else {
+				// find the last tree and make the .next to the tree we created before
+				lastTree := mux.tree
+				for lastTree != nil {
+					if lastTree.next == nil {
+						lastTree.next = tree
+						break
+					}
+					lastTree = lastTree.next
+				}
+			}
+		}
+		// I decide that it's better to explicit give subdomain and a path to it than registedPath(mysubdomain./something) now its: subdomain: mysubdomain., path: /something
+		// we have different tree for each of subdomains, now you can use everyting you can use with the normal paths ( before you couldn't set /any/*path)
+		if err := tree.entry.add(r.path, r.middleware); err != nil {
+			mux.logger.Panic(err.Error())
+		}
+	}
 }
 
 func (mux *serveMux) lookup(routeName string) *route {
@@ -1232,6 +1257,10 @@ func (mux *serveMux) lookup(routeName string) *route {
 }
 
 func (mux *serveMux) ServeRequest() fasthttp.RequestHandler {
+
+	// initialize the router once
+	mux.build()
+
 	// optimize this once once, we could do that: context.RequestPath(mux.escapePath), but we lose some nanoseconds on if :)
 	getRequestPath := func(reqCtx *fasthttp.RequestCtx) string {
 		return utils.BytesToString(reqCtx.Path())
