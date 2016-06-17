@@ -1240,7 +1240,7 @@ func (mux *serveMux) build() {
 			}
 		}
 		// I decide that it's better to explicit give subdomain and a path to it than registedPath(mysubdomain./something) now its: subdomain: mysubdomain., path: /something
-		// we have different tree for each of subdomains, now you can use everyting you can use with the normal paths ( before you couldn't set /any/*path)
+		// we have different tree for each of subdomains, now you can use everything you can use with the normal paths ( before you couldn't set /any/*path)
 		if err := tree.entry.add(r.path, r.middleware); err != nil {
 			mux.logger.Panic(err.Error())
 		}

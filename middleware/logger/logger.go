@@ -82,7 +82,7 @@ func (l *loggerMiddleware) printf(format string, a ...interface{}) {
 	}
 }
 
-// Default returns the logger middleware as Handler with the default settings
+// New returns the logger middleware as HandlerFunc with the default settings if second parameter is not passed
 func New(theLogger *logger.Logger, options ...Options) iris.HandlerFunc {
 	if theLogger == nil {
 		theLogger = logger.New(config.DefaultLogger())

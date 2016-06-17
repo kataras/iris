@@ -9,6 +9,7 @@ import (
 	"os"
 )
 
+// DefaultLoggerPrefix is the prefix (expect the [IRIS]), is empty for now
 const DefaultLoggerPrefix = ""
 
 var (

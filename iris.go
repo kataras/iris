@@ -320,7 +320,7 @@ func (s *Framework) Close() {
 	s.Must(s.CloseWithErr())
 }
 
-// MustUse registers Handler middleware  to the beggining, prepends them instead of append
+// MustUse registers Handler middleware  to the beginning, prepends them instead of append
 //
 // Use it when you want to add a global middleware to all parties, to all routes in  all subdomains
 // It can be called after other, (but before .Listen of course)
@@ -328,7 +328,7 @@ func MustUse(handlers ...Handler) {
 	Default.MustUse(handlers...)
 }
 
-// MustUseFunc registers HandlerFunc middleware  to the beggining, prepends them instead of append
+// MustUseFunc registers HandlerFunc middleware  to the beginning, prepends them instead of append
 //
 // Use it when you want to add a global middleware to all parties, to all routes in  all subdomains
 // It can be called after other, (but before .Listen of course)
@@ -336,7 +336,7 @@ func MustUseFunc(handlersFn ...HandlerFunc) {
 	Default.MustUseFunc(handlersFn...)
 }
 
-// MustUse registers Handler middleware  to the beggining, prepends them instead of append
+// MustUse registers Handler middleware  to the beginning, prepends them instead of append
 //
 // Use it when you want to add a global middleware to all parties, to all routes in  all subdomains
 // It can be called after other, (but before .Listen of course)
@@ -346,7 +346,7 @@ func (s *Framework) MustUse(handlers ...Handler) {
 	}
 }
 
-// MustUseFunc registers HandlerFunc middleware to the beggining, prepends them instead of append
+// MustUseFunc registers HandlerFunc middleware to the beginning, prepends them instead of append
 //
 // Use it when you want to add a global middleware to all parties, to all routes in  all subdomains
 // It can be called after other, (but before .Listen of course)

@@ -52,19 +52,19 @@ func (l *Logger) ResetColors() {
 
 // PrintBanner prints a text (banner) with BannerFgColor, BannerBgColor and a success message at the end
 // It doesn't cares if the logger is disabled or not, it will print this
-func (l *Logger) PrintBanner(banner string, sucessMessage string) {
+func (l *Logger) PrintBanner(banner string, successMessage string) {
 	c := color.New(attr(l.config.ColorBgDefault), attr(l.config.ColorFgBanner), color.Bold)
 	c.Println(banner)
 	bannersRan++
 
-	if sucessMessage != "" {
+	if successMessage != "" {
 		c.Add(attr(l.config.ColorBgSuccess), attr(l.config.ColorFgSuccess), color.Bold)
 
 		if bannersRan > 1 {
 			c.Printf("Server[%#v]\n", bannersRan)
 
 		}
-		c.Println(sucessMessage)
+		c.Println(successMessage)
 	}
 
 	c.DisableColor()
@@ -120,9 +120,9 @@ func (l *Logger) Panicf(format string, a ...interface{}) {
 	panic("")
 }
 
-// Sucessf calls l.Output to print to the logger with the Success colors.
+// Successf calls l.Output to print to the logger with the Success colors.
 // Arguments are handled in the manner of fmt.Printf.
-func (l *Logger) Sucessf(format string, a ...interface{}) {
+func (l *Logger) Successf(format string, a ...interface{}) {
 	if !l.config.Disabled {
 		l.underline.Add(attr(l.config.ColorBgSuccess), attr(l.config.ColorFgSuccess))
 		l.Printf(format, a...)

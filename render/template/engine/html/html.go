@@ -160,6 +160,9 @@ func (s *Engine) buildFromAsset() error {
 				if s.Config.Engine == config.JadeEngine {
 					contents, err = jade.Parse(name, contents)
 				}
+				if err != nil {
+					return err
+				}
 
 				// Add our funcmaps.
 				if s.Config.HTMLTemplate.Funcs != nil {
