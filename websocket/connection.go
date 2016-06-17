@@ -94,6 +94,22 @@ func (c *connection) writer() {
 		select {
 		case msg, ok := <-c.send:
 			if !ok {
+				defer func() {
+
+					// FIX FOR: https://github.com/kataras/iris/issues/175
+					// AS I TESTED ON TRIDENT ENGINE (INTERNET EXPLORER/SAFARI):
+					// NAVIGATE TO SITE, CLOSE THE TAB, NOTHING HAPPENS
+					// CLOSE THE WHOLE BROWSER, THEN THE c.conn is NOT NILL BUT ALL ITS FUNCTIONS PANICS, MEANS THAT IS THE STRUCT IS NOT NIL BUT THE WRITER/READER ARE NIL
+					// THE ONLY SOLUTION IS TO RECOVER HERE AT ANY PANIC
+					// THE FRAMETYPE = 8, c.closeSend = true
+					// NOTE THAT THE CLIENT IS NOT DISCONNECTED UNTIL THE WHOLE WINDOW BROWSER  CLOSED, this is engine's bug.
+					//
+					if err := recover(); err != nil {
+						ticker.Stop()
+						c.server.free <- c
+						c.underline.Close()
+					}
+				}()
 				c.write(websocket.CloseMessage, []byte{})
 				return
 			}

@@ -15,9 +15,10 @@ var (
 	assetsURL       = "https://github.com/iris-contrib/iris-control-assets/archive/master.zip"
 	assetsUnzipname = "iris-control-assets"
 	assetsPath      = ""
+	workingDir      = ""
 )
 
-// init just sets the assetsPath
+// init just sets the assetsPath & current workingDir
 func init() {
 	homepath := ""
 	if runtime.GOOS == "windows" {
@@ -26,6 +27,8 @@ func init() {
 		homepath = os.Getenv("HOME")
 	}
 	assetsPath = homepath + utils.PathSeparator + ".iris" + utils.PathSeparator + "iris-control-assets" + utils.PathSeparator
+
+	workingDir, _ = os.Getwd()
 }
 
 func installAssets() {

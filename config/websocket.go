@@ -8,14 +8,14 @@ import (
 
 // Currently only these 5 values are used for real
 const (
-	// DefaultWriteTimeout 30 * time.Second
-	DefaultWriteTimeout = 30 * time.Second
-	// DefaultPongTimeout 120 * time.Second
-	DefaultPongTimeout = 120 * time.Second
+	// DefaultWriteTimeout 15 * time.Second
+	DefaultWriteTimeout = 15 * time.Second
+	// DefaultPongTimeout 60 * time.Second
+	DefaultPongTimeout = 60 * time.Second
 	// DefaultPingPeriod (DefaultPongTimeout * 9) / 10
 	DefaultPingPeriod = (DefaultPongTimeout * 9) / 10
-	// DefaultMaxMessageSize 2048
-	DefaultMaxMessageSize = 2048
+	// DefaultMaxMessageSize 1024
+	DefaultMaxMessageSize = 1024
 )
 
 //
@@ -23,16 +23,16 @@ const (
 // Websocket the config contains options for 'websocket' package
 type Websocket struct {
 	// WriteTimeout time allowed to write a message to the connection.
-	// Default value is 30 * time.Second
+	// Default value is 15 * time.Second
 	WriteTimeout time.Duration
 	// PongTimeout allowed to read the next pong message from the connection
-	// Default value is 120 * time.Second
+	// Default value is 60 * time.Second
 	PongTimeout time.Duration
 	// PingPeriod send ping messages to the connection with this period. Must be less than PongTimeout
 	// Default value is (PongTimeout * 9) / 10
 	PingPeriod time.Duration
 	// MaxMessageSize max message size allowed from connection
-	// Default value is 2048
+	// Default value is 1024
 	MaxMessageSize int64
 	// Endpoint is the path which the websocket server will listen for clients/connections
 	// Default value is empty string, if you don't set it the Websocket server is disabled.
