@@ -35,4 +35,4 @@ func main() {
 }
 ```
 
-[![Iris control show case](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iriscontrolplugin.gif](https://github.com/iris-contrib/examples/tree/master/plugin_iriscontrol)
+[![Iris control show case](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iriscontrolplugin.gif)](https://github.com/iris-contrib/examples/tree/master/plugin_iriscontrol)
