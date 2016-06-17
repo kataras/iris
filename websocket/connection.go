@@ -14,6 +14,8 @@ import (
 type (
 	// DisconnectFunc is the callback which fires when a client/connection closed
 	DisconnectFunc func()
+	// ErrorFunc is the callback which fires when an error happens
+	ErrorFunc (func(string))
 	// NativeMessageFunc is the callback for native websocket messages, receives one []byte parameter which is the raw client's message
 	NativeMessageFunc func([]byte)
 	// MessageFunc is the second argument to the Emitter's Emit functions.
@@ -27,6 +29,12 @@ type (
 		ID() string
 		// OnDisconnect registers a callback which fires when this connection is closed by an error or manual
 		OnDisconnect(DisconnectFunc)
+		// OnError registers a callback which fires when this connection occurs an error
+		OnError(ErrorFunc)
+		// EmitError can be used to send a custom error message to the connection
+		//
+		// It does nothing more than firing the OnError listeners. It doesn't sends anything to the client.
+		EmitError(errorMessage string)
 		// To defines where server should send a message
 		// returns an emmiter to send messages
 		To(string) Emmiter
@@ -45,6 +53,7 @@ type (
 		id                       string
 		send                     chan []byte
 		onDisconnectListeners    []DisconnectFunc
+		onErrorListeners         []ErrorFunc
 		onNativeMessageListeners []NativeMessageFunc
 		onEventListeners         map[string][]MessageFunc
 		// these were  maden for performance only
@@ -66,6 +75,7 @@ func newConnection(websocketConn *websocket.Conn, s *server) *connection {
 		underline: websocketConn,
 		send:      make(chan []byte, 256),
 		onDisconnectListeners:    make([]DisconnectFunc, 0),
+		onErrorListeners:         make([]ErrorFunc, 0),
 		onNativeMessageListeners: make([]NativeMessageFunc, 0),
 		onEventListeners:         make(map[string][]MessageFunc, 0),
 		server:                   s,
@@ -159,7 +169,7 @@ func (c *connection) reader() {
 	for {
 		if _, data, err := conn.ReadMessage(); err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
-				println(err.Error())
+				c.EmitError(err.Error())
 			}
 			break
 		} else {
@@ -229,6 +239,16 @@ func (c *connection) fireDisconnect() {
 
 func (c *connection) OnDisconnect(cb DisconnectFunc) {
 	c.onDisconnectListeners = append(c.onDisconnectListeners, cb)
+}
+
+func (c *connection) OnError(cb ErrorFunc) {
+	c.onErrorListeners = append(c.onErrorListeners, cb)
+}
+
+func (c *connection) EmitError(errorMessage string) {
+	for _, cb := range c.onErrorListeners {
+		cb(errorMessage)
+	}
 }
 
 func (c *connection) To(to string) Emmiter {
