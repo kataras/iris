@@ -77,6 +77,4 @@ func (i *iriscontrol) GetDescription() string {
 
 // PreClose any clean-up
 // temporary is empty because all resources are cleaned graceful by the iris' station
-func (i *iriscontrol) PreClose(s *iris.Framework) {
-	s.Logger.Infof("Main server terminated")
-}
+func (i *iriscontrol) PreClose(s *iris.Framework) {}

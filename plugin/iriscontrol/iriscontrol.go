@@ -108,7 +108,10 @@ func (i *iriscontrol) initializeChild() {
 	})
 
 	i.child.UseFunc(func(ctx *iris.Context) {
-		///TODO: Remove this and make client-side basic auth when websocket connection.
+		///TODO: Remove this and make client-side basic auth when websocket connection. (user@password/host.. on chronium)
+		// FOR GOOGLE CHROME/CHRONIUM
+		// https://bugs.chromium.org/p/chromium/issues/detail?id=123862
+		// CROSS DOMAIN IS DISABLED so I think this is ok solution for now...
 		if ctx.PathString() == i.child.Config.Websocket.Endpoint {
 			ctx.Next()
 			return
