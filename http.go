@@ -240,8 +240,8 @@ type Server struct {
 	*fasthttp.Server
 	listener net.Listener
 	Config   *config.Server
-	started  bool
 	tls      bool
+	mu       sync.Mutex
 }
 
 // newServer returns a pointer to a Server object, and set it's options if any,  nothing more
@@ -259,7 +259,9 @@ func (s *Server) SetHandler(mux *serveMux) {
 
 // IsListening returns true if server is listening/started, otherwise false
 func (s *Server) IsListening() bool {
-	return s.started && s.listener != nil && s.listener.Addr().String() != ""
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.listener != nil && s.listener.Addr().String() != ""
 }
 
 // IsSecure returns true if server uses TLS, otherwise false
@@ -311,7 +313,7 @@ func (s *Server) VirtualHostname() (hostname string) {
 }
 
 func (s *Server) listen() error {
-	if s.started {
+	if s.IsListening() {
 		return errServerAlreadyStarted.Return()
 	}
 	listener, err := net.Listen("tcp4", s.Config.ListeningAddr)
@@ -351,9 +353,9 @@ func (s *Server) listenUNIX() error {
 
 //Serve just serves a listener, it is a blocking action, plugin.PostListen is not fired here.
 func (s *Server) serve(l net.Listener) error {
+	s.mu.Lock()
 	s.listener = l
-	s.started = true
-
+	s.mu.Unlock()
 	if s.Config.CertFile != "" && s.Config.KeyFile != "" {
 		s.tls = true
 		return s.Server.ServeTLS(s.listener, s.Config.CertFile, s.Config.KeyFile)
@@ -392,10 +394,10 @@ func (s *Server) Open() error {
 
 // close closes the server
 func (s *Server) close() (err error) {
-	if !s.started || s.listener == nil {
+	if !s.IsListening() {
 		return errServerIsClosed.Return()
 	}
-	s.started = false
+
 	err = s.listener.Close()
 
 	return

@@ -111,7 +111,7 @@ func (l *Logger) Fatalf(format string, a ...interface{}) {
 // Panic is equivalent to l.Dangerf("%#v",interface{}) followed by a call to panic().
 func (l *Logger) Panic(a interface{}) {
 	l.Dangerf("%s\n", a)
-	panic("")
+	panic(a)
 }
 
 // Panicf is equivalent to l.Dangerf() followed by a call to panic().

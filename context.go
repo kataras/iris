@@ -387,7 +387,10 @@ func (ctx *Context) SetContentType(s string) {
 }
 
 // SetHeader write to the response writer's header to a given key the given value(s)
+//
+// Note: If you want to send a multi-line string as header's value use: strings.TrimSpace first.
 func (ctx *Context) SetHeader(k string, v string) {
+	//v = strings.TrimSpace(v)
 	ctx.RequestCtx.Response.Header.Set(k, v)
 }
 
