@@ -2,7 +2,6 @@ package iriscontrol
 
 import (
 	"os"
-	"runtime"
 
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/utils"
@@ -20,15 +19,8 @@ var (
 
 // init just sets the assetsPath & current workingDir
 func init() {
-	homepath := ""
-	if runtime.GOOS == "windows" {
-		homepath = os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
-	} else {
-		homepath = os.Getenv("HOME")
-	}
-	assetsPath = homepath + utils.PathSeparator + ".iris" + utils.PathSeparator + "iris-control-assets" + utils.PathSeparator
-
 	workingDir, _ = os.Getwd()
+	assetsPath = utils.AssetsDirectory + utils.PathSeparator + "iris-control-assets" + utils.PathSeparator
 }
 
 func installAssets() {

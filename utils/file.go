@@ -9,14 +9,35 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
+
+	"github.com/fsnotify/fsnotify"
+	"github.com/kataras/iris/logger"
 )
 
 const (
 	// ContentBINARY is the  string of "application/octet-stream response headers
 	ContentBINARY = "application/octet-stream"
 )
+
+var (
+	// AssetsDirectory the path which iris saves some assets came from the internet ( used in iris control plugin (to download the html,css,js) and for iris command line tool to download the packages)
+	AssetsDirectory = ""
+)
+
+// init just sets the iris path for assets, used in iris control plugin and for iris command line tool(create command)
+// the AssetsDirectory path should be like: C:/users/kataras/.iris (for windows) and for linux you can imagine
+func init() {
+	homepath := ""
+	if runtime.GOOS == "windows" {
+		homepath = os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
+	} else {
+		homepath = os.Getenv("HOME")
+	}
+	AssetsDirectory = homepath + PathSeparator + ".iris"
+}
 
 // DirectoryExists returns true if a directory(or file) exists, otherwise false
 func DirectoryExists(dir string) bool {
@@ -316,21 +337,14 @@ func GetParentDir(targetDirectory string) string {
 	// 3-BSD License for package fsnotify/fsnotify
 	// Copyright (c) 2012 The Go Authors. All rights reserved.
 	// Copyright (c) 2012 fsnotify Authors. All rights reserved.
-	"github.com/fsnotify/fsnotify"
-	//
-	"github.com/kataras/iris/errors"
-	"github.com/kataras/iris/logger"
+*/
 
-// WatchDirectoryChanges watches for directory changes and calls the 'evt' callback parameter
-// unused after v2 but propably I will bring it back on v3
-
-func WatchDirectoryChanges(rootPath string, evt func(filename string), logger ...*logger.Logger) {
-	watcher, err := fsnotify.NewWatcher()
-
-	if err != nil {
-		if len(logger) > 0 {
-			errors.Printf(logger[0], err)
-		}
+// WatchDirectoryChanges watches a directory and fires the callback with the changed name, receives a logger just to print with red letters any errors, no need for second callback.
+func WatchDirectoryChanges(rootPath string, evt func(filename string), logger *logger.Logger) {
+	isWindows := runtime.GOOS == "windows"
+	watcher, werr := fsnotify.NewWatcher()
+	if werr != nil {
+		logger.Dangerf(werr.Error())
 		return
 	}
 
@@ -343,7 +357,7 @@ func WatchDirectoryChanges(rootPath string, evt func(filename string), logger ..
 				if event.Op&fsnotify.Write == fsnotify.Write {
 					//this is received two times, the last time is the real changed file, so
 					i++
-					if i%2 == 0 {
+					if i%2 == 0 || !isWindows { // this 'hack' works for windows but I dont know if works for linux too, we can wait for issue reports here.
 						if time.Now().After(lastChange.Add(time.Duration(1) * time.Second)) {
 							lastChange = time.Now()
 							evt(event.Name)
@@ -352,18 +366,15 @@ func WatchDirectoryChanges(rootPath string, evt func(filename string), logger ..
 
 				}
 			case err := <-watcher.Errors:
-				if len(logger) > 0 {
-					errors.Printf(logger[0], err)
-				}
+				logger.Dangerf(err.Error())
 			}
 		}
 	}()
 
-	err = watcher.Add(rootPath)
-	if err != nil {
-		if len(logger) > 0 {
-			errors.Printf(logger[0], err)
-		}
+	werr = watcher.Add(rootPath)
+	if werr != nil {
+		logger.Dangerf(werr.Error())
+
 	}
 
-}*/
+}

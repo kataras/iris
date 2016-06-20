@@ -6,7 +6,7 @@
 [Travis]: http://travis-ci.org/kataras/iris
 [License Widget]: https://img.shields.io/badge/license-Apache%20License%202.0-E91E63.svg?style=flat-square
 [License]: https://github.com/kataras/iris/blob/master/LICENSE
-[Release Widget]: https://img.shields.io/badge/release-v3.0.0--rc.1-blue.svg?style=flat-square
+[Release Widget]: https://img.shields.io/badge/release-v3.0.0--rc.2-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/iris/releases
 [Gitter Widget]: https://img.shields.io/badge/chat-on%20gitter-00BCD4.svg?style=flat-square
 [Gitter]: https://gitter.im/kataras/iris
@@ -124,7 +124,7 @@ Iris suggests you to use [this](https://github.com/gavv/httpexpect) new  suite t
 Versioning
 ------------
 
-Current: **v3.0.0-rc.1**
+Current: **v3.0.0-rc.2**
 >  Iris is an active project
 
 

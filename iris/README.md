@@ -7,14 +7,14 @@ This package is the command line tool for  [../](https://github.com/kataras/iris
 [![Iris installed screen](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iris_cli_screen2.png)](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iris_cli_screen2.png)
 
 ## Install
-Current version: 0.0.4
+Current version: 0.0.5
 ```sh
 
 go get -u github.com/kataras/iris/iris
 
 ```
 
-## Usage
+# Usage
 
 
 ```sh
@@ -24,7 +24,7 @@ $ iris [command] [-flags]
 > Note that you must have $GOPATH/bin to your $PATH system/environment variable.
 
 
-## Create
+## create
 
 
 **The create command** creates for you a start project in a directory
@@ -57,15 +57,24 @@ iris create -d myproject
 
 Will create the basic sample package to the `$GOPATH/src/myproject` folder and run the app.
 
+## run
 
-## Version
+**The run command** runs & reload on file changes your Iris station
+
+It's like ` go run ` but with directory watcher and re-run on .go file changes.
+
+```sh
+iris run main.go
+```
+
+[![Iris CLI run showcase](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iris_command_line_tool_run_command.png)](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iris_command_line_tool_run_command.png)
+
+
+
+## version
 
 ```sh
 iris version
 ```
 
-Will print the current iris' installed version to your machine
-
-## TODO
-
-- [ ] Add more templates
+Will print the current Iris' installed version to your machine

@@ -1,5 +1,15 @@
 # History
 
+## 3.0.0-rc.1 -> 3.0.0-rc.2
+
+New:
+- ` iris.MustUse/MustUseFunc`  - registers middleware for all route parties, all subdomains and all routes.
+- iris control plugin re-written, added real time browser request logger
+- `websocket.OnError` - Add OnError to be able to catch internal errors from the connection
+- [command line tool](https://github.com/kataras/iris/tree/master/iris) - `iris run main.go` runs, watch and reload on source code changes. As requested [here](https://github.com/kataras/iris/issues/192)
+
+Fixes: https://github.com/kataras/iris/issues/184 , https://github.com/kataras/iris/issues/175 .
+
 ## 3.0.0-beta.3, 3.0.0-beta.4 -> 3.0.0-rc.1
 
 This version took me many days because the whole framework's underline code is rewritten after many many many 'yoga'. Iris is not so small anymore, so I (tried) to organized it a little better. Note that, today, you can just go to [iris.go](https://github.com/kataras/iris/tree/master/iris.go) and [context.go](https://github.com/kataras/iris/tree/master/context/context.go) and look what functions you can use. You had some 'bugs' to subdomains, mail service, basic authentication and logger, these are fixed also, see below...

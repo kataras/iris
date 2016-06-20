@@ -69,7 +69,7 @@ import (
 
 const (
 	// Version of the iris
-	Version = "3.0.0-rc.1"
+	Version = "3.0.0-rc.2"
 	banner  = `         _____      _
         |_   _|    (_)
           | |  ____ _  ___
