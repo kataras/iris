@@ -71,6 +71,7 @@ Features
 - Typescript compiler + Browser editor
 - Content negotiation & streaming
 - Transport Layer Security
+- [Reload](https://github.com/kataras/iris/tree/master/iris#run) on source code changes
 - and much more
 
 

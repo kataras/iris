@@ -69,6 +69,7 @@ iris run main.go
 
 [![Iris CLI run showcase](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iris_command_line_tool_run_command.png)](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iris_command_line_tool_run_command.png)
 
+[![Iris CLI run showcase linux](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iris_command_line_tool_run_linux.png)](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iris_command_line_tool_run_linux.png)
 
 
 ## version
