@@ -111,7 +111,8 @@ func runAndWatch(flags cli.Flags) error {
 				if !isWindows {
 					fname = " " // we don't want to print the ".gooutput..." so dont print anything as a name
 				}
-				printer.Infof("\n[OP: %d] File '%s' changed, reloading...", atomic.LoadUint32(&times), fname)
+
+				printer.Infof("\n[OP: %d] File %s changed, reloading...", atomic.LoadUint32(&times), fname)
 
 				//kill the prev run
 

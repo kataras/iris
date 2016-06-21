@@ -23,8 +23,8 @@ type (
 	MessageFunc interface{}
 	// Connection is the client
 	Connection interface {
-		// Emmiter implements EmitMessage & Emit
-		Emmiter
+		// Emitter implements EmitMessage & Emit
+		Emitter
 		// ID returns the connection's identifier
 		ID() string
 		// OnDisconnect registers a callback which fires when this connection is closed by an error or manual
@@ -37,7 +37,7 @@ type (
 		EmitError(errorMessage string)
 		// To defines where server should send a message
 		// returns an emmiter to send messages
-		To(string) Emmiter
+		To(string) Emitter
 		// OnMessage registers a callback which fires when native websocket message received
 		OnMessage(NativeMessageFunc)
 		// On registers a callback to a particular event which fires when a message to this event received
@@ -57,9 +57,9 @@ type (
 		onNativeMessageListeners []NativeMessageFunc
 		onEventListeners         map[string][]MessageFunc
 		// these were  maden for performance only
-		self      Emmiter // pre-defined emmiter than sends message to its self client
-		broadcast Emmiter // pre-defined emmiter that sends message to all except this
-		all       Emmiter // pre-defined emmiter which sends message to all clients
+		self      Emitter // pre-defined emmiter than sends message to its self client
+		broadcast Emitter // pre-defined emmiter that sends message to all except this
+		all       Emitter // pre-defined emmiter which sends message to all clients
 
 		server *server
 	}
@@ -81,9 +81,9 @@ func newConnection(websocketConn *websocket.Conn, s *server) *connection {
 		server:                   s,
 	}
 
-	c.self = newEmmiter(c, c.id)
-	c.broadcast = newEmmiter(c, NotMe)
-	c.all = newEmmiter(c, All)
+	c.self = newEmitter(c, c.id)
+	c.broadcast = newEmitter(c, NotMe)
+	c.all = newEmitter(c, All)
 
 	return c
 }
@@ -251,7 +251,7 @@ func (c *connection) EmitError(errorMessage string) {
 	}
 }
 
-func (c *connection) To(to string) Emmiter {
+func (c *connection) To(to string) Emitter {
 	if to == NotMe { // if send to all except me, then return the pre-defined emmiter, and so on
 		return c.broadcast
 	} else if to == All {
@@ -260,7 +260,7 @@ func (c *connection) To(to string) Emmiter {
 		return c.self
 	}
 	// is an emmiter to another client/connection
-	return newEmmiter(c, to)
+	return newEmitter(c, to)
 }
 
 func (c *connection) EmitMessage(nativeMessage []byte) error {
