@@ -80,7 +80,10 @@ func runAndWatch(flags cli.Flags) error {
 
 	// run the file watcher before all, because the user maybe has a go syntax error before the first run
 	utils.WatchDirectoryChanges(workingDir, func(fname string) {
-		if (filepath.Ext(fname) == goExt) || (!isWindows && strings.HasPrefix(fname, goExt)) { // on !windows it sends a .gooutput_RANDOM_STRINGHERE
+		//remove the working dir from the fname path, printer should only print the relative changed file ( from the project's path)
+		fname = fname[len(workingDir)+1:]
+
+		if (filepath.Ext(fname) == goExt) || (!isWindows && strings.Contains(fname, goExt)) { // on !windows it sends a .gooutput_RANDOM_STRINGHERE, Note that: we do contains instead of HasPrefix
 			filenameCh <- fname
 		}
 
@@ -108,7 +111,7 @@ func runAndWatch(flags cli.Flags) error {
 				if !isWindows {
 					fname = " " // we don't want to print the ".gooutput..." so dont print anything as a name
 				}
-				printer.Infof("\n%d-  File '%s' changed, reloading...", atomic.LoadUint32(&times), fname)
+				printer.Infof("\n[OP: %d] File '%s' changed, reloading...", atomic.LoadUint32(&times), fname)
 
 				//kill the prev run
 
