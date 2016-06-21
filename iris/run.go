@@ -75,7 +75,6 @@ func runAndWatch(flags cli.Flags) error {
 		if isWindows {
 			executablePath += ".exe"
 		}
-		println("executablePath: " + executablePath)
 	}
 	// here(below), we don't return the error because the -help command doesn't help the user for these errors.
 
