@@ -7,7 +7,7 @@ This package is the command line tool for  [../](https://github.com/kataras/iris
 [![Iris installed screen](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iris_cli_screen2.png)](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iris_cli_screen2.png)
 
 ## Install
-Current version: 0.0.5
+Current version: 0.0.6
 ```sh
 
 go get -u github.com/kataras/iris/iris

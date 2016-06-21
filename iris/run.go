@@ -17,8 +17,39 @@ var (
 	errInvalidArgs = errors.New("Invalid arguments [%s], type -h to get assistant")
 	errInvalidExt  = errors.New("%s is not a go program")
 	errUnexpected  = errors.New("Unexpected error!!! Please post an issue here: https://github.com/kataras/iris/issues")
+	errBuild       = errors.New("\n Failed to build the %s iris program. Trace: %s")
+	errRun         = errors.New("\n Failed to run the %s iris program. Trace: %s")
 	goExt          = ".go"
 )
+
+func build(sourcepath string) error {
+	goBuild := utils.CommandBuilder("go", "build", sourcepath)
+	goBuild.Dir = workingDir
+	goBuild.Stdout = os.Stdout
+	goBuild.Stderr = os.Stderr
+	if err := goBuild.Run(); err != nil {
+		ferr := errBuild.Format(sourcepath, err.Error())
+		printer.Dangerf(ferr.Error())
+		return ferr
+	}
+	return nil
+}
+
+func run(executablePath string, stdout bool) (*utils.Cmd, error) {
+	runCmd := utils.CommandBuilder("." + utils.PathSeparator + executablePath)
+	runCmd.Dir = workingDir
+	if stdout {
+		runCmd.Stdout = os.Stdout
+	}
+
+	runCmd.Stderr = os.Stderr
+	if err := runCmd.Start(); err != nil {
+		ferr := errRun.Format(executablePath, err.Error())
+		printer.Dangerf(ferr.Error())
+		return nil, ferr
+	}
+	return runCmd, nil
+}
 
 func runAndWatch(flags cli.Flags) error {
 	if len(os.Args) <= 2 {
@@ -26,7 +57,9 @@ func runAndWatch(flags cli.Flags) error {
 		printer.Dangerf(err.Error())
 		return err
 	}
+	isWindows := runtime.GOOS == "windows"
 	programPath := ""
+	executablePath := ""
 	filenameCh := make(chan string)
 
 	if len(os.Args) > 2 { // iris run main.go
@@ -38,6 +71,11 @@ func runAndWatch(flags cli.Flags) error {
 		if filepath.Ext(programPath) != goExt {
 			return errInvalidExt.Format(programPath)
 		}
+		executablePath = programPath[:len(programPath)-3]
+		if isWindows {
+			executablePath += ".exe"
+		}
+		println("executablePath: " + executablePath)
 	}
 	// here(below), we don't return the error because the -help command doesn't help the user for these errors.
 
@@ -49,17 +87,15 @@ func runAndWatch(flags cli.Flags) error {
 
 	}, printer)
 
-	// we don't use go build and run from the executable, for performance reasons, no need this is a development action already
-	goRun := utils.CommandBuilder("go", "run", programPath)
-	goRun.Dir = workingDir
-	goRun.Stdout = os.Stdout
-	goRun.Stderr = os.Stderr
-	if err := goRun.Start(); err != nil {
-		printer.Dangerf("\n [ERROR] Failed to run the %s iris program. Trace: %s", programPath, err.Error())
-		return nil
+	if err := build(programPath); err != nil {
+		return err
 	}
 
-	isWindows := runtime.GOOS == "windows"
+	runCmd, err := run(executablePath, true)
+	if err != nil {
+		return err
+	}
+
 	defer func() {
 		printer.Dangerf("")
 		printer.Panic(errUnexpected)
@@ -70,25 +106,37 @@ func runAndWatch(flags cli.Flags) error {
 		case fname := <-filenameCh:
 			{
 				// it's not a warning but I like to use purple color for this message
-				printer.Warningf("\n/-%d-/  File '%s' changed, re-running...", atomic.LoadUint32(&times), fname)
-				// force kill, sometimes runCmd.Process.Kill or Signal(os.Kill) doesn't kill the child of the go's go run command ( which is the iris program)
-				if isWindows {
-					utils.CommandBuilder("taskkill", "/F", "/T", "/PID", strconv.Itoa(goRun.Process.Pid)).Run()
+				printer.Infof("\n%d-  File '%s' changed, reloading...", atomic.LoadUint32(&times), fname)
+
+				//kill the prev run
+
+				err := runCmd.Process.Kill()
+				if err == nil {
+					_, err = runCmd.Process.Wait()
 				} else {
-					utils.CommandBuilder("kill", "-INT", "-"+strconv.Itoa(goRun.Process.Pid)).Run()
+
+					// force kill, sometimes runCmd.Process.Kill or Signal(os.Kill) doesn't kills
+					if isWindows {
+						err = utils.CommandBuilder("taskkill", "/F", "/T", "/PID", strconv.Itoa(runCmd.Process.Pid)).Run()
+					} else {
+						err = utils.CommandBuilder("kill", "-INT", "-"+strconv.Itoa(runCmd.Process.Pid)).Run()
+					}
 				}
 
-				goRun = utils.CommandBuilder("go", "run", programPath)
-				goRun.Dir = workingDir
-				goRun.Stderr = os.Stderr
-
-				if err := goRun.Start(); err != nil {
-					printer.Warningf("\n [ERROR ON RELOAD] Failed to run the %s iris program. Trace: %s", programPath, err.Error())
-
+				err = build(programPath)
+				if err != nil {
+					printer.Warningf(err.Error())
 				} else {
-					atomic.AddUint32(&times, 1)
-					// don't print success on anything here because we may have error on iris itself, no need to print any message we are no spammers.
+
+					if runCmd, err = run(executablePath, false); err != nil {
+						printer.Warningf(err.Error())
+
+					} else {
+						printer.Successf("ready!")
+						atomic.AddUint32(&times, 1)
+					}
 				}
+
 			}
 		}
 	}
