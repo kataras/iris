@@ -18,12 +18,40 @@
 [Language]: http://golang.org
 [Platform Widget]: https://img.shields.io/badge/platform-Any--OS-gray.svg?style=flat-square
 
-the fastest web framework for Go while providing robust set of features for building modern web applications.
+The fastest web framework for Go.
 
 [![Benchmark Wizzard Processing Time Horizontal Graph](https://raw.githubusercontent.com/iris-contrib/website/cf71811e6acb2f9bf1e715e25660392bf090b923/assets/benchmark_horizontal_transparent.png)](https://github.com/smallnest/go-web-framework-benchmark)
 
+
 ```sh
-$ cat main.go
+$ cat test_json.go
+```
+```go
+package main
+
+import (
+	"github.com/kataras/iris"
+)
+
+func main() {
+
+	// render JSON
+	iris.Get("/hi_json", func(c *iris.Context) {
+		c.JSON(iris.StatusOK, iris.Map{
+			"Name":  "Iris",
+			"Born":  "13 March 2016",
+			"Stars": 2440,
+		})
+	})
+	iris.Listen(":8080")
+}
+```
+
+> Learn about [configuration](https://kataras.gitbooks.io/iris/content/configuration.html) and [render](https://kataras.gitbooks.io/iris/content/render.html).
+
+
+```sh
+$ cat test_party.go
 ```
 ```go
 package main
@@ -34,16 +62,6 @@ import (
 )
 
 func main() {
-
-	// render JSON
-	iris.Get("/hi_json", func(c *iris.Context) {
-		c.JSON(iris.StatusOK, iris.Map{
-			"Name":  "Iris",
-			"Born":  "13 March 2016",
-			"Stars": 2380,
-		})
-	})
-
 	// logger middleware
 	log := logger.New(iris.Logger)
 
@@ -87,7 +105,7 @@ func main() {
 		})
 	}
 
-	iris.Listen("127.0.0.1:8080")
+	iris.Listen(":8080")
 }
 
 // using high level sessions inside a custom middleware
@@ -102,10 +120,7 @@ func myAuthMiddleware(c *iris.Context) {
 }
 
 ```
-
-> Learn about [configuration](https://kataras.gitbooks.io/iris/content/configuration.html) and [render](https://kataras.gitbooks.io/iris/content/render.html).
-
-
+> Learn about [named parameters](https://kataras.gitbooks.io/iris/content/named-parameters.html), [parties](https://kataras.gitbooks.io/iris/content/party.html) and [subdomains](https://kataras.gitbooks.io/iris/content/subdomains.html).
 
 Installation
 ------------
