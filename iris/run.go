@@ -80,7 +80,7 @@ func runAndWatch(flags cli.Flags) error {
 
 	// run the file watcher before all, because the user maybe has a go syntax error before the first run
 	utils.WatchDirectoryChanges(workingDir, func(fname string) {
-		if filepath.Ext(fname) == goExt {
+		if (filepath.Ext(fname) == goExt) || (!isWindows && strings.HasPrefix(fname, goExt)) { // on !windows it sends a .gooutput_RANDOM_STRINGHERE
 			filenameCh <- fname
 		}
 
@@ -105,6 +105,9 @@ func runAndWatch(flags cli.Flags) error {
 		case fname := <-filenameCh:
 			{
 				// it's not a warning but I like to use purple color for this message
+				if !isWindows {
+					fname = " " // we don't want to print the ".gooutput..." so dont print anything as a name
+				}
 				printer.Infof("\n%d-  File '%s' changed, reloading...", atomic.LoadUint32(&times), fname)
 
 				//kill the prev run
@@ -131,6 +134,7 @@ func runAndWatch(flags cli.Flags) error {
 						printer.Warningf(err.Error())
 
 					} else {
+						// we did .Start, but it should be fast so no need to add a sleeper
 						printer.Successf("ready!")
 						atomic.AddUint32(&times, 1)
 					}
