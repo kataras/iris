@@ -112,7 +112,7 @@ func main() {
 func myAuthMiddleware(c *iris.Context) {
 	s := c.Session()
 
-	if s.GetString("username") == "myusername" && s.GetString("passowrd") == "mypassword" {
+	if s.GetString("username") == "myusername" && s.GetString("password") == "mypassword" {
 		c.Next()
 	} else {
 		c.EmitError(iris.StatusUnauthorized)
