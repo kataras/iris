@@ -2,12 +2,13 @@ package context
 
 import (
 	"bufio"
-	"github.com/iris-contrib/goth"
-	"github.com/kataras/iris/sessions/store"
-	"github.com/valyala/fasthttp"
 	"html/template"
 	"io"
 	"time"
+
+	"github.com/kataras/iris/sessions/store"
+	"github.com/markbates/goth"
+	"github.com/valyala/fasthttp"
 )
 
 type (
@@ -135,13 +136,8 @@ type (
 
 	// IContextAuth handles the authentication/authorization
 	IContextAuth interface {
-		// CompleteUserAuth does what it says on the tin. It completes the authentication
-		// process and fetches all of the basic information about the user from the provider.
-		//
-		// It expects to be able to get the name of the provider from the named parameters
-		// as either "provider" or ":provider".
-		//
-		// See https://github.com/iris-contrib/goth/examples/main.go to see this in action.
+		// CompleteUserAuth
+		// See https://github.com/iris-contrib/gothic/blob/master/example/main.go to see this in action.
 		CompleteUserAuth() (goth.User, error)
 	}
 )

@@ -11,3 +11,4 @@ Third party packages
 - [formam as form binder](https://github.com/monoculum/formam)
 - [i18n for internalization](https://github.com/Unknwon/i18n)
 - [color for banner](https://github.com/fatih/color)
+- [gothic](https://github.com/iris-contrib/gothic)/[goth for Multi-Provider OAuth, OAuth2](https://github.com/markbates/goth)
