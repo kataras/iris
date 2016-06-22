@@ -59,10 +59,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kataras/iris/errors"
-
+	"github.com/iris-contrib/goth/gothic"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/errors"
 	"github.com/kataras/iris/utils"
 	"github.com/valyala/fasthttp"
 )
@@ -566,6 +566,18 @@ func (s *Framework) TemplateString(templateFile string, pageContext interface{},
 		return ""
 	}
 	return res
+}
+
+// BeginAuthHandler is a convienence handler for starting the authentication process.
+// It expects to be able to get the name of the provider from the named parameters
+// as either "provider" or ":provider".
+//
+// BeginAuthHandler will redirect the user to the appropriate authentication end-point
+// for the requested provider.
+//
+// See https://github.com/iris-contrib/goth/examples/main.go to see this in action.
+func BeginAuthHandler(ctx *Context) {
+	gothic.BeginAuthHandler(ctx)
 }
 
 // -------------------------------------------------------------------------------------

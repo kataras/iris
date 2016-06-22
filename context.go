@@ -11,6 +11,16 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"github.com/iris-contrib/formBinder"
+	"github.com/iris-contrib/goth"
+	"github.com/iris-contrib/goth/gothic"
+	"github.com/kataras/iris/config"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/errors"
+	"github.com/kataras/iris/sessions/store"
+	"github.com/kataras/iris/utils"
+	"github.com/klauspost/compress/gzip"
+	"github.com/valyala/fasthttp"
 	"html/template"
 	"io"
 	"net"
@@ -22,15 +32,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/iris-contrib/formBinder"
-	"github.com/kataras/iris/config"
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/errors"
-	"github.com/kataras/iris/sessions/store"
-	"github.com/kataras/iris/utils"
-	"github.com/klauspost/compress/gzip"
-	"github.com/valyala/fasthttp"
 )
 
 const (
@@ -780,4 +781,17 @@ func (ctx *Context) SendMail(subject string, body string, to ...string) error {
 // Log logs to the iris defined logger
 func (ctx *Context) Log(format string, a ...interface{}) {
 	ctx.framework.Logger.Printf(format, a...)
+}
+
+/* Auth */
+
+// CompleteUserAuth does what it says on the tin. It completes the authentication
+// process and fetches all of the basic information about the user from the provider.
+//
+// It expects to be able to get the name of the provider from the named parameters
+// as either "provider" or ":provider".
+//
+// See https://github.com/iris-contrib/goth/examples/main.go to see this in action.
+func (ctx *Context) CompleteUserAuth() (goth.User, error) {
+	return gothic.CompleteUserAuth(ctx)
 }
