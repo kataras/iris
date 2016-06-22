@@ -91,7 +91,7 @@ func DownloadZip(zipURL string, newDir string) (string, error) {
 
 	}()
 
-	os.MkdirAll(newDir, os.ModeDir)
+	os.MkdirAll(newDir, 0755) // os.ModeDir, 0755 fix for unix users by @cgyy
 	tokens := strings.Split(zipURL, "/")
 	fileName := newDir + tokens[len(tokens)-1]
 	if !strings.HasSuffix(fileName, ".zip") {
