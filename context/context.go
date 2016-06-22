@@ -136,8 +136,12 @@ type (
 
 	// IContextAuth handles the authentication/authorization
 	IContextAuth interface {
-		// CompleteUserAuth
+		// SetOAuthUser sets the oauth user
+		// Internal method but exported because useful for advanced use cases
+		// Iris uses this method to set automatically the authenticated user.
+		SetOAuthUser(goth.User)
+		// OAuthUser returns the authenticated User
 		// See https://github.com/iris-contrib/gothic/blob/master/example/main.go to see this in action.
-		CompleteUserAuth() (goth.User, error)
+		OAuthUser() goth.User
 	}
 )

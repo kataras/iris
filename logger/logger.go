@@ -31,6 +31,7 @@ func New(c config.Logger) *Logger {
 	color.Output = colorable.NewColorable(c.Out)
 
 	l := &Logger{&c, color.New(attr(c.ColorBgDefault), attr(c.ColorFgDefault), color.Bold)}
+
 	return l
 }
 

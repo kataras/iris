@@ -59,7 +59,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iris-contrib/gothic"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/errors"
@@ -97,6 +96,7 @@ type (
 		MustUseFunc(...HandlerFunc)
 		OnError(int, HandlerFunc)
 		EmitError(int, *Context)
+		OnUserOAuth(...HandlerFunc)
 		Lookup(string) Route
 		Lookups() []Route
 		Path(string, ...interface{}) string
@@ -568,16 +568,18 @@ func (s *Framework) TemplateString(templateFile string, pageContext interface{},
 	return res
 }
 
-// BeginAuthHandler is a convienence handler for starting the authentication process.
-// It expects to be able to get the name of the provider from the named parameters
-// as either "provider" or url query parameter ":provider".
-//
-// BeginAuthHandler will redirect the user to the appropriate authentication end-point
-// for the requested provider.
-//
-// See https://github.com/iris-contrib/gothic/blob/master/example/main.go to see this in action.
-func BeginAuthHandler(ctx *Context) {
-	gothic.BeginAuthHandler(ctx)
+/* Auth */
+
+// OnUserOAuth fires the middleware when the user logged in successfully via gothic oauth
+// get the user using the context.OAuthUser()
+func OnUserOAuth(handlersFn ...HandlerFunc) {
+	Default.OnUserOAuth(handlersFn...)
+}
+
+// OnUserOAuth fires the middleware when the user logged in successfully via gothic oauth
+// get the user using the context.OAuthUser()
+func (s *Framework) OnUserOAuth(handlersFn ...HandlerFunc) {
+	s.oauthHandlers = append(s.oauthHandlers, convertToHandlers(handlersFn)...)
 }
 
 // -------------------------------------------------------------------------------------

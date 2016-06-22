@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"github.com/iris-contrib/formBinder"
-	"github.com/iris-contrib/gothic"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/errors"
@@ -88,6 +87,8 @@ type (
 		sessionStore store.IStore
 		// pos is the position number of the Context, look .Next to understand
 		pos uint8
+		//gothic oauth
+		oauthUser goth.User
 	}
 )
 
@@ -786,13 +787,15 @@ func (ctx *Context) Log(format string, a ...interface{}) {
 
 /* Auth */
 
-// CompleteUserAuth does what it says on the tin. It completes the authentication
-// process and fetches all of the basic information about the user from the provider.
-//
-// It expects to be able to get the name of the provider from the named parameters
-// as either "provider" or url query parameter ":provider".
-//
-// See https://github.com/iris-contrib/gothic/blob/master/example/main.go to see this in action.
-func (ctx *Context) CompleteUserAuth() (goth.User, error) {
-	return gothic.CompleteUserAuth(ctx)
+// SetOAuthUser sets the oauth user
+// Internal method but exported because useful for advanced use cases
+// Iris uses this method to set automatically the authenticated user.
+func (ctx *Context) SetOAuthUser(u goth.User) {
+	ctx.oauthUser = u
+}
+
+// OAuthUser returns the oauthenticated User
+// See https://github.com/iris-contrib/gothic/blob/master/exampl/main.go to see this in action.
+func (ctx *Context) OAuthUser() goth.User {
+	return ctx.oauthUser
 }

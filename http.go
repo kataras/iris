@@ -286,7 +286,24 @@ func (s *Server) Host() (host string) {
 // VirtualHost returns the s.Config.ListeningAddr
 //
 func (s *Server) VirtualHost() (host string) {
+	// check the addr if :8080 do it 0.0.0.0:8080 ,we need the hostname for many cases
+	a := s.Config.ListeningAddr
+	//check if contains hostname, we need the full host, :8080 should be : 127.0.0.1:8080
+	if portIdx := strings.IndexByte(a, ':'); portIdx == 0 {
+		// then the : is the first letter, so we dont have setted a hostname, lets set it
+		s.Config.ListeningAddr = config.DefaultServerHostname + a
+	}
 	return s.Config.ListeningAddr
+}
+
+// Fullhost returns the scheme+host
+func (s *Server) FullHost() string {
+	scheme := "http://"
+	// we need to be able to take that before(for testing &debugging) and after server's listen
+	if s.IsSecure() || (s.Config.CertFile != "" && s.Config.KeyFile != "") {
+		scheme = "https://"
+	}
+	return scheme + s.VirtualHost()
 }
 
 // Hostname returns the hostname part only, if host == localhost:8080 it will return the localhost

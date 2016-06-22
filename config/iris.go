@@ -104,6 +104,10 @@ type (
 		// Mail contains the configs for the mail sender service
 		Mail Mail
 
+		// OAuth the configs for the gothic oauth/oauth2 authentication for third-party websites
+		// See https://github.com/iris-contrib/gothic/blob/master/example/main.go
+		OAuth OAuth
+
 		// Server contains the configs for the http server
 		// Server configs are the only one which are setted inside base Iris package (from Listen, ListenTLS, ListenUNIX) NO from users
 		//
@@ -147,6 +151,7 @@ func Default() Iris {
 		Render:                DefaultRender(),
 		Websocket:             DefaultWebsocket(),
 		Mail:                  DefaultMail(),
+		OAuth:                 DefaultOAuth(),
 		Server:                DefaultServer(),
 	}
 }
