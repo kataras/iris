@@ -40,87 +40,14 @@ func main() {
 		c.JSON(iris.StatusOK, iris.Map{
 			"Name":  "Iris",
 			"Born":  "13 March 2016",
-			"Stars": 2440,
+			"Stars": 3304,
 		})
 	})
 	iris.Listen(":8080")
 }
 ```
 
-> Learn about [configuration](https://kataras.gitbooks.io/iris/content/configuration.html) and [render](https://kataras.gitbooks.io/iris/content/render.html).
-
-
-```sh
-$ cat test_party.go
-```
-```go
-package main
-
-import (
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/middleware/logger"
-)
-
-func main() {
-	// logger middleware
-	log := logger.New(iris.Logger)
-
-	// group routes by path prefix and middleware sharing
-	group := iris.Party("/users", log)
-	{
-		group.Get("/", func(c *iris.Context) {
-			// return all users or render a template
-		})
-
-		group.Get("/:userID", func(c *iris.Context) {
-			// return a user with ID `c.Param("userID")`
-		})
-
-		group.Delete("/:userID", func(c *iris.Context) {
-			//delete a user with ID `c.Param("userID")`
-		})
-	}
-
-	// using static subdomains
-	subdomain := iris.Party("account.", log, myAuthMiddleware).Layout("layouts/subdomain.html")
-	{
-		subdomain.Get("/", func(c *iris.Context) {
-			// render a template with a context of {username: "myusername"}
-			c.Render("account/index.html", iris.Map{ // we can also use a struct
-				"username": c.Session().GetString("username"),
-			})
-		})
-
-		subdomain.Post("/edit", func(c *iris.Context) {
-			//...
-		})
-	}
-
-	// using dynamic subdomains
-	dynamicSub := iris.Party("*.")
-	{
-		// middleware on route, called before the final handler
-		dynamicSub.Get("/", log, func(c *iris.Context) {
-			c.Write("Hello from subdomain: %s", c.Subdomain())
-		})
-	}
-
-	iris.Listen(":8080")
-}
-
-// using high level sessions inside a custom middleware
-func myAuthMiddleware(c *iris.Context) {
-	s := c.Session()
-
-	if s.GetString("username") == "myusername" && s.GetString("password") == "mypassword" {
-		c.Next()
-	} else {
-		c.EmitError(iris.StatusUnauthorized)
-	}
-}
-
-```
-> Learn about [named parameters](https://kataras.gitbooks.io/iris/content/named-parameters.html), [parties](https://kataras.gitbooks.io/iris/content/party.html) and [subdomains](https://kataras.gitbooks.io/iris/content/subdomains.html).
+> Learn more about [render](https://kataras.gitbooks.io/iris/content/render.html).
 
 Installation
 ------------
