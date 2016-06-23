@@ -6,7 +6,7 @@
 [Travis]: http://travis-ci.org/kataras/iris
 [License Widget]: https://img.shields.io/badge/license-Apache%20License%202.0-E91E63.svg?style=flat-square
 [License]: https://github.com/kataras/iris/blob/master/LICENSE
-[Release Widget]: https://img.shields.io/badge/release-v3.0.0--rc.2-blue.svg?style=flat-square
+[Release Widget]: https://img.shields.io/badge/release-v3.0.0--rc.3-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/iris/releases
 [Gitter Widget]: https://img.shields.io/badge/chat-on%20gitter-00BCD4.svg?style=flat-square
 [Gitter]: https://gitter.im/kataras/iris
@@ -138,19 +138,35 @@ You can find answers by exploring [these questions](https://github.com/kataras/i
 Features
 ------------
 - Focus on high performance
-- Robust routing & static, wildcard subdomains
+- Robust routing supports static and wildcard subdomains
 - View system supporting [5+](https://kataras.gitbooks.io/iris/content/render_templates.html) template engines
 - Highly scalable Websocket API with custom events
 - Sessions support with GC, memory & redis providers
 - Middlewares & Plugins were never be easier
 - Full REST API
 - Custom HTTP Errors
-- Typescript compiler + Browser editor
+- Typescript compiler + Browser-based editor
 - Content negotiation & streaming
 - Transport Layer Security
 - [Reload](https://github.com/kataras/iris/tree/master/iris#run) on source code changes
-- and much more
+- OAuth, OAuth2 provider supporting 27+ API providers
+- and more
 
+<img src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/arrowdown.png" width="72"/>
+
+
+| Name        | Description           | Usage  |
+| ------------------|:---------------------:|-------:|
+| [Basicauth Middleware ](https://github.com/iris-contrib/middleware/tree/master/basicauth)      | HTTP Basic authentication                  |[example 1](https://github.com/iris-contrib/examples/blob/master/middleware_basicauth_1/main.go), [example 2](https://github.com/iris-contrib/examples/blob/master/middleware_basicauth_2/main.go), [book section](https://kataras.gitbooks.io/iris/content/basic-authentication.html)  |
+| [Cors Middleware ](https://github.com/iris-contrib/middleware/tree/master/cors)      | Cross Origin Resource Sharing W3 specification   | [how to use ](https://github.com/iris-contrib/middleware/tree/master/cors#how-to-use)  |
+| [Secure Middleware ](https://github.com/iris-contrib/middleware/tree/master/secure) |  Facilitates some quick security wins      | [example](https://github.com/iris-contrib/examples/blob/master/middleware_secure/main.go)  |
+| [I18n Middleware ](https://github.com/iris-contrib/middleware/tree/master/i18n)      | Simple internationalization       | [example](https://github.com/iris-contrib/examples/tree/master/middleware_internationalization_i18n), [book section](https://kataras.gitbooks.io/iris/content/middleware-internationalization-and-localization.html)  |
+| [Recovery Middleware ](https://github.com/iris-contrib/middleware/tree/master/recovery) | Safety recover the station from panic       | [example](https://github.com/iris-contrib/examples/blob/master/middleware_recovery/main.go)  |
+| [Logger Middleware ](https://github.com/iris-contrib/middleware/tree/master/logger)      | Logs every request       | [example](https://github.com/iris-contrib/examples/blob/master/middleware_logger/main.go), [book section](https://kataras.gitbooks.io/iris/content/logger.html)  |
+| [Editor Plugin](https://github.com/iris-contrib/plugin/tree/master/editor)      | Alm-tools, a typescript online IDE/Editor | [book section](https://kataras.gitbooks.io/iris/content/plugin-editor.html) |
+| [Typescript Plugin](https://github.com/iris-contrib/plugin/tree/master/typescript)      | Auto-compile client-side typescript files      |   [book section](https://kataras.gitbooks.io/iris/content/plugin-typescript.html) |
+| [OAuth,OAuth2 Plugin](https://github.com/iris-contrib/plugin/tree/master/oauth) |  User Authentication was never be easier, supports >27 providers |    [example](https://github.com/iris-contrib/examples/tree/master/plugin_oauth_oauth2), [book section](https://kataras.gitbooks.io/iris/content/plugin-oauth.html) |
+| [Iris control Plugin](https://github.com/iris-contrib/plugin/tree/master/iriscontrol) |   Basic (browser-based) control over your Iris station |    [example](https://github.com/iris-contrib/examples/blob/master/plugin_iriscontrol/main.go), [book section](https://kataras.gitbooks.io/iris/content/plugin-iriscontrol.html) |
 
 Docs & Community
 ------------
@@ -202,7 +218,7 @@ Iris suggests you to use [this](https://github.com/gavv/httpexpect) new  suite t
 Versioning
 ------------
 
-Current: **v3.0.0-rc.2**
+Current: **v3.0.0-rc.3**
 >  Iris is an active project
 
 

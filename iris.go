@@ -59,16 +59,16 @@ import (
 	"strings"
 	"time"
 
+	"github.com/iris-contrib/errors"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/errors"
 	"github.com/kataras/iris/utils"
 	"github.com/valyala/fasthttp"
 )
 
 const (
 	// Version of the iris
-	Version = "3.0.0-rc.2"
+	Version = "3.0.0-rc.3"
 	banner  = `         _____      _
         |_   _|    (_)
           | |  ____ _  ___
@@ -96,12 +96,10 @@ type (
 		MustUseFunc(...HandlerFunc)
 		OnError(int, HandlerFunc)
 		EmitError(int, *Context)
-		OnUserOAuth(...HandlerFunc)
 		Lookup(string) Route
 		Lookups() []Route
 		Path(string, ...interface{}) string
 		URL(string, ...interface{}) string
-		SendMail(string, string, ...string) error
 		TemplateString(string, interface{}, ...string) string
 	}
 
@@ -538,19 +536,6 @@ func (s *Framework) URL(routeName string, args ...interface{}) (url string) {
 	return
 }
 
-// SendMail sends a mail to recipients
-// the body can be html also
-func SendMail(subject string, body string, to ...string) error {
-	return Default.SendMail(subject, body, to...)
-}
-
-// SendMail sends a mail to recipients
-// the body can be html also
-func (s *Framework) SendMail(subject string, body string, to ...string) error {
-	s.prepareMailer()
-	return s.mailer.Send(subject, body, to...)
-}
-
 // TemplateString executes a template and returns its result as string, useful when you want it for sending rich e-mails
 // returns empty string on error
 func TemplateString(templateFile string, pageContext interface{}, layout ...string) string {
@@ -566,20 +551,6 @@ func (s *Framework) TemplateString(templateFile string, pageContext interface{},
 		return ""
 	}
 	return res
-}
-
-/* Auth */
-
-// OnUserOAuth fires the middleware when the user logged in successfully via gothic oauth
-// get the user using the context.OAuthUser()
-func OnUserOAuth(handlersFn ...HandlerFunc) {
-	Default.OnUserOAuth(handlersFn...)
-}
-
-// OnUserOAuth fires the middleware when the user logged in successfully via gothic oauth
-// get the user using the context.OAuthUser()
-func (s *Framework) OnUserOAuth(handlersFn ...HandlerFunc) {
-	s.oauthHandlers = append(s.oauthHandlers, convertToHandlers(handlersFn)...)
 }
 
 // -------------------------------------------------------------------------------------

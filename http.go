@@ -10,8 +10,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/iris-contrib/errors"
 	"github.com/kataras/iris/config"
-	"github.com/kataras/iris/errors"
 	"github.com/kataras/iris/logger"
 	"github.com/kataras/iris/utils"
 	"github.com/valyala/fasthttp"
@@ -296,7 +296,7 @@ func (s *Server) VirtualHost() (host string) {
 	return s.Config.ListeningAddr
 }
 
-// Fullhost returns the scheme+host
+// FullHost returns the scheme+host
 func (s *Server) FullHost() string {
 	scheme := "http://"
 	// we need to be able to take that before(for testing &debugging) and after server's listen

@@ -23,14 +23,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/iris-contrib/errors"
 	"github.com/iris-contrib/formBinder"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/errors"
 	"github.com/kataras/iris/sessions/store"
 	"github.com/kataras/iris/utils"
 	"github.com/klauspost/compress/gzip"
-	"github.com/markbates/goth"
 	"github.com/valyala/fasthttp"
 )
 
@@ -87,8 +86,6 @@ type (
 		sessionStore store.IStore
 		// pos is the position number of the Context, look .Next to understand
 		pos uint8
-		//gothic oauth
-		oauthUser goth.User
 	}
 )
 
@@ -774,28 +771,7 @@ func (ctx *Context) SessionDestroy() {
 
 }
 
-// SendMail sends a mail to recipients
-// the body can be html also
-func (ctx *Context) SendMail(subject string, body string, to ...string) error {
-	return ctx.framework.SendMail(subject, body, to...)
-}
-
 // Log logs to the iris defined logger
 func (ctx *Context) Log(format string, a ...interface{}) {
 	ctx.framework.Logger.Printf(format, a...)
-}
-
-/* Auth */
-
-// SetOAuthUser sets the oauth user
-// Internal method but exported because useful for advanced use cases
-// Iris uses this method to set automatically the authenticated user.
-func (ctx *Context) SetOAuthUser(u goth.User) {
-	ctx.oauthUser = u
-}
-
-// OAuthUser returns the oauthenticated User
-// See https://github.com/iris-contrib/gothic/blob/master/exampl/main.go to see this in action.
-func (ctx *Context) OAuthUser() goth.User {
-	return ctx.oauthUser
 }

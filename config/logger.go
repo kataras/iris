@@ -80,12 +80,12 @@ func DefaultLogger() Logger {
 		ColorFgDanger:  int(color.FgHiRed),
 		ColorFgOther:   int(color.FgHiYellow),
 		// background colors
-		ColorBgDefault: int(color.BgHiBlack),
-		ColorBgInfo:    int(color.BgHiBlack),
-		ColorBgSuccess: int(color.BgHiBlack),
-		ColorBgWarning: int(color.BgHiBlack),
-		ColorBgDanger:  int(color.BgHiWhite),
-		ColorBgOther:   int(color.BgHiBlack),
+		ColorBgDefault: 0,
+		ColorBgInfo:    0,
+		ColorBgSuccess: 0,
+		ColorBgWarning: 0,
+		ColorBgDanger:  0,
+		ColorBgOther:   0,
 		// banner color
 		ColorFgBanner: int(color.FgHiBlue),
 	}

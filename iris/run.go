@@ -8,8 +8,8 @@ import (
 	"strings"
 	"sync/atomic"
 
+	"github.com/iris-contrib/errors"
 	"github.com/kataras/cli"
-	"github.com/kataras/iris/errors"
 	"github.com/kataras/iris/utils"
 )
 
@@ -71,10 +71,21 @@ func runAndWatch(flags cli.Flags) error {
 		if filepath.Ext(programPath) != goExt {
 			return errInvalidExt.Format(programPath)
 		}
+
+		// check if we have a path,change the workingdir and programpath
+		if lidx := strings.LastIndexByte(programPath, os.PathSeparator); lidx > 0 { // no /
+			workingDir = workingDir + utils.PathSeparator + programPath[0:lidx]
+			programPath = programPath[lidx+1:]
+		} else if lidx := strings.LastIndexByte(programPath, '/'); lidx > 0 { // no /
+			workingDir = workingDir + "/" + programPath[0:lidx]
+			programPath = programPath[lidx+1:]
+		}
+
 		executablePath = programPath[:len(programPath)-3]
 		if isWindows {
 			executablePath += ".exe"
 		}
+
 	}
 	// here(below), we don't return the error because the -help command doesn't help the user for these errors.
 

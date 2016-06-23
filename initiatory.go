@@ -6,13 +6,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iris-contrib/gothic"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/logger"
 	"github.com/kataras/iris/websocket"
-	"github.com/markbates/goth"
 
-	"github.com/kataras/iris/mail"
 	"github.com/kataras/iris/render/rest"
 	"github.com/kataras/iris/render/template"
 	"github.com/kataras/iris/sessions"
@@ -70,11 +67,9 @@ const (
 // Implements the FrameworkAPI
 type Framework struct {
 	*muxAPI
-	rest          *rest.Render
-	templates     *template.Template
-	sessions      *sessions.Manager
-	mailer        mail.Service
-	oauthHandlers Middleware
+	rest      *rest.Render
+	templates *template.Template
+	sessions  *sessions.Manager
 	// fields which are useful to the user/dev
 	HTTPServer *Server
 	Config     *config.Iris
@@ -121,44 +116,8 @@ func (s *Framework) initialize() {
 	// set the rest
 	s.rest = rest.New(s.Config.Render.Rest)
 
-	// set mail and templates if not already setted
-	s.prepareMailer()
+	// set templates if not already setted
 	s.prepareTemplates()
-
-	// set the oauth providers from the OAuth configuration field
-
-	// the user still can set his/her own provider (using goth.UseProviders), if the configuration for the provider is not exists
-	// prepare the configs
-	s.Config.OAuth = config.DefaultOAuth().MergeSingle(s.Config.OAuth)
-	oauthProviders := s.Config.OAuth.GetAll(s.HTTPServer.FullHost())
-	if len(oauthProviders) > 0 {
-		goth.UseProviders(oauthProviders...)
-		// set the mux path to handle these providers
-		s.Get(s.Config.OAuth.Path+"/:provider", func(ctx *Context) {
-			err := gothic.BeginAuthHandler(ctx)
-			if err != nil {
-				s.Logger.Warningf("\n[IRIS: OAUTH] Error:" + err.Error())
-			}
-		})
-
-		authMiddleware := func(ctx *Context) {
-
-			user, err := gothic.CompleteUserAuth(ctx)
-			if err != nil {
-				ctx.EmitError(StatusUnauthorized)
-				ctx.Log(err.Error())
-				return
-			}
-			ctx.SetOAuthUser(user)
-			ctx.Next()
-		}
-
-		s.oauthHandlers = append([]Handler{HandlerFunc(authMiddleware)}, s.oauthHandlers...)
-
-		s.Handle(MethodGet, s.Config.OAuth.Path+"/:provider/callback", s.oauthHandlers...)("oauth")
-	}
-
-	// end of auth
 
 	// listen to websocket connections
 	websocket.RegisterServer(s, s.Websocket, s.Logger)
@@ -174,14 +133,6 @@ func (s *Framework) initialize() {
 
 	if s.Config.MaxRequestBodySize > 0 {
 		s.HTTPServer.MaxRequestBodySize = int(s.Config.MaxRequestBodySize)
-	}
-}
-
-// prepareMailer sets the mailer if not nil, we make this check because of .SendMail, which can be called before Listen
-func (s *Framework) prepareMailer() {
-	// prepare the mail service
-	if s.mailer == nil {
-		s.mailer = mail.New(s.Config.Mail)
 	}
 }
 

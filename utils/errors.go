@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/kataras/iris/errors"
+	"github.com/iris-contrib/errors"
 )
 
 var (

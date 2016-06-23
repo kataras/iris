@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"github.com/garyburd/redigo/redis"
+	"github.com/iris-contrib/errors"
 	"github.com/kataras/iris/config"
-	"github.com/kataras/iris/errors"
 )
 
 var (

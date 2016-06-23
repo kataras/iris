@@ -3,7 +3,7 @@ package iris
 import (
 	"sync"
 
-	"github.com/kataras/iris/errors"
+	"github.com/iris-contrib/errors"
 
 	"github.com/kataras/iris/logger"
 	"github.com/kataras/iris/utils"

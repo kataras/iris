@@ -26,11 +26,19 @@ func attr(sgr int) color.Attribute {
 	return color.Attribute(sgr)
 }
 
+// check if background color > 0 and if so then set it
+func (l *Logger) setBg(sgr int) {
+	if sgr > 0 {
+		l.underline.Add(attr(sgr))
+	}
+}
+
 // New creates a new Logger from config.Logger configuration
 func New(c config.Logger) *Logger {
 	color.Output = colorable.NewColorable(c.Out)
 
-	l := &Logger{&c, color.New(attr(c.ColorBgDefault), attr(c.ColorFgDefault), color.Bold)}
+	l := &Logger{&c, color.New(attr(c.ColorFgDefault))}
+	l.setBg(c.ColorBgDefault)
 
 	return l
 }
@@ -48,19 +56,25 @@ func (l *Logger) IsEnabled() bool {
 // ResetColors sets the colors to the default
 // this func is called every time a success, info, warning, or danger message is printed
 func (l *Logger) ResetColors() {
-	l.underline.Add(attr(l.config.ColorBgDefault), attr(l.config.ColorFgDefault))
+	l.underline.Add(attr(l.config.ColorFgDefault))
+	l.setBg(l.config.ColorBgDefault)
 }
 
 // PrintBanner prints a text (banner) with BannerFgColor, BannerBgColor and a success message at the end
 // It doesn't cares if the logger is disabled or not, it will print this
 func (l *Logger) PrintBanner(banner string, successMessage string) {
-	c := color.New(attr(l.config.ColorBgDefault), attr(l.config.ColorFgBanner), color.Bold)
+	c := color.New(attr(l.config.ColorFgBanner))
+	if l.config.ColorBgDefault > 0 {
+		c.Add(attr(l.config.ColorBgDefault))
+	}
 	c.Println(banner)
 	bannersRan++
 
 	if successMessage != "" {
-		c.Add(attr(l.config.ColorBgSuccess), attr(l.config.ColorFgSuccess), color.Bold)
-
+		c.Add(attr(l.config.ColorFgSuccess))
+		if l.config.ColorBgSuccess > 0 {
+			c.Add(attr(l.config.ColorBgSuccess))
+		}
 		if bannersRan > 1 {
 			c.Printf("Server[%#v]\n", bannersRan)
 
@@ -125,7 +139,8 @@ func (l *Logger) Panicf(format string, a ...interface{}) {
 // Arguments are handled in the manner of fmt.Printf.
 func (l *Logger) Successf(format string, a ...interface{}) {
 	if !l.config.Disabled {
-		l.underline.Add(attr(l.config.ColorBgSuccess), attr(l.config.ColorFgSuccess))
+		l.underline.Add(attr(l.config.ColorFgSuccess))
+		l.setBg(l.config.ColorBgSuccess)
 		l.Printf(format, a...)
 	}
 }
@@ -134,7 +149,8 @@ func (l *Logger) Successf(format string, a ...interface{}) {
 // Arguments are handled in the manner of fmt.Printf.
 func (l *Logger) Infof(format string, a ...interface{}) {
 	if !l.config.Disabled {
-		l.underline.Add(attr(l.config.ColorBgInfo), attr(l.config.ColorFgInfo))
+		l.underline.Add(attr(l.config.ColorFgInfo))
+		l.setBg(l.config.ColorBgInfo)
 		l.Printf(format, a...)
 	}
 }
@@ -143,7 +159,8 @@ func (l *Logger) Infof(format string, a ...interface{}) {
 // Arguments are handled in the manner of fmt.Printf.
 func (l *Logger) Warningf(format string, a ...interface{}) {
 	if !l.config.Disabled {
-		l.underline.Add(attr(l.config.ColorBgWarning), attr(l.config.ColorFgWarning))
+		l.underline.Add(attr(l.config.ColorFgWarning))
+		l.setBg(l.config.ColorBgWarning)
 		l.Printf(format, a...)
 	}
 }
@@ -152,7 +169,8 @@ func (l *Logger) Warningf(format string, a ...interface{}) {
 // Arguments are handled in the manner of fmt.Printf.
 func (l *Logger) Dangerf(format string, a ...interface{}) {
 	if !l.config.Disabled {
-		l.underline.Add(attr(l.config.ColorBgDanger), attr(l.config.ColorFgDanger))
+		l.underline.Add(attr(l.config.ColorFgDanger))
+		l.setBg(l.config.ColorBgDanger)
 		l.Printf(format, a...)
 	}
 }
@@ -161,7 +179,8 @@ func (l *Logger) Dangerf(format string, a ...interface{}) {
 // Arguments are handled in the manner of fmt.Printf.
 func (l *Logger) Otherf(format string, a ...interface{}) {
 	if !l.config.Disabled {
-		l.underline.Add(attr(l.config.ColorBgOther), attr(l.config.ColorFgOther))
+		l.underline.Add(attr(l.config.ColorFgOther))
+		l.setBg(l.config.ColorBgOther)
 		l.Printf(format, a...)
 	}
 }
