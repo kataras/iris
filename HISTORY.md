@@ -2,7 +2,10 @@
 
 ## 3.0.0-rc.2 -> 3.0.0-rc.3
 
-Breaking changes:
+**How to upgrade**: remove your $GOPATH/src/github.com/kataras folder, open your command-line and run `go get -u github.com/kataras/iris/iris`.
+
+
+**Breaking changes**
 - Move middleware & their configs to the  [iris-contrib/middleware](https://github.com/iris-contrib/middleware) repository
 - Move all plugins & their configs to the [iris-contrib/plugin](https://github.com/iris-contrib/plugin) repository
 - Move the graceful package to the [iris-contrib/graceful](https://github.com/iris-contrib/graceful) repository
@@ -16,15 +19,15 @@ Underline changes, libraries used by iris' base code:
 - Move the errors package to the [iris-contrib/errors](https://github.com/iris-contrib/errors) repository
 - Move the tests package to the [iris-contrib/tests](https://github.com/iris-contrib/tests) repository (Yes, you should make PRs now with no fear about breaking the Iris).
 
-NEW:
+**NEW**:
 - OAuth, OAuth2 support via plugin (facebook,gplus,twitter and 25 more), gitbook section [here](https://kataras.gitbooks.io/iris/content/plugin-oauth.html), plugin [example](https://github.com/iris-contrib/examples/blob/master/plugin_oauth_oauth2/main.go), low-level package example [here](https://github.com/iris-contrib/examples/tree/master/oauth_oauth2) (no performance differences, it's just a working version of [goth](https://github.com/markbates/goth) which is converted to work with Iris).
 
-Fixes:
+**Fixes**:
 - [Iris run fails when not running from ./](https://github.com/kataras/iris/issues/215)
 - [Fix or disable colors in iris run](https://github.com/kataras/iris/issues/217).
 
 
-[Book](https://kataras.gitbooks.io/iris/content/) and [examples](https://github.com/iris-contrib/examples) are updated also.
+[Book](https://kataras.gitbooks.io/iris/content/) and [examples](https://github.com/iris-contrib/examples) are **updated** also.
 
 ## 3.0.0-rc.1 -> 3.0.0-rc.2
 

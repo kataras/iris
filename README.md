@@ -40,7 +40,7 @@ func main() {
 		c.JSON(iris.StatusOK, iris.Map{
 			"Name":  "Iris",
 			"Born":  "13 March 2016",
-			"Stars": 3304,
+			"Stars": 3404,
 		})
 	})
 	iris.Listen(":8080")
@@ -136,6 +136,12 @@ Benchmarks
 ![Benchmark Wizzard Processing Time Horizontal Graph](https://raw.githubusercontent.com/iris-contrib/website/cf71811e6acb2f9bf1e715e25660392bf090b923/assets/benchmark_horizontal_transparent.png)
 
 [Please click here to view all detailed benchmarks.](https://github.com/smallnest/go-web-framework-benchmark)
+
+Testing
+------------
+
+Tests are located to the [iris-contrib/tests repository](https://github.com/iris-contrib/tests), community should write some code there!
+I recommend writing your API tests using this new library, [httpexpect](https://github.com/gavv/httpexpect) which supports Iris and fasthttp now, after my request [here](https://github.com/gavv/httpexpect/issues/2).
 
 Versioning
 ------------
