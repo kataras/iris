@@ -117,6 +117,7 @@ Open debates
 
  - [Contribute: New website and logo for Iris](https://github.com/kataras/iris/issues/153)
  - [E-book Cover - Which one you suggest?](https://github.com/kataras/iris/issues/67)
+ - [Feature request: session.Exists](https://github.com/kataras/iris/issues/214)
 
 **TIP** Be sure to read the [history](HISTORY.md) for Migrating from 2.x to 3.x.
 
@@ -135,12 +136,6 @@ Benchmarks
 ![Benchmark Wizzard Processing Time Horizontal Graph](https://raw.githubusercontent.com/iris-contrib/website/cf71811e6acb2f9bf1e715e25660392bf090b923/assets/benchmark_horizontal_transparent.png)
 
 [Please click here to view all detailed benchmarks.](https://github.com/smallnest/go-web-framework-benchmark)
-
-Testing
-------------
-
-Iris suggests you to use [this](https://github.com/gavv/httpexpect) new  suite to test your API.
-[Httpexpect](https://github.com/gavv/httpexpect) supports fasthttp & Iris after [recommandation](https://github.com/gavv/httpexpect/issues/2). Its author is very active so I believe its a promising library. You can view examples [here](https://github.com/gavv/httpexpect/blob/master/example/iris_test.go) and [here](https://github.com/kataras/iris/blob/master/tests/router_test.go).
 
 Versioning
 ------------
@@ -165,9 +160,9 @@ Todo
 - [x] Find and provide support for the most stable template engine and be able to change it via the configuration, keep html/templates  support.
 - [x] Extend, test and publish to the public the [Iris' cmd](https://github.com/kataras/iris/tree/master/iris).
 - [x] Route naming and html url func, requested [here](https://github.com/kataras/iris/issues/165).
+- [x] Move middleware & plugins to other repository
 
-
-If you're willing to donate click [here](DONATIONS.md)
+If you're willing to donate click [here](DONATIONS.md)!
 
 People
 ------------
