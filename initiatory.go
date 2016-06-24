@@ -1,6 +1,7 @@
 package iris
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"sync"
@@ -76,6 +77,14 @@ type Framework struct {
 	Logger     *logger.Logger
 	Plugins    PluginContainer
 	Websocket  websocket.Server
+}
+
+// SkipBannerFlag, if enabled then means that this instance ran propably by an external software, which can disable the banner output by the command line argument '-s'
+var SkipBannerFlag bool
+
+func init() {
+	flag.BoolVar(&SkipBannerFlag, "s", false, "Disable banner via command line tool, overrides the logger's config field") // this mostly used by the iris command line tool
+	flag.Parse()
 }
 
 // New creates and returns a new Iris station aka Framework.
@@ -161,7 +170,9 @@ func (s *Framework) openServer() (err error) {
 	s.HTTPServer.SetHandler(s.mux)
 	if err = s.HTTPServer.Open(); err == nil {
 		// print the banner
-		if !s.Config.DisableBanner {
+		if s.Config.DisableBanner || SkipBannerFlag {
+			// skip the banner
+		} else {
 			s.Logger.PrintBanner(banner,
 				fmt.Sprintf("%s: Running at %s\n", time.Now().Format(config.TimeFormat),
 					s.HTTPServer.Host()))

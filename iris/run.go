@@ -23,6 +23,8 @@ var (
 	goExt          = ".go"
 )
 
+var times uint32 = 0
+
 func build(sourcepath string) error {
 	goBuild := utils.CommandBuilder("go", "build", sourcepath)
 	goBuild.Dir = workingDir
@@ -36,13 +38,14 @@ func build(sourcepath string) error {
 	return nil
 }
 
-func run(executablePath string, stdout bool) (*utils.Cmd, error) {
+func run(executablePath string) (*utils.Cmd, error) {
 	runCmd := utils.CommandBuilder("." + utils.PathSeparator + executablePath)
+	if times >= 1 {
+		runCmd.AppendArguments("-s") //-s to skip  the banner after the first time
+	}
 	runCmd.Dir = workingDir
 	runCmd.Stderr = os.Stderr
-	if stdout {
-		runCmd.Stdout = os.Stdout
-	}
+	runCmd.Stdout = os.Stdout
 
 	runCmd.Stderr = os.Stderr
 	if err := runCmd.Start(); err != nil {
@@ -50,6 +53,7 @@ func run(executablePath string, stdout bool) (*utils.Cmd, error) {
 		printer.Dangerf(ferr.Error())
 		return nil, ferr
 	}
+	times++
 	return runCmd, nil
 }
 
@@ -122,7 +126,7 @@ func runAndWatch(flags cli.Flags) error {
 		return err
 	}
 
-	runCmd, err := run(executablePath, true)
+	runCmd, err := run(executablePath)
 
 	if err != nil {
 		printer.Dangerf(err.Error())
@@ -133,7 +137,7 @@ func runAndWatch(flags cli.Flags) error {
 		printer.Dangerf("")
 		printer.Panic(errUnexpected)
 	}()
-	var times uint32 = 1
+
 	for {
 		select {
 		case fname := <-filenameCh:
@@ -143,7 +147,7 @@ func runAndWatch(flags cli.Flags) error {
 					fname = " " // we don't want to print the ".gooutput..." so dont print anything as a name
 				}
 
-				printer.Infof("\n[OP: %d] File %s changed, reloading...", atomic.LoadUint32(&times), fname)
+				printer.Infof("[OP: %d] File %s changed, reloading...", atomic.LoadUint32(&times), fname)
 
 				//kill the prev run
 
@@ -165,13 +169,12 @@ func runAndWatch(flags cli.Flags) error {
 					printer.Warningf(err.Error())
 				} else {
 
-					if runCmd, err = run(executablePath, false); err != nil {
-						printer.Warningf(err.Error())
+					if runCmd, err = run(executablePath); err != nil {
+						printer.Warningf(err.Error() + "\n")
 
 					} else {
 						// we did .Start, but it should be fast so no need to add a sleeper
-						printer.Successf("ready!")
-						atomic.AddUint32(&times, 1)
+						printer.Successf("ready!\n")
 					}
 				}
 
