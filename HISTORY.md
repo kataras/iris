@@ -27,6 +27,8 @@ Underline changes, libraries used by iris' base code:
 - [Fix or disable colors in iris run](https://github.com/kataras/iris/issues/217).
 
 
+Improvements to the `iris run` **command**, as requested [here](https://github.com/kataras/iris/issues/192).
+
 [Book](https://kataras.gitbooks.io/iris/content/) and [examples](https://github.com/iris-contrib/examples) are **updated** also.
 
 ## 3.0.0-rc.1 -> 3.0.0-rc.2

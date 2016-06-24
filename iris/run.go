@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -38,6 +39,7 @@ func build(sourcepath string) error {
 func run(executablePath string, stdout bool) (*utils.Cmd, error) {
 	runCmd := utils.CommandBuilder("." + utils.PathSeparator + executablePath)
 	runCmd.Dir = workingDir
+	runCmd.Stderr = os.Stderr
 	if stdout {
 		runCmd.Stdout = os.Stdout
 	}
@@ -87,10 +89,25 @@ func runAndWatch(flags cli.Flags) error {
 		}
 
 	}
-	// here(below), we don't return the error because the -help command doesn't help the user for these errors.
+
+	subfiles, err := ioutil.ReadDir(workingDir)
+	if err != nil {
+		printer.Dangerf(err.Error())
+		return err
+	}
+	var paths []string
+	paths = append(paths, workingDir)
+	for _, subfile := range subfiles {
+		if subfile.IsDir() {
+			if abspath, err := filepath.Abs(workingDir + utils.PathSeparator + subfile.Name()); err == nil {
+				paths = append(paths, abspath)
+			}
+
+		}
+	}
 
 	// run the file watcher before all, because the user maybe has a go syntax error before the first run
-	utils.WatchDirectoryChanges(workingDir, func(fname string) {
+	utils.WatchDirectoryChanges(paths, func(fname string) {
 		//remove the working dir from the fname path, printer should only print the relative changed file ( from the project's path)
 		fname = fname[len(workingDir)+1:]
 
@@ -101,14 +118,17 @@ func runAndWatch(flags cli.Flags) error {
 	}, printer)
 
 	if err := build(programPath); err != nil {
+		printer.Dangerf(err.Error())
 		return err
 	}
 
 	runCmd, err := run(executablePath, true)
+
 	if err != nil {
+		printer.Dangerf(err.Error())
 		return err
 	}
-
+	// here(below), we don't return the error because the -help command doesn't help the user for these errors.
 	defer func() {
 		printer.Dangerf("")
 		printer.Panic(errUnexpected)

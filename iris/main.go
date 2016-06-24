@@ -13,6 +13,10 @@ import (
 	"github.com/kataras/iris/logger"
 )
 
+const (
+	Version = "0.0.7"
+)
+
 var (
 	app        *cli.App
 	printer    *logger.Logger
@@ -33,7 +37,7 @@ func init() {
 	defaultInstallDir := workingDir[strings.LastIndexByte(workingDir, os.PathSeparator)+1:]
 
 	// init the cli app
-	app = cli.NewApp("iris", "Command line tool for Iris web framework", "0.0.6")
+	app = cli.NewApp("iris", "Command line tool for Iris web framework", Version)
 	// version command
 	app.Command(cli.Command("version", "\t      prints your iris version").Action(func(cli.Flags) error { app.Printf("%s", iris.Version); return nil }))
 

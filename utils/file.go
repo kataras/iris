@@ -340,7 +340,7 @@ func GetParentDir(targetDirectory string) string {
 */
 
 // WatchDirectoryChanges watches a directory and fires the callback with the changed name, receives a logger just to print with red letters any errors, no need for second callback.
-func WatchDirectoryChanges(rootPath string, evt func(filename string), logger *logger.Logger) {
+func WatchDirectoryChanges(paths []string, evt func(filename string), logger *logger.Logger) {
 	isWindows := runtime.GOOS == "windows"
 	watcher, werr := fsnotify.NewWatcher()
 	if werr != nil {
@@ -357,7 +357,7 @@ func WatchDirectoryChanges(rootPath string, evt func(filename string), logger *l
 				if event.Op&fsnotify.Write == fsnotify.Write {
 					//this is received two times, the last time is the real changed file, so
 					i++
-					if i%2 == 0 || !isWindows { // this 'hack' works for windows but I dont know if works for linux too, we can wait for issue reports here.
+					if i%2 == 0 || !isWindows { // this 'hack' works for windows & linux but I dont know if works for osx too, we can wait for issue reports here.
 						if time.Now().After(lastChange.Add(time.Duration(1) * time.Second)) {
 							lastChange = time.Now()
 							evt(event.Name)
@@ -370,11 +370,10 @@ func WatchDirectoryChanges(rootPath string, evt func(filename string), logger *l
 			}
 		}
 	}()
-
-	werr = watcher.Add(rootPath)
-	if werr != nil {
-		logger.Dangerf(werr.Error())
-
+	for _, p := range paths {
+		if werr = watcher.Add(p); werr != nil {
+			logger.Dangerf(werr.Error())
+		}
 	}
 
 }
