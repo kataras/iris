@@ -18,7 +18,7 @@
 [Language]: http://golang.org
 [Platform Widget]: https://img.shields.io/badge/platform-Any--OS-gray.svg?style=flat-square
 
-The fastest web framework for Go. Easy to [learn]((https://www.gitbook.com/book/kataras/iris/details) while providing robust set of features for building modern web applications.
+The fastest web framework for Go. Easy to [learn](https://www.gitbook.com/book/kataras/iris/details) while providing robust set of features for building modern web applications.
 
 [![Benchmark Wizzard Processing Time Horizontal Graph](https://raw.githubusercontent.com/iris-contrib/website/cf71811e6acb2f9bf1e715e25660392bf090b923/assets/benchmark_horizontal_transparent.png)](https://github.com/smallnest/go-web-framework-benchmark)
 
