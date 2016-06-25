@@ -23,7 +23,7 @@ var (
 	goExt          = ".go"
 )
 
-var times uint32 = 0
+var times uint32
 
 func build(sourcepath string) error {
 	goBuild := utils.CommandBuilder("go", "build", sourcepath)
@@ -40,9 +40,7 @@ func build(sourcepath string) error {
 
 func run(executablePath string) (*utils.Cmd, error) {
 	runCmd := utils.CommandBuilder("." + utils.PathSeparator + executablePath)
-	if times >= 1 {
-		runCmd.AppendArguments("-s") //-s to skip  the banner after the first time
-	}
+
 	runCmd.Dir = workingDir
 	runCmd.Stderr = os.Stderr
 	runCmd.Stdout = os.Stdout
@@ -121,7 +119,7 @@ func runAndWatch(flags cli.Flags) error {
 
 	}, printer)
 
-	if err := build(programPath); err != nil {
+	if err = build(programPath); err != nil {
 		printer.Dangerf(err.Error())
 		return err
 	}

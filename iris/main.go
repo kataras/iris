@@ -14,6 +14,7 @@ import (
 )
 
 const (
+	// Version of Iris command line tool
 	Version = "0.0.8"
 )
 
