@@ -180,10 +180,3 @@ The author of Iris is [@kataras](https://github.com/kataras).
 Contributing
 ------------
 If you are interested in contributing to the Iris project, please see the document [CONTRIBUTING](https://github.com/kataras/iris/blob/master/CONTRIBUTING.md).
-
-License
-------------
-
-This project is licensed under the Apache License 2.0.
-
-License can be found [here](https://github.com/kataras/iris/blob/master/LICENSE).

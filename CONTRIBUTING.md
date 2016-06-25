@@ -3,9 +3,6 @@
 ### Before Submitting an Issue
 First, please do a search in open issues to see if the issue or feature request has already been filed. If there is an issue add your comments to this issue.
 
-Second, [Star](https://github.com/kataras/iris/stargazers) & [Watch](https://github.com/kataras/iris/watchers) the Iris repo, I'm working very hard for this project, I need a confirmation that this project is used by someone else except myself.
-
-
 The Iris project is distributed across multiple repositories, try to file the issue against the correct repository,
 
 - [Iris - core](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
