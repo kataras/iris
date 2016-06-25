@@ -18,7 +18,7 @@
 [Language]: http://golang.org
 [Platform Widget]: https://img.shields.io/badge/platform-Any--OS-gray.svg?style=flat-square
 
-The fastest web framework for Go.
+The fastest web framework for Go, easy to learn while provides a robust set of features to build a modern web application.
 
 [![Benchmark Wizzard Processing Time Horizontal Graph](https://raw.githubusercontent.com/iris-contrib/website/cf71811e6acb2f9bf1e715e25660392bf090b923/assets/benchmark_horizontal_transparent.png)](https://github.com/smallnest/go-web-framework-benchmark)
 
@@ -40,7 +40,7 @@ func main() {
 		c.JSON(iris.StatusOK, iris.Map{
 			"Name":  "Iris",
 			"Born":  "13 March 2016",
-			"Stars": 3404,
+			"Stars": 3631,
 		})
 	})
 	iris.Listen(":8080")
@@ -107,7 +107,7 @@ Docs & Community
 
 - Take a look at the [examples](https://github.com/iris-contrib/examples)
 
-- [HISTORY](https://github.com//kataras/iris/tree/master/HISTORY.md) file is your friend.
+- [HISTORY](https://github.com//kataras/iris/tree/master/HISTORY.md) file is your best friend.
 
 
 If you'd like to discuss this package, or ask questions about it, feel free to
@@ -119,9 +119,6 @@ Open debates
 
  - [Contribute: New website and logo for Iris](https://github.com/kataras/iris/issues/153)
  - [E-book Cover - Which one you suggest?](https://github.com/kataras/iris/issues/67)
- - [Feature request: session.Exists](https://github.com/kataras/iris/issues/214)
-
-**TIP** Be sure to read the [history](HISTORY.md) for Migrating from 2.x to 3.x.
 
 Philosophy
 ------------
