@@ -40,7 +40,7 @@ func main() {
 		c.JSON(iris.StatusOK, iris.Map{
 			"Name":  "Iris",
 			"Born":  "13 March 2016",
-			"Stars": 3631,
+			"Stars": 3533,
 		})
 	})
 	iris.Listen(":8080")
@@ -166,6 +166,7 @@ Todo
 - [x] Extend, test and publish to the public the [Iris' cmd](https://github.com/kataras/iris/tree/master/iris).
 - [x] Route naming and html url func, requested [here](https://github.com/kataras/iris/issues/165).
 - [x] Move middleware & plugins to other repository
+- [ ] Add License files where needed, because THIRDPARTY.MD is not enough as I learned recently.
 
 If you're willing to donate click [here](DONATIONS.md)!
 
