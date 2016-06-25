@@ -40,12 +40,10 @@ func build(sourcepath string) error {
 
 func run(executablePath string) (*utils.Cmd, error) {
 	runCmd := utils.CommandBuilder("." + utils.PathSeparator + executablePath)
-
 	runCmd.Dir = workingDir
 	runCmd.Stderr = os.Stderr
 	runCmd.Stdout = os.Stdout
 
-	runCmd.Stderr = os.Stderr
 	if err := runCmd.Start(); err != nil {
 		ferr := errRun.Format(executablePath, err.Error())
 		printer.Dangerf(ferr.Error())
