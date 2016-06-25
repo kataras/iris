@@ -6,7 +6,7 @@ Third party packages
 - [amber is one of the supporting template engines](https://github.com/eknkc/amber)
 - [jade is one of the supporting template engines](https://github.com/Joker/jade)
 - [blackfriday is one of the supporting template engines](https://github.com/russross/blackfriday)
-- [klauspost/gzip for faster compression](https://github.com/klauspost/compress/gzip)
+- [klauspost/gzip for faster compression](https://github.com/klauspost/compress)
 - [httprouter](https://github.com/julienschmidt/httprouter) for the basic BSD kernel's [trie algorithm](https://en.wikipedia.org/wiki/Trie) used inside [muxEntry](https://github.com/kataras/iris/blob/master/http.go#L578), edited by [Iris' author](https://github.com/kataras) to improve its performance and achieve 0 memory allocations per operation.
 - [goo](https://github.com/kataras/goo) used inside iris command line tool
 - [cli](https://github.com/kataras/cli) used inside iris command line tool
