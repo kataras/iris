@@ -174,10 +174,14 @@ If you're willing to donate click [here](DONATIONS.md)!
 
 People
 ------------
-A big thanks goes to [all people](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=label%3A%22feature+request%22) who help building this framework with feature-requests, bug reports and more!
+A big thanks goes to [all people](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=label%3A%22feature+request%22) who help building this framework with feature-requests & bug reports!
 
 The author of Iris is [@kataras](https://github.com/kataras).
 
+
+Contributing
+------------
+If you are interested in contributing to the Iris project, please see the document [CONTRIBUTING](https://github.com/kataras/iris/blob/master/CONTRIBUTING.md).
 
 License
 ------------
