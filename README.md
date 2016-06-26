@@ -18,33 +18,34 @@
 [Language]: http://golang.org
 [Platform Widget]: https://img.shields.io/badge/platform-Any--OS-gray.svg?style=flat-square
 
-The fastest web framework for Go. Easy to [learn](https://www.gitbook.com/book/kataras/iris/details) while providing robust set of features for building modern web applications.
+The fastest web framework for Go.
+
+[Easy](https://github.com/iris-contrib/examples) to [learn](https://www.gitbook.com/book/kataras/iris/details) while, at the same time, providing robust set of features for building modern web applications.
 
 [![Benchmark Wizzard Processing Time Horizontal Graph](https://raw.githubusercontent.com/iris-contrib/website/cf71811e6acb2f9bf1e715e25660392bf090b923/assets/benchmark_horizontal_transparent.png)](https://github.com/smallnest/go-web-framework-benchmark)
 
 
-```sh
-$ cat test_json.go
+```bash
+$ cat render_json.go
 ```
 ```go
 package main
-
-import (
-	"github.com/kataras/iris"
-)
+import "github.com/kataras/iris"
 
 func main() {
-
-	// render JSON
 	iris.Get("/hi_json", func(c *iris.Context) {
 		c.JSON(iris.StatusOK, iris.Map{
 			"Name":  "Iris",
 			"Born":  "13 March 2016",
-			"Stars": 3533,
+			"Stars": 3693,
 		})
 	})
 	iris.Listen(":8080")
 }
+```
+
+```bash
+$ iris run render_json.go # run & restart the server on code changes.
 ```
 
 > Learn more about [render](https://kataras.gitbooks.io/iris/content/render.html).
@@ -53,13 +54,15 @@ Installation
 ------------
 The only requirement is the [Go Programming Language](https://golang.org/dl), at least v1.6
 
-`$ go get -u github.com/kataras/iris/iris`
+```bash
+$ go get -u github.com/kataras/iris/iris`
+```
 
- >If you are connected to the Internet through China [click here](https://kataras.gitbooks.io/iris/content/install.html)
+ >If you have installation issues and you are connected to the Internet through China, [please click here](https://kataras.gitbooks.io/iris/content/install.html).
 
 FAQ
 ------------
-You can find answers by exploring [these questions](https://github.com/kataras/iris/issues?q=label%3Aquestion).
+Explore [these questions](https://github.com/kataras/iris/issues?q=label%3Aquestion) or navigate [here](https://gitter.im/kataras/iris).
 
 
 Features
@@ -164,7 +167,7 @@ Todo
 - [x] Create server & client side (js) library for .on('event', func action(...)) / .emit('event')... (like socket.io but supports only websocket).
 - [x] Create a view system supporting different types of template engines.
 - [x] Extend, test and publish to the public the [Iris' cmd](https://github.com/kataras/iris/tree/master/iris).
-
+- [ ] Complete the front-end API tests [inside the iris-contrib]
 If you're willing to donate click [here](DONATIONS.md)!
 
 People
