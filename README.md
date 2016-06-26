@@ -2,7 +2,7 @@
 
 [![Travis Widget]][Travis] [![Release Widget]][Release] [![Report Widget]][Report] [![License Widget]][License] [![Gitter Widget]][Gitter] [![Documentation Widget]][Documentation]
 
-[Travis Widget]: https://img.shields.io/travis/tmrts/boilr.svg?style=flat-square
+[Travis Widget]: https://img.shields.io/travis/kataras/iris.svg?style=flat-square
 [Travis]: http://travis-ci.org/kataras/iris
 [License Widget]: https://img.shields.io/badge/license-MIT%20%20License%20-E91E63.svg?style=flat-square
 [License]: https://github.com/kataras/iris/blob/master/LICENSE
@@ -51,7 +51,7 @@ func main() {
 
 Installation
 ------------
- The only requirement is Go 1.6
+The only requirement is the [Go Programming Language](https://golang.org/dl), at least v1.6
 
 `$ go get -u github.com/kataras/iris/iris`
 
@@ -181,7 +181,6 @@ If you are interested in contributing to the Iris project, please see the docume
 
 Third-Party Licenses
 ------------
-This project is using third-party libraries to achieve this result.
 
 Third-Party Licenses can be found [here](THIRDPARTY-LICENSE.md)
 

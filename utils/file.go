@@ -12,9 +12,6 @@ import (
 	"runtime"
 	"strings"
 	"time"
-
-	"github.com/fsnotify/fsnotify"
-	"github.com/kataras/iris/logger"
 )
 
 const (
@@ -331,49 +328,4 @@ func GetParentDir(targetDirectory string) string {
 
 	parentDirectory := targetDirectory[0:lastSlashIndex]
 	return parentDirectory
-}
-
-/*
-	// 3-BSD License for package fsnotify/fsnotify
-	// Copyright (c) 2012 The Go Authors. All rights reserved.
-	// Copyright (c) 2012 fsnotify Authors. All rights reserved.
-*/
-
-// WatchDirectoryChanges watches a directory and fires the callback with the changed name, receives a logger just to print with red letters any errors, no need for second callback.
-func WatchDirectoryChanges(paths []string, evt func(filename string), logger *logger.Logger) {
-	isWindows := runtime.GOOS == "windows"
-	watcher, werr := fsnotify.NewWatcher()
-	if werr != nil {
-		logger.Dangerf(werr.Error())
-		return
-	}
-
-	go func() {
-		var lastChange = time.Now()
-		var i = 0
-		for {
-			select {
-			case event := <-watcher.Events:
-				if event.Op&fsnotify.Write == fsnotify.Write {
-					//this is received two times, the last time is the real changed file, so
-					i++
-					if i%2 == 0 || !isWindows { // this 'hack' works for windows & linux but I dont know if works for osx too, we can wait for issue reports here.
-						if time.Now().After(lastChange.Add(time.Duration(1) * time.Second)) {
-							lastChange = time.Now()
-							evt(event.Name)
-						}
-					}
-
-				}
-			case err := <-watcher.Errors:
-				logger.Dangerf(err.Error())
-			}
-		}
-	}()
-	for _, p := range paths {
-		if werr = watcher.Add(p); werr != nil {
-			logger.Dangerf(werr.Error())
-		}
-	}
-
 }
