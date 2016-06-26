@@ -178,6 +178,14 @@ Contributing
 ------------
 If you are interested in contributing to the Iris project, please see the document [CONTRIBUTING](https://github.com/kataras/iris/blob/master/CONTRIBUTING.md).
 
+
+Third-Party Licenses
+------------
+This project is using third-party libraries to achieve this result.
+
+Third-Party Licenses can be found [here](THIRDPARTY-LICENSE.md)
+
+
 License
 ------------
 
