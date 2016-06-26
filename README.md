@@ -43,22 +43,25 @@ func main() {
 	iris.Listen(":8080")
 }
 ```
+> Learn more about [render](https://kataras.gitbooks.io/iris/content/render.html)
 
 ```bash
-$ iris run render_json.go # run & restart the server on code changes.
+$ iris run render_json.go
 ```
 
-> Learn more about [render](https://kataras.gitbooks.io/iris/content/render.html).
+> Runs & monitors for file changes, learn more about [cli](https://github.com/kataras/iris/tree/master/iris).
+
+
 
 Installation
 ------------
 The only requirement is the [Go Programming Language](https://golang.org/dl), at least v1.6
 
 ```bash
-$ go get -u github.com/kataras/iris/iris`
+$ go get -u github.com/kataras/iris/iris
 ```
 
- >If you have installation issues and you are connected to the Internet through China, [please click here](https://kataras.gitbooks.io/iris/content/install.html).
+ >If you have installation issues and you are connected to the Internet through China please, [click here](https://kataras.gitbooks.io/iris/content/install.html).
 
 FAQ
 ------------
