@@ -665,6 +665,9 @@ func getParamsLen(path string) uint8 {
 	return uint8(n)
 }
 
+//
+// Copyright (c) 2013 Julien Schmidt, Copyright (c) 2016 Gerasimos Maropoulos All rights reserved.
+//
 // add adds a muxEntry to the existing muxEntry or to the tree if no muxEntry has the prefix of
 func (e *muxEntry) add(path string, middleware Middleware) error {
 	fullPath := path
@@ -1004,6 +1007,10 @@ func (e *muxEntry) precedenceTo(index int) int {
 
 	return newindex
 }
+
+//
+//
+//
 
 type (
 	// Route contains some useful information about a route

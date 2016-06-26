@@ -4,7 +4,7 @@
 
 [Travis Widget]: https://img.shields.io/travis/tmrts/boilr.svg?style=flat-square
 [Travis]: http://travis-ci.org/kataras/iris
-[License Widget]: https://img.shields.io/badge/license-Apache%20License%202.0-E91E63.svg?style=flat-square
+[License Widget]: https://img.shields.io/badge/license-MIT%20%20License%20-E91E63.svg?style=flat-square
 [License]: https://github.com/kataras/iris/blob/master/LICENSE
 [Release Widget]: https://img.shields.io/badge/release-v3.0.0--rc.3-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/iris/releases
@@ -162,11 +162,8 @@ Todo
 
 - [x] [Dynamic/Wildcard subdomains](https://kataras.gitbooks.io/iris/content/subdomains.html).
 - [x] Create server & client side (js) library for .on('event', func action(...)) / .emit('event')... (like socket.io but supports only websocket).
-- [x] Find and provide support for the most stable template engine and be able to change it via the configuration, keep html/templates  support.
+- [x] Create a view system supporting different types of template engines.
 - [x] Extend, test and publish to the public the [Iris' cmd](https://github.com/kataras/iris/tree/master/iris).
-- [x] Route naming and html url func, requested [here](https://github.com/kataras/iris/issues/165).
-- [x] Move middleware & plugins to other repository
-- [ ] Add License files where needed, because THIRDPARTY.MD is not enough as I learned recently.
 
 If you're willing to donate click [here](DONATIONS.md)!
 
@@ -180,3 +177,10 @@ The author of Iris is [@kataras](https://github.com/kataras).
 Contributing
 ------------
 If you are interested in contributing to the Iris project, please see the document [CONTRIBUTING](https://github.com/kataras/iris/blob/master/CONTRIBUTING.md).
+
+License
+------------
+
+This project is licensed under the MIT License.
+
+License can be found [here](LICENSE).

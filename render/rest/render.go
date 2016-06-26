@@ -1,3 +1,4 @@
+// Package rest is an edited file of https://github.com/unrolled/render
 package rest
 
 import (
