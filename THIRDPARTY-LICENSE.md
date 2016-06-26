@@ -10,7 +10,7 @@ Third party packages
 - [httprouter](https://github.com/julienschmidt/httprouter) for the basic BSD kernel's [trie algorithm](https://en.wikipedia.org/wiki/Trie) used inside [muxEntry](https://github.com/kataras/iris/blob/master/http.go#L578), edited by [Iris' author](https://github.com/kataras) to improve its performance and achieve 0 memory allocations per operation.
 - [goo](https://github.com/kataras/goo) used inside iris command line tool
 - [cli](https://github.com/kataras/cli) used inside iris command line tool
-- [color for the logger's colors](https://github.com/fatih/color)
+- [color](https://github.com/fatih/color) with [go-colorable](github.com/mattn/go-colorable) for the logger's colors]
 - [mergo for merge configs](https://github.com/imdario/mergo)
 - [formam as form binder](https://github.com/monoculum/formam)
 - [i18n for internalization](https://github.com/Unknwon/i18n)
@@ -190,6 +190,28 @@ FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
 COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+go-colorable - The MIT License (MIT)
+
+Copyright (c) 2016 Yasuhiro Matsumoto
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 mergo - Copyright (c) 2013 Dario Castañé. All rights reserved.
 mergo - Copyright (c) 2012 The Go Authors. All rights reserved.
