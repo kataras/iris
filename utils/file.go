@@ -354,7 +354,8 @@ func WatchDirectoryChanges(paths []string, evt func(filename string), logger *lo
 		for {
 			select {
 			case event := <-watcher.Events:
-				if event.Op&fsnotify.Write == fsnotify.Write {
+				if (event.Op&fsnotify.Write == fsnotify.Write) ||
+				   (event.Op&fsnotify.Rename == fsnotify.Rename) {
 					//this is received two times, the last time is the real changed file, so
 					i++
 					if i%2 == 0 || !isWindows { // this 'hack' works for windows & linux but I dont know if works for osx too, we can wait for issue reports here.
