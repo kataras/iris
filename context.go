@@ -173,6 +173,11 @@ func (ctx *Context) ParamInt(key string) (int, error) {
 	return strconv.Atoi(ctx.Param(key))
 }
 
+// ParamInt64 returns the int64 representation of the key's path named parameter's value
+func (ctx *Context) ParamInt64(key string) (int64, error) {
+	return strconv.ParseInt(ctx.Param(key), 10, 64)
+}
+
 // URLParam returns the get parameter from a request , if any
 func (ctx *Context) URLParam(key string) string {
 	return string(ctx.RequestCtx.Request.URI().QueryArgs().Peek(key))
@@ -194,7 +199,7 @@ func (ctx *Context) URLParamInt(key string) (int, error) {
 
 // URLParamInt64 returns the url query parameter as int64 value from a request ,  returns error on parse fail
 func (ctx *Context) URLParamInt64(key string) (int64, error) {
-	return strconv.ParseInt(ctx.Param(key), 10, 64)
+	return strconv.ParseInt(ctx.URLParam(key), 10, 64)
 }
 
 // MethodString returns the HTTP Method

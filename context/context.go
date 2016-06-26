@@ -16,6 +16,7 @@ type (
 	IContext interface {
 		Param(string) string
 		ParamInt(string) (int, error)
+		ParamInt64(string) (int64, error)
 		URLParam(string) string
 		URLParamInt(string) (int, error)
 		URLParamInt64(string) (int64, error)
