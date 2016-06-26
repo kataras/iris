@@ -18,6 +18,7 @@ type (
 		ParamInt(string) (int, error)
 		URLParam(string) string
 		URLParamInt(string) (int, error)
+		URLParamInt64(string) (int64, error)
 		URLParams() map[string]string
 		MethodString() string
 		HostString() string
