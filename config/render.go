@@ -26,6 +26,9 @@ const (
 	// AmberEngine is a Template's config for engine type
 	// when use this, the templates are eknkc/amber
 	AmberEngine EngineType = 4
+	// HandlebarsEngine is a Template's config for engine type
+	// when use this, the templates are aymerick/raymond
+	HandlebarsEngine EngineType = 5
 	// DefaultEngine is the HTMLEngine
 	DefaultEngine EngineType = HTMLEngine
 
@@ -115,6 +118,8 @@ type (
 		Markdown Markdown
 		// Amber contains specific configs for amber
 		Amber Amber
+		// Handlebars contains specific configs for handlebars
+		Handlebars Handlebars
 	}
 
 	// HTMLTemplate the configs for HTMLEngine
@@ -153,6 +158,12 @@ type (
 	Amber struct {
 		// Funcs for the html/template result, amber default funcs are not overrided so use it without worries
 		Funcs template.FuncMap
+	}
+	// Handlebars the configs for HandlebarsEngine
+	Handlebars struct {
+		// Helpers for Handlebars, you can register your own by raymond.RegisterHelper(name string, a interface{}) or RegisterHelpers(map[string]interface{})
+		// or just fill this method, do not override it it is not nil by default (because of Iris' helpers (url and urlpath)
+		Helpers map[string]interface{}
 	}
 )
 
@@ -210,6 +221,7 @@ func DefaultTemplate() Template {
 		Pongo:         Pongo{Filters: make(map[string]pongo2.FilterFunction, 0), Globals: make(map[string]interface{}, 0)},
 		Markdown:      Markdown{Sanitize: false},
 		Amber:         Amber{Funcs: template.FuncMap{}},
+		Handlebars:    Handlebars{Helpers: make(map[string]interface{}, 0)},
 	}
 }
 

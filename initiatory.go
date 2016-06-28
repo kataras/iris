@@ -8,11 +8,10 @@ import (
 
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/logger"
-	"github.com/kataras/iris/websocket"
-
 	"github.com/kataras/iris/render/rest"
 	"github.com/kataras/iris/render/template"
 	"github.com/kataras/iris/sessions"
+	"github.com/kataras/iris/websocket"
 	///NOTE: register the session providers, but the s.Config.Sessions.Provider will be used only, if this empty then sessions are disabled.
 	_ "github.com/kataras/iris/sessions/providers/memory"
 	_ "github.com/kataras/iris/sessions/providers/redis"
@@ -39,7 +38,6 @@ func init() {
 
 const (
 	/* conversional */
-
 	// HTMLEngine conversion for config.HTMLEngine
 	HTMLEngine = config.HTMLEngine
 	// PongoEngine conversion for config.PongoEngine
@@ -50,7 +48,8 @@ const (
 	JadeEngine = config.JadeEngine
 	// AmberEngine conversion for config.AmberEngine
 	AmberEngine = config.AmberEngine
-
+	// HandlebarsEngine conversion for config.HandlebarsEngine
+	HandlebarsEngine = config.HandlebarsEngine
 	// DefaultEngine conversion for config.DefaultEngine
 	DefaultEngine = config.DefaultEngine
 	// NoEngine conversion for config.NoEngine
@@ -58,7 +57,6 @@ const (
 	// NoLayout to disable layout for a particular template file
 	// conversion for config.NoLayout
 	NoLayout = config.NoLayout
-
 	/* end conversional */
 )
 

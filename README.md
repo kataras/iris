@@ -6,7 +6,7 @@
 [Travis]: http://travis-ci.org/kataras/iris
 [License Widget]: https://img.shields.io/badge/license-MIT%20%20License%20-E91E63.svg?style=flat-square
 [License]: https://github.com/kataras/iris/blob/master/LICENSE
-[Release Widget]: https://img.shields.io/badge/release-v3.0.0--rc.3-blue.svg?style=flat-square
+[Release Widget]: https://img.shields.io/badge/release-v3.0.0--rc.4-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/iris/releases
 [Gitter Widget]: https://img.shields.io/badge/chat-on%20gitter-00BCD4.svg?style=flat-square
 [Gitter]: https://gitter.im/kataras/iris
@@ -72,7 +72,7 @@ Features
 ------------
 - Focus on high performance
 - Robust routing supports static and wildcard subdomains
-- View system supporting [5+](https://kataras.gitbooks.io/iris/content/render_templates.html) template engines
+- View system supporting [6+](https://kataras.gitbooks.io/iris/content/render_templates.html) template engines
 - Highly scalable Websocket API with custom events
 - Sessions support with GC, memory & redis providers
 - Middlewares & Plugins were never be easier
@@ -151,7 +151,7 @@ I recommend writing your API tests using this new library, [httpexpect](https://
 Versioning
 ------------
 
-Current: **v3.0.0-rc.3**
+Current: **v3.0.0-rc.4**
 >  Iris is an active project
 
 

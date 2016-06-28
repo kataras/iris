@@ -11,6 +11,7 @@ import (
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/render/template/engine/amber"
+	"github.com/kataras/iris/render/template/engine/handlebars"
 	"github.com/kataras/iris/render/template/engine/html"
 	"github.com/kataras/iris/render/template/engine/jade"
 	"github.com/kataras/iris/render/template/engine/markdown"
@@ -98,6 +99,9 @@ func New(c config.Template) *Template {
 	case config.AmberEngine:
 		setSharedFuncs(sharedFuncs, c.Amber.Funcs)
 		e = amber.New(c) // Amber
+	case config.HandlebarsEngine:
+		setSharedFuncs(sharedFuncs, c.Handlebars.Helpers)
+		e = handlebars.New(c)
 	default: // config.NoEngine
 		return nil
 	}
