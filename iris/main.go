@@ -3,10 +3,6 @@ package main
 import (
 	"os"
 
-	_ "syscall"
-
-	"strings"
-
 	"github.com/kataras/cli"
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/config"
@@ -33,10 +29,6 @@ func init() {
 		workingDir = d
 	}
 
-	// defaultInstallDir is the default directory which the create will copy and run the package when finish downloading
-	// it's just the last path part of the workingDir
-	defaultInstallDir := workingDir[strings.LastIndexByte(workingDir, os.PathSeparator)+1:]
-
 	// init the cli app
 	app = cli.NewApp("iris", "Command line tool for Iris web framework", Version)
 	// version command
@@ -45,7 +37,7 @@ func init() {
 	// create command/-/create.go
 	createCmd := cli.Command("create", "create a project to a given directory").
 		Flag("offline", false, "set to true to disable the packages download on each create command").
-		Flag("dir", defaultInstallDir, "$GOPATH/src/$dir the directory to install the sample package").
+		Flag("dir", workingDir, "$GOPATH/src/$dir the directory to install the sample package").
 		Flag("type", "basic", "creates a project based on the -t package. Currently, available types are 'basic' & 'static'").
 		Action(create)
 

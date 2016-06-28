@@ -275,7 +275,7 @@ func (ctx *Context) RequestHeader(k string) string {
 
 // PostFormValue returns a single value from post request's data
 func (ctx *Context) PostFormValue(name string) string {
-	return string(ctx.RequestCtx.PostArgs().Peek(name))
+	return string(ctx.FormValue(name))
 }
 
 // PostFormMulti returns a slice of string from post request's data

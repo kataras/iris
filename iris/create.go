@@ -3,6 +3,7 @@ package main
 import (
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -21,22 +22,40 @@ var (
 	packagesInstallDir = utils.AssetsDirectory + utils.PathSeparator + "iris-command-assets" + utils.PathSeparator
 )
 
+func isValidInstallDir(targetDir string) bool {
+	// https://github.com/kataras/iris/issues/237
+	gopath := os.Getenv("GOPATH")
+	// remove the last ;/: for any case before the split
+	if idxLSep := strings.IndexByte(gopath, os.PathListSeparator); idxLSep == len(gopath)-1 {
+		gopath = gopath[0 : len(gopath)-2]
+	}
+
+	// check if we have more than one gopath
+	gopaths := strings.Split(gopath, string(os.PathListSeparator))
+	// the package MUST be installed only inside a valid gopath, if not then print an error to the user.
+	for _, gpath := range gopaths {
+		if strings.HasPrefix(targetDir, gpath+utils.PathSeparator) {
+			return true
+		}
+	}
+	return false
+}
+
 func create(flags cli.Flags) (err error) {
+
+	targetDir, err := filepath.Abs(flags.String("dir"))
+	if err != nil {
+		panic(err)
+	}
+
+	if !isValidInstallDir(targetDir) {
+		printer.Dangerf("\nPlease make sure you are targeting a directory inside $GOPATH, type iris -h for help.")
+		return
+	}
 
 	if !utils.DirectoryExists(packagesInstallDir) || !flags.Bool("offline") {
 		downloadPackages()
 	}
-
-	targetDir := flags.String("dir")
-
-	// remove first and last / if any
-	if strings.HasPrefix(targetDir, "./") || strings.HasPrefix(targetDir, "."+utils.PathSeparator) {
-		targetDir = targetDir[2:]
-	}
-	if targetDir[len(targetDir)-1] == '/' {
-		targetDir = targetDir[0 : len(targetDir)-1]
-	}
-	//
 
 	createPackage(flags.String("type"), targetDir)
 	return
@@ -66,7 +85,7 @@ func downloadPackages() {
 }
 
 func createPackage(packageName string, targetDir string) error {
-	installTo := os.Getenv("GOPATH") + utils.PathSeparator + "src" + utils.PathSeparator + targetDir
+	installTo := targetDir // os.Getenv("GOPATH") + utils.PathSeparator + "src" + utils.PathSeparator + targetDir
 
 	packageDir := packagesInstallDir + utils.PathSeparator + packageName
 	err := utils.CopyDir(packageDir, installTo)
@@ -85,9 +104,9 @@ func createPackage(packageName string, targetDir string) error {
 		printer.Warningf("Error while preparing main file: %#v", err)
 	}
 
-	output := strings.Replace(string(input), "github.com/iris-contrib/iris-command-assets/"+packageName+"/", targetDir+"/", -1)
+	output := strings.Replace(string(input), "github.com/iris-contrib/iris-command-assets/"+packageName+"/", filepath.Base(targetDir)+"/", -1)
 
-	err = ioutil.WriteFile(mainFile, []byte(output), 0644)
+	err = ioutil.WriteFile(mainFile, []byte(output), 0777)
 	if err != nil {
 		printer.Warningf("Error while preparing main file: %#v", err)
 	}

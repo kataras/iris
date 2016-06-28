@@ -16,14 +16,16 @@ func runAndWatch(flags cli.Flags) error {
 	}
 	programPath := os.Args[2]
 
-	/*project := rizla.NewProject(programPath)
-	project.Name = "IRIS"
-	project.AllowReloadAfter = time.Duration(3) * time.Second
-	rizla.Add(project)
+	/*
+		project := rizla.NewProject(programPath)
+		project.Name = "IRIS"
+		project.AllowReloadAfter = time.Duration(3) * time.Second
+		project.Out = rizla.NewPrinter(os.Stdout)
+		project.Err = rizla.NewPrinter(os.Stderr)
+		rizla.Add(project)
 
-	rizla.Out = os.Stdout
-	rizla.Err = os.Stderr
-	rizla.Run()*/
+		rizla.Run()
+	*/
 	// or just do that:
 
 	rizla.Run(programPath)
