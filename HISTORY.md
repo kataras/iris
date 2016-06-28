@@ -1,9 +1,23 @@
 # History
 
-## 3.0.0-rc.2 -> 3.0.0-rc.3
-
 **How to upgrade**: remove your $GOPATH/src/github.com/kataras folder, open your command-line and run `go get -u github.com/kataras/iris/iris`.
 
+## 3.0.0-rc.3 -> 3.0.0-rc.4
+
+**NEW**: **Handlebars** template engine support with all Iris' view engine's functions/helpers support:
+- `iris.Config.Render.Template.Layout = "layouts/layout.html"`
+- `config.NoLayout`
+- **dynamic** optional layout on `context.Render`
+- **Party specific** layout
+- `iris.Config.Render.Template.Handlebars.Helpers["myhelper"] = func()...`
+- `{{ yield }} `
+- `{{ render }}`
+- `{{ url "myroute" myparams}}`
+- `{{ urlpath "myroute" myparams}}`
+
+For a complete example please navigate [here](https://github.com/iris-contrib/examples/tree/master/templates_handlebars/templates).
+
+## 3.0.0-rc.2 -> 3.0.0-rc.3
 
 **Breaking changes**
 - Move middleware & their configs to the  [iris-contrib/middleware](https://github.com/iris-contrib/middleware) repository

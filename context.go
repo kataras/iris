@@ -476,7 +476,7 @@ func (ctx *Context) Render(name string, binding interface{}, layout ...string) e
 func (ctx *Context) MustRender(name string, binding interface{}, layout ...string) {
 	if err := ctx.Render(name, binding, layout...); err != nil {
 		ctx.Panic()
-		ctx.framework.Logger.Dangerf("MustRender panics for client with IP: %s On template: %s", ctx.RemoteAddr(), name)
+		ctx.framework.Logger.Dangerf("MustRender panics for client with IP: %s On template: %s.Trace: %s\n", ctx.RemoteAddr(), name, err)
 	}
 }
 
