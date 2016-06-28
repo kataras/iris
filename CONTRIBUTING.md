@@ -15,7 +15,7 @@ The Iris project is distributed across multiple repositories, try to file the is
 - [Iris - mail](https://github.com/iris-contrib/mail/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue).
 
 
-If your issue is a question then please ask the question on [Gitter](https://gitter.im/kataras/iris).
+If your issue is a question then please ask the question on [Chat](https://kataras.rocket.chat/channel/iris).
 
 ## Writing Good Bug Reports and Feature Requests
 

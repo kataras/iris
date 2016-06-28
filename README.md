@@ -1,6 +1,6 @@
 [![Iris Logo](http://iris-go.com/assets/iris_full_logo_2.png)](http://iris-go.com)
 
-[![Travis Widget]][Travis] [![Release Widget]][Release] [![Report Widget]][Report] [![License Widget]][License] [![Gitter Widget]][Gitter] [![Documentation Widget]][Documentation]
+[![Travis Widget]][Travis] [![Release Widget]][Release] [![Report Widget]][Report] [![License Widget]][License] [![Chat Widget]][Chat] [![Documentation Widget]][Documentation]
 
 [Travis Widget]: https://img.shields.io/travis/kataras/iris.svg?style=flat-square
 [Travis]: http://travis-ci.org/kataras/iris
@@ -8,8 +8,8 @@
 [License]: https://github.com/kataras/iris/blob/master/LICENSE
 [Release Widget]: https://img.shields.io/badge/release-v3.0.0--rc.4-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/iris/releases
-[Gitter Widget]: https://img.shields.io/badge/chat-on%20gitter-00BCD4.svg?style=flat-square
-[Gitter]: https://gitter.im/kataras/iris
+[Chat Widget]: https://img.shields.io/badge/Rocket.Chat-JOIN%20CHAT-00BCD4.svg?style=flat-square
+[Chat]: https://kataras.rocket.chat/channel/iris
 [Report Widget]: https://img.shields.io/badge/report%20card-A%2B-F44336.svg?style=flat-square
 [Report]: http://goreportcard.com/report/kataras/iris
 [Documentation Widget]: https://img.shields.io/badge/documentation-reference-5272B4.svg?style=flat-square
@@ -65,7 +65,7 @@ $ go get -u github.com/kataras/iris/iris
 
 FAQ
 ------------
-Explore [these questions](https://github.com/kataras/iris/issues?q=label%3Aquestion) or navigate [here](https://gitter.im/kataras/iris).
+Explore [these questions](https://github.com/kataras/iris/issues?q=label%3Aquestion) or navigate [here][CHAT].
 
 
 Features
@@ -119,7 +119,7 @@ Docs & Community
 If you'd like to discuss this package, or ask questions about it, feel free to
 
 * Post an issue or  idea [here](https://github.com/kataras/iris/issues)
-* [Chat]( https://gitter.im/kataras/iris) with us
+* [Chat][CHAT]
 
 Open debates
 
