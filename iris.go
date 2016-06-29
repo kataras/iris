@@ -244,9 +244,13 @@ func ListenTLS(addr string, certFile string, keyFile string) {
 // if you need a func to panic on error use the ListenTLS
 // ex: log.Fatal(iris.ListenTLSWithErr(":8080","yourfile.cert","yourfile.key"))
 func (s *Framework) ListenTLSWithErr(addr string, certFile string, keyFile string) error {
+	if certFile == "" || keyFile == "" {
+		return fmt.Errorf("You should provide certFile and keyFile for TLS/SSL")
+	}
 	s.Config.Server.ListeningAddr = addr
 	s.Config.Server.CertFile = certFile
 	s.Config.Server.KeyFile = keyFile
+
 	return s.openServer()
 }
 
@@ -581,16 +585,6 @@ func SecondaryListen(cfg config.Server) *Server {
 //
 // this is a NOT A BLOCKING version, the main iris.Listen should be always executed LAST, so this function goes before the main .Listen.
 func (s *Framework) SecondaryListen(cfg config.Server) *Server {
-	/*This not suits us because if prelisten plugins makes a lot of time to execute then the IsListening is false after 3 seconds (if the plugins have much work to do)
-	time.Sleep(time.Duration(3) * time.Second) // yes we wait, so simple, because the previous will run on goroutine
-	// if the main server is not yet started, then this is the main server
-	// although this function should not be used to Listen to the main server, but if so then do it right:
-	if !s.HTTPServer.IsListening() {
-		s.HTTPServer.Config = &cfg
-		s.openServer()
-		return s.HTTPServer
-	}*/
-
 	srv := newServer(&cfg)
 	// add a post listen event to start this server after the previous started
 	s.Plugins.Add(PostListenFunc(func(*Framework) {

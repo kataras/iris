@@ -30,11 +30,18 @@ type Server struct {
 	KeyFile       string
 	// Mode this is for unix only
 	Mode os.FileMode
+	// RedirectTo, defaults to empty, set it in order to override the station's handler and redirect all requests to this address which is of form(HOST:PORT or :PORT)
+	//
+	// NOTE: the http status is 'StatusMovedPermanently', means one-time-redirect(the browser remembers the new addr and goes to the new address without need to request something from this server
+	// which means that if you want to change this address you have to clear your browser's cache in order this to be able to change to the new addr.
+	//
+	// example: https://github.com/iris-contrib/examples/tree/master/multiserver_listening2
+	RedirectTo string
 }
 
 // DefaultServer returns the default configs for the server
 func DefaultServer() Server {
-	return Server{DefaultServerAddr, "", "", 0}
+	return Server{ListeningAddr: DefaultServerAddr}
 }
 
 // Merge merges the default with the given config and returns the result

@@ -403,6 +403,18 @@ func (s *Server) Open() error {
 		s.Config.ListeningAddr = config.DefaultServerHostname + a
 	}
 
+	if s.Config.RedirectTo != "" {
+		// override the handler and redirect all requests to this addr
+		s.Handler = func(reqCtx *fasthttp.RequestCtx) {
+			path := string(reqCtx.Path())
+			redirectTo := s.Config.RedirectTo
+			if path != "/" {
+				redirectTo += "/" + path
+			}
+			reqCtx.Redirect(redirectTo, StatusMovedPermanently)
+		}
+	}
+
 	if s.Config.Mode > 0 {
 		return s.listenUNIX()
 	}
