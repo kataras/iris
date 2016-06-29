@@ -410,7 +410,7 @@ func (s *Server) Open() error {
 }
 
 // close closes the server
-func (s *Server) close() (err error) {
+func (s *Server) Close() (err error) {
 	if !s.IsListening() {
 		return errServerIsClosed.Return()
 	}

@@ -90,6 +90,7 @@ type (
 		ListenUNIXWithErr(string, os.FileMode) error
 		ListenUNIX(string, os.FileMode)
 		NoListen() *Server
+		ListenToServer(config.Server) (*Server, error)
 		Close()
 		// global middleware prepending, registers to all subdomains, to all parties, you can call it at the last also
 		MustUse(...Handler)
@@ -551,6 +552,55 @@ func (s *Framework) TemplateString(templateFile string, pageContext interface{},
 		return ""
 	}
 	return res
+}
+
+// ListenToServer starts a 'secondary' server which listens to this station
+// this server will not be the main server (unless it's the first listen)
+// Note that  the view engine's functions {{ url }} and {{ urlpath }} will return the first's registered server's scheme (http/https)
+//
+// this is useful only when you want to have two listen ports ( two servers ) for the same station
+//
+// receives one parameter which is the config.Server for the new server
+// returns the new standalone server(  you can close this server by this reference) and an error
+//
+// If you have only one scheme this function is useless for you, instead you can use the normal .Listen/ListenTLS functions.
+//
+// this is a blocking version, like .Listen/ListenTLS
+func ListenToServer(cfg config.Server) (*Server, error) {
+	return Default.ListenToServer(cfg)
+}
+
+// ListenToServer starts a server which listens to this station
+// Note that  the view engine's functions {{ url }} and {{ urlpath }} will return the first's registered server's scheme (http/https)
+//
+// this is useful only when you want to have two listen ports ( two servers ) for the same station
+//
+// receives one parameter which is the config.Server for the new server
+// returns the new standalone server(  you can close this server by this reference) and an error
+//
+// If you have only one scheme this function is useless for you, instead you can use the normal .Listen/ListenTLS functions.
+//
+// this is a blocking version, like .Listen/ListenTLS
+func (s *Framework) ListenToServer(cfg config.Server) (*Server, error) {
+	time.Sleep(time.Duration(3) * time.Second) // yes we wait, so simple, because the previous will run on goroutine
+	// if the main server is not yet started, then this is the main server
+	// although this function should not be used to Listen to the main server, but if so then do it right:
+	if !s.HTTPServer.IsListening() {
+		println("samae server")
+		s.HTTPServer.Config = &cfg
+		err := s.openServer()
+		return s.HTTPServer, err
+	}
+
+	srv := newServer(&cfg)
+	srv.Handler = s.HTTPServer.Handler
+	err := srv.Open()
+	if err == nil {
+		ch := make(chan os.Signal)
+		<-ch
+		srv.Close()
+	}
+	return srv, err
 }
 
 // -------------------------------------------------------------------------------------

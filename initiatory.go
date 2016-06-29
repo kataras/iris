@@ -176,7 +176,7 @@ func (s *Framework) openServer() (err error) {
 // closeServer is used to close the tcp listener from the server, returns an error
 func (s *Framework) closeServer() error {
 	s.Plugins.DoPreClose(s)
-	return s.HTTPServer.close()
+	return s.HTTPServer.Close()
 }
 
 // justServe initializes the whole framework but server doesn't listens to a specific net.Listener
