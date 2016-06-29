@@ -2,12 +2,14 @@ package config
 
 import (
 	"github.com/imdario/mergo"
+	"github.com/valyala/fasthttp"
 )
 
 // Default values for base Iris conf
 const (
 	DefaultDisablePathCorrection = false
 	DefaultDisablePathEscape     = false
+	DefaultMaxRequestBodySize    = fasthttp.DefaultMaxRequestBodySize
 )
 
 type (
@@ -56,7 +58,7 @@ type (
 		//
 		// The server rejects requests with bodies exceeding this limit.
 		//
-		// By default request body size is -1, unlimited.
+		// By default request body size is 4MB.
 		MaxRequestBodySize int64
 
 		// ProfilePath a the route path, set it to enable http pprof tool
@@ -137,7 +139,7 @@ func Default() Iris {
 		DisablePathCorrection: DefaultDisablePathCorrection,
 		DisablePathEscape:     DefaultDisablePathEscape,
 		DisableBanner:         false,
-		MaxRequestBodySize:    -1,
+		MaxRequestBodySize:    DefaultMaxRequestBodySize,
 		ProfilePath:           "",
 		Logger:                DefaultLogger(),
 		Sessions:              DefaultSessions(),

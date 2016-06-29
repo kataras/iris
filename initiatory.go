@@ -130,7 +130,7 @@ func (s *Framework) initialize() {
 		s.Handle(MethodGet, debugPath+"/*action", profileMiddleware(debugPath)...)
 	}
 
-	if s.Config.MaxRequestBodySize > 0 {
+	if s.Config.MaxRequestBodySize > config.DefaultMaxRequestBodySize {
 		s.HTTPServer.MaxRequestBodySize = int(s.Config.MaxRequestBodySize)
 	}
 }
