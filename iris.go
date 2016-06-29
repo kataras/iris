@@ -586,7 +586,6 @@ func (s *Framework) ListenToServer(cfg config.Server) (*Server, error) {
 	// if the main server is not yet started, then this is the main server
 	// although this function should not be used to Listen to the main server, but if so then do it right:
 	if !s.HTTPServer.IsListening() {
-		println("samae server")
 		s.HTTPServer.Config = &cfg
 		err := s.openServer()
 		return s.HTTPServer, err
