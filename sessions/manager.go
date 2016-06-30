@@ -122,7 +122,6 @@ func (m *Manager) Start(ctx context.IContext) store.IStore {
 						requestDomain = strings.Replace(requestDomain, requestDomain[0:subdomainSuff], s, 1) // set to localhost.com || mysubdomain.localhost.com
 					}
 				}
-				println(requestDomain)
 				// finally set the .localhost.com (for(1-level) || .mysubdomain.localhost.com (for 2-level subdomain allow)
 				cookie.SetDomain("." + requestDomain) // . to allow persistance
 			}
