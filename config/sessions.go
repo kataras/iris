@@ -63,6 +63,9 @@ type (
 		Provider string
 		// Cookie string, the session's client cookie name, for example: "irissessionid"
 		Cookie string
+		// DecodeCookie set it to true to decode the cookie key with base64 URLEncoding
+		// Defaults to false
+		DecodeCookie bool
 		//Expires the date which the cookie must expires. Default infinitive/unlimited life
 		Expires time.Time
 		// GcDuration every how much duration(GcDuration) the memory should be clear for unused cookies (GcDuration)
@@ -83,6 +86,7 @@ func DefaultSessions() Sessions {
 	return Sessions{
 		Provider:                    "memory", // the default provider is "memory", if you set it to ""  means that sessions are disabled.
 		Cookie:                      DefaultCookieName,
+		DecodeCookie:                false,
 		Expires:                     CookieExpireNever,
 		GcDuration:                  DefaultSessionGcDuration,
 		DisableSubdomainPersistence: false,

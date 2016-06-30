@@ -102,7 +102,10 @@ func (s *Store) SetLastAccessedTime(lastacc time.Time) {
 	s.lastAccessedTime = lastacc
 }
 
-// Destroy does nothing here, to destroy the session use the manager's .Destroy func
+// Destroy
 func (s *Store) Destroy() {
-	// nothing
+	// clears without provider's update.
+	for key := range s.values {
+		delete(s.values, key)
+	}
 }

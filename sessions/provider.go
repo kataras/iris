@@ -55,9 +55,12 @@ func (p *Provider) Init(sid string) (store.IStore, error) {
 
 // Read returns the store which sid parameter is belongs
 func (p *Provider) Read(sid string) (store.IStore, error) {
+	p.mu.Lock()
 	if elem, found := p.sessions[sid]; found {
+		p.mu.Unlock() // yes defer is slow
 		return elem.Value.(store.IStore), nil
 	}
+	p.mu.Unlock()
 	// if not found
 	sessionStore, err := p.Init(sid)
 	return sessionStore, err
@@ -66,12 +69,13 @@ func (p *Provider) Read(sid string) (store.IStore, error) {
 
 // Destroy always returns a nil error, for now.
 func (p *Provider) Destroy(sid string) error {
+	p.mu.Lock()
 	if elem, found := p.sessions[sid]; found {
 		elem.Value.(store.IStore).Destroy()
 		delete(p.sessions, sid)
 		p.list.Remove(elem)
 	}
-
+	p.mu.Unlock()
 	return nil
 }
 

@@ -173,4 +173,8 @@ func (s *Store) SetLastAccessedTime(lastacc time.Time) {
 func (s *Store) Destroy() {
 	// remove the whole  value which is the s.values from real redis
 	redis.Delete(s.sid)
+	for key := range s.values {
+		delete(s.values, key)
+	}
+
 }

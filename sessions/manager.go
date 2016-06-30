@@ -42,11 +42,15 @@ func newManager(c config.Sessions) (*Manager, error) {
 	if !found {
 		return nil, ErrProviderNotFound.Format(c.Provider)
 	}
+	if c.DecodeCookie {
+		c.Cookie = base64.URLEncoding.EncodeToString([]byte(c.Cookie)) // change the cookie's name/key to a more safe(?)
+		// get the real value for your tests by:
+		//sessIdKey := url.QueryEscape(base64.URLEncoding.EncodeToString([]byte(iris.Config.Sessions.Cookie)))
+	}
 
 	manager := &Manager{}
 	manager.config = &c
 	manager.provider = provider
-	manager.config.Cookie = base64.URLEncoding.EncodeToString([]byte(c.Cookie)) // change the cookie's name/key to a more safe
 	return manager, nil
 }
 
@@ -90,7 +94,7 @@ func (m *Manager) Start(ctx context.IContext) store.IStore {
 		cookie := fasthttp.AcquireCookie()
 		// The RFC makes no mention of encoding url value, so here I think to encode both sessionid key and the value using the safe(to put and to use as cookie) url-encoding
 		cookie.SetKey(m.config.Cookie)
-		cookie.SetValue(base64.URLEncoding.EncodeToString([]byte(sid)))
+		cookie.SetValue(sid)
 		cookie.SetPath("/")
 		if !m.config.DisableSubdomainPersistence {
 			requestDomain := ctx.HostString()
@@ -132,8 +136,7 @@ func (m *Manager) Start(ctx context.IContext) store.IStore {
 		requestCtx.Response.Header.SetCookie(cookie)
 		fasthttp.ReleaseCookie(cookie)
 	} else {
-		sid, _ := base64.URLEncoding.DecodeString(cookieValue)
-		store, _ = m.provider.Read(string(sid))
+		store, _ = m.provider.Read(cookieValue)
 	}
 
 	m.mu.Unlock()
@@ -149,9 +152,7 @@ func (m *Manager) Destroy(ctx context.IContext) {
 
 	m.mu.Lock()
 	m.provider.Destroy(cookieValue)
-
 	ctx.RemoveCookie(m.config.Cookie)
-
 	m.mu.Unlock()
 }
 
