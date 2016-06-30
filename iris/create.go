@@ -20,6 +20,8 @@ const (
 
 var (
 	packagesInstallDir = utils.AssetsDirectory + utils.PathSeparator + "iris-command-assets" + utils.PathSeparator
+	// packages should install with go get before create the package
+	packagesDependencies = []string{"github.com/iris-contrib/middleware/logger"}
 )
 
 func isValidInstallDir(targetDir string) bool {
@@ -54,9 +56,27 @@ func create(flags cli.Flags) (err error) {
 	}
 
 	if !utils.DirectoryExists(packagesInstallDir) || !flags.Bool("offline") {
-		downloadPackages()
-	}
+		// install/update go dependencies at the same time downloading the zip from the github iris-contrib assets
+		finish := make(chan bool)
+		go func() {
+			go func() {
+				for _, source := range packagesDependencies {
+					gogetCmd := utils.CommandBuilder("go", "get", source)
+					if msg, err := gogetCmd.CombinedOutput(); err != nil {
+						panic("Unable to go get " + source + " please make sure you're connected to the internet.\nSolution: Remove your $GOPATH/src/github.com/iris-contrib/middleware folder and re-run the iris create\nReason:\n" + string(msg))
+					}
+				}
+				finish <- true
 
+			}()
+
+			downloadPackages()
+			<-finish
+		}()
+
+		<-finish
+		close(finish)
+	}
 	createPackage(flags.String("type"), targetDir)
 	return
 }
