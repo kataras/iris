@@ -20,9 +20,11 @@
 
 The fastest web framework for Go.
 
-[Easy](https://github.com/iris-contrib/examples) to [learn](https://www.gitbook.com/book/kataras/iris/details) while, at the same time, providing robust set of features for building modern web applications.
+**The results have been updated on July 1, 2016**
 
-[![Benchmark Wizzard Processing Time Horizontal Graph](https://raw.githubusercontent.com/iris-contrib/website/cf71811e6acb2f9bf1e715e25660392bf090b923/assets/benchmark_horizontal_transparent.png)](https://github.com/smallnest/go-web-framework-benchmark)
+[![Benchmark Wizzard Processing Time Horizontal Graph](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/master/benchmark.png)](https://github.com/smallnest/go-web-framework-benchmark)
+
+
 
 
 ```bash
@@ -138,7 +140,11 @@ Benchmarks
 
 [This Benchmark suite](https://github.com/smallnest/go-web-framework-benchmark) aims to compare the whole HTTP request processing between Go web frameworks.
 
-![Benchmark Wizzard Processing Time Horizontal Graph](https://raw.githubusercontent.com/iris-contrib/website/cf71811e6acb2f9bf1e715e25660392bf090b923/assets/benchmark_horizontal_transparent.png)
+**New results just came out:**
+
+![Benchmark Wizzard Processing Time Horizontal Graph](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/master/benchmark.png)
+
+**The results have been updated on July 1, 2016**
 
 [Please click here to view all detailed benchmarks.](https://github.com/smallnest/go-web-framework-benchmark)
 
