@@ -92,13 +92,18 @@ func (m *Manager) Start(ctx context.IContext) store.IStore {
 		cookie.SetKey(m.config.Cookie)
 		cookie.SetValue(base64.URLEncoding.EncodeToString([]byte(sid)))
 		cookie.SetPath("/")
-		if !m.config.DisableSubdomainPersistance {
+		if !m.config.DisableSubdomainPersistence {
 			requestDomain := ctx.HostString()
-			// there is a problem with .localhost setted as the domain, so we check that first
-			if strings.Count(requestDomain, ".") > 0 {
-				if portIdx := strings.IndexByte(requestDomain, ':'); portIdx > 0 {
-					requestDomain = requestDomain[0:portIdx]
-				}
+			if portIdx := strings.IndexByte(requestDomain, ':'); portIdx > 0 {
+				requestDomain = requestDomain[0:portIdx]
+			}
+			if requestDomain == "0.0.0.0" || requestDomain == "127.0.0.1" {
+				// for these type of hosts, we can't allow subdomains persistance,
+				// the web browser doesn't understand the mysubdomain.0.0.0.0 and mysubdomain.127.0.0.1 as scorrectly ubdomains because of the many dots
+				cookie.SetDomain(requestDomain)
+
+			} else if strings.Count(requestDomain, ".") > 0 { // there is a problem with .localhost setted as the domain, so we check that first
+
 				// RFC2109, we allow level 1 subdomains, but no further
 				// if we have localhost.com , we want the localhost.com.
 				// so if we have something like: mysubdomain.localhost.com we want the localhost here
@@ -117,6 +122,7 @@ func (m *Manager) Start(ctx context.IContext) store.IStore {
 						requestDomain = strings.Replace(requestDomain, requestDomain[0:subdomainSuff], s, 1) // set to localhost.com || mysubdomain.localhost.com
 					}
 				}
+				println(requestDomain)
 				// finally set the .localhost.com (for(1-level) || .mysubdomain.localhost.com (for 2-level subdomain allow)
 				cookie.SetDomain("." + requestDomain) // . to allow persistance
 			}

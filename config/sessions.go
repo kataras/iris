@@ -72,9 +72,9 @@ type (
 		// Default 2 hours
 		GcDuration time.Duration
 
-		// DisableSubdomainPersistance set it to dissallow your iris subdomains to have access to the session cookie
+		// DisableSubdomainPersistence set it to dissallow your iris subdomains to have access to the session cookie
 		// defaults to false
-		DisableSubdomainPersistance bool
+		DisableSubdomainPersistence bool
 	}
 )
 
@@ -85,7 +85,7 @@ func DefaultSessions() Sessions {
 		Cookie:                      DefaultCookieName,
 		Expires:                     CookieExpireNever,
 		GcDuration:                  DefaultSessionGcDuration,
-		DisableSubdomainPersistance: false,
+		DisableSubdomainPersistence: false,
 	}
 }
 
