@@ -48,7 +48,7 @@
 // For middleware, templates, sessions, websockets, mails, subdomains,
 // dynamic subdomains, routes, party of subdomains & routes and much more
 // visit https://www.gitbook.com/book/kataras/iris/details
-package iris
+package iris // import "github.com/kataras/iris"
 
 import (
 	"fmt"
