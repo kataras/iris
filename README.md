@@ -1,4 +1,4 @@
-[![Iris Logo](http://iris-go.com/assets/iris_full_logo_2.png)](http://iris-go.com)
+[![Iris Logo](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iris_full_logo_2.png)](http://iris-go.com)
 
 [![Travis Widget]][Travis] [![Release Widget]][Release] [![Report Widget]][Report] [![License Widget]][License] [![Chat Widget]][Chat] [![Documentation Widget]][Documentation]
 

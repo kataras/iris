@@ -1,6 +1,6 @@
 # History
 
-**How to upgrade**: remove your $GOPATH/src/github.com/kataras/iris folder, open your command-line and run `go get -u github.com/kataras/iris/iris`.
+**How to upgrade**: remove your `$GOPATH/src/github.com/kataras/iris` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
 ## 3.0.0-rc.3 -> 3.0.0-rc.4
 
@@ -15,7 +15,22 @@
 - `{{ url "myroute" myparams}}`
 - `{{ urlpath "myroute" myparams}}`
 
-For a complete example please navigate [here](https://github.com/iris-contrib/examples/tree/master/templates_handlebars).
+For a complete example please, click [here](https://github.com/iris-contrib/examples/tree/master/templates_handlebars).
+
+**NEW:** Iris **can listen to more than one server per station** now, as requested [here](https://github.com/kataras/iris/issues/235).
+For example you can have https with SSL/TLS and one more server http which navigates to the secure location.
+Take a look [here](https://github.com/kataras/iris/issues/235#issuecomment-229399829) for an example of this.
+
+
+**FIXES**
+- Fix  `sessions destroy`
+- Fix  `sessions persistence on subdomains` (as RFC2109 commands but you can disable it with `iris.Config.Sessions.DisableSubdomainPersistence = true`)
+
+
+**IMPROVEMENTS**
+- Improvements on `iris run` && `iris create`, note that the underline code for hot-reloading moved to [rizla](https://github.com/kataras/rizla).
+
+
 
 ## 3.0.0-rc.2 -> 3.0.0-rc.3
 
