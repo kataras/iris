@@ -297,15 +297,6 @@ func (ctx *Context) PostFormMulti(name string) []string {
 	return arrStr
 }
 
-// Domain same as VirtualHostname but without the :port part (if any)
-func (ctx *Context) Domain() string {
-	domain := ctx.VirtualHostname()
-	if idx := strings.IndexByte(domain, ':'); idx > 0 {
-		domain = domain[0 : idx-1]
-	}
-	return domain
-}
-
 // Subdomain returns the subdomain (string) of this request, if any
 func (ctx *Context) Subdomain() (subdomain string) {
 	host := ctx.HostString()

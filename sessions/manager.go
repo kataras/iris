@@ -94,7 +94,7 @@ func (m *Manager) Start(ctx context.IContext) store.IStore {
 		cookie.SetValue(base64.URLEncoding.EncodeToString([]byte(sid)))
 		cookie.SetPath("/")
 		if !m.config.DisableSubdomainPersistance {
-			requestDomain := ctx.HostString() // we don't use the ctx.Domain because it gives the virtual domain, which is correct on some cases but not here.
+			requestDomain := ctx.HostString()
 
 			if portIdx := strings.IndexByte(requestDomain, ':'); portIdx > 0 {
 				requestDomain = requestDomain[0:portIdx]
