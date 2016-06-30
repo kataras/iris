@@ -215,12 +215,21 @@ func (ctx *Context) HostString() string {
 // VirtualHostname returns the hostname that user registers, host path maybe differs from the real which is HostString, which taken from a net.listener
 func (ctx *Context) VirtualHostname() string {
 	realhost := ctx.HostString()
+	hostname := realhost
 	virtualhost := ctx.framework.HTTPServer.VirtualHostname()
-	hostname := strings.Replace(realhost, "127.0.0.1", virtualhost, 1)
-	hostname = strings.Replace(realhost, "localhost", virtualhost, 1)
+
 	if portIdx := strings.IndexByte(hostname, ':'); portIdx > 0 {
 		hostname = hostname[0:portIdx]
 	}
+	if idxDotAnd := strings.LastIndexByte(hostname, '.'); idxDotAnd > 0 {
+		s := hostname[idxDotAnd:]
+		if s == ".1" {
+			hostname = strings.Replace(hostname, "127.0.0.1", virtualhost, 1)
+		}
+	} else {
+		hostname = strings.Replace(hostname, "localhost", virtualhost, 1)
+	}
+
 	return hostname
 }
 
@@ -286,6 +295,15 @@ func (ctx *Context) PostFormMulti(name string) []string {
 		arrStr[i] = string(v)
 	}
 	return arrStr
+}
+
+// Domain same as VirtualHostname but without the :port part (if any)
+func (ctx *Context) Domain() string {
+	domain := ctx.VirtualHostname()
+	if idx := strings.IndexByte(domain, ':'); idx > 0 {
+		domain = domain[0 : idx-1]
+	}
+	return domain
 }
 
 // Subdomain returns the subdomain (string) of this request, if any

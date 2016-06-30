@@ -23,6 +23,7 @@ type (
 		URLParams() map[string]string
 		MethodString() string
 		HostString() string
+		Domain() string
 		Subdomain() string
 		PathString() string
 		RequestPath(bool) string

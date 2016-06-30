@@ -71,16 +71,21 @@ type (
 		//
 		// Default 2 hours
 		GcDuration time.Duration
+
+		// DisableSubdomainPersistance set it to dissallow your iris subdomains to have access to the session cookie
+		// defaults to false
+		DisableSubdomainPersistance bool
 	}
 )
 
 // DefaultSessions the default configs for Sessions
 func DefaultSessions() Sessions {
 	return Sessions{
-		Provider:   "memory", // the default provider is "memory", if you set it to ""  means that sessions are disabled.
-		Cookie:     DefaultCookieName,
-		Expires:    CookieExpireNever,
-		GcDuration: DefaultSessionGcDuration,
+		Provider:                    "memory", // the default provider is "memory", if you set it to ""  means that sessions are disabled.
+		Cookie:                      DefaultCookieName,
+		Expires:                     CookieExpireNever,
+		GcDuration:                  DefaultSessionGcDuration,
+		DisableSubdomainPersistance: false,
 	}
 }
 

@@ -89,8 +89,8 @@ type (
 		ListenTLS(string, string, string)
 		ListenUNIXWithErr(string, os.FileMode) error
 		ListenUNIX(string, os.FileMode)
-		NoListen() *Server
 		SecondaryListen(config.Server) *Server
+		NoListen() *Server
 		Close()
 		// global middleware prepending, registers to all subdomains, to all parties, you can call it at the last also
 		MustUse(...Handler)
@@ -290,6 +290,49 @@ func (s *Framework) ListenUNIXWithErr(addr string, mode os.FileMode) error {
 // panics on error
 func (s *Framework) ListenUNIX(addr string, mode os.FileMode) {
 	s.Must(s.ListenUNIXWithErr(addr, mode))
+}
+
+// SecondaryListen starts a server which listens to this station
+// Note that  the view engine's functions {{ url }} and {{ urlpath }} will return the first's registered server's scheme (http/https)
+//
+// this is useful only when you want to have two or more listening ports ( two or more servers ) for the same station
+//
+// receives one parameter which is the config.Server for the new server
+// returns the new standalone server(  you can close this server by the returning reference)
+//
+// If you need only one server this function is not for you, instead you must use the normal .Listen/ListenTLS functions.
+//
+// this is a NOT A BLOCKING version, the main iris.Listen should be always executed LAST, so this function goes before the main .Listen.
+func SecondaryListen(cfg config.Server) *Server {
+	return Default.SecondaryListen(cfg)
+}
+
+// SecondaryListen starts a server which listens to this station
+// Note that  the view engine's functions {{ url }} and {{ urlpath }} will return the first's registered server's scheme (http/https)
+//
+// this is useful only when you want to have two or more listening ports ( two or more servers ) for the same station
+//
+// receives one parameter which is the config.Server for the new server
+// returns the new standalone server(  you can close this server by the returning reference)
+//
+// If you need only one server this function is not for you, instead you must use the normal .Listen/ListenTLS functions.
+//
+// this is a NOT A BLOCKING version, the main iris.Listen should be always executed LAST, so this function goes before the main .Listen.
+func (s *Framework) SecondaryListen(cfg config.Server) *Server {
+	srv := newServer(&cfg)
+	// add a post listen event to start this server after the previous started
+	s.Plugins.Add(PostListenFunc(func(*Framework) {
+		go func() { // goroutine in order to not block any runtime post listeners
+			srv.Handler = s.HTTPServer.Handler
+			if err := srv.Open(); err == nil {
+				ch := make(chan os.Signal)
+				<-ch
+				srv.Close()
+			}
+		}()
+	}))
+
+	return srv
 }
 
 // NoListen is useful only when you want to test Iris, it doesn't starts the server but it configures and returns it
@@ -556,49 +599,6 @@ func (s *Framework) TemplateString(templateFile string, pageContext interface{},
 		return ""
 	}
 	return res
-}
-
-// SecondaryListen starts a server which listens to this station
-// Note that  the view engine's functions {{ url }} and {{ urlpath }} will return the first's registered server's scheme (http/https)
-//
-// this is useful only when you want to have two or more listening ports ( two or more servers ) for the same station
-//
-// receives one parameter which is the config.Server for the new server
-// returns the new standalone server(  you can close this server by the returning reference)
-//
-// If you need only one server this function is not for you, instead you must use the normal .Listen/ListenTLS functions.
-//
-// this is a NOT A BLOCKING version, the main iris.Listen should be always executed LAST, so this function goes before the main .Listen.
-func SecondaryListen(cfg config.Server) *Server {
-	return Default.SecondaryListen(cfg)
-}
-
-// SecondaryListen starts a server which listens to this station
-// Note that  the view engine's functions {{ url }} and {{ urlpath }} will return the first's registered server's scheme (http/https)
-//
-// this is useful only when you want to have two or more listening ports ( two or more servers ) for the same station
-//
-// receives one parameter which is the config.Server for the new server
-// returns the new standalone server(  you can close this server by the returning reference)
-//
-// If you need only one server this function is not for you, instead you must use the normal .Listen/ListenTLS functions.
-//
-// this is a NOT A BLOCKING version, the main iris.Listen should be always executed LAST, so this function goes before the main .Listen.
-func (s *Framework) SecondaryListen(cfg config.Server) *Server {
-	srv := newServer(&cfg)
-	// add a post listen event to start this server after the previous started
-	s.Plugins.Add(PostListenFunc(func(*Framework) {
-		go func() { // goroutine in order to not block any runtime post listeners
-			srv.Handler = s.HTTPServer.Handler
-			if err := srv.Open(); err == nil {
-				ch := make(chan os.Signal)
-				<-ch
-				srv.Close()
-			}
-		}()
-	}))
-
-	return srv
 }
 
 // -------------------------------------------------------------------------------------
