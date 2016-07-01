@@ -23,5 +23,4 @@ _examples/*.so
 build.bat
 tools/*
 docs/*
-/test/*
 /vendor/*

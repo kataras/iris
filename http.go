@@ -421,12 +421,11 @@ func (s *Server) Open() error {
 	return s.listen()
 }
 
-// close closes the server
+// Close terminates the server
 func (s *Server) Close() (err error) {
 	if !s.IsListening() {
 		return errServerIsClosed.Return()
 	}
-
 	err = s.listener.Close()
 
 	return
@@ -677,9 +676,6 @@ func getParamsLen(path string) uint8 {
 	return uint8(n)
 }
 
-//
-// Copyright (c) 2013 Julien Schmidt, Copyright (c) 2016 Gerasimos Maropoulos All rights reserved.
-//
 // add adds a muxEntry to the existing muxEntry or to the tree if no muxEntry has the prefix of
 func (e *muxEntry) add(path string, middleware Middleware) error {
 	fullPath := path
@@ -750,7 +746,6 @@ func (e *muxEntry) add(path string, middleware Middleware) error {
 					e.precedence++
 					continue loop
 				}
-				//we need the i here to be re-setting, so use the same i variable as we declare it on line 176
 				for i := range e.tokens {
 					if c == e.tokens[i] {
 						i = e.precedenceTo(i)
@@ -979,7 +974,7 @@ loop:
 			}
 
 			for i := range e.tokens {
-				if e.tokens[i] == '/' {
+				if e.tokens[i] == slashByte {
 					e = e.nodes[i]
 					mustRedirect = (len(e.part) == 1 && e.middleware != nil) ||
 						(e.entryCase == matchEverything && e.nodes[0].middleware != nil)
@@ -991,7 +986,7 @@ loop:
 		}
 
 		mustRedirect = (path == slash) ||
-			(len(e.part) == len(path)+1 && e.part[len(path)] == '/' &&
+			(len(e.part) == len(path)+1 && e.part[len(path)] == slashByte &&
 				path == e.part[:len(e.part)-1] && e.middleware != nil)
 		return
 	}
