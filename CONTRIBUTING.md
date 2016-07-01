@@ -15,7 +15,7 @@ The Iris project is distributed across multiple repositories, try to file the is
 - [Iris - mail](https://github.com/iris-contrib/mail/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue).
 
 
-If your issue is a question then please ask the question on [Chat](https://kataras.rocket.chat/channel/iris).
+If your issue is a question then please ask the question on [community chat][Chat].
 
 ## Writing Good Bug Reports and Feature Requests
 
@@ -33,3 +33,7 @@ The more information you can provide, the more likely someone will be successful
 
 ## Contributing Fixes
 If you are interested in fixing issues and contributing directly to the Iris base, please see the document [How to Contribute](https://github.com/iris-contrib/wiki/blob/master/How-to-Contribute.md).
+
+[Chat]: https://gitter.im/kataras/iris
+[ChatMain]: https://kataras.rocket.chat/channel/iris
+[ChatAlternative]: https://gitter.im/kataras/iris

@@ -1,24 +1,6 @@
 [![Iris Logo](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iris_full_logo_2.png)](http://iris-go.com)
 
-[![Travis Widget]][Travis] [![Release Widget]][Release] [![Report Widget]][Report] [![License Widget]][License] [![Chat Widget]][ChatAlternative] [![Documentation Widget]][Documentation]
-
-[Travis Widget]: https://img.shields.io/travis/kataras/iris.svg?style=flat-square
-[Travis]: http://travis-ci.org/kataras/iris
-[License Widget]: https://img.shields.io/badge/license-MIT%20%20License%20-E91E63.svg?style=flat-square
-[License]: https://github.com/kataras/iris/blob/master/LICENSE
-[Release Widget]: https://img.shields.io/badge/release-v3.0.0--rc.4-blue.svg?style=flat-square
-[Release]: https://github.com/kataras/iris/releases
-[Chat Widget]: https://img.shields.io/badge/community-chat-00BCD4.svg?style=flat-square
-[Chat]: ChatAlternative
-[ChatMain]: https://kataras.rocket.chat/channel/iris
-[ChatAlternative]: https://gitter.im/kataras/iris
-[Report Widget]: https://img.shields.io/badge/report%20card-A%2B-F44336.svg?style=flat-square
-[Report]: http://goreportcard.com/report/kataras/iris
-[Documentation Widget]: https://img.shields.io/badge/documentation-reference-5272B4.svg?style=flat-square
-[Documentation]: https://www.gitbook.com/book/kataras/iris/details
-[Language Widget]: https://img.shields.io/badge/powered_by-Go-3362c2.svg?style=flat-square
-[Language]: http://golang.org
-[Platform Widget]: https://img.shields.io/badge/platform-Any--OS-gray.svg?style=flat-square
+[![Travis Widget]][Travis] [![Release Widget]][Release] [![Report Widget]][Report] [![License Widget]][License] [![Chat Widget]][Chat] [![Documentation Widget]][Documentation]
 
 The fastest web framework for Go.
 
@@ -69,7 +51,7 @@ $ go get -u github.com/kataras/iris/iris
 
 FAQ
 ------------
-Explore [these questions](https://github.com/kataras/iris/issues?q=label%3Aquestion) or navigate [here][CHAT].
+Explore [these questions](https://github.com/kataras/iris/issues?q=label%3Aquestion) or navigate to the [![Chat Widget]][Chat]
 
 
 Features
@@ -123,7 +105,7 @@ Docs & Community
 If you'd like to discuss this package, or ask questions about it, feel free to
 
 * Post an issue or  idea [here](https://github.com/kataras/iris/issues)
-* [Chat][CHAT]
+* [Chat][Chat]
 
 Open debates
 
@@ -198,3 +180,21 @@ License
 This project is licensed under the MIT License.
 
 License can be found [here](LICENSE).
+
+[Travis Widget]: https://img.shields.io/travis/kataras/iris.svg?style=flat-square
+[Travis]: http://travis-ci.org/kataras/iris
+[License Widget]: https://img.shields.io/badge/license-MIT%20%20License%20-E91E63.svg?style=flat-square
+[License]: https://github.com/kataras/iris/blob/master/LICENSE
+[Release Widget]: https://img.shields.io/badge/release-v3.0.0--rc.4-blue.svg?style=flat-square
+[Release]: https://github.com/kataras/iris/releases
+[Chat Widget]: https://img.shields.io/badge/community-chat-00BCD4.svg?style=flat-square
+[Chat]: https://gitter.im/kataras/iris
+[ChatMain]: https://kataras.rocket.chat/channel/iris
+[ChatAlternative]: https://gitter.im/kataras/iris
+[Report Widget]: https://img.shields.io/badge/report%20card-A%2B-F44336.svg?style=flat-square
+[Report]: http://goreportcard.com/report/kataras/iris
+[Documentation Widget]: https://img.shields.io/badge/documentation-reference-5272B4.svg?style=flat-square
+[Documentation]: https://www.gitbook.com/book/kataras/iris/details
+[Language Widget]: https://img.shields.io/badge/powered_by-Go-3362c2.svg?style=flat-square
+[Language]: http://golang.org
+[Platform Widget]: https://img.shields.io/badge/platform-Any--OS-gray.svg?style=flat-square
