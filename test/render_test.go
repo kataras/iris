@@ -1,6 +1,6 @@
 package test
 
-// Contains tests for render/rest
+// Contains tests for render/rest & render/template
 
 import (
 	"encoding/xml"
@@ -68,9 +68,9 @@ func TestREST(t *testing.T) {
 	textT.Header("Content-Type").Equal("text/plain; charset=UTF-8")
 	textT.Body().Equal(textContents)
 
-	/*	JSONPT := e.GET("/jsonp").Expect()
-		dataT.Header("Content-Type").Equal("application/javascript; charset=UTF-8")
-		dataT.Body().Equal(dataContents)*/
+	JSONPT := e.GET("/jsonp").Expect()
+	JSONPT.Header("Content-Type").Equal("application/javascript; charset=UTF-8")
+	JSONPT.Body().Equal(JSONPCallback + `({"hello":"jsonp"});`)
 
 	JSONT := e.GET("/json").Expect()
 	JSONT.Header("Content-Type").Equal("application/json; charset=UTF-8")
