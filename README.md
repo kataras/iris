@@ -154,12 +154,14 @@ Todo
 ------------
 > for the next release 'v3'
 
-- [x] [Dynamic/Wildcard subdomains](https://kataras.gitbooks.io/iris/content/subdomains.html).
-- [x] Create server & client side (js) library for .on('event', func action(...)) / .emit('event')... (like socket.io but supports only websocket).
-- [x] Create a view system supporting different types of template engines.
-- [x] Extend, test and publish to the public the [Iris' cmd](https://github.com/kataras/iris/tree/master/iris).
-- [ ] Complete the front-end API tests [inside the iris-contrib]
-If you're willing to donate click [here](DONATIONS.md)!
+- [x] [Dynamic/Wildcard subdomains](https://kataras.gitbooks.io/iris/content/subdomains.html)
+- [x] [Create server & client side](https://kataras.gitbooks.io/iris/content/package-websocket.html) (js) library for .on('event', func action(...)) / .emit('event')... (like socket.io but supports only websocket)
+- [x] [Create a view system](https://kataras.gitbooks.io/iris/content/render_templates.html) supporting different types of template engines
+- [x] Extend, test and publish to the public the [Iris' cmd](https://github.com/kataras/iris/tree/master/iris)[*](https://github.com/kataras/rizla)
+- [ ] Complete the API tests, community can help also, tests are located [here](https://github.com/iris-contrib/tests).
+
+
+If you're **willing to donate** click [here](DONATIONS.md)!
 
 People
 ------------
