@@ -2,11 +2,10 @@
 
 [![Travis Widget]][Travis] [![Release Widget]][Release] [![Report Widget]][Report] [![License Widget]][License] [![Chat Widget]][Chat] [![Documentation Widget]][Documentation]
 
-The fastest web framework for Go.
+The [fastest](#benchmarks) web framework for Go.
 
-**The results have been updated on July 1, 2016**
 
-[![Benchmark Wizzard Processing Time Horizontal Graph](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/master/benchmark.png)](https://github.com/smallnest/go-web-framework-benchmark)
+[![Alt: The results have been updated on July 1, 2016](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/master/benchmark.png)](https://github.com/smallnest/go-web-framework-benchmark)
 
 
 
@@ -51,7 +50,7 @@ $ go get -u github.com/kataras/iris/iris
 
 FAQ
 ------------
-Explore [these questions](https://github.com/kataras/iris/issues?q=label%3Aquestion) or navigate to the [![Chat Widget]][Chat]
+Explore [these questions](https://github.com/kataras/iris/issues?q=label%3Aquestion) or navigate to the [community chat][Chat].
 
 
 Features
@@ -119,8 +118,7 @@ The Iris philosophy is to provide robust tooling for HTTP, making it a great sol
 
 Iris does not force you to use any specific ORM or template engine. With support for the most used template engines, you can quickly craft the perfect application.
 
-Benchmarks
-------------
+## Benchmarks
 
 [This Benchmark suite](https://github.com/smallnest/go-web-framework-benchmark) aims to compare the whole HTTP request processing between Go web frameworks.
 
