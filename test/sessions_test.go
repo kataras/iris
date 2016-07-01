@@ -1,6 +1,8 @@
 //Package test -v ./... builds all tests
 package test
 
+// Contains tests for sessions
+
 import (
 	"testing"
 
@@ -8,7 +10,6 @@ import (
 )
 
 func TestSessions(t *testing.T) {
-	sessionId := "mycustomsessionid"
 
 	values := map[string]interface{}{
 		"Name":   "iris",
@@ -17,8 +18,8 @@ func TestSessions(t *testing.T) {
 	}
 
 	api := iris.New()
+	api.Config.Sessions.Cookie = "mycustomsessionid"
 
-	api.Config.Sessions.Cookie = sessionId
 	writeValues := func(ctx *iris.Context) {
 		sessValues := ctx.Session().GetAll()
 		ctx.JSON(iris.StatusOK, sessValues)
@@ -55,19 +56,19 @@ func TestSessions(t *testing.T) {
 		// the cookie and all values should be empty
 	})
 
-	h := tester(api, t)
+	e := tester(api, t)
 
-	h.POST("/set").WithJSON(values).Expect().Status(iris.StatusOK).Cookies().NotEmpty()
-	h.GET("/get").Expect().Status(iris.StatusOK).JSON().Object().Equal(values)
+	e.POST("/set").WithJSON(values).Expect().Status(iris.StatusOK).Cookies().NotEmpty()
+	e.GET("/get").Expect().Status(iris.StatusOK).JSON().Object().Equal(values)
 	if enable_subdomain_tests {
-		h.Request("GET", subdomainURL+"/get").Expect().Status(iris.StatusOK).JSON().Object().Equal(values)
+		e.Request("GET", subdomainURL+"/get").Expect().Status(iris.StatusOK).JSON().Object().Equal(values)
 	}
 
 	// test destory which also clears first
-	d := h.GET("/destroy").Expect().Status(iris.StatusOK)
+	d := e.GET("/destroy").Expect().Status(iris.StatusOK)
 	d.JSON().Object().Empty()
-	d.Cookies().ContainsOnly(sessionId)
+	d.Cookies().ContainsOnly(api.Config.Sessions.Cookie)
 	// set and clear again
-	h.POST("/set").WithJSON(values).Expect().Status(iris.StatusOK).Cookies().NotEmpty()
-	h.GET("/clear").Expect().Status(iris.StatusOK).JSON().Object().Empty()
+	e.POST("/set").WithJSON(values).Expect().Status(iris.StatusOK).Cookies().NotEmpty()
+	e.GET("/clear").Expect().Status(iris.StatusOK).JSON().Object().Empty()
 }

@@ -1,5 +1,7 @@
 package test
 
+// Contains tests for the mux(router)
+
 import (
 	"fmt"
 	"testing"
@@ -21,7 +23,7 @@ type route struct {
 	Status       int
 	Register     bool
 	Params       []param
-	UrlParams    []param
+	URLParams    []param
 }
 
 func TestMuxSimple(t *testing.T) {
@@ -64,15 +66,15 @@ func TestMuxSimple(t *testing.T) {
 				ctx.SetStatusCode(r.Status)
 				if r.Params != nil && len(r.Params) > 0 {
 					ctx.SetBodyString(ctx.Params.String())
-				} else if r.UrlParams != nil && len(r.UrlParams) > 0 {
-					if len(r.UrlParams) != len(ctx.URLParams()) {
-						t.Fatalf("Error when comparing length of url parameters %d != %d", len(r.UrlParams), len(ctx.URLParams()))
+				} else if r.URLParams != nil && len(r.URLParams) > 0 {
+					if len(r.URLParams) != len(ctx.URLParams()) {
+						t.Fatalf("Error when comparing length of url parameters %d != %d", len(r.URLParams), len(ctx.URLParams()))
 					}
 					paramsKeyVal := ""
-					for idxp, p := range r.UrlParams {
+					for idxp, p := range r.URLParams {
 						val := ctx.URLParam(p.Key)
 						paramsKeyVal += p.Key + "=" + val + ","
-						if idxp == len(r.UrlParams)-1 {
+						if idxp == len(r.URLParams)-1 {
 							paramsKeyVal = paramsKeyVal[0 : len(paramsKeyVal)-1]
 						}
 					}
@@ -140,17 +142,17 @@ func TestMuxSimpleParty(t *testing.T) {
 	request("/party1/namedpath/theparam1/something/theparam2/else")
 
 	if enable_subdomain_tests {
-		subdomain_request := func(reqPath string) {
+		subdomainRequest := func(reqPath string) {
 			e.Request("GET", subdomainURL+reqPath).
 				Expect().
 				Status(iris.StatusOK).Body().Equal(subdomainHost + reqPath)
 		}
 
-		subdomain_request("/")
-		subdomain_request("/path1")
-		subdomain_request("/path2")
-		subdomain_request("/namedpath/theparam1/something/theparam2")
-		subdomain_request("/namedpath/theparam1/something/theparam2/else")
+		subdomainRequest("/")
+		subdomainRequest("/path1")
+		subdomainRequest("/path2")
+		subdomainRequest("/namedpath/theparam1/something/theparam2")
+		subdomainRequest("/namedpath/theparam1/something/theparam2/else")
 	}
 }
 
