@@ -5,14 +5,14 @@ import "time"
 
 // IStore is the interface which all session stores should implement
 type IStore interface {
-	Get(interface{}) interface{}
-	GetString(key interface{}) string
-	GetInt(key interface{}) int
-	Set(interface{}, interface{}) error
-	Delete(interface{}) error
+	Get(string) interface{}
+	GetString(string) string
+	GetInt(string) int
+	Set(string, interface{}) error
+	Delete(string) error
 	Clear() error
-	VisitAll(func(interface{}, interface{}))
-	GetAll() map[interface{}]interface{}
+	VisitAll(func(string, interface{}))
+	GetAll() map[string]interface{}
 	ID() string
 	LastAccessedTime() time.Time
 	SetLastAccessedTime(time.Time)

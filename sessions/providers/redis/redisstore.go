@@ -1,6 +1,7 @@
 package redis
 
 import (
+	"sync"
 	"time"
 
 	"github.com/kataras/iris/sessions/store"
@@ -28,8 +29,8 @@ with the memory provider. Or just have a values field inside the Store and use j
 Ok then, let's convert it again.
 */
 
-// Values is just a type of a map[interface{}]interface{}
-type Values map[interface{}]interface{}
+// Values is just a type of a map[string]interface{}
+type Values map[string]interface{}
 
 // Store the redis session store
 type Store struct {
@@ -37,6 +38,7 @@ type Store struct {
 	lastAccessedTime   time.Time
 	values             Values
 	cookieLifeDuration time.Duration //used on .Set-> SETEX on redis
+	mu                 sync.Mutex
 }
 
 var _ store.IStore = &Store{}
@@ -78,30 +80,35 @@ func (s *Store) update() {
 }
 
 // GetAll returns all values
-func (s *Store) GetAll() map[interface{}]interface{} {
+func (s *Store) GetAll() map[string]interface{} {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	return s.values
 }
 
 // VisitAll loop each one entry and calls the callback function func(key,value)
-func (s *Store) VisitAll(cb func(k interface{}, v interface{})) {
+func (s *Store) VisitAll(cb func(k string, v interface{})) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	for key := range s.values {
 		cb(key, s.values[key])
 	}
 }
 
 // Get returns the value of an entry by its key
-func (s *Store) Get(key interface{}) interface{} {
+func (s *Store) Get(key string) interface{} {
 	Provider.Update(s.sid)
-
+	s.mu.Lock()
 	if value, found := s.values[key]; found {
+		s.mu.Unlock()
 		return value
 	}
-
+	s.mu.Unlock()
 	return nil
 }
 
 // GetString same as Get but returns as string, if nil then returns an empty string
-func (s *Store) GetString(key interface{}) string {
+func (s *Store) GetString(key string) string {
 	if value := s.Get(key); value != nil {
 		if v, ok := value.(string); ok {
 			return v
@@ -112,7 +119,7 @@ func (s *Store) GetString(key interface{}) string {
 }
 
 // GetInt same as Get but returns as int, if nil then returns -1
-func (s *Store) GetInt(key interface{}) int {
+func (s *Store) GetInt(key string) int {
 	if value := s.Get(key); value != nil {
 		if v, ok := value.(int); ok {
 			return v
@@ -124,8 +131,10 @@ func (s *Store) GetInt(key interface{}) int {
 
 // Set fills the session with an entry, it receives a key and a value
 // returns an error, which is always nil
-func (s *Store) Set(key interface{}, value interface{}) error {
+func (s *Store) Set(key string, value interface{}) error {
+	s.mu.Lock()
 	s.values[key] = value
+	s.mu.Unlock()
 	Provider.Update(s.sid)
 
 	s.update()
@@ -134,8 +143,10 @@ func (s *Store) Set(key interface{}, value interface{}) error {
 
 // Delete removes an entry by its key
 // returns an error, which is always nil
-func (s *Store) Delete(key interface{}) error {
+func (s *Store) Delete(key string) error {
+	s.mu.Lock()
 	delete(s.values, key)
+	s.mu.Unlock()
 	Provider.Update(s.sid)
 	s.update()
 	return nil
@@ -145,9 +156,11 @@ func (s *Store) Delete(key interface{}) error {
 // returns an error, which is always nil
 func (s *Store) Clear() error {
 	//we are not using the Redis.Delete, I made so work for nothing.. we wanted only the .Set at the end...
+	s.mu.Lock()
 	for key := range s.values {
 		delete(s.values, key)
 	}
+	s.mu.Unlock()
 
 	Provider.Update(s.sid)
 	s.update()
@@ -173,8 +186,10 @@ func (s *Store) SetLastAccessedTime(lastacc time.Time) {
 func (s *Store) Destroy() {
 	// remove the whole  value which is the s.values from real redis
 	redis.Delete(s.sid)
+	s.mu.Lock()
 	for key := range s.values {
 		delete(s.values, key)
 	}
+	s.mu.Unlock()
 
 }

@@ -21,7 +21,7 @@ var (
 func register() {
 	// the actual work is here.
 	Provider.NewStore = func(sessionId string, cookieLifeDuration time.Duration) store.IStore {
-		return &Store{sid: sessionId, lastAccessedTime: time.Now(), values: make(map[interface{}]interface{}, 0)}
+		return &Store{sid: sessionId, lastAccessedTime: time.Now(), values: make(map[string]interface{}, 0)}
 	}
 	sessions.Register(Provider)
 }
