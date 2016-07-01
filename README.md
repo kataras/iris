@@ -1,6 +1,6 @@
 [![Iris Logo](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iris_full_logo_2.png)](http://iris-go.com)
 
-[![Travis Widget]][Travis] [![Release Widget]][Release] [![Report Widget]][Report] [![License Widget]][License] [![Chat Widget]][Chat] [![Documentation Widget]][Documentation]
+[![Travis Widget]][Travis] [![Release Widget]][Release] [![Report Widget]][Report] [![License Widget]][License] [![Chat Widget]][ChatAlternative] [![Documentation Widget]][Documentation]
 
 [Travis Widget]: https://img.shields.io/travis/kataras/iris.svg?style=flat-square
 [Travis]: http://travis-ci.org/kataras/iris
@@ -8,8 +8,9 @@
 [License]: https://github.com/kataras/iris/blob/master/LICENSE
 [Release Widget]: https://img.shields.io/badge/release-v3.0.0--rc.4-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/iris/releases
-[Chat Widget]: https://img.shields.io/badge/Rocket.Chat-JOIN%20CHAT-00BCD4.svg?style=flat-square
+[Chat Widget]: https://img.shields.io/badge/community-chat-00BCD4.svg?style=flat-square
 [Chat]: https://kataras.rocket.chat/channel/iris
+[ChatAlternative]: https://gitter.im/kataras/iris
 [Report Widget]: https://img.shields.io/badge/report%20card-A%2B-F44336.svg?style=flat-square
 [Report]: http://goreportcard.com/report/kataras/iris
 [Documentation Widget]: https://img.shields.io/badge/documentation-reference-5272B4.svg?style=flat-square

@@ -19,7 +19,7 @@ type renderTestInformationType struct {
 	Stars      int      `xml:"stars",json:"stars"`
 }
 
-func TestREST(t *testing.T) {
+func TestRenderRest(t *testing.T) {
 	api := iris.New()
 
 	dataContents := []byte("Some binary data here.")
