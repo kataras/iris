@@ -90,7 +90,7 @@ type (
 		ListenUNIXWithErr(string, os.FileMode) error
 		ListenUNIX(string, os.FileMode)
 		SecondaryListen(config.Server) *Server
-		NoListen() *Server
+		NoListen(...string) *Server
 		Close()
 		// global middleware prepending, registers to all subdomains, to all parties, you can call it at the last also
 		MustUse(...Handler)
@@ -336,14 +336,14 @@ func (s *Framework) SecondaryListen(cfg config.Server) *Server {
 }
 
 // NoListen is useful only when you want to test Iris, it doesn't starts the server but it configures and returns it
-func NoListen() *Server {
-	return Default.NoListen()
+func NoListen(optionalAddr ...string) *Server {
+	return Default.NoListen(optionalAddr...)
 }
 
 // NoListen is useful only when you want to test Iris, it doesn't starts the server but it configures and returns it
 // initializes the whole framework but server doesn't listens to a specific net.Listener
-func (s *Framework) NoListen() *Server {
-	return s.justServe()
+func (s *Framework) NoListen(optionalAddr ...string) *Server {
+	return s.justServe(optionalAddr...)
 }
 
 // CloseWithErr terminates the server and returns an error if any

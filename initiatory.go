@@ -25,6 +25,16 @@ var (
 	Plugins    PluginContainer
 	Websocket  websocket.Server
 	HTTPServer *Server
+	// Available is a channel type of bool, fired to true when the server is opened and all plugins ran
+	// fires false when .Close is called manually.
+	// the channel is always on until you close it when you don't need this.
+	//
+	// Note: it is a simple channel and decided to put it here and no inside HTTPServer, doesn't have statuses just true and false, simple as possible
+	// Where to use that?
+	// this is used on extreme cases when you don't know which .Listen/.NoListen will be called
+	// and you want to run/declare something external-not-Iris (all Iris functionality declared before .Listen/.NoListen) AFTER the server is started and plugins finished.
+	// see the ./test/iris_test.go
+	Available chan bool
 )
 
 func init() {
@@ -34,6 +44,7 @@ func init() {
 	Plugins = Default.Plugins
 	Websocket = Default.Websocket
 	HTTPServer = Default.HTTPServer
+	Available = Default.Available
 }
 
 const (
@@ -75,6 +86,7 @@ type Framework struct {
 	Logger     *logger.Logger
 	Plugins    PluginContainer
 	Websocket  websocket.Server
+	Available  chan bool
 }
 
 // New creates and returns a new Iris station aka Framework.
@@ -86,7 +98,7 @@ func New(cfg ...config.Iris) *Framework {
 
 	// we always use 's' no 'f' because 's' is easier for me to remember because of 'station'
 	// some things never change :)
-	s := &Framework{Config: &c}
+	s := &Framework{Config: &c, Available: make(chan bool, 1)} // 1 because the Available can be used after the .NoListen (which is a blocking func)
 	{
 		///NOTE: set all with s.Config pointer
 		// set the Logger
@@ -166,6 +178,7 @@ func (s *Framework) openServer() (err error) {
 					s.HTTPServer.Host()))
 		}
 		s.Plugins.DoPostListen(s)
+		s.Available <- true
 		ch := make(chan os.Signal)
 		<-ch
 		s.Close()
@@ -176,14 +189,22 @@ func (s *Framework) openServer() (err error) {
 // closeServer is used to close the tcp listener from the server, returns an error
 func (s *Framework) closeServer() error {
 	s.Plugins.DoPreClose(s)
+	s.Available <- false
 	return s.HTTPServer.Close()
 }
 
 // justServe initializes the whole framework but server doesn't listens to a specific net.Listener
-func (s *Framework) justServe() *Server {
+func (s *Framework) justServe(optionalAddr ...string) *Server {
+	addr := config.DefaultServerAddr
+	if len(optionalAddr) > 0 {
+		addr = optionalAddr[0]
+	}
+	s.HTTPServer.Config.ListeningAddr = addr
 	s.initialize()
 	s.Plugins.DoPreListen(s)
 	s.HTTPServer.SetHandler(s.mux)
 	s.Plugins.DoPostListen(s)
+	s.Available <- true
+
 	return s.HTTPServer
 }
