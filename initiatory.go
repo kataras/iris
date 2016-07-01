@@ -27,7 +27,7 @@ var (
 	HTTPServer *Server
 	// Available is a channel type of bool, fired to true when the server is opened and all plugins ran
 	// fires false when .Close is called manually.
-	// the channel is always on until you close it when you don't need this.
+	// the channel is always oepen until you close it when you don't need this.
 	//
 	// Note: it is a simple channel and decided to put it here and no inside HTTPServer, doesn't have statuses just true and false, simple as possible
 	// Where to use that?
@@ -98,7 +98,7 @@ func New(cfg ...config.Iris) *Framework {
 
 	// we always use 's' no 'f' because 's' is easier for me to remember because of 'station'
 	// some things never change :)
-	s := &Framework{Config: &c, Available: make(chan bool, 1)} // 1 because the Available can be used after the .NoListen (which is a blocking func)
+	s := &Framework{Config: &c, Available: make(chan bool)}
 	{
 		///NOTE: set all with s.Config pointer
 		// set the Logger
@@ -204,7 +204,9 @@ func (s *Framework) justServe(optionalAddr ...string) *Server {
 	s.Plugins.DoPreListen(s)
 	s.HTTPServer.SetHandler(s.mux)
 	s.Plugins.DoPostListen(s)
-	s.Available <- true
+	go func() {
+		s.Available <- true
+	}()
 
 	return s.HTTPServer
 }
