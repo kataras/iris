@@ -720,10 +720,10 @@ func (ctx *Context) RemoveCookie(name string) {
 }
 
 // GetFlash get a flash message by it's key
-// after the request lifetime the value is removed
 // returns the value as string and an error
 //
 // if the cookie doesn't exists the string is empty and the error is filled
+// after the request's life the value is removed
 func (ctx *Context) GetFlash(key string) (value string, err error) {
 
 	// first check if flash exists from this request's lifetime, if yes return that else continue to get the cookie

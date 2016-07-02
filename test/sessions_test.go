@@ -83,6 +83,9 @@ func FlashMessagesTest(t *testing.T) {
 		}
 	})
 
+	//we don't get the flash so on the next request the flash messages should be available.
+	api.Get("/get_no_getflash", func(ctx *iris.Context) {})
+
 	api.Get("/get", func(ctx *iris.Context) {
 		// one time one handler
 		kv := make(map[string]string)
@@ -106,9 +109,14 @@ func FlashMessagesTest(t *testing.T) {
 	})
 
 	e := tester(api, t)
-	e.PUT("/set").Expect().Status(iris.StatusOK)
+	e.PUT("/set").Expect().Status(iris.StatusOK).Cookies().NotEmpty()
+	// just a request which does not use the flash message, so flash messages should be available on the next request
+	e.GET("/get_no_getflash").Expect().Status(iris.StatusOK).Cookies().NotEmpty()
 	e.GET("/get").Expect().Status(iris.StatusOK).JSON().Object().Equal(values)
-	// secnd request lifetime ,the flash messages here should be not available
-	e.GET("/get").Expect().Status(iris.StatusOK).JSON().Object().Empty()
+	// second request ,the flash messages here should be not available and cookie has been removed
+	// (the true is that the cookie is removed from the first GetFlash, but is available though the whole request saved on context's values for faster get, keep that secret!)*
+	g := e.GET("/get").Expect().Status(iris.StatusOK)
+	g.JSON().Object().Empty()
+	g.Cookies().Empty()
 
 }
