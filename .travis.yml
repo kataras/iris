@@ -3,9 +3,11 @@ language: go
 go:
   - go1.6
   - tip
+before_install:
+  - go get github.com/iris-contrib/middleware/basicauth
 
 script:
-  - go test -v ./test
+  - go test -v ./test/... -coverprofile=coverage.txt -covermode=atomic
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

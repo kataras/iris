@@ -87,7 +87,7 @@ func TestMuxSimple(t *testing.T) {
 		}
 	}
 
-	e := tester(api, t)
+	e := Tester(api, t)
 
 	// run the tests (1)
 	for idx := range routes {
@@ -105,8 +105,8 @@ func TestMuxSimpleParty(t *testing.T) {
 
 	h := func(c *iris.Context) { c.WriteString(c.HostString() + c.PathString()) }
 
-	if enable_subdomain_tests {
-		subdomainParty := api.Party(subdomain + ".")
+	if EnableSubdomainTests {
+		subdomainParty := api.Party(Subdomain + ".")
 		{
 			subdomainParty.Get("/", h)
 			subdomainParty.Get("/path1", h)
@@ -126,12 +126,12 @@ func TestMuxSimpleParty(t *testing.T) {
 		p.Get("/namedpath/:param1/something/:param2/else", h)
 	}
 
-	e := tester(api, t)
+	e := Tester(api, t)
 
 	request := func(reqPath string) {
 		e.Request("GET", reqPath).
 			Expect().
-			Status(iris.StatusOK).Body().Equal(host + reqPath)
+			Status(iris.StatusOK).Body().Equal(Host + reqPath)
 	}
 
 	// run the tests
@@ -141,11 +141,11 @@ func TestMuxSimpleParty(t *testing.T) {
 	request("/party1/namedpath/theparam1/something/theparam2")
 	request("/party1/namedpath/theparam1/something/theparam2/else")
 
-	if enable_subdomain_tests {
+	if EnableSubdomainTests {
 		subdomainRequest := func(reqPath string) {
-			e.Request("GET", subdomainURL+reqPath).
+			e.Request("GET", SubdomainURL+reqPath).
 				Expect().
-				Status(iris.StatusOK).Body().Equal(subdomainHost + reqPath)
+				Status(iris.StatusOK).Body().Equal(SubdomainHost + reqPath)
 		}
 
 		subdomainRequest("/")
@@ -165,7 +165,7 @@ func TestMuxPathEscape(t *testing.T) {
 		ctx.Text(iris.StatusOK, fmt.Sprintf("name=%s,highlight=%s", name, highlight))
 	})
 
-	e := tester(api, t)
+	e := Tester(api, t)
 
 	e.GET("/details/Sakamoto desu ga").
 		WithQuery("highlight", "text").
@@ -220,7 +220,7 @@ func TestMuxCustomErrors(t *testing.T) {
 	})
 
 	// create httpexpect instance that will call fasthtpp.RequestHandler directly
-	e := tester(api, t)
+	e := Tester(api, t)
 
 	// run the tests
 	for _, r := range routesCustomErrors {
@@ -276,7 +276,7 @@ func TestMuxAPI(t *testing.T) {
 		}
 	})
 
-	e := tester(api, t)
+	e := Tester(api, t)
 
 	userID := "4077"
 	formname := "kataras"
@@ -286,4 +286,52 @@ func TestMuxAPI(t *testing.T) {
 	e.PUT("/users").WithFormField("name", formname).Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Put, name: " + formname + "\n")
 	e.POST("/users/"+userID).WithFormField("name", formname).Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Post By " + userID + ", name: " + formname + "\n")
 	e.DELETE("/users/" + userID).Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Delete By " + userID + "\n")
+}
+
+type myTestHandlerData struct {
+	Sysname              string // this will be the same for all requests
+	Version              int    // this will be the same for all requests
+	DynamicPathParameter string // this will be different for each request
+}
+
+type myTestCustomHandler struct {
+	data myTestHandlerData
+}
+
+func (m *myTestCustomHandler) Serve(ctx *iris.Context) {
+	data := &m.data
+	data.DynamicPathParameter = ctx.Param("myparam")
+	ctx.JSON(iris.StatusOK, data)
+}
+
+func TestMuxCustomHandler(t *testing.T) {
+	api := iris.New()
+	myData := myTestHandlerData{
+		Sysname: "Redhat",
+		Version: 1,
+	}
+	api.Handle("GET", "/custom_handler_1/:myparam", &myTestCustomHandler{myData})
+	api.Handle("GET", "/custom_handler_2/:myparam", &myTestCustomHandler{myData})
+
+	e := Tester(api, t)
+	// two times per route
+	param1 := "thisimyparam1"
+	expectedData1 := myData
+	expectedData1.DynamicPathParameter = param1
+	e.GET("/custom_handler_1/" + param1).Expect().Status(iris.StatusOK).JSON().Equal(expectedData1)
+
+	param2 := "thisimyparam2"
+	expectedData2 := myData
+	expectedData2.DynamicPathParameter = param2
+	e.GET("/custom_handler_1/" + param2).Expect().Status(iris.StatusOK).JSON().Equal(expectedData2)
+
+	param3 := "thisimyparam3"
+	expectedData3 := myData
+	expectedData3.DynamicPathParameter = param3
+	e.GET("/custom_handler_2/" + param3).Expect().Status(iris.StatusOK).JSON().Equal(expectedData3)
+
+	param4 := "thisimyparam4"
+	expectedData4 := myData
+	expectedData4.DynamicPathParameter = param4
+	e.GET("/custom_handler_2/" + param4).Expect().Status(iris.StatusOK).JSON().Equal(expectedData4)
 }

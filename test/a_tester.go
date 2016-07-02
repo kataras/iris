@@ -1,4 +1,4 @@
-//Package test | cd $GOPATH/src/github.com/kataras/iris/test && go test -v
+//Package test | cd $GOPATH/src/github.com/kataras/iris/test && go test -v ./test/...
 package test
 
 import (
@@ -13,32 +13,33 @@ import (
 
 // Configuration
 const (
-	scheme = "http://"
-	domain = "mydomain.com"
-	port   = 8080 // this will go as test flag some day.
+	Scheme = "http://"
+	Domain = "mydomain.com"
+	Port   = 8080 // this will go as test flag some day.
 
 	// will start  the server to real listen , this is useful ONLY WHEN TEST (AND) SUBDOMAINS,
 	// the hosts file (on windows) must be setted as '127.0.0.1 mydomain.com' & '127.0.0.1 mysubdomain.mydomain.com'
-	enable_subdomain_tests = false // this will go as test flag some day also.
-	subdomain              = "mysubdomain"
-	enable_debug           = false // this will go as test flag some day also.
+	EnableSubdomainTests = false // this will go as test flag some day also.
+	Subdomain            = "mysubdomain"
+	EnableDebug          = false // this will go as test flag some day also.
 )
 
+// shared values
 var (
-	host          = domain + ":" + strconv.Itoa(port)
-	subdomainHost = subdomain + domain + "." + host
-	hostURL       = scheme + host
-	subdomainURL  = scheme + subdomainHost
+	Host          = Domain + ":" + strconv.Itoa(Port)
+	SubdomainHost = Subdomain + Domain + "." + Host
+	HostURL       = Scheme + Host
+	SubdomainURL  = Scheme + SubdomainHost
 )
 
-// Prepare the test framework based on the Configuration
-func tester(api *iris.Framework, t *testing.T) *httpexpect.Expect {
+// Tester Prepares the test framework based on the Configuration
+func Tester(api *iris.Framework, t *testing.T) *httpexpect.Expect {
 	api.Config.DisableBanner = true
 	go func() { // no need goroutine here, we could just add go api.Listen(addr) but newcomers can see easier that these will run in a non-blocking way
-		if enable_subdomain_tests {
-			api.Listen(host)
+		if EnableSubdomainTests {
+			api.Listen(Host)
 		} else {
-			api.NoListen(host)
+			api.NoListen(Host)
 		}
 	}()
 
@@ -50,7 +51,7 @@ func tester(api *iris.Framework, t *testing.T) *httpexpect.Expect {
 	handler := api.HTTPServer.Handler
 
 	testConfiguration := httpexpect.Config{
-		BaseURL: hostURL,
+		BaseURL: HostURL,
 		Client: &http.Client{
 			Transport: httpexpect.NewFastBinder(handler),
 			Jar:       httpexpect.NewJar(),
@@ -58,7 +59,7 @@ func tester(api *iris.Framework, t *testing.T) *httpexpect.Expect {
 		Reporter: httpexpect.NewAssertReporter(t),
 	}
 
-	if enable_debug {
+	if EnableDebug {
 		testConfiguration.Printers = []httpexpect.Printer{
 			httpexpect.NewDebugPrinter(t, true),
 		}

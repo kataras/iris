@@ -59,7 +59,7 @@ func TestRenderRest(t *testing.T) {
 		ctx.Markdown(iris.StatusOK, markdownContents)
 	})
 
-	e := tester(api, t)
+	e := Tester(api, t)
 	dataT := e.GET("/data").Expect().Status(iris.StatusOK)
 	dataT.Header("Content-Type").Equal("application/octet-stream")
 	dataT.Body().Equal(string(dataContents))

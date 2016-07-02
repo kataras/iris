@@ -37,7 +37,7 @@ func TestBindForm(t *testing.T) {
 		ctx.JSON(iris.StatusOK, obj)
 	})
 
-	e := tester(api, t)
+	e := Tester(api, t)
 	passed := map[string]interface{}{"Username": "myusername", "Mail": "mymail@iris-go.com", "mydata": url.Values{"[0]": []string{"mydata1"},
 		"[1]": []string{"mydata2"}}}
 
@@ -57,7 +57,7 @@ func TestBindJSON(t *testing.T) {
 		ctx.JSON(iris.StatusOK, obj)
 	})
 
-	e := tester(api, t)
+	e := Tester(api, t)
 	passed := map[string]interface{}{"Username": "myusername", "Mail": "mymail@iris-go.com", "mydata": []string{"mydata1", "mydata2"}}
 	expectedObject := testBinderData{Username: "myusername", Mail: "mymail@iris-go.com", Data: []string{"mydata1", "mydata2"}}
 
@@ -75,7 +75,7 @@ func TestBindXML(t *testing.T) {
 		ctx.XML(iris.StatusOK, obj)
 	})
 
-	e := tester(api, t)
+	e := Tester(api, t)
 	expectedObj := testBinderXMLData{
 		XMLName:    xml.Name{Local: "info", Space: "info"},
 		FirstAttr:  "this is the first attr",

@@ -25,8 +25,8 @@ func TestSessions(t *testing.T) {
 		ctx.JSON(iris.StatusOK, sessValues)
 	}
 
-	if enable_subdomain_tests {
-		api.Party(subdomain+".").Get("/get", func(ctx *iris.Context) {
+	if EnableSubdomainTests {
+		api.Party(Subdomain+".").Get("/get", func(ctx *iris.Context) {
 			writeValues(ctx)
 		})
 	}
@@ -56,12 +56,12 @@ func TestSessions(t *testing.T) {
 		// the cookie and all values should be empty
 	})
 
-	e := tester(api, t)
+	e := Tester(api, t)
 
 	e.POST("/set").WithJSON(values).Expect().Status(iris.StatusOK).Cookies().NotEmpty()
 	e.GET("/get").Expect().Status(iris.StatusOK).JSON().Object().Equal(values)
-	if enable_subdomain_tests {
-		e.Request("GET", subdomainURL+"/get").Expect().Status(iris.StatusOK).JSON().Object().Equal(values)
+	if EnableSubdomainTests {
+		e.Request("GET", SubdomainURL+"/get").Expect().Status(iris.StatusOK).JSON().Object().Equal(values)
 	}
 
 	// test destory which also clears first
@@ -108,7 +108,7 @@ func FlashMessagesTest(t *testing.T) {
 		ctx.JSON(iris.StatusOK, kv)
 	})
 
-	e := tester(api, t)
+	e := Tester(api, t)
 	e.PUT("/set").Expect().Status(iris.StatusOK).Cookies().NotEmpty()
 	// just a request which does not use the flash message, so flash messages should be available on the next request
 	e.GET("/get_no_getflash").Expect().Status(iris.StatusOK).Cookies().NotEmpty()
