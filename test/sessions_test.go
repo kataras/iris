@@ -72,3 +72,43 @@ func TestSessions(t *testing.T) {
 	e.POST("/set").WithJSON(values).Expect().Status(iris.StatusOK).Cookies().NotEmpty()
 	e.GET("/clear").Expect().Status(iris.StatusOK).JSON().Object().Empty()
 }
+
+func FlashMessagesTest(t *testing.T) {
+	api := iris.New()
+	values := map[string]string{"name": "kataras", "package": "iris"}
+
+	api.Put("/set", func(ctx *iris.Context) {
+		for k, v := range values {
+			ctx.SetFlash(k, v)
+		}
+	})
+
+	api.Get("/get", func(ctx *iris.Context) {
+		// one time one handler
+		kv := make(map[string]string)
+		for k := range values {
+			kv[k], _ = ctx.GetFlash(k)
+		}
+		//second time on the same handler
+		for k := range values {
+			kv[k], _ = ctx.GetFlash(k)
+		}
+
+	}, func(ctx *iris.Context) {
+		// third time on a next handler
+		// test the if next handler has access to them(must) because flash are request lifetime now.
+		kv := make(map[string]string)
+		for k := range values {
+			kv[k], _ = ctx.GetFlash(k)
+		}
+		// print them to the client for test the response also
+		ctx.JSON(iris.StatusOK, kv)
+	})
+
+	e := tester(api, t)
+	e.PUT("/set").Expect().Status(iris.StatusOK)
+	e.GET("/get").Expect().Status(iris.StatusOK).JSON().Object().Equal(values)
+	// secnd request lifetime ,the flash messages here should be not available
+	e.GET("/get").Expect().Status(iris.StatusOK).JSON().Object().Empty()
+
+}

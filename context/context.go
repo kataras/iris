@@ -69,10 +69,8 @@ type (
 		SetCookie(*fasthttp.Cookie)
 		SetCookieKV(string, string)
 		RemoveCookie(string)
-		GetFlash(string) string
-		GetFlashBytes(string) ([]byte, error)
+		GetFlash(string) (string, error)
 		SetFlash(string, string)
-		SetFlashBytes(string, []byte)
 		Session() store.IStore
 		SessionDestroy()
 		Log(string, ...interface{})

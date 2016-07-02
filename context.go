@@ -54,6 +54,8 @@ const (
 
 	// stopExecutionPosition used inside the Context, is the number which shows us that the context's middleware manualy stop the execution
 	stopExecutionPosition = 255
+	// used inside GetFlash to store the lifetime request flash messages
+	flashMessagesStoreContextKey = "_iris_flash_messages_"
 )
 
 // this pool is used everywhere needed in the iris for example inside party-> Static
@@ -718,26 +720,48 @@ func (ctx *Context) RemoveCookie(name string) {
 }
 
 // GetFlash get a flash message by it's key
-// after this action the messages is removed
-// returns string, if the cookie doesn't exists the string is empty
-func (ctx *Context) GetFlash(key string) string {
-	val, err := ctx.GetFlashBytes(key)
-	if err != nil {
-		return ""
-	}
-	return string(val)
-}
+// after the request lifetime the value is removed
+// returns the value as string and an error
+//
+// if the cookie doesn't exists the string is empty and the error is filled
+func (ctx *Context) GetFlash(key string) (value string, err error) {
 
-// GetFlashBytes get a flash message by it's key
-// after this action the messages is removed
-// returns []byte along with an error if the cookie doesn't exists or decode fails
-func (ctx *Context) GetFlashBytes(key string) (value []byte, err error) {
+	// first check if flash exists from this request's lifetime, if yes return that else continue to get the cookie
+	storeExists := false
+	if messages := ctx.Get(flashMessagesStoreContextKey); messages != nil {
+		m, isMap := messages.(map[string]string)
+		if !isMap {
+			return "", fmt.Errorf("Messages request's  store is not a map[string]string. This suppose will never happen, please report this bug.")
+		}
+		storeExists = true // in order to skip the check later
+		for k, v := range m {
+			if k == key && v != "" {
+				return v, nil
+			}
+		}
+	}
+
 	cookieValue := string(ctx.RequestCtx.Request.Header.Cookie(key))
+
 	if cookieValue == "" {
 		err = errFlashNotFound.Return()
 	} else {
-		value, err = base64.URLEncoding.DecodeString(cookieValue)
-		//remove the message
+		v, e := base64.URLEncoding.DecodeString(cookieValue)
+		if e != nil {
+			return "", err
+		}
+		value = string(v)
+		// store this flash message to the lifetime request's local storage,
+		// I choose this method because no need to store it if not used at all
+		if storeExists {
+			ctx.Get(flashMessagesStoreContextKey).(map[string]string)[key] = value
+		} else {
+			flashStoreMap := make(map[string]string)
+			flashStoreMap[key] = value
+			ctx.Set(flashMessagesStoreContextKey, flashStoreMap)
+		}
+
+		//remove the real cookie, no need to have that, we stored it on lifetime request
 		ctx.RemoveCookie(key)
 		//it should'b be removed until the next reload, so we don't do that: ctx.Request.Header.SetCookie(key, "")
 	}
@@ -745,15 +769,11 @@ func (ctx *Context) GetFlashBytes(key string) (value []byte, err error) {
 }
 
 // SetFlash sets a flash message, accepts 2 parameters the key(string) and the value(string)
+// the value will be available on the NEXT request
 func (ctx *Context) SetFlash(key string, value string) {
-	ctx.SetFlashBytes(key, utils.StringToBytes(value))
-}
-
-// SetFlashBytes sets a flash message, accepts 2 parameters the key(string) and the value([]byte)
-func (ctx *Context) SetFlashBytes(key string, value []byte) {
 	c := fasthttp.AcquireCookie()
 	c.SetKey(key)
-	c.SetValue(base64.URLEncoding.EncodeToString(value))
+	c.SetValue(base64.URLEncoding.EncodeToString([]byte(value)))
 	c.SetPath("/")
 	c.SetHTTPOnly(true)
 	ctx.RequestCtx.Response.Header.SetCookie(c)

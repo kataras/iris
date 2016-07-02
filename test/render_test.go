@@ -60,27 +60,27 @@ func TestRenderRest(t *testing.T) {
 	})
 
 	e := tester(api, t)
-	dataT := e.GET("/data").Expect()
+	dataT := e.GET("/data").Expect().Status(iris.StatusOK)
 	dataT.Header("Content-Type").Equal("application/octet-stream")
 	dataT.Body().Equal(string(dataContents))
 
-	textT := e.GET("/text").Expect()
+	textT := e.GET("/text").Expect().Status(iris.StatusOK)
 	textT.Header("Content-Type").Equal("text/plain; charset=UTF-8")
 	textT.Body().Equal(textContents)
 
-	JSONPT := e.GET("/jsonp").Expect()
+	JSONPT := e.GET("/jsonp").Expect().Status(iris.StatusOK)
 	JSONPT.Header("Content-Type").Equal("application/javascript; charset=UTF-8")
 	JSONPT.Body().Equal(JSONPCallback + `({"hello":"jsonp"});`)
 
-	JSONT := e.GET("/json").Expect()
+	JSONT := e.GET("/json").Expect().Status(iris.StatusOK)
 	JSONT.Header("Content-Type").Equal("application/json; charset=UTF-8")
 	JSONT.JSON().Object().Equal(JSONXMLContents)
 
-	XMLT := e.GET("/xml").Expect()
+	XMLT := e.GET("/xml").Expect().Status(iris.StatusOK)
 	XMLT.Header("Content-Type").Equal("text/xml; charset=UTF-8")
 	XMLT.Body().Equal(`<` + JSONXMLContents.XMLName.Local + ` first="` + JSONXMLContents.FirstAttr + `" second="` + JSONXMLContents.SecondAttr + `"><name>` + JSONXMLContents.Name + `</name><birth>` + JSONXMLContents.Birth + `</birth><stars>` + strconv.Itoa(JSONXMLContents.Stars) + `</stars></info>`)
 
-	markdownT := e.GET("/markdown").Expect()
+	markdownT := e.GET("/markdown").Expect().Status(iris.StatusOK)
 	markdownT.Header("Content-Type").Equal("text/html; charset=UTF-8")
 	markdownT.Body().Equal("<h1>" + markdownContents[2:] + "</h1>\n")
 
