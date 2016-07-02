@@ -1,7 +1,7 @@
 //Package test -v ./... builds all tests
 package test
 
-// Contains tests for sessions
+// Contains tests for sessions(sessions package) & flash messages(context)
 
 import (
 	"testing"

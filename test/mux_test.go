@@ -229,3 +229,61 @@ func TestMuxCustomErrors(t *testing.T) {
 			Status(r.Status).Body().Equal(r.Body)
 	}
 }
+
+type testUserAPI struct {
+	*iris.Context
+}
+
+// GET /users
+func (u testUserAPI) Get() {
+	u.Write("Get Users\n")
+}
+
+// GET /users/:param1 which its value passed to the id argument
+func (u testUserAPI) GetBy(id string) { // id equals to u.Param("param1")
+	u.Write("Get By %s\n", id)
+}
+
+// PUT /users
+func (u testUserAPI) Put() {
+	u.Write("Put, name: %s\n", u.FormValue("name"))
+}
+
+// POST /users/:param1
+func (u testUserAPI) PostBy(id string) {
+	u.Write("Post By %s, name: %s\n", id, u.FormValue("name"))
+}
+
+// DELETE /users/:param1
+func (u testUserAPI) DeleteBy(id string) {
+	u.Write("Delete By %s\n", id)
+}
+
+func TestMuxAPI(t *testing.T) {
+	api := iris.New()
+
+	middlewareResponseText := "I assume that you are authenticated\n"
+	api.API("/users", testUserAPI{}, func(ctx *iris.Context) { // optional middleware for .API
+		// do your work here, or render a login window if not logged in, get the user and send it to the next middleware, or do  all here
+		ctx.Set("user", "username")
+		ctx.Next()
+	}, func(ctx *iris.Context) {
+		if ctx.Get("user") == "username" {
+			ctx.Write(middlewareResponseText)
+			ctx.Next()
+		} else {
+			ctx.SetStatusCode(iris.StatusUnauthorized)
+		}
+	})
+
+	e := tester(api, t)
+
+	userID := "4077"
+	formname := "kataras"
+
+	e.GET("/users").Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Get Users\n")
+	e.GET("/users/" + userID).Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Get By " + userID + "\n")
+	e.PUT("/users").WithFormField("name", formname).Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Put, name: " + formname + "\n")
+	e.POST("/users/"+userID).WithFormField("name", formname).Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Post By " + userID + ", name: " + formname + "\n")
+	e.DELETE("/users/" + userID).Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Delete By " + userID + "\n")
+}
