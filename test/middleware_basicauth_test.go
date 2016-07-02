@@ -1,11 +1,10 @@
-package middleware
+package test
 
 import (
 	"testing"
 
 	"github.com/iris-contrib/middleware/basicauth"
 	"github.com/kataras/iris"
-	. "github.com/kataras/iris/test"
 )
 
 /* Yes, middleware front-end tests also here, so if you want to test you have to go get at least one middleware */
