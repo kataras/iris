@@ -148,6 +148,25 @@ func RegisterSharedFuncs(theFuncs map[string]interface{}) {
 
 }
 
+func (t *Template) getLayout(ctx context.IContext, passedLayouts []string) string {
+
+	_layout := ""
+	if len(passedLayouts) > 0 {
+		_layout = passedLayouts[0]
+	} else if ctx != nil {
+		if layoutFromCtx := ctx.GetString(config.TemplateLayoutContextKey); layoutFromCtx != "" {
+			_layout = layoutFromCtx
+		}
+	}
+	if _layout == "" && _layout != config.NoLayout {
+		if t.Layout != config.NoLayout { // the config's Layout is disabled if "" , config.NoLayout should be passed only on ctx.Render but for any case check if user set it as config.NoLayout also
+			_layout = t.Layout
+		}
+	}
+
+	return _layout
+}
+
 // Render renders a template using the context's writer
 func (t *Template) Render(ctx context.IContext, name string, binding interface{}, layout ...string) (err error) {
 
@@ -163,18 +182,8 @@ func (t *Template) Render(ctx context.IContext, name string, binding interface{}
 		}
 	}
 
-	// I don't like this, something feels wrong
-	_layout := ""
-	if len(layout) > 0 {
-		_layout = layout[0]
-	} else if layoutFromCtx := ctx.GetString(config.TemplateLayoutContextKey); layoutFromCtx != "" {
-		_layout = layoutFromCtx
-	}
-	if _layout == "" {
-		_layout = t.Layout
-	}
+	_layout := t.getLayout(ctx, layout)
 
-	//
 	ctx.GetRequestCtx().Response.Header.Set("Content-Type", t.ContentType)
 
 	var out io.Writer
@@ -209,14 +218,7 @@ func (t *Template) RenderString(name string, binding interface{}, layout ...stri
 		}
 	}
 
-	// I don't like this, something feels wrong
-	_layout := ""
-	if len(layout) > 0 {
-		_layout = layout[0]
-	}
-	if _layout == "" {
-		_layout = t.Layout
-	}
+	_layout := t.getLayout(nil, layout)
 
 	out := t.buffer.Get()
 	// if we have problems later consider that -> out.Reset()

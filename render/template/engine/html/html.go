@@ -233,7 +233,7 @@ func (s *Engine) runtimeFuncsFor(name string, binding interface{}) {
 
 // ExecuteWriter executes a templates and write its results to the out writer
 func (s *Engine) ExecuteWriter(out io.Writer, name string, binding interface{}, layout string) error {
-	if layout != "" && layout != config.NoLayout {
+	if layout != "" {
 		s.layoutFuncsFor(name, binding)
 		name = layout
 

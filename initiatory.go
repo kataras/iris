@@ -26,7 +26,7 @@ var (
 	Websocket  websocket.Server
 	HTTPServer *Server
 	// Available is a channel type of bool, fired to true when the server is opened and all plugins ran
-	// fires false when .Close is called manually.
+	// never fires false, if the .Close called then the channel is re-allocating.
 	// the channel is always oepen until you close it when you don't need this.
 	//
 	// Note: it is a simple channel and decided to put it here and no inside HTTPServer, doesn't have statuses just true and false, simple as possible
@@ -189,7 +189,7 @@ func (s *Framework) openServer() (err error) {
 // closeServer is used to close the tcp listener from the server, returns an error
 func (s *Framework) closeServer() error {
 	s.Plugins.DoPreClose(s)
-	s.Available <- false
+	s.Available = make(chan bool)
 	return s.HTTPServer.Close()
 }
 

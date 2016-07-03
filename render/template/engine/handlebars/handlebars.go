@@ -123,7 +123,7 @@ func (e *Engine) ExecuteWriter(out io.Writer, name string, binding interface{}, 
 	isLayout := false
 
 	renderFilename := name
-	if layout != "" && layout != config.NoLayout {
+	if layout != "" {
 		isLayout = true
 		renderFilename = layout // the render becomes the layout, and the name is the partial.
 	}
