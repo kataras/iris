@@ -52,13 +52,16 @@ package iris // import "github.com/kataras/iris"
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"path"
 	"reflect"
 	"strconv"
 	"strings"
+	"testing"
 	"time"
 
+	"github.com/gavv/httpexpect"
 	"github.com/iris-contrib/errors"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/context"
@@ -102,6 +105,7 @@ type (
 		Path(string, ...interface{}) string
 		URL(string, ...interface{}) string
 		TemplateString(string, interface{}, ...string) string
+		Tester(t *testing.T) *httpexpect.Expect
 	}
 
 	// RouteNameFunc the func returns from the MuxAPi's methods, optionally sets the name of the Route (*route)
@@ -599,6 +603,48 @@ func (s *Framework) TemplateString(templateFile string, pageContext interface{},
 		return ""
 	}
 	return res
+}
+
+// NewTester Prepares and returns a new test framework based on the api
+// is useful when you need to have more than one test framework for the same iris insttance, otherwise you can use the iris.Tester(t *testing.T)/variable.Tester(t *testing.T)
+func NewTester(api *Framework, t *testing.T) *httpexpect.Expect {
+	api.Config.DisableBanner = true
+	if !api.HTTPServer.IsListening() { // maybe the user called this after .Listen/ListenTLS/ListenUNIX, the tester can be used as standalone (with no running iris instance) or inside a running instance/app
+		api.NoListen()
+		if ok := <-api.Available; !ok {
+			t.Fatal("Unexpected error: server cannot start, please report this as bug!!")
+		}
+		close(api.Available)
+	}
+
+	handler := api.HTTPServer.Handler
+
+	testConfiguration := httpexpect.Config{
+		BaseURL: api.HTTPServer.FullHost(),
+		Client: &http.Client{
+			Transport: httpexpect.NewFastBinder(handler),
+			Jar:       httpexpect.NewJar(),
+		},
+		Reporter: httpexpect.NewAssertReporter(t),
+	}
+
+	if api.Config.Tester.Debug {
+		testConfiguration.Printers = []httpexpect.Printer{
+			httpexpect.NewDebugPrinter(t, true),
+		}
+	}
+
+	return httpexpect.WithConfig(testConfiguration)
+}
+
+// Tester returns the test framework for this default insance
+func Tester(t *testing.T) *httpexpect.Expect {
+	return Default.Tester(t)
+}
+
+// Tester returns the test framework for this iris insance
+func (s *Framework) Tester(t *testing.T) *httpexpect.Expect {
+	return s.tester(t)
 }
 
 // -------------------------------------------------------------------------------------

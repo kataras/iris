@@ -109,6 +109,9 @@ type (
 		// this field is useful only when you need to READ which is the server's address, certfile & keyfile or unix's mode.
 		//
 		Server Server
+
+		// Tester contains the configs for the test framework, so far we have only one because all test framework's configs are setted by the iris itself
+		Tester Tester
 	}
 
 	// Render struct keeps organise all configuration about rendering, templates and rest currently.
@@ -146,6 +149,7 @@ func Default() Iris {
 		Render:                DefaultRender(),
 		Websocket:             DefaultWebsocket(),
 		Server:                DefaultServer(),
+		Tester:                Tester{Debug: false},
 	}
 }
 
