@@ -188,7 +188,7 @@ License can be found [here](LICENSE).
 [Release Widget]: https://img.shields.io/badge/release-v3.0.0--rc.4-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/iris/releases
 [Chat Widget]: https://img.shields.io/badge/community-chat-00BCD4.svg?style=flat-square
-[Chat]: https://kataras.rocket.chat/channel/iris
+[Chat]: https://gitter.im/kataras/iris
 [ChatMain]: https://kataras.rocket.chat/channel/iris
 [ChatAlternative]: https://gitter.im/kataras/iris
 [Report Widget]: https://img.shields.io/badge/report%20card-A%2B-F44336.svg?style=flat-square
