@@ -577,7 +577,7 @@ func (s *Framework) URL(routeName string, args ...interface{}) (url string) {
 		arguments = arguments[1:]
 	}
 
-	if parsedPath := Path(routeName, arguments...); parsedPath != "" {
+	if parsedPath := s.Path(routeName, arguments...); parsedPath != "" {
 		url = scheme + host + parsedPath
 	}
 
