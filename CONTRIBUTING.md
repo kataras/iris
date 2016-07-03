@@ -34,6 +34,6 @@ The more information you can provide, the more likely someone will be successful
 ## Contributing Fixes
 If you are interested in fixing issues and contributing directly to the Iris base, please see the document [How to Contribute](https://github.com/iris-contrib/wiki/blob/master/How-to-Contribute.md).
 
-[Chat]: https://gitter.im/kataras/iris
+[Chat]: https://kataras.rocket.chat/channel/iris
 [ChatMain]: https://kataras.rocket.chat/channel/iris
 [ChatAlternative]: https://gitter.im/kataras/iris

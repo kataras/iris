@@ -7,6 +7,7 @@ import (
 	"net/http/pprof"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -281,6 +282,21 @@ func (s *Server) Host() (host string) {
 	}
 	return s.Config.ListeningAddr
 
+}
+
+// Port returns the port which server listening for
+// if no port given with the ListeningAddr, it returns 80
+func (s *Server) Port() (port int) {
+	a := s.Config.ListeningAddr
+	if portIdx := strings.IndexByte(a, ':'); portIdx == 0 {
+		p, err := strconv.Atoi(a[portIdx+1:])
+		if err != nil {
+			port = 80
+		} else {
+			port = p
+		}
+	}
+	return
 }
 
 // VirtualHost returns the s.Config.ListeningAddr

@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"testing"
 	"time"
 
+	"github.com/gavv/httpexpect"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/logger"
 	"github.com/kataras/iris/render/rest"
@@ -33,7 +35,7 @@ var (
 	// Where to use that?
 	// this is used on extreme cases when you don't know which .Listen/.NoListen will be called
 	// and you want to run/declare something external-not-Iris (all Iris functionality declared before .Listen/.NoListen) AFTER the server is started and plugins finished.
-	// see the ./test/iris_test.go
+	// see the server_test.go for an example
 	Available chan bool
 )
 
@@ -87,6 +89,8 @@ type Framework struct {
 	Plugins    PluginContainer
 	Websocket  websocket.Server
 	Available  chan bool
+	// this is setted once when .Tester(t) is called
+	testFramework *httpexpect.Expect
 }
 
 // New creates and returns a new Iris station aka Framework.
@@ -195,11 +199,12 @@ func (s *Framework) closeServer() error {
 
 // justServe initializes the whole framework but server doesn't listens to a specific net.Listener
 func (s *Framework) justServe(optionalAddr ...string) *Server {
-	addr := config.DefaultServerAddr
+	s.HTTPServer.Config = &s.Config.Server
+
 	if len(optionalAddr) > 0 {
-		addr = optionalAddr[0]
+		s.HTTPServer.Config.ListeningAddr = optionalAddr[0]
 	}
-	s.HTTPServer.Config.ListeningAddr = addr
+
 	s.initialize()
 	s.Plugins.DoPreListen(s)
 	s.HTTPServer.SetHandler(s.mux)
@@ -209,4 +214,12 @@ func (s *Framework) justServe(optionalAddr ...string) *Server {
 	}()
 
 	return s.HTTPServer
+}
+
+// tester returns the test framework
+func (s *Framework) tester(t *testing.T) *httpexpect.Expect {
+	if s.testFramework == nil {
+		s.testFramework = NewTester(s, t)
+	}
+	return s.testFramework
 }

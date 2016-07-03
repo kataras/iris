@@ -101,10 +101,11 @@ func (m *Manager) Start(ctx context.IContext) store.IStore {
 			if portIdx := strings.IndexByte(requestDomain, ':'); portIdx > 0 {
 				requestDomain = requestDomain[0:portIdx]
 			}
+
 			if requestDomain == "0.0.0.0" || requestDomain == "127.0.0.1" {
 				// for these type of hosts, we can't allow subdomains persistance,
 				// the web browser doesn't understand the mysubdomain.0.0.0.0 and mysubdomain.127.0.0.1 as scorrectly ubdomains because of the many dots
-				cookie.SetDomain(requestDomain)
+				// so don't set a domain here
 
 			} else if strings.Count(requestDomain, ".") > 0 { // there is a problem with .localhost setted as the domain, so we check that first
 
