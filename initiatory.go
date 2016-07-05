@@ -179,6 +179,7 @@ func (s *Framework) openServer() (err error) {
 	// set the server's handler now, in order to give the chance to the plugins to add their own middlewares and routes to this station
 	s.HTTPServer.SetHandler(s.mux)
 	if err = s.HTTPServer.Open(); err == nil {
+
 		// print the banner
 		if !s.Config.DisableBanner {
 			s.Logger.PrintBanner(banner,
@@ -186,10 +187,16 @@ func (s *Framework) openServer() (err error) {
 					s.HTTPServer.Host()))
 		}
 		s.Plugins.DoPostListen(s)
-		s.Available <- true
-		ch := make(chan os.Signal)
-		<-ch
-		s.Close()
+		go func() {
+			s.Available <- true
+		}()
+
+		if !s.Config.Server.Virtual {
+			ch := make(chan os.Signal)
+			<-ch
+			s.Close()
+		}
+
 	}
 	return
 }
@@ -199,25 +206,6 @@ func (s *Framework) closeServer() error {
 	s.Plugins.DoPreClose(s)
 	s.Available = make(chan bool)
 	return s.HTTPServer.Close()
-}
-
-// justServe initializes the whole framework but server doesn't listens to a specific net.Listener
-func (s *Framework) justServe(optionalAddr ...string) *Server {
-	s.HTTPServer.Config = &s.Config.Server
-
-	if len(optionalAddr) > 0 {
-		s.HTTPServer.Config.ListeningAddr = optionalAddr[0]
-	}
-
-	s.initialize()
-	s.Plugins.DoPreListen(s)
-	s.HTTPServer.SetHandler(s.mux)
-	s.Plugins.DoPostListen(s)
-	go func() {
-		s.Available <- true
-	}()
-
-	return s.HTTPServer
 }
 
 // tester returns the test framework

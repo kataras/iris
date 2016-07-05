@@ -431,10 +431,15 @@ func (s *Server) Open() error {
 		}
 	}
 
+	if s.Config.Virtual {
+		return nil
+	}
+
 	if s.Config.Mode > 0 {
 		return s.listenUNIX()
 	}
 	return s.listen()
+
 }
 
 // Close terminates the server

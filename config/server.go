@@ -37,6 +37,8 @@ type Server struct {
 	//
 	// example: https://github.com/iris-contrib/examples/tree/master/multiserver_listening2
 	RedirectTo string
+	// Virtual If this server is not really listens to a real host, it mostly used in order to achieve testing without system modifications
+	Virtual bool
 }
 
 // DefaultServer returns the default configs for the server

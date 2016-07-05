@@ -15,6 +15,7 @@ Linux:
 */
 
 import (
+	"io/ioutil"
 	"net/http"
 	"os"
 	"testing"
@@ -22,6 +23,7 @@ import (
 
 	"github.com/gavv/httpexpect"
 	"github.com/kataras/iris/config"
+	"github.com/kataras/iris/utils"
 )
 
 const (
@@ -84,12 +86,13 @@ func TestMultiRunningServers(t *testing.T) {
 	host := "mydomain.com:443" // you have to add it to your hosts file( for windows, as 127.0.0.1 mydomain.com)
 
 	// create the key and cert files on the fly, and delete them when this test finished
-	certFile, ferr := os.Create(testCertFilename)
+	certFile, ferr := ioutil.TempFile(utils.AssetsDirectory, "_iris")
+
 	if ferr != nil {
 		t.Fatal(ferr.Error())
 	}
 
-	keyFile, ferr := os.Create(testKeyFilename)
+	keyFile, ferr := ioutil.TempFile(utils.AssetsDirectory, "_iris")
 	if ferr != nil {
 		t.Fatal(ferr.Error())
 	}
@@ -100,11 +103,11 @@ func TestMultiRunningServers(t *testing.T) {
 	defer func() {
 		certFile.Close()
 		time.Sleep(350 * time.Millisecond)
-		os.Remove(testCertFilename)
+		os.Remove(certFile.Name())
 
 		keyFile.Close()
 		time.Sleep(350 * time.Millisecond)
-		os.Remove(testKeyFilename)
+		os.Remove(keyFile.Name())
 	}()
 
 	initDefault()
@@ -114,14 +117,9 @@ func TestMultiRunningServers(t *testing.T) {
 		ctx.Write("Hello from %s", ctx.HostString())
 	})
 
-	secondary := SecondaryListen(config.Server{ListeningAddr: ":80", RedirectTo: "https://" + host}) // start one secondary server
+	secondary := SecondaryListen(config.Server{ListeningAddr: ":80", RedirectTo: "https://" + host, Virtual: true}) // start one secondary server
 	// start the main server
-	go func() {
-		err := ListenTLSWithErr(host, testCertFilename, testKeyFilename)
-		if err != nil {
-			t.Fatalf("Error on server_test ListenTLSWithErr: %s", err.Error())
-		}
-	}()
+	go ListenVirtual(config.Server{ListeningAddr: host, CertFile: certFile.Name(), KeyFile: keyFile.Name()})
 
 	defer func() {
 		go secondary.Close()

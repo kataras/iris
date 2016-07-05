@@ -94,6 +94,7 @@ type (
 		ListenUNIX(string, os.FileMode)
 		SecondaryListen(config.Server) *Server
 		NoListen(...string) *Server
+		ListenVirtual(cfg ...config.Server) *Server
 		Close()
 		// global middleware prepending, registers to all subdomains, to all parties, you can call it at the last also
 		MustUse(...Handler)
@@ -328,9 +329,11 @@ func (s *Framework) SecondaryListen(cfg config.Server) *Server {
 		go func() { // goroutine in order to not block any runtime post listeners
 			srv.Handler = s.HTTPServer.Handler
 			if err := srv.Open(); err == nil {
-				ch := make(chan os.Signal)
-				<-ch
-				srv.Close()
+				if !cfg.Virtual {
+					ch := make(chan os.Signal)
+					<-ch
+					srv.Close()
+				}
 			}
 		}()
 	}))
@@ -346,7 +349,31 @@ func NoListen(optionalAddr ...string) *Server {
 // NoListen is useful only when you want to test Iris, it doesn't starts the server but it configures and returns it
 // initializes the whole framework but server doesn't listens to a specific net.Listener
 func (s *Framework) NoListen(optionalAddr ...string) *Server {
-	return s.justServe(optionalAddr...)
+	if len(optionalAddr) > 0 {
+		s.Config.Server.ListeningAddr = optionalAddr[0]
+	}
+	return s.ListenVirtual()
+}
+
+// ListenVirtual is useful only when you want to test Iris, it doesn't starts the server but it configures and returns it
+// initializes the whole framework but server doesn't listens to a specific net.Listener
+// same as NoListen
+func ListenVirtual(cfg ...config.Server) *Server {
+	return Default.ListenVirtual(cfg...)
+}
+
+// ListenVirtual is useful only when you want to test Iris, it doesn't starts the server but it configures and returns it
+// initializes the whole framework but server doesn't listens to a specific net.Listener
+// same as NoListen
+func (s *Framework) ListenVirtual(cfg ...config.Server) *Server {
+	if len(cfg) > 0 {
+		s.Config.Server = cfg[0]
+	}
+	s.Config.DisableBanner = true
+	s.Config.Server.Virtual = true
+
+	s.Must(s.openServer())
+	return s.HTTPServer
 }
 
 // CloseWithErr terminates the server and returns an error if any
@@ -609,7 +636,7 @@ func (s *Framework) TemplateString(templateFile string, pageContext interface{},
 func NewTester(api *Framework, t *testing.T) *httpexpect.Expect {
 	api.Config.DisableBanner = true
 	if !api.HTTPServer.IsListening() { // maybe the user called this after .Listen/ListenTLS/ListenUNIX, the tester can be used as standalone (with no running iris instance) or inside a running instance/app
-		api.NoListen()
+		api.ListenVirtual()
 		if ok := <-api.Available; !ok {
 			t.Fatal("Unexpected error: server cannot start, please report this as bug!!")
 		}
