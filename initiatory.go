@@ -40,6 +40,10 @@ var (
 )
 
 func init() {
+	initDefault()
+}
+
+func initDefault() {
 	Default = New()
 	Config = Default.Config
 	Logger = Default.Logger

@@ -254,7 +254,6 @@ func (s *Framework) ListenTLSWithErr(addr string, certFile string, keyFile strin
 	s.Config.Server.ListeningAddr = addr
 	s.Config.Server.CertFile = certFile
 	s.Config.Server.KeyFile = keyFile
-
 	return s.openServer()
 }
 
