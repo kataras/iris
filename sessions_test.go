@@ -15,7 +15,7 @@ func TestSessions(t *testing.T) {
 	}
 
 	initDefault()
-	Config.Server.ListeningAddr = "127.0.0.1:8080" // in order to test the sessions
+	HTTPServer.Config.ListeningAddr = "127.0.0.1:8080" // in order to test the sessions
 	Config.Sessions.Cookie = "mycustomsessionid"
 
 	writeValues := func(ctx *Context) {

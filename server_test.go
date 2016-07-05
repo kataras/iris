@@ -1,19 +1,5 @@
 package iris
 
-/*
-Linux: /etc/hosts
-Windows: $Drive:/windows/system32/drivers/etc/hosts
-
-127.0.0.1 	mydomain.com
-127.0.0.1   mysubdomain.mydomain.com
-
-Windows:
-	go test -v
-Linux:
-	$ su
-	$ go test -v
-*/
-
 import (
 	"io/ioutil"
 	"net/http"
@@ -23,7 +9,6 @@ import (
 
 	"github.com/gavv/httpexpect"
 	"github.com/kataras/iris/config"
-	"github.com/kataras/iris/utils"
 )
 
 const (
@@ -75,9 +60,6 @@ const (
 	MlobQSunSDKx/CCJhWkbytCyh1bngAtwSAYLXavYIlJbAzx6FvtAIw4=
 	-----END RSA PRIVATE KEY-----
 `
-
-	testCertFilename = "mycert.cert"
-	testKeyFilename  = "mykey.key"
 )
 
 // Contains the server test for multi running servers
@@ -86,13 +68,13 @@ func TestMultiRunningServers(t *testing.T) {
 	host := "mydomain.com:443" // you have to add it to your hosts file( for windows, as 127.0.0.1 mydomain.com)
 
 	// create the key and cert files on the fly, and delete them when this test finished
-	certFile, ferr := ioutil.TempFile(utils.AssetsDirectory, "_iris")
+	certFile, ferr := ioutil.TempFile("", "cert")
 
 	if ferr != nil {
 		t.Fatal(ferr.Error())
 	}
 
-	keyFile, ferr := ioutil.TempFile(utils.AssetsDirectory, "_iris")
+	keyFile, ferr := ioutil.TempFile("", "key")
 	if ferr != nil {
 		t.Fatal(ferr.Error())
 	}
@@ -117,9 +99,10 @@ func TestMultiRunningServers(t *testing.T) {
 		ctx.Write("Hello from %s", ctx.HostString())
 	})
 
-	secondary := SecondaryListen(config.Server{ListeningAddr: ":80", RedirectTo: "https://" + host, Virtual: true}) // start one secondary server
+	// start the secondary server
+	secondary := SecondaryListen(config.Server{ListeningAddr: ":80", RedirectTo: "https://" + host, Virtual: true})
 	// start the main server
-	go ListenVirtual(config.Server{ListeningAddr: host, CertFile: certFile.Name(), KeyFile: keyFile.Name()})
+	go ListenTo(config.Server{ListeningAddr: host, CertFile: certFile.Name(), KeyFile: keyFile.Name(), Virtual: true})
 
 	defer func() {
 		go secondary.Close()

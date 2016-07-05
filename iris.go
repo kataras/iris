@@ -86,6 +86,7 @@ type (
 	FrameworkAPI interface {
 		MuxAPI
 		Must(error)
+		ListenTo(config.Server) error
 		ListenWithErr(string) error
 		Listen(string)
 		ListenTLSWithErr(string, string, string) error
@@ -93,8 +94,8 @@ type (
 		ListenUNIXWithErr(string, os.FileMode) error
 		ListenUNIX(string, os.FileMode)
 		SecondaryListen(config.Server) *Server
+		ListenVirtual(...string) *Server
 		NoListen(...string) *Server
-		ListenVirtual(cfg ...config.Server) *Server
 		Close()
 		// global middleware prepending, registers to all subdomains, to all parties, you can call it at the last also
 		MustUse(...Handler)
@@ -171,6 +172,19 @@ func (s *Framework) Must(err error) {
 	}
 }
 
+// ListenTo listens to a server but receives the full server's configuration
+// it's a blocking func
+func ListenTo(cfg config.Server) error {
+	return Default.ListenTo(cfg)
+}
+
+// ListenTo listens to a server but receives the full server's configuration
+// it's a blocking func
+func (s *Framework) ListenTo(cfg config.Server) error {
+	s.HTTPServer.Config = &cfg
+	return s.openServer()
+}
+
 // ListenWithErr starts the standalone http server
 // which listens to the addr parameter which as the form of
 // host:port
@@ -200,8 +214,12 @@ func Listen(addr string) {
 // if you need a func to panic on error use the Listen
 // ex: log.Fatal(iris.ListenWithErr(":8080"))
 func (s *Framework) ListenWithErr(addr string) error {
-	s.Config.Server.ListeningAddr = addr
-	return s.openServer()
+	cfg := config.DefaultServer()
+	if len(addr) > 0 {
+		cfg.ListeningAddr = addr
+	}
+
+	return s.ListenTo(cfg)
 }
 
 // Listen starts the standalone http server
@@ -249,13 +267,14 @@ func ListenTLS(addr string, certFile string, keyFile string) {
 // if you need a func to panic on error use the ListenTLS
 // ex: log.Fatal(iris.ListenTLSWithErr(":8080","yourfile.cert","yourfile.key"))
 func (s *Framework) ListenTLSWithErr(addr string, certFile string, keyFile string) error {
+	cfg := config.DefaultServer()
 	if certFile == "" || keyFile == "" {
 		return fmt.Errorf("You should provide certFile and keyFile for TLS/SSL")
 	}
-	s.Config.Server.ListeningAddr = addr
-	s.Config.Server.CertFile = certFile
-	s.Config.Server.KeyFile = keyFile
-	return s.openServer()
+	cfg.ListeningAddr = addr
+	cfg.CertFile = certFile
+	cfg.KeyFile = keyFile
+	return s.ListenTo(cfg)
 }
 
 // ListenTLS Starts a https server with certificates,
@@ -285,9 +304,10 @@ func ListenUNIX(addr string, mode os.FileMode) {
 // ListenUNIXWithErr starts the process of listening to the new requests using a 'socket file', this works only on unix
 // returns an error if something bad happens when trying to listen to
 func (s *Framework) ListenUNIXWithErr(addr string, mode os.FileMode) error {
-	s.Config.Server.ListeningAddr = addr
-	s.Config.Server.Mode = mode
-	return s.openServer()
+	cfg := config.DefaultServer()
+	cfg.ListeningAddr = addr
+	cfg.Mode = mode
+	return s.ListenTo(cfg)
 }
 
 // ListenUNIX starts the process of listening to the new requests using a 'socket file', this works only on unix
@@ -342,37 +362,44 @@ func (s *Framework) SecondaryListen(cfg config.Server) *Server {
 }
 
 // NoListen is useful only when you want to test Iris, it doesn't starts the server but it configures and returns it
+// initializes the whole framework but server doesn't listens to a specific net.Listener
+// it is not blocking the app
+// same as ListenVirtual
 func NoListen(optionalAddr ...string) *Server {
 	return Default.NoListen(optionalAddr...)
 }
 
 // NoListen is useful only when you want to test Iris, it doesn't starts the server but it configures and returns it
 // initializes the whole framework but server doesn't listens to a specific net.Listener
+// it is not blocking the app
+// same as ListenVirtual
 func (s *Framework) NoListen(optionalAddr ...string) *Server {
-	if len(optionalAddr) > 0 {
-		s.Config.Server.ListeningAddr = optionalAddr[0]
-	}
-	return s.ListenVirtual()
+	return s.ListenVirtual(optionalAddr...)
 }
 
 // ListenVirtual is useful only when you want to test Iris, it doesn't starts the server but it configures and returns it
 // initializes the whole framework but server doesn't listens to a specific net.Listener
-// same as NoListen
-func ListenVirtual(cfg ...config.Server) *Server {
-	return Default.ListenVirtual(cfg...)
+// it is not blocking the app
+func ListenVirtual(optionalAddr ...string) *Server {
+	return Default.ListenVirtual(optionalAddr...)
 }
 
 // ListenVirtual is useful only when you want to test Iris, it doesn't starts the server but it configures and returns it
 // initializes the whole framework but server doesn't listens to a specific net.Listener
-// same as NoListen
-func (s *Framework) ListenVirtual(cfg ...config.Server) *Server {
-	if len(cfg) > 0 {
-		s.Config.Server = cfg[0]
-	}
+// it is not blocking the app
+func (s *Framework) ListenVirtual(optionalAddr ...string) *Server {
 	s.Config.DisableBanner = true
-	s.Config.Server.Virtual = true
+	cfg := config.DefaultServer()
 
-	s.Must(s.openServer())
+	if len(optionalAddr) > 0 {
+		cfg.ListeningAddr = optionalAddr[0]
+	}
+	cfg.Virtual = true
+	go s.ListenTo(cfg)
+	if ok := <-s.Available; !ok {
+		s.Logger.Panic("Unexpected error:Virtual server cannot start, please report this as bug!!")
+	}
+	close(s.Available)
 	return s.HTTPServer
 }
 
@@ -634,13 +661,8 @@ func (s *Framework) TemplateString(templateFile string, pageContext interface{},
 // NewTester Prepares and returns a new test framework based on the api
 // is useful when you need to have more than one test framework for the same iris insttance, otherwise you can use the iris.Tester(t *testing.T)/variable.Tester(t *testing.T)
 func NewTester(api *Framework, t *testing.T) *httpexpect.Expect {
-	api.Config.DisableBanner = true
 	if !api.HTTPServer.IsListening() { // maybe the user called this after .Listen/ListenTLS/ListenUNIX, the tester can be used as standalone (with no running iris instance) or inside a running instance/app
 		api.ListenVirtual()
-		if ok := <-api.Available; !ok {
-			t.Fatal("Unexpected error: server cannot start, please report this as bug!!")
-		}
-		close(api.Available)
 	}
 
 	handler := api.HTTPServer.Handler
@@ -670,7 +692,10 @@ func Tester(t *testing.T) *httpexpect.Expect {
 
 // Tester returns the test framework for this iris insance
 func (s *Framework) Tester(t *testing.T) *httpexpect.Expect {
-	return s.tester(t)
+	if s.testFramework == nil {
+		s.testFramework = NewTester(s, t)
+	}
+	return s.testFramework
 }
 
 // -------------------------------------------------------------------------------------

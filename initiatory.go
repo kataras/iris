@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"sync"
-	"testing"
 	"time"
 
 	"github.com/gavv/httpexpect"
@@ -29,7 +28,7 @@ var (
 	HTTPServer *Server
 	// Available is a channel type of bool, fired to true when the server is opened and all plugins ran
 	// never fires false, if the .Close called then the channel is re-allocating.
-	// the channel is always oepen until you close it when you don't need this.
+	// the channel is closed only when .ListenVirtual is used, otherwise it remains open until you close it.
 	//
 	// Note: it is a simple channel and decided to put it here and no inside HTTPServer, doesn't have statuses just true and false, simple as possible
 	// Where to use that?
@@ -119,8 +118,9 @@ func New(cfg ...config.Iris) *Framework {
 		mux := newServeMux(sync.Pool{New: func() interface{} { return &Context{framework: s} }}, s.Logger)
 		// set the public router API (and party)
 		s.muxAPI = &muxAPI{mux: mux, relativePath: "/"}
-		// set the server
-		s.HTTPServer = newServer(&s.Config.Server)
+		// set the server with the default configuration, which is changed on Listen functions
+		defaultServerCfg := config.DefaultServer()
+		s.HTTPServer = newServer(&defaultServerCfg)
 	}
 
 	return s
@@ -187,15 +187,12 @@ func (s *Framework) openServer() (err error) {
 					s.HTTPServer.Host()))
 		}
 		s.Plugins.DoPostListen(s)
-		go func() {
-			s.Available <- true
-		}()
 
-		if !s.Config.Server.Virtual {
-			ch := make(chan os.Signal)
-			<-ch
-			s.Close()
-		}
+		go func() { s.Available <- true }()
+
+		ch := make(chan os.Signal)
+		<-ch
+		s.Close()
 
 	}
 	return
@@ -206,12 +203,4 @@ func (s *Framework) closeServer() error {
 	s.Plugins.DoPreClose(s)
 	s.Available = make(chan bool)
 	return s.HTTPServer.Close()
-}
-
-// tester returns the test framework
-func (s *Framework) tester(t *testing.T) *httpexpect.Expect {
-	if s.testFramework == nil {
-		s.testFramework = NewTester(s, t)
-	}
-	return s.testFramework
 }

@@ -103,13 +103,6 @@ type (
 		// Websocket contains the configs for Websocket's server integration
 		Websocket *Websocket
 
-		// Server contains the configs for the http server
-		// Server configs are the only one which are setted inside base Iris package (from Listen, ListenTLS, ListenUNIX) NO from users
-		//
-		// this field is useful only when you need to READ which is the server's address, certfile & keyfile or unix's mode.
-		//
-		Server Server
-
 		// Tester contains the configs for the test framework, so far we have only one because all test framework's configs are setted by the iris itself
 		Tester Tester
 	}
@@ -148,7 +141,6 @@ func Default() Iris {
 		Sessions:              DefaultSessions(),
 		Render:                DefaultRender(),
 		Websocket:             DefaultWebsocket(),
-		Server:                DefaultServer(),
 		Tester:                Tester{Debug: false},
 	}
 }

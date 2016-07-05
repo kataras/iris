@@ -50,7 +50,6 @@ func (t *testPluginEx) PreClose(*Framework) {
 
 func ExamplePlugins_Add() {
 	initDefault()
-
 	Plugins.Add(PreListenFunc(func(*Framework) {
 		fmt.Println("PreListen Func")
 	}))
@@ -68,7 +67,7 @@ func ExamplePlugins_Add() {
 	desc := Plugins.GetDescription(myplugin)
 	fmt.Println(desc)
 
-	NoListen()
+	ListenVirtual()
 	CloseWithErr()
 
 	// Output:
