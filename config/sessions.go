@@ -34,7 +34,7 @@ type (
 	Redis struct {
 		// Network "tcp"
 		Network string
-		// Addr "127.0.01:6379"
+		// Addr "127.0.0.1:6379"
 		Addr string
 		// Password string .If no password then no 'AUTH'. Default ""
 		Password string

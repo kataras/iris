@@ -284,7 +284,6 @@ func (s *Framework) Go() error {
 	s.Plugins.DoPreListen(s)
 
 	if firstErr := s.Servers.OpenAll(); firstErr != nil {
-		panic("iris:287")
 		return firstErr
 	}
 
@@ -820,6 +819,10 @@ func NewTester(api *Framework, t *testing.T) *httpexpect.Expect {
 				}
 			}
 		}
+	}
+
+	if api.Config.Tester.ExplicitURL {
+		baseURL = ""
 	}
 
 	testConfiguration := httpexpect.Config{

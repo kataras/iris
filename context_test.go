@@ -1,6 +1,11 @@
 package iris
 
-import "testing"
+import (
+	"encoding/xml"
+	"net/url"
+	"strconv"
+	"testing"
+)
 
 func TestContextReset(t *testing.T) {
 	var context Context
@@ -72,7 +77,7 @@ func TestContextDoNextStop(t *testing.T) {
 	}
 }
 
-func TestContextParam(t *testing.T) {
+func TestContextParams(t *testing.T) {
 	var context Context
 	params := PathParameters{
 		PathParameter{Key: "testkey", Value: "testvalue"},
@@ -104,8 +109,396 @@ func TestContextParam(t *testing.T) {
 	} else if vi != 548921854390354 {
 		t.Fatalf("Expecting to receive %d but we got %d", 548921854390354, vi)
 	}
+
+	// end-to-end test now, note that we will not test the whole mux here, this happens on http_test.go
+
+	initDefault()
+	expectedParamsStr := "param1=myparam1,param2=myparam2,param3=myparam3afterstatic,anything=/andhere/anything/you/like"
+	Get("/path/:param1/:param2/staticpath/:param3/*anything", func(ctx *Context) {
+		paramsStr := ctx.Params.String()
+		ctx.Write(paramsStr)
+	})
+
+	Tester(t).GET("/path/myparam1/myparam2/staticpath/myparam3afterstatic/andhere/anything/you/like").Expect().Status(StatusOK).Body().Equal(expectedParamsStr)
+
 }
 
-func TestContextURLParam(t *testing.T) {
+func TestContextURLParams(t *testing.T) {
+	initDefault()
+	passedParams := map[string]string{"param1": "value1", "param2": "value2"}
+	Get("/", func(ctx *Context) {
+		params := ctx.URLParams()
+		ctx.JSON(StatusOK, params)
+	})
+	e := Tester(t)
 
+	e.GET("/").WithQueryObject(passedParams).Expect().Status(StatusOK).JSON().Equal(passedParams)
+}
+
+// hoststring returns the full host, will return the HOST:IP
+func TestContextHostString(t *testing.T) {
+	initDefault()
+	Config.Tester.ListeningAddr = "localhost:8080"
+	Get("/", func(ctx *Context) {
+		ctx.Write(ctx.HostString())
+	})
+
+	Get("/wrong", func(ctx *Context) {
+		ctx.Write(ctx.HostString() + "w")
+	})
+
+	e := Tester(t)
+	e.GET("/").Expect().Status(StatusOK).Body().Equal(Config.Tester.ListeningAddr)
+	e.GET("/wrong").Expect().Body().NotEqual(Config.Tester.ListeningAddr)
+}
+
+// VirtualHostname returns the hostname only,
+// if the host starts with 127.0.0.1 or localhost it gives the registered hostname part of the listening addr
+func TestContextVirtualHostName(t *testing.T) {
+	initDefault()
+	vhost := "mycustomvirtualname.com"
+	Config.Tester.ListeningAddr = vhost + ":8080"
+	Get("/", func(ctx *Context) {
+		ctx.Write(ctx.VirtualHostname())
+	})
+
+	Get("/wrong", func(ctx *Context) {
+		ctx.Write(ctx.VirtualHostname() + "w")
+	})
+
+	e := Tester(t)
+	e.GET("/").Expect().Status(StatusOK).Body().Equal(vhost)
+	e.GET("/wrong").Expect().Body().NotEqual(vhost)
+}
+
+func TestContextFormValueString(t *testing.T) {
+	initDefault()
+	var k, v string
+	k = "postkey"
+	v = "postvalue"
+	Post("/", func(ctx *Context) {
+		ctx.Write(k + "=" + ctx.FormValueString(k))
+	})
+	e := Tester(t)
+
+	e.POST("/").WithFormField(k, v).Expect().Status(StatusOK).Body().Equal(k + "=" + v)
+}
+
+func TestContextSubdomain(t *testing.T) {
+	initDefault()
+	Config.Tester.ListeningAddr = "mydomain.com:9999"
+	//Config.Tester.ExplicitURL = true
+	Party("mysubdomain.").Get("/mypath", func(ctx *Context) {
+		ctx.Write(ctx.Subdomain())
+	})
+
+	e := Tester(t)
+	e.GET("/").WithURL("http://mysubdomain.mydomain.com:9999").Expect().Status(StatusNotFound)
+	e.GET("/mypath").WithURL("http://mysubdomain.mydomain.com:9999").Expect().Status(StatusOK).Body().Equal("mysubdomain")
+
+	//e.GET("http://mysubdomain.mydomain.com:9999").Expect().Status(StatusNotFound)
+	//e.GET("http://mysubdomain.mydomain.com:9999/mypath").Expect().Status(StatusOK).Body().Equal("mysubdomain")
+}
+
+type testBinderData struct {
+	Username string
+	Mail     string
+	Data     []string `form:"mydata" json:"mydata"`
+}
+
+type testBinderXMLData struct {
+	XMLName    xml.Name `xml:"info"`
+	FirstAttr  string   `xml:"first,attr"`
+	SecondAttr string   `xml:"second,attr"`
+	Name       string   `xml:"name",json:"name"`
+	Birth      string   `xml:"birth",json:"birth"`
+	Stars      int      `xml:"stars",json:"stars"`
+}
+
+func TestContextReadForm(t *testing.T) {
+	initDefault()
+
+	Post("/form", func(ctx *Context) {
+		obj := testBinderData{}
+		err := ctx.ReadForm(&obj)
+		if err != nil {
+			t.Fatalf("Error when parsing the FORM: %s", err.Error())
+		}
+		ctx.JSON(StatusOK, obj)
+	})
+
+	e := Tester(t)
+
+	passed := map[string]interface{}{"Username": "myusername", "Mail": "mymail@iris-go.com", "mydata": url.Values{"[0]": []string{"mydata1"},
+		"[1]": []string{"mydata2"}}}
+
+	expectedObject := testBinderData{Username: "myusername", Mail: "mymail@iris-go.com", Data: []string{"mydata1", "mydata2"}}
+
+	e.POST("/form").WithForm(passed).Expect().Status(StatusOK).JSON().Object().Equal(expectedObject)
+}
+
+func TestContextReadJSON(t *testing.T) {
+	initDefault()
+	Post("/json", func(ctx *Context) {
+		obj := testBinderData{}
+		err := ctx.ReadJSON(&obj)
+		if err != nil {
+			t.Fatalf("Error when parsing the JSON body: %s", err.Error())
+		}
+		ctx.JSON(StatusOK, obj)
+	})
+
+	e := Tester(t)
+	passed := map[string]interface{}{"Username": "myusername", "Mail": "mymail@iris-go.com", "mydata": []string{"mydata1", "mydata2"}}
+	expectedObject := testBinderData{Username: "myusername", Mail: "mymail@iris-go.com", Data: []string{"mydata1", "mydata2"}}
+
+	e.POST("/json").WithJSON(passed).Expect().Status(StatusOK).JSON().Object().Equal(expectedObject)
+}
+
+func TestContextReadXML(t *testing.T) {
+	initDefault()
+
+	Post("/xml", func(ctx *Context) {
+		obj := testBinderXMLData{}
+		err := ctx.ReadXML(&obj)
+		if err != nil {
+			t.Fatalf("Error when parsing the XML body: %s", err.Error())
+		}
+		ctx.XML(StatusOK, obj)
+	})
+
+	e := Tester(t)
+	expectedObj := testBinderXMLData{
+		XMLName:    xml.Name{Local: "info", Space: "info"},
+		FirstAttr:  "this is the first attr",
+		SecondAttr: "this is the second attr",
+		Name:       "Iris web framework",
+		Birth:      "13 March 2016",
+		Stars:      4064,
+	}
+	// so far no WithXML or .XML like WithJSON and .JSON on httpexpect I added a feature request as post issue and we're waiting
+	expectedBody := `<` + expectedObj.XMLName.Local + ` first="` + expectedObj.FirstAttr + `" second="` + expectedObj.SecondAttr + `"><name>` + expectedObj.Name + `</name><birth>` + expectedObj.Birth + `</birth><stars>` + strconv.Itoa(expectedObj.Stars) + `</stars></info>`
+	e.POST("/xml").WithText(expectedBody).Expect().Status(StatusOK).Body().Equal(expectedBody)
+}
+
+func TestContextRedirect(t *testing.T) {
+
+}
+
+func TestContextUserValues(t *testing.T) {
+	initDefault()
+	testCustomObjUserValue := struct{ Name string }{Name: "a name"}
+	values := map[string]interface{}{"key1": "value1", "key2": "value2", "key3": 3, "key4": testCustomObjUserValue, "key5": map[string]string{"key": "value"}}
+
+	Get("/test", func(ctx *Context) {
+
+		for k, v := range values {
+			ctx.Set(k, v)
+		}
+
+	}, func(ctx *Context) {
+		for k, v := range values {
+			userValue := ctx.Get(k)
+			if userValue != v {
+				t.Fatalf("Expecting user value: %s to be equal with: %#v but got: %#v", k, v, userValue)
+			}
+
+			if m, isMap := userValue.(map[string]string); isMap {
+				if m["key"] != v.(map[string]string)["key"] {
+					t.Fatalf("Expecting user value: %s to be equal with: %#v but got: %#v", k, v.(map[string]string)["key"], m["key"])
+				}
+			} else {
+				if userValue != v {
+					t.Fatalf("Expecting user value: %s to be equal with: %#v but got: %#v", k, v, userValue)
+				}
+			}
+
+		}
+	})
+
+	e := Tester(t)
+
+	e.GET("/test").Expect().Status(StatusOK)
+
+}
+
+/*
+NOTES OTAN ERTHW:
+
+EDW EXW TO PROVLIMA GIATI ENOEITE OTI TO CONTEXT DN DIATERIRE SE OLA ARA DN BORW NA ELENKSW STO GETFLASHES kAI STO GETFLASH TAUTOXRONA TO IDIO CONTEXT KEY SE DIAFORETIKA REQUESTS, NA DW TO APO PANW TEST, NA TO KOITAKSW
+TA MAPS DOULEVOUN KALA KATI ALLO EINAI TO PROVLIMA
+*/
+func TestContextFlashMessages(t *testing.T) {
+	initDefault()
+	firstKey := "name"
+	lastKey := "package"
+
+	values := map[string]string{firstKey: "kataras", lastKey: "iris"}
+
+	// set the flashes, the cookies are filled
+	Put("/set", func(ctx *Context) {
+		for k, v := range values {
+			ctx.SetFlash(k, v)
+		}
+	})
+
+	// get the first flash, the next should be avaiable to the next requess
+	Get("/get_first_flash", func(ctx *Context) {
+		for k := range values {
+			v, _ := ctx.GetFlash(k)
+			ctx.JSON(StatusOK, map[string]string{k: v})
+			break
+		}
+
+	})
+
+	// just an empty handler to test if the flashes should remeain to the next if GetFlash/GetFlashes used
+	Get("/get_no_getflash", func(ctx *Context) {
+	})
+
+	// get the last flash, the next should be avaiable to the next requess
+	Get("/get_last_flash", func(ctx *Context) {
+		i := 0
+		for k := range values {
+			i++
+			if i == len(values) {
+				v, _ := ctx.GetFlash(k)
+				ctx.JSON(StatusOK, map[string]string{k: v})
+			}
+		}
+	})
+
+	Get("/get_zero_flashes", func(ctx *Context) {
+		ctx.JSON(StatusOK, ctx.GetFlashes()) // should return nil
+	})
+
+	// we use the GetFlash to get the flash messages, the messages and the cookies should be empty after that
+	Get("/get_flash", func(ctx *Context) {
+		kv := make(map[string]string)
+		for k := range values {
+			v, err := ctx.GetFlash(k)
+			if err == nil {
+				kv[k] = v
+			}
+		}
+		ctx.JSON(StatusOK, kv)
+	}, func(ctx *Context) {
+		// at the same request, flashes should be available
+		if len(ctx.GetFlashes()) == 0 {
+			t.Fatalf("Flashes should be remeain to the whole request lifetime")
+		}
+	})
+
+	Get("/get_flashes", func(ctx *Context) {
+		// one time one handler, using GetFlashes
+		kv := make(map[string]string)
+		flashes := ctx.GetFlashes()
+		//second time on the same handler, using the GetFlash
+		for k := range flashes {
+			kv[k], _ = ctx.GetFlash(k)
+		}
+		if len(flashes) != len(kv) {
+			ctx.SetStatusCode(StatusNoContent)
+			return
+		}
+		ctx.Next()
+
+	}, func(ctx *Context) {
+		// third time on a next handler
+		// test the if next handler has access to them(must) because flash are request lifetime now.
+		// print them to the client for test the response also
+		ctx.JSON(StatusOK, ctx.GetFlashes())
+	})
+
+	e := Tester(t)
+	e.PUT("/set").Expect().Status(StatusOK).Cookies().NotEmpty()
+	e.GET("/get_first_flash").Expect().Status(StatusOK).JSON().Object().ContainsKey(firstKey).NotContainsKey(lastKey)
+	// just a request which does not use the flash message, so flash messages should be available on the next request
+	e.GET("/get_no_getflash").Expect().Status(StatusOK)
+	e.GET("/get_last_flash").Expect().Status(StatusOK).JSON().Object().ContainsKey(lastKey).NotContainsKey(firstKey)
+	g := e.GET("/get_zero_flashes").Expect().Status(StatusOK)
+	g.JSON().Null()
+	g.Cookies().Empty()
+	// set the magain
+	e.PUT("/set").Expect().Status(StatusOK).Cookies().NotEmpty()
+	// get them again using GetFlash
+	e.GET("/get_flash").Expect().Status(StatusOK).JSON().Object().Equal(values)
+	// this should be empty again
+	g = e.GET("/get_zero_flashes").Expect().Status(StatusOK)
+	g.JSON().Null()
+	g.Cookies().Empty()
+	//set them again
+	e.PUT("/set").Expect().Status(StatusOK).Cookies().NotEmpty()
+	// get them again using GetFlashes
+	e.GET("/get_flashes").Expect().Status(StatusOK).JSON().Object().Equal(values)
+	// this should be empty again
+	g = e.GET("/get_zero_flashes").Expect().Status(StatusOK)
+	g.JSON().Null()
+	g.Cookies().Empty()
+
+}
+
+func TestContextSessions(t *testing.T) {
+	t.Parallel()
+	values := map[string]interface{}{
+		"Name":   "iris",
+		"Months": "4",
+		"Secret": "dsads£2132215£%%Ssdsa",
+	}
+
+	initDefault()
+	Config.Sessions.Cookie = "mycustomsessionid"
+
+	writeValues := func(ctx *Context) {
+		sessValues := ctx.Session().GetAll()
+		ctx.JSON(StatusOK, sessValues)
+	}
+
+	if testEnableSubdomain {
+		Party(testSubdomain+".").Get("/get", func(ctx *Context) {
+			writeValues(ctx)
+		})
+	}
+
+	Post("set", func(ctx *Context) {
+		vals := make(map[string]interface{}, 0)
+		if err := ctx.ReadJSON(&vals); err != nil {
+			t.Fatalf("Cannot readjson. Trace %s", err.Error())
+		}
+		for k, v := range vals {
+			ctx.Session().Set(k, v)
+		}
+	})
+
+	Get("/get", func(ctx *Context) {
+		writeValues(ctx)
+	})
+
+	Get("/clear", func(ctx *Context) {
+		ctx.Session().Clear()
+		writeValues(ctx)
+	})
+
+	Get("/destroy", func(ctx *Context) {
+		ctx.SessionDestroy()
+		writeValues(ctx)
+		// the cookie and all values should be empty
+	})
+
+	e := Tester(t)
+
+	e.POST("/set").WithJSON(values).Expect().Status(StatusOK).Cookies().NotEmpty()
+	e.GET("/get").Expect().Status(StatusOK).JSON().Object().Equal(values)
+	if testEnableSubdomain {
+		es := subdomainTester(e)
+		es.Request("GET", "/get").Expect().Status(StatusOK).JSON().Object().Equal(values)
+	}
+
+	// test destory which also clears first
+	d := e.GET("/destroy").Expect().Status(StatusOK)
+	d.JSON().Object().Empty()
+	d.Cookies().ContainsOnly(Config.Sessions.Cookie)
+	// set and clear again
+	e.POST("/set").WithJSON(values).Expect().Status(StatusOK).Cookies().NotEmpty()
+	e.GET("/clear").Expect().Status(StatusOK).JSON().Object().Empty()
 }
