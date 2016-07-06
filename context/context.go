@@ -66,9 +66,11 @@ type (
 		GetString(string) string
 		GetInt(string) int
 		Set(string, interface{})
+		VisitAllCookies(func(string, string))
 		SetCookie(*fasthttp.Cookie)
 		SetCookieKV(string, string)
 		RemoveCookie(string)
+		GetFlashes() map[string]string
 		GetFlash(string) (string, error)
 		SetFlash(string, string)
 		Session() store.IStore

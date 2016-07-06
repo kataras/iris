@@ -1,5 +1,12 @@
 package iris
 
+/* The most part of  the context covered,
+the other part contains serving static methods,
+find remote ip and GetInt,
+I am not waiting unexpected behaviors from the rest of the funcs,
+so that's all with context's tests.
+*/
+
 import (
 	"encoding/xml"
 	"net/url"
@@ -308,6 +315,7 @@ func TestContextRedirectTo(t *testing.T) {
 		//println("Redirecting to: " + routeName + " with path: " + Path(routeName, args...))
 		ctx.RedirectTo(routeName, args...)
 	})
+
 	e := Tester(t)
 
 	e.GET("/redirect/to/my-path/").Expect().Status(StatusOK).Body().Equal("/mypath")
