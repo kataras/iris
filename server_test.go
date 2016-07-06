@@ -2,12 +2,10 @@ package iris
 
 import (
 	"io/ioutil"
-	"net/http"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/gavv/httpexpect"
 	"github.com/kataras/iris/config"
 )
 
@@ -63,10 +61,10 @@ const (
 )
 
 // Contains the server test for multi running servers
-// Note: this test runs two standalone (real) servers
-func TestMultiRunningServers(t *testing.T) {
+func TestMultiRunningServers_v1(t *testing.T) {
 	host := "mydomain.com:443" // you have to add it to your hosts file( for windows, as 127.0.0.1 mydomain.com)
-
+	initDefault()
+	Config.DisableBanner = true
 	// create the key and cert files on the fly, and delete them when this test finished
 	certFile, ferr := ioutil.TempFile("", "cert")
 
@@ -92,48 +90,77 @@ func TestMultiRunningServers(t *testing.T) {
 		os.Remove(keyFile.Name())
 	}()
 
-	initDefault()
-	Config.DisableBanner = true
-
 	Get("/", func(ctx *Context) {
 		ctx.Write("Hello from %s", ctx.HostString())
 	})
 
 	// start the secondary server
-	secondary := SecondaryListen(config.Server{ListeningAddr: ":80", RedirectTo: "https://" + host, Virtual: true})
+	SecondaryListen(config.Server{ListeningAddr: "mydomain.com:80", RedirectTo: "https://" + host, Virtual: true})
 	// start the main server
 	go ListenTo(config.Server{ListeningAddr: host, CertFile: certFile.Name(), KeyFile: keyFile.Name(), Virtual: true})
-
-	defer func() {
-		go secondary.Close()
-		go CloseWithErr()
-		close(Available)
-	}()
 	// prepare test framework
 	if ok := <-Available; !ok {
 		t.Fatal("Unexpected error: server cannot start, please report this as bug!!")
 	}
 
-	handler := HTTPServer.Handler
+	e := Tester(t)
 
-	testConfiguration := httpexpect.Config{
-		Client: &http.Client{
-			Transport: httpexpect.NewFastBinder(handler),
-			Jar:       httpexpect.NewJar(),
-		},
-		Reporter: httpexpect.NewAssertReporter(t),
-	}
-
-	if Config.Tester.Debug {
-		testConfiguration.Printers = []httpexpect.Printer{
-			httpexpect.NewDebugPrinter(t, true),
-		}
-	}
-	//
-
-	e := httpexpect.WithConfig(testConfiguration)
-
+	e.Request("GET", "http://mydomain.com:80").Expect().Status(StatusOK).Body().Equal("Hello from " + host)
 	e.Request("GET", "https://"+host).Expect().Status(StatusOK).Body().Equal("Hello from " + host)
-	e.Request("GET", "http://"+host).Expect().Status(StatusOK).Body().Equal("Hello from " + host)
+
+}
+
+// Contains the server test for multi running servers
+func TestMultiRunningServers_v2(t *testing.T) {
+	domain := "mydomain.com"
+	host := domain + ":443"
+	initDefault()
+	Config.DisableBanner = true
+	Config.Tester.ListeningAddr = host
+	// create the key and cert files on the fly, and delete them when this test finished
+	certFile, ferr := ioutil.TempFile("", "cert")
+
+	if ferr != nil {
+		t.Fatal(ferr.Error())
+	}
+
+	keyFile, ferr := ioutil.TempFile("", "key")
+	if ferr != nil {
+		t.Fatal(ferr.Error())
+	}
+
+	certFile.WriteString(testTLSCert)
+	keyFile.WriteString(testTLSKey)
+
+	defer func() {
+		certFile.Close()
+		time.Sleep(350 * time.Millisecond)
+		os.Remove(certFile.Name())
+
+		keyFile.Close()
+		time.Sleep(350 * time.Millisecond)
+		os.Remove(keyFile.Name())
+	}()
+
+	Get("/", func(ctx *Context) {
+		ctx.Write("Hello from %s", ctx.HostString())
+	})
+
+	// add a secondary server
+	Servers.Add(config.Server{ListeningAddr: domain + ":80", RedirectTo: "https://" + host, Virtual: true})
+	// add our primary/main server
+	Servers.Add(config.Server{ListeningAddr: host, CertFile: certFile.Name(), KeyFile: keyFile.Name(), Virtual: true})
+
+	go Go()
+
+	// prepare test framework
+	if ok := <-Available; !ok {
+		t.Fatal("Unexpected error: server cannot start, please report this as bug!!")
+	}
+
+	e := Tester(t)
+
+	e.Request("GET", "http://"+domain+":80").Expect().Status(StatusOK).Body().Equal("Hello from " + host)
+	e.Request("GET", "https://"+host).Expect().Status(StatusOK).Body().Equal("Hello from " + host)
 
 }

@@ -26,6 +26,7 @@ type testBinderXMLData struct {
 
 func TestBindForm(t *testing.T) {
 	initDefault()
+
 	Post("/form", func(ctx *Context) {
 		obj := testBinderData{}
 		err := ctx.ReadForm(&obj)
@@ -36,6 +37,7 @@ func TestBindForm(t *testing.T) {
 	})
 
 	e := Tester(t)
+
 	passed := map[string]interface{}{"Username": "myusername", "Mail": "mymail@iris-go.com", "mydata": url.Values{"[0]": []string{"mydata1"},
 		"[1]": []string{"mydata2"}}}
 

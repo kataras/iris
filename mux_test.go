@@ -16,12 +16,12 @@ const (
 )
 
 func testSubdomainHost() string {
-	return testSubdomain + strconv.Itoa(HTTPServer.Port())
+	return testSubdomain + strconv.Itoa(Servers.Main().Port())
 }
 
 func testSubdomainURL() (subdomainURL string) {
 	subdomainHost := testSubdomainHost()
-	if HTTPServer.IsSecure() {
+	if Servers.Main().IsSecure() {
 		subdomainURL = "https://" + subdomainHost
 	} else {
 		subdomainURL = "http://" + subdomainHost
@@ -159,7 +159,7 @@ func TestMuxSimpleParty(t *testing.T) {
 	request := func(reqPath string) {
 		e.Request("GET", reqPath).
 			Expect().
-			Status(StatusOK).Body().Equal(HTTPServer.Host() + reqPath)
+			Status(StatusOK).Body().Equal(Servers.Main().Host() + reqPath)
 	}
 
 	// run the tests

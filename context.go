@@ -218,7 +218,7 @@ func (ctx *Context) HostString() string {
 func (ctx *Context) VirtualHostname() string {
 	realhost := ctx.HostString()
 	hostname := realhost
-	virtualhost := ctx.framework.HTTPServer.VirtualHostname()
+	virtualhost := ctx.framework.Servers.Main().VirtualHostname()
 
 	if portIdx := strings.IndexByte(hostname, ':'); portIdx > 0 {
 		hostname = hostname[0:portIdx]
@@ -480,7 +480,11 @@ func (ctx *Context) RenderWithStatus(status int, name string, binding interface{
 
 // Render same as .RenderWithStatus but with status to iris.StatusOK (200)
 func (ctx *Context) Render(name string, binding interface{}, layout ...string) error {
-	return ctx.RenderWithStatus(StatusOK, name, binding, layout...)
+	errCode := ctx.RequestCtx.Response.StatusCode()
+	if errCode <= 0 {
+		errCode = StatusOK
+	}
+	return ctx.RenderWithStatus(errCode, name, binding, layout...)
 }
 
 // MustRender same as .Render but returns 500 internal server http status (error) if rendering fail

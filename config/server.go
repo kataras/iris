@@ -5,13 +5,17 @@ import (
 	"strconv"
 
 	"github.com/imdario/mergo"
+	"github.com/kataras/fasthttp"
 )
 
+// Default values for base Server conf
 const (
 	// DefaultServerHostname returns the default hostname which is 127.0.0.1
 	DefaultServerHostname = "127.0.0.1"
 	// DefaultServerPort returns the default port which is 8080
 	DefaultServerPort = 8080
+	// DefaultMaxRequestBodySize is 4MB
+	DefaultMaxRequestBodySize = fasthttp.DefaultMaxRequestBodySize
 )
 
 var (
@@ -30,6 +34,12 @@ type Server struct {
 	KeyFile       string
 	// Mode this is for unix only
 	Mode os.FileMode
+	// MaxRequestBodySize Maximum request body size.
+	//
+	// The server rejects requests with bodies exceeding this limit.
+	//
+	// By default request body size is 4MB.
+	MaxRequestBodySize int64
 	// RedirectTo, defaults to empty, set it in order to override the station's handler and redirect all requests to this address which is of form(HOST:PORT or :PORT)
 	//
 	// NOTE: the http status is 'StatusMovedPermanently', means one-time-redirect(the browser remembers the new addr and goes to the new address without need to request something from this server
@@ -43,7 +53,8 @@ type Server struct {
 
 // DefaultServer returns the default configs for the server
 func DefaultServer() Server {
-	return Server{ListeningAddr: DefaultServerAddr}
+	return Server{ListeningAddr: DefaultServerAddr,
+		MaxRequestBodySize: DefaultMaxRequestBodySize}
 }
 
 // Merge merges the default with the given config and returns the result
@@ -56,6 +67,15 @@ func (c Server) Merge(cfg []Server) (config Server) {
 		_default := c
 		config = _default
 	}
+
+	return
+}
+
+// MergeSingle merges the default with the given config and returns the result
+func (c Server) MergeSingle(cfg Server) (config Server) {
+
+	config = cfg
+	mergo.Merge(&config, c)
 
 	return
 }

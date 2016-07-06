@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/iris-contrib/errors"
 	"github.com/kataras/iris/config"
@@ -236,33 +237,45 @@ var (
 	errServerChmod           = errors.New("Cannot chmod %#o for %q: %s")
 )
 
-// Server the http server
-type Server struct {
-	*fasthttp.Server
-	listener net.Listener
-	Config   *config.Server
-	tls      bool
-	mu       sync.Mutex
-}
+type (
+	// Server the http server
+	Server struct {
+		*fasthttp.Server
+		listener net.Listener
+		Config   config.Server
+		tls      bool
+		mu       sync.Mutex
+	}
+	// ServerList contains the servers connected to the Iris station
+	ServerList struct {
+		mux     *serveMux
+		servers []*Server
+	}
+)
 
 // newServer returns a pointer to a Server object, and set it's options if any,  nothing more
-func newServer(c *config.Server) *Server {
-	s := &Server{Server: &fasthttp.Server{Name: config.ServerName}, Config: c}
+func newServer(cfg config.Server) *Server {
+	s := &Server{Server: &fasthttp.Server{Name: config.ServerName}, Config: cfg}
 	return s
-}
-
-// SetHandler sets the handler in order to listen on client requests
-func (s *Server) SetHandler(mux *serveMux) {
-	if s.Server != nil {
-		s.Server.Handler = mux.ServeRequest()
-	}
 }
 
 // IsListening returns true if server is listening/started, otherwise false
 func (s *Server) IsListening() bool {
+	if s == nil {
+		return false
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.listener != nil && s.listener.Addr().String() != ""
+}
+
+// IsOpened checks if handler is not nil and returns true if not, otherwise false
+// this is used to see if a server has opened, use IsListening if you want to see if the server is actually ready to serve connections
+func (s *Server) IsOpened() bool {
+	if s == nil {
+		return false
+	}
+	return s.Server != nil && s.Server.Handler != nil
 }
 
 // IsSecure returns true if server uses TLS, otherwise false
@@ -398,17 +411,17 @@ func (s *Server) serve(l net.Listener) error {
 }
 
 // Open opens/starts/runs/listens (to) the server, listen tls if Cert && Key is registed, listenUNIX if Mode is registed, otherwise listen
-func (s *Server) Open() error {
+func (s *Server) Open(h fasthttp.RequestHandler) error {
+	if h == nil {
+		return errServerHandlerMissing.Return()
+	}
+
 	if s.IsListening() {
 		return errServerAlreadyStarted.Return()
 	}
 
 	if s.Config.ListeningAddr == "" {
 		return errServerConfigMissing.Return()
-	}
-
-	if s.Handler == nil {
-		return errServerHandlerMissing.Return()
 	}
 
 	// check the addr if :8080 do it 0.0.0.0:8080 ,we need the hostname for many cases
@@ -419,9 +432,13 @@ func (s *Server) Open() error {
 		s.Config.ListeningAddr = config.DefaultServerHostname + a
 	}
 
+	if s.Config.MaxRequestBodySize > config.DefaultMaxRequestBodySize {
+		s.Server.MaxRequestBodySize = int(s.Config.MaxRequestBodySize)
+	}
+
 	if s.Config.RedirectTo != "" {
 		// override the handler and redirect all requests to this addr
-		s.Handler = func(reqCtx *fasthttp.RequestCtx) {
+		s.Server.Handler = func(reqCtx *fasthttp.RequestCtx) {
 			path := string(reqCtx.Path())
 			redirectTo := s.Config.RedirectTo
 			if path != "/" {
@@ -429,6 +446,8 @@ func (s *Server) Open() error {
 			}
 			reqCtx.Redirect(redirectTo, StatusMovedPermanently)
 		}
+	} else {
+		s.Server.Handler = h
 	}
 
 	if s.Config.Virtual {
@@ -449,6 +468,122 @@ func (s *Server) Close() (err error) {
 	}
 	err = s.listener.Close()
 
+	return
+}
+
+// -------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------
+// --------------------------------ServerList implementation-----------------------------
+// -------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------
+
+// Add adds a server to the list by its config
+// returns the new server
+func (s *ServerList) Add(cfg config.Server) *Server {
+	srv := newServer(cfg)
+	s.servers = append(s.servers, srv)
+	return srv
+}
+
+// Len returns the size of the server list
+func (s *ServerList) Len() int {
+	return len(s.servers)
+}
+
+// Main returns the main server,
+// the last added server is the main server, even if's Virtual
+func (s *ServerList) Main() (srv *Server) {
+	l := len(s.servers) - 1
+	for i := range s.servers {
+		if i == l {
+			return s.servers[i]
+		}
+	}
+	return nil
+}
+
+// Get returns the server by it's registered Address
+func (s *ServerList) Get(addr string) (srv *Server) {
+	for i := range s.servers {
+		srv = s.servers[i]
+		if srv.Config.ListeningAddr == addr {
+			return
+		}
+	}
+	return
+}
+
+// GetAll returns all registered servers
+func (s *ServerList) GetAll() []*Server {
+	return s.servers
+}
+
+// GetByIndex returns a server from the list by it's index
+func (s *ServerList) GetByIndex(i int) *Server {
+	if len(s.servers) >= i+1 {
+		return s.servers[i]
+	}
+	return nil
+}
+
+// Remove deletes a server by it's registered Address
+// returns true if something was removed, otherwise returns false
+func (s *ServerList) Remove(addr string) bool {
+	servers := s.servers
+	for i := range servers {
+		srv := servers[i]
+		if srv.Config.ListeningAddr == addr {
+			copy(servers[i:], servers[i+1:])
+			servers[len(servers)-1] = nil
+			s.servers = servers[:len(servers)-1]
+			return true
+		}
+	}
+	return false
+}
+
+// CloseAll terminates all listening servers
+// returns the first error, if erro happens it continues to closes the rest of the servers
+func (s *ServerList) CloseAll() (err error) {
+	for i := range s.servers {
+		if err == nil {
+			err = s.servers[i].Close()
+		}
+	}
+	return
+}
+
+// OpenAll starts all servers
+// returns the first error happens to one of these servers
+// if one server gets error it closes the previous servers and exits from this process
+func (s *ServerList) OpenAll() error {
+	l := len(s.servers) - 1
+	h := s.mux.ServeRequest()
+	for i := range s.servers {
+
+		if err := s.servers[i].Open(h); err != nil {
+			time.Sleep(2 * time.Second)
+			// for any case,
+			// we don't care about performance on initialization,
+			// we must make sure that the previous servers are running before closing them
+			s.CloseAll()
+			break
+		}
+		if i == l {
+			s.mux.setHostname(s.servers[i].VirtualHostname())
+		}
+
+	}
+	return nil
+}
+
+// GetAllOpened returns all opened/started servers
+func (s *ServerList) GetAllOpened() (servers []*Server) {
+	for i := range s.servers {
+		if s.servers[i].IsOpened() {
+			servers = append(servers, s.servers[i])
+		}
+	}
 	return
 }
 
