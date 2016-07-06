@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"net/url"
 	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -281,8 +282,37 @@ func TestContextReadXML(t *testing.T) {
 	e.POST("/xml").WithText(expectedBody).Expect().Status(StatusOK).Body().Equal(expectedBody)
 }
 
-func TestContextRedirect(t *testing.T) {
+// TestContextRedirectTo tests the named route redirect action
+func TestContextRedirectTo(t *testing.T) {
+	initDefault()
+	h := func(ctx *Context) { ctx.Write(ctx.PathString()) }
+	Get("/mypath", h)("my-path")
+	Get("/mypostpath", h)("my-post-path")
+	Get("mypath/with/params/:param1/:param2", func(ctx *Context) {
+		if len(ctx.Params) != 2 {
+			t.Fatalf("Strange error, expecting parameters to be two but we got: %d", len(ctx.Params))
+		}
+		ctx.Write(ctx.PathString())
+	})("my-path-with-params")
 
+	Get("/redirect/to/:routeName/*anyparams", func(ctx *Context) {
+		routeName := ctx.Param("routeName")
+		var args []interface{}
+		anyparams := ctx.Param("anyparams")
+		if anyparams != "" && anyparams != "/" {
+			params := strings.Split(anyparams[1:], "/") // firstparam/secondparam
+			for _, s := range params {
+				args = append(args, s)
+			}
+		}
+		//println("Redirecting to: " + routeName + " with path: " + Path(routeName, args...))
+		ctx.RedirectTo(routeName, args...)
+	})
+	e := Tester(t)
+
+	e.GET("/redirect/to/my-path/").Expect().Status(StatusOK).Body().Equal("/mypath")
+	e.GET("/redirect/to/my-post-path/").Expect().Status(StatusOK).Body().Equal("/mypostpath")
+	e.GET("/redirect/to/my-path-with-params/firstparam/secondparam").Expect().Status(StatusOK).Body().Equal("/mypath/with/params/firstparam/secondparam")
 }
 
 func TestContextUserValues(t *testing.T) {
@@ -322,31 +352,25 @@ func TestContextUserValues(t *testing.T) {
 
 }
 
-/*
-NOTES OTAN ERTHW:
-
-EDW EXW TO PROVLIMA GIATI ENOEITE OTI TO CONTEXT DN DIATERIRE SE OLA ARA DN BORW NA ELENKSW STO GETFLASHES kAI STO GETFLASH TAUTOXRONA TO IDIO CONTEXT KEY SE DIAFORETIKA REQUESTS, NA DW TO APO PANW TEST, NA TO KOITAKSW
-TA MAPS DOULEVOUN KALA KATI ALLO EINAI TO PROVLIMA
-*/
 func TestContextFlashMessages(t *testing.T) {
 	initDefault()
 	firstKey := "name"
 	lastKey := "package"
 
-	values := map[string]string{firstKey: "kataras", lastKey: "iris"}
-
+	values := PathParameters{PathParameter{Key: firstKey, Value: "kataras"}, PathParameter{Key: lastKey, Value: "iris"}}
+	jsonExpected := map[string]string{firstKey: "kataras", lastKey: "iris"}
 	// set the flashes, the cookies are filled
 	Put("/set", func(ctx *Context) {
-		for k, v := range values {
-			ctx.SetFlash(k, v)
+		for _, v := range values {
+			ctx.SetFlash(v.Key, v.Value)
 		}
 	})
 
 	// get the first flash, the next should be avaiable to the next requess
 	Get("/get_first_flash", func(ctx *Context) {
-		for k := range values {
-			v, _ := ctx.GetFlash(k)
-			ctx.JSON(StatusOK, map[string]string{k: v})
+		for _, v := range values {
+			val, _ := ctx.GetFlash(v.Key)
+			ctx.JSON(StatusOK, map[string]string{v.Key: val})
 			break
 		}
 
@@ -358,12 +382,10 @@ func TestContextFlashMessages(t *testing.T) {
 
 	// get the last flash, the next should be avaiable to the next requess
 	Get("/get_last_flash", func(ctx *Context) {
-		i := 0
-		for k := range values {
-			i++
-			if i == len(values) {
-				v, _ := ctx.GetFlash(k)
-				ctx.JSON(StatusOK, map[string]string{k: v})
+		for i, v := range values {
+			if i == len(values)-1 {
+				val, _ := ctx.GetFlash(v.Key)
+				ctx.JSON(StatusOK, map[string]string{v.Key: val})
 			}
 		}
 	})
@@ -375,10 +397,10 @@ func TestContextFlashMessages(t *testing.T) {
 	// we use the GetFlash to get the flash messages, the messages and the cookies should be empty after that
 	Get("/get_flash", func(ctx *Context) {
 		kv := make(map[string]string)
-		for k := range values {
-			v, err := ctx.GetFlash(k)
+		for _, v := range values {
+			val, err := ctx.GetFlash(v.Key)
 			if err == nil {
-				kv[k] = v
+				kv[v.Key] = val
 			}
 		}
 		ctx.JSON(StatusOK, kv)
@@ -422,7 +444,7 @@ func TestContextFlashMessages(t *testing.T) {
 	// set the magain
 	e.PUT("/set").Expect().Status(StatusOK).Cookies().NotEmpty()
 	// get them again using GetFlash
-	e.GET("/get_flash").Expect().Status(StatusOK).JSON().Object().Equal(values)
+	e.GET("/get_flash").Expect().Status(StatusOK).JSON().Object().Equal(jsonExpected)
 	// this should be empty again
 	g = e.GET("/get_zero_flashes").Expect().Status(StatusOK)
 	g.JSON().Null()
@@ -430,7 +452,7 @@ func TestContextFlashMessages(t *testing.T) {
 	//set them again
 	e.PUT("/set").Expect().Status(StatusOK).Cookies().NotEmpty()
 	// get them again using GetFlashes
-	e.GET("/get_flashes").Expect().Status(StatusOK).JSON().Object().Equal(values)
+	e.GET("/get_flashes").Expect().Status(StatusOK).JSON().Object().Equal(jsonExpected)
 	// this should be empty again
 	g = e.GET("/get_zero_flashes").Expect().Status(StatusOK)
 	g.JSON().Null()

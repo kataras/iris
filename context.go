@@ -426,7 +426,7 @@ func (ctx *Context) SetHeader(k string, v string) {
 // first parameter is the url to redirect
 // second parameter is the http status should send, default is 302 (StatusFound), you can set it to 301 (Permant redirect), if that's nessecery
 func (ctx *Context) Redirect(urlToRedirect string, statusHeader ...int) {
-	httpStatus := StatusFound // temporary redirect
+	httpStatus := StatusFound // a 'temporary-redirect-like' wich works better than for our purpose
 	if statusHeader != nil && len(statusHeader) > 0 && statusHeader[0] > 0 {
 		httpStatus = statusHeader[0]
 	}
