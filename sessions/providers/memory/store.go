@@ -35,7 +35,6 @@ func (s *Store) Get(key string) interface{} {
 	if value, found := s.values[key]; found {
 		return value
 	}
-	s.mu.Unlock()
 	return nil
 }
 
@@ -109,7 +108,7 @@ func (s *Store) SetLastAccessedTime(lastacc time.Time) {
 	s.lastAccessedTime = lastacc
 }
 
-// Destroy
+// Destroy deletes all keys
 func (s *Store) Destroy() {
 	// clears without provider's update.
 	s.mu.Lock()

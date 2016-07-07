@@ -95,7 +95,6 @@ func (s *Store) VisitAll(cb func(k string, v interface{})) {
 func (s *Store) Get(key string) interface{} {
 	Provider.Update(s.sid)
 	if value, found := s.values[key]; found {
-		s.mu.Unlock()
 		return value
 	}
 	return nil
