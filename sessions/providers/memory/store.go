@@ -19,15 +19,11 @@ var _ store.IStore = &Store{}
 
 // GetAll returns all values
 func (s *Store) GetAll() map[string]interface{} {
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	return s.values
 }
 
 // VisitAll loop each one entry and calls the callback function func(key,value)
 func (s *Store) VisitAll(cb func(k string, v interface{})) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	for key := range s.values {
 		cb(key, s.values[key])
 	}
@@ -36,9 +32,7 @@ func (s *Store) VisitAll(cb func(k string, v interface{})) {
 // Get returns the value of an entry by its key
 func (s *Store) Get(key string) interface{} {
 	Provider.Update(s.sid)
-	s.mu.Lock()
 	if value, found := s.values[key]; found {
-		s.mu.Unlock()
 		return value
 	}
 	s.mu.Unlock()

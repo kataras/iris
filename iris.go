@@ -61,40 +61,109 @@ import (
 	"testing"
 	"time"
 
+	"sync"
+
 	"github.com/gavv/httpexpect"
 	"github.com/iris-contrib/errors"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/logger"
+	"github.com/kataras/iris/render/rest"
+	"github.com/kataras/iris/render/template"
+	"github.com/kataras/iris/sessions"
 	"github.com/kataras/iris/utils"
+	"github.com/kataras/iris/websocket"
 	"github.com/valyala/fasthttp"
+	///NOTE: register the session providers, but the s.Config.Sessions.Provider will be used only, if this empty then sessions are disabled.
+	_ "github.com/kataras/iris/sessions/providers/memory"
+	_ "github.com/kataras/iris/sessions/providers/redis"
 )
 
 const (
 	// Version of the iris
-	Version = "3.0.0-rc.4"
-	banner  = `         _____      _
+	Version = "3.0.0-pre.release"
+
+	// HTMLEngine conversion for config.HTMLEngine
+	HTMLEngine = config.HTMLEngine
+	// PongoEngine conversion for config.PongoEngine
+	PongoEngine = config.PongoEngine
+	// MarkdownEngine conversion for config.MarkdownEngine
+	MarkdownEngine = config.MarkdownEngine
+	// JadeEngine conversion for config.JadeEngine
+	JadeEngine = config.JadeEngine
+	// AmberEngine conversion for config.AmberEngine
+	AmberEngine = config.AmberEngine
+	// HandlebarsEngine conversion for config.HandlebarsEngine
+	HandlebarsEngine = config.HandlebarsEngine
+	// DefaultEngine conversion for config.DefaultEngine
+	DefaultEngine = config.DefaultEngine
+	// NoEngine conversion for config.NoEngine
+	NoEngine = config.NoEngine
+	// NoLayout to disable layout for a particular template file
+	// conversion for config.NoLayout
+	NoLayout = config.NoLayout
+
+	banner = `         _____      _
         |_   _|    (_)
           | |  ____ _  ___
           | | | __|| |/ __|
          _| |_| |  | |\__ \
-        |_____|_|  |_||___/ ` + Version + `
-                                                 				 `
+        |_____|_|  |_||___/ ` + Version + ` `
 )
+
+// Default entry, use it with iris.$anyPublicFunc
+var (
+	Default   *Framework
+	Config    *config.Iris
+	Logger    *logger.Logger
+	Plugins   PluginContainer
+	Websocket websocket.Server
+	Servers   *ServerList
+	// Available is a channel type of bool, fired to true when the server is opened and all plugins ran
+	// never fires false, if the .Close called then the channel is re-allocating.
+	// the channel is closed only when .ListenVirtual is used, otherwise it remains open until you close it.
+	//
+	// Note: it is a simple channel and decided to put it here and no inside HTTPServer, doesn't have statuses just true and false, simple as possible
+	// Where to use that?
+	// this is used on extreme cases when you don't know which .Listen/.NoListen will be called
+	// and you want to run/declare something external-not-Iris (all Iris functionality declared before .Listen/.NoListen) AFTER the server is started and plugins finished.
+	// see the server_test.go for an example
+	Available chan bool
+)
+
+func initDefault() {
+	Default = New()
+	Config = Default.Config
+	Logger = Default.Logger
+	Plugins = Default.Plugins
+	Websocket = Default.Websocket
+	Servers = Default.Servers
+	Available = Default.Available
+}
+
+func init() {
+	initDefault()
+}
+
+// -------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------
+// --------------------------------Framework implementation-----------------------------
+// -------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------
 
 type (
 	// FrameworkAPI contains the main Iris Public API
 	FrameworkAPI interface {
 		MuxAPI
 		Must(error)
-		ListenWithErr(string) error
+		AddServer(config.Server) *Server
+		ListenTo(config.Server) error
 		Listen(string)
-		ListenTLSWithErr(string, string, string) error
 		ListenTLS(string, string, string)
-		ListenUNIXWithErr(string, os.FileMode) error
 		ListenUNIX(string, os.FileMode)
-		SecondaryListen(config.Server) *Server
-		NoListen(...string) *Server
-		Close()
+		ListenVirtual(...string) *Server
+		Go() error
+		Close() error
 		// global middleware prepending, registers to all subdomains, to all parties, you can call it at the last also
 		MustUse(...Handler)
 		MustUseFunc(...HandlerFunc)
@@ -108,55 +177,137 @@ type (
 		Tester(t *testing.T) *httpexpect.Expect
 	}
 
-	// RouteNameFunc the func returns from the MuxAPi's methods, optionally sets the name of the Route (*route)
-	RouteNameFunc func(string)
-	// MuxAPI the visible api for the serveMux
-	MuxAPI interface {
-		Party(string, ...HandlerFunc) MuxAPI
-		// middleware serial, appending
-		Use(...Handler)
-		UseFunc(...HandlerFunc)
-
-		// main handlers
-		Handle(string, string, ...Handler) RouteNameFunc
-		HandleFunc(string, string, ...HandlerFunc) RouteNameFunc
-		// H_ is used to convert a context.IContext handler func to iris.HandlerFunc, is used only inside iris internal package to avoid import cycles
-		H_(string, string, func(context.IContext)) func(string)
-		API(string, HandlerAPI, ...HandlerFunc)
-
-		// http methods
-		Get(string, ...HandlerFunc) RouteNameFunc
-		Post(string, ...HandlerFunc) RouteNameFunc
-		Put(string, ...HandlerFunc) RouteNameFunc
-		Delete(string, ...HandlerFunc) RouteNameFunc
-		Connect(string, ...HandlerFunc) RouteNameFunc
-		Head(string, ...HandlerFunc) RouteNameFunc
-		Options(string, ...HandlerFunc) RouteNameFunc
-		Patch(string, ...HandlerFunc) RouteNameFunc
-		Trace(string, ...HandlerFunc) RouteNameFunc
-		Any(string, ...HandlerFunc)
-
-		// static content
-		StaticHandler(string, int, bool, bool, []string) HandlerFunc
-		Static(string, string, int) RouteNameFunc
-		StaticFS(string, string, int) RouteNameFunc
-		StaticWeb(string, string, int) RouteNameFunc
-		StaticServe(string, ...string) RouteNameFunc
-		StaticContent(string, string, []byte) func(string)
-		Favicon(string, ...string) RouteNameFunc
-
-		// templates
-		Layout(string) MuxAPI // returns itself
+	// Framework is our God |\| Google.Search('Greek mythology Iris')
+	//
+	// Implements the FrameworkAPI
+	Framework struct {
+		*muxAPI
+		rest      *rest.Render
+		templates *template.Template
+		sessions  *sessions.Manager
+		// fields which are useful to the user/dev
+		// the last  added server is the main server
+		Servers   *ServerList
+		Config    *config.Iris
+		Logger    *logger.Logger
+		Plugins   PluginContainer
+		Websocket websocket.Server
+		Available chan bool
+		// this is setted once when .Tester(t) is called
+		testFramework *httpexpect.Expect
 	}
 )
 
-// -------------------------------------------------------------------------------------
-// -------------------------------------------------------------------------------------
-// --------------------------------Framework implementation-----------------------------
-// -------------------------------------------------------------------------------------
-// -------------------------------------------------------------------------------------
-
 var _ FrameworkAPI = &Framework{}
+
+// New creates and returns a new Iris station aka Framework.
+//
+// Receives an optional config.Iris as parameter
+// If empty then config.Default() is used instead
+func New(cfg ...config.Iris) *Framework {
+	c := config.Default().Merge(cfg)
+
+	// we always use 's' no 'f' because 's' is easier for me to remember because of 'station'
+	// some things never change :)
+	s := &Framework{Config: &c, Available: make(chan bool)}
+	{
+		///NOTE: set all with s.Config pointer
+		// set the Logger
+		s.Logger = logger.New(s.Config.Logger)
+		// set the plugin container
+		s.Plugins = &pluginContainer{logger: s.Logger}
+		// set the websocket server
+		s.Websocket = websocket.NewServer(s.Config.Websocket)
+		// set the servemux, which will provide us the public API also, with its context pool
+		mux := newServeMux(sync.Pool{New: func() interface{} { return &Context{framework: s} }}, s.Logger)
+		// set the public router API (and party)
+		s.muxAPI = &muxAPI{mux: mux, relativePath: "/"}
+
+		s.Servers = &ServerList{mux: mux, servers: make([]*Server, 0)}
+	}
+
+	return s
+}
+
+func (s *Framework) initialize() {
+	// set sessions
+	if s.Config.Sessions.Provider != "" {
+		s.sessions = sessions.New(s.Config.Sessions)
+	}
+
+	// set the rest
+	s.rest = rest.New(s.Config.Render.Rest)
+
+	// set templates if not already setted
+	s.prepareTemplates()
+
+	// listen to websocket connections
+	websocket.RegisterServer(s, s.Websocket, s.Logger)
+
+	//  prepare the mux & the server
+	s.mux.setCorrectPath(!s.Config.DisablePathCorrection)
+	s.mux.setEscapePath(!s.Config.DisablePathEscape)
+
+	// set the debug profiling handlers if ProfilePath is setted
+	if debugPath := s.Config.ProfilePath; debugPath != "" {
+		s.Handle(MethodGet, debugPath+"/*action", profileMiddleware(debugPath)...)
+	}
+}
+
+// prepareTemplates sets the templates if not nil, we make this check  because of .TemplateString, which can be called before Listen
+func (s *Framework) prepareTemplates() {
+	// prepare the templates
+	if s.templates == nil {
+		// These functions are directly contact with Iris' functionality.
+		funcs := map[string]interface{}{
+			"url":     s.URL,
+			"urlpath": s.Path,
+		}
+
+		template.RegisterSharedFuncs(funcs)
+
+		s.templates = template.New(s.Config.Render.Template)
+	}
+}
+
+// Go starts the iris station, listens to all registered servers, and prepare only if Virtual
+func Go() error {
+	return Default.Go()
+}
+
+// Go starts the iris station, listens to all registered servers, and prepare only if Virtual
+func (s *Framework) Go() error {
+	s.initialize()
+	s.Plugins.DoPreListen(s)
+
+	if firstErr := s.Servers.OpenAll(); firstErr != nil {
+		return firstErr
+	}
+
+	// print the banner
+	if !s.Config.DisableBanner {
+
+		openedServers := s.Servers.GetAllOpened()
+		l := len(openedServers)
+		hosts := make([]string, l, l)
+		for i, srv := range openedServers {
+			hosts[i] = srv.Host()
+		}
+
+		bannerMessage := time.Now().Format(config.TimeFormat) + ": Running at " + strings.Join(hosts, ", ")
+		s.Logger.PrintBanner(banner, bannerMessage)
+
+	}
+
+	s.Plugins.DoPostListen(s)
+
+	go func() { s.Available <- true }()
+	ch := make(chan os.Signal)
+	<-ch
+	s.Close() // btw, don't panic here
+
+	return nil
+}
 
 // Must panics on error, it panics on registed iris' logger
 func Must(err error) {
@@ -170,60 +321,74 @@ func (s *Framework) Must(err error) {
 	}
 }
 
-// ListenWithErr starts the standalone http server
-// which listens to the addr parameter which as the form of
-// host:port
+// AddServer same as .Servers.Add(config.Server) instead
 //
-// It returns an error you are responsible how to handle this
-// if you need a func to panic on error use the Listen
-// ex: log.Fatal(iris.ListenWithErr(":8080"))
-func ListenWithErr(addr string) error {
-	return Default.ListenWithErr(addr)
+// AddServers starts a server which listens to this station
+// Note that  the view engine's functions {{ url }} and {{ urlpath }} will return the first's registered server's scheme (http/https)
+//
+// this is useful mostly when you want to have two or more listening ports ( two or more servers ) for the same station
+//
+// receives one parameter which is the config.Server for the new server
+// returns the new standalone server(  you can close this server by the returning reference)
+//
+// If you need only one server you can use the blocking-funcs: .Listen/ListenTLS/ListenUNIX/ListenTo
+//
+// this is a NOT A BLOCKING version, the main .Listen/ListenTLS/ListenUNIX/ListenTo should be always executed LAST, so this function goes before the main .Listen/ListenTLS/ListenUNIX/ListenTo
+func AddServer(cfg config.Server) *Server {
+	return Default.AddServer(cfg)
+}
+
+// AddServer same as .Servers.Add(config.Server) instead
+//
+// AddServers starts a server which listens to this station
+// Note that  the view engine's functions {{ url }} and {{ urlpath }} will return the first's registered server's scheme (http/https)
+//
+// this is useful mostly when you want to have two or more listening ports ( two or more servers ) for the same station
+//
+// receives one parameter which is the config.Server for the new server
+// returns the new standalone server(  you can close this server by the returning reference)
+//
+// If you need only one server you can use the blocking-funcs: .Listen/ListenTLS/ListenUNIX/ListenTo
+//
+// this is a NOT A BLOCKING version, the main .Listen/ListenTLS/ListenUNIX/ListenTo should be always executed LAST, so this function goes before the main .Listen/ListenTLS/ListenUNIX/ListenTo
+func (s *Framework) AddServer(cfg config.Server) *Server {
+	return s.Servers.Add(cfg)
+}
+
+// ListenTo listens to a server but receives the full server's configuration
+// returns an error, you're responsible to handle that
+// or use the iris.Must(iris.ListenTo(config.Server{}))
+//
+// it's a blocking func
+func ListenTo(cfg config.Server) error {
+	return Default.ListenTo(cfg)
+}
+
+// ListenTo listens to a server but receives the full server's configuration
+// it's a blocking func
+func (s *Framework) ListenTo(cfg config.Server) (err error) {
+	s.Servers.Add(cfg)
+	return s.Go()
 }
 
 // Listen starts the standalone http server
 // which listens to the addr parameter which as the form of
 // host:port
 //
-// It panics on error if you need a func to return an error use the ListenWithErr
-// ex: iris.Listen(":8080")
+// It panics on error if you need a func to return an error, use the ListenTo
+// ex: err := iris.ListenTo(config.Server{ListeningAddr:":8080"})
 func Listen(addr string) {
 	Default.Listen(addr)
 }
 
-// ListenWithErr starts the standalone http server
-// which listens to the addr parameter which as the form of
-// host:port
-//
-// It returns an error you are responsible how to handle this
-// if you need a func to panic on error use the Listen
-// ex: log.Fatal(iris.ListenWithErr(":8080"))
-func (s *Framework) ListenWithErr(addr string) error {
-	s.Config.Server.ListeningAddr = addr
-	return s.openServer()
-}
-
 // Listen starts the standalone http server
 // which listens to the addr parameter which as the form of
 // host:port
 //
-// It panics on error if you need a func to return an error use the ListenWithErr
-// ex: iris.Listen(":8080")
+// It panics on error if you need a func to return an error, use the ListenTo
+// ex: err := iris.ListenTo(config.Server{ListeningAddr:":8080"})
 func (s *Framework) Listen(addr string) {
-	s.Must(s.ListenWithErr(addr))
-}
-
-// ListenTLSWithErr Starts a https server with certificates,
-// if you use this method the requests of the form of 'http://' will fail
-// only https:// connections are allowed
-// which listens to the addr parameter which as the form of
-// host:port
-//
-// It returns an error you are responsible how to handle this
-// if you need a func to panic on error use the ListenTLS
-// ex: log.Fatal(iris.ListenTLSWithErr(":8080","yourfile.cert","yourfile.key"))
-func ListenTLSWithErr(addr string, certFile string, keyFile string) error {
-	return Default.ListenTLSWithErr(addr, certFile, keyFile)
+	s.Must(s.ListenTo(config.Server{ListeningAddr: addr}))
 }
 
 // ListenTLS Starts a https server with certificates,
@@ -232,142 +397,86 @@ func ListenTLSWithErr(addr string, certFile string, keyFile string) error {
 // which listens to the addr parameter which as the form of
 // host:port
 //
-// It panics on error if you need a func to return an error use the ListenTLSWithErr
-// ex: iris.ListenTLS(":8080","yourfile.cert","yourfile.key")
+// It panics on error if you need a func to return an error, use the ListenTo
+// ex: err := iris.ListenTo(":8080","yourfile.cert","yourfile.key")
 func ListenTLS(addr string, certFile string, keyFile string) {
 	Default.ListenTLS(addr, certFile, keyFile)
 }
 
-// ListenTLSWithErr Starts a https server with certificates,
-// if you use this method the requests of the form of 'http://' will fail
-// only https:// connections are allowed
-// which listens to the addr parameter which as the form of
-// host:port
-//
-// It returns an error you are responsible how to handle this
-// if you need a func to panic on error use the ListenTLS
-// ex: log.Fatal(iris.ListenTLSWithErr(":8080","yourfile.cert","yourfile.key"))
-func (s *Framework) ListenTLSWithErr(addr string, certFile string, keyFile string) error {
-	if certFile == "" || keyFile == "" {
-		return fmt.Errorf("You should provide certFile and keyFile for TLS/SSL")
-	}
-	s.Config.Server.ListeningAddr = addr
-	s.Config.Server.CertFile = certFile
-	s.Config.Server.KeyFile = keyFile
-
-	return s.openServer()
-}
-
 // ListenTLS Starts a https server with certificates,
 // if you use this method the requests of the form of 'http://' will fail
 // only https:// connections are allowed
 // which listens to the addr parameter which as the form of
 // host:port
 //
-// It panics on error if you need a func to return an error use the ListenTLSWithErr
-// ex: iris.ListenTLS(":8080","yourfile.cert","yourfile.key")
+// It panics on error if you need a func to return an error, use the ListenTo
+// ex: err := iris.ListenTo(":8080","yourfile.cert","yourfile.key")
 func (s *Framework) ListenTLS(addr string, certFile, keyFile string) {
-	s.Must(s.ListenTLSWithErr(addr, certFile, keyFile))
-}
-
-// ListenUNIXWithErr starts the process of listening to the new requests using a 'socket file', this works only on unix
-// returns an error if something bad happens when trying to listen to
-func ListenUNIXWithErr(addr string, mode os.FileMode) error {
-	return Default.ListenUNIXWithErr(addr, mode)
+	if certFile == "" || keyFile == "" {
+		s.Logger.Panic("You should provide certFile and keyFile for TLS/SSL")
+	}
+	s.Must(s.ListenTo(config.Server{ListeningAddr: addr, CertFile: certFile, KeyFile: keyFile}))
 }
 
 // ListenUNIX starts the process of listening to the new requests using a 'socket file', this works only on unix
-// panics on error
+//
+// It panics on error if you need a func to return an error, use the ListenTo
+// ex: err := iris.ListenTo(":8080", Mode: os.FileMode)
 func ListenUNIX(addr string, mode os.FileMode) {
 	Default.ListenUNIX(addr, mode)
 }
 
-// ListenUNIXWithErr starts the process of listening to the new requests using a 'socket file', this works only on unix
-// returns an error if something bad happens when trying to listen to
-func (s *Framework) ListenUNIXWithErr(addr string, mode os.FileMode) error {
-	s.Config.Server.ListeningAddr = addr
-	s.Config.Server.Mode = mode
-	return s.openServer()
-}
-
 // ListenUNIX starts the process of listening to the new requests using a 'socket file', this works only on unix
-// panics on error
+//
+// It panics on error if you need a func to return an error, use the ListenTo
+// ex: err := iris.ListenTo(":8080", Mode: os.FileMode)
 func (s *Framework) ListenUNIX(addr string, mode os.FileMode) {
-	s.Must(s.ListenUNIXWithErr(addr, mode))
+	s.Must(ListenTo(config.Server{ListeningAddr: addr, Mode: mode}))
 }
 
-// SecondaryListen starts a server which listens to this station
-// Note that  the view engine's functions {{ url }} and {{ urlpath }} will return the first's registered server's scheme (http/https)
-//
-// this is useful only when you want to have two or more listening ports ( two or more servers ) for the same station
-//
-// receives one parameter which is the config.Server for the new server
-// returns the new standalone server(  you can close this server by the returning reference)
-//
-// If you need only one server this function is not for you, instead you must use the normal .Listen/ListenTLS functions.
-//
-// this is a NOT A BLOCKING version, the main iris.Listen should be always executed LAST, so this function goes before the main .Listen.
-func SecondaryListen(cfg config.Server) *Server {
-	return Default.SecondaryListen(cfg)
-}
-
-// SecondaryListen starts a server which listens to this station
-// Note that  the view engine's functions {{ url }} and {{ urlpath }} will return the first's registered server's scheme (http/https)
-//
-// this is useful only when you want to have two or more listening ports ( two or more servers ) for the same station
-//
-// receives one parameter which is the config.Server for the new server
-// returns the new standalone server(  you can close this server by the returning reference)
-//
-// If you need only one server this function is not for you, instead you must use the normal .Listen/ListenTLS functions.
-//
-// this is a NOT A BLOCKING version, the main iris.Listen should be always executed LAST, so this function goes before the main .Listen.
-func (s *Framework) SecondaryListen(cfg config.Server) *Server {
-	srv := newServer(&cfg)
-	// add a post listen event to start this server after the previous started
-	s.Plugins.Add(PostListenFunc(func(*Framework) {
-		go func() { // goroutine in order to not block any runtime post listeners
-			srv.Handler = s.HTTPServer.Handler
-			if err := srv.Open(); err == nil {
-				ch := make(chan os.Signal)
-				<-ch
-				srv.Close()
-			}
-		}()
-	}))
-
-	return srv
-}
-
-// NoListen is useful only when you want to test Iris, it doesn't starts the server but it configures and returns it
-func NoListen(optionalAddr ...string) *Server {
-	return Default.NoListen(optionalAddr...)
-}
-
-// NoListen is useful only when you want to test Iris, it doesn't starts the server but it configures and returns it
+// ListenVirtual is useful only when you want to test Iris, it doesn't starts the server but it configures and returns it
 // initializes the whole framework but server doesn't listens to a specific net.Listener
-func (s *Framework) NoListen(optionalAddr ...string) *Server {
-	return s.justServe(optionalAddr...)
+// it is not blocking the app
+func ListenVirtual(optionalAddr ...string) *Server {
+	return Default.ListenVirtual(optionalAddr...)
 }
 
-// CloseWithErr terminates the server and returns an error if any
-func CloseWithErr() error {
-	return Default.CloseWithErr()
+// ListenVirtual is useful only when you want to test Iris, it doesn't starts the server but it configures and returns it
+// initializes the whole framework but server doesn't listens to a specific net.Listener
+// it is not blocking the app
+func (s *Framework) ListenVirtual(optionalAddr ...string) *Server {
+	s.Config.DisableBanner = true
+	cfg := config.DefaultServer()
+
+	if len(optionalAddr) > 0 && optionalAddr[0] != "" {
+		cfg.ListeningAddr = optionalAddr[0]
+	}
+	cfg.Virtual = true
+
+	go func() {
+		s.Must(s.ListenTo(cfg))
+	}()
+
+	if ok := <-s.Available; !ok {
+		s.Logger.Panic("Unexpected error:Virtual server cannot start, please report this as bug!!")
+	}
+
+	close(s.Available)
+	return s.Servers.Main()
 }
 
-//Close terminates the server and panic if error occurs
-func Close() {
-	Default.Close()
+// Close terminates all the registered servers and returns an error if any
+// if you want to panic on this error use the iris.Must(iris.Close())
+func Close() error {
+	return Default.Close()
 }
 
-// CloseWithErr terminates the server and returns an error if any
-func (s *Framework) CloseWithErr() error {
-	return s.closeServer()
-}
-
-//Close terminates the server and panic if error occurs
-func (s *Framework) Close() {
-	s.Must(s.CloseWithErr())
+// Close terminates all the registered servers and returns an error if any
+// if you want to panic on this error use the iris.Must(iris.Close())
+func (s *Framework) Close() error {
+	s.Plugins.DoPreClose(s)
+	s.Available = make(chan bool)
+	return s.Servers.CloseAll()
 }
 
 // MustUse registers Handler middleware  to the beginning, prepends them instead of append
@@ -541,13 +650,13 @@ func (s *Framework) URL(routeName string, args ...interface{}) (url string) {
 	if r == nil {
 		return
 	}
-
+	srv := s.Servers.Main()
 	scheme := "http://"
-	if s.HTTPServer.IsSecure() {
+	if srv.IsSecure() {
 		scheme = "https://"
 	}
 
-	host := s.HTTPServer.VirtualHost()
+	host := srv.VirtualHost()
 	arguments := args[0:]
 
 	// join arrays as arguments
@@ -608,21 +717,35 @@ func (s *Framework) TemplateString(templateFile string, pageContext interface{},
 // NewTester Prepares and returns a new test framework based on the api
 // is useful when you need to have more than one test framework for the same iris insttance, otherwise you can use the iris.Tester(t *testing.T)/variable.Tester(t *testing.T)
 func NewTester(api *Framework, t *testing.T) *httpexpect.Expect {
-	api.Config.DisableBanner = true
-	if !api.HTTPServer.IsListening() { // maybe the user called this after .Listen/ListenTLS/ListenUNIX, the tester can be used as standalone (with no running iris instance) or inside a running instance/app
-		api.NoListen()
-		if ok := <-api.Available; !ok {
-			t.Fatal("Unexpected error: server cannot start, please report this as bug!!")
-		}
-		close(api.Available)
+	srv := api.Servers.Main()
+	if srv == nil { // maybe the user called this after .Listen/ListenTLS/ListenUNIX, the tester can be used as standalone (with no running iris instance) or inside a running instance/app
+		srv = api.ListenVirtual(api.Config.Tester.ListeningAddr)
 	}
 
-	handler := api.HTTPServer.Handler
+	opened := api.Servers.GetAllOpened()
+	h := srv.Handler
+	baseURL := srv.FullHost()
+	if len(opened) > 1 {
+		baseURL = ""
+		//we have more than one server, so we will create a handler here and redirect by registered listening addresses
+		h = func(reqCtx *fasthttp.RequestCtx) {
+			for _, s := range opened {
+				if strings.HasPrefix(reqCtx.URI().String(), s.FullHost()) { // yes on :80 should be passed :80 also, this is inneed for multiserver testing
+					s.Handler(reqCtx)
+					break
+				}
+			}
+		}
+	}
+
+	if api.Config.Tester.ExplicitURL {
+		baseURL = ""
+	}
 
 	testConfiguration := httpexpect.Config{
-		BaseURL: api.HTTPServer.FullHost(),
+		BaseURL: baseURL,
 		Client: &http.Client{
-			Transport: httpexpect.NewFastBinder(handler),
+			Transport: httpexpect.NewFastBinder(h),
 			Jar:       httpexpect.NewJar(),
 		},
 		Reporter: httpexpect.NewAssertReporter(t),
@@ -644,7 +767,10 @@ func Tester(t *testing.T) *httpexpect.Expect {
 
 // Tester returns the test framework for this iris insance
 func (s *Framework) Tester(t *testing.T) *httpexpect.Expect {
-	return s.tester(t)
+	if s.testFramework == nil {
+		s.testFramework = NewTester(s, t)
+	}
+	return s.testFramework
 }
 
 // -------------------------------------------------------------------------------------
@@ -652,12 +778,56 @@ func (s *Framework) Tester(t *testing.T) *httpexpect.Expect {
 // ----------------------------------MuxAPI implementation------------------------------
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
+type (
+	// RouteNameFunc the func returns from the MuxAPi's methods, optionally sets the name of the Route (*route)
+	RouteNameFunc func(string)
+	// MuxAPI the visible api for the serveMux
+	MuxAPI interface {
+		Party(string, ...HandlerFunc) MuxAPI
+		// middleware serial, appending
+		Use(...Handler)
+		UseFunc(...HandlerFunc)
 
-type muxAPI struct {
-	mux          *serveMux
-	relativePath string
-	middleware   Middleware
-}
+		// main handlers
+		Handle(string, string, ...Handler) RouteNameFunc
+		HandleFunc(string, string, ...HandlerFunc) RouteNameFunc
+		// H_ is used to convert a context.IContext handler func to iris.HandlerFunc, is used only inside iris internal package to avoid import cycles
+		H_(string, string, func(context.IContext)) func(string)
+		API(string, HandlerAPI, ...HandlerFunc)
+
+		// http methods
+		Get(string, ...HandlerFunc) RouteNameFunc
+		Post(string, ...HandlerFunc) RouteNameFunc
+		Put(string, ...HandlerFunc) RouteNameFunc
+		Delete(string, ...HandlerFunc) RouteNameFunc
+		Connect(string, ...HandlerFunc) RouteNameFunc
+		Head(string, ...HandlerFunc) RouteNameFunc
+		Options(string, ...HandlerFunc) RouteNameFunc
+		Patch(string, ...HandlerFunc) RouteNameFunc
+		Trace(string, ...HandlerFunc) RouteNameFunc
+		Any(string, ...HandlerFunc)
+
+		// static content
+		StaticHandler(string, int, bool, bool, []string) HandlerFunc
+		Static(string, string, int) RouteNameFunc
+		StaticFS(string, string, int) RouteNameFunc
+		StaticWeb(string, string, int) RouteNameFunc
+		StaticServe(string, ...string) RouteNameFunc
+		StaticContent(string, string, []byte) func(string)
+		Favicon(string, ...string) RouteNameFunc
+
+		// templates
+		Layout(string) MuxAPI // returns itself
+	}
+
+	muxAPI struct {
+		mux          *serveMux
+		relativePath string
+		middleware   Middleware
+	}
+)
+
+var _ MuxAPI = &muxAPI{}
 
 var (
 	// errAPIContextNotFound returns an error with message: 'From .API: "Context *iris.Context could not be found..'
@@ -665,8 +835,6 @@ var (
 	// errDirectoryFileNotFound returns an error with message: 'Directory or file %s couldn't found. Trace: +error trace'
 	errDirectoryFileNotFound = errors.New("Directory or file %s couldn't found. Trace: %s")
 )
-
-var _ MuxAPI = &muxAPI{}
 
 // Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
 // Party can also be named as 'Join' or 'Node' or 'Group' , Party chosen because it has more fun

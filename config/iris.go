@@ -1,15 +1,11 @@
 package config
 
-import (
-	"github.com/imdario/mergo"
-	"github.com/valyala/fasthttp"
-)
+import "github.com/imdario/mergo"
 
 // Default values for base Iris conf
 const (
 	DefaultDisablePathCorrection = false
 	DefaultDisablePathEscape     = false
-	DefaultMaxRequestBodySize    = fasthttp.DefaultMaxRequestBodySize
 )
 
 type (
@@ -54,13 +50,6 @@ type (
 		// Default is false
 		DisableBanner bool
 
-		// MaxRequestBodySize Maximum request body size.
-		//
-		// The server rejects requests with bodies exceeding this limit.
-		//
-		// By default request body size is 4MB.
-		MaxRequestBodySize int64
-
 		// ProfilePath a the route path, set it to enable http pprof tool
 		// Default is empty, if you set it to a $path, these routes will handled:
 		// $path/cmdline
@@ -103,13 +92,6 @@ type (
 		// Websocket contains the configs for Websocket's server integration
 		Websocket *Websocket
 
-		// Server contains the configs for the http server
-		// Server configs are the only one which are setted inside base Iris package (from Listen, ListenTLS, ListenUNIX) NO from users
-		//
-		// this field is useful only when you need to READ which is the server's address, certfile & keyfile or unix's mode.
-		//
-		Server Server
-
 		// Tester contains the configs for the test framework, so far we have only one because all test framework's configs are setted by the iris itself
 		Tester Tester
 	}
@@ -142,14 +124,12 @@ func Default() Iris {
 		DisablePathCorrection: DefaultDisablePathCorrection,
 		DisablePathEscape:     DefaultDisablePathEscape,
 		DisableBanner:         false,
-		MaxRequestBodySize:    DefaultMaxRequestBodySize,
 		ProfilePath:           "",
 		Logger:                DefaultLogger(),
 		Sessions:              DefaultSessions(),
 		Render:                DefaultRender(),
 		Websocket:             DefaultWebsocket(),
-		Server:                DefaultServer(),
-		Tester:                Tester{Debug: false},
+		Tester:                DefaultTester(),
 	}
 }
 

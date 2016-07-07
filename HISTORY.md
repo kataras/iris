@@ -2,6 +2,31 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras/iris` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 3.0.0-rc.4 -> 3.0.0-pre.release
+
+- `context.PostFormValue` -> `context.FormValueString`, old func stays until the next revision
+- `context.PostFormMulti` -> `context.FormValues` , old func stays until the next revision
+
+- Added `context.VisitAllCookies(func(key,value string))` to visit all your cookies (because `context.Request.Header.VisitAllCookie` has a bug(I can't fix/pr it because the author is away atm))
+- Added `context.GetFlashes` to get all available flash messages for a particular request
+- Fix flash message removed after the first `GetFlash` call in the same request
+
+**NEW FEATURE**: Built'n support for multi listening servers per iris station, secondary and virtual servers with one-line using the `iris.AddServer` & `iris.Go` to start all servers.
+
+- `iris.SecondaryListen` -> `iris.AddServer`, old func stays until the next revision
+- Added `iris.Servers` with this field you can manage your servers very easy
+- Added `iris.AddServer/iris.ListenTo/iris.Go`, but funcs like `Listen/ListenTLS/ListenUNIX` will stay forever
+- Added `config.Server.Virtual(bool), config.Server.RedirectTo(string) and config.Server.MaxRequestBodySize(int64)`
+- Added `iris.Available (channel bool)`
+- `iris.HTTPServer` -> `iris.Servers.Main()` to get the main server, which is always the last registered server (if more than one used), old field removed
+- `iris.Config.MaxRequestBodySize` -> `config.Server.MaxRequestBodySize`, old field removed
+
+**NEW FEATURE**: Build'n support for your API's end-to-end tests
+
+- Added `tester := iris.Tester(*testing.T)` , look inside: [http_test.go](https://github.com/kataras/iris/blob/master/http_test.go) & [./context_test.go](https://github.com/kataras/iris/blob/master/context_test.go) for `Tester` usage, you can also look inside the [httpexpect's repo](https://github.com/gavv/httpexpect/blob/master/example/iris_test.go) for extended examples with Iris.
+
+
+
 ## 3.0.0-rc.3 -> 3.0.0-rc.4
 
 **NEW FEATURE**: **Handlebars** template engine support with all Iris' view engine's functions/helpers support, as requested [here](https://github.com/kataras/iris/issues/239):

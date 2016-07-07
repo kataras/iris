@@ -214,11 +214,13 @@ type pluginContainer struct {
 	customEvents     map[string][]func()
 	downloader       *pluginDownloadManager
 	logger           *logger.Logger
+	mu               sync.Mutex
 }
 
 // Add activates the plugins and if succeed then adds it to the activated plugins list
 func (p *pluginContainer) Add(plugins ...Plugin) error {
 	for _, plugin := range plugins {
+
 		if p.activatedPlugins == nil {
 			p.activatedPlugins = make([]Plugin, 0)
 		}
@@ -232,10 +234,16 @@ func (p *pluginContainer) Add(plugins ...Plugin) error {
 		}
 		// Activate the plugin, if no error then add it to the plugins
 		if pluginObj, ok := plugin.(pluginActivate); ok {
-			err := pluginObj.Activate(p)
+			tempPluginContainer := *p
+			err := pluginObj.Activate(&tempPluginContainer)
 			if err != nil {
 				return errPluginActivate.Format(pName, err.Error())
 			}
+			tempActivatedPluginsLen := len(tempPluginContainer.activatedPlugins)
+			if tempActivatedPluginsLen != len(p.activatedPlugins)+tempActivatedPluginsLen+1 { // see test: plugin_test.go TestPluginActivate && TestPluginActivationError
+				p.activatedPlugins = tempPluginContainer.activatedPlugins
+			}
+
 		}
 
 		// All ok, add it to the plugins list

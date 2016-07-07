@@ -14,6 +14,10 @@ type (
 	// IContext the interface for the iris/context
 	// Used mostly inside packages which shouldn't be import ,directly, the kataras/iris.
 	IContext interface {
+		// deprecated Start
+		PostFormValue(string) string
+		PostFormMulti(string) []string
+		// deprecated End
 		Param(string) string
 		ParamInt(string) (int, error)
 		ParamInt64(string) (int64, error)
@@ -29,8 +33,8 @@ type (
 		RequestIP() string
 		RemoteAddr() string
 		RequestHeader(k string) string
-		PostFormValue(string) string
-		PostFormMulti(string) []string
+		FormValueString(string) string
+		FormValues(string) []string
 		SetStatusCode(int)
 		SetContentType(string)
 		SetHeader(string, string)
@@ -66,9 +70,11 @@ type (
 		GetString(string) string
 		GetInt(string) int
 		Set(string, interface{})
+		VisitAllCookies(func(string, string))
 		SetCookie(*fasthttp.Cookie)
 		SetCookieKV(string, string)
 		RemoveCookie(string)
+		GetFlashes() map[string]string
 		GetFlash(string) (string, error)
 		SetFlash(string, string)
 		Session() store.IStore
