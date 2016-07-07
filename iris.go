@@ -165,8 +165,12 @@ type (
 		Go() error
 		Close() error
 		// global middleware prepending, registers to all subdomains, to all parties, you can call it at the last also
+		// deprecated Start
 		MustUse(...Handler)
 		MustUseFunc(...HandlerFunc)
+		// deprecated End
+		UseGlobal(...Handler)
+		UseGlobalFunc(...HandlerFunc)
 		OnError(int, HandlerFunc)
 		EmitError(int, *Context)
 		Lookup(string) Route
@@ -220,6 +224,7 @@ func New(cfg ...config.Iris) *Framework {
 		s.Websocket = websocket.NewServer(s.Config.Websocket)
 		// set the servemux, which will provide us the public API also, with its context pool
 		mux := newServeMux(sync.Pool{New: func() interface{} { return &Context{framework: s} }}, s.Logger)
+		mux.onLookup = s.Plugins.DoPreLookup
 		// set the public router API (and party)
 		s.muxAPI = &muxAPI{mux: mux, relativePath: "/"}
 
@@ -247,7 +252,6 @@ func (s *Framework) initialize() {
 	//  prepare the mux & the server
 	s.mux.setCorrectPath(!s.Config.DisablePathCorrection)
 	s.mux.setEscapePath(!s.Config.DisablePathEscape)
-
 	// set the debug profiling handlers if ProfilePath is setted
 	if debugPath := s.Config.ProfilePath; debugPath != "" {
 		s.Handle(MethodGet, debugPath+"/*action", profileMiddleware(debugPath)...)
@@ -479,37 +483,37 @@ func (s *Framework) Close() error {
 	return s.Servers.CloseAll()
 }
 
-// MustUse registers Handler middleware  to the beginning, prepends them instead of append
+// UseGlobal registers Handler middleware  to the beginning, prepends them instead of append
 //
 // Use it when you want to add a global middleware to all parties, to all routes in  all subdomains
 // It can be called after other, (but before .Listen of course)
-func MustUse(handlers ...Handler) {
+func UseGlobal(handlers ...Handler) {
 	Default.MustUse(handlers...)
 }
 
-// MustUseFunc registers HandlerFunc middleware  to the beginning, prepends them instead of append
+// UseGlobalFunc registers HandlerFunc middleware  to the beginning, prepends them instead of append
 //
 // Use it when you want to add a global middleware to all parties, to all routes in  all subdomains
 // It can be called after other, (but before .Listen of course)
-func MustUseFunc(handlersFn ...HandlerFunc) {
+func UseGlobalFunc(handlersFn ...HandlerFunc) {
 	Default.MustUseFunc(handlersFn...)
 }
 
-// MustUse registers Handler middleware  to the beginning, prepends them instead of append
+// UseGlobal registers Handler middleware  to the beginning, prepends them instead of append
 //
 // Use it when you want to add a global middleware to all parties, to all routes in  all subdomains
 // It can be called after other, (but before .Listen of course)
-func (s *Framework) MustUse(handlers ...Handler) {
+func (s *Framework) UseGlobal(handlers ...Handler) {
 	for _, r := range s.mux.lookups {
 		r.middleware = append(handlers, r.middleware...)
 	}
 }
 
-// MustUseFunc registers HandlerFunc middleware to the beginning, prepends them instead of append
+// UseGlobalFunc registers HandlerFunc middleware to the beginning, prepends them instead of append
 //
 // Use it when you want to add a global middleware to all parties, to all routes in  all subdomains
 // It can be called after other, (but before .Listen of course)
-func (s *Framework) MustUseFunc(handlersFn ...HandlerFunc) {
+func (s *Framework) UseGlobalFunc(handlersFn ...HandlerFunc) {
 	s.MustUse(convertToHandlers(handlersFn)...)
 }
 
@@ -914,6 +918,7 @@ func (api *muxAPI) Handle(method string, registedPath string, handlers ...Handle
 	}
 
 	path = strings.Replace(path, "//", "/", -1) // fix the path if double //
+
 	return api.mux.register([]byte(method), subdomain, path, middleware).setName
 }
 
