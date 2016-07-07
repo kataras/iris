@@ -230,7 +230,6 @@ func StatusText(code int) string {
 var (
 	errServerPortAlreadyUsed = errors.New("Server can't run, port is already used")
 	errServerAlreadyStarted  = errors.New("Server is already started and listening")
-	errServerConfigMissing   = errors.New("Empty Config for server")
 	errServerHandlerMissing  = errors.New("Handler is missing from server, can't start without handler")
 	errServerIsClosed        = errors.New("Can't close the server, propably is already closed or never started")
 	errServerRemoveUnix      = errors.New("Unexpected error when trying to remove unix socket file. Addr: %s | Trace: %s")
@@ -256,7 +255,13 @@ type (
 // newServer returns a pointer to a Server object, and set it's options if any,  nothing more
 func newServer(cfg config.Server) *Server {
 	s := &Server{Server: &fasthttp.Server{Name: config.ServerName}, Config: cfg}
+	s.prepare()
 	return s
+}
+
+// prepare just prepares the listening addr
+func (s *Server) prepare() {
+	s.Config.ListeningAddr = config.ServerParseAddr(s.Config.ListeningAddr)
 }
 
 // IsListening returns true if server is listening/started, otherwise false
@@ -288,41 +293,26 @@ func (s *Server) Listener() net.Listener {
 	return s.listener
 }
 
-// Host returns the Listener().Addr().String(), if server is not listening it returns the config.ListeningAddr
+// Host returns the registered host for the server
 func (s *Server) Host() (host string) {
-	if s.IsListening() {
-		return s.Listener().Addr().String()
-	}
 	return s.Config.ListeningAddr
-
 }
 
 // Port returns the port which server listening for
 // if no port given with the ListeningAddr, it returns 80
 func (s *Server) Port() (port int) {
 	a := s.Config.ListeningAddr
-	if portIdx := strings.IndexByte(a, ':'); portIdx == 0 {
+	if portIdx := strings.IndexByte(a, ':'); portIdx != -1 {
 		p, err := strconv.Atoi(a[portIdx+1:])
 		if err != nil {
 			port = 80
 		} else {
 			port = p
 		}
+	} else {
+		port = 80
 	}
 	return
-}
-
-// VirtualHost returns the s.Config.ListeningAddr
-//
-func (s *Server) VirtualHost() (host string) {
-	// check the addr if :8080 do it 0.0.0.0:8080 ,we need the hostname for many cases
-	a := s.Config.ListeningAddr
-	//check if contains hostname, we need the full host, :8080 should be : 127.0.0.1:8080
-	if portIdx := strings.IndexByte(a, ':'); portIdx == 0 {
-		// then the : is the first letter, so we dont have setted a hostname, lets set it
-		s.Config.ListeningAddr = config.DefaultServerHostname + a
-	}
-	return s.Config.ListeningAddr
 }
 
 // FullHost returns the scheme+host
@@ -332,30 +322,12 @@ func (s *Server) FullHost() string {
 	if s.IsSecure() || (s.Config.CertFile != "" && s.Config.KeyFile != "") {
 		scheme = "https://"
 	}
-	return scheme + s.VirtualHost()
+	return scheme + s.Host()
 }
 
-// Hostname returns the hostname part only, if host == localhost:8080 it will return the localhost
-// if server is not listening it returns the config.ListeningAddr's hostname part
-func (s *Server) Hostname() (hostname string) {
-	if s.IsListening() {
-		fullhost := s.Listener().Addr().String()
-		hostname = fullhost[0:strings.IndexByte(fullhost, ':')] // no the port
-	} else {
-		hostname = s.VirtualHostname()
-	}
-	return
-}
-
-// VirtualHostname returns the hostname that user registers, host path maybe differs from the real which is HostString, which taken from a net.listener
-func (s *Server) VirtualHostname() (hostname string) {
-	hostname = s.Config.ListeningAddr
-	if idx := strings.IndexByte(hostname, ':'); idx > 1 { // at least after second char
-		hostname = hostname[0:idx]
-	} else {
-		hostname = config.DefaultServerHostname
-	}
-	return
+// Hostname returns the hostname part of the host (host expect port)
+func (s *Server) Hostname() string {
+	return s.Host()[0:strings.IndexByte(s.Host(), ':')] // no the port
 }
 
 func (s *Server) listen() error {
@@ -420,17 +392,7 @@ func (s *Server) Open(h fasthttp.RequestHandler) error {
 		return errServerAlreadyStarted.Return()
 	}
 
-	if s.Config.ListeningAddr == "" {
-		return errServerConfigMissing.Return()
-	}
-
-	// check the addr if :8080 do it 0.0.0.0:8080 ,we need the hostname for many cases
-	a := s.Config.ListeningAddr
-	//check if contains hostname, we need the full host, :8080 should be : 127.0.0.1:8080
-	if portIdx := strings.IndexByte(a, ':'); portIdx == 0 {
-		// then the : is the first letter, so we dont have setted a hostname, lets set it
-		s.Config.ListeningAddr = config.DefaultServerHostname + a
-	}
+	s.prepare() // do it again for any case
 
 	if s.Config.MaxRequestBodySize > config.DefaultMaxRequestBodySize {
 		s.Server.MaxRequestBodySize = int(s.Config.MaxRequestBodySize)
@@ -570,7 +532,7 @@ func (s *ServerList) OpenAll() error {
 			break
 		}
 		if i == l {
-			s.mux.setHostname(s.servers[i].VirtualHostname())
+			s.mux.setHostname(s.servers[i].Hostname())
 		}
 
 	}

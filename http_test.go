@@ -69,6 +69,56 @@ const (
 `
 )
 
+func TestServerHost(t *testing.T) {
+	var server1, server2, server3 Server
+	var expectedHost1 = "mydomain.com:1993"
+	var expectedHost2 = "mydomain.com:80"
+	var expectedHost3 = "127.0.0.1:9090"
+	server1.Config.ListeningAddr = expectedHost1
+	server2.Config.ListeningAddr = "mydomain.com"
+	server3.Config.ListeningAddr = ":9090"
+
+	server1.prepare()
+	server2.prepare()
+	server3.prepare()
+
+	if server1.Host() != expectedHost1 {
+		t.Fatalf("Expecting server 1's host to be %s but we got %s", expectedHost1, server1.Host())
+	}
+	if server2.Host() != expectedHost2 {
+		t.Fatalf("Expecting server 2's host to be %s but we got %s", expectedHost2, server2.Host())
+	}
+	if server3.Host() != expectedHost3 {
+		t.Fatalf("Expecting server 3's host to be %s but we got %s", expectedHost3, server3.Host())
+	}
+}
+
+func TestServerHostname(t *testing.T) {
+	var server Server
+	var expectedHostname = "mydomain.com"
+	server.Config.ListeningAddr = expectedHostname + ":1993"
+	server.prepare()
+	if server.Hostname() != expectedHostname {
+		t.Fatalf("Expecting server's hostname to be %s but we got %s", expectedHostname, server.Hostname())
+	}
+}
+
+func TestServerPort(t *testing.T) {
+	var server1, server2 Server
+	expectedPort1 := 8080
+	expectedPort2 := 80
+	server1.Config.ListeningAddr = "mydomain.com:8080"
+	server2.Config.ListeningAddr = "mydomain.com"
+	server1.prepare()
+	server2.prepare()
+	if server1.Port() != expectedPort1 {
+		t.Fatalf("Expecting server 1's port to be %d but we got %d", expectedPort1, server1.Port())
+	}
+	if server2.Port() != expectedPort2 {
+		t.Fatalf("Expecting server 2's port to be %d but we got %d", expectedPort2, server2.Port())
+	}
+}
+
 // Contains the server test for multi running servers
 func TestMultiRunningServers_v1(t *testing.T) {
 	host := "mydomain.com:443" // you have to add it to your hosts file( for windows, as 127.0.0.1 mydomain.com)
