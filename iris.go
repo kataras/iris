@@ -656,7 +656,7 @@ func (s *Framework) URL(routeName string, args ...interface{}) (url string) {
 		scheme = "https://"
 	}
 
-	host := srv.VirtualHost()
+	host := srv.Host()
 	arguments := args[0:]
 
 	// join arrays as arguments
