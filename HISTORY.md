@@ -18,6 +18,8 @@
 - Added `iris.AddServer/iris.ListenTo/iris.Go`, but funcs like `Listen/ListenTLS/ListenUNIX` will stay forever
 - Added `config.Server.Virtual(bool), config.Server.RedirectTo(string) and config.Server.MaxRequestBodySize(int64)`
 - Added `iris.Available (channel bool)`
+- `iris.HTTPServer` -> `iris.Servers.Main()` to get the main server, which is always the last registered server (if more than one used), old field removed
+- `iris.Config.MaxRequestBodySize` -> `config.Server.MaxRequestBodySize`, old field removed
 
 **NEW FEATURE**: Build'n support for your API's end-to-end tests
 
