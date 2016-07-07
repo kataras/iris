@@ -16,6 +16,9 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/valyala/fasthttp"
 )
 
 func TestContextReset(t *testing.T) {
@@ -361,6 +364,50 @@ func TestContextUserValues(t *testing.T) {
 
 	e.GET("/test").Expect().Status(StatusOK)
 
+}
+
+func TestContextCookieSetGetRemove(t *testing.T) {
+	initDefault()
+	key := "mykey"
+	value := "myvalue"
+	Get("/set", func(ctx *Context) {
+		ctx.SetCookieKV(key, value) // should return non empty cookies
+	})
+
+	Get("/set_advanced", func(ctx *Context) {
+		c := fasthttp.AcquireCookie()
+		c.SetKey(key)
+		c.SetValue(value)
+		c.SetHTTPOnly(true)
+		c.SetExpire(time.Now().Add(time.Duration((60 * 60 * 24 * 7 * 4)) * time.Second))
+		ctx.SetCookie(c)
+		fasthttp.ReleaseCookie(c)
+	})
+
+	Get("/get", func(ctx *Context) {
+		ctx.Write(ctx.GetCookie(key)) // should return my value
+	})
+
+	Get("/remove", func(ctx *Context) {
+		ctx.RemoveCookie(key)
+		cookieFound := false
+		ctx.VisitAllCookies(func(k, v string) {
+			cookieFound = true
+		})
+		if cookieFound {
+			t.Fatalf("Cookie has been found, when it shouldn't!")
+		}
+		ctx.Write(ctx.GetCookie(key)) // should return ""
+	})
+
+	e := Tester(t)
+	e.GET("/set").Expect().Status(StatusOK).Cookies().NotEmpty()
+	e.GET("/get").Expect().Status(StatusOK).Body().Equal(value)
+	e.GET("/remove").Expect().Status(StatusOK).Body().Equal("")
+	// test again with advanced set
+	e.GET("/set_advanced").Expect().Status(StatusOK).Cookies().NotEmpty()
+	e.GET("/get").Expect().Status(StatusOK).Body().Equal(value)
+	e.GET("/remove").Expect().Status(StatusOK).Body().Equal("")
 }
 
 func TestContextFlashMessages(t *testing.T) {
