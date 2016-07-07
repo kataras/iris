@@ -81,7 +81,7 @@ import (
 
 const (
 	// Version of the iris
-	Version = "3.0.0-rc.4"
+	Version = "3.0.0-pre.release"
 
 	// HTMLEngine conversion for config.HTMLEngine
 	HTMLEngine = config.HTMLEngine
@@ -156,17 +156,14 @@ type (
 	FrameworkAPI interface {
 		MuxAPI
 		Must(error)
+		AddServer(config.Server) *Server
 		ListenTo(config.Server) error
-		ListenWithErr(string) error
 		Listen(string)
-		ListenTLSWithErr(string, string, string) error
 		ListenTLS(string, string, string)
-		ListenUNIXWithErr(string, os.FileMode) error
 		ListenUNIX(string, os.FileMode)
-		SecondaryListen(config.Server) *Server
 		ListenVirtual(...string) *Server
-		NoListen(...string) *Server
-		Close()
+		Go() error
+		Close() error
 		// global middleware prepending, registers to all subdomains, to all parties, you can call it at the last also
 		MustUse(...Handler)
 		MustUseFunc(...HandlerFunc)
@@ -289,18 +286,17 @@ func (s *Framework) Go() error {
 
 	// print the banner
 	if !s.Config.DisableBanner {
-		serversMessage := time.Now().Format(config.TimeFormat) + ": Running at "
+
 		openedServers := s.Servers.GetAllOpened()
-		if len(openedServers) == 1 {
-			// if only one server then don't need to add a new line
-			serversMessage += openedServers[0].Host()
-		} else {
-			for _, srv := range openedServers {
-				serversMessage += "\n" + srv.Host()
-			}
+		l := len(openedServers)
+		hosts := make([]string, l, l)
+		for i, srv := range openedServers {
+			hosts[i] = srv.Host()
 		}
 
-		s.Logger.PrintBanner(banner, serversMessage)
+		bannerMessage := time.Now().Format(config.TimeFormat) + ": Running at " + strings.Join(hosts, ", ")
+		s.Logger.PrintBanner(banner, bannerMessage)
+
 	}
 
 	s.Plugins.DoPostListen(s)
@@ -308,7 +304,7 @@ func (s *Framework) Go() error {
 	go func() { s.Available <- true }()
 	ch := make(chan os.Signal)
 	<-ch
-	s.CloseWithErr() // btw, don't panic here
+	s.Close() // btw, don't panic here
 
 	return nil
 }
@@ -325,7 +321,44 @@ func (s *Framework) Must(err error) {
 	}
 }
 
+// AddServer same as .Servers.Add(config.Server) instead
+//
+// AddServers starts a server which listens to this station
+// Note that  the view engine's functions {{ url }} and {{ urlpath }} will return the first's registered server's scheme (http/https)
+//
+// this is useful mostly when you want to have two or more listening ports ( two or more servers ) for the same station
+//
+// receives one parameter which is the config.Server for the new server
+// returns the new standalone server(  you can close this server by the returning reference)
+//
+// If you need only one server you can use the blocking-funcs: .Listen/ListenTLS/ListenUNIX/ListenTo
+//
+// this is a NOT A BLOCKING version, the main .Listen/ListenTLS/ListenUNIX/ListenTo should be always executed LAST, so this function goes before the main .Listen/ListenTLS/ListenUNIX/ListenTo
+func AddServer(cfg config.Server) *Server {
+	return Default.AddServer(cfg)
+}
+
+// AddServer same as .Servers.Add(config.Server) instead
+//
+// AddServers starts a server which listens to this station
+// Note that  the view engine's functions {{ url }} and {{ urlpath }} will return the first's registered server's scheme (http/https)
+//
+// this is useful mostly when you want to have two or more listening ports ( two or more servers ) for the same station
+//
+// receives one parameter which is the config.Server for the new server
+// returns the new standalone server(  you can close this server by the returning reference)
+//
+// If you need only one server you can use the blocking-funcs: .Listen/ListenTLS/ListenUNIX/ListenTo
+//
+// this is a NOT A BLOCKING version, the main .Listen/ListenTLS/ListenUNIX/ListenTo should be always executed LAST, so this function goes before the main .Listen/ListenTLS/ListenUNIX/ListenTo
+func (s *Framework) AddServer(cfg config.Server) *Server {
+	return s.Servers.Add(cfg)
+}
+
 // ListenTo listens to a server but receives the full server's configuration
+// returns an error, you're responsible to handle that
+// or use the iris.Must(iris.ListenTo(config.Server{}))
+//
 // it's a blocking func
 func ListenTo(cfg config.Server) error {
 	return Default.ListenTo(cfg)
@@ -338,59 +371,24 @@ func (s *Framework) ListenTo(cfg config.Server) (err error) {
 	return s.Go()
 }
 
-// ListenWithErr starts the standalone http server
-// which listens to the addr parameter which as the form of
-// host:port
-//
-// It returns an error you are responsible how to handle this
-// if you need a func to panic on error use the Listen
-// ex: log.Fatal(iris.ListenWithErr(":8080"))
-func ListenWithErr(addr string) error {
-	return Default.ListenWithErr(addr)
-}
-
 // Listen starts the standalone http server
 // which listens to the addr parameter which as the form of
 // host:port
 //
-// It panics on error if you need a func to return an error use the ListenWithErr
-// ex: iris.Listen(":8080")
+// It panics on error if you need a func to return an error, use the ListenTo
+// ex: err := iris.ListenTo(config.Server{ListeningAddr:":8080"})
 func Listen(addr string) {
 	Default.Listen(addr)
 }
 
-// ListenWithErr starts the standalone http server
-// which listens to the addr parameter which as the form of
-// host:port
-//
-// It returns an error you are responsible how to handle this
-// if you need a func to panic on error use the Listen
-// ex: log.Fatal(iris.ListenWithErr(":8080"))
-func (s *Framework) ListenWithErr(addr string) error {
-	return s.ListenTo(config.Server{ListeningAddr: addr})
-}
-
 // Listen starts the standalone http server
 // which listens to the addr parameter which as the form of
 // host:port
 //
-// It panics on error if you need a func to return an error use the ListenWithErr
-// ex: iris.Listen(":8080")
+// It panics on error if you need a func to return an error, use the ListenTo
+// ex: err := iris.ListenTo(config.Server{ListeningAddr:":8080"})
 func (s *Framework) Listen(addr string) {
-	s.Must(s.ListenWithErr(addr))
-}
-
-// ListenTLSWithErr Starts a https server with certificates,
-// if you use this method the requests of the form of 'http://' will fail
-// only https:// connections are allowed
-// which listens to the addr parameter which as the form of
-// host:port
-//
-// It returns an error you are responsible how to handle this
-// if you need a func to panic on error use the ListenTLS
-// ex: log.Fatal(iris.ListenTLSWithErr(":8080","yourfile.cert","yourfile.key"))
-func ListenTLSWithErr(addr string, certFile string, keyFile string) error {
-	return Default.ListenTLSWithErr(addr, certFile, keyFile)
+	s.Must(s.ListenTo(config.Server{ListeningAddr: addr}))
 }
 
 // ListenTLS Starts a https server with certificates,
@@ -399,114 +397,41 @@ func ListenTLSWithErr(addr string, certFile string, keyFile string) error {
 // which listens to the addr parameter which as the form of
 // host:port
 //
-// It panics on error if you need a func to return an error use the ListenTLSWithErr
-// ex: iris.ListenTLS(":8080","yourfile.cert","yourfile.key")
+// It panics on error if you need a func to return an error, use the ListenTo
+// ex: err := iris.ListenTo(":8080","yourfile.cert","yourfile.key")
 func ListenTLS(addr string, certFile string, keyFile string) {
 	Default.ListenTLS(addr, certFile, keyFile)
 }
 
-// ListenTLSWithErr Starts a https server with certificates,
-// if you use this method the requests of the form of 'http://' will fail
-// only https:// connections are allowed
-// which listens to the addr parameter which as the form of
-// host:port
-//
-// It returns an error you are responsible how to handle this
-// if you need a func to panic on error use the ListenTLS
-// ex: log.Fatal(iris.ListenTLSWithErr(":8080","yourfile.cert","yourfile.key"))
-func (s *Framework) ListenTLSWithErr(addr string, certFile string, keyFile string) error {
-	if certFile == "" || keyFile == "" {
-		return fmt.Errorf("You should provide certFile and keyFile for TLS/SSL")
-	}
-	return s.ListenTo(config.Server{ListeningAddr: addr, CertFile: certFile, KeyFile: keyFile})
-}
-
 // ListenTLS Starts a https server with certificates,
 // if you use this method the requests of the form of 'http://' will fail
 // only https:// connections are allowed
 // which listens to the addr parameter which as the form of
 // host:port
 //
-// It panics on error if you need a func to return an error use the ListenTLSWithErr
-// ex: iris.ListenTLS(":8080","yourfile.cert","yourfile.key")
+// It panics on error if you need a func to return an error, use the ListenTo
+// ex: err := iris.ListenTo(":8080","yourfile.cert","yourfile.key")
 func (s *Framework) ListenTLS(addr string, certFile, keyFile string) {
-	s.Must(s.ListenTLSWithErr(addr, certFile, keyFile))
-}
-
-// ListenUNIXWithErr starts the process of listening to the new requests using a 'socket file', this works only on unix
-// returns an error if something bad happens when trying to listen to
-func ListenUNIXWithErr(addr string, mode os.FileMode) error {
-	return Default.ListenUNIXWithErr(addr, mode)
+	if certFile == "" || keyFile == "" {
+		s.Logger.Panic("You should provide certFile and keyFile for TLS/SSL")
+	}
+	s.Must(s.ListenTo(config.Server{ListeningAddr: addr, CertFile: certFile, KeyFile: keyFile}))
 }
 
 // ListenUNIX starts the process of listening to the new requests using a 'socket file', this works only on unix
-// panics on error
+//
+// It panics on error if you need a func to return an error, use the ListenTo
+// ex: err := iris.ListenTo(":8080", Mode: os.FileMode)
 func ListenUNIX(addr string, mode os.FileMode) {
 	Default.ListenUNIX(addr, mode)
 }
 
-// ListenUNIXWithErr starts the process of listening to the new requests using a 'socket file', this works only on unix
-// returns an error if something bad happens when trying to listen to
-func (s *Framework) ListenUNIXWithErr(addr string, mode os.FileMode) error {
-	return s.ListenTo(config.Server{ListeningAddr: addr, Mode: mode})
-}
-
 // ListenUNIX starts the process of listening to the new requests using a 'socket file', this works only on unix
-// panics on error
+//
+// It panics on error if you need a func to return an error, use the ListenTo
+// ex: err := iris.ListenTo(":8080", Mode: os.FileMode)
 func (s *Framework) ListenUNIX(addr string, mode os.FileMode) {
-	s.Must(s.ListenUNIXWithErr(addr, mode))
-}
-
-// SecondaryListen NOTE: This will be deprecated
-// Use .Servers.Add(config.Server) instead
-//
-// SecondaryListen starts a server which listens to this station
-// Note that  the view engine's functions {{ url }} and {{ urlpath }} will return the first's registered server's scheme (http/https)
-//
-// this is useful only when you want to have two or more listening ports ( two or more servers ) for the same station
-//
-// receives one parameter which is the config.Server for the new server
-// returns the new standalone server(  you can close this server by the returning reference)
-//
-// If you need only one server this function is not for you, instead you must use the normal .Listen/ListenTLS functions.
-//
-// this is a NOT A BLOCKING version, the main iris.Listen should be always executed LAST, so this function goes before the main .Listen.
-func SecondaryListen(cfg config.Server) *Server {
-	return Default.SecondaryListen(cfg)
-}
-
-// SecondaryListen NOTE: This will be deprecated
-// Use .Servers.Add(config.Server) instead
-//
-// SecondaryListen starts a server which listens to this station
-// Note that  the view engine's functions {{ url }} and {{ urlpath }} will return the first's registered server's scheme (http/https)
-//
-// this is useful only when you want to have two or more listening ports ( two or more servers ) for the same station
-//
-// receives one parameter which is the config.Server for the new server
-// returns the new standalone server(  you can close this server by the returning reference)
-//
-// If you need only one server this function is not for you, instead you must use the normal .Listen/ListenTLS functions.
-//
-// this is a NOT A BLOCKING version, the main iris.Listen should be always executed LAST, so this function goes before the main .Listen.
-func (s *Framework) SecondaryListen(cfg config.Server) *Server {
-	return s.Servers.Add(cfg)
-}
-
-// NoListen is useful only when you want to test Iris, it doesn't starts the server but it configures and returns it
-// initializes the whole framework but server doesn't listens to a specific net.Listener
-// it is not blocking the app
-// same as ListenVirtual
-func NoListen(optionalAddr ...string) *Server {
-	return Default.NoListen(optionalAddr...)
-}
-
-// NoListen is useful only when you want to test Iris, it doesn't starts the server but it configures and returns it
-// initializes the whole framework but server doesn't listens to a specific net.Listener
-// it is not blocking the app
-// same as ListenVirtual
-func (s *Framework) NoListen(optionalAddr ...string) *Server {
-	return s.ListenVirtual(optionalAddr...)
+	s.Must(ListenTo(config.Server{ListeningAddr: addr, Mode: mode}))
 }
 
 // ListenVirtual is useful only when you want to test Iris, it doesn't starts the server but it configures and returns it
@@ -540,26 +465,18 @@ func (s *Framework) ListenVirtual(optionalAddr ...string) *Server {
 	return s.Servers.Main()
 }
 
-// CloseWithErr terminates all the registered servers and returns an error if any
-func CloseWithErr() error {
-	return Default.CloseWithErr()
+// Close terminates all the registered servers and returns an error if any
+// if you want to panic on this error use the iris.Must(iris.Close())
+func Close() error {
+	return Default.Close()
 }
 
-//Close terminates all the registered servers and panic if error occurs
-func Close() {
-	Default.Close()
-}
-
-// CloseWithErr terminates all the registered servers and returns an error if any
-func (s *Framework) CloseWithErr() error {
+// Close terminates all the registered servers and returns an error if any
+// if you want to panic on this error use the iris.Must(iris.Close())
+func (s *Framework) Close() error {
 	s.Plugins.DoPreClose(s)
 	s.Available = make(chan bool)
 	return s.Servers.CloseAll()
-}
-
-//Close terminates all the registered servers and panic if error occurs
-func (s *Framework) Close() {
-	s.Must(s.CloseWithErr())
 }
 
 // MustUse registers Handler middleware  to the beginning, prepends them instead of append

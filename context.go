@@ -286,18 +286,13 @@ func (ctx *Context) RequestHeader(k string) string {
 	return utils.BytesToString(ctx.RequestCtx.Request.Header.Peek(k))
 }
 
-// PostFormValue returns a single value from post request's data
-func (ctx *Context) PostFormValue(name string) string {
-	return ctx.FormValueString(name)
-}
-
 // FormValueString returns a single value, as string, from post request's data
 func (ctx *Context) FormValueString(name string) string {
 	return string(ctx.FormValue(name))
 }
 
-// PostFormMulti returns a slice of string from post request's data
-func (ctx *Context) PostFormMulti(name string) []string {
+// FormValues returns a slice of string from post request's data
+func (ctx *Context) FormValues(name string) []string {
 	arrBytes := ctx.PostArgs().PeekMulti(name)
 	arrStr := make([]string, len(arrBytes))
 	for i, v := range arrBytes {

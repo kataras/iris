@@ -74,7 +74,7 @@ func ExamplePlugins_Add() {
 	fmt.Println(desc)
 
 	ListenVirtual()
-	CloseWithErr()
+	Close()
 
 	// Output:
 	// GetName Struct
