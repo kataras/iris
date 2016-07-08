@@ -744,15 +744,20 @@ func (ctx *Context) SetCookieKV(key, value string) {
 
 // RemoveCookie deletes a cookie by it's name/key
 func (ctx *Context) RemoveCookie(name string) {
+	ctx.Response.Header.DelCookie(name)
+
 	cookie := fasthttp.AcquireCookie()
 	cookie.SetKey(name)
 	cookie.SetValue("")
 	cookie.SetPath("/")
 	cookie.SetHTTPOnly(true)
-	exp := time.Now().Add(-time.Duration(1) * time.Minute) //RFC says 1 second, but make sure 1 minute because we are using fasthttp
+	exp := time.Now().Add(-time.Duration(1) * time.Minute) //RFC says 1 second, but let's do it 1 minute to make sure is working...
 	cookie.SetExpire(exp)
 	ctx.Response.Header.SetCookie(cookie)
 	fasthttp.ReleaseCookie(cookie)
+	// delete respone's cookie also, which is temporarly available
+	ctx.Request.Header.DelCookie(name)
+
 }
 
 // GetFlashes returns all the flash messages for available for this request

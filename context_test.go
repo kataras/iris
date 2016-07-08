@@ -447,8 +447,13 @@ func TestContextFlashMessages(t *testing.T) {
 	Get("/get_last_flash", func(ctx *Context) {
 		for i, v := range values {
 			if i == len(values)-1 {
-				val, _ := ctx.GetFlash(v.Key)
-				ctx.JSON(StatusOK, map[string]string{v.Key: val})
+				val, err := ctx.GetFlash(v.Key)
+				if err == nil {
+					ctx.JSON(StatusOK, map[string]string{v.Key: val})
+				} else {
+					ctx.JSON(StatusOK, nil) // return nil
+				}
+
 			}
 		}
 	})
@@ -576,6 +581,10 @@ func TestContextSessions(t *testing.T) {
 		// the cookie and all values should be empty
 	})
 
+	// request cookie should be empty
+	Get("/after_destroy", func(ctx *Context) {
+	})
+
 	e := Tester(t)
 
 	e.POST("/set").WithJSON(values).Expect().Status(StatusOK).Cookies().NotEmpty()
@@ -588,7 +597,10 @@ func TestContextSessions(t *testing.T) {
 	// test destory which also clears first
 	d := e.GET("/destroy").Expect().Status(StatusOK)
 	d.JSON().Object().Empty()
-	d.Cookies().ContainsOnly(Config.Sessions.Cookie)
+	// 	This removed: d.Cookies().Empty(). Reason:
+	// httpexpect counts the cookies setted or deleted at the response time, but cookie is not removed, to be really removed needs to SetExpire(now-1second) so,
+	// test if the cookies removed on the next request, like the browser's behavior.
+	e.GET("/after_destroy").Expect().Status(StatusOK).Cookies().Empty()
 	// set and clear again
 	e.POST("/set").WithJSON(values).Expect().Status(StatusOK).Cookies().NotEmpty()
 	e.GET("/clear").Expect().Status(StatusOK).JSON().Object().Empty()
