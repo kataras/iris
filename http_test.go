@@ -103,6 +103,24 @@ func TestServerHostname(t *testing.T) {
 	}
 }
 
+func TestServerFullHost(t *testing.T) {
+	var server1 Server
+	var server2 Server
+	server1.Config.ListeningAddr = "127.0.0.1:8080"
+	server1.Config.CertFile = "notempty"
+	server1.Config.KeyFile = "notempty"
+	server2.Config.ListeningAddr = "127.0.0.1:8080"
+	server1ExpectingFullhost := "https://" + server1.Config.ListeningAddr
+	server2ExpectingFullhost := "http://" + server2.Config.ListeningAddr
+	if server1.FullHost() != server1ExpectingFullhost {
+		t.Fatalf("Expecting server 1's fullhost to be %s but got %s", server1ExpectingFullhost, server1.FullHost())
+	}
+	if server2.FullHost() != server2ExpectingFullhost {
+		t.Fatalf("Expecting server 2's fullhost to be %s but got %s", server2ExpectingFullhost, server2.FullHost())
+	}
+
+}
+
 func TestServerPort(t *testing.T) {
 	var server1, server2 Server
 	expectedPort1 := 8080

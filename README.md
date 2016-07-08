@@ -139,9 +139,8 @@ I recommend writing your API tests using this new library, [httpexpect](https://
 Versioning
 ------------
 
-Current: **v3.0.0-pre.release**
+Current: **v3.0.0**
 >  Iris is an active project
-
 
 Read more about Semantic Versioning 2.0.0
 
@@ -152,13 +151,20 @@ Read more about Semantic Versioning 2.0.0
 
 Todo
 ------------
-> for the next release 'v3'
+> for the next version 'v4'
+
+- [ ] Refactor & extend view engine, separate the engines from the main code base, easier for the community to create new view engines.
+- [ ] Create a router as optional plugin, for optional path parts. Its name, 'ryan', taken from the community-member and donator who requested this feature.
+- [ ] Extend the iris control plugin
+- [ ] Remove deprecated functions.
+
+> completed for release 'v3'
 
 - [x] [Dynamic/Wildcard subdomains](https://kataras.gitbooks.io/iris/content/subdomains.html)
 - [x] [Create server & client side](https://kataras.gitbooks.io/iris/content/package-websocket.html) (js) library for .on('event', func action(...)) / .emit('event')... (like socket.io but supports only websocket)
-- [x] [Create a view system](https://kataras.gitbooks.io/iris/content/render_templates.html) supporting different types of template engines
+- [x] [Create a view engines system](https://kataras.gitbooks.io/iris/content/render_templates.html) supporting different types of template engines
 - [x] Extend, test and publish to the public the [Iris' cmd](https://github.com/kataras/iris/tree/master/iris)[*](https://github.com/kataras/rizla)
-- [ ] Complete the API tests, community can help also, tests are located [here](https://github.com/iris-contrib/tests).
+- [x] Complete the API tests, community can help also, tests are located [here](https://github.com/iris-contrib/tests).
 
 
 If you're **willing to donate** click [here](DONATIONS.md)!
@@ -185,7 +191,7 @@ License can be found [here](LICENSE).
 [Travis]: http://travis-ci.org/kataras/iris
 [License Widget]: https://img.shields.io/badge/license-MIT%20%20License%20-E91E63.svg?style=flat-square
 [License]: https://github.com/kataras/iris/blob/master/LICENSE
-[Release Widget]: https://img.shields.io/badge/release-v3.0.0--pre.release-blue.svg?style=flat-square
+[Release Widget]: https://img.shields.io/badge/release-v3.0.0-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/iris/releases
 [Chat Widget]: https://img.shields.io/badge/community-chat-00BCD4.svg?style=flat-square
 [Chat]: https://kataras.rocket.chat/channel/iris

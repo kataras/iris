@@ -315,14 +315,19 @@ func (s *Server) Port() (port int) {
 	return
 }
 
-// FullHost returns the scheme+host
-func (s *Server) FullHost() string {
+// Scheme returns http:// or https:// if SSL is enabled
+func (s *Server) Scheme() string {
 	scheme := "http://"
 	// we need to be able to take that before(for testing &debugging) and after server's listen
 	if s.IsSecure() || (s.Config.CertFile != "" && s.Config.KeyFile != "") {
 		scheme = "https://"
 	}
-	return scheme + s.Host()
+	return scheme
+}
+
+// FullHost returns the scheme+host
+func (s *Server) FullHost() string {
+	return s.Scheme() + s.Host()
 }
 
 // Hostname returns the hostname part of the host (host expect port)
@@ -850,7 +855,7 @@ func (e *muxEntry) add(path string, middleware Middleware) error {
 
 					if len(path) >= len(e.part) && e.part == path[:len(e.part)] {
 
-						if len(e.part) >= len(path) || path[len(e.part)] == '/' {
+						if len(e.part) >= len(path) || path[len(e.part)] == slashByte {
 							continue loop
 						}
 					}
@@ -859,7 +864,7 @@ func (e *muxEntry) add(path string, middleware Middleware) error {
 
 				c := path[0]
 
-				if e.entryCase == hasParams && c == '/' && len(e.nodes) == 1 {
+				if e.entryCase == hasParams && c == slashByte && len(e.nodes) == 1 {
 					e = e.nodes[0]
 					e.precedence++
 					continue loop
@@ -1148,8 +1153,12 @@ type (
 		Method() string
 		// Path returns the path
 		Path() string
+		// SetPath changes/sets the path for this route
+		SetPath(string)
 		// Middleware returns the slice of Handler([]Handler) registed to this route
 		Middleware() Middleware
+		// SetMiddleware changes/sets the middleware(handler(s)) for this route
+		SetMiddleware(Middleware)
 	}
 
 	route struct {
@@ -1239,8 +1248,16 @@ func (r route) Path() string {
 	return r.path
 }
 
+func (r *route) SetPath(s string) {
+	r.path = s
+}
+
 func (r route) Middleware() Middleware {
 	return r.middleware
+}
+
+func (r *route) SetMiddleware(m Middleware) {
+	r.middleware = m
 }
 
 const (
@@ -1264,6 +1281,8 @@ type (
 		cPool   *sync.Pool
 		tree    *muxTree
 		lookups []*route
+
+		onLookup func(Route)
 
 		api           *muxAPI
 		errorHandlers map[int]Handler
@@ -1360,6 +1379,9 @@ func (mux *serveMux) register(method []byte, subdomain string, path string, midd
 
 	// add to the lookups, it's just a collection of routes information
 	lookup := newRoute(method, subdomain, path, middleware)
+	if mux.onLookup != nil {
+		mux.onLookup(lookup)
+	}
 	mux.lookups = append(mux.lookups, lookup)
 
 	return lookup

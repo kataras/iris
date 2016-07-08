@@ -53,6 +53,13 @@ type (
 		// PluginContainer parameter used to add other plugins if that's necessary by the plugin
 		Activate(PluginContainer) error
 	}
+	// pluginPreLookup implements the PreRoute(Route) method
+	pluginPreLookup interface {
+		// PreLookup called before register a route
+		PreLookup(Route)
+	}
+	// PreLookupFunc implements the simple function listener for the PreLookup(Route)
+	PreLookupFunc func(Route)
 	// pluginPreListen implements the PreListen(*Framework) method
 	pluginPreListen interface {
 		// PreListen it's being called only one time, BEFORE the Server is started (if .Listen called)
@@ -105,6 +112,8 @@ type (
 		GetDescription(Plugin) string
 		GetByName(string) Plugin
 		Printf(string, ...interface{})
+		PreLookup(PreLookupFunc)
+		DoPreLookup(Route)
 		PreListen(PreListenFunc)
 		DoPreListen(*Framework)
 		DoPreListenParallel(*Framework)
@@ -147,6 +156,11 @@ type (
 )
 
 // convert the functions to plugin
+
+// PreLookup called before register a route
+func (fn PreLookupFunc) PreLookup(r Route) {
+	fn(r)
+}
 
 // PreListen it's being called only one time, BEFORE the Server is started (if .Listen called)
 // is used to do work at the time all other things are ready to go
@@ -339,12 +353,27 @@ func (p *pluginContainer) Printf(format string, a ...interface{}) {
 
 }
 
+// PreLookup adds a PreLookup plugin-function to the plugin flow container
+func (p *pluginContainer) PreLookup(fn PreLookupFunc) {
+	p.Add(fn)
+}
+
+// DoPreLookup raise all plugins which has the PreLookup method
+func (p *pluginContainer) DoPreLookup(r Route) {
+	for i := range p.activatedPlugins {
+		// check if this method exists on our plugin obj, these are optionaly and call it
+		if pluginObj, ok := p.activatedPlugins[i].(pluginPreLookup); ok {
+			pluginObj.PreLookup(r)
+		}
+	}
+}
+
 // PreListen adds a PreListen plugin-function to the plugin flow container
 func (p *pluginContainer) PreListen(fn PreListenFunc) {
 	p.Add(fn)
 }
 
-// DoPreListen raise all plugins which has the DoPreListen method
+// DoPreListen raise all plugins which has the PreListen method
 func (p *pluginContainer) DoPreListen(station *Framework) {
 	for i := range p.activatedPlugins {
 		// check if this method exists on our plugin obj, these are optionaly and call it

@@ -68,6 +68,40 @@ func (s *Framework) CloseWithErr() error {
 	return s.Close()
 }
 
+// MustUse registers Handler middleware  to the beginning, prepends them instead of append
+// DEPRECATED: use UseGlobal instead
+// Use it when you want to add a global middleware to all parties, to all routes in  all subdomains
+// It can be called after other, (but before .Listen of course)
+func MustUse(handlers ...Handler) {
+	Default.MustUse(handlers...)
+}
+
+// MustUseFunc registers HandlerFunc middleware  to the beginning, prepends them instead of append
+// DEPRECATED: use UseGlobalFunc instead
+// Use it when you want to add a global middleware to all parties, to all routes in  all subdomains
+// It can be called after other, (but before .Listen of course)
+func MustUseFunc(handlersFn ...HandlerFunc) {
+	Default.MustUseFunc(handlersFn...)
+}
+
+// MustUse registers Handler middleware  to the beginning, prepends them instead of append
+// DEPRECATED: use UseGlobal instead
+// Use it when you want to add a global middleware to all parties, to all routes in  all subdomains
+// It can be called after other, (but before .Listen of course)
+func (s *Framework) MustUse(handlers ...Handler) {
+	for _, r := range s.mux.lookups {
+		r.middleware = append(handlers, r.middleware...)
+	}
+}
+
+// MustUseFunc registers HandlerFunc middleware to the beginning, prepends them instead of append
+// DEPRECATED: use UseGlobalFunc instead
+// Use it when you want to add a global middleware to all parties, to all routes in  all subdomains
+// It can be called after other, (but before .Listen of course)
+func (s *Framework) MustUseFunc(handlersFn ...HandlerFunc) {
+	s.MustUse(convertToHandlers(handlersFn)...)
+}
+
 // PostFormMulti returns a slice of string from post request's data
 // DEPRECATED: Plase use FormValues instead
 func (ctx *Context) PostFormMulti(name string) []string {
