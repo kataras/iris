@@ -755,7 +755,7 @@ func (ctx *Context) RemoveCookie(name string) {
 	cookie.SetExpire(exp)
 	ctx.Response.Header.SetCookie(cookie)
 	fasthttp.ReleaseCookie(cookie)
-	// delete respone's cookie also, which is temporarly available
+	// delete request's cookie also, which is temporarly available
 	ctx.Request.Header.DelCookie(name)
 
 }
