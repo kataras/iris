@@ -1153,10 +1153,12 @@ type (
 		Method() string
 		// Path returns the path
 		Path() string
-		// SetPath changes/sets the path for the Route
+		// SetPath changes/sets the path for this route
 		SetPath(string)
 		// Middleware returns the slice of Handler([]Handler) registed to this route
 		Middleware() Middleware
+		// SetMiddleware changes/sets the middleware(handler(s)) for this route
+		SetMiddleware(Middleware)
 	}
 
 	route struct {
@@ -1252,6 +1254,10 @@ func (r *route) SetPath(s string) {
 
 func (r route) Middleware() Middleware {
 	return r.middleware
+}
+
+func (r *route) SetMiddleware(m Middleware) {
+	r.middleware = m
 }
 
 const (

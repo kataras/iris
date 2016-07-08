@@ -81,7 +81,7 @@ import (
 
 const (
 	// Version of the iris
-	Version = "3.0.0-pre.release"
+	Version = "3.0.0"
 
 	// HTMLEngine conversion for config.HTMLEngine
 	HTMLEngine = config.HTMLEngine
