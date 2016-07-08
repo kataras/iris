@@ -427,8 +427,13 @@ func TestContextFlashMessages(t *testing.T) {
 	// get the first flash, the next should be avaiable to the next requess
 	Get("/get_first_flash", func(ctx *Context) {
 		for _, v := range values {
-			val, _ := ctx.GetFlash(v.Key)
-			ctx.JSON(StatusOK, map[string]string{v.Key: val})
+			val, err := ctx.GetFlash(v.Key)
+			if err == nil {
+				ctx.JSON(StatusOK, map[string]string{v.Key: val})
+			} else {
+				ctx.JSON(StatusOK, nil) // return nil
+			}
+
 			break
 		}
 
@@ -516,6 +521,12 @@ func TestContextFlashMessages(t *testing.T) {
 	g.JSON().Null()
 	g.Cookies().Empty()
 
+	// test Get, and get again should return nothing
+	e.PUT("/set").Expect().Status(StatusOK).Cookies().NotEmpty()
+	e.GET("/get_first_flash").Expect().Status(StatusOK).JSON().Object().ContainsKey(firstKey).NotContainsKey(lastKey)
+	g = e.GET("/get_first_flash").Expect().Status(StatusOK)
+	g.JSON().Null()
+	g.Cookies().Empty()
 }
 
 func TestContextSessions(t *testing.T) {
