@@ -3,10 +3,9 @@ package main
 import (
 	"os"
 
+	"github.com/iris-contrib/logger"
 	"github.com/kataras/cli"
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/config"
-	"github.com/kataras/iris/logger"
 )
 
 const (
@@ -49,7 +48,7 @@ func init() {
 	app.Command(runAndWatchCmd)
 
 	// init the logger
-	printer = logger.New(config.DefaultLogger())
+	printer = logger.New(logger.DefaultConfig())
 }
 
 func main() {

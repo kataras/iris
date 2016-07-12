@@ -1,6 +1,9 @@
 package config
 
-import "github.com/imdario/mergo"
+import (
+	"github.com/imdario/mergo"
+	"github.com/iris-contrib/rest"
+)
 
 // Default values for base Iris conf
 const (
@@ -86,15 +89,11 @@ type (
 		// default is false
 		IsDevelopment bool
 
-		// Logger the configuration for the logger
-		// Iris logs ONLY SEMANTIC errors and the banner if enabled
-		Logger Logger
-
 		// Sessions contains the configs for sessions
 		Sessions Sessions
 
 		// Rest contains the configs for rest render configuration
-		Rest Rest
+		Rest rest.Config
 
 		// Websocket contains the configs for Websocket's server integration
 		Websocket *Websocket
@@ -113,9 +112,8 @@ func Default() Iris {
 		DisableTemplateEngines: false,
 		IsDevelopment:          false,
 		ProfilePath:            "",
-		Logger:                 DefaultLogger(),
 		Sessions:               DefaultSessions(),
-		Rest:                   DefaultRest(),
+		Rest:                   rest.DefaultConfig(),
 		Websocket:              DefaultWebsocket(),
 		Tester:                 DefaultTester(),
 	}

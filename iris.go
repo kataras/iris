@@ -65,11 +65,11 @@ import (
 
 	"github.com/gavv/httpexpect"
 	"github.com/iris-contrib/errors"
+	"github.com/iris-contrib/logger"
+	"github.com/iris-contrib/rest"
 	"github.com/iris-contrib/template/html"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/logger"
-	"github.com/kataras/iris/rest"
 	"github.com/kataras/iris/sessions"
 	"github.com/kataras/iris/utils"
 	"github.com/kataras/iris/websocket"
@@ -172,8 +172,9 @@ type (
 
 		// fields which are useful to the user/dev
 		// the last  added server is the main server
-		Servers   *ServerList
-		Config    *config.Iris
+		Servers *ServerList
+		Config  *config.Iris
+		// configuration by instance.Logger.Config
 		Logger    *logger.Logger
 		Plugins   PluginContainer
 		Websocket websocket.Server
@@ -198,7 +199,7 @@ func New(cfg ...config.Iris) *Framework {
 	{
 		///NOTE: set all with s.Config pointer
 		// set the Logger
-		s.Logger = logger.New(s.Config.Logger)
+		s.Logger = logger.New(logger.DefaultConfig())
 		// set the plugin container
 		s.Plugins = &pluginContainer{logger: s.Logger}
 		// set the templates

@@ -234,7 +234,7 @@ func (t *TemplateEngines) Add(e TemplateEngine) *TemplateEngineLocation {
 	tmplEngine := &TemplateEngineWrapper{
 		TemplateEngine: e,
 		location:       location,
-		buffer:         utils.NewBufferPool(64),
+		buffer:         utils.NewBufferPool(20),
 		gzipWriterPool: sync.Pool{New: func() interface{} {
 			return &gzip.Writer{}
 		}},

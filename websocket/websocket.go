@@ -1,9 +1,9 @@
 package websocket
 
 import (
+	"github.com/iris-contrib/logger"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/logger"
 )
 
 // to avoid the import cycle to /kataras/iris. The ws package is used inside iris' station configuration

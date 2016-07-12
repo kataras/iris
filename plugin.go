@@ -5,7 +5,7 @@ import (
 
 	"github.com/iris-contrib/errors"
 
-	"github.com/kataras/iris/logger"
+	"github.com/iris-contrib/logger"
 	"github.com/kataras/iris/utils"
 )
 
