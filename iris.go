@@ -352,8 +352,19 @@ func ListenTo(cfg config.Server) error {
 // ListenTo listens to a server but receives the full server's configuration
 // it's a blocking func
 func (s *Framework) ListenTo(cfg config.Server) (err error) {
-	c := config.DefaultServer().MergeSingle(cfg)
-	s.Servers.Add(c)
+	if cfg.ReadBufferSize == 0 {
+		cfg.ReadBufferSize = config.DefaultReadBufferSize
+	}
+	if cfg.WriteBufferSize == 0 {
+		cfg.WriteBufferSize = config.DefaultWriteBufferSize
+	}
+	if cfg.MaxRequestBodySize == 0 {
+		cfg.MaxRequestBodySize = config.DefaultMaxRequestBodySize
+	}
+	if cfg.ListeningAddr == "" {
+		cfg.ListeningAddr = config.DefaultServerAddr
+	}
+	s.Servers.Add(cfg)
 	return s.Go()
 }
 
