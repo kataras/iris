@@ -399,9 +399,9 @@ func (s *Server) Open(h fasthttp.RequestHandler) error {
 
 	s.prepare() // do it again for any case
 
-	if s.Config.MaxRequestBodySize > config.DefaultMaxRequestBodySize {
-		s.Server.MaxRequestBodySize = int(s.Config.MaxRequestBodySize)
-	}
+	s.Server.MaxRequestBodySize = s.Config.MaxRequestBodySize
+	s.Server.ReadBufferSize = s.Config.ReadBufferSize
+	s.Server.WriteBufferSize = s.Config.WriteBufferSize
 
 	if s.Config.RedirectTo != "" {
 		// override the handler and redirect all requests to this addr

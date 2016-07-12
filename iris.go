@@ -372,6 +372,8 @@ func ListenTo(cfg config.Server) error {
 // it's a blocking func
 func (s *Framework) ListenTo(cfg config.Server) (err error) {
 	s.Servers.Add(cfg)
+	c := config.DefaultServer().MergeSingle(cfg)
+	s.Servers.Add(c)
 	return s.Go()
 }
 
