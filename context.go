@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"html/template"
 	"io"
 	"net"
 	"os"
@@ -476,23 +475,23 @@ func (ctx *Context) Data(status int, v []byte) error {
 
 // RenderWithStatus builds up the response from the specified template and bindings.
 // Note: parameter layout has meaning only when using the iris.HTMLTemplate
-func (ctx *Context) RenderWithStatus(status int, name string, binding interface{}, layout ...string) error {
+func (ctx *Context) RenderWithStatus(status int, name string, binding interface{}, options ...map[string]interface{}) error {
 	ctx.SetStatusCode(status)
-	return ctx.framework.templates.Render(ctx, name, binding, layout...)
+	return ctx.framework.templates.GetBy(name).Execute(ctx, name, binding, options...)
 }
 
 // Render same as .RenderWithStatus but with status to iris.StatusOK (200)
-func (ctx *Context) Render(name string, binding interface{}, layout ...string) error {
+func (ctx *Context) Render(name string, binding interface{}, options ...map[string]interface{}) error {
 	errCode := ctx.RequestCtx.Response.StatusCode()
 	if errCode <= 0 {
 		errCode = StatusOK
 	}
-	return ctx.RenderWithStatus(errCode, name, binding, layout...)
+	return ctx.RenderWithStatus(errCode, name, binding, options...)
 }
 
 // MustRender same as .Render but returns 500 internal server http status (error) if rendering fail
-func (ctx *Context) MustRender(name string, binding interface{}, layout ...string) {
-	if err := ctx.Render(name, binding, layout...); err != nil {
+func (ctx *Context) MustRender(name string, binding interface{}, options ...map[string]interface{}) {
+	if err := ctx.Render(name, binding, options...); err != nil {
 		ctx.Panic()
 		ctx.framework.Logger.Dangerf("MustRender panics for client with IP: %s On template: %s.Trace: %s\n", ctx.RemoteAddr(), name, err)
 	}
@@ -500,8 +499,8 @@ func (ctx *Context) MustRender(name string, binding interface{}, layout ...strin
 
 // TemplateString accepts a template filename, its context data and returns the result of the parsed template (string)
 // if any error returns empty string
-func (ctx *Context) TemplateString(name string, binding interface{}, layout ...string) string {
-	return ctx.framework.TemplateString(name, binding, layout...)
+func (ctx *Context) TemplateString(name string, binding interface{}, options ...map[string]interface{}) string {
+	return ctx.framework.TemplateString(name, binding, options...)
 }
 
 // JSON marshals the given interface object and writes the JSON response.
@@ -535,17 +534,6 @@ func (ctx *Context) MarkdownString(markdownText string) string {
 // second is the markdown string
 func (ctx *Context) Markdown(status int, markdown string) {
 	ctx.HTML(status, ctx.MarkdownString(markdown))
-}
-
-// ExecuteTemplate executes a simple html template, you can use that if you already have the cached templates
-// the recommended way to render is to use iris.Templates("./templates/path/*.html") and ctx.RenderFile("filename.html",struct{})
-// accepts 2 parameters
-// the first parameter is the template (*template.Template)
-// the second parameter is the page context (interfac{})
-// returns an error if any errors occurs while executing this template
-func (ctx *Context) ExecuteTemplate(tmpl *template.Template, pageContext interface{}) error {
-	ctx.RequestCtx.SetContentType(contentHTML + ctx.framework.rest.CompiledCharset)
-	return errTemplateExecute.With(tmpl.Execute(ctx.RequestCtx.Response.BodyWriter(), pageContext))
 }
 
 // ServeContent serves content, headers are autoset

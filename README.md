@@ -139,7 +139,7 @@ I recommend writing your API tests using this new library, [httpexpect](https://
 Versioning
 ------------
 
-Current: **v3.0.0**
+Current: **v4.0.0-alpha.1**
 >  Iris is an active project
 
 Read more about Semantic Versioning 2.0.0
@@ -153,7 +153,8 @@ Todo
 ------------
 > for the next version 'v4'
 
-- [ ] Refactor & extend view engine, separate the engines from the main code base, easier for the community to create new view engines.
+- [x] Refactor & extend view engine, separate the engines from the main code base, easier for the community to create new view engines.
+- [ ] Extend i18n middleware for easier and better internalization support
 - [ ] Create a router as optional plugin, for optional path parts. Its name, 'ryan', taken from the community-member and donator who requested this feature.
 - [ ] Extend the iris control plugin
 - [ ] Remove deprecated functions.
@@ -191,7 +192,7 @@ License can be found [here](LICENSE).
 [Travis]: http://travis-ci.org/kataras/iris
 [License Widget]: https://img.shields.io/badge/license-MIT%20%20License%20-E91E63.svg?style=flat-square
 [License]: https://github.com/kataras/iris/blob/master/LICENSE
-[Release Widget]: https://img.shields.io/badge/release-v3.0.0-blue.svg?style=flat-square
+[Release Widget]: https://img.shields.io/badge/release-v4.0.0--alpha.1-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/iris/releases
 [Chat Widget]: https://img.shields.io/badge/community-chat-00BCD4.svg?style=flat-square
 [Chat]: https://kataras.rocket.chat/channel/iris

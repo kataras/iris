@@ -78,6 +78,13 @@ type (
 		// http://debug.yourdomain:PORT/threadcreate
 		// http://debug.yourdomain:PORT/pprof/block
 		ProfilePath string
+		// DisableTemplateEngines set to true to disable loading the default template engine (html/template) and disallow the use of iris.UseEngine
+		// default is false
+		DisableTemplateEngines bool
+		// IsDevelopment iris will act like a developer, for example
+		// If true then re-builds the templates on each request
+		// default is false
+		IsDevelopment bool
 
 		// Logger the configuration for the logger
 		// Iris logs ONLY SEMANTIC errors and the banner if enabled
@@ -86,8 +93,8 @@ type (
 		// Sessions contains the configs for sessions
 		Sessions Sessions
 
-		// Render contains the configs for template and rest configuration
-		Render Render
+		// Rest contains the configs for rest render configuration
+		Rest Rest
 
 		// Websocket contains the configs for Websocket's server integration
 		Websocket *Websocket
@@ -95,41 +102,22 @@ type (
 		// Tester contains the configs for the test framework, so far we have only one because all test framework's configs are setted by the iris itself
 		Tester Tester
 	}
-
-	// Render struct keeps organise all configuration about rendering, templates and rest currently.
-	Render struct {
-		// Template the configs for template
-		Template Template
-		// Rest configs for rendering.
-		//
-		// these options inside this config don't have any relation with the TemplateEngine
-		// from github.com/kataras/iris/rest
-		Rest Rest
-	}
 )
-
-// DefaultRender returns default configuration for templates and rest rendering
-func DefaultRender() Render {
-	return Render{
-		// set the default template config both not nil and default Engine to Standar
-		Template: DefaultTemplate(),
-		// set the default configs for rest
-		Rest: DefaultRest(),
-	}
-}
 
 // Default returns the default configuration for the Iris staton
 func Default() Iris {
 	return Iris{
-		DisablePathCorrection: DefaultDisablePathCorrection,
-		DisablePathEscape:     DefaultDisablePathEscape,
-		DisableBanner:         false,
-		ProfilePath:           "",
-		Logger:                DefaultLogger(),
-		Sessions:              DefaultSessions(),
-		Render:                DefaultRender(),
-		Websocket:             DefaultWebsocket(),
-		Tester:                DefaultTester(),
+		DisablePathCorrection:  DefaultDisablePathCorrection,
+		DisablePathEscape:      DefaultDisablePathEscape,
+		DisableBanner:          false,
+		DisableTemplateEngines: false,
+		IsDevelopment:          false,
+		ProfilePath:            "",
+		Logger:                 DefaultLogger(),
+		Sessions:               DefaultSessions(),
+		Rest:                   DefaultRest(),
+		Websocket:              DefaultWebsocket(),
+		Tester:                 DefaultTester(),
 	}
 }
 
@@ -158,18 +146,3 @@ func (c Iris) MergeSingle(cfg Iris) (config Iris) {
 
 	return
 }
-
-/* maybe some day
-// FromFile returns the configuration for Iris station
-//
-// receives one parameter
-// pathIni(string) the file path of the configuration-ini style
-//
-// returns an error if something bad happens
-func FromFile(pathIni string) (c Iris, err error) {
-	c = Iris{}
-	err = ini.MapTo(&c, pathIni)
-
-	return
-}
-*/

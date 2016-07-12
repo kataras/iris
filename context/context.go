@@ -2,7 +2,6 @@ package context
 
 import (
 	"bufio"
-	"html/template"
 	"io"
 	"time"
 
@@ -46,17 +45,16 @@ type (
 		Write(string, ...interface{})
 		HTML(int, string)
 		Data(int, []byte) error
-		RenderWithStatus(int, string, interface{}, ...string) error
-		Render(string, interface{}, ...string) error
-		MustRender(string, interface{}, ...string)
-		TemplateString(string, interface{}, ...string) string
+		RenderWithStatus(int, string, interface{}, ...map[string]interface{}) error
+		Render(string, interface{}, ...map[string]interface{}) error
+		MustRender(string, interface{}, ...map[string]interface{})
+		TemplateString(string, interface{}, ...map[string]interface{}) string
 		MarkdownString(string) string
 		Markdown(int, string)
 		JSON(int, interface{}) error
 		JSONP(int, string, interface{}) error
 		Text(int, string) error
 		XML(int, interface{}) error
-		ExecuteTemplate(*template.Template, interface{}) error
 		ServeContent(io.ReadSeeker, string, time.Time, bool) error
 		ServeFile(string, bool) error
 		SendFile(string, string) error
