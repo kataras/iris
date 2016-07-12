@@ -2,6 +2,23 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras/iris` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+
+## 3.0.0 -> 4.0.0-alpha.1
+
+[logger](https://github.com/iris-contrib/logger), [rest](https://github.com/iris-contrib/rest) and all [template engines](https://github.com/iris-contrib/template) **moved** to the [iris-contrib](https://github.com/iris-contrib).
+
+- `config.Logger` -> `iris.Logger.Config`
+- `config.Render/config.Render.Rest/config.Render.Template` -> **Removed**
+- `config.Render.Rest` -> `rest.Config`
+- `config.Render.Template` -> `$TEMPLATE_ENGINE.Config` except Directory,Extensions, Assets, AssetNames,
+- `config.Render.Template.Directory` -> `iris.UseEngine($TEMPLAET_ENGINE.New()).Directory("./templates", ".html")`
+- `config.Render.Template.Assets` -> `iris.UseEngine($TEMPLAET_ENGINE.New()).Directory("./templates",".html").Binary(assetFn func(name string) ([]byte, error), namesFn func() []string)`
+
+- `context.ExecuteTemplate` -> **Removed**, you can use the `context.Response.BodyWriter()` to get its writer and execute html/template engine manually, but this is useless because we support the best support for template engines among all other (golang) web frameworks
+- **Added** `config.Server.ReadBufferSize & config.Server.WriteBufferSize` which can be passed as configuration fields inside `iris.ListenTo(config.Server{...})`, which does the same job as `iris.Listen`
+- **Added** `iris.UseEngine($TEMPLAET_ENGINE.New()).Directory("./templates", ".html")` to register a template engine, now iris supports multi template engines, each template engine has its own file extension, no big changes on context.Render except the last parameter:
+- `context.Render(filename string, binding interface{}, layout string{})` -> `context.Render(filename string, binding interface{}, options ...map[string]interface{})  | context.Render("myfile.html", myPage{}, iris.Map{"gzip":true,"layout":"layouts/MyLayout.html"}) |`
+
 ## 3.0.0-rc.4 -> 3.0.0-pre.release
 
 - `context.PostFormValue` -> `context.FormValueString`, old func stays until the next revision

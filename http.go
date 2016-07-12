@@ -262,9 +262,11 @@ func newServer(cfg config.Server) *Server {
 // prepare just prepares the listening addr
 func (s *Server) prepare() {
 	s.Config.ListeningAddr = config.ServerParseAddr(s.Config.ListeningAddr)
-	s.Server.MaxRequestBodySize = s.Config.MaxRequestBodySize
-	s.Server.ReadBufferSize = s.Config.ReadBufferSize
-	s.Server.WriteBufferSize = s.Config.WriteBufferSize
+	if s.Server != nil {
+		s.Server.MaxRequestBodySize = s.Config.MaxRequestBodySize
+		s.Server.ReadBufferSize = s.Config.ReadBufferSize
+		s.Server.WriteBufferSize = s.Config.WriteBufferSize
+	}
 }
 
 // IsListening returns true if server is listening/started, otherwise false
