@@ -352,7 +352,8 @@ func ListenTo(cfg config.Server) error {
 // ListenTo listens to a server but receives the full server's configuration
 // it's a blocking func
 func (s *Framework) ListenTo(cfg config.Server) (err error) {
-	s.Servers.Add(cfg)
+	c := config.DefaultServer().MergeSingle(cfg)
+	s.Servers.Add(c)
 	return s.Go()
 }
 
