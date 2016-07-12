@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/imdario/mergo"
-	"github.com/kataras/fasthttp"
+	"github.com/valyala/fasthttp"
 )
 
 // Default values for base Server conf, can be changed for global use
