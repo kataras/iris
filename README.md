@@ -146,12 +146,15 @@ Versioning
 ------------
 
 Current: **v4.0.0-alpha.1**
+
 >  Iris is an active project
+
+- For a more 'stable' release take a look at the [version 3](https://github.com/kataras/iris/tree/v3), which keeps its [e-book](http://iris-go.com/assets/v3-book/iris.pdf) and [examples](https://github.com/iris-contrib/examples/tree/v3).
 
 
 Todo
 ------------
-> for the next version 'v4'
+> for 'v4'
 
 - [x] Refactor & extend view engine, separate the engines from the main code base, easier for the community to create new view engines
 - [ ] Implement all [opened community's feature requests](https://github.com/kataras/iris/issues?q=is%3Aissue+is%3Aopen+label%3A%22feature+request%22)
@@ -160,15 +163,6 @@ Todo
 - [ ] Extend the iris control plugin
 - [x] Remove deprecated functions
 - [ ] Will think more :)
-
-> completed for release 'v3'
-
-- [x] [Dynamic/Wildcard subdomains](https://kataras.gitbooks.io/iris/content/subdomains.html)
-- [x] [Create server & client side](https://kataras.gitbooks.io/iris/content/package-websocket.html) (js) library for .on('event', func action(...)) / .emit('event')... (like socket.io but supports only websocket)
-- [x] [Create a view engines system](https://kataras.gitbooks.io/iris/content/render_templates.html) supporting different types of template engines
-- [x] Extend, test and publish to the public the [Iris' cmd](https://github.com/kataras/iris/tree/master/iris)[*](https://github.com/kataras/rizla)
-- [x] Complete the API tests, community can help also, tests are located [here](https://github.com/iris-contrib/tests).
-
 
 If you're **willing to donate** click [here](DONATIONS.md)!
 
