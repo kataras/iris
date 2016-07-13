@@ -76,6 +76,11 @@ var (
 )
 
 type (
+	// RenderOptions is a helper type for  the optional runtime options can be passed by user when Render
+	// an example of this is the "layout" or "gzip" option
+	// same as Map but more specific name
+	RenderOptions map[string]interface{}
+
 	// Map is just a conversion for a map[string]interface{}
 	// should not be used inside Render when PongoEngine is used.
 	Map map[string]interface{}
