@@ -22,7 +22,7 @@ func main() {
 		c.JSON(iris.StatusOK, iris.Map{
 			"Name":  "Iris",
 			"Born":  "13 March 2016",
-			"Stars": 4262,
+			"Stars": 4270,
 		})
 	})
 	iris.Listen(":8080")
@@ -158,7 +158,7 @@ Todo
 - [ ] Extend i18n middleware for easier and better internalization support
 - [ ] Create a router as optional plugin, for optional path parts. Its name, 'ryan', taken from the community-member and donator who requested this feature
 - [ ] Extend the iris control plugin
-- [ ] Remove deprecated functions
+- [x] Remove deprecated functions
 - [ ] Will think more :)
 
 > completed for release 'v3'

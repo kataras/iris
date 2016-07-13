@@ -172,7 +172,7 @@ func TestMultiRunningServers_v1(t *testing.T) {
 	})
 
 	// start the secondary server
-	SecondaryListen(config.Server{ListeningAddr: "mydomain.com:80", RedirectTo: "https://" + host, Virtual: true})
+	AddServer(config.Server{ListeningAddr: "mydomain.com:80", RedirectTo: "https://" + host, Virtual: true})
 	// start the main server
 	go ListenTo(config.Server{ListeningAddr: host, CertFile: certFile.Name(), KeyFile: keyFile.Name(), Virtual: true})
 	// prepare test framework

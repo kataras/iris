@@ -13,10 +13,6 @@ type (
 	// IContext the interface for the iris/context
 	// Used mostly inside packages which shouldn't be import ,directly, the kataras/iris.
 	IContext interface {
-		// deprecated Start
-		PostFormValue(string) string
-		PostFormMulti(string) []string
-		// deprecated End
 		Param(string) string
 		ParamInt(string) (int, error)
 		ParamInt64(string) (int64, error)

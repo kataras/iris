@@ -105,8 +105,8 @@ var (
 	//
 	// Note: it is a simple channel and decided to put it here and no inside HTTPServer, doesn't have statuses just true and false, simple as possible
 	// Where to use that?
-	// this is used on extreme cases when you don't know which .Listen/.NoListen will be called
-	// and you want to run/declare something external-not-Iris (all Iris functionality declared before .Listen/.NoListen) AFTER the server is started and plugins finished.
+	// this is used on extreme cases when you don't know which .Listen/.ListenVirtual will be called
+	// and you want to run/declare something external-not-Iris (all Iris functionality declared before .Listen/.ListenVirtual) AFTER the server is started and plugins finished.
 	// see the server_test.go for an example
 	Available chan bool
 )
@@ -144,11 +144,7 @@ type (
 		ListenVirtual(...string) *Server
 		Go() error
 		Close() error
-		// global middleware prepending, registers to all subdomains, to all parties, you can call it at the last also
-		// deprecated Start
-		MustUse(...Handler)
-		MustUseFunc(...HandlerFunc)
-		// deprecated End
+		UseTemplate(TemplateEngine) *TemplateEngineLocation
 		UseGlobal(...Handler)
 		UseGlobalFunc(...HandlerFunc)
 		OnError(int, HandlerFunc)
@@ -239,7 +235,7 @@ func (s *Framework) initialize() {
 		}
 		// check and prepare the templates
 		if len(s.templates.engines) == 0 { // no template engine is registered, let's use the default
-			s.UseEngine(html.New())
+			s.UseTemplate(html.New())
 		}
 		s.templates.setReload(s.Config.IsDevelopment)
 	}
@@ -489,15 +485,15 @@ s.renderer = &renderer{
 	contentType: s.Config.Render.Template.ContentType + "; " + s.Config.Render.Template.Charset,
 }*/
 
-// UseEngine adds a template engine to the iris view system
+// UseTemplate adds a template engine to the iris view system
 // it does not build/load them yet
-func UseEngine(e TemplateEngine) *TemplateEngineLocation {
-	return Default.UseEngine(e)
+func UseTemplate(e TemplateEngine) *TemplateEngineLocation {
+	return Default.UseTemplate(e)
 }
 
-// UseEngine adds a template engine to the iris view system
+// UseTemplate adds a template engine to the iris view system
 // it does not build/load them yet
-func (s *Framework) UseEngine(e TemplateEngine) *TemplateEngineLocation {
+func (s *Framework) UseTemplate(e TemplateEngine) *TemplateEngineLocation {
 	return s.templates.Add(e)
 }
 
@@ -506,7 +502,7 @@ func (s *Framework) UseEngine(e TemplateEngine) *TemplateEngineLocation {
 // Use it when you want to add a global middleware to all parties, to all routes in  all subdomains
 // It can be called after other, (but before .Listen of course)
 func UseGlobal(handlers ...Handler) {
-	Default.MustUse(handlers...)
+	Default.UseGlobal(handlers...)
 }
 
 // UseGlobalFunc registers HandlerFunc middleware  to the beginning, prepends them instead of append
@@ -514,7 +510,7 @@ func UseGlobal(handlers ...Handler) {
 // Use it when you want to add a global middleware to all parties, to all routes in  all subdomains
 // It can be called after other, (but before .Listen of course)
 func UseGlobalFunc(handlersFn ...HandlerFunc) {
-	Default.MustUseFunc(handlersFn...)
+	Default.UseGlobalFunc(handlersFn...)
 }
 
 // UseGlobal registers Handler middleware  to the beginning, prepends them instead of append
@@ -532,7 +528,7 @@ func (s *Framework) UseGlobal(handlers ...Handler) {
 // Use it when you want to add a global middleware to all parties, to all routes in  all subdomains
 // It can be called after other, (but before .Listen of course)
 func (s *Framework) UseGlobalFunc(handlersFn ...HandlerFunc) {
-	s.MustUse(convertToHandlers(handlersFn)...)
+	s.UseGlobal(convertToHandlers(handlersFn)...)
 }
 
 // OnError registers a custom http error handler
