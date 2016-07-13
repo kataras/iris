@@ -19,6 +19,9 @@
 - **Added** `iris.UseEngine($TEMPLAET_ENGINE.New()).Directory("./templates", ".html")` to register a template engine, now iris supports multi template engines, each template engine has its own file extension, no big changes on context.Render except the last parameter:
 - `context.Render(filename string, binding interface{}, layout string{})` -> `context.Render(filename string, binding interface{}, options ...map[string]interface{})  | context.Render("myfile.html", myPage{}, iris.Map{"gzip":true,"layout":"layouts/MyLayout.html"}) |`
 
+E-book and examples are not yet updated, no big changes.
+
+
 ## 3.0.0-rc.4 -> 3.0.0-pre.release
 
 - `context.PostFormValue` -> `context.FormValueString`, old func stays until the next revision
