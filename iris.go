@@ -67,6 +67,7 @@ import (
 	"github.com/iris-contrib/errors"
 	"github.com/iris-contrib/logger"
 	"github.com/iris-contrib/rest"
+	"github.com/iris-contrib/template"
 	"github.com/iris-contrib/template/html"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/context"
@@ -89,6 +90,9 @@ const (
           | | | __|| |/ __|
          _| |_| |  | |\__ \
         |_____|_|  |_||___/ ` + Version + ` `
+
+	// NoLayout pass it to the layout option on the context.Render to disable layout for this execution
+	NoLayout = template.NoLayout
 )
 
 // Default entry, use it with iris.$anyPublicFunc
@@ -144,7 +148,7 @@ type (
 		ListenVirtual(...string) *Server
 		Go() error
 		Close() error
-		UseTemplate(TemplateEngine) *TemplateEngineLocation
+		UseTemplate(template.TemplateEngine) *template.TemplateEngineLocation
 		UseGlobal(...Handler)
 		UseGlobalFunc(...HandlerFunc)
 		OnError(int, HandlerFunc)
@@ -164,7 +168,7 @@ type (
 		*muxAPI
 		rest      *rest.Render
 		sessions  *sessions.Manager
-		templates *TemplateEngines
+		templates *template.TemplateEngines
 
 		// fields which are useful to the user/dev
 		// the last  added server is the main server
@@ -199,12 +203,12 @@ func New(cfg ...config.Iris) *Framework {
 		// set the plugin container
 		s.Plugins = &pluginContainer{logger: s.Logger}
 		// set the templates
-		s.templates = &TemplateEngines{
-			helpers: map[string]interface{}{
+		s.templates = &template.TemplateEngines{
+			Helpers: map[string]interface{}{
 				"url":     s.URL,
 				"urlpath": s.Path,
 			},
-			engines: make([]*TemplateEngineWrapper, 0),
+			Engines: make([]*template.TemplateEngineWrapper, 0),
 		}
 		// set the websocket server
 		s.Websocket = websocket.NewServer(s.Config.Websocket)
@@ -230,14 +234,14 @@ func (s *Framework) initialize() {
 	s.rest = rest.New(s.Config.Rest)
 	// prepare the templates if enabled
 	if !s.Config.DisableTemplateEngines {
-		if err := s.templates.loadAll(); err != nil {
+		if err := s.templates.LoadAll(); err != nil {
 			s.Logger.Panic(err) // panic on templates loading before listening if we have an error.
 		}
 		// check and prepare the templates
-		if len(s.templates.engines) == 0 { // no template engine is registered, let's use the default
+		if len(s.templates.Engines) == 0 { // no template engine is registered, let's use the default
 			s.UseTemplate(html.New())
 		}
-		s.templates.setReload(s.Config.IsDevelopment)
+		s.templates.Reload = s.Config.IsDevelopment
 	}
 
 	// listen to websocket connections
@@ -487,13 +491,13 @@ s.renderer = &renderer{
 
 // UseTemplate adds a template engine to the iris view system
 // it does not build/load them yet
-func UseTemplate(e TemplateEngine) *TemplateEngineLocation {
+func UseTemplate(e template.TemplateEngine) *template.TemplateEngineLocation {
 	return Default.UseTemplate(e)
 }
 
 // UseTemplate adds a template engine to the iris view system
 // it does not build/load them yet
-func (s *Framework) UseTemplate(e TemplateEngine) *TemplateEngineLocation {
+func (s *Framework) UseTemplate(e template.TemplateEngine) *template.TemplateEngineLocation {
 	return s.templates.Add(e)
 }
 
@@ -1557,7 +1561,7 @@ func (api *muxAPI) Favicon(favPath string, requestPath ...string) RouteNameFunc 
 //
 func (api *muxAPI) Layout(tmplLayoutFile string) MuxAPI {
 	api.UseFunc(func(ctx *Context) {
-		ctx.Set(config.TemplateLayoutContextKey, tmplLayoutFile)
+		ctx.Set(template.TemplateLayoutContextKey, tmplLayoutFile)
 		ctx.Next()
 	})
 	return api

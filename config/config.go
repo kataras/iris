@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	// Charset character encoding for template rendering
+	// Charset character encoding for various rendering
 	Charset = "UTF-8"
 )
 
@@ -20,14 +20,4 @@ var (
 	//
 	// Defaults to iris-fasthttp.gz
 	CompressedFileSuffix = "iris-fasthttp.gz"
-
-	// ContentTypeHTML defaults to text/html but you can change it, changes the template's content type also
-	ContentTypeHTML = "text/html"
-)
-
-const (
-	// NoLayout to disable layout for a particular template file
-	NoLayout = "@.|.@iris_no_layout@.|.@"
-	// TemplateLayoutContextKey is the name of the user values which can be used to set a template layout from a middleware and override the parent's
-	TemplateLayoutContextKey = "templateLayout"
 )
