@@ -121,6 +121,7 @@ type TemplateEngineWrapper struct {
 
 var (
 	errMissingDirectoryOrAssets = errors.New("Missing Directory or Assets by binary for the template engine!")
+	errNoTemplateEngineForExt   = errors.New("No template engine found to manage '%s' extensions")
 )
 
 func (t *TemplateEngineWrapper) load() error {
@@ -139,6 +140,10 @@ func (t *TemplateEngineWrapper) load() error {
 // an example of this is the "layout"
 // note that gzip option is an iris dynamic option which exists for all template engines
 func (t *TemplateEngineWrapper) Execute(ctx *Context, filename string, binding interface{}, options ...map[string]interface{}) (err error) {
+	if t == nil {
+		//file extension, but no template engine registered, this caused by context, and TemplateEngines. GetBy
+		return errNoTemplateEngineForExt.Format(filepath.Ext(filename))
+	}
 	if t.reload {
 		if err = t.load(); err != nil {
 			return
@@ -181,6 +186,10 @@ func (t *TemplateEngineWrapper) Execute(ctx *Context, filename string, binding i
 
 // ExecuteToString executes a template from a specific template engine and returns its contents result as string, it doesn't renders
 func (t *TemplateEngineWrapper) ExecuteToString(filename string, binding interface{}, opt ...map[string]interface{}) (result string, err error) {
+	if t == nil {
+		//file extension, but no template engine registered, this caused by context, and TemplateEngines. GetBy
+		return "", errNoTemplateEngineForExt.Format(filepath.Ext(filename))
+	}
 	if t.reload {
 		if err = t.load(); err != nil {
 			return
@@ -226,8 +235,10 @@ func (t *TemplateEngines) Add(e TemplateEngine) *TemplateEngineLocation {
 	location := &TemplateEngineLocation{}
 	// add the iris helper funcs
 	if funcer, ok := e.(TemplateEngineFuncs); ok {
-		for k, v := range t.helpers {
-			funcer.Funcs()[k] = v
+		if funcer.Funcs() != nil {
+			for k, v := range t.helpers {
+				funcer.Funcs()[k] = v
+			}
 		}
 	}
 
@@ -251,7 +262,7 @@ func (t *TemplateEngines) Add(e TemplateEngine) *TemplateEngineLocation {
 func (t *TemplateEngines) loadAll() error {
 	for i, n := 0, len(t.engines); i < n; i++ {
 		e := t.engines[i]
-		if e.location.directory == "" && e.location.assetFn == nil {
+		if e.location.directory == "" {
 			e.location.directory = DefaultTemplateDirectory // the defualt dir ./templates
 		}
 		if e.location.extension == "" {

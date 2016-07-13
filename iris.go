@@ -242,7 +242,6 @@ func (s *Framework) initialize() {
 			s.UseEngine(html.New())
 		}
 		s.templates.setReload(s.Config.IsDevelopment)
-		s.templates.loadAll()
 	}
 
 	// listen to websocket connections
