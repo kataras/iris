@@ -1260,6 +1260,24 @@ func (r *route) SetMiddleware(m Middleware) {
 	r.middleware = m
 }
 
+// RouteConflicts checks for route's middleware conflicts
+func RouteConflicts(r *route, with string) bool {
+	for _, h := range r.middleware {
+		if m, ok := h.(interface {
+			Conflicts() string
+		}); ok {
+			if c := m.Conflicts(); c == with {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (r *route) hasCors() bool {
+	return RouteConflicts(r, "httpmethod")
+}
+
 const (
 	// subdomainIndicator where './' exists in a registed path then it contains subdomain
 	subdomainIndicator = "./"
@@ -1443,6 +1461,20 @@ func (mux *serveMux) ServeRequest() fasthttp.RequestHandler {
 		getRequestPath = func(reqCtx *fasthttp.RequestCtx) string { return utils.BytesToString(reqCtx.RequestURI()) }
 	}
 
+	methodEqual := func(treeMethod []byte, reqMethod []byte) bool {
+		return bytes.Equal(treeMethod, reqMethod)
+	}
+
+	// check for cors conflicts
+	for _, r := range mux.lookups {
+		if r.hasCors() {
+			methodEqual = func(treeMethod []byte, reqMethod []byte) bool {
+				return bytes.Equal(treeMethod, reqMethod) || bytes.Equal(reqMethod, methodOptionsBytes)
+			}
+			break
+		}
+	}
+
 	return func(reqCtx *fasthttp.RequestCtx) {
 		context := mux.cPool.Get().(*Context)
 		context.Reset(reqCtx)
@@ -1450,7 +1482,7 @@ func (mux *serveMux) ServeRequest() fasthttp.RequestHandler {
 		routePath := getRequestPath(reqCtx)
 		tree := mux.tree
 		for tree != nil {
-			if !bytes.Equal(tree.method, reqCtx.Method()) {
+			if !methodEqual(tree.method, reqCtx.Method()) {
 				// we break any CORS OPTIONS method
 				// but for performance reasons if user wants http method OPTIONS to be served
 				// then must register it with .Options(...)
