@@ -100,7 +100,7 @@ Docs & Community
 <a href="https://www.gitbook.com/book/kataras/iris/details"><img align="right" width="185" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_1.png"></a>
 
 
-- Read the [book](https://www.gitbook.com/book/kataras/iris/details) or [wiki](https://github.com/kataras/iris/wiki)
+- Read the [book](https://www.gitbook.com/book/kataras/iris/details)
 
 - Take a look at the [examples](https://github.com/iris-contrib/examples)
 
