@@ -2,10 +2,10 @@
 
 [![Travis Widget]][Travis] [![Release Widget]][Release] [![Report Widget]][Report] [![License Widget]][License] [![Chat Widget]][Chat] [![Documentation Widget]][Documentation]
 
-The [fastest](#benchmarks) web framework for Go.
+The fastest web framework for Go.
 
 
-[![Alt: The results have been updated on July 1, 2016](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/master/benchmark.png)](https://github.com/smallnest/go-web-framework-benchmark)
+[![Alt: Benchmark results with pipeline and 500ms processing time](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/benchmark_horizontal_transparent.png)](#benchmarks)
 
 
 
@@ -22,7 +22,7 @@ func main() {
 		c.JSON(iris.StatusOK, iris.Map{
 			"Name":  "Iris",
 			"Born":  "13 March 2016",
-			"Stars": 3693,
+			"Stars": 4262,
 		})
 	})
 	iris.Listen(":8080")
@@ -46,7 +46,7 @@ The only requirement is the [Go Programming Language](https://golang.org/dl), at
 $ go get -u github.com/kataras/iris/iris
 ```
 
- >If you have installation issues and you are connected to the Internet through China please, [click here](https://kataras.gitbooks.io/iris/content/install.html).
+ >If you have installation issues or you are connected to the Internet through China please, [click here](https://kataras.gitbooks.io/iris/content/install.html).
 
 FAQ
 ------------
@@ -76,6 +76,12 @@ Features
 
 | Name        | Description           | Usage  |
 | ------------------|:---------------------:|-------:|
+| [HTML/Default Engine ](https://github.com/iris-contrib/template/tree/master/html)      | HTML Template Engine (Default)                  |[example 1](https://github.com/iris-contrib/examples/blob/master/template_engines/template_html_1/main.go), [book section](https://kataras.gitbooks.io/iris/content/render_templates.html)
+| [Django Engine ](https://github.com/iris-contrib/template/tree/master/django)      | Django Template Engine                  |[example 1](https://github.com/iris-contrib/examples/blob/master/template_engines/template_django_1/main.go), [book section](https://kataras.gitbooks.io/iris/content/brender_templates.html)
+| [Pug/Jade Engine ](https://github.com/iris-contrib/template/tree/master/pug)      | Pug Template Engine                  |[example 1](https://github.com/iris-contrib/examples/blob/master/template_engines/template_pug_1/main.go), [book section](https://kataras.gitbooks.io/iris/content/render_templates.html)
+| [Handlebars Engine ](https://github.com/iris-contrib/template/tree/master/handlebars)      | Handlebars Template Engine                  |[example 1](https://github.com/iris-contrib/examples/blob/master/template_engines/template_handlebars_1/main.go), [book section](https://kataras.gitbooks.io/iris/content/render_templates.html)
+| [Amber Engine ](https://github.com/iris-contrib/template/tree/master/amber)      | Amber Template Engine                  |[example 1](https://github.com/iris-contrib/examples/blob/master/template_engines/template_amber_1/main.go), [book section](https://kataras.gitbooks.io/iris/content/render_templates.html)
+| [Markdown Engine ](https://github.com/iris-contrib/template/tree/master/markdown)      | Markdown Template Engine                  |[example 1](https://github.com/iris-contrib/examples/blob/master/template_engines/template_markdown_1/main.go), [book section](https://kataras.gitbooks.io/iris/content/render_templates.html)
 | [Basicauth Middleware ](https://github.com/iris-contrib/middleware/tree/master/basicauth)      | HTTP Basic authentication                  |[example 1](https://github.com/iris-contrib/examples/blob/master/middleware_basicauth_1/main.go), [example 2](https://github.com/iris-contrib/examples/blob/master/middleware_basicauth_2/main.go), [book section](https://kataras.gitbooks.io/iris/content/basic-authentication.html)  |
 | [JWT Middleware ](https://github.com/iris-contrib/middleware/tree/master/jwt)      | JSON Web Tokens                  |[example ](https://github.com/iris-contrib/examples/blob/master/middleware_jwt/main.go), [book section](https://kataras.gitbooks.io/iris/content/jwt.html)  |
 | [Cors Middleware ](https://github.com/iris-contrib/middleware/tree/master/cors)      | Cross Origin Resource Sharing W3 specification   | [how to use ](https://github.com/iris-contrib/middleware/tree/master/cors#how-to-use)  |
@@ -133,30 +139,27 @@ Iris does not force you to use any specific ORM or template engine. With support
 Testing
 ------------
 
-Tests are located to the [iris-contrib/tests repository](https://github.com/iris-contrib/tests), community should write some code there!
+Community should write third-party or iris base tests to the [iris-contrib/tests repository](https://github.com/iris-contrib/tests).
 I recommend writing your API tests using this new library, [httpexpect](https://github.com/gavv/httpexpect) which supports Iris and fasthttp now, after my request [here](https://github.com/gavv/httpexpect/issues/2).
 
 Versioning
 ------------
 
-Current: **v3.0.0**
+Current: **v4.0.0-alpha.1**
 >  Iris is an active project
-
-Read more about Semantic Versioning 2.0.0
-
- - http://semver.org/
- - https://en.wikipedia.org/wiki/Software_versioning
- - https://wiki.debian.org/UpstreamGuide#Releases_and_Versions
 
 
 Todo
 ------------
 > for the next version 'v4'
 
-- [ ] Refactor & extend view engine, separate the engines from the main code base, easier for the community to create new view engines.
-- [ ] Create a router as optional plugin, for optional path parts. Its name, 'ryan', taken from the community-member and donator who requested this feature.
+- [x] Refactor & extend view engine, separate the engines from the main code base, easier for the community to create new view engines
+- [ ] Implement all [opened community's feature requests](https://github.com/kataras/iris/issues?q=is%3Aissue+is%3Aopen+label%3A%22feature+request%22)
+- [ ] Extend i18n middleware for easier and better internalization support
+- [ ] Create a router as optional plugin, for optional path parts. Its name, 'ryan', taken from the community-member and donator who requested this feature
 - [ ] Extend the iris control plugin
-- [ ] Remove deprecated functions.
+- [ ] Remove deprecated functions
+- [ ] Will think more :)
 
 > completed for release 'v3'
 
@@ -191,7 +194,7 @@ License can be found [here](LICENSE).
 [Travis]: http://travis-ci.org/kataras/iris
 [License Widget]: https://img.shields.io/badge/license-MIT%20%20License%20-E91E63.svg?style=flat-square
 [License]: https://github.com/kataras/iris/blob/master/LICENSE
-[Release Widget]: https://img.shields.io/badge/release-v3.0.0-blue.svg?style=flat-square
+[Release Widget]: https://img.shields.io/badge/release-v4.0.0--alpha.1-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/iris/releases
 [Chat Widget]: https://img.shields.io/badge/community-chat-00BCD4.svg?style=flat-square
 [Chat]: https://kataras.rocket.chat/channel/iris

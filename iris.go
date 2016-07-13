@@ -65,11 +65,11 @@ import (
 
 	"github.com/gavv/httpexpect"
 	"github.com/iris-contrib/errors"
+	"github.com/iris-contrib/logger"
+	"github.com/iris-contrib/rest"
+	"github.com/iris-contrib/template/html"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/logger"
-	"github.com/kataras/iris/render/rest"
-	"github.com/kataras/iris/render/template"
 	"github.com/kataras/iris/sessions"
 	"github.com/kataras/iris/utils"
 	"github.com/kataras/iris/websocket"
@@ -81,27 +81,7 @@ import (
 
 const (
 	// Version of the iris
-	Version = "3.0.0"
-
-	// HTMLEngine conversion for config.HTMLEngine
-	HTMLEngine = config.HTMLEngine
-	// PongoEngine conversion for config.PongoEngine
-	PongoEngine = config.PongoEngine
-	// MarkdownEngine conversion for config.MarkdownEngine
-	MarkdownEngine = config.MarkdownEngine
-	// JadeEngine conversion for config.JadeEngine
-	JadeEngine = config.JadeEngine
-	// AmberEngine conversion for config.AmberEngine
-	AmberEngine = config.AmberEngine
-	// HandlebarsEngine conversion for config.HandlebarsEngine
-	HandlebarsEngine = config.HandlebarsEngine
-	// DefaultEngine conversion for config.DefaultEngine
-	DefaultEngine = config.DefaultEngine
-	// NoEngine conversion for config.NoEngine
-	NoEngine = config.NoEngine
-	// NoLayout to disable layout for a particular template file
-	// conversion for config.NoLayout
-	NoLayout = config.NoLayout
+	Version = "4.0.0-alpha.1"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -177,7 +157,7 @@ type (
 		Lookups() []Route
 		Path(string, ...interface{}) string
 		URL(string, ...interface{}) string
-		TemplateString(string, interface{}, ...string) string
+		TemplateString(string, interface{}, ...map[string]interface{}) string
 		Tester(t *testing.T) *httpexpect.Expect
 	}
 
@@ -187,12 +167,14 @@ type (
 	Framework struct {
 		*muxAPI
 		rest      *rest.Render
-		templates *template.Template
 		sessions  *sessions.Manager
+		templates *TemplateEngines
+
 		// fields which are useful to the user/dev
 		// the last  added server is the main server
-		Servers   *ServerList
-		Config    *config.Iris
+		Servers *ServerList
+		Config  *config.Iris
+		// configuration by instance.Logger.Config
 		Logger    *logger.Logger
 		Plugins   PluginContainer
 		Websocket websocket.Server
@@ -217,9 +199,17 @@ func New(cfg ...config.Iris) *Framework {
 	{
 		///NOTE: set all with s.Config pointer
 		// set the Logger
-		s.Logger = logger.New(s.Config.Logger)
+		s.Logger = logger.New(logger.DefaultConfig())
 		// set the plugin container
 		s.Plugins = &pluginContainer{logger: s.Logger}
+		// set the templates
+		s.templates = &TemplateEngines{
+			helpers: map[string]interface{}{
+				"url":     s.URL,
+				"urlpath": s.Path,
+			},
+			engines: make([]*TemplateEngineWrapper, 0),
+		}
 		// set the websocket server
 		s.Websocket = websocket.NewServer(s.Config.Websocket)
 		// set the servemux, which will provide us the public API also, with its context pool
@@ -241,10 +231,18 @@ func (s *Framework) initialize() {
 	}
 
 	// set the rest
-	s.rest = rest.New(s.Config.Render.Rest)
-
-	// set templates if not already setted
-	s.prepareTemplates()
+	s.rest = rest.New(s.Config.Rest)
+	// prepare the templates if enabled
+	if !s.Config.DisableTemplateEngines {
+		if err := s.templates.loadAll(); err != nil {
+			s.Logger.Panic(err) // panic on templates loading before listening if we have an error.
+		}
+		// check and prepare the templates
+		if len(s.templates.engines) == 0 { // no template engine is registered, let's use the default
+			s.UseEngine(html.New())
+		}
+		s.templates.setReload(s.Config.IsDevelopment)
+	}
 
 	// listen to websocket connections
 	websocket.RegisterServer(s, s.Websocket, s.Logger)
@@ -255,22 +253,6 @@ func (s *Framework) initialize() {
 	// set the debug profiling handlers if ProfilePath is setted
 	if debugPath := s.Config.ProfilePath; debugPath != "" {
 		s.Handle(MethodGet, debugPath+"/*action", profileMiddleware(debugPath)...)
-	}
-}
-
-// prepareTemplates sets the templates if not nil, we make this check  because of .TemplateString, which can be called before Listen
-func (s *Framework) prepareTemplates() {
-	// prepare the templates
-	if s.templates == nil {
-		// These functions are directly contact with Iris' functionality.
-		funcs := map[string]interface{}{
-			"url":     s.URL,
-			"urlpath": s.Path,
-		}
-
-		template.RegisterSharedFuncs(funcs)
-
-		s.templates = template.New(s.Config.Render.Template)
 	}
 }
 
@@ -290,7 +272,6 @@ func (s *Framework) Go() error {
 
 	// print the banner
 	if !s.Config.DisableBanner {
-
 		openedServers := s.Servers.GetAllOpened()
 		l := len(openedServers)
 		hosts := make([]string, l, l)
@@ -493,6 +474,31 @@ func (s *Framework) Close() error {
 	s.Plugins.DoPreClose(s)
 	s.Available = make(chan bool)
 	return s.Servers.CloseAll()
+}
+
+/*
+
+// set the template engines
+s.renderer = &renderer{
+	engines: make([]TemplateEngine, 0),
+	buffer:  utils.NewBufferPool(64),
+	helpers: map[string]interface{}{
+		"url":     s.URL,
+		"urlpath": s.Path,
+	},
+	contentType: s.Config.Render.Template.ContentType + "; " + s.Config.Render.Template.Charset,
+}*/
+
+// UseEngine adds a template engine to the iris view system
+// it does not build/load them yet
+func UseEngine(e TemplateEngine) *TemplateEngineLocation {
+	return Default.UseEngine(e)
+}
+
+// UseEngine adds a template engine to the iris view system
+// it does not build/load them yet
+func (s *Framework) UseEngine(e TemplateEngine) *TemplateEngineLocation {
+	return s.templates.Add(e)
 }
 
 // UseGlobal registers Handler middleware  to the beginning, prepends them instead of append
@@ -713,17 +719,19 @@ func (s *Framework) URL(routeName string, args ...interface{}) (url string) {
 	return
 }
 
-// TemplateString executes a template and returns its result as string, useful when you want it for sending rich e-mails
+// TemplateString executes a template from the default template engine and returns its result as string, useful when you want it for sending rich e-mails
 // returns empty string on error
-func TemplateString(templateFile string, pageContext interface{}, layout ...string) string {
-	return Default.TemplateString(templateFile, pageContext, layout...)
+func TemplateString(templateFile string, pageContext interface{}, options ...map[string]interface{}) string {
+	return Default.TemplateString(templateFile, pageContext, options...)
 }
 
-// TemplateString executes a template and returns its result as string, useful when you want it for sending rich e-mails
+// TemplateString executes a template from the default template engine and returns its result as string, useful when you want it for sending rich e-mails
 // returns empty string on error
-func (s *Framework) TemplateString(templateFile string, pageContext interface{}, layout ...string) string {
-	s.prepareTemplates()
-	res, err := s.templates.RenderString(templateFile, pageContext, layout...)
+func (s *Framework) TemplateString(templateFile string, pageContext interface{}, options ...map[string]interface{}) string {
+	if s.Config.DisableTemplateEngines {
+		return ""
+	}
+	res, err := s.templates.GetBy(templateFile).ExecuteToString(templateFile, pageContext, options...)
 	if err != nil {
 		return ""
 	}

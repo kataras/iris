@@ -89,9 +89,7 @@ func MustUseFunc(handlersFn ...HandlerFunc) {
 // Use it when you want to add a global middleware to all parties, to all routes in  all subdomains
 // It can be called after other, (but before .Listen of course)
 func (s *Framework) MustUse(handlers ...Handler) {
-	for _, r := range s.mux.lookups {
-		r.middleware = append(handlers, r.middleware...)
-	}
+	s.UseGlobal(handlers...)
 }
 
 // MustUseFunc registers HandlerFunc middleware to the beginning, prepends them instead of append
@@ -99,7 +97,7 @@ func (s *Framework) MustUse(handlers ...Handler) {
 // Use it when you want to add a global middleware to all parties, to all routes in  all subdomains
 // It can be called after other, (but before .Listen of course)
 func (s *Framework) MustUseFunc(handlersFn ...HandlerFunc) {
-	s.MustUse(convertToHandlers(handlersFn)...)
+	s.UseGlobalFunc(handlersFn...)
 }
 
 // PostFormMulti returns a slice of string from post request's data

@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/iris-contrib/errors"
+	"github.com/iris-contrib/logger"
 	"github.com/kataras/iris/config"
-	"github.com/kataras/iris/logger"
 	"github.com/kataras/iris/utils"
 	"github.com/valyala/fasthttp"
 	"github.com/valyala/fasthttp/fasthttpadaptor"
@@ -262,6 +262,11 @@ func newServer(cfg config.Server) *Server {
 // prepare just prepares the listening addr
 func (s *Server) prepare() {
 	s.Config.ListeningAddr = config.ServerParseAddr(s.Config.ListeningAddr)
+	if s.Server != nil {
+		s.Server.MaxRequestBodySize = s.Config.MaxRequestBodySize
+		s.Server.ReadBufferSize = s.Config.ReadBufferSize
+		s.Server.WriteBufferSize = s.Config.WriteBufferSize
+	}
 }
 
 // IsListening returns true if server is listening/started, otherwise false
@@ -398,10 +403,6 @@ func (s *Server) Open(h fasthttp.RequestHandler) error {
 	}
 
 	s.prepare() // do it again for any case
-
-	s.Server.MaxRequestBodySize = s.Config.MaxRequestBodySize
-	s.Server.ReadBufferSize = s.Config.ReadBufferSize
-	s.Server.WriteBufferSize = s.Config.WriteBufferSize
 
 	if s.Config.RedirectTo != "" {
 		// override the handler and redirect all requests to this addr
