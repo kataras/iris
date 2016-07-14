@@ -157,6 +157,10 @@ Todo
 > for 'v4'
 
 - [x] Refactor & extend view engine, separate the engines from the main code base, easier for the community to create new view engines
+- [ ] Refactor & extend sessions, split the providers and stores to the iris-contrib
+- [ ] Refactor & extends the rest render engine in order to be able to developer to use their own implemention for rendering restful types, like, for example a  custom JSON implementation using no-standard go package for encode/decode
+- [ ] Move the iris/websocket package's source code inside iris/websocket.go one file, to be easier to use by users without import a new package
+- [ ] configs package should be removed after all these, we will not need big configurations because of different packages splitted & moved to the iris-contrib, we will keep interfaces and all required things inside kataras/iris.go.
 - [ ] Implement all [opened community's feature requests](https://github.com/kataras/iris/issues?q=is%3Aissue+is%3Aopen+label%3A%22feature+request%22)
 - [ ] Extend i18n middleware for easier and better internalization support
 - [ ] Create a router as optional plugin, for optional path parts. Its name, 'ryan', taken from the community-member and donator who requested this feature
