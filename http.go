@@ -22,23 +22,23 @@ import (
 
 const (
 	// MethodGet "GET"
-	MethodGet = "GET"
+	MethodGet = http.MethodGet
 	// MethodPost "POST"
-	MethodPost = "POST"
+	MethodPost = http.MethodPost
 	// MethodPut "PUT"
-	MethodPut = "PUT"
+	MethodPut = http.MethodPut
 	// MethodDelete "DELETE"
-	MethodDelete = "DELETE"
+	MethodDelete = http.MethodDelete
 	// MethodConnect "CONNECT"
-	MethodConnect = "CONNECT"
+	MethodConnect = http.MethodConnect
 	// MethodHead "HEAD"
-	MethodHead = "HEAD"
+	MethodHead = http.MethodHead
 	// MethodPatch "PATCH"
-	MethodPatch = "PATCH"
+	MethodPatch = http.MethodPatch
 	// MethodOptions "OPTIONS"
-	MethodOptions = "OPTIONS"
+	MethodOptions = http.MethodOptions
 	// MethodTrace "TRACE"
-	MethodTrace = "TRACE"
+	MethodTrace = http.MethodTrace
 )
 
 var (
@@ -70,160 +70,107 @@ var (
 
 const (
 	// StatusContinue http status '100'
-	StatusContinue = 100
+	StatusContinue = http.StatusContinue
 	// StatusSwitchingProtocols http status '101'
-	StatusSwitchingProtocols = 101
+	StatusSwitchingProtocols = http.StatusSwitchingProtocols
 
 	// StatusOK http status '200'
-	StatusOK = 200
+	StatusOK = http.StatusOK
 	// StatusCreated http status '201'
-	StatusCreated = 201
+	StatusCreated = http.StatusCreated
 	// StatusAccepted http status '202'
-	StatusAccepted = 202
+	StatusAccepted = http.StatusAccepted
 	// StatusNonAuthoritativeInfo http status '203'
-	StatusNonAuthoritativeInfo = 203
+	StatusNonAuthoritativeInfo = http.StatusNonAuthoritativeInfo
 	// StatusNoContent http status '204'
-	StatusNoContent = 204
+	StatusNoContent = http.StatusNoContent
 	// StatusResetContent http status '205'
-	StatusResetContent = 205
+	StatusResetContent = http.StatusResetContent
 	// StatusPartialContent http status '206'
-	StatusPartialContent = 206
+	StatusPartialContent = http.StatusPartialContent
 
 	// StatusMultipleChoices http status '300'
-	StatusMultipleChoices = 300
+	StatusMultipleChoices = http.StatusMultipleChoices
 	// StatusMovedPermanently http status '301'
-	StatusMovedPermanently = 301
+	StatusMovedPermanently = http.StatusMovedPermanently
 	// StatusFound http status '302'
-	StatusFound = 302
+	StatusFound = http.StatusFound
 	// StatusSeeOther http status '303'
-	StatusSeeOther = 303
+	StatusSeeOther = http.StatusSeeOther
 	// StatusNotModified http status '304'
-	StatusNotModified = 304
+	StatusNotModified = http.StatusNotModified
 	// StatusUseProxy http status '305'
-	StatusUseProxy = 305
+	StatusUseProxy = http.StatusUseProxy
 	// StatusTemporaryRedirect http status '307'
-	StatusTemporaryRedirect = 307
+	StatusTemporaryRedirect = http.StatusTemporaryRedirect
 
 	// StatusBadRequest http status '400'
-	StatusBadRequest = 400
+	StatusBadRequest = http.StatusBadRequest
 	// StatusUnauthorized http status '401'
-	StatusUnauthorized = 401
+	StatusUnauthorized = http.StatusUnauthorized
 	// StatusPaymentRequired http status '402'
-	StatusPaymentRequired = 402
+	StatusPaymentRequired = http.StatusPaymentRequired
 	// StatusForbidden http status '403'
-	StatusForbidden = 403
+	StatusForbidden = http.StatusForbidden
 	// StatusNotFound http status '404'
-	StatusNotFound = 404
+	StatusNotFound = http.StatusNotFound
 	// StatusMethodNotAllowed http status '405'
-	StatusMethodNotAllowed = 405
+	StatusMethodNotAllowed = http.StatusMethodNotAllowed
 	// StatusNotAcceptable http status '406'
-	StatusNotAcceptable = 406
+	StatusNotAcceptable = http.StatusNotAcceptable
 	// StatusProxyAuthRequired http status '407'
-	StatusProxyAuthRequired = 407
+	StatusProxyAuthRequired = http.StatusProxyAuthRequired
 	// StatusRequestTimeout http status '408'
-	StatusRequestTimeout = 408
+	StatusRequestTimeout = http.StatusRequestTimeout
 	// StatusConflict http status '409'
-	StatusConflict = 409
+	StatusConflict = http.StatusConflict
 	// StatusGone http status '410'
-	StatusGone = 410
+	StatusGone = http.StatusGone
 	// StatusLengthRequired http status '411'
-	StatusLengthRequired = 411
+	StatusLengthRequired = http.StatusLengthRequired
 	// StatusPreconditionFailed http status '412'
-	StatusPreconditionFailed = 412
+	StatusPreconditionFailed = http.StatusPreconditionFailed
 	// StatusRequestEntityTooLarge http status '413'
-	StatusRequestEntityTooLarge = 413
+	StatusRequestEntityTooLarge = http.StatusRequestEntityTooLarge
 	// StatusRequestURITooLong http status '414'
-	StatusRequestURITooLong = 414
+	StatusRequestURITooLong = http.StatusRequestURITooLong
 	// StatusUnsupportedMediaType http status '415'
-	StatusUnsupportedMediaType = 415
+	StatusUnsupportedMediaType = http.StatusUnsupportedMediaType
 	// StatusRequestedRangeNotSatisfiable http status '416'
-	StatusRequestedRangeNotSatisfiable = 416
+	StatusRequestedRangeNotSatisfiable = http.StatusRequestedRangeNotSatisfiable
 	// StatusExpectationFailed http status '417'
-	StatusExpectationFailed = 417
+	StatusExpectationFailed = http.StatusExpectationFailed
 	// StatusTeapot http status '418'
-	StatusTeapot = 418
+	StatusTeapot = http.StatusTeapot
 	// StatusPreconditionRequired http status '428'
-	StatusPreconditionRequired = 428
+	StatusPreconditionRequired = http.StatusPreconditionRequired
 	// StatusTooManyRequests http status '429'
-	StatusTooManyRequests = 429
+	StatusTooManyRequests = http.StatusTooManyRequests
 	// StatusRequestHeaderFieldsTooLarge http status '431'
-	StatusRequestHeaderFieldsTooLarge = 431
+	StatusRequestHeaderFieldsTooLarge = http.StatusRequestHeaderFieldsTooLarge
 	// StatusUnavailableForLegalReasons http status '451'
-	StatusUnavailableForLegalReasons = 451
+	StatusUnavailableForLegalReasons = http.StatusUnavailableForLegalReasons
 
 	// StatusInternalServerError http status '500'
-	StatusInternalServerError = 500
+	StatusInternalServerError = http.StatusInternalServerError
 	// StatusNotImplemented http status '501'
-	StatusNotImplemented = 501
+	StatusNotImplemented = http.StatusNotImplemented
 	// StatusBadGateway http status '502'
-	StatusBadGateway = 502
+	StatusBadGateway = http.StatusBadGateway
 	// StatusServiceUnavailable http status '503'
-	StatusServiceUnavailable = 503
+	StatusServiceUnavailable = http.StatusServiceUnavailable
 	// StatusGatewayTimeout http status '504'
-	StatusGatewayTimeout = 504
+	StatusGatewayTimeout = http.StatusGatewayTimeout
 	// StatusHTTPVersionNotSupported http status '505'
-	StatusHTTPVersionNotSupported = 505
+	StatusHTTPVersionNotSupported = http.StatusHTTPVersionNotSupported
 	// StatusNetworkAuthenticationRequired http status '511'
-	StatusNetworkAuthenticationRequired = 511
+	StatusNetworkAuthenticationRequired = http.StatusNetworkAuthenticationRequired
 )
-
-var statusText = map[int]string{
-	StatusContinue:           "Continue",
-	StatusSwitchingProtocols: "Switching Protocols",
-
-	StatusOK:                   "OK",
-	StatusCreated:              "Created",
-	StatusAccepted:             "Accepted",
-	StatusNonAuthoritativeInfo: "Non-Authoritative Information",
-	StatusNoContent:            "No Content",
-	StatusResetContent:         "Reset Content",
-	StatusPartialContent:       "Partial Content",
-
-	StatusMultipleChoices:   "Multiple Choices",
-	StatusMovedPermanently:  "Moved Permanently",
-	StatusFound:             "Found",
-	StatusSeeOther:          "See Other",
-	StatusNotModified:       "Not Modified",
-	StatusUseProxy:          "Use Proxy",
-	StatusTemporaryRedirect: "Temporary Redirect",
-
-	StatusBadRequest:                   "Bad Request",
-	StatusUnauthorized:                 "Unauthorized",
-	StatusPaymentRequired:              "Payment Required",
-	StatusForbidden:                    "Forbidden",
-	StatusNotFound:                     "Not Found",
-	StatusMethodNotAllowed:             "Method Not Allowed",
-	StatusNotAcceptable:                "Not Acceptable",
-	StatusProxyAuthRequired:            "Proxy Authentication Required",
-	StatusRequestTimeout:               "Request Timeout",
-	StatusConflict:                     "Conflict",
-	StatusGone:                         "Gone",
-	StatusLengthRequired:               "Length Required",
-	StatusPreconditionFailed:           "Precondition Failed",
-	StatusRequestEntityTooLarge:        "Request Entity Too Large",
-	StatusRequestURITooLong:            "Request URI Too Long",
-	StatusUnsupportedMediaType:         "Unsupported Media Type",
-	StatusRequestedRangeNotSatisfiable: "Requested Range Not Satisfiable",
-	StatusExpectationFailed:            "Expectation Failed",
-	StatusTeapot:                       "I'm a teapot",
-	StatusPreconditionRequired:         "Precondition Required",
-	StatusTooManyRequests:              "Too Many Requests",
-	StatusRequestHeaderFieldsTooLarge:  "Request Header Fields Too Large",
-	StatusUnavailableForLegalReasons:   "Unavailable For Legal Reasons",
-
-	StatusInternalServerError:           "Internal Server Error",
-	StatusNotImplemented:                "Not Implemented",
-	StatusBadGateway:                    "Bad Gateway",
-	StatusServiceUnavailable:            "Service Unavailable",
-	StatusGatewayTimeout:                "Gateway Timeout",
-	StatusHTTPVersionNotSupported:       "HTTP Version Not Supported",
-	StatusNetworkAuthenticationRequired: "Network Authentication Required",
-}
 
 // StatusText returns a text for the HTTP status code. It returns the empty
 // string if the code is unknown.
 func StatusText(code int) string {
-	return statusText[code]
+	return http.StatusText(code)
 }
 
 // Errors introduced by server.
@@ -1367,7 +1314,7 @@ func (mux *serveMux) fireError(statusCode int, ctx *Context) {
 		errHandler = HandlerFunc(func(ctx *Context) {
 			ctx.ResetBody()
 			ctx.SetStatusCode(statusCode)
-			ctx.SetBodyString(statusText[statusCode])
+			ctx.SetBodyString(StatusText(statusCode))
 		})
 		mux.errorHandlers[statusCode] = errHandler
 	}
