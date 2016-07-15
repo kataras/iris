@@ -67,22 +67,17 @@ import (
 	"github.com/iris-contrib/errors"
 	"github.com/iris-contrib/logger"
 	"github.com/iris-contrib/rest"
-	"github.com/iris-contrib/template"
 	"github.com/iris-contrib/template/html"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/sessions"
 	"github.com/kataras/iris/utils"
 	"github.com/kataras/iris/websocket"
 	"github.com/valyala/fasthttp"
-	///NOTE: register the session providers, but the s.Config.Sessions.Provider will be used only, if this empty then sessions are disabled.
-	_ "github.com/kataras/iris/sessions/providers/memory"
-	_ "github.com/kataras/iris/sessions/providers/redis"
 )
 
 const (
 	// Version of the iris
-	Version = "4.0.0-alpha.1"
+	Version = "4.0.0-alpha.2"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -90,9 +85,6 @@ const (
           | | | __|| |/ __|
          _| |_| |  | |\__ \
         |_____|_|  |_||___/ ` + Version + ` `
-
-	// NoLayout pass it to the layout option on the context.Render to disable layout for this execution
-	NoLayout = template.NoLayout
 )
 
 // Default entry, use it with iris.$anyPublicFunc
@@ -148,7 +140,8 @@ type (
 		ListenVirtual(...string) *Server
 		Go() error
 		Close() error
-		UseTemplate(template.TemplateEngine) *template.TemplateEngineLocation
+		UseSessionDB(SessionDatabase)
+		UseTemplate(TemplateEngine) *TemplateEngineLocation
 		UseGlobal(...Handler)
 		UseGlobalFunc(...HandlerFunc)
 		OnError(int, HandlerFunc)
@@ -167,8 +160,8 @@ type (
 	Framework struct {
 		*muxAPI
 		rest      *rest.Render
-		sessions  *sessions.Manager
-		templates *template.TemplateEngines
+		sessions  *sessionsManager
+		templates *TemplateEngines
 
 		// fields which are useful to the user/dev
 		// the last  added server is the main server
@@ -203,13 +196,15 @@ func New(cfg ...config.Iris) *Framework {
 		// set the plugin container
 		s.Plugins = &pluginContainer{logger: s.Logger}
 		// set the templates
-		s.templates = &template.TemplateEngines{
+		s.templates = &TemplateEngines{
 			Helpers: map[string]interface{}{
 				"url":     s.URL,
 				"urlpath": s.Path,
 			},
-			Engines: make([]*template.TemplateEngineWrapper, 0),
+			Engines: make([]*TemplateEngineWrapper, 0),
 		}
+		//set the session manager
+		s.sessions = newSessionsManager(c.Sessions)
 		// set the websocket server
 		s.Websocket = websocket.NewServer(s.Config.Websocket)
 		// set the servemux, which will provide us the public API also, with its context pool
@@ -225,11 +220,6 @@ func New(cfg ...config.Iris) *Framework {
 }
 
 func (s *Framework) initialize() {
-	// set sessions
-	if s.Config.Sessions.Provider != "" {
-		s.sessions = sessions.New(s.Config.Sessions)
-	}
-
 	// set the rest
 	s.rest = rest.New(s.Config.Rest)
 	// prepare the templates if enabled
@@ -476,28 +466,35 @@ func (s *Framework) Close() error {
 	return s.Servers.CloseAll()
 }
 
-/*
+// UseSessionDB registers a session database, you can register more than one
+// accepts a session database which implements a Load(sid string) map[string]interface{} and an Update(sid string, newValues map[string]interface{})
+// the only reason that a session database will be useful for you is when you want to keep the session's values/data after the app restart
+// a session database doesn't have write access to the session, it doesn't accept the context, so forget 'cookie database' for sessions, I will never allow that, for your protection.
+//
+// Note: Don't worry if no session database is registered, your context.Session will continue to work.
+func UseSessionDB(db SessionDatabase) {
+	Default.UseSessionDB(db)
+}
 
-// set the template engines
-s.renderer = &renderer{
-	engines: make([]TemplateEngine, 0),
-	buffer:  utils.NewBufferPool(64),
-	helpers: map[string]interface{}{
-		"url":     s.URL,
-		"urlpath": s.Path,
-	},
-	contentType: s.Config.Render.Template.ContentType + "; " + s.Config.Render.Template.Charset,
-}*/
+// UseSessionDB registers a session database, you can register more than one
+// accepts a session database which implements a Load(sid string) map[string]interface{} and an Update(sid string, newValues map[string]interface{})
+// the only reason that a session database will be useful for you is when you want to keep the session's values/data after the app restart
+// a session database doesn't have write access to the session, it doesn't accept the context, so forget 'cookie database' for sessions, I will never allow that, for your protection.
+//
+// Note: Don't worry if no session database is registered, your context.Session will continue to work.
+func (s *Framework) UseSessionDB(db SessionDatabase) {
+	s.sessions.provider.registerDatabase(db)
+}
 
 // UseTemplate adds a template engine to the iris view system
 // it does not build/load them yet
-func UseTemplate(e template.TemplateEngine) *template.TemplateEngineLocation {
+func UseTemplate(e TemplateEngine) *TemplateEngineLocation {
 	return Default.UseTemplate(e)
 }
 
 // UseTemplate adds a template engine to the iris view system
 // it does not build/load them yet
-func (s *Framework) UseTemplate(e template.TemplateEngine) *template.TemplateEngineLocation {
+func (s *Framework) UseTemplate(e TemplateEngine) *TemplateEngineLocation {
 	return s.templates.Add(e)
 }
 
@@ -1561,7 +1558,7 @@ func (api *muxAPI) Favicon(favPath string, requestPath ...string) RouteNameFunc 
 //
 func (api *muxAPI) Layout(tmplLayoutFile string) MuxAPI {
 	api.UseFunc(func(ctx *Context) {
-		ctx.Set(template.TemplateLayoutContextKey, tmplLayoutFile)
+		ctx.Set(TemplateLayoutContextKey, tmplLayoutFile)
 		ctx.Next()
 	})
 	return api

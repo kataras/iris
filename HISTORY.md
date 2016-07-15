@@ -2,6 +2,30 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras/iris` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 4.0.0-alpha.1 -> 4.0.0-alpha.2
+
+**Sessions were re-written **
+
+- Developers can use more than one 'session database', at the same time, to store the sessions
+- Easy to develop a custom session database (only two functions are required (Load & Update)), [learn more](https://github.com/iris-contrib/sessiondb/blob/master/redis/database.go)
+- Session databases are located [here](https://github.com/iris-contrib/sessiondb), contributions are welcome
+- The only frontend deleted 'thing' is the: **config.Sessions.Provider**
+- No need to register a database, the sessions works out-of-the-box
+- No frontend/API changes except the `context.Session().Set/Delete/Clear`, they doesn't return errors anymore, btw they (errors) were always nil :)
+- Examples (master branch) were updated.
+
+```sh
+$ go get github.com/iris-contrib/sessiondb/$DATABASE
+```
+
+```go
+db := $DATABASE.New(configurationHere{})
+iris.UseSessionDB(db)
+```
+
+
+> Note: Book is not updated yet, examples are up-to-date as always.
+
 
 ## 3.0.0 -> 4.0.0-alpha.1
 

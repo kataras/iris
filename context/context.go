@@ -5,11 +5,11 @@ import (
 	"io"
 	"time"
 
-	"github.com/kataras/iris/sessions/store"
 	"github.com/valyala/fasthttp"
 )
 
 type (
+
 	// IContext the interface for the iris/context
 	// Used mostly inside packages which shouldn't be import ,directly, the kataras/iris.
 	IContext interface {
@@ -71,7 +71,17 @@ type (
 		GetFlashes() map[string]string
 		GetFlash(string) (string, error)
 		SetFlash(string, string)
-		Session() store.IStore
+		Session() interface {
+			ID() string
+			Get(string) interface{}
+			GetString(key string) string
+			GetInt(key string) int
+			GetAll() map[string]interface{}
+			VisitAll(cb func(k string, v interface{}))
+			Set(string, interface{})
+			Delete(string)
+			Clear()
+		}
 		SessionDestroy()
 		Log(string, ...interface{})
 		Reset(*fasthttp.RequestCtx)

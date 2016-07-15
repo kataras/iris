@@ -25,7 +25,6 @@ import (
 	"github.com/iris-contrib/formBinder"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/sessions/store"
 	"github.com/kataras/iris/utils"
 	"github.com/klauspost/compress/gzip"
 	"github.com/valyala/fasthttp"
@@ -76,10 +75,6 @@ var (
 )
 
 type (
-	// RenderOptions is a helper type for  the optional runtime options can be passed by user when Render
-	// an example of this is the "layout" or "gzip" option
-	// same as Map but more specific name
-	RenderOptions map[string]interface{}
 
 	// Map is just a conversion for a map[string]interface{}
 	// should not be used inside Render when PongoEngine is used.
@@ -91,8 +86,8 @@ type (
 		Params    PathParameters
 		framework *Framework
 		//keep track all registed middleware (handlers)
-		middleware   Middleware
-		sessionStore store.IStore
+		middleware Middleware
+		session    *session
 		// pos is the position number of the Context, look .Next to understand
 		pos uint8
 	}
@@ -110,7 +105,7 @@ func (ctx *Context) GetRequestCtx() *fasthttp.RequestCtx {
 // I use it for zero rellocation memory
 func (ctx *Context) Reset(reqCtx *fasthttp.RequestCtx) {
 	ctx.Params = ctx.Params[0:0]
-	ctx.sessionStore = nil
+	ctx.session = nil
 	ctx.middleware = nil
 	ctx.RequestCtx = reqCtx
 }
@@ -853,24 +848,32 @@ func (ctx *Context) SetFlash(key string, value string) {
 	fasthttp.ReleaseCookie(c)
 }
 
-// Session returns the current session store, returns nil if provider is ""
-func (ctx *Context) Session() store.IStore {
-	if ctx.framework.sessions == nil || ctx.framework.Config.Sessions.Provider == "" { //the second check can be changed on runtime, users are able to  turn off the sessions by setting provider to  ""
+// Session returns the current session
+func (ctx *Context) Session() interface {
+	ID() string
+	Get(string) interface{}
+	GetString(key string) string
+	GetInt(key string) int
+	GetAll() map[string]interface{}
+	VisitAll(cb func(k string, v interface{}))
+	Set(string, interface{})
+	Delete(string)
+	Clear()
+} {
+	if ctx.framework.sessions == nil { // this should never return nil but FOR ANY CASE, on future changes.
 		return nil
 	}
 
-	if ctx.sessionStore == nil {
-		ctx.sessionStore = ctx.framework.sessions.Start(ctx)
+	if ctx.session == nil {
+		ctx.session = ctx.framework.sessions.start(ctx)
 	}
-	return ctx.sessionStore
+	return ctx.session
 }
 
 // SessionDestroy destroys the whole session, calls the provider's destroy and remove the cookie
 func (ctx *Context) SessionDestroy() {
-	if ctx.framework.sessions != nil {
-		if store := ctx.Session(); store != nil {
-			ctx.framework.sessions.Destroy(ctx)
-		}
+	if sess := ctx.Session(); sess != nil {
+		ctx.framework.sessions.destroy(ctx)
 	}
 
 }

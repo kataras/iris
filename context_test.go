@@ -596,7 +596,7 @@ func TestContextSessions(t *testing.T) {
 
 	// test destory which also clears first
 	d := e.GET("/destroy").Expect().Status(StatusOK)
-	d.JSON().Object().Empty()
+	d.JSON().Null()
 	// 	This removed: d.Cookies().Empty(). Reason:
 	// httpexpect counts the cookies setted or deleted at the response time, but cookie is not removed, to be really removed needs to SetExpire(now-1second) so,
 	// test if the cookies removed on the next request, like the browser's behavior.
