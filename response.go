@@ -143,8 +143,12 @@ func (r *responseEngineMap) render(ctx *Context, obj interface{}, options ...map
 			charset = chs
 		}
 	}
+	ctype := r.contentType
 
-	ctx.SetContentType(r.contentType + "; charset=" + charset)
+	if r.contentType != contentBinary { // set the charset only on non-binary data
+		ctype += "; charset=" + charset
+	}
+	ctx.SetContentType(ctype)
 
 	if gzipEnabled {
 		ctx.Response.Header.Add("Content-Encoding", "gzip")
@@ -214,7 +218,10 @@ func (r *responseEngines) add(engine ResponseEngine, forContentTypesOrKeys ...st
 
 func (r *responseEngines) getBy(key string) *responseEngineMap {
 	for i, n := 0, len(r.engines); i < n; i++ {
-		return r.engines[i]
+		if r.engines[i].key == key {
+			return r.engines[i]
+		}
+
 	}
 	return nil
 }
