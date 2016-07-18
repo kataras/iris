@@ -641,7 +641,7 @@ func joinMiddleware(middleware1 Middleware, middleware2 Middleware) Middleware {
 
 func profileMiddleware(debugPath string) Middleware {
 	htmlMiddleware := HandlerFunc(func(ctx *Context) {
-		ctx.SetContentType(contentHTML + "; charset=" + config.Charset)
+		ctx.SetContentType(contentHTML + "; charset=" + ctx.framework.Config.Charset)
 		ctx.Next()
 	})
 	indexHandler := ToHandlerFunc(pprof.Index)

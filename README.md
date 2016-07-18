@@ -145,7 +145,7 @@ I recommend writing your API tests using this new library, [httpexpect](https://
 Versioning
 ------------
 
-Current: **v4.0.0-alpha.2**
+Current: **v4.0.0-alpha.3**
 
 >  Iris is an active project
 
@@ -159,7 +159,7 @@ Todo
 - [x] Refactor & extend view engine, separate the engines from the main code base, easier for the community to create new view engines
 - [x] Refactor & extend sessions, split the different databases functionality to the iris-contrib
 - [ ] Refactor & extends the rest render engine in order to be able to developer to use their own implemention for rendering restful types, like, for example a  custom JSON implementation using no-standard go package for encode/decode
-- [ ] Move the iris/websocket package's source code inside iris/websocket.go one file, to be easier to use by users without import a new package
+- [x] Move the iris/websocket package's source code inside iris/websocket.go one file, to be easier to use by users without import a new package
 - [ ] configs package should be removed after all these, we will not need big configurations because of different packages splitted & moved to the iris-contrib, we will keep interfaces and all required things inside kataras/iris.go.
 - [ ] Implement all [opened community's feature requests](https://github.com/kataras/iris/issues?q=is%3Aissue+is%3Aopen+label%3A%22feature+request%22)
 - [ ] Extend i18n middleware for easier and better internalization support
@@ -192,7 +192,7 @@ License can be found [here](LICENSE).
 [Travis]: http://travis-ci.org/kataras/iris
 [License Widget]: https://img.shields.io/badge/license-MIT%20%20License%20-E91E63.svg?style=flat-square
 [License]: https://github.com/kataras/iris/blob/master/LICENSE
-[Release Widget]: https://img.shields.io/badge/release-v4.0.0--alpha.2-blue.svg?style=flat-square
+[Release Widget]: https://img.shields.io/badge/release-v4.0.0--alpha.3-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/iris/releases
 [Chat Widget]: https://img.shields.io/badge/community-chat-00BCD4.svg?style=flat-square
 [Chat]: https://kataras.rocket.chat/channel/iris

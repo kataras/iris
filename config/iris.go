@@ -2,13 +2,13 @@ package config
 
 import (
 	"github.com/imdario/mergo"
-	"github.com/iris-contrib/rest"
 )
 
 // Default values for base Iris conf
 const (
 	DefaultDisablePathCorrection = false
 	DefaultDisablePathEscape     = false
+	DefaultCharset               = "UTF-8"
 )
 
 type (
@@ -89,11 +89,13 @@ type (
 		// default is false
 		IsDevelopment bool
 
+		// Charset character encoding for various rendering
+		// used for templates and the rest of the responses
+		// defaults to "UTF-8"
+		Charset string
+
 		// Sessions contains the configs for sessions
 		Sessions Sessions
-
-		// Rest contains the configs for rest render configuration
-		Rest rest.Config
 
 		// Websocket contains the configs for Websocket's server integration
 		Websocket *Websocket
@@ -111,9 +113,9 @@ func Default() Iris {
 		DisableBanner:          false,
 		DisableTemplateEngines: false,
 		IsDevelopment:          false,
+		Charset:                DefaultCharset,
 		ProfilePath:            "",
 		Sessions:               DefaultSessions(),
-		Rest:                   rest.DefaultConfig(),
 		Websocket:              DefaultWebsocket(),
 		Tester:                 DefaultTester(),
 	}

@@ -45,13 +45,14 @@
 //
 // -----------------------------DOCUMENTATION----------------------------
 // ----------------------------_______________---------------------------
-// For middleware, templates, sessions, websockets, mails, subdomains,
+// For middleware, template engines, response engines, sessions, websockets, mails, subdomains,
 // dynamic subdomains, routes, party of subdomains & routes and much more
 // visit https://www.gitbook.com/book/kataras/iris/details
 package iris // import "github.com/kataras/iris"
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path"
@@ -61,23 +62,29 @@ import (
 	"testing"
 	"time"
 
+	"github.com/klauspost/compress/gzip"
+
 	"sync"
 
 	"github.com/gavv/httpexpect"
 	"github.com/iris-contrib/errors"
 	"github.com/iris-contrib/logger"
-	"github.com/iris-contrib/rest"
+	"github.com/iris-contrib/response/data"
+	"github.com/iris-contrib/response/json"
+	"github.com/iris-contrib/response/jsonp"
+	"github.com/iris-contrib/response/markdown"
+	"github.com/iris-contrib/response/text"
+	"github.com/iris-contrib/response/xml"
 	"github.com/iris-contrib/template/html"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/utils"
-	"github.com/kataras/iris/websocket"
 	"github.com/valyala/fasthttp"
 )
 
 const (
 	// Version of the iris
-	Version = "4.0.0-alpha.2"
+	Version = "4.0.0-alpha.3"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -93,7 +100,7 @@ var (
 	Config    *config.Iris
 	Logger    *logger.Logger
 	Plugins   PluginContainer
-	Websocket websocket.Server
+	Websocket WebsocketServer
 	Servers   *ServerList
 	// Available is a channel type of bool, fired to true when the server is opened and all plugins ran
 	// never fires false, if the .Close called then the channel is re-allocating.
@@ -151,6 +158,7 @@ type (
 		Path(string, ...interface{}) string
 		URL(string, ...interface{}) string
 		TemplateString(string, interface{}, ...map[string]interface{}) string
+		ResponseString(string, interface{}, ...map[string]interface{}) string
 		Tester(t *testing.T) *httpexpect.Expect
 	}
 
@@ -159,18 +167,18 @@ type (
 	// Implements the FrameworkAPI
 	Framework struct {
 		*muxAPI
-		rest      *rest.Render
-		sessions  *sessionsManager
-		templates *TemplateEngines
-
+		Config         *config.Iris
+		gzipWriterPool sync.Pool // used for several methods, usually inside context
+		sessions       *sessionsManager
+		responses      *responseEngines
+		templates      *templateEngines
 		// fields which are useful to the user/dev
 		// the last  added server is the main server
 		Servers *ServerList
-		Config  *config.Iris
 		// configuration by instance.Logger.Config
 		Logger    *logger.Logger
 		Plugins   PluginContainer
-		Websocket websocket.Server
+		Websocket WebsocketServer
 		Available chan bool
 		// this is setted once when .Tester(t) is called
 		testFramework *httpexpect.Expect
@@ -188,7 +196,14 @@ func New(cfg ...config.Iris) *Framework {
 
 	// we always use 's' no 'f' because 's' is easier for me to remember because of 'station'
 	// some things never change :)
-	s := &Framework{Config: &c, Available: make(chan bool)}
+	s := &Framework{
+		Config: &c,
+		gzipWriterPool: sync.Pool{New: func() interface{} {
+			return &gzip.Writer{}
+		}},
+		responses: &responseEngines{},
+		Available: make(chan bool),
+	}
 	{
 		///NOTE: set all with s.Config pointer
 		// set the Logger
@@ -196,17 +211,17 @@ func New(cfg ...config.Iris) *Framework {
 		// set the plugin container
 		s.Plugins = &pluginContainer{logger: s.Logger}
 		// set the templates
-		s.templates = &TemplateEngines{
-			Helpers: map[string]interface{}{
+		s.templates = &templateEngines{
+			helpers: map[string]interface{}{
 				"url":     s.URL,
 				"urlpath": s.Path,
 			},
-			Engines: make([]*TemplateEngineWrapper, 0),
+			engines: make([]*templateEngineWrapper, 0),
 		}
 		//set the session manager
 		s.sessions = newSessionsManager(c.Sessions)
 		// set the websocket server
-		s.Websocket = websocket.NewServer(s.Config.Websocket)
+		s.Websocket = NewWebsocketServer(s.Config.Websocket)
 		// set the servemux, which will provide us the public API also, with its context pool
 		mux := newServeMux(sync.Pool{New: func() interface{} { return &Context{framework: s} }}, s.Logger)
 		mux.onLookup = s.Plugins.DoPreLookup
@@ -220,22 +235,46 @@ func New(cfg ...config.Iris) *Framework {
 }
 
 func (s *Framework) initialize() {
-	// set the rest
-	s.rest = rest.New(s.Config.Rest)
+	// prepare the response engines, if no response engines setted for the default content-types
+	// then add them
+
+	for _, ctype := range defaultResponseKeys {
+		if rengine := s.responses.getBy(ctype); rengine == nil {
+			// if not exists
+			switch ctype {
+			case contentText:
+				s.UseResponse(text.New(), ctype)
+			case contentBinary:
+				s.UseResponse(data.New(), ctype)
+			case contentJSON:
+				s.UseResponse(json.New(), ctype)
+			case contentJSONP:
+				s.UseResponse(jsonp.New(), ctype)
+			case contentXML:
+				s.UseResponse(xml.New(), ctype)
+			case contentMarkdown:
+				s.UseResponse(markdown.New(), ctype)
+			}
+		}
+	}
+
 	// prepare the templates if enabled
 	if !s.Config.DisableTemplateEngines {
-		if err := s.templates.LoadAll(); err != nil {
-			s.Logger.Panic(err) // panic on templates loading before listening if we have an error.
-		}
+
 		// check and prepare the templates
-		if len(s.templates.Engines) == 0 { // no template engine is registered, let's use the default
+		if len(s.templates.engines) == 0 { // no template engine is registered, let's use the default
 			s.UseTemplate(html.New())
 		}
-		s.templates.Reload = s.Config.IsDevelopment
+
+		if err := s.templates.loadAll(); err != nil {
+			s.Logger.Panic(err) // panic on templates loading before listening if we have an error.
+		}
+
+		s.templates.reload = s.Config.IsDevelopment
 	}
 
 	// listen to websocket connections
-	websocket.RegisterServer(s, s.Websocket, s.Logger)
+	RegisterWebsocketServer(s, s.Websocket, s.Logger)
 
 	//  prepare the mux & the server
 	s.mux.setCorrectPath(!s.Config.DisablePathCorrection)
@@ -486,6 +525,40 @@ func (s *Framework) UseSessionDB(db SessionDatabase) {
 	s.sessions.provider.registerDatabase(db)
 }
 
+// UseResponse accepts a ResponseEngine and the key or content type on which the developer wants to register this response engine
+// the gzip and charset are automatically supported by Iris, by passing the iris.RenderOptions{} map on the context.Render
+// context.Render renders this response or a template engine if no response engine with the 'key' found
+// with these engines you can inject the context.JSON,Text,Data,JSONP,XML also
+// to do that just register with UseResponse(myEngine,"application/json") and so on
+// look at the https://github.com/iris-contrib/response for examples
+//
+// if more than one respone engine with the same key/content type exists then the results will be appended to the final request's body
+// this allows the developer to be able to create 'middleware' responses engines
+//
+// Note: if you pass an engine which contains a dot('.') as key, then the engine will not be registered.
+// you don't have to import and use github.com/iris-contrib/json, jsonp, xml, data, text, markdown
+// because iris uses these by default if no other response engine is registered for these content types
+func UseResponse(e ResponseEngine, forContentTypesOrKeys ...string) {
+	Default.UseResponse(e, forContentTypesOrKeys...)
+}
+
+// UseResponse accepts a ResponseEngine and the key or content type on which the developer wants to register this response engine
+// the gzip and charset are automatically supported by Iris, by passing the iris.RenderOptions{} map on the context.Render
+// context.Render renders this response or a template engine if no response engine with the 'key' found
+// with these engines you can inject the context.JSON,Text,Data,JSONP,XML also
+// to do that just register with UseResponse(myEngine,"application/json") and so on
+// look at the https://github.com/iris-contrib/response for examples
+//
+// if more than one respone engine with the same key/content type exists then the results will be appended to the final request's body
+// this allows the developer to be able to create 'middleware' responses engines
+//
+// Note: if you pass an engine which contains a dot('.') as key, then the engine will not be registered.
+// you don't have to import and use github.com/iris-contrib/json, jsonp, xml, data, text, markdown
+// because iris uses these by default if no other response engine is registered for these content types
+func (s *Framework) UseResponse(e ResponseEngine, forContentTypesOrKeys ...string) {
+	s.responses.add(e, forContentTypesOrKeys...)
+}
+
 // UseTemplate adds a template engine to the iris view system
 // it does not build/load them yet
 func UseTemplate(e TemplateEngine) *TemplateEngineLocation {
@@ -495,7 +568,7 @@ func UseTemplate(e TemplateEngine) *TemplateEngineLocation {
 // UseTemplate adds a template engine to the iris view system
 // it does not build/load them yet
 func (s *Framework) UseTemplate(e TemplateEngine) *TemplateEngineLocation {
-	return s.templates.Add(e)
+	return s.templates.add(e)
 }
 
 // UseGlobal registers Handler middleware  to the beginning, prepends them instead of append
@@ -716,6 +789,25 @@ func (s *Framework) URL(routeName string, args ...interface{}) (url string) {
 	return
 }
 
+// AcquireGzip prepares a gzip writer and returns it
+//
+// Note that: each iris station has its own pool
+// see ReleaseGzip
+func (s *Framework) AcquireGzip(w io.Writer) *gzip.Writer {
+	gzipWriter := s.gzipWriterPool.Get().(*gzip.Writer)
+	gzipWriter.Reset(w)
+	return gzipWriter
+}
+
+// ReleaseGzip called when flush/close and put the gzip writer back to the pool
+//
+// Note that: each iris station has its own pool
+// see AcquireGzip
+func (s *Framework) ReleaseGzip(gzipWriter *gzip.Writer) {
+	gzipWriter.Close()
+	s.gzipWriterPool.Put(gzipWriter)
+}
+
 // TemplateString executes a template from the default template engine and returns its result as string, useful when you want it for sending rich e-mails
 // returns empty string on error
 func TemplateString(templateFile string, pageContext interface{}, options ...map[string]interface{}) string {
@@ -728,7 +820,25 @@ func (s *Framework) TemplateString(templateFile string, pageContext interface{},
 	if s.Config.DisableTemplateEngines {
 		return ""
 	}
-	res, err := s.templates.GetBy(templateFile).ExecuteToString(templateFile, pageContext, options...)
+	res, err := s.templates.getBy(templateFile).executeToString(templateFile, pageContext, options...)
+	if err != nil {
+		return ""
+	}
+	return res
+}
+
+// ResponseString returns the string of a response engine,
+// does not render it to the client
+// returns empty string on error
+func ResponseString(keyOrContentType string, obj interface{}, options ...map[string]interface{}) string {
+	return Default.ResponseString(keyOrContentType, obj, options...)
+}
+
+// ResponseString returns the string of a response engine,
+// does not render it to the client
+// returns empty string on error
+func (s *Framework) ResponseString(keyOrContentType string, obj interface{}, options ...map[string]interface{}) string {
+	res, err := s.responses.getBy(keyOrContentType).toString(obj, options...)
 	if err != nil {
 		return ""
 	}

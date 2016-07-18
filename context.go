@@ -39,8 +39,19 @@ const (
 	contentLength = "Content-Length"
 	// ContentHTML is the  string of text/html response headers
 	contentHTML = "text/html"
-	// ContentBINARY is the string of application/octet-stream response headers
-	contentBINARY = "application/octet-stream"
+	// ContentBinary header value for binary data.
+	contentBinary = "application/octet-stream"
+	// ContentJSON header value for JSON data.
+	contentJSON = "application/json"
+	// ContentJSONP header value for JSONP data.
+	contentJSONP = "application/javascript"
+	// ContentText header value for Text data.
+	contentText = "text/plain"
+	// ContentXML header value for XML data.
+	contentXML = "text/xml"
+
+	// contentMarkdown custom key/content type, the real is the text/html
+	contentMarkdown = "text/markdown"
 
 	// LastModified "Last-Modified"
 	lastModified = "Last-Modified"
@@ -461,26 +472,29 @@ func (ctx *Context) Write(format string, a ...interface{}) {
 	ctx.RequestCtx.WriteString(fmt.Sprintf(format, a...))
 }
 
-// HTML writes html string with a http status
-func (ctx *Context) HTML(httpStatus int, htmlContents string) {
-	ctx.SetContentType(contentHTML + ctx.framework.rest.CompiledCharset)
-	ctx.RequestCtx.SetStatusCode(httpStatus)
-	ctx.RequestCtx.WriteString(htmlContents)
+// Gzip accepts bytes, which are compressed to gzip format and sent to the client
+func (ctx *Context) Gzip(b []byte, status int) {
+	ctx.RequestCtx.Response.Header.Add("Content-Encoding", "gzip")
+	gzipWriter := ctx.framework.gzipWriterPool.Get().(*gzip.Writer)
+	gzipWriter.Reset(ctx.RequestCtx.Response.BodyWriter())
+	gzipWriter.Write(b)
+	gzipWriter.Close()
+	ctx.framework.gzipWriterPool.Put(gzipWriter)
 }
 
-// Data writes out the raw bytes as binary data.
-func (ctx *Context) Data(status int, v []byte) error {
-	return ctx.framework.rest.Data(ctx.RequestCtx, status, v)
-}
-
-// RenderWithStatus builds up the response from the specified template and bindings.
-// Note: parameter layout has meaning only when using the iris.HTMLTemplate
+// RenderWithStatus builds up the response from the specified template or a response engine.
+// Note: the options: "gzip" and "charset" are built'n support by Iris, so you can pass these on any template engine or response engine
 func (ctx *Context) RenderWithStatus(status int, name string, binding interface{}, options ...map[string]interface{}) error {
 	ctx.SetStatusCode(status)
-	return ctx.framework.templates.GetBy(name).Execute(ctx, name, binding, options...)
+	if strings.IndexByte(name, '.') > 0 { //we have template
+		return ctx.framework.templates.getBy(name).execute(ctx, name, binding, options...)
+	}
+	return ctx.framework.responses.getBy(name).render(ctx, binding, options...)
 }
 
-// Render same as .RenderWithStatus but with status to iris.StatusOK (200)
+// Render same as .RenderWithStatus but with status to iris.StatusOK (200) if no previous status exists
+// builds up the response from the specified template or a response engine.
+// Note: the options: "gzip" and "charset" are built'n support by Iris, so you can pass these on any template engine or response engine
 func (ctx *Context) Render(name string, binding interface{}, options ...map[string]interface{}) error {
 	errCode := ctx.RequestCtx.Response.StatusCode()
 	if errCode <= 0 {
@@ -490,6 +504,8 @@ func (ctx *Context) Render(name string, binding interface{}, options ...map[stri
 }
 
 // MustRender same as .Render but returns 500 internal server http status (error) if rendering fail
+// builds up the response from the specified template or a response engine.
+// Note: the options: "gzip" and "charset" are built'n support by Iris, so you can pass these on any template engine or response engine
 func (ctx *Context) MustRender(name string, binding interface{}, options ...map[string]interface{}) {
 	if err := ctx.Render(name, binding, options...); err != nil {
 		ctx.Panic()
@@ -503,29 +519,43 @@ func (ctx *Context) TemplateString(name string, binding interface{}, options ...
 	return ctx.framework.TemplateString(name, binding, options...)
 }
 
+// HTML writes html string with a http status
+func (ctx *Context) HTML(status int, htmlContents string) {
+	if err := ctx.RenderWithStatus(status, contentHTML, htmlContents); err != nil {
+		ctx.SetContentType(contentHTML + "; charset=" + ctx.framework.Config.Charset)
+		ctx.RequestCtx.SetStatusCode(status)
+		ctx.RequestCtx.WriteString(htmlContents)
+	}
+}
+
+// Data writes out the raw bytes as binary data.
+func (ctx *Context) Data(status int, v []byte) error {
+	return ctx.RenderWithStatus(status, contentBinary, v)
+}
+
 // JSON marshals the given interface object and writes the JSON response.
 func (ctx *Context) JSON(status int, v interface{}) error {
-	return ctx.framework.rest.JSON(ctx.RequestCtx, status, v)
+	return ctx.RenderWithStatus(status, contentJSON, v)
 }
 
 // JSONP marshals the given interface object and writes the JSON response.
 func (ctx *Context) JSONP(status int, callback string, v interface{}) error {
-	return ctx.framework.rest.JSONP(ctx.RequestCtx, status, callback, v)
+	return ctx.RenderWithStatus(status, contentJSONP, v, map[string]interface{}{"callback": callback})
 }
 
 // Text writes out a string as plain text.
 func (ctx *Context) Text(status int, v string) error {
-	return ctx.framework.rest.Text(ctx.RequestCtx, status, v)
+	return ctx.RenderWithStatus(status, contentText, v)
 }
 
 // XML marshals the given interface object and writes the XML response.
 func (ctx *Context) XML(status int, v interface{}) error {
-	return ctx.framework.rest.XML(ctx.RequestCtx, status, v)
+	return ctx.RenderWithStatus(status, contentXML, v)
 }
 
 // MarkdownString parses the (dynamic) markdown string and returns the converted html string
 func (ctx *Context) MarkdownString(markdownText string) string {
-	return ctx.framework.rest.Markdown([]byte(markdownText))
+	return ctx.framework.ResponseString(contentMarkdown, markdownText)
 }
 
 // Markdown parses and renders to the client a particular (dynamic) markdown string

@@ -1,11 +1,9 @@
 package iris
 
 import (
-	"compress/gzip"
 	"io"
 
 	"path/filepath"
-	"sync"
 
 	"github.com/iris-contrib/errors"
 	"github.com/kataras/iris/utils"
@@ -16,14 +14,6 @@ var (
 
 	// DefaultTemplateDirectory the default directory if empty setted
 	DefaultTemplateDirectory = "." + utils.PathSeparator + "templates"
-)
-var (
-	// ContentTypeHTML the content type header for rendering
-	// this can be changed
-	ContentTypeHTML = "text/html"
-	// Charset the charset header for rendering
-	// this can be changed
-	Charset = "UTF-8"
 )
 
 const (
@@ -81,6 +71,22 @@ func (t TemplateFuncs) IsFree(key string) bool {
 	return true
 }
 
+func getGzipOption(options map[string]interface{}) bool {
+	gzipOpt := options["gzip"] // we only need that, so don't create new map to keep the options.
+	if b, isBool := gzipOpt.(bool); isBool {
+		return b
+	}
+	return false
+}
+
+func getCharsetOption(options map[string]interface{}) string {
+	charsetOpt := options["charset"]
+	if s, isString := charsetOpt.(string); isString {
+		return s
+	}
+	return "" // we return empty in order to set the default charset if not founded.
+}
+
 type (
 	// TemplateEngineLocation contains the funcs to set the location for the templates by directory or by binary
 	TemplateEngineLocation struct {
@@ -119,14 +125,12 @@ func (t *TemplateEngineLocation) isBinary() bool {
 	return t.assetFn != nil && t.namesFn != nil
 }
 
-// TemplateEngineWrapper is the wrapper of a template engine
-type TemplateEngineWrapper struct {
+// templateEngineWrapper is the wrapper of a template engine
+type templateEngineWrapper struct {
 	TemplateEngine
-	location            *TemplateEngineLocation
-	buffer              *utils.BufferPool
-	gzipWriterPool      sync.Pool
-	reload              bool
-	combiledContentType string
+	location *TemplateEngineLocation
+	buffer   *utils.BufferPool
+	reload   bool
 }
 
 var (
@@ -134,7 +138,7 @@ var (
 	errNoTemplateEngineForExt   = errors.New("No template engine found to manage '%s' extensions")
 )
 
-func (t *TemplateEngineWrapper) load() error {
+func (t *templateEngineWrapper) load() error {
 	if t.location.isBinary() {
 		t.LoadAssets(t.location.directory, t.location.extension, t.location.assetFn, t.location.namesFn)
 	} else if t.location.directory != "" {
@@ -145,13 +149,14 @@ func (t *TemplateEngineWrapper) load() error {
 	return nil
 }
 
-// Execute execute a template and write its result to the context's body
+// execute execute a template and write its result to the context's body
 // options are the optional runtime options can be passed by user and catched by the template engine when render
 // an example of this is the "layout"
 // note that gzip option is an iris dynamic option which exists for all template engines
-func (t *TemplateEngineWrapper) Execute(ctx *Context, filename string, binding interface{}, options ...map[string]interface{}) (err error) {
+// the gzip and charset options are built'n with iris
+func (t *templateEngineWrapper) execute(ctx *Context, filename string, binding interface{}, options ...map[string]interface{}) (err error) {
 	if t == nil {
-		//file extension, but no template engine registered, this caused by context, and TemplateEngines. GetBy
+		//file extension, but no template engine registered, this caused by context, and templateEngines. getBy
 		return errNoTemplateEngineForExt.Format(filepath.Ext(filename))
 	}
 	if t.reload {
@@ -162,10 +167,11 @@ func (t *TemplateEngineWrapper) Execute(ctx *Context, filename string, binding i
 
 	// we do all these because we don't want to initialize a new map for each execution...
 	gzipEnabled := false
+	charset := ctx.framework.Config.Charset
 	if len(options) > 0 {
-		gzipOpt := options[0]["gzip"] // we only need that, so don't create new map to keep the options.
-		if b, isBool := gzipOpt.(bool); isBool {
-			gzipEnabled = b
+		gzipEnabled = getGzipOption(options[0])
+		if chs := getCharsetOption(options[0]); chs != "" {
+			charset = chs
 		}
 	}
 
@@ -178,26 +184,25 @@ func (t *TemplateEngineWrapper) Execute(ctx *Context, filename string, binding i
 		}
 	}
 
+	ctx.SetContentType(contentHTML + "; charset=" + charset)
+
 	var out io.Writer
 	if gzipEnabled {
 		ctx.Response.Header.Add("Content-Encoding", "gzip")
-		gzipWriter := t.gzipWriterPool.Get().(*gzip.Writer)
-		gzipWriter.Reset(ctx.Response.BodyWriter())
-		defer gzipWriter.Close()
-		defer t.gzipWriterPool.Put(gzipWriter)
+		gzipWriter := ctx.framework.AcquireGzip(ctx.Response.BodyWriter())
+		defer ctx.framework.ReleaseGzip(gzipWriter)
 		out = gzipWriter
 	} else {
 		out = ctx.Response.BodyWriter()
 	}
-	ctx.SetHeader("Content-Type", t.combiledContentType)
 
 	return t.ExecuteWriter(out, filename, binding, options...)
 }
 
-// ExecuteToString executes a template from a specific template engine and returns its contents result as string, it doesn't renders
-func (t *TemplateEngineWrapper) ExecuteToString(filename string, binding interface{}, opt ...map[string]interface{}) (result string, err error) {
+// executeToString executes a template from a specific template engine and returns its contents result as string, it doesn't renders
+func (t *templateEngineWrapper) executeToString(filename string, binding interface{}, opt ...map[string]interface{}) (result string, err error) {
 	if t == nil {
-		//file extension, but no template engine registered, this caused by context, and TemplateEngines. GetBy
+		//file extension, but no template engine registered, this caused by context, and templateEngines. getBy
 		return "", errNoTemplateEngineForExt.Format(filepath.Ext(filename))
 	}
 	if t.reload {
@@ -215,18 +220,18 @@ func (t *TemplateEngineWrapper) ExecuteToString(filename string, binding interfa
 	return
 }
 
-// TemplateEngines is the container and manager of the template engines
-type TemplateEngines struct {
-	Helpers map[string]interface{}
-	Engines []*TemplateEngineWrapper
-	Reload  bool
+// templateEngines is the container and manager of the template engines
+type templateEngines struct {
+	helpers map[string]interface{}
+	engines []*templateEngineWrapper
+	reload  bool
 }
 
-// GetBy receives a filename, gets its extension and returns the template engine responsible for that file extension
-func (t *TemplateEngines) GetBy(filename string) *TemplateEngineWrapper {
+// getBy receives a filename, gets its extension and returns the template engine responsible for that file extension
+func (t *templateEngines) getBy(filename string) *templateEngineWrapper {
 	extension := filepath.Ext(filename)
-	for i, n := 0, len(t.Engines); i < n; i++ {
-		e := t.Engines[i]
+	for i, n := 0, len(t.engines); i < n; i++ {
+		e := t.engines[i]
 
 		if e.location.extension == extension {
 			return e
@@ -235,38 +240,34 @@ func (t *TemplateEngines) GetBy(filename string) *TemplateEngineWrapper {
 	return nil
 }
 
-// Add adds but not loads a template engine
-func (t *TemplateEngines) Add(e TemplateEngine) *TemplateEngineLocation {
+// add adds but not loads a template engine
+func (t *templateEngines) add(e TemplateEngine) *TemplateEngineLocation {
 	location := &TemplateEngineLocation{}
 	// add the iris helper funcs
 	if funcer, ok := e.(TemplateEngineFuncs); ok {
 		if funcer.Funcs() != nil {
-			for k, v := range t.Helpers {
+			for k, v := range t.helpers {
 				funcer.Funcs()[k] = v
 			}
 		}
 	}
 
-	tmplEngine := &TemplateEngineWrapper{
+	tmplEngine := &templateEngineWrapper{
 		TemplateEngine: e,
 		location:       location,
-		buffer:         utils.NewBufferPool(20),
-		gzipWriterPool: sync.Pool{New: func() interface{} {
-			return &gzip.Writer{}
-		}},
-		reload:              t.Reload,
-		combiledContentType: ContentTypeHTML + "; " + Charset,
+		buffer:         utils.NewBufferPool(8),
+		reload:         t.reload,
 	}
 
-	t.Engines = append(t.Engines, tmplEngine)
+	t.engines = append(t.engines, tmplEngine)
 	return location
 }
 
-// LoadAll loads all templates using all template engines, returns the first error
+// loadAll loads all templates using all template engines, returns the first error
 // called on iris' initialize
-func (t *TemplateEngines) LoadAll() error {
-	for i, n := 0, len(t.Engines); i < n; i++ {
-		e := t.Engines[i]
+func (t *templateEngines) loadAll() error {
+	for i, n := 0, len(t.engines); i < n; i++ {
+		e := t.engines[i]
 		if e.location.directory == "" {
 			e.location.directory = DefaultTemplateDirectory // the defualt dir ./templates
 		}

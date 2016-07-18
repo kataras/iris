@@ -6,11 +6,6 @@ import (
 )
 
 var (
-	// Charset character encoding for various rendering
-	Charset = "UTF-8"
-)
-
-var (
 	// TimeFormat default time format for any kind of datetime parsing
 	TimeFormat = "Mon, 02 Jan 2006 15:04:05 GMT"
 	// StaticCacheDuration expiration duration for INACTIVE file handlers

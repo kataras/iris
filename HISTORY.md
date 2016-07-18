@@ -2,6 +2,41 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras/iris` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 4.0.0-alpha.2 -> 4.0.0-alpha.3
+
+**New**
+
+A **Response Engine** gives you the freedom to create/change the render/response writer for 
+
+- `context.JSON`
+- `context.JSONP` 
+- `context.XML` 
+- `context.Text` 
+- `context.Markdown`
+- `context.Data` 
+- `context.Render("my_custom_type",mystructOrData{}, iris.RenderOptions{"gzip":false,"charset":"UTF-8"})`
+- `context.MarkdownString`
+- `iris.ResponseString(...)` 
+
+
+**Fix**
+- https://github.com/kataras/iris/issues/294
+
+**Small changes**
+
+- `iris.Config.Charset`, before alpha.3 was `iris.Config.Rest.Charset` & `iris.Config.Render.Template.Charset`, but you can override it at runtime by passinth a map `iris.RenderOptions` on the `context.Render` call .
+- `iris.Config.IsDevelopment` , before alpha.1 was `iris.Config.Render.Template.IsDevelopment` 
+
+
+**Websockets changes**
+
+No need to import the `github.com/kataras/iris/websocket` to use the `Connection` iteral, the websocket moved inside `kataras/iris` , now all exported variables' names have the prefix of `Websocket`, so the old `websocket.Connection` is now `iris.WebsocketConnection`.
+
+
+Generally, no other changes on the 'frontend API', for response engines examples and how you can register your own to add more features on existing response engines or replace them, look [here](https://github.com/iris-contrib/response).
+
+**BAD SIDE**: E-Book is still pointing on the v3 release, but will be updated soon.
+
 ## 4.0.0-alpha.1 -> 4.0.0-alpha.2
 
 **Sessions were re-written **
