@@ -309,7 +309,7 @@ func (s *Framework) Go() error {
 		}
 
 		bannerMessage := time.Now().Format(config.TimeFormat) + ": Running at " + strings.Join(hosts, ", ")
-		s.Logger.PrintBanner(banner, bannerMessage)
+		s.Logger.PrintBanner(banner, "\n"+bannerMessage)
 
 	}
 
