@@ -21,6 +21,9 @@ A **Response Engine** gives you the freedom to create/change the render/response
 
 **Fix**
 - https://github.com/kataras/iris/issues/294
+- https://github.com/kataras/iris/issues/301
+- https://github.com/kataras/iris/issues/303
+
 
 **Small changes**
 

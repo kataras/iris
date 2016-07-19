@@ -126,11 +126,11 @@ Iris does not force you to use any specific ORM or template engine. With support
 
 **New results just came out:**
 
-![Benchmark Wizzard Processing Time Horizontal Graph](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/master/benchmark.png)
+![Benchmark Wizzard July 1, 2016- Processing Time Horizontal Graph](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/0874ce64aa6d78235c9452bfed0b8fb6fb4f4547/benchmark.png)
 
 **The results have been updated on July 1, 2016**
 
-[Please click here to view all detailed benchmarks.](https://github.com/smallnest/go-web-framework-benchmark)
+[Please click here to view all detailed benchmarks.](https://github.com/smallnest/go-web-framework-benchmark/commit/0874ce64aa6d78235c9452bfed0b8fb6fb4f4547)
 
 Testing
 ------------
@@ -166,7 +166,7 @@ If you're **willing to donate** click [here](DONATIONS.md)!
 
 People
 ------------
-A big thanks goes to [all people](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=label%3A%22feature+request%22) who help building this framework with feature-requests & bug reports!
+The big thanks goes to [all people](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=label%3A%22feature+request%22) who help building this framework with feature-requests & bug reports!
 
 The author of Iris is [@kataras](https://github.com/kataras).
 
