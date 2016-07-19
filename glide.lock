@@ -101,7 +101,7 @@ imports:
   subpackages:
   - github.com\valyala\bytebufferpool
 - name: github.com/valyala/fasthttp
-  version: 886e5411604884629c566961ea8ed2cec074e4b1
+  version: 45697fe30a130ec6a54426a069c82f3abe76b63d
   subpackages:
   - github.com\valyala\fasthttp
   - github.com\valyala\fasthttp\fasthttpadaptor

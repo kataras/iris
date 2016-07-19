@@ -3,7 +3,6 @@ homepage: https://iris-go.com
 license: MIT
 owners:
 - name: Gerasimos Maropoulos
-  email: makis@ideopod.com
   homepage: https://about.me/makismaropoulos
 import:
 - package: github.com/Joker/jade
