@@ -276,6 +276,8 @@ func (t *templateEngines) loadAll() error {
 			e.location.extension = DefaultTemplateExtension // the default file ext .html
 		}
 
+		e.reload = t.reload // update the configuration every time a load happens
+
 		if err := e.load(); err != nil {
 			return err
 		}

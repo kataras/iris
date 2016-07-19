@@ -262,6 +262,7 @@ func (s *Framework) initialize() {
 	// prepare the templates if enabled
 	if !s.Config.DisableTemplateEngines {
 
+		s.templates.reload = s.Config.IsDevelopment
 		// check and prepare the templates
 		if len(s.templates.engines) == 0 { // no template engine is registered, let's use the default
 			s.UseTemplate(html.New())
@@ -270,8 +271,6 @@ func (s *Framework) initialize() {
 		if err := s.templates.loadAll(); err != nil {
 			s.Logger.Panic(err) // panic on templates loading before listening if we have an error.
 		}
-
-		s.templates.reload = s.Config.IsDevelopment
 	}
 
 	// listen to websocket connections
