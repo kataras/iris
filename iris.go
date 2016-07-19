@@ -220,7 +220,7 @@ func New(cfg ...config.Iris) *Framework {
 			engines: make([]*templateEngineWrapper, 0),
 		}
 		//set the session manager
-		s.sessions = newSessionsManager(c.Sessions)
+		s.sessions = newSessionsManager(&c.Sessions)
 		// set the websocket server
 		s.Websocket = NewWebsocketServer(s.Config.Websocket)
 		// set the servemux, which will provide us the public API also, with its context pool
