@@ -185,6 +185,7 @@ func (p *sessionProvider) read(sid string) *session {
 	p.mu.Lock()
 	if elem, found := p.sessions[sid]; found {
 		p.mu.Unlock() // yes defer is slow
+		elem.Value.(*session).lastAccessedTime = time.Now()
 		return elem.Value.(*session)
 	}
 	p.mu.Unlock()
@@ -233,7 +234,8 @@ func (p *sessionProvider) gc(duration time.Duration) {
 
 		// if the time has passed. session was expired, then delete the session and its memory place
 		// we are not destroy the session completely for the case this is re-used after
-		if (elem.Value.(*session).lastAccessedTime.Unix() + duration.Nanoseconds()) < time.Now().Unix() {
+
+		if time.Now().After(elem.Value.(*session).lastAccessedTime.Add(duration)) {
 			p.list.Remove(elem)
 			delete(p.sessions, elem.Value.(*session).sid)
 		} else {
