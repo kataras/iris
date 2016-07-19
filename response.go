@@ -93,9 +93,9 @@ type (
 	responseEngineMap struct {
 		values []ResponseEngine
 		// this is used in order to the wrapper to be gettable by the responseEngines iteral,
-		// if key is not a $content/type then the text/plain will be sent to the client
+		// if key is not a $content/type and contentType is not changed by the user/dev then the text/plain will be sent to the client
 		key         string
-		contentType string // it's not the full content type with charset
+		contentType string
 	}
 )
 
@@ -104,12 +104,12 @@ var (
 	defaultResponseKeys = [...]string{contentText, contentXML, contentBinary, contentJSON, contentJSONP, contentMarkdown}
 )
 
-var errNoResponseEngineFound = errors.New("No response engine found")
-
 // Response returns  a response to the client(request's body content)
 func (r ResponseEngineFunc) Response(obj interface{}, options ...map[string]interface{}) ([]byte, error) {
 	return r(obj, options...)
 }
+
+var errNoResponseEngineFound = errors.New("No response engine found")
 
 // on context: Send(contentType string, obj interface{}, ...options)
 
@@ -151,13 +151,13 @@ func (r *responseEngineMap) render(ctx *Context, obj interface{}, options ...map
 	ctx.SetContentType(ctype)
 
 	if gzipEnabled {
-		ctx.Response.Header.Add("Content-Encoding", "gzip")
 		gzipWriter := ctx.framework.AcquireGzip(ctx.Response.BodyWriter())
 		defer ctx.framework.ReleaseGzip(gzipWriter)
 		_, err := gzipWriter.Write(finalResult)
 		if err != nil {
 			return err
 		}
+		ctx.Response.Header.Add("Content-Encoding", "gzip")
 	} else {
 		ctx.Response.SetBody(finalResult)
 	}
@@ -186,10 +186,17 @@ type responseEngines struct {
 }
 
 // add accepts a simple response engine with its content type or key, key should not contains a dot('.').
-func (r *responseEngines) add(engine ResponseEngine, forContentTypesOrKeys ...string) {
+// if key is a content type then it's the content type, but if it not, set the content type from the returned function,
+// if it not called/changed then the default content type text/plain will be used.
+// different content types for the same key will produce bugs, as it should!
+// one key has one content type but many response engines ( one to many)
+// note that the func should be used on the same call
+func (r *responseEngines) add(engine ResponseEngine, forContentTypesOrKeys ...string) func(string) {
 	if r.engines == nil {
 		r.engines = make([]*responseEngineMap, 0)
 	}
+
+	var engineMap *responseEngineMap
 	for _, key := range forContentTypesOrKeys {
 		if strings.IndexByte(key, '.') != -1 { // the dot is not allowed as key
 			continue // skip this engine
@@ -201,7 +208,7 @@ func (r *responseEngines) add(engine ResponseEngine, forContentTypesOrKeys ...st
 			key = defaultCtypeAndKey
 		}
 
-		engineMap := r.getBy(key)
+		engineMap = r.getBy(key)
 		if engineMap == nil {
 
 			ctype := defaultCtypeAndKey
@@ -209,11 +216,25 @@ func (r *responseEngines) add(engine ResponseEngine, forContentTypesOrKeys ...st
 				// we have 'valid' content type
 				ctype = key
 			}
+			// the context.Markdown works without it but with .Render we will have problems without this:
+			if key == contentMarkdown { // remember the text/markdown is just a custom internal iris content type, which in reallity renders html
+				ctype = contentHTML
+			}
 			engineMap = &responseEngineMap{values: make([]ResponseEngine, 0), key: key, contentType: ctype}
 			r.engines = append(r.engines, engineMap)
 		}
 		engineMap.add(engine)
 	}
+
+	return func(theContentType string) {
+		// and this
+		if theContentType == contentMarkdown {
+			theContentType = contentHTML
+		}
+
+		engineMap.contentType = theContentType
+	}
+
 }
 
 func (r *responseEngines) getBy(key string) *responseEngineMap {

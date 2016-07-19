@@ -4,10 +4,7 @@
 
 The fastest web framework for Go.
 
-
 [![Alt: Benchmark results with pipeline and 500ms processing time](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/benchmark_horizontal_transparent.png)](#benchmarks)
-
-
 
 
 ```bash
@@ -30,14 +27,6 @@ func main() {
 ```
 > Learn more about [render](https://kataras.gitbooks.io/iris/content/render.html)
 
-```bash
-$ iris run render_json.go
-```
-
-> Runs & monitors for file changes, learn more about [cli](https://github.com/kataras/iris/tree/master/iris).
-
-
-
 Installation
 ------------
 The only requirement is the [Go Programming Language](https://golang.org/dl), at least v1.6
@@ -58,6 +47,7 @@ Features
 - Focus on high performance
 - Robust routing supports static and wildcard subdomains
 - View system supporting [6+](https://kataras.gitbooks.io/iris/content/render_templates.html) template engines
+- Add custom [renders/responses](https://github.com/iris-contrib/examples/tree/master/response_engines/my_custom_response/main.go) or customize & replace the [defaults](https://github.com/iris-contrib/response/) (`context.JSON/JSONP/XML/Markdown/Text/Binary(...)`)
 - Highly scalable Websocket API with custom events
 - Sessions support with GC, memory & redis providers
 - Middlewares & Plugins were never be easier
@@ -76,12 +66,18 @@ Features
 
 | Name        | Description           | Usage  |
 | ------------------|:---------------------:|-------:|
-| [HTML/Default Engine ](https://github.com/iris-contrib/template/tree/master/html)      | HTML Template Engine (Default)                  |[example 1](https://github.com/iris-contrib/examples/blob/master/template_engines/template_html_1/main.go), [book section](https://kataras.gitbooks.io/iris/content/render_templates.html)
-| [Django Engine ](https://github.com/iris-contrib/template/tree/master/django)      | Django Template Engine                  |[example 1](https://github.com/iris-contrib/examples/blob/master/template_engines/template_django_1/main.go), [book section](https://kataras.gitbooks.io/iris/content/brender_templates.html)
-| [Pug/Jade Engine ](https://github.com/iris-contrib/template/tree/master/pug)      | Pug Template Engine                  |[example 1](https://github.com/iris-contrib/examples/blob/master/template_engines/template_pug_1/main.go), [book section](https://kataras.gitbooks.io/iris/content/render_templates.html)
-| [Handlebars Engine ](https://github.com/iris-contrib/template/tree/master/handlebars)      | Handlebars Template Engine                  |[example 1](https://github.com/iris-contrib/examples/blob/master/template_engines/template_handlebars_1/main.go), [book section](https://kataras.gitbooks.io/iris/content/render_templates.html)
-| [Amber Engine ](https://github.com/iris-contrib/template/tree/master/amber)      | Amber Template Engine                  |[example 1](https://github.com/iris-contrib/examples/blob/master/template_engines/template_amber_1/main.go), [book section](https://kataras.gitbooks.io/iris/content/render_templates.html)
-| [Markdown Engine ](https://github.com/iris-contrib/template/tree/master/markdown)      | Markdown Template Engine                  |[example 1](https://github.com/iris-contrib/examples/blob/master/template_engines/template_markdown_1/main.go), [book section](https://kataras.gitbooks.io/iris/content/render_templates.html)
+| [JSON ](https://github.com/iris-contrib/response/tree/master/json)      | JSON Response Engine (Default)                  |[example 1](https://github.com/iris-contrib/examples/blob/master/response_engines/json_1/main.go),[example 2](https://github.com/iris-contrib/examples/blob/master/response_engines/json_2/main.go), [book section](https://kataras.gitbooks.io/iris/content/render_response.html)
+| [JSONP ](https://github.com/iris-contrib/response/tree/master/jsonp)      | JSONP Response Engine (Default)                  |[example 1](https://github.com/iris-contrib/examples/blob/master/response_engines/jsonp_1/main.go),[example 2](https://github.com/iris-contrib/examples/blob/master/response_engines/jsonp_2/main.go), [book section](https://kataras.gitbooks.io/iris/content/render_response.html)
+| [XML ](https://github.com/iris-contrib/response/tree/master/xml)      | XML Response Engine (Default)                  |[example 1](https://github.com/iris-contrib/examples/blob/master/response_engines/xml_1/main.go),[example 2](https://github.com/iris-contrib/examples/blob/master/response_engines/xml_2/main.go), [book section](https://kataras.gitbooks.io/iris/content/render_response.html)
+| [Markdown ](https://github.com/iris-contrib/response/tree/master/markdown)      | Markdown Response Engine (Default)                  |[example 1](https://github.com/iris-contrib/examples/blob/master/response_engines/markdown_1/main.go),[example 2](https://github.com/iris-contrib/examples/blob/master/response_engines/markdown_2/main.go), [book section](https://kataras.gitbooks.io/iris/content/render_response.html)
+| [Text](https://github.com/iris-contrib/response/tree/master/text)      | Text Response Engine (Default)                  |[example 1](https://github.com/iris-contrib/examples/blob/master/response_engines/text_1/main.go), [book section](https://kataras.gitbooks.io/iris/content/render_response.html)
+| [Binary Data ](https://github.com/iris-contrib/response/tree/master/data)      | Binary Data Response Engine (Default)                  |[example 1](https://github.com/iris-contrib/examples/blob/master/response_engines/data_1/main.go), [book section](https://kataras.gitbooks.io/iris/content/render_response.html)
+| [HTML/Default Engine ](https://github.com/iris-contrib/template/tree/master/html)      | HTML Template Engine (Default)                  |[example ](https://github.com/iris-contrib/examples/blob/master/template_engines/template_html_0/main.go), [book section](https://kataras.gitbooks.io/iris/content/render_templates.html)
+| [Django Engine ](https://github.com/iris-contrib/template/tree/master/django)      | Django Template Engine                  |[example ](https://github.com/iris-contrib/examples/blob/master/template_engines/template_django_1/main.go), [book section](https://kataras.gitbooks.io/iris/content/brender_templates.html)
+| [Pug/Jade Engine ](https://github.com/iris-contrib/template/tree/master/pug)      | Pug Template Engine                  |[example ](https://github.com/iris-contrib/examples/blob/master/template_engines/template_pug_1/main.go), [book section](https://kataras.gitbooks.io/iris/content/render_templates.html)
+| [Handlebars Engine ](https://github.com/iris-contrib/template/tree/master/handlebars)      | Handlebars Template Engine                  |[example ](https://github.com/iris-contrib/examples/blob/master/template_engines/template_handlebars_1/main.go), [book section](https://kataras.gitbooks.io/iris/content/render_templates.html)
+| [Amber Engine ](https://github.com/iris-contrib/template/tree/master/amber)      | Amber Template Engine                  |[example ](https://github.com/iris-contrib/examples/blob/master/template_engines/template_amber_1/main.go), [book section](https://kataras.gitbooks.io/iris/content/render_templates.html)
+| [Markdown Engine ](https://github.com/iris-contrib/template/tree/master/markdown)      | Markdown Template Engine                  |[example ](https://github.com/iris-contrib/examples/blob/master/template_engines/template_markdown_1/main.go), [book section](https://kataras.gitbooks.io/iris/content/render_templates.html)
 | [Basicauth Middleware ](https://github.com/iris-contrib/middleware/tree/master/basicauth)      | HTTP Basic authentication                  |[example 1](https://github.com/iris-contrib/examples/blob/master/middleware_basicauth_1/main.go), [example 2](https://github.com/iris-contrib/examples/blob/master/middleware_basicauth_2/main.go), [book section](https://kataras.gitbooks.io/iris/content/basic-authentication.html)  |
 | [JWT Middleware ](https://github.com/iris-contrib/middleware/tree/master/jwt)      | JSON Web Tokens                  |[example ](https://github.com/iris-contrib/examples/blob/master/middleware_jwt/main.go), [book section](https://kataras.gitbooks.io/iris/content/jwt.html)  |
 | [Cors Middleware ](https://github.com/iris-contrib/middleware/tree/master/cors)      | Cross Origin Resource Sharing W3 specification   | [how to use ](https://github.com/iris-contrib/middleware/tree/master/cors#how-to-use)  |
@@ -149,17 +145,15 @@ Current: **v4.0.0-alpha.3**
 
 >  Iris is an active project
 
-- For a more 'stable' release take a look at the [version 3](https://github.com/kataras/iris/tree/v3), which keeps its [e-book](http://iris-go.com/assets/v3-book/iris.pdf) and [examples](https://github.com/iris-contrib/examples/tree/v3).
-
 
 Todo
 ------------
 > for 'v4'
 
-- [x] Refactor & extend view engine, separate the engines from the main code base, easier for the community to create new view engines
-- [x] Refactor & extend sessions, split the different databases functionality to the iris-contrib
-- [ ] Refactor & extends the rest render engine in order to be able to developer to use their own implemention for rendering restful types, like, for example a  custom JSON implementation using no-standard go package for encode/decode
-- [x] Move the iris/websocket package's source code inside iris/websocket.go one file, to be easier to use by users without import a new package
+- [x] Refactor & extend view engine, separate the engines from the main code base, easier for the community to create new view engines[*](https://github.com/iris-contrib/template)
+- [x] Refactor & extend sessions, split the different databases functionality to the iris-contrib[*](https://github.com/iris-contrib/sessiondb)
+- [x] Refactor & extends the rest render engine in order to be able to developer to use their own implemention for rendering restful types, like, for example a  custom JSON implementation using no-standard go package for encode/decode[*](https://github.com/iris-contrib/response)
+- [x] Move the iris/websocket package's source code inside iris/websocket.go one file, to be easier to use by users without import a new package[*](https://github.com/kataras/iris/blob/master/websocket.go)
 - [ ] configs package should be removed after all these, we will not need big configurations because of different packages splitted & moved to the iris-contrib, we will keep interfaces and all required things inside kataras/iris.go.
 - [ ] Implement all [opened community's feature requests](https://github.com/kataras/iris/issues?q=is%3Aissue+is%3Aopen+label%3A%22feature+request%22)
 - [ ] Extend i18n middleware for easier and better internalization support

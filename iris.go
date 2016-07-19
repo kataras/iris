@@ -148,6 +148,7 @@ type (
 		Go() error
 		Close() error
 		UseSessionDB(SessionDatabase)
+		UseResponse(ResponseEngine, ...string) func(string)
 		UseTemplate(TemplateEngine) *TemplateEngineLocation
 		UseGlobal(...Handler)
 		UseGlobalFunc(...HandlerFunc)
@@ -538,8 +539,17 @@ func (s *Framework) UseSessionDB(db SessionDatabase) {
 // Note: if you pass an engine which contains a dot('.') as key, then the engine will not be registered.
 // you don't have to import and use github.com/iris-contrib/json, jsonp, xml, data, text, markdown
 // because iris uses these by default if no other response engine is registered for these content types
-func UseResponse(e ResponseEngine, forContentTypesOrKeys ...string) {
-	Default.UseResponse(e, forContentTypesOrKeys...)
+//
+// Note 2:
+// one key has one content type but many response engines ( one to many)
+//
+// returns a function(string) which you can set the content type, if it's not already declared from the key.
+// careful you should call this in the same execution.
+// one last thing, you can have unlimited number of response engines for the same key and same content type.
+// key and content type may be different, but one key is only for one content type,
+// Do not use different content types with more than one response engine on the same key
+func UseResponse(e ResponseEngine, forContentTypesOrKeys ...string) func(string) {
+	return Default.UseResponse(e, forContentTypesOrKeys...)
 }
 
 // UseResponse accepts a ResponseEngine and the key or content type on which the developer wants to register this response engine
@@ -555,8 +565,17 @@ func UseResponse(e ResponseEngine, forContentTypesOrKeys ...string) {
 // Note: if you pass an engine which contains a dot('.') as key, then the engine will not be registered.
 // you don't have to import and use github.com/iris-contrib/json, jsonp, xml, data, text, markdown
 // because iris uses these by default if no other response engine is registered for these content types
-func (s *Framework) UseResponse(e ResponseEngine, forContentTypesOrKeys ...string) {
-	s.responses.add(e, forContentTypesOrKeys...)
+//
+// Note 2:
+// one key has one content type but many response engines ( one to many)
+//
+// returns a function(string) which you can set the content type, if it's not already declared from the key.
+// careful you should call this in the same execution.
+// one last thing, you can have unlimited number of response engines for the same key and same content type.
+// key and content type may be different, but one key is only for one content type,
+// Do not use different content types with more than one response engine on the same key
+func (s *Framework) UseResponse(e ResponseEngine, forContentTypesOrKeys ...string) func(string) {
+	return s.responses.add(e, forContentTypesOrKeys...)
 }
 
 // UseTemplate adds a template engine to the iris view system
