@@ -94,6 +94,11 @@ type (
 		// defaults to "UTF-8"
 		Charset string
 
+		// Gzip enables gzip compression on your Render actions, this includes any type of render, templates and pure/raw content
+		// If you don't want to enable it globaly, you could just use the third parameter on context.Render("myfileOrResponse", structBinding{}, iris.RenderOptions{"gzip": true})
+		// defaults to false
+		Gzip bool
+
 		// Sessions contains the configs for sessions
 		Sessions Sessions
 
@@ -114,6 +119,7 @@ func Default() Iris {
 		DisableTemplateEngines: false,
 		IsDevelopment:          false,
 		Charset:                DefaultCharset,
+		Gzip:                   false,
 		ProfilePath:            "",
 		Sessions:               DefaultSessions(),
 		Websocket:              DefaultWebsocket(),

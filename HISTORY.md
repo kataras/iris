@@ -25,8 +25,8 @@ A **Response Engine** gives you the freedom to create/change the render/response
 **Small changes**
 
 - `iris.Config.Charset`, before alpha.3 was `iris.Config.Rest.Charset` & `iris.Config.Render.Template.Charset`, but you can override it at runtime by passinth a map `iris.RenderOptions` on the `context.Render` call .
-- `iris.Config.IsDevelopment` , before alpha.1 was `iris.Config.Render.Template.IsDevelopment` 
-
+- `iris.Config.IsDevelopment`, before alpha.1 was `iris.Config.Render.Template.IsDevelopment` 
+- `iris.Config.Gzip`, enables gzip compression on your Render actions, this includes any type of render, templates and pure/raw content. If you don't want to enable it globaly, you could just use the third parameter on context.Render("myfileOrResponse", structBinding{}, iris.RenderOptions{"gzip": true}). It defaults to false
 
 **Websockets changes**
 

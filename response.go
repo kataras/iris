@@ -135,10 +135,10 @@ func (r *responseEngineMap) render(ctx *Context, obj interface{}, options ...map
 		finalResult = append(finalResult, result...)
 	}
 
-	gzipEnabled := false
+	gzipEnabled := ctx.framework.Config.Gzip
 	charset := ctx.framework.Config.Charset
 	if len(options) > 0 {
-		gzipEnabled = getGzipOption(options[0]) // located to the template.go below the RenderOptions
+		gzipEnabled = getGzipOption(ctx, options[0]) // located to the template.go below the RenderOptions
 		if chs := getCharsetOption(options[0]); chs != "" {
 			charset = chs
 		}

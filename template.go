@@ -71,12 +71,12 @@ func (t TemplateFuncs) IsFree(key string) bool {
 	return true
 }
 
-func getGzipOption(options map[string]interface{}) bool {
+func getGzipOption(ctx *Context, options map[string]interface{}) bool {
 	gzipOpt := options["gzip"] // we only need that, so don't create new map to keep the options.
 	if b, isBool := gzipOpt.(bool); isBool {
 		return b
 	}
-	return false
+	return ctx.framework.Config.Gzip
 }
 
 func getCharsetOption(options map[string]interface{}) string {
@@ -166,10 +166,11 @@ func (t *templateEngineWrapper) execute(ctx *Context, filename string, binding i
 	}
 
 	// we do all these because we don't want to initialize a new map for each execution...
-	gzipEnabled := false
+	gzipEnabled := ctx.framework.Config.Gzip
 	charset := ctx.framework.Config.Charset
 	if len(options) > 0 {
-		gzipEnabled = getGzipOption(options[0])
+		gzipEnabled = getGzipOption(ctx, options[0])
+
 		if chs := getCharsetOption(options[0]); chs != "" {
 			charset = chs
 		}
