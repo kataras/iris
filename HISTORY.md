@@ -7,11 +7,14 @@
 
 
 **The important** , is that the [book](https://kataras.gitbooks.io/iris/content/) is finally updated!
-
+ 
 If you're **willing to donate** click [here](DONATIONS.md)!
 
 
 - `iris.Config.Gzip`, enables gzip compression on your Render actions, this includes any type of render, templates and pure/raw content. If you don't want to enable it globaly, you could just use the third parameter on context.Render("myfileOrResponse", structBinding{}, iris.RenderOptions{"gzip": true}). It defaults to false
+
+
+-  **Added** `config.Server.Name` as requested
 
 
 **Fix**
@@ -20,6 +23,7 @@ If you're **willing to donate** click [here](DONATIONS.md)!
 **Sessions changes **
 
 - `iris.Config.Sessions.Expires` it was time.Time, changed to time.Duration, which defaults to 0, means unlimited session life duration, if you change it then the correct date is setted on client's cookie but also server destroys the session automatically when the duration passed, this is better approach, see [here](https://github.com/kataras/iris/issues/301)
+
 
 ## 4.0.0-alpha.2 -> 4.0.0-alpha.3
 

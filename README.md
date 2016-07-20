@@ -126,11 +126,11 @@ Iris does not force you to use any specific ORM or template engine. With support
 
 **New results just came out:**
 
-![Benchmark Wizzard July 1, 2016- Processing Time Horizontal Graph](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/0874ce64aa6d78235c9452bfed0b8fb6fb4f4547/benchmark.png)
+![Benchmark Wizzard July 19, 2016- Processing Time Horizontal Graph](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/80857c26ee2e235c16dc38782df60dca152ce9c5/benchmark.png)
 
-**The results have been updated on July 1, 2016**
+**The results have been updated on July 19, 2016**
 
-[Please click here to view all detailed benchmarks.](https://github.com/smallnest/go-web-framework-benchmark/commit/0874ce64aa6d78235c9452bfed0b8fb6fb4f4547)
+[Please click here to view all detailed benchmarks.](https://github.com/smallnest/go-web-framework-benchmark/commit/80857c26ee2e235c16dc38782df60dca152ce9c5)
 
 Testing
 ------------
