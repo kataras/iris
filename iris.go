@@ -406,6 +406,7 @@ func (s *Framework) ListenTo(cfg config.Server) (err error) {
 // Listen starts the standalone http server
 // which listens to the addr parameter which as the form of
 // host:port
+// For listening on all available interfaces use 0.0.0.0 as host
 //
 // It panics on error if you need a func to return an error, use the ListenTo
 // ex: err := iris.ListenTo(config.Server{ListeningAddr:":8080"})
@@ -416,6 +417,7 @@ func Listen(addr string) {
 // Listen starts the standalone http server
 // which listens to the addr parameter which as the form of
 // host:port
+// For listening on all available interfaces use 0.0.0.0 as host
 //
 // It panics on error if you need a func to return an error, use the ListenTo
 // ex: err := iris.ListenTo(config.Server{ListeningAddr:":8080"})
@@ -428,6 +430,7 @@ func (s *Framework) Listen(addr string) {
 // only https:// connections are allowed
 // which listens to the addr parameter which as the form of
 // host:port
+// For listening on all available interfaces use 0.0.0.0 as host
 //
 // It panics on error if you need a func to return an error, use the ListenTo
 // ex: err := iris.ListenTo(":8080","yourfile.cert","yourfile.key")
@@ -440,6 +443,7 @@ func ListenTLS(addr string, certFile string, keyFile string) {
 // only https:// connections are allowed
 // which listens to the addr parameter which as the form of
 // host:port
+// For listening on all available interfaces use 0.0.0.0 as host
 //
 // It panics on error if you need a func to return an error, use the ListenTo
 // ex: err := iris.ListenTo(":8080","yourfile.cert","yourfile.key")

@@ -44,6 +44,7 @@ var (
 // Server used inside server for listening
 type Server struct {
 	// ListenningAddr the addr that server listens to
+	// For listening on all available interfaces use 0.0.0.0 as hostname
 	ListeningAddr string
 	CertFile      string
 	KeyFile       string
