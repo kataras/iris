@@ -1309,7 +1309,7 @@ type (
 		api           *muxAPI
 		errorHandlers map[int]Handler
 		logger        *logger.Logger
-		// the main server host's name, ex:  localhost, 127.0.0.1, iris-go.com
+		// the main server host's name, ex:  localhost, 127.0.0.1, 0.0.0.0, iris-go.com
 		hostname string
 		// if any of the trees contains not empty subdomain
 		hosts bool
@@ -1328,7 +1328,7 @@ func newServeMux(contextPool sync.Pool, logger *logger.Logger) *serveMux {
 		cPool:         &contextPool,
 		lookups:       make([]*route, 0),
 		errorHandlers: make(map[int]Handler, 0),
-		hostname:      "127.0.0.1",
+		hostname:      config.DefaultServerHostname, // these are changing when the server is up
 		escapePath:    !config.DefaultDisablePathEscape,
 		correctPath:   !config.DefaultDisablePathCorrection,
 		logger:        logger,

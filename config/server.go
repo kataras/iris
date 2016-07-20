@@ -11,8 +11,8 @@ import (
 
 // Default values for base Server conf
 const (
-	// DefaultServerHostname returns the default hostname which is 127.0.0.1
-	DefaultServerHostname = "127.0.0.1"
+	// DefaultServerHostname returns the default hostname which is 0.0.0.0
+	DefaultServerHostname = "0.0.0.0"
 	// DefaultServerPort returns the default port which is 8080
 	DefaultServerPort = 8080
 	// DefaultMaxRequestBodySize is 8MB
@@ -37,7 +37,7 @@ const (
 )
 
 var (
-	// DefaultServerAddr the default server addr which is: 127.0.0.1:8080
+	// DefaultServerAddr the default server addr which is: 0.0.0.0:8080
 	DefaultServerAddr = DefaultServerHostname + ":" + strconv.Itoa(DefaultServerPort)
 )
 

@@ -73,7 +73,7 @@ func TestServerHost(t *testing.T) {
 	var server1, server2, server3 Server
 	var expectedHost1 = "mydomain.com:1993"
 	var expectedHost2 = "mydomain.com:80"
-	var expectedHost3 = "127.0.0.1:9090"
+	var expectedHost3 = config.DefaultServerHostname + ":9090"
 	server1.Config.ListeningAddr = expectedHost1
 	server2.Config.ListeningAddr = "mydomain.com"
 	server3.Config.ListeningAddr = ":9090"

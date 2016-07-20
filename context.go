@@ -238,9 +238,14 @@ func (ctx *Context) VirtualHostname() string {
 	}
 	if idxDotAnd := strings.LastIndexByte(hostname, '.'); idxDotAnd > 0 {
 		s := hostname[idxDotAnd:]
+		// means that we have the request's host mymachine.com or 127.0.0.1/0.0.0.0, but for the second option we will need to replace it with the hostname that the dev was registered
+		// this needed to parse correct the {{ url }} iris global template engine's function
 		if s == ".1" {
 			hostname = strings.Replace(hostname, "127.0.0.1", virtualhost, 1)
+		} else if s == ".0" {
+			hostname = strings.Replace(hostname, "0.0.0.0", virtualhost, 1)
 		}
+		//
 	} else {
 		hostname = strings.Replace(hostname, "localhost", virtualhost, 1)
 	}
