@@ -42,6 +42,7 @@ type session struct {
 	values           map[string]interface{} // here is the real values
 	mu               sync.Mutex
 	lastAccessedTime time.Time
+	createdAt        time.Time
 	provider         *sessionProvider
 }
 
@@ -135,6 +136,7 @@ type (
 		sessions  map[string]*list.Element // underline TEMPORARY memory store used to give advantage on sessions used more times than others
 		list      *list.List               // for GC
 		databases []SessionDatabase
+		expires   time.Duration
 	}
 )
 
@@ -145,12 +147,25 @@ func (p *sessionProvider) registerDatabase(db SessionDatabase) {
 }
 
 func (p *sessionProvider) newSession(sid string) *session {
-	return &session{
+
+	sess := &session{
 		sid:              sid,
 		provider:         p,
 		lastAccessedTime: time.Now(),
 		values:           p.loadSessionValues(sid),
 	}
+	if p.expires > 0 { // if not unlimited life duration
+		time.AfterFunc(p.expires, func() {
+			// the destroy makes the check if this session is exists then or not,
+			// this is used to destroy the session from the server-side also
+			// it's good to have here for security reasons, I didn't add it on the gc function to separate its action
+			p.destroy(sid)
+
+		})
+	}
+
+	return sess
+
 }
 
 func (p *sessionProvider) loadSessionValues(sid string) map[string]interface{} {
@@ -203,7 +218,6 @@ func (p *sessionProvider) destroy(sid string) {
 		p.updateDatabases(sid, nil)
 		delete(p.sessions, sid)
 		p.list.Remove(elem)
-
 	}
 	p.mu.Unlock()
 }
@@ -234,10 +248,9 @@ func (p *sessionProvider) gc(duration time.Duration) {
 
 		// if the time has passed. session was expired, then delete the session and its memory place
 		// we are not destroy the session completely for the case this is re-used after
-
-		if time.Now().After(elem.Value.(*session).lastAccessedTime.Add(duration)) {
+		sess := elem.Value.(*session)
+		if time.Now().After(sess.lastAccessedTime.Add(duration)) {
 			p.list.Remove(elem)
-			delete(p.sessions, elem.Value.(*session).sid)
 		} else {
 			break
 		}
@@ -254,19 +267,19 @@ type (
 	// sessionsManager implements the ISessionsManager interface
 	// contains the cookie's name, the provider and a duration for GC and cookie life expire
 	sessionsManager struct {
-		config   *config.Sessions
+		config   config.Sessions
 		provider *sessionProvider
 	}
 )
 
 // newSessionsManager creates & returns a new SessionsManager and start its GC
-func newSessionsManager(c *config.Sessions) *sessionsManager {
+func newSessionsManager(c config.Sessions) *sessionsManager {
 	if c.DecodeCookie {
 		c.Cookie = base64.URLEncoding.EncodeToString([]byte(c.Cookie)) // change the cookie's name/key to a more safe(?)
 		// get the real value for your tests by:
 		//sessIdKey := url.QueryEscape(base64.URLEncoding.EncodeToString([]byte(iris.Config.Sessions.Cookie)))
 	}
-	manager := &sessionsManager{config: c, provider: &sessionProvider{list: list.New(), sessions: make(map[string]*list.Element, 0), databases: make([]SessionDatabase, 0)}}
+	manager := &sessionsManager{config: c, provider: &sessionProvider{list: list.New(), sessions: make(map[string]*list.Element, 0), databases: make([]SessionDatabase, 0), expires: c.Expires}}
 	//run the GC here
 	go manager.gc()
 	return manager
@@ -327,7 +340,13 @@ func (m *sessionsManager) start(ctx *Context) *session {
 
 		}
 		cookie.SetHTTPOnly(true)
-		cookie.SetExpire(m.config.Expires)
+		if m.config.Expires == 0 {
+			// unlimited life
+			cookie.SetExpire(config.CookieExpireNever)
+		} else {
+			cookie.SetExpire(time.Now().Add(m.config.Expires))
+		}
+
 		ctx.SetCookie(cookie)
 		fasthttp.ReleaseCookie(cookie)
 	} else {

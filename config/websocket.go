@@ -6,7 +6,6 @@ import (
 	"github.com/imdario/mergo"
 )
 
-// Currently only these 5 values are used for real
 const (
 	// DefaultWriteTimeout 15 * time.Second
 	DefaultWriteTimeout = 15 * time.Second
@@ -20,7 +19,7 @@ const (
 
 //
 
-// Websocket the config contains options for 'websocket' package
+// Websocket the config contains options for the ../websocket.go
 type Websocket struct {
 	// WriteTimeout time allowed to write a message to the connection.
 	// Default value is 15 * time.Second

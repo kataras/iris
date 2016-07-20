@@ -9,8 +9,8 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-// Default values for base Server conf, can be changed for global use
-var (
+// Default values for base Server conf
+const (
 	// DefaultServerHostname returns the default hostname which is 127.0.0.1
 	DefaultServerHostname = "127.0.0.1"
 	// DefaultServerPort returns the default port which is 8080
@@ -31,15 +31,15 @@ var (
 	//
 	// Default buffer size is 8MB
 	DefaultWriteBufferSize = 8096
+
+	// DefaultServerName the response header of the 'Server' value when writes to the client
+	DefaultServerName = "iris"
 )
 
 var (
 	// DefaultServerAddr the default server addr which is: 127.0.0.1:8080
 	DefaultServerAddr = DefaultServerHostname + ":" + strconv.Itoa(DefaultServerPort)
 )
-
-// ServerName the response header of the 'Server' value when writes to the client
-const ServerName = "iris"
 
 // Server used inside server for listening
 type Server struct {
@@ -79,6 +79,9 @@ type Server struct {
 	RedirectTo string
 	// Virtual If this server is not really listens to a real host, it mostly used in order to achieve testing without system modifications
 	Virtual bool
+	// Name the server's name, defaults to "iris".
+	// You're free to change it, but I will trust you to don't, this is the only setting whose somebody, like me, can see if iris web framework is used
+	Name string
 }
 
 // ServerParseAddr parses the listening addr and returns this
@@ -114,7 +117,7 @@ func ServerParseAddr(listeningAddr string) string {
 
 // DefaultServer returns the default configs for the server
 func DefaultServer() Server {
-	return Server{ListeningAddr: DefaultServerAddr,
+	return Server{ListeningAddr: DefaultServerAddr, Name: DefaultServerName,
 		MaxRequestBodySize: DefaultMaxRequestBodySize,
 		ReadBufferSize:     DefaultReadBufferSize,
 		WriteBufferSize:    DefaultWriteBufferSize,

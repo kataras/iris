@@ -84,7 +84,7 @@ import (
 
 const (
 	// Version of the iris
-	Version = "4.0.0-alpha.3"
+	Version = "4.0.0-alpha.4"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -219,8 +219,6 @@ func New(cfg ...config.Iris) *Framework {
 			},
 			engines: make([]*templateEngineWrapper, 0),
 		}
-		//set the session manager
-		s.sessions = newSessionsManager(&c.Sessions)
 		// set the websocket server
 		s.Websocket = NewWebsocketServer(s.Config.Websocket)
 		// set the servemux, which will provide us the public API also, with its context pool
@@ -236,6 +234,11 @@ func New(cfg ...config.Iris) *Framework {
 }
 
 func (s *Framework) initialize() {
+	if s.Config.Sessions.Cookie != "" {
+		//set the session manager
+		s.sessions = newSessionsManager(s.Config.Sessions)
+	}
+
 	// prepare the response engines, if no response engines setted for the default content-types
 	// then add them
 
@@ -335,9 +338,9 @@ func (s *Framework) Must(err error) {
 	}
 }
 
-// AddServer same as .Servers.Add(config.Server) instead
+// AddServer same as .Servers.Add(config.Server)
 //
-// AddServers starts a server which listens to this station
+// AddServer starts a server which listens to this station
 // Note that  the view engine's functions {{ url }} and {{ urlpath }} will return the first's registered server's scheme (http/https)
 //
 // this is useful mostly when you want to have two or more listening ports ( two or more servers ) for the same station
@@ -352,10 +355,10 @@ func AddServer(cfg config.Server) *Server {
 	return Default.AddServer(cfg)
 }
 
-// AddServer same as .Servers.Add(config.Server) instead
+// AddServer same as .Servers.Add(config.Server)
 //
-// AddServers starts a server which listens to this station
-// Note that  the view engine's functions {{ url }} and {{ urlpath }} will return the first's registered server's scheme (http/https)
+// AddServer starts a server which listens to this station
+// Note that  the view engine's functions {{ url }} and {{ urlpath }} will return the last registered server's scheme (http/https)
 //
 // this is useful mostly when you want to have two or more listening ports ( two or more servers ) for the same station
 //
@@ -369,7 +372,7 @@ func (s *Framework) AddServer(cfg config.Server) *Server {
 	return s.Servers.Add(cfg)
 }
 
-// ListenTo listens to a server but receives the full server's configuration
+// ListenTo listens to a server but accepts the full server's configuration
 // returns an error, you're responsible to handle that
 // or use the iris.Must(iris.ListenTo(config.Server{}))
 //
@@ -378,7 +381,10 @@ func ListenTo(cfg config.Server) error {
 	return Default.ListenTo(cfg)
 }
 
-// ListenTo listens to a server but receives the full server's configuration
+// ListenTo listens to a server but acceots the full server's configuration
+// returns an error, you're responsible to handle that
+// or use the iris.Must(iris.ListenTo(config.Server{}))
+//
 // it's a blocking func
 func (s *Framework) ListenTo(cfg config.Server) (err error) {
 	if cfg.ReadBufferSize == 0 {

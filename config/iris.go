@@ -13,17 +13,6 @@ const (
 
 type (
 	// Iris configs for the station
-	// All fields can be changed before server's listen except the DisablePathCorrection field
-	//
-	// MaxRequestBodySize is the only options that can be changed after server listen -
-	// using Config.MaxRequestBodySize = ...
-	// Render's rest config can be changed after declaration but before server's listen -
-	// using Config.Render.Rest...
-	// Render's Template config can be changed after declaration but before server's listen -
-	// using Config.Render.Template...
-	// Sessions config can be changed after declaration but before server's listen -
-	// using Config.Sessions...
-	// and so on...
 	Iris struct {
 
 		// DisablePathCorrection corrects and redirects the requested path to the registed path
@@ -106,6 +95,7 @@ type (
 		Websocket *Websocket
 
 		// Tester contains the configs for the test framework, so far we have only one because all test framework's configs are setted by the iris itself
+		// You can find example on the https://github.com/kataras/iris/glob/master/context_test.go
 		Tester Tester
 	}
 )

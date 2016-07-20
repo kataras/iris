@@ -2,6 +2,25 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras/iris` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+
+## 4.0.0-alpha.4 -> 4.0.0-alpha.4
+
+
+** The important** , is that the [book](https://kataras.gitbooks.io/iris/content/) is finally updated!
+
+If you're **willing to donate** click [here](DONATIONS.md)!
+
+
+- `iris.Config.Gzip`, enables gzip compression on your Render actions, this includes any type of render, templates and pure/raw content. If you don't want to enable it globaly, you could just use the third parameter on context.Render("myfileOrResponse", structBinding{}, iris.RenderOptions{"gzip": true}). It defaults to false
+
+
+**Fix**
+- https://github.com/kataras/iris/issues/301
+
+**Sessions changes **
+
+- `iris.Config.Sessions.Expires` it was time.Time, changed to time.Duration, which defaults to 0, means unlimited session life duration, if you change it then the correct date is setted on client's cookie but also server destroys the session automatically when the duration passed, this is better approach, see [here](https://github.com/kataras/iris/issues/301)
+
 ## 4.0.0-alpha.2 -> 4.0.0-alpha.3
 
 **New**
@@ -21,7 +40,6 @@ A **Response Engine** gives you the freedom to create/change the render/response
 
 **Fix**
 - https://github.com/kataras/iris/issues/294
-- https://github.com/kataras/iris/issues/301
 - https://github.com/kataras/iris/issues/303
 
 
@@ -29,7 +47,7 @@ A **Response Engine** gives you the freedom to create/change the render/response
 
 - `iris.Config.Charset`, before alpha.3 was `iris.Config.Rest.Charset` & `iris.Config.Render.Template.Charset`, but you can override it at runtime by passinth a map `iris.RenderOptions` on the `context.Render` call .
 - `iris.Config.IsDevelopment`, before alpha.1 was `iris.Config.Render.Template.IsDevelopment` 
-- `iris.Config.Gzip`, enables gzip compression on your Render actions, this includes any type of render, templates and pure/raw content. If you don't want to enable it globaly, you could just use the third parameter on context.Render("myfileOrResponse", structBinding{}, iris.RenderOptions{"gzip": true}). It defaults to false
+
 
 **Websockets changes**
 

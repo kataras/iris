@@ -254,7 +254,10 @@ type (
 
 // newServer returns a pointer to a Server object, and set it's options if any,  nothing more
 func newServer(cfg config.Server) *Server {
-	s := &Server{Server: &fasthttp.Server{Name: config.ServerName}, Config: cfg}
+	if cfg.Name == "" {
+		cfg.Name = config.DefaultServerName
+	}
+	s := &Server{Server: &fasthttp.Server{Name: cfg.Name}, Config: cfg}
 	s.prepare()
 	return s
 }

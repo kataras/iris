@@ -34,11 +34,12 @@ type (
 		// DecodeCookie set it to true to decode the cookie key with base64 URLEncoding
 		// Defaults to false
 		DecodeCookie bool
-		//Expires the date which the cookie must expires. Default infinitive/unlimited life
-		Expires time.Time
+		// Expires the duration of which the cookie must expires (created_time.Add(Expires)).
+		// Default infinitive/unlimited life duration(0)
+		Expires time.Duration
 		// GcDuration every how much duration(GcDuration) the memory should be clear for unused cookies (GcDuration)
 		// for example: time.Duration(2)*time.Hour. it will check every 2 hours if cookie hasn't be used for 2 hours,
-		// deletes it from memory until the user comes back, then the session continue to work as it was
+		// deletes it from backend memory until the user comes back, then the session continue to work as it was
 		//
 		// Default 2 hours
 		GcDuration time.Duration
@@ -54,7 +55,7 @@ func DefaultSessions() Sessions {
 	return Sessions{
 		Cookie:                      DefaultCookieName,
 		DecodeCookie:                false,
-		Expires:                     CookieExpireNever,
+		Expires:                     0,
 		GcDuration:                  DefaultSessionGcDuration,
 		DisableSubdomainPersistence: false,
 	}
