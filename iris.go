@@ -219,6 +219,11 @@ func New(cfg ...config.Iris) *Framework {
 			},
 			engines: make([]*templateEngineWrapper, 0),
 		}
+		// set the sessions
+		if s.Config.Sessions.Cookie != "" {
+			//set the session manager
+			s.sessions = newSessionsManager(&s.Config.Sessions)
+		}
 		// set the websocket server
 		s.Websocket = NewWebsocketServer(s.Config.Websocket)
 		// set the servemux, which will provide us the public API also, with its context pool
@@ -234,10 +239,6 @@ func New(cfg ...config.Iris) *Framework {
 }
 
 func (s *Framework) initialize() {
-	if s.Config.Sessions.Cookie != "" {
-		//set the session manager
-		s.sessions = newSessionsManager(s.Config.Sessions)
-	}
 
 	// prepare the response engines, if no response engines setted for the default content-types
 	// then add them
@@ -275,7 +276,6 @@ func (s *Framework) initialize() {
 			s.Logger.Panic(err) // panic on templates loading before listening if we have an error.
 		}
 	}
-
 	// listen to websocket connections
 	RegisterWebsocketServer(s, s.Websocket, s.Logger)
 
@@ -528,7 +528,7 @@ func UseSessionDB(db SessionDatabase) {
 //
 // Note: Don't worry if no session database is registered, your context.Session will continue to work.
 func (s *Framework) UseSessionDB(db SessionDatabase) {
-	s.sessions.provider.registerDatabase(db)
+	s.sessions.registerDatabase(db)
 }
 
 // UseResponse accepts a ResponseEngine and the key or content type on which the developer wants to register this response engine

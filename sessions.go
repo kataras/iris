@@ -267,13 +267,13 @@ type (
 	// sessionsManager implements the ISessionsManager interface
 	// contains the cookie's name, the provider and a duration for GC and cookie life expire
 	sessionsManager struct {
-		config   config.Sessions
+		config   *config.Sessions
 		provider *sessionProvider
 	}
 )
 
 // newSessionsManager creates & returns a new SessionsManager and start its GC
-func newSessionsManager(c config.Sessions) *sessionsManager {
+func newSessionsManager(c *config.Sessions) *sessionsManager {
 	if c.DecodeCookie {
 		c.Cookie = base64.URLEncoding.EncodeToString([]byte(c.Cookie)) // change the cookie's name/key to a more safe(?)
 		// get the real value for your tests by:
@@ -283,6 +283,11 @@ func newSessionsManager(c config.Sessions) *sessionsManager {
 	//run the GC here
 	go manager.gc()
 	return manager
+}
+
+func (m *sessionsManager) registerDatabase(db SessionDatabase) {
+	m.provider.expires = m.config.Expires // updae the expires confiuration field for any case
+	m.provider.registerDatabase(db)
 }
 
 func (m *sessionsManager) generateSessionID() string {
