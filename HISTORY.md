@@ -3,10 +3,10 @@
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras/iris` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
 
-## 4.0.0-alpha.4 -> 4.0.0-alpha.4
+## 4.0.0-alpha.3 -> 4.0.0-alpha.4
 
 
-** The important** , is that the [book](https://kataras.gitbooks.io/iris/content/) is finally updated!
+**The important** , is that the [book](https://kataras.gitbooks.io/iris/content/) is finally updated!
 
 If you're **willing to donate** click [here](DONATIONS.md)!
 
