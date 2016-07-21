@@ -4,7 +4,7 @@
 
 The fastest web framework for Go.
 
-[![Alt: Benchmark results with pipeline and 500ms processing time](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/benchmark_horizontal_transparent.png)](#benchmarks)
+[![Alt: Benchmark Wizzard July 21, 2016- Processing Time Horizontal Graph](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png)](#benchmarks)
 
 
 ```bash
@@ -19,7 +19,7 @@ func main() {
 		c.JSON(iris.StatusOK, iris.Map{
 			"Name":  "Iris",
 			"Born":  "13 March 2016",
-			"Stars": 4270,
+			"Stars": 4420,
 		})
 	})
 	iris.Listen(":8080")
@@ -126,11 +126,11 @@ Iris does not force you to use any specific ORM or template engine. With support
 
 **New results just came out:**
 
-![Benchmark Wizzard July 19, 2016- Processing Time Horizontal Graph](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/80857c26ee2e235c16dc38782df60dca152ce9c5/benchmark.png)
+![Benchmark Wizzard July 21, 2016- Processing Time Horizontal Graph](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png)
 
-**The results have been updated on July 19, 2016**
+**The results have been updated on July 21, 2016**
 
-[Please click here to view all detailed benchmarks.](https://github.com/smallnest/go-web-framework-benchmark/commit/80857c26ee2e235c16dc38782df60dca152ce9c5)
+[Please click here to view all detailed benchmarks.](https://github.com/smallnest/go-web-framework-benchmark/commit/4db507a22c964c9bc9774c5b31afdc199a0fe8b7)
 
 Testing
 ------------
