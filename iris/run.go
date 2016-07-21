@@ -27,7 +27,7 @@ func runAndWatch(flags cli.Flags) error {
 		rizla.Run()
 	*/
 	// or just do that:
-
+	rizla.DefaultDisableProgramRerunOutput = true // we don't want the banner to be shown after the first run
 	rizla.Run(programPath)
 
 	return nil

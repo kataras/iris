@@ -10,7 +10,7 @@ import (
 
 const (
 	// Version of Iris command line tool
-	Version = "0.0.8"
+	Version = "0.0.9"
 )
 
 var (
