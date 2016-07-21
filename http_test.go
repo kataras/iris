@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strconv"
 	"testing"
 	"time"
 
@@ -243,12 +242,13 @@ func TestMultiRunningServers_v2(t *testing.T) {
 }
 
 const (
-	testEnableSubdomain = false
-	testSubdomain       = "mysubdomain.com"
+	testEnableSubdomain = true
+	testSubdomain       = "mysubdomain"
 )
 
 func testSubdomainHost() string {
-	return testSubdomain + strconv.Itoa(Servers.Main().Port())
+	s := testSubdomain + "." + Servers.Main().Host()
+	return s
 }
 
 func testSubdomainURL() (subdomainURL string) {
@@ -431,6 +431,20 @@ func TestMuxPathEscape(t *testing.T) {
 	e.GET("/details/Sakamoto desu ga").
 		WithQuery("highlight", "text").
 		Expect().Status(StatusOK).Body().Equal("name=Sakamoto desu ga,highlight=text")
+}
+
+func TestMuxEncodeURL(t *testing.T) {
+	initDefault()
+
+	Get("/encoding/:url", func(ctx *Context) {
+		url := URLEncode(ctx.Param("url"))
+		ctx.SetStatusCode(StatusOK)
+		ctx.Write(url)
+	})
+
+	e := Tester(t)
+
+	e.GET("/encoding/http%3A%2F%2Fsome-url.com").Expect().Status(StatusOK).Body().Equal("http://some-url.com")
 }
 
 func TestMuxCustomErrors(t *testing.T) {

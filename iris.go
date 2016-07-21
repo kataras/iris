@@ -54,6 +54,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"reflect"
@@ -751,6 +752,39 @@ func (s *Framework) Path(routeName string, args ...interface{}) string {
 	}
 
 	return fmt.Sprintf(r.formattedPath, arguments...)
+}
+
+// URLEncode returns the path encoded as url
+// useful when you want to pass something to a database and be valid to retrieve it via context.Param
+// use it only for special cases, when the default behavior doesn't suits you.
+//
+// http://www.blooberry.com/indexdot/html/topics/urlencoding.htm
+// it uses just the url.QueryUnescape
+func URLEncode(path string) string {
+	if path == "" {
+		return ""
+	}
+	encodedPath, _ := url.QueryUnescape(path)
+	return encodedPath
+}
+
+// URLEncode returns the path encoded as url
+// useful when you want to pass something to a database and be valid to retrieve it via context.Param
+// use it only for special cases, when the default behavior doesn't suits you.
+//
+// http://www.blooberry.com/indexdot/html/topics/urlencoding.htm
+/* Credits to Manish Singh @kryptodev for URLEncode by post issue share code */
+// simple things, if URLEncode doesn't gives you the results you waited, use this function
+// I know it is not the best  way to describe it, but I don't think you will ever need this, it is here for ANY CASE
+func URLEncodeFasthttp(path string) string {
+	if path == "" {
+		return ""
+	}
+	u := fasthttp.AcquireURI()
+	u.SetPath(path)
+	encodedPath := u.String()[8:]
+	fasthttp.ReleaseURI(u)
+	return encodedPath
 }
 
 // URL returns the subdomain+ host + Path(...optional named parameters if route is dynamic)

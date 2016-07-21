@@ -327,23 +327,6 @@ func (ctx *Context) Subdomain() (subdomain string) {
 	return
 }
 
-// URLEncode returns the path encoded as url
-// useful when you want to pass something to a database and be valid to retrieve it via context.Param
-// use it only for special cases, when the default behavior doesn't suits you.
-//
-// http://www.blooberry.com/indexdot/html/topics/urlencoding.htm
-/* Credits to Manish Singh @kryptodev for URLEncode by post issue share code */
-func URLEncode(path string) string {
-	if path == "" {
-		return ""
-	}
-	u := fasthttp.AcquireURI()
-	u.SetPath(path)
-	encodedPath := u.String()[8:]
-	fasthttp.ReleaseURI(u)
-	return encodedPath
-}
-
 // ReadJSON reads JSON from request's body
 func (ctx *Context) ReadJSON(jsonObject interface{}) error {
 	data := ctx.RequestCtx.Request.Body()
