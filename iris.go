@@ -754,29 +754,29 @@ func (s *Framework) Path(routeName string, args ...interface{}) string {
 	return fmt.Sprintf(r.formattedPath, arguments...)
 }
 
-// URLEncode returns the path encoded as url
+// DecodeURL returns the uri parameter as url (string)
 // useful when you want to pass something to a database and be valid to retrieve it via context.Param
 // use it only for special cases, when the default behavior doesn't suits you.
 //
 // http://www.blooberry.com/indexdot/html/topics/urlencoding.htm
 // it uses just the url.QueryUnescape
-func URLEncode(path string) string {
-	if path == "" {
+func DecodeURL(uri string) string {
+	if uri == "" {
 		return ""
 	}
-	encodedPath, _ := url.QueryUnescape(path)
+	encodedPath, _ := url.QueryUnescape(uri)
 	return encodedPath
 }
 
-// URLEncode returns the path encoded as url
+// DecodeFasthttpURL returns the path decoded as url
 // useful when you want to pass something to a database and be valid to retrieve it via context.Param
 // use it only for special cases, when the default behavior doesn't suits you.
 //
 // http://www.blooberry.com/indexdot/html/topics/urlencoding.htm
-/* Credits to Manish Singh @kryptodev for URLEncode by post issue share code */
-// simple things, if URLEncode doesn't gives you the results you waited, use this function
+/* Credits to Manish Singh @kryptodev for URLDecode by post issue share code */
+// simple things, if DecodeURL doesn't gives you the results you waited, use this function
 // I know it is not the best  way to describe it, but I don't think you will ever need this, it is here for ANY CASE
-func URLEncodeFasthttp(path string) string {
+func DecodeFasthttpURL(path string) string {
 	if path == "" {
 		return ""
 	}
@@ -1103,7 +1103,6 @@ func (api *muxAPI) Handle(method string, registedPath string, handlers ...Handle
 	}
 
 	path = strings.Replace(path, "//", "/", -1) // fix the path if double //
-
 	return api.mux.register([]byte(method), subdomain, path, middleware).setName
 }
 
@@ -1197,6 +1196,7 @@ func (api *muxAPI) API(path string, restAPI HandlerAPI, middleware ...HandlerFun
 	// or no, I changed my mind, let all be named parameters and let users to decide what info they need,
 	// using the Context to take more values (post form,url params and so on).-
 
+	paramPrefix := "param"
 	for _, methodName := range AllMethods {
 		methodWithBy := strings.Title(strings.ToLower(methodName)) + "By"
 		if method, found := typ.MethodByName(methodWithBy); found {
@@ -1210,9 +1210,9 @@ func (api *muxAPI) API(path string, restAPI HandlerAPI, middleware ...HandlerFun
 
 			for i := 1; i < numInLen; i++ { // from 1 because the first is the 'object'
 				if registedPath[len(registedPath)-1] == slashByte {
-					registedPath += ":param" + strconv.Itoa(i)
+					registedPath += ":" + paramPrefix + strconv.Itoa(i)
 				} else {
-					registedPath += "/:param" + strconv.Itoa(i)
+					registedPath += "/:" + paramPrefix + strconv.Itoa(i)
 				}
 			}
 
@@ -1225,9 +1225,15 @@ func (api *muxAPI) API(path string, restAPI HandlerAPI, middleware ...HandlerFun
 					newController.FieldByName("Context").Set(reflect.ValueOf(ctx))
 					args := make([]reflect.Value, paramsLen+1, paramsLen+1)
 					args[0] = newController
-					for i := 0; i < paramsLen; i++ {
-						args[i+1] = reflect.ValueOf(ctx.Params[i].Value)
+					realParamsLen := len(ctx.Params)
+					j := 1
+					for i := 0; i < realParamsLen; i++ { // here we don't looping with the len we are already known by the 'API' because maybe there is a party/or/path witch accepting parameters before, see https://github.com/kataras/iris/issues/293
+						if strings.HasPrefix(ctx.Params[i].Key, paramPrefix) {
+							args[j] = reflect.ValueOf(ctx.Params[i].Value)
+							j++ // the first parameter is the context, other are the path parameters, j++ to be align with (API's registered)paramsLen
+						}
 					}
+
 					methodFunc.Call(args)
 				})
 				// register route

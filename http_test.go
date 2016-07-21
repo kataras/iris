@@ -433,11 +433,11 @@ func TestMuxPathEscape(t *testing.T) {
 		Expect().Status(StatusOK).Body().Equal("name=Sakamoto desu ga,highlight=text")
 }
 
-func TestMuxEncodeURL(t *testing.T) {
+func TestMuxDecodeURL(t *testing.T) {
 	initDefault()
 
 	Get("/encoding/:url", func(ctx *Context) {
-		url := URLEncode(ctx.Param("url"))
+		url := DecodeURL(ctx.Param("url"))
 		ctx.SetStatusCode(StatusOK)
 		ctx.Write(url)
 	})
@@ -560,6 +560,36 @@ func TestMuxAPI(t *testing.T) {
 	e.PUT("/users").WithFormField("name", formname).Expect().Status(StatusOK).Body().Equal(middlewareResponseText + "Put, name: " + formname + "\n")
 	e.POST("/users/"+userID).WithFormField("name", formname).Expect().Status(StatusOK).Body().Equal(middlewareResponseText + "Post By " + userID + ", name: " + formname + "\n")
 	e.DELETE("/users/" + userID).Expect().Status(StatusOK).Body().Equal(middlewareResponseText + "Delete By " + userID + "\n")
+}
+
+func TestMuxAPIWithParty(t *testing.T) {
+	initDefault()
+	siteParty := Party("sites/:site")
+
+	middlewareResponseText := "I assume that you are authenticated\n"
+	siteParty.API("/users", testUserAPI{}, func(ctx *Context) {
+		ctx.Set("user", "username")
+		ctx.Next()
+	}, func(ctx *Context) {
+		if ctx.Get("user") == "username" {
+			ctx.Write(middlewareResponseText)
+			ctx.Next()
+		} else {
+			ctx.SetStatusCode(StatusUnauthorized)
+		}
+	})
+
+	e := Tester(t)
+	siteID := "1"
+	apiPath := "/sites/" + siteID + "/users"
+	userID := "4077"
+	formname := "kataras"
+
+	e.GET(apiPath).Expect().Status(StatusOK).Body().Equal(middlewareResponseText + "Get Users\n")
+	e.GET(apiPath + "/" + userID).Expect().Status(StatusOK).Body().Equal(middlewareResponseText + "Get By " + userID + "\n")
+	e.PUT(apiPath).WithFormField("name", formname).Expect().Status(StatusOK).Body().Equal(middlewareResponseText + "Put, name: " + formname + "\n")
+	e.POST(apiPath+"/"+userID).WithFormField("name", formname).Expect().Status(StatusOK).Body().Equal(middlewareResponseText + "Post By " + userID + ", name: " + formname + "\n")
+	e.DELETE(apiPath + "/" + userID).Expect().Status(StatusOK).Body().Equal(middlewareResponseText + "Delete By " + userID + "\n")
 }
 
 type myTestHandlerData struct {
