@@ -1,11 +1,8 @@
 [![Iris Logo](https://github.com/iris-contrib/logo/raw/contribs/OneebMalik/Iris%20Logo%20with%20txt%20and%20bg.jpg)](http://iris-go.com)
 
-[![Travis Widget]][Travis] [![Release Widget]][Release] [![Report Widget]][Report] [![License Widget]][License] [![Chat Widget]][Chat] [![Documentation Widget]][Documentation] [![Examples Widget]][Examples]
+ [![Release Widget]][Release] [![Documentation Widget]][Documentation] [![Examples Widget]][Examples] [![Chat Widget]][Chat] [![Travis Widget]][Travis] [![Report Widget]][Report] [![License Widget]][License]
 
-The fastest web framework for Go.
-
-[![Alt: Benchmark Wizzard July 21, 2016- Processing Time Horizontal Graph](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png)](#benchmarks)
-
+The [fastest](#benchmarks) web framework for Go. Easy to use, while it's highly customizable.
 
 ```bash
 $ cat render_json.go
@@ -19,7 +16,7 @@ func main() {
 		c.JSON(iris.StatusOK, iris.Map{
 			"Name":  "Iris",
 			"Born":  "13 March 2016",
-			"Stars": 4420,
+			"Stars": 4453,
 		})
 	})
 	iris.Listen(":8080")
@@ -37,17 +34,37 @@ $ go get -u github.com/kataras/iris/iris
 
  >If you have installation issues or you are connected to the Internet through China please, [click here](https://kataras.gitbooks.io/iris/content/install.html).
 
-FAQ
-------------
-Explore [these questions](https://github.com/kataras/iris/issues?q=label%3Aquestion) or navigate to the [community chat][Chat].
+ Docs & Community
+ ------------
 
+ <a href="https://www.gitbook.com/book/kataras/iris/details"><img align="right" width="185" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_4.jpg"></a>
+
+
+ - Donate any amount and download [the donator edition](DONATIONS.md) guide
+
+ - Take a look at the [examples](https://github.com/iris-contrib/examples)
+
+ - [HISTORY.md](https://github.com//kataras/iris/tree/master/HISTORY.md) file is your best friend.
+
+
+ If you'd like to discuss this package, or ask questions about it, feel free to
+
+ * Post an issue or  idea [here](https://github.com/kataras/iris/issues)
+ * [Chat][Chat]
+
+ Open debates
+
+  - [Contribute: New website and logo for Iris](https://github.com/kataras/iris/issues/153)
+  - [E-book Cover - Which one you suggest?](https://github.com/kataras/iris/issues/67)
+
+* The new Iris [logo](https://github.com/iris-contrib/logo) is designed by [Corey Worrell](https://github.com/coreyworrell) 
 
 Features
 ------------
 - Focus on high performance
 - Robust routing supports static and wildcard subdomains
 - View system supporting [6+](https://kataras.gitbooks.io/iris/content/template-engines.html) template engines
-- Add custom [renders/responses](https://github.com/iris-contrib/examples/tree/master/response_engines/my_custom_response/main.go) or customize & replace the [defaults](https://github.com/iris-contrib/response/) (`context.JSON/JSONP/XML/Markdown/Text/Binary(...)`)
+- Add custom [responses](https://github.com/iris-contrib/examples/tree/master/response_engines/my_custom_response/main.go) or customize & replace the [defaults](https://github.com/iris-contrib/response/)
 - Highly scalable Websocket API with custom events
 - Sessions support with GC, memory & redis providers
 - Middlewares & Plugins were never be easier
@@ -90,28 +107,10 @@ Features
 | [OAuth,OAuth2 Plugin](https://github.com/iris-contrib/plugin/tree/master/oauth) |  User Authentication was never be easier, supports >27 providers |    [example](https://github.com/iris-contrib/examples/tree/master/plugin_oauth_oauth2), [book section](https://kataras.gitbooks.io/iris/content/plugin-oauth.html) |
 | [Iris control Plugin](https://github.com/iris-contrib/plugin/tree/master/iriscontrol) |   Basic (browser-based) control over your Iris station |    [example](https://github.com/iris-contrib/examples/blob/master/plugin_iriscontrol/main.go), [book section](https://kataras.gitbooks.io/iris/content/plugin-iriscontrol.html) |
 
-Docs & Community
+
+FAQ
 ------------
-
-<a href="https://www.gitbook.com/book/kataras/iris/details"><img align="right" width="185" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_4.jpg"></a>
-
-
-- Donate any amount and download [the donator edition](DONATIONS.md) guide
-
-- Take a look at the [examples](https://github.com/iris-contrib/examples)
-
-- [HISTORY.md](https://github.com//kataras/iris/tree/master/HISTORY.md) file is your best friend.
-
-
-If you'd like to discuss this package, or ask questions about it, feel free to
-
-* Post an issue or  idea [here](https://github.com/kataras/iris/issues)
-* [Chat][Chat]
-
-Open debates
-
- - [Contribute: New website and logo for Iris](https://github.com/kataras/iris/issues/153)
- - [E-book Cover - Which one you suggest?](https://github.com/kataras/iris/issues/67)
+Explore [these questions](https://github.com/kataras/iris/issues?q=label%3Aquestion) or navigate to the [community chat][Chat].
 
 Philosophy
 ------------
@@ -124,13 +123,13 @@ Iris does not force you to use any specific ORM or template engine. With support
 
 [This Benchmark suite](https://github.com/smallnest/go-web-framework-benchmark) aims to compare the whole HTTP request processing between Go web frameworks.
 
-**New results just came out:**
 
 ![Benchmark Wizzard July 21, 2016- Processing Time Horizontal Graph](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png)
 
 **The results have been updated on July 21, 2016**
 
 [Please click here to view all detailed benchmarks.](https://github.com/smallnest/go-web-framework-benchmark/commit/4db507a22c964c9bc9774c5b31afdc199a0fe8b7)
+
 
 Testing
 ------------
