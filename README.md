@@ -32,13 +32,12 @@ The only requirement is the [Go Programming Language](https://golang.org/dl), at
 $ go get -u github.com/kataras/iris/iris
 ```
 
- >If you have installation issues or you are connected to the Internet through China please, [click here](https://kataras.gitbooks.io/iris/content/install.html).
+If you have installation issues or you are connected to the Internet through China please, [click here](https://kataras.gitbooks.io/iris/content/install.html).
 
 
+Docs & Community
+------------
 
-
- ### Docs & Community
- 
  <a href="https://www.gitbook.com/book/kataras/iris/details"><img align="right" width="185" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_4.jpg"></a>
 
 
