@@ -1,6 +1,6 @@
-[![Iris Logo](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iris_full_logo_2.png)](http://iris-go.com)
+[![Iris Logo](https://github.com/iris-contrib/logo/raw/contribs/OneebMalik/Iris%20Logo%20with%20txt%20and%20bg.jpg)](http://iris-go.com)
 
-[![Travis Widget]][Travis] [![Release Widget]][Release] [![Report Widget]][Report] [![License Widget]][License] [![Chat Widget]][Chat] [![Documentation Widget]][Documentation]
+[![Travis Widget]][Travis] [![Release Widget]][Release] [![Report Widget]][Report] [![License Widget]][License] [![Chat Widget]][Chat] [![Documentation Widget]][Documentation] [![Examples Widget]][Examples]
 
 The fastest web framework for Go.
 
@@ -196,6 +196,8 @@ License can be found [here](LICENSE).
 [Report]: http://goreportcard.com/report/kataras/iris
 [Documentation Widget]: https://img.shields.io/badge/documentation-reference-5272B4.svg?style=flat-square
 [Documentation]: https://www.gitbook.com/book/kataras/iris/details
+[Examples Widget]: https://img.shields.io/badge/examples-repository-3362c2.svg?style=flat-square
+[Examples]: https://github.com/iris-contrib/examples
 [Language Widget]: https://img.shields.io/badge/powered_by-Go-3362c2.svg?style=flat-square
 [Language]: http://golang.org
 [Platform Widget]: https://img.shields.io/badge/platform-Any--OS-gray.svg?style=flat-square
