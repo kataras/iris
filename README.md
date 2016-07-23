@@ -1,4 +1,4 @@
-[![Iris Logo](https://github.com/iris-contrib/logo/raw/contribs/OneebMalik/Iris%20Logo%20with%20txt%20and%20bg.jpg)](http://iris-go.com)
+[![Iris Logo](https://github.com/iris-contrib/logo/raw/contribs/OneebMalik/Iris%20Logo%20with%20txt%20and%20bg.jpg)](https://github.com/iris-contrib/logo/tree/contribs/OneebMalik)
 
  [![Release Widget]][Release] [![Documentation Widget]][Documentation] [![Examples Widget]][Examples] [![Chat Widget]][Chat] [![Travis Widget]][Travis] [![Report Widget]][Report] [![License Widget]][License]
 
@@ -53,12 +53,14 @@ Docs & Community
  * Post an issue or  idea [here](https://github.com/kataras/iris/issues)
  * [Chat][Chat]
 
+The new Iris [logo](https://github.com/iris-contrib/logo) is designed by [Corey Worrell](https://github.com/coreyworrell)
+
 Open debates
 
 - [Contribute: New website and logo for Iris](https://github.com/kataras/iris/issues/153)
 - [E-book Cover - Which one you suggest?](https://github.com/kataras/iris/issues/67)
 
-* The new Iris [logo](https://github.com/iris-contrib/logo) is designed by [Corey Worrell](https://github.com/coreyworrell)
+
 
 Features
 ------------
