@@ -35,9 +35,10 @@ $ go get -u github.com/kataras/iris/iris
  >If you have installation issues or you are connected to the Internet through China please, [click here](https://kataras.gitbooks.io/iris/content/install.html).
 
 
- Docs & Community
- ------------
 
+
+ ### Docs & Community
+ 
  <a href="https://www.gitbook.com/book/kataras/iris/details"><img align="right" width="185" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_4.jpg"></a>
 
 
@@ -53,10 +54,10 @@ $ go get -u github.com/kataras/iris/iris
  * Post an issue or  idea [here](https://github.com/kataras/iris/issues)
  * [Chat][Chat]
 
- Open debates
+Open debates
 
-  - [Contribute: New website and logo for Iris](https://github.com/kataras/iris/issues/153)
-  - [E-book Cover - Which one you suggest?](https://github.com/kataras/iris/issues/67)
+- [Contribute: New website and logo for Iris](https://github.com/kataras/iris/issues/153)
+- [E-book Cover - Which one you suggest?](https://github.com/kataras/iris/issues/67)
 
 * The new Iris [logo](https://github.com/iris-contrib/logo) is designed by [Corey Worrell](https://github.com/coreyworrell)
 
