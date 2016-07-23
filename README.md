@@ -93,14 +93,14 @@ Features
 Docs & Community
 ------------
 
-<a href="https://www.gitbook.com/book/kataras/iris/details"><img align="right" width="185" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_1.png"></a>
+<a href="https://www.gitbook.com/book/kataras/iris/details"><img align="right" width="185" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_4.jpg"></a>
 
 
-- Read the [book](https://www.gitbook.com/book/kataras/iris/details)
+- Donate any amount and download [the donator edition](DONATIONS.md) guide
 
 - Take a look at the [examples](https://github.com/iris-contrib/examples)
 
-- [HISTORY](https://github.com//kataras/iris/tree/master/HISTORY.md) file is your best friend.
+- [HISTORY.md](https://github.com//kataras/iris/tree/master/HISTORY.md) file is your best friend.
 
 
 If you'd like to discuss this package, or ask questions about it, feel free to
