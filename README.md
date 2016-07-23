@@ -34,6 +34,7 @@ $ go get -u github.com/kataras/iris/iris
 
  >If you have installation issues or you are connected to the Internet through China please, [click here](https://kataras.gitbooks.io/iris/content/install.html).
 
+
  Docs & Community
  ------------
 
@@ -57,7 +58,7 @@ $ go get -u github.com/kataras/iris/iris
   - [Contribute: New website and logo for Iris](https://github.com/kataras/iris/issues/153)
   - [E-book Cover - Which one you suggest?](https://github.com/kataras/iris/issues/67)
 
-* The new Iris [logo](https://github.com/iris-contrib/logo) is designed by [Corey Worrell](https://github.com/coreyworrell) 
+* The new Iris [logo](https://github.com/iris-contrib/logo) is designed by [Corey Worrell](https://github.com/coreyworrell)
 
 Features
 ------------
