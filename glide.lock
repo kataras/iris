@@ -59,7 +59,7 @@ imports:
   subpackages:
   - github.com\kataras\cli
 - name: github.com/kataras/rizla
-  version: 55c8df3f037436b912c80e94449129bac9a5d24d
+  version: e525ea809fd22f54c5415ddfee364543d06d95a8
   subpackages:
   - github.com\kataras\rizla\rizla
 - name: github.com/klauspost/compress

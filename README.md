@@ -1,14 +1,15 @@
-[![Iris Logo](https://github.com/iris-contrib/logo/raw/contribs/OneebMalik/Iris%20Logo%20with%20txt%20and%20bg.jpg)](https://github.com/iris-contrib/logo/tree/contribs/OneebMalik)
+[![Iris Logo](https://github.com/iris-contrib/logo/raw/contribs/OneebMalik/Iris%20Logo%20with%20bg_README.jpg)](https://github.com/iris-contrib/logo/tree/contribs/OneebMalik)
 
- [![Release Widget]][Release] [![Documentation Widget]][Documentation] [![Examples Widget]][Examples] [![Chat Widget]][Chat] [![Travis Widget]][Travis] [![Report Widget]][Report] [![License Widget]][License]
+ [![Travis Widget]][Travis] [![Report Widget]][Report] [![License Widget]][License] [![Release Widget]][Release]   [![Documentation Widget]][Documentation] [![Chat Widget]][Chat]  [![Examples Widget]][Examples]
 
 The [fastest](#benchmarks) web framework for Go. Easy to use, while it's highly customizable.
 
-```bash
-$ cat render_json.go
-```
+
+ <a href="https://www.gitbook.com/book/kataras/iris/details"><img align="right" width="202" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_4.jpg"></a>
+
 ```go
 package main
+
 import "github.com/kataras/iris"
 
 func main() {
@@ -41,9 +42,9 @@ Docs & Community
  <a href="https://www.gitbook.com/book/kataras/iris/details"><img align="right" width="185" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_4.jpg"></a>
 
 
- - Donate any amount and download [the donator edition](DONATIONS.md) guide
+ - Read [the guide](https://www.gitbook.com/book/kataras/iris/details), if you wish you can [donate](DONATIONS.md) also.
 
- - Take a look at the [examples](https://github.com/iris-contrib/examples)
+ - Take a look at the mini [examples](https://github.com/iris-contrib/examples)
 
  - [HISTORY.md](https://github.com//kataras/iris/tree/master/HISTORY.md) file is your best friend.
 
