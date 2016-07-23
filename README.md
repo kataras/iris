@@ -4,8 +4,7 @@
 
 The [fastest](#benchmarks) web framework for Go. Easy to use, while it's highly customizable.
 
-
- <a href="https://www.gitbook.com/book/kataras/iris/details"><img align="right" width="202" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_4.jpg"></a>
+ <a href="https://www.gitbook.com/book/kataras/iris/details"><img align="right" width="193" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_4.jpg"></a>
 
 ```go
 package main
@@ -23,7 +22,6 @@ func main() {
 	iris.Listen(":8080")
 }
 ```
-> Learn more about [render](https://kataras.gitbooks.io/iris/content/render.html)
 
 Installation
 ------------
@@ -157,13 +155,11 @@ Todo
 - [x] Refactor & extend sessions, split the different databases functionality to the iris-contrib[*](https://github.com/iris-contrib/sessiondb)
 - [x] Refactor & extends the rest render engine in order to be able to developer to use their own implemention for rendering restful types, like, for example a  custom JSON implementation using no-standard go package for encode/decode[*](https://github.com/iris-contrib/response)
 - [x] Move the iris/websocket package's source code inside iris/websocket.go one file, to be easier to use by users without import a new package[*](https://github.com/kataras/iris/blob/master/websocket.go)
-- [ ] configs package should be removed after all these, we will not need big configurations because of different packages splitted & moved to the iris-contrib, we will keep interfaces and all required things inside kataras/iris.go.
 - [ ] Implement all [opened community's feature requests](https://github.com/kataras/iris/issues?q=is%3Aissue+is%3Aopen+label%3A%22feature+request%22)
 - [ ] Extend i18n middleware for easier and better internalization support
 - [ ] Create a router as optional plugin, for optional path parts. Its name, 'ryan', taken from the community-member and donator who requested this feature
 - [ ] Extend the iris control plugin
 - [x] Remove deprecated functions
-- [ ] Will think more :)
 
 If you're **willing to donate** click [here](DONATIONS.md)!
 
