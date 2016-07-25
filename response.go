@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/iris-contrib/errors"
+	"github.com/valyala/fasthttp"
 )
 
 type (
@@ -151,9 +152,7 @@ func (r *responseEngineMap) render(ctx *Context, obj interface{}, options ...map
 	ctx.SetContentType(ctype)
 
 	if gzipEnabled {
-		gzipWriter := ctx.framework.AcquireGzip(ctx.Response.BodyWriter())
-		defer ctx.framework.ReleaseGzip(gzipWriter)
-		_, err := gzipWriter.Write(finalResult)
+		_, err := fasthttp.WriteGzip(ctx.RequestCtx.Response.BodyWriter(), finalResult)
 		if err != nil {
 			return err
 		}

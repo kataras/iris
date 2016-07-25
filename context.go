@@ -462,12 +462,10 @@ func (ctx *Context) Write(format string, a ...interface{}) {
 
 // Gzip accepts bytes, which are compressed to gzip format and sent to the client
 func (ctx *Context) Gzip(b []byte, status int) {
-	ctx.RequestCtx.Response.Header.Add("Content-Encoding", "gzip")
-	gzipWriter := ctx.framework.gzipWriterPool.Get().(*gzip.Writer)
-	gzipWriter.Reset(ctx.RequestCtx.Response.BodyWriter())
-	gzipWriter.Write(b)
-	gzipWriter.Close()
-	ctx.framework.gzipWriterPool.Put(gzipWriter)
+	_, err := fasthttp.WriteGzip(ctx.RequestCtx.Response.BodyWriter(), b)
+	if err == nil {
+		ctx.RequestCtx.Response.Header.Add("Content-Encoding", "gzip")
+	}
 }
 
 // RenderWithStatus builds up the response from the specified template or a response engine.

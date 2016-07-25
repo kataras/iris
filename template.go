@@ -190,6 +190,7 @@ func (t *templateEngineWrapper) execute(ctx *Context, filename string, binding i
 	var out io.Writer
 	if gzipEnabled {
 		ctx.Response.Header.Add("Content-Encoding", "gzip")
+
 		gzipWriter := ctx.framework.AcquireGzip(ctx.Response.BodyWriter())
 		defer ctx.framework.ReleaseGzip(gzipWriter)
 		out = gzipWriter
@@ -197,7 +198,8 @@ func (t *templateEngineWrapper) execute(ctx *Context, filename string, binding i
 		out = ctx.Response.BodyWriter()
 	}
 
-	return t.ExecuteWriter(out, filename, binding, options...)
+	err = t.ExecuteWriter(out, filename, binding, options...)
+	return err
 }
 
 // executeToString executes a template from a specific template engine and returns its contents result as string, it doesn't renders

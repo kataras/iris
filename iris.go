@@ -199,10 +199,7 @@ func New(cfg ...config.Iris) *Framework {
 	// we always use 's' no 'f' because 's' is easier for me to remember because of 'station'
 	// some things never change :)
 	s := &Framework{
-		Config: &c,
-		gzipWriterPool: sync.Pool{New: func() interface{} {
-			return &gzip.Writer{}
-		}},
+		Config:    &c,
 		responses: &responseEngines{},
 		Available: make(chan bool),
 	}
@@ -852,7 +849,15 @@ func (s *Framework) URL(routeName string, args ...interface{}) (url string) {
 // Note that: each iris station has its own pool
 // see ReleaseGzip
 func (s *Framework) AcquireGzip(w io.Writer) *gzip.Writer {
-	gzipWriter := s.gzipWriterPool.Get().(*gzip.Writer)
+	v := s.gzipWriterPool.Get()
+	if v == nil {
+		gzipWriter, err := gzip.NewWriterLevel(w, gzip.DefaultCompression)
+		if err != nil {
+			return nil
+		}
+		return gzipWriter
+	}
+	gzipWriter := v.(*gzip.Writer)
 	gzipWriter.Reset(w)
 	return gzipWriter
 }
