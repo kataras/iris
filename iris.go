@@ -1055,7 +1055,8 @@ func (api *muxAPI) Party(relativePath string, handlersFn ...HandlerFunc) MuxAPI 
 	middleware := convertToHandlers(handlersFn)
 	// append the parent's +child's handlers
 	middleware = joinMiddleware(api.middleware, middleware)
-	return &muxAPI{relativePath: fullpath, mux: api.mux, apiRoutes: make([]*route, 0), middleware: middleware}
+
+	return &muxAPI{relativePath: fullpath, mux: api.mux, apiRoutes: make([]*route, 0), middleware: middleware, doneMiddleware: api.doneMiddleware}
 }
 
 // Use registers Handler middleware
