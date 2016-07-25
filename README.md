@@ -1,27 +1,41 @@
-[![Iris Logo](https://github.com/iris-contrib/logo/raw/contribs/OneebMalik/Iris%20Logo%20with%20bg_README.jpg)](https://github.com/iris-contrib/logo/tree/contribs/OneebMalik)
+<p align="center">
 
- [![Travis Widget]][Travis] [![Report Widget]][Report] [![License Widget]][License] [![Release Widget]][Release]   [![Documentation Widget]][Documentation] [![Chat Widget]][Chat]  [![Examples Widget]][Examples]
 
-The [fastest](#benchmarks) web framework for Go. Easy to use, while it's highly customizable.
+ <a href="https://www.gitbook.com/book/kataras/iris/details"><img  width="500" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_4.jpg"></a>
 
- <a href="https://www.gitbook.com/book/kataras/iris/details"><img align="right" width="193" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_4.jpg"></a>
+<br/>
+<a href="https://travis-ci.org/kataras/iris"><img src="https://img.shields.io/travis/kataras/iris.svg?style=flat-square" alt="Build Status"></a>
 
-```go
-package main
+<a href="https://github.com/kataras/iris/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT%20%20License%20-E91E63.svg?style=flat-square" alt="License"></a>
 
-import "github.com/kataras/iris"
+<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/release-v4.0.0--alpha.4-blue.svg?style=flat-square" alt="Releases"></a>
 
-func main() {
-	iris.Get("/hi_json", func(c *iris.Context) {
-		c.JSON(iris.StatusOK, iris.Map{
-			"Name":  "Iris",
-			"Born":  "13 March 2016",
-			"Stars": 4453,
-		})
-	})
-	iris.Listen(":8080")
-}
-```
+<a href=" https://www.gitbook.com/book/kataras/iris/details"><img src="https://img.shields.io/badge/practical-guide-5272B4.svg?style=flat-square" alt="Practical Guide/Docs"></a>
+<br/>
+<a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/examples-repository-3362c2.svg?style=flat-square" alt="Examples"></a>
+
+<a href="https://kataras.rocket.chat/channel/iris"><img src="https://img.shields.io/badge/community-chat-00BCD4.svg?style=flat-square" alt="Build Status"></a>
+
+<a href="https://golang.org"><img src="https://img.shields.io/badge/powered_by-Go-3362c2.svg?style=flat-square" alt="Built with GoLang"></a>
+
+<a href="#"><img src="https://img.shields.io/badge/platform-Any--OS-yellow.svg?style=flat-square" alt="Platforms"></a>
+<br/><br/>
+
+
+The <a href="https://github.com/kataras/iris#benchmarks">fastest</a> backend web framework,  written entirely in  Go. <br/>
+Ideally suited for both experienced and novice Developers. <br/>
+ Easy to <a href="https://www.gitbook.com/book/kataras/iris/details">learn</a>,  while it's highly customizable.
+
+
+
+</p>
+
+-----
+
+
+
+
+
 
 Installation
 ------------
@@ -40,45 +54,33 @@ Docs & Community
  <a href="https://www.gitbook.com/book/kataras/iris/details"><img align="right" width="185" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_4.jpg"></a>
 
 
- - Read [the guide](https://www.gitbook.com/book/kataras/iris/details), if you wish you can [donate](DONATIONS.md) also.
+ - The most important is to read [the practical guide](https://www.gitbook.com/book/kataras/iris/details).
 
- - Take a look at the mini [examples](https://github.com/iris-contrib/examples)
+ - Explore & download the [examples](https://github.com/iris-contrib/examples).
 
  - [HISTORY.md](https://github.com//kataras/iris/tree/master/HISTORY.md) file is your best friend.
 
 
- If you'd like to discuss this package, or ask questions about it, feel free to
+If you'd like to discuss this package, or ask questions about it, feel free to
 
- * Post an issue or  idea [here](https://github.com/kataras/iris/issues)
- * [Chat][Chat]
+ * Post an issue or  idea [here](https://github.com/kataras/iris/issues).
+ * [Chat][Chat].
 
-The new Iris [logo](https://github.com/iris-contrib/logo) is designed by [Corey Worrell](https://github.com/coreyworrell)
-
-Open debates
+Iris takes very seriously your opinion,
 
 - [Contribute: New website and logo for Iris](https://github.com/kataras/iris/issues/153)
-- [E-book Cover - Which one you suggest?](https://github.com/kataras/iris/issues/67)
-
-
 
 Features
 ------------
 - Focus on high performance
-- Robust routing supports static and wildcard subdomains
+- Robust routing, static, wildcard subdomains and routes.
+- Websocket API, Sessions support out of the box
 - View system supporting [6+](https://kataras.gitbooks.io/iris/content/template-engines.html) template engines
-- Add custom [responses](https://github.com/iris-contrib/examples/tree/master/response_engines/my_custom_response/main.go) or customize & replace the [defaults](https://github.com/iris-contrib/response/)
-- Highly scalable Websocket API with custom events
-- Sessions support with GC, memory & redis providers
-- Middlewares & Plugins were never be easier
-- Full REST API
-- Custom HTTP Errors
-- Typescript compiler + Browser-based editor
-- Content negotiation & streaming
-- Transport Layer Security
-- [Reload](https://github.com/kataras/iris/tree/master/iris#run) on source code changes
-- OAuth, OAuth2 supporting  27+ API providers
-- JSON Web Tokens
-- and more
+- Highly scalable response engines
+- Live reload
+- Typescript integration + Online editor
+- OAuth, OAuth2 supporting  27+ API providers, JWT, BasicAuth
+- and many other surprises
 
 <img src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/arrowdown.png" width="72"/>
 
