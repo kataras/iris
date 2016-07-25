@@ -1162,6 +1162,9 @@ func (api *muxAPI) Handle(method string, registedPath string, handlers ...Handle
 	}
 	r := api.mux.register([]byte(method), subdomain, path, middleware)
 	api.apiRoutes = append(api.apiRoutes, r)
+
+	// should we remove the api.apiRoutes on the .Party (new children party) ?, No, because the user maybe use this party later
+	// should we add to the 'inheritance tree' the api.apiRoutes, No, these are for this specific party only, because the user propably, will have unexpected behavior when using Use/UseFunc, Done/DoneFunc
 	return r.setName
 }
 
@@ -1211,7 +1214,14 @@ func API(path string, restAPI HandlerAPI, middleware ...HandlerFunc) {
 func (api *muxAPI) API(path string, restAPI HandlerAPI, middleware ...HandlerFunc) {
 	// here we need to find the registed methods and convert them to handler funcs
 	// methods are collected by method naming:  Get(),GetBy(...), Post(),PostBy(...), Put() and so on
-
+	if len(path) == 0 {
+		path = "/"
+	}
+	if path[0] != slashByte {
+		//  the route's paths always starts with "/", when the client navigates, the router works without "/" also ,
+		// but the developer should always prepend the slash ("/") to register the routes
+		path = "/" + path
+	}
 	typ := reflect.ValueOf(restAPI).Type()
 	contextField, found := typ.FieldByName("Context")
 	if !found {
@@ -1289,6 +1299,7 @@ func (api *muxAPI) API(path string, restAPI HandlerAPI, middleware ...HandlerFun
 					for i := 0; i < realParamsLen; i++ { // here we don't looping with the len we are already known by the 'API' because maybe there is a party/or/path witch accepting parameters before, see https://github.com/kataras/iris/issues/293
 						if strings.HasPrefix(ctx.Params[i].Key, paramPrefix) {
 							args[j] = reflect.ValueOf(ctx.Params[i].Value)
+
 							j++ // the first parameter is the context, other are the path parameters, j++ to be align with (API's registered)paramsLen
 						}
 					}
