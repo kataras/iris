@@ -1,40 +1,37 @@
 <p align="center">
 
 
- <a href="https://www.gitbook.com/book/kataras/iris/details"><img  width="500" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_4.jpg"></a>
+ <a href="https://www.gitbook.com/book/kataras/iris/details"><img  width="600" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_6_flat_alpha.png"></a>
 
 <br/>
 <a href="https://travis-ci.org/kataras/iris"><img src="https://img.shields.io/travis/kataras/iris.svg?style=flat-square" alt="Build Status"></a>
 
-<a href="https://github.com/kataras/iris/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT%20%20License%20-E91E63.svg?style=flat-square" alt="License"></a>
+<a href="https://github.com/kataras/iris/blob/master/LICENSE"><img src="https://img.shields.io/badge/%20license-MIT%20%20License%20-E91E63.svg?style=flat-square" alt="License"></a>
 
-<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/release-v4.0.0--alpha.4-blue.svg?style=flat-square" alt="Releases"></a>
+<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20release%20-%20v4.0.0--alpha.4%20-blue.svg?style=flat-square" alt="Releases"></a>
 
-<a href=" https://www.gitbook.com/book/kataras/iris/details"><img src="https://img.shields.io/badge/practical-guide-5272B4.svg?style=flat-square" alt="Practical Guide/Docs"></a>
-<br/>
-<a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/examples-repository-3362c2.svg?style=flat-square" alt="Examples"></a>
+<a href="https://www.gitbook.com/book/kataras/iris/details"><img src="https://img.shields.io/badge/%20docs-reference-5272B4.svg?style=flat-square" alt="Practical Guide/Docs"></a><br/>
 
-<a href="https://kataras.rocket.chat/channel/iris"><img src="https://img.shields.io/badge/community-chat-00BCD4.svg?style=flat-square" alt="Build Status"></a>
+<a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/%20examples-repository-3362c2.svg?style=flat-square" alt="Examples"></a>
+
+<a href="https://kataras.rocket.chat/channel/iris"><img src="https://img.shields.io/badge/%20community-chat-00BCD4.svg?style=flat-square" alt="Build Status"></a>
 
 <a href="https://golang.org"><img src="https://img.shields.io/badge/powered_by-Go-3362c2.svg?style=flat-square" alt="Built with GoLang"></a>
 
 <a href="#"><img src="https://img.shields.io/badge/platform-Any--OS-yellow.svg?style=flat-square" alt="Platforms"></a>
 <br/><br/>
 
+<br/>
 
-The <a href="https://github.com/kataras/iris#benchmarks">fastest</a> backend web framework,  written entirely in  Go. <br/>
+
+The <a href="https://github.com/kataras/iris#benchmarks">fastest</a> backend web framework,  written entirely in  Go. <br/>Easy to <a href="https://www.gitbook.com/book/kataras/iris/details">learn</a>,  while it's highly customizable. <br/>
 Ideally suited for both experienced and novice Developers. <br/>
- Easy to <a href="https://www.gitbook.com/book/kataras/iris/details">learn</a>,  while it's highly customizable.
-
-
-
-</p>
-
------
 
 
 
 
+
+<p style="background-color:#BEC6D0;height:0.2px;width:100%" ></p>
 
 
 Installation
@@ -45,7 +42,7 @@ The only requirement is the [Go Programming Language](https://golang.org/dl), at
 $ go get -u github.com/kataras/iris/iris
 ```
 
-If you have installation issues or you are connected to the Internet through China please, [click here](https://kataras.gitbooks.io/iris/content/install.html).
+> If you have installation issues or you are connected to the Internet through China please, [click here](https://kataras.gitbooks.io/iris/content/install.html).
 
 
 Docs & Community
