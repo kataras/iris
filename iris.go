@@ -981,6 +981,10 @@ type (
 		// middleware serial, appending
 		Use(...Handler)
 		UseFunc(...HandlerFunc)
+		// returns itself, because at the most-cases used like .Layout, at the first-line party's declaration
+		Done(...Handler) MuxAPI
+		DoneFunc(...HandlerFunc) MuxAPI
+		//
 
 		// main handlers
 		Handle(string, string, ...Handler) RouteNameFunc
@@ -1015,9 +1019,11 @@ type (
 	}
 
 	muxAPI struct {
-		mux          *serveMux
-		relativePath string
-		middleware   Middleware
+		mux            *serveMux
+		doneMiddleware Middleware
+		apiRoutes      []*route // used to register the .Done middleware
+		relativePath   string
+		middleware     Middleware
 	}
 )
 
@@ -1049,7 +1055,7 @@ func (api *muxAPI) Party(relativePath string, handlersFn ...HandlerFunc) MuxAPI 
 	middleware := convertToHandlers(handlersFn)
 	// append the parent's +child's handlers
 	middleware = joinMiddleware(api.middleware, middleware)
-	return &muxAPI{relativePath: fullpath, mux: api.mux, middleware: middleware}
+	return &muxAPI{relativePath: fullpath, mux: api.mux, apiRoutes: make([]*route, 0), middleware: middleware}
 }
 
 // Use registers Handler middleware
@@ -1062,6 +1068,22 @@ func UseFunc(handlersFn ...HandlerFunc) {
 	Default.UseFunc(handlersFn...)
 }
 
+// Done registers Handler 'middleware' the only difference from .Use is that it
+// should be used BEFORE any party route registered or AFTER ALL party's routes have been registered.
+//
+// returns itself
+func Done(handlers ...Handler) MuxAPI {
+	return Default.Done(handlers...)
+}
+
+// DoneFunc registers HandlerFunc 'middleware' the only difference from .Use is that it
+// should be used BEFORE any party route registered or AFTER ALL party's routes have been registered.
+//
+// returns itself
+func DoneFunc(handlersFn ...HandlerFunc) MuxAPI {
+	return Default.DoneFunc(handlersFn...)
+}
+
 // Use registers Handler middleware
 func (api *muxAPI) Use(handlers ...Handler) {
 	api.middleware = append(api.middleware, handlers...)
@@ -1070,6 +1092,31 @@ func (api *muxAPI) Use(handlers ...Handler) {
 // UseFunc registers HandlerFunc middleware
 func (api *muxAPI) UseFunc(handlersFn ...HandlerFunc) {
 	api.Use(convertToHandlers(handlersFn)...)
+}
+
+// Done registers Handler 'middleware' the only difference from .Use is that it
+// should be used BEFORE any party route registered or AFTER ALL party's routes have been registered.
+//
+// returns itself
+func (api *muxAPI) Done(handlers ...Handler) MuxAPI {
+	if len(api.apiRoutes) > 0 { // register these middleware on previous-party-defined routes, it called after the party's route methods (Handle/HandleFunc/Get/Post/Put/Delete/...)
+		for i, n := 0, len(api.apiRoutes); i < n; i++ {
+			api.apiRoutes[i].middleware = append(api.apiRoutes[i].middleware, handlers...)
+		}
+	} else {
+		// register them on the doneMiddleware, which will be used on Handle to append these middlweare as the last handler(s)
+		api.doneMiddleware = append(api.doneMiddleware, handlers...)
+	}
+
+	return api
+}
+
+// Done registers HandlerFunc 'middleware' the only difference from .Use is that it
+// should be used BEFORE any party route registered or AFTER ALL party's routes have been registered.
+//
+// returns itself
+func (api *muxAPI) DoneFunc(handlersFn ...HandlerFunc) MuxAPI {
+	return api.Done(convertToHandlers(handlersFn)...)
 }
 
 // Handle registers a route to the server's router
@@ -1108,7 +1155,13 @@ func (api *muxAPI) Handle(method string, registedPath string, handlers ...Handle
 	}
 
 	path = strings.Replace(path, "//", "/", -1) // fix the path if double //
-	return api.mux.register([]byte(method), subdomain, path, middleware).setName
+
+	if len(api.doneMiddleware) > 0 {
+		middleware = append(middleware, api.doneMiddleware...) // register the done middleware, if any
+	}
+	r := api.mux.register([]byte(method), subdomain, path, middleware)
+	api.apiRoutes = append(api.apiRoutes, r)
+	return r.setName
 }
 
 // HandleFunc registers and returns a route with a method string, path string and a handler
