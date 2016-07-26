@@ -154,7 +154,7 @@ func (p *sessionProvider) newSession(sid string) *session {
 		lastAccessedTime: time.Now(),
 		values:           p.loadSessionValues(sid),
 	}
-	if p.expires > 0 { // if not unlimited life duration
+	if p.expires > 0 { // if not unlimited life duration and no -1 (cookie remove action is based on browser's session)
 		time.AfterFunc(p.expires, func() {
 			// the destroy makes the check if this session is exists then or not,
 			// this is used to destroy the session from the server-side also
@@ -348,9 +348,9 @@ func (m *sessionsManager) start(ctx *Context) *session {
 		if m.config.Expires == 0 {
 			// unlimited life
 			cookie.SetExpire(config.CookieExpireNever)
-		} else {
+		} else if m.config.Expires > 0 {
 			cookie.SetExpire(time.Now().Add(m.config.Expires))
-		}
+		} // if it's -1 then the cookie is deleted when the browser closes
 
 		ctx.SetCookie(cookie)
 		fasthttp.ReleaseCookie(cookie)

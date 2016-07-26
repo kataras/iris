@@ -8,8 +8,8 @@ import (
 
 var (
 	universe time.Time // 0001-01-01 00:00:00 +0000 UTC
-	// CookieExpireNever the default cookie's life for sessions, unlimited
-	CookieExpireNever = universe
+	// CookieExpireNever the default cookie's life for sessions, unlimited (23 years)
+	CookieExpireNever = time.Now().AddDate(23, 0, 0)
 )
 
 const (
@@ -35,7 +35,10 @@ type (
 		// Defaults to false
 		DecodeCookie bool
 		// Expires the duration of which the cookie must expires (created_time.Add(Expires)).
+		// If you want to delete the cookie when the browser closes, set it to -1 but in this case, the server side's session duration is up to GcDuration
+		//
 		// Default infinitive/unlimited life duration(0)
+
 		Expires time.Duration
 		// GcDuration every how much duration(GcDuration) the memory should be clear for unused cookies (GcDuration)
 		// for example: time.Duration(2)*time.Hour. it will check every 2 hours if cookie hasn't be used for 2 hours,
