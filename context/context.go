@@ -9,6 +9,19 @@ import (
 )
 
 type (
+	// Session is the domain-level session's store interface
+	// it's synced with the iris/sessions.go:session
+	Session interface {
+		ID() string
+		Get(string) interface{}
+		GetString(key string) string
+		GetInt(key string) int
+		GetAll() map[string]interface{}
+		VisitAll(cb func(k string, v interface{}))
+		Set(string, interface{})
+		Delete(string)
+		Clear()
+	}
 
 	// IContext the interface for the iris/context
 	// Used mostly inside packages which shouldn't be import ,directly, the kataras/iris.
@@ -71,17 +84,7 @@ type (
 		GetFlashes() map[string]string
 		GetFlash(string) (string, error)
 		SetFlash(string, string)
-		Session() interface {
-			ID() string
-			Get(string) interface{}
-			GetString(key string) string
-			GetInt(key string) int
-			GetAll() map[string]interface{}
-			VisitAll(cb func(k string, v interface{}))
-			Set(string, interface{})
-			Delete(string)
-			Clear()
-		}
+		Session() Session
 		SessionDestroy()
 		Log(string, ...interface{})
 		Reset(*fasthttp.RequestCtx)

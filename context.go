@@ -865,17 +865,7 @@ func (ctx *Context) SetFlash(key string, value string) {
 }
 
 // Session returns the current session
-func (ctx *Context) Session() interface {
-	ID() string
-	Get(string) interface{}
-	GetString(key string) string
-	GetInt(key string) int
-	GetAll() map[string]interface{}
-	VisitAll(cb func(k string, v interface{}))
-	Set(string, interface{})
-	Delete(string)
-	Clear()
-} {
+func (ctx *Context) Session() context.Session {
 	if ctx.framework.sessions == nil { // this should never return nil but FOR ANY CASE, on future changes.
 		return nil
 	}
