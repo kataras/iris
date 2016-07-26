@@ -798,7 +798,7 @@ func (s *Framework) URL(routeName string, args ...interface{}) (url string) {
 		return
 	}
 	srv := s.Servers.Main()
-	scheme := s.Servers.Main().Scheme()
+	scheme := srv.Scheme()
 
 	host := srv.Host()
 	arguments := args[0:]
