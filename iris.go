@@ -798,10 +798,7 @@ func (s *Framework) URL(routeName string, args ...interface{}) (url string) {
 		return
 	}
 	srv := s.Servers.Main()
-	scheme := "http://"
-	if srv.IsSecure() {
-		scheme = "https://"
-	}
+	scheme := s.Servers.Main().Scheme()
 
 	host := srv.Host()
 	arguments := args[0:]

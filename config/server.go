@@ -86,6 +86,11 @@ type Server struct {
 	//
 	// Default is empty ""
 	VListeningAddr string
+	// VScheme if setted to not empty value then all template's helper funcs prepends that as the url scheme instead of the real scheme
+	// server's .Scheme returns VScheme if  not empty && differs from real scheme
+	//
+	// Default is empty ""
+	VScheme string
 	// Name the server's name, defaults to "iris".
 	// You're free to change it, but I will trust you to don't, this is the only setting whose somebody, like me, can see if iris web framework is used
 	Name string
@@ -133,6 +138,7 @@ func DefaultServer() Server {
 		RedirectTo:         "",
 		Virtual:            false,
 		VListeningAddr:     "",
+		VScheme:            "",
 	}
 }
 

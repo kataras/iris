@@ -333,6 +333,13 @@ func (s *Server) Scheme() string {
 	if s.IsSecure() || (s.Config.CertFile != "" && s.Config.KeyFile != "") {
 		scheme = "https://"
 	}
+	// but if virtual scheme is setted and it differs from the real scheme, return the vscheme
+	// the developer should set it correctly, http:// or https:// or anything at the future:P
+	vscheme := s.Config.VScheme
+	if len(vscheme) > 0 && vscheme != scheme {
+		return vscheme
+	}
+
 	return scheme
 }
 
