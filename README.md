@@ -21,17 +21,12 @@
 <a href="#"><img src="https://img.shields.io/badge/platform-Any--OS-yellow.svg?style=flat-square" alt="Platforms"></a>
 <br/><br/>
 
-<br/>
 
 
 The <a href="https://github.com/kataras/iris#benchmarks">fastest</a> backend web framework,  written entirely in  Go. <br/>Easy to <a href="https://www.gitbook.com/book/kataras/iris/details">learn</a>,  while it's highly customizable. <br/>
 Ideally suited for both experienced and novice Developers. <br/>
 
-
-
-
-
-<p style="background-color:#BEC6D0;height:0.2px;width:100%" ></p>
+</p>
 
 
 Installation

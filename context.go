@@ -472,7 +472,7 @@ func (ctx *Context) Gzip(b []byte, status int) {
 // Note: the options: "gzip" and "charset" are built'n support by Iris, so you can pass these on any template engine or response engine
 func (ctx *Context) RenderWithStatus(status int, name string, binding interface{}, options ...map[string]interface{}) error {
 	ctx.SetStatusCode(status)
-	if strings.IndexByte(name, '.') > 0 { //we have template
+	if strings.IndexByte(name, '.') > -1 { //we have template
 		return ctx.framework.templates.getBy(name).execute(ctx, name, binding, options...)
 	}
 	return ctx.framework.responses.getBy(name).render(ctx, binding, options...)

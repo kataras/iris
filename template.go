@@ -103,10 +103,10 @@ type (
 
 // Directory sets the directory to load from
 // returns the Binary location which is optional
-func (t *TemplateEngineLocation) Directory(dir string, fileExtension string) TemplateEngineBinaryLocation {
+func (t *TemplateEngineLocation) Directory(dir string, fileExtension string) *TemplateEngineBinaryLocation {
 	t.directory = dir
 	t.extension = fileExtension
-	return TemplateEngineBinaryLocation{location: t}
+	return &TemplateEngineBinaryLocation{location: t}
 }
 
 // Binary sets the asset(s) and asssets names to load from, works with Directory
