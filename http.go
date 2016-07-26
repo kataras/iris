@@ -302,7 +302,7 @@ func (s *Server) Listener() net.Listener {
 }
 
 // Host returns the registered host for the server
-func (s *Server) Host() (host string) {
+func (s *Server) Host() string {
 	if s.Config.VListeningAddr != "" {
 		return s.Config.VListeningAddr
 	}
@@ -343,7 +343,14 @@ func (s *Server) FullHost() string {
 
 // Hostname returns the hostname part of the host (host expect port)
 func (s *Server) Hostname() string {
-	return s.Host()[0:strings.IndexByte(s.Host(), ':')] // no the port
+	idxPort := strings.IndexByte(s.Host(), ':')
+	if idxPort > 0 {
+		// port exists, (it always exists for Config.ListeningAddr
+		return s.Host()[0:idxPort] // except the port
+	} // but for Config.VListeningAddr the developer maybe doesn't uses the host:port format
+
+	// so, if no port found, then return the Host as it is, it should be something 'mydomain.com'
+	return s.Host()
 }
 
 func (s *Server) listen() error {
