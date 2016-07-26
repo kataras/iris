@@ -663,7 +663,12 @@ func Lookups() []Route {
 
 // Lookup returns a registed route by its name
 func (s *Framework) Lookup(routeName string) Route {
-	return s.mux.lookup(routeName)
+	route := s.mux.lookup(routeName)
+	if nil == route {
+		return nil
+	}
+
+	return route
 }
 
 // Lookups returns all registed routes
