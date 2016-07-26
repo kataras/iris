@@ -79,6 +79,13 @@ type Server struct {
 	RedirectTo string
 	// Virtual If this server is not really listens to a real host, it mostly used in order to achieve testing without system modifications
 	Virtual bool
+	// VListeningAddr, can be used for both virtual = true or false,
+	// if it's setted to not empty, then the server's Host() will return this addr instead of the ListeningAddr.
+	// server's Host() is used inside global template helper funcs
+	// set it when you are sure you know what it does.
+	//
+	// Default is empty ""
+	VListeningAddr string
 	// Name the server's name, defaults to "iris".
 	// You're free to change it, but I will trust you to don't, this is the only setting whose somebody, like me, can see if iris web framework is used
 	Name string
@@ -117,10 +124,15 @@ func ServerParseAddr(listeningAddr string) string {
 
 // DefaultServer returns the default configs for the server
 func DefaultServer() Server {
-	return Server{ListeningAddr: DefaultServerAddr, Name: DefaultServerName,
+	return Server{
+		ListeningAddr:      DefaultServerAddr,
+		Name:               DefaultServerName,
 		MaxRequestBodySize: DefaultMaxRequestBodySize,
 		ReadBufferSize:     DefaultReadBufferSize,
 		WriteBufferSize:    DefaultWriteBufferSize,
+		RedirectTo:         "",
+		Virtual:            false,
+		VListeningAddr:     "",
 	}
 }
 

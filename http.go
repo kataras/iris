@@ -303,13 +303,16 @@ func (s *Server) Listener() net.Listener {
 
 // Host returns the registered host for the server
 func (s *Server) Host() (host string) {
+	if s.Config.VListeningAddr != "" {
+		return s.Config.VListeningAddr
+	}
 	return s.Config.ListeningAddr
 }
 
 // Port returns the port which server listening for
 // if no port given with the ListeningAddr, it returns 80
 func (s *Server) Port() (port int) {
-	a := s.Config.ListeningAddr
+	a := s.Host()
 	if portIdx := strings.IndexByte(a, ':'); portIdx != -1 {
 		p, err := strconv.Atoi(a[portIdx+1:])
 		if err != nil {
