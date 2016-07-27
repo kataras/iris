@@ -258,18 +258,7 @@ func newServer(cfg config.Server) *Server {
 		cfg.Name = config.DefaultServerName
 	}
 	s := &Server{Server: &fasthttp.Server{Name: cfg.Name}, Config: cfg}
-	s.prepare()
 	return s
-}
-
-// prepare just prepares the listening addr
-func (s *Server) prepare() {
-	s.Config.ListeningAddr = config.ServerParseAddr(s.Config.ListeningAddr)
-	if s.Server != nil {
-		s.Server.MaxRequestBodySize = s.Config.MaxRequestBodySize
-		s.Server.ReadBufferSize = s.Config.ReadBufferSize
-		s.Server.WriteBufferSize = s.Config.WriteBufferSize
-	}
 }
 
 // IsListening returns true if server is listening/started, otherwise false
@@ -423,7 +412,9 @@ func (s *Server) Open(h fasthttp.RequestHandler) error {
 		return errServerAlreadyStarted.Return()
 	}
 
-	s.prepare() // do it again for any case
+	s.Server.MaxRequestBodySize = s.Config.MaxRequestBodySize
+	s.Server.ReadBufferSize = s.Config.ReadBufferSize
+	s.Server.WriteBufferSize = s.Config.WriteBufferSize
 
 	if s.Config.RedirectTo != "" {
 		// override the handler and redirect all requests to this addr
@@ -439,13 +430,16 @@ func (s *Server) Open(h fasthttp.RequestHandler) error {
 		s.Server.Handler = h
 	}
 
+	if s.Config.Mode > 0 {
+		return s.listenUNIX()
+	}
+
+	s.Config.ListeningAddr = config.ServerParseAddr(s.Config.ListeningAddr)
+
 	if s.Config.Virtual {
 		return nil
 	}
 
-	if s.Config.Mode > 0 {
-		return s.listenUNIX()
-	}
 	return s.listen()
 
 }

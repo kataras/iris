@@ -77,9 +77,9 @@ func TestServerHost(t *testing.T) {
 	server2.Config.ListeningAddr = "mydomain.com"
 	server3.Config.ListeningAddr = ":9090"
 
-	server1.prepare()
-	server2.prepare()
-	server3.prepare()
+	server1.Config.ListeningAddr = config.ServerParseAddr(server1.Config.ListeningAddr)
+	server2.Config.ListeningAddr = config.ServerParseAddr(server2.Config.ListeningAddr)
+	server3.Config.ListeningAddr = config.ServerParseAddr(server3.Config.ListeningAddr)
 
 	if server1.Host() != expectedHost1 {
 		t.Fatalf("Expecting server 1's host to be %s but we got %s", expectedHost1, server1.Host())
@@ -96,7 +96,7 @@ func TestServerHostname(t *testing.T) {
 	var server Server
 	var expectedHostname = "mydomain.com"
 	server.Config.ListeningAddr = expectedHostname + ":1993"
-	server.prepare()
+	server.Config.ListeningAddr = config.ServerParseAddr(server.Config.ListeningAddr)
 	if server.Hostname() != expectedHostname {
 		t.Fatalf("Expecting server's hostname to be %s but we got %s", expectedHostname, server.Hostname())
 	}
@@ -126,8 +126,9 @@ func TestServerPort(t *testing.T) {
 	expectedPort2 := 80
 	server1.Config.ListeningAddr = "mydomain.com:8080"
 	server2.Config.ListeningAddr = "mydomain.com"
-	server1.prepare()
-	server2.prepare()
+	server1.Config.ListeningAddr = config.ServerParseAddr(server1.Config.ListeningAddr)
+	server2.Config.ListeningAddr = config.ServerParseAddr(server2.Config.ListeningAddr)
+
 	if server1.Port() != expectedPort1 {
 		t.Fatalf("Expecting server 1's port to be %d but we got %d", expectedPort1, server1.Port())
 	}
