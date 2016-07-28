@@ -3,6 +3,15 @@
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras/iris` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
 
+## 4.0.0-alpha.4 -> 4.0.0-alpha.5
+
+- **NEW FEATURE**: Letsencrypt.org integration[*](https://github.com/kataras/iris/issues/220)
+   - example [here](https://github.com/iris-contrib/examples/blob/master/letsencrypt/main.go)
+- **FIX**: (ListenUNIX adds :80 to filename)[https://github.com/kataras/iris/issues/321]
+- **FIX**: (Go-Bindata + ctx.Render)[https://github.com/kataras/iris/issues/315]
+- **FIX** (auto-gzip doesn't really compress data in latest code)[https://github.com/kataras/iris/issues/312]
+
+
 ## 4.0.0-alpha.3 -> 4.0.0-alpha.4
 
 

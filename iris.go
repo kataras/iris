@@ -85,7 +85,7 @@ import (
 
 const (
 	// Version of the iris
-	Version = "4.0.0-alpha.4"
+	Version = "4.0.0-alpha.5"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -433,6 +433,21 @@ func ListenTLS(addr string, certFile string, keyFile string) {
 	Default.ListenTLS(addr, certFile, keyFile)
 }
 
+// ListenTLSAuto starts a server listening at the specific nat address
+// using key & certification taken from the letsencrypt.org 's servers
+// it also starts a second 'http' server to redirect all 'http://$ADDR_HOSTNAME:80' to the' https://$ADDR'
+//
+// Notes:
+// if you don't want the last feature you should use this method:
+// iris.ListenTo(config.Server{ListeningAddr: "mydomain.com:443", AutoTLS: true})
+// it's a blocking function
+// Limit : https://github.com/iris-contrib/letsencrypt/blob/master/lets.go#L142
+//
+// example: https://github.com/iris-contrib/examples/blob/master/letsencyrpt/main.go
+func ListenTLSAuto(addr string) {
+	Default.ListenTLSAuto(addr)
+}
+
 // ListenTLS Starts a https server with certificates,
 // if you use this method the requests of the form of 'http://' will fail
 // only https:// connections are allowed
@@ -446,6 +461,29 @@ func (s *Framework) ListenTLS(addr string, certFile, keyFile string) {
 		s.Logger.Panic("You should provide certFile and keyFile for TLS/SSL")
 	}
 	s.Must(s.ListenTo(config.Server{ListeningAddr: addr, CertFile: certFile, KeyFile: keyFile}))
+}
+
+// ListenTLSAuto starts a server listening at the specific nat address
+// using key & certification taken from the letsencrypt.org 's servers
+// it also starts a second 'http' server to redirect all 'http://$ADDR_HOSTNAME:80' to the' https://$ADDR'
+//
+// Notes:
+// if you don't want the last feature you should use this method:
+// iris.ListenTo(config.Server{ListeningAddr: "mydomain.com:443", AutoTLS: true})
+// it's a blocking function
+// Limit : https://github.com/iris-contrib/letsencrypt/blob/master/lets.go#L142
+//
+// example: https://github.com/iris-contrib/examples/blob/master/letsencyrpt/main.go
+func (s *Framework) ListenTLSAuto(addr string) {
+	if portIdx := strings.IndexByte(addr, ':'); portIdx == -1 {
+		addr += ":443"
+	}
+	addr = config.ServerParseAddr(addr)
+
+	// start a secondary server (HTTP) on port 80, this is a non-blocking func
+	// redirects all http to the main server which is tls/ssl on port :443
+	s.AddServer(config.Server{ListeningAddr: ":80", RedirectTo: "https://" + addr})
+	s.Must(s.ListenTo(config.Server{ListeningAddr: addr, AutoTLS: true}))
 }
 
 // ListenUNIX starts the process of listening to the new requests using a 'socket file', this works only on unix

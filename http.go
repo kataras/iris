@@ -2,6 +2,7 @@ package iris
 
 import (
 	"bytes"
+	"crypto/tls"
 	"net"
 	"net/http"
 	"net/http/pprof"
@@ -13,6 +14,7 @@ import (
 	"time"
 
 	"github.com/iris-contrib/errors"
+	"github.com/iris-contrib/letsencrypt"
 	"github.com/iris-contrib/logger"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/utils"
@@ -282,7 +284,7 @@ func (s *Server) IsOpened() bool {
 
 // IsSecure returns true if server uses TLS, otherwise false
 func (s *Server) IsSecure() bool {
-	return s.tls
+	return s.tls || s.Config.AutoTLS // for any case
 }
 
 // Listener returns the net.Listener which this server (is) listening to
@@ -300,26 +302,31 @@ func (s *Server) Host() string {
 
 // Port returns the port which server listening for
 // if no port given with the ListeningAddr, it returns 80
-func (s *Server) Port() (port int) {
+func (s *Server) Port() int {
 	a := s.Host()
 	if portIdx := strings.IndexByte(a, ':'); portIdx != -1 {
 		p, err := strconv.Atoi(a[portIdx+1:])
 		if err != nil {
-			port = 80
+			if s.Config.AutoTLS {
+				return 443
+			}
+			return 80
 		} else {
-			port = p
+			return p
 		}
-	} else {
-		port = 80
 	}
-	return
+	if s.Config.AutoTLS {
+		return 443
+	}
+	return 80
+
 }
 
 // Scheme returns http:// or https:// if SSL is enabled
 func (s *Server) Scheme() string {
 	scheme := "http://"
 	// we need to be able to take that before(for testing &debugging) and after server's listen
-	if s.IsSecure() || (s.Config.CertFile != "" && s.Config.KeyFile != "") {
+	if s.IsSecure() || (s.Config.CertFile != "" && s.Config.KeyFile != "") || s.Config.AutoTLS {
 		scheme = "https://"
 	}
 	// but if virtual scheme is setted and it differs from the real scheme, return the vscheme
@@ -397,8 +404,20 @@ func (s *Server) serve(l net.Listener) error {
 	if s.Config.CertFile != "" && s.Config.KeyFile != "" {
 		s.tls = true
 		return s.Server.ServeTLS(s.listener, s.Config.CertFile, s.Config.KeyFile)
+	} else if s.Config.AutoTLS {
+		var m letsencrypt.Manager
+		if err := m.CacheFile("letsencrypt.cache"); err != nil {
+			return err
+		}
+		tlsConfig := &tls.Config{GetCertificate: m.GetCertificate}
+
+		ln := tls.NewListener(l, tlsConfig)
+		s.tls = true
+		s.mu.Lock()
+		s.listener = ln
+		s.mu.Unlock()
 	}
-	s.tls = false
+
 	return s.Server.Serve(s.listener)
 }
 

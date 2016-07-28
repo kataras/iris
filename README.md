@@ -8,7 +8,7 @@
 
 <a href="https://github.com/kataras/iris/blob/master/LICENSE"><img src="https://img.shields.io/badge/%20license-MIT%20%20License%20-E91E63.svg?style=flat-square" alt="License"></a>
 
-<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20release%20-%20v4.0.0--alpha.4%20-blue.svg?style=flat-square" alt="Releases"></a>
+<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20release%20-%20v4.0.0--alpha.5%20-blue.svg?style=flat-square" alt="Releases"></a>
 
 <a href="https://www.gitbook.com/book/kataras/iris/details"><img src="https://img.shields.io/badge/%20docs-reference-5272B4.svg?style=flat-square" alt="Practical Guide/Docs"></a><br/>
 
@@ -136,7 +136,7 @@ I recommend writing your API tests using this new library, [httpexpect](https://
 Versioning
 ------------
 
-Current: **v4.0.0-alpha.4**
+Current: **v4.0.0-alpha.5**
 
 >  Iris is an active project
 
@@ -149,6 +149,7 @@ Todo
 - [x] Refactor & extend sessions, split the different databases functionality to the iris-contrib[*](https://github.com/iris-contrib/sessiondb)
 - [x] Refactor & extends the rest render engine in order to be able to developer to use their own implemention for rendering restful types, like, for example a  custom JSON implementation using no-standard go package for encode/decode[*](https://github.com/iris-contrib/response)
 - [x] Move the iris/websocket package's source code inside iris/websocket.go one file, to be easier to use by users without import a new package[*](https://github.com/kataras/iris/blob/master/websocket.go)
+- [x] LetsEncrypt.org integration[*](https://github.com/kataras/iris/issues/220)
 - [ ] Implement all [opened community's feature requests](https://github.com/kataras/iris/issues?q=is%3Aissue+is%3Aopen+label%3A%22feature+request%22)
 - [ ] Extend i18n middleware for easier and better internalization support
 - [ ] Create a router as optional plugin, for optional path parts. Its name, 'ryan', taken from the community-member and donator who requested this feature
@@ -179,7 +180,7 @@ License can be found [here](LICENSE).
 [Travis]: http://travis-ci.org/kataras/iris
 [License Widget]: https://img.shields.io/badge/license-MIT%20%20License%20-E91E63.svg?style=flat-square
 [License]: https://github.com/kataras/iris/blob/master/LICENSE
-[Release Widget]: https://img.shields.io/badge/release-v4.0.0--alpha.4-blue.svg?style=flat-square
+[Release Widget]: https://img.shields.io/badge/release-v4.0.0--alpha.5-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/iris/releases
 [Chat Widget]: https://img.shields.io/badge/community-chat-00BCD4.svg?style=flat-square
 [Chat]: https://kataras.rocket.chat/channel/iris

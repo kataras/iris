@@ -47,6 +47,11 @@ type Server struct {
 	ListeningAddr string
 	CertFile      string
 	KeyFile       string
+	// AutoTLS enable to get certifications from the Letsencrypt
+	// when this configuration field is true, the CertFile & KeyFile are empty, no need to provide a key.
+	//
+	// example: https://github.com/iris-contrib/examples/blob/master/letsencyrpt/main.go
+	AutoTLS bool
 	// Mode this is for unix only
 	Mode os.FileMode
 	// MaxRequestBodySize Maximum request body size.
