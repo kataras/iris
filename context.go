@@ -317,6 +317,67 @@ func (ctx *Context) FormValues(name string) []string {
 	return arrStr
 }
 
+// PostValuesAll returns all post data values with their keys
+// multipart, form data, get & post query arguments
+func (ctx *Context) PostValuesAll() (valuesAll map[string][]string) {
+	reqCtx := ctx.RequestCtx
+	valuesAll = make(map[string][]string)
+	// first check if we have multipart form
+	multipartForm, err := reqCtx.MultipartForm()
+	if err == nil {
+		//we have multipart form
+		return multipartForm.Value
+	}
+	// if no multipart and post arguments ( means normal form)
+
+	if reqCtx.PostArgs().Len() == 0 && reqCtx.QueryArgs().Len() == 0 {
+		return // no found
+	}
+
+	reqCtx.PostArgs().VisitAll(func(k []byte, v []byte) {
+		key := string(k)
+		value := string(v)
+		// for slices
+		if valuesAll[key] != nil {
+			valuesAll[key] = append(valuesAll[key], value)
+		} else {
+			valuesAll[key] = []string{value}
+		}
+
+	})
+
+	reqCtx.QueryArgs().VisitAll(func(k []byte, v []byte) {
+		key := string(k)
+		value := string(v)
+		// for slices
+		if valuesAll[key] != nil {
+			valuesAll[key] = append(valuesAll[key], value)
+		} else {
+			valuesAll[key] = []string{value}
+		}
+	})
+
+	return
+}
+
+// PostValues returns the post data values as []string of a single key/name
+func (ctx *Context) PostValues(name string) []string {
+	values := make([]string, 0)
+	if v := ctx.PostValuesAll(); v != nil && len(v) > 0 {
+		values = v[name]
+	}
+	return values
+}
+
+// PostValue returns the post data value of a single key/name
+// returns an empty string if nothing found
+func (ctx *Context) PostValue(name string) string {
+	if v := ctx.PostValues(name); len(v) > 0 {
+		return v[0]
+	}
+	return ""
+}
+
 // Subdomain returns the subdomain (string) of this request, if any
 func (ctx *Context) Subdomain() (subdomain string) {
 	host := ctx.HostString()

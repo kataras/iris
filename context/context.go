@@ -43,6 +43,9 @@ type (
 		RequestHeader(k string) string
 		FormValueString(string) string
 		FormValues(string) []string
+		PostValuesAll() map[string][]string
+		PostValues(name string) []string
+		PostValue(name string) string
 		SetStatusCode(int)
 		SetContentType(string)
 		SetHeader(string, string)
