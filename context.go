@@ -569,6 +569,7 @@ func (ctx *Context) TemplateString(name string, binding interface{}, options ...
 // HTML writes html string with a http status
 func (ctx *Context) HTML(status int, htmlContents string) {
 	if err := ctx.RenderWithStatus(status, contentHTML, htmlContents); err != nil {
+		// if no response engine found for text/html
 		ctx.SetContentType(contentHTML + "; charset=" + ctx.framework.Config.Charset)
 		ctx.RequestCtx.SetStatusCode(status)
 		ctx.RequestCtx.WriteString(htmlContents)

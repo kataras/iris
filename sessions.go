@@ -3,6 +3,7 @@ package iris
 import (
 	"container/list"
 	"encoding/base64"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -294,6 +295,34 @@ func (m *sessionsManager) generateSessionID() string {
 	return base64.URLEncoding.EncodeToString(utils.Random(32))
 }
 
+func domainCanPersistence(requestDomain string) bool {
+	if requestDomain == "0.0.0.0" || requestDomain == "127.0.0.1" {
+		// for these type of hosts, we can't allow subdomains persistance,
+		// the web browser doesn't understand the mysubdomain.0.0.0.0 and mysubdomain.127.0.0.1 mysubdomain.32.196.56.181. as scorrectly ubdomains because of the many dots
+		// so don't set a cookie domain here, let browser handle this
+		return false
+	}
+
+	dotLen := strings.Count(requestDomain, ".")
+	if dotLen == 0 {
+		// we don't have a domain, maybe something like 'localhost', browser doesn't see the .localhost as wildcard subdomain+domain
+		return false
+	}
+	if dotLen >= 3 {
+		if lastDotIdx := strings.LastIndexByte(requestDomain, '.'); lastDotIdx != -1 {
+			// chekc the last part, if it's number then propably it's ip
+			if len(requestDomain) > lastDotIdx+1 {
+				_, err := strconv.Atoi(requestDomain[lastDotIdx+1:])
+				if err == nil {
+					return false
+				}
+			}
+		}
+	}
+
+	return true
+}
+
 // Start starts the session
 func (m *sessionsManager) start(ctx *Context) *session {
 	var session *session
@@ -313,13 +342,7 @@ func (m *sessionsManager) start(ctx *Context) *session {
 			if portIdx := strings.IndexByte(requestDomain, ':'); portIdx > 0 {
 				requestDomain = requestDomain[0:portIdx]
 			}
-
-			if requestDomain == "0.0.0.0" || requestDomain == "127.0.0.1" {
-				// for these type of hosts, we can't allow subdomains persistance,
-				// the web browser doesn't understand the mysubdomain.0.0.0.0 and mysubdomain.127.0.0.1 as scorrectly ubdomains because of the many dots
-				// so don't set a domain here
-
-			} else if strings.Count(requestDomain, ".") > 0 { // there is a problem with .localhost setted as the domain, so we check that first
+			if domainCanPersistence(requestDomain) {
 
 				// RFC2109, we allow level 1 subdomains, but no further
 				// if we have localhost.com , we want the localhost.com.

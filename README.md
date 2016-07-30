@@ -58,9 +58,12 @@ If you'd like to discuss this package, or ask questions about it, feel free to
  * Post an issue or  idea [here](https://github.com/kataras/iris/issues).
  * [Chat][Chat].
 
-Iris takes very seriously your opinion,
 
-- [Contribute: New website and logo for Iris](https://github.com/kataras/iris/issues/153)
+New website-docs & logo have been designed by the community[*](https://github.com/kataras/iris/issues/153)
+
+- Website created by [@kujtimiihoxha](https://github.com/kujtimiihoxha) 
+- Logo designed by [@OneebMalik](https://github.com/OneebMalik)
+
 
 Features
 ------------
