@@ -569,7 +569,7 @@ func (s *ServerList) OpenAll() error {
 			// we don't care about performance on initialization,
 			// we must make sure that the previous servers are running before closing them
 			s.CloseAll()
-			break
+			return err
 		}
 		if i == l {
 			s.mux.setHostname(s.servers[i].Hostname())
