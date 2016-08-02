@@ -1674,7 +1674,7 @@ func (api *muxAPI) StaticWeb(reqPath string, systemPath string, stripSlashes int
 	serveHandler := api.StaticHandler(systemPath, stripSlashes, false, !hasIndex, nil) // if not index.html exists then generate index.html which shows the list of files
 	indexHandler := func(ctx *Context) {
 		if len(ctx.Param("filepath")) < 2 && hasIndex {
-			ctx.Request.SetRequestURI("index.html")
+			ctx.Request.SetRequestURI(reqPath + "index.html")
 		}
 		ctx.Next()
 
