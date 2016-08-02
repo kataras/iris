@@ -110,9 +110,9 @@ Third Party
 ------------
 these are third party features that are developped as extensions for IRIS.
 
-|Name | Description | Usage |
-|-----|-------------|-------|
-[JOSE middleware](https://github.com/Heirko/iris-contrib/tree/master/middleware/jose) | JOSE handling middleware | [example](https://godoc.org/github.com/Heirko/iris-contrib/middleware/jose#example-package) [book section](https://github.com/Heirko/iris-contrib/tree/master/middleware/jose)
+| Name        | Description           | Usage  |
+| ------------------|:---------------------:|-------:|
+| [JOSE middleware](https://github.com/Heirko/iris-contrib/tree/master/middleware/jose)      | JOSE handling middleware  |[example](https://godoc.org/github.com/Heirko/iris-contrib/middleware/jose#example-package), [GoDoc section](https://github.com/Heirko/iris-contrib/tree/master/middleware/jose)
 
 
 FAQ
