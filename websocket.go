@@ -201,7 +201,9 @@ func (s *websocketServer) serve() {
 		case join := <-s.join:
 			s.joinRoom(join.roomName, join.websocketConnectionID)
 		case leave := <-s.leave:
-			s.leaveRoom(leave.roomName, leave.websocketConnectionID)
+			if _, found := s.websocketConnections[leave.websocketConnectionID]; found {
+				s.leaveRoom(leave.roomName, leave.websocketConnectionID)
+			}
 		case msg := <-s.messages: // message received from the websocketConnection
 			if msg.to != All && msg.to != NotMe && s.rooms[msg.to] != nil {
 				// it suppose to send the message to a room

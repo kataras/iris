@@ -104,6 +104,15 @@ type (
 // Directory sets the directory to load from
 // returns the Binary location which is optional
 func (t *TemplateEngineLocation) Directory(dir string, fileExtension string) *TemplateEngineBinaryLocation {
+	if dir == "" {
+		dir = DefaultTemplateDirectory // the default templates dir
+	}
+	if fileExtension == "" {
+		fileExtension = DefaultTemplateExtension
+	} else if fileExtension[0] != '.' { // if missing the start dot
+		fileExtension = "." + fileExtension
+	}
+
 	t.directory = dir
 	t.extension = fileExtension
 	return &TemplateEngineBinaryLocation{location: t}
@@ -111,6 +120,10 @@ func (t *TemplateEngineLocation) Directory(dir string, fileExtension string) *Te
 
 // Binary sets the asset(s) and asssets names to load from, works with Directory
 func (t *TemplateEngineBinaryLocation) Binary(assetFn func(name string) ([]byte, error), namesFn func() []string) {
+	if assetFn == nil || namesFn == nil {
+		return
+	}
+
 	t.location.assetFn = assetFn
 	t.location.namesFn = namesFn
 	// if extension is not static(setted by .Directory)

@@ -1820,7 +1820,6 @@ func (api *muxAPI) Favicon(favPath string, requestPath ...string) RouteNameFunc 
 	if len(requestPath) > 0 {
 		reqPath = requestPath[0]
 	}
-
 	api.Head(reqPath, h)
 	return api.Get(reqPath, h)
 }
