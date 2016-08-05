@@ -4,6 +4,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/imdario/mergo"
 	"github.com/valyala/fasthttp"
@@ -74,6 +75,19 @@ type Server struct {
 	//
 	// Default buffer size is used if not set.
 	WriteBufferSize int
+
+	// Maximum duration for reading the full request (including body).
+	//
+	// This also limits the maximum duration for idle keep-alive
+	// connections.
+	//
+	// By default request read timeout is unlimited.
+	ReadTimeout time.Duration
+
+	// Maximum duration for writing the full response (including body).
+	//
+	// By default response write timeout is unlimited.
+	WriteTimeout time.Duration
 
 	// RedirectTo, defaults to empty, set it in order to override the station's handler and redirect all requests to this address which is of form(HOST:PORT or :PORT)
 	//
