@@ -332,6 +332,9 @@ type (
 		Join(string)
 		// Leave removes a websocketConnection from a room
 		Leave(string)
+		// Disconnect disconnects the client, close the underline websocket conn and removes it from the conn list
+		// returns the error, if any, from the underline connection
+		Disconnect() error
 	}
 
 	websocketConnection struct {
@@ -381,7 +384,7 @@ func (c *websocketConnection) writer() {
 	ticker := time.NewTicker(c.websocketServer.config.PingPeriod)
 	defer func() {
 		ticker.Stop()
-		c.underline.Close()
+		c.Disconnect()
 	}()
 
 	for {
@@ -400,8 +403,7 @@ func (c *websocketConnection) writer() {
 					//
 					if err := recover(); err != nil {
 						ticker.Stop()
-						c.websocketServer.free <- c
-						c.underline.Close()
+						c.Disconnect()
 					}
 				}()
 				c.write(websocket.CloseMessage, []byte{})
@@ -438,8 +440,7 @@ func (c *websocketConnection) writer() {
 
 func (c *websocketConnection) reader() {
 	defer func() {
-		c.websocketServer.free <- c
-		c.underline.Close()
+		c.Disconnect()
 	}()
 	conn := c.underline
 
@@ -575,6 +576,11 @@ func (c *websocketConnection) Join(roomName string) {
 func (c *websocketConnection) Leave(roomName string) {
 	payload := websocketRoomPayload{roomName, c.id}
 	c.websocketServer.leave <- payload
+}
+
+func (c *websocketConnection) Disconnect() error {
+	c.websocketServer.free <- c // leaves from all rooms, fires the disconnect listeners and finally remove from conn list
+	return c.underline.Close()
 }
 
 // -------------------------------------------------------------------------------------
