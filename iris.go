@@ -1665,22 +1665,20 @@ func StaticWeb(reqPath string, systemPath string, stripSlashes int) RouteNameFun
 // * stripSlashes = 1, original path: "/foo/bar", result: "/bar"
 // * stripSlashes = 2, original path: "/foo/bar", result: ""
 // * if you don't know what to put on stripSlashes just 1
+// example: https://github.com/iris-contrib/examples/tree/master/static_web
 func (api *muxAPI) StaticWeb(reqPath string, systemPath string, stripSlashes int) RouteNameFunc {
 	if reqPath[len(reqPath)-1] != slashByte { // if / then /*filepath, if /something then /something/*filepath
 		reqPath += slash
 	}
 
 	hasIndex := utils.Exists(systemPath + utils.PathSeparator + "index.html")
-	serveHandler := api.StaticHandler(systemPath, stripSlashes, false, !hasIndex, nil) // if not index.html exists then generate index.html which shows the list of files
-	indexHandler := func(ctx *Context) {
-		if len(ctx.Param("filepath")) < 2 && hasIndex {
-			ctx.Request.SetRequestURI("index.html")
-		}
-		ctx.Next()
-
+	var indexNames []string
+	if hasIndex {
+		indexNames = []string{"index.html"}
 	}
-	api.Head(reqPath+"*filepath", indexHandler, serveHandler)
-	return api.Get(reqPath+"*filepath", indexHandler, serveHandler)
+	serveHandler := api.StaticHandler(systemPath, stripSlashes, false, !hasIndex, indexNames) // if not index.html exists then generate index.html which shows the list of files
+	api.Head(reqPath+"*filepath", serveHandler)
+	return api.Get(reqPath+"*filepath", serveHandler)
 }
 
 // StaticServe serves a directory as web resource

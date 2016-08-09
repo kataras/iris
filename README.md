@@ -61,7 +61,7 @@ If you'd like to discuss this package, or ask questions about it, feel free to
 
 New website-docs & logo have been designed by the community[*](https://github.com/kataras/iris/issues/153)
 
-- Website created by [@kujtimiihoxha](https://github.com/kujtimiihoxha) 
+- Website created by [@kujtimiihoxha](https://github.com/kujtimiihoxha)
 - Logo designed by [@OneebMalik](https://github.com/OneebMalik)
 
 
