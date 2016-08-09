@@ -3,6 +3,17 @@
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras/iris` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
 
+## 4.0.0-alpha.5 -> 4.0.0
+
+- **Feature request has been implemented**: Add layout support for Pug/Jade, example [here](https://github.com/iris-contrib/examples/tree/master/template_engines/template_pug_2).
+- **Feature request has been implemented**: Forcefully closing a Websocket connection, `WebsocketConnection.Disconnect() error`.
+
+- **FIX**: WebsocketConnection.Leave() will hang websocket server if .Leave was called manually when the websocket connection has been closed.
+- **FIX**: StaticWeb not serving index.html correctly, align the func with the rest of Static funcs also, [example](https://github.com/iris-contrib/examples/tree/master/static_web) added.
+
+Notes: if you compare it with previous releases (13+ versions before v3 stable), the v4 stable release was fast, now we had only 6 versions before stable, that was happened because many of bugs have been already fixed and we hadn't new bug reports and secondly, and most important for me, some third-party features are implemented mostly by third-party packages via other developers!
+
+
 ## 4.0.0-alpha.4 -> 4.0.0-alpha.5
 
 - **NEW FEATURE**: Letsencrypt.org integration[*](https://github.com/kataras/iris/issues/220)
