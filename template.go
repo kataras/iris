@@ -201,8 +201,9 @@ func (t *templateEngineWrapper) execute(ctx *Context, filename string, binding i
 	ctx.SetContentType(contentHTML + "; charset=" + charset)
 
 	var out io.Writer
-	if gzipEnabled {
-		ctx.Response.Header.Add("Content-Encoding", "gzip")
+	if gzipEnabled && ctx.clientAllowsGzip() {
+		ctx.RequestCtx.Response.Header.Add(varyHeader, acceptEncodingHeader)
+		ctx.SetHeader(contentEncodingHeader, "gzip")
 
 		gzipWriter := ctx.framework.AcquireGzip(ctx.Response.BodyWriter())
 		defer ctx.framework.ReleaseGzip(gzipWriter)

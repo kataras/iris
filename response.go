@@ -151,12 +151,13 @@ func (r *responseEngineMap) render(ctx *Context, obj interface{}, options ...map
 	}
 	ctx.SetContentType(ctype)
 
-	if gzipEnabled {
+	if gzipEnabled && ctx.clientAllowsGzip() {
 		_, err := fasthttp.WriteGzip(ctx.RequestCtx.Response.BodyWriter(), finalResult)
 		if err != nil {
 			return err
 		}
-		ctx.Response.Header.Add("Content-Encoding", "gzip")
+		ctx.RequestCtx.Response.Header.Add(varyHeader, acceptEncodingHeader)
+		ctx.SetHeader(contentEncodingHeader, "gzip")
 	} else {
 		ctx.Response.SetBody(finalResult)
 	}

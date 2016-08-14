@@ -90,9 +90,7 @@ type (
 		Session() Session
 		SessionDestroy()
 		Log(string, ...interface{})
-		Reset(*fasthttp.RequestCtx)
 		GetRequestCtx() *fasthttp.RequestCtx
-		Clone() IContext
 		Do()
 		Next()
 		StopExecution()

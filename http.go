@@ -311,9 +311,8 @@ func (s *Server) Port() int {
 				return 443
 			}
 			return 80
-		} else {
-			return p
 		}
+		return p
 	}
 	if s.Config.AutoTLS {
 		return 443
@@ -559,12 +558,10 @@ func (s *ServerList) CloseAll() (err error) {
 // OpenAll starts all servers
 // returns the first error happens to one of these servers
 // if one server gets error it closes the previous servers and exits from this process
-func (s *ServerList) OpenAll() error {
+func (s *ServerList) OpenAll(reqHandler fasthttp.RequestHandler) error {
 	l := len(s.servers) - 1
-	h := s.mux.ServeRequest()
 	for i := range s.servers {
-
-		if err := s.servers[i].Open(h); err != nil {
+		if err := s.servers[i].Open(reqHandler); err != nil {
 			time.Sleep(2 * time.Second)
 			// for any case,
 			// we don't care about performance on initialization,
@@ -1332,7 +1329,6 @@ type (
 	}
 
 	serveMux struct {
-		cPool   *sync.Pool
 		tree    *muxTree
 		lookups []*route
 
@@ -1355,9 +1351,8 @@ type (
 	}
 )
 
-func newServeMux(contextPool sync.Pool, logger *logger.Logger) *serveMux {
+func newServeMux(logger *logger.Logger) *serveMux {
 	mux := &serveMux{
-		cPool:         &contextPool,
 		lookups:       make([]*route, 0),
 		errorHandlers: make(map[int]Handler, 0),
 		hostname:      config.DefaultServerHostname, // these are changing when the server is up
@@ -1485,16 +1480,16 @@ func (mux *serveMux) lookup(routeName string) *route {
 	return nil
 }
 
-func (mux *serveMux) ServeRequest() fasthttp.RequestHandler {
+func (mux *serveMux) Handler() HandlerFunc {
 
 	// initialize the router once
 	mux.build()
 	// optimize this once once, we could do that: context.RequestPath(mux.escapePath), but we lose some nanoseconds on if :)
-	getRequestPath := func(reqCtx *fasthttp.RequestCtx) string {
-		return utils.BytesToString(reqCtx.Path())
+	getRequestPath := func(ctx *Context) string {
+		return utils.BytesToString(ctx.Path()) //string(ctx.Path()[:]) // a little bit of memory allocation, old method used: BytesToString, If I see the benchmarks get low I will change it back to old, but this way is safer.
 	}
 	if !mux.escapePath {
-		getRequestPath = func(reqCtx *fasthttp.RequestCtx) string { return utils.BytesToString(reqCtx.RequestURI()) }
+		getRequestPath = func(ctx *Context) string { return utils.BytesToString(ctx.RequestCtx.RequestURI()) }
 	}
 
 	methodEqual := func(treeMethod []byte, reqMethod []byte) bool {
@@ -1511,14 +1506,11 @@ func (mux *serveMux) ServeRequest() fasthttp.RequestHandler {
 		}
 	}
 
-	return func(reqCtx *fasthttp.RequestCtx) {
-		context := mux.cPool.Get().(*Context)
-		context.Reset(reqCtx)
-
-		routePath := getRequestPath(reqCtx)
+	return func(context *Context) {
+		routePath := getRequestPath(context)
 		tree := mux.tree
 		for tree != nil {
-			if !methodEqual(tree.method, reqCtx.Method()) {
+			if !methodEqual(tree.method, context.Method()) {
 				// we break any CORS OPTIONS method
 				// but for performance reasons if user wants http method OPTIONS to be served
 				// then must register it with .Options(...)
@@ -1555,9 +1547,8 @@ func (mux *serveMux) ServeRequest() fasthttp.RequestHandler {
 				context.middleware = middleware
 				//ctx.Request.Header.SetUserAgentBytes(DefaultUserAgent)
 				context.Do()
-				mux.cPool.Put(context)
 				return
-			} else if mustRedirect && mux.correctPath && !bytes.Equal(reqCtx.Method(), methodConnectBytes) {
+			} else if mustRedirect && mux.correctPath && !bytes.Equal(context.Method(), methodConnectBytes) {
 
 				reqPath := routePath
 				pathLen := len(reqPath)
@@ -1582,7 +1573,6 @@ func (mux *serveMux) ServeRequest() fasthttp.RequestHandler {
 						note := "<a href=\"" + utils.HTMLEscape(urlToRedirect) + "\">Moved Permanently</a>.\n"
 						context.Write(note)
 					}
-					mux.cPool.Put(context)
 					return
 				}
 			}
@@ -1590,6 +1580,5 @@ func (mux *serveMux) ServeRequest() fasthttp.RequestHandler {
 			break
 		}
 		mux.fireError(StatusNotFound, context)
-		mux.cPool.Put(context)
 	}
 }

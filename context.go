@@ -37,6 +37,12 @@ const (
 	contentType = "Content-Type"
 	// ContentLength represents the header["Content-Length"]
 	contentLength = "Content-Length"
+	// contentEncodingHeader represents the header["Content-Encoding"]
+	contentEncodingHeader = "Content-Encoding"
+	// varyHeader represents the header "Vary"
+	varyHeader = "Vary"
+	// acceptEncodingHeader represents the header key & value "Accept-Encoding"
+	acceptEncodingHeader = "Accept-Encoding"
 	// ContentHTML is the  string of text/html response headers
 	contentHTML = "text/html"
 	// ContentBinary header value for binary data.
@@ -109,36 +115,6 @@ var _ context.IContext = &Context{}
 // GetRequestCtx returns the current fasthttp context
 func (ctx *Context) GetRequestCtx() *fasthttp.RequestCtx {
 	return ctx.RequestCtx
-}
-
-// Reset resets the Context with a given domain.Response and domain.Request
-// the context is ready-to-use after that, just like a new Context
-// I use it for zero rellocation memory
-func (ctx *Context) Reset(reqCtx *fasthttp.RequestCtx) {
-	ctx.Params = ctx.Params[0:0]
-	ctx.session = nil
-	ctx.middleware = nil
-	ctx.RequestCtx = reqCtx
-}
-
-// Clone use that method if you want to use the context inside a goroutine
-func (ctx *Context) Clone() context.IContext {
-	var cloneContext = *ctx
-	cloneContext.pos = 0
-
-	//copy params
-	p := ctx.Params
-	cpP := make(PathParameters, len(p))
-	copy(cpP, p)
-	cloneContext.Params = cpP
-	//copy middleware
-	m := ctx.middleware
-	cpM := make(Middleware, len(m))
-	copy(cpM, m)
-	cloneContext.middleware = cpM
-
-	// we don't copy the sessionStore for more than one reasons...
-	return &cloneContext
 }
 
 // Do calls the first handler only, it's like Next with negative pos, used only on Router&MemoryRouter
@@ -521,11 +497,27 @@ func (ctx *Context) Write(format string, a ...interface{}) {
 	ctx.RequestCtx.WriteString(fmt.Sprintf(format, a...))
 }
 
+func (ctx *Context) clientAllowsGzip() bool {
+	if h := ctx.RequestHeader(acceptEncodingHeader); h != "" {
+		for _, v := range strings.Split(h, ";") {
+			if strings.Contains(v, "gzip") { // we do Contains because sometimes browsers has the q=, we don't use it atm. || strings.Contains(v,"deflate"){
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
 // Gzip accepts bytes, which are compressed to gzip format and sent to the client
 func (ctx *Context) Gzip(b []byte, status int) {
-	_, err := fasthttp.WriteGzip(ctx.RequestCtx.Response.BodyWriter(), b)
-	if err == nil {
-		ctx.RequestCtx.Response.Header.Add("Content-Encoding", "gzip")
+	ctx.RequestCtx.Response.Header.Add(varyHeader, acceptEncodingHeader)
+
+	if ctx.clientAllowsGzip() {
+		_, err := fasthttp.WriteGzip(ctx.RequestCtx.Response.BodyWriter(), b)
+		if err == nil {
+			ctx.SetHeader(contentEncodingHeader, "gzip")
+		}
 	}
 }
 
@@ -630,8 +622,9 @@ func (ctx *Context) ServeContent(content io.ReadSeeker, filename string, modtime
 	ctx.RequestCtx.Response.Header.Set(lastModified, modtime.UTC().Format(config.TimeFormat))
 	ctx.RequestCtx.SetStatusCode(StatusOK)
 	var out io.Writer
-	if gzipCompression {
-		ctx.RequestCtx.Response.Header.Add("Content-Encoding", "gzip")
+	if gzipCompression && ctx.clientAllowsGzip() {
+		ctx.RequestCtx.Response.Header.Add(varyHeader, acceptEncodingHeader)
+		ctx.SetHeader(contentEncodingHeader, "gzip")
 		gzipWriter := gzipWriterPool.Get().(*gzip.Writer)
 		gzipWriter.Reset(ctx.RequestCtx.Response.BodyWriter())
 		defer gzipWriter.Close()
@@ -651,6 +644,7 @@ func (ctx *Context) ServeContent(content io.ReadSeeker, filename string, modtime
 // gzipCompression (bool)
 //
 // You can define your own "Content-Type" header also, after this function call
+// This function doesn't implement resuming, use ctx.RequestCtx.SendFile/fasthttp.ServeFileUncompressed(ctx.RequestCtx,path)/ServeFile(ctx.RequestCtx,path) instead
 func (ctx *Context) ServeFile(filename string, gzipCompression bool) error {
 	f, err := os.Open(filename)
 	if err != nil {
@@ -673,6 +667,7 @@ func (ctx *Context) ServeFile(filename string, gzipCompression bool) error {
 //
 // You can define your own "Content-Type" header also, after this function call
 // for example: ctx.Response.Header.Set("Content-Type","thecontent/type")
+// This function doesn't implement resuming, use ctx.RequestCtx.SendFile instead
 func (ctx *Context) SendFile(filename string, destinationName string) error {
 	err := ctx.ServeFile(filename, false)
 	if err != nil {

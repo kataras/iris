@@ -21,30 +21,6 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-func TestContextReset(t *testing.T) {
-	var context Context
-	context.Params = PathParameters{PathParameter{Key: "testkey", Value: "testvalue"}}
-	context.Reset(nil)
-	if len(context.Params) > 0 {
-		t.Fatalf("Expecting to have %d params but got: %d", 0, len(context.Params))
-	}
-}
-
-func TestContextClone(t *testing.T) {
-	var context Context
-	context.Params = PathParameters{
-		PathParameter{Key: "testkey", Value: "testvalue"},
-		PathParameter{Key: "testkey2", Value: "testvalue2"},
-	}
-	c := context.Clone()
-	if v := c.Param("testkey"); v != context.Param("testkey") {
-		t.Fatalf("Expecting to have parameter value: %s but got: %s", context.Param("testkey"), v)
-	}
-	if v := c.Param("testkey2"); v != context.Param("testkey2") {
-		t.Fatalf("Expecting to have parameter value: %s but got: %s", context.Param("testkey2"), v)
-	}
-}
-
 func TestContextDoNextStop(t *testing.T) {
 	var context Context
 	ok := false

@@ -153,8 +153,6 @@ type (
 		UseTemplate(TemplateEngine) *TemplateEngineLocation
 		UseGlobal(...Handler)
 		UseGlobalFunc(...HandlerFunc)
-		OnError(int, HandlerFunc)
-		EmitError(int, *Context)
 		Lookup(string) Route
 		Lookups() []Route
 		Path(string, ...interface{}) string
@@ -169,6 +167,7 @@ type (
 	// Implements the FrameworkAPI
 	Framework struct {
 		*muxAPI
+		contextPool    sync.Pool
 		Config         *config.Iris
 		gzipWriterPool sync.Pool // used for several methods, usually inside context
 		sessions       *sessionsManager
@@ -225,7 +224,7 @@ func New(cfg ...config.Iris) *Framework {
 		// set the websocket server
 		s.Websocket = NewWebsocketServer(s.Config.Websocket)
 		// set the servemux, which will provide us the public API also, with its context pool
-		mux := newServeMux(sync.Pool{New: func() interface{} { return &Context{framework: s} }}, s.Logger)
+		mux := newServeMux(s.Logger)
 		mux.onLookup = s.Plugins.DoPreLookup
 		// set the public router API (and party)
 		s.muxAPI = &muxAPI{mux: mux, relativePath: "/"}
@@ -286,6 +285,29 @@ func (s *Framework) initialize() {
 	}
 }
 
+func (s *Framework) acquireCtx(reqCtx *fasthttp.RequestCtx) *Context {
+	v := s.contextPool.Get()
+	var ctx *Context
+	if v == nil {
+		ctx = &Context{
+			RequestCtx: reqCtx,
+			framework:  s,
+		}
+	} else {
+		ctx = v.(*Context)
+		ctx.Params = ctx.Params[0:0]
+		ctx.RequestCtx = reqCtx
+		ctx.middleware = nil
+		ctx.session = nil
+	}
+
+	return ctx
+}
+
+func (s *Framework) releaseCtx(ctx *Context) {
+	s.contextPool.Put(ctx)
+}
+
 // Go starts the iris station, listens to all registered servers, and prepare only if Virtual
 func Go() error {
 	return Default.Go()
@@ -295,8 +317,14 @@ func Go() error {
 func (s *Framework) Go() error {
 	s.initialize()
 	s.Plugins.DoPreListen(s)
-
-	if firstErr := s.Servers.OpenAll(); firstErr != nil {
+	// build the fasthttp handler to bind it to the servers
+	h := s.mux.Handler()
+	reqHandler := func(reqCtx *fasthttp.RequestCtx) {
+		ctx := s.acquireCtx(reqCtx)
+		h(ctx)
+		s.releaseCtx(ctx)
+	}
+	if firstErr := s.Servers.OpenAll(reqHandler); firstErr != nil {
 		return firstErr
 	}
 
@@ -665,30 +693,6 @@ func (s *Framework) UseGlobalFunc(handlersFn ...HandlerFunc) {
 	s.UseGlobal(convertToHandlers(handlersFn)...)
 }
 
-// OnError registers a custom http error handler
-func OnError(statusCode int, handlerFn HandlerFunc) {
-	Default.OnError(statusCode, handlerFn)
-}
-
-// EmitError fires a custom http error handler to the client
-//
-// if no custom error defined with this statuscode, then iris creates one, and once at runtime
-func EmitError(statusCode int, ctx *Context) {
-	Default.EmitError(statusCode, ctx)
-}
-
-// OnError registers a custom http error handler
-func (s *Framework) OnError(statusCode int, handlerFn HandlerFunc) {
-	s.mux.registerError(statusCode, handlerFn)
-}
-
-// EmitError fires a custom http error handler to the client
-//
-// if no custom error defined with this statuscode, then iris creates one, and once at runtime
-func (s *Framework) EmitError(statusCode int, ctx *Context) {
-	s.mux.fireError(statusCode, ctx)
-}
-
 // Lookup returns a registed route by its name
 func Lookup(routeName string) Route {
 	return Default.Lookup(routeName)
@@ -1051,6 +1055,10 @@ type (
 
 		// templates
 		Layout(string) MuxAPI // returns itself
+
+		// errors
+		OnError(int, HandlerFunc)
+		EmitError(int, *Context)
 	}
 
 	muxAPI struct {
@@ -1838,4 +1846,79 @@ func (api *muxAPI) Layout(tmplLayoutFile string) MuxAPI {
 		ctx.Next()
 	})
 	return api
+}
+
+// OnError registers a custom http error handler
+func OnError(statusCode int, handlerFn HandlerFunc) {
+	Default.OnError(statusCode, handlerFn)
+}
+
+// EmitError fires a custom http error handler to the client
+//
+// if no custom error defined with this statuscode, then iris creates one, and once at runtime
+func EmitError(statusCode int, ctx *Context) {
+	Default.EmitError(statusCode, ctx)
+}
+
+// OnError registers a custom http error handler
+func (api *muxAPI) OnError(statusCode int, handlerFn HandlerFunc) {
+
+	path := strings.Replace(api.relativePath, "//", "/", -1) // fix the path if double //
+	staticPath := path
+	// find the static path (on Party the path should be ALWAYS a static path, as we all know,
+	// but do this check for any case)
+	dynamicPathIdx := strings.IndexByte(path, parameterStartByte) // check for /mypath/:param
+
+	if dynamicPathIdx == -1 {
+		dynamicPathIdx = strings.IndexByte(path, matchEverythingByte) // check for /mypath/*param
+	}
+
+	if dynamicPathIdx > 1 { //yes after / and one character more ( /*param or /:param  will break the root path, and this is not allowed even on error handlers).
+		staticPath = api.relativePath[0:dynamicPathIdx]
+	}
+
+	if staticPath == "/" {
+		api.mux.registerError(statusCode, handlerFn) // register the user-specific error message, as the global error handler, for now.
+		return
+	}
+
+	//after this, we have more than one error handler for one status code, and that's dangerous some times, but use it for non-globals error catching by your own risk
+	// NOTES:
+	// subdomains error will not work if same path of a non-subdomain (maybe a TODO for later)
+	// errors for parties should be registered from the biggest path length to the smaller.
+
+	// get the previous
+	prevErrHandler := api.mux.errorHandlers[statusCode]
+	if prevErrHandler == nil {
+		/*
+		 make a new one with the standard error message,
+		 this will be used as the last handler if no other error handler catches the error (by prefix(?))
+		*/
+		prevErrHandler = HandlerFunc(func(ctx *Context) {
+			ctx.ResetBody()
+			ctx.SetStatusCode(statusCode)
+			ctx.SetBodyString(statusText[statusCode])
+		})
+	}
+
+	func(statusCode int, staticPath string, prevErrHandler Handler, newHandler Handler) { // to separate the logic
+		errHandler := HandlerFunc(func(ctx *Context) {
+			if strings.HasPrefix(ctx.PathString(), staticPath) { // yes the user should use OnError from longest to lower static path's length in order this to work, so we can find another way, like a builder on the end.
+				newHandler.Serve(ctx)
+				return
+			}
+			// serve with the user-specific global ("/") pure iris.OnError receiver Handler or the standar handler if OnError called only from inside a no-relative Party.
+			prevErrHandler.Serve(ctx)
+		})
+
+		api.mux.registerError(statusCode, errHandler)
+	}(statusCode, staticPath, prevErrHandler, handlerFn)
+
+}
+
+// EmitError fires a custom http error handler to the client
+//
+// if no custom error defined with this statuscode, then iris creates one, and once at runtime
+func (api *muxAPI) EmitError(statusCode int, ctx *Context) {
+	api.mux.fireError(statusCode, ctx)
 }
