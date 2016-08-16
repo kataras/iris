@@ -51,10 +51,13 @@ func RegisterWebsocketServer(station FrameworkAPI, server WebsocketServer, logge
 			}
 		}
 	}
-
+	clientSideLookupName := "iris-websocket-client-side"
 	station.Get(c.Endpoint, websocketHandler)
-	// serve the client side on domain:port/iris-ws.js
-	station.StaticContent("/iris-ws.js", "application/json", websocketClientSource)
+	// check if client side already exists
+	if station.Lookup(clientSideLookupName) == nil {
+		// serve the client side on domain:port/iris-ws.js
+		station.StaticContent("/iris-ws.js", "application/json", websocketClientSource)(clientSideLookupName)
+	}
 
 }
 

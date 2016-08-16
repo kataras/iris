@@ -705,7 +705,11 @@ func Lookups() []Route {
 
 // Lookup returns a registed route by its name
 func (s *Framework) Lookup(routeName string) Route {
-	return s.mux.lookup(routeName)
+	r := s.mux.lookup(routeName)
+	if nil == r {
+		return nil
+	}
+	return r
 }
 
 // Lookups returns all registed routes
@@ -1050,7 +1054,7 @@ type (
 		StaticFS(string, string, int) RouteNameFunc
 		StaticWeb(string, string, int) RouteNameFunc
 		StaticServe(string, ...string) RouteNameFunc
-		StaticContent(string, string, []byte) func(string)
+		StaticContent(string, string, []byte) RouteNameFunc
 		Favicon(string, ...string) RouteNameFunc
 
 		// templates
@@ -1739,7 +1743,7 @@ func StaticContent(reqPath string, contentType string, content []byte) RouteName
 
 // StaticContent serves bytes, memory cached, on the reqPath
 // a good example of this is how the websocket server uses that to auto-register the /iris-ws.js
-func (api *muxAPI) StaticContent(reqPath string, cType string, content []byte) func(string) { // func(string) because we use that on websockets
+func (api *muxAPI) StaticContent(reqPath string, cType string, content []byte) RouteNameFunc { // func(string) because we use that on websockets
 	modtime := time.Now()
 	modtimeStr := modtime.UTC().Format(config.TimeFormat)
 	h := func(ctx *Context) {
