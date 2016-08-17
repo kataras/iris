@@ -790,22 +790,22 @@ func (ctx *Context) SetCookie(cookie *fasthttp.Cookie) {
 
 // SetCookieKV adds a cookie, receives just a key(string) and a value(string)
 func (ctx *Context) SetCookieKV(key, value string) {
-	//c := fasthttp.AcquireCookie()
-	c := &fasthttp.Cookie{}
+	c := fasthttp.AcquireCookie()
+	//	c := &fasthttp.Cookie{}
 	c.SetKey(key)
 	c.SetValue(value)
 	c.SetHTTPOnly(true)
 	c.SetExpire(time.Now().Add(time.Duration(120) * time.Minute))
 	ctx.SetCookie(c)
-	//fasthttp.ReleaseCookie(c)
+	fasthttp.ReleaseCookie(c)
 }
 
 // RemoveCookie deletes a cookie by it's name/key
 func (ctx *Context) RemoveCookie(name string) {
 	ctx.Response.Header.DelCookie(name)
 
-	//	cookie := fasthttp.AcquireCookie()
-	cookie := &fasthttp.Cookie{}
+	cookie := fasthttp.AcquireCookie()
+	//cookie := &fasthttp.Cookie{}
 	cookie.SetKey(name)
 	cookie.SetValue("")
 	cookie.SetPath("/")
@@ -813,7 +813,7 @@ func (ctx *Context) RemoveCookie(name string) {
 	exp := time.Now().Add(-time.Duration(1) * time.Minute) //RFC says 1 second, but let's do it 1 minute to make sure is working...
 	cookie.SetExpire(exp)
 	ctx.SetCookie(cookie)
-	//fasthttp.ReleaseCookie(cookie)
+	fasthttp.ReleaseCookie(cookie)
 	// delete request's cookie also, which is temporarly available
 	ctx.Request.Header.DelCookie(name)
 }
@@ -911,25 +911,26 @@ func (ctx *Context) GetFlash(key string) (string, error) {
 func (ctx *Context) SetFlash(key string, value string) {
 	cKey := flashMessageCookiePrefix + key
 	cValue := base64.URLEncoding.EncodeToString([]byte(value))
-	/* see https://github.com/kataras/iris/issues/351
-	c := fasthttp.AcquireCookie() this occurs strange behavior if called inside a handler which ctx.Session() is already called for the first time
+
+	c := fasthttp.AcquireCookie()
 	c.SetKey(cKey)
 	c.SetValue(cValue)
 	c.SetPath("/")
 	c.SetHTTPOnly(true)
 	ctx.RequestCtx.Response.Header.SetCookie(c)
 	fasthttp.ReleaseCookie(c)
-	*/
-	// but this works, and the above:
+
+	// if any bug on the future: this works, and the above:
 	//ctx.RequestCtx.Request.Header.SetCookie(cKey, cValue)
 	//ctx.RequestCtx.Response.Header.Add("Set-Cookie", cKey+"="+cValue+"; Path:/; HttpOnly")
 	//
-	c := &fasthttp.Cookie{}
+
+	/*c := &fasthttp.Cookie{}
 	c.SetKey(cKey)
 	c.SetValue(cValue)
 	c.SetPath("/")
 	c.SetHTTPOnly(true)
-	ctx.SetCookie(c)
+	ctx.SetCookie(c)*/
 
 }
 
