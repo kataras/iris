@@ -36,7 +36,10 @@ func RegisterWebsocketServer(station FrameworkAPI, server WebsocketServer, logge
 
 	websocketHandler := func(ctx *Context) {
 		if err := server.Upgrade(ctx); err != nil {
-			logger.Panic(err)
+			if ctx.framework.Config.IsDevelopment {
+				logger.Printf("Websocket error while trying to Upgrade the connection. Trace: %s", err.Error())
+			}
+			ctx.EmitError(StatusBadRequest)
 		}
 	}
 
@@ -47,7 +50,10 @@ func RegisterWebsocketServer(station FrameworkAPI, server WebsocketServer, logge
 			}
 
 			if err := server.Upgrade(ctx); err != nil {
-				logger.Panic(err)
+				if ctx.framework.Config.IsDevelopment {
+					logger.Printf("Websocket error while trying to Upgrade the connection. Trace: %s", err.Error())
+				}
+				ctx.EmitError(StatusBadRequest)
 			}
 		}
 	}
