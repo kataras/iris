@@ -69,7 +69,7 @@ type (
 		XML(int, interface{}) error
 		ServeContent(io.ReadSeeker, string, time.Time, bool) error
 		ServeFile(string, bool) error
-		SendFile(string, string) error
+		SendFile(string, string)
 		Stream(func(*bufio.Writer))
 		StreamWriter(cb func(*bufio.Writer))
 		StreamReader(io.Reader, int)

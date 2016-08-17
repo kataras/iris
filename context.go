@@ -607,9 +607,10 @@ func (ctx *Context) Markdown(status int, markdown string) {
 }
 
 // ServeContent serves content, headers are autoset
-// receives three parameters, it's low-level function, instead you can use .ServeFile(string)
+// receives three parameters, it's low-level function, instead you can use .ServeFile(string,bool)/SendFile(string,string)
 //
 // You can define your own "Content-Type" header also, after this function call
+// Doesn't implements resuming (by range), use ctx.SendFile instead
 func (ctx *Context) ServeContent(content io.ReadSeeker, filename string, modtime time.Time, gzipCompression bool) error {
 	if t, err := time.Parse(config.TimeFormat, ctx.RequestHeader(ifModifiedSince)); err == nil && modtime.Before(t.Add(1*time.Second)) {
 		ctx.RequestCtx.Response.Header.Del(contentType)
@@ -644,7 +645,9 @@ func (ctx *Context) ServeContent(content io.ReadSeeker, filename string, modtime
 // gzipCompression (bool)
 //
 // You can define your own "Content-Type" header also, after this function call
-// This function doesn't implement resuming, use ctx.RequestCtx.SendFile/fasthttp.ServeFileUncompressed(ctx.RequestCtx,path)/ServeFile(ctx.RequestCtx,path) instead
+// This function doesn't implement resuming (by range), use ctx.SendFile/fasthttp.ServeFileUncompressed(ctx.RequestCtx,path)/fasthttpServeFile(ctx.RequestCtx,path) instead
+//
+// Use it when you want to serve css/js/... files to the client, for bigger files and 'force-download' use the SendFile
 func (ctx *Context) ServeFile(filename string, gzipCompression bool) error {
 	f, err := os.Open(filename)
 	if err != nil {
@@ -665,17 +668,10 @@ func (ctx *Context) ServeFile(filename string, gzipCompression bool) error {
 
 // SendFile sends file for force-download to the client
 //
-// You can define your own "Content-Type" header also, after this function call
-// for example: ctx.Response.Header.Set("Content-Type","thecontent/type")
-// This function doesn't implement resuming, use ctx.RequestCtx.SendFile instead
-func (ctx *Context) SendFile(filename string, destinationName string) error {
-	err := ctx.ServeFile(filename, false)
-	if err != nil {
-		return err
-	}
-
+// Use this instead of ServeFile to 'force-download' bigger files to the client
+func (ctx *Context) SendFile(filename string, destinationName string) {
+	ctx.RequestCtx.SendFile(filename)
 	ctx.RequestCtx.Response.Header.Set(contentDisposition, "attachment;filename="+destinationName)
-	return nil
 }
 
 // Stream same as StreamWriter
