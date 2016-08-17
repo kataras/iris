@@ -85,7 +85,7 @@ import (
 
 const (
 	// Version of the iris
-	Version = "4.0.0"
+	Version = "4.1.0"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -102,7 +102,10 @@ var (
 	Logger    *logger.Logger
 	Plugins   PluginContainer
 	Websocket WebsocketServer
-	Servers   *ServerList
+	// Look ssh.go for this field's configuration
+	// example: https://github.com/iris-contrib/examples/blob/master/ssh/main.go
+	SSH     *SSHServer
+	Servers *ServerList
 	// Available is a channel type of bool, fired to true when the server is opened and all plugins ran
 	// never fires false, if the .Close called then the channel is re-allocating.
 	// the channel is closed only when .ListenVirtual is used, otherwise it remains open until you close it.
@@ -121,6 +124,7 @@ func initDefault() {
 	Logger = Default.Logger
 	Plugins = Default.Plugins
 	Websocket = Default.Websocket
+	SSH = Default.SSH
 	Servers = Default.Servers
 	Available = Default.Available
 }
@@ -180,6 +184,7 @@ type (
 		Logger    *logger.Logger
 		Plugins   PluginContainer
 		Websocket WebsocketServer
+		SSH       *SSHServer
 		Available chan bool
 		// this is setted once when .Tester(t) is called
 		testFramework *httpexpect.Expect
@@ -201,6 +206,7 @@ func New(cfg ...config.Iris) *Framework {
 		Config:    &c,
 		responses: &responseEngines{},
 		Available: make(chan bool),
+		SSH:       &SSHServer{},
 	}
 	{
 		///NOTE: set all with s.Config pointer
@@ -282,6 +288,11 @@ func (s *Framework) initialize() {
 	// set the debug profiling handlers if ProfilePath is setted
 	if debugPath := s.Config.ProfilePath; debugPath != "" {
 		s.Handle(MethodGet, debugPath+"/*action", profileMiddleware(debugPath)...)
+	}
+
+	// ssh
+	if s.SSH != nil && s.SSH.Enabled() {
+		s.SSH.bindTo(s)
 	}
 }
 

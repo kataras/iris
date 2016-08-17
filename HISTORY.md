@@ -2,6 +2,14 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras/iris` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 4.0.0 -> 4.1.0
+
+- **NEW FEATURE**: Basic remote control through SSH, example [here](https://github.com/iris-contrib/examples/blob/master/ssh/main.go)
+- **NEW FEATURE**: Optionally `OnError` foreach Party (by prefix, use it with your own risk), example [here](https://github.com/iris-contrib/examples/blob/master/httperrors/main.go#L37)
+- **FIX**: Sessions + SetFlash on same handler strange behavior[*](https://github.com/kataras/iris/issues/351)
+- **FIX**: Multi websocket servers client-side source route panic[*](https://github.com/kataras/iris/issues/365)
+- Better gzip response managment
+
 
 ## 4.0.0-alpha.5 -> 4.0.0
 
@@ -27,7 +35,7 @@ Notes: if you compare it with previous releases (13+ versions before v3 stable),
 
 
 **The important** , is that the [book](https://kataras.gitbooks.io/iris/content/) is finally updated!
- 
+
 If you're **willing to donate** click [here](DONATIONS.md)!
 
 
@@ -49,17 +57,17 @@ If you're **willing to donate** click [here](DONATIONS.md)!
 
 **New**
 
-A **Response Engine** gives you the freedom to create/change the render/response writer for 
+A **Response Engine** gives you the freedom to create/change the render/response writer for
 
 - `context.JSON`
-- `context.JSONP` 
-- `context.XML` 
-- `context.Text` 
+- `context.JSONP`
+- `context.XML`
+- `context.Text`
 - `context.Markdown`
-- `context.Data` 
+- `context.Data`
 - `context.Render("my_custom_type",mystructOrData{}, iris.RenderOptions{"gzip":false,"charset":"UTF-8"})`
 - `context.MarkdownString`
-- `iris.ResponseString(...)` 
+- `iris.ResponseString(...)`
 
 
 **Fix**
@@ -70,7 +78,7 @@ A **Response Engine** gives you the freedom to create/change the render/response
 **Small changes**
 
 - `iris.Config.Charset`, before alpha.3 was `iris.Config.Rest.Charset` & `iris.Config.Render.Template.Charset`, but you can override it at runtime by passinth a map `iris.RenderOptions` on the `context.Render` call .
-- `iris.Config.IsDevelopment`, before alpha.1 was `iris.Config.Render.Template.IsDevelopment` 
+- `iris.Config.IsDevelopment`, before alpha.1 was `iris.Config.Render.Template.IsDevelopment`
 
 
 **Websockets changes**

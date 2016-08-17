@@ -1440,7 +1440,7 @@ func (mux *serveMux) register(method []byte, subdomain string, path string, midd
 // build collects all routes info and adds them to the registry in order to be served from the request handler
 // this happens once when server is setting the mux's handler.
 func (mux *serveMux) build() {
-
+	mux.tree = nil
 	sort.Sort(bySubdomain(mux.lookups))
 	for _, r := range mux.lookups {
 		// add to the registry tree

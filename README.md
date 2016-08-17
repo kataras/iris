@@ -8,7 +8,7 @@
 
 <a href="https://github.com/kataras/iris/blob/master/LICENSE"><img src="https://img.shields.io/badge/%20license-MIT%20%20License%20-E91E63.svg?style=flat-square" alt="License"></a>
 
-<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20release%20-%20v4.0.0%20-blue.svg?style=flat-square" alt="Releases"></a>
+<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20release%20-%20v4.1.0%20-blue.svg?style=flat-square" alt="Releases"></a>
 
 <a href="https://www.gitbook.com/book/kataras/iris/details"><img src="https://img.shields.io/badge/%20docs-reference-5272B4.svg?style=flat-square" alt="Practical Guide/Docs"></a><br/>
 
@@ -70,6 +70,7 @@ Features
 - Focus on high performance
 - Robust routing, static, wildcard subdomains and routes.
 - Websocket API, Sessions support out of the box
+- Remote control through [SSH](https://github.com/iris-contrib/examples/blob/master/ssh/main.go)
 - View system supporting [6+](https://kataras.gitbooks.io/iris/content/template-engines.html) template engines
 - Highly scalable response engines
 - Live reload
@@ -143,7 +144,7 @@ I recommend writing your API tests using this new library, [httpexpect](https://
 Versioning
 ------------
 
-Current: **v4.0.0**
+Current: **v4.1.0**
 
 >  Iris is an active project
 
@@ -178,7 +179,7 @@ License can be found [here](LICENSE).
 [Travis]: http://travis-ci.org/kataras/iris
 [License Widget]: https://img.shields.io/badge/license-MIT%20%20License%20-E91E63.svg?style=flat-square
 [License]: https://github.com/kataras/iris/blob/master/LICENSE
-[Release Widget]: https://img.shields.io/badge/release-v4.0.0-blue.svg?style=flat-square
+[Release Widget]: https://img.shields.io/badge/release-v4.1.0-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/iris/releases
 [Chat Widget]: https://img.shields.io/badge/community-chat-00BCD4.svg?style=flat-square
 [Chat]: https://kataras.rocket.chat/channel/iris
@@ -193,4 +194,3 @@ License can be found [here](LICENSE).
 [Language Widget]: https://img.shields.io/badge/powered_by-Go-3362c2.svg?style=flat-square
 [Language]: http://golang.org
 [Platform Widget]: https://img.shields.io/badge/platform-Any--OS-gray.svg?style=flat-square
-
