@@ -107,6 +107,14 @@ Features
 | [OAuth,OAuth2 Plugin](https://github.com/iris-contrib/plugin/tree/master/oauth) |  User Authentication was never be easier, supports >27 providers |    [example](https://github.com/iris-contrib/examples/tree/master/plugin_oauth_oauth2), [book section](https://kataras.gitbooks.io/iris/content/plugin-oauth.html) |
 | [Iris control Plugin](https://github.com/iris-contrib/plugin/tree/master/iriscontrol) |   Basic (browser-based) control over your Iris station |    [example](https://github.com/iris-contrib/examples/blob/master/plugin_iriscontrol/main.go), [book section](https://kataras.gitbooks.io/iris/content/plugin-iriscontrol.html) |
 
+Third Party
+------------
+these are third party features that are developped as extensions for IRIS.
+
+| Name        | Description           | Usage  |
+| ------------------|:---------------------:|-------:|
+| [JOSE middleware](https://github.com/Heirko/iris-contrib/tree/master/middleware/jose)      | JOSE handling middleware  |[example](https://godoc.org/github.com/Heirko/iris-contrib/middleware/jose#example-package), [GoDoc section](https://godoc.org/github.com/Heirko/iris-contrib/middleware/jose)
+
 
 FAQ
 ------------
