@@ -232,13 +232,14 @@ func (ctx *Context) VirtualHostname() string {
 // PathString returns the full escaped path as string
 // for unescaped use: ctx.RequestCtx.RequestURI() or RequestPath(escape bool)
 func (ctx *Context) PathString() string {
-	return ctx.RequestPath(true)
+	return ctx.RequestPath(!ctx.framework.Config.DisablePathEscape)
 }
 
 // RequestPath returns the requested path
 func (ctx *Context) RequestPath(escape bool) string {
 	if escape {
-		return utils.BytesToString(ctx.RequestCtx.Path())
+		//	return utils.BytesToString(ctx.RequestCtx.Path())
+		return utils.BytesToString(ctx.RequestCtx.URI().PathOriginal())
 	}
 	return utils.BytesToString(ctx.RequestCtx.RequestURI())
 }
@@ -462,6 +463,20 @@ func (ctx *Context) Redirect(urlToRedirect string, statusHeader ...int) {
 		httpStatus = statusHeader[0]
 	}
 	ctx.RequestCtx.Redirect(urlToRedirect, httpStatus)
+
+	/* you can use one of these if you want to customize the redirection:
+		1.
+			u := fasthttp.AcquireURI()
+			ctx.URI().CopyTo(u)
+			u.Update(urlToRedirect)
+			ctx.SetHeader("Location", string(u.FullURI()))
+			fasthttp.ReleaseURI(u)
+			ctx.SetStatusCode(httpStatus)
+	2.
+			ctx.SetHeader("Location", urlToRedirect)
+			ctx.SetStatusCode(httpStatus)
+	*/
+
 	ctx.StopExecution()
 }
 

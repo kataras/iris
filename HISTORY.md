@@ -2,11 +2,12 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras/iris` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
-## 4.0.0 -> 4.1.0
+## 4.0.0 -> 4.1.1
 
 - **NEW FEATURE**: Basic remote control through SSH, example [here](https://github.com/iris-contrib/examples/blob/master/ssh/main.go)
 - **NEW FEATURE**: Optionally `OnError` foreach Party (by prefix, use it with your own risk), example [here](https://github.com/iris-contrib/examples/blob/master/httperrors/main.go#L37)
-- **FIX**: Sessions + SetFlash on same handler strange behavior[*](https://github.com/kataras/iris/issues/351)
+- **NEW**: `iris.Config.Sessions.CookieLength`, You're able to customize the length of each sessionid's cookie's value. Default (and previous' implementation) is 32.
+- **FIX**: Websocket panic on non-websocket connection[*](https://github.com/kataras/iris/issues/367)
 - **FIX**: Multi websocket servers client-side source route panic[*](https://github.com/kataras/iris/issues/365)
 - Better gzip response managment
 

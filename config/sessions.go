@@ -17,6 +17,8 @@ const (
 	DefaultCookieName = "irissessionid"
 	// DefaultSessionGcDuration  is the default Session Manager's GCDuration , which is 2 hours
 	DefaultSessionGcDuration = time.Duration(2) * time.Hour
+	// DefaultCookieLength is the default Session Manager's CookieLength, which is 32
+	DefaultCookieLength = 32
 )
 
 type (
@@ -31,6 +33,9 @@ type (
 	Sessions struct {
 		// Cookie string, the session's client cookie name, for example: "irissessionid"
 		Cookie string
+		// CookieLength the length of the sessionid's cookie's value, let it to 0 if you don't want to change it
+		// Defaults to 32
+		CookieLength int
 		// DecodeCookie set it to true to decode the cookie key with base64 URLEncoding
 		// Defaults to false
 		DecodeCookie bool
@@ -57,6 +62,7 @@ type (
 func DefaultSessions() Sessions {
 	return Sessions{
 		Cookie:                      DefaultCookieName,
+		CookieLength:                DefaultCookieLength,
 		DecodeCookie:                false,
 		Expires:                     0,
 		GcDuration:                  DefaultSessionGcDuration,

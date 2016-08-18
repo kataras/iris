@@ -54,10 +54,13 @@ func (s *session) ID() string {
 
 // Get returns the value of an entry by its key
 func (s *session) Get(key string) interface{} {
-	s.provider.update(s.sid)
+	s.mu.Lock() // for any-case.
 	if value, found := s.values[key]; found {
+		s.mu.Unlock()
+		s.provider.update(s.sid)
 		return value
 	}
+	s.mu.Unlock()
 	return nil
 }
 
@@ -280,6 +283,10 @@ func newSessionsManager(c *config.Sessions) *sessionsManager {
 		// get the real value for your tests by:
 		//sessIdKey := url.QueryEscape(base64.URLEncoding.EncodeToString([]byte(iris.Config.Sessions.Cookie)))
 	}
+	if c.CookieLength <= 0 {
+		c.CookieLength = config.DefaultCookieLength
+	}
+
 	manager := &sessionsManager{config: c, provider: &sessionProvider{list: list.New(), sessions: make(map[string]*list.Element, 0), databases: make([]SessionDatabase, 0), expires: c.Expires}}
 	//run the GC here
 	go manager.gc()
@@ -292,7 +299,7 @@ func (m *sessionsManager) registerDatabase(db SessionDatabase) {
 }
 
 func (m *sessionsManager) generateSessionID() string {
-	return base64.URLEncoding.EncodeToString(utils.Random(32))
+	return base64.URLEncoding.EncodeToString(utils.Random(m.config.CookieLength))
 }
 
 func domainCanPersistence(requestDomain string) bool {
