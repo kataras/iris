@@ -30,7 +30,7 @@ Ideally suited for both experienced and novice Developers. <br/>
 
 Installation
 ------------
-The only requirement is the [Go Programming Language](https://golang.org/dl), at least v1.6
+The only requirement is the [Go Programming Language](https://golang.org/dl), at least v1.7
 
 ```bash
 $ go get -u github.com/kataras/iris/iris
