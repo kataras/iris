@@ -715,7 +715,7 @@ func websocketMessageDeserialize(event string, websocketMessage string) (message
 	} else if _type == websocketBytesMessageType {
 		message = []byte(_message)
 	} else if _type == websocketJSONMessageType {
-		err = json.Unmarshal([]byte(_message), message)
+		err = json.Unmarshal([]byte(_message), &message)
 	} else {
 		return nil, fmt.Errorf("Type %s is invalid for message: %s", _type.Name(), websocketMessage)
 	}
@@ -797,13 +797,7 @@ var Ws = (function () {
             (typeof obj === 'object' && typeof obj.valueOf() === 'boolean');
     };
     Ws.prototype.isJSON = function (obj) {
-        try {
-            JSON.parse(obj);
-        }
-        catch (e) {
-            return false;
-        }
-        return true;
+        return typeof obj === 'object';
     };
     //
     // messages
@@ -868,9 +862,7 @@ var Ws = (function () {
         return evt;
     };
     Ws.prototype.getCustomMessage = function (event, websocketMessage) {
-        var eventIdx = websocketMessage.indexOf(event + websocketMessageSeparator);
-        var s = websocketMessage.substring(eventIdx + event.length + websocketMessageSeparator.length + 2, websocketMessage.length);
-        return s;
+        return this.decodeMessage(event, websocketMessage);
     };
     //
     // Ws Events
