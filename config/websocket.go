@@ -33,6 +33,10 @@ type Websocket struct {
 	// MaxMessageSize max message size allowed from connection
 	// Default value is 1024
 	MaxMessageSize int64
+	// BinaryMessages set it to true in order to denotes binary data messages instead of utf-8 text
+	// see https://github.com/kataras/iris/issues/387#issuecomment-243006022 for more
+	// defaults to false
+	BinaryMessages bool
 	// Endpoint is the path which the websocket server will listen for clients/connections
 	// Default value is empty string, if you don't set it the Websocket server is disabled.
 	Endpoint string
@@ -52,6 +56,7 @@ func DefaultWebsocket() *Websocket {
 		PongTimeout:     DefaultPongTimeout,
 		PingPeriod:      DefaultPingPeriod,
 		MaxMessageSize:  DefaultMaxMessageSize,
+		BinaryMessages:  false,
 		ReadBufferSize:  4096,
 		WriteBufferSize: 4096,
 		Headers:         make(map[string]string, 0),

@@ -348,6 +348,7 @@ type (
 
 	websocketConnection struct {
 		underline                *websocket.Conn
+		messageType              int
 		id                       string
 		send                     chan []byte
 		onDisconnectListeners    []WebsocketDisconnectFunc
@@ -367,14 +368,20 @@ var _ WebsocketConnection = &websocketConnection{}
 
 func newWebsocketConnection(websocketConn *websocket.Conn, s *websocketServer) *websocketConnection {
 	c := &websocketConnection{
-		id:        utils.RandomString(64),
-		underline: websocketConn,
-		send:      make(chan []byte, 256),
+		id:          utils.RandomString(64),
+		messageType: websocket.TextMessage,
+		underline:   websocketConn,
+		send:        make(chan []byte, 256),
 		onDisconnectListeners:    make([]WebsocketDisconnectFunc, 0),
 		onErrorListeners:         make([]WebsocketErrorFunc, 0),
 		onNativeMessageListeners: make([]WebsocketNativeMessageFunc, 0),
 		onEventListeners:         make(map[string][]WebsocketMessageFunc, 0),
 		websocketServer:          s,
+	}
+
+	// set the messageType to binary if configuration says to
+	if s.config.BinaryMessages {
+		c.messageType = websocket.BinaryMessage
 	}
 
 	c.self = newWebsocketEmmiter(c, c.id)
@@ -420,7 +427,8 @@ func (c *websocketConnection) writer() {
 			}
 
 			c.underline.SetWriteDeadline(time.Now().Add(c.websocketServer.config.WriteTimeout))
-			res, err := c.underline.NextWriter(websocket.TextMessage)
+
+			res, err := c.underline.NextWriter(c.messageType)
 			if err != nil {
 				return
 			}
@@ -434,10 +442,6 @@ func (c *websocketConnection) writer() {
 			if err := res.Close(); err != nil {
 				return
 			}
-
-			// if err := c.write(websocket.TextMessage, msg); err != nil {
-			// 	return
-			// }
 
 		case <-ticker.C:
 			if err := c.write(websocket.PingMessage, []byte{}); err != nil {
