@@ -8,7 +8,7 @@
 
 <a href="https://github.com/kataras/iris/blob/master/LICENSE"><img src="https://img.shields.io/badge/%20license-MIT%20%20License%20-E91E63.svg?style=flat-square" alt="License"></a>
 
-<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20release%20-%20v4.1.1%20-blue.svg?style=flat-square" alt="Releases"></a>
+<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20release%20-%20v4.1.2%20-blue.svg?style=flat-square" alt="Releases"></a>
 
 <a href="https://www.gitbook.com/book/kataras/iris/details"><img src="https://img.shields.io/badge/%20docs-reference-5272B4.svg?style=flat-square" alt="Practical Guide/Docs"></a><br/>
 
@@ -108,6 +108,21 @@ Features
 | [Iris control Plugin](https://github.com/iris-contrib/plugin/tree/master/iriscontrol) |   Basic (browser-based) control over your Iris station |    [example](https://github.com/iris-contrib/examples/blob/master/plugin_iriscontrol/main.go), [book section](https://kataras.gitbooks.io/iris/content/plugin-iriscontrol.html) |
 
 
+go-* packages
+------------
+
+| Name        | Description           
+| ------------------|:---------------------:|
+| [go-errors](https://github.com/kataras/go-errors)      | Error handling
+| [go-fs](https://github.com/kataras/go-fs)      | FileSystem utils and common net/http static files handlers  
+| [go-events](https://github.com/kataras/go-events) | EventEmmiter for Go
+| [go-websocket](https://github.com/kataras/go-errors) | A websocket server and ,optionally, client side lib  for Go
+| [go-ssh](https://github.com/kataras/go-ssh) | SSH Server, build ssh interfaces, remote commands and remote cli with ease
+| [go-gzipwriter](https://github.com/kataras/go-gzipwriter) | Write gzip data to a io.Writer
+| [go-mailer](https://github.com/kataras/go-mailer) | E-mail Sender, send rich mails with one call  
+| [rizla](https://github.com/kataras/rizla) | Monitor and live-reload of your Go App
+| [Q](https://github.com/kataras/q) | HTTP2 Web Framework, 100% compatible with net/http
+
 FAQ
 ------------
 Explore [these questions](https://github.com/kataras/iris/issues?q=label%3Aquestion) or navigate to the [community chat][Chat].
@@ -144,7 +159,7 @@ I recommend writing your API tests using this new library, [httpexpect](https://
 Versioning
 ------------
 
-Current: **v4.1.1**
+Current: **v4.1.2**
 
 >  Iris is an active project
 
@@ -179,7 +194,7 @@ License can be found [here](LICENSE).
 [Travis]: http://travis-ci.org/kataras/iris
 [License Widget]: https://img.shields.io/badge/license-MIT%20%20License%20-E91E63.svg?style=flat-square
 [License]: https://github.com/kataras/iris/blob/master/LICENSE
-[Release Widget]: https://img.shields.io/badge/release-v4.1.1-blue.svg?style=flat-square
+[Release Widget]: https://img.shields.io/badge/release-v4.1.2-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/iris/releases
 [Chat Widget]: https://img.shields.io/badge/community-chat-00BCD4.svg?style=flat-square
 [Chat]: https://kataras.rocket.chat/channel/iris

@@ -3,7 +3,7 @@ package iris
 import (
 	"strings"
 
-	"github.com/iris-contrib/errors"
+	"github.com/kataras/go-errors"
 	"github.com/valyala/fasthttp"
 )
 
@@ -123,7 +123,7 @@ func (r *responseEngineMap) render(ctx *Context, obj interface{}, options ...map
 
 	if r == nil {
 		//render, but no response engine registered, this caused by context.RenderWithStatus, and responseEngines. getBy
-		return errNoResponseEngineFound.Return()
+		return errNoResponseEngineFound
 	}
 
 	var finalResult []byte
@@ -168,7 +168,7 @@ func (r *responseEngineMap) render(ctx *Context, obj interface{}, options ...map
 func (r *responseEngineMap) toString(obj interface{}, options ...map[string]interface{}) (string, error) {
 	if r == nil {
 		//render, but no response engine registered, this caused by context.RenderWithStatus, and responseEngines. getBy
-		return "", errNoResponseEngineFound.Return()
+		return "", errNoResponseEngineFound
 	}
 	var finalResult []byte
 	for i, n := 0, len(r.values); i < n; i++ {

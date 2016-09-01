@@ -5,7 +5,7 @@ import (
 
 	"path/filepath"
 
-	"github.com/iris-contrib/errors"
+	"github.com/kataras/go-errors"
 	"github.com/kataras/iris/utils"
 )
 
@@ -157,7 +157,7 @@ func (t *templateEngineWrapper) load() error {
 	} else if t.location.directory != "" {
 		t.LoadDirectory(t.location.directory, t.location.extension)
 	} else {
-		return errMissingDirectoryOrAssets.Return()
+		return errMissingDirectoryOrAssets
 	}
 	return nil
 }

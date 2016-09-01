@@ -21,8 +21,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iris-contrib/errors"
 	"github.com/iris-contrib/formBinder"
+	"github.com/kataras/go-errors"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/utils"
@@ -49,8 +49,11 @@ const (
 	contentBinary = "application/octet-stream"
 	// ContentJSON header value for JSON data.
 	contentJSON = "application/json"
-	// ContentJSONP header value for JSONP data.
+	// ContentJSONP header value for JSONP & Javascript data.
 	contentJSONP = "application/javascript"
+	// ContentJavascript header value for Javascript/JSONP
+	// conversional
+	contentJavascript = "application/javascript"
 	// ContentText header value for Text data.
 	contentText = "text/plain"
 	// ContentXML header value for XML data.
@@ -402,12 +405,12 @@ func (ctx *Context) ReadForm(formObject interface{}) error {
 	multipartForm, err := reqCtx.MultipartForm()
 	if err == nil {
 		//we have multipart form
-		return errReadBody.With(formBinder.Decode(multipartForm.Value, formObject))
+		return errReadBody.Format(formBinder.Decode(multipartForm.Value, formObject))
 	}
 	// if no multipart and post arguments ( means normal form)
 
 	if reqCtx.PostArgs().Len() == 0 && reqCtx.QueryArgs().Len() == 0 {
-		return errReadBody.With(errNoForm.Return())
+		return errReadBody.Format(errNoForm)
 	}
 
 	form := make(map[string][]string, reqCtx.PostArgs().Len()+reqCtx.QueryArgs().Len())
@@ -435,7 +438,7 @@ func (ctx *Context) ReadForm(formObject interface{}) error {
 		}
 	})
 
-	return errReadBody.With(formBinder.Decode(form, formObject))
+	return errReadBody.Format(formBinder.Decode(form, formObject))
 }
 
 /* Response */
@@ -651,7 +654,7 @@ func (ctx *Context) ServeContent(content io.ReadSeeker, filename string, modtime
 
 	}
 	_, err := io.Copy(out, content)
-	return errServeContent.With(err)
+	return errServeContent.Format(err)
 }
 
 // ServeFile serves a view file, to send a file ( zip for example) to the client you should use the SendFile(serverfilename,clientfilename)
@@ -902,7 +905,7 @@ func (ctx *Context) GetFlash(key string) (string, error) {
 
 	cookieKey, cookieValue := ctx.decodeFlashCookie(key)
 	if cookieValue == "" {
-		return "", errFlashNotFound.Return()
+		return "", errFlashNotFound
 	}
 	// store this flash message to the lifetime request's local storage,
 	// I choose this method because no need to store it if not used at all

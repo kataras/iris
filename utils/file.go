@@ -166,7 +166,7 @@ func Unzip(archive string, target string) (string, error) {
 
 // RemoveFile removes a file or directory and returns an error, if any
 func RemoveFile(filePath string) error {
-	return ErrFileRemove.With(os.RemoveAll(filePath))
+	return ErrFileRemove.Format(os.RemoveAll(filePath))
 }
 
 // Install is just the flow of: downloadZip -> unzip -> removeFile(zippedFile)

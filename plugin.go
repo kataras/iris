@@ -3,7 +3,7 @@ package iris
 import (
 	"sync"
 
-	"github.com/iris-contrib/errors"
+	"github.com/kataras/go-errors"
 
 	"github.com/iris-contrib/logger"
 	"github.com/kataras/iris/utils"
@@ -275,12 +275,12 @@ func (p *pluginContainer) Reset() {
 // This doesn't calls the PreClose method
 func (p *pluginContainer) Remove(pluginName string) error {
 	if p.activatedPlugins == nil {
-		return errPluginRemoveNoPlugins.Return()
+		return errPluginRemoveNoPlugins
 	}
 
 	if pluginName == "" {
 		//return error: cannot delete an unamed plugin
-		return errPluginRemoveEmptyName.Return()
+		return errPluginRemoveEmptyName
 	}
 
 	indexToRemove := -1
@@ -290,7 +290,7 @@ func (p *pluginContainer) Remove(pluginName string) error {
 		}
 	}
 	if indexToRemove == -1 { //if index stills -1 then no plugin was found with this name, just return an error. it is not a critical error.
-		return errPluginRemoveNotFound.Return()
+		return errPluginRemoveNotFound
 	}
 
 	p.activatedPlugins = append(p.activatedPlugins[:indexToRemove], p.activatedPlugins[indexToRemove+1:]...)

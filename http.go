@@ -13,9 +13,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iris-contrib/errors"
 	"github.com/iris-contrib/letsencrypt"
 	"github.com/iris-contrib/logger"
+	"github.com/kataras/go-errors"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/utils"
 	"github.com/valyala/fasthttp"
@@ -358,7 +358,7 @@ func (s *Server) Hostname() string {
 
 func (s *Server) listen() error {
 	if s.IsListening() {
-		return errServerAlreadyStarted.Return()
+		return errServerAlreadyStarted
 	}
 	listener, err := net.Listen("tcp4", s.Config.ListeningAddr)
 
@@ -383,7 +383,7 @@ func (s *Server) listenUNIX() error {
 	listener, err := net.Listen("unix", addr)
 
 	if err != nil {
-		return errServerPortAlreadyUsed.Return()
+		return errServerPortAlreadyUsed
 	}
 
 	if err = os.Chmod(addr, mode); err != nil {
@@ -423,11 +423,11 @@ func (s *Server) serve(l net.Listener) error {
 // Open opens/starts/runs/listens (to) the server, listen tls if Cert && Key is registed, listenUNIX if Mode is registed, otherwise listen
 func (s *Server) Open(h fasthttp.RequestHandler) error {
 	if h == nil {
-		return errServerHandlerMissing.Return()
+		return errServerHandlerMissing
 	}
 
 	if s.IsListening() {
-		return errServerAlreadyStarted.Return()
+		return errServerAlreadyStarted
 	}
 
 	s.Server.MaxRequestBodySize = s.Config.MaxRequestBodySize
@@ -466,7 +466,7 @@ func (s *Server) Open(h fasthttp.RequestHandler) error {
 // Close terminates the server
 func (s *Server) Close() (err error) {
 	if !s.IsListening() {
-		return errServerIsClosed.Return()
+		return errServerIsClosed
 	}
 	err = s.listener.Close()
 

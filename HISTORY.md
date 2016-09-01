@@ -2,6 +2,13 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras/iris` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 4.1.1 -> 4.1.2 
+
+Zero front-end changes. No real improvements, developers can ignore this update.
+
+- Replace the main and underline websocket implementation with [go-websocket](https://github.com/kataras/go-websocket). Note that we still need the [ris-contrib/websocket](https://github.com/iris-contrib/websocket) package.
+- Replace the use of iris-contrib/errors with [go-errors](https://github.com/kataras/go-errors), which has more features
+
 ## 4.0.0 -> 4.1.1
 
 - **NEW FEATURE**: Basic remote control through SSH, example [here](https://github.com/iris-contrib/examples/blob/master/ssh/main.go)

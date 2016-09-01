@@ -43,10 +43,10 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/iris-contrib/errors"
 	"github.com/iris-contrib/logger"
 	"github.com/kardianos/osext"
 	"github.com/kardianos/service"
+	"github.com/kataras/go-errors"
 	"github.com/kataras/iris/utils"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/terminal"

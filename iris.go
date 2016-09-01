@@ -68,7 +68,6 @@ import (
 	"sync"
 
 	"github.com/gavv/httpexpect"
-	"github.com/iris-contrib/errors"
 	"github.com/iris-contrib/logger"
 	"github.com/iris-contrib/response/data"
 	"github.com/iris-contrib/response/json"
@@ -77,6 +76,7 @@ import (
 	"github.com/iris-contrib/response/text"
 	"github.com/iris-contrib/response/xml"
 	"github.com/iris-contrib/template/html"
+	"github.com/kataras/go-errors"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/utils"
@@ -85,7 +85,7 @@ import (
 
 const (
 	// Version of the iris
-	Version = "4.1.1"
+	Version = "4.1.2"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -101,7 +101,7 @@ var (
 	Config    *config.Iris
 	Logger    *logger.Logger
 	Plugins   PluginContainer
-	Websocket WebsocketServer
+	Websocket *WebsocketServer
 	// Look ssh.go for this field's configuration
 	// example: https://github.com/iris-contrib/examples/blob/master/ssh/main.go
 	SSH     *SSHServer
@@ -183,7 +183,7 @@ type (
 		// configuration by instance.Logger.Config
 		Logger    *logger.Logger
 		Plugins   PluginContainer
-		Websocket WebsocketServer
+		Websocket *WebsocketServer
 		SSH       *SSHServer
 		Available chan bool
 		// this is setted once when .Tester(t) is called
@@ -1283,7 +1283,7 @@ func (api *muxAPI) API(path string, restAPI HandlerAPI, middleware ...HandlerFun
 	typ := reflect.ValueOf(restAPI).Type()
 	contextField, found := typ.FieldByName("Context")
 	if !found {
-		panic(errAPIContextNotFound.Return())
+		panic(errAPIContextNotFound)
 	}
 
 	// check & register the Get(),Post(),Put(),Delete() and so on
