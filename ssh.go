@@ -47,7 +47,7 @@ import (
 	"github.com/kardianos/osext"
 	"github.com/kardianos/service"
 	"github.com/kataras/go-errors"
-	"github.com/kataras/iris/utils"
+	"github.com/kataras/go-fs"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/terminal"
 )
@@ -324,7 +324,7 @@ func generateSigner(keypath string, sshKeygenBin string) (ssh.Signer, error) {
 	} else {
 		sshKeygenBin = "ssh-keygen"
 	}
-	if !utils.DirectoryExists(keypath) {
+	if !fs.DirectoryExists(keypath) {
 		os.MkdirAll(filepath.Dir(keypath), os.ModePerm)
 		keygenCmd := exec.Command(sshKeygenBin, "-f", keypath, "-t", "rsa", "-N", "")
 		_, err := keygenCmd.Output()

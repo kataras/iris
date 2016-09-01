@@ -6,7 +6,8 @@ import (
 	"github.com/kataras/go-errors"
 
 	"github.com/iris-contrib/logger"
-	"github.com/kataras/iris/utils"
+	"github.com/kataras/go-fs"
+	"github.com/kataras/go-installer"
 )
 
 var (
@@ -199,27 +200,27 @@ var _ PluginContainer = &pluginContainer{}
 
 // DirectoryExists returns true if a given local directory exists
 func (d *pluginDownloadManager) DirectoryExists(dir string) bool {
-	return utils.DirectoryExists(dir)
+	return fs.DirectoryExists(dir)
 }
 
 // DownloadZip downlodas a zip to the given local path location
 func (d *pluginDownloadManager) DownloadZip(zipURL string, targetDir string) (string, error) {
-	return utils.DownloadZip(zipURL, targetDir)
+	return installer.DownloadZip(zipURL, targetDir, true)
 }
 
 // Unzip unzips a zip to the given local path location
 func (d *pluginDownloadManager) Unzip(archive string, target string) (string, error) {
-	return utils.Unzip(archive, target)
+	return installer.DownloadZip(archive, target, true)
 }
 
 // Remove deletes/removes/rm a file
 func (d *pluginDownloadManager) Remove(filePath string) error {
-	return utils.RemoveFile(filePath)
+	return fs.RemoveFile(filePath)
 }
 
 // Install is just the flow of the: DownloadZip->Unzip->Remove the zip
 func (d *pluginDownloadManager) Install(remoteFileZip string, targetDirectory string) (string, error) {
-	return utils.Install(remoteFileZip, targetDirectory)
+	return installer.Install(remoteFileZip, targetDirectory, true)
 }
 
 // pluginContainer is the base container of all Iris, registed plugins

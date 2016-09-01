@@ -21,6 +21,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kataras/go-fs"
+
 	"github.com/iris-contrib/formBinder"
 	"github.com/kataras/go-errors"
 	"github.com/kataras/iris/config"
@@ -405,12 +407,12 @@ func (ctx *Context) ReadForm(formObject interface{}) error {
 	multipartForm, err := reqCtx.MultipartForm()
 	if err == nil {
 		//we have multipart form
-		return errReadBody.Format(formBinder.Decode(multipartForm.Value, formObject))
+		return errReadBody.With(formBinder.Decode(multipartForm.Value, formObject))
 	}
 	// if no multipart and post arguments ( means normal form)
 
 	if reqCtx.PostArgs().Len() == 0 && reqCtx.QueryArgs().Len() == 0 {
-		return errReadBody.Format(errNoForm)
+		return errReadBody.With(errNoForm)
 	}
 
 	form := make(map[string][]string, reqCtx.PostArgs().Len()+reqCtx.QueryArgs().Len())
@@ -438,7 +440,7 @@ func (ctx *Context) ReadForm(formObject interface{}) error {
 		}
 	})
 
-	return errReadBody.Format(formBinder.Decode(form, formObject))
+	return errReadBody.With(formBinder.Decode(form, formObject))
 }
 
 /* Response */
@@ -637,7 +639,7 @@ func (ctx *Context) ServeContent(content io.ReadSeeker, filename string, modtime
 		return nil
 	}
 
-	ctx.RequestCtx.Response.Header.Set(contentType, utils.TypeByExtension(filename))
+	ctx.RequestCtx.Response.Header.Set(contentType, fs.TypeByExtension(filename))
 	ctx.RequestCtx.Response.Header.Set(lastModified, modtime.UTC().Format(config.TimeFormat))
 	ctx.RequestCtx.SetStatusCode(StatusOK)
 	var out io.Writer
@@ -654,7 +656,7 @@ func (ctx *Context) ServeContent(content io.ReadSeeker, filename string, modtime
 
 	}
 	_, err := io.Copy(out, content)
-	return errServeContent.Format(err)
+	return errServeContent.With(err)
 }
 
 // ServeFile serves a view file, to send a file ( zip for example) to the client you should use the SendFile(serverfilename,clientfilename)

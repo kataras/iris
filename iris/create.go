@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"github.com/kataras/cli"
+	"github.com/kataras/go-fs"
+	"github.com/kataras/go-installer"
 	"github.com/kataras/iris/utils"
 )
 
@@ -19,7 +21,7 @@ const (
 )
 
 var (
-	packagesInstallDir = utils.AssetsDirectory + utils.PathSeparator + "iris-command-assets" + utils.PathSeparator
+	packagesInstallDir = utils.AssetsDirectory + fs.PathSeparator + "iris-command-assets" + fs.PathSeparator
 	// packages should install with go get before create the package
 	packagesDependencies = []string{"github.com/iris-contrib/middleware/logger"}
 )
@@ -36,7 +38,7 @@ func isValidInstallDir(targetDir string) bool {
 	gopaths := strings.Split(gopath, string(os.PathListSeparator))
 	// the package MUST be installed only inside a valid gopath, if not then print an error to the user.
 	for _, gpath := range gopaths {
-		if strings.HasPrefix(targetDir, gpath+utils.PathSeparator) {
+		if strings.HasPrefix(targetDir, gpath+fs.PathSeparator) {
 			return true
 		}
 	}
@@ -55,7 +57,7 @@ func create(flags cli.Flags) (err error) {
 		return
 	}
 
-	if !utils.DirectoryExists(packagesInstallDir) || !flags.Bool("offline") {
+	if !fs.DirectoryExists(packagesInstallDir) || !flags.Bool("offline") {
 		// install/update go dependencies at the same time downloading the zip from the github iris-contrib assets
 		finish := make(chan bool)
 		go func() {
@@ -84,7 +86,7 @@ func create(flags cli.Flags) (err error) {
 func downloadPackages() {
 	errMsg := "\nProblem while downloading the assets from the internet for the first time. Trace: %s"
 
-	installedDir, err := utils.Install(PackagesURL, packagesInstallDir)
+	installedDir, err := installer.Install(PackagesURL, packagesInstallDir, true)
 	if err != nil {
 		printer.Dangerf(errMsg, err.Error())
 		return
@@ -92,7 +94,7 @@ func downloadPackages() {
 
 	// installedDir is the packagesInstallDir+PackagesExportedName, we will copy these contents to the parent, to the packagesInstallDir, because of import paths.
 
-	err = utils.CopyDir(installedDir, packagesInstallDir)
+	err = fs.CopyDir(installedDir, packagesInstallDir)
 	if err != nil {
 		printer.Dangerf(errMsg, err.Error())
 		return
@@ -101,14 +103,14 @@ func downloadPackages() {
 	// we don't exit on errors here.
 
 	// try to remove the unzipped folder
-	utils.RemoveFile(installedDir[0 : len(installedDir)-1])
+	fs.RemoveFile(installedDir[0 : len(installedDir)-1])
 }
 
 func createPackage(packageName string, targetDir string) error {
-	installTo := targetDir // os.Getenv("GOPATH") + utils.PathSeparator + "src" + utils.PathSeparator + targetDir
+	installTo := targetDir // os.Getenv("GOPATH") + fs.PathSeparator + "src" + fs.PathSeparator + targetDir
 
-	packageDir := packagesInstallDir + utils.PathSeparator + packageName
-	err := utils.CopyDir(packageDir, installTo)
+	packageDir := packagesInstallDir + fs.PathSeparator + packageName
+	err := fs.CopyDir(packageDir, installTo)
 	if err != nil {
 		printer.Dangerf("\nProblem while copying the %s package to the %s. Trace: %s", packageName, installTo, err.Error())
 		return err
@@ -117,7 +119,7 @@ func createPackage(packageName string, targetDir string) error {
 	// now replace main.go's 'github.com/iris-contrib/iris-command-assets/basic/' with targetDir
 	// hardcode all that, we don't have anything special and neither will do
 	targetDir = strings.Replace(targetDir, "\\", "/", -1) // for any case
-	mainFile := installTo + utils.PathSeparator + "backend" + utils.PathSeparator + "main.go"
+	mainFile := installTo + fs.PathSeparator + "backend" + fs.PathSeparator + "main.go"
 
 	input, err := ioutil.ReadFile(mainFile)
 	if err != nil {
@@ -138,7 +140,7 @@ func createPackage(packageName string, targetDir string) error {
 	// go build
 	buildCmd := utils.CommandBuilder("go", "build")
 	if installTo[len(installTo)-1] != os.PathSeparator || installTo[len(installTo)-1] != '/' {
-		installTo += utils.PathSeparator
+		installTo += fs.PathSeparator
 	}
 	buildCmd.Dir = installTo + "backend"
 	buildCmd.Stderr = os.Stderr
@@ -155,7 +157,7 @@ func createPackage(packageName string, targetDir string) error {
 		executable += ".exe"
 	}
 
-	runCmd := utils.CommandBuilder("." + utils.PathSeparator + executable)
+	runCmd := utils.CommandBuilder("." + fs.PathSeparator + executable)
 	runCmd.Dir = buildCmd.Dir
 	runCmd.Stdout = os.Stdout
 	runCmd.Stderr = os.Stderr

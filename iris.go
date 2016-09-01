@@ -77,6 +77,7 @@ import (
 	"github.com/iris-contrib/response/xml"
 	"github.com/iris-contrib/template/html"
 	"github.com/kataras/go-errors"
+	"github.com/kataras/go-fs"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/utils"
@@ -1724,9 +1725,9 @@ func (api *muxAPI) StaticServe(systemPath string, requestPath ...string) RouteNa
 	var reqPath string
 
 	if len(requestPath) == 0 {
-		reqPath = strings.Replace(systemPath, utils.PathSeparator, slash, -1) // replaces any \ to /
-		reqPath = strings.Replace(reqPath, "//", slash, -1)                   // for any case, replaces // to /
-		reqPath = strings.Replace(reqPath, ".", "", -1)                       // replace any dots (./mypath -> /mypath)
+		reqPath = strings.Replace(systemPath, fs.PathSeparator, slash, -1) // replaces any \ to /
+		reqPath = strings.Replace(reqPath, "//", slash, -1)                // for any case, replaces // to /
+		reqPath = strings.Replace(reqPath, ".", "", -1)                    // replace any dots (./mypath -> /mypath)
 	} else {
 		reqPath = requestPath[0]
 	}
@@ -1734,10 +1735,10 @@ func (api *muxAPI) StaticServe(systemPath string, requestPath ...string) RouteNa
 	return api.Get(reqPath+"/*file", func(ctx *Context) {
 		filepath := ctx.Param("file")
 
-		spath := strings.Replace(filepath, "/", utils.PathSeparator, -1)
+		spath := strings.Replace(filepath, "/", fs.PathSeparator, -1)
 		spath = path.Join(systemPath, spath)
 
-		if !utils.DirectoryExists(spath) {
+		if !fs.DirectoryExists(spath) {
 			ctx.NotFound()
 			return
 		}
@@ -1816,7 +1817,7 @@ func (api *muxAPI) Favicon(favPath string, requestPath ...string) RouteNameFunc 
 		fi, _ = f.Stat()
 	}
 	modtime := fi.ModTime().UTC().Format(config.TimeFormat)
-	cType := utils.TypeByExtension(favPath)
+	cType := fs.TypeByExtension(favPath)
 	// copy the bytes here in order to cache and not read the ico on each request.
 	cacheFav := make([]byte, fi.Size())
 	if _, err = f.Read(cacheFav); err != nil {
