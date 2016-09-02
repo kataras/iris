@@ -78,6 +78,7 @@ import (
 	"github.com/iris-contrib/template/html"
 	"github.com/kataras/go-errors"
 	"github.com/kataras/go-fs"
+	"github.com/kataras/go-template"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/utils"
@@ -86,7 +87,7 @@ import (
 
 const (
 	// Version of the iris
-	Version = "4.1.2"
+	Version = "4.1.3"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -155,7 +156,7 @@ type (
 		Close() error
 		UseSessionDB(SessionDatabase)
 		UseResponse(ResponseEngine, ...string) func(string)
-		UseTemplate(TemplateEngine) *TemplateEngineLocation
+		UseTemplate(template.Engine) *template.Loader
 		UseGlobal(...Handler)
 		UseGlobalFunc(...HandlerFunc)
 		Lookup(string) Route
@@ -216,13 +217,10 @@ func New(cfg ...config.Iris) *Framework {
 		// set the plugin container
 		s.Plugins = &pluginContainer{logger: s.Logger}
 		// set the templates
-		s.templates = &templateEngines{
-			helpers: map[string]interface{}{
-				"url":     s.URL,
-				"urlpath": s.Path,
-			},
-			engines: make([]*templateEngineWrapper, 0),
-		}
+		s.templates = newTemplateEngines(map[string]interface{}{
+			"url":     s.URL,
+			"urlpath": s.Path,
+		})
 		// set the sessions
 		if s.Config.Sessions.Cookie != "" {
 			//set the session manager
@@ -270,13 +268,13 @@ func (s *Framework) initialize() {
 	// prepare the templates if enabled
 	if !s.Config.DisableTemplateEngines {
 
-		s.templates.reload = s.Config.IsDevelopment
+		s.templates.Reload = s.Config.IsDevelopment
 		// check and prepare the templates
-		if len(s.templates.engines) == 0 { // no template engine is registered, let's use the default
+		if len(s.templates.Entries) == 0 { // no template engine is registered, let's use the default
 			s.UseTemplate(html.New())
 		}
 
-		if err := s.templates.loadAll(); err != nil {
+		if err := s.templates.Load(); err != nil {
 			s.Logger.Panic(err) // panic on templates loading before listening if we have an error.
 		}
 	}
@@ -661,14 +659,14 @@ func (s *Framework) UseResponse(e ResponseEngine, forContentTypesOrKeys ...strin
 
 // UseTemplate adds a template engine to the iris view system
 // it does not build/load them yet
-func UseTemplate(e TemplateEngine) *TemplateEngineLocation {
+func UseTemplate(e template.Engine) *template.Loader {
 	return Default.UseTemplate(e)
 }
 
 // UseTemplate adds a template engine to the iris view system
 // it does not build/load them yet
-func (s *Framework) UseTemplate(e TemplateEngine) *TemplateEngineLocation {
-	return s.templates.add(e)
+func (s *Framework) UseTemplate(e template.Engine) *template.Loader {
+	return s.templates.AddEngine(e)
 }
 
 // UseGlobal registers Handler middleware  to the beginning, prepends them instead of append
@@ -938,7 +936,8 @@ func (s *Framework) TemplateString(templateFile string, pageContext interface{},
 	if s.Config.DisableTemplateEngines {
 		return ""
 	}
-	res, err := s.templates.getBy(templateFile).executeToString(templateFile, pageContext, options...)
+
+	res, err := s.templates.ExecuteString(templateFile, pageContext, options...)
 	if err != nil {
 		return ""
 	}

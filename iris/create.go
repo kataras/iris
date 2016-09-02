@@ -9,7 +9,6 @@ import (
 
 	"github.com/kataras/cli"
 	"github.com/kataras/go-fs"
-	"github.com/kataras/go-installer"
 	"github.com/kataras/iris/utils"
 )
 
@@ -86,7 +85,7 @@ func create(flags cli.Flags) (err error) {
 func downloadPackages() {
 	errMsg := "\nProblem while downloading the assets from the internet for the first time. Trace: %s"
 
-	installedDir, err := installer.Install(PackagesURL, packagesInstallDir, true)
+	installedDir, err := fs.Install(PackagesURL, packagesInstallDir, true)
 	if err != nil {
 		printer.Dangerf(errMsg, err.Error())
 		return

@@ -2,7 +2,13 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras/iris` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
-## 4.1.1 -> 4.1.2 
+## 4.1.2 -> 4.1.3
+
+Zero front-end changes. No real improvements, developers can ignore this update.
+
+- Replace the template engines with a new cross-framework package, [go-template](https://github.com/kataras/go-websocket). Same front-end API, examples and iris-contrib/template are compatible.
+
+## 4.1.1 -> 4.1.2
 
 Zero front-end changes. No real improvements, developers can ignore this update.
 

@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/kataras/go-errors"
+	"github.com/kataras/go-template"
 	"github.com/valyala/fasthttp"
 )
 
@@ -139,10 +140,8 @@ func (r *responseEngineMap) render(ctx *Context, obj interface{}, options ...map
 	gzipEnabled := ctx.framework.Config.Gzip
 	charset := ctx.framework.Config.Charset
 	if len(options) > 0 {
-		gzipEnabled = getGzipOption(ctx, options[0]) // located to the template.go below the RenderOptions
-		if chs := getCharsetOption(options[0]); chs != "" {
-			charset = chs
-		}
+		gzipEnabled = template.GetGzipOption(gzipEnabled, options[0]) // located to the template.go below the RenderOptions
+		charset = template.GetCharsetOption(charset, options[0])
 	}
 	ctype := r.contentType
 

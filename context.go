@@ -546,7 +546,7 @@ func (ctx *Context) Gzip(b []byte, status int) {
 func (ctx *Context) RenderWithStatus(status int, name string, binding interface{}, options ...map[string]interface{}) error {
 	ctx.SetStatusCode(status)
 	if strings.IndexByte(name, '.') > -1 { //we have template
-		return ctx.framework.templates.getBy(name).execute(ctx, name, binding, options...)
+		return ctx.framework.templates.render(ctx, name, binding, options...)
 	}
 	return ctx.framework.responses.getBy(name).render(ctx, binding, options...)
 }
