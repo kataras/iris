@@ -52,21 +52,6 @@ package iris // import "github.com/kataras/iris"
 
 import (
 	"fmt"
-	"io"
-	"net/http"
-	"net/url"
-	"os"
-	"path"
-	"reflect"
-	"strconv"
-	"strings"
-	"testing"
-	"time"
-
-	"github.com/klauspost/compress/gzip"
-
-	"sync"
-
 	"github.com/gavv/httpexpect"
 	"github.com/iris-contrib/logger"
 	"github.com/iris-contrib/response/data"
@@ -75,19 +60,31 @@ import (
 	"github.com/iris-contrib/response/markdown"
 	"github.com/iris-contrib/response/text"
 	"github.com/iris-contrib/response/xml"
-	"github.com/iris-contrib/template/html"
 	"github.com/kataras/go-errors"
 	"github.com/kataras/go-fs"
+	"github.com/kataras/go-sessions"
+	fasthttpSessions "github.com/kataras/go-sessions/fasthttp"
 	"github.com/kataras/go-template"
+	"github.com/kataras/go-template/html"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/utils"
 	"github.com/valyala/fasthttp"
+	"net/http"
+	"net/url"
+	"os"
+	"path"
+	"reflect"
+	"strconv"
+	"strings"
+	"sync"
+	"testing"
+	"time"
 )
 
 const (
 	// Version of the iris
-	Version = "4.1.3"
+	Version = "4.1.4"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -154,7 +151,7 @@ type (
 		ListenVirtual(...string) *Server
 		Go() error
 		Close() error
-		UseSessionDB(SessionDatabase)
+		UseSessionDB(sessions.Database)
 		UseResponse(ResponseEngine, ...string) func(string)
 		UseTemplate(template.Engine) *template.Loader
 		UseGlobal(...Handler)
@@ -173,12 +170,11 @@ type (
 	// Implements the FrameworkAPI
 	Framework struct {
 		*muxAPI
-		contextPool    sync.Pool
-		Config         *config.Iris
-		gzipWriterPool sync.Pool // used for several methods, usually inside context
-		sessions       *sessionsManager
-		responses      *responseEngines
-		templates      *templateEngines
+		contextPool sync.Pool
+		Config      *config.Iris
+		sessions    fasthttpSessions.Sessions
+		responses   *responseEngines
+		templates   *templateEngines
 		// fields which are useful to the user/dev
 		// the last  added server is the main server
 		Servers *ServerList
@@ -221,11 +217,7 @@ func New(cfg ...config.Iris) *Framework {
 			"url":     s.URL,
 			"urlpath": s.Path,
 		})
-		// set the sessions
-		if s.Config.Sessions.Cookie != "" {
-			//set the session manager
-			s.sessions = newSessionsManager(&s.Config.Sessions)
-		}
+
 		// set the websocket server
 		s.Websocket = NewWebsocketServer(s.Config.Websocket)
 		// set the servemux, which will provide us the public API also, with its context pool
@@ -241,6 +233,12 @@ func New(cfg ...config.Iris) *Framework {
 }
 
 func (s *Framework) initialize() {
+
+	// set the sessions
+	if s.Config.Sessions.Cookie != "" {
+		//set the session manager
+		s.sessions = fasthttpSessions.New(fasthttpSessions.Config(s.Config.Sessions))
+	}
 
 	// prepare the response engines, if no response engines setted for the default content-types
 	// then add them
@@ -591,7 +589,7 @@ func (s *Framework) Close() error {
 // a session database doesn't have write access to the session, it doesn't accept the context, so forget 'cookie database' for sessions, I will never allow that, for your protection.
 //
 // Note: Don't worry if no session database is registered, your context.Session will continue to work.
-func UseSessionDB(db SessionDatabase) {
+func UseSessionDB(db sessions.Database) {
 	Default.UseSessionDB(db)
 }
 
@@ -601,8 +599,8 @@ func UseSessionDB(db SessionDatabase) {
 // a session database doesn't have write access to the session, it doesn't accept the context, so forget 'cookie database' for sessions, I will never allow that, for your protection.
 //
 // Note: Don't worry if no session database is registered, your context.Session will continue to work.
-func (s *Framework) UseSessionDB(db SessionDatabase) {
-	s.sessions.registerDatabase(db)
+func (s *Framework) UseSessionDB(db sessions.Database) {
+	s.sessions.UseDatabase(db)
 }
 
 // UseResponse accepts a ResponseEngine and the key or content type on which the developer wants to register this response engine
@@ -895,33 +893,6 @@ func (s *Framework) URL(routeName string, args ...interface{}) (url string) {
 	}
 
 	return
-}
-
-// AcquireGzip prepares a gzip writer and returns it
-//
-// Note that: each iris station has its own pool
-// see ReleaseGzip
-func (s *Framework) AcquireGzip(w io.Writer) *gzip.Writer {
-	v := s.gzipWriterPool.Get()
-	if v == nil {
-		gzipWriter, err := gzip.NewWriterLevel(w, gzip.DefaultCompression)
-		if err != nil {
-			return nil
-		}
-		return gzipWriter
-	}
-	gzipWriter := v.(*gzip.Writer)
-	gzipWriter.Reset(w)
-	return gzipWriter
-}
-
-// ReleaseGzip called when flush/close and put the gzip writer back to the pool
-//
-// Note that: each iris station has its own pool
-// see AcquireGzip
-func (s *Framework) ReleaseGzip(gzipWriter *gzip.Writer) {
-	gzipWriter.Close()
-	s.gzipWriterPool.Put(gzipWriter)
 }
 
 // TemplateString executes a template from the default template engine and returns its result as string, useful when you want it for sending rich e-mails

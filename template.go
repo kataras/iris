@@ -1,6 +1,7 @@
 package iris
 
 import (
+	"github.com/kataras/go-fs"
 	"github.com/kataras/go-template"
 	"io"
 )
@@ -62,8 +63,8 @@ func (t *templateEngines) render(ctx *Context, filename string, binding interfac
 		ctx.RequestCtx.Response.Header.Add(varyHeader, acceptEncodingHeader)
 		ctx.SetHeader(contentEncodingHeader, "gzip")
 
-		gzipWriter := ctx.framework.AcquireGzip(ctx.Response.BodyWriter())
-		defer ctx.framework.ReleaseGzip(gzipWriter)
+		gzipWriter := fs.AcquireGzipWriter(ctx.Response.BodyWriter())
+		defer fs.ReleaseGzipWriter(gzipWriter)
 		out = gzipWriter
 	} else {
 		out = ctx.Response.BodyWriter()

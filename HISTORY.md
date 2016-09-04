@@ -2,6 +2,15 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras/iris` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 4.1.3 -> 4.1.4
+
+Zero front-end changes. No real improvements, developers can ignore this update.
+
+- Replace the iris sessions with a new cross-framework package, [go-sessions](https://github.com/kataras/go-sessions). Same front-end API, sessions examples are compatible, configuration of `kataras/iris/config/sessions.go` is compatible. `kataras/context.SessionStore` is now `kataras/go-sessions.Session` (normally you, as user, never used it before, because of automatically session getting by `context.Session()`)
+
+- `GzipWriter` is taken, now, from the `kataras/go-fs` package which has improvements versus the previous implementation.
+
+
 ## 4.1.2 -> 4.1.3
 
 Zero front-end changes. No real improvements, developers can ignore this update.

@@ -21,10 +21,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kataras/go-fs"
-
 	"github.com/iris-contrib/formBinder"
 	"github.com/kataras/go-errors"
+	"github.com/kataras/go-fs"
+	"github.com/kataras/go-sessions"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/utils"
@@ -109,7 +109,7 @@ type (
 		framework *Framework
 		//keep track all registed middleware (handlers)
 		middleware Middleware
-		session    *session
+		session    sessions.Session
 		// pos is the position number of the Context, look .Next to understand
 		pos uint8
 	}
@@ -955,13 +955,13 @@ func (ctx *Context) SetFlash(key string, value string) {
 }
 
 // Session returns the current session
-func (ctx *Context) Session() context.Session {
+func (ctx *Context) Session() sessions.Session {
 	if ctx.framework.sessions == nil { // this should never return nil but FOR ANY CASE, on future changes.
 		return nil
 	}
 
 	if ctx.session == nil {
-		ctx.session = ctx.framework.sessions.start(ctx)
+		ctx.session = ctx.framework.sessions.Start(ctx.RequestCtx)
 	}
 	return ctx.session
 }
@@ -969,7 +969,7 @@ func (ctx *Context) Session() context.Session {
 // SessionDestroy destroys the whole session, calls the provider's destroy and remove the cookie
 func (ctx *Context) SessionDestroy() {
 	if sess := ctx.Session(); sess != nil {
-		ctx.framework.sessions.destroy(ctx)
+		ctx.framework.sessions.Destroy(ctx.RequestCtx)
 	}
 
 }
