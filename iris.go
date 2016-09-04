@@ -232,14 +232,17 @@ func New(cfg ...config.Iris) *Framework {
 	return s
 }
 
-func (s *Framework) initialize() {
-
+func (s *Framework) initSessions() {
 	// set the sessions
-	if s.Config.Sessions.Cookie != "" {
+	if s.sessions == nil && s.Config.Sessions.Cookie != "" {
 		//set the session manager
 		s.sessions = fasthttpSessions.New(fasthttpSessions.Config(s.Config.Sessions))
 	}
+}
 
+func (s *Framework) initialize() {
+
+	s.initSessions()
 	// prepare the response engines, if no response engines setted for the default content-types
 	// then add them
 
@@ -600,6 +603,9 @@ func UseSessionDB(db sessions.Database) {
 //
 // Note: Don't worry if no session database is registered, your context.Session will continue to work.
 func (s *Framework) UseSessionDB(db sessions.Database) {
+	if s.sessions == nil {
+		s.initSessions()
+	}
 	s.sessions.UseDatabase(db)
 }
 
