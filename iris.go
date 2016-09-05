@@ -84,7 +84,7 @@ import (
 
 const (
 	// Version of the iris
-	Version = "4.1.4"
+	Version = "4.1.5"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -211,7 +211,7 @@ func New(cfg ...config.Iris) *Framework {
 		// set the Logger
 		s.Logger = logger.New(logger.DefaultConfig())
 		// set the plugin container
-		s.Plugins = &pluginContainer{logger: s.Logger}
+		s.Plugins = newPluginContainer(s.Logger)
 		// set the templates
 		s.templates = newTemplateEngines(map[string]interface{}{
 			"url":     s.URL,

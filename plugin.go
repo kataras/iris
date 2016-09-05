@@ -123,14 +123,11 @@ type (
 		DoPreClose(*Framework)
 		PreDownload(PreDownloadFunc)
 		DoPreDownload(Plugin, string)
-		// custom event callbacks
-		On(string, ...func())
-		Call(string)
 		//
 		GetAll() []Plugin
 		// GetDownloader is the only one module that is used and fire listeners at the same time in this file
 		GetDownloader() PluginDownloadManager
-	}
+	} //Note: custom event callbacks, never used internaly by Iris, but if you need them use this: github.com/kataras/go-events
 	// PluginDownloadManager is the interface which the DownloadManager should implements
 	PluginDownloadManager interface {
 		DirectoryExists(string) bool
@@ -229,6 +226,11 @@ type pluginContainer struct {
 	downloader       *pluginDownloadManager
 	logger           *logger.Logger
 	mu               sync.Mutex
+}
+
+// newPluginContainer receives a logger and returns a new PluginContainer
+func newPluginContainer(l *logger.Logger) PluginContainer {
+	return &pluginContainer{logger: l}
 }
 
 // Add activates the plugins and if succeed then adds it to the activated plugins list
@@ -447,30 +449,5 @@ func (p *pluginContainer) DoPreDownload(pluginTryToDownload Plugin, downloadURL 
 		if pluginObj, ok := p.activatedPlugins[i].(pluginPreDownload); ok {
 			pluginObj.PreDownload(pluginTryToDownload, downloadURL)
 		}
-	}
-}
-
-// On registers a custom event
-// these are not registed as plugins, they are hidden events
-func (p *pluginContainer) On(name string, fns ...func()) {
-	if p.customEvents == nil {
-		p.customEvents = make(map[string][]func(), 0)
-	}
-	if p.customEvents[name] == nil {
-		p.customEvents[name] = make([]func(), 0)
-	}
-	p.customEvents[name] = append(p.customEvents[name], fns...)
-}
-
-// Call fires the custom event
-func (p *pluginContainer) Call(name string) {
-	if p.customEvents == nil {
-		return
-	}
-	if fns := p.customEvents[name]; fns != nil {
-		for _, fn := range fns {
-			fn()
-		}
-
 	}
 }

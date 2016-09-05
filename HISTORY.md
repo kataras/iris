@@ -2,6 +2,10 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras/iris` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 4.1.4 -> 4.1.5
+
+- Remove unused Plugin's custom callbacks, if you still need them in your project use this instead: https://github.com/kataras/go-events
+
 ## 4.1.3 -> 4.1.4
 
 Zero front-end changes. No real improvements, developers can ignore this update.
