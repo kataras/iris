@@ -2,6 +2,10 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras/iris` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 4.1.5 -> 4.1.6
+
+- Align with [go-sessions](https://github.com/kataras/go-sessions), no front-end changes, however I think that the best time to make an upgrade to your local Iris is right now.
+
 ## 4.1.4 -> 4.1.5
 
 - Remove unused Plugin's custom callbacks, if you still need them in your project use this instead: https://github.com/kataras/go-events
