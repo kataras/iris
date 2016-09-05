@@ -170,7 +170,7 @@ type (
 	// Implements the FrameworkAPI
 	Framework struct {
 		*muxAPI
-		contextPool sync.Pool
+		contextPool *sync.Pool
 		Config      *config.Iris
 		sessions    fasthttpSessions.Sessions
 		responses   *responseEngines
@@ -217,7 +217,9 @@ func New(cfg ...config.Iris) *Framework {
 			"url":     s.URL,
 			"urlpath": s.Path,
 		})
-
+		s.contextPool = &sync.Pool{New: func() interface{} {
+			return &Context{framework: s}
+		}}
 		// set the websocket server
 		s.Websocket = NewWebsocketServer(s.Config.Websocket)
 		// set the servemux, which will provide us the public API also, with its context pool
@@ -296,28 +298,28 @@ func (s *Framework) initialize() {
 	}
 }
 
+/* not used anymore, we had 2% performance reduce
 func (s *Framework) acquireCtx(reqCtx *fasthttp.RequestCtx) *Context {
 	v := s.contextPool.Get()
-	var ctx *Context
 	if v == nil {
-		ctx = &Context{
+		return &Context{
 			RequestCtx: reqCtx,
 			framework:  s,
 		}
-	} else {
-		ctx = v.(*Context)
-		ctx.Params = ctx.Params[0:0]
-		ctx.RequestCtx = reqCtx
-		ctx.middleware = nil
-		ctx.session = nil
 	}
-
+	ctx := v.(*Context)
+	ctx.Params = ctx.Params[0:0]
+	ctx.RequestCtx = reqCtx
+	ctx.middleware = nil
+	ctx.session = nil
 	return ctx
 }
 
 func (s *Framework) releaseCtx(ctx *Context) {
 	s.contextPool.Put(ctx)
 }
+// so .New() is better because of internal .Get() pins
+*/
 
 // Go starts the iris station, listens to all registered servers, and prepare only if Virtual
 func Go() error {
@@ -331,9 +333,13 @@ func (s *Framework) Go() error {
 	// build the fasthttp handler to bind it to the servers
 	h := s.mux.Handler()
 	reqHandler := func(reqCtx *fasthttp.RequestCtx) {
-		ctx := s.acquireCtx(reqCtx)
+		ctx := s.contextPool.Get().(*Context)
+		ctx.Params = ctx.Params[0:0]
+		ctx.RequestCtx = reqCtx
+		ctx.middleware = nil
+		ctx.session = nil
 		h(ctx)
-		s.releaseCtx(ctx)
+		s.contextPool.Put(ctx)
 	}
 	if firstErr := s.Servers.OpenAll(reqHandler); firstErr != nil {
 		return firstErr
