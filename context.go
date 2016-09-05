@@ -961,7 +961,7 @@ func (ctx *Context) Session() sessions.Session {
 	}
 
 	if ctx.session == nil {
-		ctx.session = ctx.framework.sessions.Start(ctx.RequestCtx)
+		ctx.session = ctx.framework.sessions.StartFasthttp(ctx.RequestCtx)
 	}
 	return ctx.session
 }
@@ -969,7 +969,7 @@ func (ctx *Context) Session() sessions.Session {
 // SessionDestroy destroys the whole session, calls the provider's destroy and remove the cookie
 func (ctx *Context) SessionDestroy() {
 	if sess := ctx.Session(); sess != nil {
-		ctx.framework.sessions.Destroy(ctx.RequestCtx)
+		ctx.framework.sessions.DestroyFasthttp(ctx.RequestCtx)
 	}
 
 }

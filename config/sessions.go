@@ -2,7 +2,7 @@ package config
 
 import (
 	"github.com/imdario/mergo"
-	"github.com/kataras/go-sessions/fasthttp"
+	"github.com/kataras/go-sessions"
 	"time"
 )
 

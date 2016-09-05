@@ -8,7 +8,7 @@
 
 <a href="https://github.com/kataras/iris/blob/master/LICENSE"><img src="https://img.shields.io/badge/%20license-MIT%20%20License%20-E91E63.svg?style=flat-square" alt="License"></a>
 
-<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20release%20-%20v4.1.5%20-blue.svg?style=flat-square" alt="Releases"></a>
+<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20release%20-%20v4.1.6%20-blue.svg?style=flat-square" alt="Releases"></a>
 
 <a href="https://www.gitbook.com/book/kataras/iris/details"><img src="https://img.shields.io/badge/%20docs-reference-5272B4.svg?style=flat-square" alt="Practical Guide/Docs"></a><br/>
 
@@ -141,15 +141,12 @@ If for any personal reasons you think that Iris+fasthttp is not suitable for you
 
 ## Benchmarks
 
-[This Benchmark suite](https://github.com/smallnest/go-web-framework-benchmark) aims to compare the whole HTTP request processing between Go web frameworks.
+This Benchmark test aims to compare the whole HTTP request processing between Go web frameworks.
 
 
 ![Benchmark Wizzard July 21, 2016- Processing Time Horizontal Graph](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png)
 
 **The results have been updated on July 21, 2016**
-
-[Please click here to view all detailed benchmarks.](https://github.com/smallnest/go-web-framework-benchmark/commit/4db507a22c964c9bc9774c5b31afdc199a0fe8b7)
-
 
 Testing
 ------------
@@ -160,7 +157,7 @@ I recommend writing your API tests using this new library, [httpexpect](https://
 Versioning
 ------------
 
-Current: **v4.1.5**
+Current: **v4.1.6**
 
 >  Iris is an active project
 
@@ -195,7 +192,7 @@ License can be found [here](LICENSE).
 [Travis]: http://travis-ci.org/kataras/iris
 [License Widget]: https://img.shields.io/badge/license-MIT%20%20License%20-E91E63.svg?style=flat-square
 [License]: https://github.com/kataras/iris/blob/master/LICENSE
-[Release Widget]: https://img.shields.io/badge/release-v4.1.5-blue.svg?style=flat-square
+[Release Widget]: https://img.shields.io/badge/release-v4.1.6-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/iris/releases
 [Chat Widget]: https://img.shields.io/badge/community-chat-00BCD4.svg?style=flat-square
 [Chat]: https://kataras.rocket.chat/channel/iris

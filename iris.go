@@ -63,7 +63,6 @@ import (
 	"github.com/kataras/go-errors"
 	"github.com/kataras/go-fs"
 	"github.com/kataras/go-sessions"
-	fasthttpSessions "github.com/kataras/go-sessions/fasthttp"
 	"github.com/kataras/go-template"
 	"github.com/kataras/go-template/html"
 	"github.com/kataras/iris/config"
@@ -84,7 +83,7 @@ import (
 
 const (
 	// Version of the iris
-	Version = "4.1.5"
+	Version = "4.1.6"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -172,7 +171,7 @@ type (
 		*muxAPI
 		contextPool *sync.Pool
 		Config      *config.Iris
-		sessions    fasthttpSessions.Sessions
+		sessions    sessions.Sessions
 		responses   *responseEngines
 		templates   *templateEngines
 		// fields which are useful to the user/dev
@@ -205,8 +204,11 @@ func New(cfg ...config.Iris) *Framework {
 		responses: &responseEngines{},
 		Available: make(chan bool),
 		SSH:       &SSHServer{},
+		// set the sessions, configuration willbe updated on the initialization also, in order to give the user the opportunity to change its config at runtime.
+		sessions: sessions.New(sessions.Config(c.Sessions)),
 	}
 	{
+
 		///NOTE: set all with s.Config pointer
 		// set the Logger
 		s.Logger = logger.New(logger.DefaultConfig())
@@ -234,17 +236,9 @@ func New(cfg ...config.Iris) *Framework {
 	return s
 }
 
-func (s *Framework) initSessions() {
-	// set the sessions
-	if s.sessions == nil && s.Config.Sessions.Cookie != "" {
-		//set the session manager
-		s.sessions = fasthttpSessions.New(fasthttpSessions.Config(s.Config.Sessions))
-	}
-}
-
 func (s *Framework) initialize() {
 
-	s.initSessions()
+	s.sessions.UpdateConfig(sessions.Config(s.Config.Sessions))
 	// prepare the response engines, if no response engines setted for the default content-types
 	// then add them
 
@@ -609,9 +603,6 @@ func UseSessionDB(db sessions.Database) {
 //
 // Note: Don't worry if no session database is registered, your context.Session will continue to work.
 func (s *Framework) UseSessionDB(db sessions.Database) {
-	if s.sessions == nil {
-		s.initSessions()
-	}
 	s.sessions.UseDatabase(db)
 }
 
