@@ -114,12 +114,12 @@ go-* packages
 | Name        | Description           
 | ------------------|:---------------------:|
 | [go-template](https://github.com/kataras/go-template)      | Cross-framework template engines
-| [go-websocket](https://github.com/kataras/go-errors) | A websocket server and ,optionally, client side lib  for Go
+| [go-websocket](https://github.com/kataras/go-websocket) | A websocket server and ,optionally, client side lib  for Go
+| [go-sessions](https://github.com/kataras/go-sessions) | The fastest (web) session manager for the Go Programming Language.
+| [go-template](https://github.com/kataras/go-serializer)      | Serialize any custom type to []byte or string. Your custom serializers are finally, organised.
 | [go-errors](https://github.com/kataras/go-errors)      | Error handling
-| [go-fs](https://github.com/kataras/go-fs)      | FileSystem utils and common net/http static files handlers  
-| [go-events](https://github.com/kataras/go-events) | EventEmmiter for Go
-| [go-ssh](https://github.com/kataras/go-ssh) | SSH Server, build ssh interfaces, remote commands and remote cli with ease
-| [go-gzipwriter](https://github.com/kataras/go-gzipwriter) | Write gzip data to a io.Writer
+| [go-fs](https://github.com/kataras/go-fs)      | File system utils, including gzip writer and common net/http static files handlers  
+| [go-events](https://github.com/kataras/go-events) | Nodejs-style EventEmmiter for Go
 | [go-mailer](https://github.com/kataras/go-mailer) | E-mail Sender, send rich mails with one call  
 | [rizla](https://github.com/kataras/rizla) | Monitor and live-reload of your Go App
 | [Q](https://github.com/kataras/q) | HTTP2 Web Framework, 100% compatible with net/http
