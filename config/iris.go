@@ -1,6 +1,9 @@
 package config
 
 import (
+	"io"
+	"os"
+
 	"github.com/imdario/mergo"
 )
 
@@ -9,6 +12,11 @@ const (
 	DefaultDisablePathCorrection = false
 	DefaultDisablePathEscape     = false
 	DefaultCharset               = "UTF-8"
+	DefaultLoggerPreffix         = "[IRIS] "
+)
+
+var (
+	DefaultLoggerOut = os.Stdout
 )
 
 type (
@@ -41,6 +49,15 @@ type (
 		//
 		// Default is false
 		DisableBanner bool
+
+		// LoggerOut is the destination for output
+		//
+		// defaults to os.Stdout
+		LoggerOut io.Writer
+		// LoggerOut is the logger's prefix to write at beginning of each line
+		//
+		// Defaults to [IRIS]
+		LoggerPreffix string
 
 		// ProfilePath a the route path, set it to enable http pprof tool
 		// Default is empty, if you set it to a $path, these routes will handled:
@@ -106,6 +123,8 @@ func Default() Iris {
 		DisablePathCorrection:  DefaultDisablePathCorrection,
 		DisablePathEscape:      DefaultDisablePathEscape,
 		DisableBanner:          false,
+		LoggerOut:              DefaultLoggerOut,
+		LoggerPreffix:          DefaultLoggerPreffix,
 		DisableTemplateEngines: false,
 		IsDevelopment:          false,
 		Charset:                DefaultCharset,

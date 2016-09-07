@@ -52,8 +52,19 @@ package iris // import "github.com/kataras/iris"
 
 import (
 	"fmt"
+	"log"
+	"net/http"
+	"net/url"
+	"os"
+	"path"
+	"reflect"
+	"strconv"
+	"strings"
+	"sync"
+	"testing"
+	"time"
+
 	"github.com/gavv/httpexpect"
-	"github.com/iris-contrib/logger"
 	"github.com/iris-contrib/response/data"
 	"github.com/iris-contrib/response/json"
 	"github.com/iris-contrib/response/jsonp"
@@ -69,21 +80,11 @@ import (
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/utils"
 	"github.com/valyala/fasthttp"
-	"net/http"
-	"net/url"
-	"os"
-	"path"
-	"reflect"
-	"strconv"
-	"strings"
-	"sync"
-	"testing"
-	"time"
 )
 
 const (
 	// Version of the iris
-	Version = "4.1.6"
+	Version = "4.1.7"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -97,7 +98,7 @@ const (
 var (
 	Default   *Framework
 	Config    *config.Iris
-	Logger    *logger.Logger
+	Logger    *log.Logger // if you want colors in your console then you should use this https://github.com/iris-contrib/logger instead.
 	Plugins   PluginContainer
 	Websocket *WebsocketServer
 	// Look ssh.go for this field's configuration
@@ -169,7 +170,7 @@ type (
 	// Implements the FrameworkAPI
 	Framework struct {
 		*muxAPI
-		contextPool *sync.Pool
+		contextPool sync.Pool
 		Config      *config.Iris
 		sessions    sessions.Sessions
 		responses   *responseEngines
@@ -178,7 +179,7 @@ type (
 		// the last  added server is the main server
 		Servers *ServerList
 		// configuration by instance.Logger.Config
-		Logger    *logger.Logger
+		Logger    *log.Logger
 		Plugins   PluginContainer
 		Websocket *WebsocketServer
 		SSH       *SSHServer
@@ -200,7 +201,9 @@ func New(cfg ...config.Iris) *Framework {
 	// we always use 's' no 'f' because 's' is easier for me to remember because of 'station'
 	// some things never change :)
 	s := &Framework{
-		Config:    &c,
+		Config: &c,
+		// set the Logger
+		Logger:    log.New(c.LoggerOut, c.LoggerPreffix, log.LstdFlags),
 		responses: &responseEngines{},
 		Available: make(chan bool),
 		SSH:       &SSHServer{},
@@ -208,10 +211,11 @@ func New(cfg ...config.Iris) *Framework {
 		sessions: sessions.New(sessions.Config(c.Sessions)),
 	}
 	{
-
+		s.contextPool.New = func() interface{} {
+			return &Context{framework: s}
+		}
 		///NOTE: set all with s.Config pointer
-		// set the Logger
-		s.Logger = logger.New(logger.DefaultConfig())
+
 		// set the plugin container
 		s.Plugins = newPluginContainer(s.Logger)
 		// set the templates
@@ -219,9 +223,6 @@ func New(cfg ...config.Iris) *Framework {
 			"url":     s.URL,
 			"urlpath": s.Path,
 		})
-		s.contextPool = &sync.Pool{New: func() interface{} {
-			return &Context{framework: s}
-		}}
 		// set the websocket server
 		s.Websocket = NewWebsocketServer(s.Config.Websocket)
 		// set the servemux, which will provide us the public API also, with its context pool
@@ -292,29 +293,6 @@ func (s *Framework) initialize() {
 	}
 }
 
-/* not used anymore, we had 2% performance reduce
-func (s *Framework) acquireCtx(reqCtx *fasthttp.RequestCtx) *Context {
-	v := s.contextPool.Get()
-	if v == nil {
-		return &Context{
-			RequestCtx: reqCtx,
-			framework:  s,
-		}
-	}
-	ctx := v.(*Context)
-	ctx.Params = ctx.Params[0:0]
-	ctx.RequestCtx = reqCtx
-	ctx.middleware = nil
-	ctx.session = nil
-	return ctx
-}
-
-func (s *Framework) releaseCtx(ctx *Context) {
-	s.contextPool.Put(ctx)
-}
-// so .New() is better because of internal .Get() pins
-*/
-
 // Go starts the iris station, listens to all registered servers, and prepare only if Virtual
 func Go() error {
 	return Default.Go()
@@ -327,12 +305,14 @@ func (s *Framework) Go() error {
 	// build the fasthttp handler to bind it to the servers
 	h := s.mux.Handler()
 	reqHandler := func(reqCtx *fasthttp.RequestCtx) {
-		ctx := s.contextPool.Get().(*Context)
-		ctx.Params = ctx.Params[0:0]
+		ctx := s.contextPool.Get().(*Context) // Changed to use the pool's New 09/07/2016, ~ -4k nanoseconds(9 bench tests) per requests (better performance)
 		ctx.RequestCtx = reqCtx
+
+		h(ctx)
+
+		ctx.Params = ctx.Params[0:0]
 		ctx.middleware = nil
 		ctx.session = nil
-		h(ctx)
 		s.contextPool.Put(ctx)
 	}
 	if firstErr := s.Servers.OpenAll(reqHandler); firstErr != nil {
@@ -348,9 +328,12 @@ func (s *Framework) Go() error {
 			hosts[i] = srv.Host()
 		}
 
-		bannerMessage := time.Now().Format(config.TimeFormat) + ": Running at " + strings.Join(hosts, ", ")
-		s.Logger.PrintBanner(banner, "\n"+bannerMessage)
+		bannerMessage := fmt.Sprintf("%s: Running at %s", time.Now().Format(config.TimeFormat), strings.Join(hosts, ", "))
+		// we don't print it via Logger because:
+		// 1. The banner is only 'useful' when the developer logs to terminal and no file
+		// 2. Prefix & LstdFlags options of the default s.Logger
 
+		fmt.Printf("%s\n\n%s\n", banner, bannerMessage)
 	}
 
 	s.Plugins.DoPostListen(s)

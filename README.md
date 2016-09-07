@@ -3,30 +3,67 @@
 
  <a href="https://www.gitbook.com/book/kataras/iris/details"><img  width="600" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_6_flat_alpha.png"></a>
 
-<br/>
+<br/><br/>
+
 <a href="https://travis-ci.org/kataras/iris"><img src="https://img.shields.io/travis/kataras/iris.svg?style=flat-square" alt="Build Status"></a>
 
-<a href="https://github.com/kataras/iris/blob/master/LICENSE"><img src="https://img.shields.io/badge/%20license-MIT%20%20License%20-E91E63.svg?style=flat-square" alt="License"></a>
+<a href="https://github.com/avelino/awesome-go"><img src="https://img.shields.io/badge/awesome-%E2%9C%93-ff69b4.svg?style=flat-square" alt="https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg"></a>
 
-<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20release%20-%20v4.1.6%20-blue.svg?style=flat-square" alt="Releases"></a>
+<a href="#"><img src="https://img.shields.io/badge/platform-Any-ec2eb4.svg?style=flat-square" alt="Platforms"></a>
 
-<a href="https://www.gitbook.com/book/kataras/iris/details"><img src="https://img.shields.io/badge/%20docs-reference-5272B4.svg?style=flat-square" alt="Practical Guide/Docs"></a><br/>
-
-<a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/%20examples-repository-3362c2.svg?style=flat-square" alt="Examples"></a>
-
-<a href="https://kataras.rocket.chat/channel/iris"><img src="https://img.shields.io/badge/%20community-chat-00BCD4.svg?style=flat-square" alt="Build Status"></a>
+<a href="https://github.com/kataras/iris/blob/master/LICENSE"><img src="https://img.shields.io/badge/%20license-MIT-E91E63.svg?style=flat-square" alt="License"></a>
 
 <a href="https://golang.org"><img src="https://img.shields.io/badge/powered_by-Go-3362c2.svg?style=flat-square" alt="Built with GoLang"></a>
 
-<a href="#"><img src="https://img.shields.io/badge/platform-Any--OS-yellow.svg?style=flat-square" alt="Platforms"></a>
-<br/><br/>
-<img alt="Benchmark Wizzard July 21, 2016- Processing Time Horizontal Grap" src="https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png" />
-<br/><br/>
+<br/>
 
-The <a href="https://github.com/kataras/iris#benchmarks">fastest</a> backend web framework,  written entirely in  Go. <br/>Easy to <a href="https://www.gitbook.com/book/kataras/iris/details">learn</a>,  while it's highly customizable. <br/>
-Ideally suited for both experienced and novice Developers. <br/>
+
+<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20version%20-%204.1.7%20-blue.svg?style=flat-square" alt="Releases"></a>
+
+<a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/%20examples-repository-3362c2.svg?style=flat-square" alt="Examples"></a>
+
+<a href="https://www.gitbook.com/book/kataras/iris/details"><img src="https://img.shields.io/badge/%20docs-reference-5272B4.svg?style=flat-square" alt="Practical Guide/Docs"></a>
+
+<a href="https://kataras.rocket.chat/channel/iris"><img src="https://img.shields.io/badge/%20community-chat-00BCD4.svg?style=flat-square" alt="Chat"></a><br/><br/>
+
+
+The <a href="https://github.com/kataras/iris#benchmarks">fastest</a> backend web framework for Go. Easy to <a href="https://www.gitbook.com/book/kataras/iris/details">learn</a>,  while it's highly customizable. <br/>
+Ideally suited for both experienced and novice <b>Developers</b>.
+<br/>
+
 </p>
 
+
+
+Quick look
+------------
+
+```go
+package main
+
+import "github.com/kataras/iris"
+
+func main() {
+	iris.Favicon("./favicon.ico")
+
+	iris.Get("/", func(ctx *iris.Context) {
+		ctx.Render("index.html")
+	})
+
+	iris.Get("/login", func(ctx *iris.Context) {
+		ctx.Render("login.html", iris.Map{"Title": "Login Page"})
+	})
+
+	iris.Post("/login", func(ctx *iris.Context) {
+		secret := ctx.PostValue("secret")
+		ctx.Session().Set("secret", secret)
+
+		ctx.Redirect("/user")
+	})
+
+	iris.Listen(":8080")
+}
+```
 
 Installation
 ------------
@@ -141,18 +178,26 @@ I recommend writing your API tests using this new library, [httpexpect](https://
 Versioning
 ------------
 
-Current: **v4.1.6**
+Current: **v4.1.7**
 
 >  Iris is an active project
 
+Read more about Semantic Versioning 2.0.0
+
+ - http://semver.org/
+ - https://en.wikipedia.org/wiki/Software_versioning
+ - https://wiki.debian.org/UpstreamGuide#Releases_and_Versions
 
 Todo
 ------------
+- [x] Use of the standard `log.Logger` instead of the `iris-contrib/logger`(colorful logger), make these changes to all middleware, examples and plugins.
+- [ ] Implement, even, a better way to manage configuration/options, devs will be able to set their own custom options inside there. ` I'm thinking of something the last days, but it will have breaking changes. `
+- [ ] Implement an internal updater, as requested [here](https://github.com/kataras/iris/issues/401).
 
-Iris is a community-driven project, waiting for your suggestions and feature requests to add some items here!
+Iris is a **Community-Driven** Project, waiting for your suggestions and [feature requests](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=label%3A%22feature%20request%22)!
 
-
-If you're **willing to donate** click [here](DONATIONS.md)!
+I, as the author of this package, am working full time on this package, no time to any other job, so
+if you're **willing to donate** and you can **afford it** please click [here](DONATIONS.md), thank you!
 
 People
 ------------
@@ -176,7 +221,7 @@ License can be found [here](LICENSE).
 [Travis]: http://travis-ci.org/kataras/iris
 [License Widget]: https://img.shields.io/badge/license-MIT%20%20License%20-E91E63.svg?style=flat-square
 [License]: https://github.com/kataras/iris/blob/master/LICENSE
-[Release Widget]: https://img.shields.io/badge/release-v4.1.6-blue.svg?style=flat-square
+[Release Widget]: https://img.shields.io/badge/release-v4.1.7-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/iris/releases
 [Chat Widget]: https://img.shields.io/badge/community-chat-00BCD4.svg?style=flat-square
 [Chat]: https://kataras.rocket.chat/channel/iris

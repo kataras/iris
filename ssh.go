@@ -43,7 +43,8 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/iris-contrib/logger"
+	"log"
+
 	"github.com/kardianos/osext"
 	"github.com/kardianos/service"
 	"github.com/kataras/go-errors"
@@ -423,8 +424,8 @@ type SSHServer struct {
 	Commands Commands // Commands{Command{Name: "restart", Description:"restarts & rebuild the server", Action: func(ssh.Channel){}}}
 	// note for Commands field:
 	// the default  Iris's commands are defined at the end of this file, I tried to make this file as standalone as I can, because it will be used for Iris web framework also.
-	Shell  bool           // Set it to true to enable execute terminal's commands(system commands) via ssh if no other command is found from the Commands field. Defaults to false for security reasons
-	Logger *logger.Logger // log.New(...)/ $qinstance.Logger, fill it when you want to receive debug and info/warnings messages
+	Shell  bool        // Set it to true to enable execute terminal's commands(system commands) via ssh if no other command is found from the Commands field. Defaults to false for security reasons
+	Logger *log.Logger // log.New(...)/ $qinstance.Logger, fill it when you want to receive debug and info/warnings messages
 }
 
 // Enabled returns true if SSH can be started, if Host != ""

@@ -568,7 +568,9 @@ func (ctx *Context) Render(name string, binding interface{}, options ...map[stri
 func (ctx *Context) MustRender(name string, binding interface{}, options ...map[string]interface{}) {
 	if err := ctx.Render(name, binding, options...); err != nil {
 		ctx.Panic()
-		ctx.framework.Logger.Dangerf("MustRender panics for client with IP: %s On template: %s.Trace: %s\n", ctx.RemoteAddr(), name, err)
+		if ctx.framework.Config.IsDevelopment {
+			ctx.framework.Logger.Printf("MustRender panics for client with IP: %s On template: %s.Trace: %s\n", ctx.RemoteAddr(), name, err)
+		}
 	}
 }
 
@@ -977,4 +979,9 @@ func (ctx *Context) SessionDestroy() {
 // Log logs to the iris defined logger
 func (ctx *Context) Log(format string, a ...interface{}) {
 	ctx.framework.Logger.Printf(format, a...)
+}
+
+// Framework returns the Iris instance, containing the configuration and all other fields
+func (ctx *Context) Framework() *Framework {
+	return ctx.framework
 }

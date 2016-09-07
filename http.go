@@ -13,8 +13,9 @@ import (
 	"sync"
 	"time"
 
+	"log"
+
 	"github.com/iris-contrib/letsencrypt"
-	"github.com/iris-contrib/logger"
 	"github.com/kataras/go-errors"
 	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/utils"
@@ -1336,7 +1337,7 @@ type (
 
 		api           *muxAPI
 		errorHandlers map[int]Handler
-		logger        *logger.Logger
+		logger        *log.Logger
 		// the main server host's name, ex:  localhost, 127.0.0.1, 0.0.0.0, iris-go.com
 		hostname string
 		// if any of the trees contains not empty subdomain
@@ -1351,7 +1352,7 @@ type (
 	}
 )
 
-func newServeMux(logger *logger.Logger) *serveMux {
+func newServeMux(logger *log.Logger) *serveMux {
 	mux := &serveMux{
 		lookups:       make([]*route, 0),
 		errorHandlers: make(map[int]Handler, 0),

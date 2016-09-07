@@ -3,9 +3,9 @@ package iris
 import (
 	"sync"
 
-	"github.com/kataras/go-errors"
+	"log"
 
-	"github.com/iris-contrib/logger"
+	"github.com/kataras/go-errors"
 	"github.com/kataras/go-fs"
 )
 
@@ -224,12 +224,12 @@ type pluginContainer struct {
 	activatedPlugins []Plugin
 	customEvents     map[string][]func()
 	downloader       *pluginDownloadManager
-	logger           *logger.Logger
+	logger           *log.Logger
 	mu               sync.Mutex
 }
 
 // newPluginContainer receives a logger and returns a new PluginContainer
-func newPluginContainer(l *logger.Logger) PluginContainer {
+func newPluginContainer(l *log.Logger) PluginContainer {
 	return &pluginContainer{logger: l}
 }
 

@@ -2,6 +2,14 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras/iris` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 4.1.6 -> 4.1.7
+
+- **CHANGED**: Use of the standard `log.Logger` instead of the `iris-contrib/logger`(colorful logger), these changes are reflects some middleware, examples and plugins, I updated all of them, so don't worry.
+
+So, [iris-contrib/middleware/logger](https://github.com/iris-contrib/middleware/tree/master/logger) will now NO need to pass other Logger instead, instead of: `iris.Use(logger.New(iris.Logger))` use -> `iris.Use(logger.New())` which will use the iris/instance's Logger.
+
+- **ADDED**: `context.Framework()` which returns your Iris instance (typeof `*iris.Framework`), useful for the future(Iris will give you, soon, the ability to pass custom options inside an iris instance).
+
 ## 4.1.5 -> 4.1.6
 
 - Align with [go-sessions](https://github.com/kataras/go-sessions), no front-end changes, however I think that the best time to make an upgrade to your local Iris is right now.

@@ -1,7 +1,8 @@
 package iris
 
 import (
-	"github.com/iris-contrib/logger"
+	"log"
+
 	irisWebsocket "github.com/iris-contrib/websocket"
 	"github.com/kataras/go-websocket"
 	"github.com/kataras/iris/config"
@@ -38,7 +39,7 @@ func NewWebsocketServer(c *config.Websocket) *WebsocketServer {
 
 // RegisterWebsocketServer registers the handlers for the websocket server
 // it's a bridge between station and websocket server
-func RegisterWebsocketServer(station FrameworkAPI, server *WebsocketServer, logger *logger.Logger) {
+func RegisterWebsocketServer(station FrameworkAPI, server *WebsocketServer, logger *log.Logger) {
 	c := server.Config
 	if c.Endpoint == "" {
 		return
