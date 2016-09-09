@@ -17,7 +17,6 @@ import (
 
 	"github.com/iris-contrib/letsencrypt"
 	"github.com/kataras/go-errors"
-	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/utils"
 	"github.com/valyala/fasthttp"
 	"github.com/valyala/fasthttp/fasthttpadaptor"
@@ -244,7 +243,7 @@ type (
 	Server struct {
 		*fasthttp.Server
 		listener net.Listener
-		Config   config.Server
+		Config   ServerConfiguration
 		tls      bool
 		mu       sync.Mutex
 	}
@@ -256,11 +255,13 @@ type (
 )
 
 // newServer returns a pointer to a Server object, and set it's options if any,  nothing more
-func newServer(cfg config.Server) *Server {
-	if cfg.Name == "" {
-		cfg.Name = config.DefaultServerName
+func newServer(setters ...OptionServerSettter) *Server {
+	c := DefaultServerConfiguration()
+	for _, setter := range setters {
+		setter.Set(&c)
 	}
-	s := &Server{Server: &fasthttp.Server{Name: cfg.Name}, Config: cfg}
+
+	s := &Server{Server: &fasthttp.Server{Name: c.Name}, Config: c}
 	return s
 }
 
@@ -436,6 +437,7 @@ func (s *Server) Open(h fasthttp.RequestHandler) error {
 	s.Server.WriteBufferSize = s.Config.WriteBufferSize
 	s.Server.ReadTimeout = s.Config.ReadTimeout
 	s.Server.WriteTimeout = s.Config.WriteTimeout
+
 	if s.Config.RedirectTo != "" {
 		// override the handler and redirect all requests to this addr
 		s.Server.Handler = func(reqCtx *fasthttp.RequestCtx) {
@@ -454,7 +456,7 @@ func (s *Server) Open(h fasthttp.RequestHandler) error {
 		return s.listenUNIX()
 	}
 
-	s.Config.ListeningAddr = config.ServerParseAddr(s.Config.ListeningAddr)
+	s.Config.ListeningAddr = ServerParseAddr(s.Config.ListeningAddr)
 
 	if s.Config.Virtual {
 		return nil
@@ -482,8 +484,8 @@ func (s *Server) Close() (err error) {
 
 // Add adds a server to the list by its config
 // returns the new server
-func (s *ServerList) Add(cfg config.Server) *Server {
-	srv := newServer(cfg)
+func (s *ServerList) Add(setters ...OptionServerSettter) *Server {
+	srv := newServer(setters...)
 	s.servers = append(s.servers, srv)
 	return srv
 }
@@ -1356,9 +1358,9 @@ func newServeMux(logger *log.Logger) *serveMux {
 	mux := &serveMux{
 		lookups:       make([]*route, 0),
 		errorHandlers: make(map[int]Handler, 0),
-		hostname:      config.DefaultServerHostname, // these are changing when the server is up
-		escapePath:    !config.DefaultDisablePathEscape,
-		correctPath:   !config.DefaultDisablePathCorrection,
+		hostname:      DefaultServerHostname, // these are changing when the server is up
+		escapePath:    !DefaultDisablePathEscape,
+		correctPath:   !DefaultDisablePathCorrection,
 		logger:        logger,
 	}
 

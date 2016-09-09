@@ -18,7 +18,7 @@
 <br/>
 
 
-<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20version%20-%204.1.7%20-blue.svg?style=flat-square" alt="Releases"></a>
+<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20version%20-%204.2.0%20-blue.svg?style=flat-square" alt="Releases"></a>
 
 <a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/%20examples-repository-3362c2.svg?style=flat-square" alt="Examples"></a>
 
@@ -178,7 +178,7 @@ I recommend writing your API tests using this new library, [httpexpect](https://
 Versioning
 ------------
 
-Current: **v4.1.7**
+Current: **v4.2.0**
 
 >  Iris is an active project
 
@@ -191,7 +191,7 @@ Read more about Semantic Versioning 2.0.0
 Todo
 ------------
 - [x] Use of the standard `log.Logger` instead of the `iris-contrib/logger`(colorful logger), make these changes to all middleware, examples and plugins.
-- [ ] Implement, even, a better way to manage configuration/options, devs will be able to set their own custom options inside there. ` I'm thinking of something the last days, but it will have breaking changes. `
+- [x] Implement, even, a better way to manage configuration/options, devs will be able to set their own custom options inside there. ` I'm thinking of something the last days, but it will have breaking changes. `
 - [ ] Implement an internal updater, as requested [here](https://github.com/kataras/iris/issues/401).
 
 Iris is a **Community-Driven** Project, waiting for your suggestions and [feature requests](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=label%3A%22feature%20request%22)!
@@ -221,7 +221,7 @@ License can be found [here](LICENSE).
 [Travis]: http://travis-ci.org/kataras/iris
 [License Widget]: https://img.shields.io/badge/license-MIT%20%20License%20-E91E63.svg?style=flat-square
 [License]: https://github.com/kataras/iris/blob/master/LICENSE
-[Release Widget]: https://img.shields.io/badge/release-v4.1.7-blue.svg?style=flat-square
+[Release Widget]: https://img.shields.io/badge/release-v4.2.0-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/iris/releases
 [Chat Widget]: https://img.shields.io/badge/community-chat-00BCD4.svg?style=flat-square
 [Chat]: https://kataras.rocket.chat/channel/iris

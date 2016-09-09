@@ -184,6 +184,10 @@ type responseEngines struct {
 	engines []*responseEngineMap
 }
 
+func newResponseEngines() *responseEngines {
+	return &responseEngines{}
+}
+
 // add accepts a simple response engine with its content type or key, key should not contains a dot('.').
 // if key is a content type then it's the content type, but if it not, set the content type from the returned function,
 // if it not called/changed then the default content type text/plain will be used.

@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/gavv/httpexpect"
-	"github.com/kataras/iris/config"
 )
 
 const (
@@ -72,14 +71,14 @@ func TestServerHost(t *testing.T) {
 	var server1, server2, server3 Server
 	var expectedHost1 = "mydomain.com:1993"
 	var expectedHost2 = "mydomain.com:80"
-	var expectedHost3 = config.DefaultServerHostname + ":9090"
+	var expectedHost3 = DefaultServerHostname + ":9090"
 	server1.Config.ListeningAddr = expectedHost1
 	server2.Config.ListeningAddr = "mydomain.com"
 	server3.Config.ListeningAddr = ":9090"
 
-	server1.Config.ListeningAddr = config.ServerParseAddr(server1.Config.ListeningAddr)
-	server2.Config.ListeningAddr = config.ServerParseAddr(server2.Config.ListeningAddr)
-	server3.Config.ListeningAddr = config.ServerParseAddr(server3.Config.ListeningAddr)
+	server1.Config.ListeningAddr = ServerParseAddr(server1.Config.ListeningAddr)
+	server2.Config.ListeningAddr = ServerParseAddr(server2.Config.ListeningAddr)
+	server3.Config.ListeningAddr = ServerParseAddr(server3.Config.ListeningAddr)
 
 	if server1.Host() != expectedHost1 {
 		t.Fatalf("Expecting server 1's host to be %s but we got %s", expectedHost1, server1.Host())
@@ -96,7 +95,7 @@ func TestServerHostname(t *testing.T) {
 	var server Server
 	var expectedHostname = "mydomain.com"
 	server.Config.ListeningAddr = expectedHostname + ":1993"
-	server.Config.ListeningAddr = config.ServerParseAddr(server.Config.ListeningAddr)
+	server.Config.ListeningAddr = ServerParseAddr(server.Config.ListeningAddr)
 	if server.Hostname() != expectedHostname {
 		t.Fatalf("Expecting server's hostname to be %s but we got %s", expectedHostname, server.Hostname())
 	}
@@ -126,8 +125,8 @@ func TestServerPort(t *testing.T) {
 	expectedPort2 := 80
 	server1.Config.ListeningAddr = "mydomain.com:8080"
 	server2.Config.ListeningAddr = "mydomain.com"
-	server1.Config.ListeningAddr = config.ServerParseAddr(server1.Config.ListeningAddr)
-	server2.Config.ListeningAddr = config.ServerParseAddr(server2.Config.ListeningAddr)
+	server1.Config.ListeningAddr = ServerParseAddr(server1.Config.ListeningAddr)
+	server2.Config.ListeningAddr = ServerParseAddr(server2.Config.ListeningAddr)
 
 	if server1.Port() != expectedPort1 {
 		t.Fatalf("Expecting server 1's port to be %d but we got %d", expectedPort1, server1.Port())
@@ -172,9 +171,9 @@ func TestMultiRunningServers_v1(t *testing.T) {
 	})
 
 	// start the secondary server
-	AddServer(config.Server{ListeningAddr: "mydomain.com:80", RedirectTo: "https://" + host, Virtual: true})
+	AddServer(ServerConfiguration{ListeningAddr: "mydomain.com:80", RedirectTo: "https://" + host, Virtual: true})
 	// start the main server
-	go ListenTo(config.Server{ListeningAddr: host, CertFile: certFile.Name(), KeyFile: keyFile.Name(), Virtual: true})
+	go ListenTo(ServerConfiguration{ListeningAddr: host, CertFile: certFile.Name(), KeyFile: keyFile.Name(), Virtual: true})
 	// prepare test framework
 	if ok := <-Available; !ok {
 		t.Fatal("Unexpected error: server cannot start, please report this as bug!!")
@@ -224,9 +223,9 @@ func TestMultiRunningServers_v2(t *testing.T) {
 	})
 
 	// add a secondary server
-	Servers.Add(config.Server{ListeningAddr: domain + ":80", RedirectTo: "https://" + host, Virtual: true})
+	Servers.Add(ServerConfiguration{ListeningAddr: domain + ":80", RedirectTo: "https://" + host, Virtual: true})
 	// add our primary/main server
-	Servers.Add(config.Server{ListeningAddr: host, CertFile: certFile.Name(), KeyFile: keyFile.Name(), Virtual: true})
+	Servers.Add(ServerConfiguration{ListeningAddr: host, CertFile: certFile.Name(), KeyFile: keyFile.Name(), Virtual: true})
 
 	go Go()
 

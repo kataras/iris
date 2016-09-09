@@ -76,7 +76,6 @@ import (
 	"github.com/kataras/go-sessions"
 	"github.com/kataras/go-template"
 	"github.com/kataras/go-template/html"
-	"github.com/kataras/iris/config"
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/utils"
 	"github.com/valyala/fasthttp"
@@ -84,7 +83,7 @@ import (
 
 const (
 	// Version of the iris
-	Version = "4.1.7"
+	Version = "4.2.0"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -97,7 +96,7 @@ const (
 // Default entry, use it with iris.$anyPublicFunc
 var (
 	Default   *Framework
-	Config    *config.Iris
+	Config    *Configuration
 	Logger    *log.Logger // if you want colors in your console then you should use this https://github.com/iris-contrib/logger instead.
 	Plugins   PluginContainer
 	Websocket *WebsocketServer
@@ -143,8 +142,9 @@ type (
 	FrameworkAPI interface {
 		MuxAPI
 		Must(error)
-		AddServer(config.Server) *Server
-		ListenTo(config.Server) error
+		Set(...OptionSetter)
+		AddServer(...OptionServerSettter) *Server
+		ListenTo(...OptionServerSettter) error
 		Listen(string)
 		ListenTLS(string, string, string)
 		ListenUNIX(string, os.FileMode)
@@ -161,8 +161,9 @@ type (
 		Path(string, ...interface{}) string
 		URL(string, ...interface{}) string
 		TemplateString(string, interface{}, ...map[string]interface{}) string
+		TemplateSourceString(string, interface{}) string
 		ResponseString(string, interface{}, ...map[string]interface{}) string
-		Tester(t *testing.T) *httpexpect.Expect
+		Tester(*testing.T) *httpexpect.Expect
 	}
 
 	// Framework is our God |\| Google.Search('Greek mythology Iris')
@@ -171,7 +172,7 @@ type (
 	Framework struct {
 		*muxAPI
 		contextPool sync.Pool
-		Config      *config.Iris
+		Config      *Configuration
 		sessions    sessions.Sessions
 		responses   *responseEngines
 		templates   *templateEngines
@@ -191,55 +192,76 @@ type (
 
 var _ FrameworkAPI = &Framework{}
 
-// New creates and returns a new Iris station aka Framework.
+// New creates and returns a new Iris instance.
 //
-// Receives an optional config.Iris as parameter
-// If empty then config.Default() is used instead
-func New(cfg ...config.Iris) *Framework {
-	c := config.Default().Merge(cfg)
+// Receives (optional) multi options, use iris.Option and your editor should show you the available options to set
+// all options are inside ./configuration.go
+// example 1: iris.New(iris.OptionIsDevelopment(true), iris.OptionCharset("UTF-8"), irisOptionSessionsCookie("mycookieid"),iris.OptionWebsocketEndpoint("my_endpoint"))
+// example 2: iris.New(iris.Configuration{IsDevelopment:true, Charset: "UTF-8", Sessions: iris.SessionsConfiguration{Cookie:"mycookieid"}, Websocket: iris.WebsocketConfiguration{Endpoint:"/my_endpoint"}})
+// both ways are totally valid and equal
+func New(setters ...OptionSetter) *Framework {
 
-	// we always use 's' no 'f' because 's' is easier for me to remember because of 'station'
-	// some things never change :)
-	s := &Framework{
-		Config: &c,
-		// set the Logger
-		Logger:    log.New(c.LoggerOut, c.LoggerPreffix, log.LstdFlags),
-		responses: &responseEngines{},
-		Available: make(chan bool),
-		SSH:       &SSHServer{},
-		// set the sessions, configuration willbe updated on the initialization also, in order to give the user the opportunity to change its config at runtime.
-		sessions: sessions.New(sessions.Config(c.Sessions)),
-	}
+	s := &Framework{}
+	s.Set(setters...)
+
+	// logger, plugins & ssh
 	{
-		s.contextPool.New = func() interface{} {
-			return &Context{framework: s}
-		}
-		///NOTE: set all with s.Config pointer
-
-		// set the plugin container
+		// set the Logger, which it's configuration should be declared before .Listen because the servemux and plugins needs that
+		s.Logger = log.New(s.Config.LoggerOut, s.Config.LoggerPreffix, log.LstdFlags)
 		s.Plugins = newPluginContainer(s.Logger)
+		s.SSH = NewSSHServer()
+	}
+
+	// rendering
+	{
+		s.responses = newResponseEngines()
 		// set the templates
 		s.templates = newTemplateEngines(map[string]interface{}{
 			"url":     s.URL,
 			"urlpath": s.Path,
 		})
-		// set the websocket server
-		s.Websocket = NewWebsocketServer(s.Config.Websocket)
+	}
+
+	// websocket
+	{
+		s.Websocket = NewWebsocketServer() // in order to be able to call $instance.Websocket.OnConnection
+	}
+
+	// routing & http server
+	{
 		// set the servemux, which will provide us the public API also, with its context pool
 		mux := newServeMux(s.Logger)
 		mux.onLookup = s.Plugins.DoPreLookup
 		// set the public router API (and party)
 		s.muxAPI = &muxAPI{mux: mux, relativePath: "/"}
-
+		s.contextPool.New = func() interface{} {
+			return &Context{framework: s}
+		}
 		s.Servers = &ServerList{mux: mux, servers: make([]*Server, 0)}
+		s.Available = make(chan bool)
 	}
 
 	return s
 }
 
-func (s *Framework) initialize() {
+// Set sets an option aka configuration field to the default iris instance
+func Set(setters ...OptionSetter) {
+	Default.Set(setters...)
+}
 
-	s.sessions.UpdateConfig(sessions.Config(s.Config.Sessions))
+// Set sets an option aka configuration field to this iris instance
+func (s *Framework) Set(setters ...OptionSetter) {
+	if s.Config == nil {
+		defaultConfiguration := DefaultConfiguration()
+		s.Config = &defaultConfiguration
+	}
+
+	for _, setter := range setters {
+		setter.Set(s.Config)
+	}
+}
+
+func (s *Framework) initialize() {
 	// prepare the response engines, if no response engines setted for the default content-types
 	// then add them
 
@@ -276,8 +298,13 @@ func (s *Framework) initialize() {
 			s.Logger.Panic(err) // panic on templates loading before listening if we have an error.
 		}
 	}
-	// listen to websocket connections
-	RegisterWebsocketServer(s, s.Websocket, s.Logger)
+	// set the sessions
+	s.sessions = sessions.New(sessions.Config(s.Config.Sessions))
+
+	if s.Config.Websocket.Endpoint != "" {
+		// register the websocket server and listen to websocket connections when/if $instance.Websocket.OnConnection called by the dev
+		s.Websocket.RegisterTo(s, s.Config.Websocket)
+	}
 
 	//  prepare the mux & the server
 	s.mux.setCorrectPath(!s.Config.DisablePathCorrection)
@@ -328,7 +355,7 @@ func (s *Framework) Go() error {
 			hosts[i] = srv.Host()
 		}
 
-		bannerMessage := fmt.Sprintf("%s: Running at %s", time.Now().Format(config.TimeFormat), strings.Join(hosts, ", "))
+		bannerMessage := fmt.Sprintf("%s: Running at %s", time.Now().Format(s.Config.TimeFormat), strings.Join(hosts, ", "))
 		// we don't print it via Logger because:
 		// 1. The banner is only 'useful' when the developer logs to terminal and no file
 		// 2. Prefix & LstdFlags options of the default s.Logger
@@ -358,68 +385,60 @@ func (s *Framework) Must(err error) {
 	}
 }
 
-// AddServer same as .Servers.Add(config.Server)
+// AddServer same as .Servers.Add(ServerConfiguration)
 //
 // AddServer starts a server which listens to this station
 // Note that  the view engine's functions {{ url }} and {{ urlpath }} will return the first's registered server's scheme (http/https)
 //
 // this is useful mostly when you want to have two or more listening ports ( two or more servers ) for the same station
 //
-// receives one parameter which is the config.Server for the new server
+// receives one parameter which is the ServerConfiguration for the new server
 // returns the new standalone server(  you can close this server by the returning reference)
 //
 // If you need only one server you can use the blocking-funcs: .Listen/ListenTLS/ListenUNIX/ListenTo
 //
 // this is a NOT A BLOCKING version, the main .Listen/ListenTLS/ListenUNIX/ListenTo should be always executed LAST, so this function goes before the main .Listen/ListenTLS/ListenUNIX/ListenTo
-func AddServer(cfg config.Server) *Server {
-	return Default.AddServer(cfg)
+func AddServer(setters ...OptionServerSettter) *Server {
+	return Default.AddServer(setters...)
 }
 
-// AddServer same as .Servers.Add(config.Server)
+// AddServer same as .Servers.Add(ServerConfiguration)
 //
 // AddServer starts a server which listens to this station
 // Note that  the view engine's functions {{ url }} and {{ urlpath }} will return the last registered server's scheme (http/https)
 //
 // this is useful mostly when you want to have two or more listening ports ( two or more servers ) for the same station
 //
-// receives one parameter which is the config.Server for the new server
+// receives one parameter which is the ServerConfiguration for the new server
 // returns the new standalone server(  you can close this server by the returning reference)
 //
 // If you need only one server you can use the blocking-funcs: .Listen/ListenTLS/ListenUNIX/ListenTo
 //
 // this is a NOT A BLOCKING version, the main .Listen/ListenTLS/ListenUNIX/ListenTo should be always executed LAST, so this function goes before the main .Listen/ListenTLS/ListenUNIX/ListenTo
-func (s *Framework) AddServer(cfg config.Server) *Server {
-	return s.Servers.Add(cfg)
+func (s *Framework) AddServer(setters ...OptionServerSettter) *Server {
+	return s.Servers.Add(setters...)
 }
 
 // ListenTo listens to a server but accepts the full server's configuration
 // returns an error, you're responsible to handle that
-// or use the iris.Must(iris.ListenTo(config.Server{}))
+// ex: ris.ListenTo(iris.ServerConfiguration{ListeningAddr:":8080"})
+// ex2: err := iris.ListenTo(iris.OptionServerListeningAddr(":8080"))
+// or use the iris.Must(iris.ListenTo(iris.ServerConfiguration{ListeningAddr:":8080"}))
 //
 // it's a blocking func
-func ListenTo(cfg config.Server) error {
-	return Default.ListenTo(cfg)
+func ListenTo(setters ...OptionServerSettter) error {
+	return Default.ListenTo(setters...)
 }
 
 // ListenTo listens to a server but acceots the full server's configuration
 // returns an error, you're responsible to handle that
-// or use the iris.Must(iris.ListenTo(config.Server{}))
+// ex: ris.ListenTo(iris.ServerConfiguration{ListeningAddr:":8080"})
+// ex2: err := iris.ListenTo(iris.OptionServerListeningAddr(":8080"))
+// or use the iris.Must(iris.ListenTo(iris.ServerConfiguration{ListeningAddr:":8080"}))
 //
 // it's a blocking func
-func (s *Framework) ListenTo(cfg config.Server) (err error) {
-	if cfg.ReadBufferSize == 0 {
-		cfg.ReadBufferSize = config.DefaultReadBufferSize
-	}
-	if cfg.WriteBufferSize == 0 {
-		cfg.WriteBufferSize = config.DefaultWriteBufferSize
-	}
-	if cfg.MaxRequestBodySize == 0 {
-		cfg.MaxRequestBodySize = config.DefaultMaxRequestBodySize
-	}
-	if cfg.ListeningAddr == "" {
-		cfg.ListeningAddr = config.DefaultServerAddr
-	}
-	s.Servers.Add(cfg)
+func (s *Framework) ListenTo(setters ...OptionServerSettter) (err error) {
+	s.Servers.Add(setters...)
 	return s.Go()
 }
 
@@ -428,7 +447,6 @@ func (s *Framework) ListenTo(cfg config.Server) (err error) {
 // host:port
 //
 // It panics on error if you need a func to return an error, use the ListenTo
-// ex: err := iris.ListenTo(config.Server{ListeningAddr:":8080"})
 func Listen(addr string) {
 	Default.Listen(addr)
 }
@@ -438,9 +456,8 @@ func Listen(addr string) {
 // host:port
 //
 // It panics on error if you need a func to return an error, use the ListenTo
-// ex: err := iris.ListenTo(config.Server{ListeningAddr:":8080"})
 func (s *Framework) Listen(addr string) {
-	s.Must(s.ListenTo(config.Server{ListeningAddr: addr}))
+	s.Must(s.ListenTo(ServerConfiguration{ListeningAddr: addr}))
 }
 
 // ListenTLS Starts a https server with certificates,
@@ -450,7 +467,7 @@ func (s *Framework) Listen(addr string) {
 // host:port
 //
 // It panics on error if you need a func to return an error, use the ListenTo
-// ex: err := iris.ListenTo(":8080","yourfile.cert","yourfile.key")
+// ex: iris.ListenTLS(":8080","yourfile.cert","yourfile.key")
 func ListenTLS(addr string, certFile string, keyFile string) {
 	Default.ListenTLS(addr, certFile, keyFile)
 }
@@ -461,7 +478,7 @@ func ListenTLS(addr string, certFile string, keyFile string) {
 //
 // Notes:
 // if you don't want the last feature you should use this method:
-// iris.ListenTo(config.Server{ListeningAddr: "mydomain.com:443", AutoTLS: true})
+// iris.ListenTo(iris.ServerConfiguration{ListeningAddr: "mydomain.com:443", AutoTLS: true})
 // it's a blocking function
 // Limit : https://github.com/iris-contrib/letsencrypt/blob/master/lets.go#L142
 //
@@ -477,12 +494,12 @@ func ListenTLSAuto(addr string) {
 // host:port
 //
 // It panics on error if you need a func to return an error, use the ListenTo
-// ex: err := iris.ListenTo(":8080","yourfile.cert","yourfile.key")
+// ex: iris.ListenTLS(":8080","yourfile.cert","yourfile.key")
 func (s *Framework) ListenTLS(addr string, certFile, keyFile string) {
 	if certFile == "" || keyFile == "" {
 		s.Logger.Panic("You should provide certFile and keyFile for TLS/SSL")
 	}
-	s.Must(s.ListenTo(config.Server{ListeningAddr: addr, CertFile: certFile, KeyFile: keyFile}))
+	s.Must(s.ListenTo(ServerConfiguration{ListeningAddr: addr, CertFile: certFile, KeyFile: keyFile}))
 }
 
 // ListenTLSAuto starts a server listening at the specific nat address
@@ -491,7 +508,7 @@ func (s *Framework) ListenTLS(addr string, certFile, keyFile string) {
 //
 // Notes:
 // if you don't want the last feature you should use this method:
-// iris.ListenTo(config.Server{ListeningAddr: "mydomain.com:443", AutoTLS: true})
+// iris.ListenTo(iris.ServerConfiguration{ListeningAddr: "mydomain.com:443", AutoTLS: true})
 // it's a blocking function
 // Limit : https://github.com/iris-contrib/letsencrypt/blob/master/lets.go#L142
 //
@@ -500,18 +517,18 @@ func (s *Framework) ListenTLSAuto(addr string) {
 	if portIdx := strings.IndexByte(addr, ':'); portIdx == -1 {
 		addr += ":443"
 	}
-	addr = config.ServerParseAddr(addr)
+	addr = ServerParseAddr(addr)
 
 	// start a secondary server (HTTP) on port 80, this is a non-blocking func
 	// redirects all http to the main server which is tls/ssl on port :443
-	s.AddServer(config.Server{ListeningAddr: ":80", RedirectTo: "https://" + addr})
-	s.Must(s.ListenTo(config.Server{ListeningAddr: addr, AutoTLS: true}))
+	s.AddServer(ServerConfiguration{ListeningAddr: ":80", RedirectTo: "https://" + addr})
+	s.Must(s.ListenTo(ServerConfiguration{ListeningAddr: addr, AutoTLS: true}))
 }
 
 // ListenUNIX starts the process of listening to the new requests using a 'socket file', this works only on unix
 //
 // It panics on error if you need a func to return an error, use the ListenTo
-// ex: err := iris.ListenTo(":8080", Mode: os.FileMode)
+// ex: iris.ListenUNIX(":8080", Mode: os.FileMode)
 func ListenUNIX(addr string, mode os.FileMode) {
 	Default.ListenUNIX(addr, mode)
 }
@@ -519,9 +536,9 @@ func ListenUNIX(addr string, mode os.FileMode) {
 // ListenUNIX starts the process of listening to the new requests using a 'socket file', this works only on unix
 //
 // It panics on error if you need a func to return an error, use the ListenTo
-// ex: err := iris.ListenTo(":8080", Mode: os.FileMode)
+// ex: ris.ListenUNIX(":8080", Mode: os.FileMode)
 func (s *Framework) ListenUNIX(addr string, mode os.FileMode) {
-	s.Must(ListenTo(config.Server{ListeningAddr: addr, Mode: mode}))
+	s.Must(ListenTo(ServerConfiguration{ListeningAddr: addr, Mode: mode}))
 }
 
 // ListenVirtual is useful only when you want to test Iris, it doesn't starts the server but it configures and returns it
@@ -536,7 +553,7 @@ func ListenVirtual(optionalAddr ...string) *Server {
 // it is not blocking the app
 func (s *Framework) ListenVirtual(optionalAddr ...string) *Server {
 	s.Config.DisableBanner = true
-	cfg := config.DefaultServer()
+	cfg := DefaultServerConfiguration()
 
 	if len(optionalAddr) > 0 && optionalAddr[0] != "" {
 		cfg.ListeningAddr = optionalAddr[0]
@@ -897,6 +914,27 @@ func (s *Framework) TemplateString(templateFile string, pageContext interface{},
 	res, err := s.templates.ExecuteString(templateFile, pageContext, options...)
 	if err != nil {
 		return ""
+	}
+	return res
+}
+
+// TemplateSourceString executes a template source(raw string contents) from  the first template engines which supports raw parsing returns its result as string,
+//  useful when you want it for sending rich e-mails
+// returns empty string on error
+func TemplateSourceString(src string, pageContext interface{}) string {
+	return Default.TemplateSourceString(src, pageContext)
+}
+
+// TemplateSourceString executes a template source(raw string contents) from  the first template engines which supports raw parsing returns its result as string,
+//  useful when you want it for sending rich e-mails
+// returns empty string on error
+func (s *Framework) TemplateSourceString(src string, pageContext interface{}) string {
+	if s.Config.DisableTemplateEngines {
+		return ""
+	}
+	res, err := s.templates.ExecuteRawString(src, pageContext)
+	if err != nil {
+		res = ""
 	}
 	return res
 }
@@ -1527,8 +1565,8 @@ func (api *muxAPI) StaticHandler(systemPath string, stripSlashes int, compress b
 
 		// Enable transparent compression to save network traffic.
 		Compress:             compress,
-		CacheDuration:        config.StaticCacheDuration,
-		CompressedFileSuffix: config.CompressedFileSuffix,
+		CacheDuration:        StaticCacheDuration,
+		CompressedFileSuffix: CompressedFileSuffix,
 	}
 
 	if stripSlashes > 0 {
@@ -1713,9 +1751,13 @@ func StaticContent(reqPath string, contentType string, content []byte) RouteName
 // a good example of this is how the websocket server uses that to auto-register the /iris-ws.js
 func (api *muxAPI) StaticContent(reqPath string, cType string, content []byte) RouteNameFunc { // func(string) because we use that on websockets
 	modtime := time.Now()
-	modtimeStr := modtime.UTC().Format(config.TimeFormat)
+	modtimeStr := ""
 	h := func(ctx *Context) {
-		if t, err := time.Parse(config.TimeFormat, ctx.RequestHeader(ifModifiedSince)); err == nil && modtime.Before(t.Add(config.StaticCacheDuration)) {
+		if modtimeStr == "" {
+			modtimeStr = modtime.UTC().Format(ctx.framework.Config.TimeFormat)
+		}
+
+		if t, err := time.Parse(ctx.framework.Config.TimeFormat, ctx.RequestHeader(ifModifiedSince)); err == nil && modtime.Before(t.Add(StaticCacheDuration)) {
 			ctx.Response.Header.Del(contentType)
 			ctx.Response.Header.Del(contentLength)
 			ctx.SetStatusCode(StatusNotModified)
@@ -1772,16 +1814,19 @@ func (api *muxAPI) Favicon(favPath string, requestPath ...string) RouteNameFunc 
 		favPath = fav
 		fi, _ = f.Stat()
 	}
-	modtime := fi.ModTime().UTC().Format(config.TimeFormat)
+
 	cType := fs.TypeByExtension(favPath)
 	// copy the bytes here in order to cache and not read the ico on each request.
 	cacheFav := make([]byte, fi.Size())
 	if _, err = f.Read(cacheFav); err != nil {
 		panic(errDirectoryFileNotFound.Format(favPath, "Couldn't read the data bytes for Favicon: "+err.Error()))
 	}
-
+	modtime := ""
 	h := func(ctx *Context) {
-		if t, err := time.Parse(config.TimeFormat, ctx.RequestHeader(ifModifiedSince)); err == nil && fi.ModTime().Before(t.Add(config.StaticCacheDuration)) {
+		if modtime == "" {
+			modtime = fi.ModTime().UTC().Format(ctx.framework.Config.TimeFormat)
+		}
+		if t, err := time.Parse(ctx.framework.Config.TimeFormat, ctx.RequestHeader(ifModifiedSince)); err == nil && fi.ModTime().Before(t.Add(StaticCacheDuration)) {
 			ctx.Response.Header.Del(contentType)
 			ctx.Response.Header.Del(contentLength)
 			ctx.SetStatusCode(StatusNotModified)

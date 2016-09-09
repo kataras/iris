@@ -428,6 +428,11 @@ type SSHServer struct {
 	Logger *log.Logger // log.New(...)/ $qinstance.Logger, fill it when you want to receive debug and info/warnings messages
 }
 
+// NewSSHServer returns a new empty SSHServer
+func NewSSHServer() *SSHServer {
+	return &SSHServer{}
+}
+
 // Enabled returns true if SSH can be started, if Host != ""
 func (s *SSHServer) Enabled() bool {
 	if s == nil {

@@ -73,3 +73,31 @@ func (t *templateEngines) render(ctx *Context, filename string, binding interfac
 	err = t.ExecuteWriter(out, filename, binding, options...)
 	return err
 }
+
+// renderSource executes a template source raw contents (string) and write its result to the context's body
+// note that gzip option is an iris dynamic option which exists for all template engines
+// the gzip and charset options are built'n with iris
+func (t *templateEngines) renderSource(ctx *Context, src string, binding interface{}, options ...map[string]interface{}) (err error) {
+	// we do all these because we don't want to initialize a new map for each execution...
+	gzipEnabled := ctx.framework.Config.Gzip
+	charset := ctx.framework.Config.Charset
+	if len(options) > 0 {
+		gzipEnabled = template.GetGzipOption(gzipEnabled, options[0])
+		charset = template.GetCharsetOption(charset, options[0])
+	}
+
+	ctx.SetContentType(contentHTML + "; charset=" + charset)
+
+	var out io.Writer
+	if gzipEnabled && ctx.clientAllowsGzip() {
+		ctx.RequestCtx.Response.Header.Add(varyHeader, acceptEncodingHeader)
+		ctx.SetHeader(contentEncodingHeader, "gzip")
+
+		gzipWriter := fs.AcquireGzipWriter(ctx.Response.BodyWriter())
+		defer fs.ReleaseGzipWriter(gzipWriter)
+		out = gzipWriter
+	} else {
+		out = ctx.Response.BodyWriter()
+	}
+	return t.ExecuteRaw(src, out, binding)
+}

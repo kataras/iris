@@ -10,6 +10,13 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"github.com/iris-contrib/formBinder"
+	"github.com/kataras/go-errors"
+	"github.com/kataras/go-fs"
+	"github.com/kataras/go-sessions"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/utils"
+	"github.com/valyala/fasthttp"
 	"io"
 	"net"
 	"os"
@@ -18,18 +25,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
-
-	"github.com/iris-contrib/formBinder"
-	"github.com/kataras/go-errors"
-	"github.com/kataras/go-fs"
-	"github.com/kataras/go-sessions"
-	"github.com/kataras/iris/config"
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/utils"
-	"github.com/klauspost/compress/gzip"
-	"github.com/valyala/fasthttp"
 )
 
 const (
@@ -79,9 +75,6 @@ const (
 	cookieHeaderID               = "Cookie: "
 	cookieHeaderIDLen            = len(cookieHeaderID)
 )
-
-// this pool is used everywhere needed in the iris for example inside party-> Static
-var gzipWriterPool = sync.Pool{New: func() interface{} { return &gzip.Writer{} }}
 
 // errors
 
@@ -541,14 +534,29 @@ func (ctx *Context) Gzip(b []byte, status int) {
 	}
 }
 
+// RenderTemplateSource serves a template source(raw string contents) from  the first template engines which supports raw parsing returns its result as string
+func (ctx *Context) RenderTemplateSource(status int, src string, binding interface{}, options ...map[string]interface{}) error {
+	err := ctx.framework.templates.renderSource(ctx, src, binding, options...)
+	if err == nil {
+		ctx.SetStatusCode(status)
+	}
+
+	return err
+}
+
 // RenderWithStatus builds up the response from the specified template or a response engine.
 // Note: the options: "gzip" and "charset" are built'n support by Iris, so you can pass these on any template engine or response engine
-func (ctx *Context) RenderWithStatus(status int, name string, binding interface{}, options ...map[string]interface{}) error {
-	ctx.SetStatusCode(status)
+func (ctx *Context) RenderWithStatus(status int, name string, binding interface{}, options ...map[string]interface{}) (err error) {
 	if strings.IndexByte(name, '.') > -1 { //we have template
-		return ctx.framework.templates.render(ctx, name, binding, options...)
+		err = ctx.framework.templates.render(ctx, name, binding, options...)
 	}
-	return ctx.framework.responses.getBy(name).render(ctx, binding, options...)
+	err = ctx.framework.responses.getBy(name).render(ctx, binding, options...)
+
+	if err == nil {
+		ctx.SetStatusCode(status)
+	}
+
+	return
 }
 
 // Render same as .RenderWithStatus but with status to iris.StatusOK (200) if no previous status exists
@@ -634,7 +642,7 @@ func (ctx *Context) Markdown(status int, markdown string) {
 // You can define your own "Content-Type" header also, after this function call
 // Doesn't implements resuming (by range), use ctx.SendFile instead
 func (ctx *Context) ServeContent(content io.ReadSeeker, filename string, modtime time.Time, gzipCompression bool) error {
-	if t, err := time.Parse(config.TimeFormat, ctx.RequestHeader(ifModifiedSince)); err == nil && modtime.Before(t.Add(1*time.Second)) {
+	if t, err := time.Parse(ctx.framework.Config.TimeFormat, ctx.RequestHeader(ifModifiedSince)); err == nil && modtime.Before(t.Add(1*time.Second)) {
 		ctx.RequestCtx.Response.Header.Del(contentType)
 		ctx.RequestCtx.Response.Header.Del(contentLength)
 		ctx.RequestCtx.SetStatusCode(StatusNotModified)
@@ -642,20 +650,18 @@ func (ctx *Context) ServeContent(content io.ReadSeeker, filename string, modtime
 	}
 
 	ctx.RequestCtx.Response.Header.Set(contentType, fs.TypeByExtension(filename))
-	ctx.RequestCtx.Response.Header.Set(lastModified, modtime.UTC().Format(config.TimeFormat))
+	ctx.RequestCtx.Response.Header.Set(lastModified, modtime.UTC().Format(ctx.framework.Config.TimeFormat))
 	ctx.RequestCtx.SetStatusCode(StatusOK)
 	var out io.Writer
 	if gzipCompression && ctx.clientAllowsGzip() {
 		ctx.RequestCtx.Response.Header.Add(varyHeader, acceptEncodingHeader)
 		ctx.SetHeader(contentEncodingHeader, "gzip")
-		gzipWriter := gzipWriterPool.Get().(*gzip.Writer)
-		gzipWriter.Reset(ctx.RequestCtx.Response.BodyWriter())
-		defer gzipWriter.Close()
-		defer gzipWriterPool.Put(gzipWriter)
+
+		gzipWriter := fs.AcquireGzipWriter(ctx.RequestCtx.Response.BodyWriter())
+		defer fs.ReleaseGzipWriter(gzipWriter)
 		out = gzipWriter
 	} else {
 		out = ctx.RequestCtx.Response.BodyWriter()
-
 	}
 	_, err := io.Copy(out, content)
 	return errServeContent.With(err)
