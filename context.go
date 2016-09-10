@@ -534,6 +534,47 @@ func (ctx *Context) Gzip(b []byte, status int) {
 	}
 }
 
+// renderSerialized renders contents with a serializer with status OK which you can change using RenderWithStatus or ctx.SetStatusCode(iris.StatusCode)
+func (ctx *Context) renderSerialized(contentType string, obj interface{}, options ...map[string]interface{}) error {
+	s := ctx.framework.serializers
+	finalResult, err := s.Serialize(contentType, obj, options...)
+	if err != nil {
+		return err
+	}
+
+	gzipEnabled := ctx.framework.Config.Gzip
+	charset := ctx.framework.Config.Charset
+	if len(options) > 0 {
+		gzipEnabled = getGzipOption(gzipEnabled, options[0]) // located to the template.go below the RenderOptions
+		charset = getCharsetOption(charset, options[0])
+	}
+	ctype := contentType
+
+	if ctype == contentMarkdown { // remember the text/markdown is just a custom internal iris content type, which in reallity renders html
+		ctype = contentHTML
+	}
+
+	if ctype != contentBinary { // set the charset only on non-binary data
+		ctype += "; charset=" + charset
+	}
+	ctx.SetContentType(ctype)
+
+	if gzipEnabled && ctx.clientAllowsGzip() {
+		_, err := fasthttp.WriteGzip(ctx.RequestCtx.Response.BodyWriter(), finalResult)
+		if err != nil {
+			return err
+		}
+		ctx.RequestCtx.Response.Header.Add(varyHeader, acceptEncodingHeader)
+		ctx.SetHeader(contentEncodingHeader, "gzip")
+	} else {
+		ctx.Response.SetBody(finalResult)
+	}
+
+	ctx.SetStatusCode(StatusOK)
+
+	return nil
+}
+
 // RenderTemplateSource serves a template source(raw string contents) from  the first template engines which supports raw parsing returns its result as string
 func (ctx *Context) RenderTemplateSource(status int, src string, binding interface{}, options ...map[string]interface{}) error {
 	err := ctx.framework.templates.renderSource(ctx, src, binding, options...)
@@ -544,13 +585,14 @@ func (ctx *Context) RenderTemplateSource(status int, src string, binding interfa
 	return err
 }
 
-// RenderWithStatus builds up the response from the specified template or a response engine.
-// Note: the options: "gzip" and "charset" are built'n support by Iris, so you can pass these on any template engine or response engine
+// RenderWithStatus builds up the response from the specified template or a serialize engine.
+// Note: the options: "gzip" and "charset" are built'n support by Iris, so you can pass these on any template engine or serialize engines
 func (ctx *Context) RenderWithStatus(status int, name string, binding interface{}, options ...map[string]interface{}) (err error) {
 	if strings.IndexByte(name, '.') > -1 { //we have template
 		err = ctx.framework.templates.render(ctx, name, binding, options...)
+	} else {
+		err = ctx.renderSerialized(name, binding, options...)
 	}
-	err = ctx.framework.responses.getBy(name).render(ctx, binding, options...)
 
 	if err == nil {
 		ctx.SetStatusCode(status)
@@ -560,8 +602,8 @@ func (ctx *Context) RenderWithStatus(status int, name string, binding interface{
 }
 
 // Render same as .RenderWithStatus but with status to iris.StatusOK (200) if no previous status exists
-// builds up the response from the specified template or a response engine.
-// Note: the options: "gzip" and "charset" are built'n support by Iris, so you can pass these on any template engine or response engine
+// builds up the response from the specified template or a serialize engine.
+// Note: the options: "gzip" and "charset" are built'n support by Iris, so you can pass these on any template engine or serialize engine
 func (ctx *Context) Render(name string, binding interface{}, options ...map[string]interface{}) error {
 	errCode := ctx.RequestCtx.Response.StatusCode()
 	if errCode <= 0 {
@@ -571,8 +613,8 @@ func (ctx *Context) Render(name string, binding interface{}, options ...map[stri
 }
 
 // MustRender same as .Render but returns 500 internal server http status (error) if rendering fail
-// builds up the response from the specified template or a response engine.
-// Note: the options: "gzip" and "charset" are built'n support by Iris, so you can pass these on any template engine or response engine
+// builds up the response from the specified template or a serialize engine.
+// Note: the options: "gzip" and "charset" are built'n support by Iris, so you can pass these on any template engine or serialize engine
 func (ctx *Context) MustRender(name string, binding interface{}, options ...map[string]interface{}) {
 	if err := ctx.Render(name, binding, options...); err != nil {
 		ctx.Panic()
@@ -591,7 +633,7 @@ func (ctx *Context) TemplateString(name string, binding interface{}, options ...
 // HTML writes html string with a http status
 func (ctx *Context) HTML(status int, htmlContents string) {
 	if err := ctx.RenderWithStatus(status, contentHTML, htmlContents); err != nil {
-		// if no response engine found for text/html
+		// if no serialize engine found for text/html
 		ctx.SetContentType(contentHTML + "; charset=" + ctx.framework.Config.Charset)
 		ctx.RequestCtx.SetStatusCode(status)
 		ctx.RequestCtx.WriteString(htmlContents)
@@ -625,7 +667,7 @@ func (ctx *Context) XML(status int, v interface{}) error {
 
 // MarkdownString parses the (dynamic) markdown string and returns the converted html string
 func (ctx *Context) MarkdownString(markdownText string) string {
-	return ctx.framework.ResponseString(contentMarkdown, markdownText)
+	return ctx.framework.SerializeToString(contentMarkdown, markdownText)
 }
 
 // Markdown parses and renders to the client a particular (dynamic) markdown string

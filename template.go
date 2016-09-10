@@ -33,6 +33,24 @@ func newTemplateEngines(sharedFuncs map[string]interface{}) *templateEngines {
 	return &templateEngines{Mux: template.NewMux(sharedFuncs)}
 }
 
+// getGzipOption receives a default value and the render options map and returns if gzip is enabled for this render action
+func getGzipOption(defaultValue bool, options map[string]interface{}) bool {
+	gzipOpt := options["gzip"] // we only need that, so don't create new map to keep the options.
+	if b, isBool := gzipOpt.(bool); isBool {
+		return b
+	}
+	return defaultValue
+}
+
+// gtCharsetOption receives a default value and the render options  map and returns the correct charset for this render action
+func getCharsetOption(defaultValue string, options map[string]interface{}) string {
+	charsetOpt := options["charset"]
+	if s, isString := charsetOpt.(string); isString {
+		return s
+	}
+	return defaultValue
+}
+
 // render executes a template and write its result to the context's body
 // options are the optional runtime options can be passed by user and catched by the template engine when render
 // an example of this is the "layout"
@@ -43,8 +61,8 @@ func (t *templateEngines) render(ctx *Context, filename string, binding interfac
 	gzipEnabled := ctx.framework.Config.Gzip
 	charset := ctx.framework.Config.Charset
 	if len(options) > 0 {
-		gzipEnabled = template.GetGzipOption(gzipEnabled, options[0])
-		charset = template.GetCharsetOption(charset, options[0])
+		gzipEnabled = getGzipOption(gzipEnabled, options[0])
+		charset = getCharsetOption(charset, options[0])
 	}
 
 	ctxLayout := ctx.GetString(TemplateLayoutContextKey)

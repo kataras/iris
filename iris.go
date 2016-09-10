@@ -65,14 +65,9 @@ import (
 	"time"
 
 	"github.com/gavv/httpexpect"
-	"github.com/iris-contrib/response/data"
-	"github.com/iris-contrib/response/json"
-	"github.com/iris-contrib/response/jsonp"
-	"github.com/iris-contrib/response/markdown"
-	"github.com/iris-contrib/response/text"
-	"github.com/iris-contrib/response/xml"
 	"github.com/kataras/go-errors"
 	"github.com/kataras/go-fs"
+	"github.com/kataras/go-serializer"
 	"github.com/kataras/go-sessions"
 	"github.com/kataras/go-template"
 	"github.com/kataras/go-template/html"
@@ -83,7 +78,7 @@ import (
 
 const (
 	// Version of the iris
-	Version = "4.2.0"
+	Version = "4.2.1"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -152,7 +147,7 @@ type (
 		Go() error
 		Close() error
 		UseSessionDB(sessions.Database)
-		UseResponse(ResponseEngine, ...string) func(string)
+		UseSerializer(string, serializer.Serializer)
 		UseTemplate(template.Engine) *template.Loader
 		UseGlobal(...Handler)
 		UseGlobalFunc(...HandlerFunc)
@@ -162,7 +157,7 @@ type (
 		URL(string, ...interface{}) string
 		TemplateString(string, interface{}, ...map[string]interface{}) string
 		TemplateSourceString(string, interface{}) string
-		ResponseString(string, interface{}, ...map[string]interface{}) string
+		SerializeToString(string, interface{}, ...map[string]interface{}) string
 		Tester(*testing.T) *httpexpect.Expect
 	}
 
@@ -174,7 +169,7 @@ type (
 		contextPool sync.Pool
 		Config      *Configuration
 		sessions    sessions.Sessions
-		responses   *responseEngines
+		serializers serializer.Serializers
 		templates   *templateEngines
 		// fields which are useful to the user/dev
 		// the last  added server is the main server
@@ -214,7 +209,7 @@ func New(setters ...OptionSetter) *Framework {
 
 	// rendering
 	{
-		s.responses = newResponseEngines()
+		s.serializers = serializer.Serializers{}
 		// set the templates
 		s.templates = newTemplateEngines(map[string]interface{}{
 			"url":     s.URL,
@@ -262,28 +257,8 @@ func (s *Framework) Set(setters ...OptionSetter) {
 }
 
 func (s *Framework) initialize() {
-	// prepare the response engines, if no response engines setted for the default content-types
-	// then add them
-
-	for _, ctype := range defaultResponseKeys {
-		if rengine := s.responses.getBy(ctype); rengine == nil {
-			// if not exists
-			switch ctype {
-			case contentText:
-				s.UseResponse(text.New(), ctype)
-			case contentBinary:
-				s.UseResponse(data.New(), ctype)
-			case contentJSON:
-				s.UseResponse(json.New(), ctype)
-			case contentJSONP:
-				s.UseResponse(jsonp.New(), ctype)
-			case contentXML:
-				s.UseResponse(xml.New(), ctype)
-			case contentMarkdown:
-				s.UseResponse(markdown.New(), ctype)
-			}
-		}
-	}
+	// prepare the serializers, if not any other serializers setted for the default serializer types(json,jsonp,xml,markdown,text,data) then the defaults are setted:
+	serializer.RegisterDefaults(s.serializers)
 
 	// prepare the templates if enabled
 	if !s.Config.DisableTemplateEngines {
@@ -606,56 +581,38 @@ func (s *Framework) UseSessionDB(db sessions.Database) {
 	s.sessions.UseDatabase(db)
 }
 
-// UseResponse accepts a ResponseEngine and the key or content type on which the developer wants to register this response engine
+// UseSerializer accepts a Serializer and the key or content type on which the developer wants to register this serializer
 // the gzip and charset are automatically supported by Iris, by passing the iris.RenderOptions{} map on the context.Render
 // context.Render renders this response or a template engine if no response engine with the 'key' found
 // with these engines you can inject the context.JSON,Text,Data,JSONP,XML also
-// to do that just register with UseResponse(myEngine,"application/json") and so on
-// look at the https://github.com/iris-contrib/response for examples
+// to do that just register with UseSerializer(mySerializer,"application/json") and so on
+// look at the https://github.com/kataras/go-serializer for examples
 //
-// if more than one respone engine with the same key/content type exists then the results will be appended to the final request's body
+// if more than one serializer with the same key/content type exists then the results will be appended to the final request's body
 // this allows the developer to be able to create 'middleware' responses engines
 //
 // Note: if you pass an engine which contains a dot('.') as key, then the engine will not be registered.
 // you don't have to import and use github.com/iris-contrib/json, jsonp, xml, data, text, markdown
 // because iris uses these by default if no other response engine is registered for these content types
-//
-// Note 2:
-// one key has one content type but many response engines ( one to many)
-//
-// returns a function(string) which you can set the content type, if it's not already declared from the key.
-// careful you should call this in the same execution.
-// one last thing, you can have unlimited number of response engines for the same key and same content type.
-// key and content type may be different, but one key is only for one content type,
-// Do not use different content types with more than one response engine on the same key
-func UseResponse(e ResponseEngine, forContentTypesOrKeys ...string) func(string) {
-	return Default.UseResponse(e, forContentTypesOrKeys...)
+func UseSerializer(forContentType string, e serializer.Serializer) {
+	Default.UseSerializer(forContentType, e)
 }
 
-// UseResponse accepts a ResponseEngine and the key or content type on which the developer wants to register this response engine
+// UseSerializer accepts a Serializer and the key or content type on which the developer wants to register this serializer
 // the gzip and charset are automatically supported by Iris, by passing the iris.RenderOptions{} map on the context.Render
 // context.Render renders this response or a template engine if no response engine with the 'key' found
 // with these engines you can inject the context.JSON,Text,Data,JSONP,XML also
-// to do that just register with UseResponse(myEngine,"application/json") and so on
-// look at the https://github.com/iris-contrib/response for examples
+// to do that just register with UseSerializer(mySerializer,"application/json") and so on
+// look at the https://github.com/kataras/go-serializer for examples
 //
-// if more than one respone engine with the same key/content type exists then the results will be appended to the final request's body
+// if more than one serializer with the same key/content type exists then the results will be appended to the final request's body
 // this allows the developer to be able to create 'middleware' responses engines
 //
 // Note: if you pass an engine which contains a dot('.') as key, then the engine will not be registered.
 // you don't have to import and use github.com/iris-contrib/json, jsonp, xml, data, text, markdown
 // because iris uses these by default if no other response engine is registered for these content types
-//
-// Note 2:
-// one key has one content type but many response engines ( one to many)
-//
-// returns a function(string) which you can set the content type, if it's not already declared from the key.
-// careful you should call this in the same execution.
-// one last thing, you can have unlimited number of response engines for the same key and same content type.
-// key and content type may be different, but one key is only for one content type,
-// Do not use different content types with more than one response engine on the same key
-func (s *Framework) UseResponse(e ResponseEngine, forContentTypesOrKeys ...string) func(string) {
-	return s.responses.add(e, forContentTypesOrKeys...)
+func (s *Framework) UseSerializer(forContentType string, e serializer.Serializer) {
+	s.serializers.For(forContentType, e)
 }
 
 // UseTemplate adds a template engine to the iris view system
@@ -939,18 +896,18 @@ func (s *Framework) TemplateSourceString(src string, pageContext interface{}) st
 	return res
 }
 
-// ResponseString returns the string of a response engine,
+// SerializeToString returns the string of a serializer,
 // does not render it to the client
 // returns empty string on error
-func ResponseString(keyOrContentType string, obj interface{}, options ...map[string]interface{}) string {
-	return Default.ResponseString(keyOrContentType, obj, options...)
+func SerializeToString(keyOrContentType string, obj interface{}, options ...map[string]interface{}) string {
+	return Default.SerializeToString(keyOrContentType, obj, options...)
 }
 
-// ResponseString returns the string of a response engine,
+// SerializeToString returns the string of a serializer,
 // does not render it to the client
 // returns empty string on error
-func (s *Framework) ResponseString(keyOrContentType string, obj interface{}, options ...map[string]interface{}) string {
-	res, err := s.responses.getBy(keyOrContentType).toString(obj, options...)
+func (s *Framework) SerializeToString(keyOrContentType string, obj interface{}, options ...map[string]interface{}) string {
+	res, err := s.serializers.SerializeToString(keyOrContentType, obj, options...)
 	if err != nil {
 		return ""
 	}
