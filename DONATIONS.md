@@ -25,7 +25,7 @@ I'm  grateful for all the generous donations. Iris is fully funded by these dona
 #### Donors
 
 - [Ryan Brooks](https://github.com/ryanbyyc) donated 50 EUR at May 11
-
+- Anonymous(Currently) donated 20 EUR at September 11
 > The name of the donator added after his/her permission.
 
 #### Report, so far
@@ -33,4 +33,4 @@ I'm  grateful for all the generous donations. Iris is fully funded by these dona
 - 13 EUR for the domain, [iris-go.com](https://iris-go.com)
 
 
-**Available**: VAT(50)-13 = 47.5-13 = 34.5 EUR
+**Available**: VAT(50) + VAT(20) - 13 = 47,45 + 18,97 - 13 = 53.42 EUR
