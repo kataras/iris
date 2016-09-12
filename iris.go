@@ -78,7 +78,7 @@ import (
 
 const (
 	// Version of the iris
-	Version = "4.2.1"
+	Version = "4.2.2"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -236,6 +236,9 @@ func New(setters ...OptionSetter) *Framework {
 		s.Available = make(chan bool)
 	}
 
+	// set empty sessions , look .initialize for its Init
+	s.sessions = sessions.Empty()
+
 	return s
 }
 
@@ -273,8 +276,11 @@ func (s *Framework) initialize() {
 			s.Logger.Panic(err) // panic on templates loading before listening if we have an error.
 		}
 	}
-	// set the sessions
-	s.sessions = sessions.New(sessions.Config(s.Config.Sessions))
+
+	// init, starts the session manager if the Cookie configuration field is not empty
+	if s.Config.Sessions.Cookie != "" {
+		s.sessions.Init(sessions.Config(s.Config.Sessions))
+	}
 
 	if s.Config.Websocket.Endpoint != "" {
 		// register the websocket server and listen to websocket connections when/if $instance.Websocket.OnConnection called by the dev

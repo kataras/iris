@@ -2,6 +2,10 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras/iris` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+## 4.2.1 -> 4.2.2
+
+- Fix [sessiondb issue 416](https://github.com/kataras/iris/issues/416)
+
 ## 4.2.0 -> 4.2.1
 
 - **CHANGE**: No front-end changes if you used the default response engines before. Response Engines to Serializers, `iris.ResponseEngine` `serializer.Serializer`, comes from `kataras/go-serializer` which is installed automatically when you upgrade iris with `-u` flag.
