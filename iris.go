@@ -217,9 +217,12 @@ func New(setters ...OptionSetter) *Framework {
 		})
 	}
 
-	// websocket
+	// websocket & sessions
 	{
 		s.Websocket = NewWebsocketServer() // in order to be able to call $instance.Websocket.OnConnection
+
+		// set the sessions, look .initialize for its GC
+		s.sessions = sessions.New(sessions.DisableAutoGC(true))
 	}
 
 	// routing & http server
@@ -235,9 +238,6 @@ func New(setters ...OptionSetter) *Framework {
 		s.Servers = &ServerList{mux: mux, servers: make([]*Server, 0)}
 		s.Available = make(chan bool)
 	}
-
-	// set empty sessions , look .initialize for its Init
-	s.sessions = sessions.Empty()
 
 	return s
 }
@@ -268,7 +268,7 @@ func (s *Framework) initialize() {
 
 		s.templates.Reload = s.Config.IsDevelopment
 		// check and prepare the templates
-		if len(s.templates.Entries) == 0 { // no template engine is registered, let's use the default
+		if len(s.templates.Entries) == 0 { // no template engines were registered, let's use the default
 			s.UseTemplate(html.New())
 		}
 
@@ -279,7 +279,8 @@ func (s *Framework) initialize() {
 
 	// init, starts the session manager if the Cookie configuration field is not empty
 	if s.Config.Sessions.Cookie != "" {
-		s.sessions.Init(sessions.Config(s.Config.Sessions))
+		// re-set the configuration field for any case
+		s.sessions.Set(s.Config.Sessions, sessions.DisableAutoGC(false))
 	}
 
 	if s.Config.Websocket.Endpoint != "" {

@@ -310,6 +310,11 @@ func DefaultConfiguration() Configuration {
 // sixth is the DisableSubdomainPersistence which you can set it to true in order dissallow your q subdomains to have access to the session cook
 type SessionsConfiguration sessions.Config
 
+// Set implements the OptionSetter of the sessions package
+func (s SessionsConfiguration) Set(c *sessions.Config) {
+	*c = sessions.Config(s).Validate()
+}
+
 var (
 	// OptionSessionsCookie string, the session's client cookie name, for example: "qsessionid"
 	OptionSessionsCookie = func(val string) OptionSet {
@@ -388,6 +393,7 @@ func DefaultSessionsConfiguration() SessionsConfiguration {
 		Expires:                     0,
 		GcDuration:                  DefaultSessionGcDuration,
 		DisableSubdomainPersistence: false,
+		DisableAutoGC:               true,
 	}
 }
 
