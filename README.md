@@ -3,7 +3,7 @@
 
  <a href="https://www.gitbook.com/book/kataras/iris/details"><img  width="600" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_6_flat_alpha.png"></a>
 
-<br/><br/>
+<br/>
 
 <a href="https://travis-ci.org/kataras/iris"><img src="https://img.shields.io/travis/kataras/iris.svg?style=flat-square" alt="Build Status"></a>
 
@@ -11,7 +11,8 @@
 
 <a href="#"><img src="https://img.shields.io/badge/platform-Any-ec2eb4.svg?style=flat-square" alt="Platforms"></a>
 
-<a href="https://github.com/kataras/iris/blob/master/LICENSE"><img src="https://img.shields.io/badge/%20license-MIT-E91E63.svg?style=flat-square" alt="License"></a>
+<a href="https://github.com/kataras/iris/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0%20%20-E91E63.svg?style=flat-square" alt="License"></a>
+
 
 <a href="https://golang.org"><img src="https://img.shields.io/badge/powered_by-Go-3362c2.svg?style=flat-square" alt="Built with GoLang"></a>
 
@@ -27,7 +28,9 @@
 <a href="https://kataras.rocket.chat/channel/iris"><img src="https://img.shields.io/badge/%20community-chat-00BCD4.svg?style=flat-square" alt="Chat"></a><br/><br/>
 
 
-The <a href="https://github.com/kataras/iris#benchmarks">fastest</a> backend web framework for Go. Easy to <a href="https://www.gitbook.com/book/kataras/iris/details">learn</a>,  while it's highly customizable. <br/>
+The <a href="https://github.com/kataras/iris#benchmarks">fastest</a> backend web framework for Go.
+<br/>
+Easy to <a href="https://www.gitbook.com/book/kataras/iris/details">learn</a>,  while it's highly customizable. <br/>
 Ideally suited for both experienced and novice <b>Developers</b>.
 <br/>
 
@@ -35,7 +38,7 @@ Ideally suited for both experienced and novice <b>Developers</b>.
 
 
 
-Quick look
+Quick Look
 ------------
 
 ```go
@@ -213,13 +216,13 @@ If you are interested in contributing to the Iris project, please see the docume
 License
 ------------
 
-This project is licensed under the MIT License.
+This project is licensed under the Apache License, Version 2.0.
 
 License can be found [here](LICENSE).
 
 [Travis Widget]: https://img.shields.io/travis/kataras/iris.svg?style=flat-square
 [Travis]: http://travis-ci.org/kataras/iris
-[License Widget]: https://img.shields.io/badge/license-MIT%20%20License%20-E91E63.svg?style=flat-square
+[License Widget]: https://img.shields.io/badge/license-Apache%202.0%20%20-E91E63.svg?style=flat-square
 [License]: https://github.com/kataras/iris/blob/master/LICENSE
 [Release Widget]: https://img.shields.io/badge/release-v4.2.3-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/iris/releases
