@@ -280,8 +280,8 @@ func (ctx *Context) RequestHeader(k string) string {
 // IsAjax returns true if this request is an 'ajax request'( XMLHttpRequest)
 //
 // Read more at: http://www.w3schools.com/ajax/
-func IsAjax() bool {
-	return (c.RequestHeader("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest")
+func (ctx *Context) IsAjax() bool {
+	return ctx.RequestHeader("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest"
 }
 
 // FormValueString returns a single value, as string, from post request's data
