@@ -28,6 +28,7 @@ type (
 		RequestIP() string
 		RemoteAddr() string
 		RequestHeader(k string) string
+		IsAjax() bool
 		FormValueString(string) string
 		FormValues(string) []string
 		PostValuesAll() map[string][]string

@@ -2,6 +2,10 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras/iris` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+## 4.2.2 -> 4.2.3
+
+- [Add IsAjax() convenience method](https://github.com/kataras/iris/issues/423)
+
 ## 4.2.1 -> 4.2.2
 
 - Fix [sessiondb issue 416](https://github.com/kataras/iris/issues/416)

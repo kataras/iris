@@ -18,7 +18,7 @@
 <br/>
 
 
-<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20version%20-%204.2.2%20-blue.svg?style=flat-square" alt="Releases"></a>
+<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20version%20-%204.2.3%20-blue.svg?style=flat-square" alt="Releases"></a>
 
 <a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/%20examples-repository-3362c2.svg?style=flat-square" alt="Examples"></a>
 
@@ -178,7 +178,7 @@ I recommend writing your API tests using this new library, [httpexpect](https://
 Versioning
 ------------
 
-Current: **v4.2.2**
+Current: **v4.2.3**
 
 >  Iris is an active project
 
@@ -221,7 +221,7 @@ License can be found [here](LICENSE).
 [Travis]: http://travis-ci.org/kataras/iris
 [License Widget]: https://img.shields.io/badge/license-MIT%20%20License%20-E91E63.svg?style=flat-square
 [License]: https://github.com/kataras/iris/blob/master/LICENSE
-[Release Widget]: https://img.shields.io/badge/release-v4.2.2-blue.svg?style=flat-square
+[Release Widget]: https://img.shields.io/badge/release-v4.2.3-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/iris/releases
 [Chat Widget]: https://img.shields.io/badge/community-chat-00BCD4.svg?style=flat-square
 [Chat]: https://kataras.rocket.chat/channel/iris
