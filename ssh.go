@@ -486,7 +486,13 @@ var standardCommands = Commands{Command{Name: "help", Description: "Opens up the
 func (s *SSHServer) writeHelp(wr io.Writer) {
 	port := parsePort(s.Host)
 	hostname := parseHostname(s.Host)
-
+	defer func() {
+		if r := recover(); r != nil {
+			// means that user-dev has old version of Go Programming Language in her/his machine, so print a message to the server terminal
+			// which will help the dev, NOT the client
+			s.logf("[IRIS SSH] Help message is disabled, please install Go Programming Language, at least version 1.7: https://golang.org/dl/")
+		}
+	}()
 	data := map[string]interface{}{
 		"Hostname": hostname, "PortDeclaration": "-p " + strconv.Itoa(port),
 		"Commands": append(s.Commands, standardCommands...),
