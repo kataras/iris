@@ -260,7 +260,11 @@ func (s *Framework) Set(setters ...OptionSetter) {
 
 	// because of the reason that an update can be executed while Iris is running,
 	// this is the only configuration field which is re-checked at runtime for that type of action.
-	//
+	// exists on initialize() also in order to cover the usage of: iris.Config.CheckForUpdates = true
+	s.checkForUpdates()
+}
+
+func (s *Framework) checkForUpdates() {
 	// note: we could use the IsDevelopment configuration field to do that BUT
 	// the developer may want to check for updates without, for example, re-build template files (comes from IsDevelopment) on each request
 	if s.Config.CheckForUpdates {
@@ -350,6 +354,9 @@ func (s *Framework) initialize() {
 	if s.SSH != nil && s.SSH.Enabled() {
 		s.SSH.bindTo(s)
 	}
+
+	// updates, to cover the default station's irs.Config.checkForUpdates
+	s.checkForUpdates()
 }
 
 // Go starts the iris station, listens to all registered servers, and prepare only if Virtual
