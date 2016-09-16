@@ -78,7 +78,7 @@ import (
 
 const (
 	// Version is the current version of the Iris web framework
-	Version = "4.2.4"
+	Version = "4.2.5"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -136,8 +136,9 @@ type (
 	// FrameworkAPI contains the main Iris Public API
 	FrameworkAPI interface {
 		MuxAPI
-		Must(error)
 		Set(...OptionSetter)
+		CheckForUpdates(bool)
+		Must(error)
 		AddServer(...OptionServerSettter) *Server
 		ListenTo(...OptionServerSettter) error
 		Listen(string)
@@ -242,77 +243,6 @@ func New(setters ...OptionSetter) *Framework {
 	return s
 }
 
-// Set sets an option aka configuration field to the default iris instance
-func Set(setters ...OptionSetter) {
-	Default.Set(setters...)
-}
-
-// Set sets an option aka configuration field to this iris instance
-func (s *Framework) Set(setters ...OptionSetter) {
-	if s.Config == nil {
-		defaultConfiguration := DefaultConfiguration()
-		s.Config = &defaultConfiguration
-	}
-
-	for _, setter := range setters {
-		setter.Set(s.Config)
-	}
-
-	// because of the reason that an update can be executed while Iris is running,
-	// this is the only configuration field which is re-checked at runtime for that type of action.
-	// exists on initialize() also in order to cover the usage of: iris.Config.CheckForUpdates = true
-	s.checkForUpdates()
-}
-
-func (s *Framework) checkForUpdates() {
-	// note: we could use the IsDevelopment configuration field to do that BUT
-	// the developer may want to check for updates without, for example, re-build template files (comes from IsDevelopment) on each request
-	if s.Config.CheckForUpdates {
-		if s.updateIris() { // if updated, then do not run the web server
-			exitWaitDuration := time.Duration(0)
-			if s.Logger != nil {
-				exitWaitDuration = 5 * time.Second
-				s.Logger.Println("exiting now...")
-			}
-
-			time.AfterFunc(exitWaitDuration, func() {
-				os.Exit(0)
-			})
-		}
-	}
-}
-
-// global once because is not necessary to check for updates on more than one iris station*
-var updateOnce sync.Once
-
-const (
-	githubOwner = "kataras"
-	githubRepo  = "iris"
-)
-
-func (s *Framework) updateIris() bool {
-	updated := false
-
-	updateOnce.Do(func() {
-		writer := s.Config.LoggerOut
-
-		if writer == nil {
-			writer = os.Stdout // we need a writer because the update process will not be silent.
-		}
-
-		fs.DefaultUpdaterAlreadyInstalledMessage = "INFO: Running with the latest version(%s)\n"
-		updater, err := fs.GetUpdater(githubOwner, githubRepo, Version)
-
-		if err != nil {
-			writer.Write([]byte("Update failed: " + err.Error()))
-		}
-
-		updated = updater.Run(fs.Stdout(writer), fs.Stderr(writer), fs.Silent(false))
-	})
-
-	return updated
-}
-
 func (s *Framework) initialize() {
 	// prepare the serializers, if not any other serializers setted for the default serializer types(json,jsonp,xml,markdown,text,data) then the defaults are setted:
 	serializer.RegisterDefaults(s.serializers)
@@ -356,7 +286,12 @@ func (s *Framework) initialize() {
 	}
 
 	// updates, to cover the default station's irs.Config.checkForUpdates
-	s.checkForUpdates()
+	// note: we could use the IsDevelopment configuration field to do that BUT
+	// the developer may want to check for updates without, for example, re-build template files (comes from IsDevelopment) on each request
+	if s.Config.CheckForUpdates {
+		s.CheckForUpdates(false)
+	}
+
 }
 
 // Go starts the iris station, listens to all registered servers, and prepare only if Virtual
@@ -410,6 +345,78 @@ func (s *Framework) Go() error {
 	s.Close() // btw, don't panic here
 
 	return nil
+}
+
+// Set sets an option aka configuration field to the default iris instance
+func Set(setters ...OptionSetter) {
+	Default.Set(setters...)
+}
+
+// Set sets an option aka configuration field to this iris instance
+func (s *Framework) Set(setters ...OptionSetter) {
+	if s.Config == nil {
+		defaultConfiguration := DefaultConfiguration()
+		s.Config = &defaultConfiguration
+	}
+
+	for _, setter := range setters {
+		setter.Set(s.Config)
+	}
+}
+
+// global once because is not necessary to check for updates on more than one iris station*
+var updateOnce sync.Once
+
+const (
+	githubOwner = "kataras"
+	githubRepo  = "iris"
+)
+
+// CheckForUpdates will try to search for newer version of Iris based on the https://github.com/kataras/iris/releases
+// If a newer version found then the app will ask the he dev/user if want to update the 'x' version
+// if 'y' is pressed then the updater will try to install the latest version
+// the updater, will notify the dev/user that the update is finished and should restart the App manually.
+func CheckForUpdates(force bool) {
+	Default.CheckForUpdates(force)
+}
+
+// CheckForUpdates will try to search for newer version of Iris based on the https://github.com/kataras/iris/releases
+// If a newer version found then the app will ask the he dev/user if want to update the 'x' version
+// if 'y' is pressed then the updater will try to install the latest version
+// the updater, will notify the dev/user that the update is finished and should restart the App manually.
+// Note: exported func CheckForUpdates exists because of the reason that an update can be executed while Iris is running
+func (s *Framework) CheckForUpdates(force bool) {
+	updated := false
+	checker := func() {
+		writer := s.Config.LoggerOut
+
+		if writer == nil {
+			writer = os.Stdout // we need a writer because the update process will not be silent.
+		}
+
+		fs.DefaultUpdaterAlreadyInstalledMessage = "INFO: Running with the latest version(%s)\n"
+		updater, err := fs.GetUpdater(githubOwner, githubRepo, Version)
+
+		if err != nil {
+			writer.Write([]byte("Update failed: " + err.Error()))
+		}
+
+		updated = updater.Run(fs.Stdout(writer), fs.Stderr(writer), fs.Silent(false))
+	}
+
+	if force {
+		checker()
+	} else {
+		updateOnce.Do(checker)
+	}
+
+	if updated { // if updated, then do not run the web server
+		if s.Logger != nil {
+			s.Logger.Println("exiting now...")
+		}
+		os.Exit(0)
+	}
+
 }
 
 // Must panics on error, it panics on registed iris' logger
