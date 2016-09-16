@@ -41,6 +41,22 @@ func (o OptionSet) Set(c *Configuration) {
 //
 // Configuration is also implements the OptionSet so it's a valid option itself, this is briliant enough
 type Configuration struct {
+	// CheckForUpdates will try to search for newer version of Iris based on the https://github.com/kataras/iris/releases
+	// If a newer version found then the app will ask the he dev/user if want to update the 'x' version
+	// if 'y' is pressed then the updater will try to install the latest version
+	// the updater, will notify the dev/user that the update is finished and should restart the App manually.
+	// Notes:
+	// 1. Experimental feature
+	// 2. If setted to true, the app will have a little startup delay
+	// 3. If you as developer edited the $GOPATH/src/github/kataras or any other Iris' Go dependencies at the past
+	//    then the update process will fail.
+	//
+	// Usage: iris.Set(iris.OptionCheckForUpdates(true)) or
+	//        iris.Config.CheckForUpdates = true or
+	//        app := iris.New(iris.OptionCheckForUpdates(true))
+	// Default is false
+	CheckForUpdates bool
+
 	// DisablePathCorrection corrects and redirects the requested path to the registed path
 	// for example, if /home/ path is requested but no handler for this Route found,
 	// then the Router checks if /home handler exists, if yes,
@@ -151,6 +167,27 @@ func (c Configuration) Set(main *Configuration) {
 
 // All options starts with "Option" preffix in order to be easier to find what dev searching for
 var (
+	// OptionCheckForUpdates will try to search for newer version of Iris based on the https://github.com/kataras/iris/releases
+	// If a newer version found then the app will ask the he dev/user if want to update the 'x' version
+	// if 'y' is pressed then the updater will try to install the latest version
+	// the updater, will notify the dev/user that the update is finished and should restart the App manually.
+	// Notes:
+	// 1. Experimental feature
+	// 2. If setted to true, the app will have a little startup delay
+	// 3. If you as developer edited the $GOPATH/src/github/kataras or any other Iris' Go dependencies at the past
+	//    then the update process will fail.
+	//
+	// Usage: iris.Set(iris.OptionCheckForUpdates(true)) or
+	//        iris.Config.CheckForUpdates = true or
+	//        app := iris.New(iris.OptionCheckForUpdates(true))
+	// Default is false
+	OptionCheckForUpdates = func(val bool) OptionSet {
+		return func(c *Configuration) {
+			c.CheckForUpdates = val
+		}
+
+	}
+
 	// OptionDisablePathCorrection corrects and redirects the requested path to the registed path
 	// for example, if /home/ path is requested but no handler for this Route found,
 	// then the Router checks if /home handler exists, if yes,
@@ -163,12 +200,14 @@ var (
 		}
 
 	}
+
 	// OptionDisablePathEscape when is false then its escapes the path, the named parameters (if any).
 	OptionDisablePathEscape = func(val bool) OptionSet {
 		return func(c *Configuration) {
 			c.DisablePathEscape = val
 		}
 	}
+
 	// OptionDisableBanner outputs the iris banner at startup
 	//
 	// Default is false
@@ -177,6 +216,7 @@ var (
 			c.DisableBanner = val
 		}
 	}
+
 	// OptionLoggerOut is the destination for output
 	//
 	// Default is os.Stdout
@@ -185,6 +225,7 @@ var (
 			c.LoggerOut = val
 		}
 	}
+
 	// OptionLoggerPreffix is the logger's prefix to write at beginning of each line
 	//
 	// Default is [IRIS]
@@ -193,6 +234,7 @@ var (
 			c.LoggerPreffix = val
 		}
 	}
+
 	// OptionProfilePath a the route path, set it to enable http pprof tool
 	// Default is empty, if you set it to a $path, these routes will handled:
 	OptionProfilePath = func(val string) OptionSet {
@@ -200,6 +242,7 @@ var (
 			c.ProfilePath = val
 		}
 	}
+
 	// OptionDisableTemplateEngines set to true to disable loading the default template engine (html/template) and disallow the use of iris.UseEngine
 	// Default is false
 	OptionDisableTemplateEngines = func(val bool) OptionSet {
@@ -207,6 +250,7 @@ var (
 			c.DisableTemplateEngines = val
 		}
 	}
+
 	// OptionIsDevelopment iris will act like a developer, for example
 	// If true then re-builds the templates on each request
 	// Default is false
@@ -215,12 +259,14 @@ var (
 			c.IsDevelopment = val
 		}
 	}
+
 	// OptionTimeFormat time format for any kind of datetime parsing
 	OptionTimeFormat = func(val string) OptionSet {
 		return func(c *Configuration) {
 			c.TimeFormat = val
 		}
 	}
+
 	// OptionCharset character encoding for various rendering
 	// used for templates and the rest of the responses
 	// Default is "UTF-8"
@@ -229,6 +275,7 @@ var (
 			c.Charset = val
 		}
 	}
+
 	// OptionGzip enables gzip compression on your Render actions, this includes any type of render, templates and pure/raw content
 	// If you don't want to enable it globaly, you could just use the third parameter on context.Render("myfileOrResponse", structBinding{}, iris.RenderOptions{"gzip": true})
 	// Default is false
@@ -282,6 +329,7 @@ var (
 // DefaultConfiguration returns the default configuration for an Iris station, fills the main Configuration
 func DefaultConfiguration() Configuration {
 	return Configuration{
+		CheckForUpdates:        false,
 		DisablePathCorrection:  DefaultDisablePathCorrection,
 		DisablePathEscape:      DefaultDisablePathEscape,
 		DisableBanner:          false,

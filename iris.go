@@ -77,8 +77,8 @@ import (
 )
 
 const (
-	// Version of the iris
-	Version = "4.2.3"
+	// Version is the current version of the Iris web framework
+	Version = "4.2.4"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -257,6 +257,56 @@ func (s *Framework) Set(setters ...OptionSetter) {
 	for _, setter := range setters {
 		setter.Set(s.Config)
 	}
+
+	// because of the reason that an update can be executed while Iris is running,
+	// this is the only configuration field which is re-checked at runtime for that type of action.
+	//
+	// note: we could use the IsDevelopment configuration field to do that BUT
+	// the developer may want to check for updates without, for example, re-build template files (comes from IsDevelopment) on each request
+	if s.Config.CheckForUpdates {
+		if s.updateIris() { // if updated, then do not run the web server
+			exitWaitDuration := time.Duration(0)
+			if s.Logger != nil {
+				exitWaitDuration = 5 * time.Second
+				s.Logger.Println("exiting now...")
+			}
+
+			time.AfterFunc(exitWaitDuration, func() {
+				os.Exit(0)
+			})
+		}
+	}
+}
+
+// global once because is not necessary to check for updates on more than one iris station*
+var updateOnce sync.Once
+
+const (
+	githubOwner = "kataras"
+	githubRepo  = "iris"
+)
+
+func (s *Framework) updateIris() bool {
+	updated := false
+
+	updateOnce.Do(func() {
+		writer := s.Config.LoggerOut
+
+		if writer == nil {
+			writer = os.Stdout // we need a writer because the update process will not be silent.
+		}
+
+		fs.DefaultUpdaterAlreadyInstalledMessage = "INFO: Running with the latest version(%s)\n"
+		updater, err := fs.GetUpdater(githubOwner, githubRepo, Version)
+
+		if err != nil {
+			writer.Write([]byte("Update failed: " + err.Error()))
+		}
+
+		updated = updater.Run(fs.Stdout(writer), fs.Stderr(writer), fs.Silent(false))
+	})
+
+	return updated
 }
 
 func (s *Framework) initialize() {

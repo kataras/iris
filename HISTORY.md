@@ -2,6 +2,27 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras/iris` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+## 4.2.3 -> 4.2.4
+
+- **NEW Experimental feature**: Updater with a `CheckForUpdates` [configuration](https://github.com/kataras/iris/blob/master/configuration.go) field, as requested [here](https://github.com/kataras/iris/issues/401)
+```go
+// CheckForUpdates will try to search for newer version of Iris based on the https://github.com/kataras/iris/releases
+// If a newer version found then the app will ask the he dev/user if want to update the 'x' version
+// if 'y' is pressed then the updater will try to install the latest version
+// the updater, will notify the dev/user that the update is finished and should restart the App manually.
+// Notes:
+// 1. Experimental feature
+// 2. If setted to true, the app will have a little startup delay
+// 3. If you as developer edited the $GOPATH/src/github/kataras or any other Iris' Go dependencies at the past
+//    then the update process will fail.
+//
+// Usage: iris.Set(iris.OptionCheckForUpdates(true)) or
+//        iris.Config.CheckForUpdates = true or
+//        app := iris.New(iris.OptionCheckForUpdates(true))
+// Default is false
+CheckForUpdates bool
+```
+
 ## 4.2.2 -> 4.2.3
 
 - [Add IsAjax() convenience method](https://github.com/kataras/iris/issues/423)
