@@ -78,7 +78,7 @@ import (
 
 const (
 	// Version is the current version of the Iris web framework
-	Version = "4.2.5"
+	Version = "4.2.6"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -288,8 +288,10 @@ func (s *Framework) initialize() {
 	// updates, to cover the default station's irs.Config.checkForUpdates
 	// note: we could use the IsDevelopment configuration field to do that BUT
 	// the developer may want to check for updates without, for example, re-build template files (comes from IsDevelopment) on each request
-	if s.Config.CheckForUpdates {
+	if s.Config.CheckForUpdatesSync {
 		s.CheckForUpdates(false)
+	} else if s.Config.CheckForUpdates {
+		go func() { s.CheckForUpdates(false) }()
 	}
 
 }

@@ -47,7 +47,8 @@ type Configuration struct {
 	// the updater, will notify the dev/user that the update is finished and should restart the App manually.
 	// Notes:
 	// 1. Experimental feature
-	// 2. If setted to true, the app will have a little startup delay
+	// 2. If setted to true, the app will start the server normally and runs the updater in its own goroutine,
+	//    for a sync operation see CheckForUpdatesSync.
 	// 3. If you as developer edited the $GOPATH/src/github/kataras or any other Iris' Go dependencies at the past
 	//    then the update process will fail.
 	//
@@ -56,6 +57,14 @@ type Configuration struct {
 	//        app := iris.New(iris.OptionCheckForUpdates(true))
 	// Default is false
 	CheckForUpdates bool
+	// CheckForUpdatesSync checks for updates before server starts, it will have a little delay depends on the machine's download's speed
+	// See CheckForUpdates for more
+	// Notes:
+	// 1. you could use the CheckForUpdatesSync while CheckForUpdates is false, set this or CheckForUpdates to true not both
+	// 2. if both CheckForUpdates and CheckForUpdatesSync are setted to true then the updater will run in sync mode, before server server starts.
+	//
+	// Default is false
+	CheckForUpdatesSync bool
 
 	// DisablePathCorrection corrects and redirects the requested path to the registed path
 	// for example, if /home/ path is requested but no handler for this Route found,
@@ -186,6 +195,18 @@ var (
 			c.CheckForUpdates = val
 		}
 
+	}
+	// CheckForUpdatesSync checks for updates before server starts, it will have a little delay depends on the machine's download's speed
+	// See CheckForUpdates for more
+	// Notes:
+	// 1. you could use the CheckForUpdatesSync while CheckForUpdates is false, set this or CheckForUpdates to true not both
+	// 2. if both CheckForUpdates and CheckForUpdatesSync are setted to true then the updater will run in sync mode, before server server starts.
+	//
+	// Default is false
+	OptionCheckForUpdatesSync = func(val bool) OptionSet {
+		return func(c *Configuration) {
+			c.CheckForUpdatesSync = val
+		}
 	}
 
 	// OptionDisablePathCorrection corrects and redirects the requested path to the registed path
@@ -330,6 +351,7 @@ var (
 func DefaultConfiguration() Configuration {
 	return Configuration{
 		CheckForUpdates:        false,
+		CheckForUpdatesSync:    false,
 		DisablePathCorrection:  DefaultDisablePathCorrection,
 		DisablePathEscape:      DefaultDisablePathEscape,
 		DisableBanner:          false,

@@ -26,7 +26,7 @@ I'm  grateful for all the generous donations. Iris is fully funded by these dona
 
 - [Ryan Brooks](https://github.com/ryanbyyc) donated 50 EUR at May 11
 - [Juan Sebastián Suárez Valencia](https://github.com/Juanses) donated 20 EUR at September 11
-- Anonymous(PRIVACY PROTECTION) donated 20 EUR at September 16
+- [Bob Lee](https://github.com/li3p) donated 20 EUR at September 16
 
 > The name of the donator added after his/her permission.
 

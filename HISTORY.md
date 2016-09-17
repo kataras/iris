@@ -2,6 +2,10 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras/iris` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+## 4.2.5 -> 4.2.6
+
+- **CHANGE**: Updater (See 4.2.4 and 4.2.3) runs in its own goroutine now, unless the `iris.Config.CheckForUpdatesSync` is true.
+
 ## 4.2.4 -> 4.2.5
 
 - **ADDED**: `iris.CheckForUpdates(force bool)` which can run the updater(look 4.2.4) at runtime too, updater is tested and worked at dev machine.
