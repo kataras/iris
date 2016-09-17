@@ -667,6 +667,27 @@ type ServerConfiguration struct {
 	// By default response write timeout is unlimited.
 	WriteTimeout time.Duration
 
+	// Maximum number of concurrent client connections allowed per IP.
+	//
+	// By default unlimited number of concurrent connections
+	// may be established to the server from a single IP address.
+	// Usage: iris.ListenTo{iris.OptionServerListeningAddr(":8080"), iris.OptionServerMaxConnsPerIP(300)}
+	//    or: iris.ListenTo(iris.ServerConfiguration{ListeningAddr: ":8080", MaxConnsPerIP: 300})
+	// for an optional second server with a different port you can always use:
+	//        iris.AddServer(iris.ServerConfiguration{ListeningAddr: ":9090", MaxConnsPerIP: 300})
+	MaxConnsPerIP int
+
+	// Maximum number of requests served per connection.
+	//
+	// The server closes connection after the last request.
+	// 'Connection: close' header is added to the last response.
+	//
+	// By default unlimited number of requests may be served per connection.
+	// Usage: iris.ListenTo{iris.OptionServerListeningAddr(":8080"), iris.OptionServerMaxConnsPerIP(300)}
+	//    or: iris.ListenTo(iris.ServerConfiguration{ListeningAddr: ":8080", MaxRequestsPerConn:100})
+	// for an optional second server with a different port you can always use:
+	//        iris.AddServer(iris.ServerConfiguration{ListeningAddr: ":9090", MaxRequestsPerConn:100})
+	MaxRequestsPerConn int
 	// RedirectTo, defaults to empty, set it in order to override the station's handler and redirect all requests to this address which is of form(HOST:PORT or :PORT)
 	//
 	// NOTE: the http status is 'StatusMovedPermanently', means one-time-redirect(the browser remembers the new addr and goes to the new address without need to request something from this server
@@ -807,6 +828,28 @@ var (
 		}
 	}
 
+	// OptionServerMaxConnsPerIP Maximum number of concurrent client connections allowed per IP.
+	//
+	// By default unlimited number of concurrent connections
+	// may be established to the server from a single IP address.
+	OptionServerMaxConnsPerIP = func(val int) OptionServerSet {
+		return func(c *ServerConfiguration) {
+			c.MaxConnsPerIP = val
+		}
+	}
+
+	// OptionServerMaxRequestsPerConn Maximum number of requests served per connection.
+	//
+	// The server closes connection after the last request.
+	// 'Connection: close' header is added to the last response.
+	//
+	// By default unlimited number of requests may be served per connection.
+	OptionServerMaxRequestsPerConn = func(val int) OptionServerSet {
+		return func(c *ServerConfiguration) {
+			c.MaxRequestsPerConn = val
+		}
+	}
+
 	// RedirectTo, defaults to empty, set it in order to override the station's handler and redirect all requests to this address which is of form(HOST:PORT or :PORT)
 	//
 	// NOTE: the http status is 'StatusMovedPermanently', means one-time-redirect(the browser remembers the new addr and goes to the new address without need to request something from this server
@@ -927,6 +970,8 @@ func DefaultServerConfiguration() ServerConfiguration {
 		MaxRequestBodySize: DefaultMaxRequestBodySize,
 		ReadBufferSize:     DefaultReadBufferSize,
 		WriteBufferSize:    DefaultWriteBufferSize,
+		MaxConnsPerIP:      0,
+		MaxRequestsPerConn: 0,
 		RedirectTo:         "",
 		Virtual:            false,
 		VListeningAddr:     "",

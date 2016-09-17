@@ -437,6 +437,8 @@ func (s *Server) Open(h fasthttp.RequestHandler) error {
 	s.Server.WriteBufferSize = s.Config.WriteBufferSize
 	s.Server.ReadTimeout = s.Config.ReadTimeout
 	s.Server.WriteTimeout = s.Config.WriteTimeout
+	s.Server.MaxConnsPerIP = s.Config.MaxConnsPerIP
+	s.Server.MaxRequestsPerConn = s.Config.MaxRequestsPerConn
 
 	if s.Config.RedirectTo != "" {
 		// override the handler and redirect all requests to this addr

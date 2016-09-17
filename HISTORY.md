@@ -5,6 +5,27 @@
 ## 4.2.5 -> 4.2.6
 
 - **CHANGE**: Updater (See 4.2.4 and 4.2.3) runs in its own goroutine now, unless the `iris.Config.CheckForUpdatesSync` is true.
+- **ADDED**: To align with fasthttp server's configuration, iris has these new Server Configuration's fields, which allows you to set a type of rate limit:
+```go
+// Maximum number of concurrent client connections allowed per IP.
+//
+// By default unlimited number of concurrent connections
+// may be established to the server from a single IP address.
+MaxConnsPerIP int
+
+// Maximum number of requests served per connection.
+//
+// The server closes connection after the last request.
+// 'Connection: close' header is added to the last response.
+//
+// By default unlimited number of requests may be served per connection.
+MaxRequestsPerConn int
+
+// Usage: iris.ListenTo{iris.OptionServerListeningAddr(":8080"), iris.OptionServerMaxConnsPerIP(300)}
+//    or: iris.ListenTo(iris.ServerConfiguration{ListeningAddr: ":8080", MaxConnsPerIP: 300, MaxRequestsPerConn:100})
+// for an optional second server with a different port you can always use:
+//        iris.AddServer(iris.ServerConfiguration{ListeningAddr: ":9090", MaxConnsPerIP: 300, MaxRequestsPerConn:100})
+```
 
 ## 4.2.4 -> 4.2.5
 
