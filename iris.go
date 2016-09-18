@@ -78,7 +78,7 @@ import (
 
 const (
 	// Version is the current version of the Iris web framework
-	Version = "4.2.7"
+	Version = "4.2.8"
 
 	banner = `         _____      _
         |_   _|    (_)
