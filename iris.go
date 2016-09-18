@@ -238,11 +238,11 @@ func New(setters ...OptionSetter) *Framework {
 		// set the servemux, which will provide us the public API also, with its context pool
 		mux := newServeMux(s.Logger)
 		mux.onLookup = s.Plugins.DoPreLookup
+		s.contextPool.New = func() interface{} {
+			return &Context{framework: s, Params: make(PathParameters, s.mux.maxParameters)}
+		}
 		// set the public router API (and party)
 		s.muxAPI = &muxAPI{mux: mux, relativePath: "/"}
-		s.contextPool.New = func() interface{} {
-			return &Context{framework: s}
-		}
 		s.Servers = &ServerList{mux: mux, servers: make([]*Server, 0)}
 		s.Available = make(chan bool)
 	}
@@ -282,6 +282,7 @@ func (s *Framework) initialize() {
 	//  prepare the mux & the server
 	s.mux.setCorrectPath(!s.Config.DisablePathCorrection)
 	s.mux.setEscapePath(!s.Config.DisablePathEscape)
+
 	// set the debug profiling handlers if ProfilePath is setted
 	if debugPath := s.Config.ProfilePath; debugPath != "" {
 		s.Handle(MethodGet, debugPath+"/*action", profileMiddleware(debugPath)...)
@@ -298,15 +299,15 @@ func (s *Framework) initialize() {
 	if s.Config.CheckForUpdatesSync {
 		s.CheckForUpdates(false)
 	} else if s.Config.CheckForUpdates {
-		go func() { s.CheckForUpdates(false) }()
+		go s.CheckForUpdates(false)
 	}
 
 }
 
 // AcquireCtx gets an Iris' Context from pool
 // see iris.Handler & ReleaseCtx, Go()
-func AcquireCtx(reqCtx *fasthttp.RequestCtx) {
-	Default.AcquireCtx(reqCtx)
+func AcquireCtx(reqCtx *fasthttp.RequestCtx) *Context {
+	return Default.AcquireCtx(reqCtx)
 }
 
 // ReleaseCtx puts the Iris' Context back to the pool in order to be re-used
@@ -347,15 +348,9 @@ func (s *Framework) Go() error {
 		serve := s.mux.BuildHandler()
 		// build the fasthttp handler to bind it to the servers
 		defaultHandler := func(reqCtx *fasthttp.RequestCtx) {
-			ctx := s.contextPool.Get().(*Context) // Changed to use the pool's New 09/07/2016, ~ -4k nanoseconds(9 bench tests) per requests (better performance)
-			ctx.RequestCtx = reqCtx
-
+			ctx := s.AcquireCtx(reqCtx)
 			serve(ctx)
-
-			ctx.Params = ctx.Params[0:0]
-			ctx.middleware = nil
-			ctx.session = nil
-			s.contextPool.Put(ctx)
+			s.ReleaseCtx(ctx)
 		}
 
 		s.Handler = defaultHandler

@@ -1335,8 +1335,9 @@ type (
 	}
 
 	serveMux struct {
-		tree    *muxTree
-		lookups []*route
+		tree          *muxTree
+		lookups       []*route
+		maxParameters uint8
 
 		onLookup func(Route)
 
@@ -1454,6 +1455,7 @@ func (mux *serveMux) build() (func(reqCtx *fasthttp.RequestCtx) string, func([]b
 		if tree == nil {
 			//first time we register a route to this method with this domain
 			tree = &muxTree{method: r.method, subdomain: r.subdomain, entry: &muxEntry{}, next: nil}
+
 			if mux.tree == nil {
 				// it's the first entry
 				mux.tree = tree
@@ -1473,6 +1475,10 @@ func (mux *serveMux) build() (func(reqCtx *fasthttp.RequestCtx) string, func([]b
 		// we have different tree for each of subdomains, now you can use everything you can use with the normal paths ( before you couldn't set /any/*path)
 		if err := tree.entry.add(r.path, r.middleware); err != nil {
 			mux.logger.Panic(err.Error())
+		}
+
+		if mp := tree.entry.paramsLen; mp > mux.maxParameters {
+			mux.maxParameters = mp
 		}
 	}
 
