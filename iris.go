@@ -78,7 +78,7 @@ import (
 
 const (
 	// Version is the current version of the Iris web framework
-	Version = "4.2.8"
+	Version = "4.2.9"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -239,7 +239,7 @@ func New(setters ...OptionSetter) *Framework {
 		mux := newServeMux(s.Logger)
 		mux.onLookup = s.Plugins.DoPreLookup
 		s.contextPool.New = func() interface{} {
-			return &Context{framework: s, Params: make(PathParameters, s.mux.maxParameters)}
+			return &Context{framework: s}
 		}
 		// set the public router API (and party)
 		s.muxAPI = &muxAPI{mux: mux, relativePath: "/"}

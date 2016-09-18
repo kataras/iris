@@ -2,7 +2,7 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras/iris` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
-## 4.2.7 -> 4.2.8
+## 4.2.7 -> 4.2.8 & 4.2.9
 
 -**External FIX**: [template syntax error causes a "template doesn't exist"](https://github.com/kataras/iris/issues/415)
 
