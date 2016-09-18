@@ -145,6 +145,8 @@ type (
 		ListenTLS(string, string, string)
 		ListenUNIX(string, os.FileMode)
 		ListenVirtual(...string) *Server
+		AcquireCtx(*fasthttp.RequestCtx) *Context
+		ReleaseCtx(*Context)
 		Go() error
 		Close() error
 		UseSessionDB(sessions.Database)
@@ -301,16 +303,24 @@ func (s *Framework) initialize() {
 
 }
 
-// Go starts the iris station, listens to all registered servers, and prepare only if Virtual
-func Go() error {
-	return Default.Go()
+// AcquireCtx gets an Iris' Context from pool
+// see iris.Handler & ReleaseCtx, Go()
+func AcquireCtx(reqCtx *fasthttp.RequestCtx) {
+	Default.AcquireCtx(reqCtx)
+}
+
+// ReleaseCtx puts the Iris' Context back to the pool in order to be re-used
+// see iris.Handler & AcquireCtx, Go()
+func ReleaseCtx(ctx *Context) {
+	Default.ReleaseCtx(ctx)
 }
 
 // AcquireCtx gets an Iris' Context from pool
 // see iris.Handler & ReleaseCtx, Go()
-func (s *Framework) AcquireCtx(reqCtx *fasthttp.RequestCtx) {
+func (s *Framework) AcquireCtx(reqCtx *fasthttp.RequestCtx) *Context {
 	ctx := s.contextPool.Get().(*Context) // Changed to use the pool's New 09/07/2016, ~ -4k nanoseconds(9 bench tests) per requests (better performance)
 	ctx.RequestCtx = reqCtx
+	return ctx
 }
 
 // ReleaseCtx puts the Iris' Context back to the pool in order to be re-used
@@ -320,6 +330,11 @@ func (s *Framework) ReleaseCtx(ctx *Context) {
 	ctx.middleware = nil
 	ctx.session = nil
 	s.contextPool.Put(ctx)
+}
+
+// Go starts the iris station, listens to all registered servers, and prepare only if Virtual
+func Go() error {
+	return Default.Go()
 }
 
 // Go starts the iris station, listens to all registered servers, and prepare only if Virtual
