@@ -33,8 +33,12 @@ The <a href="https://github.com/kataras/iris#benchmarks">fastest</a> backend web
 Easy to <a href="https://www.gitbook.com/book/kataras/iris/details">learn</a>,  while it's highly customizable. <br/>
 Ideally suited for both experienced and novice <b>Developers</b>.
 <br/>
+<br/>
+
+<img src="https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png" href="#benchmarks" alt="Benchmark Wizzard July 21, 2016- Processing Time Horizontal Graph" />
 
 </p>
+
 
 
 
@@ -47,24 +51,38 @@ package main
 import "github.com/kataras/iris"
 
 func main() {
-	iris.Favicon("./favicon.ico")
+  // serve static files, just a fav here
+  iris.Favicon("./favicon.ico")
 
-	iris.Get("/", func(ctx *iris.Context) {
-		ctx.Render("index.html")
-	})
+  // handle "/" - HTTP METHOD: "GET"
+  iris.Get("/", func(ctx *iris.Context) {
+    ctx.Render("index.html")
+  })
 
-	iris.Get("/login", func(ctx *iris.Context) {
-		ctx.Render("login.html", iris.Map{"Title": "Login Page"})
-	})
+  iris.Get("/login", func(ctx *iris.Context) {
+    ctx.Render("login.html", iris.Map{"Title": "Login Page"})
+  })
 
-	iris.Post("/login", func(ctx *iris.Context) {
-		secret := ctx.PostValue("secret")
-		ctx.Session().Set("secret", secret)
+  // handle "/login" - HTTP METHOD: "POST"
+  iris.Post("/login", func(ctx *iris.Context) {
+    secret := ctx.PostValue("secret")
+    ctx.Session().Set("secret", secret)
 
-		ctx.Redirect("/user")
-	})
+    ctx.Redirect("/user")
+  })
 
-	iris.Listen(":8080")
+  // handle websocket connections
+  iris.Config.Websocket.Endpoint = "/mychat"
+  iris.Websocket.OnConnection(func(c iris.WebsocketConnection) {
+    c.Join("myroom")
+
+    c.On("chat", func(message string){
+      c.To("myroom").Emit("chat", "From "+c.ID()+": "+message)
+    })
+  })
+
+  // serve requests at http://localhost:8080
+  iris.Listen(":8080")
 }
 ```
 
@@ -195,7 +213,7 @@ Todo
 ------------
 - [x] Use of the standard `log.Logger` instead of the `iris-contrib/logger`(colorful logger), make these changes to all middleware, examples and plugins.
 - [x] Implement, even, a better way to manage configuration/options, devs will be able to set their own custom options inside there. ` I'm thinking of something the last days, but it will have breaking changes. `
-- [ ] Implement an internal updater, as requested [here](https://github.com/kataras/iris/issues/401).
+- [x] Implement an internal updater, as requested [here](https://github.com/kataras/iris/issues/401).
 
 Iris is a **Community-Driven** Project, waiting for your suggestions and [feature requests](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=label%3A%22feature%20request%22)!
 
