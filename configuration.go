@@ -688,6 +688,7 @@ type ServerConfiguration struct {
 	// for an optional second server with a different port you can always use:
 	//        iris.AddServer(iris.ServerConfiguration{ListeningAddr: ":9090", MaxRequestsPerConn:100})
 	MaxRequestsPerConn int
+
 	// RedirectTo, defaults to empty, set it in order to override the station's handler and redirect all requests to this address which is of form(HOST:PORT or :PORT)
 	//
 	// NOTE: the http status is 'StatusMovedPermanently', means one-time-redirect(the browser remembers the new addr and goes to the new address without need to request something from this server

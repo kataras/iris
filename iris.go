@@ -78,7 +78,7 @@ import (
 
 const (
 	// Version is the current version of the Iris web framework
-	Version = "4.2.6"
+	Version = "4.2.7"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -167,6 +167,11 @@ type (
 	// Implements the FrameworkAPI
 	Framework struct {
 		*muxAPI
+		// Handler field which can change the default iris' mux behavior
+		// if you want to get benefit with iris' context make use of:
+		// ctx:= iris.AcquireCtx(*fasthttp.RequestCtx) to get the context at the beginning of your handler
+		// iris.ReleaseCtx(ctx) to release/put the context to the pool, at the very end of your custom handler.
+		Handler     fasthttp.RequestHandler
 		contextPool sync.Pool
 		Config      *Configuration
 		sessions    sessions.Sessions
@@ -301,24 +306,47 @@ func Go() error {
 	return Default.Go()
 }
 
+// AcquireCtx gets an Iris' Context from pool
+// see iris.Handler & ReleaseCtx, Go()
+func (s *Framework) AcquireCtx(reqCtx *fasthttp.RequestCtx) {
+	ctx := s.contextPool.Get().(*Context) // Changed to use the pool's New 09/07/2016, ~ -4k nanoseconds(9 bench tests) per requests (better performance)
+	ctx.RequestCtx = reqCtx
+}
+
+// ReleaseCtx puts the Iris' Context back to the pool in order to be re-used
+// see iris.Handler & AcquireCtx, Go()
+func (s *Framework) ReleaseCtx(ctx *Context) {
+	ctx.Params = ctx.Params[0:0]
+	ctx.middleware = nil
+	ctx.session = nil
+	s.contextPool.Put(ctx)
+}
+
 // Go starts the iris station, listens to all registered servers, and prepare only if Virtual
 func (s *Framework) Go() error {
 	s.initialize()
 	s.Plugins.DoPreListen(s)
-	// build the fasthttp handler to bind it to the servers
-	h := s.mux.Handler()
-	reqHandler := func(reqCtx *fasthttp.RequestCtx) {
-		ctx := s.contextPool.Get().(*Context) // Changed to use the pool's New 09/07/2016, ~ -4k nanoseconds(9 bench tests) per requests (better performance)
-		ctx.RequestCtx = reqCtx
 
-		h(ctx)
+	if s.Handler == nil { // use the 'h' which is the default mux' handler
+		// build and get the default mux' handler(*Context)
+		serve := s.mux.BuildHandler()
+		// build the fasthttp handler to bind it to the servers
+		defaultHandler := func(reqCtx *fasthttp.RequestCtx) {
+			ctx := s.contextPool.Get().(*Context) // Changed to use the pool's New 09/07/2016, ~ -4k nanoseconds(9 bench tests) per requests (better performance)
+			ctx.RequestCtx = reqCtx
 
-		ctx.Params = ctx.Params[0:0]
-		ctx.middleware = nil
-		ctx.session = nil
-		s.contextPool.Put(ctx)
+			serve(ctx)
+
+			ctx.Params = ctx.Params[0:0]
+			ctx.middleware = nil
+			ctx.session = nil
+			s.contextPool.Put(ctx)
+		}
+
+		s.Handler = defaultHandler
 	}
-	if firstErr := s.Servers.OpenAll(reqHandler); firstErr != nil {
+
+	if firstErr := s.Servers.OpenAll(s.Handler); firstErr != nil {
 		return firstErr
 	}
 

@@ -2,6 +2,10 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras/iris` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+## 4.2.6 -> 4.2.7
+
+- **ADDED**: You are now able to use a raw fasthttp handler as the router instead of the default Iris' one. Example [here](https://github.com/iris-contrib/examples/blob/master/custom_fasthttp_router/main.go). But remember that I'm always recommending to use the Iris' default which supports subdomains, group of routes(parties), auto path correction and many other built'n features. This exists for specific users who told me that they need a feature like that inside Iris, we have no performance cost at all so that's ok to exists.
+
 ## 4.2.5 -> 4.2.6
 
 - **CHANGE**: Updater (See 4.2.4 and 4.2.3) runs in its own goroutine now, unless the `iris.Config.CheckForUpdatesSync` is true.

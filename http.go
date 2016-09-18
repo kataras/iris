@@ -48,24 +48,25 @@ var (
 	AllMethods = [...]string{MethodGet, MethodPost, MethodPut, MethodDelete, MethodConnect, MethodHead, MethodPatch, MethodOptions, MethodTrace}
 
 	/* methods as []byte, these are really used by iris */
-	// methodGetBytes "GET"
-	methodGetBytes = []byte(MethodGet)
-	// methodPostBytes "POST"
-	methodPostBytes = []byte(MethodPost)
-	// methodPutBytes "PUT"
-	methodPutBytes = []byte(MethodPut)
-	// methodDeleteBytes "DELETE"
-	methodDeleteBytes = []byte(MethodDelete)
-	// methodConnectBytes "CONNECT"
-	methodConnectBytes = []byte(MethodConnect)
-	// methodHeadBytes "HEAD"
-	methodHeadBytes = []byte(MethodHead)
-	// methodPatchBytes "PATCH"
-	methodPatchBytes = []byte(MethodPatch)
-	// methodOptionsBytes "OPTIONS"
-	methodOptionsBytes = []byte(MethodOptions)
-	// methodTraceBytes "TRACE"
-	methodTraceBytes = []byte(MethodTrace)
+
+	// MethodGetBytes "GET"
+	MethodGetBytes = []byte(MethodGet)
+	// MethodPostBytes "POST"
+	MethodPostBytes = []byte(MethodPost)
+	// MethodPutBytes "PUT"
+	MethodPutBytes = []byte(MethodPut)
+	// MethodDeleteBytes "DELETE"
+	MethodDeleteBytes = []byte(MethodDelete)
+	// MethodConnectBytes "CONNECT"
+	MethodConnectBytes = []byte(MethodConnect)
+	// MethodHeadBytes "HEAD"
+	MethodHeadBytes = []byte(MethodHead)
+	// MethodPatchBytes "PATCH"
+	MethodPatchBytes = []byte(MethodPatch)
+	// MethodOptionsBytes "OPTIONS"
+	MethodOptionsBytes = []byte(MethodOptions)
+	// MethodTraceBytes "TRACE"
+	MethodTraceBytes = []byte(MethodTrace)
 	/* */
 
 )
@@ -1444,7 +1445,7 @@ func (mux *serveMux) register(method []byte, subdomain string, path string, midd
 
 // build collects all routes info and adds them to the registry in order to be served from the request handler
 // this happens once when server is setting the mux's handler.
-func (mux *serveMux) build() {
+func (mux *serveMux) build() (func(reqCtx *fasthttp.RequestCtx) string, func([]byte, []byte) bool) {
 	mux.tree = nil
 	sort.Sort(bySubdomain(mux.lookups))
 	for _, r := range mux.lookups {
@@ -1474,6 +1475,31 @@ func (mux *serveMux) build() {
 			mux.logger.Panic(err.Error())
 		}
 	}
+
+	// optimize this once once, we could do that: context.RequestPath(mux.escapePath), but we lose some nanoseconds on if :)
+	getRequestPath := func(reqCtx *fasthttp.RequestCtx) string {
+		return utils.BytesToString(reqCtx.Path()) //string(ctx.Path()[:]) // a little bit of memory allocation, old method used: BytesToString, If I see the benchmarks get low I will change it back to old, but this way is safer.
+	}
+
+	if !mux.escapePath {
+		getRequestPath = func(reqCtx *fasthttp.RequestCtx) string { return utils.BytesToString(reqCtx.RequestURI()) }
+	}
+
+	methodEqual := func(treeMethod []byte, reqMethod []byte) bool {
+		return bytes.Equal(treeMethod, reqMethod)
+	}
+	// check for cors conflicts
+	for _, r := range mux.lookups {
+		if r.hasCors() {
+			methodEqual = func(treeMethod []byte, reqMethod []byte) bool {
+				return bytes.Equal(treeMethod, reqMethod) || bytes.Equal(reqMethod, MethodOptionsBytes)
+			}
+			break
+		}
+	}
+
+	return getRequestPath, methodEqual
+
 }
 
 func (mux *serveMux) lookup(routeName string) *route {
@@ -1485,34 +1511,14 @@ func (mux *serveMux) lookup(routeName string) *route {
 	return nil
 }
 
-func (mux *serveMux) Handler() HandlerFunc {
+// BuildHandler the default Iris router when iris.Handler is nil
+func (mux *serveMux) BuildHandler() HandlerFunc {
 
 	// initialize the router once
-	mux.build()
-	// optimize this once once, we could do that: context.RequestPath(mux.escapePath), but we lose some nanoseconds on if :)
-	getRequestPath := func(ctx *Context) string {
-		return utils.BytesToString(ctx.Path()) //string(ctx.Path()[:]) // a little bit of memory allocation, old method used: BytesToString, If I see the benchmarks get low I will change it back to old, but this way is safer.
-	}
-	if !mux.escapePath {
-		getRequestPath = func(ctx *Context) string { return utils.BytesToString(ctx.RequestCtx.RequestURI()) }
-	}
-
-	methodEqual := func(treeMethod []byte, reqMethod []byte) bool {
-		return bytes.Equal(treeMethod, reqMethod)
-	}
-
-	// check for cors conflicts
-	for _, r := range mux.lookups {
-		if r.hasCors() {
-			methodEqual = func(treeMethod []byte, reqMethod []byte) bool {
-				return bytes.Equal(treeMethod, reqMethod) || bytes.Equal(reqMethod, methodOptionsBytes)
-			}
-			break
-		}
-	}
+	getRequestPath, methodEqual := mux.build()
 
 	return func(context *Context) {
-		routePath := getRequestPath(context)
+		routePath := getRequestPath(context.RequestCtx)
 		tree := mux.tree
 		for tree != nil {
 			if !methodEqual(tree.method, context.Method()) {
@@ -1553,7 +1559,7 @@ func (mux *serveMux) Handler() HandlerFunc {
 				//ctx.Request.Header.SetUserAgentBytes(DefaultUserAgent)
 				context.Do()
 				return
-			} else if mustRedirect && mux.correctPath && !bytes.Equal(context.Method(), methodConnectBytes) {
+			} else if mustRedirect && mux.correctPath && !bytes.Equal(context.Method(), MethodConnectBytes) {
 
 				reqPath := routePath
 				pathLen := len(reqPath)
@@ -1574,7 +1580,7 @@ func (mux *serveMux) Handler() HandlerFunc {
 					// RFC2616 recommends that a short note "SHOULD" be included in the
 					// response because older user agents may not understand 301/307.
 					// Shouldn't send the response for POST or HEAD; that leaves GET.
-					if bytes.Equal(tree.method, methodGetBytes) {
+					if bytes.Equal(tree.method, MethodGetBytes) {
 						note := "<a href=\"" + utils.HTMLEscape(urlToRedirect) + "\">Moved Permanently</a>.\n"
 						context.Write(note)
 					}
