@@ -15,21 +15,6 @@ const (
 	Broadcast = websocket.Broadcast
 )
 
-// newUnderlineWsServer returns a new go-websocket.Server from configuration, used internaly by Iris.
-func newUnderlineWsServer(c WebsocketConfiguration) websocket.Server {
-	wsConfig := websocket.Config{
-		WriteTimeout:    c.WriteTimeout,
-		PongTimeout:     c.PongTimeout,
-		PingPeriod:      c.PingPeriod,
-		MaxMessageSize:  c.MaxMessageSize,
-		BinaryMessages:  c.BinaryMessages,
-		ReadBufferSize:  c.ReadBufferSize,
-		WriteBufferSize: c.WriteBufferSize,
-	}
-
-	return websocket.New(wsConfig)
-}
-
 // Note I keep this code only to no change the front-end API, we could only use the go-websocket and set our custom upgrader
 
 type (
@@ -37,7 +22,6 @@ type (
 	// the below code is a wrapper and bridge between iris-contrib/websocket and kataras/go-websocket
 	WebsocketServer struct {
 		websocket.Server
-		config   WebsocketConfiguration
 		upgrader irisWebsocket.Upgrader
 	}
 )
@@ -73,14 +57,34 @@ func (s *WebsocketServer) Handler(ctx *Context) {
 // RegisterTo creates the client side source route and the route path Endpoint with the correct Handler
 // receives the websocket configuration and  the iris station
 func (s *WebsocketServer) RegisterTo(station *Framework, c WebsocketConfiguration) {
-	s.config = c // save the configuration, we will need that on the .OnConnection
+
+	// Note: s.Server should be initialize on the first OnConnection, which is called before this func always.
+
+	// is just a conversional type for kataras/go-websocket.Connection
+	s.upgrader = irisWebsocket.Custom(s.Server.HandleConnection, c.ReadBufferSize, c.WriteBufferSize, false)
+
+	// set the routing for client-side source (javascript) (optional)
 	clientSideLookupName := "iris-websocket-client-side"
-	station.Get(s.config.Endpoint, s.Handler)
+	station.Get(c.Endpoint, s.Handler)
 	// check if client side already exists
 	if station.Lookup(clientSideLookupName) == nil {
 		// serve the client side on domain:port/iris-ws.js
 		station.StaticContent("/iris-ws.js", contentJavascript, websocket.ClientSource)(clientSideLookupName)
 	}
+
+	s.Server.Set(websocket.Config{
+		WriteTimeout:    c.WriteTimeout,
+		PongTimeout:     c.PongTimeout,
+		PingPeriod:      c.PingPeriod,
+		MaxMessageSize:  c.MaxMessageSize,
+		BinaryMessages:  c.BinaryMessages,
+		ReadBufferSize:  c.ReadBufferSize,
+		WriteBufferSize: c.WriteBufferSize,
+	})
+
+	// run the ws server
+	s.Server.Serve()
+
 }
 
 // WebsocketConnection is the front-end API that you will use to communicate with the client side
@@ -90,17 +94,12 @@ type WebsocketConnection interface {
 
 // OnConnection this is the main event you, as developer, will work with each of the websocket connections
 func (s *WebsocketServer) OnConnection(connectionListener func(WebsocketConnection)) {
-	// let's initialize here the ws server, the user/dev is free to change its config before this step.
 	if s.Server == nil {
-		s.Server = newUnderlineWsServer(s.config)
+		// let's initialize here the ws server, the user/dev is free to change its config before this step.
+		s.Server = websocket.New() // we need that in order to use the Iris' WebsocketConnnection, which
+		// config is empty here because are setted on the RegisterTo
+		// websocket's configuration is optional on New because it doesn't really used before the websocket.Serve
 	}
-
-	if s.upgrader.Receiver == nil {
-		s.upgrader = irisWebsocket.Custom(s.Server.HandleConnection, s.config.ReadBufferSize, s.config.WriteBufferSize, false)
-		// run the ws server
-		s.Server.Serve()
-	}
-
 	s.Server.OnConnection(func(c websocket.Connection) {
 		connectionListener(c)
 	})
