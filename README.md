@@ -56,7 +56,7 @@ func main() {
 
   // handle "/" - HTTP METHOD: "GET"
   iris.Get("/", func(ctx *iris.Context) {
-    ctx.Render("index.html")
+    ctx.Render("index.html", nil)
   })
 
   iris.Get("/login", func(ctx *iris.Context) {

@@ -2,9 +2,13 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras/iris` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+## 4.2.9 -> 4.3.0
+
+- Align with the latest version of [go-websocket](https://github.com/kataras/go-websocket), remove vendoring for compression on [go-fs](https://github.com/kataras/go-fs) which produced errors on sqllite and gorm(mysql and mongo worked fine before too) as reported [here](https://github.com/kataras/go-fs/issues/1).
+
 ## 4.2.7 -> 4.2.8 & 4.2.9
 
--**External FIX**: [template syntax error causes a "template doesn't exist"](https://github.com/kataras/iris/issues/415)
+- **External FIX**: [template syntax error causes a "template doesn't exist"](https://github.com/kataras/iris/issues/415)
 
 ## 4.2.6 -> 4.2.7
 
