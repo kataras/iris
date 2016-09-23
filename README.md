@@ -217,9 +217,6 @@ Todo
 
 Iris is a **Community-Driven** Project, waiting for your suggestions and [feature requests](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=label%3A%22feature%20request%22)!
 
-I, as the author of this package, am working full time on this package, no time to any other job, so
-if you're **willing to donate** and you can **afford it** please click [here](DONATIONS.md), thank you!
-
 People
 ------------
 The big thanks goes to [all people](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=label%3A%22feature+request%22) who help building this framework with feature-requests & bug reports!
