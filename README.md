@@ -221,7 +221,7 @@ People
 ------------
 The big thanks goes to [all people](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=label%3A%22feature+request%22) who help building this framework with feature-requests & bug reports!
 
-The author of Iris is [@kataras](https://github.com/kataras).
+The author of Iris is [@kataras](https://github.com/kataras). If **you**'re willing to donate, feel **free** to navigate to the [DONATIONS PAGE](https://github.com/kataras/iris/blob/master/DONATIONS.md).
 
 
 Contributing
