@@ -4,7 +4,7 @@ First, please do a search in open issues to see if the issue or feature request 
 
 The Iris project is distributed across multiple repositories, try to file the issue against the correct repository,
 
-- [Iris - cli and rizla]((https://github.com/kataras/rizla/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
+- [Iris - cli and rizla](https://github.com/kataras/rizla/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
 - [Iris - templates](https://github.com/kataras/go-template/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
 - [Iris - sessions](https://github.com/kataras/go-sessions/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
 - [Iris - websocket](https://github.com/kataras/go-websocket/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
@@ -13,7 +13,7 @@ The Iris project is distributed across multiple repositories, try to file the is
 - [Iris - middleware](https://github.com/iris-contrib/middleware/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
 - [Iris - plugin](https://github.com/iris-contrib/plugin/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
 - [Iris - graceful](https://github.com/iris-contrib/graceful/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
-- [Iris - mail](https://github.com/iris-contrib/mail/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue).
+- [Iris - mail](https://github.com/iris-contrib/mail/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
 - [Iris - core](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
 
 Before post a new issue do an iris upgrade:
