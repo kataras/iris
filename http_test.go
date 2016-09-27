@@ -150,7 +150,7 @@ func TestParseAddr(t *testing.T) {
 // Contains the server test for multi running servers
 func TestMultiRunningServers_v1_PROXY(t *testing.T) {
 	defer Close()
-	host := "mydomain.com" // you have to add it to your hosts file( for windows, as 127.0.0.1 mydomain.com)
+	host := "localhost" // you have to add it to your hosts file( for windows, as 127.0.0.1 mydomain.com)
 	initDefault()
 	Default.Config.DisableBanner = true
 	// create the key and cert files on the fly, and delete them when this test finished
