@@ -3,23 +3,20 @@ package iris
 import (
 	"bytes"
 	"crypto/tls"
+	"github.com/iris-contrib/letsencrypt"
+	"github.com/kataras/go-errors"
+	"github.com/kataras/iris/utils"
+	"github.com/valyala/fasthttp"
+	"github.com/valyala/fasthttp/fasthttpadaptor"
+	"log"
 	"net"
 	"net/http"
-	"net/http/pprof"
 	"os"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
-
-	"log"
-
-	"github.com/iris-contrib/letsencrypt"
-	"github.com/kataras/go-errors"
-	"github.com/kataras/iris/utils"
-	"github.com/valyala/fasthttp"
-	"github.com/valyala/fasthttp/fasthttpadaptor"
 )
 
 const (
@@ -229,370 +226,6 @@ func StatusText(code int) string {
 	return statusText[code]
 }
 
-// Errors introduced by server.
-var (
-	errServerPortAlreadyUsed = errors.New("Server can't run, port is already used")
-	errServerAlreadyStarted  = errors.New("Server is already started and listening")
-	errServerHandlerMissing  = errors.New("Handler is missing from server, can't start without handler")
-	errServerIsClosed        = errors.New("Can't close the server, propably is already closed or never started")
-	errServerRemoveUnix      = errors.New("Unexpected error when trying to remove unix socket file. Addr: %s | Trace: %s")
-	errServerChmod           = errors.New("Cannot chmod %#o for %q: %s")
-)
-
-type (
-	// Server the http server
-	Server struct {
-		*fasthttp.Server
-		listener net.Listener
-		Config   ServerConfiguration
-		tls      bool
-		mu       sync.Mutex
-	}
-	// ServerList contains the servers connected to the Iris station
-	ServerList struct {
-		mux     *serveMux
-		servers []*Server
-	}
-)
-
-// newServer returns a pointer to a Server object, and set it's options if any,  nothing more
-func newServer(setters ...OptionServerSettter) *Server {
-	c := DefaultServerConfiguration()
-	for _, setter := range setters {
-		setter.Set(&c)
-	}
-
-	s := &Server{Server: &fasthttp.Server{Name: c.Name}, Config: c}
-	return s
-}
-
-// IsListening returns true if server is listening/started, otherwise false
-func (s *Server) IsListening() bool {
-	if s == nil {
-		return false
-	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.listener != nil && s.listener.Addr().String() != ""
-}
-
-// IsOpened checks if handler is not nil and returns true if not, otherwise false
-// this is used to see if a server has opened, use IsListening if you want to see if the server is actually ready to serve connections
-func (s *Server) IsOpened() bool {
-	if s == nil {
-		return false
-	}
-	return s.Server != nil && s.Server.Handler != nil
-}
-
-// IsSecure returns true if server uses TLS, otherwise false
-func (s *Server) IsSecure() bool {
-	return s.tls || s.Config.AutoTLS // for any case
-}
-
-// Listener returns the net.Listener which this server (is) listening to
-func (s *Server) Listener() net.Listener {
-	return s.listener
-}
-
-// Host returns the registered host for the server
-func (s *Server) Host() string {
-	if s.Config.VListeningAddr != "" {
-		return s.Config.VListeningAddr
-	}
-	return s.Config.ListeningAddr
-}
-
-// Port returns the port which server listening for
-// if no port given with the ListeningAddr, it returns 80
-func (s *Server) Port() int {
-	a := s.Host()
-	if portIdx := strings.IndexByte(a, ':'); portIdx != -1 {
-		p, err := strconv.Atoi(a[portIdx+1:])
-		if err != nil {
-			if s.Config.AutoTLS {
-				return 443
-			}
-			return 80
-		}
-		return p
-	}
-	if s.Config.AutoTLS {
-		return 443
-	}
-	return 80
-
-}
-
-// Scheme returns http:// or https:// if SSL is enabled
-func (s *Server) Scheme() string {
-	scheme := "http://"
-	// we need to be able to take that before(for testing &debugging) and after server's listen
-	if s.IsSecure() || (s.Config.CertFile != "" && s.Config.KeyFile != "") || s.Config.AutoTLS {
-		scheme = "https://"
-	}
-	// but if virtual scheme is setted and it differs from the real scheme, return the vscheme
-	// the developer should set it correctly, http:// or https:// or anything at the future:P
-	vscheme := s.Config.VScheme
-	if len(vscheme) > 0 && vscheme != scheme {
-		return vscheme
-	}
-
-	return scheme
-}
-
-// FullHost returns the scheme+host
-func (s *Server) FullHost() string {
-	return s.Scheme() + s.Host()
-}
-
-// Hostname returns the hostname part of the host (host expect port)
-func (s *Server) Hostname() string {
-	a := s.Host()
-	idxPort := strings.IndexByte(a, ':')
-	if idxPort > 0 {
-		// port exists, (it always exists for Config.ListeningAddr
-		return a[0:idxPort] // except the port
-	} // but for Config.VListeningAddr the developer maybe doesn't uses the host:port format
-
-	// so, if no port found, then return the Host as it is, it should be something 'mydomain.com'
-	return a
-}
-
-func (s *Server) listen() error {
-	if s.IsListening() {
-		return errServerAlreadyStarted
-	}
-	listener, err := net.Listen("tcp4", s.Config.ListeningAddr)
-
-	if err != nil {
-		return err
-	}
-
-	go s.serve(listener) // we don't catch underline errors, we catched all already
-	return nil
-
-}
-
-func (s *Server) listenUNIX() error {
-
-	mode := s.Config.Mode
-	addr := s.Config.ListeningAddr
-
-	if errOs := os.Remove(addr); errOs != nil && !os.IsNotExist(errOs) {
-		return errServerRemoveUnix.Format(s.Config.ListeningAddr, errOs.Error())
-	}
-
-	listener, err := net.Listen("unix", addr)
-
-	if err != nil {
-		return errServerPortAlreadyUsed
-	}
-
-	if err = os.Chmod(addr, mode); err != nil {
-		return errServerChmod.Format(mode, addr, err.Error())
-	}
-
-	go s.serve(listener) // we don't catch underline errors, we catched all already
-	return nil
-
-}
-
-//Serve just serves a listener, it is a blocking action, plugin.PostListen is not fired here.
-func (s *Server) serve(l net.Listener) error {
-	s.mu.Lock()
-	s.listener = l
-	s.mu.Unlock()
-	if s.Config.CertFile != "" && s.Config.KeyFile != "" {
-		s.tls = true
-		return s.Server.ServeTLS(s.listener, s.Config.CertFile, s.Config.KeyFile)
-	} else if s.Config.AutoTLS {
-		var m letsencrypt.Manager
-		if err := m.CacheFile("letsencrypt.cache"); err != nil {
-			return err
-		}
-		tlsConfig := &tls.Config{GetCertificate: m.GetCertificate}
-
-		ln := tls.NewListener(l, tlsConfig)
-		s.tls = true
-		s.mu.Lock()
-		s.listener = ln
-		s.mu.Unlock()
-	}
-
-	return s.Server.Serve(s.listener)
-}
-
-// Open opens/starts/runs/listens (to) the server, listen tls if Cert && Key is registed, listenUNIX if Mode is registed, otherwise listen
-func (s *Server) Open(h fasthttp.RequestHandler) error {
-	if h == nil {
-		return errServerHandlerMissing
-	}
-
-	if s.IsListening() {
-		return errServerAlreadyStarted
-	}
-
-	s.Server.MaxRequestBodySize = s.Config.MaxRequestBodySize
-	s.Server.ReadBufferSize = s.Config.ReadBufferSize
-	s.Server.WriteBufferSize = s.Config.WriteBufferSize
-	s.Server.ReadTimeout = s.Config.ReadTimeout
-	s.Server.WriteTimeout = s.Config.WriteTimeout
-	s.Server.MaxConnsPerIP = s.Config.MaxConnsPerIP
-	s.Server.MaxRequestsPerConn = s.Config.MaxRequestsPerConn
-
-	if s.Config.RedirectTo != "" {
-		// override the handler and redirect all requests to this addr
-		s.Server.Handler = func(reqCtx *fasthttp.RequestCtx) {
-			path := string(reqCtx.Path())
-			redirectTo := s.Config.RedirectTo
-			if path != "/" {
-				redirectTo += "/" + path
-			}
-			reqCtx.Redirect(redirectTo, StatusMovedPermanently)
-		}
-	} else {
-		s.Server.Handler = h
-	}
-
-	if s.Config.Mode > 0 {
-		return s.listenUNIX()
-	}
-
-	s.Config.ListeningAddr = ServerParseAddr(s.Config.ListeningAddr)
-
-	if s.Config.Virtual {
-		return nil
-	}
-
-	return s.listen()
-
-}
-
-// Close terminates the server
-func (s *Server) Close() (err error) {
-	if !s.IsListening() {
-		return errServerIsClosed
-	}
-	err = s.listener.Close()
-
-	return
-}
-
-// -------------------------------------------------------------------------------------
-// -------------------------------------------------------------------------------------
-// --------------------------------ServerList implementation-----------------------------
-// -------------------------------------------------------------------------------------
-// -------------------------------------------------------------------------------------
-
-// Add adds a server to the list by its config
-// returns the new server
-func (s *ServerList) Add(setters ...OptionServerSettter) *Server {
-	srv := newServer(setters...)
-	s.servers = append(s.servers, srv)
-	return srv
-}
-
-// Len returns the size of the server list
-func (s *ServerList) Len() int {
-	return len(s.servers)
-}
-
-// Main returns the main server,
-// the last added server is the main server, even if's Virtual
-func (s *ServerList) Main() (srv *Server) {
-	l := len(s.servers) - 1
-	for i := range s.servers {
-		if i == l {
-			return s.servers[i]
-		}
-	}
-	return nil
-}
-
-// Get returns the server by it's registered Address
-func (s *ServerList) Get(addr string) (srv *Server) {
-	for i := range s.servers {
-		srv = s.servers[i]
-		if srv.Config.ListeningAddr == addr {
-			return
-		}
-	}
-	return
-}
-
-// GetAll returns all registered servers
-func (s *ServerList) GetAll() []*Server {
-	return s.servers
-}
-
-// GetByIndex returns a server from the list by it's index
-func (s *ServerList) GetByIndex(i int) *Server {
-	if len(s.servers) >= i+1 {
-		return s.servers[i]
-	}
-	return nil
-}
-
-// Remove deletes a server by it's registered Address
-// returns true if something was removed, otherwise returns false
-func (s *ServerList) Remove(addr string) bool {
-	servers := s.servers
-	for i := range servers {
-		srv := servers[i]
-		if srv.Config.ListeningAddr == addr {
-			copy(servers[i:], servers[i+1:])
-			servers[len(servers)-1] = nil
-			s.servers = servers[:len(servers)-1]
-			return true
-		}
-	}
-	return false
-}
-
-// CloseAll terminates all listening servers
-// returns the first error, if erro happens it continues to closes the rest of the servers
-func (s *ServerList) CloseAll() (err error) {
-	for i := range s.servers {
-		if err == nil {
-			err = s.servers[i].Close()
-		}
-	}
-	return
-}
-
-// OpenAll starts all servers
-// returns the first error happens to one of these servers
-// if one server gets error it closes the previous servers and exits from this process
-func (s *ServerList) OpenAll(reqHandler fasthttp.RequestHandler) error {
-	l := len(s.servers) - 1
-	for i := range s.servers {
-		if err := s.servers[i].Open(reqHandler); err != nil {
-			time.Sleep(2 * time.Second)
-			// for any case,
-			// we don't care about performance on initialization,
-			// we must make sure that the previous servers are running before closing them
-			s.CloseAll()
-			return err
-		}
-		if i == l {
-			s.mux.setHostname(s.servers[i].Hostname())
-		}
-
-	}
-	return nil
-}
-
-// GetAllOpened returns all opened/started servers
-func (s *ServerList) GetAllOpened() (servers []*Server) {
-	for i := range s.servers {
-		if s.servers[i].IsOpened() {
-			servers = append(servers, s.servers[i])
-		}
-	}
-	return
-}
-
 // errHandler returns na error with message: 'Passed argument is not func(*Context) neither an object which implements the iris.Handler with Serve(ctx *Context)
 // It seems to be a  +type Points to: +pointer.'
 var errHandler = errors.New("Passed argument is not func(*Context) neither an object which implements the iris.Handler with Serve(ctx *Context)\n It seems to be a  %T Points to: %v.")
@@ -620,7 +253,7 @@ func (h HandlerFunc) Serve(ctx *Context) {
 	h(ctx)
 }
 
-// ToHandler converts an httapi.Handler or http.HandlerFunc to an iris.Handler
+// ToHandler converts an http.Handler or http.HandlerFunc to an iris.Handler
 func ToHandler(handler interface{}) Handler {
 	//this is not the best way to do it, but I dont have any options right now.
 	switch handler.(type) {
@@ -675,44 +308,6 @@ func joinMiddleware(middleware1 Middleware, middleware2 Middleware) Middleware {
 	//start from there we finish, and store the new middleware too
 	copy(newMiddleware[nowLen:], middleware2)
 	return newMiddleware
-}
-
-func profileMiddleware(debugPath string) Middleware {
-	htmlMiddleware := HandlerFunc(func(ctx *Context) {
-		ctx.SetContentType(contentHTML + "; charset=" + ctx.framework.Config.Charset)
-		ctx.Next()
-	})
-	indexHandler := ToHandlerFunc(pprof.Index)
-	cmdlineHandler := ToHandlerFunc(pprof.Cmdline)
-	profileHandler := ToHandlerFunc(pprof.Profile)
-	symbolHandler := ToHandlerFunc(pprof.Symbol)
-	goroutineHandler := ToHandlerFunc(pprof.Handler("goroutine"))
-	heapHandler := ToHandlerFunc(pprof.Handler("heap"))
-	threadcreateHandler := ToHandlerFunc(pprof.Handler("threadcreate"))
-	debugBlockHandler := ToHandlerFunc(pprof.Handler("block"))
-
-	return Middleware{htmlMiddleware, HandlerFunc(func(ctx *Context) {
-		action := ctx.Param("action")
-		if len(action) > 1 {
-			if strings.Contains(action, "cmdline") {
-				cmdlineHandler.Serve((ctx))
-			} else if strings.Contains(action, "profile") {
-				profileHandler.Serve(ctx)
-			} else if strings.Contains(action, "symbol") {
-				symbolHandler.Serve(ctx)
-			} else if strings.Contains(action, "goroutine") {
-				goroutineHandler.Serve(ctx)
-			} else if strings.Contains(action, "heap") {
-				heapHandler.Serve(ctx)
-			} else if strings.Contains(action, "threadcreate") {
-				threadcreateHandler.Serve(ctx)
-			} else if strings.Contains(action, "debug/block") {
-				debugBlockHandler.Serve(ctx)
-			}
-		} else {
-			indexHandler.Serve(ctx)
-		}
-	})}
 }
 
 const (
@@ -1539,9 +1134,11 @@ func (mux *serveMux) BuildHandler() HandlerFunc {
 				// context.VirtualHost() is a slow method because it makes string.Replaces but user can understand that if subdomain then server will have some nano/or/milleseconds performance cost
 				requestHost := context.VirtualHostname()
 				if requestHost != mux.hostname {
+					//println(requestHost + " != " + mux.hostname)
 					// we have a subdomain
 					if strings.Index(tree.subdomain, dynamicSubdomainIndicator) != -1 {
 					} else {
+						//println(requestHost + " = " + mux.hostname)
 						// mux.host = iris-go.com:8080, the subdomain for example is api.,
 						// so the host must be api.iris-go.com:8080
 						if tree.subdomain+mux.hostname != requestHost {
@@ -1598,4 +1195,242 @@ func (mux *serveMux) BuildHandler() HandlerFunc {
 		}
 		mux.fireError(StatusNotFound, context)
 	}
+}
+
+var (
+	errPortAlreadyUsed = errors.New("Port is already used")
+	errRemoveUnix      = errors.New("Unexpected error when trying to remove unix socket file. Addr: %s | Trace: %s")
+	errChmod           = errors.New("Cannot chmod %#o for %q: %s")
+	errCertKeyMissing  = errors.New("You should provide certFile and keyFile for TLS/SSL")
+	errParseTLS        = errors.New("Couldn't load TLS, certFile=%q, keyFile=%q. Trace: %s")
+)
+
+// TCP4 returns a new tcp4 Listener
+// *tcp6 has some bugs in some operating systems, as reported by Go Community*
+func TCP4(addr string) (net.Listener, error) {
+	return net.Listen("tcp4", ParseHost(addr))
+}
+
+// UNIX returns a new unix(file) Listener
+func UNIX(addr string, mode os.FileMode) (net.Listener, error) {
+	if errOs := os.Remove(addr); errOs != nil && !os.IsNotExist(errOs) {
+		return nil, errRemoveUnix.Format(addr, errOs.Error())
+	}
+
+	listener, err := net.Listen("unix", addr)
+	if err != nil {
+		return nil, errPortAlreadyUsed.AppendErr(err)
+	}
+
+	if err = os.Chmod(addr, mode); err != nil {
+		return nil, errChmod.Format(mode, addr, err.Error())
+	}
+
+	return listener, nil
+}
+
+// TLS returns a new TLS Listener
+func TLS(addr, certFile, keyFile string) (net.Listener, error) {
+
+	if certFile == "" || keyFile == "" {
+		return nil, errCertKeyMissing
+	}
+
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		return nil, errParseTLS.Format(certFile, keyFile, err)
+	}
+
+	return CERT(addr, cert)
+}
+
+// CERT returns a listener which contans tls.Config with the provided certificate, use for ssl
+func CERT(addr string, cert tls.Certificate) (net.Listener, error) {
+	ln, err := TCP4(addr)
+	if err != nil {
+		return nil, err
+	}
+
+	tlsConfig := &tls.Config{
+		Certificates:             []tls.Certificate{cert},
+		PreferServerCipherSuites: true,
+	}
+	return tls.NewListener(ln, tlsConfig), nil
+}
+
+// LETSENCRYPT returns a new Automatic TLS Listener using letsencrypt.org service
+func LETSENCRYPT(addr string) (net.Listener, error) {
+	if portIdx := strings.IndexByte(addr, ':'); portIdx == -1 {
+		addr += ":443"
+	}
+
+	ln, err := TCP4(addr)
+	if err != nil {
+		return nil, err
+	}
+
+	var m letsencrypt.Manager
+	if err = m.CacheFile("letsencrypt.cache"); err != nil {
+		return nil, err
+	}
+
+	tlsConfig := &tls.Config{GetCertificate: m.GetCertificate}
+	tlsLn := tls.NewListener(ln, tlsConfig)
+
+	return tlsLn, nil
+}
+
+// TCPKeepAliveListener sets TCP keep-alive timeouts on accepted
+// connections.
+// Dead TCP connections (e.g. closing laptop mid-download) eventually
+// go away
+// It is not used by default if you want to pass a keep alive listener
+// then just pass the child listener, example:
+// listener := iris.TCPKeepAliveListener{iris.TCP4(":8080").(*net.TCPListener)}
+type TCPKeepAliveListener struct {
+	*net.TCPListener
+}
+
+// Accept implements the listener and sets the keep alive period which is 2minutes
+func (ln TCPKeepAliveListener) Accept() (c net.Conn, err error) {
+	tc, err := ln.AcceptTCP()
+	if err != nil {
+		return
+	}
+	tc.SetKeepAlive(true)
+	tc.SetKeepAlivePeriod(2 * time.Minute)
+	return tc, nil
+}
+
+// ParseHost tries to convert a given string to an address which is compatible with net.Listener and server
+func ParseHost(addr string) string {
+	// check if addr has :port, if not do it +:80 ,we need the hostname for many cases
+	a := addr
+	if a == "" {
+		// check for os environments
+		if oshost := os.Getenv("ADDR"); oshost != "" {
+			a = oshost
+		} else if oshost := os.Getenv("HOST"); oshost != "" {
+			a = oshost
+		} else if oshost := os.Getenv("HOSTNAME"); oshost != "" {
+			a = oshost
+			// check for port also here
+			if osport := os.Getenv("PORT"); osport != "" {
+				a += ":" + osport
+			}
+		} else if osport := os.Getenv("PORT"); osport != "" {
+			a = ":" + osport
+		} else {
+			a = DefaultServerAddr
+		}
+	}
+	if portIdx := strings.IndexByte(a, ':'); portIdx == 0 {
+		if a[portIdx:] == ":https" {
+			a = DefaultServerHostname + ":443"
+		} else {
+			// if contains only :port	,then the : is the first letter, so we dont have setted a hostname, lets set it
+			a = DefaultServerHostname + a
+		}
+	}
+
+	/* changed my mind, don't add 80, this will cause problems on unix listeners, and it's not really necessary because we take the port using parsePort
+	if portIdx := strings.IndexByte(a, ':'); portIdx < 0 {
+		// missing port part, add it
+		a = a + ":80"
+	}*/
+
+	return a
+}
+
+// ParseHostname receives an addr of form host[:port] and returns the hostname part of it
+// ex: localhost:8080 will return the `localhost`, mydomain.com:8080 will return the 'mydomain'
+func ParseHostname(addr string) string {
+	idx := strings.IndexByte(addr, ':')
+	if idx == 0 {
+		// only port, then return 0.0.0.0
+		return "0.0.0.0"
+	} else if idx > 0 {
+		return addr[0:idx]
+	}
+	// it's already hostname
+	return addr
+}
+
+// ParsePort receives an addr of form host[:port] and returns the port part of it
+// ex: localhost:8080 will return the `8080`, mydomain.com will return the '80'
+func ParsePort(addr string) int {
+	if portIdx := strings.IndexByte(addr, ':'); portIdx != -1 {
+		afP := addr[portIdx+1:]
+		p, err := strconv.Atoi(afP)
+		if err == nil {
+			return p
+		} else if afP == "https" { // it's not number, check if it's :https
+			return 443
+		}
+	}
+	return 80
+}
+
+const (
+	// SchemeHTTPS returns "https://" (full)
+	SchemeHTTPS = "https://"
+	// SchemeHTTP returns "http://" (full)
+	SchemeHTTP = "http://"
+)
+
+// ParseScheme returns the scheme based on the host,addr,domain
+// Note: the full scheme not just http*,https* *http:// *https://
+func ParseScheme(domain string) string {
+	// pure check
+	if strings.HasPrefix(domain, SchemeHTTPS) || ParsePort(domain) == 443 {
+		return SchemeHTTPS
+	}
+	return SchemeHTTP
+}
+
+var proxyHandler = func(proxyAddr string, redirectSchemeAndHost string) fasthttp.RequestHandler {
+	return func(reqCtx *fasthttp.RequestCtx) {
+		// override the handler and redirect all requests to this addr
+		redirectTo := redirectSchemeAndHost
+		fakehost := string(reqCtx.Request.Host())
+		path := string(reqCtx.Path())
+		if strings.Count(fakehost, ".") >= 3 { // propably a subdomain, pure check but doesn't matters don't worry
+			if sufIdx := strings.LastIndexByte(fakehost, '.'); sufIdx > 0 {
+				// check if the last part is a number instead of .com/.gr...
+				// if it's number then it's propably is 0.0.0.0 or 127.0.0.1... so it shouldn' use  subdomain
+				if _, err := strconv.Atoi(fakehost[sufIdx+1:]); err != nil {
+					// it's not number then process the try to parse the subdomain
+					redirectScheme := ParseScheme(redirectSchemeAndHost)
+					realHost := strings.Replace(redirectSchemeAndHost, redirectScheme, "", 1)
+					redirectHost := strings.Replace(fakehost, fakehost, realHost, 1)
+					redirectTo = redirectScheme + redirectHost + path
+					reqCtx.Redirect(redirectTo, StatusMovedPermanently)
+					return
+				}
+			}
+		}
+		if path != "/" {
+			redirectTo += path
+		}
+
+		reqCtx.Redirect(redirectTo, StatusMovedPermanently)
+	}
+}
+
+// Proxy not really a proxy, it's just
+// starts a server listening on proxyAddr but redirects all requests to the redirectToSchemeAndHost+$path
+// nothing special, use it only when you want to start a secondary server which its only work is to redirect from one requested path to another
+//
+// returns a close function
+func Proxy(proxyAddr string, redirectSchemeAndHost string) func() error {
+	proxyAddr = ParseHost(proxyAddr)
+
+	// override the handler and redirect all requests to this addr
+	h := proxyHandler(proxyAddr, redirectSchemeAndHost)
+	prx := New(OptionDisableBanner(true))
+	prx.Router = h
+
+	go prx.Listen(proxyAddr)
+
+	return prx.Close
 }

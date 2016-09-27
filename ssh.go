@@ -102,7 +102,7 @@ func (s *SSHServer) bindTo(station *Framework) {
 
 		sshCommands := Commands{
 			Command{Name: "status", Description: "Prompts the status of the HTTP Server, is listening(started) or not(stopped).", Action: func(conn ssh.Channel) {
-				if station.Servers.Main() != nil && station.Servers.Main().IsListening() {
+				if station.IsRunning() {
 					statusRunningMsg(conn)
 				} else {
 					statusNotRunningMsg(conn)
@@ -115,29 +115,26 @@ func (s *SSHServer) bindTo(station *Framework) {
 			// Note for stop If you have opened a tab with Q route:
 			//  in order to see that the http listener has closed you have to close your browser and re-navigate(browsers caches the tcp connection)
 			Command{Name: "stop", Description: "Stops the HTTP Server.", Action: func(conn ssh.Channel) {
-				srv := station.Servers.Main()
-				if srv != nil && srv.IsListening() {
-					srv.Close()
-					srv.listener = nil
+				if station.IsRunning() {
+					station.Close()
+					//srv.listener = nil used to reopen so let it setted
 					serverStoppedMsg(conn)
 				} else {
 					errServerNotReadyMsg(conn)
 				}
 			}},
 			Command{Name: "start", Description: "Starts the HTTP Server.", Action: func(conn ssh.Channel) {
-				srv := station.Servers.Main()
-				if !srv.IsListening() {
-					go srv.Open(srv.Handler)
+				if !station.IsRunning() {
+					go station.Reserve()
 				}
 				serverStartedMsg(conn)
 			}},
 			Command{Name: "restart", Description: "Restarts the HTTP Server.", Action: func(conn ssh.Channel) {
-				srv := station.Servers.Main()
-				if srv != nil && srv.IsListening() {
-					srv.Close()
-					srv.listener = nil
+				if station.IsRunning() {
+					station.Close()
+					//srv.listener = nil used to reopen so let it setted
 				}
-				go srv.Open(srv.Handler)
+				go station.Reserve()
 				serverRestartedMsg(conn)
 			}},
 			/* not ready yet
@@ -452,23 +449,9 @@ func (s *SSHServer) logf(format string, a ...interface{}) {
 	}
 }
 
-// parseHostname receives an addr of form host[:port] and returns the hostname part of it
-// ex: localhost:8080 will return the `localhost`, mydomain.com:22 will return the 'mydomain'
-func parseHostname(addr string) string {
-	idx := strings.IndexByte(addr, ':')
-	if idx == 0 {
-		// only port, then return 0.0.0.0
-		return "0.0.0.0"
-	} else if idx > 0 {
-		return addr[0:idx]
-	}
-	// it's already hostname
-	return addr
-}
-
-// parsePort receives an addr of form host[:port] and returns the port part of it
-// ex: localhost:8080 will return the `8080`, mydomain.com will return the '22'
-func parsePort(addr string) int {
+// parsePortSSH receives an addr of form host[:port] and returns the port part of it
+// ex: localhost:22 will return the `22`, mydomain.com will return the '22'
+func parsePortSSH(addr string) int {
 	if portIdx := strings.IndexByte(addr, ':'); portIdx != -1 {
 		afP := addr[portIdx+1:]
 		p, err := strconv.Atoi(afP)
@@ -484,8 +467,8 @@ var standardCommands = Commands{Command{Name: "help", Description: "Opens up the
 	Command{Name: "exit", Description: "Exits from the terminal (if interactive shell)"}}
 
 func (s *SSHServer) writeHelp(wr io.Writer) {
-	port := parsePort(s.Host)
-	hostname := parseHostname(s.Host)
+	port := parsePortSSH(s.Host)
+	hostname := ParseHostname(s.Host)
 	defer func() {
 		if r := recover(); r != nil {
 			// means that user-dev has old version of Go Programming Language in her/his machine, so print a message to the server terminal

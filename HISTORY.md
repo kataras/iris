@@ -1,6 +1,57 @@
 # History
 
-**How to upgrade**: remove your `$GOPATH/src/github.com/kataras/iris` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris`.
+**How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
+
+## 4.3.0 -> 4.4.0
+
+**NOTE**: For normal users this update offers nothing, read that only if you run Iris behind a proxy or balancer like `nginx` or you need to serve using a custom `net.Listener`.
+
+This update implements the [support of using native servers and net.Listener instead of Iris' defined](https://github.com/kataras/iris/issues/438).
+
+### Breaking changes
+- `iris.Config.Profile` field removed and the whole pprof transfered to the [iris-contrib/middleware/pprof](https://github.com/iris-contrib/middleware/tree/master/pprof).
+- `iris.ListenTLSAuto` renamed to `iris.ListenLETSENCRYPT`
+- `iris.Default.Handler` is `iris.Router` which is the Handler you can use to setup a custom router or bind Iris' router, after `iris.Build` call, to an external custom server.
+- `iris.ServerConfiguration`, `iris.ListenVirtual`, `iris.AddServer`, `iris.Go` & `iris.TesterConfiguration.ListeningAddr` removed, read below the reason and their alternatives
+
+### New features
+
+- Boost Performance on server's startup
+- **NEW**: `iris.Reserve()` re-starts the server if `iris.Close()` called previously.
+- **NEW**: `iris.Config.VHost` and `iris.Config.VScheme` replaces the previous `ListenVirtual`, `iris.TesterConfiguration.ListeningAddr`, `iris.ServerConfiguration.VListeningAddr`, `iris.ServerConfiguration.VScheme`.
+- **NEW**: `iris.Build` it's called automatically on Listen functions or Serve function. **CALL IT, MANUALLY, ONLY** WHEN YOU WANT TO BE ABLE TO GET THE IRIS ROUTER(`iris.Router`) AND PASS THAT, HANDLER, TO ANOTHER EXTERNAL FASTHTTP SERVER.
+- **NEW**: `iris.Serve(net.Listener)`. Starts the server using a custom net.Listener, look below for example link
+- **NEW**: now that iris supports custom net.Listener bind, I had to provide to you some net.Listeners too, such as `iris.TCP4`, `iris.UNIX`, `iris.TLS` , `iris.LETSENCRPYPT` & `iris.CERT` , all of these are optionals because you can just use the `iris.Listen`, `iris.ListenUNIX`, `iris.ListenTLS` & `iris.ListenLETSENCRYPT`, but if you want, for example, to pass your own `tls.Config` then you will have to create a custom net.Listener and pass that to the `iris.Serve(net.Listener)`.
+
+With these in mind, developers are now able to fill their advanced needs without use the `iris.AddServer, ServerConfiguration and V fields`, so it's easier to:
+
+- use any external (fasthttp compatible) server or router. Examples: [server](https://github.com/iris-contrib/tree/master/custom_fasthtthttp_server) and [router]((https://github.com/iris-contrib/tree/master/custom_fasthtthttp_router)
+- bind any `net.Listener` which will be used to run the Iris' HTTP server, as requested [here](https://github.com/kataras/iris/issues/395). Example [here](https://github.com/iris-contrib/tree/master/custom_net_listener)
+- setup virtual host and scheme, useful when you run Iris behind `nginx` (etc) and want template function `{{url }}` and subdomains to work as you expected. Usage:
+
+```go
+iris.Config.VHost = "mydomain.com"
+iris.Config.VScheme = "https://"
+
+iris.Listen(":8080")
+
+// this will run on localhost:8080 but templates, subdomains and all that will act like https://mydomain.com,
+// before this update you used the iris.AddServer and iris.Go and pass some strange fields into
+
+```
+
+Last, for testers:
+
+
+Who used the `iris.ListenVirtual(...).Handler`:
+If closed server, then `iris.Build()` and `iris.Router`, otherwise just `iris.Router`.
+
+
+To test subdomains or a custom domain just set the `iris.Config.VHost` and `iris.Config.VScheme` fields, instead of the old `subdomain_test_handler := iris.AddServer(iris.ServerConfiguration{VListeningAddr:"...", Virtual: true, VScheme:false}).Handler`. Usage [here](https://github.com/kataras/blob/master/http_test.go).
+
+
+
+**Finally**, I have to notify you that [examples](https://github.com/iris-contrib/examples), [plugins](https://github.com/iris-contrib/plugin), [middleware](https://github.com/iris-contrib/middleware) and [book](https://github.com/iris-contrib/gitbook) have been updated.
 
 ## 4.2.9 -> 4.3.0
 

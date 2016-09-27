@@ -8,6 +8,7 @@ CONTRIBUTE & DISCUSSION ABOUT TESTS TO: https://github.com/iris-contrib/tests
 
 import (
 	"fmt"
+	"github.com/valyala/fasthttp"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -18,129 +19,140 @@ import (
 
 const (
 	testTLSCert = `-----BEGIN CERTIFICATE-----
-		MIIDAzCCAeugAwIBAgIJAPDsxtKV4v3uMA0GCSqGSIb3DQEBBQUAMBgxFjAUBgNV
-		BAMMDTEyNy4wLjAuMTo0NDMwHhcNMTYwNjI5MTMxMjU4WhcNMjYwNjI3MTMxMjU4
-		WjAYMRYwFAYDVQQDDA0xMjcuMC4wLjE6NDQzMIIBIjANBgkqhkiG9w0BAQEFAAOC
-		AQ8AMIIBCgKCAQEA0KtAOHKrcbLwWJXgRX7XSFyu4HHHpSty4bliv8ET4sLJpbZH
-		XeVX05Foex7PnrurDP6e+0H5TgqqcpQM17/ZlFcyKrJcHSCgV0ZDB3Sb8RLQSLns
-		8a+MOSbn1WZ7TkC7d/cWlKmasQRHQ2V/cWlGooyKNEPoGaEz8MbY0wn2spyIJwsB
-		dciERC6317VTXbiZdoD8QbAsT+tBvEHM2m2A7B7PQmHNehtyFNbSV5uZNodvv1uv
-		ZTnDa6IqpjFLb1b2HNFgwmaVPmmkLuy1l9PN+o6/DUnXKKBrfPAx4JOlqTKEQpWs
-		pnfacTE3sWkkmOSSFltAXfkXIJFKdS/hy5J/KQIDAQABo1AwTjAdBgNVHQ4EFgQU
-		zr1df/c9+NyTpmyiQO8g3a8NswYwHwYDVR0jBBgwFoAUzr1df/c9+NyTpmyiQO8g
-		3a8NswYwDAYDVR0TBAUwAwEB/zANBgkqhkiG9w0BAQUFAAOCAQEACG5shtMSDgCd
-		MNjOF+YmD+PX3Wy9J9zehgaDJ1K1oDvBbQFl7EOJl8lRMWITSws22Wxwh8UXVibL
-		sscKBp14dR3e7DdbwCVIX/JyrJyOaCfy2nNBdf1B06jYFsIHvP3vtBAb9bPNOTBQ
-		QE0Ztu9kCqgsmu0//sHuBEeA3d3E7wvDhlqRSxTLcLtgC1NSgkFvBw0JvwgpkX6s
-		M5WpSBZwZv8qpplxhFfqNy8Uf+xrpSW0pGfkHumehkQGC6/Ry7raganS0aHhDPK9
-		Z1bEJ2com1bFFAQsm9yIXrRVMGGCtihB2Au0Q4jpEjUbzWYM+ItZyvRAGRM6Qex6
-		s/jogMeRsw==
-		-----END CERTIFICATE-----
+MIIDATCCAemgAwIBAgIJAPdE0ZyCKwVtMA0GCSqGSIb3DQEBBQUAMBcxFTATBgNV
+BAMMDG15ZG9tYWluLmNvbTAeFw0xNjA5MjQwNjU3MDVaFw0yNjA5MjIwNjU3MDVa
+MBcxFTATBgNVBAMMDG15ZG9tYWluLmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEP
+ADCCAQoCggEBAM9YJOV1Bl+NwEq8ZAcVU2YONBw5zGkUFJUZkL77XT0i1V473JTf
+GEpNZisDman+6n+pXarC2mR4T9PkCfmk072HaZ2LXwYe9XSgxnLJZJA1fJMzdMMC
+2XveINF+/eeoyW9+8ZjQPbZdHWcxi7RomXg1AOMAG2UWMjalK5xkTHcqDuOI2LEe
+mezWHnFdBJNMTi3pNdbVr7BjexZTSGhx4LAIP2ufTUoVzk+Cvyr4IhS00zOiyyWv
+tuJaO20Q0Q5n34o9vDAACKAfNRLBE8qzdRwsjMumXTX3hJzvgFp/4Lr5Hr2I2fBd
+tbIWN9xIsu6IibBGFItiAfQSrKAR7IFVqDUCAwEAAaNQME4wHQYDVR0OBBYEFNvN
+Yik2eBRDmDaqoMaLfvr75kGfMB8GA1UdIwQYMBaAFNvNYik2eBRDmDaqoMaLfvr7
+5kGfMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQEFBQADggEBAEAv3pKkmDTXIChB
+nVrbYwNibin9HYOPf3JCjU48V672YPgbfJM0WfTvLXNVBOdTz3aIUrhfwv/go2Jz
+yDcIFdLUdwllovhj1RwI96lbgCJ4AKoO/fvJ5Rxq+/vvLYB38PNl/fVEnOOeWzCQ
+qHfjckShNV5GzJPhfpYn9Gj6+Zj3O0cJXhF9L/FlbVxFhwPjPRbFDNTHYzgiHy82
+zhhDhTQJVnNJXfokdlg9OjfFkySqpv9fvPi/dfk5j1KmKUiYP5SYUhZiKX1JScvx
+JgesCwz1nUfVQ1TYE0dphU8mTCN4Y42i7bctx7iLcDRIFhtYstt0hhCKSxFmJSBG
+y9RITRA=
+-----END CERTIFICATE-----
 `
+
 	testTLSKey = `-----BEGIN RSA PRIVATE KEY-----
-	MIIEpQIBAAKCAQEA0KtAOHKrcbLwWJXgRX7XSFyu4HHHpSty4bliv8ET4sLJpbZH
-	XeVX05Foex7PnrurDP6e+0H5TgqqcpQM17/ZlFcyKrJcHSCgV0ZDB3Sb8RLQSLns
-	8a+MOSbn1WZ7TkC7d/cWlKmasQRHQ2V/cWlGooyKNEPoGaEz8MbY0wn2spyIJwsB
-	dciERC6317VTXbiZdoD8QbAsT+tBvEHM2m2A7B7PQmHNehtyFNbSV5uZNodvv1uv
-	ZTnDa6IqpjFLb1b2HNFgwmaVPmmkLuy1l9PN+o6/DUnXKKBrfPAx4JOlqTKEQpWs
-	pnfacTE3sWkkmOSSFltAXfkXIJFKdS/hy5J/KQIDAQABAoIBAQDCd+bo9I0s8Fun
-	4z3Y5oYSDTZ5O/CY0O5GyXPrSzCSM4Cj7EWEj1mTdb9Ohv9tam7WNHHLrcd+4NfK
-	4ok5hLVs1vqM6h6IksB7taKATz+Jo0PzkzrsXvMqzERhEBo4aoGMIv2rXIkrEdas
-	S+pCsp8+nAWtAeBMCn0Slu65d16vQxwgfod6YZfvMKbvfhOIOShl9ejQ+JxVZcMw
-	Ti8sgvYmFUrdrEH3nCgptARwbx4QwlHGaw/cLGHdepfFsVaNQsEzc7m61fSO70m4
-	NYJv48ZgjOooF5AccbEcQW9IxxikwNc+wpFYy5vDGzrBwS5zLZQFpoyMWFhtWdjx
-	hbmNn1jlAoGBAPs0ZjqsfDrH5ja4dQIdu5ErOccsmoHfMMBftMRqNG5neQXEmoLc
-	Uz8WeQ/QDf302aTua6E9iSjd7gglbFukVwMndQ1Q8Rwxz10jkXfiE32lFnqK0csx
-	ltruU6hOeSGSJhtGWBuNrT93G2lmy23fSG6BqOzdU4rn/2GPXy5zaxM/AoGBANSm
-	/E96RcBUiI6rDVqKhY+7M1yjLB41JrErL9a0Qfa6kYnaXMr84pOqVN11IjhNNTgl
-	g1lwxlpXZcZh7rYu9b7EEMdiWrJDQV7OxLDHopqUWkQ+3MHwqs6CxchyCq7kv9Df
-	IKqat7Me6Cyeo0MqcW+UMxlCRBxKQ9jqC7hDfZuXAoGBAJmyS8ImerP0TtS4M08i
-	JfsCOY21qqs/hbKOXCm42W+be56d1fOvHngBJf0YzRbO0sNo5Q14ew04DEWLsCq5
-	+EsDv0hwd7VKfJd+BakV99ruQTyk5wutwaEeJK1bph12MD6L4aiqHJAyLeFldZ45
-	+TUzu8mA+XaJz+U/NXtUPvU9AoGBALtl9M+tdy6I0Fa50ujJTe5eEGNAwK5WNKTI
-	5D2XWNIvk/Yh4shXlux+nI8UnHV1RMMX++qkAYi3oE71GsKeG55jdk3fFQInVsJQ
-	APGw3FDRD8M4ip62ki+u+tEr/tIlcAyHtWfjNKO7RuubWVDlZFXqCiXmSdOMdsH/
-	bxiREW49AoGACWev/eOzBoQJCRN6EvU2OV0s3b6f1QsPvcaH0zc6bgbBFOGmJU8v
-	pXhD88tsu9exptLkGVoYZjR0n0QT/2Kkyu93jVDW/80P7VCz8DKYyAJDa4CVwZxO
-	MlobQSunSDKx/CCJhWkbytCyh1bngAtwSAYLXavYIlJbAzx6FvtAIw4=
-	-----END RSA PRIVATE KEY-----
-`
+MIIEpQIBAAKCAQEAz1gk5XUGX43ASrxkBxVTZg40HDnMaRQUlRmQvvtdPSLVXjvc
+lN8YSk1mKwOZqf7qf6ldqsLaZHhP0+QJ+aTTvYdpnYtfBh71dKDGcslkkDV8kzN0
+wwLZe94g0X7956jJb37xmNA9tl0dZzGLtGiZeDUA4wAbZRYyNqUrnGRMdyoO44jY
+sR6Z7NYecV0Ek0xOLek11tWvsGN7FlNIaHHgsAg/a59NShXOT4K/KvgiFLTTM6LL
+Ja+24lo7bRDRDmffij28MAAIoB81EsETyrN1HCyMy6ZdNfeEnO+AWn/guvkevYjZ
+8F21shY33Eiy7oiJsEYUi2IB9BKsoBHsgVWoNQIDAQABAoIBABRhi67qY+f8nQw7
+nHF9zSbY+pJTtB4YFTXav3mmZ7HcvLB4neQcUdzr4sETp4UoQ5Cs60IfySvbD626
+WqipZQ7aQq1zx7FoVaRTMW6TEUmDmG03v6BzpUEhwoQVQYwF8Vb+WW01+vr0CDHe
+kub26S8BtsaZehfjqKfqcHD9Au8ri+Nwbu91iT4POVzBBBwYbtwXZwaYDR5PCNOI
+ld+6qLapVIVKpvLHL+tA4A/n0n4l7p8TJo/qYesFRZ7J+USt4YGFDuf15nnDge/7
+9Qjyqa9WmvRGytPdgtEzc8XwJu7xhcRthSmCppdY0ExHBwVceCEz8u3QbRYFqq3U
+iLXUpfkCgYEA6JMlRtLIEAPkJZGBxJBSaeWVOeaAaMnLAdcu4OFjSuxr65HXsdhM
+aWHopCE44NjBROAg67qgc5vNBZvhnCwyTI8nb6k/CO5QZ4AG1d2Xe/9rPV5pdaBL
+gRgOJjlG0apZpPVM4I/0JU5prwS2Z71lFmEMikwmbmngYmOysqUBfbMCgYEA5Dpw
+qzn1Oq+fasSUjzUa/wvBTVMpVjnNrda7Hnlx6lssnQaPFqifFYL9Zr/+5rWdsE2O
+NNCsy68tacspAUa0LQinzpeSP4dyTVCvZG/xWPaYDKE6FDmzsi8xHBTTxMneeU6p
+HUKJMUD3LcvBiCLunhT2xd1/+LKzVce6ms9R3ncCgYEAv9wjdDmOMSgEnblbg/xL
+AHEUmZ89bzSI9Au/8GP+tWAz5zF47o2w+355nGyLr3EgfuEmR1C97KEqkOX3SA5t
+sBqoPcUw6v0t9zP2b5dN0Ez0+rtX5GFH6Ecf5Qh7E5ukOCDkOpyGnAADzw3kK9Bi
+BAQrhCstyQguwvvb/uOAR2ECgYEA3nYcZrqaz7ZqVL8C88hW5S4HIKEkFNlJI97A
+DAdiw4ZVqUXAady5HFXPPL1+8FEtQLGIIPEazXuWb53I/WZ2r8LVFunlcylKgBRa
+sjLvdMEBGqZ5H0fTYabgXrfqZ9JBmcrTyyKU6b6icTBAF7u9DbfvhpTObZN6fO2v
+dcEJ0ycCgYEAxM8nGR+pa16kZmW1QV62EN0ifrU7SOJHCOGApU0jvTz8D4GO2j+H
+MsoPSBrZ++UYgtGO/dK4aBV1JDdy8ZdyfE6UN+a6dQgdNdbOMT4XwWdS0zlZ/+F4
+PKvbgZnLEKHvjODJ65aQmcTVUoaa11J29iAAtA3a3TcMn6C2fYpRy1s=
+-----END RSA PRIVATE KEY-----
+	`
 )
 
-func TestServerHost(t *testing.T) {
-	var server1, server2, server3 Server
-	var expectedHost1 = "mydomain.com:1993"
-	var expectedHost2 = "mydomain.com:80"
-	var expectedHost3 = DefaultServerHostname + ":9090"
-	server1.Config.ListeningAddr = expectedHost1
-	server2.Config.ListeningAddr = "mydomain.com"
-	server3.Config.ListeningAddr = ":9090"
+func TestParseAddr(t *testing.T) {
 
-	server1.Config.ListeningAddr = ServerParseAddr(server1.Config.ListeningAddr)
-	server2.Config.ListeningAddr = ServerParseAddr(server2.Config.ListeningAddr)
-	server3.Config.ListeningAddr = ServerParseAddr(server3.Config.ListeningAddr)
+	// test hosts
+	expectedHost1 := "mydomain.com:1993"
+	expectedHost2 := "mydomain.com"
+	expectedHost3 := DefaultServerHostname + ":9090"
+	expectedHost4 := "mydomain.com:443"
 
-	if server1.Host() != expectedHost1 {
-		t.Fatalf("Expecting server 1's host to be %s but we got %s", expectedHost1, server1.Host())
-	}
-	if server2.Host() != expectedHost2 {
-		t.Fatalf("Expecting server 2's host to be %s but we got %s", expectedHost2, server2.Host())
-	}
-	if server3.Host() != expectedHost3 {
-		t.Fatalf("Expecting server 3's host to be %s but we got %s", expectedHost3, server3.Host())
-	}
-}
+	host1 := ParseHost(expectedHost1)
+	host2 := ParseHost(expectedHost2)
+	host3 := ParseHost(":9090")
+	host4 := ParseHost(expectedHost4)
 
-func TestServerHostname(t *testing.T) {
-	var server Server
-	var expectedHostname = "mydomain.com"
-	server.Config.ListeningAddr = expectedHostname + ":1993"
-	server.Config.ListeningAddr = ServerParseAddr(server.Config.ListeningAddr)
-	if server.Hostname() != expectedHostname {
-		t.Fatalf("Expecting server's hostname to be %s but we got %s", expectedHostname, server.Hostname())
+	if host1 != expectedHost1 {
+		t.Fatalf("Expecting server 1's host to be %s but we got %s", expectedHost1, host1)
 	}
-}
-
-func TestServerFullHost(t *testing.T) {
-	var server1 Server
-	var server2 Server
-	server1.Config.ListeningAddr = "127.0.0.1:8080"
-	server1.Config.CertFile = "notempty"
-	server1.Config.KeyFile = "notempty"
-	server2.Config.ListeningAddr = "127.0.0.1:8080"
-	server1ExpectingFullhost := "https://" + server1.Config.ListeningAddr
-	server2ExpectingFullhost := "http://" + server2.Config.ListeningAddr
-	if server1.FullHost() != server1ExpectingFullhost {
-		t.Fatalf("Expecting server 1's fullhost to be %s but got %s", server1ExpectingFullhost, server1.FullHost())
+	if host2 != expectedHost2 {
+		t.Fatalf("Expecting server 2's host to be %s but we got %s", expectedHost2, host2)
 	}
-	if server2.FullHost() != server2ExpectingFullhost {
-		t.Fatalf("Expecting server 2's fullhost to be %s but got %s", server2ExpectingFullhost, server2.FullHost())
+	if host3 != expectedHost3 {
+		t.Fatalf("Expecting server 3's host to be %s but we got %s", expectedHost3, host3)
+	}
+	if host4 != expectedHost4 {
+		t.Fatalf("Expecting server 4's host to be %s but we got %s", expectedHost4, host4)
 	}
 
-}
+	// test hostname
+	expectedHostname1 := "mydomain.com"
+	expectedHostname2 := "mydomain.com"
+	expectedHostname3 := DefaultServerHostname
+	expectedHostname4 := "mydomain.com"
 
-func TestServerPort(t *testing.T) {
-	var server1, server2 Server
-	expectedPort1 := 8080
-	expectedPort2 := 80
-	server1.Config.ListeningAddr = "mydomain.com:8080"
-	server2.Config.ListeningAddr = "mydomain.com"
-	server1.Config.ListeningAddr = ServerParseAddr(server1.Config.ListeningAddr)
-	server2.Config.ListeningAddr = ServerParseAddr(server2.Config.ListeningAddr)
-
-	if server1.Port() != expectedPort1 {
-		t.Fatalf("Expecting server 1's port to be %d but we got %d", expectedPort1, server1.Port())
+	hostname1 := ParseHostname(host1)
+	hostname2 := ParseHostname(host2)
+	hostname3 := ParseHostname(host3)
+	hostname4 := ParseHostname(host4)
+	if hostname1 != expectedHostname1 {
+		t.Fatalf("Expecting server 1's hostname to be %s but we got %s", expectedHostname1, hostname1)
 	}
-	if server2.Port() != expectedPort2 {
-		t.Fatalf("Expecting server 2's port to be %d but we got %d", expectedPort2, server2.Port())
+
+	if hostname2 != expectedHostname2 {
+		t.Fatalf("Expecting server 2's hostname to be %s but we got %s", expectedHostname2, hostname2)
+	}
+
+	if hostname3 != expectedHostname3 {
+		t.Fatalf("Expecting server 3's hostname to be %s but we got %s", expectedHostname3, hostname3)
+	}
+
+	if hostname4 != expectedHostname4 {
+		t.Fatalf("Expecting server 4's hostname to be %s but we got %s", expectedHostname4, hostname4)
+	}
+
+	// test scheme, no need to test fullhost(scheme+host)
+	expectedScheme1 := SchemeHTTP
+	expectedScheme2 := SchemeHTTP
+	expectedScheme3 := SchemeHTTP
+	expectedScheme4 := SchemeHTTPS
+	scheme1 := ParseScheme(host1)
+	scheme2 := ParseScheme(host2)
+	scheme3 := ParseScheme(host3)
+	scheme4 := ParseScheme(host4)
+	if scheme1 != expectedScheme1 {
+		t.Fatalf("Expecting server 1's hostname to be %s but we got %s", expectedScheme1, scheme1)
+	}
+
+	if scheme2 != expectedScheme2 {
+		t.Fatalf("Expecting server 2's hostname to be %s but we got %s", expectedScheme2, scheme2)
+	}
+
+	if scheme3 != expectedScheme3 {
+		t.Fatalf("Expecting server 3's hostname to be %s but we got %s", expectedScheme3, scheme3)
+	}
+
+	if scheme4 != expectedScheme4 {
+		t.Fatalf("Expecting server 4's hostname to be %s but we got %s", expectedScheme4, scheme4)
 	}
 }
 
 // Contains the server test for multi running servers
-func TestMultiRunningServers_v1(t *testing.T) {
-	host := "mydomain.com:443" // you have to add it to your hosts file( for windows, as 127.0.0.1 mydomain.com)
+func TestMultiRunningServers_v1_PROXY(t *testing.T) {
+	defer Close()
+	host := "mydomain.com" // you have to add it to your hosts file( for windows, as 127.0.0.1 mydomain.com)
 	initDefault()
-	Config.DisableBanner = true
+	Default.Config.DisableBanner = true
 	// create the key and cert files on the fly, and delete them when this test finished
 	certFile, ferr := ioutil.TempFile("", "cert")
 
@@ -153,9 +165,6 @@ func TestMultiRunningServers_v1(t *testing.T) {
 		t.Fatal(ferr.Error())
 	}
 
-	certFile.WriteString(testTLSCert)
-	keyFile.WriteString(testTLSKey)
-
 	defer func() {
 		certFile.Close()
 		time.Sleep(350 * time.Millisecond)
@@ -166,33 +175,37 @@ func TestMultiRunningServers_v1(t *testing.T) {
 		os.Remove(keyFile.Name())
 	}()
 
+	certFile.WriteString(testTLSCert)
+	keyFile.WriteString(testTLSKey)
+
 	Get("/", func(ctx *Context) {
 		ctx.Write("Hello from %s", ctx.HostString())
 	})
 
-	// start the secondary server
-	AddServer(ServerConfiguration{ListeningAddr: "mydomain.com:80", RedirectTo: "https://" + host, Virtual: true})
-	// start the main server
-	go ListenTo(ServerConfiguration{ListeningAddr: host, CertFile: certFile.Name(), KeyFile: keyFile.Name(), Virtual: true})
-	// prepare test framework
-	if ok := <-Available; !ok {
+	go ListenTLS(host+":443", certFile.Name(), keyFile.Name())
+	if ok := <-Default.Available; !ok {
 		t.Fatal("Unexpected error: server cannot start, please report this as bug!!")
 	}
 
+	closeProxy := Proxy("mydomain.com:80", "https://"+host)
+	defer closeProxy()
+
+	Default.Config.Tester.ExplicitURL = true
 	e := Tester(t)
 
-	e.Request("GET", "http://mydomain.com:80").Expect().Status(StatusOK).Body().Equal("Hello from " + host)
+	e.Request("GET", "http://"+host).Expect().Status(StatusOK).Body().Equal("Hello from " + host)
 	e.Request("GET", "https://"+host).Expect().Status(StatusOK).Body().Equal("Hello from " + host)
 
 }
 
 // Contains the server test for multi running servers
 func TestMultiRunningServers_v2(t *testing.T) {
+	defer Close()
 	domain := "mydomain.com"
-	host := domain + ":443"
+
 	initDefault()
-	Config.DisableBanner = true
-	Config.Tester.ListeningAddr = host
+	Default.Config.DisableBanner = true
+
 	// create the key and cert files on the fly, and delete them when this test finished
 	certFile, ferr := ioutil.TempFile("", "cert")
 
@@ -219,25 +232,35 @@ func TestMultiRunningServers_v2(t *testing.T) {
 	}()
 
 	Get("/", func(ctx *Context) {
-		ctx.Write("Hello from %s", ctx.HostString())
+		ctx.Write("Hello from %s", string(ctx.HostString()))
 	})
 
 	// add a secondary server
-	Servers.Add(ServerConfiguration{ListeningAddr: domain + ":80", RedirectTo: "https://" + host, Virtual: true})
+	//Servers.Add(ServerConfiguration{ListeningAddr: domain + ":80", RedirectTo: "https://" + host, Virtual: true})
 	// add our primary/main server
-	Servers.Add(ServerConfiguration{ListeningAddr: host, CertFile: certFile.Name(), KeyFile: keyFile.Name(), Virtual: true})
+	//Servers.Add(ServerConfiguration{ListeningAddr: host, CertFile: certFile.Name(), KeyFile: keyFile.Name(), Virtual: true})
 
-	go Go()
+	//go Go()
 
-	// prepare test framework
+	// using the proxy handler
+	fsrv1 := &fasthttp.Server{Handler: proxyHandler(domain+":80", "https://"+domain)}
+	go fsrv1.ListenAndServe(domain + ":80")
+	// using the same iris' handler but not as proxy, just the same handler
+	fsrv2 := &fasthttp.Server{Handler: Default.Router}
+	go fsrv2.ListenAndServe("myotherdomain.com" + ":8080")
+
+	go ListenTLS(domain+":443", certFile.Name(), keyFile.Name())
+
 	if ok := <-Available; !ok {
 		t.Fatal("Unexpected error: server cannot start, please report this as bug!!")
 	}
 
+	Default.Config.Tester.ExplicitURL = true
 	e := Tester(t)
 
-	e.Request("GET", "http://"+domain+":80").Expect().Status(StatusOK).Body().Equal("Hello from " + host)
-	e.Request("GET", "https://"+host).Expect().Status(StatusOK).Body().Equal("Hello from " + host)
+	e.Request("GET", "http://"+domain).Expect().Status(StatusOK).Body().Equal("Hello from " + domain)
+	e.Request("GET", "http://myotherdomain.com:8080").Expect().Status(StatusOK).Body().Equal("Hello from myotherdomain.com:8080")
+	e.Request("GET", "https://"+domain).Expect().Status(StatusOK).Body().Equal("Hello from " + domain)
 
 }
 
@@ -247,18 +270,13 @@ const (
 )
 
 func testSubdomainHost() string {
-	s := testSubdomain + "." + Servers.Main().Host()
+	s := testSubdomain + "." + Default.Config.VHost
 	return s
 }
 
-func testSubdomainURL() (subdomainURL string) {
+func testSubdomainURL() string {
 	subdomainHost := testSubdomainHost()
-	if Servers.Main().IsSecure() {
-		subdomainURL = "https://" + subdomainHost
-	} else {
-		subdomainURL = "http://" + subdomainHost
-	}
-	return
+	return Default.Config.VScheme + subdomainHost
 }
 
 func subdomainTester(e *httpexpect.Expect) *httpexpect.Expect {
@@ -316,7 +334,7 @@ func TestMuxSimple(t *testing.T) {
 		{"GET", "/test_get_urlparameter2/second", "/test_get_urlparameter2/second", "name=irisurl&something=anything", "name=irisurl,something=anything", 200, true, nil, []param{{"name", "irisurl"}, {"something", "anything"}}},
 		{"GET", "/test_get_urlparameter2/first/second/third", "/test_get_urlparameter2/first/second/third", "name=irisurl&something=anything&else=elsehere", "name=irisurl,something=anything,else=elsehere", 200, true, nil, []param{{"name", "irisurl"}, {"something", "anything"}, {"else", "elsehere"}}},
 	}
-
+	defer Close()
 	initDefault()
 
 	for idx := range testRoutes {
@@ -360,7 +378,6 @@ func TestMuxSimple(t *testing.T) {
 }
 
 func TestMuxSimpleParty(t *testing.T) {
-
 	initDefault()
 
 	h := func(c *Context) { c.WriteString(c.HostString() + c.PathString()) }
@@ -386,12 +403,13 @@ func TestMuxSimpleParty(t *testing.T) {
 		p.Get("/namedpath/:param1/something/:param2/else", h)
 	}
 
+	Default.Config.VHost = "0.0.0.0:8080"
 	e := Tester(t)
 
 	request := func(reqPath string) {
 		e.Request("GET", reqPath).
 			Expect().
-			Status(StatusOK).Body().Equal(Servers.Main().Host() + reqPath)
+			Status(StatusOK).Body().Equal(Default.Config.VHost + reqPath)
 	}
 
 	// run the tests

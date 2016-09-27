@@ -56,6 +56,7 @@ func (t *testPluginEx) PreClose(*Framework) {
 
 func ExamplePlugins_Add() {
 	initDefault()
+	Default.Set(OptionDisableBanner(true))
 	Plugins.Add(PreListenFunc(func(*Framework) {
 		fmt.Println("PreListen Func")
 	}))
@@ -72,9 +73,11 @@ func ExamplePlugins_Add() {
 	Plugins.Add(myplugin)
 	desc := Plugins.GetDescription(myplugin)
 	fmt.Println(desc)
+	go Listen(":8080")
 
-	ListenVirtual()
-	Close()
+	if ok := <-Available; ok {
+		Close()
+	}
 
 	// Output:
 	// GetName Struct

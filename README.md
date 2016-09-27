@@ -11,7 +11,7 @@
 
 <a href="#"><img src="https://img.shields.io/badge/platform-Any-ec2eb4.svg?style=flat-square" alt="Platforms"></a>
 
-<a href="https://github.com/kataras/iris/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0%20%20-E91E63.svg?style=flat-square" alt="License"></a>
+<a href="https://github.com/kataras/iris/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT%20%20-E91E63.svg?style=flat-square" alt="License"></a>
 
 
 <a href="https://golang.org"><img src="https://img.shields.io/badge/powered_by-Go-3362c2.svg?style=flat-square" alt="Built with GoLang"></a>
@@ -19,7 +19,7 @@
 <br/>
 
 
-<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20version%20-%204.3.0%20-blue.svg?style=flat-square" alt="Releases"></a>
+<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20version%20-%204.4.0%20-blue.svg?style=flat-square" alt="Releases"></a>
 
 <a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/%20examples-repository-3362c2.svg?style=flat-square" alt="Examples"></a>
 
@@ -117,16 +117,14 @@ If you'd like to discuss this package, or ask questions about it, feel free to
  * [Chat][Chat].
 
 
-New website-docs & logo have been designed by the community[*](https://github.com/kataras/iris/issues/153)
-
-- Website created by [@kujtimiihoxha](https://github.com/kujtimiihoxha)
-- Logo designed by [@OneebMalik](https://github.com/OneebMalik)
+New logo have been designed by the community member, [@OneebMalik](https://github.com/OneebMalik).
 
 
 Features
 ------------
 - Focus on high performance
 - Robust routing, static, wildcard subdomains and routes.
+- Internal version checker & updater[.*](https://github.com/kataras/iris/issues/401).
 - [Websocket API](https://github.com/kataras/go-websocket), [Sessions](https://github.com/kataras/go-sessions) support out of the box
 - Remote control through [SSH](https://github.com/iris-contrib/examples/blob/master/ssh/main.go)
 - View system supporting [6+](https://github.com/kataras/go-template) template engines.[*](https://kataras.gitbooks.io/iris/content/template-engines.html)
@@ -160,6 +158,7 @@ Features
 | [I18n Middleware ](https://github.com/iris-contrib/middleware/tree/master/i18n)      | Simple internationalization       | [example](https://github.com/iris-contrib/examples/tree/master/middleware_internationalization_i18n), [book section](https://kataras.gitbooks.io/iris/content/middleware-internationalization-and-localization.html)  |
 | [Recovery Middleware ](https://github.com/iris-contrib/middleware/tree/master/recovery) | Safety recover the station from panic       | [example](https://github.com/iris-contrib/examples/blob/master/middleware_recovery/main.go)  |
 | [Logger Middleware ](https://github.com/iris-contrib/middleware/tree/master/logger)      | Logs every request       | [example](https://github.com/iris-contrib/examples/blob/master/middleware_logger/main.go), [book section](https://kataras.gitbooks.io/iris/content/logger.html)  |
+| [Profile Middleware ](https://github.com/iris-contrib/middleware/tree/master/pprof)      | Http profiling for debugging    | [example](https://github.com/iris-contrib/examples/blob/master/middleware_pprof/main.go)  |
 | [Editor Plugin](https://github.com/iris-contrib/plugin/tree/master/editor)      | Alm-tools, a typescript online IDE/Editor | [book section](https://kataras.gitbooks.io/iris/content/plugin-editor.html) |
 | [Typescript Plugin](https://github.com/iris-contrib/plugin/tree/master/typescript)      | Auto-compile client-side typescript files      |   [book section](https://kataras.gitbooks.io/iris/content/plugin-typescript.html) |
 | [OAuth,OAuth2 Plugin](https://github.com/iris-contrib/plugin/tree/master/oauth) |  User Authentication was never be easier, supports >27 providers |    [example](https://github.com/iris-contrib/examples/tree/master/plugin_oauth_oauth2), [book section](https://kataras.gitbooks.io/iris/content/plugin-oauth.html) |
@@ -193,13 +192,12 @@ This Benchmark test aims to compare the whole HTTP request processing between Go
 Testing
 ------------
 
-Community should write third-party or iris base tests to the [iris-contrib/tests repository](https://github.com/iris-contrib/tests).
-I recommend writing your API tests using this new library, [httpexpect](https://github.com/gavv/httpexpect) which supports Iris and fasthttp now, after my request [here](https://github.com/gavv/httpexpect/issues/2).
+I recommend writing your API tests using this new library, [httpexpect](https://github.com/gavv/httpexpect) which supports Iris and fasthttp now, after my request [here](https://github.com/gavv/httpexpect/issues/2). You can find Iris examples [here](https://github.com/gavv/httpexpect/blob/master/example/iris_test.go), [here](https://github.com/kataras/iris/blob/master/http_test.go) and [here](https://github.com/kataras/iris/blob/master/context_test.go).
 
 Versioning
 ------------
 
-Current: **v4.3.0**
+Current: **v4.4.0**
 
 >  Iris is an active project
 
@@ -214,6 +212,7 @@ Todo
 - [x] Use of the standard `log.Logger` instead of the `iris-contrib/logger`(colorful logger), make these changes to all middleware, examples and plugins.
 - [x] Implement, even, a better way to manage configuration/options, devs will be able to set their own custom options inside there. ` I'm thinking of something the last days, but it will have breaking changes. `
 - [x] Implement an internal updater, as requested [here](https://github.com/kataras/iris/issues/401).
+- [x] Support of using native servers and net.Listener instead of Iris' defined.[*](https://github.com/kataras/iris/issues/438)
 
 Iris is a **Community-Driven** Project, waiting for your suggestions and [feature requests](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=label%3A%22feature%20request%22)!
 
@@ -231,26 +230,8 @@ If you are interested in contributing to the Iris project, please see the docume
 License
 ------------
 
-This project is licensed under the Apache License, Version 2.0.
+This project is licensed under the MIT License, Copyright (c) 2016 Gerasimos Maropoulos.
 
-License can be found [here](LICENSE).
-
-[Travis Widget]: https://img.shields.io/travis/kataras/iris.svg?style=flat-square
-[Travis]: http://travis-ci.org/kataras/iris
-[License Widget]: https://img.shields.io/badge/license-Apache%202.0%20%20-E91E63.svg?style=flat-square
-[License]: https://github.com/kataras/iris/blob/master/LICENSE
-[Release Widget]: https://img.shields.io/badge/release-v4.3.0-blue.svg?style=flat-square
-[Release]: https://github.com/kataras/iris/releases
-[Chat Widget]: https://img.shields.io/badge/community-chat-00BCD4.svg?style=flat-square
 [Chat]: https://kataras.rocket.chat/channel/iris
 [ChatMain]: https://kataras.rocket.chat/channel/iris
 [ChatAlternative]: https://gitter.im/kataras/iris
-[Report Widget]: https://img.shields.io/badge/report%20card-A%2B-F44336.svg?style=flat-square
-[Report]: http://goreportcard.com/report/kataras/iris
-[Documentation Widget]: https://img.shields.io/badge/documentation-reference-5272B4.svg?style=flat-square
-[Documentation]: https://www.gitbook.com/book/kataras/iris/details
-[Examples Widget]: https://img.shields.io/badge/examples-repository-3362c2.svg?style=flat-square
-[Examples]: https://github.com/iris-contrib/examples
-[Language Widget]: https://img.shields.io/badge/powered_by-Go-3362c2.svg?style=flat-square
-[Language]: http://golang.org
-[Platform Widget]: https://img.shields.io/badge/platform-Any--OS-gray.svg?style=flat-square

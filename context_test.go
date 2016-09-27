@@ -128,7 +128,7 @@ func TestContextURLParams(t *testing.T) {
 // hoststring returns the full host, will return the HOST:IP
 func TestContextHostString(t *testing.T) {
 	initDefault()
-	Config.Tester.ListeningAddr = "localhost:8080"
+	Default.Config.VHost = "0.0.0.0:8080"
 	Get("/", func(ctx *Context) {
 		ctx.Write(ctx.HostString())
 	})
@@ -138,8 +138,8 @@ func TestContextHostString(t *testing.T) {
 	})
 
 	e := Tester(t)
-	e.GET("/").Expect().Status(StatusOK).Body().Equal(Config.Tester.ListeningAddr)
-	e.GET("/wrong").Expect().Body().NotEqual(Config.Tester.ListeningAddr)
+	e.GET("/").Expect().Status(StatusOK).Body().Equal(Default.Config.VHost)
+	e.GET("/wrong").Expect().Body().NotEqual(Default.Config.VHost)
 }
 
 // VirtualHostname returns the hostname only,
@@ -147,7 +147,7 @@ func TestContextHostString(t *testing.T) {
 func TestContextVirtualHostName(t *testing.T) {
 	initDefault()
 	vhost := "mycustomvirtualname.com"
-	Config.Tester.ListeningAddr = vhost + ":8080"
+	Default.Config.VHost = vhost + ":8080"
 	Get("/", func(ctx *Context) {
 		ctx.Write(ctx.VirtualHostname())
 	})
@@ -176,13 +176,15 @@ func TestContextFormValueString(t *testing.T) {
 
 func TestContextSubdomain(t *testing.T) {
 	initDefault()
-	Config.Tester.ListeningAddr = "mydomain.com:9999"
-	//Config.Tester.ExplicitURL = true
+	Default.Config.VHost = "mydomain.com:9999"
+	//Default.Config.Tester.ListeningAddr = "mydomain.com:9999"
+	// Default.Config.Tester.ExplicitURL = true
 	Party("mysubdomain.").Get("/mypath", func(ctx *Context) {
 		ctx.Write(ctx.Subdomain())
 	})
 
 	e := Tester(t)
+
 	e.GET("/").WithURL("http://mysubdomain.mydomain.com:9999").Expect().Status(StatusNotFound)
 	e.GET("/mypath").WithURL("http://mysubdomain.mydomain.com:9999").Expect().Status(StatusOK).Body().Equal("mysubdomain")
 
@@ -560,7 +562,7 @@ func TestContextSessions(t *testing.T) {
 	// request cookie should be empty
 	Get("/after_destroy", func(ctx *Context) {
 	})
-
+	Default.Config.VHost = "mydomain.com"
 	e := Tester(t)
 
 	e.POST("/set").WithJSON(values).Expect().Status(StatusOK).Cookies().NotEmpty()

@@ -8,7 +8,6 @@ import (
 	"io"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -41,6 +40,78 @@ func (o OptionSet) Set(c *Configuration) {
 //
 // Configuration is also implements the OptionSet so it's a valid option itself, this is briliant enough
 type Configuration struct {
+	// VHost is the addr or the domain that server listens to, which it's optional
+	// When to set VHost manually:
+	// 1. it's automatically setted when you're calling
+	//     $instance.Listen/ListenUNIX/ListenTLS/ListenLETSENCRYPT functions or
+	//     ln,_ := iris.TCP4/UNIX/TLS/LETSENCRYPT; $instance.Serve(ln)
+	// 2. If you using a balancer, or something like nginx
+	//    then set it in order to have the correct url
+	//    when calling the template helper '{{url }}'
+	//    *keep note that you can use {{urlpath }}) instead*
+	//
+	// Note: this is the main's server Host, you can setup unlimited number of fasthttp servers
+	// listening to the $instance.Handler after the manually-called $instance.Build
+	//
+	// Default comes from iris.Listen/.Serve with iris' listeners (iris.TCP4/UNIX/TLS/LETSENCRYPT)
+	VHost string
+
+	// VScheme is the scheme (http:// or https://) putted at the template function '{{url }}'
+	// It's an optional field,
+	// When to set VScheme manually:
+	// 1. You didn't start the main server using $instance.Listen/ListenTLS/ListenLETSENCRYPT or $instance.Serve($instance.TCP4()/.TLS...)
+	// 2. if you're using something like nginx and have iris listening with addr only(http://) but the nginx mapper is listening to https://
+	//
+	// Default comes from iris.Listen/.Serve with iris' listeners (TCP4,UNIX,TLS,LETSENCRYPT)
+	VScheme string
+
+	// MaxRequestBodySize Maximum request body size.
+	//
+	// The server rejects requests with bodies exceeding this limit.
+	//
+	// By default request body size is 8MB.
+	MaxRequestBodySize int
+
+	// Per-connection buffer size for requests' reading.
+	// This also limits the maximum header size.
+	//
+	// Increase this buffer if your clients send multi-KB RequestURIs
+	// and/or multi-KB headers (for example, BIG cookies).
+	//
+	// Default buffer size is used if not set.
+	ReadBufferSize int
+
+	// Per-connection buffer size for responses' writing.
+	//
+	// Default buffer size is used if not set.
+	WriteBufferSize int
+
+	// Maximum duration for reading the full request (including body).
+	//
+	// This also limits the maximum duration for idle keep-alive
+	// connections.
+	//
+	// By default request read timeout is unlimited.
+	ReadTimeout time.Duration
+
+	// Maximum duration for writing the full response (including body).
+	//
+	// By default response write timeout is unlimited.
+	WriteTimeout time.Duration
+
+	// Maximum number of concurrent client connections allowed per IP.
+	//
+	// By default unlimited number of concurrent connections
+	MaxConnsPerIP int
+
+	// Maximum number of requests served per connection.
+	//
+	// The server closes connection after the last request.
+	// 'Connection: close' header is added to the last response.
+	//
+	// By default unlimited number of requests may be served per connection.
+	MaxRequestsPerConn int
+
 	// CheckForUpdates will try to search for newer version of Iris based on the https://github.com/kataras/iris/releases
 	// If a newer version found then the app will ask the he dev/user if want to update the 'x' version
 	// if 'y' is pressed then the updater will try to install the latest version
@@ -102,35 +173,6 @@ type Configuration struct {
 	// Default is [IRIS]
 	LoggerPreffix string
 
-	// ProfilePath a the route path, set it to enable http pprof tool
-	// Default is empty, if you set it to a $path, these routes will handled:
-	// $path/cmdline
-	// $path/profile
-	// $path/symbol
-	// $path/goroutine
-	// $path/heap
-	// $path/threadcreate
-	// $path/pprof/block
-	// for example if '/debug/pprof'
-	// http://yourdomain:PORT/debug/pprof/
-	// http://yourdomain:PORT/debug/pprof/cmdline
-	// http://yourdomain:PORT/debug/pprof/profile
-	// http://yourdomain:PORT/debug/pprof/symbol
-	// http://yourdomain:PORT/debug/pprof/goroutine
-	// http://yourdomain:PORT/debug/pprof/heap
-	// http://yourdomain:PORT/debug/pprof/threadcreate
-	// http://yourdomain:PORT/debug/pprof/pprof/block
-	// it can be a subdomain also, for example, if 'debug.'
-	// http://debug.yourdomain:PORT/
-	// http://debug.yourdomain:PORT/cmdline
-	// http://debug.yourdomain:PORT/profile
-	// http://debug.yourdomain:PORT/symbol
-	// http://debug.yourdomain:PORT/goroutine
-	// http://debug.yourdomain:PORT/heap
-	// http://debug.yourdomain:PORT/threadcreate
-	// http://debug.yourdomain:PORT/pprof/block
-	ProfilePath string
-
 	// DisableTemplateEngines set to true to disable loading the default template engine (html/template) and disallow the use of iris.UseEngine
 	// default is false
 	DisableTemplateEngines bool
@@ -176,6 +218,116 @@ func (c Configuration) Set(main *Configuration) {
 
 // All options starts with "Option" preffix in order to be easier to find what dev searching for
 var (
+
+	// OptionVHost is the addr or the domain that server listens to, which it's optional
+	// When to set VHost manually:
+	// 1. it's automatically setted when you're calling
+	//     $instance.Listen/ListenUNIX/ListenTLS/ListenLETSENCRYPT functions or
+	//     ln,_ := iris.TCP4/UNIX/TLS/LETSENCRYPT; $instance.Serve(ln)
+	// 2. If you using a balancer, or something like nginx
+	//    then set it in order to have the correct url
+	//    when calling the template helper '{{url }}'
+	//    *keep note that you can use {{urlpath }}) instead*
+	//
+	// Note: this is the main's server Host, you can setup unlimited number of fasthttp servers
+	// listening to the $instance.Handler after the manually-called $instance.Build
+	//
+	// Default comes from iris.Listen/.Serve with iris' listeners (iris.TCP4/UNIX/TLS/LETSENCRYPT)
+	OptionVHost = func(val string) OptionSet {
+		return func(c *Configuration) {
+			c.VHost = val
+		}
+	}
+
+	// OptionVScheme is the scheme (http:// or https://) putted at the template function '{{url }}'
+	// It's an optional field,
+	// When to set Scheme manually:
+	// 1. You didn't start the main server using $instance.Listen/ListenTLS/ListenLETSENCRYPT or $instance.Serve($instance.TCP4()/.TLS...)
+	// 2. if you're using something like nginx and have iris listening with addr only(http://) but the nginx mapper is listening to https://
+	//
+	// Default comes from iris.Listen/.Serve with iris' listeners (TCP4,UNIX,TLS,LETSENCRYPT)
+	OptionVScheme = func(val string) OptionSet {
+		return func(c *Configuration) {
+			c.VScheme = val
+		}
+	}
+
+	// OptionMaxRequestBodySize Maximum request body size.
+	//
+	// The server rejects requests with bodies exceeding this limit.
+	//
+	// By default request body size is 8MB.
+	OptionMaxRequestBodySize = func(val int) OptionSet {
+		return func(c *Configuration) {
+			c.MaxRequestBodySize = val
+		}
+	}
+
+	// Per-connection buffer size for requests' reading.``
+	// This also limits the maximum header size.
+	//
+	// Increase this buffer if your clients send multi-KB RequestURIs
+	// and/or multi-KB headers (for example, BIG cookies).
+	//
+	// Default buffer size is used if not set.
+	OptionReadBufferSize = func(val int) OptionSet {
+		return func(c *Configuration) {
+			c.ReadBufferSize = val
+		}
+	}
+
+	// Per-connection buffer size for responses' writing.
+	//
+	// Default buffer size is used if not set.
+	OptionWriteBufferSize = func(val int) OptionSet {
+		return func(c *Configuration) {
+			c.WriteBufferSize = val
+		}
+	}
+
+	// Maximum duration for reading the full request (including body).
+	//
+	// This also limits the maximum duration for idle keep-alive
+	// connections.
+	//
+	// By default request read timeout is unlimited.
+	OptionReadTimeout = func(val time.Duration) OptionSet {
+		return func(c *Configuration) {
+			c.ReadTimeout = val
+		}
+	}
+
+	// Maximum duration for writing the full response (including body).
+	//
+	// By default response write timeout is unlimited.
+	OptionWriteTimeout = func(val time.Duration) OptionSet {
+		return func(c *Configuration) {
+			c.WriteTimeout = val
+		}
+	}
+
+	// OptionMaxConnsPerIP Maximum number of concurrent client connections allowed per IP.
+	//
+	// By default unlimited number of concurrent connections
+	// may be established to the server from a single IP address.
+	OptionMaxConnsPerIP = func(val int) OptionSet {
+		return func(c *Configuration) {
+			c.MaxConnsPerIP = val
+		}
+	}
+
+	// OptionMaxRequestsPerConn Maximum number of requests served per connection.
+	//
+	// The server closes connection after the last request.
+	// 'Connection: close' header is added to the last response.
+	//
+	// By default unlimited number of requests may be served per connection.
+	OptionMaxRequestsPerConn = func(val int) OptionSet {
+		return func(c *Configuration) {
+			c.MaxRequestsPerConn = val
+		}
+	}
+
 	// OptionCheckForUpdates will try to search for newer version of Iris based on the https://github.com/kataras/iris/releases
 	// If a newer version found then the app will ask the he dev/user if want to update the 'x' version
 	// if 'y' is pressed then the updater will try to install the latest version
@@ -194,7 +346,6 @@ var (
 		return func(c *Configuration) {
 			c.CheckForUpdates = val
 		}
-
 	}
 	// CheckForUpdatesSync checks for updates before server starts, it will have a little delay depends on the machine's download's speed
 	// See CheckForUpdates for more
@@ -253,14 +404,6 @@ var (
 	OptionLoggerPreffix = func(val string) OptionSet {
 		return func(c *Configuration) {
 			c.LoggerPreffix = val
-		}
-	}
-
-	// OptionProfilePath a the route path, set it to enable http pprof tool
-	// Default is empty, if you set it to a $path, these routes will handled:
-	OptionProfilePath = func(val string) OptionSet {
-		return func(c *Configuration) {
-			c.ProfilePath = val
 		}
 	}
 
@@ -340,6 +483,25 @@ const (
 	DefaultDisablePathEscape     = false
 	DefaultCharset               = "UTF-8"
 	DefaultLoggerPreffix         = "[IRIS] "
+	// DefaultMaxRequestBodySize is 8MB
+	DefaultMaxRequestBodySize = 2 * fasthttp.DefaultMaxRequestBodySize
+
+	// Per-connection buffer size for requests' reading.
+	// This also limits the maximum header size.
+	//
+	// Increase this buffer if your clients send multi-KB RequestURIs
+	// and/or multi-KB headers (for example, BIG cookies).
+	//
+	// Default buffer size is 8MB
+	DefaultReadBufferSize = 8096
+
+	// Per-connection buffer size for responses' writing.
+	//
+	// Default buffer size is 8MB
+	DefaultWriteBufferSize = 8096
+
+	// DefaultServerName the response header of the 'Server' value when writes to the client
+	DefaultServerName = "iris"
 )
 
 var (
@@ -350,6 +512,13 @@ var (
 // DefaultConfiguration returns the default configuration for an Iris station, fills the main Configuration
 func DefaultConfiguration() Configuration {
 	return Configuration{
+		VHost:                  "",
+		VScheme:                "",
+		MaxRequestBodySize:     DefaultMaxRequestBodySize,
+		ReadBufferSize:         DefaultReadBufferSize,
+		WriteBufferSize:        DefaultWriteBufferSize,
+		MaxConnsPerIP:          0,
+		MaxRequestsPerConn:     0,
 		CheckForUpdates:        false,
 		CheckForUpdatesSync:    false,
 		DisablePathCorrection:  DefaultDisablePathCorrection,
@@ -362,7 +531,6 @@ func DefaultConfiguration() Configuration {
 		TimeFormat:             DefaultTimeFormat,
 		Charset:                DefaultCharset,
 		Gzip:                   false,
-		ProfilePath:            "",
 		Sessions:               DefaultSessionsConfiguration(),
 		Websocket:              DefaultWebsocketConfiguration(),
 		Tester:                 DefaultTesterConfiguration(),
@@ -579,9 +747,6 @@ func DefaultWebsocketConfiguration() WebsocketConfiguration {
 
 // TesterConfiguration configuration used inside main config field 'Tester'
 type TesterConfiguration struct {
-	// ListeningAddr is the virtual server's listening addr (host)
-	// Default is "iris-go.com:1993"
-	ListeningAddr string
 	// ExplicitURL If true then the url (should) be prepended manually, useful when want to test subdomains
 	// Default is false
 	ExplicitURL bool
@@ -591,13 +756,6 @@ type TesterConfiguration struct {
 }
 
 var (
-	// OptionTesterListeningAddr is the virtual server's listening addr (host)
-	// Default is "iris-go.com:1993"
-	OptionTesterListeningAddr = func(val string) OptionSet {
-		return func(c *Configuration) {
-			c.Tester.ListeningAddr = val
-		}
-	}
 	// OptionTesterExplicitURL If true then the url (should) be prepended manually, useful when want to test subdomains
 	// Default is false
 	OptionTesterExplicitURL = func(val bool) OptionSet {
@@ -615,367 +773,19 @@ var (
 )
 
 // DefaultTesterConfiguration returns the default configuration for a tester
-// the ListeningAddr is used as virtual only when no running server is founded
 func DefaultTesterConfiguration() TesterConfiguration {
-	return TesterConfiguration{ListeningAddr: "iris-go.com:1993", ExplicitURL: false, Debug: false}
-}
-
-// ServerConfiguration is the configuration which is used inside iris' server(s) for listening to
-type ServerConfiguration struct {
-	// ListenningAddr the addr that server listens to
-	ListeningAddr string
-	CertFile      string
-	KeyFile       string
-	// AutoTLS enable to get certifications from the Letsencrypt
-	// when this configuration field is true, the CertFile & KeyFile are empty, no need to provide a key.
-	//
-	// example: https://github.com/iris-contrib/examples/blob/master/letsencyrpt/main.go
-	AutoTLS bool
-	// Mode this is for unix only
-	Mode os.FileMode
-	// MaxRequestBodySize Maximum request body size.
-	//
-	// The server rejects requests with bodies exceeding this limit.
-	//
-	// By default request body size is 8MB.
-	MaxRequestBodySize int
-
-	// Per-connection buffer size for requests' reading.
-	// This also limits the maximum header size.
-	//
-	// Increase this buffer if your clients send multi-KB RequestURIs
-	// and/or multi-KB headers (for example, BIG cookies).
-	//
-	// Default buffer size is used if not set.
-	ReadBufferSize int
-
-	// Per-connection buffer size for responses' writing.
-	//
-	// Default buffer size is used if not set.
-	WriteBufferSize int
-
-	// Maximum duration for reading the full request (including body).
-	//
-	// This also limits the maximum duration for idle keep-alive
-	// connections.
-	//
-	// By default request read timeout is unlimited.
-	ReadTimeout time.Duration
-
-	// Maximum duration for writing the full response (including body).
-	//
-	// By default response write timeout is unlimited.
-	WriteTimeout time.Duration
-
-	// Maximum number of concurrent client connections allowed per IP.
-	//
-	// By default unlimited number of concurrent connections
-	// may be established to the server from a single IP address.
-	// Usage: iris.ListenTo{iris.OptionServerListeningAddr(":8080"), iris.OptionServerMaxConnsPerIP(300)}
-	//    or: iris.ListenTo(iris.ServerConfiguration{ListeningAddr: ":8080", MaxConnsPerIP: 300})
-	// for an optional second server with a different port you can always use:
-	//        iris.AddServer(iris.ServerConfiguration{ListeningAddr: ":9090", MaxConnsPerIP: 300})
-	MaxConnsPerIP int
-
-	// Maximum number of requests served per connection.
-	//
-	// The server closes connection after the last request.
-	// 'Connection: close' header is added to the last response.
-	//
-	// By default unlimited number of requests may be served per connection.
-	// Usage: iris.ListenTo{iris.OptionServerListeningAddr(":8080"), iris.OptionServerMaxConnsPerIP(300)}
-	//    or: iris.ListenTo(iris.ServerConfiguration{ListeningAddr: ":8080", MaxRequestsPerConn:100})
-	// for an optional second server with a different port you can always use:
-	//        iris.AddServer(iris.ServerConfiguration{ListeningAddr: ":9090", MaxRequestsPerConn:100})
-	MaxRequestsPerConn int
-
-	// RedirectTo, defaults to empty, set it in order to override the station's handler and redirect all requests to this address which is of form(HOST:PORT or :PORT)
-	//
-	// NOTE: the http status is 'StatusMovedPermanently', means one-time-redirect(the browser remembers the new addr and goes to the new address without need to request something from this server
-	// which means that if you want to change this address you have to clear your browser's cache in order this to be able to change to the new addr.
-	//
-	// example: https://github.com/iris-contrib/examples/tree/master/multiserver_listening2
-	RedirectTo string
-	// Virtual If this server is not really listens to a real host, it mostly used in order to achieve testing without system modifications
-	Virtual bool
-	// VListeningAddr, can be used for both virtual = true or false,
-	// if it's setted to not empty, then the server's Host() will return this addr instead of the ListeningAddr.
-	// server's Host() is used inside global template helper funcs
-	// set it when you are sure you know what it does.
-	//
-	// Default is empty ""
-	VListeningAddr string
-	// VScheme if setted to not empty value then all template's helper funcs prepends that as the url scheme instead of the real scheme
-	// server's .Scheme returns VScheme if  not empty && differs from real scheme
-	//
-	// Default is empty ""
-	VScheme string
-	// Name the server's name, defaults to "iris".
-	// You're free to change it, but I will trust you to don't, this is the only setting whose somebody, like me, can see if iris web framework is used
-	Name string
-}
-
-// note: ServerConfiguration is the only one config which has its own option setter because
-// it's independent from a specific iris instance:
-// same server can run on multi iris instance
-// one iris instance/station can have and listening to more than one server.
-
-// OptionServerSettter server configuration option setter
-type OptionServerSettter interface {
-	Set(c *ServerConfiguration)
-}
-
-// OptionServerSet is the func which implements the OptionServerSettter, this is used widely
-type OptionServerSet func(c *ServerConfiguration)
-
-// Set is the func which makes OptionServerSet implements the OptionServerSettter
-func (o OptionServerSet) Set(c *ServerConfiguration) {
-	o(c)
-}
-
-// Set implements the OptionServerSettter to the ServerConfiguration
-func (c ServerConfiguration) Set(main *ServerConfiguration) {
-	mergo.MergeWithOverwrite(main, c)
-}
-
-// Options for ServerConfiguration
-var (
-	OptionServerListeningAddr = func(val string) OptionServerSet {
-		return func(c *ServerConfiguration) {
-			c.ListeningAddr = val
-		}
-	}
-
-	OptionServerCertFile = func(val string) OptionServerSet {
-		return func(c *ServerConfiguration) {
-			c.CertFile = val
-		}
-	}
-
-	OptionServerKeyFile = func(val string) OptionServerSet {
-		return func(c *ServerConfiguration) {
-			c.KeyFile = val
-		}
-	}
-
-	// AutoTLS enable to get certifications from the Letsencrypt
-	// when this configuration field is true, the CertFile & KeyFile are empty, no need to provide a key.
-	//
-	// example: https://github.com/iris-contrib/examples/blob/master/letsencyrpt/main.go
-	OptionServerAutoTLS = func(val bool) OptionServerSet {
-		return func(c *ServerConfiguration) {
-			c.AutoTLS = val
-		}
-	}
-
-	// Mode this is for unix only
-	OptionServerMode = func(val os.FileMode) OptionServerSet {
-		return func(c *ServerConfiguration) {
-			c.Mode = val
-		}
-	}
-
-	// OptionServerMaxRequestBodySize Maximum request body size.
-	//
-	// The server rejects requests with bodies exceeding this limit.
-	//
-	// By default request body size is 8MB.
-	OptionServerMaxRequestBodySize = func(val int) OptionServerSet {
-		return func(c *ServerConfiguration) {
-			c.MaxRequestBodySize = val
-		}
-	}
-
-	// Per-connection buffer size for requests' reading.
-	// This also limits the maximum header size.
-	//
-	// Increase this buffer if your clients send multi-KB RequestURIs
-	// and/or multi-KB headers (for example, BIG cookies).
-	//
-	// Default buffer size is used if not set.
-	OptionServerReadBufferSize = func(val int) OptionServerSet {
-		return func(c *ServerConfiguration) {
-			c.ReadBufferSize = val
-		}
-	}
-
-	// Per-connection buffer size for responses' writing.
-	//
-	// Default buffer size is used if not set.
-	OptionServerWriteBufferSize = func(val int) OptionServerSet {
-		return func(c *ServerConfiguration) {
-			c.WriteBufferSize = val
-		}
-	}
-
-	// Maximum duration for reading the full request (including body).
-	//
-	// This also limits the maximum duration for idle keep-alive
-	// connections.
-	//
-	// By default request read timeout is unlimited.
-	OptionServerReadTimeout = func(val time.Duration) OptionServerSet {
-		return func(c *ServerConfiguration) {
-			c.ReadTimeout = val
-		}
-	}
-
-	// Maximum duration for writing the full response (including body).
-	//
-	// By default response write timeout is unlimited.
-	OptionServerWriteTimeout = func(val time.Duration) OptionServerSet {
-		return func(c *ServerConfiguration) {
-			c.WriteTimeout = val
-		}
-	}
-
-	// OptionServerMaxConnsPerIP Maximum number of concurrent client connections allowed per IP.
-	//
-	// By default unlimited number of concurrent connections
-	// may be established to the server from a single IP address.
-	OptionServerMaxConnsPerIP = func(val int) OptionServerSet {
-		return func(c *ServerConfiguration) {
-			c.MaxConnsPerIP = val
-		}
-	}
-
-	// OptionServerMaxRequestsPerConn Maximum number of requests served per connection.
-	//
-	// The server closes connection after the last request.
-	// 'Connection: close' header is added to the last response.
-	//
-	// By default unlimited number of requests may be served per connection.
-	OptionServerMaxRequestsPerConn = func(val int) OptionServerSet {
-		return func(c *ServerConfiguration) {
-			c.MaxRequestsPerConn = val
-		}
-	}
-
-	// RedirectTo, defaults to empty, set it in order to override the station's handler and redirect all requests to this address which is of form(HOST:PORT or :PORT)
-	//
-	// NOTE: the http status is 'StatusMovedPermanently', means one-time-redirect(the browser remembers the new addr and goes to the new address without need to request something from this server
-	// which means that if you want to change this address you have to clear your browser's cache in order this to be able to change to the new addr.
-	//
-	// example: https://github.com/iris-contrib/examples/tree/master/multiserver_listening2
-	OptionServerRedirectTo = func(val string) OptionServerSet {
-		return func(c *ServerConfiguration) {
-			c.RedirectTo = val
-		}
-	}
-
-	// OptionServerVirtual If this server is not really listens to a real host, it mostly used in order to achieve testing without system modifications
-	OptionServerVirtual = func(val bool) OptionServerSet {
-		return func(c *ServerConfiguration) {
-			c.Virtual = val
-		}
-	}
-	// OptionServerVListeningAddr, can be used for both virtual = true or false,
-	// if it's setted to not empty, then the server's Host() will return this addr instead of the ListeningAddr.
-	// server's Host() is used inside global template helper funcs
-	// set it when you are sure you know what it does.
-	//
-	// Default is empty ""
-	OptionServerVListeningAddr = func(val string) OptionServerSet {
-		return func(c *ServerConfiguration) {
-			c.VListeningAddr = val
-		}
-	}
-
-	// OptionServerVScheme if setted to not empty value then all template's helper funcs prepends that as the url scheme instead of the real scheme
-	// server's .Scheme returns VScheme if  not empty && differs from real scheme
-	//
-	// Default is empty ""
-	OptionServerVScheme = func(val string) OptionServerSet {
-		return func(c *ServerConfiguration) {
-			c.VScheme = val
-		}
-	}
-
-	// OptionServerName the server's name, defaults to "iris".
-	// You're free to change it, but I will trust you to don't, this is the only setting whose somebody, like me, can see if iris web framework is used
-	OptionServerName = func(val string) OptionServerSet {
-		return func(c *ServerConfiguration) {
-			c.ListeningAddr = val
-		}
-	}
-)
-
-// ServerParseAddr parses the listening addr and returns this
-func ServerParseAddr(listeningAddr string) string {
-	// check if addr has :port, if not do it +:80 ,we need the hostname for many cases
-	a := listeningAddr
-	if a == "" {
-		// check for os environments
-		if oshost := os.Getenv("HOST"); oshost != "" {
-			a = oshost
-		} else if oshost := os.Getenv("ADDR"); oshost != "" {
-			a = oshost
-		} else if osport := os.Getenv("PORT"); osport != "" {
-			a = ":" + osport
-		}
-
-		if a == "" {
-			a = DefaultServerAddr
-		}
-
-	}
-	if portIdx := strings.IndexByte(a, ':'); portIdx == 0 {
-		// if contains only :port	,then the : is the first letter, so we dont have setted a hostname, lets set it
-		a = DefaultServerHostname + a
-	}
-	if portIdx := strings.IndexByte(a, ':'); portIdx < 0 {
-		// missing port part, add it
-		a = a + ":80"
-	}
-
-	return a
+	return TesterConfiguration{ExplicitURL: false, Debug: false}
 }
 
 // Default values for base Server conf
 const (
 	// DefaultServerHostname returns the default hostname which is 0.0.0.0
 	DefaultServerHostname = "0.0.0.0"
-	// DefaultServerPort returns the default port which is 8080
+	// DefaultServerPort returns the default port which is 8080, not used
 	DefaultServerPort = 8080
-	// DefaultMaxRequestBodySize is 8MB
-	DefaultMaxRequestBodySize = 2 * fasthttp.DefaultMaxRequestBodySize
-
-	// Per-connection buffer size for requests' reading.
-	// This also limits the maximum header size.
-	//
-	// Increase this buffer if your clients send multi-KB RequestURIs
-	// and/or multi-KB headers (for example, BIG cookies).
-	//
-	// Default buffer size is 8MB
-	DefaultReadBufferSize = 8096
-
-	// Per-connection buffer size for responses' writing.
-	//
-	// Default buffer size is 8MB
-	DefaultWriteBufferSize = 8096
-
-	// DefaultServerName the response header of the 'Server' value when writes to the client
-	DefaultServerName = "iris"
 )
 
 var (
 	// DefaultServerAddr the default server addr which is: 0.0.0.0:8080
 	DefaultServerAddr = DefaultServerHostname + ":" + strconv.Itoa(DefaultServerPort)
 )
-
-// DefaultServerConfiguration returns the default configs for the server
-func DefaultServerConfiguration() ServerConfiguration {
-	return ServerConfiguration{
-		ListeningAddr:      DefaultServerAddr,
-		Name:               DefaultServerName,
-		MaxRequestBodySize: DefaultMaxRequestBodySize,
-		ReadBufferSize:     DefaultReadBufferSize,
-		WriteBufferSize:    DefaultWriteBufferSize,
-		MaxConnsPerIP:      0,
-		MaxRequestsPerConn: 0,
-		RedirectTo:         "",
-		Virtual:            false,
-		VListeningAddr:     "",
-		VScheme:            "",
-	}
-}

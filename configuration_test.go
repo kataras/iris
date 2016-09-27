@@ -67,36 +67,19 @@ func TestConfigOptionsDeep(t *testing.T) {
 	cookiename := "MYSESSIONID"
 	charset := "MYCHARSET"
 	dev := true
-	profilePath := "/mypprof"
+	vhost := "mydomain.com"
 	// first session, after charset,dev and profilepath, no canonical order.
-	api := New(OptionSessionsCookie(cookiename), OptionCharset(charset), OptionIsDevelopment(dev), OptionProfilePath(profilePath))
+	api := New(OptionSessionsCookie(cookiename), OptionCharset(charset), OptionIsDevelopment(dev), OptionVHost(vhost))
 
 	expected := DefaultConfiguration()
 	expected.Sessions.Cookie = cookiename
 	expected.Charset = charset
 	expected.IsDevelopment = dev
-	expected.ProfilePath = profilePath
+	expected.VHost = vhost
 
 	has := *api.Config
 
 	if !reflect.DeepEqual(has, expected) {
 		t.Fatalf("DEEP configuration is not the same after New expected:\n %#v \ngot:\n %#v", expected, has)
 	}
-}
-
-// ServerConfiguration is independent so make a small test for that
-func TestConfigServerOptions(t *testing.T) {
-	expected := DefaultServerConfiguration()
-	expected.ListeningAddr = "mydomain.com:80"
-	expected.RedirectTo = "https://mydomain.com:443"
-	expected.Virtual = true
-
-	c := ServerConfiguration{ListeningAddr: expected.ListeningAddr, RedirectTo: expected.RedirectTo, Virtual: expected.Virtual}
-	// static config test
-	s := newServer(c)
-
-	if !reflect.DeepEqual(s.Config, expected) {
-		t.Fatalf("Static Server Configuration not equal after newServer, expected:\n%#v \nwhile got:\n%#v", expected, s.Config)
-	}
-
 }

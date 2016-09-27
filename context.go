@@ -205,7 +205,7 @@ func (ctx *Context) HostString() string {
 func (ctx *Context) VirtualHostname() string {
 	realhost := ctx.HostString()
 	hostname := realhost
-	virtualhost := ctx.framework.Servers.Main().Hostname()
+	virtualhost := ctx.framework.mux.hostname
 
 	if portIdx := strings.IndexByte(hostname, ':'); portIdx > 0 {
 		hostname = hostname[0:portIdx]
