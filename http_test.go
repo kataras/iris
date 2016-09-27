@@ -151,6 +151,7 @@ func TestParseAddr(t *testing.T) {
 func TestMultiRunningServers_v1_PROXY(t *testing.T) {
 	defer Close()
 	host := "localhost" // you have to add it to your hosts file( for windows, as 127.0.0.1 mydomain.com)
+	hostTLS := "localhost:9999"
 	initDefault()
 	Default.Config.DisableBanner = true
 	// create the key and cert files on the fly, and delete them when this test finished
@@ -179,29 +180,30 @@ func TestMultiRunningServers_v1_PROXY(t *testing.T) {
 	keyFile.WriteString(testTLSKey)
 
 	Get("/", func(ctx *Context) {
-		ctx.Write("Hello from %s", ctx.HostString())
+		ctx.Write("Hello from %s", hostTLS)
 	})
 
-	go ListenTLS(host+":443", certFile.Name(), keyFile.Name())
+	go ListenTLS(hostTLS, certFile.Name(), keyFile.Name())
 	if ok := <-Default.Available; !ok {
 		t.Fatal("Unexpected error: server cannot start, please report this as bug!!")
 	}
 
-	closeProxy := Proxy("mydomain.com:80", "https://"+host)
+	closeProxy := Proxy("localhost:8080", "https://"+hostTLS)
 	defer closeProxy()
 
 	Default.Config.Tester.ExplicitURL = true
 	e := Tester(t)
 
-	e.Request("GET", "http://"+host).Expect().Status(StatusOK).Body().Equal("Hello from " + host)
-	e.Request("GET", "https://"+host).Expect().Status(StatusOK).Body().Equal("Hello from " + host)
+	e.Request("GET", "http://"+host+":8080").Expect().Status(StatusOK).Body().Equal("Hello from " + hostTLS)
+	e.Request("GET", "https://"+hostTLS).Expect().Status(StatusOK).Body().Equal("Hello from " + hostTLS)
 
 }
 
 // Contains the server test for multi running servers
 func TestMultiRunningServers_v2(t *testing.T) {
 	defer Close()
-	domain := "mydomain.com"
+	domain := "localhost"
+	hostTLS := "localhost:9999"
 
 	initDefault()
 	Default.Config.DisableBanner = true
@@ -232,7 +234,7 @@ func TestMultiRunningServers_v2(t *testing.T) {
 	}()
 
 	Get("/", func(ctx *Context) {
-		ctx.Write("Hello from %s", string(ctx.HostString()))
+		ctx.Write("Hello from %s", hostTLS)
 	})
 
 	// add a secondary server
@@ -243,13 +245,13 @@ func TestMultiRunningServers_v2(t *testing.T) {
 	//go Go()
 
 	// using the proxy handler
-	fsrv1 := &fasthttp.Server{Handler: proxyHandler(domain+":80", "https://"+domain)}
-	go fsrv1.ListenAndServe(domain + ":80")
+	fsrv1 := &fasthttp.Server{Handler: proxyHandler(domain+":8080", "https://"+hostTLS)}
+	go fsrv1.ListenAndServe(domain + ":8080")
 	// using the same iris' handler but not as proxy, just the same handler
 	fsrv2 := &fasthttp.Server{Handler: Default.Router}
-	go fsrv2.ListenAndServe("myotherdomain.com" + ":8080")
+	go fsrv2.ListenAndServe(domain + ":8888")
 
-	go ListenTLS(domain+":443", certFile.Name(), keyFile.Name())
+	go ListenTLS(hostTLS, certFile.Name(), keyFile.Name())
 
 	if ok := <-Available; !ok {
 		t.Fatal("Unexpected error: server cannot start, please report this as bug!!")
@@ -258,9 +260,9 @@ func TestMultiRunningServers_v2(t *testing.T) {
 	Default.Config.Tester.ExplicitURL = true
 	e := Tester(t)
 
-	e.Request("GET", "http://"+domain).Expect().Status(StatusOK).Body().Equal("Hello from " + domain)
-	e.Request("GET", "http://myotherdomain.com:8080").Expect().Status(StatusOK).Body().Equal("Hello from myotherdomain.com:8080")
-	e.Request("GET", "https://"+domain).Expect().Status(StatusOK).Body().Equal("Hello from " + domain)
+	e.Request("GET", "http://"+domain+":8080").Expect().Status(StatusOK).Body().Equal("Hello from " + hostTLS)
+	e.Request("GET", "http://localhost:8888").Expect().Status(StatusOK).Body().Equal("Hello from " + hostTLS)
+	e.Request("GET", "https://"+hostTLS).Expect().Status(StatusOK).Body().Equal("Hello from " + hostTLS)
 
 }
 
