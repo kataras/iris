@@ -73,11 +73,12 @@ func ExamplePlugins_Add() {
 	Plugins.Add(myplugin)
 	desc := Plugins.GetDescription(myplugin)
 	fmt.Println(desc)
-	go Listen(":8080")
 
-	if ok := <-Available; ok {
-		Close()
-	}
+	// travis have problems if I do that using
+	// Listen(":8080") and Close()
+	Plugins.DoPreListen(Default)
+	Plugins.DoPostListen(Default)
+	Plugins.DoPreClose(Default)
 
 	// Output:
 	// GetName Struct
