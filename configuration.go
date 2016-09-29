@@ -499,14 +499,13 @@ const (
 	//
 	// Default buffer size is 8MB
 	DefaultWriteBufferSize = 8096
-
-	// DefaultServerName the response header of the 'Server' value when writes to the client
-	DefaultServerName = "iris"
 )
 
 var (
 	// DefaultLoggerOut is the default logger's output
 	DefaultLoggerOut = os.Stdout
+	// DefaultServerName the response header of the 'Server' value when writes to the client
+	DefaultServerName = ""
 )
 
 // DefaultConfiguration returns the default configuration for an Iris station, fills the main Configuration

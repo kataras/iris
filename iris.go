@@ -362,7 +362,11 @@ func (s *Framework) Build() {
 
 		if s.ln != nil { // user called Listen functions or Serve,
 			// create the main server
-			s.fsrv = &fasthttp.Server{Name: DefaultServerName,
+			srvName := "iris"
+			if len(DefaultServerName) > 0 {
+				srvName += "_" + DefaultServerName
+			}
+			s.fsrv = &fasthttp.Server{Name: srvName,
 				MaxRequestBodySize: s.Config.MaxRequestBodySize,
 				ReadBufferSize:     s.Config.ReadBufferSize,
 				WriteBufferSize:    s.Config.WriteBufferSize,

@@ -8,21 +8,21 @@
 
 ```go
 // ...
-	iris.UsePreRender(func(ctx *iris.Context, filename string, binding interface{}, options ...map[string]interface{}) bool {
-		// put the 'Error' binding here, for the shake of the test
-		if b, isMap := binding.(map[string]interface{}); isMap {
-			b["Error"] = "error!"
-		}
-		// true= continue to the next PreRender
-    // false= do not continue to the next PreRender
-    // * but the actual Render will be called at any case *
-		return true
-	})
+iris.UsePreRender(func(ctx *iris.Context, filename string, binding interface{}, options ...map[string]interface{}) bool {
+	// put the 'Error' binding here, for the shake of the test
+	if b, isMap := binding.(map[string]interface{}); isMap {
+		b["Error"] = "error!"
+	}
+	// true= continue to the next PreRender
+  // false= do not continue to the next PreRender
+  // * but the actual Render will be called at any case *
+  return true
+})
 
-  iris.Get("/", func(ctx *Context) {
-  		ctx.Render("hi.html", map[string]interface{}{"Username": "anybody"})
-      // hi.html: <h1>HI {{.Username}}. Error: {{.Error}}</h1>
-  })
+iris.Get("/", func(ctx *Context) {
+  	ctx.Render("hi.html", map[string]interface{}{"Username": "anybody"})
+    // hi.html: <h1>HI {{.Username}}. Error: {{.Error}}</h1>
+})
 
 // ...
 ```

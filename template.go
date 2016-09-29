@@ -62,9 +62,6 @@ func getCharsetOption(defaultValue string, options map[string]interface{}) strin
 }
 
 func (t *templateEngines) usePreRender(pre PreRender) {
-	if t.prerenders == nil {
-		t.prerenders = make([]PreRender, 0)
-	}
 	t.prerenders = append(t.prerenders, pre)
 }
 
