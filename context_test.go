@@ -657,5 +657,48 @@ func TestContextRenderRest(t *testing.T) {
 	markdownT := e.GET("/markdown").Expect().Status(StatusOK)
 	markdownT.Header("Content-Type").Equal("text/html; charset=UTF-8")
 	markdownT.Body().Equal("<h1>" + markdownContents[2:] + "</h1>\n")
+}
 
+func TestContextPreRender(t *testing.T) {
+	initDefault()
+	errMsg1 := "thereIsAnError"
+	UsePreRender(func(ctx *Context, src string, binding interface{}, options ...map[string]interface{}) bool {
+		// put the 'Error' binding here, for the shake of the test
+		if b, isMap := binding.(map[string]interface{}); isMap {
+			b["Error"] = errMsg1
+		}
+		// continue to the next prerender
+		return true
+	})
+	errMsg2 := "thereIsASecondError"
+	UsePreRender(func(ctx *Context, src string, binding interface{}, options ...map[string]interface{}) bool {
+		// put the 'Error' binding here, for the shake of the test
+		if b, isMap := binding.(map[string]interface{}); isMap {
+			prev := b["Error"].(string)
+			msg := prev + errMsg2
+			b["Error"] = msg
+		}
+		// DO NOT CONTINUE to the next prerender
+		return false
+	})
+
+	errMsg3 := "thereisAThirdError"
+	UsePreRender(func(ctx *Context, src string, binding interface{}, options ...map[string]interface{}) bool {
+		// put the 'Error' binding here, for the shake of the test
+		if b, isMap := binding.(map[string]interface{}); isMap {
+			prev := b["Error"].(string)
+			msg := prev + errMsg3
+			b["Error"] = msg
+		}
+		// doesn't matters the return statement, we don't have other prerender
+		return true
+	})
+
+	Get("/", func(ctx *Context) {
+		ctx.RenderTemplateSource(StatusOK, "<h1>HI {{.Username}}. Error: {{.Error}}</h1>", map[string]interface{}{"Username": "kataras"})
+	})
+
+	e := Tester(t)
+	expected := "<h1>HI kataras. Error: " + errMsg1 + errMsg2 + "</h1>"
+	e.GET("/").Expect().Status(StatusOK).Body().Contains(expected)
 }

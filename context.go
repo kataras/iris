@@ -596,7 +596,7 @@ func (ctx *Context) RenderTemplateSource(status int, src string, binding interfa
 // Note: the options: "gzip" and "charset" are built'n support by Iris, so you can pass these on any template engine or serialize engines
 func (ctx *Context) RenderWithStatus(status int, name string, binding interface{}, options ...map[string]interface{}) (err error) {
 	if strings.IndexByte(name, '.') > -1 { //we have template
-		err = ctx.framework.templates.render(ctx, name, binding, options...)
+		err = ctx.framework.templates.renderFile(ctx, name, binding, options...)
 	} else {
 		err = ctx.renderSerialized(name, binding, options...)
 	}

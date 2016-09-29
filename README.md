@@ -19,7 +19,7 @@
 <br/>
 
 
-<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20version%20-%204.4.0%20-blue.svg?style=flat-square" alt="Releases"></a>
+<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20version%20-%204.4.1%20-blue.svg?style=flat-square" alt="Releases"></a>
 
 <a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/%20examples-repository-3362c2.svg?style=flat-square" alt="Examples"></a>
 
@@ -197,7 +197,7 @@ I recommend writing your API tests using this new library, [httpexpect](https://
 Versioning
 ------------
 
-Current: **v4.4.0**
+Current: **v4.4.1**
 
 >  Iris is an active project
 
@@ -213,6 +213,7 @@ Todo
 - [x] Implement, even, a better way to manage configuration/options, devs will be able to set their own custom options inside there. ` I'm thinking of something the last days, but it will have breaking changes. `
 - [x] Implement an internal updater, as requested [here](https://github.com/kataras/iris/issues/401).
 - [x] Support of using native servers and net.Listener instead of Iris' defined.[*](https://github.com/kataras/iris/issues/438)
+- [x] Add context processors(PreRenders).[*](https://github.com/kataras/iris/issues/412)
 
 Iris is a **Community-Driven** Project, waiting for your suggestions and [feature requests](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=label%3A%22feature%20request%22)!
 

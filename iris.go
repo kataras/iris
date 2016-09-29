@@ -79,7 +79,7 @@ import (
 
 const (
 	// Version is the current version of the Iris web framework
-	Version = "4.4.0"
+	Version = "4.4.1"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -149,6 +149,7 @@ type (
 		UseSessionDB(sessions.Database)
 		UseSerializer(string, serializer.Serializer)
 		UseTemplate(template.Engine) *template.Loader
+		UsePreRender(PreRender)
 		UseGlobal(...Handler)
 		UseGlobalFunc(...HandlerFunc)
 		Lookup(string) Route
@@ -771,6 +772,28 @@ func UseSerializer(forContentType string, e serializer.Serializer) {
 // because iris uses these by default if no other response engine is registered for these content types
 func (s *Framework) UseSerializer(forContentType string, e serializer.Serializer) {
 	s.serializers.For(forContentType, e)
+}
+
+// UsePreRender adds a Template's PreRender
+// PreRender is typeof func(*iris.Context, filenameOrSource string, binding interface{}, options ...map[string]interface{}) bool
+// PreRenders helps developers to pass middleware between the route Handler and a context.Render call
+// all parameter receivers can be changed before passing it to the actual context's Render
+// so, you can change the filenameOrSource, the page binding, the options, and even add cookies, session value or a flash message through ctx
+// the return value of a PreRender is a boolean, if returns false then the next PreRender will not be executed, keep note
+// that the actual context's Render will be called at any case.
+func UsePreRender(pre PreRender) {
+	Default.UsePreRender(pre)
+}
+
+// UsePreRender adds a Template's PreRender
+// PreRender is typeof func(*iris.Context, filenameOrSource string, binding interface{}, options ...map[string]interface{}) bool
+// PreRenders helps developers to pass middleware between the route Handler and a context.Render call
+// all parameter receivers can be changed before passing it to the actual context's Render
+// so, you can change the filenameOrSource, the page binding, the options, and even add cookies, session value or a flash message through ctx
+// the return value of a PreRender is a boolean, if returns false then the next PreRender will not be executed, keep note
+// that the actual context's Render will be called at any case.
+func (s *Framework) UsePreRender(pre PreRender) {
+	s.templates.usePreRender(pre)
 }
 
 // UseTemplate adds a template engine to the iris view system
@@ -1952,11 +1975,26 @@ func (api *muxAPI) Favicon(favPath string, requestPath ...string) RouteNameFunc 
 // 		})
 // 	}
 //
+func Layout(tmplLayoutFile string) MuxAPI {
+	return Default.Layout(tmplLayoutFile)
+}
+
+// Layout oerrides the parent template layout with a more specific layout for this Party
+// returns this Party, to continue as normal
+// example:
+// my := iris.Party("/my").Layout("layouts/mylayout.html")
+// 	{
+// 		my.Get("/", func(ctx *iris.Context) {
+// 			ctx.MustRender("page1.html", nil)
+// 		})
+// 	}
+//
 func (api *muxAPI) Layout(tmplLayoutFile string) MuxAPI {
 	api.UseFunc(func(ctx *Context) {
 		ctx.Set(TemplateLayoutContextKey, tmplLayoutFile)
 		ctx.Next()
 	})
+
 	return api
 }
 
