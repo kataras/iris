@@ -293,6 +293,10 @@ func Build() {
 // SERVE IRIS BEHIND AN EXTERNAL CUSTOM fasthttp.Server, CAN BE CALLED ONCE PER IRIS INSTANCE FOR YOUR SAFETY
 func (s *Framework) Build() {
 	s.once.Do(func() {
+		// re-nwe logger's attrs
+		s.Logger.SetPrefix(s.Config.LoggerPreffix)
+		s.Logger.SetOutput(s.Config.LoggerOut)
+
 		// prepare the serializers, if not any other serializers setted for the default serializer types(json,jsonp,xml,markdown,text,data) then the defaults are setted:
 		serializer.RegisterDefaults(s.serializers)
 
