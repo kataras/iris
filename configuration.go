@@ -38,7 +38,7 @@ func (o OptionSet) Set(c *Configuration) {
 // Configuration the whole configuration for an iris instance ($instance.Config) or global iris instance (iris.Config)
 // these can be passed via options also, look at the top of this file(configuration.go)
 //
-// Configuration is also implements the OptionSet so it's a valid option itself, this is briliant enough
+// Configuration is also implements the OptionSet so it's a valid option itself, this is brilliant enough
 type Configuration struct {
 	// VHost is the addr or the domain that server listens to, which it's optional
 	// When to set VHost manually:

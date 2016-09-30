@@ -463,7 +463,7 @@ func (ctx *Context) SetHeader(k string, v string) {
 // first parameter is the url to redirect
 // second parameter is the http status should send, default is 302 (StatusFound), you can set it to 301 (Permant redirect), if that's nessecery
 func (ctx *Context) Redirect(urlToRedirect string, statusHeader ...int) {
-	httpStatus := StatusFound // a 'temporary-redirect-like' wich works better than for our purpose
+	httpStatus := StatusFound // a 'temporary-redirect-like' which works better than for our purpose
 	if statusHeader != nil && len(statusHeader) > 0 && statusHeader[0] > 0 {
 		httpStatus = statusHeader[0]
 	}
@@ -833,7 +833,7 @@ func (ctx *Context) Set(key string, value interface{}) {
 // Note: the method ctx.Request.Header.VisitAllCookie by fasthttp, has a strange bug which I cannot solve at the moment.
 // This is the reason which this function exists and should be used instead of fasthttp's built'n.
 func (ctx *Context) VisitAllCookies(visitor func(key string, value string)) {
-	// strange bug, this doesnt works also: 	cookieHeaderContent := ctx.Request.Header.Peek("Cookie")/User-Agent tested also
+	// strange bug, this doesn't works also: 	cookieHeaderContent := ctx.Request.Header.Peek("Cookie")/User-Agent tested also
 	headerbody := string(ctx.Request.Header.Header())
 	headerlines := strings.Split(headerbody, "\n")
 	for _, s := range headerlines {

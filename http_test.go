@@ -152,6 +152,8 @@ func TestMultiRunningServers_v1_PROXY(t *testing.T) {
 	defer Close()
 	host := "localhost" // you have to add it to your hosts file( for windows, as 127.0.0.1 mydomain.com)
 	hostTLS := "localhost:9999"
+	Close()
+	defer Close()
 	initDefault()
 	Default.Config.DisableBanner = true
 	// create the key and cert files on the fly, and delete them when this test finished
@@ -406,9 +408,12 @@ func TestMuxSimpleParty(t *testing.T) {
 	}
 
 	Default.Config.VHost = "0.0.0.0:8080"
+	//Default.Config.Tester.Debug = true
+	//Default.Config.Tester.ExplicitURL = true
 	e := Tester(t)
 
 	request := func(reqPath string) {
+
 		e.Request("GET", reqPath).
 			Expect().
 			Status(StatusOK).Body().Equal(Default.Config.VHost + reqPath)

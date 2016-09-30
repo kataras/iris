@@ -176,13 +176,13 @@ func TestPluginEvents(t *testing.T) {
 	plugins.DoPreClose(nil)
 
 	if !prelistenran {
-		t.Fatalf("Expected to run PreListen Func but it doesnt!")
+		t.Fatalf("Expected to run PreListen Func but it doesn't!")
 	}
 	if !postlistenran {
-		t.Fatalf("Expected to run PostListen Func but it doesnt!")
+		t.Fatalf("Expected to run PostListen Func but it doesn't!")
 	}
 	if !precloseran {
-		t.Fatalf("Expected to run PostListen Func but it doesnt!")
+		t.Fatalf("Expected to run PostListen Func but it doesn't!")
 	}
 
 	if !myplugin.named {
@@ -192,13 +192,13 @@ func TestPluginEvents(t *testing.T) {
 		t.Fatalf("Plugin should be activated but it's not!")
 	}
 	if !myplugin.prelistenran {
-		t.Fatalf("Expected to run PreListen Struct but it doesnt!")
+		t.Fatalf("Expected to run PreListen Struct but it doesn't!")
 	}
 	if !myplugin.postlistenran {
-		t.Fatalf("Expected to run PostListen Struct but it doesnt!")
+		t.Fatalf("Expected to run PostListen Struct but it doesn't!")
 	}
 	if !myplugin.precloseran {
-		t.Fatalf("Expected to run PostListen Struct but it doesnt!")
+		t.Fatalf("Expected to run PostListen Struct but it doesn't!")
 	}
 
 }

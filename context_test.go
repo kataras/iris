@@ -402,7 +402,7 @@ func TestContextFlashMessages(t *testing.T) {
 		}
 	})
 
-	// get the first flash, the next should be avaiable to the next requess
+	// get the first flash, the next should be available to the next requess
 	Get("/get_first_flash", func(ctx *Context) {
 		for _, v := range values {
 			val, err := ctx.GetFlash(v.Key)
@@ -421,7 +421,7 @@ func TestContextFlashMessages(t *testing.T) {
 	Get("/get_no_getflash", func(ctx *Context) {
 	})
 
-	// get the last flash, the next should be avaiable to the next requess
+	// get the last flash, the next should be available to the next requess
 	Get("/get_last_flash", func(ctx *Context) {
 		for i, v := range values {
 			if i == len(values)-1 {
@@ -572,7 +572,7 @@ func TestContextSessions(t *testing.T) {
 		es.Request("GET", "/get").Expect().Status(StatusOK).JSON().Object().Equal(values)
 	}
 
-	// test destory which also clears first
+	// test destroy which also clears first
 	d := e.GET("/destroy").Expect().Status(StatusOK)
 	d.JSON().Null()
 	// 	This removed: d.Cookies().Empty(). Reason:

@@ -824,7 +824,7 @@ func (s bySubdomain) Less(i, j int) bool {
 var _ Route = &route{}
 
 func newRoute(method []byte, subdomain string, path string, middleware Middleware) *route {
-	r := &route{name: path + subdomain, method: method, subdomain: subdomain, path: path, middleware: middleware}
+	r := &route{name: path + subdomain, method: method, methodStr: string(method), subdomain: subdomain, path: path, middleware: middleware}
 	r.formatPath()
 	return r
 }
@@ -926,11 +926,10 @@ type (
 		// ex: mysubdomain.
 		subdomain string
 		entry     *muxEntry
-		next      *muxTree
 	}
 
 	serveMux struct {
-		tree          *muxTree
+		garden        []*muxTree
 		lookups       []*route
 		maxParameters uint8
 
@@ -1008,16 +1007,14 @@ func (mux *serveMux) fireError(statusCode int, ctx *Context) {
 	errHandler.Serve(ctx)
 }
 
-func (mux *serveMux) getTree(method []byte, subdomain string) (tree *muxTree) {
-	tree = mux.tree
-	for tree != nil {
-		if bytes.Equal(tree.method, method) && tree.subdomain == subdomain {
-			return
+func (mux *serveMux) getTree(method []byte, subdomain string) *muxTree {
+	for i := range mux.garden {
+		t := mux.garden[i]
+		if bytes.Equal(t.method, method) && t.subdomain == subdomain {
+			return t
 		}
-		tree = tree.next
 	}
-	// tree is nil here, return that.
-	return
+	return nil
 }
 
 func (mux *serveMux) register(method []byte, subdomain string, path string, middleware Middleware) *route {
@@ -1041,30 +1038,30 @@ func (mux *serveMux) register(method []byte, subdomain string, path string, midd
 
 // build collects all routes info and adds them to the registry in order to be served from the request handler
 // this happens once when server is setting the mux's handler.
-func (mux *serveMux) build() (func(reqCtx *fasthttp.RequestCtx) string, func([]byte, []byte) bool) {
-	mux.tree = nil
+func (mux *serveMux) build() func(reqCtx *fasthttp.RequestCtx) string {
+
+	// check for cors conflicts FIRST in order to put them in OPTIONS tree also
+	for i := range mux.lookups {
+		r := mux.lookups[i]
+		if r.hasCors() {
+			if exists := mux.lookup(r.path + r.subdomain); exists == nil || exists.Method() != MethodOptions {
+				// skip any already registed to OPTIONS, some users maybe do that manually, so we should be careful here, we do not catch custom names but that's fairly enough
+				mux.register(MethodOptionsBytes, r.subdomain, r.path, r.middleware)
+			}
+
+		}
+	}
+
 	sort.Sort(bySubdomain(mux.lookups))
-	for _, r := range mux.lookups {
+
+	for i := range mux.lookups {
+		r := mux.lookups[i]
 		// add to the registry tree
 		tree := mux.getTree(r.method, r.subdomain)
 		if tree == nil {
 			//first time we register a route to this method with this domain
-			tree = &muxTree{method: r.method, subdomain: r.subdomain, entry: &muxEntry{}, next: nil}
-
-			if mux.tree == nil {
-				// it's the first entry
-				mux.tree = tree
-			} else {
-				// find the last tree and make the .next to the tree we created before
-				lastTree := mux.tree
-				for lastTree != nil {
-					if lastTree.next == nil {
-						lastTree.next = tree
-						break
-					}
-					lastTree = lastTree.next
-				}
-			}
+			tree = &muxTree{method: r.method, subdomain: r.subdomain, entry: &muxEntry{}}
+			mux.garden = append(mux.garden, tree)
 		}
 		// I decide that it's better to explicit give subdomain and a path to it than registedPath(mysubdomain./something) now its: subdomain: mysubdomain., path: /something
 		// we have different tree for each of subdomains, now you can use everything you can use with the normal paths ( before you couldn't set /any/*path)
@@ -1086,20 +1083,7 @@ func (mux *serveMux) build() (func(reqCtx *fasthttp.RequestCtx) string, func([]b
 		getRequestPath = func(reqCtx *fasthttp.RequestCtx) string { return utils.BytesToString(reqCtx.RequestURI()) }
 	}
 
-	methodEqual := func(treeMethod []byte, reqMethod []byte) bool {
-		return bytes.Equal(treeMethod, reqMethod)
-	}
-	// check for cors conflicts
-	for _, r := range mux.lookups {
-		if r.hasCors() {
-			methodEqual = func(treeMethod []byte, reqMethod []byte) bool {
-				return bytes.Equal(treeMethod, reqMethod) || bytes.Equal(reqMethod, MethodOptionsBytes)
-			}
-			break
-		}
-	}
-
-	return getRequestPath, methodEqual
+	return getRequestPath
 
 }
 
@@ -1116,20 +1100,15 @@ func (mux *serveMux) lookup(routeName string) *route {
 func (mux *serveMux) BuildHandler() HandlerFunc {
 
 	// initialize the router once
-	getRequestPath, methodEqual := mux.build()
+	getRequestPath := mux.build()
 
 	return func(context *Context) {
 		routePath := getRequestPath(context.RequestCtx)
-		tree := mux.tree
-		for tree != nil {
-			if !methodEqual(tree.method, context.Method()) {
-				// we break any CORS OPTIONS method
-				// but for performance reasons if user wants http method OPTIONS to be served
-				// then must register it with .Options(...)
-				tree = tree.next
+		for i := range mux.garden {
+			tree := mux.garden[i]
+			if !bytes.Equal(tree.method, context.Method()) {
 				continue
 			}
-			// we have at least one subdomain on the root
 			if mux.hosts && tree.subdomain != "" {
 				// context.VirtualHost() is a slow method because it makes string.Replaces but user can understand that if subdomain then server will have some nano/or/milleseconds performance cost
 				requestHost := context.VirtualHostname()
@@ -1143,17 +1122,17 @@ func (mux *serveMux) BuildHandler() HandlerFunc {
 						// so the host must be api.iris-go.com:8080
 						if tree.subdomain+mux.hostname != requestHost {
 							// go to the next tree, we have a subdomain but it is not the correct
-							tree = tree.next
+
 							continue
 						}
 
 					}
 				} else {
 					//("it's subdomain but the request is the same as the listening addr mux.host == requestHost =>" + mux.host + "=" + requestHost + " ____ and tree's subdomain was: " + tree.subdomain)
-					tree = tree.next
 					continue
 				}
 			}
+
 			middleware, params, mustRedirect := tree.entry.get(routePath, context.Params) // pass the parameters here for 0 allocation
 			if middleware != nil {
 				// ok we found the correct route, serve it and exit entirely from here

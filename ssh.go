@@ -1,6 +1,6 @@
 package iris
 
-// Minimal managment over SSH for your Iris & Q web server
+// Minimal management over SSH for your Iris & Q web server
 //
 // Declaration:
 //
