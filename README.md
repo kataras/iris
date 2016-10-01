@@ -1,24 +1,96 @@
-# iris: sometimes the simplicity is the best solution
-[![Travis Widget]][Travis]
-[![Report Widget]][Report]
-[![Awesome Widget]][Awesome]
-[![License Widget]][License]
-[![Release Widget]][Release]
-[![Examples Widget]][Examples]
-[![Documentation Widget]][Documentation]
-[![Chat Widget]][Chat]  
-[![Iris Logo](https://github.com/kataras/tolk/raw/master/logo.jpg)](http://iris-go.com)
-
-The fastest web framework for Go. Easy to learn, while it's highly customizable.
-Ideally suited for both experienced and novice Developers.
+<p align="center">
 
 
+ <a href="https://www.gitbook.com/book/kataras/iris/details"><img  width="600" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_6_flat_alpha.png"></a>
 
-## Features
+<br/>
+
+<a href="https://travis-ci.org/kataras/iris"><img src="https://img.shields.io/travis/kataras/iris.svg?style=flat-square" alt="Build Status"></a>
+
+<a href="https://github.com/avelino/awesome-go"><img src="https://img.shields.io/badge/awesome-%E2%9C%93-ff69b4.svg?style=flat-square" alt="https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg"></a>
+
+<a href="#"><img src="https://img.shields.io/badge/platform-Any-ec2eb4.svg?style=flat-square" alt="Platforms"></a>
+
+<a href="https://github.com/kataras/iris/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT%20%20-E91E63.svg?style=flat-square" alt="License"></a>
+
+
+<a href="https://golang.org"><img src="https://img.shields.io/badge/powered_by-Go-3362c2.svg?style=flat-square" alt="Built with GoLang"></a>
+
+<br/>
+
+
+<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20version%20-%204.4.2%20-blue.svg?style=flat-square" alt="Releases"></a>
+
+<a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/%20examples-repository-3362c2.svg?style=flat-square" alt="Examples"></a>
+
+<a href="https://www.gitbook.com/book/kataras/iris/details"><img src="https://img.shields.io/badge/%20docs-reference-5272B4.svg?style=flat-square" alt="Practical Guide/Docs"></a>
+
+<a href="https://kataras.rocket.chat/channel/iris"><img src="https://img.shields.io/badge/%20community-chat-00BCD4.svg?style=flat-square" alt="Chat"></a><br/><br/>
+
+
+The <a href="https://github.com/kataras/iris#benchmarks">fastest</a> backend web framework for Go.
+<br/>
+Easy to <a href="https://www.gitbook.com/book/kataras/iris/details">learn</a>,  while it's highly customizable. <br/>
+Ideally suited for both experienced and novice <b>Developers</b>.
+<br/>
+<br/>
+
+<img src="https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png" href="#benchmarks" alt="Benchmark Wizzard July 21, 2016- Processing Time Horizontal Graph" />
+
+</p>
+
+
+
+
+Quick Look
+------------
+
+```go
+package main
+
+import "github.com/kataras/iris"
+
+func main() {
+  // serve static files, just a fav here
+  iris.Favicon("./favicon.ico")
+
+  // handle "/" - HTTP METHOD: "GET"
+  iris.Get("/", func(ctx *iris.Context) {
+    ctx.Render("index.html", nil)
+  })
+
+  iris.Get("/login", func(ctx *iris.Context) {
+    ctx.Render("login.html", iris.Map{"Title": "Login Page"})
+  })
+
+  // handle "/login" - HTTP METHOD: "POST"
+  iris.Post("/login", func(ctx *iris.Context) {
+    secret := ctx.PostValue("secret")
+    ctx.Session().Set("secret", secret)
+
+    ctx.Redirect("/user")
+  })
+
+  // handle websocket connections
+  iris.Config.Websocket.Endpoint = "/mychat"
+  iris.Websocket.OnConnection(func(c iris.WebsocketConnection) {
+    c.Join("myroom")
+
+    c.On("chat", func(message string){
+      c.To("myroom").Emit("chat", "From "+c.ID()+": "+message)
+    })
+  })
+
+  // serve requests at http://localhost:8080
+  iris.Listen(":8080")
+}
+```
+
+What's inside?
+------------
 
 - Focus on high performance
 - Automatically install TLS certificates from https://letsencrypt.org
-- Proxy HTTP and WebSocket requests
 - Robust routing and middleware ecosystem
 - Define virtual hosts and (wildcard) subdomains with path level routing
 - Graceful shutdown
@@ -64,7 +136,7 @@ $ go get -u github.com/kataras/iris/iris
  <a href="https://www.gitbook.com/book/kataras/iris/details"><img align="right" width="125" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_4.jpg"></a>
 
 
- - The most important is to read [the practical guide](https://www.gitbook.com/book/kataras/iris/details).
+ - The most important is to read [the practical guide](https://kataras.gitbooks.io/iris/content/).
 
  - Explore & download the [examples](https://github.com/iris-contrib/examples).
 
@@ -82,7 +154,7 @@ Hi, my name is Gerasimos Maropoulos and I'm the author of this project, let me p
 
 I started to design iris the night of the 13 March 2016, some weeks later, iris started to became famous and I have to fix many issues and implement new features, but I didn't have time to work on Iris because I had a part time job and the (software engineering) colleague which I studied.
 
-I wanted to make iris' users proud of the framework they're using, so I decided to interupt my studies and colleague, two days later I left from my part time job also.
+I wanted to make iris' users proud of the framework they're using, so I decided to interrupt my studies and colleague, two days later I left from my part time job also.
 
 Today I spend all my days and nights coding for Iris, and I'm happy about this, therefore I have zero incoming value.
 
@@ -90,6 +162,36 @@ Today I spend all my days and nights coding for Iris, and I'm happy about this, 
 - [Donate](https://github.com/kataras/iris/blob/master/DONATIONS.md)
 - :earth_americas: spread the word
 - [Contribute](#contributing) to the project
+
+
+
+
+| Name        | Description           | Usage  |
+| ------------------|:---------------------:|-------:|
+| [JSON ](https://github.com/kataras/go-serializer/tree/master/json)      | JSON Serializer (Default)                  |[example 1](https://github.com/iris-contrib/examples/blob/master/serialize_engines/json_1/main.go),[example 2](https://github.com/iris-contrib/examples/blob/master/serialize_engines/json_2/main.go), [book section](https://kataras.gitbooks.io/iris/content/serialize-engines.html)
+| [JSONP ](https://github.com/kataras/go-serializer/tree/master/jsonp)      | JSONP Serializer (Default)                  |[example 1](https://github.com/iris-contrib/examples/blob/master/serialize_engines/jsonp_1/main.go),[example 2](https://github.com/iris-contrib/examples/blob/master/serialize_engines/jsonp_2/main.go), [book section](https://kataras.gitbooks.io/iris/content/serialize-engines.html)
+| [XML ](https://github.com/kataras/go-serializer/tree/master/xml)      | XML Serializer (Default)                  |[example 1](https://github.com/iris-contrib/examples/blob/master/serialize_engines/xml_1/main.go),[example 2](https://github.com/iris-contrib/examples/blob/master/serialize_engines/xml_2/main.go), [book section](https://kataras.gitbooks.io/iris/content/serialize-engines.html)
+| [Markdown ](https://github.com/kataras/go-serializer/tree/master/markdown)      | Markdown Serializer (Default)                  |[example 1](https://github.com/iris-contrib/examples/blob/master/serialize_engines/markdown_1/main.go),[example 2](https://github.com/iris-contrib/examples/blob/master/serialize_engines/markdown_2/main.go), [book section](https://kataras.gitbooks.io/iris/content/serialize-engines.html)
+| [Text](https://github.com/kataras/go-serializer/tree/master/text)      | Text Serializer (Default)                  |[example 1](https://github.com/iris-contrib/examples/blob/master/serialize_engines/text_1/main.go), [book section](https://kataras.gitbooks.io/iris/content/serialize-engines.html)
+| [Binary Data ](https://github.com/kataras/go-serializer/tree/master/data)      | Binary Data Serializer (Default)                  |[example 1](https://github.com/iris-contrib/examples/blob/master/serialize_engines/data_1/main.go), [book section](https://kataras.gitbooks.io/iris/content/serialize-engines.html)
+| [HTML/Default Engine ](https://github.com/kataras/go-template/tree/master/html)      | HTML Template Engine (Default)                  |[example ](https://github.com/iris-contrib/examples/blob/master/template_engines/template_html_0/main.go), [book section](https://kataras.gitbooks.io/iris/content/template-engines.html)
+| [Django Engine ](https://github.com/kataras/go-template/tree/master/django)      | Django Template Engine                  |[example ](https://github.com/iris-contrib/examples/blob/master/template_engines/template_django_1/main.go), [book section](https://kataras.gitbooks.io/iris/content/template-engines.html)
+| [Pug/Jade Engine ](https://github.com/kataras/go-template/tree/master/pug)      | Pug Template Engine                  |[example ](https://github.com/iris-contrib/examples/blob/master/template_engines/template_pug_1/main.go), [book section](https://kataras.gitbooks.io/iris/content/template-engines.html)
+| [Handlebars Engine ](https://github.com/kataras/go-template/tree/master/handlebars)      | Handlebars Template Engine                  |[example ](https://github.com/iris-contrib/examples/blob/master/template_engines/template_handlebars_1/main.go), [book section](https://kataras.gitbooks.io/iris/content/template-engines.html)
+| [Amber Engine ](https://github.com/kataras/go-template/tree/master/amber)      | Amber Template Engine                  |[example ](https://github.com/iris-contrib/examples/blob/master/template_engines/template_amber_1/main.go), [book section](https://kataras.gitbooks.io/iris/content/template-engines.html)
+| [Markdown Engine ](https://github.com/kataras/go-template/tree/master/markdown)      | Markdown Template Engine                  |[example ](https://github.com/iris-contrib/examples/blob/master/template_engines/template_markdown_1/main.go), [book section](https://kataras.gitbooks.io/iris/content/template-engines.html)
+| [Basicauth Middleware ](https://github.com/iris-contrib/middleware/tree/master/basicauth)      | HTTP Basic authentication                  |[example 1](https://github.com/iris-contrib/examples/blob/master/middleware_basicauth_1/main.go), [example 2](https://github.com/iris-contrib/examples/blob/master/middleware_basicauth_2/main.go), [book section](https://kataras.gitbooks.io/iris/content/basic-authentication.html)  |
+| [JWT Middleware ](https://github.com/iris-contrib/middleware/tree/master/jwt)      | JSON Web Tokens                  |[example ](https://github.com/iris-contrib/examples/blob/master/middleware_jwt/main.go), [book section](https://kataras.gitbooks.io/iris/content/jwt.html)  |
+| [Cors Middleware ](https://github.com/iris-contrib/middleware/tree/master/cors)      | Cross Origin Resource Sharing W3 specification   | [how to use ](https://github.com/iris-contrib/middleware/tree/master/cors#how-to-use)  |
+| [Secure Middleware ](https://github.com/iris-contrib/middleware/tree/master/secure) |  Facilitates some quick security wins      | [example](https://github.com/iris-contrib/examples/blob/master/middleware_secure/main.go)  |
+| [I18n Middleware ](https://github.com/iris-contrib/middleware/tree/master/i18n)      | Simple internationalization       | [example](https://github.com/iris-contrib/examples/tree/master/middleware_internationalization_i18n), [book section](https://kataras.gitbooks.io/iris/content/middleware-internationalization-and-localization.html)  |
+| [Recovery Middleware ](https://github.com/iris-contrib/middleware/tree/master/recovery) | Safety recover the station from panic       | [example](https://github.com/iris-contrib/examples/blob/master/middleware_recovery/main.go)  |
+| [Logger Middleware ](https://github.com/iris-contrib/middleware/tree/master/logger)      | Logs every request       | [example](https://github.com/iris-contrib/examples/blob/master/middleware_logger/main.go), [book section](https://kataras.gitbooks.io/iris/content/logger.html)  |
+| [Profile Middleware ](https://github.com/iris-contrib/middleware/tree/master/pprof)      | Http profiling for debugging    | [example](https://github.com/iris-contrib/examples/blob/master/middleware_pprof/main.go)  |
+| [Editor Plugin](https://github.com/iris-contrib/plugin/tree/master/editor)      | Alm-tools, a typescript online IDE/Editor | [book section](https://kataras.gitbooks.io/iris/content/plugin-editor.html) |
+| [Typescript Plugin](https://github.com/iris-contrib/plugin/tree/master/typescript)      | Auto-compile client-side typescript files      |   [book section](https://kataras.gitbooks.io/iris/content/plugin-typescript.html) |
+| [OAuth,OAuth2 Plugin](https://github.com/iris-contrib/plugin/tree/master/oauth) |  User Authentication was never be easier, supports >27 providers |    [example](https://github.com/iris-contrib/examples/tree/master/plugin_oauth_oauth2), [book section](https://kataras.gitbooks.io/iris/content/plugin-oauth.html) |
+| [Iris control Plugin](https://github.com/iris-contrib/plugin/tree/master/iriscontrol) |   Basic (browser-based) control over your Iris station |    [example](https://github.com/iris-contrib/examples/blob/master/plugin_iriscontrol/main.go), [book section](https://kataras.gitbooks.io/iris/content/plugin-iriscontrol.html) |
 
 
 
@@ -130,13 +232,10 @@ Read more about Semantic Versioning 2.0.0
  - https://en.wikipedia.org/wiki/Software_versioning
  - https://wiki.debian.org/UpstreamGuide#Releases_and_Versions
 
-
-Contributing
+Todo
 ------------
-If you are interested in contributing to the Iris project, please make sure that you read the document [CONTRIBUTING](https://github.com/kataras/iris/blob/master/CONTRIBUTING.md) first.
 
-- Report issues
-- Suggest new features or enhancements
+Iris is a **Community-Driven** Project, waiting for your suggestions and [feature requests](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=label%3A%22feature%20request%22)!
 
 People
 ------------
@@ -145,8 +244,9 @@ The big thanks goes to [all people](https://github.com/kataras/iris/issues?utf8=
 The author of Iris is [@kataras](https://github.com/kataras). If **you**'re willing to donate, feel **free** to navigate to the [DONATIONS PAGE](https://github.com/kataras/iris/blob/master/DONATIONS.md).
 
 
-
-
+Contributing
+------------
+If you are interested in contributing to the Iris project, please see the document [CONTRIBUTING](https://github.com/kataras/iris/blob/master/CONTRIBUTING.md).
 
 License
 ------------
