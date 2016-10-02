@@ -52,15 +52,6 @@ package iris // import "github.com/kataras/iris"
 
 import (
 	"fmt"
-	"github.com/gavv/httpexpect"
-	"github.com/kataras/go-errors"
-	"github.com/kataras/go-fs"
-	"github.com/kataras/go-serializer"
-	"github.com/kataras/go-sessions"
-	"github.com/kataras/go-template"
-	"github.com/kataras/go-template/html"
-	"github.com/kataras/iris/utils"
-	"github.com/valyala/fasthttp"
 	"log"
 	"net"
 	"net/http"
@@ -75,11 +66,21 @@ import (
 	"syscall"
 	"testing"
 	"time"
+
+	"github.com/gavv/httpexpect"
+	"github.com/kataras/go-errors"
+	"github.com/kataras/go-fs"
+	"github.com/kataras/go-serializer"
+	"github.com/kataras/go-sessions"
+	"github.com/kataras/go-template"
+	"github.com/kataras/go-template/html"
+	"github.com/kataras/iris/utils"
+	"github.com/valyala/fasthttp"
 )
 
 const (
 	// Version is the current version of the Iris web framework
-	Version = "4.4.2"
+	Version = "4.4.3"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -240,6 +241,9 @@ func New(setters ...OptionSetter) *Framework {
 	{
 		// set the servemux, which will provide us the public API also, with its context pool
 		mux := newServeMux(s.Logger)
+		mux.escapePath = !s.Config.DisablePathCorrection
+		// escapePath re-setted on .Set and after build, it's the only config which should be setted before any other route(party-releated) method called.
+
 		mux.onLookup = s.Plugins.DoPreLookup
 		s.contextPool.New = func() interface{} {
 			return &Context{framework: s}
@@ -266,6 +270,10 @@ func (s *Framework) Set(setters ...OptionSetter) {
 
 	for _, setter := range setters {
 		setter.Set(s.Config)
+	}
+
+	if s.muxAPI != nil && s.mux != nil { // if called after .New
+		s.mux.escapePath = !s.Config.DisablePathCorrection // then re-set the mux' pathEscape, which should be setted BEFORE any route-releated method call
 	}
 }
 
@@ -1328,7 +1336,7 @@ func (api *muxAPI) Handle(method string, registedPath string, handlers ...Handle
 		return nil
 	}
 
-	fullpath := api.relativePath + registedPath // keep the last "/" if any,  "/xyz/"
+	fullpath := api.relativePath + registedPath // for now, keep the last "/" if any,  "/xyz/"
 
 	middleware := joinMiddleware(api.middleware, handlers)
 
@@ -1339,6 +1347,16 @@ func (api *muxAPI) Handle(method string, registedPath string, handlers ...Handle
 	if dotWSlashIdx := strings.Index(path, subdomainIndicator); dotWSlashIdx > 0 {
 		subdomain = fullpath[0 : dotWSlashIdx+1] // admin.
 		path = fullpath[dotWSlashIdx+1:]         // /
+	}
+	// we splitted the path and subdomain parts so we're ready to check only the path, otherwise we will had problems with subdomains
+	if api.mux.correctPath {
+		// remove last "/" if any, "/xyz/"
+		if len(path) > 1 { // if it's the root, then keep it*
+			if path[len(path)-1] == slashByte {
+				// ok we are inside /xyz/
+				path = path[0 : len(path)-1]
+			}
+		}
 	}
 
 	path = strings.Replace(path, "//", "/", -1) // fix the path if double //

@@ -8,11 +8,12 @@ CONTRIBUTE & DISCUSSION ABOUT TESTS TO: https://github.com/iris-contrib/tests
 
 import (
 	"fmt"
-	"github.com/valyala/fasthttp"
 	"io/ioutil"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/valyala/fasthttp"
 
 	"github.com/gavv/httpexpect"
 )
@@ -408,7 +409,7 @@ func TestMuxSimpleParty(t *testing.T) {
 	}
 
 	Default.Config.VHost = "0.0.0.0:8080"
-	//Default.Config.Tester.Debug = true
+	Default.Config.Tester.Debug = true
 	//Default.Config.Tester.ExplicitURL = true
 	e := Tester(t)
 
@@ -420,7 +421,7 @@ func TestMuxSimpleParty(t *testing.T) {
 	}
 
 	// run the tests
-	request("/party1/")
+	request("/party1")
 	request("/party1/path1")
 	request("/party1/path2")
 	request("/party1/namedpath/theparam1/something/theparam2")
