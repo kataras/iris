@@ -28,7 +28,7 @@
 <a href="https://kataras.rocket.chat/channel/iris"><img src="https://img.shields.io/badge/%20community-chat-00BCD4.svg?style=flat-square" alt="Chat"></a><br/><br/>
 
 
-The <a href="https://github.com/kataras/iris#benchmarks">fastest</a> backend web framework for Go.
+The <a href="https://github.com/kataras/iris#benchmarks">fastest</a> back-end web framework written in Go.
 <br/>
 Easy to <a href="https://www.gitbook.com/book/kataras/iris/details">learn</a>,  while it's highly customizable. <br/>
 Ideally suited for both experienced and novice <b>Developers</b>.
@@ -39,7 +39,11 @@ Ideally suited for both experienced and novice <b>Developers</b>.
 
 </p>
 
-### 3 October 2016 [Iris vs Nginx vs Nodejs express](https://translate.google.com/translate?sl=auto&tl=en&js=y&prev=_t&hl=en&ie=UTF-8&u=https%3A%2F%2Fwww.ntossapo.me%2F2016%2F08%2F13%2Fnginx-vs-nginx-php-fpm-vs-go-iris-vs-express-with-wrk%2F&edit-text=&act=url)
+## News
+ - [Iris vs Nginx vs Nodejs express](https://translate.google.com/translate?sl=auto&tl=en&js=y&prev=_t&hl=en&ie=UTF-8&u=https%3A%2F%2Fwww.ntossapo.me%2F2016%2F08%2F13%2Fnginx-vs-nginx-php-fpm-vs-go-iris-vs-express-with-wrk%2F&edit-text=&act=url)
+
+- Check out [this](https://t.co/Y7bK0THScG) Meetup with GoLang User Group. Contains ~30 minutes talk about the Iris web framework. Happens at Thursday, October 13, 2016.
+
 
 ## Feature Overview
 
