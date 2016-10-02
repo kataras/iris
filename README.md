@@ -39,6 +39,7 @@ Ideally suited for both experienced and novice <b>Developers</b>.
 
 </p>
 
+### 3 October 2016 [Iris vs Nginx vs Nodejs express](https://translate.google.com/translate?sl=auto&tl=en&js=y&prev=_t&hl=en&ie=UTF-8&u=https%3A%2F%2Fwww.ntossapo.me%2F2016%2F08%2F13%2Fnginx-vs-nginx-php-fpm-vs-go-iris-vs-express-with-wrk%2F&edit-text=&act=url)
 
 ## Feature Overview
 
@@ -825,7 +826,7 @@ Today I spend all my days and nights coding for Iris, and I'm happy about this, 
 Philosophy
 ------------
 
-The Iris philosophy is to provide robust tooling for HTTP, making it a great solution for single page applications, web sites, hybrids, or public HTTP APIs. Keep note that, today, iris has the clostest performance to the nginx.
+The Iris philosophy is to provide robust tooling for HTTP, making it a great solution for single page applications, web sites, hybrids, or public HTTP APIs. Keep note that, today, iris is faster than nginx itself.
 
 Iris does not force you to use any specific ORM or template engine. With support for the most used template engines, you can quickly craft the perfect application.
 
@@ -834,12 +835,23 @@ Iris does not force you to use any specific ORM or template engine. With support
 Benchmarks
 ------------
 
+
 This Benchmark test aims to compare the whole HTTP request processing between Go web frameworks.
 
 
 ![Benchmark Wizzard July 21, 2016- Processing Time Horizontal Graph](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png)
 
 **The results have been updated on July 21, 2016**
+
+The second is an article I just found(**3 October 2016**) which compares Iris vs Nginx vs Nodejs express, it was written in Thai, so I used google to translate it to english.
+
+![Iris vs Nginx vs Nodejs express](https://github.com/iris-contrib/website/raw/gh-pages/assets/03Oct2016/iris_1.png)
+
+The results showed that the req / sec iris do best at around 70k-50k, followed by nginx and nginx-php-fpm and nodejs respectively.
+The error golang-iris and nginx work equally, followed by the final nginx and php-fpm at a ratio of 1: 1.
+
+You can read the full article [here](https://translate.google.com/translate?sl=auto&tl=en&js=y&prev=_t&hl=en&ie=UTF-8&u=https%3A%2F%2Fwww.ntossapo.me%2F2016%2F08%2F13%2Fnginx-vs-nginx-php-fpm-vs-go-iris-vs-express-with-wrk%2F&edit-text=&act=url).
+
 
 Testing
 ------------
