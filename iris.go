@@ -241,9 +241,7 @@ func New(setters ...OptionSetter) *Framework {
 	{
 		// set the servemux, which will provide us the public API also, with its context pool
 		mux := newServeMux(s.Logger)
-		mux.correctPath = !s.Config.DisablePathCorrection
-		// escapePath & correctPath are re-setted on .Set and after build*
-		mux.escapePath = !s.Config.DisablePathEscape
+		mux.setCorrectPath(!s.Config.DisablePathCorrection) // correctPath is re-setted on .Set and after build*
 
 		mux.onLookup = s.Plugins.DoPreLookup
 		s.contextPool.New = func() interface{} {
@@ -273,9 +271,8 @@ func (s *Framework) Set(setters ...OptionSetter) {
 		setter.Set(s.Config)
 	}
 
-	if s.muxAPI != nil && s.mux != nil { // if called after .New
-		s.mux.correctPath = !s.Config.DisablePathCorrection
-		s.mux.escapePath = !s.Config.DisablePathEscape
+	if s.muxAPI != nil && s.mux != nil { // if called after .New, which it does, correctPath is the only field we need to be updated before .Listen, so:
+		s.mux.setCorrectPath(!s.Config.DisablePathCorrection)
 	}
 }
 
@@ -335,6 +332,10 @@ func (s *Framework) Build() {
 			s.Websocket.RegisterTo(s, s.Config.Websocket)
 		}
 
+		//  prepare the mux runtime fields again, for any case
+		s.mux.setCorrectPath(!s.Config.DisablePathCorrection)
+		s.mux.setEscapePath(!s.Config.DisablePathEscape)
+
 		// prepare the server's handler, we do that check because iris supports
 		// custom routers (you can take the routes registed by iris using iris.Lookups function)
 		if s.Router == nil {
@@ -368,9 +369,6 @@ func (s *Framework) Build() {
 			s.Config.VScheme = ParseScheme(s.Config.VHost)
 		}
 
-		//  prepare the mux runtime fields
-		s.mux.setCorrectPath(!s.Config.DisablePathCorrection)
-		s.mux.setEscapePath(!s.Config.DisablePathEscape)
 		// set the mux' hostname (for multi subdomain routing)
 		s.mux.hostname = ParseHostname(s.Config.VHost)
 
