@@ -1157,11 +1157,14 @@ func (mux *serveMux) BuildHandler() HandlerFunc {
 
 					context.Request.URI().SetPath(reqPath)
 					urlToRedirect := utils.BytesToString(context.Request.RequestURI())
-					statisForRedirect := StatusMovedPermanently //	StatusMovedPermanently, this document is obselte, clients caches this, so no performance difference to the next call
+
+					statisForRedirect := StatusMovedPermanently //	StatusMovedPermanently, this document is obselte, clients caches this.
 					if bytes.Equal(tree.method, MethodPostBytes) ||
-						bytes.Equal(tree.method, MethodPutBytes) || bytes.Equal(tree.method, MethodDeleteBytes) {
-						statisForRedirect = StatusTemporaryRedirect //	To mantain POST data
+						bytes.Equal(tree.method, MethodPutBytes) ||
+						bytes.Equal(tree.method, MethodDeleteBytes) {
+						statisForRedirect = StatusTemporaryRedirect //	To maintain POST data
 					}
+
 					context.Redirect(urlToRedirect, statisForRedirect)
 					// RFC2616 recommends that a short note "SHOULD" be included in the
 					// response because older user agents may not understand 301/307.
