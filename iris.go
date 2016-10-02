@@ -80,7 +80,7 @@ import (
 
 const (
 	// Version is the current version of the Iris web framework
-	Version = "4.4.3"
+	Version = "4.4.4"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -241,8 +241,9 @@ func New(setters ...OptionSetter) *Framework {
 	{
 		// set the servemux, which will provide us the public API also, with its context pool
 		mux := newServeMux(s.Logger)
-		mux.escapePath = !s.Config.DisablePathCorrection
-		// escapePath re-setted on .Set and after build, it's the only config which should be setted before any other route(party-releated) method called.
+		mux.correctPath = !s.Config.DisablePathCorrection
+		// escapePath & correctPath are re-setted on .Set and after build*
+		mux.escapePath = !s.Config.DisablePathEscape
 
 		mux.onLookup = s.Plugins.DoPreLookup
 		s.contextPool.New = func() interface{} {
@@ -273,7 +274,8 @@ func (s *Framework) Set(setters ...OptionSetter) {
 	}
 
 	if s.muxAPI != nil && s.mux != nil { // if called after .New
-		s.mux.escapePath = !s.Config.DisablePathCorrection // then re-set the mux' pathEscape, which should be setted BEFORE any route-releated method call
+		s.mux.correctPath = !s.Config.DisablePathCorrection
+		s.mux.escapePath = !s.Config.DisablePathEscape
 	}
 }
 

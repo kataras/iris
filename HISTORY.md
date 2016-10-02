@@ -2,11 +2,11 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
-## 4.4.1 -> 4.4.3 
+## 4.4.1 -> 4.4.4
 
 - **FIX**: CORS
 - **FIX**: Unexpected Party root's route slash  when `DisablePathCorrection` is false(default), as reported [here](https://github.com/kataras/iris/issues/453)
-
+- **small fix**: DisablePathEscape not affects
 ## 4.4.0 -> 4.4.1
 
 - **NEW**: Template PreRenders, as requested [here](https://github.com/kataras/iris/issues/412).
