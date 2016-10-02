@@ -252,26 +252,30 @@ func save(ctx *iris.Context)  {
 	// Get avatar
 	avatar, err := ctx.FormFile("avatar")
 	if err != nil {
-		return err
+    ctx.EmitError(iris.StatusInternalServerError)
+    return
 	}
 
 	// Source
 	src, err := avatar.Open()
 	if err != nil {
-		return err
+    ctx.EmitError(iris.StatusInternalServerError)
+    return
 	}
 	defer src.Close()
 
 	// Destination
 	dst, err := os.Create(avatar.Filename)
 	if err != nil {
-		return err
+    ctx.EmitError(iris.StatusInternalServerError)
+    return
 	}
 	defer dst.Close()
 
 	// Copy
 	if _, err = io.Copy(dst, src); err != nil {
-		return err
+    ctx.EmitError(iris.StatusInternalServerError)
+    return
 	}
 
 	ctx.HTML(iris.StatusOK, "<b>Thanks!</b>")
@@ -294,6 +298,7 @@ iris.Post("/users", func(ctx *iris.Context) {
 	u := new(User)
 	if err := ctx.ReadJSON(u); err != nil {
 		ctx.EmitError(iris.StatusInternalServerError)
+    return
 	}
 	ctx.JSON(iris.StatusCreated, u)
    // or
@@ -313,6 +318,47 @@ iris.Post("/users", func(ctx *iris.Context) {
 | [Markdown ](https://github.com/kataras/go-serializer/tree/master/markdown)      | Markdown Serializer (Default)                  |[example 1](https://github.com/iris-contrib/examples/blob/master/serialize_engines/markdown_1/main.go),[example 2](https://github.com/iris-contrib/examples/blob/master/serialize_engines/markdown_2/main.go), [book section](https://kataras.gitbooks.io/iris/content/serialize-engines.html)
 | [Text](https://github.com/kataras/go-serializer/tree/master/text)      | Text Serializer (Default)                  |[example 1](https://github.com/iris-contrib/examples/blob/master/serialize_engines/text_1/main.go), [book section](https://kataras.gitbooks.io/iris/content/serialize-engines.html)
 | [Binary Data ](https://github.com/kataras/go-serializer/tree/master/data)      | Binary Data Serializer (Default)                  |[example 1](https://github.com/iris-contrib/examples/blob/master/serialize_engines/data_1/main.go), [book section](https://kataras.gitbooks.io/iris/content/serialize-engines.html)
+
+
+### HTTP Errors
+
+You can define your own handlers when http error occurs.
+
+```go
+package main
+
+import (
+	"github.com/kataras/iris"
+)
+
+func main() {
+
+	iris.OnError(iris.StatusInternalServerError, func(ctx *iris.Context) {
+        ctx.Write("CUSTOM 500 INTERNAL SERVER ERROR PAGE")
+		// or ctx.Render, ctx.HTML any render method you want
+		ctx.Log("http status: 500 happened!")
+	})
+
+	iris.OnError(iris.StatusNotFound, func(ctx *iris.Context) {
+		ctx.Write("CUSTOM 404 NOT FOUND ERROR PAGE")
+		ctx.Log("http status: 404 happened!")
+	})
+
+	// emit the errors to test them
+	iris.Get("/500", func(ctx *iris.Context) {
+		ctx.EmitError(iris.StatusInternalServerError) // ctx.Panic()
+	})
+
+	iris.Get("/404", func(ctx *iris.Context) {
+		ctx.EmitError(iris.StatusNotFound) // ctx.NotFound()
+	})
+
+	iris.Listen(":80")
+
+}
+
+
+```
 
 ### Static Content
 
