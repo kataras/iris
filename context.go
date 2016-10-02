@@ -10,13 +10,6 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"github.com/iris-contrib/formBinder"
-	"github.com/kataras/go-errors"
-	"github.com/kataras/go-fs"
-	"github.com/kataras/go-sessions"
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/utils"
-	"github.com/valyala/fasthttp"
 	"io"
 	"net"
 	"os"
@@ -26,6 +19,14 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/iris-contrib/formBinder"
+	"github.com/kataras/go-errors"
+	"github.com/kataras/go-fs"
+	"github.com/kataras/go-sessions"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/utils"
+	"github.com/valyala/fasthttp"
 )
 
 const (
