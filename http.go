@@ -3,11 +3,6 @@ package iris
 import (
 	"bytes"
 	"crypto/tls"
-	"github.com/iris-contrib/letsencrypt"
-	"github.com/kataras/go-errors"
-	"github.com/kataras/iris/utils"
-	"github.com/valyala/fasthttp"
-	"github.com/valyala/fasthttp/fasthttpadaptor"
 	"log"
 	"net"
 	"net/http"
@@ -17,6 +12,12 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/iris-contrib/letsencrypt"
+	"github.com/kataras/go-errors"
+	"github.com/kataras/iris/utils"
+	"github.com/valyala/fasthttp"
+	"github.com/valyala/fasthttp/fasthttpadaptor"
 )
 
 const (
@@ -1147,7 +1148,6 @@ func (mux *serveMux) BuildHandler() HandlerFunc {
 				pathLen := len(reqPath)
 
 				if pathLen > 1 {
-
 					if reqPath[pathLen-1] == '/' {
 						reqPath = reqPath[:pathLen-1] //remove the last /
 					} else {
@@ -1157,8 +1157,12 @@ func (mux *serveMux) BuildHandler() HandlerFunc {
 
 					context.Request.URI().SetPath(reqPath)
 					urlToRedirect := utils.BytesToString(context.Request.RequestURI())
-
-					context.Redirect(urlToRedirect, StatusMovedPermanently) //	StatusMovedPermanently
+					statisForRedirect := StatusMovedPermanently //	StatusMovedPermanently, this document is obselte, clients caches this, so no performance difference to the next call
+					if bytes.Equal(tree.method, MethodPostBytes) ||
+						bytes.Equal(tree.method, MethodPutBytes) || bytes.Equal(tree.method, MethodDeleteBytes) {
+						statisForRedirect = StatusTemporaryRedirect //	To mantain POST data
+					}
+					context.Redirect(urlToRedirect, statisForRedirect)
 					// RFC2616 recommends that a short note "SHOULD" be included in the
 					// response because older user agents may not understand 301/307.
 					// Shouldn't send the response for POST or HEAD; that leaves GET.
