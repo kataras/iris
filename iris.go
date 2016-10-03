@@ -1348,8 +1348,10 @@ func (api *muxAPI) Handle(method string, registedPath string, handlers ...Handle
 		subdomain = fullpath[0 : dotWSlashIdx+1] // admin.
 		path = fullpath[dotWSlashIdx+1:]         // /
 	}
-	// we splitted the path and subdomain parts so we're ready to check only the path, otherwise we will had problems with subdomains
-	if api.mux.correctPath {
+	// not needed after the redirect status change for POST methods
+	// we splitted the path and subdomain parts so we're ready to check only the path,
+	// otherwise we will had problems with subdomains
+	/*if api.mux.correctPath {
 		// remove last "/" if any, "/xyz/"
 		if len(path) > 1 { // if it's the root, then keep it*
 			if path[len(path)-1] == slashByte {
@@ -1357,7 +1359,7 @@ func (api *muxAPI) Handle(method string, registedPath string, handlers ...Handle
 				path = path[0 : len(path)-1]
 			}
 		}
-	}
+	}*/
 
 	path = strings.Replace(path, "//", "/", -1) // fix the path if double //
 

@@ -29,7 +29,7 @@ I'm  grateful for all the generous donations. Iris is fully funded by these dona
 - [Bob Lee](https://github.com/li3p) donated 20 EUR at September 16
 - [Celso Luiz](https://github.com/celsosz) donated 50 EUR at September 29
 - ANONYMOUS(Waiting For Approval) donated 6 EUR at October 1
-- ANONYMOUS(Waiting For Approval) donated 20 EUR at October 2
+- Ankur Srivastava donated 20 EUR at October 2
 
 > The name of the donator added after his/her permission.
 
