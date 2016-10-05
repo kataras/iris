@@ -58,8 +58,11 @@ func (s *WebsocketServer) Handler(ctx *Context) {
 // receives the websocket configuration and  the iris station
 func (s *WebsocketServer) RegisterTo(station *Framework, c WebsocketConfiguration) {
 
-	// Note: s.Server should be initialize on the first OnConnection, which is called before this func always.
-
+	// Note: s.Server should be initialize on the first OnConnection, which is called before this func  when Default websocket server.
+	// When not: when calling this function before OnConnection, when we have more than one websocket server running
+	if s.Server == nil {
+		s.Server = websocket.New()
+	}
 	// is just a conversional type for kataras/go-websocket.Connection
 	s.upgrader = irisWebsocket.Custom(s.Server.HandleConnection, c.ReadBufferSize, c.WriteBufferSize, false)
 
@@ -95,6 +98,7 @@ type WebsocketConnection interface {
 // OnConnection this is the main event you, as developer, will work with each of the websocket connections
 func (s *WebsocketServer) OnConnection(connectionListener func(WebsocketConnection)) {
 	if s.Server == nil {
+		// for default webserver this is the time when the websocket server will be init
 		// let's initialize here the ws server, the user/dev is free to change its config before this step.
 		s.Server = websocket.New() // we need that in order to use the Iris' WebsocketConnnection, which
 		// config is empty here because are setted on the RegisterTo

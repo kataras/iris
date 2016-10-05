@@ -2,7 +2,11 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
-## 4.4.1 -> 4.4.5
+## 4.4.6 -> 4.4.7
+
+- **small fix**: websocket server is nil when more than the default websocket station tries to be registered before `OnConnection` called[*](https://github.com/kataras/iris/issues/460)
+
+## 4.4.1 -> 4.4.6
 
 - **FIX**: CORS not worked for all http methods
 - **FIX**: Unexpected Party root's route slash  when `DisablePathCorrection` is false(default), as reported [here](https://github.com/kataras/iris/issues/453)

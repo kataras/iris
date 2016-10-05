@@ -79,7 +79,7 @@ import (
 
 const (
 	// Version is the current version of the Iris web framework
-	Version = "4.4.6"
+	Version = "4.4.7"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -1348,11 +1348,13 @@ func (api *muxAPI) Handle(method string, registedPath string, handlers ...Handle
 		subdomain = fullpath[0 : dotWSlashIdx+1] // admin.
 		path = fullpath[dotWSlashIdx+1:]         // /
 	}
-	// not needed after the redirect status change for POST methods
+
 	// we splitted the path and subdomain parts so we're ready to check only the path,
 	// otherwise we will had problems with subdomains
-	// if the user wants beta:= iris.Party("/beta"); beta.Get("/") to be registered as : /beta/ then should disable the path correction OR register it like: beta.Get("//")
-	// this is only for the party's roots in order to have expected paths, as we do with iris.Get("/") which is localhost:8080 as RFC points, not localhost:8080/
+	// if the user wants beta:= iris.Party("/beta"); beta.Get("/") to be registered as
+	//: /beta/ then should disable the path correction OR register it like: beta.Get("//")
+	// this is only for the party's roots in order to have expected paths,
+	// as we do with iris.Get("/") which is localhost:8080 as RFC points, not localhost:8080/
 	if api.mux.correctPath && registedPath == slash { // check the given relative path
 		// remove last "/" if any, "/xyz/"
 		if len(path) > 1 { // if it's the root, then keep it*
