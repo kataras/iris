@@ -118,10 +118,10 @@ func main(){
   })
 
   iris.Get("/myjson", func(ctx *iris.Context){
-    ctx.JSON(iris.Map{
+    ctx.JSON(iris.StatusOK, iris.Map{
       "Name": "Iris",
       "Released": "13 March 2016",
-      "Stars": 5250,
+      "Stars": 5281,
     })
   })
 
