@@ -4,7 +4,7 @@
 
 ## 4.4.7 -> 4.4.8
 
-- **NEW**: `RequestDecoder` gives the ability to set a custom decoder **per passed object** when `context.ReadJSON` and `context.ReadXML` 
+- **NEW**: `BodyDecoder` gives the ability to set a custom decoder **per passed object** when `context.ReadJSON` and `context.ReadXML` 
 
 ```go
 // BodyDecoder is an interface which any struct can implement in order to customize the decode action
