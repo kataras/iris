@@ -1,4 +1,5 @@
 /*
+/*
 Context.go  Implements: ./context/context.go
 */
 
@@ -372,10 +373,11 @@ func (ctx *Context) Subdomain() (subdomain string) {
 }
 
 // ReadJSON reads JSON from request's body
-func (ctx *Context) ReadJSON(jsonObject interface{}) error {
-	data := ctx.RequestCtx.Request.Body()
-
-	decoder := json.NewDecoder(strings.NewReader(string(data)))
+func (ctx *Context) ReadJSON(jsonObject *interface{}) error {
+	//Go's JSON actually expects a pointer not just a object
+	//And why abuse strings.NewReader? Just let Unmarshal do it
+	data := ctx.GetRequestCtx().PostBody()
+	json.Unmarshal(data, &jsonObject)
 	err := decoder.Decode(jsonObject)
 
 	//err != nil fix by @shiena
