@@ -377,11 +377,10 @@ func (ctx *Context) ReadJSON(jsonObject *interface{}) error {
 	//Go's JSON actually expects a pointer not just a object
 	//And why abuse strings.NewReader? Just let Unmarshal do it
 	data := ctx.GetRequestCtx().PostBody()
-	json.Unmarshal(data, &jsonObject)
-	err := decoder.Decode(jsonObject)
+	err := json.Unmarshal(data, &jsonObject)
 
 	//err != nil fix by @shiena
-	if err != nil && err != io.EOF {
+	if err != nil {
 		return errReadBody.Format("JSON", err.Error())
 	}
 
