@@ -371,33 +371,65 @@ func (ctx *Context) Subdomain() (subdomain string) {
 	return
 }
 
+// BodyDecoder is an interface which any struct can implement in order to customize the decode action
+// from ReadJSON and ReadXML
+//
+// Trivial example of this could be:
+// type User struct { Username string }
+//
+// func (u *User) Decode(data []byte) error {
+//	  return json.Unmarshal(data, u)
+// }
+//
+// the 'context.ReadJSON/ReadXML(&User{})' will call the User's
+// Decode option to decode the request body
+//
+// Note: This is totally optionally, the default decoders
+// for ReadJSON is the encoding/json and for ReadXML is the encoding/xml
+type BodyDecoder interface {
+	Decode(data []byte) error
+}
+
 // ReadJSON reads JSON from request's body
 func (ctx *Context) ReadJSON(jsonObject interface{}) error {
-	data := ctx.RequestCtx.Request.Body()
+	rawData := ctx.Request.Body()
 
-	decoder := json.NewDecoder(strings.NewReader(string(data)))
-	err := decoder.Decode(jsonObject)
-
-	//err != nil fix by @shiena
-	if err != nil && err != io.EOF {
-		return errReadBody.Format("JSON", err.Error())
+	// check if the jsonObject contains its own decode
+	// in this case the jsonObject should be a pointer also,
+	// but this is up to the user's custom Decode implementation*
+	//
+	// See 'BodyDecoder' for more
+	if decoder, isDecoder := jsonObject.(BodyDecoder); isDecoder {
+		return decoder.Decode(rawData)
 	}
 
-	return nil
+	// check if jsonObject is already a pointer, if yes then pass as it's
+	if reflect.TypeOf(jsonObject).Kind() == reflect.Ptr {
+		return json.Unmarshal(rawData, jsonObject)
+	}
+	// finally, if the jsonObject doesn't contains a self-body decoder and it's not a pointer
+	return json.Unmarshal(rawData, &jsonObject)
 }
 
 // ReadXML reads XML from request's body
 func (ctx *Context) ReadXML(xmlObject interface{}) error {
-	data := ctx.RequestCtx.Request.Body()
+	rawData := ctx.Request.Body()
 
-	decoder := xml.NewDecoder(strings.NewReader(string(data)))
-	err := decoder.Decode(xmlObject)
-	//err != nil fix by @shiena
-	if err != nil && err != io.EOF {
-		return errReadBody.Format("XML", err.Error())
+	// check if the xmlObject contains its own decode
+	// in this case the jsonObject should be a pointer also,
+	// but this is up to the user's custom Decode implementation*
+	//
+	// See 'BodyDecoder' for more
+	if decoder, isDecoder := xmlObject.(BodyDecoder); isDecoder {
+		return decoder.Decode(rawData)
 	}
 
-	return nil
+	// check if xmlObject is already a pointer, if yes then pass as it's
+	if reflect.TypeOf(xmlObject).Kind() == reflect.Ptr {
+		return xml.Unmarshal(rawData, xmlObject)
+	}
+	// finally, if the xmlObject doesn't contains a self-body decoder and it's not a pointer
+	return xml.Unmarshal(rawData, &xmlObject)
 }
 
 // ReadForm binds the formObject  with the form data

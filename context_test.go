@@ -11,7 +11,9 @@ CONTRIBUTE & DISCUSSION ABOUT TESTS TO: https://github.com/iris-contrib/tests
 */
 
 import (
+	"encoding/json"
 	"encoding/xml"
+	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
@@ -240,12 +242,75 @@ func TestContextReadJSON(t *testing.T) {
 		ctx.JSON(StatusOK, obj)
 	})
 
+	Post("/json_pointer", func(ctx *Context) {
+		obj := &testBinderData{}
+		err := ctx.ReadJSON(obj)
+		if err != nil {
+			t.Fatalf("Error when parsing the JSON body: %s", err.Error())
+		}
+		ctx.JSON(StatusOK, obj)
+	})
+
 	e := Tester(t)
 	passed := map[string]interface{}{"Username": "myusername", "Mail": "mymail@iris-go.com", "mydata": []string{"mydata1", "mydata2"}}
 	expectedObject := testBinderData{Username: "myusername", Mail: "mymail@iris-go.com", Data: []string{"mydata1", "mydata2"}}
 
 	e.POST("/json").WithJSON(passed).Expect().Status(StatusOK).JSON().Object().Equal(expectedObject)
+	e.POST("/json_pointer").WithJSON(passed).Expect().Status(StatusOK).JSON().Object().Equal(expectedObject)
 }
+
+type testJSONBinderDataWithDecoder struct {
+	Username    string
+	Mail        string
+	Data        []string `json:"mydata"`
+	shouldError bool
+}
+
+func (tj *testJSONBinderDataWithDecoder) Decode(data []byte) error {
+	if tj.shouldError {
+		return fmt.Errorf("Should error")
+	}
+	return json.Unmarshal(data, tj)
+}
+
+func TestContextReadJSONWithDecoder(t *testing.T) {
+	initDefault()
+	Post("/json_should_error", func(ctx *Context) {
+		obj := testJSONBinderDataWithDecoder{shouldError: true}
+		err := ctx.ReadJSON(&obj)
+		if err == nil {
+			t.Fatalf("Should prompted for error 'Should error' but not error returned from the custom decoder!")
+		}
+		ctx.Write(err.Error())
+		ctx.SetStatusCode(StatusOK)
+	})
+
+	Post("/json", func(ctx *Context) {
+		obj := testJSONBinderDataWithDecoder{}
+		err := ctx.ReadJSON(&obj)
+		if err != nil {
+			t.Fatalf("Error when parsing the JSON body: %s", err.Error())
+		}
+		ctx.JSON(StatusOK, obj)
+	})
+
+	Post("/json_pointer", func(ctx *Context) {
+		obj := &testJSONBinderDataWithDecoder{}
+		err := ctx.ReadJSON(obj)
+		if err != nil {
+			t.Fatalf("Error when parsing the JSON body: %s", err.Error())
+		}
+		ctx.JSON(StatusOK, obj)
+	})
+
+	e := Tester(t)
+	passed := map[string]interface{}{"Username": "kataras", "Mail": "mymail@iris-go.com", "mydata": []string{"mydata1", "mydata2"}}
+	expectedObject := testJSONBinderDataWithDecoder{Username: "kataras", Mail: "mymail@iris-go.com", Data: []string{"mydata1", "mydata2"}}
+
+	e.POST("/json_should_error").WithJSON(passed).Expect().Status(StatusOK).Body().Equal("Should error")
+	e.POST("/json").WithJSON(passed).Expect().Status(StatusOK).JSON().Object().Equal(expectedObject)
+	e.POST("/json_pointer").WithJSON(passed).Expect().Status(StatusOK).JSON().Object().Equal(expectedObject)
+} // no need for xml, it's exact the same.
 
 func TestContextReadXML(t *testing.T) {
 	initDefault()

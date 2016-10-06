@@ -2,6 +2,34 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 4.4.7 -> 4.4.8
+
+- **NEW**: `RequestDecoder` gives the ability to set a custom decoder **per passed object** when `context.ReadJSON` and `context.ReadXML` 
+
+```go
+// BodyDecoder is an interface which any struct can implement in order to customize the decode action
+// from ReadJSON and ReadXML
+//
+// Trivial example of this could be:
+// type User struct { Username string }
+//
+// func (u *User) Decode(data []byte) error {
+//	  return json.Unmarshal(data, u)
+// }
+//
+// the 'context.ReadJSON/ReadXML(&User{})' will call the User's
+// Decode option to decode the request body
+//
+// Note: This is totally optionally, the default decoders
+// for ReadJSON is the encoding/json and for ReadXML is the encoding/xml
+type BodyDecoder interface {
+	Decode(data []byte) error
+}
+
+```
+
+> for a usage example go to https://github.com/kataras/iris/blob/master/context_test.go#L262
+
 ## 4.4.6 -> 4.4.7
 
 - **small fix**: websocket server is nil when more than the default websocket station tries to be registered before `OnConnection` called[*](https://github.com/kataras/iris/issues/460)
