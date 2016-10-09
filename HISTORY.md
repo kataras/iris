@@ -2,9 +2,13 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 4.4.8 -> 4.4.9
+
+- **FIX**: Previous CORS fix wasn't enough and produces error before server's startup[*](https://github.com/kataras/iris/issues/461) if many paths were trying to auto-register an `.OPTIONS` route, now this is fixed in combined with some improvements on the [cors middleware](https://github.com/iris-contrib/middleware/tree/master/cors) too.
+
 ## 4.4.7 -> 4.4.8
 
-- **NEW**: `BodyDecoder` gives the ability to set a custom decoder **per passed object** when `context.ReadJSON` and `context.ReadXML` 
+- **NEW**: `BodyDecoder` gives the ability to set a custom decoder **per passed object** when `context.ReadJSON` and `context.ReadXML`
 
 ```go
 // BodyDecoder is an interface which any struct can implement in order to customize the decode action
@@ -39,7 +43,7 @@ type BodyDecoder interface {
 - **FIX**: CORS not worked for all http methods
 - **FIX**: Unexpected Party root's route slash  when `DisablePathCorrection` is false(default), as reported [here](https://github.com/kataras/iris/issues/453)
 - **small fix**: DisablePathEscape not affects the uri string
-- **small fix**: when Path Correction on POST redirect to the GET instead of POST 
+- **small fix**: when Path Correction on POST redirect to the GET instead of POST
 
 ## 4.4.0 -> 4.4.1
 

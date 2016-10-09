@@ -1039,19 +1039,7 @@ func (mux *serveMux) register(method []byte, subdomain string, path string, midd
 
 // build collects all routes info and adds them to the registry in order to be served from the request handler
 // this happens once when server is setting the mux's handler.
-func (mux *serveMux) build() func(reqCtx *fasthttp.RequestCtx) string {
-
-	// check for cors conflicts FIRST in order to put them in OPTIONS tree also
-	for i := range mux.lookups {
-		r := mux.lookups[i]
-		if r.hasCors() {
-			if exists := mux.lookup(r.path + r.subdomain); exists == nil || exists.Method() != MethodOptions {
-				// skip any already registed to OPTIONS, some users maybe do that manually, so we should be careful here, we do not catch custom names but that's fairly enough
-				mux.register(MethodOptionsBytes, r.subdomain, r.path, r.middleware)
-			}
-
-		}
-	}
+func (mux *serveMux) build() (getRequestPath func(*fasthttp.RequestCtx) string, methodEqual func([]byte, []byte) bool) {
 
 	sort.Sort(bySubdomain(mux.lookups))
 
@@ -1067,7 +1055,7 @@ func (mux *serveMux) build() func(reqCtx *fasthttp.RequestCtx) string {
 		// I decide that it's better to explicit give subdomain and a path to it than registedPath(mysubdomain./something) now its: subdomain: mysubdomain., path: /something
 		// we have different tree for each of subdomains, now you can use everything you can use with the normal paths ( before you couldn't set /any/*path)
 		if err := tree.entry.add(r.path, r.middleware); err != nil {
-			mux.logger.Panic(err.Error())
+			mux.logger.Panic(err)
 		}
 
 		if mp := tree.entry.paramsLen; mp > mux.maxParameters {
@@ -1076,7 +1064,7 @@ func (mux *serveMux) build() func(reqCtx *fasthttp.RequestCtx) string {
 	}
 
 	// optimize this once once, we could do that: context.RequestPath(mux.escapePath), but we lose some nanoseconds on if :)
-	getRequestPath := func(reqCtx *fasthttp.RequestCtx) string {
+	getRequestPath = func(reqCtx *fasthttp.RequestCtx) string {
 		return utils.BytesToString(reqCtx.Path()) //string(ctx.Path()[:]) // a little bit of memory allocation, old method used: BytesToString, If I see the benchmarks get low I will change it back to old, but this way is safer.
 	}
 
@@ -1084,7 +1072,23 @@ func (mux *serveMux) build() func(reqCtx *fasthttp.RequestCtx) string {
 		getRequestPath = func(reqCtx *fasthttp.RequestCtx) string { return utils.BytesToString(reqCtx.RequestURI()) }
 	}
 
-	return getRequestPath
+	methodEqual = func(reqMethod []byte, treeMethod []byte) bool {
+		return bytes.Equal(reqMethod, treeMethod)
+	}
+	// check for cors conflicts FIRST in order to put them in OPTIONS tree also
+	for i := range mux.lookups {
+		r := mux.lookups[i]
+		if r.hasCors() {
+			// cors middleware is updated also, ref: https://github.com/kataras/iris/issues/461
+			methodEqual = func(reqMethod []byte, treeMethod []byte) bool {
+				// preflights
+				return bytes.Equal(reqMethod, MethodOptionsBytes) || bytes.Equal(reqMethod, treeMethod)
+			}
+			break
+		}
+	}
+
+	return
 
 }
 
@@ -1101,15 +1105,16 @@ func (mux *serveMux) lookup(routeName string) *route {
 func (mux *serveMux) BuildHandler() HandlerFunc {
 
 	// initialize the router once
-	getRequestPath := mux.build()
+	getRequestPath, methodEqual := mux.build()
 
 	return func(context *Context) {
 		routePath := getRequestPath(context.RequestCtx)
 		for i := range mux.garden {
 			tree := mux.garden[i]
-			if !bytes.Equal(tree.method, context.Method()) {
+			if !methodEqual(context.Method(), tree.method) {
 				continue
 			}
+
 			if mux.hosts && tree.subdomain != "" {
 				// context.VirtualHost() is a slow method because it makes string.Replaces but user can understand that if subdomain then server will have some nano/or/milleseconds performance cost
 				requestHost := context.VirtualHostname()
@@ -1123,7 +1128,6 @@ func (mux *serveMux) BuildHandler() HandlerFunc {
 						// so the host must be api.iris-go.com:8080
 						if tree.subdomain+mux.hostname != requestHost {
 							// go to the next tree, we have a subdomain but it is not the correct
-
 							continue
 						}
 
