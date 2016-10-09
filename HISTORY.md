@@ -2,6 +2,62 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 4.4.9 -> 4.5.0
+
+- **NEW**: Websocket configuration fields:
+	- `Error func(ctx *Context, status int, reason string)`. Manually catch  any handshake errors. Default calls the `ctx.EmitError(status)` with a stored error message in the `WsError` key(`ctx.Set("WsError", reason)`), as before.
+	- `CheckOrigin func(ctx *Context)`. Manually allow or dissalow client's websocket access, ex: via header **Origin**. Default allow all origins(CORS-like) as before.
+	- `Headers bool`. Allow websocket handler to copy request's headers on the handshake. Default is true
+	 With these in-mind the `WebsocketConfiguration` seems like this now :
+	 ```go
+	 type WebsocketConfiguration struct {
+	 	// WriteTimeout time allowed to write a message to the connection.
+	 	// Default value is 15 * time.Second
+	 	WriteTimeout time.Duration
+	 	// PongTimeout allowed to read the next pong message from the connection
+	 	// Default value is 60 * time.Second
+	 	PongTimeout time.Duration
+	 	// PingPeriod send ping messages to the connection with this period. Must be less than PongTimeout
+	 	// Default value is (PongTimeout * 9) / 10
+	 	PingPeriod time.Duration
+	 	// MaxMessageSize max message size allowed from connection
+	 	// Default value is 1024
+	 	MaxMessageSize int64
+	 	// BinaryMessages set it to true in order to denotes binary data messages instead of utf-8 text
+	 	// see https://github.com/kataras/iris/issues/387#issuecomment-243006022 for more
+	 	// defaults to false
+	 	BinaryMessages bool
+	 	// Endpoint is the path which the websocket server will listen for clients/connections
+	 	// Default value is empty string, if you don't set it the Websocket server is disabled.
+	 	Endpoint string
+	 	// ReadBufferSize is the buffer size for the underline reader
+	 	ReadBufferSize int
+	 	// WriteBufferSize is the buffer size for the underline writer
+	 	WriteBufferSize int
+	 	// Headers  if true then the client's headers are copy to the websocket connection
+	 	//
+	 	// Default is true
+	 	Headers bool
+	 	// Error specifies the function for generating HTTP error responses.
+	 	//
+	 	// The default behavior is to store the reason in the context (ctx.Set(reason)) and fire any custom error (ctx.EmitError(status))
+	 	Error func(ctx *Context, status int, reason string)
+	 	// CheckOrigin returns true if the request Origin header is acceptable. If
+	 	// CheckOrigin is nil, the host in the Origin header must not be set or
+	 	// must match the host of the request.
+	 	//
+	 	// The default behavior is to allow all origins
+	 	// you can change this behavior by setting the iris.Config.Websocket.CheckOrigin = iris.WebsocketCheckSameOrigin
+	 	CheckOrigin func(ctx *Context) bool
+	 }
+	 ```
+
+- **REMOVE**: `github.com/kataras/iris/context/context.go` , this is no needed anymore. Its only usage was inside `sessions` and `websockets`, a month ago I did improvements to the sessions as a standalone package, the IContext interface is not being used there. With the today's changes, the iris-contrib/websocket doesn't needs the IContext interface too, so the whole folder `./context` is useless and removed now. Users developers don't have any side-affects from this change.  
+
+
+[Examples](https://github.com/iris-contrib/examples), [Book](https://github.com/iris-contrib/gitbook) are up-to-date, just new configuration fields.
+
+
 ## 4.4.8 -> 4.4.9
 
 - **FIX**: Previous CORS fix wasn't enough and produces error before server's startup[*](https://github.com/kataras/iris/issues/461) if many paths were trying to auto-register an `.OPTIONS` route, now this is fixed in combined with some improvements on the [cors middleware](https://github.com/iris-contrib/middleware/tree/master/cors) too.

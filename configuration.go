@@ -6,6 +6,7 @@ import (
 	"github.com/kataras/go-sessions"
 	"github.com/valyala/fasthttp"
 	"io"
+	"net/url"
 	"os"
 	"strconv"
 	"time"
@@ -659,6 +660,21 @@ type WebsocketConfiguration struct {
 	ReadBufferSize int
 	// WriteBufferSize is the buffer size for the underline writer
 	WriteBufferSize int
+	// Headers  if true then the client's headers are copy to the websocket connection
+	//
+	// Default is true
+	Headers bool
+	// Error specifies the function for generating HTTP error responses.
+	//
+	// The default behavior is to store the reason in the context (ctx.Set(reason)) and fire any custom error (ctx.EmitError(status))
+	Error func(ctx *Context, status int, reason string)
+	// CheckOrigin returns true if the request Origin header is acceptable. If
+	// CheckOrigin is nil, the host in the Origin header must not be set or
+	// must match the host of the request.
+	//
+	// The default behavior is to allow all origins
+	// you can change this behavior by setting the iris.Config.Websocket.CheckOrigin = iris.WebsocketCheckSameOrigin
+	CheckOrigin func(ctx *Context) bool
 }
 
 var (
@@ -717,6 +733,26 @@ var (
 			c.Websocket.WriteBufferSize = val
 		}
 	}
+	// OptionWebsocketHeaders  if true then the client's headers are copy to the websocket connection
+	OptionWebsocketHeaders = func(val bool) OptionSet {
+		return func(c *Configuration) {
+			c.Websocket.Headers = val
+		}
+	}
+	// OptionWebsocketError specifies the function for generating HTTP error responses.
+	OptionWebsocketError = func(val func(*Context, int, string)) OptionSet {
+		return func(c *Configuration) {
+			c.Websocket.Error = val
+		}
+	}
+	// OptionWebsocketCheckOrigin returns true if the request Origin header is acceptable. If
+	// CheckOrigin is nil, the host in the Origin header must not be set or
+	// must match the host of the request.
+	OptionWebsocketCheckOrigin = func(val func(*Context) bool) OptionSet {
+		return func(c *Configuration) {
+			c.Websocket.CheckOrigin = val
+		}
+	}
 )
 
 const (
@@ -730,6 +766,31 @@ const (
 	DefaultMaxMessageSize = 1024
 )
 
+var (
+	// DefaultWebsocketError is the default method to manage the handshake websocket errors
+	DefaultWebsocketError = func(ctx *Context, status int, reason string) {
+		ctx.Set("WsError", reason)
+		ctx.EmitError(status)
+	}
+	// DefaultWebsocketCheckOrigin is the default method to allow websocket clients to connect to this server
+	// you can change this behavior by setting the iris.Config.Websocket.CheckOrigin = iris.WebsocketCheckSameOrigin
+	DefaultWebsocketCheckOrigin = func(ctx *Context) bool {
+		return true
+	}
+	// WebsocketCheckSameOrigin returns true if the origin is not set or is equal to the request host
+	WebsocketCheckSameOrigin = func(ctx *Context) bool {
+		origin := ctx.RequestHeader("origin")
+		if len(origin) == 0 {
+			return true
+		}
+		u, err := url.Parse(origin)
+		if err != nil {
+			return false
+		}
+		return u.Host == ctx.HostString()
+	}
+)
+
 // DefaultWebsocketConfiguration returns the default config for iris-ws websocket package
 func DefaultWebsocketConfiguration() WebsocketConfiguration {
 	return WebsocketConfiguration{
@@ -741,6 +802,7 @@ func DefaultWebsocketConfiguration() WebsocketConfiguration {
 		ReadBufferSize:  4096,
 		WriteBufferSize: 4096,
 		Endpoint:        "",
+		Headers:         true,
 	}
 }
 

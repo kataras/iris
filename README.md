@@ -19,7 +19,7 @@
 <br/>
 
 
-<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20version%20-%204.4.9%20-blue.svg?style=flat-square" alt="Releases"></a>
+<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20version%20-%204.5.0%20-blue.svg?style=flat-square" alt="Releases"></a>
 
 <a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/%20examples-repository-3362c2.svg?style=flat-square" alt="Examples"></a>
 
@@ -41,14 +41,6 @@ Ideally suited for both experienced and novice <b>Developers</b>.
 
 - Check out [this](https://t.co/Y7bK0THScG) Meetup with GoLang User Group. Contains ~30 minutes talk about the Iris web framework. Happens at Thursday, October 13, 2016.
 
-#### Donations
-I'm  grateful for all the generous donations. Iris is fully funded by these donations[*](DONATIONS.md).
-
-- [Ryan Brooks](https://github.com/ryanbyyc) donated 50 EUR at May 11
-- [Juan Sebastián Suárez Valencia](https://github.com/Juanses) donated 20 EUR at September 11
-- [Bob Lee](https://github.com/li3p) donated 20 EUR at September 16
-- [Celso Luiz](https://github.com/celsosz) donated 50 EUR at September 29
-- [Ankur Srivastava](https://github.com/ansrivas) donated 20 EUR at October 2
 
 ## Feature Overview
 
@@ -870,7 +862,7 @@ I recommend writing your API tests using this new library, [httpexpect](https://
 Versioning
 ------------
 
-Current: **v4.4.9**
+Current: **v4.5.0**
 
 >  Iris is an active project
 
@@ -906,7 +898,7 @@ This project is licensed under the [MIT License](LICENSE), Copyright (c) 2016 Ge
 [Travis]: http://travis-ci.org/kataras/iris
 [License Widget]: https://img.shields.io/badge/license-MIT%20%20License%20-E91E63.svg?style=flat-square
 [License]: https://github.com/kataras/iris/blob/master/LICENSE
-[Release Widget]: https://img.shields.io/badge/release-4.4.9%20-blue.svg?style=flat-square
+[Release Widget]: https://img.shields.io/badge/release-4.5.0%20-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/iris/releases
 [Chat Widget]: https://img.shields.io/badge/community-chat%20-00BCD4.svg?style=flat-square
 [Chat]: https://kataras.rocket.chat/channel/iris

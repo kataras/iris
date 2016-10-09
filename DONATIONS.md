@@ -10,12 +10,13 @@ Feel free to send **any** amount through paypal
 
 [![](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=kataras2006%40hotmail%2ecom&lc=GR&item_name=Iris%20web%20framework&item_number=iriswebframeworkdonationid2016&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted&return=http://iris-go.com/assets/v4-book/iris.pdf&cancel_return=https://www.gitbook.com/book/kataras/iris/details)
 
-> Please check your e-mail after your donation, I will ask you if you want to public your donation
+> Please check your e-mail after your donation
 
 Benefits:
 
-- Your github username is visible to the very-top of the README page
+- Your github username,after your approval, is visible here . I respect your privacy at any case.
 - Access to the 'donors' [private chat room](https://kataras.rocket.chat/group/donors), real-time assistance by me.
+- Each donate gives lifetime to the Iris web framework. The author works full-time on this project, no time for any part-time job.
 
 **Thank you**!
 
@@ -33,7 +34,7 @@ I'm  grateful for all the generous donations. Iris is fully funded by these dona
 - ANONYMOUS(Waiting For Approval) donated 6 EUR at October 1
 - [Ankur Srivastava](https://github.com/ansrivas) donated 20 EUR at October 2
 
-> The name of the donator added after his/her permission.
+> The name or/and github username link added after donator's approvement.
 
 #### Report, so far
 

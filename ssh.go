@@ -27,6 +27,8 @@ package iris
 // log
 // help
 // exit
+//
+// Keep note that I will re-write this file, ssh.go because, as you can see, it's not well-written and not maintainable*
 
 import (
 	"bytes"

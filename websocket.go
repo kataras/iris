@@ -23,6 +23,16 @@ type (
 	WebsocketServer struct {
 		websocket.Server
 		upgrader irisWebsocket.Upgrader
+
+		// the only fields we need at runtime here for iris-specific error and check origin funcs
+		// they comes from WebsocketConfiguration
+
+		// Error specifies the function for generating HTTP error responses.
+		Error func(ctx *Context, status int, reason string)
+		// CheckOrigin returns true if the request Origin header is acceptable. If
+		// CheckOrigin is nil, the host in the Origin header must not be set or
+		// must match the host of the request.
+		CheckOrigin func(ctx *Context) bool
 	}
 )
 
@@ -40,17 +50,32 @@ func NewWebsocketServer() *WebsocketServer {
 // If the upgrade fails, then Upgrade replies to the client with an HTTP error
 // response.
 func (s *WebsocketServer) Upgrade(ctx *Context) error {
-	return s.upgrader.Upgrade(ctx)
+	return s.upgrader.Upgrade(ctx.RequestCtx)
 }
 
 // Handler is the iris Handler to upgrade the request
 // used inside RegisterRoutes
 func (s *WebsocketServer) Handler(ctx *Context) {
+	// first, check origin
+	if !s.CheckOrigin(ctx) {
+		s.Error(ctx, StatusForbidden, "websocket: origin not allowed")
+		return
+	}
+
+	// all other errors comes from the underline iris-contrib/websocket
 	if err := s.Upgrade(ctx); err != nil {
 		if ctx.framework.Config.IsDevelopment {
 			ctx.Log("Websocket error while trying to Upgrade the connection. Trace: %s", err.Error())
 		}
-		ctx.EmitError(StatusBadRequest)
+
+		statusErrCode := StatusBadRequest
+		if herr, isHandshake := err.(irisWebsocket.HandshakeError); isHandshake {
+			statusErrCode = herr.Status()
+		}
+		// if not handshake error just fire the custom(if any) StatusBadRequest
+		// with the websocket's error message in the ctx.Get("WsError")
+		DefaultWebsocketError(ctx, statusErrCode, err.Error())
+
 	}
 }
 
@@ -64,7 +89,7 @@ func (s *WebsocketServer) RegisterTo(station *Framework, c WebsocketConfiguratio
 		s.Server = websocket.New()
 	}
 	// is just a conversional type for kataras/go-websocket.Connection
-	s.upgrader = irisWebsocket.Custom(s.Server.HandleConnection, c.ReadBufferSize, c.WriteBufferSize, false)
+	s.upgrader = irisWebsocket.Custom(s.Server.HandleConnection, c.ReadBufferSize, c.WriteBufferSize, c.Headers)
 
 	// set the routing for client-side source (javascript) (optional)
 	clientSideLookupName := "iris-websocket-client-side"
@@ -84,6 +109,17 @@ func (s *WebsocketServer) RegisterTo(station *Framework, c WebsocketConfiguratio
 		ReadBufferSize:  c.ReadBufferSize,
 		WriteBufferSize: c.WriteBufferSize,
 	})
+
+	s.Error = c.Error
+	s.CheckOrigin = c.CheckOrigin
+
+	if s.Error == nil {
+		s.Error = DefaultWebsocketError
+	}
+
+	if s.CheckOrigin == nil {
+		s.CheckOrigin = DefaultWebsocketCheckOrigin
+	}
 
 	// run the ws server
 	s.Server.Serve()

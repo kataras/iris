@@ -1,7 +1,3 @@
-/*
-Context.go  Implements: ./context/context.go
-*/
-
 package iris
 
 import (
@@ -24,7 +20,6 @@ import (
 	"github.com/kataras/go-errors"
 	"github.com/kataras/go-fs"
 	"github.com/kataras/go-sessions"
-	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/utils"
 	"github.com/valyala/fasthttp"
 )
@@ -108,8 +103,6 @@ type (
 		pos uint8
 	}
 )
-
-var _ context.IContext = &Context{}
 
 // GetRequestCtx returns the current fasthttp context
 func (ctx *Context) GetRequestCtx() *fasthttp.RequestCtx {
