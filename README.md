@@ -32,14 +32,22 @@ The <a href="https://github.com/kataras/iris#benchmarks">fastest</a> back-end we
 <br/>
 Easy to <a href="https://www.gitbook.com/book/kataras/iris/details">learn</a>,  while it's highly customizable. <br/>
 Ideally suited for both experienced and novice <b>Developers</b>.
+<br/>
 </p>
 
 
 
 ## News
- - [Iris vs Nginx vs Nodejs express](https://translate.google.com/translate?sl=auto&tl=en&js=y&prev=_t&hl=en&ie=UTF-8&u=https%3A%2F%2Fwww.ntossapo.me%2F2016%2F08%2F13%2Fnginx-vs-nginx-php-fpm-vs-go-iris-vs-express-with-wrk%2F&edit-text=&act=url)
 
-- Check out [this](https://t.co/Y7bK0THScG) Meetup with GoLang User Group. Contains ~30 minutes talk about the Iris web framework. Happens at Thursday, October 13, 2016.
+- Check out [this](https://t.co/Y7bK0THScG) Meetup with GoLang User Group. Contains ~30 minutes talk about Iris.
+
+- Newest Articles
+
+  -  [Building Web Apps with Iris](http://mycodesmells.com/post/building-web-apps-with-iris) by Paweł Słomka
+
+  - [Testing Iris RESTful API](https://drasko.github.io/2016/09/26/testing-iris-restful-api/) by Drasko Draskovic
+
+  - [Iris vs Nginx vs Php vs Nodejs](https://www.ntossapo.me/2016/08/13/nginx-vs-nginx-php-fpm-vs-go-iris-vs-express-with-wrk/) by Tossapon Nuanchuay
 
 
 ## Feature Overview
@@ -75,7 +83,8 @@ Ideally suited for both experienced and novice <b>Developers</b>.
  - WWW to non WWW
 - View system supporting more than six template engines, you can still use anything you like
 - Highly scalable rich render (Markdown, JSON, JSONP, XML...)
-- Websocket API similar to socket.io  
+- Easy to read JSON, XML and Form data from request, able to change each of the default decoders
+- Websocket-only API similar to socket.io  
 - Hot Reload
 - Typescript integration + Web IDE
 - Checks for updates at startup
