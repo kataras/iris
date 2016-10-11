@@ -79,7 +79,7 @@ import (
 
 const (
 	// Version is the current version of the Iris web framework
-	Version = "4.5.0"
+	Version = "4.5.1"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -299,6 +299,25 @@ func Build() {
 // SERVE IRIS BEHIND AN EXTERNAL CUSTOM fasthttp.Server, CAN BE CALLED ONCE PER IRIS INSTANCE FOR YOUR SAFETY
 func (s *Framework) Build() {
 	s.once.Do(func() {
+		// .Build, normally*, auto-called after station's listener setted but before the real Serve, so here set the host, scheme
+		// and the mux hostname(*this is here because user may not call .Serve/.Listen functions if listen by a custom server)
+
+		if s.Config.VHost == "" { // if not setted by Listen functions
+			if s.ln != nil { // but user called .Serve
+				// then take the listener's addr
+				s.Config.VHost = s.ln.Addr().String()
+			} else {
+				// if no .Serve or .Listen called, then the user should set the VHost manually,
+				// however set it to a default value here for any case
+				s.Config.VHost = DefaultServerAddr
+			}
+		}
+		// if user didn't specified a scheme then get it from the VHost, which is already setted at before statements
+		if s.Config.VScheme == "" {
+			s.Config.VScheme = ParseScheme(s.Config.VHost)
+		}
+
+		s.Plugins.DoPreBuild(s) // once after configuration has been setted. *nothing stops you to change the VHost and VScheme at this point*
 		// re-nwe logger's attrs
 		s.Logger.SetPrefix(s.Config.LoggerPreffix)
 		s.Logger.SetOutput(s.Config.LoggerOut)
@@ -348,24 +367,6 @@ func (s *Framework) Build() {
 			}
 
 			s.Router = defaultHandler
-		}
-
-		// .Build, normally*, auto-called after station's listener setted but before the real Serve, so here set the host, scheme
-		// and the mux hostname(*this is here because user may not call .Serve/.Listen functions if listen by a custom server)
-
-		if s.Config.VHost == "" { // if not setted by Listen functions
-			if s.ln != nil { // but user called .Serve
-				// then take the listener's addr
-				s.Config.VHost = s.ln.Addr().String()
-			} else {
-				// if no .Serve or .Listen called, then the user should set the VHost manually,
-				// however set it to a default value here for any case
-				s.Config.VHost = DefaultServerAddr
-			}
-		}
-		// if user didn't specified a scheme then get it from the VHost, which is already setted at before statements
-		if s.Config.VScheme == "" {
-			s.Config.VScheme = ParseScheme(s.Config.VHost)
 		}
 
 		// set the mux' hostname (for multi subdomain routing)

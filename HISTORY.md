@@ -2,6 +2,12 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 4.5.0 -> 4.5.1
+
+- **NEW**: `PreBuild` plugin type, raises before `.Build`. Used by third-party plugins to register any runtime routes or make any changes to the iris main configuration, example of this usage is the [OAuth/OAuth2 Plugin](https://github.com/iris-contrib/plugin/tree/master/oauth).
+
+- **FIX**: The [OAuth example](https://github.com/iris-contrib/examples/tree/master/plugin_oauth_oauth2).
+
 ## 4.4.9 -> 4.5.0
 
 - **NEW**: Websocket configuration fields:
@@ -9,7 +15,7 @@
 	- `CheckOrigin func(ctx *Context)`. Manually allow or dissalow client's websocket access, ex: via header **Origin**. Default allow all origins(CORS-like) as before.
 	- `Headers bool`. Allow websocket handler to copy request's headers on the handshake. Default is true
 	 With these in-mind the `WebsocketConfiguration` seems like this now :
-	 
+
 ```go
 type WebsocketConfiguration struct {
 	// WriteTimeout time allowed to write a message to the connection.

@@ -60,11 +60,22 @@ type (
 	}
 	// PreLookupFunc implements the simple function listener for the PreLookup(Route)
 	PreLookupFunc func(Route)
+	// pluginPreBuild implements the PreBuild(*Framework) method
+	pluginPreBuild interface {
+		// PreBuild it's being called once time, BEFORE the Server is started and before PreListen
+		// is used to do work before all other things are ready
+		// use this event if you want to add routes to your iris station
+		// or make any changes to the iris main configuration
+		// receiver is the station
+		PreBuild(*Framework)
+	}
+	// PreBuildFunc implements the simple function listener for the PreBuild(*Framework)
+	PreBuildFunc func(*Framework)
 	// pluginPreListen implements the PreListen(*Framework) method
 	pluginPreListen interface {
 		// PreListen it's being called only one time, BEFORE the Server is started (if .Listen called)
 		// is used to do work at the time all other things are ready to go
-		//  parameter is the station
+		// receiver is the station
 		PreListen(*Framework)
 	}
 	// PreListenFunc implements the simple function listener for the PreListen(*Framework)
@@ -114,6 +125,8 @@ type (
 		Printf(string, ...interface{})
 		PreLookup(PreLookupFunc)
 		DoPreLookup(Route)
+		PreBuild(PreBuildFunc)
+		DoPreBuild(*Framework)
 		PreListen(PreListenFunc)
 		DoPreListen(*Framework)
 		DoPreListenParallel(*Framework)
@@ -157,6 +170,15 @@ type (
 // PreLookup called before register a route
 func (fn PreLookupFunc) PreLookup(r Route) {
 	fn(r)
+}
+
+// PreBuild it's being called once time, BEFORE the Server is started and before PreListen
+// is used to do work before all other things are ready
+// use this event if you want to add routes to your iris station
+// or make any changes to the iris main configuration
+// receiver is the station
+func (fn PreBuildFunc) PreBuild(station *Framework) {
+	fn(station)
 }
 
 // PreListen it's being called only one time, BEFORE the Server is started (if .Listen called)
@@ -367,6 +389,21 @@ func (p *pluginContainer) DoPreLookup(r Route) {
 		// check if this method exists on our plugin obj, these are optionaly and call it
 		if pluginObj, ok := p.activatedPlugins[i].(pluginPreLookup); ok {
 			pluginObj.PreLookup(r)
+		}
+	}
+}
+
+// PreBuild adds a PreBuild plugin-function to the plugin flow container
+func (p *pluginContainer) PreBuild(fn PreBuildFunc) {
+	p.Add(fn)
+}
+
+// DoPreBuild raise all plugins that have the PreBuild method
+func (p *pluginContainer) DoPreBuild(station *Framework) {
+	for i := range p.activatedPlugins {
+		// check if this method exists on our plugin obj, these are optionaly and call it
+		if pluginObj, ok := p.activatedPlugins[i].(pluginPreBuild); ok {
+			pluginObj.PreBuild(station)
 		}
 	}
 }
