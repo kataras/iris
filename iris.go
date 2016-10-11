@@ -79,7 +79,7 @@ import (
 
 const (
 	// Version is the current version of the Iris web framework
-	Version = "4.5.1"
+	Version = "4.5.2"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -353,6 +353,7 @@ func (s *Framework) Build() {
 		//  prepare the mux runtime fields again, for any case
 		s.mux.setCorrectPath(!s.Config.DisablePathCorrection)
 		s.mux.setEscapePath(!s.Config.DisablePathEscape)
+		s.mux.setFireMethodNotAllowed(s.Config.FireMethodNotAllowed)
 
 		// prepare the server's handler, we do that check because iris supports
 		// custom routers (you can take the routes registed by iris using iris.Lookups function)

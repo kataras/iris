@@ -949,18 +949,22 @@ type (
 		// if false then the /something it's not the same as /something/
 		// defaults to true
 		correctPath bool
-		mu          sync.Mutex
+		// if enabled then the router checks and fires an error for 405 http status method not allowed too if no method compatible method was found
+		// by default is false
+		fireMethodNotAllowed bool
+		mu                   sync.Mutex
 	}
 )
 
 func newServeMux(logger *log.Logger) *serveMux {
 	mux := &serveMux{
-		lookups:       make([]*route, 0),
-		errorHandlers: make(map[int]Handler, 0),
-		hostname:      DefaultServerHostname, // these are changing when the server is up
-		escapePath:    !DefaultDisablePathEscape,
-		correctPath:   !DefaultDisablePathCorrection,
-		logger:        logger,
+		lookups:              make([]*route, 0),
+		errorHandlers:        make(map[int]Handler, 0),
+		hostname:             DefaultServerHostname, // these are changing when the server is up
+		escapePath:           !DefaultDisablePathEscape,
+		correctPath:          !DefaultDisablePathCorrection,
+		fireMethodNotAllowed: false,
+		logger:               logger,
 	}
 
 	return mux
@@ -976,6 +980,10 @@ func (mux *serveMux) setEscapePath(b bool) {
 
 func (mux *serveMux) setCorrectPath(b bool) {
 	mux.correctPath = b
+}
+
+func (mux *serveMux) setFireMethodNotAllowed(b bool) {
+	mux.fireMethodNotAllowed = b
 }
 
 // registerError registers a handler to a http status
@@ -1182,6 +1190,17 @@ func (mux *serveMux) BuildHandler() HandlerFunc {
 			}
 			// not found
 			break
+		}
+		// https://github.com/kataras/iris/issues/469
+		if mux.fireMethodNotAllowed {
+			for i := range mux.garden {
+				tree := mux.garden[i]
+				if !methodEqual(context.Method(), tree.method) {
+					continue
+				}
+			}
+			mux.fireError(StatusMethodNotAllowed, context)
+			return
 		}
 		mux.fireError(StatusNotFound, context)
 	}

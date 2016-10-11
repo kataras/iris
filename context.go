@@ -147,16 +147,31 @@ func (ctx *Context) GetHandlerName() string {
 /* Request */
 
 // Param returns the string representation of the key's path named parameter's value
+//
+// Return value should be never stored directly, instead store it to a local variable,
+// for example
+// instead of: context.Session().Set("name", ctx.Param("user"))
+// do this: username:= ctx.Param("user");ctx.Session().Set("name", username)
 func (ctx *Context) Param(key string) string {
 	return ctx.Params.Get(key)
 }
 
 // ParamInt returns the int representation of the key's path named parameter's value
+//
+// Return value should be never stored directly, instead store it to a local variable,
+// for example
+// instead of: context.Session().Set("age", ctx.Param("age"))
+// do this: age:= ctx.Param("age");ctx.Session().Set("age", age)
 func (ctx *Context) ParamInt(key string) (int, error) {
 	return strconv.Atoi(ctx.Param(key))
 }
 
 // ParamInt64 returns the int64 representation of the key's path named parameter's value
+//
+// Return value should be never stored directly, instead store it to a local variable,
+// for example
+// instead of: context.Session().Set("ms", ctx.ParamInt64("ms"))
+// do this: ms:= ctx.ParamInt64("ms");ctx.Session().Set("ms", ms)
 func (ctx *Context) ParamInt64(key string) (int64, error) {
 	return strconv.ParseInt(ctx.Param(key), 10, 64)
 }

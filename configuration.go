@@ -1,15 +1,16 @@
 package iris
 
 import (
-	"github.com/imdario/mergo"
-	"github.com/kataras/go-options"
-	"github.com/kataras/go-sessions"
-	"github.com/valyala/fasthttp"
 	"io"
 	"net/url"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/imdario/mergo"
+	"github.com/kataras/go-options"
+	"github.com/kataras/go-sessions"
+	"github.com/valyala/fasthttp"
 )
 
 type (
@@ -159,6 +160,10 @@ type Configuration struct {
 	//
 	// Default is false
 	DisablePathEscape bool
+
+	// FireMethodNotAllowed if it's true router checks for StatusMethodNotAllowed(405) and fires the 405 error instead of 404
+	// Default is false
+	FireMethodNotAllowed bool
 
 	// DisableBanner outputs the iris banner at startup
 	//
@@ -381,6 +386,14 @@ var (
 		}
 	}
 
+	// FireMethodNotAllowed if it's true router checks for StatusMethodNotAllowed(405) and fires the 405 error instead of 404
+	// Default is false
+	OptionFireMethodNotAllowed = func(val bool) OptionSet {
+		return func(c *Configuration) {
+			c.FireMethodNotAllowed = val
+		}
+	}
+
 	// OptionDisableBanner outputs the iris banner at startup
 	//
 	// Default is false
@@ -523,6 +536,7 @@ func DefaultConfiguration() Configuration {
 		CheckForUpdatesSync:    false,
 		DisablePathCorrection:  DefaultDisablePathCorrection,
 		DisablePathEscape:      DefaultDisablePathEscape,
+		FireMethodNotAllowed:   false,
 		DisableBanner:          false,
 		LoggerOut:              DefaultLoggerOut,
 		LoggerPreffix:          DefaultLoggerPreffix,

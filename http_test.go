@@ -665,3 +665,27 @@ func TestMuxCustomHandler(t *testing.T) {
 	expectedData4.DynamicPathParameter = param4
 	e.GET("/custom_handler_2/" + param4).Expect().Status(StatusOK).JSON().Equal(expectedData4)
 }
+
+func TestMuxFireMethodNotAllowed(t *testing.T) {
+	initDefault()
+	Default.Config.FireMethodNotAllowed = true
+	h := func(ctx *Context) {
+		ctx.Write("%s", ctx.MethodString())
+	}
+
+	Default.OnError(StatusMethodNotAllowed, func(ctx *Context) {
+		ctx.Write("Hello from my custom 405 page")
+	})
+
+	Get("/mypath", h)
+	Put("/mypath", h)
+
+	e := Tester(t)
+
+	e.GET("/mypath").Expect().Status(StatusOK).Body().Equal("GET")
+	e.PUT("/mypath").Expect().Status(StatusOK).Body().Equal("PUT")
+	// this should fail with 405 and catch by the custom http error
+
+	e.POST("/mypath").Expect().Status(StatusMethodNotAllowed).Body().Equal("Hello from my custom 405 page")
+	Close()
+}
