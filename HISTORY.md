@@ -3,21 +3,20 @@
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
 
-## 4.5.1 -> 4.5.2 
+## 4.5.1 -> 4.5.2
 
-- **Feature request**: I never though that it will be easier for users to catch 405 instead of simple 404, I though that will make your life harder, but it's requested by the Community [here](https://github.com/kataras/iris/issues/469), so I did my duty. Enable firing Status Method Not Allowed (405) with a simple configuration field: `iris.Config.FireMethodNotAllowed=true` or `iris.Set(iris.OptionFireMethodNotAllowed(true))` or `app := iris.New(iris.Configuration{FireMethodNotAllowed:true})`, a test example:
+- **Feature request**: I never though that it will be easier for users to catch 405 instead of simple 404, I though that will make your life harder, but it's requested by the Community [here](https://github.com/kataras/iris/issues/469), so I did my duty. Enable firing Status Method Not Allowed (405) with a simple configuration field: `iris.Config.FireMethodNotAllowed=true` or `iris.Set(iris.OptionFireMethodNotAllowed(true))` or `app := iris.New(iris.Configuration{FireMethodNotAllowed:true})`. A trivial, test example can be shown here:
 
 ```go
-
 func TestMuxFireMethodNotAllowed(t *testing.T) {
-	
+
 	iris.Config.FireMethodNotAllowed = true // enable catching 405 errors
 
 	h := func(ctx *iris.Context) {
 		ctx.Write("%s", ctx.MethodString())
 	}
 
-	Iris.OnError(iris.StatusMethodNotAllowed, func(ctx *iris.Context) {
+	iris.OnError(iris.StatusMethodNotAllowed, func(ctx *iris.Context) {
 		ctx.Write("Hello from my custom 405 page")
 	})
 
@@ -26,11 +25,11 @@ func TestMuxFireMethodNotAllowed(t *testing.T) {
 
 	e := iris.Tester(t)
 
-	e.GET("/mypath").Expect().Status(StatusOK).Body().Equal("GET")
-	e.PUT("/mypath").Expect().Status(StatusOK).Body().Equal("PUT")
+	e.GET("/mypath").Expect().Status(iris.StatusOK).Body().Equal("GET")
+	e.PUT("/mypath").Expect().Status(iris.StatusOK).Body().Equal("PUT")
 	// this should fail with 405 and catch by the custom http error
 
-	e.POST("/mypath").Expect().Status(StatusMethodNotAllowed).Body().Equal("Hello from my custom 405 page")
+	e.POST("/mypath").Expect().Status(iris.StatusMethodNotAllowed).Body().Equal("Hello from my custom 405 page")
 	iris.Close()
 }
 ```
