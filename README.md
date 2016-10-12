@@ -234,7 +234,7 @@ func details(ctx *iris.Context){
 name | value
 :--- | :---
 name | Gerasimos Maropoulos
-email | kataras2006@homail.com
+email | kataras2006@hotmail.com
 
 
 ```go
