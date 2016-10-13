@@ -1,6 +1,8 @@
-package iris
+// Black-box Testing
+package iris_test
 
 import (
+	"github.com/kataras/iris"
 	"reflect"
 	"testing"
 )
@@ -8,9 +10,9 @@ import (
 // go test -v -run TestConfig*
 
 func TestConfigStatic(t *testing.T) {
-	def := DefaultConfiguration()
+	def := iris.DefaultConfiguration()
 
-	api := New(def)
+	api := iris.New(def)
 	afterNew := *api.Config
 
 	if !reflect.DeepEqual(def, afterNew) {
@@ -23,7 +25,7 @@ func TestConfigStatic(t *testing.T) {
 		t.Fatalf("Configuration should be not equal, got: %#v", afterNew)
 	}
 
-	api = New(Configuration{IsDevelopment: true})
+	api = iris.New(iris.Configuration{IsDevelopment: true})
 
 	afterNew = *api.Config
 
@@ -31,7 +33,7 @@ func TestConfigStatic(t *testing.T) {
 		t.Fatalf("Passing a Configuration field as Option fails, expected IsDevelopment to be true but was false")
 	}
 
-	api = New() // empty , means defaults so
+	api = iris.New() // empty , means defaults so
 	if !reflect.DeepEqual(def, *api.Config) {
 		t.Fatalf("Default configuration is not the same after NewFromConfig expected:\n %#v \ngot:\n %#v", def, *api.Config)
 	}
@@ -41,7 +43,7 @@ func TestConfigOptions(t *testing.T) {
 	charset := "MYCHARSET"
 	dev := true
 
-	api := New(OptionCharset(charset), OptionIsDevelopment(dev))
+	api := iris.New(iris.OptionCharset(charset), iris.OptionIsDevelopment(dev))
 
 	if got := api.Config.Charset; got != charset {
 		t.Fatalf("Expected configuration Charset to be: %s but got: %s", charset, got)
@@ -53,7 +55,7 @@ func TestConfigOptions(t *testing.T) {
 
 	// now check if other default values are setted (should be setted automatically)
 
-	expected := DefaultConfiguration()
+	expected := iris.DefaultConfiguration()
 	expected.Charset = charset
 	expected.IsDevelopment = dev
 
@@ -69,9 +71,9 @@ func TestConfigOptionsDeep(t *testing.T) {
 	dev := true
 	vhost := "mydomain.com"
 	// first session, after charset,dev and profilepath, no canonical order.
-	api := New(OptionSessionsCookie(cookiename), OptionCharset(charset), OptionIsDevelopment(dev), OptionVHost(vhost))
+	api := iris.New(iris.OptionSessionsCookie(cookiename), iris.OptionCharset(charset), iris.OptionIsDevelopment(dev), iris.OptionVHost(vhost))
 
-	expected := DefaultConfiguration()
+	expected := iris.DefaultConfiguration()
 	expected.Sessions.Cookie = cookiename
 	expected.Charset = charset
 	expected.IsDevelopment = dev

@@ -1,4 +1,5 @@
-package iris
+// Black-box Testing
+package iris_test
 
 /*
 This is the part we only care, these are end-to-end tests for the mux(router) and the server, the whole http file is made for these reasons only, so these tests are enough I think.
@@ -13,9 +14,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/valyala/fasthttp"
-
 	"github.com/gavv/httpexpect"
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/httptest"
+	"github.com/valyala/fasthttp"
 )
 
 const (
@@ -75,13 +77,13 @@ func TestParseAddr(t *testing.T) {
 	// test hosts
 	expectedHost1 := "mydomain.com:1993"
 	expectedHost2 := "mydomain.com"
-	expectedHost3 := DefaultServerHostname + ":9090"
+	expectedHost3 := iris.DefaultServerHostname + ":9090"
 	expectedHost4 := "mydomain.com:443"
 
-	host1 := ParseHost(expectedHost1)
-	host2 := ParseHost(expectedHost2)
-	host3 := ParseHost(":9090")
-	host4 := ParseHost(expectedHost4)
+	host1 := iris.ParseHost(expectedHost1)
+	host2 := iris.ParseHost(expectedHost2)
+	host3 := iris.ParseHost(":9090")
+	host4 := iris.ParseHost(expectedHost4)
 
 	if host1 != expectedHost1 {
 		t.Fatalf("Expecting server 1's host to be %s but we got %s", expectedHost1, host1)
@@ -99,13 +101,13 @@ func TestParseAddr(t *testing.T) {
 	// test hostname
 	expectedHostname1 := "mydomain.com"
 	expectedHostname2 := "mydomain.com"
-	expectedHostname3 := DefaultServerHostname
+	expectedHostname3 := iris.DefaultServerHostname
 	expectedHostname4 := "mydomain.com"
 
-	hostname1 := ParseHostname(host1)
-	hostname2 := ParseHostname(host2)
-	hostname3 := ParseHostname(host3)
-	hostname4 := ParseHostname(host4)
+	hostname1 := iris.ParseHostname(host1)
+	hostname2 := iris.ParseHostname(host2)
+	hostname3 := iris.ParseHostname(host3)
+	hostname4 := iris.ParseHostname(host4)
 	if hostname1 != expectedHostname1 {
 		t.Fatalf("Expecting server 1's hostname to be %s but we got %s", expectedHostname1, hostname1)
 	}
@@ -123,14 +125,14 @@ func TestParseAddr(t *testing.T) {
 	}
 
 	// test scheme, no need to test fullhost(scheme+host)
-	expectedScheme1 := SchemeHTTP
-	expectedScheme2 := SchemeHTTP
-	expectedScheme3 := SchemeHTTP
-	expectedScheme4 := SchemeHTTPS
-	scheme1 := ParseScheme(host1)
-	scheme2 := ParseScheme(host2)
-	scheme3 := ParseScheme(host3)
-	scheme4 := ParseScheme(host4)
+	expectedScheme1 := iris.SchemeHTTP
+	expectedScheme2 := iris.SchemeHTTP
+	expectedScheme3 := iris.SchemeHTTP
+	expectedScheme4 := iris.SchemeHTTPS
+	scheme1 := iris.ParseScheme(host1)
+	scheme2 := iris.ParseScheme(host2)
+	scheme3 := iris.ParseScheme(host3)
+	scheme4 := iris.ParseScheme(host4)
 	if scheme1 != expectedScheme1 {
 		t.Fatalf("Expecting server 1's hostname to be %s but we got %s", expectedScheme1, scheme1)
 	}
@@ -150,13 +152,13 @@ func TestParseAddr(t *testing.T) {
 
 // Contains the server test for multi running servers
 func TestMultiRunningServers_v1_PROXY(t *testing.T) {
-	defer Close()
+	defer iris.Close()
 	host := "localhost" // you have to add it to your hosts file( for windows, as 127.0.0.1 mydomain.com)
 	hostTLS := "localhost:9999"
-	Close()
-	defer Close()
-	initDefault()
-	Default.Config.DisableBanner = true
+	iris.Close()
+	defer iris.Close()
+	iris.ResetDefault()
+	iris.Default.Config.DisableBanner = true
 	// create the key and cert files on the fly, and delete them when this test finished
 	certFile, ferr := ioutil.TempFile("", "cert")
 
@@ -182,34 +184,33 @@ func TestMultiRunningServers_v1_PROXY(t *testing.T) {
 	certFile.WriteString(testTLSCert)
 	keyFile.WriteString(testTLSKey)
 
-	Get("/", func(ctx *Context) {
+	iris.Get("/", func(ctx *iris.Context) {
 		ctx.Write("Hello from %s", hostTLS)
 	})
 
-	go ListenTLS(hostTLS, certFile.Name(), keyFile.Name())
-	if ok := <-Default.Available; !ok {
+	go iris.ListenTLS(hostTLS, certFile.Name(), keyFile.Name())
+	if ok := <-iris.Default.Available; !ok {
 		t.Fatal("Unexpected error: server cannot start, please report this as bug!!")
 	}
 
-	closeProxy := Proxy("localhost:8080", "https://"+hostTLS)
+	closeProxy := iris.Proxy("localhost:8080", "https://"+hostTLS)
 	defer closeProxy()
 
-	Default.Config.Tester.ExplicitURL = true
-	e := Tester(t)
+	e := httptest.New(iris.Default, t, httptest.ExplicitURL(true))
 
-	e.Request("GET", "http://"+host+":8080").Expect().Status(StatusOK).Body().Equal("Hello from " + hostTLS)
-	e.Request("GET", "https://"+hostTLS).Expect().Status(StatusOK).Body().Equal("Hello from " + hostTLS)
+	e.Request("GET", "http://"+host+":8080").Expect().Status(iris.StatusOK).Body().Equal("Hello from " + hostTLS)
+	e.Request("GET", "https://"+hostTLS).Expect().Status(iris.StatusOK).Body().Equal("Hello from " + hostTLS)
 
 }
 
 // Contains the server test for multi running servers
 func TestMultiRunningServers_v2(t *testing.T) {
-	defer Close()
+	defer iris.Close()
 	domain := "localhost"
 	hostTLS := "localhost:9999"
 
-	initDefault()
-	Default.Config.DisableBanner = true
+	iris.ResetDefault()
+	iris.Default.Config.DisableBanner = true
 
 	// create the key and cert files on the fly, and delete them when this test finished
 	certFile, ferr := ioutil.TempFile("", "cert")
@@ -236,7 +237,7 @@ func TestMultiRunningServers_v2(t *testing.T) {
 		os.Remove(keyFile.Name())
 	}()
 
-	Get("/", func(ctx *Context) {
+	iris.Get("/", func(ctx *iris.Context) {
 		ctx.Write("Hello from %s", hostTLS)
 	})
 
@@ -248,24 +249,23 @@ func TestMultiRunningServers_v2(t *testing.T) {
 	//go Go()
 
 	// using the proxy handler
-	fsrv1 := &fasthttp.Server{Handler: proxyHandler(domain+":8080", "https://"+hostTLS)}
+	fsrv1 := &fasthttp.Server{Handler: iris.ProxyHandler(domain+":8080", "https://"+hostTLS)}
 	go fsrv1.ListenAndServe(domain + ":8080")
 	// using the same iris' handler but not as proxy, just the same handler
-	fsrv2 := &fasthttp.Server{Handler: Default.Router}
+	fsrv2 := &fasthttp.Server{Handler: iris.Default.Router}
 	go fsrv2.ListenAndServe(domain + ":8888")
 
-	go ListenTLS(hostTLS, certFile.Name(), keyFile.Name())
+	go iris.ListenTLS(hostTLS, certFile.Name(), keyFile.Name())
 
-	if ok := <-Available; !ok {
+	if ok := <-iris.Default.Available; !ok {
 		t.Fatal("Unexpected error: server cannot start, please report this as bug!!")
 	}
 
-	Default.Config.Tester.ExplicitURL = true
-	e := Tester(t)
+	e := httptest.New(iris.Default, t, httptest.ExplicitURL(true))
 
-	e.Request("GET", "http://"+domain+":8080").Expect().Status(StatusOK).Body().Equal("Hello from " + hostTLS)
-	e.Request("GET", "http://localhost:8888").Expect().Status(StatusOK).Body().Equal("Hello from " + hostTLS)
-	e.Request("GET", "https://"+hostTLS).Expect().Status(StatusOK).Body().Equal("Hello from " + hostTLS)
+	e.Request("GET", "http://"+domain+":8080").Expect().Status(iris.StatusOK).Body().Equal("Hello from " + hostTLS)
+	e.Request("GET", "http://localhost:8888").Expect().Status(iris.StatusOK).Body().Equal("Hello from " + hostTLS)
+	e.Request("GET", "https://"+hostTLS).Expect().Status(iris.StatusOK).Body().Equal("Hello from " + hostTLS)
 
 }
 
@@ -275,13 +275,13 @@ const (
 )
 
 func testSubdomainHost() string {
-	s := testSubdomain + "." + Default.Config.VHost
+	s := testSubdomain + "." + iris.Default.Config.VHost
 	return s
 }
 
 func testSubdomainURL() string {
 	subdomainHost := testSubdomainHost()
-	return Default.Config.VScheme + subdomainHost
+	return iris.Default.Config.VScheme + subdomainHost
 }
 
 func subdomainTester(e *httpexpect.Expect) *httpexpect.Expect {
@@ -339,13 +339,13 @@ func TestMuxSimple(t *testing.T) {
 		{"GET", "/test_get_urlparameter2/second", "/test_get_urlparameter2/second", "name=irisurl&something=anything", "name=irisurl,something=anything", 200, true, nil, []param{{"name", "irisurl"}, {"something", "anything"}}},
 		{"GET", "/test_get_urlparameter2/first/second/third", "/test_get_urlparameter2/first/second/third", "name=irisurl&something=anything&else=elsehere", "name=irisurl,something=anything,else=elsehere", 200, true, nil, []param{{"name", "irisurl"}, {"something", "anything"}, {"else", "elsehere"}}},
 	}
-	defer Close()
-	initDefault()
+	defer iris.Close()
+	iris.ResetDefault()
 
 	for idx := range testRoutes {
 		r := testRoutes[idx]
 		if r.Register {
-			HandleFunc(r.Method, r.Path, func(ctx *Context) {
+			iris.HandleFunc(r.Method, r.Path, func(ctx *iris.Context) {
 				ctx.SetStatusCode(r.Status)
 				if r.Params != nil && len(r.Params) > 0 {
 					ctx.SetBodyString(ctx.Params.String())
@@ -370,7 +370,7 @@ func TestMuxSimple(t *testing.T) {
 		}
 	}
 
-	e := Tester(t)
+	e := httptest.New(iris.Default, t)
 
 	// run the tests (1)
 	for idx := range testRoutes {
@@ -383,12 +383,12 @@ func TestMuxSimple(t *testing.T) {
 }
 
 func TestMuxSimpleParty(t *testing.T) {
-	initDefault()
+	iris.ResetDefault()
 
-	h := func(c *Context) { c.WriteString(c.HostString() + c.PathString()) }
+	h := func(c *iris.Context) { c.WriteString(c.HostString() + c.PathString()) }
 
 	if testEnableSubdomain {
-		subdomainParty := Party(testSubdomain + ".")
+		subdomainParty := iris.Party(testSubdomain + ".")
 		{
 			subdomainParty.Get("/", h)
 			subdomainParty.Get("/path1", h)
@@ -399,7 +399,7 @@ func TestMuxSimpleParty(t *testing.T) {
 	}
 
 	// simple
-	p := Party("/party1")
+	p := iris.Party("/party1")
 	{
 		p.Get("/", h)
 		p.Get("/path1", h)
@@ -408,16 +408,16 @@ func TestMuxSimpleParty(t *testing.T) {
 		p.Get("/namedpath/:param1/something/:param2/else", h)
 	}
 
-	Default.Config.VHost = "0.0.0.0:8080"
-	// Default.Config.Tester.Debug = true
-	// Default.Config.Tester.ExplicitURL = true
-	e := Tester(t)
+	iris.Default.Config.VHost = "0.0.0.0:8080"
+	// iris.Default.Config.Tester.Debug = true
+	// iris.Default.Config.Tester.ExplicitURL = true
+	e := httptest.New(iris.Default, t)
 
 	request := func(reqPath string) {
 
 		e.Request("GET", reqPath).
 			Expect().
-			Status(StatusOK).Body().Equal(Default.Config.VHost + reqPath)
+			Status(iris.StatusOK).Body().Equal(iris.Default.Config.VHost + reqPath)
 	}
 
 	// run the tests
@@ -432,7 +432,7 @@ func TestMuxSimpleParty(t *testing.T) {
 		subdomainRequest := func(reqPath string) {
 			es.Request("GET", reqPath).
 				Expect().
-				Status(StatusOK).Body().Equal(testSubdomainHost() + reqPath)
+				Status(iris.StatusOK).Body().Equal(testSubdomainHost() + reqPath)
 		}
 
 		subdomainRequest("/")
@@ -444,33 +444,33 @@ func TestMuxSimpleParty(t *testing.T) {
 }
 
 func TestMuxPathEscape(t *testing.T) {
-	initDefault()
+	iris.ResetDefault()
 
-	Get("/details/:name", func(ctx *Context) {
+	iris.Get("/details/:name", func(ctx *iris.Context) {
 		name := ctx.Param("name")
 		highlight := ctx.URLParam("highlight")
-		ctx.Text(StatusOK, fmt.Sprintf("name=%s,highlight=%s", name, highlight))
+		ctx.Text(iris.StatusOK, fmt.Sprintf("name=%s,highlight=%s", name, highlight))
 	})
 
-	e := Tester(t)
+	e := httptest.New(iris.Default, t)
 
 	e.GET("/details/Sakamoto desu ga").
 		WithQuery("highlight", "text").
-		Expect().Status(StatusOK).Body().Equal("name=Sakamoto desu ga,highlight=text")
+		Expect().Status(iris.StatusOK).Body().Equal("name=Sakamoto desu ga,highlight=text")
 }
 
 func TestMuxDecodeURL(t *testing.T) {
-	initDefault()
+	iris.ResetDefault()
 
-	Get("/encoding/:url", func(ctx *Context) {
-		url := DecodeURL(ctx.Param("url"))
-		ctx.SetStatusCode(StatusOK)
+	iris.Get("/encoding/:url", func(ctx *iris.Context) {
+		url := iris.DecodeURL(ctx.Param("url"))
+		ctx.SetStatusCode(iris.StatusOK)
 		ctx.Write(url)
 	})
 
-	e := Tester(t)
+	e := httptest.New(iris.Default, t)
 
-	e.GET("/encoding/http%3A%2F%2Fsome-url.com").Expect().Status(StatusOK).Body().Equal("http://some-url.com")
+	e.GET("/encoding/http%3A%2F%2Fsome-url.com").Expect().Status(iris.StatusOK).Body().Equal("http://some-url.com")
 }
 
 func TestMuxCustomErrors(t *testing.T) {
@@ -500,27 +500,27 @@ func TestMuxCustomErrors(t *testing.T) {
 			{"TRACE", "/test_trace_panic_custom", "/test_trace_panic_custom", "", internalServerMessage, 500, true, nil, nil},
 		}
 	)
-	initDefault()
+	iris.ResetDefault()
 	// first register the testRoutes needed
 	for _, r := range testRoutesCustomErrors {
 		if r.Register {
-			HandleFunc(r.Method, r.Path, func(ctx *Context) {
+			iris.HandleFunc(r.Method, r.Path, func(ctx *iris.Context) {
 				ctx.EmitError(r.Status)
 			})
 		}
 	}
 
 	// register the custom errors
-	OnError(404, func(ctx *Context) {
+	iris.OnError(iris.StatusNotFound, func(ctx *iris.Context) {
 		ctx.Write("%s", notFoundMessage)
 	})
 
-	OnError(500, func(ctx *Context) {
+	iris.OnError(iris.StatusInternalServerError, func(ctx *iris.Context) {
 		ctx.Write("%s", internalServerMessage)
 	})
 
 	// create httpexpect instance that will call fasthtpp.RequestHandler directly
-	e := Tester(t)
+	e := httptest.New(iris.Default, t)
 
 	// run the tests
 	for _, r := range testRoutesCustomErrors {
@@ -531,7 +531,7 @@ func TestMuxCustomErrors(t *testing.T) {
 }
 
 type testUserAPI struct {
-	*Context
+	*iris.Context
 }
 
 // GET /users
@@ -560,62 +560,62 @@ func (u testUserAPI) DeleteBy(id string) {
 }
 
 func TestMuxAPI(t *testing.T) {
-	initDefault()
+	iris.ResetDefault()
 
 	middlewareResponseText := "I assume that you are authenticated\n"
-	API("/users", testUserAPI{}, func(ctx *Context) { // optional middleware for .API
+	iris.API("/users", testUserAPI{}, func(ctx *iris.Context) { // optional middleware for .API
 		// do your work here, or render a login window if not logged in, get the user and send it to the next middleware, or do  all here
 		ctx.Set("user", "username")
 		ctx.Next()
-	}, func(ctx *Context) {
+	}, func(ctx *iris.Context) {
 		if ctx.Get("user") == "username" {
 			ctx.Write(middlewareResponseText)
 			ctx.Next()
 		} else {
-			ctx.SetStatusCode(StatusUnauthorized)
+			ctx.SetStatusCode(iris.StatusUnauthorized)
 		}
 	})
 
-	e := Tester(t)
+	e := httptest.New(iris.Default, t)
 
 	userID := "4077"
 	formname := "kataras"
 
-	e.GET("/users").Expect().Status(StatusOK).Body().Equal(middlewareResponseText + "Get Users\n")
-	e.GET("/users/" + userID).Expect().Status(StatusOK).Body().Equal(middlewareResponseText + "Get By " + userID + "\n")
-	e.PUT("/users").WithFormField("name", formname).Expect().Status(StatusOK).Body().Equal(middlewareResponseText + "Put, name: " + formname + "\n")
-	e.POST("/users/"+userID).WithFormField("name", formname).Expect().Status(StatusOK).Body().Equal(middlewareResponseText + "Post By " + userID + ", name: " + formname + "\n")
-	e.DELETE("/users/" + userID).Expect().Status(StatusOK).Body().Equal(middlewareResponseText + "Delete By " + userID + "\n")
+	e.GET("/users").Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Get Users\n")
+	e.GET("/users/" + userID).Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Get By " + userID + "\n")
+	e.PUT("/users").WithFormField("name", formname).Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Put, name: " + formname + "\n")
+	e.POST("/users/"+userID).WithFormField("name", formname).Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Post By " + userID + ", name: " + formname + "\n")
+	e.DELETE("/users/" + userID).Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Delete By " + userID + "\n")
 }
 
 func TestMuxAPIWithParty(t *testing.T) {
-	initDefault()
-	siteParty := Party("sites/:site")
+	iris.ResetDefault()
+	siteParty := iris.Party("sites/:site")
 
 	middlewareResponseText := "I assume that you are authenticated\n"
-	siteParty.API("/users", testUserAPI{}, func(ctx *Context) {
+	siteParty.API("/users", testUserAPI{}, func(ctx *iris.Context) {
 		ctx.Set("user", "username")
 		ctx.Next()
-	}, func(ctx *Context) {
+	}, func(ctx *iris.Context) {
 		if ctx.Get("user") == "username" {
 			ctx.Write(middlewareResponseText)
 			ctx.Next()
 		} else {
-			ctx.SetStatusCode(StatusUnauthorized)
+			ctx.SetStatusCode(iris.StatusUnauthorized)
 		}
 	})
 
-	e := Tester(t)
+	e := httptest.New(iris.Default, t)
 	siteID := "1"
 	apiPath := "/sites/" + siteID + "/users"
 	userID := "4077"
 	formname := "kataras"
 
-	e.GET(apiPath).Expect().Status(StatusOK).Body().Equal(middlewareResponseText + "Get Users\n")
-	e.GET(apiPath + "/" + userID).Expect().Status(StatusOK).Body().Equal(middlewareResponseText + "Get By " + userID + "\n")
-	e.PUT(apiPath).WithFormField("name", formname).Expect().Status(StatusOK).Body().Equal(middlewareResponseText + "Put, name: " + formname + "\n")
-	e.POST(apiPath+"/"+userID).WithFormField("name", formname).Expect().Status(StatusOK).Body().Equal(middlewareResponseText + "Post By " + userID + ", name: " + formname + "\n")
-	e.DELETE(apiPath + "/" + userID).Expect().Status(StatusOK).Body().Equal(middlewareResponseText + "Delete By " + userID + "\n")
+	e.GET(apiPath).Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Get Users\n")
+	e.GET(apiPath + "/" + userID).Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Get By " + userID + "\n")
+	e.PUT(apiPath).WithFormField("name", formname).Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Put, name: " + formname + "\n")
+	e.POST(apiPath+"/"+userID).WithFormField("name", formname).Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Post By " + userID + ", name: " + formname + "\n")
+	e.DELETE(apiPath + "/" + userID).Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Delete By " + userID + "\n")
 }
 
 type myTestHandlerData struct {
@@ -628,64 +628,64 @@ type myTestCustomHandler struct {
 	data myTestHandlerData
 }
 
-func (m *myTestCustomHandler) Serve(ctx *Context) {
+func (m *myTestCustomHandler) Serve(ctx *iris.Context) {
 	data := &m.data
 	data.DynamicPathParameter = ctx.Param("myparam")
-	ctx.JSON(StatusOK, data)
+	ctx.JSON(iris.StatusOK, data)
 }
 
 func TestMuxCustomHandler(t *testing.T) {
-	initDefault()
+	iris.ResetDefault()
 	myData := myTestHandlerData{
 		Sysname: "Redhat",
 		Version: 1,
 	}
-	Handle("GET", "/custom_handler_1/:myparam", &myTestCustomHandler{myData})
-	Handle("GET", "/custom_handler_2/:myparam", &myTestCustomHandler{myData})
+	iris.Handle("GET", "/custom_handler_1/:myparam", &myTestCustomHandler{myData})
+	iris.Handle("GET", "/custom_handler_2/:myparam", &myTestCustomHandler{myData})
 
-	e := Tester(t)
+	e := httptest.New(iris.Default, t)
 	// two times per testRoute
 	param1 := "thisimyparam1"
 	expectedData1 := myData
 	expectedData1.DynamicPathParameter = param1
-	e.GET("/custom_handler_1/" + param1).Expect().Status(StatusOK).JSON().Equal(expectedData1)
+	e.GET("/custom_handler_1/" + param1).Expect().Status(iris.StatusOK).JSON().Equal(expectedData1)
 
 	param2 := "thisimyparam2"
 	expectedData2 := myData
 	expectedData2.DynamicPathParameter = param2
-	e.GET("/custom_handler_1/" + param2).Expect().Status(StatusOK).JSON().Equal(expectedData2)
+	e.GET("/custom_handler_1/" + param2).Expect().Status(iris.StatusOK).JSON().Equal(expectedData2)
 
 	param3 := "thisimyparam3"
 	expectedData3 := myData
 	expectedData3.DynamicPathParameter = param3
-	e.GET("/custom_handler_2/" + param3).Expect().Status(StatusOK).JSON().Equal(expectedData3)
+	e.GET("/custom_handler_2/" + param3).Expect().Status(iris.StatusOK).JSON().Equal(expectedData3)
 
 	param4 := "thisimyparam4"
 	expectedData4 := myData
 	expectedData4.DynamicPathParameter = param4
-	e.GET("/custom_handler_2/" + param4).Expect().Status(StatusOK).JSON().Equal(expectedData4)
+	e.GET("/custom_handler_2/" + param4).Expect().Status(iris.StatusOK).JSON().Equal(expectedData4)
 }
 
 func TestMuxFireMethodNotAllowed(t *testing.T) {
-	initDefault()
-	Default.Config.FireMethodNotAllowed = true
-	h := func(ctx *Context) {
+	iris.ResetDefault()
+	iris.Default.Config.FireMethodNotAllowed = true
+	h := func(ctx *iris.Context) {
 		ctx.Write("%s", ctx.MethodString())
 	}
 
-	Default.OnError(StatusMethodNotAllowed, func(ctx *Context) {
+	iris.Default.OnError(iris.StatusMethodNotAllowed, func(ctx *iris.Context) {
 		ctx.Write("Hello from my custom 405 page")
 	})
 
-	Get("/mypath", h)
-	Put("/mypath", h)
+	iris.Get("/mypath", h)
+	iris.Put("/mypath", h)
 
-	e := Tester(t)
+	e := httptest.New(iris.Default, t)
 
-	e.GET("/mypath").Expect().Status(StatusOK).Body().Equal("GET")
-	e.PUT("/mypath").Expect().Status(StatusOK).Body().Equal("PUT")
+	e.GET("/mypath").Expect().Status(iris.StatusOK).Body().Equal("GET")
+	e.PUT("/mypath").Expect().Status(iris.StatusOK).Body().Equal("PUT")
 	// this should fail with 405 and catch by the custom http error
 
-	e.POST("/mypath").Expect().Status(StatusMethodNotAllowed).Body().Equal("Hello from my custom 405 page")
-	Close()
+	e.POST("/mypath").Expect().Status(iris.StatusMethodNotAllowed).Body().Equal("Hello from my custom 405 page")
+	iris.Close()
 }

@@ -207,10 +207,6 @@ type Configuration struct {
 	// Websocket contains the configs for Websocket's server integration
 	Websocket WebsocketConfiguration
 
-	// Tester contains the configs for the test framework, so far we have only one because all test framework's configs are setted by the iris itself
-	// You can find example on the https://github.com/kataras/iris/glob/master/context_test.go
-	Tester TesterConfiguration
-
 	// Other are the custom, dynamic options, can be empty
 	// this fill used only by you to set any app's options you want
 	// for each of an Iris instance
@@ -547,7 +543,6 @@ func DefaultConfiguration() Configuration {
 		Gzip:                   false,
 		Sessions:               DefaultSessionsConfiguration(),
 		Websocket:              DefaultWebsocketConfiguration(),
-		Tester:                 DefaultTesterConfiguration(),
 		Other:                  options.Options{},
 	}
 }
@@ -818,38 +813,6 @@ func DefaultWebsocketConfiguration() WebsocketConfiguration {
 		Endpoint:        "",
 		Headers:         true,
 	}
-}
-
-// TesterConfiguration configuration used inside main config field 'Tester'
-type TesterConfiguration struct {
-	// ExplicitURL If true then the url (should) be prepended manually, useful when want to test subdomains
-	// Default is false
-	ExplicitURL bool
-	// Debug if true then debug messages from the httpexpect will be shown when a test runs
-	// Default is false
-	Debug bool
-}
-
-var (
-	// OptionTesterExplicitURL If true then the url (should) be prepended manually, useful when want to test subdomains
-	// Default is false
-	OptionTesterExplicitURL = func(val bool) OptionSet {
-		return func(c *Configuration) {
-			c.Tester.ExplicitURL = val
-		}
-	}
-	// OptionTesterDebug if true then debug messages from the httpexpect will be shown when a test runs
-	// Default is false
-	OptionTesterDebug = func(val bool) OptionSet {
-		return func(c *Configuration) {
-			c.Tester.Debug = val
-		}
-	}
-)
-
-// DefaultTesterConfiguration returns the default configuration for a tester
-func DefaultTesterConfiguration() TesterConfiguration {
-	return TesterConfiguration{ExplicitURL: false, Debug: false}
 }
 
 // Default values for base Server conf

@@ -1,4 +1,5 @@
-package iris
+// Black-box Testing
+package iris_test
 
 /*
 The most part of  the context covered,
@@ -14,30 +15,32 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/httptest"
+	"github.com/valyala/fasthttp"
 	"net/url"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/valyala/fasthttp"
 )
 
+// White-box testing *
 func TestContextDoNextStop(t *testing.T) {
-	var context Context
+	var context iris.Context
 	ok := false
 	afterStop := false
-	context.middleware = Middleware{HandlerFunc(func(*Context) {
+	context.Middleware = iris.Middleware{iris.HandlerFunc(func(*iris.Context) {
 		ok = true
-	}), HandlerFunc(func(*Context) {
+	}), iris.HandlerFunc(func(*iris.Context) {
 		ok = true
-	}), HandlerFunc(func(*Context) {
+	}), iris.HandlerFunc(func(*iris.Context) {
 		// this will never execute
 		afterStop = true
 	})}
 	context.Do()
-	if context.pos != 0 {
-		t.Fatalf("Expecting position 0 for context's middleware but we got: %d", context.pos)
+	if context.Pos != 0 {
+		t.Fatalf("Expecting position 0 for context's middleware but we got: %d", context.Pos)
 	}
 	if !ok {
 		t.Fatalf("Unexpected behavior, first context's middleware didn't executed")
@@ -46,16 +49,16 @@ func TestContextDoNextStop(t *testing.T) {
 
 	context.Next()
 
-	if int(context.pos) != 1 {
-		t.Fatalf("Expecting to have position %d but we got: %d", 1, context.pos)
+	if int(context.Pos) != 1 {
+		t.Fatalf("Expecting to have position %d but we got: %d", 1, context.Pos)
 	}
 	if !ok {
 		t.Fatalf("Next context's middleware didn't executed")
 	}
 
 	context.StopExecution()
-	if context.pos != stopExecutionPosition {
-		t.Fatalf("Context's StopExecution didn't worked, we expected to have position %d but we got %d", stopExecutionPosition, context.pos)
+	if context.Pos != 255 {
+		t.Fatalf("Context's StopExecution didn't worked, we expected to have position %d but we got %d", 255, context.Pos)
 	}
 
 	if !context.IsStopped() {
@@ -69,13 +72,14 @@ func TestContextDoNextStop(t *testing.T) {
 	}
 }
 
+// White-box testing *
 func TestContextParams(t *testing.T) {
-	var context Context
-	params := PathParameters{
-		PathParameter{Key: "testkey", Value: "testvalue"},
-		PathParameter{Key: "testkey2", Value: "testvalue2"},
-		PathParameter{Key: "id", Value: "3"},
-		PathParameter{Key: "bigint", Value: "548921854390354"},
+	var context iris.Context
+	params := iris.PathParameters{
+		iris.PathParameter{Key: "testkey", Value: "testvalue"},
+		iris.PathParameter{Key: "testkey2", Value: "testvalue2"},
+		iris.PathParameter{Key: "id", Value: "3"},
+		iris.PathParameter{Key: "bigint", Value: "548921854390354"},
 	}
 	context.Params = params
 
@@ -104,94 +108,94 @@ func TestContextParams(t *testing.T) {
 
 	// end-to-end test now, note that we will not test the whole mux here, this happens on http_test.go
 
-	initDefault()
+	iris.ResetDefault()
 	expectedParamsStr := "param1=myparam1,param2=myparam2,param3=myparam3afterstatic,anything=/andhere/anything/you/like"
-	Get("/path/:param1/:param2/staticpath/:param3/*anything", func(ctx *Context) {
+	iris.Get("/path/:param1/:param2/staticpath/:param3/*anything", func(ctx *iris.Context) {
 		paramsStr := ctx.Params.String()
 		ctx.Write(paramsStr)
 	})
 
-	Tester(t).GET("/path/myparam1/myparam2/staticpath/myparam3afterstatic/andhere/anything/you/like").Expect().Status(StatusOK).Body().Equal(expectedParamsStr)
+	httptest.New(iris.Default, t).GET("/path/myparam1/myparam2/staticpath/myparam3afterstatic/andhere/anything/you/like").Expect().Status(iris.StatusOK).Body().Equal(expectedParamsStr)
 
 }
 
 func TestContextURLParams(t *testing.T) {
-	initDefault()
+	iris.ResetDefault()
 	passedParams := map[string]string{"param1": "value1", "param2": "value2"}
-	Get("/", func(ctx *Context) {
+	iris.Get("/", func(ctx *iris.Context) {
 		params := ctx.URLParams()
-		ctx.JSON(StatusOK, params)
+		ctx.JSON(iris.StatusOK, params)
 	})
-	e := Tester(t)
+	e := httptest.New(iris.Default, t)
 
-	e.GET("/").WithQueryObject(passedParams).Expect().Status(StatusOK).JSON().Equal(passedParams)
+	e.GET("/").WithQueryObject(passedParams).Expect().Status(iris.StatusOK).JSON().Equal(passedParams)
 }
 
 // hoststring returns the full host, will return the HOST:IP
 func TestContextHostString(t *testing.T) {
-	initDefault()
-	Default.Config.VHost = "0.0.0.0:8080"
-	Get("/", func(ctx *Context) {
+	iris.ResetDefault()
+	iris.Default.Config.VHost = "0.0.0.0:8080"
+	iris.Get("/", func(ctx *iris.Context) {
 		ctx.Write(ctx.HostString())
 	})
 
-	Get("/wrong", func(ctx *Context) {
+	iris.Get("/wrong", func(ctx *iris.Context) {
 		ctx.Write(ctx.HostString() + "w")
 	})
 
-	e := Tester(t)
-	e.GET("/").Expect().Status(StatusOK).Body().Equal(Default.Config.VHost)
-	e.GET("/wrong").Expect().Body().NotEqual(Default.Config.VHost)
+	e := httptest.New(iris.Default, t)
+	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(iris.Default.Config.VHost)
+	e.GET("/wrong").Expect().Body().NotEqual(iris.Default.Config.VHost)
 }
 
 // VirtualHostname returns the hostname only,
 // if the host starts with 127.0.0.1 or localhost it gives the registered hostname part of the listening addr
 func TestContextVirtualHostName(t *testing.T) {
-	initDefault()
+	iris.ResetDefault()
 	vhost := "mycustomvirtualname.com"
-	Default.Config.VHost = vhost + ":8080"
-	Get("/", func(ctx *Context) {
+	iris.Default.Config.VHost = vhost + ":8080"
+	iris.Get("/", func(ctx *iris.Context) {
 		ctx.Write(ctx.VirtualHostname())
 	})
 
-	Get("/wrong", func(ctx *Context) {
+	iris.Get("/wrong", func(ctx *iris.Context) {
 		ctx.Write(ctx.VirtualHostname() + "w")
 	})
 
-	e := Tester(t)
-	e.GET("/").Expect().Status(StatusOK).Body().Equal(vhost)
+	e := httptest.New(iris.Default, t)
+	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(vhost)
 	e.GET("/wrong").Expect().Body().NotEqual(vhost)
 }
 
 func TestContextFormValueString(t *testing.T) {
-	initDefault()
+	iris.ResetDefault()
 	var k, v string
 	k = "postkey"
 	v = "postvalue"
-	Post("/", func(ctx *Context) {
+	iris.Post("/", func(ctx *iris.Context) {
 		ctx.Write(k + "=" + ctx.FormValueString(k))
 	})
-	e := Tester(t)
+	e := httptest.New(iris.Default, t)
 
-	e.POST("/").WithFormField(k, v).Expect().Status(StatusOK).Body().Equal(k + "=" + v)
+	e.POST("/").WithFormField(k, v).Expect().Status(iris.StatusOK).Body().Equal(k + "=" + v)
 }
 
 func TestContextSubdomain(t *testing.T) {
-	initDefault()
-	Default.Config.VHost = "mydomain.com:9999"
+	iris.ResetDefault()
+	iris.Default.Config.VHost = "mydomain.com:9999"
 	//Default.Config.Tester.ListeningAddr = "mydomain.com:9999"
 	// Default.Config.Tester.ExplicitURL = true
-	Party("mysubdomain.").Get("/mypath", func(ctx *Context) {
+	iris.Party("mysubdomain.").Get("/mypath", func(ctx *iris.Context) {
 		ctx.Write(ctx.Subdomain())
 	})
 
-	e := Tester(t)
+	e := httptest.New(iris.Default, t)
 
-	e.GET("/").WithURL("http://mysubdomain.mydomain.com:9999").Expect().Status(StatusNotFound)
-	e.GET("/mypath").WithURL("http://mysubdomain.mydomain.com:9999").Expect().Status(StatusOK).Body().Equal("mysubdomain")
+	e.GET("/").WithURL("http://mysubdomain.mydomain.com:9999").Expect().Status(iris.StatusNotFound)
+	e.GET("/mypath").WithURL("http://mysubdomain.mydomain.com:9999").Expect().Status(iris.StatusOK).Body().Equal("mysubdomain")
 
 	//e.GET("http://mysubdomain.mydomain.com:9999").Expect().Status(StatusNotFound)
-	//e.GET("http://mysubdomain.mydomain.com:9999/mypath").Expect().Status(StatusOK).Body().Equal("mysubdomain")
+	//e.GET("http://mysubdomain.mydomain.com:9999/mypath").Expect().Status(iris.StatusOK).Body().Equal("mysubdomain")
 }
 
 type testBinderData struct {
@@ -210,53 +214,53 @@ type testBinderXMLData struct {
 }
 
 func TestContextReadForm(t *testing.T) {
-	initDefault()
+	iris.ResetDefault()
 
-	Post("/form", func(ctx *Context) {
+	iris.Post("/form", func(ctx *iris.Context) {
 		obj := testBinderData{}
 		err := ctx.ReadForm(&obj)
 		if err != nil {
 			t.Fatalf("Error when parsing the FORM: %s", err.Error())
 		}
-		ctx.JSON(StatusOK, obj)
+		ctx.JSON(iris.StatusOK, obj)
 	})
 
-	e := Tester(t)
+	e := httptest.New(iris.Default, t)
 
 	passed := map[string]interface{}{"Username": "myusername", "Mail": "mymail@iris-go.com", "mydata": url.Values{"[0]": []string{"mydata1"},
 		"[1]": []string{"mydata2"}}}
 
 	expectedObject := testBinderData{Username: "myusername", Mail: "mymail@iris-go.com", Data: []string{"mydata1", "mydata2"}}
 
-	e.POST("/form").WithForm(passed).Expect().Status(StatusOK).JSON().Object().Equal(expectedObject)
+	e.POST("/form").WithForm(passed).Expect().Status(iris.StatusOK).JSON().Object().Equal(expectedObject)
 }
 
 func TestContextReadJSON(t *testing.T) {
-	initDefault()
-	Post("/json", func(ctx *Context) {
+	iris.ResetDefault()
+	iris.Post("/json", func(ctx *iris.Context) {
 		obj := testBinderData{}
 		err := ctx.ReadJSON(&obj)
 		if err != nil {
 			t.Fatalf("Error when parsing the JSON body: %s", err.Error())
 		}
-		ctx.JSON(StatusOK, obj)
+		ctx.JSON(iris.StatusOK, obj)
 	})
 
-	Post("/json_pointer", func(ctx *Context) {
+	iris.Post("/json_pointer", func(ctx *iris.Context) {
 		obj := &testBinderData{}
 		err := ctx.ReadJSON(obj)
 		if err != nil {
 			t.Fatalf("Error when parsing the JSON body: %s", err.Error())
 		}
-		ctx.JSON(StatusOK, obj)
+		ctx.JSON(iris.StatusOK, obj)
 	})
 
-	e := Tester(t)
+	e := httptest.New(iris.Default, t)
 	passed := map[string]interface{}{"Username": "myusername", "Mail": "mymail@iris-go.com", "mydata": []string{"mydata1", "mydata2"}}
 	expectedObject := testBinderData{Username: "myusername", Mail: "mymail@iris-go.com", Data: []string{"mydata1", "mydata2"}}
 
-	e.POST("/json").WithJSON(passed).Expect().Status(StatusOK).JSON().Object().Equal(expectedObject)
-	e.POST("/json_pointer").WithJSON(passed).Expect().Status(StatusOK).JSON().Object().Equal(expectedObject)
+	e.POST("/json").WithJSON(passed).Expect().Status(iris.StatusOK).JSON().Object().Equal(expectedObject)
+	e.POST("/json_pointer").WithJSON(passed).Expect().Status(iris.StatusOK).JSON().Object().Equal(expectedObject)
 }
 
 type testJSONBinderDataWithDecoder struct {
@@ -274,57 +278,57 @@ func (tj *testJSONBinderDataWithDecoder) Decode(data []byte) error {
 }
 
 func TestContextReadJSONWithDecoder(t *testing.T) {
-	initDefault()
-	Post("/json_should_error", func(ctx *Context) {
+	iris.ResetDefault()
+	iris.Post("/json_should_error", func(ctx *iris.Context) {
 		obj := testJSONBinderDataWithDecoder{shouldError: true}
 		err := ctx.ReadJSON(&obj)
 		if err == nil {
 			t.Fatalf("Should prompted for error 'Should error' but not error returned from the custom decoder!")
 		}
 		ctx.Write(err.Error())
-		ctx.SetStatusCode(StatusOK)
+		ctx.SetStatusCode(iris.StatusOK)
 	})
 
-	Post("/json", func(ctx *Context) {
+	iris.Post("/json", func(ctx *iris.Context) {
 		obj := testJSONBinderDataWithDecoder{}
 		err := ctx.ReadJSON(&obj)
 		if err != nil {
 			t.Fatalf("Error when parsing the JSON body: %s", err.Error())
 		}
-		ctx.JSON(StatusOK, obj)
+		ctx.JSON(iris.StatusOK, obj)
 	})
 
-	Post("/json_pointer", func(ctx *Context) {
+	iris.Post("/json_pointer", func(ctx *iris.Context) {
 		obj := &testJSONBinderDataWithDecoder{}
 		err := ctx.ReadJSON(obj)
 		if err != nil {
 			t.Fatalf("Error when parsing the JSON body: %s", err.Error())
 		}
-		ctx.JSON(StatusOK, obj)
+		ctx.JSON(iris.StatusOK, obj)
 	})
 
-	e := Tester(t)
+	e := httptest.New(iris.Default, t)
 	passed := map[string]interface{}{"Username": "kataras", "Mail": "mymail@iris-go.com", "mydata": []string{"mydata1", "mydata2"}}
 	expectedObject := testJSONBinderDataWithDecoder{Username: "kataras", Mail: "mymail@iris-go.com", Data: []string{"mydata1", "mydata2"}}
 
-	e.POST("/json_should_error").WithJSON(passed).Expect().Status(StatusOK).Body().Equal("Should error")
-	e.POST("/json").WithJSON(passed).Expect().Status(StatusOK).JSON().Object().Equal(expectedObject)
-	e.POST("/json_pointer").WithJSON(passed).Expect().Status(StatusOK).JSON().Object().Equal(expectedObject)
+	e.POST("/json_should_error").WithJSON(passed).Expect().Status(iris.StatusOK).Body().Equal("Should error")
+	e.POST("/json").WithJSON(passed).Expect().Status(iris.StatusOK).JSON().Object().Equal(expectedObject)
+	e.POST("/json_pointer").WithJSON(passed).Expect().Status(iris.StatusOK).JSON().Object().Equal(expectedObject)
 } // no need for xml, it's exact the same.
 
 func TestContextReadXML(t *testing.T) {
-	initDefault()
+	iris.ResetDefault()
 
-	Post("/xml", func(ctx *Context) {
+	iris.Post("/xml", func(ctx *iris.Context) {
 		obj := testBinderXMLData{}
 		err := ctx.ReadXML(&obj)
 		if err != nil {
 			t.Fatalf("Error when parsing the XML body: %s", err.Error())
 		}
-		ctx.XML(StatusOK, obj)
+		ctx.XML(iris.StatusOK, obj)
 	})
 
-	e := Tester(t)
+	e := httptest.New(iris.Default, t)
 	expectedObj := testBinderXMLData{
 		XMLName:    xml.Name{Local: "info", Space: "info"},
 		FirstAttr:  "this is the first attr",
@@ -335,23 +339,23 @@ func TestContextReadXML(t *testing.T) {
 	}
 	// so far no WithXML or .XML like WithJSON and .JSON on httpexpect I added a feature request as post issue and we're waiting
 	expectedBody := `<` + expectedObj.XMLName.Local + ` first="` + expectedObj.FirstAttr + `" second="` + expectedObj.SecondAttr + `"><name>` + expectedObj.Name + `</name><birth>` + expectedObj.Birth + `</birth><stars>` + strconv.Itoa(expectedObj.Stars) + `</stars></info>`
-	e.POST("/xml").WithText(expectedBody).Expect().Status(StatusOK).Body().Equal(expectedBody)
+	e.POST("/xml").WithText(expectedBody).Expect().Status(iris.StatusOK).Body().Equal(expectedBody)
 }
 
 // TestContextRedirectTo tests the named route redirect action
 func TestContextRedirectTo(t *testing.T) {
-	initDefault()
-	h := func(ctx *Context) { ctx.Write(ctx.PathString()) }
-	Get("/mypath", h)("my-path")
-	Get("/mypostpath", h)("my-post-path")
-	Get("mypath/with/params/:param1/:param2", func(ctx *Context) {
+	iris.ResetDefault()
+	h := func(ctx *iris.Context) { ctx.Write(ctx.PathString()) }
+	iris.Get("/mypath", h)("my-path")
+	iris.Get("/mypostpath", h)("my-post-path")
+	iris.Get("mypath/with/params/:param1/:param2", func(ctx *iris.Context) {
 		if len(ctx.Params) != 2 {
 			t.Fatalf("Strange error, expecting parameters to be two but we got: %d", len(ctx.Params))
 		}
 		ctx.Write(ctx.PathString())
 	})("my-path-with-params")
 
-	Get("/redirect/to/:routeName/*anyparams", func(ctx *Context) {
+	iris.Get("/redirect/to/:routeName/*anyparams", func(ctx *iris.Context) {
 		routeName := ctx.Param("routeName")
 		var args []interface{}
 		anyparams := ctx.Param("anyparams")
@@ -365,25 +369,25 @@ func TestContextRedirectTo(t *testing.T) {
 		ctx.RedirectTo(routeName, args...)
 	})
 
-	e := Tester(t)
+	e := httptest.New(iris.Default, t)
 
-	e.GET("/redirect/to/my-path/").Expect().Status(StatusOK).Body().Equal("/mypath")
-	e.GET("/redirect/to/my-post-path/").Expect().Status(StatusOK).Body().Equal("/mypostpath")
-	e.GET("/redirect/to/my-path-with-params/firstparam/secondparam").Expect().Status(StatusOK).Body().Equal("/mypath/with/params/firstparam/secondparam")
+	e.GET("/redirect/to/my-path/").Expect().Status(iris.StatusOK).Body().Equal("/mypath")
+	e.GET("/redirect/to/my-post-path/").Expect().Status(iris.StatusOK).Body().Equal("/mypostpath")
+	e.GET("/redirect/to/my-path-with-params/firstparam/secondparam").Expect().Status(iris.StatusOK).Body().Equal("/mypath/with/params/firstparam/secondparam")
 }
 
 func TestContextUserValues(t *testing.T) {
-	initDefault()
+	iris.ResetDefault()
 	testCustomObjUserValue := struct{ Name string }{Name: "a name"}
 	values := map[string]interface{}{"key1": "value1", "key2": "value2", "key3": 3, "key4": testCustomObjUserValue, "key5": map[string]string{"key": "value"}}
 
-	Get("/test", func(ctx *Context) {
+	iris.Get("/test", func(ctx *iris.Context) {
 
 		for k, v := range values {
 			ctx.Set(k, v)
 		}
 
-	}, func(ctx *Context) {
+	}, func(ctx *iris.Context) {
 		for k, v := range values {
 			userValue := ctx.Get(k)
 			if userValue != v {
@@ -403,21 +407,21 @@ func TestContextUserValues(t *testing.T) {
 		}
 	})
 
-	e := Tester(t)
+	e := httptest.New(iris.Default, t)
 
-	e.GET("/test").Expect().Status(StatusOK)
+	e.GET("/test").Expect().Status(iris.StatusOK)
 
 }
 
 func TestContextCookieSetGetRemove(t *testing.T) {
-	initDefault()
+	iris.ResetDefault()
 	key := "mykey"
 	value := "myvalue"
-	Get("/set", func(ctx *Context) {
+	iris.Get("/set", func(ctx *iris.Context) {
 		ctx.SetCookieKV(key, value) // should return non empty cookies
 	})
 
-	Get("/set_advanced", func(ctx *Context) {
+	iris.Get("/set_advanced", func(ctx *iris.Context) {
 		c := fasthttp.AcquireCookie()
 		c.SetKey(key)
 		c.SetValue(value)
@@ -427,11 +431,11 @@ func TestContextCookieSetGetRemove(t *testing.T) {
 		fasthttp.ReleaseCookie(c)
 	})
 
-	Get("/get", func(ctx *Context) {
+	iris.Get("/get", func(ctx *iris.Context) {
 		ctx.Write(ctx.GetCookie(key)) // should return my value
 	})
 
-	Get("/remove", func(ctx *Context) {
+	iris.Get("/remove", func(ctx *iris.Context) {
 		ctx.RemoveCookie(key)
 		cookieFound := false
 		ctx.VisitAllCookies(func(k, v string) {
@@ -443,38 +447,38 @@ func TestContextCookieSetGetRemove(t *testing.T) {
 		ctx.Write(ctx.GetCookie(key)) // should return ""
 	})
 
-	e := Tester(t)
-	e.GET("/set").Expect().Status(StatusOK).Cookies().NotEmpty()
-	e.GET("/get").Expect().Status(StatusOK).Body().Equal(value)
-	e.GET("/remove").Expect().Status(StatusOK).Body().Equal("")
+	e := httptest.New(iris.Default, t)
+	e.GET("/set").Expect().Status(iris.StatusOK).Cookies().NotEmpty()
+	e.GET("/get").Expect().Status(iris.StatusOK).Body().Equal(value)
+	e.GET("/remove").Expect().Status(iris.StatusOK).Body().Equal("")
 	// test again with advanced set
-	e.GET("/set_advanced").Expect().Status(StatusOK).Cookies().NotEmpty()
-	e.GET("/get").Expect().Status(StatusOK).Body().Equal(value)
-	e.GET("/remove").Expect().Status(StatusOK).Body().Equal("")
+	e.GET("/set_advanced").Expect().Status(iris.StatusOK).Cookies().NotEmpty()
+	e.GET("/get").Expect().Status(iris.StatusOK).Body().Equal(value)
+	e.GET("/remove").Expect().Status(iris.StatusOK).Body().Equal("")
 }
 
 func TestContextFlashMessages(t *testing.T) {
-	initDefault()
+	iris.ResetDefault()
 	firstKey := "name"
 	lastKey := "package"
 
-	values := PathParameters{PathParameter{Key: firstKey, Value: "kataras"}, PathParameter{Key: lastKey, Value: "iris"}}
+	values := iris.PathParameters{iris.PathParameter{Key: firstKey, Value: "kataras"}, iris.PathParameter{Key: lastKey, Value: "iris"}}
 	jsonExpected := map[string]string{firstKey: "kataras", lastKey: "iris"}
 	// set the flashes, the cookies are filled
-	Put("/set", func(ctx *Context) {
+	iris.Put("/set", func(ctx *iris.Context) {
 		for _, v := range values {
 			ctx.SetFlash(v.Key, v.Value)
 		}
 	})
 
 	// get the first flash, the next should be available to the next requess
-	Get("/get_first_flash", func(ctx *Context) {
+	iris.Get("/get_first_flash", func(ctx *iris.Context) {
 		for _, v := range values {
 			val, err := ctx.GetFlash(v.Key)
 			if err == nil {
-				ctx.JSON(StatusOK, map[string]string{v.Key: val})
+				ctx.JSON(iris.StatusOK, map[string]string{v.Key: val})
 			} else {
-				ctx.JSON(StatusOK, nil) // return nil
+				ctx.JSON(iris.StatusOK, nil) // return nil
 			}
 
 			break
@@ -483,30 +487,30 @@ func TestContextFlashMessages(t *testing.T) {
 	})
 
 	// just an empty handler to test if the flashes should remeain to the next if GetFlash/GetFlashes used
-	Get("/get_no_getflash", func(ctx *Context) {
+	iris.Get("/get_no_getflash", func(ctx *iris.Context) {
 	})
 
 	// get the last flash, the next should be available to the next requess
-	Get("/get_last_flash", func(ctx *Context) {
+	iris.Get("/get_last_flash", func(ctx *iris.Context) {
 		for i, v := range values {
 			if i == len(values)-1 {
 				val, err := ctx.GetFlash(v.Key)
 				if err == nil {
-					ctx.JSON(StatusOK, map[string]string{v.Key: val})
+					ctx.JSON(iris.StatusOK, map[string]string{v.Key: val})
 				} else {
-					ctx.JSON(StatusOK, nil) // return nil
+					ctx.JSON(iris.StatusOK, nil) // return nil
 				}
 
 			}
 		}
 	})
 
-	Get("/get_zero_flashes", func(ctx *Context) {
-		ctx.JSON(StatusOK, ctx.GetFlashes()) // should return nil
+	iris.Get("/get_zero_flashes", func(ctx *iris.Context) {
+		ctx.JSON(iris.StatusOK, ctx.GetFlashes()) // should return nil
 	})
 
 	// we use the GetFlash to get the flash messages, the messages and the cookies should be empty after that
-	Get("/get_flash", func(ctx *Context) {
+	iris.Get("/get_flash", func(ctx *iris.Context) {
 		kv := make(map[string]string)
 		for _, v := range values {
 			val, err := ctx.GetFlash(v.Key)
@@ -514,15 +518,15 @@ func TestContextFlashMessages(t *testing.T) {
 				kv[v.Key] = val
 			}
 		}
-		ctx.JSON(StatusOK, kv)
-	}, func(ctx *Context) {
+		ctx.JSON(iris.StatusOK, kv)
+	}, func(ctx *iris.Context) {
 		// at the same request, flashes should be available
 		if len(ctx.GetFlashes()) == 0 {
 			t.Fatalf("Flashes should be remeain to the whole request lifetime")
 		}
 	})
 
-	Get("/get_flashes", func(ctx *Context) {
+	iris.Get("/get_flashes", func(ctx *iris.Context) {
 		// one time one handler, using GetFlashes
 		kv := make(map[string]string)
 		flashes := ctx.GetFlashes()
@@ -531,48 +535,48 @@ func TestContextFlashMessages(t *testing.T) {
 			kv[k], _ = ctx.GetFlash(k)
 		}
 		if len(flashes) != len(kv) {
-			ctx.SetStatusCode(StatusNoContent)
+			ctx.SetStatusCode(iris.StatusNoContent)
 			return
 		}
 		ctx.Next()
 
-	}, func(ctx *Context) {
+	}, func(ctx *iris.Context) {
 		// third time on a next handler
 		// test the if next handler has access to them(must) because flash are request lifetime now.
 		// print them to the client for test the response also
-		ctx.JSON(StatusOK, ctx.GetFlashes())
+		ctx.JSON(iris.StatusOK, ctx.GetFlashes())
 	})
 
-	e := Tester(t)
-	e.PUT("/set").Expect().Status(StatusOK).Cookies().NotEmpty()
-	e.GET("/get_first_flash").Expect().Status(StatusOK).JSON().Object().ContainsKey(firstKey).NotContainsKey(lastKey)
+	e := httptest.New(iris.Default, t)
+	e.PUT("/set").Expect().Status(iris.StatusOK).Cookies().NotEmpty()
+	e.GET("/get_first_flash").Expect().Status(iris.StatusOK).JSON().Object().ContainsKey(firstKey).NotContainsKey(lastKey)
 	// just a request which does not use the flash message, so flash messages should be available on the next request
-	e.GET("/get_no_getflash").Expect().Status(StatusOK)
-	e.GET("/get_last_flash").Expect().Status(StatusOK).JSON().Object().ContainsKey(lastKey).NotContainsKey(firstKey)
-	g := e.GET("/get_zero_flashes").Expect().Status(StatusOK)
+	e.GET("/get_no_getflash").Expect().Status(iris.StatusOK)
+	e.GET("/get_last_flash").Expect().Status(iris.StatusOK).JSON().Object().ContainsKey(lastKey).NotContainsKey(firstKey)
+	g := e.GET("/get_zero_flashes").Expect().Status(iris.StatusOK)
 	g.JSON().Null()
 	g.Cookies().Empty()
 	// set the magain
-	e.PUT("/set").Expect().Status(StatusOK).Cookies().NotEmpty()
+	e.PUT("/set").Expect().Status(iris.StatusOK).Cookies().NotEmpty()
 	// get them again using GetFlash
-	e.GET("/get_flash").Expect().Status(StatusOK).JSON().Object().Equal(jsonExpected)
+	e.GET("/get_flash").Expect().Status(iris.StatusOK).JSON().Object().Equal(jsonExpected)
 	// this should be empty again
-	g = e.GET("/get_zero_flashes").Expect().Status(StatusOK)
+	g = e.GET("/get_zero_flashes").Expect().Status(iris.StatusOK)
 	g.JSON().Null()
 	g.Cookies().Empty()
 	//set them again
-	e.PUT("/set").Expect().Status(StatusOK).Cookies().NotEmpty()
+	e.PUT("/set").Expect().Status(iris.StatusOK).Cookies().NotEmpty()
 	// get them again using GetFlashes
-	e.GET("/get_flashes").Expect().Status(StatusOK).JSON().Object().Equal(jsonExpected)
+	e.GET("/get_flashes").Expect().Status(iris.StatusOK).JSON().Object().Equal(jsonExpected)
 	// this should be empty again
-	g = e.GET("/get_zero_flashes").Expect().Status(StatusOK)
+	g = e.GET("/get_zero_flashes").Expect().Status(iris.StatusOK)
 	g.JSON().Null()
 	g.Cookies().Empty()
 
 	// test Get, and get again should return nothing
-	e.PUT("/set").Expect().Status(StatusOK).Cookies().NotEmpty()
-	e.GET("/get_first_flash").Expect().Status(StatusOK).JSON().Object().ContainsKey(firstKey).NotContainsKey(lastKey)
-	g = e.GET("/get_first_flash").Expect().Status(StatusOK)
+	e.PUT("/set").Expect().Status(iris.StatusOK).Cookies().NotEmpty()
+	e.GET("/get_first_flash").Expect().Status(iris.StatusOK).JSON().Object().ContainsKey(firstKey).NotContainsKey(lastKey)
+	g = e.GET("/get_first_flash").Expect().Status(iris.StatusOK)
 	g.JSON().Null()
 	g.Cookies().Empty()
 }
@@ -585,21 +589,21 @@ func TestContextSessions(t *testing.T) {
 		"Secret": "dsads£2132215£%%Ssdsa",
 	}
 
-	initDefault()
-	Config.Sessions.Cookie = "mycustomsessionid"
+	iris.ResetDefault()
+	iris.Default.Config.Sessions.Cookie = "mycustomsessionid"
 
-	writeValues := func(ctx *Context) {
+	writeValues := func(ctx *iris.Context) {
 		sessValues := ctx.Session().GetAll()
-		ctx.JSON(StatusOK, sessValues)
+		ctx.JSON(iris.StatusOK, sessValues)
 	}
 
 	if testEnableSubdomain {
-		Party(testSubdomain+".").Get("/get", func(ctx *Context) {
+		iris.Party(testSubdomain+".").Get("/get", func(ctx *iris.Context) {
 			writeValues(ctx)
 		})
 	}
 
-	Post("set", func(ctx *Context) {
+	iris.Post("set", func(ctx *iris.Context) {
 		vals := make(map[string]interface{}, 0)
 		if err := ctx.ReadJSON(&vals); err != nil {
 			t.Fatalf("Cannot readjson. Trace %s", err.Error())
@@ -609,44 +613,44 @@ func TestContextSessions(t *testing.T) {
 		}
 	})
 
-	Get("/get", func(ctx *Context) {
+	iris.Get("/get", func(ctx *iris.Context) {
 		writeValues(ctx)
 	})
 
-	Get("/clear", func(ctx *Context) {
+	iris.Get("/clear", func(ctx *iris.Context) {
 		ctx.Session().Clear()
 		writeValues(ctx)
 	})
 
-	Get("/destroy", func(ctx *Context) {
+	iris.Get("/destroy", func(ctx *iris.Context) {
 		ctx.SessionDestroy()
 		writeValues(ctx)
 		// the cookie and all values should be empty
 	})
 
 	// request cookie should be empty
-	Get("/after_destroy", func(ctx *Context) {
+	iris.Get("/after_destroy", func(ctx *iris.Context) {
 	})
-	Default.Config.VHost = "mydomain.com"
-	e := Tester(t)
+	iris.Default.Config.VHost = "mydomain.com"
+	e := httptest.New(iris.Default, t)
 
-	e.POST("/set").WithJSON(values).Expect().Status(StatusOK).Cookies().NotEmpty()
-	e.GET("/get").Expect().Status(StatusOK).JSON().Object().Equal(values)
+	e.POST("/set").WithJSON(values).Expect().Status(iris.StatusOK).Cookies().NotEmpty()
+	e.GET("/get").Expect().Status(iris.StatusOK).JSON().Object().Equal(values)
 	if testEnableSubdomain {
 		es := subdomainTester(e)
-		es.Request("GET", "/get").Expect().Status(StatusOK).JSON().Object().Equal(values)
+		es.Request("GET", "/get").Expect().Status(iris.StatusOK).JSON().Object().Equal(values)
 	}
 
 	// test destroy which also clears first
-	d := e.GET("/destroy").Expect().Status(StatusOK)
+	d := e.GET("/destroy").Expect().Status(iris.StatusOK)
 	d.JSON().Null()
 	// 	This removed: d.Cookies().Empty(). Reason:
 	// httpexpect counts the cookies setted or deleted at the response time, but cookie is not removed, to be really removed needs to SetExpire(now-1second) so,
 	// test if the cookies removed on the next request, like the browser's behavior.
-	e.GET("/after_destroy").Expect().Status(StatusOK).Cookies().Empty()
+	e.GET("/after_destroy").Expect().Status(iris.StatusOK).Cookies().Empty()
 	// set and clear again
-	e.POST("/set").WithJSON(values).Expect().Status(StatusOK).Cookies().NotEmpty()
-	e.GET("/clear").Expect().Status(StatusOK).JSON().Object().Empty()
+	e.POST("/set").WithJSON(values).Expect().Status(iris.StatusOK).Cookies().NotEmpty()
+	e.GET("/clear").Expect().Status(iris.StatusOK).JSON().Object().Empty()
 }
 
 type renderTestInformationType struct {
@@ -659,7 +663,7 @@ type renderTestInformationType struct {
 }
 
 func TestContextRenderRest(t *testing.T) {
-	initDefault()
+	iris.ResetDefault()
 
 	dataContents := []byte("Some binary data here.")
 	textContents := "Plain text here"
@@ -675,59 +679,59 @@ func TestContextRenderRest(t *testing.T) {
 	}
 	markdownContents := "# Hello dynamic markdown from Iris"
 
-	Get("/data", func(ctx *Context) {
-		ctx.Data(StatusOK, dataContents)
+	iris.Get("/data", func(ctx *iris.Context) {
+		ctx.Data(iris.StatusOK, dataContents)
 	})
 
-	Get("/text", func(ctx *Context) {
-		ctx.Text(StatusOK, textContents)
+	iris.Get("/text", func(ctx *iris.Context) {
+		ctx.Text(iris.StatusOK, textContents)
 	})
 
-	Get("/jsonp", func(ctx *Context) {
-		ctx.JSONP(StatusOK, JSONPCallback, JSONPContents)
+	iris.Get("/jsonp", func(ctx *iris.Context) {
+		ctx.JSONP(iris.StatusOK, JSONPCallback, JSONPContents)
 	})
 
-	Get("/json", func(ctx *Context) {
-		ctx.JSON(StatusOK, JSONXMLContents)
+	iris.Get("/json", func(ctx *iris.Context) {
+		ctx.JSON(iris.StatusOK, JSONXMLContents)
 	})
-	Get("/xml", func(ctx *Context) {
-		ctx.XML(StatusOK, JSONXMLContents)
-	})
-
-	Get("/markdown", func(ctx *Context) {
-		ctx.Markdown(StatusOK, markdownContents)
+	iris.Get("/xml", func(ctx *iris.Context) {
+		ctx.XML(iris.StatusOK, JSONXMLContents)
 	})
 
-	e := Tester(t)
-	dataT := e.GET("/data").Expect().Status(StatusOK)
+	iris.Get("/markdown", func(ctx *iris.Context) {
+		ctx.Markdown(iris.StatusOK, markdownContents)
+	})
+
+	e := httptest.New(iris.Default, t)
+	dataT := e.GET("/data").Expect().Status(iris.StatusOK)
 	dataT.Header("Content-Type").Equal("application/octet-stream")
 	dataT.Body().Equal(string(dataContents))
 
-	textT := e.GET("/text").Expect().Status(StatusOK)
+	textT := e.GET("/text").Expect().Status(iris.StatusOK)
 	textT.Header("Content-Type").Equal("text/plain; charset=UTF-8")
 	textT.Body().Equal(textContents)
 
-	JSONPT := e.GET("/jsonp").Expect().Status(StatusOK)
+	JSONPT := e.GET("/jsonp").Expect().Status(iris.StatusOK)
 	JSONPT.Header("Content-Type").Equal("application/javascript; charset=UTF-8")
 	JSONPT.Body().Equal(JSONPCallback + `({"hello":"jsonp"});`)
 
-	JSONT := e.GET("/json").Expect().Status(StatusOK)
+	JSONT := e.GET("/json").Expect().Status(iris.StatusOK)
 	JSONT.Header("Content-Type").Equal("application/json; charset=UTF-8")
 	JSONT.JSON().Object().Equal(JSONXMLContents)
 
-	XMLT := e.GET("/xml").Expect().Status(StatusOK)
+	XMLT := e.GET("/xml").Expect().Status(iris.StatusOK)
 	XMLT.Header("Content-Type").Equal("text/xml; charset=UTF-8")
 	XMLT.Body().Equal(`<` + JSONXMLContents.XMLName.Local + ` first="` + JSONXMLContents.FirstAttr + `" second="` + JSONXMLContents.SecondAttr + `"><name>` + JSONXMLContents.Name + `</name><birth>` + JSONXMLContents.Birth + `</birth><stars>` + strconv.Itoa(JSONXMLContents.Stars) + `</stars></info>`)
 
-	markdownT := e.GET("/markdown").Expect().Status(StatusOK)
+	markdownT := e.GET("/markdown").Expect().Status(iris.StatusOK)
 	markdownT.Header("Content-Type").Equal("text/html; charset=UTF-8")
 	markdownT.Body().Equal("<h1>" + markdownContents[2:] + "</h1>\n")
 }
 
 func TestContextPreRender(t *testing.T) {
-	initDefault()
+	iris.ResetDefault()
 	errMsg1 := "thereIsAnError"
-	UsePreRender(func(ctx *Context, src string, binding interface{}, options ...map[string]interface{}) bool {
+	iris.UsePreRender(func(ctx *iris.Context, src string, binding interface{}, options ...map[string]interface{}) bool {
 		// put the 'Error' binding here, for the shake of the test
 		if b, isMap := binding.(map[string]interface{}); isMap {
 			b["Error"] = errMsg1
@@ -736,7 +740,7 @@ func TestContextPreRender(t *testing.T) {
 		return true
 	})
 	errMsg2 := "thereIsASecondError"
-	UsePreRender(func(ctx *Context, src string, binding interface{}, options ...map[string]interface{}) bool {
+	iris.UsePreRender(func(ctx *iris.Context, src string, binding interface{}, options ...map[string]interface{}) bool {
 		// put the 'Error' binding here, for the shake of the test
 		if b, isMap := binding.(map[string]interface{}); isMap {
 			prev := b["Error"].(string)
@@ -748,7 +752,7 @@ func TestContextPreRender(t *testing.T) {
 	})
 
 	errMsg3 := "thereisAThirdError"
-	UsePreRender(func(ctx *Context, src string, binding interface{}, options ...map[string]interface{}) bool {
+	iris.UsePreRender(func(ctx *iris.Context, src string, binding interface{}, options ...map[string]interface{}) bool {
 		// put the 'Error' binding here, for the shake of the test
 		if b, isMap := binding.(map[string]interface{}); isMap {
 			prev := b["Error"].(string)
@@ -759,11 +763,11 @@ func TestContextPreRender(t *testing.T) {
 		return true
 	})
 
-	Get("/", func(ctx *Context) {
-		ctx.RenderTemplateSource(StatusOK, "<h1>HI {{.Username}}. Error: {{.Error}}</h1>", map[string]interface{}{"Username": "kataras"})
+	iris.Get("/", func(ctx *iris.Context) {
+		ctx.RenderTemplateSource(iris.StatusOK, "<h1>HI {{.Username}}. Error: {{.Error}}</h1>", map[string]interface{}{"Username": "kataras"})
 	})
 
-	e := Tester(t)
+	e := httptest.New(iris.Default, t)
 	expected := "<h1>HI kataras. Error: " + errMsg1 + errMsg2 + "</h1>"
-	e.GET("/").Expect().Status(StatusOK).Body().Contains(expected)
+	e.GET("/").Expect().Status(iris.StatusOK).Body().Contains(expected)
 }

@@ -1,4 +1,5 @@
-package iris
+// Black-box Testing
+package iris_test
 
 /*
 Contains tests for plugin, no end-to-end, just local-object tests, these are enoguh for now.
@@ -8,6 +9,7 @@ CONTRIBUTE & DISCUSSION ABOUT TESTS TO: https://github.com/iris-contrib/tests
 
 import (
 	"fmt"
+	"github.com/kataras/iris"
 	"testing"
 )
 
@@ -33,52 +35,52 @@ func (t *testPluginEx) GetDescription() string {
 	return testPluginExDescription
 }
 
-func (t *testPluginEx) Activate(p PluginContainer) error {
+func (t *testPluginEx) Activate(p iris.PluginContainer) error {
 	fmt.Println("Activate Struct")
 	t.activated = true
 	return nil
 }
 
-func (t *testPluginEx) PreListen(*Framework) {
+func (t *testPluginEx) PreListen(*iris.Framework) {
 	fmt.Println("PreListen Struct")
 	t.prelistenran = true
 }
 
-func (t *testPluginEx) PostListen(*Framework) {
+func (t *testPluginEx) PostListen(*iris.Framework) {
 	fmt.Println("PostListen Struct")
 	t.postlistenran = true
 }
 
-func (t *testPluginEx) PreClose(*Framework) {
+func (t *testPluginEx) PreClose(*iris.Framework) {
 	fmt.Println("PreClose Struct")
 	t.precloseran = true
 }
 
 func ExamplePlugins_Add() {
-	initDefault()
-	Default.Set(OptionDisableBanner(true))
-	Plugins.Add(PreListenFunc(func(*Framework) {
+	iris.ResetDefault()
+	iris.Default.Set(iris.OptionDisableBanner(true))
+	iris.Plugins.Add(iris.PreListenFunc(func(*iris.Framework) {
 		fmt.Println("PreListen Func")
 	}))
 
-	Plugins.Add(PostListenFunc(func(*Framework) {
+	iris.Plugins.Add(iris.PostListenFunc(func(*iris.Framework) {
 		fmt.Println("PostListen Func")
 	}))
 
-	Plugins.Add(PreCloseFunc(func(*Framework) {
+	iris.Plugins.Add(iris.PreCloseFunc(func(*iris.Framework) {
 		fmt.Println("PreClose Func")
 	}))
 
 	myplugin := &testPluginEx{}
-	Plugins.Add(myplugin)
-	desc := Plugins.GetDescription(myplugin)
+	iris.Plugins.Add(myplugin)
+	desc := iris.Plugins.GetDescription(myplugin)
 	fmt.Println(desc)
 
 	// travis have problems if I do that using
 	// Listen(":8080") and Close()
-	Plugins.DoPreListen(Default)
-	Plugins.DoPostListen(Default)
-	Plugins.DoPreClose(Default)
+	iris.Plugins.DoPreListen(iris.Default)
+	iris.Plugins.DoPostListen(iris.Default)
+	iris.Plugins.DoPreClose(iris.Default)
 
 	// Output:
 	// GetName Struct
@@ -95,7 +97,8 @@ func ExamplePlugins_Add() {
 
 // if a plugin has GetName, then it should be registered only one time, the name exists for that reason, it's like unique  ID
 func TestPluginDublicateName(t *testing.T) {
-	var plugins pluginContainer
+	iris.ResetDefault()
+	var plugins = iris.Default.Plugins
 	firstNamedPlugin := &testPluginEx{}
 	sameNamedPlugin := &testPluginEx{}
 	// err := plugins.Add(firstNamedPlugin, sameNamedPlugin) or
@@ -107,8 +110,8 @@ func TestPluginDublicateName(t *testing.T) {
 	if err == nil {
 		t.Fatalf("Expected an error because of dublicate named plugin!")
 	}
-	if len(plugins.activatedPlugins) != 1 {
-		t.Fatalf("Expected: %d activated plugin but we got: %d", 1, len(plugins.activatedPlugins))
+	if plugins.Len() != 1 {
+		t.Fatalf("Expected: %d activated plugin but we got: %d", 1, plugins.Len())
 	}
 }
 
@@ -116,7 +119,7 @@ type testPluginActivationType struct {
 	shouldError bool
 }
 
-func (t testPluginActivationType) Activate(p PluginContainer) error {
+func (t testPluginActivationType) Activate(p iris.PluginContainer) error {
 	p.Add(&testPluginEx{})
 	if t.shouldError {
 		return fmt.Errorf("An error happens, this plugin and the added plugins by this plugin should not be registered")
@@ -125,46 +128,49 @@ func (t testPluginActivationType) Activate(p PluginContainer) error {
 }
 
 func TestPluginActivate(t *testing.T) {
-	var plugins pluginContainer
+	iris.ResetDefault()
+	var plugins = iris.Default.Plugins
 	myplugin := testPluginActivationType{shouldError: false}
 	plugins.Add(myplugin)
 
-	if len(plugins.activatedPlugins) != 2 { // 2 because it registeres a second plugin also
-		t.Fatalf("Expected activated plugins to be: %d but we got: %d", 0, len(plugins.activatedPlugins))
+	if plugins.Len() != 2 { // 2 because it registeres a second plugin also
+		t.Fatalf("Expected activated plugins to be: %d but we got: %d", 0, plugins.Len())
 	}
 }
 
 // if any error returned from the Activate plugin's method, then this plugin and the plugins it registers should not be registered at all
 func TestPluginActivationError(t *testing.T) {
-	var plugins pluginContainer
+	iris.ResetDefault()
+	var plugins = iris.Default.Plugins
 	myplugin := testPluginActivationType{shouldError: true}
 	plugins.Add(myplugin)
 
-	if len(plugins.activatedPlugins) > 0 {
-		t.Fatalf("Expected activated plugins to be: %d but we got: %d", 0, len(plugins.activatedPlugins))
+	if plugins.Len() > 0 {
+		t.Fatalf("Expected activated plugins to be: %d but we got: %d", 0, plugins.Len())
 	}
 }
 
 func TestPluginEvents(t *testing.T) {
-	var plugins pluginContainer
+	iris.ResetDefault()
+	var plugins = iris.Default.Plugins
 	var prelistenran, postlistenran, precloseran bool
 
-	plugins.Add(PreListenFunc(func(*Framework) {
+	plugins.Add(iris.PreListenFunc(func(*iris.Framework) {
 		prelistenran = true
 	}))
 
-	plugins.Add(PostListenFunc(func(*Framework) {
+	plugins.Add(iris.PostListenFunc(func(*iris.Framework) {
 		postlistenran = true
 	}))
 
-	plugins.Add(PreCloseFunc(func(*Framework) {
+	plugins.Add(iris.PreCloseFunc(func(*iris.Framework) {
 		precloseran = true
 	}))
 
 	myplugin := &testPluginEx{}
 	plugins.Add(myplugin)
-	if len(plugins.activatedPlugins) != 4 {
-		t.Fatalf("Expected: %d plugins to be registed but we got: %d", 4, len(plugins.activatedPlugins))
+	if plugins.Len() != 4 {
+		t.Fatalf("Expected: %d plugins to be registed but we got: %d", 4, plugins.Len())
 	}
 	desc := plugins.GetDescription(myplugin)
 	if desc != testPluginExDescription {

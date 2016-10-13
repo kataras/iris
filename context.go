@@ -96,10 +96,10 @@ type (
 		Params    PathParameters
 		framework *Framework
 		//keep track all registed middleware (handlers)
-		middleware Middleware
+		Middleware Middleware //  exported because is useful for debugging
 		session    sessions.Session
-		// pos is the position number of the Context, look .Next to understand
-		pos uint8
+		// Pos is the position number of the Context, look .Next to understand
+		Pos uint8 // exported because is useful for debugging
 	}
 )
 
@@ -110,37 +110,37 @@ func (ctx *Context) GetRequestCtx() *fasthttp.RequestCtx {
 
 // Do calls the first handler only, it's like Next with negative pos, used only on Router&MemoryRouter
 func (ctx *Context) Do() {
-	ctx.pos = 0
-	ctx.middleware[0].Serve(ctx)
+	ctx.Pos = 0
+	ctx.Middleware[0].Serve(ctx)
 }
 
 // Next calls all the next handler from the middleware stack, it used inside a middleware
 func (ctx *Context) Next() {
 	//set position to the next
-	ctx.pos++
-	midLen := uint8(len(ctx.middleware))
+	ctx.Pos++
+	midLen := uint8(len(ctx.Middleware))
 	//run the next
-	if ctx.pos < midLen {
-		ctx.middleware[ctx.pos].Serve(ctx)
+	if ctx.Pos < midLen {
+		ctx.Middleware[ctx.Pos].Serve(ctx)
 	}
 
 }
 
 // StopExecution just sets the .pos to 255 in order to  not move to the next middlewares(if any)
 func (ctx *Context) StopExecution() {
-	ctx.pos = stopExecutionPosition
+	ctx.Pos = stopExecutionPosition
 }
 
 //
 
 // IsStopped checks and returns true if the current position of the Context is 255, means that the StopExecution has called
 func (ctx *Context) IsStopped() bool {
-	return ctx.pos == stopExecutionPosition
+	return ctx.Pos == stopExecutionPosition
 }
 
 // GetHandlerName as requested returns the stack-name of the function which the Middleware is setted from
 func (ctx *Context) GetHandlerName() string {
-	return runtime.FuncForPC(reflect.ValueOf(ctx.middleware[len(ctx.middleware)-1]).Pointer()).Name()
+	return runtime.FuncForPC(reflect.ValueOf(ctx.Middleware[len(ctx.Middleware)-1]).Pointer()).Name()
 }
 
 /* Request */

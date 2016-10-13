@@ -54,7 +54,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"net/http"
 	"net/url"
 	"os"
 	"os/signal"
@@ -63,7 +62,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"testing"
 	"time"
 
 	"github.com/gavv/httpexpect"
@@ -108,7 +106,16 @@ var (
 	Available chan bool
 )
 
-func initDefault() {
+// ResetDefault resets the iris.Default which is the instance which is used on the default iris station for
+//  iris.Get(all api functions)
+// iris.Config
+// iris.Logger
+// iris.Plugins
+// iris.Router
+// iris.Websocket
+// iris.SSH and iris.Available channel
+// useful mostly when you are not using the form of app := iris.New() inside your tests, to make sure that you're using a new iris instance
+func ResetDefault() {
 	Default = New()
 	Config = Default.Config
 	Logger = Default.Logger
@@ -120,7 +127,7 @@ func initDefault() {
 }
 
 func init() {
-	initDefault()
+	ResetDefault()
 }
 
 // -------------------------------------------------------------------------------------
@@ -159,7 +166,6 @@ type (
 		TemplateString(string, interface{}, ...map[string]interface{}) string
 		TemplateSourceString(string, interface{}) string
 		SerializeToString(string, interface{}, ...map[string]interface{}) string
-		Tester(*testing.T) *httpexpect.Expect
 	}
 
 	// Framework is our God |\| Google.Search('Greek mythology Iris')
@@ -678,7 +684,7 @@ func ReleaseCtx(ctx *Context) {
 // see .AcquireCtx & .Serve
 func (s *Framework) ReleaseCtx(ctx *Context) {
 	ctx.Params = ctx.Params[0:0]
-	ctx.middleware = nil
+	ctx.Middleware = nil
 	ctx.session = nil
 	s.contextPool.Put(ctx)
 }
@@ -1110,55 +1116,6 @@ func (s *Framework) SerializeToString(keyOrContentType string, obj interface{}, 
 		return ""
 	}
 	return res
-}
-
-// NewTester Prepares and returns a new test framework based on the api
-// is useful when you need to have more than one test framework for the same iris insttance, otherwise you can use the iris.Tester(t *testing.T)/variable.Tester(t *testing.T)
-func NewTester(api *Framework, t *testing.T) *httpexpect.Expect {
-	api.Set(OptionDisableBanner(true))
-
-	baseURL := ""
-	if api.fsrv == nil {
-		api.Build()
-	}
-	if !api.Config.Tester.ExplicitURL {
-		baseURL = api.Config.VScheme + api.Config.VHost
-		// if it's still empty then set it to the default server addr
-		if baseURL == "" {
-			baseURL = SchemeHTTP + DefaultServerAddr
-		}
-
-	}
-
-	testConfiguration := httpexpect.Config{
-		BaseURL: baseURL,
-		Client: &http.Client{
-			Transport: httpexpect.NewFastBinder(api.Router),
-			Jar:       httpexpect.NewJar(),
-		},
-		Reporter: httpexpect.NewAssertReporter(t),
-	}
-
-	if api.Config.Tester.Debug {
-		testConfiguration.Printers = []httpexpect.Printer{
-			httpexpect.NewDebugPrinter(t, true),
-		}
-	}
-
-	return httpexpect.WithConfig(testConfiguration)
-}
-
-// Tester returns the test framework for this default insance
-func Tester(t *testing.T) *httpexpect.Expect {
-	return Default.Tester(t)
-}
-
-// Tester returns the test framework for this iris insance
-func (s *Framework) Tester(t *testing.T) *httpexpect.Expect {
-	if s.testFramework == nil {
-		s.testFramework = NewTester(s, t)
-	}
-	return s.testFramework
 }
 
 // -------------------------------------------------------------------------------------
@@ -1732,7 +1689,7 @@ func (api *muxAPI) StaticHandler(systemPath string, stripSlashes int, compress b
 		if errCode == StatusNotFound || errCode == StatusBadRequest || errCode == StatusInternalServerError {
 			api.mux.fireError(errCode, ctx)
 		}
-		if ctx.pos < uint8(len(ctx.middleware))-1 {
+		if ctx.Pos < uint8(len(ctx.Middleware))-1 {
 			ctx.Next() // for any case
 		}
 

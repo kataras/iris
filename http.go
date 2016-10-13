@@ -1173,7 +1173,7 @@ func (mux *serveMux) BuildHandler() HandlerFunc {
 			if middleware != nil {
 				// ok we found the correct route, serve it and exit entirely from here
 				context.Params = params
-				context.middleware = middleware
+				context.Middleware = middleware
 				//ctx.Request.Header.SetUserAgentBytes(DefaultUserAgent)
 				context.Do()
 				return
@@ -1420,7 +1420,8 @@ func ParseScheme(domain string) string {
 	return SchemeHTTP
 }
 
-var proxyHandler = func(proxyAddr string, redirectSchemeAndHost string) fasthttp.RequestHandler {
+// ProxyHandler returns a new fasthttp handler which works as 'proxy', maybe doesn't suits you look its code before using that in production
+var ProxyHandler = func(proxyAddr string, redirectSchemeAndHost string) fasthttp.RequestHandler {
 	return func(reqCtx *fasthttp.RequestCtx) {
 		// override the handler and redirect all requests to this addr
 		redirectTo := redirectSchemeAndHost
@@ -1458,7 +1459,7 @@ func Proxy(proxyAddr string, redirectSchemeAndHost string) func() error {
 	proxyAddr = ParseHost(proxyAddr)
 
 	// override the handler and redirect all requests to this addr
-	h := proxyHandler(proxyAddr, redirectSchemeAndHost)
+	h := ProxyHandler(proxyAddr, redirectSchemeAndHost)
 	prx := New(OptionDisableBanner(true))
 	prx.Router = h
 

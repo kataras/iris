@@ -3,6 +3,79 @@
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
 
+## 4.5.2/.3 -> 4.6.0
+
+### This update affects only testers who used `iris.Tester` at the past.
+
+- **FIX**: httptest flags caused by httpexpect which used to help you with tests inside **old** func `iris.Tester` as reported [here]( https://github.com/kataras/iris/issues/337#issuecomment-253429976)
+
+- **NEW**: `iris.ResetDefault()` func which resets the default iris instance which is the station for the most part of the public/package API
+
+- **NEW**: package `httptest` with configuration which can be passed per 'tester' instead of iris instance( this is very helpful for testers)
+
+- **CHANGED**: All tests are now converted for 'white-box' testing, means that tests now have package named: `iris_test` instead of `iris` in the same main directory.
+
+- **CHANGED**: `iris.Tester` moved to `httptest.New` which lives inside the new `/kataras/iris/httptest` package, so:
+
+
+**old**
+```go
+import (
+	"github.com/kataras/iris"
+	"testing"
+)
+
+func MyTest(t *testing.T) {
+	iris.Get("/mypath", func(ctx *iris.Context){
+		ctx.Write("my body")
+	})
+	// with configs: iris.Config.Tester.ExplicitURL/Debug = true
+	e:= iris.Tester(t)
+	e.GET("/mypath").Expect().Status(iris.StatusOK).Body().Equal("my body")
+}
+```
+**used that instead/new**
+```go
+import (
+	"github.com/kataras/iris/httptest"
+	"github.com/kataras/iris"
+	"testing"
+)
+
+func MyTest(t *testing.T) {
+	// make sure that you reset your default station if you don't use the form of app := iris.New()
+	iris.ResetDefault()
+
+	iris.Get("/mypath", func(ctx *iris.Context){
+		ctx.Write("my body")
+	})
+
+	e:= httptest.New(iris.Default, t)
+	// with configs: e:= httptest.New(iris.Default, t, httptest.ExplicitURL(true), httptest.Debug(true))
+	e.GET("/mypath").Expect().Status(iris.StatusOK).Body().Equal("my body")
+}
+```
+
+
+Finally, some plugins container's additions:
+
+- **NEW**: `iris.Plugins.Len()` func which returns the length of the current activated plugins in the default station
+
+- **NEW**: `iris.Plugins.Fired("event") int` func which returns how much times and from how many plugins a particular event type is fired, event types are: `"prelookup", "prebuild", "prelisten", "postlisten", "preclose", "predownload"`
+
+- **NEW**: `iris.Plugins.PreLookupFired() bool` func which returns true if `PreLookup` fired at least one time
+
+- **NEW**: `iris.Plugins.PreBuildFired() bool` func which returns true if `PreBuild` fired at least one time
+
+- **NEW**: `iris.Plugins.PreListenFired() bool` func which returns true if `PreListen/PreListenParallel` fired at least one time
+
+- **NEW**: `iris.Plugins.PostListenFired() bool` func which returns true if `PostListen` fired at least one time
+
+- **NEW**: `iris.Plugins.PreCloseFired() bool` func which returns true if `PreClose` fired at least one time
+
+- **NEW**: `iris.Plugins.PreDownloadFired() bool` func which returns true if `PreDownload` fired at least one time
+
+
 ## 4.5.1 -> 4.5.2
 
 - **Feature request**: I never though that it will be easier for users to catch 405 instead of simple 404, I though that will make your life harder, but it's requested by the Community [here](https://github.com/kataras/iris/issues/469), so I did my duty. Enable firing Status Method Not Allowed (405) with a simple configuration field: `iris.Config.FireMethodNotAllowed=true` or `iris.Set(iris.OptionFireMethodNotAllowed(true))` or `app := iris.New(iris.Configuration{FireMethodNotAllowed:true})`. A trivial, test example can be shown here:

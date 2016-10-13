@@ -119,23 +119,31 @@ type (
 	PluginContainer interface {
 		Add(...Plugin) error
 		Remove(string) error
+		Len() int
 		GetName(Plugin) string
 		GetDescription(Plugin) string
 		GetByName(string) Plugin
 		Printf(string, ...interface{})
+		Fired(string) int
 		PreLookup(PreLookupFunc)
 		DoPreLookup(Route)
+		PreLookupFired() bool
 		PreBuild(PreBuildFunc)
 		DoPreBuild(*Framework)
+		PreBuildFired() bool
 		PreListen(PreListenFunc)
 		DoPreListen(*Framework)
 		DoPreListenParallel(*Framework)
+		PreListenFired() bool
 		PostListen(PostListenFunc)
 		DoPostListen(*Framework)
+		PostListenFired() bool
 		PreClose(PreCloseFunc)
 		DoPreClose(*Framework)
+		PreCloseFired() bool
 		PreDownload(PreDownloadFunc)
 		DoPreDownload(Plugin, string)
+		PreDownloadFired() bool
 		//
 		GetAll() []Plugin
 		// GetDownloader is the only one module that is used and fire listeners at the same time in this file
@@ -248,11 +256,12 @@ type pluginContainer struct {
 	downloader       *pluginDownloadManager
 	logger           *log.Logger
 	mu               sync.Mutex
+	fired            map[string]int // event/plugin type name and the times fired
 }
 
 // newPluginContainer receives a logger and returns a new PluginContainer
 func newPluginContainer(l *log.Logger) PluginContainer {
-	return &pluginContainer{logger: l}
+	return &pluginContainer{logger: l, fired: make(map[string]int, 0)}
 }
 
 // Add activates the plugins and if succeed then adds it to the activated plugins list
@@ -291,10 +300,6 @@ func (p *pluginContainer) Add(plugins ...Plugin) error {
 	return nil
 }
 
-func (p *pluginContainer) Reset() {
-
-}
-
 // Remove removes a plugin by it's name, if pluginName is empty "" or no plugin found with this name, then nothing is removed and a specific error is returned.
 // This doesn't calls the PreClose method
 func (p *pluginContainer) Remove(pluginName string) error {
@@ -320,6 +325,11 @@ func (p *pluginContainer) Remove(pluginName string) error {
 	p.activatedPlugins = append(p.activatedPlugins[:indexToRemove], p.activatedPlugins[indexToRemove+1:]...)
 
 	return nil
+}
+
+// Len returns the number of activate plugins
+func (p *pluginContainer) Len() int {
+	return len(p.activatedPlugins)
 }
 
 // GetName returns the name of a plugin, if no GetName() implemented it returns an empty string ""
@@ -378,6 +388,29 @@ func (p *pluginContainer) Printf(format string, a ...interface{}) {
 
 }
 
+// fire adds a fired event on the (statically type named) map and returns the new times
+func (p *pluginContainer) fire(name string) int {
+	p.mu.Lock()
+	var times int
+	// maybe unnessecary but for clarity reasons
+	if t, found := p.fired[name]; found {
+		times = t
+	}
+	times++
+	p.fired[name] = times
+	p.mu.Unlock()
+	return times
+}
+
+// Fired receives an event name/plugin type and returns the times which this event is fired and how many plugins are fired this event,
+// if zero then it's not fired at all
+func (p *pluginContainer) Fired(name string) (times int) {
+	if t, found := p.fired[name]; found {
+		times = t
+	}
+	return
+}
+
 // PreLookup adds a PreLookup plugin-function to the plugin flow container
 func (p *pluginContainer) PreLookup(fn PreLookupFunc) {
 	p.Add(fn)
@@ -388,9 +421,16 @@ func (p *pluginContainer) DoPreLookup(r Route) {
 	for i := range p.activatedPlugins {
 		// check if this method exists on our plugin obj, these are optionaly and call it
 		if pluginObj, ok := p.activatedPlugins[i].(pluginPreLookup); ok {
+			// fire will add times to the number of events fired this event
+			p.fire("prelookup")
 			pluginObj.PreLookup(r)
 		}
 	}
+}
+
+// PreLookupFired returns true if PreLookup event/ plugin type is fired at least one time
+func (p *pluginContainer) PreLookupFired() bool {
+	return p.Fired("prelookup") > 0
 }
 
 // PreBuild adds a PreBuild plugin-function to the plugin flow container
@@ -404,8 +444,14 @@ func (p *pluginContainer) DoPreBuild(station *Framework) {
 		// check if this method exists on our plugin obj, these are optionaly and call it
 		if pluginObj, ok := p.activatedPlugins[i].(pluginPreBuild); ok {
 			pluginObj.PreBuild(station)
+			p.fire("prebuild")
 		}
 	}
+}
+
+// PreBuildFired returns true if PreBuild event/ plugin type is fired at least one time
+func (p *pluginContainer) PreBuildFired() bool {
+	return p.Fired("prebuild") > 0
 }
 
 // PreListen adds a PreListen plugin-function to the plugin flow container
@@ -419,6 +465,7 @@ func (p *pluginContainer) DoPreListen(station *Framework) {
 		// check if this method exists on our plugin obj, these are optionaly and call it
 		if pluginObj, ok := p.activatedPlugins[i].(pluginPreListen); ok {
 			pluginObj.PreListen(station)
+			p.fire("prelisten")
 		}
 	}
 }
@@ -433,6 +480,7 @@ func (p *pluginContainer) DoPreListenParallel(station *Framework) {
 		go func(plugin Plugin) {
 			if pluginObj, ok := plugin.(pluginPreListen); ok {
 				pluginObj.PreListen(station)
+				p.fire("prelisten")
 			}
 
 			wg.Done()
@@ -442,6 +490,11 @@ func (p *pluginContainer) DoPreListenParallel(station *Framework) {
 
 	wg.Wait()
 
+}
+
+// PreListenFired returns true if PreListen or PreListenParallel event/ plugin type is fired at least one time
+func (p *pluginContainer) PreListenFired() bool {
+	return p.Fired("prelisten") > 0
 }
 
 // PostListen adds a PostListen plugin-function to the plugin flow container
@@ -455,8 +508,14 @@ func (p *pluginContainer) DoPostListen(station *Framework) {
 		// check if this method exists on our plugin obj, these are optionaly and call it
 		if pluginObj, ok := p.activatedPlugins[i].(pluginPostListen); ok {
 			pluginObj.PostListen(station)
+			p.fire("postlisten")
 		}
 	}
+}
+
+// PostListenFired returns true if PostListen event/ plugin type is fired at least one time
+func (p *pluginContainer) PostListenFired() bool {
+	return p.Fired("postlisten") > 0
 }
 
 // PreClose adds a PreClose plugin-function to the plugin flow container
@@ -470,8 +529,14 @@ func (p *pluginContainer) DoPreClose(station *Framework) {
 		// check if this method exists on our plugin obj, these are optionaly and call it
 		if pluginObj, ok := p.activatedPlugins[i].(pluginPreClose); ok {
 			pluginObj.PreClose(station)
+			p.fire("preclose")
 		}
 	}
+}
+
+// PreCloseFired returns true if PreCLose event/ plugin type is fired at least one time
+func (p *pluginContainer) PreCloseFired() bool {
+	return p.Fired("preclose") > 0
 }
 
 // PreDownload adds a PreDownload plugin-function to the plugin flow container
@@ -485,6 +550,12 @@ func (p *pluginContainer) DoPreDownload(pluginTryToDownload Plugin, downloadURL 
 		// check if this method exists on our plugin obj, these are optionaly and call it
 		if pluginObj, ok := p.activatedPlugins[i].(pluginPreDownload); ok {
 			pluginObj.PreDownload(pluginTryToDownload, downloadURL)
+			p.fire("predownload")
 		}
 	}
+}
+
+// PreDownloadFired returns true if PreDownload event/ plugin type is fired at least one time
+func (p *pluginContainer) PreDownloadFired() bool {
+	return p.Fired("predownload") > 0
 }
