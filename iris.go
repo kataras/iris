@@ -64,7 +64,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gavv/httpexpect"
 	"github.com/kataras/go-errors"
 	"github.com/kataras/go-fs"
 	"github.com/kataras/go-serializer"
@@ -196,9 +195,6 @@ type (
 		Plugins   PluginContainer
 		Websocket *WebsocketServer
 		SSH       *SSHServer
-
-		// this is setted once when .Tester(t) is called
-		testFramework *httpexpect.Expect
 	}
 )
 
