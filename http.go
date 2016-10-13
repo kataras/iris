@@ -15,7 +15,6 @@ import (
 
 	"github.com/iris-contrib/letsencrypt"
 	"github.com/kataras/go-errors"
-	"github.com/kataras/iris/utils"
 	"github.com/valyala/fasthttp"
 	"github.com/valyala/fasthttp/fasthttpadaptor"
 )
@@ -434,6 +433,14 @@ func getParamsLen(path string) uint8 {
 	return uint8(n)
 }
 
+// findLower returns the smaller number between a and b
+func findLower(a, b int) int {
+	if a <= b {
+		return a
+	}
+	return b
+}
+
 // add adds a muxEntry to the existing muxEntry or to the tree if no muxEntry has the prefix of
 func (e *muxEntry) add(path string, middleware Middleware) error {
 	fullPath := path
@@ -448,7 +455,7 @@ func (e *muxEntry) add(path string, middleware Middleware) error {
 			}
 
 			i := 0
-			max := utils.FindLower(len(path), len(e.part))
+			max := findLower(len(path), len(e.part))
 			for i < max && path[i] == e.part[i] {
 				i++
 			}
@@ -1073,11 +1080,11 @@ func (mux *serveMux) build() (getRequestPath func(*fasthttp.RequestCtx) string, 
 
 	// optimize this once once, we could do that: context.RequestPath(mux.escapePath), but we lose some nanoseconds on if :)
 	getRequestPath = func(reqCtx *fasthttp.RequestCtx) string {
-		return utils.BytesToString(reqCtx.Path()) //string(ctx.Path()[:]) // a little bit of memory allocation, old method used: BytesToString, If I see the benchmarks get low I will change it back to old, but this way is safer.
+		return string(reqCtx.Path())
 	}
 
 	if !mux.escapePath {
-		getRequestPath = func(reqCtx *fasthttp.RequestCtx) string { return utils.BytesToString(reqCtx.RequestURI()) }
+		getRequestPath = func(reqCtx *fasthttp.RequestCtx) string { return string(reqCtx.RequestURI()) }
 	}
 
 	methodEqual = func(reqMethod []byte, treeMethod []byte) bool {
@@ -1107,6 +1114,22 @@ func (mux *serveMux) lookup(routeName string) *route {
 		}
 	}
 	return nil
+}
+
+//THESE ARE FROM Go Authors
+var htmlReplacer = strings.NewReplacer(
+	"&", "&amp;",
+	"<", "&lt;",
+	">", "&gt;",
+	// "&#34;" is shorter than "&quot;".
+	`"`, "&#34;",
+	// "&#39;" is shorter than "&apos;" and apos was not in HTML until HTML5.
+	"'", "&#39;",
+)
+
+// HTMLEscape returns a string which has no valid html code
+func HTMLEscape(s string) string {
+	return htmlReplacer.Replace(s)
 }
 
 // BuildHandler the default Iris router when iris.Handler is nil
@@ -1168,7 +1191,7 @@ func (mux *serveMux) BuildHandler() HandlerFunc {
 					}
 
 					context.Request.URI().SetPath(reqPath)
-					urlToRedirect := utils.BytesToString(context.Request.RequestURI())
+					urlToRedirect := string(context.Request.RequestURI())
 
 					statisForRedirect := StatusMovedPermanently //	StatusMovedPermanently, this document is obselte, clients caches this.
 					if bytes.Equal(tree.method, MethodPostBytes) ||
@@ -1182,7 +1205,7 @@ func (mux *serveMux) BuildHandler() HandlerFunc {
 					// response because older user agents may not understand 301/307.
 					// Shouldn't send the response for POST or HEAD; that leaves GET.
 					if bytes.Equal(tree.method, MethodGetBytes) {
-						note := "<a href=\"" + utils.HTMLEscape(urlToRedirect) + "\">Moved Permanently</a>.\n"
+						note := "<a href=\"" + HTMLEscape(urlToRedirect) + "\">Moved Permanently</a>.\n"
 						context.Write(note)
 					}
 					return

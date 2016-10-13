@@ -20,7 +20,6 @@ import (
 	"github.com/kataras/go-errors"
 	"github.com/kataras/go-fs"
 	"github.com/kataras/go-sessions"
-	"github.com/kataras/iris/utils"
 	"github.com/valyala/fasthttp"
 )
 
@@ -202,12 +201,12 @@ func (ctx *Context) URLParamInt64(key string) (int64, error) {
 
 // MethodString returns the HTTP Method
 func (ctx *Context) MethodString() string {
-	return utils.BytesToString(ctx.Method())
+	return string(ctx.Method())
 }
 
 // HostString returns the Host of the request( the url as string )
 func (ctx *Context) HostString() string {
-	return utils.BytesToString(ctx.Host())
+	return string(ctx.Host())
 }
 
 // VirtualHostname returns the hostname that user registers, host path maybe differs from the real which is HostString, which taken from a net.listener
@@ -246,9 +245,9 @@ func (ctx *Context) PathString() string {
 func (ctx *Context) RequestPath(escape bool) string {
 	if escape {
 		//	return utils.BytesToString(ctx.RequestCtx.Path())
-		return utils.BytesToString(ctx.RequestCtx.URI().PathOriginal())
+		return string(ctx.RequestCtx.URI().PathOriginal())
 	}
-	return utils.BytesToString(ctx.RequestCtx.RequestURI())
+	return string(ctx.RequestCtx.RequestURI())
 }
 
 // RequestIP gets just the Remote Address from the client.
@@ -283,7 +282,7 @@ func (ctx *Context) RemoteAddr() string {
 // accepts one parameter, the key of the header (string)
 // returns string
 func (ctx *Context) RequestHeader(k string) string {
-	return utils.BytesToString(ctx.RequestCtx.Request.Header.Peek(k))
+	return string(ctx.RequestCtx.Request.Header.Peek(k))
 }
 
 // IsAjax returns true if this request is an 'ajax request'( XMLHttpRequest)
