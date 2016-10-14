@@ -895,7 +895,7 @@ The author of Iris is [@kataras](https://github.com/kataras). If **you**'re will
 
 Contributing
 ------------
-If you are interested in contributing to the Iris project, please see the document [CONTRIBUTING](https://github.com/kataras/iris/blob/master/CONTRIBUTING.md).
+If you are interested in contributing to the Iris project, please see the document [CONTRIBUTING](https://github.com/kataras/iris/blob/master/.github/CONTRIBUTING.md).
 
 License
 ------------
