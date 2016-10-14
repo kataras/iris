@@ -32,22 +32,18 @@ The <a href="https://github.com/kataras/iris#benchmarks">fastest</a> back-end we
 <br/>
 Easy to <a href="https://www.gitbook.com/book/kataras/iris/details">learn</a>,  while it's highly customizable. <br/>
 Ideally suited for both experienced and novice <b>Developers</b>.
-<br/>
 </p>
 
 
 
-## News
 
-- Check out [this](https://t.co/Y7bK0THScG) Meetup with GoLang User Group. Contains ~30 minutes talk about Iris.
+## Recent Articles
 
-- Newest Articles
+-  [Building Web Apps with Iris](http://mycodesmells.com/post/building-web-apps-with-iris) by Paweł Słomka
 
-  -  [Building Web Apps with Iris](http://mycodesmells.com/post/building-web-apps-with-iris) by Paweł Słomka
+- [Testing Iris RESTful API](https://drasko.github.io/2016/09/26/testing-iris-restful-api/) by Drasko Draskovic
 
-  - [Testing Iris RESTful API](https://drasko.github.io/2016/09/26/testing-iris-restful-api/) by Drasko Draskovic
-
-  - [Iris vs Nginx vs Php vs Nodejs](https://www.ntossapo.me/2016/08/13/nginx-vs-nginx-php-fpm-vs-go-iris-vs-express-with-wrk/) by Tossapon Nuanchuay
+- [Iris vs Nginx vs Php vs Nodejs](https://www.ntossapo.me/2016/08/13/nginx-vs-nginx-php-fpm-vs-go-iris-vs-express-with-wrk/) by Tossapon Nuanchuay
 
 
 ## Feature Overview
