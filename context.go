@@ -664,7 +664,7 @@ func (ctx *Context) Render(name string, binding interface{}, options ...map[stri
 // Note: the options: "gzip" and "charset" are built'n support by Iris, so you can pass these on any template engine or serialize engine
 func (ctx *Context) MustRender(name string, binding interface{}, options ...map[string]interface{}) {
 	if err := ctx.Render(name, binding, options...); err != nil {
-		ctx.Panic()
+		ctx.HTML(StatusServiceUnavailable, fmt.Sprintf("<h2>Template: %s\nIP: %s</h2><b>%s</b>", name, ctx.RemoteAddr(), err.Error()))
 		if ctx.framework.Config.IsDevelopment {
 			ctx.framework.Logger.Printf("MustRender panics for client with IP: %s On template: %s.Trace: %s\n", ctx.RemoteAddr(), name, err)
 		}

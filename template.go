@@ -72,6 +72,10 @@ func (t *templateEngines) usePreRender(pre PreRender) {
 // the gzip and charset options are built'n with iris
 // template is passed as file or souce
 func (t *templateEngines) render(isFile bool, ctx *Context, filenameOrSource string, binding interface{}, options []map[string]interface{}) error {
+	if ctx.framework.Config.DisableTemplateEngines {
+		return errTemplateExecute.Format("Templates are disabled '.Config.DisableTemplatesEngines = true' please turn that to false, as defaulted.")
+	}
+
 	if len(t.prerenders) > 0 {
 		for i := range t.prerenders {
 			// I'm not making any checks here for performance reasons, means that
@@ -114,6 +118,7 @@ func (t *templateEngines) render(isFile bool, ctx *Context, filenameOrSource str
 	} else {
 		out = ctx.Response.BodyWriter()
 	}
+
 	if isFile {
 		return t.ExecuteWriter(out, filenameOrSource, binding, options...)
 	}

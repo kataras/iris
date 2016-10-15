@@ -771,3 +771,22 @@ func TestContextPreRender(t *testing.T) {
 	expected := "<h1>HI kataras. Error: " + errMsg1 + errMsg2 + "</h1>"
 	e.GET("/").Expect().Status(iris.StatusOK).Body().Contains(expected)
 }
+
+func TestTemplatesDisabled(t *testing.T) {
+	iris.ResetDefault()
+	defer iris.Close()
+
+	iris.Default.Config.DisableTemplateEngines = true
+
+	file := "index.html"
+	ip := "0.0.0.0"
+	errTmpl := "<h2>Template: %s\nIP: %s</h2><b>%s</b>"
+	expctedErrMsg := fmt.Sprintf(errTmpl, file, ip, "Error: Unable to execute a template. Trace: Templates are disabled '.Config.DisableTemplatesEngines = true' please turn that to false, as defaulted.\n")
+
+	iris.Get("/renderErr", func(ctx *iris.Context) {
+		ctx.MustRender(file, nil)
+	})
+
+	e := httptest.New(iris.Default, t)
+	e.GET("/renderErr").Expect().Status(iris.StatusServiceUnavailable).Body().Equal(expctedErrMsg)
+}
