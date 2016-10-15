@@ -659,8 +659,7 @@ func (ctx *Context) Render(name string, binding interface{}, options ...map[stri
 	return ctx.RenderWithStatus(errCode, name, binding, options...)
 }
 
-// MustRender same as .Render but returns 500 internal server http status (error) if rendering fail
-// builds up the response from the specified template or a serialize engine.
+// MustRender same as .Render but returns 503 service unavailable http status with a (html) message if render failed
 // Note: the options: "gzip" and "charset" are built'n support by Iris, so you can pass these on any template engine or serialize engine
 func (ctx *Context) MustRender(name string, binding interface{}, options ...map[string]interface{}) {
 	if err := ctx.Render(name, binding, options...); err != nil {
