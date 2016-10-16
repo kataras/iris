@@ -255,13 +255,13 @@ type pluginContainer struct {
 	customEvents     map[string][]func()
 	downloader       *pluginDownloadManager
 	logger           *log.Logger
-	mu               sync.Mutex
+	mu               *sync.Mutex
 	fired            map[string]int // event/plugin type name and the times fired
 }
 
 // newPluginContainer receives a logger and returns a new PluginContainer
 func newPluginContainer(l *log.Logger) PluginContainer {
-	return &pluginContainer{logger: l, fired: make(map[string]int, 0)}
+	return &pluginContainer{logger: l, fired: make(map[string]int, 0), mu: &sync.Mutex{}}
 }
 
 // Add activates the plugins and if succeed then adds it to the activated plugins list
@@ -282,16 +282,16 @@ func (p *pluginContainer) Add(plugins ...Plugin) error {
 		// Activate the plugin, if no error then add it to the plugins
 		if pluginObj, ok := plugin.(pluginActivate); ok {
 
-			//tempPluginContainer := *p // contains the mutex but we' re safe here.
-			err := pluginObj.Activate(p)
+			tempPluginContainer := *p
+			err := pluginObj.Activate(&tempPluginContainer)
 			if err != nil {
 				return errPluginActivate.Format(pName, err.Error())
 			}
-			/*
-				tempActivatedPluginsLen := len(tempPluginContainer.activatedPlugins)
-				if tempActivatedPluginsLen != len(p.activatedPlugins)+tempActivatedPluginsLen+1 { // see test: plugin_test.go TestPluginActivate && TestPluginActivationError
-					p.activatedPlugins = tempPluginContainer.activatedPlugins
-				}*/
+
+			tempActivatedPluginsLen := len(tempPluginContainer.activatedPlugins)
+			if tempActivatedPluginsLen != len(p.activatedPlugins)+tempActivatedPluginsLen+1 { // see test: plugin_test.go TestPluginActivate && TestPluginActivationError
+				p.activatedPlugins = tempPluginContainer.activatedPlugins
+			}
 
 		}
 
