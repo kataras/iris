@@ -11,7 +11,7 @@
 
 <a href="#"><img src="https://img.shields.io/badge/platform-Any-ec2eb4.svg?style=flat-square" alt="Platforms"></a>
 
-<a href="https://github.com/kataras/iris/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT%20%20-E91E63.svg?style=flat-square" alt="License"></a>
+<a href="https://github.com/kataras/iris/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-Apache%20Version%202-E91E63.svg?style=flat-square" alt="License"></a>
 
 
 <a href="https://golang.org"><img src="https://img.shields.io/badge/powered_by-Go-3362c2.svg?style=flat-square" alt="Built with GoLang"></a>
@@ -898,12 +898,12 @@ If you are interested in contributing to the Iris project, please see the docume
 License
 ------------
 
-This project is licensed under the [MIT License](LICENSE), Copyright (c) 2016 Gerasimos Maropoulos.
+This project is licensed under the [Apache License, Version 2.0](LICENSE), Copyright (c) 2016 Gerasimos Maropoulos.
 
 
 [Travis Widget]: https://img.shields.io/travis/kataras/iris.svg?style=flat-square
 [Travis]: http://travis-ci.org/kataras/iris
-[License Widget]: https://img.shields.io/badge/license-MIT%20%20License%20-E91E63.svg?style=flat-square
+[License Widget]: https://img.shields.io/badge/license-Apache%20Version%202-E91E63.svg?style=flat-square
 [License]: https://github.com/kataras/iris/blob/master/LICENSE
 [Release Widget]: https://img.shields.io/badge/release-4.6.0%20-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/iris/releases
