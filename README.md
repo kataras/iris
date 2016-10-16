@@ -7,7 +7,7 @@
 
 <a href="https://travis-ci.org/kataras/iris"><img src="https://img.shields.io/travis/kataras/iris.svg?style=flat-square" alt="Build Status"></a>
 
-<a href="https://github.com/avelino/awesome-go"><img src="https://img.shields.io/badge/awesome-%E2%9C%93-ff69b4.svg?style=flat-square" alt="https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg"></a>
+<a href="http://goreportcard.com/report/kataras/iris"><img src="https://img.shields.io/badge/report%20card%20-A%2B-F44336.svg?style=flat-square" alt="http://goreportcard.com/report/kataras/iris"></a>
 
 <a href="#"><img src="https://img.shields.io/badge/platform-Any-ec2eb4.svg?style=flat-square" alt="Platforms"></a>
 
@@ -39,7 +39,7 @@ Ideally suited for both experienced and novice <b>Developers</b>.
 
 ## Recent Articles
 
--  [Building Web Apps with Iris](http://mycodesmells.com/post/building-web-apps-with-iris) by Paweł Słomka
+- [Building Web Apps with Iris](http://mycodesmells.com/post/building-web-apps-with-iris) by Paweł Słomka
 
 - [The fastest web framework for Go](http://marcoscleison.xyz/the-fastest-web-framework-for-go-in-this-earth/) by Marcos Cleison
 
@@ -920,5 +920,3 @@ This project is licensed under the [Apache License, Version 2.0](LICENSE), Copyr
 [Language Widget]: https://img.shields.io/badge/powered_by-Go-3362c2.svg?style=flat-square
 [Language]: http://golang.org
 [Platform Widget]: https://img.shields.io/badge/platform-Any--OS-gray.svg?style=flat-square
-[Awesome]: https://github.com/avelino/awesome-go
-[Awesome Widget]: https://img.shields.io/badge/awesome%20go-%E2%9C%93-ff69b4.svg?style=flat-square

@@ -352,7 +352,7 @@ func (ctx *Context) PostValuesAll() (valuesAll map[string][]string) {
 
 // PostValues returns the post data values as []string of a single key/name
 func (ctx *Context) PostValues(name string) []string {
-	values := make([]string, 0)
+	var values []string
 	if v := ctx.PostValuesAll(); v != nil && len(v) > 0 {
 		values = v[name]
 	}

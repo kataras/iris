@@ -282,15 +282,16 @@ func (p *pluginContainer) Add(plugins ...Plugin) error {
 		// Activate the plugin, if no error then add it to the plugins
 		if pluginObj, ok := plugin.(pluginActivate); ok {
 
-			tempPluginContainer := *p // contains the mutex but we' re safe here.
-			err := pluginObj.Activate(&tempPluginContainer)
+			//tempPluginContainer := *p // contains the mutex but we' re safe here.
+			err := pluginObj.Activate(p)
 			if err != nil {
 				return errPluginActivate.Format(pName, err.Error())
 			}
-			tempActivatedPluginsLen := len(tempPluginContainer.activatedPlugins)
-			if tempActivatedPluginsLen != len(p.activatedPlugins)+tempActivatedPluginsLen+1 { // see test: plugin_test.go TestPluginActivate && TestPluginActivationError
-				p.activatedPlugins = tempPluginContainer.activatedPlugins
-			}
+			/*
+				tempActivatedPluginsLen := len(tempPluginContainer.activatedPlugins)
+				if tempActivatedPluginsLen != len(p.activatedPlugins)+tempActivatedPluginsLen+1 { // see test: plugin_test.go TestPluginActivate && TestPluginActivationError
+					p.activatedPlugins = tempPluginContainer.activatedPlugins
+				}*/
 
 		}
 
@@ -392,7 +393,7 @@ func (p *pluginContainer) Printf(format string, a ...interface{}) {
 func (p *pluginContainer) fire(name string) int {
 	p.mu.Lock()
 	var times int
-	// maybe unnessecary but for clarity reasons
+	// maybe unnecessary but for clarity reasons
 	if t, found := p.fired[name]; found {
 		times = t
 	}
