@@ -2,6 +2,77 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 4.6.0 -> 4.6.1 
+
+- **NEW**: `iris.StaticEmbedded`/`app := iris.New(); app.StaticEmbedded` - Embed static assets into your executable with [go-bindata](https://github.com/jteeuwen/go-bindata) and serve them.
+
+> Note: This was already buitl'n feature for templates using `iris.UseTemplate(html.New()).Directory("./templates",".html").Binary(Asset,AssetNames)`, after v4.6.1 you can do that for other static files too, with the `StaticEmbedded` function
+
+**outline**
+```go
+
+// StaticEmbedded  used when files are distrubuted inside the app executable, using go-bindata mostly
+// First parameter is the request path, the path which the files in the vdir(second parameter) will be served to, for example "/static"
+// Second parameter is the (virtual) directory path, for example "./assets"
+// Third parameter is the Asset function
+// Forth parameter is the AssetNames function
+//
+// For more take a look at the
+// example: https://github.com/iris-contrib/examples/tree/master/static_files_embedded
+StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) RouteNameFunc
+
+```
+
+**example**
+
+You can view and run it from [here](https://github.com/iris-contrib/examples/tree/master/static_files_embedded) *
+
+```go
+package main
+
+// First of all, execute: $ go get https://github.com/jteeuwen/go-bindata
+// Secondly, execute the command: cd $GOPATH/src/github.com/iris-contrib/examples/static_files_embedded && go-bindata ./assets/...
+
+import (
+	"github.com/kataras/iris"
+)
+
+func main() {
+
+	// executing this go-bindata command creates a source file named 'bindata.go' which
+	// gives you the Asset and AssetNames funcs which we will pass into .StaticAssets
+	// for more viist: https://github.com/jteeuwen/go-bindata
+	// Iris gives you a way to integrade these functions to your web app
+
+	// For the reason that you may use go-bindata to embed more than your assets, you should pass the 'virtual directory path', for example here is the : "./assets"
+	// and the request path, which these files will be served to, you can set as "/assets" or "/static" which resulting on http://localhost:8080/static/*anyfile.*extension
+	iris.StaticEmbedded("/static", "./assets", Asset, AssetNames)
+
+
+	// that's all
+	// this will serve the ./assets (embedded) files to the /static request path for example the favicon.ico will be served as :
+	// http://localhost:8080/static/favicon.ico
+	// Methods: GET and HEAD
+
+
+
+	iris.Get("/", func(ctx *iris.Context) {
+		ctx.HTML(iris.StatusOK, "<b> Hi from index</b>")
+	})
+
+	iris.Listen(":8080")
+}
+
+// Navigate to:
+// http://localhost:8080/static/favicon.ico
+// http://localhost:8080/static/js/jquery-2.1.1.js
+// http://localhost:8080/static/css/bootstrap.min.css
+
+// Now, these files are stored inside into your executable program, no need to keep it in the same location with your assets folder.
+
+
+```
+
 
 ## 4.5.2/.3 -> 4.6.0
 

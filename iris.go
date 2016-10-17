@@ -76,7 +76,7 @@ import (
 
 const (
 	// Version is the current version of the Iris web framework
-	Version = "4.6.0"
+	Version = "4.6.1"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -1157,6 +1157,7 @@ type (
 		StaticWeb(string, string, int) RouteNameFunc
 		StaticServe(string, ...string) RouteNameFunc
 		StaticContent(string, string, []byte) RouteNameFunc
+		StaticEmbedded(string, string, func(string) ([]byte, error), func() []string) RouteNameFunc
 		Favicon(string, ...string) RouteNameFunc
 
 		// templates
@@ -1702,8 +1703,8 @@ func (api *muxAPI) StaticHandler(systemPath string, stripSlashes int, compress b
 // * stripSlashes = 0, original path: "/foo/bar", result: "/foo/bar"
 // * stripSlashes = 1, original path: "/foo/bar", result: "/bar"
 // * stripSlashes = 2, original path: "/foo/bar", result: ""
-func Static(relative string, systemPath string, stripSlashes int) RouteNameFunc {
-	return Default.Static(relative, systemPath, stripSlashes)
+func Static(reqPath string, systemPath string, stripSlashes int) RouteNameFunc {
+	return Default.Static(reqPath, systemPath, stripSlashes)
 }
 
 // Static registers a route which serves a system directory
@@ -1716,15 +1717,15 @@ func Static(relative string, systemPath string, stripSlashes int) RouteNameFunc 
 // * stripSlashes = 0, original path: "/foo/bar", result: "/foo/bar"
 // * stripSlashes = 1, original path: "/foo/bar", result: "/bar"
 // * stripSlashes = 2, original path: "/foo/bar", result: ""
-func (api *muxAPI) Static(relative string, systemPath string, stripSlashes int) RouteNameFunc {
-	if relative[len(relative)-1] != slashByte { // if / then /*filepath, if /something then /something/*filepath
-		relative += slash
+func (api *muxAPI) Static(reqPath string, systemPath string, stripSlashes int) RouteNameFunc {
+	if reqPath[len(reqPath)-1] != slashByte { // if / then /*filepath, if /something then /something/*filepath
+		reqPath += slash
 	}
 
 	h := api.StaticHandler(systemPath, stripSlashes, false, false, nil)
 
-	api.Head(relative+"*filepath", h)
-	return api.Get(relative+"*filepath", h)
+	api.Head(reqPath+"*filepath", h)
+	return api.Get(reqPath+"*filepath", h)
 }
 
 // StaticFS registers a route which serves a system directory
@@ -1875,6 +1876,128 @@ func (api *muxAPI) StaticContent(reqPath string, cType string, content []byte) R
 	}
 	api.Head(reqPath, h)
 	return api.Get(reqPath, h)
+}
+
+// StaticEmbedded  used when files are distrubuted inside the app executable, using go-bindata mostly
+// First parameter is the request path, the path which the files in the vdir(second parameter) will be served to, for example "/static"
+// Second parameter is the (virtual) directory path, for example "./assets"
+// Third parameter is the Asset function
+// Forth parameter is the AssetNames function
+//
+// For more take a look at the
+// example: https://github.com/iris-contrib/examples/tree/master/static_files_embedded
+func StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) RouteNameFunc {
+	return Default.StaticEmbedded(requestPath, vdir, assetFn, namesFn)
+}
+
+// StaticEmbedded  used when files are distrubuted inside the app executable, using go-bindata mostly
+// First parameter is the request path, the path which the files in the vdir will be served to, for example "/static"
+// Second parameter is the (virtual) directory path, for example "./assets"
+// Third parameter is the Asset function
+// Forth parameter is the AssetNames function
+//
+// For more take a look at the
+// example: https://github.com/iris-contrib/examples/tree/master/static_files_embedded
+func (api *muxAPI) StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) RouteNameFunc {
+
+	// check if requestPath already contains an asterix-match to anything symbol:  /path/*
+	requestPath = strings.Replace(requestPath, "//", "/", -1)
+	matchEverythingIdx := strings.IndexByte(requestPath, matchEverythingByte)
+	paramName := "path"
+
+	if matchEverythingIdx != -1 {
+		// found so it should has a param name, take it
+		paramName = requestPath[matchEverythingIdx+1:]
+	} else {
+		// make the requestPath
+		if requestPath[len(requestPath)-1] == slashByte {
+			// ends with / remove it
+			requestPath = requestPath[0 : len(requestPath)-2]
+		}
+
+		requestPath += slash + "*" + paramName // $requestPath/*path
+	}
+
+	if len(vdir) > 0 {
+		if vdir[0] == '.' { // first check for .wrong
+			vdir = vdir[1:]
+		}
+		if vdir[0] == '/' || vdir[0] == os.PathSeparator { // second check for /something, (or ./something if we had dot on 0 it will be removed
+			vdir = vdir[1:]
+		}
+	}
+
+	// collect the names we are care for, because not all Asset used here, we need the vdir's assets.
+	allNames := namesFn()
+
+	var names []string
+	for _, path := range allNames {
+		// check if path is the path name we care for
+		if !strings.HasPrefix(path, vdir) {
+			continue
+		}
+
+		path = strings.Replace(path, "\\", "/", -1) // replace system paths with double slashes
+		path = strings.Replace(path, "./", "/", -1) // replace ./assets/favicon.ico to /assets/favicon.ico in order to be ready for compare with the reqPath later
+		path = path[len(vdir):]                     // set it as the its 'relative' ( we should re-setted it when assetFn will be used)
+		names = append(names, path)
+
+	}
+	if len(names) == 0 {
+		// we don't start the server yet, so:
+		panic("iris.StaticEmbedded: Unable to locate any embedded files located to the (virutal) directory: " + vdir)
+	}
+
+	modtime := time.Now()
+	modtimeStr := ""
+	h := func(ctx *Context) {
+
+		reqPath := ctx.Param(paramName)
+
+		for _, path := range names {
+
+			if path != reqPath {
+				continue
+			}
+
+			cType := fs.TypeByExtension(path)
+			fullpath := vdir + path
+
+			buf, err := assetFn(fullpath)
+
+			if err != nil {
+				continue
+			}
+
+			if modtimeStr == "" {
+				modtimeStr = modtime.UTC().Format(ctx.framework.Config.TimeFormat)
+			}
+
+			if t, err := time.Parse(ctx.framework.Config.TimeFormat, ctx.RequestHeader(ifModifiedSince)); err == nil && modtime.Before(t.Add(StaticCacheDuration)) {
+				ctx.Response.Header.Del(contentType)
+				ctx.Response.Header.Del(contentLength)
+				ctx.SetStatusCode(StatusNotModified)
+				return
+			}
+
+			ctx.Response.Header.Set(contentType, cType)
+			ctx.Response.Header.Set(lastModified, modtimeStr)
+
+			ctx.SetStatusCode(StatusOK)
+			ctx.SetContentType(cType)
+
+			ctx.Response.SetBody(buf)
+			return
+		}
+
+		// not found
+		ctx.EmitError(StatusNotFound)
+
+	}
+
+	api.Head(requestPath, h)
+
+	return api.Get(requestPath, h)
 }
 
 // Favicon serves static favicon
