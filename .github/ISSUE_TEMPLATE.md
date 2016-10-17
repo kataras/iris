@@ -1,4 +1,4 @@
-- Version : **4.6.0**
+- Version : **V4 LTS**
 
 - Operating System:
 
