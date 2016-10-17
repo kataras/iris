@@ -37,7 +37,7 @@ Ideally suited for both experienced and novice <b>Developers</b>.
 
 
 
-## Recent Articles
+## News
 
 - [Building Web Apps with Iris](http://mycodesmells.com/post/building-web-apps-with-iris) by Paweł Słomka
 
@@ -46,6 +46,15 @@ Ideally suited for both experienced and novice <b>Developers</b>.
 - [Testing Iris RESTful API](https://drasko.github.io/2016/09/26/testing-iris-restful-api/) by Drasko Draskovic
 
 - [Iris vs Nginx vs Php vs Nodejs](https://www.ntossapo.me/2016/08/13/nginx-vs-nginx-php-fpm-vs-go-iris-vs-express-with-wrk/) by Tossapon Nuanchuay
+
+### Donates
+I left my job and university to work explicit on Iris, so I'm  grateful for all the generous donations[*](DONATIONS.md)
+
+- [Ryan Brooks](https://github.com/ryanbyyc) donated 50 EUR at May 11
+- [Juan Sebastián Suárez Valencia](https://github.com/Juanses) donated 20 EUR at September 11
+- [Bob Lee](https://github.com/li3p) donated 20 EUR at September 16
+- [Celso Luiz](https://github.com/celsosz) donated 50 EUR at September 29
+- [Ankur Srivastava](https://github.com/ansrivas) donated 20 EUR at October 2
 
 
 ## Feature Overview
