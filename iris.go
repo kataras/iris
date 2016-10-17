@@ -1960,15 +1960,6 @@ func (api *muxAPI) StaticEmbedded(requestPath string, vdir string, assetFn func(
 				continue
 			}
 
-			cType := fs.TypeByExtension(path)
-			fullpath := vdir + path
-
-			buf, err := assetFn(fullpath)
-
-			if err != nil {
-				continue
-			}
-
 			if modtimeStr == "" {
 				modtimeStr = modtime.UTC().Format(ctx.framework.Config.TimeFormat)
 			}
@@ -1978,6 +1969,15 @@ func (api *muxAPI) StaticEmbedded(requestPath string, vdir string, assetFn func(
 				ctx.Response.Header.Del(contentLength)
 				ctx.SetStatusCode(StatusNotModified)
 				return
+			}
+
+			cType := fs.TypeByExtension(path)
+			fullpath := vdir + path
+
+			buf, err := assetFn(fullpath)
+
+			if err != nil {
+				continue
 			}
 
 			ctx.Response.Header.Set(contentType, cType)
