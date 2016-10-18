@@ -39,6 +39,18 @@ Ideally suited for both experienced and novice <b>Developers</b>.
 
 ## News
 
+**18 Oct 2016**
+Currently, iris is under attack by its competirors, who posted fake articles & screenshots trying to **discredit the framework through me**, this will stop soon. Same (2) people did that before 5 months too, when they saw that iris gone too popular for their needs.
+
+- Issues & PRs will be closed for 2-3 days, they are posting things from fake accounts, see [here](https://github.com/kataras/iris/pull/491).
+- Chat is read-only, because of the bots coming in and insulting the 240 iris chat members.
+
+**Do your own research before accept something by somebody.**   
+
+-----
+
+
+
 - [Building Web Apps with Iris](http://mycodesmells.com/post/building-web-apps-with-iris) by Paweł Słomka
 
 - [The fastest web framework for Go](http://marcoscleison.xyz/the-fastest-web-framework-for-go-in-this-earth/) by Marcos Cleison
@@ -55,7 +67,7 @@ I left my job and university to work explicit on Iris, so I'm  grateful for all 
 - [Bob Lee](https://github.com/li3p) donated 20 EUR at September 16
 - [Celso Luiz](https://github.com/celsosz) donated 50 EUR at September 29
 - [Ankur Srivastava](https://github.com/ansrivas) donated 20 EUR at October 2
-
+- ANONYMOUS(Waiting For Approval) donated 100 EUR at October 18
 
 ## Feature Overview
 
