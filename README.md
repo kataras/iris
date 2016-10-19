@@ -31,24 +31,12 @@
 The <a href="https://github.com/kataras/iris#benchmarks">fastest</a> back-end web framework written in Go.
 <br/>
 Easy to <a href="https://docs.iris-go.com">learn</a>,  while it's highly customizable. <br/>
-Ideally suited for both experienced and novice <b>Developers</b>.
+Ideally suited for both experienced and novice Devs.
 </p>
 
 
-
-
 ## News
-
-**18 Oct 2016**
-Currently, iris is under attack by its competirors, who posted fake articles & screenshots trying to **discredit the framework through me**, this will stop soon. Same (2) people did that before 5 months too, when they saw that iris gone too popular for their needs.
-
-- Issues & PRs will be closed for 2-3 days, they are posting things from fake accounts, see [here](https://github.com/kataras/iris/pull/491).
-- Chat is read-only, because of the bots coming in and insulting the 240 iris chat members.
-
-**Do your own research before accept something by somebody.**   
-
------
-
+**Do your own research before accepting anything was written by anybpdy.**   
 
 
 - [Building Web Apps with Iris](http://mycodesmells.com/post/building-web-apps-with-iris) by Paweł Słomka
@@ -59,8 +47,7 @@ Currently, iris is under attack by its competirors, who posted fake articles & s
 
 - [Iris vs Nginx vs Php vs Nodejs](https://www.ntossapo.me/2016/08/13/nginx-vs-nginx-php-fpm-vs-go-iris-vs-express-with-wrk/) by Tossapon Nuanchuay
 
-### Donates
-I left my job and university to work explicit on Iris, so I'm  grateful for all the generous donations[*](DONATIONS.md)
+#### Donates
 
 - [Ryan Brooks](https://github.com/ryanbyyc) donated 50 EUR at May 11
 - [Juan Sebastián Suárez Valencia](https://github.com/Juanses) donated 20 EUR at September 11
