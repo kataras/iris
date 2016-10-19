@@ -36,7 +36,8 @@ Ideally suited for both experienced and novice Devs.
 
 
 ## News
-**Do your own research before accepting anything was written by anybpdy.**   
+
+> Do your own research before accepting anything was written by anybody. 
 
 
 - [Building Web Apps with Iris](http://mycodesmells.com/post/building-web-apps-with-iris) by Paweł Słomka
