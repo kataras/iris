@@ -142,6 +142,8 @@ const (
 	StatusExpectationFailed = 417
 	// StatusTeapot http status '418'
 	StatusTeapot = 418
+	// StatusUnprocessableEntity http status '422'
+	StatusUnprocessableEntity = 422
 	// StatusPreconditionRequired http status '428'
 	StatusPreconditionRequired = 428
 	// StatusTooManyRequests http status '429'
