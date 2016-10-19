@@ -34,13 +34,14 @@ I'm  grateful for all the generous donations. Iris is fully funded by these dona
 - ANONYMOUS(Waiting For Approval) donated 6 EUR at October 1
 - [Ankur Srivastava](https://github.com/ansrivas) donated 20 EUR at October 2
 - ANONYMOUS(Waiting For Approval) donated 100 EUR at October 18
+- ANONYMOUS(Waiting For Approval) donated 20 EUR at October 19
 
-> The name or/and github username link added after donator's approvement.
+> The name or/and github username link added after donator's approvement, please check your e-mail.
 
 #### Report, so far
 
 - 13 EUR for the domain, [iris-go.com](https://iris-go.com)
 
 
-**Available**: VAT(50) + VAT(20) + VAT(20) + VAT(50) + VAT(6) + VAT(20) + VAT(100) - 13 = 47,45 + 18,97 + 18,61 + 47,05 + 5,34 + 18,97 + 98,04 - 13 =
-241,17 EUR
+**Available**: VAT(50) + VAT(20) + VAT(20) + VAT(50) + VAT(6) + VAT(20) + VAT(100) + VAT(20) - 13 = 47,45 + 18,97 + 18,61 + 47,05 + 5,34 + 18,97 + 98,04 +18,97 - 13 =
+260,14 EUR

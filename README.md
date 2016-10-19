@@ -31,24 +31,11 @@
 The <a href="https://github.com/kataras/iris#benchmarks">fastest</a> back-end web framework written in Go.
 <br/>
 Easy to <a href="https://docs.iris-go.com">learn</a>,  while it's highly customizable. <br/>
-Ideally suited for both experienced and novice Devs.
+Ideally suited for both experienced and novice <b>Developers</b>.
 </p>
 
 
-## News
-
-> Do your own research before accepting anything was written by anybody. 
-
-
-- [Building Web Apps with Iris](http://mycodesmells.com/post/building-web-apps-with-iris) by Paweł Słomka
-
-- [The fastest web framework for Go](http://marcoscleison.xyz/the-fastest-web-framework-for-go-in-this-earth/) by Marcos Cleison
-
-- [Testing Iris RESTful API](https://drasko.github.io/2016/09/26/testing-iris-restful-api/) by Drasko Draskovic
-
-- [Iris vs Nginx vs Php vs Nodejs](https://www.ntossapo.me/2016/08/13/nginx-vs-nginx-php-fpm-vs-go-iris-vs-express-with-wrk/) by Tossapon Nuanchuay
-
-#### Donates
+#### [Donations](DONATIONS.md)
 
 - [Ryan Brooks](https://github.com/ryanbyyc) donated 50 EUR at May 11
 - [Juan Sebastián Suárez Valencia](https://github.com/Juanses) donated 20 EUR at September 11
@@ -56,6 +43,7 @@ Ideally suited for both experienced and novice Devs.
 - [Celso Luiz](https://github.com/celsosz) donated 50 EUR at September 29
 - [Ankur Srivastava](https://github.com/ansrivas) donated 20 EUR at October 2
 - ANONYMOUS(Waiting For Approval) donated 100 EUR at October 18
+- ANONYMOUS(Waiting For Approval) donated 20 EUR at October 19
 
 ## Feature Overview
 
