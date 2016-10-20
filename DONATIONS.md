@@ -14,7 +14,7 @@ Feel free to send **any** amount through paypal
 
 Benefits:
 
-- Your github username,after your approval, is visible here . I respect your privacy at any case.
+- Your github username, after your approval, is visible on the top of the README page and here.
 - Access to the 'donors' [private chat room](https://kataras.rocket.chat/group/donors), real-time assistance by me.
 - Each donate gives lifetime to the Iris web framework. The author works full-time on this project, no time for any part-time job.
 
@@ -25,7 +25,7 @@ Benefits:
 
 I'm  grateful for all the generous donations. Iris is fully funded by these donations.
 
-#### Donors
+#### Donations
 
 - [Ryan Brooks](https://github.com/ryanbyyc) donated 50 EUR at May 11
 - [Juan Sebastián Suárez Valencia](https://github.com/Juanses) donated 20 EUR at September 11
@@ -36,7 +36,7 @@ I'm  grateful for all the generous donations. Iris is fully funded by these dona
 - ANONYMOUS(Waiting For Approval) donated 100 EUR at October 18
 - ANONYMOUS(Waiting For Approval) donated 20 EUR at October 19
 
-> The name or/and github username link added after donator's approvement, please check your e-mail.
+> The name or/and github username link added after donator's approvement via e-mail.
 
 #### Report, so far
 

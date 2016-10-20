@@ -2,48 +2,34 @@
 
 
  <a href="https://www.gitbook.com/book/kataras/iris/details"><img  width="600" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_6_flat_alpha.png"></a>
-
-<br/>
-
+</p>
+<p>
 <a href="https://travis-ci.org/kataras/iris"><img src="https://img.shields.io/travis/kataras/iris.svg?style=flat-square" alt="Build Status"></a>
+
+<a href="https://github.com/kataras/iris/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-%20Apache%20Version%202-E91E63.svg?style=flat-square" alt="License"></a>
 
 <a href="http://goreportcard.com/report/kataras/iris"><img src="https://img.shields.io/badge/report%20card%20-A%2B-F44336.svg?style=flat-square" alt="http://goreportcard.com/report/kataras/iris"></a>
 
-<a href="#"><img src="https://img.shields.io/badge/platform-Any-ec2eb4.svg?style=flat-square" alt="Platforms"></a>
-
-<a href="https://github.com/kataras/iris/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-Apache%20Version%202-E91E63.svg?style=flat-square" alt="License"></a>
-
-
-<a href="https://golang.org"><img src="https://img.shields.io/badge/powered_by-Go-3362c2.svg?style=flat-square" alt="Built with GoLang"></a>
-
-<br/>
-
+<a href="https://kataras.rocket.chat/channel/iris"><img src="https://img.shields.io/badge/%20community-chat-00BCD4.svg?style=flat-square" alt="Chat"></a>
 
 <a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20release%20-%20V4%20LTS%20-blue.svg?style=flat-square" alt="Releases"></a>
 
 <a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/%20examples-repository-3362c2.svg?style=flat-square" alt="Examples"></a>
 
-<a href="https://docs.iris-go.com"><img src="https://img.shields.io/badge/%20docs-reference-5272B4.svg?style=flat-square" alt="Practical Guide/Docs"></a>
+<a href="https://docs.iris-go.com"><img src="https://img.shields.io/badge/%20docs-%20reference-5272B4.svg?style=flat-square" alt="Practical Guide/Docs"></a>
 
-<a href="https://kataras.rocket.chat/channel/iris"><img src="https://img.shields.io/badge/%20community-chat-00BCD4.svg?style=flat-square" alt="Chat"></a><br/><br/>
-
-
-The <a href="https://github.com/kataras/iris#benchmarks">fastest</a> back-end web framework written in Go.
-<br/>
-Easy to <a href="https://docs.iris-go.com">learn</a>,  while it's highly customizable. <br/>
-Ideally suited for both experienced and novice <b>Developers</b>.
 </p>
 
-
-#### [Donations](DONATIONS.md)
+**Thanks** to all these generous donations, the Iris project remains a high quality open-source framework
 
 - [Ryan Brooks](https://github.com/ryanbyyc) donated 50 EUR at May 11
 - [Juan Sebastián Suárez Valencia](https://github.com/Juanses) donated 20 EUR at September 11
 - [Bob Lee](https://github.com/li3p) donated 20 EUR at September 16
 - [Celso Luiz](https://github.com/celsosz) donated 50 EUR at September 29
+- [Anonymous](https://github.com/kataras/iris/blob/master/DONATIONS.md#donors) donated 6 EUR at October 1
 - [Ankur Srivastava](https://github.com/ansrivas) donated 20 EUR at October 2
-- ANONYMOUS(Waiting For Approval) donated 100 EUR at October 18
-- ANONYMOUS(Waiting For Approval) donated 20 EUR at October 19
+- [Anonymous](https://github.com/kataras/iris/blob/master/DONATIONS.md#donors) donated 100 EUR at October 18
+- [Anonymous](https://github.com/kataras/iris/blob/master/DONATIONS.md#donors) donated 20 EUR at October 19
 
 ## Feature Overview
 
@@ -887,12 +873,18 @@ The author of Iris is [@kataras](https://github.com/kataras). If **you**'re will
 
 Contributing
 ------------
+
+Iris is the work of hundreds of the community's [feature requests](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=%20label%3A%22feature%20request%22%20) and [reports](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=label%3Abug). I appreciate your help!
+
 If you are interested in contributing to the Iris project, please see the document [CONTRIBUTING](https://github.com/kataras/iris/blob/master/.github/CONTRIBUTING.md).
+
+##### Note that I do not accept pull requests and that I use the issue tracker for bug reports and proposals only. Please ask questions on the [https://kataras.rocket.chat/channel/iris][Chat] or [http://stackoverflow.com/](http://stackoverflow.com).
 
 License
 ------------
 
-This project is licensed under the [Apache License, Version 2.0](LICENSE), Copyright (c) 2016 Gerasimos Maropoulos.
+Unless otherwise noted, the Iris source files are distributed
+under the Apache Version 2 license found in the [LICENSE file](LICENSE).
 
 
 [Travis Widget]: https://img.shields.io/travis/kataras/iris.svg?style=flat-square
