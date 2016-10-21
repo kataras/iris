@@ -3,6 +3,10 @@ package iris
 import (
 	"bytes"
 	"crypto/tls"
+	"github.com/iris-contrib/letsencrypt"
+	"github.com/kataras/go-errors"
+	"github.com/valyala/fasthttp"
+	"github.com/valyala/fasthttp/fasthttpadaptor"
 	"log"
 	"net"
 	"net/http"
@@ -12,11 +16,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/iris-contrib/letsencrypt"
-	"github.com/kataras/go-errors"
-	"github.com/valyala/fasthttp"
-	"github.com/valyala/fasthttp/fasthttpadaptor"
 )
 
 const (
@@ -65,7 +64,6 @@ var (
 	// MethodTraceBytes "TRACE"
 	MethodTraceBytes = []byte(MethodTrace)
 	/* */
-
 )
 
 const (
@@ -73,7 +71,6 @@ const (
 	StatusContinue = 100
 	// StatusSwitchingProtocols http status '101'
 	StatusSwitchingProtocols = 101
-
 	// StatusOK http status '200'
 	StatusOK = 200
 	// StatusCreated http status '201'
@@ -88,7 +85,6 @@ const (
 	StatusResetContent = 205
 	// StatusPartialContent http status '206'
 	StatusPartialContent = 206
-
 	// StatusMultipleChoices http status '300'
 	StatusMultipleChoices = 300
 	// StatusMovedPermanently http status '301'
@@ -103,7 +99,6 @@ const (
 	StatusUseProxy = 305
 	// StatusTemporaryRedirect http status '307'
 	StatusTemporaryRedirect = 307
-
 	// StatusBadRequest http status '400'
 	StatusBadRequest = 400
 	// StatusUnauthorized http status '401'
@@ -150,7 +145,6 @@ const (
 	StatusRequestHeaderFieldsTooLarge = 431
 	// StatusUnavailableForLegalReasons http status '451'
 	StatusUnavailableForLegalReasons = 451
-
 	// StatusInternalServerError http status '500'
 	StatusInternalServerError = 500
 	// StatusNotImplemented http status '501'
@@ -168,49 +162,45 @@ const (
 )
 
 var statusText = map[int]string{
-	StatusContinue:           "Continue",
-	StatusSwitchingProtocols: "Switching Protocols",
-
-	StatusOK:                   "OK",
-	StatusCreated:              "Created",
-	StatusAccepted:             "Accepted",
-	StatusNonAuthoritativeInfo: "Non-Authoritative Information",
-	StatusNoContent:            "No Content",
-	StatusResetContent:         "Reset Content",
-	StatusPartialContent:       "Partial Content",
-
-	StatusMultipleChoices:   "Multiple Choices",
-	StatusMovedPermanently:  "Moved Permanently",
-	StatusFound:             "Found",
-	StatusSeeOther:          "See Other",
-	StatusNotModified:       "Not Modified",
-	StatusUseProxy:          "Use Proxy",
-	StatusTemporaryRedirect: "Temporary Redirect",
-
-	StatusBadRequest:                   "Bad Request",
-	StatusUnauthorized:                 "Unauthorized",
-	StatusPaymentRequired:              "Payment Required",
-	StatusForbidden:                    "Forbidden",
-	StatusNotFound:                     "Not Found",
-	StatusMethodNotAllowed:             "Method Not Allowed",
-	StatusNotAcceptable:                "Not Acceptable",
-	StatusProxyAuthRequired:            "Proxy Authentication Required",
-	StatusRequestTimeout:               "Request Timeout",
-	StatusConflict:                     "Conflict",
-	StatusGone:                         "Gone",
-	StatusLengthRequired:               "Length Required",
-	StatusPreconditionFailed:           "Precondition Failed",
-	StatusRequestEntityTooLarge:        "Request Entity Too Large",
-	StatusRequestURITooLong:            "Request URI Too Long",
-	StatusUnsupportedMediaType:         "Unsupported Media Type",
-	StatusRequestedRangeNotSatisfiable: "Requested Range Not Satisfiable",
-	StatusExpectationFailed:            "Expectation Failed",
-	StatusTeapot:                       "I'm a teapot",
-	StatusPreconditionRequired:         "Precondition Required",
-	StatusTooManyRequests:              "Too Many Requests",
-	StatusRequestHeaderFieldsTooLarge:  "Request Header Fields Too Large",
-	StatusUnavailableForLegalReasons:   "Unavailable For Legal Reasons",
-
+	StatusContinue:                      "Continue",
+	StatusSwitchingProtocols:            "Switching Protocols",
+	StatusOK:                            "OK",
+	StatusCreated:                       "Created",
+	StatusAccepted:                      "Accepted",
+	StatusNonAuthoritativeInfo:          "Non-Authoritative Information",
+	StatusNoContent:                     "No Content",
+	StatusResetContent:                  "Reset Content",
+	StatusPartialContent:                "Partial Content",
+	StatusMultipleChoices:               "Multiple Choices",
+	StatusMovedPermanently:              "Moved Permanently",
+	StatusFound:                         "Found",
+	StatusSeeOther:                      "See Other",
+	StatusNotModified:                   "Not Modified",
+	StatusUseProxy:                      "Use Proxy",
+	StatusTemporaryRedirect:             "Temporary Redirect",
+	StatusBadRequest:                    "Bad Request",
+	StatusUnauthorized:                  "Unauthorized",
+	StatusPaymentRequired:               "Payment Required",
+	StatusForbidden:                     "Forbidden",
+	StatusNotFound:                      "Not Found",
+	StatusMethodNotAllowed:              "Method Not Allowed",
+	StatusNotAcceptable:                 "Not Acceptable",
+	StatusProxyAuthRequired:             "Proxy Authentication Required",
+	StatusRequestTimeout:                "Request Timeout",
+	StatusConflict:                      "Conflict",
+	StatusGone:                          "Gone",
+	StatusLengthRequired:                "Length Required",
+	StatusPreconditionFailed:            "Precondition Failed",
+	StatusRequestEntityTooLarge:         "Request Entity Too Large",
+	StatusRequestURITooLong:             "Request URI Too Long",
+	StatusUnsupportedMediaType:          "Unsupported Media Type",
+	StatusRequestedRangeNotSatisfiable:  "Requested Range Not Satisfiable",
+	StatusExpectationFailed:             "Expectation Failed",
+	StatusTeapot:                        "I'm a teapot",
+	StatusPreconditionRequired:          "Precondition Required",
+	StatusTooManyRequests:               "Too Many Requests",
+	StatusRequestHeaderFieldsTooLarge:   "Request Header Fields Too Large",
+	StatusUnavailableForLegalReasons:    "Unavailable For Legal Reasons",
 	StatusInternalServerError:           "Internal Server Error",
 	StatusNotImplemented:                "Not Implemented",
 	StatusBadGateway:                    "Bad Gateway",

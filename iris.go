@@ -75,8 +75,10 @@ import (
 )
 
 const (
-	// Version is the current version of the Iris web framework
-	Version = "4.6.1"
+	// IsLongTermSupport flag is true when the below version number is a long-term-support version
+	IsLongTermSupport = true
+	// Version is the current version number of the Iris web framework
+	Version = "4"
 
 	banner = `         _____      _
         |_   _|    (_)

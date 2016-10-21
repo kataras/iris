@@ -19,7 +19,7 @@
 <br/>
 
 
-<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20version%20-%204.6.1%20-blue.svg?style=flat-square" alt="Releases"></a>
+<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20version%20-%204%20LTS%20-blue.svg?style=flat-square" alt="Releases"></a>
 
 <a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/%20examples-repository-3362c2.svg?style=flat-square" alt="Examples"></a>
 
@@ -31,31 +31,21 @@
 The <a href="https://github.com/kataras/iris#benchmarks">fastest</a> back-end web framework written in Go.
 <br/>
 Easy to <a href="https://docs.iris-go.com">learn</a>,  while it's highly customizable. <br/>
-Ideally suited for both experienced and novice <b>Developers</b>.
+Ideally suited for both experienced and novice Developers.
 </p>
 
 
 
-
-## News
-
-- [Building Web Apps with Iris](http://mycodesmells.com/post/building-web-apps-with-iris) by Paweł Słomka
-
-- [The fastest web framework for Go](http://marcoscleison.xyz/the-fastest-web-framework-for-go-in-this-earth/) by Marcos Cleison
-
-- [Testing Iris RESTful API](https://drasko.github.io/2016/09/26/testing-iris-restful-api/) by Drasko Draskovic
-
-- [Iris vs Nginx vs Php vs Nodejs](https://www.ntossapo.me/2016/08/13/nginx-vs-nginx-php-fpm-vs-go-iris-vs-express-with-wrk/) by Tossapon Nuanchuay
-
-### Donates
-I left my job and university to work explicit on Iris, so I'm  grateful for all the generous donations[*](DONATIONS.md)
+**Thanks** to all these generous donations, the Iris project remains a high quality open-source framework
 
 - [Ryan Brooks](https://github.com/ryanbyyc) donated 50 EUR at May 11
 - [Juan Sebastián Suárez Valencia](https://github.com/Juanses) donated 20 EUR at September 11
 - [Bob Lee](https://github.com/li3p) donated 20 EUR at September 16
 - [Celso Luiz](https://github.com/celsosz) donated 50 EUR at September 29
+- [Anonymous](https://github.com/kataras/iris/blob/master/DONATIONS.md#donations) donated 6 EUR at October 1
 - [Ankur Srivastava](https://github.com/ansrivas) donated 20 EUR at October 2
-
+- [Anonymous](https://github.com/kataras/iris/blob/master/DONATIONS.md#donations) donated 100 EUR at October 18
+- [Anonymous](https://github.com/kataras/iris/blob/master/DONATIONS.md#donations) donated 20 EUR at October 19
 
 ## Feature Overview
 
@@ -878,43 +868,50 @@ I recommend writing your API tests using this new library, [httpexpect](https://
 Versioning
 ------------
 
-Current: **v4.6.1**
+Current: **V4 LTS**
 
->  Iris is an active project
+A new LTS version is released every 6 months
 
-Read more about Semantic Versioning 2.0.0
+> LTS stands for Long Term Support
 
- - http://semver.org/
- - https://en.wikipedia.org/wiki/Software_versioning
- - https://wiki.debian.org/UpstreamGuide#Releases_and_Versions
 
-Todo
+Todo for the next release
 ------------
+
+- [ ] Server-side React render, as requested [here](https://github.com/kataras/iris/issues/503)
+
 
 Iris is a **Community-Driven** Project, waiting for your suggestions and [feature requests](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=label%3A%22feature%20request%22)!
 
 People
 ------------
-The big thanks goes to [all people](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=label%3A%22feature+request%22) who help building this framework with feature-requests & bug reports!
 
-The author of Iris is [@kataras](https://github.com/kataras). If **you**'re willing to donate, feel **free** to navigate to the [DONATIONS PAGE](https://github.com/kataras/iris/blob/master/DONATIONS.md).
+The author of Iris is [@kataras](https://github.com/kataras).
+
+If **you**'re willing to donate and you can afford the cost, feel **free** to navigate to the [DONATIONS PAGE](https://github.com/kataras/iris/blob/master/DONATIONS.md).
 
 
 Contributing
 ------------
+
+Iris is the work of hundreds of the community's [feature requests](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=%20label%3A%22feature%20request%22%20) and [reports](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=label%3Abug). I appreciate your help!
+
 If you are interested in contributing to the Iris project, please see the document [CONTRIBUTING](https://github.com/kataras/iris/blob/master/.github/CONTRIBUTING.md).
+
+##### Note that I do not accept pull requests and that I use the issue tracker for bug reports and proposals only. Please ask questions on the [https://kataras.rocket.chat/channel/iris][Chat] or [http://stackoverflow.com/](http://stackoverflow.com).
 
 License
 ------------
 
-This project is licensed under the [Apache License, Version 2.0](LICENSE), Copyright (c) 2016 Gerasimos Maropoulos.
+Unless otherwise noted, the Iris source files are distributed
+under the Apache Version 2 license found in the [LICENSE file](LICENSE).
 
 
 [Travis Widget]: https://img.shields.io/travis/kataras/iris.svg?style=flat-square
 [Travis]: http://travis-ci.org/kataras/iris
 [License Widget]: https://img.shields.io/badge/license-Apache%20Version%202-E91E63.svg?style=flat-square
 [License]: https://github.com/kataras/iris/blob/master/LICENSE
-[Release Widget]: https://img.shields.io/badge/release-4.6.1%20-blue.svg?style=flat-square
+[Release Widget]: https://img.shields.io/badge/release-V4%20LTS%20-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/iris/releases
 [Chat Widget]: https://img.shields.io/badge/community-chat%20-00BCD4.svg?style=flat-square
 [Chat]: https://kataras.rocket.chat/channel/iris
