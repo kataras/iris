@@ -19,7 +19,7 @@
 <br/>
 
 
-<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20version%20-%204%20LTS%20-blue.svg?style=flat-square" alt="Releases"></a>
+<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20version%20-%205.0.1%20-blue.svg?style=flat-square" alt="Releases"></a>
 
 <a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/%20examples-repository-3362c2.svg?style=flat-square" alt="Examples"></a>
 
@@ -870,14 +870,9 @@ I recommend writing your API tests using this new library, [httpexpect](https://
 Versioning
 ------------
 
-Current: **V4 LTS**
+Current: **5.0.1**
 
-A new LTS version is released every 6 months
-
-> LTS stands for Long Term Support
-
-
-Todo for the next release
+Todo
 ------------
 
 - [ ] Server-side React render, as requested [here](https://github.com/kataras/iris/issues/503)
@@ -913,7 +908,7 @@ under the Apache Version 2 license found in the [LICENSE file](LICENSE).
 [Travis]: http://travis-ci.org/kataras/iris
 [License Widget]: https://img.shields.io/badge/license-Apache%20Version%202-E91E63.svg?style=flat-square
 [License]: https://github.com/kataras/iris/blob/master/LICENSE
-[Release Widget]: https://img.shields.io/badge/release-V4%20LTS%20-blue.svg?style=flat-square
+[Release Widget]: https://img.shields.io/badge/release-V5.0.1%20-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/iris/releases
 [Chat Widget]: https://img.shields.io/badge/community-chat%20-00BCD4.svg?style=flat-square
 [Chat]: https://kataras.rocket.chat/channel/iris

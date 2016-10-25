@@ -317,16 +317,6 @@ const (
 )
 
 type (
-	// PathParameter is a struct which contains Key and Value, used for named path parameters
-	PathParameter struct {
-		Key   string
-		Value string
-	}
-
-	// PathParameters type for a slice of PathParameter
-	// Tt's a slice of PathParameter type, because it's faster than map
-	PathParameters []PathParameter
-
 	// entryCase is the type which the type of muxEntryusing in order to determinate what type (parameterized, anything, static...) is the perticular node
 	entryCase uint8
 
@@ -355,58 +345,6 @@ var (
 	errMuxEntryWildcardConflictsMiddleware = errors.New("Router: Wildcard  conflicts with existing middleware for the route path: '%s' !")
 	errMuxEntryWildcardMissingSlash        = errors.New("Router: No slash(/) were found before wildcard in the route path: '%s' !")
 )
-
-// Get returns a value from a key inside this Parameters
-// If no parameter with this key given then it returns an empty string
-func (params PathParameters) Get(key string) string {
-	for _, p := range params {
-		if p.Key == key {
-			return p.Value
-		}
-	}
-	return ""
-}
-
-// String returns a string implementation of all parameters that this PathParameters object keeps
-// hasthe form of key1=value1,key2=value2...
-func (params PathParameters) String() string {
-	var buff bytes.Buffer
-	for i := range params {
-		buff.WriteString(params[i].Key)
-		buff.WriteString("=")
-		buff.WriteString(params[i].Value)
-		if i < len(params)-1 {
-			buff.WriteString(",")
-		}
-
-	}
-	return buff.String()
-}
-
-// ParseParams receives a string and returns PathParameters (slice of PathParameter)
-// received string must have this form:  key1=value1,key2=value2...
-func ParseParams(str string) PathParameters {
-	_paramsstr := strings.Split(str, ",")
-	if len(_paramsstr) == 0 {
-		return nil
-	}
-
-	params := make(PathParameters, 0) // PathParameters{}
-
-	//	for i := 0; i < len(_paramsstr); i++ {
-	for i := range _paramsstr {
-		idxOfEq := strings.IndexRune(_paramsstr[i], '=')
-		if idxOfEq == -1 {
-			//error
-			return nil
-		}
-
-		key := _paramsstr[i][:idxOfEq]
-		val := _paramsstr[i][idxOfEq+1:]
-		params = append(params, PathParameter{key, val})
-	}
-	return params
-}
 
 // getParamsLen returns the parameters length from a given path
 func getParamsLen(path string) uint8 {
@@ -644,8 +582,7 @@ func (e *muxEntry) addNode(numParams uint8, path string, fullPath string, middle
 }
 
 // get is used by the Router, it finds and returns the correct muxEntry for a path
-func (e *muxEntry) get(path string, _params PathParameters) (middleware Middleware, params PathParameters, mustRedirect bool) {
-	params = _params
+func (e *muxEntry) get(path string, ctx *Context) (mustRedirect bool) {
 loop:
 	for {
 		if len(path) > len(e.part) {
@@ -674,13 +611,7 @@ loop:
 						end++
 					}
 
-					if cap(params) < int(e.paramsLen) {
-						params = make(PathParameters, 0, e.paramsLen)
-					}
-					i := len(params)
-					params = params[:i+1]
-					params[i].Key = e.part[1:]
-					params[i].Value = path[:end]
+					ctx.Set(e.part[1:], path[:end])
 
 					if end < len(path) {
 						if len(e.nodes) > 0 {
@@ -692,8 +623,7 @@ loop:
 						mustRedirect = (len(path) == end+1)
 						return
 					}
-
-					if middleware = e.middleware; middleware != nil {
+					if ctx.Middleware = e.middleware; ctx.Middleware != nil {
 						return
 					} else if len(e.nodes) == 1 {
 						e = e.nodes[0]
@@ -703,15 +633,9 @@ loop:
 					return
 
 				case matchEverything:
-					if cap(params) < int(e.paramsLen) {
-						params = make(PathParameters, 0, e.paramsLen)
-					}
-					i := len(params)
-					params = params[:i+1]
-					params[i].Key = e.part[2:]
-					params[i].Value = path
 
-					middleware = e.middleware
+					ctx.Set(e.part[2:], path)
+					ctx.Middleware = e.middleware
 					return
 
 				default:
@@ -719,7 +643,7 @@ loop:
 				}
 			}
 		} else if path == e.part {
-			if middleware = e.middleware; middleware != nil {
+			if ctx.Middleware = e.middleware; ctx.Middleware != nil {
 				return
 			}
 
@@ -1159,11 +1083,9 @@ func (mux *serveMux) BuildHandler() HandlerFunc {
 				}
 			}
 
-			middleware, params, mustRedirect := tree.entry.get(routePath, context.Params) // pass the parameters here for 0 allocation
-			if middleware != nil {
+			mustRedirect := tree.entry.get(routePath, context) // pass the parameters here for 0 allocation
+			if context.Middleware != nil {
 				// ok we found the correct route, serve it and exit entirely from here
-				context.Params = params
-				context.Middleware = middleware
 				//ctx.Request.Header.SetUserAgentBytes(DefaultUserAgent)
 				context.Do()
 				return

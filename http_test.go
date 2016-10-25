@@ -348,7 +348,7 @@ func TestMuxSimple(t *testing.T) {
 			iris.HandleFunc(r.Method, r.Path, func(ctx *iris.Context) {
 				ctx.SetStatusCode(r.Status)
 				if r.Params != nil && len(r.Params) > 0 {
-					ctx.SetBodyString(ctx.Params.String())
+					ctx.SetBodyString(ctx.ParamsSentence())
 				} else if r.URLParams != nil && len(r.URLParams) > 0 {
 					if len(r.URLParams) != len(ctx.URLParams()) {
 						t.Fatalf("Error when comparing length of url parameters %d != %d", len(r.URLParams), len(ctx.URLParams()))

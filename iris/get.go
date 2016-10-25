@@ -91,7 +91,7 @@ func buildGetCommand() *cli.Cmd {
 		availabletypes = append(availabletypes, "'"+k+"'")
 	}
 	// comma separated of projects' map key
-	return cli.Command("get", "gets & runs a simple protoype-based project").
+	return cli.Command("get", "gets & runs a simple prototype-based project").
 		Flag("type",
 			"basic",
 			// we take the os.Args in order to have access both via subcommand and when flag passed

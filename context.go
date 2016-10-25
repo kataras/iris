@@ -2,6 +2,7 @@ package iris
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"encoding/xml"
@@ -93,7 +94,6 @@ type (
 	// it is not good practice to use this object in goroutines, for these cases use the .Clone()
 	Context struct {
 		*fasthttp.RequestCtx
-		Params    PathParameters
 		framework *Framework
 		//keep track all registed middleware (handlers)
 		Middleware Middleware //  exported because is useful for debugging
@@ -144,36 +144,6 @@ func (ctx *Context) GetHandlerName() string {
 }
 
 /* Request */
-
-// Param returns the string representation of the key's path named parameter's value
-//
-// Return value should be never stored directly, instead store it to a local variable,
-// for example
-// instead of: context.Session().Set("name", ctx.Param("user"))
-// do this: username:= ctx.Param("user");ctx.Session().Set("name", username)
-func (ctx *Context) Param(key string) string {
-	return ctx.Params.Get(key)
-}
-
-// ParamInt returns the int representation of the key's path named parameter's value
-//
-// Return value should be never stored directly, instead store it to a local variable,
-// for example
-// instead of: context.Session().Set("age", ctx.Param("age"))
-// do this: age:= ctx.Param("age");ctx.Session().Set("age", age)
-func (ctx *Context) ParamInt(key string) (int, error) {
-	return strconv.Atoi(ctx.Param(key))
-}
-
-// ParamInt64 returns the int64 representation of the key's path named parameter's value
-//
-// Return value should be never stored directly, instead store it to a local variable,
-// for example
-// instead of: context.Session().Set("ms", ctx.ParamInt64("ms"))
-// do this: ms:= ctx.ParamInt64("ms");ctx.Session().Set("ms", ms)
-func (ctx *Context) ParamInt64(key string) (int64, error) {
-	return strconv.ParseInt(ctx.Param(key), 10, 64)
-}
 
 // URLParam returns the get parameter from a request , if any
 func (ctx *Context) URLParam(key string) string {
@@ -826,6 +796,14 @@ func (ctx *Context) StreamReader(bodyStream io.Reader, bodySize int) {
 
 /* Storage */
 
+// ValuesLen returns the total length of the user values storage, some of them maybe path parameters
+func (ctx *Context) ValuesLen() (n int) {
+	ctx.VisitUserValues(func([]byte, interface{}) {
+		n++
+	})
+	return
+}
+
 // Get returns the user's value from a key
 // if doesn't exists returns nil
 func (ctx *Context) Get(key string) interface{} {
@@ -852,19 +830,78 @@ func (ctx *Context) GetString(key string) string {
 	return ""
 }
 
-// GetInt same as Get but returns the value as int
-// if nothing founds returns -1
-func (ctx *Context) GetInt(key string) int {
-	if v, ok := ctx.Get(key).(int); ok {
-		return v
+var errIntParse = errors.New("Unable to find or parse the integer, found: %#v")
+
+// GetInt same as Get but tries to convert the return value as integer
+// if nothing found or canno be parsed to integer it returns an error
+func (ctx *Context) GetInt(key string) (int, error) {
+	v := ctx.Get(key)
+	if vint, ok := v.(int); ok {
+		return vint, nil
+	} else if vstring, sok := v.(string); sok {
+		return strconv.Atoi(vstring)
 	}
 
-	return -1
+	return -1, errIntParse.Format(v)
 }
 
 // Set sets a value to a key in the values map
 func (ctx *Context) Set(key string, value interface{}) {
 	ctx.RequestCtx.SetUserValue(key, value)
+}
+
+// ParamsLen tries to return all the stored values which values are string, probably most of them will be the path parameters
+func (ctx *Context) ParamsLen() (n int) {
+	ctx.VisitUserValues(func(kb []byte, vg interface{}) {
+		if _, ok := vg.(string); ok {
+			n++
+		}
+
+	})
+	return
+}
+
+// Param returns the string representation of the key's path named parameter's value
+// same as GetString
+func (ctx *Context) Param(key string) string {
+	return ctx.GetString(key)
+}
+
+// ParamInt returns the int representation of the key's path named parameter's value
+// same as GetInt
+func (ctx *Context) ParamInt(key string) (int, error) {
+	return ctx.GetInt(key)
+}
+
+// ParamInt64 returns the int64 representation of the key's path named parameter's value
+func (ctx *Context) ParamInt64(key string) (int64, error) {
+	return strconv.ParseInt(ctx.Param(key), 10, 64)
+}
+
+// ParamsSentence returns a string implementation of all parameters that this context  keeps
+// hasthe form of key1=value1,key2=value2...
+func (ctx *Context) ParamsSentence() string {
+	var buff bytes.Buffer
+	ctx.VisitUserValues(func(kb []byte, vg interface{}) {
+		v, ok := vg.(string)
+		if !ok {
+			return
+		}
+		k := string(kb)
+		buff.WriteString(k)
+		buff.WriteString("=")
+		buff.WriteString(v)
+		// we don't know where that (yet) stops so...
+		buff.WriteString(",")
+
+	})
+	result := buff.String()
+	if len(result) < 2 {
+		return ""
+	}
+
+	return result[0 : len(result)-1]
+
 }
 
 // VisitAllCookies takes a visitor which loops on each (request's) cookie key and value

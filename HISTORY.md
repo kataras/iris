@@ -2,6 +2,30 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+
+## v4 -> 5.0.1
+
+- **IMPROVE**: [Iris command line tool](https://github.com/kataras/iris/tree/master/iris) introduces a **new** `get` command (replacement for the old `create`)
+
+
+**The get command** downloads, installs and runs a project based on a `prototype`, such as `basic`, `static` and `mongo` .
+
+> These projects are located [online](https://github.com/iris-contrib/examples/tree/master/AIO_examples)
+
+
+```sh
+iris get basic
+```
+
+Downloads the  [basic](https://github.com/iris-contrib/examples/tree/master/AIO_examples/basic) sample protoype project to the `$GOPATH/src/github.com/iris-contrib/examples` directory(the iris cmd will open this folder to you, automatically) builds, runs and watch for source code changes (hot-reload)
+
+[![Iris get command preview](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iriscmd.gif)](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iriscmd.gif)
+
+
+- **CHANGE**: The `Path parameters` are now **immutable**. Now you don't have to copy a `path parameter` before passing to another function which maybe modifies it, this has a side-affect of `context.GetString("key") = context.Param("key")`  so you have to be careful to not override a path parameter via other custom (per-context) user value.
+
+
+
 ## v3 -> v4 long term support
 
 - **NEW**: `iris.StaticEmbedded`/`app := iris.New(); app.StaticEmbedded` - Embed static assets into your executable with [go-bindata](https://github.com/jteeuwen/go-bindata) and serve them.

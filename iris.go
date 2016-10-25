@@ -64,6 +64,7 @@ import (
 	"sync"
 	"time"
 
+	"bytes"
 	"github.com/kataras/go-errors"
 	"github.com/kataras/go-fs"
 	"github.com/kataras/go-serializer"
@@ -76,9 +77,9 @@ import (
 
 const (
 	// IsLongTermSupport flag is true when the below version number is a long-term-support version
-	IsLongTermSupport = true
+	IsLongTermSupport = false
 	// Version is the current version number of the Iris web framework
-	Version = "4"
+	Version = "5.0.1"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -681,7 +682,6 @@ func ReleaseCtx(ctx *Context) {
 // ReleaseCtx puts the Iris' Context back to the pool in order to be re-used
 // see .AcquireCtx & .Serve
 func (s *Framework) ReleaseCtx(ctx *Context) {
-	ctx.Params = ctx.Params[0:0]
 	ctx.Middleware = nil
 	ctx.session = nil
 	s.contextPool.Put(ctx)
@@ -1425,7 +1425,7 @@ func (api *muxAPI) API(path string, restAPI HandlerAPI, middleware ...HandlerFun
 	// or no, I changed my mind, let all be named parameters and let users to decide what info they need,
 	// using the Context to take more values (post form,url params and so on).-
 
-	paramPrefix := "param"
+	paramPrefix := []byte("param")
 	for _, methodName := range AllMethods {
 		methodWithBy := strings.Title(strings.ToLower(methodName)) + "By"
 		if method, found := typ.MethodByName(methodWithBy); found {
@@ -1439,9 +1439,9 @@ func (api *muxAPI) API(path string, restAPI HandlerAPI, middleware ...HandlerFun
 
 			for i := 1; i < numInLen; i++ { // from 1 because the first is the 'object'
 				if registedPath[len(registedPath)-1] == slashByte {
-					registedPath += ":" + paramPrefix + strconv.Itoa(i)
+					registedPath += ":" + string(paramPrefix) + strconv.Itoa(i)
 				} else {
-					registedPath += "/:" + paramPrefix + strconv.Itoa(i)
+					registedPath += "/:" + string(paramPrefix) + strconv.Itoa(i)
 				}
 			}
 
@@ -1454,15 +1454,15 @@ func (api *muxAPI) API(path string, restAPI HandlerAPI, middleware ...HandlerFun
 					newController.FieldByName("Context").Set(reflect.ValueOf(ctx))
 					args := make([]reflect.Value, paramsLen+1, paramsLen+1)
 					args[0] = newController
-					realParamsLen := len(ctx.Params)
 					j := 1
-					for i := 0; i < realParamsLen; i++ { // here we don't looping with the len we are already known by the 'API' because maybe there is a party/or/path witch accepting parameters before, see https://github.com/kataras/iris/issues/293
-						if strings.HasPrefix(ctx.Params[i].Key, paramPrefix) {
-							args[j] = reflect.ValueOf(ctx.Params[i].Value)
+
+					ctx.VisitUserValues(func(k []byte, v interface{}) {
+						if bytes.HasPrefix(k, paramPrefix) {
+							args[j] = reflect.ValueOf(v.(string))
 
 							j++ // the first parameter is the context, other are the path parameters, j++ to be align with (API's registered)paramsLen
 						}
-					}
+					})
 
 					methodFunc.Call(args)
 				})
