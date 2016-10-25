@@ -49,6 +49,12 @@ Ideally suited for both experienced and novice Developers.
 - [赵 益鋆](https://github.com/se77en) donated 20 EUR at October 21
 - Anonymous (by own will) donated 50 EUR at October 21
 
+**Random articles**
+
+- [20 Minute URL Shortener with Go and Redis - Iris+Docker+Redis](https://www.kieranajp.uk/articles/build-url-shortener-api-golang/) by Kieran Patel
+- [The fastest web framework for Go](http://marcoscleison.xyz/the-fastest-web-framework-for-go-in-this-earth/) by Marcos Cleison
+- [Iris vs Nginx vs Php vs Nodejs](https://www.ntossapo.me/2016/08/13/nginx-vs-nginx-php-fpm-vs-go-iris-vs-express-with-wrk/) by Tossapon Nuanchuay
+
 ## Feature Overview
 
 - Focus on high performance

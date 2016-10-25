@@ -775,6 +775,8 @@ func (ctx *Context) Stream(cb func(writer *bufio.Writer)) {
 //     * if response body is streamed from slow external sources.
 //     * if response body must be streamed to the client in chunks.
 //     (aka `http server push`).
+//
+// See also the StreamReader
 func (ctx *Context) StreamWriter(cb func(writer *bufio.Writer)) {
 	ctx.RequestCtx.SetBodyStreamWriter(cb)
 }
@@ -789,7 +791,7 @@ func (ctx *Context) StreamWriter(cb func(writer *bufio.Writer)) {
 // bodyStream.Close() is called after finishing reading all body data
 // if it implements io.Closer.
 //
-// See also StreamReader.
+// See also the StreamWriter
 func (ctx *Context) StreamReader(bodyStream io.Reader, bodySize int) {
 	ctx.RequestCtx.Response.SetBodyStream(bodyStream, bodySize)
 }
