@@ -23,9 +23,9 @@ var (
 	// the available projects/examples to build & run using this command line tool
 	projects = map[string]project{
 		// the project type, passed on the get command : project.gopath & project.mainfile
-		"basic":  project{remote: toslash(commonRepo, "basic", "backend")},
-		"static": project{remote: toslash(commonRepo, "static", "backend")},
-		"mongo":  project{remote: toslash(commonRepo, "mongo", "backend")},
+		"basic":  {remote: toslash(commonRepo, "basic", "backend")},
+		"static": {remote: toslash(commonRepo, "static", "backend")},
+		"mongo":  {remote: toslash(commonRepo, "mongo", "backend")},
 	}
 )
 

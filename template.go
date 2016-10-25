@@ -100,7 +100,7 @@ func (t *templateEngines) render(isFile bool, ctx *Context, filenameOrSource str
 			if len(options) > 0 {
 				options[0]["layout"] = ctxLayout
 			} else {
-				options = []map[string]interface{}{map[string]interface{}{"layout": ctxLayout}}
+				options = []map[string]interface{}{{"layout": ctxLayout}}
 			}
 		}
 	}

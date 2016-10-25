@@ -1947,7 +1947,7 @@ func (api *muxAPI) StaticEmbedded(requestPath string, vdir string, assetFn func(
 	}
 	if len(names) == 0 {
 		// we don't start the server yet, so:
-		panic("iris.StaticEmbedded: Unable to locate any embedded files located to the (virutal) directory: " + vdir)
+		panic("iris.StaticEmbedded: Unable to locate any embedded files located to the (virtual) directory: " + vdir)
 	}
 
 	modtime := time.Now()
