@@ -80,6 +80,7 @@ func TestCacheCanRender(t *testing.T) {
 	expectedBody := iris.SerializeToString("text/markdown", testMarkdownContents)
 
 	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedBody)
+	time.Sleep(5 * time.Second)                                          // let's sleep for a while in order to be saved in cache(running in goroutine)
 	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedBody) // the 1 minute didnt' passed so it should work
 
 	// travis... and time sleep not a good idea for testing, we will see what we can do other day, the cache is tested on examples too*
