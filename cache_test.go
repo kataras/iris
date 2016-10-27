@@ -94,3 +94,37 @@ func TestCacheCanRender(t *testing.T) {
 	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedBody)
 	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedBody)*/
 }
+
+// func TestCacheRemote(t *testing.T) {
+// 	iris.ResetDefault()
+// 	// setup the remote cache service listening on localhost:8888/cache
+// 	remoteService := iris.New(iris.OptionCacheGCDuration(1*time.Minute), iris.OptionDisableBanner(true), iris.OptionIsDevelopment(true))
+// 	remoteService.Any("/cache", remoteService.ServeRemoteCache())
+// 	defer remoteService.Close()
+// 	go remoteService.Listen(":8888")
+// 	<-remoteService.Available
+//
+// 	app := iris.New(iris.OptionIsDevelopment(true))
+//
+// 	expectedBody := iris.SerializeToString("text/markdown", testMarkdownContents)
+//
+// 	i := 1
+// 	bodyHandler := func(ctx *iris.Context) {
+// 		if i%2 == 0 { // only for testing
+// 			ctx.SetStatusCode(iris.StatusNoContent)
+// 			i++
+// 			return
+// 		}
+// 		i++
+// 		ctx.Markdown(iris.StatusOK, testMarkdownContents)
+// 	}
+//
+// 	app.Get("/", iris.RemoteCache("http://127.0.0.1:8888/cache", bodyHandler, time.Duration(15)*time.Second))
+//
+// 	e := httptest.New(app, t, httptest.Debug(true))
+//
+// 	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedBody)
+// 	time.Sleep(5 * time.Second)
+// 	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedBody)
+//
+// }

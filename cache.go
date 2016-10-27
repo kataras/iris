@@ -1,18 +1,27 @@
 package iris
 
 import (
+	"fmt"
+	"github.com/valyala/fasthttp"
+	"net/url"
+	"strconv"
 	"sync"
 	"time"
 )
 
 type (
 	// CacheService is the cache service which caches the whole response body
-	// it's an interface because you can even set your own cache service inside framework!
 	CacheService interface {
 		// Start is the method which the CacheService starts the GC(check if expiration of each entry is passed , if yes then delete it from cache)
 		Start(time.Duration)
 		// Cache accepts a route's handler which will cache its response and a time.Duration(int64) which is the expiration duration
 		Cache(HandlerFunc, time.Duration) HandlerFunc
+		// ServeRemoteCache creates & returns a new handler which saves cache by POST method and serves a cache entry by GET method to clients
+		// usually set it with iris.Any,
+		// but developer is able to set different paths for save or get cache entries: using the iris.Post/.Get(...,iris.ServeRemote())
+		//
+		// IT IS NOT READY FOR PRODUCTION YET, READ THE HISTORY.md for the available working cache methods
+		ServeRemoteCache() HandlerFunc
 		// Invalidate accepts a cache key (which can be retrieved by 'GetCacheKey') and remove its cache response body
 		InvalidateCache(string)
 	}
@@ -60,7 +69,7 @@ func (cs *cacheService) Start(gcDuration time.Duration) {
 			cs.mu.Lock()
 			now := time.Now()
 			for k, v := range cs.cache {
-				if now.After(v.expires) {
+				if now.Before(v.expires) {
 					delete(cs.cache, k)
 				}
 			}
@@ -199,4 +208,163 @@ func (cs *cacheService) Cache(bodyHandler HandlerFunc, expiration time.Duration)
 	}
 
 	return h
+}
+
+// GetRemoteCacheKey returns the context's cache key,
+// differs from GetCacheKey is that this method parses the query arguments
+// because this key must be sent to an external server
+func GetRemoteCacheKey(ctx *Context) string {
+	return url.QueryEscape(ctx.Request.URI().String())
+}
+
+// RemoteCache accepts the remote server address and path of the external cache service, the body handler and optional an expiration
+// the last 2 receivers works like .Cache(...) function
+//
+// Note: Remotecache is a global function, usage:
+// app.Get("/", iris.RemoteCache("http://127.0.0.1:8888/cache", bodyHandler, time.Duration(15)*time.Second))
+//
+// IT IS NOT READY FOR PRODUCTION YET, READ THE HISTORY.md for the available working cache methods
+func RemoteCache(cacheServerAddr string, bodyHandler HandlerFunc, expiration time.Duration) HandlerFunc {
+	client := fasthttp.Client{}
+	//	buf := utils.NewBufferPool(10)
+	cacheDurationStr := fmt.Sprintf("%f", expiration.Seconds())
+	h := func(ctx *Context) {
+		req := fasthttp.AcquireRequest()
+		req.SetRequestURI(cacheServerAddr)
+		req.Header.SetMethodBytes(MethodGetBytes)
+		req.URI().QueryArgs().Add("cache_key", GetRemoteCacheKey(ctx))
+
+		res := fasthttp.AcquireResponse()
+		err := client.DoTimeout(req, res, time.Duration(5)*time.Second)
+		if err != nil || res.StatusCode() == StatusBadRequest {
+			// if not found on cache, then execute the handler and save the cache to the remote server
+			bodyHandler.Serve(ctx)
+			// save to the remote cache
+			req.Header.SetMethodBytes(MethodPostBytes)
+
+			req.URI().QueryArgs().Add("cache_duration", cacheDurationStr)
+			statusCode := strconv.Itoa(ctx.Response.StatusCode())
+			req.URI().QueryArgs().Add("cache_status_code", statusCode)
+			cType := string(ctx.Response.Header.Peek(contentType))
+			req.URI().QueryArgs().Add("cache_content_type", cType)
+			postArgs := fasthttp.AcquireArgs()
+			postArgs.SetBytesV("cache_body", ctx.Response.Body())
+
+			go func() {
+				client.DoTimeout(req, res, time.Duration(5)*time.Second)
+				fasthttp.ReleaseArgs(postArgs)
+				fasthttp.ReleaseRequest(req)
+				fasthttp.ReleaseResponse(res)
+			}()
+
+		} else {
+			// get the status code , content type and the write the response body
+			statusCode := res.StatusCode()
+			cType := res.Header.ContentType()
+			ctx.SetStatusCode(statusCode)
+			ctx.Response.Header.SetContentTypeBytes(cType)
+
+			ctx.RequestCtx.Write(res.Body())
+
+			fasthttp.ReleaseRequest(req)
+			fasthttp.ReleaseResponse(res)
+		}
+
+	}
+	return h
+}
+
+// ServeRemoteCache usage: iris.Any("/cacheservice", iris.ServeRemote())
+// client does an http request to retrieve cached body from the external/remote server which keeps the cache service.
+//
+// if is GET method request then gets from cache
+// if it's POST method request then its saves to the cache
+// if it's DELETE method request then its invalidates/removes from cache manually
+// the content type and the status are setted inside the caller's handler
+// this is not like cs.Cache, it's useful only when you separate your servers to achieve horizontal scaling
+//
+// Note that it depends on a station instance's cache service.
+// Do not try to call it from default' station if you use the form of app := iris.New(),
+// use the app.ServeRemoteCache instead of iris.Cache
+//
+// IT IS NOT READY FOR PRODUCTION YET, READ THE HISTORY.md for the available working cache methods
+func ServeRemoteCache() HandlerFunc {
+	return Default.CacheService.ServeRemoteCache()
+}
+
+// ServeRemoteCache usage: iris.Any("/cacheservice", iris.ServeRemoteCache())
+// client does an http request to retrieve cached body from the external/remote server which keeps the cache service.
+//
+// if is GET method request then gets from cache
+// if it's POST method request then its saves to the cache
+// if it's DELETE method request then its invalidates/removes from cache manually
+// the content type and the status are setted inside the caller's handler
+// this is not like cs.Cache, it's useful only when you separate your servers to achieve horizontal scaling
+//
+// Note that it depends on a station instance's cache service.
+// Do not try to call it from default' station if you use the form of app := iris.New(),
+// use the app.ServeRemoteCache instead of iris.Cache
+//
+// IT IS NOT READY FOR PRODUCTION YET, READ THE HISTORY.md for the available working cache methods
+func (cs *cacheService) ServeRemoteCache() HandlerFunc {
+	h := func(ctx *Context) {
+		key := ctx.URLParam("cache_key")
+		if key == "" {
+			ctx.SetStatusCode(StatusBadRequest)
+			return
+		}
+
+		if ctx.IsGet() {
+			if v := cs.get(key); v != nil {
+				ctx.SetStatusCode(v.statusCode)
+				ctx.SetContentType(v.contentType)
+				ctx.RequestCtx.Write(v.value)
+				return
+			}
+		} else if ctx.IsPost() {
+			// get the cache expiration via url param
+			expirationSeconds, err := ctx.URLParamInt64("cache_duration")
+			// get the body from the post arguments or requested body
+			body := ctx.PostArgs().Peek("cache_body")
+			if len(body) == 0 {
+				body = ctx.Request.Body()
+				if len(body) == 0 {
+					ctx.SetStatusCode(StatusBadRequest)
+					return
+				}
+			}
+			// get the expiration from the "cache-control's maxage" if no url param is setted
+			if expirationSeconds <= 0 || err != nil {
+				expirationSeconds = ctx.MaxAge()
+			}
+
+			// if not setted then try to get it via
+			if expirationSeconds <= 0 {
+				expirationSeconds = 5 * 60 // 5 minutes
+			}
+
+			cacheDuration := time.Duration(expirationSeconds) * time.Second
+			statusCode, err := ctx.URLParamInt("cache_status_code")
+			if err != nil {
+				statusCode = StatusOK
+			}
+			cType := ctx.URLParam("cache_content_type")
+			if cType == "" {
+				cType = contentHTML
+			}
+
+			cs.set(key, statusCode, cType, body, cacheDuration)
+
+			ctx.SetStatusCode(StatusOK)
+			return
+		} else if ctx.IsDelete() {
+			cs.remove(key)
+			ctx.SetStatusCode(StatusOK)
+			return
+		}
+
+		ctx.SetStatusCode(StatusBadRequest)
+	}
+
+	return cs.Cache(h, -1)
 }
