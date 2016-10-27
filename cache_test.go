@@ -57,7 +57,7 @@ All features of Sundown are supported, including:
 // EXAMPLE: https://github.com/iris-contrib/examples/tree/master/cache_body
 func TestCacheCanRender(t *testing.T) {
 	iris.ResetDefault()
-	iris.Config.CacheGCDuration = time.Duration(2) * time.Second
+	iris.Config.CacheGCDuration = time.Duration(10) * time.Second
 	iris.Config.IsDevelopment = true
 	defer iris.Close()
 	var i = 1
@@ -71,7 +71,7 @@ func TestCacheCanRender(t *testing.T) {
 		ctx.Markdown(iris.StatusOK, testMarkdownContents)
 	}
 
-	expiration := time.Duration(15 * time.Second)
+	expiration := time.Duration(1 * time.Minute)
 
 	iris.Get("/", iris.Cache(bodyHandler, expiration))
 
@@ -80,7 +80,7 @@ func TestCacheCanRender(t *testing.T) {
 	expectedBody := iris.SerializeToString("text/markdown", testMarkdownContents)
 
 	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedBody)
-	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedBody) // the 15 seconds didnt' passed so it should work
+	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedBody) // the 1 minute didnt' passed so it should work
 
 	// travis... and time sleep not a good idea for testing, we will see what we can do other day, the cache is tested on examples too*
 	/*e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedBody) // the cache still son the corrrect body so no StatusNoContent fires
