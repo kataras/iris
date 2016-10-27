@@ -75,6 +75,7 @@ Ideally suited for both experienced and novice Developers.
 - Define your format and output for the logger
 - Define custom HTTP errors handlers
 - Gzip response
+- Cache
 - Authentication
  - OAuth, OAuth2 supporting 27+ popular websites
  - JWT
