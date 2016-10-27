@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"reflect"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -62,6 +63,8 @@ const (
 	ifModifiedSince = "If-Modified-Since"
 	// ContentDisposition "Content-Disposition"
 	contentDisposition = "Content-Disposition"
+	// CacheControl "Cache-Control"
+	cacheControl = "Cache-Control"
 
 	// stopExecutionPosition used inside the Context, is the number which shows us that the context's middleware manualy stop the execution
 	stopExecutionPosition = 255
@@ -1107,6 +1110,30 @@ func (ctx *Context) SessionDestroy() {
 		ctx.framework.sessions.DestroyFasthttp(ctx.RequestCtx)
 	}
 
+}
+
+var maxAgeExp = regexp.MustCompile(`maxage=(\d+)`)
+
+// MaxAge returns the "cache-control" request header's value
+// seconds as int64
+// if header not found or parse failed then it returns -1
+func (ctx *Context) MaxAge() int64 {
+	header := ctx.RequestHeader(cacheControl)
+	if header == "" {
+		return -1
+	}
+	m := maxAgeExp.FindStringSubmatch(header)
+	if len(m) == 2 {
+		if v, err := strconv.Atoi(m[1]); err == nil {
+			return int64(v)
+		}
+	}
+	return -1
+}
+
+// InvalidateCache clears the cache manually for this request uri context's handler's route
+func (ctx *Context) InvalidateCache() {
+	ctx.framework.CacheService.InvalidateCache(GetCacheKey(ctx))
 }
 
 // Log logs to the iris defined logger

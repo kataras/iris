@@ -19,7 +19,7 @@
 <br/>
 
 
-<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20version%20-%205.0.1%20-blue.svg?style=flat-square" alt="Releases"></a>
+<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20version%20-%205.1.0%20-blue.svg?style=flat-square" alt="Releases"></a>
 
 <a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/%20examples-repository-3362c2.svg?style=flat-square" alt="Examples"></a>
 
@@ -53,7 +53,7 @@ Ideally suited for both experienced and novice Developers.
 
 - [20 Minute URL Shortener with Go and Redis - Iris+Docker+Redis](https://www.kieranajp.uk/articles/build-url-shortener-api-golang/) by Kieran Patel
 - [The fastest web framework for Go](http://marcoscleison.xyz/the-fastest-web-framework-for-go-in-this-earth/) by Marcos Cleison
-- [Iris vs Nginx vs Php vs Nodejs](https://www.ntossapo.me/2016/08/13/nginx-vs-nginx-php-fpm-vs-go-iris-vs-express-with-wrk/) by Tossapon Nuanchuay
+- [Iris vs Nginx vs Php vs Nodejs](https://translate.google.com/translate?sl=auto&tl=en&js=y&prev=_t&hl=en&ie=UTF-8&u=http://webcache.googleusercontent.com/search?q=cache:https%3A%2F%2Fwww.ntossapo.me%2F2016%2F08%2F13%2Fnginx-vs-nginx-php-fpm-vs-go-iris-vs-express-with-wrk%2F&edit-text=&act=url) by Tossapon Nuanchuay
 
 ## Feature Overview
 
@@ -865,7 +865,7 @@ The second is an article I just found(**3 October 2016**) which compares Iris vs
 The results showed that the req / sec iris do best at around 70k-50k, followed by nginx and nginx-php-fpm and nodejs respectively.
 The error golang-iris and nginx work equally, followed by the final nginx and php-fpm at a ratio of 1: 1.
 
-You can read the full article [here](https://translate.google.com/translate?sl=auto&tl=en&js=y&prev=_t&hl=en&ie=UTF-8&u=https%3A%2F%2Fwww.ntossapo.me%2F2016%2F08%2F13%2Fnginx-vs-nginx-php-fpm-vs-go-iris-vs-express-with-wrk%2F&edit-text=&act=url).
+You can read the full article [here](https://translate.google.com/translate?sl=auto&tl=en&js=y&prev=_t&hl=en&ie=UTF-8&u=http://webcache.googleusercontent.com/search?q=cache:https%3A%2F%2Fwww.ntossapo.me%2F2016%2F08%2F13%2Fnginx-vs-nginx-php-fpm-vs-go-iris-vs-express-with-wrk%2F&edit-text=&act=url).
 
 
 Testing
@@ -876,13 +876,14 @@ I recommend writing your API tests using this new library, [httpexpect](https://
 Versioning
 ------------
 
-Current: **5.0.1**
+Current: **5.1.0**
 
 Todo
 ------------
 
 - [ ] Server-side React render, as requested [here](https://github.com/kataras/iris/issues/503)
-
+- [x] Iris command line improvements, as requested [here](https://github.com/kataras/iris/issues/506)
+- [x] Cache service, simple but can make your page renders up to 10 times faster, write your suggestions [here](https://github.com/kataras/iris/issues/513)
 
 Iris is a **Community-Driven** Project, waiting for your suggestions and [feature requests](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=label%3A%22feature%20request%22)!
 
@@ -914,7 +915,7 @@ under the Apache Version 2 license found in the [LICENSE file](LICENSE).
 [Travis]: http://travis-ci.org/kataras/iris
 [License Widget]: https://img.shields.io/badge/license-Apache%20Version%202-E91E63.svg?style=flat-square
 [License]: https://github.com/kataras/iris/blob/master/LICENSE
-[Release Widget]: https://img.shields.io/badge/release-V5.0.1%20-blue.svg?style=flat-square
+[Release Widget]: https://img.shields.io/badge/release-V5.1.0%20-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/iris/releases
 [Chat Widget]: https://img.shields.io/badge/community-chat%20-00BCD4.svg?style=flat-square
 [Chat]: https://kataras.rocket.chat/channel/iris

@@ -1,16 +1,6 @@
 // Black-box Testing
 package iris_test
 
-/*
-The most part of  the context covered,
-the other part contains serving static methods,
-find remote ip, GetInt and the view engine rendering(templates)
-I am not waiting unexpected behaviors from the rest of the funcs,
-so that's all with context's tests.
-
-CONTRIBUTE & DISCUSSION ABOUT TESTS TO: https://github.com/iris-contrib/tests
-*/
-
 import (
 	"encoding/json"
 	"encoding/xml"

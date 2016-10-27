@@ -2,6 +2,134 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 5.0.1 -> 5.1.0
+
+- **NEW FEATURE**: `CacheService` simple, cache service for your app's static body content(can work as external service if you are doing horizontal scaling, the `Cache` is just a `Handler` :) )
+
+Cache any content, templates, static files, even the error handlers, anything.
+
+> Bombardier: 5 million requests and 100k clients per second to this markdown  static content(look below) with cache(3 seconds) can be served up to ~x12 times faster. Imagine what happens with bigger content like full page and templates!
+
+
+**OUTLINE**
+```go
+
+// Cache is just a wrapper for a route's handler which you want to enable body caching
+// Usage: iris.Get("/", iris.Cache(func(ctx *iris.Context){
+//    ctx.WriteString("Hello, world!") // or a template or anything else
+// }, time.Duration(10*time.Second))) // duration of expiration
+// if <=time.Second then it tries to find it though request header's "cache-control" maxage value
+//
+// Note that it depends on a station instance's cache service.
+// Do not try to call it from default' station if you use the form of app := iris.New(),
+// use the app.Cache instead of iris.Cache
+Cache(bodyHandler HandlerFunc, expiration time.Duration) HandlerFunc
+
+// InvalidateCache clears the cache body for a specific key(request uri, can be retrieved by GetCacheKey(ctx))
+//
+// Note that it depends on a station instance's cache service.
+// Do not try to call it from default' station if you use the form of app := iris.New(),
+// use the app.Cache instead of iris.Cache
+InvalidateCache(key string)
+
+// GetCacheKey returns the cache key(string) from a Context
+GetCacheKey(ctx *Context) string
+
+```
+
+**OVERVIEW**
+
+```go
+iris.Get("/hi", iris.Cache(func(c *iris.Context) {
+	c.WriteString("Hi this is a big content, do not try cache on small content it will not make any significant difference!")
+}, time.Duration(10)*time.Second))
+
+```
+
+[EXAMPLE](https://github.com/iris-contrib/examples/tree/master/cache_body):
+
+
+
+
+
+
+```go
+package main
+
+import (
+	"github.com/kataras/iris"
+	"time"
+)
+
+var testMarkdownContents = `## Hello Markdown from Iris
+
+This is an example of Markdown with Iris
+
+
+
+Features
+--------
+
+All features of Sundown are supported, including:
+
+*   **Compatibility**. The Markdown v1.0.3 test suite passes with
+    the --tidy option.  Without --tidy, the differences are
+    mostly in whitespace and entity escaping, where blackfriday is
+    more consistent and cleaner.
+
+*   **Common extensions**, including table support, fenced code
+    blocks, autolinks, strikethroughs, non-strict emphasis, etc.
+
+*   **Safety**. Blackfriday is paranoid when parsing, making it safe
+    to feed untrusted user input without fear of bad things
+    happening. The test suite stress tests this and there are no
+    known inputs that make it crash.  If you find one, please let me
+    know and send me the input that does it.
+
+    NOTE: "safety" in this context means *runtime safety only*. In order to
+    protect yourself against JavaScript injection in untrusted content, see
+    [this example](https://github.com/russross/blackfriday#sanitize-untrusted-content).
+
+*   **Fast processing**. It is fast enough to render on-demand in
+    most web applications without having to cache the output.
+
+*   **Thread safety**. You can run multiple parsers in different
+    goroutines without ill effect. There is no dependence on global
+    shared state.
+
+*   **Minimal dependencies**. Blackfriday only depends on standard
+    library packages in Go. The source code is pretty
+    self-contained, so it is easy to add to any project, including
+    Google App Engine projects.
+
+*   **Standards compliant**. Output successfully validates using the
+    W3C validation tool for HTML 4.01 and XHTML 1.0 Transitional.
+
+	[this is a link](https://github.com/kataras/iris) `
+
+func main() {
+	// if this is not setted then iris set this duration to the lowest expiration entry from the cache + 5 seconds
+	// recommentation is to left as it's or
+	// iris.Config.CacheGCDuration = time.Duration(5) * time.Minute
+
+	bodyHandler := func(ctx *iris.Context) {
+		ctx.Markdown(iris.StatusOK, testMarkdownContents)
+	}
+
+	expiration := time.Duration(5 * time.Second)
+
+	iris.Get("/", iris.Cache(bodyHandler, expiration))
+
+	// if expiration is <=time.Second then the cache tries to set the expiration from the "cache-control" maxage header's value(in seconds)
+	// // if this header doesn't founds then the default is 5 minutes
+	iris.Get("/cache_control", iris.Cache(func(ctx *iris.Context) {
+		ctx.HTML(iris.StatusOK, "<h1>Hello!</h1>")
+	}, -1))
+
+	iris.Listen(":8080")
+}
+
+```
 
 ## v4 -> 5.0.1
 

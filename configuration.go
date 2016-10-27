@@ -180,12 +180,12 @@ type Configuration struct {
 	LoggerPreffix string
 
 	// DisableTemplateEngines set to true to disable loading the default template engine (html/template) and disallow the use of iris.UseEngine
-	// default is false
+	// Defaults to false
 	DisableTemplateEngines bool
 
 	// IsDevelopment iris will act like a developer, for example
 	// If true then re-builds the templates on each request
-	// default is false
+	// Defaults to false
 	IsDevelopment bool
 
 	// TimeFormat time format for any kind of datetime parsing
@@ -193,17 +193,26 @@ type Configuration struct {
 
 	// Charset character encoding for various rendering
 	// used for templates and the rest of the responses
-	// defaults to "UTF-8"
+	// Defaults to "UTF-8"
 	Charset string
 
 	// Gzip enables gzip compression on your Render actions, this includes any type of render, templates and pure/raw content
 	// If you don't want to enable it globaly, you could just use the third parameter on context.Render("myfileOrResponse", structBinding{}, iris.RenderOptions{"gzip": true})
-	// defaults to false
+	// Defaults to false
 	Gzip bool
 
 	// Sessions contains the configs for sessions
 	Sessions SessionsConfiguration
 
+	// CacheGCDuration the cache gc duration,
+	// when this duration is passed then the cache is checking for each of the cache entries' expiration field
+	// this clears only the Cached handlers, so if you don't want cache then don't pass your handler arround the Cache wrapper
+	// it's like the session's GcDuration field
+	//
+	// Is if your app is big and not very changable (like a blog) set this duration big , like 5 hours
+	//
+	// Defaults to Auto, Auto means that is setted by the lowest expiration of all cach entries
+	CacheGCDuration time.Duration
 	// Websocket contains the configs for Websocket's server integration
 	Websocket WebsocketConfiguration
 
@@ -425,6 +434,20 @@ var (
 		}
 	}
 
+	// OptionCacheGCDuration ses the cache gc duration,
+	// when this duration is passed then the cache is checking for each of the cache entries' expiration field
+	// this clears only the Cached handlers, so if you don't want cache then don't pass your handler arround the Cache wrapper
+	// it's like the session's GcDuration field
+	//
+	// Is if your app is big and not very changable (like a blog) set this duration big , like 5 hours
+	//
+	// Defaults to Auto, Auto means that is setted by the lowest expiration of all cach entries
+	OptionCacheGCDuration = func(val time.Duration) OptionSet {
+		return func(c *Configuration) {
+			c.CacheGCDuration = val
+		}
+	}
+
 	// OptionIsDevelopment iris will act like a developer, for example
 	// If true then re-builds the templates on each request
 	// Default is false
@@ -542,6 +565,7 @@ func DefaultConfiguration() Configuration {
 		Charset:                DefaultCharset,
 		Gzip:                   false,
 		Sessions:               DefaultSessionsConfiguration(),
+		CacheGCDuration:        minimumAllowedCacheDuration,
 		Websocket:              DefaultWebsocketConfiguration(),
 		Other:                  options.Options{},
 	}
@@ -552,7 +576,7 @@ func DefaultConfiguration() Configuration {
 // first is the cookieName, the session's name (string) ["mysessionsecretcookieid"]
 // second enable if you want to decode the cookie's key also
 // third is the time which the client's cookie expires
-// forth is the cookie length (sessionid) int, defaults to 32, do not change if you don't have any reason to do
+// forth is the cookie length (sessionid) int, Defaults to 32, do not change if you don't have any reason to do
 // fifth is the gcDuration (time.Duration) when this time passes it removes the unused sessions from the memory until the user come back
 // sixth is the DisableSubdomainPersistence which you can set it to true in order dissallow your q subdomains to have access to the session cook
 type SessionsConfiguration sessions.Config
@@ -608,7 +632,7 @@ var (
 	}
 
 	// OptionSessionsDisableSubdomainPersistence set it to true in order dissallow your q subdomains to have access to the session cookie
-	// defaults to false
+	// Defaults to false
 	OptionSessionsDisableSubdomainPersistence = func(val bool) OptionSet {
 		return func(c *Configuration) {
 			c.Sessions.DisableSubdomainPersistence = val
@@ -660,7 +684,7 @@ type WebsocketConfiguration struct {
 	MaxMessageSize int64
 	// BinaryMessages set it to true in order to denotes binary data messages instead of utf-8 text
 	// see https://github.com/kataras/iris/issues/387#issuecomment-243006022 for more
-	// defaults to false
+	// Defaults to false
 	BinaryMessages bool
 	// Endpoint is the path which the websocket server will listen for clients/connections
 	// Default value is empty string, if you don't set it the Websocket server is disabled.
@@ -717,7 +741,7 @@ var (
 	}
 	// OptionWebsocketBinaryMessages set it to true in order to denotes binary data messages instead of utf-8 text
 	// see https://github.com/kataras/iris/issues/387#issuecomment-243006022 for more
-	// defaults to false
+	// Defaults to false
 	OptionWebsocketBinaryMessages = func(val bool) OptionSet {
 		return func(c *Configuration) {
 			c.Websocket.BinaryMessages = val

@@ -79,7 +79,7 @@ const (
 	// IsLongTermSupport flag is true when the below version number is a long-term-support version
 	IsLongTermSupport = false
 	// Version is the current version number of the Iris web framework
-	Version = "5.0.1"
+	Version = "5.1.0"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -142,6 +142,7 @@ type (
 	// FrameworkAPI contains the main Iris Public API
 	FrameworkAPI interface {
 		MuxAPI
+		CacheService
 		Set(...OptionSetter)
 		Must(error)
 		Build()
@@ -175,6 +176,7 @@ type (
 	// Implements the FrameworkAPI
 	Framework struct {
 		*muxAPI
+		CacheService
 		// HTTP Server runtime fields is the iris' defined main server, developer can use unlimited number of servers
 		// note: they're available after .Build, and .Serve/Listen/ListenTLS/ListenLETSENCRYPT/ListenUNIX
 		ln        net.Listener
@@ -193,11 +195,10 @@ type (
 		sessions    sessions.Sessions
 		serializers serializer.Serializers
 		templates   *templateEngines
-		// configuration by instance.Logger.Config
-		Logger    *log.Logger
-		Plugins   PluginContainer
-		Websocket *WebsocketServer
-		SSH       *SSHServer
+		Logger      *log.Logger
+		Plugins     PluginContainer
+		Websocket   *WebsocketServer
+		SSH         *SSHServer
 	}
 )
 
@@ -231,6 +232,8 @@ func New(setters ...OptionSetter) *Framework {
 			"url":     s.URL,
 			"urlpath": s.Path,
 		})
+		// set the cache service
+		s.CacheService = newCacheService()
 	}
 
 	// websocket & sessions
@@ -349,6 +352,9 @@ func (s *Framework) Build() {
 			// re-set the configuration field for any case
 			s.sessions.Set(s.Config.Sessions, sessions.DisableAutoGC(false))
 		}
+
+		// set the cache gc duration and start service
+		s.CacheService.Start(s.Config.CacheGCDuration)
 
 		if s.Config.Websocket.Endpoint != "" {
 			// register the websocket server and listen to websocket connections when/if $instance.Websocket.OnConnection called by the dev
@@ -1111,6 +1117,9 @@ func SerializeToString(keyOrContentType string, obj interface{}, options ...map[
 func (s *Framework) SerializeToString(keyOrContentType string, obj interface{}, options ...map[string]interface{}) string {
 	res, err := s.serializers.SerializeToString(keyOrContentType, obj, options...)
 	if err != nil {
+		if s.Config.IsDevelopment {
+			s.Logger.Printf("Error on SerializeToString, Key(content-type): %s. Trace: %s\n", keyOrContentType, err)
+		}
 		return ""
 	}
 	return res
