@@ -181,11 +181,16 @@ iris.Listen(":8080")
 ```go
 iris.ListenTLS(":8080", "./ssl/mycert.cert", "./ssl/mykey.key")
 ```
-`ListenLETSENCRYPT(addr string)`
+`ListenLETSENCRYPT(addr string, cacheFileOptional ...string)`
 ```go
-iris.ListenLETSENCRYPT(":8080")
+iris.ListenLETSENCRYPT("mydomain.com")
 ```
+```go
+iris.Serve(iris.LETSENCRYPTPROD("myproductionwebsite.com"))
+```
+
 And
+
 ```go
 ListenUNIX(addr string, mode os.FileMode)
 Close() error

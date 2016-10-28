@@ -11,12 +11,12 @@
 //
 // func main() {
 //     iris.Get("/hi_json", func(c *iris.Context) {
-//         c.JSON(200, iris.Map{
+//         c.JSON(iris.StatusOK, iris.Map{
 //             "Name": "Iris",
 //             "Released":  "13 March 2016",
 //         })
 //     })
-//     iris.Listen(":8080")
+//     iris.ListenLETSENCRYPT("mydomain.com")
 // }
 //
 // ----------------------------------------------------------------------
@@ -149,7 +149,7 @@ type (
 		Serve(net.Listener) error
 		Listen(string)
 		ListenTLS(string, string, string)
-		ListenLETSENCRYPT(string)
+		ListenLETSENCRYPT(string, ...string)
 		ListenUNIX(string, os.FileMode)
 		Close() error
 		Reserve() error
@@ -551,22 +551,36 @@ func (s *Framework) ListenTLS(addr string, certFile, keyFile string) {
 // ListenLETSENCRYPT starts a server listening at the specific nat address
 // using key & certification taken from the letsencrypt.org 's servers
 // it's also starts a second 'http' server to redirect all 'http://$ADDR_HOSTNAME:80' to the' https://$ADDR'
+// it creates a cache file to store the certifications, for performance reasons, this file by-default is "./letsencrypt.cache"
+// if you skip the second parameter then the cache file is "./letsencrypt.cache"
+// if you want to disable cache then simple pass as second argument an empty emtpy string ""
+//
 // example: https://github.com/iris-contrib/examples/blob/master/letsencyrpt/main.go
-func ListenLETSENCRYPT(addr string) {
-	Default.ListenLETSENCRYPT(addr)
+//
+// supports localhost domains for testing,
+// NOTE: if you are ready for production then use `$app.Serve(iris.LETSENCRYPTPROD("mydomain.com"))` instead
+func ListenLETSENCRYPT(addr string, cacheFileOptional ...string) {
+	Default.ListenLETSENCRYPT(addr, cacheFileOptional...)
 }
 
 // ListenLETSENCRYPT starts a server listening at the specific nat address
 // using key & certification taken from the letsencrypt.org 's servers
 // it's also starts a second 'http' server to redirect all 'http://$ADDR_HOSTNAME:80' to the' https://$ADDR'
+// it creates a cache file to store the certifications, for performance reasons, this file by-default is "./letsencrypt.cache"
+// if you skip the second parameter then the cache file is "./letsencrypt.cache"
+// if you want to disable cache then simple pass as second argument an empty emtpy string ""
+//
 // example: https://github.com/iris-contrib/examples/blob/master/letsencyrpt/main.go
-func (s *Framework) ListenLETSENCRYPT(addr string) {
+//
+// supports localhost domains for testing,
+// NOTE: if you are ready for production then use `$app.Serve(iris.LETSENCRYPTPROD("mydomain.com"))` instead
+func (s *Framework) ListenLETSENCRYPT(addr string, cacheFileOptional ...string) {
 	addr = ParseHost(addr)
 	if s.Config.VHost == "" {
 		s.Config.VHost = addr
 		// this will be set as the front-end listening addr
 	}
-	ln, err := LETSENCRYPT(addr)
+	ln, err := LETSENCRYPT(addr, cacheFileOptional...)
 	if err != nil {
 		s.Logger.Panic(err)
 	}

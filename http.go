@@ -3,10 +3,6 @@ package iris
 import (
 	"bytes"
 	"crypto/tls"
-	"github.com/iris-contrib/letsencrypt"
-	"github.com/kataras/go-errors"
-	"github.com/valyala/fasthttp"
-	"github.com/valyala/fasthttp/fasthttpadaptor"
 	"log"
 	"net"
 	"net/http"
@@ -16,6 +12,12 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/iris-contrib/letsencrypt"
+	"github.com/kataras/go-errors"
+	"github.com/valyala/fasthttp"
+	"github.com/valyala/fasthttp/fasthttpadaptor"
+	"golang.org/x/crypto/acme/autocert"
 )
 
 const (
@@ -1203,7 +1205,13 @@ func CERT(addr string, cert tls.Certificate) (net.Listener, error) {
 }
 
 // LETSENCRYPT returns a new Automatic TLS Listener using letsencrypt.org service
-func LETSENCRYPT(addr string) (net.Listener, error) {
+// receives two parameters, the first is the domain of the server
+// and the second is optionally, the cache file, if you skip it then the cache directory is "./letsencrypt.cache"
+// if you want to disable cache file then simple give it a value of emtpy string ""
+//
+// supports localhost domains for testing,
+// but I recommend you to use the LETSENCRYPTPROD if you gonna to use it on production
+func LETSENCRYPT(addr string, cacheFileOptional ...string) (net.Listener, error) {
 	if portIdx := strings.IndexByte(addr, ':'); portIdx == -1 {
 		addr += ":443"
 	}
@@ -1213,9 +1221,57 @@ func LETSENCRYPT(addr string) (net.Listener, error) {
 		return nil, err
 	}
 
+	cacheFile := "./letsencrypt.cache"
+	if len(cacheFileOptional) > 0 {
+		cacheFile = cacheFileOptional[0]
+	}
+
 	var m letsencrypt.Manager
-	if err = m.CacheFile("letsencrypt.cache"); err != nil {
+
+	if cacheFile != "" {
+		if err = m.CacheFile(cacheFile); err != nil {
+			return nil, err
+		}
+	}
+
+	tlsConfig := &tls.Config{GetCertificate: m.GetCertificate}
+	tlsLn := tls.NewListener(ln, tlsConfig)
+
+	return tlsLn, nil
+}
+
+// LETSENCRYPTPROD returns a new Automatic TLS Listener using letsencrypt.org service
+// receives two parameters, the first is the domain of the server
+// and the second is optionally, the cache directory, if you skip it then the cache directory is "./certcache"
+// if you want to disable cache directory then simple give it a value of emtpy string ""
+//
+// does NOT supports localhost domains for testing, use LETSENCRYPT instead.
+//
+// this is the recommended function to use when you're ready for production state
+func LETSENCRYPTPROD(addr string, cacheDirOptional ...string) (net.Listener, error) {
+	if portIdx := strings.IndexByte(addr, ':'); portIdx == -1 {
+		addr += ":443"
+	}
+
+	ln, err := TCP4(addr)
+	if err != nil {
 		return nil, err
+	}
+
+	cacheDir := "./certcache"
+	if len(cacheDirOptional) > 0 {
+		cacheDir = cacheDirOptional[0]
+	}
+
+	m := autocert.Manager{
+		Prompt: autocert.AcceptTOS,
+	} // HostPolicy is missing, if user wants it, then she/he should manually
+	// configure the autocertmanager and use the `iris.Serve` to pass that listener
+
+	if cacheDir == "" {
+		// then the user passed empty by own will, then I guess she/he doesnt' want any cache directory
+	} else {
+		m.Cache = autocert.DirCache(cacheDir)
 	}
 
 	tlsConfig := &tls.Config{GetCertificate: m.GetCertificate}
