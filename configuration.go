@@ -204,15 +204,6 @@ type Configuration struct {
 	// Sessions contains the configs for sessions
 	Sessions SessionsConfiguration
 
-	// CacheGCDuration the cache gc duration,
-	// when this duration is passed then the cache is checking for each of the cache entries' expiration field
-	// this clears only the Cached handlers, so if you don't want cache then don't pass your handler arround the Cache wrapper
-	// it's like the session's GcDuration field
-	//
-	// Is if your app is big and not very changable (like a blog) set this duration big , like 5 hours
-	//
-	// Defaults to Auto, Auto means that is setted by the lowest expiration of all cach entries
-	CacheGCDuration time.Duration
 	// Websocket contains the configs for Websocket's server integration
 	Websocket WebsocketConfiguration
 
@@ -434,20 +425,6 @@ var (
 		}
 	}
 
-	// OptionCacheGCDuration ses the cache gc duration,
-	// when this duration is passed then the cache is checking for each of the cache entries' expiration field
-	// this clears only the Cached handlers, so if you don't want cache then don't pass your handler arround the Cache wrapper
-	// it's like the session's GcDuration field
-	//
-	// Is if your app is big and not very changable (like a blog) set this duration big , like 5 hours
-	//
-	// Defaults to Auto, Auto means that is setted by the lowest expiration of all cach entries
-	OptionCacheGCDuration = func(val time.Duration) OptionSet {
-		return func(c *Configuration) {
-			c.CacheGCDuration = val
-		}
-	}
-
 	// OptionIsDevelopment iris will act like a developer, for example
 	// If true then re-builds the templates on each request
 	// Default is false
@@ -565,7 +542,6 @@ func DefaultConfiguration() Configuration {
 		Charset:                DefaultCharset,
 		Gzip:                   false,
 		Sessions:               DefaultSessionsConfiguration(),
-		CacheGCDuration:        minimumAllowedCacheDuration,
 		Websocket:              DefaultWebsocketConfiguration(),
 		Other:                  options.Options{},
 	}

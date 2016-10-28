@@ -57,7 +57,7 @@ All features of Sundown are supported, including:
 // EXAMPLE: https://github.com/iris-contrib/examples/tree/master/cache_body
 func TestCacheCanRender(t *testing.T) {
 	iris.ResetDefault()
-	iris.Config.CacheGCDuration = time.Duration(10) * time.Second
+
 	iris.Config.IsDevelopment = true
 	defer iris.Close()
 	var i = 1
@@ -83,48 +83,45 @@ func TestCacheCanRender(t *testing.T) {
 	time.Sleep(5 * time.Second)                                          // let's sleep for a while in order to be saved in cache(running in goroutine)
 	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedBody) // the 1 minute didnt' passed so it should work
 
-	// travis... and time sleep not a good idea for testing, we will see what we can do other day, the cache is tested on examples too*
-	/*e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedBody) // the cache still son the corrrect body so no StatusNoContent fires
-	time.Sleep(time.Duration(5) * time.Second)                           // 4 depends on the CacheGCDuration not the expiration
-
-	// the cache should be cleared and now i =  2 then it should run the iris.StatusNoContent  with empty body ( we don't use the EmitError)
-	e.GET("/").Expect().Status(iris.StatusNoContent).Body().Empty()
-	time.Sleep(time.Duration(5) * time.Second)
-
-	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedBody)
-	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedBody)*/
 }
 
+// CacheRemote IS not ready for production yet
 // func TestCacheRemote(t *testing.T) {
 // 	iris.ResetDefault()
 // 	// setup the remote cache service listening on localhost:8888/cache
-// 	remoteService := iris.New(iris.OptionCacheGCDuration(1*time.Minute), iris.OptionDisableBanner(true), iris.OptionIsDevelopment(true))
-// 	remoteService.Any("/cache", remoteService.ServeRemoteCache())
+// 	remoteService := iris.New(iris.OptionDisableBanner(true))
+// 	remoteService.Any("/cache", remoteService.ServeRemoteCache(5*time.Second)) // clear the gc every  5 seconds
 // 	defer remoteService.Close()
-// 	go remoteService.Listen(":8888")
+// 	go remoteService.Listen("localhost:8888")
 // 	<-remoteService.Available
 //
-// 	app := iris.New(iris.OptionIsDevelopment(true))
+// 	app := iris.New()
 //
-// 	expectedBody := iris.SerializeToString("text/markdown", testMarkdownContents)
-//
-// 	i := 1
+// 	n := 1
 // 	bodyHandler := func(ctx *iris.Context) {
-// 		if i%2 == 0 { // only for testing
-// 			ctx.SetStatusCode(iris.StatusNoContent)
-// 			i++
-// 			return
-// 		}
-// 		i++
+// 		n++
 // 		ctx.Markdown(iris.StatusOK, testMarkdownContents)
 // 	}
 //
-// 	app.Get("/", iris.RemoteCache("http://127.0.0.1:8888/cache", bodyHandler, time.Duration(15)*time.Second))
+// 	app.Get("/", iris.RemoteCache("http://localhost:8888/cache", bodyHandler, 10*time.Second))
 //
-// 	e := httptest.New(app, t, httptest.Debug(true))
+// 	e := httptest.New(app, t, httptest.Debug(false))
+//
+// 	expectedBody := app.SerializeToString("text/markdown", testMarkdownContents)
 //
 // 	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedBody)
+// 	time.Sleep(3 * time.Second) // let's wait a while because saving is going on a goroutine (in some ms, but travis is slow so 2 seconds wait)
+// 	// we are in cache, so the 'n' should be 1
+// 	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedBody)
+// 	if n > 1 {
+// 		// n should be 1 because it doesn't changed after the first call
+// 		t.Fatalf("Expected n = %d but got %d. Cache has problems!!", 1, n)
+// 	}
+//
+// 	// let's wait 5 more seconds, the cache should be cleared now the n should be 2
 // 	time.Sleep(5 * time.Second)
-// 	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedBody)
-//
+// 	e.GET("/").Expect().Status(iris.StatusNoContent).Body().Empty()
+// 	if n != 2 {
+// 		t.Fatalf("Expected n = %d but got %d. Cache has problems!!", 2, n)
+// 	}
 // }

@@ -142,7 +142,7 @@ type (
 	// FrameworkAPI contains the main Iris Public API
 	FrameworkAPI interface {
 		MuxAPI
-		CacheService
+		CacheServiceAPI
 		Set(...OptionSetter)
 		Must(error)
 		Build()
@@ -176,7 +176,7 @@ type (
 	// Implements the FrameworkAPI
 	Framework struct {
 		*muxAPI
-		CacheService
+		*cacheService
 		// HTTP Server runtime fields is the iris' defined main server, developer can use unlimited number of servers
 		// note: they're available after .Build, and .Serve/Listen/ListenTLS/ListenLETSENCRYPT/ListenUNIX
 		ln        net.Listener
@@ -233,7 +233,7 @@ func New(setters ...OptionSetter) *Framework {
 			"urlpath": s.Path,
 		})
 		// set the cache service
-		s.CacheService = newCacheService()
+		s.cacheService = newCacheService()
 	}
 
 	// websocket & sessions
@@ -354,7 +354,9 @@ func (s *Framework) Build() {
 		}
 
 		// set the cache gc duration and start service
-		s.CacheService.Start(s.Config.CacheGCDuration)
+		if s.cacheService.gcDuration > 0 {
+			s.cacheService.start()
+		}
 
 		if s.Config.Websocket.Endpoint != "" {
 			// register the websocket server and listen to websocket connections when/if $instance.Websocket.OnConnection called by the dev
