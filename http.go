@@ -1207,7 +1207,7 @@ func CERT(addr string, cert tls.Certificate) (net.Listener, error) {
 // LETSENCRYPT returns a new Automatic TLS Listener using letsencrypt.org service
 // receives two parameters, the first is the domain of the server
 // and the second is optionally, the cache file, if you skip it then the cache directory is "./letsencrypt.cache"
-// if you want to disable cache file then simple give it a value of emtpy string ""
+// if you want to disable cache file then simple give it a value of empty string ""
 //
 // supports localhost domains for testing,
 // but I recommend you to use the LETSENCRYPTPROD if you gonna to use it on production
@@ -1243,7 +1243,7 @@ func LETSENCRYPT(addr string, cacheFileOptional ...string) (net.Listener, error)
 // LETSENCRYPTPROD returns a new Automatic TLS Listener using letsencrypt.org service
 // receives two parameters, the first is the domain of the server
 // and the second is optionally, the cache directory, if you skip it then the cache directory is "./certcache"
-// if you want to disable cache directory then simple give it a value of emtpy string ""
+// if you want to disable cache directory then simple give it a value of empty string ""
 //
 // does NOT supports localhost domains for testing, use LETSENCRYPT instead.
 //

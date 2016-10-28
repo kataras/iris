@@ -71,7 +71,6 @@ func (cs *cacheService) start() {
 				now := time.Now()
 				for k, v := range cs.cache {
 					if now.After(v.expires) {
-						println("remove cache")
 						delete(cs.cache, k)
 					}
 				}
@@ -84,7 +83,7 @@ func (cs *cacheService) start() {
 
 func (cs *cacheService) get(key string) *cacheEntry {
 	cs.mu.RLock()
-	if v, ok := cs.cache[key]; ok {
+	if v, ok := cs.cache[key]; ok && time.Now().Before(v.expires) { // we check for expiration, the gc clears the cache but gc maybe late
 		cs.mu.RUnlock()
 		return v
 	}
@@ -199,13 +198,8 @@ func getResponseStatusCode(ctx *Context) int {
 func (cs *cacheService) Cache(bodyHandler HandlerFunc, expiration time.Duration) HandlerFunc {
 	expiration = validateCacheDuration(expiration)
 
-	if cs.gcDuration == -1 {
-		// if gc duration is not setted yet or this is the only one Cache which happens to have bigger expiration than the minimumAllowedCacheDuration
-		// then set that as the gcDuration
-		cs.gcDuration = expiration // the first time the  lowerExpiration should be > minimumAllowedCacheDuration so:
-	} else if expiration < cs.gcDuration { // find the lower
-		// if this expiration is lower than the already setted, set the gcDuration to this
-		cs.gcDuration = expiration
+	if cs.gcDuration == -1 || expiration < cs.gcDuration {
+		cs.gcDuration = expiration // the first time the  gcDuration should be > minimumAllowedCacheDuration so:
 	}
 
 	h := func(ctx *Context) {
@@ -245,6 +239,9 @@ const (
 	queryCacheDuration    = "cache_duration"
 	queryCacheStatusCode  = "cache_status_code"
 	queryCacheContentType = "cache_content_type"
+	requestCacheTimeout   = 5 * time.Second
+	statusCacheSucceed    = StatusOK
+	statusCacheFailed     = StatusBadRequest
 )
 
 // RemoteCache accepts the remote server address and path of the external cache service, the body handler and optional an expiration
@@ -262,25 +259,25 @@ func RemoteCache(cacheServerAddr string, bodyHandler HandlerFunc, expiration tim
 		req := fasthttp.AcquireRequest()
 		req.SetRequestURI(cacheServerAddr)
 		req.Header.SetMethodBytes(MethodGetBytes)
-		req.URI().QueryArgs().Add("cache_key", GetRemoteCacheKey(ctx))
+		req.URI().QueryArgs().Add(queryCacheKey, GetRemoteCacheKey(ctx))
 
 		res := fasthttp.AcquireResponse()
-		err := client.DoTimeout(req, res, time.Duration(5)*time.Second)
-		if err != nil || res.StatusCode() == StatusBadRequest {
+		err := client.DoTimeout(req, res, requestCacheTimeout)
+		if err != nil || res.StatusCode() == statusCacheFailed {
 			// if not found on cache, then execute the handler and save the cache to the remote server
 			bodyHandler.Serve(ctx)
 			// save to the remote cache
 			req.Header.SetMethodBytes(MethodPostBytes)
-
-			req.URI().QueryArgs().Add("cache_duration", cacheDurationStr)
+			args := req.URI().QueryArgs()
+			args.Add(queryCacheDuration, cacheDurationStr)
 			statusCode := strconv.Itoa(ctx.Response.StatusCode())
-			req.URI().QueryArgs().Add("cache_status_code", statusCode)
+			args.Add(queryCacheStatusCode, statusCode)
 			cType := string(ctx.Response.Header.Peek(contentType))
-			req.URI().QueryArgs().Add("cache_content_type", cType)
+			args.Add(queryCacheContentType, cType)
 
 			req.SetBody(ctx.Response.Body())
 			go func() {
-				client.DoTimeout(req, res, time.Duration(5)*time.Second)
+				client.DoTimeout(req, res, requestCacheTimeout)
 				fasthttp.ReleaseRequest(req)
 				fasthttp.ReleaseResponse(res)
 			}()
@@ -332,11 +329,11 @@ func ServeRemoteCache(gcDuration time.Duration) HandlerFunc {
 // use the app.ServeRemoteCache instead of iris.ServeRemoteCache
 func (cs *cacheService) ServeRemoteCache(gcDuration time.Duration) HandlerFunc {
 	cs.gcDuration = validateCacheDuration(gcDuration)
-
+	// the service started at pre-listen state(on .Build) if gcDuration > 0
 	h := func(ctx *Context) {
-		key := ctx.URLParam("cache_key")
+		key := ctx.URLParam(queryCacheKey)
 		if key == "" {
-			ctx.SetStatusCode(StatusBadRequest)
+			ctx.SetStatusCode(statusCacheFailed)
 			return
 		}
 
@@ -347,11 +344,11 @@ func (cs *cacheService) ServeRemoteCache(gcDuration time.Duration) HandlerFunc {
 			}
 		} else if ctx.IsPost() {
 			// get the cache expiration via url param
-			expirationSeconds, err := ctx.URLParamInt64("cache_duration")
+			expirationSeconds, err := ctx.URLParamInt64(queryCacheDuration)
 			// get the body from the requested body
 			body := ctx.Request.Body()
 			if len(body) == 0 {
-				ctx.SetStatusCode(StatusBadRequest)
+				ctx.SetStatusCode(statusCacheFailed)
 				return
 
 			}
@@ -365,27 +362,22 @@ func (cs *cacheService) ServeRemoteCache(gcDuration time.Duration) HandlerFunc {
 				expirationSeconds = int64(minimumAllowedCacheDuration.Seconds())
 			}
 
-			cacheDuration := time.Duration(expirationSeconds) * time.Second
-			statusCode, err := ctx.URLParamInt("cache_status_code")
-			if err != nil {
-				statusCode = StatusOK
-			}
-			cType := ctx.URLParam("cache_content_type")
-			if cType == "" {
-				cType = contentHTML
-			}
+			cacheDuration := validateCacheDuration(time.Duration(expirationSeconds) * time.Second)
+			statusCode, _ := ctx.URLParamInt(queryCacheDuration)
+			statusCode = validateStatusCode(statusCode)
+			cType := validateContentType(ctx.URLParam(queryCacheContentType))
 
 			cs.set(key, statusCode, cType, body, cacheDuration)
 
-			ctx.SetStatusCode(StatusOK)
+			ctx.SetStatusCode(statusCacheSucceed)
 			return
 		} else if ctx.IsDelete() {
 			cs.remove(key)
-			ctx.SetStatusCode(StatusOK)
+			ctx.SetStatusCode(statusCacheSucceed)
 			return
 		}
 
-		ctx.SetStatusCode(StatusBadRequest)
+		ctx.SetStatusCode(statusCacheFailed)
 	}
 
 	return h

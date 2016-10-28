@@ -553,7 +553,7 @@ func (s *Framework) ListenTLS(addr string, certFile, keyFile string) {
 // it's also starts a second 'http' server to redirect all 'http://$ADDR_HOSTNAME:80' to the' https://$ADDR'
 // it creates a cache file to store the certifications, for performance reasons, this file by-default is "./letsencrypt.cache"
 // if you skip the second parameter then the cache file is "./letsencrypt.cache"
-// if you want to disable cache then simple pass as second argument an empty emtpy string ""
+// if you want to disable cache then simple pass as second argument an empty empty string ""
 //
 // example: https://github.com/iris-contrib/examples/blob/master/letsencyrpt/main.go
 //
@@ -568,7 +568,7 @@ func ListenLETSENCRYPT(addr string, cacheFileOptional ...string) {
 // it's also starts a second 'http' server to redirect all 'http://$ADDR_HOSTNAME:80' to the' https://$ADDR'
 // it creates a cache file to store the certifications, for performance reasons, this file by-default is "./letsencrypt.cache"
 // if you skip the second parameter then the cache file is "./letsencrypt.cache"
-// if you want to disable cache then simple pass as second argument an empty emtpy string ""
+// if you want to disable cache then simple pass as second argument an empty empty string ""
 //
 // example: https://github.com/iris-contrib/examples/blob/master/letsencyrpt/main.go
 //
