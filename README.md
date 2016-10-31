@@ -21,7 +21,7 @@
 
 <a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20version%20-%204%20LTS%20-blue.svg?style=flat-square" alt="Releases"></a>
 
-<a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/%20examples-repository-3362c2.svg?style=flat-square" alt="Examples"></a>
+<a href="https://github.com/iris-contrib/examples/tree/4.0.0"><img src="https://img.shields.io/badge/%20examples-repository-3362c2.svg?style=flat-square" alt="Examples"></a>
 
 <a href="https://docs.iris-go.com"><img src="https://img.shields.io/badge/%20docs-reference-5272B4.svg?style=flat-square" alt="Practical Guide/Docs"></a>
 
