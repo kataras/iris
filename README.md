@@ -105,7 +105,7 @@ Ideally suited for both experienced and novice Developers.
 The only requirement is the [Go Programming Language](https://golang.org/dl), at least v1.7.
 
 ```bash
-$ go get -u github.com/kataras/iris/iris
+$ go get -u gopkg.in/kataras/iris.v4
 ```
 
 ### Hello, World!
@@ -884,15 +884,6 @@ Versioning
 ------------
 
 Current: **v4 LTS**
-
-Todo
-------------
-
-- [ ] Server-side React render, as requested [here](https://github.com/kataras/iris/issues/503)
-- [x] Iris command line improvements, as requested [here](https://github.com/kataras/iris/issues/506)
-- [x] Cache service, simple but can make your page renders up to 10 times faster, write your suggestions [here](https://github.com/kataras/iris/issues/513)
-
-Iris is a **Community-Driven** Project, waiting for your suggestions and [feature requests](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=label%3A%22feature%20request%22)!
 
 People
 ------------
