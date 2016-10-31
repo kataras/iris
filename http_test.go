@@ -1,12 +1,6 @@
 // Black-box Testing
 package iris_test
 
-/*
-This is the part we only care, these are end-to-end tests for the mux(router) and the server, the whole http file is made for these reasons only, so these tests are enough I think.
-
-CONTRIBUTE & DISCUSSION ABOUT TESTS TO: https://github.com/iris-contrib/tests
-*/
-
 import (
 	"fmt"
 	"io/ioutil"
@@ -15,9 +9,9 @@ import (
 	"time"
 
 	"github.com/gavv/httpexpect"
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/httptest"
 	"github.com/valyala/fasthttp"
+	"gopkg.in/kataras/iris.v4"
+	"gopkg.in/kataras/iris.v4/httptest"
 )
 
 const (

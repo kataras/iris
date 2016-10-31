@@ -5,9 +5,9 @@ import (
 
 	"strings"
 
-	"github.com/kataras/cli"
-	"github.com/kataras/go-errors"
-	"github.com/kataras/rizla/rizla"
+	"gopkg.in/kataras/cli.v0"
+	"gopkg.in/kataras/go-errors.v0"
+	"gopkg.in/kataras/rizla.v0/rizla"
 )
 
 func buildRunCommand() *cli.Cmd {

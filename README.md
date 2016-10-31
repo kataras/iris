@@ -117,7 +117,7 @@ $ cat helloworld.go
 ```go
 package main
 
-import "github.com/kataras/iris"
+import "gopkg.in/kataras/iris.v4"
 
 func main(){
 
@@ -351,7 +351,7 @@ You can define your own handlers when http error occurs.
 package main
 
 import (
-	"github.com/kataras/iris"
+	"gopkg.in/kataras/iris.v4"
 )
 
 func main() {
@@ -537,7 +537,7 @@ iris.Get("/txt", func(ctx *iris.Context) {
 // file ./main.go
 package main
 
-import "github.com/kataras/iris"
+import "gopkg.in/kataras/iris.v4"
 
 func main() {
 	iris.Config.IsDevelopment = true // this will reload the templates on each request
@@ -570,9 +570,9 @@ func hi(ctx *iris.Context) {
 ```go
 
 import (
-  "github.com/iris-contrib/middleware/logger"
-  "github.com/iris-contrib/middleware/cors"
-  "github.com/iris-contrib/middleware/basicauth"
+  "gopkg.in/iris-contrib/middleware.v4/logger"
+  "gopkg.in/iris-contrib/middleware.v4/cors"
+  "gopkg.in/iris-contrib/middleware.v4/basicauth"
 )
 // Root level middleware
 iris.Use(logger.New())
@@ -608,13 +608,13 @@ iris.Get("/products", logme, func(ctx *iris.Context) {
 | [JWT Middleware ](https://github.com/iris-contrib/middleware/tree/master/jwt)      | JSON Web Tokens                  |[example ](https://github.com/iris-contrib/examples/blob/master/middleware_jwt/main.go), [book section](https://docs.iris-go.com/jwt.html)  |
 | [Cors Middleware ](https://github.com/iris-contrib/middleware/tree/master/cors)      | Cross Origin Resource Sharing W3 specification   | [how to use ](https://github.com/iris-contrib/middleware/tree/master/cors#how-to-use)  |
 | [Secure Middleware ](https://github.com/iris-contrib/middleware/tree/master/secure) |  Facilitates some quick security wins      | [example](https://github.com/iris-contrib/examples/blob/master/middleware_secure/main.go)  |
-| [I18n Middleware ](https://github.com/iris-contrib/middleware/tree/master/i18n)      | Simple internationalization       | [example](https://github.com/iris-contrib/examples/tree/master/middleware_internationalization_i18n), [book section](https://docs.iris-go.com/middleware-internationalization-and-localization.html)  |
+| [I18n Middleware ](https://github.com/iris-contrib/middleware/tree/master/i18n)      | Simple internationalization       | [example](https://github.com/iris-contrib/examples/tree/4.0.0/middleware_internationalization_i18n), [book section](https://docs.iris-go.com/middleware-internationalization-and-localization.html)  |
 | [Recovery Middleware ](https://github.com/iris-contrib/middleware/tree/master/recovery) | Safety recover the station from panic       | [example](https://github.com/iris-contrib/examples/blob/master/middleware_recovery/main.go)  |
 | [Logger Middleware ](https://github.com/iris-contrib/middleware/tree/master/logger)      | Logs every request       | [example](https://github.com/iris-contrib/examples/blob/master/middleware_logger/main.go), [book section](https://docs.iris-go.com/logger.html)  |
 | [Profile Middleware ](https://github.com/iris-contrib/middleware/tree/master/pprof)      | Http profiling for debugging    | [example](https://github.com/iris-contrib/examples/blob/master/middleware_pprof/main.go)  |
 | [Editor Plugin](https://github.com/iris-contrib/plugin/tree/master/editor)      | Alm-tools, a typescript online IDE/Editor | [book section](https://docs.iris-go.com/plugin-editor.html) |
 | [Typescript Plugin](https://github.com/iris-contrib/plugin/tree/master/typescript)      | Auto-compile client-side typescript files      |   [book section](https://docs.iris-go.com/plugin-typescript.html) |
-| [OAuth,OAuth2 Plugin](https://github.com/iris-contrib/plugin/tree/master/oauth) |  User Authentication was never be easier, supports >27 providers |    [example](https://github.com/iris-contrib/examples/tree/master/plugin_oauth_oauth2), [book section](https://docs.iris-go.com/plugin-oauth.html) |
+| [OAuth,OAuth2 Plugin](https://github.com/iris-contrib/plugin/tree/master/oauth) |  User Authentication was never be easier, supports >27 providers |    [example](https://github.com/iris-contrib/examples/tree/4.0.0/plugin_oauth_oauth2), [book section](https://docs.iris-go.com/plugin-oauth.html) |
 | [Iris control Plugin](https://github.com/iris-contrib/plugin/tree/master/iriscontrol) |   Basic (browser-based) control over your Iris station |    [example](https://github.com/iris-contrib/examples/blob/master/plugin_iriscontrol/main.go), [book section](https://docs.iris-go.com/plugin-iriscontrol.html) |
 
 ### Sessions
@@ -689,7 +689,7 @@ package main
 
 import (
     "fmt"
-    "github.com/kataras/iris"
+    "gopkg.in/kataras/iris.v4"
 )
 
 type clientPage struct {
@@ -805,7 +805,7 @@ function appendMessage(messageDiv) {
 
 ```
 
-View a working example by navigating [here](https://github.com/iris-contrib/examples/tree/master/websocket) and if you need more than one websocket server [click here](https://github.com/iris-contrib/examples/tree/master/websocket_unlimited_servers).
+View a working example by navigating [here](https://github.com/iris-contrib/examples/tree/4.0.0/websocket) and if you need more than one websocket server [click here](https://github.com/iris-contrib/examples/tree/4.0.0/websocket_unlimited_servers).
 
 > Each section of the README has its own - more advanced - subject on the book, so be sure to check book for any further research
 

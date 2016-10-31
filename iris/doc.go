@@ -1,9 +1,9 @@
-package main // import "github.com/kataras/iris/iris"
+package main
 
 /*
 
 - install iris command line tool
-$ go get -u github.com/kataras/iris/iris
+$ go get -u gopkg.in/kataras/iris.v4/iris
 
 
 - get command

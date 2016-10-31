@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/kataras/cli"
-	"github.com/kataras/iris"
+	"gopkg.in/kataras/cli.v0"
+	"gopkg.in/kataras/iris.v4"
 )
 
 var (

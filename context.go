@@ -18,11 +18,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iris-contrib/formBinder"
-	"github.com/kataras/go-errors"
-	"github.com/kataras/go-fs"
-	"github.com/kataras/go-sessions"
 	"github.com/valyala/fasthttp"
+	"gopkg.in/iris-contrib/formBinder.v4"
+	"gopkg.in/kataras/go-errors.v0"
+	"gopkg.in/kataras/go-fs.v0"
+	"gopkg.in/kataras/go-sessions.v0"
 )
 
 const (

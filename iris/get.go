@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/kataras/cli"
-	"github.com/kataras/go-fs"
 	"github.com/skratchdot/open-golang/open"
+	"gopkg.in/kataras/cli.v0"
+	"gopkg.in/kataras/go-fs.v0"
 	"os"
 	"os/exec"
 	"strings"
@@ -18,7 +18,7 @@ type project struct {
 // first of all: we could fetch the AIO_examples and make the projects full dynamically, this would be perfect BUT not yet,
 // for now lets make it dynamic via code, we want a third-party repo to be compatible also, not only iris-contrib/examples.
 var (
-	commonRepo       = "github.com/iris-contrib/examples/AIO_examples/"
+	commonRepo       = "gopkg.in/iris-contrib/examples.v4/AIO_examples/"
 	relativeMainFile = "main.go"
 	// the available projects/examples to build & run using this command line tool
 	projects = map[string]project{

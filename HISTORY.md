@@ -1,6 +1,6 @@
 # History
 
-**How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
+**How to upgrade**: remove your `$GOPATH/src/gopkg.in/kataras` folder, open your command-line and execute this command: `go get -u gopkg.in/kataras/iris.v4`.
 
 
 ## v3 -> v4 (fasthttp-based) long term support
@@ -45,7 +45,7 @@ iris.Get("/hi", iris.Cache(func(c *iris.Context) {
 
 ```
 
-[EXAMPLE](https://github.com/iris-contrib/examples/tree/master/cache_body):
+[EXAMPLE](https://github.com/iris-contrib/examples/tree/4.0.0/cache_body):
 
 
 
@@ -53,7 +53,7 @@ iris.Get("/hi", iris.Cache(func(c *iris.Context) {
 package main
 
 import (
-	"github.com/kataras/iris"
+	"gopkg.in/kataras/iris.v4"
 	"time"
 )
 
@@ -132,14 +132,14 @@ func main() {
 
 **The get command** downloads, installs and runs a project based on a `prototype`, such as `basic`, `static` and `mongo` .
 
-> These projects are located [online](https://github.com/iris-contrib/examples/tree/master/AIO_examples)
+> These projects are located [online](https://github.com/iris-contrib/examples/tree/4.0.0/AIO_examples)
 
 
 ```sh
 iris get basic
 ```
 
-Downloads the  [basic](https://github.com/iris-contrib/examples/tree/master/AIO_examples/basic) sample protoype project to the `$GOPATH/src/github.com/iris-contrib/examples` directory(the iris cmd will open this folder to you, automatically) builds, runs and watch for source code changes (hot-reload)
+Downloads the  [basic](https://github.com/iris-contrib/examples/tree/4.0.0/AIO_examples/basic) sample protoype project to the `$GOPATH/src/github.com/iris-contrib/examples` directory(the iris cmd will open this folder to you, automatically) builds, runs and watch for source code changes (hot-reload)
 
 [![Iris get command preview](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iriscmd.gif)](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iriscmd.gif)
 
@@ -161,14 +161,14 @@ Downloads the  [basic](https://github.com/iris-contrib/examples/tree/master/AIO_
 // Forth parameter is the AssetNames function
 //
 // For more take a look at the
-// example: https://github.com/iris-contrib/examples/tree/master/static_files_embedded
+// example: https://github.com/iris-contrib/examples/tree/4.0.0/static_files_embedded
 StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) RouteNameFunc
 
 ```
 
 **example**
 
-You can view and run it from [here](https://github.com/iris-contrib/examples/tree/master/static_files_embedded) *
+You can view and run it from [here](https://github.com/iris-contrib/examples/tree/4.0.0/static_files_embedded) *
 
 ```go
 package main
@@ -177,7 +177,7 @@ package main
 // Secondly, execute the command: cd $GOPATH/src/github.com/iris-contrib/examples/static_files_embedded && go-bindata ./assets/...
 
 import (
-	"github.com/kataras/iris"
+	"gopkg.in/kataras/iris.v4"
 )
 
 func main() {
@@ -231,7 +231,7 @@ func main() {
 **old**
 ```go
 import (
-	"github.com/kataras/iris"
+	"gopkg.in/kataras/iris.v4"
 	"testing"
 )
 
@@ -247,8 +247,8 @@ func MyTest(t *testing.T) {
 **used that instead/new**
 ```go
 import (
-	"github.com/kataras/iris/httptest"
-	"github.com/kataras/iris"
+	"gopkg.in/kataras/iris.v4/httptest"
+	"gopkg.in/kataras/iris.v4"
 	"testing"
 )
 
@@ -318,7 +318,7 @@ func TestMuxFireMethodNotAllowed(t *testing.T) {
 
 - **NEW**: `PreBuild` plugin type, raises before `.Build`. Used by third-party plugins to register any runtime routes or make any changes to the iris main configuration, example of this usage is the [OAuth/OAuth2 Plugin](https://github.com/iris-contrib/plugin/tree/master/oauth).
 
-- **FIX**: The [OAuth example](https://github.com/iris-contrib/examples/tree/master/plugin_oauth_oauth2).
+- **FIX**: The [OAuth example](https://github.com/iris-contrib/examples/tree/4.0.0/plugin_oauth_oauth2).
 
 
 - **NEW**: Websocket configuration fields:
@@ -554,13 +554,13 @@ CheckForUpdates bool
 
 - **CHANGE**: No front-end changes if you used the default response engines before. Response Engines to Serializers, `iris.ResponseEngine` `serializer.Serializer`, comes from `kataras/go-serializer` which is installed automatically when you upgrade iris with `-u` flag.
 
-    - the repo "github.com/iris-contrib/response" is a clone of "github.com/kataras/go-serializer", to keep compatibility state. examples and gitbook updated to work with the last.
+    - the repo "github.com/iris-contrib/response" is a clone of "gopkg.in/kataras/go-serializer.v0", to keep compatibility state. examples and gitbook updated to work with the last.
 
     - `iris.UseResponse(iris.ResponseEngine, ...string)func (string)` was used to register custom response engines, now you use: `iris.UseSerializer(key string, s serializer.Serializer)`.
 
     - `iris.ResponseString` same defintion but differnet name now: `iris.SerializeToString`
 
-[Serializer examples](https://github.com/iris-contrib/examples/tree/master/serialize_engines) and [Book section](https://kataras.gitbooks.io/iris/content/serialize-engines.html) updated.
+[Serializer examples](https://github.com/iris-contrib/examples/tree/4.0.0/serialize_engines) and [Book section](https://kataras.gitbooks.io/iris/content/serialize-engines.html) updated.
 
 
 - **ADDED**: `iris.TemplateSourceString(src string, binding interface{}) string` this will parse the src raw contents to the template engine and return the string result & `context.RenderTemplateSource(status int, src string, binding interface{}, options ...map[string]interface{}) error` this will parse the src raw contents to the template engine and render the result to the client, as requseted [here](https://github.com/kataras/iris/issues/409).
@@ -592,7 +592,7 @@ now you can just write this:
 
 `.New` **by configuration**
 ```go
-import "github.com/kataras/iris"
+import "gopkg.in/kataras/iris.v4"
 //...
 myConfig := iris.Configuration{Charset: "UTF-8", IsDevelopment:true, Sessions: iris.SessionsConfiguration{Cookie:"mycookie"}, Websocket: iris.WebsocketConfiguration{Endpoint: "/my_endpoint"}}
 iris.New(myConfig)
@@ -601,7 +601,7 @@ iris.New(myConfig)
 `.New` **by options**
 
 ```go
-import "github.com/kataras/iris"
+import "gopkg.in/kataras/iris.v4"
 //...
 iris.New(iris.OptionCharset("UTF-8"), iris.OptionIsDevelopment(true), iris.OptionSessionsCookie("mycookie"), iris.OptionWebsocketEndpoint("/my_endpoint"))
 
@@ -811,7 +811,7 @@ OptionServerWriteTimeout(val time.Duration)
 // NOTE: the http status is 'StatusMovedPermanently', means one-time-redirect(the browser remembers the new addr and goes to the new address without need to request something from this server
 // which means that if you want to change this address you have to clear your browser's cache in order this to be able to change to the new addr.
 //
-// example: https://github.com/iris-contrib/examples/tree/master/multiserver_listening2
+// example: https://github.com/iris-contrib/examples/tree/4.0.0/multiserver_listening2
 OptionServerRedirectTo(val string)
 
 // OptionServerVirtual If this server is not really listens to a real host, it mostly used in order to achieve testing without system modifications
@@ -880,11 +880,11 @@ Zero front-end changes. No real improvements, developers can ignore this update.
 - Better gzip response managment
 
 
-- **Feature request has been implemented**: Add layout support for Pug/Jade, example [here](https://github.com/iris-contrib/examples/tree/master/template_engines/template_pug_2).
+- **Feature request has been implemented**: Add layout support for Pug/Jade, example [here](https://github.com/iris-contrib/examples/tree/4.0.0/template_engines/template_pug_2).
 - **Feature request has been implemented**: Forcefully closing a Websocket connection, `WebsocketConnection.Disconnect() error`.
 
 - **FIX**: WebsocketConnection.Leave() will hang websocket server if .Leave was called manually when the websocket connection has been closed.
-- **FIX**: StaticWeb not serving index.html correctly, align the func with the rest of Static funcs also, [example](https://github.com/iris-contrib/examples/tree/master/static_web) added.
+- **FIX**: StaticWeb not serving index.html correctly, align the func with the rest of Static funcs also, [example](https://github.com/iris-contrib/examples/tree/4.0.0/static_web) added.
 
 Notes: if you compare it with previous releases (13+ versions before v3 stable), the v4 stable release was fast, now we had only 6 versions before stable, that was happened because many of bugs have been already fixed and we hadn't new bug reports and secondly, and most important for me, some third-party features are implemented mostly by third-party packages via other developers!
 
@@ -1029,7 +1029,7 @@ E-book and examples are not yet updated, no big changes.
 - `{{ url "myroute" myparams}}`
 - `{{ urlpath "myroute" myparams}}`
 
-For a complete example please, click [here](https://github.com/iris-contrib/examples/tree/master/templates_handlebars).
+For a complete example please, click [here](https://github.com/iris-contrib/examples/tree/4.0.0/templates_handlebars).
 
 **NEW:** Iris **can listen to more than one server per station** now, as requested [here](https://github.com/kataras/iris/issues/235).
 For example you can have https with SSL/TLS and one more server http which navigates to the secure location.
@@ -1063,7 +1063,7 @@ Underline changes, libraries used by iris' base code:
 - Move the tests package to the [iris-contrib/tests](https://github.com/iris-contrib/tests) repository (Yes, you should make PRs now with no fear about breaking the Iris).
 
 **NEW**:
-- OAuth, OAuth2 support via plugin (facebook,gplus,twitter and 25 more), gitbook section [here](https://kataras.gitbooks.io/iris/content/plugin-oauth.html), plugin [example](https://github.com/iris-contrib/examples/blob/master/plugin_oauth_oauth2/main.go), low-level package example [here](https://github.com/iris-contrib/examples/tree/master/oauth_oauth2) (no performance differences, it's just a working version of [goth](https://github.com/markbates/goth) which is converted to work with Iris)
+- OAuth, OAuth2 support via plugin (facebook,gplus,twitter and 25 more), gitbook section [here](https://kataras.gitbooks.io/iris/content/plugin-oauth.html), plugin [example](https://github.com/iris-contrib/examples/blob/master/plugin_oauth_oauth2/main.go), low-level package example [here](https://github.com/iris-contrib/examples/tree/4.0.0/oauth_oauth2) (no performance differences, it's just a working version of [goth](https://github.com/markbates/goth) which is converted to work with Iris)
 
 - JSON Web Tokens support via [this middleware](https://github.com/iris-contrib/middleware/tree/master/jwt), book section [here](https://kataras.gitbooks.io/iris/content/jwt.html), as requested [here](https://github.com/kataras/iris/issues/187).
 
@@ -1253,7 +1253,7 @@ And other not-too-important fixes
 
 - NEW: Wildcard(dynamic) subdomains, read [here](https://kataras.gitbooks.io/iris/content/subdomains.html)
 
-- NEW: Implement feature request [#165](https://github.com/kataras/iris/issues/165). Routes can now be selected by `a custom name`, and this allows us to use the {{ url "custom-name" "any" "named" "parameters"}}``: For HTML & Amber engines, example [here](https://github.com/iris-contrib/examples/tree/master/templates_9). For PongoEngine, example [here](https://github.com/iris-contrib/examples/tree/master/templates_10_pongo)
+- NEW: Implement feature request [#165](https://github.com/kataras/iris/issues/165). Routes can now be selected by `a custom name`, and this allows us to use the {{ url "custom-name" "any" "named" "parameters"}}``: For HTML & Amber engines, example [here](https://github.com/iris-contrib/examples/tree/4.0.0/templates_9). For PongoEngine, example [here](https://github.com/iris-contrib/examples/tree/4.0.0/templates_10_pongo)
 
 - Remove the [x/net/context](https://godoc.org/golang.org/x/net/context), it has been useless after v2.
 
@@ -1261,10 +1261,10 @@ And other not-too-important fixes
 ## 3.0.0-alpha.beta -> 3.0.0-beta
 
 
-- New iris.API for easy API declaration, read more [here](https://kataras.gitbooks.io/iris/content/using-handlerapi.html), example [there](https://github.com/iris-contrib/examples/tree/master/api_handler_2).
+- New iris.API for easy API declaration, read more [here](https://kataras.gitbooks.io/iris/content/using-handlerapi.html), example [there](https://github.com/iris-contrib/examples/tree/4.0.0/api_handler_2).
 
 
-- Add [example](https://github.com/iris-contrib/examples/tree/master/middleware_basicauth_2) and fix the Basic Authentication middleware
+- Add [example](https://github.com/iris-contrib/examples/tree/4.0.0/middleware_basicauth_2) and fix the Basic Authentication middleware
 
 ## 3.0.0-alpha.6 -> 3.0.0-alpha.beta
 
@@ -1323,7 +1323,7 @@ OnDisconnect(func(){})
 
 ```
 
-- [Example](https://github.com/iris-contrib/examples/tree/master/websocket)
+- [Example](https://github.com/iris-contrib/examples/tree/4.0.0/websocket)
 - [E-book section](https://kataras.gitbooks.io/iris/content/package-websocket.html)
 
 
@@ -1371,8 +1371,8 @@ Changes:
 
 
 Added:
-	- iris.AmberEngine [Amber](https://github.com/eknkc/amber). [View an example](https://github.com/iris-contrib/examples/tree/master/templates_7_html_amber)
-	- iris.JadeEngine [Jade](https://github.com/Joker/jade). [View an example](https://github.com/iris-contrib/examples/tree/master/templates_6_html_jade)
+	- iris.AmberEngine [Amber](https://github.com/eknkc/amber). [View an example](https://github.com/iris-contrib/examples/tree/4.0.0/templates_7_html_amber)
+	- iris.JadeEngine [Jade](https://github.com/Joker/jade). [View an example](https://github.com/iris-contrib/examples/tree/4.0.0/templates_6_html_jade)
 
 Book section [Render/Templates updated](https://kataras.gitbooks.io/iris/content/render_templates.html)
 
@@ -1415,7 +1415,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/kataras/iris"
+	"gopkg.in/kataras/iris.v4"
 )
 
 type Visitor struct {

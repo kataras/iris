@@ -1,8 +1,8 @@
 package iris
 
 import (
-	irisWebsocket "github.com/iris-contrib/websocket"
-	"github.com/kataras/go-websocket"
+	irisWebsocket "gopkg.in/iris-contrib/websocket.v4"
+	"gopkg.in/kataras/go-websocket.v0"
 )
 
 // conversionals

@@ -13,11 +13,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iris-contrib/letsencrypt"
-	"github.com/kataras/go-errors"
 	"github.com/valyala/fasthttp"
 	"github.com/valyala/fasthttp/fasthttpadaptor"
 	"golang.org/x/crypto/acme/autocert"
+	"gopkg.in/iris-contrib/letsencrypt.v4"
+	"gopkg.in/kataras/go-errors.v0"
 )
 
 const (

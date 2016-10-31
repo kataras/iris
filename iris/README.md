@@ -1,6 +1,6 @@
 ## Package information
 
-This package is the command line tool for  [../](https://github.com/kataras/iris).
+This package is the command line tool for  [../](https://github.com/kataras/iris/tree/4.0.0).
 
 
 [![Iris get command preview](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iriscmd.gif)](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iriscmd.gif)
@@ -31,14 +31,14 @@ $ iris [command] [-flags]
 
 **The get command** downloads, installs and runs a project based on a `prototype`, such as `basic`, `static` and `mongo` .
 
-> These projects are located [online](https://github.com/iris-contrib/examples/tree/master/AIO_examples)
+> These projects are located [online](https://github.com/iris-contrib/examples/tree/4.0.0/AIO_examples)
 
 
 ```sh
 iris get mongo
 ```
 
-Downloads the  [mongo](https://github.com/iris-contrib/examples/tree/master/AIO_examples/mongo) sample protoype project to the `$GOPATH/src/github.com/iris-contrib/examples` directory(the iris cmd will open this folder to you, automatically) builds, runs and watch for source code changes (hot-reload)
+Downloads the  [mongo](https://github.com/iris-contrib/examples/tree/4.0.0/AIO_examples/mongo) sample protoype project to the `$GOPATH/src/github.com/iris-contrib/examples` directory(the iris cmd will open this folder to you, automatically) builds, runs and watch for source code changes (hot-reload)
 
 
 ## run

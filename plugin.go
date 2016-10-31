@@ -5,8 +5,8 @@ import (
 
 	"log"
 
-	"github.com/kataras/go-errors"
-	"github.com/kataras/go-fs"
+	"gopkg.in/kataras/go-errors.v0"
+	"gopkg.in/kataras/go-fs.v0"
 )
 
 var (

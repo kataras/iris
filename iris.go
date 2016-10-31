@@ -7,7 +7,7 @@
 //
 // package main
 //
-// import  "github.com/kataras/iris"
+// import  "gopkg.in/kataras/iris.v4"
 //
 // func main() {
 //     iris.Get("/hi_json", func(c *iris.Context) {
@@ -23,7 +23,7 @@
 //
 // package main
 //
-// import  "github.com/kataras/iris"
+// import  "gopkg.in/kataras/iris.v4"
 //
 // func main() {
 // 	s1 := iris.New()
@@ -48,7 +48,7 @@
 // For middleware, template engines, response engines, sessions, websockets, mails, subdomains,
 // dynamic subdomains, routes, party of subdomains & routes, ssh and much more
 // visit https://www.gitbook.com/book/kataras/iris/details
-package iris // import "github.com/kataras/iris"
+package iris
 
 import (
 	"fmt"
@@ -65,15 +65,15 @@ import (
 	"time"
 
 	"bytes"
-	"github.com/geekypanda/httpcache"
-	"github.com/kataras/go-errors"
-	"github.com/kataras/go-fs"
-	"github.com/kataras/go-serializer"
-	"github.com/kataras/go-sessions"
-	"github.com/kataras/go-template"
-	"github.com/kataras/go-template/html"
-	"github.com/kataras/iris/utils"
 	"github.com/valyala/fasthttp"
+	"gopkg.in/geekypanda/httpcache.v0"
+	"gopkg.in/kataras/go-errors.v0"
+	"gopkg.in/kataras/go-fs.v0"
+	"gopkg.in/kataras/go-serializer.v0"
+	"gopkg.in/kataras/go-sessions.v0"
+	"gopkg.in/kataras/go-template.v0"
+	"gopkg.in/kataras/go-template.v0/html"
+	"gopkg.in/kataras/iris.v4/utils"
 )
 
 const (
@@ -1848,7 +1848,7 @@ func StaticWeb(reqPath string, systemPath string, stripSlashes int) RouteNameFun
 // * stripSlashes = 1, original path: "/foo/bar", result: "/bar"
 // * stripSlashes = 2, original path: "/foo/bar", result: ""
 // * if you don't know what to put on stripSlashes just 1
-// example: https://github.com/iris-contrib/examples/tree/master/static_web
+// example: https://github.com/iris-contrib/examples/tree/4.0.0/static_web
 func (api *muxAPI) StaticWeb(reqPath string, systemPath string, stripSlashes int) RouteNameFunc {
 	if reqPath[len(reqPath)-1] != slashByte { // if / then /*filepath, if /something then /something/*filepath
 		reqPath += slash
@@ -1945,7 +1945,7 @@ func (api *muxAPI) StaticContent(reqPath string, cType string, content []byte) R
 // Forth parameter is the AssetNames function
 //
 // For more take a look at the
-// example: https://github.com/iris-contrib/examples/tree/master/static_files_embedded
+// example: https://github.com/iris-contrib/examples/tree/4.0.0/static_files_embedded
 func StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) RouteNameFunc {
 	return Default.StaticEmbedded(requestPath, vdir, assetFn, namesFn)
 }
@@ -1957,7 +1957,7 @@ func StaticEmbedded(requestPath string, vdir string, assetFn func(name string) (
 // Forth parameter is the AssetNames function
 //
 // For more take a look at the
-// example: https://github.com/iris-contrib/examples/tree/master/static_files_embedded
+// example: https://github.com/iris-contrib/examples/tree/4.0.0/static_files_embedded
 func (api *muxAPI) StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) RouteNameFunc {
 
 	// check if requestPath already contains an asterix-match to anything symbol:  /path/*

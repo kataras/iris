@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/imdario/mergo"
-	"github.com/kataras/go-options"
-	"github.com/kataras/go-sessions"
 	"github.com/valyala/fasthttp"
+	"gopkg.in/kataras/go-options.v0"
+	"gopkg.in/kataras/go-sessions.v0"
 )
 
 type (

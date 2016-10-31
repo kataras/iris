@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/kataras/go-errors"
+	"gopkg.in/kataras/go-errors.v0"
 	"os"
 	"path/filepath"
 	"strings"
