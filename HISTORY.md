@@ -2,7 +2,8 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
-## 5.0.1 -> 5.1.0
+
+## v3 -> v4 (fasthttp-based) long term support
 
 - **NEW FEATURE**: `CacheService` simple, cache service for your app's static body content(can work as external service if you are doing horizontal scaling, the `Cache` is just a `Handler` :) )
 
@@ -25,15 +26,13 @@ Cache any content, templates, static files, even the error handlers, anything.
 // use the app.Cache instead of iris.Cache
 Cache(bodyHandler HandlerFunc, expiration time.Duration) HandlerFunc
 
-// InvalidateCache clears the cache body for a specific key(request uri, can be retrieved by GetCacheKey(ctx))
+// InvalidateCache clears the cache body for a specific context's url path(cache unique key)
 //
 // Note that it depends on a station instance's cache service.
 // Do not try to call it from default' station if you use the form of app := iris.New(),
-// use the app.Cache instead of iris.Cache
-InvalidateCache(key string)
+// use the app.InvalidateCache instead of iris.InvalidateCache
+InvalidateCache(ctx *Context)
 
-// GetCacheKey returns the cache key(string) from a Context
-GetCacheKey(ctx *Context) string
 
 ```
 
@@ -47,9 +46,6 @@ iris.Get("/hi", iris.Cache(func(c *iris.Context) {
 ```
 
 [EXAMPLE](https://github.com/iris-contrib/examples/tree/master/cache_body):
-
-
-
 
 
 
@@ -131,8 +127,6 @@ func main() {
 
 ```
 
-## v4 -> 5.0.1
-
 - **IMPROVE**: [Iris command line tool](https://github.com/kataras/iris/tree/master/iris) introduces a **new** `get` command (replacement for the old `create`)
 
 
@@ -152,9 +146,6 @@ Downloads the  [basic](https://github.com/iris-contrib/examples/tree/master/AIO_
 
 - **CHANGE**: The `Path parameters` are now **immutable**. Now you don't have to copy a `path parameter` before passing to another function which maybe modifies it, this has a side-affect of `context.GetString("key") = context.Param("key")`  so you have to be careful to not override a path parameter via other custom (per-context) user value.
 
-
-
-## v3 -> v4 long term support
 
 - **NEW**: `iris.StaticEmbedded`/`app := iris.New(); app.StaticEmbedded` - Embed static assets into your executable with [go-bindata](https://github.com/jteeuwen/go-bindata) and serve them.
 
@@ -882,8 +873,6 @@ Zero front-end changes. No real improvements, developers can ignore this update.
 - Replace the main and underline websocket implementation with [go-websocket](https://github.com/kataras/go-websocket). Note that we still need the [ris-contrib/websocket](https://github.com/iris-contrib/websocket) package.
 - Replace the use of iris-contrib/errors with [go-errors](https://github.com/kataras/go-errors), which has more features
 
-
-- **NEW FEATURE**: Basic remote control through SSH, example [here](https://github.com/iris-contrib/examples/blob/master/ssh/main.go)
 - **NEW FEATURE**: Optionally `OnError` foreach Party (by prefix, use it with your own risk), example [here](https://github.com/iris-contrib/examples/blob/master/httperrors/main.go#L37)
 - **NEW**: `iris.Config.Sessions.CookieLength`, You're able to customize the length of each sessionid's cookie's value. Default (and previous' implementation) is 32.
 - **FIX**: Websocket panic on non-websocket connection[*](https://github.com/kataras/iris/issues/367)

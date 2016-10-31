@@ -1133,7 +1133,7 @@ func (ctx *Context) MaxAge() int64 {
 
 // InvalidateCache clears the cache manually for this request uri context's handler's route
 func (ctx *Context) InvalidateCache() {
-	ctx.framework.cacheService.InvalidateCache(GetCacheKey(ctx))
+	ctx.framework.InvalidateCache(ctx)
 }
 
 // Log logs to the iris defined logger

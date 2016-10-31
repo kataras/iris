@@ -65,6 +65,7 @@ import (
 	"time"
 
 	"bytes"
+	"github.com/geekypanda/httpcache"
 	"github.com/kataras/go-errors"
 	"github.com/kataras/go-fs"
 	"github.com/kataras/go-serializer"
@@ -77,9 +78,9 @@ import (
 
 const (
 	// IsLongTermSupport flag is true when the below version number is a long-term-support version
-	IsLongTermSupport = false
+	IsLongTermSupport = true
 	// Version is the current version number of the Iris web framework
-	Version = "5.1.0"
+	Version = "4"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -97,9 +98,6 @@ var (
 	Plugins   PluginContainer
 	Router    fasthttp.RequestHandler
 	Websocket *WebsocketServer
-	// Look ssh.go for this field's configuration
-	// example: https://github.com/iris-contrib/examples/blob/master/ssh/main.go
-	SSH *SSHServer
 	// Available is a channel type of bool, fired to true when the server is opened and all plugins ran
 	// never fires false, if the .Close called then the channel is re-allocating.
 	// the channel remains open until you close it.
@@ -115,7 +113,7 @@ var (
 // iris.Plugins
 // iris.Router
 // iris.Websocket
-// iris.SSH and iris.Available channel
+// iris.Available channel
 // useful mostly when you are not using the form of app := iris.New() inside your tests, to make sure that you're using a new iris instance
 func ResetDefault() {
 	Default = New()
@@ -124,7 +122,6 @@ func ResetDefault() {
 	Plugins = Default.Plugins
 	Router = Default.Router
 	Websocket = Default.Websocket
-	SSH = Default.SSH
 	Available = Default.Available
 }
 
@@ -142,7 +139,6 @@ type (
 	// FrameworkAPI contains the main Iris Public API
 	FrameworkAPI interface {
 		MuxAPI
-		CacheServiceAPI
 		Set(...OptionSetter)
 		Must(error)
 		Build()
@@ -169,6 +165,8 @@ type (
 		TemplateString(string, interface{}, ...map[string]interface{}) string
 		TemplateSourceString(string, interface{}) string
 		SerializeToString(string, interface{}, ...map[string]interface{}) string
+		Cache(HandlerFunc, time.Duration) HandlerFunc
+		InvalidateCache(*Context)
 	}
 
 	// Framework is our God |\| Google.Search('Greek mythology Iris')
@@ -176,7 +174,6 @@ type (
 	// Implements the FrameworkAPI
 	Framework struct {
 		*muxAPI
-		*cacheService
 		// HTTP Server runtime fields is the iris' defined main server, developer can use unlimited number of servers
 		// note: they're available after .Build, and .Serve/Listen/ListenTLS/ListenLETSENCRYPT/ListenUNIX
 		ln        net.Listener
@@ -198,7 +195,6 @@ type (
 		Logger      *log.Logger
 		Plugins     PluginContainer
 		Websocket   *WebsocketServer
-		SSH         *SSHServer
 	}
 )
 
@@ -216,12 +212,11 @@ func New(setters ...OptionSetter) *Framework {
 	s := &Framework{}
 	s.Set(setters...)
 
-	// logger, plugins & ssh
+	// logger & plugins
 	{
 		// set the Logger, which it's configuration should be declared before .Listen because the servemux and plugins needs that
 		s.Logger = log.New(s.Config.LoggerOut, s.Config.LoggerPreffix, log.LstdFlags)
 		s.Plugins = newPluginContainer(s.Logger)
-		s.SSH = NewSSHServer()
 	}
 
 	// rendering
@@ -232,8 +227,6 @@ func New(setters ...OptionSetter) *Framework {
 			"url":     s.URL,
 			"urlpath": s.Path,
 		})
-		// set the cache service
-		s.cacheService = newCacheService()
 	}
 
 	// websocket & sessions
@@ -353,11 +346,6 @@ func (s *Framework) Build() {
 			s.sessions.Set(s.Config.Sessions, sessions.DisableAutoGC(false))
 		}
 
-		// set the cache gc duration and start service
-		if s.cacheService.gcDuration > 0 {
-			s.cacheService.start()
-		}
-
 		if s.Config.Websocket.Endpoint != "" {
 			// register the websocket server and listen to websocket connections when/if $instance.Websocket.OnConnection called by the dev
 			s.Websocket.RegisterTo(s, s.Config.Websocket)
@@ -402,13 +390,6 @@ func (s *Framework) Build() {
 				MaxRequestsPerConn: s.Config.MaxRequestsPerConn,
 				Handler:            s.Router,
 			}
-		}
-
-		//
-
-		// ssh
-		if s.SSH != nil && s.SSH.Enabled() {
-			s.SSH.bindTo(s)
 		}
 
 		// updates, to cover the default station's irs.Config.checkForUpdates
@@ -1139,6 +1120,58 @@ func (s *Framework) SerializeToString(keyOrContentType string, obj interface{}, 
 		return ""
 	}
 	return res
+}
+
+// Cache is just a wrapper for a route's handler which you want to enable body caching
+// Usage: iris.Get("/", iris.Cache(func(ctx *iris.Context){
+//    ctx.WriteString("Hello, world!") // or a template or anything else
+// }, time.Duration(10*time.Second))) // duration of expiration
+// if <=time.Second then it tries to find it though request header's "cache-control" maxage value
+//
+// Note that it depends on a station instance's cache service.
+// Do not try to call it from default' station if you use the form of app := iris.New(),
+// use the app.Cache instead of iris.Cache
+func Cache(bodyHandler HandlerFunc, expiration time.Duration) HandlerFunc {
+	return Default.Cache(bodyHandler, expiration)
+}
+
+// Cache is just a wrapper for a route's handler which you want to enable body caching
+// Usage: iris.Get("/", iris.Cache(func(ctx *iris.Context){
+//    ctx.WriteString("Hello, world!") // or a template or anything else
+// }, time.Duration(10*time.Second))) // duration of expiration
+// if <=time.Second then it tries to find it though request header's "cache-control" maxage value
+//
+// Note that it depends on a station instance's cache service.
+// Do not try to call it from default' station if you use the form of app := iris.New(),
+// use the app.Cache instead of iris.Cache
+func (s *Framework) Cache(bodyHandler HandlerFunc, expiration time.Duration) HandlerFunc {
+	fh := httpcache.Fasthttp.Cache(func(reqCtx *fasthttp.RequestCtx) {
+		ctx := s.AcquireCtx(reqCtx)
+		bodyHandler.Serve(ctx)
+		s.ReleaseCtx(ctx)
+	}, expiration)
+
+	return func(ctx *Context) {
+		fh(ctx.RequestCtx)
+	}
+}
+
+// InvalidateCache clears the cache body for a specific context's url path(cache unique key)
+//
+// Note that it depends on a station instance's cache service.
+// Do not try to call it from default' station if you use the form of app := iris.New(),
+// use the app.InvalidateCache instead of iris.InvalidateCache
+func InvalidateCache(ctx *Context) {
+	Default.InvalidateCache(ctx)
+}
+
+// InvalidateCache clears the cache body for a specific context's url path(cache unique key)
+//
+// Note that it depends on a station instance's cache service.
+// Do not try to call it from default' station if you use the form of app := iris.New(),
+// use the app.InvalidateCache instead of iris.InvalidateCache
+func (s *Framework) InvalidateCache(ctx *Context) {
+	httpcache.Fasthttp.Invalidate(ctx.RequestCtx)
 }
 
 // -------------------------------------------------------------------------------------
