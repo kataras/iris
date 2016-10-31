@@ -19,7 +19,7 @@
 <br/>
 
 
-<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20version%20-%204%20LTS%20-blue.svg?style=flat-square" alt="Releases"></a>
+<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20version%20-%205.0.1%20-blue.svg?style=flat-square" alt="Releases"></a>
 
 <a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/%20examples-repository-3362c2.svg?style=flat-square" alt="Examples"></a>
 
@@ -35,69 +35,6 @@ Ideally suited for both experienced and novice Developers.
 </p>
 
 
-
-**Thanks** to all these generous donations, the Iris project remains a high quality open-source framework
-
-- [Ryan Brooks](https://github.com/ryanbyyc) donated 50 EUR at May 11
-- [Juan Sebastián Suárez Valencia](https://github.com/Juanses) donated 20 EUR at September 11
-- [Bob Lee](https://github.com/li3p) donated 20 EUR at September 16
-- [Celso Luiz](https://github.com/celsosz) donated 50 EUR at September 29
-- [Anonymous](https://github.com/kataras/iris/blob/master/DONATIONS.md#donations) donated 6 EUR at October 1
-- [Ankur Srivastava](https://github.com/ansrivas) donated 20 EUR at October 2
-- [Anonymous](https://github.com/kataras/iris/blob/master/DONATIONS.md#donations) donated 100 EUR at October 18
-- [Anonymous](https://github.com/kataras/iris/blob/master/DONATIONS.md#donations) donated 20 EUR at October 19
-- [赵 益鋆](https://github.com/se77en) donated 20 EUR at October 21
-- Anonymous (by own will) donated 50 EUR at October 21
-
-**Random articles**
-
-- [20 Minute URL Shortener with Go and Redis - Iris+Docker+Redis](https://www.kieranajp.uk/articles/build-url-shortener-api-golang/) by Kieran Patel
-- [The fastest web framework for Go](http://marcoscleison.xyz/the-fastest-web-framework-for-go-in-this-earth/) by Marcos Cleison
-- [Iris vs Nginx vs Php vs Nodejs](https://translate.google.com/translate?sl=auto&tl=en&js=y&prev=_t&hl=en&ie=UTF-8&u=http://webcache.googleusercontent.com/search?q=cache:https%3A%2F%2Fwww.ntossapo.me%2F2016%2F08%2F13%2Fnginx-vs-nginx-php-fpm-vs-go-iris-vs-express-with-wrk%2F&edit-text=&act=url) by Tossapon Nuanchuay
-
-## Feature Overview
-
-- Focus on high performance
-- Automatically install TLS certificates from https://letsencrypt.org
-- Robust routing and middleware ecosystem
-- Build RESTful APIs
-- Group API's and subdomains
-- Body binding for JSON, XML, and any form element
-- More than 40 handy functions to send HTTP responses
-- View system supporting more than 6+ template engines, with prerenders. You can still use anything you like
-- Database Communication with any ORM
-- Define virtual hosts and (wildcard) subdomains with path level routing
-- Graceful shutdown
-- Limit request body
-- Localization i18N
-- Serve static files
-- Cache
-- Log requests
-- Define your format and output for the logger
-- Define custom HTTP errors handlers
-- Gzip response
-- Cache
-- Authentication
- - OAuth, OAuth2 supporting 27+ popular websites
- - JWT
- - Basic Authentication
- - HTTP Sessions
-- Add / Remove trailing slash from the URL with option to redirect
-- Redirect requests
- - HTTP to HTTPS
- - HTTP to HTTPS WWW
- - HTTP to HTTPS non WWW
- - Non WWW to WWW
- - WWW to non WWW
-- Highly scalable rich render (Markdown, JSON, JSONP, XML...)
-- Easy to read JSON, XML and Form data from request, able to change each of the default decoders
-- Websocket-only API similar to socket.io  
-- Hot Reload
-- Typescript integration + Web IDE
-- Checks for updates at startup
-- Highly customizable
-
-
 ## Quick Start
 
 ### Installation
@@ -106,6 +43,12 @@ The only requirement is the [Go Programming Language](https://golang.org/dl), at
 
 ```bash
 $ go get -u github.com/kataras/iris/iris
+```
+
+
+> NOTE: **If you want a stable version for production**, then install [v4](https://github.com/kataras/iris/tree/4.0.0#versioning) instead, its [examples](https://github.com/iris-contrib/examples/tree/4.0.0), [book](https://github.com/iris-contrib/gitbook), [middleware](https://github.com/iris-contrib/middleware/tree/4.0.0) and [plugins](https://github.com/iris-contrib/plugin/tree/4.0.0) are expecting an import path of:
+```bash
+$ go get -u gopkg.in/kataras/iris.v4/iris
 ```
 
 ### Hello, World!
@@ -883,14 +826,15 @@ I recommend writing your API tests using this new library, [httpexpect](https://
 Versioning
 ------------
 
-Current: **v4 LTS**
+Current: **v5.0.1**
+
+Stable: **[v4 LTS](https://github.com/kataras/iris/tree/4.0.0#versioning)**
+
 
 Todo
 ------------
 
 - [ ] Server-side React render, as requested [here](https://github.com/kataras/iris/issues/503)
-- [x] Iris command line improvements, as requested [here](https://github.com/kataras/iris/issues/506)
-- [x] Cache service, simple but can make your page renders up to 10 times faster, write your suggestions [here](https://github.com/kataras/iris/issues/513)
 
 Iris is a **Community-Driven** Project, waiting for your suggestions and [feature requests](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=label%3A%22feature%20request%22)!
 
@@ -922,7 +866,7 @@ under the Apache Version 2 license found in the [LICENSE file](LICENSE).
 [Travis]: http://travis-ci.org/kataras/iris
 [License Widget]: https://img.shields.io/badge/license-Apache%20Version%202-E91E63.svg?style=flat-square
 [License]: https://github.com/kataras/iris/blob/master/LICENSE
-[Release Widget]: https://img.shields.io/badge/release-V4%20LTS%20-blue.svg?style=flat-square
+[Release Widget]: https://img.shields.io/badge/release-5.0.1%20-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/iris/releases
 [Chat Widget]: https://img.shields.io/badge/community-chat%20-00BCD4.svg?style=flat-square
 [Chat]: https://kataras.rocket.chat/channel/iris

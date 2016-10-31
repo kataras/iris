@@ -3,7 +3,7 @@
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
 
-## v3 -> v4 (fasthttp-based) long term support
+## v3 -> [v4](https://github.com/kataras/iris/tree/4.0.0) (fasthttp-based) long term support
 
 - **NEW FEATURE**: `CacheService` simple, cache service for your app's static body content(can work as external service if you are doing horizontal scaling, the `Cache` is just a `Handler` :) )
 
