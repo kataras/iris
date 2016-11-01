@@ -46,7 +46,7 @@ $ go get -u github.com/kataras/iris/iris
 ```
 
 
-> NOTE: **If you want a stable version for production**, then install [v4](https://github.com/kataras/iris/tree/4.0.0#versioning) instead, its [examples](https://github.com/iris-contrib/examples/tree/4.0.0), [book](https://github.com/iris-contrib/gitbook), [middleware](https://github.com/iris-contrib/middleware/tree/4.0.0) and [plugins](https://github.com/iris-contrib/plugin/tree/4.0.0) are expecting an import path of:
+> NOTE: **If you want a stable version for production**, then install [v4](https://github.com/kataras/iris/tree/4.0.0#versioning) instead, its [examples](https://github.com/iris-contrib/examples/tree/4.0.0), [book](https://docs-v4.iris-go.com), [middleware](https://github.com/iris-contrib/middleware/tree/4.0.0) and [plugins](https://github.com/iris-contrib/plugin/tree/4.0.0) are expecting an import path of:
 ```bash
 $ go get -u gopkg.in/kataras/iris.v4/iris
 ```
