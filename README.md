@@ -1,7 +1,7 @@
 <p align="center">
 
 
- <a href="https://www.gitbook.com/book/kataras/iris/details"><img  width="600" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_6_flat_alpha.png"></a>
+ <a href="https://docs-v4.iris-go.com"><img  width="600" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_6_flat_alpha.png"></a>
 
 <br/>
 
@@ -23,14 +23,14 @@
 
 <a href="https://github.com/iris-contrib/examples/tree/4.0.0"><img src="https://img.shields.io/badge/%20examples-repository-3362c2.svg?style=flat-square" alt="Examples"></a>
 
-<a href="https://docs.iris-go.com"><img src="https://img.shields.io/badge/%20docs-reference-5272B4.svg?style=flat-square" alt="Practical Guide/Docs"></a>
+<a href="https://docs-v4.iris-go.com"><img src="https://img.shields.io/badge/%20docs-reference-5272B4.svg?style=flat-square" alt="Practical Guide/Docs"></a>
 
 <a href="https://kataras.rocket.chat/channel/iris"><img src="https://img.shields.io/badge/%20community-chat-00BCD4.svg?style=flat-square" alt="Chat"></a><br/><br/>
 
 
 The <a href="https://github.com/kataras/iris#benchmarks">fastest</a> back-end web framework written in Go.
 <br/>
-Easy to <a href="https://docs.iris-go.com">learn</a>,  while it's highly customizable. <br/>
+Easy to <a href="https://docs-v4.iris-go.com">learn</a>,  while it's highly customizable. <br/>
 Ideally suited for both experienced and novice Developers.
 </p>
 
@@ -315,12 +315,12 @@ iris.Post("/users", func(ctx *iris.Context) {
 
 | Name        | Description           | Usage  |
 | ------------------|:---------------------:|-------:|
-| [JSON ](https://github.com/kataras/go-serializer/tree/0.0.4/json)      | JSON Serializer (Default)                  |[example 1](https://github.com/iris-contrib/examples/blob/0.0.4/serialize_engines/json_1/main.go),[example 2](https://github.com/iris-contrib/examples/blob/0.0.4/serialize_engines/json_2/main.go), [book section](https://docs.iris-go.com/serialize-engines.html)
-| [JSONP ](https://github.com/kataras/go-serializer/tree/0.0.4/jsonp)      | JSONP Serializer (Default)                  |[example 1](https://github.com/iris-contrib/examples/blob/0.0.4/serialize_engines/jsonp_1/main.go),[example 2](https://github.com/iris-contrib/examples/blob/4.0.0/serialize_engines/jsonp_2/main.go), [book section](https://docs.iris-go.com/serialize-engines.html)
-| [XML ](https://github.com/kataras/go-serializer/tree/0.0.4/xml)      | XML Serializer (Default)                  |[example 1](https://github.com/iris-contrib/examples/blob/4.0.0/serialize_engines/xml_1/main.go),[example 2](https://github.com/iris-contrib/examples/blob/4.0.0/serialize_engines/xml_2/main.go), [book section](https://docs.iris-go.com/serialize-engines.html)
-| [Markdown ](https://github.com/kataras/go-serializer/tree/0.0.4/markdown)      | Markdown Serializer (Default)                  |[example 1](https://github.com/iris-contrib/examples/blob/4.0.0/serialize_engines/markdown_1/main.go),[example 2](https://github.com/iris-contrib/examples/blob/4.0.0/serialize_engines/markdown_2/main.go), [book section](https://docs.iris-go.com/serialize-engines.html)
-| [Text](https://github.com/kataras/go-serializer/tree/0.0.4/text)      | Text Serializer (Default)                  |[example 1](https://github.com/iris-contrib/examples/blob/4.0.0/serialize_engines/text_1/main.go), [book section](https://docs.iris-go.com/serialize-engines.html)
-| [Binary Data ](https://github.com/kataras/go-serializer/tree/0.0.4/data)      | Binary Data Serializer (Default)                  |[example 1](https://github.com/iris-contrib/examples/blob/4.0.0/serialize_engines/data_1/main.go), [book section](https://docs.iris-go.com/serialize-engines.html)
+| [JSON ](https://github.com/kataras/go-serializer/tree/0.0.4/json)      | JSON Serializer (Default)                  |[example 1](https://github.com/iris-contrib/examples/blob/0.0.4/serialize_engines/json_1/main.go),[example 2](https://github.com/iris-contrib/examples/blob/0.0.4/serialize_engines/json_2/main.go), [book section](https://docs-v4.iris-go.com/serialize-engines.html)
+| [JSONP ](https://github.com/kataras/go-serializer/tree/0.0.4/jsonp)      | JSONP Serializer (Default)                  |[example 1](https://github.com/iris-contrib/examples/blob/0.0.4/serialize_engines/jsonp_1/main.go),[example 2](https://github.com/iris-contrib/examples/blob/4.0.0/serialize_engines/jsonp_2/main.go), [book section](https://docs-v4.iris-go.com/serialize-engines.html)
+| [XML ](https://github.com/kataras/go-serializer/tree/0.0.4/xml)      | XML Serializer (Default)                  |[example 1](https://github.com/iris-contrib/examples/blob/4.0.0/serialize_engines/xml_1/main.go),[example 2](https://github.com/iris-contrib/examples/blob/4.0.0/serialize_engines/xml_2/main.go), [book section](https://docs-v4.iris-go.com/serialize-engines.html)
+| [Markdown ](https://github.com/kataras/go-serializer/tree/0.0.4/markdown)      | Markdown Serializer (Default)                  |[example 1](https://github.com/iris-contrib/examples/blob/4.0.0/serialize_engines/markdown_1/main.go),[example 2](https://github.com/iris-contrib/examples/blob/4.0.0/serialize_engines/markdown_2/main.go), [book section](https://docs-v4.iris-go.com/serialize-engines.html)
+| [Text](https://github.com/kataras/go-serializer/tree/0.0.4/text)      | Text Serializer (Default)                  |[example 1](https://github.com/iris-contrib/examples/blob/4.0.0/serialize_engines/text_1/main.go), [book section](https://docs-v4.iris-go.com/serialize-engines.html)
+| [Binary Data ](https://github.com/kataras/go-serializer/tree/0.0.4/data)      | Binary Data Serializer (Default)                  |[example 1](https://github.com/iris-contrib/examples/blob/4.0.0/serialize_engines/data_1/main.go), [book section](https://docs-v4.iris-go.com/serialize-engines.html)
 
 
 ### HTTP Errors
@@ -545,16 +545,16 @@ func hi(ctx *iris.Context) {
 
 | Name        | Description           | Usage  |
 | ------------------|:---------------------:|-------:|
-| [HTML/Default Engine ](https://github.com/kataras/go-template/tree/0.0.3/html)      | HTML Template Engine (Default)                  |[example ](https://github.com/iris-contrib/examples/blob/4.0.0/template_engines/template_html_0/main.go), [book section](https://docs.iris-go.com/template-engines.html)
-| [Django Engine ](https://github.com/kataras/go-template/tree/0.0.3/django)      | Django Template Engine                  |[example ](https://github.com/iris-contrib/examples/blob/4.0.0/template_engines/template_django_1/main.go), [book section](https://docs.iris-go.com/template-engines.html)
-| [Pug/Jade Engine ](https://github.com/kataras/go-template/tree/0.0.3/pug)      | Pug Template Engine                  |[example ](https://github.com/iris-contrib/examples/blob/4.0.0/template_engines/template_pug_1/main.go), [book section](https://docs.iris-go.com/template-engines.html)
-| [Handlebars Engine ](https://github.com/kataras/go-template/tree/0.0.3/handlebars)      | Handlebars Template Engine                  |[example ](https://github.com/iris-contrib/examples/blob/4.0.0/template_engines/template_handlebars_1/main.go), [book section](https://docs.iris-go.com/template-engines.html)
-| [Amber Engine ](https://github.com/kataras/go-template/tree/0.0.3/amber)      | Amber Template Engine                  |[example ](https://github.com/iris-contrib/examples/blob/4.0.0/template_engines/template_amber_1/main.go), [book section](https://docs.iris-go.com/template-engines.html)
-| [Markdown Engine ](https://github.com/kataras/go-template/tree/0.0.3/markdown)      | Markdown Template Engine                  |[example ](https://github.com/iris-contrib/examples/blob/4.0.0/template_engines/template_markdown_1/main.go), [book section](https://docs.iris-go.com/template-engines.html)
+| [HTML/Default Engine ](https://github.com/kataras/go-template/tree/0.0.3/html)      | HTML Template Engine (Default)                  |[example ](https://github.com/iris-contrib/examples/blob/4.0.0/template_engines/template_html_0/main.go), [book section](https://docs-v4.iris-go.com/template-engines.html)
+| [Django Engine ](https://github.com/kataras/go-template/tree/0.0.3/django)      | Django Template Engine                  |[example ](https://github.com/iris-contrib/examples/blob/4.0.0/template_engines/template_django_1/main.go), [book section](https://docs-v4.iris-go.com/template-engines.html)
+| [Pug/Jade Engine ](https://github.com/kataras/go-template/tree/0.0.3/pug)      | Pug Template Engine                  |[example ](https://github.com/iris-contrib/examples/blob/4.0.0/template_engines/template_pug_1/main.go), [book section](https://docs-v4.iris-go.com/template-engines.html)
+| [Handlebars Engine ](https://github.com/kataras/go-template/tree/0.0.3/handlebars)      | Handlebars Template Engine                  |[example ](https://github.com/iris-contrib/examples/blob/4.0.0/template_engines/template_handlebars_1/main.go), [book section](https://docs-v4.iris-go.com/template-engines.html)
+| [Amber Engine ](https://github.com/kataras/go-template/tree/0.0.3/amber)      | Amber Template Engine                  |[example ](https://github.com/iris-contrib/examples/blob/4.0.0/template_engines/template_amber_1/main.go), [book section](https://docs-v4.iris-go.com/template-engines.html)
+| [Markdown Engine ](https://github.com/kataras/go-template/tree/0.0.3/markdown)      | Markdown Template Engine                  |[example ](https://github.com/iris-contrib/examples/blob/4.0.0/template_engines/template_markdown_1/main.go), [book section](https://docs-v4.iris-go.com/template-engines.html)
 
 > Each section of the README has its own - more advanced - subject on the book, so be sure to check book for any further research
 
-[Read more](https://docs.iris-go.com/template-engines.html)
+[Read more](https://docs-v4.iris-go.com/template-engines.html)
 
 ### Middleware ecosystem
 
@@ -596,18 +596,18 @@ iris.Get("/products", logme, func(ctx *iris.Context) {
 
 | Name        | Description           | Usage  |
 | ------------------|:---------------------:|-------:|
-| [Basicauth Middleware ](https://github.com/iris-contrib/middleware/tree/master/basicauth)      | HTTP Basic authentication                  |[example 1](https://github.com/iris-contrib/examples/blob/4.0.0/middleware_basicauth_1/main.go), [example 2](https://github.com/iris-contrib/examples/blob/4.0.0/middleware_basicauth_2/main.go), [book section](https://docs.iris-go.com/basic-authentication.html)  |
-| [JWT Middleware ](https://github.com/iris-contrib/middleware/tree/master/jwt)      | JSON Web Tokens                  |[example ](https://github.com/iris-contrib/examples/blob/4.0.0/middleware_jwt/main.go), [book section](https://docs.iris-go.com/jwt.html)  |
+| [Basicauth Middleware ](https://github.com/iris-contrib/middleware/tree/master/basicauth)      | HTTP Basic authentication                  |[example 1](https://github.com/iris-contrib/examples/blob/4.0.0/middleware_basicauth_1/main.go), [example 2](https://github.com/iris-contrib/examples/blob/4.0.0/middleware_basicauth_2/main.go), [book section](https://docs-v4.iris-go.com/basic-authentication.html)  |
+| [JWT Middleware ](https://github.com/iris-contrib/middleware/tree/master/jwt)      | JSON Web Tokens                  |[example ](https://github.com/iris-contrib/examples/blob/4.0.0/middleware_jwt/main.go), [book section](https://docs-v4.iris-go.com/jwt.html)  |
 | [Cors Middleware ](https://github.com/iris-contrib/middleware/tree/master/cors)      | Cross Origin Resource Sharing W3 specification   | [how to use ](https://github.com/iris-contrib/middleware/tree/master/cors#how-to-use)  |
 | [Secure Middleware ](https://github.com/iris-contrib/middleware/tree/master/secure) |  Facilitates some quick security wins      | [example](https://github.com/iris-contrib/examples/blob/4.0.0/middleware_secure/main.go)  |
-| [I18n Middleware ](https://github.com/iris-contrib/middleware/tree/master/i18n)      | Simple internationalization       | [example](https://github.com/iris-contrib/examples/tree/4.0.0/middleware_internationalization_i18n), [book section](https://docs.iris-go.com/middleware-internationalization-and-localization.html)  |
+| [I18n Middleware ](https://github.com/iris-contrib/middleware/tree/master/i18n)      | Simple internationalization       | [example](https://github.com/iris-contrib/examples/tree/4.0.0/middleware_internationalization_i18n), [book section](https://docs-v4.iris-go.com/middleware-internationalization-and-localization.html)  |
 | [Recovery Middleware ](https://github.com/iris-contrib/middleware/tree/master/recovery) | Safety recover the station from panic       | [example](https://github.com/iris-contrib/examples/blob/4.0.0/middleware_recovery/main.go)  |
-| [Logger Middleware ](https://github.com/iris-contrib/middleware/tree/master/logger)      | Logs every request       | [example](https://github.com/iris-contrib/examples/blob/4.0.0/middleware_logger/main.go), [book section](https://docs.iris-go.com/logger.html)  |
+| [Logger Middleware ](https://github.com/iris-contrib/middleware/tree/master/logger)      | Logs every request       | [example](https://github.com/iris-contrib/examples/blob/4.0.0/middleware_logger/main.go), [book section](https://docs-v4.iris-go.com/logger.html)  |
 | [Profile Middleware ](https://github.com/iris-contrib/middleware/tree/master/pprof)      | Http profiling for debugging    | [example](https://github.com/iris-contrib/examples/blob/4.0.0/middleware_pprof/main.go)  |
-| [Editor Plugin](https://github.com/iris-contrib/plugin/tree/4.0.0/editor)      | Alm-tools, a typescript online IDE/Editor | [book section](https://docs.iris-go.com/plugin-editor.html) |
-| [Typescript Plugin](https://github.com/iris-contrib/plugin/tree/4.0.0/typescript)      | Auto-compile client-side typescript files      |   [book section](https://docs.iris-go.com/plugin-typescript.html) |
-| [OAuth,OAuth2 Plugin](https://github.com/iris-contrib/plugin/tree/4.0.0/oauth) |  User Authentication was never be easier, supports >27 providers |    [example](https://github.com/iris-contrib/examples/tree/4.0.0/plugin_oauth_oauth2), [book section](https://docs.iris-go.com/plugin-oauth.html) |
-| [Iris control Plugin](https://github.com/iris-contrib/plugin/tree/4.0.0/iriscontrol) |   Basic (browser-based) control over your Iris station |    [example](https://github.com/iris-contrib/examples/blob/4.0.0/plugin_iriscontrol/main.go), [book section](https://docs.iris-go.com/plugin-iriscontrol.html) |
+| [Editor Plugin](https://github.com/iris-contrib/plugin/tree/4.0.0/editor)      | Alm-tools, a typescript online IDE/Editor | [book section](https://docs-v4.iris-go.com/plugin-editor.html) |
+| [Typescript Plugin](https://github.com/iris-contrib/plugin/tree/4.0.0/typescript)      | Auto-compile client-side typescript files      |   [book section](https://docs-v4.iris-go.com/plugin-typescript.html) |
+| [OAuth,OAuth2 Plugin](https://github.com/iris-contrib/plugin/tree/4.0.0/oauth) |  User Authentication was never be easier, supports >27 providers |    [example](https://github.com/iris-contrib/examples/tree/4.0.0/plugin_oauth_oauth2), [book section](https://docs-v4.iris-go.com/plugin-oauth.html) |
+| [Iris control Plugin](https://github.com/iris-contrib/plugin/tree/4.0.0/iriscontrol) |   Basic (browser-based) control over your Iris station |    [example](https://github.com/iris-contrib/examples/blob/4.0.0/plugin_iriscontrol/main.go), [book section](https://docs-v4.iris-go.com/plugin-iriscontrol.html) |
 
 ### Sessions
 If you notice a bug or issue [post it here](https://github.com/kataras/go-sessions/tree/0.0.5).
@@ -671,7 +671,7 @@ iris.Get("/", func(ctx *iris.Context) {
 
 > Each section of the README has its own - more advanced - subject on the book, so be sure to check book for any further research
 
-[Read more](https://docs.iris-go.com/package-sessions.html)
+[Read more](https://docs-v4.iris-go.com/package-sessions.html)
 
 ### Websockets
 
@@ -801,14 +801,14 @@ View a working example by navigating [here](https://github.com/iris-contrib/exam
 
 > Each section of the README has its own - more advanced - subject on the book, so be sure to check book for any further research
 
-[Read more](https://docs.iris-go.com/package-websocket.html)
+[Read more](https://docs-v4.iris-go.com/package-websocket.html)
 
 ### Need help?
 
- <a href="https://www.gitbook.com/book/kataras/iris/details"><img align="right" width="125" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_4.jpg"></a>
+ <a href="https://docs-v4.iris-go.com"><img align="right" width="125" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_4.jpg"></a>
 
 
- - The most important is to read [the practical guide](https://docs.iris-go.com/).
+ - The most important is to read [the practical guide](https://docs-v4.iris-go.com/).
 
  - Explore & download the [examples](https://github.com/iris-contrib/examples/tree/4.0.0).
 
@@ -879,7 +879,7 @@ Current: **v4 LTS**
 
 List of relative repositories linked to `import path "gopkg.in/kataras/iris.v4" `
 
-[iris-contrib/gitbook 4.0.0](https://github.com/iris-contrib/gitbook/tree/4.0.0)
+[iris-contrib/gitbook 4.0.0](https://docs-v4.iris-go.com)
 
 [iris-contrib/examples 4.0.0](https://github.com/iris-contrib/examples/tree/4.0.0)
 
@@ -959,7 +959,7 @@ under the Apache Version 2 license found in the [LICENSE file](LICENSE).
 [Report Widget]: https://img.shields.io/badge/report%20card%20-A%2B-F44336.svg?style=flat-square
 [Report]: http://goreportcard.com/report/kataras/iris
 [Documentation Widget]: https://img.shields.io/badge/docs-reference%20-5272B4.svg?style=flat-square
-[Documentation]: https://www.gitbook.com/book/kataras/iris/details
+[Documentation]: https://docs-v4.iris-go.com
 [Examples Widget]: https://img.shields.io/badge/examples-repository%20-3362c2.svg?style=flat-square
 [Examples]: https://github.com/iris-contrib/examples
 [Language Widget]: https://img.shields.io/badge/powered_by-Go-3362c2.svg?style=flat-square

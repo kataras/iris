@@ -1476,7 +1476,7 @@ func main() {
 
 ## 3.0.0-alpha.1 -> 3.0.0-alpha.2
 
-*The e-book was updated, take a closer look [here](https://www.gitbook.com/book/kataras/iris/details)*
+*The e-book was updated, take a closer look [here](https://docs-v4.iris-go.com)*
 
 
 **Breaking changes**

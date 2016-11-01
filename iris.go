@@ -47,7 +47,7 @@
 // ----------------------------_______________---------------------------
 // For middleware, template engines, response engines, sessions, websockets, mails, subdomains,
 // dynamic subdomains, routes, party of subdomains & routes, ssh and much more
-// visit https://www.gitbook.com/book/kataras/iris/details
+// visit https://docs-v4.iris-go.com
 package iris
 
 import (

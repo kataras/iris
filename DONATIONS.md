@@ -8,7 +8,7 @@ If you,
 
 Feel free to send **any** amount through paypal
 
-[![](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=kataras2006%40hotmail%2ecom&lc=GR&item_name=Iris%20web%20framework&item_number=iriswebframeworkdonationid2016&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted&return=http://iris-go.com/assets/v4-book/iris.pdf&cancel_return=https://www.gitbook.com/book/kataras/iris/details)
+[![](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=kataras2006%40hotmail%2ecom&lc=GR&item_name=Iris%20web%20framework&item_number=iriswebframeworkdonationid2016&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted&return=http://iris-go.com/assets/v4-book/iris.pdf&cancel_return=https://docs-v4.iris-go.com)
 
 > Please check your e-mail after your donation
 
