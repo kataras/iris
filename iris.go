@@ -1,53 +1,54 @@
-//Package iris the fastest go web framework in (this) Earth.
-///NOTE: When you see 'framework' or 'station' we mean the Iris web framework's main implementation.
-//
-//
-// Basic usage
-// ----------------------------------------------------------------------
-//
-// package main
-//
-// import  "github.com/kataras/iris"
-//
-// func main() {
-//     iris.Get("/hi_json", func(c *iris.Context) {
-//         c.JSON(iris.StatusOK, iris.Map{
-//             "Name": "Iris",
-//             "Released":  "13 March 2016",
-//         })
-//     })
-//     iris.ListenLETSENCRYPT("mydomain.com")
-// }
-//
-// ----------------------------------------------------------------------
-//
-// package main
-//
-// import  "github.com/kataras/iris"
-//
-// func main() {
-// 	s1 := iris.New()
-// 	s1.Get("/hi_json", func(c *iris.Context) {
-// 		c.JSON(200, iris.Map{
-// 			"Name": "Iris",
-// 			"Released":  "13 March 2016",
-// 		})
-// 	})
-//
-// 	s2 := iris.New()
-// 	s2.Get("/hi_raw_html", func(c *iris.Context) {
-// 		c.HTML(iris.StatusOK, "<b> Iris </b> welcomes <h1>you!</h1>")
-// 	})
-//
-// 	go s1.Listen(":8080")
-// 	s2.Listen(":1993")
-// }
-//
-// -----------------------------DOCUMENTATION----------------------------
-// ----------------------------_______________---------------------------
-// For middleware, template engines, response engines, sessions, websockets, mails, subdomains,
-// dynamic subdomains, routes, party of subdomains & routes, ssh and much more
-// visit https://www.gitbook.com/book/kataras/iris/details
+/*
+Package iris the fastest go web framework in (this) Earth.
+
+Basic usage
+----------------------------------------------------------------------
+
+package main
+
+import  "github.com/kataras/iris"
+
+func main() {
+    iris.Get("/hi_json", func(c *iris.Context) {
+        c.JSON(iris.StatusOK, iris.Map{
+            "Name": "Iris",
+            "Released":  "13 March 2016",
+        })
+    })
+    iris.ListenLETSENCRYPT("mydomain.com")
+}
+
+----------------------------------------------------------------------
+
+package main
+
+import  "github.com/kataras/iris"
+
+func main() {
+	s1 := iris.New()
+	s1.Get("/hi_json", func(c *iris.Context) {
+		c.JSON(200, iris.Map{
+			"Name": "Iris",
+			"Released":  "13 March 2016",
+		})
+	})
+
+	s2 := iris.New()
+	s2.Get("/hi_raw_html", func(c *iris.Context) {
+		c.HTML(iris.StatusOK, "<b> Iris </b> welcomes <h1>you!</h1>")
+	})
+
+	go s1.Listen(":8080")
+	s2.Listen(":1993")
+}
+
+----------------------------------------------------------------------
+
+For middleware, template engines, response engines, sessions, websockets, mails, subdomains,
+dynamic subdomains, routes, party of subdomains & routes, ssh and much more
+
+visit https://www.gitbook.com/book/kataras/iris/details
+*/
 package iris // import "github.com/kataras/iris"
 
 import (

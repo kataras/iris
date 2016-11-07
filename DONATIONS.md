@@ -37,7 +37,7 @@ I'm  grateful for all the generous donations. Iris is fully funded by these dona
 - ANONYMOUS(Waiting For Approval) donated 20 EUR at October 19
 - [Damon Zhao](https://github.com/se77en) donated 20 EUR at October 21
 - ANONYMOUS(BY OWN WILL) donated 50 EUR at October 21
-- ANONYMOUS(please contact with [me](mailto:kataras2006@hotmail.com), mail sent failed) donated 30 EUR at November 4
+- [exponity - consulting & digital transformation](https://github.com/exponity), donated 30 EUR at November 4
 
 > The name or/and github username link added after donator's approvement via e-mail.
 
