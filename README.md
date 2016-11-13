@@ -1,20 +1,21 @@
 <p align="center">
 
-
  <a href="https://www.gitbook.com/book/kataras/iris/details"><img  width="600" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_6_flat_alpha.png"></a>
 
 <br/>
 
+
 <a href="https://travis-ci.org/kataras/iris"><img src="https://img.shields.io/travis/kataras/iris.svg?style=flat-square" alt="Build Status"></a>
 
-<a href="http://goreportcard.com/report/kataras/iris"><img src="https://img.shields.io/badge/report%20card%20-A%2B-F44336.svg?style=flat-square" alt="http://goreportcard.com/report/kataras/iris"></a>
+<a href="http://goreportcard.com/report/kataras/iris"><img src="https://img.shields.io/badge/report%20card%20-a%2B-F44336.svg?style=flat-square" alt="http://goreportcard.com/report/kataras/iris"></a>
 
-<a href="#"><img src="https://img.shields.io/badge/platform-Any-ec2eb4.svg?style=flat-square" alt="Platforms"></a>
-
-<a href="https://github.com/kataras/iris/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-Apache%20Version%202-E91E63.svg?style=flat-square" alt="License"></a>
+<a href="https://golang.org"><img src="https://img.shields.io/badge/powered_by-go-6362c2.svg?style=flat-square" alt="Built with GoLang"></a>
 
 
-<a href="https://golang.org"><img src="https://img.shields.io/badge/powered_by-Go-3362c2.svg?style=flat-square" alt="Built with GoLang"></a>
+<a href="https://golang.org"><img src="https://img.shields.io/badge/platform-any-ec2eb4.svg?style=flat-square" alt="Cross framework"></a>
+
+
+<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=kataras2006%40hotmail%2ecom&lc=GR&item_name=Iris%20web%20framework&item_number=iriswebframeworkdonationid2016&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted"><img src="https://img.shields.io/badge/open-%20source-thisismycolor.svg?logo=data:image%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAwIDEwMDAiPjxwYXRoIGZpbGw9InJnYigyMjAsMjIwLDIyMCkiIGQ9Ik04ODYuNiwzMDUuM2MtNDUuNywyMDMuMS0xODcsMzEwLjMtNDA5LjYsMzEwLjNoLTc0LjFsLTUxLjUsMzI2LjloLTYybC0zLjIsMjEuMWMtMi4xLDE0LDguNiwyNi40LDIyLjYsMjYuNGgxNTguNWMxOC44LDAsMzQuNy0xMy42LDM3LjctMzIuMmwxLjUtOGwyOS45LTE4OS4zbDEuOS0xMC4zYzIuOS0xOC42LDE4LjktMzIuMiwzNy43LTMyLjJoMjMuNWMxNTMuNSwwLDI3My43LTYyLjQsMzA4LjktMjQyLjdDOTIxLjYsNDA2LjgsOTE2LjcsMzQ4LjYsODg2LjYsMzA1LjN6Ii8%2BPHBhdGggZmlsbD0icmdiKDIyMCwyMjAsMjIwKSIgZD0iTTc5MS45LDgzLjlDNzQ2LjUsMzIuMiw2NjQuNCwxMCw1NTkuNSwxMEgyNTVjLTIxLjQsMC0zOS44LDE1LjUtNDMuMSwzNi44TDg1LDg1MWMtMi41LDE1LjksOS44LDMwLjIsMjUuOCwzMC4ySDI5OWw0Ny4zLTI5OS42bC0xLjUsOS40YzMuMi0yMS4zLDIxLjQtMzYuOCw0Mi45LTM2LjhINDc3YzE3NS41LDAsMzEzLTcxLjIsMzUzLjItMjc3LjVjMS4yLTYuMSwyLjMtMTIuMSwzLjEtMTcuOEM4NDUuMSwxODIuOCw4MzMuMiwxMzAuOCw3OTEuOSw4My45TDc5MS45LDgzLjl6Ii8%2BPC9zdmc%2B" alt="Donation"></a>
 
 <br/>
 
@@ -25,30 +26,35 @@
 
 <a href="https://docs.iris-go.com"><img src="https://img.shields.io/badge/%20docs-reference-5272B4.svg?style=flat-square" alt="Practical Guide/Docs"></a>
 
-<a href="https://kataras.rocket.chat/channel/iris"><img src="https://img.shields.io/badge/%20community-chat-00BCD4.svg?style=flat-square" alt="Chat"></a><br/><br/>
-
-
-The <a href="https://github.com/kataras/iris#benchmarks">fastest</a> back-end web framework written in Go.
+<a href="https://kataras.rocket.chat/channel/iris"><img src="https://img.shields.io/badge/%20community-chat-00BCD4.svg?style=flat-square" alt="Chat"></a><br/>
 <br/>
-Easy to <a href="https://docs.iris-go.com">learn</a>,  while it's highly customizable. <br/>
-Ideally suited for both experienced and novice Developers.
+
+
+<b>iris</b> is a web application framework written in Go.
+<b>Easy</b> to <a href="https://github.com/iris-contrib/examples">learn</a>,  while it's highly customizable. <br/>
+
+Its only sin?
+To be the <b>fastest</b> web framework was ever published under open-source circumstances.<br/>
+<i>Companies' offers were rejected, free forever.</i><br/><br/>
+
+<b>Enjoy</b> this framework now, without hesitation.<br/>
 </p>
 
 
-## Quick Start
 
-### Installation
+Quick Start
+-----------
 
 The only requirement is the [Go Programming Language](https://golang.org/dl), at least v1.7.
 
 ```bash
-$ go get -u github.com/kataras/iris/iris
+$ go get -u github.com/kataras/iris
 ```
 
 
-> NOTE: **If you want a stable version for production**, then install [v4](https://github.com/kataras/iris/tree/4.0.0#versioning) instead, its [examples](https://github.com/iris-contrib/examples/tree/4.0.0), [book](https://docs-v4.iris-go.com), [middleware](https://github.com/iris-contrib/middleware/tree/4.0.0) and [plugins](https://github.com/iris-contrib/plugin/tree/4.0.0) are expecting an import path of:
+> Production? Install the [stable version](https://github.com/kataras/iris/tree/4.0.0#versioning) instead
 ```bash
-$ go get -u gopkg.in/kataras/iris.v4/iris
+$ go get -u gopkg.in/kataras/iris.v4
 ```
 
 ### Hello, World!
@@ -64,17 +70,10 @@ import "github.com/kataras/iris"
 
 func main(){
 
-  iris.Get("/", func(ctx *iris.Context){
-    ctx.Write("Hello, %s", "World!")
+  iris.Get("/", func(c *iris.Context){
+    c.HTML(iris.StatusOK, "<h1> Hello World! </h1>")
   })
 
-  iris.Get("/myjson", func(ctx *iris.Context){
-    ctx.JSON(iris.StatusOK, iris.Map{
-      "Name": "Iris",
-      "Released": "13 March 2016",
-      "Stars": 5525,
-    })
-  })
 
   iris.Listen(":8080")
 }
@@ -85,7 +84,7 @@ func main(){
 $ go run helloworld.go
 ```
 
-Navigate to http://localhost:8080 and you should see Hello, World!
+Open your browser at http://localhost:8080 and you should see the `Hello World!`.
 
 ### New
 
@@ -858,26 +857,11 @@ If you are interested in contributing to the Iris project, please see the docume
 License
 ------------
 
-Unless otherwise noted, the Iris source files are distributed
-under the Apache Version 2 license found in the [LICENSE file](LICENSE).
+Copyright &copy; 2016 Gerasimos Maropoulos <makis@ideopod.com>
+This work is free. Unless otherwise noted, the iris source files are distributed under the
+terms of the Do What The Fuck You Want To Public License, Version 2,
+as published by [Sam Hocevar](http://www.wtfpl.net/author/admin/). Navigate [here](http://www.wtfpl.net/about/) for more details.
 
 
-[Travis Widget]: https://img.shields.io/travis/kataras/iris.svg?style=flat-square
-[Travis]: http://travis-ci.org/kataras/iris
-[License Widget]: https://img.shields.io/badge/license-Apache%20Version%202-E91E63.svg?style=flat-square
-[License]: https://github.com/kataras/iris/blob/master/LICENSE
-[Release Widget]: https://img.shields.io/badge/release-5.0.1%20-blue.svg?style=flat-square
-[Release]: https://github.com/kataras/iris/releases
-[Chat Widget]: https://img.shields.io/badge/community-chat%20-00BCD4.svg?style=flat-square
+
 [Chat]: https://kataras.rocket.chat/channel/iris
-[ChatMain]: https://kataras.rocket.chat/channel/iris
-[ChatAlternative]: https://gitter.im/kataras/iris
-[Report Widget]: https://img.shields.io/badge/report%20card%20-A%2B-F44336.svg?style=flat-square
-[Report]: http://goreportcard.com/report/kataras/iris
-[Documentation Widget]: https://img.shields.io/badge/docs-reference%20-5272B4.svg?style=flat-square
-[Documentation]: https://www.gitbook.com/book/kataras/iris/details
-[Examples Widget]: https://img.shields.io/badge/examples-repository%20-3362c2.svg?style=flat-square
-[Examples]: https://github.com/iris-contrib/examples
-[Language Widget]: https://img.shields.io/badge/powered_by-Go-3362c2.svg?style=flat-square
-[Language]: http://golang.org
-[Platform Widget]: https://img.shields.io/badge/platform-Any--OS-gray.svg?style=flat-square

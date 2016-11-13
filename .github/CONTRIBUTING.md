@@ -1,8 +1,5 @@
 ##### Note that I do not accept pull requests and that I use the issue tracker for bug reports and proposals only. Please ask questions on the [https://kataras.rocket.chat/channel/iris][Chat] or [http://stackoverflow.com/](http://stackoverflow.com).
 
-Unless otherwise noted, the Iris source files are distributed
-under the Apache Version 2 license found in the [LICENSE file](https://github.com/kataras/iris/blob/master/LICENSE).
-
 ## Before Submitting an Issue
 
 First, please do a search in open issues to see if the issue or feature request has already been filed. If there is an issue add your comments to this issue.
