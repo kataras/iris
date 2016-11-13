@@ -537,7 +537,7 @@ func (s *Framework) ListenTLS(addr string, certFile, keyFile string) {
 // if you skip the second parameter then the cache file is "./letsencrypt.cache"
 // if you want to disable cache then simple pass as second argument an empty empty string ""
 //
-// example: https://github.com/iris-contrib/examples/blob/master/letsencyrpt/main.go
+// example: https://github.com/iris-contrib/examples/blob/master/letsencrypt/main.go
 //
 // supports localhost domains for testing,
 // NOTE: if you are ready for production then use `$app.Serve(iris.LETSENCRYPTPROD("mydomain.com"))` instead
@@ -552,7 +552,7 @@ func ListenLETSENCRYPT(addr string, cacheFileOptional ...string) {
 // if you skip the second parameter then the cache file is "./letsencrypt.cache"
 // if you want to disable cache then simple pass as second argument an empty empty string ""
 //
-// example: https://github.com/iris-contrib/examples/blob/master/letsencyrpt/main.go
+// example: https://github.com/iris-contrib/examples/blob/master/letsencrypt/main.go
 //
 // supports localhost domains for testing,
 // NOTE: if you are ready for production then use `$app.Serve(iris.LETSENCRYPTPROD("mydomain.com"))` instead
