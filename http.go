@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/geekypanda/httpcache"
 	"github.com/iris-contrib/letsencrypt"
 	"github.com/kataras/go-errors"
 	"github.com/valyala/fasthttp"
@@ -696,9 +697,29 @@ func (e *muxEntry) precedenceTo(index int) int {
 	return newindex
 }
 
-//
-//
-//
+// cachedMuxEntry is just a wrapper for the Cache functionality
+// it seems useless but I prefer to keep the cached handler on its own memory stack,
+// reason:  no clojures hell in the Cache function
+type cachedMuxEntry struct {
+	cachedHandler fasthttp.RequestHandler
+}
+
+func newCachedMuxEntry(f *Framework, bodyHandler HandlerFunc, expiration time.Duration) *cachedMuxEntry {
+	fhandler := func(reqCtx *fasthttp.RequestCtx) {
+		ctx := f.AcquireCtx(reqCtx)
+		bodyHandler.Serve(ctx)
+		f.ReleaseCtx(ctx)
+	}
+
+	cachedHandler := httpcache.CacheFasthttp(fhandler, expiration)
+	return &cachedMuxEntry{
+		cachedHandler: cachedHandler,
+	}
+}
+
+func (c *cachedMuxEntry) Serve(ctx *Context) {
+	c.cachedHandler(ctx.RequestCtx)
+}
 
 type (
 	// Route contains some useful information about a route

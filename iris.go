@@ -52,6 +52,7 @@ visit https://www.gitbook.com/book/kataras/iris/details
 package iris // import "github.com/kataras/iris"
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"net"
@@ -65,8 +66,6 @@ import (
 	"sync"
 	"time"
 
-	"bytes"
-	"github.com/geekypanda/httpcache"
 	"github.com/kataras/go-errors"
 	"github.com/kataras/go-fs"
 	"github.com/kataras/go-serializer"
@@ -81,7 +80,7 @@ const (
 	// IsLongTermSupport flag is true when the below version number is a long-term-support version
 	IsLongTermSupport = false
 	// Version is the current version number of the Iris web framework
-	Version = "5.0.1"
+	Version = "5.0.2"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -167,7 +166,6 @@ type (
 		TemplateSourceString(string, interface{}) string
 		SerializeToString(string, interface{}, ...map[string]interface{}) string
 		Cache(HandlerFunc, time.Duration) HandlerFunc
-		InvalidateCache(*Context)
 	}
 
 	// Framework is our God |\| Google.Search('Greek mythology Iris')
@@ -1127,7 +1125,7 @@ func (s *Framework) SerializeToString(keyOrContentType string, obj interface{}, 
 // Usage: iris.Get("/", iris.Cache(func(ctx *iris.Context){
 //    ctx.WriteString("Hello, world!") // or a template or anything else
 // }, time.Duration(10*time.Second))) // duration of expiration
-// if <=time.Second then it tries to find it though request header's "cache-control" maxage value
+// if <=2 seconds then it tries to find it though request header's "cache-control" maxage value
 //
 // Note that it depends on a station instance's cache service.
 // Do not try to call it from default' station if you use the form of app := iris.New(),
@@ -1146,33 +1144,8 @@ func Cache(bodyHandler HandlerFunc, expiration time.Duration) HandlerFunc {
 // Do not try to call it from default' station if you use the form of app := iris.New(),
 // use the app.Cache instead of iris.Cache
 func (s *Framework) Cache(bodyHandler HandlerFunc, expiration time.Duration) HandlerFunc {
-	fh := httpcache.Fasthttp.Cache(func(reqCtx *fasthttp.RequestCtx) {
-		ctx := s.AcquireCtx(reqCtx)
-		bodyHandler.Serve(ctx)
-		s.ReleaseCtx(ctx)
-	}, expiration)
-
-	return func(ctx *Context) {
-		fh(ctx.RequestCtx)
-	}
-}
-
-// InvalidateCache clears the cache body for a specific context's url path(cache unique key)
-//
-// Note that it depends on a station instance's cache service.
-// Do not try to call it from default' station if you use the form of app := iris.New(),
-// use the app.InvalidateCache instead of iris.InvalidateCache
-func InvalidateCache(ctx *Context) {
-	Default.InvalidateCache(ctx)
-}
-
-// InvalidateCache clears the cache body for a specific context's url path(cache unique key)
-//
-// Note that it depends on a station instance's cache service.
-// Do not try to call it from default' station if you use the form of app := iris.New(),
-// use the app.InvalidateCache instead of iris.InvalidateCache
-func (s *Framework) InvalidateCache(ctx *Context) {
-	httpcache.Fasthttp.Invalidate(ctx.RequestCtx)
+	ce := newCachedMuxEntry(s, bodyHandler, expiration)
+	return ce.Serve
 }
 
 // -------------------------------------------------------------------------------------

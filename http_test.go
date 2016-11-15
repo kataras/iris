@@ -11,10 +11,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/gavv/httpexpect"
+	"github.com/kataras/go-errors"
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/httptest"
 	"github.com/valyala/fasthttp"
@@ -688,4 +690,64 @@ func TestMuxFireMethodNotAllowed(t *testing.T) {
 
 	e.POST("/mypath").Expect().Status(iris.StatusMethodNotAllowed).Body().Equal("Hello from my custom 405 page")
 	iris.Close()
+}
+
+var (
+	cacheDuration      = 5 * time.Second
+	errCacheTestFailed = errors.New("Expected the main handler to be executed %d times instead of %d.")
+)
+
+// ~14secs
+func runCacheTest(e *httpexpect.Expect, path string, counterPtr *uint32, expectedBodyStr, expectedContentType string) error {
+	e.GET(path).Expect().Status(iris.StatusOK).Body().Equal(expectedBodyStr)
+	time.Sleep(cacheDuration / 5) // lets wait for a while, cache should be saved and ready
+	e.GET(path).Expect().Status(iris.StatusOK).Body().Equal(expectedBodyStr)
+	counter := atomic.LoadUint32(counterPtr)
+	if counter > 1 {
+		// n should be 1 because it doesn't changed after the first call
+		return errCacheTestFailed.Format(1, counter)
+	}
+	time.Sleep(cacheDuration)
+
+	// cache should be cleared now
+	e.GET(path).Expect().Status(iris.StatusOK).ContentType(expectedContentType, "utf-8").Body().Equal(expectedBodyStr)
+	time.Sleep(cacheDuration / 5)
+	// let's call again , the cache should be saved
+	e.GET(path).Expect().Status(iris.StatusOK).ContentType(expectedContentType, "utf-8").Body().Equal(expectedBodyStr)
+	counter = atomic.LoadUint32(counterPtr)
+	if counter != 2 {
+		return errCacheTestFailed.Format(2, counter)
+	}
+
+	return nil
+}
+
+func TestCache(t *testing.T) {
+
+	iris.ResetDefault()
+
+	expectedBodyStr := "Imagine it as a big message to achieve x20 response performance!"
+	var textCounter, htmlCounter uint32
+
+	iris.Get("/text", iris.Cache(func(ctx *iris.Context) {
+		atomic.AddUint32(&textCounter, 1)
+		ctx.Text(iris.StatusOK, expectedBodyStr)
+	}, cacheDuration))
+
+	iris.Get("/html", iris.Cache(func(ctx *iris.Context) {
+		atomic.AddUint32(&htmlCounter, 1)
+		ctx.HTML(iris.StatusOK, expectedBodyStr)
+	}, cacheDuration))
+
+	e := httptest.New(iris.Default, t)
+
+	// test cache on text/plain
+	if err := runCacheTest(e, "/text", &textCounter, expectedBodyStr, "text/plain"); err != nil {
+		t.Fatal(err)
+	}
+
+	// text cache on text/html
+	if err := runCacheTest(e, "/html", &htmlCounter, expectedBodyStr, "text/html"); err != nil {
+		t.Fatal(err)
+	}
 }

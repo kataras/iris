@@ -561,7 +561,6 @@ func (ctx *Context) renderSerialized(contentType string, obj interface{}, option
 	if err != nil {
 		return err
 	}
-
 	gzipEnabled := ctx.framework.Config.Gzip
 	charset := ctx.framework.Config.Charset
 	if len(options) > 0 {
@@ -1129,11 +1128,6 @@ func (ctx *Context) MaxAge() int64 {
 		}
 	}
 	return -1
-}
-
-// InvalidateCache clears the cache manually for this request uri context's handler's route
-func (ctx *Context) InvalidateCache() {
-	ctx.framework.InvalidateCache(ctx)
 }
 
 // Log logs to the iris defined logger

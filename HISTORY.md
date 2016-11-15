@@ -2,6 +2,17 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 5.0.1 -> 5.0.2
+
+- [geekypanda/httpcache](https://github.com/geekypanda/httpcache) has been re-written,
+ by me, got rid of the mutex locks and use individual statcks instead,
+ gain even more performance boost
+
+- `InvalidateCache` has been removed,
+	it wasn't working well for big apps, let cache work with
+	its automation, is better.
+
+- Add tests for the `iris.Cache`
 
 ## v3 -> [v4](https://github.com/kataras/iris/tree/4.0.0) (fasthttp-based) long term support
 
@@ -371,7 +382,7 @@ type WebsocketConfiguration struct {
 
 ```
 
-- **REMOVE**: `github.com/kataras/iris/context/context.go` , this is no needed anymore. Its only usage was inside `sessions` and `websockets`, a month ago I did improvements to the sessions as a standalone package, the IContext interface is not being used there. With the today's changes, the iris-contrib/websocket doesn't needs the IContext interface too, so the whole folder `./context` is useless and removed now. Users developers don't have any side-affects from this change.  
+- **REMOVE**: `github.com/kataras/iris/context/context.go` , this is no needed anymore. Its only usage was inside `sessions` and `websockets`, a month ago I did improvements to the sessions as a standalone package, the IContext interface is not being used there. With the today's changes, the iris-contrib/websocket doesn't needs the IContext interface too, so the whole folder `./context` is useless and removed now. Users developers don't have any side-affects from this change.
 
 
 [Examples](https://github.com/iris-contrib/examples), [Book](https://github.com/iris-contrib/gitbook) are up-to-date, just new configuration fields.
@@ -835,7 +846,7 @@ OptionServerVScheme(val string)
 // You're free to change it, but I will trust you to don't, this is the only setting whose somebody, like me, can see if iris web framework is used
 OptionServerName(val string)
 
-```    
+```
 
 View all configuration fields and options by navigating to the [kataras/iris/configuration.go source file](https://github.com/kataras/iris/blob/master/configuration.go)
 
