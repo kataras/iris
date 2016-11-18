@@ -1,56 +1,58 @@
-//Package iris the fastest go web framework in (this) Earth.
-///NOTE: When you see 'framework' or 'station' we mean the Iris web framework's main implementation.
-//
-//
-// Basic usage
-// ----------------------------------------------------------------------
-//
-// package main
-//
-// import  "github.com/kataras/iris"
-//
-// func main() {
-//     iris.Get("/hi_json", func(c *iris.Context) {
-//         c.JSON(200, iris.Map{
-//             "Name": "Iris",
-//             "Released":  "13 March 2016",
-//         })
-//     })
-//     iris.Listen(":8080")
-// }
-//
-// ----------------------------------------------------------------------
-//
-// package main
-//
-// import  "github.com/kataras/iris"
-//
-// func main() {
-// 	s1 := iris.New()
-// 	s1.Get("/hi_json", func(c *iris.Context) {
-// 		c.JSON(200, iris.Map{
-// 			"Name": "Iris",
-// 			"Released":  "13 March 2016",
-// 		})
-// 	})
-//
-// 	s2 := iris.New()
-// 	s2.Get("/hi_raw_html", func(c *iris.Context) {
-// 		c.HTML(iris.StatusOK, "<b> Iris </b> welcomes <h1>you!</h1>")
-// 	})
-//
-// 	go s1.Listen(":8080")
-// 	s2.Listen(":1993")
-// }
-//
-// -----------------------------DOCUMENTATION----------------------------
-// ----------------------------_______________---------------------------
-// For middleware, template engines, response engines, sessions, websockets, mails, subdomains,
-// dynamic subdomains, routes, party of subdomains & routes, ssh and much more
-// visit https://www.gitbook.com/book/kataras/iris/details
+/*
+Package iris the fastest go web framework in (this) Earth.
+
+Basic usage
+----------------------------------------------------------------------
+
+package main
+
+import  "github.com/kataras/iris"
+
+func main() {
+    iris.Get("/hi_json", func(c *iris.Context) {
+        c.JSON(iris.StatusOK, iris.Map{
+            "Name": "Iris",
+            "Released":  "13 March 2016",
+        })
+    })
+    iris.ListenLETSENCRYPT("mydomain.com")
+}
+
+----------------------------------------------------------------------
+
+package main
+
+import  "github.com/kataras/iris"
+
+func main() {
+	s1 := iris.New()
+	s1.Get("/hi_json", func(c *iris.Context) {
+		c.JSON(200, iris.Map{
+			"Name": "Iris",
+			"Released":  "13 March 2016",
+		})
+	})
+
+	s2 := iris.New()
+	s2.Get("/hi_raw_html", func(c *iris.Context) {
+		c.HTML(iris.StatusOK, "<b> Iris </b> welcomes <h1>you!</h1>")
+	})
+
+	go s1.Listen(":8080")
+	s2.Listen(":1993")
+}
+
+----------------------------------------------------------------------
+
+For middleware, template engines, response engines, sessions, websockets, mails, subdomains,
+dynamic subdomains, routes, party of subdomains & routes, ssh and much more
+
+visit https://www.gitbook.com/book/kataras/iris/details
+*/
 package iris // import "github.com/kataras/iris"
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"net"
@@ -75,8 +77,10 @@ import (
 )
 
 const (
-	// Version is the current version of the Iris web framework
-	Version = "4.6.0"
+	// IsLongTermSupport flag is true when the below version number is a long-term-support version
+	IsLongTermSupport = false
+	// Version is the current version number of the Iris web framework
+	Version = "5.0.2"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -94,9 +98,6 @@ var (
 	Plugins   PluginContainer
 	Router    fasthttp.RequestHandler
 	Websocket *WebsocketServer
-	// Look ssh.go for this field's configuration
-	// example: https://github.com/iris-contrib/examples/blob/master/ssh/main.go
-	SSH *SSHServer
 	// Available is a channel type of bool, fired to true when the server is opened and all plugins ran
 	// never fires false, if the .Close called then the channel is re-allocating.
 	// the channel remains open until you close it.
@@ -112,7 +113,7 @@ var (
 // iris.Plugins
 // iris.Router
 // iris.Websocket
-// iris.SSH and iris.Available channel
+// iris.Available channel
 // useful mostly when you are not using the form of app := iris.New() inside your tests, to make sure that you're using a new iris instance
 func ResetDefault() {
 	Default = New()
@@ -121,7 +122,6 @@ func ResetDefault() {
 	Plugins = Default.Plugins
 	Router = Default.Router
 	Websocket = Default.Websocket
-	SSH = Default.SSH
 	Available = Default.Available
 }
 
@@ -145,7 +145,7 @@ type (
 		Serve(net.Listener) error
 		Listen(string)
 		ListenTLS(string, string, string)
-		ListenLETSENCRYPT(string)
+		ListenLETSENCRYPT(string, ...string)
 		ListenUNIX(string, os.FileMode)
 		Close() error
 		Reserve() error
@@ -165,6 +165,7 @@ type (
 		TemplateString(string, interface{}, ...map[string]interface{}) string
 		TemplateSourceString(string, interface{}) string
 		SerializeToString(string, interface{}, ...map[string]interface{}) string
+		Cache(HandlerFunc, time.Duration) HandlerFunc
 	}
 
 	// Framework is our God |\| Google.Search('Greek mythology Iris')
@@ -190,11 +191,9 @@ type (
 		sessions    sessions.Sessions
 		serializers serializer.Serializers
 		templates   *templateEngines
-		// configuration by instance.Logger.Config
-		Logger    *log.Logger
-		Plugins   PluginContainer
-		Websocket *WebsocketServer
-		SSH       *SSHServer
+		Logger      *log.Logger
+		Plugins     PluginContainer
+		Websocket   *WebsocketServer
 	}
 )
 
@@ -212,12 +211,11 @@ func New(setters ...OptionSetter) *Framework {
 	s := &Framework{}
 	s.Set(setters...)
 
-	// logger, plugins & ssh
+	// logger & plugins
 	{
 		// set the Logger, which it's configuration should be declared before .Listen because the servemux and plugins needs that
 		s.Logger = log.New(s.Config.LoggerOut, s.Config.LoggerPreffix, log.LstdFlags)
 		s.Plugins = newPluginContainer(s.Logger)
-		s.SSH = NewSSHServer()
 	}
 
 	// rendering
@@ -393,13 +391,6 @@ func (s *Framework) Build() {
 			}
 		}
 
-		//
-
-		// ssh
-		if s.SSH != nil && s.SSH.Enabled() {
-			s.SSH.bindTo(s)
-		}
-
 		// updates, to cover the default station's irs.Config.checkForUpdates
 		// note: we could use the IsDevelopment configuration field to do that BUT
 		// the developer may want to check for updates without, for example, re-build template files (comes from IsDevelopment) on each request
@@ -540,22 +531,36 @@ func (s *Framework) ListenTLS(addr string, certFile, keyFile string) {
 // ListenLETSENCRYPT starts a server listening at the specific nat address
 // using key & certification taken from the letsencrypt.org 's servers
 // it's also starts a second 'http' server to redirect all 'http://$ADDR_HOSTNAME:80' to the' https://$ADDR'
-// example: https://github.com/iris-contrib/examples/blob/master/letsencyrpt/main.go
-func ListenLETSENCRYPT(addr string) {
-	Default.ListenLETSENCRYPT(addr)
+// it creates a cache file to store the certifications, for performance reasons, this file by-default is "./letsencrypt.cache"
+// if you skip the second parameter then the cache file is "./letsencrypt.cache"
+// if you want to disable cache then simple pass as second argument an empty empty string ""
+//
+// example: https://github.com/iris-contrib/examples/blob/master/letsencrypt/main.go
+//
+// supports localhost domains for testing,
+// NOTE: if you are ready for production then use `$app.Serve(iris.LETSENCRYPTPROD("mydomain.com"))` instead
+func ListenLETSENCRYPT(addr string, cacheFileOptional ...string) {
+	Default.ListenLETSENCRYPT(addr, cacheFileOptional...)
 }
 
 // ListenLETSENCRYPT starts a server listening at the specific nat address
 // using key & certification taken from the letsencrypt.org 's servers
 // it's also starts a second 'http' server to redirect all 'http://$ADDR_HOSTNAME:80' to the' https://$ADDR'
-// example: https://github.com/iris-contrib/examples/blob/master/letsencyrpt/main.go
-func (s *Framework) ListenLETSENCRYPT(addr string) {
+// it creates a cache file to store the certifications, for performance reasons, this file by-default is "./letsencrypt.cache"
+// if you skip the second parameter then the cache file is "./letsencrypt.cache"
+// if you want to disable cache then simple pass as second argument an empty empty string ""
+//
+// example: https://github.com/iris-contrib/examples/blob/master/letsencrypt/main.go
+//
+// supports localhost domains for testing,
+// NOTE: if you are ready for production then use `$app.Serve(iris.LETSENCRYPTPROD("mydomain.com"))` instead
+func (s *Framework) ListenLETSENCRYPT(addr string, cacheFileOptional ...string) {
 	addr = ParseHost(addr)
 	if s.Config.VHost == "" {
 		s.Config.VHost = addr
 		// this will be set as the front-end listening addr
 	}
-	ln, err := LETSENCRYPT(addr)
+	ln, err := LETSENCRYPT(addr, cacheFileOptional...)
 	if err != nil {
 		s.Logger.Panic(err)
 	}
@@ -679,7 +684,6 @@ func ReleaseCtx(ctx *Context) {
 // ReleaseCtx puts the Iris' Context back to the pool in order to be re-used
 // see .AcquireCtx & .Serve
 func (s *Framework) ReleaseCtx(ctx *Context) {
-	ctx.Params = ctx.Params[0:0]
 	ctx.Middleware = nil
 	ctx.session = nil
 	s.contextPool.Put(ctx)
@@ -1109,9 +1113,39 @@ func SerializeToString(keyOrContentType string, obj interface{}, options ...map[
 func (s *Framework) SerializeToString(keyOrContentType string, obj interface{}, options ...map[string]interface{}) string {
 	res, err := s.serializers.SerializeToString(keyOrContentType, obj, options...)
 	if err != nil {
+		if s.Config.IsDevelopment {
+			s.Logger.Printf("Error on SerializeToString, Key(content-type): %s. Trace: %s\n", keyOrContentType, err)
+		}
 		return ""
 	}
 	return res
+}
+
+// Cache is just a wrapper for a route's handler which you want to enable body caching
+// Usage: iris.Get("/", iris.Cache(func(ctx *iris.Context){
+//    ctx.WriteString("Hello, world!") // or a template or anything else
+// }, time.Duration(10*time.Second))) // duration of expiration
+// if <=2 seconds then it tries to find it though request header's "cache-control" maxage value
+//
+// Note that it depends on a station instance's cache service.
+// Do not try to call it from default' station if you use the form of app := iris.New(),
+// use the app.Cache instead of iris.Cache
+func Cache(bodyHandler HandlerFunc, expiration time.Duration) HandlerFunc {
+	return Default.Cache(bodyHandler, expiration)
+}
+
+// Cache is just a wrapper for a route's handler which you want to enable body caching
+// Usage: iris.Get("/", iris.Cache(func(ctx *iris.Context){
+//    ctx.WriteString("Hello, world!") // or a template or anything else
+// }, time.Duration(10*time.Second))) // duration of expiration
+// if <=time.Second then it tries to find it though request header's "cache-control" maxage value
+//
+// Note that it depends on a station instance's cache service.
+// Do not try to call it from default' station if you use the form of app := iris.New(),
+// use the app.Cache instead of iris.Cache
+func (s *Framework) Cache(bodyHandler HandlerFunc, expiration time.Duration) HandlerFunc {
+	ce := newCachedMuxEntry(s, bodyHandler, expiration)
+	return ce.Serve
 }
 
 // -------------------------------------------------------------------------------------
@@ -1157,6 +1191,7 @@ type (
 		StaticWeb(string, string, int) RouteNameFunc
 		StaticServe(string, ...string) RouteNameFunc
 		StaticContent(string, string, []byte) RouteNameFunc
+		StaticEmbedded(string, string, func(string) ([]byte, error), func() []string) RouteNameFunc
 		Favicon(string, ...string) RouteNameFunc
 
 		// templates
@@ -1422,7 +1457,7 @@ func (api *muxAPI) API(path string, restAPI HandlerAPI, middleware ...HandlerFun
 	// or no, I changed my mind, let all be named parameters and let users to decide what info they need,
 	// using the Context to take more values (post form,url params and so on).-
 
-	paramPrefix := "param"
+	paramPrefix := []byte("param")
 	for _, methodName := range AllMethods {
 		methodWithBy := strings.Title(strings.ToLower(methodName)) + "By"
 		if method, found := typ.MethodByName(methodWithBy); found {
@@ -1436,9 +1471,9 @@ func (api *muxAPI) API(path string, restAPI HandlerAPI, middleware ...HandlerFun
 
 			for i := 1; i < numInLen; i++ { // from 1 because the first is the 'object'
 				if registedPath[len(registedPath)-1] == slashByte {
-					registedPath += ":" + paramPrefix + strconv.Itoa(i)
+					registedPath += ":" + string(paramPrefix) + strconv.Itoa(i)
 				} else {
-					registedPath += "/:" + paramPrefix + strconv.Itoa(i)
+					registedPath += "/:" + string(paramPrefix) + strconv.Itoa(i)
 				}
 			}
 
@@ -1451,15 +1486,15 @@ func (api *muxAPI) API(path string, restAPI HandlerAPI, middleware ...HandlerFun
 					newController.FieldByName("Context").Set(reflect.ValueOf(ctx))
 					args := make([]reflect.Value, paramsLen+1, paramsLen+1)
 					args[0] = newController
-					realParamsLen := len(ctx.Params)
 					j := 1
-					for i := 0; i < realParamsLen; i++ { // here we don't looping with the len we are already known by the 'API' because maybe there is a party/or/path witch accepting parameters before, see https://github.com/kataras/iris/issues/293
-						if strings.HasPrefix(ctx.Params[i].Key, paramPrefix) {
-							args[j] = reflect.ValueOf(ctx.Params[i].Value)
+
+					ctx.VisitUserValues(func(k []byte, v interface{}) {
+						if bytes.HasPrefix(k, paramPrefix) {
+							args[j] = reflect.ValueOf(v.(string))
 
 							j++ // the first parameter is the context, other are the path parameters, j++ to be align with (API's registered)paramsLen
 						}
-					}
+					})
 
 					methodFunc.Call(args)
 				})
@@ -1702,8 +1737,8 @@ func (api *muxAPI) StaticHandler(systemPath string, stripSlashes int, compress b
 // * stripSlashes = 0, original path: "/foo/bar", result: "/foo/bar"
 // * stripSlashes = 1, original path: "/foo/bar", result: "/bar"
 // * stripSlashes = 2, original path: "/foo/bar", result: ""
-func Static(relative string, systemPath string, stripSlashes int) RouteNameFunc {
-	return Default.Static(relative, systemPath, stripSlashes)
+func Static(reqPath string, systemPath string, stripSlashes int) RouteNameFunc {
+	return Default.Static(reqPath, systemPath, stripSlashes)
 }
 
 // Static registers a route which serves a system directory
@@ -1716,15 +1751,15 @@ func Static(relative string, systemPath string, stripSlashes int) RouteNameFunc 
 // * stripSlashes = 0, original path: "/foo/bar", result: "/foo/bar"
 // * stripSlashes = 1, original path: "/foo/bar", result: "/bar"
 // * stripSlashes = 2, original path: "/foo/bar", result: ""
-func (api *muxAPI) Static(relative string, systemPath string, stripSlashes int) RouteNameFunc {
-	if relative[len(relative)-1] != slashByte { // if / then /*filepath, if /something then /something/*filepath
-		relative += slash
+func (api *muxAPI) Static(reqPath string, systemPath string, stripSlashes int) RouteNameFunc {
+	if reqPath[len(reqPath)-1] != slashByte { // if / then /*filepath, if /something then /something/*filepath
+		reqPath += slash
 	}
 
 	h := api.StaticHandler(systemPath, stripSlashes, false, false, nil)
 
-	api.Head(relative+"*filepath", h)
-	return api.Get(relative+"*filepath", h)
+	api.Head(reqPath+"*filepath", h)
+	return api.Get(reqPath+"*filepath", h)
 }
 
 // StaticFS registers a route which serves a system directory
@@ -1875,6 +1910,128 @@ func (api *muxAPI) StaticContent(reqPath string, cType string, content []byte) R
 	}
 	api.Head(reqPath, h)
 	return api.Get(reqPath, h)
+}
+
+// StaticEmbedded  used when files are distrubuted inside the app executable, using go-bindata mostly
+// First parameter is the request path, the path which the files in the vdir(second parameter) will be served to, for example "/static"
+// Second parameter is the (virtual) directory path, for example "./assets"
+// Third parameter is the Asset function
+// Forth parameter is the AssetNames function
+//
+// For more take a look at the
+// example: https://github.com/iris-contrib/examples/tree/master/static_files_embedded
+func StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) RouteNameFunc {
+	return Default.StaticEmbedded(requestPath, vdir, assetFn, namesFn)
+}
+
+// StaticEmbedded  used when files are distrubuted inside the app executable, using go-bindata mostly
+// First parameter is the request path, the path which the files in the vdir will be served to, for example "/static"
+// Second parameter is the (virtual) directory path, for example "./assets"
+// Third parameter is the Asset function
+// Forth parameter is the AssetNames function
+//
+// For more take a look at the
+// example: https://github.com/iris-contrib/examples/tree/master/static_files_embedded
+func (api *muxAPI) StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) RouteNameFunc {
+
+	// check if requestPath already contains an asterix-match to anything symbol:  /path/*
+	requestPath = strings.Replace(requestPath, "//", "/", -1)
+	matchEverythingIdx := strings.IndexByte(requestPath, matchEverythingByte)
+	paramName := "path"
+
+	if matchEverythingIdx != -1 {
+		// found so it should has a param name, take it
+		paramName = requestPath[matchEverythingIdx+1:]
+	} else {
+		// make the requestPath
+		if requestPath[len(requestPath)-1] == slashByte {
+			// ends with / remove it
+			requestPath = requestPath[0 : len(requestPath)-2]
+		}
+
+		requestPath += slash + "*" + paramName // $requestPath/*path
+	}
+
+	if len(vdir) > 0 {
+		if vdir[0] == '.' { // first check for .wrong
+			vdir = vdir[1:]
+		}
+		if vdir[0] == '/' || vdir[0] == os.PathSeparator { // second check for /something, (or ./something if we had dot on 0 it will be removed
+			vdir = vdir[1:]
+		}
+	}
+
+	// collect the names we are care for, because not all Asset used here, we need the vdir's assets.
+	allNames := namesFn()
+
+	var names []string
+	for _, path := range allNames {
+		// check if path is the path name we care for
+		if !strings.HasPrefix(path, vdir) {
+			continue
+		}
+
+		path = strings.Replace(path, "\\", "/", -1) // replace system paths with double slashes
+		path = strings.Replace(path, "./", "/", -1) // replace ./assets/favicon.ico to /assets/favicon.ico in order to be ready for compare with the reqPath later
+		path = path[len(vdir):]                     // set it as the its 'relative' ( we should re-setted it when assetFn will be used)
+		names = append(names, path)
+
+	}
+	if len(names) == 0 {
+		// we don't start the server yet, so:
+		panic("iris.StaticEmbedded: Unable to locate any embedded files located to the (virtual) directory: " + vdir)
+	}
+
+	modtime := time.Now()
+	modtimeStr := ""
+	h := func(ctx *Context) {
+
+		reqPath := ctx.Param(paramName)
+
+		for _, path := range names {
+
+			if path != reqPath {
+				continue
+			}
+
+			if modtimeStr == "" {
+				modtimeStr = modtime.UTC().Format(ctx.framework.Config.TimeFormat)
+			}
+
+			if t, err := time.Parse(ctx.framework.Config.TimeFormat, ctx.RequestHeader(ifModifiedSince)); err == nil && modtime.Before(t.Add(StaticCacheDuration)) {
+				ctx.Response.Header.Del(contentType)
+				ctx.Response.Header.Del(contentLength)
+				ctx.SetStatusCode(StatusNotModified)
+				return
+			}
+
+			cType := fs.TypeByExtension(path)
+			fullpath := vdir + path
+
+			buf, err := assetFn(fullpath)
+
+			if err != nil {
+				continue
+			}
+
+			ctx.Response.Header.Set(contentType, cType)
+			ctx.Response.Header.Set(lastModified, modtimeStr)
+
+			ctx.SetStatusCode(StatusOK)
+			ctx.SetContentType(cType)
+
+			ctx.Response.SetBody(buf)
+			return
+		}
+
+		// not found
+		ctx.EmitError(StatusNotFound)
+
+	}
+
+	api.Head(requestPath, h)
+
+	return api.Get(requestPath, h)
 }
 
 // Favicon serves static favicon

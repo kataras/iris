@@ -1,16 +1,6 @@
 // Black-box Testing
 package iris_test
 
-/*
-The most part of  the context covered,
-the other part contains serving static methods,
-find remote ip, GetInt and the view engine rendering(templates)
-I am not waiting unexpected behaviors from the rest of the funcs,
-so that's all with context's tests.
-
-CONTRIBUTE & DISCUSSION ABOUT TESTS TO: https://github.com/iris-contrib/tests
-*/
-
 import (
 	"encoding/json"
 	"encoding/xml"
@@ -72,16 +62,24 @@ func TestContextDoNextStop(t *testing.T) {
 	}
 }
 
+type pathParameter struct {
+	Key   string
+	Value string
+}
+type pathParameters []pathParameter
+
 // White-box testing *
 func TestContextParams(t *testing.T) {
-	var context iris.Context
-	params := iris.PathParameters{
-		iris.PathParameter{Key: "testkey", Value: "testvalue"},
-		iris.PathParameter{Key: "testkey2", Value: "testvalue2"},
-		iris.PathParameter{Key: "id", Value: "3"},
-		iris.PathParameter{Key: "bigint", Value: "548921854390354"},
+	context := &iris.Context{RequestCtx: &fasthttp.RequestCtx{}}
+	params := pathParameters{
+		pathParameter{Key: "testkey", Value: "testvalue"},
+		pathParameter{Key: "testkey2", Value: "testvalue2"},
+		pathParameter{Key: "id", Value: "3"},
+		pathParameter{Key: "bigint", Value: "548921854390354"},
 	}
-	context.Params = params
+	for _, p := range params {
+		context.Set(p.Key, p.Value)
+	}
 
 	if v := context.Param(params[0].Key); v != params[0].Value {
 		t.Fatalf("Expecting parameter value to be %s but we got %s", params[0].Value, context.Param("testkey"))
@@ -90,8 +88,8 @@ func TestContextParams(t *testing.T) {
 		t.Fatalf("Expecting parameter value to be %s but we got %s", params[1].Value, context.Param("testkey2"))
 	}
 
-	if len(context.Params) != len(params) {
-		t.Fatalf("Expecting to have %d parameters but we got %d", len(params), len(context.Params))
+	if context.ParamsLen() != len(params) {
+		t.Fatalf("Expecting to have %d parameters but we got %d", len(params), context.ParamsLen())
 	}
 
 	if vi, err := context.ParamInt(params[2].Key); err != nil {
@@ -111,7 +109,7 @@ func TestContextParams(t *testing.T) {
 	iris.ResetDefault()
 	expectedParamsStr := "param1=myparam1,param2=myparam2,param3=myparam3afterstatic,anything=/andhere/anything/you/like"
 	iris.Get("/path/:param1/:param2/staticpath/:param3/*anything", func(ctx *iris.Context) {
-		paramsStr := ctx.Params.String()
+		paramsStr := ctx.ParamsSentence()
 		ctx.Write(paramsStr)
 	})
 
@@ -349,8 +347,8 @@ func TestContextRedirectTo(t *testing.T) {
 	iris.Get("/mypath", h)("my-path")
 	iris.Get("/mypostpath", h)("my-post-path")
 	iris.Get("mypath/with/params/:param1/:param2", func(ctx *iris.Context) {
-		if len(ctx.Params) != 2 {
-			t.Fatalf("Strange error, expecting parameters to be two but we got: %d", len(ctx.Params))
+		if l := ctx.ParamsLen(); l != 2 {
+			t.Fatalf("Strange error, expecting parameters to be two but we got: %d", l)
 		}
 		ctx.Write(ctx.PathString())
 	})("my-path-with-params")
@@ -462,7 +460,7 @@ func TestContextFlashMessages(t *testing.T) {
 	firstKey := "name"
 	lastKey := "package"
 
-	values := iris.PathParameters{iris.PathParameter{Key: firstKey, Value: "kataras"}, iris.PathParameter{Key: lastKey, Value: "iris"}}
+	values := pathParameters{pathParameter{Key: firstKey, Value: "kataras"}, pathParameter{Key: lastKey, Value: "iris"}}
 	jsonExpected := map[string]string{firstKey: "kataras", lastKey: "iris"}
 	// set the flashes, the cookies are filled
 	iris.Put("/set", func(ctx *iris.Context) {
@@ -770,4 +768,23 @@ func TestContextPreRender(t *testing.T) {
 	e := httptest.New(iris.Default, t)
 	expected := "<h1>HI kataras. Error: " + errMsg1 + errMsg2 + "</h1>"
 	e.GET("/").Expect().Status(iris.StatusOK).Body().Contains(expected)
+}
+
+func TestTemplatesDisabled(t *testing.T) {
+	iris.ResetDefault()
+	defer iris.Close()
+
+	iris.Default.Config.DisableTemplateEngines = true
+
+	file := "index.html"
+	ip := "0.0.0.0"
+	errTmpl := "<h2>Template: %s\nIP: %s</h2><b>%s</b>"
+	expctedErrMsg := fmt.Sprintf(errTmpl, file, ip, "Error: Unable to execute a template. Trace: Templates are disabled '.Config.DisableTemplatesEngines = true' please turn that to false, as defaulted.\n")
+
+	iris.Get("/renderErr", func(ctx *iris.Context) {
+		ctx.MustRender(file, nil)
+	})
+
+	e := httptest.New(iris.Default, t)
+	e.GET("/renderErr").Expect().Status(iris.StatusServiceUnavailable).Body().Equal(expctedErrMsg)
 }

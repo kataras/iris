@@ -2,10 +2,231 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 5.0.1 -> 5.0.2
 
-## 4.5.2/.3 -> 4.6.0
+- [geekypanda/httpcache](https://github.com/geekypanda/httpcache) has been re-written,
+ by me, got rid of the mutex locks and use individual statcks instead,
+ gain even more performance boost
 
-### This update affects only testers who used `iris.Tester` at the past.
+- `InvalidateCache` has been removed,
+	it wasn't working well for big apps, let cache work with
+	its automation, is better.
+
+- Add tests for the `iris.Cache`
+
+## v3 -> [v4](https://github.com/kataras/iris/tree/4.0.0) (fasthttp-based) long term support
+
+- **NEW FEATURE**: `CacheService` simple, cache service for your app's static body content(can work as external service if you are doing horizontal scaling, the `Cache` is just a `Handler` :) )
+
+Cache any content, templates, static files, even the error handlers, anything.
+
+> Bombardier: 5 million requests and 100k clients per second to this markdown  static content(look below) with cache(3 seconds) can be served up to ~x12 times faster. Imagine what happens with bigger content like full page and templates!
+
+
+**OUTLINE**
+```go
+
+// Cache is just a wrapper for a route's handler which you want to enable body caching
+// Usage: iris.Get("/", iris.Cache(func(ctx *iris.Context){
+//    ctx.WriteString("Hello, world!") // or a template or anything else
+// }, time.Duration(10*time.Second))) // duration of expiration
+// if <=time.Second then it tries to find it though request header's "cache-control" maxage value
+//
+// Note that it depends on a station instance's cache service.
+// Do not try to call it from default' station if you use the form of app := iris.New(),
+// use the app.Cache instead of iris.Cache
+Cache(bodyHandler HandlerFunc, expiration time.Duration) HandlerFunc
+
+// InvalidateCache clears the cache body for a specific context's url path(cache unique key)
+//
+// Note that it depends on a station instance's cache service.
+// Do not try to call it from default' station if you use the form of app := iris.New(),
+// use the app.InvalidateCache instead of iris.InvalidateCache
+InvalidateCache(ctx *Context)
+
+
+```
+
+**OVERVIEW**
+
+```go
+iris.Get("/hi", iris.Cache(func(c *iris.Context) {
+	c.WriteString("Hi this is a big content, do not try cache on small content it will not make any significant difference!")
+}, time.Duration(10)*time.Second))
+
+```
+
+[EXAMPLE](https://github.com/iris-contrib/examples/tree/master/cache_body):
+
+
+
+```go
+package main
+
+import (
+	"github.com/kataras/iris"
+	"time"
+)
+
+var testMarkdownContents = `## Hello Markdown from Iris
+
+This is an example of Markdown with Iris
+
+
+
+Features
+--------
+
+All features of Sundown are supported, including:
+
+*   **Compatibility**. The Markdown v1.0.3 test suite passes with
+    the --tidy option.  Without --tidy, the differences are
+    mostly in whitespace and entity escaping, where blackfriday is
+    more consistent and cleaner.
+
+*   **Common extensions**, including table support, fenced code
+    blocks, autolinks, strikethroughs, non-strict emphasis, etc.
+
+*   **Safety**. Blackfriday is paranoid when parsing, making it safe
+    to feed untrusted user input without fear of bad things
+    happening. The test suite stress tests this and there are no
+    known inputs that make it crash.  If you find one, please let me
+    know and send me the input that does it.
+
+    NOTE: "safety" in this context means *runtime safety only*. In order to
+    protect yourself against JavaScript injection in untrusted content, see
+    [this example](https://github.com/russross/blackfriday#sanitize-untrusted-content).
+
+*   **Fast processing**. It is fast enough to render on-demand in
+    most web applications without having to cache the output.
+
+*   **Thread safety**. You can run multiple parsers in different
+    goroutines without ill effect. There is no dependence on global
+    shared state.
+
+*   **Minimal dependencies**. Blackfriday only depends on standard
+    library packages in Go. The source code is pretty
+    self-contained, so it is easy to add to any project, including
+    Google App Engine projects.
+
+*   **Standards compliant**. Output successfully validates using the
+    W3C validation tool for HTML 4.01 and XHTML 1.0 Transitional.
+
+	[this is a link](https://github.com/kataras/iris) `
+
+func main() {
+	// if this is not setted then iris set this duration to the lowest expiration entry from the cache + 5 seconds
+	// recommentation is to left as it's or
+	// iris.Config.CacheGCDuration = time.Duration(5) * time.Minute
+
+	bodyHandler := func(ctx *iris.Context) {
+		ctx.Markdown(iris.StatusOK, testMarkdownContents)
+	}
+
+	expiration := time.Duration(5 * time.Second)
+
+	iris.Get("/", iris.Cache(bodyHandler, expiration))
+
+	// if expiration is <=time.Second then the cache tries to set the expiration from the "cache-control" maxage header's value(in seconds)
+	// // if this header doesn't founds then the default is 5 minutes
+	iris.Get("/cache_control", iris.Cache(func(ctx *iris.Context) {
+		ctx.HTML(iris.StatusOK, "<h1>Hello!</h1>")
+	}, -1))
+
+	iris.Listen(":8080")
+}
+
+```
+
+- **IMPROVE**: [Iris command line tool](https://github.com/kataras/iris/tree/master/iris) introduces a **new** `get` command (replacement for the old `create`)
+
+
+**The get command** downloads, installs and runs a project based on a `prototype`, such as `basic`, `static` and `mongo` .
+
+> These projects are located [online](https://github.com/iris-contrib/examples/tree/master/AIO_examples)
+
+
+```sh
+iris get basic
+```
+
+Downloads the  [basic](https://github.com/iris-contrib/examples/tree/master/AIO_examples/basic) sample protoype project to the `$GOPATH/src/github.com/iris-contrib/examples` directory(the iris cmd will open this folder to you, automatically) builds, runs and watch for source code changes (hot-reload)
+
+[![Iris get command preview](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iriscmd.gif)](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iriscmd.gif)
+
+
+- **CHANGE**: The `Path parameters` are now **immutable**. Now you don't have to copy a `path parameter` before passing to another function which maybe modifies it, this has a side-affect of `context.GetString("key") = context.Param("key")`  so you have to be careful to not override a path parameter via other custom (per-context) user value.
+
+
+- **NEW**: `iris.StaticEmbedded`/`app := iris.New(); app.StaticEmbedded` - Embed static assets into your executable with [go-bindata](https://github.com/jteeuwen/go-bindata) and serve them.
+
+> Note: This was already buitl'n feature for templates using `iris.UseTemplate(html.New()).Directory("./templates",".html").Binary(Asset,AssetNames)`, after v4.6.1 you can do that for other static files too, with the `StaticEmbedded` function
+
+**outline**
+```go
+
+// StaticEmbedded  used when files are distrubuted inside the app executable, using go-bindata mostly
+// First parameter is the request path, the path which the files in the vdir(second parameter) will be served to, for example "/static"
+// Second parameter is the (virtual) directory path, for example "./assets"
+// Third parameter is the Asset function
+// Forth parameter is the AssetNames function
+//
+// For more take a look at the
+// example: https://github.com/iris-contrib/examples/tree/master/static_files_embedded
+StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) RouteNameFunc
+
+```
+
+**example**
+
+You can view and run it from [here](https://github.com/iris-contrib/examples/tree/master/static_files_embedded) *
+
+```go
+package main
+
+// First of all, execute: $ go get https://github.com/jteeuwen/go-bindata
+// Secondly, execute the command: cd $GOPATH/src/github.com/iris-contrib/examples/static_files_embedded && go-bindata ./assets/...
+
+import (
+	"github.com/kataras/iris"
+)
+
+func main() {
+
+	// executing this go-bindata command creates a source file named 'bindata.go' which
+	// gives you the Asset and AssetNames funcs which we will pass into .StaticAssets
+	// for more viist: https://github.com/jteeuwen/go-bindata
+	// Iris gives you a way to integrade these functions to your web app
+
+	// For the reason that you may use go-bindata to embed more than your assets, you should pass the 'virtual directory path', for example here is the : "./assets"
+	// and the request path, which these files will be served to, you can set as "/assets" or "/static" which resulting on http://localhost:8080/static/*anyfile.*extension
+	iris.StaticEmbedded("/static", "./assets", Asset, AssetNames)
+
+
+	// that's all
+	// this will serve the ./assets (embedded) files to the /static request path for example the favicon.ico will be served as :
+	// http://localhost:8080/static/favicon.ico
+	// Methods: GET and HEAD
+
+
+
+	iris.Get("/", func(ctx *iris.Context) {
+		ctx.HTML(iris.StatusOK, "<b> Hi from index</b>")
+	})
+
+	iris.Listen(":8080")
+}
+
+// Navigate to:
+// http://localhost:8080/static/favicon.ico
+// http://localhost:8080/static/js/jquery-2.1.1.js
+// http://localhost:8080/static/css/bootstrap.min.css
+
+// Now, these files are stored inside into your executable program, no need to keep it in the same location with your assets folder.
+
+
+```
+
 
 - **FIX**: httptest flags caused by httpexpect which used to help you with tests inside **old** func `iris.Tester` as reported [here]( https://github.com/kataras/iris/issues/337#issuecomment-253429976)
 
@@ -76,8 +297,6 @@ Finally, some plugins container's additions:
 - **NEW**: `iris.Plugins.PreDownloadFired() bool` func which returns true if `PreDownload` fired at least one time
 
 
-## 4.5.1 -> 4.5.2
-
 - **Feature request**: I never though that it will be easier for users to catch 405 instead of simple 404, I though that will make your life harder, but it's requested by the Community [here](https://github.com/kataras/iris/issues/469), so I did my duty. Enable firing Status Method Not Allowed (405) with a simple configuration field: `iris.Config.FireMethodNotAllowed=true` or `iris.Set(iris.OptionFireMethodNotAllowed(true))` or `app := iris.New(iris.Configuration{FireMethodNotAllowed:true})`. A trivial, test example can be shown here:
 
 ```go
@@ -107,13 +326,11 @@ func TestMuxFireMethodNotAllowed(t *testing.T) {
 }
 ```
 
-## 4.5.0 -> 4.5.1
 
 - **NEW**: `PreBuild` plugin type, raises before `.Build`. Used by third-party plugins to register any runtime routes or make any changes to the iris main configuration, example of this usage is the [OAuth/OAuth2 Plugin](https://github.com/iris-contrib/plugin/tree/master/oauth).
 
 - **FIX**: The [OAuth example](https://github.com/iris-contrib/examples/tree/master/plugin_oauth_oauth2).
 
-## 4.4.9 -> 4.5.0
 
 - **NEW**: Websocket configuration fields:
 	- `Error func(ctx *Context, status int, reason string)`. Manually catch  any handshake errors. Default calls the `ctx.EmitError(status)` with a stored error message in the `WsError` key(`ctx.Set("WsError", reason)`), as before.
@@ -165,17 +382,15 @@ type WebsocketConfiguration struct {
 
 ```
 
-- **REMOVE**: `github.com/kataras/iris/context/context.go` , this is no needed anymore. Its only usage was inside `sessions` and `websockets`, a month ago I did improvements to the sessions as a standalone package, the IContext interface is not being used there. With the today's changes, the iris-contrib/websocket doesn't needs the IContext interface too, so the whole folder `./context` is useless and removed now. Users developers don't have any side-affects from this change.  
+- **REMOVE**: `github.com/kataras/iris/context/context.go` , this is no needed anymore. Its only usage was inside `sessions` and `websockets`, a month ago I did improvements to the sessions as a standalone package, the IContext interface is not being used there. With the today's changes, the iris-contrib/websocket doesn't needs the IContext interface too, so the whole folder `./context` is useless and removed now. Users developers don't have any side-affects from this change.
 
 
 [Examples](https://github.com/iris-contrib/examples), [Book](https://github.com/iris-contrib/gitbook) are up-to-date, just new configuration fields.
 
 
-## 4.4.8 -> 4.4.9
 
 - **FIX**: Previous CORS fix wasn't enough and produces error before server's startup[*](https://github.com/kataras/iris/issues/461) if many paths were trying to auto-register an `.OPTIONS` route, now this is fixed in combined with some improvements on the [cors middleware](https://github.com/iris-contrib/middleware/tree/master/cors) too.
 
-## 4.4.7 -> 4.4.8
 
 - **NEW**: `BodyDecoder` gives the ability to set a custom decoder **per passed object** when `context.ReadJSON` and `context.ReadXML`
 
@@ -203,18 +418,15 @@ type BodyDecoder interface {
 
 > for a usage example go to https://github.com/kataras/iris/blob/master/context_test.go#L262
 
-## 4.4.6 -> 4.4.7
 
 - **small fix**: websocket server is nil when more than the default websocket station tries to be registered before `OnConnection` called[*](https://github.com/kataras/iris/issues/460)
 
-## 4.4.1 -> 4.4.6
 
 - **FIX**: CORS not worked for all http methods
 - **FIX**: Unexpected Party root's route slash  when `DisablePathCorrection` is false(default), as reported [here](https://github.com/kataras/iris/issues/453)
 - **small fix**: DisablePathEscape not affects the uri string
 - **small fix**: when Path Correction on POST redirect to the GET instead of POST
 
-## 4.4.0 -> 4.4.1
 
 - **NEW**: Template PreRenders, as requested [here](https://github.com/kataras/iris/issues/412).
 
@@ -240,8 +452,6 @@ iris.Get("/", func(ctx *Context) {
 ```
 
 
-
-## 4.3.0 -> 4.4.0
 
 **NOTE**: For normal users this update offers nothing, read that only if you run Iris behind a proxy or balancer like `nginx` or you need to serve using a custom `net.Listener`.
 
@@ -292,19 +502,15 @@ To test subdomains or a custom domain just set the `iris.Config.VHost` and `iris
 
 **Finally**, I have to notify you that [examples](https://github.com/iris-contrib/examples), [plugins](https://github.com/iris-contrib/plugin), [middleware](https://github.com/iris-contrib/middleware) and [book](https://github.com/iris-contrib/gitbook) have been updated.
 
-## 4.2.9 -> 4.3.0
 
 - Align with the latest version of [go-websocket](https://github.com/kataras/go-websocket), remove vendoring for compression on [go-fs](https://github.com/kataras/go-fs) which produced errors on sqllite and gorm(mysql and mongo worked fine before too) as reported [here](https://github.com/kataras/go-fs/issues/1).
 
-## 4.2.7 -> 4.2.8 & 4.2.9
 
 - **External FIX**: [template syntax error causes a "template doesn't exist"](https://github.com/kataras/iris/issues/415)
 
-## 4.2.6 -> 4.2.7
 
 - **ADDED**: You are now able to use a raw fasthttp handler as the router instead of the default Iris' one. Example [here](https://github.com/iris-contrib/examples/blob/master/custom_fasthttp_router/main.go). But remember that I'm always recommending to use the Iris' default which supports subdomains, group of routes(parties), auto path correction and many other built'n features. This exists for specific users who told me that they need a feature like that inside Iris, we have no performance cost at all so that's ok to exists.
 
-## 4.2.5 -> 4.2.6
 
 - **CHANGE**: Updater (See 4.2.4 and 4.2.3) runs in its own goroutine now, unless the `iris.Config.CheckForUpdatesSync` is true.
 - **ADDED**: To align with fasthttp server's configuration, iris has these new Server Configuration's fields, which allows you to set a type of rate limit:
@@ -329,11 +535,8 @@ MaxRequestsPerConn int
 //        iris.AddServer(iris.ServerConfiguration{ListeningAddr: ":9090", MaxConnsPerIP: 300, MaxRequestsPerConn:100})
 ```
 
-## 4.2.4 -> 4.2.5
-
 - **ADDED**: `iris.CheckForUpdates(force bool)` which can run the updater(look 4.2.4) at runtime too, updater is tested and worked at dev machine.
 
-## 4.2.3 -> 4.2.4
 
 - **NEW Experimental feature**: Updater with a `CheckForUpdates` [configuration](https://github.com/kataras/iris/blob/master/configuration.go) field, as requested [here](https://github.com/kataras/iris/issues/401)
 ```go
@@ -354,15 +557,11 @@ MaxRequestsPerConn int
 CheckForUpdates bool
 ```
 
-## 4.2.2 -> 4.2.3
-
 - [Add IsAjax() convenience method](https://github.com/kataras/iris/issues/423)
 
-## 4.2.1 -> 4.2.2
 
 - Fix [sessiondb issue 416](https://github.com/kataras/iris/issues/416)
 
-## 4.2.0 -> 4.2.1
 
 - **CHANGE**: No front-end changes if you used the default response engines before. Response Engines to Serializers, `iris.ResponseEngine` `serializer.Serializer`, comes from `kataras/go-serializer` which is installed automatically when you upgrade iris with `-u` flag.
 
@@ -374,8 +573,6 @@ CheckForUpdates bool
 
 [Serializer examples](https://github.com/iris-contrib/examples/tree/master/serialize_engines) and [Book section](https://kataras.gitbooks.io/iris/content/serialize-engines.html) updated.
 
-
-## 4.1.7 -> 4.2.0
 
 - **ADDED**: `iris.TemplateSourceString(src string, binding interface{}) string` this will parse the src raw contents to the template engine and return the string result & `context.RenderTemplateSource(status int, src string, binding interface{}, options ...map[string]interface{}) error` this will parse the src raw contents to the template engine and render the result to the client, as requseted [here](https://github.com/kataras/iris/issues/409).
 
@@ -649,13 +846,12 @@ OptionServerVScheme(val string)
 // You're free to change it, but I will trust you to don't, this is the only setting whose somebody, like me, can see if iris web framework is used
 OptionServerName(val string)
 
-```    
+```
 
 View all configuration fields and options by navigating to the [kataras/iris/configuration.go source file](https://github.com/kataras/iris/blob/master/configuration.go)
 
 [Book](https://kataras.gitbooks.io/iris/content/configuration.html) & [Examples](https://github.com/iris-contrib/examples) are updated (website docs will be updated soon).
 
-## 4.1.6 -> 4.1.7
 
 - **CHANGED**: Use of the standard `log.Logger` instead of the `iris-contrib/logger`(colorful logger), these changes are reflects some middleware, examples and plugins, I updated all of them, so don't worry.
 
@@ -663,15 +859,12 @@ So, [iris-contrib/middleware/logger](https://github.com/iris-contrib/middleware/
 
 - **ADDED**: `context.Framework()` which returns your Iris instance (typeof `*iris.Framework`), useful for the future(Iris will give you, soon, the ability to pass custom options inside an iris instance).
 
-## 4.1.5 -> 4.1.6
 
 - Align with [go-sessions](https://github.com/kataras/go-sessions), no front-end changes, however I think that the best time to make an upgrade to your local Iris is right now.
 
-## 4.1.4 -> 4.1.5
 
 - Remove unused Plugin's custom callbacks, if you still need them in your project use this instead: https://github.com/kataras/go-events
 
-## 4.1.3 -> 4.1.4
 
 Zero front-end changes. No real improvements, developers can ignore this update.
 
@@ -680,30 +873,23 @@ Zero front-end changes. No real improvements, developers can ignore this update.
 - `GzipWriter` is taken, now, from the `kataras/go-fs` package which has improvements versus the previous implementation.
 
 
-## 4.1.2 -> 4.1.3
 
 Zero front-end changes. No real improvements, developers can ignore this update.
 
 - Replace the template engines with a new cross-framework package, [go-template](https://github.com/kataras/go-websocket). Same front-end API, examples and iris-contrib/template are compatible.
 
-## 4.1.1 -> 4.1.2
 
 Zero front-end changes. No real improvements, developers can ignore this update.
 
 - Replace the main and underline websocket implementation with [go-websocket](https://github.com/kataras/go-websocket). Note that we still need the [ris-contrib/websocket](https://github.com/iris-contrib/websocket) package.
 - Replace the use of iris-contrib/errors with [go-errors](https://github.com/kataras/go-errors), which has more features
 
-## 4.0.0 -> 4.1.1
-
-- **NEW FEATURE**: Basic remote control through SSH, example [here](https://github.com/iris-contrib/examples/blob/master/ssh/main.go)
 - **NEW FEATURE**: Optionally `OnError` foreach Party (by prefix, use it with your own risk), example [here](https://github.com/iris-contrib/examples/blob/master/httperrors/main.go#L37)
 - **NEW**: `iris.Config.Sessions.CookieLength`, You're able to customize the length of each sessionid's cookie's value. Default (and previous' implementation) is 32.
 - **FIX**: Websocket panic on non-websocket connection[*](https://github.com/kataras/iris/issues/367)
 - **FIX**: Multi websocket servers client-side source route panic[*](https://github.com/kataras/iris/issues/365)
 - Better gzip response managment
 
-
-## 4.0.0-alpha.5 -> 4.0.0
 
 - **Feature request has been implemented**: Add layout support for Pug/Jade, example [here](https://github.com/iris-contrib/examples/tree/master/template_engines/template_pug_2).
 - **Feature request has been implemented**: Forcefully closing a Websocket connection, `WebsocketConnection.Disconnect() error`.
@@ -714,8 +900,6 @@ Zero front-end changes. No real improvements, developers can ignore this update.
 Notes: if you compare it with previous releases (13+ versions before v3 stable), the v4 stable release was fast, now we had only 6 versions before stable, that was happened because many of bugs have been already fixed and we hadn't new bug reports and secondly, and most important for me, some third-party features are implemented mostly by third-party packages via other developers!
 
 
-## 4.0.0-alpha.4 -> 4.0.0-alpha.5
-
 - **NEW FEATURE**: Letsencrypt.org integration[*](https://github.com/kataras/iris/issues/220)
    - example [here](https://github.com/iris-contrib/examples/blob/master/letsencrypt/main.go)
 - **FIX**: (ListenUNIX adds :80 to filename)[https://github.com/kataras/iris/issues/321]
@@ -723,7 +907,6 @@ Notes: if you compare it with previous releases (13+ versions before v3 stable),
 - **FIX** (auto-gzip doesn't really compress data in latest code)[https://github.com/kataras/iris/issues/312]
 
 
-## 4.0.0-alpha.3 -> 4.0.0-alpha.4
 
 
 **The important** , is that the [book](https://kataras.gitbooks.io/iris/content/) is finally updated!
@@ -743,9 +926,6 @@ If you're **willing to donate** click [here](DONATIONS.md)!
 **Sessions changes **
 
 - `iris.Config.Sessions.Expires` it was time.Time, changed to time.Duration, which defaults to 0, means unlimited session life duration, if you change it then the correct date is setted on client's cookie but also server destroys the session automatically when the duration passed, this is better approach, see [here](https://github.com/kataras/iris/issues/301)
-
-
-## 4.0.0-alpha.2 -> 4.0.0-alpha.3
 
 **New**
 
@@ -782,7 +962,6 @@ Generally, no other changes on the 'frontend API', for response engines examples
 
 **BAD SIDE**: E-Book is still pointing on the v3 release, but will be updated soon.
 
-## 4.0.0-alpha.1 -> 4.0.0-alpha.2
 
 **Sessions were re-written **
 
@@ -795,16 +974,13 @@ Generally, no other changes on the 'frontend API', for response engines examples
 - Examples (master branch) were updated.
 
 ```sh
-$ go get github.com/iris-contrib/sessiondb/$DATABASE
+$ go get github.com/kataras/go-sessions/sessiondb/$DATABASE
 ```
 
 ```go
 db := $DATABASE.New(configurationHere{})
 iris.UseSessionDB(db)
 ```
-
-
-> Note: Book is not updated yet, examples are up-to-date as always.
 
 
 ## 3.0.0 -> 4.0.0-alpha.1

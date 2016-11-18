@@ -13,10 +13,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/geekypanda/httpcache"
 	"github.com/iris-contrib/letsencrypt"
 	"github.com/kataras/go-errors"
 	"github.com/valyala/fasthttp"
 	"github.com/valyala/fasthttp/fasthttpadaptor"
+	"golang.org/x/crypto/acme/autocert"
 )
 
 const (
@@ -65,7 +67,6 @@ var (
 	// MethodTraceBytes "TRACE"
 	MethodTraceBytes = []byte(MethodTrace)
 	/* */
-
 )
 
 const (
@@ -73,7 +74,6 @@ const (
 	StatusContinue = 100
 	// StatusSwitchingProtocols http status '101'
 	StatusSwitchingProtocols = 101
-
 	// StatusOK http status '200'
 	StatusOK = 200
 	// StatusCreated http status '201'
@@ -88,7 +88,6 @@ const (
 	StatusResetContent = 205
 	// StatusPartialContent http status '206'
 	StatusPartialContent = 206
-
 	// StatusMultipleChoices http status '300'
 	StatusMultipleChoices = 300
 	// StatusMovedPermanently http status '301'
@@ -103,7 +102,6 @@ const (
 	StatusUseProxy = 305
 	// StatusTemporaryRedirect http status '307'
 	StatusTemporaryRedirect = 307
-
 	// StatusBadRequest http status '400'
 	StatusBadRequest = 400
 	// StatusUnauthorized http status '401'
@@ -150,7 +148,6 @@ const (
 	StatusRequestHeaderFieldsTooLarge = 431
 	// StatusUnavailableForLegalReasons http status '451'
 	StatusUnavailableForLegalReasons = 451
-
 	// StatusInternalServerError http status '500'
 	StatusInternalServerError = 500
 	// StatusNotImplemented http status '501'
@@ -168,49 +165,45 @@ const (
 )
 
 var statusText = map[int]string{
-	StatusContinue:           "Continue",
-	StatusSwitchingProtocols: "Switching Protocols",
-
-	StatusOK:                   "OK",
-	StatusCreated:              "Created",
-	StatusAccepted:             "Accepted",
-	StatusNonAuthoritativeInfo: "Non-Authoritative Information",
-	StatusNoContent:            "No Content",
-	StatusResetContent:         "Reset Content",
-	StatusPartialContent:       "Partial Content",
-
-	StatusMultipleChoices:   "Multiple Choices",
-	StatusMovedPermanently:  "Moved Permanently",
-	StatusFound:             "Found",
-	StatusSeeOther:          "See Other",
-	StatusNotModified:       "Not Modified",
-	StatusUseProxy:          "Use Proxy",
-	StatusTemporaryRedirect: "Temporary Redirect",
-
-	StatusBadRequest:                   "Bad Request",
-	StatusUnauthorized:                 "Unauthorized",
-	StatusPaymentRequired:              "Payment Required",
-	StatusForbidden:                    "Forbidden",
-	StatusNotFound:                     "Not Found",
-	StatusMethodNotAllowed:             "Method Not Allowed",
-	StatusNotAcceptable:                "Not Acceptable",
-	StatusProxyAuthRequired:            "Proxy Authentication Required",
-	StatusRequestTimeout:               "Request Timeout",
-	StatusConflict:                     "Conflict",
-	StatusGone:                         "Gone",
-	StatusLengthRequired:               "Length Required",
-	StatusPreconditionFailed:           "Precondition Failed",
-	StatusRequestEntityTooLarge:        "Request Entity Too Large",
-	StatusRequestURITooLong:            "Request URI Too Long",
-	StatusUnsupportedMediaType:         "Unsupported Media Type",
-	StatusRequestedRangeNotSatisfiable: "Requested Range Not Satisfiable",
-	StatusExpectationFailed:            "Expectation Failed",
-	StatusTeapot:                       "I'm a teapot",
-	StatusPreconditionRequired:         "Precondition Required",
-	StatusTooManyRequests:              "Too Many Requests",
-	StatusRequestHeaderFieldsTooLarge:  "Request Header Fields Too Large",
-	StatusUnavailableForLegalReasons:   "Unavailable For Legal Reasons",
-
+	StatusContinue:                      "Continue",
+	StatusSwitchingProtocols:            "Switching Protocols",
+	StatusOK:                            "OK",
+	StatusCreated:                       "Created",
+	StatusAccepted:                      "Accepted",
+	StatusNonAuthoritativeInfo:          "Non-Authoritative Information",
+	StatusNoContent:                     "No Content",
+	StatusResetContent:                  "Reset Content",
+	StatusPartialContent:                "Partial Content",
+	StatusMultipleChoices:               "Multiple Choices",
+	StatusMovedPermanently:              "Moved Permanently",
+	StatusFound:                         "Found",
+	StatusSeeOther:                      "See Other",
+	StatusNotModified:                   "Not Modified",
+	StatusUseProxy:                      "Use Proxy",
+	StatusTemporaryRedirect:             "Temporary Redirect",
+	StatusBadRequest:                    "Bad Request",
+	StatusUnauthorized:                  "Unauthorized",
+	StatusPaymentRequired:               "Payment Required",
+	StatusForbidden:                     "Forbidden",
+	StatusNotFound:                      "Not Found",
+	StatusMethodNotAllowed:              "Method Not Allowed",
+	StatusNotAcceptable:                 "Not Acceptable",
+	StatusProxyAuthRequired:             "Proxy Authentication Required",
+	StatusRequestTimeout:                "Request Timeout",
+	StatusConflict:                      "Conflict",
+	StatusGone:                          "Gone",
+	StatusLengthRequired:                "Length Required",
+	StatusPreconditionFailed:            "Precondition Failed",
+	StatusRequestEntityTooLarge:         "Request Entity Too Large",
+	StatusRequestURITooLong:             "Request URI Too Long",
+	StatusUnsupportedMediaType:          "Unsupported Media Type",
+	StatusRequestedRangeNotSatisfiable:  "Requested Range Not Satisfiable",
+	StatusExpectationFailed:             "Expectation Failed",
+	StatusTeapot:                        "I'm a teapot",
+	StatusPreconditionRequired:          "Precondition Required",
+	StatusTooManyRequests:               "Too Many Requests",
+	StatusRequestHeaderFieldsTooLarge:   "Request Header Fields Too Large",
+	StatusUnavailableForLegalReasons:    "Unavailable For Legal Reasons",
 	StatusInternalServerError:           "Internal Server Error",
 	StatusNotImplemented:                "Not Implemented",
 	StatusBadGateway:                    "Bad Gateway",
@@ -327,16 +320,6 @@ const (
 )
 
 type (
-	// PathParameter is a struct which contains Key and Value, used for named path parameters
-	PathParameter struct {
-		Key   string
-		Value string
-	}
-
-	// PathParameters type for a slice of PathParameter
-	// Tt's a slice of PathParameter type, because it's faster than map
-	PathParameters []PathParameter
-
 	// entryCase is the type which the type of muxEntryusing in order to determinate what type (parameterized, anything, static...) is the perticular node
 	entryCase uint8
 
@@ -365,58 +348,6 @@ var (
 	errMuxEntryWildcardConflictsMiddleware = errors.New("Router: Wildcard  conflicts with existing middleware for the route path: '%s' !")
 	errMuxEntryWildcardMissingSlash        = errors.New("Router: No slash(/) were found before wildcard in the route path: '%s' !")
 )
-
-// Get returns a value from a key inside this Parameters
-// If no parameter with this key given then it returns an empty string
-func (params PathParameters) Get(key string) string {
-	for _, p := range params {
-		if p.Key == key {
-			return p.Value
-		}
-	}
-	return ""
-}
-
-// String returns a string implementation of all parameters that this PathParameters object keeps
-// hasthe form of key1=value1,key2=value2...
-func (params PathParameters) String() string {
-	var buff bytes.Buffer
-	for i := range params {
-		buff.WriteString(params[i].Key)
-		buff.WriteString("=")
-		buff.WriteString(params[i].Value)
-		if i < len(params)-1 {
-			buff.WriteString(",")
-		}
-
-	}
-	return buff.String()
-}
-
-// ParseParams receives a string and returns PathParameters (slice of PathParameter)
-// received string must have this form:  key1=value1,key2=value2...
-func ParseParams(str string) PathParameters {
-	_paramsstr := strings.Split(str, ",")
-	if len(_paramsstr) == 0 {
-		return nil
-	}
-
-	params := make(PathParameters, 0) // PathParameters{}
-
-	//	for i := 0; i < len(_paramsstr); i++ {
-	for i := range _paramsstr {
-		idxOfEq := strings.IndexRune(_paramsstr[i], '=')
-		if idxOfEq == -1 {
-			//error
-			return nil
-		}
-
-		key := _paramsstr[i][:idxOfEq]
-		val := _paramsstr[i][idxOfEq+1:]
-		params = append(params, PathParameter{key, val})
-	}
-	return params
-}
 
 // getParamsLen returns the parameters length from a given path
 func getParamsLen(path string) uint8 {
@@ -654,8 +585,7 @@ func (e *muxEntry) addNode(numParams uint8, path string, fullPath string, middle
 }
 
 // get is used by the Router, it finds and returns the correct muxEntry for a path
-func (e *muxEntry) get(path string, _params PathParameters) (middleware Middleware, params PathParameters, mustRedirect bool) {
-	params = _params
+func (e *muxEntry) get(path string, ctx *Context) (mustRedirect bool) {
 loop:
 	for {
 		if len(path) > len(e.part) {
@@ -684,13 +614,7 @@ loop:
 						end++
 					}
 
-					if cap(params) < int(e.paramsLen) {
-						params = make(PathParameters, 0, e.paramsLen)
-					}
-					i := len(params)
-					params = params[:i+1]
-					params[i].Key = e.part[1:]
-					params[i].Value = path[:end]
+					ctx.Set(e.part[1:], path[:end])
 
 					if end < len(path) {
 						if len(e.nodes) > 0 {
@@ -702,8 +626,7 @@ loop:
 						mustRedirect = (len(path) == end+1)
 						return
 					}
-
-					if middleware = e.middleware; middleware != nil {
+					if ctx.Middleware = e.middleware; ctx.Middleware != nil {
 						return
 					} else if len(e.nodes) == 1 {
 						e = e.nodes[0]
@@ -713,15 +636,9 @@ loop:
 					return
 
 				case matchEverything:
-					if cap(params) < int(e.paramsLen) {
-						params = make(PathParameters, 0, e.paramsLen)
-					}
-					i := len(params)
-					params = params[:i+1]
-					params[i].Key = e.part[2:]
-					params[i].Value = path
 
-					middleware = e.middleware
+					ctx.Set(e.part[2:], path)
+					ctx.Middleware = e.middleware
 					return
 
 				default:
@@ -729,7 +646,7 @@ loop:
 				}
 			}
 		} else if path == e.part {
-			if middleware = e.middleware; middleware != nil {
+			if ctx.Middleware = e.middleware; ctx.Middleware != nil {
 				return
 			}
 
@@ -780,9 +697,29 @@ func (e *muxEntry) precedenceTo(index int) int {
 	return newindex
 }
 
-//
-//
-//
+// cachedMuxEntry is just a wrapper for the Cache functionality
+// it seems useless but I prefer to keep the cached handler on its own memory stack,
+// reason:  no clojures hell in the Cache function
+type cachedMuxEntry struct {
+	cachedHandler fasthttp.RequestHandler
+}
+
+func newCachedMuxEntry(f *Framework, bodyHandler HandlerFunc, expiration time.Duration) *cachedMuxEntry {
+	fhandler := func(reqCtx *fasthttp.RequestCtx) {
+		ctx := f.AcquireCtx(reqCtx)
+		bodyHandler.Serve(ctx)
+		f.ReleaseCtx(ctx)
+	}
+
+	cachedHandler := httpcache.CacheFasthttp(fhandler, expiration)
+	return &cachedMuxEntry{
+		cachedHandler: cachedHandler,
+	}
+}
+
+func (c *cachedMuxEntry) Serve(ctx *Context) {
+	c.cachedHandler(ctx.RequestCtx)
+}
 
 type (
 	// Route contains some useful information about a route
@@ -1169,11 +1106,9 @@ func (mux *serveMux) BuildHandler() HandlerFunc {
 				}
 			}
 
-			middleware, params, mustRedirect := tree.entry.get(routePath, context.Params) // pass the parameters here for 0 allocation
-			if middleware != nil {
+			mustRedirect := tree.entry.get(routePath, context) // pass the parameters here for 0 allocation
+			if context.Middleware != nil {
 				// ok we found the correct route, serve it and exit entirely from here
-				context.Params = params
-				context.Middleware = middleware
 				//ctx.Request.Header.SetUserAgentBytes(DefaultUserAgent)
 				context.Do()
 				return
@@ -1291,7 +1226,13 @@ func CERT(addr string, cert tls.Certificate) (net.Listener, error) {
 }
 
 // LETSENCRYPT returns a new Automatic TLS Listener using letsencrypt.org service
-func LETSENCRYPT(addr string) (net.Listener, error) {
+// receives two parameters, the first is the domain of the server
+// and the second is optionally, the cache file, if you skip it then the cache directory is "./letsencrypt.cache"
+// if you want to disable cache file then simple give it a value of empty string ""
+//
+// supports localhost domains for testing,
+// but I recommend you to use the LETSENCRYPTPROD if you gonna to use it on production
+func LETSENCRYPT(addr string, cacheFileOptional ...string) (net.Listener, error) {
 	if portIdx := strings.IndexByte(addr, ':'); portIdx == -1 {
 		addr += ":443"
 	}
@@ -1301,9 +1242,57 @@ func LETSENCRYPT(addr string) (net.Listener, error) {
 		return nil, err
 	}
 
+	cacheFile := "./letsencrypt.cache"
+	if len(cacheFileOptional) > 0 {
+		cacheFile = cacheFileOptional[0]
+	}
+
 	var m letsencrypt.Manager
-	if err = m.CacheFile("letsencrypt.cache"); err != nil {
+
+	if cacheFile != "" {
+		if err = m.CacheFile(cacheFile); err != nil {
+			return nil, err
+		}
+	}
+
+	tlsConfig := &tls.Config{GetCertificate: m.GetCertificate}
+	tlsLn := tls.NewListener(ln, tlsConfig)
+
+	return tlsLn, nil
+}
+
+// LETSENCRYPTPROD returns a new Automatic TLS Listener using letsencrypt.org service
+// receives two parameters, the first is the domain of the server
+// and the second is optionally, the cache directory, if you skip it then the cache directory is "./certcache"
+// if you want to disable cache directory then simple give it a value of empty string ""
+//
+// does NOT supports localhost domains for testing, use LETSENCRYPT instead.
+//
+// this is the recommended function to use when you're ready for production state
+func LETSENCRYPTPROD(addr string, cacheDirOptional ...string) (net.Listener, error) {
+	if portIdx := strings.IndexByte(addr, ':'); portIdx == -1 {
+		addr += ":443"
+	}
+
+	ln, err := TCP4(addr)
+	if err != nil {
 		return nil, err
+	}
+
+	cacheDir := "./certcache"
+	if len(cacheDirOptional) > 0 {
+		cacheDir = cacheDirOptional[0]
+	}
+
+	m := autocert.Manager{
+		Prompt: autocert.AcceptTOS,
+	} // HostPolicy is missing, if user wants it, then she/he should manually
+	// configure the autocertmanager and use the `iris.Serve` to pass that listener
+
+	if cacheDir == "" {
+		// then the user passed empty by own will, then I guess she/he doesnt' want any cache directory
+	} else {
+		m.Cache = autocert.DirCache(cacheDir)
 	}
 
 	tlsConfig := &tls.Config{GetCertificate: m.GetCertificate}

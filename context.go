@@ -2,6 +2,7 @@ package iris
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"encoding/xml"
@@ -11,6 +12,7 @@ import (
 	"os"
 	"path"
 	"reflect"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -61,6 +63,8 @@ const (
 	ifModifiedSince = "If-Modified-Since"
 	// ContentDisposition "Content-Disposition"
 	contentDisposition = "Content-Disposition"
+	// CacheControl "Cache-Control"
+	cacheControl = "Cache-Control"
 
 	// stopExecutionPosition used inside the Context, is the number which shows us that the context's middleware manualy stop the execution
 	stopExecutionPosition = 255
@@ -93,7 +97,6 @@ type (
 	// it is not good practice to use this object in goroutines, for these cases use the .Clone()
 	Context struct {
 		*fasthttp.RequestCtx
-		Params    PathParameters
 		framework *Framework
 		//keep track all registed middleware (handlers)
 		Middleware Middleware //  exported because is useful for debugging
@@ -144,36 +147,6 @@ func (ctx *Context) GetHandlerName() string {
 }
 
 /* Request */
-
-// Param returns the string representation of the key's path named parameter's value
-//
-// Return value should be never stored directly, instead store it to a local variable,
-// for example
-// instead of: context.Session().Set("name", ctx.Param("user"))
-// do this: username:= ctx.Param("user");ctx.Session().Set("name", username)
-func (ctx *Context) Param(key string) string {
-	return ctx.Params.Get(key)
-}
-
-// ParamInt returns the int representation of the key's path named parameter's value
-//
-// Return value should be never stored directly, instead store it to a local variable,
-// for example
-// instead of: context.Session().Set("age", ctx.Param("age"))
-// do this: age:= ctx.Param("age");ctx.Session().Set("age", age)
-func (ctx *Context) ParamInt(key string) (int, error) {
-	return strconv.Atoi(ctx.Param(key))
-}
-
-// ParamInt64 returns the int64 representation of the key's path named parameter's value
-//
-// Return value should be never stored directly, instead store it to a local variable,
-// for example
-// instead of: context.Session().Set("ms", ctx.ParamInt64("ms"))
-// do this: ms:= ctx.ParamInt64("ms");ctx.Session().Set("ms", ms)
-func (ctx *Context) ParamInt64(key string) (int64, error) {
-	return strconv.ParseInt(ctx.Param(key), 10, 64)
-}
 
 // URLParam returns the get parameter from a request , if any
 func (ctx *Context) URLParam(key string) string {
@@ -352,7 +325,7 @@ func (ctx *Context) PostValuesAll() (valuesAll map[string][]string) {
 
 // PostValues returns the post data values as []string of a single key/name
 func (ctx *Context) PostValues(name string) []string {
-	values := make([]string, 0)
+	var values []string
 	if v := ctx.PostValuesAll(); v != nil && len(v) > 0 {
 		values = v[name]
 	}
@@ -588,7 +561,6 @@ func (ctx *Context) renderSerialized(contentType string, obj interface{}, option
 	if err != nil {
 		return err
 	}
-
 	gzipEnabled := ctx.framework.Config.Gzip
 	charset := ctx.framework.Config.Charset
 	if len(options) > 0 {
@@ -659,12 +631,11 @@ func (ctx *Context) Render(name string, binding interface{}, options ...map[stri
 	return ctx.RenderWithStatus(errCode, name, binding, options...)
 }
 
-// MustRender same as .Render but returns 500 internal server http status (error) if rendering fail
-// builds up the response from the specified template or a serialize engine.
+// MustRender same as .Render but returns 503 service unavailable http status with a (html) message if render failed
 // Note: the options: "gzip" and "charset" are built'n support by Iris, so you can pass these on any template engine or serialize engine
 func (ctx *Context) MustRender(name string, binding interface{}, options ...map[string]interface{}) {
 	if err := ctx.Render(name, binding, options...); err != nil {
-		ctx.Panic()
+		ctx.HTML(StatusServiceUnavailable, fmt.Sprintf("<h2>Template: %s\nIP: %s</h2><b>%s</b>", name, ctx.RemoteAddr(), err.Error()))
 		if ctx.framework.Config.IsDevelopment {
 			ctx.framework.Logger.Printf("MustRender panics for client with IP: %s On template: %s.Trace: %s\n", ctx.RemoteAddr(), name, err)
 		}
@@ -806,6 +777,8 @@ func (ctx *Context) Stream(cb func(writer *bufio.Writer)) {
 //     * if response body is streamed from slow external sources.
 //     * if response body must be streamed to the client in chunks.
 //     (aka `http server push`).
+//
+// See also the StreamReader
 func (ctx *Context) StreamWriter(cb func(writer *bufio.Writer)) {
 	ctx.RequestCtx.SetBodyStreamWriter(cb)
 }
@@ -820,12 +793,20 @@ func (ctx *Context) StreamWriter(cb func(writer *bufio.Writer)) {
 // bodyStream.Close() is called after finishing reading all body data
 // if it implements io.Closer.
 //
-// See also StreamReader.
+// See also the StreamWriter
 func (ctx *Context) StreamReader(bodyStream io.Reader, bodySize int) {
 	ctx.RequestCtx.Response.SetBodyStream(bodyStream, bodySize)
 }
 
 /* Storage */
+
+// ValuesLen returns the total length of the user values storage, some of them maybe path parameters
+func (ctx *Context) ValuesLen() (n int) {
+	ctx.VisitUserValues(func([]byte, interface{}) {
+		n++
+	})
+	return
+}
 
 // Get returns the user's value from a key
 // if doesn't exists returns nil
@@ -853,19 +834,78 @@ func (ctx *Context) GetString(key string) string {
 	return ""
 }
 
-// GetInt same as Get but returns the value as int
-// if nothing founds returns -1
-func (ctx *Context) GetInt(key string) int {
-	if v, ok := ctx.Get(key).(int); ok {
-		return v
+var errIntParse = errors.New("Unable to find or parse the integer, found: %#v")
+
+// GetInt same as Get but tries to convert the return value as integer
+// if nothing found or canno be parsed to integer it returns an error
+func (ctx *Context) GetInt(key string) (int, error) {
+	v := ctx.Get(key)
+	if vint, ok := v.(int); ok {
+		return vint, nil
+	} else if vstring, sok := v.(string); sok {
+		return strconv.Atoi(vstring)
 	}
 
-	return -1
+	return -1, errIntParse.Format(v)
 }
 
 // Set sets a value to a key in the values map
 func (ctx *Context) Set(key string, value interface{}) {
 	ctx.RequestCtx.SetUserValue(key, value)
+}
+
+// ParamsLen tries to return all the stored values which values are string, probably most of them will be the path parameters
+func (ctx *Context) ParamsLen() (n int) {
+	ctx.VisitUserValues(func(kb []byte, vg interface{}) {
+		if _, ok := vg.(string); ok {
+			n++
+		}
+
+	})
+	return
+}
+
+// Param returns the string representation of the key's path named parameter's value
+// same as GetString
+func (ctx *Context) Param(key string) string {
+	return ctx.GetString(key)
+}
+
+// ParamInt returns the int representation of the key's path named parameter's value
+// same as GetInt
+func (ctx *Context) ParamInt(key string) (int, error) {
+	return ctx.GetInt(key)
+}
+
+// ParamInt64 returns the int64 representation of the key's path named parameter's value
+func (ctx *Context) ParamInt64(key string) (int64, error) {
+	return strconv.ParseInt(ctx.Param(key), 10, 64)
+}
+
+// ParamsSentence returns a string implementation of all parameters that this context  keeps
+// hasthe form of key1=value1,key2=value2...
+func (ctx *Context) ParamsSentence() string {
+	var buff bytes.Buffer
+	ctx.VisitUserValues(func(kb []byte, vg interface{}) {
+		v, ok := vg.(string)
+		if !ok {
+			return
+		}
+		k := string(kb)
+		buff.WriteString(k)
+		buff.WriteString("=")
+		buff.WriteString(v)
+		// we don't know where that (yet) stops so...
+		buff.WriteString(",")
+
+	})
+	result := buff.String()
+	if len(result) < 2 {
+		return ""
+	}
+
+	return result[0 : len(result)-1]
+
 }
 
 // VisitAllCookies takes a visitor which loops on each (request's) cookie key and value
@@ -1069,6 +1109,25 @@ func (ctx *Context) SessionDestroy() {
 		ctx.framework.sessions.DestroyFasthttp(ctx.RequestCtx)
 	}
 
+}
+
+var maxAgeExp = regexp.MustCompile(`maxage=(\d+)`)
+
+// MaxAge returns the "cache-control" request header's value
+// seconds as int64
+// if header not found or parse failed then it returns -1
+func (ctx *Context) MaxAge() int64 {
+	header := ctx.RequestHeader(cacheControl)
+	if header == "" {
+		return -1
+	}
+	m := maxAgeExp.FindStringSubmatch(header)
+	if len(m) == 2 {
+		if v, err := strconv.Atoi(m[1]); err == nil {
+			return int64(v)
+		}
+	}
+	return -1
 }
 
 // Log logs to the iris defined logger

@@ -1,8 +1,5 @@
-- [x] I have read the [book](https://www.gitbook.com/book/kataras/iris/details), [examples](https://github.com/iris-contrib/examples), [contributing file](https://github.com/kataras/iris/blob/master/.github/CONTRIBUTING.md) and I'm sure that this worths to be a PR on the Iris repository.
+If you are interested in contributing to the Iris project, please see the document [CONTRIBUTING](https://github.com/kataras/iris/blob/master/.github/CONTRIBUTING.md).
 
-- [x] I have opened an issue and discuss this feature/fix with the Community, I got @kataras permission to post this PR.
+##### Note that I do not accept pull requests and that I use the issue tracker for bug reports and proposals only. Please ask questions on the [https://kataras.rocket.chat/channel/iris][Chat] or [http://stackoverflow.com/](http://stackoverflow.com).
 
-- Operating System(s) that this PR was tested:  
-
-
-Description and notes: 
+[Chat]: https://kataras.rocket.chat/channel/iris

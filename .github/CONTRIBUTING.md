@@ -1,16 +1,18 @@
+##### Note that I do not accept pull requests and that I use the issue tracker for bug reports and proposals only. Please ask questions on the [https://kataras.rocket.chat/channel/iris][Chat] or [http://stackoverflow.com/](http://stackoverflow.com).
+
 ## Before Submitting an Issue
 
 First, please do a search in open issues to see if the issue or feature request has already been filed. If there is an issue add your comments to this issue.
 
 The Iris project is distributed across multiple repositories, try to file the issue against the correct repository,
 
+- [Iris - middleware](https://github.com/iris-contrib/middleware/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
 - [Iris - cli and rizla](https://github.com/kataras/rizla/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
 - [Iris - templates](https://github.com/kataras/go-template/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
 - [Iris - sessions](https://github.com/kataras/go-sessions/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
 - [Iris - websocket](https://github.com/kataras/go-websocket/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
 - [Iris - gitbook](https://github.com/iris-contrib/gitbook/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
 - [Iris - examples](https://github.com/iris-contrib/examples/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
-- [Iris - middleware](https://github.com/iris-contrib/middleware/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
 - [Iris - plugin](https://github.com/iris-contrib/plugin/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
 - [Iris - graceful](https://github.com/iris-contrib/graceful/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
 - [Iris - mail](https://github.com/iris-contrib/mail/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
@@ -31,9 +33,6 @@ The author answers the same day, perhaps the same hour you post the issue.
 
 It is impossible to notify each user on every change, so to be aware of the framework's changes and be notify about updates
 please **star** or **watch** the repository.
-
-
-
 
 If your issue is a closed-personal question then please ask that question on [community chat][Chat].
 

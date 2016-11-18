@@ -2,17 +2,21 @@ package main // import "github.com/kataras/iris/iris"
 
 /*
 
-go get -u github.com/kataras/iris/iris
+- install iris command line tool
+$ go get -u github.com/kataras/iris/iris
 
 
-// create command
-create an empty folder, open the command prompt/terminal there, type and press enter:
+- get command
+Downloads the mongo sample project prototype, open this folder to your explorer,
+builds, runs and watches for source code changes (hot-reload).
 
-iris create
+$ iris get mongo
 
 
-// run command
-navigate to your app's directory and execute:
+- run command
+Runs and monitors for source code changes(hot-reload).
 
-iris run main.go
+$ cd mysites/site1
+$ iris run main.go
+
 */
