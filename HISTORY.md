@@ -2,6 +2,10 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 5.0.2 -> 5.0.3
+
+- Fix `https relative redirect paths`, a very old issue, which I just saw, peaceful, again :)
+
 ## 5.0.1 -> 5.0.2
 
 - [geekypanda/httpcache](https://github.com/geekypanda/httpcache) has been re-written,

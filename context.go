@@ -474,28 +474,29 @@ func (ctx *Context) SetHeader(k string, v string) {
 // Redirect redirect sends a redirect response the client
 // accepts 2 parameters string and an optional int
 // first parameter is the url to redirect
-// second parameter is the http status should send, default is 302 (StatusFound), you can set it to 301 (Permant redirect), if that's nessecery
+// second parameter is the http status should send, default is 302 (StatusFound),
+// you can set it to 301 (Permant redirect), if that's nessecery
 func (ctx *Context) Redirect(urlToRedirect string, statusHeader ...int) {
+	ctx.StopExecution()
+
 	httpStatus := StatusFound // a 'temporary-redirect-like' which works better than for our purpose
 	if statusHeader != nil && len(statusHeader) > 0 && statusHeader[0] > 0 {
 		httpStatus = statusHeader[0]
 	}
+
+	// #355
+	if ctx.IsTLS() {
+		u := fasthttp.AcquireURI()
+		ctx.URI().CopyTo(u)
+		u.SetScheme("https")
+		u.Update(urlToRedirect)
+		ctx.SetHeader("Location", string(u.FullURI()))
+		fasthttp.ReleaseURI(u)
+		ctx.SetStatusCode(httpStatus)
+		return
+	}
+
 	ctx.RequestCtx.Redirect(urlToRedirect, httpStatus)
-
-	/* you can use one of these if you want to customize the redirection:
-		1.
-			u := fasthttp.AcquireURI()
-			ctx.URI().CopyTo(u)
-			u.Update(urlToRedirect)
-			ctx.SetHeader("Location", string(u.FullURI()))
-			fasthttp.ReleaseURI(u)
-			ctx.SetStatusCode(httpStatus)
-	2.
-			ctx.SetHeader("Location", urlToRedirect)
-			ctx.SetStatusCode(httpStatus)
-	*/
-
-	ctx.StopExecution()
 }
 
 // RedirectTo does the same thing as Redirect but instead of receiving a uri or path it receives a route name
