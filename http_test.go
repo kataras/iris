@@ -751,3 +751,50 @@ func TestCache(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestRedirectHTTPS(t *testing.T) {
+	host := "localhost:5700"
+	expectedBody := "Redirected to https://" + host + "/redirected"
+	iris.ResetDefault()
+	defer iris.Close()
+
+	iris.Set(iris.OptionDisableBanner(true))
+
+	iris.Get("/redirect", func(ctx *iris.Context) { ctx.Redirect("/redirected") })
+	iris.Get("/redirected", func(ctx *iris.Context) { ctx.Text(iris.StatusOK, "Redirected to "+ctx.URI().String()) })
+
+	// create the key and cert files on the fly, and delete them when this test finished
+	// note: code dublication but it's ok we may change that to local ListenLETSENCRYPT
+	certFile, ferr := ioutil.TempFile("", "cert")
+
+	if ferr != nil {
+		t.Fatal(ferr.Error())
+	}
+
+	keyFile, ferr := ioutil.TempFile("", "key")
+	if ferr != nil {
+		t.Fatal(ferr.Error())
+	}
+
+	defer func() {
+		certFile.Close()
+		time.Sleep(350 * time.Millisecond)
+		os.Remove(certFile.Name())
+
+		keyFile.Close()
+		time.Sleep(350 * time.Millisecond)
+		os.Remove(keyFile.Name())
+	}()
+
+	certFile.WriteString(testTLSCert)
+	keyFile.WriteString(testTLSKey)
+
+	go iris.ListenTLS(host, certFile.Name(), keyFile.Name())
+	if ok := <-iris.Default.Available; !ok {
+		t.Fatal("Unexpected error: server cannot start, please report this as bug!!")
+	}
+
+	e := httptest.New(iris.Default, t, httptest.ExplicitURL(true))
+
+	e.Request("GET", "https://"+host+"/redirect").Expect().Status(iris.StatusOK).Body().Equal(expectedBody)
+}

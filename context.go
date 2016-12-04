@@ -471,6 +471,10 @@ func (ctx *Context) SetHeader(k string, v string) {
 	ctx.RequestCtx.Response.Header.Set(k, v)
 }
 
+// it used only inside Redirect,
+// keep it here for allocations reason
+var httpsSchemeOnlyBytes = []byte("https")
+
 // Redirect redirect sends a redirect response the client
 // accepts 2 parameters string and an optional int
 // first parameter is the url to redirect
@@ -486,12 +490,10 @@ func (ctx *Context) Redirect(urlToRedirect string, statusHeader ...int) {
 
 	// #355
 	if ctx.IsTLS() {
-		u := fasthttp.AcquireURI()
-		ctx.URI().CopyTo(u)
-		u.SetScheme("https")
+		u := ctx.URI()
+		u.SetSchemeBytes(httpsSchemeOnlyBytes)
 		u.Update(urlToRedirect)
 		ctx.SetHeader("Location", string(u.FullURI()))
-		fasthttp.ReleaseURI(u)
 		ctx.SetStatusCode(httpStatus)
 		return
 	}

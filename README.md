@@ -30,14 +30,15 @@
 <br/>
 
 
-<b>iris</b> is a web application framework written in Go.
-<b>Easy</b> to <a href="https://github.com/iris-contrib/examples">learn</a>,  while it's highly customizable. <br/>
+<b>Iris</b> is a well known web application framework written in Go.
+<br/>
+<b>Easy</b> to <a href="https://github.com/iris-contrib/examples">learn</a>,  while it's highly customizable, <br/>
+<i>ideally suited for both experienced and novice Developers.</i><br/><br/>
 
 Its only sin?
 To be the <b>fastest</b> web framework was ever published under open-source circumstances.<br/>
-<i>Companies' offers were rejected, free forever.</i><br/><br/>
 
-<b>Enjoy</b> this framework now, without hesitation.<br/>
+<b>Enjoy yourself!</b><br/>
 </p>
 
 
@@ -45,22 +46,17 @@ To be the <b>fastest</b> web framework was ever published under open-source circ
 Quick Start
 -----------
 
-The only requirement is the [Go Programming Language](https://golang.org/dl), at least v1.7.
+The only requirement is the [Go Programming Language](https://golang.org/dl) 1.7+
 
 ```bash
-$ go get -u github.com/kataras/iris
+$ go get -u github.com/kataras/iris/iris
 ```
 
 
-> Production? Install the [stable version](https://github.com/kataras/iris/tree/4.0.0#versioning) instead
-```bash
-$ go get -u gopkg.in/kataras/iris.v4
-```
-
-### Hello, World!
+### Hello, JSON!
 
 ```sh
-$ cat helloworld.go
+$ cat hellojson.go
 ```
 
 ```go
@@ -70,21 +66,37 @@ import "github.com/kataras/iris"
 
 func main(){
 
-  iris.Get("/", func(c *iris.Context){
-    c.HTML(iris.StatusOK, "<h1> Hello World! </h1>")
+  // http://localhost:5700/api/user/42
+  // Method: "GET"
+  iris.Get("/api/user/:id", func(ctx *iris.Context){
+
+    // take the :id from the path, parse to integer
+    // and set it to the new userID local variable.
+    userID := ctx.ParamInt("id")
+
+    // userRepo, imaginary database service <- your only job.
+    user := userRepo.GetByID(userID)
+
+    // send back a response to the client,
+    // .JSON: content type as application/json; charset="utf-8"
+    // iris.StatusOK: with 200 http status code.
+    //
+    // send user as it is or make use of any json valid golang type,
+    // like the iris.Map{"username" : user.Username}.
+    ctx.JSON(iris.StatusOK, user)
+
   })
 
-
-  iris.Listen(":8080")
+  iris.Listen("localhost:5700")
 }
 
 ```
 
 ```sh
-$ go run helloworld.go
+$ go run hellojson.go
 ```
 
-Open your browser at http://localhost:8080 and you should see the `Hello World!`.
+Open your browser or any other http client at http://localhost:5700/api/user/42.
 
 ### New
 
