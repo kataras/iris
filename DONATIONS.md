@@ -49,13 +49,17 @@ I'm  grateful for all the generous donations. Iris is fully funded by these dona
 
 - [exponity - consulting & digital transformation](https://github.com/exponity) donated 30 EUR at November 4
 
+- ANONYMOUS(BY OWN WILL)* donated 50 EUR at December 7
+
+- ANONYMOUS(Waiting For Approval)* donated 20 EUR at December 9
+
 > * The name or/and github username link added after donator's approvement via e-mail.
 
 #### Report, so far
 
 - 13 EUR for the domain, [iris-go.com](https://iris-go.com)
 
-**Available**: VAT(50) + VAT(20) + VAT(20) + VAT(50) + VAT(6) + VAT(20) + VAT(100) + VAT(20) + VAT(20) + VAT(50) + VAT(30) - 13 = 47,45 + 18,97 + 18,61 + 47,05 + 5,34 + 18,97 + 98,04 + 18,97 + 18,61 + 47,95 + 28,24 - 13 =
-354,31 EUR
+**Available**: VAT(50) + VAT(20) + VAT(20) + VAT(50) + VAT(6) + VAT(20) + VAT(100) + VAT(20) + VAT(20) + VAT(50) + VAT(30) + VAT(40) + VAT(20) - 13 = 47,45 + 18,97 + 18,61 + 47,05 + 5,34 + 18,97 + 98,04 + 18,97 + 18,61 + 47,95 + 28,24 + 47,05 + 18,97 - 13 =
+420,33 EUR
 
 > November 2016: The publication of the report is stopped. Any updated report will be delivered to the donors and only to them.
