@@ -1,6 +1,6 @@
 <p align="center">
+ <a href="https://www.gitbook.com/book/kataras/iris/details"><img  width="500" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_6_flat_alpha.png"></a>
 
- <a href="https://www.gitbook.com/book/kataras/iris/details"><img  width="600" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_6_flat_alpha.png"></a>
 
 <br/>
 
@@ -29,34 +29,70 @@
 <a href="https://kataras.rocket.chat/channel/iris"><img src="https://img.shields.io/badge/%20community-chat-00BCD4.svg?style=flat-square" alt="Chat"></a><br/>
 <br/>
 
-
 <b>Iris</b> is a well known web application framework written in Go.
 <br/>
-<b>Easy</b> to <a href="https://github.com/iris-contrib/examples">learn</a>,  while it's highly customizable, <br/>
-<i>ideally suited for both experienced and novice Developers.</i><br/><br/>
+<b>Easy</b> to <a href="https://docs.iris-go.com">learn</a>  while it's highly customizable,
+ideally suited for <br/> both experienced and novice developers.<br/><br/>
 
-Its only sin?
-To be the <b>fastest</b> web framework was ever published under open-source circumstances.<br/>
+Besides the fact that Iris is faster than any alternatives you may met before, <br/> thanks to its fluent API, <b>you don't have to be an expert to work with it.</b><br/> <br/>
 
-<b>Enjoy yourself!</b><br/>
+If you're coming from <a href="(https://nodejs.org/en/">Node.js</a> world, this is the <a href="https://github.com/expressjs/express">expressjs</a>  alternative for the <a href="https://golang.org">Go Programming Language.</a>
+<br/>
+
+<br/>
 </p>
+<p>
+<img width="535" align="left" src="https://github.com/iris-contrib/website/raw/gh-pages/assets/chtree.jpg" />
+
+&nbsp;&nbsp;This project started ~9 months ago<br/>
+&nbsp;&nbsp;and rapidly won your trust,<br/>
+&nbsp;&nbsp;I'm very thankful for this and<br/>
+&nbsp;&nbsp;I promise you that I'll continue to<br/>
+&nbsp;&nbsp;do my bests.<br/><br/>
+
+&nbsp;&nbsp;All people, poor or rich, should give<br/>
+&nbsp;&nbsp;and share with each others.
+<br/><br/>
+&nbsp;&nbsp;As a person who knows<br/>
+&nbsp;&nbsp;how someone feels when opens<br/>
+&nbsp;&nbsp;the fridge and finds nothing to eat, again,  <br/>
+&nbsp;&nbsp;I decided that all the <a href="https://github.com/kataras/iris/blob/master/DONATIONS.md">money you<br/>
+&nbsp;&nbsp;donated so far[<i>420 EUR</i>]</a>,<br/>
+&nbsp;&nbsp;and until the end of this month,<br/>
+&nbsp;&nbsp;<b>should go back to the people<br/>
+&nbsp;&nbsp;who need them most.</b><br/>
+&nbsp;&nbsp;Is not enough but...
+
+
+
+<br/>
+<br/>
+
+&nbsp;&nbsp;CHRISTMAS IS MOST TRULY<br/>
+&nbsp;&nbsp;CHRISTMAS WHEN WE<br/>
+&nbsp;&nbsp;CELEBRATE IT BY GIVING THE<br/>
+&nbsp;&nbsp;LIGHT OF LOVE TO THOSE<br/>
+&nbsp;&nbsp;WHO NEED IT MOST.
+<br/><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;~ Ruth Carter Stapleton
+
+<br/>
+<br/>
+<br/>
+</p>
+
 
 
 
 Quick Start
 -----------
 
-The only requirement is the [Go Programming Language](https://golang.org/dl) 1.7+
-
 ```bash
-$ go get -u github.com/kataras/iris/iris
+go get -u github.com/kataras/iris
 ```
 
-
-### Hello, JSON!
-
 ```sh
-$ cat hellojson.go
+cat hellojson.go
 ```
 
 ```go
@@ -865,15 +901,6 @@ Iris is the work of hundreds of the community's [feature requests](https://githu
 If you are interested in contributing to the Iris project, please see the document [CONTRIBUTING](https://github.com/kataras/iris/blob/master/.github/CONTRIBUTING.md).
 
 ##### Note that I do not accept pull requests and that I use the issue tracker for bug reports and proposals only. Please ask questions on the [https://kataras.rocket.chat/channel/iris][Chat] or [http://stackoverflow.com/](http://stackoverflow.com).
-
-License
-------------
-
-Copyright &copy; 2016 Gerasimos Maropoulos <makis@ideopod.com>
-This work is free. Unless otherwise noted, the iris source files are distributed under the
-terms of the Do What The Fuck You Want To Public License, Version 2,
-as published by [Sam Hocevar](http://www.wtfpl.net/author/admin/). Navigate [here](http://www.wtfpl.net/about/) for more details.
-
 
 
 [Chat]: https://kataras.rocket.chat/channel/iris
