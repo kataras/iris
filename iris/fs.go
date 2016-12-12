@@ -7,21 +7,6 @@ import (
 	"strings"
 )
 
-var workingDir string
-
-func getWorkingDir() string {
-	if workingDir == "" {
-		errUnableToGetWD := errors.New(Name + ": Unable to get working directory, %s")
-		// set the current working dir
-		d, err := os.Getwd()
-		if err != nil {
-			panic(errUnableToGetWD.Format(err))
-		}
-		workingDir = d
-	}
-	return workingDir
-}
-
 var goPath string
 
 // returns the (last) gopath+"/src/"

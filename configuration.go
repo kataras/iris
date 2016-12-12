@@ -617,7 +617,6 @@ var (
 )
 
 var (
-	universe time.Time // 0001-01-01 00:00:00 +0000 UTC
 	// CookieExpireNever the default cookie's life for sessions, unlimited (23 years)
 	CookieExpireNever = time.Now().AddDate(23, 0, 0)
 )

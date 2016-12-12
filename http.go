@@ -313,8 +313,7 @@ const (
 	// matchEverythingByte is just a byte of '*" rune/char
 	matchEverythingByte = byte('*')
 
-	isStatic entryCase = iota
-	isRoot
+	isRoot entryCase = iota
 	hasParams
 	matchEverything
 )

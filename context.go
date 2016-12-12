@@ -26,8 +26,6 @@ import (
 )
 
 const (
-	// DefaultUserAgent default to 'iris' but it is not used anywhere yet
-	defaultUserAgent = "iris"
 	// ContentType represents the header["Content-Type"]
 	contentType = "Content-Type"
 	// ContentLength represents the header["Content-Length"]
@@ -78,14 +76,11 @@ const (
 // errors
 
 var (
-	errTemplateExecute  = errors.New("Unable to execute a template. Trace: %s")
-	errFlashNotFound    = errors.New("Unable to get flash message. Trace: Cookie does not exists")
-	errSessionNil       = errors.New("Unable to set session, Config().Session.Provider is nil, please refer to the docs!")
-	errNoForm           = errors.New("Request has no any valid form")
-	errWriteJSON        = errors.New("Before JSON be written to the body, JSON Encoder returned an error. Trace: %s")
-	errRenderMarshalled = errors.New("Before +type Rendering, MarshalIndent returned an error. Trace: %s")
-	errReadBody         = errors.New("While trying to read %s from the request body. Trace %s")
-	errServeContent     = errors.New("While trying to serve content to the client. Trace %s")
+	errTemplateExecute = errors.New("Unable to execute a template. Trace: %s")
+	errFlashNotFound   = errors.New("Unable to get flash message. Trace: Cookie does not exists")
+	errNoForm          = errors.New("Request has no any valid form")
+	errReadBody        = errors.New("While trying to read %s from the request body. Trace %s")
+	errServeContent    = errors.New("While trying to serve content to the client. Trace %s")
 )
 
 type (
@@ -282,22 +277,27 @@ func (ctx *Context) FormValues(name string) []string {
 
 // PostValuesAll returns all post data values with their keys
 // multipart, form data, get & post query arguments
-func (ctx *Context) PostValuesAll() (valuesAll map[string][]string) {
-	reqCtx := ctx.RequestCtx
-	valuesAll = make(map[string][]string)
+//
+// NOTE: A check for nil is necessary for zero results
+func (ctx *Context) PostValuesAll() map[string][]string {
 	// first check if we have multipart form
-	multipartForm, err := reqCtx.MultipartForm()
+	multipartForm, err := ctx.MultipartForm()
 	if err == nil {
 		//we have multipart form
 		return multipartForm.Value
 	}
-	// if no multipart and post arguments ( means normal form)
 
-	if reqCtx.PostArgs().Len() == 0 && reqCtx.QueryArgs().Len() == 0 {
-		return // no found
+	postArgs := ctx.PostArgs()
+	queryArgs := ctx.QueryArgs()
+
+	len := postArgs.Len() + queryArgs.Len()
+	if len == 0 {
+		return nil // nothing found
 	}
 
-	reqCtx.PostArgs().VisitAll(func(k []byte, v []byte) {
+	valuesAll := make(map[string][]string, len)
+
+	visitor := func(k []byte, v []byte) {
 		key := string(k)
 		value := string(v)
 		// for slices
@@ -306,21 +306,11 @@ func (ctx *Context) PostValuesAll() (valuesAll map[string][]string) {
 		} else {
 			valuesAll[key] = []string{value}
 		}
+	}
 
-	})
-
-	reqCtx.QueryArgs().VisitAll(func(k []byte, v []byte) {
-		key := string(k)
-		value := string(v)
-		// for slices
-		if valuesAll[key] != nil {
-			valuesAll[key] = append(valuesAll[key], value)
-		} else {
-			valuesAll[key] = []string{value}
-		}
-	})
-
-	return
+	postArgs.VisitAll(visitor)
+	queryArgs.VisitAll(visitor)
+	return valuesAll
 }
 
 // PostValues returns the post data values as []string of a single key/name
@@ -370,90 +360,61 @@ type BodyDecoder interface {
 	Decode(data []byte) error
 }
 
-// ReadJSON reads JSON from request's body
-func (ctx *Context) ReadJSON(jsonObject interface{}) error {
-	rawData := ctx.Request.Body()
-
-	// check if the jsonObject contains its own decode
-	// in this case the jsonObject should be a pointer also,
-	// but this is up to the user's custom Decode implementation*
-	//
-	// See 'BodyDecoder' for more
-	if decoder, isDecoder := jsonObject.(BodyDecoder); isDecoder {
-		return decoder.Decode(rawData)
-	}
-
-	// check if jsonObject is already a pointer, if yes then pass as it's
-	if reflect.TypeOf(jsonObject).Kind() == reflect.Ptr {
-		return json.Unmarshal(rawData, jsonObject)
-	}
-	// finally, if the jsonObject doesn't contains a self-body decoder and it's not a pointer
-	return json.Unmarshal(rawData, &jsonObject)
+// Unmarshaler is the interface implemented by types that can unmarshal any raw data
+// TIP INFO: Any v object which implements the BodyDecoder can be override the unmarshaler
+type Unmarshaler interface {
+	Unmarshal(data []byte, v interface{}) error
 }
 
-// ReadXML reads XML from request's body
-func (ctx *Context) ReadXML(xmlObject interface{}) error {
+// UnmarshalerFunc a shortcut for the Unmarshaler interface
+//
+// See 'Unmarshaler' and 'BodyDecoder' for more
+type UnmarshalerFunc func(data []byte, v interface{}) error
+
+// Unmarshal parses the X-encoded data and stores the result in the value pointed to by v.
+// Unmarshal uses the inverse of the encodings that Marshal uses, allocating maps,
+// slices, and pointers as necessary.
+func (u UnmarshalerFunc) Unmarshal(data []byte, v interface{}) error {
+	return u(data, v)
+}
+
+// UnmarshalBody reads the request's body and binds it to a value or pointer of any type
+// Examples of usage: context.ReadJSON, context.ReadXML
+func (ctx *Context) UnmarshalBody(v interface{}, unmarshaler Unmarshaler) error {
 	rawData := ctx.Request.Body()
 
-	// check if the xmlObject contains its own decode
-	// in this case the jsonObject should be a pointer also,
+	// check if the v contains its own decode
+	// in this case the v should be a pointer also,
 	// but this is up to the user's custom Decode implementation*
 	//
 	// See 'BodyDecoder' for more
-	if decoder, isDecoder := xmlObject.(BodyDecoder); isDecoder {
+	if decoder, isDecoder := v.(BodyDecoder); isDecoder {
 		return decoder.Decode(rawData)
 	}
 
-	// check if xmlObject is already a pointer, if yes then pass as it's
-	if reflect.TypeOf(xmlObject).Kind() == reflect.Ptr {
-		return xml.Unmarshal(rawData, xmlObject)
+	// check if v is already a pointer, if yes then pass as it's
+	if reflect.TypeOf(v).Kind() == reflect.Ptr {
+		return unmarshaler.Unmarshal(rawData, v)
 	}
-	// finally, if the xmlObject doesn't contains a self-body decoder and it's not a pointer
-	return xml.Unmarshal(rawData, &xmlObject)
+	// finally, if the v doesn't contains a self-body decoder and it's not a pointer
+	// use the custom unmarshaler to bind the body
+	return unmarshaler.Unmarshal(rawData, &v)
+}
+
+// ReadJSON reads JSON from request's body and binds it to a value of any json-valid type
+func (ctx *Context) ReadJSON(jsonObject interface{}) error {
+	return ctx.UnmarshalBody(jsonObject, UnmarshalerFunc(json.Unmarshal))
+}
+
+// ReadXML reads XML from request's body and binds it to a value of any xml-valid type
+func (ctx *Context) ReadXML(xmlObject interface{}) error {
+	return ctx.UnmarshalBody(xmlObject, UnmarshalerFunc(xml.Unmarshal))
 }
 
 // ReadForm binds the formObject  with the form data
 // it supports any kind of struct
 func (ctx *Context) ReadForm(formObject interface{}) error {
-	reqCtx := ctx.RequestCtx
-	// first check if we have multipart form
-	multipartForm, err := reqCtx.MultipartForm()
-	if err == nil {
-		//we have multipart form
-		return errReadBody.With(formBinder.Decode(multipartForm.Value, formObject))
-	}
-	// if no multipart and post arguments ( means normal form)
-
-	if reqCtx.PostArgs().Len() == 0 && reqCtx.QueryArgs().Len() == 0 {
-		return errReadBody.With(errNoForm)
-	}
-
-	form := make(map[string][]string, reqCtx.PostArgs().Len()+reqCtx.QueryArgs().Len())
-
-	reqCtx.PostArgs().VisitAll(func(k []byte, v []byte) {
-		key := string(k)
-		value := string(v)
-		// for slices
-		if form[key] != nil {
-			form[key] = append(form[key], value)
-		} else {
-			form[key] = []string{value}
-		}
-
-	})
-
-	reqCtx.QueryArgs().VisitAll(func(k []byte, v []byte) {
-		key := string(k)
-		value := string(v)
-		// for slices
-		if form[key] != nil {
-			form[key] = append(form[key], value)
-		} else {
-			form[key] = []string{value}
-		}
-	})
-
-	return errReadBody.With(formBinder.Decode(form, formObject))
+	return errReadBody.With(formBinder.Decode(ctx.PostValuesAll(), formObject))
 }
 
 /* Response */
@@ -697,6 +658,34 @@ func (ctx *Context) MarkdownString(markdownText string) string {
 // second is the markdown string
 func (ctx *Context) Markdown(status int, markdown string) {
 	ctx.HTML(status, ctx.MarkdownString(markdown))
+}
+
+// staticCachePassed checks the IfModifiedSince header and
+// returns true if (client-side) duration has expired
+func (ctx *Context) staticCachePassed(modtime time.Time) bool {
+	if t, err := time.Parse(ctx.framework.Config.TimeFormat, ctx.RequestHeader(ifModifiedSince)); err == nil && modtime.Before(t.Add(StaticCacheDuration)) {
+		ctx.Response.Header.Del(contentType)
+		ctx.Response.Header.Del(contentLength)
+		ctx.SetStatusCode(StatusNotModified)
+		return true
+	}
+	return false
+}
+
+// SetClientCachedBody like SetBody but it sends with an expiration datetime
+// which is managed by the client-side (all major browsers supports this feature)
+func (ctx *Context) SetClientCachedBody(status int, bodyContent []byte, cType string, modtime time.Time) {
+	if ctx.staticCachePassed(modtime) {
+		return
+	}
+
+	modtimeFormatted := modtime.UTC().Format(ctx.framework.Config.TimeFormat)
+
+	ctx.Response.Header.Set(contentType, cType)
+	ctx.Response.Header.Set(lastModified, modtimeFormatted)
+	ctx.SetStatusCode(status)
+
+	ctx.Response.SetBody(bodyContent)
 }
 
 // ServeContent serves content, headers are autoset

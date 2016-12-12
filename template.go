@@ -6,10 +6,6 @@ import (
 	"io"
 )
 
-var (
-	builtinFuncs = [...]string{"url", "urlpath"}
-)
-
 const (
 	// NoLayout to disable layout for a particular template file
 	NoLayout = template.NoLayout

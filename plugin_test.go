@@ -127,27 +127,28 @@ func (t testPluginActivationType) Activate(p iris.PluginContainer) error {
 	return nil
 }
 
-func TestPluginActivate(t *testing.T) {
-	iris.ResetDefault()
-	var plugins = iris.Default.Plugins
-	myplugin := testPluginActivationType{shouldError: false}
-	plugins.Add(myplugin)
-
-	if plugins.Len() != 2 { // 2 because it registeres a second plugin also
-		t.Fatalf("Expected activated plugins to be: %d but we got: %d", 0, plugins.Len())
+// a plugin may contain children plugins too, but,
+// if an error happened then all of them are not activated/added to the plugin container
+func AddPluginTo(t *testing.T, plugins iris.PluginContainer, plugin iris.Plugin, expectingCount int) {
+	plugins.Add(plugin)
+	if plugins.Len() != expectingCount { // 2 because it registeres a second plugin also
+		t.Fatalf("Expected activated plugins to be: %d but we got: %d", expectingCount, plugins.Len())
 	}
 }
 
-// if any error returned from the Activate plugin's method, then this plugin and the plugins it registers should not be registered at all
-func TestPluginActivationError(t *testing.T) {
+// if any error returned from the Activate plugin's method,
+// then this plugin and the plugins it registers should not be registered at all
+func TestPluginActivate(t *testing.T) {
 	iris.ResetDefault()
-	var plugins = iris.Default.Plugins
-	myplugin := testPluginActivationType{shouldError: true}
-	plugins.Add(myplugin)
+	plugins := iris.Plugins
 
-	if plugins.Len() > 0 {
-		t.Fatalf("Expected activated plugins to be: %d but we got: %d", 0, plugins.Len())
-	}
+	myValidPluginWithChild := testPluginActivationType{shouldError: false}
+	AddPluginTo(t, plugins, myValidPluginWithChild, 2) // 2 because its children registered also (its parent is not throwing an error)
+
+	myInvalidPlugin := testPluginActivationType{shouldError: true}
+	// should stay 2, even if we tried to add a new one,
+	// because it cancels the registration of its children too (shouldError = true)
+	AddPluginTo(t, plugins, myInvalidPlugin, 2)
 }
 
 func TestPluginEvents(t *testing.T) {

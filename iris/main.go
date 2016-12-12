@@ -7,9 +7,8 @@ import (
 
 var (
 	// Name the name of the cmd tool
-	Name              = "Iris Command Line Tool"
-	app               *cli.App
-	defaultInstallDir string
+	Name = "Iris Command Line Tool"
+	app  *cli.App
 )
 
 func init() {

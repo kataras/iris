@@ -2,6 +2,44 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 5.0.3 -> 5.0.4
+
+
+The use of `iris.BodyDecoder` as a custom decoder that you can implement to a type in order to be used as the decoder/binder for the request body and override the json.Unmarshal(`context.ReadJSON`) or xml.Unmarshal(`context.ReadXML`) was very useful and gave you some kind of **per-type-binder** extensibility.
+
+
+
+
+**NEW** `context.UnmarshalBody`: **Per-service-binder**. Side by side with the `iris.BodyDecoder`. We now have a second way to pass a custom `Unmarshaler` to override the `json.Unmarshal` and `xml.Unmarshal`.
+
+ If the object doesn't implements the `iris.BodyDecoder` but you still want to implement your own algorithm to parse []byte as an 'object' instead of the iris' defaults.
+
+ ```go
+ type Unmarshaler interface {
+ 	Unmarshal(data []byte, v interface{}) error
+ }
+
+ ```
+`context.ReadJSON & context.ReadXML` have been also refactored to work with this interface and the new `context.DeodeBody` function, look:
+
+```go
+// ReadJSON reads JSON from request's body
+// and binds it to a value of any json-valid type
+func (ctx *Context) ReadJSON(jsonObject interface{}) error {
+	return ctx.UnmarshalBody(jsonObject, UnmarshalerFunc(json.Unmarshal))
+}
+
+// ReadXML reads XML from request's body
+// and binds it to a value of any xml-valid type
+func (ctx *Context) ReadXML(xmlObject interface{}) error {
+	return ctx.UnmarshalBody(xmlObject, UnmarshalerFunc(xml.Unmarshal))
+}
+
+```
+
+Both  `encoding/json` and `encoding/xml` standard packages have valid `Unmarshal function` so they can be used as `iris.Unmarshaller` (with the help of `iris.UnmarshallerFunc` which just converts the signature to the `iris.Unmarshaller` interface). You only have to implement one function and it will work with any 'object' passed to the `UnmarshalBody` even if the object doesn't implements the `iris.BodyDecoder`.
+
+
 ## 5.0.2 -> 5.0.3
 
 - Fix `https relative redirect paths`, a very old issue, which I just saw, peaceful, again :)

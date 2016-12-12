@@ -80,7 +80,7 @@ const (
 	// IsLongTermSupport flag is true when the below version number is a long-term-support version
 	IsLongTermSupport = false
 	// Version is the current version number of the Iris web framework
-	Version = "5.0.3"
+	Version = "5.0.4"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -900,6 +900,28 @@ func Path(routeName string, args ...interface{}) string {
 	return Default.Path(routeName, args...)
 }
 
+func joinPathArguments(args ...interface{}) []interface{} {
+	arguments := args[0:]
+	for i, v := range arguments {
+		if arr, ok := v.([]string); ok {
+			if len(arr) > 0 {
+				interfaceArr := make([]interface{}, len(arr))
+				for j, sv := range arr {
+					interfaceArr[j] = sv
+				}
+				// replace the current slice
+				// with the first string element (always as interface{})
+				arguments[i] = interfaceArr[0]
+				// append the rest of them to the slice itself
+				// the range is not affected by these things in go,
+				// so we are safe to do it.
+				arguments = append(args, interfaceArr[1:]...)
+			}
+		}
+	}
+	return arguments
+}
+
 // Path used to check arguments with the route's named parameters and return the correct url
 // if parse failed returns empty string
 func (s *Framework) Path(routeName string, args ...interface{}) string {
@@ -950,22 +972,7 @@ func (s *Framework) Path(routeName string, args ...interface{}) string {
 		return ""
 	}
 
-	arguments := args[0:]
-
-	// check for arrays
-	for i, v := range arguments {
-		if arr, ok := v.([]string); ok {
-			if len(arr) > 0 {
-				interfaceArr := make([]interface{}, len(arr))
-				for j, sv := range arr {
-					interfaceArr[j] = sv
-				}
-				arguments[i] = interfaceArr[0]
-				arguments = append(arguments, interfaceArr[1:]...)
-			}
-
-		}
-	}
+	arguments := joinPathArguments(args...)
 
 	return fmt.Sprintf(r.formattedPath, arguments...)
 }
@@ -1019,22 +1026,7 @@ func (s *Framework) URL(routeName string, args ...interface{}) (url string) {
 
 	scheme := s.Config.VScheme // if s.Config.VScheme was setted, that will be used instead of the real, in order to make easy to run behind nginx
 	host := s.Config.VHost     // if s.Config.VHost was setted, that will be used instead of the real, in order to make easy to run behind nginx
-	arguments := args[0:]
-
-	// join arrays as arguments
-	for i, v := range arguments {
-		if arr, ok := v.([]string); ok {
-			if len(arr) > 0 {
-				interfaceArr := make([]interface{}, len(arr))
-				for j, sv := range arr {
-					interfaceArr[j] = sv
-				}
-				arguments[i] = interfaceArr[0]
-				arguments = append(arguments, interfaceArr[1:]...)
-			}
-
-		}
-	}
+	arguments := joinPathArguments(args...)
 
 	// if it's dynamic subdomain then the first argument is the subdomain part
 	if r.subdomain == dynamicSubdomainIndicator {
@@ -1741,6 +1733,21 @@ func Static(reqPath string, systemPath string, stripSlashes int) RouteNameFunc {
 	return Default.Static(reqPath, systemPath, stripSlashes)
 }
 
+// if / then returns /*wildcard or /something then /something/*wildcard
+// if empty then returns /*wildcard too
+func validateWildcard(reqPath string, paramName string) string {
+	if reqPath[len(reqPath)-1] != slashByte {
+		reqPath += slash
+	}
+	reqPath += "*" + paramName
+	return reqPath
+}
+
+func (api *muxAPI) registerResourceRoute(reqPath string, h HandlerFunc) RouteNameFunc {
+	api.Head(reqPath, h)
+	return api.Get(reqPath, h)
+}
+
 // Static registers a route which serves a system directory
 // this doesn't generates an index page which list all files
 // no compression is used also, for these features look at StaticFS func
@@ -1752,14 +1759,9 @@ func Static(reqPath string, systemPath string, stripSlashes int) RouteNameFunc {
 // * stripSlashes = 1, original path: "/foo/bar", result: "/bar"
 // * stripSlashes = 2, original path: "/foo/bar", result: ""
 func (api *muxAPI) Static(reqPath string, systemPath string, stripSlashes int) RouteNameFunc {
-	if reqPath[len(reqPath)-1] != slashByte { // if / then /*filepath, if /something then /something/*filepath
-		reqPath += slash
-	}
-
 	h := api.StaticHandler(systemPath, stripSlashes, false, false, nil)
-
-	api.Head(reqPath+"*filepath", h)
-	return api.Get(reqPath+"*filepath", h)
+	reqPath = validateWildcard(reqPath, "filepath")
+	return api.registerResourceRoute(reqPath, h)
 }
 
 // StaticFS registers a route which serves a system directory
@@ -1791,13 +1793,9 @@ func StaticFS(reqPath string, systemPath string, stripSlashes int) RouteNameFunc
 // * stripSlashes = 1, original path: "/foo/bar", result: "/bar"
 // * stripSlashes = 2, original path: "/foo/bar", result: ""
 func (api *muxAPI) StaticFS(reqPath string, systemPath string, stripSlashes int) RouteNameFunc {
-	if reqPath[len(reqPath)-1] != slashByte {
-		reqPath += slash
-	}
-
 	h := api.StaticHandler(systemPath, stripSlashes, true, true, nil)
-	api.Head(reqPath+"*filepath", h)
-	return api.Get(reqPath+"*filepath", h)
+	reqPath = validateWildcard(reqPath, "filepath")
+	return api.registerResourceRoute(reqPath, h)
 }
 
 // StaticWeb same as Static but if index.html exists and request uri is '/' then display the index.html's contents
@@ -1824,18 +1822,13 @@ func StaticWeb(reqPath string, systemPath string, stripSlashes int) RouteNameFun
 // * if you don't know what to put on stripSlashes just 1
 // example: https://github.com/iris-contrib/examples/tree/master/static_web
 func (api *muxAPI) StaticWeb(reqPath string, systemPath string, stripSlashes int) RouteNameFunc {
-	if reqPath[len(reqPath)-1] != slashByte { // if / then /*filepath, if /something then /something/*filepath
-		reqPath += slash
-	}
-	//todo: fs.go
 	hasIndex := utils.Exists(systemPath + utils.PathSeparator + "index.html")
 	var indexNames []string
 	if hasIndex {
 		indexNames = []string{"index.html"}
 	}
 	serveHandler := api.StaticHandler(systemPath, stripSlashes, false, !hasIndex, indexNames) // if not index.html exists then generate index.html which shows the list of files
-	api.Head(reqPath+"*filepath", serveHandler)
-	return api.Get(reqPath+"*filepath", serveHandler)
+	return api.registerResourceRoute(reqPath+"*filepath", serveHandler)
 }
 
 // StaticServe serves a directory as web resource
@@ -1890,26 +1883,11 @@ func StaticContent(reqPath string, contentType string, content []byte) RouteName
 // a good example of this is how the websocket server uses that to auto-register the /iris-ws.js
 func (api *muxAPI) StaticContent(reqPath string, cType string, content []byte) RouteNameFunc { // func(string) because we use that on websockets
 	modtime := time.Now()
-	modtimeStr := ""
 	h := func(ctx *Context) {
-		if modtimeStr == "" {
-			modtimeStr = modtime.UTC().Format(ctx.framework.Config.TimeFormat)
-		}
-
-		if t, err := time.Parse(ctx.framework.Config.TimeFormat, ctx.RequestHeader(ifModifiedSince)); err == nil && modtime.Before(t.Add(StaticCacheDuration)) {
-			ctx.Response.Header.Del(contentType)
-			ctx.Response.Header.Del(contentLength)
-			ctx.SetStatusCode(StatusNotModified)
-			return
-		}
-
-		ctx.Response.Header.Set(contentType, cType)
-		ctx.Response.Header.Set(lastModified, modtimeStr)
-		ctx.SetStatusCode(StatusOK)
-		ctx.Response.SetBody(content)
+		ctx.SetClientCachedBody(StatusOK, content, cType, modtime)
 	}
-	api.Head(reqPath, h)
-	return api.Get(reqPath, h)
+
+	return api.registerResourceRoute(reqPath, h)
 }
 
 // StaticEmbedded  used when files are distrubuted inside the app executable, using go-bindata mostly
@@ -1983,7 +1961,6 @@ func (api *muxAPI) StaticEmbedded(requestPath string, vdir string, assetFn func(
 	}
 
 	modtime := time.Now()
-	modtimeStr := ""
 	h := func(ctx *Context) {
 
 		reqPath := ctx.Param(paramName)
@@ -1992,17 +1969,6 @@ func (api *muxAPI) StaticEmbedded(requestPath string, vdir string, assetFn func(
 
 			if path != reqPath {
 				continue
-			}
-
-			if modtimeStr == "" {
-				modtimeStr = modtime.UTC().Format(ctx.framework.Config.TimeFormat)
-			}
-
-			if t, err := time.Parse(ctx.framework.Config.TimeFormat, ctx.RequestHeader(ifModifiedSince)); err == nil && modtime.Before(t.Add(StaticCacheDuration)) {
-				ctx.Response.Header.Del(contentType)
-				ctx.Response.Header.Del(contentLength)
-				ctx.SetStatusCode(StatusNotModified)
-				return
 			}
 
 			cType := fs.TypeByExtension(path)
@@ -2014,24 +1980,16 @@ func (api *muxAPI) StaticEmbedded(requestPath string, vdir string, assetFn func(
 				continue
 			}
 
-			ctx.Response.Header.Set(contentType, cType)
-			ctx.Response.Header.Set(lastModified, modtimeStr)
-
-			ctx.SetStatusCode(StatusOK)
-			ctx.SetContentType(cType)
-
-			ctx.Response.SetBody(buf)
+			ctx.SetClientCachedBody(StatusOK, buf, cType, modtime)
 			return
 		}
 
-		// not found
+		// not found or error
 		ctx.EmitError(StatusNotFound)
 
 	}
 
-	api.Head(requestPath, h)
-
-	return api.Get(requestPath, h)
+	return api.registerResourceRoute(requestPath, h)
 }
 
 // Favicon serves static favicon
@@ -2104,8 +2062,8 @@ func (api *muxAPI) Favicon(favPath string, requestPath ...string) RouteNameFunc 
 	if len(requestPath) > 0 {
 		reqPath = requestPath[0]
 	}
-	api.Head(reqPath, h)
-	return api.Get(reqPath, h)
+
+	return api.registerResourceRoute(reqPath, h)
 }
 
 // Layout oerrides the parent template layout with a more specific layout for this Party

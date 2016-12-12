@@ -20,7 +20,7 @@
 <br/>
 
 
-<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20version%20-%205.0.3%20-blue.svg?style=flat-square" alt="Releases"></a>
+<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20version%20-%205.0.4%20-blue.svg?style=flat-square" alt="Releases"></a>
 
 <a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/%20examples-repository-3362c2.svg?style=flat-square" alt="Examples"></a>
 
@@ -36,7 +36,7 @@ ideally suited for <br/> both experienced and novice developers.<br/><br/>
 
 Besides the fact that Iris is faster than any alternatives you may met before, <br/> thanks to its fluent API, <b>you don't have to be an expert to work with it.</b><br/> <br/>
 
-If you're coming from <a href="(https://nodejs.org/en/">Node.js</a> world, this is the <a href="https://github.com/expressjs/express">expressjs</a>  alternative for the <a href="https://golang.org">Go Programming Language.</a>
+If you're coming from <a href="https://nodejs.org/en/">Node.js</a> world, this is the <a href="https://github.com/expressjs/express">expressjs</a>  alternative for the <a href="https://golang.org">Go Programming Language.</a>
 <br/>
 
 <br/>
@@ -873,7 +873,7 @@ I recommend writing your API tests using this new library, [httpexpect](https://
 Versioning
 ------------
 
-Current: **v5.0.3**
+Current: **v5.0.4**
 
 Stable: **[v4 LTS](https://github.com/kataras/iris/tree/4.0.0#versioning)**
 
