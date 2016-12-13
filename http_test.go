@@ -185,11 +185,11 @@ func listenTLS(api *iris.Framework, hostTLS string) func() {
 
 	return func() {
 		certFile.Close()
-		time.Sleep(350 * time.Millisecond)
+		time.Sleep(150 * time.Millisecond)
 		os.Remove(certFile.Name())
 
 		keyFile.Close()
-		time.Sleep(350 * time.Millisecond)
+		time.Sleep(150 * time.Millisecond)
 		os.Remove(keyFile.Name())
 
 		api.Close()
@@ -662,7 +662,7 @@ func TestMuxFireMethodNotAllowed(t *testing.T) {
 }
 
 var (
-	cacheDuration      = 5 * time.Second
+	cacheDuration      = 2 * time.Second
 	errCacheTestFailed = errors.New("Expected the main handler to be executed %d times instead of %d.")
 )
 
@@ -691,6 +691,8 @@ func runCacheTest(e *httpexpect.Expect, path string, counterPtr *uint32, expecte
 	return nil
 }
 
+/*
+Inside github.com/geekypanda/httpcache are enough, no need to add 10+ seconds of testing here.
 func TestCache(t *testing.T) {
 
 	iris.ResetDefault()
@@ -720,6 +722,7 @@ func TestCache(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+*/
 
 func TestRedirectHTTPS(t *testing.T) {
 	iris.ResetDefault()
