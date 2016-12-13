@@ -29,7 +29,7 @@
 <a href="https://kataras.rocket.chat/channel/iris"><img src="https://img.shields.io/badge/%20community-chat-00BCD4.svg?style=flat-square" alt="Chat"></a><br/>
 <br/>
 
-<b>Iris</b> is a well known web application framework written in Go.
+<b>Iris</b> is a well-known web application framework written in Go.
 <br/>
 <b>Easy</b> to <a href="https://docs.iris-go.com">learn</a>  while it's highly customizable,
 ideally suited for <br/> both experienced and novice developers.<br/><br/>
@@ -901,6 +901,40 @@ Iris is the work of hundreds of the community's [feature requests](https://githu
 If you are interested in contributing to the Iris project, please see the document [CONTRIBUTING](https://github.com/kataras/iris/blob/master/.github/CONTRIBUTING.md).
 
 ##### Note that I do not accept pull requests and that I use the issue tracker for bug reports and proposals only. Please ask questions on the [https://kataras.rocket.chat/channel/iris][Chat] or [http://stackoverflow.com/](http://stackoverflow.com).
+
+Depends on:
+
+- http protocol layer comes from [valyala/fasthttp](https://github.com/valyala/fasthttp), by Aliaksandr Valialkin.
+- rich and encoded responses support comes from [kataras/go-serializer](https://github.com/kataras/go-serializer/tree/0.0.4), by me.
+- template support comes from [kataras/go-template](https://github.com/kataras/go-template/tree/0.0.3), by me.
+- gzip support comes from [kataras/go-fs](https://github.com/kataras/go-fs/tree/0.0.5) and the super-fast compression library [klauspost/compress/gzip](https://github.com/klauspost/compress/tree/master/gzip), by me & Klaus Post.
+- websockets support comes from [kataras/go-websocket](https://github.com/kataras/go-websocket/tree/0.0.2), by me.
+- Base of the parameterized routing algorithm comes from [julienschmidt/httprouter](https://github.com/julienschmidt/httprouter), by Julien Schmidt, with some relative to performance edits by me.
+- sessions support comes from [kataras/go-sessions](https://github.com/kataras/go-sessions/tree/0.0.6), by me.
+- caching support comes from [geekypanda/httpcache](https://github.com/geekypanda/httpcache/tree/0.0.1), by me and GeekyPanda.
+- end-to-end http test APIs comes from [gavv/httpexpect](https://github.com/gavv/httpexpect), by Victor Gaydov.
+- hot-reload on source code changes comes from [kataras/rizla](https://github.com/kataras/rizla), by me.
+- auto-updater (via github) comes from [kataras/go-fs](https://github.com/kataras/go-fs), by me.
+- request body form binder is an [edited version](https://github.com/iris-contrib/formBinder) of the [monoculum/formam](https://github.com/monoculum/formam) library, by Monoculum Organisation.
+- all other packages comes from the [Iris Contrib Organisation](https://github.com/iris-contrib) and the [Go standard library](https://github.com/golang/go), by me & The Go Authors.
+
+
+Contact
+------------
+
+Besides the fact that we have a [community chat][Chat] for questions or reports and ideas, [stackoverflow](http://stackoverflow.com/) section for generic go+iris questions and the [github issues](https://github.com/kataras/iris/issues) for bug reports and feature requests, you can also contact with me, as a person who is always open to help you:
+
+- [Twitter](https://twitter.com/MakisMaropoulos)
+- [Facebook](https://facebook.com/kataras.gopher)
+- [Linkedin](https://gr.linkedin.com/in/%CE%B3%CE%B5%CF%81%CE%AC%CF%83%CE%B9%CE%BC%CE%BF%CF%82-%CE%BC%CE%B1%CF%81%CF%8C%CF%80%CE%BF%CF%85%CE%BB%CE%BF%CF%82-69839274)
+- [Youtube + Gplus](https://www.youtube.com/user/PrimesocialNetworks)
+- [Medium](https://medium.com/@kataras)
+
+License
+------------
+
+Unless otherwise noted, the `iris` source files are distributed
+under the BSD-3 Clause license found in the [LICENSE file](LICENSE).
 
 
 [Chat]: https://kataras.rocket.chat/channel/iris
