@@ -53,13 +53,15 @@ I'm  grateful for all the generous donations. Iris is fully funded by these dona
 
 - ANONYMOUS(Waiting For Approval)* donated 20 EUR at December 9
 
+- ANONYMOUS(Waiting For Approval)* donated 5 EUR at December 13
+
 > * The name or/and github username link added after donator's approvement via e-mail.
 
 #### Report, so far
 
 - 13 EUR for the domain, [iris-go.com](https://iris-go.com)
 
-**Available**: VAT(50) + VAT(20) + VAT(20) + VAT(50) + VAT(6) + VAT(20) + VAT(100) + VAT(20) + VAT(20) + VAT(50) + VAT(30) + VAT(50) + VAT(20) - 13 = 47,45 + 18,97 + 18,61 + 47,05 + 5,34 + 18,97 + 98,04 + 18,97 + 18,61 + 47,95 + 28,24 + 47,05 + 18,97 - 13 =
-420,33 EUR
+**Available**: VAT(50) + VAT(20) + VAT(20) + VAT(50) + VAT(6) + VAT(20) + VAT(100) + VAT(20) + VAT(20) + VAT(50) + VAT(30) + VAT(50) + VAT(20) + VAT(5) - 13 = 47,45 + 18,97 + 18,61 + 47,05 + 5,34 + 18,97 + 98,04 + 18,97 + 18,61 + 47,95 + 28,24 + 47,05 + 18,97 + 4,59 - 13 =
+424,92 EUR
 
 **All donations so far and until the end of this month(01/01/2017), will go back to the people who need them most, they are not enough but I will try to raise the amount by myself too.**

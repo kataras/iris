@@ -57,7 +57,7 @@ If you're coming from <a href="https://nodejs.org/en/">Node.js</a> world, this i
 &nbsp;&nbsp;how someone feels when opens<br/>
 &nbsp;&nbsp;the fridge and finds nothing to eat, again,  <br/>
 &nbsp;&nbsp;I decided that all the <a href="https://github.com/kataras/iris/blob/master/DONATIONS.md">money you<br/>
-&nbsp;&nbsp;donated so far[<i>420 EUR</i>]</a>,<br/>
+&nbsp;&nbsp;donated so far[<i>424 EUR</i>]</a>,<br/>
 &nbsp;&nbsp;and until the end of this month,<br/>
 &nbsp;&nbsp;<b>should go back to the people<br/>
 &nbsp;&nbsp;who need them most.</b><br/>
