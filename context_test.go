@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"github.com/gavv/httpexpect"
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/httptest"
 	"github.com/valyala/fasthttp"
@@ -211,6 +212,109 @@ type testBinderXMLData struct {
 	Stars      int      `xml:"stars",json:"stars"`
 }
 
+type testBinder struct {
+	//pointer of  testBinderDataJSON or testBinderXMLData
+	vp          interface{}
+	m           iris.Unmarshaler
+	shouldError bool
+}
+
+func (tj *testBinder) Decode(data []byte) error {
+	if tj.shouldError {
+		return fmt.Errorf("Should error")
+	}
+	return tj.m.Unmarshal(data, tj.vp)
+}
+
+func testUnmarshaler(t *testing.T, tb *testBinder,
+	write func(ctx *iris.Context)) *httpexpect.Request {
+
+	// a very dirty and awful way but here we must test in deep
+	// the custom object's decoder error with the custom
+	// unmarshaler result whenever the testUnmarshaler called.
+	if tb.shouldError == false {
+		tb.shouldError = true
+		testUnmarshaler(t, tb, nil)
+		tb.shouldError = false
+	}
+
+	iris.ResetDefault()
+	h := func(ctx *iris.Context) {
+		err := ctx.UnmarshalBody(tb.vp, tb.m)
+		if tb.shouldError && err == nil {
+			t.Fatalf("Should prompted for error 'Should error' but not error returned from the custom decoder!")
+		} else if err != nil {
+			t.Fatalf("Error when parsing the body: %s", err.Error())
+		}
+		if write != nil {
+			write(ctx)
+		}
+	}
+
+	iris.Post("/bind_req_body", h)
+
+	e := httptest.New(iris.Default, t)
+	return e.POST("/bind_req_body")
+}
+
+// same as DecodeBody
+// JSON, XML by DecodeBody passing the default unmarshalers
+func TestContextBinders(t *testing.T) {
+
+	passed := map[string]interface{}{"Username": "myusername",
+		"Mail":   "mymail@iris-go.com",
+		"mydata": []string{"mydata1", "mydata2"}}
+	expectedObject := testBinderData{Username: "myusername",
+		Mail: "mymail@iris-go.com",
+		Data: []string{"mydata1", "mydata2"}}
+
+	// JSON
+	vJSON := &testBinder{&testBinderData{},
+		iris.UnmarshalerFunc(json.Unmarshal), false}
+
+	testUnmarshaler(
+		t,
+		vJSON,
+		func(ctx *iris.Context) {
+			ctx.JSON(iris.StatusOK, vJSON.vp)
+		}).
+		WithJSON(passed).
+		Expect().
+		Status(iris.StatusOK).
+		JSON().Object().Equal(expectedObject)
+
+	// XML
+	expectedObj := testBinderXMLData{
+		XMLName:    xml.Name{Local: "info", Space: "info"},
+		FirstAttr:  "this is the first attr",
+		SecondAttr: "this is the second attr",
+		Name:       "Iris web framework",
+		Birth:      "13 March 2016",
+		Stars:      5758,
+	}
+	expectedAndPassedObjText := `<` + expectedObj.XMLName.Local + ` first="` +
+		expectedObj.FirstAttr + `" second="` +
+		expectedObj.SecondAttr + `"><name>` +
+		expectedObj.Name + `</name><birth>` +
+		expectedObj.Birth + `</birth><stars>` +
+		strconv.Itoa(expectedObj.Stars) + `</stars></info>`
+
+	// JSON
+	vXML := &testBinder{&testBinderXMLData{},
+		iris.UnmarshalerFunc(xml.Unmarshal), false}
+	testUnmarshaler(
+		t,
+		vXML,
+		func(ctx *iris.Context) {
+			ctx.XML(iris.StatusOK, vXML.vp)
+		}).
+		WithText(expectedAndPassedObjText).
+		Expect().
+		Status(iris.StatusOK).
+		Body().Equal(expectedAndPassedObjText)
+
+}
+
 func TestContextReadForm(t *testing.T) {
 	iris.ResetDefault()
 
@@ -231,113 +335,6 @@ func TestContextReadForm(t *testing.T) {
 	expectedObject := testBinderData{Username: "myusername", Mail: "mymail@iris-go.com", Data: []string{"mydata1", "mydata2"}}
 
 	e.POST("/form").WithForm(passed).Expect().Status(iris.StatusOK).JSON().Object().Equal(expectedObject)
-}
-
-func TestContextReadJSON(t *testing.T) {
-	iris.ResetDefault()
-	iris.Post("/json", func(ctx *iris.Context) {
-		obj := testBinderData{}
-		err := ctx.ReadJSON(&obj)
-		if err != nil {
-			t.Fatalf("Error when parsing the JSON body: %s", err.Error())
-		}
-		ctx.JSON(iris.StatusOK, obj)
-	})
-
-	iris.Post("/json_pointer", func(ctx *iris.Context) {
-		obj := &testBinderData{}
-		err := ctx.ReadJSON(obj)
-		if err != nil {
-			t.Fatalf("Error when parsing the JSON body: %s", err.Error())
-		}
-		ctx.JSON(iris.StatusOK, obj)
-	})
-
-	e := httptest.New(iris.Default, t)
-	passed := map[string]interface{}{"Username": "myusername", "Mail": "mymail@iris-go.com", "mydata": []string{"mydata1", "mydata2"}}
-	expectedObject := testBinderData{Username: "myusername", Mail: "mymail@iris-go.com", Data: []string{"mydata1", "mydata2"}}
-
-	e.POST("/json").WithJSON(passed).Expect().Status(iris.StatusOK).JSON().Object().Equal(expectedObject)
-	e.POST("/json_pointer").WithJSON(passed).Expect().Status(iris.StatusOK).JSON().Object().Equal(expectedObject)
-}
-
-type testJSONBinderDataWithDecoder struct {
-	Username    string
-	Mail        string
-	Data        []string `json:"mydata"`
-	shouldError bool
-}
-
-func (tj *testJSONBinderDataWithDecoder) Decode(data []byte) error {
-	if tj.shouldError {
-		return fmt.Errorf("Should error")
-	}
-	return json.Unmarshal(data, tj)
-}
-
-func TestContextReadJSONWithDecoder(t *testing.T) {
-	iris.ResetDefault()
-	iris.Post("/json_should_error", func(ctx *iris.Context) {
-		obj := testJSONBinderDataWithDecoder{shouldError: true}
-		err := ctx.ReadJSON(&obj)
-		if err == nil {
-			t.Fatalf("Should prompted for error 'Should error' but not error returned from the custom decoder!")
-		}
-		ctx.Write(err.Error())
-		ctx.SetStatusCode(iris.StatusOK)
-	})
-
-	iris.Post("/json", func(ctx *iris.Context) {
-		obj := testJSONBinderDataWithDecoder{}
-		err := ctx.ReadJSON(&obj)
-		if err != nil {
-			t.Fatalf("Error when parsing the JSON body: %s", err.Error())
-		}
-		ctx.JSON(iris.StatusOK, obj)
-	})
-
-	iris.Post("/json_pointer", func(ctx *iris.Context) {
-		obj := &testJSONBinderDataWithDecoder{}
-		err := ctx.ReadJSON(obj)
-		if err != nil {
-			t.Fatalf("Error when parsing the JSON body: %s", err.Error())
-		}
-		ctx.JSON(iris.StatusOK, obj)
-	})
-
-	e := httptest.New(iris.Default, t)
-	passed := map[string]interface{}{"Username": "kataras", "Mail": "mymail@iris-go.com", "mydata": []string{"mydata1", "mydata2"}}
-	expectedObject := testJSONBinderDataWithDecoder{Username: "kataras", Mail: "mymail@iris-go.com", Data: []string{"mydata1", "mydata2"}}
-
-	e.POST("/json_should_error").WithJSON(passed).Expect().Status(iris.StatusOK).Body().Equal("Should error")
-	e.POST("/json").WithJSON(passed).Expect().Status(iris.StatusOK).JSON().Object().Equal(expectedObject)
-	e.POST("/json_pointer").WithJSON(passed).Expect().Status(iris.StatusOK).JSON().Object().Equal(expectedObject)
-} // no need for xml, it's exact the same.
-
-func TestContextReadXML(t *testing.T) {
-	iris.ResetDefault()
-
-	iris.Post("/xml", func(ctx *iris.Context) {
-		obj := testBinderXMLData{}
-		err := ctx.ReadXML(&obj)
-		if err != nil {
-			t.Fatalf("Error when parsing the XML body: %s", err.Error())
-		}
-		ctx.XML(iris.StatusOK, obj)
-	})
-
-	e := httptest.New(iris.Default, t)
-	expectedObj := testBinderXMLData{
-		XMLName:    xml.Name{Local: "info", Space: "info"},
-		FirstAttr:  "this is the first attr",
-		SecondAttr: "this is the second attr",
-		Name:       "Iris web framework",
-		Birth:      "13 March 2016",
-		Stars:      4064,
-	}
-	// so far no WithXML or .XML like WithJSON and .JSON on httpexpect I added a feature request as post issue and we're waiting
-	expectedBody := `<` + expectedObj.XMLName.Local + ` first="` + expectedObj.FirstAttr + `" second="` + expectedObj.SecondAttr + `"><name>` + expectedObj.Name + `</name><birth>` + expectedObj.Birth + `</birth><stars>` + strconv.Itoa(expectedObj.Stars) + `</stars></info>`
-	e.POST("/xml").WithText(expectedBody).Expect().Status(iris.StatusOK).Body().Equal(expectedBody)
 }
 
 // TestContextRedirectTo tests the named route redirect action
@@ -728,38 +725,33 @@ func TestContextRenderRest(t *testing.T) {
 
 func TestContextPreRender(t *testing.T) {
 	iris.ResetDefault()
-	errMsg1 := "thereIsAnError"
-	iris.UsePreRender(func(ctx *iris.Context, src string, binding interface{}, options ...map[string]interface{}) bool {
-		// put the 'Error' binding here, for the shake of the test
-		if b, isMap := binding.(map[string]interface{}); isMap {
-			b["Error"] = errMsg1
-		}
-		// continue to the next prerender
-		return true
-	})
-	errMsg2 := "thereIsASecondError"
-	iris.UsePreRender(func(ctx *iris.Context, src string, binding interface{}, options ...map[string]interface{}) bool {
-		// put the 'Error' binding here, for the shake of the test
-		if b, isMap := binding.(map[string]interface{}); isMap {
-			prev := b["Error"].(string)
-			msg := prev + errMsg2
-			b["Error"] = msg
-		}
-		// DO NOT CONTINUE to the next prerender
-		return false
-	})
 
-	errMsg3 := "thereisAThirdError"
-	iris.UsePreRender(func(ctx *iris.Context, src string, binding interface{}, options ...map[string]interface{}) bool {
-		// put the 'Error' binding here, for the shake of the test
-		if b, isMap := binding.(map[string]interface{}); isMap {
-			prev := b["Error"].(string)
-			msg := prev + errMsg3
-			b["Error"] = msg
+	preRender := func(errMsg string, shouldContinue bool) iris.PreRender {
+		return func(ctx *iris.Context,
+			src string,
+			binding interface{},
+			options ...map[string]interface{}) bool {
+			// put the 'Error' binding here, for the shake of the test
+			if b, isMap := binding.(map[string]interface{}); isMap {
+				msg := ""
+				if prevMsg := b["Error"]; prevMsg != nil {
+					// we have a previous message
+					msg += prevMsg.(string)
+				}
+				msg += errMsg
+				b["Error"] = msg
+			}
+			return shouldContinue
 		}
-		// doesn't matters the return statement, we don't have other prerender
-		return true
-	})
+	}
+	errMsg1 := "thereIsAnError"
+	errMsg2 := "thereIsASecondError"
+	errMsg3 := "thereisAThirdError"
+	// only errMsg1 and errMsg2 should be rendered because
+	// on errMsg2 we stop the execution
+	iris.UsePreRender(preRender(errMsg1, true))
+	iris.UsePreRender(preRender(errMsg2, false))
+	iris.UsePreRender(preRender(errMsg3, false)) // false doesn't matters here
 
 	iris.Get("/", func(ctx *iris.Context) {
 		ctx.RenderTemplateSource(iris.StatusOK, "<h1>HI {{.Username}}. Error: {{.Error}}</h1>", map[string]interface{}{"Username": "kataras"})

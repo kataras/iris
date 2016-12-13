@@ -78,7 +78,6 @@ const (
 var (
 	errTemplateExecute = errors.New("Unable to execute a template. Trace: %s")
 	errFlashNotFound   = errors.New("Unable to get flash message. Trace: Cookie does not exists")
-	errNoForm          = errors.New("Request has no any valid form")
 	errReadBody        = errors.New("While trying to read %s from the request body. Trace %s")
 	errServeContent    = errors.New("While trying to serve content to the client. Trace %s")
 )
