@@ -158,28 +158,32 @@ func getRandomPort() int {
 	return getRandomNumber(min, max)
 }
 
-// Contains the server test for multi running servers
-func TestMultiRunningServers_v1_PROXY(t *testing.T) {
-	defer iris.Close()
-	host := "localhost" // you have to add it to your hosts file( for windows, as 127.0.0.1 mydomain.com)
-	hostTLS := host + ":" + strconv.Itoa(getRandomPort())
-	iris.Close()
-	defer iris.Close()
-	iris.ResetDefault()
-	iris.Default.Config.DisableBanner = true
+// works as
+// defer listenTLS(iris.Default, hostTLS)()
+func listenTLS(api *iris.Framework, hostTLS string) func() {
+	api.Close() // close any previous server
+	api.Config.DisableBanner = true
 	// create the key and cert files on the fly, and delete them when this test finished
 	certFile, ferr := ioutil.TempFile("", "cert")
 
 	if ferr != nil {
-		t.Fatal(ferr.Error())
+		api.Logger.Panic(ferr.Error())
 	}
 
 	keyFile, ferr := ioutil.TempFile("", "key")
 	if ferr != nil {
-		t.Fatal(ferr.Error())
+		api.Logger.Panic(ferr.Error())
 	}
 
-	defer func() {
+	certFile.WriteString(testTLSCert)
+	keyFile.WriteString(testTLSKey)
+
+	go api.ListenTLS(hostTLS, certFile.Name(), keyFile.Name())
+	if ok := <-api.Available; !ok {
+		api.Logger.Panic("Unexpected error: server cannot start, please report this as bug!!")
+	}
+
+	return func() {
 		certFile.Close()
 		time.Sleep(350 * time.Millisecond)
 		os.Remove(certFile.Name())
@@ -187,22 +191,27 @@ func TestMultiRunningServers_v1_PROXY(t *testing.T) {
 		keyFile.Close()
 		time.Sleep(350 * time.Millisecond)
 		os.Remove(keyFile.Name())
-	}()
 
-	certFile.WriteString(testTLSCert)
-	keyFile.WriteString(testTLSKey)
+		api.Close()
+	}
+}
+
+// Contains the server test for multi running servers
+func TestMultiRunningServers_v1_PROXY(t *testing.T) {
+	iris.ResetDefault()
+
+	host := "localhost" // you have to add it to your hosts file( for windows, as 127.0.0.1 mydomain.com)
+	hostTLS := host + ":" + strconv.Itoa(getRandomPort())
 
 	iris.Get("/", func(ctx *iris.Context) {
 		ctx.Write("Hello from %s", hostTLS)
 	})
 
-	go iris.ListenTLS(hostTLS, certFile.Name(), keyFile.Name())
-	if ok := <-iris.Default.Available; !ok {
-		t.Fatal("Unexpected error: server cannot start, please report this as bug!!")
-	}
 	proxyHost := host + ":" + strconv.Itoa(getRandomNumber(3333, 4444))
 	closeProxy := iris.Proxy(proxyHost, "https://"+hostTLS)
 	defer closeProxy()
+
+	defer listenTLS(iris.Default, hostTLS)()
 
 	e := httptest.New(iris.Default, t, httptest.ExplicitURL(true))
 
@@ -213,39 +222,12 @@ func TestMultiRunningServers_v1_PROXY(t *testing.T) {
 
 // Contains the server test for multi running servers
 func TestMultiRunningServers_v2(t *testing.T) {
-	defer iris.Close()
+	iris.ResetDefault()
+
 	domain := "localhost"
 	hostTLS := domain + ":" + strconv.Itoa(getRandomPort())
 	srv1Host := domain + ":" + strconv.Itoa(getRandomNumber(4446, 5444))
 	srv2Host := domain + ":" + strconv.Itoa(getRandomNumber(7778, 8887))
-
-	iris.ResetDefault()
-	iris.Default.Config.DisableBanner = true
-
-	// create the key and cert files on the fly, and delete them when this test finished
-	certFile, ferr := ioutil.TempFile("", "cert")
-
-	if ferr != nil {
-		t.Fatal(ferr.Error())
-	}
-
-	keyFile, ferr := ioutil.TempFile("", "key")
-	if ferr != nil {
-		t.Fatal(ferr.Error())
-	}
-
-	certFile.WriteString(testTLSCert)
-	keyFile.WriteString(testTLSKey)
-
-	defer func() {
-		certFile.Close()
-		time.Sleep(350 * time.Millisecond)
-		os.Remove(certFile.Name())
-
-		keyFile.Close()
-		time.Sleep(350 * time.Millisecond)
-		os.Remove(keyFile.Name())
-	}()
 
 	iris.Get("/", func(ctx *iris.Context) {
 		ctx.Write("Hello from %s", hostTLS)
@@ -256,8 +238,6 @@ func TestMultiRunningServers_v2(t *testing.T) {
 	// add our primary/main server
 	//Servers.Add(ServerConfiguration{ListeningAddr: host, CertFile: certFile.Name(), KeyFile: keyFile.Name(), Virtual: true})
 
-	//go Go()
-
 	// using the proxy handler
 	fsrv1 := &fasthttp.Server{Handler: iris.ProxyHandler(srv1Host, "https://"+hostTLS)}
 	go fsrv1.ListenAndServe(srv1Host)
@@ -265,11 +245,7 @@ func TestMultiRunningServers_v2(t *testing.T) {
 	fsrv2 := &fasthttp.Server{Handler: iris.Default.Router}
 	go fsrv2.ListenAndServe(srv2Host)
 
-	go iris.ListenTLS(hostTLS, certFile.Name(), keyFile.Name())
-
-	if ok := <-iris.Default.Available; !ok {
-		t.Fatal("Unexpected error: server cannot start, please report this as bug!!")
-	}
+	defer listenTLS(iris.Default, hostTLS)()
 
 	e := httptest.New(iris.Default, t, httptest.ExplicitURL(true))
 
@@ -573,7 +549,7 @@ func TestMuxAPI(t *testing.T) {
 	iris.ResetDefault()
 
 	middlewareResponseText := "I assume that you are authenticated\n"
-	iris.API("/users", testUserAPI{}, func(ctx *iris.Context) { // optional middleware for .API
+	h := []iris.HandlerFunc{func(ctx *iris.Context) { // optional middleware for .API
 		// do your work here, or render a login window if not logged in, get the user and send it to the next middleware, or do  all here
 		ctx.Set("user", "username")
 		ctx.Next()
@@ -584,48 +560,33 @@ func TestMuxAPI(t *testing.T) {
 		} else {
 			ctx.SetStatusCode(iris.StatusUnauthorized)
 		}
-	})
+	}}
+
+	iris.API("/users", testUserAPI{}, h...)
+	// test a simple .Party  with compination of .API
+	iris.Party("sites/:site").API("/users", testUserAPI{}, h...)
 
 	e := httptest.New(iris.Default, t)
 
-	userID := "4077"
-	formname := "kataras"
-
-	e.GET("/users").Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Get Users\n")
-	e.GET("/users/" + userID).Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Get By " + userID + "\n")
-	e.PUT("/users").WithFormField("name", formname).Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Put, name: " + formname + "\n")
-	e.POST("/users/"+userID).WithFormField("name", formname).Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Post By " + userID + ", name: " + formname + "\n")
-	e.DELETE("/users/" + userID).Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Delete By " + userID + "\n")
-}
-
-func TestMuxAPIWithParty(t *testing.T) {
-	iris.ResetDefault()
-	siteParty := iris.Party("sites/:site")
-
-	middlewareResponseText := "I assume that you are authenticated\n"
-	siteParty.API("/users", testUserAPI{}, func(ctx *iris.Context) {
-		ctx.Set("user", "username")
-		ctx.Next()
-	}, func(ctx *iris.Context) {
-		if ctx.Get("user") == "username" {
-			ctx.Write(middlewareResponseText)
-			ctx.Next()
-		} else {
-			ctx.SetStatusCode(iris.StatusUnauthorized)
-		}
-	})
-
-	e := httptest.New(iris.Default, t)
 	siteID := "1"
 	apiPath := "/sites/" + siteID + "/users"
 	userID := "4077"
 	formname := "kataras"
 
+	// .API
+	e.GET("/users").Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Get Users\n")
+	e.GET("/users/" + userID).Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Get By " + userID + "\n")
+	e.PUT("/users").WithFormField("name", formname).Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Put, name: " + formname + "\n")
+	e.POST("/users/"+userID).WithFormField("name", formname).Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Post By " + userID + ", name: " + formname + "\n")
+	e.DELETE("/users/" + userID).Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Delete By " + userID + "\n")
+
+	// .Party
 	e.GET(apiPath).Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Get Users\n")
 	e.GET(apiPath + "/" + userID).Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Get By " + userID + "\n")
 	e.PUT(apiPath).WithFormField("name", formname).Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Put, name: " + formname + "\n")
 	e.POST(apiPath+"/"+userID).WithFormField("name", formname).Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Post By " + userID + ", name: " + formname + "\n")
 	e.DELETE(apiPath + "/" + userID).Expect().Status(iris.StatusOK).Body().Equal(middlewareResponseText + "Delete By " + userID + "\n")
+
 }
 
 type myTestHandlerData struct {
@@ -761,48 +722,15 @@ func TestCache(t *testing.T) {
 }
 
 func TestRedirectHTTPS(t *testing.T) {
+	iris.ResetDefault()
 	host := "localhost:5700"
 	expectedBody := "Redirected to https://" + host + "/redirected"
-	iris.ResetDefault()
-	defer iris.Close()
-
-	iris.Set(iris.OptionDisableBanner(true))
 
 	iris.Get("/redirect", func(ctx *iris.Context) { ctx.Redirect("/redirected") })
 	iris.Get("/redirected", func(ctx *iris.Context) { ctx.Text(iris.StatusOK, "Redirected to "+ctx.URI().String()) })
 
-	// create the key and cert files on the fly, and delete them when this test finished
-	// note: code dublication but it's ok we may change that to local ListenLETSENCRYPT
-	certFile, ferr := ioutil.TempFile("", "cert")
-
-	if ferr != nil {
-		t.Fatal(ferr.Error())
-	}
-
-	keyFile, ferr := ioutil.TempFile("", "key")
-	if ferr != nil {
-		t.Fatal(ferr.Error())
-	}
-
-	defer func() {
-		certFile.Close()
-		time.Sleep(350 * time.Millisecond)
-		os.Remove(certFile.Name())
-
-		keyFile.Close()
-		time.Sleep(350 * time.Millisecond)
-		os.Remove(keyFile.Name())
-	}()
-
-	certFile.WriteString(testTLSCert)
-	keyFile.WriteString(testTLSKey)
-
-	go iris.ListenTLS(host, certFile.Name(), keyFile.Name())
-	if ok := <-iris.Default.Available; !ok {
-		t.Fatal("Unexpected error: server cannot start, please report this as bug!!")
-	}
+	defer listenTLS(iris.Default, host)()
 
 	e := httptest.New(iris.Default, t, httptest.ExplicitURL(true))
-
 	e.Request("GET", "https://"+host+"/redirect").Expect().Status(iris.StatusOK).Body().Equal(expectedBody)
 }
