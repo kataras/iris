@@ -1,25 +1,20 @@
 // Black-box Testing
 package iris_test
 
-/*
-This is the part we only care, these are end-to-end tests for the mux(router) and the server, the whole http file is made for these reasons only, so these tests are enough I think.
-
-CONTRIBUTE & DISCUSSION ABOUT TESTS TO: https://github.com/iris-contrib/tests
-*/
-
 import (
 	"fmt"
-	"io/ioutil"
-	"os"
-	"sync/atomic"
-	"testing"
-	"time"
-
 	"github.com/gavv/httpexpect"
 	"github.com/kataras/go-errors"
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/httptest"
 	"github.com/valyala/fasthttp"
+	"io/ioutil"
+	"math/rand"
+	"os"
+	"strconv"
+	"sync/atomic"
+	"testing"
+	"time"
 )
 
 const (
@@ -152,11 +147,22 @@ func TestParseAddr(t *testing.T) {
 	}
 }
 
+func getRandomNumber(min int, max int) int {
+	rand.Seed(time.Now().Unix())
+	return rand.Intn(max-min) + min
+}
+
+func getRandomPort() int {
+	min := 6666
+	max := 7777
+	return getRandomNumber(min, max)
+}
+
 // Contains the server test for multi running servers
 func TestMultiRunningServers_v1_PROXY(t *testing.T) {
 	defer iris.Close()
 	host := "localhost" // you have to add it to your hosts file( for windows, as 127.0.0.1 mydomain.com)
-	hostTLS := "localhost:9999"
+	hostTLS := host + ":" + strconv.Itoa(getRandomPort())
 	iris.Close()
 	defer iris.Close()
 	iris.ResetDefault()
@@ -194,13 +200,13 @@ func TestMultiRunningServers_v1_PROXY(t *testing.T) {
 	if ok := <-iris.Default.Available; !ok {
 		t.Fatal("Unexpected error: server cannot start, please report this as bug!!")
 	}
-
-	closeProxy := iris.Proxy("localhost:8080", "https://"+hostTLS)
+	proxyHost := host + ":" + strconv.Itoa(getRandomNumber(3333, 4444))
+	closeProxy := iris.Proxy(proxyHost, "https://"+hostTLS)
 	defer closeProxy()
 
 	e := httptest.New(iris.Default, t, httptest.ExplicitURL(true))
 
-	e.Request("GET", "http://"+host+":8080").Expect().Status(iris.StatusOK).Body().Equal("Hello from " + hostTLS)
+	e.Request("GET", "http://"+proxyHost).Expect().Status(iris.StatusOK).Body().Equal("Hello from " + hostTLS)
 	e.Request("GET", "https://"+hostTLS).Expect().Status(iris.StatusOK).Body().Equal("Hello from " + hostTLS)
 
 }
@@ -209,7 +215,9 @@ func TestMultiRunningServers_v1_PROXY(t *testing.T) {
 func TestMultiRunningServers_v2(t *testing.T) {
 	defer iris.Close()
 	domain := "localhost"
-	hostTLS := "localhost:9999"
+	hostTLS := domain + ":" + strconv.Itoa(getRandomPort())
+	srv1Host := domain + ":" + strconv.Itoa(getRandomNumber(4446, 5444))
+	srv2Host := domain + ":" + strconv.Itoa(getRandomNumber(7778, 8887))
 
 	iris.ResetDefault()
 	iris.Default.Config.DisableBanner = true
@@ -251,11 +259,11 @@ func TestMultiRunningServers_v2(t *testing.T) {
 	//go Go()
 
 	// using the proxy handler
-	fsrv1 := &fasthttp.Server{Handler: iris.ProxyHandler(domain+":8080", "https://"+hostTLS)}
-	go fsrv1.ListenAndServe(domain + ":8080")
+	fsrv1 := &fasthttp.Server{Handler: iris.ProxyHandler(srv1Host, "https://"+hostTLS)}
+	go fsrv1.ListenAndServe(srv1Host)
 	// using the same iris' handler but not as proxy, just the same handler
 	fsrv2 := &fasthttp.Server{Handler: iris.Default.Router}
-	go fsrv2.ListenAndServe(domain + ":8888")
+	go fsrv2.ListenAndServe(srv2Host)
 
 	go iris.ListenTLS(hostTLS, certFile.Name(), keyFile.Name())
 
@@ -265,8 +273,8 @@ func TestMultiRunningServers_v2(t *testing.T) {
 
 	e := httptest.New(iris.Default, t, httptest.ExplicitURL(true))
 
-	e.Request("GET", "http://"+domain+":8080").Expect().Status(iris.StatusOK).Body().Equal("Hello from " + hostTLS)
-	e.Request("GET", "http://localhost:8888").Expect().Status(iris.StatusOK).Body().Equal("Hello from " + hostTLS)
+	e.Request("GET", "http://"+srv1Host).Expect().Status(iris.StatusOK).Body().Equal("Hello from " + hostTLS)
+	e.Request("GET", "http://"+srv2Host).Expect().Status(iris.StatusOK).Body().Equal("Hello from " + hostTLS)
 	e.Request("GET", "https://"+hostTLS).Expect().Status(iris.StatusOK).Body().Equal("Hello from " + hostTLS)
 
 }
@@ -410,7 +418,7 @@ func TestMuxSimpleParty(t *testing.T) {
 		p.Get("/namedpath/:param1/something/:param2/else", h)
 	}
 
-	iris.Default.Config.VHost = "0.0.0.0:8080"
+	iris.Default.Config.VHost = "0.0.0.0:" + strconv.Itoa(getRandomPort())
 	// iris.Default.Config.Tester.Debug = true
 	// iris.Default.Config.Tester.ExplicitURL = true
 	e := httptest.New(iris.Default, t)
