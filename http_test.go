@@ -152,12 +152,6 @@ func getRandomNumber(min int, max int) int {
 	return rand.Intn(max-min) + min
 }
 
-func getRandomPort() int {
-	min := 6666
-	max := 7777
-	return getRandomNumber(min, max)
-}
-
 // works as
 // defer listenTLS(iris.Default, hostTLS)()
 func listenTLS(api *iris.Framework, hostTLS string) func() {
@@ -201,13 +195,13 @@ func TestMultiRunningServers_v1_PROXY(t *testing.T) {
 	iris.ResetDefault()
 
 	host := "localhost" // you have to add it to your hosts file( for windows, as 127.0.0.1 mydomain.com)
-	hostTLS := host + ":" + strconv.Itoa(getRandomPort())
+	hostTLS := host + ":" + strconv.Itoa(getRandomNumber(8886, 8889))
 
 	iris.Get("/", func(ctx *iris.Context) {
 		ctx.Write("Hello from %s", hostTLS)
 	})
 
-	proxyHost := host + ":" + strconv.Itoa(getRandomNumber(3333, 4444))
+	proxyHost := host + ":" + strconv.Itoa(getRandomNumber(3300, 3332))
 	closeProxy := iris.Proxy(proxyHost, "https://"+hostTLS)
 	defer closeProxy()
 
@@ -225,18 +219,13 @@ func TestMultiRunningServers_v2(t *testing.T) {
 	iris.ResetDefault()
 
 	domain := "localhost"
-	hostTLS := domain + ":" + strconv.Itoa(getRandomPort())
+	hostTLS := domain + ":" + strconv.Itoa(getRandomNumber(3333, 4444))
 	srv1Host := domain + ":" + strconv.Itoa(getRandomNumber(4446, 5444))
 	srv2Host := domain + ":" + strconv.Itoa(getRandomNumber(7778, 8887))
 
 	iris.Get("/", func(ctx *iris.Context) {
 		ctx.Write("Hello from %s", hostTLS)
 	})
-
-	// add a secondary server
-	//Servers.Add(ServerConfiguration{ListeningAddr: domain + ":80", RedirectTo: "https://" + host, Virtual: true})
-	// add our primary/main server
-	//Servers.Add(ServerConfiguration{ListeningAddr: host, CertFile: certFile.Name(), KeyFile: keyFile.Name(), Virtual: true})
 
 	// using the proxy handler
 	fsrv1 := &fasthttp.Server{Handler: iris.ProxyHandler(srv1Host, "https://"+hostTLS)}
@@ -394,7 +383,7 @@ func TestMuxSimpleParty(t *testing.T) {
 		p.Get("/namedpath/:param1/something/:param2/else", h)
 	}
 
-	iris.Default.Config.VHost = "0.0.0.0:" + strconv.Itoa(getRandomPort())
+	iris.Default.Config.VHost = "0.0.0.0:" + strconv.Itoa(getRandomNumber(2222, 2399))
 	// iris.Default.Config.Tester.Debug = true
 	// iris.Default.Config.Tester.ExplicitURL = true
 	e := httptest.New(iris.Default, t)

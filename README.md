@@ -29,7 +29,7 @@
 <a href="https://kataras.rocket.chat/channel/iris"><img src="https://img.shields.io/badge/%20community-chat-00BCD4.svg?style=flat-square" alt="Chat"></a><br/>
 <br/>
 
-<b>Iris</b> is a well-known web application framework written in Go.
+<b>Iris</b> is the fastest back-end web framework written in Go.
 <br/>
 <b>Easy</b> to <a href="https://docs.iris-go.com">learn</a>  while it's highly customizable,
 ideally suited for <br/> both experienced and novice developers.<br/><br/>
@@ -40,49 +40,52 @@ If you're coming from <a href="https://nodejs.org/en/">Node.js</a> world, this i
 <br/>
 
 <br/>
-</p>
-<p>
-<img width="535" align="left" src="https://github.com/iris-contrib/website/raw/gh-pages/assets/chtree.jpg" />
-
-&nbsp;&nbsp;This project started ~9 months ago<br/>
-&nbsp;&nbsp;and rapidly won your trust,<br/>
-&nbsp;&nbsp;I'm very thankful for this and<br/>
-&nbsp;&nbsp;I promise you that I'll continue to<br/>
-&nbsp;&nbsp;do my bests.<br/><br/>
-
-&nbsp;&nbsp;All people, poor or rich, should give<br/>
-&nbsp;&nbsp;and share with each others.
-<br/><br/>
-&nbsp;&nbsp;As a person who knows<br/>
-&nbsp;&nbsp;how someone feels when opens<br/>
-&nbsp;&nbsp;the fridge and finds nothing to eat, again,  <br/>
-&nbsp;&nbsp;I decided that all the <a href="https://github.com/kataras/iris/blob/master/DONATIONS.md">money you<br/>
-&nbsp;&nbsp;donated so far[<i>424 EUR</i>]</a>,<br/>
-&nbsp;&nbsp;and until the end of this month,<br/>
-&nbsp;&nbsp;<b>should go back to the people<br/>
-&nbsp;&nbsp;who need them most.</b><br/>
-&nbsp;&nbsp;Is not enough but...
-
-
-
-<br/>
-<br/>
-
-&nbsp;&nbsp;CHRISTMAS IS MOST TRULY<br/>
-&nbsp;&nbsp;CHRISTMAS WHEN WE<br/>
-&nbsp;&nbsp;CELEBRATE IT BY GIVING THE<br/>
-&nbsp;&nbsp;LIGHT OF LOVE TO THOSE<br/>
-&nbsp;&nbsp;WHO NEED IT MOST.
-<br/><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;~ Ruth Carter Stapleton
-
-<br/>
-<br/>
-<br/>
+<img src="https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png" alt="Benchmark Wizzard July 21, 2016- Processing Time Horizontal Graph" />
 </p>
 
 
 
+Feature Overview
+-----------
+
+- Focus on high performance
+- Automatically install and serve certificates from https://letsencrypt.org
+- Robust routing and middleware ecosystem
+- Build RESTful APIs
+- Group API's and subdomains with wildcard support
+- Body binding for JSON, XML, Forms, can be extended to use your own custom binders
+- More than 50 handy functions to send HTTP responses
+- View system: supporting more than 6+ template engines, with prerenders. You can still use your favorite
+- Define virtual hosts and (wildcard) subdomains with path level routing
+- Graceful shutdown
+- Limit request body
+- Localization i18N
+- Serve static files
+- Cache
+- Log requests
+- Customizable format and output for the logger
+- Customizable HTTP errors
+- Compression (Gzip)
+- Authentication
+ - OAuth, OAuth2 supporting 27+ popular websites
+ - JWT
+ - Basic Authentication
+ - HTTP Sessions
+- Add / Remove trailing slash from the URL with option to redirect
+- Redirect requests
+ - HTTP to HTTPS
+ - HTTP to HTTPS WWW
+ - HTTP to HTTPS non WWW
+ - Non WWW to WWW
+ - WWW to non WWW
+- Highly scalable rich content render (Markdown, JSON, JSONP, XML...)
+- Websocket-only API similar to socket.io  
+- Hot Reload on source code changes
+- Typescript integration + Web IDE
+- Checks for updates at startup
+- Highly customizable
+- Feels like you used iris forever, thanks to its Fluent API
+- And many others...
 
 Quick Start
 -----------
@@ -133,6 +136,49 @@ $ go run hellojson.go
 ```
 
 Open your browser or any other http client at http://localhost:5700/api/user/42.
+
+### Merry Christmas!
+
+<p>
+
+<img width="535" align="left" src="https://github.com/iris-contrib/website/raw/gh-pages/assets/chtree.jpg" />
+
+&nbsp;&nbsp;This project started ~9 months ago<br/>
+&nbsp;&nbsp;and rapidly won your trust,<br/>
+&nbsp;&nbsp;I'm very thankful for this and<br/>
+&nbsp;&nbsp;I promise you that I'll continue to<br/>
+&nbsp;&nbsp;do my bests.<br/><br/>
+
+&nbsp;&nbsp;All people, poor or rich, should give<br/>
+&nbsp;&nbsp;and share with each others.
+<br/><br/>
+&nbsp;&nbsp;As a person who knows<br/>
+&nbsp;&nbsp;how someone feels when opens<br/>
+&nbsp;&nbsp;the fridge and finds nothing to eat, again,  <br/>
+&nbsp;&nbsp;I decided that all the <a href="https://github.com/kataras/iris/blob/master/DONATIONS.md">money you<br/>
+&nbsp;&nbsp;donated so far[<i>424 EUR</i>]</a>,<br/>
+&nbsp;&nbsp;and until the end of this month,<br/>
+&nbsp;&nbsp;<b>should go back to the people<br/>
+&nbsp;&nbsp;who need them most.</b><br/>
+&nbsp;&nbsp;Is not enough but...
+
+
+
+<br/>
+<br/>
+
+&nbsp;&nbsp;CHRISTMAS IS MOST TRULY<br/>
+&nbsp;&nbsp;CHRISTMAS WHEN WE<br/>
+&nbsp;&nbsp;CELEBRATE IT BY GIVING THE<br/>
+&nbsp;&nbsp;LIGHT OF LOVE TO THOSE<br/>
+&nbsp;&nbsp;WHO NEED IT MOST.
+<br/><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;~ Ruth Carter Stapleton
+
+<br/>
+<br/>
+<br/>
+</p>
 
 ### New
 
