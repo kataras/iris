@@ -1121,6 +1121,117 @@ func (ctx *Context) MaxAge() int64 {
 	return -1
 }
 
+// RequestTransactionScope is the request transaction scope of a handler's context
+// Can't say a lot here because I it will take more than 200 lines to write about.
+// You can search third-party articles or books on how Business Transaction works (it's quite simple, especialy here).
+// But I can provide you a simple example here: https://github.com/iris-contrib/examples/tree/master/request_transactions
+//
+// Note that this is unique and new
+// (=I haver never seen any other examples or code in Golang on this subject, so far, as with the most of iris features...)
+// it's not covers all paths,
+// such as databases, this should be managed by the libraries you use to make your database connection,
+// this transaction scope is only for iris' request/response(Context).
+type RequestTransactionScope struct {
+	Context *Context
+}
+
+// ErrWithStatus custom error type which is useful
+// to send an error containing the http status code and a reason
+type ErrWithStatus struct {
+	// failure status code, required
+	statusCode int
+	// plain text message, optional
+	message string // if it's empty then the already registered custom(or default) http error will be fired.
+}
+
+// Status sets the http status code of this error
+func (err *ErrWithStatus) Status(statusCode int) *ErrWithStatus {
+	err.statusCode = statusCode
+	return err
+}
+
+// Reason sets the reason message of this error
+func (err *ErrWithStatus) Reason(msg string) *ErrWithStatus {
+	err.message = msg
+	return err
+}
+
+// AppendReason just appends a reason message
+func (err *ErrWithStatus) AppendReason(msg string) *ErrWithStatus {
+	err.message += "\n" + msg
+	return err
+}
+
+// Error implements the error standard
+func (err ErrWithStatus) Error() string {
+	return err.message
+}
+
+// NewErrWithStatus returns an new custom error type which should be used
+// side by side with Transaction(s)
+func NewErrWithStatus() *ErrWithStatus {
+	return new(ErrWithStatus)
+}
+
+// Complete completes the transaction
+// - if the error is not nil then the response
+//   is resetting and sends an error to the client.
+// - if the error is nil then the response sent as expected.
+//
+// The error can be a type of ErrWithStatus, create using the iris.NewErrWithStatus().
+func (r *RequestTransactionScope) Complete(err error) {
+	if err != nil && err.Error() != "" {
+		ctx := r.Context
+		// reset any previous response,
+		// except the content type we may use it to fire an error or take that from custom error type (?)
+		// no let's keep the custom error type as simple as possible, take that from prev attempt:
+		cType := string(ctx.Response.Header.ContentType())
+		if cType == "" {
+			cType = "text/plain; charset=" + ctx.framework.Config.Charset
+		}
+
+		// clears:
+		// - body
+		// - cookies
+		// - any headers
+		// and anything else we tried to sent before.
+		ctx.Response.Reset()
+
+		statusCode := StatusInternalServerError // default http status code if not provided
+		reason := err.Error()
+		shouldFireCustom := false
+		if errWstatus, ok := err.(*ErrWithStatus); ok {
+			statusCode = errWstatus.statusCode
+			if reason == "" { // if we have custom error type with a given status but empty reason then fire from custom http error (or default)
+				shouldFireCustom = true
+			}
+		}
+		if shouldFireCustom {
+			// if it's not our custom type of error nor an error with a non empty reason then we fire a default
+			// or custom (EmitError) using the 500 internal server error
+			ctx.EmitError(StatusInternalServerError)
+			return
+		}
+		// fire from the error or the custom error type
+		ctx.SetStatusCode(statusCode)
+		ctx.SetContentType(cType)
+		ctx.SetBodyString(reason)
+		return
+	}
+
+}
+
+// BeginTransaction starts a request scoped transaction.
+//
+// See more here: https://github.com/iris-contrib/examples/tree/master/request_transactions
+func (ctx *Context) BeginTransaction(pipe func(scope *RequestTransactionScope)) {
+	// not the best way but this should be do the job if we want multiple transaction in the same handler and context.
+	tempCtx := *ctx // clone the temp context
+	scope := &RequestTransactionScope{Context: &tempCtx}
+	pipe(scope)           // run the context inside its scope
+	*ctx = *scope.Context // copy back the context
+}
+
 // Log logs to the iris defined logger
 func (ctx *Context) Log(format string, a ...interface{}) {
 	ctx.framework.Logger.Printf(format, a...)

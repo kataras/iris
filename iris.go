@@ -80,7 +80,7 @@ const (
 	// IsLongTermSupport flag is true when the below version number is a long-term-support version
 	IsLongTermSupport = false
 	// Version is the current version number of the Iris web framework
-	Version = "5.0.4"
+	Version = "5.1.0"
 
 	banner = `         _____      _
         |_   _|    (_)

@@ -20,7 +20,7 @@
 <br/>
 
 
-<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20version%20-%205.0.4%20-blue.svg?style=flat-square" alt="Releases"></a>
+<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20version%20-%205.1.0%20-blue.svg?style=flat-square" alt="Releases"></a>
 
 <a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/%20examples-repository-3362c2.svg?style=flat-square" alt="Examples"></a>
 
@@ -52,6 +52,7 @@ Feature Overview
 - Automatically install and serve certificates from https://letsencrypt.org
 - Robust routing and middleware ecosystem
 - Build RESTful APIs
+- Request-Scoped Transactions
 - Group API's and subdomains with wildcard support
 - Body binding for JSON, XML, Forms, can be extended to use your own custom binders
 - More than 50 handy functions to send HTTP responses
@@ -919,7 +920,7 @@ I recommend writing your API tests using this new library, [httpexpect](https://
 Versioning
 ------------
 
-Current: **v5.0.4**
+Current: **v5.1.0**
 
 Stable: **[v4 LTS](https://github.com/kataras/iris/tree/4.0.0#versioning)**
 
@@ -928,7 +929,7 @@ Todo
 ------------
 
 - [ ] Server-side React render, as requested [here](https://github.com/kataras/iris/issues/503)
-
+- [+] [NEW: Request-Scoped Transactions](https://github.com/iris-contrib/examples/tree/master/request_transactions)
 Iris is a **Community-Driven** Project, waiting for your suggestions and [feature requests](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=label%3A%22feature%20request%22)!
 
 People

@@ -2,6 +2,10 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 5.0.4 -> 5.1.0
+
+- **NEW (UNIQUE?) FEATURE**: Request-scoped transactions inside handler's context. Proof-of-concept example [here](https://github.com/iris-contrib/examples/tree/master/request_transactions).
+
 ## 5.0.3 -> 5.0.4
 
 
