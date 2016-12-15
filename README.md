@@ -929,7 +929,9 @@ Todo
 ------------
 
 - [ ] Server-side React render, as requested [here](https://github.com/kataras/iris/issues/503)
-- [+] [NEW: Request-Scoped Transactions](https://github.com/iris-contrib/examples/tree/master/request_transactions)
+- [x] [v5.1.0: Request-Scoped Transactions](https://github.com/iris-contrib/examples/tree/master/request_transactions), simple and elegant.
+
+
 Iris is a **Community-Driven** Project, waiting for your suggestions and [feature requests](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=label%3A%22feature%20request%22)!
 
 People
