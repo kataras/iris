@@ -20,7 +20,7 @@
 <br/>
 
 
-<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20version%20-%205.1.0%20-blue.svg?style=flat-square" alt="Releases"></a>
+<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20version%20-%205.1.1%20-blue.svg?style=flat-square" alt="Releases"></a>
 
 <a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/%20examples-repository-3362c2.svg?style=flat-square" alt="Examples"></a>
 
@@ -920,7 +920,7 @@ I recommend writing your API tests using this new library, [httpexpect](https://
 Versioning
 ------------
 
-Current: **v5.1.0**
+Current: **v5.1.1**
 
 Stable: **[v4 LTS](https://github.com/kataras/iris/tree/4.0.0#versioning)**
 
@@ -929,7 +929,7 @@ Todo
 ------------
 
 - [ ] Server-side React render, as requested [here](https://github.com/kataras/iris/issues/503)
-- [x] [v5.1.0: Request-Scoped Transactions](https://github.com/iris-contrib/examples/tree/master/request_transactions), simple and elegant.
+- [x] [v5.1.0: (Request) Scoped Transactions](https://github.com/iris-contrib/examples/tree/master/transactions), simple and elegant.
 
 
 Iris is a **Community-Driven** Project, waiting for your suggestions and [feature requests](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=label%3A%22feature%20request%22)!

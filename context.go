@@ -1121,20 +1121,6 @@ func (ctx *Context) MaxAge() int64 {
 	return -1
 }
 
-// RequestTransactionScope is the request transaction scope of a handler's context
-// Can't say a lot here because I it will take more than 200 lines to write about.
-// You can search third-party articles or books on how Business Transaction works (it's quite simple, especialy here).
-// But I can provide you a simple example here: https://github.com/iris-contrib/examples/tree/master/request_transactions
-//
-// Note that this is unique and new
-// (=I haver never seen any other examples or code in Golang on this subject, so far, as with the most of iris features...)
-// it's not covers all paths,
-// such as databases, this should be managed by the libraries you use to make your database connection,
-// this transaction scope is only for iris' request/response(Context).
-type RequestTransactionScope struct {
-	Context *Context
-}
-
 // ErrWithStatus custom error type which is useful
 // to send an error containing the http status code and a reason
 type ErrWithStatus struct {
@@ -1145,6 +1131,8 @@ type ErrWithStatus struct {
 }
 
 // Status sets the http status code of this error
+// if only status exists but no reason then
+// custom http error of this staus (if any) will be fired (context.EmitError)
 func (err *ErrWithStatus) Status(statusCode int) *ErrWithStatus {
 	err.statusCode = statusCode
 	return err
@@ -1173,15 +1161,77 @@ func NewErrWithStatus() *ErrWithStatus {
 	return new(ErrWithStatus)
 }
 
+// TransactionValidator used to register global transaction pre-validators
+type TransactionValidator interface {
+	// ValidateTransaction pre-validates transactions
+	// transaction fails if this returns an error or it's Complete has a non empty error
+	ValidateTransaction(*TransactionScope) error
+}
+
+// TransactionScope is the (request) transaction scope of a handler's context
+// Can't say a lot here because I it will take more than 200 lines to write about.
+// You can search third-party articles or books on how Business Transaction works (it's quite simple, especialy here).
+// But I can provide you a simple example here: https://github.com/iris-contrib/examples/tree/master/transactions
+//
+// Note that this is unique and new
+// (=I haver never seen any other examples or code in Golang on this subject, so far, as with the most of iris features...)
+// it's not covers all paths,
+// such as databases, this should be managed by the libraries you use to make your database connection,
+// this transaction scope is only for iris' request & response(Context).
+type TransactionScope struct {
+	Context         *Context
+	isRequestScoped bool
+	isFailure       bool
+}
+
+// RequestScoped receives a boolean which determinates if other transactions depends on this.
+// If setted true then whenever this transaction is not completed succesfuly,
+// the rest of the transactions will be not executed at all.
+//
+// Defaults to false, execute all transactions on their own independently scopes.
+func (r *TransactionScope) RequestScoped(isRequestScoped bool) {
+	r.isRequestScoped = isRequestScoped
+}
+
 // Complete completes the transaction
-// - if the error is not nil then the response
-//   is resetting and sends an error to the client.
-// - if the error is nil then the response sent as expected.
+// rollback and send an error when:
+// 1. a not nil error AND non-empty reason AND custom type error has status code
+// 2. a not nil error AND empty reason BUT custom type error has status code
+// 3. a not nil error AND non-empty reason.
 //
 // The error can be a type of ErrWithStatus, create using the iris.NewErrWithStatus().
-func (r *RequestTransactionScope) Complete(err error) {
-	if err != nil && err.Error() != "" {
+func (r *TransactionScope) Complete(err error) {
+	if err != nil {
+
 		ctx := r.Context
+		statusCode := StatusInternalServerError // default http status code if not provided
+		reason := err.Error()
+
+		if errWstatus, ok := err.(*ErrWithStatus); ok {
+			if errWstatus.statusCode > 0 {
+				// get the status code from the custom error type
+				statusCode = errWstatus.statusCode
+
+				// empty error message but status code given,
+				if reason == "" {
+					r.isFailure = true
+					// reset everything, cookies and headers and body.
+					ctx.Response.Reset()
+					// execute from custom (if any) http error (template or plain text)
+					ctx.EmitError(errWstatus.statusCode)
+					return
+				}
+			}
+		} else if reason == "" {
+			// do nothing empty reason and no status code means that this is not a failure, even if the error is not nil.
+			return
+		}
+
+		// rollback and send an error when we have:
+		// 1. a not nil error AND non-empty reason AND custom type error has status code
+		// 2. a not nil error AND empty reason BUT custom type error has status code
+		// 3. a not nil error AND non-empty reason.
+
 		// reset any previous response,
 		// except the content type we may use it to fire an error or take that from custom error type (?)
 		// no let's keep the custom error type as simple as possible, take that from prev attempt:
@@ -1197,39 +1247,53 @@ func (r *RequestTransactionScope) Complete(err error) {
 		// and anything else we tried to sent before.
 		ctx.Response.Reset()
 
-		statusCode := StatusInternalServerError // default http status code if not provided
-		reason := err.Error()
-		shouldFireCustom := false
-		if errWstatus, ok := err.(*ErrWithStatus); ok {
-			statusCode = errWstatus.statusCode
-			if reason == "" { // if we have custom error type with a given status but empty reason then fire from custom http error (or default)
-				shouldFireCustom = true
-			}
-		}
-		if shouldFireCustom {
-			// if it's not our custom type of error nor an error with a non empty reason then we fire a default
-			// or custom (EmitError) using the 500 internal server error
-			ctx.EmitError(StatusInternalServerError)
-			return
-		}
 		// fire from the error or the custom error type
 		ctx.SetStatusCode(statusCode)
 		ctx.SetContentType(cType)
 		ctx.SetBodyString(reason)
+		r.isFailure = true
 		return
 	}
 
 }
 
+// skipTransactionsContextKey set this to any value to stop executing next transactions
+// it's a context-key in order to be used from anywhere, set it by calling the SkipTransactions()
+const skipTransactionsContextKey = "@@IRIS_TRANSACTIONS_SKIP_@@"
+
+// SkipTransactions if called then skip the rest of the transactions
+// or all of them if called before the first transaction
+func (ctx *Context) SkipTransactions() {
+	ctx.Set(skipTransactionsContextKey, 1)
+}
+
+// TransactionsSkipped returns true if the transactions skipped or canceled at all.
+func (ctx *Context) TransactionsSkipped() bool {
+	if n, err := ctx.GetInt(skipTransactionsContextKey); err == nil && n == 1 {
+		return true
+	}
+	return false
+}
+
 // BeginTransaction starts a request scoped transaction.
 //
-// See more here: https://github.com/iris-contrib/examples/tree/master/request_transactions
-func (ctx *Context) BeginTransaction(pipe func(scope *RequestTransactionScope)) {
+// See more here: https://github.com/iris-contrib/examples/tree/master/transactions
+func (ctx *Context) BeginTransaction(pipe func(scope *TransactionScope)) {
+	// do NOT begin a transaction when the previous transaction has been failed
+	// and it was requested scoped or SkipTransactions called manually
+	if ctx.TransactionsSkipped() {
+		return
+	}
 	// not the best way but this should be do the job if we want multiple transaction in the same handler and context.
 	tempCtx := *ctx // clone the temp context
-	scope := &RequestTransactionScope{Context: &tempCtx}
+	scope := &TransactionScope{Context: &tempCtx}
 	pipe(scope)           // run the context inside its scope
 	*ctx = *scope.Context // copy back the context
+
+	if scope.isRequestScoped && scope.isFailure {
+		ctx.SkipTransactions()
+	}
+
 }
 
 // Log logs to the iris defined logger

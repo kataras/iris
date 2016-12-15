@@ -781,15 +781,17 @@ func TestTemplatesDisabled(t *testing.T) {
 	e.GET("/renderErr").Expect().Status(iris.StatusServiceUnavailable).Body().Equal(expctedErrMsg)
 }
 
-func TestRequestTransactions(t *testing.T) {
+func TestTransactions(t *testing.T) {
 	iris.ResetDefault()
 	firstTransictionFailureMessage := "Error: Virtual failure!!!"
 	secondTransictionSuccessHTMLMessage := "<h1>This will sent at all cases because it lives on different transaction and it doesn't fails</h1>"
 	persistMessage := "<h1>I persist show this message to the client!</h1>"
-	expectedTestMessage := firstTransictionFailureMessage + secondTransictionSuccessHTMLMessage + persistMessage
 
-	iris.Get("/failFirsTransactionButSuccessSecond", func(ctx *iris.Context) {
-		ctx.BeginTransaction(func(scope *iris.RequestTransactionScope) {
+	maybeFailureTransaction := func(shouldFail bool, isRequestScoped bool) func(scope *iris.TransactionScope) {
+		return func(scope *iris.TransactionScope) {
+			// OPTIONAl, if true then the next transictions will not be executed if this transiction fails
+			scope.RequestScoped(isRequestScoped)
+
 			// OPTIONAL STEP:
 			// create a new custom type of error here to keep track of the status code and reason message
 			err := iris.NewErrWithStatus()
@@ -808,8 +810,7 @@ func TestRequestTransactions(t *testing.T) {
 			//	}
 			// or err.AppendReason(firstErr.Error()) // ... err.Reason(dbErr.Error()).Status(500)
 
-			// virtualize a fake error for the proof of concept
-			fail := true
+			fail := shouldFail
 
 			if fail {
 				err.Status(iris.StatusInternalServerError).
@@ -822,25 +823,56 @@ func TestRequestTransactions(t *testing.T) {
 			// if the reason is empty then the transaction completed succesfuly,
 			// otherwise we rollback the whole response body and cookies and everything lives inside the scope.Request.
 			scope.Complete(err)
-		})
+		}
+	}
 
-		ctx.BeginTransaction(func(scope *iris.RequestTransactionScope) {
-			scope.Context.HTML(iris.StatusOK,
-				secondTransictionSuccessHTMLMessage)
-			// * if we don't have any 'throw error' logic then no need of scope.Complete()
-		})
+	successTransaction := func(scope *iris.TransactionScope) {
+		scope.Context.HTML(iris.StatusOK,
+			secondTransictionSuccessHTMLMessage)
+		// * if we don't have any 'throw error' logic then no need of scope.Complete()
+	}
 
+	persistMessageHandler := func(ctx *iris.Context) {
 		// OPTIONAL, depends on the usage:
 		// at any case, what ever happens inside the context's transactions send this to the client
 		ctx.HTML(iris.StatusOK, persistMessage)
+	}
+
+	iris.Get("/failFirsTransactionButSuccessSecondWithPersistMessage", func(ctx *iris.Context) {
+		ctx.BeginTransaction(maybeFailureTransaction(true, false))
+		ctx.BeginTransaction(successTransaction)
+		persistMessageHandler(ctx)
+	})
+
+	iris.Get("/failFirsTransactionButSuccessSecond", func(ctx *iris.Context) {
+		ctx.BeginTransaction(maybeFailureTransaction(true, false))
+		ctx.BeginTransaction(successTransaction)
+	})
+
+	iris.Get("/failAllBecauseOfRequestScopeAndFailure", func(ctx *iris.Context) {
+		ctx.BeginTransaction(maybeFailureTransaction(true, true))
+		ctx.BeginTransaction(successTransaction)
 	})
 
 	e := httptest.New(iris.Default, t)
+
+	e.GET("/failFirsTransactionButSuccessSecondWithPersistMessage").
+		Expect().
+		Status(iris.StatusOK).
+		ContentType("text/html", iris.Config.Charset).
+		Body().
+		Equal(firstTransictionFailureMessage + secondTransictionSuccessHTMLMessage + persistMessage)
 
 	e.GET("/failFirsTransactionButSuccessSecond").
 		Expect().
 		Status(iris.StatusOK).
 		ContentType("text/html", iris.Config.Charset).
 		Body().
-		Equal(expectedTestMessage)
+		Equal(firstTransictionFailureMessage + secondTransictionSuccessHTMLMessage)
+
+	e.GET("/failAllBecauseOfRequestScopeAndFailure").
+		Expect().
+		Status(iris.StatusInternalServerError).
+		Body().
+		Equal(firstTransictionFailureMessage)
 }

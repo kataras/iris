@@ -2,9 +2,16 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 5.1.0 -> 5.1.1
+Two hours after the previous update,
+
+- **More on Transactions**: By-default transaction's lifetime is 'per-call/transient' meaning that each transaction has its own scope on the context, rollbacks when `scope.Complete(notNilAndNotEmptyError)` and the rest of transictions in chain are executed as expected, from now and on you have the ability to `skip the rest of the next transictions on first failure` by simply call `scope.RequestScoped(true)`.
+
+Note: `RequestTransactionScope` renamed to ,simply, `TransactionScope`.
+
 ## 5.0.4 -> 5.1.0
 
-- **NEW (UNIQUE?) FEATURE**: Request-scoped transactions inside handler's context. Proof-of-concept example [here](https://github.com/iris-contrib/examples/tree/master/request_transactions).
+- **NEW (UNIQUE?) FEATURE**: Request-scoped transactions inside handler's context. Proof-of-concept example [here](https://github.com/iris-contrib/examples/tree/master/transactions).
 
 ## 5.0.3 -> 5.0.4
 
