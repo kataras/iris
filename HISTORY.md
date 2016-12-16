@@ -2,10 +2,14 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 5.1.1 -> 5.1.2
+
+- **More on Transactions vol 2**: Added **iris.UseTransaction** and **iris.DoneTransaction** to register transactions as you register middleware(handlers). new named type **iris.TransactionFunc**, shortcut of `func(scope *iris.TransactionScope)`, that gives you a function which you can convert a transaction to a normal handler/middleware using its `.ToMiddleware()`, for more see the `test code inside context_test.go:TestTransactionsMiddleware`.
+
 ## 5.1.0 -> 5.1.1
 Two hours after the previous update,
 
-- **More on Transactions**: By-default transaction's lifetime is 'per-call/transient' meaning that each transaction has its own scope on the context, rollbacks when `scope.Complete(notNilAndNotEmptyError)` and the rest of transictions in chain are executed as expected, from now and on you have the ability to `skip the rest of the next transictions on first failure` by simply call `scope.RequestScoped(true)`.
+- **More on Transactions**: By-default transaction's lifetime is 'per-call/transient' meaning that each transaction has its own scope on the context, rollbacks when `scope.Complete(notNilAndNotEmptyError)` and the rest of transactions in chain are executed as expected, from now and on you have the ability to `skip the rest of the next transactions on first failure` by simply call `scope.RequestScoped(true)`.
 
 Note: `RequestTransactionScope` renamed to ,simply, `TransactionScope`.
 

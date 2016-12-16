@@ -783,13 +783,13 @@ func TestTemplatesDisabled(t *testing.T) {
 
 func TestTransactions(t *testing.T) {
 	iris.ResetDefault()
-	firstTransictionFailureMessage := "Error: Virtual failure!!!"
-	secondTransictionSuccessHTMLMessage := "<h1>This will sent at all cases because it lives on different transaction and it doesn't fails</h1>"
+	firstTransactionFailureMessage := "Error: Virtual failure!!!"
+	secondTransactionSuccessHTMLMessage := "<h1>This will sent at all cases because it lives on different transaction and it doesn't fails</h1>"
 	persistMessage := "<h1>I persist show this message to the client!</h1>"
 
 	maybeFailureTransaction := func(shouldFail bool, isRequestScoped bool) func(scope *iris.TransactionScope) {
 		return func(scope *iris.TransactionScope) {
-			// OPTIONAl, if true then the next transictions will not be executed if this transiction fails
+			// OPTIONAl, if true then the next transactions will not be executed if this transaction fails
 			scope.RequestScoped(isRequestScoped)
 
 			// OPTIONAL STEP:
@@ -815,7 +815,7 @@ func TestTransactions(t *testing.T) {
 			if fail {
 				err.Status(iris.StatusInternalServerError).
 					// if status given but no reason then the default or the custom http error will be fired (like ctx.EmitError)
-					Reason(firstTransictionFailureMessage)
+					Reason(firstTransactionFailureMessage)
 			}
 
 			// OPTIONAl STEP:
@@ -828,7 +828,7 @@ func TestTransactions(t *testing.T) {
 
 	successTransaction := func(scope *iris.TransactionScope) {
 		scope.Context.HTML(iris.StatusOK,
-			secondTransictionSuccessHTMLMessage)
+			secondTransactionSuccessHTMLMessage)
 		// * if we don't have any 'throw error' logic then no need of scope.Complete()
 	}
 
@@ -861,18 +861,116 @@ func TestTransactions(t *testing.T) {
 		Status(iris.StatusOK).
 		ContentType("text/html", iris.Config.Charset).
 		Body().
-		Equal(firstTransictionFailureMessage + secondTransictionSuccessHTMLMessage + persistMessage)
+		Equal(firstTransactionFailureMessage + secondTransactionSuccessHTMLMessage + persistMessage)
 
 	e.GET("/failFirsTransactionButSuccessSecond").
 		Expect().
 		Status(iris.StatusOK).
 		ContentType("text/html", iris.Config.Charset).
 		Body().
-		Equal(firstTransictionFailureMessage + secondTransictionSuccessHTMLMessage)
+		Equal(firstTransactionFailureMessage + secondTransactionSuccessHTMLMessage)
 
 	e.GET("/failAllBecauseOfRequestScopeAndFailure").
 		Expect().
 		Status(iris.StatusInternalServerError).
 		Body().
-		Equal(firstTransictionFailureMessage)
+		Equal(firstTransactionFailureMessage)
+}
+
+func TestTransactionsMiddleware(t *testing.T) {
+	forbiddenMsg := "Error: Not allowed."
+	allowMsg := "Hello!"
+
+	transaction := iris.TransactionFunc(func(scope *iris.TransactionScope) {
+		// must set that to true when we want to bypass the whole handler if this transaction fails.
+		scope.RequestScoped(true)
+		// optional but useful when we want a specific reason message
+		// without register global custom http errors to a status (using iris.OnError)
+		err := iris.NewErrWithStatus()
+		// the difference from ctx.BeginTransaction is that
+		// if that fails it not only skips all transactions but all next handler(s) too
+		// here we use this middleware AFTER a handler, so all handlers are executed before that but
+		// this will fail because this is the difference from normal handler, it resets the whole response if Complete(notEmptyError)
+		if scope.Context.GetString("username") != "iris" {
+			err.Status(iris.StatusForbidden).Reason(forbiddenMsg)
+		}
+
+		scope.Complete(err)
+	})
+
+	failHandlerFunc := func(ctx *iris.Context) {
+		ctx.Set("username", "wrong")
+		ctx.Write("This should not be sent to the client.")
+
+		ctx.Next() // in order to execute the next handler, which is a wrapper of transaction
+	}
+
+	successHandlerFunc := func(ctx *iris.Context) {
+		ctx.Set("username", "iris")
+		ctx.Write("Hello!")
+
+		ctx.Next()
+	}
+
+	// per route after transaction(middleware)
+	api := iris.New()
+	api.Get("/transaction_after_route_middleware_fail_because_of_request_scope_fails", failHandlerFunc, transaction.ToMiddleware()) // after per route
+
+	api.Get("/transaction_after_route_middleware_success_so_response_should_be_sent_to_the_client", successHandlerFunc, transaction.ToMiddleware()) // after per route
+
+	e := httptest.New(api, t)
+	e.GET("/transaction_after_route_middleware_fail_because_of_request_scope_fails").
+		Expect().
+		Status(iris.StatusForbidden).
+		Body().
+		Equal(forbiddenMsg)
+
+	e.GET("/transaction_after_route_middleware_success_so_response_should_be_sent_to_the_client").
+		Expect().
+		Status(iris.StatusOK).
+		Body().
+		Equal(allowMsg)
+
+		// global, after all route's handlers
+	api = iris.New()
+
+	api.DoneTransaction(transaction)
+	api.Get("/failed_because_of_done_transaction", failHandlerFunc)
+
+	api.Get("/succeed_because_of_done_transaction", successHandlerFunc)
+
+	e = httptest.New(api, t)
+	e.GET("/failed_because_of_done_transaction").
+		Expect().
+		Status(iris.StatusForbidden).
+		Body().
+		Equal(forbiddenMsg)
+
+	e.GET("/succeed_because_of_done_transaction").
+		Expect().
+		Status(iris.StatusOK).
+		Body().
+		Equal(allowMsg)
+
+	// global, before all route's handlers transaction, this is not so useful so these transaction will be succesfuly and just adds a message
+	api = iris.New()
+	transactionHTMLResponse := "<b>Transaction here</b>"
+	expectedResponse := transactionHTMLResponse + allowMsg
+	api.UseTransaction(func(scope *iris.TransactionScope) {
+		scope.Context.HTML(iris.StatusOK, transactionHTMLResponse)
+		// scope.Context.Next() is automatically called on UseTransaction
+	})
+
+	api.Get("/route1", func(ctx *iris.Context) {
+		ctx.Write(allowMsg)
+	})
+
+	e = httptest.New(api, t)
+	e.GET("/route1").
+		Expect().
+		Status(iris.StatusOK).
+		ContentType("text/html", api.Config.Charset).
+		Body().
+		Equal(expectedResponse)
+
 }

@@ -80,7 +80,7 @@ const (
 	// IsLongTermSupport flag is true when the below version number is a long-term-support version
 	IsLongTermSupport = false
 	// Version is the current version number of the Iris web framework
-	Version = "5.1.1"
+	Version = "5.1.2"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -1152,12 +1152,15 @@ type (
 	MuxAPI interface {
 		Party(string, ...HandlerFunc) MuxAPI
 		// middleware serial, appending
-		Use(...Handler)
-		UseFunc(...HandlerFunc)
+		Use(...Handler) MuxAPI
+		UseFunc(...HandlerFunc) MuxAPI
 		// returns itself, because at the most-cases used like .Layout, at the first-line party's declaration
 		Done(...Handler) MuxAPI
 		DoneFunc(...HandlerFunc) MuxAPI
-		//
+
+		// transactions
+		UseTransaction(...TransactionFunc) MuxAPI
+		DoneTransaction(...TransactionFunc) MuxAPI
 
 		// main handlers
 		Handle(string, string, ...Handler) RouteNameFunc
@@ -1236,13 +1239,13 @@ func (api *muxAPI) Party(relativePath string, handlersFn ...HandlerFunc) MuxAPI 
 }
 
 // Use registers Handler middleware
-func Use(handlers ...Handler) {
-	Default.Use(handlers...)
+func Use(handlers ...Handler) MuxAPI {
+	return Default.Use(handlers...)
 }
 
 // UseFunc registers HandlerFunc middleware
-func UseFunc(handlersFn ...HandlerFunc) {
-	Default.UseFunc(handlersFn...)
+func UseFunc(handlersFn ...HandlerFunc) MuxAPI {
+	return Default.UseFunc(handlersFn...)
 }
 
 // Done registers Handler 'middleware' the only difference from .Use is that it
@@ -1262,13 +1265,16 @@ func DoneFunc(handlersFn ...HandlerFunc) MuxAPI {
 }
 
 // Use registers Handler middleware
-func (api *muxAPI) Use(handlers ...Handler) {
+// returns itself
+func (api *muxAPI) Use(handlers ...Handler) MuxAPI {
 	api.middleware = append(api.middleware, handlers...)
+	return api
 }
 
 // UseFunc registers HandlerFunc middleware
-func (api *muxAPI) UseFunc(handlersFn ...HandlerFunc) {
-	api.Use(convertToHandlers(handlersFn)...)
+// returns itself
+func (api *muxAPI) UseFunc(handlersFn ...HandlerFunc) MuxAPI {
+	return api.Use(convertToHandlers(handlersFn)...)
 }
 
 // Done registers Handler 'middleware' the only difference from .Use is that it
@@ -1294,6 +1300,60 @@ func (api *muxAPI) Done(handlers ...Handler) MuxAPI {
 // returns itself
 func (api *muxAPI) DoneFunc(handlersFn ...HandlerFunc) MuxAPI {
 	return api.Done(convertToHandlers(handlersFn)...)
+}
+
+// UseTransaction adds transaction(s) middleware
+// the difference from manually adding them to the ctx.BeginTransaction
+// is that if a transaction is requested scope and is failed then the (next) handler is not executed.
+//
+// Returns itself.
+//
+// See https://github.com/iris-contrib/examples/tree/master/transactions to manually add transactions
+// and https://github.com/kataras/iris/blob/master/context_test.go for more
+func UseTransaction(pipes ...TransactionFunc) MuxAPI {
+	return Default.UseTransaction(pipes...)
+}
+
+// UseTransaction adds transaction(s) middleware
+// the difference from manually adding them to the ctx.BeginTransaction
+// is that if a transaction is requested scope and is failed then the (next) handler is not executed.
+//
+// Returns itself.
+//
+// See https://github.com/iris-contrib/examples/tree/master/transactions to manually add transactions
+// and https://github.com/kataras/iris/blob/master/context_test.go for more
+func (api *muxAPI) UseTransaction(pipes ...TransactionFunc) MuxAPI {
+	return api.UseFunc(func(ctx *Context) {
+		for i := range pipes {
+			ctx.BeginTransaction(pipes[i])
+			if ctx.TransactionsSkipped() {
+				ctx.StopExecution()
+			}
+		}
+		ctx.Next()
+	})
+}
+
+// DoneTransaction registers Transaction 'middleware' the only difference from .UseTransaction is that
+// is executed always last, after all of each route's handlers, returns itself.
+//
+// See https://github.com/iris-contrib/examples/tree/master/transactions to manually add transactions
+// and https://github.com/kataras/iris/blob/master/context_test.go for more
+func DoneTransaction(pipes ...TransactionFunc) MuxAPI {
+	return Default.DoneTransaction(pipes...)
+}
+
+// DoneTransaction registers Transaction 'middleware' the only difference from .UseTransaction is that
+// is executed always last, after all of each route's handlers, returns itself.
+//
+// See https://github.com/iris-contrib/examples/tree/master/transactions to manually add transactions
+// and https://github.com/kataras/iris/blob/master/context_test.go for more
+func (api *muxAPI) DoneTransaction(pipes ...TransactionFunc) MuxAPI {
+	return api.DoneFunc(func(ctx *Context) {
+		for i := range pipes {
+			ctx.BeginTransaction(pipes[i])
+		}
+	})
 }
 
 // Handle registers a route to the server's router

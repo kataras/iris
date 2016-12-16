@@ -1161,13 +1161,6 @@ func NewErrWithStatus() *ErrWithStatus {
 	return new(ErrWithStatus)
 }
 
-// TransactionValidator used to register global transaction pre-validators
-type TransactionValidator interface {
-	// ValidateTransaction pre-validates transactions
-	// transaction fails if this returns an error or it's Complete has a non empty error
-	ValidateTransaction(*TransactionScope) error
-}
-
 // TransactionScope is the (request) transaction scope of a handler's context
 // Can't say a lot here because I it will take more than 200 lines to write about.
 // You can search third-party articles or books on how Business Transaction works (it's quite simple, especialy here).
@@ -1222,7 +1215,9 @@ func (r *TransactionScope) Complete(err error) {
 					return
 				}
 			}
-		} else if reason == "" {
+		}
+
+		if reason == "" {
 			// do nothing empty reason and no status code means that this is not a failure, even if the error is not nil.
 			return
 		}
@@ -1275,10 +1270,28 @@ func (ctx *Context) TransactionsSkipped() bool {
 	return false
 }
 
-// BeginTransaction starts a request scoped transaction.
+// TransactionFunc is just a func(scope *TransactionScope)
+// used to register transaction(s) to a handler's context.
+type TransactionFunc func(scope *TransactionScope)
+
+// ToMiddleware wraps/converts a transaction to a handler func
+// it is not recommended to be used by users because
+// this can be a little tricky if someone doesn't know how transaction works.
 //
-// See more here: https://github.com/iris-contrib/examples/tree/master/transactions
-func (ctx *Context) BeginTransaction(pipe func(scope *TransactionScope)) {
+// Note: it auto-calls the ctx.Next() so as I noted, not recommended to use if you don't know the code behind it,
+// use the .UseTransaction and .DoneTransaction instead
+func (pipe TransactionFunc) ToMiddleware() HandlerFunc {
+	return func(ctx *Context) {
+		ctx.BeginTransaction(pipe)
+		ctx.Next()
+	}
+}
+
+// BeginTransaction starts a request scoped transaction.
+// Transactions have their own middleware ecosystem also, look iris.go:UseTransaction.
+//
+// See https://github.com/iris-contrib/examples/tree/master/transactions for more
+func (ctx *Context) BeginTransaction(pipe TransactionFunc) {
 	// do NOT begin a transaction when the previous transaction has been failed
 	// and it was requested scoped or SkipTransactions called manually
 	if ctx.TransactionsSkipped() {
