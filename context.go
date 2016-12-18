@@ -1122,6 +1122,23 @@ func (ctx *Context) MaxAge() int64 {
 	return -1
 }
 
+// ErrFallback is just an empty error but it is recognised from the TransactionScope.Complete,
+// it reverts its changes and continue as normal, no error will be shown to the user.
+//
+// Usually it is used on recovery from panics (inside .BeginTransaction)
+// but users can use that also to by-pass the error's response of your custom transaction pipe.
+type ErrFallback struct{}
+
+func (ne *ErrFallback) Error() string {
+	return ""
+}
+
+// NewErrFallback returns a new error wihch contains an empty error,
+// look .BeginTransaction and context_test.go:TestTransactionRecoveryFromPanic
+func NewErrFallback() *ErrFallback {
+	return &ErrFallback{}
+}
+
 // ErrWithStatus custom error type which is useful
 // to send an error containing the http status code and a reason
 type ErrWithStatus struct {
@@ -1129,6 +1146,11 @@ type ErrWithStatus struct {
 	statusCode int
 	// plain text message, optional
 	message string // if it's empty then the already registered custom(or default) http error will be fired.
+}
+
+// Silent in case the user changed his/her mind and wants to silence this error
+func (err *ErrWithStatus) Silent() error {
+	return NewErrFallback()
 }
 
 // Status sets the http status code of this error
@@ -1215,7 +1237,12 @@ func (r *TransactionScope) Complete(err error) {
 		ctx := r.Context
 		statusCode := StatusInternalServerError // default http status code if not provided
 		reason := err.Error()
-
+		if _, ok := err.(*ErrFallback); ok {
+			// revert without any log or response.
+			r.isFailure = true
+			ctx.Response.Reset()
+			return
+		}
 		if errWstatus, ok := err.(*ErrWithStatus); ok {
 			if errWstatus.statusCode > 0 {
 				// get the status code from the custom error type
@@ -1303,11 +1330,17 @@ func (pipe TransactionFunc) ToMiddleware() HandlerFunc {
 	}
 }
 
+// non-detailed error log for transacton unexpected panic
+var errTransactionInterrupted = errors.New("Transaction Interrupted, recovery from panic:\n%s")
+
 // BeginTransaction starts a request scoped transaction.
 // Transactions have their own middleware ecosystem also, look iris.go:UseTransaction.
 //
 // See https://github.com/iris-contrib/examples/tree/master/transactions for more
-func (ctx *Context) BeginTransaction(pipe TransactionFunc) {
+func (ctx *Context) BeginTransaction(pipe func(scope *TransactionScope)) {
+	// SILLY NOTE: use of manual pipe type in order of TransactionFunc
+	// in order to help editors complete the sentence here...
+
 	// do NOT begin a transaction when the previous transaction has been failed
 	// and it was requested scoped or SkipTransactions called manually.
 	if ctx.TransactionsSkipped() {
@@ -1318,24 +1351,34 @@ func (ctx *Context) BeginTransaction(pipe TransactionFunc) {
 	tempCtx := *ctx
 	// get a transaction scope from the pool by passing the temp context/
 	scope := acquireTransactionScope(&tempCtx)
+	defer func() {
+		if err := recover(); err != nil {
+			if ctx.framework.Config.IsDevelopment {
+				ctx.Log(errTransactionInterrupted.Format(err).Error())
+			}
+			// complete (again or not , doesn't matters) the scope without loud
+			scope.Complete(NewErrFallback())
+			// we continue as normal, no need to return here*
+		}
 
+		// if the transaction completed with an error then the transaction itself reverts the changes
+		// and replaces the context's response with an error.
+		// if the transaction completed successfully then we need to pass the temp's context's response to this context.
+		// so we must copy back its context at all cases, no matter the result of the transaction.
+		*ctx = *scope.Context
+
+		// if the scope had lifetime of the whole request and it completed with an error(failure)
+		// then we do not continue to the next transactions.
+		if scope.isRequestScoped && scope.isFailure {
+			ctx.SkipTransactions()
+		}
+
+		// finally, release and put the transaction scope back to the pool.
+		releaseTransactionScope(scope)
+	}()
 	// run the worker with its context inside this scope.
 	pipe(scope)
 
-	// if the transaction completed with an error then the transaction itself reverts the changes
-	// and replaces the context's response with an error.
-	// if the transaction completed successfully then we need to pass the temp's context's response to this context.
-	// so we must copy back its context at all cases, no matter the result of the transaction.
-	*ctx = *scope.Context
-
-	// if the scope had lifetime of the whole request and it completed with an error(failure)
-	// then we do not continue to the next transactions.
-	if scope.isRequestScoped && scope.isFailure {
-		ctx.SkipTransactions()
-	}
-
-	// finally, release and put the transaction scope back to the pool.
-	releaseTransactionScope(scope)
 }
 
 // Log logs to the iris defined logger

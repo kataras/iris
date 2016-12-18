@@ -972,5 +972,69 @@ func TestTransactionsMiddleware(t *testing.T) {
 		ContentType("text/html", api.Config.Charset).
 		Body().
 		Equal(expectedResponse)
+}
+
+func TestTransactionFailureCompletionButSilently(t *testing.T) {
+	iris.ResetDefault()
+	expectedBody := "I don't care for any unexpected panics, this response should be sent."
+
+	iris.Get("/panic_silent", func(ctx *iris.Context) {
+		ctx.BeginTransaction(func(scope *iris.TransactionScope) {
+			scope.Context.Write("blablabla this should not be shown because of 'unexpected' panic.")
+			panic("OMG, UNEXPECTED ERROR BECAUSE YOU ARE NOT A DISCIPLINED PROGRAMMER, BUT IRIS HAS YOU COVERED!")
+		})
+
+		ctx.WriteString(expectedBody)
+	})
+
+	iris.Get("/expected_error_but_silent_instead_of_send_the_reason", func(ctx *iris.Context) {
+		ctx.BeginTransaction(func(scope *iris.TransactionScope) {
+			scope.Context.Write("this will not be sent.")
+			// complete with a failure ( so revert the changes) but do it silently.
+			scope.Complete(iris.NewErrFallback())
+		})
+
+		ctx.WriteString(expectedBody)
+	})
+
+	iris.Get("/silly_way_expected_error_but_silent_instead_of_send_the_reason", func(ctx *iris.Context) {
+		ctx.BeginTransaction(func(scope *iris.TransactionScope) {
+			scope.Context.Write("this will not be sent.")
+
+			// or if you know the error will be silent from the beggining:	err :=   &iris.ErrFallback{}
+			err := iris.NewErrWithStatus()
+
+			fail := true
+
+			if fail {
+				err.Status(iris.StatusBadRequest).Reason("we dont know but it was expected error")
+			}
+
+			// we change our mind we don't want to send the error to the user, so err.Silent to the .Complete
+			// complete with a failure ( so revert the changes) but do it silently.
+			scope.Complete(err.Silent())
+		})
+
+		ctx.WriteString(expectedBody)
+	})
+
+	e := httptest.New(iris.Default, t)
+
+	e.GET("/panic_silent").Expect().
+		Status(iris.StatusOK).
+		Body().
+		Equal(expectedBody)
+
+	e.GET("/expected_error_but_silent_instead_of_send_the_reason").
+		Expect().
+		Status(iris.StatusOK).
+		Body().
+		Equal(expectedBody)
+
+	e.GET("/silly_way_expected_error_but_silent_instead_of_send_the_reason").
+		Expect().
+		Status(iris.StatusOK).
+		Body().
+		Equal(expectedBody)
 
 }

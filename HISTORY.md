@@ -2,6 +2,9 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 5.1.1 -> 5.1.3
+- **More on Transactions vol 3**: Recovery from any (unexpected error) panics inside `context.BeginTransaction` without loud, continue the execution as expected. Next version will have a little cleanup if I see that the transactions code is going very large or hard to understand the flow*
+
 ## 5.1.1 -> 5.1.2
 
 - **More on Transactions vol 2**: Added **iris.UseTransaction** and **iris.DoneTransaction** to register transactions as you register middleware(handlers). new named type **iris.TransactionFunc**, shortcut of `func(scope *iris.TransactionScope)`, that gives you a function which you can convert a transaction to a normal handler/middleware using its `.ToMiddleware()`, for more see the `test code inside context_test.go:TestTransactionsMiddleware`.
