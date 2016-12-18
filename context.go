@@ -16,6 +16,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/iris-contrib/formBinder"
@@ -1177,6 +1178,21 @@ type TransactionScope struct {
 	isFailure       bool
 }
 
+var tspool = sync.Pool{New: func() interface{} { return &TransactionScope{} }}
+
+func acquireTransactionScope(ctx *Context) *TransactionScope {
+	ts := tspool.Get().(*TransactionScope)
+	ts.Context = ctx
+	return ts
+}
+
+func releaseTransactionScope(ts *TransactionScope) {
+	ts.Context = nil
+	ts.isFailure = false
+	ts.isRequestScoped = false
+	tspool.Put(ts)
+}
+
 // RequestScoped receives a boolean which determinates if other transactions depends on this.
 // If setted true then whenever this transaction is not completed succesfuly,
 // the rest of the transactions will be not executed at all.
@@ -1293,20 +1309,33 @@ func (pipe TransactionFunc) ToMiddleware() HandlerFunc {
 // See https://github.com/iris-contrib/examples/tree/master/transactions for more
 func (ctx *Context) BeginTransaction(pipe TransactionFunc) {
 	// do NOT begin a transaction when the previous transaction has been failed
-	// and it was requested scoped or SkipTransactions called manually
+	// and it was requested scoped or SkipTransactions called manually.
 	if ctx.TransactionsSkipped() {
 		return
 	}
-	// not the best way but this should be do the job if we want multiple transaction in the same handler and context.
-	tempCtx := *ctx // clone the temp context
-	scope := &TransactionScope{Context: &tempCtx}
-	pipe(scope)           // run the context inside its scope
-	*ctx = *scope.Context // copy back the context
 
+	// hold the temp context which will be appear and ready-to-use from the pipe.
+	tempCtx := *ctx
+	// get a transaction scope from the pool by passing the temp context/
+	scope := acquireTransactionScope(&tempCtx)
+
+	// run the worker with its context inside this scope.
+	pipe(scope)
+
+	// if the transaction completed with an error then the transaction itself reverts the changes
+	// and replaces the context's response with an error.
+	// if the transaction completed successfully then we need to pass the temp's context's response to this context.
+	// so we must copy back its context at all cases, no matter the result of the transaction.
+	*ctx = *scope.Context
+
+	// if the scope had lifetime of the whole request and it completed with an error(failure)
+	// then we do not continue to the next transactions.
 	if scope.isRequestScoped && scope.isFailure {
 		ctx.SkipTransactions()
 	}
 
+	// finally, release and put the transaction scope back to the pool.
+	releaseTransactionScope(scope)
 }
 
 // Log logs to the iris defined logger
