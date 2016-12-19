@@ -715,7 +715,7 @@ func TestCache(t *testing.T) {
 
 func TestRedirectHTTPS(t *testing.T) {
 	iris.ResetDefault()
-	host := "localhost:5700"
+	host := "localhost:" + strconv.Itoa(getRandomNumber(4545, 5555))
 	expectedBody := "Redirected to https://" + host + "/redirected"
 
 	iris.Get("/redirect", func(ctx *iris.Context) { ctx.Redirect("/redirected") })

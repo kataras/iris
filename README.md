@@ -112,7 +112,7 @@ func main(){
 
     // take the :id from the path, parse to integer
     // and set it to the new userID local variable.
-    userID := ctx.ParamInt("id")
+    userID,_ := ctx.ParamInt("id")
 
     // userRepo, imaginary database service <- your only job.
     user := userRepo.GetByID(userID)
