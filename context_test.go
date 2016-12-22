@@ -5,15 +5,16 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"github.com/gavv/httpexpect"
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/httptest"
-	"github.com/valyala/fasthttp"
 	"net/url"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/gavv/httpexpect"
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/httptest"
+	"github.com/valyala/fasthttp"
 )
 
 // White-box testing *
@@ -849,6 +850,14 @@ func TestTransactions(t *testing.T) {
 		ctx.BeginTransaction(successTransaction)
 	})
 
+	/*TODO: MAKE THIS TO WORK
+	iris.Get("/failFirsAndThirdTransactionsButSuccessSecond", func(ctx *iris.Context) {
+		ctx.BeginTransaction(maybeFailureTransaction(true, false))
+		ctx.BeginTransaction(successTransaction)
+		ctx.BeginTransaction(maybeFailureTransaction(true, false))
+	})
+	*/
+
 	iris.Get("/failAllBecauseOfRequestScopeAndFailure", func(ctx *iris.Context) {
 		ctx.BeginTransaction(maybeFailureTransaction(true, true))
 		ctx.BeginTransaction(successTransaction)
@@ -869,6 +878,14 @@ func TestTransactions(t *testing.T) {
 		ContentType("text/html", iris.Config.Charset).
 		Body().
 		Equal(firstTransactionFailureMessage + secondTransactionSuccessHTMLMessage)
+		/*
+			e.GET("/failFirsAndThirdTransactionsButSuccessSecond").
+				Expect().
+				Status(iris.StatusOK).
+				ContentType("text/html", iris.Config.Charset).
+				Body().
+				Equal(firstTransactionFailureMessage + secondTransactionSuccessHTMLMessage)
+		*/
 
 	e.GET("/failAllBecauseOfRequestScopeAndFailure").
 		Expect().

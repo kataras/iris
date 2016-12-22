@@ -948,7 +948,7 @@ func (mux *serveMux) fireError(statusCode int, ctx *Context) {
 	errHandler := mux.errorHandlers[statusCode]
 	if errHandler == nil {
 		errHandler = HandlerFunc(func(ctx *Context) {
-			ctx.ResetBody()
+			ctx.Response.Reset()
 			ctx.SetStatusCode(statusCode)
 			ctx.SetBodyString(statusText[statusCode])
 		})

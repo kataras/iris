@@ -1772,7 +1772,7 @@ func (api *muxAPI) StaticHandler(systemPath string, stripSlashes int, compress b
 		if errCode == StatusNotFound || errCode == StatusBadRequest || errCode == StatusInternalServerError {
 			api.mux.fireError(errCode, ctx)
 		}
-		if ctx.Pos < uint8(len(ctx.Middleware))-1 {
+		if ctx.Pos < len(ctx.Middleware)-1 {
 			ctx.Next() // for any case
 		}
 
