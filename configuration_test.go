@@ -2,7 +2,7 @@
 package iris_test
 
 import (
-	"github.com/kataras/iris"
+	"gopkg.in/kataras/iris.v5"
 	"reflect"
 	"testing"
 )

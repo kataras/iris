@@ -6,7 +6,7 @@ Basic usage
 
 package main
 
-import  "github.com/kataras/iris"
+import  "gopkg.in/kataras/iris.v5"
 
 func main() {
     iris.Get("/hi_json", func(c *iris.Context) {
@@ -22,7 +22,7 @@ func main() {
 
 package main
 
-import  "github.com/kataras/iris"
+import  "gopkg.in/kataras/iris.v5"
 
 func main() {
 	s1 := iris.New()
@@ -47,9 +47,9 @@ func main() {
 For middleware, template engines, response engines, sessions, websockets, mails, subdomains,
 dynamic subdomains, routes, party of subdomains & routes, ssh and much more
 
-visit https://www.gitbook.com/book/kataras/iris/details
+visit https://docs-v5.iris-go.com/
 */
-package iris // import "github.com/kataras/iris"
+package iris
 
 import (
 	"bytes"
@@ -78,9 +78,9 @@ import (
 
 const (
 	// IsLongTermSupport flag is true when the below version number is a long-term-support version
-	IsLongTermSupport = false
+	IsLongTermSupport = true
 	// Version is the current version number of the Iris web framework
-	Version = "5.1.3"
+	Version = "5.0.0"
 
 	banner = `         _____      _
         |_   _|    (_)

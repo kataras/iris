@@ -9,7 +9,7 @@ CONTRIBUTE & DISCUSSION ABOUT TESTS TO: https://github.com/iris-contrib/tests
 
 import (
 	"fmt"
-	"github.com/kataras/iris"
+	"gopkg.in/kataras/iris.v5"
 	"testing"
 )
 

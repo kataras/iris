@@ -3,7 +3,7 @@ package main // import "github.com/kataras/iris/iris"
 /*
 
 - install iris command line tool
-$ go get -u github.com/kataras/iris/iris
+$ go get -u gopkg.in/kataras/iris.v5
 
 
 - get command

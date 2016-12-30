@@ -2,7 +2,7 @@ package httptest
 
 import (
 	"github.com/gavv/httpexpect"
-	"github.com/kataras/iris"
+	"gopkg.in/kataras/iris.v5"
 	"net/http"
 	"testing"
 )

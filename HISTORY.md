@@ -1,26 +1,20 @@
-# History
+## [v4](https://github.com/kataras/iris/tree/4.0.0) -> [v5](https://github.com/kataras/iris/tree/5.0.0)
 
-**How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
+- Some not-so-important fixes on websockets, sessions and cli
 
-## 5.1.1 -> 5.1.3
 - **More on Transactions vol 3**: Recovery from any (unexpected error) panics inside `context.BeginTransaction` without loud, continue the execution as expected. Next version will have a little cleanup if I see that the transactions code is going very large or hard to understand the flow*
 
-## 5.1.1 -> 5.1.2
 
 - **More on Transactions vol 2**: Added **iris.UseTransaction** and **iris.DoneTransaction** to register transactions as you register middleware(handlers). new named type **iris.TransactionFunc**, shortcut of `func(scope *iris.TransactionScope)`, that gives you a function which you can convert a transaction to a normal handler/middleware using its `.ToMiddleware()`, for more see the `test code inside context_test.go:TestTransactionsMiddleware`.
 
-## 5.1.0 -> 5.1.1
 Two hours after the previous update,
 
 - **More on Transactions**: By-default transaction's lifetime is 'per-call/transient' meaning that each transaction has its own scope on the context, rollbacks when `scope.Complete(notNilAndNotEmptyError)` and the rest of transactions in chain are executed as expected, from now and on you have the ability to `skip the rest of the next transactions on first failure` by simply call `scope.RequestScoped(true)`.
 
 Note: `RequestTransactionScope` renamed to ,simply, `TransactionScope`.
 
-## 5.0.4 -> 5.1.0
 
 - **NEW (UNIQUE?) FEATURE**: Request-scoped transactions inside handler's context. Proof-of-concept example [here](https://github.com/iris-contrib/examples/tree/master/transactions).
-
-## 5.0.3 -> 5.0.4
 
 
 The use of `iris.BodyDecoder` as a custom decoder that you can implement to a type in order to be used as the decoder/binder for the request body and override the json.Unmarshal(`context.ReadJSON`) or xml.Unmarshal(`context.ReadXML`) was very useful and gave you some kind of **per-type-binder** extensibility.
@@ -58,11 +52,8 @@ func (ctx *Context) ReadXML(xmlObject interface{}) error {
 Both  `encoding/json` and `encoding/xml` standard packages have valid `Unmarshal function` so they can be used as `iris.Unmarshaller` (with the help of `iris.UnmarshallerFunc` which just converts the signature to the `iris.Unmarshaller` interface). You only have to implement one function and it will work with any 'object' passed to the `UnmarshalBody` even if the object doesn't implements the `iris.BodyDecoder`.
 
 
-## 5.0.2 -> 5.0.3
-
 - Fix `https relative redirect paths`, a very old issue, which I just saw, peaceful, again :)
 
-## 5.0.1 -> 5.0.2
 
 - [geekypanda/httpcache](https://github.com/geekypanda/httpcache) has been re-written,
  by me, got rid of the mutex locks and use individual statcks instead,

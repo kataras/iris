@@ -1365,13 +1365,6 @@ func (ctx *Context) BeginTransaction(pipe func(scope *TransactionScope)) {
 		// and replaces the context's response with an error.
 		// if the transaction completed successfully then we need to pass the temp's context's response to this context.
 		// so we must copy back its context at all cases, no matter the result of the transaction.
-
-		// TODO: GREEK, THESE COMMENTS WILL BE REMOVED AFTER I FIX A RECENT BUG REPORTED BY COMMUNITY
-		// auto to xreiazomaste gia na pianei ta errors kiolas, ara prepei na vrw allous tropous
-		// na manteuw an 9elei o xristis na dixnei errors sto transaction h apla na to kanei skip
-		// alla tautoxrona ena failed transaction sto telos na mh kanei reset ta proigoumena, gt twra auto kanei,
-		// kai auto xreiazete omws se arketes periptwseis alla prepei kiolas na diaxwrizw to ka9e transaction na einai aneksartita
-		// pisteuw to Response.Reset dn 9a mas xreiastei ka9olou, prepei na ktlvenw mono pote xreiazete na kanw copy to scope's context kai pote oxi.
 		*ctx = *scope.Context
 
 		// if the scope had lifetime of the whole request and it completed with an error(failure)

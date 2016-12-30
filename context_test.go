@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"github.com/gavv/httpexpect"
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/httptest"
 	"github.com/valyala/fasthttp"
+	"gopkg.in/kataras/iris.v5"
+	"gopkg.in/kataras/iris.v5/httptest"
 )
 
 // White-box testing *
@@ -886,7 +886,6 @@ func TestTransactions(t *testing.T) {
 				Body().
 				Equal(firstTransactionFailureMessage + secondTransactionSuccessHTMLMessage)
 		*/
-
 	e.GET("/failAllBecauseOfRequestScopeAndFailure").
 		Expect().
 		Status(iris.StatusInternalServerError).

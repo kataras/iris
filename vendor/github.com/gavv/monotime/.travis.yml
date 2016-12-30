@@ -1,0 +1,10 @@
+language: go
+sudo: false
+
+go:
+    - 1.7
+    - tip
+
+script:
+  - go get -v -t .
+  - go test -v .

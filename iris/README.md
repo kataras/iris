@@ -1,6 +1,6 @@
 ## Package information
 
-This package is the command line tool for  [../](https://github.com/kataras/iris).
+This package is the command line tool for  [../](https://github.com/kataras/iris/tree/5.0.0).
 
 
 [![Iris get command preview](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iriscmd.gif)](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/iriscmd.gif)
