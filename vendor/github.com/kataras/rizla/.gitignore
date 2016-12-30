@@ -1,7 +1,0 @@
-.project
-.settings
-.vscode/*
-.atom-build.json
-*.exe
-*.txt
-*/rizla_test.go
