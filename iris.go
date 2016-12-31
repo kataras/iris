@@ -724,6 +724,7 @@ func (s *Framework) CheckForUpdates(force bool) {
 
 		if err != nil {
 			writer.Write([]byte("Update failed: " + err.Error()))
+			return
 		}
 
 		updated = updater.Run(fs.Stdout(writer), fs.Stderr(writer), fs.Silent(false))
