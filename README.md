@@ -673,45 +673,44 @@ The web application uses the session id as the key for retrieving the stored dat
 
 ```go
 iris.Get("/", func(ctx *iris.Context) {
-		ctx.Write("You should navigate to the /set, /get, /delete, /clear,/destroy instead")
-	})
+	ctx.Write("You should navigate to the /set, /get, /delete, /clear,/destroy instead")
+})
 
-	iris.Get("/set", func(ctx *iris.Context) {
+iris.Get("/set", func(ctx *iris.Context) {
 
-		//set session values
-		ctx.Session().Set("name", "iris")
+	//set session values
+	ctx.Session().Set("name", "iris")
 
-		//test if setted here
-		ctx.Write("All ok session setted to: %s", ctx.Session().GetString("name"))
-	})
+	//test if setted here
+	ctx.Write("All ok session setted to: %s", ctx.Session().GetString("name"))
+})
 
-	iris.Get("/get", func(ctx *iris.Context) {
-		// get a specific key as a string.
-		// returns an empty string if the key was not found.
-		name := ctx.Session().GetString("name")
+iris.Get("/get", func(ctx *iris.Context) {
+	// get a specific key as a string.
+	// returns an empty string if the key was not found.
+	name := ctx.Session().GetString("name")
 
-		ctx.Write("The name on the /set was: %s", name)
-	})
+	ctx.Write("The name on the /set was: %s", name)
+})
 
-	iris.Get("/delete", func(ctx *iris.Context) {
-		// delete a specific key
-		ctx.Session().Delete("name")
-	})
+iris.Get("/delete", func(ctx *iris.Context) {
+	// delete a specific key
+	ctx.Session().Delete("name")
+})
 
-	iris.Get("/clear", func(ctx *iris.Context) {
-		// removes all entries
-		ctx.Session().Clear()
-	})
+iris.Get("/clear", func(ctx *iris.Context) {
+	// removes all entries
+	ctx.Session().Clear()
+})
 
-	iris.Get("/destroy", func(ctx *iris.Context) {
-		// destroy/removes the entire session and cookie
-		ctx.SessionDestroy()
-		ctx.Log("You have to refresh the page to completely remove the session (on browsers), so the name should NOT be empty NOW, is it?\n ame: %s\n\nAlso check your cookies in your browser's cookies, should be no field for localhost/127.0.0.1 (or whatever you use)", ctx.Session().GetString("name"))
-		ctx.Write("You have to refresh the page to completely remove the session (on browsers), so the name should NOT be empty NOW, is it?\nName: %s\n\nAlso check your cookies in your browser's cookies, should be no field for localhost/127.0.0.1 (or whatever you use)", ctx.Session().GetString("name"))
-	})
+iris.Get("/destroy", func(ctx *iris.Context) {
+	// destroy/removes the entire session and cookie
+	ctx.SessionDestroy()
+	ctx.Log("You have to refresh the page to completely remove the session (on browsers), so the name should NOT be empty NOW, is it?\n ame: %s\n\nAlso check your cookies in your browser's cookies, should be no field for localhost/127.0.0.1 (or whatever you use)", ctx.Session().GetString("name"))
+	ctx.Write("You have to refresh the page to completely remove the session (on browsers), so the name should NOT be empty NOW, is it?\nName: %s\n\nAlso check your cookies in your browser's cookies, should be no field for localhost/127.0.0.1 (or whatever you use)", ctx.Session().GetString("name"))
+})
 
-	iris.Listen(":8080")
-
+iris.Listen(":8080")
 ```
 
 > Each section of the README has its own - more advanced - subject on the book, so be sure to check book for any further research
