@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/kataras/go-errors"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/kataras/go-errors"
 )
 
 var goPath string

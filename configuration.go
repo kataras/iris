@@ -1,7 +1,10 @@
 package iris
 
 import (
+	"crypto/tls"
 	"io"
+	"net"
+	"net/http"
 	"net/url"
 	"os"
 	"strconv"
@@ -10,7 +13,6 @@ import (
 	"github.com/imdario/mergo"
 	"github.com/kataras/go-options"
 	"github.com/kataras/go-sessions"
-	"github.com/valyala/fasthttp"
 )
 
 type (
@@ -52,7 +54,7 @@ type Configuration struct {
 	//    when calling the template helper '{{url }}'
 	//    *keep note that you can use {{urlpath }}) instead*
 	//
-	// Note: this is the main's server Host, you can setup unlimited number of fasthttp servers
+	// Note: this is the main's server Host, you can setup unlimited number of net/http servers
 	// listening to the $instance.Handler after the manually-called $instance.Build
 	//
 	// Default comes from iris.Listen/.Serve with iris' listeners (iris.TCP4/UNIX/TLS/LETSENCRYPT)
@@ -67,52 +69,30 @@ type Configuration struct {
 	// Default comes from iris.Listen/.Serve with iris' listeners (TCP4,UNIX,TLS,LETSENCRYPT)
 	VScheme string
 
-	// MaxRequestBodySize Maximum request body size.
-	//
-	// The server rejects requests with bodies exceeding this limit.
-	//
-	// By default request body size is 8MB.
-	MaxRequestBodySize int
+	ReadTimeout  time.Duration // maximum duration before timing out read of the request
+	WriteTimeout time.Duration // maximum duration before timing out write of the response
 
-	// Per-connection buffer size for requests' reading.
-	// This also limits the maximum header size.
-	//
-	// Increase this buffer if your clients send multi-KB RequestURIs
-	// and/or multi-KB headers (for example, BIG cookies).
-	//
-	// Default buffer size is used if not set.
-	ReadBufferSize int
+	// MaxHeaderBytes controls the maximum number of bytes the
+	// server will read parsing the request header's keys and
+	// values, including the request line. It does not limit the
+	// size of the request body.
+	// If zero, DefaultMaxHeaderBytes is used.
+	MaxHeaderBytes int
 
-	// Per-connection buffer size for responses' writing.
-	//
-	// Default buffer size is used if not set.
-	WriteBufferSize int
+	// TLSNextProto optionally specifies a function to take over
+	// ownership of the provided TLS connection when an NPN/ALPN
+	// protocol upgrade has occurred. The map key is the protocol
+	// name negotiated. The Handler argument should be used to
+	// handle HTTP requests and will initialize the Request's TLS
+	// and RemoteAddr if not already set. The connection is
+	// automatically closed when the function returns.
+	// If TLSNextProto is nil, HTTP/2 support is enabled automatically.
+	TLSNextProto map[string]func(*http.Server, *tls.Conn, http.Handler)
 
-	// Maximum duration for reading the full request (including body).
-	//
-	// This also limits the maximum duration for idle keep-alive
-	// connections.
-	//
-	// By default request read timeout is unlimited.
-	ReadTimeout time.Duration
-
-	// Maximum duration for writing the full response (including body).
-	//
-	// By default response write timeout is unlimited.
-	WriteTimeout time.Duration
-
-	// Maximum number of concurrent client connections allowed per IP.
-	//
-	// By default unlimited number of concurrent connections
-	MaxConnsPerIP int
-
-	// Maximum number of requests served per connection.
-	//
-	// The server closes connection after the last request.
-	// 'Connection: close' header is added to the last response.
-	//
-	// By default unlimited number of requests may be served per connection.
-	MaxRequestsPerConn int
+	// ConnState specifies an optional callback function that is
+	// called when a client connection changes state. See the
+	// ConnState type and associated constants for details.
+	ConnState func(net.Conn, http.ConnState)
 
 	// CheckForUpdates will try to search for newer version of Iris based on the https://github.com/kataras/iris/releases
 	// If a newer version found then the app will ask the he dev/user if want to update the 'x' version
@@ -231,7 +211,7 @@ var (
 	//    when calling the template helper '{{url }}'
 	//    *keep note that you can use {{urlpath }}) instead*
 	//
-	// Note: this is the main's server Host, you can setup unlimited number of fasthttp servers
+	// Note: this is the main's server Host, you can setup unlimited number of net/http servers
 	// listening to the $instance.Handler after the manually-called $instance.Build
 	//
 	// Default comes from iris.Listen/.Serve with iris' listeners (iris.TCP4/UNIX/TLS/LETSENCRYPT)
@@ -253,80 +233,50 @@ var (
 			c.VScheme = val
 		}
 	}
-
-	// OptionMaxRequestBodySize Maximum request body size.
-	//
-	// The server rejects requests with bodies exceeding this limit.
-	//
-	// By default request body size is 8MB.
-	OptionMaxRequestBodySize = func(val int) OptionSet {
-		return func(c *Configuration) {
-			c.MaxRequestBodySize = val
-		}
-	}
-
-	// Per-connection buffer size for requests' reading.``
-	// This also limits the maximum header size.
-	//
-	// Increase this buffer if your clients send multi-KB RequestURIs
-	// and/or multi-KB headers (for example, BIG cookies).
-	//
-	// Default buffer size is used if not set.
-	OptionReadBufferSize = func(val int) OptionSet {
-		return func(c *Configuration) {
-			c.ReadBufferSize = val
-		}
-	}
-
-	// Per-connection buffer size for responses' writing.
-	//
-	// Default buffer size is used if not set.
-	OptionWriteBufferSize = func(val int) OptionSet {
-		return func(c *Configuration) {
-			c.WriteBufferSize = val
-		}
-	}
-
-	// Maximum duration for reading the full request (including body).
-	//
-	// This also limits the maximum duration for idle keep-alive
-	// connections.
-	//
-	// By default request read timeout is unlimited.
+	// maximum duration before timing out read of the request
 	OptionReadTimeout = func(val time.Duration) OptionSet {
 		return func(c *Configuration) {
 			c.ReadTimeout = val
 		}
 	}
-
-	// Maximum duration for writing the full response (including body).
-	//
-	// By default response write timeout is unlimited.
+	// maximum duration before timing out write of the response
 	OptionWriteTimeout = func(val time.Duration) OptionSet {
 		return func(c *Configuration) {
 			c.WriteTimeout = val
 		}
 	}
 
-	// OptionMaxConnsPerIP Maximum number of concurrent client connections allowed per IP.
-	//
-	// By default unlimited number of concurrent connections
-	// may be established to the server from a single IP address.
-	OptionMaxConnsPerIP = func(val int) OptionSet {
+	// MaxHeaderBytes controls the maximum number of bytes the
+	// server will read parsing the request header's keys and
+	// values, including the request line. It does not limit the
+	// size of the request body.
+	// If zero, DefaultMaxHeaderBytes(8MB) is used.
+	OptionMaxHeaderBytes = func(val int) OptionSet {
 		return func(c *Configuration) {
-			c.MaxConnsPerIP = val
+			c.MaxHeaderBytes = val
 		}
 	}
 
-	// OptionMaxRequestsPerConn Maximum number of requests served per connection.
-	//
-	// The server closes connection after the last request.
-	// 'Connection: close' header is added to the last response.
-	//
-	// By default unlimited number of requests may be served per connection.
-	OptionMaxRequestsPerConn = func(val int) OptionSet {
+	// TLSNextProto optionally specifies a function to take over
+	// ownership of the provided TLS connection when an NPN/ALPN
+	// protocol upgrade has occurred. The map key is the protocol
+	// name negotiated. The Handler argument should be used to
+	// handle HTTP requests and will initialize the Request's TLS
+	// and RemoteAddr if not already set. The connection is
+	// automatically closed when the function returns.
+	// If TLSNextProto is nil, HTTP/2 support is enabled automatically.
+	OptionTLSNextProto = func(val map[string]func(*http.Server, *tls.Conn, http.Handler)) OptionSet {
 		return func(c *Configuration) {
-			c.MaxRequestsPerConn = val
+			c.TLSNextProto = val
+		}
+	}
+
+	// ConnState specifies an optional callback function that is
+	// called when a client connection changes state. See the
+	// ConnState type and associated constants for details.
+	OptionConnState = func(val func(net.Conn, http.ConnState)) OptionSet {
+		return func(c *Configuration) {
+			c.ConnState = val
 		}
 	}
 
@@ -480,11 +430,6 @@ var (
 	DefaultTimeFormat = "Mon, 02 Jan 2006 15:04:05 GMT"
 	// StaticCacheDuration expiration duration for INACTIVE file handlers, it's a global configuration field to all iris instances
 	StaticCacheDuration = 20 * time.Second
-	// CompressedFileSuffix is the suffix to add to the name of
-	// cached compressed file when using the .StaticFS function.
-	//
-	// Defaults to iris-fasthttp.gz
-	CompressedFileSuffix = "iris-fasthttp.gz"
 )
 
 // Default values for base Iris conf
@@ -493,9 +438,6 @@ const (
 	DefaultDisablePathEscape     = false
 	DefaultCharset               = "UTF-8"
 	DefaultLoggerPreffix         = "[IRIS] "
-	// DefaultMaxRequestBodySize is 8MB
-	DefaultMaxRequestBodySize = 2 * fasthttp.DefaultMaxRequestBodySize
-
 	// Per-connection buffer size for requests' reading.
 	// This also limits the maximum header size.
 	//
@@ -503,19 +445,17 @@ const (
 	// and/or multi-KB headers (for example, BIG cookies).
 	//
 	// Default buffer size is 8MB
-	DefaultReadBufferSize = 8096
+	DefaultMaxHeaderBytes = 8096
 
-	// Per-connection buffer size for responses' writing.
-	//
-	// Default buffer size is 8MB
-	DefaultWriteBufferSize = 8096
+	// DefaultReadTimeout no read client timeout
+	DefaultReadTimeout = 0
+	// DefaultWriteTimeout no serve client timeout
+	DefaultWriteTimeout = 0
 )
 
 var (
 	// DefaultLoggerOut is the default logger's output
 	DefaultLoggerOut = os.Stdout
-	// DefaultServerName the response header of the 'Server' value when writes to the client
-	DefaultServerName = ""
 )
 
 // DefaultConfiguration returns the default configuration for an Iris station, fills the main Configuration
@@ -523,11 +463,9 @@ func DefaultConfiguration() Configuration {
 	return Configuration{
 		VHost:                  "",
 		VScheme:                "",
-		MaxRequestBodySize:     DefaultMaxRequestBodySize,
-		ReadBufferSize:         DefaultReadBufferSize,
-		WriteBufferSize:        DefaultWriteBufferSize,
-		MaxConnsPerIP:          0,
-		MaxRequestsPerConn:     0,
+		ReadTimeout:            DefaultReadTimeout,
+		WriteTimeout:           DefaultWriteTimeout,
+		MaxHeaderBytes:         DefaultMaxHeaderBytes,
 		CheckForUpdates:        false,
 		CheckForUpdatesSync:    false,
 		DisablePathCorrection:  DefaultDisablePathCorrection,
@@ -675,14 +613,14 @@ type WebsocketConfiguration struct {
 	// Error specifies the function for generating HTTP error responses.
 	//
 	// The default behavior is to store the reason in the context (ctx.Set(reason)) and fire any custom error (ctx.EmitError(status))
-	Error func(ctx *Context, status int, reason string)
+	Error func(ctx *Context, status int, reason error)
 	// CheckOrigin returns true if the request Origin header is acceptable. If
 	// CheckOrigin is nil, the host in the Origin header must not be set or
 	// must match the host of the request.
 	//
 	// The default behavior is to allow all origins
 	// you can change this behavior by setting the iris.Config.Websocket.CheckOrigin = iris.WebsocketCheckSameOrigin
-	CheckOrigin func(ctx *Context) bool
+	CheckOrigin func(r *http.Request) bool
 }
 
 var (
@@ -748,7 +686,7 @@ var (
 		}
 	}
 	// OptionWebsocketError specifies the function for generating HTTP error responses.
-	OptionWebsocketError = func(val func(*Context, int, string)) OptionSet {
+	OptionWebsocketError = func(val func(*Context, int, error)) OptionSet {
 		return func(c *Configuration) {
 			c.Websocket.Error = val
 		}
@@ -756,7 +694,7 @@ var (
 	// OptionWebsocketCheckOrigin returns true if the request Origin header is acceptable. If
 	// CheckOrigin is nil, the host in the Origin header must not be set or
 	// must match the host of the request.
-	OptionWebsocketCheckOrigin = func(val func(*Context) bool) OptionSet {
+	OptionWebsocketCheckOrigin = func(val func(*http.Request) bool) OptionSet {
 		return func(c *Configuration) {
 			c.Websocket.CheckOrigin = val
 		}
@@ -764,30 +702,30 @@ var (
 )
 
 const (
-	// DefaultWriteTimeout 15 * time.Second
-	DefaultWriteTimeout = 15 * time.Second
-	// DefaultPongTimeout 60 * time.Second
-	DefaultPongTimeout = 60 * time.Second
-	// DefaultPingPeriod (DefaultPongTimeout * 9) / 10
-	DefaultPingPeriod = (DefaultPongTimeout * 9) / 10
-	// DefaultMaxMessageSize 1024
-	DefaultMaxMessageSize = 1024
+	// DefaultWebsocketWriteTimeout 15 * time.Second
+	DefaultWebsocketWriteTimeout = 15 * time.Second
+	// DefaultWebsocketPongTimeout 60 * time.Second
+	DefaultWebsocketPongTimeout = 60 * time.Second
+	// DefaultWebsocketPingPeriod (DefaultPongTimeout * 9) / 10
+	DefaultWebsocketPingPeriod = (DefaultWebsocketPongTimeout * 9) / 10
+	// DefaultWebsocketMaxMessageSize 1024
+	DefaultWebsocketMaxMessageSize = 1024
 )
 
 var (
 	// DefaultWebsocketError is the default method to manage the handshake websocket errors
-	DefaultWebsocketError = func(ctx *Context, status int, reason string) {
+	DefaultWebsocketError = func(ctx *Context, status int, reason error) {
 		ctx.Set("WsError", reason)
 		ctx.EmitError(status)
 	}
 	// DefaultWebsocketCheckOrigin is the default method to allow websocket clients to connect to this server
 	// you can change this behavior by setting the iris.Config.Websocket.CheckOrigin = iris.WebsocketCheckSameOrigin
-	DefaultWebsocketCheckOrigin = func(ctx *Context) bool {
+	DefaultWebsocketCheckOrigin = func(r *http.Request) bool {
 		return true
 	}
 	// WebsocketCheckSameOrigin returns true if the origin is not set or is equal to the request host
-	WebsocketCheckSameOrigin = func(ctx *Context) bool {
-		origin := ctx.RequestHeader("origin")
+	WebsocketCheckSameOrigin = func(r *http.Request) bool {
+		origin := r.Header.Get("origin")
 		if len(origin) == 0 {
 			return true
 		}
@@ -795,17 +733,17 @@ var (
 		if err != nil {
 			return false
 		}
-		return u.Host == ctx.HostString()
+		return u.Host == r.Host
 	}
 )
 
 // DefaultWebsocketConfiguration returns the default config for iris-ws websocket package
 func DefaultWebsocketConfiguration() WebsocketConfiguration {
 	return WebsocketConfiguration{
-		WriteTimeout:    DefaultWriteTimeout,
-		PongTimeout:     DefaultPongTimeout,
-		PingPeriod:      DefaultPingPeriod,
-		MaxMessageSize:  DefaultMaxMessageSize,
+		WriteTimeout:    DefaultWebsocketWriteTimeout,
+		PongTimeout:     DefaultWebsocketPongTimeout,
+		PingPeriod:      DefaultWebsocketPingPeriod,
+		MaxMessageSize:  DefaultWebsocketMaxMessageSize,
 		BinaryMessages:  false,
 		ReadBufferSize:  4096,
 		WriteBufferSize: 4096,

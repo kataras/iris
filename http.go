@@ -1,7 +1,6 @@
 package iris
 
 import (
-	"bytes"
 	"crypto/tls"
 	"log"
 	"net"
@@ -16,8 +15,6 @@ import (
 	"github.com/geekypanda/httpcache"
 	"github.com/iris-contrib/letsencrypt"
 	"github.com/kataras/go-errors"
-	"github.com/valyala/fasthttp"
-	"github.com/valyala/fasthttp/fasthttpadaptor"
 	"golang.org/x/crypto/acme/autocert"
 )
 
@@ -45,171 +42,139 @@ const (
 var (
 	// AllMethods "GET", "POST", "PUT", "DELETE", "CONNECT", "HEAD", "PATCH", "OPTIONS", "TRACE"
 	AllMethods = [...]string{MethodGet, MethodPost, MethodPut, MethodDelete, MethodConnect, MethodHead, MethodPatch, MethodOptions, MethodTrace}
-
-	/* methods as []byte, these are really used by iris */
-
-	// MethodGetBytes "GET"
-	MethodGetBytes = []byte(MethodGet)
-	// MethodPostBytes "POST"
-	MethodPostBytes = []byte(MethodPost)
-	// MethodPutBytes "PUT"
-	MethodPutBytes = []byte(MethodPut)
-	// MethodDeleteBytes "DELETE"
-	MethodDeleteBytes = []byte(MethodDelete)
-	// MethodConnectBytes "CONNECT"
-	MethodConnectBytes = []byte(MethodConnect)
-	// MethodHeadBytes "HEAD"
-	MethodHeadBytes = []byte(MethodHead)
-	// MethodPatchBytes "PATCH"
-	MethodPatchBytes = []byte(MethodPatch)
-	// MethodOptionsBytes "OPTIONS"
-	MethodOptionsBytes = []byte(MethodOptions)
-	// MethodTraceBytes "TRACE"
-	MethodTraceBytes = []byte(MethodTrace)
-	/* */
 )
 
+// HTTP status codes.
 const (
-	// StatusContinue http status '100'
-	StatusContinue = 100
-	// StatusSwitchingProtocols http status '101'
-	StatusSwitchingProtocols = 101
-	// StatusOK http status '200'
-	StatusOK = 200
-	// StatusCreated http status '201'
-	StatusCreated = 201
-	// StatusAccepted http status '202'
-	StatusAccepted = 202
-	// StatusNonAuthoritativeInfo http status '203'
-	StatusNonAuthoritativeInfo = 203
-	// StatusNoContent http status '204'
-	StatusNoContent = 204
-	// StatusResetContent http status '205'
-	StatusResetContent = 205
-	// StatusPartialContent http status '206'
-	StatusPartialContent = 206
-	// StatusMultipleChoices http status '300'
-	StatusMultipleChoices = 300
-	// StatusMovedPermanently http status '301'
-	StatusMovedPermanently = 301
-	// StatusFound http status '302'
-	StatusFound = 302
-	// StatusSeeOther http status '303'
-	StatusSeeOther = 303
-	// StatusNotModified http status '304'
-	StatusNotModified = 304
-	// StatusUseProxy http status '305'
-	StatusUseProxy = 305
-	// StatusTemporaryRedirect http status '307'
-	StatusTemporaryRedirect = 307
-	// StatusBadRequest http status '400'
-	StatusBadRequest = 400
-	// StatusUnauthorized http status '401'
-	StatusUnauthorized = 401
-	// StatusPaymentRequired http status '402'
-	StatusPaymentRequired = 402
-	// StatusForbidden http status '403'
-	StatusForbidden = 403
-	// StatusNotFound http status '404'
-	StatusNotFound = 404
-	// StatusMethodNotAllowed http status '405'
-	StatusMethodNotAllowed = 405
-	// StatusNotAcceptable http status '406'
-	StatusNotAcceptable = 406
-	// StatusProxyAuthRequired http status '407'
-	StatusProxyAuthRequired = 407
-	// StatusRequestTimeout http status '408'
-	StatusRequestTimeout = 408
-	// StatusConflict http status '409'
-	StatusConflict = 409
-	// StatusGone http status '410'
-	StatusGone = 410
-	// StatusLengthRequired http status '411'
-	StatusLengthRequired = 411
-	// StatusPreconditionFailed http status '412'
-	StatusPreconditionFailed = 412
-	// StatusRequestEntityTooLarge http status '413'
-	StatusRequestEntityTooLarge = 413
-	// StatusRequestURITooLong http status '414'
-	StatusRequestURITooLong = 414
-	// StatusUnsupportedMediaType http status '415'
-	StatusUnsupportedMediaType = 415
-	// StatusRequestedRangeNotSatisfiable http status '416'
-	StatusRequestedRangeNotSatisfiable = 416
-	// StatusExpectationFailed http status '417'
-	StatusExpectationFailed = 417
-	// StatusTeapot http status '418'
-	StatusTeapot = 418
-	// StatusPreconditionRequired http status '428'
-	StatusPreconditionRequired = 428
-	// StatusTooManyRequests http status '429'
-	StatusTooManyRequests = 429
-	// StatusRequestHeaderFieldsTooLarge http status '431'
-	StatusRequestHeaderFieldsTooLarge = 431
-	// StatusUnavailableForLegalReasons http status '451'
-	StatusUnavailableForLegalReasons = 451
-	// StatusInternalServerError http status '500'
-	StatusInternalServerError = 500
-	// StatusNotImplemented http status '501'
-	StatusNotImplemented = 501
-	// StatusBadGateway http status '502'
-	StatusBadGateway = 502
-	// StatusServiceUnavailable http status '503'
-	StatusServiceUnavailable = 503
-	// StatusGatewayTimeout http status '504'
-	StatusGatewayTimeout = 504
-	// StatusHTTPVersionNotSupported http status '505'
-	StatusHTTPVersionNotSupported = 505
-	// StatusNetworkAuthenticationRequired http status '511'
-	StatusNetworkAuthenticationRequired = 511
+	StatusContinue           = 100 // RFC 7231, 6.2.1
+	StatusSwitchingProtocols = 101 // RFC 7231, 6.2.2
+	StatusProcessing         = 102 // RFC 2518, 10.1
+
+	StatusOK                   = 200 // RFC 7231, 6.3.1
+	StatusCreated              = 201 // RFC 7231, 6.3.2
+	StatusAccepted             = 202 // RFC 7231, 6.3.3
+	StatusNonAuthoritativeInfo = 203 // RFC 7231, 6.3.4
+	StatusNoContent            = 204 // RFC 7231, 6.3.5
+	StatusResetContent         = 205 // RFC 7231, 6.3.6
+	StatusPartialContent       = 206 // RFC 7233, 4.1
+	StatusMultiStatus          = 207 // RFC 4918, 11.1
+	StatusAlreadyReported      = 208 // RFC 5842, 7.1
+	StatusIMUsed               = 226 // RFC 3229, 10.4.1
+
+	StatusMultipleChoices   = 300 // RFC 7231, 6.4.1
+	StatusMovedPermanently  = 301 // RFC 7231, 6.4.2
+	StatusFound             = 302 // RFC 7231, 6.4.3
+	StatusSeeOther          = 303 // RFC 7231, 6.4.4
+	StatusNotModified       = 304 // RFC 7232, 4.1
+	StatusUseProxy          = 305 // RFC 7231, 6.4.5
+	_                       = 306 // RFC 7231, 6.4.6 (Unused)
+	StatusTemporaryRedirect = 307 // RFC 7231, 6.4.7
+	StatusPermanentRedirect = 308 // RFC 7538, 3
+
+	StatusBadRequest                   = 400 // RFC 7231, 6.5.1
+	StatusUnauthorized                 = 401 // RFC 7235, 3.1
+	StatusPaymentRequired              = 402 // RFC 7231, 6.5.2
+	StatusForbidden                    = 403 // RFC 7231, 6.5.3
+	StatusNotFound                     = 404 // RFC 7231, 6.5.4
+	StatusMethodNotAllowed             = 405 // RFC 7231, 6.5.5
+	StatusNotAcceptable                = 406 // RFC 7231, 6.5.6
+	StatusProxyAuthRequired            = 407 // RFC 7235, 3.2
+	StatusRequestTimeout               = 408 // RFC 7231, 6.5.7
+	StatusConflict                     = 409 // RFC 7231, 6.5.8
+	StatusGone                         = 410 // RFC 7231, 6.5.9
+	StatusLengthRequired               = 411 // RFC 7231, 6.5.10
+	StatusPreconditionFailed           = 412 // RFC 7232, 4.2
+	StatusRequestEntityTooLarge        = 413 // RFC 7231, 6.5.11
+	StatusRequestURITooLong            = 414 // RFC 7231, 6.5.12
+	StatusUnsupportedMediaType         = 415 // RFC 7231, 6.5.13
+	StatusRequestedRangeNotSatisfiable = 416 // RFC 7233, 4.4
+	StatusExpectationFailed            = 417 // RFC 7231, 6.5.14
+	StatusTeapot                       = 418 // RFC 7168, 2.3.3
+	StatusUnprocessableEntity          = 422 // RFC 4918, 11.2
+	StatusLocked                       = 423 // RFC 4918, 11.3
+	StatusFailedDependency             = 424 // RFC 4918, 11.4
+	StatusUpgradeRequired              = 426 // RFC 7231, 6.5.15
+	StatusPreconditionRequired         = 428 // RFC 6585, 3
+	StatusTooManyRequests              = 429 // RFC 6585, 4
+	StatusRequestHeaderFieldsTooLarge  = 431 // RFC 6585, 5
+	StatusUnavailableForLegalReasons   = 451 // RFC 7725, 3
+
+	StatusInternalServerError           = 500 // RFC 7231, 6.6.1
+	StatusNotImplemented                = 501 // RFC 7231, 6.6.2
+	StatusBadGateway                    = 502 // RFC 7231, 6.6.3
+	StatusServiceUnavailable            = 503 // RFC 7231, 6.6.4
+	StatusGatewayTimeout                = 504 // RFC 7231, 6.6.5
+	StatusHTTPVersionNotSupported       = 505 // RFC 7231, 6.6.6
+	StatusVariantAlsoNegotiates         = 506 // RFC 2295, 8.1
+	StatusInsufficientStorage           = 507 // RFC 4918, 11.5
+	StatusLoopDetected                  = 508 // RFC 5842, 7.2
+	StatusNotExtended                   = 510 // RFC 2774, 7
+	StatusNetworkAuthenticationRequired = 511 // RFC 6585, 6
 )
 
 var statusText = map[int]string{
-	StatusContinue:                      "Continue",
-	StatusSwitchingProtocols:            "Switching Protocols",
-	StatusOK:                            "OK",
-	StatusCreated:                       "Created",
-	StatusAccepted:                      "Accepted",
-	StatusNonAuthoritativeInfo:          "Non-Authoritative Information",
-	StatusNoContent:                     "No Content",
-	StatusResetContent:                  "Reset Content",
-	StatusPartialContent:                "Partial Content",
-	StatusMultipleChoices:               "Multiple Choices",
-	StatusMovedPermanently:              "Moved Permanently",
-	StatusFound:                         "Found",
-	StatusSeeOther:                      "See Other",
-	StatusNotModified:                   "Not Modified",
-	StatusUseProxy:                      "Use Proxy",
-	StatusTemporaryRedirect:             "Temporary Redirect",
-	StatusBadRequest:                    "Bad Request",
-	StatusUnauthorized:                  "Unauthorized",
-	StatusPaymentRequired:               "Payment Required",
-	StatusForbidden:                     "Forbidden",
-	StatusNotFound:                      "Not Found",
-	StatusMethodNotAllowed:              "Method Not Allowed",
-	StatusNotAcceptable:                 "Not Acceptable",
-	StatusProxyAuthRequired:             "Proxy Authentication Required",
-	StatusRequestTimeout:                "Request Timeout",
-	StatusConflict:                      "Conflict",
-	StatusGone:                          "Gone",
-	StatusLengthRequired:                "Length Required",
-	StatusPreconditionFailed:            "Precondition Failed",
-	StatusRequestEntityTooLarge:         "Request Entity Too Large",
-	StatusRequestURITooLong:             "Request URI Too Long",
-	StatusUnsupportedMediaType:          "Unsupported Media Type",
-	StatusRequestedRangeNotSatisfiable:  "Requested Range Not Satisfiable",
-	StatusExpectationFailed:             "Expectation Failed",
-	StatusTeapot:                        "I'm a teapot",
-	StatusPreconditionRequired:          "Precondition Required",
-	StatusTooManyRequests:               "Too Many Requests",
-	StatusRequestHeaderFieldsTooLarge:   "Request Header Fields Too Large",
-	StatusUnavailableForLegalReasons:    "Unavailable For Legal Reasons",
+	StatusContinue:           "Continue",
+	StatusSwitchingProtocols: "Switching Protocols",
+	StatusProcessing:         "Processing",
+
+	StatusOK:                   "OK",
+	StatusCreated:              "Created",
+	StatusAccepted:             "Accepted",
+	StatusNonAuthoritativeInfo: "Non-Authoritative Information",
+	StatusNoContent:            "No Content",
+	StatusResetContent:         "Reset Content",
+	StatusPartialContent:       "Partial Content",
+	StatusMultiStatus:          "Multi-Status",
+	StatusAlreadyReported:      "Already Reported",
+	StatusIMUsed:               "IM Used",
+
+	StatusMultipleChoices:   "Multiple Choices",
+	StatusMovedPermanently:  "Moved Permanently",
+	StatusFound:             "Found",
+	StatusSeeOther:          "See Other",
+	StatusNotModified:       "Not Modified",
+	StatusUseProxy:          "Use Proxy",
+	StatusTemporaryRedirect: "Temporary Redirect",
+	StatusPermanentRedirect: "Permanent Redirect",
+
+	StatusBadRequest:                   "Bad Request",
+	StatusUnauthorized:                 "Unauthorized",
+	StatusPaymentRequired:              "Payment Required",
+	StatusForbidden:                    "Forbidden",
+	StatusNotFound:                     "Not Found",
+	StatusMethodNotAllowed:             "Method Not Allowed",
+	StatusNotAcceptable:                "Not Acceptable",
+	StatusProxyAuthRequired:            "Proxy Authentication Required",
+	StatusRequestTimeout:               "Request Timeout",
+	StatusConflict:                     "Conflict",
+	StatusGone:                         "Gone",
+	StatusLengthRequired:               "Length Required",
+	StatusPreconditionFailed:           "Precondition Failed",
+	StatusRequestEntityTooLarge:        "Request Entity Too Large",
+	StatusRequestURITooLong:            "Request URI Too Long",
+	StatusUnsupportedMediaType:         "Unsupported Media Type",
+	StatusRequestedRangeNotSatisfiable: "Requested Range Not Satisfiable",
+	StatusExpectationFailed:            "Expectation Failed",
+	StatusTeapot:                       "I'm a teapot",
+	StatusUnprocessableEntity:          "Unprocessable Entity",
+	StatusLocked:                       "Locked",
+	StatusFailedDependency:             "Failed Dependency",
+	StatusUpgradeRequired:              "Upgrade Required",
+	StatusPreconditionRequired:         "Precondition Required",
+	StatusTooManyRequests:              "Too Many Requests",
+	StatusRequestHeaderFieldsTooLarge:  "Request Header Fields Too Large",
+	StatusUnavailableForLegalReasons:   "Unavailable For Legal Reasons",
+
 	StatusInternalServerError:           "Internal Server Error",
 	StatusNotImplemented:                "Not Implemented",
 	StatusBadGateway:                    "Bad Gateway",
 	StatusServiceUnavailable:            "Service Unavailable",
 	StatusGatewayTimeout:                "Gateway Timeout",
 	StatusHTTPVersionNotSupported:       "HTTP Version Not Supported",
+	StatusVariantAlsoNegotiates:         "Variant Also Negotiates",
+	StatusInsufficientStorage:           "Insufficient Storage",
+	StatusLoopDetected:                  "Loop Detected",
+	StatusNotExtended:                   "Not Extended",
 	StatusNetworkAuthenticationRequired: "Network Authentication Required",
 }
 
@@ -226,7 +191,7 @@ var errHandler = errors.New("Passed argument is not func(*Context) neither an ob
 type (
 	// Handler the main Iris Handler interface.
 	Handler interface {
-		Serve(ctx *Context)
+		Serve(ctx *Context) // iris-specific
 	}
 
 	// HandlerFunc type is an adapter to allow the use of
@@ -246,37 +211,36 @@ func (h HandlerFunc) Serve(ctx *Context) {
 	h(ctx)
 }
 
-// ToHandler converts an http.Handler or http.HandlerFunc to an iris.Handler
-func ToHandler(handler interface{}) Handler {
+// ToNativeHandler converts an iris handler to http.Handler
+func ToNativeHandler(station *Framework, h Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := station.AcquireCtx(w, r)
+		h.Serve(ctx)
+		station.ReleaseCtx(ctx)
+	})
+}
+
+// ToHandler converts an http.Handler/HandlerFunc to iris.Handler(Func)
+func ToHandler(handler interface{}) HandlerFunc {
+
 	//this is not the best way to do it, but I dont have any options right now.
 	switch handler.(type) {
-	case Handler:
+	case HandlerFunc:
 		//it's already an iris handler
-		return handler.(Handler)
+		return handler.(HandlerFunc)
 	case http.Handler:
 		//it's http.Handler
-		h := fasthttpadaptor.NewFastHTTPHandlerFunc(handler.(http.Handler).ServeHTTP)
-
-		return ToHandlerFastHTTP(h)
+		h := handler.(http.Handler)
+		return func(ctx *Context) {
+			h.ServeHTTP(ctx.ResponseWriter, ctx.Request)
+		}
 	case func(http.ResponseWriter, *http.Request):
-		//it's http.HandlerFunc
-		h := fasthttpadaptor.NewFastHTTPHandlerFunc(handler.(func(http.ResponseWriter, *http.Request)))
-		return ToHandlerFastHTTP(h)
+		return ToHandler(http.HandlerFunc(handler.(func(http.ResponseWriter, *http.Request))))
+		//for func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc): READ iris-conrib/middleware/README.md for details
 	default:
 		panic(errHandler.Format(handler, handler))
 	}
-}
 
-// ToHandlerFunc converts an http.Handler or http.HandlerFunc to an iris.HandlerFunc
-func ToHandlerFunc(handler interface{}) HandlerFunc {
-	return ToHandler(handler).Serve
-}
-
-// ToHandlerFastHTTP converts an fasthttp.RequestHandler to an iris.Handler
-func ToHandlerFastHTTP(h fasthttp.RequestHandler) Handler {
-	return HandlerFunc((func(ctx *Context) {
-		h(ctx.RequestCtx)
-	}))
 }
 
 // convertToHandlers just make []HandlerFunc to []Handler, although HandlerFunc and Handler are the same
@@ -700,24 +664,24 @@ func (e *muxEntry) precedenceTo(index int) int {
 // it seems useless but I prefer to keep the cached handler on its own memory stack,
 // reason:  no clojures hell in the Cache function
 type cachedMuxEntry struct {
-	cachedHandler fasthttp.RequestHandler
+	cachedHandler http.Handler
 }
 
-func newCachedMuxEntry(f *Framework, bodyHandler HandlerFunc, expiration time.Duration) *cachedMuxEntry {
-	fhandler := func(reqCtx *fasthttp.RequestCtx) {
-		ctx := f.AcquireCtx(reqCtx)
+func newCachedMuxEntry(s *Framework, bodyHandler HandlerFunc, expiration time.Duration) *cachedMuxEntry {
+	httphandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := s.AcquireCtx(w, r)
 		bodyHandler.Serve(ctx)
-		f.ReleaseCtx(ctx)
-	}
+		s.ReleaseCtx(ctx)
+	})
 
-	cachedHandler := httpcache.CacheFasthttpFunc(fhandler, expiration)
+	cachedHandler := httpcache.Cache(httphandler, expiration)
 	return &cachedMuxEntry{
 		cachedHandler: cachedHandler,
 	}
 }
 
 func (c *cachedMuxEntry) Serve(ctx *Context) {
-	c.cachedHandler(ctx.RequestCtx)
+	c.cachedHandler.ServeHTTP(ctx.ResponseWriter, ctx.Request)
 }
 
 type (
@@ -743,8 +707,7 @@ type (
 		// if no name given then it's the subdomain+path
 		name           string
 		subdomain      string
-		method         []byte
-		methodStr      string
+		method         string
 		path           string
 		middleware     Middleware
 		formattedPath  string
@@ -767,8 +730,8 @@ func (s bySubdomain) Less(i, j int) bool {
 
 var _ Route = &route{}
 
-func newRoute(method []byte, subdomain string, path string, middleware Middleware) *route {
-	r := &route{name: path + subdomain, method: method, methodStr: string(method), subdomain: subdomain, path: path, middleware: middleware}
+func newRoute(method string, subdomain string, path string, middleware Middleware) *route {
+	r := &route{name: path + subdomain, method: method, subdomain: subdomain, path: path, middleware: middleware}
 	r.formatPath()
 	return r
 }
@@ -816,10 +779,7 @@ func (r route) Subdomain() string {
 }
 
 func (r route) Method() string {
-	if r.methodStr == "" {
-		r.methodStr = string(r.method)
-	}
-	return r.methodStr
+	return r.method
 }
 
 func (r route) Path() string {
@@ -865,7 +825,7 @@ const (
 
 type (
 	muxTree struct {
-		method []byte
+		method string
 		// subdomain is empty for default-hostname routes,
 		// ex: mysubdomain.
 		subdomain string
@@ -886,9 +846,6 @@ type (
 		hostname string
 		// if any of the trees contains not empty subdomain
 		hosts bool
-		// if false then searching by unescaped path
-		// defaults to true
-		escapePath bool
 		// if false then the /something it's not the same as /something/
 		// defaults to true
 		correctPath bool
@@ -904,7 +861,6 @@ func newServeMux(logger *log.Logger) *serveMux {
 		lookups:              make([]*route, 0),
 		errorHandlers:        make(map[int]Handler, 0),
 		hostname:             DefaultServerHostname, // these are changing when the server is up
-		escapePath:           !DefaultDisablePathEscape,
 		correctPath:          !DefaultDisablePathCorrection,
 		fireMethodNotAllowed: false,
 		logger:               logger,
@@ -915,10 +871,6 @@ func newServeMux(logger *log.Logger) *serveMux {
 
 func (mux *serveMux) setHostname(h string) {
 	mux.hostname = h
-}
-
-func (mux *serveMux) setEscapePath(b bool) {
-	mux.escapePath = b
 }
 
 func (mux *serveMux) setCorrectPath(b bool) {
@@ -948,7 +900,7 @@ func (mux *serveMux) fireError(statusCode int, ctx *Context) {
 	errHandler := mux.errorHandlers[statusCode]
 	if errHandler == nil {
 		errHandler = HandlerFunc(func(ctx *Context) {
-			ctx.Response.Reset()
+			ctx.ResponseWriter.Reset()
 			ctx.SetStatusCode(statusCode)
 			ctx.SetBodyString(statusText[statusCode])
 		})
@@ -959,17 +911,17 @@ func (mux *serveMux) fireError(statusCode int, ctx *Context) {
 	errHandler.Serve(ctx)
 }
 
-func (mux *serveMux) getTree(method []byte, subdomain string) *muxTree {
+func (mux *serveMux) getTree(method string, subdomain string) *muxTree {
 	for i := range mux.garden {
 		t := mux.garden[i]
-		if bytes.Equal(t.method, method) && t.subdomain == subdomain {
+		if t.method == method && t.subdomain == subdomain {
 			return t
 		}
 	}
 	return nil
 }
 
-func (mux *serveMux) register(method []byte, subdomain string, path string, middleware Middleware) *route {
+func (mux *serveMux) register(method string, subdomain string, path string, middleware Middleware) *route {
 	mux.mu.Lock()
 	defer mux.mu.Unlock()
 
@@ -990,7 +942,7 @@ func (mux *serveMux) register(method []byte, subdomain string, path string, midd
 
 // build collects all routes info and adds them to the registry in order to be served from the request handler
 // this happens once when server is setting the mux's handler.
-func (mux *serveMux) build() (getRequestPath func(*fasthttp.RequestCtx) string, methodEqual func([]byte, []byte) bool) {
+func (mux *serveMux) build() (methodEqual func(string, string) bool) {
 
 	sort.Sort(bySubdomain(mux.lookups))
 
@@ -1014,26 +966,17 @@ func (mux *serveMux) build() (getRequestPath func(*fasthttp.RequestCtx) string, 
 		}
 	}
 
-	// optimize this once once, we could do that: context.RequestPath(mux.escapePath), but we lose some nanoseconds on if :)
-	getRequestPath = func(reqCtx *fasthttp.RequestCtx) string {
-		return string(reqCtx.Path())
-	}
-
-	if !mux.escapePath {
-		getRequestPath = func(reqCtx *fasthttp.RequestCtx) string { return string(reqCtx.RequestURI()) }
-	}
-
-	methodEqual = func(reqMethod []byte, treeMethod []byte) bool {
-		return bytes.Equal(reqMethod, treeMethod)
+	methodEqual = func(reqMethod string, treeMethod string) bool {
+		return reqMethod == treeMethod
 	}
 	// check for cors conflicts FIRST in order to put them in OPTIONS tree also
 	for i := range mux.lookups {
 		r := mux.lookups[i]
 		if r.hasCors() {
 			// cors middleware is updated also, ref: https://github.com/kataras/iris/issues/461
-			methodEqual = func(reqMethod []byte, treeMethod []byte) bool {
+			methodEqual = func(reqMethod string, treeMethod string) bool {
 				// preflights
-				return bytes.Equal(reqMethod, MethodOptionsBytes) || bytes.Equal(reqMethod, treeMethod)
+				return reqMethod == MethodOptions || reqMethod == treeMethod
 			}
 			break
 		}
@@ -1072,18 +1015,19 @@ func HTMLEscape(s string) string {
 func (mux *serveMux) BuildHandler() HandlerFunc {
 
 	// initialize the router once
-	getRequestPath, methodEqual := mux.build()
+	methodEqual := mux.build()
 
 	return func(context *Context) {
-		routePath := getRequestPath(context.RequestCtx)
+		routePath := context.Path()
 		for i := range mux.garden {
 			tree := mux.garden[i]
-			if !methodEqual(context.Method(), tree.method) {
+			if !methodEqual(context.Request.Method, tree.method) {
 				continue
 			}
 
 			if mux.hosts && tree.subdomain != "" {
-				// context.VirtualHost() is a slow method because it makes string.Replaces but user can understand that if subdomain then server will have some nano/or/milleseconds performance cost
+				// context.VirtualHost() is a slow method because it makes
+				// string.Replaces but user can understand that if subdomain then server will have some nano/or/milleseconds performance cost
 				requestHost := context.VirtualHostname()
 				if requestHost != mux.hostname {
 					//println(requestHost + " != " + mux.hostname)
@@ -1111,8 +1055,7 @@ func (mux *serveMux) BuildHandler() HandlerFunc {
 				//ctx.Request.Header.SetUserAgentBytes(DefaultUserAgent)
 				context.Do()
 				return
-			} else if mustRedirect && mux.correctPath && !bytes.Equal(context.Method(), MethodConnectBytes) {
-
+			} else if mustRedirect && mux.correctPath { // && context.Method() == MethodConnect {
 				reqPath := routePath
 				pathLen := len(reqPath)
 
@@ -1124,23 +1067,22 @@ func (mux *serveMux) BuildHandler() HandlerFunc {
 						reqPath = reqPath + "/"
 					}
 
-					context.Request.URI().SetPath(reqPath)
-					urlToRedirect := string(context.Request.RequestURI())
+					urlToRedirect := reqPath
 
-					statisForRedirect := StatusMovedPermanently //	StatusMovedPermanently, this document is obselte, clients caches this.
-					if bytes.Equal(tree.method, MethodPostBytes) ||
-						bytes.Equal(tree.method, MethodPutBytes) ||
-						bytes.Equal(tree.method, MethodDeleteBytes) {
-						statisForRedirect = StatusTemporaryRedirect //	To maintain POST data
+					statusForRedirect := StatusMovedPermanently //	StatusMovedPermanently, this document is obselte, clients caches this.
+					if tree.method == MethodPost ||
+						tree.method == MethodPut ||
+						tree.method == MethodDelete {
+						statusForRedirect = StatusTemporaryRedirect //	To maintain POST data
 					}
 
-					context.Redirect(urlToRedirect, statisForRedirect)
+					context.Redirect(urlToRedirect, statusForRedirect)
 					// RFC2616 recommends that a short note "SHOULD" be included in the
 					// response because older user agents may not understand 301/307.
 					// Shouldn't send the response for POST or HEAD; that leaves GET.
-					if bytes.Equal(tree.method, MethodGetBytes) {
+					if tree.method == MethodGet {
 						note := "<a href=\"" + HTMLEscape(urlToRedirect) + "\">Moved Permanently</a>.\n"
-						context.Write(note)
+						context.WriteString(note)
 					}
 					return
 				}
@@ -1408,13 +1350,14 @@ func ParseScheme(domain string) string {
 	return SchemeHTTP
 }
 
-// ProxyHandler returns a new fasthttp handler which works as 'proxy', maybe doesn't suits you look its code before using that in production
-var ProxyHandler = func(proxyAddr string, redirectSchemeAndHost string) fasthttp.RequestHandler {
-	return func(reqCtx *fasthttp.RequestCtx) {
+// ProxyHandler returns a new net/http.Handler which works as 'proxy', maybe doesn't suits you look its code before using that in production
+var ProxyHandler = func(redirectSchemeAndHost string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
 		// override the handler and redirect all requests to this addr
 		redirectTo := redirectSchemeAndHost
-		fakehost := string(reqCtx.Request.Host())
-		path := string(reqCtx.Path())
+		fakehost := r.URL.Host
+		path := r.URL.EscapedPath()
 		if strings.Count(fakehost, ".") >= 3 { // propably a subdomain, pure check but doesn't matters don't worry
 			if sufIdx := strings.LastIndexByte(fakehost, '.'); sufIdx > 0 {
 				// check if the last part is a number instead of .com/.gr...
@@ -1425,7 +1368,7 @@ var ProxyHandler = func(proxyAddr string, redirectSchemeAndHost string) fasthttp
 					realHost := strings.Replace(redirectSchemeAndHost, redirectScheme, "", 1)
 					redirectHost := strings.Replace(fakehost, fakehost, realHost, 1)
 					redirectTo = redirectScheme + redirectHost + path
-					reqCtx.Redirect(redirectTo, StatusMovedPermanently)
+					http.Redirect(w, r, redirectTo, StatusMovedPermanently)
 					return
 				}
 			}
@@ -1433,8 +1376,11 @@ var ProxyHandler = func(proxyAddr string, redirectSchemeAndHost string) fasthttp
 		if path != "/" {
 			redirectTo += path
 		}
+		if redirectTo == r.URL.String() {
+			return
+		}
 
-		reqCtx.Redirect(redirectTo, StatusMovedPermanently)
+		http.Redirect(w, r, redirectTo, StatusMovedPermanently)
 	}
 }
 
@@ -1447,11 +1393,13 @@ func Proxy(proxyAddr string, redirectSchemeAndHost string) func() error {
 	proxyAddr = ParseHost(proxyAddr)
 
 	// override the handler and redirect all requests to this addr
-	h := ProxyHandler(proxyAddr, redirectSchemeAndHost)
+	h := ProxyHandler(redirectSchemeAndHost)
 	prx := New(OptionDisableBanner(true))
 	prx.Router = h
 
 	go prx.Listen(proxyAddr)
-
-	return prx.Close
+	if ok := <-prx.Available; !ok {
+		prx.Logger.Panic("Unexpected error: proxy server cannot start, please report this as bug!!")
+	}
+	return func() error { return prx.Close() }
 }

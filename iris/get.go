@@ -2,12 +2,13 @@ package main // #nosec
 
 import (
 	"fmt"
-	"github.com/kataras/cli"
-	"github.com/kataras/go-fs"
-	"github.com/skratchdot/open-golang/open"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/kataras/cli"
+	"github.com/kataras/go-fs"
+	"github.com/skratchdot/open-golang/open"
 )
 
 // we introduce a project type, because I'm (not near future) planning  dynamic inserting projects here by iris community

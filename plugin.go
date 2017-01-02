@@ -1,9 +1,8 @@
 package iris
 
 import (
-	"sync"
-
 	"log"
+	"sync"
 
 	"github.com/kataras/go-errors"
 	"github.com/kataras/go-fs"

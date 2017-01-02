@@ -2,6 +2,58 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+
+## v5/fasthttp -> 6.0.0
+
+As I [promised to the community](https://github.com/kataras/iris/issues/565) and a lot others, HTTP/2 support on Iris is happening!
+
+I tried to minimize the side affects.
+
+If you don't find something you used to use come here and check that conversional list:
+
+- `context.Response.BodyWriter() io.Writer` -> `context.ResponseWriter` is a http.ResponseWriter(and io.Writer) now.
+
+- `context.RequestCtx` removed and replaced by `context.ResponseWriter (*iris.ResponseWriter -> http.ResponseWriter)` and `context.Request (*http.Request)`
+
+- `context.Write(string, ...string)` -> `context.Writef(string, ...string)` | Write now has this form: Write([]byte) (int,error). All other write methods didn't changed.
+
+- `context.GetFlash/SetFlash` -> `context.Session().GetFlash/GetFlashString/SetFlash/DeleteFlash/ClearFlashes/Flashes/HasFlash`.
+
+- `context.FormValueString(string)` -> `context.FormValue(string)`.
+- `context.PathString()` -> `context.Path()`.
+- `context.HostString()` -> `context.Host()`.
+
+- `iris.Config.DisablePathEscape` was removed because now we have two methods to get a parameter `context.Param/ParamDecoded`.
+
+
+- All net/http middleware/handlers are **COMPATIBLE WITH IRIS NOW**, read more there](https://github.com/iris-contrib/middleware/blob/master/README.md#can-i-use-standard-nethttp-handler-with-iris).
+
+
+**Static methods changes**
+
+- `iris.StaticServe/StaticContent/StaticEmbedded/Favicon stay as they were before this version.`.
+
+-	`iris.StaticHandler(string, int, bool, bool, []string) HandlerFunc` -> `iris.StaticHandler(reqPath string, systemPath string, showList bool, enableGzip bool) HandlerFunc`.
+
+
+- `iris.StaticWeb(string, string, int) RouteNameFunc` -> `iris.StaticWeb(routePath string, systemPath string) RouteNameFunc`.
+- `iris.Static` -> removed and joined to the new iris.StaticHandler
+- `iris.StaticFS` -> removed and joined into the new `iris.StaticWeb`.
+
+
+
+**More on Transictions vol 4**:
+
+- Add support for custom `transactions scopes`, two scopes already implemented: `iris.TransientTransactionScope(default) and iris.RequestTransactionScope `
+
+- `ctx.BeginTransaction(pipe func(*iris.TransactionScope))` -> `ctx.BeginTransaction(pipe func(*iris.Transaction))`
+
+- [from](https://github.com/iris-contrib/examples/blob/5.0.0/transactions/main.go) -> [to](https://github.com/iris-contrib/examples/blob/master/transactions/main.go). Further research `context_test.go:TestTransactions` and https://www.codeproject.com/Articles/690136/All-About-TransactionScope (for .NET C#, I got the idea from there, it's a unique(golang web) feature so please read this before use transactions inside iris)
+
+
+[Examples](https://github.com/iris-contrib/examples/tree/master), [middleware](https://github.com/iris-contrib/middleware/tree/master) & [plugins](https://github.com/iris-contrib/plugin) were been refactored for this new (net/http2 compatible) release.
+
+
 ## 5.1.1 -> 5.1.3
 - **More on Transactions vol 3**: Recovery from any (unexpected error) panics inside `context.BeginTransaction` without loud, continue the execution as expected. Next version will have a little cleanup if I see that the transactions code is going very large or hard to understand the flow*
 

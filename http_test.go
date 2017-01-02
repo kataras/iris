@@ -3,70 +3,69 @@ package iris_test
 
 import (
 	"fmt"
-	"github.com/gavv/httpexpect"
-	"github.com/kataras/go-errors"
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/httptest"
-	"github.com/valyala/fasthttp"
 	"io/ioutil"
 	"math/rand"
+	"net/http"
 	"os"
 	"strconv"
-	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/gavv/httpexpect"
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/httptest"
 )
 
 const (
 	testTLSCert = `-----BEGIN CERTIFICATE-----
-MIIDATCCAemgAwIBAgIJAPdE0ZyCKwVtMA0GCSqGSIb3DQEBBQUAMBcxFTATBgNV
-BAMMDG15ZG9tYWluLmNvbTAeFw0xNjA5MjQwNjU3MDVaFw0yNjA5MjIwNjU3MDVa
-MBcxFTATBgNVBAMMDG15ZG9tYWluLmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEP
-ADCCAQoCggEBAM9YJOV1Bl+NwEq8ZAcVU2YONBw5zGkUFJUZkL77XT0i1V473JTf
-GEpNZisDman+6n+pXarC2mR4T9PkCfmk072HaZ2LXwYe9XSgxnLJZJA1fJMzdMMC
-2XveINF+/eeoyW9+8ZjQPbZdHWcxi7RomXg1AOMAG2UWMjalK5xkTHcqDuOI2LEe
-mezWHnFdBJNMTi3pNdbVr7BjexZTSGhx4LAIP2ufTUoVzk+Cvyr4IhS00zOiyyWv
-tuJaO20Q0Q5n34o9vDAACKAfNRLBE8qzdRwsjMumXTX3hJzvgFp/4Lr5Hr2I2fBd
-tbIWN9xIsu6IibBGFItiAfQSrKAR7IFVqDUCAwEAAaNQME4wHQYDVR0OBBYEFNvN
-Yik2eBRDmDaqoMaLfvr75kGfMB8GA1UdIwQYMBaAFNvNYik2eBRDmDaqoMaLfvr7
-5kGfMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQEFBQADggEBAEAv3pKkmDTXIChB
-nVrbYwNibin9HYOPf3JCjU48V672YPgbfJM0WfTvLXNVBOdTz3aIUrhfwv/go2Jz
-yDcIFdLUdwllovhj1RwI96lbgCJ4AKoO/fvJ5Rxq+/vvLYB38PNl/fVEnOOeWzCQ
-qHfjckShNV5GzJPhfpYn9Gj6+Zj3O0cJXhF9L/FlbVxFhwPjPRbFDNTHYzgiHy82
-zhhDhTQJVnNJXfokdlg9OjfFkySqpv9fvPi/dfk5j1KmKUiYP5SYUhZiKX1JScvx
-JgesCwz1nUfVQ1TYE0dphU8mTCN4Y42i7bctx7iLcDRIFhtYstt0hhCKSxFmJSBG
-y9RITRA=
+MIIDAzCCAeugAwIBAgIJAP0pWSuIYyQCMA0GCSqGSIb3DQEBBQUAMBgxFjAUBgNV
+BAMMDWxvY2FsaG9zdDozMzEwHhcNMTYxMjI1MDk1OTI3WhcNMjYxMjIzMDk1OTI3
+WjAYMRYwFAYDVQQDDA1sb2NhbGhvc3Q6MzMxMIIBIjANBgkqhkiG9w0BAQEFAAOC
+AQ8AMIIBCgKCAQEA5vETjLa+8W856rWXO1xMF/CLss9vn5xZhPXKhgz+D7ogSAXm
+mWP53eeBUGC2r26J++CYfVqwOmfJEu9kkGUVi8cGMY9dHeIFPfxD31MYX175jJQe
+tu0WeUII7ciNsSUDyBMqsl7yi1IgN7iLONM++1+QfbbmNiEbghRV6icEH6M+bWlz
+3YSAMEdpK3mg2gsugfLKMwJkaBKEehUNMySRlIhyLITqt1exYGaggRd1zjqUpqpD
+sL2sRVHJ3qHGkSh8nVy8MvG8BXiFdYQJP3mCQDZzruCyMWj5/19KAyu7Cto3Bcvu
+PgujnwRtU+itt8WhZUVtU1n7Ivf6lMJTBcc4OQIDAQABo1AwTjAdBgNVHQ4EFgQU
+MXrBvbILQmiwjUj19aecF2N+6IkwHwYDVR0jBBgwFoAUMXrBvbILQmiwjUj19aec
+F2N+6IkwDAYDVR0TBAUwAwEB/zANBgkqhkiG9w0BAQUFAAOCAQEA4zbFml1t9KXJ
+OijAV8gALePR8v04DQwJP+jsRxXw5zzhc8Wqzdd2hjUd07mfRWAvmyywrmhCV6zq
+OHznR+aqIqHtm0vV8OpKxLoIQXavfBd6axEXt3859RDM4xJNwIlxs3+LWGPgINud
+wjJqjyzSlhJpQpx4YZ5Da+VMiqAp8N1UeaZ5lBvmSDvoGh6HLODSqtPlWMrldRW9
+AfsXVxenq81MIMeKW2fSOoPnWZ4Vjf1+dSlbJE/DD4zzcfbyfgY6Ep/RrUltJ3ag
+FQbuNTQlgKabe21dSL9zJ2PengVKXl4Trl+4t/Kina9N9Jw535IRCSwinD6a/2Ca
+m7DnVXFiVA==
 -----END CERTIFICATE-----
 `
 
 	testTLSKey = `-----BEGIN RSA PRIVATE KEY-----
-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
+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
 -----END RSA PRIVATE KEY-----
-	`
+`
 )
 
 func TestParseAddr(t *testing.T) {
@@ -155,7 +154,7 @@ func getRandomNumber(min int, max int) int {
 // works as
 // defer listenTLS(iris.Default, hostTLS)()
 func listenTLS(api *iris.Framework, hostTLS string) func() {
-	api.Close() // close any previous server
+	api.Close() // close any prev listener
 	api.Config.DisableBanner = true
 	// create the key and cert files on the fly, and delete them when this test finished
 	certFile, ferr := ioutil.TempFile("", "cert")
@@ -179,68 +178,77 @@ func listenTLS(api *iris.Framework, hostTLS string) func() {
 
 	return func() {
 		certFile.Close()
-		time.Sleep(150 * time.Millisecond)
+		time.Sleep(50 * time.Millisecond)
 		os.Remove(certFile.Name())
 
 		keyFile.Close()
-		time.Sleep(150 * time.Millisecond)
+		time.Sleep(50 * time.Millisecond)
 		os.Remove(keyFile.Name())
-
-		api.Close()
 	}
 }
 
 // Contains the server test for multi running servers
 func TestMultiRunningServers_v1_PROXY(t *testing.T) {
-	iris.ResetDefault()
+	api := iris.New()
 
-	host := "localhost" // you have to add it to your hosts file( for windows, as 127.0.0.1 mydomain.com)
-	hostTLS := host + ":" + strconv.Itoa(getRandomNumber(8886, 8889))
-
-	iris.Get("/", func(ctx *iris.Context) {
-		ctx.Write("Hello from %s", hostTLS)
+	host := "localhost"
+	hostTLS := host + ":" + strconv.Itoa(getRandomNumber(1919, 2221))
+	api.Get("/", func(ctx *iris.Context) {
+		ctx.Writef("Hello from %s", hostTLS)
 	})
+	// println("running main on: " + hostTLS)
 
-	proxyHost := host + ":" + strconv.Itoa(getRandomNumber(3300, 3332))
-	closeProxy := iris.Proxy(proxyHost, "https://"+hostTLS)
-	defer closeProxy()
+	defer listenTLS(api, hostTLS)()
 
-	defer listenTLS(iris.Default, hostTLS)()
+	e := httptest.New(api, t, httptest.ExplicitURL(true))
+	e.Request("GET", "/").Expect().Status(iris.StatusOK).Body().Equal("Hello from " + hostTLS)
 
-	e := httptest.New(iris.Default, t, httptest.ExplicitURL(true))
+	// proxy http to https
+	proxyHost := host + ":" + strconv.Itoa(getRandomNumber(3300, 3340))
+	// println("running proxy on: " + proxyHost)
 
-	e.Request("GET", "http://"+proxyHost).Expect().Status(iris.StatusOK).Body().Equal("Hello from " + hostTLS)
-	e.Request("GET", "https://"+hostTLS).Expect().Status(iris.StatusOK).Body().Equal("Hello from " + hostTLS)
+	iris.Proxy(proxyHost, "https://"+hostTLS)
 
+	//	proxySrv := &http.Server{Addr: proxyHost, Handler: iris.ProxyHandler("https://" + hostTLS)}
+	//	go proxySrv.ListenAndServe()
+	//	time.Sleep(3 * time.Second)
+
+	eproxy := httptest.NewInsecure("http://"+proxyHost, t, httptest.ExplicitURL(true))
+	eproxy.Request("GET", "/").Expect().Status(iris.StatusOK).Body().Equal("Hello from " + hostTLS)
 }
 
 // Contains the server test for multi running servers
 func TestMultiRunningServers_v2(t *testing.T) {
-	iris.ResetDefault()
+	api := iris.New()
 
 	domain := "localhost"
-	hostTLS := domain + ":" + strconv.Itoa(getRandomNumber(3333, 4444))
+	hostTLS := domain + ":" + strconv.Itoa(getRandomNumber(2222, 2229))
 	srv1Host := domain + ":" + strconv.Itoa(getRandomNumber(4446, 5444))
 	srv2Host := domain + ":" + strconv.Itoa(getRandomNumber(7778, 8887))
 
-	iris.Get("/", func(ctx *iris.Context) {
-		ctx.Write("Hello from %s", hostTLS)
+	api.Get("/", func(ctx *iris.Context) {
+		ctx.Writef("Hello from %s", hostTLS)
 	})
 
-	// using the proxy handler
-	fsrv1 := &fasthttp.Server{Handler: iris.ProxyHandler(srv1Host, "https://"+hostTLS)}
-	go fsrv1.ListenAndServe(srv1Host)
+	defer listenTLS(api, hostTLS)()
+
 	// using the same iris' handler but not as proxy, just the same handler
-	fsrv2 := &fasthttp.Server{Handler: iris.Default.Router}
-	go fsrv2.ListenAndServe(srv2Host)
+	srv2 := &http.Server{Handler: api.Router, Addr: srv2Host}
+	go srv2.ListenAndServe()
 
-	defer listenTLS(iris.Default, hostTLS)()
+	// using the proxy handler
+	srv1 := &http.Server{Handler: iris.ProxyHandler("https://" + hostTLS), Addr: srv1Host}
+	go srv1.ListenAndServe()
+	time.Sleep(500 * time.Millisecond) // wait a little for the http servers
 
-	e := httptest.New(iris.Default, t, httptest.ExplicitURL(true))
+	e := httptest.New(api, t, httptest.ExplicitURL(true))
+	e.Request("GET", "/").Expect().Status(iris.StatusOK).Body().Equal("Hello from " + hostTLS)
 
-	e.Request("GET", "http://"+srv1Host).Expect().Status(iris.StatusOK).Body().Equal("Hello from " + hostTLS)
-	e.Request("GET", "http://"+srv2Host).Expect().Status(iris.StatusOK).Body().Equal("Hello from " + hostTLS)
-	e.Request("GET", "https://"+hostTLS).Expect().Status(iris.StatusOK).Body().Equal("Hello from " + hostTLS)
+	eproxy1 := httptest.NewInsecure("http://"+srv1Host, t, httptest.ExplicitURL(true))
+	eproxy1.Request("GET", "/").Expect().Status(iris.StatusOK).Body().Equal("Hello from " + hostTLS)
+
+	eproxy2 := httptest.NewInsecure("http://"+srv2Host, t)
+	eproxy2.Request("GET", "/").Expect().Status(iris.StatusOK).Body().Equal("Hello from " + hostTLS)
 
 }
 
@@ -360,7 +368,7 @@ func TestMuxSimple(t *testing.T) {
 func TestMuxSimpleParty(t *testing.T) {
 	iris.ResetDefault()
 
-	h := func(c *iris.Context) { c.WriteString(c.HostString() + c.PathString()) }
+	h := func(c *iris.Context) { c.WriteString(c.Request.URL.Host + c.Request.RequestURI) }
 
 	if testEnableSubdomain {
 		subdomainParty := iris.Party(testSubdomain + ".")
@@ -422,8 +430,9 @@ func TestMuxPathEscape(t *testing.T) {
 	iris.ResetDefault()
 
 	iris.Get("/details/:name", func(ctx *iris.Context) {
-		name := ctx.Param("name")
+		name := ctx.ParamDecoded("name")
 		highlight := ctx.URLParam("highlight")
+
 		ctx.Text(iris.StatusOK, fmt.Sprintf("name=%s,highlight=%s", name, highlight))
 	})
 
@@ -438,9 +447,10 @@ func TestMuxDecodeURL(t *testing.T) {
 	iris.ResetDefault()
 
 	iris.Get("/encoding/:url", func(ctx *iris.Context) {
-		url := iris.DecodeURL(ctx.Param("url"))
+		url := ctx.ParamDecoded("url")
+
 		ctx.SetStatusCode(iris.StatusOK)
-		ctx.Write(url)
+		ctx.WriteString(url)
 	})
 
 	e := httptest.New(iris.Default, t)
@@ -487,11 +497,11 @@ func TestMuxCustomErrors(t *testing.T) {
 
 	// register the custom errors
 	iris.OnError(iris.StatusNotFound, func(ctx *iris.Context) {
-		ctx.Write("%s", notFoundMessage)
+		ctx.Writef("%s", notFoundMessage)
 	})
 
 	iris.OnError(iris.StatusInternalServerError, func(ctx *iris.Context) {
-		ctx.Write("%s", internalServerMessage)
+		ctx.Writef("%s", internalServerMessage)
 	})
 
 	// create httpexpect instance that will call fasthtpp.RequestHandler directly
@@ -511,27 +521,27 @@ type testUserAPI struct {
 
 // GET /users
 func (u testUserAPI) Get() {
-	u.Write("Get Users\n")
+	u.WriteString("Get Users\n")
 }
 
 // GET /users/:param1 which its value passed to the id argument
 func (u testUserAPI) GetBy(id string) { // id equals to u.Param("param1")
-	u.Write("Get By %s\n", id)
+	u.Writef("Get By %s\n", id)
 }
 
 // PUT /users
 func (u testUserAPI) Put() {
-	u.Write("Put, name: %s\n", u.FormValue("name"))
+	u.Writef("Put, name: %s\n", u.FormValue("name"))
 }
 
 // POST /users/:param1
 func (u testUserAPI) PostBy(id string) {
-	u.Write("Post By %s, name: %s\n", id, u.FormValue("name"))
+	u.Writef("Post By %s, name: %s\n", id, u.FormValue("name"))
 }
 
 // DELETE /users/:param1
 func (u testUserAPI) DeleteBy(id string) {
-	u.Write("Delete By %s\n", id)
+	u.Writef("Delete By %s\n", id)
 }
 
 func TestMuxAPI(t *testing.T) {
@@ -544,7 +554,7 @@ func TestMuxAPI(t *testing.T) {
 		ctx.Next()
 	}, func(ctx *iris.Context) {
 		if ctx.Get("user") == "username" {
-			ctx.Write(middlewareResponseText)
+			ctx.WriteString(middlewareResponseText)
 			ctx.Next()
 		} else {
 			ctx.SetStatusCode(iris.StatusUnauthorized)
@@ -630,11 +640,11 @@ func TestMuxFireMethodNotAllowed(t *testing.T) {
 	iris.ResetDefault()
 	iris.Default.Config.FireMethodNotAllowed = true
 	h := func(ctx *iris.Context) {
-		ctx.Write("%s", ctx.MethodString())
+		ctx.WriteString(ctx.Method())
 	}
 
 	iris.Default.OnError(iris.StatusMethodNotAllowed, func(ctx *iris.Context) {
-		ctx.Write("Hello from my custom 405 page")
+		ctx.WriteString("Hello from my custom 405 page")
 	})
 
 	iris.Get("/mypath", h)
@@ -650,6 +660,7 @@ func TestMuxFireMethodNotAllowed(t *testing.T) {
 	iris.Close()
 }
 
+/*
 var (
 	cacheDuration      = 2 * time.Second
 	errCacheTestFailed = errors.New("Expected the main handler to be executed %d times instead of %d.")
@@ -680,7 +691,7 @@ func runCacheTest(e *httpexpect.Expect, path string, counterPtr *uint32, expecte
 	return nil
 }
 
-/*
+
 Inside github.com/geekypanda/httpcache are enough, no need to add 10+ seconds of testing here.
 func TestCache(t *testing.T) {
 
@@ -714,15 +725,18 @@ func TestCache(t *testing.T) {
 */
 
 func TestRedirectHTTPS(t *testing.T) {
-	iris.ResetDefault()
-	host := "localhost:" + strconv.Itoa(getRandomNumber(4545, 5555))
-	expectedBody := "Redirected to https://" + host + "/redirected"
 
-	iris.Get("/redirect", func(ctx *iris.Context) { ctx.Redirect("/redirected") })
-	iris.Get("/redirected", func(ctx *iris.Context) { ctx.Text(iris.StatusOK, "Redirected to "+ctx.URI().String()) })
+	api := iris.New(iris.OptionIsDevelopment(true))
 
-	defer listenTLS(iris.Default, host)()
+	host := "localhost:" + strconv.Itoa(getRandomNumber(1717, 9281))
 
-	e := httptest.New(iris.Default, t, httptest.ExplicitURL(true))
-	e.Request("GET", "https://"+host+"/redirect").Expect().Status(iris.StatusOK).Body().Equal(expectedBody)
+	expectedBody := "Redirected to /redirected"
+
+	api.Get("/redirect", func(ctx *iris.Context) { ctx.Redirect("/redirected") })
+	api.Get("/redirected", func(ctx *iris.Context) { ctx.Text(iris.StatusOK, "Redirected to "+ctx.Path()) })
+	defer listenTLS(api, host)()
+
+	e := httptest.New(api, t)
+	e.GET("/redirect").Expect().Status(iris.StatusOK).Body().Equal(expectedBody)
+
 }

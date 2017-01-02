@@ -20,7 +20,7 @@
 <br/>
 
 
-<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20version%20-%205.1.3%20-blue.svg?style=flat-square" alt="Releases"></a>
+<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20version%20-%206.0.0%20-blue.svg?style=flat-square" alt="Releases"></a>
 
 <a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/%20examples-repository-3362c2.svg?style=flat-square" alt="Examples"></a>
 
@@ -29,7 +29,7 @@
 <a href="https://kataras.rocket.chat/channel/iris"><img src="https://img.shields.io/badge/%20community-chat-00BCD4.svg?style=flat-square" alt="Chat"></a><br/>
 <br/>
 
-<b>Iris</b> is the fastest back-end web framework written in Go.
+<b>Iris</b> is the fastest HTTP/2 web framework written in Go.
 <br/>
 <b>Easy</b> to <a href="https://docs.iris-go.com">learn</a>  while it's highly customizable,
 ideally suited for <br/> both experienced and novice developers.<br/><br/>
@@ -39,8 +39,6 @@ Besides the fact that Iris is faster than any alternatives you may met before, <
 If you're coming from <a href="https://nodejs.org/en/">Node.js</a> world, this is the <a href="https://github.com/expressjs/express">expressjs</a>  alternative for the <a href="https://golang.org">Go Programming Language.</a>
 <br/>
 
-<br/>
-<img src="https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png" alt="Benchmark Wizzard July 21, 2016- Processing Time Horizontal Graph" />
 </p>
 
 
@@ -49,10 +47,14 @@ Feature Overview
 -----------
 
 - Focus on high performance
+- Highly customizable
+- HTTP/2 full support
+- Hot Reload on source code changes
+- Compatible with all net/http handlers
 - Automatically install and serve certificates from https://letsencrypt.org
 - Robust routing and middleware ecosystem
 - Build RESTful APIs
-- Request-Scoped Transactions
+- Context Scoped Transactions
 - Group API's and subdomains with wildcard support
 - Body binding for JSON, XML, Forms, can be extended to use your own custom binders
 - More than 50 handy functions to send HTTP responses
@@ -61,9 +63,8 @@ Feature Overview
 - Graceful shutdown
 - Limit request body
 - Localization i18N
-- Serve static files
-- Cache
-- Log requests
+- Serve static files, directories and streams
+- Fast Cache System
 - Customizable format and output for the logger
 - Customizable HTTP errors
 - Compression (Gzip)
@@ -71,22 +72,15 @@ Feature Overview
  - OAuth, OAuth2 supporting 27+ popular websites
  - JWT
  - Basic Authentication
- - HTTP Sessions
+ - HTTP Sessions and flash messages
 - Add / Remove trailing slash from the URL with option to redirect
-- Redirect requests
- - HTTP to HTTPS
- - HTTP to HTTPS WWW
- - HTTP to HTTPS non WWW
- - Non WWW to WWW
- - WWW to non WWW
+- Redirect any request
 - Highly scalable rich content render (Markdown, JSON, JSONP, XML...)
-- Websocket-only API similar to socket.io  
-- Hot Reload on source code changes
+- Websocket API similar to socket.io
 - Typescript integration + Web IDE
-- Checks for updates at startup
-- Highly customizable
+- Optional updater
 - Feels like you used iris forever, thanks to its Fluent API
-- And many others...
+- And more...
 
 Quick Start
 -----------
@@ -127,7 +121,7 @@ func main(){
 
   })
 
-  iris.Listen("localhost:5700")
+  iris.Listen("localhost:5900")
 }
 
 ```
@@ -138,48 +132,6 @@ $ go run hellojson.go
 
 Open your browser or any other http client at http://localhost:5700/api/user/42.
 
-### Merry Christmas!
-
-<p>
-
-<img width="535" align="left" src="https://github.com/iris-contrib/website/raw/gh-pages/assets/chtree.jpg" />
-
-&nbsp;&nbsp;This project started ~9 months ago<br/>
-&nbsp;&nbsp;and rapidly won your trust,<br/>
-&nbsp;&nbsp;I'm very thankful for this and<br/>
-&nbsp;&nbsp;I promise you that I'll continue to<br/>
-&nbsp;&nbsp;do my bests.<br/><br/>
-
-&nbsp;&nbsp;All people, poor or rich, should give<br/>
-&nbsp;&nbsp;and share with each others.
-<br/><br/>
-&nbsp;&nbsp;As a person who knows<br/>
-&nbsp;&nbsp;how someone feels when opens<br/>
-&nbsp;&nbsp;the fridge and finds nothing to eat, again,  <br/>
-&nbsp;&nbsp;I decided that all the <a href="https://github.com/kataras/iris/blob/master/DONATIONS.md">money you<br/>
-&nbsp;&nbsp;donated so far[<i>424 EUR</i>]</a>,<br/>
-&nbsp;&nbsp;and until the end of this month,<br/>
-&nbsp;&nbsp;<b>should go back to the people<br/>
-&nbsp;&nbsp;who need them most.</b><br/>
-&nbsp;&nbsp;Is not enough but...
-
-
-
-<br/>
-<br/>
-
-&nbsp;&nbsp;CHRISTMAS IS MOST TRULY<br/>
-&nbsp;&nbsp;CHRISTMAS WHEN WE<br/>
-&nbsp;&nbsp;CELEBRATE IT BY GIVING THE<br/>
-&nbsp;&nbsp;LIGHT OF LOVE TO THOSE<br/>
-&nbsp;&nbsp;WHO NEED IT MOST.
-<br/><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;~ Ruth Carter Stapleton
-
-<br/>
-<br/>
-<br/>
-</p>
 
 ### New
 
@@ -190,7 +142,7 @@ app := iris.New()
 app.Listen(....)
 
 // New with configuration struct
-app := iris.New(iris.Configuration{ DisablePathEscape: true})
+app := iris.New(iris.Configuration{ IsDevelopment: true})
 
 app.Listen(...)
 
@@ -198,7 +150,9 @@ app.Listen(...)
 iris.Listen(...)
 
 // Default station with custom configuration
-iris.Config.DisablePathEscape = true
+// view the whole configuration at: ./configuration.go
+iris.Config.IsDevelopment = true
+iris.Config.Charset = "UTF-8"
 
 iris.Listen(...)
 ```
@@ -270,8 +224,8 @@ func getProduct(ctx *iris.Context){
 
 ```go
 func details(ctx *iris.Context){
-  color:= ctx.URLParam("color")
-  weight:= ctx.URLParamInt("weight")
+  color := ctx.URLParam("color")
+  weight,_ := ctx.URLParamInt("weight")
 }
 
 ```
@@ -289,8 +243,8 @@ email | kataras2006@homail.com
 ```go
 func save(ctx *iris.Context) {
 	// Get name and email
-	name := ctx.FormValueString("name")
-	email := ctx.FormValueString("email")
+	name := ctx.FormValue("name")
+	email := ctx.FormValue("email")
 }
 ```
 
@@ -307,22 +261,16 @@ avatar | avatar
 ```go
 func save(ctx *iris.Context)  {
 	// Get name and email
-	name := ctx.FormValueString("name")
-	email := ctx.FormValueString("email")
+	name := ctx.FormValue("name")
+	email := ctx.FormValue("email")
 	// Get avatar
-	avatar, err := ctx.FormFile("avatar")
+	avatar, info, err := ctx.FormFile("avatar")
 	if err != nil {
        ctx.EmitError(iris.StatusInternalServerError)
        return
 	}
 
-	// Source
-	src, err := avatar.Open()
-	if err != nil {
-       ctx.EmitError(iris.StatusInternalServerError)
-       return
-	}
-	defer src.Close()
+	defer avatar.Close()
 
 	// Destination
 	dst, err := os.Create(avatar.Filename)
@@ -333,7 +281,7 @@ func save(ctx *iris.Context)  {
 	defer dst.Close()
 
 	// Copy
-	if _, err = io.Copy(dst, src); err != nil {
+	if _, err = io.Copy(dst, avatar); err != nil {
        ctx.EmitError(iris.StatusInternalServerError)
        return
 	}
@@ -394,13 +342,13 @@ import (
 func main() {
 
 	iris.OnError(iris.StatusInternalServerError, func(ctx *iris.Context) {
-        ctx.Write("CUSTOM 500 INTERNAL SERVER ERROR PAGE")
+    ctx.Writef("CUSTOM 500 INTERNAL SERVER ERROR PAGE")
 		// or ctx.Render, ctx.HTML any render method you want
 		ctx.Log("http status: 500 happened!")
 	})
 
 	iris.OnError(iris.StatusNotFound, func(ctx *iris.Context) {
-		ctx.Write("CUSTOM 404 NOT FOUND ERROR PAGE")
+		ctx.Writef("CUSTOM 404 NOT FOUND ERROR PAGE")
 		ctx.Log("http status: 404 happened!")
 	})
 
@@ -422,85 +370,44 @@ func main() {
 
 ### Static Content
 
-Serve files or directories, use the correct for your case, if you don't know which one, just use the `Static(relative string, systemPath string, stripSlashes int)`.
+Serve files or directories, use the correct for your case, if you don't know which one, just use the `StaticWeb(reqPath string, systemPath string)`.
 
 ```go
-// StaticHandler returns a HandlerFunc to serve static system directory
-// Accepts 5 parameters
+// Favicon serves static favicon
+// accepts 2 parameters, second is optional
+// favPath (string), declare the system directory path of the __.ico
+// requestPath (string), it's the route's path, by default this is the "/favicon.ico" because some browsers tries to get this by default first,
+// you can declare your own path if you have more than one favicon (desktop, mobile and so on)
 //
-// first param is the systemPath (string)
-// Path to the root directory to serve files from.
+// this func will add a route for you which will static serve the /yuorpath/yourfile.ico to the /yourfile.ico (nothing special that you can't handle by yourself)
+// Note that you have to call it on every favicon you have to serve automatically (dekstop, mobile and so on)
 //
-// second is the stripSlashes (int) level
-// * stripSlashes = 0, original path: "/foo/bar", result: "/foo/bar"
-// * stripSlashes = 1, original path: "/foo/bar", result: "/bar"
-// * stripSlashes = 2, original path: "/foo/bar", result: ""
-//
-// third is the compress (bool)
-// Transparently compresses responses if set to true.
-//
-// The server tries minimizing CPU usage by caching compressed files.
-// It adds FSCompressedFileSuffix suffix to the original file name and
-// tries saving the resulting compressed file under the new file name.
-// So it is advisable to give the server write access to Root
-// and to all inner folders in order to minimze CPU usage when serving
-// compressed responses.
-//
-// fourth is the generateIndexPages (bool)
-// Index pages for directories without files matching IndexNames
-// are automatically generated if set.
-//
-// Directory index generation may be quite slow for directories
-// with many files (more than 1K), so it is discouraged enabling
-// index pages' generation for such directories.
-//
-// fifth is the indexNames ([]string)
-// List of index file names to try opening during directory access.
-//
-// For example:
-//
-//     * index.html
-//     * index.htm
-//     * my-super-index.xml
-//
-StaticHandler(systemPath string, stripSlashes int, compress bool,
-                  generateIndexPages bool, indexNames []string) HandlerFunc
+// panics on error
+Favicon(favPath string, requestPath ...string) RouteNameFunc
 
-// Static registers a route which serves a system directory
-// this doesn't generates an index page which list all files
-// no compression is used also, for these features look at StaticFS func
-// accepts three parameters
-// first parameter is the request url path (string)
-// second parameter is the system directory (string)
-// third parameter is the level (int) of stripSlashes
-// * stripSlashes = 0, original path: "/foo/bar", result: "/foo/bar"
-// * stripSlashes = 1, original path: "/foo/bar", result: "/bar"
-// * stripSlashes = 2, original path: "/foo/bar", result: ""
-Static(relative string, systemPath string, stripSlashes int)
-
-// StaticFS registers a route which serves a system directory
-// generates an index page which list all files
-// uses compression which file cache, if you use this method it will generate compressed files also
-// think this function as small fileserver with http
-// accepts three parameters
-// first parameter is the request url path (string)
-// second parameter is the system directory (string)
-// third parameter is the level (int) of stripSlashes
-// * stripSlashes = 0, original path: "/foo/bar", result: "/foo/bar"
-// * stripSlashes = 1, original path: "/foo/bar", result: "/bar"
-// * stripSlashes = 2, original path: "/foo/bar", result: ""
-StaticFS(relative string, systemPath string, stripSlashes int)
+// StaticHandler returns a new Handler which serves static files
+StaticHandler(reqPath string, systemPath string, showList bool, enableGzip bool) HandlerFunc
 
 // StaticWeb same as Static but if index.html e
 // xists and request uri is '/' then display the index.html's contents
 // accepts three parameters
 // first parameter is the request url path (string)
 // second parameter is the system directory (string)
-// third parameter is the level (int) of stripSlashes
-// * stripSlashes = 0, original path: "/foo/bar", result: "/foo/bar"
-// * stripSlashes = 1, original path: "/foo/bar", result: "/bar"
-// * stripSlashes = 2, original path: "/foo/bar", result: ""
-StaticWeb(relative string, systemPath string, stripSlashes int)
+StaticWeb(reqPath string, systemPath string) RouteNameFunc
+
+// StaticEmbedded  used when files are distrubuted inside the app executable, using go-bindata mostly
+// First parameter is the request path, the path which the files in the vdir will be served to, for example "/static"
+// Second parameter is the (virtual) directory path, for example "./assets"
+// Third parameter is the Asset function
+// Forth parameter is the AssetNames function
+//
+// For more take a look at the
+// example: https://github.com/iris-contrib/examples/tree/master/static_files_embedded
+StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) RouteNameFunc
+
+// StaticContent serves bytes, memory cached, on the reqPath
+// a good example of this is how the websocket server uses that to auto-register the /iris-ws.js
+StaticContent(reqPath string, cType string, content []byte) RouteNameFunc
 
 // StaticServe serves a directory as web resource
 // it's the simpliest form of the Static* functions
@@ -514,20 +421,16 @@ StaticServe(systemPath string, requestPath ...string)
 ```
 
 ```go
-iris.Static("/public", "./static/assets/", 1)
+iris.StaticWeb("/public", "./static/assets/")
 //-> /public/assets/favicon.ico
 ```
 
 ```go
-iris.StaticFS("/ftp", "./myfiles/public", 1)
+iris.StaticWeb("/","./my_static_html_website")
 ```
 
 ```go
-iris.StaticWeb("/","./my_static_html_website", 1)
-```
-
-```go
-StaticServe(systemPath string, requestPath ...string)
+context.StaticServe(systemPath string, requestPath ...string)
 ```
 
 #### Manual static file serving
@@ -540,7 +443,7 @@ StaticServe(systemPath string, requestPath ...string)
 // gzipCompression (bool)
 //
 // You can define your own "Content-Type" header also, after this function call
-ServeFile(filename string, gzipCompression bool) error
+context.ServeFile(filename string, gzipCompression bool) error
 ```
 
 Serve static individual file
@@ -673,7 +576,7 @@ The web application uses the session id as the key for retrieving the stored dat
 
 ```go
 iris.Get("/", func(ctx *iris.Context) {
-		ctx.Write("You should navigate to the /set, /get, /delete, /clear,/destroy instead")
+		ctx.Writef("You should navigate to the /set, /get, /delete, /clear,/destroy instead")
 	})
 
 	iris.Get("/set", func(ctx *iris.Context) {
@@ -682,7 +585,7 @@ iris.Get("/", func(ctx *iris.Context) {
 		ctx.Session().Set("name", "iris")
 
 		//test if setted here
-		ctx.Write("All ok session setted to: %s", ctx.Session().GetString("name"))
+		ctx.Writef("All ok session setted to: %s", ctx.Session().GetString("name"))
 	})
 
 	iris.Get("/get", func(ctx *iris.Context) {
@@ -690,7 +593,7 @@ iris.Get("/", func(ctx *iris.Context) {
 		// returns an empty string if the key was not found.
 		name := ctx.Session().GetString("name")
 
-		ctx.Write("The name on the /set was: %s", name)
+		ctx.Writef("The name on the /set was: %s", name)
 	})
 
 	iris.Get("/delete", func(ctx *iris.Context) {
@@ -707,7 +610,7 @@ iris.Get("/", func(ctx *iris.Context) {
 		// destroy/removes the entire session and cookie
 		ctx.SessionDestroy()
 		ctx.Log("You have to refresh the page to completely remove the session (on browsers), so the name should NOT be empty NOW, is it?\n ame: %s\n\nAlso check your cookies in your browser's cookies, should be no field for localhost/127.0.0.1 (or whatever you use)", ctx.Session().GetString("name"))
-		ctx.Write("You have to refresh the page to completely remove the session (on browsers), so the name should NOT be empty NOW, is it?\nName: %s\n\nAlso check your cookies in your browser's cookies, should be no field for localhost/127.0.0.1 (or whatever you use)", ctx.Session().GetString("name"))
+		ctx.Writef("You have to refresh the page to completely remove the session (on browsers), so the name should NOT be empty NOW, is it?\nName: %s\n\nAlso check your cookies in your browser's cookies, should be no field for localhost/127.0.0.1 (or whatever you use)", ctx.Session().GetString("name"))
 	})
 
 	iris.Listen(":8080")
@@ -738,7 +641,7 @@ func main() {
     iris.Static("/js", "./static/js", 1)
 
     iris.Get("/", func(ctx *iris.Context) {
-        ctx.Render("client.html", clientPage{"Client Page", ctx.HostString()})
+        ctx.Render("client.html", clientPage{"Client Page", ctx.Host()})
     })
 
     // the path at which the websocket client should register itself to
@@ -915,21 +818,14 @@ You can read the full article [here](https://translate.google.com/translate?sl=a
 Testing
 ------------
 
-I recommend writing your API tests using this new library, [httpexpect](https://github.com/gavv/httpexpect) which supports Iris and fasthttp now, after my request [here](https://github.com/gavv/httpexpect/issues/2). You can find Iris examples [here](https://github.com/gavv/httpexpect/blob/master/_examples/iris_test.go), [here](https://github.com/kataras/iris/blob/master/http_test.go) and [here](https://github.com/kataras/iris/blob/master/context_test.go).
+I recommend writing your API tests using this new library, [httpexpect](https://github.com/gavv/httpexpect). You can find Iris examples [here](https://github.com/gavv/httpexpect/blob/master/_examples/iris_test.go), [here](https://github.com/kataras/iris/blob/master/http_test.go) and [here](https://github.com/kataras/iris/blob/master/context_test.go).
 
 Versioning
 ------------
 
-Current: **v5.1.3**
+Current: **v6.0.0**
 
-Stable: **[v4 LTS](https://github.com/kataras/iris/tree/4.0.0#versioning)**
-
-
-Todo
-------------
-
-- [ ] Server-side React render, as requested [here](https://github.com/kataras/iris/issues/503)
-- [x] [v5.1.0: (Request) Scoped Transactions](https://github.com/iris-contrib/examples/tree/master/transactions), simple and elegant.
+Stable: **[v5/fasthttp](https://github.com/kataras/iris/tree/5.0.0)**
 
 
 Iris is a **Community-Driven** Project, waiting for your suggestions and [feature requests](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=label%3A%22feature%20request%22)!
@@ -949,11 +845,10 @@ Iris is the work of hundreds of the community's [feature requests](https://githu
 
 If you are interested in contributing to the Iris project, please see the document [CONTRIBUTING](https://github.com/kataras/iris/blob/master/.github/CONTRIBUTING.md).
 
-##### Note that I do not accept pull requests and that I use the issue tracker for bug reports and proposals only. Please ask questions on the [https://kataras.rocket.chat/channel/iris][Chat] or [http://stackoverflow.com/](http://stackoverflow.com).
 
 Depends on:
 
-- http protocol layer comes from [valyala/fasthttp](https://github.com/valyala/fasthttp), by Aliaksandr Valialkin.
+- http protocol layer comes from [net/http](https://github.com/golang/go/tree/master/src/net/http), by Go Authors.
 - rich and encoded responses support comes from [kataras/go-serializer](https://github.com/kataras/go-serializer/tree/0.0.4), by me.
 - template support comes from [kataras/go-template](https://github.com/kataras/go-template/tree/0.0.3), by me.
 - gzip support comes from [kataras/go-fs](https://github.com/kataras/go-fs/tree/0.0.5) and the super-fast compression library [klauspost/compress/gzip](https://github.com/klauspost/compress/tree/master/gzip), by me & Klaus Post.
@@ -983,7 +878,7 @@ License
 ------------
 
 Unless otherwise noted, the `iris` source files are distributed
-under the BSD-3 Clause license found in the [LICENSE file](LICENSE).
+under the MIT License found in the [LICENSE file](LICENSE).
 
 
 [Chat]: https://kataras.rocket.chat/channel/iris

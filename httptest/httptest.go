@@ -1,10 +1,12 @@
 package httptest
 
 import (
-	"github.com/gavv/httpexpect"
-	"github.com/kataras/iris"
+	"crypto/tls"
 	"net/http"
 	"testing"
+
+	"github.com/gavv/httpexpect"
+	"github.com/kataras/iris"
 )
 
 type (
@@ -94,7 +96,35 @@ func New(api *iris.Framework, t *testing.T, setters ...OptionSetter) *httpexpect
 	testConfiguration := httpexpect.Config{
 		BaseURL: baseURL,
 		Client: &http.Client{
-			Transport: httpexpect.NewFastBinder(api.Router),
+			Transport: httpexpect.NewBinder(api.Router),
+			Jar:       httpexpect.NewJar(),
+		},
+		Reporter: httpexpect.NewAssertReporter(t),
+	}
+
+	if conf.Debug {
+		testConfiguration.Printers = []httpexpect.Printer{
+			httpexpect.NewDebugPrinter(t, true),
+		}
+	}
+
+	return httpexpect.WithConfig(testConfiguration)
+}
+
+// NewInsecure same as New but receives a single host instead of the whole framework
+func NewInsecure(baseURL string, t *testing.T, setters ...OptionSetter) *httpexpect.Expect {
+	conf := DefaultConfiguration()
+	for _, setter := range setters {
+		setter.Set(conf)
+	}
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+
+	testConfiguration := httpexpect.Config{
+		BaseURL: baseURL,
+		Client: &http.Client{
+			Transport: transport,
 			Jar:       httpexpect.NewJar(),
 		},
 		Reporter: httpexpect.NewAssertReporter(t),

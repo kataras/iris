@@ -1,14 +1,15 @@
 package iris
 
 import (
-	"bufio"
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"mime/multipart"
 	"net"
+	"net/http"
 	"os"
 	"path"
 	"reflect"
@@ -16,14 +17,12 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/iris-contrib/formBinder"
 	"github.com/kataras/go-errors"
 	"github.com/kataras/go-fs"
 	"github.com/kataras/go-sessions"
-	"github.com/valyala/fasthttp"
 )
 
 const (
@@ -67,11 +66,6 @@ const (
 
 	// stopExecutionPosition used inside the Context, is the number which shows us that the context's middleware manualy stop the execution
 	stopExecutionPosition = 255
-	// used inside GetFlash to store the lifetime request flash messages
-	flashMessagesStoreContextKey = "_iris_flash_messages_"
-	flashMessageCookiePrefix     = "_iris_flash_message_"
-	cookieHeaderID               = "Cookie: "
-	cookieHeaderIDLen            = len(cookieHeaderID)
 )
 
 // errors
@@ -84,15 +78,69 @@ var (
 )
 
 type (
+	requestValue struct {
+		key   []byte
+		value interface{}
+	}
+	requestValues []requestValue
+)
+
+func (r *requestValues) Set(key string, value interface{}) {
+	args := *r
+	n := len(args)
+	for i := 0; i < n; i++ {
+		kv := &args[i]
+		if string(kv.key) == key {
+			kv.value = value
+			return
+		}
+	}
+
+	c := cap(args)
+	if c > n {
+		args = args[:n+1]
+		kv := &args[n]
+		kv.key = append(kv.key[:0], key...)
+		kv.value = value
+		*r = args
+		return
+	}
+
+	kv := requestValue{}
+	kv.key = append(kv.key[:0], key...)
+	kv.value = value
+	*r = append(args, kv)
+}
+
+func (r *requestValues) Get(key string) interface{} {
+	args := *r
+	n := len(args)
+	for i := 0; i < n; i++ {
+		kv := &args[i]
+		if string(kv.key) == key {
+			return kv.value
+		}
+	}
+	return nil
+}
+
+func (r *requestValues) Reset() {
+	*r = (*r)[:0]
+}
+
+type (
 
 	// Map is just a conversion for a map[string]interface{}
 	// should not be used inside Render when PongoEngine is used.
 	Map map[string]interface{}
+
 	// Context is resetting every time a request is coming to the server
 	// it is not good practice to use this object in goroutines, for these cases use the .Clone()
 	Context struct {
-		*fasthttp.RequestCtx
-		framework *Framework
+		ResponseWriter *ResponseWriter
+		Request        *http.Request
+		values         requestValues
+		framework      *Framework
 		//keep track all registed middleware (handlers)
 		Middleware Middleware //  exported because is useful for debugging
 		session    sessions.Session
@@ -101,10 +149,11 @@ type (
 	}
 )
 
-// GetRequestCtx returns the current fasthttp context
-func (ctx *Context) GetRequestCtx() *fasthttp.RequestCtx {
-	return ctx.RequestCtx
-}
+// -------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------
+// -----------------------------Handler(s) Execution------------------------------------
+// -------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------
 
 // Do calls the first handler only, it's like Next with negative pos, used only on Router&MemoryRouter
 func (ctx *Context) Do() {
@@ -116,20 +165,16 @@ func (ctx *Context) Do() {
 func (ctx *Context) Next() {
 	//set position to the next
 	ctx.Pos++
-	midLen := len(ctx.Middleware)
 	//run the next
-	if ctx.Pos < midLen {
+	if ctx.Pos < len(ctx.Middleware) {
 		ctx.Middleware[ctx.Pos].Serve(ctx)
 	}
-
 }
 
 // StopExecution just sets the .pos to 255 in order to  not move to the next middlewares(if any)
 func (ctx *Context) StopExecution() {
 	ctx.Pos = stopExecutionPosition
 }
-
-//
 
 // IsStopped checks and returns true if the current position of the Context is 255, means that the StopExecution has called
 func (ctx *Context) IsStopped() bool {
@@ -141,45 +186,41 @@ func (ctx *Context) GetHandlerName() string {
 	return runtime.FuncForPC(reflect.ValueOf(ctx.Middleware[len(ctx.Middleware)-1]).Pointer()).Name()
 }
 
-/* Request */
+// -------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------
+// -----------------------------Request URL, Method, IP & Headers getters---------------
+// -------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------
 
-// URLParam returns the get parameter from a request , if any
-func (ctx *Context) URLParam(key string) string {
-	return string(ctx.RequestCtx.Request.URI().QueryArgs().Peek(key))
+// Method returns the http request method
+// same as *http.Request.Method
+func (ctx *Context) Method() string {
+	return ctx.Request.Method
 }
 
-// URLParams returns a map of a list of each url(query) parameter
-func (ctx *Context) URLParams() map[string]string {
-	urlparams := make(map[string]string)
-	ctx.RequestCtx.Request.URI().QueryArgs().VisitAll(func(key, value []byte) {
-		urlparams[string(key)] = string(value)
-	})
-	return urlparams
+// Host returns the host part of the current url
+func (ctx *Context) Host() string {
+	return ctx.Request.URL.Host
 }
 
-// URLParamInt returns the url query parameter as int value from a request ,  returns error on parse fail
-func (ctx *Context) URLParamInt(key string) (int, error) {
-	return strconv.Atoi(ctx.URLParam(key))
+// ServerHost returns the server host taken by *http.Request.Host
+func (ctx *Context) ServerHost() string {
+	return ctx.Request.Host
 }
 
-// URLParamInt64 returns the url query parameter as int64 value from a request ,  returns error on parse fail
-func (ctx *Context) URLParamInt64(key string) (int64, error) {
-	return strconv.ParseInt(ctx.URLParam(key), 10, 64)
-}
+// Subdomain returns the subdomain (string) of this request, if any
+func (ctx *Context) Subdomain() (subdomain string) {
+	host := ctx.Host()
+	if index := strings.IndexByte(host, '.'); index > 0 {
+		subdomain = host[0:index]
+	}
 
-// MethodString returns the HTTP Method
-func (ctx *Context) MethodString() string {
-	return string(ctx.Method())
-}
-
-// HostString returns the Host of the request( the url as string )
-func (ctx *Context) HostString() string {
-	return string(ctx.Host())
+	return
 }
 
 // VirtualHostname returns the hostname that user registers, host path maybe differs from the real which is HostString, which taken from a net.listener
 func (ctx *Context) VirtualHostname() string {
-	realhost := ctx.HostString()
+	realhost := ctx.Host()
 	hostname := realhost
 	virtualhost := ctx.framework.mux.hostname
 
@@ -203,37 +244,28 @@ func (ctx *Context) VirtualHostname() string {
 	return hostname
 }
 
-// PathString returns the full escaped path as string
+// Path returns the full escaped path as string
 // for unescaped use: ctx.RequestCtx.RequestURI() or RequestPath(escape bool)
-func (ctx *Context) PathString() string {
+func (ctx *Context) Path() string {
 	return ctx.RequestPath(!ctx.framework.Config.DisablePathEscape)
 }
 
 // RequestPath returns the requested path
 func (ctx *Context) RequestPath(escape bool) string {
 	if escape {
-		//	return utils.BytesToString(ctx.RequestCtx.Path())
-		return string(ctx.RequestCtx.URI().PathOriginal())
+		return ctx.Request.URL.EscapedPath()
 	}
-	return string(ctx.RequestCtx.RequestURI())
+	return ctx.Request.RequestURI
 }
 
-// RequestIP gets just the Remote Address from the client.
-func (ctx *Context) RequestIP() string {
-	if ip, _, err := net.SplitHostPort(strings.TrimSpace(ctx.RequestCtx.RemoteAddr().String())); err == nil {
-		return ip
-	}
-	return ""
-}
-
-// RemoteAddr is like RequestIP but it checks for proxy servers also, tries to get the real client's request IP
+// RemoteAddr tries to return the real client's request IP
 func (ctx *Context) RemoteAddr() string {
-	header := string(ctx.RequestCtx.Request.Header.Peek("X-Real-Ip"))
+	header := ctx.RequestHeader("X-Real-Ip")
 	realIP := strings.TrimSpace(header)
 	if realIP != "" {
 		return realIP
 	}
-	realIP = string(ctx.RequestCtx.Request.Header.Peek("X-Forwarded-For"))
+	realIP = ctx.RequestHeader("X-Forwarded-For")
 	idx := strings.IndexByte(realIP, ',')
 	if idx >= 0 {
 		realIP = realIP[0:idx]
@@ -242,15 +274,22 @@ func (ctx *Context) RemoteAddr() string {
 	if realIP != "" {
 		return realIP
 	}
-	return ctx.RequestIP()
-
+	addr := strings.TrimSpace(ctx.Request.RemoteAddr)
+	if len(addr) == 0 {
+		return ""
+	}
+	// if addr has port use the net.SplitHostPort otherwise(error occurs) take as it is
+	if ip, _, err := net.SplitHostPort(addr); err == nil {
+		return ip
+	}
+	return addr
 }
 
 // RequestHeader returns the request header's value
 // accepts one parameter, the key of the header (string)
 // returns string
 func (ctx *Context) RequestHeader(k string) string {
-	return string(ctx.RequestCtx.Request.Header.Peek(k))
+	return ctx.Request.Header.Get(k)
 }
 
 // IsAjax returns true if this request is an 'ajax request'( XMLHttpRequest)
@@ -260,86 +299,92 @@ func (ctx *Context) IsAjax() bool {
 	return ctx.RequestHeader("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest"
 }
 
-// FormValueString returns a single value, as string, from post request's data
-func (ctx *Context) FormValueString(name string) string {
-	return string(ctx.FormValue(name))
+// -------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------
+// -----------------------------GET & POST arguments------------------------------------
+// -------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------
+
+// URLParam returns the get parameter from a request , if any
+func (ctx *Context) URLParam(key string) string {
+	return ctx.Request.URL.Query().Get(key)
 }
 
-// FormValues returns a slice of string from post request's data
-func (ctx *Context) FormValues(name string) []string {
-	arrBytes := ctx.PostArgs().PeekMulti(name)
-	arrStr := make([]string, len(arrBytes))
-	for i, v := range arrBytes {
-		arrStr[i] = string(v)
-	}
-	return arrStr
-}
+// URLParams returns a map of GET query parameters seperated by comma if more than one
+// it returns an empty map if nothing founds
+func (ctx *Context) URLParams() map[string]string {
+	values := map[string]string{}
 
-// PostValuesAll returns all post data values with their keys
-// multipart, form data, get & post query arguments
-//
-// NOTE: A check for nil is necessary for zero results
-func (ctx *Context) PostValuesAll() map[string][]string {
-	// first check if we have multipart form
-	multipartForm, err := ctx.MultipartForm()
-	if err == nil {
-		//we have multipart form
-		return multipartForm.Value
-	}
-
-	postArgs := ctx.PostArgs()
-	queryArgs := ctx.QueryArgs()
-
-	len := postArgs.Len() + queryArgs.Len()
-	if len == 0 {
-		return nil // nothing found
-	}
-
-	valuesAll := make(map[string][]string, len)
-
-	visitor := func(k []byte, v []byte) {
-		key := string(k)
-		value := string(v)
-		// for slices
-		if valuesAll[key] != nil {
-			valuesAll[key] = append(valuesAll[key], value)
-		} else {
-			valuesAll[key] = []string{value}
+	q := ctx.URLParamsAsMulti()
+	if q != nil {
+		for k, v := range q {
+			values[k] = strings.Join(v, ",")
 		}
 	}
 
-	postArgs.VisitAll(visitor)
-	queryArgs.VisitAll(visitor)
-	return valuesAll
-}
-
-// PostValues returns the post data values as []string of a single key/name
-func (ctx *Context) PostValues(name string) []string {
-	var values []string
-	if v := ctx.PostValuesAll(); v != nil && len(v) > 0 {
-		values = v[name]
-	}
 	return values
 }
 
-// PostValue returns the post data value of a single key/name
-// returns an empty string if nothing found
+// URLParamsAsMulti returns a map of list contains the url get parameters
+func (ctx *Context) URLParamsAsMulti() map[string][]string {
+	return ctx.Request.URL.Query()
+}
+
+// URLParamInt returns the url query parameter as int value from a request ,  returns error on parse fail
+func (ctx *Context) URLParamInt(key string) (int, error) {
+	return strconv.Atoi(ctx.URLParam(key))
+}
+
+// URLParamInt64 returns the url query parameter as int64 value from a request ,  returns error on parse fail
+func (ctx *Context) URLParamInt64(key string) (int64, error) {
+	return strconv.ParseInt(ctx.URLParam(key), 10, 64)
+}
+
+func (ctx *Context) askParseForm() error {
+	if ctx.Request.Form == nil {
+		if err := ctx.Request.ParseForm(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// FormValues returns all post data values with their keys
+// form data, get, post & put query arguments
+//
+// NOTE: A check for nil is necessary for zero results
+func (ctx *Context) FormValues() map[string][]string {
+	//  we skip the check of multipart form, takes too much memory, if user wants it can do manually now.
+	if err := ctx.askParseForm(); err != nil {
+		return nil
+	}
+	return ctx.Request.Form // nothing more to do, it's already contains both query and post & put args.
+}
+
+// FormValue returns a single form value by its name/key
+func (ctx *Context) FormValue(name string) string {
+	return ctx.Request.FormValue(name)
+}
+
+// PostValue returns a form's only-post value by its name
+// same as Request.PostFormValue
 func (ctx *Context) PostValue(name string) string {
-	if v := ctx.PostValues(name); len(v) > 0 {
-		return v[0]
-	}
-	return ""
+	return ctx.Request.PostFormValue(name)
 }
 
-// Subdomain returns the subdomain (string) of this request, if any
-func (ctx *Context) Subdomain() (subdomain string) {
-	host := ctx.HostString()
-	if index := strings.IndexByte(host, '.'); index > 0 {
-		subdomain = host[0:index]
-	}
-
-	return
+// FormFile returns the first file for the provided form key.
+// FormFile calls ctx.Request.ParseMultipartForm and ParseForm if necessary.
+//
+// same as Request.FormFile
+func (ctx *Context) FormFile(key string) (multipart.File, *multipart.FileHeader, error) {
+	return ctx.Request.FormFile(key)
 }
+
+// -------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------
+// -----------------------------Request Body Binders/Readers----------------------------
+// -------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------
 
 // BodyDecoder is an interface which any struct can implement in order to customize the decode action
 // from ReadJSON and ReadXML
@@ -381,7 +426,14 @@ func (u UnmarshalerFunc) Unmarshal(data []byte, v interface{}) error {
 // UnmarshalBody reads the request's body and binds it to a value or pointer of any type
 // Examples of usage: context.ReadJSON, context.ReadXML
 func (ctx *Context) UnmarshalBody(v interface{}, unmarshaler Unmarshaler) error {
-	rawData := ctx.Request.Body()
+	if ctx.Request.Body == nil {
+		return errors.New("Empty body, please send request body!")
+	}
+
+	rawData, err := ioutil.ReadAll(ctx.Request.Body)
+	if err != nil {
+		return err
+	}
 
 	// check if the v contains its own decode
 	// in this case the v should be a pointer also,
@@ -414,22 +466,35 @@ func (ctx *Context) ReadXML(xmlObject interface{}) error {
 // ReadForm binds the formObject  with the form data
 // it supports any kind of struct
 func (ctx *Context) ReadForm(formObject interface{}) error {
-	return errReadBody.With(formBinder.Decode(ctx.PostValuesAll(), formObject))
+	values := ctx.FormValues()
+	if values == nil {
+		return errors.New("An empty form passed on context.ReadForm")
+	}
+	return errReadBody.With(formBinder.Decode(values, formObject))
+}
+
+// ResetBody resets the body of the response
+func (ctx *Context) ResetBody() {
+	ctx.ResponseWriter.ResetBody()
 }
 
 /* Response */
 
 // SetContentType sets the response writer's header key 'Content-Type' to a given value(s)
 func (ctx *Context) SetContentType(s string) {
-	ctx.RequestCtx.Response.Header.Set(contentType, s)
+	ctx.ResponseWriter.Header().Set(contentType, s)
 }
 
-// SetHeader write to the response writer's header to a given key the given value(s)
-//
-// Note: If you want to send a multi-line string as header's value use: strings.TrimSpace first.
+// SetHeader write to the response writer's header to a given key the given value
 func (ctx *Context) SetHeader(k string, v string) {
-	//v = strings.TrimSpace(v)
-	ctx.RequestCtx.Response.Header.Set(k, v)
+	ctx.ResponseWriter.Header().Add(k, v)
+}
+
+// SetStatusCode sets the status code header to the response
+//
+// NOTE: Iris takes cares of multiple header writing
+func (ctx *Context) SetStatusCode(statusCode int) {
+	ctx.ResponseWriter.WriteHeader(statusCode)
 }
 
 // it used only inside Redirect,
@@ -449,17 +514,12 @@ func (ctx *Context) Redirect(urlToRedirect string, statusHeader ...int) {
 		httpStatus = statusHeader[0]
 	}
 
-	// #355
-	if ctx.IsTLS() {
-		u := ctx.URI()
-		u.SetSchemeBytes(httpsSchemeOnlyBytes)
-		u.Update(urlToRedirect)
-		ctx.SetHeader("Location", string(u.FullURI()))
-		ctx.SetStatusCode(httpStatus)
-		return
+	if urlToRedirect == ctx.Path() {
+		if ctx.framework.Config.IsDevelopment {
+			ctx.Log("Trying to redirect to itself. FROM: %s TO: %s", ctx.Path(), urlToRedirect)
+		}
 	}
-
-	ctx.RequestCtx.Redirect(urlToRedirect, httpStatus)
+	http.Redirect(ctx.ResponseWriter.ResponseWriter, ctx.Request, urlToRedirect, httpStatus)
 }
 
 // RedirectTo does the same thing as Redirect but instead of receiving a uri or path it receives a route name
@@ -469,6 +529,12 @@ func (ctx *Context) RedirectTo(routeName string, args ...interface{}) {
 		ctx.Redirect(s, StatusFound)
 	}
 }
+
+// -------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------
+// -----------------------------(Custom) Errors-----------------------------------------
+// ----------------------Look iris.OnError/EmitError for more---------------------------
+// -------------------------------------------------------------------------------------
 
 // NotFound emits an error 404 to the client, using the custom http errors
 // if no custom errors provided then it sends the default error message
@@ -488,11 +554,47 @@ func (ctx *Context) EmitError(statusCode int) {
 	ctx.StopExecution()
 }
 
-// Write writes a string to the client, something like fmt.Printf but for the web
-func (ctx *Context) Write(format string, a ...interface{}) {
-	//this doesn't work with gzip, so just write the []byte better |ctx.ResponseWriter.WriteString(fmt.Sprintf(format, a...))
-	ctx.RequestCtx.WriteString(fmt.Sprintf(format, a...))
+// -------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------
+// -----------------------------Raw write methods---------------------------------------
+// -------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------
+
+// Write writes the contents to the response writer.
+//
+// Returns the number of bytes written and any write error encountered
+func (ctx *Context) Write(contents []byte) (n int, err error) {
+	return ctx.ResponseWriter.Write(contents)
 }
+
+// Writef formats according to a format specifier and writes to the response.
+//
+// Returns the number of bytes written and any write error encountered
+func (ctx *Context) Writef(format string, a ...interface{}) (n int, err error) {
+	return fmt.Fprintf(ctx.ResponseWriter, format, a...)
+}
+
+// WriteString writes a simple string to the response.
+//
+// Returns the number of bytes written and any write error encountered
+func (ctx *Context) WriteString(s string) (n int, err error) {
+	return io.WriteString(ctx.ResponseWriter, s)
+}
+
+// SetBodyString writes a simple string to the response.
+func (ctx *Context) SetBodyString(s string) {
+	ctx.ResponseWriter.SetBodyString(s)
+}
+
+// -------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------
+// -------------------------Context's gzip inline response writer ----------------------
+// ---------------------Look template.go & iris.go for more options---------------------
+// -------------------------------------------------------------------------------------
+
+var (
+	errClientDoesNotSupportGzip = errors.New("Client doesn't supports gzip compression")
+)
 
 func (ctx *Context) clientAllowsGzip() bool {
 	if h := ctx.RequestHeader(acceptEncodingHeader); h != "" {
@@ -502,21 +604,46 @@ func (ctx *Context) clientAllowsGzip() bool {
 			}
 		}
 	}
-
 	return false
 }
 
-// Gzip accepts bytes, which are compressed to gzip format and sent to the client
-func (ctx *Context) Gzip(b []byte, status int) {
-	ctx.RequestCtx.Response.Header.Add(varyHeader, acceptEncodingHeader)
-
+// WriteGzip accepts bytes, which are compressed to gzip format and sent to the client.
+// returns the number of bytes written and an error ( if the client doesn' supports gzip compression)
+func (ctx *Context) WriteGzip(b []byte) (int, error) {
 	if ctx.clientAllowsGzip() {
-		_, err := fasthttp.WriteGzip(ctx.RequestCtx.Response.BodyWriter(), b)
+		ctx.ResponseWriter.Header().Add(varyHeader, acceptEncodingHeader)
+
+		gzipWriter := fs.AcquireGzipWriter(ctx.ResponseWriter)
+		n, err := gzipWriter.Write(b)
+		fs.ReleaseGzipWriter(gzipWriter)
+
 		if err == nil {
 			ctx.SetHeader(contentEncodingHeader, "gzip")
+		} // else write the contents as it is? no let's create a new func for this
+		return n, err
+	}
+	return 0, errClientDoesNotSupportGzip
+}
+
+// TryWriteGzip accepts bytes, which are compressed to gzip format and sent to the client.
+// If client does not supprots gzip then the contents are written as they are, uncompressed.
+func (ctx *Context) TryWriteGzip(b []byte) (int, error) {
+	n, err := ctx.WriteGzip(b)
+	if err != nil {
+		// check if the error came from gzip not allowed and not the writer itself
+		if _, ok := err.(*errors.Error); ok {
+			// client didn't supported gzip, write them uncompressed:
+			return ctx.ResponseWriter.Write(b)
 		}
 	}
+	return n, err
 }
+
+// -------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------
+// -----------------------------Render and powerful content negotiation-----------------
+// -------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------
 
 // renderSerialized renders contents with a serializer with status OK which you can change using RenderWithStatus or ctx.SetStatusCode(iris.StatusCode)
 func (ctx *Context) renderSerialized(contentType string, obj interface{}, options ...map[string]interface{}) error {
@@ -541,20 +668,12 @@ func (ctx *Context) renderSerialized(contentType string, obj interface{}, option
 		ctype += "; charset=" + charset
 	}
 	ctx.SetContentType(ctype)
-
-	if gzipEnabled && ctx.clientAllowsGzip() {
-		_, err := fasthttp.WriteGzip(ctx.RequestCtx.Response.BodyWriter(), finalResult)
-		if err != nil {
-			return err
-		}
-		ctx.RequestCtx.Response.Header.Add(varyHeader, acceptEncodingHeader)
-		ctx.SetHeader(contentEncodingHeader, "gzip")
+	if gzipEnabled {
+		ctx.TryWriteGzip(finalResult)
 	} else {
-		ctx.Response.SetBody(finalResult)
+		ctx.ResponseWriter.Write(finalResult)
 	}
-
 	ctx.SetStatusCode(StatusOK)
-
 	return nil
 }
 
@@ -588,7 +707,7 @@ func (ctx *Context) RenderWithStatus(status int, name string, binding interface{
 // builds up the response from the specified template or a serialize engine.
 // Note: the options: "gzip" and "charset" are built'n support by Iris, so you can pass these on any template engine or serialize engine
 func (ctx *Context) Render(name string, binding interface{}, options ...map[string]interface{}) error {
-	errCode := ctx.RequestCtx.Response.StatusCode()
+	errCode := ctx.ResponseWriter.StatusCode()
 	if errCode <= 0 {
 		errCode = StatusOK
 	}
@@ -599,9 +718,9 @@ func (ctx *Context) Render(name string, binding interface{}, options ...map[stri
 // Note: the options: "gzip" and "charset" are built'n support by Iris, so you can pass these on any template engine or serialize engine
 func (ctx *Context) MustRender(name string, binding interface{}, options ...map[string]interface{}) {
 	if err := ctx.Render(name, binding, options...); err != nil {
-		ctx.HTML(StatusServiceUnavailable, fmt.Sprintf("<h2>Template: %s\nIP: %s</h2><b>%s</b>", name, ctx.RemoteAddr(), err.Error()))
+		ctx.HTML(StatusServiceUnavailable, fmt.Sprintf("<h2>Template: %s</h2><b>%s</b>", name, err.Error()))
 		if ctx.framework.Config.IsDevelopment {
-			ctx.framework.Logger.Printf("MustRender panics for client with IP: %s On template: %s.Trace: %s\n", ctx.RemoteAddr(), name, err)
+			ctx.framework.Logger.Printf("MustRender panics on template: %s.Trace: %s\n", name, err)
 		}
 	}
 }
@@ -617,8 +736,8 @@ func (ctx *Context) HTML(status int, htmlContents string) {
 	if err := ctx.RenderWithStatus(status, contentHTML, htmlContents); err != nil {
 		// if no serialize engine found for text/html
 		ctx.SetContentType(contentHTML + "; charset=" + ctx.framework.Config.Charset)
-		ctx.RequestCtx.SetStatusCode(status)
-		ctx.RequestCtx.WriteString(htmlContents)
+		ctx.SetStatusCode(status)
+		ctx.WriteString(htmlContents)
 	}
 }
 
@@ -660,12 +779,18 @@ func (ctx *Context) Markdown(status int, markdown string) {
 	ctx.HTML(status, ctx.MarkdownString(markdown))
 }
 
+// -------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------
+// --------------------Static content serve by context implementation-------------------
+// --------------------Look iris.go for more useful Static web system methods-----------
+// -------------------------------------------------------------------------------------
+
 // staticCachePassed checks the IfModifiedSince header and
 // returns true if (client-side) duration has expired
 func (ctx *Context) staticCachePassed(modtime time.Time) bool {
 	if t, err := time.Parse(ctx.framework.Config.TimeFormat, ctx.RequestHeader(ifModifiedSince)); err == nil && modtime.Before(t.Add(StaticCacheDuration)) {
-		ctx.Response.Header.Del(contentType)
-		ctx.Response.Header.Del(contentLength)
+		ctx.ResponseWriter.Header().Del(contentType)
+		ctx.ResponseWriter.Header().Del(contentLength)
 		ctx.SetStatusCode(StatusNotModified)
 		return true
 	}
@@ -681,11 +806,11 @@ func (ctx *Context) SetClientCachedBody(status int, bodyContent []byte, cType st
 
 	modtimeFormatted := modtime.UTC().Format(ctx.framework.Config.TimeFormat)
 
-	ctx.Response.Header.Set(contentType, cType)
-	ctx.Response.Header.Set(lastModified, modtimeFormatted)
+	ctx.ResponseWriter.Header().Set(contentType, cType)
+	ctx.ResponseWriter.Header().Set(lastModified, modtimeFormatted)
 	ctx.SetStatusCode(status)
 
-	ctx.Response.SetBody(bodyContent)
+	ctx.ResponseWriter.Write(bodyContent)
 }
 
 // ServeContent serves content, headers are autoset
@@ -695,25 +820,25 @@ func (ctx *Context) SetClientCachedBody(status int, bodyContent []byte, cType st
 // Doesn't implements resuming (by range), use ctx.SendFile instead
 func (ctx *Context) ServeContent(content io.ReadSeeker, filename string, modtime time.Time, gzipCompression bool) error {
 	if t, err := time.Parse(ctx.framework.Config.TimeFormat, ctx.RequestHeader(ifModifiedSince)); err == nil && modtime.Before(t.Add(1*time.Second)) {
-		ctx.RequestCtx.Response.Header.Del(contentType)
-		ctx.RequestCtx.Response.Header.Del(contentLength)
-		ctx.RequestCtx.SetStatusCode(StatusNotModified)
+		ctx.ResponseWriter.Header().Del(contentType)
+		ctx.ResponseWriter.Header().Del(contentLength)
+		ctx.SetStatusCode(StatusNotModified)
 		return nil
 	}
 
-	ctx.RequestCtx.Response.Header.Set(contentType, fs.TypeByExtension(filename))
-	ctx.RequestCtx.Response.Header.Set(lastModified, modtime.UTC().Format(ctx.framework.Config.TimeFormat))
-	ctx.RequestCtx.SetStatusCode(StatusOK)
+	ctx.ResponseWriter.Header().Set(contentType, fs.TypeByExtension(filename))
+	ctx.ResponseWriter.Header().Set(lastModified, modtime.UTC().Format(ctx.framework.Config.TimeFormat))
+	ctx.SetStatusCode(StatusOK)
 	var out io.Writer
 	if gzipCompression && ctx.clientAllowsGzip() {
-		ctx.RequestCtx.Response.Header.Add(varyHeader, acceptEncodingHeader)
+		ctx.ResponseWriter.Header().Add(varyHeader, acceptEncodingHeader)
 		ctx.SetHeader(contentEncodingHeader, "gzip")
 
-		gzipWriter := fs.AcquireGzipWriter(ctx.RequestCtx.Response.BodyWriter())
+		gzipWriter := fs.AcquireGzipWriter(ctx.ResponseWriter)
 		defer fs.ReleaseGzipWriter(gzipWriter)
 		out = gzipWriter
 	} else {
-		out = ctx.RequestCtx.Response.BodyWriter()
+		out = ctx.ResponseWriter
 	}
 	_, err := io.Copy(out, content)
 	return errServeContent.With(err)
@@ -725,7 +850,7 @@ func (ctx *Context) ServeContent(content io.ReadSeeker, filename string, modtime
 // gzipCompression (bool)
 //
 // You can define your own "Content-Type" header also, after this function call
-// This function doesn't implement resuming (by range), use ctx.SendFile/fasthttp.ServeFileUncompressed(ctx.RequestCtx,path)/fasthttpServeFile(ctx.RequestCtx,path) instead
+// This function doesn't implement resuming (by range), use ctx.SendFile instead
 //
 // Use it when you want to serve css/js/... files to the client, for bigger files and 'force-download' use the SendFile
 func (ctx *Context) ServeFile(filename string, gzipCompression bool) error {
@@ -750,60 +875,25 @@ func (ctx *Context) ServeFile(filename string, gzipCompression bool) error {
 //
 // Use this instead of ServeFile to 'force-download' bigger files to the client
 func (ctx *Context) SendFile(filename string, destinationName string) {
-	ctx.RequestCtx.SendFile(filename)
-	ctx.RequestCtx.Response.Header.Set(contentDisposition, "attachment;filename="+destinationName)
+	ctx.ServeFile(filename, false)
+	ctx.ResponseWriter.Header().Set(contentDisposition, "attachment;filename="+destinationName)
 }
 
-// Stream same as StreamWriter
-func (ctx *Context) Stream(cb func(writer *bufio.Writer)) {
-	ctx.StreamWriter(cb)
-}
-
-// StreamWriter registers the given stream writer for populating
-// response body.
-//
-//
-// This function may be used in the following cases:
-//
-//     * if response body is too big (more than 10MB).
-//     * if response body is streamed from slow external sources.
-//     * if response body must be streamed to the client in chunks.
-//     (aka `http server push`).
-//
-// See also the StreamReader
-func (ctx *Context) StreamWriter(cb func(writer *bufio.Writer)) {
-	ctx.RequestCtx.SetBodyStreamWriter(cb)
-}
-
-// StreamReader sets response body stream and, optionally body size.
-//
-// If bodySize is >= 0, then the bodyStream must provide exactly bodySize bytes
-// before returning io.EOF.
-//
-// If bodySize < 0, then bodyStream is read until io.EOF.
-//
-// bodyStream.Close() is called after finishing reading all body data
-// if it implements io.Closer.
-//
-// See also the StreamWriter
-func (ctx *Context) StreamReader(bodyStream io.Reader, bodySize int) {
-	ctx.RequestCtx.Response.SetBodyStream(bodyStream, bodySize)
-}
-
-/* Storage */
+// -------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------
+// --------------------------------Storage----------------------------------------------
+// -----------------------User Values &  Path parameters--------------------------------
+// -------------------------------------------------------------------------------------
 
 // ValuesLen returns the total length of the user values storage, some of them maybe path parameters
 func (ctx *Context) ValuesLen() (n int) {
-	ctx.VisitUserValues(func([]byte, interface{}) {
-		n++
-	})
-	return
+	return len(ctx.values)
 }
 
 // Get returns the user's value from a key
 // if doesn't exists returns nil
 func (ctx *Context) Get(key string) interface{} {
-	return ctx.RequestCtx.UserValue(key)
+	return ctx.values.Get(key)
 }
 
 // GetFmt returns a value which has this format: func(format string, args ...interface{}) string
@@ -843,12 +933,23 @@ func (ctx *Context) GetInt(key string) (int, error) {
 
 // Set sets a value to a key in the values map
 func (ctx *Context) Set(key string, value interface{}) {
-	ctx.RequestCtx.SetUserValue(key, value)
+	ctx.values.Set(key, value)
+}
+
+// VisitValues calls visitor for each existing context's temp values.
+//
+// visitor must not retain references to key and value after returning.
+// Make key and/or value copies if you need storing them after returning.
+func (ctx *Context) VisitValues(visitor func([]byte, interface{})) {
+	for i, n := 0, len(ctx.values); i < n; i++ {
+		kv := &ctx.values[i]
+		visitor(kv.key, kv.value)
+	}
 }
 
 // ParamsLen tries to return all the stored values which values are string, probably most of them will be the path parameters
 func (ctx *Context) ParamsLen() (n int) {
-	ctx.VisitUserValues(func(kb []byte, vg interface{}) {
+	ctx.VisitValues(func(kb []byte, vg interface{}) {
 		if _, ok := vg.(string); ok {
 			n++
 		}
@@ -861,6 +962,11 @@ func (ctx *Context) ParamsLen() (n int) {
 // same as GetString
 func (ctx *Context) Param(key string) string {
 	return ctx.GetString(key)
+}
+
+// ParamDecoded returns a url-query-decoded path parameter's value
+func (ctx *Context) ParamDecoded(key string) string {
+	return DecodeQuery(DecodeQuery(ctx.Param(key)))
 }
 
 // ParamInt returns the int representation of the key's path named parameter's value
@@ -878,7 +984,7 @@ func (ctx *Context) ParamInt64(key string) (int64, error) {
 // hasthe form of key1=value1,key2=value2...
 func (ctx *Context) ParamsSentence() string {
 	var buff bytes.Buffer
-	ctx.VisitUserValues(func(kb []byte, vg interface{}) {
+	ctx.VisitValues(func(kb []byte, vg interface{}) {
 		v, ok := vg.(string)
 		if !ok {
 			return
@@ -900,197 +1006,179 @@ func (ctx *Context) ParamsSentence() string {
 
 }
 
-// VisitAllCookies takes a visitor which loops on each (request's) cookie key and value
+// -------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------
+// -----------https://github.com/golang/net/blob/master/context/context.go--------------
+// -------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------
+
+// Deadline returns the time when work done on behalf of this context
+// should be canceled.  Deadline returns ok==false when no deadline is
+// set.  Successive calls to Deadline return the same results.
+func (ctx *Context) Deadline() (deadline time.Time, ok bool) {
+	return
+}
+
+// Done returns a channel that's closed when work done on behalf of this
+// context should be canceled.  Done may return nil if this context can
+// never be canceled.  Successive calls to Done return the same value.
 //
-// Note: the method ctx.Request.Header.VisitAllCookie by fasthttp, has a strange bug which I cannot solve at the moment.
-// This is the reason which this function exists and should be used instead of fasthttp's built'n.
+// WithCancel arranges for Done to be closed when cancel is called;
+// WithDeadline arranges for Done to be closed when the deadline
+// expires; WithTimeout arranges for Done to be closed when the timeout
+// elapses.
+//
+// Done is provided for use in select statements:
+//
+//  // Stream generates values with DoSomething and sends them to out
+//  // until DoSomething returns an error or ctx.Done is closed.
+//  func Stream(ctx context.Context, out chan<- Value) error {
+//  	for {
+//  		v, err := DoSomething(ctx)
+//  		if err != nil {
+//  			return err
+//  		}
+//  		select {
+//  		case <-ctx.Done():
+//  			return ctx.Err()
+//  		case out <- v:
+//  		}
+//  	}
+//  }
+//
+// See http://blog.golang.org/pipelines for more examples of how to use
+// a Done channel for cancelation.
+func (ctx *Context) Done() <-chan struct{} {
+	return nil
+}
+
+// Err returns a non-nil error value after Done is closed.  Err returns
+// Canceled if the context was canceled or DeadlineExceeded if the
+// context's deadline passed.  No other values for Err are defined.
+// After Done is closed, successive calls to Err return the same value.
+func (ctx *Context) Err() error {
+	return nil
+}
+
+// Value returns the value associated with this context for key, or nil
+// if no value is associated with key.  Successive calls to Value with
+// the same key returns the same result.
+//
+// Use context values only for request-scoped data that transits
+// processes and API boundaries, not for passing optional parameters to
+// functions.
+//
+// A key identifies a specific value in a Context.  Functions that wish
+// to store values in Context typically allocate a key in a global
+// variable then use that key as the argument to context.WithValue and
+// Context.Value.  A key can be any type that supports equality;
+// packages should define keys as an unexported type to avoid
+// collisions.
+//
+// Packages that define a Context key should provide type-safe accessors
+// for the values stores using that key:
+//
+// 	// Package user defines a User type that's stored in Contexts.
+// 	package user
+//
+// 	import "golang.org/x/net/context"
+//
+// 	// User is the type of value stored in the Contexts.
+// 	type User struct {...}
+//
+// 	// key is an unexported type for keys defined in this package.
+// 	// This prevents collisions with keys defined in other packages.
+// 	type key int
+//
+// 	// userKey is the key for user.User values in Contexts.  It is
+// 	// unexported; clients use user.NewContext and user.FromContext
+// 	// instead of using this key directly.
+// 	var userKey key = 0
+//
+// 	// NewContext returns a new Context that carries value u.
+// 	func NewContext(ctx context.Context, u *User) context.Context {
+// 		return context.WithValue(ctx, userKey, u)
+// 	}
+//
+// 	// FromContext returns the User value stored in ctx, if any.
+// 	func FromContext(ctx context.Context) (*User, bool) {
+// 		u, ok := ctx.Value(userKey).(*User)
+// 		return u, ok
+// 	}
+func (ctx *Context) Value(key interface{}) interface{} {
+	if key == 0 {
+		return ctx.Request
+	}
+	if k, ok := key.(string); ok {
+		return ctx.GetString(k)
+	}
+	return nil
+}
+
+// -------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------
+// --------------------------------Session & Cookies------------------------------------
+// -------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------
+
+// VisitAllCookies takes a visitor which loops on each (request's) cookie key and value
 func (ctx *Context) VisitAllCookies(visitor func(key string, value string)) {
-	// strange bug, this doesn't works also: 	cookieHeaderContent := ctx.Request.Header.Peek("Cookie")/User-Agent tested also
-	headerbody := string(ctx.Request.Header.Header())
-	headerlines := strings.Split(headerbody, "\n")
-	for _, s := range headerlines {
-		if len(s) > cookieHeaderIDLen {
-			if s[0:cookieHeaderIDLen] == cookieHeaderID {
-				contents := s[cookieHeaderIDLen:]
-				values := strings.Split(contents, "; ")
-				for _, s := range values {
-					keyvalue := strings.SplitN(s, "=", 2)
-					visitor(keyvalue[0], keyvalue[1])
-				}
-			}
-		}
+	for _, cookie := range ctx.Request.Cookies() {
+		visitor(cookie.Name, cookie.Value)
 	}
 }
 
 // GetCookie returns cookie's value by it's name
 // returns empty string if nothing was found
-func (ctx *Context) GetCookie(name string) (val string) {
-	bcookie := ctx.RequestCtx.Request.Header.Cookie(name)
-	if bcookie != nil {
-		val = string(bcookie)
+func (ctx *Context) GetCookie(name string) string {
+	cookie, err := ctx.Request.Cookie(name)
+	if err != nil {
+		return ""
 	}
-	return
+	return cookie.Value
 }
 
 // SetCookie adds a cookie
-func (ctx *Context) SetCookie(cookie *fasthttp.Cookie) {
-	ctx.RequestCtx.Response.Header.SetCookie(cookie)
+func (ctx *Context) SetCookie(cookie *http.Cookie) {
+	http.SetCookie(ctx.ResponseWriter, cookie)
 }
 
 // SetCookieKV adds a cookie, receives just a key(string) and a value(string)
-func (ctx *Context) SetCookieKV(key, value string) {
-	c := fasthttp.AcquireCookie()
-	//	c := &fasthttp.Cookie{}
-	c.SetKey(key)
-	c.SetValue(value)
-	c.SetHTTPOnly(true)
-	c.SetExpire(time.Now().Add(time.Duration(120) * time.Minute))
+//
+// Expires on 2 hours by default(unchable)
+// use ctx.SetCookie or http.SetCookie instead for more control.
+func (ctx *Context) SetCookieKV(name, value string) {
+	c := &http.Cookie{}
+	c.Name = name
+	c.Value = value
+	c.HttpOnly = true
+	c.Expires = time.Now().Add(time.Duration(120) * time.Minute)
 	ctx.SetCookie(c)
-	fasthttp.ReleaseCookie(c)
 }
 
 // RemoveCookie deletes a cookie by it's name/key
 func (ctx *Context) RemoveCookie(name string) {
-	ctx.Response.Header.DelCookie(name)
-
-	cookie := fasthttp.AcquireCookie()
-	//cookie := &fasthttp.Cookie{}
-	cookie.SetKey(name)
-	cookie.SetValue("")
-	cookie.SetPath("/")
-	cookie.SetHTTPOnly(true)
+	c := &http.Cookie{}
+	c.Name = name
+	c.Value = ""
+	c.Path = "/"
+	c.HttpOnly = true
 	exp := time.Now().Add(-time.Duration(1) * time.Minute) //RFC says 1 second, but let's do it 1 minute to make sure is working...
-	cookie.SetExpire(exp)
-	ctx.SetCookie(cookie)
-	fasthttp.ReleaseCookie(cookie)
+	c.Expires = exp
+	c.MaxAge = -1
+	ctx.SetCookie(c)
 	// delete request's cookie also, which is temporarly available
-	ctx.Request.Header.DelCookie(name)
+	ctx.Request.Header.Set("Cookie", "")
 }
 
-// GetFlashes returns all the flash messages for available for this request
-func (ctx *Context) GetFlashes() map[string]string {
-	// if already taken at least one time, this will be filled
-	if messages := ctx.Get(flashMessagesStoreContextKey); messages != nil {
-		if m, isMap := messages.(map[string]string); isMap {
-			return m
-		}
-	} else {
-		flashMessageFound := false
-		// else first time, get all flash cookie keys(the prefix will tell us which is a flash message), and after get all one-by-one using the GetFlash.
-		flashMessageCookiePrefixLen := len(flashMessageCookiePrefix)
-		ctx.VisitAllCookies(func(key string, value string) {
-			if len(key) > flashMessageCookiePrefixLen {
-				if key[0:flashMessageCookiePrefixLen] == flashMessageCookiePrefix {
-					unprefixedKey := key[flashMessageCookiePrefixLen:]
-					_, err := ctx.GetFlash(unprefixedKey) // this func will add to the list (flashMessagesStoreContextKey) also
-					if err == nil {
-						flashMessageFound = true
-					}
-				}
-
-			}
-		})
-		// if we found at least one flash message then re-execute this function to return the list
-		if flashMessageFound {
-			return ctx.GetFlashes()
-		}
-	}
-	return nil
-}
-
-func (ctx *Context) decodeFlashCookie(key string) (string, string) {
-	cookieKey := flashMessageCookiePrefix + key
-	cookieValue := string(ctx.RequestCtx.Request.Header.Cookie(cookieKey))
-
-	if cookieValue != "" {
-		v, e := base64.URLEncoding.DecodeString(cookieValue)
-		if e == nil {
-			return cookieKey, string(v)
-		}
-	}
-	return "", ""
-}
-
-// GetFlash get a flash message by it's key
-// returns the value as string and an error
-//
-// if the cookie doesn't exists the string is empty and the error is filled
-// after the request's life the value is removed
-func (ctx *Context) GetFlash(key string) (string, error) {
-
-	// first check if flash exists from this request's lifetime, if yes return that else continue to get the cookie
-	storeExists := false
-
-	if messages := ctx.Get(flashMessagesStoreContextKey); messages != nil {
-		m, isMap := messages.(map[string]string)
-		if !isMap {
-			return "", fmt.Errorf("Flash store is not a map[string]string. This suppose will never happen, please report this bug.")
-		}
-		storeExists = true // in order to skip the check later
-		for k, v := range m {
-			if k == key && v != "" {
-				return v, nil
-			}
-		}
-	}
-
-	cookieKey, cookieValue := ctx.decodeFlashCookie(key)
-	if cookieValue == "" {
-		return "", errFlashNotFound
-	}
-	// store this flash message to the lifetime request's local storage,
-	// I choose this method because no need to store it if not used at all
-	if storeExists {
-		ctx.Get(flashMessagesStoreContextKey).(map[string]string)[key] = cookieValue
-	} else {
-		flashStoreMap := make(map[string]string)
-		flashStoreMap[key] = cookieValue
-		ctx.Set(flashMessagesStoreContextKey, flashStoreMap)
-	}
-
-	//remove the real cookie, no need to have that, we stored it on lifetime request
-	ctx.RemoveCookie(cookieKey)
-	return cookieValue, nil
-	//it should'b be removed until the next reload, so we don't do that: ctx.Request.Header.SetCookie(key, "")
-
-}
-
-// SetFlash sets a flash message, accepts 2 parameters the key(string) and the value(string)
-// the value will be available on the NEXT request
-func (ctx *Context) SetFlash(key string, value string) {
-	cKey := flashMessageCookiePrefix + key
-	cValue := base64.URLEncoding.EncodeToString([]byte(value))
-
-	c := fasthttp.AcquireCookie()
-	c.SetKey(cKey)
-	c.SetValue(cValue)
-	c.SetPath("/")
-	c.SetHTTPOnly(true)
-	ctx.RequestCtx.Response.Header.SetCookie(c)
-	fasthttp.ReleaseCookie(c)
-
-	// if any bug on the future: this works, and the above:
-	//ctx.RequestCtx.Request.Header.SetCookie(cKey, cValue)
-	//ctx.RequestCtx.Response.Header.Add("Set-Cookie", cKey+"="+cValue+"; Path:/; HttpOnly")
-	//
-
-	/*c := &fasthttp.Cookie{}
-	c.SetKey(cKey)
-	c.SetValue(cValue)
-	c.SetPath("/")
-	c.SetHTTPOnly(true)
-	ctx.SetCookie(c)*/
-
-}
-
-// Session returns the current session
+// Session returns the current session ( && flash messages )
 func (ctx *Context) Session() sessions.Session {
 	if ctx.framework.sessions == nil { // this should never return nil but FOR ANY CASE, on future changes.
 		return nil
 	}
 
 	if ctx.session == nil {
-		ctx.session = ctx.framework.sessions.StartFasthttp(ctx.RequestCtx)
+		ctx.session = ctx.framework.sessions.Start(ctx.ResponseWriter, ctx.Request)
 	}
 	return ctx.session
 }
@@ -1098,7 +1186,7 @@ func (ctx *Context) Session() sessions.Session {
 // SessionDestroy destroys the whole session, calls the provider's destroy and remove the cookie
 func (ctx *Context) SessionDestroy() {
 	if sess := ctx.Session(); sess != nil {
-		ctx.framework.sessions.DestroyFasthttp(ctx.RequestCtx)
+		ctx.framework.sessions.Destroy(ctx.ResponseWriter, ctx.Request)
 	}
 
 }
@@ -1122,182 +1210,15 @@ func (ctx *Context) MaxAge() int64 {
 	return -1
 }
 
-// ErrFallback is just an empty error but it is recognised from the TransactionScope.Complete,
-// it reverts its changes and continue as normal, no error will be shown to the user.
-//
-// Usually it is used on recovery from panics (inside .BeginTransaction)
-// but users can use that also to by-pass the error's response of your custom transaction pipe.
-type ErrFallback struct{}
-
-func (ne *ErrFallback) Error() string {
-	return ""
-}
-
-// NewErrFallback returns a new error wihch contains an empty error,
-// look .BeginTransaction and context_test.go:TestTransactionRecoveryFromPanic
-func NewErrFallback() *ErrFallback {
-	return &ErrFallback{}
-}
-
-// ErrWithStatus custom error type which is useful
-// to send an error containing the http status code and a reason
-type ErrWithStatus struct {
-	// failure status code, required
-	statusCode int
-	// plain text message, optional
-	message string // if it's empty then the already registered custom(or default) http error will be fired.
-}
-
-// Silent in case the user changed his/her mind and wants to silence this error
-func (err *ErrWithStatus) Silent() error {
-	return NewErrFallback()
-}
-
-// Status sets the http status code of this error
-// if only status exists but no reason then
-// custom http error of this staus (if any) will be fired (context.EmitError)
-func (err *ErrWithStatus) Status(statusCode int) *ErrWithStatus {
-	err.statusCode = statusCode
-	return err
-}
-
-// Reason sets the reason message of this error
-func (err *ErrWithStatus) Reason(msg string) *ErrWithStatus {
-	err.message = msg
-	return err
-}
-
-// AppendReason just appends a reason message
-func (err *ErrWithStatus) AppendReason(msg string) *ErrWithStatus {
-	err.message += "\n" + msg
-	return err
-}
-
-// Error implements the error standard
-func (err ErrWithStatus) Error() string {
-	return err.message
-}
-
-// NewErrWithStatus returns an new custom error type which should be used
-// side by side with Transaction(s)
-func NewErrWithStatus() *ErrWithStatus {
-	return new(ErrWithStatus)
-}
-
-// TransactionScope is the (request) transaction scope of a handler's context
-// Can't say a lot here because I it will take more than 200 lines to write about.
-// You can search third-party articles or books on how Business Transaction works (it's quite simple, especialy here).
-// But I can provide you a simple example here: https://github.com/iris-contrib/examples/tree/master/transactions
-//
-// Note that this is unique and new
-// (=I haver never seen any other examples or code in Golang on this subject, so far, as with the most of iris features...)
-// it's not covers all paths,
-// such as databases, this should be managed by the libraries you use to make your database connection,
-// this transaction scope is only for iris' request & response(Context).
-type TransactionScope struct {
-	Context         *Context
-	isRequestScoped bool
-	isFailure       bool
-}
-
-var tspool = sync.Pool{New: func() interface{} { return &TransactionScope{} }}
-
-func acquireTransactionScope(ctx *Context) *TransactionScope {
-	ts := tspool.Get().(*TransactionScope)
-	ts.Context = ctx
-	return ts
-}
-
-func releaseTransactionScope(ts *TransactionScope) {
-	ts.Context = nil
-	ts.isFailure = false
-	ts.isRequestScoped = false
-	tspool.Put(ts)
-}
-
-// RequestScoped receives a boolean which determinates if other transactions depends on this.
-// If setted true then whenever this transaction is not completed succesfuly,
-// the rest of the transactions will be not executed at all.
-//
-// Defaults to false, execute all transactions on their own independently scopes.
-func (r *TransactionScope) RequestScoped(isRequestScoped bool) {
-	r.isRequestScoped = isRequestScoped
-}
-
-// Complete completes the transaction
-// rollback and send an error when:
-// 1. a not nil error AND non-empty reason AND custom type error has status code
-// 2. a not nil error AND empty reason BUT custom type error has status code
-// 3. a not nil error AND non-empty reason.
-//
-// The error can be a type of ErrWithStatus, create using the iris.NewErrWithStatus().
-func (r *TransactionScope) Complete(err error) {
-	if err != nil {
-
-		ctx := r.Context
-		statusCode := StatusInternalServerError // default http status code if not provided
-		reason := err.Error()
-		if _, ok := err.(*ErrFallback); ok {
-			// revert without any log or response.
-			r.isFailure = true
-			ctx.Response.Reset()
-			return
-		}
-		if errWstatus, ok := err.(*ErrWithStatus); ok {
-			if errWstatus.statusCode > 0 {
-				// get the status code from the custom error type
-				statusCode = errWstatus.statusCode
-
-				// empty error message but status code given,
-				if reason == "" {
-					r.isFailure = true
-					// reset everything, cookies and headers and body.
-					ctx.Response.Reset()
-					// execute from custom (if any) http error (template or plain text)
-					ctx.EmitError(errWstatus.statusCode)
-					return
-				}
-			}
-		}
-
-		if reason == "" {
-			// do nothing empty reason and no status code means that this is not a failure, even if the error is not nil.
-			return
-		}
-
-		// rollback and send an error when we have:
-		// 1. a not nil error AND non-empty reason AND custom type error has status code
-		// 2. a not nil error AND empty reason BUT custom type error has status code
-		// 3. a not nil error AND non-empty reason.
-
-		// reset any previous response,
-		// except the content type we may use it to fire an error or take that from custom error type (?)
-		// no let's keep the custom error type as simple as possible, take that from prev attempt:
-		cType := string(ctx.Response.Header.ContentType())
-		if cType == "" {
-			cType = "text/plain; charset=" + ctx.framework.Config.Charset
-		}
-
-		// clears:
-		// - body
-		// - cookies
-		// - any headers
-		// and anything else we tried to sent before.
-		ctx.Response.Reset()
-
-		// fire from the error or the custom error type
-		ctx.SetStatusCode(statusCode)
-		ctx.SetContentType(cType)
-		ctx.SetBodyString(reason)
-		r.isFailure = true
-		return
-	}
-
-}
+// -------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------
+// --------------------------------Transactions-----------------------------------------
+// -------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------
 
 // skipTransactionsContextKey set this to any value to stop executing next transactions
 // it's a context-key in order to be used from anywhere, set it by calling the SkipTransactions()
-const skipTransactionsContextKey = "@@IRIS_TRANSACTIONS_SKIP_@@"
+const skipTransactionsContextKey = "__IRIS_TRANSACTIONS_SKIP___"
 
 // SkipTransactions if called then skip the rest of the transactions
 // or all of them if called before the first transaction
@@ -1313,31 +1234,23 @@ func (ctx *Context) TransactionsSkipped() bool {
 	return false
 }
 
-// TransactionFunc is just a func(scope *TransactionScope)
-// used to register transaction(s) to a handler's context.
-type TransactionFunc func(scope *TransactionScope)
-
-// ToMiddleware wraps/converts a transaction to a handler func
-// it is not recommended to be used by users because
-// this can be a little tricky if someone doesn't know how transaction works.
-//
-// Note: it auto-calls the ctx.Next() so as I noted, not recommended to use if you don't know the code behind it,
-// use the .UseTransaction and .DoneTransaction instead
-func (pipe TransactionFunc) ToMiddleware() HandlerFunc {
-	return func(ctx *Context) {
-		ctx.BeginTransaction(pipe)
-		ctx.Next()
-	}
-}
-
 // non-detailed error log for transacton unexpected panic
 var errTransactionInterrupted = errors.New("Transaction Interrupted, recovery from panic:\n%s")
 
-// BeginTransaction starts a request scoped transaction.
+// BeginTransaction starts a scoped transaction.
+//
+// Can't say a lot here because it will take more than 200 lines to write about.
+// You can search third-party articles or books on how Business Transaction works (it's quite simple, especialy here).
+//
+// Note that this is unique and new
+// (=I haver never seen any other examples or code in Golang on this subject, so far, as with the most of iris features...)
+// it's not covers all paths,
+// such as databases, this should be managed by the libraries you use to make your database connection,
+// this transaction scope is only for context's response.
 // Transactions have their own middleware ecosystem also, look iris.go:UseTransaction.
 //
 // See https://github.com/iris-contrib/examples/tree/master/transactions for more
-func (ctx *Context) BeginTransaction(pipe func(scope *TransactionScope)) {
+func (ctx *Context) BeginTransaction(pipe func(transaction *Transaction)) {
 	// SILLY NOTE: use of manual pipe type in order of TransactionFunc
 	// in order to help editors complete the sentence here...
 
@@ -1346,46 +1259,27 @@ func (ctx *Context) BeginTransaction(pipe func(scope *TransactionScope)) {
 	if ctx.TransactionsSkipped() {
 		return
 	}
-
-	// hold the temp context which will be appear and ready-to-use from the pipe.
-	tempCtx := *ctx
 	// get a transaction scope from the pool by passing the temp context/
-	scope := acquireTransactionScope(&tempCtx)
+	t := newTransaction(ctx)
 	defer func() {
 		if err := recover(); err != nil {
 			if ctx.framework.Config.IsDevelopment {
 				ctx.Log(errTransactionInterrupted.Format(err).Error())
 			}
 			// complete (again or not , doesn't matters) the scope without loud
-			scope.Complete(NewErrFallback())
+			t.Complete(nil)
 			// we continue as normal, no need to return here*
 		}
 
-		// if the transaction completed with an error then the transaction itself reverts the changes
-		// and replaces the context's response with an error.
-		// if the transaction completed successfully then we need to pass the temp's context's response to this context.
-		// so we must copy back its context at all cases, no matter the result of the transaction.
-
-		// TODO: GREEK, THESE COMMENTS WILL BE REMOVED AFTER I FIX A RECENT BUG REPORTED BY COMMUNITY
-		// auto to xreiazomaste gia na pianei ta errors kiolas, ara prepei na vrw allous tropous
-		// na manteuw an 9elei o xristis na dixnei errors sto transaction h apla na to kanei skip
-		// alla tautoxrona ena failed transaction sto telos na mh kanei reset ta proigoumena, gt twra auto kanei,
-		// kai auto xreiazete omws se arketes periptwseis alla prepei kiolas na diaxwrizw to ka9e transaction na einai aneksartita
-		// pisteuw to Response.Reset dn 9a mas xreiastei ka9olou, prepei na ktlvenw mono pote xreiazete na kanw copy to scope's context kai pote oxi.
-		*ctx = *scope.Context
-
-		// if the scope had lifetime of the whole request and it completed with an error(failure)
-		// then we do not continue to the next transactions.
-		if scope.isRequestScoped && scope.isFailure {
-			ctx.SkipTransactions()
-		}
-
-		// finally, release and put the transaction scope back to the pool.
-		releaseTransactionScope(scope)
+		// write the temp contents to the original writer
+		t.Context.ResponseWriter.writeTo(ctx.ResponseWriter)
+		// give back to the transaction the original writer (SetBeforeFlush works this way and only this way)
+		// this is tricky but nessecery if we want ctx.EmitError to work inside transactions
+		t.Context.ResponseWriter = ctx.ResponseWriter
 	}()
-	// run the worker with its context inside this scope.
-	pipe(scope)
 
+	// run the worker with its context clone inside.
+	pipe(t)
 }
 
 // Log logs to the iris defined logger

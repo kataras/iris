@@ -1,4 +1,6 @@
-##### Note that I do not accept pull requests and that I use the issue tracker for bug reports and proposals only. Please ask questions on the [https://kataras.rocket.chat/channel/iris][Chat] or [http://stackoverflow.com/](http://stackoverflow.com).
+If you wanna contribute please submit a PR to one of the [iris-contrib organisation's](https://github.com/iris-contrib) projects.
+
+##### Note that I do not accept pull requests here and that I use the issue tracker for bug reports and proposals only. Please ask questions on the [https://kataras.rocket.chat/channel/iris][Chat] or [http://stackoverflow.com/](http://stackoverflow.com).
 
 ## Before Submitting an Issue
 

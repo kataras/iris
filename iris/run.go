@@ -2,7 +2,6 @@ package main
 
 import (
 	"os"
-
 	"strings"
 
 	"github.com/kataras/cli"

@@ -1,12 +1,6 @@
 // Black-box Testing
 package iris_test
 
-/*
-Contains tests for plugin, no end-to-end, just local-object tests, these are enoguh for now.
-
-CONTRIBUTE & DISCUSSION ABOUT TESTS TO: https://github.com/iris-contrib/tests
-*/
-
 import (
 	"fmt"
 	"github.com/kataras/iris"

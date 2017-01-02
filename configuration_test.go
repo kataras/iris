@@ -2,9 +2,10 @@
 package iris_test
 
 import (
-	"github.com/kataras/iris"
 	"reflect"
 	"testing"
+
+	"github.com/kataras/iris"
 )
 
 // go test -v -run TestConfig*

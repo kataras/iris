@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
@@ -14,7 +15,6 @@ import (
 	"github.com/gavv/httpexpect"
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/httptest"
-	"github.com/valyala/fasthttp"
 )
 
 // White-box testing *
@@ -72,7 +72,7 @@ type pathParameters []pathParameter
 
 // White-box testing *
 func TestContextParams(t *testing.T) {
-	context := &iris.Context{RequestCtx: &fasthttp.RequestCtx{}}
+	context := &iris.Context{}
 	params := pathParameters{
 		pathParameter{Key: "testkey", Value: "testvalue"},
 		pathParameter{Key: "testkey2", Value: "testvalue2"},
@@ -112,7 +112,7 @@ func TestContextParams(t *testing.T) {
 	expectedParamsStr := "param1=myparam1,param2=myparam2,param3=myparam3afterstatic,anything=/andhere/anything/you/like"
 	iris.Get("/path/:param1/:param2/staticpath/:param3/*anything", func(ctx *iris.Context) {
 		paramsStr := ctx.ParamsSentence()
-		ctx.Write(paramsStr)
+		ctx.WriteString(paramsStr)
 	})
 
 	httptest.New(iris.Default, t).GET("/path/myparam1/myparam2/staticpath/myparam3afterstatic/andhere/anything/you/like").Expect().Status(iris.StatusOK).Body().Equal(expectedParamsStr)
@@ -136,11 +136,11 @@ func TestContextHostString(t *testing.T) {
 	iris.ResetDefault()
 	iris.Default.Config.VHost = "0.0.0.0:8080"
 	iris.Get("/", func(ctx *iris.Context) {
-		ctx.Write(ctx.HostString())
+		ctx.WriteString(ctx.Host())
 	})
 
 	iris.Get("/wrong", func(ctx *iris.Context) {
-		ctx.Write(ctx.HostString() + "w")
+		ctx.WriteString(ctx.Host() + "w")
 	})
 
 	e := httptest.New(iris.Default, t)
@@ -155,11 +155,11 @@ func TestContextVirtualHostName(t *testing.T) {
 	vhost := "mycustomvirtualname.com"
 	iris.Default.Config.VHost = vhost + ":8080"
 	iris.Get("/", func(ctx *iris.Context) {
-		ctx.Write(ctx.VirtualHostname())
+		ctx.WriteString(ctx.VirtualHostname())
 	})
 
 	iris.Get("/wrong", func(ctx *iris.Context) {
-		ctx.Write(ctx.VirtualHostname() + "w")
+		ctx.WriteString(ctx.VirtualHostname() + "w")
 	})
 
 	e := httptest.New(iris.Default, t)
@@ -173,7 +173,7 @@ func TestContextFormValueString(t *testing.T) {
 	k = "postkey"
 	v = "postvalue"
 	iris.Post("/", func(ctx *iris.Context) {
-		ctx.Write(k + "=" + ctx.FormValueString(k))
+		ctx.WriteString(k + "=" + ctx.FormValue(k))
 	})
 	e := httptest.New(iris.Default, t)
 
@@ -186,7 +186,7 @@ func TestContextSubdomain(t *testing.T) {
 	//Default.Config.Tester.ListeningAddr = "mydomain.com:9999"
 	// Default.Config.Tester.ExplicitURL = true
 	iris.Party("mysubdomain.").Get("/mypath", func(ctx *iris.Context) {
-		ctx.Write(ctx.Subdomain())
+		ctx.WriteString(ctx.Subdomain())
 	})
 
 	e := httptest.New(iris.Default, t)
@@ -341,14 +341,14 @@ func TestContextReadForm(t *testing.T) {
 // TestContextRedirectTo tests the named route redirect action
 func TestContextRedirectTo(t *testing.T) {
 	iris.ResetDefault()
-	h := func(ctx *iris.Context) { ctx.Write(ctx.PathString()) }
+	h := func(ctx *iris.Context) { ctx.WriteString(ctx.Path()) }
 	iris.Get("/mypath", h)("my-path")
 	iris.Get("/mypostpath", h)("my-post-path")
 	iris.Get("mypath/with/params/:param1/:param2", func(ctx *iris.Context) {
 		if l := ctx.ParamsLen(); l != 2 {
 			t.Fatalf("Strange error, expecting parameters to be two but we got: %d", l)
 		}
-		ctx.Write(ctx.PathString())
+		ctx.WriteString(ctx.Path())
 	})("my-path-with-params")
 
 	iris.Get("/redirect/to/:routeName/*anyparams", func(ctx *iris.Context) {
@@ -418,17 +418,16 @@ func TestContextCookieSetGetRemove(t *testing.T) {
 	})
 
 	iris.Get("/set_advanced", func(ctx *iris.Context) {
-		c := fasthttp.AcquireCookie()
-		c.SetKey(key)
-		c.SetValue(value)
-		c.SetHTTPOnly(true)
-		c.SetExpire(time.Now().Add(time.Duration((60 * 60 * 24 * 7 * 4)) * time.Second))
+		c := &http.Cookie{}
+		c.Name = key
+		c.Value = value
+		c.HttpOnly = true
+		c.Expires = time.Now().Add(time.Duration((60 * 60 * 24 * 7 * 4)) * time.Second)
 		ctx.SetCookie(c)
-		fasthttp.ReleaseCookie(c)
 	})
 
 	iris.Get("/get", func(ctx *iris.Context) {
-		ctx.Write(ctx.GetCookie(key)) // should return my value
+		ctx.WriteString(ctx.GetCookie(key)) // should return my value
 	})
 
 	iris.Get("/remove", func(ctx *iris.Context) {
@@ -440,7 +439,7 @@ func TestContextCookieSetGetRemove(t *testing.T) {
 		if cookieFound {
 			t.Fatalf("Cookie has been found, when it shouldn't!")
 		}
-		ctx.Write(ctx.GetCookie(key)) // should return ""
+		ctx.WriteString(ctx.GetCookie(key)) // should return ""
 	})
 
 	e := httptest.New(iris.Default, t)
@@ -451,130 +450,6 @@ func TestContextCookieSetGetRemove(t *testing.T) {
 	e.GET("/set_advanced").Expect().Status(iris.StatusOK).Cookies().NotEmpty()
 	e.GET("/get").Expect().Status(iris.StatusOK).Body().Equal(value)
 	e.GET("/remove").Expect().Status(iris.StatusOK).Body().Equal("")
-}
-
-func TestContextFlashMessages(t *testing.T) {
-	iris.ResetDefault()
-	firstKey := "name"
-	lastKey := "package"
-
-	values := pathParameters{pathParameter{Key: firstKey, Value: "kataras"}, pathParameter{Key: lastKey, Value: "iris"}}
-	jsonExpected := map[string]string{firstKey: "kataras", lastKey: "iris"}
-	// set the flashes, the cookies are filled
-	iris.Put("/set", func(ctx *iris.Context) {
-		for _, v := range values {
-			ctx.SetFlash(v.Key, v.Value)
-		}
-	})
-
-	// get the first flash, the next should be available to the next requess
-	iris.Get("/get_first_flash", func(ctx *iris.Context) {
-		for _, v := range values {
-			val, err := ctx.GetFlash(v.Key)
-			if err == nil {
-				ctx.JSON(iris.StatusOK, map[string]string{v.Key: val})
-			} else {
-				ctx.JSON(iris.StatusOK, nil) // return nil
-			}
-
-			break
-		}
-
-	})
-
-	// just an empty handler to test if the flashes should remeain to the next if GetFlash/GetFlashes used
-	iris.Get("/get_no_getflash", func(ctx *iris.Context) {
-	})
-
-	// get the last flash, the next should be available to the next requess
-	iris.Get("/get_last_flash", func(ctx *iris.Context) {
-		for i, v := range values {
-			if i == len(values)-1 {
-				val, err := ctx.GetFlash(v.Key)
-				if err == nil {
-					ctx.JSON(iris.StatusOK, map[string]string{v.Key: val})
-				} else {
-					ctx.JSON(iris.StatusOK, nil) // return nil
-				}
-
-			}
-		}
-	})
-
-	iris.Get("/get_zero_flashes", func(ctx *iris.Context) {
-		ctx.JSON(iris.StatusOK, ctx.GetFlashes()) // should return nil
-	})
-
-	// we use the GetFlash to get the flash messages, the messages and the cookies should be empty after that
-	iris.Get("/get_flash", func(ctx *iris.Context) {
-		kv := make(map[string]string)
-		for _, v := range values {
-			val, err := ctx.GetFlash(v.Key)
-			if err == nil {
-				kv[v.Key] = val
-			}
-		}
-		ctx.JSON(iris.StatusOK, kv)
-	}, func(ctx *iris.Context) {
-		// at the same request, flashes should be available
-		if len(ctx.GetFlashes()) == 0 {
-			t.Fatalf("Flashes should be remeain to the whole request lifetime")
-		}
-	})
-
-	iris.Get("/get_flashes", func(ctx *iris.Context) {
-		// one time one handler, using GetFlashes
-		kv := make(map[string]string)
-		flashes := ctx.GetFlashes()
-		//second time on the same handler, using the GetFlash
-		for k := range flashes {
-			kv[k], _ = ctx.GetFlash(k)
-		}
-		if len(flashes) != len(kv) {
-			ctx.SetStatusCode(iris.StatusNoContent)
-			return
-		}
-		ctx.Next()
-
-	}, func(ctx *iris.Context) {
-		// third time on a next handler
-		// test the if next handler has access to them(must) because flash are request lifetime now.
-		// print them to the client for test the response also
-		ctx.JSON(iris.StatusOK, ctx.GetFlashes())
-	})
-
-	e := httptest.New(iris.Default, t)
-	e.PUT("/set").Expect().Status(iris.StatusOK).Cookies().NotEmpty()
-	e.GET("/get_first_flash").Expect().Status(iris.StatusOK).JSON().Object().ContainsKey(firstKey).NotContainsKey(lastKey)
-	// just a request which does not use the flash message, so flash messages should be available on the next request
-	e.GET("/get_no_getflash").Expect().Status(iris.StatusOK)
-	e.GET("/get_last_flash").Expect().Status(iris.StatusOK).JSON().Object().ContainsKey(lastKey).NotContainsKey(firstKey)
-	g := e.GET("/get_zero_flashes").Expect().Status(iris.StatusOK)
-	g.JSON().Null()
-	g.Cookies().Empty()
-	// set the magain
-	e.PUT("/set").Expect().Status(iris.StatusOK).Cookies().NotEmpty()
-	// get them again using GetFlash
-	e.GET("/get_flash").Expect().Status(iris.StatusOK).JSON().Object().Equal(jsonExpected)
-	// this should be empty again
-	g = e.GET("/get_zero_flashes").Expect().Status(iris.StatusOK)
-	g.JSON().Null()
-	g.Cookies().Empty()
-	//set them again
-	e.PUT("/set").Expect().Status(iris.StatusOK).Cookies().NotEmpty()
-	// get them again using GetFlashes
-	e.GET("/get_flashes").Expect().Status(iris.StatusOK).JSON().Object().Equal(jsonExpected)
-	// this should be empty again
-	g = e.GET("/get_zero_flashes").Expect().Status(iris.StatusOK)
-	g.JSON().Null()
-	g.Cookies().Empty()
-
-	// test Get, and get again should return nothing
-	e.PUT("/set").Expect().Status(iris.StatusOK).Cookies().NotEmpty()
-	e.GET("/get_first_flash").Expect().Status(iris.StatusOK).JSON().Object().ContainsKey(firstKey).NotContainsKey(lastKey)
-	g = e.GET("/get_first_flash").Expect().Status(iris.StatusOK)
-	g.JSON().Null()
-	g.Cookies().Empty()
 }
 
 func TestContextSessions(t *testing.T) {
@@ -770,9 +645,8 @@ func TestTemplatesDisabled(t *testing.T) {
 	iris.Default.Config.DisableTemplateEngines = true
 
 	file := "index.html"
-	ip := "0.0.0.0"
-	errTmpl := "<h2>Template: %s\nIP: %s</h2><b>%s</b>"
-	expctedErrMsg := fmt.Sprintf(errTmpl, file, ip, "Error: Unable to execute a template. Trace: Templates are disabled '.Config.DisableTemplatesEngines = true' please turn that to false, as defaulted.\n")
+	errTmpl := "<h2>Template: %s</h2><b>%s</b>"
+	expctedErrMsg := fmt.Sprintf(errTmpl, file, "Error: Unable to execute a template. Trace: Templates are disabled '.Config.DisableTemplatesEngines = true' please turn that to false, as defaulted.\n")
 
 	iris.Get("/renderErr", func(ctx *iris.Context) {
 		ctx.MustRender(file, nil)
@@ -788,46 +662,36 @@ func TestTransactions(t *testing.T) {
 	secondTransactionSuccessHTMLMessage := "<h1>This will sent at all cases because it lives on different transaction and it doesn't fails</h1>"
 	persistMessage := "<h1>I persist show this message to the client!</h1>"
 
-	maybeFailureTransaction := func(shouldFail bool, isRequestScoped bool) func(scope *iris.TransactionScope) {
-		return func(scope *iris.TransactionScope) {
-			// OPTIONAl, if true then the next transactions will not be executed if this transaction fails
-			scope.RequestScoped(isRequestScoped)
+	maybeFailureTransaction := func(shouldFail bool, isRequestScoped bool) func(t *iris.Transaction) {
+		return func(t *iris.Transaction) {
+			// OPTIONAl, the next transactions and the flow will not be skipped if this transaction fails
+			if isRequestScoped {
+				t.SetScope(iris.RequestTransactionScope)
+			}
 
 			// OPTIONAL STEP:
 			// create a new custom type of error here to keep track of the status code and reason message
-			err := iris.NewErrWithStatus()
+			err := iris.NewTransactionErrResult()
 
-			// we should use scope.Context if we want to rollback on any errors lives inside this function clojure.
-			// if you want persistence then use the 'ctx'.
-			scope.Context.Text(iris.StatusOK, "Blablabla this should not be sent to the client because we will fill the err with a message and status")
-
-			//	var firstErr error  = do this()   // your code here
-			//	var secondErr error = try_do_this() // your code here
-			//	var thirdErr error  = try_do_this() // your code here
-			//	var fail bool = false
-
-			//	if firstErr != nil || secondErr != nil || thirdErr != nil {
-			//			fail = true
-			//	}
-			// or err.AppendReason(firstErr.Error()) // ... err.Reason(dbErr.Error()).Status(500)
+			t.Context.Text(iris.StatusOK, "Blablabla this should not be sent to the client because we will fill the err with a message and status")
 
 			fail := shouldFail
 
 			if fail {
-				err.Status(iris.StatusInternalServerError).
-					// if status given but no reason then the default or the custom http error will be fired (like ctx.EmitError)
-					Reason(firstTransactionFailureMessage)
+				err.StatusCode = iris.StatusInternalServerError
+				err.Reason = firstTransactionFailureMessage
 			}
 
 			// OPTIONAl STEP:
 			// but useful if we want to post back an error message to the client if the transaction failed.
 			// if the reason is empty then the transaction completed succesfuly,
-			// otherwise we rollback the whole response body and cookies and everything lives inside the scope.Request.
-			scope.Complete(err)
+			// otherwise we rollback the whole response body and cookies and everything lives inside the transaction.Request.
+			t.Complete(err)
 		}
 	}
 
-	successTransaction := func(scope *iris.TransactionScope) {
+	successTransaction := func(scope *iris.Transaction) {
+
 		scope.Context.HTML(iris.StatusOK,
 			secondTransactionSuccessHTMLMessage)
 		// * if we don't have any 'throw error' logic then no need of scope.Complete()
@@ -850,18 +714,28 @@ func TestTransactions(t *testing.T) {
 		ctx.BeginTransaction(successTransaction)
 	})
 
-	/*TODO: MAKE THIS TO WORK
-	iris.Get("/failFirsAndThirdTransactionsButSuccessSecond", func(ctx *iris.Context) {
-		ctx.BeginTransaction(maybeFailureTransaction(true, false))
-		ctx.BeginTransaction(successTransaction)
-		ctx.BeginTransaction(maybeFailureTransaction(true, false))
-	})
-	*/
-
 	iris.Get("/failAllBecauseOfRequestScopeAndFailure", func(ctx *iris.Context) {
 		ctx.BeginTransaction(maybeFailureTransaction(true, true))
 		ctx.BeginTransaction(successTransaction)
 	})
+
+	customErrorTemplateText := "<h1>custom error</h1>"
+	iris.OnError(iris.StatusInternalServerError, func(ctx *iris.Context) {
+		ctx.Text(iris.StatusInternalServerError, customErrorTemplateText)
+	})
+
+	failureWithRegisteredErrorHandler := func(ctx *iris.Context) {
+		ctx.BeginTransaction(func(transaction *iris.Transaction) {
+			transaction.SetScope(iris.RequestTransactionScope)
+			err := iris.NewTransactionErrResult()
+			err.StatusCode = iris.StatusInternalServerError // set only the status code in order to execute the registered template
+			transaction.Complete(err)
+		})
+
+		ctx.Text(iris.StatusOK, "this will not be sent to the client because first is requested scope and it's failed")
+	}
+
+	iris.Get("/failAllBecauseFirstTransactionFailedWithRegisteredErrorTemplate", failureWithRegisteredErrorHandler)
 
 	e := httptest.New(iris.Default, t)
 
@@ -870,188 +744,24 @@ func TestTransactions(t *testing.T) {
 		Status(iris.StatusOK).
 		ContentType("text/html", iris.Config.Charset).
 		Body().
-		Equal(firstTransactionFailureMessage + secondTransactionSuccessHTMLMessage + persistMessage)
+		Equal(secondTransactionSuccessHTMLMessage + persistMessage)
 
 	e.GET("/failFirsTransactionButSuccessSecond").
 		Expect().
 		Status(iris.StatusOK).
 		ContentType("text/html", iris.Config.Charset).
 		Body().
-		Equal(firstTransactionFailureMessage + secondTransactionSuccessHTMLMessage)
-		/*
-			e.GET("/failFirsAndThirdTransactionsButSuccessSecond").
-				Expect().
-				Status(iris.StatusOK).
-				ContentType("text/html", iris.Config.Charset).
-				Body().
-				Equal(firstTransactionFailureMessage + secondTransactionSuccessHTMLMessage)
-		*/
+		Equal(secondTransactionSuccessHTMLMessage)
 
 	e.GET("/failAllBecauseOfRequestScopeAndFailure").
 		Expect().
 		Status(iris.StatusInternalServerError).
 		Body().
 		Equal(firstTransactionFailureMessage)
-}
 
-func TestTransactionsMiddleware(t *testing.T) {
-	forbiddenMsg := "Error: Not allowed."
-	allowMsg := "Hello!"
-
-	transaction := iris.TransactionFunc(func(scope *iris.TransactionScope) {
-		// must set that to true when we want to bypass the whole handler if this transaction fails.
-		scope.RequestScoped(true)
-		// optional but useful when we want a specific reason message
-		// without register global custom http errors to a status (using iris.OnError)
-		err := iris.NewErrWithStatus()
-		// the difference from ctx.BeginTransaction is that
-		// if that fails it not only skips all transactions but all next handler(s) too
-		// here we use this middleware AFTER a handler, so all handlers are executed before that but
-		// this will fail because this is the difference from normal handler, it resets the whole response if Complete(notEmptyError)
-		if scope.Context.GetString("username") != "iris" {
-			err.Status(iris.StatusForbidden).Reason(forbiddenMsg)
-		}
-
-		scope.Complete(err)
-	})
-
-	failHandlerFunc := func(ctx *iris.Context) {
-		ctx.Set("username", "wrong")
-		ctx.Write("This should not be sent to the client.")
-
-		ctx.Next() // in order to execute the next handler, which is a wrapper of transaction
-	}
-
-	successHandlerFunc := func(ctx *iris.Context) {
-		ctx.Set("username", "iris")
-		ctx.Write("Hello!")
-
-		ctx.Next()
-	}
-
-	// per route after transaction(middleware)
-	api := iris.New()
-	api.Get("/transaction_after_route_middleware_fail_because_of_request_scope_fails", failHandlerFunc, transaction.ToMiddleware()) // after per route
-
-	api.Get("/transaction_after_route_middleware_success_so_response_should_be_sent_to_the_client", successHandlerFunc, transaction.ToMiddleware()) // after per route
-
-	e := httptest.New(api, t)
-	e.GET("/transaction_after_route_middleware_fail_because_of_request_scope_fails").
+	e.GET("/failAllBecauseFirstTransactionFailedWithRegisteredErrorTemplate").
 		Expect().
-		Status(iris.StatusForbidden).
+		Status(iris.StatusInternalServerError).
 		Body().
-		Equal(forbiddenMsg)
-
-	e.GET("/transaction_after_route_middleware_success_so_response_should_be_sent_to_the_client").
-		Expect().
-		Status(iris.StatusOK).
-		Body().
-		Equal(allowMsg)
-
-		// global, after all route's handlers
-	api = iris.New()
-
-	api.DoneTransaction(transaction)
-	api.Get("/failed_because_of_done_transaction", failHandlerFunc)
-
-	api.Get("/succeed_because_of_done_transaction", successHandlerFunc)
-
-	e = httptest.New(api, t)
-	e.GET("/failed_because_of_done_transaction").
-		Expect().
-		Status(iris.StatusForbidden).
-		Body().
-		Equal(forbiddenMsg)
-
-	e.GET("/succeed_because_of_done_transaction").
-		Expect().
-		Status(iris.StatusOK).
-		Body().
-		Equal(allowMsg)
-
-	// global, before all route's handlers transaction, this is not so useful so these transaction will be succesfuly and just adds a message
-	api = iris.New()
-	transactionHTMLResponse := "<b>Transaction here</b>"
-	expectedResponse := transactionHTMLResponse + allowMsg
-	api.UseTransaction(func(scope *iris.TransactionScope) {
-		scope.Context.HTML(iris.StatusOK, transactionHTMLResponse)
-		// scope.Context.Next() is automatically called on UseTransaction
-	})
-
-	api.Get("/route1", func(ctx *iris.Context) {
-		ctx.Write(allowMsg)
-	})
-
-	e = httptest.New(api, t)
-	e.GET("/route1").
-		Expect().
-		Status(iris.StatusOK).
-		ContentType("text/html", api.Config.Charset).
-		Body().
-		Equal(expectedResponse)
-}
-
-func TestTransactionFailureCompletionButSilently(t *testing.T) {
-	iris.ResetDefault()
-	expectedBody := "I don't care for any unexpected panics, this response should be sent."
-
-	iris.Get("/panic_silent", func(ctx *iris.Context) {
-		ctx.BeginTransaction(func(scope *iris.TransactionScope) {
-			scope.Context.Write("blablabla this should not be shown because of 'unexpected' panic.")
-			panic("OMG, UNEXPECTED ERROR BECAUSE YOU ARE NOT A DISCIPLINED PROGRAMMER, BUT IRIS HAS YOU COVERED!")
-		})
-
-		ctx.WriteString(expectedBody)
-	})
-
-	iris.Get("/expected_error_but_silent_instead_of_send_the_reason", func(ctx *iris.Context) {
-		ctx.BeginTransaction(func(scope *iris.TransactionScope) {
-			scope.Context.Write("this will not be sent.")
-			// complete with a failure ( so revert the changes) but do it silently.
-			scope.Complete(iris.NewErrFallback())
-		})
-
-		ctx.WriteString(expectedBody)
-	})
-
-	iris.Get("/silly_way_expected_error_but_silent_instead_of_send_the_reason", func(ctx *iris.Context) {
-		ctx.BeginTransaction(func(scope *iris.TransactionScope) {
-			scope.Context.Write("this will not be sent.")
-
-			// or if you know the error will be silent from the beggining:	err :=   &iris.ErrFallback{}
-			err := iris.NewErrWithStatus()
-
-			fail := true
-
-			if fail {
-				err.Status(iris.StatusBadRequest).Reason("we dont know but it was expected error")
-			}
-
-			// we change our mind we don't want to send the error to the user, so err.Silent to the .Complete
-			// complete with a failure ( so revert the changes) but do it silently.
-			scope.Complete(err.Silent())
-		})
-
-		ctx.WriteString(expectedBody)
-	})
-
-	e := httptest.New(iris.Default, t)
-
-	e.GET("/panic_silent").Expect().
-		Status(iris.StatusOK).
-		Body().
-		Equal(expectedBody)
-
-	e.GET("/expected_error_but_silent_instead_of_send_the_reason").
-		Expect().
-		Status(iris.StatusOK).
-		Body().
-		Equal(expectedBody)
-
-	e.GET("/silly_way_expected_error_but_silent_instead_of_send_the_reason").
-		Expect().
-		Status(iris.StatusOK).
-		Body().
-		Equal(expectedBody)
-
+		Equal(customErrorTemplateText)
 }

@@ -13,6 +13,7 @@ func main() {
         c.JSON(iris.StatusOK, iris.Map{
             "Name": "Iris",
             "Released":  "13 March 2016",
+						"Stars": "5883",
         })
     })
     iris.ListenLETSENCRYPT("mydomain.com")
@@ -27,9 +28,10 @@ import  "github.com/kataras/iris"
 func main() {
 	s1 := iris.New()
 	s1.Get("/hi_json", func(c *iris.Context) {
-		c.JSON(200, iris.Map{
+		c.JSON(iris.StatusOK, iris.Map{
 			"Name": "Iris",
 			"Released":  "13 March 2016",
+			"Stars": "5883",
 		})
 	})
 
@@ -47,7 +49,7 @@ func main() {
 For middleware, template engines, response engines, sessions, websockets, mails, subdomains,
 dynamic subdomains, routes, party of subdomains & routes, ssh and much more
 
-visit https://www.gitbook.com/book/kataras/iris/details
+visit https://docs.iris-go.com
 */
 package iris // import "github.com/kataras/iris"
 
@@ -56,6 +58,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"net/url"
 	"os"
 	"os/signal"
@@ -72,15 +75,13 @@ import (
 	"github.com/kataras/go-sessions"
 	"github.com/kataras/go-template"
 	"github.com/kataras/go-template/html"
-	"github.com/kataras/iris/utils"
-	"github.com/valyala/fasthttp"
 )
 
 const (
 	// IsLongTermSupport flag is true when the below version number is a long-term-support version
 	IsLongTermSupport = false
 	// Version is the current version number of the Iris web framework
-	Version = "5.1.3"
+	Version = "6.0.0"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -96,7 +97,7 @@ var (
 	Config    *Configuration
 	Logger    *log.Logger // if you want colors in your console then you should use this https://github.com/iris-contrib/logger instead.
 	Plugins   PluginContainer
-	Router    fasthttp.RequestHandler
+	Router    http.Handler
 	Websocket *WebsocketServer
 	// Available is a channel type of bool, fired to true when the server is opened and all plugins ran
 	// never fires false, if the .Close called then the channel is re-allocating.
@@ -149,7 +150,7 @@ type (
 		ListenUNIX(string, os.FileMode)
 		Close() error
 		Reserve() error
-		AcquireCtx(*fasthttp.RequestCtx) *Context
+		AcquireCtx(http.ResponseWriter, *http.Request) *Context
 		ReleaseCtx(*Context)
 		CheckForUpdates(bool)
 		UseSessionDB(sessions.Database)
@@ -168,34 +169,80 @@ type (
 		Cache(HandlerFunc, time.Duration) HandlerFunc
 	}
 
-	// Framework is our God |\| Google.Search('Greek mythology Iris')
-	//
-	// Implements the FrameworkAPI
-	Framework struct {
-		*muxAPI
-		// HTTP Server runtime fields is the iris' defined main server, developer can use unlimited number of servers
-		// note: they're available after .Build, and .Serve/Listen/ListenTLS/ListenLETSENCRYPT/ListenUNIX
-		ln        net.Listener
-		fsrv      *fasthttp.Server
-		Available chan bool
-		//
-		// Router field which can change the default iris' mux behavior
-		// if you want to get benefit with iris' context make use of:
-		// ctx:= iris.AcquireCtx(*fasthttp.RequestCtx) to get the context at the beginning of your handler
-		// iris.ReleaseCtx(ctx) to release/put the context to the pool, at the very end of your custom handler.
-		Router fasthttp.RequestHandler
+	// MuxAPI the visible api for the serveMux
+	MuxAPI interface {
+		Party(string, ...HandlerFunc) MuxAPI
+		// middleware serial, appending
+		Use(...Handler) MuxAPI
+		UseFunc(...HandlerFunc) MuxAPI
+		Done(...Handler) MuxAPI
+		DoneFunc(...HandlerFunc) MuxAPI
 
-		contextPool sync.Pool
-		once        sync.Once
-		Config      *Configuration
-		sessions    sessions.Sessions
-		serializers serializer.Serializers
-		templates   *templateEngines
-		Logger      *log.Logger
-		Plugins     PluginContainer
-		Websocket   *WebsocketServer
+		// main handlers
+		Handle(string, string, ...Handler) RouteNameFunc
+		HandleFunc(string, string, ...HandlerFunc) RouteNameFunc
+		API(string, HandlerAPI, ...HandlerFunc)
+
+		// http methods
+		Get(string, ...HandlerFunc) RouteNameFunc
+		Post(string, ...HandlerFunc) RouteNameFunc
+		Put(string, ...HandlerFunc) RouteNameFunc
+		Delete(string, ...HandlerFunc) RouteNameFunc
+		Connect(string, ...HandlerFunc) RouteNameFunc
+		Head(string, ...HandlerFunc) RouteNameFunc
+		Options(string, ...HandlerFunc) RouteNameFunc
+		Patch(string, ...HandlerFunc) RouteNameFunc
+		Trace(string, ...HandlerFunc) RouteNameFunc
+		Any(string, ...HandlerFunc)
+
+		// static content
+		StaticServe(string, ...string) RouteNameFunc
+		StaticContent(string, string, []byte) RouteNameFunc
+		StaticEmbedded(string, string, func(string) ([]byte, error), func() []string) RouteNameFunc
+		Favicon(string, ...string) RouteNameFunc
+		// static file system
+		StaticHandler(string, string, bool, bool) HandlerFunc
+		StaticWeb(string, string) RouteNameFunc
+
+		// party layout for template engines
+		Layout(string) MuxAPI
+
+		// errors
+		OnError(int, HandlerFunc)
+		EmitError(int, *Context)
 	}
+
+	// RouteNameFunc the func returns from the MuxAPi's methods, optionally sets the name of the Route (*route)
+	RouteNameFunc func(string)
 )
+
+// Framework is our God |\| Google.Search('Greek mythology Iris')
+//
+// Implements the FrameworkAPI
+type Framework struct {
+	*muxAPI
+	// HTTP Server runtime fields is the iris' defined main server, developer can use unlimited number of servers
+	// note: they're available after .Build, and .Serve/Listen/ListenTLS/ListenLETSENCRYPT/ListenUNIX
+	ln        net.Listener
+	srv       *http.Server
+	Available chan bool
+	//
+	// Router field which can change the default iris' mux behavior
+	// if you want to get benefit with iris' context make use of:
+	// ctx:= iris.AcquireCtx(http.ResponseWriter, *http.Request) to get the context at the beginning of your handler
+	// iris.ReleaseCtx(ctx) to release/put the context to the pool, at the very end of your custom handler.
+	Router http.Handler
+
+	contextPool sync.Pool
+	once        sync.Once
+	Config      *Configuration
+	sessions    sessions.Sessions
+	serializers serializer.Serializers
+	templates   *templateEngines
+	Logger      *log.Logger
+	Plugins     PluginContainer
+	Websocket   *WebsocketServer
+}
 
 var _ FrameworkAPI = &Framework{}
 
@@ -230,7 +277,9 @@ func New(setters ...OptionSetter) *Framework {
 
 	// websocket & sessions
 	{
-		s.Websocket = NewWebsocketServer() // in order to be able to call $instance.Websocket.OnConnection
+		// in order to be able to call $instance.Websocket.OnConnection
+		// the whole ws configuration and websocket server is really initialized only on first OnConnection
+		s.Websocket = NewWebsocketServer(s)
 
 		// set the sessions, look .initialize for its GC
 		s.sessions = sessions.New(sessions.DisableAutoGC(true))
@@ -283,13 +332,14 @@ func Must(err error) {
 // Must panics on error, it panics on registed iris' logger
 func (s *Framework) Must(err error) {
 	if err != nil {
-		s.Logger.Panic(err.Error())
+		//	s.Logger.Panicf("%s. Trace:\n%s", err, debug.Stack())
+		s.Logger.Panic(err)
 	}
 }
 
 // Build builds the whole framework's parts together
 // DO NOT CALL IT MANUALLY IF YOU ARE NOT:
-// SERVE IRIS BEHIND AN EXTERNAL CUSTOM fasthttp.Server, CAN BE CALLED ONCE PER IRIS INSTANCE FOR YOUR SAFETY
+// SERVE IRIS BEHIND AN EXTERNAL CUSTOM net/http.Server, CAN BE CALLED ONCE PER IRIS INSTANCE FOR YOUR SAFETY
 func Build() {
 	Default.Build()
 }
@@ -345,14 +395,8 @@ func (s *Framework) Build() {
 			s.sessions.Set(s.Config.Sessions, sessions.DisableAutoGC(false))
 		}
 
-		if s.Config.Websocket.Endpoint != "" {
-			// register the websocket server and listen to websocket connections when/if $instance.Websocket.OnConnection called by the dev
-			s.Websocket.RegisterTo(s, s.Config.Websocket)
-		}
-
 		//  prepare the mux runtime fields again, for any case
 		s.mux.setCorrectPath(!s.Config.DisablePathCorrection)
-		s.mux.setEscapePath(!s.Config.DisablePathEscape)
 		s.mux.setFireMethodNotAllowed(s.Config.FireMethodNotAllowed)
 
 		// prepare the server's handler, we do that check because iris supports
@@ -360,12 +404,12 @@ func (s *Framework) Build() {
 		if s.Router == nil {
 			// build and get the default mux' handler(*Context)
 			serve := s.mux.BuildHandler()
-			// build the fasthttp handler to bind it to the servers
-			defaultHandler := func(reqCtx *fasthttp.RequestCtx) {
-				ctx := s.AcquireCtx(reqCtx)
+			// build the net/http.Handler to bind it to the servers
+			defaultHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				ctx := s.AcquireCtx(w, r)
 				serve(ctx)
 				s.ReleaseCtx(ctx)
-			}
+			})
 
 			s.Router = defaultHandler
 		}
@@ -375,19 +419,20 @@ func (s *Framework) Build() {
 
 		if s.ln != nil { // user called Listen functions or Serve,
 			// create the main server
-			srvName := "iris"
-			if len(DefaultServerName) > 0 {
-				srvName += "_" + DefaultServerName
+			s.srv = &http.Server{
+				ReadTimeout:    s.Config.ReadTimeout,
+				WriteTimeout:   s.Config.WriteTimeout,
+				MaxHeaderBytes: s.Config.MaxHeaderBytes,
+				TLSNextProto:   s.Config.TLSNextProto,
+				ConnState:      s.Config.ConnState,
+				Handler:        s.Router,
+				Addr:           s.Config.VHost,
 			}
-			s.fsrv = &fasthttp.Server{Name: srvName,
-				MaxRequestBodySize: s.Config.MaxRequestBodySize,
-				ReadBufferSize:     s.Config.ReadBufferSize,
-				WriteBufferSize:    s.Config.WriteBufferSize,
-				ReadTimeout:        s.Config.ReadTimeout,
-				WriteTimeout:       s.Config.WriteTimeout,
-				MaxConnsPerIP:      s.Config.MaxConnsPerIP,
-				MaxRequestsPerConn: s.Config.MaxRequestsPerConn,
-				Handler:            s.Router,
+			if s.Config.TLSNextProto != nil {
+				s.srv.TLSNextProto = s.Config.TLSNextProto
+			}
+			if s.Config.ConnState != nil {
+				s.srv.ConnState = s.Config.ConnState
 			}
 		}
 
@@ -435,9 +480,8 @@ func (s *Framework) Serve(ln net.Listener) error {
 			s.Logger.Panic(err)
 		}
 	}()
-
 	// start the server in goroutine, .Available will block instead
-	go func() { s.Must(s.fsrv.Serve(ln)) }()
+	go func() { s.Must(s.srv.Serve(ln)) }()
 
 	if !s.Config.DisableBanner {
 		bannerMessage := fmt.Sprintf("%s: Running at %s", time.Now().Format(s.Config.TimeFormat), s.Config.VHost)
@@ -524,7 +568,6 @@ func (s *Framework) ListenTLS(addr string, certFile, keyFile string) {
 	if err != nil {
 		s.Logger.Panic(err)
 	}
-
 	s.Must(s.Serve(ln))
 }
 
@@ -606,32 +649,6 @@ func (s *Framework) IsRunning() bool {
 	return s != nil && s.ln != nil && s.ln.Addr() != nil && s.ln.Addr().String() != ""
 }
 
-// DisableKeepalive whether to disable keep-alive connections.
-//
-// The server will close all the incoming connections after sending
-// the first response to client if this option is set to true.
-//
-// By default keep-alive connections are enabled
-//
-// Note: Used on packages like graceful, after the server runs.
-func DisableKeepalive(val bool) {
-	Default.DisableKeepalive(val)
-}
-
-// DisableKeepalive whether to disable keep-alive connections.
-//
-// The server will close all the incoming connections after sending
-// the first response to client if this option is set to true.
-//
-// By default keep-alive connections are enabled
-//
-// Note: Used on packages like graceful, after the server runs.
-func (s *Framework) DisableKeepalive(val bool) {
-	if s.fsrv != nil {
-		s.fsrv.DisableKeepalive = val
-	}
-}
-
 // Close terminates all the registered servers and returns an error if any
 // if you want to panic on this error use the iris.Must(iris.Close())
 func Close() error {
@@ -663,15 +680,16 @@ func (s *Framework) Reserve() error {
 
 // AcquireCtx gets an Iris' Context from pool
 // see .ReleaseCtx & .Serve
-func AcquireCtx(reqCtx *fasthttp.RequestCtx) *Context {
-	return Default.AcquireCtx(reqCtx)
+func AcquireCtx(w http.ResponseWriter, r *http.Request) *Context {
+	return Default.AcquireCtx(w, r)
 }
 
 // AcquireCtx gets an Iris' Context from pool
 // see .ReleaseCtx & .Serve
-func (s *Framework) AcquireCtx(reqCtx *fasthttp.RequestCtx) *Context {
+func (s *Framework) AcquireCtx(w http.ResponseWriter, r *http.Request) *Context {
 	ctx := s.contextPool.Get().(*Context) // Changed to use the pool's New 09/07/2016, ~ -4k nanoseconds(9 bench tests) per requests (better performance)
-	ctx.RequestCtx = reqCtx
+	ctx.ResponseWriter = acquireResponseWriter(w)
+	ctx.Request = r
 	return ctx
 }
 
@@ -684,8 +702,15 @@ func ReleaseCtx(ctx *Context) {
 // ReleaseCtx puts the Iris' Context back to the pool in order to be re-used
 // see .AcquireCtx & .Serve
 func (s *Framework) ReleaseCtx(ctx *Context) {
+	// flush the body when all finished
+	ctx.ResponseWriter.flushResponse()
+
 	ctx.Middleware = nil
 	ctx.session = nil
+	ctx.Request = nil
+	releaseResponseWriter(ctx.ResponseWriter)
+	ctx.values.Reset()
+
 	s.contextPool.Put(ctx)
 }
 
@@ -978,37 +1003,35 @@ func (s *Framework) Path(routeName string, args ...interface{}) string {
 	return fmt.Sprintf(r.formattedPath, arguments...)
 }
 
-// DecodeURL returns the uri parameter as url (string)
+// DecodeQuery returns the uri parameter as url (string)
 // useful when you want to pass something to a database and be valid to retrieve it via context.Param
 // use it only for special cases, when the default behavior doesn't suits you.
 //
 // http://www.blooberry.com/indexdot/html/topics/urlencoding.htm
 // it uses just the url.QueryUnescape
-func DecodeURL(uri string) string {
-	if uri == "" {
+func DecodeQuery(path string) string {
+	if path == "" {
 		return ""
 	}
-	encodedPath, _ := url.QueryUnescape(uri)
+	encodedPath, err := url.QueryUnescape(path)
+	if err != nil {
+		return path
+	}
 	return encodedPath
 }
 
-// DecodeFasthttpURL returns the path decoded as url
+// DecodeURL returns the decoded uri
 // useful when you want to pass something to a database and be valid to retrieve it via context.Param
 // use it only for special cases, when the default behavior doesn't suits you.
 //
 // http://www.blooberry.com/indexdot/html/topics/urlencoding.htm
-/* Credits to Manish Singh @kryptodev for URLDecode by post issue share code */
-// simple things, if DecodeURL doesn't gives you the results you waited, use this function
-// I know it is not the best  way to describe it, but I don't think you will ever need this, it is here for ANY CASE
-func DecodeFasthttpURL(path string) string {
-	if path == "" {
+// it uses just the url.Parse
+func DecodeURL(uri string) string {
+	u, err := url.Parse(uri)
+	if err != nil {
 		return ""
 	}
-	u := fasthttp.AcquireURI()
-	u.SetPath(path)
-	encodedPath := u.String()[8:]
-	fasthttp.ReleaseURI(u)
-	return encodedPath
+	return u.String()
 }
 
 // URL returns the subdomain+ host + Path(...optional named parameters if route is dynamic)
@@ -1146,66 +1169,14 @@ func (s *Framework) Cache(bodyHandler HandlerFunc, expiration time.Duration) Han
 // ----------------------------------MuxAPI implementation------------------------------
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
-type (
-	// RouteNameFunc the func returns from the MuxAPi's methods, optionally sets the name of the Route (*route)
-	RouteNameFunc func(string)
-	// MuxAPI the visible api for the serveMux
-	MuxAPI interface {
-		Party(string, ...HandlerFunc) MuxAPI
-		// middleware serial, appending
-		Use(...Handler) MuxAPI
-		UseFunc(...HandlerFunc) MuxAPI
-		// returns itself, because at the most-cases used like .Layout, at the first-line party's declaration
-		Done(...Handler) MuxAPI
-		DoneFunc(...HandlerFunc) MuxAPI
 
-		// transactions
-		UseTransaction(...TransactionFunc) MuxAPI
-		DoneTransaction(...TransactionFunc) MuxAPI
-
-		// main handlers
-		Handle(string, string, ...Handler) RouteNameFunc
-		HandleFunc(string, string, ...HandlerFunc) RouteNameFunc
-		API(string, HandlerAPI, ...HandlerFunc)
-
-		// http methods
-		Get(string, ...HandlerFunc) RouteNameFunc
-		Post(string, ...HandlerFunc) RouteNameFunc
-		Put(string, ...HandlerFunc) RouteNameFunc
-		Delete(string, ...HandlerFunc) RouteNameFunc
-		Connect(string, ...HandlerFunc) RouteNameFunc
-		Head(string, ...HandlerFunc) RouteNameFunc
-		Options(string, ...HandlerFunc) RouteNameFunc
-		Patch(string, ...HandlerFunc) RouteNameFunc
-		Trace(string, ...HandlerFunc) RouteNameFunc
-		Any(string, ...HandlerFunc)
-
-		// static content
-		StaticHandler(string, int, bool, bool, []string) HandlerFunc
-		Static(string, string, int) RouteNameFunc
-		StaticFS(string, string, int) RouteNameFunc
-		StaticWeb(string, string, int) RouteNameFunc
-		StaticServe(string, ...string) RouteNameFunc
-		StaticContent(string, string, []byte) RouteNameFunc
-		StaticEmbedded(string, string, func(string) ([]byte, error), func() []string) RouteNameFunc
-		Favicon(string, ...string) RouteNameFunc
-
-		// templates
-		Layout(string) MuxAPI // returns itself
-
-		// errors
-		OnError(int, HandlerFunc)
-		EmitError(int, *Context)
-	}
-
-	muxAPI struct {
-		mux            *serveMux
-		doneMiddleware Middleware
-		apiRoutes      []*route // used to register the .Done middleware
-		relativePath   string
-		middleware     Middleware
-	}
-)
+type muxAPI struct {
+	mux            *serveMux
+	doneMiddleware Middleware
+	apiRoutes      []*route // used to register the .Done middleware
+	relativePath   string
+	middleware     Middleware
+}
 
 var _ MuxAPI = &muxAPI{}
 
@@ -1311,9 +1282,9 @@ func (api *muxAPI) DoneFunc(handlersFn ...HandlerFunc) MuxAPI {
 //
 // See https://github.com/iris-contrib/examples/tree/master/transactions to manually add transactions
 // and https://github.com/kataras/iris/blob/master/context_test.go for more
-func UseTransaction(pipes ...TransactionFunc) MuxAPI {
-	return Default.UseTransaction(pipes...)
-}
+// func UseTransaction(pipes ...TransactionFunc) MuxAPI {
+// 	return Default.UseTransaction(pipes...)
+// }
 
 // UseTransaction adds transaction(s) middleware
 // the difference from manually adding them to the ctx.BeginTransaction
@@ -1323,39 +1294,39 @@ func UseTransaction(pipes ...TransactionFunc) MuxAPI {
 //
 // See https://github.com/iris-contrib/examples/tree/master/transactions to manually add transactions
 // and https://github.com/kataras/iris/blob/master/context_test.go for more
-func (api *muxAPI) UseTransaction(pipes ...TransactionFunc) MuxAPI {
-	return api.UseFunc(func(ctx *Context) {
-		for i := range pipes {
-			ctx.BeginTransaction(pipes[i])
-			if ctx.TransactionsSkipped() {
-				ctx.StopExecution()
-			}
-		}
-		ctx.Next()
-	})
-}
+// func (api *muxAPI) UseTransaction(pipes ...TransactionFunc) MuxAPI {
+// 	return api.UseFunc(func(ctx *Context) {
+// 		for i := range pipes {
+// 			ctx.BeginTransaction(pipes[i])
+// 			if ctx.TransactionsSkipped() {
+// 				ctx.StopExecution()
+// 			}
+// 		}
+// 		ctx.Next()
+// 	})
+// }
 
 // DoneTransaction registers Transaction 'middleware' the only difference from .UseTransaction is that
 // is executed always last, after all of each route's handlers, returns itself.
 //
 // See https://github.com/iris-contrib/examples/tree/master/transactions to manually add transactions
 // and https://github.com/kataras/iris/blob/master/context_test.go for more
-func DoneTransaction(pipes ...TransactionFunc) MuxAPI {
-	return Default.DoneTransaction(pipes...)
-}
+// func DoneTransaction(pipes ...TransactionFunc) MuxAPI {
+// 	return Default.DoneTransaction(pipes...)
+// }
 
 // DoneTransaction registers Transaction 'middleware' the only difference from .UseTransaction is that
 // is executed always last, after all of each route's handlers, returns itself.
 //
 // See https://github.com/iris-contrib/examples/tree/master/transactions to manually add transactions
 // and https://github.com/kataras/iris/blob/master/context_test.go for more
-func (api *muxAPI) DoneTransaction(pipes ...TransactionFunc) MuxAPI {
-	return api.DoneFunc(func(ctx *Context) {
-		for i := range pipes {
-			ctx.BeginTransaction(pipes[i])
-		}
-	})
-}
+// func (api *muxAPI) DoneTransaction(pipes ...TransactionFunc) MuxAPI {
+// 	return api.DoneFunc(func(ctx *Context) {
+// 		for i := range pipes {
+// 			ctx.BeginTransaction(pipes[i])
+// 		}
+// 	})
+// }
 
 // Handle registers a route to the server's router
 // if empty method is passed then registers handler(s) for all methods, same as .Any, but returns nil as result
@@ -1412,7 +1383,7 @@ func (api *muxAPI) Handle(method string, registedPath string, handlers ...Handle
 	if len(api.doneMiddleware) > 0 {
 		middleware = append(middleware, api.doneMiddleware...) // register the done middleware, if any
 	}
-	r := api.mux.register([]byte(method), subdomain, path, middleware)
+	r := api.mux.register(method, subdomain, path, middleware)
 	api.apiRoutes = append(api.apiRoutes, r)
 
 	// should we remove the api.apiRoutes on the .Party (new children party) ?, No, because the user maybe use this party later
@@ -1541,7 +1512,7 @@ func (api *muxAPI) API(path string, restAPI HandlerAPI, middleware ...HandlerFun
 					args[0] = newController
 					j := 1
 
-					ctx.VisitUserValues(func(k []byte, v interface{}) {
+					ctx.VisitValues(func(k []byte, v interface{}) {
 						if bytes.HasPrefix(k, paramPrefix) {
 							args[j] = reflect.ValueOf(v.(string))
 
@@ -1664,136 +1635,6 @@ func (api *muxAPI) Any(registedPath string, handlersFn ...HandlerFunc) {
 	}
 }
 
-// StaticHandler returns a Handler to serve static system directory
-// Accepts 5 parameters
-//
-// first is the systemPath (string)
-// Path to the root directory to serve files from.
-//
-// second is the  stripSlashes (int) level
-// * stripSlashes = 0, original path: "/foo/bar", result: "/foo/bar"
-// * stripSlashes = 1, original path: "/foo/bar", result: "/bar"
-// * stripSlashes = 2, original path: "/foo/bar", result: ""
-//
-// third is the compress (bool)
-// Transparently compresses responses if set to true.
-//
-// The server tries minimizing CPU usage by caching compressed files.
-// It adds fasthttp.FSCompressedFileSuffix suffix to the original file name and
-// tries saving the resulting compressed file under the new file name.
-// So it is advisable to give the server write access to Root
-// and to all inner folders in order to minimze CPU usage when serving
-// compressed responses.
-//
-// fourth is the generateIndexPages (bool)
-// Index pages for directories without files matching IndexNames
-// are automatically generated if set.
-//
-// Directory index generation may be quite slow for directories
-// with many files (more than 1K), so it is discouraged enabling
-// index pages' generation for such directories.
-//
-// fifth is the indexNames ([]string)
-// List of index file names to try opening during directory access.
-//
-// For example:
-//
-//     * index.html
-//     * index.htm
-//     * my-super-index.xml
-//
-func StaticHandler(systemPath string, stripSlashes int, compress bool, generateIndexPages bool, indexNames []string) HandlerFunc {
-	return Default.StaticHandler(systemPath, stripSlashes, compress, generateIndexPages, indexNames)
-}
-
-// StaticHandler returns a Handler to serve static system directory
-// Accepts 5 parameters
-//
-// first is the systemPath (string)
-// Path to the root directory to serve files from.
-//
-// second is the  stripSlashes (int) level
-// * stripSlashes = 0, original path: "/foo/bar", result: "/foo/bar"
-// * stripSlashes = 1, original path: "/foo/bar", result: "/bar"
-// * stripSlashes = 2, original path: "/foo/bar", result: ""
-//
-// third is the compress (bool)
-// Transparently compresses responses if set to true.
-//
-// The server tries minimizing CPU usage by caching compressed files.
-// It adds fasthttp.FSCompressedFileSuffix suffix to the original file name and
-// tries saving the resulting compressed file under the new file name.
-// So it is advisable to give the server write access to Root
-// and to all inner folders in order to minimze CPU usage when serving
-// compressed responses.
-//
-// fourth is the generateIndexPages (bool)
-// Index pages for directories without files matching IndexNames
-// are automatically generated if set.
-//
-// Directory index generation may be quite slow for directories
-// with many files (more than 1K), so it is discouraged enabling
-// index pages' generation for such directories.
-//
-// fifth is the indexNames ([]string)
-// List of index file names to try opening during directory access.
-//
-// For example:
-//
-//     * index.html
-//     * index.htm
-//     * my-super-index.xml
-//
-func (api *muxAPI) StaticHandler(systemPath string, stripSlashes int, compress bool, generateIndexPages bool, indexNames []string) HandlerFunc {
-	if indexNames == nil {
-		indexNames = []string{}
-	}
-	fs := &fasthttp.FS{
-		// Path to directory to serve.
-		Root:       systemPath,
-		IndexNames: indexNames,
-		// Generate index pages if client requests directory contents.
-		GenerateIndexPages: generateIndexPages,
-
-		// Enable transparent compression to save network traffic.
-		Compress:             compress,
-		CacheDuration:        StaticCacheDuration,
-		CompressedFileSuffix: CompressedFileSuffix,
-	}
-
-	if stripSlashes > 0 {
-		fs.PathRewrite = fasthttp.NewPathSlashesStripper(stripSlashes)
-	}
-
-	// Create request handler for serving static files.
-	h := fs.NewRequestHandler()
-	return HandlerFunc(func(ctx *Context) {
-		h(ctx.RequestCtx)
-		errCode := ctx.RequestCtx.Response.StatusCode()
-		if errCode == StatusNotFound || errCode == StatusBadRequest || errCode == StatusInternalServerError {
-			api.mux.fireError(errCode, ctx)
-		}
-		if ctx.Pos < len(ctx.Middleware)-1 {
-			ctx.Next() // for any case
-		}
-
-	})
-}
-
-// Static registers a route which serves a system directory
-// this doesn't generates an index page which list all files
-// no compression is used also, for these features look at StaticFS func
-// accepts three parameters
-// first parameter is the request url path (string)
-// second parameter is the system directory (string)
-// third parameter is the level (int) of stripSlashes
-// * stripSlashes = 0, original path: "/foo/bar", result: "/foo/bar"
-// * stripSlashes = 1, original path: "/foo/bar", result: "/bar"
-// * stripSlashes = 2, original path: "/foo/bar", result: ""
-func Static(reqPath string, systemPath string, stripSlashes int) RouteNameFunc {
-	return Default.Static(reqPath, systemPath, stripSlashes)
-}
-
 // if / then returns /*wildcard or /something then /something/*wildcard
 // if empty then returns /*wildcard too
 func validateWildcard(reqPath string, paramName string) string {
@@ -1807,89 +1648,6 @@ func validateWildcard(reqPath string, paramName string) string {
 func (api *muxAPI) registerResourceRoute(reqPath string, h HandlerFunc) RouteNameFunc {
 	api.Head(reqPath, h)
 	return api.Get(reqPath, h)
-}
-
-// Static registers a route which serves a system directory
-// this doesn't generates an index page which list all files
-// no compression is used also, for these features look at StaticFS func
-// accepts three parameters
-// first parameter is the request url path (string)
-// second parameter is the system directory (string)
-// third parameter is the level (int) of stripSlashes
-// * stripSlashes = 0, original path: "/foo/bar", result: "/foo/bar"
-// * stripSlashes = 1, original path: "/foo/bar", result: "/bar"
-// * stripSlashes = 2, original path: "/foo/bar", result: ""
-func (api *muxAPI) Static(reqPath string, systemPath string, stripSlashes int) RouteNameFunc {
-	h := api.StaticHandler(systemPath, stripSlashes, false, false, nil)
-	reqPath = validateWildcard(reqPath, "filepath")
-	return api.registerResourceRoute(reqPath, h)
-}
-
-// StaticFS registers a route which serves a system directory
-// this is the fastest method to serve static files
-// generates an index page which list all files
-// if you use this method it will generate compressed files also
-// think this function as small fileserver with http
-// accepts three parameters
-// first parameter is the request url path (string)
-// second parameter is the system directory (string)
-// third parameter is the level (int) of stripSlashes
-// * stripSlashes = 0, original path: "/foo/bar", result: "/foo/bar"
-// * stripSlashes = 1, original path: "/foo/bar", result: "/bar"
-// * stripSlashes = 2, original path: "/foo/bar", result: ""
-func StaticFS(reqPath string, systemPath string, stripSlashes int) RouteNameFunc {
-	return Default.StaticFS(reqPath, systemPath, stripSlashes)
-}
-
-// StaticFS registers a route which serves a system directory
-// this is the fastest method to serve static files
-// generates an index page which list all files
-// if you use this method it will generate compressed files also
-// think this function as small fileserver with http
-// accepts three parameters
-// first parameter is the request url path (string)
-// second parameter is the system directory (string)
-// third parameter is the level (int) of stripSlashes
-// * stripSlashes = 0, original path: "/foo/bar", result: "/foo/bar"
-// * stripSlashes = 1, original path: "/foo/bar", result: "/bar"
-// * stripSlashes = 2, original path: "/foo/bar", result: ""
-func (api *muxAPI) StaticFS(reqPath string, systemPath string, stripSlashes int) RouteNameFunc {
-	h := api.StaticHandler(systemPath, stripSlashes, true, true, nil)
-	reqPath = validateWildcard(reqPath, "filepath")
-	return api.registerResourceRoute(reqPath, h)
-}
-
-// StaticWeb same as Static but if index.html exists and request uri is '/' then display the index.html's contents
-// accepts three parameters
-// first parameter is the request url path (string)
-// second parameter is the system directory (string)
-// third parameter is the level (int) of stripSlashes
-// * stripSlashes = 0, original path: "/foo/bar", result: "/foo/bar"
-// * stripSlashes = 1, original path: "/foo/bar", result: "/bar"
-// * stripSlashes = 2, original path: "/foo/bar", result: ""
-// * if you don't know what to put on stripSlashes just 1
-func StaticWeb(reqPath string, systemPath string, stripSlashes int) RouteNameFunc {
-	return Default.StaticWeb(reqPath, systemPath, stripSlashes)
-}
-
-// StaticWeb same as Static but if index.html exists and request uri is '/' then display the index.html's contents
-// accepts three parameters
-// first parameter is the request url path (string)
-// second parameter is the system directory (string)
-// third parameter is the level (int) of stripSlashes
-// * stripSlashes = 0, original path: "/foo/bar", result: "/foo/bar"
-// * stripSlashes = 1, original path: "/foo/bar", result: "/bar"
-// * stripSlashes = 2, original path: "/foo/bar", result: ""
-// * if you don't know what to put on stripSlashes just 1
-// example: https://github.com/iris-contrib/examples/tree/master/static_web
-func (api *muxAPI) StaticWeb(reqPath string, systemPath string, stripSlashes int) RouteNameFunc {
-	hasIndex := utils.Exists(systemPath + utils.PathSeparator + "index.html")
-	var indexNames []string
-	if hasIndex {
-		indexNames = []string{"index.html"}
-	}
-	serveHandler := api.StaticHandler(systemPath, stripSlashes, false, !hasIndex, indexNames) // if not index.html exists then generate index.html which shows the list of files
-	return api.registerResourceRoute(reqPath+"*filepath", serveHandler)
 }
 
 // StaticServe serves a directory as web resource
@@ -2107,16 +1865,17 @@ func (api *muxAPI) Favicon(favPath string, requestPath ...string) RouteNameFunc 
 			modtime = fi.ModTime().UTC().Format(ctx.framework.Config.TimeFormat)
 		}
 		if t, err := time.Parse(ctx.framework.Config.TimeFormat, ctx.RequestHeader(ifModifiedSince)); err == nil && fi.ModTime().Before(t.Add(StaticCacheDuration)) {
-			ctx.Response.Header.Del(contentType)
-			ctx.Response.Header.Del(contentLength)
+
+			ctx.ResponseWriter.Header().Del(contentType)
+			ctx.ResponseWriter.Header().Del(contentLength)
 			ctx.SetStatusCode(StatusNotModified)
 			return
 		}
 
-		ctx.Response.Header.Set(contentType, cType)
-		ctx.Response.Header.Set(lastModified, modtime)
+		ctx.ResponseWriter.Header().Set(contentType, cType)
+		ctx.ResponseWriter.Header().Set(lastModified, modtime)
 		ctx.SetStatusCode(StatusOK)
-		ctx.Response.SetBody(cacheFav)
+		ctx.ResponseWriter.SetBody(cacheFav)
 	}
 
 	reqPath := "/favicon" + path.Ext(fi.Name()) //we could use the filename, but because standards is /favicon.ico/.png.
@@ -2125,6 +1884,91 @@ func (api *muxAPI) Favicon(favPath string, requestPath ...string) RouteNameFunc 
 	}
 
 	return api.registerResourceRoute(reqPath, h)
+}
+
+// StripPrefix returns a handler that serves HTTP requests
+// by removing the given prefix from the request URL's Path
+// and invoking the handler h. StripPrefix handles a
+// request for a path that doesn't begin with prefix by
+// replying with an HTTP 404 not found error.
+func StripPrefix(prefix string, h HandlerFunc) HandlerFunc {
+	if prefix == "" {
+		return h
+	}
+	return func(ctx *Context) {
+		if p := strings.TrimPrefix(ctx.Request.URL.Path, prefix); len(p) < len(ctx.Request.URL.Path) {
+			ctx.Request.URL.Path = p
+			h(ctx)
+		} else {
+			ctx.NotFound()
+		}
+	}
+}
+
+// StaticHandler returns a new Handler which serves static files
+func StaticHandler(reqPath string, systemPath string, showList bool, enableGzip bool) HandlerFunc {
+	return Default.StaticHandler(reqPath, systemPath, showList, enableGzip)
+}
+
+// StaticHandler returns a new Handler which serves static files
+func (api *muxAPI) StaticHandler(reqPath string, systemPath string, showList bool, enableGzip bool) HandlerFunc {
+	h := NewStaticHandlerBuilder(systemPath).
+		Path(api.relativePath + reqPath).
+		Listing(showList).
+		Gzip(enableGzip).
+		Build()
+
+	managedStaticHandler := func(ctx *Context) {
+		h(ctx)
+		prevStatusCode := ctx.ResponseWriter.StatusCode()
+		if prevStatusCode >= 400 { // we have an error
+			// fire the custom error handler
+			api.mux.fireError(prevStatusCode, ctx)
+		}
+		// go to the next middleware
+		if ctx.Pos < len(ctx.Middleware)-1 {
+			ctx.Next()
+		}
+	}
+	return managedStaticHandler
+}
+
+// StaticWeb returns a handler that serves HTTP requests
+// with the contents of the file system rooted at directory.
+//
+// first parameter: the route path
+// second parameter: the system directory
+// for more options look iris.StaticHandler.
+//
+//     iris.StaticWeb("/static", "./static")
+//
+// As a special case, the returned file server redirects any request
+// ending in "/index.html" to the same path, without the final
+// "index.html".
+//
+// StaticWeb calls the StaticHandler(reqPath, systemPath, listingDirectories: false, gzip: false ).
+func StaticWeb(reqPath string, systemPath string) RouteNameFunc {
+	return Default.StaticWeb(reqPath, systemPath)
+}
+
+// StaticWeb returns a handler that serves HTTP requests
+// with the contents of the file system rooted at directory.
+//
+// first parameter: the route path
+// second parameter: the system directory
+// for more options look iris.StaticHandler.
+//
+//     iris.StaticWeb("/static", "./static")
+//
+// As a special case, the returned file server redirects any request
+// ending in "/index.html" to the same path, without the final
+// "index.html".
+//
+// StaticWeb calls the StaticHandler(reqPath, systemPath, listingDirectories: false, gzip: false ).
+func (api *muxAPI) StaticWeb(reqPath string, systemPath string) RouteNameFunc {
+	h := api.StaticHandler(reqPath, systemPath, false, false)
+	routePath := validateWildcard(reqPath, "file")
+	return api.registerResourceRoute(routePath, h)
 }
 
 // Layout oerrides the parent template layout with a more specific layout for this Party
@@ -2215,7 +2059,7 @@ func (api *muxAPI) OnError(statusCode int, handlerFn HandlerFunc) {
 
 	func(statusCode int, staticPath string, prevErrHandler Handler, newHandler Handler) { // to separate the logic
 		errHandler := HandlerFunc(func(ctx *Context) {
-			if strings.HasPrefix(ctx.PathString(), staticPath) { // yes the user should use OnError from longest to lower static path's length in order this to work, so we can find another way, like a builder on the end.
+			if strings.HasPrefix(ctx.Path(), staticPath) { // yes the user should use OnError from longest to lower static path's length in order this to work, so we can find another way, like a builder on the end.
 				newHandler.Serve(ctx)
 				return
 			}

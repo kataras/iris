@@ -1,9 +1,10 @@
 package iris
 
 import (
+	"io"
+
 	"github.com/kataras/go-fs"
 	"github.com/kataras/go-template"
-	"io"
 )
 
 const (
@@ -105,14 +106,14 @@ func (t *templateEngines) render(isFile bool, ctx *Context, filenameOrSource str
 
 	var out io.Writer
 	if gzipEnabled && ctx.clientAllowsGzip() {
-		ctx.RequestCtx.Response.Header.Add(varyHeader, acceptEncodingHeader)
+		ctx.ResponseWriter.Header().Add(varyHeader, acceptEncodingHeader)
 		ctx.SetHeader(contentEncodingHeader, "gzip")
 
-		gzipWriter := fs.AcquireGzipWriter(ctx.Response.BodyWriter())
+		gzipWriter := fs.AcquireGzipWriter(ctx.ResponseWriter)
 		defer fs.ReleaseGzipWriter(gzipWriter)
 		out = gzipWriter
 	} else {
-		out = ctx.Response.BodyWriter()
+		out = ctx.ResponseWriter
 	}
 
 	if isFile {
