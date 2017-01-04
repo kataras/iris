@@ -2,6 +2,11 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 6.0.1 -> 6.0.2
+
+- Fix subdomains (silly fix by checking the Request.Host vs Request.URL.Host) and add a more realistic test, as reported [here](https://github.com/kataras/iris/issues/574).
+
+
 ## 6.0.0 -> 6.0.1
 
 We had(for 2 days) one ResponseWriter which has special and unique features, but it slowed the execution a little bit, so I had to think more about it, I want to keep iris as the fastest http/2 web framework, well-designed and also to be usable and very easy for new programmers, performance vs design is tough decision. I choose performance most of the times but golang gives us the way to have a good design with that too.

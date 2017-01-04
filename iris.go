@@ -81,7 +81,7 @@ const (
 	// IsLongTermSupport flag is true when the below version number is a long-term-support version
 	IsLongTermSupport = false
 	// Version is the current version number of the Iris web framework
-	Version = "6.0.1"
+	Version = "6.0.2"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -416,7 +416,6 @@ func (s *Framework) Build() {
 
 		// set the mux' hostname (for multi subdomain routing)
 		s.mux.hostname = ParseHostname(s.Config.VHost)
-
 		if s.ln != nil { // user called Listen functions or Serve,
 			// create the main server
 			s.srv = &http.Server{

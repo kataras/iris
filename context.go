@@ -200,7 +200,11 @@ func (ctx *Context) Method() string {
 
 // Host returns the host part of the current url
 func (ctx *Context) Host() string {
-	return ctx.Request.URL.Host
+	h := ctx.Request.URL.Host
+	if h == "" {
+		h = ctx.Request.Host
+	}
+	return h
 }
 
 // ServerHost returns the server host taken by *http.Request.Host

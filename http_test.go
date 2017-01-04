@@ -426,6 +426,61 @@ func TestMuxSimpleParty(t *testing.T) {
 	}
 }
 
+// TestRealSubdomainSimple exists because the local examples some times passed but...
+// hope that travis will not has problem with this
+func TestRealSubdomainSimple(t *testing.T) {
+
+	api := iris.New()
+	host := "localhost:" + strconv.Itoa(getRandomNumber(4732, 4958))
+	subdomain := "admin"
+	subdomainHost := subdomain + "." + host
+
+	// no order, you can register subdomains at the end also.
+	admin := api.Party(subdomain + ".")
+	{
+		// admin.mydomain.com
+		admin.Get("/", func(c *iris.Context) {
+			c.Writef("INDEX FROM %s", subdomainHost)
+		})
+		// admin.mydomain.com/hey
+		admin.Get("/hey", func(c *iris.Context) {
+			c.Writef(subdomainHost + c.Request.RequestURI)
+		})
+		// admin.mydomain.com/hey2
+		admin.Get("/hey2", func(c *iris.Context) {
+			c.Writef(subdomainHost + c.Request.RequestURI)
+		})
+	}
+
+	// mydomain.com/
+	api.Get("/", func(c *iris.Context) {
+		c.Writef("INDEX FROM no-subdomain hey")
+	})
+
+	// mydomain.com/hey
+	api.Get("/hey", func(c *iris.Context) {
+		c.Writef("HEY FROM no-subdomain hey")
+	})
+
+	api.Config.DisableBanner = true
+	go api.Listen(host)
+
+	<-api.Available
+
+	e := httptest.New(api, t, httptest.ExplicitURL(true))
+
+	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal("INDEX FROM no-subdomain hey")
+	e.GET("/hey").Expect().Status(iris.StatusOK).Body().Equal("HEY FROM no-subdomain hey")
+
+	sub := e.Builder(func(req *httpexpect.Request) {
+		req.WithURL("http://admin." + host)
+	})
+
+	sub.GET("/").Expect().Status(iris.StatusOK).Body().Equal("INDEX FROM " + subdomainHost)
+	sub.GET("/hey").Expect().Status(iris.StatusOK).Body().Equal(subdomainHost + "/hey")
+	sub.GET("/hey2").Expect().Status(iris.StatusOK).Body().Equal(subdomainHost + "/hey2")
+}
+
 func TestMuxPathEscape(t *testing.T) {
 	iris.ResetDefault()
 
