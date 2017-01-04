@@ -49,7 +49,7 @@ type Transaction struct {
 func newTransaction(from *Context) *Transaction {
 	tempCtx := *from
 	writer := tempCtx.ResponseWriter.clone()
-	tempCtx.ResponseWriter = writer
+	tempCtx.ResponseWriter = writer //from.ResponseWriter.clone() // &(*tempCtx.ResponseWriter.(*ResponseRecorder))
 	t := &Transaction{
 		parent:  from,
 		Context: &tempCtx,
@@ -131,7 +131,7 @@ func (tsf TransactionScopeFunc) EndTransaction(maybeErr TransactionErrResult, ct
 // useful for the most cases.
 var TransientTransactionScope = TransactionScopeFunc(func(maybeErr TransactionErrResult, ctx *Context) bool {
 	if maybeErr.IsFailure() {
-		ctx.ResponseWriter.Reset() // this response is skipped because it's empty.
+		ctx.Recorder().Reset() // this response is skipped because it's empty.
 	}
 	return true
 })
@@ -143,16 +143,20 @@ var TransientTransactionScope = TransactionScopeFunc(func(maybeErr TransactionEr
 // is not written to the client, and an error status code is written instead.
 var RequestTransactionScope = TransactionScopeFunc(func(maybeErr TransactionErrResult, ctx *Context) bool {
 	if maybeErr.IsFailure() {
+
 		// we need to register a beforeResponseFlush event here in order
 		// to execute last the EmitError
 		// (which will reset the whole response's body, status code and headers setted from normal flow or other transactions too)
 		ctx.ResponseWriter.SetBeforeFlush(func() {
+			// we need to re-take the context's response writer
+			// because inside here the response writer is changed to the original's
+			// look ~context:1306
+			w := ctx.ResponseWriter.(*ResponseRecorder)
 			if maybeErr.Reason != "" {
-				ctx.ResponseWriter.Reset()
 				// send the error with the info user provided
-				ctx.ResponseWriter.SetBodyString(maybeErr.Reason)
-				ctx.ResponseWriter.WriteHeader(maybeErr.StatusCode)
-				ctx.ResponseWriter.SetContentType(maybeErr.ContentType)
+				w.SetBodyString(maybeErr.Reason)
+				w.WriteHeader(maybeErr.StatusCode)
+				w.SetContentType(maybeErr.ContentType)
 			} else {
 				// else execute the registered user error and skip the next transactions and all normal flow,
 				ctx.EmitError(maybeErr.StatusCode)

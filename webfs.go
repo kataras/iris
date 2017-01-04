@@ -131,12 +131,12 @@ func (w *webfs) Build() HandlerFunc {
 		}
 
 		w.handler = func(ctx *Context) {
-			writer := ctx.ResponseWriter.ResponseWriter
+			writer := ctx.ResponseWriter
 
 			if w.gzip && ctx.clientAllowsGzip() {
 				ctx.ResponseWriter.Header().Add(varyHeader, acceptEncodingHeader)
 				ctx.SetHeader(contentEncodingHeader, "gzip")
-				gzipResWriter := acquireGzipResponseWriter(ctx.ResponseWriter.ResponseWriter)
+				gzipResWriter := acquireGzipResponseWriter(ctx.ResponseWriter) //.ResponseWriter)
 				writer = gzipResWriter
 				defer releaseGzipResponseWriter(gzipResWriter)
 			}

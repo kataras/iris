@@ -361,7 +361,6 @@ func TestContextRedirectTo(t *testing.T) {
 				args = append(args, s)
 			}
 		}
-		//println("Redirecting to: " + routeName + " with path: " + Path(routeName, args...))
 		ctx.RedirectTo(routeName, args...)
 	})
 
@@ -691,7 +690,9 @@ func TestTransactions(t *testing.T) {
 	}
 
 	successTransaction := func(scope *iris.Transaction) {
-
+		if scope.Context.Request.RequestURI == "/failAllBecauseOfRequestScopeAndFailure" {
+			t.Fatalf("We are inside successTransaction but the previous REQUEST SCOPED TRANSACTION HAS FAILED SO THiS SHOULD NOT BE RAN AT ALL")
+		}
 		scope.Context.HTML(iris.StatusOK,
 			secondTransactionSuccessHTMLMessage)
 		// * if we don't have any 'throw error' logic then no need of scope.Complete()

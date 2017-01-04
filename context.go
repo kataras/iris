@@ -137,7 +137,7 @@ type (
 	// Context is resetting every time a request is coming to the server
 	// it is not good practice to use this object in goroutines, for these cases use the .Clone()
 	Context struct {
-		ResponseWriter *ResponseWriter
+		ResponseWriter // *responseWriter by default, when record is on then *ResponseRecorder
 		Request        *http.Request
 		values         requestValues
 		framework      *Framework
@@ -473,11 +473,6 @@ func (ctx *Context) ReadForm(formObject interface{}) error {
 	return errReadBody.With(formBinder.Decode(values, formObject))
 }
 
-// ResetBody resets the body of the response
-func (ctx *Context) ResetBody() {
-	ctx.ResponseWriter.ResetBody()
-}
-
 /* Response */
 
 // SetContentType sets the response writer's header key 'Content-Type' to a given value(s)
@@ -492,7 +487,7 @@ func (ctx *Context) SetHeader(k string, v string) {
 
 // SetStatusCode sets the status code header to the response
 //
-// NOTE: Iris takes cares of multiple header writing
+// same as .WriteHeader, iris takes cares of your status code seriously
 func (ctx *Context) SetStatusCode(statusCode int) {
 	ctx.ResponseWriter.WriteHeader(statusCode)
 }
@@ -519,7 +514,7 @@ func (ctx *Context) Redirect(urlToRedirect string, statusHeader ...int) {
 			ctx.Log("Trying to redirect to itself. FROM: %s TO: %s", ctx.Path(), urlToRedirect)
 		}
 	}
-	http.Redirect(ctx.ResponseWriter.ResponseWriter, ctx.Request, urlToRedirect, httpStatus)
+	http.Redirect(ctx.ResponseWriter, ctx.Request, urlToRedirect, httpStatus)
 }
 
 // RedirectTo does the same thing as Redirect but instead of receiving a uri or path it receives a route name
@@ -552,38 +547,6 @@ func (ctx *Context) Panic() {
 func (ctx *Context) EmitError(statusCode int) {
 	ctx.framework.EmitError(statusCode, ctx)
 	ctx.StopExecution()
-}
-
-// -------------------------------------------------------------------------------------
-// -------------------------------------------------------------------------------------
-// -----------------------------Raw write methods---------------------------------------
-// -------------------------------------------------------------------------------------
-// -------------------------------------------------------------------------------------
-
-// Write writes the contents to the response writer.
-//
-// Returns the number of bytes written and any write error encountered
-func (ctx *Context) Write(contents []byte) (n int, err error) {
-	return ctx.ResponseWriter.Write(contents)
-}
-
-// Writef formats according to a format specifier and writes to the response.
-//
-// Returns the number of bytes written and any write error encountered
-func (ctx *Context) Writef(format string, a ...interface{}) (n int, err error) {
-	return fmt.Fprintf(ctx.ResponseWriter, format, a...)
-}
-
-// WriteString writes a simple string to the response.
-//
-// Returns the number of bytes written and any write error encountered
-func (ctx *Context) WriteString(s string) (n int, err error) {
-	return io.WriteString(ctx.ResponseWriter, s)
-}
-
-// SetBodyString writes a simple string to the response.
-func (ctx *Context) SetBodyString(s string) {
-	ctx.ResponseWriter.SetBodyString(s)
 }
 
 // -------------------------------------------------------------------------------------
@@ -690,15 +653,20 @@ func (ctx *Context) RenderTemplateSource(status int, src string, binding interfa
 // RenderWithStatus builds up the response from the specified template or a serialize engine.
 // Note: the options: "gzip" and "charset" are built'n support by Iris, so you can pass these on any template engine or serialize engines
 func (ctx *Context) RenderWithStatus(status int, name string, binding interface{}, options ...map[string]interface{}) (err error) {
+
+	if _, shouldFirstStatusCode := ctx.ResponseWriter.(*responseWriter); shouldFirstStatusCode {
+		ctx.SetStatusCode(status)
+	}
+
 	if strings.IndexByte(name, '.') > -1 { //we have template
 		err = ctx.framework.templates.renderFile(ctx, name, binding, options...)
 	} else {
 		err = ctx.renderSerialized(name, binding, options...)
 	}
-
-	if err == nil {
-		ctx.SetStatusCode(status)
-	}
+	// we don't care for the last one it will not be written more than one if we have the *responseWriter
+	///TODO:
+	// if we have ResponseRecorder order doesn't matters but I think the transactions have bugs , for now let's keep it here because it 'fixes' one of them...
+	ctx.SetStatusCode(status)
 
 	return
 }
@@ -1212,9 +1180,37 @@ func (ctx *Context) MaxAge() int64 {
 
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
-// --------------------------------Transactions-----------------------------------------
+// ---------------------------Transactions & Response Writer Recording------------------
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
+
+// Record transforms the context's basic and direct responseWriter to a ResponseRecorder
+// which can be used to reset the body, reset headers, get the body,
+// get & set the status code at any time and more
+func (ctx *Context) Record() {
+	if w, ok := ctx.ResponseWriter.(*responseWriter); ok {
+		ctx.ResponseWriter = acquireResponseRecorder(w)
+	}
+}
+
+// Recorder returns the context's ResponseRecorder
+// if not recording then it starts recording and returns the new context's ResponseRecorder
+func (ctx *Context) Recorder() *ResponseRecorder {
+	ctx.Record()
+	return ctx.ResponseWriter.(*ResponseRecorder)
+}
+
+// IsRecording returns the response recorder and a true value
+// when the response writer is recording the status code, body, headers and so on,
+// else returns nil and false
+func (ctx *Context) IsRecording() (*ResponseRecorder, bool) {
+	//NOTE:
+	// two return values in order to minimize the if statement:
+	// if (Recording) then writer = Recorder()
+	// instead we do: recorder,ok = Recording()
+	rr, ok := ctx.ResponseWriter.(*ResponseRecorder)
+	return rr, ok
+}
 
 // skipTransactionsContextKey set this to any value to stop executing next transactions
 // it's a context-key in order to be used from anywhere, set it by calling the SkipTransactions()
@@ -1259,6 +1255,10 @@ func (ctx *Context) BeginTransaction(pipe func(transaction *Transaction)) {
 	if ctx.TransactionsSkipped() {
 		return
 	}
+
+	// start recording in order to be able to control the full response writer
+	ctx.Record()
+
 	// get a transaction scope from the pool by passing the temp context/
 	t := newTransaction(ctx)
 	defer func() {
@@ -1273,6 +1273,7 @@ func (ctx *Context) BeginTransaction(pipe func(transaction *Transaction)) {
 
 		// write the temp contents to the original writer
 		t.Context.ResponseWriter.writeTo(ctx.ResponseWriter)
+
 		// give back to the transaction the original writer (SetBeforeFlush works this way and only this way)
 		// this is tricky but nessecery if we want ctx.EmitError to work inside transactions
 		t.Context.ResponseWriter = ctx.ResponseWriter

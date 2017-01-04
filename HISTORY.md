@@ -2,6 +2,26 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 6.0.0 -> 6.0.1
+
+We had(for 2 days) one ResponseWriter which has special and unique features, but it slowed the execution a little bit, so I had to think more about it, I want to keep iris as the fastest http/2 web framework, well-designed and also to be usable and very easy for new programmers, performance vs design is tough decision. I choose performance most of the times but golang gives us the way to have a good design with that too.
+
+I had to convert that ResponseWriter to a 'big but simple golang' interface and split the behavior into two parts, one will be the default and fast response writer, and the other will be the most useful response writer + transactions = iris.ResponseRecorder (no other framework or library have these features as far as I know). At the same time I had to provide an easy one-call way to wrap the basic response writer to a response recorder and set it to the context or to the whole app.
+
+> Of course I give the green light to other authors to copy these response writers as I already did with the whole source code and I'm happy to see my code exists into other famous web frameworks even when they don't notice my name anywhere :)
+
+-  **response_writer.go**: is the response writer as you knew it with iris' bonus like the `StatusCode() int` which returns the http status code (useful for middleware which needs to know the previous status code), `WriteHeader` which doesn't let you write the status code more than once and so on.
+
+- **response_recorder.go**: is the response writer used by `Transactions` but you can use it by calling the `context.Record/Redorder/IsRecording()`. It lets you `ResetBody` , `ResetHeaders and cookies`, set the `status code` at any time (before or after its Write method) and more.
+
+
+Transform the responseWriter to a ResponseRecorder is ridiculous easily, depending on yours preferences select one of these methods:
+
+- context call (lifetime only inside route's handlers/middleware): `context.Record();` which will convert the context.ResponseWriter to a ResponseRecorder. All previous methods works as before but if you want to `ResetBody/Reset/ResetHeaders/SetBody/SetBodyString` you will have to use the `w := context.Recorder()` or just cast the context.ResponseWriter to a pointer of iris.ResponseRecorder.
+
+- middleware (global, per party, per route...): `iris.UseGlobal(iris.Recorder)`/`app := iris.New(); app.UseGlobal(iris.Recorder)` or `iris.Get("/mypath", iris.Recorder, myPathHandler)`
+
+
 
 ## v5/fasthttp -> 6.0.0
 

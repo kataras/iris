@@ -81,7 +81,7 @@ const (
 	// IsLongTermSupport flag is true when the below version number is a long-term-support version
 	IsLongTermSupport = false
 	// Version is the current version number of the Iris web framework
-	Version = "6.0.0"
+	Version = "6.0.1"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -346,7 +346,7 @@ func Build() {
 
 // Build builds the whole framework's parts together
 // DO NOT CALL IT MANUALLY IF YOU ARE NOT:
-// SERVE IRIS BEHIND AN EXTERNAL CUSTOM fasthttp.Server, CAN BE CALLED ONCE PER IRIS INSTANCE FOR YOUR SAFETY
+// SERVE IRIS BEHIND AN EXTERNAL CUSTOM nethttp.Server, CAN BE CALLED ONCE PER IRIS INSTANCE FOR YOUR SAFETY
 func (s *Framework) Build() {
 	s.once.Do(func() {
 		// .Build, normally*, auto-called after station's listener setted but before the real Serve, so here set the host, scheme
@@ -529,7 +529,7 @@ func (s *Framework) Listen(addr string) {
 		// this will be set as the front-end listening addr
 	}
 
-	ln, err := TCP4(addr)
+	ln, err := TCPKeepAlive(addr)
 	if err != nil {
 		s.Logger.Panic(err)
 	}
@@ -608,8 +608,8 @@ func (s *Framework) ListenLETSENCRYPT(addr string, cacheFileOptional ...string) 
 		s.Logger.Panic(err)
 	}
 
-	// starts a second server which listening on :80 to redirect all requests to the :443 (https://)
-	Proxy(":80", "https://"+addr)
+	// starts a second server which listening on HOST:80 to redirect all requests to the HTTPS://HOST:PORT
+	Proxy(ParseHostname(addr)+":80", "https://"+addr)
 	s.Must(s.Serve(ln))
 }
 
@@ -702,13 +702,15 @@ func ReleaseCtx(ctx *Context) {
 // ReleaseCtx puts the Iris' Context back to the pool in order to be re-used
 // see .AcquireCtx & .Serve
 func (s *Framework) ReleaseCtx(ctx *Context) {
-	// flush the body when all finished
+	// flush the body (on recorder) or just the status code (on basic response writer)
+	// when all finished
 	ctx.ResponseWriter.flushResponse()
 
 	ctx.Middleware = nil
 	ctx.session = nil
 	ctx.Request = nil
-	releaseResponseWriter(ctx.ResponseWriter)
+	///TODO:
+	ctx.ResponseWriter.releaseMe()
 	ctx.values.Reset()
 
 	s.contextPool.Put(ctx)
@@ -1875,7 +1877,7 @@ func (api *muxAPI) Favicon(favPath string, requestPath ...string) RouteNameFunc 
 		ctx.ResponseWriter.Header().Set(contentType, cType)
 		ctx.ResponseWriter.Header().Set(lastModified, modtime)
 		ctx.SetStatusCode(StatusOK)
-		ctx.ResponseWriter.SetBody(cacheFav)
+		ctx.Write(cacheFav)
 	}
 
 	reqPath := "/favicon" + path.Ext(fi.Name()) //we could use the filename, but because standards is /favicon.ico/.png.
@@ -2051,9 +2053,11 @@ func (api *muxAPI) OnError(statusCode int, handlerFn HandlerFunc) {
 		 this will be used as the last handler if no other error handler catches the error (by prefix(?))
 		*/
 		prevErrHandler = HandlerFunc(func(ctx *Context) {
-			ctx.ResetBody()
+			if w, ok := ctx.IsRecording(); ok {
+				w.Reset()
+			}
 			ctx.SetStatusCode(statusCode)
-			ctx.SetBodyString(statusText[statusCode])
+			ctx.WriteString(statusText[statusCode])
 		})
 	}
 

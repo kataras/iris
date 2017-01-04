@@ -2,6 +2,7 @@ package iris
 
 import (
 	"bufio"
+	"fmt"
 	"net"
 	"net/http"
 	"sync"
@@ -12,14 +13,13 @@ import (
 )
 
 type gzipResponseWriter struct {
-	http.ResponseWriter
-	http.Flusher
+	ResponseWriter
 	gzipWriter *gzip.Writer
 }
 
 var gzpool = sync.Pool{New: func() interface{} { return &gzipResponseWriter{} }}
 
-func acquireGzipResponseWriter(underline http.ResponseWriter) *gzipResponseWriter {
+func acquireGzipResponseWriter(underline ResponseWriter) *gzipResponseWriter {
 	w := gzpool.Get().(*gzipResponseWriter)
 	w.ResponseWriter = underline
 	w.gzipWriter = fs.AcquireGzipWriter(w.ResponseWriter)
@@ -36,63 +36,80 @@ func (w *gzipResponseWriter) Write(contents []byte) (int, error) {
 	return w.gzipWriter.Write(contents)
 }
 
-var rpool = sync.Pool{New: func() interface{} { return &ResponseWriter{} }}
+var rpool = sync.Pool{New: func() interface{} { return &responseWriter{statusCode: StatusOK} }}
 
-func acquireResponseWriter(underline http.ResponseWriter) *ResponseWriter {
-	w := rpool.Get().(*ResponseWriter)
+func acquireResponseWriter(underline http.ResponseWriter) *responseWriter {
+	w := rpool.Get().(*responseWriter)
 	w.ResponseWriter = underline
-	w.headers = underline.Header()
 	return w
 }
 
-func releaseResponseWriter(w *ResponseWriter) {
-	w.headers = nil
-	w.ResponseWriter = nil
-	w.statusCode = 0
+func releaseResponseWriter(w *responseWriter) {
+	w.statusCodeSent = false
 	w.beforeFlush = nil
-	w.ResetBody()
+	w.statusCode = StatusOK
 	rpool.Put(w)
 }
 
-// A ResponseWriter interface is used by an HTTP handler to
+// ResponseWriter interface is used by the context to serve an HTTP handler to
 // construct an HTTP response.
 //
 // A ResponseWriter may not be used after the Handler.ServeHTTP method
 // has returned.
-type ResponseWriter struct {
+type ResponseWriter interface {
+	http.ResponseWriter
+	http.Flusher
+	http.Hijacker
+	http.CloseNotifier
+
+	Writef(format string, a ...interface{}) (n int, err error)
+	WriteString(s string) (n int, err error)
+	SetContentType(cType string)
+	ContentType() string
+	StatusCode() int
+	SetBeforeFlush(cb func())
+	flushResponse()
+	clone() ResponseWriter
+	writeTo(ResponseWriter)
+	releaseMe()
+}
+
+// responseWriter is the basic response writer,
+// it writes directly to the underline http.ResponseWriter
+type responseWriter struct {
+	http.ResponseWriter
+	statusCode     int  // the saved status code which will be used from the cache service
+	statusCodeSent bool // reply header has been (logically) written
 	// yes only one callback, we need simplicity here because on EmitError the beforeFlush events should NOT be cleared
 	// but the response is cleared.
 	// Sometimes is useful to keep the event,
 	// so we keep one func only and let the user decide when he/she wants to override it with an empty func before the EmitError (context's behavior)
 	beforeFlush func()
-	http.ResponseWriter
-	// these three fields are setted on flushBody which runs only once on the end of the handler execution.
-	// this helps the performance on multi-write and keep tracks the body, status code and headers in order to run each transaction
-	// on its own
-	chunks     []byte      // keep track of the body in order to be resetable and useful inside custom transactions
-	statusCode int         // the saved status code which will be used from the cache service
-	headers    http.Header // the saved headers
 }
 
-// Header returns the header map that will be sent by
-// WriteHeader. Changing the header after a call to
-// WriteHeader (or Write) has no effect unless the modified
-// headers were declared as trailers by setting the
-// "Trailer" header before the call to WriteHeader (see example).
-// To suppress implicit response headers, set their value to nil.
-func (w *ResponseWriter) Header() http.Header {
-	return w.headers
-}
+var _ ResponseWriter = &responseWriter{}
 
 // StatusCode returns the status code header value
-func (w *ResponseWriter) StatusCode() int {
+func (w *responseWriter) StatusCode() int {
 	return w.statusCode
 }
 
-// Adds the contents to the body reply, it writes the contents temporarily
-// to a value in order to be flushed at the end of the request,
-// this method give us the opportunity to reset the body if needed.
+// Writef formats according to a format specifier and writes to the response.
 //
+// Returns the number of bytes written and any write error encountered
+func (w *responseWriter) Writef(format string, a ...interface{}) (n int, err error) {
+	w.tryWriteHeader()
+	return fmt.Fprintf(w.ResponseWriter, format, a...)
+}
+
+// WriteString writes a simple string to the response.
+//
+// Returns the number of bytes written and any write error encountered
+func (w *responseWriter) WriteString(s string) (n int, err error) {
+	return w.Write([]byte(s))
+}
+
+// Write writes to the client
 // If WriteHeader has not yet been called, Write calls
 // WriteHeader(http.StatusOK) before writing the data. If the Header
 // does not contain a Content-Type line, Write adds a Content-Type set
@@ -110,65 +127,53 @@ func (w *ResponseWriter) StatusCode() int {
 // writing the response. However, such behavior may not be supported
 // by all HTTP/2 clients. Handlers should read before writing if
 // possible to maximize compatibility.
-func (w *ResponseWriter) Write(contents []byte) (int, error) {
-	w.chunks = append(w.chunks, contents...)
-	return len(w.chunks), nil
+func (w *responseWriter) Write(contents []byte) (int, error) {
+	w.tryWriteHeader()
+	return w.ResponseWriter.Write(contents)
 }
 
-// Body returns the body tracked from the writer so far
-// do not use this for edit.
-func (w *ResponseWriter) Body() []byte {
-	return w.chunks
-}
-
-// SetBodyString overrides the body and sets it to a string value
-func (w *ResponseWriter) SetBodyString(s string) {
-	w.chunks = []byte(s)
-}
-
-// SetBody overrides the body and sets it to a slice of bytes value
-func (w *ResponseWriter) SetBody(b []byte) {
-	w.chunks = b
-}
-
-// ResetBody resets the response body
-func (w *ResponseWriter) ResetBody() {
-	w.chunks = w.chunks[0:0]
-}
-
-// ResetHeaders clears the temp headers
-func (w *ResponseWriter) ResetHeaders() {
-	// original response writer's headers are empty.
-	w.headers = w.ResponseWriter.Header()
-}
-
-// Reset resets the response body, headers and the status code header
-func (w *ResponseWriter) Reset() {
-	w.ResetHeaders()
-	w.statusCode = 0
-	w.ResetBody()
-}
+// prin to write na benei to write header
+// meta to write den ginete edw
+// prepei omws kai mono me WriteHeader kai xwris Write na pigenei to status code
+// ara...wtf prepei na exw function flushStatusCode kai na elenxei an exei dw9ei status code na to kanei write aliws 200
 
 // WriteHeader sends an HTTP response header with status code.
 // If WriteHeader is not called explicitly, the first call to Write
 // will trigger an implicit WriteHeader(http.StatusOK).
 // Thus explicit calls to WriteHeader are mainly used to
 // send error codes.
-func (w *ResponseWriter) WriteHeader(statusCode int) {
+func (w *responseWriter) WriteHeader(statusCode int) {
 	w.statusCode = statusCode
 }
 
+// SetBeforeFlush registers the unique callback which called exactly before the response is flushed to the client
+func (w *responseWriter) SetBeforeFlush(cb func()) {
+	w.beforeFlush = cb
+}
+
+func (w *responseWriter) flushResponse() {
+	if w.beforeFlush != nil {
+		w.beforeFlush()
+	}
+	w.tryWriteHeader()
+}
+
+func (w *responseWriter) tryWriteHeader() {
+	if !w.statusCodeSent { // by write
+		w.statusCodeSent = true
+		w.ResponseWriter.WriteHeader(w.statusCode)
+	}
+}
+
 // ContentType returns the content type, if not setted returns empty string
-func (w *ResponseWriter) ContentType() string {
-	return w.headers.Get(contentType)
+func (w *responseWriter) ContentType() string {
+	return w.ResponseWriter.Header().Get(contentType)
 }
 
 // SetContentType sets the content type header
-func (w *ResponseWriter) SetContentType(cType string) {
-	w.headers.Set(contentType, cType)
+func (w *responseWriter) SetContentType(cType string) {
+	w.ResponseWriter.Header().Set(contentType, cType)
 }
-
-var errHijackNotSupported = errors.New("Hijack is not supported to this response writer!")
 
 // Hijack lets the caller take over the connection.
 // After a call to Hijack(), the HTTP server library
@@ -181,47 +186,16 @@ var errHijackNotSupported = errors.New("Hijack is not supported to this response
 // already set, depending on the configuration of the
 // Server. It is the caller's responsibility to set
 // or clear those deadlines as needed.
-func (w *ResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+func (w *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	if h, isHijacker := w.ResponseWriter.(http.Hijacker); isHijacker {
 		return h.Hijack()
 	}
 
-	return nil, nil, errHijackNotSupported
-}
-
-// SetBeforeFlush registers the unique callback which called exactly before the response is flushed to the client
-func (w *ResponseWriter) SetBeforeFlush(cb func()) {
-	w.beforeFlush = cb
-}
-
-// flushResponse the full body, headers and status code to the underline response writer
-// called automatically at the end of each request, see ReleaseCtx
-func (w *ResponseWriter) flushResponse() {
-
-	if w.beforeFlush != nil {
-		w.beforeFlush()
-	}
-
-	if w.statusCode > 0 {
-		w.ResponseWriter.WriteHeader(w.statusCode)
-	}
-
-	if w.headers != nil {
-		for k, values := range w.headers {
-			for i := range values {
-				w.ResponseWriter.Header().Add(k, values[i])
-			}
-		}
-	}
-
-	if len(w.chunks) > 0 {
-		w.ResponseWriter.Write(w.chunks)
-	}
+	return nil, nil, errors.New("Hijack is not supported to this response writer!")
 }
 
 // Flush sends any buffered data to the client.
-func (w *ResponseWriter) Flush() {
-	w.flushResponse()
+func (w *responseWriter) Flush() {
 	// The Flusher interface is implemented by ResponseWriters that allow
 	// an HTTP handler to flush buffered data to the client.
 	//
@@ -238,43 +212,60 @@ func (w *ResponseWriter) Flush() {
 	}
 }
 
+// CloseNotify returns a channel that receives at most a
+// single value (true) when the client connection has gone
+// away.
+//
+// CloseNotify may wait to notify until Request.Body has been
+// fully read.
+//
+// After the Handler has returned, there is no guarantee
+// that the channel receives a value.
+//
+// If the protocol is HTTP/1.1 and CloseNotify is called while
+// processing an idempotent request (such a GET) while
+// HTTP/1.1 pipelining is in use, the arrival of a subsequent
+// pipelined request may cause a value to be sent on the
+// returned channel. In practice HTTP/1.1 pipelining is not
+// enabled in browsers and not seen often in the wild. If this
+// is a problem, use HTTP/2 or only use CloseNotify on methods
+// such as POST.
+func (w *responseWriter) CloseNotify() <-chan bool {
+	return w.ResponseWriter.(http.CloseNotifier).CloseNotify()
+}
+
 // clone returns a clone of this response writer
-// it copies the header, status code, headers and the beforeFlush finally  returns a new ResponseWriter
-func (w *ResponseWriter) clone() *ResponseWriter {
-	wc := &ResponseWriter{}
+// it copies the header, status code, headers and the beforeFlush finally  returns a new ResponseRecorder
+func (w *responseWriter) clone() ResponseWriter {
+	wc := &responseWriter{}
 	wc.ResponseWriter = w.ResponseWriter
 	wc.statusCode = w.statusCode
-	wc.headers = w.headers
-	wc.chunks = w.chunks[0:]
 	wc.beforeFlush = w.beforeFlush
+	wc.statusCodeSent = w.statusCodeSent
 	return wc
 }
 
 // writeTo writes a response writer (temp: status code, headers and body) to another response writer
-func (w *ResponseWriter) writeTo(to *ResponseWriter) {
+func (w *responseWriter) writeTo(to ResponseWriter) {
 	// set the status code, failure status code are first class
-	if w.statusCode > 0 {
-		to.statusCode = w.statusCode
+	if w.statusCode >= 400 {
+		to.WriteHeader(w.statusCode)
 	}
 
 	// append the headers
-	if w.headers != nil {
-		for k, values := range w.headers {
+	if w.Header() != nil {
+		for k, values := range w.Header() {
 			for _, v := range values {
-				if to.headers.Get(v) == "" {
-					to.headers.Add(k, v)
+				if to.Header().Get(v) == "" {
+					to.Header().Add(k, v)
 				}
 			}
 		}
 
 	}
+	// the body is not copied, this writer doesn't supports recording
+}
 
-	// append the body
-	if len(w.chunks) > 0 {
-		to.Write(w.chunks)
-	}
-
-	if w.beforeFlush != nil {
-		to.SetBeforeFlush(w.beforeFlush)
-	}
+func (w *responseWriter) releaseMe() {
+	releaseResponseWriter(w)
 }

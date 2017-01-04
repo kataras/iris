@@ -886,7 +886,9 @@ func (mux *serveMux) registerError(statusCode int, handler Handler) {
 	mux.mu.Lock()
 	func(statusCode int, handler Handler) {
 		mux.errorHandlers[statusCode] = HandlerFunc(func(ctx *Context) {
-			ctx.ResetBody()
+			if w, ok := ctx.IsRecording(); ok {
+				w.Reset()
+			}
 			ctx.SetStatusCode(statusCode)
 			handler.Serve(ctx)
 		})
@@ -900,14 +902,15 @@ func (mux *serveMux) fireError(statusCode int, ctx *Context) {
 	errHandler := mux.errorHandlers[statusCode]
 	if errHandler == nil {
 		errHandler = HandlerFunc(func(ctx *Context) {
-			ctx.ResponseWriter.Reset()
+			if w, ok := ctx.IsRecording(); ok {
+				w.Reset()
+			}
 			ctx.SetStatusCode(statusCode)
-			ctx.SetBodyString(statusText[statusCode])
+			ctx.WriteString(statusText[statusCode])
 		})
 		mux.errorHandlers[statusCode] = errHandler
 	}
 	mux.mu.Unlock()
-
 	errHandler.Serve(ctx)
 }
 
@@ -1113,8 +1116,16 @@ var (
 	errParseTLS        = errors.New("Couldn't load TLS, certFile=%q, keyFile=%q. Trace: %s")
 )
 
+// TCPKeepAlive returns a new tcp keep alive Listener
+func TCPKeepAlive(addr string) (net.Listener, error) {
+	ln, err := net.Listen("tcp", ParseHost(addr))
+	if err != nil {
+		return nil, err
+	}
+	return TCPKeepAliveListener{ln.(*net.TCPListener)}, err
+}
+
 // TCP4 returns a new tcp4 Listener
-// *tcp6 has some bugs in some operating systems, as reported by Go Community*
 func TCP4(addr string) (net.Listener, error) {
 	return net.Listen("tcp4", ParseHost(addr))
 }
@@ -1253,14 +1264,14 @@ type TCPKeepAliveListener struct {
 	*net.TCPListener
 }
 
-// Accept implements the listener and sets the keep alive period which is 2minutes
+// Accept implements the listener and sets the keep alive period which is 3minutes
 func (ln TCPKeepAliveListener) Accept() (c net.Conn, err error) {
 	tc, err := ln.AcceptTCP()
 	if err != nil {
 		return
 	}
 	tc.SetKeepAlive(true)
-	tc.SetKeepAlivePeriod(2 * time.Minute)
+	tc.SetKeepAlivePeriod(3 * time.Minute)
 	return tc, nil
 }
 
@@ -1283,7 +1294,7 @@ func ParseHost(addr string) string {
 		} else if osport := os.Getenv("PORT"); osport != "" {
 			a = ":" + osport
 		} else {
-			a = DefaultServerAddr
+			a = ":http"
 		}
 	}
 	if portIdx := strings.IndexByte(a, ':'); portIdx == 0 {
@@ -1380,6 +1391,8 @@ var ProxyHandler = func(redirectSchemeAndHost string) http.HandlerFunc {
 			return
 		}
 
+		//	redirectTo := redirectSchemeAndHost + r.RequestURI
+
 		http.Redirect(w, r, redirectTo, StatusMovedPermanently)
 	}
 }
@@ -1401,5 +1414,6 @@ func Proxy(proxyAddr string, redirectSchemeAndHost string) func() error {
 	if ok := <-prx.Available; !ok {
 		prx.Logger.Panic("Unexpected error: proxy server cannot start, please report this as bug!!")
 	}
+
 	return func() error { return prx.Close() }
 }
