@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -765,4 +766,44 @@ func TestTransactions(t *testing.T) {
 		Status(iris.StatusInternalServerError).
 		Body().
 		Equal(customErrorTemplateText)
+}
+
+func TestLimitRequestBodySize(t *testing.T) {
+	const maxBodySize = 1 << 20
+
+	api := iris.New()
+
+	// or inside handler: ctx.SetMaxRequestBodySize(int64(maxBodySize))
+	api.Use(iris.LimitRequestBodySize(maxBodySize))
+
+	api.Post("/", func(ctx *iris.Context) {
+		b, err := ioutil.ReadAll(ctx.Request.Body)
+		if len(b) > maxBodySize {
+			// this is a fatal error it should never happened.
+			t.Fatalf("body is larger (%d) than maxBodySize (%d) even if we add the LimitRequestBodySize middleware", len(b), maxBodySize)
+		}
+		// if is larger then send a bad request status
+		if err != nil {
+			ctx.WriteHeader(iris.StatusBadRequest)
+			ctx.Writef(err.Error())
+			return
+		}
+
+		ctx.Write(b)
+	})
+
+	// UseGlobal should be called at the end used to prepend handlers
+	// api.UseGlobal(iris.LimitRequestBodySize(int64(maxBodySize)))
+
+	e := httptest.New(api, t)
+
+	// test with small body
+	e.POST("/").WithBytes([]byte("ok")).Expect().Status(iris.StatusOK).Body().Equal("ok")
+	// test with equal to max body size limit
+	bsent := make([]byte, maxBodySize, maxBodySize)
+	e.POST("/").WithBytes(bsent).Expect().Status(iris.StatusOK).Body().Length().Equal(len(bsent))
+	// test with larger body sent and wait for the custom response
+	largerBSent := make([]byte, maxBodySize+1, maxBodySize+1)
+	e.POST("/").WithBytes(largerBSent).Expect().Status(iris.StatusBadRequest).Body().Equal("http: request body too large")
+
 }

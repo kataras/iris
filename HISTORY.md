@@ -2,6 +2,25 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 6.0.2 -> 6.0.3
+
+- Give the users an easy to way to set a limit to the body size comes from the client, globally or per-route (useful when you want to disable/enable limit on certain clients).
+
+```go
+// ...
+const maxBodySize =  1 << 20
+// ...
+
+api := iris.New()
+
+api.Use(iris.LimitRequestBodySize(maxBodySize))
+// or do it manually under certain situations,
+// inside the route's handler:
+// ctx.SetMaxRequestBodySize(maxBodySize)
+
+// routes after
+```
+
 ## 6.0.1 -> 6.0.2
 
 - Fix subdomains (silly fix by checking the Request.Host vs Request.URL.Host) and add a more realistic test, as reported [here](https://github.com/kataras/iris/issues/574).

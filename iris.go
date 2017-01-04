@@ -81,7 +81,7 @@ const (
 	// IsLongTermSupport flag is true when the below version number is a long-term-support version
 	IsLongTermSupport = false
 	// Version is the current version number of the Iris web framework
-	Version = "6.0.2"
+	Version = "6.0.3"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -862,7 +862,7 @@ func (s *Framework) UseTemplate(e template.Engine) *template.Loader {
 // UseGlobal registers Handler middleware  to the beginning, prepends them instead of append
 //
 // Use it when you want to add a global middleware to all parties, to all routes in  all subdomains
-// It can be called after other, (but before .Listen of course)
+// It should be called right before Listen functions
 func UseGlobal(handlers ...Handler) {
 	Default.UseGlobal(handlers...)
 }
@@ -870,7 +870,7 @@ func UseGlobal(handlers ...Handler) {
 // UseGlobalFunc registers HandlerFunc middleware  to the beginning, prepends them instead of append
 //
 // Use it when you want to add a global middleware to all parties, to all routes in  all subdomains
-// It can be called after other, (but before .Listen of course)
+// It should be called right before Listen functions
 func UseGlobalFunc(handlersFn ...HandlerFunc) {
 	Default.UseGlobalFunc(handlersFn...)
 }
@@ -878,17 +878,22 @@ func UseGlobalFunc(handlersFn ...HandlerFunc) {
 // UseGlobal registers Handler middleware  to the beginning, prepends them instead of append
 //
 // Use it when you want to add a global middleware to all parties, to all routes in  all subdomains
-// It can be called after other, (but before .Listen of course)
+// It should be called right before Listen functions
 func (s *Framework) UseGlobal(handlers ...Handler) {
-	for _, r := range s.mux.lookups {
-		r.middleware = append(handlers, r.middleware...)
+	if len(s.mux.lookups) > 0 {
+		for _, r := range s.mux.lookups {
+			r.middleware = append(handlers, r.middleware...)
+		}
+		return
 	}
+
+	s.Use(handlers...)
 }
 
 // UseGlobalFunc registers HandlerFunc middleware to the beginning, prepends them instead of append
 //
 // Use it when you want to add a global middleware to all parties, to all routes in  all subdomains
-// It can be called after other, (but before .Listen of course)
+// It should be called right before Listen functions
 func (s *Framework) UseGlobalFunc(handlersFn ...HandlerFunc) {
 	s.UseGlobal(convertToHandlers(handlersFn)...)
 }

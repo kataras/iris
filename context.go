@@ -390,6 +390,25 @@ func (ctx *Context) FormFile(key string) (multipart.File, *multipart.FileHeader,
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
 
+// NOTE: No default max body size http package has some built'n protection for DoS attacks
+// See iris.Config.MaxBytesReader, https://github.com/golang/go/issues/2093#issuecomment-66057813
+// and https://github.com/golang/go/issues/2093#issuecomment-66057824
+
+// LimitRequestBodySize is a middleware which sets a request body size limit for all next handlers
+// should be registered before all other handlers
+var LimitRequestBodySize = func(maxRequestBodySizeBytes int64) HandlerFunc {
+	return func(ctx *Context) {
+		ctx.SetMaxRequestBodySize(maxRequestBodySizeBytes)
+		ctx.Next()
+	}
+}
+
+// SetMaxRequestBodySize sets a limit to the request body size
+// should be called before reading the request body from the client
+func (ctx *Context) SetMaxRequestBodySize(limitOverBytes int64) {
+	ctx.Request.Body = http.MaxBytesReader(ctx.ResponseWriter, ctx.Request.Body, limitOverBytes)
+}
+
 // BodyDecoder is an interface which any struct can implement in order to customize the decode action
 // from ReadJSON and ReadXML
 //
