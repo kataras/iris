@@ -68,15 +68,6 @@ const (
 	stopExecutionPosition = 255
 )
 
-// errors
-
-var (
-	errTemplateExecute = errors.New("Unable to execute a template. Trace: %s")
-	errFlashNotFound   = errors.New("Unable to get flash message. Trace: Cookie does not exists")
-	errReadBody        = errors.New("While trying to read %s from the request body. Trace %s")
-	errServeContent    = errors.New("While trying to serve content to the client. Trace %s")
-)
-
 type (
 	requestValue struct {
 		key   []byte
@@ -384,6 +375,12 @@ func (ctx *Context) FormFile(key string) (multipart.File, *multipart.FileHeader,
 	return ctx.Request.FormFile(key)
 }
 
+var (
+	errTemplateExecute = errors.New("Unable to execute a template. Trace: %s")
+	errReadBody        = errors.New("While trying to read %s from the request body. Trace %s")
+	errServeContent    = errors.New("While trying to serve content to the client. Trace %s")
+)
+
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
 // -----------------------------Request Body Binders/Readers----------------------------
@@ -515,10 +512,6 @@ func (ctx *Context) SetStatusCode(statusCode int) {
 	ctx.ResponseWriter.WriteHeader(statusCode)
 }
 
-// it used only inside Redirect,
-// keep it here for allocations reason
-var httpsSchemeOnlyBytes = []byte("https")
-
 // Redirect redirect sends a redirect response the client
 // accepts 2 parameters string and an optional int
 // first parameter is the url to redirect
@@ -608,6 +601,7 @@ func (ctx *Context) WriteGzip(b []byte) (int, error) {
 		} // else write the contents as it is? no let's create a new func for this
 		return n, err
 	}
+
 	return 0, errClientDoesNotSupportGzip
 }
 
@@ -868,6 +862,38 @@ func (ctx *Context) ServeFile(filename string, gzipCompression bool) error {
 func (ctx *Context) SendFile(filename string, destinationName string) {
 	ctx.ServeFile(filename, false)
 	ctx.ResponseWriter.Header().Set(contentDisposition, "attachment;filename="+destinationName)
+}
+
+// StreamWriter registers the given stream writer for populating
+// response body.
+//
+// Access to context's and/or its' members is forbidden from writer.
+//
+// This function may be used in the following cases:
+//
+//     * if response body is too big (more than iris.LimitRequestBodySize(if setted)).
+//     * if response body is streamed from slow external sources.
+//     * if response body must be streamed to the client in chunks.
+//     (aka `http server push`).
+//
+// receives a function which receives the response writer
+// and returns false when it should stop writing, otherwise true in order to continue
+func (ctx *Context) StreamWriter(writer func(w io.Writer) bool) {
+	w := ctx.ResponseWriter
+	notifyClosed := w.CloseNotify()
+	for {
+		select {
+		// response writer forced to close, exit.
+		case <-notifyClosed:
+			return
+		default:
+			shouldContinue := writer(w)
+			w.Flush()
+			if !shouldContinue {
+				return
+			}
+		}
+	}
 }
 
 // -------------------------------------------------------------------------------------

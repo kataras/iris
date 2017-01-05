@@ -157,6 +157,7 @@ func (w *ResponseRecorder) flushResponse() {
 func (w *ResponseRecorder) Flush() {
 	w.flushResponse()
 	w.responseWriter.Flush()
+	w.ResetBody()
 }
 
 // clone returns a clone of this response writer

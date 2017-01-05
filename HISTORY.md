@@ -2,6 +2,13 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+
+## 6.0.3 -> 6.0.4
+
+- Add a simple `context.StreamWriter` to fill the v5's StreamWriter, it's a `io.Writer` instead of `bufio.Writer` and returns false when stop otherwise true. Take a look at the silly book examples [here](https://docs.iris-go.com/streaming).
+
+
+
 ## 6.0.2 -> 6.0.3
 
 - Give the users an easy to way to set a limit to the body size comes from the client, globally or per-route (useful when you want to disable/enable limit on certain clients).
