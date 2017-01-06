@@ -231,7 +231,11 @@ func (w *responseWriter) Flush() {
 // is a problem, use HTTP/2 or only use CloseNotify on methods
 // such as POST.
 func (w *responseWriter) CloseNotify() <-chan bool {
-	return w.ResponseWriter.(http.CloseNotifier).CloseNotify()
+	if notifier, supportsCloseNotify := w.ResponseWriter.(http.CloseNotifier); supportsCloseNotify {
+		return notifier.CloseNotify()
+	}
+	ch := make(chan bool, 1)
+	return ch
 }
 
 // clone returns a clone of this response writer
