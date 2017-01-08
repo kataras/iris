@@ -841,7 +841,7 @@ You can read the full article [here](https://translate.google.com/translate?sl=a
 Testing
 ------------
 
-I recommend writing your API tests using this new library, [httpexpect](https://github.com/gavv/httpexpect). You can find Iris examples [here](https://github.com/gavv/httpexpect/blob/master/_examples/iris_test.go), [here](https://github.com/kataras/iris/blob/master/http_test.go) and [here](https://github.com/kataras/iris/blob/master/context_test.go).
+I recommend writing your API tests using this new library, [httpexpect](https://github.com/gavv/httpexpect). You can find Iris examples [here](https://github.com/kataras/iris/blob/master/vendor/github.com/gavv/httpexpect/_examples/iris_test.go), [here](https://github.com/kataras/iris/blob/master/http_test.go) and [here](https://github.com/kataras/iris/blob/master/context_test.go).
 
 Versioning
 ------------
