@@ -4,7 +4,7 @@
 
 ## 6.0.4 -> 6.0.5
 
-- Add `iris.DestroySessionByID(string)` and `iris.DestroyAllSessions()` functions as requested by a community member in the [chat]https://kataras.rocket.chat/channel/iris):
+- Add `iris.DestroySessionByID(string)` and `iris.DestroyAllSessions()` functions as requested by a community member in the [chat](https://kataras.rocket.chat/channel/iris):
 
 ```go
 // DestroySessionByID removes the session entry

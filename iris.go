@@ -154,6 +154,8 @@ type (
 		ReleaseCtx(*Context)
 		CheckForUpdates(bool)
 		UseSessionDB(sessions.Database)
+		DestroySessionByID(sid string)
+		DestroyAllSessions()
 		UseSerializer(string, serializer.Serializer)
 		UseTemplate(template.Engine) *template.Loader
 		UsePreRender(PreRender)
@@ -796,8 +798,24 @@ func (s *Framework) UseSessionDB(db sessions.Database) {
 // Client's session cookie will still exist but it will be reseted on the next request.
 //
 // It's safe to use it even if you are not sure if a session with that id exists.
+func DestroySessionByID(sid string) {
+	Default.DestroySessionByID(sid)
+}
+
+// DestroySessionByID removes the session entry
+// from the server-side memory (and database if registered).
+// Client's session cookie will still exist but it will be reseted on the next request.
+//
+// It's safe to use it even if you are not sure if a session with that id exists.
 func (s *Framework) DestroySessionByID(sid string) {
 	s.sessions.DestroyByID(sid)
+}
+
+// DestroyAllSessions removes all sessions
+// from the server-side memory (and database if registered).
+// Client's session cookie will still exist but it will be reseted on the next request.
+func DestroyAllSessions() {
+	Default.DestroyAllSessions()
 }
 
 // DestroyAllSessions removes all sessions
