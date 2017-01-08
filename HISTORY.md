@@ -2,6 +2,22 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 6.0.4 -> 6.0.5
+
+- Add `iris.DestroySessionByID(string)` and `iris.DestroyAllSessions()` functions as requested by a community member in the [chat]https://kataras.rocket.chat/channel/iris):
+
+```go
+// DestroySessionByID removes the session entry
+// from the server-side memory (and database if registered).
+// Client's session cookie will still exist but it will be reseted on the next request.
+//
+// It's safe to use it even if you are not sure if a session with that id exists.
+DestroySessionByID(string)
+// DestroyAllSessions removes all sessions
+// from the server-side memory (and database if registered).
+// Client's session cookie will still exist but it will be reseted on the next request.
+DestroyAllSessions()
+```
 
 ## 6.0.3 -> 6.0.4
 
@@ -61,6 +77,8 @@ As I [promised to the community](https://github.com/kataras/iris/issues/565) and
 I tried to minimize the side affects.
 
 If you don't find something you used to use come here and check that conversional list:
+
+- `iris.ToHandlerFunc` -> `iris.ToHandler`
 
 - `context.Response.BodyWriter() io.Writer` -> `context.ResponseWriter` is a http.ResponseWriter(and io.Writer) now.
 

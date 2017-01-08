@@ -1205,7 +1205,6 @@ func (ctx *Context) SessionDestroy() {
 	if sess := ctx.Session(); sess != nil {
 		ctx.framework.sessions.Destroy(ctx.ResponseWriter, ctx.Request)
 	}
-
 }
 
 var maxAgeExp = regexp.MustCompile(`maxage=(\d+)`)

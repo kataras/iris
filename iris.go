@@ -81,7 +81,7 @@ const (
 	// IsLongTermSupport flag is true when the below version number is a long-term-support version
 	IsLongTermSupport = false
 	// Version is the current version number of the Iris web framework
-	Version = "6.0.4"
+	Version = "6.0.5"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -789,6 +789,22 @@ func UseSessionDB(db sessions.Database) {
 // Note: Don't worry if no session database is registered, your context.Session will continue to work.
 func (s *Framework) UseSessionDB(db sessions.Database) {
 	s.sessions.UseDatabase(db)
+}
+
+// DestroySessionByID removes the session entry
+// from the server-side memory (and database if registered).
+// Client's session cookie will still exist but it will be reseted on the next request.
+//
+// It's safe to use it even if you are not sure if a session with that id exists.
+func (s *Framework) DestroySessionByID(sid string) {
+	s.sessions.DestroyByID(sid)
+}
+
+// DestroyAllSessions removes all sessions
+// from the server-side memory (and database if registered).
+// Client's session cookie will still exist but it will be reseted on the next request.
+func (s *Framework) DestroyAllSessions() {
+	s.sessions.DestroyAll()
 }
 
 // UseSerializer accepts a Serializer and the key or content type on which the developer wants to register this serializer

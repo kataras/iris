@@ -20,7 +20,7 @@
 <br/>
 
 
-<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20version%20-%206.0.4%20-blue.svg?style=flat-square" alt="Releases"></a>
+<a href="https://github.com/kataras/iris/releases"><img src="https://img.shields.io/badge/%20version%20-%206.0.5%20-blue.svg?style=flat-square" alt="Releases"></a>
 
 <a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/%20examples-repository-3362c2.svg?style=flat-square" alt="Examples"></a>
 
@@ -557,6 +557,9 @@ iris.Get("/products", logme, func(ctx *iris.Context) {
 | [OAuth,OAuth2 Plugin](https://github.com/iris-contrib/plugin/tree/master/oauth) |  User Authentication was never be easier, supports >27 providers |    [example](https://github.com/iris-contrib/examples/tree/master/plugin_oauth_oauth2), [book section](https://docs.iris-go.com/plugin-oauth.html) |
 | [Iris control Plugin](https://github.com/iris-contrib/plugin/tree/master/iriscontrol) |   Basic (browser-based) control over your Iris station |    [example](https://github.com/iris-contrib/examples/blob/master/plugin_iriscontrol/main.go), [book section](https://docs.iris-go.com/plugin-iriscontrol.html) |
 
+> NOTE: All net/http handlers and middleware that already created by other go developers are also compatible with Iris, even if they are not be documented here, read more [here](https://github.com/iris-contrib/middleware#can-i-use-standard-nethttp-handler-with-iris).
+
+
 ### Sessions
 If you notice a bug or issue [post it here](https://github.com/kataras/go-sessions).
 
@@ -615,6 +618,26 @@ iris.Get("/", func(ctx *iris.Context) {
 
 	iris.Listen(":8080")
 
+```
+
+- `iris.DestroySessionByID(string)`
+
+```go
+// DestroySessionByID removes the session entry
+// from the server-side memory (and database if registered).
+// Client's session cookie will still exist but it will be reseted on the next request.
+//
+// It's safe to use it even if you are not sure if a session with that id exists.
+DestroySessionByID(string)
+```
+
+- `iris.DestroyAllSessions()`
+
+```go
+// DestroyAllSessions removes all sessions
+// from the server-side memory (and database if registered).
+// Client's session cookie will still exist but it will be reseted on the next request.
+DestroyAllSessions()
 ```
 
 > Each section of the README has its own - more advanced - subject on the book, so be sure to check book for any further research
@@ -823,7 +846,7 @@ I recommend writing your API tests using this new library, [httpexpect](https://
 Versioning
 ------------
 
-Current: **v6.0.4**
+Current: **v6.0.5**
 
 Stable: **[v5/fasthttp](https://github.com/kataras/iris/tree/5.0.0)**
 
