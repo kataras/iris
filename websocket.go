@@ -83,6 +83,7 @@ func (ws *WebsocketServer) init() {
 			ws.station.ReleaseCtx(ctx)
 		},
 		CheckOrigin: c.CheckOrigin,
+		IDGenerator: c.IDGenerator,
 	})
 }
 
