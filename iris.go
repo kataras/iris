@@ -9,8 +9,8 @@ package main
 import  "github.com/kataras/iris"
 
 func main() {
-    iris.Get("/hi_json", func(c *iris.Context) {
-        c.JSON(iris.StatusOK, iris.Map{
+    iris.Get("/hi_json", func(ctx *iris.Context) {
+        ctx.JSON(iris.StatusOK, iris.Map{
             "Name": "Iris",
             "Released":  "13 March 2016",
 						"Stars": "5883",
@@ -27,8 +27,8 @@ import  "github.com/kataras/iris"
 
 func main() {
 	s1 := iris.New()
-	s1.Get("/hi_json", func(c *iris.Context) {
-		c.JSON(iris.StatusOK, iris.Map{
+	s1.Get("/hi_json", func(ctx *iris.Context) {
+		ctx.JSON(iris.StatusOK, iris.Map{
 			"Name": "Iris",
 			"Released":  "13 March 2016",
 			"Stars": "5883",
@@ -36,8 +36,8 @@ func main() {
 	})
 
 	s2 := iris.New()
-	s2.Get("/hi_raw_html", func(c *iris.Context) {
-		c.HTML(iris.StatusOK, "<b> Iris </b> welcomes <h1>you!</h1>")
+	s2.Get("/hi_raw_html", func(ctx *iris.Context) {
+		ctx.HTML(iris.StatusOK, "<b> Iris </b> welcomes <h1>you!</h1>")
 	})
 
 	go s1.Listen(":8080")
@@ -47,7 +47,7 @@ func main() {
 ----------------------------------------------------------------------
 
 For middleware, template engines, response engines, sessions, websockets, mails, subdomains,
-dynamic subdomains, routes, party of subdomains & routes, ssh and much more
+dynamic subdomains, routes, party of subdomains & routes and more
 
 visit https://docs.iris-go.com
 */
@@ -81,7 +81,7 @@ const (
 	// IsLongTermSupport flag is true when the below version number is a long-term-support version
 	IsLongTermSupport = false
 	// Version is the current version number of the Iris web framework
-	Version = "6.0.5"
+	Version = "6.0.6"
 
 	banner = `         _____      _
         |_   _|    (_)
