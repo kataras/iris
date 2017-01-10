@@ -66,6 +66,65 @@ func TestResponseWriterToRecorderMiddleware(t *testing.T) {
 	e.GET("/").Expect().Status(iris.StatusForbidden).Body().Equal(beforeFlushBody)
 }
 
+func TestResponseRecorderStatusCodeContentTypeBody(t *testing.T) {
+	api := iris.New()
+	firstStatusCode := iris.StatusOK
+	contentType := "text/html; charset=" + api.Config.Charset
+	firstBodyPart := "first"
+	secondBodyPart := "second"
+	prependedBody := "zero"
+	expectedBody := prependedBody + firstBodyPart + secondBodyPart
+
+	api.Use(iris.Recorder)
+	// recorder's status code can change if needed by a middleware or the last handler.
+	api.UseFunc(func(ctx *iris.Context) {
+		ctx.SetStatusCode(firstStatusCode)
+		ctx.Next()
+	})
+
+	api.UseFunc(func(ctx *iris.Context) {
+		ctx.SetContentType(contentType)
+		ctx.Next()
+	})
+
+	api.UseFunc(func(ctx *iris.Context) {
+		// set a body ( we will append it later, only with response recorder we can set append or remove a body or a part of it*)
+		ctx.WriteString(firstBodyPart)
+		ctx.Next()
+	})
+
+	api.UseFunc(func(ctx *iris.Context) {
+		ctx.WriteString(secondBodyPart)
+		ctx.Next()
+	})
+
+	api.Get("/", func(ctx *iris.Context) {
+		previousStatusCode := ctx.StatusCode()
+		if previousStatusCode != firstStatusCode {
+			t.Fatalf("Previous status code should be %d but got %d", firstStatusCode, previousStatusCode)
+		}
+
+		previousContentType := ctx.ContentType()
+		if previousContentType != contentType {
+			t.Fatalf("First content type should be %s but got %d", contentType, previousContentType)
+		}
+		// change the status code, this will tested later on (httptest)
+		ctx.SetStatusCode(iris.StatusForbidden)
+		prevBody := string(ctx.Recorder().Body())
+		if prevBody != firstBodyPart+secondBodyPart {
+			t.Fatalf("Previous body (first handler + second handler's writes) expected to be: %s but got: %s", firstBodyPart+secondBodyPart, prevBody)
+		}
+		// test it on httptest later on
+		ctx.Recorder().SetBodyString(prependedBody + prevBody)
+	})
+
+	e := httptest.New(api, t)
+
+	et := e.GET("/").Expect().Status(iris.StatusForbidden)
+	et.Header("Content-Type").Equal(contentType)
+	et.Body().Equal(expectedBody)
+}
+
 func ExampleResponseWriter_WriteHeader() {
 	// func TestResponseWriterMultipleWriteHeader(t *testing.T) {
 	iris.ResetDefault()
