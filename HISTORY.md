@@ -2,6 +2,14 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 6.0.7 -> 6.0.8
+
+- Add `iris.UseTemplateFunc(functionName string, function interface{})`. You could always set custom template funcs by using each of [template engine's](https://github.com/kataras/go-template) configuration but this function will help newcomers to start creating their custom template funcs. 
+
+Example:
+
+-  https://github.com/iris-contrib/examples/tree/master/template_funcmap
+
 ## 6.0.6 -> 6.0.7
 
 - `iris.Config.DisablePathEscape` -> renamed to `iris.Config.EnablePathEscape`, which defaults to false. Path escape is turned off by-default now,
