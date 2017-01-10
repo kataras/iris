@@ -293,7 +293,7 @@ type testRoute struct {
 
 func TestMuxSimple(t *testing.T) {
 	testRoutes := []testRoute{
-		// FOUND - registed
+		// FOUND - registered
 		{"GET", "/test_get", "/test_get", "", "hello, get!", 200, true, nil, nil},
 		{"POST", "/test_post", "/test_post", "", "hello, post!", 200, true, nil, nil},
 		{"PUT", "/test_put", "/test_put", "", "hello, put!", 200, true, nil, nil},
@@ -303,7 +303,7 @@ func TestMuxSimple(t *testing.T) {
 		{"CONNECT", "/test_connect", "/test_connect", "", "hello, connect!", 200, true, nil, nil},
 		{"PATCH", "/test_patch", "/test_patch", "", "hello, patch!", 200, true, nil, nil},
 		{"TRACE", "/test_trace", "/test_trace", "", "hello, trace!", 200, true, nil, nil},
-		// NOT FOUND - not registed
+		// NOT FOUND - not registered
 		{"GET", "/test_get_nofound", "/test_get_nofound", "", "Not Found", 404, false, nil, nil},
 		{"POST", "/test_post_nofound", "/test_post_nofound", "", "Not Found", 404, false, nil, nil},
 		{"PUT", "/test_put_nofound", "/test_put_nofound", "", "Not Found", 404, false, nil, nil},
@@ -519,7 +519,7 @@ func TestMuxCustomErrors(t *testing.T) {
 		notFoundMessage        = "Iris custom message for 404 not found"
 		internalServerMessage  = "Iris custom message for 500 internal server error"
 		testRoutesCustomErrors = []testRoute{
-			// NOT FOUND CUSTOM ERRORS - not registed
+			// NOT FOUND CUSTOM ERRORS - not registered
 			{"GET", "/test_get_nofound_custom", "/test_get_nofound_custom", "", notFoundMessage, 404, false, nil, nil},
 			{"POST", "/test_post_nofound_custom", "/test_post_nofound_custom", "", notFoundMessage, 404, false, nil, nil},
 			{"PUT", "/test_put_nofound_custom", "/test_put_nofound_custom", "", notFoundMessage, 404, false, nil, nil},
@@ -529,7 +529,7 @@ func TestMuxCustomErrors(t *testing.T) {
 			{"CONNECT", "/test_connect_nofound_custom", "/test_connect_nofound_custom", "", notFoundMessage, 404, false, nil, nil},
 			{"PATCH", "/test_patch_nofound_custom", "/test_patch_nofound_custom", "", notFoundMessage, 404, false, nil, nil},
 			{"TRACE", "/test_trace_nofound_custom", "/test_trace_nofound_custom", "", notFoundMessage, 404, false, nil, nil},
-			// SERVER INTERNAL ERROR 500 PANIC CUSTOM ERRORS - registed
+			// SERVER INTERNAL ERROR 500 PANIC CUSTOM ERRORS - registered
 			{"GET", "/test_get_panic_custom", "/test_get_panic_custom", "", internalServerMessage, 500, true, nil, nil},
 			{"POST", "/test_post_panic_custom", "/test_post_panic_custom", "", internalServerMessage, 500, true, nil, nil},
 			{"PUT", "/test_put_panic_custom", "/test_put_panic_custom", "", internalServerMessage, 500, true, nil, nil},
@@ -618,7 +618,7 @@ func TestMuxAPI(t *testing.T) {
 	}}
 
 	iris.API("/users", testUserAPI{}, h...)
-	// test a simple .Party  with compination of .API
+	// test a simple .Party  with combination of .API
 	iris.Party("sites/:site").API("/users", testUserAPI{}, h...)
 
 	e := httptest.New(iris.Default, t)
@@ -716,70 +716,6 @@ func TestMuxFireMethodNotAllowed(t *testing.T) {
 	iris.Close()
 }
 
-/*
-var (
-	cacheDuration      = 2 * time.Second
-	errCacheTestFailed = errors.New("Expected the main handler to be executed %d times instead of %d.")
-)
-
-// ~14secs
-func runCacheTest(e *httpexpect.Expect, path string, counterPtr *uint32, expectedBodyStr, expectedContentType string) error {
-	e.GET(path).Expect().Status(iris.StatusOK).Body().Equal(expectedBodyStr)
-	time.Sleep(cacheDuration / 5) // lets wait for a while, cache should be saved and ready
-	e.GET(path).Expect().Status(iris.StatusOK).Body().Equal(expectedBodyStr)
-	counter := atomic.LoadUint32(counterPtr)
-	if counter > 1 {
-		// n should be 1 because it doesn't changed after the first call
-		return errCacheTestFailed.Format(1, counter)
-	}
-	time.Sleep(cacheDuration)
-
-	// cache should be cleared now
-	e.GET(path).Expect().Status(iris.StatusOK).ContentType(expectedContentType, "utf-8").Body().Equal(expectedBodyStr)
-	time.Sleep(cacheDuration / 5)
-	// let's call again , the cache should be saved
-	e.GET(path).Expect().Status(iris.StatusOK).ContentType(expectedContentType, "utf-8").Body().Equal(expectedBodyStr)
-	counter = atomic.LoadUint32(counterPtr)
-	if counter != 2 {
-		return errCacheTestFailed.Format(2, counter)
-	}
-
-	return nil
-}
-
-
-Inside github.com/geekypanda/httpcache are enough, no need to add 10+ seconds of testing here.
-func TestCache(t *testing.T) {
-
-	iris.ResetDefault()
-
-	expectedBodyStr := "Imagine it as a big message to achieve x20 response performance!"
-	var textCounter, htmlCounter uint32
-
-	iris.Get("/text", iris.Cache(func(ctx *iris.Context) {
-		atomic.AddUint32(&textCounter, 1)
-		ctx.Text(iris.StatusOK, expectedBodyStr)
-	}, cacheDuration))
-
-	iris.Get("/html", iris.Cache(func(ctx *iris.Context) {
-		atomic.AddUint32(&htmlCounter, 1)
-		ctx.HTML(iris.StatusOK, expectedBodyStr)
-	}, cacheDuration))
-
-	e := httptest.New(iris.Default, t)
-
-	// test cache on text/plain
-	if err := runCacheTest(e, "/text", &textCounter, expectedBodyStr, "text/plain"); err != nil {
-		t.Fatal(err)
-	}
-
-	// text cache on text/html
-	if err := runCacheTest(e, "/html", &htmlCounter, expectedBodyStr, "text/html"); err != nil {
-		t.Fatal(err)
-	}
-}
-*/
-
 func TestRedirectHTTPS(t *testing.T) {
 
 	api := iris.New(iris.OptionIsDevelopment(true))
@@ -794,5 +730,4 @@ func TestRedirectHTTPS(t *testing.T) {
 
 	e := httptest.New(api, t)
 	e.GET("/redirect").Expect().Status(iris.StatusOK).Body().Equal(expectedBody)
-
 }

@@ -119,7 +119,7 @@ type Configuration struct {
 	// Default is false
 	CheckForUpdatesSync bool
 
-	// DisablePathCorrection corrects and redirects the requested path to the registed path
+	// DisablePathCorrection corrects and redirects the requested path to the registered path
 	// for example, if /home/ path is requested but no handler for this Route found,
 	// then the Router checks if /home handler exists, if yes,
 	// (permant)redirects the client to the correct path /home
@@ -177,7 +177,7 @@ type Configuration struct {
 	Charset string
 
 	// Gzip enables gzip compression on your Render actions, this includes any type of render, templates and pure/raw content
-	// If you don't want to enable it globaly, you could just use the third parameter on context.Render("myfileOrResponse", structBinding{}, iris.RenderOptions{"gzip": true})
+	// If you don't want to enable it globally, you could just use the third parameter on context.Render("myfileOrResponse", structBinding{}, iris.RenderOptions{"gzip": true})
 	// Defaults to false
 	Gzip bool
 
@@ -312,7 +312,7 @@ var (
 		}
 	}
 
-	// OptionDisablePathCorrection corrects and redirects the requested path to the registed path
+	// OptionDisablePathCorrection corrects and redirects the requested path to the registered path
 	// for example, if /home/ path is requested but no handler for this Route found,
 	// then the Router checks if /home handler exists, if yes,
 	// (permant)redirects the client to the correct path /home
@@ -401,7 +401,7 @@ var (
 	}
 
 	// OptionGzip enables gzip compression on your Render actions, this includes any type of render, templates and pure/raw content
-	// If you don't want to enable it globaly, you could just use the third parameter on context.Render("myfileOrResponse", structBinding{}, iris.RenderOptions{"gzip": true})
+	// If you don't want to enable it globally, you could just use the third parameter on context.Render("myfileOrResponse", structBinding{}, iris.RenderOptions{"gzip": true})
 	// Default is false
 	OptionGzip = func(val bool) OptionSet {
 		return func(c *Configuration) {

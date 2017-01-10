@@ -64,7 +64,7 @@ const (
 	// CacheControl "Cache-Control"
 	cacheControl = "Cache-Control"
 
-	// stopExecutionPosition used inside the Context, is the number which shows us that the context's middleware manualy stop the execution
+	// stopExecutionPosition used inside the Context, is the number which shows us that the context's middleware manually stop the execution
 	stopExecutionPosition = 255
 )
 
@@ -132,7 +132,7 @@ type (
 		Request        *http.Request
 		values         requestValues
 		framework      *Framework
-		//keep track all registed middleware (handlers)
+		//keep track all registered middleware (handlers)
 		Middleware Middleware //  exported because is useful for debugging
 		session    sessions.Session
 		// Pos is the position number of the Context, look .Next to understand
@@ -313,7 +313,7 @@ func (ctx *Context) URLParam(key string) string {
 	return ctx.Request.URL.Query().Get(key)
 }
 
-// URLParams returns a map of GET query parameters seperated by comma if more than one
+// URLParams returns a map of GET query parameters separated by comma if more than one
 // it returns an empty map if nothing founds
 func (ctx *Context) URLParams() map[string]string {
 	values := map[string]string{}
@@ -1192,7 +1192,7 @@ func (ctx *Context) RemoveCookie(name string) {
 	c.Expires = exp
 	c.MaxAge = -1
 	ctx.SetCookie(c)
-	// delete request's cookie also, which is temporarly available
+	// delete request's cookie also, which is temporary available
 	ctx.Request.Header.Set("Cookie", "")
 }
 
@@ -1292,7 +1292,7 @@ var errTransactionInterrupted = errors.New("Transaction Interrupted, recovery fr
 // BeginTransaction starts a scoped transaction.
 //
 // Can't say a lot here because it will take more than 200 lines to write about.
-// You can search third-party articles or books on how Business Transaction works (it's quite simple, especialy here).
+// You can search third-party articles or books on how Business Transaction works (it's quite simple, especially here).
 //
 // Note that this is unique and new
 // (=I haver never seen any other examples or code in Golang on this subject, so far, as with the most of iris features...)

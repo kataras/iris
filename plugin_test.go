@@ -125,7 +125,7 @@ func (t testPluginActivationType) Activate(p iris.PluginContainer) error {
 // if an error happened then all of them are not activated/added to the plugin container
 func AddPluginTo(t *testing.T, plugins iris.PluginContainer, plugin iris.Plugin, expectingCount int) {
 	plugins.Add(plugin)
-	if plugins.Len() != expectingCount { // 2 because it registeres a second plugin also
+	if plugins.Len() != expectingCount { // 2 because it registers a second plugin also
 		t.Fatalf("Expected activated plugins to be: %d but we got: %d", expectingCount, plugins.Len())
 	}
 }
@@ -165,7 +165,7 @@ func TestPluginEvents(t *testing.T) {
 	myplugin := &testPluginEx{}
 	plugins.Add(myplugin)
 	if plugins.Len() != 4 {
-		t.Fatalf("Expected: %d plugins to be registed but we got: %d", 4, plugins.Len())
+		t.Fatalf("Expected: %d plugins to be registered but we got: %d", 4, plugins.Len())
 	}
 	desc := plugins.GetDescription(myplugin)
 	if desc != testPluginExDescription {

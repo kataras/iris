@@ -375,7 +375,7 @@ Downloads the  [basic](https://github.com/iris-contrib/examples/tree/master/AIO_
 **outline**
 ```go
 
-// StaticEmbedded  used when files are distrubuted inside the app executable, using go-bindata mostly
+// StaticEmbedded  used when files are distributed inside the app executable, using go-bindata mostly
 // First parameter is the request path, the path which the files in the vdir(second parameter) will be served to, for example "/static"
 // Second parameter is the (virtual) directory path, for example "./assets"
 // Third parameter is the Asset function
@@ -832,7 +832,7 @@ iris.Set(iris.OptionDisableBanner(true))
 
 **List** of all available options:
 ```go
-// OptionDisablePathCorrection corrects and redirects the requested path to the registed path
+// OptionDisablePathCorrection corrects and redirects the requested path to the registered path
 // for example, if /home/ path is requested but no handler for this Route found,
 // then the Router checks if /home handler exists, if yes,
 // (permant)redirects the client to the correct path /home
@@ -880,7 +880,7 @@ OptionTimeFormat(val string)
 OptionCharset(val string)
 
 // OptionGzip enables gzip compression on your Render actions, this includes any type of render, templates and pure/raw content
-// If you don't want to enable it globaly, you could just use the third parameter on context.Render("myfileOrResponse", structBinding{}, iris.RenderOptions{"gzip": true})
+// If you don't want to enable it globally, you could just use the third parameter on context.Render("myfileOrResponse", structBinding{}, iris.RenderOptions{"gzip": true})
 // Default is false
 OptionGzip(val bool)
 
@@ -1124,7 +1124,7 @@ Notes: if you compare it with previous releases (13+ versions before v3 stable),
 If you're **willing to donate** click [here](DONATIONS.md)!
 
 
-- `iris.Config.Gzip`, enables gzip compression on your Render actions, this includes any type of render, templates and pure/raw content. If you don't want to enable it globaly, you could just use the third parameter on context.Render("myfileOrResponse", structBinding{}, iris.RenderOptions{"gzip": true}). It defaults to false
+- `iris.Config.Gzip`, enables gzip compression on your Render actions, this includes any type of render, templates and pure/raw content. If you don't want to enable it globally, you could just use the third parameter on context.Render("myfileOrResponse", structBinding{}, iris.RenderOptions{"gzip": true}). It defaults to false
 
 
 -  **Added** `config.Server.Name` as requested
@@ -1551,7 +1551,7 @@ OnDisconnect(func(){})
 We have some base-config's changed, these configs which are defaulted to true renamed to 'Disable+$oldName'
 ```go
 
-		// DisablePathCorrection corrects and redirects the requested path to the registed path
+		// DisablePathCorrection corrects and redirects the requested path to the registered path
 		// for example, if /home/ path is requested but no handler for this Route found,
 		// then the Router checks if /home handler exists, if yes,
 		// (permant)redirects the client to the correct path /home

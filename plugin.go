@@ -1,5 +1,7 @@
 package iris
 
+///TODO: Be ready for go v1.8 in order to accomplish my first idea.
+
 import (
 	"log"
 	"sync"
@@ -13,8 +15,8 @@ var (
 	errPluginAlreadyExists = errors.New("Cannot use the same plugin again, '%s[%s]' is already exists")
 	// errPluginActivate returns an error with message: 'While trying to activate plugin '+plugin name'. Trace: +specific error'
 	errPluginActivate = errors.New("While trying to activate plugin '%s'. Trace: %s")
-	// errPluginRemoveNoPlugins returns an error with message: 'No plugins are registed yet, you cannot remove a plugin from an empty list!'
-	errPluginRemoveNoPlugins = errors.New("No plugins are registed yet, you cannot remove a plugin from an empty list!")
+	// errPluginRemoveNoPlugins returns an error with message: 'No plugins are registered yet, you cannot remove a plugin from an empty list!'
+	errPluginRemoveNoPlugins = errors.New("No plugins are registered yet, you cannot remove a plugin from an empty list!")
 	// errPluginRemoveEmptyName returns an error with message: 'Plugin with an empty name cannot be removed'
 	errPluginRemoveEmptyName = errors.New("Plugin with an empty name cannot be removed")
 	// errPluginRemoveNotFound returns an error with message: 'Cannot remove a plugin which doesn't exists'
@@ -248,7 +250,7 @@ func (d *pluginDownloadManager) Install(remoteFileZip string, targetDirectory st
 	return fs.Install(remoteFileZip, targetDirectory, true)
 }
 
-// pluginContainer is the base container of all Iris, registed plugins
+// pluginContainer is the base container of all Iris, registered plugins
 type pluginContainer struct {
 	activatedPlugins []Plugin
 	customEvents     map[string][]func()
@@ -379,7 +381,7 @@ func (p *pluginContainer) GetDownloader() PluginDownloadManager {
 	return p.downloader
 }
 
-// Printf sends plain text to any registed logger (future), some plugins maybe want use this method
+// Printf sends plain text to any registered logger (future), some plugins maybe want use this method
 // maybe at the future I change it, instead of sync even-driven to async channels...
 func (p *pluginContainer) Printf(format string, a ...interface{}) {
 	if p.logger != nil {

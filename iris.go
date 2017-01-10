@@ -335,12 +335,12 @@ func (s *Framework) Set(setters ...OptionSetter) {
 	}
 }
 
-// Must panics on error, it panics on registed iris' logger
+// Must panics on error, it panics on registered iris' logger
 func Must(err error) {
 	Default.Must(err)
 }
 
-// Must panics on error, it panics on registed iris' logger
+// Must panics on error, it panics on registered iris' logger
 func (s *Framework) Must(err error) {
 	if err != nil {
 		//	s.Logger.Panicf("%s. Trace:\n%s", err, debug.Stack())
@@ -411,7 +411,7 @@ func (s *Framework) Build() {
 		s.mux.setFireMethodNotAllowed(s.Config.FireMethodNotAllowed)
 
 		// prepare the server's handler, we do that check because iris supports
-		// custom routers (you can take the routes registed by iris using iris.Lookups function)
+		// custom routers (you can take the routes registered by iris using iris.Lookups function)
 		if s.Router == nil {
 			// build and get the default mux' handler(*Context)
 			serve := s.mux.BuildHandler()
@@ -437,6 +437,7 @@ func (s *Framework) Build() {
 				ConnState:      s.Config.ConnState,
 				Handler:        s.Router,
 				Addr:           s.Config.VHost,
+				ErrorLog:       s.Logger,
 			}
 			if s.Config.TLSNextProto != nil {
 				s.srv.TLSNextProto = s.Config.TLSNextProto
@@ -973,17 +974,17 @@ func (s *Framework) UseGlobalFunc(handlersFn ...HandlerFunc) {
 	s.UseGlobal(convertToHandlers(handlersFn)...)
 }
 
-// Lookup returns a registed route by its name
+// Lookup returns a registered route by its name
 func Lookup(routeName string) Route {
 	return Default.Lookup(routeName)
 }
 
-// Lookups returns all registed routes
+// Lookups returns all registered routes
 func Lookups() []Route {
 	return Default.Lookups()
 }
 
-// Lookup returns a registed route by its name
+// Lookup returns a registered route by its name
 func (s *Framework) Lookup(routeName string) Route {
 	r := s.mux.lookup(routeName)
 	if nil == r {
@@ -992,7 +993,7 @@ func (s *Framework) Lookup(routeName string) Route {
 	return r
 }
 
-// Lookups returns all registed routes
+// Lookups returns all registered routes
 func (s *Framework) Lookups() (routes []Route) {
 	// silly but...
 	for i := range s.mux.lookups {
@@ -1411,27 +1412,27 @@ func (api *muxAPI) DoneFunc(handlersFn ...HandlerFunc) MuxAPI {
 
 // Handle registers a route to the server's router
 // if empty method is passed then registers handler(s) for all methods, same as .Any, but returns nil as result
-func Handle(method string, registedPath string, handlers ...Handler) RouteNameFunc {
-	return Default.Handle(method, registedPath, handlers...)
+func Handle(method string, registeredPath string, handlers ...Handler) RouteNameFunc {
+	return Default.Handle(method, registeredPath, handlers...)
 }
 
 // HandleFunc registers and returns a route with a method string, path string and a handler
-// registedPath is the relative url path
-func HandleFunc(method string, registedPath string, handlersFn ...HandlerFunc) RouteNameFunc {
-	return Default.HandleFunc(method, registedPath, handlersFn...)
+// registeredPath is the relative url path
+func HandleFunc(method string, registeredPath string, handlersFn ...HandlerFunc) RouteNameFunc {
+	return Default.HandleFunc(method, registeredPath, handlersFn...)
 }
 
 // Handle registers a route to the server's router
 // if empty method is passed then registers handler(s) for all methods, same as .Any, but returns nil as result
-func (api *muxAPI) Handle(method string, registedPath string, handlers ...Handler) RouteNameFunc {
+func (api *muxAPI) Handle(method string, registeredPath string, handlers ...Handler) RouteNameFunc {
 	if method == "" { // then use like it was .Any
 		for _, k := range AllMethods {
-			api.Handle(k, registedPath, handlers...)
+			api.Handle(k, registeredPath, handlers...)
 		}
 		return nil
 	}
 
-	fullpath := api.relativePath + registedPath // for now, keep the last "/" if any,  "/xyz/"
+	fullpath := api.relativePath + registeredPath // for now, keep the last "/" if any,  "/xyz/"
 
 	middleware := joinMiddleware(api.middleware, handlers)
 
@@ -1450,7 +1451,7 @@ func (api *muxAPI) Handle(method string, registedPath string, handlers ...Handle
 	//: /beta/ then should disable the path correction OR register it like: beta.Get("//")
 	// this is only for the party's roots in order to have expected paths,
 	// as we do with iris.Get("/") which is localhost:8080 as RFC points, not localhost:8080/
-	if api.mux.correctPath && registedPath == slash { // check the given relative path
+	if api.mux.correctPath && registeredPath == slash { // check the given relative path
 		// remove last "/" if any, "/xyz/"
 		if len(path) > 1 { // if it's the root, then keep it*
 			if path[len(path)-1] == slashByte {
@@ -1473,9 +1474,9 @@ func (api *muxAPI) Handle(method string, registedPath string, handlers ...Handle
 }
 
 // HandleFunc registers and returns a route with a method string, path string and a handler
-// registedPath is the relative url path
-func (api *muxAPI) HandleFunc(method string, registedPath string, handlersFn ...HandlerFunc) RouteNameFunc {
-	return api.Handle(method, registedPath, convertToHandlers(handlersFn)...)
+// registeredPath is the relative url path
+func (api *muxAPI) HandleFunc(method string, registeredPath string, handlersFn ...HandlerFunc) RouteNameFunc {
+	return api.Handle(method, registeredPath, convertToHandlers(handlersFn)...)
 }
 
 // API converts & registers a custom struct to the router
@@ -1484,7 +1485,7 @@ func (api *muxAPI) HandleFunc(method string, registedPath string, handlersFn ...
 // second is the custom struct (interface{}) which can be anything that has a *iris.Context as field.
 // third is the common middlewares, it's optional
 //
-// Note that API's routes have their default-name to the full registed path,
+// Note that API's routes have their default-name to the full registered path,
 // no need to give a special name for it, because it's not supposed to be used inside your templates.
 //
 // Recommend to use when you retrieve data from an external database,
@@ -1501,7 +1502,7 @@ func API(path string, restAPI HandlerAPI, middleware ...HandlerFunc) {
 // second is the custom struct (interface{}) which can be anything that has a *iris.Context as field.
 // third is the common middleware, it's optional
 //
-// Note that API's routes have their default-name to the full registed path,
+// Note that API's routes have their default-name to the full registered path,
 // no need to give a special name for it, because it's not supposed to be used inside your templates.
 //
 // Recommend to use when you retrieve data from an external database,
@@ -1509,7 +1510,7 @@ func API(path string, restAPI HandlerAPI, middleware ...HandlerFunc) {
 //
 // This is a slow method, if you care about router-performance use the Handle/HandleFunc/Get/Post/Put/Delete/Trace/Options... instead
 func (api *muxAPI) API(path string, restAPI HandlerAPI, middleware ...HandlerFunc) {
-	// here we need to find the registed methods and convert them to handler funcs
+	// here we need to find the registered methods and convert them to handler funcs
 	// methods are collected by method naming:  Get(),GetBy(...), Post(),PostBy(...), Put() and so on
 	if len(path) == 0 {
 		path = "/"
@@ -1572,17 +1573,17 @@ func (api *muxAPI) API(path string, restAPI HandlerAPI, middleware ...HandlerFun
 			}
 			methodFuncType := methodFunc.Type()
 			numInLen := methodFuncType.NumIn() // how much data we should receive from the request
-			registedPath := path
+			registeredPath := path
 
 			for i := 1; i < numInLen; i++ { // from 1 because the first is the 'object'
-				if registedPath[len(registedPath)-1] == slashByte {
-					registedPath += ":" + string(paramPrefix) + strconv.Itoa(i)
+				if registeredPath[len(registeredPath)-1] == slashByte {
+					registeredPath += ":" + string(paramPrefix) + strconv.Itoa(i)
 				} else {
-					registedPath += "/:" + string(paramPrefix) + strconv.Itoa(i)
+					registeredPath += "/:" + string(paramPrefix) + strconv.Itoa(i)
 				}
 			}
 
-			func(registedPath string, typ reflect.Type, contextField reflect.StructField, methodFunc reflect.Value, paramsLen int, method string) {
+			func(registeredPath string, typ reflect.Type, contextField reflect.StructField, methodFunc reflect.Value, paramsLen int, method string) {
 				var handlersFn []HandlerFunc
 
 				handlersFn = append(handlersFn, middleware...)
@@ -1604,8 +1605,8 @@ func (api *muxAPI) API(path string, restAPI HandlerAPI, middleware ...HandlerFun
 					methodFunc.Call(args)
 				})
 				// register route
-				api.HandleFunc(method, registedPath, handlersFn...)
-			}(registedPath, typ, contextField, methodFunc, numInLen-1, methodName)
+				api.HandleFunc(method, registeredPath, handlersFn...)
+			}(registeredPath, typ, contextField, methodFunc, numInLen-1, methodName)
 
 		}
 
@@ -1659,8 +1660,8 @@ func Trace(path string, handlersFn ...HandlerFunc) RouteNameFunc {
 }
 
 // Any registers a route for ALL of the http methods (Get,Post,Put,Head,Patch,Options,Connect,Delete)
-func Any(registedPath string, handlersFn ...HandlerFunc) {
-	Default.Any(registedPath, handlersFn...)
+func Any(registeredPath string, handlersFn ...HandlerFunc) {
+	Default.Any(registeredPath, handlersFn...)
 
 }
 
@@ -1710,9 +1711,9 @@ func (api *muxAPI) Trace(path string, handlersFn ...HandlerFunc) RouteNameFunc {
 }
 
 // Any registers a route for ALL of the http methods (Get,Post,Put,Head,Patch,Options,Connect,Delete)
-func (api *muxAPI) Any(registedPath string, handlersFn ...HandlerFunc) {
+func (api *muxAPI) Any(registeredPath string, handlersFn ...HandlerFunc) {
 	for _, k := range AllMethods {
-		api.HandleFunc(k, registedPath, handlersFn...)
+		api.HandleFunc(k, registeredPath, handlersFn...)
 	}
 }
 
@@ -1790,7 +1791,7 @@ func (api *muxAPI) StaticContent(reqPath string, cType string, content []byte) R
 	return api.registerResourceRoute(reqPath, h)
 }
 
-// StaticEmbedded  used when files are distrubuted inside the app executable, using go-bindata mostly
+// StaticEmbedded  used when files are distributed inside the app executable, using go-bindata mostly
 // First parameter is the request path, the path which the files in the vdir(second parameter) will be served to, for example "/static"
 // Second parameter is the (virtual) directory path, for example "./assets"
 // Third parameter is the Asset function
@@ -1802,7 +1803,7 @@ func StaticEmbedded(requestPath string, vdir string, assetFn func(name string) (
 	return Default.StaticEmbedded(requestPath, vdir, assetFn, namesFn)
 }
 
-// StaticEmbedded  used when files are distrubuted inside the app executable, using go-bindata mostly
+// StaticEmbedded  used when files are distributed inside the app executable, using go-bindata mostly
 // First parameter is the request path, the path which the files in the vdir will be served to, for example "/static"
 // Second parameter is the (virtual) directory path, for example "./assets"
 // Third parameter is the Asset function
@@ -1899,7 +1900,7 @@ func (api *muxAPI) StaticEmbedded(requestPath string, vdir string, assetFn func(
 // you can declare your own path if you have more than one favicon (desktop, mobile and so on)
 //
 // this func will add a route for you which will static serve the /yuorpath/yourfile.ico to the /yourfile.ico (nothing special that you can't handle by yourself)
-// Note that you have to call it on every favicon you have to serve automatically (dekstop, mobile and so on)
+// Note that you have to call it on every favicon you have to serve automatically (desktop, mobile and so on)
 //
 // panics on error
 func Favicon(favPath string, requestPath ...string) RouteNameFunc {
@@ -1913,7 +1914,7 @@ func Favicon(favPath string, requestPath ...string) RouteNameFunc {
 // you can declare your own path if you have more than one favicon (desktop, mobile and so on)
 //
 // this func will add a route for you which will static serve the /yuorpath/yourfile.ico to the /yourfile.ico (nothing special that you can't handle by yourself)
-// Note that you have to call it on every favicon you have to serve automatically (dekstop, mobile and so on)
+// Note that you have to call it on every favicon you have to serve automatically (desktop, mobile and so on)
 //
 // panics on error
 func (api *muxAPI) Favicon(favPath string, requestPath ...string) RouteNameFunc {
