@@ -198,6 +198,7 @@ func (w *responseWriter) SetContentType(cType string) {
 // or clear those deadlines as needed.
 func (w *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	if h, isHijacker := w.ResponseWriter.(http.Hijacker); isHijacker {
+		w.statusCodeSent = true
 		return h.Hijack()
 	}
 
