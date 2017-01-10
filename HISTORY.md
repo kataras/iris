@@ -107,11 +107,13 @@ I tried to minimize the side affects.
 
 If you don't find something you used to use come here and check that conversional list:
 
-- `iris.ToHandlerFunc` -> `iris.ToHandler`
+- `iris.ToHandlerFunc` -> `iris.ToHandler`.
 
 - `context.Response.BodyWriter() io.Writer` -> `context.ResponseWriter` is a http.ResponseWriter(and io.Writer) now.
 
-- `context.RequestCtx` removed and replaced by `context.ResponseWriter (*iris.ResponseWriter -> http.ResponseWriter)` and `context.Request (*http.Request)`
+- `context.Request/Response.Body()` -> `body,err := io.ReadAll(context.Request.Body)` or for response's previous body(useful on middleware) `ctx.Record() /* middleware here */ body:= ctx.Recorder().Body()`.
+
+- `context.RequestCtx` removed and replaced by `context.ResponseWriter (*iris.ResponseWriter -> http.ResponseWriter)` and `context.Request (*http.Request)`.
 
 - `context.Write(string, ...string)` -> `context.Writef(string, ...string)` | Write now has this form: Write([]byte) (int,error). All other write methods didn't changed.
 
@@ -121,8 +123,11 @@ If you don't find something you used to use come here and check that conversiona
 - `context.PathString()` -> `context.Path()`.
 - `context.HostString()` -> `context.Host()`.
 
-- `iris.Config.DisablePathEscape` was removed because now we have two methods to get a parameter `context.Param/ParamDecoded`.
+- `iris.Config.DisablePathEscape` -> `iris.Config.EnablePathEscape`, defaults to false. Now we have two methods to get a decoded parameter.
 
+- `context.Param/ParamDecoded` without need of this to be true, if it's true then the path parameters are query-decoded and .ParamDecoded returns the uri-decoded result.
+
+- `context.RequestIP` -> `context.Request.RemoteAddr` but I recommend use the previous context's function: `context.RemoteAddr()` which will search for the client's IP in detail.
 
 - All net/http middleware/handlers are **COMPATIBLE WITH IRIS NOW**, read more there](https://github.com/iris-contrib/middleware/blob/master/README.md#can-i-use-standard-nethttp-handler-with-iris).
 
