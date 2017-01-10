@@ -242,15 +242,15 @@ func (ctx *Context) VirtualHostname() string {
 // Path returns the full escaped path as string
 // for unescaped use: ctx.RequestCtx.RequestURI() or RequestPath(escape bool)
 func (ctx *Context) Path() string {
-	return ctx.RequestPath(!ctx.framework.Config.DisablePathEscape)
+	return ctx.RequestPath(ctx.framework.Config.EnablePathEscape)
 }
 
 // RequestPath returns the requested path
 func (ctx *Context) RequestPath(escape bool) string {
 	if escape {
-		return ctx.Request.URL.EscapedPath()
+		return DecodeQuery(ctx.Request.URL.EscapedPath())
 	}
-	return ctx.Request.RequestURI
+	return ctx.Request.URL.Path
 }
 
 // RemoteAddr tries to return the real client's request IP
@@ -957,16 +957,16 @@ func (ctx *Context) Set(key string, value interface{}) {
 //
 // visitor must not retain references to key and value after returning.
 // Make key and/or value copies if you need storing them after returning.
-func (ctx *Context) VisitValues(visitor func([]byte, interface{})) {
+func (ctx *Context) VisitValues(visitor func(string, interface{})) {
 	for i, n := 0, len(ctx.values); i < n; i++ {
 		kv := &ctx.values[i]
-		visitor(kv.key, kv.value)
+		visitor(string(kv.key), kv.value)
 	}
 }
 
 // ParamsLen tries to return all the stored values which values are string, probably most of them will be the path parameters
 func (ctx *Context) ParamsLen() (n int) {
-	ctx.VisitValues(func(kb []byte, vg interface{}) {
+	ctx.VisitValues(func(kb string, vg interface{}) {
 		if _, ok := vg.(string); ok {
 			n++
 		}
@@ -1001,7 +1001,7 @@ func (ctx *Context) ParamInt64(key string) (int64, error) {
 // hasthe form of key1=value1,key2=value2...
 func (ctx *Context) ParamsSentence() string {
 	var buff bytes.Buffer
-	ctx.VisitValues(func(kb []byte, vg interface{}) {
+	ctx.VisitValues(func(kb string, vg interface{}) {
 		v, ok := vg.(string)
 		if !ok {
 			return

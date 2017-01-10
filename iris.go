@@ -54,7 +54,6 @@ visit https://docs.iris-go.com
 package iris // import "github.com/kataras/iris"
 
 import (
-	"bytes"
 	"fmt"
 	"log"
 	"net"
@@ -81,7 +80,7 @@ const (
 	// IsLongTermSupport flag is true when the below version number is a long-term-support version
 	IsLongTermSupport = false
 	// Version is the current version number of the Iris web framework
-	Version = "6.0.6"
+	Version = "6.0.7"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -866,6 +865,8 @@ func (s *Framework) UseSerializer(forContentType string, e serializer.Serializer
 // so, you can change the filenameOrSource, the page binding, the options, and even add cookies, session value or a flash message through ctx
 // the return value of a PreRender is a boolean, if returns false then the next PreRender will not be executed, keep note
 // that the actual context's Render will be called at any case.
+//
+// Example: https://github.com/iris-contrib/examples/tree/master/template_engines/template_prerender
 func UsePreRender(pre PreRender) {
 	Default.UsePreRender(pre)
 }
@@ -877,6 +878,8 @@ func UsePreRender(pre PreRender) {
 // so, you can change the filenameOrSource, the page binding, the options, and even add cookies, session value or a flash message through ctx
 // the return value of a PreRender is a boolean, if returns false then the next PreRender will not be executed, keep note
 // that the actual context's Render will be called at any case.
+//
+// Example: https://github.com/iris-contrib/examples/tree/master/template_engines/template_prerender
 func (s *Framework) UsePreRender(pre PreRender) {
 	s.templates.usePreRender(pre)
 }
@@ -1069,7 +1072,7 @@ func DecodeQuery(path string) string {
 func DecodeURL(uri string) string {
 	u, err := url.Parse(uri)
 	if err != nil {
-		return ""
+		return uri
 	}
 	return u.String()
 }
@@ -1521,7 +1524,7 @@ func (api *muxAPI) API(path string, restAPI HandlerAPI, middleware ...HandlerFun
 	// or no, I changed my mind, let all be named parameters and let users to decide what info they need,
 	// using the Context to take more values (post form,url params and so on).-
 
-	paramPrefix := []byte("param")
+	paramPrefix := "param"
 	for _, methodName := range AllMethods {
 		methodWithBy := strings.Title(strings.ToLower(methodName)) + "By"
 		if method, found := typ.MethodByName(methodWithBy); found {
@@ -1552,8 +1555,8 @@ func (api *muxAPI) API(path string, restAPI HandlerAPI, middleware ...HandlerFun
 					args[0] = newController
 					j := 1
 
-					ctx.VisitValues(func(k []byte, v interface{}) {
-						if bytes.HasPrefix(k, paramPrefix) {
+					ctx.VisitValues(func(k string, v interface{}) {
+						if strings.HasPrefix(k, paramPrefix) {
 							args[j] = reflect.ValueOf(v.(string))
 
 							j++ // the first parameter is the context, other are the path parameters, j++ to be align with (API's registered)paramsLen

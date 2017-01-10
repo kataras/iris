@@ -127,10 +127,10 @@ type Configuration struct {
 	// Default is false
 	DisablePathCorrection bool
 
-	// DisablePathEscape when is false then its escapes the path, the named parameters (if any).
-	// Change to true it if you want something like this https://github.com/kataras/iris/issues/135 to work
+	// EnablePathEscape when is true then its escapes the path, the named parameters (if any).
+	// Change to false it if you want something like this https://github.com/kataras/iris/issues/135 to work
 	//
-	// When do you need to Disable(true) it:
+	// When do you need to Disable(false) it:
 	// accepts parameters with slash '/'
 	// Request: http://localhost:8080/details/Project%2FDelta
 	// ctx.Param("project") returns the raw named parameter: Project%2FDelta
@@ -139,7 +139,7 @@ type Configuration struct {
 	// Look here: https://github.com/kataras/iris/issues/135 for more
 	//
 	// Default is false
-	DisablePathEscape bool
+	EnablePathEscape bool
 
 	// FireMethodNotAllowed if it's true router checks for StatusMethodNotAllowed(405) and fires the 405 error instead of 404
 	// Default is false
@@ -325,10 +325,10 @@ var (
 
 	}
 
-	// OptionDisablePathEscape when is false then its escapes the path, the named parameters (if any).
-	OptionDisablePathEscape = func(val bool) OptionSet {
+	// OptionEnablePathEscape when is true then its escapes the path, the named path parameters (if any).
+	OptionEnablePathEscape = func(val bool) OptionSet {
 		return func(c *Configuration) {
-			c.DisablePathEscape = val
+			c.EnablePathEscape = val
 		}
 	}
 
@@ -435,7 +435,7 @@ var (
 // Default values for base Iris conf
 const (
 	DefaultDisablePathCorrection = false
-	DefaultDisablePathEscape     = false
+	DefaultEnablePathEscape      = false
 	DefaultCharset               = "UTF-8"
 	DefaultLoggerPreffix         = "[IRIS] "
 	// Per-connection buffer size for requests' reading.
@@ -469,7 +469,7 @@ func DefaultConfiguration() Configuration {
 		CheckForUpdates:        false,
 		CheckForUpdatesSync:    false,
 		DisablePathCorrection:  DefaultDisablePathCorrection,
-		DisablePathEscape:      DefaultDisablePathEscape,
+		EnablePathEscape:       DefaultEnablePathEscape,
 		FireMethodNotAllowed:   false,
 		DisableBanner:          false,
 		LoggerOut:              DefaultLoggerOut,
