@@ -50,7 +50,7 @@ I'm  grateful for all the generous donations. Iris is fully funded by these dona
 
 - ANONYMOUS donated 5 EUR at December 13
 
-- [Github username is not available yet] donated 25 EUR at Jenuary 8 of 2017
+- [Thomas Fritz](https://github.com/thomasfr) donated 25 EUR at Jenuary 8 of 2017
 
 > * The name or/and github username link added after donator's approvement via e-mail.
 

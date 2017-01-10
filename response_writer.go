@@ -202,7 +202,7 @@ func (w *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 		return h.Hijack()
 	}
 
-	return nil, nil, errors.New("Hijack is not supported to this response writer!")
+	return nil, nil, errors.New("Hijack is not supported by this ResponseWriter.")
 }
 
 // Flush sends any buffered data to the client.
