@@ -697,7 +697,7 @@ type (
 		Path() string
 		// SetPath changes/sets the path for this route
 		SetPath(string)
-		// Middleware returns the slice of Handler([]Handler) registed to this route
+		// Middleware returns the slice of Handler([]Handler) registered to this route
 		Middleware() Middleware
 		// SetMiddleware changes/sets the middleware(handler(s)) for this route
 		SetMiddleware(Middleware)
@@ -817,9 +817,9 @@ func (r *route) hasCors() bool {
 }
 
 const (
-	// subdomainIndicator where './' exists in a registed path then it contains subdomain
+	// subdomainIndicator where './' exists in a registered path then it contains subdomain
 	subdomainIndicator = "./"
-	// dynamicSubdomainIndicator where a registed path starts with '*.' then it contains a dynamic subdomain, if subdomain == "*." then its dynamic
+	// dynamicSubdomainIndicator where a registered path starts with '*.' then it contains a dynamic subdomain, if subdomain == "*." then its dynamic
 	dynamicSubdomainIndicator = "*."
 )
 
@@ -958,7 +958,7 @@ func (mux *serveMux) build() (methodEqual func(string, string) bool) {
 			tree = &muxTree{method: r.method, subdomain: r.subdomain, entry: &muxEntry{}}
 			mux.garden = append(mux.garden, tree)
 		}
-		// I decide that it's better to explicit give subdomain and a path to it than registedPath(mysubdomain./something) now its: subdomain: mysubdomain., path: /something
+		// I decide that it's better to explicit give subdomain and a path to it than registeredPath(mysubdomain./something) now its: subdomain: mysubdomain., path: /something
 		// we have different tree for each of subdomains, now you can use everything you can use with the normal paths ( before you couldn't set /any/*path)
 		if err := tree.entry.add(r.path, r.middleware); err != nil {
 			mux.logger.Panic(err)

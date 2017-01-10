@@ -378,7 +378,7 @@ Serve files or directories, use the correct for your case, if you don't know whi
 // you can declare your own path if you have more than one favicon (desktop, mobile and so on)
 //
 // this func will add a route for you which will static serve the /yuorpath/yourfile.ico to the /yourfile.ico (nothing special that you can't handle by yourself)
-// Note that you have to call it on every favicon you have to serve automatically (dekstop, mobile and so on)
+// Note that you have to call it on every favicon you have to serve automatically (desktop, mobile and so on)
 //
 // panics on error
 Favicon(favPath string, requestPath ...string) RouteNameFunc
@@ -393,7 +393,7 @@ StaticHandler(reqPath string, systemPath string, showList bool, enableGzip bool)
 // second parameter is the system directory (string)
 StaticWeb(reqPath string, systemPath string) RouteNameFunc
 
-// StaticEmbedded  used when files are distrubuted inside the app executable, using go-bindata mostly
+// StaticEmbedded  used when files are distributed inside the app executable, using go-bindata mostly
 // First parameter is the request path, the path which the files in the vdir will be served to, for example "/static"
 // Second parameter is the (virtual) directory path, for example "./assets"
 // Third parameter is the Asset function

@@ -684,7 +684,7 @@ func TestTransactions(t *testing.T) {
 
 			// OPTIONAl STEP:
 			// but useful if we want to post back an error message to the client if the transaction failed.
-			// if the reason is empty then the transaction completed succesfuly,
+			// if the reason is empty then the transaction completed successfully,
 			// otherwise we rollback the whole response body and cookies and everything lives inside the transaction.Request.
 			t.Complete(err)
 		}

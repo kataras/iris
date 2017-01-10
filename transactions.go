@@ -124,7 +124,7 @@ func (tsf TransactionScopeFunc) EndTransaction(maybeErr TransactionErrResult, ct
 	return tsf(maybeErr, ctx)
 }
 
-// TransientTransactionScope explaination:
+// TransientTransactionScope explanation:
 //
 // independent 'silent' scope, if transaction fails (if transaction.IsFailure() == true)
 // then its response is not written to the real context no error is provided to the user.
@@ -136,7 +136,7 @@ var TransientTransactionScope = TransactionScopeFunc(func(maybeErr TransactionEr
 	return true
 })
 
-// RequestTransactionScope explaination:
+// RequestTransactionScope explanation:
 //
 // if scope fails (if transaction.IsFailure() == true)
 // then the rest of the context's response  (transaction or normal flow)
