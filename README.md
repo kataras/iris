@@ -84,7 +84,7 @@ Quick Start
 -----------
 
 ```bash
-go get -u github.com/kataras/iris
+go get -u github.com/kataras/iris/iris
 ```
 
 ```sh
@@ -119,7 +119,7 @@ func main(){
 
   })
 
-  iris.Listen("localhost:5900")
+  iris.Listen(":6000")
 }
 
 ```
@@ -127,8 +127,12 @@ func main(){
 ```sh
 $ go run hellojson.go
 ```
+> TIP #1> $ iris run main.go to enable hot-reload on .go source code changes.
 
-Open your browser or any other http client at http://localhost:5700/api/user/42.
+> TIP #2> iris.Config.IsDevelopment = true to monitor the changes you make in the templates. 
+
+
+Open your browser or any other http client at http://localhost:6000/api/user/42.
 
 
 ### New
