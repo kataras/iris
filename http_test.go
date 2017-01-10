@@ -322,7 +322,7 @@ func TestMuxSimple(t *testing.T) {
 		{"GET", "/test_get_urlparameter2/second", "/test_get_urlparameter2/second", "name=irisurl&something=anything", "name=irisurl,something=anything", 200, true, nil, []param{{"name", "irisurl"}, {"something", "anything"}}},
 		{"GET", "/test_get_urlparameter2/first/second/third", "/test_get_urlparameter2/first/second/third", "name=irisurl&something=anything&else=elsehere", "name=irisurl,something=anything,else=elsehere", 200, true, nil, []param{{"name", "irisurl"}, {"something", "anything"}, {"else", "elsehere"}}},
 	}
-	defer iris.Close()
+
 	iris.ResetDefault()
 
 	for idx := range testRoutes {
@@ -353,7 +353,7 @@ func TestMuxSimple(t *testing.T) {
 		}
 	}
 
-	e := httptest.New(iris.Default, t)
+	e := httptest.New(iris.Default, t, httptest.Debug(true))
 
 	// run the tests (1)
 	for idx := range testRoutes {
@@ -483,6 +483,7 @@ func TestRealSubdomainSimple(t *testing.T) {
 
 func TestMuxPathEscape(t *testing.T) {
 	iris.ResetDefault()
+	iris.Config.EnablePathEscape = true
 
 	iris.Get("/details/:name", func(ctx *iris.Context) {
 		name := ctx.ParamDecoded("name")

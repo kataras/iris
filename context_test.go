@@ -127,7 +127,7 @@ func TestContextURLParams(t *testing.T) {
 		params := ctx.URLParams()
 		ctx.JSON(iris.StatusOK, params)
 	})
-	e := httptest.New(iris.Default, t)
+	e := httptest.New(iris.Default, t, httptest.Debug(true))
 
 	e.GET("/").WithQueryObject(passedParams).Expect().Status(iris.StatusOK).JSON().Equal(passedParams)
 }

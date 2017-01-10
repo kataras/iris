@@ -2,6 +2,27 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 6.0.6 -> 6.0.7
+
+- `iris.Config.DisablePathEscape` -> renamed to `iris.Config.EnablePathEscape`, which defaults to false. Path escape is turned off by-default now,
+if you're waiting for unescaped path parameters, then just enable it by putting: `iris.Config.EnablePathEscape = true` anywhere in your code OR
+use the `context.ParamDecoded` instead of the context.Param when you want to escape a single path parameter.
+
+- Example for `iris.UsePreRender` https://github.com/iris-contrib/examples/tree/master/template_engines/template_prerender
+
+## 6.0.5 -> 6.0.6
+
+http.Request access from WebsocketConnection.
+
+Example:
+
+- https://github.com/iris-contrib/examples/blob/master/websocket/main.go#L34
+
+Relative commits to kataras/go-websocket:
+- https://github.com/kataras/go-websocket/commit/550fc8b32eb13b3b4a4bfeb227ef1a896c8f8698
+
+- https://github.com/kataras/go-websocket/commit/62c2d989d8b5e9126cdbf451c0e41e2e2b0b31b8
+
 ## 6.0.4 -> 6.0.5
 
 - Add `iris.DestroySessionByID(string)` and `iris.DestroyAllSessions()` functions as requested by a community member in the [chat](https://kataras.rocket.chat/channel/iris)

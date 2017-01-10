@@ -27,6 +27,8 @@ type (
 	// so, you can change the filenameOrSource, the page binding, the options, and even add cookies, session value or a flash message through ctx
 	// the return value of a PreRender is a boolean, if returns false then the next PreRender will not be executed, keep note
 	// that the actual context's Render will be called at any case.
+	//
+	// Example: https://github.com/iris-contrib/examples/tree/master/template_engines/template_prerender
 	PreRender func(ctx *Context, filenameOrSource string, binding interface{}, options ...map[string]interface{}) bool
 )
 
@@ -74,9 +76,12 @@ func (t *templateEngines) render(isFile bool, ctx *Context, filenameOrSource str
 	}
 
 	if len(t.prerenders) > 0 {
+
 		for i := range t.prerenders {
+
 			// I'm not making any checks here for performance reasons, means that
 			// if binding is pointer it can be changed, otherwise not.
+
 			if shouldContinue := t.prerenders[i](ctx, filenameOrSource, binding, options...); !shouldContinue {
 				break
 			}
