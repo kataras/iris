@@ -80,7 +80,7 @@ const (
 	// IsLongTermSupport flag is true when the below version number is a long-term-support version
 	IsLongTermSupport = false
 	// Version is the current version number of the Iris web framework
-	Version = "6.0.7"
+	Version = "6.0.8"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -139,82 +139,92 @@ type (
 	// FrameworkAPI contains the main Iris Public API
 	FrameworkAPI interface {
 		MuxAPI
-		Set(...OptionSetter)
-		Must(error)
+		Set(options ...OptionSetter)
+		Must(err error)
+
 		Build()
-		Serve(net.Listener) error
-		Listen(string)
-		ListenTLS(string, string, string)
-		ListenLETSENCRYPT(string, ...string)
-		ListenUNIX(string, os.FileMode)
+		Serve(ln net.Listener) error
+		Listen(addr string)
+		ListenTLS(addr string, certFilePath string, keyFilePath string)
+		ListenLETSENCRYPT(addr string, cacheOptionalStoreFilePath ...string)
+		ListenUNIX(fileOrAddr string, fileMode os.FileMode)
 		Close() error
 		Reserve() error
-		AcquireCtx(http.ResponseWriter, *http.Request) *Context
-		ReleaseCtx(*Context)
-		CheckForUpdates(bool)
-		UseSessionDB(sessions.Database)
+
+		AcquireCtx(w http.ResponseWriter, r *http.Request) *Context
+		ReleaseCtx(ctx *Context)
+
+		CheckForUpdates(check bool)
+
+		UseSessionDB(sessDB sessions.Database)
 		DestroySessionByID(sid string)
 		DestroyAllSessions()
-		UseSerializer(string, serializer.Serializer)
-		UseTemplate(template.Engine) *template.Loader
-		UsePreRender(PreRender)
-		UseGlobal(...Handler)
-		UseGlobalFunc(...HandlerFunc)
-		Lookup(string) Route
+
+		UseSerializer(contentType string, serializerEngine serializer.Serializer)
+		UsePreRender(prerenderFunc PreRender)
+		UseTemplateFunc(functionName string, function interface{})
+		UseTemplate(tmplEngine template.Engine) *template.Loader
+
+		UseGlobal(middleware ...Handler)
+		UseGlobalFunc(middleware ...HandlerFunc)
+
+		Lookup(routeName string) Route
 		Lookups() []Route
-		Path(string, ...interface{}) string
-		URL(string, ...interface{}) string
-		TemplateString(string, interface{}, ...map[string]interface{}) string
-		TemplateSourceString(string, interface{}) string
-		SerializeToString(string, interface{}, ...map[string]interface{}) string
-		Cache(HandlerFunc, time.Duration) HandlerFunc
+		Path(routeName string, optionalPathParameters ...interface{}) (routePath string)
+		URL(routeName string, optionalPathParameters ...interface{}) (routeURL string)
+
+		TemplateString(file string, binding interface{}, options ...map[string]interface{}) (parsedTemplate string)
+		TemplateSourceString(src string, binding interface{}) (parsedTemplate string)
+		SerializeToString(string, interface{}, ...map[string]interface{}) (serializedContent string)
+
+		Cache(handlerToCache HandlerFunc, expiration time.Duration) (cachedHandler HandlerFunc)
 	}
 
 	// MuxAPI the visible api for the serveMux
 	MuxAPI interface {
-		Party(string, ...HandlerFunc) MuxAPI
+		Party(reqRelativeRootPath string, middleware ...HandlerFunc) MuxAPI
 		// middleware serial, appending
-		Use(...Handler) MuxAPI
-		UseFunc(...HandlerFunc) MuxAPI
-		Done(...Handler) MuxAPI
-		DoneFunc(...HandlerFunc) MuxAPI
+		Use(middleware ...Handler) MuxAPI
+		UseFunc(middleware ...HandlerFunc) MuxAPI
+		Done(middleware ...Handler) MuxAPI
+		DoneFunc(middleware ...HandlerFunc) MuxAPI
 
 		// main handlers
-		Handle(string, string, ...Handler) RouteNameFunc
-		HandleFunc(string, string, ...HandlerFunc) RouteNameFunc
-		API(string, HandlerAPI, ...HandlerFunc)
+		Handle(method string, reqPath string, middleware ...Handler) RouteNameFunc
+		HandleFunc(method string, reqPath string, middleware ...HandlerFunc) RouteNameFunc
+		API(reqRelativeRootPath string, api HandlerAPI, middleware ...HandlerFunc)
 
 		// http methods
-		Get(string, ...HandlerFunc) RouteNameFunc
-		Post(string, ...HandlerFunc) RouteNameFunc
-		Put(string, ...HandlerFunc) RouteNameFunc
-		Delete(string, ...HandlerFunc) RouteNameFunc
-		Connect(string, ...HandlerFunc) RouteNameFunc
-		Head(string, ...HandlerFunc) RouteNameFunc
-		Options(string, ...HandlerFunc) RouteNameFunc
-		Patch(string, ...HandlerFunc) RouteNameFunc
-		Trace(string, ...HandlerFunc) RouteNameFunc
-		Any(string, ...HandlerFunc)
+		Get(reqRelativePath string, middleware ...HandlerFunc) RouteNameFunc
+		Post(reqRelativePath string, middleware ...HandlerFunc) RouteNameFunc
+		Put(reqRelativePath string, middleware ...HandlerFunc) RouteNameFunc
+		Delete(reqRelativePath string, middleware ...HandlerFunc) RouteNameFunc
+		Connect(reqRelativePath string, middleware ...HandlerFunc) RouteNameFunc
+		Head(reqRelativePath string, middleware ...HandlerFunc) RouteNameFunc
+		Options(reqRelativePath string, middleware ...HandlerFunc) RouteNameFunc
+		Patch(reqRelativePath string, middleware ...HandlerFunc) RouteNameFunc
+		Trace(reqRelativePath string, middleware ...HandlerFunc) RouteNameFunc
+		Any(reqRelativePath string, middleware ...HandlerFunc)
 
 		// static content
-		StaticServe(string, ...string) RouteNameFunc
-		StaticContent(string, string, []byte) RouteNameFunc
-		StaticEmbedded(string, string, func(string) ([]byte, error), func() []string) RouteNameFunc
-		Favicon(string, ...string) RouteNameFunc
+		StaticServe(systemFilePath string, optionalReqRelativePath ...string) RouteNameFunc
+		StaticContent(reqRelativePath string, contentType string, contents []byte) RouteNameFunc
+		StaticEmbedded(reqRelativePath string, contentType string, assets func(string) ([]byte, error), assetsNames func() []string) RouteNameFunc
+		Favicon(systemFilePath string, optionalReqRelativePath ...string) RouteNameFunc
 		// static file system
-		StaticHandler(string, string, bool, bool) HandlerFunc
-		StaticWeb(string, string) RouteNameFunc
+		StaticHandler(reqRelativePath string, systemPath string, showList bool, enableGzip bool) HandlerFunc
+		StaticWeb(reqRelativePath string, systemPath string) RouteNameFunc
 
 		// party layout for template engines
-		Layout(string) MuxAPI
+		Layout(layoutTemplateFileName string) MuxAPI
 
 		// errors
-		OnError(int, HandlerFunc)
-		EmitError(int, *Context)
+		OnError(statusCode int, handler HandlerFunc)
+		EmitError(statusCode int, ctx *Context)
 	}
 
 	// RouteNameFunc the func returns from the MuxAPi's methods, optionally sets the name of the Route (*route)
-	RouteNameFunc func(string)
+	RouteNameFunc func(customRouteName string)
 )
 
 // Framework is our God |\| Google.Search('Greek mythology Iris')
@@ -882,6 +892,34 @@ func UsePreRender(pre PreRender) {
 // Example: https://github.com/iris-contrib/examples/tree/master/template_engines/template_prerender
 func (s *Framework) UsePreRender(pre PreRender) {
 	s.templates.usePreRender(pre)
+}
+
+// UseTemplateFunc sets or replaces a TemplateFunc from the shared available TemplateFuncMap
+// defaults are the iris.URL and iris.Path, all the template engines supports the following:
+// {{ url "mynamedroute" "pathParameter_ifneeded"} }
+// {{ urlpath "mynamedroute" "pathParameter_ifneeded" }}
+// {{ render "header.html" }}
+// {{ render_r "header.html" }} // partial relative path to current page
+// {{ yield }}
+// {{ current }}
+//
+// See more https:/github.com/iris-contrib/examples/tree/master/template_engines/template_funcmap
+func UseTemplateFunc(functionName string, function interface{}) {
+	Default.UseTemplateFunc(functionName, function)
+}
+
+// UseTemplateFunc sets or replaces a TemplateFunc from the shared available TemplateFuncMap
+// defaults are the iris.URL and iris.Path, all the template engines supports the following:
+// {{ url "mynamedroute" "pathParameter_ifneeded"} }
+// {{ urlpath "mynamedroute" "pathParameter_ifneeded" }}
+// {{ render "header.html" }}
+// {{ render_r "header.html" }} // partial relative path to current page
+// {{ yield }}
+// {{ current }}
+//
+// See more https:/github.com/iris-contrib/examples/tree/master/template_engines/template_funcmap
+func (s *Framework) UseTemplateFunc(functionName string, function interface{}) {
+	s.templates.SharedFuncs[functionName] = function
 }
 
 // UseTemplate adds a template engine to the iris view system

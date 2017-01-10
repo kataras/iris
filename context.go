@@ -248,6 +248,14 @@ func (ctx *Context) Path() string {
 // RequestPath returns the requested path
 func (ctx *Context) RequestPath(escape bool) string {
 	if escape {
+		// NOTE: for example:
+		// DecodeURI decodes %2F to '/'
+		// DecodeQuery decodes any %20 to whitespace
+		// here we choose to be query-decoded only
+		// and with context.ParamDecoded the user receives a URI decoded path parameter.
+		// see https://github.com/iris-contrib/examples/tree/master/named_parameters_pathescape
+		// and https://github.com/iris-contrib/examples/tree/master/pathescape
+
 		return DecodeQuery(ctx.Request.URL.EscapedPath())
 	}
 	return ctx.Request.URL.Path
