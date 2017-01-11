@@ -18,7 +18,7 @@
 <br/>
 
 
-<a href="https://github.com/kataras/iris/blob/master/HISTORY.md"><img src="https://img.shields.io/badge/%20version%20-%206.0.9%20-blue.svg?style=flat-square" alt="CHANGELOG/HISTORY"></a>
+<a href="https://github.com/kataras/iris/blob/master/HISTORY.md"><img src="https://img.shields.io/badge/%20version%20-%206.1.0%20-blue.svg?style=flat-square" alt="CHANGELOG/HISTORY"></a>
 
 <a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/%20examples-repository-3362c2.svg?style=flat-square" alt="Examples"></a>
 
@@ -947,7 +947,7 @@ I recommend testing your API using this new library, [httpexpect](https://github
 Versioning
 ------------
 
-Current: **v6.0.9**
+Current: **v6.1.0**
 
 Older: **[v5/fasthttp](https://github.com/kataras/iris/tree/5.0.0)**
 

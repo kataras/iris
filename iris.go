@@ -81,7 +81,7 @@ const (
 	// IsLongTermSupport flag is true when the below version number is a long-term-support version
 	IsLongTermSupport = false
 	// Version is the current version number of the Iris web framework
-	Version = "6.0.9"
+	Version = "6.1.0"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -576,6 +576,14 @@ func (s *Framework) Listen(addr string) {
 	if s.Config.VHost == "" {
 		s.Config.VHost = addr
 		// this will be set as the front-end listening addr
+	}
+	// only here, other Listen functions should throw an error if port is missing.
+	// User should know how to fix them on ListenUNIX/ListenTLS/ListenLETSENCRYPT/Serve,
+	// they are used by more 'advanced' devs, mostly.
+
+	if portIdx := strings.IndexByte(addr, ':'); portIdx < 0 {
+		// missing port part, add it
+		addr = addr + ":80"
 	}
 
 	ln, err := TCPKeepAlive(addr)
@@ -1394,60 +1402,6 @@ func (api *muxAPI) DoneFunc(handlersFn ...HandlerFunc) MuxAPI {
 	return api.Done(convertToHandlers(handlersFn)...)
 }
 
-// UseTransaction adds transaction(s) middleware
-// the difference from manually adding them to the ctx.BeginTransaction
-// is that if a transaction is requested scope and is failed then the (next) handler is not executed.
-//
-// Returns itself.
-//
-// See https://github.com/iris-contrib/examples/tree/master/transactions to manually add transactions
-// and https://github.com/kataras/iris/blob/master/context_test.go for more
-// func UseTransaction(pipes ...TransactionFunc) MuxAPI {
-// 	return Default.UseTransaction(pipes...)
-// }
-
-// UseTransaction adds transaction(s) middleware
-// the difference from manually adding them to the ctx.BeginTransaction
-// is that if a transaction is requested scope and is failed then the (next) handler is not executed.
-//
-// Returns itself.
-//
-// See https://github.com/iris-contrib/examples/tree/master/transactions to manually add transactions
-// and https://github.com/kataras/iris/blob/master/context_test.go for more
-// func (api *muxAPI) UseTransaction(pipes ...TransactionFunc) MuxAPI {
-// 	return api.UseFunc(func(ctx *Context) {
-// 		for i := range pipes {
-// 			ctx.BeginTransaction(pipes[i])
-// 			if ctx.TransactionsSkipped() {
-// 				ctx.StopExecution()
-// 			}
-// 		}
-// 		ctx.Next()
-// 	})
-// }
-
-// DoneTransaction registers Transaction 'middleware' the only difference from .UseTransaction is that
-// is executed always last, after all of each route's handlers, returns itself.
-//
-// See https://github.com/iris-contrib/examples/tree/master/transactions to manually add transactions
-// and https://github.com/kataras/iris/blob/master/context_test.go for more
-// func DoneTransaction(pipes ...TransactionFunc) MuxAPI {
-// 	return Default.DoneTransaction(pipes...)
-// }
-
-// DoneTransaction registers Transaction 'middleware' the only difference from .UseTransaction is that
-// is executed always last, after all of each route's handlers, returns itself.
-//
-// See https://github.com/iris-contrib/examples/tree/master/transactions to manually add transactions
-// and https://github.com/kataras/iris/blob/master/context_test.go for more
-// func (api *muxAPI) DoneTransaction(pipes ...TransactionFunc) MuxAPI {
-// 	return api.DoneFunc(func(ctx *Context) {
-// 		for i := range pipes {
-// 			ctx.BeginTransaction(pipes[i])
-// 		}
-// 	})
-// }
-
 // Handle registers a route to the server's router
 // if empty method is passed then registers handler(s) for all methods, same as .Any, but returns nil as result
 func Handle(method string, registeredPath string, handlers ...Handler) RouteNameFunc {
@@ -1504,6 +1458,7 @@ func (api *muxAPI) Handle(method string, registeredPath string, handlers ...Hand
 		middleware = append(middleware, api.doneMiddleware...) // register the done middleware, if any
 	}
 	r := api.mux.register(method, subdomain, path, middleware)
+
 	api.apiRoutes = append(api.apiRoutes, r)
 
 	// should we remove the api.apiRoutes on the .Party (new children party) ?, No, because the user maybe use this party later
@@ -2032,8 +1987,16 @@ func StaticHandler(reqPath string, systemPath string, showList bool, enableGzip 
 
 // StaticHandler returns a new Handler which serves static files
 func (api *muxAPI) StaticHandler(reqPath string, systemPath string, showList bool, enableGzip bool) HandlerFunc {
+	// here we separate the path from the subdomain (if any), we care only for the path
+	// fixes a bug when serving static files via a subdomain
+	fullpath := api.relativePath + reqPath
+	path := fullpath
+	if dotWSlashIdx := strings.Index(path, subdomainIndicator); dotWSlashIdx > 0 {
+		path = fullpath[dotWSlashIdx+1:]
+	}
+
 	h := NewStaticHandlerBuilder(systemPath).
-		Path(api.relativePath + reqPath).
+		Path(path).
 		Listing(showList).
 		Gzip(enableGzip).
 		Build()

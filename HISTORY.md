@@ -2,6 +2,12 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 6.0.9 -> 6.1.0
+
+- Fix a not found error when serving static files through custom subdomain, this should work again: `iris.Party("mysubdomain.").StaticWeb("/", "./static")`
+
+- Add SPA Example (separate REST API from the index page): https://github.com/iris-contrib/examples/tree/master/spa_1_using_subdomain
+
 ## 6.0.8 -> 6.0.9
 
 - Add `PostInterrupt` plugin, useful for customization of the **os.Interrupt** singal, before that Iris closed the server automatically.
@@ -19,7 +25,7 @@ iris.Plugins.PostInterrupt(func(s *Framework){
   /* Do  any custom cleanup and finally call the s.Close()
      remember you have the iris.Plugins.PreClose(func(s *Framework)) event too
      so you can split your logic in two logically places.
-  */   
+  */
 
 })
 
