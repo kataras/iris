@@ -2,6 +2,29 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 6.0.8 -> 6.0.9
+
+- Add `PostInterrupt` plugin, useful for customization of the **os.Interrupt** singal, before that Iris closed the server automatically.
+
+```go
+iris.Plugins.PostInterrupt(func(s *Framework){
+  // when os.Interrupt signal is fired the body of this function will be fired,
+  // you're responsible for closing the server with s.Close()
+
+  // if that event is not registered then the framework
+  // will close the server for you.
+
+
+
+  /* Do  any custom cleanup and finally call the s.Close()
+     remember you have the iris.Plugins.PreClose(func(s *Framework)) event too
+     so you can split your logic in two logically places.
+  */   
+
+})
+
+```
+
 ## 6.0.7 -> 6.0.8
 
 - Add `iris.UseTemplateFunc(functionName string, function interface{})`. You could always set custom template funcs by using each of [template engine's](https://github.com/kataras/go-template) configuration but this function will help newcomers to start creating their custom template funcs.

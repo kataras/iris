@@ -66,6 +66,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/kataras/go-errors"
@@ -80,7 +81,7 @@ const (
 	// IsLongTermSupport flag is true when the below version number is a long-term-support version
 	IsLongTermSupport = false
 	// Version is the current version number of the Iris web framework
-	Version = "6.0.8"
+	Version = "6.0.9"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -478,21 +479,51 @@ func (s *Framework) Serve(ln net.Listener) error {
 	}
 	// maybe a 'race' here but user should not call .Serve more than one time especially in more than one go routines...
 	s.ln = ln
-
+	// build the handler and all other components
 	s.Build()
+	// fire all PreListen plugins
 	s.Plugins.DoPreListen(s)
 
-	// This didn't helped me ,here, but maybe can help you:
-	// https://www.oreilly.com/learning/run-strikingly-fast-parallel-file-searches-in-go-with-sync-errgroup?utm_source=golangweekly&utm_medium=email
-	// new experimental package: errgroup
-
+	// catch any panics to the user defined logger.
 	defer func() {
 		if err := recover(); err != nil {
 			s.Logger.Panic(err)
 		}
 	}()
-	// start the server in goroutine, .Available will block instead
-	go func() { s.Must(s.srv.Serve(ln)) }()
+
+	// prepare for 'after serve' actions
+	var stop uint32
+	go func() {
+		// wait for the server's Serve func (309 mill is a lot or not, I found that this number is the perfect for most of the environments.)
+		time.Sleep(309 * time.Millisecond)
+		if atomic.LoadUint32(&stop) > 0 {
+			return
+		}
+		// print the banner
+		// fire the PostListen plugins
+		// wait for system channel interrupt
+		// fire the PostInterrupt plugins or close and exit.
+		s.postServe()
+	}()
+
+	serverStartUpErr := s.srv.Serve(ln)
+	if serverStartUpErr != nil {
+		// if an error then it would be nice to stop the banner and all next plugin events.
+		atomic.AddUint32(&stop, 1)
+	}
+	// finally return the error or block here, remember,
+	// you can always use the iris.Available to 'see' if and when the server is up (virtually),
+	// until go1.8 these are our best options.
+	return serverStartUpErr
+}
+
+// runs only when server starts without errors
+// what it does?
+// 0. print the banner
+// 1. fire the PostListen plugins
+// 2. wait for system channel interrupt
+// 3. fire the PostInterrupt plugins or close and exit.
+func (s *Framework) postServe() {
 
 	if !s.Config.DisableBanner {
 		bannerMessage := fmt.Sprintf("%s: Running at %s", time.Now().Format(s.Config.TimeFormat), s.Config.VHost)
@@ -506,17 +537,22 @@ func (s *Framework) Serve(ln net.Listener) error {
 	s.Plugins.DoPostListen(s)
 
 	go func() { s.Available <- true }()
+
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt)
 	<-ch
-	if err := s.Close(); err != nil {
-		if s.Config.IsDevelopment {
-			s.Logger.Printf("Error while closing the server: %s\n", err)
+	// catch custom plugin event for interrupt
+	s.Plugins.DoPostInterrupt(s)
+	if !s.Plugins.PostInterruptFired() {
+		// if no PostInterrupt events fired, then I assume that the user doesn't cares
+		// so close the server automatically.
+		if err := s.Close(); err != nil {
+			if s.Config.IsDevelopment {
+				s.Logger.Printf("Error while closing the server: %s\n", err)
+			}
 		}
-		return err
+		os.Exit(1)
 	}
-	os.Exit(1)
-	return nil
 }
 
 // Listen starts the standalone http server
