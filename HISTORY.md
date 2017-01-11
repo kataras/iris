@@ -25,6 +25,8 @@ iris.Plugins.PostInterrupt(func(s *Framework){
 
 ```
 
+- Example: https://github.com/iris-contrib/examples/tree/master/os_interrupt
+
 ## 6.0.7 -> 6.0.8
 
 - Add `iris.UseTemplateFunc(functionName string, function interface{})`. You could always set custom template funcs by using each of [template engine's](https://github.com/kataras/go-template) configuration but this function will help newcomers to start creating their custom template funcs.
