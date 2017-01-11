@@ -96,11 +96,13 @@ type (
 		// graceful shutdown can be done here
 		//
 		// Read more here: https://github.com/kataras/iris/blob/master/HISTORY.md#608---609
+		// Example: https://github.com/iris-contrib/examples/tree/master/os_interrupt
 		PostInterrupt(*Framework)
 	}
 	// PostInterruptFunc implements the simple function listener for the PostInterrupt(*Framework)
 	//
 	// Read more here: https://github.com/kataras/iris/blob/master/HISTORY.md#608---609
+	// Example: https://github.com/iris-contrib/examples/tree/master/os_interrupt
 	PostInterruptFunc func(*Framework)
 
 	// pluginPreClose implements the PreClose(*Framework) method
@@ -217,6 +219,15 @@ func (fn PreListenFunc) PreListen(station *Framework) {
 // PostListen it's being called only one time, AFTER the Server is started (if .Listen called)
 // parameter is the station
 func (fn PostListenFunc) PostListen(station *Framework) {
+	fn(station)
+}
+
+// PostInterrupt it's being called only one time, when os.Interrupt system event catched
+// graceful shutdown can be done here
+//
+// Read more here: https://github.com/kataras/iris/blob/master/HISTORY.md#608---609
+// Example: https://github.com/iris-contrib/examples/tree/master/os_interrupt
+func (fn PostInterruptFunc) PostInterrupt(station *Framework) {
 	fn(station)
 }
 
@@ -540,6 +551,7 @@ func (p *pluginContainer) PostListenFired() bool {
 // PostInterrupt adds a PostInterrupt plugin-function to the plugin flow container
 //
 // Read more here: https://github.com/kataras/iris/blob/master/HISTORY.md#608---609
+// Example: https://github.com/iris-contrib/examples/tree/master/os_interrupt
 func (p *pluginContainer) PostInterrupt(fn PostInterruptFunc) {
 	p.Add(fn)
 }

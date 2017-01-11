@@ -541,7 +541,9 @@ func (s *Framework) postServe() {
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt)
 	<-ch
+
 	// catch custom plugin event for interrupt
+	// Example: https://github.com/iris-contrib/examples/tree/master/os_interrupt
 	s.Plugins.DoPostInterrupt(s)
 	if !s.Plugins.PostInterruptFired() {
 		// if no PostInterrupt events fired, then I assume that the user doesn't cares
