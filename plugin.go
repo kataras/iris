@@ -89,6 +89,20 @@ type (
 	}
 	// PostListenFunc implements the simple function listener for the PostListen(*Framework)
 	PostListenFunc func(*Framework)
+
+	// pluginPostInterrupt implements the PostInterrupt(*Framework) method
+	pluginPostInterrupt interface {
+		// PostInterrupt it's being called only one time, when os.Interrupt system event catched
+		// graceful shutdown can be done here
+		//
+		// Read more here: https://github.com/kataras/iris/blob/master/HISTORY.md#608---609
+		PostInterrupt(*Framework)
+	}
+	// PostInterruptFunc implements the simple function listener for the PostInterrupt(*Framework)
+	//
+	// Read more here: https://github.com/kataras/iris/blob/master/HISTORY.md#608---609
+	PostInterruptFunc func(*Framework)
+
 	// pluginPreClose implements the PreClose(*Framework) method
 	pluginPreClose interface {
 		// PreClose it's being called only one time, BEFORE the Iris .Close method
@@ -139,6 +153,9 @@ type (
 		PostListen(PostListenFunc)
 		DoPostListen(*Framework)
 		PostListenFired() bool
+		PostInterrupt(PostInterruptFunc)
+		DoPostInterrupt(*Framework)
+		PostInterruptFired() bool
 		PreClose(PreCloseFunc)
 		DoPreClose(*Framework)
 		PreCloseFired() bool
@@ -518,6 +535,29 @@ func (p *pluginContainer) DoPostListen(station *Framework) {
 // PostListenFired returns true if PostListen event/ plugin type is fired at least one time
 func (p *pluginContainer) PostListenFired() bool {
 	return p.Fired("postlisten") > 0
+}
+
+// PostInterrupt adds a PostInterrupt plugin-function to the plugin flow container
+//
+// Read more here: https://github.com/kataras/iris/blob/master/HISTORY.md#608---609
+func (p *pluginContainer) PostInterrupt(fn PostInterruptFunc) {
+	p.Add(fn)
+}
+
+// DoPostInterrupt raise all plugins which has the PostInterrupt method
+func (p *pluginContainer) DoPostInterrupt(station *Framework) {
+	for i := range p.activatedPlugins {
+		// check if this method exists on our plugin obj, these are optionaly and call it
+		if pluginObj, ok := p.activatedPlugins[i].(pluginPostInterrupt); ok {
+			pluginObj.PostInterrupt(station)
+			p.fire("postinterrupt")
+		}
+	}
+}
+
+// PostInterruptFired returns true if PostInterrupt event/ plugin type is fired at least one time
+func (p *pluginContainer) PostInterruptFired() bool {
+	return p.Fired("postinterrupt") > 0
 }
 
 // PreClose adds a PreClose plugin-function to the plugin flow container
