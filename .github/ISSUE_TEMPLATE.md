@@ -1,4 +1,4 @@
-- Version : **6.0.9**
+- Version : **6.1.0**
 
 - Operating System:
 
