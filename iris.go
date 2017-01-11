@@ -479,8 +479,8 @@ func (s *Framework) Serve(ln net.Listener) error {
 	// maybe a 'race' here but user should not call .Serve more than one time especially in more than one go routines...
 	s.ln = ln
 
-	s.Build()
 	s.Plugins.DoPreListen(s)
+	s.Build()
 
 	// This didn't helped me ,here, but maybe can help you:
 	// https://www.oreilly.com/learning/run-strikingly-fast-parallel-file-searches-in-go-with-sync-errgroup?utm_source=golangweekly&utm_medium=email
