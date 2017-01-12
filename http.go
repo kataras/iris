@@ -37,10 +37,15 @@ const (
 	MethodOptions = "OPTIONS"
 	// MethodTrace "TRACE"
 	MethodTrace = "TRACE"
+	// MethodNone is a Virtual method
+	// to store the "offline" routes
+	// in the mux's tree
+	MethodNone = "NONE"
 )
 
 var (
-	// AllMethods "GET", "POST", "PUT", "DELETE", "CONNECT", "HEAD", "PATCH", "OPTIONS", "TRACE"
+	// AllMethods contains all the http valid methods:
+	// "GET", "POST", "PUT", "DELETE", "CONNECT", "HEAD", "PATCH", "OPTIONS", "TRACE"
 	AllMethods = [...]string{MethodGet, MethodPost, MethodPut, MethodDelete, MethodConnect, MethodHead, MethodPatch, MethodOptions, MethodTrace}
 )
 
@@ -701,6 +706,8 @@ type (
 		Middleware() Middleware
 		// SetMiddleware changes/sets the middleware(handler(s)) for this route
 		SetMiddleware(Middleware)
+		// IsOnline returns true if the route is marked as "online" (state)
+		IsOnline() bool
 	}
 
 	route struct {
@@ -796,6 +803,10 @@ func (r route) Middleware() Middleware {
 
 func (r *route) SetMiddleware(m Middleware) {
 	r.middleware = m
+}
+
+func (r route) IsOnline() bool {
+	return r.method != MethodNone
 }
 
 // RouteConflicts checks for route's middleware conflicts
@@ -944,10 +955,17 @@ func (mux *serveMux) register(method string, subdomain string, path string, midd
 }
 
 // build collects all routes info and adds them to the registry in order to be served from the request handler
-// this happens once when server is setting the mux's handler.
+// this happens once(except when a route changes its state) when server is setting the mux's handler.
 func (mux *serveMux) build() (methodEqual func(string, string) bool) {
 
 	sort.Sort(bySubdomain(mux.lookups))
+	// clear them for any case
+	// build may called internally to re-build the routes.
+	// re-build happens from BuildHandler() when a route changes its state
+	// from offline to online or from online to offline
+	mux.garden = mux.garden[0:0]
+	// this is not used anywhere for now, but keep it here.
+	mux.maxParameters = 0
 
 	for i := range mux.lookups {
 		r := mux.lookups[i]
@@ -1014,7 +1032,12 @@ func HTMLEscape(s string) string {
 	return htmlReplacer.Replace(s)
 }
 
-// BuildHandler the default Iris router when iris.Handler is nil
+// BuildHandler the default Iris router when iris.Router is nil
+//
+// NOTE: Is called and re-set to the iris.Router when
+// a route changes its state from "online" to "offline" or "offline" to "online"
+// look iris.None(...) for more
+// and: https://github.com/kataras/iris/issues/585
 func (mux *serveMux) BuildHandler() HandlerFunc {
 
 	// initialize the router once
