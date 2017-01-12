@@ -731,3 +731,64 @@ func TestRedirectHTTPS(t *testing.T) {
 	e := httptest.New(api, t)
 	e.GET("/redirect").Expect().Status(iris.StatusOK).Body().Equal(expectedBody)
 }
+
+func TestRouteStateSimple(t *testing.T) {
+	iris.ResetDefault()
+	// here
+	offlineRouteName := "user.api"
+	offlineRoutePath := "/api/user/:userid"
+	offlineRouteRequestedTestPath := "/api/user/42"
+	offlineBody := "user with id: 42"
+
+	iris.None(offlineRoutePath, func(ctx *iris.Context) {
+		userid := ctx.Param("userid")
+		if userid != "42" {
+			// we are expecting userid 42 always in this test so
+			t.Fatalf("what happened? expected userid to be 42 but got %s", userid)
+		}
+		ctx.Writef(offlineBody)
+	})(offlineRouteName)
+
+	// change the "user.api" state from offline to online and online to offline
+	iris.Get("/change", func(ctx *iris.Context) {
+		// here
+		if iris.Lookup(offlineRouteName).IsOnline() {
+			// set to offline
+			iris.SetRouteOffline(offlineRouteName)
+		} else {
+			// set to online if it was not online(so it was offline)
+			iris.SetRouteOnline(offlineRouteName, iris.MethodGet)
+		}
+	})
+
+	iris.Get("/execute", func(ctx *iris.Context) {
+		// here
+		ctx.ExecRouteAgainst(offlineRouteName, "/api/user/42")
+	})
+
+	hello := "Hello from index"
+	iris.Get("/", func(ctx *iris.Context) {
+		ctx.Writef(hello)
+	})
+
+	e := httptest.New(iris.Default, t)
+
+	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(hello)
+	// here
+	// the status should be not found, the route is invisible from outside world
+	e.GET(offlineRouteRequestedTestPath).Expect().Status(iris.StatusNotFound)
+
+	// set the route online with the /change
+	e.GET("/change").Expect().Status(iris.StatusOK)
+	// try again, it should be online now
+	e.GET(offlineRouteRequestedTestPath).Expect().Status(iris.StatusOK).Body().Equal(offlineBody)
+	// change to offline again
+	e.GET("/change").Expect().Status(iris.StatusOK)
+	// and test again, it should be offline now
+	e.GET(offlineRouteRequestedTestPath).Expect().Status(iris.StatusNotFound)
+
+	// finally test the execute on the offline route
+	// it should be remains offline but execute the route like it is from client request.
+	e.GET("/execute").Expect().Status(iris.StatusOK).Body().Equal(offlineBody)
+	e.GET(offlineRouteRequestedTestPath).Expect().Status(iris.StatusNotFound)
+}

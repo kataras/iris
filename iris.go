@@ -81,7 +81,7 @@ const (
 	// IsLongTermSupport flag is true when the below version number is a long-term-support version
 	IsLongTermSupport = false
 	// Version is the current version number of the Iris web framework
-	Version = "6.1.0"
+	Version = "6.1.1"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -171,6 +171,10 @@ type (
 
 		Lookup(routeName string) Route
 		Lookups() []Route
+		SetRouteOnline(routeName string, HTTPMethod string) bool
+		SetRouteOffline(routeName string) bool
+		ChangeRouteState(routeName string, HTTPMethod string) bool
+
 		Path(routeName string, optionalPathParameters ...interface{}) (routePath string)
 		URL(routeName string, optionalPathParameters ...interface{}) (routeURL string)
 
@@ -195,6 +199,8 @@ type (
 		HandleFunc(method string, reqPath string, middleware ...HandlerFunc) RouteNameFunc
 		API(reqRelativeRootPath string, api HandlerAPI, middleware ...HandlerFunc)
 
+		// virtual method for "offline" routes new feature
+		None(reqRelativePath string, Middleware ...HandlerFunc) RouteNameFunc
 		// http methods
 		Get(reqRelativePath string, middleware ...HandlerFunc) RouteNameFunc
 		Post(reqRelativePath string, middleware ...HandlerFunc) RouteNameFunc
@@ -417,11 +423,7 @@ func (s *Framework) Build() {
 			// build and get the default mux' handler(*Context)
 			serve := s.mux.BuildHandler()
 			// build the net/http.Handler to bind it to the servers
-			defaultHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				ctx := s.AcquireCtx(w, r)
-				serve(ctx)
-				s.ReleaseCtx(ctx)
-			})
+			defaultHandler := ToNativeHandler(s, serve)
 
 			s.Router = defaultHandler
 		}
@@ -1048,6 +1050,88 @@ func (s *Framework) Lookups() (routes []Route) {
 	return
 }
 
+// SetRouteOnline sets the state of the route to "online" with a specific http method
+// it re-builds the router
+//
+// returns true if state was actually changed
+//
+// see context.ExecRoute(routeName),
+// iris.None(...) and iris.SetRouteOnline/SetRouteOffline
+// For more details look: https://github.com/kataras/iris/issues/585
+//
+// Example: https://github.com/iris-contrib/examples/tree/master/route_state
+func SetRouteOnline(routeName string, HTTPMethod string) bool {
+	return Default.SetRouteOnline(routeName, HTTPMethod)
+}
+
+// SetRouteOffline sets the state of the route to "offline" and re-builds the router
+//
+// returns true if state was actually changed
+//
+// see context.ExecRoute(routeName),
+// iris.None(...) and iris.SetRouteOnline/SetRouteOffline
+// For more details look: https://github.com/kataras/iris/issues/585
+//
+// Example: https://github.com/iris-contrib/examples/tree/master/route_state
+func SetRouteOffline(routeName string) bool {
+	return Default.SetRouteOffline(routeName)
+}
+
+// ChangeRouteState changes the state of the route.
+// iris.MethodNone for offline
+// and iris.MethodGet/MethodPost/MethodPut/MethodDelete /MethodConnect/MethodOptions/MethodHead/MethodTrace/MethodPatch for online
+// it re-builds the router
+//
+// returns true if state was actually changed
+//
+// see context.ExecRoute(routeName),
+// iris.None(...) and iris.SetRouteOnline/SetRouteOffline
+// For more details look: https://github.com/kataras/iris/issues/585
+//
+// Example: https://github.com/iris-contrib/examples/tree/master/route_state
+func ChangeRouteState(routeName string, HTTPMethod string) bool {
+	return Default.ChangeRouteState(routeName, HTTPMethod)
+}
+
+// SetRouteOnline sets the state of the route to "online" with a specific http method
+// it re-builds the router
+//
+// returns true if state was actually changed
+func (s *Framework) SetRouteOnline(routeName string, HTTPMethod string) bool {
+	return s.ChangeRouteState(routeName, HTTPMethod)
+}
+
+// SetRouteOffline sets the state of the route to "offline" and re-builds the router
+//
+// returns true if state was actually changed
+func (s *Framework) SetRouteOffline(routeName string) bool {
+	return s.ChangeRouteState(routeName, MethodNone)
+}
+
+// ChangeRouteState changes the state of the route.
+// iris.MethodNone for offline
+// and iris.MethodGet/MethodPost/MethodPut/MethodDelete /MethodConnect/MethodOptions/MethodHead/MethodTrace/MethodPatch for online
+// it re-builds the router
+//
+// returns true if state was actually changed
+func (s *Framework) ChangeRouteState(routeName string, HTTPMethod string) bool {
+	r := s.mux.lookup(routeName)
+	nonSpecificMethod := len(HTTPMethod) == 0
+	if r != nil {
+		if r.method != HTTPMethod {
+			if nonSpecificMethod {
+				r.method = MethodGet // if no method given, then do it for "GET" only
+			} else {
+				r.method = HTTPMethod
+			}
+			// re-build the router/main handler
+			s.Router = ToNativeHandler(s, s.mux.BuildHandler())
+			return true
+		}
+	}
+	return false
+}
+
 // Path used to check arguments with the route's named parameters and return the correct url
 // if parse failed returns empty string
 func Path(routeName string, args ...interface{}) string {
@@ -1607,6 +1691,16 @@ func (api *muxAPI) API(path string, restAPI HandlerAPI, middleware ...HandlerFun
 
 }
 
+// None registers an "offline" route
+// see context.ExecRoute(routeName),
+// iris.None(...) and iris.SetRouteOnline/SetRouteOffline
+// For more details look: https://github.com/kataras/iris/issues/585
+//
+// Example: https://github.com/iris-contrib/examples/tree/master/route_state
+func None(path string, handlersFn ...HandlerFunc) RouteNameFunc {
+	return Default.None(path, handlersFn...)
+}
+
 // Get registers a route for the Get http method
 func Get(path string, handlersFn ...HandlerFunc) RouteNameFunc {
 	return Default.Get(path, handlersFn...)
@@ -1655,7 +1749,16 @@ func Trace(path string, handlersFn ...HandlerFunc) RouteNameFunc {
 // Any registers a route for ALL of the http methods (Get,Post,Put,Head,Patch,Options,Connect,Delete)
 func Any(registeredPath string, handlersFn ...HandlerFunc) {
 	Default.Any(registeredPath, handlersFn...)
+}
 
+// None registers an "offline" route
+// see context.ExecRoute(routeName),
+// iris.None(...) and iris.SetRouteOnline/SetRouteOffline
+// For more details look: https://github.com/kataras/iris/issues/585
+//
+// Example: https://github.com/iris-contrib/examples/tree/master/route_state
+func (api *muxAPI) None(path string, handlersFn ...HandlerFunc) RouteNameFunc {
+	return api.HandleFunc(MethodNone, path, handlersFn...)
 }
 
 // Get registers a route for the Get http method

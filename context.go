@@ -177,6 +177,53 @@ func (ctx *Context) GetHandlerName() string {
 	return runtime.FuncForPC(reflect.ValueOf(ctx.Middleware[len(ctx.Middleware)-1]).Pointer()).Name()
 }
 
+// ExecRoute calls any route by its name (mostly  "offline" route) like it was requested by the user, but it is not.
+// Offline means that the route is registered to the iris and have all features that a normal route has
+// BUT it isn't available by browsing, its handlers executed only when other handler's context call them
+// it can validate paths, has sessions, path parameters and all.
+//
+// It doesn't changes the global state, if a route was "offline" it remains offline.
+//
+// see ExecRouteAgainst(routeName, againstRequestPath string),
+// iris.None(...) and iris.SetRouteOnline/SetRouteOffline
+// For more details look: https://github.com/kataras/iris/issues/585
+//
+// Example: https://github.com/iris-contrib/examples/tree/master/route_state
+func (ctx *Context) ExecRoute(routeName string) *Context {
+	return ctx.ExecRouteAgainst(routeName, ctx.Path())
+}
+
+// ExecRouteAgainst calls any route by its name (mostly  "offline" route) against a 'virtually' request path
+// like it was requested by the user, but it is not.
+// Offline means that the route is registered to the iris and have all features that a normal route has
+// BUT it isn't available by browsing, its handlers executed only when other handler's context call them
+// it can validate paths, has sessions, path parameters and all.
+//
+// It doesn't changes the global state, if a route was "offline" it remains offline.
+//
+// see ExecRoute(routeName),
+// iris.None(...) and iris.SetRouteOnline/SetRouteOffline
+// For more details look: https://github.com/kataras/iris/issues/585
+//
+// Example: https://github.com/iris-contrib/examples/tree/master/route_state
+func (ctx *Context) ExecRouteAgainst(routeName string, againstRequestPath string) *Context {
+
+	r := ctx.framework.Lookup(routeName)
+	if r != nil {
+		context := &(*ctx)
+		context.Middleware = context.Middleware[0:0]
+		context.values.Reset()
+		tree := ctx.framework.muxAPI.mux.getTree(r.Method(), r.Subdomain())
+		tree.entry.get(againstRequestPath, context)
+		if len(context.Middleware) > 0 {
+			context.Do()
+			return context
+		}
+	}
+	// if failed return nil in order to this fail to be catchable
+	return nil
+}
+
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
 // -----------------------------Request URL, Method, IP & Headers getters---------------
