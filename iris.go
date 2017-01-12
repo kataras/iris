@@ -171,9 +171,9 @@ type (
 
 		Lookup(routeName string) Route
 		Lookups() []Route
-		SetRouteOnline(routeName string, HTTPMethod string) bool
-		SetRouteOffline(routeName string) bool
-		ChangeRouteState(routeName string, HTTPMethod string) bool
+		SetRouteOnline(r Route, HTTPMethod string) bool
+		SetRouteOffline(r Route) bool
+		ChangeRouteState(r Route, HTTPMethod string) bool
 
 		Path(routeName string, optionalPathParameters ...interface{}) (routePath string)
 		URL(routeName string, optionalPathParameters ...interface{}) (routeURL string)
@@ -219,8 +219,8 @@ type (
 		StaticEmbedded(reqRelativePath string, contentType string, assets func(string) ([]byte, error), assetsNames func() []string) RouteNameFunc
 		Favicon(systemFilePath string, optionalReqRelativePath ...string) RouteNameFunc
 		// static file system
-		StaticHandler(reqRelativePath string, systemPath string, showList bool, enableGzip bool) HandlerFunc
-		StaticWeb(reqRelativePath string, systemPath string) RouteNameFunc
+		StaticHandler(reqRelativePath string, systemPath string, showList bool, enableGzip bool, exceptRoutes ...Route) HandlerFunc
+		StaticWeb(reqRelativePath string, systemPath string, exceptRoutes ...Route) RouteNameFunc
 
 		// party layout for template engines
 		Layout(layoutTemplateFileName string) MuxAPI
@@ -231,7 +231,12 @@ type (
 	}
 
 	// RouteNameFunc the func returns from the MuxAPi's methods, optionally sets the name of the Route (*route)
-	RouteNameFunc func(customRouteName string)
+	//
+	// You can find the Route by iris.Lookup("theRouteName")
+	// you can set a route name as: myRoute := iris.Get("/mypath", handler)("theRouteName")
+	// that will set a name to the route and returns its iris.Route instance for further usage.
+	//
+	RouteNameFunc func(customRouteName string) Route
 )
 
 // Framework is our God |\| Google.Search('Greek mythology Iris')
@@ -1060,8 +1065,8 @@ func (s *Framework) Lookups() (routes []Route) {
 // For more details look: https://github.com/kataras/iris/issues/585
 //
 // Example: https://github.com/iris-contrib/examples/tree/master/route_state
-func SetRouteOnline(routeName string, HTTPMethod string) bool {
-	return Default.SetRouteOnline(routeName, HTTPMethod)
+func SetRouteOnline(r Route, HTTPMethod string) bool {
+	return Default.SetRouteOnline(r, HTTPMethod)
 }
 
 // SetRouteOffline sets the state of the route to "offline" and re-builds the router
@@ -1073,8 +1078,8 @@ func SetRouteOnline(routeName string, HTTPMethod string) bool {
 // For more details look: https://github.com/kataras/iris/issues/585
 //
 // Example: https://github.com/iris-contrib/examples/tree/master/route_state
-func SetRouteOffline(routeName string) bool {
-	return Default.SetRouteOffline(routeName)
+func SetRouteOffline(r Route) bool {
+	return Default.SetRouteOffline(r)
 }
 
 // ChangeRouteState changes the state of the route.
@@ -1089,23 +1094,23 @@ func SetRouteOffline(routeName string) bool {
 // For more details look: https://github.com/kataras/iris/issues/585
 //
 // Example: https://github.com/iris-contrib/examples/tree/master/route_state
-func ChangeRouteState(routeName string, HTTPMethod string) bool {
-	return Default.ChangeRouteState(routeName, HTTPMethod)
+func ChangeRouteState(r Route, HTTPMethod string) bool {
+	return Default.ChangeRouteState(r, HTTPMethod)
 }
 
 // SetRouteOnline sets the state of the route to "online" with a specific http method
 // it re-builds the router
 //
 // returns true if state was actually changed
-func (s *Framework) SetRouteOnline(routeName string, HTTPMethod string) bool {
-	return s.ChangeRouteState(routeName, HTTPMethod)
+func (s *Framework) SetRouteOnline(r Route, HTTPMethod string) bool {
+	return s.ChangeRouteState(r, HTTPMethod)
 }
 
 // SetRouteOffline sets the state of the route to "offline" and re-builds the router
 //
 // returns true if state was actually changed
-func (s *Framework) SetRouteOffline(routeName string) bool {
-	return s.ChangeRouteState(routeName, MethodNone)
+func (s *Framework) SetRouteOffline(r Route) bool {
+	return s.ChangeRouteState(r, MethodNone)
 }
 
 // ChangeRouteState changes the state of the route.
@@ -1114,15 +1119,14 @@ func (s *Framework) SetRouteOffline(routeName string) bool {
 // it re-builds the router
 //
 // returns true if state was actually changed
-func (s *Framework) ChangeRouteState(routeName string, HTTPMethod string) bool {
-	r := s.mux.lookup(routeName)
-	nonSpecificMethod := len(HTTPMethod) == 0
+func (s *Framework) ChangeRouteState(r Route, HTTPMethod string) bool {
 	if r != nil {
-		if r.method != HTTPMethod {
+		nonSpecificMethod := len(HTTPMethod) == 0
+		if r.Method() != HTTPMethod {
 			if nonSpecificMethod {
-				r.method = MethodGet // if no method given, then do it for "GET" only
+				r.SetMethod(MethodGet) // if no method given, then do it for "GET" only
 			} else {
-				r.method = HTTPMethod
+				r.SetMethod(HTTPMethod)
 			}
 			// re-build the router/main handler
 			s.Router = ToNativeHandler(s, s.mux.BuildHandler())
@@ -2064,32 +2068,13 @@ func (api *muxAPI) Favicon(favPath string, requestPath ...string) RouteNameFunc 
 	return api.registerResourceRoute(reqPath, h)
 }
 
-// StripPrefix returns a handler that serves HTTP requests
-// by removing the given prefix from the request URL's Path
-// and invoking the handler h. StripPrefix handles a
-// request for a path that doesn't begin with prefix by
-// replying with an HTTP 404 not found error.
-func StripPrefix(prefix string, h HandlerFunc) HandlerFunc {
-	if prefix == "" {
-		return h
-	}
-	return func(ctx *Context) {
-		if p := strings.TrimPrefix(ctx.Request.URL.Path, prefix); len(p) < len(ctx.Request.URL.Path) {
-			ctx.Request.URL.Path = p
-			h(ctx)
-		} else {
-			ctx.NotFound()
-		}
-	}
-}
-
 // StaticHandler returns a new Handler which serves static files
 func StaticHandler(reqPath string, systemPath string, showList bool, enableGzip bool) HandlerFunc {
 	return Default.StaticHandler(reqPath, systemPath, showList, enableGzip)
 }
 
 // StaticHandler returns a new Handler which serves static files
-func (api *muxAPI) StaticHandler(reqPath string, systemPath string, showList bool, enableGzip bool) HandlerFunc {
+func (api *muxAPI) StaticHandler(reqPath string, systemPath string, showList bool, enableGzip bool, exceptRoutes ...Route) HandlerFunc {
 	// here we separate the path from the subdomain (if any), we care only for the path
 	// fixes a bug when serving static files via a subdomain
 	fullpath := api.relativePath + reqPath
@@ -2102,6 +2087,7 @@ func (api *muxAPI) StaticHandler(reqPath string, systemPath string, showList boo
 		Path(path).
 		Listing(showList).
 		Gzip(enableGzip).
+		Except(exceptRoutes...).
 		Build()
 
 	managedStaticHandler := func(ctx *Context) {
@@ -2124,6 +2110,8 @@ func (api *muxAPI) StaticHandler(reqPath string, systemPath string, showList boo
 //
 // first parameter: the route path
 // second parameter: the system directory
+// third OPTIONAL parameter: the exception routes
+//      (= give priority to these routes instead of the static handler)
 // for more options look iris.StaticHandler.
 //
 //     iris.StaticWeb("/static", "./static")
@@ -2133,8 +2121,8 @@ func (api *muxAPI) StaticHandler(reqPath string, systemPath string, showList boo
 // "index.html".
 //
 // StaticWeb calls the StaticHandler(reqPath, systemPath, listingDirectories: false, gzip: false ).
-func StaticWeb(reqPath string, systemPath string) RouteNameFunc {
-	return Default.StaticWeb(reqPath, systemPath)
+func StaticWeb(reqPath string, systemPath string, exceptRoutes ...Route) RouteNameFunc {
+	return Default.StaticWeb(reqPath, systemPath, exceptRoutes...)
 }
 
 // StaticWeb returns a handler that serves HTTP requests
@@ -2142,6 +2130,8 @@ func StaticWeb(reqPath string, systemPath string) RouteNameFunc {
 //
 // first parameter: the route path
 // second parameter: the system directory
+// third OPTIONAL parameter: the exception routes
+//      (= give priority to these routes instead of the static handler)
 // for more options look iris.StaticHandler.
 //
 //     iris.StaticWeb("/static", "./static")
@@ -2151,8 +2141,8 @@ func StaticWeb(reqPath string, systemPath string) RouteNameFunc {
 // "index.html".
 //
 // StaticWeb calls the StaticHandler(reqPath, systemPath, listingDirectories: false, gzip: false ).
-func (api *muxAPI) StaticWeb(reqPath string, systemPath string) RouteNameFunc {
-	h := api.StaticHandler(reqPath, systemPath, false, false)
+func (api *muxAPI) StaticWeb(reqPath string, systemPath string, exceptRoutes ...Route) RouteNameFunc {
+	h := api.StaticHandler(reqPath, systemPath, false, false, exceptRoutes...)
 	routePath := validateWildcard(reqPath, "file")
 	return api.registerResourceRoute(routePath, h)
 }

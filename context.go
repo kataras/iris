@@ -177,10 +177,14 @@ func (ctx *Context) GetHandlerName() string {
 	return runtime.FuncForPC(reflect.ValueOf(ctx.Middleware[len(ctx.Middleware)-1]).Pointer()).Name()
 }
 
-// ExecRoute calls any route by its name (mostly  "offline" route) like it was requested by the user, but it is not.
+// ExecRoute calls any route (mostly  "offline" route) like it was requested by the user, but it is not.
 // Offline means that the route is registered to the iris and have all features that a normal route has
 // BUT it isn't available by browsing, its handlers executed only when other handler's context call them
 // it can validate paths, has sessions, path parameters and all.
+//
+// You can find the Route by iris.Lookup("theRouteName")
+// you can set a route name as: myRoute := iris.Get("/mypath", handler)("theRouteName")
+// that will set a name to the route and returns its iris.Route instance for further usage.
 //
 // It doesn't changes the global state, if a route was "offline" it remains offline.
 //
@@ -189,15 +193,19 @@ func (ctx *Context) GetHandlerName() string {
 // For more details look: https://github.com/kataras/iris/issues/585
 //
 // Example: https://github.com/iris-contrib/examples/tree/master/route_state
-func (ctx *Context) ExecRoute(routeName string) *Context {
-	return ctx.ExecRouteAgainst(routeName, ctx.Path())
+func (ctx *Context) ExecRoute(r Route) *Context {
+	return ctx.ExecRouteAgainst(r, ctx.Path())
 }
 
-// ExecRouteAgainst calls any route by its name (mostly  "offline" route) against a 'virtually' request path
+// ExecRouteAgainst calls any iris.Route against a 'virtually' request path
 // like it was requested by the user, but it is not.
 // Offline means that the route is registered to the iris and have all features that a normal route has
 // BUT it isn't available by browsing, its handlers executed only when other handler's context call them
 // it can validate paths, has sessions, path parameters and all.
+//
+// You can find the Route by iris.Lookup("theRouteName")
+// you can set a route name as: myRoute := iris.Get("/mypath", handler)("theRouteName")
+// that will set a name to the route and returns its iris.Route instance for further usage.
 //
 // It doesn't changes the global state, if a route was "offline" it remains offline.
 //
@@ -206,9 +214,7 @@ func (ctx *Context) ExecRoute(routeName string) *Context {
 // For more details look: https://github.com/kataras/iris/issues/585
 //
 // Example: https://github.com/iris-contrib/examples/tree/master/route_state
-func (ctx *Context) ExecRouteAgainst(routeName string, againstRequestPath string) *Context {
-
-	r := ctx.framework.Lookup(routeName)
+func (ctx *Context) ExecRouteAgainst(r Route, againstRequestPath string) *Context {
 	if r != nil {
 		context := &(*ctx)
 		context.Middleware = context.Middleware[0:0]
@@ -220,8 +226,40 @@ func (ctx *Context) ExecRouteAgainst(routeName string, againstRequestPath string
 			return context
 		}
 	}
-	// if failed return nil in order to this fail to be catchable
 	return nil
+}
+
+// Prioritize is a middleware which executes a route against this path
+// when the request's Path has a prefix of the route's STATIC PART
+// is not executing ExecRoute to determinate if it's valid, for performance reasons
+// if this function is not enough for you and you want to test more than one parameterized path
+// then use the:  if c := ExecRoute(r); c == nil { /*  move to the next, the route is not valid */ }
+//
+// You can find the Route by iris.Lookup("theRouteName")
+// you can set a route name as: myRoute := iris.Get("/mypath", handler)("theRouteName")
+// that will set a name to the route and returns its iris.Route instance for further usage.
+//
+// if the route found then it executes that and don't continue to the next handler
+// if not found then continue to the next handler
+func Prioritize(r Route) HandlerFunc {
+	if r != nil {
+		return func(ctx *Context) {
+			reqPath := ctx.Path()
+			if strings.HasPrefix(reqPath, r.StaticPath()) {
+				newctx := ctx.ExecRouteAgainst(r, reqPath)
+				if newctx == nil { // route not found.
+					ctx.EmitError(StatusNotFound)
+				}
+				return
+			}
+			// execute the next handler if no prefix
+			// here look, the only error we catch is the 404,
+			//  we can't go ctx.Next() and believe that the next handler will manage the error
+			// because it will not, we are not on the router.
+			ctx.Next()
+		}
+	}
+	return func(ctx *Context) { ctx.Next() }
 }
 
 // -------------------------------------------------------------------------------------

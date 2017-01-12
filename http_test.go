@@ -734,36 +734,34 @@ func TestRedirectHTTPS(t *testing.T) {
 
 func TestRouteStateSimple(t *testing.T) {
 	iris.ResetDefault()
-	// here
-	offlineRouteName := "user.api"
 	offlineRoutePath := "/api/user/:userid"
 	offlineRouteRequestedTestPath := "/api/user/42"
 	offlineBody := "user with id: 42"
 
-	iris.None(offlineRoutePath, func(ctx *iris.Context) {
+	offlineRoute := iris.None(offlineRoutePath, func(ctx *iris.Context) {
 		userid := ctx.Param("userid")
 		if userid != "42" {
 			// we are expecting userid 42 always in this test so
 			t.Fatalf("what happened? expected userid to be 42 but got %s", userid)
 		}
 		ctx.Writef(offlineBody)
-	})(offlineRouteName)
+	})("api.users") // or an empty (), required, in order to get the Route instance.
 
 	// change the "user.api" state from offline to online and online to offline
 	iris.Get("/change", func(ctx *iris.Context) {
 		// here
-		if iris.Lookup(offlineRouteName).IsOnline() {
+		if offlineRoute.IsOnline() {
 			// set to offline
-			iris.SetRouteOffline(offlineRouteName)
+			iris.SetRouteOffline(offlineRoute)
 		} else {
 			// set to online if it was not online(so it was offline)
-			iris.SetRouteOnline(offlineRouteName, iris.MethodGet)
+			iris.SetRouteOnline(offlineRoute, iris.MethodGet)
 		}
 	})
 
 	iris.Get("/execute", func(ctx *iris.Context) {
 		// here
-		ctx.ExecRouteAgainst(offlineRouteName, "/api/user/42")
+		ctx.ExecRouteAgainst(offlineRoute, "/api/user/42")
 	})
 
 	hello := "Hello from index"

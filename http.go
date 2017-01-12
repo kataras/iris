@@ -698,8 +698,16 @@ type (
 		Subdomain() string
 		// Method returns the http method
 		Method() string
+		// SetMethod sets the route's method
+		// requires re-build of the iris.Router
+		SetMethod(string)
+
 		// Path returns the path
 		Path() string
+
+		// staticPath returns the static part of the path
+		StaticPath() string
+
 		// SetPath changes/sets the path for this route
 		SetPath(string)
 		// Middleware returns the slice of Handler([]Handler) registered to this route
@@ -716,6 +724,7 @@ type (
 		subdomain      string
 		method         string
 		path           string
+		staticPath     string
 		middleware     Middleware
 		formattedPath  string
 		formattedParts int
@@ -740,6 +749,7 @@ var _ Route = &route{}
 func newRoute(method string, subdomain string, path string, middleware Middleware) *route {
 	r := &route{name: path + subdomain, method: method, subdomain: subdomain, path: path, middleware: middleware}
 	r.formatPath()
+	r.calculateStaticPath()
 	return r
 }
 
@@ -773,8 +783,20 @@ func (r *route) formatPath() {
 	r.formattedPath = tempPath
 }
 
-func (r *route) setName(newName string) {
+func (r *route) calculateStaticPath() {
+	for i := 0; i < len(r.path); i++ {
+		if r.path[i] == matchEverythingByte || r.path[i] == parameterStartByte {
+			r.staticPath = r.path[0 : i-1] // stop at the first dynamic path symbol and set the static path to its [0:previous]
+			return
+		}
+	}
+	// not a dynamic symbol found, set its static path to its path.
+	r.staticPath = r.path
+}
+
+func (r *route) setName(newName string) Route {
 	r.name = newName
+	return r
 }
 
 func (r route) Name() string {
@@ -789,8 +811,16 @@ func (r route) Method() string {
 	return r.method
 }
 
+func (r *route) SetMethod(method string) {
+	r.method = method
+}
+
 func (r route) Path() string {
 	return r.path
+}
+
+func (r route) StaticPath() string {
+	return r.staticPath
 }
 
 func (r *route) SetPath(s string) {
