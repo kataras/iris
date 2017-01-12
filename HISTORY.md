@@ -8,9 +8,13 @@
 
 - Discussion: https://github.com/kataras/iris/issues/585
 - Test: https://github.com/kataras/iris/blob/master/http_test.go#L735
-- Example: https://github.com/iris-contrib/examples/tree/master/route_state
+- Example 1: https://github.com/iris-contrib/examples/tree/master/route_state
+- Example 2, SPA: https://github.com/iris-contrib/examples/tree/master/spa_2_using_offline_routing
 
 **What?**
+
+
+- Give priority to an API path inside a Static route
 
 ```go
 package main
@@ -21,38 +25,57 @@ import (
 
 func main() {
 
-	iris.None("/api/user/:userid", func(ctx *iris.Context) {
+	usersAPI := iris.None("/api/users/:userid", func(ctx *iris.Context) {
+		ctx.Writef("user with id: %s", ctx.Param("userid"))
+	})("api.users.id")
+
+	iris.StaticWeb("/", "./www", usersAPI)
+
+	//
+	// START THE SERVER
+	//
+	iris.Listen("localhost:8080")
+}
+
+
+```
+
+- Play with(very advanced usage, used by big companies): enable(online) or disable(offline) routes at runtime with one line of code.
+
+```go
+package main
+
+import (
+	"github.com/kataras/iris"
+)
+
+func main() {
+
+	// You can find the Route by iris.Lookup("theRouteName")
+	// you can set a route name as: myRoute := iris.Get("/mypath", handler)("theRouteName")
+	// that will set a name to the route and returns its iris.Route instance for further usage.
+	api := iris.None("/api/users/:userid", func(ctx *iris.Context) {
 		userid := ctx.Param("userid")
 		ctx.Writef("user with id: %s", userid)
-	})("user.api")
+	})("users.api")
 
-	// change the "user.api" state from offline to online and online to offline
+	// change the "users.api" state from offline to online and online to offline
 	iris.Get("/change", func(ctx *iris.Context) {
-		routeName := "user.api"
-		if iris.Lookup(routeName).IsOnline() {
+		if api.IsOnline() {
 			// set to offline
-			iris.SetRouteOffline(routeName)
+			iris.SetRouteOffline(api)
 		} else {
 			// set to online if it was not online(so it was offline)
-			iris.SetRouteOnline(routeName, iris.MethodGet)
+			iris.SetRouteOnline(api, iris.MethodGet)
 		}
 	})
 
-	//	iris.Get("/execute/:routename", func(ctx *iris.Context) {
-	//		routeName := ctx.Param("routename")
-	//		userAPICtx := ctx.ExecuteRoute(routeName)
-	//		if userAPICtx == nil {
-	//			ctx.Writef("Route with name: %s didnt' found or couldn't be validate with this request path!", routeName)
-	//		}
-	//	})
-
 	iris.Get("/execute", func(ctx *iris.Context) {
-		routeName := "user.api"
 		// change the path in order to be catcable from the ExecuteRoute
-		// ctx.Request.URL.Path = "/api/user/42"
-		// ctx.ExecRoute(routeName)
+		// ctx.Request.URL.Path = "/api/users/42"
+		// ctx.ExecRoute(iris.Route)
 		// or:
-		ctx.ExecRouteAgainst(routeName, "/api/user/42")
+		ctx.ExecRouteAgainst(api, "/api/users/42")
 	})
 
 	iris.Get("/", func(ctx *iris.Context) {
@@ -63,11 +86,11 @@ func main() {
 	// START THE SERVER
 	//
 	// STEPS:
-	// 1. navigate to http://localhost:8080/user/api/42
+	// 1. navigate to http://localhost:8080/api/users/42
 	// you should get 404 error
 	// 2. now, navigate to http://localhost:8080/change
 	// you should see a blank page
-	// 3. now, navigate to http://localhost:8080/user/api/42
+	// 3. now, navigate to http://localhost:8080/api/users/42
 	// you should see the page working, NO 404 error
 	// go back to the http://localhost:8080/change
 	// you should get 404 error again
@@ -75,6 +98,25 @@ func main() {
 	// you can do the same with group of routes and subdomains :)
 	iris.Listen(":8080")
 }
+
+```
+
+- New built'n Middleware:  `iris.Prioritize(route)` in order to give priority to a route inside other handler (used internally on StaticWeb's builder)
+
+```go
+usersAPI := iris.None("/api/users/:userid", func(ctx *iris.Context) {
+	ctx.Writef("user with id: %s", ctx.Param("userid"))
+})("api.users.id") // we need to call empty ("") in order to get its iris.Route instance
+// or ("the name of the route")
+// which later on can be found with iris.Lookup("the name of the route")
+
+static := iris.StaticHandler("/", "./www", false, false)
+// manually give a priority to the usersAPI, if not found then continue to the static handler
+iris.Get("/*file", iris.Prioritize(usersAPI), static)
+
+iris.Get("/*file", static)
+
+iris.Listen(":8080")
 
 ```
 

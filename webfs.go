@@ -14,6 +14,7 @@ type StaticHandlerBuilder interface {
 	Gzip(enable bool) StaticHandlerBuilder
 	Listing(listDirectoriesOnOff bool) StaticHandlerBuilder
 	StripPath(yesNo bool) StaticHandlerBuilder
+	Except(r ...Route) StaticHandlerBuilder
 	Build() HandlerFunc
 }
 
@@ -27,6 +28,7 @@ type webfs struct {
 	// these are init on the Build() call
 	filesystem http.FileSystem
 	once       sync.Once
+	exceptions []Route
 	handler    HandlerFunc
 }
 
@@ -88,6 +90,13 @@ func (w *webfs) StripPath(yesNo bool) StaticHandlerBuilder {
 	return w
 }
 
+// Except add a route exception,
+// gives priority to that Route over the static handler.
+func (w *webfs) Except(r ...Route) StaticHandlerBuilder {
+	w.exceptions = append(w.exceptions, r...)
+	return w
+}
+
 type (
 	noListFile struct {
 		http.File
@@ -130,7 +139,7 @@ func (w *webfs) Build() HandlerFunc {
 			fsHandler = http.StripPrefix(prefix, fileserver)
 		}
 
-		w.handler = func(ctx *Context) {
+		h := func(ctx *Context) {
 			writer := ctx.ResponseWriter
 
 			if w.gzip && ctx.clientAllowsGzip() {
@@ -143,7 +152,41 @@ func (w *webfs) Build() HandlerFunc {
 
 			fsHandler.ServeHTTP(writer, ctx.Request)
 		}
+
+		if len(w.exceptions) > 0 {
+			middleware := make(Middleware, len(w.exceptions)+1)
+			for i := range w.exceptions {
+				middleware[i] = Prioritize(w.exceptions[i])
+			}
+			middleware[len(w.exceptions)] = HandlerFunc(h)
+
+			w.handler = func(ctx *Context) {
+				ctx.Middleware = append(middleware, ctx.Middleware...)
+				ctx.Do()
+			}
+		} else {
+			w.handler = h
+		}
 	})
 
 	return w.handler
+}
+
+// StripPrefix returns a handler that serves HTTP requests
+// by removing the given prefix from the request URL's Path
+// and invoking the handler h. StripPrefix handles a
+// request for a path that doesn't begin with prefix by
+// replying with an HTTP 404 not found error.
+func StripPrefix(prefix string, h HandlerFunc) HandlerFunc {
+	if prefix == "" {
+		return h
+	}
+	return func(ctx *Context) {
+		if p := strings.TrimPrefix(ctx.Request.URL.Path, prefix); len(p) < len(ctx.Request.URL.Path) {
+			ctx.Request.URL.Path = p
+			h(ctx)
+		} else {
+			ctx.NotFound()
+		}
+	}
 }
