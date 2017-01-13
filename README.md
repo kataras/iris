@@ -39,6 +39,9 @@ If you're coming from <a href="https://nodejs.org/en/">Node.js</a> world, this i
 
 </p>
 
+<p align="center">
+<img src="https://github.com/iris-contrib/website/raw/gh-pages/assets/comics/comic1.png" />
+</p>
 
 
 Feature Overview
