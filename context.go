@@ -1007,13 +1007,32 @@ func (ctx *Context) Get(key string) interface{} {
 }
 
 // GetFmt returns a value which has this format: func(format string, args ...interface{}) string
-// if doesn't exists returns nil
-func (ctx *Context) GetFmt(key string) func(format string, args ...interface{}) string {
+// if doesn't exists returns a function which returns an empty string.
+//
+// "translate" is the key of the i18n middlweare
+// for more plaese look: https://github.com/iris-contrib/examples/tree/master/middleware_internationalization_i18n
+func (ctx *Context) getFmt(key string) func(format string, args ...interface{}) string {
 	if v, ok := ctx.Get(key).(func(format string, args ...interface{}) string); ok {
 		return v
 	}
 	return func(format string, args ...interface{}) string { return "" }
+}
 
+// TranslateLanguageContextKey & TranslateFunctionContextKey are used by i18n handlers/middleware
+// currently we have only one: https://github.com/iris-contrib/middleware/tree/master/i18n
+// but you can use these keys to override the i18n's cookie name (TranslateLanguageContextKey)
+// or to store new translate function  by using the ctx.Set(iris.TranslateFunctionContextKey, theTrFunc)
+var (
+	TranslateLanguageContextKey = "language"
+	TranslateFunctionContextKey = "translate"
+)
+
+// Translate is the i18n (localization) middleware's function, it just
+// calls the ctx.getFmt("translate").
+// "translate" is the key of the i18n middlweare
+// for more plaese look: https://github.com/iris-contrib/examples/tree/master/middleware_internationalization_i18n
+func (ctx *Context) Translate(format string, args ...interface{}) string {
+	return ctx.getFmt(TranslateFunctionContextKey)(format, args...)
 }
 
 // GetString same as Get but returns the value as string
