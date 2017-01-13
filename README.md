@@ -39,9 +39,20 @@ If you're coming from <a href="https://nodejs.org/en/">Node.js</a> world, this i
 
 </p>
 
+When humor goes, there goes civilization
+-----------
+
 <p align="center">
 <img src="https://github.com/iris-contrib/website/raw/gh-pages/assets/comics/comic1.png" />
 </p>
+
+What you say about Iris
+-----------
+
+
+[![What people say](https://github.com/iris-contrib/website/raw/gh-pages/assets/gif_link_to_yt.gif)](https://www.youtube.com/watch?v=jGx0LkuUs4A)
+
+> [click here](https://www.youtube.com/watch?v=jGx0LkuUs4A) to see more of them.
 
 
 Feature Overview
@@ -921,7 +932,7 @@ Iris does not force you to use any specific ORM or template engine. With support
 
 
 
-Benchmarks
+Benchmarks v5
 ------------
 
 
@@ -931,15 +942,6 @@ This Benchmark test aims to compare the whole HTTP request processing between Go
 ![Benchmark Wizzard July 21, 2016- Processing Time Horizontal Graph](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png)
 
 **The results have been updated on July 21, 2016**
-
-The second is an article I just found(**3 October 2016**) which compares Iris vs Nginx vs Nodejs express, it was written in Thai, so I used google to translate it to english.
-
-![Iris vs Nginx vs Nodejs express](https://github.com/iris-contrib/website/raw/gh-pages/assets/03Oct2016/iris_1.png)
-
-The results showed that the req / sec iris do best at around 70k-50k, followed by nginx and nginx-php-fpm and nodejs respectively.
-The error golang-iris and nginx work equally, followed by the final nginx and php-fpm at a ratio of 1: 1.
-
-You can read the full article [here](https://translate.google.com/translate?sl=auto&tl=en&js=y&prev=_t&hl=en&ie=UTF-8&u=http://webcache.googleusercontent.com/search?q=cache:https%3A%2F%2Fwww.ntossapo.me%2F2016%2F08%2F13%2Fnginx-vs-nginx-php-fpm-vs-go-iris-vs-express-with-wrk%2F&edit-text=&act=url).
 
 
 Testing
@@ -952,7 +954,7 @@ Versioning
 
 Current: **v6.1.2**
 
-Older: **[v5/fasthttp](https://github.com/kataras/iris/tree/5.0.0)**
+Old: **[v5/fasthttp](https://github.com/kataras/iris/tree/5.0.0)**
 
 
 Iris is a **Community-Driven** Project, waiting for your suggestions and [feature requests](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=label%3A%22feature%20request%22)!
