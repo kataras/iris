@@ -48,8 +48,7 @@ When humor goes, there goes civilization
 
 What you say about Iris
 -----------
-
-
+[![What people say](https://github.com/iris-contrib/website/raw/gh-pages/assets/gif_link_to_yt2.gif)](https://www.youtube.com/watch?v=jGx0LkuUs4A)
 [![What people say](https://github.com/iris-contrib/website/raw/gh-pages/assets/gif_link_to_yt.gif)](https://www.youtube.com/watch?v=jGx0LkuUs4A)
 
 > [click here](https://www.youtube.com/watch?v=jGx0LkuUs4A) to see more of them.
