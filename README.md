@@ -39,19 +39,13 @@ If you're coming from <a href="https://nodejs.org/en/">Node.js</a> world, this i
 
 </p>
 
-When humor goes, there goes civilization
------------
 
-<p align="center">
-<img src="https://github.com/iris-contrib/website/raw/gh-pages/assets/comics/comic1.png" />
-</p>
-
-What you say about Iris
+What The Community Says
 -----------
 [![What people say](https://github.com/iris-contrib/website/raw/gh-pages/assets/gif_link_to_yt2.gif)](https://www.youtube.com/watch?v=jGx0LkuUs4A)
 [![What people say](https://github.com/iris-contrib/website/raw/gh-pages/assets/gif_link_to_yt.gif)](https://www.youtube.com/watch?v=jGx0LkuUs4A)
 
-> [click here](https://www.youtube.com/watch?v=jGx0LkuUs4A) to see more of them.
+> [navigate here](https://www.youtube.com/watch?v=jGx0LkuUs4A) to view all Go Community's reactions.
 
 
 Feature Overview
@@ -60,6 +54,7 @@ Feature Overview
 - Focus on high performance
 - Highly customizable
 - HTTP/2 full support
+- Change the default Router's behavior
 - Hot Reload on source code changes
 - Compatible with all net/http handlers
 - Automatically install and serve certificates from https://letsencrypt.org
@@ -140,10 +135,12 @@ func main(){
 ```sh
 $ go run hellojson.go
 ```
-> TIP #1> $ iris run main.go to enable hot-reload on .go source code changes.
+> TIP: $ iris run main.go to enable hot-reload on .go source code changes.
 
-> TIP #2> iris.Config.IsDevelopment = true to monitor the changes you make in the templates.
+> TIP: iris.Config.IsDevelopment = true to monitor the changes you make in the templates.
 
+> TIP:  Want to change the default Router's behavior to something else like Gorilla's Mux?
+Go [there](https://github.com/iris-contrib/examples/tree/master/plugin_gorillamux) to learn how. 
 
 Open your browser or any other http client at http://localhost:6000/api/user/42.
 
