@@ -97,6 +97,13 @@ var (
 	Config    *Configuration
 	Logger    *log.Logger // if you want colors in your console then you should use this https://github.com/iris-contrib/logger instead.
 	Plugins   PluginContainer
+	// Router field holds the main http.Handler which can be changed.
+	// if you want to get benefit with iris' context make use of:
+	// ctx:= iris.AcquireCtx(http.ResponseWriter, *http.Request) to get the context at the beginning of your handler
+	// iris.ReleaseCtx(ctx) to release/put the context to the pool, at the very end of your custom handler.
+	//
+	// Want to change the default Router's behavior to something else like Gorilla's Mux? 
+	// See more: https://github.com/iris-contrib/plugin/tree/master/gorillamux
 	Router    http.Handler
 	Websocket *WebsocketServer
 	// Available is a channel type of bool, fired to true when the server is opened and all plugins ran
@@ -108,7 +115,7 @@ var (
 )
 
 // ResetDefault resets the iris.Default which is the instance which is used on the default iris station for
-//  iris.Get(all api functions)
+// iris.Get(all api functions)
 // iris.Config
 // iris.Logger
 // iris.Plugins
@@ -250,10 +257,13 @@ type Framework struct {
 	srv       *http.Server
 	Available chan bool
 	//
-	// Router field which can change the default iris' mux behavior
+	// Router field holds the main http.Handler which can be changed.
 	// if you want to get benefit with iris' context make use of:
 	// ctx:= iris.AcquireCtx(http.ResponseWriter, *http.Request) to get the context at the beginning of your handler
 	// iris.ReleaseCtx(ctx) to release/put the context to the pool, at the very end of your custom handler.
+	//
+	// Want to change the default Router's behavior to something else like Gorilla's Mux? 
+	// See more: https://github.com/iris-contrib/plugin/tree/master/gorillamux
 	Router http.Handler
 
 	contextPool sync.Pool
