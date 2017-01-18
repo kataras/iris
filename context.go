@@ -953,8 +953,8 @@ func (ctx *Context) ServeFile(filename string, gzipCompression bool) error {
 //
 // Use this instead of ServeFile to 'force-download' bigger files to the client
 func (ctx *Context) SendFile(filename string, destinationName string) {
-	ctx.ServeFile(filename, false)
 	ctx.ResponseWriter.Header().Set(contentDisposition, "attachment;filename="+destinationName)
+	ctx.ServeFile(filename, false)
 }
 
 // StreamWriter registers the given stream writer for populating
