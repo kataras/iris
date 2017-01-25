@@ -93,16 +93,16 @@ const (
 
 // Default iris instance entry and its public fields, use it with iris.$anyPublicFuncOrField
 var (
-	Default   *Framework
-	Config    *Configuration
-	Logger    *log.Logger // if you want colors in your console then you should use this https://github.com/iris-contrib/logger instead.
-	Plugins   PluginContainer
+	Default *Framework
+	Config  *Configuration
+	Logger  *log.Logger // if you want colors in your console then you should use this https://github.com/iris-contrib/logger instead.
+	Plugins PluginContainer
 	// Router field holds the main http.Handler which can be changed.
 	// if you want to get benefit with iris' context make use of:
 	// ctx:= iris.AcquireCtx(http.ResponseWriter, *http.Request) to get the context at the beginning of your handler
 	// iris.ReleaseCtx(ctx) to release/put the context to the pool, at the very end of your custom handler.
 	//
-	// Want to change the default Router's behavior to something else like Gorilla's Mux? 
+	// Want to change the default Router's behavior to something else like Gorilla's Mux?
 	// See more: https://github.com/iris-contrib/plugin/tree/master/gorillamux
 	Router    http.Handler
 	Websocket *WebsocketServer
@@ -262,7 +262,7 @@ type Framework struct {
 	// ctx:= iris.AcquireCtx(http.ResponseWriter, *http.Request) to get the context at the beginning of your handler
 	// iris.ReleaseCtx(ctx) to release/put the context to the pool, at the very end of your custom handler.
 	//
-	// Want to change the default Router's behavior to something else like Gorilla's Mux? 
+	// Want to change the default Router's behavior to something else like Gorilla's Mux?
 	// See more: https://github.com/iris-contrib/plugin/tree/master/gorillamux
 	Router http.Handler
 
