@@ -1,5 +1,5 @@
 <p align="center">
- <a href="https://www.gitbook.com/book/kataras/iris/details"><img  width="500" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_6_flat_alpha.png"></a>
+ <a href="https://www.gitbook.com/book/kataras/iris/details"><img  width="500" src="https://raw.githubusercontent.com/kataras/iris/master/logo.jpg" alt="Logo created by an Iris community member, @coreyworrell" ></a>
 
 
 <br/>
@@ -29,22 +29,24 @@
 
 <b>Iris</b> is the fastest HTTP/2 web framework written in Go.
 <br/>
-<b>Easy</b> to <a href="https://docs.iris-go.com">learn</a>  while it's highly customizable,
+<b>Easy</b> to <a href="https://github.com/kataras/iris/tree/master/docs">learn</a>  while it's highly customizable,
 ideally suited for <br/> both experienced and novice developers.<br/><br/>
 
-Besides the fact that Iris is faster than any alternatives you may met before, <br/> thanks to its fluent API, <b>you don't have to be an expert to work with it.</b><br/> <br/>
+If you're coming from <a href="https://nodejs.org/en/">Node.js</a> world, this is the <a href="https://github.com/expressjs/express">expressjs</a> for the <a href="https://golang.org">Go Programming Language.</a>
+<br/><br/>
 
-If you're coming from <a href="https://nodejs.org/en/">Node.js</a> world, this is the <a href="https://github.com/expressjs/express">expressjs</a>  alternative for the <a href="https://golang.org">Go Programming Language.</a>
-<br/>
+
+
+<a href="https://www.youtube.com/watch?v=jGx0LkuUs4A">
+<img src="https://github.com/iris-contrib/website/raw/gh-pages/assets/gif_link_to_yt2.gif" alt="What people say" />
+</a>
+
+<a href="https://www.youtube.com/watch?v=jGx0LkuUs4A">
+<img src="https://github.com/iris-contrib/website/raw/gh-pages/assets/gif_link_to_yt.gif" alt="What people say" />
+</a>
+
 
 </p>
-
-Iris developers around the world
------------
-[![What people say](https://github.com/iris-contrib/website/raw/gh-pages/assets/gif_link_to_yt2.gif)](https://www.youtube.com/watch?v=jGx0LkuUs4A)
-[![What people say](https://github.com/iris-contrib/website/raw/gh-pages/assets/gif_link_to_yt.gif)](https://www.youtube.com/watch?v=jGx0LkuUs4A)
-
-> [https://www.youtube.com/watch?v=jGx0LkuUs4A](https://www.youtube.com/watch?v=jGx0LkuUs4A)
 
 Installation
 -----------
@@ -123,9 +125,7 @@ Besides the fact that we have a [community chat][Chat] for questions or reports 
 
 - [Twitter](https://twitter.com/MakisMaropoulos)
 - [Facebook](https://facebook.com/kataras.gopher)
-- [Linkedin](https://gr.linkedin.com/in/%CE%B3%CE%B5%CF%81%CE%AC%CF%83%CE%B9%CE%BC%CE%BF%CF%82-%CE%BC%CE%B1%CF%81%CF%8C%CF%80%CE%BF%CF%85%CE%BB%CE%BF%CF%82-69839274)
-- [Youtube + Gplus](https://www.youtube.com/user/PrimesocialNetworks)
-- [Medium](https://medium.com/@kataras)
+- [Linkedin](https://www.linkedin.com/in/gerasimos-maropoulos)
 
 
 Versioning
