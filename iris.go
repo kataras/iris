@@ -176,6 +176,7 @@ type (
 		UseGlobal(middleware ...Handler)
 		UseGlobalFunc(middleware ...HandlerFunc)
 
+		ChangeRouter(http.Handler)
 		Lookup(routeName string) Route
 		Lookups() []Route
 		SetRouteOnline(r Route, HTTPMethod string) bool
@@ -1037,6 +1038,38 @@ func (s *Framework) UseGlobalFunc(handlersFn ...HandlerFunc) {
 	s.UseGlobal(convertToHandlers(handlersFn)...)
 }
 
+// ChangeRouter force-changes the pre-defined iris' router while RUNTIME
+// this function can be used to wrap the existing router with other.
+// You can already do all these things with plugins, this function is a sugar for the craziest among us.
+//
+// Example of its only usage:
+// https://github.com/iris-contrib/plugin/blob/master/cors/plugin.go#L22
+// https://github.com/iris-contrib/plugin/blob/master/cors/plugin.go#L25
+// https://github.com/iris-contrib/plugin/blob/master/cors/plugin.go#L28
+//
+// It's recommended that you use Plugin.PreBuild to change the router BEFORE the BUILD state.
+func ChangeRouter(h http.Handler) {
+	Default.ChangeRouter(h)
+}
+
+// ChangeRouter force-changes the pre-defined iris' router while RUNTIME
+// this function can be used to wrap the existing router with other.
+// You can already do all these things with plugins, this function is a sugar for the craziest among us.
+//
+// Example of its only usage:
+// https://github.com/iris-contrib/plugin/blob/master/cors/plugin.go#L22
+// https://github.com/iris-contrib/plugin/blob/master/cors/plugin.go#L25
+// https://github.com/iris-contrib/plugin/blob/master/cors/plugin.go#L28
+//
+// It's recommended that you use Plugin.PreBuild to change the router BEFORE the BUILD state.
+func (s *Framework) ChangeRouter(h http.Handler) {
+	s.Router = h
+	s.srv.Handler = h
+}
+
+///TODO: Inside note for author:
+// make one and only one common API interface for all iris' supported Routers(gorillamux,httprouter,corsrouter)
+
 // Lookup returns a registered route by its name
 func Lookup(routeName string) Route {
 	return Default.Lookup(routeName)
@@ -1558,7 +1591,6 @@ func (api *muxAPI) Handle(method string, registeredPath string, handlers ...Hand
 	r := api.mux.register(method, subdomain, path, middleware)
 
 	api.apiRoutes = append(api.apiRoutes, r)
-
 	// should we remove the api.apiRoutes on the .Party (new children party) ?, No, because the user maybe use this party later
 	// should we add to the 'inheritance tree' the api.apiRoutes, No, these are for this specific party only, because the user propably, will have unexpected behavior when using Use/UseFunc, Done/DoneFunc
 	return r.setName
