@@ -9,11 +9,11 @@ import (
 
 // conversionals
 const (
-	// All is the string which the Emmiter use to send a message to all
+	// All is the string which the Emitter use to send a message to all
 	All = websocket.All
-	// NotMe is the string which the Emmiter use to send a message to all except this websocket.Connection
+	// NotMe is the string which the Emitter use to send a message to all except this websocket.Connection
 	NotMe = websocket.NotMe
-	// Broadcast is the string which the Emmiter use to send a message to all except this websocket.Connection, same as 'NotMe'
+	// Broadcast is the string which the Emitter use to send a message to all except this websocket.Connection, same as 'NotMe'
 	Broadcast = websocket.Broadcast
 )
 
