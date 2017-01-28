@@ -105,7 +105,7 @@ func main(){
 	   
 	   // http://localhost:6111/users/42
        // Method: "GET"
-	   userAPI.Get("/:userid", getByIDHandler)
+	   userAPI.Get("/:id", getByIDHandler)
 	   
 	   // http://localhost:6111/users
        // Method: "POST"
