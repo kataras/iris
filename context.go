@@ -120,7 +120,6 @@ func (r *requestValues) Reset() {
 }
 
 type (
-
 	// Map is just a conversion for a map[string]interface{}
 	// should not be used inside Render when PongoEngine is used.
 	Map map[string]interface{}

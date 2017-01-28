@@ -78,7 +78,9 @@ type Configuration struct {
 	// size of the request body.
 	// If zero, DefaultMaxHeaderBytes is used.
 	MaxHeaderBytes int
-
+	// MaxRequestBodySize limit the maximum size of request body the server will read
+	// If zero, DefaultMaxRequestBodySize is used.
+	MaxRequestBodySize int64
 	// TLSNextProto optionally specifies a function to take over
 	// ownership of the provided TLS connection when an NPN/ALPN
 	// protocol upgrade has occurred. The map key is the protocol
@@ -200,7 +202,6 @@ func (c Configuration) Set(main *Configuration) {
 
 // All options starts with "Option" preffix in order to be easier to find what dev searching for
 var (
-
 	// OptionVHost is the addr or the domain that server listens to, which it's optional
 	// When to set VHost manually:
 	// 1. it's automatically setted when you're calling
@@ -256,7 +257,13 @@ var (
 			c.MaxHeaderBytes = val
 		}
 	}
-
+	// MaxRequestBodySize limit the maximum size of request body the server will read
+	// If zero, DefaultMaxRequestBodySize(10MB) is used.notice:the unit is byte here.
+	OptionMaxRequestBodySize = func(val int64) OptionSet {
+		return func(c *Configuration) {
+			c.MaxRequestBodySize = val
+		}
+	}
 	// TLSNextProto optionally specifies a function to take over
 	// ownership of the provided TLS connection when an NPN/ALPN
 	// protocol upgrade has occurred. The map key is the protocol
@@ -446,7 +453,8 @@ const (
 	//
 	// Default buffer size is 8MB
 	DefaultMaxHeaderBytes = 8096
-
+	//This is the default value (10MB) that limits the size of request body
+	DefaultMaxRequestBodySize int64 = 10 << 20
 	// DefaultReadTimeout no read client timeout
 	DefaultReadTimeout = 0
 	// DefaultWriteTimeout no serve client timeout
@@ -466,6 +474,7 @@ func DefaultConfiguration() Configuration {
 		ReadTimeout:            DefaultReadTimeout,
 		WriteTimeout:           DefaultWriteTimeout,
 		MaxHeaderBytes:         DefaultMaxHeaderBytes,
+		MaxRequestBodySize:     DefaultMaxRequestBodySize,
 		CheckForUpdates:        false,
 		CheckForUpdatesSync:    false,
 		DisablePathCorrection:  DefaultDisablePathCorrection,

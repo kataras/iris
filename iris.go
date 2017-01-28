@@ -765,6 +765,9 @@ func (s *Framework) AcquireCtx(w http.ResponseWriter, r *http.Request) *Context 
 	ctx := s.contextPool.Get().(*Context) // Changed to use the pool's New 09/07/2016, ~ -4k nanoseconds(9 bench tests) per requests (better performance)
 	ctx.ResponseWriter = acquireResponseWriter(w)
 	ctx.Request = r
+	if ctx.Request.Body != nil {
+		ctx.Request.Body = http.MaxBytesReader(w, r.Body, s.Config.MaxRequestBodySize)
+	}
 	return ctx
 }
 
