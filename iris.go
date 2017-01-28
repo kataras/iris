@@ -544,14 +544,16 @@ func (s *Framework) Serve(ln net.Listener) error {
 func (s *Framework) postServe() {
 
 	if !s.Config.DisableBanner {
-		bannerMessage := fmt.Sprintf("%s: Running at %s", time.Now().Format(s.Config.TimeFormat), s.Config.VHost)
+		dateNow := time.Now().Format(s.Config.TimeFormat)
 		// we don't print it via Logger because:
 		// 1. The banner is only 'useful' when the developer logs to terminal and no file
 		// 2. Prefix & LstdFlags options of the default s.Logger
 
 		if s.Config.DisplayFullBanner {
+			bannerMessage := fmt.Sprintf("%s: Running at %s", dateNow, s.Config.VHost)
 			fmt.Printf("%s\n\n%s\n", banner, bannerMessage)
 		} else {
+			bannerMessage := fmt.Sprintf("%s: Iris %s - Running at %s", dateNow, Version, s.Config.VHost)
 			fmt.Println(bannerMessage)
 		}
 	}
