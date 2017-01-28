@@ -59,6 +59,82 @@ The only requirement is the [Go Programming Language](https://golang.org/dl/), a
 $ go get -u github.com/kataras/iris/iris
 ```
 
+Overview
+-----------
+
+```go
+package main
+
+import (
+    "github.com/kataras/iris"
+	"github.com/kataras/go-template/html"
+)	
+
+func main(){
+
+   // 6 template engines are supported out-of-the-box:
+   //
+   // - standard html/template
+   // - amber
+   // - django
+   // - handlebars
+   // - pug(jade)
+   // - markdown
+   //
+   // Use the html standard engine for all files inside "./views" folder with extension ".html"
+   iris.UseTemplate(html.New()).Directory("./views", ".html")
+   
+  // http://localhost:6111
+  // Method: "GET"
+  // Render ./views/index.html
+  iris.Get("/", func(ctx *iris.Context){
+      ctx.Render("index.html", nil)
+  })
+  
+  // Group routes, optionally: share middleware, template layout and custom http errors.  
+  userAPI := iris.Party("/users", userAPIMiddleware).
+			 Layout("layouts/userLayout.html")
+     {
+	   // Fire userNotFoundHandler when Not Found 
+	   // inside http://localhost:6111/users/*anything
+	   userAPI.OnError(404, userNotFoundHandler)
+	   
+       // http://localhost:6111/users
+       // Method: "GET"
+       userAPI.Get("/", getAllHandler)
+	   
+	   // http://localhost:6111/users/42
+       // Method: "GET"
+	   userAPI.Get("/:userid", getByIDHandler)
+	   
+	   // http://localhost:6111/users
+       // Method: "POST"
+	   userAPI.Post("/", saveUserHandler)
+     } 
+
+	 getByIDHandler := func(ctx *iris.Context){
+	     // take the :id from the path, parse to integer
+		// and set it to the new userID local variable.
+		userID,_ := ctx.ParamInt("id")
+
+		// userRepo, imaginary database service <- your only job.
+		user := userRepo.GetByID(userID)
+
+		// send back a response to the client,
+		// .JSON: content type as application/json; charset="utf-8"
+		// iris.StatusOK: with 200 http status code.
+		//
+		// send user as it is or make use of any json valid golang type,
+		// like the iris.Map{"username" : user.Username}.
+		ctx.JSON(iris.StatusOK, user)
+	 }
+	
+  // Start the server at 0.0.0.0:6111
+  iris.Listen(":6111")
+}
+
+```
+
 Documentation
 -----------
 
