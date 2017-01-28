@@ -549,7 +549,11 @@ func (s *Framework) postServe() {
 		// 1. The banner is only 'useful' when the developer logs to terminal and no file
 		// 2. Prefix & LstdFlags options of the default s.Logger
 
-		fmt.Printf("%s\n\n%s\n", banner, bannerMessage)
+		if s.Config.DisplayFullBanner {
+			fmt.Printf("%s\n\n%s\n", banner, bannerMessage)
+		} else {
+			fmt.Println(bannerMessage)
+		}
 	}
 
 	s.Plugins.DoPostListen(s)

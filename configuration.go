@@ -150,6 +150,11 @@ type Configuration struct {
 	// Default is false
 	DisableBanner bool
 
+	// DisplayFullBanner outputs the iris full (instead of one-line banner) banner at startup
+	//
+	// Default is true
+	DisplayFullBanner bool
+
 	// LoggerOut is the destination for output
 	//
 	// Default is os.Stdout
@@ -349,6 +354,15 @@ var (
 		}
 	}
 
+	// OptionDisplayFullBanner outputs the iris full (instead of one-line banner) banner at startup
+	//
+	// Default is true
+	OptionDisplayFullBanner = func(val bool) OptionSet {
+		return func(c *Configuration) {
+			c.DisplayFullBanner = val
+		}
+	}
+
 	// OptionLoggerOut is the destination for output
 	//
 	// Default is os.Stdout
@@ -472,6 +486,7 @@ func DefaultConfiguration() Configuration {
 		EnablePathEscape:       DefaultEnablePathEscape,
 		FireMethodNotAllowed:   false,
 		DisableBanner:          false,
+		DisplayFullBanner:      true,
 		LoggerOut:              DefaultLoggerOut,
 		LoggerPreffix:          DefaultLoggerPreffix,
 		DisableTemplateEngines: false,
