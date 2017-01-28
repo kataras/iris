@@ -545,16 +545,15 @@ func (s *Framework) postServe() {
 
 	if !s.Config.DisableBanner {
 		dateNow := time.Now().Format(s.Config.TimeFormat)
+		runningBanner := fmt.Sprintf("Running at %s", s.Config.VHost)
 		// we don't print it via Logger because:
 		// 1. The banner is only 'useful' when the developer logs to terminal and no file
 		// 2. Prefix & LstdFlags options of the default s.Logger
 
 		if s.Config.DisplayFullBanner {
-			bannerMessage := fmt.Sprintf("%s: Running at %s", dateNow, s.Config.VHost)
-			fmt.Printf("%s\n\n%s\n", banner, bannerMessage)
+			fmt.Printf("%s\n\n%s: %s\n", banner, dateNow, runningBanner)
 		} else {
-			bannerMessage := fmt.Sprintf("%s: Iris %s - Running at %s", dateNow, Version, s.Config.VHost)
-			fmt.Println(bannerMessage)
+			fmt.Printf("%s: Iris %s - %s\n", dateNow, Version, runningBanner)
 		}
 	}
 
