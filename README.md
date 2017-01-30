@@ -1,6 +1,6 @@
 <p align="center">
  <a href="https://www.gitbook.com/book/kataras/iris/details">
-	<img width="500" src="https://raw.githubusercontent.com/kataras/iris/master/logo.jpg" 
+	<img width="500" src="https://raw.githubusercontent.com/kataras/iris/master/logo.jpg"
 	alt="Logo created by an Iris community member, @OneebMalik">
  </a>
 
@@ -20,7 +20,7 @@
 <br/>
 
 
-<a href="https://github.com/kataras/iris/blob/master/HISTORY.md"><img src="https://img.shields.io/badge/%20version%20-%206.1.2%20-blue.svg?style=flat-square" alt="CHANGELOG/HISTORY"></a>
+<a href="https://github.com/kataras/iris/blob/master/HISTORY.md"><img src="https://img.shields.io/badge/%20version%20-%206.1.3%20-blue.svg?style=flat-square" alt="CHANGELOG/HISTORY"></a>
 
 <a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/%20examples-repository-3362c2.svg?style=flat-square" alt="Examples"></a>
 
@@ -68,7 +68,7 @@ package main
 import (
     "github.com/kataras/iris"
 	"github.com/kataras/go-template/html"
-)	
+)
 
 func main(){
 
@@ -83,34 +83,34 @@ func main(){
    //
    // Use the html standard engine for all files inside "./views" folder with extension ".html"
    iris.UseTemplate(html.New()).Directory("./views", ".html")
-   
+
   // http://localhost:6111
   // Method: "GET"
   // Render ./views/index.html
   iris.Get("/", func(ctx *iris.Context){
       ctx.Render("index.html", nil)
   })
-  
-  // Group routes, optionally: share middleware, template layout and custom http errors.  
+
+  // Group routes, optionally: share middleware, template layout and custom http errors.
   userAPI := iris.Party("/users", userAPIMiddleware).
 			 Layout("layouts/userLayout.html")
      {
-	   // Fire userNotFoundHandler when Not Found 
+	   // Fire userNotFoundHandler when Not Found
 	   // inside http://localhost:6111/users/*anything
 	   userAPI.OnError(404, userNotFoundHandler)
-	   
+
        // http://localhost:6111/users
        // Method: "GET"
        userAPI.Get("/", getAllHandler)
-	   
+
 	   // http://localhost:6111/users/42
        // Method: "GET"
 	   userAPI.Get("/:id", getByIDHandler)
-	   
+
 	   // http://localhost:6111/users
        // Method: "POST"
 	   userAPI.Post("/", saveUserHandler)
-     } 
+     }
 
 	 getByIDHandler := func(ctx *iris.Context){
 	     // take the :id from the path, parse to integer
@@ -128,7 +128,7 @@ func main(){
 		// like the iris.Map{"username" : user.Username}.
 		ctx.JSON(iris.StatusOK, user)
 	 }
-	
+
   // Start the server at 0.0.0.0:6111
   iris.Listen(":6111")
 }
@@ -209,7 +209,7 @@ Besides the fact that we have a [community chat][Chat] for questions or reports 
 Versioning
 ------------
 
-Current: **v6.1.2**
+Current: **v6.1.3**
 
 v5: https://github.com/kataras/iris/tree/5.0.0
 

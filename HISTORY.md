@@ -2,6 +2,25 @@
 
 **How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
 
+## 6.1.2 -> 6.1.3
+
+- Added a configuration field `iris.Config.DisableBodyConsumptionOnUnmarshal`
+
+```go
+// DisableBodyConsumptionOnUnmarshal manages the reading behavior of the context's body readers/binders.
+// If setted to true then it
+// disables the body consumption by the `context.UnmarshalBody/ReadJSON/ReadXML`.
+//
+// By-default io.ReadAll` is used to read the body from the `context.Request.Body which is an `io.ReadCloser`,
+// if this field setted to true then a new buffer will be created to read from and the request body.
+// The body will not be changed and existing data before the context.UnmarshalBody/ReadJSON/ReadXML will be not consumed.
+DisableBodyConsumptionOnUnmarshal bool
+```
+
+If that option is setted to true then you can read more than one times from the same `context.Request.Body`.
+Defaults to false because the majority of developers expecting request body to be empty after unmarshal.
+
+
 ## 6.1.1 -> 6.1.2
 
 Better internalization and localization support, with ability to change the cookie's key and context's keys.

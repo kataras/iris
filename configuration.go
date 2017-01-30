@@ -150,6 +150,15 @@ type Configuration struct {
 	// Default is false
 	DisableBanner bool
 
+	// DisableBodyConsumptionOnUnmarshal manages the reading behavior of the context's body readers/binders.
+	// If setted to true then it
+	// disables the body consumption by the `context.UnmarshalBody/ReadJSON/ReadXML`.
+	//
+	// By-default io.ReadAll` is used to read the body from the `context.Request.Body which is an `io.ReadCloser`,
+	// if this field setted to true then a new buffer will be created to read from and the request body.
+	// The body will not be changed and existing data before the context.UnmarshalBody/ReadJSON/ReadXML will be not consumed.
+	DisableBodyConsumptionOnUnmarshal bool
+
 	// LoggerOut is the destination for output
 	//
 	// Default is os.Stdout
@@ -349,6 +358,19 @@ var (
 		}
 	}
 
+	// OptionDisableBodyConsumptionOnUnmarshal manages the reading behavior of the context's body readers/binders.
+	// If setted to true then it
+	// disables the body consumption by the `context.UnmarshalBody/ReadJSON/ReadXML`.
+	//
+	// By-default io.ReadAll` is used to read the body from the `context.Request.Body which is an `io.ReadCloser`,
+	// if this field setted to true then a new buffer will be created to read from and the request body.
+	// The body will not be changed and existing data before the context.UnmarshalBody/ReadJSON/ReadXML will be not consumed.
+	OptionDisableBodyConsumptionOnUnmarshal = func(val bool) OptionSet {
+		return func(c *Configuration) {
+			c.DisableBodyConsumptionOnUnmarshal = val
+		}
+	}
+
 	// OptionLoggerOut is the destination for output
 	//
 	// Default is os.Stdout
@@ -461,27 +483,28 @@ var (
 // DefaultConfiguration returns the default configuration for an Iris station, fills the main Configuration
 func DefaultConfiguration() Configuration {
 	return Configuration{
-		VHost:                  "",
-		VScheme:                "",
-		ReadTimeout:            DefaultReadTimeout,
-		WriteTimeout:           DefaultWriteTimeout,
-		MaxHeaderBytes:         DefaultMaxHeaderBytes,
-		CheckForUpdates:        false,
-		CheckForUpdatesSync:    false,
-		DisablePathCorrection:  DefaultDisablePathCorrection,
-		EnablePathEscape:       DefaultEnablePathEscape,
-		FireMethodNotAllowed:   false,
-		DisableBanner:          false,
-		LoggerOut:              DefaultLoggerOut,
-		LoggerPreffix:          DefaultLoggerPreffix,
-		DisableTemplateEngines: false,
-		IsDevelopment:          false,
-		TimeFormat:             DefaultTimeFormat,
-		Charset:                DefaultCharset,
-		Gzip:                   false,
-		Sessions:               DefaultSessionsConfiguration(),
-		Websocket:              DefaultWebsocketConfiguration(),
-		Other:                  options.Options{},
+		VHost:                             "",
+		VScheme:                           "",
+		ReadTimeout:                       DefaultReadTimeout,
+		WriteTimeout:                      DefaultWriteTimeout,
+		MaxHeaderBytes:                    DefaultMaxHeaderBytes,
+		CheckForUpdates:                   false,
+		CheckForUpdatesSync:               false,
+		DisablePathCorrection:             DefaultDisablePathCorrection,
+		EnablePathEscape:                  DefaultEnablePathEscape,
+		FireMethodNotAllowed:              false,
+		DisableBanner:                     false,
+		DisableBodyConsumptionOnUnmarshal: false,
+		LoggerOut:                         DefaultLoggerOut,
+		LoggerPreffix:                     DefaultLoggerPreffix,
+		DisableTemplateEngines:            false,
+		IsDevelopment:                     false,
+		TimeFormat:                        DefaultTimeFormat,
+		Charset:                           DefaultCharset,
+		Gzip:                              false,
+		Sessions:                          DefaultSessionsConfiguration(),
+		Websocket:                         DefaultWebsocketConfiguration(),
+		Other:                             options.Options{},
 	}
 }
 
