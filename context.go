@@ -548,6 +548,12 @@ func (ctx *Context) UnmarshalBody(v interface{}, unmarshaler Unmarshaler) error 
 		return err
 	}
 
+	if ctx.framework.Config.DisableBodyConsumptionOnUnmarshal {
+		// * remember, Request.Body has no Bytes(), we have to consume them first
+		// and after re-set them to the body, this is the only solution.
+		ctx.Request.Body = ioutil.NopCloser(bytes.NewBuffer(rawData))
+	}
+
 	// check if the v contains its own decode
 	// in this case the v should be a pointer also,
 	// but this is up to the user's custom Decode implementation*
