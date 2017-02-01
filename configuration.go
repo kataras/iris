@@ -508,7 +508,7 @@ func DefaultConfiguration() Configuration {
 		EnablePathEscape:                  DefaultEnablePathEscape,
 		FireMethodNotAllowed:              false,
 		DisableBanner:                     false,
-    DisplayFullBanner:                 true,
+		DisplayFullBanner:                 true,
 		DisableBodyConsumptionOnUnmarshal: false,
 		LoggerOut:                         DefaultLoggerOut,
 		LoggerPreffix:                     DefaultLoggerPreffix,
