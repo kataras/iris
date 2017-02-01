@@ -251,6 +251,13 @@ func testUnmarshaler(t *testing.T, tb *testBinder,
 		if write != nil {
 			write(ctx)
 		}
+
+		if iris.Config.DisableBodyConsumptionOnUnmarshal {
+			rawData, _ := ioutil.ReadAll(ctx.Request.Body)
+			if len(rawData) == 0 {
+				t.Fatalf("Expected data to NOT BE consumed by the previous UnmarshalBody call but we got empty body.")
+			}
+		}
 	}
 
 	iris.Post("/bind_req_body", h)
@@ -301,7 +308,6 @@ func TestContextBinders(t *testing.T) {
 		expectedObj.Birth + `</birth><stars>` +
 		strconv.Itoa(expectedObj.Stars) + `</stars></info>`
 
-	// JSON
 	vXML := &testBinder{&testBinderXMLData{},
 		iris.UnmarshalerFunc(xml.Unmarshal), false}
 	testUnmarshaler(
@@ -315,6 +321,18 @@ func TestContextBinders(t *testing.T) {
 		Status(iris.StatusOK).
 		Body().Equal(expectedAndPassedObjText)
 
+	// JSON with DisableBodyConsumptionOnUnmarshal
+	iris.Config.DisableBodyConsumptionOnUnmarshal = true
+	testUnmarshaler(
+		t,
+		vJSON,
+		func(ctx *iris.Context) {
+			ctx.JSON(iris.StatusOK, vJSON.vp)
+		}).
+		WithJSON(passed).
+		Expect().
+		Status(iris.StatusOK).
+		JSON().Object().Equal(expectedObject)
 }
 
 func TestContextReadForm(t *testing.T) {
