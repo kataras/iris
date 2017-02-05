@@ -27,8 +27,8 @@ func run(cli.Flags) error {
 }
 
 func runAndWatch(programPath string) {
-	rizla.DefaultDisableProgramRerunOutput = true // we don't want the banner to be shown after the first run
-	// run with the filepath.Walk method instead of file signals because
-	// some (not the majority) users' editors override the operating system's file signals
-	rizla.RunWith(rizla.WatcherFromFlag("-walk"))
+	// we don't want the banner to be shown after the first run
+	rizla.DefaultDisableProgramRerunOutput = true
+	// See https://github.com/kataras/rizla/issues/6#issuecomment-277533051
+	rizla.Run(programPath)
 }

@@ -14,13 +14,18 @@ Users should prepare their apps for:
 
 - **MOST IMPORTANT: REMOVE**  Package-level exported `iris.Default's methods and variables`, `iris.Default` will exists but methods like `iris.Handle` should be replace with `iris.Default.Handle` or `app := iris.New(); app.Handle(...); // like before, these will never change`.
    - Why?
-
+    Iris is bigger than it was, we need to keep a limit on the exported functions to help users understand the flow much easier.
 		Users often asked questions about built'n features and functions usage because they are being confused of the big public API (`iris.` vs `app := iris.New(); app.`).
 		This removal will also let me to describe the types with more sense.
-
+    
 - NEW feature: `app.Adapt(iris.Policy)` which you will be able to adapt a **custom http router**, **custom template functions**, **custom http router wrappers**, **flow events** and much more. I'll cover these on book and examples when it will be released.
 
 - Replace: `.Plugins.` with `EventPolicy`: `app.Adapt(iris.EventPolicy{ Boot: func(*iris.Framework){}} )`.
+   - Why?
+
+      To be ready and don't confuse future users with the go's plugin mechanism.
+      A 'real plugin system' is coming with go 1.8 BUT we will not use that ready because
+      they are not ready for all operating systems.
 
 - Replace: `.AcquireCtx/.ReleaseCtx` with `app.Context.Acquire/Release/Run`.
 
