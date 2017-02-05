@@ -27,17 +27,8 @@ func run(cli.Flags) error {
 }
 
 func runAndWatch(programPath string) {
-	/*
-		project := rizla.NewProject(programPath)
-		project.Name = "IRIS"
-		project.AllowReloadAfter = time.Duration(3) * time.Second
-		project.Out = rizla.NewPrinter(os.Stdout)
-		project.Err = rizla.NewPrinter(os.Stderr)
-		rizla.Add(project)
-
-		rizla.Run()
-	*/
-	// or just do that:
 	rizla.DefaultDisableProgramRerunOutput = true // we don't want the banner to be shown after the first run
-	rizla.Run(programPath)
+	// run with the filepath.Walk method instead of file signals because
+	// some (not the majority) users' editors override the operating system's file signals
+	rizla.RunWith(rizla.WatcherFromFlag("-walk"))
 }

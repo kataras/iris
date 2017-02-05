@@ -57,6 +57,18 @@ app.Get("/", indexHandler)
 ## Convert `http.Handler` to `iris.Handler` using the `iris.ToHandler`
 
 ```go
+// ToHandler converts different type styles of handlers that you
+// used to use (usually with third-party net/http middleware) to an iris.HandlerFunc.
+//
+// Supported types:
+// - .ToHandler(h http.Handler)
+// - .ToHandler(func(w http.ResponseWriter, r *http.Request))
+// - .ToHandler(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc))
+func ToHandler(handler interface{}) HandlerFunc
+```
+
+
+```go
 app := iris.New()
 
 sillyHTTPHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){
