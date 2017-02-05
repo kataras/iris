@@ -162,6 +162,21 @@ func (ctx *Context) Next() {
 	}
 }
 
+// NextHandler returns the next handler in the chain (ctx.Middleware)
+// otherwise nil.
+// Notes:
+//  If the result of NextHandler() will be executed then
+//  the ctx.Pos (which is exported for these reasons) should be manually increment(++)
+//  otherwise your app will visit twice the same handler.
+func (ctx *Context) NextHandler() Handler {
+	nextPos := ctx.Pos + 1
+	// check if it has a next middleware
+	if nextPos < len(ctx.Middleware) {
+		return ctx.Middleware[nextPos]
+	}
+	return nil
+}
+
 // StopExecution just sets the .pos to 255 in order to  not move to the next middlewares(if any)
 func (ctx *Context) StopExecution() {
 	ctx.Pos = stopExecutionPosition
