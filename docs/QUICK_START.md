@@ -6,53 +6,89 @@ go get -u github.com/kataras/iris/iris
 ```
 
 ```sh
-cat hellojson.go
+cat app.go
 ```
 
 ```go
-package main
+package iris_test
 
-import "github.com/kataras/iris"
+import (
+	"github.com/kataras/go-template/html"
+	"github.com/kataras/iris"
+)
 
-func main(){
+func main() {
+	app := iris.New()
+	// 6 template engines are supported out-of-the-box:
+	//
+	// - standard html/template
+	// - amber
+	// - django
+	// - handlebars
+	// - pug(jade)
+	// - markdown
+	//
+	// Use the html standard engine for all files inside "./views" folder with extension ".html"
+	// Defaults to:
+	app.UseTemplate(html.New()).Directory("./views", ".html")
 
-  // http://localhost:5700/api/user/42
-  // Method: "GET"
-  iris.Get("/api/user/:id", func(ctx *iris.Context){
+	// http://localhost:6111
+	// Method: "GET"
+	// Render ./views/index.html
+	app.Get("/", func(ctx *iris.Context) {
+		ctx.Render("index.html", nil)
+	})
 
-    // take the :id from the path, parse to integer
-    // and set it to the new userID local variable.
-    userID,_ := ctx.ParamInt("id")
+	// Group routes, optionally: share middleware, template layout and custom http errors.
+	userAPI := app.Party("/users", userAPIMiddleware).
+		Layout("layouts/userLayout.html")
+	{
+		// Fire userNotFoundHandler when Not Found
+		// inside http://localhost:6111/users/*anything
+		userAPI.OnError(404, userNotFoundHandler)
 
-    // userRepo, imaginary database service <- your only job.
-    user := userRepo.GetByID(userID)
+		// http://localhost:6111/users
+		// Method: "GET"
+		userAPI.Get("/", getAllHandler)
 
-    // send back a response to the client,
-    // .JSON: content type as application/json; charset="utf-8"
-    // iris.StatusOK: with 200 http status code.
-    //
-    // send user as it is or make use of any json valid golang type,
-    // like the iris.Map{"username" : user.Username}.
-    ctx.JSON(iris.StatusOK, user)
+		// http://localhost:6111/users/42
+		// Method: "GET"
+		userAPI.Get("/:id", getByIDHandler)
 
-  })
+		// http://localhost:6111/users
+		// Method: "POST"
+		userAPI.Post("/", saveUserHandler)
+	}
 
-  iris.Listen(":6000")
+	// Start the server at 0.0.0.0:6111
+	app.Listen(":6111")
+}
+
+func getByIDHandler(ctx *iris.Context) {
+	// take the :id from the path, parse to integer
+	// and set it to the new userID local variable.
+	userID, _ := ctx.ParamInt("id")
+
+	// userRepo, imaginary database service <- your only job.
+	user := userRepo.GetByID(userID)
+
+	// send back a response to the client,
+	// .JSON: content type as application/json; charset="utf-8"
+	// iris.StatusOK: with 200 http status code.
+	//
+	// send user as it is or make use of any json valid golang type,
+	// like the iris.Map{"username" : user.Username}.
+	ctx.JSON(iris.StatusOK, user)
 }
 
 ```
 
-```sh
-$ go run hellojson.go
-```
 > TIP: $ iris run main.go to enable hot-reload on .go source code changes.
 
 > TIP: iris.Config.IsDevelopment = true to monitor the changes you make in the templates.
 
 > TIP:  Want to change the default Router's behavior to something else like Gorilla's Mux?
 Go [there](https://github.com/iris-contrib/examples/tree/master/plugin_gorillamux) to learn how.
-
-Open your browser or any other http client at http://localhost:6000/api/user/42.
 
 
 ### New

@@ -50,6 +50,7 @@ If you're coming from <a href="https://nodejs.org/en/">Node.js</a> world, this i
 
 </p>
 
+
 Installation
 -----------
 
@@ -59,6 +60,9 @@ The only requirement is the [Go Programming Language](https://golang.org/dl/), a
 $ go get -u github.com/kataras/iris/iris
 ```
 
+![Benchmark Wizzard July 21, 2016- Processing Time Horizontal Graph](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png)
+
+
 Overview
 -----------
 
@@ -66,74 +70,77 @@ Overview
 package main
 
 import (
-    "github.com/kataras/iris"
 	"github.com/kataras/go-template/html"
+	"github.com/kataras/iris"
 )
 
-func main(){
+func main() {
+	app := iris.New()
+	// 6 template engines are supported out-of-the-box:
+	//
+	// - standard html/template
+	// - amber
+	// - django
+	// - handlebars
+	// - pug(jade)
+	// - markdown
+	//
+	// Use the html standard engine for all files inside "./views" folder with extension ".html"
+	// Defaults to:
+	app.UseTemplate(html.New()).Directory("./views", ".html")
 
-   // 6 template engines are supported out-of-the-box:
-   //
-   // - standard html/template
-   // - amber
-   // - django
-   // - handlebars
-   // - pug(jade)
-   // - markdown
-   //
-   // Use the html standard engine for all files inside "./views" folder with extension ".html"
-   iris.UseTemplate(html.New()).Directory("./views", ".html")
+	// http://localhost:6111
+	// Method: "GET"
+	// Render ./views/index.html
+	app.Get("/", func(ctx *iris.Context) {
+		ctx.Render("index.html", nil)
+	})
 
-  // http://localhost:6111
-  // Method: "GET"
-  // Render ./views/index.html
-  iris.Get("/", func(ctx *iris.Context){
-      ctx.Render("index.html", nil)
-  })
+	// Group routes, optionally: share middleware, template layout and custom http errors.
+	userAPI := app.Party("/users", userAPIMiddleware).
+		Layout("layouts/userLayout.html")
+	{
+		// Fire userNotFoundHandler when Not Found
+		// inside http://localhost:6111/users/*anything
+		userAPI.OnError(404, userNotFoundHandler)
 
-  // Group routes, optionally: share middleware, template layout and custom http errors.
-  userAPI := iris.Party("/users", userAPIMiddleware).
-			 Layout("layouts/userLayout.html")
-     {
-	   // Fire userNotFoundHandler when Not Found
-	   // inside http://localhost:6111/users/*anything
-	   userAPI.OnError(404, userNotFoundHandler)
+		// http://localhost:6111/users
+		// Method: "GET"
+		userAPI.Get("/", getAllHandler)
 
-       // http://localhost:6111/users
-       // Method: "GET"
-       userAPI.Get("/", getAllHandler)
+		// http://localhost:6111/users/42
+		// Method: "GET"
+		userAPI.Get("/:id", getByIDHandler)
 
-	   // http://localhost:6111/users/42
-       // Method: "GET"
-	   userAPI.Get("/:id", getByIDHandler)
+		// http://localhost:6111/users
+		// Method: "POST"
+		userAPI.Post("/", saveUserHandler)
+	}
 
-	   // http://localhost:6111/users
-       // Method: "POST"
-	   userAPI.Post("/", saveUserHandler)
-     }
-
-	 getByIDHandler := func(ctx *iris.Context){
-	     // take the :id from the path, parse to integer
-		// and set it to the new userID local variable.
-		userID,_ := ctx.ParamInt("id")
-
-		// userRepo, imaginary database service <- your only job.
-		user := userRepo.GetByID(userID)
-
-		// send back a response to the client,
-		// .JSON: content type as application/json; charset="utf-8"
-		// iris.StatusOK: with 200 http status code.
-		//
-		// send user as it is or make use of any json valid golang type,
-		// like the iris.Map{"username" : user.Username}.
-		ctx.JSON(iris.StatusOK, user)
-	 }
-
-  // Start the server at 0.0.0.0:6111
-  iris.Listen(":6111")
+	// Start the server at 0.0.0.0:6111
+	app.Listen(":6111")
 }
 
+func getByIDHandler(ctx *iris.Context) {
+	// take the :id from the path, parse to integer
+	// and set it to the new userID local variable.
+	userID, _ := ctx.ParamInt("id")
+
+	// userRepo, imaginary database service <- your only job.
+	user := userRepo.GetByID(userID)
+
+	// send back a response to the client,
+	// .JSON: content type as application/json; charset="utf-8"
+	// iris.StatusOK: with 200 http status code.
+	//
+	// send user as it is or make use of any json valid golang type,
+	// like the iris.Map{"username" : user.Username}.
+	ctx.JSON(iris.StatusOK, user)
+}
 ```
+> TIP: Execute `iris run main.go` to enable hot-reload on .go source code changes.
+
+> TIP: Set `app.Config.IsDevelopment = true` to monitor the template changes.
 
 Documentation
 -----------
