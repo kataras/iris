@@ -232,8 +232,8 @@ func New(setters ...OptionSetter) *Framework {
 	{
 		s.Websocket = NewWebsocketServer() // in order to be able to call $instance.Websocket.OnConnection
 
-		// set the sessions, look .initialize for its GC
-		s.sessions = sessions.New(sessions.DisableAutoGC(true))
+		// set the sessions
+		s.sessions = sessions.New()
 	}
 
 	// routing
@@ -339,11 +339,8 @@ func (s *Framework) Build() {
 			}
 		}
 
-		// init, starts the session manager if the Cookie configuration field is not empty
-		if s.Config.Sessions.Cookie != "" {
-			// re-set the configuration field for any case
-			s.sessions.Set(s.Config.Sessions, sessions.DisableAutoGC(false))
-		}
+		// set the user's configuration
+		s.sessions.Set(s.Config.Sessions)
 
 		if s.Config.Websocket.Endpoint != "" {
 			// register the websocket server and listen to websocket connections when/if $instance.Websocket.OnConnection called by the dev
