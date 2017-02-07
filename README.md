@@ -1,7 +1,8 @@
 <p align="center">
  <a href="https://www.gitbook.com/book/kataras/iris/details">
 	<img width="500" src="https://raw.githubusercontent.com/kataras/iris/master/logo.jpg"
-	alt="Logo created by an Iris community member, @OneebMalik">
+	alt="Logo created by an Iris community member, https://github.com/OneebMalik"
+  title="Logo created by an Iris community member, https://github.com/OneebMalik">
  </a>
 
 <br/>
@@ -20,7 +21,7 @@
 <br/>
 
 
-<a href="https://github.com/kataras/iris/blob/master/HISTORY.md"><img src="https://img.shields.io/badge/%20version%20-%206.1.3%20-blue.svg?style=flat-square" alt="CHANGELOG/HISTORY"></a>
+<a href="https://github.com/kataras/iris/blob/master/HISTORY.md"><img src="https://img.shields.io/badge/%20version%20-%206.1.4%20-blue.svg?style=flat-square" alt="CHANGELOG/HISTORY"></a>
 
 <a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/%20examples-repository-3362c2.svg?style=flat-square" alt="Examples"></a>
 
@@ -199,6 +200,7 @@ Today I spend all my days and nights coding for Iris, and I'm happy about this, 
 - Star the project, will help you to follow the upcoming features.
 - [Donate](https://github.com/kataras/iris/blob/master/DONATIONS.md), if you can afford any cost.
 - Write an article about Iris or even post a Tweet.
+- Do Pull Requests on the [iris-contrib](https://github.com/iris-contrib) organisation's repositories, like book and examples.
 
 If you are interested in contributing to the Iris project, please see the document [CONTRIBUTING](https://github.com/kataras/iris/blob/master/.github/CONTRIBUTING.md).
 
@@ -216,7 +218,7 @@ Besides the fact that we have a [community chat][Chat] for questions or reports 
 Versioning
 ------------
 
-Current: **v6.1.3**
+Current: **v6.1.4**
 
 v5: https://github.com/kataras/iris/tree/5.0.0
 

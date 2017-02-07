@@ -81,7 +81,7 @@ const (
 	// IsLongTermSupport flag is true when the below version number is a long-term-support version
 	IsLongTermSupport = false
 	// Version is the current version number of the Iris web framework
-	Version = "6.1.3"
+	Version = "6.1.4"
 
 	banner = `         _____      _
         |_   _|    (_)
@@ -315,8 +315,9 @@ func New(setters ...OptionSetter) *Framework {
 		// the whole ws configuration and websocket server is really initialized only on first OnConnection
 		s.Websocket = NewWebsocketServer(s)
 
-		// set the sessions, look .initialize for its GC
-		s.sessions = sessions.New(sessions.DisableAutoGC(true))
+		// set the sessions in order to UseSessionDB to work
+		// see Build state
+		s.sessions = sessions.New()
 	}
 
 	// routing
@@ -423,11 +424,8 @@ func (s *Framework) Build() {
 			}
 		}
 
-		// init, starts the session manager if the Cookie configuration field is not empty
-		if s.Config.Sessions.Cookie != "" {
-			// re-set the configuration field for any case
-			s.sessions.Set(s.Config.Sessions, sessions.DisableAutoGC(false))
-		}
+		// set the user's configuration (may changed after .New())
+		s.sessions.Set(s.Config.Sessions)
 
 		//  prepare the mux runtime fields again, for any case
 		s.mux.setCorrectPath(!s.Config.DisablePathCorrection)

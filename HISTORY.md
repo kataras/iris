@@ -17,7 +17,7 @@ Users should prepare their apps for:
     Iris is bigger than it was, we need to keep a limit on the exported functions to help users understand the flow much easier.
 		Users often asked questions about built'n features and functions usage because they are being confused of the big public API (`iris.` vs `app := iris.New(); app.`).
 		This removal will also let me to describe the types with more sense.
-    
+
 - NEW feature: `app.Adapt(iris.Policy)` which you will be able to adapt a **custom http router**, **custom template functions**, **custom http router wrappers**, **flow events** and much more. I'll cover these on book and examples when it will be released.
 
 - Replace: `.Plugins.` with `EventPolicy`: `app.Adapt(iris.EventPolicy{ Boot: func(*iris.Framework){}} )`.
@@ -29,18 +29,36 @@ Users should prepare their apps for:
 
 - Replace: `.AcquireCtx/.ReleaseCtx` with `app.Context.Acquire/Release/Run`.
 
-- NEW feature: able to pass an `func(http.ResponseWriter, *http.Request, http.HandlerFunc)` third-party net/http middleware like normal
-iris.HandlerFunc with `iris.ToHandler`. (I already pushed that to the current version,  because I think it will make your life easier now).
+- IMPROVEMENT: Now you're able to pass an `func(http.ResponseWriter, *http.Request, http.HandlerFunc)` third-party net/http middleware(Chain-of-responsibility pattern)  using the `iris.ToHandler` wrapper func without any other custom boilerplate.
+     * already pushed to the current version
 
-- FIX: `iris run main.go` didn't reload the app on file changes when saving a source file via some IDEs,
+
+- FIX: [iris run main.go](https://github.com/kataras/iris/tree/master/iris#run) not reloading when file changes maden by some of the IDEs,
 because they do override the operating system's fs signals. The majority of
-editors worked before but I couldn't let some developers without support. (I already pushed that to the current version)
+editors worked before but I couldn't let some developers without support.
+     * already pushed to the current version
+
 
 - FIX: custom routers not working well with static file serving, reverse routing and per-party http custom errors.
+
+- IMPROVEMENT: [Sessions manager](https://github.com/kataras/go-sessions) works even faster now.
+     * already pushed to the current version
+
 
 - NEW: HTTP/2 Push `context.Push`
 
 The full list of next version's features among with one by one steps to refactor your code in breaking-cases will be noticed here when it will be released.
+
+## 6.1.3 -> 6.1.4
+
+- FIX: [iris run main.go](https://github.com/kataras/iris/tree/master/iris#run) not reloading when file changes maden by some of the IDEs,
+because they do override the operating system's fs signals. The majority of
+editors worked before but I couldn't let some developers without support.
+
+- IMPROVEMENT: Now you're able to pass an `func(http.ResponseWriter, *http.Request, http.HandlerFunc)` third-party net/http middleware(Chain-of-responsibility pattern)  using the `iris.ToHandler` wrapper func without any other custom boilerplate.
+
+- IMPROVEMENT: [Sessions manager](https://github.com/kataras/go-sessions) works even faster now.
+
 
 ## 6.1.2 -> 6.1.3
 
