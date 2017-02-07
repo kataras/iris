@@ -58,6 +58,7 @@ editors worked before but I couldn't let some developers without support.
 - IMPROVEMENT: Now you're able to pass an `func(http.ResponseWriter, *http.Request, http.HandlerFunc)` third-party net/http middleware(Chain-of-responsibility pattern)  using the `iris.ToHandler` wrapper func without any other custom boilerplate.
 
 - IMPROVEMENT: [Sessions manager](https://github.com/kataras/go-sessions) works even faster now.
+     * Change: `context.Session().GetAll()` returns an empty map instead of nil when session has no values. 
 
 
 ## 6.1.2 -> 6.1.3
