@@ -596,17 +596,6 @@ var (
 		}
 	}
 
-	// OptionSessionsGcDuration every how much duration(GcDuration) the memory should be clear for unused cookies (GcDuration)
-	// for example: time.Duration(2)*time.Hour. it will check every 2 hours if cookie hasn't be used for 2 hours,
-	// deletes it from backend memory until the user comes back, then the session continue to work as it was
-	//
-	// Default 2 hours
-	OptionSessionsGcDuration = func(val time.Duration) OptionSet {
-		return func(c *Configuration) {
-			c.Sessions.GcDuration = val
-		}
-	}
-
 	// OptionSessionsDisableSubdomainPersistence set it to true in order dissallow your q subdomains to have access to the session cookie
 	// Defaults to false
 	OptionSessionsDisableSubdomainPersistence = func(val bool) OptionSet {
@@ -624,8 +613,6 @@ var (
 const (
 	// DefaultCookieName the secret cookie's name for sessions
 	DefaultCookieName = "irissessionid"
-	// DefaultSessionGcDuration  is the default Session Manager's GCDuration , which is 2 hours
-	DefaultSessionGcDuration = time.Duration(2) * time.Hour
 	// DefaultCookieLength is the default Session Manager's CookieLength, which is 32
 	DefaultCookieLength = 32
 )
@@ -637,9 +624,7 @@ func DefaultSessionsConfiguration() SessionsConfiguration {
 		CookieLength:                DefaultCookieLength,
 		DecodeCookie:                false,
 		Expires:                     0,
-		GcDuration:                  DefaultSessionGcDuration,
 		DisableSubdomainPersistence: false,
-		DisableAutoGC:               true,
 	}
 }
 
