@@ -1,6 +1,6 @@
 <p align="center">
  <a href="https://www.gitbook.com/book/kataras/iris/details">
-	<img width="305" height="100" src="https://raw.githubusercontent.com/kataras/iris/master/brand/iris-logo-2x.png" alt="Iris Logo" title="Iris Logo">
+	<img width="305" height="100" src="../master/brand/iris-logo-2x.png" alt="Iris Logo" title="Iris Logo">
  </a>
 
 <br/>
