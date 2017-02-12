@@ -1,8 +1,6 @@
 <p align="center">
  <a href="https://www.gitbook.com/book/kataras/iris/details">
-	<img width="500" src="https://raw.githubusercontent.com/kataras/iris/master/logo.jpg"
-	alt="Logo created by an Iris community member, https://github.com/OneebMalik"
-  title="Logo created by an Iris community member, https://github.com/OneebMalik">
+	<img width="305" height="100" src="https://raw.githubusercontent.com/kataras/iris/master/brand/iris-logo-2x.png" alt="Iris Logo" title="Iris Logo">
  </a>
 
 <br/>
