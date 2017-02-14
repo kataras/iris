@@ -148,14 +148,13 @@ func (w *ResponseRecorder) flushResponse() {
 	w.responseWriter.flushResponse()
 
 	if len(w.chunks) > 0 {
+		// ignore error
 		w.responseWriter.Write(w.chunks)
 	}
-
 }
 
 // Flush sends any buffered data to the client.
 func (w *ResponseRecorder) Flush() {
-	w.flushResponse()
 	w.responseWriter.Flush()
 	w.ResetBody()
 }
@@ -250,6 +249,7 @@ func (w *ResponseRecorder) writeTo(res ResponseWriter) {
 
 		// append the body
 		if len(w.chunks) > 0 {
+			// ignore error
 			to.Write(w.chunks)
 		}
 
