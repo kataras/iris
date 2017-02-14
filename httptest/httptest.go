@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/gavv/httpexpect"
-	"github.com/kataras/iris"
+	"github.com/iris-contrib/httpexpect"
+	"gopkg.in/kataras/iris.v6"
 )
 
 type (
@@ -66,7 +66,7 @@ func DefaultConfiguration() *Configuration {
 // New Prepares and returns a new test framework based on the api
 // is useful when you need to have more than one test framework for the same iris instance
 // usage:
-// iris.Get("/mypath", func(ctx *iris.Context){ctx.Write("my body")})
+// iris.Default.Get("/mypath", func(ctx *iris.Context){ctx.Write("my body")})
 // ...
 // e := httptest.New(iris.Default, t)
 // e.GET("/mypath").Expect().Status(iris.StatusOK).Body().Equal("my body")
@@ -79,11 +79,10 @@ func New(api *iris.Framework, t *testing.T, setters ...OptionSetter) *httpexpect
 	}
 
 	api.Set(iris.OptionDisableBanner(true))
-
+	api.Adapt(iris.DevLogger())
 	baseURL := ""
-	if !api.Plugins.PreBuildFired() {
-		api.Build()
-	}
+	api.Boot()
+
 	if !conf.ExplicitURL {
 		baseURL = api.Config.VScheme + api.Config.VHost
 		// if it's still empty then set it to the default server addr
@@ -96,7 +95,7 @@ func New(api *iris.Framework, t *testing.T, setters ...OptionSetter) *httpexpect
 	testConfiguration := httpexpect.Config{
 		BaseURL: baseURL,
 		Client: &http.Client{
-			Transport: httpexpect.NewBinder(api.Router),
+			Transport: httpexpect.NewBinder(api),
 			Jar:       httpexpect.NewJar(),
 		},
 		Reporter: httpexpect.NewAssertReporter(t),

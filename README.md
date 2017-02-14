@@ -8,7 +8,7 @@
 <br/>
 
 
-<a href="https://travis-ci.org/kataras/iris"><img src="https://img.shields.io/travis/kataras/iris.svg?style=flat-square" alt="Build Status"></a>
+<a href="https://travis-ci.org/kataras/iris"><img src="https://api.travis-ci.org/kataras/iris.svg?branch=v6&style=flat-square" alt="Build Status"></a>
 
 <a href="http://goreportcard.com/report/kataras/iris"><img src="https://img.shields.io/badge/report%20card%20-a%2B-F44336.svg?style=flat-square" alt="http://goreportcard.com/report/kataras/iris"></a>
 
@@ -21,7 +21,7 @@
 <br/>
 
 
-<a href="https://github.com/kataras/iris/blob/master/HISTORY.md"><img src="https://img.shields.io/badge/%20version%20-%206.1.4%20-blue.svg?style=flat-square" alt="CHANGELOG/HISTORY"></a>
+<a href="https://github.com/kataras/iris/blob/v6/HISTORY.md"><img src="https://img.shields.io/badge/%20version%20-%206.2.0%20-blue.svg?style=flat-square" alt="CHANGELOG/HISTORY"></a>
 
 <a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/%20examples-repository-3362c2.svg?style=flat-square" alt="Examples"></a>
 
@@ -30,9 +30,11 @@
 <a href="https://kataras.rocket.chat/channel/iris"><img src="https://img.shields.io/badge/%20community-chat-00BCD4.svg?style=flat-square" alt="Chat"></a><br/>
 <br/>
 
-<b>Iris</b> is the fastest HTTP/2 web framework written in Go.
-<br/>
-<b>Easy</b> to <a href="https://github.com/kataras/iris/tree/master/docs">learn</a>  while it's highly customizable,
+Iris provides efficient and well-designed toolbox with robust set of features to<br/> <b>create your own
+perfect high-performance web application</b> <br/>with unlimited portability using the Go Programming Language.
+
+<br/><br/>
+<b>Easy</b> to <a href="https://github.com/kataras/iris/tree/v6/docs">learn</a>  while it's highly customizable,
 ideally suited for <br/> both experienced and novice developers.<br/><br/>
 
 If you're coming from <a href="https://nodejs.org/en/">Node.js</a> world, this is the <a href="https://github.com/expressjs/express">expressjs</a> for the <a href="https://golang.org">Go Programming Language.</a>
@@ -58,10 +60,8 @@ Installation
 The only requirement is the [Go Programming Language](https://golang.org/dl/), at least v1.7.
 
 ```bash
-$ go get -u github.com/kataras/iris/iris
+$ go get gopkg.in/kataras/iris.v6
 ```
-
-![Benchmark Wizzard July 21, 2016- Processing Time Horizontal Graph](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png)
 
 
 Overview
@@ -71,26 +71,29 @@ Overview
 package main
 
 import (
-	"github.com/kataras/go-template/html"
-	"github.com/kataras/iris"
+	"gopkg.in/kataras/iris.v6"
+	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
+	"gopkg.in/kataras/iris.v6/adaptors/view"
 )
 
 func main() {
 	app := iris.New()
-	// 6 template engines are supported out-of-the-box:
+	app.Adapt(iris.Devlogger()) // adapt a logger which prints all errors to the os.Stdout
+	app.Adapt(httprouter.New()) // adapt the adaptors/httprouter or adaptors/gorillamux
+
+	// 5 template engines are supported out-of-the-box:
 	//
 	// - standard html/template
 	// - amber
 	// - django
 	// - handlebars
 	// - pug(jade)
-	// - markdown
 	//
 	// Use the html standard engine for all files inside "./views" folder with extension ".html"
-	// Defaults to:
-	app.UseTemplate(html.New()).Directory("./views", ".html")
+	templates := view.HTML("./views", ".html")
+	app.Adapt(templates)
 
-	// http://localhost:6111
+	// http://localhost:6200
 	// Method: "GET"
 	// Render ./views/index.html
 	app.Get("/", func(ctx *iris.Context) {
@@ -102,24 +105,24 @@ func main() {
 		Layout("layouts/userLayout.html")
 	{
 		// Fire userNotFoundHandler when Not Found
-		// inside http://localhost:6111/users/*anything
+		// inside http://localhost:6200/users/*anything
 		userAPI.OnError(404, userNotFoundHandler)
 
-		// http://localhost:6111/users
+		// http://localhost:6200/users
 		// Method: "GET"
 		userAPI.Get("/", getAllHandler)
 
-		// http://localhost:6111/users/42
+		// http://localhost:6200/users/42
 		// Method: "GET"
 		userAPI.Get("/:id", getByIDHandler)
 
-		// http://localhost:6111/users
+		// http://localhost:6200/users
 		// Method: "POST"
 		userAPI.Post("/", saveUserHandler)
 	}
 
-	// Start the server at 0.0.0.0:6111
-	app.Listen(":6111")
+	// Start the server at 127.0.0.1:6200
+	app.Listen(":6200")
 }
 
 func getByIDHandler(ctx *iris.Context) {
@@ -141,7 +144,7 @@ func getByIDHandler(ctx *iris.Context) {
 ```
 > TIP: Execute `iris run main.go` to enable hot-reload on .go source code changes.
 
-> TIP: Set `app.Config.IsDevelopment = true` to monitor the template changes.
+> TIP: Add `templates.Reload(true)` to monitor the template changes.
 
 Documentation
 -----------
@@ -149,11 +152,13 @@ Documentation
  <a href="https://www.gitbook.com/book/kataras/iris/details"><img align="right" width="125" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_4.jpg"></a>
 
 
- - The most important is to read [the practical guide](https://docs.iris-go.com/).
+ - The most important is to read [the practical guide](https://docs.iris-go.com/)
 
- - Navigate through [examples](https://github.com/iris-contrib/examples).
+ - Read [godocs](https://godoc.org/github.com/kataras/iris) for the details
 
- - [HISTORY.md](https://github.com//kataras/iris/tree/master/HISTORY.md) file is your best friend.
+ - Navigate through [examples](https://github.com/iris-contrib/examples)
+
+ - [HISTORY.md](https://github.com//kataras/iris/tree/v6/HISTORY.md) file is your best friend.
 
 
 Testing
@@ -162,8 +167,8 @@ Testing
 You can find RESTFUL test examples by navigating to the following links:
 
 - [gavv/_examples/iris_test.go](https://github.com/gavv/httpexpect/blob/master/_examples/iris_test.go).
-- [./http_test.go](https://github.com/kataras/iris/blob/master/http_test.go).
-- [./context_test.go](https://github.com/kataras/iris/blob/master/context_test.go).
+- [./http_test.go](https://github.com/kataras/iris/blob/v6/http_test.go).
+- [./context_test.go](https://github.com/kataras/iris/blob/v6/context_test.go).
 
 
 FAQ
@@ -218,7 +223,7 @@ Besides the fact that we have a [community chat][Chat] for questions or reports 
 Versioning
 ------------
 
-Current: **v6.1.4**
+Current: **v6.2.0**
 
 v5: https://github.com/kataras/iris/tree/5.0.0
 
@@ -228,5 +233,8 @@ License
 
 Unless otherwise noted, the source files are distributed
 under the MIT License found in the [LICENSE file](LICENSE).
+
+Note that some optional components that you may use with Iris requires
+different license agreements.
 
 [Chat]: https://kataras.rocket.chat/channel/iris

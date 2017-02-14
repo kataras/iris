@@ -2,11 +2,9 @@ package iris
 
 import (
 	"crypto/tls"
-	"io"
 	"net"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 	"time"
 
@@ -39,7 +37,7 @@ func (o OptionSet) Set(c *Configuration) {
 	o(c)
 }
 
-// Configuration the whole configuration for an iris instance ($instance.Config) or global iris instance (iris.Config)
+// Configuration the whole configuration for an iris instance ($instance.Config) or global iris instance (iris.Default.Config)
 // these can be passed via options also, look at the top of this file(configuration.go)
 //
 // Configuration is also implements the OptionSet so it's a valid option itself, this is brilliant enough
@@ -57,7 +55,7 @@ type Configuration struct {
 	// Note: this is the main's server Host, you can setup unlimited number of net/http servers
 	// listening to the $instance.Handler after the manually-called $instance.Build
 	//
-	// Default comes from iris.Listen/.Serve with iris' listeners (iris.TCP4/UNIX/TLS/LETSENCRYPT)
+	// Default comes from iris.Default.Listen/.Serve with iris' listeners (iris.TCP4/UNIX/TLS/LETSENCRYPT)
 	VHost string
 
 	// VScheme is the scheme (http:// or https://) putted at the template function '{{url }}'
@@ -66,7 +64,7 @@ type Configuration struct {
 	// 1. You didn't start the main server using $instance.Listen/ListenTLS/ListenLETSENCRYPT or $instance.Serve($instance.TCP4()/.TLS...)
 	// 2. if you're using something like nginx and have iris listening with addr only(http://) but the nginx mapper is listening to https://
 	//
-	// Default comes from iris.Listen/.Serve with iris' listeners (TCP4,UNIX,TLS,LETSENCRYPT)
+	// Default comes from iris.Default.Listen/.Serve with iris' listeners (TCP4,UNIX,TLS,LETSENCRYPT)
 	VScheme string
 
 	ReadTimeout  time.Duration // maximum duration before timing out read of the request
@@ -105,8 +103,8 @@ type Configuration struct {
 	// 3. If you as developer edited the $GOPATH/src/github/kataras or any other Iris' Go dependencies at the past
 	//    then the update process will fail.
 	//
-	// Usage: iris.Set(iris.OptionCheckForUpdates(true)) or
-	//        iris.Config.CheckForUpdates = true or
+	// Usage: iris.Default.Set(iris.OptionCheckForUpdates(true)) or
+	//        iris.Default.Config.CheckForUpdates = true or
 	//        app := iris.New(iris.OptionCheckForUpdates(true))
 	// Default is false
 	CheckForUpdates bool
@@ -159,23 +157,9 @@ type Configuration struct {
 	// The body will not be changed and existing data before the context.UnmarshalBody/ReadJSON/ReadXML will be not consumed.
 	DisableBodyConsumptionOnUnmarshal bool
 
-	// LoggerOut is the destination for output
-	//
-	// Default is os.Stdout
-	LoggerOut io.Writer
-	// LoggerPreffix is the logger's prefix to write at beginning of each line
-	//
-	// Default is [IRIS]
-	LoggerPreffix string
-
-	// DisableTemplateEngines set to true to disable loading the default template engine (html/template) and disallow the use of iris.UseEngine
+	// DisableTemplateEngines set to true to disable loading the default template engine (html/template) and disallow the use of iris.Default.UseEngine
 	// Defaults to false
 	DisableTemplateEngines bool
-
-	// IsDevelopment iris will act like a developer, for example
-	// If true then re-builds the templates on each request
-	// Defaults to false
-	IsDevelopment bool
 
 	// TimeFormat time format for any kind of datetime parsing
 	TimeFormat string
@@ -204,6 +188,7 @@ type Configuration struct {
 
 // Set implements the OptionSetter
 func (c Configuration) Set(main *Configuration) {
+	// ignore error
 	mergo.MergeWithOverwrite(main, c)
 }
 
@@ -223,7 +208,7 @@ var (
 	// Note: this is the main's server Host, you can setup unlimited number of net/http servers
 	// listening to the $instance.Handler after the manually-called $instance.Build
 	//
-	// Default comes from iris.Listen/.Serve with iris' listeners (iris.TCP4/UNIX/TLS/LETSENCRYPT)
+	// Default comes from iris.Default.Listen/.Serve with iris' listeners (iris.TCP4/UNIX/TLS/LETSENCRYPT)
 	OptionVHost = func(val string) OptionSet {
 		return func(c *Configuration) {
 			c.VHost = val
@@ -236,7 +221,7 @@ var (
 	// 1. You didn't start the main server using $instance.Listen/ListenTLS/ListenLETSENCRYPT or $instance.Serve($instance.TCP4()/.TLS...)
 	// 2. if you're using something like nginx and have iris listening with addr only(http://) but the nginx mapper is listening to https://
 	//
-	// Default comes from iris.Listen/.Serve with iris' listeners (TCP4,UNIX,TLS,LETSENCRYPT)
+	// Default comes from iris.Default.Listen/.Serve with iris' listeners (TCP4,UNIX,TLS,LETSENCRYPT)
 	OptionVScheme = func(val string) OptionSet {
 		return func(c *Configuration) {
 			c.VScheme = val
@@ -299,8 +284,8 @@ var (
 	// 3. If you as developer edited the $GOPATH/src/github/kataras or any other Iris' Go dependencies at the past
 	//    then the update process will fail.
 	//
-	// Usage: iris.Set(iris.OptionCheckForUpdates(true)) or
-	//        iris.Config.CheckForUpdates = true or
+	// Usage: iris.Default.Set(iris.OptionCheckForUpdates(true)) or
+	//        iris.Default.Config.CheckForUpdates = true or
 	//        app := iris.New(iris.OptionCheckForUpdates(true))
 	// Default is false
 	OptionCheckForUpdates = func(val bool) OptionSet {
@@ -371,41 +356,6 @@ var (
 		}
 	}
 
-	// OptionLoggerOut is the destination for output
-	//
-	// Default is os.Stdout
-	OptionLoggerOut = func(val io.Writer) OptionSet {
-		return func(c *Configuration) {
-			c.LoggerOut = val
-		}
-	}
-
-	// OptionLoggerPreffix is the logger's prefix to write at beginning of each line
-	//
-	// Default is [IRIS]
-	OptionLoggerPreffix = func(val string) OptionSet {
-		return func(c *Configuration) {
-			c.LoggerPreffix = val
-		}
-	}
-
-	// OptionDisableTemplateEngines set to true to disable loading the default template engine (html/template) and disallow the use of iris.UseEngine
-	// Default is false
-	OptionDisableTemplateEngines = func(val bool) OptionSet {
-		return func(c *Configuration) {
-			c.DisableTemplateEngines = val
-		}
-	}
-
-	// OptionIsDevelopment iris will act like a developer, for example
-	// If true then re-builds the templates on each request
-	// Default is false
-	OptionIsDevelopment = func(val bool) OptionSet {
-		return func(c *Configuration) {
-			c.IsDevelopment = val
-		}
-	}
-
 	// OptionTimeFormat time format for any kind of datetime parsing
 	OptionTimeFormat = func(val string) OptionSet {
 		return func(c *Configuration) {
@@ -459,7 +409,6 @@ const (
 	DefaultDisablePathCorrection = false
 	DefaultEnablePathEscape      = false
 	DefaultCharset               = "UTF-8"
-	DefaultLoggerPreffix         = "[IRIS] "
 	// Per-connection buffer size for requests' reading.
 	// This also limits the maximum header size.
 	//
@@ -473,11 +422,6 @@ const (
 	DefaultReadTimeout = 0
 	// DefaultWriteTimeout no serve client timeout
 	DefaultWriteTimeout = 0
-)
-
-var (
-	// DefaultLoggerOut is the default logger's output
-	DefaultLoggerOut = os.Stdout
 )
 
 // DefaultConfiguration returns the default configuration for an Iris station, fills the main Configuration
@@ -495,10 +439,6 @@ func DefaultConfiguration() Configuration {
 		FireMethodNotAllowed:              false,
 		DisableBanner:                     false,
 		DisableBodyConsumptionOnUnmarshal: false,
-		LoggerOut:                         DefaultLoggerOut,
-		LoggerPreffix:                     DefaultLoggerPreffix,
-		DisableTemplateEngines:            false,
-		IsDevelopment:                     false,
 		TimeFormat:                        DefaultTimeFormat,
 		Charset:                           DefaultCharset,
 		Gzip:                              false,
@@ -623,7 +563,7 @@ type WebsocketConfiguration struct {
 	// must match the host of the request.
 	//
 	// The default behavior is to allow all origins
-	// you can change this behavior by setting the iris.Config.Websocket.CheckOrigin = iris.WebsocketCheckSameOrigin
+	// you can change this behavior by setting the iris.Default.Config.Websocket.CheckOrigin = iris.WebsocketCheckSameOrigin
 	CheckOrigin func(r *http.Request) bool
 	// IDGenerator used to create (and later on, set)
 	// an ID for each incoming websocket connections (clients).
@@ -733,7 +673,7 @@ var (
 		ctx.EmitError(status)
 	}
 	// DefaultWebsocketCheckOrigin is the default method to allow websocket clients to connect to this server
-	// you can change this behavior by setting the iris.Config.Websocket.CheckOrigin = iris.WebsocketCheckSameOrigin
+	// you can change this behavior by setting the iris.Default.Config.Websocket.CheckOrigin = iris.WebsocketCheckSameOrigin
 	DefaultWebsocketCheckOrigin = func(r *http.Request) bool {
 		return true
 	}
