@@ -12,15 +12,15 @@ import (
 
 var (
 	// errPluginAlreadyExists returns an error with message: 'Cannot activate the same plugin again, plugin '+plugin name[+plugin description]' is already exists'
-	errPluginAlreadyExists = errors.New("Cannot use the same plugin again, '%s[%s]' is already exists")
+	errPluginAlreadyExists = errors.New("cannot use the same plugin again, '%s[%s]' is already exists")
 	// errPluginActivate returns an error with message: 'While trying to activate plugin '+plugin name'. Trace: +specific error'
-	errPluginActivate = errors.New("While trying to activate plugin '%s'. Trace: %s")
+	errPluginActivate = errors.New("while trying to activate plugin '%s'. Trace: %s")
 	// errPluginRemoveNoPlugins returns an error with message: 'No plugins are registered yet, you cannot remove a plugin from an empty list!'
-	errPluginRemoveNoPlugins = errors.New("No plugins are registered yet, you cannot remove a plugin from an empty list!")
+	errPluginRemoveNoPlugins = errors.New("no plugins are registered yet, you cannot remove a plugin from an empty list")
 	// errPluginRemoveEmptyName returns an error with message: 'Plugin with an empty name cannot be removed'
-	errPluginRemoveEmptyName = errors.New("Plugin with an empty name cannot be removed")
+	errPluginRemoveEmptyName = errors.New("plugin with an empty name cannot be removed")
 	// errPluginRemoveNotFound returns an error with message: 'Cannot remove a plugin which doesn't exists'
-	errPluginRemoveNotFound = errors.New("Cannot remove a plugin which doesn't exists")
+	errPluginRemoveNotFound = errors.New("cannot remove a plugin which doesn't exists")
 )
 
 type (

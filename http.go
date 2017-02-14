@@ -379,14 +379,14 @@ type (
 )
 
 var (
-	errMuxEntryConflictsWildcard           = errors.New("Router: Path's part: '%s' conflicts with wildcard '%s' in the route path: '%s' !")
-	errMuxEntryMiddlewareAlreadyExists     = errors.New("Router: Middleware were already registered for the path: '%s' !")
-	errMuxEntryInvalidWildcard             = errors.New("Router: More than one wildcard found in the path part: '%s' in route's path: '%s' !")
-	errMuxEntryConflictsExistingWildcard   = errors.New("Router: Wildcard for route path: '%s' conflicts with existing children in route path: '%s' !")
-	errMuxEntryWildcardUnnamed             = errors.New("Router: Unnamed wildcard found in path: '%s' !")
-	errMuxEntryWildcardInvalidPlace        = errors.New("Router: Wildcard is only allowed at the end of the path, in the route path: '%s' !")
-	errMuxEntryWildcardConflictsMiddleware = errors.New("Router: Wildcard  conflicts with existing middleware for the route path: '%s' !")
-	errMuxEntryWildcardMissingSlash        = errors.New("Router: No slash(/) were found before wildcard in the route path: '%s' !")
+	errMuxEntryConflictsWildcard           = errors.New("router: Path's part: '%s' conflicts with wildcard '%s' in the route path: '%s'")
+	errMuxEntryMiddlewareAlreadyExists     = errors.New("router: Middleware were already registered for the path: '%s'")
+	errMuxEntryInvalidWildcard             = errors.New("router: More than one wildcard found in the path part: '%s' in route's path: '%s'")
+	errMuxEntryConflictsExistingWildcard   = errors.New("router: Wildcard for route path: '%s' conflicts with existing children in route path: '%s'")
+	errMuxEntryWildcardUnnamed             = errors.New("router: Unnamed wildcard found in path: '%s'")
+	errMuxEntryWildcardInvalidPlace        = errors.New("router: Wildcard is only allowed at the end of the path, in the route path: '%s'")
+	errMuxEntryWildcardConflictsMiddleware = errors.New("router: Wildcard  conflicts with existing middleware for the route path: '%s'")
+	errMuxEntryWildcardMissingSlash        = errors.New("router: No slash(/) were found before wildcard in the route path: '%s'")
 )
 
 // getParamsLen returns the parameters length from a given path
