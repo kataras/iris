@@ -1,7 +1,6 @@
 package websocket
 
 import (
-	"github.com/imdario/mergo"
 	"net/http"
 	"time"
 )
@@ -83,7 +82,18 @@ type Config struct {
 
 // Set is the func which makes the OptionSet an OptionSetter, this is used mostly
 func (c Config) Set(main *Config) {
-	mergo.MergeWithOverwrite(main, c)
+	// just set them, validatation comes later
+	main.Error = c.Error
+	main.CheckOrigin = c.CheckOrigin
+	main.WriteTimeout = c.WriteTimeout
+	main.ReadTimeout = c.ReadTimeout
+	main.PongTimeout = c.PongTimeout
+	main.PingPeriod = c.PingPeriod
+	main.MaxMessageSize = c.MaxMessageSize
+	main.BinaryMessages = c.BinaryMessages
+	main.ReadBufferSize = c.ReadBufferSize
+	main.WriteBufferSize = c.WriteBufferSize
+	main.IDGenerator = c.IDGenerator
 }
 
 // Error sets the error handler
@@ -179,19 +189,19 @@ func (c Config) Validate() Config {
 	// 0 means no timeout but.
 	// I don't approve no timeout things,
 	// so we force the user to use timeouts otherwise the defaults.
-	if c.WriteTimeout <= 0 {
+	if c.WriteTimeout.Seconds() <= 0 {
 		c.WriteTimeout = DefaultWebsocketWriteTimeout
 	}
 
-	if c.ReadTimeout <= 0 {
+	if c.ReadTimeout.Seconds() <= 0 {
 		c.ReadTimeout = DefaultWebsocketReadTimeout
 	}
 
-	if c.PongTimeout <= 0 {
+	if c.PongTimeout.Seconds() <= 0 {
 		c.PongTimeout = DefaultWebsocketPongTimeout
 	}
 
-	if c.PingPeriod <= 0 {
+	if c.PingPeriod.Seconds() <= 0 {
 		c.PingPeriod = DefaultWebsocketPingPeriod
 	}
 

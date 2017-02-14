@@ -288,25 +288,28 @@ func New(setters ...OptionSetter) *Framework {
 		}
 
 		s.Adapt(EventPolicy{Build: func(*Framework) {
-			// first check if it's not setted already by any Boot event.
-			if s.Router.handler == nil {
-				// and most importantly, check if the user has provided a router
-				// adaptor, if not then it should panic here, iris can't run without a router attached to it
-				// and default router not any more, user should select one from ./adaptors or
-				// any other third-party adaptor may done by community.
-				// I was coding the new iris version for more than 20 days(~200+ hours of code)
-				// and I hope that once per application the addition of +1 line users have to put,
-				// is not a big deal.
-				if s.policies.RouterBuilderPolicy == nil {
-					// this is important panic and app can't continue as we said.
-					s.handlePanic(errRouterIsMissing.Format(s.Config.VHost))
-					// don't trace anything else,
-					// the detailed errRouterIsMissing message will tell the user what to do to fix that.
-					os.Exit(0)
+			// user has registered routes
+			if s.Router.repository.Len() > 0 {
+				// first check if it's not setted already by any Boot event.
+				if s.Router.handler == nil {
+					// and most importantly, check if the user has provided a router
+					// adaptor, if not then it should panic here, iris can't run without a router attached to it
+					// and default router not any more, user should select one from ./adaptors or
+					// any other third-party adaptor may done by community.
+					// I was coding the new iris version for more than 20 days(~200+ hours of code)
+					// and I hope that once per application the addition of +1 line users have to put,
+					// is not a big deal.
+					if s.policies.RouterBuilderPolicy == nil {
+						// this is important panic and app can't continue as we said.
+						s.handlePanic(errRouterIsMissing.Format(s.Config.VHost))
+						// don't trace anything else,
+						// the detailed errRouterIsMissing message will tell the user what to do to fix that.
+						os.Exit(0)
 
+					}
+					// buid the router using user's selection build policy
+					s.Router.build(s.policies.RouterBuilderPolicy)
 				}
-				// buid the router using user's selection build policy
-				s.Router.build(s.policies.RouterBuilderPolicy)
 			}
 		}})
 
