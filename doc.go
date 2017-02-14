@@ -518,4 +518,4 @@ If you enjoy what you just saw and want to learn more, please follow the below l
 
 
 */
-package iris // import "gopkg.in/kataras/iris.v6"
+package iris
