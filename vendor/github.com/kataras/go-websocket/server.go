@@ -225,6 +225,7 @@ func Handler() http.Handler {
 func (s *server) Handler() http.Handler {
 	// build the upgrader once
 	c := s.config
+
 	upgrader := websocket.Upgrader{ReadBufferSize: c.ReadBufferSize, WriteBufferSize: c.WriteBufferSize, Error: c.Error, CheckOrigin: c.CheckOrigin}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Upgrade upgrades the HTTP server connection to the WebSocket protocol.
