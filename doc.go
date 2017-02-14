@@ -36,13 +36,13 @@ By adapted a router users are able to use router's features on the route's Path,
 the rest of the HTTP API and Context's calls remains the same for all routers, as expected.
 
 - httprouter, it's a custom version of https://github.comjulienschmidt/httprouter,
-    which is edited to support iris' subdomains, reverse routing, custom http errors and a lot features,
-    it should be a bit faster than the original too because of iris' Context.
-    It uses `/mypath/:firstParameter/path/:secondParameter` and `/mypath/*wildcardParamName` .
+  which is edited to support iris' subdomains, reverse routing, custom http errors and a lot features,
+  it should be a bit faster than the original too because of iris' Context.
+  It uses `/mypath/:firstParameter/path/:secondParameter` and `/mypath/*wildcardParamName` .
 
 - gorillamuxa, it's the https://github.com/gorilla/mux which supports subdomains,
-    custom http errors, reverse routing, pattern matching via regex and the rest of the iris' features.
-    It uses `/mypath/{firstParameter:any-regex-valid-here}/path/{secondParameter}` and `/mypath/{wildcardParamName:.*}`
+  custom http errors, reverse routing, pattern matching via regex and the rest of the iris' features.
+  It uses `/mypath/{firstParameter:any-regex-valid-here}/path/{secondParameter}` and `/mypath/{wildcardParamName:.*}`
 
 Example code:
 
