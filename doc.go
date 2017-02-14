@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /*
-Iris back-end web framework provides efficient and well-designed toolbox with robust set of features to
+Package iris provides efficient and well-designed toolbox with robust set of features to
 create your own perfect high performance web application
 with unlimited portability using the Go Programming Language.
 
@@ -32,8 +32,8 @@ Basic HTTP API.
 Iris is a very pluggable ecosystem,
 router can be customized by adapting a 'RouterBuilderPolicy && RouterReversionPolicy'.
 
-With the power of Iris' router adaptors, developers are able to use any 
-third-party router's path features without any implications to the rest 
+With the power of Iris' router adaptors, developers are able to use any
+third-party router's path features without any implications to the rest
 of their API.
 
 A Developer is able to select between two out-of-the-box powerful routers:
@@ -154,64 +154,63 @@ Example `gorillamux` code:
       package main
 
       import (
-        "gopkg.in/kataras/iris.v6"
-        "gopkg.in/kataras/iris.v6/adaptors/gorillamux"
+      	"gopkg.in/kataras/iris.v6"
+      	"gopkg.in/kataras/iris.v6/adaptors/gorillamux"
       )
 
       func main() {
-        app := iris.New()
-        app.Adapt(iris.DevLogger())
-        app.Adapt(gorillamux.New())
+      	app := iris.New()
+      	app.Adapt(iris.DevLogger())
+      	app.Adapt(gorillamux.New())
 
+      	app.OnError(iris.StatusNotFound, func(ctx *iris.Context) {
+      		ctx.HTML(iris.StatusNotFound, "<h1> custom http error page </h1>")
+      	})
 
-        app.OnError(iris.StatusNotFound, func(ctx *iris.Context){
-          ctx.HTML(iris.StatusNotFound, "<h1> custom http error page </h1>")
-        })
+      	app.Get("/healthcheck", h)
 
+      	gamesMiddleware := func(ctx *iris.Context) {
+      		println(ctx.Method() + ": " + ctx.Path())
+      		ctx.Next()
+      	}
 
-        app.Get("/healthcheck", h)
+      	games := app.Party("/games", gamesMiddleware)
+      	{ // braces are optional of course, it's just a style of code
+      		games.Get("/{gameID:[0-9]+}/clans", h)
+      		games.Get("/{gameID:[0-9]+}/clans/clan/{publicID:[0-9]+}", h)
+      		games.Get("/{gameID:[0-9]+}/clans/search", h)
 
-        gamesMiddleware := func(ctx *iris.Context) {
-          println(ctx.Method() + ": " + ctx.Path())
-          ctx.Next()
-        }
+      		games.Put("/{gameID:[0-9]+}/players/{publicID:[0-9]+}", h)
+      		games.Put("/{gameID:[0-9]+}/clans/clan/{publicID:[0-9]+}", h)
 
-        games:= app.Party("/games", gamesMiddleware)
-        { // braces are optional of course, it's just a style of code
-        	 games.Get("/{gameID:[0-9]+}/clans", h)
-        	 games.Get("/{gameID:[0-9]+}/clans/clan/{publicID:[0-9]+}", h)
-        	 games.Get("/{gameID:[0-9]+}/clans/search", h)
+      		games.Post("/{gameID:[0-9]+}/clans", h)
+      		games.Post("/{gameID:[0-9]+}/players", h)
+      		games.Post("/{gameID:[0-9]+}/clans/{publicID:[0-9]+}/leave", h)
+      		games.Post("/{gameID:[0-9]+}/clans/{clanPublicID:[0-9]+}/memberships/application", h)
+      		games.Post("/{gameID:[0-9]+}/clans/{clanPublicID:[0-9]+}/memberships/application/:action", h)
+      		games.Post("/{gameID:[0-9]+}/clans/{clanPublicID:[0-9]+}/memberships/invitation", h)
+      		games.Post("/{gameID:[0-9]+}/clans/{clanPublicID:[0-9]+}/memberships/invitation/:action", h)
+      		games.Post("/{gameID:[0-9]+}/clans/{clanPublicID:[0-9]+}/memberships/delete", h)
+      		games.Post("/{gameID:[0-9]+}/clans/{clanPublicID:[0-9]+}/memberships/promote", h)
+      		games.Post("/{gameID:[0-9]+}/clans/{clanPublicID:[0-9]+}/memberships/demote", h)
+      	}
 
-        	 games.Put("/{gameID:[0-9]+}/players/{publicID:[0-9]+}", h)
-        	 games.Put("/{gameID:[0-9]+}/clans/clan/{publicID:[0-9]+}", h)
+      	app.Get("/anything/{anythingparameter:.*}", func(ctx *iris.Context) {
+      		s := ctx.Param("anythingparameter")
+      		ctx.Writef("The path after /anything is: %s", s)
+      	})
 
-        	 games.Post("/{gameID:[0-9]+}/clans", h)
-        	 games.Post("/{gameID:[0-9]+}/players", h)
-        	 games.Post("/{gameID:[0-9]+}/clans/{publicID:[0-9]+}/leave", h)
-        	 games.Post("/{gameID:[0-9]+}/clans/{clanPublicID:[0-9]+}/memberships/application", h)
-        	 games.Post("/{gameID:[0-9]+}/clans/{clanPublicID:[0-9]+}/memberships/application/:action", h)
-        	 games.Post("/{gameID:[0-9]+}/clans/{clanPublicID:[0-9]+}/memberships/invitation", h)
-        	 games.Post("/{gameID:[0-9]+}/clans/{clanPublicID:[0-9]+}/memberships/invitation/:action", h)
-        	 games.Post("/{gameID:[0-9]+}/clans/{clanPublicID:[0-9]+}/memberships/delete", h)
-        	 games.Post("/{gameID:[0-9]+}/clans/{clanPublicID:[0-9]+}/memberships/promote", h)
-        	 games.Post("/{gameID:[0-9]+}/clans/{clanPublicID:[0-9]+}/memberships/demote", h)
-        }
+      	p := app.Party("mysubdomain.")
+      	// http://mysubdomain.myhost.com/
+      	p.Get("/", h)
 
-        app.Get("/anything/{anythingparameter:.*}", func(ctx *iris.Context){
-          s := ctx.Param("anythingparameter")
-          ctx.Writef("The path after /anything is: %s",s)
-        })
-
-        mysubdomain:= app.Party("mysubdomain.")
-        // http://mysubdomain.myhost.com/
-        mysudomain.Get("/", h)
-
-        app.Listen("myhost.com:80")
+      	app.Listen("myhost.com:80")
       }
 
       func h(ctx *iris.Context) {
       	ctx.HTML(iris.StatusOK, "<h1>Path<h1/>"+ctx.Path())
       }
+
 
 
 Example `httprouter` code:
