@@ -32,17 +32,21 @@ Basic HTTP API.
 Iris is a very pluggable ecosystem,
 router can be customized by adapting a 'RouterBuilderPolicy && RouterReversionPolicy'.
 
-By adapted a router users are able to use router's features on the route's Path,
-the rest of the HTTP API and Context's calls remains the same for all routers, as expected.
+With the power of Iris' router adaptors, developers are able to use any 
+third-party router's path features without any implications to the rest 
+of their API.
 
-- httprouter, it's a custom version of https://github.comjulienschmidt/httprouter,
-  which is edited to support iris' subdomains, reverse routing, custom http errors and a lot features,
-  it should be a bit faster than the original too because of iris' Context.
-  It uses `/mypath/:firstParameter/path/:secondParameter` and `/mypath/*wildcardParamName` .
+A Developer is able to select between two out-of-the-box powerful routers:
 
-- gorillamuxa, it's the https://github.com/gorilla/mux which supports subdomains,
-  custom http errors, reverse routing, pattern matching via regex and the rest of the iris' features.
-  It uses `/mypath/{firstParameter:any-regex-valid-here}/path/{secondParameter}` and `/mypath/{wildcardParamName:.*}`
+Httprouter, it's a custom version of https://github.comjulienschmidt/httprouter,
+which is edited to support iris' subdomains, reverse routing, custom http errors and a lot features,
+it should be a bit faster than the original too because of iris' Context.
+It uses `/mypath/:firstParameter/path/:secondParameter` and `/mypath/*wildcardParamName` .
+
+Gorilla Mux, it's the https://github.com/gorilla/mux which supports subdomains,
+custom http errors, reverse routing, pattern matching via regex and the rest of the iris' features.
+It uses `/mypath/{firstParameter:any-regex-valid-here}/path/{secondParameter}` and `/mypath/{wildcardParamName:.*}`
+
 
 Example code:
 
