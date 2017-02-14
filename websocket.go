@@ -36,7 +36,7 @@ type (
 // NewWebsocketServer returns a new empty unitialized websocket server
 // it runs on first OnConnection
 func NewWebsocketServer(station *Framework) *WebsocketServer {
-	return &WebsocketServer{station: station, Server: websocket.New(), Config: DefaultWebsocketConfiguration()}
+	return &WebsocketServer{station: station, Server: websocket.New(), Config: station.Config.Websocket}
 }
 
 // NewWebsocketServer creates the client side source route and the route path Endpoint with the correct Handler
