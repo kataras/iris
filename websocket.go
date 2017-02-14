@@ -56,9 +56,9 @@ func (ws *WebsocketServer) init() {
 	clientSideLookupName := "iris-websocket-client-side"
 	ws.station.Get(c.Endpoint, ToHandler(ws.Server.Handler()))
 	// check if client side already exists
-	if ws.station.Lookup(clientSideLookupName) == nil {
+	if ws.station.Routes().Lookup(clientSideLookupName) == nil {
 		// serve the client side on domain:port/iris-ws.js
-		ws.station.StaticContent("/iris-ws.js", contentJavascript, websocket.ClientSource)(clientSideLookupName)
+		ws.station.StaticContent("/iris-ws.js", contentJavascript, websocket.ClientSource).ChangeName(clientSideLookupName)
 	}
 
 	if c.CheckOrigin == nil {
@@ -78,9 +78,9 @@ func (ws *WebsocketServer) init() {
 		ReadBufferSize:  c.ReadBufferSize,
 		WriteBufferSize: c.WriteBufferSize,
 		Error: func(w http.ResponseWriter, r *http.Request, status int, reason error) {
-			ctx := ws.station.AcquireCtx(w, r)
-			c.Error(ctx, status, reason)
-			ws.station.ReleaseCtx(ctx)
+			ws.station.Context.Run(w, r, func(ctx *Context) {
+				c.Error(ctx, status, reason)
+			})
 		},
 		CheckOrigin: c.CheckOrigin,
 		IDGenerator: c.IDGenerator,

@@ -1,4 +1,4 @@
-package main // import "github.com/kataras/iris/iris"
+package main
 
 /*
 
