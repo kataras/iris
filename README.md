@@ -25,7 +25,7 @@
 
 <a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/%20examples-repository-3362c2.svg?style=flat-square" alt="Examples"></a>
 
-<a href="https://docs.iris-go.com"><img src="https://img.shields.io/badge/%20docs-reference-5272B4.svg?style=flat-square" alt="Practical Guide/Docs"></a>
+<a href="https://godoc.org/gopkg.in/kataras/iris.v6"><img src="https://img.shields.io/badge/%20docs-reference-5272B4.svg?style=flat-square" alt="Practical Guide/Docs"></a>
 
 <a href="https://kataras.rocket.chat/channel/iris"><img src="https://img.shields.io/badge/%20community-chat-00BCD4.svg?style=flat-square" alt="Chat"></a><br/>
 <br/>
@@ -34,7 +34,7 @@ Iris provides efficient and well-designed toolbox with robust set of features to
 perfect high-performance web application</b> <br/>with unlimited portability using the Go Programming Language.
 
 <br/><br/>
-<b>Easy</b> to <a href="https://github.com/kataras/iris/tree/v6/docs">learn</a>  while it's highly customizable,
+<b>Easy</b> to <a href="https://godoc.org/gopkg.in/kataras/iris.v6">learn</a>  while it's highly customizable,
 ideally suited for <br/> both experienced and novice developers.<br/><br/>
 
 If you're coming from <a href="https://nodejs.org/en/">Node.js</a> world, this is the <a href="https://github.com/expressjs/express">expressjs</a> for the <a href="https://golang.org">Go Programming Language.</a>
@@ -152,9 +152,9 @@ Documentation
  <a href="https://www.gitbook.com/book/kataras/iris/details"><img align="right" width="125" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_4.jpg"></a>
 
 
- - The most important is to read [the practical guide](https://docs.iris-go.com/)
+ - The most important is to know where to find the [details](https://godoc.org/gopkg.in/kataras/iris.v6)
 
- - Read [godocs](https://godoc.org/github.com/kataras/iris) for the details
+ - Read [the practical guide](https://docs.iris-go.com/)
 
  - Navigate through [examples](https://github.com/iris-contrib/examples)
 
