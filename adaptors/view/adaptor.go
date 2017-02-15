@@ -1,3 +1,5 @@
+// Package view is the adaptor of the 5 template engines
+// as written by me at https://github.com/kataras/go-template
 package view
 
 import (

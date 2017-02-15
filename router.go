@@ -80,6 +80,9 @@ Edit your main .go source file to adapt one of these routers and restart your ap
 		// right below the iris.New()
 		app.Adapt(httprouter.New()) // <--- and this line were missing.
 
+		// the rest of your source code...
+		// ...
+		
 		app.Listen("%s")
 	}
 
