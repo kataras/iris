@@ -37,6 +37,7 @@ Changes:
 - Remove `context.RenderTemplateSource` you should make a new template file and use the `iris.Render` to specify an `io.Writer` like `bytes.Buffer`
 - Remove  `plugins`, replaced with more pluggable echosystem that I designed from zero on this release, named `Policy` [Adaptors](https://github.com/kataras/iris/tree/master/adaptors) (all plugins have been converted, fixed and improvement, except the iriscontrol).
 - `context.Log(string,...interface{})` -> `context.Log(iris.LogMode, string)`
+- Remove `.Config.Websocket` , replaced with the `kataras/iris/adaptors/websocket.Config` adaptor.
 
 - https://github.com/iris-contrib/plugin      ->  https://github.com/iris-contrib/adaptors
 
@@ -859,18 +860,208 @@ editors worked before but I couldn't let some developers without support.
 
 ### Websockets
 
-There are many internal improvements to the [websocket server](https://github.com/kataras/go-websocket), and it's
-operating slighty faster.
+There are many internal improvements to the websocket server, it
+operates slighty faster to.
 
-The kataras/go-websocket library, which `app.OnConnection` is refering to, will not be changed, its API will still remain.
-I am not putting anything new there (I doubt if any bug is available to fix, it's very simple and it just works).
 
-I started the kataras/go-websocket back then because I wanted a simple and fast websocket server for
-the fasthttp iris' version and back then no one did that before.
-Now(after v6) iris is compatible with any net/http websocket library that already created by third-parties.
+Websocket is an Adaptor too and you can edit more configuration fields than before.
+No Write and Read timeout by default, you have to set the fields if you want to enable timeout.
 
-If the iris' websocket feature does not cover your app's needs, you can simple use any other
-library for websockets, like the Golang's compatible to `socket.io`, example:
+Below you'll see the before and the after, keep note that the static and templates didn't changed, so I am not putting the whole
+html and javascript sources here, you can run the full examples from [here](https://github.com/kataras/iris/tree/6.2/adaptors/websocket/_examples).
+
+**BEFORE:***
+
+```go
+
+package main
+
+import (
+	"fmt" // optional
+
+	"github.com/kataras/iris"
+)
+
+type clientPage struct {
+	Title string
+	Host  string
+}
+
+func main() {
+	iris.StaticWeb("/js", "./static/js")
+
+	iris.Get("/", func(ctx *iris.Context) {
+		ctx.Render("client.html", clientPage{"Client Page", ctx.Host()})
+	})
+
+	// the path which the websocket client should listen/registed to ->
+	iris.Config.Websocket.Endpoint = "/my_endpoint"
+	// by-default all origins are accepted, you can change this behavior by setting:
+	// iris.Config.Websocket.CheckOrigin
+
+	var myChatRoom = "room1"
+	iris.Websocket.OnConnection(func(c iris.WebsocketConnection) {
+		// Request returns the (upgraded) *http.Request of this connection
+		// avoid using it, you normally don't need it,
+		// websocket has everything you need to authenticate the user BUT if it's necessary
+		// then  you use it to receive user information, for example: from headers.
+
+		// httpRequest := c.Request()
+		// fmt.Printf("Headers for the connection with ID: %s\n\n", c.ID())
+		// for k, v := range httpRequest.Header {
+		// fmt.Printf("%s = '%s'\n", k, strings.Join(v, ", "))
+		// }
+
+		// join to a room (optional)
+		c.Join(myChatRoom)
+
+		c.On("chat", func(message string) {
+			if message == "leave" {
+				c.Leave(myChatRoom)
+				c.To(myChatRoom).Emit("chat", "Client with ID: "+c.ID()+" left from the room and cannot send or receive message to/from this room.")
+				c.Emit("chat", "You have left from the room: "+myChatRoom+" you cannot send or receive any messages from others inside that room.")
+				return
+			}
+			// to all except this connection ->
+			// c.To(iris.Broadcast).Emit("chat", "Message from: "+c.ID()+"-> "+message)
+			// to all connected clients: c.To(iris.All)
+
+			// to the client itself ->
+			//c.Emit("chat", "Message from myself: "+message)
+
+			//send the message to the whole room,
+			//all connections are inside this room will receive this message
+			c.To(myChatRoom).Emit("chat", "From: "+c.ID()+": "+message)
+		})
+
+		// or create a new leave event
+		// c.On("leave", func() {
+		// 	c.Leave(myChatRoom)
+		// })
+
+		c.OnDisconnect(func() {
+			fmt.Printf("Connection with ID: %s has been disconnected!\n", c.ID())
+
+		})
+	})
+
+	iris.Listen(":8080")
+}
+
+
+
+```
+
+
+**AFTER**
+```go
+package main
+
+import (
+	"fmt" // optional
+
+	"gopkg.in/kataras/iris.v6"
+	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
+	"gopkg.in/kataras/iris.v6/adaptors/view"
+	"gopkg.in/kataras/iris.v6/adaptors/websocket"
+)
+
+type clientPage struct {
+	Title string
+	Host  string
+}
+
+func main() {
+	app := iris.New()
+	app.Adapt(iris.DevLogger())                  // enable all (error) logs
+	app.Adapt(httprouter.New())                  // select the httprouter as the servemux
+	app.Adapt(view.HTML("./templates", ".html")) // select the html engine to serve templates
+
+	ws := websocket.New(websocket.Config{
+		// the path which the websocket client should listen/registed to,
+		Endpoint: "/my_endpoint",
+		// the client-side javascript static file path
+		// which will be served by Iris.
+		// default is /iris-ws.js
+		// if you change that you have to change the bottom of templates/client.html
+		// script tag:
+		ClientSourcePath: "/iris-ws.js",
+		//
+		// Set the timeouts, 0 means no timeout
+		// websocket has more configuration, go to ../../config.go for more:
+		// WriteTimeout: 0,
+		// ReadTimeout:  0,
+		// by-default all origins are accepted, you can change this behavior by setting:
+		// CheckOrigin: (r *http.Request ) bool {},
+		//
+		//
+		// IDGenerator used to create (and later on, set)
+		// an ID for each incoming websocket connections (clients).
+		// The request is an argument which you can use to generate the ID (from headers for example).
+		// If empty then the ID is generated by DefaultIDGenerator: randomString(64):
+		// IDGenerator func(ctx *iris.Context) string {},
+	})
+
+	app.Adapt(ws) // adapt the websocket server, you can adapt more than one with different Endpoint
+
+	app.StaticWeb("/js", "./static/js") // serve our custom javascript code
+
+	app.Get("/", func(ctx *iris.Context) {
+		ctx.Render("client.html", clientPage{"Client Page", ctx.Host()})
+	})
+
+	var myChatRoom = "room1"
+
+	ws.OnConnection(func(c websocket.Connection) {
+		// Context returns the (upgraded) *iris.Context of this connection
+		// avoid using it, you normally don't need it,
+		// websocket has everything you need to authenticate the user BUT if it's necessary
+		// then  you use it to receive user information, for example: from headers.
+
+		// ctx := c.Context()
+
+		// join to a room (optional)
+		c.Join(myChatRoom)
+
+		c.On("chat", func(message string) {
+			if message == "leave" {
+				c.Leave(myChatRoom)
+				c.To(myChatRoom).Emit("chat", "Client with ID: "+c.ID()+" left from the room and cannot send or receive message to/from this room.")
+				c.Emit("chat", "You have left from the room: "+myChatRoom+" you cannot send or receive any messages from others inside that room.")
+				return
+			}
+			// to all except this connection ->
+			// c.To(websocket.Broadcast).Emit("chat", "Message from: "+c.ID()+"-> "+message)
+			// to all connected clients: c.To(websocket.All)
+
+			// to the client itself ->
+			//c.Emit("chat", "Message from myself: "+message)
+
+			//send the message to the whole room,
+			//all connections are inside this room will receive this message
+			c.To(myChatRoom).Emit("chat", "From: "+c.ID()+": "+message)
+		})
+
+		// or create a new leave event
+		// c.On("leave", func() {
+		// 	c.Leave(myChatRoom)
+		// })
+
+		c.OnDisconnect(func() {
+			fmt.Printf("Connection with ID: %s has been disconnected!\n", c.ID())
+		})
+	})
+
+	app.Listen(":8080")
+}
+
+```
+
+
+
+
+If the iris' websocket feature does not cover your app's needs, you can simply use any other
+library for websockets that you used to use, like the Golang's compatible to `socket.io`, simple example:
 
 ```go
 package main
