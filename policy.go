@@ -31,6 +31,7 @@ type (
 		RouterWrapperPolicy
 		RenderPolicy
 		TemplateFuncsPolicy
+		SessionsPolicy
 	}
 )
 
@@ -70,6 +71,8 @@ func (p Policies) Adapt(frame *Policies) {
 	if p.TemplateFuncsPolicy != nil {
 		p.TemplateFuncsPolicy.Adapt(frame)
 	}
+
+	p.SessionsPolicy.Adapt(frame)
 
 }
 
@@ -428,5 +431,97 @@ func (t TemplateFuncsPolicy) Adapt(frame *Policies) {
 				frame.TemplateFuncsPolicy[k] = v
 			}
 		}
+	}
+}
+
+type (
+	// Author's notes:
+	// session manager can work as a middleware too
+	// but we want an easy-api for the user
+	// as we did before with: context.Session().Set/Get...
+	// these things cannot be done with middleware and sessions is a critical part of an application
+	// which needs attention, so far we used the kataras/go-sessions which I spent many weeks to create
+	// and that time has not any known bugs or any other issues, it's fully featured.
+	// BUT user may want to use other session library and in the same time users should be able to use
+	// iris' api for sessions from context, so a policy is that we need, the policy will contains
+	// the Start(responsewriter, request) and the Destroy(responsewriter, request)
+	// (keep note that this Destroy is not called at the end of a handler, Start does its job without need to end something
+	// sessions are setting in real time, when the user calls .Set ),
+	// the Start(responsewriter, request) will return a 'Session' which will contain the API for context.Session() , it should be
+	// rich, as before, so the interface will be a clone of the kataras/go-sessions/Session.
+	// If the user wants to use other library and that library missing features that kataras/go-sesisons has
+	// then the user should make an empty implementation of these calls in order to work.
+	// That's no problem, before they couldn't adapt any session manager, now they will can.
+	//
+	// The databases or stores registration will be in the session manager's responsibility,
+	// as well the DestroyByID and DestroyAll (I'm calling these with these names because
+	//                                        I take as base the kataras/go-sessions,
+	//                                        I have no idea if other session managers
+	//                                        supports these things, if not then no problem,
+	//                                        these funcs will be not required by the sessions policy)
+	//
+	// ok let's begin.
+
+	// Session should expose the SessionsPolicy's end-user API.
+	// This will be returned at the sess := context.Session().
+	Session interface {
+		ID() string
+		Get(string) interface{}
+		HasFlash() bool
+		GetFlash(string) interface{}
+		GetString(key string) string
+		GetFlashString(string) string
+		GetInt(key string) (int, error)
+		GetInt64(key string) (int64, error)
+		GetFloat32(key string) (float32, error)
+		GetFloat64(key string) (float64, error)
+		GetBoolean(key string) (bool, error)
+		GetAll() map[string]interface{}
+		GetFlashes() map[string]interface{}
+		VisitAll(cb func(k string, v interface{}))
+		Set(string, interface{})
+		SetFlash(string, interface{})
+		Delete(string)
+		DeleteFlash(string)
+		Clear()
+		ClearFlashes()
+	}
+
+	// SessionsPolicy is the policy for a session manager.
+	//
+	// A SessionsPolicy should be responsible to Start a sesion based
+	// on raw http.ResponseWriter and http.Request, which should return
+	// a compatible iris.Session interface, type. If the external session manager
+	// doesn't qualifies, then the user should code the rest of the functions with empty implementation.
+	//
+	// A SessionsPolicy should be responsible to Destory a session based
+	// on the http.ResponseWriter and http.Request, this function should works individually.
+	//
+	// No iris.Context required from users. In order to be able to adapt any external session manager.
+	//
+	// The SessionsPolicy should be adapted once.
+	SessionsPolicy struct {
+		// Start should starts the session for the particular net/http request
+		Start func(http.ResponseWriter, *http.Request) Session
+
+		// Destroy should kills the net/http session and remove the associated cookie
+		// Keep note that: Destroy should not called at the end of any handler, it's an independent func.
+		// Start should set
+		// the values at realtime and if manager doesn't supports these
+		// then the user manually have to call its 'done' func inside the handler.
+		Destroy func(http.ResponseWriter, *http.Request)
+	}
+)
+
+// Adapt adaps a SessionsPolicy object to the main *Policies.
+//
+// Remember: Each policy is an adaptor.
+// An adaptor should contains one or more policies too.
+func (s SessionsPolicy) Adapt(frame *Policies) {
+	if s.Start != nil {
+		frame.SessionsPolicy.Start = s.Start
+	}
+	if s.Destroy != nil {
+		frame.SessionsPolicy.Destroy = s.Destroy
 	}
 }

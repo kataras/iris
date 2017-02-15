@@ -855,8 +855,121 @@ editors worked before but I couldn't let some developers without support.
 
 ### Sessions
 
-- IMPROVEMENT: [Sessions manager](https://github.com/kataras/go-sessions) works even faster now.
 
+Sessions manager is also an Adaptor now, `iris.SessionsPolicy`.
+So far we used the `kataras/go-sessions`, you could always use other session manager ofcourse but you would lose the `context.Session()`
+and its returning value, the `iris.Session` now.
+
+`SessionsPolicy` gives the developers the opportunity to adapt any,
+compatible with a particular simple interface(Start and Destroy methods), third-party sessions managers.
+
+- The API for sessions inside context is the same, no  matter what session manager you wanna to adapt.
+- The API for sessions inside context didn't changed, it's the same as you knew it.
+
+- Iris, of course, has built'n `SessionsPolicy` adaptor(the kataras/go-sessions: edited to remove fasthttp dependencies).
+    - Sessions manager works even faster now and a bug fixed for some browsers.
+
+- Functions like, adding a database or store(i.e: `UseDatabase`) depends on the session manager of your choice,
+Iris doesn't requires these things
+to adapt a package as a session manager. So `iris.UseDatabase` has been removed and depends on the `mySessions.UseDatabase` you 'll see below.
+
+- `iris.DestroySessionByID and iris.DestroyAllSessions` have been also removed, depends on the session manager of your choice, `mySessions.DestroyByID and mySessions.DestroyAll`  should do the job now.
+
+
+> Don't worry about forgetting to adapt any feature that you use inside Iris, Iris will print you a how-to-fix message at iris.DevMode log level.
+
+**[Example](https://github.com/kataras/iris/tree/6.2/adaptors/sessions/_example) code:**
+
+```go
+package main
+
+import (
+	"time"
+
+	"gopkg.in/kataras/iris.v6"
+	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
+	"gopkg.in/kataras/iris.v6/adaptors/sessions"
+)
+
+func main() {
+	app := iris.New()
+	app.Adapt(iris.DevLogger()) // enable all (error) logs
+	app.Adapt(httprouter.New()) // select the httprouter as the servemux
+
+	mySessions := sessions.New(sessions.Config{
+		// Cookie string, the session's client cookie name, for example: "mysessionid"
+		//
+		// Defaults to "irissessionid"
+		Cookie: "mysessionid",
+		// base64 urlencoding,
+		// if you have strange name cookie name enable this
+		DecodeCookie: false,
+		// it's time.Duration, from the time cookie is created, how long it can be alive?
+		// 0 means no expire.
+		// -1 means expire when browser closes
+		// or set a value, like 2 hours:
+		Expires: time.Hour * 2,
+		// the length of the sessionid's cookie's value
+		CookieLength: 32,
+		// if you want to invalid cookies on different subdomains
+		// of the same host, then enable it
+		DisableSubdomainPersistence: false,
+	})
+
+	// OPTIONALLY:
+	// import "gopkg.in/kataras/iris.v6/adaptors/sessions/sessiondb/redis"
+	// or import "github.com/kataras/go-sessions/sessiondb/$any_available_community_database"
+	// mySessions.UseDatabase(redis.New(...))
+
+	app.Adapt(mySessions) // Adapt the session manager we just created.
+
+	app.Get("/", func(ctx *iris.Context) {
+		ctx.Writef("You should navigate to the /set, /get, /delete, /clear,/destroy instead")
+	})
+	app.Get("/set", func(ctx *iris.Context) {
+
+		//set session values
+		ctx.Session().Set("name", "iris")
+
+		//test if setted here
+		ctx.Writef("All ok session setted to: %s", ctx.Session().GetString("name"))
+	})
+
+	app.Get("/get", func(ctx *iris.Context) {
+		// get a specific key, as string, if no found returns just an empty string
+		name := ctx.Session().GetString("name")
+
+		ctx.Writef("The name on the /set was: %s", name)
+	})
+
+	app.Get("/delete", func(ctx *iris.Context) {
+		// delete a specific key
+		ctx.Session().Delete("name")
+	})
+
+	app.Get("/clear", func(ctx *iris.Context) {
+		// removes all entries
+		ctx.Session().Clear()
+	})
+
+	app.Get("/destroy", func(ctx *iris.Context) {
+
+		//destroy, removes the entire session and cookie
+		ctx.SessionDestroy()
+		msg := "You have to refresh the page to completely remove the session (browsers works this way, it's not iris-specific.)"
+
+		ctx.Writef(msg)
+		ctx.Log(iris.DevMode, msg)
+	}) // Note about destroy:
+	//
+	// You can destroy a session outside of a handler too, using the:
+	// mySessions.DestroyByID
+	// mySessions.DestroyAll
+
+	app.Listen(":8080")
+}
+
+```
 
 ### Websockets
 

@@ -1,3 +1,8 @@
+// Package typescript provides a typescript compiler with hot-reloader
+// and optionally a cloud-based editor, called 'alm-tools'.
+// typescript (by microsoft) and alm-tools (by basarat) have their own (open-source) licenses
+// the tools are not used directly by this adaptor, but it's good to know where you can find
+// the software.
 package typescript
 
 import (

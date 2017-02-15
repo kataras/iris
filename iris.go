@@ -26,7 +26,6 @@ import (
 	"github.com/kataras/go-errors"
 	"github.com/kataras/go-fs"
 	"github.com/kataras/go-serializer"
-	"github.com/kataras/go-sessions"
 )
 
 const (
@@ -70,9 +69,8 @@ type Framework struct {
 	ln             net.Listener
 	closedManually bool
 
-	once     sync.Once
-	Config   *Configuration
-	sessions sessions.Sessions
+	once   sync.Once
+	Config *Configuration
 }
 
 var defaultGlobalLoggerOuput = log.New(os.Stdout, "[iris] ", log.LstdFlags)
@@ -234,22 +232,6 @@ func New(setters ...OptionSetter) *Framework {
 
 		}
 
-	}
-
-	{
-		//  +------------------------------------------------------------+
-		//  | Module Name: Sessions                                      |
-		//  | On Init: Attach a session manager with empty config        |
-		//  | On Build: Set the configuration if allowed                 |
-		//  +------------------------------------------------------------+
-
-		// set the sessions in order to UseSessionDB to work
-		s.sessions = sessions.New()
-		// On Build:
-		s.Adapt(EventPolicy{Build: func(*Framework) {
-			// re-set the configuration field to update users configuration
-			s.sessions.Set(s.Config.Sessions)
-		}})
 	}
 
 	{
@@ -645,32 +627,6 @@ func (s *Framework) Adapt(policies ...Policy) {
 	}
 }
 
-// UseSessionDB registers a session database, you can register more than one
-// accepts a session database which implements a Load(sid string) map[string]interface{} and an Update(sid string, newValues map[string]interface{})
-// the only reason that a session database will be useful for you is when you want to keep the session's values/data after the app restart
-// a session database doesn't have write access to the session, it doesn't accept the context, so forget 'cookie database' for sessions, I will never allow that, for your protection.
-//
-// Note: Don't worry if no session database is registered, your context.Session will continue to work.
-func (s *Framework) UseSessionDB(db sessions.Database) {
-	s.sessions.UseDatabase(db)
-}
-
-// DestroySessionByID removes the session entry
-// from the server-side memory (and database if registered).
-// Client's session cookie will still exist but it will be reseted on the next request.
-//
-// It's safe to use it even if you are not sure if a session with that id exists.
-func (s *Framework) DestroySessionByID(sid string) {
-	s.sessions.DestroyByID(sid)
-}
-
-// DestroyAllSessions removes all sessions
-// from the server-side memory (and database if registered).
-// Client's session cookie will still exist but it will be reseted on the next request.
-func (s *Framework) DestroyAllSessions() {
-	s.sessions.DestroyAll()
-}
-
 // cachedMuxEntry is just a wrapper for the Cache functionality
 // it seems useless but I prefer to keep the cached handler on its own memory stack,
 // reason:  no clojures hell in the Cache function
@@ -831,9 +787,13 @@ Edit your main .go source file to adapt one of these and restart your app.
 
 	func main(){
 		app := iris.New()
+		// right below the iris.New():
 		app.Adapt(httprouter.New()) // or gorillamux.New()
-		// right below the iris.New()
+
 		app.Adapt(view.HTML("./templates", ".html")) // <--- and this line were missing.
+
+		// the rest of your source code...
+		// ...
 
 		app.Listen("%s")
 	}
