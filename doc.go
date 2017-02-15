@@ -513,11 +513,11 @@ Example code:
 You should have a basic idea of the framework by now, we just scratched the surface.
 If you enjoy what you just saw and want to learn more, please follow the below links:
 
-    - examples: https://github.com/iris-contrib/examples
-    - book: https://docs.iris-go.com
-    - adaptors: https://github.com/kataras/iris/tree/v6/adaptors
-    - middleware: https://github.com/kataras/iris/tree/v6/middleware & https://github.com/iris-contrib/middleware
-    - godocs: https://godoc.org/github.com/kataras/iris
+- examples: https://github.com/iris-contrib/examples
+- book: https://docs.iris-go.com
+- adaptors: https://github.com/kataras/iris/tree/v6/adaptors
+- middleware: https://github.com/kataras/iris/tree/v6/middleware & https://github.com/iris-contrib/middleware
+- godocs: https://godoc.org/github.com/kataras/iris
 
 
 */

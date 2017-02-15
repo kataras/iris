@@ -68,30 +68,30 @@ type (
 
 var (
 	errMuxEntryConflictsWildcard = errors.New(`
-			Router: '%s' in new path '%s'
+			httprouter: '%s' in new path '%s'
 							conflicts with existing wildcarded route with path: '%s'
 							in existing prefix of'%s' `)
 
 	errMuxEntryMiddlewareAlreadyExists = errors.New(`
-		Router: Middleware were already registered for the path: '%s'`)
+		httprouter: Middleware were already registered for the path: '%s'`)
 
 	errMuxEntryInvalidWildcard = errors.New(`
-		Router: More than one wildcard found in the path part: '%s' in route's path: '%s'`)
+		httprouter: More than one wildcard found in the path part: '%s' in route's path: '%s'`)
 
 	errMuxEntryConflictsExistingWildcard = errors.New(`
-		Router: Wildcard for route path: '%s' conflicts with existing children in route path: '%s'`)
+		httprouter: Wildcard for route path: '%s' conflicts with existing children in route path: '%s'`)
 
 	errMuxEntryWildcardUnnamed = errors.New(`
-		Router: Unnamed wildcard found in path: '%s'`)
+		httprouter: Unnamed wildcard found in path: '%s'`)
 
 	errMuxEntryWildcardInvalidPlace = errors.New(`
-		Router: Wildcard is only allowed at the end of the path, in the route path: '%s'`)
+		httprouter: Wildcard is only allowed at the end of the path, in the route path: '%s'`)
 
 	errMuxEntryWildcardConflictsMiddleware = errors.New(`
-		Router: Wildcard  conflicts with existing middleware for the route path: '%s'`)
+		httprouter: Wildcard  conflicts with existing middleware for the route path: '%s'`)
 
 	errMuxEntryWildcardMissingSlash = errors.New(`
-		Router: No slash(/) were found before wildcard in the route path: '%s'`)
+		httprouter: No slash(/) were found before wildcard in the route path: '%s'`)
 )
 
 // getParamsLen returns the parameters length from a given path
@@ -575,7 +575,7 @@ func New() iris.Policies {
 					// while ProdMode means that the iris should not continue running
 					// by-default it panics on these errors, but to make sure let's introduce the fatalErr to stop visiting
 					fatalErr = true
-					logger(iris.ProdMode, "fatal error on  httprouter build adaptor: "+err.Error())
+					logger(iris.ProdMode, err.Error())
 					return
 				}
 
