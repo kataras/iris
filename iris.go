@@ -70,10 +70,9 @@ type Framework struct {
 	ln             net.Listener
 	closedManually bool
 
-	once      sync.Once
-	Config    *Configuration
-	sessions  sessions.Sessions
-	Websocket *WebsocketServer
+	once     sync.Once
+	Config   *Configuration
+	sessions sessions.Sessions
 }
 
 var defaultGlobalLoggerOuput = log.New(os.Stdout, "[iris] ", log.LstdFlags)
@@ -251,19 +250,6 @@ func New(setters ...OptionSetter) *Framework {
 			// re-set the configuration field to update users configuration
 			s.sessions.Set(s.Config.Sessions)
 		}})
-	}
-
-	{
-		//  +------------------------------------------------------------+
-		//  | Module Name: Websocket                                     |
-		//  | On Init: Attach a new websocket server.                    |
-		//  |         It starts on first callback registration           |
-		//  +------------------------------------------------------------+
-
-		// in order to be able to call $instance.Websocket.OnConnection.
-		// The whole server's configuration will be
-		// initialized on the first OnConnection registration (no runtime)
-		s.Websocket = NewWebsocketServer(s)
 	}
 
 	{
