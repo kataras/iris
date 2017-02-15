@@ -23,7 +23,6 @@ import (
 	"github.com/iris-contrib/formBinder"
 	"github.com/kataras/go-errors"
 	"github.com/kataras/go-fs"
-	"github.com/kataras/go-sessions"
 	"github.com/kataras/go-template"
 )
 
@@ -215,7 +214,7 @@ type (
 		framework      *Framework
 		//keep track all registered middleware (handlers)
 		Middleware Middleware //  exported because is useful for debugging
-		session    sessions.Session
+		session    Session
 		// Pos is the position number of the Context, look .Next to understand
 		Pos int // exported because is useful for debugging
 	}
@@ -1484,22 +1483,82 @@ func (ctx *Context) RemoveCookie(name string) {
 	ctx.Request.Header.Set("Cookie", "")
 }
 
-// Session returns the current session ( && flash messages )
-func (ctx *Context) Session() sessions.Session {
-	if ctx.framework.sessions == nil { // this should never return nil but FOR ANY CASE, on future changes.
+var errSessionsPolicyIsMissing = errors.New(
+	`
+manually call of context.Session() for client IP: '%s' without specified SessionsPolicy!
+Please .Adapt one of the available session managers inside 'kataras/iris/adaptors'.
+
+Edit your main .go source file to adapt one of these and restart your app.
+	i.e: lines (<---) were missing.
+	-------------------------------------------------------------------
+	import (
+		"github.com/kataras/iris"
+		"github.com/kataras/iris/adaptors/httprouter" // or gorillamux
+		"github.com/kataras/iris/adaptors/sessions" // <--- this line
+	)
+
+	func main(){
+		app := iris.New()
+		// right below the iris.New()
+		app.Adapt(httprouter.New()) // or gorillamux.New()
+
+		mySessions := sessions.New(sessions.Config{
+			// Cookie string, the session's client cookie name, for example: "mysessionid"
+			//
+			// Defaults to "gosessionid"
+			Cookie: "mysessionid",
+			// base64 urlencoding,
+			// if you have strange name cookie name enable this
+			DecodeCookie: false,
+			// it's time.Duration, from the time cookie is created, how long it can be alive?
+			// 0 means no expire.
+			Expires: 0,
+			// the length of the sessionid's cookie's value
+			CookieLength: 32,
+			// if you want to invalid cookies on different subdomains
+			// of the same host, then enable it
+			DisableSubdomainPersistence: false,
+		})
+
+		// OPTIONALLY:
+		// import "gopkg.in/kataras/iris.v6/adaptors/sessions/sessiondb/redis"
+		// or import "github.com/kataras/go-sessions/sessiondb/$any_available_community_database"
+		// mySessions.UseDatabase(redis.New(...))
+
+		app.Adapt(mySessions) // <--- and this line were missing.
+
+		// the rest of your source code...
+		// ...
+
+		app.Listen("%s")
+	}
+	-------------------------------------------------------------------
+ `)
+
+// Session returns the current Session.
+//
+// if SessionsPolicy is missing then a detailed how-to-fix message
+// will be visible to the user (DevMode)
+// and the return value will be NILL.
+func (ctx *Context) Session() Session {
+	policy := ctx.framework.policies.SessionsPolicy
+	if policy.Start == nil {
+		ctx.framework.Log(DevMode,
+			errSessionsPolicyIsMissing.Format(ctx.RemoteAddr(), ctx.framework.Config.VHost).Error())
 		return nil
 	}
 
 	if ctx.session == nil {
-		ctx.session = ctx.framework.sessions.Start(ctx.ResponseWriter, ctx.Request)
+		ctx.session = policy.Start(ctx.ResponseWriter, ctx.Request)
 	}
+
 	return ctx.session
 }
 
 // SessionDestroy destroys the whole session, calls the provider's destroy and remove the cookie
 func (ctx *Context) SessionDestroy() {
 	if sess := ctx.Session(); sess != nil {
-		ctx.framework.sessions.Destroy(ctx.ResponseWriter, ctx.Request)
+		ctx.framework.policies.SessionsPolicy.Destroy(ctx.ResponseWriter, ctx.Request)
 	}
 }
 

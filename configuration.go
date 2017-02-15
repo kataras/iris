@@ -9,7 +9,6 @@ import (
 
 	"github.com/imdario/mergo"
 	"github.com/kataras/go-options"
-	"github.com/kataras/go-sessions"
 )
 
 type (
@@ -173,9 +172,6 @@ type Configuration struct {
 	// If you don't want to enable it globally, you could just use the third parameter on context.Render("myfileOrResponse", structBinding{}, iris.RenderOptions{"gzip": true})
 	// Defaults to false
 	Gzip bool
-
-	// Sessions contains the configs for sessions
-	Sessions SessionsConfiguration
 
 	// Other are the custom, dynamic options, can be empty
 	// this fill used only by you to set any app's options you want
@@ -439,89 +435,7 @@ func DefaultConfiguration() Configuration {
 		TimeFormat:                        DefaultTimeFormat,
 		Charset:                           DefaultCharset,
 		Gzip:                              false,
-		Sessions:                          DefaultSessionsConfiguration(),
 		Other:                             options.Options{},
-	}
-}
-
-// SessionsConfiguration the configuration for sessions
-// has 6 fields
-// first is the cookieName, the session's name (string) ["mysessionsecretcookieid"]
-// second enable if you want to decode the cookie's key also
-// third is the time which the client's cookie expires
-// forth is the cookie length (sessionid) int, Defaults to 32, do not change if you don't have any reason to do
-// fifth is the gcDuration (time.Duration) when this time passes it removes the unused sessions from the memory until the user come back
-// sixth is the DisableSubdomainPersistence which you can set it to true in order dissallow your q subdomains to have access to the session cook
-type SessionsConfiguration sessions.Config
-
-// Set implements the OptionSetter of the sessions package
-func (s SessionsConfiguration) Set(c *sessions.Config) {
-	*c = sessions.Config(s).Validate()
-}
-
-var (
-	// OptionSessionsCookie string, the session's client cookie name, for example: "qsessionid"
-	OptionSessionsCookie = func(val string) OptionSet {
-		return func(c *Configuration) {
-			c.Sessions.Cookie = val
-		}
-	}
-
-	// OptionSessionsDecodeCookie set it to true to decode the cookie key with base64 URLEncoding
-	// Defaults to false
-	OptionSessionsDecodeCookie = func(val bool) OptionSet {
-		return func(c *Configuration) {
-			c.Sessions.DecodeCookie = val
-		}
-	}
-
-	// OptionSessionsExpires the duration of which the cookie must expires (created_time.Add(Expires)).
-	// If you want to delete the cookie when the browser closes, set it to -1 but in this case, the server side's session duration is up to GcDuration
-	//
-	// Default infinitive/unlimited life duration(0)
-	OptionSessionsExpires = func(val time.Duration) OptionSet {
-		return func(c *Configuration) {
-			c.Sessions.Expires = val
-		}
-	}
-
-	// OptionSessionsCookieLength the length of the sessionid's cookie's value, let it to 0 if you don't want to change it
-	// Defaults to 32
-	OptionSessionsCookieLength = func(val int) OptionSet {
-		return func(c *Configuration) {
-			c.Sessions.CookieLength = val
-		}
-	}
-
-	// OptionSessionsDisableSubdomainPersistence set it to true in order dissallow your q subdomains to have access to the session cookie
-	// Defaults to false
-	OptionSessionsDisableSubdomainPersistence = func(val bool) OptionSet {
-		return func(c *Configuration) {
-			c.Sessions.DisableSubdomainPersistence = val
-		}
-	}
-)
-
-var (
-	// CookieExpireNever the default cookie's life for sessions, unlimited (23 years)
-	CookieExpireNever = time.Now().AddDate(23, 0, 0)
-)
-
-const (
-	// DefaultCookieName the secret cookie's name for sessions
-	DefaultCookieName = "irissessionid"
-	// DefaultCookieLength is the default Session Manager's CookieLength, which is 32
-	DefaultCookieLength = 32
-)
-
-// DefaultSessionsConfiguration the default configs for Sessions
-func DefaultSessionsConfiguration() SessionsConfiguration {
-	return SessionsConfiguration{
-		Cookie:                      DefaultCookieName,
-		CookieLength:                DefaultCookieLength,
-		DecodeCookie:                false,
-		Expires:                     0,
-		DisableSubdomainPersistence: false,
 	}
 }
 
