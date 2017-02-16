@@ -116,8 +116,8 @@ package main
 
 import (
 	"gopkg.in/kataras/iris.v6"
-	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
 	"gopkg.in/kataras/iris.v6/adaptors/view"
+	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
 )
 
 func main() {
@@ -208,9 +208,8 @@ Testing
 
 You can find RESTFUL test examples by navigating to the following links:
 
-- [gavv/_examples/iris_test.go](https://github.com/gavv/httpexpect/blob/master/_examples/iris_test.go).
-- [./http_test.go](https://github.com/kataras/iris/blob/v6/http_test.go).
-- [./context_test.go](https://github.com/kataras/iris/blob/v6/context_test.go).
+- [gavv/_examples/iris_test.go](https://github.com/gavv/httpexpect/blob/master/_examples/iris_test.go)
+- [./httptest/_example/main_test.go](https://github.com/kataras/iris/blob/v6/httptest/_example/main_test.go)
 
 
 FAQ
