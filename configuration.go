@@ -90,7 +90,7 @@ type Configuration struct {
 	// listening to the $instance.Handler after the manually-called $instance.Build
 	//
 	// Default comes from iris.Default.Listen/.Serve with iris' listeners (iris.TCP4/UNIX/TLS/LETSENCRYPT).
-	VHost string `yaml:"vHost"`
+	VHost string `yaml:"VHost"`
 
 	// VScheme is the scheme (http:// or https://) putted at the template function '{{url }}'
 	// It's an optional field,
@@ -101,20 +101,20 @@ type Configuration struct {
 	//   addr only(http://) but the nginx mapper is listening to https://
 	//
 	// Default comes from iris.Default.Listen/.Serve with iris' listeners (TCP4,UNIX,TLS,LETSENCRYPT).
-	VScheme string `yaml:"vScheme"`
+	VScheme string `yaml:"VScheme"`
 
 	// ReadTimeout is the maximum duration before timing out read of the request.
-	ReadTimeout time.Duration `yaml:"readTimeout"`
+	ReadTimeout time.Duration `yaml:"ReadTimeout"`
 
 	// WriteTimeout is the maximum duration before timing out write of the response.
-	WriteTimeout time.Duration `yaml:"writeTimeout"`
+	WriteTimeout time.Duration `yaml:"WriteTimeout"`
 
 	// MaxHeaderBytes controls the maximum number of bytes the
 	// server will read parsing the request header's keys and
 	// values, including the request line. It does not limit the
 	// size of the request body.
 	// If zero, DefaultMaxHeaderBytes is used.
-	MaxHeaderBytes int `yaml:"maxHeaderBytes"`
+	MaxHeaderBytes int `yaml:"MaxHeaderBytes"`
 
 	// CheckForUpdates will try to search for newer version of Iris based on the https://github.com/kataras/iris/releases
 	// If a newer version found then the app will ask the he dev/user if want to update the 'x' version
@@ -130,7 +130,7 @@ type Configuration struct {
 	// Usage: app := iris.New(iris.Configuration{CheckForUpdates: true})
 	//
 	// Defaults to false.
-	CheckForUpdates bool `yaml:"checkForUpdates"`
+	CheckForUpdates bool `yaml:"CheckForUpdates"`
 
 	// DisablePathCorrection corrects and redirects the requested path to the registered path
 	// for example, if /home/ path is requested but no handler for this Route found,
@@ -151,17 +151,17 @@ type Configuration struct {
 	// projectName, _ := url.QueryUnescape(c.Param("project").
 	//
 	// Defaults to false.
-	EnablePathEscape bool `yaml:"enablePathEscape"`
+	EnablePathEscape bool `yaml:"EnablePathEscape"`
 
 	// FireMethodNotAllowed if it's true router checks for StatusMethodNotAllowed(405) and
 	//  fires the 405 error instead of 404
 	// Defaults to false.
-	FireMethodNotAllowed bool `yaml:"fireMethodNotAllowed"`
+	FireMethodNotAllowed bool `yaml:"FireMethodNotAllowed"`
 
 	// DisableBanner outputs the iris banner at startup
 	//
 	// Defaults to false.
-	DisableBanner bool `yaml:"disableBanner"`
+	DisableBanner bool `yaml:"DisableBanner"`
 
 	// DisableBodyConsumptionOnUnmarshal manages the reading behavior of the context's body readers/binders.
 	// If setted to true then it
@@ -171,29 +171,29 @@ type Configuration struct {
 	// if this field setted to true then a new buffer will be created to read from and the request body.
 	// The body will not be changed and existing data before the
 	// context.UnmarshalBody/ReadJSON/ReadXML will be not consumed.
-	DisableBodyConsumptionOnUnmarshal bool `yaml:"disableBodyConsumptionOnUnmarshal"`
+	DisableBodyConsumptionOnUnmarshal bool `yaml:"DisableBodyConsumptionOnUnmarshal"`
 
 	// TimeFormat time format for any kind of datetime parsing
 	// Defauls to  "Mon, 02 Jan 2006 15:04:05 GMT".
-	TimeFormat string `yaml:"timeFormat"`
+	TimeFormat string `yaml:"TimeFormat"`
 
 	// Charset character encoding for various rendering
 	// used for templates and the rest of the responses
 	// Defaults to "UTF-8".
-	Charset string `yaml:"charset"`
+	Charset string `yaml:"Charset"`
 
 	// Gzip enables gzip compression on your Render actions, this includes any type of render,
 	// templates and pure/raw content
 	// If you don't want to enable it globally, you could just use the third parameter
 	// on context.Render("myfileOrResponse", structBinding{}, iris.RenderOptions{"gzip": true})
 	// Defaults to false.
-	Gzip bool `yaml:"gzip"`
+	Gzip bool `yaml:"Gzip"`
 
 	// Other are the custom, dynamic options, can be empty.
 	// This field used only by you to set any app's options you want
 	// or by custom adaptors, it's a way to simple communicate between your adaptors (if any)
 	// Defaults to a non-nil empty map.
-	Other map[string]interface{} `yaml:"other"`
+	Other map[string]interface{} `yaml:"Other"`
 }
 
 // Set implements the OptionSetter
