@@ -103,33 +103,20 @@ func TestConfigurationYAML(t *testing.T) {
 	}()
 
 	yamlConfigurationContents := `
-  vHost: iris-go.com
-
-  vScheme: https://
-
-  readTimeout: 0
-
-  writeTimeout: 5s
-
-  maxHeaderBytes: 8096
-
-  checkForUpdates: true
-
-  disablePathCorrection: false
-
-  enablePathEscape: false
-
-  fireMethodNotAllowed: true
-
-  disableBanner: true
-
-  disableBodyConsumptionOnUnmarshal: true
-
-  timeFormat: Mon, 01 Jan 2006 15:04:05 GMT
-
-  charset: UTF-8
-
-  gzip: true
+  VHost: iris-go.com
+  VScheme: https://
+  ReadTimeout: 0
+  WriteTimeout: 5s
+  MaxHeaderBytes: 8096
+  CheckForUpdates: true
+  DisablePathCorrection: false
+  EnablePathEscape: false
+  FireMethodNotAllowed: true
+  DisableBanner: true
+  DisableBodyConsumptionOnUnmarshal: true
+  TimeFormat: Mon, 01 Jan 2006 15:04:05 GMT
+  Charset: UTF-8
+  Gzip: true
 
   `
 	yamlFile.WriteString(yamlConfigurationContents)
