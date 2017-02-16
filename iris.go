@@ -5,7 +5,7 @@
 // For middleware, template engines, response engines, sessions, websockets, mails, subdomains,
 // dynamic subdomains, routes, party of subdomains & routes and more
 //
-// visit https://docs.iris-go.com
+// visit https://godoc.org/gopkg.in/kataras/iris.v6
 package iris
 
 import (

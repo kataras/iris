@@ -411,32 +411,29 @@ Example code:
       }
 
 
-Visit https://godoc.org/github.com/kataras/iris#Router for more.
+View engine
 
-
-View engine, supports 5 template engines, developers can still use any external golang template engine,
+Iris supports 5 template engines out-of-the-box, developers can still use any external golang template engine,
 as `context.ResponseWriter` is an `io.Writer`.
 
 All of these five template engines have common features with common API,
 like Layout, Template Funcs, Party-specific layout, partial rendering and more.
 
-- the standard html, based on https://github.com/kataras/go-template/tree/master/html
-its template parser is the https://golang.org/pkg/html/template/.
+The standard html, based on github.com/kataras/go-template/tree/master/html
+its template parser is the golang.org/pkg/html/template/.
 
-- django, based on https://github.com/kataras/go-template/tree/master/django
-its template parser is the https://github.com/flosch/pongo2
+Django, based ongithub.com/kataras/go-template/tree/master/django
+its template parser is the github.com/flosch/pongo2
 
-- pug, based on https://github.com/kataras/go-template/tree/master/pug
-its template parser is the https://github.com/Joker/jade
+Pug(Jade), based on github.com/kataras/go-template/tree/master/pug
+its template parser is the github.com/Joker/jade
 
-- handlebars, based on https://github.com/kataras/go-template/tree/master/handlebars
-its template parser is the https://github.com/aymerick/raymond
+Handlebars, based on github.com/kataras/go-template/tree/master/handlebars
+its template parser is the github.com/aymerick/raymond
 
-- amber, based on https://github.com/kataras/go-template/tree/master/amber
-its template parser is the https://github.com/eknkc/amber
+Amber, based on github.com/kataras/go-template/tree/master/amber
+its template parser is the github.com/eknkc/amber
 
-Each one of these template engines has different options,
-view adaptors are located here: https://github.com/kataras/iris/tree/v6/adaptors/view .
 
 Example code:
 
@@ -515,13 +512,18 @@ Example code:
     app.Adapt(pugEngine)
 
 
-You should have a basic idea of the framework by now, we just scratched the surface.
+Each one of these template engines has different options located here: https://github.com/kataras/iris/tree/v6/adaptors/view .
+
+That's the basics, we didn't cover a lot, such as static files, websockets, sessions...
+
+But you should have a basic idea of the framework by now, we just scratched the surface.
 If you enjoy what you just saw and want to learn more, please follow the below links:
 
-- examples: https://github.com/iris-contrib/examples
-- adaptors: https://github.com/kataras/iris/tree/v6/adaptors
-- middleware: https://github.com/kataras/iris/tree/v6/middleware & https://github.com/iris-contrib/middleware
-- godocs: https://godoc.org/github.com/kataras/iris
+Examples: https://github.com/iris-contrib/examples
+
+Adaptors: https://github.com/kataras/iris/tree/v6/adaptors
+
+Middleware: https://github.com/kataras/iris/tree/v6/middleware & https://github.com/iris-contrib/middleware
 
 
 */
