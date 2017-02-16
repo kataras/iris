@@ -7,40 +7,37 @@
 
 <br/>
 
+<a href="https://travis-ci.org/kataras/iris"><img src="https://api.travis-ci.org/kataras/iris.svg?branch=v6&style=flat-square" alt="Build Status"></a>
+
+<a href="http://goreportcard.com/report/kataras/iris"><img src="https://img.shields.io/badge/report%20card%20-a%2B-F44336.svg?style=flat-square" alt="http://goreportcard.com/report/kataras/iris"></a>
+
+<a href="https://golang.org"><img src="https://img.shields.io/badge/platform-any-ec2eb4.svg?style=flat-square" alt="Runs everywhere"></a>
+
+<a href="https://golang.org"><img src="https://img.shields.io/badge/powered_by-go-6362c2.svg?style=flat-square" alt="Built with GoLang"></a>
 
 
-Iris provides efficient and well-designed toolbox with robust set of features to<br/> <b>create your own
-perfect high-performance web application</b> <br/>with unlimited potentials amd <b>portability</b>.
+<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=kataras2006%40hotmail%2ecom&lc=GR&item_name=Iris%20web%20framework&item_number=iriswebframeworkdonationid2016&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted"><img src="https://img.shields.io/badge/open-%20source-thisismycolor.svg?logo=data:image%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAwIDEwMDAiPjxwYXRoIGZpbGw9InJnYigyMjAsMjIwLDIyMCkiIGQ9Ik04ODYuNiwzMDUuM2MtNDUuNywyMDMuMS0xODcsMzEwLjMtNDA5LjYsMzEwLjNoLTc0LjFsLTUxLjUsMzI2LjloLTYybC0zLjIsMjEuMWMtMi4xLDE0LDguNiwyNi40LDIyLjYsMjYuNGgxNTguNWMxOC44LDAsMzQuNy0xMy42LDM3LjctMzIuMmwxLjUtOGwyOS45LTE4OS4zbDEuOS0xMC4zYzIuOS0xOC42LDE4LjktMzIuMiwzNy43LTMyLjJoMjMuNWMxNTMuNSwwLDI3My43LTYyLjQsMzA4LjktMjQyLjdDOTIxLjYsNDA2LjgsOTE2LjcsMzQ4LjYsODg2LjYsMzA1LjN6Ii8%2BPHBhdGggZmlsbD0icmdiKDIyMCwyMjAsMjIwKSIgZD0iTTc5MS45LDgzLjlDNzQ2LjUsMzIuMiw2NjQuNCwxMCw1NTkuNSwxMEgyNTVjLTIxLjQsMC0zOS44LDE1LjUtNDMuMSwzNi44TDg1LDg1MWMtMi41LDE1LjksOS44LDMwLjIsMjUuOCwzMC4ySDI5OWw0Ny4zLTI5OS42bC0xLjUsOS40YzMuMi0yMS4zLDIxLjQtMzYuOCw0Mi45LTM2LjhINDc3YzE3NS41LDAsMzEzLTcxLjIsMzUzLjItMjc3LjVjMS4yLTYuMSwyLjMtMTIuMSwzLjEtMTcuOEM4NDUuMSwxODIuOCw4MzMuMiwxMzAuOCw3OTEuOSw4My45TDc5MS45LDgzLjl6Ii8%2BPC9zdmc%2B" alt="Donation"></a>
 
-<br/><br/>
-<b>Easy</b> to <a href="https://godoc.org/gopkg.in/kataras/iris.v6">learn</a>  while it's highly customizable,
-ideally suited for <br/> both experienced and novice developers.<br/><br/>
+<br/>
 
-If you're coming from <a href="https://nodejs.org/en/">Node.js</a> world, this is the <a href="https://github.com/expressjs/express">expressjs</a> for the <a href="https://golang.org">Go Programming Language.</a>
+Iris√ is an efficient and well-designed toolbox with robust set of features to<br/> <b>create your own
+perfect high-performance web applications</b> <br/>with unlimited potentials and <b>portability</b>.
+
 
 
 </p>
 
-Not just another Go Web Framework
+#Not Yet Another Go Web Framework
 ----------
 
-
 <p>
-<a href="https://github.com/kataras/iris/blob/v6/HISTORY.md"><img src="https://img.shields.io/badge/%20codename%20-%20vNext%20-blue.svg?style=flat-square" alt="CHANGELOG/HISTORY"></a>
+<a href="https://github.com/kataras/iris/blob/v6/HISTORY.md"><img src="https://img.shields.io/badge/codename%20-%20√Next%20-blue.svg?style=flat-square" alt="CHANGELOG/HISTORY"></a>
 
 <a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/%20examples-repository-3362c2.svg?style=flat-square" alt="Examples"></a>
 
 <a href="https://godoc.org/gopkg.in/kataras/iris.v6"><img src="https://img.shields.io/badge/%20docs-reference-5272B4.svg?style=flat-square" alt="Docs"></a>
 
 <a href="https://kataras.rocket.chat/channel/iris"><img src="https://img.shields.io/badge/%20community-chat-00BCD4.svg?style=flat-square" alt="Chat"></a>
-
-<a href="http://goreportcard.com/report/kataras/iris"><img src="https://img.shields.io/badge/report%20card%20-a%2B-F44336.svg?style=flat-square" alt="http://goreportcard.com/report/kataras/iris"></a>
-
-
-<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=kataras2006%40hotmail%2ecom&lc=GR&item_name=Iris%20web%20framework&item_number=iriswebframeworkdonationid2016&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted"><img src="https://img.shields.io/badge/open-%20source-thisismycolor.svg?logo=data:image%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAwIDEwMDAiPjxwYXRoIGZpbGw9InJnYigyMjAsMjIwLDIyMCkiIGQ9Ik04ODYuNiwzMDUuM2MtNDUuNywyMDMuMS0xODcsMzEwLjMtNDA5LjYsMzEwLjNoLTc0LjFsLTUxLjUsMzI2LjloLTYybC0zLjIsMjEuMWMtMi4xLDE0LDguNiwyNi40LDIyLjYsMjYuNGgxNTguNWMxOC44LDAsMzQuNy0xMy42LDM3LjctMzIuMmwxLjUtOGwyOS45LTE4OS4zbDEuOS0xMC4zYzIuOS0xOC42LDE4LjktMzIuMiwzNy43LTMyLjJoMjMuNWMxNTMuNSwwLDI3My43LTYyLjQsMzA4LjktMjQyLjdDOTIxLjYsNDA2LjgsOTE2LjcsMzQ4LjYsODg2LjYsMzA1LjN6Ii8%2BPHBhdGggZmlsbD0icmdiKDIyMCwyMjAsMjIwKSIgZD0iTTc5MS45LDgzLjlDNzQ2LjUsMzIuMiw2NjQuNCwxMCw1NTkuNSwxMEgyNTVjLTIxLjQsMC0zOS44LDE1LjUtNDMuMSwzNi44TDg1LDg1MWMtMi41LDE1LjksOS44LDMwLjIsMjUuOCwzMC4ySDI5OWw0Ny4zLTI5OS42bC0xLjUsOS40YzMuMi0yMS4zLDIxLjQtMzYuOCw0Mi45LTM2LjhINDc3YzE3NS41LDAsMzEzLTcxLjIsMzUzLjItMjc3LjVjMS4yLTYuMSwyLjMtMTIuMSwzLjEtMTcuOEM4NDUuMSwxODIuOCw4MzMuMiwxMzAuOCw3OTEuOSw4My45TDc5MS45LDgzLjl6Ii8%2BPC9zdmc%2B" alt="Donation"></a>
-
-
-<a href="https://travis-ci.org/kataras/iris"><img src="https://api.travis-ci.org/kataras/iris.svg?branch=v6&style=flat-square" alt="Build Status"></a>
 
 </p>
 
@@ -88,6 +85,8 @@ You'll never miss a thing from `net/http`, but if you do on some point, no probl
 Iris is a community-driven project, you suggest and I code.
 
 Unlike others, this repository is very active. When you post an issue, you get an answer in the next couple of minutes, hours at the worst. If you find a bug, I am obliged to fix it on the same day.
+
+If you're coming from <a href="https://nodejs.org/en/">Node.js</a> world, this is the <a href="https://github.com/expressjs/express">expressjs</a> for the <a href="https://golang.org">Go Programming Language.</a>
 
 > Q: Why this framework is better than alternatives, does the author is, simply, better than other developers?
 
@@ -267,7 +266,7 @@ Besides the fact that we have a [community chat][Chat] for questions or reports 
 Versioning
 ------------
 
-Current: **v6**, code-named as "vNext"
+Current: **v6**, code-named as "√Next"
 
 v5: https://github.com/kataras/iris/tree/5.0.0
 
