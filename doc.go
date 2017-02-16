@@ -51,29 +51,29 @@ It uses `/mypath/{firstParameter:any-regex-valid-here}/path/{secondParameter}` a
 Example code:
 
 
-        package main
+      package main
 
-        import (
-          "gopkg.in/kataras/iris.v6"
-          "gopkg.in/kataras/iris.v6/adaptors/httprouter" // <--- or adaptors/gorillamux
-        )
+      import (
+      	"gopkg.in/kataras/iris.v6"
+      	"gopkg.in/kataras/iris.v6/adaptors/httprouter" // <--- or adaptors/gorillamux
+      )
 
-        func main(){
-          app := iris.New()
-          app.Adapt(httprouter.New()) // <--- or gorillamux.New()
+      func main() {
+      	app := iris.New()
+      	app.Adapt(httprouter.New()) // <--- or gorillamux.New()
 
-          // HTTP Method: GET
-          // PATH: http://127.0.0.1/
-          // Handler(s): index
-          app.Get("/", index)
+      	// HTTP Method: GET
+      	// PATH: http://127.0.0.1/
+      	// Handler(s): index
+      	app.Get("/", index)
 
+      	app.Listen(":80")
+      }
 
-          app.Listen(":80")
-        }
+      func index(ctx *iris.Context) {
+      	ctx.HTML(iris.StatusOK, "<h1> Welcome to my page!</h1>")
+      }
 
-        func index(ctx *iris.Context){
-          ctx.HTML(iris.StatusOK, "<h1> Welcome to my page!</h1>")
-        }
 
 
 All HTTP methods are supported, users can register handlers for same paths on different methods.
@@ -379,31 +379,35 @@ Example code:
       package main
 
       import (
-      	"gopkg.in/kataras/iris.v6"
-        "github.com/kataras/adaptors/gorillamux"
       	"github.com/rs/cors"
+      	"gopkg.in/kataras/iris.v6"
+      	"gopkg.in/kataras/iris.v6/adaptors/gorillamux"
       )
 
-      // myCors returns a new cors middleware
+      // newCorsMiddleware returns a new cors middleware
       // with the provided options.
-      myCors := func(opts cors.Options) iris.HandlerFunc {
-        handlerWithNext := cors.New(opts).ServeHTTP
+      func newCorsMiddleware() iris.HandlerFunc {
+      	options := cors.Options{
+      		AllowedOrigins: []string{"*"},
+      	}
+      	handlerWithNext := cors.New(options).ServeHTTP
 
-        // this is the only func you will have to use if you're going to make use of any external net/http middleware.
-        // iris.ToHandler converts the net/http middleware to an iris-compatible.
+      	// this is the only func you will have to use if you're going
+      	// to make use of any external net/http middleware.
+      	// iris.ToHandler converts the net/http middleware to an iris-compatible.
       	return iris.ToHandler(handlerWithNext)
       }
 
-      func main(){
-         app := iris.New()
-         app.Adapt(httprouter.New())
+      func main() {
+      	app := iris.New()
+      	app.Adapt(gorillamux.New())
 
-         // Any registers a route to all http methods.
-         app.Any("/user", myCors(cors.Options{AllowOrigins: "*"}), func(ctx *iris.Context){
-           // ....
-         })
+      	// Any registers a route to all http methods.
+      	app.Any("/user", newCorsMiddleware(), func(ctx *iris.Context) {
+      		// ....
+      	})
 
-         app.Listen(":8080")
+      	app.Listen(":8080")
       }
 
 
@@ -416,23 +420,23 @@ as `context.ResponseWriter` is an `io.Writer`.
 All of these five template engines have common features with common API,
 like Layout, Template Funcs, Party-specific layout, partial rendering and more.
 
-   - the standard html, based on https://github.com/kataras/go-template/tree/master/html
-     its template parser is the https://golang.org/pkg/html/template/.
+- the standard html, based on https://github.com/kataras/go-template/tree/master/html
+its template parser is the https://golang.org/pkg/html/template/.
 
-   - django, based on https://github.com/kataras/go-template/tree/master/django
-    its template parser is the https://github.com/flosch/pongo2
+- django, based on https://github.com/kataras/go-template/tree/master/django
+its template parser is the https://github.com/flosch/pongo2
 
-   - pug, based on https://github.com/kataras/go-template/tree/master/pug
-    its template parser is the https://github.com/Joker/jade
+- pug, based on https://github.com/kataras/go-template/tree/master/pug
+its template parser is the https://github.com/Joker/jade
 
-   - handlebars, based on https://github.com/kataras/go-template/tree/master/handlebars
-    its template parser is the https://github.com/aymerick/raymond
+- handlebars, based on https://github.com/kataras/go-template/tree/master/handlebars
+its template parser is the https://github.com/aymerick/raymond
 
-   - amber, based on https://github.com/kataras/go-template/tree/master/amber
-    its template parser is the https://github.com/eknkc/amber
+- amber, based on https://github.com/kataras/go-template/tree/master/amber
+its template parser is the https://github.com/eknkc/amber
 
 Each one of these template engines has different options,
-view adaptors are located here: https://github.com/kataras/iris/tree/master/adaptors/view .
+view adaptors are located here: https://github.com/kataras/iris/tree/v6/adaptors/view .
 
 Example code:
 
@@ -445,47 +449,48 @@ Example code:
       )
 
       func main() {
-		app := iris.New(iris.Configuration{Gzip: false, Charset: "UTF-8"}) // defaults to these
+      	app := iris.New(iris.Configuration{Gzip: false, Charset: "UTF-8"}) // defaults to these
 
       	app.Adapt(iris.DevLogger())
       	app.Adapt(gorillamux.New())
 
-        // - standard html  | view.HTML(...)
-        // - django         | view.Django(...)
-        // - pug(jade)      | view.Pug(...)
-        // - handlebars     | view.Handlebars(...)
-        // - amber          | view.Amber(...)
+      	// - standard html  | view.HTML(...)
+      	// - django         | view.Django(...)
+      	// - pug(jade)      | view.Pug(...)
+      	// - handlebars     | view.Handlebars(...)
+      	// - amber          | view.Amber(...)
       	app.Adapt(view.HTML("./templates", ".html")) // <---- use the standard html
 
-        // default template funcs:
-        //
-        // - {{ url "mynamedroute" "pathParameter_ifneeded"} }
-        // - {{ urlpath "mynamedroute" "pathParameter_ifneeded" }}
-        // - {{ render "header.html" }}
-        // - {{ render_r "header.html" }} // partial relative path to current page
-        // - {{ yield }}
-        // - {{ current }}
-        //
-        // to adapt custom funcs, use:
-        app.Adapt(iris.TemplateFuncsPolicy{"myfunc": func(s string) string {
-              return "hi "+s
-        }}) // usage inside template: {{ hi "kataras"}}
+      	// default template funcs:
+      	//
+      	// - {{ url "mynamedroute" "pathParameter_ifneeded"} }
+      	// - {{ urlpath "mynamedroute" "pathParameter_ifneeded" }}
+      	// - {{ render "header.html" }}
+      	// - {{ render_r "header.html" }} // partial relative path to current page
+      	// - {{ yield }}
+      	// - {{ current }}
+      	//
+      	// to adapt custom funcs, use:
+      	app.Adapt(iris.TemplateFuncsPolicy{"myfunc": func(s string) string {
+      		return "hi " + s
+      	}}) // usage inside template: {{ hi "kataras"}}
 
       	app.Get("/hi", func(ctx *iris.Context) {
       		ctx.Render(
-             // the file name of the template relative to the './templates'.
+      			// the file name of the template relative to the './templates'.
       			"hi.html",
       			iris.Map{"Name": "Iris"},
-            // the .Name inside the ./templates/hi.html,
-            // you can use any custom struct that you want to bind to the requested template.
-      			iris.Map{"gzip": false},  // set to true to enable gzip compression.
+      			// the .Name inside the ./templates/hi.html,
+      			// you can use any custom struct that you want to bind to the requested template.
+      			iris.Map{"gzip": false}, // set to true to enable gzip compression.
       		)
 
       	})
 
-        // http://127.0.0.1:8080/hi
+      	// http://127.0.0.1:8080/hi
       	app.Listen(":8080")
       }
+
 
 View engine supports bundled(https://github.com/jteeuwen/go-bindata) template files too.
 go-bindata gives you two functions, asset and assetNames,
@@ -514,7 +519,6 @@ You should have a basic idea of the framework by now, we just scratched the surf
 If you enjoy what you just saw and want to learn more, please follow the below links:
 
 - examples: https://github.com/iris-contrib/examples
-- book: https://docs.iris-go.com
 - adaptors: https://github.com/kataras/iris/tree/v6/adaptors
 - middleware: https://github.com/kataras/iris/tree/v6/middleware & https://github.com/iris-contrib/middleware
 - godocs: https://godoc.org/github.com/kataras/iris
