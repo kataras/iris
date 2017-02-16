@@ -8,20 +8,23 @@ import (
 	"time"
 
 	"github.com/imdario/mergo"
-	"github.com/kataras/go-options"
 )
 
 type (
 	// OptionSetter sets a configuration field to the main configuration
-	// used to help developers to write less and configure only what they really want and nothing else
-	// example:
+	// used to help developers to write less and configure only what
+	// they really want and nothing else.
+	//
+	// Usage:
 	// iris.New(iris.Configuration{Charset: "UTF-8", Gzip:true})
 	// now can be done also by using iris.Option$FIELD:
 	// iris.New(iris.OptionCharset("UTF-8"), iris.OptionGzip(true))
-	// benefits:
-	// 1. dev has no worries what option to pass,
-	//    he/she can just press iris.Option and all options should be shown to her/his editor's autocomplete-popup window
-	// 2. can be passed with any order
+	//
+	// Benefits:
+	// 1. Developers have no worries what option to pass,
+	//    they can just type iris.Option and all options should
+	//    be visible to their editor's autocomplete-popup window
+	// 2. Can be passed with any order
 	// 3. Can override previous configuration
 	OptionSetter interface {
 		// Set receives a pointer to the global Configuration type and does the job of filling it
@@ -36,10 +39,9 @@ func (o OptionSet) Set(c *Configuration) {
 	o(c)
 }
 
-// Configuration the whole configuration for an iris instance ($instance.Config) or global iris instance (iris.Default.Config)
-// these can be passed via options also, look at the top of this file(configuration.go)
-//
-// Configuration is also implements the OptionSet so it's a valid option itself, this is brilliant enough
+// Configuration the whole configuration for an Iris station instance
+// these can be passed via options also, look at the top of this file(configuration.go).
+// Configuration is a valid OptionSetter.
 type Configuration struct {
 	// VHost is the addr or the domain that server listens to, which it's optional
 	// When to set VHost manually:
@@ -54,20 +56,24 @@ type Configuration struct {
 	// Note: this is the main's server Host, you can setup unlimited number of net/http servers
 	// listening to the $instance.Handler after the manually-called $instance.Build
 	//
-	// Default comes from iris.Default.Listen/.Serve with iris' listeners (iris.TCP4/UNIX/TLS/LETSENCRYPT)
+	// Default comes from iris.Default.Listen/.Serve with iris' listeners (iris.TCP4/UNIX/TLS/LETSENCRYPT).
 	VHost string
 
 	// VScheme is the scheme (http:// or https://) putted at the template function '{{url }}'
 	// It's an optional field,
 	// When to set VScheme manually:
-	// 1. You didn't start the main server using $instance.Listen/ListenTLS/ListenLETSENCRYPT or $instance.Serve($instance.TCP4()/.TLS...)
-	// 2. if you're using something like nginx and have iris listening with addr only(http://) but the nginx mapper is listening to https://
+	// 1. You didn't start the main server using $instance.Listen/ListenTLS/ListenLETSENCRYPT
+	//    or $instance.Serve($instance.TCP4()/.TLS...)
+	// 2. if you're using something like nginx and have iris listening with
+	//   addr only(http://) but the nginx mapper is listening to https://
 	//
-	// Default comes from iris.Default.Listen/.Serve with iris' listeners (TCP4,UNIX,TLS,LETSENCRYPT)
+	// Default comes from iris.Default.Listen/.Serve with iris' listeners (TCP4,UNIX,TLS,LETSENCRYPT).
 	VScheme string
 
-	ReadTimeout  time.Duration // maximum duration before timing out read of the request
-	WriteTimeout time.Duration // maximum duration before timing out write of the response
+	// ReadTimeout is the maximum duration before timing out read of the request.
+	ReadTimeout time.Duration
+	// WriteTimeout is the maximum duration before timing out write of the response.
+	WriteTimeout time.Duration
 
 	// MaxHeaderBytes controls the maximum number of bytes the
 	// server will read parsing the request header's keys and
@@ -98,30 +104,21 @@ type Configuration struct {
 	// Notes:
 	// 1. Experimental feature
 	// 2. If setted to true, the app will start the server normally and runs the updater in its own goroutine,
-	//    for a sync operation see CheckForUpdatesSync.
+	//    in order to no delay the boot time on your development state.
 	// 3. If you as developer edited the $GOPATH/src/github/kataras or any other Iris' Go dependencies at the past
 	//    then the update process will fail.
 	//
-	// Usage: iris.Default.Set(iris.OptionCheckForUpdates(true)) or
-	//        iris.Default.Config.CheckForUpdates = true or
-	//        app := iris.New(iris.OptionCheckForUpdates(true))
-	// Default is false
-	CheckForUpdates bool
-	// CheckForUpdatesSync checks for updates before server starts, it will have a little delay depends on the machine's download's speed
-	// See CheckForUpdates for more
-	// Notes:
-	// 1. you could use the CheckForUpdatesSync while CheckForUpdates is false, set this or CheckForUpdates to true not both
-	// 2. if both CheckForUpdates and CheckForUpdatesSync are setted to true then the updater will run in sync mode, before server server starts.
+	// Usage: app := iris.New(iris.Configuration{CheckForUpdates: true})
 	//
-	// Default is false
-	CheckForUpdatesSync bool
+	// Defaults to false.
+	CheckForUpdates bool
 
 	// DisablePathCorrection corrects and redirects the requested path to the registered path
 	// for example, if /home/ path is requested but no handler for this Route found,
 	// then the Router checks if /home handler exists, if yes,
 	// (permant)redirects the client to the correct path /home
 	//
-	// Default is false
+	// Defaults to false.
 	DisablePathCorrection bool
 
 	// EnablePathEscape when is true then its escapes the path, the named parameters (if any).
@@ -133,18 +130,18 @@ type Configuration struct {
 	// ctx.Param("project") returns the raw named parameter: Project%2FDelta
 	// which you can escape it manually with net/url:
 	// projectName, _ := url.QueryUnescape(c.Param("project").
-	// Look here: https://github.com/kataras/iris/issues/135 for more
 	//
-	// Default is false
+	// Defaults to false.
 	EnablePathEscape bool
 
-	// FireMethodNotAllowed if it's true router checks for StatusMethodNotAllowed(405) and fires the 405 error instead of 404
-	// Default is false
+	// FireMethodNotAllowed if it's true router checks for StatusMethodNotAllowed(405) and
+	//  fires the 405 error instead of 404
+	// Defaults to false.
 	FireMethodNotAllowed bool
 
 	// DisableBanner outputs the iris banner at startup
 	//
-	// Default is false
+	// Defaults to false.
 	DisableBanner bool
 
 	// DisableBodyConsumptionOnUnmarshal manages the reading behavior of the context's body readers/binders.
@@ -153,35 +150,35 @@ type Configuration struct {
 	//
 	// By-default io.ReadAll` is used to read the body from the `context.Request.Body which is an `io.ReadCloser`,
 	// if this field setted to true then a new buffer will be created to read from and the request body.
-	// The body will not be changed and existing data before the context.UnmarshalBody/ReadJSON/ReadXML will be not consumed.
+	// The body will not be changed and existing data before the
+	// context.UnmarshalBody/ReadJSON/ReadXML will be not consumed.
 	DisableBodyConsumptionOnUnmarshal bool
 
-	// DisableTemplateEngines set to true to disable loading the default template engine (html/template) and disallow the use of iris.Default.UseEngine
-	// Defaults to false
-	DisableTemplateEngines bool
-
 	// TimeFormat time format for any kind of datetime parsing
+	// Defauls to  "Mon, 02 Jan 2006 15:04:05 GMT".
 	TimeFormat string
 
 	// Charset character encoding for various rendering
 	// used for templates and the rest of the responses
-	// Defaults to "UTF-8"
+	// Defaults to "UTF-8".
 	Charset string
 
-	// Gzip enables gzip compression on your Render actions, this includes any type of render, templates and pure/raw content
-	// If you don't want to enable it globally, you could just use the third parameter on context.Render("myfileOrResponse", structBinding{}, iris.RenderOptions{"gzip": true})
-	// Defaults to false
+	// Gzip enables gzip compression on your Render actions, this includes any type of render,
+	// templates and pure/raw content
+	// If you don't want to enable it globally, you could just use the third parameter
+	// on context.Render("myfileOrResponse", structBinding{}, iris.RenderOptions{"gzip": true})
+	// Defaults to false.
 	Gzip bool
 
-	// Other are the custom, dynamic options, can be empty
-	// this fill used only by you to set any app's options you want
-	// for each of an Iris instance
-	Other options.Options
+	// Other are the custom, dynamic options, can be empty.
+	// This field used only by you to set any app's options you want
+	// or by custom adaptors, it's a way to simple communicate between your adaptors (if any)
+	// Defaults to a non-nil empty map.
+	Other map[string]interface{}
 }
 
 // Set implements the OptionSetter
 func (c Configuration) Set(main *Configuration) {
-	// ignore error
 	mergo.MergeWithOverwrite(main, c)
 }
 
@@ -201,7 +198,7 @@ var (
 	// Note: this is the main's server Host, you can setup unlimited number of net/http servers
 	// listening to the $instance.Handler after the manually-called $instance.Build
 	//
-	// Default comes from iris.Default.Listen/.Serve with iris' listeners (iris.TCP4/UNIX/TLS/LETSENCRYPT)
+	// Default comes from iris.Default.Listen/.Serve with iris' listeners (iris.TCP4/UNIX/TLS/LETSENCRYPT).
 	OptionVHost = func(val string) OptionSet {
 		return func(c *Configuration) {
 			c.VHost = val
@@ -211,22 +208,26 @@ var (
 	// OptionVScheme is the scheme (http:// or https://) putted at the template function '{{url }}'
 	// It's an optional field,
 	// When to set Scheme manually:
-	// 1. You didn't start the main server using $instance.Listen/ListenTLS/ListenLETSENCRYPT or $instance.Serve($instance.TCP4()/.TLS...)
-	// 2. if you're using something like nginx and have iris listening with addr only(http://) but the nginx mapper is listening to https://
+	// 1. You didn't start the main server using $instance.Listen/ListenTLS/ListenLETSENCRYPT
+	//     or $instance.Serve($instance.TCP4()/.TLS...)
+	// 2. if you're using something like nginx and have iris listening with
+	//    addr only(http://) but the nginx mapper is listening to https://
 	//
-	// Default comes from iris.Default.Listen/.Serve with iris' listeners (TCP4,UNIX,TLS,LETSENCRYPT)
+	// Default comes from iris.Default.Listen/.Serve with iris' listeners (TCP4,UNIX,TLS,LETSENCRYPT).
 	OptionVScheme = func(val string) OptionSet {
 		return func(c *Configuration) {
 			c.VScheme = val
 		}
 	}
-	// maximum duration before timing out read of the request
+
+	// OptionReadTimeout sets the Maximum duration before timing out read of the request.
 	OptionReadTimeout = func(val time.Duration) OptionSet {
 		return func(c *Configuration) {
 			c.ReadTimeout = val
 		}
 	}
-	// maximum duration before timing out write of the response
+
+	// OptionWriteTimeout sets the Maximum duration before timing out write of the response.
 	OptionWriteTimeout = func(val time.Duration) OptionSet {
 		return func(c *Configuration) {
 			c.WriteTimeout = val
@@ -280,22 +281,10 @@ var (
 	// Usage: iris.Default.Set(iris.OptionCheckForUpdates(true)) or
 	//        iris.Default.Config.CheckForUpdates = true or
 	//        app := iris.New(iris.OptionCheckForUpdates(true))
-	// Default is false
+	// Defaults to false.
 	OptionCheckForUpdates = func(val bool) OptionSet {
 		return func(c *Configuration) {
 			c.CheckForUpdates = val
-		}
-	}
-	// CheckForUpdatesSync checks for updates before server starts, it will have a little delay depends on the machine's download's speed
-	// See CheckForUpdates for more
-	// Notes:
-	// 1. you could use the CheckForUpdatesSync while CheckForUpdates is false, set this or CheckForUpdates to true not both
-	// 2. if both CheckForUpdates and CheckForUpdatesSync are setted to true then the updater will run in sync mode, before server server starts.
-	//
-	// Default is false
-	OptionCheckForUpdatesSync = func(val bool) OptionSet {
-		return func(c *Configuration) {
-			c.CheckForUpdatesSync = val
 		}
 	}
 
@@ -304,7 +293,7 @@ var (
 	// then the Router checks if /home handler exists, if yes,
 	// (permant)redirects the client to the correct path /home
 	//
-	// Default is false
+	// Defaults to false.
 	OptionDisablePathCorrection = func(val bool) OptionSet {
 		return func(c *Configuration) {
 			c.DisablePathCorrection = val
@@ -319,17 +308,18 @@ var (
 		}
 	}
 
-	// FireMethodNotAllowed if it's true router checks for StatusMethodNotAllowed(405) and fires the 405 error instead of 404
-	// Default is false
+	// FireMethodNotAllowed if it's true router checks for StatusMethodNotAllowed(405)
+	// and fires the 405 error instead of 404
+	// Defaults to false.
 	OptionFireMethodNotAllowed = func(val bool) OptionSet {
 		return func(c *Configuration) {
 			c.FireMethodNotAllowed = val
 		}
 	}
 
-	// OptionDisableBanner outputs the iris banner at startup
+	// OptionDisableBanner outputs the iris banner at startup.
 	//
-	// Default is false
+	// Defaults to false.
 	OptionDisableBanner = func(val bool) OptionSet {
 		return func(c *Configuration) {
 			c.DisableBanner = val
@@ -349,7 +339,8 @@ var (
 		}
 	}
 
-	// OptionTimeFormat time format for any kind of datetime parsing
+	// OptionTimeFormat time format for any kind of datetime parsing.
+	// Defauls to  "Mon, 02 Jan 2006 15:04:05 GMT".
 	OptionTimeFormat = func(val string) OptionSet {
 		return func(c *Configuration) {
 			c.TimeFormat = val
@@ -358,7 +349,7 @@ var (
 
 	// OptionCharset character encoding for various rendering
 	// used for templates and the rest of the responses
-	// Default is "UTF-8"
+	// Defaults to "UTF-8".
 	OptionCharset = func(val string) OptionSet {
 		return func(c *Configuration) {
 			c.Charset = val
@@ -367,25 +358,23 @@ var (
 
 	// OptionGzip enables gzip compression on your Render actions, this includes any type of render, templates and pure/raw content
 	// If you don't want to enable it globally, you could just use the third parameter on context.Render("myfileOrResponse", structBinding{}, iris.RenderOptions{"gzip": true})
-	// Default is false
+	// Defaults to false.
 	OptionGzip = func(val bool) OptionSet {
 		return func(c *Configuration) {
 			c.Gzip = val
 		}
 	}
 
-	// OptionOther are the custom, dynamic options, can be empty
-	// this fill used only by you to set any app's options you want
-	// for each of an Iris instance
-	OptionOther = func(val ...options.Options) OptionSet {
-		opts := options.Options{}
-		for _, opt := range val {
-			for k, v := range opt {
-				opts[k] = v
-			}
-		}
+	// Other are the custom, dynamic options, can be empty.
+	// This field used only by you to set any app's options you want
+	// or by custom adaptors, it's a way to simple communicate between your adaptors (if any)
+	// Defaults to a non-nil empty map.
+	OptionOther = func(key string, val interface{}) OptionSet {
 		return func(c *Configuration) {
-			c.Other = opts
+			if c.Other == nil {
+				c.Other = make(map[string]interface{}, 0)
+			}
+			c.Other[key] = val
 		}
 	}
 )
@@ -418,15 +407,14 @@ const (
 )
 
 // DefaultConfiguration returns the default configuration for an Iris station, fills the main Configuration
-func DefaultConfiguration() Configuration {
-	return Configuration{
+func DefaultConfiguration() *Configuration {
+	return &Configuration{
 		VHost:                             "",
 		VScheme:                           "",
 		ReadTimeout:                       DefaultReadTimeout,
 		WriteTimeout:                      DefaultWriteTimeout,
 		MaxHeaderBytes:                    DefaultMaxHeaderBytes,
 		CheckForUpdates:                   false,
-		CheckForUpdatesSync:               false,
 		DisablePathCorrection:             DefaultDisablePathCorrection,
 		EnablePathEscape:                  DefaultEnablePathEscape,
 		FireMethodNotAllowed:              false,
@@ -435,7 +423,7 @@ func DefaultConfiguration() Configuration {
 		TimeFormat:                        DefaultTimeFormat,
 		Charset:                           DefaultCharset,
 		Gzip:                              false,
-		Other:                             options.Options{},
+		Other:                             make(map[string]interface{}, 0),
 	}
 }
 

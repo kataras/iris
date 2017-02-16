@@ -92,8 +92,7 @@ func DevLogger() LoggerPolicy {
 // New creates and returns a fresh Iris *Framework instance
 // with the default configuration if no 'setters' parameters passed.
 func New(setters ...OptionSetter) *Framework {
-	s := &Framework{}
-
+	s := &Framework{Config: DefaultConfiguration()}
 	//  +------------------------------------------------------------+
 	//  | Set the config passed from setters                         |
 	//  | or use the default one                                     |
@@ -176,8 +175,9 @@ func New(setters ...OptionSetter) *Framework {
 		{
 			//  +------------------------------------------------------------+
 			//  | Module Name: Rich Content-Type Renderer                    |
-			//  | On Init: Attach a new empty content-type serializers       |
-			//  | On Build: register the default serializers  + the user's   |
+			//  | On Init: Attach a new empty content-type serializers.      |
+			//  | Adapt one RenderPolicy which is responsible                |
+			//  | for json,jsonp,xml and markdown rendering                  |
 			//  +------------------------------------------------------------+
 
 			// prepare the serializers,
@@ -219,16 +219,13 @@ func New(setters ...OptionSetter) *Framework {
 		{
 			//  +------------------------------------------------------------+
 			//  | Module Name: Template engine's funcs                       |
-			//  | On Init: Use the template mux builder to                   |
-			//  |         adapt the reverse routing tmpl funcs               |
+			//  | On Init: Adapt the reverse routing tmpl funcs              |
 			//  |          for any template engine that will be registered   |
 			//  +------------------------------------------------------------+
 			s.Adapt(TemplateFuncsPolicy{
 				"url":     s.URL,
 				"urlpath": s.policies.RouterReversionPolicy.URLPath,
-			})
-
-			// the entire template registration logic lives inside the ./adaptors/template now.
+			}) // the entire template registration logic lives inside the ./adaptors/view now.
 
 		}
 
@@ -286,14 +283,12 @@ func New(setters ...OptionSetter) *Framework {
 	{
 		//  +------------------------------------------------------------+
 		//  | Module Name: System                                        |
-		//  | On Build: Check for updates on Build                       |
+		//  | On Build: Check for updates on Build, async                |
 		//  +------------------------------------------------------------+
 
 		// On Build: local repository updates
 		s.Adapt(EventPolicy{Build: func(*Framework) {
-			if s.Config.CheckForUpdatesSync {
-				s.CheckForUpdates(false)
-			} else if s.Config.CheckForUpdates {
+			if s.Config.CheckForUpdates {
 				go s.CheckForUpdates(false)
 			}
 		}})
@@ -304,11 +299,6 @@ func New(setters ...OptionSetter) *Framework {
 
 // Set sets an option, configuration field to its Config
 func (s *Framework) Set(setters ...OptionSetter) {
-	if s.Config == nil {
-		defaultConfiguration := DefaultConfiguration()
-		s.Config = &defaultConfiguration
-	}
-
 	for _, setter := range setters {
 		setter.Set(s.Config)
 	}
