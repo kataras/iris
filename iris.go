@@ -1,4 +1,4 @@
-// Package iris provides efficient and well-designed toolbox with robust set of features to
+// Package iris is an efficient and well-designed toolbox with robust set of features to
 // create your own perfect high performance web application
 // with unlimited portability using the Go Programming Language.
 //
