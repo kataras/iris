@@ -19,9 +19,9 @@
 // SOFTWARE.
 
 /*
-Package iris is an efficient and well-designed toolbox with robust set of features to
+Package iris provides efficient and well-designed tools with robust set of features to
 create your own perfect high performance web application
-with unlimited portability using the Go Programming Language.
+with unlimited potentials and portability.
 
 Note: This package is under active development status.
 Each month a new version is releasing
