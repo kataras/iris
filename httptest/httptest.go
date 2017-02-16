@@ -63,7 +63,7 @@ func DefaultConfiguration() *Configuration {
 	return &Configuration{ExplicitURL: false, Debug: false}
 }
 
-// New Prepares and returns a new test framework based on the api
+// New Prepares and returns a new test framework based on the app
 // is useful when you need to have more than one test framework for the same iris instance
 // usage:
 // iris.Default.Get("/mypath", func(ctx *iris.Context){ctx.Write("my body")})
@@ -72,19 +72,19 @@ func DefaultConfiguration() *Configuration {
 // e.GET("/mypath").Expect().Status(iris.StatusOK).Body().Equal("my body")
 //
 // You can find example on the https://github.com/kataras/iris/glob/master/context_test.go
-func New(api *iris.Framework, t *testing.T, setters ...OptionSetter) *httpexpect.Expect {
+func New(app *iris.Framework, t *testing.T, setters ...OptionSetter) *httpexpect.Expect {
 	conf := DefaultConfiguration()
 	for _, setter := range setters {
 		setter.Set(conf)
 	}
 
-	api.Set(iris.OptionDisableBanner(true))
-	api.Adapt(iris.DevLogger())
+	app.Set(iris.OptionDisableBanner(true))
+	app.Adapt(iris.DevLogger())
 	baseURL := ""
-	api.Boot()
+	app.Boot()
 
 	if !conf.ExplicitURL {
-		baseURL = api.Config.VScheme + api.Config.VHost
+		baseURL = app.Config.VScheme + app.Config.VHost
 		// if it's still empty then set it to the default server addr
 		if baseURL == "" {
 			baseURL = iris.SchemeHTTP + iris.DefaultServerAddr
@@ -95,7 +95,7 @@ func New(api *iris.Framework, t *testing.T, setters ...OptionSetter) *httpexpect
 	testConfiguration := httpexpect.Config{
 		BaseURL: baseURL,
 		Client: &http.Client{
-			Transport: httpexpect.NewBinder(api),
+			Transport: httpexpect.NewBinder(app),
 			Jar:       httpexpect.NewJar(),
 		},
 		Reporter: httpexpect.NewAssertReporter(t),
