@@ -20,24 +20,23 @@
 
 <br/>
 
-Iris√ is an efficient and well-designed toolbox with robust set of features to<br/> <b>create your own
-perfect high-performance web applications</b> <br/>with unlimited potentials and <b>portability</b>.
+Iris is an efficient and well-designed toolbox with robust set of features.<br/>Write <b>your own</b>
+<b>perfect high-performance web applications</b> <br/>with unlimited potentials and <b>portability</b>.
+<br/>
 
-
-
+<i><u>Powered by Google's Go</u></i>.
 </p>
 
-#Not Yet Another Go Web Framework
-----------
-
 <p>
-<a href="https://github.com/kataras/iris/blob/v6/HISTORY.md"><img src="https://img.shields.io/badge/codename%20-%20√Next%20-blue.svg?style=flat-square" alt="CHANGELOG/HISTORY"></a>
+<h1># Not YAWF<!-- hashtag, no title. --></h1>
 
-<a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/%20examples-repository-3362c2.svg?style=flat-square" alt="Examples"></a>
+<a href="https://github.com/kataras/iris/blob/v6/HISTORY.md"><img src="https://img.shields.io/badge/codename-√Next%20-blue.svg?style=flat-square" alt="CHANGELOG/HISTORY"></a>
 
-<a href="https://godoc.org/gopkg.in/kataras/iris.v6"><img src="https://img.shields.io/badge/%20docs-reference-5272B4.svg?style=flat-square" alt="Docs"></a>
+<a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/examples-%20repository-3362c2.svg?style=flat-square" alt="Examples"></a>
 
-<a href="https://kataras.rocket.chat/channel/iris"><img src="https://img.shields.io/badge/%20community-chat-00BCD4.svg?style=flat-square" alt="Chat"></a>
+<a href="https://godoc.org/gopkg.in/kataras/iris.v6"><img src="https://img.shields.io/badge/docs-%20reference-5272B4.svg?style=flat-square" alt="Docs"></a>
+
+<a href="https://kataras.rocket.chat/channel/iris"><img src="https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square" alt="Chat"></a>
 
 </p>
 
