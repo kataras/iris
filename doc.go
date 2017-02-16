@@ -385,6 +385,7 @@ Static Files
 
 Example code:
 
+
       package main
 
       import (
@@ -392,8 +393,6 @@ Example code:
       	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
       )
 
-      // if your ide cannot find the ./static folder try to build that program and after execute it
-      // or try to download & run this example via LiteIDE.
       func main() {
 
       	app := iris.New()
@@ -407,7 +406,7 @@ Example code:
       	// This will serve the ./static/favicons/iris_favicon_32_32.ico to: 127.0.0.1:8080/favicon_32_32.ico
 
       	app.Get("/", func(ctx *iris.Context) {
-      		ctx.HTML(iris.StatusOK, "You should see the favicon now at the side of your browser, if not please refresh or clear the browser's cache.")
+      		ctx.HTML(iris.StatusOK, "You should see the favicon now at the side of your browser.")
       	})
 
       	app.Listen(":8080")
