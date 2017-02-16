@@ -82,7 +82,7 @@ Edit your main .go source file to adapt one of these routers and restart your ap
 
 		// the rest of your source code...
 		// ...
-		
+
 		app.Listen("%s")
 	}
 
@@ -405,7 +405,7 @@ func (router *Router) StaticServe(systemPath string, requestPath ...string) Rout
 
 // StaticContent serves bytes, memory cached, on the reqPath
 // a good example of this is how the websocket server uses that to auto-register the /iris-ws.js
-func (router *Router) StaticContent(reqPath string, cType string, content []byte) RouteInfo { // func(string) because we use that on websockets
+func (router *Router) StaticContent(reqPath string, cType string, content []byte) RouteInfo {
 	modtime := time.Now()
 	h := func(ctx *Context) {
 		if err := ctx.SetClientCachedBody(StatusOK, content, cType, modtime); err != nil {
@@ -504,6 +504,8 @@ func (router *Router) StaticEmbedded(requestPath string, vdir string, assetFn fu
 //
 // panics on error
 func (router *Router) Favicon(favPath string, requestPath ...string) RouteInfo {
+	favPath = abs(favPath)
+
 	f, err := os.Open(favPath)
 	if err != nil {
 		panic(errDirectoryFileNotFound.Format(favPath, err.Error()))

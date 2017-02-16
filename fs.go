@@ -3,6 +3,7 @@ package iris
 import (
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 )
@@ -42,6 +43,16 @@ func toWebPath(systemPath string) string {
 	return webpath
 }
 
+// abs calls filepath.Abs but ignores the error and
+// returns the original value if any error occured.
+func abs(path string) string {
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return path
+	}
+	return absPath
+}
+
 // NewStaticHandlerBuilder returns a new Handler which serves static files
 // supports gzip, no listing and much more
 // Note that, this static builder returns a Handler
@@ -52,7 +63,7 @@ func toWebPath(systemPath string) string {
 // structure and want a fluent api to work on.
 func NewStaticHandlerBuilder(dir string) StaticHandlerBuilder {
 	return &fsHandler{
-		directory: http.Dir(dir),
+		directory: http.Dir(abs(dir)),
 		// default route path is the same as the directory
 		requestPath: toWebPath(dir),
 		// enable strip path by-default
