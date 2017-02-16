@@ -147,8 +147,8 @@ Example code:
 Parameterized Path
 
 
-Path Parameters' syntax depends on the selected router
-Note: This is the only difference between the routers, the registered path form, the API remains the same for both.
+Path Parameters' syntax depends on the selected router.
+This is the only difference between the routers, the registered path form, the API remains the same for both.
 
 Example `gorillamux` code:
 
@@ -212,7 +212,6 @@ Example `gorillamux` code:
       func h(ctx *iris.Context) {
       	ctx.HTML(iris.StatusOK, "<h1>Path<h1/>"+ctx.Path())
       }
-
 
 
 Example `httprouter` code:
@@ -284,7 +283,10 @@ Example `httprouter` code:
 Grouping Routes
 
 
-A set of routes that are being groupped by path prefix can (optionally) share the same middleware handlers and template layou.
+A set of routes that are being groupped by path prefix can (optionally) share the same middleware handlers and template layout.
+A group can have a nested group too.
+
+`.Party` is being used to group routes, developers can declare an unlimited number of (nested) groups.
 
 
 Example code:
@@ -609,10 +611,12 @@ That's the basics
 But you should have a basic idea of the framework by now, we just scratched the surface.
 If you enjoy what you just saw and want to learn more, please follow the below links:
 
-Examples: https://github.com/iris-contrib/examples
-Adaptors: https://github.com/kataras/iris/tree/v6/adaptors
-Middleware: https://github.com/kataras/iris/tree/v6/middleware and
-https://github.com/iris-contrib/middleware
+* Examples: https://github.com/iris-contrib/examples
+
+* Adaptors: https://github.com/kataras/iris/tree/v6/adaptors
+
+* Middleware: https://github.com/kataras/iris/tree/v6/middleware and
+* https://github.com/iris-contrib/middleware
 
 
 */
