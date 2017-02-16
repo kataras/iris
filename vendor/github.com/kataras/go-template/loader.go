@@ -47,7 +47,14 @@ func (t *Loader) Directory(dir string, fileExtension string) *BinaryLoader {
 		fileExtension = "." + fileExtension
 	}
 
-	t.Dir = dir
+	absDir, err := filepath.Abs(dir)
+	// panic here of course.
+	if err != nil {
+		panic("couldn't find the dir: " + dir +
+			" as absolute neither from current working directory: " + err.Error())
+	}
+	t.Dir = absDir
+
 	t.Extension = fileExtension
 
 	return &BinaryLoader{Loader: t}

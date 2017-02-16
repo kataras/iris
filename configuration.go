@@ -1,13 +1,13 @@
 package iris
 
 import (
-	"crypto/tls"
-	"net"
-	"net/http"
+	"io/ioutil"
+	"path/filepath"
 	"strconv"
 	"time"
 
 	"github.com/imdario/mergo"
+	"gopkg.in/yaml.v2"
 )
 
 type (
@@ -39,6 +39,39 @@ func (o OptionSet) Set(c *Configuration) {
 	o(c)
 }
 
+// YAML reads Configuration from a file.yml.
+//
+// Accepts the absolute path of the file.yml.
+// An error will be shown to the user via panic with the error message.
+// Error may occur when the file.yml doesn't exists or is not formatted correctly.
+//
+// Usage:
+// 1. `app := iris.New(YAML("myfile.yml"))`
+// 2. `app.Set(YAML("myfile.yml"))`
+func YAML(filename string) Configuration {
+	c := DefaultConfiguration()
+
+	// get the abs
+	// which will try to find the 'filename' from current workind dir too.
+	yamlAbsPath, err := filepath.Abs(filename)
+	if err != nil {
+		panic("FATAL ERROR .yml.filename to absolute: " + err.Error())
+	}
+
+	// read the raw contents of the file
+	data, err := ioutil.ReadFile(yamlAbsPath)
+	if err != nil {
+		panic("FATAL ERROR .yml.ReadFile: " + err.Error())
+	}
+
+	// put the file's contents as yaml to the default configuration(c)
+	if err := yaml.Unmarshal(data, &c); err != nil {
+		panic("FATAL ERROR .yml.Unmarshal: " + err.Error())
+	}
+
+	return c
+}
+
 // Configuration the whole configuration for an Iris station instance
 // these can be passed via options also, look at the top of this file(configuration.go).
 // Configuration is a valid OptionSetter.
@@ -57,7 +90,7 @@ type Configuration struct {
 	// listening to the $instance.Handler after the manually-called $instance.Build
 	//
 	// Default comes from iris.Default.Listen/.Serve with iris' listeners (iris.TCP4/UNIX/TLS/LETSENCRYPT).
-	VHost string
+	VHost string `yaml:"vHost"`
 
 	// VScheme is the scheme (http:// or https://) putted at the template function '{{url }}'
 	// It's an optional field,
@@ -68,34 +101,20 @@ type Configuration struct {
 	//   addr only(http://) but the nginx mapper is listening to https://
 	//
 	// Default comes from iris.Default.Listen/.Serve with iris' listeners (TCP4,UNIX,TLS,LETSENCRYPT).
-	VScheme string
+	VScheme string `yaml:"vScheme"`
 
 	// ReadTimeout is the maximum duration before timing out read of the request.
-	ReadTimeout time.Duration
+	ReadTimeout time.Duration `yaml:"readTimeout"`
+
 	// WriteTimeout is the maximum duration before timing out write of the response.
-	WriteTimeout time.Duration
+	WriteTimeout time.Duration `yaml:"writeTimeout"`
 
 	// MaxHeaderBytes controls the maximum number of bytes the
 	// server will read parsing the request header's keys and
 	// values, including the request line. It does not limit the
 	// size of the request body.
 	// If zero, DefaultMaxHeaderBytes is used.
-	MaxHeaderBytes int
-
-	// TLSNextProto optionally specifies a function to take over
-	// ownership of the provided TLS connection when an NPN/ALPN
-	// protocol upgrade has occurred. The map key is the protocol
-	// name negotiated. The Handler argument should be used to
-	// handle HTTP requests and will initialize the Request's TLS
-	// and RemoteAddr if not already set. The connection is
-	// automatically closed when the function returns.
-	// If TLSNextProto is nil, HTTP/2 support is enabled automatically.
-	TLSNextProto map[string]func(*http.Server, *tls.Conn, http.Handler)
-
-	// ConnState specifies an optional callback function that is
-	// called when a client connection changes state. See the
-	// ConnState type and associated constants for details.
-	ConnState func(net.Conn, http.ConnState)
+	MaxHeaderBytes int `yaml:"maxHeaderBytes"`
 
 	// CheckForUpdates will try to search for newer version of Iris based on the https://github.com/kataras/iris/releases
 	// If a newer version found then the app will ask the he dev/user if want to update the 'x' version
@@ -111,7 +130,7 @@ type Configuration struct {
 	// Usage: app := iris.New(iris.Configuration{CheckForUpdates: true})
 	//
 	// Defaults to false.
-	CheckForUpdates bool
+	CheckForUpdates bool `yaml:"checkForUpdates"`
 
 	// DisablePathCorrection corrects and redirects the requested path to the registered path
 	// for example, if /home/ path is requested but no handler for this Route found,
@@ -119,7 +138,7 @@ type Configuration struct {
 	// (permant)redirects the client to the correct path /home
 	//
 	// Defaults to false.
-	DisablePathCorrection bool
+	DisablePathCorrection bool `yaml:"disablePathCorrection"`
 
 	// EnablePathEscape when is true then its escapes the path, the named parameters (if any).
 	// Change to false it if you want something like this https://github.com/kataras/iris/issues/135 to work
@@ -132,17 +151,17 @@ type Configuration struct {
 	// projectName, _ := url.QueryUnescape(c.Param("project").
 	//
 	// Defaults to false.
-	EnablePathEscape bool
+	EnablePathEscape bool `yaml:"enablePathEscape"`
 
 	// FireMethodNotAllowed if it's true router checks for StatusMethodNotAllowed(405) and
 	//  fires the 405 error instead of 404
 	// Defaults to false.
-	FireMethodNotAllowed bool
+	FireMethodNotAllowed bool `yaml:"fireMethodNotAllowed"`
 
 	// DisableBanner outputs the iris banner at startup
 	//
 	// Defaults to false.
-	DisableBanner bool
+	DisableBanner bool `yaml:"disableBanner"`
 
 	// DisableBodyConsumptionOnUnmarshal manages the reading behavior of the context's body readers/binders.
 	// If setted to true then it
@@ -152,34 +171,36 @@ type Configuration struct {
 	// if this field setted to true then a new buffer will be created to read from and the request body.
 	// The body will not be changed and existing data before the
 	// context.UnmarshalBody/ReadJSON/ReadXML will be not consumed.
-	DisableBodyConsumptionOnUnmarshal bool
+	DisableBodyConsumptionOnUnmarshal bool `yaml:"disableBodyConsumptionOnUnmarshal"`
 
 	// TimeFormat time format for any kind of datetime parsing
 	// Defauls to  "Mon, 02 Jan 2006 15:04:05 GMT".
-	TimeFormat string
+	TimeFormat string `yaml:"timeFormat"`
 
 	// Charset character encoding for various rendering
 	// used for templates and the rest of the responses
 	// Defaults to "UTF-8".
-	Charset string
+	Charset string `yaml:"charset"`
 
 	// Gzip enables gzip compression on your Render actions, this includes any type of render,
 	// templates and pure/raw content
 	// If you don't want to enable it globally, you could just use the third parameter
 	// on context.Render("myfileOrResponse", structBinding{}, iris.RenderOptions{"gzip": true})
 	// Defaults to false.
-	Gzip bool
+	Gzip bool `yaml:"gzip"`
 
 	// Other are the custom, dynamic options, can be empty.
 	// This field used only by you to set any app's options you want
 	// or by custom adaptors, it's a way to simple communicate between your adaptors (if any)
 	// Defaults to a non-nil empty map.
-	Other map[string]interface{}
+	Other map[string]interface{} `yaml:"other"`
 }
 
 // Set implements the OptionSetter
 func (c Configuration) Set(main *Configuration) {
-	mergo.MergeWithOverwrite(main, c)
+	if err := mergo.MergeWithOverwrite(main, c); err != nil {
+		panic("FATAL ERROR .Configuration as OptionSetter: " + err.Error())
+	}
 }
 
 // All options starts with "Option" preffix in order to be easier to find what dev searching for
@@ -242,29 +263,6 @@ var (
 	OptionMaxHeaderBytes = func(val int) OptionSet {
 		return func(c *Configuration) {
 			c.MaxHeaderBytes = val
-		}
-	}
-
-	// TLSNextProto optionally specifies a function to take over
-	// ownership of the provided TLS connection when an NPN/ALPN
-	// protocol upgrade has occurred. The map key is the protocol
-	// name negotiated. The Handler argument should be used to
-	// handle HTTP requests and will initialize the Request's TLS
-	// and RemoteAddr if not already set. The connection is
-	// automatically closed when the function returns.
-	// If TLSNextProto is nil, HTTP/2 support is enabled automatically.
-	OptionTLSNextProto = func(val map[string]func(*http.Server, *tls.Conn, http.Handler)) OptionSet {
-		return func(c *Configuration) {
-			c.TLSNextProto = val
-		}
-	}
-
-	// ConnState specifies an optional callback function that is
-	// called when a client connection changes state. See the
-	// ConnState type and associated constants for details.
-	OptionConnState = func(val func(net.Conn, http.ConnState)) OptionSet {
-		return func(c *Configuration) {
-			c.ConnState = val
 		}
 	}
 
@@ -407,8 +405,8 @@ const (
 )
 
 // DefaultConfiguration returns the default configuration for an Iris station, fills the main Configuration
-func DefaultConfiguration() *Configuration {
-	return &Configuration{
+func DefaultConfiguration() Configuration {
+	return Configuration{
 		VHost:                             "",
 		VScheme:                           "",
 		ReadTimeout:                       DefaultReadTimeout,

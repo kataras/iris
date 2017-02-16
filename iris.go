@@ -9,6 +9,7 @@
 package iris
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io"
 	"log"
@@ -66,7 +67,21 @@ type Framework struct {
 
 	// HTTP Server runtime fields is the iris' defined main server, developer can use unlimited number of servers
 	// note: they're available after .Build, and .Serve/Listen/ListenTLS/ListenLETSENCRYPT/ListenUNIX
-	ln             net.Listener
+	ln net.Listener
+	// TLSNextProto optionally specifies a function to take over
+	// ownership of the provided TLS connection when an NPN/ALPN
+	// protocol upgrade has occurred. The map key is the protocol
+	// name negotiated. The Handler argument should be used to
+	// handle HTTP requests and will initialize the Request's TLS
+	// and RemoteAddr if not already set. The connection is
+	// automatically closed when the function returns.
+	// If TLSNextProto is nil, HTTP/2 support is enabled automatically.
+	TLSNextProto map[string]func(*http.Server, *tls.Conn, http.Handler)
+	// ConnState specifies an optional callback function that is
+	// called when a client connection changes state. See the
+	// ConnState type and associated constants for details.
+	ConnState func(net.Conn, http.ConnState)
+
 	closedManually bool
 
 	once   sync.Once
@@ -92,13 +107,14 @@ func DevLogger() LoggerPolicy {
 // New creates and returns a fresh Iris *Framework instance
 // with the default configuration if no 'setters' parameters passed.
 func New(setters ...OptionSetter) *Framework {
-	s := &Framework{Config: DefaultConfiguration()}
+	cfg := DefaultConfiguration()
+	s := &Framework{Config: &cfg}
+
 	//  +------------------------------------------------------------+
 	//  | Set the config passed from setters                         |
 	//  | or use the default one                                     |
 	//  +------------------------------------------------------------+
 	s.Set(setters...)
-
 	{
 		//  +------------------------------------------------------------+
 		//  | Module Name: Logger                                        |
@@ -389,19 +405,13 @@ func (s *Framework) Serve(ln net.Listener) error {
 		ReadTimeout:    s.Config.ReadTimeout,
 		WriteTimeout:   s.Config.WriteTimeout,
 		MaxHeaderBytes: s.Config.MaxHeaderBytes,
-		TLSNextProto:   s.Config.TLSNextProto,
-		ConnState:      s.Config.ConnState,
+		TLSNextProto:   s.TLSNextProto,
+		ConnState:      s.ConnState,
 		Addr:           s.Config.VHost,
 		ErrorLog:       s.policies.LoggerPolicy.ToLogger(log.LstdFlags),
 		Handler:        s.Router,
 	}
 
-	if s.Config.TLSNextProto != nil {
-		srv.TLSNextProto = s.Config.TLSNextProto
-	}
-	if s.Config.ConnState != nil {
-		srv.ConnState = s.Config.ConnState
-	}
 	// print the banner and wait for system channel interrupt
 	go s.postServe()
 	// finally return the error or block here, remember,
@@ -535,7 +545,9 @@ func (s *Framework) isRunning() bool {
 
 // Close is not working propetly but it releases the host:port.
 func (s *Framework) Close() error {
+
 	if s.isRunning() {
+		s.closedManually = true
 		///TODO:
 		// This code below doesn't works without custom net listener which will work in a stop channel which will cost us performance.
 		// This will work on go v1.8 BUT FOR NOW make unexported reserve/reboot/restart in order to be non confusual for the user.
