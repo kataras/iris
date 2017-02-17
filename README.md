@@ -49,15 +49,15 @@ I made two very simple identical applications, the first written with a famous m
 
 I ran `go build` for both of them,
 
- - the first had `9.029 KB` overall file size,
- - the second had `8.505 KB` overall file size!
- - net/http` had produced an executable file with `5.380 KB` size
+ - _gin_ had `9.029 KB` overall file size,
+ - _iris_ had `8.505 KB` overall file size!
+ - _net/http_ had produced an executable file with `5.380 KB` size.
 
 
 > The app didn't used any third-party library. If you test the same thing I test and adapt other features like sessions and websockets then the size of `gin` and `net/http` could be doubled while `iris`' overall file size will remain almost the same.
 
 
-**Applications that are written using Iris have smaller file sizes** than a single router library!
+**Applications that are written using Iris produce smaller file size even if they use more features** than a simple router library!
 
 > Q: How is that possible?
 
