@@ -62,12 +62,43 @@ func init() {
 
 // Framework is our God |\| Google.Search('Greek mythology Iris').
 type Framework struct {
+	// Router is the Router API, REST Routing, Static files & favicon,
+	// Grouping, Custom HTTP Errors,  Subdomains and more.
+	//
+	// This field is available before 'Boot' but the routes are actually registered after 'Boot'
+	// if no RouterBuilderPolicy was .Adapt(ed) by user then
+	// it throws a panic with detailed information of how-to-fix it.
 	*Router
+
+	// Config contains the configuration fields
+	// all fields defaults to something that is working, developers don't have to set it.
+	//
+	// can be setted via .New, .Set and .New(.YAML)
+	Config *Configuration
+
+	// policies contains the necessary information about the application's components.
+	// - LoggerPolicy
+	// - EventPolicy
+	//      - Boot
+	//      - Build
+	//      - Interrupted
+	//      - Recover
+	// - RouterReversionPolicy
+	//      - StaticPath
+	//      - WildcardPath
+	//      - URLPath
+	//      - RouteContextLinker
+	// - RouterBuilderPolicy
+	// - RouterWrapperPolicy
+	// - RenderPolicy
+	// - TemplateFuncsPolicy
+	// - SessionsPolicy
+	//
+	// These are setted by user's call to .Adapt
 	policies Policies
 
-	// HTTP Server runtime fields is the iris' defined main server, developer can use unlimited number of servers
-	// note: they're available after .Build, and .Serve/Listen/ListenTLS/ListenLETSENCRYPT/ListenUNIX
-	ln net.Listener
+	ln net.Listener // setted on Listten/Serve funcions, available after 'Boot'
+
 	// TLSNextProto optionally specifies a function to take over
 	// ownership of the provided TLS connection when an NPN/ALPN
 	// protocol upgrade has occurred. The map key is the protocol
@@ -76,16 +107,16 @@ type Framework struct {
 	// and RemoteAddr if not already set. The connection is
 	// automatically closed when the function returns.
 	// If TLSNextProto is nil, HTTP/2 support is enabled automatically.
-	TLSNextProto map[string]func(*http.Server, *tls.Conn, http.Handler)
+	TLSNextProto map[string]func(*http.Server, *tls.Conn, http.Handler) // same as http.Server.TLSNextProto
+
 	// ConnState specifies an optional callback function that is
 	// called when a client connection changes state. See the
 	// ConnState type and associated constants for details.
-	ConnState func(net.Conn, http.ConnState)
+	ConnState func(net.Conn, http.ConnState) // same as http.Server.ConnState
 
-	closedManually bool
+	closedManually bool // true if closed via .Close, used to not throw an error when closing the app's server
 
-	once   sync.Once
-	Config *Configuration
+	once sync.Once // used to 'Boot' once
 }
 
 var defaultGlobalLoggerOuput = log.New(os.Stdout, "[iris] ", log.LstdFlags)
@@ -269,27 +300,36 @@ func New(setters ...OptionSetter) *Framework {
 		}
 
 		s.Adapt(EventPolicy{Build: func(*Framework) {
-			// user has registered routes
-			if s.Router.repository.Len() > 0 {
-				// first check if it's not setted already by any Boot event.
-				if s.Router.handler == nil {
-					// and most importantly, check if the user has provided a router
-					// adaptor, if not then it should panic here, iris can't run without a router attached to it
-					// and default router not any more, user should select one from ./adaptors or
-					// any other third-party adaptor may done by community.
-					// I was coding the new iris version for more than 20 days(~200+ hours of code)
-					// and I hope that once per application the addition of +1 line users have to put,
-					// is not a big deal.
-					if s.policies.RouterBuilderPolicy == nil {
+			// Author's notes:
+			// Proxy for example has 0 routes registered but still uses the RouterBuilderPolicy
+			// so we can't check only for it, we can check if it's nil and it has more than one registered
+			// routes, then panic, if has no registered routes the user don't want to get errors about the router.
+
+			// first check if it's not setted already by any Boot event.
+			if s.Router.handler == nil {
+				hasRoutes := s.Router.repository.Len() > 0
+				routerBuilder := s.policies.RouterBuilderPolicy
+				// and most importantly, check if the user has provided a router adaptor
+				//                    at the same time has registered at least one route,
+				// if not then it should panic here, iris can't run without a router attached to it
+				// and default router not any more, user should select one from ./adaptors or
+				// any other third-party adaptor may done by community.
+				// I was coding the new iris version for more than 20 days(~200+ hours of code)
+				// and I hope that once per application the addition of +1 line users have to put,
+				// is not a big deal.
+				if hasRoutes {
+					if routerBuilder == nil {
 						// this is important panic and app can't continue as we said.
 						s.handlePanic(errRouterIsMissing.Format(s.Config.VHost))
 						// don't trace anything else,
 						// the detailed errRouterIsMissing message will tell the user what to do to fix that.
 						os.Exit(0)
-
 					}
+				}
+
+				if routerBuilder != nil {
 					// buid the router using user's selection build policy
-					s.Router.build(s.policies.RouterBuilderPolicy)
+					s.Router.build(routerBuilder)
 				}
 			}
 		}})
