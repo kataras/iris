@@ -4,7 +4,7 @@ package cors
 //  | Cors wrapper usage                                         |
 //  +------------------------------------------------------------+
 //
-// import "github.com/kataras/iris/adaptors/cors"
+// import "gopkg.in/kataras/iris.v6/adaptors/cors"
 //
 // app := iris.New()
 // app.Adapt(cors.New(cors.Options{})))
