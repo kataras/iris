@@ -1016,7 +1016,7 @@ func main() {
 		ctx.Render("client.html", clientPage{"Client Page", ctx.Host()})
 	})
 
-	// the path which the websocket client should listen/registed to ->
+	// the path which the websocket client should listen/registered to ->
 	iris.Config.Websocket.Endpoint = "/my_endpoint"
 	// by-default all origins are accepted, you can change this behavior by setting:
 	// iris.Config.Websocket.CheckOrigin
@@ -1100,7 +1100,7 @@ func main() {
 	app.Adapt(view.HTML("./templates", ".html")) // select the html engine to serve templates
 
 	ws := websocket.New(websocket.Config{
-		// the path which the websocket client should listen/registed to,
+		// the path which the websocket client should listen/registered to,
 		Endpoint: "/my_endpoint",
 		// the client-side javascript static file path
 		// which will be served by Iris.
