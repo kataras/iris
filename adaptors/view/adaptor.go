@@ -74,7 +74,7 @@ func (h *Adaptor) Adapt(frame *iris.Policies) {
 			// no need to panic here because we will use the html as the default template engine
 			// even if the user doesn't asks for
 			// or no? we had the defaults before... maybe better to give the user
-			// the oportunity to learn about the template's configuration
+			// the opportunity to learn about the template's configuration
 			// (now 6.1.4 ) they are defaulted and users may don't know how and if they can change the configuration
 			// even if the book and examples covers these things, many times they're asking me on chat.............
 			// so no defaults? ok no defaults. This file then will be saved to /adaptors as with other template engines.
@@ -94,7 +94,7 @@ func (h *Adaptor) Adapt(frame *iris.Policies) {
 			// adaptor. We also know that it is not a good idea to have two
 			// policies with the same function or we can? wait. No we can't.
 			// We can't because:
-			// - the RenderPolicy should accept any type of render process, not only tempaltes.
+			// - the RenderPolicy should accept any type of render process, not only templates.
 			// - I didn't design iris/policy.go to keep logic about implementation, this would make that very limited
 			//    and I don't want to break that just for the templates.
 			// - We want community to be able to create packages which can adapt template functions but
@@ -105,13 +105,13 @@ func (h *Adaptor) Adapt(frame *iris.Policies) {
 			//
 			// So when the community wants to create a template adaptor has two options:
 			// - Use the RenderPolicy which is just a func
-			// - Use the kataras/iris/adaptors/view.Adaptor adaptor wrapper for RenderPolicy with a compination of kataras/go-template/.Engine
+			// - Use the kataras/iris/adaptors/view.Adaptor adaptor wrapper for RenderPolicy with a combination of kataras/go-template/.Engine
 			//
 			//
-			// So here is the only place we adapt the iris.TemplateFuncsPolicy to the tempaltes, if and only if templates are used,
+			// So here is the only place we adapt the iris.TemplateFuncsPolicy to the templates, if and only if templates are used,
 			//  otherwise they are just ignored without any creepy things.
 			//
-			// The TemplateFuncsPolicy will work in compination with the specific template adaptor's functions(see html.go and the rest)
+			// The TemplateFuncsPolicy will work in combination with the specific template adaptor's functions(see html.go and the rest)
 
 			if len(frame.TemplateFuncsPolicy) > 0 {
 				mux.SetFuncMapToEngine(frame.TemplateFuncsPolicy, h.engine)

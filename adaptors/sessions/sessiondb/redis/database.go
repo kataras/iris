@@ -32,15 +32,17 @@ func (d *Database) Load(sid string) map[string]interface{} {
 		if err != nil {
 			if err != nil {
 				// don't use to get the logger, just prin these to the console... atm
-				println("Redis Connection error on Connect: " + err.Error())
-				println("But don't panic, auto-switching to memory store right now!")
+				///TODO: Find a way to use the iris' defined logger via an optional interface to Database.
+				// println("Redis Connection error on Connect: " + err.Error())
+				// println("But don't panic, auto-switching to memory store right now!")
 			}
 		}
 	}
 	//fetch the values from this session id and copy-> store them
 	val, err := d.redis.GetBytes(sid)
 	if err == nil {
-		err = DeserializeBytes(val, &values)
+		// err removed because of previous TODO
+		DeserializeBytes(val, &values)
 	}
 
 	return values

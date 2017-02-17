@@ -492,7 +492,7 @@ type (
 	// a compatible iris.Session interface, type. If the external session manager
 	// doesn't qualifies, then the user should code the rest of the functions with empty implementation.
 	//
-	// A SessionsPolicy should be responsible to Destory a session based
+	// A SessionsPolicy should be responsible to Destroy a session based
 	// on the http.ResponseWriter and http.Request, this function should works individually.
 	//
 	// No iris.Context required from users. In order to be able to adapt any external session manager.

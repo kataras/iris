@@ -32,7 +32,7 @@ func Handlebars(directory string, extension string) *HandlebarsAdaptor {
 // and optionally {{partial/partial_r/render}} to render other template files like headers and footers
 //
 // The 'tmplLayoutFile' is a relative path of the templates base directory,
-// for the template file whith its extension.
+// for the template file with its extension.
 //
 // Example: Handlebars("./templates", ".html").Layout("layouts/mainLayout.html")
 //         // mainLayout.html is inside: "./templates/layouts/".
