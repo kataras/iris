@@ -288,12 +288,14 @@ func Proxy(proxyAddr string, redirectSchemeAndHost string) func() error {
 	// override the handler and redirect all requests to this addr
 	h := ProxyHandler(redirectSchemeAndHost)
 	prx := New(OptionDisableBanner(true))
+	prx.Adapt(DevLogger())
+
 	prx.Adapt(RouterBuilderPolicy(func(RouteRepository, ContextPool) http.Handler {
 		return h
 	}))
 
 	go prx.Listen(proxyAddr)
-	time.Sleep(300 * time.Millisecond)
+	time.Sleep(150 * time.Millisecond)
 
 	return func() error { return prx.Close() }
 }
