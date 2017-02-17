@@ -17,12 +17,13 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/iris-contrib/formBinder"
 	"github.com/kataras/go-errors"
 	"github.com/kataras/go-fs"
-	"github.com/kataras/go-sessions"
+	"github.com/kataras/go-template"
 )
 
 const (
@@ -120,6 +121,85 @@ func (r *requestValues) Reset() {
 }
 
 type (
+	// ContextPool is a set of temporary *Context that may be individually saved and
+	// retrieved.
+	//
+	// Any item stored in the Pool may be removed automatically at any time without
+	// notification. If the Pool holds the only reference when this happens, the
+	// item might be deallocated.
+	//
+	// The ContextPool is safe for use by multiple goroutines simultaneously.
+	//
+	// ContextPool's purpose is to cache allocated but unused Contexts for later reuse,
+	// relieving pressure on the garbage collector.
+	ContextPool interface {
+		// Acquire returns a Context from pool.
+		// See Release.
+		Acquire(w http.ResponseWriter, r *http.Request) *Context
+
+		// Release puts a Context back to its pull, this function releases its resources.
+		// See Acquire.
+		Release(ctx *Context)
+
+		// Framework is never used, except when you're in a place where you don't have access to the *iris.Framework station
+		// but you need to fire a func or check its Config.
+		//
+		// Used mostly inside external routers to take the .Config.VHost
+		// without the need of other param receivers and refactors when changes
+		//
+		// note: we could make a variable inside contextPool which would be received by newContextPool
+		// but really doesn't need, we just need to borrow a context: we are in pre-build state
+		// so the server is not actually running yet, no runtime performance cost.
+		Framework() *Framework
+
+		// Run is a combination of Acquire and Release , between these two the `runner` runs,
+		// when `runner` finishes its job then the Context is being released.
+		Run(w http.ResponseWriter, r *http.Request, runner func(ctx *Context))
+	}
+
+	contextPool struct {
+		pool sync.Pool
+	}
+)
+
+var _ ContextPool = &contextPool{}
+
+func (c *contextPool) Acquire(w http.ResponseWriter, r *http.Request) *Context {
+	ctx := c.pool.Get().(*Context)
+	ctx.ResponseWriter = acquireResponseWriter(w)
+	ctx.Request = r
+	return ctx
+}
+
+func (c *contextPool) Release(ctx *Context) {
+	// flush the body (on recorder) or just the status code (on basic response writer)
+	// when all finished
+	ctx.ResponseWriter.flushResponse()
+
+	ctx.Middleware = nil
+	ctx.session = nil
+	ctx.Request = nil
+	///TODO:
+	ctx.ResponseWriter.releaseMe()
+	ctx.values.Reset()
+
+	c.pool.Put(ctx)
+}
+
+func (c *contextPool) Framework() *Framework {
+	ctx := c.pool.Get().(*Context)
+	s := ctx.framework
+	c.pool.Put(ctx)
+	return s
+}
+
+func (c *contextPool) Run(w http.ResponseWriter, r *http.Request, runner func(*Context)) {
+	ctx := c.Acquire(w, r)
+	runner(ctx)
+	c.Release(ctx)
+}
+
+type (
 
 	// Map is just a conversion for a map[string]interface{}
 	// should not be used inside Render when PongoEngine is used.
@@ -134,7 +214,7 @@ type (
 		framework      *Framework
 		//keep track all registered middleware (handlers)
 		Middleware Middleware //  exported because is useful for debugging
-		session    sessions.Session
+		session    Session
 		// Pos is the position number of the Context, look .Next to understand
 		Pos int // exported because is useful for debugging
 	}
@@ -198,17 +278,17 @@ func (ctx *Context) GetHandlerName() string {
 // it can validate paths, has sessions, path parameters and all.
 //
 // You can find the Route by iris.Lookup("theRouteName")
-// you can set a route name as: myRoute := iris.Get("/mypath", handler)("theRouteName")
+// you can set a route name as: myRoute := iris.Default.Get("/mypath", handler)("theRouteName")
 // that will set a name to the route and returns its iris.Route instance for further usage.
 //
 // It doesn't changes the global state, if a route was "offline" it remains offline.
 //
 // see ExecRouteAgainst(routeName, againstRequestPath string),
-// iris.None(...) and iris.SetRouteOnline/SetRouteOffline
+// iris.Default.None(...) and iris.Default.SetRouteOnline/SetRouteOffline
 // For more details look: https://github.com/kataras/iris/issues/585
 //
 // Example: https://github.com/iris-contrib/examples/tree/master/route_state
-func (ctx *Context) ExecRoute(r Route) *Context {
+func (ctx *Context) ExecRoute(r RouteInfo) *Context {
 	return ctx.ExecRouteAgainst(r, ctx.Path())
 }
 
@@ -219,23 +299,27 @@ func (ctx *Context) ExecRoute(r Route) *Context {
 // it can validate paths, has sessions, path parameters and all.
 //
 // You can find the Route by iris.Lookup("theRouteName")
-// you can set a route name as: myRoute := iris.Get("/mypath", handler)("theRouteName")
+// you can set a route name as: myRoute := iris.Default.Get("/mypath", handler)("theRouteName")
 // that will set a name to the route and returns its iris.Route instance for further usage.
 //
 // It doesn't changes the global state, if a route was "offline" it remains offline.
 //
 // see ExecRoute(routeName),
-// iris.None(...) and iris.SetRouteOnline/SetRouteOffline
+// iris.Default.None(...) and iris.Default.SetRouteOnline/SetRouteOffline
 // For more details look: https://github.com/kataras/iris/issues/585
 //
 // Example: https://github.com/iris-contrib/examples/tree/master/route_state
-func (ctx *Context) ExecRouteAgainst(r Route, againstRequestPath string) *Context {
+func (ctx *Context) ExecRouteAgainst(r RouteInfo, againstRequestPath string) *Context {
 	if r != nil {
 		context := &(*ctx)
 		context.Middleware = context.Middleware[0:0]
 		context.values.Reset()
-		tree := ctx.framework.muxAPI.mux.getTree(r.Method(), r.Subdomain())
-		tree.entry.get(againstRequestPath, context)
+		context.Request.RequestURI = againstRequestPath
+		context.Request.URL.Path = againstRequestPath
+		context.Request.URL.RawPath = againstRequestPath
+		ctx.framework.policies.RouterReversionPolicy.RouteContextLinker(r, context)
+		// tree := ctx.framework.muxAPI.mux.getTree(r.Method(), r.Subdomain())
+		// tree.entry.get(againstRequestPath, context)
 		if len(context.Middleware) > 0 {
 			context.Do()
 			return context
@@ -251,16 +335,17 @@ func (ctx *Context) ExecRouteAgainst(r Route, againstRequestPath string) *Contex
 // then use the:  if c := ExecRoute(r); c == nil { /*  move to the next, the route is not valid */ }
 //
 // You can find the Route by iris.Lookup("theRouteName")
-// you can set a route name as: myRoute := iris.Get("/mypath", handler)("theRouteName")
+// you can set a route name as: myRoute := iris.Default.Get("/mypath", handler)("theRouteName")
 // that will set a name to the route and returns its iris.Route instance for further usage.
 //
 // if the route found then it executes that and don't continue to the next handler
 // if not found then continue to the next handler
-func Prioritize(r Route) HandlerFunc {
+func Prioritize(r RouteInfo) HandlerFunc {
 	if r != nil {
 		return func(ctx *Context) {
 			reqPath := ctx.Path()
-			if strings.HasPrefix(reqPath, r.StaticPath()) {
+			staticPath := ctx.framework.policies.RouterReversionPolicy.StaticPath(r.Path())
+			if strings.HasPrefix(reqPath, staticPath) {
 				newctx := ctx.ExecRouteAgainst(r, reqPath)
 				if newctx == nil { // route not found.
 					ctx.EmitError(StatusNotFound)
@@ -313,11 +398,12 @@ func (ctx *Context) Subdomain() (subdomain string) {
 	return
 }
 
-// VirtualHostname returns the hostname that user registers, host path maybe differs from the real which is HostString, which taken from a net.listener
+// VirtualHostname returns the hostname that user registers,
+// host path maybe differs from the real which is the Host(), which taken from a net.listener
 func (ctx *Context) VirtualHostname() string {
 	realhost := ctx.Host()
 	hostname := realhost
-	virtualhost := ctx.framework.mux.hostname
+	virtualhost := ctx.framework.Config.VHost
 
 	if portIdx := strings.IndexByte(hostname, ':'); portIdx > 0 {
 		hostname = hostname[0:portIdx]
@@ -496,7 +582,7 @@ var (
 // -------------------------------------------------------------------------------------
 
 // NOTE: No default max body size http package has some built'n protection for DoS attacks
-// See iris.Config.MaxBytesReader, https://github.com/golang/go/issues/2093#issuecomment-66057813
+// See iris.Default.Config.MaxBytesReader, https://github.com/golang/go/issues/2093#issuecomment-66057813
 // and https://github.com/golang/go/issues/2093#issuecomment-66057824
 
 // LimitRequestBodySize is a middleware which sets a request body size limit for all next handlers
@@ -555,7 +641,7 @@ func (u UnmarshalerFunc) Unmarshal(data []byte, v interface{}) error {
 // Examples of usage: context.ReadJSON, context.ReadXML
 func (ctx *Context) UnmarshalBody(v interface{}, unmarshaler Unmarshaler) error {
 	if ctx.Request.Body == nil {
-		return errors.New("Empty body, please send request body!")
+		return errors.New("unmarshal: empty body")
 	}
 
 	rawData, err := ioutil.ReadAll(ctx.Request.Body)
@@ -635,14 +721,12 @@ func (ctx *Context) Redirect(urlToRedirect string, statusHeader ...int) {
 	ctx.StopExecution()
 
 	httpStatus := StatusFound // a 'temporary-redirect-like' which works better than for our purpose
-	if statusHeader != nil && len(statusHeader) > 0 && statusHeader[0] > 0 {
+	if len(statusHeader) > 0 && statusHeader[0] > 0 {
 		httpStatus = statusHeader[0]
 	}
 
 	if urlToRedirect == ctx.Path() {
-		if ctx.framework.Config.IsDevelopment {
-			ctx.Log("Trying to redirect to itself. FROM: %s TO: %s", ctx.Path(), urlToRedirect)
-		}
+		ctx.Log(DevMode, "trying to redirect to itself. FROM: %s TO: %s", ctx.Path(), urlToRedirect)
 	}
 	http.Redirect(ctx.ResponseWriter, ctx.Request, urlToRedirect, httpStatus)
 }
@@ -739,46 +823,68 @@ func (ctx *Context) TryWriteGzip(b []byte) (int, error) {
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
 
-// renderSerialized renders contents with a serializer with status OK which you can change using RenderWithStatus or ctx.SetStatusCode(iris.StatusCode)
-func (ctx *Context) renderSerialized(contentType string, obj interface{}, options ...map[string]interface{}) error {
-	s := ctx.framework.serializers
-	finalResult, err := s.Serialize(contentType, obj, options...)
-	if err != nil {
-		return err
+const (
+	// NoLayout to disable layout for a particular template file
+	NoLayout = template.NoLayout
+	// TemplateLayoutContextKey is the name of the user values which can be used to set a template layout from a middleware and override the parent's
+	TemplateLayoutContextKey = "templateLayout"
+)
+
+// getGzipOption receives a default value and the render options map and returns if gzip is enabled for this render action
+func getGzipOption(defaultValue bool, options map[string]interface{}) bool {
+	gzipOpt := options["gzip"] // we only need that, so don't create new map to keep the options.
+	if b, isBool := gzipOpt.(bool); isBool {
+		return b
+	}
+	return defaultValue
+}
+
+// gtCharsetOption receives a default value and the render options  map and returns the correct charset for this render action
+func getCharsetOption(defaultValue string, options map[string]interface{}) string {
+	charsetOpt := options["charset"]
+	if s, isString := charsetOpt.(string); isString {
+		return s
+	}
+	return defaultValue
+}
+
+func (ctx *Context) fastRenderWithStatus(status int, cType string, data []byte) (err error) {
+	if _, shouldFirstStatusCode := ctx.ResponseWriter.(*responseWriter); shouldFirstStatusCode {
+		ctx.SetStatusCode(status)
 	}
 	gzipEnabled := ctx.framework.Config.Gzip
 	charset := ctx.framework.Config.Charset
-	if len(options) > 0 {
-		gzipEnabled = getGzipOption(gzipEnabled, options[0]) // located to the template.go below the RenderOptions
-		charset = getCharsetOption(charset, options[0])
-	}
-	ctype := contentType
 
-	if ctype == contentMarkdown { // remember the text/markdown is just a custom internal iris content type, which in reallity renders html
-		ctype = contentHTML
+	if cType != contentBinary {
+		cType += "; charset=" + charset
 	}
 
-	if ctype != contentBinary { // set the charset only on non-binary data
-		ctype += "; charset=" + charset
-	}
-	ctx.SetContentType(ctype)
-	if gzipEnabled {
-		ctx.TryWriteGzip(finalResult)
+	// add the content type to the response
+	ctx.SetContentType(cType)
+
+	var out io.Writer
+	if gzipEnabled && ctx.clientAllowsGzip() {
+		ctx.ResponseWriter.Header().Add(varyHeader, acceptEncodingHeader)
+		ctx.SetHeader(contentEncodingHeader, "gzip")
+
+		gzipWriter := fs.AcquireGzipWriter(ctx.ResponseWriter)
+		defer fs.ReleaseGzipWriter(gzipWriter)
+		out = gzipWriter
 	} else {
-		ctx.ResponseWriter.Write(finalResult)
-	}
-	ctx.SetStatusCode(StatusOK)
-	return nil
-}
-
-// RenderTemplateSource serves a template source(raw string contents) from  the first template engines which supports raw parsing returns its result as string
-func (ctx *Context) RenderTemplateSource(status int, src string, binding interface{}, options ...map[string]interface{}) error {
-	err := ctx.framework.templates.renderSource(ctx, src, binding, options...)
-	if err == nil {
-		ctx.SetStatusCode(status)
+		out = ctx.ResponseWriter
 	}
 
-	return err
+	// no need to loop through the RenderPolicy, these types must be fast as possible
+	// with the features like gzip and custom charset too.
+	_, err = out.Write(data)
+
+	// we don't care for the last one it will not be written more than one if we have the *responseWriter
+	///TODO:
+	// if we have ResponseRecorder order doesn't matters but I think the transactions have bugs,
+	// temporary let's keep it here because it 'fixes' one of them...
+	ctx.SetStatusCode(status)
+
+	return
 }
 
 // RenderWithStatus builds up the response from the specified template or a serialize engine.
@@ -789,11 +895,55 @@ func (ctx *Context) RenderWithStatus(status int, name string, binding interface{
 		ctx.SetStatusCode(status)
 	}
 
-	if strings.IndexByte(name, '.') > -1 { //we have template
-		err = ctx.framework.templates.renderFile(ctx, name, binding, options...)
-	} else {
-		err = ctx.renderSerialized(name, binding, options...)
+	// we do all these because we don't want to initialize a new map for each execution...
+	gzipEnabled := ctx.framework.Config.Gzip
+	charset := ctx.framework.Config.Charset
+	if len(options) > 0 {
+		gzipEnabled = getGzipOption(gzipEnabled, options[0])
+		charset = getCharsetOption(charset, options[0])
 	}
+
+	ctxLayout := ctx.GetString(TemplateLayoutContextKey)
+	if ctxLayout != "" {
+		if len(options) > 0 {
+			options[0]["layout"] = ctxLayout
+		} else {
+			options = []map[string]interface{}{{"layout": ctxLayout}}
+		}
+	}
+
+	// Find Content type
+	// if it the name is not a template file, then take that as the content type.
+	cType := contentHTML
+	if !strings.Contains(name, ".") {
+		// remember the text/markdown is just a custom internal
+		// iris content type, which in reallity renders html
+		if name != contentMarkdown {
+			cType = name
+		}
+
+	}
+	if cType != contentBinary {
+		cType += "; charset=" + charset
+	}
+
+	// add the content type to the response
+	ctx.SetContentType(cType)
+
+	var out io.Writer
+	if gzipEnabled && ctx.clientAllowsGzip() {
+		ctx.ResponseWriter.Header().Add(varyHeader, acceptEncodingHeader)
+		ctx.SetHeader(contentEncodingHeader, "gzip")
+
+		gzipWriter := fs.AcquireGzipWriter(ctx.ResponseWriter)
+		defer fs.ReleaseGzipWriter(gzipWriter)
+		out = gzipWriter
+	} else {
+		out = ctx.ResponseWriter
+	}
+
+	err = ctx.framework.Render(out, name, binding, options...)
+
 	// we don't care for the last one it will not be written more than one if we have the *responseWriter
 	///TODO:
 	// if we have ResponseRecorder order doesn't matters but I think the transactions have bugs , for now let's keep it here because it 'fixes' one of them...
@@ -817,32 +967,45 @@ func (ctx *Context) Render(name string, binding interface{}, options ...map[stri
 // Note: the options: "gzip" and "charset" are built'n support by Iris, so you can pass these on any template engine or serialize engine
 func (ctx *Context) MustRender(name string, binding interface{}, options ...map[string]interface{}) {
 	if err := ctx.Render(name, binding, options...); err != nil {
-		ctx.HTML(StatusServiceUnavailable, fmt.Sprintf("<h2>Template: %s</h2><b>%s</b>", name, err.Error()))
-		if ctx.framework.Config.IsDevelopment {
-			ctx.framework.Logger.Printf("MustRender panics on template: %s.Trace: %s\n", name, err)
+		htmlErr := ctx.HTML(StatusServiceUnavailable,
+			fmt.Sprintf("<h2>Template: %s</h2><b>%s</b>", name, err.Error()))
+
+		ctx.Log(DevMode, "MustRender failed to render '%s', trace: %s\n",
+			name, err)
+
+		if htmlErr != nil {
+			ctx.Log(DevMode, "MustRender also failed to render the html fallback: %s",
+				htmlErr.Error())
 		}
-	}
-}
 
-// TemplateString accepts a template filename, its context data and returns the result of the parsed template (string)
-// if any error returns empty string
-func (ctx *Context) TemplateString(name string, binding interface{}, options ...map[string]interface{}) string {
-	return ctx.framework.TemplateString(name, binding, options...)
-}
-
-// HTML writes html string with a http status
-func (ctx *Context) HTML(status int, htmlContents string) {
-	if err := ctx.RenderWithStatus(status, contentHTML, htmlContents); err != nil {
-		// if no serialize engine found for text/html
-		ctx.SetContentType(contentHTML + "; charset=" + ctx.framework.Config.Charset)
-		ctx.SetStatusCode(status)
-		ctx.WriteString(htmlContents)
 	}
 }
 
 // Data writes out the raw bytes as binary data.
-func (ctx *Context) Data(status int, v []byte) error {
-	return ctx.RenderWithStatus(status, contentBinary, v)
+//
+// RenderPolicy does NOT apply to context.HTML, context.Text and context.Data
+// To change their default behavior users should use
+// the context.RenderWithStatus(statusCode, contentType, content, options...) instead.
+func (ctx *Context) Data(status int, data []byte) error {
+	return ctx.fastRenderWithStatus(status, contentBinary, data)
+}
+
+// Text writes out a string as plain text.
+//
+// RenderPolicy does NOT apply to context.HTML, context.Text and context.Data
+// To change their default behavior users should use
+// the context.RenderWithStatus(statusCode, contentType, content, options...) instead.
+func (ctx *Context) Text(status int, text string) error {
+	return ctx.fastRenderWithStatus(status, contentBinary, []byte(text))
+}
+
+// HTML writes html string with a http status
+//
+// RenderPolicy does NOT apply to context.HTML, context.Text and context.Data
+// To change their default behavior users should use
+// the context.RenderWithStatus(statusCode, contentType, content, options...) instead.
+func (ctx *Context) HTML(status int, htmlContents string) error {
+	return ctx.fastRenderWithStatus(status, contentHTML, []byte(htmlContents))
 }
 
 // JSON marshals the given interface object and writes the JSON response.
@@ -855,11 +1018,6 @@ func (ctx *Context) JSONP(status int, callback string, v interface{}) error {
 	return ctx.RenderWithStatus(status, contentJSONP, v, map[string]interface{}{"callback": callback})
 }
 
-// Text writes out a string as plain text.
-func (ctx *Context) Text(status int, v string) error {
-	return ctx.RenderWithStatus(status, contentText, v)
-}
-
 // XML marshals the given interface object and writes the XML response.
 func (ctx *Context) XML(status int, v interface{}) error {
 	return ctx.RenderWithStatus(status, contentXML, v)
@@ -867,15 +1025,20 @@ func (ctx *Context) XML(status int, v interface{}) error {
 
 // MarkdownString parses the (dynamic) markdown string and returns the converted html string
 func (ctx *Context) MarkdownString(markdownText string) string {
-	return ctx.framework.SerializeToString(contentMarkdown, markdownText)
+	out := &bytes.Buffer{}
+	_, ok := ctx.framework.policies.RenderPolicy(out, contentMarkdown, markdownText)
+	if ok {
+		return out.String()
+	}
+	return ""
 }
 
 // Markdown parses and renders to the client a particular (dynamic) markdown string
 // accepts two parameters
 // first is the http status code
 // second is the markdown string
-func (ctx *Context) Markdown(status int, markdown string) {
-	ctx.HTML(status, ctx.MarkdownString(markdown))
+func (ctx *Context) Markdown(status int, markdown string) error {
+	return ctx.HTML(status, ctx.MarkdownString(markdown))
 }
 
 // -------------------------------------------------------------------------------------
@@ -898,9 +1061,9 @@ func (ctx *Context) staticCachePassed(modtime time.Time) bool {
 
 // SetClientCachedBody like SetBody but it sends with an expiration datetime
 // which is managed by the client-side (all major browsers supports this feature)
-func (ctx *Context) SetClientCachedBody(status int, bodyContent []byte, cType string, modtime time.Time) {
+func (ctx *Context) SetClientCachedBody(status int, bodyContent []byte, cType string, modtime time.Time) error {
 	if ctx.staticCachePassed(modtime) {
-		return
+		return nil
 	}
 
 	modtimeFormatted := modtime.UTC().Format(ctx.framework.Config.TimeFormat)
@@ -909,7 +1072,8 @@ func (ctx *Context) SetClientCachedBody(status int, bodyContent []byte, cType st
 	ctx.ResponseWriter.Header().Set(lastModified, modtimeFormatted)
 	ctx.SetStatusCode(status)
 
-	ctx.ResponseWriter.Write(bodyContent)
+	_, err := ctx.ResponseWriter.Write(bodyContent)
+	return err
 }
 
 // ServeContent serves content, headers are autoset
@@ -973,9 +1137,9 @@ func (ctx *Context) ServeFile(filename string, gzipCompression bool) error {
 // SendFile sends file for force-download to the client
 //
 // Use this instead of ServeFile to 'force-download' bigger files to the client
-func (ctx *Context) SendFile(filename string, destinationName string) {
+func (ctx *Context) SendFile(filename string, destinationName string) error {
 	ctx.ResponseWriter.Header().Set(contentDisposition, "attachment;filename="+destinationName)
-	ctx.ServeFile(filename, false)
+	return ctx.ServeFile(filename, false)
 }
 
 // StreamWriter registers the given stream writer for populating
@@ -1134,12 +1298,11 @@ func (ctx *Context) ParamInt64(key string) (int64, error) {
 // hasthe form of key1=value1,key2=value2...
 func (ctx *Context) ParamsSentence() string {
 	var buff bytes.Buffer
-	ctx.VisitValues(func(kb string, vg interface{}) {
-		v, ok := vg.(string)
+	ctx.VisitValues(func(k string, vi interface{}) {
+		v, ok := vi.(string)
 		if !ok {
 			return
 		}
-		k := string(kb)
 		buff.WriteString(k)
 		buff.WriteString("=")
 		buff.WriteString(v)
@@ -1321,22 +1484,82 @@ func (ctx *Context) RemoveCookie(name string) {
 	ctx.Request.Header.Set("Cookie", "")
 }
 
-// Session returns the current session ( && flash messages )
-func (ctx *Context) Session() sessions.Session {
-	if ctx.framework.sessions == nil { // this should never return nil but FOR ANY CASE, on future changes.
+var errSessionsPolicyIsMissing = errors.New(
+	`
+manually call of context.Session() for client IP: '%s' without specified SessionsPolicy!
+Please .Adapt one of the available session managers inside 'kataras/iris/adaptors'.
+
+Edit your main .go source file to adapt one of these and restart your app.
+	i.e: lines (<---) were missing.
+	-------------------------------------------------------------------
+	import (
+		"github.com/kataras/iris"
+		"github.com/kataras/iris/adaptors/httprouter" // or gorillamux
+		"github.com/kataras/iris/adaptors/sessions" // <--- this line
+	)
+
+	func main(){
+		app := iris.New()
+		// right below the iris.New()
+		app.Adapt(httprouter.New()) // or gorillamux.New()
+
+		mySessions := sessions.New(sessions.Config{
+			// Cookie string, the session's client cookie name, for example: "mysessionid"
+			//
+			// Defaults to "gosessionid"
+			Cookie: "mysessionid",
+			// base64 urlencoding,
+			// if you have strange name cookie name enable this
+			DecodeCookie: false,
+			// it's time.Duration, from the time cookie is created, how long it can be alive?
+			// 0 means no expire.
+			Expires: 0,
+			// the length of the sessionid's cookie's value
+			CookieLength: 32,
+			// if you want to invalid cookies on different subdomains
+			// of the same host, then enable it
+			DisableSubdomainPersistence: false,
+		})
+
+		// OPTIONALLY:
+		// import "gopkg.in/kataras/iris.v6/adaptors/sessions/sessiondb/redis"
+		// or import "github.com/kataras/go-sessions/sessiondb/$any_available_community_database"
+		// mySessions.UseDatabase(redis.New(...))
+
+		app.Adapt(mySessions) // <--- and this line were missing.
+
+		// the rest of your source code...
+		// ...
+
+		app.Listen("%s")
+	}
+	-------------------------------------------------------------------
+ `)
+
+// Session returns the current Session.
+//
+// if SessionsPolicy is missing then a detailed how-to-fix message
+// will be visible to the user (DevMode)
+// and the return value will be NILL.
+func (ctx *Context) Session() Session {
+	policy := ctx.framework.policies.SessionsPolicy
+	if policy.Start == nil {
+		ctx.framework.Log(DevMode,
+			errSessionsPolicyIsMissing.Format(ctx.RemoteAddr(), ctx.framework.Config.VHost).Error())
 		return nil
 	}
 
 	if ctx.session == nil {
-		ctx.session = ctx.framework.sessions.Start(ctx.ResponseWriter, ctx.Request)
+		ctx.session = policy.Start(ctx.ResponseWriter, ctx.Request)
 	}
+
 	return ctx.session
 }
 
 // SessionDestroy destroys the whole session, calls the provider's destroy and remove the cookie
 func (ctx *Context) SessionDestroy() {
 	if sess := ctx.Session(); sess != nil {
-		ctx.framework.sessions.Destroy(ctx.ResponseWriter, ctx.Request)
+		ctx.framework.policies.SessionsPolicy.Destroy(ctx.ResponseWriter, ctx.Request)
 	}
 }
 
@@ -1444,9 +1667,7 @@ func (ctx *Context) BeginTransaction(pipe func(transaction *Transaction)) {
 	t := newTransaction(ctx)
 	defer func() {
 		if err := recover(); err != nil {
-			if ctx.framework.Config.IsDevelopment {
-				ctx.Log(errTransactionInterrupted.Format(err).Error())
-			}
+			ctx.Log(DevMode, errTransactionInterrupted.Format(err).Error())
 			// complete (again or not , doesn't matters) the scope without loud
 			t.Complete(nil)
 			// we continue as normal, no need to return here*
@@ -1465,8 +1686,8 @@ func (ctx *Context) BeginTransaction(pipe func(transaction *Transaction)) {
 }
 
 // Log logs to the iris defined logger
-func (ctx *Context) Log(format string, a ...interface{}) {
-	ctx.framework.Logger.Printf(format, a...)
+func (ctx *Context) Log(mode LogMode, format string, a ...interface{}) {
+	ctx.framework.Log(mode, fmt.Sprintf(format, a...))
 }
 
 // Framework returns the Iris instance, containing the configuration and all other fields

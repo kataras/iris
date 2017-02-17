@@ -148,56 +148,46 @@ func (w *ResponseRecorder) flushResponse() {
 	w.responseWriter.flushResponse()
 
 	if len(w.chunks) > 0 {
+		// ignore error
 		w.responseWriter.Write(w.chunks)
 	}
-
 }
 
 // Flush sends any buffered data to the client.
 func (w *ResponseRecorder) Flush() {
-	w.flushResponse()
 	w.responseWriter.Flush()
 	w.ResetBody()
 }
 
-// NOTE: Users: Uncomment the below code if you are already using Go from master branch.
-// HTTP/2 Go 1.8 Push feature,
-// as described in the source code(master):
-// https://github.com/golang/go/blob/master/src/net/http/http.go#L119 .
-// I have already tested the feature on my machine, but
-// in order to avoid breaking the users' workspace:
-// Uncomment these when 1.8 released (I guess in the middle of February)
-// TODO:
+// Push initiates an HTTP/2 server push. This constructs a synthetic
+// request using the given target and options, serializes that request
+// into a PUSH_PROMISE frame, then dispatches that request using the
+// server's request handler. If opts is nil, default options are used.
 //
-// // Push initiates an HTTP/2 server push. This constructs a synthetic
-// // request using the given target and options, serializes that request
-// // into a PUSH_PROMISE frame, then dispatches that request using the
-// // server's request handler. If opts is nil, default options are used.
-// //
-// // The target must either be an absolute path (like "/path") or an absolute
-// // URL that contains a valid host and the same scheme as the parent request.
-// // If the target is a path, it will inherit the scheme and host of the
-// // parent request.
-// //
-// // The HTTP/2 spec disallows recursive pushes and cross-authority pushes.
-// // Push may or may not detect these invalid pushes; however, invalid
-// // pushes will be detected and canceled by conforming clients.
-// //
-// // Handlers that wish to push URL X should call Push before sending any
-// // data that may trigger a request for URL X. This avoids a race where the
-// // client issues requests for X before receiving the PUSH_PROMISE for X.
-// //
-// // Push returns ErrNotSupported if the client has disabled push or if push
-// // is not supported on the underlying connection.
-// func (w *ResponseRecorder) Push(target string, opts *http.PushOptions) error {
-// 	w.flushResponse()
-// 	err := w.responseWriter.Push(target, opts)
-// 	// NOTE: we have to reset them even if the push failed.
-// 	w.ResetBody()
-// 	w.ResetHeaders()
+// The target must either be an absolute path (like "/path") or an absolute
+// URL that contains a valid host and the same scheme as the parent request.
+// If the target is a path, it will inherit the scheme and host of the
+// parent request.
 //
-// 	return err
-// }
+// The HTTP/2 spec disallows recursive pushes and cross-authority pushes.
+// Push may or may not detect these invalid pushes; however, invalid
+// pushes will be detected and canceled by conforming clients.
+//
+// Handlers that wish to push URL X should call Push before sending any
+// data that may trigger a request for URL X. This avoids a race where the
+// client issues requests for X before receiving the PUSH_PROMISE for X.
+//
+// Push returns ErrPushNotSupported if the client has disabled push or if push
+// is not supported on the underlying connection.
+func (w *ResponseRecorder) Push(target string, opts *http.PushOptions) error {
+	w.flushResponse()
+	err := w.responseWriter.Push(target, opts)
+	// NOTE: we have to reset them even if the push failed.
+	w.ResetBody()
+	w.ResetHeaders()
+
+	return err
+}
 
 // clone returns a clone of this response writer
 // it copies the header, status code, headers and the beforeFlush finally  returns a new ResponseRecorder
@@ -250,6 +240,7 @@ func (w *ResponseRecorder) writeTo(res ResponseWriter) {
 
 		// append the body
 		if len(w.chunks) > 0 {
+			// ignore error
 			to.Write(w.chunks)
 		}
 
