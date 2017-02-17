@@ -23,6 +23,10 @@ Package iris provides efficient and well-designed tools with robust set of featu
 create your own perfect high performance web application
 with unlimited potentials and portability.
 
+Source code and other details for the project are available at GitHub:
+
+   https://github.com/kataras/iris
+
 Note: This package is under active development status.
 Each month a new version is releasing
 to adapt the latest web trends and technologies.
