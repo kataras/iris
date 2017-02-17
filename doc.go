@@ -78,10 +78,12 @@ Example code:
       	ctx.HTML(iris.StatusOK, "<h1> Welcome to my page!</h1>")
       }
 
-      $ go run main.go
 
-      $ iris run main.go ## enables reload on source code changes.
+Run
 
+  $ go run main.go
+
+  $ iris run main.go ## enables reload on source code changes.
 
 
 All HTTP methods are supported, users can register handlers for same paths on different methods.
