@@ -100,8 +100,6 @@ type Framework struct {
 	// These are setted by user's call to .Adapt
 	policies Policies
 
-	ln net.Listener // setted on Listten/Serve funcions, available after 'Boot'
-
 	// TLSNextProto optionally specifies a function to take over
 	// ownership of the provided TLS connection when an NPN/ALPN
 	// protocol upgrade has occurred. The map key is the protocol
@@ -210,19 +208,15 @@ func New(setters ...OptionSetter) *Framework {
 	s.Adapt(EventPolicy{Boot: func(s *Framework) {
 		// set the host and scheme
 		if s.Config.VHost == "" { // if not setted by Listen functions
-			if s.ln != nil { // but user called .Serve
-				// then take the listener's addr
-				s.Config.VHost = s.ln.Addr().String()
-			} else {
-				// if no .Serve or .Listen called, then the user should set the VHost manually,
-				// however set it to a default value here for any case
-				s.Config.VHost = DefaultServerAddr
-			}
+			s.Config.VHost = DefaultServerAddr
 		}
-		// if user didn't specified a scheme then get it from the VHost, which is already setted at before statements
+		// if user didn't specified a scheme then get it from the VHost,
+		// which is already setted at before statements
 		if s.Config.VScheme == "" {
+			// if :443 or :https then returns https:// otherwise http://
 			s.Config.VScheme = ParseScheme(s.Config.VHost)
 		}
+
 	}})
 
 	{
@@ -436,28 +430,21 @@ func (s *Framework) Boot() (firstTime bool) {
 	return
 }
 
-// Serve serves incoming connections from the given listener.
-//
-// Serve blocks until the given listener returns permanent error.
-func (s *Framework) Serve(ln net.Listener) error {
-	if s.ln != nil {
-		return errors.New("server is already started and listening")
-	}
-
-	s.ln = ln
+func (s *Framework) setupServe() (srv *http.Server, deferFn func()) {
 	s.closedManually = false
+
 	s.Boot()
 
-	// post any panics to the user defined logger.
-	defer func() {
+	deferFn = func() {
+		// post any panics to the user defined logger.
 		if rerr := recover(); rerr != nil {
 			if err, ok := rerr.(error); ok {
 				s.handlePanic(err)
 			}
 		}
-	}()
+	}
 
-	srv := &http.Server{
+	srv = &http.Server{
 		ReadTimeout:    s.Config.ReadTimeout,
 		WriteTimeout:   s.Config.WriteTimeout,
 		MaxHeaderBytes: s.Config.MaxHeaderBytes,
@@ -467,21 +454,38 @@ func (s *Framework) Serve(ln net.Listener) error {
 		ErrorLog:       s.policies.LoggerPolicy.ToLogger(log.LstdFlags),
 		Handler:        s.Router,
 	}
+
 	// Set the grace shutdown, it's just a func no need to make things complicated
 	// all are managed by net/http now.
 	s.Shutdown = func(ctx context.Context) error {
 		// order matters, look s.handlePanic
 		s.closedManually = true
 		err := srv.Shutdown(ctx)
-		s.ln = nil
 		return err
 	}
 
+	return
+}
+
+// Serve serves incoming connections from the given listener.
+//
+// Serve blocks until the given listener returns permanent error.
+func (s *Framework) Serve(ln net.Listener) error {
+	if ln == nil {
+		return errors.New("nil net.Listener on Serve")
+	}
+
+	// if user called .Serve and doesn't uses any nginx-like balancers.
+	if s.Config.VHost == "" {
+		s.Config.VHost = ParseHost(ln.Addr().String())
+	} // Scheme will be checked from Boot state.
+
+	srv, fn := s.setupServe()
+	defer fn()
+
 	// print the banner and wait for system channel interrupt
 	go s.postServe()
-	// finally return the error or block here, remember,
-	// until go1.8 these are our best options.
-	return srv.Serve(s.ln)
+	return srv.Serve(ln)
 }
 
 func (s *Framework) postServe() {
@@ -507,14 +511,15 @@ func (s *Framework) postServe() {
 // If you need to manually monitor any error please use `.Serve` instead.
 func (s *Framework) Listen(addr string) {
 	addr = ParseHost(addr)
-	if s.Config.VHost == "" {
-		s.Config.VHost = addr
-		// this will be set as the front-end listening addr
-	}
-	// only here, other Listen functions should throw an error if port is missing.
-	// User should know how to fix them on ListenUNIX/ListenTLS/ListenLETSENCRYPT/Serve,
-	// they are used by more 'advanced' devs, mostly.
 
+	// if .Listen called normally and VHost is not setted,
+	// so it's Host is the Real listening addr and user-given
+	if s.Config.VHost == "" {
+		s.Config.VHost = addr // as it is
+		// this will be set as the front-end listening addr
+	} // VScheme will be checked on Boot.
+
+	// this check, only here, other Listen functions should throw an error if port is missing.
 	if portIdx := strings.IndexByte(addr, ':'); portIdx < 0 {
 		// missing port part, add it
 		addr = addr + ":80"
@@ -538,16 +543,27 @@ func (s *Framework) Listen(addr string) {
 // If you need to manually monitor any error please use `.Serve` instead.
 func (s *Framework) ListenTLS(addr string, certFile, keyFile string) {
 	addr = ParseHost(addr)
-	if s.Config.VHost == "" {
-		s.Config.VHost = addr
-		// this will be set as the front-end listening addr
+
+	{
+		// set it before Boot, be-careful VHost and VScheme are used by nginx users too
+		// we don't want to alt them.
+		if s.Config.VHost == "" {
+			s.Config.VHost = addr
+			// this will be set as the front-end listening addr
+		}
+		if s.Config.VScheme == "" {
+			s.Config.VScheme = SchemeHTTPS
+		}
 	}
 
-	ln, err := TLS(addr, certFile, keyFile)
-	if err != nil {
-		s.handlePanic(err)
-	}
-	s.Must(s.Serve(ln))
+	srv, fn := s.setupServe()
+	// We are doing the same parts as .Serve does but instead we run srv.ListenAndServeTLS
+	// because of un-exported net/http.server.go:setupHTTP2_ListenAndServeTLS function which
+	// broke our previous flow but no problem :)
+	defer fn()
+	// print the banner and wait for system channel interrupt
+	go s.postServe()
+	s.Must(srv.ListenAndServeTLS(certFile, keyFile))
 }
 
 // ListenLETSENCRYPT starts a server listening at the specific nat address
@@ -557,16 +573,25 @@ func (s *Framework) ListenTLS(addr string, certFile, keyFile string) {
 // if you skip the second parameter then the cache file is "./letsencrypt.cache"
 // if you want to disable cache then simple pass as second argument an empty empty string ""
 //
-// example: https://github.com/iris-contrib/examples/blob/master/letsencrypt/main.go
+// Note: HTTP/2 Push is not working with LETSENCRYPT, you have to use ListenTLS to enable HTTP/2
+// Because net/http's author didn't exported the functions to tell the server that is using HTTP/2...
 //
-// supports localhost domains for testing,
-// NOTE: if you are ready for production then use `$app.Serve(iris.LETSENCRYPTPROD("mydomain.com"))` instead
+// example: https://github.com/iris-contrib/examples/blob/master/letsencrypt/main.go
 func (s *Framework) ListenLETSENCRYPT(addr string, cacheFileOptional ...string) {
 	addr = ParseHost(addr)
-	if s.Config.VHost == "" {
-		s.Config.VHost = addr
-		// this will be set as the front-end listening addr
+
+	{
+		// set it before Boot, be-careful VHost and VScheme are used by nginx users too
+		// we don't want to alt them.
+		if s.Config.VHost == "" {
+			s.Config.VHost = addr
+			// this will be set as the front-end listening addr
+		}
+		if s.Config.VScheme == "" {
+			s.Config.VScheme = SchemeHTTPS
+		}
 	}
+
 	ln, err := LETSENCRYPT(addr, cacheFileOptional...)
 	if err != nil {
 		s.handlePanic(err)
