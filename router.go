@@ -607,9 +607,9 @@ func (router *Router) StaticHandler(reqPath string, systemPath string, showList 
 // second parameter: the system directory
 // third OPTIONAL parameter: the exception routes
 //      (= give priority to these routes instead of the static handler)
-// for more options look iris.StaticHandler.
+// for more options look router.StaticHandler.
 //
-//     iris.StaticWeb("/static", "./static")
+//     router.StaticWeb("/static", "./static")
 //
 // As a special case, the returned file server redirects any request
 // ending in "/index.html" to the same path, without the final
@@ -618,8 +618,22 @@ func (router *Router) StaticHandler(reqPath string, systemPath string, showList 
 // StaticWeb calls the StaticHandler(reqPath, systemPath, listingDirectories: false, gzip: false ).
 func (router *Router) StaticWeb(reqPath string, systemPath string, exceptRoutes ...RouteInfo) RouteInfo {
 	h := router.StaticHandler(reqPath, systemPath, false, false, exceptRoutes...)
-	routePath := validateWildcard(reqPath, "file")
-	return router.registerResourceRoute(routePath, h)
+	paramName := "file"
+	routePath := validateWildcard(reqPath, paramName)
+	handler := func(ctx *Context) {
+		h(ctx)
+		if fname := ctx.Param(paramName); fname != "" {
+			cType := fs.TypeByExtension(fname)
+			if cType != contentBinary && !strings.Contains(cType, "charset") {
+				cType += "; charset=" + ctx.framework.Config.Charset
+			}
+
+			ctx.SetContentType(cType)
+		}
+
+	}
+
+	return router.registerResourceRoute(routePath, handler)
 }
 
 // Layout oerrides the parent template layout with a more specific layout for this Party

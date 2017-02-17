@@ -225,6 +225,8 @@ func TypeByExtension(fullfilename string) (t string) {
 		// no use of map here because we will have to lock/unlock it, by hand is better, no problem:
 		if ext == ".json" {
 			t = "application/json"
+		} else if ext == ".js" {
+			t = "application/javascript"
 		} else if ext == ".zip" {
 			t = "application/zip"
 		} else if ext == ".3gp" {
@@ -241,6 +243,11 @@ func TypeByExtension(fullfilename string) (t string) {
 			t = "image/png"
 		} else {
 			t = "application/octet-stream"
+		}
+		// mime.TypeByExtension returns as text/plain; | charset=utf-8 the static .js (not always)
+	} else if t == "text/plain" || t == "text/plain; charset=utf-8" {
+		if ext == ".js" {
+			t = "application/javascript"
 		}
 	}
 	return
