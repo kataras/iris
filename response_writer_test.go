@@ -132,7 +132,7 @@ func TestResponseRecorderStatusCodeContentTypeBody(t *testing.T) {
 }
 
 func ExampleResponseWriter_WriteHeader() {
-	app := iris.New(iris.OptionDisableBanner(true))
+	app := iris.New()
 	app.Adapt(newTestNativeRouter())
 
 	expectedOutput := "Hey"
