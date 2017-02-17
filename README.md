@@ -31,7 +31,7 @@ Iris is an efficient and well-designed toolbox with robust set of features.<br/>
 
 <a href="https://github.com/kataras/iris/blob/v6/HISTORY.md"><img src="https://img.shields.io/badge/codename-√Νεxτ%20-blue.svg?style=flat-square" alt="CHANGELOG/HISTORY"></a>
 
-<a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/examples-%20repository-3362c2.svg?style=flat-square" alt="Examples"></a>
+<a href="https://github.com/kataras/iris/issues/606"><img src="https://img.shields.io/badge/examples-%20repository-3362c2.svg?style=flat-square" alt="Examples"></a>
 
 <a href="https://godoc.org/gopkg.in/kataras/iris.v6"><img src="https://img.shields.io/badge/docs-%20reference-5272B4.svg?style=flat-square" alt="Docs"></a>
 
@@ -192,9 +192,9 @@ Documentation
 
  - The most important is to know where to find the [details](https://godoc.org/gopkg.in/kataras/iris.v6)
 
- - Navigate through [examples](https://github.com/iris-contrib/examples)
+ - [./adaptors](https://github.com/kataras/iris/tree/v6/adaptors) and [./middleware](https://github.com/kataras/iris/tree/v6/middleware) contains examples for their usage.
 
- - [HISTORY.md](https://github.com//kataras/iris/tree/v6/HISTORY.md) file is your best friend.
+ - [HISTORY.md](https://github.com//kataras/iris/tree/v6/HISTORY.md) is your best friend, version migrations are released there.
 
 
 Testing
