@@ -2,6 +2,7 @@
 package iris_test
 
 import (
+	"context"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -152,8 +153,6 @@ func getRandomNumber(min int, max int) int {
 // works as
 // defer listenTLS(iris.Default, hostTLS)()
 func listenTLS(app *iris.Framework, hostTLS string) func() {
-	app.Close() // close any prev listener
-	app.Config.DisableBanner = true
 	// create the key and cert files on the fly, and delete them when this test finished
 	certFile, ferr := ioutil.TempFile("", "cert")
 
@@ -173,6 +172,8 @@ func listenTLS(app *iris.Framework, hostTLS string) func() {
 	time.Sleep(200 * time.Millisecond)
 
 	return func() {
+		app.Shutdown(context.Background())
+
 		certFile.Close()
 		time.Sleep(50 * time.Millisecond)
 		os.Remove(certFile.Name())

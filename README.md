@@ -30,7 +30,7 @@ Iris is an efficient and well-designed toolbox with robust set of features.<br/>
 <p>
 <h1># Not YAWF<!-- hashtag, no title. --></h1>
 
-<a href="https://github.com/kataras/iris/blob/v6/HISTORY.md"><img src="https://img.shields.io/badge/codename-√Next%20-blue.svg?style=flat-square" alt="CHANGELOG/HISTORY"></a>
+<a href="https://github.com/kataras/iris/blob/v6/HISTORY.md"><img src="https://img.shields.io/badge/codename-√Νεxτ%20-blue.svg?style=flat-square" alt="CHANGELOG/HISTORY"></a>
 
 <a href="https://github.com/iris-contrib/examples"><img src="https://img.shields.io/badge/examples-%20repository-3362c2.svg?style=flat-square" alt="Examples"></a>
 
@@ -264,7 +264,7 @@ Besides the fact that we have a [community chat][Chat] for questions or reports 
 Versioning
 ------------
 
-Current: **v6**, code-named as "√Next"
+Current: **v6**, code-named as "√Νεxτ"
 
 v5: https://github.com/kataras/iris/tree/5.0.0
 

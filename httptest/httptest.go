@@ -78,8 +78,6 @@ func New(app *iris.Framework, t *testing.T, setters ...OptionSetter) *httpexpect
 		setter.Set(conf)
 	}
 
-	app.Set(iris.OptionDisableBanner(true))
-	app.Adapt(iris.DevLogger())
 	baseURL := ""
 	app.Boot()
 
