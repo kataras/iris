@@ -11,7 +11,7 @@ Users already notified for some breaking-changes, this section will help you
 to adapt the new changes to your application, it contains an overview of the new features too.
 
 - Shutdown with `app.Shutdown(context.Context) error`, no need for any third-parties, with `EventPolicy.Interrupted` and Go's 1.8 Gracefully Shutdown feature you're ready to go!
-- HTTP/2 Go 1.8 `context.Push(target string, opts *http.PushOptions) error` is supported, example can be found [here](https://github.com/kataras/iris/blob/v6/adaptors/websocket/_examples/webocket_secure/main.go)
+- HTTP/2 Go 1.8 `context.Push(target string, opts *http.PushOptions) error` is supported, example can be found [here](https://github.com/kataras/iris/blob/v6/adaptors/websocket/_examples/websocket_secure/main.go)
 
 - Router (two lines to add, new features)
 - Template engines (two lines to add, same features as before, except their easier configuration)
