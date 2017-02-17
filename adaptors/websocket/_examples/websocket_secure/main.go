@@ -56,7 +56,7 @@ func main() {
 		// send our custom javascript source file before client really asks for that
 		// using the new go v1.8's HTTP/2 Push.
 		// Note that you have to listen using ListenTLS/ListenLETSENCRYPT in order this to work.
-		if err := ctx.ResponseWriter.Push("/js/chat.js", nil); err != nil {
+		if err := ctx.Push("/js/chat.js", nil); err != nil {
 			app.Log(iris.DevMode, err.Error())
 		}
 		ctx.Render("client.html", clientPage{"Client Page", ctx.Host()})
