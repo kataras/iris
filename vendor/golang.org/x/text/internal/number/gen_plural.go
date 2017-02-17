@@ -128,9 +128,9 @@ func genPlurals(w *gen.CodeWriter, data *cldr.CLDR) {
 		// a true value for element i means that the number i is included.
 		setMap := map[[numN]bool]int{
 			// The above init func adds an entry for including all numbers.
-			[numN]bool{1: true}: 1, // fix {1} to a nice value
-			[numN]bool{2: true}: 2, // fix {2} to a nice value
-			[numN]bool{0: true}: 3, // fix {0} to a nice value
+			{1: true}: 1, // fix {1} to a nice value
+			{2: true}: 2, // fix {2} to a nice value
+			{0: true}: 3, // fix {0} to a nice value
 		}
 
 		// inclusionMasks contains bit masks for every number under numN to

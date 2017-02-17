@@ -10,7 +10,7 @@ import (
 
 // This will be removed at the final release
 // it's here just for my tests
-// it will may transfered to the (advanced) examples repository
+// it will may transferred to the (advanced) examples repository
 // in order to show the users how they can adapt any third-party router.
 // They can also view the ./adaptors/httprouter and ./adaptors/gorillamux.
 func newTestNativeRouter() Policies {

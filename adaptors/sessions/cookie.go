@@ -55,7 +55,7 @@ func RemoveCookie(name string, res http.ResponseWriter, req *http.Request) {
 // valid means that is recognised as 'domain' by the browser, so it(the cookie) can be shared with subdomains also
 func IsValidCookieDomain(domain string) bool {
 	if domain == "0.0.0.0" || domain == "127.0.0.1" {
-		// for these type of hosts, we can't allow subdomains persistance,
+		// for these type of hosts, we can't allow subdomains persistence,
 		// the web browser doesn't understand the mysubdomain.0.0.0.0 and mysubdomain.127.0.0.1 mysubdomain.32.196.56.181. as scorrectly ubdomains because of the many dots
 		// so don't set a cookie domain here, let browser handle this
 		return false
