@@ -24,7 +24,6 @@ Iris is an efficient and well-designed toolbox with robust set of features.<br/>
 <b>perfect high-performance web applications</b> <br/>with unlimited potentials and <b>portability</b>.
 <br/>
 
-<i><u>Powered by Google's Go</u></i>.
 </p>
 
 <p>
@@ -41,51 +40,46 @@ Iris is an efficient and well-designed toolbox with robust set of features.<br/>
 </p>
 
 
-Iris is fully vendored. That means it is independent of any API changes in the used libraries and will work seamlessly in the future!
+Iris is fully vendored. That means it is independent of any API changes in the used libraries and **will work seamlessly in the future**!
 
-Iris follows the latest tech trends around the world.
+The size of the executable file is a critical part of the Application Deployment Process,
 
-Iris' features are visible to other web frameworks after some time. That means that Iris is followed by other go web frameworks.
-
-The executable file size is a critical part of Application Deployment process.
-
-I made two very simple identical applications, the first written with a famous mini web framework named `gin`(=Just a Router, with logger, recover and pure Context support) and the second in `iris`
-(=every feature that you will need at the first place is bundled when you install Iris. Including sessions, websockets, typescript support, a cloud-editor, the view engine with 5 different template parsers, two Routers to select from, an end-to-end framework to test your API, more than 60 handy helpers via Context, complete rest API implementation, and cors, basicauth, internalization i18n, logger and recover middleware).
+I made two very simple identical applications, the first written with a famous mini web framework named `gin`(=a Router, with logger, recover and pure Context out-of-the-box support) and the second in `iris`
+(=every feature that you will need at the first place is bundled when you install Iris. Including sessions, websockets, typescript support, a cloud-editor, the view engine with 5 different template parsers, two Routers to select from, an end-to-end framework to test your API, more than 60 handy helpers via Context, complete rest API implementation, and cors, basicauth, internalization i18n, logger and recover middleware out-of-the-box).
 
 I ran `go build` for both of them,
 
  - the first had `9.029 KB` overall file size,
  - the second had `8.505 KB` overall file size!
-
-Keep note that the same app written in pure `net/http` had produced an executable file with `5.380 KB` size.
-
-Note that these applications doesn't uses any third-party library, they are simple applications, if we used other features like sessions and websockets then the size of `gin` and `net/http`
-could be the double, while in the same time `iris`' overall file size will remain almost the same.
+ - net/http` had produced an executable file with `5.380 KB` size
 
 
-Result: Iris' executable file size is even smaller than simple router libraries!
+> The app didn't used any third-party library. If you test the same thing I test and adapt other features like sessions and websockets then the size of `gin` and `net/http` could be doubled while `iris`' overall file size will remain almost the same.
+
+
+**Applications that are written using Iris have smaller file sizes** than a single router library!
 
 > Q: How is that possible?
 
 > A: The Iris' vendor was done manually without any third-party tool. That means that I had the chance to remove any unnecessary code that Iris never uses internally.
 
 
+Always follows the latest trends and best practices. Iris is the **Secret To Staying One Step Ahead of Your Competition**.
 
-Iris is a high-performance tool, but it doesn't stops there. Performance depends on your application too, Iris helps you to make the right choices on every step.
 
-Familiar and easy API.
+Iris is a high-performance tool, but it doesn't stops there. Performance depends on your application too, **Iris helps you to do the right choices** on every step.
 
-Examples and Documentation for the most use cases and if you don't find something, just do an online search of the net/http way and adapt this way to Iris, Iris is not black-magic, I didn't invent the world.
+**Familiar** and easy **API**. Sinatra-like REST API.
 
-Iris is a low-level web framework, you know what you code on each single line.
+Contains examples and documentation for all its features.
 
-You'll never miss a thing from `net/http`, but if you do on some point, no problem because Iris is fully compatible with stdlib, you still have access to `http.ResponseWriter` and `http.Request`, you can adapt any third-party middleware of form `func(http.ResponseWriter, *http.Request, next http.HandlerFunc)` as well.
+Iris is a `low-level access` web framework, you always know what you're doing.
 
-Iris is a community-driven project, you suggest and I code.
+You'll **never miss a thing** from `net/http`, but if you do on some point, no problem because Iris is fully compatible with stdlib, you still have access to `http.ResponseWriter` and `http.Request`, you can adapt any third-party middleware of form `func(http.ResponseWriter, *http.Request, next http.HandlerFunc)` as well.
 
-Unlike others, this repository is very active. When you post an issue, you get an answer in the next couple of minutes, hours at the worst. If you find a bug, I am obliged to fix it on the same day.
+Iris is a community-driven project, **you suggest and I code**.
 
-If you're coming from <a href="https://nodejs.org/en/">Node.js</a> world, this is the <a href="https://github.com/expressjs/express">expressjs</a> for the <a href="https://golang.org">Go Programming Language.</a>
+Unlike other repositories, this one is **very active**. When you post an issue, you get an answer at the next couple of minutes(hours at the worst). If you find a bug, **I am obliged to fix** that on the same day.
 
 > Q: Why this framework is better than alternatives, does the author is, simply, better than other developers?
 
@@ -101,7 +95,7 @@ Click the below animation to see what people say about Iris.
 Installation
 -----------
 
-The only requirement is the [Go Programming Language](https://golang.org/dl/), at least v1.8
+The only requirement is the [Go Programming Language](https://golang.org/dl/), at least 1.8
 
 ```bash
 $ go get gopkg.in/kataras/iris.v6
