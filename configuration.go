@@ -158,11 +158,6 @@ type Configuration struct {
 	// Defaults to false.
 	FireMethodNotAllowed bool `yaml:"FireMethodNotAllowed"`
 
-	// DisableBanner outputs the iris banner at startup
-	//
-	// Defaults to false.
-	DisableBanner bool `yaml:"DisableBanner"`
-
 	// DisableBodyConsumptionOnUnmarshal manages the reading behavior of the context's body readers/binders.
 	// If setted to true then it
 	// disables the body consumption by the `context.UnmarshalBody/ReadJSON/ReadXML`.
@@ -315,15 +310,6 @@ var (
 		}
 	}
 
-	// OptionDisableBanner outputs the iris banner at startup.
-	//
-	// Defaults to false.
-	OptionDisableBanner = func(val bool) OptionSet {
-		return func(c *Configuration) {
-			c.DisableBanner = val
-		}
-	}
-
 	// OptionDisableBodyConsumptionOnUnmarshal manages the reading behavior of the context's body readers/binders.
 	// If setted to true then it
 	// disables the body consumption by the `context.UnmarshalBody/ReadJSON/ReadXML`.
@@ -416,7 +402,6 @@ func DefaultConfiguration() Configuration {
 		DisablePathCorrection:             DefaultDisablePathCorrection,
 		EnablePathEscape:                  DefaultEnablePathEscape,
 		FireMethodNotAllowed:              false,
-		DisableBanner:                     false,
 		DisableBodyConsumptionOnUnmarshal: false,
 		TimeFormat:                        DefaultTimeFormat,
 		Charset:                           DefaultCharset,

@@ -9,6 +9,7 @@
 package iris
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"io"
@@ -33,12 +34,14 @@ const (
 	// Version is the current version number of the Iris web framework
 	Version = "6.2.0"
 
+	codeName = `√Νεxτ`
+
 	banner = `         _____      _
         |_   _|    (_)
           | |  ____ _  ___
           | | | __|| |/ __|
          _| |_| |  | |\__ \
-        |_____|_|  |_||___/ ` + Version + ` `
+        |_____|_|  |_||___/ ` + codeName
 )
 
 // Default is the field which keeps an empty `Framework`
@@ -114,12 +117,25 @@ type Framework struct {
 	// ConnState type and associated constants for details.
 	ConnState func(net.Conn, http.ConnState) // same as http.Server.ConnState
 
-	closedManually bool // true if closed via .Close, used to not throw an error when closing the app's server
+	// Shutdown gracefully shuts down the server without interrupting any
+	// active connections. Shutdown works by first closing all open
+	// listeners, then closing all idle connections, and then waiting
+	// indefinitely for connections to return to idle and then shut down.
+	// If the provided context expires before the shutdown is complete,
+	// then the context's error is returned.
+	//
+	// Shutdown does not attempt to close nor wait for hijacked
+	// connections such as WebSockets. The caller of Shutdown should
+	// separately notify such long-lived connections of shutdown and wait
+	// for them to close, if desired.
+	Shutdown func(context.Context) error
+
+	closedManually bool // true if closed via .Shutdown, used to not throw a panic on s.handlePanic when closing the app's server
 
 	once sync.Once // used to 'Boot' once
 }
 
-var defaultGlobalLoggerOuput = log.New(os.Stdout, "[iris] ", log.LstdFlags)
+var defaultGlobalLoggerOuput = log.New(os.Stdout, "[Iris] ", log.LstdFlags)
 
 // DevLogger returns a new Logger which prints both ProdMode and DevMode messages
 // to the default global logger printer.
@@ -377,6 +393,17 @@ func (s *Framework) Must(err error) {
 }
 
 func (s *Framework) handlePanic(err error) {
+	// if x, ok := err.(*net.OpError); ok && x.Op == "accept" {
+	// 	return
+	// }
+
+	if err.Error() == http.ErrServerClosed.Error() && s.closedManually {
+		//.Shutdown was called, log to dev not in prod (prod is only for critical errors.)
+		// also do not try to recover from this error, remember, Shutdown was called manually here.
+		s.Log(DevMode, "HTTP Server closed manually")
+		return
+	}
+
 	if recoveryHandler := s.policies.EventPolicy.Recover; recoveryHandler != nil {
 		recoveryHandler(s, err)
 		return
@@ -413,8 +440,8 @@ func (s *Framework) Boot() (firstTime bool) {
 //
 // Serve blocks until the given listener returns permanent error.
 func (s *Framework) Serve(ln net.Listener) error {
-	if s.isRunning() {
-		return errors.New("Server is already started and listening")
+	if s.ln != nil {
+		return errors.New("server is already started and listening")
 	}
 	// maybe a 'race' here but user should not call .Serve more than one time especially in more than one go routines...
 	s.ln = ln
@@ -423,18 +450,6 @@ func (s *Framework) Serve(ln net.Listener) error {
 	// post any panics to the user defined logger.
 	defer func() {
 		if rerr := recover(); rerr != nil {
-			if x, ok := rerr.(*net.OpError); ok && x.Op == "accept" && s.closedManually {
-				///TODO:
-				// here we don't report it back because the user called .Close manually.
-				// NOTES:
-				//
-				// I know that the best option to actual Close a server is
-				//  by using a custom net.Listener and do it via channels on its Accept.
-				// BUT I am not doing this right now because as I'm learning the new go v1.8 will have a shutdown
-				// options by-default and we will use that instead.
-				// println("iris.go:355:recover but closed manually so we don't run the handler")
-				return
-			}
 			if err, ok := rerr.(error); ok {
 				s.handlePanic(err)
 			}
@@ -451,6 +466,15 @@ func (s *Framework) Serve(ln net.Listener) error {
 		ErrorLog:       s.policies.LoggerPolicy.ToLogger(log.LstdFlags),
 		Handler:        s.Router,
 	}
+	// Set the grace shutdown, it's just a func no need to make things complicated
+	// all are managed by net/http now.
+	s.Shutdown = func(ctx context.Context) error {
+		// order matters, look s.handlePanic
+		s.closedManually = true
+		err := srv.Shutdown(ctx)
+		s.ln = nil
+		return err
+	}
 
 	// print the banner and wait for system channel interrupt
 	go s.postServe()
@@ -460,14 +484,8 @@ func (s *Framework) Serve(ln net.Listener) error {
 }
 
 func (s *Framework) postServe() {
-	if !s.Config.DisableBanner {
-		bannerMessage := fmt.Sprintf("%s: Running at %s", time.Now().Format(s.Config.TimeFormat), s.Config.VHost)
-		// we don't print it via Logger because:
-		// 1. The banner is only 'useful' when the developer logs to terminal and no file
-		// 2. Prefix & LstdFlags options of the default s.Logger
-
-		fmt.Printf("%s\n\n%s\n", banner, bannerMessage)
-	}
+	bannerMessage := fmt.Sprintf("| Running at %s\n\n%s\n", s.Config.VHost, banner)
+	s.Log(DevMode, bannerMessage)
 
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt)
@@ -476,8 +494,8 @@ func (s *Framework) postServe() {
 	// fire any custom interrupted events and at the end close and exit
 	// if the custom event blocks then it decides what to do next.
 	s.policies.Fire(s.policies.Interrupted, s)
-	// .Close doesn't really closes but it releases the ip:port, wait for go1.8 and see comments on IsRunning
-	s.Close()
+
+	s.Shutdown(context.Background())
 	os.Exit(1)
 }
 
@@ -575,34 +593,6 @@ func (s *Framework) ListenUNIX(addr string, mode os.FileMode) {
 
 	s.Must(s.Serve(ln))
 }
-
-// IsRunning returns true if server is running
-func (s *Framework) isRunning() bool {
-	///TODO: this will change on gov1.8,
-	// Reseve or Restart and Close will be re-added again when 1.8 final release.
-	return s != nil && s.ln != nil && s.ln.Addr() != nil && s.ln.Addr().String() != ""
-}
-
-// Close is not working propetly but it releases the host:port.
-func (s *Framework) Close() error {
-
-	if s.isRunning() {
-		s.closedManually = true
-		///TODO:
-		// This code below doesn't works without custom net listener which will work in a stop channel which will cost us performance.
-		// This will work on go v1.8 BUT FOR NOW make unexported reserve/reboot/restart in order to be non confusual for the user.
-		// Close need to be exported because whitebox tests are using this method to release the port.
-		return s.ln.Close()
-	}
-
-	return nil
-}
-
-// restart re-starts the server using the last .Serve's listener
-// func (s *Framework) restart() error {
-// 	///TODO: See .close() notes
-// 	return s.Serve(s.ln)
-// }
 
 func (s *Framework) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.Router.ServeHTTP(w, r)

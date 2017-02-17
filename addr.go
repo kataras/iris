@@ -1,6 +1,7 @@
 package iris
 
 import (
+	"context"
 	"crypto/tls"
 	"net"
 	"net/http"
@@ -282,13 +283,12 @@ var ProxyHandler = func(redirectSchemeAndHost string) http.HandlerFunc {
 // nothing special, use it only when you want to start a secondary server which its only work is to redirect from one requested path to another
 //
 // returns a close function
-func Proxy(proxyAddr string, redirectSchemeAndHost string) func() error {
+func Proxy(proxyAddr string, redirectSchemeAndHost string) func(context.Context) error {
 	proxyAddr = ParseHost(proxyAddr)
 
 	// override the handler and redirect all requests to this addr
 	h := ProxyHandler(redirectSchemeAndHost)
-	prx := New(OptionDisableBanner(true))
-	prx.Adapt(DevLogger())
+	prx := New()
 
 	prx.Adapt(RouterBuilderPolicy(func(RouteRepository, ContextPool) http.Handler {
 		return h
@@ -297,5 +297,5 @@ func Proxy(proxyAddr string, redirectSchemeAndHost string) func() error {
 	go prx.Listen(proxyAddr)
 	time.Sleep(150 * time.Millisecond)
 
-	return func() error { return prx.Close() }
+	return prx.Shutdown
 }

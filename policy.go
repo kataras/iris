@@ -143,12 +143,10 @@ func (l LoggerPolicy) Adapt(frame *Policies) {
 //
 // Implementations must not retain p.
 //
-// Note: this Write writes as the Production Env, so the default logger should be able to log this messages
-// coming from internal http.Server (mostly)
-// you can change this behavior too.
+// Note: this Write writes as the DevMode.
 func (l LoggerPolicy) Write(p []byte) (n int, err error) {
 	log := string(p)
-	l(ProdMode, log)
+	l(DevMode, log)
 	return len(log), nil
 }
 
