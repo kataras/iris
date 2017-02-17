@@ -398,7 +398,8 @@ func (ctx *Context) Subdomain() (subdomain string) {
 	return
 }
 
-// VirtualHostname returns the hostname that user registers, host path maybe differs from the real which is HostString, which taken from a net.listener
+// VirtualHostname returns the hostname that user registers,
+// host path maybe differs from the real which is the Host(), which taken from a net.listener
 func (ctx *Context) VirtualHostname() string {
 	realhost := ctx.Host()
 	hostname := realhost

@@ -11,7 +11,7 @@ import (
 	. "gopkg.in/kataras/iris.v6"
 )
 
-// go test -v -run TestConfiguration*
+// $ go test -v -run TestConfiguration*
 
 func TestConfigurationStatic(t *testing.T) {
 	def := DefaultConfiguration()
