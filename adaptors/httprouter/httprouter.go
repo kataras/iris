@@ -625,26 +625,21 @@ func (mux *serveMux) buildHandler(pool iris.ContextPool) http.Handler {
 				}
 
 				if mux.hosts && tree.subdomain != "" {
-					// context.VirtualHost() is a slow method because it makes
-					// string.Replaces but user can understand that if subdomain then server will have some nano/or/milleseconds performance cost
-					requestHost := context.VirtualHostname()
+
+					requestHost := context.Host()
 					hostname := context.Framework().Config.VHost
+					// println("mux are true and tree.subdomain= " + tree.subdomain + "and hostname = " + hostname + " host = " + requestHost)
 					if requestHost != hostname {
-						//println(requestHost + " != " + mux.hostname)
 						// we have a subdomain
 						if strings.Contains(tree.subdomain, iris.DynamicSubdomainIndicator) {
 						} else {
-							//println(requestHost + " = " + mux.hostname)
-							// mux.host = iris-go.com:8080, the subdomain for example is api.,
-							// so the host must be api.iris-go.com:8080
 							if tree.subdomain+hostname != requestHost {
 								// go to the next tree, we have a subdomain but it is not the correct
 								continue
 							}
-
 						}
 					} else {
-						//("it's subdomain but the request is the same as the listening addr mux.host == requestHost =>" + mux.host + "=" + requestHost + " ____ and tree's subdomain was: " + tree.subdomain)
+						//("it's subdomain but the request is not the same as the vhost)
 						continue
 					}
 				}

@@ -62,13 +62,7 @@ func newTestNativeRouter() Policies {
 		RouterBuilderPolicy: func(repo RouteRepository, context ContextPool) http.Handler {
 			servemux := http.NewServeMux()
 			noIndexRegistered := true
-			servemux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-				if noIndexRegistered {
-					context.Run(w, r, func(ctx *Context) {
-						ctx.EmitError(StatusNotFound)
-					})
-				}
-			})
+
 			repo.Visit(func(route RouteInfo) {
 				path := route.Path()
 				if path == "/" {
@@ -85,15 +79,6 @@ func newTestNativeRouter() Policies {
 						ctx.Middleware = route.Middleware()
 						recorder := ctx.Recorder()
 						ctx.Do()
-
-						// ok, we can't bypass the net/http server.go's err handlers
-						// we have two options:
-						// - create the mux by ourselve, not an ideal because we already done two of them.
-						// - create a new response writer which will check once if user has registered error handler,if yes write that response instead.
-						// - on "/" path(which net/http fallbacks if no any registered route handler found) make if requested_path != "/" or ""
-						// and emit the 404 error, but for the rest of the custom errors...?
-						// - use our custom context's recorder to record the status code, this will be a bit slower solution(maybe not)
-						//   but it covers all our scenarios.
 
 						statusCode := recorder.StatusCode()
 						if statusCode >= 400 { // if we have an error status code try to find a custom error handler
@@ -113,6 +98,21 @@ func newTestNativeRouter() Policies {
 				})
 			})
 
+			// ok, we can't bypass the net/http server.go's err handlers
+			// we have two options:
+			// - create the mux by ourselve, not an ideal because we already done two of them.
+			// - create a new response writer which will check once if user has registered error handler,if yes write that response instead.
+			// - on "/" path(which net/http fallbacks if no any registered route handler found) make if requested_path != "/" or ""
+			// and emit the 404 error, but for the rest of the custom errors...?
+			// - use our custom context's recorder to record the status code, this will be a bit slower solution(maybe not)
+			//   but it covers all our scenarios.
+			if noIndexRegistered {
+				servemux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+					context.Run(w, r, func(ctx *Context) {
+						ctx.EmitError(StatusNotFound)
+					})
+				})
+			}
 			return servemux
 		},
 	}
