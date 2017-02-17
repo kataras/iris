@@ -138,7 +138,7 @@ func registerRoute(route iris.RouteInfo, gorillaRouter *mux.Router, context iris
 		if subdomain != "" {
 			if subdomain == "*." {
 				// it's an iris wildcard subdomain
-				// so register it as wildcard on gorilla mux too (hopefuly, it supports these things)
+				// so register it as wildcard on gorilla mux too
 				subdomain = "{subdomain}."
 			} else {
 				// it's a static subdomain (which contains the dot)

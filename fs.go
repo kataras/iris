@@ -44,7 +44,7 @@ func toWebPath(systemPath string) string {
 }
 
 // abs calls filepath.Abs but ignores the error and
-// returns the original value if any error occured.
+// returns the original value if any error occurred.
 func abs(path string) string {
 	absPath, err := filepath.Abs(path)
 	if err != nil {

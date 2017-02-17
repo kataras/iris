@@ -125,7 +125,7 @@ func (s *sessions) Start(res http.ResponseWriter, req *http.Request) iris.Sessio
 					}
 				}
 				// finally set the .localhost.com (for(1-level) || .mysubdomain.localhost.com (for 2-level subdomain allow)
-				cookie.Domain = "." + requestDomain // . to allow persistance
+				cookie.Domain = "." + requestDomain // . to allow persistence
 			}
 
 		}

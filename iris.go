@@ -244,7 +244,7 @@ func New(setters ...OptionSetter) *Framework {
 
 			//
 			// notes for me: Why not at the build state? in order to be overridable and not only them,
-			// these are easy to be overriden by external adaptors too, no matter the order,
+			// these are easy to be overridden by external adaptors too, no matter the order,
 			// this is why the RenderPolicy last registration executing first and the first last.
 			//
 

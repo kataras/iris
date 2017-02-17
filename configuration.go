@@ -169,7 +169,7 @@ type Configuration struct {
 	DisableBodyConsumptionOnUnmarshal bool `yaml:"DisableBodyConsumptionOnUnmarshal"`
 
 	// TimeFormat time format for any kind of datetime parsing
-	// Defauls to  "Mon, 02 Jan 2006 15:04:05 GMT".
+	// Defaults to  "Mon, 02 Jan 2006 15:04:05 GMT".
 	TimeFormat string `yaml:"TimeFormat"`
 
 	// Charset character encoding for various rendering
@@ -324,7 +324,7 @@ var (
 	}
 
 	// OptionTimeFormat time format for any kind of datetime parsing.
-	// Defauls to  "Mon, 02 Jan 2006 15:04:05 GMT".
+	// Defaults to  "Mon, 02 Jan 2006 15:04:05 GMT".
 	OptionTimeFormat = func(val string) OptionSet {
 		return func(c *Configuration) {
 			c.TimeFormat = val
