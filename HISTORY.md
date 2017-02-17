@@ -10,12 +10,14 @@
 Users already notified for some breaking-changes, this section will help you
 to adapt the new changes to your application, it contains an overview of the new features too.
 
+- Shutdown with `app.Shutdown(context.Context) error`, no need for any third-parties, with `EventPolicy.Interrupted` and Go's 1.8 Gracefully Shutdown feature you're ready to go!
+- HTTP/2 Go 1.8 `context.Push(target string, opts *http.PushOptions) error` is supported
 - Router (two lines to add, new features)
 - Template engines (two lines to add, same features as before, except their easier configuration)
 - Basic middleware, that have been written by me, are transfared to the main repository[/middleware](https://github.com/kataras/iris/tree/master/middleware) with a lot of improvements to the `recover middleware` (see the next)
 - `func(http.ResponseWriter, r *http.Request, next http.HandlerFunc)` signature is fully compatible using `iris.ToHandler` helper wrapper func, without any need of custom boilerplate code. So all net/http middleware out there are supported, no need to re-invert the world here, search to the internet and you'll find a suitable to your case.
 - Developers can use a `yaml` files for the configuration using the `iris.YAML` function: `app := iris.New(iris.YAML("myconfiguration.yaml"))`
-- Shutdown with `app.Shutdown(context.Context) error`, no need for any third-parties, with `EventPolicy.Interrupted` and Go's 1.8 Gracefully Shutdown feature you're ready to go!
+
 
 Fixes:
 

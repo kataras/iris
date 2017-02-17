@@ -443,8 +443,9 @@ func (s *Framework) Serve(ln net.Listener) error {
 	if s.ln != nil {
 		return errors.New("server is already started and listening")
 	}
-	// maybe a 'race' here but user should not call .Serve more than one time especially in more than one go routines...
+
 	s.ln = ln
+	s.closedManually = false
 	s.Boot()
 
 	// post any panics to the user defined logger.
