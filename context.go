@@ -555,7 +555,7 @@ func (u UnmarshalerFunc) Unmarshal(data []byte, v interface{}) error {
 // Examples of usage: context.ReadJSON, context.ReadXML
 func (ctx *Context) UnmarshalBody(v interface{}, unmarshaler Unmarshaler) error {
 	if ctx.Request.Body == nil {
-		return errors.New("empty body, please send request body")
+		return errors.New("Empty body, please send request body!")
 	}
 
 	rawData, err := ioutil.ReadAll(ctx.Request.Body)

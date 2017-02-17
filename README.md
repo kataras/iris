@@ -61,8 +61,6 @@ The only requirement is the [Go Programming Language](https://golang.org/dl/), a
 $ go get -u github.com/kataras/iris/iris
 ```
 
-> Note: Upcoming release is coming soon, with go v1.8 HTTP/2 Push and some breaking-changes, view this [branch](https://github.com/kataras/iris/tree/v6) for news.
-
 ![Benchmark Wizzard July 21, 2016- Processing Time Horizontal Graph](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png)
 
 

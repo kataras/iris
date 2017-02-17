@@ -1,36 +1,54 @@
 /*
 Package iris the fastest go web framework in (this) Earth.
 
-Basic usage:
+Basic usage
+----------------------------------------------------------------------
 
+package main
 
-			package main
+import  "github.com/kataras/iris"
 
-			import  "github.com/kataras/iris"
-
-			func main() {
-				s1 := iris.New()
-				s1.Get("/hi_json", func(ctx *iris.Context) {
-					ctx.JSON(iris.StatusOK, iris.Map{
-						"Name": "Iris",
-						"Released":  "13 March 2016",
+func main() {
+    iris.Get("/hi_json", func(ctx *iris.Context) {
+        ctx.JSON(iris.StatusOK, iris.Map{
+            "Name": "Iris",
+            "Released":  "13 March 2016",
 						"Stars": "5883",
-					})
-				})
+        })
+    })
+    iris.ListenLETSENCRYPT("mydomain.com")
+}
 
-				s2 := iris.New()
-				s2.Get("/hi_raw_html", func(ctx *iris.Context) {
-					ctx.HTML(iris.StatusOK, "<b> Iris </b> welcomes <h1>you!</h1>")
-				})
+----------------------------------------------------------------------
 
-				go s1.Listen(":8080")
-				s2.Listen(":1993")
-			}
+package main
 
+import  "github.com/kataras/iris"
 
+func main() {
+	s1 := iris.New()
+	s1.Get("/hi_json", func(ctx *iris.Context) {
+		ctx.JSON(iris.StatusOK, iris.Map{
+			"Name": "Iris",
+			"Released":  "13 March 2016",
+			"Stars": "5883",
+		})
+	})
+
+	s2 := iris.New()
+	s2.Get("/hi_raw_html", func(ctx *iris.Context) {
+		ctx.HTML(iris.StatusOK, "<b> Iris </b> welcomes <h1>you!</h1>")
+	})
+
+	go s1.Listen(":8080")
+	s2.Listen(":1993")
+}
+
+----------------------------------------------------------------------
 
 For middleware, template engines, response engines, sessions, websockets, mails, subdomains,
 dynamic subdomains, routes, party of subdomains & routes and more
+
 visit https://docs.iris-go.com
 */
 package iris // import "github.com/kataras/iris"
@@ -1421,7 +1439,7 @@ var _ MuxAPI = &muxAPI{}
 
 var (
 	// errAPIContextNotFound returns an error with message: 'From .API: "Context *iris.Context could not be found..'
-	errAPIContextNotFound = errors.New("from .API: Context *iris.Context could not be found")
+	errAPIContextNotFound = errors.New("From .API: Context *iris.Context could not be found.")
 	// errDirectoryFileNotFound returns an error with message: 'Directory or file %s couldn't found. Trace: +error trace'
 	errDirectoryFileNotFound = errors.New("Directory or file %s couldn't found. Trace: %s")
 )
