@@ -61,6 +61,8 @@ type ResponseWriter interface {
 	http.Flusher
 	http.Hijacker
 	http.CloseNotifier
+	// breaks go 1.7 as well as the *PushOptions.
+	// New users should upgrade to 1.8 if they want to use Iris.
 	http.Pusher
 
 	Writef(format string, a ...interface{}) (n int, err error)
