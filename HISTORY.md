@@ -1,6 +1,7 @@
 # History
 
-**How to upgrade**: remove your `$GOPATH/src/github.com/kataras` folder, open your command-line and execute this command: `go get -u github.com/kataras/iris/iris`.
+**How to upgrade**: Open your command-line and execute this command: `go get -u gopkg.in/kataras/iris.v6`.
+
 
 ## 6.1.4 -> 6.2.0 (√Νεxτ)
 
