@@ -67,7 +67,7 @@ func TestMuxSimple(t *testing.T) {
 	app := newApp()
 
 	testRoutes := []testRoute{
-		// FOUND - registed
+		// FOUND - registered
 		{"GET", "/test_get", "/test_get", "", "hello, get!", 200, true, nil, nil},
 		{"POST", "/test_post", "/test_post", "", "hello, post!", 200, true, nil, nil},
 		{"PUT", "/test_put", "/test_put", "", "hello, put!", 200, true, nil, nil},
@@ -77,7 +77,7 @@ func TestMuxSimple(t *testing.T) {
 		{"CONNECT", "/test_connect", "/test_connect", "", "hello, connect!", 200, true, nil, nil},
 		{"PATCH", "/test_patch", "/test_patch", "", "hello, patch!", 200, true, nil, nil},
 		{"TRACE", "/test_trace", "/test_trace", "", "hello, trace!", 200, true, nil, nil},
-		// NOT FOUND - not registed
+		// NOT FOUND - not registered
 		{"GET", "/test_get_nofound", "/test_get_nofound", "", "Not Found", 404, false, nil, nil},
 		{"POST", "/test_post_nofound", "/test_post_nofound", "", "Not Found", 404, false, nil, nil},
 		{"PUT", "/test_put_nofound", "/test_put_nofound", "", "Not Found", 404, false, nil, nil},
@@ -233,7 +233,7 @@ func TestMuxCustomErrors(t *testing.T) {
 		notFoundMessage        = "Iris custom message for 404 not found"
 		internalServerMessage  = "Iris custom message for 500 internal server error"
 		testRoutesCustomErrors = []testRoute{
-			// NOT FOUND CUSTOM ERRORS - not registed
+			// NOT FOUND CUSTOM ERRORS - not registered
 			{"GET", "/test_get_nofound_custom", "/test_get_nofound_custom", "", notFoundMessage, 404, false, nil, nil},
 			{"POST", "/test_post_nofound_custom", "/test_post_nofound_custom", "", notFoundMessage, 404, false, nil, nil},
 			{"PUT", "/test_put_nofound_custom", "/test_put_nofound_custom", "", notFoundMessage, 404, false, nil, nil},
@@ -243,7 +243,7 @@ func TestMuxCustomErrors(t *testing.T) {
 			{"CONNECT", "/test_connect_nofound_custom", "/test_connect_nofound_custom", "", notFoundMessage, 404, false, nil, nil},
 			{"PATCH", "/test_patch_nofound_custom", "/test_patch_nofound_custom", "", notFoundMessage, 404, false, nil, nil},
 			{"TRACE", "/test_trace_nofound_custom", "/test_trace_nofound_custom", "", notFoundMessage, 404, false, nil, nil},
-			// SERVER INTERNAL ERROR 500 PANIC CUSTOM ERRORS - registed
+			// SERVER INTERNAL ERROR 500 PANIC CUSTOM ERRORS - registered
 			{"GET", "/test_get_panic_custom", "/test_get_panic_custom", "", internalServerMessage, 500, true, nil, nil},
 			{"POST", "/test_post_panic_custom", "/test_post_panic_custom", "", internalServerMessage, 500, true, nil, nil},
 			{"PUT", "/test_put_panic_custom", "/test_put_panic_custom", "", internalServerMessage, 500, true, nil, nil},

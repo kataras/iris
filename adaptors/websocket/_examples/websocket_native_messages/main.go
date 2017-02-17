@@ -29,7 +29,7 @@ func main() {
 	app.Adapt(view.HTML("./templates", ".html")) // select the html engine to serve templates
 
 	ws := websocket.New(websocket.Config{
-		// the path which the websocket client should listen/registed to,
+		// the path which the websocket client should listen/registered to,
 		Endpoint: "/my_endpoint",
 		// to enable binary messages (useful for protobuf):
 		// BinaryMessages: true,
