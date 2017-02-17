@@ -200,10 +200,12 @@ Documentation
 Testing
 ------------
 
-You can find RESTFUL test examples by navigating to the following links:
+You can find End-To-End test examples by navigating to the source code.
 
-- [gavv/_examples/iris_test.go](https://github.com/gavv/httpexpect/blob/master/_examples/iris_test.go)
-- [./httptest/_example/main_test.go](https://github.com/kataras/iris/blob/v6/httptest/_example/main_test.go)
+A simple test is located to [./httptest/_example/main_test.go](https://github.com/kataras/iris/blob/v6/httptest/_example/main_test.go)
+
+
+Read more about [gavv's httpexpect](https://github.com/gavv/httpexpect).
 
 
 FAQ
