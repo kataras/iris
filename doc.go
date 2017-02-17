@@ -78,6 +78,10 @@ Example code:
       	ctx.HTML(iris.StatusOK, "<h1> Welcome to my page!</h1>")
       }
 
+      $ go run main.go
+
+      $ iris run main.go ## enables reload on source code changes.
+
 
 
 All HTTP methods are supported, users can register handlers for same paths on different methods.
@@ -596,8 +600,8 @@ Example code:
 
 A real example can be found here: https://github.com/kataras/iris/tree/v6/adaptors/view/_examples/template_binary .
 
-Enable auto-reloading of templates on each request. Useful while users are in dev mode
-because they don't have to restart their app on every edit you make on the template files.
+Enable auto-reloading of templates on each request. Useful while developers are in dev mode
+as they no neeed to restart their app on every template edit.
 
 Example code:
 
