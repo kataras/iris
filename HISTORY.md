@@ -746,23 +746,24 @@ This pattern allows us to be very pluggable and add features that the *Framework
 it knows only the main policies which implement but their features are our(as users) business.
 
 
-We have 7 policies,so far, and some of them have 'subpolicies' (the RouterReversionPolicy for example).
+We have 8 policies, so far, and some of them have 'subpolicies' (the RouterReversionPolicy for example).
 
--  LoggerPolicy
--  EventPolicy
+- LoggerPolicy
+- EventPolicy
      - Boot
      - Build
      - Interrupted
      - Recover
--  RouterReversionPolicy
+- RouterReversionPolicy
      - StaticPath
      - WildcardPath
      - URLPath
      - RouteContextLinker
--  RouterBuilderPolicy
--  RouterWrapperPolicy
--  RenderPolicy
--  TemplateFuncsPolicy
+- RouterBuilderPolicy
+- RouterWrapperPolicy
+- RenderPolicy
+- TemplateFuncsPolicy
+- SessionsPolicy
 
 
 **Details** of these can be found at [policy.go](https://github.com/kataras/iris/blob/master/policy.go).
