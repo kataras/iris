@@ -113,7 +113,6 @@ func TestConfigurationYAML(t *testing.T) {
   EnablePathEscape: false
   FireMethodNotAllowed: true
   DisableBodyConsumptionOnUnmarshal: true
-  DisableBodyConsumptionOnUnmarshal: true
   TimeFormat: Mon, 01 Jan 2006 15:04:05 GMT
   Charset: UTF-8
   Gzip: true
@@ -163,11 +162,6 @@ func TestConfigurationYAML(t *testing.T) {
 
 	if expected := true; c.DisableBodyConsumptionOnUnmarshal != expected {
 		t.Fatalf("error on TestConfigurationYAML: Expected DisableBodyConsumptionOnUnmarshal %v but got %v", expected, c.DisableBodyConsumptionOnUnmarshal)
-	}
-
-	if expected := true; c.DisableBodyConsumptionOnUnmarshal != expected {
-		t.Fatalf("error on TestConfigurationYAML: Expected DisableBodyConsumptionOnUnmarshal %v but got %v",
-			expected, c.DisableBodyConsumptionOnUnmarshal)
 	}
 
 	if expected := "Mon, 01 Jan 2006 15:04:05 GMT"; c.TimeFormat != expected {
