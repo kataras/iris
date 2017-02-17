@@ -244,6 +244,7 @@ func (w *responseWriter) Push(target string, opts *http.PushOptions) error {
 		if err != nil && err.Error() == http.ErrNotSupported.ErrorString {
 			return ErrPushNotSupported
 		}
+		return err
 	}
 	return ErrPushNotSupported
 }
