@@ -67,7 +67,7 @@ I ran `go build` for both of them,
 Always follows the latest trends and best practices. Iris is the **Secret To Staying One Step Ahead of Your Competition**.
 
 
-Iris is a high-performance tool, but it doesn't stops there. Performance depends on your application too, **Iris helps you to do the right choices** on every step.
+Iris is a high-performance tool, but it doesn't stops there. Performance depends on your application too, **Iris helps you to make the right choices** on every step.
 
 **Familiar** and easy **API**. Sinatra-like REST API.
 
