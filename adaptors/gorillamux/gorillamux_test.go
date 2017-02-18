@@ -17,6 +17,6 @@ func TestRouteURLPath(t *testing.T) {
 	expected := "/profile/42/iris-go/something"
 
 	if got := app.Path("profile", "user_id", 42, "ref", "iris-go", "anything", "something"); got != expected {
-		t.Fatalf("httprouter's reverse routing 'URLPath' error:  expected %s but got %s", expected, got)
+		t.Fatalf("gorillamux' reverse routing 'URLPath' error:  expected %s but got %s", expected, got)
 	}
 }
