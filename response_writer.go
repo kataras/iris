@@ -61,16 +61,9 @@ type ResponseWriter interface {
 	http.Flusher
 	http.Hijacker
 	http.CloseNotifier
-	// NOTE: Users: Uncomment the below code if you are already using Go from master branch.
-	// HTTP/2 Go 1.8 Push feature,
-	// as described in the source code(master):
-	// https://github.com/golang/go/blob/master/src/net/http/http.go#L119 .
-	// I have already tested the feature on my machine, but
-	// in order to avoid breaking the users' workspace:
-	// Uncomment these when 1.8 released (I guess in the middle of February)
-	// TODO:
-	//
-	// http.Pusher
+	// breaks go 1.7 as well as the *PushOptions.
+	// New users should upgrade to 1.8 if they want to use Iris.
+	http.Pusher
 
 	Writef(format string, a ...interface{}) (n int, err error)
 	WriteString(s string) (n int, err error)
@@ -202,7 +195,7 @@ func (w *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 		return h.Hijack()
 	}
 
-	return nil, nil, errors.New("Hijack is not supported by this ResponseWriter.")
+	return nil, nil, errors.New("hijack is not supported by this ResponseWriter")
 }
 
 // Flush sends any buffered data to the client.
@@ -223,44 +216,40 @@ func (w *responseWriter) Flush() {
 	}
 }
 
-// NOTE: Users: Uncomment the below code if you are already using Go from master branch.
-// HTTP/2 Go 1.8 Push feature,
-// as described in the source code(master):
-// https://github.com/golang/go/blob/master/src/net/http/http.go#L119 .
-// I have already tested the feature on my machine, but
-// in order to avoid breaking the users' workspace:
-// Uncomment these when 1.8 released (I guess in the middle of February)
-// TODO:
+// ErrPushNotSupported is returned by the Push method to
+// indicate that HTTP/2 Push support is not available.
+var ErrPushNotSupported = errors.New("push feature is not supported by this ResponseWriter")
+
+// Push initiates an HTTP/2 server push. This constructs a synthetic
+// request using the given target and options, serializes that request
+// into a PUSH_PROMISE frame, then dispatches that request using the
+// server's request handler. If opts is nil, default options are used.
 //
+// The target must either be an absolute path (like "/path") or an absolute
+// URL that contains a valid host and the same scheme as the parent request.
+// If the target is a path, it will inherit the scheme and host of the
+// parent request.
 //
-// // Push initiates an HTTP/2 server push. This constructs a synthetic
-// // request using the given target and options, serializes that request
-// // into a PUSH_PROMISE frame, then dispatches that request using the
-// // server's request handler. If opts is nil, default options are used.
-// //
-// // The target must either be an absolute path (like "/path") or an absolute
-// // URL that contains a valid host and the same scheme as the parent request.
-// // If the target is a path, it will inherit the scheme and host of the
-// // parent request.
-// //
-// // The HTTP/2 spec disallows recursive pushes and cross-authority pushes.
-// // Push may or may not detect these invalid pushes; however, invalid
-// // pushes will be detected and canceled by conforming clients.
-// //
-// // Handlers that wish to push URL X should call Push before sending any
-// // data that may trigger a request for URL X. This avoids a race where the
-// // client issues requests for X before receiving the PUSH_PROMISE for X.
-// //
-// // Push returns ErrNotSupported if the client has disabled push or if push
-// // is not supported on the underlying connection.
-// func (w *responseWriter) Push(target string, opts *http.PushOptions) error {
+// The HTTP/2 spec disallows recursive pushes and cross-authority pushes.
+// Push may or may not detect these invalid pushes; however, invalid
+// pushes will be detected and canceled by conforming clients.
 //
-// 	if pusher, isPusher := w.ResponseWriter.(http.Pusher); isPusher {
-// 		return pusher.Push(target, opts)
-// 	}
+// Handlers that wish to push URL X should call Push before sending any
+// data that may trigger a request for URL X. This avoids a race where the
+// client issues requests for X before receiving the PUSH_PROMISE for X.
 //
-// 	return errors.New("HTTP/2 Push feature is not supported, yet.")
-// }
+// Push returns ErrPushNotSupported if the client has disabled push or if push
+// is not supported on the underlying connection.
+func (w *responseWriter) Push(target string, opts *http.PushOptions) error {
+	if pusher, isPusher := w.ResponseWriter.(http.Pusher); isPusher {
+		err := pusher.Push(target, opts)
+		if err != nil && err.Error() == http.ErrNotSupported.ErrorString {
+			return ErrPushNotSupported
+		}
+		return err
+	}
+	return ErrPushNotSupported
+}
 
 // CloseNotify returns a channel that receives at most a
 // single value (true) when the client connection has gone

@@ -4,17 +4,19 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/httptest"
+	"gopkg.in/kataras/iris.v6"
+	"gopkg.in/kataras/iris.v6/httptest"
 )
 
 // most tests lives inside context_test.go:Transactions, there lives the response writer's full and coblex tests
 func TestResponseWriterBeforeFlush(t *testing.T) {
-	api := iris.New()
+	app := iris.New()
+	app.Adapt(newTestNativeRouter())
+
 	body := "my body"
 	beforeFlushBody := "body appeneded or setted before callback"
 
-	api.Get("/", func(ctx *iris.Context) {
+	app.Get("/", func(ctx *iris.Context) {
 		w := ctx.ResponseWriter
 
 		w.SetBeforeFlush(func() {
@@ -26,7 +28,7 @@ func TestResponseWriterBeforeFlush(t *testing.T) {
 
 	// recorder can change the status code after write too
 	// it can also be changed everywhere inside the context's lifetime
-	api.Get("/recorder", func(ctx *iris.Context) {
+	app.Get("/recorder", func(ctx *iris.Context) {
 		w := ctx.Recorder()
 
 		w.SetBeforeFlush(func() {
@@ -38,18 +40,20 @@ func TestResponseWriterBeforeFlush(t *testing.T) {
 		w.WriteString(body)
 	})
 
-	e := httptest.New(api, t)
+	e := httptest.New(app, t)
 
 	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(body + beforeFlushBody)
 	e.GET("/recorder").Expect().Status(iris.StatusForbidden).Body().Equal(beforeFlushBody)
 }
 
 func TestResponseWriterToRecorderMiddleware(t *testing.T) {
-	api := iris.New()
-	beforeFlushBody := "body appeneded or setted before callback"
-	api.UseGlobal(iris.Recorder)
+	app := iris.New()
+	app.Adapt(newTestNativeRouter())
 
-	api.Get("/", func(ctx *iris.Context) {
+	beforeFlushBody := "body appeneded or setted before callback"
+	app.UseGlobal(iris.Recorder)
+
+	app.Get("/", func(ctx *iris.Context) {
 		w := ctx.Recorder()
 
 		w.SetBeforeFlush(func() {
@@ -61,44 +65,46 @@ func TestResponseWriterToRecorderMiddleware(t *testing.T) {
 		w.WriteString("this will not be sent at all because of SetBodyString")
 	})
 
-	e := httptest.New(api, t)
+	e := httptest.New(app, t)
 
 	e.GET("/").Expect().Status(iris.StatusForbidden).Body().Equal(beforeFlushBody)
 }
 
 func TestResponseRecorderStatusCodeContentTypeBody(t *testing.T) {
-	api := iris.New()
+	app := iris.New()
+	app.Adapt(newTestNativeRouter())
+
 	firstStatusCode := iris.StatusOK
-	contentType := "text/html; charset=" + api.Config.Charset
+	contentType := "text/html; charset=" + app.Config.Charset
 	firstBodyPart := "first"
 	secondBodyPart := "second"
 	prependedBody := "zero"
 	expectedBody := prependedBody + firstBodyPart + secondBodyPart
 
-	api.Use(iris.Recorder)
+	app.Use(iris.Recorder)
 	// recorder's status code can change if needed by a middleware or the last handler.
-	api.UseFunc(func(ctx *iris.Context) {
+	app.UseFunc(func(ctx *iris.Context) {
 		ctx.SetStatusCode(firstStatusCode)
 		ctx.Next()
 	})
 
-	api.UseFunc(func(ctx *iris.Context) {
+	app.UseFunc(func(ctx *iris.Context) {
 		ctx.SetContentType(contentType)
 		ctx.Next()
 	})
 
-	api.UseFunc(func(ctx *iris.Context) {
+	app.UseFunc(func(ctx *iris.Context) {
 		// set a body ( we will append it later, only with response recorder we can set append or remove a body or a part of it*)
 		ctx.WriteString(firstBodyPart)
 		ctx.Next()
 	})
 
-	api.UseFunc(func(ctx *iris.Context) {
+	app.UseFunc(func(ctx *iris.Context) {
 		ctx.WriteString(secondBodyPart)
 		ctx.Next()
 	})
 
-	api.Get("/", func(ctx *iris.Context) {
+	app.Get("/", func(ctx *iris.Context) {
 		previousStatusCode := ctx.StatusCode()
 		if previousStatusCode != firstStatusCode {
 			t.Fatalf("Previous status code should be %d but got %d", firstStatusCode, previousStatusCode)
@@ -118,7 +124,7 @@ func TestResponseRecorderStatusCodeContentTypeBody(t *testing.T) {
 		ctx.Recorder().SetBodyString(prependedBody + prevBody)
 	})
 
-	e := httptest.New(api, t)
+	e := httptest.New(app, t)
 
 	et := e.GET("/").Expect().Status(iris.StatusForbidden)
 	et.Header("Content-Type").Equal(contentType)
@@ -126,12 +132,11 @@ func TestResponseRecorderStatusCodeContentTypeBody(t *testing.T) {
 }
 
 func ExampleResponseWriter_WriteHeader() {
-	// func TestResponseWriterMultipleWriteHeader(t *testing.T) {
-	iris.ResetDefault()
-	iris.Default.Set(iris.OptionDisableBanner(true))
+	app := iris.New()
+	app.Adapt(newTestNativeRouter())
 
 	expectedOutput := "Hey"
-	iris.Get("/", func(ctx *iris.Context) {
+	app.Get("/", func(ctx *iris.Context) {
 
 		// here
 		for i := 0; i < 10; i++ {
@@ -149,7 +154,7 @@ func ExampleResponseWriter_WriteHeader() {
 		}
 	})
 
-	e := httptest.New(iris.Default, nil)
+	e := httptest.New(app, nil)
 	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedOutput)
 	// here it shouldn't log an error that status code write multiple times (by the net/http package.)
 
