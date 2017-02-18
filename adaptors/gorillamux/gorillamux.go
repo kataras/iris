@@ -8,8 +8,8 @@ package gorillamux
 // package main
 //
 // import (
-// 	"gopkg.in/kataras/iris.v6/adaptors/gorillamux"
 // 	"gopkg.in/kataras/iris.v6"
+// 	"gopkg.in/kataras/iris.v6/adaptors/gorillamux"
 // )
 //
 // func main() {
@@ -37,7 +37,8 @@ const dynamicSymbol = '{'
 // New returns a new gorilla mux router which can be plugged inside iris.
 // This is magic.
 func New() iris.Policies {
-	router := mux.NewRouter()
+	var router *mux.Router
+
 	var logger func(iris.LogMode, string)
 	return iris.Policies{
 		EventPolicy: iris.EventPolicy{Boot: func(s *iris.Framework) {
@@ -76,17 +77,11 @@ func New() iris.Policies {
 				}
 				return ""
 			},
-			RouteContextLinker: func(r iris.RouteInfo, ctx *iris.Context) {
-				if r == nil {
-					return
-				}
-				route := router.Get(r.Name())
-				if route != nil {
-					mapToContext(ctx.Request, r.Middleware(), ctx)
-				}
-			},
 		},
 		RouterBuilderPolicy: func(repo iris.RouteRepository, context iris.ContextPool) http.Handler {
+			router = mux.NewRouter() // re-set the router here,
+			// the RouterBuilderPolicy re-runs on every method change (route "offline/online" states mostly)
+
 			repo.Visit(func(route iris.RouteInfo) {
 				registerRoute(route, router, context)
 			})
@@ -102,49 +97,47 @@ func New() iris.Policies {
 	}
 }
 
-func mapToContext(r *http.Request, middleware iris.Middleware, ctx *iris.Context) {
-	if params := mux.Vars(r); len(params) > 0 {
-		// set them with ctx.Set in order to be accesible by ctx.Param in the user's handler
-		for k, v := range params {
-			ctx.Set(k, v)
-		}
-	}
-	// including the iris.Default.Use/UseFunc and the route's middleware,
-	// main handler and any done handlers.
-	ctx.Middleware = middleware
-}
-
 // so easy:
 func registerRoute(route iris.RouteInfo, gorillaRouter *mux.Router, context iris.ContextPool) {
-	if route.IsOnline() {
-		handler := func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.Acquire(w, r)
 
-			mapToContext(r, route.Middleware(), ctx)
-			ctx.Do()
-
-			context.Release(ctx)
-		}
-
-		// remember, we get a new iris.Route foreach of the HTTP Methods, so this should be work
-		methods := []string{route.Method()}
-		// if route has cors then we register the route with the "OPTIONS" method too
-		if route.HasCors() {
-			methods = append(methods, http.MethodOptions)
-		}
-		gorillaRoute := gorillaRouter.HandleFunc(route.Path(), handler).Methods(methods...).Name(route.Name())
-
-		subdomain := route.Subdomain()
-		if subdomain != "" {
-			if subdomain == "*." {
-				// it's an iris wildcard subdomain
-				// so register it as wildcard on gorilla mux too
-				subdomain = "{subdomain}."
-			} else {
-				// it's a static subdomain (which contains the dot)
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		context.Run(w, r, func(ctx *iris.Context) {
+			if params := mux.Vars(ctx.Request); len(params) > 0 {
+				// set them with ctx.Set in order to be accesible by ctx.Param in the user's handler
+				for k, v := range params {
+					ctx.Set(k, v)
+				}
 			}
-			// host = subdomain  + listening host
-			gorillaRoute.Host(subdomain + context.Framework().Config.VHost)
-		}
+			// including the global middleware, done handlers too
+			ctx.Middleware = route.Middleware()
+			ctx.Do()
+		})
 	}
+
+	// remember, we get a new iris.Route foreach of the HTTP Methods, so this should be work
+	methods := []string{route.Method()}
+	// if route has cors then we register the route with the "OPTIONS" method too
+	if route.HasCors() {
+		methods = append(methods, http.MethodOptions)
+	}
+	gorillaRoute := gorillaRouter.HandleFunc(route.Path(), handler).
+		Methods(methods...).
+		Name(route.Name())
+
+	subdomain := route.Subdomain()
+	if subdomain != "" {
+		if subdomain == "*." {
+			// it's an iris wildcard subdomain
+			// so register it as wildcard on gorilla mux too
+			subdomain = "{subdomain}."
+		} else {
+			// it's a static subdomain (which contains the dot)
+		}
+		// host = subdomain  + listening host
+		gorillaRoute.Host(subdomain + context.Framework().Config.VHost)
+	}
+
+	// Author's notes: even if the Method is iris.MethodNone
+	// the gorillamux saves the route, so we don't need to use the repo.OnMethodChanged
+	// and route.IsOnline() and we don't need the RouteContextLinker, we just serve like request on Offline routes*
 }
