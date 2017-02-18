@@ -284,3 +284,17 @@ func TestMuxCustomErrors(t *testing.T) {
 			Status(r.Status).Body().Equal(r.Body)
 	}
 }
+
+func TestRouteURLPath(t *testing.T) {
+	app := iris.New()
+	app.Adapt(httprouter.New())
+
+	app.None("/profile/:user_id/:ref/*anything", nil).ChangeName("profile")
+	app.Boot()
+
+	expected := "/profile/42/iris-go/something"
+
+	if got := app.Path("profile", 42, "iris-go", "something"); got != expected {
+		t.Fatalf("httprouter's reverse routing 'URLPath' error:  expected %s but got %s", expected, got)
+	}
+}

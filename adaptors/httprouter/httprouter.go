@@ -25,6 +25,7 @@ package httprouter
 // }
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -461,6 +462,40 @@ type (
 	}
 )
 
+// path = "/api/users/:id"
+// return "/api/users/%v"
+//
+// path = "/files/*file"
+// return /files/%v
+//
+// path = "/:username/messages/:messageid"
+// return "/%v/messages/%v"
+func formatPath(path string) string {
+	n1Len := strings.Count(path, ":")
+	isMatchEverything := len(path) > 0 && path[len(path)-1] == matchEverythingByte
+	if n1Len == 0 && !isMatchEverything {
+		// its a static
+		return path
+	}
+	if n1Len == 0 && isMatchEverything {
+		//if we have something like: /mypath/anything/* -> /mypatch/anything/%v
+		return path[0:len(path)-2] + "%v"
+
+	}
+
+	splittedN1 := strings.Split(path, "/")
+
+	for _, v := range splittedN1 {
+		if len(v) > 0 {
+			if v[0] == ':' || v[0] == matchEverythingByte {
+				path = strings.Replace(path, v, "%v", -1) // n1Len, but let it we don't care about performance here.
+			}
+		}
+	}
+
+	return path
+}
+
 // New returns a new iris' policy to create and attach the router.
 // It's based on the julienschmidt/httprouter  with more features and some iris-relative performance tips:
 // subdomains(wildcard/dynamic and static) and faster parameters set (use of the already-created context's values)
@@ -497,55 +532,37 @@ func New() iris.Policies {
 			WildcardPath: func(path string, paramName string) string {
 				return path + slash + matchEverythingString + paramName
 			},
+			// path = "/api/users/:id", args = ["42"]
+			// return "/api/users/42"
+			//
+			// path = "/files/*file", args = ["mydir","myfile.zip"]
+			// return /files/mydir/myfile.zip
+			//
+			// path = "/:username/messages/:messageid", args = ["kataras","42"]
+			// return "/kataras/messages/42"
+			//
+			// This policy is used for reverse routing,
+			// see iris.Path/URL and ~/adaptors/view/ {{ url }} {{ urlpath }}
+			URLPath: func(r iris.RouteInfo, args ...string) string {
+				rpath := r.Path()
+				formattedPath := formatPath(rpath)
 
-			// URLPath: func(r iris.RouteInfo, args ...string) string {
-			// 	argsLen := len(args)
-			//
-			// 	// we have named parameters but arguments not given
-			// 	if argsLen == 0 && r.formattedParts > 0 {
-			// 		return ""
-			// 	} else if argsLen == 0 && r.formattedParts == 0 {
-			// 		// it's static then just return the path
-			// 		return r.path
-			// 	}
-			//
-			// 	// we have arguments but they are much more than the named parameters
-			//
-			// 	// 1 check if we have /*, if yes then join all arguments to one as path and pass that as parameter
-			// 	if argsLen > r.formattedParts {
-			// 		if r.path[len(r.path)-1] == matchEverythingByte {
-			// 			// we have to convert each argument to a string in this case
-			//
-			// 			argsString := make([]string, argsLen, argsLen)
-			//
-			// 			for i, v := range args {
-			// 				if s, ok := v.(string); ok {
-			// 					argsString[i] = s
-			// 				} else if num, ok := v.(int); ok {
-			// 					argsString[i] = strconv.Itoa(num)
-			// 				} else if b, ok := v.(bool); ok {
-			// 					argsString[i] = strconv.FormatBool(b)
-			// 				} else if arr, ok := v.([]string); ok {
-			// 					if len(arr) > 0 {
-			// 						argsString[i] = arr[0]
-			// 						argsString = append(argsString, arr[1:]...)
-			// 					}
-			// 				}
-			// 			}
-			//
-			// 			parameter := strings.Join(argsString, slash)
-			// 			result := fmt.Sprintf(r.formattedPath, parameter)
-			// 			return result
-			// 		}
-			// 		// 2 if !1 return false
-			// 		return ""
-			// 	}
-			//
-			// 	arguments := joinPathArguments(args...)
-			//
-			// 	return fmt.Sprintf(r.formattedPath, arguments...)
-			// },
+				if rpath == formattedPath {
+					// static, no need to pass args
+					return rpath
+				}
+				// check if we have /*, if yes then join all arguments to one as path and pass that as parameter
+				if formattedPath != rpath && rpath[len(rpath)-1] == matchEverythingByte {
+					parameter := strings.Join(args, slash)
+					return fmt.Sprintf(formattedPath, parameter)
+				}
+				// else return the formattedPath with its args
+				for _, s := range args {
+					formattedPath = strings.Replace(formattedPath, "%v", s, 1)
+				}
+				return formattedPath
 
+			},
 		},
 		RouterBuilderPolicy: func(repo iris.RouteRepository, context iris.ContextPool) http.Handler {
 			fatalErr := false

@@ -121,7 +121,7 @@ type testNativeRoute struct {
 	status             int
 }
 
-func TestRouterPolicyAdaptor(t *testing.T) {
+func TestNativeRouterPolicyAdaptor(t *testing.T) {
 	expectedWrongMethodStatus := StatusNotFound
 	app := New(Configuration{FireMethodNotAllowed: true})
 	app.Adapt(newTestNativeRouter())
@@ -166,9 +166,9 @@ func TestRouterPolicyAdaptor(t *testing.T) {
 	}).ChangeName("profile")
 
 	e := httptest.New(app, t)
-	expected := "/profile/?user_id=42&ref=iris-go&something=anything"
+	expected := "/profile/?user_id=42&ref=iris-go&anything=something"
 
-	if got := app.Path("profile", "user_id", 42, "ref", "iris-go", "something", "anything"); got != expected {
+	if got := app.Path("profile", "user_id", 42, "ref", "iris-go", "anything", "something"); got != expected {
 		t.Fatalf("URLPath expected %s but got %s", expected, got)
 	}
 
