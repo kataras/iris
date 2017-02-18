@@ -140,10 +140,6 @@ func (s *sessions) Start(res http.ResponseWriter, req *http.Request) iris.Sessio
 				cookie.Expires = time.Now().Add(s.config.Expires)
 			}
 			cookie.MaxAge = int(cookie.Expires.Sub(time.Now()).Seconds())
-		} else {
-			// if it's -1 then the cookie is deleted when the browser closes
-			// so MaxAge = -1
-			cookie.MaxAge = -1
 		}
 
 		AddCookie(cookie, res)
