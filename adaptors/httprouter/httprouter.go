@@ -545,15 +545,12 @@ func New() iris.Policies {
 			//
 			// 	return fmt.Sprintf(r.formattedPath, arguments...)
 			// },
-			RouteContextLinker: func(r iris.RouteInfo, ctx *iris.Context) {
-				tree := mux.getTree(r.Method(), r.Subdomain())
-				if tree != nil {
-					tree.entry.get(ctx.Request.URL.Path, ctx)
-				}
-			},
+
 		},
 		RouterBuilderPolicy: func(repo iris.RouteRepository, context iris.ContextPool) http.Handler {
 			fatalErr := false
+			mux.garden = mux.garden[0:0] // re-set the nodes
+			mux.hosts = false
 			repo.Visit(func(r iris.RouteInfo) {
 				if fatalErr {
 					return

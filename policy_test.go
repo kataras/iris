@@ -52,12 +52,6 @@ func newTestNativeRouter() Policies {
 				}
 				return path
 			},
-			RouteContextLinker: func(r RouteInfo, ctx *Context) {
-				if r == nil {
-					return
-				}
-				ctx.Middleware = r.Middleware()
-			},
 		},
 		RouterBuilderPolicy: func(repo RouteRepository, context ContextPool) http.Handler {
 			servemux := http.NewServeMux()

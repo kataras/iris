@@ -93,7 +93,7 @@ func New(app *iris.Framework, t *testing.T, setters ...OptionSetter) *httpexpect
 	testConfiguration := httpexpect.Config{
 		BaseURL: baseURL,
 		Client: &http.Client{
-			Transport: httpexpect.NewBinder(app),
+			Transport: httpexpect.NewBinder(app.Router),
 			Jar:       httpexpect.NewJar(),
 		},
 		Reporter: httpexpect.NewAssertReporter(t),
