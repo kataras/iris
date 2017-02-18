@@ -237,6 +237,7 @@ func (r *routeRepository) ChangeMethod(routeInfo RouteInfo,
 	}
 
 	if valid {
+
 		route := r.getRouteByName(routeInfo.Name())
 		if route != nil && route.method != newMethod {
 			oldMethod := route.method

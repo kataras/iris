@@ -277,7 +277,7 @@ func (ctx *Context) GetHandlerName() string {
 // BUT it isn't available by browsing, its handlers executed only when other handler's context call them
 // it can validate paths, has sessions, path parameters and all.
 //
-// You can find the Route by iris.Lookup("theRouteName")
+// You can find the Route by iris.Default.Routes().Lookup("theRouteName")
 // you can set a route name as: myRoute := iris.Default.Get("/mypath", handler)("theRouteName")
 // that will set a name to the route and returns its iris.Route instance for further usage.
 //
@@ -288,8 +288,8 @@ func (ctx *Context) GetHandlerName() string {
 // For more details look: https://github.com/kataras/iris/issues/585
 //
 // Example: https://github.com/iris-contrib/examples/tree/master/route_state
-func (ctx *Context) ExecRoute(r RouteInfo) *Context {
-	return ctx.ExecRouteAgainst(r, ctx.Path())
+func (ctx *Context) ExecRoute(r RouteInfo) {
+	ctx.ExecRouteAgainst(r, ctx.Path())
 }
 
 // ExecRouteAgainst calls any iris.Route against a 'virtually' request path
@@ -298,7 +298,7 @@ func (ctx *Context) ExecRoute(r RouteInfo) *Context {
 // BUT it isn't available by browsing, its handlers executed only when other handler's context call them
 // it can validate paths, has sessions, path parameters and all.
 //
-// You can find the Route by iris.Lookup("theRouteName")
+// You can find the Route by iris.Default.Routes().Lookup("theRouteName")
 // you can set a route name as: myRoute := iris.Default.Get("/mypath", handler)("theRouteName")
 // that will set a name to the route and returns its iris.Route instance for further usage.
 //
@@ -309,23 +309,34 @@ func (ctx *Context) ExecRoute(r RouteInfo) *Context {
 // For more details look: https://github.com/kataras/iris/issues/585
 //
 // Example: https://github.com/iris-contrib/examples/tree/master/route_state
-func (ctx *Context) ExecRouteAgainst(r RouteInfo, againstRequestPath string) *Context {
-	if r != nil {
-		context := &(*ctx)
-		context.Middleware = context.Middleware[0:0]
-		context.values.Reset()
-		context.Request.RequestURI = againstRequestPath
-		context.Request.URL.Path = againstRequestPath
-		context.Request.URL.RawPath = againstRequestPath
-		ctx.framework.policies.RouterReversionPolicy.RouteContextLinker(r, context)
-		// tree := ctx.framework.muxAPI.mux.getTree(r.Method(), r.Subdomain())
-		// tree.entry.get(againstRequestPath, context)
-		if len(context.Middleware) > 0 {
-			context.Do()
-			return context
-		}
+//
+// User can get the response by simple using rec := ctx.Recorder(); rec.Body()/rec.StatusCode()/rec.Header()
+// The route will be executed via the Router, as it would requested by client.
+func (ctx *Context) ExecRouteAgainst(r RouteInfo, againstRequestPath string) {
+	if r != nil && againstRequestPath != "" {
+		// ok no need to clone the whole context, let's be dirty here for the sake of performance.
+		backupMidldeware := ctx.Middleware[0:]
+		backupPath := ctx.Path()
+		bakcupMethod := ctx.Method()
+		backupValues := ctx.values
+		backupPos := ctx.Pos
+		// sessions stays.
+
+		ctx.values.Reset()
+		ctx.Middleware = ctx.Middleware[0:0]
+		ctx.Request.RequestURI = againstRequestPath
+		ctx.Request.URL.Path = againstRequestPath
+		ctx.Request.Method = r.Method()
+
+		ctx.framework.Router.ServeHTTP(ctx.ResponseWriter, ctx.Request)
+
+		ctx.Middleware = backupMidldeware
+		ctx.Request.RequestURI = backupPath
+		ctx.Request.URL.Path = backupPath
+		ctx.Request.Method = bakcupMethod
+		ctx.values = backupValues
+		ctx.Pos = backupPos
 	}
-	return nil
 }
 
 // Prioritize is a middleware which executes a route against this path
@@ -334,7 +345,7 @@ func (ctx *Context) ExecRouteAgainst(r RouteInfo, againstRequestPath string) *Co
 // if this function is not enough for you and you want to test more than one parameterized path
 // then use the:  if c := ExecRoute(r); c == nil { /*  move to the next, the route is not valid */ }
 //
-// You can find the Route by iris.Lookup("theRouteName")
+// You can find the Route by iris.Default.Routes().Lookup("theRouteName")
 // you can set a route name as: myRoute := iris.Default.Get("/mypath", handler)("theRouteName")
 // that will set a name to the route and returns its iris.Route instance for further usage.
 //
@@ -346,10 +357,8 @@ func Prioritize(r RouteInfo) HandlerFunc {
 			reqPath := ctx.Path()
 			staticPath := ctx.framework.policies.RouterReversionPolicy.StaticPath(r.Path())
 			if strings.HasPrefix(reqPath, staticPath) {
-				newctx := ctx.ExecRouteAgainst(r, reqPath)
-				if newctx == nil { // route not found.
-					ctx.EmitError(StatusNotFound)
-				}
+				ctx.ExecRouteAgainst(r, reqPath) // returns 404 page from EmitErrors, these things depends on router adaptors
+				// we are done here.
 				return
 			}
 			// execute the next handler if no prefix

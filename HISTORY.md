@@ -766,7 +766,6 @@ We have 8 policies, so far, and some of them have 'subpolicies' (the RouterRever
      - StaticPath
      - WildcardPath
      - URLPath
-     - RouteContextLinker
 - RouterBuilderPolicy
 - RouterWrapperPolicy
 - RenderPolicy

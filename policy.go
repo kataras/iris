@@ -272,11 +272,6 @@ type (
 		// URLPath used for reverse routing on templates with {{ url }} and {{ path }} funcs.
 		// Receives the route name and  arguments and returns its http path
 		URLPath func(r RouteInfo, args ...string) string
-
-		// RouteContextLinker should put the route's handlers and named parameters(if any) to the ctx
-		// it's used to execute virtually an "offline" route
-		// against a context like it was requested by user, but it is not.
-		RouteContextLinker func(r RouteInfo, ctx *Context)
 	}
 	// RouterBuilderPolicy is the most useful Policy for custom routers.
 	// A custom router should adapt this policy which is a func
@@ -316,10 +311,6 @@ func (r RouterReversionPolicy) Adapt(frame *Policies) {
 
 	if r.URLPath != nil {
 		frame.RouterReversionPolicy.URLPath = r.URLPath
-	}
-
-	if r.RouteContextLinker != nil {
-		frame.RouterReversionPolicy.RouteContextLinker = r.RouteContextLinker
 	}
 }
 
