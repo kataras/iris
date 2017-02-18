@@ -184,10 +184,12 @@ func getByIDHandler(ctx *iris.Context) {
 
 > TIP: Add `templates.Reload(true)` to monitor the template changes.
 
+
+
 Documentation
 -----------
 
- <a href="https://godoc.org/gopkg.in/kataras/iris.v6"><img align="right" width="125" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_4.jpg"></a>
+ <a href="https://docs.iris-go.com"><img align="right" width="125" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_4.jpg"></a>
 
 
 - New GOpher? Welcome! Take a look at the [GopherBOOk](http://gopherbook.iris-go.com/)
@@ -215,11 +217,6 @@ A simple test is located to [./httptest/_example/main_test.go](https://github.co
 
 
 Read more about [gavv's httpexpect](https://github.com/gavv/httpexpect).
-
-
-
-
-
 
 
 Philosophy
@@ -250,7 +247,7 @@ Today I spend all my days and nights coding for Iris, and I'm happy about this, 
 - Star the project, will help you to follow the upcoming features.
 - [Donate](https://github.com/kataras/iris/blob/master/DONATIONS.md), if you can afford any cost.
 - Write an article about Iris or even post a Tweet.
-- Do Pull Requests on the [iris-contrib](https://github.com/iris-contrib) organisation's repositories, like [book](https://github.com/iris-contrib/gitbook), [examples](https://github.com/iris-contrib/examples) and to [gopherbook](http://gopherbook.iris-go.com/).
+- **Do Pull Requests on the [iris-contrib](https://github.com/iris-contrib)** organisation's repositories, like [book](https://github.com/iris-contrib/gitbook), [examples](https://github.com/iris-contrib/examples) and to [gopherbook](http://gopherbook.iris-go.com/).
 
 If you are interested in contributing to the Iris project, please see the document [CONTRIBUTING](https://github.com/kataras/iris/blob/master/.github/CONTRIBUTING.md).
 
@@ -281,5 +278,19 @@ under the MIT License found in the [LICENSE file](LICENSE).
 
 Note that some optional components that you may use with Iris requires
 different license agreements.
+
+
+TODO
+------------
+
+- [ ] Refactor the [Examples](https://github.com/iris-contrib/examples) to be align with the latest version
+- [ ] Upgrade [GitBook](https://docs.iris-go.com) for the latest release
+- [ ] Add some missing tests from the previous version and find a way to share these end-to-end tests accross the adaptors and the root
+- [ ] Replace http://iris-go.com content to something more fancy, as suggested [here](https://github.com/kataras/iris/issues/613)
+- [ ] Make a table list of the most famous middleware(s) with their descriptions, in order to help new Gophers find what they're looking for
+
+
+Iris is a Community-Driven project waiting for your [feature requests](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=label%3A%22the%20feature%20has%20been%20implemented%22%20)!
+
 
 [Chat]: https://kataras.rocket.chat/channel/iris
