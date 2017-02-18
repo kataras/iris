@@ -16,7 +16,7 @@ to adapt the new changes to your application, it contains an overview of the new
 
 - Router (two lines to add, new features)
 - Template engines (two lines to add, same features as before, except their easier configuration)
-- Basic middleware, that have been written by me, are transfared to the main repository[/middleware](https://github.com/kataras/iris/tree/master/middleware) with a lot of improvements to the `recover middleware` (see the next)
+- Basic middleware, that have been written by me, are transfared to the main repository[/middleware](https://github.com/kataras/iris/tree/v6/middleware) with a lot of improvements to the `recover middleware` (see the next)
 - `func(http.ResponseWriter, r *http.Request, next http.HandlerFunc)` signature is fully compatible using `iris.ToHandler` helper wrapper func, without any need of custom boilerplate code. So all net/http middleware out there are supported, no need to re-invert the world here, search to the internet and you'll find a suitable to your case.
 - Developers can use a `yaml` files for the configuration using the `iris.YAML` function: `app := iris.New(iris.YAML("myconfiguration.yaml"))`
 
@@ -42,31 +42,31 @@ Changes:
 - Remove `.Logger`, `.Config.IsDevelopment`, `.Config.LoggerOut`, `.Config.LoggerPrefix` you can adapt a logger which will log to each log message mode by `app.Adapt(iris.DevLogger())` or adapt a new one, it's just a `func(mode iris.LogMode, message string)`.
 - Remove `.Config.DisableTemplateEngines`, are disabled by-default, you have to `.Adapt` a view engine by yourself
 - Remove `context.RenderTemplateSource` you should make a new template file and use the `iris.Render` to specify an `io.Writer` like `bytes.Buffer`
-- Remove  `plugins`, replaced with more pluggable echosystem that I designed from zero on this release, named `Policy` [Adaptors](https://github.com/kataras/iris/tree/master/adaptors) (all plugins have been converted, fixed and improvement, except the iriscontrol).
+- Remove  `plugins`, replaced with more pluggable echosystem that I designed from zero on this release, named `Policy` [Adaptors](https://github.com/kataras/iris/tree/v6/adaptors) (all plugins have been converted, fixed and improvement, except the iriscontrol).
 - `context.Log(string,...interface{})` -> `context.Log(iris.LogMode, string)`
 - Remove `.Config.DisableBanner`, now it's controlled by `app.Adapt(iris.LoggerPolicy(func(mode iris.LogMode, msg string)))`
 - Remove `.Config.Websocket` , replaced with the `kataras/iris/adaptors/websocket.Config` adaptor.
 
 - https://github.com/iris-contrib/plugin      ->  https://github.com/iris-contrib/adaptors
 
-- `import "github.com/iris-contrib/middleware/basicauth"` -> `import "github.com/kataras/iris/middleware/basicauth"`
-- `import "github.com/iris-contrib/middleware/i18n"` -> `import "github.com/kataras/iris/middleware/i18n"`
-- `import "github.com/iris-contrib/middleware/logger"` -> `import "github.com/kataras/iris/middleware/logger"`
-- `import "github.com/iris-contrib/middleware/recovery"` -> `import "github.com/kataras/iris/middleware/recover"`
+- `import "github.com/iris-contrib/middleware/basicauth"` -> `import "gopkg.in/kataras/iris.v6/middleware/basicauth"`
+- `import "github.com/iris-contrib/middleware/i18n"` -> `import "gopkg.in/kataras/iris.v6/middleware/i18n"`
+- `import "github.com/iris-contrib/middleware/logger"` -> `import "gopkg.in/kataras/iris.v6/middleware/logger"`
+- `import "github.com/iris-contrib/middleware/recovery"` -> `import "gopkg.in/kataras/iris.v6/middleware/recover"`
 
 
-- `import "github.com/iris-contrib/plugin/typescript"` -> `import "github.com/kataras/iris/adaptors/typescript"`
-- `import "github.com/iris-contrib/plugin/editor"` -> `import "github.com/kataras/iris/adaptors/typescript/editor"`
-- `import "github.com/iris-contrib/plugin/cors"` -> `import "github.com/kataras/iris/adaptors/cors"`
-- `import "github.com/iris-contrib/plugin/gorillamux"` -> `import "github.com/kataras/iris/adaptors/gorillamux"`
+- `import "github.com/iris-contrib/plugin/typescript"` -> `import "gopkg.in/kataras/iris.v6/adaptors/typescript"`
+- `import "github.com/iris-contrib/plugin/editor"` -> `import "gopkg.in/kataras/iris.v6/adaptors/typescript/editor"`
+- `import "github.com/iris-contrib/plugin/cors"` -> `import "gopkg.in/kataras/iris.v6/adaptors/cors"`
+- `import "github.com/iris-contrib/plugin/gorillamux"` -> `import "gopkg.in/kataras/iris.v6/adaptors/gorillamux"`
 - `import github.com/iris-contrib/plugin/oauth"` -> `import "github.com/iris-contrib/adaptors/oauth"`
 
 
-- `import "github.com/kataras/go-template/html"` -> `import "github.com/kataras/iris/adaptors/view"`
-- `import "github.com/kataras/go-template/django"` -> `import "github.com/kataras/iris/adaptors/view"`
-- `import "github.com/kataras/go-template/pug"` -> `import "github.com/kataras/iris/adaptors/view"`
-- `import "github.com/kataras/go-template/handlebars"` -> `import "github.com/kataras/iris/adaptors/view"`
-- `import "github.com/kataras/go-template/amber"` -> `import "github.com/kataras/iris/adaptors/view"`
+- `import "github.com/kataras/go-template/html"` -> `import "gopkg.in/kataras/iris.v6/adaptors/view"`
+- `import "github.com/kataras/go-template/django"` -> `import "gopkg.in/kataras/iris.v6/adaptors/view"`
+- `import "github.com/kataras/go-template/pug"` -> `import "gopkg.in/kataras/iris.v6/adaptors/view"`
+- `import "github.com/kataras/go-template/handlebars"` -> `import "gopkg.in/kataras/iris.v6/adaptors/view"`
+- `import "github.com/kataras/go-template/amber"` -> `import "gopkg.in/kataras/iris.v6/adaptors/view"`
 
 **Read more below** for the lines you have to change. Package-level removal is critical, you will have build-time errors. Router(less) is MUST, otherwise your app will fatal with a detailed error message.
 
@@ -88,7 +88,7 @@ At the past I gave you many workarounds, but they are just workarounds, not a co
 Two routers available to use, today:
 
 
-- [httprouter](https://github.com/kataras/iris/tree/master/adaptors/httprouter), the old defaulted. A router that can be adapted, it's a custom version of https://github.comjulienschmidt/httprouter which is edited to support iris' subdomains, reverse routing, custom http errors and a lot features, it should be a bit faster than the original too because of iris' Context. It uses `/mypath/:firstParameter/path/:secondParameter` and `/mypath/*wildcardParamName` .
+- [httprouter](https://github.com/kataras/iris/tree/v6/adaptors/httprouter), the old defaulted. A router that can be adapted, it's a custom version of https://github.comjulienschmidt/httprouter which is edited to support iris' subdomains, reverse routing, custom http errors and a lot features, it should be a bit faster than the original too because of iris' Context. It uses `/mypath/:firstParameter/path/:secondParameter` and `/mypath/*wildcardParamName` .
 
 
 Example:
@@ -97,8 +97,8 @@ Example:
 package main
 
 import (
-  "github.com/kataras/iris"
-  "github.com/kataras/iris/adaptors/httprouter" // <---- NEW
+  "gopkg.in/kataras/iris.v6"
+  "gopkg.in/kataras/iris.v6/adaptors/httprouter" // <---- NEW
 )
 
 func main() {
@@ -184,7 +184,7 @@ func h(ctx *iris.Context) {
 
 ```
 
-- [gorillamux](https://github.com/kataras/iris/tree/master/adaptors/gorillamux), a router that can be adapted, it's the https://github.com/gorilla/mux which supports subdomains, custom http errors, reverse routing, pattern matching via regex and the rest of the iris' features.
+- [gorillamux](https://github.com/kataras/iris/tree/v6/adaptors/gorillamux), a router that can be adapted, it's the https://github.com/gorilla/mux which supports subdomains, custom http errors, reverse routing, pattern matching via regex and the rest of the iris' features.
 
 
 Example:
@@ -193,8 +193,8 @@ Example:
 package main
 
 import (
-  "github.com/kataras/iris"
-  "github.com/kataras/iris/adaptors/gorillamux" // <---- NEW
+  "gopkg.in/kataras/iris.v6"
+  "gopkg.in/kataras/iris.v6/adaptors/gorillamux" // <---- NEW
 )
 
 func main() {
@@ -296,7 +296,7 @@ As we said, all iris' features works as before even if you are able to adapt any
 > I would love to see more routers (as more as they can provide different `path declaration` features) from the community, create an adaptor for an iris' router and I will share your repository to the rest of the users!
 
 
-Adaptors are located [there](https://github.com/kataras/iris/tree/master/adaptors).
+Adaptors are located [there](https://github.com/kataras/iris/tree/v6/adaptors).
 
 ### View engine (5 template engine adaptors)
 
@@ -320,7 +320,7 @@ All of these **five template engines** have common features with common API, lik
 
    - **amber**, based on [go-template/amber](https://github.com/kataras/go-template/tree/master/amber), its template parser is the [amber](https://github.com/eknkc/amber).
 
-Each of the template engines has different options, view adaptors are located [here](https://github.com/kataras/iris/tree/master/adaptors/view).
+Each of the template engines has different options, view adaptors are located [here](https://github.com/kataras/iris/tree/v6/adaptors/view).
 
 
 Example:
@@ -330,9 +330,9 @@ Example:
 package main
 
 import (
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/adaptors/gorillamux" // <--- NEW (previous section)
-	"github.com/kataras/iris/adaptors/view" // <--- NEW it contains all the template engines
+	"gopkg.in/kataras/iris.v6"
+	"gopkg.in/kataras/iris.v6/adaptors/gorillamux" // <--- NEW (previous section)
+	"gopkg.in/kataras/iris.v6/adaptors/view" // <--- NEW it contains all the template engines
 )
 
 func main() {
@@ -390,7 +390,7 @@ app.UseTemplate(django.New()).Directory("./templates", ".html")/*.Binary(...)*/)
 
 **AFTER**
 ```go
-import "github.com/kataras/iris/adaptors/view"
+import ""gopkg.in/kataras/iris.v6/adaptors/view"
 // ...
 app := iris.New()
 app.Adapt(view.Django("./templates",".htmll")/*.Binary(...)*/)
@@ -485,8 +485,8 @@ func main(){
 package controllers
 
 import (
-  "github.com/kataras/iris"
-  "github.com/kataras/iris/adaptors/httprouter"
+  "gopkg.in/kataras/iris.v6"
+  "gopkg.in/kataras/iris.v6/adaptors/httprouter"
 )
 
 func init(){
@@ -501,7 +501,7 @@ func init(){
 package main
 
 import (
-  "github.com/kataras/iris"
+  "gopkg.in/kataras/iris.v6"
    _ "github.com/mypackage/controllers"
 )
 
@@ -588,8 +588,8 @@ func main() {
 package main
 
 import (
-	"github.com/kataras/iris"
-  "github.com/kataras/iris/adaptors/gorillamux"
+	"gopkg.in/kataras/iris.v6"
+  "gopkg.in/kataras/iris.v6/adaptors/gorillamux"
 )
 
 func  GetAllUsersHandler(ctx *iris.Context) {
@@ -773,11 +773,11 @@ We have 8 policies, so far, and some of them have 'subpolicies' (the RouterRever
 - SessionsPolicy
 
 
-**Details** of these can be found at [policy.go](https://github.com/kataras/iris/blob/master/policy.go).
+**Details** of these can be found at [policy.go](https://github.com/kataras/iris/blob/v6/policy.go).
 
 The **Community**'s adaptors are [here](https://github.com/iris-contrib/adaptors).
 
-**Iris' Built'n Adaptors** for these policies can be found at [/adaptors folder](https://github.com/kataras/iris/tree/master/adaptors).
+**Iris' Built'n Adaptors** for these policies can be found at [/adaptors folder](https://github.com/kataras/iris/tree/v6/adaptors).
 
 The folder contains:
 
@@ -825,8 +825,8 @@ Example:
 package main
 
 import (
-	"github.com/kataras/iris"
-  "github.com/kataras/adaptors/gorillamux"
+	"gopkg.in/kataras/iris.v6"
+  "gopkg.in/kataras/iris.v6/adaptors/gorillamux"
 	"github.com/rs/cors"
 )
 
@@ -856,7 +856,7 @@ func main(){
 
 ### iris cmd
 
-- FIX: [iris run main.go](https://github.com/kataras/iris/tree/master/iris#run) not reloading when file changes maden by some of the IDEs,
+- FIX: [iris run main.go](https://github.com/kataras/iris/tree/v6/iris#run) not reloading when file changes maden by some of the IDEs,
 because they do override the operating system's fs signals. The majority of
 editors worked before but I couldn't let some developers without support.
 
@@ -886,7 +886,7 @@ to adapt a package as a session manager. So `iris.UseDatabase` has been removed 
 
 > Don't worry about forgetting to adapt any feature that you use inside Iris, Iris will print you a how-to-fix message at iris.DevMode log level.
 
-**[Example](https://github.com/kataras/iris/tree/6.2/adaptors/sessions/_example) code:**
+**[Example](https://github.com/kataras/iris/tree/v6/adaptors/sessions/_example) code:**
 
 ```go
 package main
@@ -989,7 +989,7 @@ Websocket is an Adaptor too and you can edit more configuration fields than befo
 No Write and Read timeout by default, you have to set the fields if you want to enable timeout.
 
 Below you'll see the before and the after, keep note that the static and templates didn't changed, so I am not putting the whole
-html and javascript sources here, you can run the full examples from [here](https://github.com/kataras/iris/tree/6.2/adaptors/websocket/_examples).
+html and javascript sources here, you can run the full examples from [here](https://github.com/kataras/iris/tree/v6/adaptors/websocket/_examples).
 
 **BEFORE:***
 
@@ -1190,8 +1190,8 @@ package main
 import (
      "log"
 
-    "github.com/kataras/iris"
-    "github.com/kataras/iris/adaptors/httprouter"
+    "gopkg.in/kataras/iris.v6"
+    "gopkg.in/kataras/iris.v6/adaptors/httprouter"
     "github.com/googollee/go-socket.io"
 )
 
@@ -1226,12 +1226,12 @@ func main() {
 ### Typescript compiler and cloud-based editor
 
 The Typescript compiler adaptor(old 'plugin') has been fixed (it had an issue on new typescript versions).
-Example can be bound [here](https://github.com/kataras/iris/tree/master/adaptors/typescript/_example).
+Example can be bound [here](https://github.com/kataras/iris/tree/v6/adaptors/typescript/_example).
 
 The Cloud-based editor adaptor(old 'plugin') also fixed and improved to show debug messages to your iris' LoggerPolicy.
-Example can be bound [here](https://github.com/kataras/iris/tree/master/adaptors/typescript/editor/_example).
+Example can be bound [here](https://github.com/kataras/iris/tree/v6/adaptors/typescript/editor/_example).
 
-Their import paths also changed as the rest of the old plugins from: https://github.com/iris-contrib/plugin to https://github.com/kataras/adaptors.
+Their import paths also changed as the rest of the old plugins from: https://github.com/iris-contrib/plugin to https://github.com/kataras/adaptors and https://github.com/iris-contrib/adaptors
 I had them on iris-contrib because I thought that community would help but it didn't, no problem, they are at the same codebase now
 which making things easier to debug for me.
 
@@ -1260,8 +1260,8 @@ Example:
 package main
 
 import (
-	"github.com/kataras/iris"
-  "github.com/kataras/adaptors/gorillamux"
+	"gopkg.in/kataras/iris.v6"
+  "gopkg.in/kataras/iris.v6/adaptors/gorillamux"
 	"github.com/rs/cors"
 )
 
@@ -1290,9 +1290,9 @@ Example:
 package main
 
 import (
-	"github.com/kataras/iris"
-  "github.com/kataras/adaptors/httprouter"
-  "github.com/kataras/adaptors/cors"
+	"gopkg.in/kataras/iris.v6"
+  "gopkg.in/kataras/iris.v6/adaptors/httprouter"
+  "gopkg.in/kataras/iris.v6/adaptors/cors"
 )
 
 func main(){
