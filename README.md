@@ -31,7 +31,7 @@ Iris is an efficient and well-designed toolbox with robust set of features.<br/>
 
 <a href="https://github.com/kataras/iris/blob/v6/HISTORY.md"><img src="https://img.shields.io/badge/codename-√Νεxτ%20-blue.svg?style=flat-square" alt="CHANGELOG/HISTORY"></a>
 
-<a href="https://github.com/kataras/iris/issues/606"><img src="https://img.shields.io/badge/examples-%20repository-3362c2.svg?style=flat-square" alt="Examples"></a>
+<a href="http://gopherbook.iris-go.com/"><img src="https://img.shields.io/badge/examples-%20repository-3362c2.svg?style=flat-square" alt="Examples for new Gophers"></a>
 
 <a href="https://godoc.org/gopkg.in/kataras/iris.v6"><img src="https://img.shields.io/badge/docs-%20reference-5272B4.svg?style=flat-square" alt="Docs"></a>
 
@@ -190,11 +190,20 @@ Documentation
  <a href="https://godoc.org/gopkg.in/kataras/iris.v6"><img align="right" width="125" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_4.jpg"></a>
 
 
- - The most important is to know where to find the [details](https://godoc.org/gopkg.in/kataras/iris.v6)
+- New GOpher? Welcome! Take a look at the [GopherBOOk](http://gopherbook.iris-go.com/)
 
- - [./adaptors](https://github.com/kataras/iris/tree/v6/adaptors) and [./middleware](https://github.com/kataras/iris/tree/v6/middleware) contains examples for their usage.
+- Numerous of examples can be found [here](https://github.com/iris-contrib/examples)
 
- - [HISTORY.md](https://github.com//kataras/iris/tree/v6/HISTORY.md) is your best friend, version migrations are released there.
+- [./adaptors](https://github.com/kataras/iris/tree/v6/adaptors) and [./middleware](https://github.com/kataras/iris/tree/v6/middleware) contains examples of their usage.
+
+- [HISTORY.md](https://github.com//kataras/iris/tree/v6/HISTORY.md) is your best friend, version migrations are released there.
+
+- The most important is to know where to find the [details](https://godoc.org/gopkg.in/kataras/iris.v6)
+
+
+### FAQ
+
+Explore [these questions](https://github.com/kataras/iris/issues?q=label%3Aquestion) and join to our [community chat][Chat]!
 
 
 Testing
@@ -208,10 +217,9 @@ A simple test is located to [./httptest/_example/main_test.go](https://github.co
 Read more about [gavv's httpexpect](https://github.com/gavv/httpexpect).
 
 
-FAQ
------------
 
-Explore [these questions](https://github.com/kataras/iris/issues?q=label%3Aquestion) and join to our [community chat][Chat]!
+
+
 
 
 Philosophy
@@ -242,7 +250,7 @@ Today I spend all my days and nights coding for Iris, and I'm happy about this, 
 - Star the project, will help you to follow the upcoming features.
 - [Donate](https://github.com/kataras/iris/blob/master/DONATIONS.md), if you can afford any cost.
 - Write an article about Iris or even post a Tweet.
-- Do Pull Requests on the [iris-contrib](https://github.com/iris-contrib) organisation's repositories, like book and examples.
+- Do Pull Requests on the [iris-contrib](https://github.com/iris-contrib) organisation's repositories, like [book](https://github.com/iris-contrib/gitbook), [examples](https://github.com/iris-contrib/examples) and to [gopherbook](http://gopherbook.iris-go.com/).
 
 If you are interested in contributing to the Iris project, please see the document [CONTRIBUTING](https://github.com/kataras/iris/blob/master/.github/CONTRIBUTING.md).
 
