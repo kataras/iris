@@ -64,9 +64,15 @@ func New() iris.Policies {
 			//  {{ url "providerLink" "provider" "facebook"}}
 			// 	for a path: "/auth/{provider}" with name 'providerLink'
 			URLPath: func(r iris.RouteInfo, args ...string) string {
+				if router == nil {
+					logger(iris.ProdMode, "gorillamux' reverse routing 'URLPath' should be called after Boot/Listen/Serve")
+					return ""
+				}
+
 				if r == nil {
 					return ""
 				}
+
 				if gr := router.Get(r.Name()); gr != nil {
 					u, err := gr.URLPath(args...)
 					if err != nil {

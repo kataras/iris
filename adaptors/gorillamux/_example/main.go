@@ -43,9 +43,18 @@ func main() {
 		games.Post("/{gameID:[0-9]+}/clans/{clanPublicID:[0-9]+}/memberships/demote", h)
 	}
 
-	app.Get("/anything/{anythingparameter:.*}", func(ctx *iris.Context) {
+	myroute := app.Get("/anything/{anythingparameter:.*}", func(ctx *iris.Context) {
 		s := ctx.Param("anythingparameter")
 		ctx.Writef("The path after /anything is: %s", s)
+	}) // .ChangeName("myroute")
+
+	app.Get("/reverse_myroute", func(ctx *iris.Context) {
+		// reverse routing snippet using templates:
+		// https://github.com/kataras/iris/tree/v6/adaptors/view/_examples/template_html_3 (gorillamux)
+		// https://github.com/kataras/iris/tree/v6/adaptors/view/_examples/template_html_4 (httprouter)
+
+		myrouteRequestPath := app.Path(myroute.Name(), "anythingparameter", "something/here")
+		ctx.Writef("Should be '/anything/something/here': %s", myrouteRequestPath)
 	})
 
 	p := app.Party("mysubdomain.")

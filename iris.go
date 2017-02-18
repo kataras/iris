@@ -730,7 +730,12 @@ func (s *Framework) Cache(bodyHandler HandlerFunc, expiration time.Duration) Han
 }
 
 // Path used to check arguments with the route's named parameters and return the correct url
-// if parse failed returns empty string
+// if parse failed returns empty string.
+// Used for reverse routing, depends on router adaptor.
+//
+// Examples:
+// https://github.com/kataras/iris/tree/v6/adaptors/view/_examples/template_html_3 (gorillamux)
+// https://github.com/kataras/iris/tree/v6/adaptors/view/_examples/template_html_4 (httprouter)
 func (s *Framework) Path(routeName string, args ...interface{}) string {
 	r := s.Router.Routes().Lookup(routeName)
 	if r == nil {
@@ -768,39 +773,13 @@ func (s *Framework) Path(routeName string, args ...interface{}) string {
 	return s.policies.RouterReversionPolicy.URLPath(r, argsString...)
 }
 
-// DecodeQuery returns the uri parameter as url (string)
-// useful when you want to pass something to a database and be valid to retrieve it via context.Param
-// use it only for special cases, when the default behavior doesn't suits you.
+// URL returns the subdomain + host + Path(...optional named parameters if route is dynamic)
+// returns an empty string if parse is failed.
+// Used for reverse routing, depends on router adaptor.
 //
-// http://www.blooberry.com/indexdot/html/topics/urlencoding.htm
-// it uses just the url.QueryUnescape
-func DecodeQuery(path string) string {
-	if path == "" {
-		return ""
-	}
-	encodedPath, err := url.QueryUnescape(path)
-	if err != nil {
-		return path
-	}
-	return encodedPath
-}
-
-// DecodeURL returns the decoded uri
-// useful when you want to pass something to a database and be valid to retrieve it via context.Param
-// use it only for special cases, when the default behavior doesn't suits you.
-//
-// http://www.blooberry.com/indexdot/html/topics/urlencoding.htm
-// it uses just the url.Parse
-func DecodeURL(uri string) string {
-	u, err := url.Parse(uri)
-	if err != nil {
-		return uri
-	}
-	return u.String()
-}
-
-// URL returns the subdomain+ host + Path(...optional named parameters if route is dynamic)
-// returns an empty string if parse is failed
+// Examples:
+// https://github.com/kataras/iris/tree/v6/adaptors/view/_examples/template_html_3 (gorillamux)
+// https://github.com/kataras/iris/tree/v6/adaptors/view/_examples/template_html_4 (httprouter)
 func (s *Framework) URL(routeName string, args ...interface{}) (url string) {
 	r := s.Router.Routes().Lookup(routeName)
 	if r == nil {
@@ -831,6 +810,37 @@ func (s *Framework) URL(routeName string, args ...interface{}) (url string) {
 	}
 
 	return
+}
+
+// DecodeQuery returns the uri parameter as url (string)
+// useful when you want to pass something to a database and be valid to retrieve it via context.Param
+// use it only for special cases, when the default behavior doesn't suits you.
+//
+// http://www.blooberry.com/indexdot/html/topics/urlencoding.htm
+// it uses just the url.QueryUnescape
+func DecodeQuery(path string) string {
+	if path == "" {
+		return ""
+	}
+	encodedPath, err := url.QueryUnescape(path)
+	if err != nil {
+		return path
+	}
+	return encodedPath
+}
+
+// DecodeURL returns the decoded uri
+// useful when you want to pass something to a database and be valid to retrieve it via context.Param
+// use it only for special cases, when the default behavior doesn't suits you.
+//
+// http://www.blooberry.com/indexdot/html/topics/urlencoding.htm
+// it uses just the url.Parse
+func DecodeURL(uri string) string {
+	u, err := url.Parse(uri)
+	if err != nil {
+		return uri
+	}
+	return u.String()
 }
 
 var errTemplateRendererIsMissing = errors.New(
