@@ -2,6 +2,7 @@ package iris_test
 
 import (
 	"io/ioutil"
+	"strconv"
 	"testing"
 
 	"gopkg.in/kataras/iris.v6"
@@ -234,4 +235,36 @@ func TestLimitRequestBodySizeMiddleware(t *testing.T) {
 	largerBSent := make([]byte, maxBodySize+1, maxBodySize+1)
 	e.POST("/").WithBytes(largerBSent).Expect().Status(iris.StatusBadRequest).Body().Equal("http: request body too large")
 
+}
+
+func TestRedirectHTTP(t *testing.T) {
+	host := "localhost:" + strconv.Itoa(getRandomNumber(1717, 9281))
+
+	app := iris.New(iris.Configuration{VHost: host})
+	app.Adapt(httprouter.New())
+
+	expectedBody := "Redirected to /redirected"
+
+	app.Get("/redirect", func(ctx *iris.Context) { ctx.Redirect("/redirected") })
+	app.Get("/redirected", func(ctx *iris.Context) { ctx.Text(iris.StatusOK, "Redirected to "+ctx.Path()) })
+
+	e := httptest.New(app, t)
+	e.GET("/redirect").Expect().Status(iris.StatusOK).Body().Equal(expectedBody)
+}
+
+func TestRedirectHTTPS(t *testing.T) {
+
+	app := iris.New()
+	app.Adapt(httprouter.New())
+
+	host := "localhost:" + strconv.Itoa(getRandomNumber(1717, 9281))
+
+	expectedBody := "Redirected to /redirected"
+
+	app.Get("/redirect", func(ctx *iris.Context) { ctx.Redirect("/redirected") })
+	app.Get("/redirected", func(ctx *iris.Context) { ctx.Text(iris.StatusOK, "Redirected to "+ctx.Path()) })
+	defer listenTLS(app, host)()
+
+	e := httptest.New(app, t)
+	e.GET("/redirect").Expect().Status(iris.StatusOK).Body().Equal(expectedBody)
 }

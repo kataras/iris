@@ -109,6 +109,10 @@ func TestMuxSimple(t *testing.T) {
 						t.Fatalf("Error when comparing length of url parameters %d != %d", len(r.URLParams), len(ctx.URLParams()))
 					}
 					paramsKeyVal := ""
+					///TODO:
+					// Gorilla mux saves and gets its vars by map, so no specific order
+					//
+					// I should change this test below:
 					for idxp, p := range r.URLParams {
 						val := ctx.URLParam(p.Key)
 						paramsKeyVal += p.Key + "=" + val + ","
