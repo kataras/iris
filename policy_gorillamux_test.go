@@ -1,70 +1,23 @@
-package gorillamux_test
+package iris_test
 
 import (
-	"math/rand"
 	"strconv"
 	"testing"
-	"time"
 
-	"github.com/iris-contrib/httpexpect"
 	"gopkg.in/kataras/iris.v6"
 	"gopkg.in/kataras/iris.v6/adaptors/gorillamux"
 	"gopkg.in/kataras/iris.v6/httptest"
 )
 
-func getRandomNumber(min int, max int) int {
-	rand.Seed(time.Now().Unix())
-	return rand.Intn(max-min) + min
-}
-
-const (
-	testEnableSubdomain = true
-	testSubdomain       = "mysubdomain"
-)
-
-func testSubdomainHost(host string) string {
-	s := testSubdomain + "." + host
-	return s
-}
-
-func testSubdomainURL(scheme string, host string) string {
-	subdomainHost := testSubdomainHost(host)
-	return scheme + subdomainHost
-}
-
-func subdomainTester(e *httpexpect.Expect, app *iris.Framework) *httpexpect.Expect {
-	es := e.Builder(func(req *httpexpect.Request) {
-		req.WithURL(testSubdomainURL(app.Config.VScheme, app.Config.VHost))
-	})
-	return es
-}
-
-type param struct {
-	Key   string
-	Value string
-}
-
-type testRoute struct {
-	Method       string
-	Path         string
-	RequestPath  string
-	RequestQuery string
-	Body         string
-	Status       int
-	Register     bool
-	Params       []param
-	URLParams    []param
-}
-
-func newApp() *iris.Framework {
+func newGorillaMuxAPP() *iris.Framework {
 	app := iris.New()
 	app.Adapt(gorillamux.New())
 
 	return app
 }
 
-func TestMuxSimple(t *testing.T) {
-	app := newApp()
+func TestGorillaMuxSimple(t *testing.T) {
+	app := newGorillaMuxAPP()
 
 	testRoutes := []testRoute{
 		// FOUND - registered
@@ -141,8 +94,8 @@ func TestMuxSimple(t *testing.T) {
 
 }
 
-func TestMuxSimpleParty(t *testing.T) {
-	app := newApp()
+func TestGorillaMuxSimpleParty(t *testing.T) {
+	app := newGorillaMuxAPP()
 
 	h := func(ctx *iris.Context) { ctx.WriteString(ctx.Host() + ctx.Path()) }
 
@@ -202,8 +155,8 @@ func TestMuxSimpleParty(t *testing.T) {
 	}
 }
 
-func TestMuxPathEscape(t *testing.T) {
-	app := newApp()
+func TestGorillaMuxPathEscape(t *testing.T) {
+	app := newGorillaMuxAPP()
 
 	app.Get("/details/{name}", func(ctx *iris.Context) {
 		name := ctx.Param("name")
@@ -218,8 +171,8 @@ func TestMuxPathEscape(t *testing.T) {
 		Expect().Status(iris.StatusOK).Body().Equal("name=Sakamoto desu ga,highlight=text")
 }
 
-func TestMuxParamDecodedDecodeURL(t *testing.T) {
-	app := newApp()
+func TestGorillaMuxParamDecodedDecodeURL(t *testing.T) {
+	app := newGorillaMuxAPP()
 
 	app.Get("/encoding/{url}", func(ctx *iris.Context) {
 		url := iris.DecodeURL(ctx.ParamDecoded("url"))
@@ -232,7 +185,7 @@ func TestMuxParamDecodedDecodeURL(t *testing.T) {
 	e.GET("/encoding/http%3A%2F%2Fsome-url.com").Expect().Status(iris.StatusOK).Body().Equal("http://some-url.com")
 }
 
-func TestMuxCustomErrors(t *testing.T) {
+func TestGorillaMuxCustomErrors(t *testing.T) {
 	var (
 		notFoundMessage        = "Iris custom message for 404 not found"
 		internalServerMessage  = "Iris custom message for 500 internal server error"
@@ -259,7 +212,7 @@ func TestMuxCustomErrors(t *testing.T) {
 			{"TRACE", "/test_trace_panic_custom", "/test_trace_panic_custom", "", internalServerMessage, 500, true, nil, nil},
 		}
 	)
-	app := newApp()
+	app := newGorillaMuxAPP()
 	// first register the testRoutes needed
 	for _, r := range testRoutesCustomErrors {
 		if r.Register {
@@ -289,7 +242,7 @@ func TestMuxCustomErrors(t *testing.T) {
 	}
 }
 
-func TestRouteURLPath(t *testing.T) {
+func TestGorillaMuxRouteURLPath(t *testing.T) {
 	app := iris.New()
 	app.Adapt(gorillamux.New())
 

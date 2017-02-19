@@ -2,8 +2,11 @@ package iris_test
 
 import (
 	"io/ioutil"
+	"net/http"
 	"strconv"
+	"strings"
 	"testing"
+	"time"
 
 	"gopkg.in/kataras/iris.v6"
 	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
@@ -267,4 +270,120 @@ func TestRedirectHTTPS(t *testing.T) {
 
 	e := httptest.New(app, t)
 	e.GET("/redirect").Expect().Status(iris.StatusOK).Body().Equal(expectedBody)
+}
+
+// TestContextRedirectTo tests the named route redirect action
+func TestContextRedirectTo(t *testing.T) {
+	app := iris.New()
+	app.Adapt(httprouter.New())
+	h := func(ctx *iris.Context) { ctx.WriteString(ctx.Path()) }
+	app.Get("/mypath", h).ChangeName("my-path")
+	app.Get("/mypostpath", h).ChangeName("my-post-path")
+	app.Get("mypath/with/params/:param1/:param2", func(ctx *iris.Context) {
+		if l := ctx.ParamsLen(); l != 2 {
+			t.Fatalf("Strange error, expecting parameters to be two but we got: %d", l)
+		}
+		ctx.WriteString(ctx.Path())
+	}).ChangeName("my-path-with-params")
+
+	app.Get("/redirect/to/:routeName/*anyparams", func(ctx *iris.Context) {
+		routeName := ctx.Param("routeName")
+		var args []interface{}
+		anyparams := ctx.Param("anyparams")
+		if anyparams != "" && anyparams != "/" {
+			params := strings.Split(anyparams[1:], "/") // firstparam/secondparam
+			for _, s := range params {
+				args = append(args, s)
+			}
+		}
+		ctx.RedirectTo(routeName, args...)
+	})
+
+	e := httptest.New(app, t)
+
+	e.GET("/redirect/to/my-path/").Expect().Status(iris.StatusOK).Body().Equal("/mypath")
+	e.GET("/redirect/to/my-post-path/").Expect().Status(iris.StatusOK).Body().Equal("/mypostpath")
+	e.GET("/redirect/to/my-path-with-params/firstparam/secondparam").Expect().Status(iris.StatusOK).Body().Equal("/mypath/with/params/firstparam/secondparam")
+}
+
+func TestContextUserValues(t *testing.T) {
+	app := iris.New()
+	app.Adapt(httprouter.New())
+	testCustomObjUserValue := struct{ Name string }{Name: "a name"}
+	values := map[string]interface{}{"key1": "value1", "key2": "value2", "key3": 3, "key4": testCustomObjUserValue, "key5": map[string]string{"key": "value"}}
+
+	app.Get("/test", func(ctx *iris.Context) {
+
+		for k, v := range values {
+			ctx.Set(k, v)
+		}
+
+	}, func(ctx *iris.Context) {
+		for k, v := range values {
+			userValue := ctx.Get(k)
+			if userValue != v {
+				t.Fatalf("Expecting user value: %s to be equal with: %#v but got: %#v", k, v, userValue)
+			}
+
+			if m, isMap := userValue.(map[string]string); isMap {
+				if m["key"] != v.(map[string]string)["key"] {
+					t.Fatalf("Expecting user value: %s to be equal with: %#v but got: %#v", k, v.(map[string]string)["key"], m["key"])
+				}
+			} else {
+				if userValue != v {
+					t.Fatalf("Expecting user value: %s to be equal with: %#v but got: %#v", k, v, userValue)
+				}
+			}
+
+		}
+	})
+
+	e := httptest.New(app, t)
+
+	e.GET("/test").Expect().Status(iris.StatusOK)
+
+}
+
+func TestContextCookieSetGetRemove(t *testing.T) {
+	app := iris.New()
+	app.Adapt(httprouter.New())
+	key := "mykey"
+	value := "myvalue"
+	app.Get("/set", func(ctx *iris.Context) {
+		ctx.SetCookieKV(key, value) // should return non empty cookies
+	})
+
+	app.Get("/set_advanced", func(ctx *iris.Context) {
+		c := &http.Cookie{}
+		c.Name = key
+		c.Value = value
+		c.HttpOnly = true
+		c.Expires = time.Now().Add(time.Duration((60 * 60 * 24 * 7 * 4)) * time.Second)
+		ctx.SetCookie(c)
+	})
+
+	app.Get("/get", func(ctx *iris.Context) {
+		ctx.WriteString(ctx.GetCookie(key)) // should return my value
+	})
+
+	app.Get("/remove", func(ctx *iris.Context) {
+		ctx.RemoveCookie(key)
+		cookieFound := false
+		ctx.VisitAllCookies(func(k, v string) {
+			cookieFound = true
+		})
+		if cookieFound {
+			t.Fatalf("Cookie has been found, when it shouldn't!")
+		}
+		ctx.WriteString(ctx.GetCookie(key)) // should return ""
+	})
+
+	e := httptest.New(app, t)
+	e.GET("/set").Expect().Status(iris.StatusOK).Cookies().NotEmpty()
+	e.GET("/get").Expect().Status(iris.StatusOK).Body().Equal(value)
+	e.GET("/remove").Expect().Status(iris.StatusOK).Body().Equal("")
+	// test again with advanced set
+	e.GET("/set_advanced").Expect().Status(iris.StatusOK).Cookies().NotEmpty()
+	e.GET("/get").Expect().Status(iris.StatusOK).Body().Equal(value)
+	e.GET("/remove").Expect().Status(iris.StatusOK).Body().Equal("")
 }

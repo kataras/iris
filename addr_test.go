@@ -11,9 +11,37 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iris-contrib/httpexpect"
 	"gopkg.in/kataras/iris.v6"
 	"gopkg.in/kataras/iris.v6/httptest"
 )
+
+func getRandomNumber(min int, max int) int {
+	rand.Seed(time.Now().Unix())
+	return rand.Intn(max-min) + min
+}
+
+const (
+	testEnableSubdomain = true
+	testSubdomain       = "mysubdomain"
+)
+
+func testSubdomainHost(host string) string {
+	s := testSubdomain + "." + host
+	return s
+}
+
+func testSubdomainURL(scheme string, host string) string {
+	subdomainHost := testSubdomainHost(host)
+	return scheme + subdomainHost
+}
+
+func subdomainTester(e *httpexpect.Expect, app *iris.Framework) *httpexpect.Expect {
+	es := e.Builder(func(req *httpexpect.Request) {
+		req.WithURL(testSubdomainURL(app.Config.VScheme, app.Config.VHost))
+	})
+	return es
+}
 
 func TestParseAddr(t *testing.T) {
 
@@ -144,11 +172,6 @@ k9X9TwWyZtp5IL1CAEd/Il9ZTXFzr3lNaN8LCFnU+EIsz1YgUW8LTg==
 -----END RSA PRIVATE KEY-----
 `
 )
-
-func getRandomNumber(min int, max int) int {
-	rand.Seed(time.Now().Unix())
-	return rand.Intn(max-min) + min
-}
 
 // works as
 // defer listenTLS(iris.Default, hostTLS)()

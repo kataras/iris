@@ -121,7 +121,7 @@ type testNativeRoute struct {
 	status             int
 }
 
-func TestNativeRouterPolicyAdaptor(t *testing.T) {
+func TestNativeRouter(t *testing.T) {
 	expectedWrongMethodStatus := StatusNotFound
 	app := New(Configuration{FireMethodNotAllowed: true})
 	app.Adapt(newTestNativeRouter())
