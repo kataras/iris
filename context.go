@@ -568,6 +568,33 @@ func (ctx *Context) RenderTemplateSource(status int, src string, binding interfa
 	return err
 }
 
+func (ctx *Context) fastRenderWithStatus(status int, cType string, data []byte) (err error) {
+	gzipEnabled := ctx.framework.Config.Gzip
+	charset := ctx.framework.Config.Charset
+
+	if cType != contentBinary {
+		cType += "; charset=" + charset
+	}
+
+	// add the content type to the response
+	ctx.SetContentType(cType)
+
+	if gzipEnabled && ctx.clientAllowsGzip() {
+		_, err := fasthttp.WriteGzip(ctx.RequestCtx.Response.BodyWriter(), data)
+		if err != nil {
+			return err
+		}
+		ctx.RequestCtx.Response.Header.Add(varyHeader, acceptEncodingHeader)
+		ctx.SetHeader(contentEncodingHeader, "gzip")
+	} else {
+		ctx.Response.SetBody(data)
+	}
+
+	ctx.SetStatusCode(status)
+
+	return
+}
+
 // RenderWithStatus builds up the response from the specified template or a serialize engine.
 // Note: the options: "gzip" and "charset" are built'n support by Iris, so you can pass these on any template engine or serialize engines
 func (ctx *Context) RenderWithStatus(status int, name string, binding interface{}, options ...map[string]interface{}) (err error) {
@@ -614,7 +641,7 @@ func (ctx *Context) TemplateString(name string, binding interface{}, options ...
 
 // HTML writes html string with a http status
 func (ctx *Context) HTML(status int, htmlContents string) {
-	if err := ctx.RenderWithStatus(status, contentHTML, htmlContents); err != nil {
+	if err := ctx.fastRenderWithStatus(status, contentHTML, htmlContents); err != nil {
 		// if no serialize engine found for text/html
 		ctx.SetContentType(contentHTML + "; charset=" + ctx.framework.Config.Charset)
 		ctx.RequestCtx.SetStatusCode(status)
@@ -624,7 +651,7 @@ func (ctx *Context) HTML(status int, htmlContents string) {
 
 // Data writes out the raw bytes as binary data.
 func (ctx *Context) Data(status int, v []byte) error {
-	return ctx.RenderWithStatus(status, contentBinary, v)
+	return ctx.fastRenderWithStatus(status, contentBinary, v)
 }
 
 // JSON marshals the given interface object and writes the JSON response.
@@ -639,7 +666,7 @@ func (ctx *Context) JSONP(status int, callback string, v interface{}) error {
 
 // Text writes out a string as plain text.
 func (ctx *Context) Text(status int, v string) error {
-	return ctx.RenderWithStatus(status, contentText, v)
+	return ctx.fastRenderWithStatus(status, contentText, v)
 }
 
 // XML marshals the given interface object and writes the XML response.
@@ -1024,7 +1051,7 @@ func (ctx *Context) GetFlash(key string) (string, error) {
 	if messages := ctx.Get(flashMessagesStoreContextKey); messages != nil {
 		m, isMap := messages.(map[string]string)
 		if !isMap {
-			return "", fmt.Errorf("Flash store is not a map[string]string. This suppose will never happen, please report this bug.")
+			return "", fmt.Errorf("Flash store is not a map[string]string. This suppose will never happen, please report this bug")
 		}
 		storeExists = true // in order to skip the check later
 		for k, v := range m {
