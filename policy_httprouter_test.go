@@ -134,8 +134,6 @@ func TestHTTPRouterSimpleParty(t *testing.T) {
 	}
 
 	app.Config.VHost = "0.0.0.0:" + strconv.Itoa(getRandomNumber(2222, 2399))
-	// app.Config.Tester.Debug = true
-	// app.Config.Tester.ExplicitURL = true
 	e := httptest.New(app, t)
 
 	request := func(reqPath string) {
@@ -199,8 +197,7 @@ func TestHTTPRouterParamDecodedDecodeURL(t *testing.T) {
 }
 
 func TestHTTPRouterRouteURLPath(t *testing.T) {
-	app := iris.New()
-	app.Adapt(httprouter.New())
+	app := newHTTPRouterApp()
 
 	app.None("/profile/:user_id/:ref/*anything", nil).ChangeName("profile")
 	app.Boot()
@@ -213,8 +210,7 @@ func TestHTTPRouterRouteURLPath(t *testing.T) {
 }
 
 func TestHTTPRouterFireMethodNotAllowed(t *testing.T) {
-	app := iris.New()
-	app.Adapt(httprouter.New())
+	app := newHTTPRouterApp()
 	app.Config.FireMethodNotAllowed = true
 	h := func(ctx *iris.Context) {
 		ctx.WriteString(ctx.Method())
@@ -234,4 +230,19 @@ func TestHTTPRouterFireMethodNotAllowed(t *testing.T) {
 	// this should fail with 405 and catch by the custom http error
 
 	e.POST("/mypath").Expect().Status(iris.StatusMethodNotAllowed).Body().Equal("Hello from my custom 405 page")
+}
+
+func TestHTTPRouterRegexMiddleware(t *testing.T) {
+	app := newHTTPRouterApp()
+
+	app.Get("/users/:userid", app.Regex("userid", "[0-9]+$"), func(ctx *iris.Context) {})
+	app.Get("/profile/:username", app.Regex("username", "[a-zA-Z]+$"), func(ctx *iris.Context) {})
+
+	e := httptest.New(app, t)
+
+	e.GET("/users/42").Expect().Status(iris.StatusOK)
+	e.GET("/users/sarantaduo").Expect().Status(iris.StatusNotFound)
+
+	e.GET("/profile/gerasimosmaropoulos").Expect().Status(iris.StatusOK)
+	e.GET("/profile/anumberof42").Expect().Status(iris.StatusNotFound)
 }

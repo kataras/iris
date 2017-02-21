@@ -496,6 +496,11 @@ func formatPath(path string) string {
 	return path
 }
 
+// Name is the name of the router
+//
+// See $iris_instance.Config.Other for more.
+const Name = "httprouter"
+
 // New returns a new iris' policy to create and attach the router.
 // It's based on the julienschmidt/httprouter  with more features and some iris-relative performance tips:
 // subdomains(wildcard/dynamic and static) and faster parameters set (use of the already-created context's values)
@@ -512,6 +517,7 @@ func New() iris.Policies {
 		EventPolicy: iris.EventPolicy{
 			Boot: func(s *iris.Framework) {
 				logger = s.Log
+				s.Set(iris.OptionOther(iris.RouterNameConfigKey, Name))
 			},
 		},
 		RouterReversionPolicy: iris.RouterReversionPolicy{

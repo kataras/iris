@@ -5,6 +5,8 @@
 
 ## 6.1.4 -> 6.2.0 (√Νεxτ)
 
+_Last update: 22 Feb 2017_
+
 > Note: I want you to know that I spent more than 200 hours (16 days of ~10-15 hours per-day, do the math) for this release, two days to write these changes, please read the sections before think that you have an issue and post a new question, thanks!
 
 
@@ -19,7 +21,7 @@ to adapt the new changes to your application, it contains an overview of the new
 - Basic middleware, that have been written by me, are transfared to the main repository[/middleware](https://github.com/kataras/iris/tree/v6/middleware) with a lot of improvements to the `recover middleware` (see the next)
 - `func(http.ResponseWriter, r *http.Request, next http.HandlerFunc)` signature is fully compatible using `iris.ToHandler` helper wrapper func, without any need of custom boilerplate code. So all net/http middleware out there are supported, no need to re-invert the world here, search to the internet and you'll find a suitable to your case.
 - Developers can use a `yaml` files for the configuration using the `iris.YAML` function: `app := iris.New(iris.YAML("myconfiguration.yaml"))`
-
+- Add `.Regex` middleware which does path validation using the `regexp` package, i.e `.Regex("param", "[0-9]+$")`. Useful for routers that don't support regex route path validation out-of-the-box.
 
 Fixes:
 
