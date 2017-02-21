@@ -641,7 +641,7 @@ func (ctx *Context) TemplateString(name string, binding interface{}, options ...
 
 // HTML writes html string with a http status
 func (ctx *Context) HTML(status int, htmlContents string) {
-	if err := ctx.fastRenderWithStatus(status, contentHTML, htmlContents); err != nil {
+	if err := ctx.fastRenderWithStatus(status, contentHTML, []byte(htmlContents)); err != nil {
 		// if no serialize engine found for text/html
 		ctx.SetContentType(contentHTML + "; charset=" + ctx.framework.Config.Charset)
 		ctx.RequestCtx.SetStatusCode(status)
@@ -650,8 +650,8 @@ func (ctx *Context) HTML(status int, htmlContents string) {
 }
 
 // Data writes out the raw bytes as binary data.
-func (ctx *Context) Data(status int, v []byte) error {
-	return ctx.fastRenderWithStatus(status, contentBinary, v)
+func (ctx *Context) Data(status int, data []byte) error {
+	return ctx.fastRenderWithStatus(status, contentBinary, data)
 }
 
 // JSON marshals the given interface object and writes the JSON response.
@@ -665,8 +665,8 @@ func (ctx *Context) JSONP(status int, callback string, v interface{}) error {
 }
 
 // Text writes out a string as plain text.
-func (ctx *Context) Text(status int, v string) error {
-	return ctx.fastRenderWithStatus(status, contentText, v)
+func (ctx *Context) Text(status int, text string) error {
+	return ctx.fastRenderWithStatus(status, contentText, []byte(text))
 }
 
 // XML marshals the given interface object and writes the XML response.
