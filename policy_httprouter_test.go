@@ -268,3 +268,27 @@ func TestHTTPRouterRouteURLPath(t *testing.T) {
 		t.Fatalf("httprouter's reverse routing 'URLPath' error:  expected %s but got %s", expected, got)
 	}
 }
+
+func TestHTTPRouterFireMethodNotAllowed(t *testing.T) {
+	app := iris.New()
+	app.Adapt(httprouter.New())
+	app.Config.FireMethodNotAllowed = true
+	h := func(ctx *iris.Context) {
+		ctx.WriteString(ctx.Method())
+	}
+
+	app.OnError(iris.StatusMethodNotAllowed, func(ctx *iris.Context) {
+		ctx.WriteString("Hello from my custom 405 page")
+	})
+
+	app.Get("/mypath", h)
+	app.Put("/mypath", h)
+
+	e := httptest.New(app, t)
+
+	e.GET("/mypath").Expect().Status(iris.StatusOK).Body().Equal("GET")
+	e.PUT("/mypath").Expect().Status(iris.StatusOK).Body().Equal("PUT")
+	// this should fail with 405 and catch by the custom http error
+
+	e.POST("/mypath").Expect().Status(iris.StatusMethodNotAllowed).Body().Equal("Hello from my custom 405 page")
+}
