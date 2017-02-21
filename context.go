@@ -899,7 +899,6 @@ func (ctx *Context) fastRenderWithStatus(status int, cType string, data []byte) 
 // RenderWithStatus builds up the response from the specified template or a serialize engine.
 // Note: the options: "gzip" and "charset" are built'n support by Iris, so you can pass these on any template engine or serialize engines
 func (ctx *Context) RenderWithStatus(status int, name string, binding interface{}, options ...map[string]interface{}) (err error) {
-
 	if _, shouldFirstStatusCode := ctx.ResponseWriter.(*responseWriter); shouldFirstStatusCode {
 		ctx.SetStatusCode(status)
 	}
@@ -1005,7 +1004,7 @@ func (ctx *Context) Data(status int, data []byte) error {
 // To change their default behavior users should use
 // the context.RenderWithStatus(statusCode, contentType, content, options...) instead.
 func (ctx *Context) Text(status int, text string) error {
-	return ctx.fastRenderWithStatus(status, contentBinary, []byte(text))
+	return ctx.fastRenderWithStatus(status, contentText, []byte(text))
 }
 
 // HTML writes html string with a http status
