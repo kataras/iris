@@ -187,9 +187,23 @@ type Configuration struct {
 	// Other are the custom, dynamic options, can be empty.
 	// This field used only by you to set any app's options you want
 	// or by custom adaptors, it's a way to simple communicate between your adaptors (if any)
-	// Defaults to a non-nil empty map.
+	// Defaults to a non-nil empty map
+	//
+	// Some times is useful to know the router's name in order to take some dynamically runtime decisions.
+	// So, when router policies are being adapted by a router adaptor,
+	// a "routeName" key will be(optionally) filled with the name of the Router's features are being used.
+	// The "routeName" can be retrivied by:
+	// app := iris.New()
+	// app.Adapt(routerAdaptor.New())
+	// app.Config.Other[iris.RouterNameConfigKey]
+	//
 	Other map[string]interface{} `yaml:"Other"`
 }
+
+// RouterNameConfigKey is the optional key that is being registered by router adaptor.
+// It's not as a static field because it's optionally setted, it depends of the router adaptor's author.
+// Usage: app.Config.Other[iris.RouterNameConfigKey]
+const RouterNameConfigKey = "routerName"
 
 // Set implements the OptionSetter
 func (c Configuration) Set(main *Configuration) {

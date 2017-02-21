@@ -43,6 +43,11 @@ func staticPath(path string) string {
 	return path
 }
 
+// Name is the name of the router
+//
+// See $iris_instance.Config.Other for more.
+const Name = "gorillamux"
+
 // New returns a new gorilla mux router which can be plugged inside iris.
 // This is magic.
 func New() iris.Policies {
@@ -52,6 +57,7 @@ func New() iris.Policies {
 	return iris.Policies{
 		EventPolicy: iris.EventPolicy{Boot: func(s *iris.Framework) {
 			logger = s.Log
+			s.Set(iris.OptionOther(iris.RouterNameConfigKey, Name))
 		}},
 		RouterReversionPolicy: iris.RouterReversionPolicy{
 			// path normalization done on iris' side

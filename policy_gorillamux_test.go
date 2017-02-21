@@ -119,8 +119,6 @@ func TestGorillaMuxSimpleParty(t *testing.T) {
 	}
 
 	app.Config.VHost = "0.0.0.0:" + strconv.Itoa(getRandomNumber(2222, 2399))
-	// app.Config.Tester.Debug = true
-	// app.Config.Tester.ExplicitURL = true
 	e := httptest.New(app, t)
 
 	request := func(reqPath string) {

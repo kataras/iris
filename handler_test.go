@@ -37,7 +37,7 @@ func TestCustomHandler(t *testing.T) {
 	app.Handle("GET", "/custom_handler_1", &myTestCustomHandler{myData})
 	app.Handle("GET", "/custom_handler_2", &myTestCustomHandler{myData})
 
-	e := httptest.New(app, t, httptest.Debug(true))
+	e := httptest.New(app, t)
 	// two times per testRoute
 	param1 := "thisimyparam1"
 	expectedData1 := myData
