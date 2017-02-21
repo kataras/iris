@@ -198,63 +198,6 @@ func TestHTTPRouterParamDecodedDecodeURL(t *testing.T) {
 	e.GET("/encoding/http%3A%2F%2Fsome-url.com").Expect().Status(iris.StatusOK).Body().Equal("http://some-url.com")
 }
 
-func TestHTTPRouterCustomErrors(t *testing.T) {
-	var (
-		notFoundMessage        = "Iris custom message for 404 not found"
-		internalServerMessage  = "Iris custom message for 500 internal server error"
-		testRoutesCustomErrors = []testRoute{
-			// NOT FOUND CUSTOM ERRORS - not registered
-			{"GET", "/test_get_nofound_custom", "/test_get_nofound_custom", "", notFoundMessage, 404, false, nil, nil},
-			{"POST", "/test_post_nofound_custom", "/test_post_nofound_custom", "", notFoundMessage, 404, false, nil, nil},
-			{"PUT", "/test_put_nofound_custom", "/test_put_nofound_custom", "", notFoundMessage, 404, false, nil, nil},
-			{"DELETE", "/test_delete_nofound_custom", "/test_delete_nofound_custom", "", notFoundMessage, 404, false, nil, nil},
-			{"HEAD", "/test_head_nofound_custom", "/test_head_nofound_custom", "", notFoundMessage, 404, false, nil, nil},
-			{"OPTIONS", "/test_options_nofound_custom", "/test_options_nofound_custom", "", notFoundMessage, 404, false, nil, nil},
-			{"CONNECT", "/test_connect_nofound_custom", "/test_connect_nofound_custom", "", notFoundMessage, 404, false, nil, nil},
-			{"PATCH", "/test_patch_nofound_custom", "/test_patch_nofound_custom", "", notFoundMessage, 404, false, nil, nil},
-			{"TRACE", "/test_trace_nofound_custom", "/test_trace_nofound_custom", "", notFoundMessage, 404, false, nil, nil},
-			// SERVER INTERNAL ERROR 500 PANIC CUSTOM ERRORS - registered
-			{"GET", "/test_get_panic_custom", "/test_get_panic_custom", "", internalServerMessage, 500, true, nil, nil},
-			{"POST", "/test_post_panic_custom", "/test_post_panic_custom", "", internalServerMessage, 500, true, nil, nil},
-			{"PUT", "/test_put_panic_custom", "/test_put_panic_custom", "", internalServerMessage, 500, true, nil, nil},
-			{"DELETE", "/test_delete_panic_custom", "/test_delete_panic_custom", "", internalServerMessage, 500, true, nil, nil},
-			{"HEAD", "/test_head_panic_custom", "/test_head_panic_custom", "", internalServerMessage, 500, true, nil, nil},
-			{"OPTIONS", "/test_options_panic_custom", "/test_options_panic_custom", "", internalServerMessage, 500, true, nil, nil},
-			{"CONNECT", "/test_connect_panic_custom", "/test_connect_panic_custom", "", internalServerMessage, 500, true, nil, nil},
-			{"PATCH", "/test_patch_panic_custom", "/test_patch_panic_custom", "", internalServerMessage, 500, true, nil, nil},
-			{"TRACE", "/test_trace_panic_custom", "/test_trace_panic_custom", "", internalServerMessage, 500, true, nil, nil},
-		}
-	)
-	app := newHTTPRouterApp()
-	// first register the testRoutes needed
-	for _, r := range testRoutesCustomErrors {
-		if r.Register {
-			app.HandleFunc(r.Method, r.Path, func(ctx *iris.Context) {
-				ctx.EmitError(r.Status)
-			})
-		}
-	}
-
-	// register the custom errors
-	app.OnError(iris.StatusNotFound, func(ctx *iris.Context) {
-		ctx.Writef("%s", notFoundMessage)
-	})
-
-	app.OnError(iris.StatusInternalServerError, func(ctx *iris.Context) {
-		ctx.Writef("%s", internalServerMessage)
-	})
-
-	// create httpexpect instance that will call fasthtpp.RequestHandler directly
-	e := httptest.New(app, t)
-
-	// run the tests
-	for _, r := range testRoutesCustomErrors {
-		e.Request(r.Method, r.RequestPath).
-			Expect().
-			Status(r.Status).Body().Equal(r.Body)
-	}
-}
-
 func TestHTTPRouterRouteURLPath(t *testing.T) {
 	app := iris.New()
 	app.Adapt(httprouter.New())
