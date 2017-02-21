@@ -702,12 +702,17 @@ func (mux *serveMux) buildHandler(pool iris.ContextPool) http.Handler {
 			}
 			// https://github.com/kataras/iris/issues/469
 			if context.Framework().Config.FireMethodNotAllowed {
+				var methodAllowed string
 				for i := range mux.garden {
 					tree := mux.garden[i]
+					methodAllowed = tree.method // keep track of the allowed method of the last checked tree
 					if !mux.methodEqual(context.Method(), tree.method) {
 						continue
 					}
 				}
+				// RCF rfc2616 https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
+				// The response MUST include an Allow header containing a list of valid methods for the requested resource.
+				context.SetHeader("Allow", methodAllowed)
 				context.EmitError(iris.StatusMethodNotAllowed)
 				return
 			}
