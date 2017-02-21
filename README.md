@@ -285,7 +285,7 @@ TODO
 
 - [ ] Refactor the [Examples](https://github.com/iris-contrib/examples) to be align with the latest version
 - [ ] Upgrade [GitBook](https://docs.iris-go.com) for the latest release
-- [ ] Add some missing tests from the previous version and find a way to share these end-to-end tests accross the adaptors and the root
+- [x] Add some missing tests from the previous version and find a way to share these end-to-end tests accross the adaptors and the root
 - [ ] Replace http://iris-go.com content to something more fancy, as suggested [here](https://github.com/kataras/iris/issues/613)
 - [ ] Make a table list of the most famous middleware(s) with their descriptions, in order to help new Gophers find what they're looking for
 
