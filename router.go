@@ -525,6 +525,14 @@ func (router *Router) StaticEmbedded(requestPath string, vdir string, assetFn fu
 	h := func(ctx *Context) {
 		reqPath := ctx.Param(paramName)
 		for _, path := range names {
+			// in order to map "/" as "/index.html"
+			// as requested here: https://github.com/kataras/iris/issues/633#issuecomment-281691851
+			if path == "/index.html" {
+				if reqPath[len(reqPath)-1] == slashByte {
+					reqPath = "/index.html"
+				}
+			}
+
 			if path != reqPath {
 				continue
 			}
