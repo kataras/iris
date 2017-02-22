@@ -113,7 +113,7 @@ class Ws {
             t = websocketJSONMessageType;
             m = JSON.stringify(data);
         } else {
-            console.log("Invalid");
+            console.log("Invalid, javascript-side should contains an empty second parameter.");
         }
 
         return this._msg(event, t, m);
