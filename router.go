@@ -487,7 +487,9 @@ func (router *Router) StaticContent(reqPath string, cType string, content []byte
 // example: https://github.com/iris-contrib/examples/tree/master/static_files_embedded
 func (router *Router) StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) RouteInfo {
 	paramName := "path"
-	requestPath = router.Context.Framework().policies.RouterReversionPolicy.WildcardPath(requestPath, paramName)
+	s := router.Context.Framework()
+
+	requestPath = s.policies.RouterReversionPolicy.WildcardPath(requestPath, paramName)
 
 	if len(vdir) > 0 {
 		if vdir[0] == '.' { // first check for .wrong
@@ -512,20 +514,17 @@ func (router *Router) StaticEmbedded(requestPath string, vdir string, assetFn fu
 		path = strings.Replace(path, "./", "/", -1) // replace ./assets/favicon.ico to /assets/favicon.ico in order to be ready for compare with the reqPath later
 		path = path[len(vdir):]                     // set it as the its 'relative' ( we should re-setted it when assetFn will be used)
 		names = append(names, path)
-
 	}
+
 	if len(names) == 0 {
 		// we don't start the server yet, so:
-		panic("iris.StaticEmbedded: Unable to locate any embedded files located to the (virtual) directory: " + vdir)
+		s.Log(ProdMode, "error on StaticEmbedded: unable to locate any embedded files located to the (virtual) directory: "+vdir)
 	}
 
 	modtime := time.Now()
 	h := func(ctx *Context) {
-
 		reqPath := ctx.Param(paramName)
-
 		for _, path := range names {
-
 			if path != reqPath {
 				continue
 			}
