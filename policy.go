@@ -285,11 +285,19 @@ type (
 )
 
 func normalizePath(path string) string {
+	// some users can't understand the difference between
+	// request path and operating system's directory path
+	// they think that "./" is the index, that's wrong, "/" is the index
+	// so fix that here...
+	if path[0] == '.' {
+		path = path[1:]
+	}
 	path = strings.Replace(path, "//", "/", -1)
 	if len(path) > 1 && strings.IndexByte(path, '/') == len(path)-1 {
 		// if  it's not "/" and ending with slash remove that slash
 		path = path[0 : len(path)-2]
 	}
+
 	return path
 }
 

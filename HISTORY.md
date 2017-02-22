@@ -34,6 +34,7 @@ Fixes:
 - Fix and improve the cloud-editor `alm/alm-tools` plugin(now adaptor)
 - Fix gorillamux serve static files (custom routers are supported with a workaround, not a complete solution as they are now)
 - Fix `iris run main.go` app reload while user saved the file from gogland
+- Fix [StaticEmbedded doesn't works on root "/"](https://github.com/kataras/iris/issues/633)
 
 Changes:
 

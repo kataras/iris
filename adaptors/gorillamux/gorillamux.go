@@ -62,8 +62,16 @@ func New() iris.Policies {
 		RouterReversionPolicy: iris.RouterReversionPolicy{
 			// path normalization done on iris' side
 			StaticPath: staticPath,
-			WildcardPath: func(requestPath string, paramName string) string {
-				return requestPath + "/{" + paramName + ":.*}"
+			WildcardPath: func(path string, paramName string) string {
+				// {param:.*}
+				wildcardPart := "{" + paramName + ":.*}"
+
+				if path[len(path)-1] != '/' {
+					// if not ending with slash then prepend the slash to the wildcard path part
+					wildcardPart = "/" + wildcardPart
+				}
+				// finally return the path given + the wildcard path part
+				return path + wildcardPart
 			},
 			// 	Note: on gorilla mux the {{ url }} and {{ path}} should give the key and the value, not only the values by order.
 			// 	{{ url "nameOfTheRoute" "parameterName" "parameterValue"}}.
