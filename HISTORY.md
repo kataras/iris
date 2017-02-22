@@ -23,6 +23,8 @@ to adapt the new changes to your application, it contains an overview of the new
 - Developers can use a `yaml` files for the configuration using the `iris.YAML` function: `app := iris.New(iris.YAML("myconfiguration.yaml"))`
 - Add `.Regex` middleware which does path validation using the `regexp` package, i.e `.Regex("param", "[0-9]+$")`. Useful for routers that don't support regex route path validation out-of-the-box.
 
+- Websocket additions: `c.Context() *iris.Context`, `ws.GetConnectionsByRoom("room name") []websocket.Connection`, `c.OnLeave(func(roomName string){})`, `c.Values().Set(key,value)/.Get(key).Reset()` (where ws:websocket.Server insance, where c:websocket.Connection instance)
+
 Fixes:
 
 - Websocket improvements and fix errors when using custom golang client

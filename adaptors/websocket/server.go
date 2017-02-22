@@ -48,7 +48,12 @@ type Server interface {
 	// first parameter is the room name and the second the connection.ID()
 	//
 	// You can use connection.Leave("room name") instead.
-	Leave(roomName string, connID string)
+	// Returns true if the connection has actually left from the particular room.
+	Leave(roomName string, connID string) bool
+
+	// GetConnectionsByRoom returns a list of Connection
+	// are joined to this room.
+	GetConnectionsByRoom(roomName string) []Connection
 
 	// Disconnect force-disconnects a websocket connection
 	// based on its connection.ID()
@@ -282,6 +287,8 @@ func (s *server) LeaveAll(connID string) {
 	for name, connectionIDs := range s.rooms {
 		for i := range connectionIDs {
 			if connectionIDs[i] == connID {
+				// fire the on room leave connection's listeners
+				s.connections.get(connID).fireOnLeave(name)
 				// the connection is inside this room, lets remove it
 				s.rooms[name][i] = s.rooms[name][len(s.rooms[name])-1]
 				s.rooms[name] = s.rooms[name][:len(s.rooms[name])-1]
@@ -295,14 +302,16 @@ func (s *server) LeaveAll(connID string) {
 // first parameter is the room name and the second the connection.ID()
 //
 // You can use connection.Leave("room name") instead.
-func (s *server) Leave(roomName string, connID string) {
+// Returns true if the connection has actually left from the particular room.
+func (s *server) Leave(roomName string, connID string) bool {
 	s.mu.Lock()
-	s.leave(roomName, connID)
+	left := s.leave(roomName, connID)
 	s.mu.Unlock()
+	return left
 }
 
 // leave used internally, no locks used.
-func (s *server) leave(roomName string, connID string) {
+func (s *server) leave(roomName string, connID string) (left bool) {
 	///THINK: we could add locks to its room but we still use the lock for the whole rooms or we can just do what we do with connections
 	// I will think about it on the next revision, so far we use the locks only for rooms so we are ok...
 	if s.rooms[roomName] != nil {
@@ -310,6 +319,7 @@ func (s *server) leave(roomName string, connID string) {
 			if s.rooms[roomName][i] == connID {
 				s.rooms[roomName][i] = s.rooms[roomName][len(s.rooms[roomName])-1]
 				s.rooms[roomName] = s.rooms[roomName][:len(s.rooms[roomName])-1]
+				left = true
 				break
 			}
 		}
@@ -317,6 +327,27 @@ func (s *server) leave(roomName string, connID string) {
 			delete(s.rooms, roomName)
 		}
 	}
+
+	if left {
+		// fire the on room leave connection's listeners
+		s.connections.get(connID).fireOnLeave(roomName)
+	}
+	return
+}
+
+// GetConnectionsByRoom returns a list of Connection
+// which are joined to this room.
+func (s *server) GetConnectionsByRoom(roomName string) []Connection {
+	s.mu.Lock()
+	var conns []Connection
+	if connIDs, found := s.rooms[roomName]; found {
+		for _, connID := range connIDs {
+			conns = append(conns, s.connections.get(connID))
+		}
+
+	}
+	s.mu.Unlock()
+	return conns
 }
 
 // emitMessage is the main 'router' of the messages coming from the connection
@@ -369,14 +400,17 @@ func (s *server) emitMessage(from, to string, data []byte) {
 //
 // You can use the connection.Disconnect() instead.
 func (s *server) Disconnect(connID string) (err error) {
+	// leave from all joined rooms before remove the actual connection from the list.
+	// note: we cannot use that to send data if the client is actually closed.
+	s.LeaveAll(connID)
+
 	// remove the connection from the list
 	if c, ok := s.connections.remove(connID); ok {
 		if !c.disconnected {
 			c.disconnected = true
 			// stop the ping timer
 			c.pinger.Stop()
-			// leave from all joined rooms
-			s.LeaveAll(connID)
+
 			// fire the disconnect callbacks, if any
 			c.fireDisconnect()
 			// close the underline connection and return its error, if any.

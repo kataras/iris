@@ -1,5 +1,5 @@
 // Package websocket provides an easy way to setup server and client side rich websocket experience for Iris
-// As originally written by me at https://github.com/kataras/go-websocket
+// As originally written by me at https://github.com/kataras/go-websocket based on v0.1.1
 package websocket
 
 import (
