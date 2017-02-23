@@ -103,11 +103,18 @@ $ go get gopkg.in/kataras/iris.v6
 
 Documentation
 -----------
-https://godoc.org/gopkg.in/kataras/iris.v6
 
-#### Getting Started with Go+Iris
+ <a href="https://docs.iris-go.com"><img align="right" width="125" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_4.jpg"></a>
 
-http://gopherbook.iris-go.com
+- Godocs https://godoc.org/gopkg.in/kataras/iris.v6
+
+- Getting Started with Go+Iris http://gopherbook.iris-go.com
+
+- Navigate through community examples https://github.com/iris-contrib/examples
+
+- [./adaptors](https://github.com/kataras/iris/tree/v6/adaptors) and [./middleware](https://github.com/kataras/iris/tree/v6/middleware) contains examples of their usage.
+
+- [HISTORY.md](https://github.com//kataras/iris/tree/v6/HISTORY.md) is your best friend, version migrations are released there.
 
 
 Overview
@@ -233,21 +240,34 @@ app.Adapt(view.HTML("./views", ".html").Reload(true))
 ```
 
 
-Documentation
------------
+Third Party Middleware
+------------
 
- <a href="https://docs.iris-go.com"><img align="right" width="125" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_4.jpg"></a>
+Iris has its own middleware form of `func(ctx *iris.Context)` but it's also compatible with all `net/http` middleware forms using [iris.ToHandler](https://github.com/iris-contrib/middleware/blob/master/cors/cors.go#L33), i.e Negroni's middleware form of `func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)`.
 
+Here is a small list of Iris compatible middleware, I'm sure you can find more! Feel free to put up a [PR](https://github.com/iris-contrib/middleware) your middleware if you have built one :
 
-- New GOpher? Welcome! Take a look at the [GopherBOOk](http://gopherbook.iris-go.com/)
+| Middleware | Author | Description |
+| -----------|--------|-------------|
+| [binding](https://github.com/mholt/binding) | [Matt Holt](https://github.com/mholt) | Data binding from HTTP requests into structs |
+| [cloudwatch](https://github.com/cvillecsteele/negroni-cloudwatch) | [Colin Steele](https://github.com/cvillecsteele) | AWS cloudwatch metrics middleware |
+| [csp](https://github.com/awakenetworks/csp) | [Awake Networks](https://github.com/awakenetworks) | [Content Security Policy](https://www.w3.org/TR/CSP2/) (CSP) support |
+| [delay](https://github.com/jeffbmartinez/delay) | [Jeff Martinez](https://github.com/jeffbmartinez) | Add delays/latency to endpoints. Useful when testing effects of high latency |
+| [New Relic Go Agent](https://github.com/yadvendar/negroni-newrelic-go-agent) | [Yadvendar Champawat](https://github.com/yadvendar) | Official [New Relic Go Agent](https://github.com/newrelic/go-agent) (currently in beta)  |
+| [gorelic](https://github.com/jingweno/negroni-gorelic) | [Jingwen Owen Ou](https://github.com/jingweno) | New Relic agent for Go runtime |
+| [JWT Middleware](https://github.com/auth0/go-jwt-middleware) | [Auth0](https://github.com/auth0) | Middleware checks for a JWT on the `Authorization` header on incoming requests and decodes it|
+| [logrus](https://github.com/meatballhat/negroni-logrus) | [Dan Buch](https://github.com/meatballhat) | Logrus-based logger |
+| [onthefly](https://github.com/xyproto/onthefly) | [Alexander Rødseth](https://github.com/xyproto) | Generate TinySVG, HTML and CSS on the fly |
+| [permissions2](https://github.com/xyproto/permissions2) | [Alexander Rødseth](https://github.com/xyproto) | Cookies, users and permissions |
+| [prometheus](https://github.com/zbindenren/negroni-prometheus) | [Rene Zbinden](https://github.com/zbindenren) | Easily create metrics endpoint for the [prometheus](http://prometheus.io) instrumentation tool |
+| [render](https://github.com/unrolled/render) | [Cory Jacobsen](https://github.com/unrolled) | Render JSON, XML and HTML templates |
+| [RestGate](https://github.com/pjebs/restgate) | [Prasanga Siripala](https://github.com/pjebs) | Secure authentication for REST API endpoints |
+| [secure](https://github.com/unrolled/secure) | [Cory Jacobsen](https://github.com/unrolled) | Middleware that implements a few quick security wins |
+| [stats](https://github.com/thoas/stats) | [Florent Messa](https://github.com/thoas) | Store information about your web application (response time, etc.) |
+| [VanGoH](https://github.com/auroratechnologies/vangoh) | [Taylor Wrobel](https://github.com/twrobel3) | Configurable [AWS-Style](http://docs.aws.amazon.com/AmazonS3/latest/dev/RESTAuthentication.html) HMAC authentication middleware |
+| [xrequestid](https://github.com/pilu/xrequestid) | [Andrea Franz](https://github.com/pilu) | Middleware that assigns a random X-Request-Id header to each request |
+| [digits](https://github.com/bamarni/digits) | [Bilal Amarni](https://github.com/bamarni) | Middleware that handles [Twitter Digits](https://get.digits.com/) authentication |
 
-- Numerous of examples can be found [here](https://github.com/iris-contrib/examples)
-
-- [./adaptors](https://github.com/kataras/iris/tree/v6/adaptors) and [./middleware](https://github.com/kataras/iris/tree/v6/middleware) contains examples of their usage.
-
-- [HISTORY.md](https://github.com//kataras/iris/tree/v6/HISTORY.md) is your best friend, version migrations are released there.
-
-- The most important is to know where to find the [details](https://godoc.org/gopkg.in/kataras/iris.v6)
 
 
 ### FAQ
@@ -334,7 +354,7 @@ TODO
 - [ ] Upgrade [GitBook](https://docs.iris-go.com) for the latest release
 - [x] Add some missing tests from the previous version and find a way to share these end-to-end tests accross the adaptors and the root
 - [ ] Replace http://iris-go.com content to something more fancy, as suggested [here](https://github.com/kataras/iris/issues/613)
-- [ ] Make a table list of the most famous middleware(s) with their descriptions, in order to help new Gophers find what they're looking for
+- [x] Make a table list of the most famous middleware(s) with their descriptions, in order to help new Gophers find what they're looking for
 
 
 Iris is a Community-Driven project waiting for your [feature requests](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=label%3A%22the%20feature%20has%20been%20implemented%22%20)!
