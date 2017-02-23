@@ -59,6 +59,7 @@ I'm  grateful for all the generous donations. Iris is fully funded by these dona
 - [Lex Tang](https://github.com/lexrus) donated 20 EUR at February 22 of 2017
 
 
+
 > * The name or/and github username link added after donator's approvement via e-mail.
 
 #### Report, so far
