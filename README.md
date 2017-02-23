@@ -97,9 +97,17 @@ Installation
 
 The only requirement is the [Go Programming Language](https://golang.org/dl/), at least 1.8
 
-```bash
+```sh
 $ go get gopkg.in/kataras/iris.v6
 ```
+
+Documentation
+-----------
+https://godoc.org/gopkg.in/kataras/iris.v6
+
+#### Getting Started with Go+Iris
+
+http://gopherbook.iris-go.com
 
 
 Overview
@@ -110,32 +118,42 @@ package main
 
 import (
 	"gopkg.in/kataras/iris.v6"
-	"gopkg.in/kataras/iris.v6/adaptors/view"
+	"gopkg.in/kataras/iris.v6/adaptors/cors"
 	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
+	"gopkg.in/kataras/iris.v6/adaptors/view"
 )
 
 func main() {
+	// Receives optional iris.Configuration{}, see ./configuration.go
+	// for more.
 	app := iris.New()
-	app.Adapt(iris.Devlogger()) // adapt a logger which prints all errors to the os.Stdout
-	app.Adapt(httprouter.New()) // adapt the adaptors/httprouter or adaptors/gorillamux
 
-	// 5 template engines are supported out-of-the-box:
-	//
-	// - standard html/template
-	// - amber
-	// - django
-	// - handlebars
-	// - pug(jade)
-	//
-	// Use the html standard engine for all files inside "./views" folder with extension ".html"
-	templates := view.HTML("./views", ".html")
-	app.Adapt(templates)
+	// Order doesn't matter,
+	// You can split it to different .Adapt calls.
+	// See ./adaptors folder for more.
+	app.Adapt(
+		// adapt a logger which prints all errors to the os.Stdout
+		iris.DevLogger(),
+		// adapt the adaptors/httprouter or adaptors/gorillamux
+		httprouter.New(),
+		// 5 template engines are supported out-of-the-box:
+		//
+		// - standard html/template
+		// - amber
+		// - django
+		// - handlebars
+		// - pug(jade)
+		//
+		// Use the html standard engine for all files inside "./views" folder with extension ".html"
+		view.HTML("./views", ".html"),
+		// Cors wrapper to the entire application, allow all origins.
+		cors.New(cors.Options{AllowedOrigins: []string{"*"}}))
 
-	// http://localhost:6200
+	// http://localhost:6300
 	// Method: "GET"
 	// Render ./views/index.html
 	app.Get("/", func(ctx *iris.Context) {
-		ctx.Render("index.html", nil)
+		ctx.Render("index.html", iris.Map{"Title": "Page Title"}, iris.RenderOptions{"gzip": true})
 	})
 
 	// Group routes, optionally: share middleware, template layout and custom http errors.
@@ -143,24 +161,39 @@ func main() {
 		Layout("layouts/userLayout.html")
 	{
 		// Fire userNotFoundHandler when Not Found
-		// inside http://localhost:6200/users/*anything
+		// inside http://localhost:6300/users/*anything
 		userAPI.OnError(404, userNotFoundHandler)
 
-		// http://localhost:6200/users
+		// http://localhost:6300/users
 		// Method: "GET"
 		userAPI.Get("/", getAllHandler)
 
-		// http://localhost:6200/users/42
+		// http://localhost:6300/users/42
 		// Method: "GET"
 		userAPI.Get("/:id", getByIDHandler)
 
-		// http://localhost:6200/users
+		// http://localhost:6300/users
 		// Method: "POST"
 		userAPI.Post("/", saveUserHandler)
 	}
 
-	// Start the server at 127.0.0.1:6200
-	app.Listen(":6200")
+	// Start the server at 127.0.0.1:6300
+	app.Listen(":6300")
+}
+
+func userAPIMiddleware(ctx *iris.Context) {
+	// your code here...
+	println("Request: " + ctx.Path())
+	ctx.Next() // go to the next handler(s)
+}
+
+func userNotFoundHandler(ctx *iris.Context) {
+	// your code here...
+	ctx.HTML(iris.StatusNotFound, "<h1> User page not found </h1>")
+}
+
+func getAllHandler(ctx *iris.Context) {
+	// your code here...
 }
 
 func getByIDHandler(ctx *iris.Context) {
@@ -179,11 +212,25 @@ func getByIDHandler(ctx *iris.Context) {
 	// like the iris.Map{"username" : user.Username}.
 	ctx.JSON(iris.StatusOK, user)
 }
+
+func saveUserHandler(ctx *iris.Context) {
+	// your code here...
+}
 ```
-> TIP: Execute `iris run main.go` to enable hot-reload on .go source code changes.
 
-> TIP: Add `templates.Reload(true)` to monitor the template changes.
+### Reload on source code changes
 
+```sh
+$ go get -u github.com/kataras/rizla
+$ cd $GOPATH/src/mywebapp
+$ rizla run main.go
+```
+
+### Reload templates on each incoming request
+
+```go
+app.Adapt(view.HTML("./views", ".html").Reload(true))
+```
 
 
 Documentation
