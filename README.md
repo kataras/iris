@@ -278,12 +278,31 @@ Explore [these questions](https://github.com/kataras/iris/issues?q=label%3Aquest
 Testing
 ------------
 
-You can find End-To-End test examples by navigating to the source code.
+The `httptest` package is a simple Iris helper for the httpexpect, a new library for End-to-end HTTP and REST API testing for Go.
+
+You can find tests by navigating to the source code,
+i.e:
+
+- [context_test.go](https://github.com/kataras/iris/blob/v6/context_test.go)
+- [handler_test.go](https://github.com/kataras/iris/blob/v6/handler_test.go)
+- [policy_gorillamux_test.go](https://github.com/kataras/iris/blob/v6/policy_gorillamux_test.go)
+- [policy_httprouter_test.go](https://github.com/kataras/iris/blob/v6/policy_httprouter_test.go)
+- [policy_nativerouter_test.go](https://github.com/kataras/iris/blob/v6/policy_nativerouter_test.go)
+- [policy_render_test.go](https://github.com/kataras/iris/blob/v6/policy_render_test.go)
+- [policy_sessions_test.go](https://github.com/kataras/iris/blob/v6/policy_sessions_test.go)
+- [response_writer_test.go](https://github.com/kataras/iris/blob/v6/response_writer_test.go)
+- [route_test.go](https://github.com/kataras/iris/blob/v6/route_test.go)
+- [status_test.go](https://github.com/kataras/iris/blob/v6/status_test.go)
+- [transaction_test.go](https://github.com/kataras/iris/blob/v6/transaction_test.go)
 
 A simple test is located to [./httptest/_example/main_test.go](https://github.com/kataras/iris/blob/v6/httptest/_example/main_test.go)
 
+httpexpect's repository has some Iris examples too:
 
-Read more about [gavv's httpexpect](https://github.com/gavv/httpexpect).
+- https://github.com/gavv/httpexpect/blob/master/_examples/iris.go (without `httptest` package)
+- https://github.com/gavv/httpexpect/blob/master/_examples/iris_test.go (without `httptest` package)
+
+Read more about httpexpect [here](https://github.com/gavv/httpexpect).
 
 
 Philosophy
@@ -291,7 +310,7 @@ Philosophy
 
 The Iris philosophy is to provide robust tooling for HTTP, making it a great solution for single page applications, web sites, hybrids, or public HTTP APIs. Keep note that, today, iris is faster than nginx itself.
 
-Iris does not force you to use any specific ORM or template engine. With support for the most used template engines (6+), you can quickly craft the perfect application.
+Iris does not force you to use any specific ORM or template engine. Iris is routerless which means you can adapt any router you like, [httprouter](https://github.com/kataras/iris/blob/v6/adaptors/httprouter/_example/main.go) is the fastest, [gorillamux](https://github.com/kataras/iris/blob/v6/adaptors/gorillamux/_example/main.go) has more features. With support for the most used template engines (5), you can quickly craft the perfect application.
 
 
 People & Support
