@@ -197,6 +197,7 @@ var (
 )
 
 func (router *Router) build(builder RouterBuilderPolicy) {
+	router.repository.sort() // sort - priority to subdomains
 	router.handler = builder(router.repository, router.Context)
 }
 
@@ -340,7 +341,6 @@ func (router *Router) Handle(method string, registeredPath string, handlers ...H
 		middleware = append(middleware, router.doneMiddleware...) // register the done middleware, if any
 	}
 	r := router.repository.register(method, subdomain, path, middleware)
-
 	router.apiRoutes = append(router.apiRoutes, r)
 	// should we remove the router.apiRoutes on the .Party (new children party) ?, No, because the user maybe use this party later
 	// should we add to the 'inheritance tree' the router.apiRoutes, No, these are for this specific party only, because the user propably, will have unexpected behavior when using Use/UseFunc, Done/DoneFunc
