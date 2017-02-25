@@ -143,8 +143,6 @@ type (
 		// websocket has everything you need to authenticate the user BUT if it's necessary
 		// then  you use it to receive user information, for example: from headers
 		Context() *iris.Context
-		// Values returns the temporary lock-free connection's data store
-		Values() ConnectionValues
 
 		// OnDisconnect registers a callback which fires when this connection is closed by an error or manual
 		OnDisconnect(DisconnectFunc)
@@ -176,6 +174,16 @@ type (
 		// Disconnect disconnects the client, close the underline websocket conn and removes it from the conn list
 		// returns the error, if any, from the underline connection
 		Disconnect() error
+		// SetValue sets a key-value pair on the connection's mem store.
+		SetValue(key string, value interface{})
+		// GetValue gets a value by its key from the connection's mem store.
+		GetValue(key string) interface{}
+		// GetValueArrString gets a value as []string by its key from the connection's mem store.
+		GetValueArrString(key string) []string
+		// GetValueString gets a value as string by its key from the connection's mem store.
+		GetValueString(key string) string
+		// GetValueInt gets a value as integer by its key from the connection's mem store.
+		GetValueInt(key string) int
 	}
 
 	connection struct {
@@ -467,4 +475,45 @@ func (c *connection) fireOnLeave(roomName string) {
 
 func (c *connection) Disconnect() error {
 	return c.server.Disconnect(c.ID())
+}
+
+// mem per-conn store
+
+func (c *connection) SetValue(key string, value interface{}) {
+	c.values.Set(key, value)
+}
+
+func (c *connection) GetValue(key string) interface{} {
+	return c.values.Get(key)
+}
+
+func (c *connection) GetValueArrString(key string) []string {
+	if v := c.values.Get(key); v != nil {
+		if arrString, ok := v.([]string); ok {
+			return arrString
+		}
+	}
+	return nil
+}
+
+func (c *connection) GetValueString(key string) string {
+	if v := c.values.Get(key); v != nil {
+		if s, ok := v.(string); ok {
+			return s
+		}
+	}
+	return ""
+}
+
+func (c *connection) GetValueInt(key string) int {
+	if v := c.values.Get(key); v != nil {
+		if i, ok := v.(int); ok {
+			return i
+		} else if s, ok := v.(string); ok {
+			if iv, err := strconv.Atoi(s); err == nil {
+				return iv
+			}
+		}
+	}
+	return 0
 }
