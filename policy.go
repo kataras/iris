@@ -92,7 +92,7 @@ const (
 	// ProdMode the production level logger write mode,
 	// responsible to fatal errors, errors that happen which
 	// your app can't continue running.
-	ProdMode LogMode = 1 << iota
+	ProdMode LogMode = iota
 	// DevMode is the development level logger write mode,
 	// responsible to the rest of the errors, for example
 	// if you set a app.Favicon("myfav.ico"..) and that fav doesn't exists
@@ -258,17 +258,30 @@ type (
 	// which custom routers should create and adapt to the Policies.
 	RouterReversionPolicy struct {
 		// StaticPath should return the static part of the route path
-		// for example, with the default router (: and *):
+		// for example, with the httprouter(: and *):
 		// /api/user/:userid should return /api/user
 		// /api/user/:userid/messages/:messageid should return /api/user
 		// /dynamicpath/*path should return /dynamicpath
 		// /my/path should return /my/path
 		StaticPath func(path string) string
 		// WildcardPath should return a path converted to a 'dynamic' path
-		// for example, with the default router(wildcard symbol: '*'):
+		// for example, with the httprouter(wildcard symbol: '*'):
 		// ("/static", "path") should return /static/*path
 		// ("/myfiles/assets", "anything") should return /myfiles/assets/*anything
 		WildcardPath func(path string, paramName string) string
+		// Param should return a named parameter as each router defines named path parameters.
+		// For example, with the httprouter(: as named param symbol):
+		// userid should return :userid.
+		// with gorillamux, userid should return {userid}
+		// or userid[1-9]+ should return {userid[1-9]+}.
+		// so basically we just wrap the raw parameter name
+		// with the start (and end) dynamic symbols of each router implementing the RouterReversionPolicy.
+		// It's an optional functionality but it can be used to create adaptors without even know the router
+		// that the user uses (which can be taken by app.Config.Other[iris.RouterNameConfigKey].
+		//
+		// Note: we don't need a function like WildcardParam because the developer
+		// can use the Param with a combination with WildcardPath.
+		Param func(paramName string) string
 		// URLPath used for reverse routing on templates with {{ url }} and {{ path }} funcs.
 		// Receives the route name and  arguments and returns its http path
 		URLPath func(r RouteInfo, args ...string) string
@@ -315,6 +328,10 @@ func (r RouterReversionPolicy) Adapt(frame *Policies) {
 		frame.RouterReversionPolicy.WildcardPath = func(path string, paramName string) string {
 			return wildcardPathFn(normalizePath(path), paramName)
 		}
+	}
+
+	if r.Param != nil {
+		frame.RouterReversionPolicy.Param = r.Param
 	}
 
 	if r.URLPath != nil {

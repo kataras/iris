@@ -246,3 +246,19 @@ func TestHTTPRouterRegexMiddleware(t *testing.T) {
 	e.GET("/profile/gerasimosmaropoulos").Expect().Status(iris.StatusOK)
 	e.GET("/profile/anumberof42").Expect().Status(iris.StatusNotFound)
 }
+
+func TestHTTPRouterRouteParamAndWildcardPath(t *testing.T) {
+	app := newHTTPRouterApp()
+	routePath := app.RouteWildcardPath("/profile/"+app.RouteParam("user_id")+"/"+app.RouteParam("ref")+"/", "anything")
+	expectedRoutePath := "/profile/:user_id/:ref/*anything"
+	if routePath != expectedRoutePath {
+		t.Fatalf("HTTPRouter Error on RouteParam and RouteWildcardPath, expecting '%s' but got '%s'", expectedRoutePath, routePath)
+	}
+
+	app.Get(routePath, func(ctx *iris.Context) {
+		ctx.Writef(ctx.Path())
+	})
+	e := httptest.New(app, t)
+
+	e.GET("/profile/42/areference/anythinghere").Expect().Status(iris.StatusOK).Body().Equal("/profile/42/areference/anythinghere")
+}

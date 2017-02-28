@@ -5,7 +5,7 @@
 
 ## 6.1.4 -> 6.2.0 (√Νεxτ)
 
-_Last update: 22 Feb 2017_
+_Last update: 28 Feb 2017_
 
 > Note: I want you to know that I spent more than 200 hours (16 days of ~10-15 hours per-day, do the math) for this release, two days to write these changes, please read the sections before think that you have an issue and post a new question, thanks!
 
@@ -770,6 +770,7 @@ We have 8 policies, so far, and some of them have 'subpolicies' (the RouterRever
 - RouterReversionPolicy
      - StaticPath
      - WildcardPath
+	 - Param
      - URLPath
 - RouterBuilderPolicy
 - RouterWrapperPolicy

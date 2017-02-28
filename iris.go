@@ -19,6 +19,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -89,8 +90,8 @@ type Framework struct {
 	// - RouterReversionPolicy
 	//      - StaticPath
 	//      - WildcardPath
+	//      - Param
 	//      - URLPath
-	//      - RouteContextLinker
 	// - RouterBuilderPolicy
 	// - RouterWrapperPolicy
 	// - RenderPolicy
@@ -882,6 +883,103 @@ func (s *Framework) URL(routeName string, args ...interface{}) (url string) {
 	}
 
 	return
+}
+
+// Regex takes pairs with the named path (without symbols) following by its expression
+// and returns a middleware which will do a pure but effective validation using the regexp package.
+//
+// Note: '/adaptors/gorillamux' already supports regex path validation.
+// It's useful while the developer uses the '/adaptors/httprouter' instead.
+func (s *Framework) Regex(pairParamExpr ...string) HandlerFunc {
+	srvErr := func(ctx *Context) {
+		ctx.EmitError(StatusInternalServerError)
+	}
+
+	wp := s.policies.RouterReversionPolicy.WildcardPath
+	if wp == nil {
+		s.Log(ProdMode, "regex cannot be used when a router policy is missing\n"+errRouterIsMissing.Format(s.Config.VHost).Error())
+		return srvErr
+	}
+
+	if len(pairParamExpr)%2 != 0 {
+		s.Log(ProdMode,
+			"regex pre-compile error: the correct format is paramName, expression"+
+				"paramName2, expression2. The len should be %2==0")
+		return srvErr
+	}
+	pairs := make(map[string]*regexp.Regexp, len(pairParamExpr)/2)
+
+	for i := 0; i < len(pairParamExpr)-1; i++ {
+		expr := pairParamExpr[i+1]
+		r, err := regexp.Compile(expr)
+		if err != nil {
+			s.Log(ProdMode, "regex '"+expr+"' failed. Trace: "+err.Error())
+			return srvErr
+		}
+
+		pairs[pairParamExpr[i]] = r
+		i++
+	}
+
+	// return the middleware
+	return func(ctx *Context) {
+		for k, v := range pairs {
+			pathPart := ctx.Param(k)
+			if pathPart == "" {
+				// take care, the router already
+				// does the param validations
+				// so if it's empty here it means that
+				// the router has label it as optional.
+				// so we skip it, and continue to the next.
+				continue
+			}
+			// the improtant thing:
+			// if the path part didn't match with the relative exp, then fire status not found.
+			if !v.MatchString(pathPart) {
+				ctx.EmitError(StatusNotFound)
+				return
+			}
+		}
+		// otherwise continue to the next handler...
+		ctx.Next()
+	}
+}
+
+// RouteParam returns a named parameter as each router defines named path parameters.
+// For example, with the httprouter(: as named param symbol):
+// userid should return :userid.
+// with gorillamux, userid should return {userid}
+// or userid[1-9]+ should return {userid[1-9]+}.
+// so basically we just wrap the raw parameter name
+// with the start (and end) dynamic symbols of each router implementing the RouterReversionPolicy.
+// It's an optional functionality but it can be used to create adaptors without even know the router
+// that the user uses (which can be taken by app.Config.Other[iris.RouterNameConfigKey].
+//
+// Note: we don't need a function like ToWildcardParam because the developer
+// can use the RouterParam with a combination with RouteWildcardPath.
+//
+// Example: https://github.com/iris-contrib/adaptors/blob/master/oauth/oauth.go
+func (s *Framework) RouteParam(paramName string) string {
+	if s.policies.RouterReversionPolicy.Param == nil {
+		// all Iris' routers are implementing all features but third-parties may not, so make sure that the user
+		// will get a useful message back.
+		s.Log(DevMode, "cannot wrap a route named path parameter because the functionality was not implemented by the current router.")
+		return ""
+	}
+
+	return s.policies.RouterReversionPolicy.Param(paramName)
+}
+
+// RouteWildcardPath returns a path converted to a 'dynamic' path
+// for example, with the httprouter(wildcard symbol: '*'):
+// ("/static", "path") should return /static/*path
+// ("/myfiles/assets", "anything") should return /myfiles/assets/*anything
+func (s *Framework) RouteWildcardPath(path string, paramName string) string {
+	if s.policies.RouterReversionPolicy.WildcardPath == nil {
+		s.Log(DevMode, "please use WildcardPath after .Adapt(router).\n"+errRouterIsMissing.Format(s.Config.VHost).Error())
+		return ""
+	}
+	return s.policies.RouterReversionPolicy.WildcardPath(path, paramName)
 }
 
 // DecodeQuery returns the uri parameter as url (string)
