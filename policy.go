@@ -92,7 +92,7 @@ const (
 	// ProdMode the production level logger write mode,
 	// responsible to fatal errors, errors that happen which
 	// your app can't continue running.
-	ProdMode LogMode = iota
+	ProdMode LogMode = 1 << iota
 	// DevMode is the development level logger write mode,
 	// responsible to the rest of the errors, for example
 	// if you set a app.Favicon("myfav.ico"..) and that fav doesn't exists
