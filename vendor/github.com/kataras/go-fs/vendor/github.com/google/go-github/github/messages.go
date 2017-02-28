@@ -4,7 +4,7 @@
 // license that can be found in the LICENSE file.
 
 // This file provides functions for validating payloads from GitHub Webhooks.
-// GitHub docs: https://developer.github.com/webhooks/securing/#validating-payloads-from-github
+// GitHub API docs: https://developer.github.com/webhooks/securing/#validating-payloads-from-github
 
 package github
 
@@ -14,6 +14,7 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"hash"
@@ -30,6 +31,42 @@ const (
 	sha512Prefix = "sha512"
 	// signatureHeader is the GitHub header key used to pass the HMAC hexdigest.
 	signatureHeader = "X-Hub-Signature"
+	// eventTypeHeader is the GitHub header key used to pass the event type.
+	eventTypeHeader = "X-Github-Event"
+)
+
+var (
+	// eventTypeMapping maps webhooks types to their corresponding go-github struct types.
+	eventTypeMapping = map[string]string{
+		"commit_comment":                        "CommitCommentEvent",
+		"create":                                "CreateEvent",
+		"delete":                                "DeleteEvent",
+		"deployment":                            "DeploymentEvent",
+		"deployment_status":                     "DeploymentStatusEvent",
+		"fork":                                  "ForkEvent",
+		"gollum":                                "GollumEvent",
+		"integration_installation":              "IntegrationInstallationEvent",
+		"integration_installation_repositories": "IntegrationInstallationRepositoriesEvent",
+		"issue_comment":                         "IssueCommentEvent",
+		"issues":                                "IssuesEvent",
+		"label":                                 "LabelEvent",
+		"member":                                "MemberEvent",
+		"membership":                            "MembershipEvent",
+		"milestone":                             "MilestoneEvent",
+		"organization":                          "OrganizationEvent",
+		"page_build":                            "PageBuildEvent",
+		"ping":                                  "PingEvent",
+		"public":                                "PublicEvent",
+		"pull_request_review":                   "PullRequestReviewEvent",
+		"pull_request_review_comment":           "PullRequestReviewCommentEvent",
+		"pull_request":                          "PullRequestEvent",
+		"push":                                  "PushEvent",
+		"repository":                            "RepositoryEvent",
+		"release":                               "ReleaseEvent",
+		"status":                                "StatusEvent",
+		"team_add":                              "TeamAddEvent",
+		"watch":                                 "WatchEvent",
+	}
 )
 
 // genMAC generates the HMAC signature for a message provided the secret key
@@ -106,7 +143,7 @@ func ValidatePayload(r *http.Request, secretKey []byte) (payload []byte, err err
 // payload is the JSON payload sent by GitHub Webhooks.
 // secretKey is the GitHub Webhook secret message.
 //
-// GitHub docs: https://developer.github.com/webhooks/securing/#validating-payloads-from-github
+// GitHub API docs: https://developer.github.com/webhooks/securing/#validating-payloads-from-github
 func validateSignature(signature string, payload, secretKey []byte) error {
 	messageMAC, hashFunc, err := messageMAC(signature)
 	if err != nil {
@@ -116,4 +153,43 @@ func validateSignature(signature string, payload, secretKey []byte) error {
 		return errors.New("payload signature check failed")
 	}
 	return nil
+}
+
+// WebHookType returns the event type of webhook request r.
+func WebHookType(r *http.Request) string {
+	return r.Header.Get(eventTypeHeader)
+}
+
+// ParseWebHook parses the event payload. For recognized event types, a
+// value of the corresponding struct type will be returned (as returned
+// by Event.Payload()). An error will be returned for unrecognized event
+// types.
+//
+// Example usage:
+//
+//     func (s *GitHubEventMonitor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+//       payload, err := github.ValidatePayload(r, s.webhookSecretKey)
+//       if err != nil { ... }
+//       event, err := github.ParseWebHook(github.WebHookType(r), payload)
+//       if err != nil { ... }
+//       switch event := event.(type) {
+//       case *github.CommitCommentEvent:
+//           processCommitCommentEvent(event)
+//       case *github.CreateEvent:
+//           processCreateEvent(event)
+//       ...
+//       }
+//     }
+//
+func ParseWebHook(messageType string, payload []byte) (interface{}, error) {
+	eventType, ok := eventTypeMapping[messageType]
+	if !ok {
+		return nil, fmt.Errorf("unknown X-Github-Event in message: %v", messageType)
+	}
+
+	event := Event{
+		Type:       &eventType,
+		RawPayload: (*json.RawMessage)(&payload),
+	}
+	return event.Payload(), nil
 }
