@@ -545,6 +545,9 @@ func New() iris.Policies {
 				// finally return the path given + the wildcard path part
 				return path + wildcardPart
 			},
+			Param: func(paramName string) string {
+				return string(parameterStartByte) + paramName
+			},
 			// path = "/api/users/:id", args = ["42"]
 			// return "/api/users/42"
 			//

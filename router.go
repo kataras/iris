@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"regexp"
 	"strings"
 	"time"
 
@@ -130,71 +129,6 @@ type Router struct {
 	// per-party
 	relativePath string
 }
-
-// Regex takes pairs with the named path (without symbols) following by its expression
-// and returns a middleware which will do a pure but effective validation using the regexp package.
-//
-// Note: '/adaptors/gorillamux' already supports regex path validation.
-// It's useful while the developer uses the '/adaptors/httprouter' instead.
-func (s *Framework) Regex(pairParamExpr ...string) HandlerFunc {
-	srvErr := func(ctx *Context) {
-		ctx.EmitError(StatusInternalServerError)
-	}
-
-	wp := s.policies.RouterReversionPolicy.WildcardPath
-	if wp == nil {
-		s.Log(ProdMode, "expr cannot be used when a router policy is missing\n"+errRouterIsMissing.Format(s.Config.VHost).Error())
-		return srvErr
-	}
-
-	if len(pairParamExpr)%2 != 0 {
-		s.Log(ProdMode,
-			"regexp expr pre-compile error: the correct format is paramName, expression"+
-				"paramName2, expression2. The len should be %2==0")
-		return srvErr
-	}
-	pairs := make(map[string]*regexp.Regexp, len(pairParamExpr)/2)
-
-	for i := 0; i < len(pairParamExpr)-1; i++ {
-		expr := pairParamExpr[i+1]
-		r, err := regexp.Compile(expr)
-		if err != nil {
-			s.Log(ProdMode, "expr: regexp failed on: "+expr+". Trace:"+err.Error())
-			return srvErr
-		}
-
-		pairs[pairParamExpr[i]] = r
-		i++
-	}
-
-	// return the middleware
-	return func(ctx *Context) {
-		for k, v := range pairs {
-			pathPart := ctx.Param(k)
-			if pathPart == "" {
-				// take care, the router already
-				// does the param validations
-				// so if it's empty here it means that
-				// the router has label it as optional.
-				// so we skip it, and continue to the next.
-				continue
-			}
-			// the improtant thing:
-			// if the path part didn't match with the relative exp, then fire status not found.
-			if !v.MatchString(pathPart) {
-				ctx.EmitError(StatusNotFound)
-				return
-			}
-		}
-		// otherwise continue to the next handler...
-		ctx.Next()
-	}
-}
-
-var (
-	// errDirectoryFileNotFound returns an error with message: 'Directory or file %s couldn't found. Trace: +error trace'
-	errDirectoryFileNotFound = errors.New("Directory or file %s couldn't found. Trace: %s")
-)
 
 func (router *Router) build(builder RouterBuilderPolicy) {
 	router.repository.sort() // sort - priority to subdomains
@@ -560,6 +494,9 @@ func (router *Router) StaticEmbedded(requestPath string, vdir string, assetFn fu
 
 	return router.registerResourceRoute(requestPath, h)
 }
+
+// errDirectoryFileNotFound returns an error with message: 'Directory or file %s couldn't found. Trace: +error trace'
+var errDirectoryFileNotFound = errors.New("Directory or file %s couldn't found. Trace: %s")
 
 // Favicon serves static favicon
 // accepts 2 parameters, second is optional

@@ -194,3 +194,20 @@ func TestGorillaMuxRouteURLPath(t *testing.T) {
 		t.Fatalf("gorillamux' reverse routing 'URLPath' error:  expected %s but got %s", expected, got)
 	}
 }
+
+func TestGorillaMuxRouteParamAndWildcardPath(t *testing.T) {
+	app := iris.New()
+	app.Adapt(gorillamux.New())
+	routePath := app.RouteWildcardPath("/profile/"+app.RouteParam("user_id")+"/"+app.RouteParam("ref")+"/", "anything")
+	expectedRoutePath := "/profile/{user_id}/{ref}/{anything:.*}"
+	if routePath != expectedRoutePath {
+		t.Fatalf("Gorilla Mux Error on RouteParam and RouteWildcardPath, expecting '%s' but got '%s'", expectedRoutePath, routePath)
+	}
+
+	app.Get(routePath, func(ctx *iris.Context) {
+		ctx.Writef(ctx.Path())
+	})
+	e := httptest.New(app, t)
+
+	e.GET("/profile/42/areference/anythinghere").Expect().Status(iris.StatusOK).Body().Equal("/profile/42/areference/anythinghere")
+}

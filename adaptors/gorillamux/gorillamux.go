@@ -74,6 +74,9 @@ func New() iris.Policies {
 				// finally return the path given + the wildcard path part
 				return path + wildcardPart
 			},
+			Param: func(paramName string) string {
+				return "{" + paramName + "}"
+			},
 			// 	Note: on gorilla mux the {{ url }} and {{ path}} should give the key and the value, not only the values by order.
 			// 	{{ url "nameOfTheRoute" "parameterName" "parameterValue"}}.
 			//
