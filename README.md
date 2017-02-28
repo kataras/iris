@@ -40,6 +40,21 @@ Iris is an efficient and well-designed toolbox with robust set of features.<br/>
 </p>
 
 
+> Q: First of all, why I have to choose server-based web framework instead of AWS-based(or `serverless`) frameworks?
+
+> A: `Serverless and AWS` Are Wonderful—Until They Go Wrong. Today the 'internet has been broken' and most of the sites
+, including isitdownrightnow.com,  are down or operating very slow! Why? Because of AmazonS3. 
+Many articles have been written about this sad fact:
+
+- WashingtonPost:  https://www.washingtonpost.com/news/the-switch/wp/2017/02/28/why-a-whole-slew-of-websites-are-suddenly-down-or-working-slowly/?tid=sm_fb&utm_term=.583d2ca0921b
+- CNN: http://money.cnn.com/2017/02/28/technology/amazon-web-services-outages/index.html
+- CNET: https://www.cnet.com/news/no-the-internet-is-not-broken-amazon-web-services-is-just-having-issues/?ftag=COS-05-10-aa0a&linkId=34980800
+- MIT Technology Review: https://www.technologyreview.com/s/603738/centralized-web-services-are-wonderful-until-they-go-wrong/?_ga=1.82562070.1263144274.1488319022
+
+> I will not reveal which one I wrote:)
+
+**Continue to read about Iris' advantages over other go web frameworks**
+
 Iris is fully vendored. That means it is independent of any API changes in the used libraries and **will work seamlessly in the future**!
 
 The size of the executable file is a critical part of the Application Deployment Process,
