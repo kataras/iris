@@ -76,6 +76,7 @@ func (s *sessions) Adapt(frame *iris.Policies) {
 	}
 
 	policy.Adapt(frame)
+
 }
 
 // UseDatabase adds a session database to the manager's provider,

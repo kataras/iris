@@ -133,7 +133,7 @@ type Framework struct {
 	once sync.Once // used to 'Boot' once
 }
 
-var defaultGlobalLoggerOuput = log.New(os.Stdout, "[Iris] ", log.LstdFlags)
+var defaultGlobalLoggerOuput = log.New(os.Stdout, "", log.LstdFlags)
 
 // DevLogger returns a new Logger which prints both ProdMode and DevMode messages
 // to the default global logger printer.
@@ -144,8 +144,26 @@ var defaultGlobalLoggerOuput = log.New(os.Stdout, "[Iris] ", log.LstdFlags)
 // Users can always ignore that and adapt a custom LoggerPolicy,
 // which will use your custom printer instead.
 func DevLogger() LoggerPolicy {
+	lastLog := time.Now()
+	distanceDuration := 850 * time.Millisecond
 	return func(mode LogMode, logMessage string) {
-		defaultGlobalLoggerOuput.Println(logMessage)
+		if strings.Contains(logMessage, banner) {
+			fmt.Print(logMessage)
+			lastLog = time.Now()
+			return
+		}
+		nowLog := time.Now()
+		if nowLog.Before(lastLog.Add(distanceDuration)) {
+			// don't use the log.Logger to print this message
+			// if the last one was printed before some seconds.
+			fmt.Println(logMessage)
+			lastLog = nowLog
+			return
+		}
+		// begin with new line in order to have the time once at the top
+		// and the child logs below it.
+		defaultGlobalLoggerOuput.Println("\u2192\n" + logMessage)
+		lastLog = nowLog
 	}
 }
 
@@ -185,6 +203,11 @@ func New(setters ...OptionSetter) *Framework {
 				defaultGlobalLoggerOuput.Println(logMessage)
 			}
 		}))
+
+		s.Adapt(EventPolicy{Boot: func(*Framework) {
+			// Print the banner first, even if we have to print errors later.
+			s.Log(DevMode, banner+"\n\n")
+		}})
 
 	}
 
@@ -382,10 +405,51 @@ func (s *Framework) Set(setters ...OptionSetter) {
 
 // Log logs to the defined logger policy.
 //
-// The default outputs to the os.Stdout when EnvMode is 'ProductionEnv'
+// The default outputs to the os.Stdout when EnvMode is 'iris.ProdMode'
 func (s *Framework) Log(mode LogMode, log string) {
 	s.policies.LoggerPolicy(mode, log)
 }
+
+// Author's note:
+//
+// I implemented this and worked for configuration fields logs but I'm not sure
+// if users want to print adaptor's configuration, i.e: websocket, sessions
+// so comment this feature, and
+// if/when I get good feedback from the private beta testers I'll uncomment these on public repo too.
+//
+//
+// Logf same as .Log but receives arguments like fmt.Printf.
+// Note: '%#v' and '%+v' named arguments are being printed, pretty.
+//
+// The default outputs to the os.Stdout when EnvMode is 'iris.ProdMode'
+// func (s *Framework) Logf(mode LogMode, format string, v ...interface{}) {
+// 	if mode == DevMode {
+// 		marker := 0
+// 		for i := 0; i < len(format); i++ {
+// 			if format[i] == '%' {
+// 				if i < len(format)-2 {
+// 					if part := format[i : i+3]; part == "%#v" || part == "%+v" {
+// 						if len(v) > marker {
+// 							spew.Config.Indent = "\t\t\t"
+// 							spew.Config.DisablePointerAddresses = true
+// 							spew.Config.DisableCapacities = true
+// 							spew.Config.DisablePointerMethods = true
+// 							spew.Config.DisableMethods = true
+// 							arg := v[marker]
+// 							format = strings.Replace(format, part, "%s", 1)
+// 							v[marker] = spew.Sdump(arg)
+// 						}
+// 					}
+// 				}
+// 				marker++
+// 			}
+// 		}
+// 	}
+//
+// 	log := fmt.Sprintf(format, v...)
+//
+// 	s.policies.LoggerPolicy(mode, log)
+// }
 
 // Must checks if the error is not nil, if it isn't
 // panics on registered iris' logger or
@@ -499,7 +563,15 @@ func (s *Framework) Serve(ln net.Listener) error {
 }
 
 func (s *Framework) postServe() {
-	bannerMessage := fmt.Sprintf("| Running at %s\n\n%s\n", s.Config.VHost, banner)
+	routerInfo := ""
+	if routerNameVal := s.Config.Other[RouterNameConfigKey]; routerNameVal != nil {
+		if routerName, ok := routerNameVal.(string); ok {
+			routerInfo = "using " + routerName
+		}
+	}
+
+	bannerMessage := fmt.Sprintf("Serving HTTP on %s port %d %s", ParseHostname(s.Config.VHost), ParsePort(s.Config.VHost), routerInfo)
+
 	s.Log(DevMode, bannerMessage)
 
 	ch := make(chan os.Signal, 1)

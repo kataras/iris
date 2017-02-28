@@ -55,10 +55,11 @@ func New() iris.Policies {
 
 	var logger func(iris.LogMode, string)
 	return iris.Policies{
-		EventPolicy: iris.EventPolicy{Boot: func(s *iris.Framework) {
-			logger = s.Log
-			s.Set(iris.OptionOther(iris.RouterNameConfigKey, Name))
-		}},
+		EventPolicy: iris.EventPolicy{
+			Boot: func(s *iris.Framework) {
+				logger = s.Log
+				s.Set(iris.OptionOther(iris.RouterNameConfigKey, Name))
+			}},
 		RouterReversionPolicy: iris.RouterReversionPolicy{
 			// path normalization done on iris' side
 			StaticPath: staticPath,

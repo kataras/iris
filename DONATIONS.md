@@ -70,4 +70,4 @@ I'm  grateful for all the generous donations. Iris is fully funded by these dona
 - **Thanks** to all of **You**, 424 EUR donated to [Holy Metropolis of Ioannina](http://www.imioanninon.gr/main/) for clothes, foods and medications for our fellow human beings.
 
 
-**Available**: VAT(50) + VAT(20) + VAT(20) + VAT(50) + VAT(6) + VAT(20) + VAT(100) + VAT(20) + VAT(20) + VAT(50) + VAT(30) + VAT(50) + VAT(20) + VAT(5) + VAT(25) + VAT(20) + VAT(20) + VAT(20) - 424 - 13  = 47,45 + 18,97 + 18,61 + 47,05 + 5,34 + 18,97 + 98,04 + 18,97 + 18,61 + 47,95 + 28,24 + 47,05 + 18,97 + 4,59 + 23,80 + 18,77 + 18,97 + 18,61 + 33,76 - 424 - 13 = **114,83 EUR**
+**Available**: VAT(50) + VAT(20) + VAT(20) + VAT(50) + VAT(6) + VAT(20) + VAT(100) + VAT(20) + VAT(20) + VAT(50) + VAT(30) + VAT(50) + VAT(20) + VAT(5) + VAT(25) + VAT(20) + VAT(20) + VAT(20) + VAT(35) - 424 - 13  = 47,45 + 18,97 + 18,61 + 47,05 + 5,34 + 18,97 + 98,04 + 18,97 + 18,61 + 47,95 + 28,24 + 47,05 + 18,97 + 4,59 + 23,80 + 18,77 + 18,97 + 18,61 + 33,76 - 424 - 13 = **114,83 EUR**

@@ -6,6 +6,11 @@ import (
 	"gopkg.in/kataras/iris.v6/adaptors/typescript"
 )
 
+// NOTE: Some machines don't allow to install typescript automatically, so if you don't have typescript installed
+// and the typescript adaptor doesn't works for you then follow the below steps:
+// 1. close the iris server
+// 2. open your terminal and execute: npm install -g typescript
+// 3. start your iris server, it should be work, as expected, now.
 func main() {
 	app := iris.New()
 	app.Adapt(iris.DevLogger())
