@@ -8,7 +8,8 @@ import (
 
 func main() {
 	app := iris.New()
-	app.Adapt(httprouter.New()) // adapt a router first of all
+	app.Adapt(iris.DevLogger()) // adapt a simple internal logger to print any errors
+	app.Adapt(httprouter.New()) // adapt a router, you can use gorillamux too
 
 	app.Use(i18n.New(i18n.Config{
 		Default:      "en-US",

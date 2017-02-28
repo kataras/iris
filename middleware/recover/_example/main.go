@@ -8,13 +8,16 @@ import (
 
 func main() {
 	app := iris.New()
-	app.Adapt(httprouter.New())
-
-	app.Adapt(iris.DevLogger()) // fast way to enable non-fatal messages to be printed to the user
+	// fast way to enable non-fatal messages to be printed to the user
 	// (yes in iris even recover's errors are not fatal because it's restarting,
 	// ProdMode messages are only for things that Iris cannot continue at all,
 	// these are logged by-default but you can change that behavior too by passing a different LoggerPolicy to the .Adapt)
-	app.Use(recover.New()) // it's io.Writer is the same as app.Config.LoggerOut
+	app.Adapt(iris.DevLogger())
+	// adapt a router, you can use gorillamux too
+	app.Adapt(httprouter.New())
+
+	// use this recover(y) middleware
+	app.Use(recover.New())
 
 	i := 0
 	// let's simmilate a panic every next request
