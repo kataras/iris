@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	"github.com/kataras/go-errors"
-	"github.com/kataras/go-fs"
 	"github.com/klauspost/compress/gzip"
 )
 
@@ -22,12 +21,12 @@ var gzpool = sync.Pool{New: func() interface{} { return &gzipResponseWriter{} }}
 func acquireGzipResponseWriter(underline ResponseWriter) *gzipResponseWriter {
 	w := gzpool.Get().(*gzipResponseWriter)
 	w.ResponseWriter = underline
-	w.gzipWriter = fs.AcquireGzipWriter(w.ResponseWriter)
+	w.gzipWriter = acquireGzipWriter(w.ResponseWriter)
 	return w
 }
 
 func releaseGzipResponseWriter(w *gzipResponseWriter) {
-	fs.ReleaseGzipWriter(w.gzipWriter)
+	releaseGzipWriter(w.gzipWriter)
 	gzpool.Put(w)
 }
 

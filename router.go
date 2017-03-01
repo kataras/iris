@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/kataras/go-errors"
-	"github.com/kataras/go-fs"
 )
 
 const (
@@ -374,9 +373,9 @@ func (router *Router) StaticServe(systemPath string, requestPath ...string) Rout
 	var reqPath string
 
 	if len(requestPath) == 0 {
-		reqPath = strings.Replace(systemPath, fs.PathSeparator, slash, -1) // replaces any \ to /
-		reqPath = strings.Replace(reqPath, "//", slash, -1)                // for any case, replaces // to /
-		reqPath = strings.Replace(reqPath, ".", "", -1)                    // replace any dots (./mypath -> /mypath)
+		reqPath = strings.Replace(systemPath, string(os.PathSeparator), slash, -1) // replaces any \ to /
+		reqPath = strings.Replace(reqPath, "//", slash, -1)                        // for any case, replaces // to /
+		reqPath = strings.Replace(reqPath, ".", "", -1)                            // replace any dots (./mypath -> /mypath)
 	} else {
 		reqPath = requestPath[0]
 	}
@@ -384,10 +383,10 @@ func (router *Router) StaticServe(systemPath string, requestPath ...string) Rout
 	return router.Get(reqPath+"/*file", func(ctx *Context) {
 		filepath := ctx.Param("file")
 
-		spath := strings.Replace(filepath, "/", fs.PathSeparator, -1)
+		spath := strings.Replace(filepath, "/", string(os.PathSeparator), -1)
 		spath = path.Join(systemPath, spath)
 
-		if !fs.DirectoryExists(spath) {
+		if !directoryExists(spath) {
 			ctx.NotFound()
 			return
 		}
@@ -471,7 +470,7 @@ func (router *Router) StaticEmbedded(requestPath string, vdir string, assetFn fu
 				continue
 			}
 
-			cType := fs.TypeByExtension(path)
+			cType := typeByExtension(path)
 			fullpath := vdir + path
 
 			buf, err := assetFn(fullpath)
@@ -530,7 +529,7 @@ func (router *Router) Favicon(favPath string, requestPath ...string) RouteInfo {
 		fi, _ = f.Stat()
 	}
 
-	cType := fs.TypeByExtension(favPath)
+	cType := typeByExtension(favPath)
 	// copy the bytes here in order to cache and not read the ico on each request.
 	cacheFav := make([]byte, fi.Size())
 	if _, err = f.Read(cacheFav); err != nil {
@@ -628,7 +627,7 @@ func (router *Router) StaticWeb(reqPath string, systemPath string, exceptRoutes 
 	handler := func(ctx *Context) {
 		h(ctx)
 		if fname := ctx.Param(paramName); fname != "" {
-			cType := fs.TypeByExtension(fname)
+			cType := typeByExtension(fname)
 			if cType != contentBinary && !strings.Contains(cType, "charset") {
 				cType += "; charset=" + ctx.framework.Config.Charset
 			}

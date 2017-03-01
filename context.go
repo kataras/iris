@@ -22,8 +22,6 @@ import (
 
 	"github.com/iris-contrib/formBinder"
 	"github.com/kataras/go-errors"
-	"github.com/kataras/go-fs"
-	"github.com/kataras/go-template"
 )
 
 const (
@@ -775,7 +773,7 @@ func (ctx *Context) EmitError(statusCode int) {
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
 // -------------------------Context's gzip inline response writer ----------------------
-// ---------------------Look template.go & iris.go for more options---------------------
+// ---------------------Look adaptors/view & iris.go for more options-------------------
 // -------------------------------------------------------------------------------------
 
 var (
@@ -799,9 +797,9 @@ func (ctx *Context) WriteGzip(b []byte) (int, error) {
 	if ctx.clientAllowsGzip() {
 		ctx.ResponseWriter.Header().Add(varyHeader, acceptEncodingHeader)
 
-		gzipWriter := fs.AcquireGzipWriter(ctx.ResponseWriter)
+		gzipWriter := acquireGzipWriter(ctx.ResponseWriter)
 		n, err := gzipWriter.Write(b)
-		fs.ReleaseGzipWriter(gzipWriter)
+		releaseGzipWriter(gzipWriter)
 
 		if err == nil {
 			ctx.SetHeader(contentEncodingHeader, "gzip")
@@ -834,7 +832,7 @@ func (ctx *Context) TryWriteGzip(b []byte) (int, error) {
 
 const (
 	// NoLayout to disable layout for a particular template file
-	NoLayout = template.NoLayout
+	NoLayout = "@.|.@no_layout@.|.@"
 	// TemplateLayoutContextKey is the name of the user values which can be used to set a template layout from a middleware and override the parent's
 	TemplateLayoutContextKey = "templateLayout"
 )
@@ -876,8 +874,8 @@ func (ctx *Context) fastRenderWithStatus(status int, cType string, data []byte) 
 		ctx.ResponseWriter.Header().Add(varyHeader, acceptEncodingHeader)
 		ctx.SetHeader(contentEncodingHeader, "gzip")
 
-		gzipWriter := fs.AcquireGzipWriter(ctx.ResponseWriter)
-		defer fs.ReleaseGzipWriter(gzipWriter)
+		gzipWriter := acquireGzipWriter(ctx.ResponseWriter)
+		defer releaseGzipWriter(gzipWriter)
 		out = gzipWriter
 	} else {
 		out = ctx.ResponseWriter
@@ -943,8 +941,8 @@ func (ctx *Context) RenderWithStatus(status int, name string, binding interface{
 		ctx.ResponseWriter.Header().Add(varyHeader, acceptEncodingHeader)
 		ctx.SetHeader(contentEncodingHeader, "gzip")
 
-		gzipWriter := fs.AcquireGzipWriter(ctx.ResponseWriter)
-		defer fs.ReleaseGzipWriter(gzipWriter)
+		gzipWriter := acquireGzipWriter(ctx.ResponseWriter)
+		defer releaseGzipWriter(gzipWriter)
 		out = gzipWriter
 	} else {
 		out = ctx.ResponseWriter
@@ -1097,7 +1095,7 @@ func (ctx *Context) ServeContent(content io.ReadSeeker, filename string, modtime
 		return nil
 	}
 
-	ctx.ResponseWriter.Header().Set(contentType, fs.TypeByExtension(filename))
+	ctx.ResponseWriter.Header().Set(contentType, typeByExtension(filename))
 	ctx.ResponseWriter.Header().Set(lastModified, modtime.UTC().Format(ctx.framework.Config.TimeFormat))
 	ctx.SetStatusCode(StatusOK)
 	var out io.Writer
@@ -1105,8 +1103,8 @@ func (ctx *Context) ServeContent(content io.ReadSeeker, filename string, modtime
 		ctx.ResponseWriter.Header().Add(varyHeader, acceptEncodingHeader)
 		ctx.SetHeader(contentEncodingHeader, "gzip")
 
-		gzipWriter := fs.AcquireGzipWriter(ctx.ResponseWriter)
-		defer fs.ReleaseGzipWriter(gzipWriter)
+		gzipWriter := acquireGzipWriter(ctx.ResponseWriter)
+		defer releaseGzipWriter(gzipWriter)
 		out = gzipWriter
 	} else {
 		out = ctx.ResponseWriter

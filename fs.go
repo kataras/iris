@@ -1,6 +1,7 @@
 package iris
 
 import (
+	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -18,6 +19,12 @@ type StaticHandlerBuilder interface {
 	Except(r ...RouteInfo) StaticHandlerBuilder
 	Build() HandlerFunc
 }
+
+//  +------------------------------------------------------------+
+//  |                                                            |
+//  |                      Static Builder                        |
+//  |                                                            |
+//  +------------------------------------------------------------+
 
 type fsHandler struct {
 	// user options, only directory is required.
@@ -200,4 +207,64 @@ func StripPrefix(prefix string, h HandlerFunc) HandlerFunc {
 			ctx.NotFound()
 		}
 	}
+}
+
+// typeByExtension returns the MIME type associated with the file extension ext.
+// The extension ext should begin with a leading dot, as in ".html".
+// When ext has no associated type, typeByExtension returns "".
+//
+// Extensions are looked up first case-sensitively, then case-insensitively.
+//
+// The built-in table is small but on unix it is augmented by the local
+// system's mime.types file(s) if available under one or more of these
+// names:
+//
+//   /etc/mime.types
+//   /etc/apache2/mime.types
+//   /etc/apache/mime.types
+//
+// On Windows, MIME types are extracted from the registry.
+//
+// Text types have the charset parameter set to "utf-8" by default.
+func typeByExtension(fullfilename string) (t string) {
+	ext := filepath.Ext(fullfilename)
+	//these should be found by the windows(registry) and unix(apache) but on windows some machines have problems on this part.
+	if t = mime.TypeByExtension(ext); t == "" {
+		// no use of map here because we will have to lock/unlock it, by hand is better, no problem:
+		if ext == ".json" {
+			t = "application/json"
+		} else if ext == ".js" {
+			t = "application/javascript"
+		} else if ext == ".zip" {
+			t = "application/zip"
+		} else if ext == ".3gp" {
+			t = "video/3gpp"
+		} else if ext == ".7z" {
+			t = "application/x-7z-compressed"
+		} else if ext == ".ace" {
+			t = "application/x-ace-compressed"
+		} else if ext == ".aac" {
+			t = "audio/x-aac"
+		} else if ext == ".ico" { // for any case
+			t = "image/x-icon"
+		} else if ext == ".png" {
+			t = "image/png"
+		} else {
+			t = "application/octet-stream"
+		}
+		// mime.TypeByExtension returns as text/plain; | charset=utf-8 the static .js (not always)
+	} else if t == "text/plain" || t == "text/plain; charset=utf-8" {
+		if ext == ".js" {
+			t = "application/javascript"
+		}
+	}
+	return
+}
+
+// directoryExists returns true if a directory(or file) exists, otherwise false
+func directoryExists(dir string) bool {
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		return false
+	}
+	return true
 }
