@@ -379,7 +379,7 @@ func (r RouterWrapperPolicy) Adapt(frame *Policies) {
 //  - the first registered is executing last.
 // So a custom adaptor that the community can create and share with each other
 // can override the existing one with just a simple registration.
-type RenderPolicy func(out io.Writer, name string, bind interface{}, options ...map[string]interface{}) (error, bool)
+type RenderPolicy func(out io.Writer, name string, bind interface{}, options ...map[string]interface{}) (bool, error)
 
 // Adapt adaps a RenderPolicy object to the main *Policies.
 func (r RenderPolicy) Adapt(frame *Policies) {
@@ -388,14 +388,14 @@ func (r RenderPolicy) Adapt(frame *Policies) {
 		prevRenderer := frame.RenderPolicy
 		if prevRenderer != nil {
 			nextRenderer := r
-			renderer = func(out io.Writer, name string, binding interface{}, options ...map[string]interface{}) (error, bool) {
+			renderer = func(out io.Writer, name string, binding interface{}, options ...map[string]interface{}) (bool, error) {
 				// Remember: RenderPolicy works in the opossite order of declaration,
 				// the last registered is trying to be executed first,
 				// the first registered is executing last.
-				err, ok := nextRenderer(out, name, binding, options...)
+				ok, err := nextRenderer(out, name, binding, options...)
 				if !ok {
 
-					prevErr, prevOk := prevRenderer(out, name, binding, options...)
+					prevOk, prevErr := prevRenderer(out, name, binding, options...)
 					if err != nil {
 						if prevErr != nil {
 							err = errors.New(prevErr.Error()).Append(err.Error())
@@ -407,7 +407,7 @@ func (r RenderPolicy) Adapt(frame *Policies) {
 				}
 				// this renderer is responsible for this name
 				// but it has an error, so don't continue to the next
-				return err, ok
+				return ok, err
 
 			}
 		}

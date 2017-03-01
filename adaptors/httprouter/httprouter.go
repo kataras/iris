@@ -522,14 +522,17 @@ func New() iris.Policies {
 		RouterReversionPolicy: iris.RouterReversionPolicy{
 			// path normalization done on iris' side
 			StaticPath: func(path string) string {
-
 				i := strings.IndexByte(path, parameterStartByte)
-				x := strings.IndexByte(path, matchEverythingByte)
-				if i > -1 {
-					return path[0:i]
-				}
-				if x > -1 {
-					return path[0:x]
+				v := strings.IndexByte(path, matchEverythingByte)
+				if i > -1 || v > -1 {
+					if i < v {
+						return path[0:i]
+					}
+					// we can't return path[0:0]
+					if v > 0 {
+						return path[0:v]
+					}
+
 				}
 
 				return path
