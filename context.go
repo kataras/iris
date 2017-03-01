@@ -1034,7 +1034,7 @@ func (ctx *Context) XML(status int, v interface{}) error {
 // MarkdownString parses the (dynamic) markdown string and returns the converted html string
 func (ctx *Context) MarkdownString(markdownText string) string {
 	out := &bytes.Buffer{}
-	_, ok := ctx.framework.policies.RenderPolicy(out, contentMarkdown, markdownText)
+	ok, _ := ctx.framework.policies.RenderPolicy(out, contentMarkdown, markdownText)
 	if ok {
 		return out.String()
 	}

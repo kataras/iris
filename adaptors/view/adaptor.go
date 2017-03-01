@@ -125,13 +125,13 @@ func (h *Adaptor) Adapt(frame *iris.Policies) {
 	// adapt the build event to the main policies
 	evt.Adapt(frame)
 
-	r := iris.RenderPolicy(func(out io.Writer, file string, tmplContext interface{}, options ...map[string]interface{}) (error, bool) {
+	r := iris.RenderPolicy(func(out io.Writer, file string, tmplContext interface{}, options ...map[string]interface{}) (bool, error) {
 		// template mux covers that but maybe we have more than one RenderPolicy
 		// and each of them carries a different mux on the new design.
 		if strings.Contains(file, h.extension) {
-			return mux.ExecuteWriter(out, file, tmplContext, options...), true
+			return true, mux.ExecuteWriter(out, file, tmplContext, options...)
 		}
-		return nil, false
+		return false, nil
 	})
 
 	r.Adapt(frame)

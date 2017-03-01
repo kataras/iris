@@ -28,7 +28,6 @@ import (
 	"github.com/geekypanda/httpcache"
 	"github.com/kataras/go-errors"
 	"github.com/kataras/go-fs"
-	"github.com/kataras/go-serializer"
 )
 
 const (
@@ -260,42 +259,7 @@ func New(setters ...OptionSetter) *Framework {
 			//  | Adapt one RenderPolicy which is responsible                |
 			//  | for json,jsonp,xml and markdown rendering                  |
 			//  +------------------------------------------------------------+
-
-			// prepare the serializers,
-			// serializer content-types(json,jsonp,xml,markdown) the defaults are setted:
-			serializers := serializer.Serializers{}
-			serializer.RegisterDefaults(serializers)
-
-			//
-			// notes for me: Why not at the build state? in order to be overridable and not only them,
-			// these are easy to be overridden by external adaptors too, no matter the order,
-			// this is why the RenderPolicy last registration executing first and the first last.
-			//
-
-			// Adapt the RenderPolicy on the Build in order to be the last
-			// render policy, so the users can adapt their own before the default(= to override json,xml,jsonp renderer).
-			//
-			// Notes: the Renderer of the view system is managed by the
-			// adaptors because they are optional.
-			// If templates are binded to the RenderPolicy then
-			// If a key contains a dot('.') then is a template file
-			// otherwise try to find a serializer, if contains error then we return false and the error
-			// in order the renderer to continue to search for any other custom registerer RenderPolicy
-			// if no error then check if it has written anything, if yes write the content
-			// to the writer(which is the context.ResponseWriter or the gzip version of it)
-			// if no error but nothing written then we return false and the error
-			s.Adapt(RenderPolicy(func(out io.Writer, name string, bind interface{}, options ...map[string]interface{}) (error, bool) {
-				b, err := serializers.Serialize(name, bind, options...)
-				if err != nil {
-					return err, false // errors should be wrapped
-				}
-				if len(b) > 0 {
-					_, err = out.Write(b)
-					return err, true
-				}
-				// continue to the next if any or notice there is no available renderer for that name
-				return nil, false
-			}))
+			s.Adapt(restRenderPolicy)
 		}
 		{
 			//  +------------------------------------------------------------+
@@ -1061,7 +1025,7 @@ type RenderOptions map[string]interface{}
 //
 // It can also render json,xml,jsonp and markdown by-default before or after .Build too.
 func (s *Framework) Render(w io.Writer, name string, bind interface{}, options ...map[string]interface{}) error {
-	err, ok := s.policies.RenderPolicy(w, name, bind, options...)
+	ok, err := s.policies.RenderPolicy(w, name, bind, options...)
 	if !ok {
 		// ok is false ONLY WHEN there is no registered render policy
 		// that is responsible for that 'name` (if contains dot '.' it's for templates).
