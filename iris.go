@@ -462,7 +462,6 @@ func (s *Framework) Boot() (firstTime bool) {
 		// right before the Listen, all methods have been setted
 		// usually is used to adapt third-party servers or proxies or load balancer(s)
 		s.policies.EventPolicy.Fire(s.policies.EventPolicy.Build, s)
-
 		firstTime = true
 	})
 	return

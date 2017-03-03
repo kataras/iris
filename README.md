@@ -27,7 +27,7 @@ Iris is an efficient and well-designed toolbox with robust set of features.<br/>
 </p>
 
 <p>
-<h2>Hashtag #Not_Just_YAWF<!-- hashtag, no title. --></h2>
+<h2>#Not_Just_A_Web_Framework<!-- hashtag, no title. --></h2>
 
 <a href="https://github.com/kataras/iris/blob/v6/HISTORY.md"><img src="https://img.shields.io/badge/codename-√Νεxτ%20-blue.svg?style=flat-square" alt="CHANGELOG/HISTORY"></a>
 
@@ -39,37 +39,33 @@ Iris is an efficient and well-designed toolbox with robust set of features.<br/>
 
 </p>
 
+New web developers are so enthusiastic about the idea of `serverless` and `AWS`. Most of the experienced developers we already know that we shouldn't use these things for our critical parts of our application.
 
-> Q: First of all, why I have to choose server-based web framework instead of AWS-based(or `serverless`) frameworks?
 
-> A: `Serverless and AWS` Are Wonderful—Until They Go Wrong. Today the 'internet has been broken' and most of the sites
-, including isitdownrightnow.com,  are down or operating very slow! Why? Because of AmazonS3. 
-Many articles have been written about this sad fact:
+**`Serverless and AWS` Are Wonderful—Until They Go Wrong.**  There was a flash-point (at 28 February of 2017) where the 'internet was offline' and most of the sites, including isitdownrightnow.com,  were down or operated very slow! Why? Because of `serverless` and `AmazonS3`. 
+Please think twice before moving your code into `serverless`, **instead, use web frameworks that are created for servers that you control**.
 
-- WashingtonPost:  https://www.washingtonpost.com/news/the-switch/wp/2017/02/28/why-a-whole-slew-of-websites-are-suddenly-down-or-working-slowly/?tid=sm_fb&utm_term=.583d2ca0921b
-- CNN: http://money.cnn.com/2017/02/28/technology/amazon-web-services-outages/index.html
-- CNET: https://www.cnet.com/news/no-the-internet-is-not-broken-amazon-web-services-is-just-having-issues/?ftag=COS-05-10-aa0a&linkId=34980800
-- MIT Technology Review: https://www.technologyreview.com/s/603738/centralized-web-services-are-wonderful-until-they-go-wrong/?_ga=1.82562070.1263144274.1488319022
+Proof of concept: 
 
-> I will not reveal which one I wrote:)
+- [Washington Post](https://www.washingtonpost.com/news/the-switch/wp/2017/02/28/why-a-whole-slew-of-websites-are-suddenly-down-or-working-slowly)
+- [CNN](http://money.cnn.com/2017/02/28/technology/amazon-web-services-outages/index.html)
+- [CNET](https://www.cnet.com/news/no-the-internet-is-not-broken-amazon-web-services-is-just-having-issues/?ftag=COS-05-10-aa0a&linkId=34980800)
+- [MIT Technology Review](https://www.technologyreview.com/s/603738/centralized-web-services-are-wonderful-until-they-go-wrong/?_ga=1.82562070.1263144274.1488319022)
+- [GolangNews](https://golangnews.com/stories/1835-serverless-is-wonderfuluntil-they-go-wrong.)
 
-**Continue to read about Iris' advantages over other go web frameworks**
 
 Iris is fully vendored. That means it is independent of any API changes in the used libraries and **will work seamlessly in the future**!
 
-The size of the executable file is a critical part of the Application Deployment Process,
+The size of the executable file is a critical part of the Application Deployment Process.
 
-I made two very simple identical applications, the first written with a famous mini web framework named `gin`(=a Router, with logger, recover and pure Context out-of-the-box support) and the second in `iris`
-(=every feature that you will need at the first place is bundled when you install Iris. Including sessions, websockets, typescript support, a cloud-editor, the view engine with 5 different template parsers, two Routers to select from, an end-to-end framework to test your API, more than 60 handy helpers via Context, complete rest API implementation, and cors, basicauth, internalization i18n, logger and recover middleware out-of-the-box).
-
-I ran `go build` for both of them,
-
- - _gin_ had `9.029 KB` overall file size,
- - _iris_ had `8.505 KB` overall file size!
+Two very simple identical applications, the first was written with `iris` and the second with a simple golang router.
+ 
+ - _iris_ had `8.505 KB` overall file size
+ - _gin_ had `9.029 KB` overall file size
  - _net/http_ had produced an executable file with `5.380 KB` size.
 
 
-> The app didn't used any third-party library. If you test the same thing I test and adapt other features like sessions and websockets then the size of `gin` and `net/http` could be doubled while `iris`' overall file size will remain almost the same.
+> Iris has built'n support for the most of the features that you will use to craft your perfect web application, while the golang router(gin & httprouter alone) doesn't. Imagine what would happened if the simple app we created would use `sessions`, `websockets`, `view engine`... I tested that too, `gin` and `net/http` had produced the x3 of their original size, **while `iris application`' overall executable filesize remained stable**!
 
 
 **Applications that are written using Iris produce smaller file size even if they use more features** than a simple router library!
