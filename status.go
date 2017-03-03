@@ -196,8 +196,8 @@ func (e *ErrorHandlers) GetOrRegister(statusCode int) Handler {
 			}
 			ctx.SetStatusCode(statusCode)
 			if _, err := ctx.WriteString(statusText[statusCode]); err != nil {
-				ctx.Log(DevMode, "error from a pre-defined error handler while trying to send an http error: %s",
-					err.Error())
+				ctx.Log(DevMode, "(status code: %d) %s",
+					err.Error(), statusCode)
 			}
 		})
 		e.mu.Lock()
