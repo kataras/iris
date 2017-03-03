@@ -70,15 +70,11 @@ Two very simple identical applications, the first was written with `iris` and th
 
 **Applications that are written using Iris produce smaller file size even if they use more features** than a simple router library!
 
-> Q: How is that possible?
 
-> A: The Iris' vendor was done manually without any third-party tool. That means that I had the chance to remove any unnecessary code that Iris never uses internally.
-
-
-Always follows the latest trends and best practices. Iris is the **Secret To Staying One Step Ahead of Your Competition**.
+Iris always follows the latest trends and best practices. Iris is the **Secret To Staying One Step Ahead of Your Competition**.
 
 
-Iris is a high-performance tool, but it doesn't stops there. Performance depends on your application too, **Iris helps you to make the right choices** on every step.
+Iris is **a high-performance** tool, but it doesn't stops there. Performance depends on your application too, **Iris helps you to make the right choices** on every step.
 
 **Familiar** and easy **API**. Sinatra-like REST API.
 
@@ -92,9 +88,7 @@ Iris is a community-driven project, **you suggest and I code**.
 
 Unlike other repositories, this one is **very active**. When you post an issue, you get an answer at the next couple of minutes(hours at the worst). If you find a bug, **I am obliged to fix** that on the same day.
 
-> Q: Why this framework is better than alternatives, does the author is, simply, better than other developers?
 
-> A: Probably not, I don't think that I'm better than anyone else, I still learning every single day. The answer is that I have all the world's time to code for Iris the whole day, I don't have any obligations to anybody else, except you. I'd describe my self as a very dedicated FOSS developer.
 
 Click the below animation to see what people say about Iris.
 
@@ -110,18 +104,21 @@ The only requirement is the [Go Programming Language](https://golang.org/dl/), a
 
 ```sh
 $ go get gopkg.in/kataras/iris.v6
+
+# Star the repository in order to join thousands of Golang Programmers and keep your Web App Updated.
 ```
+
 
 Documentation
 -----------
 
  <a href="https://docs.iris-go.com"><img align="right" width="125" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_4.jpg"></a>
 
-- Godocs https://godoc.org/gopkg.in/kataras/iris.v6
+- Godocs ⇒ https://godoc.org/gopkg.in/kataras/iris.v6
 
-- Getting Started with Go+Iris http://gopherbook.iris-go.com
+- Getting Started with Go+Iris ⇒ http://gopherbook.iris-go.com
 
-- Navigate through community examples https://github.com/iris-contrib/examples
+- Navigate through community examples ⇒ https://github.com/iris-contrib/examples
 
 - [./adaptors](https://github.com/kataras/iris/tree/v6/adaptors) and [./middleware](https://github.com/kataras/iris/tree/v6/middleware) contains examples of their usage.
 
@@ -241,7 +238,7 @@ func saveUserHandler(ctx *iris.Context) {
 ```sh
 $ go get -u github.com/kataras/rizla
 $ cd $GOPATH/src/mywebapp
-$ rizla run main.go
+$ rizla main.go
 ```
 
 ### Reload templates on each incoming request
