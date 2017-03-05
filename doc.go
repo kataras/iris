@@ -27,6 +27,11 @@ Source code and other details for the project are available at GitHub:
 
    https://github.com/kataras/iris
 
+Looking for further support?
+
+   http://support.iris-go.com
+
+
 Note: This package is under active development status.
 Each month a new version is releasing
 to adapt the latest web trends and technologies.

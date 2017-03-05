@@ -1,9 +1,9 @@
 Please answer these questions before submitting your issue. Thanks!
 
-- [x] I have read the [GopherBOOk](http://gopherbook.iris-go.com), [Examples](https://github.com/iris-contrib/examples), [Contributing File](https://github.com/kataras/iris/blob/v6/.github/CONTRIBUTING.md) and **I'm sure that this issue is not posted** before.
+- [x] I have read the [GopherBOOk](http://gopherbook.iris-go.com), [Examples](https://github.com/iris-contrib/examples), [Contributing File](https://github.com/kataras/iris/blob/v6/.github/CONTRIBUTING.md) and **I'm sure that this issue is not [posted](http://support.iris-go.com)** before.
 
 
-### What version of Go are you using (`go version`)?
+### What version of Go are you using, minimum 1.8 (`go version`)?
 
 
 ### What operating system and processor architecture are you using (`go env`)?

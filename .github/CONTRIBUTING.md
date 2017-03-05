@@ -4,7 +4,7 @@ If you wanna contribute please submit a PR to one of the [iris-contrib organisat
 
 ## Before Submitting an Issue
 
-First, please do a search in open issues to see if the issue or feature request has already been filed. If there is an issue add your comments to this issue.
+First, please do a search in [open issues](http://support.iris-go.com) to see if the issue or feature request has already been filed. If there is an issue add your comments to this issue.
 
 The Iris project is distributed across multiple repositories, try to file the issue against the correct repository,
 
@@ -14,7 +14,7 @@ The Iris project is distributed across multiple repositories, try to file the is
 - [Sessions](https://github.com/kataras/go-sessions/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
 - [About docs.iris-go.com](https://github.com/iris-contrib/gitbook/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
 - [About examples](https://github.com/iris-contrib/examples/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
-- [Iris main(core)](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
+- [Iris main(core)](http://support.iris-go.com)
 
 Before post a new issue do an iris upgrade:
 

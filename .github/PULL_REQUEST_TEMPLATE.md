@@ -1,6 +1,6 @@
 This repository follows the official [golang](https://github.com/golang/go#contributing) guidelines for the contributions:
 
-##### Note that I do not accept pull requests here and that I use the issue tracker for bug reports and proposals only. Please ask questions on the [https://kataras.rocket.chat/channel/iris][Chat] or http://stackoverflow.com.
+##### Note that I do not accept pull requests here and that I use the issue tracker proposals only. Please ask questions on the  http://support.iris-go.com or [https://kataras.rocket.chat/channel/iris][chat].
 
 Iris' features are not directly adopted to Iris. A component's feature/change should be tested for some time before being part of the Iris which users install.
 

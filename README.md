@@ -11,7 +11,7 @@
 
 <a href="http://goreportcard.com/report/kataras/iris"><img src="https://img.shields.io/badge/report%20card%20-a%2B-F44336.svg?style=flat-square" alt="http://goreportcard.com/report/kataras/iris"></a>
 
-<a href="https://golang.org"><img src="https://img.shields.io/badge/platform-any-ec2eb4.svg?style=flat-square" alt="Runs everywhere"></a>
+<a href="http://support.iris-go.com"><img src="https://img.shields.io/badge/support-page-ec2eb4.svg?style=flat-square" alt="Iris support forum"></a>
 
 <a href="https://golang.org"><img src="https://img.shields.io/badge/powered_by-go-6362c2.svg?style=flat-square" alt="Built with GoLang"></a>
 
@@ -280,7 +280,7 @@ Here is a small list of Iris compatible middleware, I'm sure you can find more! 
 
 ### FAQ
 
-Explore [these questions](https://github.com/kataras/iris/issues?q=label%3Aquestion) and join to our [community chat][Chat]!
+Explore [these questions](http://support.iris-go.com/t/question) and join to our [community chat][Chat]!
 
 
 Testing
@@ -349,7 +349,7 @@ If you are interested in contributing to the Iris project, please see the docume
 Contact
 ------------
 
-Besides the fact that we have a [community chat][Chat] for questions or reports and ideas, [stackoverflow](http://stackoverflow.com/) section for generic go+iris questions and the [github issues](https://github.com/kataras/iris/issues) for bug reports and feature requests, you can also contact with me, as a person who is always open to help you:
+Besides the fact that we have a [community chat][Chat] for questions or reports and ideas, [stackoverflow](http://stackoverflow.com/) section for generic go+iris questions and the [iris support](http://support.iris-go.com) for bug reports and feature requests, you can also contact with me, as a person who is always open to help you:
 
 - [Twitter](https://twitter.com/MakisMaropoulos)
 - [Facebook](https://facebook.com/kataras.gopher)
@@ -384,7 +384,7 @@ TODO
 - [x] Make a table list of the most famous middleware(s) with their descriptions, in order to help new Gophers find what they're looking for
 
 
-Iris is a Community-Driven project waiting for your [feature requests](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=label%3A%22the%20feature%20has%20been%20implemented%22%20)!
+Iris is a Community-Driven project waiting for your [feature requests](http://support.iris-go.com/t/feature-request)!
 
 
 [Chat]: https://kataras.rocket.chat/channel/iris
