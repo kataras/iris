@@ -26,76 +26,6 @@ Iris is an efficient and well-designed toolbox with robust set of features.<br/>
 
 </p>
 
-<p>
-<h2>#Not_Just_A_Web_Framework<!-- hashtag, no title. --></h2>
-
-<a href="https://github.com/kataras/iris/blob/v6/HISTORY.md"><img src="https://img.shields.io/badge/codename-√Νεxτ%20-blue.svg?style=flat-square" alt="CHANGELOG/HISTORY"></a>
-
-<a href="http://gopherbook.iris-go.com/"><img src="https://img.shields.io/badge/examples-%20repository-3362c2.svg?style=flat-square" alt="Examples for new Gophers"></a>
-
-<a href="https://godoc.org/gopkg.in/kataras/iris.v6"><img src="https://img.shields.io/badge/docs-%20reference-5272B4.svg?style=flat-square" alt="Docs"></a>
-
-<a href="https://kataras.rocket.chat/channel/iris"><img src="https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square" alt="Chat"></a>
-
-</p>
-
-New web developers are so enthusiastic about the idea of `serverless` and `AWS`. Most of the experienced developers we already know that we shouldn't use these things for our critical parts of our application.
-
-
-**`Serverless and AWS` Are Wonderful—Until They Go Wrong.**  There was a flash-point (at 28 February of 2017) where the 'internet was offline' and most of the sites, including isitdownrightnow.com,  were down or operated very slow! Why? Because of `serverless` and `AmazonS3`. 
-Please think twice before moving your code into `serverless`, **instead, use web frameworks that are created for servers that you control**.
-
-Proof of concept: 
-
-- [Washington Post](https://www.washingtonpost.com/news/the-switch/wp/2017/02/28/why-a-whole-slew-of-websites-are-suddenly-down-or-working-slowly)
-- [CNN](http://money.cnn.com/2017/02/28/technology/amazon-web-services-outages/index.html)
-- [CNET](https://www.cnet.com/news/no-the-internet-is-not-broken-amazon-web-services-is-just-having-issues/?ftag=COS-05-10-aa0a&linkId=34980800)
-- [MIT Technology Review](https://www.technologyreview.com/s/603738/centralized-web-services-are-wonderful-until-they-go-wrong/?_ga=1.82562070.1263144274.1488319022)
-- [GolangNews](https://golangnews.com/stories/1835-serverless-is-wonderfuluntil-they-go-wrong.)
-
-
-Iris is fully vendored. That means it is independent of any API changes in the used libraries and **will work seamlessly in the future**!
-
-The size of the executable file is a critical part of the Application Deployment Process.
-
-Two very simple identical applications, the first was written with `iris` and the second with a simple golang router.
- 
- - _iris_ had `8.505 KB` overall file size
- - _gin_ had `9.029 KB` overall file size
- - _net/http_ had produced an executable file with `5.380 KB` size.
-
-
-> Iris has built'n support for the most of the features that you will use to craft your perfect web application, while the golang router(gin & httprouter alone) doesn't. Imagine what would happened if the simple app we created would use `sessions`, `websockets`, `view engine`... I tested that too, `gin` and `net/http` had produced the x3 of their original size, **while `iris application`' overall executable filesize remained stable**!
-
-
-**Applications that are written using Iris produce smaller file size even if they use more features** than a simple router library!
-
-
-Iris always follows the latest trends and best practices. Iris is the **Secret To Staying One Step Ahead of Your Competition**.
-
-
-Iris is **a high-performance** tool, but it doesn't stops there. Performance depends on your application too, **Iris helps you to make the right choices** on every step.
-
-**Familiar** and easy **API**. Sinatra-like REST API.
-
-Contains examples and documentation for all its features.
-
-Iris is a `low-level access` web framework, you always know what you're doing.
-
-You'll **never miss a thing** from `net/http`, but if you do on some point, no problem because Iris is fully compatible with stdlib, you still have access to `http.ResponseWriter` and `http.Request`, you can adapt any third-party middleware of form `func(http.ResponseWriter, *http.Request, next http.HandlerFunc)` as well.
-
-Iris is a community-driven project, **you suggest and I code**.
-
-Unlike other repositories, this one is **very active**. When you post an issue, you get an answer at the next couple of minutes(hours at the worst). If you find a bug, **I am obliged to fix** that on the same day.
-
-
-
-Click the below animation to see what people say about Iris.
-
-<a href="https://www.youtube.com/watch?v=jGx0LkuUs4A">
-<img src="https://github.com/iris-contrib/website/raw/gh-pages/assets/gif_link_to_yt2.gif" alt="What people say" />
-</a>
-
 
 Installation
 -----------
@@ -104,9 +34,9 @@ The only requirement is the [Go Programming Language](https://golang.org/dl/), a
 
 ```sh
 $ go get gopkg.in/kataras/iris.v6
-
-# Star the repository in order to join thousands of Golang Programmers and keep your Web App Updated.
 ```
+
+For further installation support, navigate [here](http://support.iris-go.com/d/16-how-to-install-iris-web-framework).
 
 
 Documentation
@@ -278,9 +208,86 @@ Here is a small list of Iris compatible middleware, I'm sure you can find more! 
 
 
 
-### FAQ
+FAQ
+-----------
 
-Explore [these questions](http://support.iris-go.com/t/question) and join to our [community chat][Chat]!
+<a href="https://github.com/kataras/iris/blob/v6/HISTORY.md"><img src="https://img.shields.io/badge/codename-√Νεxτ%20-blue.svg?style=flat-square" alt="CHANGELOG/HISTORY"></a>
+
+<a href="http://gopherbook.iris-go.com/"><img src="https://img.shields.io/badge/examples-%20repository-3362c2.svg?style=flat-square" alt="Examples for new Gophers"></a>
+
+<a href="https://godoc.org/gopkg.in/kataras/iris.v6"><img src="https://img.shields.io/badge/docs-%20reference-5272B4.svg?style=flat-square" alt="Docs"></a>
+
+<a href="https://kataras.rocket.chat/channel/iris"><img src="https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square" alt="Chat"></a>
+
+
+
+> Q: OK Iris is really fast, but my current website does not need that performance at the moment, are there other reasons to move into Iris?
+
+
+Iris is fully vendored. That means it is independent of any API changes in the used libraries and **will work seamlessly in the future**!
+
+The size of the executable file is a critical part of the Application Deployment Process.
+
+Two very simple identical applications, the first was written with `iris` and the second with a simple golang router.
+ 
+ - _iris_ had `8.505 KB` overall file size
+ - _gin_ had `9.029 KB` overall file size
+ - _net/http_ had produced an executable file with `5.380 KB` size.
+
+
+> Iris has built'n support for the most of the features that you will use to craft your perfect web application, while the golang router(gin & httprouter alone) doesn't. Imagine what would happened if the simple app we created would use `sessions`, `websockets`, `view engine`... I tested that too, `gin` and `net/http` had produced the x3 of their original size, **while `iris application`' overall executable filesize remained stable**!
+
+
+**Applications that are written using Iris produce smaller file size even if they use more features** than a simple router library!
+
+
+Iris always follows the latest trends and best practices. Iris is the **Secret To Staying One Step Ahead of Your Competition**.
+
+
+Iris is **a high-performance** tool, but it doesn't stops there. Performance depends on your application too, **Iris helps you to make the right choices** on every step.
+
+**Familiar** and easy **API**. Sinatra-like REST API.
+
+Contains examples and documentation for all its features.
+
+Iris is a `low-level access` web framework, you always know what you're doing.
+
+You'll **never miss a thing** from `net/http`, but if you do on some point, no problem because Iris is fully compatible with stdlib, you still have access to `http.ResponseWriter` and `http.Request`, you can adapt any third-party middleware of form `func(http.ResponseWriter, *http.Request, next http.HandlerFunc)` as well.
+
+Iris is a community-driven project, **you suggest and I code**.
+
+Unlike other repositories, this one is **very active**. When you post an issue, you get an answer at the next couple of minutes(hours at the worst). If you find a bug, **I am obliged to fix** that on the same day.
+
+
+Click the below animation to see by your self what people, like you, say about Iris.
+
+<a href="https://www.youtube.com/watch?v=jGx0LkuUs4A">
+<img src="https://github.com/iris-contrib/website/raw/gh-pages/assets/gif_link_to_yt2.gif" alt="What people say" />
+</a>
+
+
+
+> Q: Why no `serverless`?
+
+New web developers are so enthusiastic about the idea of `serverless` and `AWS`. Most of the experienced developers we already know that we shouldn't use these things for our critical parts of our application.
+
+
+**`Serverless and AWS` Are Wonderful—Until They Go Wrong.**  There was a flash-point (at 28 February of 2017) where the 'internet was offline' and most of the sites, including isitdownrightnow.com,  were down or operated very slow! Why? Because of `serverless` and `AmazonS3`. 
+Please think twice before moving your code into `serverless`, **instead, use web frameworks that are created for servers that you control**, i.e Iris.
+
+Proof of concept: 
+
+- [Washington Post](https://www.washingtonpost.com/news/the-switch/wp/2017/02/28/why-a-whole-slew-of-websites-are-suddenly-down-or-working-slowly)
+- [CNN](http://money.cnn.com/2017/02/28/technology/amazon-web-services-outages/index.html)
+- [CNET](https://www.cnet.com/news/no-the-internet-is-not-broken-amazon-web-services-is-just-having-issues/?ftag=COS-05-10-aa0a&linkId=34980800)
+- [MIT Technology Review](https://www.technologyreview.com/s/603738/centralized-web-services-are-wonderful-until-they-go-wrong/?_ga=1.82562070.1263144274.1488319022)
+- [GolangNews](https://golangnews.com/stories/1835-serverless-is-wonderfuluntil-they-go-wrong.)
+
+
+
+
+
+Explore [these questions](http://support.iris-go.com/) and join to our [community chat][Chat]!
 
 
 Testing
