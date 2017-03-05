@@ -2,7 +2,7 @@
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u gopkg.in/kataras/iris.v6`.
 
-## Looking for further support?
+## Looking for free support?
 
 	http://support.iris-go.com
 
@@ -58,11 +58,11 @@ app.Render(buff, "my_template.html", nil)
 ```
 
 ```go
-// you can take the app(*Framework instance) from a *Context too:
+// you can take the app(*Framework instance) via *Context.Framework() too:
 
 app.Get("/send_mail", func(ctx *iris.Context){
 	buff := &bytes.Buffer{}
-	ctx.Framework().Render()(buff, "my_template.html", nil)
+	ctx.Framework().Render(buff, "my_template.html", nil)
 	// ...
 })
 
