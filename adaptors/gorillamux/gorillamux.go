@@ -190,7 +190,7 @@ func registerRoute(route iris.RouteInfo, gorillaRouter *mux.Router, context iris
 
 	subdomain := route.Subdomain()
 	if subdomain != "" {
-		if subdomain == "*." {
+		if subdomain == iris.DynamicSubdomainIndicator {
 			// it's an iris wildcard subdomain
 			// so register it as wildcard on gorilla mux too
 			subdomain = "{subdomain}."
