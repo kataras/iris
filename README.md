@@ -211,6 +211,8 @@ Here is a small list of Iris compatible middleware, I'm sure you can find more! 
 FAQ
 -----------
 
+<p>
+
 <a href="https://github.com/kataras/iris/blob/v6/HISTORY.md"><img src="https://img.shields.io/badge/codename-√Νεxτ%20-blue.svg?style=flat-square" alt="CHANGELOG/HISTORY"></a>
 
 <a href="http://gopherbook.iris-go.com/"><img src="https://img.shields.io/badge/examples-%20repository-3362c2.svg?style=flat-square" alt="Examples for new Gophers"></a>
@@ -219,7 +221,7 @@ FAQ
 
 <a href="https://kataras.rocket.chat/channel/iris"><img src="https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square" alt="Chat"></a>
 
-
+</p>
 
 > Q: OK Iris is really fast, but my current website does not need that performance at the moment, are there other reasons to move into Iris?
 
