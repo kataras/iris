@@ -6,7 +6,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/BurntSushi/toml"
 	"github.com/imdario/mergo"
+	"github.com/kataras/go-errors"
 	"gopkg.in/yaml.v2"
 )
 
@@ -39,15 +41,18 @@ func (o OptionSet) Set(c *Configuration) {
 	o(c)
 }
 
-// YAML reads Configuration from a file.yml.
+var errConfigurationDecode = errors.New("while trying to decode configuration")
+
+// YAML reads Configuration from a configuration.yml file.
 //
-// Accepts the absolute path of the file.yml.
+// Accepts the absolute path of the configuration.yml.
 // An error will be shown to the user via panic with the error message.
-// Error may occur when the file.yml doesn't exists or is not formatted correctly.
+// Error may occur when the configuration.yml doesn't exists or is not formatted correctly.
 //
 // Usage:
-// 1. `app := iris.New(YAML("myfile.yml"))`
-// 2. `app.Set(YAML("myfile.yml"))`
+// 1. `app := iris.New(iris.YAML("myconfig.yml"))`
+// or
+// 2. `app.Set(iris.YAML("myconfig.yml"))`
 func YAML(filename string) Configuration {
 	c := DefaultConfiguration()
 
@@ -55,20 +60,61 @@ func YAML(filename string) Configuration {
 	// which will try to find the 'filename' from current workind dir too.
 	yamlAbsPath, err := filepath.Abs(filename)
 	if err != nil {
-		panic("FATAL ERROR .yml.filename to absolute: " + err.Error())
+		panic(errConfigurationDecode.AppendErr(err))
 	}
 
 	// read the raw contents of the file
 	data, err := ioutil.ReadFile(yamlAbsPath)
 	if err != nil {
-		panic("FATAL ERROR .yml.ReadFile: " + err.Error())
+		panic(errConfigurationDecode.AppendErr(err))
 	}
 
 	// put the file's contents as yaml to the default configuration(c)
 	if err := yaml.Unmarshal(data, &c); err != nil {
-		panic("FATAL ERROR .yml.Unmarshal: " + err.Error())
+		panic(errConfigurationDecode.AppendErr(err))
 	}
 
+	return c
+}
+
+// TOML reads Configuration from a toml-compatible document file.
+// Read more about toml's implementation at:
+// https://github.com/toml-lang/toml
+//
+//
+// Accepts the absolute path of the configuration file.
+// An error will be shown to the user via panic with the error message.
+// Error may occur when the file doesn't exists or is not formatted correctly.
+//
+// Usage:
+// 1. `app := iris.New(iris.TOML("myconfig.toml"))`
+// or
+// 2. `app.Set(iris.TOML("myconfig.toml"))`
+func TOML(filename string) Configuration {
+	c := DefaultConfiguration()
+
+	// get the abs
+	// which will try to find the 'filename' from current workind dir too.
+	tomlAbsPath, err := filepath.Abs(filename)
+	if err != nil {
+		panic(errConfigurationDecode.AppendErr(err))
+	}
+
+	// read the raw contents of the file
+	data, err := ioutil.ReadFile(tomlAbsPath)
+	if err != nil {
+		panic(errConfigurationDecode.AppendErr(err))
+	}
+
+	// put the file's contents as toml to the default configuration(c)
+	if _, err := toml.Decode(string(data), &c); err != nil {
+		panic(errConfigurationDecode.AppendErr(err))
+	}
+	// Author's notes:
+	// The toml's 'usual thing' for key naming is: the_config_key instead of TheConfigKey
+	// but I am always prefer to use the specific programming language's syntax
+	// and the original configuration name fields for external configuration files
+	// so we do 'toml: "TheConfigKeySameAsTheConfigField" instead.
 	return c
 }
 
@@ -101,20 +147,20 @@ type Configuration struct {
 	//   addr only(http://) but the nginx mapper is listening to https://
 	//
 	// Default comes from iris.Default.Listen/.Serve with iris' listeners (TCP4,UNIX,TLS,LETSENCRYPT).
-	VScheme string `yaml:"VScheme"`
+	VScheme string `yaml:"VScheme" toml:"VScheme"`
 
 	// ReadTimeout is the maximum duration before timing out read of the request.
-	ReadTimeout time.Duration `yaml:"ReadTimeout"`
+	ReadTimeout time.Duration `yaml:"ReadTimeout" toml:"ReadTimeout"`
 
 	// WriteTimeout is the maximum duration before timing out write of the response.
-	WriteTimeout time.Duration `yaml:"WriteTimeout"`
+	WriteTimeout time.Duration `yaml:"WriteTimeout" toml:"WriteTimeout"`
 
 	// MaxHeaderBytes controls the maximum number of bytes the
 	// server will read parsing the request header's keys and
 	// values, including the request line. It does not limit the
 	// size of the request body.
 	// If zero, DefaultMaxHeaderBytes is used.
-	MaxHeaderBytes int `yaml:"MaxHeaderBytes"`
+	MaxHeaderBytes int `yaml:"MaxHeaderBytes" toml:"MaxHeaderBytes"`
 
 	// CheckForUpdates will try to search for newer version of Iris based on the https://github.com/kataras/iris/releases
 	// If a newer version found then the app will ask the he dev/user if want to update the 'x' version
@@ -130,7 +176,7 @@ type Configuration struct {
 	// Usage: app := iris.New(iris.Configuration{CheckForUpdates: true})
 	//
 	// Defaults to false.
-	CheckForUpdates bool `yaml:"CheckForUpdates"`
+	CheckForUpdates bool `yaml:"CheckForUpdates" toml:"CheckForUpdates"`
 
 	// DisablePathCorrection corrects and redirects the requested path to the registered path
 	// for example, if /home/ path is requested but no handler for this Route found,
@@ -138,7 +184,7 @@ type Configuration struct {
 	// (permant)redirects the client to the correct path /home
 	//
 	// Defaults to false.
-	DisablePathCorrection bool `yaml:"disablePathCorrection"`
+	DisablePathCorrection bool `yaml:"DisablePathCorrection" toml:"DisablePathCorrection"`
 
 	// EnablePathEscape when is true then its escapes the path, the named parameters (if any).
 	// Change to false it if you want something like this https://github.com/kataras/iris/issues/135 to work
@@ -151,12 +197,12 @@ type Configuration struct {
 	// projectName, _ := url.QueryUnescape(c.Param("project").
 	//
 	// Defaults to false.
-	EnablePathEscape bool `yaml:"EnablePathEscape"`
+	EnablePathEscape bool `yaml:"EnablePathEscape" toml:"EnablePathEscape"`
 
 	// FireMethodNotAllowed if it's true router checks for StatusMethodNotAllowed(405) and
 	//  fires the 405 error instead of 404
 	// Defaults to false.
-	FireMethodNotAllowed bool `yaml:"FireMethodNotAllowed"`
+	FireMethodNotAllowed bool `yaml:"FireMethodNotAllowed" toml:"FireMethodNotAllowed"`
 
 	// DisableBodyConsumptionOnUnmarshal manages the reading behavior of the context's body readers/binders.
 	// If setted to true then it
@@ -166,23 +212,23 @@ type Configuration struct {
 	// if this field setted to true then a new buffer will be created to read from and the request body.
 	// The body will not be changed and existing data before the
 	// context.UnmarshalBody/ReadJSON/ReadXML will be not consumed.
-	DisableBodyConsumptionOnUnmarshal bool `yaml:"DisableBodyConsumptionOnUnmarshal"`
+	DisableBodyConsumptionOnUnmarshal bool `yaml:"DisableBodyConsumptionOnUnmarshal" toml:"DisableBodyConsumptionOnUnmarshal"`
 
 	// TimeFormat time format for any kind of datetime parsing
 	// Defaults to  "Mon, 02 Jan 2006 15:04:05 GMT".
-	TimeFormat string `yaml:"TimeFormat"`
+	TimeFormat string `yaml:"TimeFormat" toml:"TimeFormat"`
 
 	// Charset character encoding for various rendering
 	// used for templates and the rest of the responses
 	// Defaults to "UTF-8".
-	Charset string `yaml:"Charset"`
+	Charset string `yaml:"Charset" toml:"Charset"`
 
 	// Gzip enables gzip compression on your Render actions, this includes any type of render,
 	// templates and pure/raw content
 	// If you don't want to enable it globally, you could just use the third parameter
 	// on context.Render("myfileOrResponse", structBinding{}, iris.RenderOptions{"gzip": true})
 	// Defaults to false.
-	Gzip bool `yaml:"Gzip"`
+	Gzip bool `yaml:"Gzip" toml:"Gzip"`
 
 	// Other are the custom, dynamic options, can be empty.
 	// This field used only by you to set any app's options you want
@@ -197,7 +243,7 @@ type Configuration struct {
 	// app.Adapt(routerAdaptor.New())
 	// app.Config.Other[iris.RouterNameConfigKey]
 	//
-	Other map[string]interface{} `yaml:"Other"`
+	Other map[string]interface{} `yaml:"Other" toml:"Other"`
 }
 
 // RouterNameConfigKey is the optional key that is being registered by router adaptor.
