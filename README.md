@@ -24,8 +24,58 @@ Iris is an efficient and well-designed toolbox with robust set of features.<br/>
 <b>perfect high-performance web applications</b> <br/>with unlimited potentials and <b>portability</b>.
 <br/>
 
+If you're coming from <a href="https://nodejs.org/en/">Node.js</a> world, this is the <a href="https://github.com/expressjs/express">expressjs</a>  alternative for the <a href="https://golang.org">Go Programming Language.</a>
+<br/>
+
+<br/>
+<img src="https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png" alt="Benchmark Wizzard July 21, 2016- Processing Time Horizontal Graph. These third-party source benchmark results are for v5. New (go 1.8) benchmarks will be published on the next techempower's fortune!" />
+
+
 </p>
 
+Feature Overview
+-----------
+
+- Focus on high performance
+- Automatically install and serve certificates from https://letsencrypt.org
+- Robust routing and middleware ecosystem
+- Build RESTful APIs
+- Choose your favorite routes' path syntax between [httprouter](https://github.com/kataras/iris/blob/v6/adaptors/httprouter/_example/main.go) and [gorillamux](https://github.com/kataras/iris/blob/v6/adaptors/gorillamux/_example/main.go)
+- Request-Scoped Transactions
+- Group API's and subdomains with wildcard support
+- Body binding for JSON, XML, Forms, can be extended to use your own custom binders
+- More than 50 handy functions to send HTTP responses
+- View system: supporting more than 6+ template engines, with prerenders. You can still use your favorite
+- Define virtual hosts and (wildcard) subdomains with path level routing
+- Graceful shutdown
+- Limit request body
+- Localization i18N
+- Serve static files
+- Cache
+- Log requests
+- Customizable format and output for the logger
+- Customizable HTTP errors
+- Compression (Gzip)
+- Authentication
+ - OAuth, OAuth2 supporting 27+ popular websites
+ - JWT
+ - Basic Authentication
+ - HTTP Sessions
+- Add / Remove trailing slash from the URL with option to redirect
+- Redirect requests
+ - HTTP to HTTPS
+ - HTTP to HTTPS WWW
+ - HTTP to HTTPS non WWW
+ - Non WWW to WWW
+ - WWW to non WWW
+- Highly scalable rich content render (Markdown, JSON, JSONP, XML...)
+- Websocket-only API similar to socket.io  
+- Hot Reload on source code changes
+- Typescript integration + Web IDE
+- Checks for updates at startup
+- Highly customizable
+- Feels like you used iris forever, thanks to its Fluent API
+- And many others...
 
 Installation
 -----------

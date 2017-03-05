@@ -24,7 +24,13 @@ to adapt the new changes to your application, it contains an overview of the new
 - Template engines (two lines to add, same features as before, except their easier configuration)
 - Basic middleware, that have been written by me, are transfared to the main repository[/middleware](https://github.com/kataras/iris/tree/v6/middleware) with a lot of improvements to the `recover middleware` (see the next)
 - `func(http.ResponseWriter, r *http.Request, next http.HandlerFunc)` signature is fully compatible using `iris.ToHandler` helper wrapper func, without any need of custom boilerplate code. So all net/http middleware out there are supported, no need to re-invert the world here, search to the internet and you'll find a suitable to your case.
-- Developers can use a `yaml` files for the configuration using the `iris.YAML` function: `app := iris.New(iris.YAML("myconfiguration.yaml"))`
+
+- Load Configuration from an external file, yaml and toml:
+
+	- [yaml-based](http://www.yaml.org/) configuration file using the `iris.YAML` function: `app := iris.New(iris.YAML("myconfiguration.yaml"))`
+	- [toml-based](https://github.com/toml-lang/toml) configuration file using the `iris.TOML` function: `app := iris.New(iris.TOML("myconfiguration.toml"))`
+
+
 - Add `.Regex` middleware which does path validation using the `regexp` package, i.e `.Regex("param", "[0-9]+$")`. Useful for routers that don't support regex route path validation out-of-the-box.
 
 - Websocket additions: `c.Context() *iris.Context`, `ws.GetConnectionsByRoom("room name") []websocket.Connection`, `c.OnLeave(func(roomName string){})`, `c.Values().Set(key,value)/.Get(key).Reset()` (where ws:websocket.Server insance, where c:websocket.Connection instance)
@@ -45,8 +51,8 @@ Fixes:
 Changes:
 
 - `context.TemplateString` replaced with `app.Render(w io.Writer, name string, bind interface{}, options ...map[string]interface{}) error)` which gives you more functionality.
+
 ```go
-```
 import "bytes"
 // ....
 app := iris.New()
