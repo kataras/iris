@@ -1,6 +1,10 @@
-# History
+# Changelog
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u gopkg.in/kataras/iris.v6`.
+
+## Looking for further support?
+
+	http://support.iris-go.com
 
 
 ## 6.1.4 -> 6.2.0 (√Νεxτ)
@@ -40,7 +44,29 @@ Fixes:
 
 Changes:
 
+- `context.TemplateString` replaced with `app.Render(w io.Writer, name string, bind interface{}, options ...map[string]interface{}) error)` which gives you more functionality.
+```go
+```
+import "bytes"
+// ....
+app := iris.New()
+// ....
 
+buff := &bytes.Buffer{}
+app.Render(buff, "my_template.html", nil)
+// buff.String() is the template parser's result, use that string to send a rich-text e-mail based on a template.
+```
+
+```go
+// you can take the app(*Framework instance) from a *Context too:
+
+app.Get("/send_mail", func(ctx *iris.Context){
+	buff := &bytes.Buffer{}
+	ctx.Framework().Render()(buff, "my_template.html", nil)
+	// ...
+})
+
+```
 - `.Close() error` replaced with gracefully `.Shutdown(context.Context) error`
 - Remove all the package-level functions and variables for a default `*iris.Framework, iris.Default`
 - Remove `.API`, use `iris.Handle/.HandleFunc/.Get/.Post/.Put/.Delete/.Trace/.Options/.Use/.UseFunc/.UseGlobal/.Party/` instead
