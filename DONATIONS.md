@@ -1,54 +1,52 @@
-
-I spend all my time in the construction of Iris, therefore I have no income value.
-
-Feel free to send **any** amount through paypal
-
-[![](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=kataras2006%40hotmail%2ecom&lc=GR&item_name=Iris%20web%20framework&item_number=iriswebframeworkdonationid2016&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted)
-
-> Please check your e-mail after your donation
-
-Benefits:
-
-- Your github username, after your approval, is visible here.
-- Access to the 'donors' [private chat room](https://kataras.rocket.chat/group/donors), real-time assistance by me.
-- Each donate gives lifetime to the Iris web framework. The author works full-time on this project, no time for any part-time job.
-
-**Thank you**!
-
-### More about your donations
+The main purpose of donations to open source is to say "thank you" to the developer rather than actually advancing the project.
 
 
-I'm  grateful for all the generous donations. Iris is fully funded by these donations.
+Open source projects don’t need the money like those charities do—and so it’s usually phrased like: *Buy the developer a cup of coffee*.
 
-#### Donations
 
-- ANONYMOUS donated 50 EUR at May 11
+<!--It's true that I am spending all my available time for Iris and its related projects, therefore I have no income value.
+
+However, I am not asking from people to change the system. I know that the majority of us(devs) don't really care how authors of projects like Iris survive. I totally understand that.
+
+If somebody out there can
+help developers like me to worry less about daily life's dilemmas it would be easier for them to make the particular project(s) even better.
+There are no limits to the Iris' potentials.
+
+
+I am a realistic person. If things won't change for my daily life I will be forced to give Iris' managment to somebody else(that community could trust).-->
+
+# Buy me a cup of coffee?
+
+Iris is free and open source but developing it has taken thousands of hours of my time and a large part of my sanity. If you feel this web framework useful to you, it would go a great way to ensuring that I can afford to take the time to continue to develop it.
+
+Thanks for your gratitude and finance help ♡
+
+[![](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/donate.png)](https://www.paypal.me/kataras/25eur)
+
+
+Some of the benefits are listed here:
+
+- Your github username, after your approval, is visible here as a "premium" community member.
+- Access to the 'donors' [private chat room](https://kataras.rocket.chat/group/donors) gives you real-time assistance by Iris' Author.
+
+## More about your donations
+
+*ANONYMOUS*: People who donate but don't want to be shown here. *ANONYMOUS* are listed as one group instead of an individual entry, in order to protect their exact date of their donation.
+
+
+- *ANYNOMOUS* donated 336 EUR
 
 - [Juan Sebastián Suárez Valencia](https://github.com/Juanses) donated 20 EUR at September 11
 
 - [Bob Lee](https://github.com/li3p) donated 20 EUR at September 16
 
-- [Celso Luiz](https://github.com/celsosz) donated 50 EUR at September 29
-
-- ANONYMOUS donated 6 EUR at October 1
+- [Celso Luiz](https://github.com/celsosz) donated 50 EUR at September 29 
 
 - [Ankur Srivastava](https://github.com/ansrivas) donated 20 EUR at October 2
 
-- ANONYMOUS donated 100 EUR at October 18
-
-- ANONYMOUS donated 20 EUR at October 19
-
 - [Damon Zhao](https://github.com/se77en) donated 20 EUR at October 21
 
-- ANONYMOUS donated 50 EUR at October 21
-
 - [exponity - consulting & digital transformation](https://github.com/exponity) donated 30 EUR at November 4
-
-- ANONYMOUS donated 50 EUR at December 7
-
-- ANONYMOUS donated 20 EUR at December 9
-
-- ANONYMOUS donated 5 EUR at December 13
 
 - [Thomas Fritz](https://github.com/thomasfr) donated 25 EUR at Jenuary 8 of 2017
 
@@ -58,17 +56,10 @@ I'm  grateful for all the generous donations. Iris is fully funded by these dona
 
 - [Lex Tang](https://github.com/lexrus) donated 20 EUR at February 22 of 2017
 
-- ANONYMOUS donated 35 EUR at February 24 of 2017
+## Sponsors 
 
+Want to add your company's logo here?
 
+Please contact me via email: kataras2006@hotmail.com
 
-> The name or/and github username link added after donator's approvement via e-mail.
-
-#### Report, so far
-
-- 13 EUR for the domain, [iris-go.com](https://iris-go.com)
-- **Thanks** to all of **You**, 424 EUR donated to [Holy Metropolis of Ioannina](http://www.imioanninon.gr/main/) for clothes, foods and medications for our fellow human beings.
-- 211 EUR 1year(pre-ordered) hosting for http://support.iris-go.com.
-
-
-**Available**: VAT(50) + VAT(20) + VAT(20) + VAT(50) + VAT(6) + VAT(20) + VAT(100) + VAT(20) + VAT(20) + VAT(50) + VAT(30) + VAT(50) + VAT(20) + VAT(5) + VAT(25) + VAT(20) + VAT(20) + VAT(20) + VAT(35) - 424 - 13  = 47,45 + 18,97 + 18,61 + 47,05 + 5,34 + 18,97 + 98,04 + 18,97 + 18,61 + 47,95 + 28,24 + 47,05 + 18,97 + 4,59 + 23,80 + 18,77 + 18,97 + 18,61 + 33,76 - 424 - 211 - 13 = **-96,17 EUR**
+Thank you!
