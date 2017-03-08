@@ -1,41 +1,36 @@
 <p align="center">
- <a href="https://godoc.org/gopkg.in/kataras/iris.v6">
-	<img width="500" src="https://raw.githubusercontent.com/kataras/iris/master/logo.jpg"
+ <a href="http://support.iris-go.com">
+	<img width="570" src="https://raw.githubusercontent.com/kataras/iris/v6/logo.jpg"
 	alt="Logo created by an Iris community member, https://github.com/OneebMalik"
-  title="Logo created by an Iris community member, https://github.com/OneebMalik">
+  title="Navigate to http://support.iris-go.com">
  </a>
-
 <br/>
+
 
 <a href="https://travis-ci.org/kataras/iris"><img src="https://api.travis-ci.org/kataras/iris.svg?branch=v6&style=flat-square" alt="Build Status"></a>
-
 <a href="http://goreportcard.com/report/kataras/iris"><img src="https://img.shields.io/badge/report%20card%20-a%2B-F44336.svg?style=flat-square" alt="http://goreportcard.com/report/kataras/iris"></a>
-
 <a href="http://support.iris-go.com"><img src="https://img.shields.io/badge/support-page-ec2eb4.svg?style=flat-square" alt="Iris support forum"></a>
-
 <a href="https://golang.org"><img src="https://img.shields.io/badge/powered_by-go-6362c2.svg?style=flat-square" alt="Built with GoLang"></a>
-
-
 <a href="https://www.paypal.me/kataras/25eur"><img src="https://img.shields.io/badge/Buy%20me%20a%20cup%20of%20-%20coffee%3F-F4A460.svg?logo=data:image%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAwIDEwMDAiPjxwYXRoIGZpbGw9InJnYigyMjAsMjIwLDIyMCkiIGQ9Ik04ODYuNiwzMDUuM2MtNDUuNywyMDMuMS0xODcsMzEwLjMtNDA5LjYsMzEwLjNoLTc0LjFsLTUxLjUsMzI2LjloLTYybC0zLjIsMjEuMWMtMi4xLDE0LDguNiwyNi40LDIyLjYsMjYuNGgxNTguNWMxOC44LDAsMzQuNy0xMy42LDM3LjctMzIuMmwxLjUtOGwyOS45LTE4OS4zbDEuOS0xMC4zYzIuOS0xOC42LDE4LjktMzIuMiwzNy43LTMyLjJoMjMuNWMxNTMuNSwwLDI3My43LTYyLjQsMzA4LjktMjQyLjdDOTIxLjYsNDA2LjgsOTE2LjcsMzQ4LjYsODg2LjYsMzA1LjN6Ii8%2BPHBhdGggZmlsbD0icmdiKDIyMCwyMjAsMjIwKSIgZD0iTTc5MS45LDgzLjlDNzQ2LjUsMzIuMiw2NjQuNCwxMCw1NTkuNSwxMEgyNTVjLTIxLjQsMC0zOS44LDE1LjUtNDMuMSwzNi44TDg1LDg1MWMtMi41LDE1LjksOS44LDMwLjIsMjUuOCwzMC4ySDI5OWw0Ny4zLTI5OS42bC0xLjUsOS40YzMuMi0yMS4zLDIxLjQtMzYuOCw0Mi45LTM2LjhINDc3YzE3NS41LDAsMzEzLTcxLjIsMzUzLjItMjc3LjVjMS4yLTYuMSwyLjMtMTIuMSwzLjEtMTcuOEM4NDUuMSwxODIuOCw4MzMuMiwxMzAuOCw3OTEuOSw4My45TDc5MS45LDgzLjl6Ii8%2BPC9zdmc%2B" alt="Buy me a cup of coffee"></a>
 
-<br/>
+<br/><br/>
 
 Iris is an efficient and well-designed toolbox with robust set of features.<br/>Write <b>your own</b>
 <b>perfect high-performance web applications</b> <br/>with unlimited potentials and <b>portability</b>.
+<br/><br>
+
+If you're coming from <a href="https://nodejs.org/en/">Node.js</a> world, this is the <a href="https://github.com/expressjs/express">expressjs</a> equivalent for the <a href="https://golang.org">Go Programming Language.</a>
 <br/>
 
-If you're coming from <a href="https://nodejs.org/en/">Node.js</a> world, this is the <a href="https://github.com/expressjs/express">expressjs</a>  alternative for the <a href="https://golang.org">Go Programming Language.</a>
 <br/>
-
-<br/>
-<img src="https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png" alt="Benchmark Wizzard July 21, 2016- Processing Time Horizontal Graph. These third-party source benchmark results are for v5. New (go 1.8) benchmarks will be published on the next techempower's fortune!" />
+<img src="https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png" title="This benchmark measures results from 'real-world' instead of 'hello-world' application source code. | Last Update At: July 21, 2016. | Shows: Processing Time Horizontal Graph. | Who did Transparency:  Third-party source | Iris version: these benchmark results are totally valid for v5. | New (go 1.8 + iris.v6) benchmarks will be published on the next techempower's fortune!" />
 
 
 </p>
 
 Heroes [♡](https://github.com/kataras/iris#support)
 -----------
- 
+
 [Juan Sebastián Suárez Valencia](https://github.com/Juanses) donated 20 EUR at September 11 of 2016
 
 [Bob Lee](https://github.com/li3p) donated 20 EUR at September 16 of 2016
@@ -94,7 +89,7 @@ Feature Overview
  - Non WWW to WWW
  - WWW to non WWW
 - Highly scalable rich content render (Markdown, JSON, JSONP, XML...)
-- Websocket-only API similar to socket.io  
+- Websocket-only API similar to socket.io
 - Hot Reload on source code changes
 - Typescript integration + Web IDE
 - Checks for updates at startup
@@ -305,7 +300,7 @@ Iris is fully vendored. That means it is independent of any API changes in the u
 The size of the executable file is a critical part of the Application Deployment Process.
 
 Two very simple identical applications, the first was written with `iris` and the second with a simple golang router.
- 
+
  - _iris_ had `8.505 KB` overall file size
  - _gin_ had `9.029 KB` overall file size
  - _net/http_ had produced an executable file with `5.380 KB` size.
@@ -348,10 +343,10 @@ Click the below animation to see by your self what people, like you, say about I
 New web developers are so enthusiastic about the idea of `serverless` and `AWS`. Most of the experienced developers we already know that we shouldn't use these things for our critical parts of our application.
 
 
-**`Serverless and AWS` Are Wonderful—Until They Go Wrong.**  There was a flash-point (at 28 February of 2017) where the 'internet was offline' and most of the sites, including isitdownrightnow.com,  were down or operated very slow! Why? Because of `serverless` and `AmazonS3`. 
+**`Serverless and AWS` Are Wonderful—Until They Go Wrong.**  There was a flash-point (at 28 February of 2017) where the 'internet was offline' and most of the sites, including isitdownrightnow.com,  were down or operated very slow! Why? Because of `serverless` and `AmazonS3`.
 Please think twice before moving your code into `serverless`, **instead, use web frameworks that are created for servers that you control**, i.e Iris.
 
-Proof of concept: 
+Proof of concept:
 
 - [Washington Post](https://www.washingtonpost.com/news/the-switch/wp/2017/02/28/why-a-whole-slew-of-websites-are-suddenly-down-or-working-slowly)
 - [CNN](http://money.cnn.com/2017/02/28/technology/amazon-web-services-outages/index.html)
@@ -404,7 +399,7 @@ The Iris philosophy is to provide robust tooling for HTTP, making it a great sol
 Iris does not force you to use any specific ORM or template engine. Iris is routerless which means you can adapt any router you like, [httprouter](https://github.com/kataras/iris/blob/v6/adaptors/httprouter/_example/main.go) is the fastest, [gorillamux](https://github.com/kataras/iris/blob/v6/adaptors/gorillamux/_example/main.go) has more features. With support for the most used template engines (5), you can quickly craft the perfect application.
 
 
-People 
+People
 ------------
 
 The author of Iris is [@kataras](https://github.com/kataras).
@@ -449,7 +444,7 @@ Some of the benefits are listed here:
 > *ANONYMOUS*: People who donate but don't want to be shown here.
 *ANONYMOUS* are listed as one group instead of an individual entry, in order to protect their exact date of their donation.
 
-> The names, shown at the [supporters](heroes) list, are sorted by **date** and **NOT by the amount** of the donation.
+> The names, shown at the [supporters](https://github.com/kataras/iris#heroes-) list, are sorted by **date** and **NOT by the amount** of the donation.
 
 ### More options!
 
