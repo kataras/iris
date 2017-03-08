@@ -16,7 +16,7 @@
 <a href="https://golang.org"><img src="https://img.shields.io/badge/powered_by-go-6362c2.svg?style=flat-square" alt="Built with GoLang"></a>
 
 
-<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=kataras2006%40hotmail%2ecom&lc=GR&item_name=Iris%20web%20framework&item_number=iriswebframeworkdonationid2016&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted"><img src="https://img.shields.io/badge/open-%20source-thisismycolor.svg?logo=data:image%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAwIDEwMDAiPjxwYXRoIGZpbGw9InJnYigyMjAsMjIwLDIyMCkiIGQ9Ik04ODYuNiwzMDUuM2MtNDUuNywyMDMuMS0xODcsMzEwLjMtNDA5LjYsMzEwLjNoLTc0LjFsLTUxLjUsMzI2LjloLTYybC0zLjIsMjEuMWMtMi4xLDE0LDguNiwyNi40LDIyLjYsMjYuNGgxNTguNWMxOC44LDAsMzQuNy0xMy42LDM3LjctMzIuMmwxLjUtOGwyOS45LTE4OS4zbDEuOS0xMC4zYzIuOS0xOC42LDE4LjktMzIuMiwzNy43LTMyLjJoMjMuNWMxNTMuNSwwLDI3My43LTYyLjQsMzA4LjktMjQyLjdDOTIxLjYsNDA2LjgsOTE2LjcsMzQ4LjYsODg2LjYsMzA1LjN6Ii8%2BPHBhdGggZmlsbD0icmdiKDIyMCwyMjAsMjIwKSIgZD0iTTc5MS45LDgzLjlDNzQ2LjUsMzIuMiw2NjQuNCwxMCw1NTkuNSwxMEgyNTVjLTIxLjQsMC0zOS44LDE1LjUtNDMuMSwzNi44TDg1LDg1MWMtMi41LDE1LjksOS44LDMwLjIsMjUuOCwzMC4ySDI5OWw0Ny4zLTI5OS42bC0xLjUsOS40YzMuMi0yMS4zLDIxLjQtMzYuOCw0Mi45LTM2LjhINDc3YzE3NS41LDAsMzEzLTcxLjIsMzUzLjItMjc3LjVjMS4yLTYuMSwyLjMtMTIuMSwzLjEtMTcuOEM4NDUuMSwxODIuOCw4MzMuMiwxMzAuOCw3OTEuOSw4My45TDc5MS45LDgzLjl6Ii8%2BPC9zdmc%2B" alt="Donation"></a>
+<a href="https://www.paypal.me/kataras/25eur"><img src="https://img.shields.io/badge/Buy%20me%20a%20cup%20of%20-%20coffee%3F-F4A460.svg?logo=data:image%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAwIDEwMDAiPjxwYXRoIGZpbGw9InJnYigyMjAsMjIwLDIyMCkiIGQ9Ik04ODYuNiwzMDUuM2MtNDUuNywyMDMuMS0xODcsMzEwLjMtNDA5LjYsMzEwLjNoLTc0LjFsLTUxLjUsMzI2LjloLTYybC0zLjIsMjEuMWMtMi4xLDE0LDguNiwyNi40LDIyLjYsMjYuNGgxNTguNWMxOC44LDAsMzQuNy0xMy42LDM3LjctMzIuMmwxLjUtOGwyOS45LTE4OS4zbDEuOS0xMC4zYzIuOS0xOC42LDE4LjktMzIuMiwzNy43LTMyLjJoMjMuNWMxNTMuNSwwLDI3My43LTYyLjQsMzA4LjktMjQyLjdDOTIxLjYsNDA2LjgsOTE2LjcsMzQ4LjYsODg2LjYsMzA1LjN6Ii8%2BPHBhdGggZmlsbD0icmdiKDIyMCwyMjAsMjIwKSIgZD0iTTc5MS45LDgzLjlDNzQ2LjUsMzIuMiw2NjQuNCwxMCw1NTkuNSwxMEgyNTVjLTIxLjQsMC0zOS44LDE1LjUtNDMuMSwzNi44TDg1LDg1MWMtMi41LDE1LjksOS44LDMwLjIsMjUuOCwzMC4ySDI5OWw0Ny4zLTI5OS42bC0xLjUsOS40YzMuMi0yMS4zLDIxLjQtMzYuOCw0Mi45LTM2LjhINDc3YzE3NS41LDAsMzEzLTcxLjIsMzUzLjItMjc3LjVjMS4yLTYuMSwyLjMtMTIuMSwzLjEtMTcuOEM4NDUuMSwxODIuOCw4MzMuMiwxMzAuOCw3OTEuOSw4My45TDc5MS45LDgzLjl6Ii8%2BPC9zdmc%2B" alt="Buy me a cup of coffee"></a>
 
 <br/>
 
@@ -32,6 +32,31 @@ If you're coming from <a href="https://nodejs.org/en/">Node.js</a> world, this i
 
 
 </p>
+
+Heroes [♡](https://github.com/kataras/iris#support)
+-----------
+ 
+[Juan Sebastián Suárez Valencia](https://github.com/Juanses) donated 20 EUR at September 11 of 2016
+
+[Bob Lee](https://github.com/li3p) donated 20 EUR at September 16 of 2016
+
+[Celso Luiz](https://github.com/celsosz) donated 50 EUR at September 29 of 2016
+
+[Ankur Srivastava](https://github.com/ansrivas) donated 20 EUR at October 2 of 2016
+
+[Damon Zhao](https://github.com/se77en) donated 20 EUR at October 21 of 2016
+
+[exponity - consulting & digital transformation](https://github.com/exponity) donated 30 EUR at November 4 of 2016
+
+[Thomas Fritz](https://github.com/thomasfr) donated 25 EUR at Jenuary 8 of 2017
+
+[Thanos V.](http://mykonosbiennale.com/) donated 20 EUR at Jenuary 16 of 2017
+
+[George Opritescu](https://github.com/International) donated 20 EUR at February 7 of 2017
+
+[Lex Tang](https://github.com/lexrus) donated 20 EUR at February 22 of 2017
+
+ANYNOMOUS[*](https://github.com/kataras/iris#support) donated 336 EUR
 
 Feature Overview
 -----------
@@ -257,7 +282,6 @@ Here is a small list of Iris compatible middleware, I'm sure you can find more! 
 | [digits](https://github.com/bamarni/digits) | [Bilal Amarni](https://github.com/bamarni) | Middleware that handles [Twitter Digits](https://get.digits.com/) authentication |
 
 
-
 FAQ
 -----------
 
@@ -380,32 +404,70 @@ The Iris philosophy is to provide robust tooling for HTTP, making it a great sol
 Iris does not force you to use any specific ORM or template engine. Iris is routerless which means you can adapt any router you like, [httprouter](https://github.com/kataras/iris/blob/v6/adaptors/httprouter/_example/main.go) is the fastest, [gorillamux](https://github.com/kataras/iris/blob/v6/adaptors/gorillamux/_example/main.go) has more features. With support for the most used template engines (5), you can quickly craft the perfect application.
 
 
-People & Support
+People 
 ------------
 
 The author of Iris is [@kataras](https://github.com/kataras).
 
-The Success of Iris belongs to YOU with your bug reports and feature requests that made this Framework so Unique.
+However the real Success of Iris belongs to you with your bug reports and feature requests that made this Framework so Unique.
 
-#### Who is kataras?
 
-Hi, my name is Gerasimos Maropoulos and I'm the author of this project, let me put a few words about me.
+Support
+------------
 
-I started to design Iris the night of the 13 March 2016, some weeks later, iris started to became famous and I have to fix many issues and implement new features, but I didn't have time to work on Iris because I had a part time job and the (software engineering) colleague which I studied.
+<!--It's true that I am spending all my available time for Iris and its related projects, therefore I have no income value.
 
-I wanted to make iris' users proud of the framework they're using, so I decided to interrupt my studies and colleague, two days later I left from my part time job also.
+However, I am not asking from people to change the system. I know that the majority of us(devs) don't really care how authors of projects like Iris survive. I totally understand that.
 
-Today I spend all my days and nights coding for Iris, and I'm happy about this, therefore I have zero incoming value.
+If somebody out there can
+help developers like me to worry less about daily life's dilemmas it would be easier for them to make the particular project(s) even better.
+There are no limits to the Iris' potentials.
+
+
+I am a realistic person. If things won't change for my daily life I will be forced to give Iris' managment to somebody else(that community could trust).-->
+
+The main purpose of donations to open source is to say "thank you" to the developer rather than actually advancing the project.
+
+Open source projects don’t need the money like those charities do—and so it’s usually phrased like: *Buy the developer a cup of coffee*.
+
+
+### Buy me a cup of coffee?
+
+Iris is free and open source but developing it has taken thousands of hours of my time and a large part of my sanity. If you feel this web framework useful to you, it would go a great way to ensuring that I can afford to take the time to continue to develop it.
+
+Thanks for your gratitude and finance help ♡
+
+[![](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/donate.png)](https://www.paypal.me/kataras/25eur)
+
+
+Some of the benefits are listed here:
+
+- Your github username, after your approval, is visible at the top of the README page.
+- Access to the 'donors' [private chat room](https://kataras.rocket.chat/group/donors) gives you real-time assistance by Iris' Author.
+
+
+> *ANONYMOUS*: People who donate but don't want to be shown here.
+*ANONYMOUS* are listed as one group instead of an individual entry, in order to protect their exact date of their donation.
+
+> The names, shown at the [supporters](heroes) list, are sorted by **date** and **NOT by the amount** of the donation.
+
+### More options!
 
 - Star the project, will help you to follow the upcoming features.
-- [Donate](https://github.com/kataras/iris/blob/master/DONATIONS.md), if you can afford any cost.
 - Write an article about Iris or even post a Tweet.
-- **Do Pull Requests on the [iris-contrib](https://github.com/iris-contrib)** organisation's repositories, like [book](https://github.com/iris-contrib/gitbook), [examples](https://github.com/iris-contrib/examples) and to [gopherbook](http://gopherbook.iris-go.com/).
-
-If you are interested in contributing to the Iris project, please see the document [CONTRIBUTING](https://github.com/kataras/iris/blob/master/.github/CONTRIBUTING.md).
+- If you are interested in contributing to the Iris project, please see the document [CONTRIBUTING](https://github.com/kataras/iris/blob/master/.github/CONTRIBUTING.md).
 
 
-Contact
+### Become An Iris Sponsor
+
+Want to add your company's logo to our [website](http://iris-go.com)?
+
+Please contact me via email: kataras2006@hotmail.com
+
+Thank you!
+
+
+Socialize
 ------------
 
 Besides the fact that we have a [community chat][Chat] for questions or reports and ideas, [stackoverflow](http://stackoverflow.com/) section for generic go+iris questions and the [iris support](http://support.iris-go.com) for bug reports and feature requests, you can also contact with me, as a person who is always open to help you:
@@ -438,9 +500,6 @@ TODO
 
 - [ ] Refactor the [Examples](https://github.com/iris-contrib/examples) to be align with the latest version
 - [ ] Upgrade [GitBook](https://docs.iris-go.com) for the latest release
-- [x] Add some missing tests from the previous version and find a way to share these end-to-end tests accross the adaptors and the root
-- [ ] Replace http://iris-go.com content to something more fancy, as suggested [here](https://github.com/kataras/iris/issues/613)
-- [x] Make a table list of the most famous middleware(s) with their descriptions, in order to help new Gophers find what they're looking for
 
 
 Iris is a Community-Driven project waiting for your [feature requests](http://support.iris-go.com/t/feature-request)!
