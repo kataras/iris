@@ -732,9 +732,21 @@ func (ctx *Context) Redirect(urlToRedirect string, statusHeader ...int) {
 		httpStatus = statusHeader[0]
 	}
 
-	if urlToRedirect == ctx.Path() {
-		ctx.Log(DevMode, "trying to redirect to itself. FROM: %s TO: %s", ctx.Path(), urlToRedirect)
+	// we don't know the Method of the url to redirect,
+	// sure we can find it by reverse routing as we already implemented
+	// but it will take too much time for a simple redirect, it doesn't worth it.
+	// So we are checking the CURRENT Method for GET, HEAD,  CONNECT and TRACE.
+	// the
+	// Fixes: http: //support.iris-go.com/d/21-wrong-warning-message-while-redirecting
+	shouldCheckForCycle := urlToRedirect == ctx.Path() && ctx.Method() == MethodGet
+	// from POST to GET on the same path will give a warning message but developers don't use the iris.DevLogger
+	// for production, so I assume it's OK to let it logs it
+	// (it can solve issues when developer redirects to the same handler over and over again)
+	// Note: it doesn't stops the redirect, the developer gets what he/she expected.
+	if shouldCheckForCycle {
+		ctx.Log(DevMode, "warning: redirect from: '%s' to: '%s',\ncurrent method: '%s'", ctx.Path(), urlToRedirect, ctx.Method())
 	}
+
 	http.Redirect(ctx.ResponseWriter, ctx.Request, urlToRedirect, httpStatus)
 }
 
