@@ -31,35 +31,32 @@ Some of the benefits are listed here:
 
 ## More about your donations
 
-*ANONYMOUS*: People who donate but don't want to be shown here. *ANONYMOUS* are listed as one group instead of an individual entry, in order to protect their exact date of their donation.
 
 
-- *ANYNOMOUS* donated 336 EUR
+[Juan Sebastián Suárez Valencia](https://github.com/Juanses) donated 20 EUR at September 11
 
-- [Juan Sebastián Suárez Valencia](https://github.com/Juanses) donated 20 EUR at September 11
+[Bob Lee](https://github.com/li3p) donated 20 EUR at September 16
 
-- [Bob Lee](https://github.com/li3p) donated 20 EUR at September 16
+[Celso Luiz](https://github.com/celsosz) donated 50 EUR at September 29 
 
-- [Celso Luiz](https://github.com/celsosz) donated 50 EUR at September 29 
+[Ankur Srivastava](https://github.com/ansrivas) donated 20 EUR at October 2
 
-- [Ankur Srivastava](https://github.com/ansrivas) donated 20 EUR at October 2
+[Damon Zhao](https://github.com/se77en) donated 20 EUR at October 21
 
-- [Damon Zhao](https://github.com/se77en) donated 20 EUR at October 21
+[exponity - consulting & digital transformation](https://github.com/exponity) donated 30 EUR at November 4
 
-- [exponity - consulting & digital transformation](https://github.com/exponity) donated 30 EUR at November 4
+[Thomas Fritz](https://github.com/thomasfr) donated 25 EUR at Jenuary 8 of 2017
 
-- [Thomas Fritz](https://github.com/thomasfr) donated 25 EUR at Jenuary 8 of 2017
+[Thanos V.](http://mykonosbiennale.com/) donated 20 EUR at Jenuary 16 of 2017
 
-- [Thanos V.](http://mykonosbiennale.com/) donated 20 EUR at Jenuary 16 of 2017
+[George Opritescu](https://github.com/International) donated 20 EUR at February 7 of 2017
 
-- [George Opritescu](https://github.com/International) donated 20 EUR at February 7 of 2017
+[Lex Tang](https://github.com/lexrus) donated 20 EUR at February 22 of 2017
 
-- [Lex Tang](https://github.com/lexrus) donated 20 EUR at February 22 of 2017
+*ANYNOMOUS* donated 336 EUR
 
-## Sponsors 
 
-Want to add your company's logo here?
+> The names, shown at the [supporters](https://github.com/kataras/iris#heroes-) list, are sorted by **date** and **NOT by the amount** of the donation.
 
-Please contact me via email: kataras2006@hotmail.com
 
-Thank you!
+> *ANONYMOUS*: People who donate but don't want to be shown here. *ANONYMOUS* are listed as one group instead of an individual entry, in order to protect their exact date of their donation.
