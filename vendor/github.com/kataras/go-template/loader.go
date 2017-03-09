@@ -47,13 +47,7 @@ func (t *Loader) Directory(dir string, fileExtension string) *BinaryLoader {
 		fileExtension = "." + fileExtension
 	}
 
-	absDir, err := filepath.Abs(dir)
-	// panic here of course.
-	if err != nil {
-		panic("couldn't find the dir: " + dir +
-			" as absolute neither from current working directory: " + err.Error())
-	}
-	t.Dir = absDir
+	t.Dir = dir
 
 	t.Extension = fileExtension
 
@@ -86,11 +80,22 @@ var errMissingDirectoryOrAssets = errors.New("missing Directory or Assets by bin
 
 // LoadEngine receives a template Engine and calls its LoadAssets or the LoadDirectory with the loader's locations
 func (t *Loader) LoadEngine(e Engine) error {
-	if t.IsBinary() {
-		return e.LoadAssets(t.Dir, t.Extension, t.AssetFn, t.NamesFn)
-	} else if t.Dir != "" {
-		return e.LoadDirectory(t.Dir, t.Extension)
+	if t.Dir == "" {
+		return errMissingDirectoryOrAssets
 	}
-	return errMissingDirectoryOrAssets
 
+	if t.IsBinary() {
+		// don't try to put abs path here
+		// fixes: http://support.iris-go.com/d/22-template-binary-problem-in-v6
+		return e.LoadAssets(t.Dir, t.Extension, t.AssetFn, t.NamesFn)
+	}
+
+	// fixes when user tries to execute the binary from a temp location while the templates are relatively located
+	absDir, err := filepath.Abs(t.Dir)
+	// panic here of course.
+	if err != nil {
+		panic("couldn't find the dir in the relative dir: '" + t.Dir +
+			"' neither as absolute: '" + absDir + "'\n" + err.Error())
+	}
+	return e.LoadDirectory(absDir, t.Extension)
 }

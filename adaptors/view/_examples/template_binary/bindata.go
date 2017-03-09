@@ -3,6 +3,7 @@
 // templates/hi.html
 // DO NOT EDIT!
 
+// NOTE: execute your own look main.go
 package main
 
 import (
@@ -83,7 +84,7 @@ func templatesHiHtml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/hi.html", size: 106, mode: os.FileMode(438), modTime: time.Unix(1468907204, 0)}
+	info := bindataFileInfo{name: "templates/hi.html", size: 106, mode: os.FileMode(438), modTime: time.Unix(1487682349, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -184,8 +185,8 @@ type bintree struct {
 }
 
 var _bintree = &bintree{nil, map[string]*bintree{
-	"templates": {nil, map[string]*bintree{
-		"hi.html": {templatesHiHtml, map[string]*bintree{}},
+	"templates": &bintree{nil, map[string]*bintree{
+		"hi.html": &bintree{templatesHiHtml, map[string]*bintree{}},
 	}},
 }}
 
