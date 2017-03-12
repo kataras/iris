@@ -18,15 +18,14 @@ func acquireResponseRecorder(underline *responseWriter) *ResponseRecorder {
 	w := rrpool.Get().(*ResponseRecorder)
 	w.responseWriter = underline
 	w.headers = underline.Header()
+	w.ResetBody()
 	return w
 }
 
 func releaseResponseRecorder(w *ResponseRecorder) {
-	w.ResetBody()
 	if w.responseWriter != nil {
 		releaseResponseWriter(w.responseWriter)
 	}
-
 	rrpool.Put(w)
 }
 
@@ -124,9 +123,18 @@ func (w *ResponseRecorder) ResetHeaders() {
 	w.headers = w.responseWriter.Header()
 }
 
+// ReseAllHeaders clears all headers, both temp and underline's response writer
+func (w *ResponseRecorder) ReseAllHeaders() {
+	w.headers = http.Header{}
+	h := w.responseWriter.Header()
+	for k := range h {
+		h[k] = nil
+	}
+}
+
 // Reset resets the response body, headers and the status code header
 func (w *ResponseRecorder) Reset() {
-	w.ResetHeaders()
+	w.ReseAllHeaders()
 	w.statusCode = StatusOK
 	w.ResetBody()
 }
@@ -135,9 +143,12 @@ func (w *ResponseRecorder) Reset() {
 // called automatically at the end of each request, see ReleaseCtx
 func (w *ResponseRecorder) flushResponse() {
 	if w.headers != nil {
+		h := w.responseWriter.Header()
+
 		for k, values := range w.headers {
+			h[k] = nil
 			for i := range values {
-				w.responseWriter.Header().Add(k, values[i])
+				h.Add(k, values[i])
 			}
 		}
 	}

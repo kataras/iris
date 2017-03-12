@@ -1,6 +1,7 @@
 package iris
 
 import (
+	"regexp"
 	"sync"
 )
 
@@ -153,7 +154,7 @@ type ErrorHandlers struct {
 	mu       sync.RWMutex
 }
 
-// Register registers a handler to a http status
+// Register registers a handler to a http status.
 func (e *ErrorHandlers) Register(statusCode int, handler Handler) {
 	e.mu.Lock()
 	if e.handlers == nil {
@@ -169,6 +170,39 @@ func (e *ErrorHandlers) Register(statusCode int, handler Handler) {
 		})
 	}(statusCode, handler)
 	e.mu.Unlock()
+}
+
+// RegisterRegex same as Register but it receives a third parameter which is the regex expression
+// which is running versus the REQUESTED PATH, i.e "/api/users/42".
+//
+// If the match against the REQUEST PATH and the 'expr' failed then
+// the previous registered error handler on this specific 'statusCode' will be executed.
+//
+// Returns an error if regexp.Compile failed, nothing special.
+func (e *ErrorHandlers) RegisterRegex(statusCode int, handler Handler, expr string) error {
+	// if expr is empty, skip the validation and set the error handler as it's
+	if expr == "" {
+		e.Register(statusCode, handler)
+		return nil
+	}
+	r, err := regexp.Compile(expr)
+	if err != nil {
+		return err
+	}
+
+	prevHandler := e.GetOrRegister(statusCode)
+
+	e.Register(statusCode, HandlerFunc(func(ctx *Context) {
+		requestPath := ctx.Request.RequestURI
+
+		if r.MatchString(requestPath) {
+			handler.Serve(ctx)
+			return
+		}
+		prevHandler.Serve(ctx)
+	}))
+
+	return nil
 }
 
 // Get returns the handler which is responsible for

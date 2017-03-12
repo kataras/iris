@@ -164,8 +164,12 @@ var _ ContextPool = &contextPool{}
 
 func (c *contextPool) Acquire(w http.ResponseWriter, r *http.Request) *Context {
 	ctx := c.pool.Get().(*Context)
+	ctx.Middleware = nil
+	ctx.session = nil
 	ctx.ResponseWriter = acquireResponseWriter(w)
 	ctx.Request = r
+	ctx.values = ctx.values[0:0]
+
 	return ctx
 }
 
@@ -173,13 +177,8 @@ func (c *contextPool) Release(ctx *Context) {
 	// flush the body (on recorder) or just the status code (on basic response writer)
 	// when all finished
 	ctx.ResponseWriter.flushResponse()
-
-	ctx.Middleware = nil
-	ctx.session = nil
-	ctx.Request = nil
 	///TODO:
 	ctx.ResponseWriter.releaseMe()
-	ctx.values.Reset()
 
 	c.pool.Put(ctx)
 }
@@ -810,8 +809,8 @@ func (ctx *Context) WriteGzip(b []byte) (int, error) {
 		ctx.ResponseWriter.Header().Add(varyHeader, acceptEncodingHeader)
 
 		gzipWriter := acquireGzipWriter(ctx.ResponseWriter)
+		defer releaseGzipWriter(gzipWriter)
 		n, err := gzipWriter.Write(b)
-		releaseGzipWriter(gzipWriter)
 
 		if err == nil {
 			ctx.SetHeader(contentEncodingHeader, "gzip")
@@ -1305,6 +1304,28 @@ func (ctx *Context) ParamDecoded(key string) string {
 // same as GetInt
 func (ctx *Context) ParamInt(key string) (int, error) {
 	return ctx.GetInt(key)
+}
+
+// ParamIntWildcard removes the first slash if found and
+// returns the int representation of the key's wildcard path parameter's value.
+//
+// Returns -1 with an error if the parameter couldn't be found.
+func (ctx *Context) ParamIntWildcard(key string) (int, error) {
+	v := ctx.Get(key)
+	if v != nil {
+		if vint, ok := v.(int); ok {
+			return vint, nil
+		} else if vstring, sok := v.(string); sok {
+			if len(vstring) > 1 {
+				if vstring[0] == '/' {
+					vstring = vstring[1:]
+				}
+			}
+			return strconv.Atoi(vstring)
+		}
+	}
+
+	return -1, errIntParse.Format(v)
 }
 
 // ParamInt64 returns the int64 representation of the key's path named parameter's value

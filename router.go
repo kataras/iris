@@ -348,16 +348,6 @@ func (router *Router) Any(registeredPath string, handlersFn ...HandlerFunc) {
 	}
 }
 
-// if / then returns /*wildcard or /something then /something/*wildcard
-// if empty then returns /*wildcard too
-func validateWildcard(reqPath string, paramName string) string {
-	if reqPath[len(reqPath)-1] != slashByte {
-		reqPath += slash
-	}
-	reqPath += "*" + paramName
-	return reqPath
-}
-
 func (router *Router) registerResourceRoute(reqPath string, h HandlerFunc) RouteInfo {
 	router.Head(reqPath, h)
 	return router.Get(reqPath, h)
@@ -582,26 +572,12 @@ func (router *Router) StaticHandler(reqPath string, systemPath string, showList 
 		path = fullpath[dotWSlashIdx+1:]
 	}
 
-	h := NewStaticHandlerBuilder(systemPath).
+	return NewStaticHandlerBuilder(systemPath).
 		Path(path).
 		Listing(showList).
 		Gzip(enableGzip).
 		Except(exceptRoutes...).
 		Build()
-
-	managedStaticHandler := func(ctx *Context) {
-		h(ctx)
-		prevStatusCode := ctx.ResponseWriter.StatusCode()
-		if prevStatusCode >= 400 { // we have an error
-			// fire the custom error handler
-			router.Errors.Fire(prevStatusCode, ctx)
-		}
-		// go to the next middleware
-		if ctx.Pos < len(ctx.Middleware)-1 {
-			ctx.Next()
-		}
-	}
-	return managedStaticHandler
 }
 
 // StaticWeb returns a handler that serves HTTP requests
@@ -623,7 +599,7 @@ func (router *Router) StaticHandler(reqPath string, systemPath string, showList 
 func (router *Router) StaticWeb(reqPath string, systemPath string, exceptRoutes ...RouteInfo) RouteInfo {
 	h := router.StaticHandler(reqPath, systemPath, false, false, exceptRoutes...)
 	paramName := "file"
-	routePath := validateWildcard(reqPath, paramName)
+	routePath := router.Context.Framework().RouteWildcardPath(reqPath, paramName)
 	handler := func(ctx *Context) {
 		h(ctx)
 		if fname := ctx.Param(paramName); fname != "" {
@@ -659,10 +635,22 @@ func (router *Router) Layout(tmplLayoutFile string) *Router {
 	return router
 }
 
-// OnError registers a custom http error handler
-func (router *Router) OnError(statusCode int, handlerFn HandlerFunc) {
+// OnError registers a custom http error handler.
+// Accepts the status code which the 'handlerFn' should be fired,
+// third parameter is OPTIONAL, if setted then the 'handlerFn' will be executed
+// only when this regex expression will be validated and matched to the ctx.Request.RequestURI,
+// keep note that it will compare the whole request path but the error handler owns to this Party,
+// this gives developers power tooling.
+//
+// Each party's static path prefix can have a set of its own error handlers,
+// this works by wrapping the error handlers, so if a party doesn't needs a custom error handler,
+// then it will execute the root's one (if setted, otherwise the framework creates one at runtime).
+func (router *Router) OnError(statusCode int, handlerFn HandlerFunc, rgexp ...string) {
 	staticPath := router.Context.Framework().policies.RouterReversionPolicy.StaticPath(router.relativePath)
-
+	expr := ""
+	if len(rgexp) > 0 {
+		expr = rgexp[0]
+	}
 	if staticPath == "/" {
 		router.Errors.Register(statusCode, handlerFn) // register the user-specific error message, as the global error handler, for now.
 		return
@@ -676,9 +664,12 @@ func (router *Router) OnError(statusCode int, handlerFn HandlerFunc) {
 	// get the previous
 	prevErrHandler := router.Errors.GetOrRegister(statusCode)
 
-	func(statusCode int, staticPath string, prevErrHandler Handler, newHandler Handler) { // to separate the logic
+	func(statusCode int, staticPath string, prevErrHandler Handler, newHandler Handler, expr string) { // to separate the logic
 		errHandler := HandlerFunc(func(ctx *Context) {
-			if strings.HasPrefix(ctx.Path(), staticPath) { // yes the user should use OnError from longest to lower static path's length in order this to work, so we can find another way, like a builder on the end.
+
+			path := ctx.Request.RequestURI // This is relative to: http://support.iris-go.com/d/17-fallback-handler-for-non-matched-routes
+			// note: NOT Request.URL.Path (even if it's not overriden by static handlers.)
+			if strings.HasPrefix(path, staticPath) { // yes the user should use OnError from longest to lower static path's length in order this to work, so we can find another way, like a builder on the end.
 				newHandler.Serve(ctx)
 				return
 			}
@@ -686,9 +677,8 @@ func (router *Router) OnError(statusCode int, handlerFn HandlerFunc) {
 			prevErrHandler.Serve(ctx)
 		})
 
-		router.Errors.Register(statusCode, errHandler)
-	}(statusCode, staticPath, prevErrHandler, handlerFn)
-
+		router.Errors.RegisterRegex(statusCode, errHandler, expr)
+	}(statusCode, staticPath, prevErrHandler, handlerFn, expr)
 }
 
 // EmitError fires a custom http error handler to the client
