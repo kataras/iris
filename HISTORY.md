@@ -8,8 +8,18 @@
 
 
 ## 6.1.4 -> 6.2.0 (√Νεxτ)
+_Update: 12 March 2017_
 
-_Last update: 28 Feb 2017_
+- Enhance Custom http errors with gzip and static files handler, as requested/reported [here](http://support.iris-go.com/d/17-fallback-handler-for-non-matched-routes/9).
+- Enhance per-party custom http errors (now it works on any wildcard path too).
+- Add a third parameter on `app.OnError(...)` for custom http errors with regexp validation, see [status_test.go](https://github.com/kataras/iris/blob/v6/status_test.go) for an example.
+- Add a `context.ParamIntWildcard(...)` to skip the first slash, useful for wildcarded paths' parameters.
+
+
+> Prepare for nice things, tomorrow is Iris' first birthday!
+
+
+_Update: 28 Feb 2017_
 
 > Note: I want you to know that I spent more than 200 hours (16 days of ~10-15 hours per-day, do the math) for this release, two days to write these changes, please read the sections before think that you have an issue and post a new question, thanks!
 

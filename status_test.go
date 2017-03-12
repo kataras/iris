@@ -103,3 +103,63 @@ func TestStatusMethodNotAllowed(t *testing.T) {
 	testStatusMethodNotAllowed(httprouter.New(), t)
 	testStatusMethodNotAllowed(gorillamux.New(), t)
 }
+
+func testRegisterRegex(routerPolicy iris.Policy, t *testing.T) {
+
+	app := iris.New()
+	app.Adapt(routerPolicy)
+
+	h := func(ctx *iris.Context) {
+		ctx.WriteString(ctx.Method())
+	}
+
+	app.OnError(iris.StatusNotFound, func(ctx *iris.Context) {
+		ctx.WriteString("root 404")
+	})
+
+	staticP := app.Party("/static")
+	{
+		// or app.Errors... same thing
+		staticP.Errors.RegisterRegex(iris.StatusNotFound, iris.HandlerFunc(func(ctx *iris.Context) {
+			ctx.WriteString("/static 404")
+		}), "/static/[0-9]+")
+
+		// simulate a StaticHandler or StaticWeb simple behavior
+		// in order to get a not found error from a wildcard path registered on the root path of the "/static".
+		// Note:
+		// RouteWildcardPath when you want to work on all router adaptors:httprouter=> *file, gorillamux=> {file:.*}
+		staticP.Get(app.RouteWildcardPath("/", "file"), func(ctx *iris.Context) {
+
+			i, err := ctx.ParamIntWildcard("file")
+			if i > 0 || err == nil {
+				// this handler supposed to accept only strings, for the sake of the test.
+				ctx.EmitError(iris.StatusNotFound)
+				return
+			}
+
+			ctx.SetStatusCode(iris.StatusOK)
+		})
+
+	}
+
+	app.Get("/mypath", h)
+
+	e := httptest.New(app, t)
+	// print("-------------------TESTING ")
+	// println(app.Config.Other[iris.RouterNameConfigKey].(string) + "-------------------")
+
+	e.GET("/mypath").Expect().Status(iris.StatusOK).Body().Equal("GET")
+	e.GET("/rootnotfound").Expect().Status(iris.StatusNotFound).Body().Equal("root 404")
+
+	// test found on party
+	e.GET("/static/itshouldbeok").Expect().Status(iris.StatusOK)
+	// test no found on party ( by putting at least one integer after /static)
+	e.GET("/static/42").Expect().Status(iris.StatusNotFound).Body().Equal("/static 404")
+
+	// println("-------------------------------------------------------")
+}
+
+func TestRegisterRegex(t *testing.T) {
+	testRegisterRegex(httprouter.New(), t)
+	testRegisterRegex(gorillamux.New(), t)
+}

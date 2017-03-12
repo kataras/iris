@@ -294,6 +294,10 @@ type (
 	// RouterWrapperPolicy is the Policy which enables a wrapper on the top of
 	// the builded Router. Usually it's useful for third-party middleware
 	// when need to wrap the entire application with a middleware like CORS.
+	//
+	// Developers can Adapt more than one RouterWrapper
+	// those wrappers' execution comes from last to first.
+	// That means that the second wrapper will wrap the first, and so on.
 	RouterWrapperPolicy func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)
 )
 
@@ -364,8 +368,26 @@ func (r RouterBuilderPolicy) Adapt(frame *Policies) {
 }
 
 // Adapt adaps a RouterWrapperPolicy object to the main *Policies.
-func (r RouterWrapperPolicy) Adapt(frame *Policies) {
-	frame.RouterWrapperPolicy = r
+func (rw RouterWrapperPolicy) Adapt(frame *Policies) {
+	if rw != nil {
+		wrapper := rw
+		prevWrapper := frame.RouterWrapperPolicy
+
+		if prevWrapper != nil {
+			nextWrapper := rw
+			wrapper = func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+				if next != nil {
+					nexthttpFunc := http.HandlerFunc(func(_w http.ResponseWriter, _r *http.Request) {
+						prevWrapper(_w, _r, next)
+					})
+					nextWrapper(w, r, nexthttpFunc)
+				}
+
+			}
+		}
+		frame.RouterWrapperPolicy = wrapper
+	}
+
 }
 
 // RenderPolicy is the type which you can adapt custom renderers
