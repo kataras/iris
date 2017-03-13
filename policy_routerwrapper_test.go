@@ -32,10 +32,6 @@ func TestRouterWrapperPolicySimple(t *testing.T) {
 		// w2 -> w1 -> httprouter -> handler
 	)
 
-	app.OnError(StatusNotFound, func(ctx *Context) {
-		ctx.Writef("not found")
-	})
-
 	app.Get("/", func(ctx *Context) {
 		ctx.Write([]byte("OK"))
 	})
