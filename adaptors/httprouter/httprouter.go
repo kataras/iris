@@ -42,64 +42,19 @@ const (
 	slash = "/"
 	// matchEverythingByte is just a byte of '*" rune/char
 	matchEverythingByte = byte('*')
-
-	isRoot entryCase = iota
-	hasParams
-	matchEverything
 )
 
-type (
-	// entryCase is the type which the type of muxEntryusing in order to determinate what type (parameterized, anything, static...) is the perticular node
-	entryCase uint8
-
-	// muxEntry is the node of a tree of the routes,
-	// in order to learn how this is working, google 'trie' or watch this lecture: https://www.youtube.com/watch?v=uhAUk63tLRM
-	// this method is used by the BSD's kernel also
-	muxEntry struct {
-		part        string
-		entryCase   entryCase
-		hasWildNode bool
-		tokens      string
-		nodes       []*muxEntry
-		middleware  iris.Middleware
-		precedence  uint64
-		paramsLen   uint8
+func min(a, b int) int {
+	if a <= b {
+		return a
 	}
-)
+	return b
+}
 
-var (
-	errMuxEntryConflictsWildcard = errors.New(`
-			httprouter: '%s' in new path '%s'
-							conflicts with existing wildcarded route with path: '%s'
-							in existing prefix of'%s' `)
-
-	errMuxEntryMiddlewareAlreadyExists = errors.New(`
-		httprouter: Middleware were already registered for the path: '%s'`)
-
-	errMuxEntryInvalidWildcard = errors.New(`
-		httprouter: More than one wildcard found in the path part: '%s' in route's path: '%s'`)
-
-	errMuxEntryConflictsExistingWildcard = errors.New(`
-		httprouter: Wildcard for route path: '%s' conflicts with existing children in route path: '%s'`)
-
-	errMuxEntryWildcardUnnamed = errors.New(`
-		httprouter: Unnamed wildcard found in path: '%s'`)
-
-	errMuxEntryWildcardInvalidPlace = errors.New(`
-		httprouter: Wildcard is only allowed at the end of the path, in the route path: '%s'`)
-
-	errMuxEntryWildcardConflictsMiddleware = errors.New(`
-		httprouter: Wildcard  conflicts with existing middleware for the route path: '%s'`)
-
-	errMuxEntryWildcardMissingSlash = errors.New(`
-		httprouter: No slash(/) were found before wildcard in the route path: '%s'`)
-)
-
-// getParamsLen returns the parameters length from a given path
-func getParamsLen(path string) uint8 {
+func countParams(path string) uint8 {
 	var n uint
 	for i := 0; i < len(path); i++ {
-		if path[i] != ':' && path[i] != '*' { // ParameterStartByte & MatchEverythingByte
+		if path[i] != ':' && path[i] != '*' {
 			continue
 		}
 		n++
@@ -110,304 +65,391 @@ func getParamsLen(path string) uint8 {
 	return uint8(n)
 }
 
-// findLower returns the smaller number between a and b
-func findLower(a, b int) int {
-	if a <= b {
-		return a
-	}
-	return b
+type nodeType uint8
+
+const (
+	static nodeType = iota // default
+	root
+	param
+	catchAll
+)
+
+type node struct {
+	path      string
+	wildChild bool
+	nType     nodeType
+	maxParams uint8
+	indices   string
+	children  []*node
+	handle    iris.Middleware
+	priority  uint32
 }
 
-// add adds a muxEntry to the existing muxEntry or to the tree if no muxEntry has the prefix of
-func (e *muxEntry) add(path string, middleware iris.Middleware) error {
-	fullPath := path
-	e.precedence++
-	numParams := getParamsLen(path)
+// increments priority of the given child and reorders if necessary
+func (n *node) incrementChildPrio(pos int) int {
+	n.children[pos].priority++
+	prio := n.children[pos].priority
 
-	if len(e.part) > 0 || len(e.nodes) > 0 {
-	loop:
+	// adjust position (move to front)
+	newPos := pos
+	for newPos > 0 && n.children[newPos-1].priority < prio {
+		// swap node positions
+		n.children[newPos-1], n.children[newPos] = n.children[newPos], n.children[newPos-1]
+
+		newPos--
+	}
+
+	// build new index char string
+	if newPos != pos {
+		n.indices = n.indices[:newPos] + // unchanged prefix, might be empty
+			n.indices[pos:pos+1] + // the index char we move
+			n.indices[newPos:pos] + n.indices[pos+1:] // rest without char at 'pos'
+	}
+
+	return newPos
+}
+
+// addRoute adds a node with the given handle to the path.
+// Not concurrency-safe!
+func (n *node) addRoute(path string, handle iris.Middleware) error {
+	fullPath := path
+	n.priority++
+	numParams := countParams(path)
+
+	// non-empty tree
+	if len(n.path) > 0 || len(n.children) > 0 {
+	walk:
 		for {
-			if numParams > e.paramsLen {
-				e.paramsLen = numParams
+			// Update maxParams of the current node
+			if numParams > n.maxParams {
+				n.maxParams = numParams
 			}
 
+			// Find the longest common prefix.
+			// This also implies that the common prefix contains no ':' or '*'
+			// since the existing key can't contain those chars.
 			i := 0
-			max := findLower(len(path), len(e.part))
-			for i < max && path[i] == e.part[i] {
+			max := min(len(path), len(n.path))
+			for i < max && path[i] == n.path[i] {
 				i++
 			}
 
-			if i < len(e.part) {
-				node := muxEntry{
-					part:        e.part[i:],
-					hasWildNode: e.hasWildNode,
-					tokens:      e.tokens,
-					nodes:       e.nodes,
-					middleware:  e.middleware,
-					precedence:  e.precedence - 1,
+			// Split edge
+			if i < len(n.path) {
+				child := node{
+					path:      n.path[i:],
+					wildChild: n.wildChild,
+					nType:     static,
+					indices:   n.indices,
+					children:  n.children,
+					handle:    n.handle,
+					priority:  n.priority - 1,
 				}
 
-				for i := range node.nodes {
-					if node.nodes[i].paramsLen > node.paramsLen {
-						node.paramsLen = node.nodes[i].paramsLen
+				// Update maxParams (max of all children)
+				for i := range child.children {
+					if child.children[i].maxParams > child.maxParams {
+						child.maxParams = child.children[i].maxParams
 					}
 				}
 
-				e.nodes = []*muxEntry{&node}
-				e.tokens = string([]byte{e.part[i]})
-				e.part = path[:i]
-				e.middleware = nil
-				e.hasWildNode = false
+				n.children = []*node{&child}
+				// []byte for proper unicode char conversion, see #65
+				n.indices = string([]byte{n.path[i]})
+				n.path = path[:i]
+				n.handle = nil
+				n.wildChild = false
 			}
 
+			// Make new node a child of this node
 			if i < len(path) {
 				path = path[i:]
 
-				if e.hasWildNode {
-					e = e.nodes[0]
-					e.precedence++
+				if n.wildChild {
+					n = n.children[0]
+					n.priority++
 
-					if numParams > e.paramsLen {
-						e.paramsLen = numParams
+					// Update maxParams of the child node
+					if numParams > n.maxParams {
+						n.maxParams = numParams
 					}
 					numParams--
 
-					if len(path) >= len(e.part) && e.part == path[:len(e.part)] &&
+					// Check if the wildcard matches
+					if len(path) >= len(n.path) && n.path == path[:len(n.path)] &&
 						// Check for longer wildcard, e.g. :name and :names
-						(len(e.part) >= len(path) || path[len(e.part)] == '/') {
-						continue loop
+						(len(n.path) >= len(path) || path[len(n.path)] == '/') {
+						continue walk
 					} else {
 						// Wildcard conflict
-						part := strings.SplitN(path, "/", 2)[0]
-						prefix := fullPath[:strings.Index(fullPath, part)] + e.part
-						return errMuxEntryConflictsWildcard.Format(fullPath, e.part, prefix)
-
+						pathSeg := strings.SplitN(path, "/", 2)[0]
+						prefix := fullPath[:strings.Index(fullPath, pathSeg)] + n.path
+						return errors.New("'" + pathSeg +
+							"' in new path '" + fullPath +
+							"' conflicts with existing wildcard '" + n.path +
+							"' in existing prefix '" + prefix +
+							"'")
 					}
-
 				}
 
 				c := path[0]
 
-				if e.entryCase == hasParams && c == slashByte && len(e.nodes) == 1 {
-					e = e.nodes[0]
-					e.precedence++
-					continue loop
+				// slash after param
+				if n.nType == param && c == '/' && len(n.children) == 1 {
+					n = n.children[0]
+					n.priority++
+					continue walk
 				}
-				for i := range e.tokens {
-					if c == e.tokens[i] {
-						i = e.precedenceTo(i)
-						e = e.nodes[i]
-						continue loop
+
+				// Check if a child with the next path byte exists
+				for i := 0; i < len(n.indices); i++ {
+					if c == n.indices[i] {
+						i = n.incrementChildPrio(i)
+						n = n.children[i]
+						continue walk
 					}
 				}
 
-				if c != parameterStartByte && c != matchEverythingByte {
-
-					e.tokens += string([]byte{c})
-					node := &muxEntry{
-						paramsLen: numParams,
+				// Otherwise insert it
+				if c != ':' && c != '*' {
+					// []byte for proper unicode char conversion, see #65
+					n.indices += string([]byte{c})
+					child := &node{
+						maxParams: numParams,
 					}
-					e.nodes = append(e.nodes, node)
-					e.precedenceTo(len(e.tokens) - 1)
-					e = node
+					n.children = append(n.children, child)
+					n.incrementChildPrio(len(n.indices) - 1)
+					n = child
 				}
-				return e.addNode(numParams, path, fullPath, middleware)
+				return n.insertChild(numParams, path, fullPath, handle)
 
-			} else if i == len(path) {
-				if e.middleware != nil {
-					return errMuxEntryMiddlewareAlreadyExists.Format(fullPath)
+			} else if i == len(path) { // Make node a (in-path) leaf
+				if n.handle != nil {
+					return errors.New("a handle is already registered for path '" + fullPath + "'")
 				}
-				e.middleware = middleware
+				n.handle = handle
 			}
 			return nil
 		}
-	} else {
-		if err := e.addNode(numParams, path, fullPath, middleware); err != nil {
-			return err
-		}
-		e.entryCase = isRoot
+	} else { // Empty tree
+		n.insertChild(numParams, path, fullPath, handle)
+		n.nType = root
 	}
 	return nil
 }
 
-// addNode adds a muxEntry as children to other muxEntry
-func (e *muxEntry) addNode(numParams uint8, path string, fullPath string, middleware iris.Middleware) error {
-	var offset int
+func (n *node) insertChild(numParams uint8, path, fullPath string, handle iris.Middleware) error {
+	var offset int // already handled bytes of the path
 
+	// find prefix until first wildcard (beginning with ':'' or '*'')
 	for i, max := 0, len(path); numParams > 0; i++ {
 		c := path[i]
-		if c != parameterStartByte && c != matchEverythingByte {
+		if c != ':' && c != '*' {
 			continue
 		}
 
+		// find wildcard end (either '/' or path end)
 		end := i + 1
-		for end < max && path[end] != slashByte {
+		for end < max && path[end] != '/' {
 			switch path[end] {
-			case parameterStartByte, matchEverythingByte:
-				return errMuxEntryInvalidWildcard.Format(path[i:], fullPath)
+			// the wildcard name must not contain ':' and '*'
+			case ':', '*':
+				return errors.New("only one wildcard per path segment is allowed, has: '" +
+					path[i:] + "' in path '" + fullPath + "'")
 			default:
 				end++
 			}
 		}
 
-		if len(e.nodes) > 0 {
-			return errMuxEntryConflictsExistingWildcard.Format(path[i:end], fullPath)
+		// check if this Node existing children which would be
+		// unreachable if we insert the wildcard here
+		if len(n.children) > 0 {
+			return errors.New("wildcard route '" + path[i:end] +
+				"' conflicts with existing children in path '" + fullPath + "'")
 		}
 
+		// check if the wildcard has a name
 		if end-i < 2 {
-			return errMuxEntryWildcardUnnamed.Format(fullPath)
+			return errors.New("wildcards must be named with a non-empty name in path '" + fullPath + "'")
 		}
 
-		if c == parameterStartByte {
-
+		if c == ':' { // param
+			// split path at the beginning of the wildcard
 			if i > 0 {
-				e.part = path[offset:i]
+				n.path = path[offset:i]
 				offset = i
 			}
 
-			child := &muxEntry{
-				entryCase: hasParams,
-				paramsLen: numParams,
+			child := &node{
+				nType:     param,
+				maxParams: numParams,
 			}
-			e.nodes = []*muxEntry{child}
-			e.hasWildNode = true
-			e = child
-			e.precedence++
+			n.children = []*node{child}
+			n.wildChild = true
+			n = child
+			n.priority++
 			numParams--
 
+			// if the path doesn't end with the wildcard, then there
+			// will be another non-wildcard subpath starting with '/'
 			if end < max {
-				e.part = path[offset:end]
+				n.path = path[offset:end]
 				offset = end
 
-				child := &muxEntry{
-					paramsLen:  numParams,
-					precedence: 1,
+				child := &node{
+					maxParams: numParams,
+					priority:  1,
 				}
-				e.nodes = []*muxEntry{child}
-				e = child
+				n.children = []*node{child}
+				n = child
 			}
 
-		} else {
+		} else { // catchAll
 			if end != max || numParams > 1 {
-				return errMuxEntryWildcardInvalidPlace.Format(fullPath)
+				return errors.New("catch-all routes are only allowed at the end of the path in path '" + fullPath + "'")
 			}
 
-			if len(e.part) > 0 && e.part[len(e.part)-1] == '/' {
-				return errMuxEntryWildcardConflictsMiddleware.Format(fullPath)
+			if len(n.path) > 0 && n.path[len(n.path)-1] == '/' {
+				return errors.New("catch-all conflicts with existing handle for the path segment root in path '" + fullPath + "'")
 			}
 
+			// currently fixed width 1 for '/'
 			i--
-			if path[i] != slashByte {
-				return errMuxEntryWildcardMissingSlash.Format(fullPath)
+			if path[i] != '/' {
+				return errors.New("no / before catch-all in path '" + fullPath + "'")
 			}
 
-			e.part = path[offset:i]
+			n.path = path[offset:i]
 
-			child := &muxEntry{
-				hasWildNode: true,
-				entryCase:   matchEverything,
-				paramsLen:   1,
+			// first node: catchAll node with empty path
+			child := &node{
+				wildChild: true,
+				nType:     catchAll,
+				maxParams: 1,
 			}
-			e.nodes = []*muxEntry{child}
-			e.tokens = string(path[i])
-			e = child
-			e.precedence++
+			n.children = []*node{child}
+			n.indices = string(path[i])
+			n = child
+			n.priority++
 
-			child = &muxEntry{
-				part:       path[i:],
-				entryCase:  matchEverything,
-				paramsLen:  1,
-				middleware: middleware,
-				precedence: 1,
+			// second node: node holding the variable
+			child = &node{
+				path:      path[i:],
+				nType:     catchAll,
+				maxParams: 1,
+				handle:    handle,
+				priority:  1,
 			}
-			e.nodes = []*muxEntry{child}
+			n.children = []*node{child}
 
 			return nil
 		}
 	}
 
-	e.part = path[offset:]
-	e.middleware = middleware
-
+	// insert remaining path part and handle to the leaf
+	n.path = path[offset:]
+	n.handle = handle
 	return nil
 }
 
-// get is used by the Router, it finds and returns the correct muxEntry for a path
-func (e *muxEntry) get(path string, ctx *iris.Context) (mustRedirect bool) {
-loop:
+// Returns the handle registered with the given path (key). The values of
+// wildcards are saved to a map.
+// If no handle can be found, a TSR (trailing slash redirect) recommendation is
+// made if a handle exists with an extra (without the) trailing slash for the
+// given path.
+func (n *node) getValue(path string, ctx *iris.Context) (tsr bool) {
+walk: // outer loop for walking the tree
 	for {
-		if len(path) > len(e.part) {
-			if path[:len(e.part)] == e.part {
-				path = path[len(e.part):]
-
-				if !e.hasWildNode {
+		if len(path) > len(n.path) {
+			if path[:len(n.path)] == n.path {
+				path = path[len(n.path):]
+				// If this node does not have a wildcard (param or catchAll)
+				// child,  we can just look up the next child node and continue
+				// to walk down the tree
+				if !n.wildChild {
 					c := path[0]
-					for i := range e.tokens {
-						if c == e.tokens[i] {
-							e = e.nodes[i]
-							continue loop
+					for i := 0; i < len(n.indices); i++ {
+						if c == n.indices[i] {
+							n = n.children[i]
+							continue walk
 						}
 					}
 
-					mustRedirect = (path == slash && e.middleware != nil)
+					// Nothing found.
+					// We can recommend to redirect to the same URL without a
+					// trailing slash if a leaf exists for that path.
+					tsr = (path == "/" && n.handle != nil)
 					return
+
 				}
 
-				e = e.nodes[0]
-				switch e.entryCase {
-				case hasParams:
-
+				// handle wildcard child
+				n = n.children[0]
+				switch n.nType {
+				case param:
+					// find param end (either '/' or path end)
 					end := 0
 					for end < len(path) && path[end] != '/' {
 						end++
 					}
 
-					ctx.Set(e.part[1:], path[:end])
+					// save param value
+					ctx.Set(n.path[1:], path[:end])
 
+					// we need to go deeper!
 					if end < len(path) {
-						if len(e.nodes) > 0 {
+						if len(n.children) > 0 {
 							path = path[end:]
-							e = e.nodes[0]
-							continue loop
+							n = n.children[0]
+							continue walk
 						}
 
-						mustRedirect = (len(path) == end+1)
+						// ... but we can't
+						tsr = (len(path) == end+1)
 						return
 					}
-					if ctx.Middleware = e.middleware; ctx.Middleware != nil {
+
+					if ctx.Middleware = n.handle; ctx.Middleware != nil {
 						return
-					} else if len(e.nodes) == 1 {
-						e = e.nodes[0]
-						mustRedirect = (e.part == slash && e.middleware != nil)
+					} else if len(n.children) == 1 {
+						// No handle found. Check if a handle for this path + a
+						// trailing slash exists for TSR recommendation
+						n = n.children[0]
+						tsr = (n.path == "/" && n.handle != nil)
 					}
 
 					return
 
-				case matchEverything:
+				case catchAll:
+					// save param value
+					ctx.Set(n.path[2:], path)
 
-					ctx.Set(e.part[2:], path)
-					ctx.Middleware = e.middleware
+					ctx.Middleware = n.handle
 					return
 
 				default:
-					return
+					panic("invalid node type")
 				}
 			}
-		} else if path == e.part {
-			if ctx.Middleware = e.middleware; ctx.Middleware != nil {
+		} else if path == n.path {
+			// We should have reached the node containing the handle.
+			// Check if this node has a handle registered.
+			if ctx.Middleware = n.handle; ctx.Middleware != nil {
 				return
 			}
 
-			if path == slash && e.hasWildNode && e.entryCase != isRoot {
-				mustRedirect = true
+			if path == "/" && n.wildChild && n.nType != root {
+				tsr = true
 				return
 			}
 
-			for i := range e.tokens {
-				if e.tokens[i] == slashByte {
-					e = e.nodes[i]
-					mustRedirect = (len(e.part) == 1 && e.middleware != nil) ||
-						(e.entryCase == matchEverything && e.nodes[0].middleware != nil)
+			// No handle found. Check if a handle for this path + a
+			// trailing slash exists for trailing slash recommendation
+			for i := 0; i < len(n.indices); i++ {
+				if n.indices[i] == '/' {
+					n = n.children[i]
+					tsr = (len(n.path) == 1 && n.handle != nil) ||
+						(n.nType == catchAll && n.children[0].handle != nil)
 					return
 				}
 			}
@@ -415,34 +457,29 @@ loop:
 			return
 		}
 
-		mustRedirect = (path == slash) ||
-			(len(e.part) == len(path)+1 && e.part[len(path)] == slashByte &&
-				path == e.part[:len(e.part)-1] && e.middleware != nil)
+		// Nothing found. We can recommend to redirect to the same URL with an
+		// extra trailing slash if a leaf exists for that path
+		tsr = (path == "/") ||
+			(len(n.path) == len(path)+1 && n.path[len(path)] == '/' &&
+				path == n.path[:len(n.path)-1] && n.handle != nil)
 		return
 	}
 }
 
-// precedenceTo just adds the priority of this muxEntry by an index
-func (e *muxEntry) precedenceTo(index int) int {
-	e.nodes[index].precedence++
-	_precedence := e.nodes[index].precedence
-
-	newindex := index
-	for newindex > 0 && e.nodes[newindex-1].precedence < _precedence {
-		tmpN := e.nodes[newindex-1]
-		e.nodes[newindex-1] = e.nodes[newindex]
-		e.nodes[newindex] = tmpN
-
-		newindex--
+// shift bytes in array by n bytes left
+func shiftNRuneBytes(rb [4]byte, n int) [4]byte {
+	switch n {
+	case 0:
+		return rb
+	case 1:
+		return [4]byte{rb[1], rb[2], rb[3], 0}
+	case 2:
+		return [4]byte{rb[2], rb[3]}
+	case 3:
+		return [4]byte{rb[3]}
+	default:
+		return [4]byte{}
 	}
-
-	if newindex != index {
-		e.tokens = e.tokens[:newindex] +
-			e.tokens[index:index+1] +
-			e.tokens[newindex:index] + e.tokens[index+1:]
-	}
-
-	return newindex
 }
 
 type (
@@ -451,7 +488,7 @@ type (
 		// subdomain is empty for default-hostname routes,
 		// ex: mysubdomain.
 		subdomain string
-		entry     *muxEntry
+		entry     *node
 	}
 
 	serveMux struct {
@@ -599,20 +636,20 @@ func New() iris.Policies {
 				tree := mux.getTree(method, subdomain)
 				if tree == nil {
 					//first time we register a route to this method with this domain
-					tree = &muxTree{method: method, subdomain: subdomain, entry: &muxEntry{}}
+					tree = &muxTree{method: method, subdomain: subdomain, entry: &node{}}
 					mux.garden = append(mux.garden, tree)
 				}
 				// I decide that it's better to explicit give subdomain and a path to it than registeredPath(mysubdomain./something) now its: subdomain: mysubdomain., path: /something
 				// we have different tree for each of subdomains, now you can use everything you can use with the normal paths ( before you couldn't set /any/*path)
-				if err := tree.entry.add(path, middleware); err != nil {
+				if err := tree.entry.addRoute(path, middleware); err != nil {
 					// while ProdMode means that the iris should not continue running
 					// by-default it panics on these errors, but to make sure let's introduce the fatalErr to stop visiting
 					fatalErr = true
-					logger(iris.ProdMode, err.Error())
+					logger(iris.ProdMode, Name+" "+err.Error())
 					return
 				}
 
-				if mp := tree.entry.paramsLen; mp > mux.maxParameters {
+				if mp := tree.entry.maxParams; mp > mux.maxParameters {
 					mux.maxParameters = mp
 				}
 
@@ -677,7 +714,7 @@ func (mux *serveMux) buildHandler(pool iris.ContextPool) http.Handler {
 					}
 				}
 
-				mustRedirect := tree.entry.get(routePath, context) // pass the parameters here for 0 allocation
+				mustRedirect := tree.entry.getValue(routePath, context) // pass the parameters here for 0 allocation
 				if context.Middleware != nil {
 					// ok we found the correct route, serve it and exit entirely from here
 					//ctx.Request.Header.SetUserAgentBytes(DefaultUserAgent)

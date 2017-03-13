@@ -1,0 +1,29 @@
+<input id="input" type="text" />
+<button onclick="send()">Send</button>
+<pre id="output"></pre>
+<script src="/iris-ws.js"></script>
+<script>
+	var input = document.getElementById("input");
+	var output = document.getElementById("output");
+
+	// Ws comes from the auto-served '/iris-ws.js'
+	var socket = new Ws("ws://localhost:8080/echo");
+	socket.OnConnect(function () {
+		output.innerHTML += "Status: Connected\n";
+	});
+
+	socket.OnDisconnect(function () {
+		output.innerHTML += "Status: Disconnected\n";
+	});
+
+	// read events from the server
+	socket.On("chat", function (msg) {
+		output.innerHTML += "Server: " + msg + "\n";
+	});
+
+	function send() {
+		// send chat event data to the server
+		socket.Emit("chat", input.value);
+		input.value = "";
+	}
+</script>
