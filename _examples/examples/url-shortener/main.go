@@ -23,6 +23,18 @@ func main() {
 	// Serve static files (css)
 	app.StaticWeb("/static", "./static_files")
 
+	// other solution for both static files and urls in the root path(not recommended but it's here if you ever need it):
+	// fileserver :=  iris.StaticHandler("./static_files", false, false)
+	// app.Get("/*path", func(ctx *iris.Context) {
+	// 	fileserver.Serve(ctx)
+	// 	if ctx.StatusCode() >= 200 && ctx.StatusCode() < 300 {
+	// 	    // then the file found and served correctly.
+	// 	} else {
+	// 		// otherwise check for urls....
+	// 		execShortURL(ctx, ctx.Param("path"))
+	// 	}
+	// })
+
 	var mu sync.Mutex
 	var urls = map[string]string{
 		"iris": "http://support.iris-go.com",
@@ -53,7 +65,7 @@ func main() {
 		execShortURL(ctx, ctx.Param("shortkey"))
 	})
 
-	//  for wildcard subdomain (yeah.. cool) http://dsaoj41u321dsa.localhost:8080
+	// for wildcard subdomain (yeah.. cool) http://dsaoj41u321dsa.localhost:8080
 	// Note:
 	// if you want subdomains (chrome doesn't works on localhost, so you have to define other hostname on app.Listen)
 	// app.Party("*.", func(ctx *iris.Context) {
