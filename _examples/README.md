@@ -27,7 +27,7 @@ Developers should read the official [documentation](https://godoc.org/gopkg.in/k
 * [Websockets](examples/websockets/main.go)
 * [Markdown and Cache](examples/cache-markdown/main.go)
 * [Online Visitors](examples/online-visitors/main.go)
-* [URL Shortener](examples/url-shortener/main.go)
+* [URL Shortener using BoltDB](examples/url-shortener/main.go)
 
 
 > Take look at the [community examples](https://github.com/iris-contrib/examples) too!

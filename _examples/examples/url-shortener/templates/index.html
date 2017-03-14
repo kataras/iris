@@ -9,12 +9,13 @@
 <body>
     <h2>Golang URL Shortener</h2>
     <h3>{{ .form_result}}</h3>
-    <form action="/url/shorten" method="POST">
+    <form action="/shorten" method="POST">
         <input type="text" name="url" style="width: 35em;" />
         <input type="submit" value="Shorten!" />
     </form>
-
-    <p>{{ .url_count }} URLs shortened</p>
+    {{ if isPositive .url_count }}
+        <p>{{ .url_count }} URLs shortened</p>
+    {{ end }}
 </body>
 
 </html>
