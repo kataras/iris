@@ -20,13 +20,35 @@ import (
 	"github.com/kataras/go-errors"
 )
 
+// StaticHandler returns a new Handler which is ready
+// to serve all kind of static files.
+//
+// Developers can wrap this handler using the `iris.StripPrefix`
+// for a fixed static path when the result handler is being, finally, registered to a route.
+//
+//
+// Usage:
+// app := iris.New()
+// ...
+// fileserver := iris.StaticHandler("./static_files", false, false)
+// h := iris.StripPrefix("/static", fileserver)
+// /* http://mydomain.com/static/css/style.css */
+// app.Get("/static", h)
+// ...
+//
+func StaticHandler(systemPath string, showList bool, enableGzip bool, exceptRoutes ...RouteInfo) HandlerFunc {
+	return NewStaticHandlerBuilder(systemPath).
+		Listing(showList).
+		Gzip(enableGzip).
+		Except(exceptRoutes...).
+		Build()
+}
+
 // StaticHandlerBuilder is the web file system's Handler builder
 // use that or the iris.StaticHandler/StaticWeb methods
 type StaticHandlerBuilder interface {
-	Path(requestRoutePath string) StaticHandlerBuilder
 	Gzip(enable bool) StaticHandlerBuilder
 	Listing(listDirectoriesOnOff bool) StaticHandlerBuilder
-	StripPath(yesNo bool) StaticHandlerBuilder
 	Except(r ...RouteInfo) StaticHandlerBuilder
 	Build() HandlerFunc
 }
@@ -40,8 +62,6 @@ type StaticHandlerBuilder interface {
 type fsHandler struct {
 	// user options, only directory is required.
 	directory       http.Dir
-	requestPath     string
-	stripPath       bool
 	gzip            bool
 	listDirectories bool
 	// these are init on the Build() call
@@ -82,22 +102,11 @@ func abs(path string) string {
 func NewStaticHandlerBuilder(dir string) StaticHandlerBuilder {
 	return &fsHandler{
 		directory: http.Dir(abs(dir)),
-		// default route path is the same as the directory
-		requestPath: toWebPath(dir),
-		// enable strip path by-default
-		stripPath: true,
 		// gzip is disabled by default
 		gzip: false,
 		// list directories disabled by default
 		listDirectories: false,
 	}
-}
-
-// Path sets the request path.
-// Defaults to same as system path
-func (w *fsHandler) Path(requestRoutePath string) StaticHandlerBuilder {
-	w.requestPath = toWebPath(requestRoutePath)
-	return w
 }
 
 // Gzip if enable is true then gzip compression is enabled for this static directory
@@ -111,11 +120,6 @@ func (w *fsHandler) Gzip(enable bool) StaticHandlerBuilder {
 // Defaults to false
 func (w *fsHandler) Listing(listDirectoriesOnOff bool) StaticHandlerBuilder {
 	w.listDirectories = listDirectoriesOnOff
-	return w
-}
-
-func (w *fsHandler) StripPath(yesNo bool) StaticHandlerBuilder {
-	w.stripPath = yesNo
 	return w
 }
 
@@ -160,7 +164,7 @@ func (w *fsHandler) Build() HandlerFunc {
 	w.once.Do(func() {
 		w.filesystem = w.directory
 
-		hStatic := func(ctx *Context) {
+		fileserver := func(ctx *Context) {
 			upath := ctx.Request.URL.Path
 			if !strings.HasPrefix(upath, "/") {
 				upath = "/" + upath
@@ -203,14 +207,6 @@ func (w *fsHandler) Build() HandlerFunc {
 			}
 		}
 
-		var fileserver HandlerFunc
-
-		if w.stripPath {
-			fileserver = StripPrefix(w.requestPath, hStatic)
-		} else {
-			fileserver = hStatic
-		}
-
 		if len(w.exceptions) > 0 {
 			middleware := make(Middleware, len(w.exceptions)+1)
 			for i := range w.exceptions {
@@ -237,12 +233,26 @@ func (w *fsHandler) Build() HandlerFunc {
 // and invoking the handler h. StripPrefix handles a
 // request for a path that doesn't begin with prefix by
 // replying with an HTTP 404 not found error.
+//
+// Usage:
+// fileserver := iris.StaticHandler("./static_files", false, false)
+// h := iris.StripPrefix("/static", fileserver)
+// app.Get("/static", h)
+//
 func StripPrefix(prefix string, h HandlerFunc) HandlerFunc {
 	if prefix == "" {
 		return h
 	}
+	// here we separate the path from the subdomain (if any), we care only for the path
+	// fixes a bug when serving static files via a subdomain
+	fixedPrefix := prefix
+	if dotWSlashIdx := strings.Index(fixedPrefix, subdomainIndicator); dotWSlashIdx > 0 {
+		fixedPrefix = fixedPrefix[dotWSlashIdx+1:]
+	}
+	fixedPrefix = toWebPath(fixedPrefix)
+
 	return func(ctx *Context) {
-		if p := strings.TrimPrefix(ctx.Request.URL.Path, prefix); len(p) < len(ctx.Request.URL.Path) {
+		if p := strings.TrimPrefix(ctx.Request.URL.Path, fixedPrefix); len(p) < len(ctx.Request.URL.Path) {
 			ctx.Request.URL.Path = p
 			h(ctx)
 		} else {

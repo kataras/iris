@@ -55,39 +55,5 @@ func main() {
 
 	})
 
-	// ------ first customization without even the need of *Context or a Handler--------
-	//
-	// Custom new content-/type:
-	//	app.Adapt(iris.RenderPolicy(func(out io.Writer, name string, binding interface{}, options ...map[string]interface{}) (error, bool) {
-	//		if name == "customcontent-type" {
-	//
-	//			// some very advanced things here:
-	//			out.Write([]byte(binding.(string)))
-	//			return nil, true
-	//		}
-	//		return nil, false
-	//	}))
-	//
-	//	app.Get("/custom", func(ctx *iris.Context) {
-	//		ctx.RenderWithStatus(iris.StatusOK, // or MustRender
-	//			"customcontent-type",
-	//			"my custom content here!",
-	//		)
-	//	})
-	//
-	// ---- second -----------------------------------------------------------------------
-	//
-	// Override the defaults (the json,xml,jsonp,text,data and so on), an existing  content-type:
-	//	app.Adapt(iris.RenderPolicy(func(out io.Writer, name string, binding interface{}, options ...map[string]interface{}) (error, bool) {
-	//		if name == "text/plain" {
-	//			out.Write([]byte("From the custom text/plain renderer: " + binding.(string)))
-	//			return nil, true
-	//		}
-	//
-	//		return nil, false
-	//	}))
-	// // the context.Text's behaviors was changed now by your custom renderer.
-	//
-
 	app.Listen(":8080")
 }

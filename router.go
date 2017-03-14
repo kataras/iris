@@ -562,22 +562,27 @@ func (router *Router) Favicon(favPath string, requestPath ...string) RouteInfo {
 	return router.registerResourceRoute(reqPath, h)
 }
 
-// StaticHandler returns a new Handler which serves static files
+// StaticHandler returns a new Handler which is ready
+// to serve all kind of static files.
+//
+// Note:
+// The only difference from package-level `StaticHandler`
+// is that this `StaticHandler`` receives a request path which
+// is appended to the party's relative path and stripped here,
+// so `iris.StripPath` is useless and should not being used here.
+//
+// Usage:
+// app := iris.New()
+// ...
+// mySubdomainFsServer := app.Party("mysubdomain.")
+// h := mySubdomainFsServer.StaticHandler("/static", "./static_files", false, false)
+// /* http://mysubdomain.mydomain.com/static/css/style.css */
+// mySubdomainFsServer.Get("/static", h)
+// ...
+//
 func (router *Router) StaticHandler(reqPath string, systemPath string, showList bool, enableGzip bool, exceptRoutes ...RouteInfo) HandlerFunc {
-	// here we separate the path from the subdomain (if any), we care only for the path
-	// fixes a bug when serving static files via a subdomain
-	fullpath := router.relativePath + reqPath
-	path := fullpath
-	if dotWSlashIdx := strings.Index(path, subdomainIndicator); dotWSlashIdx > 0 {
-		path = fullpath[dotWSlashIdx+1:]
-	}
-
-	return NewStaticHandlerBuilder(systemPath).
-		Path(path).
-		Listing(showList).
-		Gzip(enableGzip).
-		Except(exceptRoutes...).
-		Build()
+	return StripPrefix(router.relativePath+reqPath,
+		StaticHandler(systemPath, showList, enableGzip))
 }
 
 // StaticWeb returns a handler that serves HTTP requests
@@ -602,15 +607,17 @@ func (router *Router) StaticWeb(reqPath string, systemPath string, exceptRoutes 
 	routePath := router.Context.Framework().RouteWildcardPath(reqPath, paramName)
 	handler := func(ctx *Context) {
 		h(ctx)
-		if fname := ctx.Param(paramName); fname != "" {
-			cType := typeByExtension(fname)
-			if cType != contentBinary && !strings.Contains(cType, "charset") {
-				cType += "; charset=" + ctx.framework.Config.Charset
+		// re-check the content type here for any case,
+		// although the new code does it automatically but it's good to have it here.
+		if ctx.StatusCode() >= 200 && ctx.StatusCode() < 400 {
+			if fname := ctx.Param(paramName); fname != "" {
+				cType := typeByExtension(fname)
+				if cType != contentBinary && !strings.Contains(cType, "charset") {
+					cType += "; charset=" + ctx.framework.Config.Charset
+				}
+				ctx.SetContentType(cType)
 			}
-
-			ctx.SetContentType(cType)
 		}
-
 	}
 
 	return router.registerResourceRoute(routePath, handler)
