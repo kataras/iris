@@ -814,6 +814,7 @@ func (s *Framework) Regex(pairParamExpr ...string) HandlerFunc {
 		ctx.EmitError(StatusInternalServerError)
 	}
 
+	// just to check if router is adapted.
 	wp := s.policies.RouterReversionPolicy.WildcardPath
 	if wp == nil {
 		s.Log(ProdMode, "regex cannot be used when a router policy is missing\n"+errRouterIsMissing.Format(s.Config.VHost).Error())
@@ -826,6 +827,8 @@ func (s *Framework) Regex(pairParamExpr ...string) HandlerFunc {
 				"paramName2, expression2. The len should be %2==0")
 		return srvErr
 	}
+
+	// we do compile first to reduce the performance cost at serve time.
 	pairs := make(map[string]*regexp.Regexp, len(pairParamExpr)/2)
 
 	for i := 0; i < len(pairParamExpr)-1; i++ {
@@ -843,21 +846,37 @@ func (s *Framework) Regex(pairParamExpr ...string) HandlerFunc {
 	// return the middleware
 	return func(ctx *Context) {
 		for k, v := range pairs {
-			pathPart := ctx.Param(k)
-			if pathPart == "" {
-				// take care, the router already
-				// does the param validations
-				// so if it's empty here it means that
-				// the router has label it as optional.
-				// so we skip it, and continue to the next.
-				continue
-			}
-			// the improtant thing:
-			// if the path part didn't match with the relative exp, then fire status not found.
-			if !v.MatchString(pathPart) {
+			if !ctx.ParamValidate(v, k) {
 				ctx.EmitError(StatusNotFound)
 				return
 			}
+		}
+		// otherwise continue to the next handler...
+		ctx.Next()
+	}
+}
+
+func (s *Framework) RegexSingle(paramName string, expr string, onFail HandlerFunc) HandlerFunc {
+
+	// just to check if router is adapted.
+	wp := s.policies.RouterReversionPolicy.WildcardPath
+	if wp == nil {
+		s.Log(ProdMode, "regex cannot be used when a router policy is missing\n"+errRouterIsMissing.Format(s.Config.VHost).Error())
+		return onFail
+	}
+
+	// we do compile first to reduce the performance cost at serve time.
+	r, err := regexp.Compile(expr)
+	if err != nil {
+		s.Log(ProdMode, "regex '"+expr+"' failed. Trace: "+err.Error())
+		return onFail
+	}
+
+	// return the middleware
+	return func(ctx *Context) {
+		if !ctx.ParamValidate(r, paramName) {
+			onFail(ctx)
+			return
 		}
 		// otherwise continue to the next handler...
 		ctx.Next()

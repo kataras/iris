@@ -90,13 +90,16 @@ func (s *sessions) Start(res http.ResponseWriter, req *http.Request) iris.Sessio
 	var sess iris.Session
 
 	cookieValue := GetCookie(s.config.Cookie, req)
+
 	if cookieValue == "" { // cookie doesn't exists, let's generate a session and add set a cookie
 		sid := SessionIDGenerator(s.config.CookieLength)
+
 		sess = s.provider.Init(sid, s.config.Expires)
 		cookie := &http.Cookie{}
 
 		// The RFC makes no mention of encoding url value, so here I think to encode both sessionid key and the value using the safe(to put and to use as cookie) url-encoding
 		cookie.Name = s.config.Cookie
+
 		cookie.Value = sid
 		cookie.Path = "/"
 		if !s.config.DisableSubdomainPersistence {
@@ -143,8 +146,34 @@ func (s *sessions) Start(res http.ResponseWriter, req *http.Request) iris.Sessio
 			cookie.MaxAge = int(cookie.Expires.Sub(time.Now()).Seconds())
 		}
 
+		{
+			// encode the session id cookie client value right before send it.
+			if encode := s.config.Encode; encode != nil {
+				newVal, err := encode(s.config.Cookie, cookie.Value)
+				if err == nil {
+					cookie.Value = newVal
+				} else {
+					cookie.Value = ""
+				}
+			}
+		}
+
 		AddCookie(cookie, res)
 	} else {
+
+		{
+			// decode the cookie value from the client's cookie right before read the session data.
+			var cookieValueDecoded *string
+			if decode := s.config.Decode; decode != nil {
+				err := decode(s.config.Cookie, cookieValue, &cookieValueDecoded)
+				if err == nil {
+					cookieValue = *cookieValueDecoded
+				} else {
+					cookieValue = ""
+				}
+			}
+		}
+
 		sess = s.provider.Read(cookieValue, s.config.Expires)
 	}
 	return sess
@@ -157,6 +186,22 @@ func (s *sessions) Destroy(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	RemoveCookie(s.config.Cookie, res, req)
+
+	{
+		// decode the client's cookie value in order to find the server's session id
+		// to destroy the session data.
+		var cookieValueDecoded *string
+		if decode := s.config.Decode; decode != nil {
+			err := decode(s.config.Cookie, cookieValue, &cookieValueDecoded)
+			if err == nil {
+				cookieValue = *cookieValueDecoded
+			} else {
+				cookieValue = ""
+			}
+		}
+
+	}
+
 	s.provider.Destroy(cookieValue)
 }
 
