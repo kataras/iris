@@ -269,6 +269,34 @@ func (ctx *Context) GetHandlerName() string {
 	return runtime.FuncForPC(reflect.ValueOf(ctx.Middleware[len(ctx.Middleware)-1]).Pointer()).Name()
 }
 
+// ParamValidate receives a compiled Regexp and execute a parameter's value
+// against this regexp, returns true if matched or param not found, otherwise false.
+//
+// It accepts a compiled regexp to reduce the performance cost on serve time.
+// If you need a more automative solution, use the `app.Regex` or `app.RegexSingle` instead.
+//
+// This function helper is ridiculous simple but it's good to have it on one place.
+func (ctx *Context) ParamValidate(compiledExpr *regexp.Regexp, paramName string) bool {
+	pathPart := ctx.Param(paramName)
+	if pathPart == "" {
+		// take care, the router already
+		// does the param validations
+		// so if it's empty here it means that
+		// the router has label it as optional.
+		// so we skip the check.
+		return true
+	}
+
+	if pathPart[0] == '/' {
+		// it's probably wildcard, we 'should' remove that part to do the matching below
+		pathPart = pathPart[1:]
+	}
+
+	// the improtant thing:
+	// if the path part didn't match with the relative exp, then fire status not found.
+	return compiledExpr.MatchString(pathPart)
+}
+
 // ExecRoute calls any route (mostly  "offline" route) like it was requested by the user, but it is not.
 // Offline means that the route is registered to the iris and have all features that a normal route has
 // BUT it isn't available by browsing, its handlers executed only when other handler's context call them
