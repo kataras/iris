@@ -18,9 +18,6 @@ func main() {
 		//
 		// Defaults to "irissessionid"
 		Cookie: "mysessionid",
-		// base64 urlencoding,
-		// if you have strange name cookie name enable this
-		DecodeCookie: false,
 		// it's time.Duration, from the time cookie is created, how long it can be alive?
 		// 0 means no expire.
 		// -1 means expire when browser closes
@@ -31,6 +28,7 @@ func main() {
 		// if you want to invalid cookies on different subdomains
 		// of the same host, then enable it
 		DisableSubdomainPersistence: false,
+		// want to be crazy safe? Take a look at the "securecookie" example folder.
 	})
 
 	// OPTIONALLY:
@@ -71,13 +69,10 @@ func main() {
 
 	app.Get("/destroy", func(ctx *iris.Context) {
 
-		//destroy, removes the entire session and cookie
+		//destroy, removes the entire session data and cookie
 		ctx.SessionDestroy()
-		msg := "You have to refresh the page to completely remove the session (browsers works this way, it's not iris-specific.)"
-
-		ctx.Writef(msg)
-		ctx.Log(iris.DevMode, msg)
-	}) // Note about destroy:
+	})
+	// Note about Destroy:
 	//
 	// You can destroy a session outside of a handler too, using the:
 	// mySessions.DestroyByID
