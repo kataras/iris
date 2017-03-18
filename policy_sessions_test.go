@@ -2,8 +2,10 @@ package iris_test
 
 import (
 	"testing"
+	// developers can use any library to add a custom cookie encoder/decoder.
+	// At this test code we use the gorilla's securecookie library:
+	"github.com/gorilla/securecookie"
 
-	"github.com/gorilla/securecookie" // optional, to set sessions'' Encode and Decode
 	"gopkg.in/kataras/iris.v6"
 	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
 	"gopkg.in/kataras/iris.v6/adaptors/sessions"

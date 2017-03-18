@@ -1,5 +1,5 @@
 // Package sessions as originally written by me at https://github.com/kataras/go-sessions
-// Based on kataras/go-sessions v1.0.0.
+// Based on kataras/go-sessions v1.0.1.
 //
 // Edited for Iris v6 (or iris vNext) and removed all fasthttp things in order to reduce the
 // compiled and go getable size. The 'file' and 'leveldb' databases are missing
@@ -28,13 +28,13 @@ type (
 
 		// UseDatabase ,optionally, adds a session database to the manager's provider,
 		// a session db doesn't have write access
-		// see https://github.com/kataras/go-sessions/tree/master/sessiondb
+		// see https://github.com/kataras/go-sessions/tree/master/sessiondb for its usage.
 		UseDatabase(Database)
 
 		// Start starts the session for the particular net/http request
 		Start(http.ResponseWriter, *http.Request) iris.Session
 
-		// Destroy kills the net/http session and remove the associated cookie
+		// Destroy deletes all session data and remove the associated cookie.
 		Destroy(http.ResponseWriter, *http.Request)
 
 		// DestroyByID removes the session entry
@@ -42,6 +42,9 @@ type (
 		// Client's session cookie will still exist but it will be reseted on the next request.
 		//
 		// It's safe to use it even if you are not sure if a session with that id exists.
+		//
+		// Note: the sid should be the original one (i.e: fetched by a store )
+		// it's not decoded.
 		DestroyByID(string)
 		// DestroyAll removes all sessions
 		// from the server-side memory (and database if registered).
@@ -146,61 +149,29 @@ func (s *sessions) Start(res http.ResponseWriter, req *http.Request) iris.Sessio
 			cookie.MaxAge = int(cookie.Expires.Sub(time.Now()).Seconds())
 		}
 
-		{
-			// encode the session id cookie client value right before send it.
-			if encode := s.config.Encode; encode != nil {
-				newVal, err := encode(s.config.Cookie, cookie.Value)
-				if err == nil {
-					cookie.Value = newVal
-				} else {
-					cookie.Value = ""
-				}
-			}
-		}
+		// encode the session id cookie client value right before send it.
+		cookie.Value = s.encodeCookieValue(cookie.Value)
 
 		AddCookie(cookie, res)
 	} else {
 
-		{
-			// decode the cookie value from the client's cookie right before read the session data.
-			var cookieValueDecoded *string
-			if decode := s.config.Decode; decode != nil {
-				err := decode(s.config.Cookie, cookieValue, &cookieValueDecoded)
-				if err == nil {
-					cookieValue = *cookieValueDecoded
-				} else {
-					cookieValue = ""
-				}
-			}
-		}
+		cookieValue = s.decodeCookieValue(cookieValue)
 
 		sess = s.provider.Read(cookieValue, s.config.Expires)
 	}
 	return sess
 }
 
-// Destroy kills the net/http session and remove the associated cookie
+// Destroy remove the session data and remove the associated cookie.
 func (s *sessions) Destroy(res http.ResponseWriter, req *http.Request) {
 	cookieValue := GetCookie(s.config.Cookie, req)
+	// decode the client's cookie value in order to find the server's session id
+	// to destroy the session data.
+	cookieValue = s.decodeCookieValue(cookieValue)
 	if cookieValue == "" { // nothing to destroy
 		return
 	}
 	RemoveCookie(s.config.Cookie, res, req)
-
-	{
-		// decode the client's cookie value in order to find the server's session id
-		// to destroy the session data.
-		var cookieValueDecoded *string
-		if decode := s.config.Decode; decode != nil {
-			err := decode(s.config.Cookie, cookieValue, &cookieValueDecoded)
-			if err == nil {
-				cookieValue = *cookieValueDecoded
-			} else {
-				cookieValue = ""
-			}
-		}
-
-	}
 
 	s.provider.Destroy(cookieValue)
 }
@@ -210,7 +181,9 @@ func (s *sessions) Destroy(res http.ResponseWriter, req *http.Request) {
 // Client's session cookie will still exist but it will be reseted on the next request.
 //
 // It's safe to use it even if you are not sure if a session with that id exists.
-// Works for both net/http
+//
+// Note: the sid should be the original one (i.e: fetched by a store )
+// it's not decoded.
 func (s *sessions) DestroyByID(sid string) {
 	s.provider.Destroy(sid)
 }
@@ -218,13 +191,39 @@ func (s *sessions) DestroyByID(sid string) {
 // DestroyAll removes all sessions
 // from the server-side memory (and database if registered).
 // Client's session cookie will still exist but it will be reseted on the next request.
-// Works for both net/http
 func (s *sessions) DestroyAll() {
 	s.provider.DestroyAll()
 }
 
 // SessionIDGenerator returns a random string, used to set the session id
-// you are able to override this to use your own method for generate session ids
+// you are able to override this to use your own method for generate session ids.
 var SessionIDGenerator = func(strLength int) string {
 	return base64.URLEncoding.EncodeToString(random(strLength))
+}
+
+// let's keep these funcs simple, we can do it with two lines but we may add more things in the future.
+func (s *sessions) decodeCookieValue(cookieValue string) string {
+	var cookieValueDecoded *string
+	if decode := s.config.Decode; decode != nil {
+		err := decode(s.config.Cookie, cookieValue, &cookieValueDecoded)
+		if err == nil {
+			cookieValue = *cookieValueDecoded
+		} else {
+			cookieValue = ""
+		}
+	}
+	return cookieValue
+}
+
+func (s *sessions) encodeCookieValue(cookieValue string) string {
+	if encode := s.config.Encode; encode != nil {
+		newVal, err := encode(s.config.Cookie, cookieValue)
+		if err == nil {
+			cookieValue = newVal
+		} else {
+			cookieValue = ""
+		}
+	}
+
+	return cookieValue
 }

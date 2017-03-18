@@ -42,7 +42,8 @@ func logout(ctx *iris.Context) {
 func main() {
 	app := iris.New()
 	app.Adapt(httprouter.New())
-
+	// Look https://github.com/kataras/iris/tree/v6/adaptors/sessions/_examples for more features,
+	// i.e encode/decode and lifetime.
 	sess := sessions.New(sessions.Config{Cookie: key})
 	app.Adapt(sess)
 

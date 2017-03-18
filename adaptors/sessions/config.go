@@ -1,7 +1,6 @@
 package sessions
 
 import (
-	"encoding/base64"
 	"time"
 )
 
@@ -25,11 +24,6 @@ type (
 		//
 		// Defaults to "irissessionid"
 		Cookie string
-
-		// DecodeCookie set it to true to decode the cookie key with base64 URLEncoding
-		//
-		// Defaults to false
-		DecodeCookie bool
 
 		// Encode the cookie value if not nil.
 		// Should accept as first argument the cookie name (config.Name)
@@ -81,12 +75,6 @@ func (c Config) Validate() Config {
 
 	if c.Cookie == "" {
 		c.Cookie = DefaultCookieName
-	}
-
-	if c.DecodeCookie {
-		c.Cookie = base64.URLEncoding.EncodeToString([]byte(c.Cookie)) // change the cookie's name/key to a more safe(?)
-		// get the real value for your tests by:
-		//sessIdKey := url.QueryEscape(base64.URLEncoding.EncodeToString([]byte(Sessions.Cookie)))
 	}
 
 	if c.CookieLength <= 0 {

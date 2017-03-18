@@ -8,6 +8,10 @@
 
 
 ## 6.1.4 -> 6.2.0 (√Νεxτ)
+_Update: 18 March 2017_
+
+- **Sessions**: Enchance the community feature request about custom encode and decode methods for the cookie value(sessionid) as requested [here](http://support.iris-go.com/d/29-mark-cookie-for-session-as-secure).
+
 _Update: 12 March 2017_
 
 - Enhance Custom http errors with gzip and static files handler, as requested/reported [here](http://support.iris-go.com/d/17-fallback-handler-for-non-matched-routes/9).
@@ -934,7 +938,10 @@ to adapt a package as a session manager. So `iris.UseDatabase` has been removed 
 
 > Don't worry about forgetting to adapt any feature that you use inside Iris, Iris will print you a how-to-fix message at iris.DevMode log level.
 
-**[Example](https://github.com/kataras/iris/tree/v6/adaptors/sessions/_example) code:**
+
+**[Examples folder](https://github.com/kataras/iris/tree/v6/adaptors/sessions/_examples)**
+
+
 
 ```go
 package main
