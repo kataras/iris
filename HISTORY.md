@@ -47,7 +47,21 @@ to adapt the new changes to your application, it contains an overview of the new
 
 - Add `.Regex` middleware which does path validation using the `regexp` package, i.e `.Regex("param", "[0-9]+$")`. Useful for routers that don't support regex route path validation out-of-the-box.
 
-- Websocket additions: `c.Context() *iris.Context`, `ws.GetConnectionsByRoom("room name") []websocket.Connection`, `c.OnLeave(func(roomName string){})`, `c.Values().Set(key,value)/.Get(key).Reset()` (where ws:websocket.Server insance, where c:websocket.Connection instance)
+- Websocket additions: `c.Context() *iris.Context`, `ws.GetConnectionsByRoom("room name") []websocket.Connection`, `c.OnLeave(func(roomName string){})`, 
+```go
+		// SetValue sets a key-value pair on the connection's mem store.
+		c.SetValue(key string, value interface{})
+		// GetValue gets a value by its key from the connection's mem store.
+		c.GetValue(key string) interface{}
+		// GetValueArrString gets a value as []string by its key from the connection's mem store.
+		c.GetValueArrString(key string) []string
+		// GetValueString gets a value as string by its key from the connection's mem store.
+		c.GetValueString(key string) string
+		// GetValueInt gets a value as integer by its key from the connection's mem store.
+		c.GetValueInt(key string) int
+
+``` 
+[examples here](https://github.com/kataras/iris/blob/v6/adaptors/websocket/_examples). 
 
 Fixes:
 
