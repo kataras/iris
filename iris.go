@@ -268,7 +268,7 @@ func New(setters ...OptionSetter) *Framework {
 			//  +------------------------------------------------------------+
 			s.Adapt(TemplateFuncsPolicy{
 				"url":     s.URL,
-				"urlpath": s.policies.RouterReversionPolicy.URLPath,
+				"urlpath": s.Path,
 			}) // the entire template registration logic lives inside the ./adaptors/view now.
 
 		}
