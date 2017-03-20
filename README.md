@@ -1,34 +1,73 @@
-<p align="center">
+<p>
+
  <a href="http://support.iris-go.com">
-	<img width="570" src="https://raw.githubusercontent.com/kataras/iris/v6/logo.jpg"
-	alt="Logo created by an Iris community member, https://github.com/OneebMalik"
+ <!-- 20 March 2017 note: The latest github markdown engine commit broke the align="center" -->  
+	<img src="https://github.com/iris-contrib/website/raw/gh-pages/assets/simplicity_random_image_but_suitable_because_iris_has_the_same_slogan.gif"
   title="Navigate to http://support.iris-go.com">
  </a>
 <br/>
 
+Iris is an efficient and well-designed toolbox with robust set of features. Write <b>your own</b>
+<b>perfect high-performance web applications</b> with unlimited <b>potentials</b>.
+<br/>
+
+If you're coming from <a href="https://nodejs.org/en/">Node.js</a> world, this is the <a href="https://github.com/expressjs/express">expressjs</a> equivalent for the <a href="https://golang.org">Go Programming Language.</a>
+<br/>
 
 <a href="https://travis-ci.org/kataras/iris"><img src="https://api.travis-ci.org/kataras/iris.svg?branch=v6&style=flat-square" alt="Build Status"></a>
 <a href="http://goreportcard.com/report/kataras/iris"><img src="https://img.shields.io/badge/report%20card%20-a%2B-F44336.svg?style=flat-square" alt="http://goreportcard.com/report/kataras/iris"></a>
 <a href="http://support.iris-go.com"><img src="https://img.shields.io/badge/support-page-ec2eb4.svg?style=flat-square" alt="Iris support forum"></a>
 <a href="https://golang.org"><img src="https://img.shields.io/badge/powered_by-go-6362c2.svg?style=flat-square" alt="Built with GoLang"></a>
+<a href="https://github.com/kataras/iris/blob/v6/HISTORY.md"><img src="https://img.shields.io/badge/codename-√Νεxτ%20-blue.svg?style=flat-square" alt="CHANGELOG/HISTORY"></a>
+<a href="http://gopherbook.iris-go.com/"><img src="https://img.shields.io/badge/examples-%20repository-3362c2.svg?style=flat-square" alt="Examples for new Gophers"></a>
+<a href="https://godoc.org/gopkg.in/kataras/iris.v6"><img src="https://img.shields.io/badge/docs-%20reference-5272B4.svg?style=flat-square" alt="Docs"></a>
+<a href="https://kataras.rocket.chat/channel/iris"><img src="https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square" alt="Chat"></a>
 <a href="https://www.paypal.me/kataras/25eur"><img src="https://img.shields.io/badge/Buy%20me%20a%20cup%20of%20-%20coffee%3F-F4A460.svg?logo=data:image%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAwIDEwMDAiPjxwYXRoIGZpbGw9InJnYigyMjAsMjIwLDIyMCkiIGQ9Ik04ODYuNiwzMDUuM2MtNDUuNywyMDMuMS0xODcsMzEwLjMtNDA5LjYsMzEwLjNoLTc0LjFsLTUxLjUsMzI2LjloLTYybC0zLjIsMjEuMWMtMi4xLDE0LDguNiwyNi40LDIyLjYsMjYuNGgxNTguNWMxOC44LDAsMzQuNy0xMy42LDM3LjctMzIuMmwxLjUtOGwyOS45LTE4OS4zbDEuOS0xMC4zYzIuOS0xOC42LDE4LjktMzIuMiwzNy43LTMyLjJoMjMuNWMxNTMuNSwwLDI3My43LTYyLjQsMzA4LjktMjQyLjdDOTIxLjYsNDA2LjgsOTE2LjcsMzQ4LjYsODg2LjYsMzA1LjN6Ii8%2BPHBhdGggZmlsbD0icmdiKDIyMCwyMjAsMjIwKSIgZD0iTTc5MS45LDgzLjlDNzQ2LjUsMzIuMiw2NjQuNCwxMCw1NTkuNSwxMEgyNTVjLTIxLjQsMC0zOS44LDE1LjUtNDMuMSwzNi44TDg1LDg1MWMtMi41LDE1LjksOS44LDMwLjIsMjUuOCwzMC4ySDI5OWw0Ny4zLTI5OS42bC0xLjUsOS40YzMuMi0yMS4zLDIxLjQtMzYuOCw0Mi45LTM2LjhINDc3YzE3NS41LDAsMzEzLTcxLjIsMzUzLjItMjc3LjVjMS4yLTYuMSwyLjMtMTIuMSwzLjEtMTcuOEM4NDUuMSwxODIuOCw4MzMuMiwxMzAuOCw3OTEuOSw4My45TDc5MS45LDgzLjl6Ii8%2BPC9zdmc%2B" alt="Buy me a cup of coffee"></a>
 
-<br/><br/>
+<br/>
+<img src="https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png" alt="This benchmark measures results from 'real-world' instead of 'hello-world' application source code. | Last Update At: July 21, 2016. | Shows: Processing Time Horizontal Graph. | Who did Transparency:  Third-party source | Iris version: these benchmark results are totally valid for v5. | New (go 1.8 + iris.v6) benchmarks will be published on the next techempower's fortune!" />
 
-Iris is an efficient and well-designed toolbox with robust set of features.<br/>Write <b>your own</b>
-<b>perfect high-performance web applications</b> <br/>with unlimited potentials and <b>portability</b>.
-<br/><br>
+</p>
 
-If you're coming from <a href="https://nodejs.org/en/">Node.js</a> world, this is the <a href="https://github.com/expressjs/express">expressjs</a> equivalent for the <a href="https://golang.org">Go Programming Language.</a>
+
+What you say about Iris ✌
+-----------
+<p>
+<a href="https://dzone.com/articles/a-url-shortener-service-using-go-iris-and-bolt-ger?oid=twitter&utm_content=buffera2aca&utm_medium=social&utm_source=twitter.com&utm_campaign=buffer">
+<img width="600" src="http://iris-go.com/comment28.png" />
+</a>
+
+<a href="https://twitter.com/gelnior/status/769100480706379776">
+<img src="http://iris-go.com/comment27.png" />
+</a>
+
 <br/>
 
+<a href="https://twitter.com/_mgale/status/818591490305761280">
+<img width="630" src="http://iris-go.com/comment25.png" />
+</a>
+
+<a href="https://twitter.com/MeAlex07/status/822799954188075008">
+<img width="627" src="http://iris-go.com/comment26.png" />
+</a>
+
 <br/>
-<img src="https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png" title="This benchmark measures results from 'real-world' instead of 'hello-world' application source code. | Last Update At: July 21, 2016. | Shows: Processing Time Horizontal Graph. | Who did Transparency:  Third-party source | Iris version: these benchmark results are totally valid for v5. | New (go 1.8 + iris.v6) benchmarks will be published on the next techempower's fortune!" />
+
+
+<a href="https://www.youtube.com/watch?v=jGx0LkuUs4A">
+<img  width="630" src="https://github.com/iris-contrib/website/raw/gh-pages/assets/gif_link_to_yt.gif" alt="What people say" />
+</a>
+
+<a href="https://www.youtube.com/watch?v=jGx0LkuUs4A">
+<img width="627" src="https://github.com/iris-contrib/website/raw/gh-pages/assets/gif_link_to_yt2.gif" alt="What people say" />
+</a>
 
 
 </p>
 
-Heroes [♡](https://github.com/kataras/iris#support)
+
+
+Legends [♡](https://github.com/kataras/iris#support)
 -----------
 
 [Juan Sebastián Suárez Valencia](https://github.com/Juanses) donated 20 EUR at September 11 of 2016
@@ -107,22 +146,6 @@ $ go get gopkg.in/kataras/iris.v6
 ```
 
 For further installation support, navigate [here](http://support.iris-go.com/d/16-how-to-install-iris-web-framework).
-
-
-Documentation
------------
-
- <a href="https://docs.iris-go.com"><img align="right" width="125" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_4.jpg"></a>
-
-- Godocs ⇒ https://godoc.org/gopkg.in/kataras/iris.v6
-
-- Getting Started with Go+Iris ⇒ http://gopherbook.iris-go.com
-
-- Navigate through community examples ⇒ https://github.com/iris-contrib/examples
-
-- [./adaptors](https://github.com/kataras/iris/tree/v6/adaptors) and [./middleware](https://github.com/kataras/iris/tree/v6/middleware) contains examples of their usage.
-
-- [HISTORY.md](https://github.com//kataras/iris/tree/v6/HISTORY.md) is your best friend, version migrations are released there.
 
 
 Overview
@@ -248,6 +271,91 @@ app.Adapt(view.HTML("./views", ".html").Reload(true))
 ```
 
 
+FAQ & Documentation
+-----------
+
+ <a href="https://github.com/kataras/iris/tree/v6/_examples"><img align="right" width="125" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_4.jpg"></a>
+
+- [Getting Started with Go+Iris](http://gopherbook.iris-go.com).
+
+- [Godocs](https://godoc.org/gopkg.in/kataras/iris.v6) for deep documentation.
+
+- Official small but practical [examples](https://github.com/kataras/iris/tree/v6/_examples).
+
+- Navigate through [community examples](https://github.com/iris-contrib/examples) too.
+
+- [DZone: A URL Shortener Service Using Go, Iris, and Bolt](https://dzone.com/articles/a-url-shortener-service-using-go-iris-and-bolt-ger?oid=twitter&utm_content=buffera2aca&utm_medium=social&utm_source=twitter.com&utm_campaign=buffer).
+
+- [./adaptors](https://github.com/kataras/iris/tree/v6/adaptors) and [./middleware](https://github.com/kataras/iris/tree/v6/middleware) contains examples of their usage.
+
+- [HISTORY.md](https://github.com//kataras/iris/tree/v6/HISTORY.md) is your best friend, version migrations are released there.
+
+
+I'll be glad to talk with you about **your awesome feature requests**, 
+open a new [discussion](http://support.iris-go.com), you will be heard!
+
+
+
+Support
+------------
+
+- [Star the project](https://github.com/kataras/iris/strangers), will help you to follow the upcoming features.
+- Write [an article](https://dzone.com/articles/a-url-shortener-service-using-go-iris-and-bolt-ger) about Iris or even [post a Tweet](https://twitter.com/gelnior/status/769100480706379776).
+- Report bugs by opening an new topic labeled as 'bug' [here](http://support.iris-go.com), thanks!
+
+
+
+<!--It's true that I am spending all my available time for Iris and its related projects, therefore I have no income value.
+
+However, I am not asking from people to change the system. I know that the majority of us(devs) don't really care how authors of projects like Iris survive. I totally understand that.
+
+If somebody out there can
+help developers like me to worry less about daily life's dilemmas it would be easier for them to make the particular project(s) even better.
+There are no limits to the Iris' potentials.
+
+
+I am a realistic person. If things won't change for my daily life I will be forced to give Iris' managment to somebody else(that community could trust).-->
+
+Buy me a cup of coffee?
+------------
+
+Iris is free and open source but developing it has taken thousands of hours of my time and a large part of my sanity. If you feel this web framework useful to you, it would go a great way to ensuring that I can afford to take the time to continue to develop it.
+
+
+I spend all my time in the construction of Iris, therefore I have no income value.
+
+Feel free to send **any** amount through paypal
+
+[![](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.me/kataras/)
+
+> Please check your e-mail after your donation.
+
+
+Thanks for your gratitude and finance help ♡
+
+
+<!-- 
+
+Some of the benefits are listed here:
+
+- Your github username, after your approval, is visible at the top of the README page.
+- Access to the 'donors' [private chat room](https://kataras.rocket.chat/group/donors) gives you real-time assistance by Iris' Author.
+
+--> 
+
+<!-- 
+
+### Become An Iris Sponsor
+
+Want to add your company's logo to our [website](http://iris-go.com)?
+
+Please contact me via email: kataras2006@hotmail.com
+
+Thank you!
+
+-->
+
+
 Third Party Middleware
 ------------
 
@@ -277,18 +385,14 @@ Here is a small list of Iris compatible middleware, I'm sure you can find more! 
 | [digits](https://github.com/bamarni/digits) | [Bilal Amarni](https://github.com/bamarni) | Middleware that handles [Twitter Digits](https://get.digits.com/) authentication |
 
 
+<!-- 
+
 FAQ
 -----------
 
 <p>
 
-<a href="https://github.com/kataras/iris/blob/v6/HISTORY.md"><img src="https://img.shields.io/badge/codename-√Νεxτ%20-blue.svg?style=flat-square" alt="CHANGELOG/HISTORY"></a>
 
-<a href="http://gopherbook.iris-go.com/"><img src="https://img.shields.io/badge/examples-%20repository-3362c2.svg?style=flat-square" alt="Examples for new Gophers"></a>
-
-<a href="https://godoc.org/gopkg.in/kataras/iris.v6"><img src="https://img.shields.io/badge/docs-%20reference-5272B4.svg?style=flat-square" alt="Docs"></a>
-
-<a href="https://kataras.rocket.chat/channel/iris"><img src="https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square" alt="Chat"></a>
 
 </p>
 
@@ -360,6 +464,7 @@ Proof of concept:
 
 Explore [these questions](http://support.iris-go.com/) and join to our [community chat][Chat]!
 
+-->
 
 Testing
 ------------
@@ -374,22 +479,15 @@ i.e:
 - [policy_gorillamux_test.go](https://github.com/kataras/iris/blob/v6/policy_gorillamux_test.go)
 - [policy_httprouter_test.go](https://github.com/kataras/iris/blob/v6/policy_httprouter_test.go)
 - [policy_nativerouter_test.go](https://github.com/kataras/iris/blob/v6/policy_nativerouter_test.go)
-- [policy_render_test.go](https://github.com/kataras/iris/blob/v6/policy_render_test.go)
+- [policy_routerwrapper_test.go](https://github.com/kataras/iris/blob/v6/policy_routerwrapper_test.go)
 - [policy_sessions_test.go](https://github.com/kataras/iris/blob/v6/policy_sessions_test.go)
 - [response_writer_test.go](https://github.com/kataras/iris/blob/v6/response_writer_test.go)
 - [route_test.go](https://github.com/kataras/iris/blob/v6/route_test.go)
 - [status_test.go](https://github.com/kataras/iris/blob/v6/status_test.go)
 - [transaction_test.go](https://github.com/kataras/iris/blob/v6/transaction_test.go)
+- [serializer_test.go](https://github.com/kataras/iris/blob/v6/serializer_test.go)
 
 A simple test is located to [./httptest/_example/main_test.go](https://github.com/kataras/iris/blob/v6/httptest/_example/main_test.go)
-
-httpexpect's repository has some Iris examples too:
-
-- https://github.com/gavv/httpexpect/blob/master/_examples/iris.go (without `httptest` package)
-- https://github.com/gavv/httpexpect/blob/master/_examples/iris_test.go (without `httptest` package)
-
-Read more about httpexpect [here](https://github.com/gavv/httpexpect).
-
 
 Philosophy
 ------------
@@ -405,61 +503,6 @@ People
 The author of Iris is [@kataras](https://github.com/kataras).
 
 However the real Success of Iris belongs to you with your bug reports and feature requests that made this Framework so Unique.
-
-
-Support
-------------
-
-<!--It's true that I am spending all my available time for Iris and its related projects, therefore I have no income value.
-
-However, I am not asking from people to change the system. I know that the majority of us(devs) don't really care how authors of projects like Iris survive. I totally understand that.
-
-If somebody out there can
-help developers like me to worry less about daily life's dilemmas it would be easier for them to make the particular project(s) even better.
-There are no limits to the Iris' potentials.
-
-
-I am a realistic person. If things won't change for my daily life I will be forced to give Iris' managment to somebody else(that community could trust).-->
-
-The main purpose of donations to open source is to say "thank you" to the developer rather than actually advancing the project.
-
-Open source projects don’t need the money like those charities do—and so it’s usually phrased like: *Buy the developer a cup of coffee*.
-
-
-### Buy me a cup of coffee?
-
-Iris is free and open source but developing it has taken thousands of hours of my time and a large part of my sanity. If you feel this web framework useful to you, it would go a great way to ensuring that I can afford to take the time to continue to develop it.
-
-Thanks for your gratitude and finance help ♡
-
-[![](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/donate.png)](https://www.paypal.me/kataras/25eur)
-
-
-Some of the benefits are listed here:
-
-- Your github username, after your approval, is visible at the top of the README page.
-- Access to the 'donors' [private chat room](https://kataras.rocket.chat/group/donors) gives you real-time assistance by Iris' Author.
-
-
-> *ANONYMOUS*: People who donate but don't want to be shown here.
-*ANONYMOUS* are listed as one group instead of an individual entry, in order to protect their exact date of their donation.
-
-> The names, shown at the [supporters](https://github.com/kataras/iris#heroes-) list, are sorted by **date** and **NOT by the amount** of the donation.
-
-### More options!
-
-- Star the project, will help you to follow the upcoming features.
-- Write an article about Iris or even post a Tweet.
-- If you are interested in contributing to the Iris project, please see the document [CONTRIBUTING](https://github.com/kataras/iris/blob/master/.github/CONTRIBUTING.md).
-
-
-### Become An Iris Sponsor
-
-Want to add your company's logo to our [website](http://iris-go.com)?
-
-Please contact me via email: kataras2006@hotmail.com
-
-Thank you!
 
 
 Socialize
