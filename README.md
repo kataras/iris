@@ -7,7 +7,7 @@
  </a>
 <br/>
 
-Iris is an efficient and well-designed toolbox with robust set of features. Write <b>your own</b>
+Iris is an efficient and well-designed toolbox with robust set of features.<br/>Write <b>your own</b>
 <b>perfect high-performance web applications</b> with unlimited <b>potentials</b>.
 <br/>
 
@@ -19,10 +19,12 @@ If you're coming from <a href="https://nodejs.org/en/">Node.js</a> world, this i
 <a href="http://support.iris-go.com"><img src="https://img.shields.io/badge/support-page-ec2eb4.svg?style=flat-square" alt="Iris support forum"></a>
 <a href="https://golang.org"><img src="https://img.shields.io/badge/powered_by-go-6362c2.svg?style=flat-square" alt="Built with GoLang"></a>
 <a href="https://github.com/kataras/iris/blob/v6/HISTORY.md"><img src="https://img.shields.io/badge/codename-√Νεxτ%20-blue.svg?style=flat-square" alt="CHANGELOG/HISTORY"></a>
-<a href="http://gopherbook.iris-go.com/"><img src="https://img.shields.io/badge/examples-%20repository-3362c2.svg?style=flat-square" alt="Examples for new Gophers"></a>
+<a href="https://www.paypal.me/kataras/25eur"><img src="https://img.shields.io/badge/Buy%20me%20a%20cup%20of%20-%20coffee%3F-F4A460.svg?logo=data:image%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAwIDEwMDAiPjxwYXRoIGZpbGw9InJnYigyMjAsMjIwLDIyMCkiIGQ9Ik04ODYuNiwzMDUuM2MtNDUuNywyMDMuMS0xODcsMzEwLjMtNDA5LjYsMzEwLjNoLTc0LjFsLTUxLjUsMzI2LjloLTYybC0zLjIsMjEuMWMtMi4xLDE0LDguNiwyNi40LDIyLjYsMjYuNGgxNTguNWMxOC44LDAsMzQuNy0xMy42LDM3LjctMzIuMmwxLjUtOGwyOS45LTE4OS4zbDEuOS0xMC4zYzIuOS0xOC42LDE4LjktMzIuMiwzNy43LTMyLjJoMjMuNWMxNTMuNSwwLDI3My43LTYyLjQsMzA4LjktMjQyLjdDOTIxLjYsNDA2LjgsOTE2LjcsMzQ4LjYsODg2LjYsMzA1LjN6Ii8%2BPHBhdGggZmlsbD0icmdiKDIyMCwyMjAsMjIwKSIgZD0iTTc5MS45LDgzLjlDNzQ2LjUsMzIuMiw2NjQuNCwxMCw1NTkuNSwxMEgyNTVjLTIxLjQsMC0zOS44LDE1LjUtNDMuMSwzNi44TDg1LDg1MWMtMi41LDE1LjksOS44LDMwLjIsMjUuOCwzMC4ySDI5OWw0Ny4zLTI5OS42bC0xLjUsOS40YzMuMi0yMS4zLDIxLjQtMzYuOCw0Mi45LTM2LjhINDc3YzE3NS41LDAsMzEzLTcxLjIsMzUzLjItMjc3LjVjMS4yLTYuMSwyLjMtMTIuMSwzLjEtMTcuOEM4NDUuMSwxODIuOCw4MzMuMiwxMzAuOCw3OTEuOSw4My45TDc5MS45LDgzLjl6Ii8%2BPC9zdmc%2B" alt="Buy me a cup of coffee"></a>
+<br/>
+<a href="https://github.com/kataras/iris/tree/v6/_examples"><img src="https://img.shields.io/badge/examples-%20repository-3362c2.svg?style=flat-square" alt="Examples for new Gophers"></a>
 <a href="https://godoc.org/gopkg.in/kataras/iris.v6"><img src="https://img.shields.io/badge/docs-%20reference-5272B4.svg?style=flat-square" alt="Docs"></a>
 <a href="https://kataras.rocket.chat/channel/iris"><img src="https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square" alt="Chat"></a>
-<a href="https://www.paypal.me/kataras/25eur"><img src="https://img.shields.io/badge/Buy%20me%20a%20cup%20of%20-%20coffee%3F-F4A460.svg?logo=data:image%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAwIDEwMDAiPjxwYXRoIGZpbGw9InJnYigyMjAsMjIwLDIyMCkiIGQ9Ik04ODYuNiwzMDUuM2MtNDUuNywyMDMuMS0xODcsMzEwLjMtNDA5LjYsMzEwLjNoLTc0LjFsLTUxLjUsMzI2LjloLTYybC0zLjIsMjEuMWMtMi4xLDE0LDguNiwyNi40LDIyLjYsMjYuNGgxNTguNWMxOC44LDAsMzQuNy0xMy42LDM3LjctMzIuMmwxLjUtOGwyOS45LTE4OS4zbDEuOS0xMC4zYzIuOS0xOC42LDE4LjktMzIuMiwzNy43LTMyLjJoMjMuNWMxNTMuNSwwLDI3My43LTYyLjQsMzA4LjktMjQyLjdDOTIxLjYsNDA2LjgsOTE2LjcsMzQ4LjYsODg2LjYsMzA1LjN6Ii8%2BPHBhdGggZmlsbD0icmdiKDIyMCwyMjAsMjIwKSIgZD0iTTc5MS45LDgzLjlDNzQ2LjUsMzIuMiw2NjQuNCwxMCw1NTkuNSwxMEgyNTVjLTIxLjQsMC0zOS44LDE1LjUtNDMuMSwzNi44TDg1LDg1MWMtMi41LDE1LjksOS44LDMwLjIsMjUuOCwzMC4ySDI5OWw0Ny4zLTI5OS42bC0xLjUsOS40YzMuMi0yMS4zLDIxLjQtMzYuOCw0Mi45LTM2LjhINDc3YzE3NS41LDAsMzEzLTcxLjIsMzUzLjItMjc3LjVjMS4yLTYuMSwyLjMtMTIuMSwzLjEtMTcuOEM4NDUuMSwxODIuOCw4MzMuMiwxMzAuOCw3OTEuOSw4My45TDc5MS45LDgzLjl6Ii8%2BPC9zdmc%2B" alt="Buy me a cup of coffee"></a>
+
 
 <br/>
 <img src="https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png" alt="This benchmark measures results from 'real-world' instead of 'hello-world' application source code. | Last Update At: July 21, 2016. | Shows: Processing Time Horizontal Graph. | Who did Transparency:  Third-party source | Iris version: these benchmark results are totally valid for v5. | New (go 1.8 + iris.v6) benchmarks will be published on the next techempower's fortune!" />
@@ -34,32 +36,33 @@ What you say about Iris ✌
 -----------
 <p>
 <a href="https://dzone.com/articles/a-url-shortener-service-using-go-iris-and-bolt-ger?oid=twitter&utm_content=buffera2aca&utm_medium=social&utm_source=twitter.com&utm_campaign=buffer">
-<img width="600" src="http://iris-go.com/comment28.png" />
+<img width="300" src="http://iris-go.com/comment28.png" />
 </a>
 
 <a href="https://twitter.com/gelnior/status/769100480706379776">
-<img src="http://iris-go.com/comment27.png" />
+<img width="300" src="http://iris-go.com/comment27.png" />
 </a>
 
 <br/>
 
 <a href="https://twitter.com/_mgale/status/818591490305761280">
-<img width="630" src="http://iris-go.com/comment25.png" />
+<img width="300" width="630" src="http://iris-go.com/comment25.png" />
 </a>
 
 <a href="https://twitter.com/MeAlex07/status/822799954188075008">
-<img width="627" src="http://iris-go.com/comment26.png" />
+<img width="300" width="627" src="http://iris-go.com/comment26.png" />
 </a>
 
 <br/>
 
 
 <a href="https://www.youtube.com/watch?v=jGx0LkuUs4A">
-<img  width="630" src="https://github.com/iris-contrib/website/raw/gh-pages/assets/gif_link_to_yt.gif" alt="What people say" />
+<img  width="300"
+src="https://github.com/iris-contrib/website/raw/gh-pages/assets/gif_link_to_yt.gif" alt="What people say" />
 </a>
 
 <a href="https://www.youtube.com/watch?v=jGx0LkuUs4A">
-<img width="627" src="https://github.com/iris-contrib/website/raw/gh-pages/assets/gif_link_to_yt2.gif" alt="What people say" />
+<img width ="300" src="https://github.com/iris-contrib/website/raw/gh-pages/assets/gif_link_to_yt2.gif" alt="What people say" />
 </a>
 
 
