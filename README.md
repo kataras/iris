@@ -19,12 +19,11 @@ If you're coming from <a href="https://nodejs.org/en/">Node.js</a> world, this i
 <a href="http://support.iris-go.com"><img src="https://img.shields.io/badge/support-page-ec2eb4.svg?style=flat-square" alt="Iris support forum"></a>
 <a href="https://golang.org"><img src="https://img.shields.io/badge/powered_by-go-6362c2.svg?style=flat-square" alt="Built with GoLang"></a>
 <a href="https://github.com/kataras/iris/blob/v6/HISTORY.md"><img src="https://img.shields.io/badge/codename-√Νεxτ%20-blue.svg?style=flat-square" alt="CHANGELOG/HISTORY"></a>
-<a href="https://www.paypal.me/kataras/25eur"><img src="https://img.shields.io/badge/Buy%20me%20a%20cup%20of%20-%20coffee%3F-F4A460.svg?logo=data:image%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAwIDEwMDAiPjxwYXRoIGZpbGw9InJnYigyMjAsMjIwLDIyMCkiIGQ9Ik04ODYuNiwzMDUuM2MtNDUuNywyMDMuMS0xODcsMzEwLjMtNDA5LjYsMzEwLjNoLTc0LjFsLTUxLjUsMzI2LjloLTYybC0zLjIsMjEuMWMtMi4xLDE0LDguNiwyNi40LDIyLjYsMjYuNGgxNTguNWMxOC44LDAsMzQuNy0xMy42LDM3LjctMzIuMmwxLjUtOGwyOS45LTE4OS4zbDEuOS0xMC4zYzIuOS0xOC42LDE4LjktMzIuMiwzNy43LTMyLjJoMjMuNWMxNTMuNSwwLDI3My43LTYyLjQsMzA4LjktMjQyLjdDOTIxLjYsNDA2LjgsOTE2LjcsMzQ4LjYsODg2LjYsMzA1LjN6Ii8%2BPHBhdGggZmlsbD0icmdiKDIyMCwyMjAsMjIwKSIgZD0iTTc5MS45LDgzLjlDNzQ2LjUsMzIuMiw2NjQuNCwxMCw1NTkuNSwxMEgyNTVjLTIxLjQsMC0zOS44LDE1LjUtNDMuMSwzNi44TDg1LDg1MWMtMi41LDE1LjksOS44LDMwLjIsMjUuOCwzMC4ySDI5OWw0Ny4zLTI5OS42bC0xLjUsOS40YzMuMi0yMS4zLDIxLjQtMzYuOCw0Mi45LTM2LjhINDc3YzE3NS41LDAsMzEzLTcxLjIsMzUzLjItMjc3LjVjMS4yLTYuMSwyLjMtMTIuMSwzLjEtMTcuOEM4NDUuMSwxODIuOCw4MzMuMiwxMzAuOCw3OTEuOSw4My45TDc5MS45LDgzLjl6Ii8%2BPC9zdmc%2B" alt="Buy me a cup of coffee"></a>
 <br/>
 <a href="https://github.com/kataras/iris/tree/v6/_examples"><img src="https://img.shields.io/badge/examples-%20repository-3362c2.svg?style=flat-square" alt="Examples for new Gophers"></a>
 <a href="https://godoc.org/gopkg.in/kataras/iris.v6"><img src="https://img.shields.io/badge/docs-%20reference-5272B4.svg?style=flat-square" alt="Docs"></a>
 <a href="https://kataras.rocket.chat/channel/iris"><img src="https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square" alt="Chat"></a>
-
+<a href="https://github.com/kataras/iris#buy-me-a-cup-of-coffee"><img src="https://img.shields.io/badge/buy%20me%20a%20cup%20of%20-%20coffee-F4A460.svg?logo=data:image%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAwIDEwMDAiPjxwYXRoIGZpbGw9InJnYigyMjAsMjIwLDIyMCkiIGQ9Ik04ODYuNiwzMDUuM2MtNDUuNywyMDMuMS0xODcsMzEwLjMtNDA5LjYsMzEwLjNoLTc0LjFsLTUxLjUsMzI2LjloLTYybC0zLjIsMjEuMWMtMi4xLDE0LDguNiwyNi40LDIyLjYsMjYuNGgxNTguNWMxOC44LDAsMzQuNy0xMy42LDM3LjctMzIuMmwxLjUtOGwyOS45LTE4OS4zbDEuOS0xMC4zYzIuOS0xOC42LDE4LjktMzIuMiwzNy43LTMyLjJoMjMuNWMxNTMuNSwwLDI3My43LTYyLjQsMzA4LjktMjQyLjdDOTIxLjYsNDA2LjgsOTE2LjcsMzQ4LjYsODg2LjYsMzA1LjN6Ii8%2BPHBhdGggZmlsbD0icmdiKDIyMCwyMjAsMjIwKSIgZD0iTTc5MS45LDgzLjlDNzQ2LjUsMzIuMiw2NjQuNCwxMCw1NTkuNSwxMEgyNTVjLTIxLjQsMC0zOS44LDE1LjUtNDMuMSwzNi44TDg1LDg1MWMtMi41LDE1LjksOS44LDMwLjIsMjUuOCwzMC4ySDI5OWw0Ny4zLTI5OS42bC0xLjUsOS40YzMuMi0yMS4zLDIxLjQtMzYuOCw0Mi45LTM2LjhINDc3YzE3NS41LDAsMzEzLTcxLjIsMzUzLjItMjc3LjVjMS4yLTYuMSwyLjMtMTIuMSwzLjEtMTcuOEM4NDUuMSwxODIuOCw4MzMuMiwxMzAuOCw3OTEuOSw4My45TDc5MS45LDgzLjl6Ii8%2BPC9zdmc%2B" alt="Buy me a cup of coffee"></a>
 
 <br/>
 <img src="https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png" alt="This benchmark measures results from 'real-world' instead of 'hello-world' application source code. | Last Update At: July 21, 2016. | Shows: Processing Time Horizontal Graph. | Who did Transparency:  Third-party source | Iris version: these benchmark results are totally valid for v5. | New (go 1.8 + iris.v6) benchmarks will be published on the next techempower's fortune!" />
@@ -65,10 +64,7 @@ src="https://github.com/iris-contrib/website/raw/gh-pages/assets/gif_link_to_yt.
 <img width ="300" src="https://github.com/iris-contrib/website/raw/gh-pages/assets/gif_link_to_yt2.gif" alt="What people say" />
 </a>
 
-
 </p>
-
-
 
 Legends [♡](https://github.com/kataras/iris#support)
 -----------
@@ -279,19 +275,20 @@ FAQ & Documentation
 
  <a href="https://github.com/kataras/iris/tree/v6/_examples"><img align="right" width="125" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_4.jpg"></a>
 
-- [Getting Started with Go+Iris](http://gopherbook.iris-go.com).
+1. [Getting Started with Go+Iris](http://gopherbook.iris-go.com)
 
-- [Godocs](https://godoc.org/gopkg.in/kataras/iris.v6) for deep documentation.
+2. Official small but practical [examples](https://github.com/kataras/iris/tree/v6/_examples)
 
-- Official small but practical [examples](https://github.com/kataras/iris/tree/v6/_examples).
+3. Navigate through [community examples](https://github.com/iris-contrib/examples) too
 
-- Navigate through [community examples](https://github.com/iris-contrib/examples) too.
+4. [DZone: A URL Shortener Service Using Go, Iris, and Bolt](https://dzone.com/articles/a-url-shortener-service-using-go-iris-and-bolt-ger?oid=twitter&utm_content=buffera2aca&utm_medium=social&utm_source=twitter.com&utm_campaign=buffer)
 
-- [DZone: A URL Shortener Service Using Go, Iris, and Bolt](https://dzone.com/articles/a-url-shortener-service-using-go-iris-and-bolt-ger?oid=twitter&utm_content=buffera2aca&utm_medium=social&utm_source=twitter.com&utm_campaign=buffer).
+5. [./adaptors](https://github.com/kataras/iris/tree/v6/adaptors) and [./middleware](https://github.com/kataras/iris/tree/v6/middleware) contains examples of their usage
 
-- [./adaptors](https://github.com/kataras/iris/tree/v6/adaptors) and [./middleware](https://github.com/kataras/iris/tree/v6/middleware) contains examples of their usage.
+6. [Godocs](https://godoc.org/gopkg.in/kataras/iris.v6) for deep documentation
 
-- [HISTORY.md](https://github.com//kataras/iris/tree/v6/HISTORY.md) is your best friend, version migrations are released there.
+
+7. [HISTORY.md](https://github.com//kataras/iris/tree/v6/HISTORY.md) is your best friend, version migrations are released there
 
 
 I'll be glad to talk with you about **your awesome feature requests**, 
@@ -302,10 +299,10 @@ open a new [discussion](http://support.iris-go.com), you will be heard!
 Support
 ------------
 
-- [Star the project](https://github.com/kataras/iris/strangers), will help you to follow the upcoming features.
-- Write [an article](https://dzone.com/articles/a-url-shortener-service-using-go-iris-and-bolt-ger) about Iris or even [post a Tweet](https://twitter.com/gelnior/status/769100480706379776).
-- Report bugs by opening an new topic labeled as 'bug' [here](http://support.iris-go.com), thanks!
-
+- :star: [the project](https://github.com/kataras/iris/stargazers), will help you to follow the upcoming features
+- [Donate](https://github.com/kataras/iris#buy-me-a-cup-of-coffee), will help me to continue
+- [Post](http://support.iris-go.com) a feature request or report a bug, will help all of us to build a better web, together
+- :earth_americas: post [an article](https://dzone.com/articles/a-url-shortener-service-using-go-iris-and-bolt-ger) or [tweet](https://twitter.com/gelnior/status/769100480706379776) and share it with your neighbor
 
 
 <!--It's true that I am spending all my available time for Iris and its related projects, therefore I have no income value.
@@ -364,7 +361,7 @@ Third Party Middleware
 
 Iris has its own middleware form of `func(ctx *iris.Context)` but it's also compatible with all `net/http` middleware forms using [iris.ToHandler](https://github.com/iris-contrib/middleware/blob/master/cors/cors.go#L33), i.e Negroni's middleware form of `func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)`.
 
-Here is a small list of Iris compatible middleware, I'm sure you can find more! Feel free to put up a [PR](https://github.com/iris-contrib/middleware) your middleware if you have built one :
+Here is a small list of Iris compatible middleware, I'm sure you can find more:
 
 | Middleware | Author | Description |
 | -----------|--------|-------------|
@@ -387,6 +384,7 @@ Here is a small list of Iris compatible middleware, I'm sure you can find more! 
 | [xrequestid](https://github.com/pilu/xrequestid) | [Andrea Franz](https://github.com/pilu) | Middleware that assigns a random X-Request-Id header to each request |
 | [digits](https://github.com/bamarni/digits) | [Bilal Amarni](https://github.com/bamarni) | Middleware that handles [Twitter Digits](https://get.digits.com/) authentication |
 
+Feel free to put up a [PR](https://github.com/iris-contrib/middleware) your middleware!
 
 <!-- 
 
@@ -508,7 +506,7 @@ The author of Iris is [@kataras](https://github.com/kataras).
 However the real Success of Iris belongs to you with your bug reports and feature requests that made this Framework so Unique.
 
 
-Socialize
+Contact
 ------------
 
 Besides the fact that we have a [community chat][Chat] for questions or reports and ideas, [stackoverflow](http://stackoverflow.com/) section for generic go+iris questions and the [iris support](http://support.iris-go.com) for bug reports and feature requests, you can also contact with me, as a person who is always open to help you:
@@ -518,13 +516,8 @@ Besides the fact that we have a [community chat][Chat] for questions or reports 
 - [Linkedin](https://www.linkedin.com/in/gerasimos-maropoulos)
 
 
-Versioning
+Codename: ["√Νεxτ"](https://github.com/kataras/iris/blob/v6/HISTORY.md)
 ------------
-
-Current: **v6**, code-named as "√Νεxτ"
-
-v5: https://github.com/kataras/iris/tree/5.0.0
-
 
 License
 ------------
@@ -534,16 +527,6 @@ under the MIT License found in the [LICENSE file](LICENSE).
 
 Note that some optional components that you may use with Iris requires
 different license agreements.
-
-
-TODO
-------------
-
-- [ ] Refactor the [Examples](https://github.com/iris-contrib/examples) to be align with the latest version
-- [ ] Upgrade [GitBook](https://docs.iris-go.com) for the latest release
-
-
-Iris is a Community-Driven project waiting for your [feature requests](http://support.iris-go.com/t/feature-request)!
 
 
 [Chat]: https://kataras.rocket.chat/channel/iris
