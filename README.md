@@ -281,7 +281,7 @@ FAQ & Documentation
 
 3. Navigate through [community examples](https://github.com/iris-contrib/examples) too
 
-4. [DZone: A URL Shortener Service Using Go, Iris, and Bolt](https://dzone.com/articles/a-url-shortener-service-using-go-iris-and-bolt-ger?oid=twitter&utm_content=buffera2aca&utm_medium=social&utm_source=twitter.com&utm_campaign=buffer)
+4. [DZone: A URL Shortener Service Using Go, Iris, and Bolt](https://twitter.com/DZone/status/843673709793742848)
 
 5. [./adaptors](https://github.com/kataras/iris/tree/v6/adaptors) and [./middleware](https://github.com/kataras/iris/tree/v6/middleware) contains examples of their usage
 
