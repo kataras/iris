@@ -43,7 +43,7 @@ const (
 	ANDSymbol          = '&'
 )
 
-const DefaultFailStatusCode = 0
+const DefaultFailStatusCode = 404
 
 // Parse i.e:
 // id:int range(1,5) otherFunc(3) !404
