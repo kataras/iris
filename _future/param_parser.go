@@ -73,6 +73,12 @@ func ParseParam(source string) (*ParamTmpl, error) {
 	// id:int min(1) max(5)
 	// id:int range(1,5)!404 or !404, space doesn't matters on fail error code.
 	cursor := 0
+	// hasFuncs setted to true when we validate that we have macro's functions
+	// so we can check for parenthesis.
+	// We need that check because the user may add a regexp with parenthesis.
+	// Although this will not be recommended, user is better to create a macro for its regexp
+	// in order to use it everywhere and reduce code duplication.
+	hasFuncs := false
 	for i := 0; i < len(source); i++ {
 		if source[i] == ParamNameSeperator {
 			if i+1 >= len(source) {
@@ -100,6 +106,7 @@ func ParseParam(source string) (*ParamTmpl, error) {
 			// take the left part: int if it's the first
 			// space after the param name
 			if t.Macro.Name == t.Expression {
+				hasFuncs = true
 				t.Macro.Name = source[cursor:i]
 			} // else we have one or more functions, skip.
 
@@ -107,7 +114,7 @@ func ParseParam(source string) (*ParamTmpl, error) {
 			continue
 		}
 
-		if source[i] == FuncStart {
+		if hasFuncs && source[i] == FuncStart {
 			// take the left part: range
 			funcName := source[cursor:i]
 			t.Macro.Funcs = append(t.Macro.Funcs, MacroFuncTmpl{Name: funcName})
@@ -116,7 +123,7 @@ func ParseParam(source string) (*ParamTmpl, error) {
 			continue
 		}
 		// 1,5)
-		if source[i] == FuncEnd {
+		if hasFuncs && source[i] == FuncEnd {
 			// check if we have end parenthesis but not start
 			if len(t.Macro.Funcs) == 0 {
 				return nil, fmt.Errorf("missing start macro's '%s' function, on source '%s'", t.Macro.Name, source)
