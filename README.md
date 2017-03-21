@@ -34,7 +34,7 @@ If you're coming from <a href="https://nodejs.org/en/">Node.js</a> world, this i
 What you say about Iris ✌
 -----------
 <p>
-<a href="https://twitter.com/DZone/status/843673709793742848">
+<a href="https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7">
 <img width="300" src="http://iris-go.com/comment28.png" />
 </a>
 
@@ -281,7 +281,7 @@ FAQ & Documentation
 
 3. Navigate through [community examples](https://github.com/iris-contrib/examples) too
 
-4. [DZone: A URL Shortener Service Using Go, Iris, and Bolt](https://twitter.com/DZone/status/843673709793742848)
+4. [Creating A URL Shortener Service Using Go, Iris, and Bolt](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
 
 5. [./adaptors](https://github.com/kataras/iris/tree/v6/adaptors) and [./middleware](https://github.com/kataras/iris/tree/v6/middleware) contains examples of their usage
 
