@@ -34,7 +34,7 @@ If you're coming from <a href="https://nodejs.org/en/">Node.js</a> world, this i
 What you say about Iris ✌
 -----------
 <p>
-<a href="https://dzone.com/articles/a-url-shortener-service-using-go-iris-and-bolt-ger?oid=twitter&utm_content=buffera2aca&utm_medium=social&utm_source=twitter.com&utm_campaign=buffer">
+<a href="https://twitter.com/DZone/status/843673709793742848">
 <img width="300" src="http://iris-go.com/comment28.png" />
 </a>
 
