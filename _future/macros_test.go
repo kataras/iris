@@ -1,6 +1,7 @@
 // I would be grateful if I had the chance to see the whole work-in-progress in a codebase when I started.
 // You have the chance to learn faster nowdays, don't underestimate that, that's the only reason that this "_future" folder exists now.
 //
+//
 // The whole "router" package is a temp place to test my ideas and implementations for future iris' features.
 // Young developers can understand and see how ideas can be transform to real implementations on a software like Iris,
 // watching the history of a "dirty" code can be useful for some of you.
@@ -8,6 +9,7 @@
 package router
 
 import (
+	"reflect"
 	"regexp"
 	"strconv"
 	"testing"
@@ -162,29 +164,105 @@ func addMacroFunc(macroName string, funcName string, v func([]string) _macrofn) 
 
 const global_macro = "any"
 
+func macroFuncFrom(v interface{}) func(params []string) _macrofn {
+	// this is executed once on boot time, not at serve time:
+	vot := reflect.TypeOf(v)
+	numFields := vot.NumIn()
+
+	return func(params []string) _macrofn {
+		if len(params) != numFields {
+			panic("should accepts _numFields_ args")
+		}
+		var args []reflect.Value
+
+		// check for accepting arguments
+		for i := 0; i < numFields; i++ {
+			field := vot.In(i)
+
+			switch field.Kind() {
+			case reflect.Int:
+				val, err := strconv.Atoi(params[i])
+				if err != nil {
+					panic("invalid first parameter: " + err.Error())
+				}
+				args = append(args, reflect.ValueOf(val))
+			case reflect.String:
+			case reflect.Bool:
+			default:
+				panic("unsported type!")
+			}
+		}
+
+		// check for the return type (only one ofc, which again is a function but it returns a boolean)
+		// which accepts one argument which is the parameter value.
+		if vot.NumOut() != 1 {
+			panic("expecting to return only one (func)")
+		}
+		rof := vot.Out(0)
+		if rof.Kind() != reflect.Func {
+			panic("expecting to return a function!")
+		}
+
+		returnRof := rof.Out(0)
+		if rof.NumOut() != 1 {
+			panic("expecting to return only one (bool)")
+		}
+		if returnRof.Kind() != reflect.Bool {
+			panic("expecting this func to return a boolean")
+		}
+
+		if rof.NumIn() != 1 {
+			panic("expecting this func to receive one arg")
+		}
+
+		vof := reflect.ValueOf(v).Call(args)[0].Interface().(func(string) bool)
+		//
+
+		// this is executed when a route requested:
+		return func(paramValue string, _ *iris.Context) bool {
+			return vof(paramValue)
+		}
+		//
+	}
+}
+
 func TestMacros(t *testing.T) {
 	addMacro("int", fromRegexp("[1-9]+$"))
 
 	// {id:int range(42,49)}
-	addMacroFunc("int", "range", func(params []string) _macrofn {
-		// start: .Boot time, before .Listen
-		allowedParamsLen := 2
-		// params:  42,49 (including first and second)
-		if len(params) != allowedParamsLen {
-			panic("range accepts two parameters")
-		}
+	// addMacroFunc("int", "range", func(params []string) _macrofn {
+	// 	// start: .Boot time, before .Listen
+	// 	allowedParamsLen := 2
+	// 	// params:  42,49 (including first and second)
+	// 	if len(params) != allowedParamsLen {
+	// 		panic("range accepts two parameters")
+	// 	}
 
-		min, err := strconv.Atoi(params[0])
-		if err != nil {
-			panic("invalid first parameter: " + err.Error())
-		}
-		max, err := strconv.Atoi(params[1])
-		if err != nil {
-			panic("invalid second parameter: " + err.Error())
-		}
-		// end
+	// 	min, err := strconv.Atoi(params[0])
+	// 	if err != nil {
+	// 		panic("invalid first parameter: " + err.Error())
+	// 	}
+	// 	max, err := strconv.Atoi(params[1])
+	// 	if err != nil {
+	// 		panic("invalid second parameter: " + err.Error())
+	// 	}
+	// 	// end
 
-		return func(paramValue string, _ *iris.Context) bool {
+	// 	return func(paramValue string, _ *iris.Context) bool {
+	// 		paramValueInt, err := strconv.Atoi(paramValue)
+	// 		if err != nil {
+	// 			return false
+	// 		}
+	// 		if paramValueInt >= min && paramValueInt <= max {
+	// 			return true
+	// 		}
+	// 		return false
+	// 	}
+	// })
+	// result should be like that in the final feature implementation, using reflection BEFORE .Listen on .Boot time,
+	// so no performance cost(done) =>
+	addMacroFunc("int", "range", macroFuncFrom(func(min int, max int) func(string) bool {
+		return func(paramValue string) bool {
 			paramValueInt, err := strconv.Atoi(paramValue)
 			if err != nil {
 				return false
@@ -194,7 +272,7 @@ func TestMacros(t *testing.T) {
 			}
 			return false
 		}
-	})
+	}))
 
 	addMacroFunc("int", "even", func(params []string) _macrofn {
 		return func(paramValue string, _ *iris.Context) bool {
@@ -221,7 +299,6 @@ func TestMacros(t *testing.T) {
 		contents := params[0]
 		// we don't care about path's parameter here
 		return func(_ string, ctx *iris.Context) bool {
-			println("print markdown?: ")
 			ctx.Markdown(iris.StatusOK, contents)
 			return true
 		}
