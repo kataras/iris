@@ -19,9 +19,12 @@ I am a realistic person. If things won't change for my daily life I will be forc
 
 Iris is free and open source but developing it has taken thousands of hours of my time and a large part of my sanity. If you feel this web framework useful to you, it would go a great way to ensuring that I can afford to take the time to continue to develop it.
 
-Thanks for your gratitude and finance help ♡
 
-[![](https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/donate.png)](https://www.paypal.me/kataras/25eur)
+I spend all my time in the construction of Iris, therefore I have no income value.
+
+Feel free to send **any** amount through paypal
+
+[![](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=kataras2006%40hotmail%2ecom&lc=GR&item_name=Iris%20web%20framework&item_number=iriswebframeworkdonationid2016&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted)
 
 
 Some of the benefits are listed here:
@@ -30,8 +33,6 @@ Some of the benefits are listed here:
 - Access to the 'donors' [private chat room](https://kataras.rocket.chat/group/donors) gives you real-time assistance by Iris' Author.
 
 ## More about your donations
-
-
 
 [Juan Sebastián Suárez Valencia](https://github.com/Juanses) donated 20 EUR at September 11
 
@@ -53,10 +54,12 @@ Some of the benefits are listed here:
 
 [Lex Tang](https://github.com/lexrus) donated 20 EUR at February 22 of 2017
 
-*ANYNOMOUS* donated 336 EUR
+*ANONYMOUS* donated 356 EUR, last anonymous donation at March 22 of 2017
 
 
 > The names, shown at the [supporters](https://github.com/kataras/iris#heroes-) list, are sorted by **date** and **NOT by the amount** of the donation.
 
 
 > *ANONYMOUS*: People who donate but don't want to be shown here. *ANONYMOUS* are listed as one group instead of an individual entry, in order to protect their exact date of their donation.
+
+# Thanks for your gratitude and finance help ♡

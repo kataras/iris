@@ -89,7 +89,9 @@ Legends [♡](https://github.com/kataras/iris#support)
 
 [Lex Tang](https://github.com/lexrus) donated 20 EUR at February 22 of 2017
 
-ANYNOMOUS[*](https://github.com/kataras/iris#support) donated 336 EUR
+<!-- ANONYMOUS[*](https://github.com/kataras/iris#support) donated 356 EUR, last anonymous donation at 22 March of 2017
+// No o need to show anonymous donations here, the full list is still shown at DONATIONS.md.
+-->
 
 Feature Overview
 -----------
@@ -326,7 +328,7 @@ I spend all my time in the construction of Iris, therefore I have no income valu
 
 Feel free to send **any** amount through paypal
 
-[![](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.me/kataras/)
+[![](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=kataras2006%40hotmail%2ecom&lc=GR&item_name=Iris%20web%20framework&item_number=iriswebframeworkdonationid2016&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted)
 
 > Please check your e-mail after your donation.
 
