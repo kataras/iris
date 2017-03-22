@@ -12,6 +12,7 @@ import (
 	"reflect"
 	"regexp"
 	"strconv"
+	"strings"
 	"testing"
 
 	"gopkg.in/kataras/iris.v6"
@@ -35,7 +36,8 @@ func fromRegexp(expr string) _macrofn {
 	if err != nil {
 		panic(err)
 	}
-	return func(pathParamValue string, _ *iris.Context) bool { return r.MatchString(pathParamValue) }
+
+	return r.MatchString
 }
 
 // link the path tmpl with macros, at .Boot time, before Listen.
@@ -59,7 +61,7 @@ func link(path string, mac _macros) iris.HandlerFunc {
 			}
 			paramValue := ctx.Param(paramName)
 			if paramValue != "" {
-				valid := validator(paramValue, ctx)
+				valid := validator(paramValue)
 				if !valid {
 					// print("not valid for validator on paramValue= '" + paramValue + "' ctx.Pos = ")
 					// println(ctx.Pos) // it should be always 0.
@@ -92,9 +94,9 @@ func link(path string, mac _macros) iris.HandlerFunc {
 					if hasFunc {
 						prevEval := eval
 						macroFuncEval := fi.eval(mi.Params)
-						eval = func(pvalue string, ctx *iris.Context) bool {
-							if prevEval(pvalue, ctx) {
-								return macroFuncEval(pvalue, ctx)
+						eval = func(pvalue string) bool {
+							if prevEval(pvalue) {
+								return macroFuncEval(pvalue)
 							}
 							return false
 						}
@@ -135,7 +137,7 @@ func testMacros(source string) error {
 }
 
 // let's give the macro's funcs access to context, it will be great experimental to serve templates just with a path signature
-type _macrofn func(pathParamValue string, ctx *iris.Context) bool
+type _macrofn func(pathParamValue string) bool
 
 type _macrofunc struct {
 	name string
@@ -164,6 +166,7 @@ func addMacroFunc(macroName string, funcName string, v func([]string) _macrofn) 
 
 const global_macro = "any"
 
+// func(min int, max int) func(paramValue string)bool
 func macroFuncFrom(v interface{}) func(params []string) _macrofn {
 	// this is executed once on boot time, not at serve time:
 	vot := reflect.TypeOf(v)
@@ -178,19 +181,32 @@ func macroFuncFrom(v interface{}) func(params []string) _macrofn {
 		// check for accepting arguments
 		for i := 0; i < numFields; i++ {
 			field := vot.In(i)
-
+			param := params[i]
+			// if field.IsVariadic() {
+			// 	panic("variadic arguments are not supported") // or they will do ?
+			// }
+			var val interface{}
+			var err error
 			switch field.Kind() {
-			case reflect.Int:
-				val, err := strconv.Atoi(params[i])
-				if err != nil {
-					panic("invalid first parameter: " + err.Error())
-				}
-				args = append(args, reflect.ValueOf(val))
+			// these can be transfered to another function with supported type conversions
+			// the dev can also be able to modify how a string converted to x kind of type,
+			// even custom type, i.e User{}, (I have to give an easy way to do hard things
+			//                               but also extensibility for devs that are experienced,
+			//                               like I did with the rest of the features).
 			case reflect.String:
+				val = param
+			case reflect.Int:
+				val, err = strconv.Atoi(param)
 			case reflect.Bool:
+				val, err = strconv.ParseBool(param)
+
 			default:
 				panic("unsported type!")
 			}
+			if err != nil {
+				panic(err)
+			}
+			args = append(args, reflect.ValueOf(val))
 		}
 
 		// check for the return type (only one ofc, which again is a function but it returns a boolean)
@@ -215,12 +231,19 @@ func macroFuncFrom(v interface{}) func(params []string) _macrofn {
 			panic("expecting this func to receive one arg")
 		}
 
-		vof := reflect.ValueOf(v).Call(args)[0].Interface().(func(string) bool)
+		vofi := reflect.ValueOf(v).Call(args)[0].Interface()
+		var validator _macrofn
+		// check for typed and not typed
+		if _v, ok := vofi.(_macrofn); ok {
+			validator = _v
+		} else if _v, ok = vofi.(func(string) bool); ok {
+			validator = _v
+		}
 		//
 
 		// this is executed when a route requested:
-		return func(paramValue string, _ *iris.Context) bool {
-			return vof(paramValue)
+		return func(paramValue string) bool {
+			return validator(paramValue)
 		}
 		//
 	}
@@ -229,7 +252,8 @@ func macroFuncFrom(v interface{}) func(params []string) _macrofn {
 func TestMacros(t *testing.T) {
 	addMacro("int", fromRegexp("[1-9]+$"))
 
-	// {id:int range(42,49)}
+	// // {id:int range(42,49)}
+	// // "hard" manually way(it will not be included on the final feature(;)):
 	// addMacroFunc("int", "range", func(params []string) _macrofn {
 	// 	// start: .Boot time, before .Listen
 	// 	allowedParamsLen := 2
@@ -248,7 +272,7 @@ func TestMacros(t *testing.T) {
 	// 	}
 	// 	// end
 
-	// 	return func(paramValue string, _ *iris.Context) bool {
+	// 	return func(paramValue string) bool {
 	// 		paramValueInt, err := strconv.Atoi(paramValue)
 	// 		if err != nil {
 	// 			return false
@@ -259,6 +283,10 @@ func TestMacros(t *testing.T) {
 	// 		return false
 	// 	}
 	// })
+	//
+	// {id:int range(42,49)}
+	// easy way, same performance as the hard way, no cost while serving requests.
+	// ::
 	// result should be like that in the final feature implementation, using reflection BEFORE .Listen on .Boot time,
 	// so no performance cost(done) =>
 	addMacroFunc("int", "range", macroFuncFrom(func(min int, max int) func(string) bool {
@@ -275,7 +303,7 @@ func TestMacros(t *testing.T) {
 	}))
 
 	addMacroFunc("int", "even", func(params []string) _macrofn {
-		return func(paramValue string, _ *iris.Context) bool {
+		return func(paramValue string) bool {
 			paramValueInt, err := strconv.Atoi(paramValue)
 			if err != nil {
 				return false
@@ -288,21 +316,30 @@ func TestMacros(t *testing.T) {
 	})
 
 	// "any" will contain macros functions
-	// which are available to all other, we will need some functions to be 'globally' registered when don't care about
-	// what macro is used, for example let's try the markdown(#hello), yes serve files without even call a function:)
+	// which are available to all other, we will need some functions to be 'globally' registered when don't care about.
 	addMacro("any", fromRegexp(".*"))
-	addMacroFunc("any", "markdown", func(params []string) _macrofn {
-		if len(params) != 1 {
-			panic("markdown expected 1 arg")
+	addMacroFunc("any", "contains", macroFuncFrom(func(text string) _macrofn {
+		return func(paramValue string) bool {
+			return strings.Contains(paramValue, text)
 		}
+	}))
+	addMacroFunc("any", "suffix", macroFuncFrom(func(text string) _macrofn {
+		return func(paramValue string) bool {
+			return strings.HasSuffix(paramValue, text)
+		}
+	}))
 
-		contents := params[0]
-		// we don't care about path's parameter here
-		return func(_ string, ctx *iris.Context) bool {
-			ctx.Markdown(iris.StatusOK, contents)
-			return true
+	addMacro("string", fromRegexp("[a-zA-Z]+$"))
+	// this will 'override' the "any contains"
+	// when string macro is used:
+	addMacroFunc("string", "contains", macroFuncFrom(func(text string) _macrofn {
+		return func(paramValue string) bool {
+			println("from string:contains instead of any:string")
+			println("'" + text + "' vs '" + paramValue + "'")
+
+			return strings.Contains(paramValue, text)
 		}
-	})
+	}))
 
 	path := "/api/users/{id:int range(42,49) even() !600}/posts"
 	app := iris.New()
@@ -320,9 +357,18 @@ func TestMacros(t *testing.T) {
 		ctx.ResponseWriter.WriteString(ctx.Path())
 	})
 
-	path2 := "/markdown/{anything:any markdown(**hello**)}"
+	path2 := "/markdown/{file:any suffix(.md)}"
 	hv2 := link(path2, all_macros)
-	app.Get("/markdown/*anything", hv2)
+	app.Get("/markdown/*file", hv2, func(ctx *iris.Context) {
+		ctx.Markdown(iris.StatusOK, "**hello**")
+	})
+
+	// contains a space(on tests)
+	path3 := "/hello/{fullname:string contains( )}"
+	hv3 := link(path3, all_macros)
+	app.Get("/hello/:fullname", hv3, func(ctx *iris.Context) {
+		ctx.Writef("hello %s", ctx.Param("fullname"))
+	})
 
 	e := httptest.New(app, t)
 
@@ -341,5 +387,7 @@ func TestMacros(t *testing.T) {
 	// response with "path language" only no need of handler too.
 	// As it goes I love the idea and users will embrace and built awesome things on top of it.
 	// maybe I have to 'rename' the final feature on something like iris expression language and document it as much as I can, people will love that
-	e.GET("/markdown/something").Expect().Status(iris.StatusOK).ContentType("text/html", "utf-8").Body().Equal("<p><strong>hello</strong></p>\n")
+	e.GET("/markdown/something.md").Expect().Status(iris.StatusOK).ContentType("text/html", "utf-8").Body().Equal("<p><strong>hello</strong></p>\n")
+	e.GET("/hello/Makis Maropoulos").Expect().Status(iris.StatusOK).Body().Equal("hello Makis Maropoulos")
+	e.GET("/hello/MakisMaropoulos").Expect().Status(iris.StatusNotFound) // no space -> invalidate -> fail status code
 }
