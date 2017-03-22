@@ -56,8 +56,7 @@ Some of the benefits are listed here:
 
 *ANONYMOUS* donated 356 EUR, last anonymous donation at March 22 of 2017
 
-
-> The names, shown at the [supporters](https://github.com/kataras/iris#heroes-) list, are sorted by **date** and **NOT by the amount** of the donation.
+> The names, shown at the [legends](https://github.com/kataras/iris#legends-) list, are sorted by **date** and **NOT by the amount** of the donation.
 
 
 > *ANONYMOUS*: People who donate but don't want to be shown here. *ANONYMOUS* are listed as one group instead of an individual entry, in order to protect their exact date of their donation.

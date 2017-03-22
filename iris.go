@@ -1,11 +1,17 @@
-// Package iris provides efficient and well-designed tools with robust set of features to
-// create your own perfect high performance web application
-// with unlimited potentials and portability.
+// Package iris is a web framework which provides efficient and well-designed
+// tools with robust set of features to create your awesome and
+// high-performance web application powered by unlimited potentials and portability
 //
-// For middleware, template engines, response engines, sessions, websockets, mails, subdomains,
-// dynamic subdomains, routes, party of subdomains & routes and more
+// For view engines, render engines, sessions,
+// websockets, subdomains, automatic-TLS,
+// context support with 50+ handy http functions,
+// dynamic subdomains, router & routes,
+// parties of subdomains & routes,
+// access control, typescript compiler,
+// basicauth,internalization, logging,
+// and much more,
 //
-// visit https://godoc.org/gopkg.in/kataras/iris.v6
+// please visit https://godoc.org/gopkg.in/kataras/iris.v6
 package iris
 
 import (
