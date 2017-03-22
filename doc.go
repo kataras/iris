@@ -19,9 +19,9 @@
 // SOFTWARE.
 
 /*
-Package iris provides efficient and well-designed tools with robust set of features to
-create your own perfect high performance web application
-with unlimited potentials and portability.
+Package iris is a web framework which provides efficient and well-designed
+tools with robust set of features to create your awesome and
+high-performance web application powered by unlimited potentials and portability.
 
 Source code and other details for the project are available at GitHub:
 
