@@ -47,6 +47,8 @@ func link(path string, mac _macros) iris.HandlerFunc {
 	if err != nil {
 		panic(err)
 	}
+
+	// println(tmpl.Params[0].Param.FailStatusCode)
 	// link the path,  based on its template with a macro
 	// and return a new compiled macro or a list of iris handlers
 	// in order to be prepended on the original route or make a different function for that?
@@ -334,8 +336,8 @@ func TestMacros(t *testing.T) {
 	// when string macro is used:
 	addMacroFunc("string", "contains", macroFuncFrom(func(text string) _macrofn {
 		return func(paramValue string) bool {
-			println("from string:contains instead of any:string")
-			println("'" + text + "' vs '" + paramValue + "'")
+			// println("from string:contains instead of any:string")
+			// println("'" + text + "' vs '" + paramValue + "'")
 
 			return strings.Contains(paramValue, text)
 		}

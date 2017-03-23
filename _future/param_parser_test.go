@@ -51,9 +51,10 @@ func TestParamParser(t *testing.T) {
 
 	// id:int
 	expected := &ParamTmpl{
-		Name:       "id",
-		Expression: "int",
-		Macro:      MacroTmpl{Name: "int"},
+		Name:           "id",
+		Expression:     "int",
+		FailStatusCode: 404,
+		Macro:          MacroTmpl{Name: "int"},
 	}
 	source := expected.Name + string(ParamNameSeperator) + expected.Expression
 	if err := testParamParser(expected.Name+":"+expected.Expression, expected); err != nil {
@@ -63,8 +64,9 @@ func TestParamParser(t *testing.T) {
 
 	// id:int range(1,5)
 	expected = &ParamTmpl{
-		Name:       "id",
-		Expression: "int range(1,5)",
+		Name:           "id",
+		Expression:     "int range(1,5)",
+		FailStatusCode: 404,
 		Macro: MacroTmpl{Name: "int",
 			Funcs: []MacroFuncTmpl{
 				MacroFuncTmpl{Name: "range", Params: []string{"1", "5"}},
@@ -79,8 +81,9 @@ func TestParamParser(t *testing.T) {
 
 	// id:int min(1) max(5)
 	expected = &ParamTmpl{
-		Name:       "id",
-		Expression: "int min(1) max(5)",
+		Name:           "id",
+		Expression:     "int min(1) max(5)",
+		FailStatusCode: 404,
 		Macro: MacroTmpl{Name: "int",
 			Funcs: []MacroFuncTmpl{
 				MacroFuncTmpl{Name: "min", Params: []string{"1"}},

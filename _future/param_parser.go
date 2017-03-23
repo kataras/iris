@@ -39,11 +39,43 @@ const (
 	FuncEnd            = ')'
 	FuncParamSeperator = ','
 	FailSeparator      = '!'
-	ORSymbol           = '|'
-	ANDSymbol          = '&'
 )
 
 const DefaultFailStatusCode = 404
+
+type CursorState int
+
+func (cs *CursorState) Is(s CursorState) bool {
+	c := *cs
+	if c == s {
+		switch s {
+		case CursorStateNone:
+			*cs = CursorStateStarted
+		case CursorStateStarted:
+			*cs = CursorStatePending
+		case CursorStatePending:
+			*cs = CursorStateRecording
+		case CursorStateRecording:
+			*cs = CursorStateStarted
+		}
+		return true
+	}
+	return false
+}
+
+// we use that to set a value of each "state".
+// because macro's function's arguments can accepts space and regex with any character
+const (
+	// no : is found yet
+	CursorStateNone CursorState = iota
+	// macro name and first expression guess parsed
+	// and we' ready to walk forward
+	CursorStateStarted
+	// after space, waiting for a macro func begin or !+fail_status_code
+	CursorStatePending
+	// inside the macro func, after the opening parenthesis
+	CursorStateRecording
+)
 
 // Parse i.e:
 // id:int range(1,5) otherFunc(3) !404
@@ -72,18 +104,15 @@ func ParseParam(source string) (*ParamTmpl, error) {
 	// id:int range(1,5)
 	// id:int min(1) max(5)
 	// id:int range(1,5)!404 or !404, space doesn't matters on fail error code.
+	// cursor := 0
+	state := CursorStateNone
 	cursor := 0
-	// waitForFunc setted to true when we validate that we have macro's functions
-	// so we can check for parenthesis.
-	// We need that check because the user may add a regexp with parenthesis.
-	// Although this will not be recommended, user is better to create a macro for its regexp
-	// in order to use it everywhere and reduce code duplication.
-	waitForFunc := false
-	// when inside macro func we don't need to check for anything else, because it could
-	// break the tmpl, i.e FuncSeperator (space) if "contains( )".
-	insideFunc := false
 	for i := 0; i < len(source); i++ {
-		if source[i] == ParamNameSeperator {
+		// TODO: find a better way instead of introducing variables like waitForFunc, insideFunc,
+		// one way is to move the functions with the reverse order but this can fix the problem for now
+		// later it will introduce new bugs, we can find a better static way to check these things, tomorrow.
+		// :int ...
+		if source[i] == ParamNameSeperator && state.Is(CursorStateNone) {
 			if i+1 >= len(source) {
 				return nil, fmt.Errorf("missing marco or raw expression after seperator, on source '%s'", source)
 			}
@@ -100,40 +129,34 @@ func ParseParam(source string) (*ParamTmpl, error) {
 			//  I think to do and is working).
 			t.Macro = MacroTmpl{Name: t.Expression}
 
-			// cursor knows the last known(parsed) char position.
 			cursor = i + 1
 			continue
 		}
-		// TODO: find a better way instead of introducing variables like waitForFunc, insideFunc,
-		// one way is to move the functions with the reverse order but this can fix the problem for now
-		// later it will introduce new bugs, we can find a better static way to check these things, tomorrow.
 
-		// int ...
-		if !waitForFunc && source[i] == FuncSeperator {
+		if source[i] == FuncSeperator && state.Is(CursorStateStarted) {
 			// take the left part: int if it's the first
 			// space after the param name
 			if t.Macro.Name == t.Expression {
 				t.Macro.Name = source[cursor:i]
 			} // else we have one or more functions, skip.
-			waitForFunc = true
 			cursor = i + 1
 			continue
 		}
+
 		// if not inside a func body
 		//         the cursor is a point which can receive a func
 		//         starts with (
-		if !insideFunc && waitForFunc && source[i] == FuncStart {
-			insideFunc = true
+		if source[i] == FuncStart && state.Is(CursorStatePending) {
 			// take the left part: range
 			funcName := source[cursor:i]
 			t.Macro.Funcs = append(t.Macro.Funcs, MacroFuncTmpl{Name: funcName})
-
 			cursor = i + 1
 			continue
 		}
+
 		// 1,5)
 		// we are inside func and )
-		if insideFunc && source[i] == FuncEnd {
+		if source[i] == FuncEnd && state.Is(CursorStateRecording) {
 			// check if we have end parenthesis but not start
 			if len(t.Macro.Funcs) == 0 {
 				return nil, fmt.Errorf("missing start macro's '%s' function, on source '%s'", t.Macro.Name, source)
@@ -141,25 +164,19 @@ func ParseParam(source string) (*ParamTmpl, error) {
 
 			// take the left part, between Start and End: 1,5
 			funcParamsStr := source[cursor:i]
-			println("param_parser.go:41: '" + funcParamsStr + "'")
 
 			funcParams := strings.SplitN(funcParamsStr, string(FuncParamSeperator), -1)
 			t.Macro.Funcs[len(t.Macro.Funcs)-1].Params = funcParams
-
 			cursor = i + 1
-
-			insideFunc = false  // ignore ')' until new '('
-			waitForFunc = false // wait for the next space to not ignore '('
 			continue
 		}
 
-		if source[i] == FailSeparator {
+		if source[i] == FailSeparator && (state.Is(CursorStateStarted) || state.Is(CursorStatePending)) {
 			// it should be the last element
 			// so no problem if we set the cursor here and work with that
 			// we will not need that later.
-			cursor = i + 1
-
-			if cursor >= len(source) {
+			cursor += 1
+			if i+1 >= len(source) {
 				return nil, fmt.Errorf("missing fail status code after '%q', on source '%s'", FailSeparator, source)
 			}
 
@@ -171,7 +188,7 @@ func ParseParam(source string) (*ParamTmpl, error) {
 
 			t.FailStatusCode = failCode
 
-			continue
+			break
 		}
 
 	}
