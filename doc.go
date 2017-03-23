@@ -605,7 +605,7 @@ Example code:
       djangoEngine.Binary(asset, assetNames)
       app.Adapt(djangoEngine)
 
-A real example can be found here: https://github.com/kataras/iris/tree/v6/adaptors/view/_examples/template_binary .
+A real example can be found here: https://github.com/kataras/iris/tree/v6/_examples/intermediate/view/embedding-templates-into-app.
 
 Enable auto-reloading of templates on each request. Useful while developers are in dev mode
 as they no neeed to restart their app on every template edit.

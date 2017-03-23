@@ -90,7 +90,7 @@ Feature Overview
 - Automatically install and serve certificates from https://letsencrypt.org
 - Robust routing and middleware ecosystem
 - Build RESTful APIs
-- Choose your favorite routes' path syntax between [httprouter](https://github.com/kataras/iris/blob/v6/adaptors/httprouter/_example/main.go) and [gorillamux](https://github.com/kataras/iris/blob/v6/adaptors/gorillamux/_example/main.go)
+- Choose your favorite routes' path syntax between [httprouter](https://github.com/kataras/iris/blob/v6/_examples/beginner/routes-using-httprouter/main.go) and [gorillamux](https://github.com/kataras/iris/blob/v6/_examples/beginner/routes-using-gorillamux/main.go)
 - Request-Scoped Transactions
 - Group API's and subdomains with wildcard support
 - Body binding for JSON, XML, Forms, can be extended to use your own custom binders
@@ -275,12 +275,9 @@ FAQ & Documentation
 
 4. [Creating A URL Shortener Service Using Go, Iris, and Bolt](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
 
-5. [./adaptors](https://github.com/kataras/iris/tree/v6/adaptors) and [./middleware](https://github.com/kataras/iris/tree/v6/middleware) contains examples of their usage
+5. [Godocs](https://godoc.org/gopkg.in/kataras/iris.v6) for deep documentation
 
-6. [Godocs](https://godoc.org/gopkg.in/kataras/iris.v6) for deep documentation
-
-
-7. [HISTORY.md](https://github.com//kataras/iris/tree/v6/HISTORY.md) is your best friend, version migrations are released there
+6. [HISTORY.md](https://github.com//kataras/iris/tree/v6/HISTORY.md) is your best friend, version migrations are released there
 
 
 I'll be glad to talk with you about **your awesome feature requests**, 
@@ -480,14 +477,14 @@ i.e:
 - [transaction_test.go](https://github.com/kataras/iris/blob/v6/transaction_test.go)
 - [serializer_test.go](https://github.com/kataras/iris/blob/v6/serializer_test.go)
 
-A simple test is located to [./httptest/_example/main_test.go](https://github.com/kataras/iris/blob/v6/httptest/_example/main_test.go)
+A simple test is located to [./_examples/advanced/httptest/main_test.go](https://github.com/kataras/iris/blob/v6/_examples/advanced/httptest/main_test.go)
 
 Philosophy
 ------------
 
 The Iris philosophy is to provide robust tooling for HTTP, making it a great solution for single page applications, web sites, hybrids, or public HTTP APIs. Keep note that, today, iris is faster than nginx itself.
 
-Iris does not force you to use any specific ORM or template engine. Iris is routerless which means you can adapt any router you like, [httprouter](https://github.com/kataras/iris/blob/v6/adaptors/httprouter/_example/main.go) is the fastest, [gorillamux](https://github.com/kataras/iris/blob/v6/adaptors/gorillamux/_example/main.go) has more features. With support for the most used template engines (5), you can quickly craft the perfect application.
+Iris does not force you to use any specific ORM or template engine. Iris is routerless which means you can adapt any router you like, [httprouter](https://github.com/kataras/iris/blob/v6/_examples/beginner/routes-using-httprouter/main.go) is the fastest, [gorillamux](https://github.com/kataras/iris/blob/v6/_examples/beginner/routes-using-gorillamux/main.go) has more features. With support for the most used template engines (5), you can quickly craft the perfect application.
 
 
 People
