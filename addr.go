@@ -37,18 +37,18 @@ func TCPKeepAlive(addr string) (net.Listener, error) {
 }
 
 // UNIX returns a new unix(file) Listener
-func UNIX(addr string, mode os.FileMode) (net.Listener, error) {
-	if errOs := os.Remove(addr); errOs != nil && !os.IsNotExist(errOs) {
-		return nil, errRemoveUnix.Format(addr, errOs.Error())
+func UNIX(socketFile string, mode os.FileMode) (net.Listener, error) {
+	if errOs := os.Remove(socketFile); errOs != nil && !os.IsNotExist(errOs) {
+		return nil, errRemoveUnix.Format(socketFile, errOs.Error())
 	}
 
-	listener, err := net.Listen("unix", addr)
+	listener, err := net.Listen("unix", socketFile)
 	if err != nil {
 		return nil, errPortAlreadyUsed.AppendErr(err)
 	}
 
-	if err = os.Chmod(addr, mode); err != nil {
-		return nil, errChmod.Format(mode, addr, err.Error())
+	if err = os.Chmod(socketFile, mode); err != nil {
+		return nil, errChmod.Format(mode, socketFile, err.Error())
 	}
 
 	return listener, nil
@@ -84,14 +84,16 @@ func CERT(addr string, cert tls.Certificate) (net.Listener, error) {
 }
 
 // LETSENCRYPT returns a new Automatic TLS Listener using letsencrypt.org service
-// receives two parameters, the first is the domain of the server
-// and the second is optionally, the cache directory, if you skip it then the cache directory is "./certcache"
+// receives three parameters,
+// the first is the host of the server,
+// second can be the server name(domain) or empty if skip verification is the expected behavior (not recommended)
+// and the third is optionally, the cache directory, if you skip it then the cache directory is "./certcache"
 // if you want to disable cache directory then simple give it a value of empty string ""
 //
 // does NOT supports localhost domains for testing.
 //
 // this is the recommended function to use when you're ready for production state
-func LETSENCRYPT(addr string, cacheDirOptional ...string) (net.Listener, error) {
+func LETSENCRYPT(addr string, serverName string, cacheDirOptional ...string) (net.Listener, error) {
 	if portIdx := strings.IndexByte(addr, ':'); portIdx == -1 {
 		addr += ":443"
 	}
@@ -109,15 +111,22 @@ func LETSENCRYPT(addr string, cacheDirOptional ...string) (net.Listener, error) 
 	m := autocert.Manager{
 		Prompt: autocert.AcceptTOS,
 	} // HostPolicy is missing, if user wants it, then she/he should manually
-	// configure the autocertmanager and use the `iris.Default.Serve` to pass that listener
 
 	if cacheDir == "" {
 		// then the user passed empty by own will, then I guess she/he doesnt' want any cache directory
 	} else {
 		m.Cache = autocert.DirCache(cacheDir)
 	}
-
 	tlsConfig := &tls.Config{GetCertificate: m.GetCertificate}
+
+	// use InsecureSkipVerify or ServerName to a value
+	if serverName == "" {
+		// if server name is invalid then bypass it
+		tlsConfig.InsecureSkipVerify = true
+	} else {
+		tlsConfig.ServerName = serverName
+	}
+
 	tlsLn := tls.NewListener(ln, tlsConfig)
 
 	return tlsLn, nil

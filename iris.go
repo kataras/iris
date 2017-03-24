@@ -579,6 +579,7 @@ func (s *Framework) Listen(addr string) {
 	ln, err := TCPKeepAlive(addr)
 	if err != nil {
 		s.handlePanic(err)
+		return
 	}
 
 	s.Must(s.Serve(ln))
@@ -620,14 +621,14 @@ func (s *Framework) ListenTLS(addr string, certFile, keyFile string) {
 // ListenLETSENCRYPT starts a server listening at the specific nat address
 // using key & certification taken from the letsencrypt.org 's servers
 // it's also starts a second 'http' server to redirect all 'http://$ADDR_HOSTNAME:80' to the' https://$ADDR'
-// it creates a cache file to store the certifications, for performance reasons, this file by-default is "./letsencrypt.cache"
+// it creates a cache file to store the certifications, for performance reasons, this file by-default is "./certcache"
 // if you skip the second parameter then the cache file is "./letsencrypt.cache"
 // if you want to disable cache then simple pass as second argument an empty empty string ""
 //
 // Note: HTTP/2 Push is not working with LETSENCRYPT, you have to use ListenTLS to enable HTTP/2
 // Because net/http's author didn't exported the functions to tell the server that is using HTTP/2...
 //
-// example: https://github.com/iris-contrib/examples/blob/master/letsencrypt/main.go
+// example: https://github.com/kataras/iris/blob/v6/_examples/beginner/listen-letsencrypt/main.go
 func (s *Framework) ListenLETSENCRYPT(addr string, cacheFileOptional ...string) {
 	addr = ParseHost(addr)
 
@@ -643,9 +644,10 @@ func (s *Framework) ListenLETSENCRYPT(addr string, cacheFileOptional ...string) 
 		}
 	}
 
-	ln, err := LETSENCRYPT(addr, cacheFileOptional...)
+	ln, err := LETSENCRYPT(addr, addr, cacheFileOptional...)
 	if err != nil {
 		s.handlePanic(err)
+		return
 	}
 
 	// starts a second server which listening on HOST:80 to redirect all requests to the HTTPS://HOST:PORT
@@ -653,21 +655,23 @@ func (s *Framework) ListenLETSENCRYPT(addr string, cacheFileOptional ...string) 
 	s.Must(s.Serve(ln))
 }
 
-// ListenUNIX starts the process of listening to the new requests using a 'socket file', this works only on unix
-//
+// ListenUNIX starts the process of listening to the new requests using a 'socket file',
+// Note: this works only on unix
 //
 // If you need to manually monitor any error please use `.Serve` instead.
-func (s *Framework) ListenUNIX(addr string, mode os.FileMode) {
-	// *on unix listen we don't parse the host, because sometimes it causes problems to the user
-	if s.Config.VHost == "" {
-		s.Config.VHost = addr
-		// this will be set as the front-end listening addr
-	}
-	ln, err := UNIX(addr, mode)
+//
+// example: https://github.com/kataras/iris/blob/v6/_examples/beginner/listen-unix/main.go
+func (s *Framework) ListenUNIX(socketFile string, mode os.FileMode) {
+	ln, err := UNIX(socketFile, mode)
 	if err != nil {
 		s.handlePanic(err)
+		return
 	}
-
+	// *on unix listen we don't parse the host, because sometimes it causes problems to the user
+	if s.Config.VHost == "" {
+		s.Config.VHost = ln.Addr().String()
+		// this will be set as the front-end listening addr
+	}
 	s.Must(s.Serve(ln))
 }
 
