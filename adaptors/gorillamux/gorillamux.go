@@ -34,6 +34,20 @@ import (
 
 const dynamicSymbol = '{'
 
+func staticPath(path string) string {
+	i := strings.IndexByte(path, dynamicSymbol)
+	if i > -1 {
+		return path[0:i]
+	}
+
+	return path
+}
+
+// Name is the name of the router
+//
+// See $iris_instance.Config.Other for more.
+const Name = "gorillamux"
+
 // New returns a new gorilla mux router which can be plugged inside iris.
 // This is magic.
 func New() iris.Policies {
@@ -41,21 +55,27 @@ func New() iris.Policies {
 
 	var logger func(iris.LogMode, string)
 	return iris.Policies{
-		EventPolicy: iris.EventPolicy{Boot: func(s *iris.Framework) {
-			logger = s.Log
-		}},
+		EventPolicy: iris.EventPolicy{
+			Boot: func(s *iris.Framework) {
+				logger = s.Log
+				s.Set(iris.OptionOther(iris.RouterNameConfigKey, Name))
+			}},
 		RouterReversionPolicy: iris.RouterReversionPolicy{
 			// path normalization done on iris' side
-			StaticPath: func(path string) string {
-				i := strings.IndexByte(path, dynamicSymbol)
-				if i > -1 {
-					return path[0:i]
-				}
+			StaticPath: staticPath,
+			WildcardPath: func(path string, paramName string) string {
+				// {param:.*}
+				wildcardPart := "{" + paramName + ":.*}"
 
-				return path
+				if path[len(path)-1] != '/' {
+					// if not ending with slash then prepend the slash to the wildcard path part
+					wildcardPart = "/" + wildcardPart
+				}
+				// finally return the path given + the wildcard path part
+				return path + wildcardPart
 			},
-			WildcardPath: func(requestPath string, paramName string) string {
-				return requestPath + "/{" + paramName + ":.*}"
+			Param: func(paramName string) string {
+				return "{" + paramName + "}"
 			},
 			// 	Note: on gorilla mux the {{ url }} and {{ path}} should give the key and the value, not only the values by order.
 			// 	{{ url "nameOfTheRoute" "parameterName" "parameterValue"}}.
@@ -94,10 +114,48 @@ func New() iris.Policies {
 
 			router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				ctx := context.Acquire(w, r)
-				// to catch custom 404 not found http errors may registered by user
-				ctx.EmitError(iris.StatusNotFound)
+				// gorilla mux doesn't supports fire method not allowed like iris
+				// so this is my hack to support it:
+				if ctx.Framework().Config.FireMethodNotAllowed {
+					stopVisitor := false
+					repo.Visit(func(route iris.RouteInfo) {
+						if stopVisitor {
+							return
+						}
+						// this is not going to work 100% for all routes especially the coblex
+						// but this is the best solution, to check via static path, subdomain and cors to find the 'correct' route to
+						// compare its method in order to implement the status method not allowed in gorilla mux which doesn't support it
+						// and if I edit its internal implementation it will be complicated for new releases to be updated.
+						p := staticPath(route.Path())
+						if route.Subdomain() == "" || route.Subdomain() == ctx.Subdomain() {
+							if p == ctx.Path() {
+								// we don't care about this route because it has cors and this method is options
+								// or its method is equal with the requests but the router didn't select this route
+								// that means that the dynamic path didn't match, so we skip it.
+								if (route.HasCors() && ctx.Method() == iris.MethodOptions) || ctx.Method() == route.Method() {
+									return
+								}
+
+								if ctx.Method() != route.Method() {
+									// RCF rfc2616 https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
+									// The response MUST include an Allow header containing a list of valid methods for the requested resource.
+									ctx.SetHeader("Allow", route.Method())
+									ctx.EmitError(iris.StatusMethodNotAllowed)
+									stopVisitor = true
+									return
+								}
+							}
+						}
+
+					})
+
+				} else {
+					// to catch custom 404 not found http errors may registered by user
+					ctx.EmitError(iris.StatusNotFound)
+				}
 				context.Release(ctx)
 			})
+
 			return router
 		},
 	}
@@ -132,7 +190,7 @@ func registerRoute(route iris.RouteInfo, gorillaRouter *mux.Router, context iris
 
 	subdomain := route.Subdomain()
 	if subdomain != "" {
-		if subdomain == "*." {
+		if subdomain == iris.DynamicSubdomainIndicator {
 			// it's an iris wildcard subdomain
 			// so register it as wildcard on gorilla mux too
 			subdomain = "{subdomain}."

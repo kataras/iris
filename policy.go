@@ -258,17 +258,30 @@ type (
 	// which custom routers should create and adapt to the Policies.
 	RouterReversionPolicy struct {
 		// StaticPath should return the static part of the route path
-		// for example, with the default router (: and *):
+		// for example, with the httprouter(: and *):
 		// /api/user/:userid should return /api/user
 		// /api/user/:userid/messages/:messageid should return /api/user
 		// /dynamicpath/*path should return /dynamicpath
 		// /my/path should return /my/path
 		StaticPath func(path string) string
 		// WildcardPath should return a path converted to a 'dynamic' path
-		// for example, with the default router(wildcard symbol: '*'):
+		// for example, with the httprouter(wildcard symbol: '*'):
 		// ("/static", "path") should return /static/*path
 		// ("/myfiles/assets", "anything") should return /myfiles/assets/*anything
 		WildcardPath func(path string, paramName string) string
+		// Param should return a named parameter as each router defines named path parameters.
+		// For example, with the httprouter(: as named param symbol):
+		// userid should return :userid.
+		// with gorillamux, userid should return {userid}
+		// or userid[1-9]+ should return {userid[1-9]+}.
+		// so basically we just wrap the raw parameter name
+		// with the start (and end) dynamic symbols of each router implementing the RouterReversionPolicy.
+		// It's an optional functionality but it can be used to create adaptors without even know the router
+		// that the user uses (which can be taken by app.Config.Other[iris.RouterNameConfigKey].
+		//
+		// Note: we don't need a function like WildcardParam because the developer
+		// can use the Param with a combination with WildcardPath.
+		Param func(paramName string) string
 		// URLPath used for reverse routing on templates with {{ url }} and {{ path }} funcs.
 		// Receives the route name and  arguments and returns its http path
 		URLPath func(r RouteInfo, args ...string) string
@@ -281,15 +294,27 @@ type (
 	// RouterWrapperPolicy is the Policy which enables a wrapper on the top of
 	// the builded Router. Usually it's useful for third-party middleware
 	// when need to wrap the entire application with a middleware like CORS.
+	//
+	// Developers can Adapt more than one RouterWrapper
+	// those wrappers' execution comes from last to first.
+	// That means that the second wrapper will wrap the first, and so on.
 	RouterWrapperPolicy func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)
 )
 
 func normalizePath(path string) string {
+	// some users can't understand the difference between
+	// request path and operating system's directory path
+	// they think that "./" is the index, that's wrong, "/" is the index
+	// so fix that here...
+	if path[0] == '.' {
+		path = path[1:]
+	}
 	path = strings.Replace(path, "//", "/", -1)
 	if len(path) > 1 && strings.IndexByte(path, '/') == len(path)-1 {
 		// if  it's not "/" and ending with slash remove that slash
 		path = path[0 : len(path)-2]
 	}
+
 	return path
 }
 
@@ -307,6 +332,10 @@ func (r RouterReversionPolicy) Adapt(frame *Policies) {
 		frame.RouterReversionPolicy.WildcardPath = func(path string, paramName string) string {
 			return wildcardPathFn(normalizePath(path), paramName)
 		}
+	}
+
+	if r.Param != nil {
+		frame.RouterReversionPolicy.Param = r.Param
 	}
 
 	if r.URLPath != nil {
@@ -339,8 +368,26 @@ func (r RouterBuilderPolicy) Adapt(frame *Policies) {
 }
 
 // Adapt adaps a RouterWrapperPolicy object to the main *Policies.
-func (r RouterWrapperPolicy) Adapt(frame *Policies) {
-	frame.RouterWrapperPolicy = r
+func (rw RouterWrapperPolicy) Adapt(frame *Policies) {
+	if rw != nil {
+		wrapper := rw
+		prevWrapper := frame.RouterWrapperPolicy
+
+		if prevWrapper != nil {
+			nextWrapper := rw
+			wrapper = func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+				if next != nil {
+					nexthttpFunc := http.HandlerFunc(func(_w http.ResponseWriter, _r *http.Request) {
+						prevWrapper(_w, _r, next)
+					})
+					nextWrapper(w, r, nexthttpFunc)
+				}
+
+			}
+		}
+		frame.RouterWrapperPolicy = wrapper
+	}
+
 }
 
 // RenderPolicy is the type which you can adapt custom renderers
@@ -354,7 +401,7 @@ func (r RouterWrapperPolicy) Adapt(frame *Policies) {
 //  - the first registered is executing last.
 // So a custom adaptor that the community can create and share with each other
 // can override the existing one with just a simple registration.
-type RenderPolicy func(out io.Writer, name string, bind interface{}, options ...map[string]interface{}) (error, bool)
+type RenderPolicy func(out io.Writer, name string, bind interface{}, options ...map[string]interface{}) (bool, error)
 
 // Adapt adaps a RenderPolicy object to the main *Policies.
 func (r RenderPolicy) Adapt(frame *Policies) {
@@ -363,14 +410,14 @@ func (r RenderPolicy) Adapt(frame *Policies) {
 		prevRenderer := frame.RenderPolicy
 		if prevRenderer != nil {
 			nextRenderer := r
-			renderer = func(out io.Writer, name string, binding interface{}, options ...map[string]interface{}) (error, bool) {
+			renderer = func(out io.Writer, name string, binding interface{}, options ...map[string]interface{}) (bool, error) {
 				// Remember: RenderPolicy works in the opossite order of declaration,
 				// the last registered is trying to be executed first,
 				// the first registered is executing last.
-				err, ok := nextRenderer(out, name, binding, options...)
+				ok, err := nextRenderer(out, name, binding, options...)
 				if !ok {
 
-					prevErr, prevOk := prevRenderer(out, name, binding, options...)
+					prevOk, prevErr := prevRenderer(out, name, binding, options...)
 					if err != nil {
 						if prevErr != nil {
 							err = errors.New(prevErr.Error()).Append(err.Error())
@@ -382,7 +429,7 @@ func (r RenderPolicy) Adapt(frame *Policies) {
 				}
 				// this renderer is responsible for this name
 				// but it has an error, so don't continue to the next
-				return err, ok
+				return ok, err
 
 			}
 		}

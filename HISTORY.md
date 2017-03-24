@@ -1,9 +1,29 @@
-# History
+# Changelog
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u gopkg.in/kataras/iris.v6`.
 
+## Looking for free support?
+
+	http://support.iris-go.com
+
 
 ## 6.1.4 -> 6.2.0 (√Νεxτ)
+_Update: 18 March 2017_
+
+- **Sessions**: Enchance the community feature request about custom encode and decode methods for the cookie value(sessionid) as requested [here](http://support.iris-go.com/d/29-mark-cookie-for-session-as-secure).
+
+_Update: 12 March 2017_
+
+- Enhance Custom http errors with gzip and static files handler, as requested/reported [here](http://support.iris-go.com/d/17-fallback-handler-for-non-matched-routes/9).
+- Enhance per-party custom http errors (now it works on any wildcard path too).
+- Add a third parameter on `app.OnError(...)` for custom http errors with regexp validation, see [status_test.go](https://github.com/kataras/iris/blob/v6/status_test.go) for an example.
+- Add a `context.ParamIntWildcard(...)` to skip the first slash, useful for wildcarded paths' parameters.
+
+
+> Prepare for nice things, tomorrow is Iris' first birthday!
+
+
+_Update: 28 Feb 2017_
 
 > Note: I want you to know that I spent more than 200 hours (16 days of ~10-15 hours per-day, do the math) for this release, two days to write these changes, please read the sections before think that you have an issue and post a new question, thanks!
 
@@ -18,8 +38,30 @@ to adapt the new changes to your application, it contains an overview of the new
 - Template engines (two lines to add, same features as before, except their easier configuration)
 - Basic middleware, that have been written by me, are transfared to the main repository[/middleware](https://github.com/kataras/iris/tree/v6/middleware) with a lot of improvements to the `recover middleware` (see the next)
 - `func(http.ResponseWriter, r *http.Request, next http.HandlerFunc)` signature is fully compatible using `iris.ToHandler` helper wrapper func, without any need of custom boilerplate code. So all net/http middleware out there are supported, no need to re-invert the world here, search to the internet and you'll find a suitable to your case.
-- Developers can use a `yaml` files for the configuration using the `iris.YAML` function: `app := iris.New(iris.YAML("myconfiguration.yaml"))`
 
+- Load Configuration from an external file, yaml and toml:
+
+	- [yaml-based](http://www.yaml.org/) configuration file using the `iris.YAML` function: `app := iris.New(iris.YAML("myconfiguration.yaml"))`
+	- [toml-based](https://github.com/toml-lang/toml) configuration file using the `iris.TOML` function: `app := iris.New(iris.TOML("myconfiguration.toml"))`
+
+
+- Add `.Regex` middleware which does path validation using the `regexp` package, i.e `.Regex("param", "[0-9]+$")`. Useful for routers that don't support regex route path validation out-of-the-box.
+
+- Websocket additions: `c.Context() *iris.Context`, `ws.GetConnectionsByRoom("room name") []websocket.Connection`, `c.OnLeave(func(roomName string){})`, 
+```go
+		// SetValue sets a key-value pair on the connection's mem store.
+		c.SetValue(key string, value interface{})
+		// GetValue gets a value by its key from the connection's mem store.
+		c.GetValue(key string) interface{}
+		// GetValueArrString gets a value as []string by its key from the connection's mem store.
+		c.GetValueArrString(key string) []string
+		// GetValueString gets a value as string by its key from the connection's mem store.
+		c.GetValueString(key string) string
+		// GetValueInt gets a value as integer by its key from the connection's mem store.
+		c.GetValueInt(key string) int
+
+``` 
+[examples here](https://github.com/kataras/iris/blob/v6/adaptors/websocket/_examples). 
 
 Fixes:
 
@@ -32,10 +74,33 @@ Fixes:
 - Fix and improve the cloud-editor `alm/alm-tools` plugin(now adaptor)
 - Fix gorillamux serve static files (custom routers are supported with a workaround, not a complete solution as they are now)
 - Fix `iris run main.go` app reload while user saved the file from gogland
+- Fix [StaticEmbedded doesn't works on root "/"](https://github.com/kataras/iris/issues/633)
 
 Changes:
 
+- `context.TemplateString` replaced with `app.Render(w io.Writer, name string, bind interface{}, options ...map[string]interface{}) error)` which gives you more functionality.
 
+```go
+import "bytes"
+// ....
+app := iris.New()
+// ....
+
+buff := &bytes.Buffer{}
+app.Render(buff, "my_template.html", nil)
+// buff.String() is the template parser's result, use that string to send a rich-text e-mail based on a template.
+```
+
+```go
+// you can take the app(*Framework instance) via *Context.Framework() too:
+
+app.Get("/send_mail", func(ctx *iris.Context){
+	buff := &bytes.Buffer{}
+	ctx.Framework().Render(buff, "my_template.html", nil)
+	// ...
+})
+
+```
 - `.Close() error` replaced with gracefully `.Shutdown(context.Context) error`
 - Remove all the package-level functions and variables for a default `*iris.Framework, iris.Default`
 - Remove `.API`, use `iris.Handle/.HandleFunc/.Get/.Post/.Put/.Delete/.Trace/.Options/.Use/.UseFunc/.UseGlobal/.Party/` instead
@@ -765,6 +830,7 @@ We have 8 policies, so far, and some of them have 'subpolicies' (the RouterRever
 - RouterReversionPolicy
      - StaticPath
      - WildcardPath
+	 - Param
      - URLPath
 - RouterBuilderPolicy
 - RouterWrapperPolicy
@@ -886,7 +952,10 @@ to adapt a package as a session manager. So `iris.UseDatabase` has been removed 
 
 > Don't worry about forgetting to adapt any feature that you use inside Iris, Iris will print you a how-to-fix message at iris.DevMode log level.
 
-**[Example](https://github.com/kataras/iris/tree/v6/adaptors/sessions/_example) code:**
+
+**[Examples folder](https://github.com/kataras/iris/tree/v6/adaptors/sessions/_examples)**
+
+
 
 ```go
 package main

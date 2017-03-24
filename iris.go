@@ -1,11 +1,17 @@
-// Package iris provides efficient and well-designed tools with robust set of features to
-// create your own perfect high performance web application
-// with unlimited potentials and portability.
+// Package iris is a web framework which provides efficient and well-designed
+// tools with robust set of features to create your awesome and
+// high-performance web application powered by unlimited potentials and portability
 //
-// For middleware, template engines, response engines, sessions, websockets, mails, subdomains,
-// dynamic subdomains, routes, party of subdomains & routes and more
+// For view engines, render engines, sessions,
+// websockets, subdomains, automatic-TLS,
+// context support with 50+ handy http functions,
+// dynamic subdomains, router & routes,
+// parties of subdomains & routes,
+// access control, typescript compiler,
+// basicauth,internalization, logging,
+// and much more,
 //
-// visit https://godoc.org/gopkg.in/kataras/iris.v6
+// please visit https://godoc.org/gopkg.in/kataras/iris.v6
 package iris
 
 import (
@@ -19,6 +25,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -26,8 +33,6 @@ import (
 
 	"github.com/geekypanda/httpcache"
 	"github.com/kataras/go-errors"
-	"github.com/kataras/go-fs"
-	"github.com/kataras/go-serializer"
 )
 
 const (
@@ -89,8 +94,8 @@ type Framework struct {
 	// - RouterReversionPolicy
 	//      - StaticPath
 	//      - WildcardPath
+	//      - Param
 	//      - URLPath
-	//      - RouteContextLinker
 	// - RouterBuilderPolicy
 	// - RouterWrapperPolicy
 	// - RenderPolicy
@@ -133,7 +138,7 @@ type Framework struct {
 	once sync.Once // used to 'Boot' once
 }
 
-var defaultGlobalLoggerOuput = log.New(os.Stdout, "[Iris] ", log.LstdFlags)
+var defaultGlobalLoggerOuput = log.New(os.Stdout, "", log.LstdFlags)
 
 // DevLogger returns a new Logger which prints both ProdMode and DevMode messages
 // to the default global logger printer.
@@ -144,8 +149,26 @@ var defaultGlobalLoggerOuput = log.New(os.Stdout, "[Iris] ", log.LstdFlags)
 // Users can always ignore that and adapt a custom LoggerPolicy,
 // which will use your custom printer instead.
 func DevLogger() LoggerPolicy {
+	lastLog := time.Now()
+	distanceDuration := 850 * time.Millisecond
 	return func(mode LogMode, logMessage string) {
-		defaultGlobalLoggerOuput.Println(logMessage)
+		if strings.Contains(logMessage, banner) {
+			fmt.Print(logMessage)
+			lastLog = time.Now()
+			return
+		}
+		nowLog := time.Now()
+		if nowLog.Before(lastLog.Add(distanceDuration)) {
+			// don't use the log.Logger to print this message
+			// if the last one was printed before some seconds.
+			fmt.Println(logMessage)
+			lastLog = nowLog
+			return
+		}
+		// begin with new line in order to have the time once at the top
+		// and the child logs below it.
+		defaultGlobalLoggerOuput.Println("\u2192\n" + logMessage)
+		lastLog = nowLog
 	}
 }
 
@@ -185,6 +208,11 @@ func New(setters ...OptionSetter) *Framework {
 				defaultGlobalLoggerOuput.Println(logMessage)
 			}
 		}))
+
+		s.Adapt(EventPolicy{Boot: func(*Framework) {
+			// Print the banner first, even if we have to print errors later.
+			s.Log(DevMode, banner+"\n\n")
+		}})
 
 	}
 
@@ -236,42 +264,7 @@ func New(setters ...OptionSetter) *Framework {
 			//  | Adapt one RenderPolicy which is responsible                |
 			//  | for json,jsonp,xml and markdown rendering                  |
 			//  +------------------------------------------------------------+
-
-			// prepare the serializers,
-			// serializer content-types(json,jsonp,xml,markdown) the defaults are setted:
-			serializers := serializer.Serializers{}
-			serializer.RegisterDefaults(serializers)
-
-			//
-			// notes for me: Why not at the build state? in order to be overridable and not only them,
-			// these are easy to be overridden by external adaptors too, no matter the order,
-			// this is why the RenderPolicy last registration executing first and the first last.
-			//
-
-			// Adapt the RenderPolicy on the Build in order to be the last
-			// render policy, so the users can adapt their own before the default(= to override json,xml,jsonp renderer).
-			//
-			// Notes: the Renderer of the view system is managed by the
-			// adaptors because they are optional.
-			// If templates are binded to the RenderPolicy then
-			// If a key contains a dot('.') then is a template file
-			// otherwise try to find a serializer, if contains error then we return false and the error
-			// in order the renderer to continue to search for any other custom registerer RenderPolicy
-			// if no error then check if it has written anything, if yes write the content
-			// to the writer(which is the context.ResponseWriter or the gzip version of it)
-			// if no error but nothing written then we return false and the error
-			s.Adapt(RenderPolicy(func(out io.Writer, name string, bind interface{}, options ...map[string]interface{}) (error, bool) {
-				b, err := serializers.Serialize(name, bind, options...)
-				if err != nil {
-					return err, false // errors should be wrapped
-				}
-				if len(b) > 0 {
-					_, err = out.Write(b)
-					return err, true
-				}
-				// continue to the next if any or notice there is no available renderer for that name
-				return nil, false
-			}))
+			s.Adapt(restRenderPolicy)
 		}
 		{
 			//  +------------------------------------------------------------+
@@ -281,7 +274,7 @@ func New(setters ...OptionSetter) *Framework {
 			//  +------------------------------------------------------------+
 			s.Adapt(TemplateFuncsPolicy{
 				"url":     s.URL,
-				"urlpath": s.policies.RouterReversionPolicy.URLPath,
+				"urlpath": s.Path,
 			}) // the entire template registration logic lives inside the ./adaptors/view now.
 
 		}
@@ -365,7 +358,7 @@ func New(setters ...OptionSetter) *Framework {
 		// On Build: local repository updates
 		s.Adapt(EventPolicy{Build: func(*Framework) {
 			if s.Config.CheckForUpdates {
-				go s.CheckForUpdates(false)
+				go CheckForUpdates(false)
 			}
 		}})
 	}
@@ -382,10 +375,51 @@ func (s *Framework) Set(setters ...OptionSetter) {
 
 // Log logs to the defined logger policy.
 //
-// The default outputs to the os.Stdout when EnvMode is 'ProductionEnv'
+// The default outputs to the os.Stdout when EnvMode is 'iris.ProdMode'
 func (s *Framework) Log(mode LogMode, log string) {
 	s.policies.LoggerPolicy(mode, log)
 }
+
+// Author's note:
+//
+// I implemented this and worked for configuration fields logs but I'm not sure
+// if users want to print adaptor's configuration, i.e: websocket, sessions
+// so comment this feature, and
+// if/when I get good feedback from the private beta testers I'll uncomment these on public repo too.
+//
+//
+// Logf same as .Log but receives arguments like fmt.Printf.
+// Note: '%#v' and '%+v' named arguments are being printed, pretty.
+//
+// The default outputs to the os.Stdout when EnvMode is 'iris.ProdMode'
+// func (s *Framework) Logf(mode LogMode, format string, v ...interface{}) {
+// 	if mode == DevMode {
+// 		marker := 0
+// 		for i := 0; i < len(format); i++ {
+// 			if format[i] == '%' {
+// 				if i < len(format)-2 {
+// 					if part := format[i : i+3]; part == "%#v" || part == "%+v" {
+// 						if len(v) > marker {
+// 							spew.Config.Indent = "\t\t\t"
+// 							spew.Config.DisablePointerAddresses = true
+// 							spew.Config.DisableCapacities = true
+// 							spew.Config.DisablePointerMethods = true
+// 							spew.Config.DisableMethods = true
+// 							arg := v[marker]
+// 							format = strings.Replace(format, part, "%s", 1)
+// 							v[marker] = spew.Sdump(arg)
+// 						}
+// 					}
+// 				}
+// 				marker++
+// 			}
+// 		}
+// 	}
+//
+// 	log := fmt.Sprintf(format, v...)
+//
+// 	s.policies.LoggerPolicy(mode, log)
+// }
 
 // Must checks if the error is not nil, if it isn't
 // panics on registered iris' logger or
@@ -434,7 +468,6 @@ func (s *Framework) Boot() (firstTime bool) {
 		// right before the Listen, all methods have been setted
 		// usually is used to adapt third-party servers or proxies or load balancer(s)
 		s.policies.EventPolicy.Fire(s.policies.EventPolicy.Build, s)
-
 		firstTime = true
 	})
 	return
@@ -499,7 +532,15 @@ func (s *Framework) Serve(ln net.Listener) error {
 }
 
 func (s *Framework) postServe() {
-	bannerMessage := fmt.Sprintf("| Running at %s\n\n%s\n", s.Config.VHost, banner)
+	routerInfo := ""
+	if routerNameVal := s.Config.Other[RouterNameConfigKey]; routerNameVal != nil {
+		if routerName, ok := routerNameVal.(string); ok {
+			routerInfo = "using " + routerName
+		}
+	}
+
+	bannerMessage := fmt.Sprintf("Serving HTTP on %s port %d %s", ParseHostname(s.Config.VHost), ParsePort(s.Config.VHost), routerInfo)
+
 	s.Log(DevMode, bannerMessage)
 
 	ch := make(chan os.Signal, 1)
@@ -538,6 +579,7 @@ func (s *Framework) Listen(addr string) {
 	ln, err := TCPKeepAlive(addr)
 	if err != nil {
 		s.handlePanic(err)
+		return
 	}
 
 	s.Must(s.Serve(ln))
@@ -579,14 +621,14 @@ func (s *Framework) ListenTLS(addr string, certFile, keyFile string) {
 // ListenLETSENCRYPT starts a server listening at the specific nat address
 // using key & certification taken from the letsencrypt.org 's servers
 // it's also starts a second 'http' server to redirect all 'http://$ADDR_HOSTNAME:80' to the' https://$ADDR'
-// it creates a cache file to store the certifications, for performance reasons, this file by-default is "./letsencrypt.cache"
+// it creates a cache file to store the certifications, for performance reasons, this file by-default is "./certcache"
 // if you skip the second parameter then the cache file is "./letsencrypt.cache"
 // if you want to disable cache then simple pass as second argument an empty empty string ""
 //
 // Note: HTTP/2 Push is not working with LETSENCRYPT, you have to use ListenTLS to enable HTTP/2
 // Because net/http's author didn't exported the functions to tell the server that is using HTTP/2...
 //
-// example: https://github.com/iris-contrib/examples/blob/master/letsencrypt/main.go
+// example: https://github.com/kataras/iris/blob/v6/_examples/beginner/listen-letsencrypt/main.go
 func (s *Framework) ListenLETSENCRYPT(addr string, cacheFileOptional ...string) {
 	addr = ParseHost(addr)
 
@@ -602,9 +644,10 @@ func (s *Framework) ListenLETSENCRYPT(addr string, cacheFileOptional ...string) 
 		}
 	}
 
-	ln, err := LETSENCRYPT(addr, cacheFileOptional...)
+	ln, err := LETSENCRYPT(addr, addr, cacheFileOptional...)
 	if err != nil {
 		s.handlePanic(err)
+		return
 	}
 
 	// starts a second server which listening on HOST:80 to redirect all requests to the HTTPS://HOST:PORT
@@ -612,69 +655,28 @@ func (s *Framework) ListenLETSENCRYPT(addr string, cacheFileOptional ...string) 
 	s.Must(s.Serve(ln))
 }
 
-// ListenUNIX starts the process of listening to the new requests using a 'socket file', this works only on unix
-//
+// ListenUNIX starts the process of listening to the new requests using a 'socket file',
+// Note: this works only on unix
 //
 // If you need to manually monitor any error please use `.Serve` instead.
-func (s *Framework) ListenUNIX(addr string, mode os.FileMode) {
-	// *on unix listen we don't parse the host, because sometimes it causes problems to the user
-	if s.Config.VHost == "" {
-		s.Config.VHost = addr
-		// this will be set as the front-end listening addr
-	}
-	ln, err := UNIX(addr, mode)
+//
+// example: https://github.com/kataras/iris/blob/v6/_examples/beginner/listen-unix/main.go
+func (s *Framework) ListenUNIX(socketFile string, mode os.FileMode) {
+	ln, err := UNIX(socketFile, mode)
 	if err != nil {
 		s.handlePanic(err)
+		return
 	}
-
+	// *on unix listen we don't parse the host, because sometimes it causes problems to the user
+	if s.Config.VHost == "" {
+		s.Config.VHost = ln.Addr().String()
+		// this will be set as the front-end listening addr
+	}
 	s.Must(s.Serve(ln))
 }
 
 func (s *Framework) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.Router.ServeHTTP(w, r)
-}
-
-// global once because is not necessary to check for updates on more than one iris station*
-var updateOnce sync.Once
-
-const (
-	githubOwner = "kataras"
-	githubRepo  = "iris"
-)
-
-// CheckForUpdates will try to search for newer version of Iris based on the https://github.com/kataras/iris/releases
-// If a newer version found then the app will ask the he dev/user if want to update the 'x' version
-// if 'y' is pressed then the updater will try to install the latest version
-// the updater, will notify the dev/user that the update is finished and should restart the App manually.
-// Note: exported func CheckForUpdates exists because of the reason that an update can be executed while Iris is running
-func (s *Framework) CheckForUpdates(force bool) {
-	updated := false
-	checker := func() {
-
-		fs.DefaultUpdaterAlreadyInstalledMessage = "Updater: Running with the latest version(%s)\n"
-		updater, err := fs.GetUpdater(githubOwner, githubRepo, Version)
-
-		if err != nil {
-			// ignore writer's error
-			s.Log(DevMode, "update failed: "+err.Error())
-			return
-		}
-
-		updated = updater.Run(fs.Stdout(s.policies.LoggerPolicy), fs.Stderr(s.policies.LoggerPolicy), fs.Silent(false))
-
-	}
-
-	if force {
-		checker()
-	} else {
-		updateOnce.Do(checker)
-	}
-
-	if updated { // if updated, then do not run the web server
-		s.Log(DevMode, "exiting now...")
-		os.Exit(1)
-	}
-
 }
 
 // Adapt adapds a policy to the Framework.
@@ -812,6 +814,122 @@ func (s *Framework) URL(routeName string, args ...interface{}) (url string) {
 	return
 }
 
+// Regex takes pairs with the named path (without symbols) following by its expression
+// and returns a middleware which will do a pure but effective validation using the regexp package.
+//
+// Note: '/adaptors/gorillamux' already supports regex path validation.
+// It's useful while the developer uses the '/adaptors/httprouter' instead.
+func (s *Framework) Regex(pairParamExpr ...string) HandlerFunc {
+	srvErr := func(ctx *Context) {
+		ctx.EmitError(StatusInternalServerError)
+	}
+
+	// just to check if router is adapted.
+	wp := s.policies.RouterReversionPolicy.WildcardPath
+	if wp == nil {
+		s.Log(ProdMode, "regex cannot be used when a router policy is missing\n"+errRouterIsMissing.Format(s.Config.VHost).Error())
+		return srvErr
+	}
+
+	if len(pairParamExpr)%2 != 0 {
+		s.Log(ProdMode,
+			"regex pre-compile error: the correct format is paramName, expression"+
+				"paramName2, expression2. The len should be %2==0")
+		return srvErr
+	}
+
+	// we do compile first to reduce the performance cost at serve time.
+	pairs := make(map[string]*regexp.Regexp, len(pairParamExpr)/2)
+
+	for i := 0; i < len(pairParamExpr)-1; i++ {
+		expr := pairParamExpr[i+1]
+		r, err := regexp.Compile(expr)
+		if err != nil {
+			s.Log(ProdMode, "regex '"+expr+"' failed. Trace: "+err.Error())
+			return srvErr
+		}
+
+		pairs[pairParamExpr[i]] = r
+		i++
+	}
+
+	// return the middleware
+	return func(ctx *Context) {
+		for k, v := range pairs {
+			if !ctx.ParamValidate(v, k) {
+				ctx.EmitError(StatusNotFound)
+				return
+			}
+		}
+		// otherwise continue to the next handler...
+		ctx.Next()
+	}
+}
+
+func (s *Framework) RegexSingle(paramName string, expr string, onFail HandlerFunc) HandlerFunc {
+
+	// just to check if router is adapted.
+	wp := s.policies.RouterReversionPolicy.WildcardPath
+	if wp == nil {
+		s.Log(ProdMode, "regex cannot be used when a router policy is missing\n"+errRouterIsMissing.Format(s.Config.VHost).Error())
+		return onFail
+	}
+
+	// we do compile first to reduce the performance cost at serve time.
+	r, err := regexp.Compile(expr)
+	if err != nil {
+		s.Log(ProdMode, "regex '"+expr+"' failed. Trace: "+err.Error())
+		return onFail
+	}
+
+	// return the middleware
+	return func(ctx *Context) {
+		if !ctx.ParamValidate(r, paramName) {
+			onFail(ctx)
+			return
+		}
+		// otherwise continue to the next handler...
+		ctx.Next()
+	}
+}
+
+// RouteParam returns a named parameter as each router defines named path parameters.
+// For example, with the httprouter(: as named param symbol):
+// userid should return :userid.
+// with gorillamux, userid should return {userid}
+// or userid[1-9]+ should return {userid[1-9]+}.
+// so basically we just wrap the raw parameter name
+// with the start (and end) dynamic symbols of each router implementing the RouterReversionPolicy.
+// It's an optional functionality but it can be used to create adaptors without even know the router
+// that the user uses (which can be taken by app.Config.Other[iris.RouterNameConfigKey].
+//
+// Note: we don't need a function like ToWildcardParam because the developer
+// can use the RouterParam with a combination with RouteWildcardPath.
+//
+// Example: https://github.com/iris-contrib/adaptors/blob/master/oauth/oauth.go
+func (s *Framework) RouteParam(paramName string) string {
+	if s.policies.RouterReversionPolicy.Param == nil {
+		// all Iris' routers are implementing all features but third-parties may not, so make sure that the user
+		// will get a useful message back.
+		s.Log(DevMode, "cannot wrap a route named path parameter because the functionality was not implemented by the current router.")
+		return ""
+	}
+
+	return s.policies.RouterReversionPolicy.Param(paramName)
+}
+
+// RouteWildcardPath returns a path converted to a 'dynamic' path
+// for example, with the httprouter(wildcard symbol: '*'):
+// ("/static", "path") should return /static/*path
+// ("/myfiles/assets", "anything") should return /myfiles/assets/*anything
+func (s *Framework) RouteWildcardPath(path string, paramName string) string {
+	if s.policies.RouterReversionPolicy.WildcardPath == nil {
+		s.Log(DevMode, "please use WildcardPath after .Adapt(router).\n"+errRouterIsMissing.Format(s.Config.VHost).Error())
+		return ""
+	}
+	return s.policies.RouterReversionPolicy.WildcardPath(path, paramName)
+}
+
 // DecodeQuery returns the uri parameter as url (string)
 // useful when you want to pass something to a database and be valid to retrieve it via context.Param
 // use it only for special cases, when the default behavior doesn't suits you.
@@ -891,7 +1009,7 @@ type RenderOptions map[string]interface{}
 //
 // It can also render json,xml,jsonp and markdown by-default before or after .Build too.
 func (s *Framework) Render(w io.Writer, name string, bind interface{}, options ...map[string]interface{}) error {
-	err, ok := s.policies.RenderPolicy(w, name, bind, options...)
+	ok, err := s.policies.RenderPolicy(w, name, bind, options...)
 	if !ok {
 		// ok is false ONLY WHEN there is no registered render policy
 		// that is responsible for that 'name` (if contains dot '.' it's for templates).
