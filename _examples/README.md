@@ -12,6 +12,7 @@ It doesn't contains "best ways" neither explains all its features. It's just a s
     * [Hello World](beginner/hello-world/main.go)
     * [Routes (using httprouter)](beginner/routes-using-httprouter/main.go)
     * [Routes (using gorillamux)](beginner/routes-using-gorillamux/main.go)
+    * [Internal Application File Logger](beginner/file-logger/main.go)
     * [Write JSON](beginner/write-json/main.go)
     * [Read JSON](beginner/read-json/main.go)
     * [Read Form](beginner/read-form/main.go)
