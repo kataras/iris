@@ -2,16 +2,11 @@
 
 This folder provides easy to understand code snippets on how to get started with web development with the Go programming language using the  [Iris](https://github.com/kataras/iris) web framework.
 
-
 It doesn't contains "best ways" neither explains all its features. It's just a simple, practical cookbook for young Go developers!
 
-Developers should read the official [documentation](https://godoc.org/gopkg.in/kataras/iris.v6) in depth.
-
-
-<a href ="https://github.com/kataras/iris"> <img align="right" src="http://iris-go.com/assets/book/cover_4.jpg" width="300" /> </a>
-
-
 ## Table of Contents
+<!-- when the new book will be ready I should add the link here -->
+<img align="right" src="http://iris-go.com/assets/book/cover_4.jpg" width="300" />
 
 * [Level: Beginner](beginner)
     * [Hello World](beginner/hello-world/main.go)
@@ -75,4 +70,8 @@ Developers should read the official [documentation](https://godoc.org/gopkg.in/k
         * [Multi](advanced/subdomains/multi/main.go)
         * [Wildcard](advanced/subdomains/wildcard/main.go)
 
-> Take look at the [community examples](https://github.com/iris-contrib/examples) too!
+
+
+> Don't forget to take a quick look or add your own [examples in the community's repository](https://github.com/iris-contrib/examples)!
+
+> Developers should read the official [documentation](https://godoc.org/gopkg.in/kataras/iris.v6), in depth, for better understanding.
