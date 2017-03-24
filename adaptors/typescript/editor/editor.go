@@ -172,12 +172,13 @@ func (e *Editor) start() {
 
 	cmd := npm.CommandBuilder("node", npm.NodeModuleAbs("alm/src/server.js"))
 	cmd.AppendArguments("-a", e.config.Username+":"+e.config.Password,
-		"-h", e.config.Hostname, "-t", strconv.Itoa(e.config.Port), "-d", e.config.WorkingDir[0:len(e.config.WorkingDir)-1])
+		"-h", e.config.Hostname, "-t", strconv.Itoa(e.config.Port), "-d", e.config.WorkingDir)
 	// for auto-start in the browser: cmd.AppendArguments("-o")
 	if e.config.KeyFile != "" && e.config.CertFile != "" {
 		cmd.AppendArguments("--httpskey", e.config.KeyFile, "--httpscert", e.config.CertFile)
 	}
 
+	prefix := ""
 	// when debug is not disabled
 	// show any messages to the user( they are useful here)
 	// to the io.Writer that iris' user is defined from configuration
@@ -189,7 +190,7 @@ func (e *Editor) start() {
 
 			go func() {
 				for outputScanner.Scan() {
-					e.logger(iris.DevMode, "Editor: "+outputScanner.Text())
+					e.logger(iris.DevMode, prefix+outputScanner.Text())
 				}
 			}()
 
@@ -198,7 +199,7 @@ func (e *Editor) start() {
 				errScanner := bufio.NewScanner(errReader)
 				go func() {
 					for errScanner.Scan() {
-						e.logger(iris.DevMode, "Editor: "+errScanner.Text())
+						e.logger(iris.DevMode, prefix+errScanner.Text())
 					}
 				}()
 			}
@@ -207,7 +208,7 @@ func (e *Editor) start() {
 
 	err := cmd.Start()
 	if err != nil {
-		e.logger(iris.ProdMode, "Error while running alm-tools. Trace: "+err.Error())
+		e.logger(iris.ProdMode, prefix+err.Error())
 		return
 	}
 

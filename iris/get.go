@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/kataras/cli"
-	"github.com/kataras/go-fs"
 	"github.com/skratchdot/open-golang/open"
 )
 
@@ -30,6 +29,14 @@ var (
 	}
 )
 
+// DirectoryExists returns true if a directory(or file) exists, otherwise false
+func DirectoryExists(dir string) bool {
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		return false
+	}
+	return true
+}
+
 // dir returns the supposed local directory for this project
 func (p project) dir() string {
 	return join(getGoPath(), p.remote)
@@ -41,11 +48,12 @@ func (p project) mainfile() string {
 
 func (p project) download() {
 	// first, check if the repo exists locally in gopath
-	if fs.DirectoryExists(p.dir()) {
+	if DirectoryExists(p.dir()) {
 		return
 	}
 	app.Printf("Downloading... ")
-	finish := fs.ShowIndicator(cli.Output, false)
+
+	finish := cli.ShowIndicator(false)
 
 	defer func() {
 
@@ -72,7 +80,7 @@ func (p project) run() {
 	// the source and change the import paths from there too
 	// so here just let run and watch it
 	mainFile := p.mainfile()
-	if !fs.DirectoryExists(mainFile) { // or file exists, same thing
+	if !DirectoryExists(mainFile) { // or file exists, same thing
 		p.download()
 	}
 	installedDir := p.dir()

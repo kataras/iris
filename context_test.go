@@ -1,9 +1,18 @@
 package iris_test
 
 import (
+	"encoding/json"
+	"encoding/xml"
+	"fmt"
 	"io/ioutil"
+	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
 	"testing"
+	"time"
 
+	"github.com/iris-contrib/httpexpect"
 	"gopkg.in/kataras/iris.v6"
 	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
 	"gopkg.in/kataras/iris.v6/httptest"
@@ -234,4 +243,318 @@ func TestLimitRequestBodySizeMiddleware(t *testing.T) {
 	largerBSent := make([]byte, maxBodySize+1, maxBodySize+1)
 	e.POST("/").WithBytes(largerBSent).Expect().Status(iris.StatusBadRequest).Body().Equal("http: request body too large")
 
+}
+
+type testBinderData struct {
+	Username string
+	Mail     string
+	Data     []string `form:"mydata" json:"mydata"`
+}
+
+type testBinderXMLData struct {
+	XMLName    xml.Name `xml:"info"`
+	FirstAttr  string   `xml:"first,attr"`
+	SecondAttr string   `xml:"second,attr"`
+	Name       string   `xml:"name" json:"name"`
+	Birth      string   `xml:"birth" json:"birth"`
+	Stars      int      `xml:"stars" json:"stars"`
+}
+
+type testBinder struct {
+	//pointer of  testBinderDataJSON or testBinderXMLData
+	vp          interface{}
+	m           iris.Unmarshaler
+	shouldError bool
+}
+
+func (tj *testBinder) Decode(data []byte) error {
+	if tj.shouldError {
+		return fmt.Errorf("Should error")
+	}
+	return tj.m.Unmarshal(data, tj.vp)
+}
+
+func testUnmarshaler(app *iris.Framework, t *testing.T, tb *testBinder,
+	write func(ctx *iris.Context)) *httpexpect.Request {
+
+	// a very dirty and awful way but here we must test in deep
+	// the custom object's decoder error with the custom
+	// unmarshaler result whenever the testUnmarshaler called.
+	if tb.shouldError == false {
+		tb.shouldError = true
+		testUnmarshaler(app, t, tb, write)
+		tb.shouldError = false
+	}
+
+	h := func(ctx *iris.Context) {
+		err := ctx.UnmarshalBody(tb.vp, tb.m)
+		if tb.shouldError && err == nil {
+			t.Fatalf("Should prompted for error 'Should error' but not error returned from the custom decoder!")
+		} else if err != nil {
+			t.Fatalf("Error when parsing the body: %s", err.Error())
+		}
+		if write != nil {
+			write(ctx)
+		}
+
+		if app.Config.DisableBodyConsumptionOnUnmarshal {
+			rawData, _ := ioutil.ReadAll(ctx.Request.Body)
+			if len(rawData) == 0 {
+				t.Fatalf("Expected data to NOT BE consumed by the previous UnmarshalBody call but we got empty body.")
+			}
+		}
+	}
+
+	app.Post("/bind_req_body", h)
+
+	e := httptest.New(app, t)
+	return e.POST("/bind_req_body")
+}
+
+// same as DecodeBody
+// JSON, XML by DecodeBody passing the default unmarshalers
+func TestContextBinders(t *testing.T) {
+
+	passed := map[string]interface{}{"Username": "myusername",
+		"Mail":   "mymail@iris-go.com",
+		"mydata": []string{"mydata1", "mydata2"}}
+	expectedObject := testBinderData{Username: "myusername",
+		Mail: "mymail@iris-go.com",
+		Data: []string{"mydata1", "mydata2"}}
+
+	// JSON
+	vJSON := &testBinder{&testBinderData{},
+		iris.UnmarshalerFunc(json.Unmarshal), false}
+
+	// XML
+	expectedObj := testBinderXMLData{
+		XMLName:    xml.Name{Local: "info", Space: "info"},
+		FirstAttr:  "this is the first attr",
+		SecondAttr: "this is the second attr",
+		Name:       "Iris web framework",
+		Birth:      "13 March 2016",
+		Stars:      5758,
+	}
+	expectedAndPassedObjText := `<` + expectedObj.XMLName.Local + ` first="` +
+		expectedObj.FirstAttr + `" second="` +
+		expectedObj.SecondAttr + `"><name>` +
+		expectedObj.Name + `</name><birth>` +
+		expectedObj.Birth + `</birth><stars>` +
+		strconv.Itoa(expectedObj.Stars) + `</stars></info>`
+
+	vXML := &testBinder{&testBinderXMLData{},
+		iris.UnmarshalerFunc(xml.Unmarshal), false}
+
+	app := iris.New()
+	app.Adapt(httprouter.New())
+
+	testUnmarshaler(app,
+		t,
+		vXML,
+		func(ctx *iris.Context) {
+			ctx.XML(iris.StatusOK, vXML.vp)
+		}).
+		WithText(expectedAndPassedObjText).
+		Expect().
+		Status(iris.StatusOK).
+		Body().Equal(expectedAndPassedObjText)
+
+	app2 := iris.New()
+	app2.Adapt(httprouter.New())
+	testUnmarshaler(app2,
+		t,
+		vJSON,
+		func(ctx *iris.Context) {
+			ctx.JSON(iris.StatusOK, vJSON.vp)
+		}).
+		WithJSON(passed).
+		Expect().
+		Status(iris.StatusOK).
+		JSON().Object().Equal(expectedObject)
+
+	// JSON with DisableBodyConsumptionOnUnmarshal
+	app3 := iris.New()
+	app3.Adapt(httprouter.New())
+
+	app3.Config.DisableBodyConsumptionOnUnmarshal = true
+	testUnmarshaler(app3,
+		t,
+		vJSON,
+		func(ctx *iris.Context) {
+			ctx.JSON(iris.StatusOK, vJSON.vp)
+		}).
+		WithJSON(passed).
+		Expect().
+		Status(iris.StatusOK).
+		JSON().Object().Equal(expectedObject)
+}
+
+func TestContextReadForm(t *testing.T) {
+	app := iris.New()
+	app.Adapt(httprouter.New())
+
+	app.Post("/form", func(ctx *iris.Context) {
+		obj := testBinderData{}
+		err := ctx.ReadForm(&obj)
+		if err != nil {
+			t.Fatalf("Error when parsing the FORM: %s", err.Error())
+		}
+		ctx.JSON(iris.StatusOK, obj)
+	})
+
+	e := httptest.New(app, t)
+
+	passed := map[string]interface{}{"Username": "myusername", "Mail": "mymail@iris-go.com", "mydata": url.Values{"[0]": []string{"mydata1"},
+		"[1]": []string{"mydata2"}}}
+
+	expectedObject := testBinderData{Username: "myusername", Mail: "mymail@iris-go.com", Data: []string{"mydata1", "mydata2"}}
+
+	e.POST("/form").WithForm(passed).Expect().Status(iris.StatusOK).JSON().Object().Equal(expectedObject)
+}
+
+func TestRedirectHTTP(t *testing.T) {
+	host := "localhost:" + strconv.Itoa(getRandomNumber(1717, 9281))
+
+	app := iris.New(iris.Configuration{VHost: host})
+	app.Adapt(httprouter.New())
+
+	expectedBody := "Redirected to /redirected"
+
+	app.Get("/redirect", func(ctx *iris.Context) { ctx.Redirect("/redirected") })
+	app.Get("/redirected", func(ctx *iris.Context) { ctx.Text(iris.StatusOK, "Redirected to "+ctx.Path()) })
+
+	e := httptest.New(app, t)
+	e.GET("/redirect").Expect().Status(iris.StatusOK).Body().Equal(expectedBody)
+}
+
+func TestRedirectHTTPS(t *testing.T) {
+
+	app := iris.New()
+	app.Adapt(httprouter.New())
+
+	host := "localhost:" + strconv.Itoa(getRandomNumber(1717, 9281))
+
+	expectedBody := "Redirected to /redirected"
+
+	app.Get("/redirect", func(ctx *iris.Context) { ctx.Redirect("/redirected") })
+	app.Get("/redirected", func(ctx *iris.Context) { ctx.Text(iris.StatusOK, "Redirected to "+ctx.Path()) })
+	defer listenTLS(app, host)()
+
+	e := httptest.New(app, t)
+	e.GET("/redirect").Expect().Status(iris.StatusOK).Body().Equal(expectedBody)
+}
+
+// TestContextRedirectTo tests the named route redirect action
+func TestContextRedirectTo(t *testing.T) {
+	app := iris.New()
+	app.Adapt(httprouter.New())
+	h := func(ctx *iris.Context) { ctx.WriteString(ctx.Path()) }
+	app.Get("/mypath", h).ChangeName("my-path")
+	app.Get("/mypostpath", h).ChangeName("my-post-path")
+	app.Get("mypath/with/params/:param1/:param2", func(ctx *iris.Context) {
+		if l := ctx.ParamsLen(); l != 2 {
+			t.Fatalf("Strange error, expecting parameters to be two but we got: %d", l)
+		}
+		ctx.WriteString(ctx.Path())
+	}).ChangeName("my-path-with-params")
+
+	app.Get("/redirect/to/:routeName/*anyparams", func(ctx *iris.Context) {
+		routeName := ctx.Param("routeName")
+		var args []interface{}
+		anyparams := ctx.Param("anyparams")
+		if anyparams != "" && anyparams != "/" {
+			params := strings.Split(anyparams[1:], "/") // firstparam/secondparam
+			for _, s := range params {
+				args = append(args, s)
+			}
+		}
+		ctx.RedirectTo(routeName, args...)
+	})
+
+	e := httptest.New(app, t)
+
+	e.GET("/redirect/to/my-path/").Expect().Status(iris.StatusOK).Body().Equal("/mypath")
+	e.GET("/redirect/to/my-post-path/").Expect().Status(iris.StatusOK).Body().Equal("/mypostpath")
+	e.GET("/redirect/to/my-path-with-params/firstparam/secondparam").Expect().Status(iris.StatusOK).Body().Equal("/mypath/with/params/firstparam/secondparam")
+}
+
+func TestContextUserValues(t *testing.T) {
+	app := iris.New()
+	app.Adapt(httprouter.New())
+	testCustomObjUserValue := struct{ Name string }{Name: "a name"}
+	values := map[string]interface{}{"key1": "value1", "key2": "value2", "key3": 3, "key4": testCustomObjUserValue, "key5": map[string]string{"key": "value"}}
+
+	app.Get("/test", func(ctx *iris.Context) {
+
+		for k, v := range values {
+			ctx.Set(k, v)
+		}
+
+	}, func(ctx *iris.Context) {
+		for k, v := range values {
+			userValue := ctx.Get(k)
+			if userValue != v {
+				t.Fatalf("Expecting user value: %s to be equal with: %#v but got: %#v", k, v, userValue)
+			}
+
+			if m, isMap := userValue.(map[string]string); isMap {
+				if m["key"] != v.(map[string]string)["key"] {
+					t.Fatalf("Expecting user value: %s to be equal with: %#v but got: %#v", k, v.(map[string]string)["key"], m["key"])
+				}
+			} else {
+				if userValue != v {
+					t.Fatalf("Expecting user value: %s to be equal with: %#v but got: %#v", k, v, userValue)
+				}
+			}
+
+		}
+	})
+
+	e := httptest.New(app, t)
+
+	e.GET("/test").Expect().Status(iris.StatusOK)
+}
+
+func TestContextCookieSetGetRemove(t *testing.T) {
+	app := iris.New()
+	app.Adapt(httprouter.New())
+	key := "mykey"
+	value := "myvalue"
+	app.Get("/set", func(ctx *iris.Context) {
+		ctx.SetCookieKV(key, value) // should return non empty cookies
+	})
+
+	app.Get("/set_advanced", func(ctx *iris.Context) {
+		c := &http.Cookie{}
+		c.Name = key
+		c.Value = value
+		c.HttpOnly = true
+		c.Expires = time.Now().Add(time.Duration((60 * 60 * 24 * 7 * 4)) * time.Second)
+		ctx.SetCookie(c)
+	})
+
+	app.Get("/get", func(ctx *iris.Context) {
+		ctx.WriteString(ctx.GetCookie(key)) // should return my value
+	})
+
+	app.Get("/remove", func(ctx *iris.Context) {
+		ctx.RemoveCookie(key)
+		cookieFound := false
+		ctx.VisitAllCookies(func(k, v string) {
+			cookieFound = true
+		})
+		if cookieFound {
+			t.Fatalf("Cookie has been found, when it shouldn't!")
+		}
+		ctx.WriteString(ctx.GetCookie(key)) // should return ""
+	})
+
+	e := httptest.New(app, t)
+	e.GET("/set").Expect().Status(iris.StatusOK).Cookies().NotEmpty()
+	e.GET("/get").Expect().Status(iris.StatusOK).Body().Equal(value)
+	e.GET("/remove").Expect().Status(iris.StatusOK).Body().Equal("")
+	// test again with advanced set
+	e.GET("/set_advanced").Expect().Status(iris.StatusOK).Cookies().NotEmpty()
+	e.GET("/get").Expect().Status(iris.StatusOK).Body().Equal(value)
+	e.GET("/remove").Expect().Status(iris.StatusOK).Body().Equal("")
 }

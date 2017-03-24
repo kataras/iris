@@ -104,15 +104,15 @@ func (t *TsAdaptor) start() {
 				}
 
 			}
-			t.logger(iris.DevMode, fmt.Sprintf("%d Typescript project(s) compiled ( %d monitored by a background file watcher ) ", len(projects), watchedProjects))
+			// t.logger(iris.DevMode, fmt.Sprintf("%d Typescript project(s) compiled ( %d monitored by a background file watcher ) ", len(projects), watchedProjects))
 		} else {
 			//search for standalone typescript (.ts) files and compile them
 			files := t.getTypescriptFiles()
 			if len(files) > 0 {
-				watchedFiles := 0
+				/* watchedFiles := 0
 				if t.Config.Tsconfig.CompilerOptions.Watch {
 					watchedFiles = len(files)
-				}
+				}*/
 				//it must be always > 0 if we came here, because of if hasTypescriptFiles == true.
 				for _, file := range files {
 					absPath, err := filepath.Abs(file)
@@ -142,7 +142,7 @@ func (t *TsAdaptor) start() {
 					}()
 
 				}
-				t.logger(iris.DevMode, fmt.Sprintf("%d Typescript file(s) compiled ( %d monitored by a background file watcher )", len(files), watchedFiles))
+				// t.logger(iris.DevMode, fmt.Sprintf("%d Typescript file(s) compiled ( %d monitored by a background file watcher )", len(files), watchedFiles))
 			}
 
 		}

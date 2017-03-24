@@ -12,6 +12,61 @@ import (
 	"gopkg.in/kataras/iris.v6"
 )
 
+type (
+	connectionValue struct {
+		key   []byte
+		value interface{}
+	}
+	// ConnectionValues is the temporary connection's memory store
+	ConnectionValues []connectionValue
+)
+
+// Set sets a value based on the key
+func (r *ConnectionValues) Set(key string, value interface{}) {
+	args := *r
+	n := len(args)
+	for i := 0; i < n; i++ {
+		kv := &args[i]
+		if string(kv.key) == key {
+			kv.value = value
+			return
+		}
+	}
+
+	c := cap(args)
+	if c > n {
+		args = args[:n+1]
+		kv := &args[n]
+		kv.key = append(kv.key[:0], key...)
+		kv.value = value
+		*r = args
+		return
+	}
+
+	kv := connectionValue{}
+	kv.key = append(kv.key[:0], key...)
+	kv.value = value
+	*r = append(args, kv)
+}
+
+// Get returns a value based on its key
+func (r *ConnectionValues) Get(key string) interface{} {
+	args := *r
+	n := len(args)
+	for i := 0; i < n; i++ {
+		kv := &args[i]
+		if string(kv.key) == key {
+			return kv.value
+		}
+	}
+	return nil
+}
+
+// Reset clears the values
+func (r *ConnectionValues) Reset() {
+	*r = (*r)[:0]
+}
+
 // UnderlineConnection is used for compatible with fasthttp and net/http underline websocket libraries
 // we only need ~8 funcs from websocket.Conn so:
 type UnderlineConnection interface {
@@ -65,6 +120,10 @@ type UnderlineConnection interface {
 type (
 	// DisconnectFunc is the callback which fires when a client/connection closed
 	DisconnectFunc func()
+	// LeaveRoomFunc is the callback which fires when a client/connection leaves from any room.
+	// This is called automatically when client/connection disconnected
+	// (because websocket server automatically leaves from all joined rooms)
+	LeaveRoomFunc func(roomName string)
 	// ErrorFunc is the callback which fires when an error happens
 	ErrorFunc (func(string))
 	// NativeMessageFunc is the callback for native websocket messages, receives one []byte parameter which is the raw client's message
@@ -103,10 +162,28 @@ type (
 		// Join join a connection to a room, it doesn't check if connection is already there, so care
 		Join(string)
 		// Leave removes a connection from a room
-		Leave(string)
+		// Returns true if the connection has actually left from the particular room.
+		Leave(string) bool
+		// OnLeave registeres a callback which fires when this connection left from any joined room.
+		// This callback is called automatically on Disconnected client, because websocket server automatically
+		// deletes the disconnected connection from any joined rooms.
+		//
+		// Note: the callback(s) called right before the server deletes the connection from the room
+		// so the connection theoritical can still send messages to its room right before it is being disconnected.
+		OnLeave(roomLeaveCb LeaveRoomFunc)
 		// Disconnect disconnects the client, close the underline websocket conn and removes it from the conn list
 		// returns the error, if any, from the underline connection
 		Disconnect() error
+		// SetValue sets a key-value pair on the connection's mem store.
+		SetValue(key string, value interface{})
+		// GetValue gets a value by its key from the connection's mem store.
+		GetValue(key string) interface{}
+		// GetValueArrString gets a value as []string by its key from the connection's mem store.
+		GetValueArrString(key string) []string
+		// GetValueString gets a value as string by its key from the connection's mem store.
+		GetValueString(key string) string
+		// GetValueInt gets a value as integer by its key from the connection's mem store.
+		GetValueInt(key string) int
 	}
 
 	connection struct {
@@ -116,6 +193,7 @@ type (
 		pinger                   *time.Ticker
 		disconnected             bool
 		onDisconnectListeners    []DisconnectFunc
+		onRoomLeaveListeners     []LeaveRoomFunc
 		onErrorListeners         []ErrorFunc
 		onNativeMessageListeners []NativeMessageFunc
 		onEventListeners         map[string][]MessageFunc
@@ -126,6 +204,7 @@ type (
 
 		// access to the Context, use with causion, you can't use response writer as you imagine.
 		ctx    *iris.Context
+		values ConnectionValues
 		server *server
 		// #119 , websocket writers are not protected by locks inside the gorilla's websocket code
 		// so we must protect them otherwise we're getting concurrent connection error on multi writers in the same time.
@@ -144,6 +223,7 @@ func newConnection(s *server, ctx *iris.Context, underlineConn UnderlineConnecti
 		id:                       id,
 		messageType:              websocket.TextMessage,
 		onDisconnectListeners:    make([]DisconnectFunc, 0),
+		onRoomLeaveListeners:     make([]LeaveRoomFunc, 0),
 		onErrorListeners:         make([]ErrorFunc, 0),
 		onNativeMessageListeners: make([]NativeMessageFunc, 0),
 		onEventListeners:         make(map[string][]MessageFunc, 0),
@@ -317,6 +397,10 @@ func (c *connection) Context() *iris.Context {
 	return c.ctx
 }
 
+func (c *connection) Values() ConnectionValues {
+	return c.values
+}
+
 func (c *connection) fireDisconnect() {
 	for i := range c.onDisconnectListeners {
 		c.onDisconnectListeners[i]()
@@ -373,10 +457,63 @@ func (c *connection) Join(roomName string) {
 	c.server.Join(roomName, c.id)
 }
 
-func (c *connection) Leave(roomName string) {
-	c.server.Leave(roomName, c.id)
+func (c *connection) Leave(roomName string) bool {
+	return c.server.Leave(roomName, c.id)
+}
+
+func (c *connection) OnLeave(roomLeaveCb LeaveRoomFunc) {
+	c.onRoomLeaveListeners = append(c.onRoomLeaveListeners, roomLeaveCb)
+	// note: the callbacks are called from the server on the '.leave' and '.LeaveAll' funcs.
+}
+
+func (c *connection) fireOnLeave(roomName string) {
+	// fire the onRoomLeaveListeners
+	for i := range c.onRoomLeaveListeners {
+		c.onRoomLeaveListeners[i](roomName)
+	}
 }
 
 func (c *connection) Disconnect() error {
 	return c.server.Disconnect(c.ID())
+}
+
+// mem per-conn store
+
+func (c *connection) SetValue(key string, value interface{}) {
+	c.values.Set(key, value)
+}
+
+func (c *connection) GetValue(key string) interface{} {
+	return c.values.Get(key)
+}
+
+func (c *connection) GetValueArrString(key string) []string {
+	if v := c.values.Get(key); v != nil {
+		if arrString, ok := v.([]string); ok {
+			return arrString
+		}
+	}
+	return nil
+}
+
+func (c *connection) GetValueString(key string) string {
+	if v := c.values.Get(key); v != nil {
+		if s, ok := v.(string); ok {
+			return s
+		}
+	}
+	return ""
+}
+
+func (c *connection) GetValueInt(key string) int {
+	if v := c.values.Get(key); v != nil {
+		if i, ok := v.(int); ok {
+			return i
+		} else if s, ok := v.(string); ok {
+			if iv, err := strconv.Atoi(s); err == nil {
+				return iv
+			}
+		}
+	}
+	return 0
 }

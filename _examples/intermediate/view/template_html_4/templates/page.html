@@ -1,0 +1,16 @@
+<!-- the only difference between normal named routes and dynamic subdomains named routes is that the first argument of  url
+is the subdomain part instead of named parameter-->
+
+<a href="{{url "dynamic-subdomain1" "username1"}}">username1.127.0.0.1:8080/mypath</a>
+<br />
+<br />
+<a href="{{url "dynamic-subdomain2" "username2" "theParam1" "theParam2"}}">username2.127.0.0.1:8080/mypath2/{param1}/{param2}</a>
+<br />
+<br />
+<a href="{{url "dynamic-subdomain3" "username3" "theParam1" "theParam2AfterStatic"}}">username3.127.0.0.1:8080/mypath3/{param1}/statichere/{param2}</a>
+<br />
+<br />
+<a href="{{url "dynamic-subdomain4" "username4" "theParam1" "theparam2AfterStatic" "otherParam" "matchAnything"}}">username4.127.0.0.1:8080/mypath4/{param1}/statichere/{param2}/{otherParam}/{something:.*}</a>
+<br />
+<br />
+<a href="{{url "dynamic-subdomain5" .ParamsAsArray }}" >username5.127.0.0.1:8080/mypath6/{param1}/{param2}/staticParam/{param3}AfterStatic</a>

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/kataras/go-errors"
-	"github.com/kataras/go-fs"
 )
 
 const (
@@ -130,12 +129,8 @@ type Router struct {
 	relativePath string
 }
 
-var (
-	// errDirectoryFileNotFound returns an error with message: 'Directory or file %s couldn't found. Trace: +error trace'
-	errDirectoryFileNotFound = errors.New("Directory or file %s couldn't found. Trace: %s")
-)
-
 func (router *Router) build(builder RouterBuilderPolicy) {
+	router.repository.sort() // sort - priority to subdomains
 	router.handler = builder(router.repository, router.Context)
 }
 
@@ -279,7 +274,6 @@ func (router *Router) Handle(method string, registeredPath string, handlers ...H
 		middleware = append(middleware, router.doneMiddleware...) // register the done middleware, if any
 	}
 	r := router.repository.register(method, subdomain, path, middleware)
-
 	router.apiRoutes = append(router.apiRoutes, r)
 	// should we remove the router.apiRoutes on the .Party (new children party) ?, No, because the user maybe use this party later
 	// should we add to the 'inheritance tree' the router.apiRoutes, No, these are for this specific party only, because the user propably, will have unexpected behavior when using Use/UseFunc, Done/DoneFunc
@@ -354,16 +348,6 @@ func (router *Router) Any(registeredPath string, handlersFn ...HandlerFunc) {
 	}
 }
 
-// if / then returns /*wildcard or /something then /something/*wildcard
-// if empty then returns /*wildcard too
-func validateWildcard(reqPath string, paramName string) string {
-	if reqPath[len(reqPath)-1] != slashByte {
-		reqPath += slash
-	}
-	reqPath += "*" + paramName
-	return reqPath
-}
-
 func (router *Router) registerResourceRoute(reqPath string, h HandlerFunc) RouteInfo {
 	router.Head(reqPath, h)
 	return router.Get(reqPath, h)
@@ -379,9 +363,9 @@ func (router *Router) StaticServe(systemPath string, requestPath ...string) Rout
 	var reqPath string
 
 	if len(requestPath) == 0 {
-		reqPath = strings.Replace(systemPath, fs.PathSeparator, slash, -1) // replaces any \ to /
-		reqPath = strings.Replace(reqPath, "//", slash, -1)                // for any case, replaces // to /
-		reqPath = strings.Replace(reqPath, ".", "", -1)                    // replace any dots (./mypath -> /mypath)
+		reqPath = strings.Replace(systemPath, string(os.PathSeparator), slash, -1) // replaces any \ to /
+		reqPath = strings.Replace(reqPath, "//", slash, -1)                        // for any case, replaces // to /
+		reqPath = strings.Replace(reqPath, ".", "", -1)                            // replace any dots (./mypath -> /mypath)
 	} else {
 		reqPath = requestPath[0]
 	}
@@ -389,10 +373,10 @@ func (router *Router) StaticServe(systemPath string, requestPath ...string) Rout
 	return router.Get(reqPath+"/*file", func(ctx *Context) {
 		filepath := ctx.Param("file")
 
-		spath := strings.Replace(filepath, "/", fs.PathSeparator, -1)
+		spath := strings.Replace(filepath, "/", string(os.PathSeparator), -1)
 		spath = path.Join(systemPath, spath)
 
-		if !fs.DirectoryExists(spath) {
+		if !directoryExists(spath) {
 			ctx.NotFound()
 			return
 		}
@@ -426,7 +410,9 @@ func (router *Router) StaticContent(reqPath string, cType string, content []byte
 // example: https://github.com/iris-contrib/examples/tree/master/static_files_embedded
 func (router *Router) StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) RouteInfo {
 	paramName := "path"
-	requestPath = router.Context.Framework().policies.RouterReversionPolicy.WildcardPath(requestPath, paramName)
+	s := router.Context.Framework()
+
+	requestPath = s.policies.RouterReversionPolicy.WildcardPath(requestPath, paramName)
 
 	if len(vdir) > 0 {
 		if vdir[0] == '.' { // first check for .wrong
@@ -451,25 +437,30 @@ func (router *Router) StaticEmbedded(requestPath string, vdir string, assetFn fu
 		path = strings.Replace(path, "./", "/", -1) // replace ./assets/favicon.ico to /assets/favicon.ico in order to be ready for compare with the reqPath later
 		path = path[len(vdir):]                     // set it as the its 'relative' ( we should re-setted it when assetFn will be used)
 		names = append(names, path)
-
 	}
+
 	if len(names) == 0 {
 		// we don't start the server yet, so:
-		panic("iris.StaticEmbedded: Unable to locate any embedded files located to the (virtual) directory: " + vdir)
+		s.Log(ProdMode, "error on StaticEmbedded: unable to locate any embedded files located to the (virtual) directory: "+vdir)
 	}
 
 	modtime := time.Now()
 	h := func(ctx *Context) {
-
 		reqPath := ctx.Param(paramName)
-
 		for _, path := range names {
+			// in order to map "/" as "/index.html"
+			// as requested here: https://github.com/kataras/iris/issues/633#issuecomment-281691851
+			if path == "/index.html" {
+				if reqPath[len(reqPath)-1] == slashByte {
+					reqPath = "/index.html"
+				}
+			}
 
 			if path != reqPath {
 				continue
 			}
 
-			cType := fs.TypeByExtension(path)
+			cType := typeByExtension(path)
 			fullpath := vdir + path
 
 			buf, err := assetFn(fullpath)
@@ -492,6 +483,9 @@ func (router *Router) StaticEmbedded(requestPath string, vdir string, assetFn fu
 
 	return router.registerResourceRoute(requestPath, h)
 }
+
+// errDirectoryFileNotFound returns an error with message: 'Directory or file %s couldn't found. Trace: +error trace'
+var errDirectoryFileNotFound = errors.New("Directory or file %s couldn't found. Trace: %s")
 
 // Favicon serves static favicon
 // accepts 2 parameters, second is optional
@@ -525,7 +519,7 @@ func (router *Router) Favicon(favPath string, requestPath ...string) RouteInfo {
 		fi, _ = f.Stat()
 	}
 
-	cType := fs.TypeByExtension(favPath)
+	cType := typeByExtension(favPath)
 	// copy the bytes here in order to cache and not read the ico on each request.
 	cacheFav := make([]byte, fi.Size())
 	if _, err = f.Read(cacheFav); err != nil {
@@ -568,36 +562,27 @@ func (router *Router) Favicon(favPath string, requestPath ...string) RouteInfo {
 	return router.registerResourceRoute(reqPath, h)
 }
 
-// StaticHandler returns a new Handler which serves static files
+// StaticHandler returns a new Handler which is ready
+// to serve all kind of static files.
+//
+// Note:
+// The only difference from package-level `StaticHandler`
+// is that this `StaticHandler`` receives a request path which
+// is appended to the party's relative path and stripped here,
+// so `iris.StripPath` is useless and should not being used here.
+//
+// Usage:
+// app := iris.New()
+// ...
+// mySubdomainFsServer := app.Party("mysubdomain.")
+// h := mySubdomainFsServer.StaticHandler("/static", "./static_files", false, false)
+// /* http://mysubdomain.mydomain.com/static/css/style.css */
+// mySubdomainFsServer.Get("/static", h)
+// ...
+//
 func (router *Router) StaticHandler(reqPath string, systemPath string, showList bool, enableGzip bool, exceptRoutes ...RouteInfo) HandlerFunc {
-	// here we separate the path from the subdomain (if any), we care only for the path
-	// fixes a bug when serving static files via a subdomain
-	fullpath := router.relativePath + reqPath
-	path := fullpath
-	if dotWSlashIdx := strings.Index(path, subdomainIndicator); dotWSlashIdx > 0 {
-		path = fullpath[dotWSlashIdx+1:]
-	}
-
-	h := NewStaticHandlerBuilder(systemPath).
-		Path(path).
-		Listing(showList).
-		Gzip(enableGzip).
-		Except(exceptRoutes...).
-		Build()
-
-	managedStaticHandler := func(ctx *Context) {
-		h(ctx)
-		prevStatusCode := ctx.ResponseWriter.StatusCode()
-		if prevStatusCode >= 400 { // we have an error
-			// fire the custom error handler
-			router.Errors.Fire(prevStatusCode, ctx)
-		}
-		// go to the next middleware
-		if ctx.Pos < len(ctx.Middleware)-1 {
-			ctx.Next()
-		}
-	}
-	return managedStaticHandler
+	return StripPrefix(router.relativePath+reqPath,
+		StaticHandler(systemPath, showList, enableGzip))
 }
 
 // StaticWeb returns a handler that serves HTTP requests
@@ -619,18 +604,20 @@ func (router *Router) StaticHandler(reqPath string, systemPath string, showList 
 func (router *Router) StaticWeb(reqPath string, systemPath string, exceptRoutes ...RouteInfo) RouteInfo {
 	h := router.StaticHandler(reqPath, systemPath, false, false, exceptRoutes...)
 	paramName := "file"
-	routePath := validateWildcard(reqPath, paramName)
+	routePath := router.Context.Framework().RouteWildcardPath(reqPath, paramName)
 	handler := func(ctx *Context) {
 		h(ctx)
-		if fname := ctx.Param(paramName); fname != "" {
-			cType := fs.TypeByExtension(fname)
-			if cType != contentBinary && !strings.Contains(cType, "charset") {
-				cType += "; charset=" + ctx.framework.Config.Charset
+		// re-check the content type here for any case,
+		// although the new code does it automatically but it's good to have it here.
+		if ctx.StatusCode() >= 200 && ctx.StatusCode() < 400 {
+			if fname := ctx.Param(paramName); fname != "" {
+				cType := typeByExtension(fname)
+				if cType != contentBinary && !strings.Contains(cType, "charset") {
+					cType += "; charset=" + ctx.framework.Config.Charset
+				}
+				ctx.SetContentType(cType)
 			}
-
-			ctx.SetContentType(cType)
 		}
-
 	}
 
 	return router.registerResourceRoute(routePath, handler)
@@ -655,10 +642,22 @@ func (router *Router) Layout(tmplLayoutFile string) *Router {
 	return router
 }
 
-// OnError registers a custom http error handler
-func (router *Router) OnError(statusCode int, handlerFn HandlerFunc) {
+// OnError registers a custom http error handler.
+// Accepts the status code which the 'handlerFn' should be fired,
+// third parameter is OPTIONAL, if setted then the 'handlerFn' will be executed
+// only when this regex expression will be validated and matched to the ctx.Request.RequestURI,
+// keep note that it will compare the whole request path but the error handler owns to this Party,
+// this gives developers power tooling.
+//
+// Each party's static path prefix can have a set of its own error handlers,
+// this works by wrapping the error handlers, so if a party doesn't needs a custom error handler,
+// then it will execute the root's one (if setted, otherwise the framework creates one at runtime).
+func (router *Router) OnError(statusCode int, handlerFn HandlerFunc, rgexp ...string) {
 	staticPath := router.Context.Framework().policies.RouterReversionPolicy.StaticPath(router.relativePath)
-
+	expr := ""
+	if len(rgexp) > 0 {
+		expr = rgexp[0]
+	}
 	if staticPath == "/" {
 		router.Errors.Register(statusCode, handlerFn) // register the user-specific error message, as the global error handler, for now.
 		return
@@ -672,9 +671,12 @@ func (router *Router) OnError(statusCode int, handlerFn HandlerFunc) {
 	// get the previous
 	prevErrHandler := router.Errors.GetOrRegister(statusCode)
 
-	func(statusCode int, staticPath string, prevErrHandler Handler, newHandler Handler) { // to separate the logic
+	func(statusCode int, staticPath string, prevErrHandler Handler, newHandler Handler, expr string) { // to separate the logic
 		errHandler := HandlerFunc(func(ctx *Context) {
-			if strings.HasPrefix(ctx.Path(), staticPath) { // yes the user should use OnError from longest to lower static path's length in order this to work, so we can find another way, like a builder on the end.
+
+			path := ctx.Request.RequestURI // This is relative to: http://support.iris-go.com/d/17-fallback-handler-for-non-matched-routes
+			// note: NOT Request.URL.Path (even if it's not overriden by static handlers.)
+			if strings.HasPrefix(path, staticPath) { // yes the user should use OnError from longest to lower static path's length in order this to work, so we can find another way, like a builder on the end.
 				newHandler.Serve(ctx)
 				return
 			}
@@ -682,9 +684,8 @@ func (router *Router) OnError(statusCode int, handlerFn HandlerFunc) {
 			prevErrHandler.Serve(ctx)
 		})
 
-		router.Errors.Register(statusCode, errHandler)
-	}(statusCode, staticPath, prevErrHandler, handlerFn)
-
+		router.Errors.RegisterRegex(statusCode, errHandler, expr)
+	}(statusCode, staticPath, prevErrHandler, handlerFn, expr)
 }
 
 // EmitError fires a custom http error handler to the client

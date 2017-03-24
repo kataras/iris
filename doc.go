@@ -19,13 +19,18 @@
 // SOFTWARE.
 
 /*
-Package iris provides efficient and well-designed tools with robust set of features to
-create your own perfect high performance web application
-with unlimited potentials and portability.
+Package iris is a web framework which provides efficient and well-designed
+tools with robust set of features to create your awesome and
+high-performance web application powered by unlimited potentials and portability.
 
 Source code and other details for the project are available at GitHub:
 
    https://github.com/kataras/iris
+
+Looking for further support?
+
+   http://support.iris-go.com
+
 
 Note: This package is under active development status.
 Each month a new version is releasing
@@ -600,7 +605,7 @@ Example code:
       djangoEngine.Binary(asset, assetNames)
       app.Adapt(djangoEngine)
 
-A real example can be found here: https://github.com/kataras/iris/tree/v6/adaptors/view/_examples/template_binary .
+A real example can be found here: https://github.com/kataras/iris/tree/v6/_examples/intermediate/view/embedding-templates-into-app.
 
 Enable auto-reloading of templates on each request. Useful while developers are in dev mode
 as they no neeed to restart their app on every template edit.

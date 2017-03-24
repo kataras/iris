@@ -81,18 +81,6 @@ func IsValidCookieDomain(domain string) bool {
 	return true
 }
 
-func encodeCookieValue(value string) string {
-	return base64.URLEncoding.EncodeToString([]byte(value))
-}
-
-func decodeCookieValue(value string) (string, error) {
-	v, err := base64.URLEncoding.DecodeString(value)
-	if err != nil {
-		return "", err
-	}
-	return string(v), nil
-}
-
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
 // ----------------------------------Strings & Serialization----------------------------

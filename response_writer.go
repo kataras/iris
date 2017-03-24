@@ -8,13 +8,14 @@ import (
 	"sync"
 
 	"github.com/kataras/go-errors"
-	"github.com/kataras/go-fs"
 	"github.com/klauspost/compress/gzip"
 )
 
 type gzipResponseWriter struct {
 	ResponseWriter
-	gzipWriter *gzip.Writer
+	gzipWriter *gzip.Writer // it contains the underline writer too
+	chunks     []byte
+	disabled   bool
 }
 
 var gzpool = sync.Pool{New: func() interface{} { return &gzipResponseWriter{} }}
@@ -22,18 +23,45 @@ var gzpool = sync.Pool{New: func() interface{} { return &gzipResponseWriter{} }}
 func acquireGzipResponseWriter(underline ResponseWriter) *gzipResponseWriter {
 	w := gzpool.Get().(*gzipResponseWriter)
 	w.ResponseWriter = underline
-	w.gzipWriter = fs.AcquireGzipWriter(w.ResponseWriter)
+	w.gzipWriter = acquireGzipWriter(w.ResponseWriter)
+	w.chunks = w.chunks[0:0]
+	w.disabled = false
 	return w
 }
 
 func releaseGzipResponseWriter(w *gzipResponseWriter) {
-	fs.ReleaseGzipWriter(w.gzipWriter)
+	releaseGzipWriter(w.gzipWriter)
 	gzpool.Put(w)
 }
 
 // Write compresses and writes that data to the underline response writer
 func (w *gzipResponseWriter) Write(contents []byte) (int, error) {
-	return w.gzipWriter.Write(contents)
+	// save the contents to serve them (only gzip data here)
+	w.chunks = append(w.chunks, contents...)
+	return len(w.chunks), nil
+}
+
+func (w *gzipResponseWriter) flushResponse() {
+	if w.disabled {
+		w.ResponseWriter.Write(w.chunks)
+	} else {
+		// if it's not disable write all chunks gzip compressed
+		w.gzipWriter.Write(w.chunks) // it writes to the underline responseWriter (look acquireGzipResponseWriter)
+	}
+	w.ResponseWriter.flushResponse()
+}
+
+func (w *gzipResponseWriter) ResetBody() {
+	w.chunks = w.chunks[0:0]
+}
+
+func (w *gzipResponseWriter) Disable() {
+	w.disabled = true
+}
+
+func (w *gzipResponseWriter) releaseMe() {
+	releaseGzipResponseWriter(w)
+	w.ResponseWriter.releaseMe()
 }
 
 var rpool = sync.Pool{New: func() interface{} { return &responseWriter{statusCode: StatusOK} }}

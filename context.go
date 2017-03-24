@@ -22,8 +22,6 @@ import (
 
 	"github.com/iris-contrib/formBinder"
 	"github.com/kataras/go-errors"
-	"github.com/kataras/go-fs"
-	"github.com/kataras/go-template"
 )
 
 const (
@@ -166,8 +164,12 @@ var _ ContextPool = &contextPool{}
 
 func (c *contextPool) Acquire(w http.ResponseWriter, r *http.Request) *Context {
 	ctx := c.pool.Get().(*Context)
+	ctx.Middleware = nil
+	ctx.session = nil
 	ctx.ResponseWriter = acquireResponseWriter(w)
 	ctx.Request = r
+	ctx.values = ctx.values[0:0]
+
 	return ctx
 }
 
@@ -175,13 +177,8 @@ func (c *contextPool) Release(ctx *Context) {
 	// flush the body (on recorder) or just the status code (on basic response writer)
 	// when all finished
 	ctx.ResponseWriter.flushResponse()
-
-	ctx.Middleware = nil
-	ctx.session = nil
-	ctx.Request = nil
 	///TODO:
 	ctx.ResponseWriter.releaseMe()
-	ctx.values.Reset()
 
 	c.pool.Put(ctx)
 }
@@ -270,6 +267,34 @@ func (ctx *Context) IsStopped() bool {
 // GetHandlerName as requested returns the stack-name of the function which the Middleware is setted from
 func (ctx *Context) GetHandlerName() string {
 	return runtime.FuncForPC(reflect.ValueOf(ctx.Middleware[len(ctx.Middleware)-1]).Pointer()).Name()
+}
+
+// ParamValidate receives a compiled Regexp and execute a parameter's value
+// against this regexp, returns true if matched or param not found, otherwise false.
+//
+// It accepts a compiled regexp to reduce the performance cost on serve time.
+// If you need a more automative solution, use the `app.Regex` or `app.RegexSingle` instead.
+//
+// This function helper is ridiculous simple but it's good to have it on one place.
+func (ctx *Context) ParamValidate(compiledExpr *regexp.Regexp, paramName string) bool {
+	pathPart := ctx.Param(paramName)
+	if pathPart == "" {
+		// take care, the router already
+		// does the param validations
+		// so if it's empty here it means that
+		// the router has label it as optional.
+		// so we skip the check.
+		return true
+	}
+
+	if pathPart[0] == '/' {
+		// it's probably wildcard, we 'should' remove that part to do the matching below
+		pathPart = pathPart[1:]
+	}
+
+	// the improtant thing:
+	// if the path part didn't match with the relative exp, then fire status not found.
+	return compiledExpr.MatchString(pathPart)
 }
 
 // ExecRoute calls any route (mostly  "offline" route) like it was requested by the user, but it is not.
@@ -734,9 +759,21 @@ func (ctx *Context) Redirect(urlToRedirect string, statusHeader ...int) {
 		httpStatus = statusHeader[0]
 	}
 
-	if urlToRedirect == ctx.Path() {
-		ctx.Log(DevMode, "trying to redirect to itself. FROM: %s TO: %s", ctx.Path(), urlToRedirect)
+	// we don't know the Method of the url to redirect,
+	// sure we can find it by reverse routing as we already implemented
+	// but it will take too much time for a simple redirect, it doesn't worth it.
+	// So we are checking the CURRENT Method for GET, HEAD,  CONNECT and TRACE.
+	// the
+	// Fixes: http: //support.iris-go.com/d/21-wrong-warning-message-while-redirecting
+	shouldCheckForCycle := urlToRedirect == ctx.Path() && ctx.Method() == MethodGet
+	// from POST to GET on the same path will give a warning message but developers don't use the iris.DevLogger
+	// for production, so I assume it's OK to let it logs it
+	// (it can solve issues when developer redirects to the same handler over and over again)
+	// Note: it doesn't stops the redirect, the developer gets what he/she expected.
+	if shouldCheckForCycle {
+		ctx.Log(DevMode, "warning: redirect from: '%s' to: '%s',\ncurrent method: '%s'", ctx.Path(), urlToRedirect, ctx.Method())
 	}
+
 	http.Redirect(ctx.ResponseWriter, ctx.Request, urlToRedirect, httpStatus)
 }
 
@@ -775,7 +812,7 @@ func (ctx *Context) EmitError(statusCode int) {
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
 // -------------------------Context's gzip inline response writer ----------------------
-// ---------------------Look template.go & iris.go for more options---------------------
+// ---------------------Look adaptors/view & iris.go for more options-------------------
 // -------------------------------------------------------------------------------------
 
 var (
@@ -799,9 +836,9 @@ func (ctx *Context) WriteGzip(b []byte) (int, error) {
 	if ctx.clientAllowsGzip() {
 		ctx.ResponseWriter.Header().Add(varyHeader, acceptEncodingHeader)
 
-		gzipWriter := fs.AcquireGzipWriter(ctx.ResponseWriter)
+		gzipWriter := acquireGzipWriter(ctx.ResponseWriter)
+		defer releaseGzipWriter(gzipWriter)
 		n, err := gzipWriter.Write(b)
-		fs.ReleaseGzipWriter(gzipWriter)
 
 		if err == nil {
 			ctx.SetHeader(contentEncodingHeader, "gzip")
@@ -834,7 +871,7 @@ func (ctx *Context) TryWriteGzip(b []byte) (int, error) {
 
 const (
 	// NoLayout to disable layout for a particular template file
-	NoLayout = template.NoLayout
+	NoLayout = "@.|.@no_layout@.|.@"
 	// TemplateLayoutContextKey is the name of the user values which can be used to set a template layout from a middleware and override the parent's
 	TemplateLayoutContextKey = "templateLayout"
 )
@@ -876,8 +913,8 @@ func (ctx *Context) fastRenderWithStatus(status int, cType string, data []byte) 
 		ctx.ResponseWriter.Header().Add(varyHeader, acceptEncodingHeader)
 		ctx.SetHeader(contentEncodingHeader, "gzip")
 
-		gzipWriter := fs.AcquireGzipWriter(ctx.ResponseWriter)
-		defer fs.ReleaseGzipWriter(gzipWriter)
+		gzipWriter := acquireGzipWriter(ctx.ResponseWriter)
+		defer releaseGzipWriter(gzipWriter)
 		out = gzipWriter
 	} else {
 		out = ctx.ResponseWriter
@@ -899,7 +936,6 @@ func (ctx *Context) fastRenderWithStatus(status int, cType string, data []byte) 
 // RenderWithStatus builds up the response from the specified template or a serialize engine.
 // Note: the options: "gzip" and "charset" are built'n support by Iris, so you can pass these on any template engine or serialize engines
 func (ctx *Context) RenderWithStatus(status int, name string, binding interface{}, options ...map[string]interface{}) (err error) {
-
 	if _, shouldFirstStatusCode := ctx.ResponseWriter.(*responseWriter); shouldFirstStatusCode {
 		ctx.SetStatusCode(status)
 	}
@@ -944,8 +980,8 @@ func (ctx *Context) RenderWithStatus(status int, name string, binding interface{
 		ctx.ResponseWriter.Header().Add(varyHeader, acceptEncodingHeader)
 		ctx.SetHeader(contentEncodingHeader, "gzip")
 
-		gzipWriter := fs.AcquireGzipWriter(ctx.ResponseWriter)
-		defer fs.ReleaseGzipWriter(gzipWriter)
+		gzipWriter := acquireGzipWriter(ctx.ResponseWriter)
+		defer releaseGzipWriter(gzipWriter)
 		out = gzipWriter
 	} else {
 		out = ctx.ResponseWriter
@@ -1005,7 +1041,7 @@ func (ctx *Context) Data(status int, data []byte) error {
 // To change their default behavior users should use
 // the context.RenderWithStatus(statusCode, contentType, content, options...) instead.
 func (ctx *Context) Text(status int, text string) error {
-	return ctx.fastRenderWithStatus(status, contentBinary, []byte(text))
+	return ctx.fastRenderWithStatus(status, contentText, []byte(text))
 }
 
 // HTML writes html string with a http status
@@ -1035,7 +1071,7 @@ func (ctx *Context) XML(status int, v interface{}) error {
 // MarkdownString parses the (dynamic) markdown string and returns the converted html string
 func (ctx *Context) MarkdownString(markdownText string) string {
 	out := &bytes.Buffer{}
-	_, ok := ctx.framework.policies.RenderPolicy(out, contentMarkdown, markdownText)
+	ok, _ := ctx.framework.policies.RenderPolicy(out, contentMarkdown, markdownText)
 	if ok {
 		return out.String()
 	}
@@ -1098,7 +1134,7 @@ func (ctx *Context) ServeContent(content io.ReadSeeker, filename string, modtime
 		return nil
 	}
 
-	ctx.ResponseWriter.Header().Set(contentType, fs.TypeByExtension(filename))
+	ctx.ResponseWriter.Header().Set(contentType, typeByExtension(filename))
 	ctx.ResponseWriter.Header().Set(lastModified, modtime.UTC().Format(ctx.framework.Config.TimeFormat))
 	ctx.SetStatusCode(StatusOK)
 	var out io.Writer
@@ -1106,8 +1142,8 @@ func (ctx *Context) ServeContent(content io.ReadSeeker, filename string, modtime
 		ctx.ResponseWriter.Header().Add(varyHeader, acceptEncodingHeader)
 		ctx.SetHeader(contentEncodingHeader, "gzip")
 
-		gzipWriter := fs.AcquireGzipWriter(ctx.ResponseWriter)
-		defer fs.ReleaseGzipWriter(gzipWriter)
+		gzipWriter := acquireGzipWriter(ctx.ResponseWriter)
+		defer releaseGzipWriter(gzipWriter)
 		out = gzipWriter
 	} else {
 		out = ctx.ResponseWriter
@@ -1296,6 +1332,28 @@ func (ctx *Context) ParamDecoded(key string) string {
 // same as GetInt
 func (ctx *Context) ParamInt(key string) (int, error) {
 	return ctx.GetInt(key)
+}
+
+// ParamIntWildcard removes the first slash if found and
+// returns the int representation of the key's wildcard path parameter's value.
+//
+// Returns -1 with an error if the parameter couldn't be found.
+func (ctx *Context) ParamIntWildcard(key string) (int, error) {
+	v := ctx.Get(key)
+	if v != nil {
+		if vint, ok := v.(int); ok {
+			return vint, nil
+		} else if vstring, sok := v.(string); sok {
+			if len(vstring) > 1 {
+				if vstring[0] == '/' {
+					vstring = vstring[1:]
+				}
+			}
+			return strconv.Atoi(vstring)
+		}
+	}
+
+	return -1, errIntParse.Format(v)
 }
 
 // ParamInt64 returns the int64 representation of the key's path named parameter's value

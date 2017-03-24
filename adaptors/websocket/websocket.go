@@ -1,5 +1,5 @@
 // Package websocket provides an easy way to setup server and client side rich websocket experience for Iris
-// As originally written by me at https://github.com/kataras/go-websocket
+// As originally written by me at https://github.com/kataras/go-websocket based on v0.1.1
 package websocket
 
 import (
@@ -56,6 +56,12 @@ func (s *server) Adapt(frame *iris.Policies) {
 				// serve the client side on domain:port/iris-ws.js
 				f.StaticContent(wsClientSidePath, "application/javascript", ClientSource).ChangeName(clientSideLookupName)
 			}
+
+			// If we want to show configuration fields... I'm not sure for this yet, so let it commented: f.Logf(iris.DevMode, "%#v", s.config)
+		},
+
+		Build: func(f *iris.Framework) {
+			f.Log(iris.DevMode, "Serving Websockets on "+f.Config.VHost+s.config.Endpoint)
 		},
 	}
 

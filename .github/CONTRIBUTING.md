@@ -4,32 +4,27 @@ If you wanna contribute please submit a PR to one of the [iris-contrib organisat
 
 ## Before Submitting an Issue
 
-First, please do a search in open issues to see if the issue or feature request has already been filed. If there is an issue add your comments to this issue.
+First, please do a search in [open issues](http://support.iris-go.com) to see if the issue or feature request has already been filed. If there is an issue add your comments to this issue.
 
 The Iris project is distributed across multiple repositories, try to file the issue against the correct repository,
 
-- [Iris - middleware](https://github.com/iris-contrib/middleware/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
-- [Iris - cli and rizla](https://github.com/kataras/rizla/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
-- [Iris - templates](https://github.com/kataras/go-template/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
-- [Iris - sessions](https://github.com/kataras/go-sessions/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
-- [Iris - websocket](https://github.com/kataras/go-websocket/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
-- [Iris - gitbook](https://github.com/iris-contrib/gitbook/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
-- [Iris - examples](https://github.com/iris-contrib/examples/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
-- [Iris - plugin](https://github.com/iris-contrib/plugin/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
-- [Iris - graceful](https://github.com/iris-contrib/graceful/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
-- [Iris - mail](https://github.com/iris-contrib/mail/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
-- [Iris - core](https://github.com/kataras/iris/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
+- [Community iris-specific middleware](https://github.com/iris-contrib/middleware/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
+- [App reloader and command line tool](https://github.com/kataras/rizla/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
+- [View Engine](https://github.com/kataras/go-template/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
+- [Sessions](https://github.com/kataras/go-sessions/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
+- [About docs.iris-go.com](https://github.com/iris-contrib/gitbook/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
+- [About examples](https://github.com/iris-contrib/examples/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
+- [Iris main(core)](http://support.iris-go.com)
 
 Before post a new issue do an iris upgrade:
 
-- Delete `$GOPATH/src/github.com/kataras`
-- Open shell and execute the command: `go get -u github.com/kataras/iris/iris`
+- Delete `$GOPATH/src/gopkg.in/kataras`
+- Open shell and execute the command: `go get -u gopkg.in/kataras/iris.v6/iris`
 - Try to re-produce the issue
 - If the issue still exists, then post the issue with the necessary information.
 
 
-
-If the issue is after an upgrade, please read the [HISTORY.md](https://github.com/kataras/iris/blob/master/HISTORY.md) for any breaking-changes and fixes.
+If the issue is after an upgrade, please read the [HISTORY.md](https://github.com/kataras/iris/blob/v6/HISTORY.md) for any breaking-changes and fixes.
 
 The author answers the same day, perhaps the same hour you post the issue.
 
