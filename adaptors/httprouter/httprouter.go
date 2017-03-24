@@ -685,6 +685,15 @@ func (mux *serveMux) getTree(method string, subdomain string) *muxTree {
 }
 
 func (mux *serveMux) buildHandler(pool iris.ContextPool) http.Handler {
+
+	hostname := pool.Framework().Config.VHost
+	// check if VHost is mydomain.com:80 || mydomain.com:443 before serving
+	// means that the port part is optional and a valid client can make a request without the port.
+	hostPort := iris.ParsePort(hostname)
+	if hostPort == 80 || hostPort == 443 {
+		hostname = iris.ParseHostname(hostname) // remove the port part.
+	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		pool.Run(w, r, func(context *iris.Context) {
 			routePath := context.Path()
@@ -697,7 +706,6 @@ func (mux *serveMux) buildHandler(pool iris.ContextPool) http.Handler {
 				if mux.hosts && tree.subdomain != "" {
 
 					requestHost := context.Host()
-					hostname := context.Framework().Config.VHost
 					// println("mux are true and tree.subdomain= " + tree.subdomain + "and hostname = " + hostname + " host = " + requestHost)
 					if requestHost != hostname {
 						// we have a subdomain
