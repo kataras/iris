@@ -54,6 +54,8 @@ Some of the benefits are listed here:
 
 [Lex Tang](https://github.com/lexrus) donated 20 EUR at February 22 of 2017
 
+[Conrad Steenberg](https://github.com/hengestone) donated 25 EUR at March 23 of 2017
+
 *ANONYMOUS* donated 356 EUR, last anonymous donation at March 22 of 2017
 
 > The names, shown at the [legends](https://github.com/kataras/iris#legends-) list, are sorted by **date** and **NOT by the amount** of the donation.

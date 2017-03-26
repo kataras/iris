@@ -79,6 +79,8 @@ Legends [♡](https://github.com/kataras/iris#support)
 
 [Lex Tang](https://github.com/lexrus) donated 20 EUR at February 22 of 2017
 
+[Conrad Steenberg](https://github.com/hengestone) donated 25 EUR at March 23 of 2017
+
 <!-- ANONYMOUS[*](https://github.com/kataras/iris#support) donated 356 EUR, last anonymous donation at 22 March of 2017
 // No o need to show anonymous donations here, the full list is still shown at DONATIONS.md.
 -->
