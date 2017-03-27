@@ -41,7 +41,7 @@ app.Int.Set("min", minValidator)
 
 ```go
 isVersionStrValidator := func() func(string) bool {
-    versions := []string("v1","v2")
+    versions := []string{"v1","v2"}
     return func(paramValue string) bool {
         for _, s := range versions {
             if s == paramValue {
