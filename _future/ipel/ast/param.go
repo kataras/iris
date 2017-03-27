@@ -11,14 +11,14 @@ const (
 	// /myparam
 	ParamTypeAlphabetical
 	// /myparam1/myparam2
-	ParamPath
+	ParamTypePath
 )
 
 var paramTypes = map[string]ParamType{
 	"int":          ParamTypeInt,
 	"string":       ParamTypeString,
 	"alphabetical": ParamTypeAlphabetical,
-	"path":         ParamPath,
+	"path":         ParamTypePath,
 	// could be named also:
 	// "tail":
 	// "wild"
