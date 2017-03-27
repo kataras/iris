@@ -20,6 +20,33 @@ import (
 	"gopkg.in/kataras/iris.v6/httptest"
 )
 
+// No, better to have simple functions, it will be easier for users to understand
+// type ParamEvaluator interface {
+// 	Eval() func(string) bool
+// 	Literal() string
+// }
+
+// type IntParam struct {
+// }
+
+// func (i IntParam) Literal() string {
+// 	return "int"
+// }
+
+// func (i IntParam) Eval() func(string) bool {
+// 	r, err := regexp.Compile("[1-9]+$")
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	return r.MatchString
+// }
+
+// func (i IntParam) Eq(eqToNumber int) func(int) bool {
+// 	return func(param int) bool {
+// 		return eqToNumber == param
+// 	}
+// }
+
 // a helper to return a macro from a simple regexp
 // it compiles the regexp  and after returns the macro, for obviously performance reasons.
 func fromRegexp(expr string) _macrofn {

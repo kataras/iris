@@ -35,9 +35,10 @@ func TestPathParser(t *testing.T) {
 			PathParamTmpl{
 				SegmentIndex: 1,
 				Param: ParamTmpl{
-					Name:       "id",
-					Expression: "int",
-					Macro:      MacroTmpl{Name: "int"},
+					Name:           "id",
+					Expression:     "int",
+					FailStatusCode: 404,
+					Macro:          MacroTmpl{Name: "int"},
 				},
 			},
 		},
