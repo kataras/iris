@@ -5,24 +5,15 @@ type TokenType int
 type Token struct {
 	Type    TokenType
 	Literal string
-	Start   int // excluding, useful for user
-	End     int // excluding, useful for user and index
+	Start   int // including the first char, Literal[index:]
+	End     int // including the last char, Literal[start:end+1)
 }
 
-func (t Token) StartIndex() int {
-	if t.Start > 0 {
-		return t.Start + 1
-	}
-	return t.Start
-}
-
-func (t Token) EndIndex() int {
-	return t.End
-}
-
+// /about/{fullname:alphabetical}
+// /profile/{anySpecialName:string}
 // {id:int range(1,5) else 404}
 // /admin/{id:int eq(1) else 402}
-// /file/{filepath:tail else 405}
+// /file/{filepath:file else 405}
 const (
 	EOF = iota // 0
 	ILLEGAL
@@ -33,7 +24,7 @@ const (
 	//	PARAM_IDENTIFIER // id
 	COLON // :
 	// let's take them in parser
-	//	PARAM_TYPE       // int, string, alphabetic, tail
+	//	PARAM_TYPE       // int, string, alphabetical, file, path or unexpected
 	//	PARAM_FUNC       // range
 	LPAREN // (
 	RPAREN // )

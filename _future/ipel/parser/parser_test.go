@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"gopkg.in/kataras/iris.v6/_future/ipel/ast"
-	"gopkg.in/kataras/iris.v6/_future/ipel/lexer"
 )
 
 func TestParseError(t *testing.T) {
@@ -15,8 +14,7 @@ func TestParseError(t *testing.T) {
 	illegalChar := '$'
 
 	input := "{id" + string(illegalChar) + "int range(1,5) else 404}"
-	l := lexer.New(input)
-	p := New(l)
+	p := New(input)
 
 	_, err := p.Parse()
 
@@ -36,10 +34,8 @@ func TestParseError(t *testing.T) {
 
 	// success
 	input2 := "{id:int range(1,5) else 404}"
-	l2 := lexer.New(input2)
-	p2 := New(l2)
-
-	_, err = p2.Parse()
+	p.Reset(input2)
+	_, err = p.Parse()
 
 	if err != nil {
 		t.Fatalf("expecting empty error on input '%s', but got: %s", input2, err.Error())
@@ -89,23 +85,35 @@ func TestParse(t *testing.T) {
 				},
 				ErrorCode: 404,
 			}}, // 2
-		{"{username:alphabetical", true,
+		{"{username:alphabetical}", true,
 			ast.ParamStatement{
 				Name:      "username",
 				Type:      ast.ParamTypeAlphabetical,
 				ErrorCode: 404,
 			}}, // 3
-		{"{username:thisianunexpected", false,
+		{"{myparam}", true,
 			ast.ParamStatement{
-				Name:      "username",
-				Type:      ast.ParamTypeUnExpected,
+				Name:      "myparam",
+				Type:      ast.ParamTypeString,
 				ErrorCode: 404,
 			}}, // 4
-	}
+		{"{myparam_:thisianunexpected}", false,
+			ast.ParamStatement{
+				Name:      "myparam_",
+				Type:      ast.ParamTypeUnExpected,
+				ErrorCode: 404,
+			}}, // 5
+		{"{myparam2}", false, // false because it will give an error of unexpeced token type with value 2
+			ast.ParamStatement{
+				Name:      "myparam", // expected "myparam" because we don't allow integers to the parameter names.
+				Type:      ast.ParamTypeString,
+				ErrorCode: 404,
+			}}, // 6
 
+	}
+	var p *Parser = new(Parser)
 	for i, tt := range tests {
-		l := lexer.New(tt.input)
-		p := New(l)
+		p.Reset(tt.input)
 		resultStmt, err := p.Parse()
 
 		if tt.valid && err != nil {

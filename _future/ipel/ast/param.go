@@ -4,25 +4,29 @@ type ParamType uint8
 
 const (
 	ParamTypeUnExpected ParamType = iota
-	// /42
-	ParamTypeInt
 	// /myparam1
 	ParamTypeString
+	// /42
+	ParamTypeInt
 	// /myparam
 	ParamTypeAlphabetical
+	// /main.css
+	ParamTypeFile
 	// /myparam1/myparam2
 	ParamTypePath
 )
 
 var paramTypes = map[string]ParamType{
-	"int":          ParamTypeInt,
 	"string":       ParamTypeString,
+	"int":          ParamTypeInt,
 	"alphabetical": ParamTypeAlphabetical,
+	"file":         ParamTypeFile,
 	"path":         ParamTypePath,
 	// could be named also:
 	// "tail":
 	// "wild"
 	// "wildcard"
+
 }
 
 func LookupParamType(ident string) ParamType {
