@@ -7,13 +7,13 @@
 - No Breaking Changes.
 - No performance cost if not used.
 - Can convert a path for the existing routers, if no router is being used, then it will use its own, new, router.
-- 4+1 basic parameter types: `int`, `string`, `alphabetical`, `path`, (wildcard), `any` based on regexp.
+- 4+1 basic parameter types:  `string`, `int`, `alphabetical`, `file`, `path` (file with any number of slashes), based on regexp.
 - Each type has unlimited functions of its own, they should be able to be overriden.
 - Give devs the ability to parse their function's arguments before use them and return a func which is the validator.
 - Function will be a generic type(`interface{}`) in order to devs be able to use any type without boilerplate code for conversions,
 can be done using reflection and reflect.Call, on .Boot time to parse the function automatically, and keep the returning validator function (already tested and worked).
-- The `any` will be the default if dev use functions to the named path parameter but missing a type.
-- If a type doesnt't contains a function of its own, then it will use the `any`'s, so `any` will contain global-use functions too. 
+- The `string` will be the default if dev use functions to the named path parameter but missing a type.
+- If a type doesnt't contains a function of its own, then it will use the `string`'s, so `string` will contain global-use functions too. 
 
 ## Preview
 
@@ -67,7 +67,7 @@ app.String.Set("isVersion", isVersionStrValidator)
 app.String.Set("len", lenStrValidator)
 ```
 
-`/uploads/{filepath:tail contains(.) else 403}`
+`/uploads/{fullpath:path contains(.) else 403}`
 
 ```go
 [...]

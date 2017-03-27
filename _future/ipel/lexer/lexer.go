@@ -11,9 +11,9 @@ type Lexer struct {
 	ch      byte // current char under examination
 }
 
-func New(input string) *Lexer {
+func New(src string) *Lexer {
 	l := &Lexer{
-		input: input,
+		input: src,
 	}
 	// step to the first character in order to be ready
 	l.readChar()
@@ -86,9 +86,12 @@ func (l *Lexer) newToken(tokenType token.TokenType, lit string) token.Token {
 		Start:   l.pos,
 		End:     l.pos,
 	}
-
+	// remember, l.pos is the last char
+	// and we want to include both start and end
+	// in order to be easy to the user to see by just marking the expression
 	if l.pos > 1 && len(lit) > 1 {
-		t.End = t.Start + len(lit) - 1
+		t.End = l.pos - 1
+		t.Start = t.End - len(lit) + 1
 	}
 
 	return t

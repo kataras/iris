@@ -15,12 +15,15 @@ type Parser struct {
 	errors []string
 }
 
-func New(lexer *lexer.Lexer) *Parser {
-	p := &Parser{
-		l: lexer,
-	}
-
+func New(src string) *Parser {
+	p := new(Parser)
+	p.Reset(src)
 	return p
+}
+
+func (p *Parser) Reset(src string) {
+	p.l = lexer.New(src)
+	p.errors = []string{}
 }
 
 func (p *Parser) appendErr(format string, a ...interface{}) {
@@ -28,6 +31,7 @@ func (p *Parser) appendErr(format string, a ...interface{}) {
 }
 
 const DefaultParamErrorCode = 404
+const DefaultParamType = ast.ParamTypeString
 
 func parseParamFuncArg(t token.Token) (a ast.ParamFuncArg, err error) {
 	if t.Type == token.INT {
@@ -36,20 +40,35 @@ func parseParamFuncArg(t token.Token) (a ast.ParamFuncArg, err error) {
 	return t.Literal, nil
 }
 
+func (p Parser) Error() error {
+	if len(p.errors) > 0 {
+		return fmt.Errorf(strings.Join(p.errors, "\n"))
+	}
+	return nil
+}
+
 func (p *Parser) Parse() (*ast.ParamStatement, error) {
-	stmt := new(ast.ParamStatement)
-	stmt.ErrorCode = DefaultParamErrorCode
-	// let's have them nilled stmt.Funcs = make([]ast.ParamFunc, 0)
+	p.errors = []string{}
+
+	stmt := &ast.ParamStatement{
+		ErrorCode: DefaultParamErrorCode,
+		Type:      DefaultParamType,
+	}
+
 	lastParamFunc := ast.ParamFunc{}
+
 	for {
 		t := p.l.NextToken()
 		if t.Type == token.EOF {
+			if stmt.Name == "" {
+				p.appendErr("[1:] parameter name is missing")
+			}
 			break
 		}
 
 		switch t.Type {
 		case token.LBRACE:
-			// name
+			// name, alphabetical and _, param names are not allowed to contain any number.
 			nextTok := p.l.NextToken()
 			stmt.Name = nextTok.Literal
 		case token.COLON:
@@ -58,7 +77,6 @@ func (p *Parser) Parse() (*ast.ParamStatement, error) {
 			paramType := ast.LookupParamType(nextTok.Literal)
 			if paramType == ast.ParamTypeUnExpected {
 				p.appendErr("[%d:%d] unexpected parameter type: %s", t.Start, t.End, nextTok.Literal)
-				continue
 			}
 			stmt.Type = paramType
 			// param func
@@ -104,12 +122,8 @@ func (p *Parser) Parse() (*ast.ParamStatement, error) {
 			p.appendErr("[%d:%d] illegal token: %s", t.Start, t.End, t.Literal)
 		default:
 			p.appendErr("[%d:%d] unexpected token type: %q with value %s", t.Start, t.End, t.Type, t.Literal)
-
 		}
 	}
 
-	if len(p.errors) > 0 {
-		return nil, fmt.Errorf(strings.Join(p.errors, "\n"))
-	}
-	return stmt, nil
+	return stmt, p.Error()
 }
