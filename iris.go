@@ -679,7 +679,7 @@ func (s *Framework) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.Router.ServeHTTP(w, r)
 }
 
-// Adapt adapds a policy to the Framework.
+// Adapt adapts a policy to the Framework.
 // It accepts single or more objects that implements the iris.Policy.
 // Iris provides some of them but you can build your own based on one or more of these:
 // - iris.EventPolicy
