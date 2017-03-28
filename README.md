@@ -133,7 +133,8 @@ Feature Overview
 Table of Contents
 -----------
 
-<img align="right" src="http://iris-go.com/assets/book/cover_4.jpg" width="300" />
+<a href="https://github.com/kataras/iris/tree/v6/_examples#table-of-contents"><img align="right" width="265" src="https://raw.githubusercontent.com/iris-contrib/website/gh-pages/assets/book/cover_4.jpg"></a>
+
 
 * [Level: Beginner](_examples/beginner)
     * [Hello World](_examples/beginner/hello-world/main.go)
@@ -171,7 +172,7 @@ Table of Contents
         * [Template HTML: Part Three](_examples/intermediate/view/template_html_3/main.go)
         * [Template HTML: Part Four](_examples/intermediate/view/template_html_4/main.go)
         * [Inject Data Between Handlers](_examples/intermediate/view/context-view-data/main.go)
-        * [Embedding Templates Into Executable](_examples/intermediate/embedding-templates-into-app)
+        * [Embedding Templates Into Executable](_examples/intermediate/view/embedding-templates-into-app)
         * [Custom Renderer](_examples/intermediate/view/custom-renderer/main.go)
     * [Password Hashing](_examples/intermediate/password-hashing/main.go)
     * [Sessions](_examples/intermediate/sessions)
