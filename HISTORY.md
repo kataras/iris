@@ -8,13 +8,21 @@
 
 
 ## 6.1.4 -> 6.2.0 (√Νεxτ)
+
+
+_Update: 28 March 2017_
+
+- **View**: Provide an easier method on the community's question about "injecting" additional data outside of the route's main handler which calls the .Render, via middleware. 
+	- As discussed [above](http://support.iris-go.com/d/27-using-middleware-to-inject-properties-for-templates). 
+	- Click [here](https://github.com/kataras/iris/tree/v6/_examples/intermediate/view/context-view-data) for an example.
+
 _Update: 18 March 2017_
 
-- **Sessions**: Enchance the community feature request about custom encode and decode methods for the cookie value(sessionid) as requested [here](http://support.iris-go.com/d/29-mark-cookie-for-session-as-secure).
+- **Sessions**: Enchance the community's feature request about custom encode and decode methods for the cookie value(sessionid) as requested [here](http://support.iris-go.com/d/29-mark-cookie-for-session-as-secure).
 
 _Update: 12 March 2017_
 
-- Enhance Custom http errors with gzip and static files handler, as requested/reported [here](http://support.iris-go.com/d/17-fallback-handler-for-non-matched-routes/9).
+- Enhance Custom http errors with gzip and static files handler, as requested/reported [here](http://support.iris-go.com/d/17-fallback-handler-for-non-matched-routes).
 - Enhance per-party custom http errors (now it works on any wildcard path too).
 - Add a third parameter on `app.OnError(...)` for custom http errors with regexp validation, see [status_test.go](https://github.com/kataras/iris/blob/v6/status_test.go) for an example.
 - Add a `context.ParamIntWildcard(...)` to skip the first slash, useful for wildcarded paths' parameters.
