@@ -44,7 +44,7 @@ It doesn't contains "best ways" neither explains all its features. It's just a s
         * [Template HTML: Part Three](intermediate/view/template_html_3/main.go)
         * [Template HTML: Part Four](intermediate/view/template_html_4/main.go)
         * [Inject Data Between Handlers](intermediate/view/context-view-data/main.go)
-        * [Embedding Templates Into Executable](intermediate/embedding-templates-into-app)
+        * [Embedding Templates Into Executable](intermediate/view/embedding-templates-into-app)
         * [Custom Renderer](intermediate/view/custom-renderer/main.go)
     * [Password Hashing](intermediate/password-hashing/main.go)
     * [Sessions](intermediate/sessions)
