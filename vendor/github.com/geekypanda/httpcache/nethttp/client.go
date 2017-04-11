@@ -2,11 +2,13 @@ package nethttp
 
 import (
 	"bytes"
-	"github.com/geekypanda/httpcache/internal"
-	"github.com/geekypanda/httpcache/internal/nethttp/rule"
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/geekypanda/httpcache/cfg"
+	"github.com/geekypanda/httpcache/nethttp/rule"
+	"github.com/geekypanda/httpcache/uri"
 )
 
 // ClientHandler is the client-side handler
@@ -76,7 +78,7 @@ func (h *ClientHandler) AddRule(r rule.Rule) *ClientHandler {
 
 // Client is used inside the global Request function
 // this client is an exported to give you a freedom of change its Transport, Timeout and so on(in case of ssl)
-var Client = &http.Client{Timeout: internal.RequestCacheTimeout}
+var Client = &http.Client{Timeout: cfg.RequestCacheTimeout}
 
 const (
 	methodGet  = "GET"
@@ -107,7 +109,7 @@ func (h *ClientHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	uri := &internal.URIBuilder{}
+	uri := &uri.URIBuilder{}
 	uri.ServerAddr(h.remoteHandlerURL).ClientURI(r.URL.RequestURI()).ClientMethod(r.Method)
 
 	// set the full url here because below we have other issues, probably net/http bugs
@@ -122,7 +124,7 @@ func (h *ClientHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// println("GET Do to the remote cache service with the url: " + request.URL.String())
 	response, err := Client.Do(request)
 
-	if err != nil || response.StatusCode == internal.FailStatus {
+	if err != nil || response.StatusCode == cfg.FailStatus {
 		// if not found on cache, then execute the handler and save the cache to the remote server
 		recorder := AcquireResponseRecorder(w)
 		defer ReleaseResponseRecorder(recorder)
@@ -156,7 +158,7 @@ func (h *ClientHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Client.Do(request)
 	} else {
 		// get the status code , content type and the write the response body
-		w.Header().Set(internal.ContentTypeHeader, response.Header.Get(internal.ContentTypeHeader))
+		w.Header().Set(cfg.ContentTypeHeader, response.Header.Get(cfg.ContentTypeHeader))
 		w.WriteHeader(response.StatusCode)
 		responseBody, err := ioutil.ReadAll(response.Body)
 		response.Body.Close()

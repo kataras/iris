@@ -4,8 +4,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/geekypanda/httpcache/internal"
-	"github.com/geekypanda/httpcache/internal/nethttp/rule"
+	"github.com/geekypanda/httpcache/cfg"
+	"github.com/geekypanda/httpcache/entry"
+	"github.com/geekypanda/httpcache/nethttp/rule"
 )
 
 // Handler the local cache service handler contains
@@ -22,14 +23,14 @@ type Handler struct {
 	rule rule.Rule
 
 	// entry is the memory cache entry
-	entry *internal.Entry
+	entry *entry.Entry
 }
 
 // NewHandler returns a new cached handler
 func NewHandler(bodyHandler http.Handler,
 	expireDuration time.Duration) *Handler {
 
-	e := internal.NewEntry(expireDuration)
+	e := entry.NewEntry(expireDuration)
 
 	return &Handler{
 		bodyHandler: bodyHandler,
@@ -38,8 +39,7 @@ func NewHandler(bodyHandler http.Handler,
 	}
 }
 
-// Rule sets the ruleset for this handler,
-// see internal/net/http/ruleset.go for more information.
+// Rule sets the ruleset for this handler.
 //
 // returns itself.
 func (h *Handler) Rule(r rule.Rule) *Handler {
@@ -106,7 +106,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// if it's valid then just write the cached results
-	w.Header().Set(internal.ContentTypeHeader, res.ContentType())
+	w.Header().Set(cfg.ContentTypeHeader, res.ContentType())
 	w.WriteHeader(res.StatusCode())
 	w.Write(res.Body())
 }

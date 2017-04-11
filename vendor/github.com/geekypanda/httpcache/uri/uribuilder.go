@@ -1,10 +1,12 @@
-package internal
+package uri
 
 import (
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/geekypanda/httpcache/cfg"
 )
 
 // URIBuilder is the requested url builder
@@ -98,15 +100,15 @@ func (r URIBuilder) build() string {
 		statusCodeStr = strconv.Itoa(r.cacheStatuscode)
 	}
 
-	s := remoteURL + "?" + QueryCacheKey + "=" + url.QueryEscape(r.clientMethod+scheme+r.clientURI)
+	s := remoteURL + "?" + cfg.QueryCacheKey + "=" + url.QueryEscape(r.clientMethod+scheme+r.clientURI)
 	if cacheDurationStr != "" {
-		s += "&" + QueryCacheDuration + "=" + url.QueryEscape(cacheDurationStr)
+		s += "&" + cfg.QueryCacheDuration + "=" + url.QueryEscape(cacheDurationStr)
 	}
 	if statusCodeStr != "" {
-		s += "&" + QueryCacheStatusCode + "=" + url.QueryEscape(statusCodeStr)
+		s += "&" + cfg.QueryCacheStatusCode + "=" + url.QueryEscape(statusCodeStr)
 	}
 	if r.cacheContentType != "" {
-		s += "&" + QueryCacheContentType + "=" + url.QueryEscape(r.cacheContentType)
+		s += "&" + cfg.QueryCacheContentType + "=" + url.QueryEscape(r.cacheContentType)
 	}
 	return s
 }

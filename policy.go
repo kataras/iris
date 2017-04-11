@@ -107,7 +107,7 @@ const (
 // Arguments should be handled in the manner of fmt.Printf.
 type LoggerPolicy func(mode LogMode, log string)
 
-// Adapt addapts a Logger to the main policies.
+// Adapt adapts a Logger to the main policies.
 func (l LoggerPolicy) Adapt(frame *Policies) {
 	if l != nil {
 		// notes for me: comment these in order to remember

@@ -199,11 +199,15 @@ func (c *contextPool) Run(w http.ResponseWriter, r *http.Request, runner func(*C
 type (
 
 	// Map is just a conversion for a map[string]interface{}
-	// should not be used inside Render when PongoEngine is used.
 	Map map[string]interface{}
 
-	// Context is resetting every time a request is coming to the server
-	// it is not good practice to use this object in goroutines, for these cases use the .Clone()
+	// Context is the "midle-man"" server's object for the clients.
+	//
+	// A New Context is being acquired from a sync.Pool on each connection.
+	// The Context is the most important thing on the Iris' http flow.
+	//
+	// Developers send responses to the client's request through a Context.
+	// Developers get request information from the client's request a Context.
 	Context struct {
 		ResponseWriter // *responseWriter by default, when record is on then *ResponseRecorder
 		Request        *http.Request
