@@ -1,10 +1,10 @@
-package internal
+package entry
 
-import "time"
+import (
+	"time"
 
-// MinimumCacheDuration is the minimum duration from time.Now
-// which is allowed between cache save and cache clear
-const MinimumCacheDuration = 2 * time.Second
+	"github.com/geekypanda/httpcache/cfg"
+) 
 
 // Entry is the cache entry
 // contains the expiration datetime and the response
@@ -26,8 +26,8 @@ type Entry struct {
 func NewEntry(duration time.Duration) *Entry {
 	// if given duration is not <=0 (which means finds from the headers)
 	// then we should check for the MinimumCacheDuration here
-	if duration >= 0 && duration < MinimumCacheDuration {
-		duration = MinimumCacheDuration
+	if duration >= 0 && duration < cfg.MinimumCacheDuration {
+		duration = cfg.MinimumCacheDuration
 	}
 
 	return &Entry{
@@ -66,14 +66,14 @@ type LifeChanger func() time.Duration
 //
 // useful when we find a max-age header from the handler
 func (e *Entry) ChangeLifetime(fdur LifeChanger) {
-	if e.life < MinimumCacheDuration {
+	if e.life < cfg.MinimumCacheDuration {
 		newLifetime := fdur()
 		if newLifetime > e.life {
 			e.life = newLifetime
 		} else {
 			// if even the new lifetime is less than MinimumCacheDuration
 			// then change set it explicitly here
-			e.life = MinimumCacheDuration
+			e.life = cfg.MinimumCacheDuration
 		}
 	}
 }
@@ -103,7 +103,3 @@ func (e *Entry) Reset(statusCode int, contentType string,
 	}
 	e.expiresAt = time.Now().Add(e.life)
 }
-
-// NoCacheHeader is the static header key which is setted to the response when NoCache is called,
-// used inside nethttp and fhttp Skippers.
-const NoCacheHeader = "X-No-Cache"

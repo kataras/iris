@@ -722,10 +722,6 @@ func (c *cachedMuxEntry) Serve(ctx *Context) {
 //    ctx.WriteString("Hello, world!") // or a template or anything else
 // }, time.Duration(10*time.Second))) // duration of expiration
 // if <=time.Second then it tries to find it though request header's "cache-control" maxage value
-//
-// Note that it depends on a station instance's cache service.
-// Do not try to call it from default' station if you use the form of app := iris.New(),
-// use the app.Cache instead of iris.Cache
 func (s *Framework) Cache(bodyHandler HandlerFunc, expiration time.Duration) HandlerFunc {
 	ce := newCachedMuxEntry(s, bodyHandler, expiration)
 	return ce.Serve

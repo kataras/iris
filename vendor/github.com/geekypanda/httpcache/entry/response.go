@@ -1,4 +1,4 @@
-package internal
+package entry
 
 // Response is the cached response will be send to the clients
 // its fields setted at runtime on each of the non-cached executions
