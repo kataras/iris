@@ -9,6 +9,34 @@
 
 ## 6.1.4 -> 6.2.0 (√Νεxτ)
 
+_Update: 12 April 2017_
+
+```
+Many of you, including myself, thought that Gerasimos is not accepting any PRs, this is wrong.
+
+I did a long PR, which actually fixes some bugs and integrations with the godep tool, on a project that he's contributing too.
+
+The next day I'm logged into my personal twitter and I saw a message written by him.
+
+He, @kataras, wrote me that he was really impressed by the time I spent to actually fix a bug on an Iris sub-project.
+He told me that no one did that before and he asked me if I have more time to help these days on the Iris project too.
+
+And, Here I am! Introducing myself to the most clever community!
+```
+
+```
+Hello,
+my name is Esemplastic.
+
+Iris' author, @kataras, is very busy these days on designing the new Iris' release which will contain even more prototypes and it will break any rules you knew so far.
+I took a sneak preview of it, don't tell to him!
+
+
+I'm the temporary maintainer of this open-source project and your new friend.
+```
+
+-  **FIX**: Upgrade the [httpcache](https://github.com/geekypanda/httpcache) vendor. As requested [here](http://support.iris-go.com/d/44-upgrade-httpcache-module).
+
 
 _Update: 28 March 2017_
 
