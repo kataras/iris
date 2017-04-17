@@ -22,7 +22,7 @@ func main() {
 
 	app.Get("/get", func(ctx *iris.Context) {
 		name := ctx.Session().GetFlashString("name")
-		if name != "" {
+		if name == "" {
 			ctx.Writef("Empty name!!")
 			return
 		}
@@ -31,7 +31,7 @@ func main() {
 
 	app.Get("/test", func(ctx *iris.Context) {
 		name := ctx.Session().GetFlashString("name")
-		if name != "" {
+		if name == "" {
 			ctx.Writef("Empty name!!")
 			return
 		}
