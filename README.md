@@ -16,6 +16,9 @@ Iris is an <b>efficient</b> and well-designed, <b>cross-platform, web framework<
 If you're coming from <a href="https://nodejs.org/en/">Node.js</a> world, this is the <a href="https://github.com/expressjs/express">expressjs</a> equivalent for the <a href="https://golang.org">Go Programming Language.</a>
 </p>
 
+<details>
+<summary>News</summary>
+
 Upcoming release - Calliope
 -----------
 
@@ -23,13 +26,18 @@ Hello people, I'm designing the new Iris version with the codename of "**Calliop
 
 Based on the **Greek goddesses** of ancient mythology, **Calliope** was one of the Muses, the muse of epic poetry, daughter of Zeus and Mnemosyne and the wisest of the Muses.
 
-
-The next, tactical, month release should be published at the **1 May of 2017**.
+The next, tactical, month release *should be published at the **1 May of 2017** *.
 
 I am making my bests to catch up this deadline, so I'm very busy these days. Sorry for being late to answer to your questions!
 
-Watch or Star this github repository to get real-time notifications.
+**UPDATE: 6 May 2017**
 
+The release could be published at the first may of 2017 but it was postponed.
+
+The below tasks should be completed before publishing the new release: 
+- The review, of the new release's specifications that I wrote, should be ready at the next couple of days.
+- The results from our beta testers may take a little more but it worths the waiting.
+</details>
 
 What you say about Iris ✌
 -----------
