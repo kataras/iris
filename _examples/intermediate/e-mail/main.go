@@ -5,6 +5,7 @@ import (
 
 	"github.com/kataras/go-mailer"
 	"gopkg.in/kataras/iris.v6"
+	"gopkg.in/kataras/iris.v6/adaptors/view"
 	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
 )
 
@@ -15,6 +16,8 @@ func main() {
 	app.Adapt(iris.DevLogger())
 	// set the router, you can choose gorillamux too
 	app.Adapt(httprouter.New())
+	// set a root for our templates
+	app.Adapt(view.HTML("./templates", ".html"))
 
 	// change these to your own settings
 	cfg := mailer.Config{
