@@ -6,6 +6,54 @@
 
 	http://support.iris-go.com
 
+_Update: 18 May 2017_
+
+Hello Community, @kataras sent me a report of some of the improvements he was coding for the last two months. 
+Here is a small preview of that report:
+ 
+Website
+Thanks to [Santosh Anand](https://github.com/santoshanand) the http://iris-go.com has been upgraded and it's awesome!
+
+[Santosh](https://github.com/santoshanand) is a freelancer, he has a good knowledge of nodejs and express js, Android, iOS, React Native, Vue.js etc, if you need a developer to find or create a solution for your problem or task, please contact with him.
+
+As Gerasimos explained to me, he will provide you more information about [Santosh Anand](https://github.com/santoshanand)'s profile later on.
+
+People
+- Some specifications will be published to help people with interest to understand how Iris works under the hood
+- Every level of the framework's API has been simplified, code is a lot easier to read
+- Guidelines for people who wants to contribute to the Iris project will be, finally, published. PRs can be approved after 2 or more code reviews
+
+General
+- Desktop notifications for common errors, online solution is visible when user click on the "Balloon" (Can be turned off)
+- Tray icon with useful links, including "docs and examples", "get free support", "chat with us" (Can be turned off)
+- Several enhancements for typescript transpiler, view engine, websocket server and sessions manager 
+
+Routing
+- New custom interpreter including parser and evaluator for routes' path, i.e `/users/{userid:int min(1)}`, `/users/{username:string regexp(...)`, `/assets/{file:path}` with custom "macros" and more (Optional, the old syntax is totally valid and safe)
+- Remove of gorillamux, it's useless. The new way is faster than anything else we have seen in Go so far.
+- Subdomains matching improvements
+- Simplify API, i.e Handlers are now standalone functions, no need for `HandleFunc,UseFunc,DoneFunc,UseGlobalFunc`, only `Handle,Use,Done,UseGlobal`
+- General speed improvements
+- Cache with expiration, rules can be setted per route or globally
+
+Server
+- Performance boost up to 8-12% on 5kkk+ connections
+- Schedule custom tasks(with cancelation) when server is running
+- Future Go1.9's [ServeTLS](https://go-review.googlesource.com/c/38114/2/src/net/http/server.go) has already adopted here
+- New `Done` and `Err` channels to catch shutdown or any errors
+- Able to set custom underline *http.Server(s) under the Iris' Server Supervisor  
+- Proxy removed, net/http has its own and it's good
+- New tcp listening methods are easier to use, simplier to read
+
+Context
+- Easy way to change Iris' default `Context` with a custom one
+- Custom HTTP errors are fired when request is done , automatically
+- `ResponseWriter().SetBeforeFlush(...)` works for Flush and HTTP/2 Push, respectfully
+- `JSON, JSONP, XML, Markdown, HTML` faster
+- Able to set `ViewData` and `ViewLayout` via middleware when executing a template
+- Several improvements under the `Request transactions` 
+- And 16+ more additions, new features and API simplifications, will be documented when @kataras decide to publish the new release at github.
+
 
 ## 6.1.4 -> 6.2.0 (√Νεxτ)
 
