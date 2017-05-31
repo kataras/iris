@@ -102,6 +102,7 @@ func (s *WebsocketServer) RegisterTo(station *Framework, c WebsocketConfiguratio
 
 	s.Server.Set(websocket.Config{
 		WriteTimeout:    c.WriteTimeout,
+		ReadTimeout:     c.ReadTimeout,
 		PongTimeout:     c.PongTimeout,
 		PingPeriod:      c.PingPeriod,
 		MaxMessageSize:  c.MaxMessageSize,
