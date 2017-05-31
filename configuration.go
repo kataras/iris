@@ -633,6 +633,9 @@ type WebsocketConfiguration struct {
 	// WriteTimeout time allowed to write a message to the connection.
 	// Default value is 15 * time.Second
 	WriteTimeout time.Duration
+	// ReadTimeout time allowed to read a message from the connection.
+	// Default value is 15 * time.Second
+	ReadTimeout time.Duration
 	// PongTimeout allowed to read the next pong message from the connection
 	// Default value is 60 * time.Second
 	PongTimeout time.Duration
@@ -676,6 +679,13 @@ var (
 	OptionWebsocketWriteTimeout = func(val time.Duration) OptionSet {
 		return func(c *Configuration) {
 			c.Websocket.WriteTimeout = val
+		}
+	}
+	// OptionWebsocketReadTimeout time allowed to read a message from the connection.
+	// Default value is 15 * time.Second
+	OptionWebsocketReadTimeout = func(val time.Duration) OptionSet {
+		return func(c *Configuration) {
+			c.Websocket.ReadTimeout = val
 		}
 	}
 	// OptionWebsocketPongTimeout allowed to read the next pong message from the connection
@@ -751,6 +761,8 @@ var (
 const (
 	// DefaultWriteTimeout 15 * time.Second
 	DefaultWriteTimeout = 15 * time.Second
+	// DefaultReadTimeout 15 * time.Second
+	DefaultReadTimeout = 15 * time.Second
 	// DefaultPongTimeout 60 * time.Second
 	DefaultPongTimeout = 60 * time.Second
 	// DefaultPingPeriod (DefaultPongTimeout * 9) / 10
@@ -788,6 +800,7 @@ var (
 func DefaultWebsocketConfiguration() WebsocketConfiguration {
 	return WebsocketConfiguration{
 		WriteTimeout:    DefaultWriteTimeout,
+		ReadTimeout:     DefaultReadTimeout,
 		PongTimeout:     DefaultPongTimeout,
 		PingPeriod:      DefaultPingPeriod,
 		MaxMessageSize:  DefaultMaxMessageSize,
