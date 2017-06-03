@@ -1,0 +1,7 @@
+42
+&lt;script&gt;alert(&#39;xss&#39;);&lt;/script&gt;
+<script>alert('xss');</script>
+8
+test
+
+test

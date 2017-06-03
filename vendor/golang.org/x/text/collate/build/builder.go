@@ -12,7 +12,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"golang.org/x/text/collate/colltab"
+	"golang.org/x/text/internal/colltab"
 	"golang.org/x/text/language"
 	"golang.org/x/text/unicode/norm"
 )
@@ -445,8 +445,10 @@ func (b *Builder) build() (*table, error) {
 	}
 	b.built = true
 	b.t = &table{
-		maxContractLen: utf8.UTFMax,
-		variableTop:    uint32(b.varTop),
+		Table: colltab.Table{
+			MaxContractLen: utf8.UTFMax,
+			VariableTop:    uint32(b.varTop),
+		},
 	}
 
 	b.buildOrdering(&b.root)
@@ -458,21 +460,22 @@ func (b *Builder) build() (*table, error) {
 		}
 	}
 	i, err := b.index.generate()
-	b.t.index = *i
+	b.t.trie = *i
+	b.t.Index = colltab.Trie{
+		Index:   i.index,
+		Values:  i.values,
+		Index0:  i.index[blockSize*b.t.root.lookupStart:],
+		Values0: i.values[blockSize*b.t.root.valueStart:],
+	}
 	b.error(err)
 	return b.t, b.err
 }
 
 // Build builds the root Collator.
-// TODO: return Weighter instead
 func (b *Builder) Build() (colltab.Weighter, error) {
-	t, err := b.build()
+	table, err := b.build()
 	if err != nil {
 		return nil, err
-	}
-	table := colltab.Init(t)
-	if table == nil {
-		panic("generated table of incompatible type")
 	}
 	return table, nil
 }
@@ -574,16 +577,16 @@ func simplify(o *ordering) {
 // It returns an index to the expansion table.
 func (b *Builder) appendExpansion(e *entry) int {
 	t := b.t
-	i := len(t.expandElem)
+	i := len(t.ExpandElem)
 	ce := uint32(len(e.elems))
-	t.expandElem = append(t.expandElem, ce)
+	t.ExpandElem = append(t.ExpandElem, ce)
 	for _, w := range e.elems {
 		ce, err := makeCE(w)
 		if err != nil {
 			b.error(err)
 			return -1
 		}
-		t.expandElem = append(t.expandElem, ce)
+		t.ExpandElem = append(t.ExpandElem, ce)
 	}
 	return i
 }
@@ -611,8 +614,8 @@ func (b *Builder) processContractions(o *ordering) {
 	cm := make(map[rune][]*entry)
 	for e := o.front(); e != nil; e, _ = e.nextIndexed() {
 		if e.contraction() {
-			if len(e.str) > b.t.maxContractLen {
-				b.t.maxContractLen = len(e.str)
+			if len(e.str) > b.t.MaxContractLen {
+				b.t.MaxContractLen = len(e.str)
 			}
 			r := e.runes[0]
 			if _, ok := cm[r]; !ok {
@@ -656,7 +659,7 @@ func (b *Builder) processContractions(o *ordering) {
 		handle, ok := b.ctHandle[key]
 		if !ok {
 			var err error
-			handle, err = t.contractTries.appendTrie(sufx)
+			handle, err = appendTrie(&t.ContractTries, sufx)
 			if err != nil {
 				b.error(err)
 			}
@@ -668,7 +671,7 @@ func (b *Builder) processContractions(o *ordering) {
 			var p, sn int
 			if len(e.runes) > 1 {
 				str := []byte(string(e.runes[1:]))
-				p, sn = t.contractTries.lookup(handle, str)
+				p, sn = lookup(&t.ContractTries, handle, str)
 				if sn != len(str) {
 					log.Fatalf("%s: processContractions: unexpected length for '%X'; len=%d; want %d", o.id, e.runes, sn, len(str))
 				}
@@ -688,9 +691,9 @@ func (b *Builder) processContractions(o *ordering) {
 		key = fmt.Sprintf("%v", elems)
 		i, ok := b.ctElem[key]
 		if !ok {
-			i = len(t.contractElem)
+			i = len(t.ContractElem)
 			b.ctElem[key] = i
-			t.contractElem = append(t.contractElem, elems...)
+			t.ContractElem = append(t.ContractElem, elems...)
 		}
 		// Store info in entry for starter rune.
 		es[0].contractionIndex = i

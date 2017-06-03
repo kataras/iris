@@ -16,6 +16,7 @@ import (
 
 	"golang.org/x/text/internal"
 	"golang.org/x/text/internal/gen"
+	"golang.org/x/text/internal/number"
 	"golang.org/x/text/internal/stringset"
 	"golang.org/x/text/language"
 	"golang.org/x/text/unicode/cldr"
@@ -44,7 +45,7 @@ func main() {
 
 	d := &cldr.Decoder{}
 	d.SetDirFilter("supplemental", "main")
-	d.SetSectionFilter("numbers", "numberingSystem", "plurals")
+	d.SetSectionFilter("numbers", "numberingSystem")
 	data, err := d.DecodeZip(r)
 	if err != nil {
 		log.Fatalf("DecodeZip: %v", err)
@@ -59,14 +60,7 @@ func main() {
 
 	genNumSystem(w, data)
 	genSymbols(w, data)
-	genPlurals(w, data)
-
-	w = gen.NewCodeWriter()
-	defer w.WriteGoFile(*outputTestFile, pkg)
-
-	fmt.Fprintln(w, `import "golang.org/x/text/internal/format/plural"`)
-
-	genPluralsTests(w, data)
+	genFormats(w, data)
 }
 
 var systemMap = map[string]system{"latn": 0}
@@ -346,4 +340,119 @@ and default symbol set`)
 langToAlt is a list of numbering system and symbol set pairs, sorted and
 marked by compact language index.`)
 	w.WriteVar("langToAlt", langToAlt)
+}
+
+// genFormats generates the lookup table for decimal, scientific and percent
+// patterns.
+//
+// CLDR allows for patterns to be different per language for different numbering
+// systems. In practice the patterns are set to be consistent for a language
+// independent of the numbering system. genFormats verifies that no language
+// deviates from this.
+func genFormats(w *gen.CodeWriter, data *cldr.CLDR) {
+	d, err := cldr.ParseDraft(*draft)
+	if err != nil {
+		log.Fatalf("invalid draft level: %v", err)
+	}
+
+	// Fill the first slot with a dummy so we can identify unspecified tags.
+	formats := []number.Pattern{{}}
+	patterns := map[string]int{}
+
+	// TODO: It would be possible to eliminate two of these slices by having
+	// another indirection and store a reference to the combination of patterns.
+	decimal := make([]byte, language.NumCompactTags)
+	scientific := make([]byte, language.NumCompactTags)
+	percent := make([]byte, language.NumCompactTags)
+
+	for _, lang := range data.Locales() {
+		ldml := data.RawLDML(lang)
+		if ldml.Numbers == nil {
+			continue
+		}
+		langIndex, ok := language.CompactIndex(language.MustParse(lang))
+		if !ok {
+			log.Fatalf("No compact index for language %s", lang)
+		}
+		type patternSlice []*struct {
+			cldr.Common
+			Numbers string `xml:"numbers,attr"`
+			Count   string `xml:"count,attr"`
+		}
+
+		add := func(name string, tags []byte, ps patternSlice) {
+			sl := cldr.MakeSlice(&ps)
+			sl.SelectDraft(d)
+			if len(ps) == 0 {
+				return
+			}
+			if len(ps) > 2 || len(ps) == 2 && ps[0] != ps[1] {
+				log.Fatalf("Inconsistent %d patterns for language %s", name, lang)
+			}
+			s := ps[0].Data()
+
+			index, ok := patterns[s]
+			if !ok {
+				nf, err := number.ParsePattern(s)
+				if err != nil {
+					log.Fatal(err)
+				}
+				index = len(formats)
+				patterns[s] = index
+				formats = append(formats, *nf)
+			}
+			tags[langIndex] = byte(index)
+		}
+
+		for _, df := range ldml.Numbers.DecimalFormats {
+			for _, l := range df.DecimalFormatLength {
+				if l.Type != "" {
+					continue
+				}
+				for _, f := range l.DecimalFormat {
+					add("decimal", decimal, f.Pattern)
+				}
+			}
+		}
+		for _, df := range ldml.Numbers.ScientificFormats {
+			for _, l := range df.ScientificFormatLength {
+				if l.Type != "" {
+					continue
+				}
+				for _, f := range l.ScientificFormat {
+					add("scientific", scientific, f.Pattern)
+				}
+			}
+		}
+		for _, df := range ldml.Numbers.PercentFormats {
+			for _, l := range df.PercentFormatLength {
+				if l.Type != "" {
+					continue
+				}
+				for _, f := range l.PercentFormat {
+					add("percent", percent, f.Pattern)
+				}
+			}
+		}
+	}
+
+	// Complete the parent tag array to reflect inheritance. An index of 0
+	// indicates an unspecified value.
+	for _, data := range [][]byte{decimal, scientific, percent} {
+		for i := range data {
+			p := uint16(i)
+			for ; data[p] == 0; p = internal.Parent[p] {
+			}
+			data[i] = data[p]
+		}
+	}
+	w.WriteVar("tagToDecimal", decimal)
+	w.WriteVar("tagToScientific", scientific)
+	w.WriteVar("tagToPercent", percent)
+
+	value := strings.Replace(fmt.Sprintf("%#v", formats), "number.", "", -1)
+	// Break up the lines. This won't give ideal perfect formatting, but it is
+	// better than one huge line.
+	value = strings.Replace(value, ", ", ",\n", -1)
+	fmt.Fprintf(w, "var formats = %s\n", value)
 }

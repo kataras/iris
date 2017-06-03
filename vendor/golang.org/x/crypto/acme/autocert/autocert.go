@@ -10,6 +10,7 @@ package autocert
 
 import (
 	"bytes"
+	"context"
 	"crypto"
 	"crypto/ecdsa"
 	"crypto/elliptic"
@@ -30,8 +31,13 @@ import (
 	"time"
 
 	"golang.org/x/crypto/acme"
-	"golang.org/x/net/context"
 )
+
+// createCertRetryAfter is how much time to wait before removing a failed state
+// entry due to an unsuccessful createCert call.
+// This is a variable instead of a const for testing.
+// TODO: Consider making it configurable or an exp backoff?
+var createCertRetryAfter = time.Minute
 
 // pseudoRand is safe for concurrent use.
 var pseudoRand *lockedMathRand
@@ -41,8 +47,9 @@ func init() {
 	pseudoRand = &lockedMathRand{rnd: mathrand.New(src)}
 }
 
-// AcceptTOS always returns true to indicate the acceptance of a CA Terms of Service
-// during account registration.
+// AcceptTOS is a Manager.Prompt function that always returns true to
+// indicate acceptance of the CA's Terms of Service during account
+// registration.
 func AcceptTOS(tosURL string) bool { return true }
 
 // HostPolicy specifies which host names the Manager is allowed to respond to.
@@ -75,18 +82,6 @@ func defaultHostPolicy(context.Context, string) error {
 // Manager is a stateful certificate manager built on top of acme.Client.
 // It obtains and refreshes certificates automatically,
 // as well as providing them to a TLS server via tls.Config.
-//
-// A simple usage example:
-//
-//	m := autocert.Manager{
-//		Prompt: autocert.AcceptTOS,
-//		HostPolicy: autocert.HostWhitelist("example.org"),
-//	}
-//	s := &http.Server{
-//		Addr: ":https",
-//		TLSConfig: &tls.Config{GetCertificate: m.GetCertificate},
-//	}
-//	s.ListenAndServeTLS("", "")
 //
 // To preserve issued certificates and improve overall performance,
 // use a cache implementation of Cache. For instance, DirCache.
@@ -123,7 +118,7 @@ type Manager struct {
 	// RenewBefore optionally specifies how early certificates should
 	// be renewed before they expire.
 	//
-	// If zero, they're renewed 1 week before expiration.
+	// If zero, they're renewed 30 days before expiration.
 	RenewBefore time.Duration
 
 	// Client is used to perform low-level operations, such as account registration
@@ -173,10 +168,23 @@ type Manager struct {
 // The error is propagated back to the caller of GetCertificate and is user-visible.
 // This does not affect cached certs. See HostPolicy field description for more details.
 func (m *Manager) GetCertificate(hello *tls.ClientHelloInfo) (*tls.Certificate, error) {
+	if m.Prompt == nil {
+		return nil, errors.New("acme/autocert: Manager.Prompt not set")
+	}
+
 	name := hello.ServerName
 	if name == "" {
 		return nil, errors.New("acme/autocert: missing server name")
 	}
+	if !strings.Contains(strings.Trim(name, "."), ".") {
+		return nil, errors.New("acme/autocert: server name component count invalid")
+	}
+	if strings.ContainsAny(name, `/\`) {
+		return nil, errors.New("acme/autocert: server name contains invalid character")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
 
 	// check whether this is a token cert requested for TLS-SNI challenge
 	if strings.HasSuffix(name, ".acme.invalid") {
@@ -185,7 +193,7 @@ func (m *Manager) GetCertificate(hello *tls.ClientHelloInfo) (*tls.Certificate, 
 		if cert := m.tokenCert[name]; cert != nil {
 			return cert, nil
 		}
-		if cert, err := m.cacheGet(name); err == nil {
+		if cert, err := m.cacheGet(ctx, name); err == nil {
 			return cert, nil
 		}
 		// TODO: cache error results?
@@ -194,7 +202,7 @@ func (m *Manager) GetCertificate(hello *tls.ClientHelloInfo) (*tls.Certificate, 
 
 	// regular domain
 	name = strings.TrimSuffix(name, ".") // golang.org/issue/18114
-	cert, err := m.cert(name)
+	cert, err := m.cert(ctx, name)
 	if err == nil {
 		return cert, nil
 	}
@@ -203,7 +211,6 @@ func (m *Manager) GetCertificate(hello *tls.ClientHelloInfo) (*tls.Certificate, 
 	}
 
 	// first-time
-	ctx := context.Background() // TODO: use a deadline?
 	if err := m.hostPolicy()(ctx, name); err != nil {
 		return nil, err
 	}
@@ -211,14 +218,14 @@ func (m *Manager) GetCertificate(hello *tls.ClientHelloInfo) (*tls.Certificate, 
 	if err != nil {
 		return nil, err
 	}
-	m.cachePut(name, cert)
+	m.cachePut(ctx, name, cert)
 	return cert, nil
 }
 
 // cert returns an existing certificate either from m.state or cache.
 // If a certificate is found in cache but not in m.state, the latter will be filled
 // with the cached value.
-func (m *Manager) cert(name string) (*tls.Certificate, error) {
+func (m *Manager) cert(ctx context.Context, name string) (*tls.Certificate, error) {
 	m.stateMu.Lock()
 	if s, ok := m.state[name]; ok {
 		m.stateMu.Unlock()
@@ -227,7 +234,7 @@ func (m *Manager) cert(name string) (*tls.Certificate, error) {
 		return s.tlscert()
 	}
 	defer m.stateMu.Unlock()
-	cert, err := m.cacheGet(name)
+	cert, err := m.cacheGet(ctx, name)
 	if err != nil {
 		return nil, err
 	}
@@ -249,12 +256,11 @@ func (m *Manager) cert(name string) (*tls.Certificate, error) {
 }
 
 // cacheGet always returns a valid certificate, or an error otherwise.
-func (m *Manager) cacheGet(domain string) (*tls.Certificate, error) {
+// If a cached certficate exists but is not valid, ErrCacheMiss is returned.
+func (m *Manager) cacheGet(ctx context.Context, domain string) (*tls.Certificate, error) {
 	if m.Cache == nil {
 		return nil, ErrCacheMiss
 	}
-	// TODO: might want to define a cache timeout on m
-	ctx := context.Background()
 	data, err := m.Cache.Get(ctx, domain)
 	if err != nil {
 		return nil, err
@@ -263,7 +269,7 @@ func (m *Manager) cacheGet(domain string) (*tls.Certificate, error) {
 	// private
 	priv, pub := pem.Decode(data)
 	if priv == nil || !strings.Contains(priv.Type, "PRIVATE") {
-		return nil, errors.New("acme/autocert: no private key found in cache")
+		return nil, ErrCacheMiss
 	}
 	privKey, err := parsePrivateKey(priv.Bytes)
 	if err != nil {
@@ -281,13 +287,14 @@ func (m *Manager) cacheGet(domain string) (*tls.Certificate, error) {
 		pubDER = append(pubDER, b.Bytes)
 	}
 	if len(pub) > 0 {
-		return nil, errors.New("acme/autocert: invalid public key")
+		// Leftover content not consumed by pem.Decode. Corrupt. Ignore.
+		return nil, ErrCacheMiss
 	}
 
 	// verify and create TLS cert
 	leaf, err := validCert(domain, pubDER, privKey)
 	if err != nil {
-		return nil, err
+		return nil, ErrCacheMiss
 	}
 	tlscert := &tls.Certificate{
 		Certificate: pubDER,
@@ -297,7 +304,7 @@ func (m *Manager) cacheGet(domain string) (*tls.Certificate, error) {
 	return tlscert, nil
 }
 
-func (m *Manager) cachePut(domain string, tlscert *tls.Certificate) error {
+func (m *Manager) cachePut(ctx context.Context, domain string, tlscert *tls.Certificate) error {
 	if m.Cache == nil {
 		return nil
 	}
@@ -329,8 +336,6 @@ func (m *Manager) cachePut(domain string, tlscert *tls.Certificate) error {
 		}
 	}
 
-	// TODO: might want to define a cache timeout on m
-	ctx := context.Background()
 	return m.Cache.Put(ctx, domain, buf.Bytes())
 }
 
@@ -370,6 +375,23 @@ func (m *Manager) createCert(ctx context.Context, domain string) (*tls.Certifica
 
 	der, leaf, err := m.authorizedCert(ctx, state.key, domain)
 	if err != nil {
+		// Remove the failed state after some time,
+		// making the manager call createCert again on the following TLS hello.
+		time.AfterFunc(createCertRetryAfter, func() {
+			defer testDidRemoveState(domain)
+			m.stateMu.Lock()
+			defer m.stateMu.Unlock()
+			// Verify the state hasn't changed and it's still invalid
+			// before deleting.
+			s, ok := m.state[domain]
+			if !ok {
+				return
+			}
+			if _, err := validCert(domain, s.cert, s.key); err == nil {
+				return
+			}
+			delete(m.state, domain)
+		})
 		return nil, err
 	}
 	state.cert = der
@@ -418,7 +440,6 @@ func (m *Manager) certState(domain string) (*certState, error) {
 // authorizedCert starts domain ownership verification process and requests a new cert upon success.
 // The key argument is the certificate private key.
 func (m *Manager) authorizedCert(ctx context.Context, key crypto.Signer, domain string) (der [][]byte, leaf *x509.Certificate, err error) {
-	// TODO: make m.verify retry or retry m.verify calls here
 	if err := m.verify(ctx, domain); err != nil {
 		return nil, nil, err
 	}
@@ -494,7 +515,7 @@ func (m *Manager) verify(ctx context.Context, domain string) error {
 	if err != nil {
 		return err
 	}
-	m.putTokenCert(name, &cert)
+	m.putTokenCert(ctx, name, &cert)
 	defer func() {
 		// verification has ended at this point
 		// don't need token cert anymore
@@ -512,14 +533,14 @@ func (m *Manager) verify(ctx context.Context, domain string) error {
 
 // putTokenCert stores the cert under the named key in both m.tokenCert map
 // and m.Cache.
-func (m *Manager) putTokenCert(name string, cert *tls.Certificate) {
+func (m *Manager) putTokenCert(ctx context.Context, name string, cert *tls.Certificate) {
 	m.tokenCertMu.Lock()
 	defer m.tokenCertMu.Unlock()
 	if m.tokenCert == nil {
 		m.tokenCert = make(map[string]*tls.Certificate)
 	}
 	m.tokenCert[name] = cert
-	m.cachePut(name, cert)
+	m.cachePut(ctx, name, cert)
 }
 
 // deleteTokenCert removes the token certificate for the specified domain name
@@ -644,10 +665,10 @@ func (m *Manager) hostPolicy() HostPolicy {
 }
 
 func (m *Manager) renewBefore() time.Duration {
-	if m.RenewBefore > maxRandRenew {
+	if m.RenewBefore > renewJitter {
 		return m.RenewBefore
 	}
-	return 7 * 24 * time.Hour // 1 week
+	return 720 * time.Hour // 30 days
 }
 
 // certState is ready when its mutex is unlocked for reading.
@@ -789,5 +810,10 @@ func (r *lockedMathRand) int63n(max int64) int64 {
 	return n
 }
 
-// for easier testing
-var timeNow = time.Now
+// For easier testing.
+var (
+	timeNow = time.Now
+
+	// Called when a state is removed.
+	testDidRemoveState = func(domain string) {}
+)

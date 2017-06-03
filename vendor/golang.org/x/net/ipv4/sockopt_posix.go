@@ -11,7 +11,7 @@ import (
 	"os"
 	"unsafe"
 
-	"golang.org/x/net/internal/iana"
+	"golang.org/x/net/was-internal/iana"
 )
 
 func getInt(s uintptr, opt *sockOpt) (int, error) {

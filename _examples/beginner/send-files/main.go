@@ -1,21 +1,17 @@
 package main
 
 import (
-	"gopkg.in/kataras/iris.v6"
-	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
 )
 
 func main() {
 	app := iris.New()
-	// output startup banner and error logs on os.Stdout
-	app.Adapt(iris.DevLogger())
-	// set the router, you can choose gorillamux too
-	app.Adapt(httprouter.New())
 
-	app.Get("/servezip", func(c *iris.Context) {
+	app.Get("/", func(ctx context.Context) {
 		file := "./files/first.zip"
-		c.SendFile(file, "c.zip")
+		ctx.SendFile(file, "c.zip")
 	})
 
-	app.Listen(":8080")
+	app.Run(iris.Addr(":8080"))
 }

@@ -1,15 +1,13 @@
 package main
 
 import (
-	"gopkg.in/kataras/iris.v6"
-	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
-	"gopkg.in/kataras/iris.v6/middleware/i18n"
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/middleware/i18n"
 )
 
 func main() {
 	app := iris.New()
-	app.Adapt(iris.DevLogger()) // adapt a simple internal logger to print any errors
-	app.Adapt(httprouter.New()) // adapt a router, you can use gorillamux too
 
 	app.Use(i18n.New(i18n.Config{
 		Default:      "en-US",
@@ -19,14 +17,14 @@ func main() {
 			"el-GR": "./locales/locale_el-GR.ini",
 			"zh-CN": "./locales/locale_zh-CN.ini"}}))
 
-	app.Get("/", func(ctx *iris.Context) {
+	app.Get("/", func(ctx context.Context) {
 
 		// it tries to find the language by:
-		// ctx.Get("language") , that should be setted on other middleware before the i18n middleware*
+		// ctx.Values().GetString("language")
 		// if that was empty then
 		// it tries to find from the URLParameter setted on the configuration
 		// if not found then
-		// it tries to find the language by the "lang" cookie
+		// it tries to find the language by the "language" cookie
 		// if didn't found then it it set to the Default setted on the configuration
 
 		// hi is the key, 'kataras' is the %s on the .ini file
@@ -36,7 +34,7 @@ func main() {
 		// or:
 		hi := i18n.Translate(ctx, "hi", "kataras")
 
-		language := ctx.Get(iris.TranslateLanguageContextKey) // language is the language key, example 'en-US'
+		language := ctx.Values().GetString(ctx.Application().ConfigurationReadOnly().GetTranslateLanguageContextKey()) // return is form of 'en-US'
 
 		// The first succeed language found saved at the cookie with name ("language"),
 		//  you can change that by changing the value of the:  iris.TranslateLanguageContextKey
@@ -46,6 +44,6 @@ func main() {
 	// go to http://localhost:8080/?lang=el-GR
 	// or http://localhost:8080
 	// or http://localhost:8080/?lang=zh-CN
-	app.Listen(":8080")
+	app.Run(iris.Addr(":8080"))
 
 }

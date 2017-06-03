@@ -1,25 +1,30 @@
 package main
 
 import (
-	"gopkg.in/kataras/iris.v6"
-	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
-	"gopkg.in/kataras/iris.v6/adaptors/view"
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/view"
 )
 
 func main() {
 	app := iris.New()
-	app.Adapt(iris.DevLogger())
-	app.Adapt(httprouter.New())
-
+	// $ go get -u github.com/jteeuwen/go-bindata/...
 	// $ go-bindata ./templates/...
 	// $ go build
-	// $ ./template_binary
-	// templates are not used, you can delete the folder and run the example
-	app.Adapt(view.HTML("./templates", ".html").Binary(Asset, AssetNames))
-	app.Get("/hi", hi)
-	app.Listen(":8080")
+	// $ ./embedding-templates-into-app
+	// html files are not used, you can delete the folder and run the example
+	app.AttachView(view.HTML("./templates", ".html").Binary(Asset, AssetNames))
+	app.Get("/", hi)
+
+	// http://localhost:8080
+	app.Run(iris.Addr(":8080"))
 }
 
-func hi(ctx *iris.Context) {
-	ctx.MustRender("hi.html", struct{ Name string }{Name: "iris"})
+type page struct {
+	Title, Name string
+}
+
+func hi(ctx context.Context) {
+	ctx.ViewData("", page{Title: "Hi Page", Name: "iris"})
+	ctx.View("hi.html")
 }

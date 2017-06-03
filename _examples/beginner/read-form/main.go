@@ -2,9 +2,9 @@
 package main
 
 import (
-	"gopkg.in/kataras/iris.v6"
-	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
-	"gopkg.in/kataras/iris.v6/adaptors/view"
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/view"
 )
 
 type Visitor struct {
@@ -15,28 +15,27 @@ type Visitor struct {
 
 func main() {
 	app := iris.New()
-	// output startup banner and error logs on os.Stdout
-	app.Adapt(iris.DevLogger())
-	// set the router, you can choose gorillamux too
-	app.Adapt(httprouter.New())
-	// set the view html template engine
-	app.Adapt(view.HTML("./templates", ".html"))
 
-	app.Get("/", func(ctx *iris.Context) {
-		if err := ctx.Render("form.html", nil); err != nil {
-			ctx.Log(iris.DevMode, err.Error())
+	// set the view html template engine
+	app.AttachView(view.HTML("./templates", ".html").Reload(true))
+
+	app.Get("/", func(ctx context.Context) {
+		if err := ctx.View("form.html"); err != nil {
+			ctx.StatusCode(iris.StatusInternalServerError)
+			ctx.WriteString(err.Error())
 		}
 	})
 
-	app.Post("/form_action", func(ctx *iris.Context) {
+	app.Post("/form_action", func(ctx context.Context) {
 		visitor := Visitor{}
 		err := ctx.ReadForm(&visitor)
 		if err != nil {
-			ctx.Log(iris.DevMode, "Error when reading form: "+err.Error())
+			ctx.StatusCode(iris.StatusInternalServerError)
+			ctx.WriteString(err.Error())
 		}
 
 		ctx.Writef("Visitor: %#v", visitor)
 	})
 
-	app.Listen(":8080")
+	app.Run(iris.Addr(":8080"))
 }

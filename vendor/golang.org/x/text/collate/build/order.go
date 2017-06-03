@@ -11,7 +11,7 @@ import (
 	"strings"
 	"unicode"
 
-	"golang.org/x/text/collate/colltab"
+	"golang.org/x/text/internal/colltab"
 	"golang.org/x/text/unicode/norm"
 )
 

@@ -9,9 +9,8 @@ import (
 	"encoding/binary"
 	"errors"
 	"hash"
+	"hash/crc32"
 	"io"
-
-	"github.com/klauspost/crc32"
 )
 
 // TODO(adg): support zip file comments

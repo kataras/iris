@@ -15,7 +15,8 @@ import (
 )
 
 const (
-	maxCodeLen = 16 // max length of Huffman code
+	maxCodeLen     = 16 // max length of Huffman code
+	maxCodeLenMask = 15 // mask for max length of Huffman code
 	// The next three numbers come from the RFC section 3.2.7, with the
 	// additional proviso in section 3.2.5 which implies that distance codes
 	// 30 and 31 should never occur in compressed data.
@@ -101,10 +102,10 @@ const (
 )
 
 type huffmanDecoder struct {
-	min      int                      // the minimum code length
-	chunks   [huffmanNumChunks]uint32 // chunks as described above
-	links    [][]uint32               // overflow links
-	linkMask uint32                   // mask the width of the link table
+	min      int                       // the minimum code length
+	chunks   *[huffmanNumChunks]uint32 // chunks as described above
+	links    [][]uint32                // overflow links
+	linkMask uint32                    // mask the width of the link table
 }
 
 // Initialize Huffman decoding tables from array of code lengths.
@@ -118,8 +119,11 @@ func (h *huffmanDecoder) init(bits []int) bool {
 	// development to supplement the currently ad-hoc unit tests.
 	const sanity = false
 
+	if h.chunks == nil {
+		h.chunks = &[huffmanNumChunks]uint32{}
+	}
 	if h.min != 0 {
-		*h = huffmanDecoder{}
+		*h = huffmanDecoder{chunks: h.chunks, links: h.links}
 	}
 
 	// Count number of codes of each length,
@@ -136,7 +140,7 @@ func (h *huffmanDecoder) init(bits []int) bool {
 		if n > max {
 			max = n
 		}
-		count[n]++
+		count[n&maxCodeLenMask]++
 	}
 
 	// Empty tree. The decompressor.huffSym function will fail later if the tree
@@ -154,8 +158,8 @@ func (h *huffmanDecoder) init(bits []int) bool {
 	var nextcode [maxCodeLen]int
 	for i := min; i <= max; i++ {
 		code <<= 1
-		nextcode[i] = code
-		code += count[i]
+		nextcode[i&maxCodeLenMask] = code
+		code += count[i&maxCodeLenMask]
 	}
 
 	// Check that the coding is complete (i.e., that we've
@@ -168,13 +172,22 @@ func (h *huffmanDecoder) init(bits []int) bool {
 	}
 
 	h.min = min
+	chunks := h.chunks[:]
+	for i := range chunks {
+		chunks[i] = 0
+	}
+
 	if max > huffmanChunkBits {
 		numLinks := 1 << (uint(max) - huffmanChunkBits)
 		h.linkMask = uint32(numLinks - 1)
 
 		// create link tables
 		link := nextcode[huffmanChunkBits+1] >> 1
-		h.links = make([][]uint32, huffmanNumChunks-link)
+		if cap(h.links) < huffmanNumChunks-link {
+			h.links = make([][]uint32, huffmanNumChunks-link)
+		} else {
+			h.links = h.links[:huffmanNumChunks-link]
+		}
 		for j := uint(link); j < huffmanNumChunks; j++ {
 			reverse := int(reverseByte[j>>8]) | int(reverseByte[j&0xff])<<8
 			reverse >>= uint(16 - huffmanChunkBits)
@@ -183,8 +196,15 @@ func (h *huffmanDecoder) init(bits []int) bool {
 				panic("impossible: overwriting existing chunk")
 			}
 			h.chunks[reverse] = uint32(off<<huffmanValueShift | (huffmanChunkBits + 1))
-			h.links[off] = make([]uint32, numLinks)
+			if cap(h.links[off]) < numLinks {
+				h.links[off] = make([]uint32, numLinks)
+			} else {
+				links := h.links[off][:0]
+				h.links[off] = links[:numLinks]
+			}
 		}
+	} else {
+		h.links = h.links[:0]
 	}
 
 	for i, n := range bits {
@@ -799,6 +819,8 @@ func (f *decompressor) Reset(r io.Reader, dict []byte) error {
 		r:        makeReader(r),
 		bits:     f.bits,
 		codebits: f.codebits,
+		h1:       f.h1,
+		h2:       f.h2,
 		dict:     f.dict,
 		step:     (*decompressor).nextBlock,
 	}

@@ -1,43 +1,57 @@
 package main
 
+// We don't have to reinvert the wheel, so we will use a good cors middleware
+// as a router wrapper for our entire app.
+// Follow the steps below:
+//  +------------------------------------------------------------+
+//  | 		Cors installation                                    |
+//  +------------------------------------------------------------+
+// 			go get -u github.com/rs/cors
+//
+//  +------------------------------------------------------------+
+//  | 		Cors wrapper usage                                   |
+//  +------------------------------------------------------------+
+//			import "github.com/rs/cors"
+//
+// 			app := iris.New()
+// 			corsOptions := cors.Options{/* your options here */}
+// 			corsWrapper := cors.New(corsOptions).ServeHTTP
+// 			app.Wrap(corsWrapper)
+//
+// 			[your code goes here...]
+//
+// 			app.Run(iris.Addr(":8080"))
+
 import (
-	"gopkg.in/kataras/iris.v6"
-	"gopkg.in/kataras/iris.v6/adaptors/cors"
-	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
+	"github.com/rs/cors"
+
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
 )
 
 func main() {
 
 	app := iris.New()
-	app.Adapt(iris.DevLogger())
-	app.Adapt(httprouter.New())
-
-	crs := cors.New(cors.Options{
+	corsOptions := cors.Options{
 		AllowedOrigins:   []string{"*"},
 		AllowCredentials: true,
-	})
+	}
 
-	app.Adapt(crs) // this line should be added
-	// adaptor supports cors allowed methods, middleware does not.
+	corsWrapper := cors.New(corsOptions).ServeHTTP
 
-	// if you want per-route-only cors
-	// then you should check https://github.com/iris-contrib/middleware/tree/master/cors
+	app.WrapRouter(corsWrapper)
 
 	v1 := app.Party("/api/v1")
 	{
-		v1.Post("/home", func(c *iris.Context) {
-			app.Log(iris.DevMode, "lalala")
-			c.WriteString("Hello from /home")
-		})
-		v1.Get("/g", func(c *iris.Context) {
-			app.Log(iris.DevMode, "lalala")
-			c.WriteString("Hello from /home")
-		})
-		v1.Post("/h", func(c *iris.Context) {
-			app.Log(iris.DevMode, "lalala")
-			c.WriteString("Hello from /home")
-		})
+		v1.Get("/", h)
+		v1.Put("/put", h)
+		v1.Post("/post", h)
 	}
 
-	app.Listen(":8080")
+	app.Run(iris.Addr(":8080"))
+}
+
+func h(ctx context.Context) {
+	ctx.Application().Log(ctx.Path())
+	ctx.Writef("Hello from %s", ctx.Path())
 }

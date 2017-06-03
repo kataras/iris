@@ -8,54 +8,15 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+
+	"golang.org/x/text/internal/colltab"
 )
 
 // table is an intermediate structure that roughly resembles the table in collate.
-// It implements the non-exported interface collate.tableInitializer
 type table struct {
-	index trie // main trie
-	root  *trieHandle
-
-	// expansion info
-	expandElem []uint32
-
-	// contraction info
-	contractTries  contractTrieSet
-	contractElem   []uint32
-	maxContractLen int
-	variableTop    uint32
-}
-
-func (t *table) TrieIndex() []uint16 {
-	return t.index.index
-}
-
-func (t *table) TrieValues() []uint32 {
-	return t.index.values
-}
-
-func (t *table) FirstBlockOffsets() (i, v uint16) {
-	return t.root.lookupStart, t.root.valueStart
-}
-
-func (t *table) ExpandElems() []uint32 {
-	return t.expandElem
-}
-
-func (t *table) ContractTries() []struct{ l, h, n, i uint8 } {
-	return t.contractTries
-}
-
-func (t *table) ContractElems() []uint32 {
-	return t.contractElem
-}
-
-func (t *table) MaxContractLen() int {
-	return t.maxContractLen
-}
-
-func (t *table) VariableTop() uint32 {
-	return t.variableTop
+	colltab.Table
+	trie trie
+	root *trieHandle
 }
 
 // print writes the table as Go compilable code to w. It prefixes the
@@ -70,10 +31,10 @@ func (t *table) fprint(w io.Writer, name string) (n, size int, err error) {
 		size += sz
 	}
 	// Write arrays needed for the structure.
-	update(printColElems(w, t.expandElem, name+"ExpandElem"))
-	update(printColElems(w, t.contractElem, name+"ContractElem"))
-	update(t.index.printArrays(w, name))
-	update(t.contractTries.printArray(w, name))
+	update(printColElems(w, t.ExpandElem, name+"ExpandElem"))
+	update(printColElems(w, t.ContractElem, name+"ContractElem"))
+	update(t.trie.printArrays(w, name))
+	update(printArray(t.ContractTries, w, name))
 
 	nn, e := fmt.Fprintf(w, "// Total size of %sTable is %d bytes\n", name, size)
 	update(nn, 0, e)

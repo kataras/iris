@@ -9,7 +9,7 @@ package ipv4
 import (
 	"syscall"
 
-	"golang.org/x/net/internal/netreflect"
+	"golang.org/x/net/was-internal/netreflect"
 )
 
 // TOS returns the type-of-service field value for outgoing packets.

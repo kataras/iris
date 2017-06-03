@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	"golang.org/x/net/internal/netreflect"
+	"golang.org/x/net/was-internal/netreflect"
 )
 
 // BUG(mikio): On Windows, the JoinSourceSpecificGroup,

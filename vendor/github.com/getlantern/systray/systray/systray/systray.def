@@ -1,0 +1,8 @@
+LIBRARY systray
+DESCRIPTION "System Tray Support"
+EXPORTS
+	nativeLoop					@1
+	setIcon						@2
+	setTooltip					@3
+	add_or_update_menu_item		@4
+	quit						@5

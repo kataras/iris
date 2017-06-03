@@ -4,41 +4,29 @@
 
 package collate
 
+import "golang.org/x/text/internal/colltab"
+
+const blockSize = 64
+
+func getTable(t tableIndex) *colltab.Table {
+	return &colltab.Table{
+		Index: colltab.Trie{
+			Index0:  mainLookup[:][blockSize*t.lookupOffset:],
+			Values0: mainValues[:][blockSize*t.valuesOffset:],
+			Index:   mainLookup[:],
+			Values:  mainValues[:],
+		},
+		ExpandElem:     mainExpandElem[:],
+		ContractTries:  colltab.ContractTrieSet(mainCTEntries[:]),
+		ContractElem:   mainContractElem[:],
+		MaxContractLen: 18,
+		VariableTop:    varTop,
+	}
+}
+
 // tableIndex holds information for constructing a table
 // for a certain locale based on the main table.
 type tableIndex struct {
 	lookupOffset uint32
 	valuesOffset uint32
-}
-
-func (t tableIndex) TrieIndex() []uint16 {
-	return mainLookup[:]
-}
-
-func (t tableIndex) TrieValues() []uint32 {
-	return mainValues[:]
-}
-
-func (t tableIndex) FirstBlockOffsets() (lookup, value uint16) {
-	return uint16(t.lookupOffset), uint16(t.valuesOffset)
-}
-
-func (t tableIndex) ExpandElems() []uint32 {
-	return mainExpandElem[:]
-}
-
-func (t tableIndex) ContractTries() []struct{ l, h, n, i uint8 } {
-	return mainCTEntries[:]
-}
-
-func (t tableIndex) ContractElems() []uint32 {
-	return mainContractElem[:]
-}
-
-func (t tableIndex) MaxContractLen() int {
-	return 18 // TODO: generate
-}
-
-func (t tableIndex) VariableTop() uint32 {
-	return varTop
 }

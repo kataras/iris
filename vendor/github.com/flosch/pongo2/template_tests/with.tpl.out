@@ -1,0 +1,16 @@
+new style
+Start 'I'm john doe' End
+Start 'I'm john doe11' End
+Start 'I'm guest7' End
+Start 'Hi number 10! Will not be overridden inside the block. I'm john doe, 50 years old.I have 10 children.' End
+
+old style - still supported by Django
+Start 'I'm john doe' End
+Start 'I'm john doe11' End
+Start 'I'm guest7' End
+Start 'Hi number 10! Will not be overridden inside the block. I'm john doe, 50 years old.I have 10 children.' End
+
+more with tests
+<pongo2_test.user Value>
+user1
+user3

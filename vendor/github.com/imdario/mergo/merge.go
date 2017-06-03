@@ -79,7 +79,7 @@ func deepMerge(dst, src reflect.Value, visited map[uintptr]*visit, depth int, ov
 	case reflect.Interface:
 		if src.IsNil() {
 			break
-		} else if dst.IsNil() || overwrite {
+		} else if dst.IsNil() {
 			if dst.CanSet() && (overwrite || isEmptyValue(dst)) {
 				dst.Set(src)
 			}

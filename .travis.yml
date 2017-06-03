@@ -1,6 +1,10 @@
 language: go
-
+os:
+  - linux
+  - osx
 go:
-    - go1.8
-
-go_import_path: gopkg.in/kataras/iris.v6
+  - go1.8
+  - tip
+go_import_path: github.com/kataras/iris
+before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install libgtk-3-dev libappindicator3-dev          ; fi

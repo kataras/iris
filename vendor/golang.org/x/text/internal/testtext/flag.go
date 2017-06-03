@@ -16,7 +16,7 @@ var long = flag.Bool("long", false,
 
 // SkipIfNotLong returns whether long tests should be performed.
 func SkipIfNotLong(t *testing.T) {
-	if !gen.IsLocal() && !*long {
+	if testing.Short() || !(gen.IsLocal() || *long) {
 		t.Skip("skipping test to prevent downloading; to run use -long or use -local or UNICODE_DIR to specify a local source")
 	}
 }

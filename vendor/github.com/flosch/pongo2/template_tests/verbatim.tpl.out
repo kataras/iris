@@ -1,0 +1,7 @@
+.42
+<style>@media{#foobar...
+{{ test }}
+{% test %}
+42.
+
+.42{{ test }}42.

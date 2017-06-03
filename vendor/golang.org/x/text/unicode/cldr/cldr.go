@@ -5,7 +5,7 @@
 //go:generate go run makexml.go -output xml.go
 
 // Package cldr provides a parser for LDML and related XML formats.
-// This package is inteded to be used by the table generation tools
+// This package is intended to be used by the table generation tools
 // for the various internationalization-related packages.
 // As the XML types are generated from the CLDR DTD, and as the CLDR standard
 // is periodically amended, this package may change considerably over time.

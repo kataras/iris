@@ -13,7 +13,6 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"regexp"
@@ -78,6 +77,14 @@ func Part(f func(p *Parser)) Option {
 	}
 }
 
+// The CommentHandler option passes comments that are on a line by itself to
+// a given handler.
+func CommentHandler(f func(s string)) Option {
+	return func(p *Parser) {
+		p.commentHandler = f
+	}
+}
+
 // A Parser parses Unicode Character Database (UCD) files.
 type Parser struct {
 	scanner *bufio.Scanner
@@ -92,7 +99,8 @@ type Parser struct {
 	parsedRange          bool
 	rangeStart, rangeEnd rune
 
-	partHandler func(p *Parser)
+	partHandler    func(p *Parser)
+	commentHandler func(s string)
 }
 
 func (p *Parser) setError(err error) {
@@ -103,7 +111,6 @@ func (p *Parser) setError(err error) {
 
 func (p *Parser) getField(i int) []byte {
 	if i >= len(p.field) {
-		p.setError(fmt.Errorf("ucd: index of field %d out of bounds", i))
 		return nil
 	}
 	return p.field[i]
@@ -138,7 +145,13 @@ func (p *Parser) Next() bool {
 
 	for p.scanner.Scan() {
 		b := p.scanner.Bytes()
-		if len(b) == 0 || b[0] == '#' {
+		if len(b) == 0 {
+			continue
+		}
+		if b[0] == '#' {
+			if p.commentHandler != nil {
+				p.commentHandler(strings.TrimSpace(string(b[1:])))
+			}
 			continue
 		}
 

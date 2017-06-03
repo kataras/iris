@@ -3,30 +3,27 @@ package main
 import (
 	"sync/atomic"
 
-	"gopkg.in/kataras/iris.v6"
-	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
-	"gopkg.in/kataras/iris.v6/adaptors/view"
-	"gopkg.in/kataras/iris.v6/adaptors/websocket"
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
+
+	"github.com/kataras/iris/view"
+	"github.com/kataras/iris/websocket"
 )
 
 var (
-	app *iris.Framework
+	app *iris.Application
 	ws  websocket.Server
 )
 
 func init() {
 	// init the server instance
 	app = iris.New()
-	// adapt a logger in dev mode
-	app.Adapt(iris.DevLogger())
-	// adapt router
-	app.Adapt(httprouter.New())
-	// adapt templaes
-	app.Adapt(view.HTML("./templates", ".html").Reload(true))
-	// adapt websocket
+	// load templaes
+	app.AttachView(view.HTML("./templates", ".html").Reload(true))
+	// attach websocket server
 	ws = websocket.New(websocket.Config{Endpoint: "/my_endpoint"})
 	ws.OnConnection(HandleWebsocketConnection)
-	app.Adapt(ws)
+	ws.Attach(app)
 }
 
 type page struct {
@@ -36,21 +33,23 @@ type page struct {
 func main() {
 	app.StaticWeb("/js", "./static/assets/js")
 
-	h := func(ctx *iris.Context) {
-		ctx.Render("index.html", page{PageID: "index page"})
+	h := func(ctx context.Context) {
+		ctx.ViewData("", page{PageID: "index page"})
+		ctx.View("index.html")
 	}
 
-	h2 := func(ctx *iris.Context) {
-		ctx.Render("other.html", page{PageID: "other page"})
+	h2 := func(ctx context.Context) {
+		ctx.ViewData("", page{PageID: "other page"})
+		ctx.View("other.html")
 	}
 
 	// Open some browser tabs/or windows
 	// and navigate to
-	// http://localhost:8080/ and http://localhost:8080/other
+	// http://localhost:8080/ and http://localhost:8080/other multiple times.
 	// Each page has its own online-visitors counter.
 	app.Get("/", h)
 	app.Get("/other", h2)
-	app.Listen(":8080")
+	app.Run(iris.Addr(":8080"))
 }
 
 type pageView struct {

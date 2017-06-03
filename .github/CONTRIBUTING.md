@@ -1,38 +1,23 @@
-If you wanna contribute please submit a PR to one of the [iris-contrib organisation's](https://github.com/iris-contrib) projects.
+## Code Of Conduct
 
-##### Note that I do not accept pull requests here and that I use the issue tracker for bug reports and proposals only. Please ask questions on the [https://kataras.rocket.chat/channel/iris][Chat] or [http://stackoverflow.com/](http://stackoverflow.com).
+The community should respect and follow our new [Code of Conduct](https://github.com/kataras/iris/blob/master/CODE-OF-CONDUCT.md).
 
 ## Before Submitting an Issue
 
-First, please do a search in [open issues](http://support.iris-go.com) to see if the issue or feature request has already been filed. If there is an issue add your comments to this issue.
+Navigate through [issues](https://github.com/kataras/issues) and check if it has been already filled by other person.
 
-The Iris project is distributed across multiple repositories, try to file the issue against the correct repository,
 
-- [Community iris-specific middleware](https://github.com/iris-contrib/middleware/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
-- [App reloader and command line tool](https://github.com/kataras/rizla/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
-- [View Engine](https://github.com/kataras/go-template/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
-- [Sessions](https://github.com/kataras/go-sessions/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
-- [About docs.iris-go.com](https://github.com/iris-contrib/gitbook/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
-- [About examples](https://github.com/iris-contrib/examples/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue)
-- [Iris main(core)](http://support.iris-go.com)
+Before post a new issue, please do an upgrade:
 
-Before post a new issue do an iris upgrade:
-
-- Delete `$GOPATH/src/gopkg.in/kataras`
-- Open shell and execute the command: `go get -u gopkg.in/kataras/iris.v6/iris`
+- Delete `$GOPATH/src/github.com/kataras`
+- Open shell and execute the command: `go get -u github.com/kataras/iris`
 - Try to re-produce the issue
-- If the issue still exists, then post the issue with the necessary information.
 
+To be aware of the framework's changes and updates please **[star](https://github.com/kataras/iris/stargazers)** and **[watch](https://github.com/kataras/iris/watchers)** the repository.
 
-If the issue is after an upgrade, please read the [HISTORY.md](https://github.com/kataras/iris/blob/v6/HISTORY.md) for any breaking-changes and fixes.
+Do not discuss things that they're not relative to the framework, keep Github issues useful for newcomers. A Github issue should exists to solve or report a problem. 
 
-The author answers the same day, perhaps the same hour you post the issue.
-
-It is impossible to notify each user on every change, so to be aware of the framework's changes and be notify about updates
-please **star** or **watch** the repository.
-
-If your issue is a closed-personal question then please ask that question on [community chat][Chat].
-
+> If you want to talk about something else that can't be inside Github issues please [chat](https://gitter.im/iris-go/Lobby) with us.
 
 ## Writing Good Bug Reports and Feature Requests
 
@@ -47,5 +32,3 @@ The more information you can provide, the more likely someone will be successful
 * Version of Iris
 * Errors in the Terminal/Console
 * When you have glide/godep installed, can you reproduce the issue when starting Iris' station without these?
-
-[Chat]: https://kataras.rocket.chat/channel/iris

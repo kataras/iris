@@ -1,0 +1,130 @@
+
+    'item1'
+
+    'john doe'
+
+    '42'
+
+    'item1'
+
+    'john doe'
+
+    '42'
+
+    'item1'
+
+    'john doe'
+
+    '42'
+
+    'item1'
+
+
+    'item1'
+    May I present the cycle item again: 'item1'
+
+    'john doe'
+    May I present the cycle item again: 'john doe'
+
+    '42'
+    May I present the cycle item again: '42'
+
+    'item1'
+    May I present the cycle item again: 'item1'
+
+    'john doe'
+    May I present the cycle item again: 'john doe'
+
+    '42'
+    May I present the cycle item again: '42'
+
+    'item1'
+    May I present the cycle item again: 'item1'
+
+    'john doe'
+    May I present the cycle item again: 'john doe'
+
+    '42'
+    May I present the cycle item again: '42'
+
+    'item1'
+    May I present the cycle item again: 'item1'
+
+
+    ''
+    May I present the cycle item: 'item1'
+
+    ''
+    May I present the cycle item: 'john doe'
+
+    ''
+    May I present the cycle item: '42'
+
+    ''
+    May I present the cycle item: 'item1'
+
+    ''
+    May I present the cycle item: 'john doe'
+
+    ''
+    May I present the cycle item: '42'
+
+    ''
+    May I present the cycle item: 'item1'
+
+    ''
+    May I present the cycle item: 'john doe'
+
+    ''
+    May I present the cycle item: '42'
+
+    ''
+    May I present the cycle item: 'item1'
+
+
+    ''
+    May I present the cycle item: 'item1'
+    Included 'item1'.
+
+    ''
+    May I present the cycle item: 'john doe'
+    Included 'john doe'.
+
+    ''
+    May I present the cycle item: '42'
+    Included '42'.
+
+    ''
+    May I present the cycle item: 'item1'
+    Included 'item1'.
+
+    ''
+    May I present the cycle item: 'john doe'
+    Included 'john doe'.
+
+    ''
+    May I present the cycle item: '42'
+    Included '42'.
+
+    ''
+    May I present the cycle item: 'item1'
+    Included 'item1'.
+
+    ''
+    May I present the cycle item: 'john doe'
+    Included 'john doe'.
+
+    ''
+    May I present the cycle item: '42'
+    Included '42'.
+
+    ''
+    May I present the cycle item: 'item1'
+    Included 'item1'.
+
+'item1'
+'john doe'
+''
+'item1'
+''
+'john doe'

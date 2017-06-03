@@ -1,10 +1,13 @@
+// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package basicauth
 
 import (
 	"time"
 
-	"github.com/imdario/mergo"
-	"gopkg.in/kataras/iris.v6"
+	"github.com/kataras/iris/context"
 )
 
 const (
@@ -35,14 +38,7 @@ func DefaultConfig() Config {
 	return Config{make(map[string]string), DefaultBasicAuthRealm, DefaultBasicAuthContextKey, 0}
 }
 
-// MergeSingle merges the default with the given config and returns the result
-func (c Config) MergeSingle(cfg Config) (config Config) {
-	config = cfg
-	mergo.Merge(&config, c)
-	return
-}
-
 // User returns the user from context key same as 'ctx.GetString("user")' but cannot be used by the developer, this is only here in order to understand how you can get the authenticated username
-func (c Config) User(ctx *iris.Context) string {
-	return ctx.GetString(c.ContextKey)
+func (c Config) User(ctx context.Context) string {
+	return ctx.Values().GetString(c.ContextKey)
 }

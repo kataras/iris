@@ -9,7 +9,7 @@ import (
 	"unsafe"
 
 	"golang.org/x/net/bpf"
-	"golang.org/x/net/internal/netreflect"
+	"golang.org/x/net/was-internal/netreflect"
 )
 
 // SetBPF attaches a BPF program to the connection.

@@ -1,0 +1,9 @@
+&lt;script&gt;alert(&#39;xss&#39;);&lt;/script&gt;
+
+<script>alert('xss');</script>
+
+
+&lt;script&gt;alert(&#39;xss&#39;);&lt;/script&gt;
+
+
+&lt;script&gt;alert(&#39;xss&#39;);&lt;/script&gt;
