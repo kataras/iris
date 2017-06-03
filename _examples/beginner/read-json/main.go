@@ -1,8 +1,8 @@
 package main
 
 import (
-	"gopkg.in/kataras/iris.v6"
-	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
 )
 
 type Company struct {
@@ -11,26 +11,34 @@ type Company struct {
 	Other string
 }
 
-func MyHandler(ctx *iris.Context) {
+func MyHandler(ctx context.Context) {
 	c := &Company{}
 	if err := ctx.ReadJSON(c); err != nil {
-		ctx.Log(iris.DevMode, err.Error())
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.WriteString(err.Error())
 		return
 	}
 
-	ctx.Writef("Company: %#v\n", c)
+	ctx.Writef("Received: %#v\n", c)
 }
 
 func main() {
 	app := iris.New()
-	// output startup banner and error logs on os.Stdout
-	app.Adapt(iris.DevLogger())
-	// set the router, you can choose gorillamux too
-	app.Adapt(httprouter.New())
 
-	// use postman or whatever to do a POST request
-	// to the http://localhost:8080 with BODY: JSON PAYLOAD
-	// and Content-Type to application/json
 	app.Post("/", MyHandler)
-	app.Listen(":8080")
+
+	// use Postman or whatever to do a POST request
+	// to the http://localhost:8080 with RAW BODY:
+	/*
+		{
+			"Name": "Iris-Go",
+			"City": "New York",
+			"Other": "Something here"
+		}
+	*/
+	// and Content-Type to application/json
+	//
+	// The response should be:
+	// Received: &main.Company{Name:"Iris-Go", City:"New York", Other:"Something here"}
+	app.Run(iris.Addr(":8080"))
 }

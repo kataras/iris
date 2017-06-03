@@ -13,21 +13,11 @@ import (
 	"time"
 
 	"github.com/boltdb/bolt"
-	"gopkg.in/kataras/iris.v6"
-	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
-	"gopkg.in/kataras/iris.v6/adaptors/view"
-)
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
 
-// a custom Iris event policy, which will run when server interruped (i.e control+C)
-// receives a func() error, most of packages are compatible with that on their Close/Shutdown/Cancel funcs.
-func releaser(r func() error) iris.EventPolicy {
-	return iris.EventPolicy{
-		Interrupted: func(app *iris.Framework) {
-			if err := r(); err != nil {
-				app.Log(iris.ProdMode, "error while releasing resources: "+err.Error())
-			}
-		}}
-}
+	"github.com/kataras/iris/view"
+)
 
 func main() {
 	app := iris.New()
@@ -36,83 +26,77 @@ func main() {
 	db := NewDB("shortener.db")
 	factory := NewFactory(DefaultGenerator, db)
 
-	app.Adapt(
-		// print all kind of errors and logs at os.Stdout
-		iris.DevLogger(),
-		// use the httprouter, you can use adpaotrs/gorillamux if you want
-		httprouter.New(),
-		// serve the "./templates" directory's "*.html" files with the HTML std view engine.
-		view.HTML("./templates", ".html").Reload(true),
-		// `db.Close` is a `func() error` so it can be a `releaser` too.
-		// Wrap the db.Close with the releaser in order to be released when app exits or control+C
-		// You probably never saw that before, clever pattern which I am able to use only with Iris :)
-		releaser(db.Close),
-	)
-
+	// serve the "./templates" directory's "*.html" files with the HTML std view engine.
+	tmpl := view.HTML("./templates", ".html").Reload(true)
 	// template funcs
 	//
 	// look ./templates/index.html#L16
-	app.Adapt(iris.TemplateFuncsPolicy{"isPositive": func(n int) bool {
+	tmpl.AddFunc("isPositive", func(n int) bool {
 		if n > 0 {
 			return true
 		}
 		return false
-	}})
+	})
+
+	app.AttachView(tmpl)
 
 	// Serve static files (css)
 	app.StaticWeb("/static", "./resources")
 
-	app.Get("/", func(ctx *iris.Context) {
-		ctx.MustRender("index.html", iris.Map{"url_count": db.Len()})
+	app.Get("/", func(ctx context.Context) {
+		ctx.ViewData("url_count", db.Len())
+		ctx.View("index.html")
 	})
 
 	// find and execute a short url by its key
 	// used on http://localhost:8080/u/dsaoj41u321dsa
-	execShortURL := func(ctx *iris.Context, key string) {
+	execShortURL := func(ctx context.Context, key string) {
 		if key == "" {
-			ctx.EmitError(iris.StatusBadRequest)
+			ctx.StatusCode(iris.StatusBadRequest)
 			return
 		}
 
 		value := db.Get(key)
 		if value == "" {
-			ctx.SetStatusCode(iris.StatusNotFound)
+			ctx.StatusCode(iris.StatusNotFound)
 			ctx.Writef("Short URL for key: '%s' not found", key)
 			return
 		}
 
 		ctx.Redirect(value, iris.StatusTemporaryRedirect)
 	}
-	app.Get("/u/:shortkey", func(ctx *iris.Context) {
-		execShortURL(ctx, ctx.Param("shortkey"))
+	app.Get("/u/:shortkey", func(ctx context.Context) {
+		execShortURL(ctx, ctx.Params().Get("shortkey"))
 	})
 
-	app.Post("/shorten", func(ctx *iris.Context) {
-		data := make(map[string]interface{}, 0)
+	app.Post("/shorten", func(ctx context.Context) {
 		formValue := ctx.FormValue("url")
 		if formValue == "" {
-			data["form_result"] = "You need to a enter a URL."
+			ctx.ViewData("form_result", "You need to a enter a URL")
 		} else {
 			key, err := factory.Gen(formValue)
 			if err != nil {
-				data["form_result"] = "Invalid URL."
+				ctx.ViewData("form_result", "Invalid URL")
 			} else {
 				if err = db.Set(key, formValue); err != nil {
-					data["form_result"] = "Internal error while saving the url"
-					app.Log(iris.DevMode, "while saving url: "+err.Error())
+					ctx.ViewData("form_result", "Internal error while saving the URL")
+					app.Log("while saving URL: " + err.Error())
 				} else {
-					ctx.SetStatusCode(iris.StatusOK)
-					shortenURL := "http://" + app.Config.VHost + "/u/" + key
-					data["form_result"] = template.HTML("<pre><a target='_new' href='" + shortenURL + "'>" + shortenURL + " </a></pre>")
+					ctx.StatusCode(iris.StatusOK)
+					shortenURL := "http://" + app.ConfigurationReadOnly().GetVHost() + "/u/" + key
+					ctx.ViewData("form_result",
+						template.HTML("<pre><a target='_new' href='"+shortenURL+"'>"+shortenURL+" </a></pre>"))
 				}
 
 			}
 		}
-		data["url_count"] = db.Len()
-		ctx.Render("index.html", data)
+		ctx.ViewData("url_count", db.Len())
+		ctx.View("index.html")
 	})
 
-	app.Listen("localhost:8080")
+	app.Run(iris.Addr(":8080"))
+
+	db.Close()
 }
 
 //  +------------------------------------------------------------+

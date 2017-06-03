@@ -1,26 +1,24 @@
 package main
 
 import (
-	"gopkg.in/kataras/iris.v6"
-	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
-	"gopkg.in/kataras/iris.v6/adaptors/sessions"
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/sessions"
 )
 
 func main() {
 	app := iris.New()
 	// output startup banner and error logs on os.Stdout
-	app.Adapt(iris.DevLogger())
-	// set the router, you can choose gorillamux too
-	app.Adapt(httprouter.New())
-	sess := sessions.New(sessions.Config{Cookie: "myappsessionid"})
-	app.Adapt(sess)
 
-	app.Get("/set", func(ctx *iris.Context) {
+	sess := sessions.New(sessions.Config{Cookie: "myappsessionid"})
+	app.AttachSessionManager(sess)
+
+	app.Get("/set", func(ctx context.Context) {
 		ctx.Session().SetFlash("name", "iris")
 		ctx.Writef("Message setted, is available for the next request")
 	})
 
-	app.Get("/get", func(ctx *iris.Context) {
+	app.Get("/get", func(ctx context.Context) {
 		name := ctx.Session().GetFlashString("name")
 		if name == "" {
 			ctx.Writef("Empty name!!")
@@ -29,7 +27,7 @@ func main() {
 		ctx.Writef("Hello %s", name)
 	})
 
-	app.Get("/test", func(ctx *iris.Context) {
+	app.Get("/test", func(ctx context.Context) {
 		name := ctx.Session().GetFlashString("name")
 		if name == "" {
 			ctx.Writef("Empty name!!")
@@ -41,5 +39,5 @@ func main() {
 
 	})
 
-	app.Listen(":8080")
+	app.Run(iris.Addr(":8080"))
 }

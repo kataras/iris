@@ -2,52 +2,74 @@
 package main
 
 import (
-	"gopkg.in/kataras/iris.v6"
-	"gopkg.in/kataras/iris.v6/adaptors/gorillamux"
-	"gopkg.in/kataras/iris.v6/adaptors/view"
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/core/router"
+	"github.com/kataras/iris/view"
+)
+
+const (
+	host = "127.0.0.1:8080"
 )
 
 func main() {
 	app := iris.New()
-	app.Adapt(iris.DevLogger())
-	app.Adapt(gorillamux.New())
 
-	app.Adapt(view.HTML("./templates", ".html"))
+	// create a custom path reverser, iris let you define your own host and scheme
+	// which is useful when you have nginx or caddy in front of iris.
+	rv := router.NewRoutePathReverser(app, router.WithHost(host), router.WithScheme("http"))
+	// locate and define our templates as usual.
+	templates := view.HTML("./templates", ".html")
+	// add a custom func of "url" and pass the rv.URL as its template function body,
+	// so {{url "routename" "paramsOrSubdomainAsFirstArgument"}} will work inside our templates.
+	templates.AddFunc("url", rv.URL)
 
-	app.Get("/mypath", emptyHandler).ChangeName("my-page1")
-	app.Get("/mypath2/{param1}/{param2}", emptyHandler).ChangeName("my-page2")
-	app.Get("/mypath3/{param1}/statichere/{param2}", emptyHandler).ChangeName("my-page3")
-	app.Get("/mypath4/{param1}/statichere/{param2}/{otherparam}/{something:.*}", emptyHandler).ChangeName("my-page4")
+	app.AttachView(templates)
 
-	// same with Handle/Func
-	app.HandleFunc("GET", "/mypath5/{param1}/statichere/{param2}/{otherparam}/anything/{something:.*}", emptyHandler).ChangeName("my-page5")
+	// wildcard subdomain, will catch username1.... username2.... username3... username4.... username5...
+	// that our below links are providing via page.html's first argument which is the subdomain.
 
-	app.Get("/mypath6/{param1}/{param2}/staticParam/{param3AfterStatic}", emptyHandler).ChangeName("my-page6")
+	subdomain := app.Party("*.")
 
-	app.Get("/", func(ctx *iris.Context) {
-		// for /mypath6...
-		paramsAsArray := []string{"param1", "theParam1",
-			"param2", "theParam2",
-			"param3AfterStatic", "theParam3"}
+	mypathRoute, _ := subdomain.Get("/mypath", emptyHandler)
+	mypathRoute.Name = "my-page1"
 
-		if err := ctx.Render("page.html", iris.Map{"ParamsAsArray": paramsAsArray}); err != nil {
+	mypath2Route, _ := subdomain.Get("/mypath2/{paramfirst}/{paramsecond}", emptyHandler)
+	mypath2Route.Name = "my-page2"
+
+	mypath3Route, _ := subdomain.Get("/mypath3/{paramfirst}/statichere/{paramsecond}", emptyHandler)
+	mypath3Route.Name = "my-page3"
+
+	mypath4Route, _ := subdomain.Get("/mypath4/{paramfirst}/statichere/{paramsecond}/{otherparam}/{something:path}", emptyHandler)
+	mypath4Route.Name = "my-page4"
+
+	mypath5Route, _ := subdomain.Handle("GET", "/mypath5/{paramfirst}/statichere/{paramsecond}/{otherparam}/anything/{something:path}", emptyHandler)
+	mypath5Route.Name = "my-page5"
+
+	mypath6Route, err := subdomain.Get("/mypath6/{paramfirst}/{paramsecond}/staticParam/{paramThirdAfterStatic}", emptyHandler)
+	if err != nil { // catch any route problems when declare a route or on err := app.Run(...); err != nil { panic(err) }
+		panic(err)
+	}
+	mypath6Route.Name = "my-page6"
+
+	app.Get("/", func(ctx context.Context) {
+		// for username5./mypath6...
+		paramsAsArray := []string{"username5", "theParam1", "theParam2", "paramThirdAfterStatic"}
+		ctx.ViewData("ParamsAsArray", paramsAsArray)
+		if err := ctx.View("page.html"); err != nil {
 			panic(err)
 		}
 	})
 
-	app.Get("/redirect/{namedRoute}", func(ctx *iris.Context) {
-		routeName := ctx.Param("namedRoute")
-
-		println("The full uri of " + routeName + "is: " + app.URL(routeName))
-		// if routeName == "my-page1"
-		// prints: The full uri of my-page1 is: http://127.0.0.1:8080/mypath
-		ctx.RedirectTo(routeName)
-		// http://127.0.0.1:8080/redirect/my-page1 will redirect to -> http://127.0.0.1:8080/mypath
-	})
-
-	app.Listen("localhost:8080")
+	// http://127.0.0.1:8080
+	app.Run(iris.Addr(host))
 }
 
-func emptyHandler(ctx *iris.Context) {
-	ctx.Writef("Hello from %s.", ctx.Path())
+func emptyHandler(ctx context.Context) {
+	ctx.Writef("Hello from subdomain: %s , you're in path:  %s", ctx.Subdomain(), ctx.Path())
 }
+
+// Note:
+// If you got an empty string on {{ url }} or {{ urlpath }} it means that
+// args length are not aligned with the route's parameters length
+// or the route didn't found by the passed name.

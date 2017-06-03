@@ -1,3 +1,7 @@
+// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package logger
 
 // Config are the options of the logger middlweare
@@ -16,6 +20,6 @@ type Config struct {
 }
 
 // DefaultConfig returns an options which all properties are true except EnableColors
-func DefaultConfig() Config {
+func DefaultConfigurationReadOnly() Config {
 	return Config{true, true, true, true}
 }

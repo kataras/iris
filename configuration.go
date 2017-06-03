@@ -1,47 +1,21 @@
+// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package iris
 
 import (
 	"io/ioutil"
 	"path/filepath"
-	"strconv"
-	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/imdario/mergo"
-	"github.com/kataras/go-errors"
 	"gopkg.in/yaml.v2"
+
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/core/errors"
 )
 
-type (
-	// OptionSetter sets a configuration field to the main configuration
-	// used to help developers to write less and configure only what
-	// they really want and nothing else.
-	//
-	// Usage:
-	// iris.New(iris.Configuration{Charset: "UTF-8", Gzip:true})
-	// now can be done also by using iris.Option$FIELD:
-	// iris.New(iris.OptionCharset("UTF-8"), iris.OptionGzip(true))
-	//
-	// Benefits:
-	// 1. Developers have no worries what option to pass,
-	//    they can just type iris.Option and all options should
-	//    be visible to their editor's autocomplete-popup window
-	// 2. Can be passed with any order
-	// 3. Can override previous configuration
-	OptionSetter interface {
-		// Set receives a pointer to the global Configuration type and does the job of filling it
-		Set(c *Configuration)
-	}
-	// OptionSet implements the OptionSetter
-	OptionSet func(c *Configuration)
-)
-
-// Set is the func which makes the OptionSet an OptionSetter, this is used mostly
-func (o OptionSet) Set(c *Configuration) {
-	o(c)
-}
-
-var errConfigurationDecode = errors.New("while trying to decode configuration")
+var errConfigurationDecode = errors.New("error while trying to decode configuration")
 
 // YAML reads Configuration from a configuration.yml file.
 //
@@ -50,9 +24,7 @@ var errConfigurationDecode = errors.New("while trying to decode configuration")
 // Error may occur when the configuration.yml doesn't exists or is not formatted correctly.
 //
 // Usage:
-// 1. `app := iris.New(iris.YAML("myconfig.yml"))`
-// or
-// 2. `app.Set(iris.YAML("myconfig.yml"))`
+// app := iris.Run(iris.Addr(":8080"), iris.WithConfiguration(iris.YAML("myconfig.yml")))
 func YAML(filename string) Configuration {
 	c := DefaultConfiguration()
 
@@ -87,9 +59,7 @@ func YAML(filename string) Configuration {
 // Error may occur when the file doesn't exists or is not formatted correctly.
 //
 // Usage:
-// 1. `app := iris.New(iris.TOML("myconfig.toml"))`
-// or
-// 2. `app.Set(iris.TOML("myconfig.toml"))`
+// app := iris.Run(iris.Addr(":8080"), iris.WithConfiguration(iris.YAML("myconfig.tml")))
 func TOML(filename string) Configuration {
 	c := DefaultConfiguration()
 
@@ -118,65 +88,124 @@ func TOML(filename string) Configuration {
 	return c
 }
 
-// Configuration the whole configuration for an Iris station instance
+// Configurator is just an interface which accepts the framework instance.
+//
+// It can be used to register a custom configuration with `Configure` in order
+// to modify the framework instance.
+//
+// Currently Configurator is being used to describe the configuration's fields values.
+type Configurator func(*Application)
+
+// variables for configurators don't need any receivers, functions
+// for them that need (helps code editors to recognise as variables without parenthesis completion).
+
+// WithoutBanner turns off the write banner on server startup.
+var WithoutBanner = func(app *Application) {
+	app.config.DisableBanner = true
+}
+
+// WithTray shows the taskbar tray icon.
+var WithTray = func(app *Application) {
+	app.config.EnableTray = true
+}
+
+// WithoutInterruptHandler disables the automatic graceful server shutdown
+// when control/cmd+C pressed.
+var WithoutInterruptHandler = func(app *Application) {
+	app.config.DisableInterruptHandler = true
+}
+
+// WithoutPathCorrection disables the PathCorrection setting.
+//
+// See` Configuration`.
+var WithoutPathCorrection = func(app *Application) {
+	app.config.DisablePathCorrection = true
+}
+
+// WithoutBodyConsumptionOnUnmarshal disables BodyConsumptionOnUnmarshal setting.
+//
+// See` Configuration`.
+var WithoutBodyConsumptionOnUnmarshal = func(app *Application) {
+	app.config.DisableBodyConsumptionOnUnmarshal = true
+}
+
+// WithoutAutoFireStatusCode disables the AutoFireStatusCode setting.
+//
+// See` Configuration`.
+var WithoutAutoFireStatusCode = func(app *Application) {
+	app.config.DisableAutoFireStatusCode = true
+}
+
+// WithPathEscape enanbles the PathEscape setting.
+//
+// See` Configuration`.
+var WithPathEscape = func(app *Application) {
+	app.config.EnablePathEscape = true
+}
+
+// WithFireMethodNotAllowed enanbles the FireMethodNotAllowed setting.
+//
+// See` Configuration`.
+var WithFireMethodNotAllowed = func(app *Application) {
+	app.config.FireMethodNotAllowed = true
+}
+
+// WithTimeFormat sets the TimeFormat setting.
+//
+// See` Configuration`.
+func WithTimeFormat(timeformat string) Configurator {
+	return func(app *Application) {
+		app.config.TimeFormat = timeformat
+	}
+}
+
+// WithCharset sets the Charset setting.
+//
+// See` Configuration`.
+func WithCharset(charset string) Configurator {
+	return func(app *Application) {
+		app.config.Charset = charset
+	}
+}
+
+// WithOtherValue adds a value based on a key to the Other setting.
+//
+// See` Configuration`.
+func WithOtherValue(key string, val interface{}) Configurator {
+	return func(app *Application) {
+		if app.config.Other == nil {
+			app.config.Other = make(map[string]interface{}, 0)
+		}
+		app.config.Other[key] = val
+	}
+}
+
+// Configuration the whole configuration for an Iris instance
 // these can be passed via options also, look at the top of this file(configuration.go).
 // Configuration is a valid OptionSetter.
 type Configuration struct {
-	// VHost is the addr or the domain that server listens to, which it's optional
-	// When to set VHost manually:
-	// 1. it's automatically setted when you're calling
-	//     $instance.Listen/ListenUNIX/ListenTLS/ListenLETSENCRYPT functions or
-	//     ln,_ := iris.TCP4/UNIX/TLS/LETSENCRYPT; $instance.Serve(ln)
-	// 2. If you using a balancer, or something like nginx
-	//    then set it in order to have the correct url
-	//    when calling the template helper '{{url }}'
-	//    *keep note that you can use {{urlpath }}) instead*
-	//
-	// Note: this is the main's server Host, you can setup unlimited number of net/http servers
-	// listening to the $instance.Handler after the manually-called $instance.Build
-	//
-	// Default comes from iris.Default.Listen/.Serve with iris' listeners (iris.TCP4/UNIX/TLS/LETSENCRYPT).
-	VHost string `yaml:"VHost"`
+	// vhost is private and setted only with .Run method, it cannot be changed after the first set.
+	// It can be retrieved by the context if needed (i.e router for subdomains)
+	vhost string
 
-	// VScheme is the scheme (http:// or https://) putted at the template function '{{url }}'
-	// It's an optional field,
-	// When to set VScheme manually:
-	// 1. You didn't start the main server using $instance.Listen/ListenTLS/ListenLETSENCRYPT
-	//    or $instance.Serve($instance.TCP4()/.TLS...)
-	// 2. if you're using something like nginx and have iris listening with
-	//   addr only(http://) but the nginx mapper is listening to https://
-	//
-	// Default comes from iris.Default.Listen/.Serve with iris' listeners (TCP4,UNIX,TLS,LETSENCRYPT).
-	VScheme string `yaml:"VScheme" toml:"VScheme"`
-
-	// ReadTimeout is the maximum duration before timing out read of the request.
-	ReadTimeout time.Duration `yaml:"ReadTimeout" toml:"ReadTimeout"`
-
-	// WriteTimeout is the maximum duration before timing out write of the response.
-	WriteTimeout time.Duration `yaml:"WriteTimeout" toml:"WriteTimeout"`
-
-	// MaxHeaderBytes controls the maximum number of bytes the
-	// server will read parsing the request header's keys and
-	// values, including the request line. It does not limit the
-	// size of the request body.
-	// If zero, DefaultMaxHeaderBytes is used.
-	MaxHeaderBytes int `yaml:"MaxHeaderBytes" toml:"MaxHeaderBytes"`
-
-	// CheckForUpdates will try to search for newer version of Iris based on the https://github.com/kataras/iris/releases
-	// If a newer version found then the app will ask the he dev/user if want to update the 'x' version
-	// if 'y' is pressed then the updater will try to install the latest version
-	// the updater, will notify the dev/user that the update is finished and should restart the App manually.
-	// Notes:
-	// 1. Experimental feature
-	// 2. If setted to true, the app will start the server normally and runs the updater in its own goroutine,
-	//    in order to no delay the boot time on your development state.
-	// 3. If you as developer edited the $GOPATH/src/github/kataras or any other Iris' Go dependencies at the past
-	//    then the update process will fail.
-	//
-	// Usage: app := iris.New(iris.Configuration{CheckForUpdates: true})
+	// DisableBanner if setted to true then it turns off the write banner on server startup.
 	//
 	// Defaults to false.
-	CheckForUpdates bool `yaml:"CheckForUpdates" toml:"CheckForUpdates"`
+	DisableBanner bool `yaml:"DisableBanner" toml:"DisableBanner"`
+	// EnableTray if setted to true then it shows the taskbar tray icon.
+	// Tray icon is not enabled by-default for linux systems,
+	// you have to install a dependency first and re-get the Iris pgk:
+	// $ sudo apt-get install libgtk-3-dev libappindicator3-dev
+	// "$ go get -u github.com/kataras/xeo
+	//
+	//  Defaults to false.
+	EnableTray bool `yaml:"EnableTray" toml:"EnableTray"`
+	// DisableInterruptHandler if setted to true then it disables the automatic graceful server shutdown
+	// when control/cmd+C pressed.
+	// Turn this to true if you're planning to handle this by your own via a custom host.Task.
+	//
+	// Defaults to false.
+	DisableInterruptHandler bool `yaml:"DisableInterruptHandler" toml:"DisableInterruptHandler"`
 
 	// DisablePathCorrection corrects and redirects the requested path to the registered path
 	// for example, if /home/ path is requested but no handler for this Route found,
@@ -214,6 +243,19 @@ type Configuration struct {
 	// context.UnmarshalBody/ReadJSON/ReadXML will be not consumed.
 	DisableBodyConsumptionOnUnmarshal bool `yaml:"DisableBodyConsumptionOnUnmarshal" toml:"DisableBodyConsumptionOnUnmarshal"`
 
+	// DisableAutoFireStatusCode if true then it turns off the http error status code handler automatic execution
+	// from "context.StatusCode(>=400)" and instead app should manually call the "context.FireStatusCode(>=400)".
+	//
+	// By-default a custom http error handler will be fired when "context.StatusCode(code)" called,
+	// code should be >=400 in order to be received as an "http error handler".
+	//
+	// Developer may want this option to setted as true in order to manually call the
+	// error handlers when needed via "context.FireStatusCode(>=400)".
+	// HTTP Custom error handlers are being registered via "framework.OnStatusCode(code, handler)".
+	//
+	// Defaults to false.
+	DisableAutoFireStatusCode bool `yaml:"DisableAutoFireStatusCode" toml:"DisableAutoFireStatusCode"`
+
 	// TimeFormat time format for any kind of datetime parsing
 	// Defaults to  "Mon, 02 Jan 2006 15:04:05 GMT".
 	TimeFormat string `yaml:"TimeFormat" toml:"TimeFormat"`
@@ -223,262 +265,234 @@ type Configuration struct {
 	// Defaults to "UTF-8".
 	Charset string `yaml:"Charset" toml:"Charset"`
 
-	// Gzip enables gzip compression on your Render actions, this includes any type of render,
-	// templates and pure/raw content
-	// If you don't want to enable it globally, you could just use the third parameter
-	// on context.Render("myfileOrResponse", structBinding{}, iris.RenderOptions{"gzip": true})
-	// Defaults to false.
-	Gzip bool `yaml:"Gzip" toml:"Gzip"`
+	//  +----------------------------------------------------+
+	//  | Context's keys for values used on various featuers |
+	//  +----------------------------------------------------+
+
+	// Context values' keys for various features.
+	//
+	// TranslateLanguageContextKey & TranslateFunctionContextKey are used by i18n handlers/middleware
+	// currently we have only one: https://github.com/kataras/iris/tree/master/middleware/i18n.
+	//
+	// Defaults to "iris.translate" and "iris.language"
+	TranslateFunctionContextKey string `yaml:"TranslateFunctionContextKey" toml:"TranslateFunctionContextKey"`
+	// TranslateLanguageContextKey used for i18n.
+	//
+	// Defaults to "iris.language"
+	TranslateLanguageContextKey string `yaml:"TranslateLanguageContextKey" toml:"TranslateLanguageContextKey"`
+
+	// GetViewLayoutContextKey is the key of the context's user values' key
+	// which is being used to set the template
+	// layout from a middleware or the main handler.
+	// Overrides the parent's or the configuration's.
+	//
+	// Defaults to "iris.ViewLayout"
+	ViewLayoutContextKey string `yaml:"ViewLayoutContextKey" toml:"ViewLayoutContextKey"`
+	// GetViewDataContextKey is the key of the context's user values' key
+	// which is being used to set the template
+	// binding data from a middleware or the main handler.
+	//
+	// Defaults to "iris.viewData"
+	ViewDataContextKey string `yaml:"ViewDataContextKey" toml:"ViewDataContextKey"`
 
 	// Other are the custom, dynamic options, can be empty.
 	// This field used only by you to set any app's options you want
 	// or by custom adaptors, it's a way to simple communicate between your adaptors (if any)
 	// Defaults to a non-nil empty map
-	//
-	// Some times is useful to know the router's name in order to take some dynamically runtime decisions.
-	// So, when router policies are being adapted by a router adaptor,
-	// a "routeName" key will be(optionally) filled with the name of the Router's features are being used.
-	// The "routeName" can be retrivied by:
-	// app := iris.New()
-	// app.Adapt(routerAdaptor.New())
-	// app.Config.Other[iris.RouterNameConfigKey]
-	//
 	Other map[string]interface{} `yaml:"Other" toml:"Other"`
 }
 
-// RouterNameConfigKey is the optional key that is being registered by router adaptor.
-// It's not as a static field because it's optionally setted, it depends of the router adaptor's author.
-// Usage: app.Config.Other[iris.RouterNameConfigKey]
-const RouterNameConfigKey = "routerName"
+var _ context.ConfigurationReadOnly = &Configuration{}
 
-// Set implements the OptionSetter
-func (c Configuration) Set(main *Configuration) {
-	if err := mergo.MergeWithOverwrite(main, c); err != nil {
-		panic("FATAL ERROR .Configuration as OptionSetter: " + err.Error())
-	}
+// GetVHost returns the non-exported vhost config field.
+//
+// If original addr ended with :443 or :80, it will return the host without the port.
+// If original addr was :https or :http, it will return localhost.
+// If original addr was 0.0.0.0, it will return localhost.
+func (c Configuration) GetVHost() string {
+	return c.vhost
 }
 
-// All options starts with "Option" preffix in order to be easier to find what dev searching for
-var (
+// GetDisablePathCorrection returns the configuration.DisablePathCorrection,
+// DisablePathCorrection corrects and redirects the requested path to the registered path
+// for example, if /home/ path is requested but no handler for this Route found,
+// then the Router checks if /home handler exists, if yes,
+// (permant)redirects the client to the correct path /home.
+func (c Configuration) GetDisablePathCorrection() bool {
+	return c.DisablePathCorrection
+}
 
-	// OptionVHost is the addr or the domain that server listens to, which it's optional
-	// When to set VHost manually:
-	// 1. it's automatically setted when you're calling
-	//     $instance.Listen/ListenUNIX/ListenTLS/ListenLETSENCRYPT functions or
-	//     ln,_ := iris.TCP4/UNIX/TLS/LETSENCRYPT; $instance.Serve(ln)
-	// 2. If you using a balancer, or something like nginx
-	//    then set it in order to have the correct url
-	//    when calling the template helper '{{url }}'
-	//    *keep note that you can use {{urlpath }}) instead*
-	//
-	// Note: this is the main's server Host, you can setup unlimited number of net/http servers
-	// listening to the $instance.Handler after the manually-called $instance.Build
-	//
-	// Default comes from iris.Default.Listen/.Serve with iris' listeners (iris.TCP4/UNIX/TLS/LETSENCRYPT).
-	OptionVHost = func(val string) OptionSet {
-		return func(c *Configuration) {
-			c.VHost = val
+// GetEnablePathEscape is the configuration.EnablePathEscape,
+// returns true when its escapes the path, the named parameters (if any).
+func (c Configuration) GetEnablePathEscape() bool {
+	return c.EnablePathEscape
+}
+
+// GetFireMethodNotAllowed returns the configuration.FireMethodNotAllowed.
+func (c Configuration) GetFireMethodNotAllowed() bool {
+	return c.FireMethodNotAllowed
+}
+
+// GetDisableBodyConsumptionOnUnmarshal returns the configuration.GetDisableBodyConsumptionOnUnmarshal,
+// manages the reading behavior of the context's body readers/binders.
+// If returns true then the body consumption by the `context.UnmarshalBody/ReadJSON/ReadXML`
+// is disabled.
+//
+// By-default io.ReadAll` is used to read the body from the `context.Request.Body which is an `io.ReadCloser`,
+// if this field setted to true then a new buffer will be created to read from and the request body.
+// The body will not be changed and existing data before the
+// context.UnmarshalBody/ReadJSON/ReadXML will be not consumed.
+func (c Configuration) GetDisableBodyConsumptionOnUnmarshal() bool {
+	return c.DisableBodyConsumptionOnUnmarshal
+}
+
+// GetDisableAutoFireStatusCode returns the configuration.DisableAutoFireStatusCode.
+// Returns true when the http error status code handler automatic execution turned off.
+func (c Configuration) GetDisableAutoFireStatusCode() bool {
+	return c.DisableAutoFireStatusCode
+}
+
+// GetTimeFormat returns the configuration.TimeFormat,
+// format for any kind of datetime parsing.
+func (c Configuration) GetTimeFormat() string {
+	return c.TimeFormat
+}
+
+// GetCharset returns the configuration.Charset,
+// the character encoding for various rendering
+// used for templates and the rest of the responses.
+func (c Configuration) GetCharset() string {
+	return c.Charset
+}
+
+// GetTranslateFunctionContextKey returns the configuration's TranslateFunctionContextKey value,
+// used for i18n.
+func (c Configuration) GetTranslateFunctionContextKey() string {
+	return c.TranslateFunctionContextKey
+}
+
+// GetTranslateLanguageContextKey returns the configuration's TranslateLanguageContextKey value,
+// used for i18n.
+func (c Configuration) GetTranslateLanguageContextKey() string {
+	return c.TranslateLanguageContextKey
+}
+
+// GetViewLayoutContextKey returns the key of the context's user values' key
+// which is being used to set the template
+// layout from a middleware or the main handler.
+// Overrides the parent's or the configuration's.
+func (c Configuration) GetViewLayoutContextKey() string {
+	return c.ViewLayoutContextKey
+}
+
+// GetViewDataContextKey returns the key of the context's user values' key
+// which is being used to set the template
+// binding data from a middleware or the main handler.
+func (c Configuration) GetViewDataContextKey() string {
+	return c.ViewDataContextKey
+}
+
+// GetOther returns the configuration.Other map.
+func (c Configuration) GetOther() map[string]interface{} {
+	return c.Other
+}
+
+// WithConfiguration sets the "c" values to the framework's configurations.
+//
+// Usage:
+// app.Run(iris.Addr(":8080"), iris.WithConfiguration(iris.Configuration{/* fields here */ }))
+// or
+// iris.WithConfiguration(iris.YAML("./cfg/iris.yml"))
+// or
+// iris.WithConfiguration(iris.TOML("./cfg/iris.tml"))
+func WithConfiguration(c Configuration) Configurator {
+	return func(app *Application) {
+		main := app.config
+
+		if v := c.DisableBanner; v {
+			main.DisableBanner = v
 		}
-	}
 
-	// OptionVScheme is the scheme (http:// or https://) putted at the template function '{{url }}'
-	// It's an optional field,
-	// When to set Scheme manually:
-	// 1. You didn't start the main server using $instance.Listen/ListenTLS/ListenLETSENCRYPT
-	//     or $instance.Serve($instance.TCP4()/.TLS...)
-	// 2. if you're using something like nginx and have iris listening with
-	//    addr only(http://) but the nginx mapper is listening to https://
-	//
-	// Default comes from iris.Default.Listen/.Serve with iris' listeners (TCP4,UNIX,TLS,LETSENCRYPT).
-	OptionVScheme = func(val string) OptionSet {
-		return func(c *Configuration) {
-			c.VScheme = val
-		}
-	}
-
-	// OptionReadTimeout sets the Maximum duration before timing out read of the request.
-	OptionReadTimeout = func(val time.Duration) OptionSet {
-		return func(c *Configuration) {
-			c.ReadTimeout = val
-		}
-	}
-
-	// OptionWriteTimeout sets the Maximum duration before timing out write of the response.
-	OptionWriteTimeout = func(val time.Duration) OptionSet {
-		return func(c *Configuration) {
-			c.WriteTimeout = val
-		}
-	}
-
-	// MaxHeaderBytes controls the maximum number of bytes the
-	// server will read parsing the request header's keys and
-	// values, including the request line. It does not limit the
-	// size of the request body.
-	// If zero, DefaultMaxHeaderBytes(8MB) is used.
-	OptionMaxHeaderBytes = func(val int) OptionSet {
-		return func(c *Configuration) {
-			c.MaxHeaderBytes = val
-		}
-	}
-
-	// OptionCheckForUpdates will try to search for newer version of Iris based on the https://github.com/kataras/iris/releases
-	// If a newer version found then the app will ask the he dev/user if want to update the 'x' version
-	// if 'y' is pressed then the updater will try to install the latest version
-	// the updater, will notify the dev/user that the update is finished and should restart the App manually.
-	// Notes:
-	// 1. Experimental feature
-	// 2. If setted to true, the app will have a little startup delay
-	// 3. If you as developer edited the $GOPATH/src/github/kataras or any other Iris' Go dependencies at the past
-	//    then the update process will fail.
-	//
-	// Usage: iris.Default.Set(iris.OptionCheckForUpdates(true)) or
-	//        iris.Default.Config.CheckForUpdates = true or
-	//        app := iris.New(iris.OptionCheckForUpdates(true))
-	// Defaults to false.
-	OptionCheckForUpdates = func(val bool) OptionSet {
-		return func(c *Configuration) {
-			c.CheckForUpdates = val
-		}
-	}
-
-	// OptionDisablePathCorrection corrects and redirects the requested path to the registered path
-	// for example, if /home/ path is requested but no handler for this Route found,
-	// then the Router checks if /home handler exists, if yes,
-	// (permant)redirects the client to the correct path /home
-	//
-	// Defaults to false.
-	OptionDisablePathCorrection = func(val bool) OptionSet {
-		return func(c *Configuration) {
-			c.DisablePathCorrection = val
+		if v := c.EnableTray; v {
+			main.EnableTray = v
 		}
 
-	}
-
-	// OptionEnablePathEscape when is true then its escapes the path, the named path parameters (if any).
-	OptionEnablePathEscape = func(val bool) OptionSet {
-		return func(c *Configuration) {
-			c.EnablePathEscape = val
+		if v := c.DisableInterruptHandler; v {
+			main.DisableInterruptHandler = v
 		}
-	}
 
-	// FireMethodNotAllowed if it's true router checks for StatusMethodNotAllowed(405)
-	// and fires the 405 error instead of 404
-	// Defaults to false.
-	OptionFireMethodNotAllowed = func(val bool) OptionSet {
-		return func(c *Configuration) {
-			c.FireMethodNotAllowed = val
+		if v := c.DisablePathCorrection; v {
+			main.DisablePathCorrection = v
 		}
-	}
 
-	// OptionDisableBodyConsumptionOnUnmarshal manages the reading behavior of the context's body readers/binders.
-	// If setted to true then it
-	// disables the body consumption by the `context.UnmarshalBody/ReadJSON/ReadXML`.
-	//
-	// By-default io.ReadAll` is used to read the body from the `context.Request.Body which is an `io.ReadCloser`,
-	// if this field setted to true then a new buffer will be created to read from and the request body.
-	// The body will not be changed and existing data before the context.UnmarshalBody/ReadJSON/ReadXML will be not consumed.
-	OptionDisableBodyConsumptionOnUnmarshal = func(val bool) OptionSet {
-		return func(c *Configuration) {
-			c.DisableBodyConsumptionOnUnmarshal = val
+		if v := c.EnablePathEscape; v {
+			main.EnablePathEscape = v
 		}
-	}
 
-	// OptionTimeFormat time format for any kind of datetime parsing.
-	// Defaults to  "Mon, 02 Jan 2006 15:04:05 GMT".
-	OptionTimeFormat = func(val string) OptionSet {
-		return func(c *Configuration) {
-			c.TimeFormat = val
+		if v := c.FireMethodNotAllowed; v {
+			main.FireMethodNotAllowed = v
 		}
-	}
 
-	// OptionCharset character encoding for various rendering
-	// used for templates and the rest of the responses
-	// Defaults to "UTF-8".
-	OptionCharset = func(val string) OptionSet {
-		return func(c *Configuration) {
-			c.Charset = val
+		if v := c.DisableBodyConsumptionOnUnmarshal; v {
+			main.DisableBodyConsumptionOnUnmarshal = v
 		}
-	}
 
-	// OptionGzip enables gzip compression on your Render actions, this includes any type of render, templates and pure/raw content
-	// If you don't want to enable it globally, you could just use the third parameter on context.Render("myfileOrResponse", structBinding{}, iris.RenderOptions{"gzip": true})
-	// Defaults to false.
-	OptionGzip = func(val bool) OptionSet {
-		return func(c *Configuration) {
-			c.Gzip = val
+		if v := c.DisableAutoFireStatusCode; v {
+			main.DisableAutoFireStatusCode = v
 		}
-	}
 
-	// Other are the custom, dynamic options, can be empty.
-	// This field used only by you to set any app's options you want
-	// or by custom adaptors, it's a way to simple communicate between your adaptors (if any)
-	// Defaults to a non-nil empty map.
-	OptionOther = func(key string, val interface{}) OptionSet {
-		return func(c *Configuration) {
-			if c.Other == nil {
-				c.Other = make(map[string]interface{}, 0)
+		if v := c.TimeFormat; v != "" {
+			main.TimeFormat = v
+		}
+
+		if v := c.Charset; v != "" {
+			main.Charset = v
+		}
+
+		if v := c.TranslateFunctionContextKey; v != "" {
+			main.TranslateFunctionContextKey = v
+		}
+
+		if v := c.TranslateLanguageContextKey; v != "" {
+			main.TranslateLanguageContextKey = v
+		}
+
+		if v := c.ViewLayoutContextKey; v != "" {
+			main.ViewLayoutContextKey = v
+		}
+
+		if v := c.ViewDataContextKey; v != "" {
+			main.ViewDataContextKey = v
+		}
+
+		if v := c.Other; len(v) > 0 {
+			if main.Other == nil {
+				main.Other = make(map[string]interface{}, 0)
 			}
-			c.Other[key] = val
+			for key, value := range v {
+				main.Other[key] = value
+			}
 		}
 	}
-)
-
-var (
-	// DefaultTimeFormat default time format for any kind of datetime parsing
-	DefaultTimeFormat = "Mon, 02 Jan 2006 15:04:05 GMT"
-	// StaticCacheDuration expiration duration for INACTIVE file handlers, it's a global configuration field to all iris instances
-	StaticCacheDuration = 20 * time.Second
-)
-
-// Default values for base Iris conf
-const (
-	DefaultDisablePathCorrection = false
-	DefaultEnablePathEscape      = false
-	DefaultCharset               = "UTF-8"
-	// Per-connection buffer size for requests' reading.
-	// This also limits the maximum header size.
-	//
-	// Increase this buffer if your clients send multi-KB RequestURIs
-	// and/or multi-KB headers (for example, BIG cookies).
-	//
-	// Default buffer size is 8MB
-	DefaultMaxHeaderBytes = 8096
-
-	// DefaultReadTimeout no read client timeout
-	DefaultReadTimeout = 0
-	// DefaultWriteTimeout no serve client timeout
-	DefaultWriteTimeout = 0
-)
+}
 
 // DefaultConfiguration returns the default configuration for an Iris station, fills the main Configuration
 func DefaultConfiguration() Configuration {
 	return Configuration{
-		VHost:                             "",
-		VScheme:                           "",
-		ReadTimeout:                       DefaultReadTimeout,
-		WriteTimeout:                      DefaultWriteTimeout,
-		MaxHeaderBytes:                    DefaultMaxHeaderBytes,
-		CheckForUpdates:                   false,
-		DisablePathCorrection:             DefaultDisablePathCorrection,
-		EnablePathEscape:                  DefaultEnablePathEscape,
+		DisableBanner:                     false,
+		EnableTray:                        false,
+		DisableInterruptHandler:           false,
+		DisablePathCorrection:             false,
+		EnablePathEscape:                  false,
 		FireMethodNotAllowed:              false,
 		DisableBodyConsumptionOnUnmarshal: false,
-		TimeFormat:                        DefaultTimeFormat,
-		Charset:                           DefaultCharset,
-		Gzip:                              false,
+		DisableAutoFireStatusCode:         false,
+		TimeFormat:                        "Mon, Jan 02 2006 15:04:05 GMT",
+		Charset:                           "UTF-8",
+		TranslateFunctionContextKey:       "iris.translate",
+		TranslateLanguageContextKey:       "iris.language",
+		ViewLayoutContextKey:              "iris.viewLayout",
+		ViewDataContextKey:                "iris.viewData",
 		Other:                             make(map[string]interface{}, 0),
 	}
 }
-
-// Default values for base Server conf
-const (
-	// DefaultServerHostname returns the default hostname which is 0.0.0.0
-	DefaultServerHostname = "0.0.0.0"
-	// DefaultServerPort returns the default port which is 8080, not used
-	DefaultServerPort = 8080
-)
-
-var (
-	// DefaultServerAddr the default server addr which is: 0.0.0.0:8080
-	DefaultServerAddr = DefaultServerHostname + ":" + strconv.Itoa(DefaultServerPort)
-)

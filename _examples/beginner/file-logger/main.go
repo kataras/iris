@@ -1,63 +1,49 @@
 package main
 
 import (
-	"log"
 	"os"
+	"time"
 
-	"gopkg.in/kataras/iris.v6"
-	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
 )
 
-var myLogFile *os.File
+// get a filename based on the date, file logs works that way the most times
+// but these are just a sugar, you can directly attach a new file logger with .AttachLogger(io.Writer)
+func todayFilename() string {
+	today := time.Now().Format("Jan 02 2006")
+	return today + ".txt"
+}
 
-func init() {
-	// open an output file
-	f, err := os.Create("logs.txt")
+func newLogFile() *os.File {
+	filename := todayFilename()
+	// open an output file, this will append to the today's file if server restarted.
+	f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		panic(err)
 	}
-	myLogFile = f
-}
 
-func myFileLogger() iris.LoggerPolicy {
-
-	// you can use a *File or an io.Writer,
-	// we want to log with timestamps so we use the log.New.
-	myLogger := log.New(myLogFile, "", log.LstdFlags)
-
-	// the logger is just a func,
-	// will be used in runtime
-	return func(mode iris.LogMode, message string) {
-		// optionally, check for production or development log message mode
-		// two modes: iris.ProdMode and iris.DevMode
-		if mode == iris.ProdMode {
-			// log only production-mode log messages
-			myLogger.Println(message)
-		}
-	}
+	return f
 }
 
 func main() {
-	// close the log file on exit application
-	// when panic or iris exited by interupt event or manually by Shutdown.
-	defer func() {
-		if err := myLogFile.Close(); err != nil {
-			panic(err)
-		}
-	}()
+	f := newLogFile()
+	defer f.Close()
 
 	app := iris.New()
-	app.Adapt(myFileLogger())
-	app.Adapt(httprouter.New())
+	// attach the file as logger, remember, iris' app logger is just an io.Writer.
+	app.AttachLogger(f)
 
-	app.Get("/", func(ctx *iris.Context) {
-		// for the sake of simplicity, in order see the logs at the ./logs.txt:
-		app.Log(iris.ProdMode, "You have requested: http://localhost/8080"+ctx.Path())
-
+	app.Get("/", func(ctx context.Context) {
+		// for the sake of simplicity, in order see the logs at the ./_today_.txt
+		ctx.Application().Log("Request: %s\r\n", ctx.Path())
 		ctx.Writef("hello")
 	})
 
-	// open http://localhost:8080
-	// and watch the ./logs.txt file
-	app.Listen(":8080")
+	// navigate to http://localhost:8080
+	// and open the ./logs.txt file
+	if err := app.Run(iris.Addr(":8080"), iris.WithoutBanner); err != nil {
+		app.Log("Shutdown with error: %v", err)
+
+	}
 }

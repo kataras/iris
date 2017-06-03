@@ -3,9 +3,9 @@ package main
 import (
 	"encoding/xml"
 
-	"gopkg.in/kataras/iris.v6"
-	"gopkg.in/kataras/iris.v6/adaptors/gorillamux"
-	"gopkg.in/kataras/iris.v6/adaptors/view"
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/view"
 )
 
 // ExampleXML just a test struct to view represents xml content-type
@@ -17,43 +17,61 @@ type ExampleXML struct {
 
 func main() {
 	app := iris.New()
-	app.Adapt(iris.DevLogger())
-	app.Adapt(gorillamux.New())
 
-	app.Get("/data", func(ctx *iris.Context) {
-		ctx.Data(iris.StatusOK, []byte("Some binary data here."))
+	// Just some general restful render types, none of these has to do anything with templates.
+	app.Get("/binary", func(ctx context.Context) { // useful when you want force-download of contents of raw bytes form.
+		ctx.Binary([]byte("Some binary data here."))
 	})
 
-	app.Get("/text", func(ctx *iris.Context) {
-		ctx.Text(iris.StatusOK, "Plain text here")
+	app.Get("/text", func(ctx context.Context) {
+		ctx.Text("Plain text here")
 	})
 
-	app.Get("/json", func(ctx *iris.Context) {
-		ctx.JSON(iris.StatusOK, map[string]string{"hello": "json"}) // or myjsonStruct{hello:"json}
+	app.Get("/json", func(ctx context.Context) {
+		ctx.JSON(map[string]string{"hello": "json"}) // or myjsonStruct{hello:"json}
 	})
 
-	app.Get("/jsonp", func(ctx *iris.Context) {
-		ctx.JSONP(iris.StatusOK, "callbackName", map[string]string{"hello": "jsonp"})
+	app.Get("/jsonp", func(ctx context.Context) {
+		ctx.JSONP(map[string]string{"hello": "jsonp"}, context.JSONP{Callback: "callbackName"})
 	})
 
-	app.Get("/xml", func(ctx *iris.Context) {
-		ctx.XML(iris.StatusOK, ExampleXML{One: "hello", Two: "xml"}) // or iris.Map{"One":"hello"...}
+	app.Get("/xml", func(ctx context.Context) {
+		ctx.XML(ExampleXML{One: "hello", Two: "xml"}) // or context.Map{"One":"hello"...}
 	})
 
-	app.Get("/markdown", func(ctx *iris.Context) {
-		ctx.Markdown(iris.StatusOK, "# Hello Dynamic Markdown Iris")
+	app.Get("/markdown", func(ctx context.Context) {
+		ctx.Markdown([]byte("# Hello Dynamic Markdown -- Iris"))
 	})
 
-	app.Adapt(view.HTML("./templates", ".html"))
-	app.Get("/template", func(ctx *iris.Context) {
+	//
 
-		ctx.MustRender(
-			"hi.html",                // the file name of the template relative to the './templates'
-			iris.Map{"Name": "Iris"}, // the .Name inside the ./templates/hi.html
-			iris.Map{"gzip": false},  // enable gzip for big files
-		)
+	// - standard html  | view.HTML(...)
+	// - django         | view.Django(...)
+	// - pug(jade)      | view.Pug(...)
+	// - handlebars     | view.Handlebars(...)
+	// - amber          | view.Amber(...)
+	// with default template funcs:
+	//
+	// - {{ urlpath "mynamedroute" "pathParameter_ifneeded" }}
+	// - {{ render "header.html" }}
+	// - {{ render_r "header.html" }} // partial relative path to current page
+	// - {{ yield }}
+	// - {{ current }}
+	app.AttachView(view.HTML("./templates", ".html"))
+	app.Get("/template", func(ctx context.Context) {
+
+		ctx.ViewData("Name", "Iris") // the .Name inside the ./templates/hi.html
+		ctx.Gzip(true)               // enable gzip for big files
+		ctx.View("hi.html")          // render the template with the file name relative to the './templates'
 
 	})
 
-	app.Listen(":8080")
+	// http://localhost:8080/binary
+	// http://localhost:8080/text
+	// http://localhost:8080/json
+	// http://localhost:8080/jsonp
+	// http://localhost:8080/xml
+	// http://localhost:8080/markdown
+	// http://localhost:8080/template
+	app.Run(iris.Addr(":8080"))
 }

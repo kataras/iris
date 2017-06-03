@@ -1,5 +1,5 @@
-.settings
-.project
+# my own configuration for vs code, my lovely editor, if someone of you want this, contact with me
 .vscode
-specs
+# turn off these for now
 .github
+specs

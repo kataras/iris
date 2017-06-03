@@ -1,11 +1,12 @@
 package main
 
 import (
-	"gopkg.in/kataras/iris.v6"
-	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
-	"gopkg.in/kataras/iris.v6/adaptors/sessions"
-	"gopkg.in/kataras/iris.v6/adaptors/sessions/sessiondb/redis"
-	"gopkg.in/kataras/iris.v6/adaptors/sessions/sessiondb/redis/service"
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
+
+	"github.com/kataras/iris/sessions"
+	"github.com/kataras/iris/sessions/sessiondb/redis"
+	"github.com/kataras/iris/sessions/sessiondb/redis/service"
 )
 
 func main() {
@@ -29,16 +30,16 @@ func main() {
 
 	// the rest of the code stays the same.
 	app := iris.New()
-	app.Adapt(iris.DevLogger()) // enable all (error) logs
-	app.Adapt(httprouter.New()) // select the httprouter as the servemux
+	// enable all (error) logs
+	// select the httprouter as the servemux
 
-	// Adapt the session manager we just created
-	app.Adapt(mySessions)
+	// Attach the session manager we just created
+	app.AttachSessionManager(mySessions)
 
-	app.Get("/", func(ctx *iris.Context) {
+	app.Get("/", func(ctx context.Context) {
 		ctx.Writef("You should navigate to the /set, /get, /delete, /clear,/destroy instead")
 	})
-	app.Get("/set", func(ctx *iris.Context) {
+	app.Get("/set", func(ctx context.Context) {
 
 		//set session values
 		ctx.Session().Set("name", "iris")
@@ -47,27 +48,27 @@ func main() {
 		ctx.Writef("All ok session setted to: %s", ctx.Session().GetString("name"))
 	})
 
-	app.Get("/get", func(ctx *iris.Context) {
+	app.Get("/get", func(ctx context.Context) {
 		// get a specific key, as string, if no found returns just an empty string
 		name := ctx.Session().GetString("name")
 
 		ctx.Writef("The name on the /set was: %s", name)
 	})
 
-	app.Get("/delete", func(ctx *iris.Context) {
+	app.Get("/delete", func(ctx context.Context) {
 		// delete a specific key
 		ctx.Session().Delete("name")
 	})
 
-	app.Get("/clear", func(ctx *iris.Context) {
+	app.Get("/clear", func(ctx context.Context) {
 		// removes all entries
 		ctx.Session().Clear()
 	})
 
-	app.Get("/destroy", func(ctx *iris.Context) {
+	app.Get("/destroy", func(ctx context.Context) {
 		//destroy, removes the entire session data and cookie
 		ctx.SessionDestroy()
 	})
 
-	app.Listen(":8080")
+	app.Run(iris.Addr(":8080"))
 }

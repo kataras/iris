@@ -1,6 +1,6 @@
 Please answer these questions before submitting your issue. Thanks!
 
-- [x] I have read the [GopherBOOk](http://gopherbook.iris-go.com), [Examples](https://github.com/iris-contrib/examples), [Contributing File](https://github.com/kataras/iris/blob/v6/.github/CONTRIBUTING.md) and **I'm sure that this issue is not [posted](http://support.iris-go.com)** before.
+- [x] I have read the [_examples](https://github.com/kataras/iris/tree/master/_examples), [Contributing File](https://github.com/kataras/iris/blob/master/.github/CONTRIBUTING.md).
 
 
 ### What version of Go are you using, minimum 1.8 (`go version`)?

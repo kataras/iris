@@ -1,103 +1,75 @@
-// Package main an example on how to naming your routes & use the custom 'url' HTML Template Engine, same for other template engines.
+// Package main an example on how to naming your routes & use the custom 'url path' HTML Template Engine, same for other template engines.
 package main
 
 import (
-	"gopkg.in/kataras/iris.v6"
-	"gopkg.in/kataras/iris.v6/adaptors/gorillamux"
-	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
-	"gopkg.in/kataras/iris.v6/adaptors/view"
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/view"
 )
 
 func main() {
 	app := iris.New()
-	app.Adapt(iris.DevLogger())
-	app.Adapt(view.HTML("./templates", ".html").Reload(true))
+	if err := app.AttachView(view.HTML("./templates", ".html").Reload(true)); err != nil {
+		panic(err)
+	}
 
-	startWithHTTPRouter(app)
-	// or uncomment
-	// startWithGorillamux()
+	mypathRoute, _ := app.Get("/mypath", writePathHandler)
+	mypathRoute.Name = "my-page1"
 
-	app.Listen("localhost:8080")
+	mypath2Route, err := app.Get("/mypath2/{paramfirst}/{paramsecond}", writePathHandler)
+	// same as: app.Get("/mypath2/:paramfirst/:paramsecond", writePathHandler)
+	if err != nil { // catch errors when creating a route or catch them on err := .Run, it's up to you.
+		panic(err)
+	}
+	mypath2Route.Name = "my-page2"
+
+	mypath3Route, _ := app.Get("/mypath3/{paramfirst}/statichere/{paramsecond}", writePathHandler)
+	mypath3Route.Name = "my-page3"
+
+	mypath4Route, _ := app.Get("/mypath4/{paramfirst}/statichere/{paramsecond}/{otherparam}/{something:path}", writePathHandler)
+	// same as: app.Get("/mypath4/:paramfirst/statichere/:paramsecond/:otherparam/*something", writePathHandler)
+	mypath4Route.Name = "my-page4"
+
+	// same with Handle/Func
+	mypath5Route, _ := app.Handle("GET", "/mypath5/{paramfirst}/statichere/{paramsecond}/{otherparam}/anything/{something:path}", writePathHandler)
+	mypath5Route.Name = "my-page5"
+
+	mypath6Route, _ := app.Get("/mypath6/{paramfirst}/{paramsecond}/statichere/{paramThirdAfterStatic}", writePathHandler)
+	mypath6Route.Name = "my-page6"
+
+	app.Get("/", func(ctx context.Context) {
+		// for /mypath6...
+		paramsAsArray := []string{"theParam1", "theParam2", "paramThirdAfterStatic"}
+		ctx.ViewData("ParamsAsArray", paramsAsArray)
+		if err := ctx.View("page.html"); err != nil {
+			panic(err)
+		}
+	})
+
+	app.Get("/redirect/{namedRoute}", func(ctx context.Context) {
+		routeName := ctx.Params().Get("namedRoute")
+		r := app.GetRoute(routeName)
+		if r == nil {
+			ctx.StatusCode(404)
+			ctx.Writef("Route with name %s not found", routeName)
+			return
+		}
+
+		println("The path of " + routeName + "is: " + r.Path)
+		// if routeName == "my-page1"
+		// prints: The path of of my-page1 is: /mypath
+		// if it's a path which takes named parameters
+		// then use "r.ResolvePath(paramValuesHere)"
+		ctx.Redirect(r.Path)
+		// http://localhost:8080/redirect/my-page1 will redirect to -> http://localhost:8080/mypath
+	})
+
+	// http://localhost:8080
+	// http://localhost/redirect/my-page1
+	app.Run(iris.Addr(":8080"))
 
 }
 
-func writePathHandler(ctx *iris.Context) {
+func writePathHandler(ctx context.Context) {
 	ctx.Writef("Hello from %s.", ctx.Path())
-}
-
-func startWithHTTPRouter(app *iris.Framework) {
-
-	app.Adapt(httprouter.New())
-
-	app.Get("/mypath", writePathHandler).ChangeName("my-page1")
-	app.Get("/mypath2/:param1/:param2", writePathHandler).ChangeName("my-page2")
-	app.Get("/mypath3/:param1/statichere/:param2", writePathHandler).ChangeName("my-page3")
-	app.Get("/mypath4/:param1/statichere/:param2/:otherparam/*something", writePathHandler).ChangeName("my-page4")
-
-	// same with Handle/Func
-	app.HandleFunc("GET", "/mypath5/:param1/statichere/:param2/:otherparam/anything/*something", writePathHandler).ChangeName("my-page5")
-
-	app.Get("/mypath6/:param1/:param2/staticParam/:param3AfterStatic", writePathHandler).ChangeName("my-page6")
-
-	app.Get("/", func(ctx *iris.Context) {
-		// for /mypath6...
-		paramsAsArray := []string{"param1", "theParam1",
-			"param2", "theParam2",
-			"param3AfterStatic", "theParam3"}
-
-		if err := ctx.Render("page.html", iris.Map{"ParamsAsArray": paramsAsArray}); err != nil {
-			panic(err)
-		}
-	})
-
-	app.Get("/redirect/:namedRoute", func(ctx *iris.Context) {
-		routeName := ctx.Param("namedRoute")
-
-		println("The full uri of " + routeName + "is: " + app.URL(routeName))
-		// if routeName == "my-page1"
-		// prints: The full uri of my-page1 is: http://127.0.0.1:8080/mypath
-		ctx.RedirectTo(routeName)
-		// http://127.0.0.1:8080/redirect/my-page1 will redirect to -> http://127.0.0.1:8080/mypath
-	})
-
-}
-
-// for gorillamux adaptor is the same thing, the path syntax is the only thing changed ofc.
-// Note: Here, we could use app.RouteParam("param1") without even care what router is being used,
-//       but I have two examples of the same thing in order to be more understable for you.
-func startWithGorillamux(app *iris.Framework) {
-	app.Adapt(gorillamux.New())
-
-	app.Get("/mypath", writePathHandler).ChangeName("my-page1")
-	app.Get("/mypath2/{param1}/{param2}", writePathHandler).ChangeName("my-page2")
-	app.Get("/mypath3/{param1}/statichere/{param2}", writePathHandler).ChangeName("my-page3")
-	app.Get("/mypath4/{param1}/statichere/{param2}/{otherparam}/{something:.*}", writePathHandler).ChangeName("my-page4")
-
-	// same with Handle/Func
-	app.HandleFunc("GET", "/mypath5/{param1}/statichere/{param2}/{otherparam}/anything/{something:.*}", writePathHandler).ChangeName("my-page5")
-
-	app.Get("/mypath6/{param1}/{param2}/staticParam/{param3AfterStatic}", writePathHandler).ChangeName("my-page6")
-
-	app.Get("/", func(ctx *iris.Context) {
-		// for /mypath6...
-		paramsAsArray := []string{"param1", "theParam1",
-			"param2", "theParam2",
-			"param3AfterStatic", "theParam3"}
-
-		if err := ctx.Render("page.html", iris.Map{"ParamsAsArray": paramsAsArray}); err != nil {
-			panic(err)
-		}
-	})
-
-	app.Get("/redirect/{namedRoute}", func(ctx *iris.Context) {
-		routeName := ctx.Param("namedRoute")
-
-		println("The full uri of " + routeName + "is: " + app.URL(routeName))
-		// if routeName == "my-page1"
-		// prints: The full uri of my-page1 is: http://127.0.0.1:8080/mypath
-		ctx.RedirectTo(routeName)
-		// http://127.0.0.1:8080/redirect/my-page1 will redirect to -> http://127.0.0.1:8080/mypath
-	})
-
-	app.Listen("localhost:8080")
 }

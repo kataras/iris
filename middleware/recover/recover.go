@@ -1,3 +1,8 @@
+// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+// Package recover provides recovery for specific routes or for the whole app via middleware. See _examples/beginner/recover
 package recover
 
 import (
@@ -5,12 +10,12 @@ import (
 	"runtime"
 	"strconv"
 
-	"gopkg.in/kataras/iris.v6"
+	"github.com/kataras/iris/context"
 )
 
-func getRequestLogs(ctx *iris.Context) string {
+func getRequestLogs(ctx context.Context) string {
 	var status, ip, method, path string
-	status = strconv.Itoa(ctx.ResponseWriter.StatusCode())
+	status = strconv.Itoa(ctx.GetStatusCode())
 	path = ctx.Path()
 	method = ctx.Method()
 	ip = ctx.RemoteAddr()
@@ -21,8 +26,8 @@ func getRequestLogs(ctx *iris.Context) string {
 // New returns a new recover middleware
 // it logs to the LoggerOut iris' configuration field if its IsDeveloper configuration field is enabled.
 // otherwise it just continues to serve
-func New() iris.HandlerFunc {
-	return func(ctx *iris.Context) {
+func New() context.Handler {
+	return func(ctx context.Context) {
 		defer func() {
 			if err := recover(); err != nil {
 				if ctx.IsStopped() {
@@ -41,14 +46,14 @@ func New() iris.HandlerFunc {
 				}
 
 				// when stack finishes
-				logMessage := fmt.Sprintf("Recovered from a route's Handler('%s')\n", ctx.GetHandlerName())
+				logMessage := fmt.Sprintf("Recovered from a route's Handler('%s')\n", ctx.HandlerName())
 				logMessage += fmt.Sprintf("At Request: %s\n", getRequestLogs(ctx))
 				logMessage += fmt.Sprintf("Trace: %s\n", err)
 				logMessage += fmt.Sprintf("\n%s\n", stacktrace)
-				ctx.Log(iris.DevMode, logMessage)
+				ctx.Application().Log(logMessage)
 
 				ctx.StopExecution()
-				ctx.EmitError(iris.StatusInternalServerError)
+				ctx.StatusCode(500)
 
 			}
 		}()

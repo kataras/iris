@@ -7,9 +7,9 @@ package main
 import (
 	"time"
 
-	"gopkg.in/kataras/iris.v6"
-	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
-	"gopkg.in/kataras/iris.v6/adaptors/view"
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/view"
 )
 
 const (
@@ -20,39 +20,42 @@ const (
 func main() {
 	app := iris.New()
 	// output startup banner and error logs on os.Stdout
-	app.Adapt(iris.DevLogger())
-	// set the router, you can choose gorillamux too
-	app.Adapt(httprouter.New())
-	// set the view engine target to ./templates folder
-	app.Adapt(view.HTML("./templates", ".html").Reload(true))
 
-	app.UseFunc(func(ctx *iris.Context) {
+	// set the view engine target to ./templates folder
+	app.AttachView(view.HTML("./templates", ".html").Reload(true))
+
+	app.Use(func(ctx context.Context) {
 		// set the title, current time and a layout in order to be used if and when the next handler(s) calls the .Render function
 		ctx.ViewData("Title", DefaultTitle)
-		now := time.Now().Format(app.Config.TimeFormat)
+		now := time.Now().Format(ctx.Application().ConfigurationReadOnly().GetTimeFormat())
 		ctx.ViewData("CurrentTime", now)
 		ctx.ViewLayout(DefaultLayout)
 
 		ctx.Next()
 	})
 
-	app.Get("/", func(ctx *iris.Context) {
+	app.Get("/", func(ctx context.Context) {
 		ctx.ViewData("BodyMessage", "a sample text here... setted by the route handler")
-		if err := ctx.Render("index.html", nil); err != nil {
-			app.Log(iris.DevMode, err.Error())
+		if err := ctx.View("index.html"); err != nil {
+			ctx.Application().Log(err.Error())
 		}
 	})
 
-	app.Get("/about", func(ctx *iris.Context) {
+	app.Get("/about", func(ctx context.Context) {
 		ctx.ViewData("Title", "My About Page")
 		ctx.ViewData("BodyMessage", "about text here... setted by the route handler")
 
 		// same file, just to keep things simple.
-		if err := ctx.Render("index.html", nil); err != nil {
-			app.Log(iris.DevMode, err.Error())
+		if err := ctx.View("index.html"); err != nil {
+			ctx.Application().Log(err.Error())
 		}
 	})
 
-	// Open localhost:8080 and localhost:8080/about
-	app.Listen(":8080")
+	// http://localhost:8080
+	// http://localhost:8080/about
+	app.Run(iris.Addr(":8080"))
 }
+
+// Notes: ViewData("", myCustomStruct{}) will set this myCustomStruct value as a root binding data,
+// so any View("other", "otherValue") will probably fail.
+// To clear the binding data: ctx.Set(ctx.Application().ConfigurationReadOnly().GetViewDataContextKey(), nil)

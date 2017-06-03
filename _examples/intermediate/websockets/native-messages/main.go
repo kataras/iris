@@ -3,10 +3,11 @@ package main
 import (
 	"fmt"
 
-	"gopkg.in/kataras/iris.v6"
-	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
-	"gopkg.in/kataras/iris.v6/adaptors/view"
-	"gopkg.in/kataras/iris.v6/adaptors/websocket"
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
+
+	"github.com/kataras/iris/view"
+	"github.com/kataras/iris/websocket"
 )
 
 /* Native messages no need to import the iris-ws.js to the ./templates.client.html
@@ -24,9 +25,9 @@ type clientPage struct {
 
 func main() {
 	app := iris.New()
-	app.Adapt(iris.DevLogger())                  // enable all (error) logs
-	app.Adapt(httprouter.New())                  // select the httprouter as the servemux
-	app.Adapt(view.HTML("./templates", ".html")) // select the html engine to serve templates
+	// enable all (error) logs
+	// select the httprouter as the servemux
+	app.AttachView(view.HTML("./templates", ".html")) // select the html engine to serve templates
 
 	ws := websocket.New(websocket.Config{
 		// the path which the websocket client should listen/registered to,
@@ -35,12 +36,13 @@ func main() {
 		// BinaryMessages: true,
 	})
 
-	app.Adapt(ws) // adapt the websocket server, you can adapt more than one with different Endpoint
+	ws.Attach(app) // adapt the websocket server, you can adapt more than one with different Endpoint
 
 	app.StaticWeb("/js", "./static/js") // serve our custom javascript code
 
-	app.Get("/", func(ctx *iris.Context) {
-		ctx.Render("client.html", clientPage{"Client Page", ctx.Host()})
+	app.Get("/", func(ctx context.Context) {
+		ctx.ViewData("", clientPage{"Client Page", "localhost:8080"})
+		ctx.View("client.html")
 	})
 
 	ws.OnConnection(func(c websocket.Connection) {
@@ -57,6 +59,6 @@ func main() {
 
 	})
 
-	app.Listen(":8080")
+	app.Run(iris.Addr(":8080"))
 
 }

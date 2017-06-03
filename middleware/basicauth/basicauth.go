@@ -1,3 +1,8 @@
+// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+// Package basicauth provides http basic authentication via middleware. See _examples/beginner/basicauth
 package basicauth
 
 import (
@@ -5,21 +10,9 @@ import (
 	"strconv"
 	"time"
 
-	"gopkg.in/kataras/iris.v6"
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
 )
-
-//  +------------------------------------------------------------+
-//  | Middleware usage                                           |
-//  +------------------------------------------------------------+
-//
-// import "gopkg.in/kataras/iris.v6/middleware/basicauth"
-//
-// app := iris.New()
-// authentication := basicauth.Default(map[string]string{"myusername": "mypassword", "mySecondusername": "mySecondpassword"})
-// app.Get("/dashboard", authentication, func(ctx *iris.Context){})
-//
-// for more configuration basicauth.New(basicauth.Config{...})
-// see _example
 
 type (
 	encodedUser struct {
@@ -41,27 +34,29 @@ type (
 
 //
 
-// New takes one parameter, the Config returns a HandlerFunc
-// use: iris.UseFunc(New(...)), iris.Get(...,New(...),...)
-func New(c Config) iris.HandlerFunc {
-	b := &basicAuthMiddleware{config: DefaultConfig().MergeSingle(c)}
+// New takes one parameter, the Config returns a Handler
+// use: iris.Use(New(...)), iris.Get(...,New(...),...)
+func New(c Config) context.Handler {
+	config := DefaultConfig()
+	if c.ContextKey != "" {
+		config.ContextKey = c.ContextKey
+	}
+	if c.Realm != "" {
+		config.Realm = c.Realm
+	}
+	config.Users = c.Users
+
+	b := &basicAuthMiddleware{config: config}
 	b.init()
 	return b.Serve
 }
 
-// Default takes one parameter, the users returns a HandlerFunc
-// use: iris.UseFunc(Default(...)), iris.Get(...,Default(...),...)
-func Default(users map[string]string) iris.HandlerFunc {
+// Default takes one parameter, the users returns a Handler
+// use: iris.Use(Default(...)), iris.Get(...,Default(...),...)
+func Default(users map[string]string) context.Handler {
 	c := DefaultConfig()
 	c.Users = users
 	return New(c)
-}
-
-//
-
-// User returns the user from context key same as 'ctx.GetString("user")' but cannot be used by the developer, use the basicauth.Config.User func instead.
-func (b *basicAuthMiddleware) User(ctx *iris.Context) string {
-	return b.config.User(ctx)
 }
 
 func (b *basicAuthMiddleware) init() {
@@ -98,20 +93,20 @@ func (b *basicAuthMiddleware) findAuth(headerValue string) (auth *encodedUser, f
 	return
 }
 
-func (b *basicAuthMiddleware) askForCredentials(ctx *iris.Context) {
-	ctx.SetHeader("WWW-Authenticate", b.realmHeaderValue)
-	ctx.SetStatusCode(iris.StatusUnauthorized)
+func (b *basicAuthMiddleware) askForCredentials(ctx context.Context) {
+	ctx.Header("WWW-Authenticate", b.realmHeaderValue)
+	ctx.StatusCode(iris.StatusUnauthorized)
 }
 
 // Serve the actual middleware
-func (b *basicAuthMiddleware) Serve(ctx *iris.Context) {
+func (b *basicAuthMiddleware) Serve(ctx context.Context) {
 
-	if auth, found := b.findAuth(ctx.RequestHeader("Authorization")); !found {
+	if auth, found := b.findAuth(ctx.GetHeader("Authorization")); !found {
 		b.askForCredentials(ctx)
 		// don't continue to the next handler
 	} else {
 		// all ok set the context's value in order to be getable from the next handler
-		ctx.Set(b.config.ContextKey, auth.Username)
+		ctx.Values().Set(b.config.ContextKey, auth.Username)
 		if b.expireEnabled {
 
 			if auth.logged == false {
