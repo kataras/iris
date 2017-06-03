@@ -1,43 +1,14 @@
-<p align="center">
- <a href="http://support.iris-go.com">
-	<img width="500" src="https://github.com/iris-contrib/website/raw/gh-pages/assets/simplicity_random_image_but_suitable_because_iris_has_the_same_slogan.gif"
-  alt="Navigate to http://support.iris-go.com">
- </a>
+# Iris
 
+<p>
+Iris is an <b>efficient</b> and well-designed, <b>cross-platform, web framework</b> with robust set of <b>features</b>.<br/>Build your own <b>high-performance</b> web applications and <b>APIs</b> powered by unlimited <b>potentials and portability</b>.<br/>
 <a href="https://travis-ci.org/kataras/iris"><img src="https://api.travis-ci.org/kataras/iris.svg?branch=v6&style=flat-square" alt="Build Status"></a>
 <a href="http://goreportcard.com/report/kataras/iris"><img src="https://img.shields.io/badge/report%20card%20-a%2B-F44336.svg?style=flat-square" alt="http://goreportcard.com/report/kataras/iris"></a>
 <a href="http://support.iris-go.com"><img src="https://img.shields.io/badge/support-page-ec2eb4.svg?style=flat-square" alt="Iris support forum"></a> <!-- <a href="https://github.com/kataras/iris/blob/v6/HISTORY.md"><img src="https://img.shields.io/badge/codename-√Νεxτ%20-blue.svg?style=flat-square" alt="CHANGELOG/HISTORY"></a> --><a href="https://github.com/kataras/iris/tree/v6/_examples#table-of-contents"><img src="https://img.shields.io/badge/examples-%20repository-3362c2.svg?style=flat-square" alt="Examples for new Gophers"></a>
 <a href="https://godoc.org/gopkg.in/kataras/iris.v6"><img src="https://img.shields.io/badge/docs-%20reference-5272B4.svg?style=flat-square" alt="Docs"></a>
 <a href="https://kataras.rocket.chat/channel/iris"><img src="https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square" alt="Chat"></a>
 <a href="https://github.com/kataras/iris#buy-me-a-cup-of-coffee"><img src="https://img.shields.io/badge/support-%20open--source-F4A460.svg?logo=data:image%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAwIDEwMDAiPjxwYXRoIGZpbGw9InJnYigyMjAsMjIwLDIyMCkiIGQ9Ik04ODYuNiwzMDUuM2MtNDUuNywyMDMuMS0xODcsMzEwLjMtNDA5LjYsMzEwLjNoLTc0LjFsLTUxLjUsMzI2LjloLTYybC0zLjIsMjEuMWMtMi4xLDE0LDguNiwyNi40LDIyLjYsMjYuNGgxNTguNWMxOC44LDAsMzQuNy0xMy42LDM3LjctMzIuMmwxLjUtOGwyOS45LTE4OS4zbDEuOS0xMC4zYzIuOS0xOC42LDE4LjktMzIuMiwzNy43LTMyLjJoMjMuNWMxNTMuNSwwLDI3My43LTYyLjQsMzA4LjktMjQyLjdDOTIxLjYsNDA2LjgsOTE2LjcsMzQ4LjYsODg2LjYsMzA1LjN6Ii8%2BPHBhdGggZmlsbD0icmdiKDIyMCwyMjAsMjIwKSIgZD0iTTc5MS45LDgzLjlDNzQ2LjUsMzIuMiw2NjQuNCwxMCw1NTkuNSwxMEgyNTVjLTIxLjQsMC0zOS44LDE1LjUtNDMuMSwzNi44TDg1LDg1MWMtMi41LDE1LjksOS44LDMwLjIsMjUuOCwzMC4ySDI5OWw0Ny4zLTI5OS42bC0xLjUsOS40YzMuMi0yMS4zLDIxLjQtMzYuOCw0Mi45LTM2LjhINDc3YzE3NS41LDAsMzEzLTcxLjIsMzUzLjItMjc3LjVjMS4yLTYuMSwyLjMtMTIuMSwzLjEtMTcuOEM4NDUuMSwxODIuOCw4MzMuMiwxMzAuOCw3OTEuOSw4My45TDc5MS45LDgzLjl6Ii8%2BPC9zdmc%2B" alt="Buy me a cup of coffee"></a>
-<br/>
-Iris is an <b>efficient</b> and well-designed, <b>cross-platform, web framework</b> with robust set of <b>features</b>.<br/>Build your own <b>high-performance</b> web applications and <b>APIs</b> powered by unlimited <b>potentials and portability</b>.
-
-If you're coming from <a href="https://nodejs.org/en/">Node.js</a> world, this is the <a href="https://github.com/expressjs/express">expressjs</a> equivalent for the <a href="https://golang.org">Go Programming Language.</a>
 </p>
-
-<details>
-<summary>News</summary>
-
-Upcoming release - Calliope
------------
-
-Hello people, I'm designing the new Iris version with the codename of "**Calliope**".
-
-Based on the **Greek goddesses** of ancient mythology, **Calliope** was one of the Muses, the muse of epic poetry, daughter of Zeus and Mnemosyne and the wisest of the Muses.
-
-The next, tactical, month release *should be published at the **1 May of 2017** *.
-
-I am making my bests to catch up this deadline, so I'm very busy these days. Sorry for being late to answer to your questions!
-
-**UPDATE: 6 May 2017**
-
-The release could be published at the first may of 2017 but it was postponed.
-
-The below tasks should be completed before publishing the new release: 
-- The review, of the new release's specifications that I wrote, should be ready at the next couple of days.
-- The results from our beta testers may take a little more but it worths the waiting.
-</details>
 
 What you say about Iris ✌
 -----------
@@ -71,6 +42,9 @@ src="https://github.com/iris-contrib/website/raw/gh-pages/assets/gif_link_to_yt.
 <a href="https://www.youtube.com/watch?v=jGx0LkuUs4A">
 <img width ="300" src="https://github.com/iris-contrib/website/raw/gh-pages/assets/gif_link_to_yt2.gif" alt="What people say" />
 </a>
+<br/>
+
+If you're coming from <a href="https://nodejs.org/en/">Node.js</a> world, this is the <a href="https://github.com/expressjs/express">expressjs</a> equivalent for the <a href="https://golang.org">Go Programming Language.</a><br/>
 
 </p>
 
@@ -227,9 +201,6 @@ The only requirement is the [Go Programming Language](https://golang.org/dl/), a
 $ go get gopkg.in/kataras/iris.v6
 ```
 
-For further installation support, navigate [here](http://support.iris-go.com/d/16-how-to-install-iris-web-framework).
-
-
 Overview
 -----------
 
@@ -385,17 +356,6 @@ Support
 - :earth_americas: post [an article](https://dzone.com/articles/a-url-shortener-service-using-go-iris-and-bolt-ger) or [tweet](https://twitter.com/gelnior/status/769100480706379776) and share it with your neighbor
 
 
-<!--It's true that I am spending all my available time for Iris and its related projects, therefore I have no income value.
-
-However, I am not asking from people to change the system. I know that the majority of us(devs) don't really care how authors of projects like Iris survive. I totally understand that.
-
-If somebody out there can
-help developers like me to worry less about daily life's dilemmas it would be easier for them to make the particular project(s) even better.
-There are no limits to the Iris' potentials.
-
-
-I am a realistic person. If things won't change for my daily life I will be forced to give Iris' managment to somebody else(that community could trust).-->
-
 Buy me a cup of coffee?
 ------------
 
@@ -412,29 +372,6 @@ Feel free to send **any** amount through paypal
 
 
 Thanks for your gratitude and finance help ♡
-
-
-<!-- 
-
-Some of the benefits are listed here:
-
-- Your github username, after your approval, is visible at the top of the README page.
-- Access to the 'donors' [private chat room](https://kataras.rocket.chat/group/donors) gives you real-time assistance by Iris' Author.
-
---> 
-
-<!-- 
-
-### Become An Iris Sponsor
-
-Want to add your company's logo to our [website](http://iris-go.com)?
-
-Please contact me via email: kataras2006@hotmail.com
-
-Thank you!
-
--->
-
 
 Third Party Middleware
 ------------
@@ -465,87 +402,6 @@ Here is a small list of Iris compatible middleware, I'm sure you can find more:
 | [digits](https://github.com/bamarni/digits) | [Bilal Amarni](https://github.com/bamarni) | Middleware that handles [Twitter Digits](https://get.digits.com/) authentication |
 
 Feel free to put up a [PR](https://github.com/iris-contrib/middleware) your middleware!
-
-<!-- 
-
-FAQ
------------
-
-<p>
-
-
-
-</p>
-
-> Q: OK Iris is really fast, but my current website does not need that performance at the moment, are there other reasons to move into Iris?
-
-
-Iris is fully vendored. That means it is independent of any API changes in the used libraries and **will work seamlessly in the future**!
-
-The size of the executable file is a critical part of the Application Deployment Process.
-
-Two very simple identical applications, the first was written with `iris` and the second with a simple golang router.
-
- - _iris_ had `8.505 KB` overall file size
- - _gin_ had `9.029 KB` overall file size
- - _net/http_ had produced an executable file with `5.380 KB` size.
-
-
-> Iris has built'n support for the most of the features that you will use to craft your perfect web application, while the golang router(gin & httprouter alone) doesn't. Imagine what would happened if the simple app we created would use `sessions`, `websockets`, `view engine`... I tested that too, `gin` and `net/http` had produced the x3 of their original size, **while `iris application`' overall executable filesize remained stable**!
-
-
-**Applications that are written using Iris produce smaller file size even if they use more features** than a simple router library!
-
-
-Iris always follows the latest trends and best practices. Iris is the **Secret To Staying One Step Ahead of Your Competition**.
-
-
-Iris is **a high-performance** tool, but it doesn't stops there. Performance depends on your application too, **Iris helps you to make the right choices** on every step.
-
-**Familiar** and easy **API**. Sinatra-like REST API.
-
-Contains examples and documentation for all its features.
-
-Iris is a `low-level access` web framework, you always know what you're doing.
-
-You'll **never miss a thing** from `net/http`, but if you do on some point, no problem because Iris is fully compatible with stdlib, you still have access to `http.ResponseWriter` and `http.Request`, you can adapt any third-party middleware of form `func(http.ResponseWriter, *http.Request, next http.HandlerFunc)` as well.
-
-Iris is a community-driven project, **you suggest and I code**.
-
-Unlike other repositories, this one is **very active**. When you post an issue, you get an answer at the next couple of minutes(hours at the worst). If you find a bug, **I am obliged to fix** that on the same day.
-
-
-Click the below animation to see by your self what people, like you, say about Iris.
-
-<a href="https://www.youtube.com/watch?v=jGx0LkuUs4A">
-<img src="https://github.com/iris-contrib/website/raw/gh-pages/assets/gif_link_to_yt2.gif" alt="What people say" />
-</a>
-
-
-
-> Q: Why no `serverless`?
-
-New web developers are so enthusiastic about the idea of `serverless` and `AWS`. Most of the experienced developers we already know that we shouldn't use these things for our critical parts of our application.
-
-
-**`Serverless and AWS` Are Wonderful—Until They Go Wrong.**  There was a flash-point (at 28 February of 2017) where the 'internet was offline' and most of the sites, including isitdownrightnow.com,  were down or operated very slow! Why? Because of `serverless` and `AmazonS3`.
-Please think twice before moving your code into `serverless`, **instead, use web frameworks that are created for servers that you control**, i.e Iris.
-
-Proof of concept:
-
-- [Washington Post](https://www.washingtonpost.com/news/the-switch/wp/2017/02/28/why-a-whole-slew-of-websites-are-suddenly-down-or-working-slowly)
-- [CNN](http://money.cnn.com/2017/02/28/technology/amazon-web-services-outages/index.html)
-- [CNET](https://www.cnet.com/news/no-the-internet-is-not-broken-amazon-web-services-is-just-having-issues/?ftag=COS-05-10-aa0a&linkId=34980800)
-- [MIT Technology Review](https://www.technologyreview.com/s/603738/centralized-web-services-are-wonderful-until-they-go-wrong/?_ga=1.82562070.1263144274.1488319022)
-- [GolangNews](https://golangnews.com/stories/1835-serverless-is-wonderfuluntil-they-go-wrong.)
-
-
-
-
-
-Explore [these questions](http://support.iris-go.com/) and join to our [community chat][Chat]!
-
--->
 
 Testing
 ------------

@@ -6,87 +6,24 @@
 
 	http://support.iris-go.com
 
-_Update: 18 May 2017_
+## Sa, 03 June 2017
 
-Hello Community, @kataras sent me a report of some of the improvements he was coding for the last two months. 
-Here is a small preview of that report:
- 
-Website
-Thanks to [Santosh Anand](https://github.com/santoshanand) the http://iris-go.com has been upgraded and it's awesome!
+New version 7 released.
 
-[Santosh](https://github.com/santoshanand) is a freelancer, he has a good knowledge of nodejs and express js, Android, iOS, React Native, Vue.js etc, if you need a developer to find or create a solution for your problem or task, please contact with him.
+Navigate to the [master](https://github.com/kataras/iris/tree/master) branch for more.
 
-As Gerasimos explained to me, he will provide you more information about [Santosh Anand](https://github.com/santoshanand)'s profile later on.
+This version, v6, will work "forever" by-design, it uses the vendor directory feature, so you get truly reproducible builds, as this method guards against upstream renames and delete.
 
-People
-- Some specifications will be published to help people with interest to understand how Iris works under the hood
-- Every level of the framework's API has been simplified, code is a lot easier to read
-- Guidelines for people who wants to contribute to the Iris project will be, finally, published. PRs can be approved after 2 or more code reviews
+Developers are not forced to upgrade to the version 7 if they don't really need it. 
 
-General
-- Desktop notifications for common errors, online solution is visible when user click on the "Balloon" (Can be turned off)
-- Tray icon with useful links, including "docs and examples", "get free support", "chat with us" (Can be turned off)
-- Several enhancements for typescript transpiler, view engine, websocket server and sessions manager 
+## v5 -> v6 
 
-Routing
-- New custom interpreter including parser and evaluator for routes' path, i.e `/users/{userid:int min(1)}`, `/users/{username:string regexp(...)`, `/assets/{file:path}` with custom "macros" and more (Optional, the old syntax is totally valid and safe)
-- Remove of gorillamux, it's useless. The new way is faster than anything else we have seen in Go so far.
-- Subdomains matching improvements
-- Simplify API, i.e Handlers are now standalone functions, no need for `HandleFunc,UseFunc,DoneFunc,UseGlobalFunc`, only `Handle,Use,Done,UseGlobal`
-- General speed improvements
-- Cache with expiration, rules can be setted per route or globally
+Users already notified for some breaking-changes, this section will help you
+to adapt the new changes to your application, it contains an overview of the new features too.
 
-Server
-- Performance boost up to 8-12% on 5kkk+ connections
-- Schedule custom tasks(with cancelation) when server is running
-- Future Go1.9's [ServeTLS](https://go-review.googlesource.com/c/38114/2/src/net/http/server.go) has already adopted here
-- New `Done` and `Err` channels to catch shutdown or any errors
-- Able to set custom underline *http.Server(s) under the Iris' Server Supervisor  
-- Proxy removed, net/http has its own and it's good
-- New tcp listening methods are easier to use, simplier to read
-
-Context
-- Easy way to change Iris' default `Context` with a custom one
-- Custom HTTP errors are fired when request is done , automatically
-- `ResponseWriter().SetBeforeFlush(...)` works for Flush and HTTP/2 Push, respectfully
-- `JSON, JSONP, XML, Markdown, HTML` faster
-- Able to set `ViewData` and `ViewLayout` via middleware when executing a template
-- Several improvements under the `Request transactions` 
-- And 16+ more additions, new features and API simplifications, will be documented when @kataras decide to publish the new release at github.
-
-
-## 6.1.4 -> 6.2.0 (√Νεxτ)
-
-_Update: 12 April 2017_
-
-```
-Many of you, including myself, thought that Gerasimos is not accepting any PRs, this is wrong.
-
-I did a long PR, which actually fixes some bugs and integrations with the godep tool, on a project that he's contributing too.
-
-The next day I'm logged into my personal twitter and I saw a message written by him.
-
-He, @kataras, wrote me that he was really impressed by the time I spent to actually fix a bug on an Iris sub-project.
-He told me that no one did that before and he asked me if I have more time to help these days on the Iris project too.
-
-And, Here I am! Introducing myself to the most clever community!
-```
-
-```
-Hello,
-my name is Esemplastic.
-
-Iris' author, @kataras, is very busy these days on designing the new Iris' release which will contain even more prototypes and it will break any rules you knew so far.
-I took a sneak preview of it, don't tell to him!
-
-
-I'm the temporary maintainer of this open-source project and your new friend.
-```
 
 -  **FIX**: Upgrade the [httpcache](https://github.com/geekypanda/httpcache) vendor. As requested [here](http://support.iris-go.com/d/44-upgrade-httpcache-module).
 
-
-_Update: 28 March 2017_
 
 - **View**: Provide an easier method on the community's question about "injecting" additional data outside of the route's main handler which calls the .Render, via middleware. 
 	- As discussed [above](http://support.iris-go.com/d/27-using-middleware-to-inject-properties-for-templates). 
@@ -102,18 +39,6 @@ _Update: 12 March 2017_
 - Enhance per-party custom http errors (now it works on any wildcard path too).
 - Add a third parameter on `app.OnError(...)` for custom http errors with regexp validation, see [status_test.go](https://github.com/kataras/iris/blob/v6/status_test.go) for an example.
 - Add a `context.ParamIntWildcard(...)` to skip the first slash, useful for wildcarded paths' parameters.
-
-
-> Prepare for nice things, tomorrow is Iris' first birthday!
-
-
-_Update: 28 Feb 2017_
-
-> Note: I want you to know that I spent more than 200 hours (16 days of ~10-15 hours per-day, do the math) for this release, two days to write these changes, please read the sections before think that you have an issue and post a new question, thanks!
-
-
-Users already notified for some breaking-changes, this section will help you
-to adapt the new changes to your application, it contains an overview of the new features too.
 
 - Shutdown with `app.Shutdown(context.Context) error`, no need for any third-parties, with `EventPolicy.Interrupted` and Go's 1.8 Gracefully Shutdown feature you're ready to go!
 - HTTP/2 Go 1.8 `context.Push(target string, opts *http.PushOptions) error` is supported, example can be found [here](https://github.com/kataras/iris/blob/v6/adaptors/websocket/_examples/websocket_secure/main.go)
