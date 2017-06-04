@@ -41,6 +41,8 @@ cover the internal changes, the difference is so big that anybody can see them w
 
 ## Changes from [v6](https://github.com/kataras/iris/tree/v6)
 
+The whole framework was re-written from zero but I tried to keep the most common public API that iris developers use.
+
 Vendoring /w update 
 
 The previous vendor action for v6 was done by-hand, now I'm using the [go dep](https://github.com/golang/dep) tool, I had to do
@@ -52,17 +54,20 @@ by go dep, but they had lines with the `typealias` feature, which is not ready b
 - fix "cannot use internal package" at golang/x/net/ipv4 and ipv6 packages
 	- rename the interal folder to was-internal, everywhere and fix its references.
 - fix "main redeclared in this block"
-	- remove the examples folder from everywhere.
+	- remove all examples folders.
+- remove main.go files on jsondiff lib, used by gavv/httpexpect, produces errors on `test -v ./...` while jd and jp folders are not used at all.
 
 The go dep tool does what is says, as expected, don't be afraid of it now.
 I am totally recommending this tool for package authors, even if it's in its alpha state.
 I remember when Iris was in its alpha state and it had 4k stars on its first weeks/or month and that helped me a lot to fix reported bugs by users and make the framework even better, so give love to go dep from today!
 
 General
+
+- Several enhancements for the typescript transpiler, view engine, websocket server and sessions manager
 - All `Listen` methods replaced with a single `Run` method, see [here](https://github.com/kataras/iris/tree/master/_examples/beginner/listening)
 - Configuration, easier to modify the defaults, see [here](https://github.com/kataras/iris/tree/master/_examples/beginner/cofiguration)
 - `HandlerFunc` removed, just `Handler` of `func(context.Context)` where context.Context derives from `import "github.com/kataras/iris/context"` (on August this import path will be optional)
-    - Simplify API, i.e instead of all these, `Handle,HandleFunc,Use,UseFunc,Done,DoneFunc,UseGlobal,UseGlobalFunc` use `Handle,Use,Done,UseGlobal`.
+    - Simplify API, i.e: instead of `Handle,HandleFunc,Use,UseFunc,Done,DoneFunc,UseGlobal,UseGlobalFunc` use `Handle,Use,Done,UseGlobal`.
 - Response time decreased even more (9-35%, depends on the application)
 - The `Adaptors` idea replaced with a more structural design pattern, but you have to apply these changes: 
     - `app.Adapt(view.HTML/Pug/Amber/Django/Handlebars...)` -> `app.AttachView(view.HTML/Pug/Amber/Django/Handlebars...)` 
@@ -80,7 +85,7 @@ Routing
         - `{firstname:alphabetical}`,
         - `{requestfile:file}` ,
         - `{mylowercaseParam regexp([a-z]+)}`.
-        - The previous syntax of `:param` and `*param` syntax still working as expected. Previous rules for paths confliction remain as they were.
+        - The previous syntax of `:param` and `*param` still working as expected. Previous rules for paths confliction remain as they were.
             - Also, path parameter names should be only alphabetical now, numbers and symbols are not allowed (for your own good, I have seen a lot the last year...).
 
 Click [here](https://github.com/kataras/iris/tree/master/_examples/beginner/routing) for details.
@@ -91,12 +96,12 @@ Context
     - in order to be able to use a custom context and/or catch lifetime like `BeginRequest` and `EndRequest` from context itself, see below
 - `context.JSON, context.JSONP, context.XML, context.Markdown, context.HTML` work faster
 - `context.Render("filename.ext", bindingViewData{}, options) ` -> `context.View("filename.ext")`
-    - `View` renders only templates, it will not try to search if you have a restful renderer adapted, because, now, you can do it via method overloading using a custom Context.
+    - `View` renders only templates, it will not try to search if you have a restful renderer adapted, because, now, you can do it via method overriding using a custom Context.
     - Able to set `context.ViewData` and `context.ViewLayout` via middleware when executing a template.
 - `context.SetStatusCode(statusCode)` -> `context.StatusCode(statusCode)`
     - which is equivalent with the old `EmitError` too:
         - if status code >=400 given can automatically fire a custom http error handler if response wasn't written already.
-    - `context.GetStatusCode` -> `context.GetStatusCode()`.
+    - `context.StatusCode()` -> `context.GetStatusCode()`
     - `app.OnError` -> `app.OnErrorCode`
     - Errors per party are removed by-default, you can just use one global error handler with logic like "if path starts with 'prefix' fire this error handler, else...". 
 - Easy way to change Iris' default `Context` with a custom one, see [here](https://github.com/kataras/iris/tree/master/_examples/intermediate/custom-context)
@@ -109,7 +114,6 @@ with the status code that user gave with `context.StatusCode` or with `200 OK`, 
     - **the new API is even more easier to read, understand and use.**
 
 Server
-- Several enhancements for the typescript transpiler, view engine, websocket server and sessions manager 
 - Able to set custom underline *http.Server(s) with new Host (aka Server Supervisor) feature 
     - `Done` and `Err` channels to catch shutdown or any errors on custom hosts,
     - Schedule custom tasks(with cancelation) when server is running, see [here](https://github.com/kataras/iris/tree/master/_examples/intermediate/graceful-shutdown)

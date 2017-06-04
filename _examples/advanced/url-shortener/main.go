@@ -13,9 +13,9 @@ import (
 	"time"
 
 	"github.com/boltdb/bolt"
+
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/context"
-
 	"github.com/kataras/iris/view"
 )
 
