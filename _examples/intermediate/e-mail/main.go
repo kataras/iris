@@ -2,12 +2,14 @@ package main
 
 import (
 	"bytes"
+	"html/template"
 
 	"github.com/kataras/go-mailer"
 	"gopkg.in/kataras/iris.v6"
 	"gopkg.in/kataras/iris.v6/adaptors/view"
 	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
 )
+var t = template.Must(template.ParseFiles(filepath.Join("templates", "mail_body.html")))
 
 func main() {
 
@@ -61,11 +63,13 @@ func main() {
 		// the rest of the parameters are the same and the behavior is the same as ctx.Render,
 		// except the 'where to render'
 		buff := &bytes.Buffer{}
+		data := map[string]string{
+			"Message": "This is the rich message again",
+			"Footer":  "The footer of the email!",
+		}
+		t.Execute(buf, data)
 
-		app.Render(buff, "body.html", iris.Map{
-			"Message": " his is the rich message body sent by a template!!",
-			"Footer":  "The footer of this e-mail!",
-		})
+
 		content := buff.String()
 
 		err := mailService.Send("iris e-mail just t3st subject", content, to...)
