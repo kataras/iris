@@ -165,9 +165,9 @@ $ rizla main.go
 
 I'm sorry for taking this personally but I really need to thanks each one of them because they stood up [♡](https://github.com/kataras/iris#support) for me when others trying to "bullying" my personality in order to deflame Iris. 
 
-All of us should read and repsect the official [golang](https://golang.org/conduct) and [iris](CODE-OF-CONDUCT.md) community **Code of Conduct**. This type of commitment and communication is the way of making Go great.
+All of us should read and respect the official [golang](https://golang.org/conduct) and [iris](CODE-OF-CONDUCT.md) community **Code of Conduct**. This type of commitment and communication is the way of making Go great.
 
-<!-- on each chance, i.e when iris posts were trending on sites like dzone and medium they spamming an awful full of lies and deflamation blog post. We all should read and repsect the official golang's and iris' Code of Conduct. -->
+<!-- on each chance, i.e when iris posts were trending on sites like dzone and medium they spamming an awful full of lies and deflamation blog post. We all should read and respect the official golang's and iris' Code of Conduct. -->
 
 [Juan Sebastián Suárez Valencia](https://github.com/Juanses) donated 20 EUR at September 11 of 2016
 
@@ -229,7 +229,7 @@ Feature Overview
 -----------
 
 - Focus on high performance
-- Build RESTful APIs with our expressionist path syntax, i.e `{userid:int min(1)}`, `{asset:path}`, `{lowercase: regexp([a-z]+)}`
+- Build RESTful APIs with our expressionist path syntax, i.e `{userid:int min(1)}`, `{asset:path}`, `{custom regexp([a-z]+)}`
 - Automatically install and serve certificates from https://letsencrypt.org
 - Robust routing and middleware ecosystem
 - Request-Scoped Transactions
