@@ -7,6 +7,7 @@ It doesn't contains "best ways" neither explains all its features. It's just a s
 ## Table of contents
 
 * [Level: Beginner](beginner)
+    * [Hello world](beginner/hello-world/main.go)
     * [Overview](beginner/overview/main.go)
     * [Listening](beginner/listening)
         * [Common, with address](beginner/listening/listen-addr/main.go)
