@@ -38,14 +38,19 @@ const (
         |_____|_|  |_||___/ `
 
 	// Version is the current version number of the Iris Web framework.
-	Version = "V7.0.0"
+	Version = "7.0.0"
 )
 
-// MethodNone is a Virtual method
-// to store the "offline" routes.
-//
-// Conversion for router.MethodNone.
-const MethodNone = router.MethodNone
+const (
+	// MethodNone is a Virtual method
+	// to store the "offline" routes.
+	//
+	// Conversion for router.MethodNone.
+	MethodNone = router.MethodNone
+	// NoLayout to disable layout for a particular template file
+	// Conversion for view.NoLayout
+	NoLayout = "iris.nolayout"
+)
 
 // Application is responsible to manage the state of the application.
 // It contains and handles all the necessary parts to create a fast web server.
@@ -198,7 +203,7 @@ func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 
 	if !app.config.DisableBanner {
 		// show the banner and the available keys to exit from app.
-		su.Schedule(host.WriteBannerTask(app.logger, banner+Version))
+		su.Schedule(host.WriteBannerTask(app.logger, banner+"V"+Version))
 	}
 
 	// give 5 seconds to the server to wait for the (idle) connections.

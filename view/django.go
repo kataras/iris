@@ -14,6 +14,7 @@ import (
 	"sync"
 
 	"github.com/flosch/pongo2"
+	"github.com/kataras/iris/context"
 )
 
 type (
@@ -267,6 +268,10 @@ func getPongoContext(templateData interface{}) pongo2.Context {
 
 	if contextData, isPongoContext := templateData.(pongo2.Context); isPongoContext {
 		return contextData
+	}
+
+	if contextData, isContextViewData := templateData.(context.Map); isContextViewData {
+		return pongo2.Context(contextData)
 	}
 
 	return templateData.(map[string]interface{})
