@@ -772,7 +772,7 @@ func TestTemplatesDisabled(t *testing.T) {
 	file := "index.html"
 	ip := "0.0.0.0"
 	errTmpl := "<h2>Template: %s\nIP: %s</h2><b>%s</b>"
-	expctedErrMsg := fmt.Sprintf(errTmpl, file, ip, "Error: Unable to execute a template. Trace: Templates are disabled '.Config.DisableTemplatesEngines = true' please turn that to false, as defaulted.\n")
+	expctedErrMsg := fmt.Sprintf(errTmpl, file, ip, "error: Unable to execute a template. Trace: Templates are disabled '.Config.DisableTemplatesEngines = true' please turn that to false, as defaulted.\n")
 
 	iris.Get("/renderErr", func(ctx *iris.Context) {
 		ctx.MustRender(file, nil)
