@@ -32,7 +32,6 @@ import (
 
 	"github.com/kataras/iris/core/errors"
 	"github.com/kataras/iris/sessions"
-	"github.com/kataras/iris/view"
 )
 
 type (
@@ -1484,14 +1483,14 @@ func (ctx *context) Gzip(enable bool) {
 
 const (
 	// NoLayout to disable layout for a particular template file
-	NoLayout = view.NoLayout
+	NoLayout = "iris.nolayout"
 )
 
 // ViewLayout sets the "layout" option if and when .View
 // is being called afterwards, in the same request.
 // Useful when need to set or/and change a layout based on the previous handlers in the chain.
 //
-// Note that the 'layoutTmplFile' argument can be setted to iris.NoLayout || view.NoLayout
+// Note that the 'layoutTmplFile' argument can be setted to iris.NoLayout || view.NoLayout || context.NoLayout
 // to disable the layout for a specific view render action,
 // it disables the engine's configuration's layout property.
 //
