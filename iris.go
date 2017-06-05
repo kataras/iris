@@ -38,6 +38,8 @@ const (
         |_____|_|  |_||___/ `
 
 	// Version is the current version number of the Iris Web framework.
+	//
+	// Look https://github.com/kataras/iris#where-can-i-find-older-versions for older versions.
 	Version = "7.0.0"
 )
 
@@ -48,8 +50,8 @@ const (
 	// Conversion for router.MethodNone.
 	MethodNone = router.MethodNone
 	// NoLayout to disable layout for a particular template file
-	// Conversion for view.NoLayout
-	NoLayout = "iris.nolayout"
+	// Conversion for view.NoLayout.
+	NoLayout = view.NoLayout
 )
 
 // Application is responsible to manage the state of the application.
