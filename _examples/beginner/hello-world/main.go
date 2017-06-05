@@ -10,5 +10,5 @@ func main() {
 	app.Handle("GET", "/", func(ctx context.Context) {
 		ctx.HTML("<b> Hello world! </b>")
 	})
-	app.Run(iris.Addr(":8080"))
+	app.Run(iris.Addr(":8080"), iris.WithTray)
 }
