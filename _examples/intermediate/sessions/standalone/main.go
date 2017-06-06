@@ -3,15 +3,15 @@ package main
 import (
 	"time"
 
-	"gopkg.in/kataras/iris.v6"
-	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
-	"gopkg.in/kataras/iris.v6/adaptors/sessions"
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/sessions"
 )
 
 func main() {
 	app := iris.New()
-	app.Adapt(iris.DevLogger()) // enable all (error) logs
-	app.Adapt(httprouter.New()) // select the httprouter as the servemux
+	// enable all (error) logs
+	// select the httprouter as the servemux
 
 	mySessions := sessions.New(sessions.Config{
 		// Cookie string, the session's client cookie name, for example: "mysessionid"
@@ -23,8 +23,6 @@ func main() {
 		// -1 means expire when browser closes
 		// or set a value, like 2 hours:
 		Expires: time.Hour * 2,
-		// the length of the sessionid's cookie's value
-		CookieLength: 32,
 		// if you want to invalid cookies on different subdomains
 		// of the same host, then enable it
 		DisableSubdomainPersistence: false,
@@ -32,16 +30,16 @@ func main() {
 	})
 
 	// OPTIONALLY:
-	// import "gopkg.in/kataras/iris.v6/adaptors/sessions/sessiondb/redis"
+	// import "github.com/kataras/iris/sessions/sessiondb/redis"
 	// or import "github.com/kataras/go-sessions/sessiondb/$any_available_community_database"
 	// mySessions.UseDatabase(redis.New(...))
 
-	app.Adapt(mySessions) // Adapt the session manager we just created.
+	app.AttachSessionManager(mySessions) // Attach the session manager we just created.
 
-	app.Get("/", func(ctx *iris.Context) {
+	app.Get("/", func(ctx context.Context) {
 		ctx.Writef("You should navigate to the /set, /get, /delete, /clear,/destroy instead")
 	})
-	app.Get("/set", func(ctx *iris.Context) {
+	app.Get("/set", func(ctx context.Context) {
 
 		//set session values
 		ctx.Session().Set("name", "iris")
@@ -50,24 +48,24 @@ func main() {
 		ctx.Writef("All ok session setted to: %s", ctx.Session().GetString("name"))
 	})
 
-	app.Get("/get", func(ctx *iris.Context) {
+	app.Get("/get", func(ctx context.Context) {
 		// get a specific key, as string, if no found returns just an empty string
 		name := ctx.Session().GetString("name")
 
 		ctx.Writef("The name on the /set was: %s", name)
 	})
 
-	app.Get("/delete", func(ctx *iris.Context) {
+	app.Get("/delete", func(ctx context.Context) {
 		// delete a specific key
 		ctx.Session().Delete("name")
 	})
 
-	app.Get("/clear", func(ctx *iris.Context) {
+	app.Get("/clear", func(ctx context.Context) {
 		// removes all entries
 		ctx.Session().Clear()
 	})
 
-	app.Get("/destroy", func(ctx *iris.Context) {
+	app.Get("/destroy", func(ctx context.Context) {
 
 		//destroy, removes the entire session data and cookie
 		ctx.SessionDestroy()
@@ -78,5 +76,5 @@ func main() {
 	// mySessions.DestroyByID
 	// mySessions.DestroyAll
 
-	app.Listen(":8080")
+	app.Run(iris.Addr(":8080"))
 }

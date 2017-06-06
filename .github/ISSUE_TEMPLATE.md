@@ -1,24 +1,5 @@
-Please answer these questions before submitting your issue. Thanks!
+**Do not create** issues or proposals neither request features **here**.
 
-- [x] I have read the [GopherBOOk](http://gopherbook.iris-go.com), [Examples](https://github.com/iris-contrib/examples), [Contributing File](https://github.com/kataras/iris/blob/v6/.github/CONTRIBUTING.md) and **I'm sure that this issue is not [posted](http://support.iris-go.com)** before.
+Navigate to the https://github.com/iris-contrib/community-board instead.
 
-
-### What version of Go are you using, minimum 1.8 (`go version`)?
-
-
-### What operating system and processor architecture are you using (`go env`)?
-
-
-### What version of Iris are you using?
-
-
-### What did you do?
-
-If possible, provide a recipe for reproducing the error.
-A complete runnable program is good.
-
-
-### What did you expect to see?
-
-
-### What did you see instead?
+[FAQ](https://github.com/iris-contrib/community-board#community-board)

@@ -1,20 +1,14 @@
 package main
 
 import (
-	"gopkg.in/kataras/iris.v6"
-	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
 )
 
 func main() {
 	app := iris.New()
-	// Adapt the "httprouter", faster,
-	// but it has limits on named path parameters' validation,
-	// you can adapt "gorillamux" if you need regexp path validation!
-	app.Adapt(httprouter.New())
-
-	app.HandleFunc("GET", "/", func(ctx *iris.Context) {
-		ctx.Writef("hello world\n")
+	app.Handle("GET", "/", func(ctx context.Context) {
+		ctx.HTML("<b> Hello world! </b>")
 	})
-
-	app.Listen(":8080")
+	app.Run(iris.Addr(":8080"), iris.WithTray)
 }

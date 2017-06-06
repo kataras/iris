@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:generate go run gen.go gen_common.go gen_plural.go
+//go:generate go run gen.go gen_common.go
 
 // Package number contains tools and data for formatting numbers.
 package number
@@ -134,4 +134,12 @@ func (n Info) Digit(asciiDigit rune) rune {
 // Symbol returns the string for the given symbol type.
 func (n Info) Symbol(t SymbolType) string {
 	return symData.Elem(int(symIndex[n.symIndex][t]))
+}
+
+func formatForLang(t language.Tag, index []byte) *Pattern {
+	for ; ; t = t.Parent() {
+		if x, ok := language.CompactIndex(t); ok {
+			return &formats[index[x]]
+		}
+	}
 }

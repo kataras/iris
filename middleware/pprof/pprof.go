@@ -1,59 +1,51 @@
-// Package pprof usage:  app.Get(iris.RouteWildcardPath("/debug/pprof", "action"), pprof.New())
-// for specific router adaptors follow these optional route syntax:
-// 'adaptors/httprouter':
-//
-// app := iris.New()
-// app.Adapt(httprouter.New())
-// app.Get("/debug/pprof/*action", pprof.New())
-//
-// 'adaptors/gorillamux':
-//
-// app := iris.New()
-// app.Adapt(gorillamux.New())
-// app.Get("/debug/pprof/{action:.*}", pprof.New())
+// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+// Package pprof provides native pprof support via middleware. See _examples/beginner/pprof
 package pprof
 
 import (
 	"net/http/pprof"
 	"strings"
 
-	"gopkg.in/kataras/iris.v6"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/core/handlerconv"
 )
 
 // New returns a new pprof (profile, cmdline, symbol, goroutine, heap, threadcreate, debug/block) Middleware.
-// Note: Route MUST have the last named parameter wildcard named '*action'
-func New() iris.HandlerFunc {
-	indexHandler := iris.ToHandler(pprof.Index)
-	cmdlineHandler := iris.ToHandler(pprof.Cmdline)
-	profileHandler := iris.ToHandler(pprof.Profile)
-	symbolHandler := iris.ToHandler(pprof.Symbol)
-	goroutineHandler := iris.ToHandler(pprof.Handler("goroutine"))
-	heapHandler := iris.ToHandler(pprof.Handler("heap"))
-	threadcreateHandler := iris.ToHandler(pprof.Handler("threadcreate"))
-	debugBlockHandler := iris.ToHandler(pprof.Handler("block"))
+// Note: Route MUST have the last named parameter wildcard named '{action:path}'
+func New() context.Handler {
+	indexHandler := handlerconv.FromStd(pprof.Index)
+	cmdlineHandler := handlerconv.FromStd(pprof.Cmdline)
+	profileHandler := handlerconv.FromStd(pprof.Profile)
+	symbolHandler := handlerconv.FromStd(pprof.Symbol)
+	goroutineHandler := handlerconv.FromStd(pprof.Handler("goroutine"))
+	heapHandler := handlerconv.FromStd(pprof.Handler("heap"))
+	threadcreateHandler := handlerconv.FromStd(pprof.Handler("threadcreate"))
+	debugBlockHandler := handlerconv.FromStd(pprof.Handler("block"))
 
-	return iris.HandlerFunc(func(ctx *iris.Context) {
-		ctx.SetContentType("text/html; charset=" + ctx.Framework().Config.Charset)
-
-		action := ctx.Param("action")
-		if len(action) > 1 {
-			if strings.Contains(action, "cmdline") {
-				cmdlineHandler.Serve((ctx))
-			} else if strings.Contains(action, "profile") {
-				profileHandler.Serve(ctx)
-			} else if strings.Contains(action, "symbol") {
-				symbolHandler.Serve(ctx)
-			} else if strings.Contains(action, "goroutine") {
-				goroutineHandler.Serve(ctx)
-			} else if strings.Contains(action, "heap") {
-				heapHandler.Serve(ctx)
-			} else if strings.Contains(action, "threadcreate") {
-				threadcreateHandler.Serve(ctx)
-			} else if strings.Contains(action, "debug/block") {
-				debugBlockHandler.Serve(ctx)
+	return func(ctx context.Context) {
+		ctx.ContentType("text/html")
+		actionPathParameter := ctx.Values().GetString("action")
+		if len(actionPathParameter) > 1 {
+			if strings.Contains(actionPathParameter, "cmdline") {
+				cmdlineHandler((ctx))
+			} else if strings.Contains(actionPathParameter, "profile") {
+				profileHandler(ctx)
+			} else if strings.Contains(actionPathParameter, "symbol") {
+				symbolHandler(ctx)
+			} else if strings.Contains(actionPathParameter, "goroutine") {
+				goroutineHandler(ctx)
+			} else if strings.Contains(actionPathParameter, "heap") {
+				heapHandler(ctx)
+			} else if strings.Contains(actionPathParameter, "threadcreate") {
+				threadcreateHandler(ctx)
+			} else if strings.Contains(actionPathParameter, "debug/block") {
+				debugBlockHandler(ctx)
 			}
 		} else {
-			indexHandler.Serve(ctx)
+			indexHandler(ctx)
 		}
-	})
+	}
 }

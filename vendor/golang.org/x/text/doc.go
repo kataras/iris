@@ -4,8 +4,9 @@
 
 //go:generate go run gen.go
 
-// text is a repository of text-related packages, such as character encodings,
-// text transformations, and locale-specific text handling.
+// text is a repository of text-related packages related to internationalization
+// (i18n) and localization (l10n), such as character encodings, text
+// transformations, and locale-specific text handling.
 package text
 
 // TODO: more documentation on general concepts, such as Transformers, use

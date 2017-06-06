@@ -3,15 +3,16 @@ package main
 import (
 	"time"
 
-	"gopkg.in/kataras/iris.v6"
-	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/cache"
+	"github.com/kataras/iris/context"
 )
 
-var testMarkdownContents = `## Hello Markdown
+var markdownContents = []byte(`## Hello Markdown
 
 This is a sample of Markdown contents
 
-
+ 
 
 Features
 --------
@@ -39,7 +40,7 @@ All features of Sundown are supported, including:
 *   **Fast processing**. It is fast enough to render on-demand in
     most web applications without having to cache the output.
 
-*   **Thread safety**. You can run multiple parsers in different
+*   **Routine safety**. You can run multiple parsers in different
     goroutines without ill effect. There is no dependence on global
     shared state.
 
@@ -51,32 +52,55 @@ All features of Sundown are supported, including:
 *   **Standards compliant**. Output successfully validates using the
     W3C validation tool for HTML 4.01 and XHTML 1.0 Transitional.
 
-	[this is a link](https://github.com/kataras/iris) `
+	[this is a link](https://github.com/kataras/iris) `)
 
+// Cache should not be used on handlers that contain dynamic data.
+// Cache is a good and a must-feature on static content, i.e "about page" or for a whole blog site.
 func main() {
 	app := iris.New()
-	// output startup banner and error logs on os.Stdout
-	app.Adapt(iris.DevLogger())
-	// set the router, you can choose gorillamux too
-	app.Adapt(httprouter.New())
 
-	app.Get("/hi", app.Cache(func(c *iris.Context) {
-		c.WriteString("Hi this is a big content, do not try cache on small content it will not make any significant difference!")
-	}, time.Duration(10)*time.Second))
+	// first argument is the handler which response's we want to apply the cache.
+	// if second argument, expiration, is <=time.Second then the cache tries to set the expiration from the "cache-control" maxage header's value(in seconds)
+	// and if that header is empty or not exist then it sets a default of 5 minutes.
+	writeMarkdownCached := cache.Cache(writeMarkdown, 10*time.Second) // or CacheHandler to get the handler
 
-	bodyHandler := func(ctx *iris.Context) {
-		ctx.Markdown(iris.StatusOK, testMarkdownContents)
-	}
+	app.Get("/", writeMarkdownCached.ServeHTTP)
+	// saves its content on the first request and serves it instead of re-calculating the content.
+	// After 10 seconds it will be cleared and resetted.
 
-	expiration := time.Duration(5 * time.Second)
-
-	app.Get("/", app.Cache(bodyHandler, expiration))
-
-	// if expiration is <=time.Second then the cache tries to set the expiration from the "cache-control" maxage header's value(in seconds)
-	// // if this header doesn't founds then the default is 5 minutes
-	app.Get("/cache_control", app.Cache(func(ctx *iris.Context) {
-		ctx.HTML(iris.StatusOK, "<h1>Hello!</h1>")
-	}, -1))
-
-	app.Listen(":8080")
+	app.Run(iris.Addr(":8080"))
 }
+
+func writeMarkdown(ctx context.Context) {
+	// tap multiple times the browser's refresh button and you will
+	// see this println only once every 10 seconds.
+	println("Handler executed. Content refreshed.")
+
+	ctx.Markdown(markdownContents)
+}
+
+// Notes:
+// Cached handler is not changing your pre-defined headers,
+// so it will not send any additional headers to the client.
+// The cache happening at the server-side's memory.
+//
+// see "DefaultRuleSet" in "cache/client/ruleset.go" to see how you can add separated
+// rules to each of the cached handlers (`.AddRule`) with the help of "/cache/client/rule"'s definitions.
+//
+// The default rules are:
+/*
+	    // #1 A shared cache MUST NOT use a cached response to a request with an
+		// Authorization header field
+		rule.HeaderClaim(ruleset.AuthorizationRule),
+		// #2 "must-revalidate" and/or
+		// "s-maxage" response directives are not allowed to be served stale
+		// (Section 4.2.4) by shared caches.  In particular, a response with
+		// either "max-age=0, must-revalidate" or "s-maxage=0" cannot be used to
+		// satisfy a subsequent request without revalidating it on the origin
+		// server.
+		rule.HeaderClaim(ruleset.MustRevalidateRule),
+		rule.HeaderClaim(ruleset.ZeroMaxAgeRule),
+		// #3 custom No-Cache header used inside this library
+		// for BOTH request and response (after get-cache action)
+		rule.Header(ruleset.NoCacheRule, ruleset.NoCacheRule)
+*/

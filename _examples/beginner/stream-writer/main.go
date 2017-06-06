@@ -5,20 +5,16 @@ import (
 	"io"
 	"time" // showcase the delay
 
-	"gopkg.in/kataras/iris.v6"
-	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
 )
 
 func main() {
 	app := iris.New()
-	// output startup banner and error logs on os.Stdout
-	app.Adapt(iris.DevLogger())
-	// set the router, you can choose gorillamux too
-	app.Adapt(httprouter.New())
 
 	timeWaitForCloseStream := 4 * time.Second
 
-	app.Get("/", func(ctx *iris.Context) {
+	app.Get("/", func(ctx context.Context) {
 		i := 0
 		// goroutine in order to no block and just wait,
 		// goroutine is OPTIONAL and not a very good option but it depends on the needs
@@ -39,7 +35,7 @@ func main() {
 		time.Sleep(timeWaitForCloseStream)
 	})
 
-	app.Get("/alternative", func(ctx *iris.Context) {
+	app.Get("/alternative", func(ctx context.Context) {
 		// Send the response in chunks and wait for a second between each chunk.
 		ctx.StreamWriter(func(w io.Writer) bool {
 			for i := 1; i <= 4; i++ {
@@ -52,5 +48,5 @@ func main() {
 		})
 	})
 
-	app.Listen(":8080")
+	app.Run(iris.Addr(":8080"))
 }

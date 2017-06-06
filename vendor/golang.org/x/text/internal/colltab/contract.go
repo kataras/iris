@@ -6,9 +6,9 @@ package colltab
 
 import "unicode/utf8"
 
-// For a description of contractTrieSet, see text/collate/build/contract.go.
+// For a description of ContractTrieSet, see text/collate/build/contract.go.
 
-type contractTrieSet []struct{ l, h, n, i uint8 }
+type ContractTrieSet []struct{ L, H, N, I uint8 }
 
 // ctScanner is used to match a trie to an input sequence.
 // A contraction may match a non-contiguous sequence of bytes in an input string.
@@ -19,7 +19,7 @@ type contractTrieSet []struct{ l, h, n, i uint8 }
 // retains the state of the last match and leaves it up to the user to continue
 // the match at the appropriate points.
 type ctScanner struct {
-	states contractTrieSet
+	states ContractTrieSet
 	s      []byte
 	n      int
 	index  int
@@ -28,7 +28,7 @@ type ctScanner struct {
 }
 
 type ctScannerString struct {
-	states contractTrieSet
+	states ContractTrieSet
 	s      string
 	n      int
 	index  int
@@ -36,11 +36,11 @@ type ctScannerString struct {
 	done   bool
 }
 
-func (t contractTrieSet) scanner(index, n int, b []byte) ctScanner {
+func (t ContractTrieSet) scanner(index, n int, b []byte) ctScanner {
 	return ctScanner{s: b, states: t[index:], n: n}
 }
 
-func (t contractTrieSet) scannerString(index, n int, str string) ctScannerString {
+func (t ContractTrieSet) scannerString(index, n int, str string) ctScannerString {
 	return ctScannerString{s: str, states: t[index:], n: n}
 }
 
@@ -72,15 +72,15 @@ func (s *ctScanner) scan(p int) int {
 		// cannot match discontiguous UTF-8 in a normalized string. We could let
 		// a negative value of e.n mean that we can set s.done = true and avoid
 		// the need for additional matches.
-		if c >= e.l {
-			if e.l == c {
+		if c >= e.L {
+			if e.L == c {
 				p++
-				if e.i != noIndex {
-					s.index = int(e.i)
+				if e.I != noIndex {
+					s.index = int(e.I)
 					s.pindex = p
 				}
-				if e.n != final {
-					i, states, n = 0, states[int(e.h)+n:], int(e.n)
+				if e.N != final {
+					i, states, n = 0, states[int(e.H)+n:], int(e.N)
 					if p >= len(str) || utf8.RuneStart(str[p]) {
 						s.states, s.n, pr = states, n, p
 					}
@@ -89,10 +89,10 @@ func (s *ctScanner) scan(p int) int {
 					return p
 				}
 				continue
-			} else if e.n == final && c <= e.h {
+			} else if e.N == final && c <= e.H {
 				p++
 				s.done = true
-				s.index = int(c-e.l) + int(e.i)
+				s.index = int(c-e.L) + int(e.I)
 				s.pindex = p
 				return p
 			}
@@ -114,15 +114,15 @@ func (s *ctScannerString) scan(p int) int {
 		// cannot match discontiguous UTF-8 in a normalized string. We could let
 		// a negative value of e.n mean that we can set s.done = true and avoid
 		// the need for additional matches.
-		if c >= e.l {
-			if e.l == c {
+		if c >= e.L {
+			if e.L == c {
 				p++
-				if e.i != noIndex {
-					s.index = int(e.i)
+				if e.I != noIndex {
+					s.index = int(e.I)
 					s.pindex = p
 				}
-				if e.n != final {
-					i, states, n = 0, states[int(e.h)+n:], int(e.n)
+				if e.N != final {
+					i, states, n = 0, states[int(e.H)+n:], int(e.N)
 					if p >= len(str) || utf8.RuneStart(str[p]) {
 						s.states, s.n, pr = states, n, p
 					}
@@ -131,10 +131,10 @@ func (s *ctScannerString) scan(p int) int {
 					return p
 				}
 				continue
-			} else if e.n == final && c <= e.h {
+			} else if e.N == final && c <= e.H {
 				p++
 				s.done = true
-				s.index = int(c-e.l) + int(e.i)
+				s.index = int(c-e.L) + int(e.I)
 				s.pindex = p
 				return p
 			}

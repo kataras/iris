@@ -1,0 +1,3 @@
+.*Usage of filter 'banned_filter' is not allowed \(sandbox restriction active\).
+.*Usage of tag 'banned_tag' is not allowed \(sandbox restriction active\).
+\[Error \(where: fromfile\) | Line 1 Col 12 near '../../test_not_existent'\] open : no such file or directory

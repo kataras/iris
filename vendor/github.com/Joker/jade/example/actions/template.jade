@@ -1,0 +1,19 @@
+doctype html
+html(lang=en)
+	head
+		meta(charset=utf-8)
+		title Title
+	body
+		p ads
+		ul
+			li The name is {{.Name}}.
+			li The age is {{.Age}}.
+
+		range .Emails
+			div An email is {{.}}
+
+		with .Jobs
+			range .
+				div.
+				 An employer is {{.Employer}}
+				 and the role is {{.Role}}

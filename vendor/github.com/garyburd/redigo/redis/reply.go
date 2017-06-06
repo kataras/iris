@@ -391,3 +391,35 @@ func Int64Map(result interface{}, err error) (map[string]int64, error) {
 	}
 	return m, nil
 }
+
+// Positions is a helper that converts an array of positions (lat, long)
+// into a [][2]float64. The GEOPOS command returns replies in this format.
+func Positions(result interface{}, err error) ([]*[2]float64, error) {
+	values, err := Values(result, err)
+	if err != nil {
+		return nil, err
+	}
+	positions := make([]*[2]float64, len(values))
+	for i := range values {
+		if values[i] == nil {
+			continue
+		}
+		p, ok := values[i].([]interface{})
+		if !ok {
+			return nil, fmt.Errorf("redigo: unexpected element type for interface slice, got type %T", values[i])
+		}
+		if len(p) != 2 {
+			return nil, fmt.Errorf("redigo: unexpected number of values for a member position, got %d", len(p))
+		}
+		lat, err := Float64(p[0], nil)
+		if err != nil {
+			return nil, err
+		}
+		long, err := Float64(p[1], nil)
+		if err != nil {
+			return nil, err
+		}
+		positions[i] = &[2]float64{lat, long}
+	}
+	return positions, nil
+}

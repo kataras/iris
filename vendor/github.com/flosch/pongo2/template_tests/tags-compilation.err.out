@@ -1,0 +1,6 @@
+.*Unexpected EOF, expected tag elif or else or endif.
+.*If-condition is malformed.
+.*Block named 'test' already defined.*
+.*Name for 'endblock' must equal to 'block'\-tag's name \('test' != 'test2'\).
+.*Name for 'endblock' must equal to 'block'-tag's name \('test2' != 'xy'\).
+.*Either no or only one argument \(identifier\) allowed for 'endblock'.

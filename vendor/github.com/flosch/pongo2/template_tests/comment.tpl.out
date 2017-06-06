@@ -1,0 +1,39 @@
+empty single line comment
+
+
+filled single line comment
+
+
+filled single line comment with valid tags
+
+
+filled single line comment with invalid tags
+
+
+filled single line comment with invalid syntax
+
+
+empty block comment
+
+
+filled text single line block comment
+
+
+empty multi line block comment
+
+
+block comment with other tags inside of it
+
+
+block comment with invalid tags inside of it
+
+
+block comment with invalid syntax inside of it
+
+
+Regular tags between comments to verify it doesn't break in the lexer
+
+after if
+
+
+end of file

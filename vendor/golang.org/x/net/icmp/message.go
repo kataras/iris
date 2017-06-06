@@ -19,9 +19,9 @@ import (
 	"net"
 	"syscall"
 
-	"golang.org/x/net/internal/iana"
 	"golang.org/x/net/ipv4"
 	"golang.org/x/net/ipv6"
+	"golang.org/x/net/was-internal/iana"
 )
 
 // BUG(mikio): This package is not implemented on NaCl and Plan 9.

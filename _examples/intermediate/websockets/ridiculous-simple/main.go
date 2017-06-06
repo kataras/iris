@@ -3,9 +3,10 @@ package main
 import (
 	"fmt"
 
-	"gopkg.in/kataras/iris.v6"
-	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
-	"gopkg.in/kataras/iris.v6/adaptors/websocket"
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
+
+	"github.com/kataras/iris/websocket"
 )
 
 func handleConnection(c websocket.Connection) {
@@ -16,16 +17,16 @@ func handleConnection(c websocket.Connection) {
 		// Print the message to the console
 		fmt.Printf("%s sent: %s\n", c.Context().RemoteAddr(), msg)
 
-		// Write message back to browser
-		c.Emit("chat", msg)
+		// Write message back to the client message owner:
+		// c.Emit("chat", msg)
+
+		c.To(websocket.Broadcast).Emit("chat", msg)
 	})
 
 }
 
 func main() {
 	app := iris.New()
-	app.Adapt(iris.DevLogger())
-	app.Adapt(httprouter.New())
 
 	// create our echo websocket server
 	ws := websocket.New(websocket.Config{
@@ -36,13 +37,16 @@ func main() {
 
 	ws.OnConnection(handleConnection)
 
-	// Adapt the websocket server.
-	// you can adapt more than one of course.
-	app.Adapt(ws)
+	// Adapt the application to the websocket server.
+	ws.Attach(app)
 
-	app.Get("/", func(ctx *iris.Context) {
+	app.Get("/", func(ctx context.Context) {
 		ctx.ServeFile("websockets.html", false) // second parameter: enable gzip?
 	})
 
-	app.Listen(":8080")
+	// x2
+	// http://localhost:8080
+	// http://localhost:8080
+	// write something, press submit, see the result.
+	app.Run(iris.Addr(":8080"))
 }

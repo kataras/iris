@@ -1,0 +1,18 @@
+
+    New comment from another user user1
+    
+        Validated changed to True
+    
+    Comment's author name or date changed
+
+    
+    
+        Validated value not changed
+    
+    Comment's author name or date changed
+
+    New comment from another user user3
+    
+        Validated changed to False
+    
+    Comment's author name or date changed

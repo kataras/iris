@@ -1,8 +1,4 @@
-.settings
-.project
+# my own configuration for vs code, my lovely editor, if someone of you want this, contact with me
 .vscode
-2M_donation_timeline.cpd
-performance_tips.txt
-notes.txt
-organisations_using_iris.txt
-independent_developers_using_iris.txt
+# turn off these for now
+specs

@@ -1,3 +1,7 @@
+// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package httptest
 
 import (
@@ -6,7 +10,8 @@ import (
 	"testing"
 
 	"github.com/iris-contrib/httpexpect"
-	"gopkg.in/kataras/iris.v6"
+
+	"github.com/kataras/iris"
 )
 
 type (
@@ -26,30 +31,30 @@ func (o OptionSet) Set(c *Configuration) {
 
 // Configuration httptest configuration
 type Configuration struct {
-	// ExplicitURL If true then the url (should) be prepended manually, useful when want to test subdomains
-	// Default is false
-	ExplicitURL bool
+	// URL the base url.
+	// Defaults to empty string "".
+	URL string
 	// Debug if true then debug messages from the httpexpect will be shown when a test runs
-	// Default is false
+	// Defaults to false.
 	Debug bool
 }
 
 // Set implements the OptionSetter for the Configuration itself
 func (c Configuration) Set(main *Configuration) {
-	main.ExplicitURL = c.ExplicitURL
+	main.URL = c.URL
 	main.Debug = c.Debug
 }
 
 var (
-	// ExplicitURL If true then the url (should) be prepended manually, useful when want to test subdomains
-	// Default is false
-	ExplicitURL = func(val bool) OptionSet {
+	// URL if setted then it sets the httptest's BaseURL.
+	// Defaults to empty string "".
+	URL = func(schemeAndHost string) OptionSet {
 		return func(c *Configuration) {
-			c.ExplicitURL = val
+			c.URL = schemeAndHost
 		}
 	}
 	// Debug if true then debug messages from the httpexpect will be shown when a test runs
-	// Default is false
+	// Defaults to false.
 	Debug = func(val bool) OptionSet {
 		return func(c *Configuration) {
 			c.Debug = val
@@ -57,43 +62,34 @@ var (
 	}
 )
 
-// DefaultConfiguration returns the default configuration for the httptest
-// all values are defaulted to false for clarity
+// DefaultConfiguration returns the default configuration for the httptest.
 func DefaultConfiguration() *Configuration {
-	return &Configuration{ExplicitURL: false, Debug: false}
+	return &Configuration{URL: "", Debug: false}
 }
 
 // New Prepares and returns a new test framework based on the app
 // is useful when you need to have more than one test framework for the same iris instance
 // usage:
-// iris.Default.Get("/mypath", func(ctx *iris.Context){ctx.Write("my body")})
+// iris.Default.Get("/mypath", func(ctx context.Context){ctx.Write("my body")})
 // ...
 // e := httptest.New(iris.Default, t)
 // e.GET("/mypath").Expect().Status(iris.StatusOK).Body().Equal("my body")
 //
 // You can find example on the https://github.com/kataras/iris/glob/master/context_test.go
-func New(app *iris.Framework, t *testing.T, setters ...OptionSetter) *httpexpect.Expect {
+func New(app *iris.Application, t *testing.T, setters ...OptionSetter) *httpexpect.Expect {
 	conf := DefaultConfiguration()
 	for _, setter := range setters {
 		setter.Set(conf)
 	}
 
-	baseURL := ""
-	app.Boot()
-
-	if !conf.ExplicitURL {
-		baseURL = app.Config.VScheme + app.Config.VHost
-		// if it's still empty then set it to the default server addr
-		if baseURL == "" {
-			baseURL = iris.SchemeHTTP + iris.DefaultServerAddr
-		}
-
-	}
+	// disable logger
+	app.AttachLogger(nil)
+	app.Build()
 
 	testConfiguration := httpexpect.Config{
-		BaseURL: baseURL,
+		BaseURL: conf.URL,
 		Client: &http.Client{
-			Transport: httpexpect.NewBinder(app.Router),
+			Transport: httpexpect.NewBinder(app),
 			Jar:       httpexpect.NewJar(),
 		},
 		Reporter: httpexpect.NewAssertReporter(t),
@@ -109,7 +105,7 @@ func New(app *iris.Framework, t *testing.T, setters ...OptionSetter) *httpexpect
 }
 
 // NewInsecure same as New but receives a single host instead of the whole framework
-func NewInsecure(baseURL string, t *testing.T, setters ...OptionSetter) *httpexpect.Expect {
+func NewInsecure(t *testing.T, setters ...OptionSetter) *httpexpect.Expect {
 	conf := DefaultConfiguration()
 	for _, setter := range setters {
 		setter.Set(conf)
@@ -119,7 +115,7 @@ func NewInsecure(baseURL string, t *testing.T, setters ...OptionSetter) *httpexp
 	}
 
 	testConfiguration := httpexpect.Config{
-		BaseURL: baseURL,
+		BaseURL: conf.URL,
 		Client: &http.Client{
 			Transport: transport,
 			Jar:       httpexpect.NewJar(),

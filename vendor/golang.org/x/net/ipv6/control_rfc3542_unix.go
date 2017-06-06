@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"unsafe"
 
-	"golang.org/x/net/internal/iana"
+	"golang.org/x/net/was-internal/iana"
 )
 
 func marshalTrafficClass(b []byte, cm *ControlMessage) []byte {

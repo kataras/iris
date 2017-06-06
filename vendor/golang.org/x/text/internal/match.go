@@ -29,21 +29,23 @@ import (
 //
 // A Match will indicate an Exact match if the language matches after
 // canonicalization and High if the matched tag is a parent.
-func NewInheritanceMatcher(t []language.Tag) language.Matcher {
-	tags := make(inheritanceMatcher)
+func NewInheritanceMatcher(t []language.Tag) *InheritanceMatcher {
+	tags := &InheritanceMatcher{make(map[language.Tag]int)}
 	for i, tag := range t {
 		ct, err := language.All.Canonicalize(tag)
 		if err != nil {
 			ct = tag
 		}
-		tags[ct] = i
+		tags.index[ct] = i
 	}
 	return tags
 }
 
-type inheritanceMatcher map[language.Tag]int
+type InheritanceMatcher struct {
+	index map[language.Tag]int
+}
 
-func (m inheritanceMatcher) Match(want ...language.Tag) (language.Tag, int, language.Confidence) {
+func (m InheritanceMatcher) Match(want ...language.Tag) (language.Tag, int, language.Confidence) {
 	for _, t := range want {
 		ct, err := language.All.Canonicalize(t)
 		if err != nil {
@@ -51,7 +53,7 @@ func (m inheritanceMatcher) Match(want ...language.Tag) (language.Tag, int, lang
 		}
 		conf := language.Exact
 		for {
-			if index, ok := m[ct]; ok {
+			if index, ok := m.index[ct]; ok {
 				return ct, index, conf
 			}
 			if ct == language.Und {

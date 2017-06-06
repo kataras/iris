@@ -1,0 +1,4 @@
+{{ -(true || false) }}
+{{ simple.func_add("test", 5) }}
+{% for item in simple.multiple_item_list %} {{ simple.func_add("test", 5) }} {% endfor %}
+{{ simple.func_variadic_sum_int("foo") }}

@@ -1,0 +1,18 @@
+{% spaceless %}
+<div id="content">
+    <p>
+        This is a test! Mail me at
+
+             <a href="mailto:mail@example.tld">
+                mail@example.tld
+             </a>
+    </p>
+
+    <p>
+
+            Yep!
+
+    </p>
+
+</div>
+{% endspaceless %}

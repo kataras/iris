@@ -1,0 +1,4 @@
+extends recursion.parent.amber
+
+block main
+    block inner

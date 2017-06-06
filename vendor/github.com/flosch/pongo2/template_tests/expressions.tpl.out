@@ -1,0 +1,69 @@
+integers and complex expressions
+-90
+90
+-90
+90
+531440999967.000000
+
+floats
+5.500000
+5.172841
+False
+True
+
+mul/div
+10
+10.000000
+0
+13.250000
+0
+0.500000
+1000000.000000
+
+logic expressions
+False
+False
+True
+True
+False
+False
+True
+
+float comparison
+True
+False
+False
+True
+
+remainders
+0
+True
+1
+
+in/not in
+True
+True
+False
+False
+True
+True
+False
+True
+True
+False
+True
+False
+
+issue #48 (associativity for infix operators)
+33
+12
+0
+
+issue #64 (uint comparison with int const)
+8
+True
+False
+True
+True
+False
+False

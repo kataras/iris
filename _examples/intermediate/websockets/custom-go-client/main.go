@@ -2,19 +2,17 @@ package main
 
 // Run first `go run main.go server`
 // and `go run main.go client` as many times as you want.
-// Originally written by: github.com/antlaw to describe an old kataras/go-websocket's issue
-// which you can find here: https://github.com/kataras/go-websocket/issues/24
+// Originally written by: github.com/antlaw to describe an old issue.
 import (
 	"fmt"
 	"os"
 	"strings"
 	"time"
 
-	"gopkg.in/kataras/iris.v6"
-	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
-	"gopkg.in/kataras/iris.v6/adaptors/websocket"
-
 	xwebsocket "golang.org/x/net/websocket"
+
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/websocket"
 )
 
 // WS is the current websocket connection
@@ -65,7 +63,7 @@ func recvUntilErr() {
 //ConnectWebSocket connect a websocket to host
 func ConnectWebSocket() error {
 	var origin = "http://localhost/"
-	var url = "ws://localhost:9090/socket"
+	var url = "ws://localhost:8080/socket"
 	var err error
 	WS, err = xwebsocket.Dial(url, "", origin)
 	return err
@@ -136,14 +134,14 @@ func OnConnect(c websocket.Connection) {
 // ServerLoop listen and serve websocket requests
 func ServerLoop() {
 	app := iris.New()
-	app.Adapt(iris.DevLogger()) // enable all (error) logs
-	app.Adapt(httprouter.New()) // select the httprouter as the servemux
+	// enable all (error) logs
+	// select the httprouter as the servemux
 
 	ws := websocket.New(websocket.Config{Endpoint: "/socket"})
-	app.Adapt(ws)
+	ws.Attach(app)
 
 	ws.OnConnection(OnConnect)
-	app.Listen("0.0.0.0:9090")
+	app.Run(iris.Addr(":8080"))
 
 }
 

@@ -5,8 +5,7 @@
 package search
 
 import (
-	"golang.org/x/text/collate/colltab"
-	newcolltab "golang.org/x/text/internal/colltab"
+	"golang.org/x/text/internal/colltab"
 )
 
 // TODO: handle variable primary weights?
@@ -44,7 +43,7 @@ func isIgnorable(m *Matcher, e colltab.Elem) bool {
 
 // TODO: Use a Boyer-Moore-like algorithm (probably Sunday) for searching.
 
-func (p *Pattern) forwardSearch(it *newcolltab.Iter) (start, end int) {
+func (p *Pattern) forwardSearch(it *colltab.Iter) (start, end int) {
 	for start := 0; it.Next(); it.Reset(start) {
 		nextStart := it.End()
 		if end := p.searchOnce(it); end != -1 {
@@ -55,7 +54,7 @@ func (p *Pattern) forwardSearch(it *newcolltab.Iter) (start, end int) {
 	return -1, -1
 }
 
-func (p *Pattern) anchoredForwardSearch(it *newcolltab.Iter) (start, end int) {
+func (p *Pattern) anchoredForwardSearch(it *colltab.Iter) (start, end int) {
 	if it.Next() {
 		if end := p.searchOnce(it); end != -1 {
 			return 0, end
@@ -90,7 +89,7 @@ func tertiary(e colltab.Elem) int {
 // to be filled with collation elements of the first segment, where n is the
 // number of source bytes consumed for this segment. It will return the end
 // position of the match or -1.
-func (p *Pattern) searchOnce(it *newcolltab.Iter) (end int) {
+func (p *Pattern) searchOnce(it *colltab.Iter) (end int) {
 	var pLevel [4]int
 
 	m := p.m

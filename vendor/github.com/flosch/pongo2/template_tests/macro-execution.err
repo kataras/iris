@@ -1,0 +1,1 @@
+{% macro number() export %}No number here.{% endmacro %}{{ number() }}

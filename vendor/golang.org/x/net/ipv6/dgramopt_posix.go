@@ -10,7 +10,7 @@ import (
 	"net"
 	"syscall"
 
-	"golang.org/x/net/internal/netreflect"
+	"golang.org/x/net/was-internal/netreflect"
 )
 
 // MulticastHopLimit returns the hop limit field value for outgoing

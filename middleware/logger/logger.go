@@ -1,21 +1,25 @@
+// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+// Package loger provides request logging via middleware. See _examples/beginner/request-logger
 package logger
 
 import (
-	"fmt"
 	"strconv"
 	"time"
 
-	"gopkg.in/kataras/iris.v6"
+	"github.com/kataras/iris/context"
 )
 
-type loggerMiddleware struct {
+type requestLoggerMiddleware struct {
 	config Config
 }
 
 // Serve serves the middleware
-func (l *loggerMiddleware) Serve(ctx *iris.Context) {
+func (l *requestLoggerMiddleware) ServeHTTP(ctx context.Context) {
 	//all except latency to string
-	var date, status, ip, method, path string
+	var status, ip, method, path string
 	var latency time.Duration
 	var startTime, endTime time.Time
 	path = ctx.Path()
@@ -26,11 +30,10 @@ func (l *loggerMiddleware) Serve(ctx *iris.Context) {
 	ctx.Next()
 	//no time.Since in order to format it well after
 	endTime = time.Now()
-	date = endTime.Format("01/02 - 15:04:05")
 	latency = endTime.Sub(startTime)
 
 	if l.config.Status {
-		status = strconv.Itoa(ctx.ResponseWriter.StatusCode())
+		status = strconv.Itoa(ctx.GetStatusCode())
 	}
 
 	if l.config.IP {
@@ -45,18 +48,21 @@ func (l *loggerMiddleware) Serve(ctx *iris.Context) {
 		path = ""
 	}
 
-	//finally print the logs
-	ctx.Log(iris.DevMode, fmt.Sprintf("%s %v %4v %s %s %s \n", date, status, latency, ip, method, path))
+	//finally print the logs, no new line, the framework's logger is responsible how to render each log.
+	ctx.Application().Log("%v %4v %s %s %s", status, latency, ip, method, path)
 }
 
-// New returns the logger middleware
-// receives optional configs(logger.Config)
-func New(cfg ...Config) iris.HandlerFunc {
-	c := DefaultConfig()
+// New creates and returns a new request logger middleware.
+// Do not confuse it with the framework's Logger.
+// This is for the http requests.
+//
+// Receives an optional configuation.
+func New(cfg ...Config) context.Handler {
+	c := DefaultConfigurationReadOnly()
 	if len(cfg) > 0 {
 		c = cfg[0]
 	}
-	l := &loggerMiddleware{config: c}
+	l := &requestLoggerMiddleware{config: c}
 
-	return l.Serve
+	return l.ServeHTTP
 }

@@ -1,23 +1,43 @@
 package main
 
 import (
-	"gopkg.in/kataras/iris.v6"
-	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
-	"gopkg.in/kataras/iris.v6/adaptors/view"
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/view"
 )
 
 func main() {
-	app := iris.New(iris.Configuration{Gzip: false, Charset: "UTF-8"}) // defaults to these
+	app := iris.New() // defaults to these
 
-	app.Adapt(iris.DevLogger())
-	app.Adapt(httprouter.New())
+	// - standard html  | view.HTML(...)
+	// - django         | view.Django(...)
+	// - pug(jade)      | view.Pug(...)
+	// - handlebars     | view.Handlebars(...)
+	// - amber          | view.Amber(...)
 
-	app.Adapt(view.HTML("./templates", ".html"))
+	tmpl := view.HTML("./templates", ".html")
+	tmpl.Reload(true) // reload templates on each request (development mode)
+	// default template funcs are:
+	//
+	// - {{ urlpath "mynamedroute" "pathParameter_ifneeded" }}
+	// - {{ render "header.html" }}
+	// - {{ render_r "header.html" }} // partial relative path to current page
+	// - {{ yield }}
+	// - {{ current }}
+	tmpl.AddFunc("greet", func(s string) string {
+		return "Greetings " + s + "!"
+	})
+	app.AttachView(tmpl)
 
-	app.Get("/hi", hi)
-	app.Listen(":8080")
+	app.Get("/", hi)
+
+	// http://localhost:8080
+	app.Run(iris.Addr(":8080"), iris.WithCharset("UTF-8")) // defaults to that but you can change it.
 }
 
-func hi(ctx *iris.Context) {
-	ctx.MustRender("hi.html", struct{ Name string }{Name: "iris"})
+func hi(ctx context.Context) {
+	ctx.ViewData("Title", "Hi Page")
+	ctx.ViewData("Name", "Iris") // {{.Name}} will render: Iris
+	// ctx.ViewData("", myCcustomStruct{})
+	ctx.View("hi.html")
 }

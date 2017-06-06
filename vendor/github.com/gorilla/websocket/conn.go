@@ -10,9 +10,9 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
-	"math/rand"
 	"net"
 	"strconv"
+	"sync"
 	"time"
 	"unicode/utf8"
 )
@@ -218,39 +218,23 @@ func isValidReceivedCloseCode(code int) bool {
 	return validReceivedCloseCodes[code] || (code >= 3000 && code <= 4999)
 }
 
-func maskBytes(key [4]byte, pos int, b []byte) int {
-	for i := range b {
-		b[i] ^= key[pos&3]
-		pos++
-	}
-	return pos & 3
-}
-
-func newMaskKey() [4]byte {
-	n := rand.Uint32()
-	return [4]byte{byte(n), byte(n >> 8), byte(n >> 16), byte(n >> 24)}
-}
-
-// Conn represents a WebSocket connection.
+// The Conn type represents a WebSocket connection.
 type Conn struct {
 	conn        net.Conn
 	isServer    bool
 	subprotocol string
 
 	// Write fields
-	mu             chan bool // used as mutex to protect write to conn and closeSent
-	closeSent      bool      // whether close message was sent
-	writeErr       error
-	writeBuf       []byte // frame is constructed in this buffer.
-	writePos       int    // end of data in writeBuf.
-	writeFrameType int    // type of the current frame.
-	writeDeadline  time.Time
-	messageWriter  *messageWriter // the current low-level message writer
-	writer         io.WriteCloser // the current writer returned to the application
-	isWriting      bool           // for best-effort concurrent write detection
+	mu            chan bool // used as mutex to protect write to conn
+	writeBuf      []byte    // frame is constructed in this buffer.
+	writeDeadline time.Time
+	writer        io.WriteCloser // the current writer returned to the application
+	isWriting     bool           // for best-effort concurrent write detection
+
+	writeErrMu sync.Mutex
+	writeErr   error
 
 	enableWriteCompression bool
-	writeCompress          bool // whether next call to flushFrame should set RSV1
 	newCompressionWriter   func(io.WriteCloser) (io.WriteCloser, error)
 
 	// Read fields
@@ -264,6 +248,7 @@ type Conn struct {
 	readMaskKey   [4]byte
 	handlePong    func(string) error
 	handlePing    func(string) error
+	handleClose   func(int, string) error
 	readErrCount  int
 	messageReader *messageReader // the current low-level reader
 
@@ -292,10 +277,9 @@ func newConn(conn net.Conn, isServer bool, readBufferSize, writeBufferSize int) 
 		mu:                     mu,
 		readFinal:              true,
 		writeBuf:               make([]byte, writeBufferSize+maxFrameHeaderSize),
-		writeFrameType:         noFrame,
-		writePos:               maxFrameHeaderSize,
 		enableWriteCompression: true,
 	}
+	c.SetCloseHandler(nil)
 	c.SetPingHandler(nil)
 	c.SetPongHandler(nil)
 	return c
@@ -323,28 +307,39 @@ func (c *Conn) RemoteAddr() net.Addr {
 
 // Write methods
 
+func (c *Conn) writeFatal(err error) error {
+	err = hideTempErr(err)
+	c.writeErrMu.Lock()
+	if c.writeErr == nil {
+		c.writeErr = err
+	}
+	c.writeErrMu.Unlock()
+	return err
+}
+
 func (c *Conn) write(frameType int, deadline time.Time, bufs ...[]byte) error {
 	<-c.mu
 	defer func() { c.mu <- true }()
 
-	if c.closeSent {
-		return ErrCloseSent
-	} else if frameType == CloseMessage {
-		c.closeSent = true
+	c.writeErrMu.Lock()
+	err := c.writeErr
+	c.writeErrMu.Unlock()
+	if err != nil {
+		return err
 	}
 
 	c.conn.SetWriteDeadline(deadline)
 	for _, buf := range bufs {
 		if len(buf) > 0 {
-			n, err := c.conn.Write(buf)
-			if n != len(buf) {
-				// Close on partial write.
-				c.conn.Close()
-			}
+			_, err := c.conn.Write(buf)
 			if err != nil {
-				return err
+				return c.writeFatal(err)
 			}
 		}
+	}
+
+	if frameType == CloseMessage {
+		c.writeFatal(ErrCloseSent)
 	}
 	return nil
 }
@@ -394,18 +389,41 @@ func (c *Conn) WriteControl(messageType int, data []byte, deadline time.Time) er
 	}
 	defer func() { c.mu <- true }()
 
-	if c.closeSent {
-		return ErrCloseSent
-	} else if messageType == CloseMessage {
-		c.closeSent = true
+	c.writeErrMu.Lock()
+	err := c.writeErr
+	c.writeErrMu.Unlock()
+	if err != nil {
+		return err
 	}
 
 	c.conn.SetWriteDeadline(deadline)
-	n, err := c.conn.Write(buf)
-	if n != 0 && n != len(buf) {
-		c.conn.Close()
+	_, err = c.conn.Write(buf)
+	if err != nil {
+		return c.writeFatal(err)
 	}
-	return hideTempErr(err)
+	if messageType == CloseMessage {
+		c.writeFatal(ErrCloseSent)
+	}
+	return err
+}
+
+func (c *Conn) prepWrite(messageType int) error {
+	// Close previous writer if not already closed by the application. It's
+	// probably better to return an error in this situation, but we cannot
+	// change this without breaking existing applications.
+	if c.writer != nil {
+		c.writer.Close()
+		c.writer = nil
+	}
+
+	if !isControl(messageType) && !isData(messageType) {
+		return errBadWriteOpCode
+	}
+
+	c.writeErrMu.Lock()
+	err := c.writeErr
+	c.writeErrMu.Unlock()
+	return err
 }
 
 // NextWriter returns a writer for the next message to send. The writer's Close
@@ -414,64 +432,64 @@ func (c *Conn) WriteControl(messageType int, data []byte, deadline time.Time) er
 // There can be at most one open writer on a connection. NextWriter closes the
 // previous writer if the application has not already done so.
 func (c *Conn) NextWriter(messageType int) (io.WriteCloser, error) {
-	if c.writeErr != nil {
-		return nil, c.writeErr
+	if err := c.prepWrite(messageType); err != nil {
+		return nil, err
 	}
 
-	// Close previous writer if not already closed by the application. It's
-	// probably better to return an error in this situation, but we cannot
-	// change this without breaking existing applications.
-	if c.writer != nil {
-		err := c.writer.Close()
-		if err != nil {
-			return nil, err
-		}
+	mw := &messageWriter{
+		c:         c,
+		frameType: messageType,
+		pos:       maxFrameHeaderSize,
 	}
-
-	if !isControl(messageType) && !isData(messageType) {
-		return nil, errBadWriteOpCode
-	}
-
-	c.writeFrameType = messageType
-	c.messageWriter = &messageWriter{c}
-
-	var w io.WriteCloser = c.messageWriter
+	c.writer = mw
 	if c.newCompressionWriter != nil && c.enableWriteCompression && isData(messageType) {
-		c.writeCompress = true
-		var err error
-		w, err = c.newCompressionWriter(w)
+		w, err := c.newCompressionWriter(c.writer)
 		if err != nil {
-			c.writer.Close()
+			c.writer = nil
 			return nil, err
 		}
+		mw.compress = true
+		c.writer = w
 	}
+	return c.writer, nil
+}
 
-	return w, nil
+type messageWriter struct {
+	c         *Conn
+	compress  bool // whether next call to flushFrame should set RSV1
+	pos       int  // end of data in writeBuf.
+	frameType int  // type of the current frame.
+	err       error
+}
+
+func (w *messageWriter) fatal(err error) error {
+	if w.err != nil {
+		w.err = err
+		w.c.writer = nil
+	}
+	return err
 }
 
 // flushFrame writes buffered data and extra as a frame to the network. The
 // final argument indicates that this is the last frame in the message.
-func (c *Conn) flushFrame(final bool, extra []byte) error {
-	length := c.writePos - maxFrameHeaderSize + len(extra)
+func (w *messageWriter) flushFrame(final bool, extra []byte) error {
+	c := w.c
+	length := w.pos - maxFrameHeaderSize + len(extra)
 
 	// Check for invalid control frames.
-	if isControl(c.writeFrameType) &&
+	if isControl(w.frameType) &&
 		(!final || length > maxControlFramePayloadSize) {
-		c.messageWriter = nil
-		c.writer = nil
-		c.writeFrameType = noFrame
-		c.writePos = maxFrameHeaderSize
-		return errInvalidControlFrame
+		return w.fatal(errInvalidControlFrame)
 	}
 
-	b0 := byte(c.writeFrameType)
+	b0 := byte(w.frameType)
 	if final {
 		b0 |= finalBit
 	}
-	if c.writeCompress {
+	if w.compress {
 		b0 |= rsv1Bit
 	}
-	c.writeCompress = false
+	w.compress = false
 
 	b1 := byte(0)
 	if !c.isServer {
@@ -504,10 +522,9 @@ func (c *Conn) flushFrame(final bool, extra []byte) error {
 	if !c.isServer {
 		key := newMaskKey()
 		copy(c.writeBuf[maxFrameHeaderSize-4:], key[:])
-		maskBytes(key, 0, c.writeBuf[maxFrameHeaderSize:c.writePos])
+		maskBytes(key, 0, c.writeBuf[maxFrameHeaderSize:w.pos])
 		if len(extra) > 0 {
-			c.writeErr = errors.New("websocket: internal error, extra used in client mode")
-			return c.writeErr
+			return c.writeFatal(errors.New("websocket: internal error, extra used in client mode"))
 		}
 	}
 
@@ -520,44 +537,35 @@ func (c *Conn) flushFrame(final bool, extra []byte) error {
 	}
 	c.isWriting = true
 
-	c.writeErr = c.write(c.writeFrameType, c.writeDeadline, c.writeBuf[framePos:c.writePos], extra)
+	err := c.write(w.frameType, c.writeDeadline, c.writeBuf[framePos:w.pos], extra)
 
 	if !c.isWriting {
 		panic("concurrent write to websocket connection")
 	}
 	c.isWriting = false
 
-	// Setup for next frame.
-	c.writePos = maxFrameHeaderSize
-	c.writeFrameType = continuationFrame
+	if err != nil {
+		return w.fatal(err)
+	}
+
 	if final {
-		c.messageWriter = nil
 		c.writer = nil
-		c.writeFrameType = noFrame
+		return nil
 	}
-	return c.writeErr
-}
 
-type messageWriter struct{ c *Conn }
-
-func (w *messageWriter) err() error {
-	c := w.c
-	if c.messageWriter != w {
-		return errWriteClosed
-	}
-	if c.writeErr != nil {
-		return c.writeErr
-	}
+	// Setup for next frame.
+	w.pos = maxFrameHeaderSize
+	w.frameType = continuationFrame
 	return nil
 }
 
 func (w *messageWriter) ncopy(max int) (int, error) {
-	n := len(w.c.writeBuf) - w.c.writePos
+	n := len(w.c.writeBuf) - w.pos
 	if n <= 0 {
-		if err := w.c.flushFrame(false, nil); err != nil {
+		if err := w.flushFrame(false, nil); err != nil {
 			return 0, err
 		}
-		n = len(w.c.writeBuf) - w.c.writePos
+		n = len(w.c.writeBuf) - w.pos
 	}
 	if n > max {
 		n = max
@@ -566,13 +574,13 @@ func (w *messageWriter) ncopy(max int) (int, error) {
 }
 
 func (w *messageWriter) Write(p []byte) (int, error) {
-	if err := w.err(); err != nil {
-		return 0, err
+	if w.err != nil {
+		return 0, w.err
 	}
 
 	if len(p) > 2*len(w.c.writeBuf) && w.c.isServer {
 		// Don't buffer large messages.
-		err := w.c.flushFrame(false, p)
+		err := w.flushFrame(false, p)
 		if err != nil {
 			return 0, err
 		}
@@ -585,16 +593,16 @@ func (w *messageWriter) Write(p []byte) (int, error) {
 		if err != nil {
 			return 0, err
 		}
-		copy(w.c.writeBuf[w.c.writePos:], p[:n])
-		w.c.writePos += n
+		copy(w.c.writeBuf[w.pos:], p[:n])
+		w.pos += n
 		p = p[n:]
 	}
 	return nn, nil
 }
 
 func (w *messageWriter) WriteString(p string) (int, error) {
-	if err := w.err(); err != nil {
-		return 0, err
+	if w.err != nil {
+		return 0, w.err
 	}
 
 	nn := len(p)
@@ -603,27 +611,27 @@ func (w *messageWriter) WriteString(p string) (int, error) {
 		if err != nil {
 			return 0, err
 		}
-		copy(w.c.writeBuf[w.c.writePos:], p[:n])
-		w.c.writePos += n
+		copy(w.c.writeBuf[w.pos:], p[:n])
+		w.pos += n
 		p = p[n:]
 	}
 	return nn, nil
 }
 
 func (w *messageWriter) ReadFrom(r io.Reader) (nn int64, err error) {
-	if err := w.err(); err != nil {
-		return 0, err
+	if w.err != nil {
+		return 0, w.err
 	}
 	for {
-		if w.c.writePos == len(w.c.writeBuf) {
-			err = w.c.flushFrame(false, nil)
+		if w.pos == len(w.c.writeBuf) {
+			err = w.flushFrame(false, nil)
 			if err != nil {
 				break
 			}
 		}
 		var n int
-		n, err = r.Read(w.c.writeBuf[w.c.writePos:])
-		w.c.writePos += n
+		n, err = r.Read(w.c.writeBuf[w.pos:])
+		w.pos += n
 		nn += int64(n)
 		if err != nil {
 			if err == io.EOF {
@@ -636,25 +644,36 @@ func (w *messageWriter) ReadFrom(r io.Reader) (nn int64, err error) {
 }
 
 func (w *messageWriter) Close() error {
-	if err := w.err(); err != nil {
+	if w.err != nil {
+		return w.err
+	}
+	if err := w.flushFrame(true, nil); err != nil {
 		return err
 	}
-	return w.c.flushFrame(true, nil)
+	w.err = errWriteClosed
+	return nil
 }
 
 // WriteMessage is a helper method for getting a writer using NextWriter,
 // writing the message and closing the writer.
 func (c *Conn) WriteMessage(messageType int, data []byte) error {
+
+	if c.isServer && (c.newCompressionWriter == nil || !c.enableWriteCompression) {
+
+		// Fast path with no allocations and single frame.
+
+		if err := c.prepWrite(messageType); err != nil {
+			return err
+		}
+		mw := messageWriter{c: c, frameType: messageType, pos: maxFrameHeaderSize}
+		n := copy(c.writeBuf[mw.pos:], data)
+		mw.pos += n
+		data = data[n:]
+		return mw.flushFrame(true, data)
+	}
+
 	w, err := c.NextWriter(messageType)
 	if err != nil {
-		return err
-	}
-	if _, ok := w.(*messageWriter); ok && c.isServer {
-		// Optimize write as a single frame.
-		n := copy(c.writeBuf[c.writePos:], data)
-		c.writePos += n
-		data = data[n:]
-		err = c.flushFrame(true, data)
 		return err
 	}
 	if _, err = w.Write(data); err != nil {
@@ -799,11 +818,9 @@ func (c *Conn) advanceFrame() (int, error) {
 			return noFrame, err
 		}
 	case CloseMessage:
-		echoMessage := []byte{}
 		closeCode := CloseNoStatusReceived
 		closeText := ""
 		if len(payload) >= 2 {
-			echoMessage = payload[:2]
 			closeCode = int(binary.BigEndian.Uint16(payload))
 			if !isValidReceivedCloseCode(closeCode) {
 				return noFrame, c.handleProtocolError("invalid close code")
@@ -813,7 +830,9 @@ func (c *Conn) advanceFrame() (int, error) {
 				return noFrame, c.handleProtocolError("invalid utf8 payload in close frame")
 			}
 		}
-		c.WriteControl(CloseMessage, echoMessage, time.Now().Add(writeWait))
+		if err := c.handleClose(closeCode, closeText); err != nil {
+			return noFrame, err
+		}
 		return noFrame, &CloseError{Code: closeCode, Text: closeText}
 	}
 
@@ -941,6 +960,29 @@ func (c *Conn) SetReadLimit(limit int64) {
 	c.readLimit = limit
 }
 
+// CloseHandler returns the current close handler
+func (c *Conn) CloseHandler() func(code int, text string) error {
+	return c.handleClose
+}
+
+// SetCloseHandler sets the handler for close messages received from the peer.
+// The code argument to h is the received close code or CloseNoStatusReceived
+// if the close message is empty. The default close handler sends a close frame
+// back to the peer.
+func (c *Conn) SetCloseHandler(h func(code int, text string) error) {
+	if h == nil {
+		h = func(code int, text string) error {
+			message := []byte{}
+			if code != CloseNoStatusReceived {
+				message = FormatCloseMessage(code, "")
+			}
+			c.WriteControl(CloseMessage, message, time.Now().Add(writeWait))
+			return nil
+		}
+	}
+	c.handleClose = h
+}
+
 // PingHandler returns the current ping handler
 func (c *Conn) PingHandler() func(appData string) error {
 	return c.handlePing
@@ -983,6 +1025,13 @@ func (c *Conn) SetPongHandler(h func(appData string) error) {
 // modifications to connection specific flags.
 func (c *Conn) UnderlyingConn() net.Conn {
 	return c.conn
+}
+
+// EnableWriteCompression enables and disables write compression of
+// subsequent text and binary messages. This function is a noop if
+// compression was not negotiated with the peer.
+func (c *Conn) EnableWriteCompression(enable bool) {
+	c.enableWriteCompression = enable
 }
 
 // FormatCloseMessage formats closeCode and text as a WebSocket close message.

@@ -4,13 +4,16 @@
 </head>
 <body>
 	<form action="/form_action" method="post">
-		<input type="text" name="Username" /> <br /> <input type="text"
-			name="Mail" /><br /> <select multiple="multiple" name="mydata">
+		Username: <input type="text" name="Username" /> <br />
+		Mail: <input type="text" name="Mail" /> <br /> 
+		Select one or more:  <br/> 
+		<select multiple="multiple" name="mydata">
 			<option value='one'>One</option>
 			<option value='two'>Two</option>
 			<option value='three'>Three</option>
 			<option value='four'>Four</option>
 		</select>
+
 		<hr />
 		<input type="submit" value="Send data" />
 

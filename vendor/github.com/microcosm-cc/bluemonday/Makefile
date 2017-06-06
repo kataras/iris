@@ -11,7 +11,7 @@
 #
 #   install:      Builds, tests and installs the code locally
 
-.PHONY: all fmt build vet lint test cover clean install
+.PHONY: all fmt build vet lint test cover install
 
 # The first target is always the default action if `make` is called without
 # args we build and install into $GOPATH so that it can just be run
@@ -19,13 +19,13 @@
 all: fmt vet test install
 
 fmt:
-	@gofmt -w ./$*
+	@gofmt -s -w ./$*
 
-build: clean
+build:
 	@go build
 
 vet:
-	@vet *.go
+	@go vet *.go
 
 lint:
 	@golint *.go
@@ -38,5 +38,5 @@ cover:
 	@go test -coverprofile=$(COVERAGE_FILE) && \
 	cover -html=$(COVERAGE_FILE) && rm $(COVERAGE_FILE)
 
-install: clean
+install:
 	@go install ./...

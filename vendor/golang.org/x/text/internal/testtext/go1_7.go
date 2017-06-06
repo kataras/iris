@@ -8,6 +8,10 @@ package testtext
 
 import "testing"
 
-func Run(t *testing.T, name string, fn func(t *testing.T)) {
-	t.Run(name, fn)
+func Run(t *testing.T, name string, fn func(t *testing.T)) bool {
+	return t.Run(name, fn)
+}
+
+func Bench(b *testing.B, name string, fn func(b *testing.B)) bool {
+	return b.Run(name, fn)
 }

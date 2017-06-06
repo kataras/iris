@@ -23,8 +23,15 @@ type namer interface {
 
 func nameLanguage(n namer, x interface{}) string {
 	t, _ := language.All.Compose(x)
-	i, _, _ := langTagSet.index(t.Raw())
-	return n.name(i)
+	for {
+		i, _, _ := langTagSet.index(t.Raw())
+		if s := n.name(i); s != "" {
+			return s
+		}
+		if t = t.Parent(); t == language.Und {
+			return ""
+		}
+	}
 }
 
 func nameScript(n namer, x interface{}) string {
@@ -48,30 +55,36 @@ func nameTag(langN, scrN, regN namer, x interface{}) string {
 	if c, err := form.Canonicalize(t); err == nil {
 		t = c
 	}
+	_, sRaw, rRaw := t.Raw()
 	i, scr, reg := langTagSet.index(t.Raw())
-	if i == -1 {
-		return ""
+	for i != -1 {
+		if str := langN.name(i); str != "" {
+			if hasS, hasR := (scr != language.Script{}), (reg != language.Region{}); hasS || hasR {
+				ss, sr := "", ""
+				if hasS {
+					ss = scrN.name(scriptIndex.index(scr.String()))
+				}
+				if hasR {
+					sr = regN.name(regionIndex.index(reg.String()))
+				}
+				// TODO: use patterns in CLDR or at least confirm they are the
+				// same for all languages.
+				if ss != "" && sr != "" {
+					return fmt.Sprintf("%s (%s, %s)", str, ss, sr)
+				}
+				if ss != "" || sr != "" {
+					return fmt.Sprintf("%s (%s%s)", str, ss, sr)
+				}
+			}
+			return str
+		}
+		scr, reg = sRaw, rRaw
+		if t = t.Parent(); t == language.Und {
+			return ""
+		}
+		i, _, _ = langTagSet.index(t.Raw())
 	}
-
-	str := langN.name(i)
-	if hasS, hasR := (scr != language.Script{}), (reg != language.Region{}); hasS || hasR {
-		ss, sr := "", ""
-		if hasS {
-			ss = scrN.name(scriptIndex.index(scr.String()))
-		}
-		if hasR {
-			sr = regN.name(regionIndex.index(reg.String()))
-		}
-		// TODO: use patterns in CLDR or at least confirm they are the same for
-		// all languages.
-		if ss != "" && sr != "" {
-			return fmt.Sprintf("%s (%s, %s)", str, ss, sr)
-		}
-		if ss != "" || sr != "" {
-			return fmt.Sprintf("%s (%s%s)", str, ss, sr)
-		}
-	}
-	return str
+	return ""
 }
 
 // header contains the data and indexes for a single namer.

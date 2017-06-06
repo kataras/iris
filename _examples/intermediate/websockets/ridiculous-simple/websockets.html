@@ -18,12 +18,16 @@
 
 	// read events from the server
 	socket.On("chat", function (msg) {
-		output.innerHTML += "Server: " + msg + "\n";
+		addMessage(msg)
 	});
 
 	function send() {
-		// send chat event data to the server
-		socket.Emit("chat", input.value);
-		input.value = "";
+		addMessage("Me: "+input.value) // write ourselves
+		socket.Emit("chat", input.value);// send chat event data to the websocket server
+		input.value = ""; // clear the input
+	}
+
+	function addMessage(msg) {
+		output.innerHTML += msg + "\n";
 	}
 </script>
