@@ -62,6 +62,15 @@ func (wsc *wsClient) echoString(message string) {
 	wsc.con.Emit("echo_reply", message)
 }
 
+func (wsc *wsClient) reverseString(message string) {
+	// fmt.Println("recv :", message)
+	chars := []rune(message)
+	for i, j := 0, len(chars)-1; i < j; i, j = i+1, j-1 {
+		chars[i], chars[j] = chars[j], chars[i]
+	}
+	wsc.con.Emit("reverse_reply", string(chars))
+}
+
 func (wsc *wsClient) lenString(message string) {
 	// fmt.Println("recv :", message)
 	wsc.con.Emit("len_reply", len(message))
@@ -94,6 +103,8 @@ func (wss *wsServer) connect(con Connection) {
 	con.On("echo", c.echoString)
 
 	con.On("len", c.lenString)
+
+	con.On("reverse", c.reverseString)
 
 	con.OnDisconnect(c.disconnect)
 }
@@ -205,7 +216,7 @@ func TestConnectAndWait(t *testing.T) {
 	wss.shutdown()
 }
 
-func TestMixedMessages(t *testing.T) {
+func TestMixedMessagesConcurrency(t *testing.T) {
 	var wss wsServer
 	wss.startup()
 	time.Sleep(1 * time.Second)
@@ -230,6 +241,7 @@ func TestMixedMessages(t *testing.T) {
 		cycles := int32(500)
 		echo_count := int32(0)
 		len_count := int32(0)
+		reverse_count := int32(0)
 		raw_count := int32(0)
 		// fmt.Println("Dial complete")
 		time.Sleep(1 * time.Second)
@@ -241,6 +253,10 @@ func TestMixedMessages(t *testing.T) {
 			// fmt.Printf("client len_reply %d\n", i)
 			atomic.AddInt32(&len_count, 1)
 		})
+		client.On("reverse_reply", func(s string) {
+			// fmt.Println("client reverse_reply", s)
+			atomic.AddInt32(&reverse_count, 1)
+		})
 		client.OnMessage(func(b []byte) {
 			// fmt.Println("client raw_reply", hex.EncodeToString(b))
 			atomic.AddInt32(&raw_count, 1)
@@ -248,13 +264,23 @@ func TestMixedMessages(t *testing.T) {
 		// fmt.Println("ON complete")
 		time.Sleep(1 * time.Second)
 		var wg sync.WaitGroup
-		wg.Add(3)
+		wg.Add(4)
 		go func() {
 			defer wg.Done()
 			for i := 0; i < int(cycles); i++ {
 				s := fmt.Sprintf("hello %d", i)
 				if client.Emit("echo", s) != nil {
 					fmt.Println("error serializing echo request:", s)
+					t.Fail()
+				}
+			}
+		}()
+		go func() {
+			defer wg.Done()
+			for i := 0; i < int(cycles); i++ {
+				s := fmt.Sprintf("hello %d", i)
+				if client.Emit("reverse", s) != nil {
+					fmt.Println("error serializing reverse request:", s)
 					t.Fail()
 				}
 			}
