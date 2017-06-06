@@ -269,7 +269,13 @@ func TestMixedMessages(t *testing.T) {
 			}
 		}()
 		// fmt.Println("Emit complete")
-		time.Sleep(5 * time.Second)
+		// wait until we complete or timeout after 1 minute
+		for i := 0; i < 60; i++ {
+			if (echo_count == cycles) && (len_count == cycles) && (raw_count == cycles) {
+				break
+			}
+			time.Sleep(1 * time.Second)
+		}
 		// fmt.Printf("echo, len, raw = %d, %d, %d\n", echo_count, len_count, raw_count)
 		if echo_count != cycles {
 			fmt.Printf("echo count mismatch, %d != %d\n", echo_count, cycles)
