@@ -6,6 +6,8 @@ So it's useless for the end-developers, but it will be a good place to learn how
 cli and dynamic-generators programs.
 
 
+Click [here](https://github.com/iris-contrib/community-board/issues/2) to learn its future.
+
 > When I use the word "generator" I don't mean the go1.4+ generate feature.
 
 ## Don't waste your time, it is not ready yet.

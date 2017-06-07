@@ -104,11 +104,6 @@ var WithoutBanner = func(app *Application) {
 	app.config.DisableBanner = true
 }
 
-// WithTray shows the taskbar tray icon.
-var WithTray = func(app *Application) {
-	app.config.EnableTray = true
-}
-
 // WithoutInterruptHandler disables the automatic graceful server shutdown
 // when control/cmd+C pressed.
 var WithoutInterruptHandler = func(app *Application) {
@@ -192,14 +187,6 @@ type Configuration struct {
 	//
 	// Defaults to false.
 	DisableBanner bool `yaml:"DisableBanner" toml:"DisableBanner"`
-	// EnableTray if setted to true then it shows the taskbar tray icon.
-	// Tray icon is not enabled by-default for linux systems,
-	// you have to install a dependency first and re-get the Iris pgk:
-	// $ sudo apt-get install libgtk-3-dev libappindicator3-dev
-	// "$ go get -u github.com/kataras/xeo
-	//
-	//  Defaults to false.
-	EnableTray bool `yaml:"EnableTray" toml:"EnableTray"`
 	// DisableInterruptHandler if setted to true then it disables the automatic graceful server shutdown
 	// when control/cmd+C pressed.
 	// Turn this to true if you're planning to handle this by your own via a custom host.Task.
@@ -413,10 +400,6 @@ func WithConfiguration(c Configuration) Configurator {
 			main.DisableBanner = v
 		}
 
-		if v := c.EnableTray; v {
-			main.EnableTray = v
-		}
-
 		if v := c.DisableInterruptHandler; v {
 			main.DisableInterruptHandler = v
 		}
@@ -480,7 +463,6 @@ func WithConfiguration(c Configuration) Configurator {
 func DefaultConfiguration() Configuration {
 	return Configuration{
 		DisableBanner:                     false,
-		EnableTray:                        false,
 		DisableInterruptHandler:           false,
 		DisablePathCorrection:             false,
 		EnablePathEscape:                  false,

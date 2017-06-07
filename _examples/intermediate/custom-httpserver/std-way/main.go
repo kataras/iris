@@ -31,7 +31,7 @@ func main() {
 	srv.ListenAndServe() // same as app.Run(iris.Addr(":8080"))
 
 	// Notes:
-	// Banne and Tray are not shown at all. Same for the Interrupt Handler, even if app's configuration allows them.
+	// Banner is not shown at all. Same for the Interrupt Handler, even if app's configuration allows them.
 	//
 	// `.Run` is the only one function that cares about those three.
 

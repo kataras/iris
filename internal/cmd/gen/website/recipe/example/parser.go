@@ -1,10 +1,10 @@
-package examples
+package example
 
 import (
 	"bytes"
-	"io"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/kataras/iris/core/errors"
@@ -12,34 +12,21 @@ import (
 	"github.com/russross/blackfriday"
 )
 
-// we could directly query and parse the github page for _examples and take
-// the examples from its folders, without even the need of a readme to be exist. But I will not do that
-// because github may change its structure to these folders, so its safer to just:
-// convert the raw readme.md to the html
-// query the new html and parse its ul and li tags,
-// markdown syntax for these things will (never) change, so I assume it will work for a lot of years.
-const (
-	branch = "master"
-	// rootURL = "https://github.com/kataras/iris/tree/" + branch + "/_examples"
-	// rawRootURL = "https://raw.githubusercontent.com/kataras/iris/"+branch"/_examples/"
-	contentsURL      = "https://raw.githubusercontent.com/kataras/iris/" + branch + "/_examples/README.md"
-	tableOfContents  = "Table of contents"
-	sanitizeMarkdown = true
-)
-
-// WriteExamplesTo will write all examples to the "w"
-func WriteExamplesTo(w io.Writer) (categories []Category, err error) {
-	// if len(categoryName) == 0 {
-	// 	return nil, errors.New("category is empty")
-	// }
-	// categoryName = strings.ToTitle(categoryName) // i.e Category Name
-
-	// category := Category{
-	// 	Name: categoryName,
-	// }
+// Parse will try to parse and return all examples.
+// The input parameter "branch" is used to build
+// the raw..iris-contrib/examples/$branch/
+// but it should be the same with
+// the kataras/iris/$branch/ for consistency.
+func Parse(branch string) (examples []Example, err error) {
+	var (
+		contentsURL      = "https://raw.githubusercontent.com/iris-contrib/examples/" + branch
+		tableOfContents  = "Table of contents"
+		sanitizeMarkdown = true
+	)
 
 	// get the raw markdown
-	res, err := http.Get(contentsURL)
+	readmeURL := contentsURL + "/README.md"
+	res, err := http.Get(readmeURL)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +55,8 @@ func WriteExamplesTo(w io.Writer) (categories []Category, err error) {
 		return nil, err
 	}
 
-	// or with just one line (but may break if we add another h2, so I will do it with the hard and un-readable way for now)
+	// or with just one line (but may break if we add another h2,
+	// so I will do it with the hard and un-readable way for now)
 	// readme.Find("h2").First().NextAllFiltered("ul").Children().Text()
 
 	// find the header of Table Of Contents, we will need it to take its
@@ -82,14 +70,12 @@ func WriteExamplesTo(w io.Writer) (categories []Category, err error) {
 		return true
 	})
 
-	// println(tableOfContentsHeader.Text())
-
 	if tableOfContentsHeader == nil {
 		return nil, errors.New("table of contents not found using: " + tableOfContents)
 	}
 
 	// get the list of the examples
-	tableOfContentsUL := tableOfContentsHeader.NextAllFiltered("ul")
+	tableOfContentsUL := tableOfContentsHeader.NextFiltered("ul")
 	if tableOfContentsUL == nil {
 		return nil, errors.New("table of contents list not found")
 	}
@@ -102,22 +88,42 @@ func WriteExamplesTo(w io.Writer) (categories []Category, err error) {
 			return false // break on first failure
 		}
 
-		categoryName := exampleHrefLink.Text()
+		name := exampleHrefLink.Text()
 
-		println(categoryName)
+		sourcelink, _ := li.Find("a").First().Attr("href")
+		hasChildren := !strings.HasSuffix(sourcelink, ".go")
 
-		category := Category{
-			Name: categoryName,
+		example := Example{
+			Name:           name,
+			DataSource:     contentsURL + "/" + sourcelink,
+			HasChildren:    hasChildren,
+			HasNotChildren: !hasChildren,
 		}
 
-		_ = category
+		// search for sub examples
+		if hasChildren {
+			li.Find("ul").Children().EachWithBreak(func(_ int, liExample *goquery.Selection) bool {
+				name := liExample.Text()
+				liHref := liExample.Find("a").First()
+				sourcelink, ok := liHref.Attr("href")
+				if !ok {
+					err = errors.New(name + "'s source couldn't be found")
+					return false
+				}
 
-		li.Find("ul").Children().Each(func(_ int, liExample *goquery.Selection) {
-			println(liExample.Text())
-		})
+				subExample := Example{
+					Name:       name,
+					DataSource: contentsURL + "/" + sourcelink,
+				}
 
+				example.Children = append(example.Children, subExample)
+				return true
+			})
+
+		}
+
+		examples = append(examples, example)
 		return true
 	})
-
-	return nil, err
+	return examples, err
 }

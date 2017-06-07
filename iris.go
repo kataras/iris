@@ -40,7 +40,7 @@ const (
 	// Version is the current version number of the Iris Web framework.
 	//
 	// Look https://github.com/kataras/iris#where-can-i-find-older-versions for older versions.
-	Version = "7.0.0"
+	Version = "7.0.1"
 )
 
 const (
@@ -208,15 +208,11 @@ func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 		su.Schedule(host.WriteBannerTask(app.logger, banner+"V"+Version))
 	}
 
-	// give 5 seconds to the server to wait for the (idle) connections.
-	shutdownTimeout := 5 * time.Second
-	if app.config.EnableTray {
-		// start the tray icon to the taskbar (cross-platform) when server started.
-		su.Schedule(host.ShowTrayTask(Version, shutdownTimeout))
-	}
-
 	if !app.config.DisableInterruptHandler {
-		// when control/cmd+C pressed.
+		// give 5 seconds to the server to wait for the (idle) connections.
+		shutdownTimeout := 5 * time.Second
+
+		// when CTRL+C/CMD+C pressed.
 		su.Schedule(host.ShutdownOnInterruptTask(shutdownTimeout))
 	}
 
@@ -325,7 +321,7 @@ func Raw(f func() error) Runner {
 // then create a new host and run it manually by `go NewHost(*http.Server).Serve/ListenAndServe` etc...
 // or use an already created host:
 // h := NewHost(*http.Server)
-// Run(Raw(h.ListenAndServe), WithoutBanner, WithTray, WithCharset("UTF-8"))
+// Run(Raw(h.ListenAndServe), WithoutBanner, WithCharset("UTF-8"))
 //
 // The Application can go online with any type of server or iris's host with the help of
 // the following runners:
