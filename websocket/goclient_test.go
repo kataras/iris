@@ -123,9 +123,7 @@ func (wss *wsServer) disconnect(wsc *wsClient) {
 		if v == wsc {
 			wss.clients[p] = wss.clients[l-1]
 			wss.clients = wss.clients[:l-1]
-
 			fmt.Printf("Disconnect # active clients : %d\n", len(wss.clients))
-
 			return
 		}
 	}
@@ -316,6 +314,7 @@ func TestMixedMessagesConcurrency(t *testing.T) {
 		for i := 0; i < 60; i++ {
 			if (atomic.LoadInt32(&echo_count) == cycles) &&
 				(atomic.LoadInt32(&len_count) == cycles) &&
+				(atomic.LoadInt32(&reverse_count) == cycles) &&
 				(atomic.LoadInt32(&raw_count) == cycles) {
 				break
 			}
