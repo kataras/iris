@@ -163,7 +163,7 @@ $ rizla main.go
 <details>
 <summary>Legends</summary>
 
-I'm sorry for taking this personally but I really need to thanks each one of them because they stood up [♡](https://github.com/kataras/iris#support) for me when others trying to "bullying" my personality in order to deflame Iris. 
+I'm sorry for taking this personally but I really need to thank each one of them because they stood up [♡](https://github.com/kataras/iris#support) for me when others tried to "bullying" my personality in order to deflame Iris.
 
 All of us should read and respect the official [golang](https://golang.org/conduct) and [iris](https://github.com/iris-contrib/community-board/blob/master/CODE-OF-CONDUCT.md) community **Code of Conduct**. This type of commitment and communication is the way of making Go great.
 
