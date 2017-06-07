@@ -168,21 +168,32 @@ func (wss *wsServer) shutdown() {
 
 func TestConnectAndWait(t *testing.T) {
 	var wss wsServer
+	var client *Client
+	var err error
+	tries_left := int(5)
 	wss.startup()
 	time.Sleep(1 * time.Second)
 	d := new(WSDialer)
-	client, _, err := d.Dial("ws://127.0.0.1:8080/echo", nil, Config{
-		ReadTimeout:     60 * time.Second,
-		WriteTimeout:    60 * time.Second,
-		PingPeriod:      9 * 6 * time.Second,
-		PongTimeout:     60 * time.Second,
-		ReadBufferSize:  4096,
-		WriteBufferSize: 4096,
-		BinaryMessages:  true,
-	})
-	if err != nil {
-		fmt.Println("Dialer error:", err)
-		t.Fail()
+	client = nil
+	for (client == nil) && (tries_left > 0) {
+		client, _, err = d.Dial("ws://127.0.0.1:8080/echo", nil, Config{
+			ReadTimeout:     60 * time.Second,
+			WriteTimeout:    60 * time.Second,
+			PingPeriod:      9 * 6 * time.Second,
+			PongTimeout:     60 * time.Second,
+			ReadBufferSize:  4096,
+			WriteBufferSize: 4096,
+			BinaryMessages:  true,
+		})
+		if err != nil {
+			fmt.Println("Dialer error:", err)
+			if tries_left > 0 {
+				time.Sleep(1 * time.Second)
+				tries_left -= 1
+			} else {
+				t.Fail()
+			}
+		}
 	}
 	if client == nil {
 		fmt.Println("Dialer returned nil client")
@@ -216,21 +227,32 @@ func TestConnectAndWait(t *testing.T) {
 
 func TestMixedMessagesConcurrency(t *testing.T) {
 	var wss wsServer
+	var client *Client
+	var err error
+	tries_left := int(5)
 	wss.startup()
 	time.Sleep(1 * time.Second)
 	d := new(WSDialer)
-	client, _, err := d.Dial("ws://127.0.0.1:8080/echo", nil, Config{
-		ReadTimeout:     60 * time.Second,
-		WriteTimeout:    60 * time.Second,
-		PingPeriod:      9 * 6 * time.Second,
-		PongTimeout:     60 * time.Second,
-		ReadBufferSize:  4096,
-		WriteBufferSize: 4096,
-		BinaryMessages:  true,
-	})
-	if err != nil {
-		fmt.Println("Dialer error:", err)
-		t.Fail()
+	client = nil
+	for (client == nil) && (tries_left > 0) {
+		client, _, err = d.Dial("ws://127.0.0.1:8080/echo", nil, Config{
+			ReadTimeout:     60 * time.Second,
+			WriteTimeout:    60 * time.Second,
+			PingPeriod:      9 * 6 * time.Second,
+			PongTimeout:     60 * time.Second,
+			ReadBufferSize:  4096,
+			WriteBufferSize: 4096,
+			BinaryMessages:  true,
+		})
+		if err != nil {
+			fmt.Println("Dialer error:", err)
+			if tries_left > 0 {
+				time.Sleep(1 * time.Second)
+				tries_left -= 1
+			} else {
+				t.Fail()
+			}
+		}
 	}
 	if client == nil {
 		fmt.Println("Dialer returned nil client")
