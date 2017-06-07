@@ -29,6 +29,11 @@ Thanks to [Santosh Anand](https://github.com/santoshanand) the http://iris-go.co
 
 The amount of the next two or three donations you'll send they will be immediately transferred to his own account balance, so be generous please!
 
+# We, 07 June 2017 | v7.0.1
+
+- Proof of concept of an internal release generator, navigate [here](https://github.com/iris-contrib/community-board/issues/2) to read more. 
+- Remove tray icon "feature", click [here](https://github.com/iris-contrib/community-board/issues/1) to learn why.
+
 # Sa, 03 June 2017 
 
 After 2+ months of hard work and collaborations, Iris [version 7](https://github.com/kataras/iris) was published earlier today.
@@ -117,8 +122,6 @@ Server
 - Able to set custom underline *http.Server(s) with new Host (aka Server Supervisor) feature 
     - `Done` and `Err` channels to catch shutdown or any errors on custom hosts,
     - Schedule custom tasks(with cancelation) when server is running, see [here](https://github.com/kataras/iris/tree/master/_examples/intermediate/graceful-shutdown)
-    - Taskbar Tray icon (disabled by default)
-        - Linux users have to download manually some dependencies if `app.WithTrayIcon` is passed on `app.Run`'s as second argument, the logger will print how.
 - Interrupt handler task for gracefully shutdown (when `CTRL/CMD+C`) are enabled by-default, you can disable its via configuration: `app.Run(iris.Addr(":8080"), iris.WithoutInterruptHandler)`
 
 Future plans

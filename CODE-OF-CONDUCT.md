@@ -24,7 +24,7 @@ This code of conduct applies to all repos and communities for kataras-managed op
 
 ## Reporting Code of Conduct Issues
 
-We encourage all communities to resolve issues on their own whenever possible. This builds a broader and deeper understanding and ultimately a healthier interaction. In the event that an issue cannot be resolved locally, please feel free to report your concerns by contacting kataras2006@hotmail.com or kataras@tutanota.com(secure mail).
+We encourage all communities to resolve issues on their own whenever possible. This builds a broader and deeper understanding and ultimately a healthier interaction. In the event that an issue cannot be resolved locally, please feel free to report your concerns by mail to kataras2006@hotmail.com or kataras@tutanota.com (secure way).
 
 In your report please include:
 

@@ -123,12 +123,6 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/getlantern/systray"
-  packages = ["."]
-  revision = "0068f6ae40ea39bfd683043e8452024097fff0e4"
-
-[[projects]]
-  branch = "master"
   name = "github.com/google/go-querystring"
   packages = ["query"]
   revision = "53e6ce116135b80d037921a7fdd5138cf32d7a8a"
@@ -192,12 +186,6 @@
   name = "github.com/moul/http2curl"
   packages = ["."]
   revision = "4e24498b31dba4683efb9d35c1c8a91e2eda28c8"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/oxtoacart/bpool"
-  packages = ["."]
-  revision = "4e1c5567d7c2dd59fa4c7c83d34c2f3528b025d6"
 
 [[projects]]
   name = "github.com/pmezard/go-difflib"
@@ -300,6 +288,12 @@
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   revision = "cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/PuerkitoBio/goquery"
+  packages = ["."]
+  revision = "2dc93891ab3bcc1dbc2cbf9bc6376c37f6e6f289"
 
 [solve-meta]
   analyzer-name = "dep"
