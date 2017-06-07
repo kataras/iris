@@ -51,7 +51,7 @@ func (c *Client) readPump() {
 	for {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
-			fmt.Println("disconnect @ ", time.Now().Format("2006-01-02 15:04:05.000000"))
+			// fmt.Println("disconnect @ ", time.Now().Format("2006-01-02 15:04:05.000000"))
 			return
 		}
 		c.conn.SetReadDeadline(time.Now().Add(c.config.ReadTimeout))
