@@ -1,13 +1,16 @@
 package main
 
-import (
-	// developers can use any library to add a custom cookie encoder/decoder.
-	// At this example we use the gorilla's securecookie library:
-	"github.com/gorilla/securecookie"
+// developers can use any library to add a custom cookie encoder/decoder.
+// At this example we use the gorilla's securecookie package:
+// $ go get github.com/gorilla/securecookie
+// $ go run main.go
 
+import (
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/sessions"
+
+	"github.com/gorilla/securecookie"
 )
 
 func main() {

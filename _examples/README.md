@@ -44,6 +44,7 @@ It doesn't contains "best ways" neither explains all its features. It's just a s
     * [Request Logger](beginner/request-logger/main.go)
     * [Basic Authentication](beginner/basicauth/main.go)
 * [Level: Intermediate](intermediate)
+    * [OAUth2](intermediate/oauth2/main.go)
     * [Transactions](intermediate/transactions/main.go)
     * [HTTP Testing](intermediate/httptest/main_test.go)
     * [Watch & Compile Typescript source files](intermediate/typescript/main.go)
