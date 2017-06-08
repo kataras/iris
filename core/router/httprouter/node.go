@@ -329,11 +329,9 @@ func (n *Node) insertChild(numParams uint8, path, fullPath string, handle contex
 // given context.
 //
 // ResolveRoute finds the correct registered route from the Node when the ctx.Handlers() > 0.
-func (n *Node) ResolveRoute(ctx context.Context) (handlers context.Handlers, p context.RequestParams, tsr bool) { //(p context.RequestParams, tsr bool) {
+func (n *Node) ResolveRoute(ctx context.Context) (handlers context.Handlers, tsr bool) { //(p context.RequestParams, tsr bool) {
 	path := ctx.Request().URL.Path
 	handlers = ctx.Handlers()
-	// values := ctx.Values()
-	p = ctx.Params()
 walk: // outer loop for walking the tree
 	for {
 		if len(path) > len(n.path) {
@@ -370,14 +368,7 @@ walk: // outer loop for walking the tree
 					}
 
 					// save param value
-					if cap(p) < int(n.maxParams) {
-						p = make(context.RequestParams, 0, n.maxParams)
-					}
-					i := len(p)
-					p = p[:i+1] // expand
-					p[i].Key = n.path[1:]
-					p[i].Value = path[:end]
-
+					ctx.Params().Set(n.path[1:], path[:end])
 					// we need to go deeper!
 					if end < len(path) {
 						if len(n.children) > 0 {
@@ -403,15 +394,7 @@ walk: // outer loop for walking the tree
 					return
 
 				case catchAll:
-					// save param value
-					if cap(p) < int(n.maxParams) {
-						p = make(context.RequestParams, 0, n.maxParams)
-					}
-					i := len(p)
-					p = p[:i+1] // expand
-
-					p[i].Key = n.path[2:]
-					p[i].Value = path
+					ctx.Params().Set(n.path[2:], path)
 					handlers = n.handle
 					return
 

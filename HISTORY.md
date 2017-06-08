@@ -29,6 +29,10 @@ Thanks to [Santosh Anand](https://github.com/santoshanand) the http://iris-go.co
 
 The amount of the next two or three donations you'll send they will be immediately transferred to his own account balance, so be generous please!
 
+# Th, 08 June 2017 | v7.0.2
+
+- Able to set **immutable** data on sessions and context's storage. Aligned to fix an issue on slices and maps as reported [here](https://github.com/iris-contrib/community-board/issues/5).
+
 # We, 07 June 2017 | v7.0.1
 
 - Proof of concept of an internal release generator, navigate [here](https://github.com/iris-contrib/community-board/issues/2) to read more. 

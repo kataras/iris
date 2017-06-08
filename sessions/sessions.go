@@ -47,8 +47,9 @@ type (
 		GetFlashes() map[string]interface{}
 		VisitAll(cb func(k string, v interface{}))
 		Set(string, interface{})
+		SetImmutable(key string, value interface{})
 		SetFlash(string, interface{})
-		Delete(string)
+		Delete(string) bool
 		DeleteFlash(string)
 		Clear()
 		ClearFlashes()

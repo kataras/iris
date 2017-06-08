@@ -8,6 +8,10 @@ import (
 	"github.com/kataras/iris/sessions"
 )
 
+type myobject struct {
+	name string
+}
+
 func main() {
 	app := iris.New()
 	// enable all (error) logs
@@ -29,11 +33,6 @@ func main() {
 		// want to be crazy safe? Take a look at the "securecookie" example folder.
 	})
 
-	// OPTIONALLY:
-	// import "github.com/kataras/iris/sessions/sessiondb/redis"
-	// or import "github.com/kataras/go-sessions/sessiondb/$any_available_community_database"
-	// mySessions.UseDatabase(redis.New(...))
-
 	app.AttachSessionManager(mySessions) // Attach the session manager we just created.
 
 	app.Get("/", func(ctx context.Context) {
@@ -41,15 +40,24 @@ func main() {
 	})
 	app.Get("/set", func(ctx context.Context) {
 
-		//set session values
+		//set session values.
+
 		ctx.Session().Set("name", "iris")
 
 		//test if setted here
 		ctx.Writef("All ok session setted to: %s", ctx.Session().GetString("name"))
+
+		// Set will set the value as-it-is,
+		// if it's a slice or map
+		// you will be able to change it on .Get directly!
+		// Keep note that I don't recommend saving big data neither slices or maps on a session
+		// but if you really need it then use the `SetImmutable` instead of `Set`.
+		// Use `SetImmutable` consistently, it's slower.
+		// Read more about muttable and immutable go types: https://stackoverflow.com/a/8021081
 	})
 
 	app.Get("/get", func(ctx context.Context) {
-		// get a specific key, as string, if no found returns just an empty string
+		// get a specific value, as string, if no found returns just an empty string
 		name := ctx.Session().GetString("name")
 
 		ctx.Writef("The name on the /set was: %s", name)

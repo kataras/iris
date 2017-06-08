@@ -40,7 +40,7 @@ const (
 	// Version is the current version number of the Iris Web framework.
 	//
 	// Look https://github.com/kataras/iris#where-can-i-find-older-versions for older versions.
-	Version = "7.0.1"
+	Version = "7.0.2"
 )
 
 const (
