@@ -84,18 +84,38 @@ func main() {
 	// mySessions.DestroyByID
 	// mySessions.DestroyAll
 
-	app.Get("/immutable", func(ctx context.Context) {
+	// remember: slices and maps are muttable by-design
+	// The `SetImmutable` makes sure that they will be stored and received
+	// as immutable, so you can't change them directly by mistake.
+	//
+	// Use `SetImmutable` consistently, it's slower than `Set`.
+	// Read more about muttable and immutable go types: https://stackoverflow.com/a/8021081
+	app.Get("/set_immutable", func(ctx context.Context) {
 		business := []businessModel{{Name: "Edward"}, {Name: "value 2"}}
 		ctx.Session().SetImmutable("businessEdit", business)
 		businessGet := ctx.Session().Get("businessEdit").([]businessModel)
-		// businessGet[0].Name is equal to Edward initially
+
+		// try to change it, if we used `Set` instead of `SetImmutable` this
+		// change will affect the underline array of the session's value "businessEdit", but now it will not.
 		businessGet[0].Name = "Gabriel"
+
 	})
 
-	app.Get("/immutable_get", func(ctx context.Context) {
-		if ctx.Session().Get("businessEdit").([]businessModel)[0].Name == "Gabriel" {
+	app.Get("/get_immutable", func(ctx context.Context) {
+		valSlice := ctx.Session().Get("businessEdit")
+		if valSlice == nil {
+			ctx.HTML("please navigate to the <a href='/set_immutable'>/set_immutable</a> first")
+			return
+		}
+
+		firstModel := valSlice.([]businessModel)[0]
+		// businessGet[0].Name is equal to Edward initially
+		if firstModel.Name != "Edward" {
 			panic("Report this as a bug, immutable data cannot be changed from the caller without re-SetImmutable")
 		}
+
+		ctx.Writef("[]businessModel[0].Name remains: %s", firstModel.Name)
+
 		// the name should remains "Edward"
 	})
 

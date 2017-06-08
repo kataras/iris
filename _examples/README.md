@@ -94,6 +94,9 @@ It doesn't contains "best ways" neither explains all its features. It's just a s
     * [Online Visitors](advanced/online-visitors/main.go)
     * [URL Shortener using BoltDB](advanced/url-shortener/main.go)
 
+
+You may want to check out examples for jwt, cors and the rest of community-maden middleware by clicking [here](https://github.com/iris-contrib/middleware)
+
 > Do not forget to [star or watch the project](https://github.com/kataras/iris/stargazers) in order to stay updated with the latest tech trends, it takes some seconds for the sake of go!
 
 > Developers should read the official [documentation](https://godoc.org/github.com/kataras/iris) in depth, for deep understanding.
