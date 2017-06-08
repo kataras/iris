@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/kataras/iris/core/errors"
+	"github.com/kataras/iris/core/memstore"
 )
 
 type (
@@ -18,7 +19,7 @@ type (
 	// implements the context.Session interface
 	session struct {
 		sid    string
-		values map[string]interface{} // here are the real values
+		values memstore.Store // here are the real values
 		// we could set the flash messages inside values but this will bring us more problems
 		// because of session databases and because of
 		// users may want to get all sessions and save them or display them
@@ -45,10 +46,10 @@ func (s *session) ID() string {
 	return s.sid
 }
 
-// Get returns the value of an entry by its key
+// Get returns a value based on its "key".
 func (s *session) Get(key string) interface{} {
 	s.mu.RLock()
-	value := s.values[key]
+	value := s.values.Get(key)
 	s.mu.RUnlock()
 
 	return value
@@ -215,8 +216,8 @@ func (s *session) GetBoolean(key string) (bool, error) {
 func (s *session) GetAll() map[string]interface{} {
 	items := make(map[string]interface{}, len(s.values))
 	s.mu.RLock()
-	for key, v := range s.values {
-		items[key] = v
+	for _, kv := range s.values {
+		items[kv.Key] = kv.Value()
 	}
 	s.mu.RUnlock()
 	return items
@@ -237,19 +238,34 @@ func (s *session) GetFlashes() map[string]interface{} {
 
 // VisitAll loop each one entry and calls the callback function func(key,value)
 func (s *session) VisitAll(cb func(k string, v interface{})) {
-	for key := range s.values {
-		cb(key, s.values[key])
-	}
+	s.values.Visit(cb)
 }
 
-// Set fills the session with an entry, it receives a key and a value
-// returns an error, which is always nil
-func (s *session) Set(key string, value interface{}) {
+func (s *session) set(key string, value interface{}, immutable bool) {
 	s.mu.Lock()
-	s.values[key] = value
+	if immutable {
+		s.values.Set(key, value)
+	} else {
+		s.values.SetImmutable(key, value)
+	}
 	s.mu.Unlock()
 
 	s.updateDatabases()
+}
+
+// Set fills the session with an entry"value", based on its "key".
+func (s *session) Set(key string, value interface{}) {
+	s.set(key, value, false)
+}
+
+// SetImmutable fills the session with an entry "value", based on its "key".
+// Unlike `Set`, the output value cannot be changed by the caller later on (when .Get)
+// An Immutable entry should be only changed with a `SetImmutable`, simple `Set` will not work
+// if the entry was immutable, for your own safety.
+// Use it consistently, it's far slower than `Set`.
+// Read more about muttable and immutable go types: https://stackoverflow.com/a/8021081
+func (s *session) SetImmutable(key string, value interface{}) {
+	s.set(key, value, true)
 }
 
 // SetFlash sets a flash message by its key.
@@ -278,13 +294,15 @@ func (s *session) SetFlash(key string, value interface{}) {
 	s.mu.Unlock()
 }
 
-// Delete removes an entry by its key
-func (s *session) Delete(key string) {
+// Delete removes an entry by its key,
+// returns true if actually something was removed.
+func (s *session) Delete(key string) bool {
 	s.mu.Lock()
-	delete(s.values, key)
+	removed := s.values.Remove(key)
 	s.mu.Unlock()
 
 	s.updateDatabases()
+	return removed
 }
 
 func (s *session) updateDatabases() {
@@ -301,9 +319,7 @@ func (s *session) DeleteFlash(key string) {
 // Clear removes all entries
 func (s *session) Clear() {
 	s.mu.Lock()
-	for key := range s.values {
-		delete(s.values, key)
-	}
+	s.values.Reset()
 	s.mu.Unlock()
 
 	s.updateDatabases()

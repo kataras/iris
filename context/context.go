@@ -31,6 +31,7 @@ import (
 	"github.com/russross/blackfriday"
 
 	"github.com/kataras/iris/core/errors"
+	"github.com/kataras/iris/core/memstore"
 	"github.com/kataras/iris/sessions"
 )
 
@@ -71,6 +72,64 @@ type (
 // slices, and pointers as necessary.
 func (u UnmarshalerFunc) Unmarshal(data []byte, v interface{}) error {
 	return u(data, v)
+}
+
+// RequestParams is a key string - value string storage which context's request params should implement.
+// RequestValues is for communication between middleware, RequestParams cannot be changed, are setted at the routing
+// time, stores the dynamic named parameters, can be empty if the route is static.
+type RequestParams struct {
+	store memstore.Store
+}
+
+// Set shouldn't be used as a local storage, context's values store
+// is the local storage, not params.
+func (r *RequestParams) Set(key, value string) {
+	r.store.Set(key, value)
+}
+
+// Visit accepts a visitor which will be filled
+// by the key-value params.
+func (r *RequestParams) Visit(visitor func(key string, value interface{})) {
+	r.store.Visit(visitor)
+}
+
+// Get returns a path parameter's value based on its route's dynamic path key.
+func (r RequestParams) Get(key string) string {
+	return r.store.GetString(key)
+}
+
+// GetInt returns the param's value as int, based on its key.
+func (r RequestParams) GetInt(key string) (int, error) {
+	return r.store.GetInt(key)
+}
+
+// GetInt64 returns the user's value as int64, based on its key.
+func (r RequestParams) GetInt64(key string) (int64, error) {
+	return r.store.GetInt64(key)
+}
+
+// GetDecoded returns the url-query-decoded user's value based on its key.
+func (r RequestParams) GetDecoded(key string) string {
+	return DecodeQuery(DecodeQuery(r.Get(key)))
+}
+
+// GetIntUnslashed same as Get but it removes the first slash if found.
+// Usage: Get an id from a wildcard path.
+//
+// Returns -1 with an error if the parameter couldn't be found.
+func (r RequestParams) GetIntUnslashed(key string) (int, error) {
+	v := r.Get(key)
+	if v != "" {
+		if len(v) > 1 {
+			if v[0] == '/' {
+				v = v[1:]
+			}
+		}
+		return strconv.Atoi(v)
+
+	}
+
+	return -1, memstore.ErrIntParse.Format(v)
 }
 
 // Context is the midle-man server's "object" for the clients.
@@ -163,9 +222,7 @@ type Context interface {
 	// Params returns the current url's named parameters key-value storage.
 	// Named path parameters are being saved here.
 	// This storage, as the whole Context, is per-request lifetime.
-	Params() RequestParams
-	// SetParams sets/or/overrides the request's url named parameters key-value storage.
-	SetParams(RequestParams)
+	Params() *RequestParams
 
 	// Values returns the current "user" storage.
 	// Named path parameters and any optional data can be saved here.
@@ -173,7 +230,7 @@ type Context interface {
 	//
 	// You can use this function to Set and Get local values
 	// that can be used to share information between handlers and middleware.
-	Values() *RequestValues
+	Values() *memstore.Store
 	// Translate is the i18n (localization) middleware's function,
 	// it calls the Get("translate") to return the translated value.
 	//
@@ -684,8 +741,8 @@ type context struct {
 	// the original http.Request
 	request *http.Request
 	// the local key-value storage
-	params RequestParams // url named parameters
-	values RequestValues // generic storage, middleware communication
+	params RequestParams  // url named parameters
+	values memstore.Store // generic storage, middleware communication
 
 	// the underline application framework
 	framework Application
@@ -720,7 +777,7 @@ func (ctx *context) BeginRequest(w http.ResponseWriter, r *http.Request) {
 	ctx.handlers = nil           // will be filled by router.Serve/HTTP
 	ctx.session = nil            // >>      >>     by sessions.Session()
 	ctx.values = ctx.values[0:0] // >>      >>     by context.Values().Set
-	ctx.params = ctx.params[0:0]
+	ctx.params.store = ctx.params.store[0:0]
 	ctx.request = r
 	ctx.currentHandlerIndex = 0
 	ctx.writer = AcquireResponseWriter()
@@ -861,13 +918,8 @@ func (ctx *context) IsStopped() bool {
 // Params returns the current url's named parameters key-value storage.
 // Named path parameters are being saved here.
 // This storage, as the whole context, is per-request lifetime.
-func (ctx *context) Params() RequestParams {
-	return ctx.params
-}
-
-// SetParams sets/or/overrides the request's url named parameters key-value storage.
-func (ctx *context) SetParams(params RequestParams) {
-	ctx.params = params
+func (ctx *context) Params() *RequestParams {
+	return &ctx.params
 }
 
 // Values returns the current "user" storage.
@@ -876,7 +928,7 @@ func (ctx *context) SetParams(params RequestParams) {
 //
 // You can use this function to Set and Get local values
 // that can be used to share information between handlers and middleware.
-func (ctx *context) Values() *RequestValues {
+func (ctx *context) Values() *memstore.Store {
 	return &ctx.values
 }
 

@@ -173,9 +173,8 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 			}
 		}
 
-		handlers, params, mustRedirect := t.Entry.ResolveRoute(ctx)
+		handlers, mustRedirect := t.Entry.ResolveRoute(ctx)
 		if len(handlers) > 0 {
-			ctx.SetParams(params)
 			ctx.SetHandlers(handlers)
 			ctx.Handlers()[0](ctx)
 			// to remove the .Next(maybe not a good idea), reduces the performance a bit:

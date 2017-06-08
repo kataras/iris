@@ -7,6 +7,8 @@ package sessions
 import (
 	"sync"
 	"time"
+
+	"github.com/kataras/iris/core/memstore"
 )
 
 type (
@@ -44,7 +46,7 @@ func (p *provider) newSession(sid string, expires time.Duration) *session {
 	sess := &session{
 		sid:      sid,
 		provider: p,
-		values:   p.loadSessionValues(sid),
+		values:   p.loadSessionValuesFromDB(sid),
 		flashes:  make(map[string]*flashMessage),
 	}
 
@@ -60,20 +62,32 @@ func (p *provider) newSession(sid string, expires time.Duration) *session {
 	return sess
 }
 
-func (p *provider) loadSessionValues(sid string) map[string]interface{} {
+// can return nil
+func (p *provider) loadSessionValuesFromDB(sid string) memstore.Store {
+	var store memstore.Store
 
 	for i, n := 0, len(p.databases); i < n; i++ {
 		if dbValues := p.databases[i].Load(sid); dbValues != nil && len(dbValues) > 0 {
-			return dbValues // return the first non-empty from the registered stores.
+			for k, v := range dbValues {
+				store.Set(k, v)
+			}
 		}
 	}
-	values := make(map[string]interface{})
-	return values
+	return store
 }
 
-func (p *provider) updateDatabases(sid string, newValues map[string]interface{}) {
-	for i, n := 0, len(p.databases); i < n; i++ {
-		p.databases[i].Update(sid, newValues)
+func (p *provider) updateDatabases(sid string, store memstore.Store) {
+
+	if l := store.Len(); l > 0 {
+		mapValues := make(map[string]interface{}, l)
+
+		store.Visit(func(k string, v interface{}) {
+			mapValues[k] = v
+		})
+
+		for i, n := 0, len(p.databases); i < n; i++ {
+			p.databases[i].Update(sid, mapValues)
+		}
 	}
 }
 

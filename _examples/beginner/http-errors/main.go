@@ -22,7 +22,7 @@ func main() {
 	})
 
 	app.Get("/u/{firstname:alphabetical}", func(ctx context.Context) {
-		ctx.Writef("Hello %s", ctx.Values().GetString("firstname"))
+		ctx.Writef("Hello %s", ctx.Params().Get("firstname"))
 	})
 
 	app.Run(iris.Addr(":8080"))
