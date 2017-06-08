@@ -8,8 +8,8 @@ import (
 	"github.com/kataras/iris/sessions"
 )
 
-type myobject struct {
-	name string
+type businessModel struct {
+	Name string
 }
 
 func main() {
@@ -83,6 +83,21 @@ func main() {
 	// You can destroy a session outside of a handler too, using the:
 	// mySessions.DestroyByID
 	// mySessions.DestroyAll
+
+	app.Get("/immutable", func(ctx context.Context) {
+		business := []businessModel{{Name: "Edward"}, {Name: "value 2"}}
+		ctx.Session().SetImmutable("businessEdit", business)
+		businessGet := ctx.Session().Get("businessEdit").([]businessModel)
+		// businessGet[0].Name is equal to Edward initially
+		businessGet[0].Name = "Gabriel"
+	})
+
+	app.Get("/immutable_get", func(ctx context.Context) {
+		if ctx.Session().Get("businessEdit").([]businessModel)[0].Name == "Gabriel" {
+			panic("Report this as a bug, immutable data cannot be changed from the caller without re-SetImmutable")
+		}
+		// the name should remains "Edward"
+	})
 
 	app.Run(iris.Addr(":8080"))
 }
