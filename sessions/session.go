@@ -244,9 +244,9 @@ func (s *session) VisitAll(cb func(k string, v interface{})) {
 func (s *session) set(key string, value interface{}, immutable bool) {
 	s.mu.Lock()
 	if immutable {
-		s.values.Set(key, value)
-	} else {
 		s.values.SetImmutable(key, value)
+	} else {
+		s.values.Set(key, value)
 	}
 	s.mu.Unlock()
 
