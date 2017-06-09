@@ -8,7 +8,6 @@ package websocket
 import (
 	"bytes"
 	"crypto/tls"
-	// "fmt"
 	"net"
 	"net/http"
 	"net/url"
@@ -58,6 +57,7 @@ type ClientConnection interface {
 // in order to ensure all read operations are within a single goroutine
 // readPump processes incoming messages and dispatches them to messageReceived
 func (c *client) readPump() {
+	// fmt.Println("starting readPump")
 	defer c.conn.Close()
 	c.conn.SetReadLimit(c.config.MaxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(c.config.ReadTimeout))
@@ -80,9 +80,7 @@ func (c *client) readPump() {
 			return
 		}
 		c.conn.SetReadDeadline(time.Now().Add(c.config.ReadTimeout))
-
 		// fmt.Println("recv:", string(message), "@", time.Now().Format("2006-01-02 15:04:05.000000"))
-
 		go c.messageReceived(message)
 	}
 }
@@ -253,9 +251,10 @@ func (c *client) Disconnect() error {
 	return nil
 }
 
-// WSDialer here is a shameless wrapper around gorilla.websocket.Dialer
-// which returns a wsclient.Client instead of the gorilla Connection on Dial()
-type WSDialer struct {
+// Dialer here is a shameless wrapper around gorilla.websocket.Dialer
+// which returns an iris websocket.ClientConnection instead of the gorilla
+// Connection on Dial()
+type Dialer struct {
 	// NetDial specifies the dial function for creating TCP connections. If
 	// NetDial is nil, net.Dial is used.
 	NetDial func(network, addr string) (net.Conn, error)
@@ -298,7 +297,7 @@ type WSDialer struct {
 // Dial initiates a connection to a remote Iris server websocket listener
 // using the gorilla websocket Dialer and returns a Client connection
 // which can be used to emit and handle messages
-func (wsd *WSDialer) Dial(urlStr string, requestHeader http.Header, config Config) (ClientConnection, *http.Response, error) {
+func (wsd *Dialer) Dial(urlStr string, requestHeader http.Header, config Config) (ClientConnection, *http.Response, error) {
 	if wsd.dialer == nil {
 		wsd.dialer = new(gwebsocket.Dialer)
 	}
@@ -318,12 +317,11 @@ func (wsd *WSDialer) Dial(urlStr string, requestHeader http.Header, config Confi
 	c := new(client)
 	c.conn = conn
 	c.config = config
-	c.config.Validate()
 	c.wAbort = make(chan bool)
 	c.wchan = make(chan []byte)
 	c.pchan = make(chan []byte)
 	c.onEventListeners = make(map[string][]MessageFunc)
-	c.config.Validate()
+	c.config = config.Validate()
 	c.connected = true
 
 	go c.writePump()

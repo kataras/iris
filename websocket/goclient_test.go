@@ -170,7 +170,7 @@ func TestConnectAndWait(t *testing.T) {
 	var err error
 	tries_left := int(5)
 	wss.startup()
-	d := new(WSDialer)
+	d := new(Dialer)
 	client = nil
 	for (client == nil) && (tries_left > 0) {
 		client, _, err = d.Dial("ws://127.0.0.1:8080/echo", nil, Config{
@@ -227,7 +227,7 @@ func TestMixedMessagesConcurrency(t *testing.T) {
 	var err error
 	tries_left := int(5)
 	wss.startup()
-	d := new(WSDialer)
+	d := new(Dialer)
 	client = nil
 	for (client == nil) && (tries_left > 0) {
 		client, _, err = d.Dial("ws://127.0.0.1:8080/echo", nil, Config{
@@ -359,7 +359,7 @@ func TestServerDisconnect(t *testing.T) {
 	connected := true
 	tries_left := int(5)
 	wss.startup()
-	d := new(WSDialer)
+	d := new(Dialer)
 	client = nil
 	for (client == nil) && (tries_left > 0) {
 		client, _, err = d.Dial("ws://127.0.0.1:8080/echo", nil, Config{
@@ -423,7 +423,7 @@ func TestNoServerDisconnect(t *testing.T) {
 	connected := true
 	tries_left := int(5)
 	wss.startup()
-	d := new(WSDialer)
+	d := new(Dialer)
 	client = nil
 	for (client == nil) && (tries_left > 0) {
 		client, _, err = d.Dial("ws://127.0.0.1:8080/echo", nil, Config{
@@ -485,7 +485,7 @@ func TestClientDisconnect(t *testing.T) {
 	connected := true
 	tries_left := int(5)
 	wss.startup()
-	d := new(WSDialer)
+	d := new(Dialer)
 	client = nil
 	for (client == nil) && (tries_left > 0) {
 		client, _, err = d.Dial("ws://127.0.0.1:8080/echo", nil, Config{
