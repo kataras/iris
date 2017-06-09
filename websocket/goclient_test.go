@@ -160,15 +160,16 @@ func (wss *wsServer) startup() {
 }
 
 func (wss *wsServer) shutdown() {
-	ctx, _ := stdContext.WithTimeout(stdContext.Background(), 5*time.Second)
+	ctx, _ := stdContext.WithTimeout(stdContext.Background(), 1*time.Second)
 	wss.super.Shutdown(ctx)
+	time.Sleep(1 * time.Second)
 }
 
 func TestConnectAndWait(t *testing.T) {
 	var wss wsServer
 	var client ClientConnection
 	var err error
-	tries_left := int(5)
+	tries_left := int(10)
 	wss.startup()
 	d := new(Dialer)
 	client = nil
@@ -225,7 +226,7 @@ func TestMixedMessagesConcurrency(t *testing.T) {
 	var wss wsServer
 	var client ClientConnection
 	var err error
-	tries_left := int(5)
+	tries_left := int(10)
 	wss.startup()
 	d := new(Dialer)
 	client = nil
@@ -357,7 +358,7 @@ func TestServerDisconnect(t *testing.T) {
 	var client ClientConnection
 	var err error
 	connected := true
-	tries_left := int(5)
+	tries_left := int(10)
 	wss.startup()
 	d := new(Dialer)
 	client = nil
@@ -421,7 +422,7 @@ func TestNoServerDisconnect(t *testing.T) {
 	var client ClientConnection
 	var err error
 	connected := true
-	tries_left := int(5)
+	tries_left := int(10)
 	wss.startup()
 	d := new(Dialer)
 	client = nil
@@ -483,7 +484,7 @@ func TestClientDisconnect(t *testing.T) {
 	var client ClientConnection
 	var err error
 	connected := true
-	tries_left := int(5)
+	tries_left := int(10)
 	wss.startup()
 	d := new(Dialer)
 	client = nil
