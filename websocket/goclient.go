@@ -21,7 +21,7 @@ import (
 
 // Client presents a subset of iris.websocket.Connection interface to support
 // client-initiated connections using the Iris websocket message protocol
-type Client struct {
+type client struct {
 	conn                     *gwebsocket.Conn
 	config                   Config
 	wAbort                   chan bool
@@ -35,9 +35,9 @@ type Client struct {
 	dMutex                   sync.Mutex
 }
 
-// CommonInterface defines proper subset of Connection interface which is
+// ClientConnection defines proper subset of Connection interface which is
 // satisfied by Client
-type CommonInterface interface {
+type ClientConnection interface {
 	// EmitMessage sends a native websocket message
 	EmitMessage([]byte) error
 	// Emit sends a message on a particular event
@@ -57,7 +57,7 @@ type CommonInterface interface {
 
 // in order to ensure all read operations are within a single goroutine
 // readPump processes incoming messages and dispatches them to messageReceived
-func (c *Client) readPump() {
+func (c *client) readPump() {
 	defer c.conn.Close()
 	c.conn.SetReadLimit(c.config.MaxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(c.config.ReadTimeout))
@@ -87,7 +87,7 @@ func (c *Client) readPump() {
 	}
 }
 
-func (c *Client) fireDisconnect() {
+func (c *client) fireDisconnect() {
 	c.dMutex.Lock()
 	defer c.dMutex.Unlock()
 	if c.connected == false {
@@ -102,7 +102,7 @@ func (c *Client) fireDisconnect() {
 
 // messageReceived comes straight from iris/adapters/websocket/connection.go
 // messageReceived checks the incoming message and fire the nativeMessage listeners or the event listeners (ws custom message)
-func (c *Client) messageReceived(data []byte) {
+func (c *client) messageReceived(data []byte) {
 
 	if bytes.HasPrefix(data, websocketMessagePrefixBytes) {
 		customData := string(data)
@@ -151,7 +151,7 @@ func (c *Client) messageReceived(data []byte) {
 
 // In order to ensure all write operations are within a single goroutine
 // writePump handles write operations to the socket serially from channels
-func (c *Client) writePump() {
+func (c *client) writePump() {
 	pingtimer := time.NewTicker(c.config.PingPeriod)
 	defer c.conn.Close()
 	c.conn.SetWriteDeadline(time.Now().Add(c.config.WriteTimeout))
@@ -206,14 +206,14 @@ func (c *Client) writePump() {
 
 // EmitMessage sends a native (raw) message to the socket. The server will
 // receive this message using the handler specified with OnMessage()
-func (c *Client) EmitMessage(nativeMessage []byte) error {
+func (c *client) EmitMessage(nativeMessage []byte) error {
 	c.wchan <- nativeMessage
 	return nil
 }
 
 // Emit sends a message to a particular event queue. The server will receive
 // these messages via the handler specified using On()
-func (c *Client) Emit(event string, data interface{}) error {
+func (c *client) Emit(event string, data interface{}) error {
 	message, err := websocketMessageSerialize(event, data)
 	if err != nil {
 		return err
@@ -223,24 +223,24 @@ func (c *Client) Emit(event string, data interface{}) error {
 	return nil
 }
 
-func (c *Client) OnDisconnect(f DisconnectFunc) {
+func (c *client) OnDisconnect(f DisconnectFunc) {
 	c.onDisconnectListeners = append(c.onDisconnectListeners, f)
 }
 
-//func (c *Client) OnError(f ErrorFunc) {
+//func (c *client) OnError(f ErrorFunc) {
 //
 //}
 
 // OnMessage designates a listener callback function for raw messages. If
 // multiple callback functions are specified, all will be called for each
 // message
-func (c *Client) OnMessage(f NativeMessageFunc) {
+func (c *client) OnMessage(f NativeMessageFunc) {
 	c.onNativeMessageListeners = append(c.onNativeMessageListeners, f)
 }
 
 // On designates a listener callback for a specific event tag.  If multiple
 // callback functions are specified, all will be called for each message
-func (c *Client) On(event string, f MessageFunc) {
+func (c *client) On(event string, f MessageFunc) {
 	if c.onEventListeners[event] == nil {
 		c.onEventListeners[event] = make([]MessageFunc, 0)
 	}
@@ -248,7 +248,7 @@ func (c *Client) On(event string, f MessageFunc) {
 	c.onEventListeners[event] = append(c.onEventListeners[event], f)
 }
 
-func (c *Client) Disconnect() error {
+func (c *client) Disconnect() error {
 	c.wAbort <- true
 	return nil
 }
@@ -298,7 +298,7 @@ type WSDialer struct {
 // Dial initiates a connection to a remote Iris server websocket listener
 // using the gorilla websocket Dialer and returns a Client connection
 // which can be used to emit and handle messages
-func (wsd *WSDialer) Dial(urlStr string, requestHeader http.Header, config Config) (*Client, *http.Response, error) {
+func (wsd *WSDialer) Dial(urlStr string, requestHeader http.Header, config Config) (ClientConnection, *http.Response, error) {
 	if wsd.dialer == nil {
 		wsd.dialer = new(gwebsocket.Dialer)
 	}
@@ -315,7 +315,7 @@ func (wsd *WSDialer) Dial(urlStr string, requestHeader http.Header, config Confi
 	if err != nil {
 		return nil, response, err
 	}
-	c := new(Client)
+	c := new(client)
 	c.conn = conn
 	c.config = config
 	c.config.Validate()

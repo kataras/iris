@@ -22,7 +22,7 @@ import (
 	//"github.com/kataras/iris/websocket"
 )
 
-func validateInterface(con CommonInterface) bool {
+func validateInterface(con ClientConnection) bool {
 	return true
 }
 
@@ -166,7 +166,7 @@ func (wss *wsServer) shutdown() {
 
 func TestConnectAndWait(t *testing.T) {
 	var wss wsServer
-	var client *Client
+	var client ClientConnection
 	var err error
 	tries_left := int(5)
 	wss.startup()
@@ -223,7 +223,7 @@ func TestConnectAndWait(t *testing.T) {
 
 func TestMixedMessagesConcurrency(t *testing.T) {
 	var wss wsServer
-	var client *Client
+	var client ClientConnection
 	var err error
 	tries_left := int(5)
 	wss.startup()
@@ -354,7 +354,7 @@ func TestMixedMessagesConcurrency(t *testing.T) {
 
 func TestServerDisconnect(t *testing.T) {
 	var wss wsServer
-	var client *Client
+	var client ClientConnection
 	var err error
 	connected := true
 	tries_left := int(5)
@@ -418,7 +418,7 @@ func TestServerDisconnect(t *testing.T) {
 
 func TestNoServerDisconnect(t *testing.T) {
 	var wss wsServer
-	var client *Client
+	var client ClientConnection
 	var err error
 	connected := true
 	tries_left := int(5)
@@ -480,7 +480,7 @@ func TestNoServerDisconnect(t *testing.T) {
 
 func TestClientDisconnect(t *testing.T) {
 	var wss wsServer
-	var client *Client
+	var client ClientConnection
 	var err error
 	connected := true
 	tries_left := int(5)
