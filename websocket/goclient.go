@@ -8,11 +8,12 @@ package websocket
 import (
 	"bytes"
 	"crypto/tls"
-	"fmt"
+	// "fmt"
 	"net"
 	"net/http"
 	"net/url"
 	"strconv"
+	"sync"
 	"time"
 
 	gwebsocket "github.com/gorilla/websocket"
@@ -23,12 +24,35 @@ import (
 type Client struct {
 	conn                     *gwebsocket.Conn
 	config                   Config
+	wAbort                   chan bool
 	wchan                    chan []byte
 	pchan                    chan []byte
 	onDisconnectListeners    []DisconnectFunc
 	onErrorListeners         []ErrorFunc
 	onNativeMessageListeners []NativeMessageFunc
 	onEventListeners         map[string][]MessageFunc
+	connected                bool
+	dMutex                   sync.Mutex
+}
+
+// CommonInterface defines proper subset of Connection interface which is
+// satisfied by Client
+type CommonInterface interface {
+	// EmitMessage sends a native websocket message
+	EmitMessage([]byte) error
+	// Emit sends a message on a particular event
+	Emit(string, interface{}) error
+
+	// OnDisconnect registers a callback which fires when this connection is closed by an error or manual
+	OnDisconnect(DisconnectFunc)
+
+	// OnMessage registers a callback which fires when native websocket message received
+	OnMessage(NativeMessageFunc)
+	// On registers a callback to a particular event which fires when a message to this event received
+	On(string, MessageFunc)
+	// Disconnect disconnects the client, close the underline websocket conn and removes it from the conn list
+	// returns the error, if any, from the underline connection
+	Disconnect() error
 }
 
 // in order to ensure all read operations are within a single goroutine
@@ -52,6 +76,7 @@ func (c *Client) readPump() {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
 			// fmt.Println("disconnect @ ", time.Now().Format("2006-01-02 15:04:05.000000"))
+			c.wAbort <- false
 			return
 		}
 		c.conn.SetReadDeadline(time.Now().Add(c.config.ReadTimeout))
@@ -60,6 +85,19 @@ func (c *Client) readPump() {
 
 		go c.messageReceived(message)
 	}
+}
+
+func (c *Client) fireDisconnect() {
+	c.dMutex.Lock()
+	defer c.dMutex.Unlock()
+	if c.connected == false {
+		return
+	}
+	// fmt.Println("fireDisconnect unique")
+	for i := range c.onDisconnectListeners {
+		c.onDisconnectListeners[i]()
+	}
+	c.connected = false
 }
 
 // messageReceived comes straight from iris/adapters/websocket/connection.go
@@ -123,13 +161,15 @@ func (c *Client) writePump() {
 			// fmt.Printf("WP: writing %s\n", string(wmsg))
 			w, err := c.conn.NextWriter(gwebsocket.TextMessage)
 			if err != nil {
-				fmt.Println("error getting NextWriter")
+				// fmt.Println("error getting NextWriter")
+				c.fireDisconnect()
 				return
 			}
 			w.Write(wmsg)
 
 			if err := w.Close(); err != nil {
-				fmt.Println("error closing NextWriter")
+				// fmt.Println("error closing NextWriter")
+				c.fireDisconnect()
 				return
 			}
 
@@ -137,13 +177,27 @@ func (c *Client) writePump() {
 			c.conn.SetWriteDeadline(time.Now().Add(c.config.WriteTimeout))
 			// fmt.Printf("sending PONG to %s\n", c.conn.UnderlyingConn().RemoteAddr().String())
 			if err := c.conn.WriteControl(gwebsocket.PongMessage, pmsg, time.Now().Add(c.config.WriteTimeout)); err != nil {
+				// fmt.Println("error sending PONG")
+				c.fireDisconnect()
 				return
 			}
+
+		// any write to wAbort aborts writePump
+		case sendClose := <-c.wAbort:
+			// fmt.Println("wAbort received")
+			if sendClose {
+				c.conn.WriteControl(gwebsocket.CloseMessage, gwebsocket.FormatCloseMessage(gwebsocket.CloseNormalClosure, ""),
+					time.Now().Add(c.config.WriteTimeout))
+			}
+			c.fireDisconnect()
+			return
 
 		case <-pingtimer.C:
 			c.conn.SetWriteDeadline(time.Now().Add(c.config.WriteTimeout))
 			// fmt.Printf("sending PING to %s\n", c.conn.UnderlyingConn().RemoteAddr().String())
 			if err := c.conn.WriteControl(gwebsocket.PingMessage, []byte{}, time.Now().Add(c.config.WriteTimeout)); err != nil {
+				// fmt.Println("error sending PING")
+				c.fireDisconnect()
 				return
 			}
 		}
@@ -169,9 +223,9 @@ func (c *Client) Emit(event string, data interface{}) error {
 	return nil
 }
 
-//func (c *Client) OnDisconnect(f DisconnectFunc) {
-//
-//}
+func (c *Client) OnDisconnect(f DisconnectFunc) {
+	c.onDisconnectListeners = append(c.onDisconnectListeners, f)
+}
 
 //func (c *Client) OnError(f ErrorFunc) {
 //
@@ -194,9 +248,10 @@ func (c *Client) On(event string, f MessageFunc) {
 	c.onEventListeners[event] = append(c.onEventListeners[event], f)
 }
 
-//func (c *Client) Disconnect() error {
-//	return nil
-//}
+func (c *Client) Disconnect() error {
+	c.wAbort <- true
+	return nil
+}
 
 // WSDialer here is a shameless wrapper around gorilla.websocket.Dialer
 // which returns a wsclient.Client instead of the gorilla Connection on Dial()
@@ -264,10 +319,12 @@ func (wsd *WSDialer) Dial(urlStr string, requestHeader http.Header, config Confi
 	c.conn = conn
 	c.config = config
 	c.config.Validate()
+	c.wAbort = make(chan bool)
 	c.wchan = make(chan []byte)
 	c.pchan = make(chan []byte)
 	c.onEventListeners = make(map[string][]MessageFunc)
 	c.config.Validate()
+	c.connected = true
 
 	go c.writePump()
 	go c.readPump()

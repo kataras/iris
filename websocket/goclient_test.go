@@ -40,6 +40,10 @@ import (
 	//"github.com/kataras/iris/websocket"
 )
 
+func validateInterface(con CommonInterface) bool {
+	return true
+}
+
 // test server model used to test client code
 
 type indexResponse struct {
@@ -77,7 +81,7 @@ func (wsc *wsClient) lenString(message string) {
 }
 
 func (wsc *wsClient) disconnect() {
-	fmt.Println("client disconnect @ ", time.Now().Format("2006-01-02 15:04:05.000000"))
+	// fmt.Println("client disconnect @ ", time.Now().Format("2006-01-02 15:04:05.000000"))
 }
 
 type wsServer struct {
@@ -93,19 +97,17 @@ func (wss *wsServer) connect(con Connection) {
 	wss.listMutex.Lock()
 	defer wss.listMutex.Unlock()
 
+	// fail compile here if server connection doesn't satisfy interface
+	validateInterface(con)
 	c := &wsClient{con: con, wss: wss}
 	wss.clients = append(wss.clients, c)
 
 	// fmt.Printf("Connect # active clients : %d\n", len(wss.clients))
 
 	con.OnMessage(c.echoRawMessage)
-
 	con.On("echo", c.echoString)
-
 	con.On("len", c.lenString)
-
 	con.On("reverse", c.reverseString)
-
 	con.OnDisconnect(c.disconnect)
 }
 
@@ -123,7 +125,7 @@ func (wss *wsServer) disconnect(wsc *wsClient) {
 		if v == wsc {
 			wss.clients[p] = wss.clients[l-1]
 			wss.clients = wss.clients[:l-1]
-			fmt.Printf("Disconnect # active clients : %d\n", len(wss.clients))
+			// fmt.Printf("Disconnect # active clients : %d\n", len(wss.clients))
 			return
 		}
 	}
@@ -195,6 +197,8 @@ func TestConnectAndWait(t *testing.T) {
 			}
 		}
 	}
+	// fail compile here if client doesn't satisfy common interface
+	validateInterface(client)
 	if client == nil {
 		fmt.Println("Dialer returned nil client")
 		t.Fail()
@@ -206,8 +210,6 @@ func TestConnectAndWait(t *testing.T) {
 			time.Sleep(1 * time.Second)
 		}
 		got_reply := false
-		// fmt.Println("Dial complete")
-		time.Sleep(1 * time.Second)
 		client.On("echo_reply", func(s string) {
 			// fmt.Println("client echo_reply", s)
 			got_reply = true
@@ -231,7 +233,6 @@ func TestMixedMessagesConcurrency(t *testing.T) {
 	var err error
 	tries_left := int(5)
 	wss.startup()
-	time.Sleep(1 * time.Second)
 	d := new(WSDialer)
 	client = nil
 	for (client == nil) && (tries_left > 0) {
@@ -264,7 +265,6 @@ func TestMixedMessagesConcurrency(t *testing.T) {
 		reverse_count := int32(0)
 		raw_count := int32(0)
 		// fmt.Println("Dial complete")
-		time.Sleep(1 * time.Second)
 		client.On("echo_reply", func(s string) {
 			//fmt.Println("client echo_reply", s)
 			atomic.AddInt32(&echo_count, 1)
@@ -355,6 +355,201 @@ func TestMixedMessagesConcurrency(t *testing.T) {
 			fmt.Printf("echo count mismatch, %d != %d\n", raw_count, cycles)
 			t.Fail()
 		}
+	}
+	wss.shutdown()
+	c := wss.clients[0]
+	c.con.Disconnect()
+	time.Sleep(5 * time.Second)
+}
+
+func TestServerDisconnect(t *testing.T) {
+	var wss wsServer
+	var client *Client
+	var err error
+	connected := true
+	tries_left := int(5)
+	wss.startup()
+	time.Sleep(1 * time.Second)
+	d := new(WSDialer)
+	client = nil
+	for (client == nil) && (tries_left > 0) {
+		client, _, err = d.Dial("ws://127.0.0.1:8080/echo", nil, Config{
+			ReadTimeout:     60 * time.Second,
+			WriteTimeout:    60 * time.Second,
+			PingPeriod:      9 * 6 * time.Second,
+			PongTimeout:     60 * time.Second,
+			ReadBufferSize:  4096,
+			WriteBufferSize: 4096,
+			BinaryMessages:  true,
+		})
+		if err != nil {
+			fmt.Println("Dialer error:", err)
+			if tries_left > 0 {
+				time.Sleep(1 * time.Second)
+				tries_left -= 1
+			} else {
+				t.Fail()
+			}
+		}
+	}
+	if client == nil {
+		fmt.Println("Dialer returned nil client")
+		t.Fail()
+	} else {
+		got_reply := false
+		client.On("echo_reply", func(s string) {
+			// fmt.Println("client echo_reply", s)
+			got_reply = true
+		})
+		client.OnDisconnect(func() {
+			// fmt.Println("client echo_reply", s)
+			connected = false
+		})
+		client.Emit("echo", "hello")
+		// fmt.Println("Emit complete")
+		time.Sleep(1 * time.Second)
+		if !got_reply {
+			fmt.Println("No echo response")
+			t.Fail()
+		}
+	}
+	c := wss.clients[0]
+	c.con.Disconnect()
+	tries_left = 5
+	for connected && (tries_left > 0) {
+		time.Sleep(1 * time.Second)
+		tries_left -= 1
+	}
+	if connected {
+		fmt.Println("Disconnect not received by client")
+		t.Fail()
+	}
+	wss.shutdown()
+}
+
+func TestNoServerDisconnect(t *testing.T) {
+	var wss wsServer
+	var client *Client
+	var err error
+	connected := true
+	tries_left := int(5)
+	wss.startup()
+	time.Sleep(1 * time.Second)
+	d := new(WSDialer)
+	client = nil
+	for (client == nil) && (tries_left > 0) {
+		client, _, err = d.Dial("ws://127.0.0.1:8080/echo", nil, Config{
+			ReadTimeout:     60 * time.Second,
+			WriteTimeout:    60 * time.Second,
+			PingPeriod:      9 * 6 * time.Second,
+			PongTimeout:     60 * time.Second,
+			ReadBufferSize:  4096,
+			WriteBufferSize: 4096,
+			BinaryMessages:  true,
+		})
+		if err != nil {
+			fmt.Println("Dialer error:", err)
+			if tries_left > 0 {
+				time.Sleep(1 * time.Second)
+				tries_left -= 1
+			} else {
+				t.Fail()
+			}
+		}
+	}
+	if client == nil {
+		fmt.Println("Dialer returned nil client")
+		t.Fail()
+	} else {
+		got_reply := false
+		client.On("echo_reply", func(s string) {
+			// fmt.Println("client echo_reply", s)
+			got_reply = true
+		})
+		client.OnDisconnect(func() {
+			// fmt.Println("client echo_reply", s)
+			connected = false
+		})
+		client.Emit("echo", "hello")
+		// fmt.Println("Emit complete")
+		time.Sleep(1 * time.Second)
+		if !got_reply {
+			fmt.Println("No echo response")
+			t.Fail()
+		}
+	}
+	tries_left = 5
+	for connected && (tries_left > 0) {
+		time.Sleep(1 * time.Second)
+		tries_left -= 1
+	}
+	if connected == false {
+		fmt.Println("Client disconnected unexpectedly")
+		t.Fail()
+	}
+	wss.shutdown()
+}
+
+func TestClientDisconnect(t *testing.T) {
+	var wss wsServer
+	var client *Client
+	var err error
+	connected := true
+	tries_left := int(5)
+	wss.startup()
+	time.Sleep(1 * time.Second)
+	d := new(WSDialer)
+	client = nil
+	for (client == nil) && (tries_left > 0) {
+		client, _, err = d.Dial("ws://127.0.0.1:8080/echo", nil, Config{
+			ReadTimeout:     60 * time.Second,
+			WriteTimeout:    60 * time.Second,
+			PingPeriod:      9 * 6 * time.Second,
+			PongTimeout:     60 * time.Second,
+			ReadBufferSize:  4096,
+			WriteBufferSize: 4096,
+			BinaryMessages:  true,
+		})
+		if err != nil {
+			fmt.Println("Dialer error:", err)
+			if tries_left > 0 {
+				time.Sleep(1 * time.Second)
+				tries_left -= 1
+			} else {
+				t.Fail()
+			}
+		}
+	}
+	if client == nil {
+		fmt.Println("Dialer returned nil client")
+		t.Fail()
+	} else {
+		got_reply := false
+		client.On("echo_reply", func(s string) {
+			// fmt.Println("client echo_reply", s)
+			got_reply = true
+		})
+		client.OnDisconnect(func() {
+			// fmt.Println("client echo_reply", s)
+			connected = false
+		})
+		client.Emit("echo", "hello")
+		// fmt.Println("Emit complete")
+		time.Sleep(1 * time.Second)
+		if !got_reply {
+			fmt.Println("No echo response")
+			t.Fail()
+		}
+	}
+	client.Disconnect()
+	tries_left = 5
+	for connected && (tries_left > 0) {
+		time.Sleep(1 * time.Second)
+		tries_left -= 1
+	}
+	if connected == true {
+		fmt.Println("No Disconnect Received")
+		t.Fail()
 	}
 	wss.shutdown()
 }
