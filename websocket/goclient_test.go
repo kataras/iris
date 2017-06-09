@@ -161,6 +161,20 @@ func (wss *wsServer) startup() {
 	wss.super = host.New(wss.srv)
 
 	go wss.app.Run(iris.Server(wss.srv), iris.WithoutBanner)
+
+	tries := 0
+	for {
+		_, err := http.Get("http://127.0.0.1:8080/")
+		if err == nil {
+			break
+		}
+		tries += 1
+		if tries > 30 {
+			fmt.Println("Server not responding")
+			return
+		}
+		time.Sleep(1 * time.Second)
+	}
 }
 
 func (wss *wsServer) shutdown() {
@@ -174,7 +188,6 @@ func TestConnectAndWait(t *testing.T) {
 	var err error
 	tries_left := int(5)
 	wss.startup()
-	time.Sleep(1 * time.Second)
 	d := new(WSDialer)
 	client = nil
 	for (client == nil) && (tries_left > 0) {
@@ -215,7 +228,6 @@ func TestConnectAndWait(t *testing.T) {
 			got_reply = true
 		})
 		// fmt.Println("ON complete")
-		time.Sleep(1 * time.Second)
 		client.Emit("echo", "hello")
 		// fmt.Println("Emit complete")
 		time.Sleep(1 * time.Second)
@@ -282,7 +294,6 @@ func TestMixedMessagesConcurrency(t *testing.T) {
 			atomic.AddInt32(&raw_count, 1)
 		})
 		// fmt.Println("ON complete")
-		time.Sleep(1 * time.Second)
 		var wg sync.WaitGroup
 		wg.Add(4)
 		go func() {
@@ -357,9 +368,6 @@ func TestMixedMessagesConcurrency(t *testing.T) {
 		}
 	}
 	wss.shutdown()
-	c := wss.clients[0]
-	c.con.Disconnect()
-	time.Sleep(5 * time.Second)
 }
 
 func TestServerDisconnect(t *testing.T) {
@@ -369,7 +377,6 @@ func TestServerDisconnect(t *testing.T) {
 	connected := true
 	tries_left := int(5)
 	wss.startup()
-	time.Sleep(1 * time.Second)
 	d := new(WSDialer)
 	client = nil
 	for (client == nil) && (tries_left > 0) {
@@ -434,7 +441,6 @@ func TestNoServerDisconnect(t *testing.T) {
 	connected := true
 	tries_left := int(5)
 	wss.startup()
-	time.Sleep(1 * time.Second)
 	d := new(WSDialer)
 	client = nil
 	for (client == nil) && (tries_left > 0) {
@@ -497,7 +503,6 @@ func TestClientDisconnect(t *testing.T) {
 	connected := true
 	tries_left := int(5)
 	wss.startup()
-	time.Sleep(1 * time.Second)
 	d := new(WSDialer)
 	client = nil
 	for (client == nil) && (tries_left > 0) {
