@@ -70,6 +70,8 @@ func (h *routerHandler) addRoute(method, subdomain, path string, handlers contex
 	return nil
 }
 
+// NewDefaultHandler returns the handler which is responsible
+// to map the request with a route (aka mux implementation).
 func NewDefaultHandler() RequestHandler {
 	h := &routerHandler{}
 	return h

@@ -12,6 +12,9 @@ import (
 	"github.com/kataras/iris/core/router/macro"
 )
 
+// Route contains the information about a registered Route.
+// If any of the following fields are changed then the
+// caller should Refresh the router.
 type Route struct {
 	Name      string          // "userRoute"
 	Method    string          // "GET"
@@ -24,6 +27,11 @@ type Route struct {
 	FormattedPath string
 }
 
+// NewRoute returns a new route based on its method,
+// subdomain, the path (unparsed or original),
+// handlers and the macro container which all routes should share.
+// It parses the path based on the "macros",
+// handlers are being changed to validate the macros at serve time, if needed.
 func NewRoute(method, subdomain, unparsedPath string,
 	handlers context.Handlers, macros *macro.MacroMap) (*Route, error) {
 

@@ -4,6 +4,11 @@
 
 package context
 
+// ConfigurationReadOnly can be implemented
+// by Configuration, it's being used inside the Context.
+// All methods that it contains should be "safe" to be called by the context
+// at "serve time". A configuration field may be missing when it's not
+// safe or its useless to be called from a request handler.
 type ConfigurationReadOnly interface {
 	// GetVHost returns the non-exported vhost config field.
 	//

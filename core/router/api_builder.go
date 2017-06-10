@@ -62,6 +62,8 @@ func (r *repository) getAll() []*Route {
 	return r.routes
 }
 
+// RoutesProvider should be implemented by
+// iteral which contains the registered routes.
 type RoutesProvider interface { // api builder
 	GetRoutes() []*Route
 	GetRoute(routeName string) *Route
@@ -177,6 +179,8 @@ func (rb *APIBuilder) Party(relativePath string, handlers ...context.Handler) Pa
 	}
 }
 
+// Macros returns the macro map which is responsible
+// to register custom macro functions for all routes.
 func (rb *APIBuilder) Macros() *macro.MacroMap {
 	return rb.macros
 }
