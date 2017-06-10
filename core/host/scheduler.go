@@ -22,13 +22,23 @@ func (t *task) isCanceled() bool {
 	return atomic.LoadInt32(&t.alreadyCanceled) != 0
 }
 
+// Scheduler is a type of an event emmiter.
+// Can register a specific task for a specific event
+// when host is starting the server or host is interrupted by CTRL+C/CMD+C.
+// It's being used internally on host supervisor.
 type Scheduler struct {
 	onServeTasks     []*task
 	onInterruptTasks []*task
 }
 
+// TaskCancelFunc cancels a Task when called.
 type TaskCancelFunc func()
 
+// Schedule schedule/registers a Task,
+// it will be executed/run to when host starts the server
+// or when host is interrupted by CTRL+C/CMD+C  based on the TaskRunner type.
+//
+// See `OnInterrupt` and `ScheduleFunc` too.
 func (s *Scheduler) Schedule(runner TaskRunner) TaskCancelFunc {
 
 	t := new(task)
@@ -50,6 +60,11 @@ func (s *Scheduler) Schedule(runner TaskRunner) TaskCancelFunc {
 	}
 }
 
+// ScheduleFunc schedule/registers a task function,
+// it will be executed/run to when host starts the server
+// or when host is interrupted by CTRL+C/CMD+C  based on the TaskRunner type.
+//
+// See `OnInterrupt` and `ScheduleFunc` too.
 func (s *Scheduler) ScheduleFunc(runner func(TaskProcess)) TaskCancelFunc {
 	return s.Schedule(TaskRunnerFunc(runner))
 }
@@ -63,10 +78,14 @@ func cancelTasks(tasks []*task) {
 	}
 }
 
+// CancelOnServeTasks cancels all tasks that are scheduled to run when
+// host is starting the server, when the server is alive and online.
 func (s *Scheduler) CancelOnServeTasks() {
 	cancelTasks(s.onServeTasks)
 }
 
+// CancelOnInterruptTasks cancels all tasks that are scheduled to run when
+// host is being interrupted by CTRL+C/CMD+C, when the server is alive and online as well.
 func (s *Scheduler) CancelOnInterruptTasks() {
 	cancelTasks(s.onInterruptTasks)
 }
@@ -124,6 +143,8 @@ func (s *Scheduler) notifyErr(err error) {
 	})
 }
 
+// CopyTo copies all tasks from "s" to "to" Scheduler.
+// It doesn't care about anything else.
 func (s *Scheduler) CopyTo(to *Scheduler) {
 	s.visit(func(t *task) {
 		rnner := t.runner

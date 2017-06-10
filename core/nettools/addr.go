@@ -57,6 +57,10 @@ var IsLoopbackHost = func(requestHost string) bool {
 	// would probably not want to reach the server with different Application.Config.Addr than
 	// he/she declared.
 	portOrPathIdx := strings.LastIndexByte(requestHost, ':')
+
+	if portOrPathIdx == 0 { //  0.0.0.0:[...]/localhost:[...]/127.0.0.1:[...]/ipv6 local...
+		return true
+	}
 	// this will not catch ipv6 loopbacks like subdomain.0000:0:0000::01.1:8080
 	// but, again, is for developers only, is hard to try to navigate with something like this,
 	// and if that happened, I provide a way to override the whole "algorithm" to a custom one via "IsLoopbackHost".

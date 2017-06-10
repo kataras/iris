@@ -36,6 +36,13 @@ type Supervisor struct {
 	mu sync.Mutex
 }
 
+// New returns a new host supervisor
+// based on a native net/http "srv".
+//
+// It contains all native net/http's Server methods.
+// Plus you can add tasks on specific events.
+// It has its own flow, which means that you can prevent
+// to return and exit and restore the flow too.
 func New(srv *http.Server) *Supervisor {
 	return &Supervisor{
 		server:       srv,
@@ -45,10 +52,23 @@ func New(srv *http.Server) *Supervisor {
 	}
 }
 
+// DeferFlow defers the flow of the exeuction,
+// i.e: when server should return error and exit
+// from app, a DeferFlow call inside a Task
+// can wait for a `RestoreFlow` to exit or not exit if
+// host's server is "fixed".
+//
+// See `RestoreFlow` too.
 func (su *Supervisor) DeferFlow() {
 	atomic.StoreInt32(&su.shouldWait, 1)
 }
 
+// RestoreFlow restores the flow of the execution,
+// if called without a `DeferFlow` call before
+// then it does nothing.
+// See tests to understand how that can be useful on specific cases.
+//
+// See `DeferFlow` too.
 func (su *Supervisor) RestoreFlow() {
 	if su.isWaiting() {
 		atomic.StoreInt32(&su.shouldWait, 0)
@@ -162,10 +182,25 @@ func (su *Supervisor) newListener() (net.Listener, error) {
 	return l, nil
 }
 
+// Serve accepts incoming connections on the Listener l, creating a
+// new service goroutine for each. The service goroutines read requests and
+// then call su.server.Handler to reply to them.
+//
+// For HTTP/2 support, server.TLSConfig should be initialized to the
+// provided listener's TLS Config before calling Serve. If
+// server.TLSConfig is non-nil and doesn't include the string "h2" in
+// Config.NextProtos, HTTP/2 support is not enabled.
+//
+// Serve always returns a non-nil error. After Shutdown or Close, the
+// returned error is http.ErrServerClosed.
 func (su *Supervisor) Serve(l net.Listener) error {
 	return su.supervise(func() error { return su.server.Serve(l) })
 }
 
+// ListenAndServe listens on the TCP network address addr
+// and then calls Serve with handler to handle requests
+// on incoming connections.
+// Accepted connections are configured to enable TCP keep-alives.
 func (su *Supervisor) ListenAndServe() error {
 	l, err := su.newListener()
 	if err != nil {
@@ -178,6 +213,11 @@ func setupHTTP2(cfg *tls.Config) {
 	cfg.NextProtos = append(cfg.NextProtos, "h2") // HTTP2
 }
 
+// ListenAndServeTLS acts identically to ListenAndServe, except that it
+// expects HTTPS connections. Additionally, files containing a certificate and
+// matching private key for the server must be provided. If the certificate
+// is signed by a certificate authority, the certFile should be the concatenation
+// of the server's certificate, any intermediates, and the CA's certificate.
 func (su *Supervisor) ListenAndServeTLS(certFile string, keyFile string) error {
 	if certFile == "" || keyFile == "" {
 		return errors.New("certFile or keyFile missing")
@@ -195,6 +235,9 @@ func (su *Supervisor) ListenAndServeTLS(certFile string, keyFile string) error {
 	return su.ListenAndServe()
 }
 
+// ListenAndServeAutoTLS acts identically to ListenAndServe, except that it
+// expects HTTPS connections. server's certificates are auto generated from LETSENCRYPT using
+// the golang/x/net/autocert package.
 func (su *Supervisor) ListenAndServeAutoTLS() error {
 	autoTLSManager := autocert.Manager{
 		Prompt: autocert.AcceptTOS,

@@ -6,6 +6,7 @@ package iris
 
 import (
 	// std packages
+	stdContext "context"
 	"io"
 	"log"
 	"net"
@@ -79,6 +80,9 @@ type Application struct {
 	sessions sessions.Sessions
 	// used for build
 	once sync.Once
+
+	mu       sync.Mutex
+	Shutdown func(stdContext.Context) error
 }
 
 // New creates and returns a fresh empty Iris *Application instance.
@@ -149,14 +153,17 @@ func (app *Application) Build() (err error) {
 			return // if view engine loading failed then don't continue
 		}
 
-		var routerHandler router.RequestHandler
-		// router
-		// create the request handler, the default routing handler
-		routerHandler = router.NewDefaultHandler()
+		if !app.Router.Downgraded() {
+			var routerHandler router.RequestHandler
+			// router
+			// create the request handler, the default routing handler
+			routerHandler = router.NewDefaultHandler()
 
-		err = app.Router.BuildRouter(app.ContextPool, routerHandler, app.APIBuilder)
-		// re-build of the router from outside can be done with;
-		// app.RefreshRouter()
+			err = app.Router.BuildRouter(app.ContextPool, routerHandler, app.APIBuilder)
+			// re-build of the router from outside can be done with;
+			// app.RefreshRouter()
+		}
+
 	})
 
 	return
@@ -166,6 +173,9 @@ func (app *Application) Build() (err error) {
 // completes the necessary missing parts of that "srv"
 // and returns a new, ready-to-use, host (supervisor).
 func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
+	app.mu.Lock()
+	defer app.mu.Unlock()
+
 	// set the server's handler to the framework's router
 	if srv.Handler == nil {
 		srv.Handler = app.Router
@@ -214,6 +224,10 @@ func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 
 		// when CTRL+C/CMD+C pressed.
 		su.Schedule(host.ShutdownOnInterruptTask(shutdownTimeout))
+	}
+
+	if app.Shutdown == nil {
+		app.Shutdown = su.Shutdown
 	}
 
 	return su

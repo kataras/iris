@@ -10,6 +10,10 @@ import (
 	"runtime"
 )
 
+// WriteBannerTask is a task which accepts a logger(io.Writer)
+// and a "banner" text to write to following
+// by a generated message based on the host supervisor's server and writes it to the "w".
+// This task runs on serve.
 func WriteBannerTask(w io.Writer, banner string) TaskRunnerFunc {
 	return func(proc TaskProcess) {
 		listeningURI := proc.Host().HostURL()

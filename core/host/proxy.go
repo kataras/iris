@@ -5,10 +5,13 @@
 package host
 
 import (
+	"crypto/tls"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"strings"
+
+	"github.com/kataras/iris/core/nettools"
 )
 
 func singleJoiningSlash(a, b string) string {
@@ -29,7 +32,6 @@ func singleJoiningSlash(a, b string) string {
 // the target request will be for /base/dir.
 //
 // Relative to httputil.NewSingleHostReverseProxy with some additions.
-// Used for the deprecated `LETSENCRYPT`.
 func ProxyHandler(target *url.URL) *httputil.ReverseProxy {
 	targetQuery := target.RawQuery
 	director := func(req *http.Request) {
@@ -42,8 +44,22 @@ func ProxyHandler(target *url.URL) *httputil.ReverseProxy {
 		} else {
 			req.URL.RawQuery = targetQuery + "&" + req.URL.RawQuery
 		}
+
+		if _, ok := req.Header["User-Agent"]; !ok {
+			// explicitly disable User-Agent so it's not set to default value
+			req.Header.Set("User-Agent", "")
+		}
 	}
-	return &httputil.ReverseProxy{Director: director}
+	p := &httputil.ReverseProxy{Director: director}
+
+	if nettools.IsLoopbackHost(target.Host) {
+		transport := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+		p.Transport = transport
+	}
+
+	return p
 }
 
 // NewProxy returns a new host (server supervisor) which
@@ -56,7 +72,6 @@ func ProxyHandler(target *url.URL) *httputil.ReverseProxy {
 // proxy.ListenAndServe() // use of proxy.Shutdown to close the proxy server.
 func NewProxy(hostAddr string, target *url.URL) *Supervisor {
 	proxyHandler := ProxyHandler(target)
-
 	proxy := New(&http.Server{
 		Addr:    hostAddr,
 		Handler: proxyHandler,
