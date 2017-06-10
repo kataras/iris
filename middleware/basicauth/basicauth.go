@@ -34,13 +34,12 @@ type (
 
 //
 
-// New takes one parameter, the Config returns a Handler
-// use: iris.Use(New(...)), iris.Get(...,New(...),...)
+// New accepts basicauth.Config and returns a new Handler
+// which will ask the client for basic auth (username, password),
+// validate that and if valid continues to the next handler, otherwise
+// throws a StatusUnauthorized http error code.
 func New(c Config) context.Handler {
 	config := DefaultConfig()
-	if c.ContextKey != "" {
-		config.ContextKey = c.ContextKey
-	}
 	if c.Realm != "" {
 		config.Realm = c.Realm
 	}
@@ -51,8 +50,10 @@ func New(c Config) context.Handler {
 	return b.Serve
 }
 
-// Default takes one parameter, the users returns a Handler
-// use: iris.Use(Default(...)), iris.Get(...,Default(...),...)
+// Default accepts only the users and returns a new Handler
+// which will ask the client for basic auth (username, password),
+// validate that and if valid continues to the next handler, otherwise
+// throws a StatusUnauthorized http error code.
 func Default(users map[string]string) context.Handler {
 	c := DefaultConfig()
 	c.Users = users
@@ -101,26 +102,23 @@ func (b *basicAuthMiddleware) askForCredentials(ctx context.Context) {
 // Serve the actual middleware
 func (b *basicAuthMiddleware) Serve(ctx context.Context) {
 
-	if auth, found := b.findAuth(ctx.GetHeader("Authorization")); !found {
+	auth, found := b.findAuth(ctx.GetHeader("Authorization"))
+	if !found {
 		b.askForCredentials(ctx)
+		return
 		// don't continue to the next handler
-	} else {
-		// all ok set the context's value in order to be getable from the next handler
-		ctx.Values().Set(b.config.ContextKey, auth.Username)
-		if b.expireEnabled {
-
-			if auth.logged == false {
-				auth.expires = time.Now().Add(b.config.Expires)
-				auth.logged = true
-			}
-
-			if time.Now().After(auth.expires) {
-				b.askForCredentials(ctx) // ask for authentication again
-				return
-			}
-
-		}
-		ctx.Next() // continue
 	}
+	// all ok
+	if b.expireEnabled {
+		if auth.logged == false {
+			auth.expires = time.Now().Add(b.config.Expires)
+			auth.logged = true
+		}
 
+		if time.Now().After(auth.expires) {
+			b.askForCredentials(ctx) // ask for authentication again
+			return
+		}
+	}
+	ctx.Next() // continue
 }

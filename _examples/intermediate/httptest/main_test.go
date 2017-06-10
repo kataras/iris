@@ -7,10 +7,10 @@ import (
 	"github.com/kataras/iris/httptest"
 )
 
-// $ cd _example
+// $ cd $GOPATH/src/github.com/kataras/iris/_examples/intermediate/httptest
 // $ go test -v
 func TestNewApp(t *testing.T) {
-	app := buildApp()
+	app := newApp()
 	e := httptest.New(app, t)
 
 	// redirects to /admin without basic auth
@@ -20,11 +20,11 @@ func TestNewApp(t *testing.T) {
 
 	// with valid basic auth
 	e.GET("/admin").WithBasicAuth("myusername", "mypassword").Expect().
-		Status(iris.StatusOK).Body().Equal("Hello authenticated user: myusername from: /admin")
+		Status(iris.StatusOK).Body().Equal("/admin myusername:mypassword")
 	e.GET("/admin/profile").WithBasicAuth("myusername", "mypassword").Expect().
-		Status(iris.StatusOK).Body().Equal("Hello authenticated user: myusername from: /admin/profile")
+		Status(iris.StatusOK).Body().Equal("/admin/profile myusername:mypassword")
 	e.GET("/admin/settings").WithBasicAuth("myusername", "mypassword").Expect().
-		Status(iris.StatusOK).Body().Equal("Hello authenticated user: myusername from: /admin/settings")
+		Status(iris.StatusOK).Body().Equal("/admin/settings myusername:mypassword")
 
 	// with invalid basic auth
 	e.GET("/admin/settings").WithBasicAuth("invalidusername", "invalidpassword").
