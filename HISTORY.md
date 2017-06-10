@@ -29,6 +29,11 @@ Thanks to [Santosh Anand](https://github.com/santoshanand) the http://iris-go.co
 
 The amount of the next two or three donations you'll send they will be immediately transferred to his own account balance, so be generous please!
 
+# Sa, 10 June 2017 | v7.0.4
+
+- Simplify and add a test for the [basicauth middleware](https://github.com/kataras/iris/tree/master/middleware/basicauth), no need to be
+stored inside the Context anymore, developers can get the validated user(username and password) via `context.Request().BasicAuth()`. `basicauth.Config.ContextKey` was removed, just remove that field from your configuration, it's useless now. 
+
 # Sa, 10 June 2017 | v7.0.3
 
 - New `context.Session().PeekFlash("key")` added, unlike `GetFlash` this will return the flash value but keep the message valid for the next requests too.

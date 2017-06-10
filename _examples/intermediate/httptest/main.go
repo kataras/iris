@@ -6,25 +6,14 @@ import (
 	"github.com/kataras/iris/middleware/basicauth"
 )
 
-func buildApp() *iris.Application {
+func newApp() *iris.Application {
 	app := iris.New()
 
 	authConfig := basicauth.Config{
-		Users:      map[string]string{"myusername": "mypassword", "mySecondusername": "mySecondpassword"},
-		Realm:      "Authorization Required", // defaults to "Authorization Required"
-		ContextKey: "user",                   // defaults to "user"
+		Users: map[string]string{"myusername": "mypassword"},
 	}
 
 	authentication := basicauth.New(authConfig)
-
-	// to global app.Use(authentication) (or app.UseGlobal before the .Run)
-	// to routes
-	/*
-		app.Get("/mysecret", authentication, func(ctx context.Context) {
-			username := ctx.Values().GetString("user") //  the Contextkey from the authConfig
-			ctx.Writef("Hello authenticated user: %s ", username)
-		})
-	*/
 
 	app.Get("/", func(ctx context.Context) { ctx.Redirect("/admin") })
 
@@ -33,27 +22,26 @@ func buildApp() *iris.Application {
 	needAuth := app.Party("/admin", authentication)
 	{
 		//http://localhost:8080/admin
-		needAuth.Get("/", func(ctx context.Context) {
-			username := ctx.Values().GetString("user") //  the Contextkey from the authConfig
-			ctx.Writef("Hello authenticated user: %s from: %s", username, ctx.Path())
-		})
+		needAuth.Get("/", h)
 		// http://localhost:8080/admin/profile
-		needAuth.Get("/profile", func(ctx context.Context) {
-			username := ctx.Values().GetString("user") //  the Contextkey from the authConfig
-			ctx.Writef("Hello authenticated user: %s from: %s", username, ctx.Path())
-		})
+		needAuth.Get("/profile", h)
 
 		// http://localhost:8080/admin/settings
-		needAuth.Get("/settings", func(ctx context.Context) {
-			username := authConfig.User(ctx) // shortcut for ctx.Values().GetString("user")
-			ctx.Writef("Hello authenticated user: %s from: %s", username, ctx.Path())
-		})
+		needAuth.Get("/settings", h)
 	}
 
 	return app
 }
 
+func h(ctx context.Context) {
+	username, password, _ := ctx.Request().BasicAuth()
+	// third parameter it will be always true because the middleware
+	// makes sure for that, otherwise this handler will not be executed.
+
+	ctx.Writef("%s %s:%s", ctx.Path(), username, password)
+}
+
 func main() {
-	app := buildApp()
+	app := newApp()
 	app.Run(iris.Addr(":8080"))
 }
