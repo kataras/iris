@@ -8,8 +8,9 @@ go_import_path: github.com/kataras/iris
 install:
   - go get ./...
 # install test dependencies
-  - go get golang.org/x/tools/cmd/cover
-  - go get -v github.com/axw/gocov
-  - go install github.com/axw/gocov/gocov
+#  - go get golang.org/x/tools/cmd/cover
+#  - go get -v github.com/axw/gocov
+#  - go install github.com/axw/gocov/gocov
 script:
-  - gocov test | gocov report
+ # - gocov test | gocov report # the result is invalid because it tests the vendor too, which are removed to reduce the dl size. 
+  - go test -v ./...
