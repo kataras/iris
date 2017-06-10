@@ -37,19 +37,19 @@ func main() {
 	{
 		//http://localhost:8080/admin
 		needAuth.Get("/", func(ctx context.Context) {
-			username := ctx.Values().GetString("mycustomkey") //  the Contextkey from the authConfig
-			ctx.Writef("Hello authenticated user: %s from: %s ", username, ctx.Path())
+			username := ctx.Values().GetString("user") //  the Contextkey from the authConfig
+			ctx.Writef("Hello authenticated user: %s from: %s", username, ctx.Path())
 		})
 		// http://localhost:8080/admin/profile
 		needAuth.Get("/profile", func(ctx context.Context) {
-			username := ctx.Values().GetString("mycustomkey") //  the Contextkey from the authConfig
-			ctx.Writef("Hello authenticated user: %s from: %s ", username, ctx.Path())
+			username := ctx.Values().GetString("user") //  the Contextkey from the authConfig
+			ctx.Writef("Hello authenticated user: %s from: % ", username, ctx.Path())
 		})
 
 		// http://localhost:8080/admin/settings
 		needAuth.Get("/settings", func(ctx context.Context) {
-			username := authConfig.User(ctx) // shortcut for ctx.Values().GetString("mycustomkey")
-			ctx.Writef("Hello authenticated user: %s from: %s ", username, ctx.Path())
+			username := authConfig.User(ctx) // shortcut for ctx.Values().GetString("user")
+			ctx.Writef("Hello authenticated user: %s from: %s", username, ctx.Path())
 		})
 	}
 

@@ -3,27 +3,31 @@ package main
 import (
 	"testing"
 
+	"github.com/kataras/iris"
 	"github.com/kataras/iris/httptest"
 )
 
 // $ cd _example
 // $ go test -v
 func TestNewApp(t *testing.T) {
-	app := newApp()
+	app := buildApp()
 	e := httptest.New(app, t)
 
-	// test nauthorized
-	e.GET("/hello").Expect().Status(401).Body().Equal("<h1> Unauthorized Page! </h1>")
-	// test our login flash message
-	name := "myname"
-	e.POST("/login").WithFormField("name", name).Expect().Status(200)
-	// test the /hello again with the flash (a message which deletes itself after it has been shown to the user)
-	// setted on /login previously.
-	expectedResponse := map[string]interface{}{
-		"Message": "Hello",
-		"From":    name,
-	}
-	e.GET("/hello").Expect().Status(200).JSON().Equal(expectedResponse)
-	// test /hello nauthorized again, it should be return 401 now (flash should be removed)
-	e.GET("/hello").Expect().Status(401).Body().Equal("<h1> Unauthorized Page! </h1>")
+	// redirects to /admin without basic auth
+	e.GET("/").Expect().Status(iris.StatusUnauthorized)
+	// without basic auth
+	e.GET("/admin").Expect().Status(iris.StatusUnauthorized)
+
+	// with valid basic auth
+	e.GET("/admin").WithBasicAuth("myusername", "mypassword").Expect().
+		Status(iris.StatusOK).Body().Equal("Hello authenticated user: myusername from: /admin")
+	e.GET("/admin/profile").WithBasicAuth("myusername", "mypassword").Expect().
+		Status(iris.StatusOK).Body().Equal("Hello authenticated user: myusername from: /admin/profile")
+	e.GET("/admin/settings").WithBasicAuth("myusername", "mypassword").Expect().
+		Status(iris.StatusOK).Body().Equal("Hello authenticated user: myusername from: /admin/settings")
+
+	// with invalid basic auth
+	e.GET("/admin/settings").WithBasicAuth("invalidusername", "invalidpassword").
+		Expect().Status(iris.StatusUnauthorized)
+
 }

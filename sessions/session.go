@@ -66,9 +66,9 @@ func (s *session) runFlashGC() {
 	s.mu.Unlock()
 }
 
-// HasFlash returns true if this request has available flash messages
+// HasFlash returns true if this session has available flash messages.
 func (s *session) HasFlash() bool {
-	return s.flashes != nil && len(s.flashes) > 0
+	return len(s.flashes) > 0
 }
 
 // GetFlash returns a flash message which removed on the next request
