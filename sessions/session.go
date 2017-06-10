@@ -71,23 +71,43 @@ func (s *session) HasFlash() bool {
 	return len(s.flashes) > 0
 }
 
-// GetFlash returns a flash message which removed on the next request
+// GetFlash returns a stored flash message based on its "key"
+// which will be removed on the next request.
 //
 // To check for flash messages we use the HasFlash() Method
 // and to obtain the flash message we use the GetFlash() Method.
 // There is also a method GetFlashes() to fetch all the messages.
 //
 // Fetching a message deletes it from the session.
-// This means that a message is meant to be displayed only on the first page served to the user
-func (s *session) GetFlash(key string) (v interface{}) {
+// This means that a message is meant to be displayed only on the first page served to the user.
+func (s *session) GetFlash(key string) interface{} {
+	fv, ok := s.peekFlashMessage(key)
+	if !ok {
+		return nil
+	}
+	fv.shouldRemove = true
+	return fv.value
+}
+
+// PeekFlash returns a stored flash message based on its "key".
+// Unlike GetFlash, this will keep the message valid for the next requests,
+// until GetFlashes or GetFlash("key").
+func (s *session) PeekFlash(key string) interface{} {
+	fv, ok := s.peekFlashMessage(key)
+	if !ok {
+		return nil
+	}
+	return fv.value
+}
+
+func (s *session) peekFlashMessage(key string) (*flashMessage, bool) {
 	s.mu.Lock()
-	if valueStorage, found := s.flashes[key]; found {
-		valueStorage.shouldRemove = true
-		v = valueStorage.value
+	if fv, found := s.flashes[key]; found {
+		return fv, true
 	}
 	s.mu.Unlock()
 
-	return
+	return nil, false
 }
 
 // GetString same as Get but returns as string, if nil then returns an empty string
