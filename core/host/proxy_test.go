@@ -31,7 +31,7 @@ func TestProxy(t *testing.T) {
 	// proxySrv.Downgrade(p.ServeHTTP)
 	// go proxySrv.Run(iris.Addr(":80"), iris.WithoutBanner, iris.WithoutInterruptHandler)
 
-	go host.NewProxy(":1193", u).ListenAndServe() // should be localhost/127.0.0.1:80 but travis throws permission denied.
+	go host.NewProxy("localhost:2017", u).ListenAndServe() // should be localhost/127.0.0.1:80 but travis throws permission denied.
 
 	app := iris.New()
 	app.Get("/", func(ctx context.Context) {
@@ -53,7 +53,7 @@ func TestProxy(t *testing.T) {
 	// main server
 	go app.Run(iris.Listener(httptest.NewLocalTLSListener(l)), iris.WithoutBanner)
 
-	e := httptest.NewInsecure(t, httptest.URL("http://localhost:1193"))
+	e := httptest.NewInsecure(t, httptest.URL("http://localhost:2017"))
 	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedIndex)
 	e.GET("/about").Expect().Status(iris.StatusOK).Body().Equal(expectedAbout)
 	e.GET("/notfound").Expect().Status(iris.StatusNotFound).Body().Equal(unexpectedRoute)
