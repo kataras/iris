@@ -29,6 +29,18 @@ Thanks to [Santosh Anand](https://github.com/santoshanand) the http://iris-go.co
 
 The amount of the next two or three donations you'll send they will be immediately transferred to his own account balance, so be generous please!
 
+# Sa, 10 June 2017 | v7.0.3
+
+- New `context.Session().PeekFlash("key")` added, unlike `GetFlash` this will return the flash value but keep the message valid for the next requests too.
+- Complete the [httptest example](https://github.com/iris-contrib/examples/tree/master/httptest).
+- Fix the (marked as deprecated) `ListenLETSENCRYPT` function.
+- Upgrade the [iris-contrib/middleware](https://github.com/iris-contrib/middleware) including JWT, CORS and Secure handlers.
+- Add [OAuth2 example](https://github.com/iris-contrib/examples/tree/master/oauth2) -- showcases the third-party package [goth](https://github.com/markbates/goth) integration with Iris.
+
+### Community
+
+ - Add github integration on https://kataras.rocket.chat/channel/iris , so users can login with their github accounts instead of creating new for the chat only.
+
 # Th, 08 June 2017 | v7.0.2
 
 - Able to set **immutable** data on sessions and context's storage. Aligned to fix an issue on slices and maps as reported [here](https://github.com/iris-contrib/community-board/issues/5).
