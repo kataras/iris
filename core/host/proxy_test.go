@@ -18,7 +18,7 @@ func TestProxy(t *testing.T) {
 	unexpectedRoute := "unexpected"
 
 	// proxySrv := iris.New()
-	u, err := url.Parse("https://localhost")
+	u, err := url.Parse("https://localhost:4444")
 	if err != nil {
 		t.Fatalf("%v while parsing url", err)
 	}
@@ -31,7 +31,7 @@ func TestProxy(t *testing.T) {
 	// proxySrv.Downgrade(p.ServeHTTP)
 	// go proxySrv.Run(iris.Addr(":80"), iris.WithoutBanner, iris.WithoutInterruptHandler)
 
-	go host.NewProxy(":80", u).ListenAndServe()
+	go host.NewProxy(":1193", u).ListenAndServe() // should be localhost/127.0.0.1:80 but travis throws permission denied.
 
 	app := iris.New()
 	app.Get("/", func(ctx context.Context) {
@@ -46,14 +46,14 @@ func TestProxy(t *testing.T) {
 		ctx.WriteString(unexpectedRoute)
 	})
 
-	l, err := net.Listen("tcp", "localhost:443")
+	l, err := net.Listen("tcp", "localhost:4444") // should be localhost/127.0.0.1:443 but travis throws permission denied.
 	if err != nil {
 		t.Fatalf("%v while creating tcp4 listener for new tls local test listener", err)
 	}
 	// main server
 	go app.Run(iris.Listener(httptest.NewLocalTLSListener(l)), iris.WithoutBanner)
 
-	e := httptest.NewInsecure(t, httptest.URL("http://localhost"))
+	e := httptest.NewInsecure(t, httptest.URL("http://localhost:1193"))
 	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedIndex)
 	e.GET("/about").Expect().Status(iris.StatusOK).Body().Equal(expectedAbout)
 	e.GET("/notfound").Expect().Status(iris.StatusNotFound).Body().Equal(unexpectedRoute)

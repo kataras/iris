@@ -12,6 +12,12 @@ import (
 	"github.com/kataras/iris/core/errors"
 )
 
+// Router is the "director".
+// Caller should provide a request handler (router implementation or root handler).
+// Router is responsible to build the received request handler and run it
+// to serve requests, based on the received context.Pool.
+//
+// User can refresh the router with `RefreshRouter` whenever a route's field is changed by him.
 type Router struct {
 	mu sync.Mutex // for Downgrade, WrapRouter & BuildRouter,
 	// not indeed but we don't to risk its usage by third-parties.

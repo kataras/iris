@@ -24,7 +24,7 @@ func TestMuttable(t *testing.T) {
 
 	// map
 
-	p.Set("map", map[string]myTestObject{"key 1": myTestObject{"value 1"}, "key 2": myTestObject{"value 2"}})
+	p.Set("map", map[string]myTestObject{"key 1": {"value 1"}, "key 2": {"value 2"}})
 	vMap := p.Get("map").(map[string]myTestObject)
 	vMap["key 1"] = myTestObject{"modified"}
 
@@ -60,7 +60,7 @@ func TestImmutable(t *testing.T) {
 	}
 
 	// map
-	p.SetImmutable("map", map[string]myTestObject{"key 1": myTestObject{"value 1"}, "key 2": myTestObject{"value 2"}})
+	p.SetImmutable("map", map[string]myTestObject{"key 1": {"value 1"}, "key 2": {"value 2"}})
 	vMap := p.Get("map").(map[string]myTestObject)
 	vMap["key 1"] = myTestObject{"modified"}
 

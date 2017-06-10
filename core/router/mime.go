@@ -588,7 +588,7 @@ func TypeByExtension(ext string) (typ string) {
 	return typ
 }
 
-// TypeByFilename, saem as TypeByExtension
+// TypeByFilename same as TypeByExtension
 // but receives a filename path instead.
 func TypeByFilename(fullFilename string) string {
 	ext := filepath.Ext(fullFilename)

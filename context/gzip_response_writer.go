@@ -85,6 +85,10 @@ type GzipResponseWriter struct {
 
 var _ ResponseWriter = &GzipResponseWriter{}
 
+// BeginGzipResponse accepts a ResponseWriter
+// and prepares the new gzip response writer.
+// It's being called per-handler, when caller decide
+// to change the response writer type.
 func (w *GzipResponseWriter) BeginGzipResponse(underline ResponseWriter) {
 	w.ResponseWriter = underline
 	w.gzipWriter = acquireGzipWriter(w.ResponseWriter)
@@ -92,6 +96,8 @@ func (w *GzipResponseWriter) BeginGzipResponse(underline ResponseWriter) {
 	w.disabled = false
 }
 
+// EndResponse called right before the contents of this
+// response writer are flushed to the client.
 func (w *GzipResponseWriter) EndResponse() {
 	releaseGzipResponseWriter(w)
 	w.ResponseWriter.EndResponse()
@@ -104,6 +110,8 @@ func (w *GzipResponseWriter) Write(contents []byte) (int, error) {
 	return len(w.chunks), nil
 }
 
+// FlushResponse validates the response headers in order to be compatible with the gzip written data
+// and writes the data to the underline ResponseWriter.
 func (w *GzipResponseWriter) FlushResponse() {
 	if w.disabled {
 		w.ResponseWriter.Write(w.chunks)
@@ -128,7 +136,7 @@ func (w *GzipResponseWriter) ResetBody() {
 	w.chunks = w.chunks[0:0]
 }
 
-// Disable, disables the gzip compression for the next .Write's data,
+// Disable turns of the gzip compression for the next .Write's data,
 // if called then the contents are being written in plain form.
 func (w *GzipResponseWriter) Disable() {
 	w.disabled = true
