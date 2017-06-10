@@ -136,7 +136,7 @@ func (w *GzipResponseWriter) ResetBody() {
 	w.chunks = w.chunks[0:0]
 }
 
-// Disable turns of the gzip compression for the next .Write's data,
+// Disable turns off the gzip compression for the next .Write's data,
 // if called then the contents are being written in plain form.
 func (w *GzipResponseWriter) Disable() {
 	w.disabled = true

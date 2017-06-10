@@ -4,7 +4,12 @@ os:
   - osx
 go:
   - go1.8
-  - tip
 go_import_path: github.com/kataras/iris
-before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install libgtk-3-dev libappindicator3-dev          ; fi
+install:
+  - go get ./...
+# install test dependencies
+  - go get golang.org/x/tools/cmd/cover
+  - go get -v github.com/axw/gocov
+  - go install github.com/axw/gocov/gocov
+script:
+  - gocov test | gocov report

@@ -251,7 +251,7 @@ Feature Overview
  - OAuth, OAuth2 supporting 27+ popular websites
  - JWT
  - Basic Authentication
- - HTTP Sessions
+- HTTP Sessions
 - Add / Remove trailing slash from the URL with option to redirect
 - Redirect requests
  - HTTP to HTTPS
