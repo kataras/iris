@@ -12,16 +12,21 @@ import (
 	"context"
 	"github.com/kataras/iris/core/nettools"
 	"net/http"
-	"os"
 )
 
 type (
+	// FlowController exports the `DeferFlow`
+	// and `RestoreFlow` capabilities.
+	// Read more at Supervisor.
 	FlowController interface {
 		DeferFlow()
 		RestoreFlow()
 	}
 )
 
+// TaskHost contains all the necessary information
+// about the host supervisor, its server
+// and the exports the whole flow controller of it.
 type TaskHost struct {
 	su *Supervisor
 	// Supervisor with access fields when server is running, i.e restrict access to "Schedule"
@@ -35,14 +40,17 @@ type TaskHost struct {
 	errChan  chan error
 }
 
+// Done filled when server was shutdown.
 func (h TaskHost) Done() <-chan struct{} {
 	return h.doneChan
 }
 
+// Err filled when server received an error.
 func (h TaskHost) Err() <-chan error {
 	return h.errChan
 }
 
+// Serve can (re)run the server with the latest known configuration.
 func (h TaskHost) Serve() error {
 	// the underline server's serve, using the "latest known" listener from the supervisor.
 	l, err := h.su.newListener()
@@ -69,24 +77,40 @@ func (h TaskHost) Hostname() string {
 	return nettools.ResolveHostname(h.su.server.Addr)
 }
 
+// Shutdown gracefully shuts down the server without interrupting any
+// active connections. Shutdown works by first closing all open
+// listeners, then closing all idle connections, and then waiting
+// indefinitely for connections to return to idle and then shut down.
+// If the provided context expires before the shutdown is complete,
+// then the context's error is returned.
+//
+// Shutdown does not attempt to close nor wait for hijacked
+// connections such as WebSockets. The caller of Shutdown should
+// separately notify such long-lived connections of shutdown and wait
+// for them to close, if desired.
 func (h TaskHost) Shutdown(ctx context.Context) error {
 	// the underline server's Shutdown (otherwise we will cancel all tasks and do cycles)
 	return h.su.server.Shutdown(ctx)
 }
 
-func (h TaskHost) PID() int {
-	return h.pid
-}
-
+// TaskProcess is the context of the Task runner.
+// Contains the host's information and actions
+// and its self cancelation emmiter.
 type TaskProcess struct {
 	canceledChan chan struct{}
 	host         TaskHost
 }
 
+// Done filled when this task is canceled.
 func (p TaskProcess) Done() <-chan struct{} {
 	return p.canceledChan
 }
 
+// Host returns the TaskHost.
+//
+// TaskHost contains all the necessary information
+// about the host supervisor, its server
+// and the exports the whole flow controller of it.
 func (p TaskProcess) Host() TaskHost {
 	return p.host
 }
@@ -97,7 +121,6 @@ func createTaskHost(su *Supervisor) TaskHost {
 		FlowController: su,
 		doneChan:       make(chan struct{}),
 		errChan:        make(chan error),
-		pid:            os.Getpid(),
 	}
 
 	return host
@@ -121,11 +144,21 @@ func newTaskProcess(host TaskHost) TaskProcess {
 // A Task is considered to be a lightweight process because it runs within the context of a Supervisor
 // and takes advantage of resources allocated for that Supervisor and its Server.
 type TaskRunner interface {
+	// Run runs the task based on its TaskProcess which contains
+	// all the necessary information and actions to control the host supervisor
+	// and its server.
 	Run(TaskProcess)
 }
 
+// TaskRunnerFunc "converts" a func(TaskProcess) to a complete TaskRunner.
+// Its functionality is exactly the same as TaskRunner.
+//
+// See `TaskRunner` too.
 type TaskRunnerFunc func(TaskProcess)
 
+// Run runs the task based on its TaskProcess which contains
+// all the necessary information and actions to control the host supervisor
+// and its server.
 func (s TaskRunnerFunc) Run(proc TaskProcess) {
 	s(proc)
 }

@@ -102,20 +102,12 @@ func (app *Application) ListenTLS(addr string, certFile, keyFile string) {
 func (app *Application) ListenLETSENCRYPT(addr string, cacheDirOptional ...string) {
 	l, err := nettools.LETSENCRYPT(addr, addr, cacheDirOptional...)
 	CheckErr(err)
-
-	targetURL := nettools.SchemeHTTPS + "://" + nettools.ResolveVHost(addr)
-	target, err := url.Parse(targetURL)
+	// create the redirect server to redirect http://... to https://...
+	hostname := nettools.ResolveHostname(addr)
+	proxyAddr := hostname + ":80"
+	target, err := url.Parse("https://" + hostname)
 	CheckErr(err)
-	// create the reverse proxy to redirect http://... to https://...
-	proxyAddr := nettools.ResolveHostname(addr) + ":80"
-	proxySrv := host.NewProxy(proxyAddr, target)
-
-	go func() {
-		if err := proxySrv.ListenAndServe(); err != nil {
-			// don't panic here, just log the proxy's error.
-			app.Log("proxy error: %v", err)
-		}
-	}()
+	go host.NewProxy(proxyAddr, target).ListenAndServe()
 
 	CheckErr(app.Run(Listener(l)))
 }

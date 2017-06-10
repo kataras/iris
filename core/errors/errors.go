@@ -11,7 +11,6 @@ import (
 
 var (
 	// Prefix the error prefix, applies to each error's message.
-	// Should not be changed.
 	Prefix = ""
 	// NewLine adds a new line to the end of each error's message
 	// defaults to true

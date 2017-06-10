@@ -1,3 +1,4 @@
+// white-box testing
 package memstore
 
 import (
@@ -89,5 +90,23 @@ func TestImmutable(t *testing.T) {
 	vvObjP := p.Get("objp").(myTestObject)
 	if vvObjP.name == "modified" {
 		t.Fatalf("expected objp to be immutable but caller was able to change its value")
+	}
+}
+
+func TestImmutableSetOnlyWithSetImmutable(t *testing.T) {
+	var p Store
+
+	p.SetImmutable("objp", &myTestObject{"value"})
+
+	p.Set("objp", &myTestObject{"modified"})
+	vObjP := p.Get("objp").(myTestObject)
+	if vObjP.name == "modified" {
+		t.Fatalf("caller should not be able to change the immutable entry with a simple `Set`")
+	}
+
+	p.SetImmutable("objp", &myTestObject{"value with SetImmutable"})
+	vvObjP := p.Get("objp").(myTestObject)
+	if vvObjP.name != "value with SetImmutable" {
+		t.Fatalf("caller should be able to change the immutable entry with a `SetImmutable`")
 	}
 }

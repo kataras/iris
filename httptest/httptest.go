@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/iris-contrib/httpexpect"
-
 	"github.com/kataras/iris"
 )
 

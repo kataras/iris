@@ -13,6 +13,7 @@ import (
 // value(Task) when an OS interrupt/kill signal received.
 type OnInterrupt TaskRunnerFunc
 
+// Run runs the interrupt task and completes the TaskRunner interface.
 func (t OnInterrupt) Run(proc TaskProcess) {
 	t(proc)
 }

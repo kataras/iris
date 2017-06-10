@@ -91,6 +91,11 @@ func (router *Router) Downgrade(newMainHandler http.HandlerFunc) {
 	router.mu.Unlock()
 }
 
+// Downgraded returns true if this router is downgraded.
+func (router *Router) Downgraded() bool {
+	return router.mainHandler != nil && router.requestHandler == nil
+}
+
 // WrapRouter adds a wrapper on the top of the main router.
 // Usually it's useful for third-party middleware
 // when need to wrap the entire application with a middleware like CORS.
