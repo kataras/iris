@@ -189,8 +189,9 @@ func convertTmplToNodePath(tmpl *macro.Template) (string, error) {
 	for i, p := range tmpl.Params {
 		if p.Type == ast.ParamTypePath {
 			if i != len(tmpl.Params)-1 {
-				return "", errors.New("parameter type \"ParamTypePath\" is allowed to exists to the very last of a path")
+				return "", errors.New("parameter type \"ParamTypePath\" should be putted to the very last of a path")
 			}
+
 			routePath = strings.Replace(routePath, p.Src, WildcardParam(p.Name), 1)
 		} else {
 			routePath = strings.Replace(routePath, p.Src, Param(p.Name), 1)
@@ -202,6 +203,7 @@ func convertTmplToNodePath(tmpl *macro.Template) (string, error) {
 
 // note: returns nil if not needed, the caller(router) should be check for that before adding that on route's Middleware
 func convertTmplToHandler(tmpl *macro.Template) context.Handler {
+
 	needMacroHandler := false
 
 	// check if we have params like: {name:string} or {name} or {anything:path} without else keyword or any functions used inside these params.

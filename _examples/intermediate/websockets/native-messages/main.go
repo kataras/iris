@@ -25,8 +25,7 @@ type clientPage struct {
 
 func main() {
 	app := iris.New()
-	// enable all (error) logs
-	// select the httprouter as the servemux
+
 	app.AttachView(view.HTML("./templates", ".html")) // select the html engine to serve templates
 
 	ws := websocket.New(websocket.Config{

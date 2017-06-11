@@ -21,7 +21,7 @@ It doesn't contains "best ways" neither explains all its features. It's just a s
         * [Import from YAML file](beginner/configuration/from-yaml-file/main.go)
         * [Import from TOML file](beginner/configuration/from-toml-file/main.go)
     * [Routing](beginner/routing)
-        * [Overview](beginner/routing/main.go)
+        * [Overview](beginner/routing/overview/main.go)
         * [Basic](beginner/routing/basic/main.go)
         * [Dynamic Path](beginner/routing/dynamic-path/main.go)
         * [Reverse routing](beginner/routing/reverse/main.go)

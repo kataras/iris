@@ -14,9 +14,6 @@ type businessModel struct {
 
 func main() {
 	app := iris.New()
-	// enable all (error) logs
-	// select the httprouter as the servemux
-
 	mySessions := sessions.New(sessions.Config{
 		// Cookie string, the session's client cookie name, for example: "mysessionid"
 		//

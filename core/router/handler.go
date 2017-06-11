@@ -5,15 +5,15 @@
 package router
 
 import (
+	"fmt"
 	"html"
 	"net/http"
 	"sort"
 	"strings"
-	"sync/atomic"
 
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/nettools"
-	"github.com/kataras/iris/core/router/httprouter"
+	"github.com/kataras/iris/core/router/node"
 )
 
 // RequestHandler the middle man between acquiring a context and releasing it.
@@ -31,13 +31,12 @@ type tree struct {
 	// subdomain is empty for default-hostname routes,
 	// ex: mysubdomain.
 	Subdomain string
-	Entry     *httprouter.Node
+	Nodes     *node.Nodes
 }
 
 type routerHandler struct {
 	trees []*tree
-	vhost atomic.Value // is a string setted at the first it founds a subdomain, we need that here in order to reduce the resolveVHost calls
-	hosts bool         // true if at least one route contains a Subdomain.
+	hosts bool // true if at least one route contains a Subdomain.
 }
 
 var _ RequestHandler = &routerHandler{}
@@ -54,20 +53,20 @@ func (h *routerHandler) getTree(method, subdomain string) *tree {
 }
 
 func (h *routerHandler) addRoute(method, subdomain, path string, handlers context.Handlers) error {
-	// get or create a tree and add the route
+	if len(path) == 0 || path[0] != '/' {
+		return fmt.Errorf("router: path %q must begin with %q", path, "/")
+	}
+
 	t := h.getTree(method, subdomain)
 
 	if t == nil {
-		//first time we register a route to this method with this domain
-		t = &tree{Method: method, Subdomain: subdomain, Entry: new(httprouter.Node)}
+		n := make(node.Nodes, 0)
+		// first time we register a route to this method with this subdomain
+		t = &tree{Method: method, Subdomain: subdomain, Nodes: &n}
 		h.trees = append(h.trees, t)
 	}
 
-	if err := t.Entry.AddRoute(path, handlers); err != nil {
-		return err
-	}
-
-	return nil
+	return t.Nodes.Add(path, handlers)
 }
 
 // NewDefaultHandler returns the handler which is responsible
@@ -98,11 +97,41 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 			return err
 		}
 	}
+
 	return nil
 }
 
 func (h *routerHandler) HandleRequest(ctx context.Context) {
 	method := ctx.Method()
+	path := ctx.Path()
+
+	if !ctx.Application().ConfigurationReadOnly().GetDisablePathCorrection() {
+
+		if len(path) > 1 && path[len(path)-1] == '/' {
+			// Remove trailing slash and client-permant rule for redirection,
+			// if confgiuration allows that and path has an extra slash.
+
+			// update the new path and redirect.
+			r := ctx.Request()
+			path = path[:len(path)-1]
+			r.URL.Path = path
+			url := r.URL.String()
+
+			ctx.Redirect(url, http.StatusMovedPermanently)
+
+			// RFC2616 recommends that a short note "SHOULD" be included in the
+			// response because older user agents may not understand 301/307.
+			// Shouldn't send the response for POST or HEAD; that leaves GET.
+			if method == http.MethodGet {
+				note := "<a href=\"" +
+					html.EscapeString(url) +
+					"\">Moved Permanently</a>.\n"
+
+				ctx.ResponseWriter().WriteString(note)
+			}
+			return
+		}
+	}
 
 	for i := range h.trees {
 		t := h.trees[i]
@@ -110,39 +139,6 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 			continue
 		}
 
-		// Changed my mind for subdomains, there are unnecessary steps here
-		// most servers don't need these and on other servers may force the server to send a 404 not found
-		// on a valid subdomain, by commenting my previous implementation we allow any request host to be discovarable for subdomains.
-		// if h.hosts && t.Subdomain != "" {
-
-		// 	if h.vhost.Load() == nil {
-		// 		h.vhost.Store(nettools.ResolveVHost(ctx.Application().ConfigurationReadOnly().GetAddr()))
-		// 	}
-
-		// 	host := h.vhost.Load().(string)
-		// 	requestHost := ctx.Host()
-
-		// 	if requestHost != host {
-		// 		// we have a subdomain
-		// 		if strings.Contains(t.Subdomain, DynamicSubdomainIndicator) {
-		// 		} else {
-		// 			// if subdomain+host is not the request host
-		// 			// and
-		// 			// if request host didn't matched the server's host
-		// 			// check if reached the server
-		// 			// with a local address, this case is the developer him/herself,
-		// 			// if both of them failed then continue and ignore this tree.
-		// 			if t.Subdomain+host != requestHost && !nettools.IsLoopbackHost(requestHost) {
-		// 				// go to the next tree, we have a subdomain but it is not the correct
-		// 				continue
-		// 			}
-		// 		}
-		// 	} else {
-		// 		//("it's subdomain but the request is not the same as the vhost)
-		// 		continue
-		// 	}
-		// }
-		// new, simpler and without the need of known the real host:
 		if h.hosts && t.Subdomain != "" {
 			requestHost := ctx.Host()
 			if nettools.IsLoopbackSubdomain(requestHost) {
@@ -175,62 +171,13 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 			}
 		}
 
-		handlers, mustRedirect := t.Entry.ResolveRoute(ctx)
+		handlers := t.Nodes.Find(path, ctx.Params())
 		if len(handlers) > 0 {
-			ctx.SetHandlers(handlers)
-			ctx.Handlers()[0](ctx)
-			// to remove the .Next(maybe not a good idea), reduces the performance a bit:
-			// ctx.Handlers()[0](ctx) // execute the first, as soon as possible
-			// // execute the chain of handlers, carefully
-			// current := ctx.HandlerIndex(-1)
-			// for {
-			// 	if ctx.IsStopped() || current >= n {
-			// 		break
-			// 	}
-
-			// 	ctx.HandlerIndex(current)
-			// 	ctx.Handlers()[current](ctx)
-			// 	current++
-			// 	if i := ctx.HandlerIndex(-1); i > current { // navigate to previous handler is not allowed
-			// 		current = i
-			// 	}
-			// }
-
+			ctx.Do(handlers)
+			// found
 			return
-		} else if mustRedirect && !ctx.Application().ConfigurationReadOnly().GetDisablePathCorrection() { // && ctx.Method() == MethodConnect {
-			urlToRedirect := ctx.Path()
-			pathLen := len(urlToRedirect)
-
-			if pathLen > 1 {
-				if urlToRedirect[pathLen-1] == '/' {
-					urlToRedirect = urlToRedirect[:pathLen-1] // remove the last /
-				} else {
-					// it has path prefix, it doesn't ends with / and it hasn't be found, then just append the slash
-					urlToRedirect = urlToRedirect + "/"
-				}
-
-				statusForRedirect := http.StatusMovedPermanently //	StatusMovedPermanently, this document is obselte, clients caches this.
-				if t.Method == http.MethodPost ||
-					t.Method == http.MethodPut ||
-					t.Method == http.MethodDelete {
-					statusForRedirect = http.StatusTemporaryRedirect //	To maintain POST data
-				}
-
-				ctx.Redirect(urlToRedirect, statusForRedirect)
-				// RFC2616 recommends that a short note "SHOULD" be included in the
-				// response because older user agents may not understand 301/307.
-				// Shouldn't send the response for POST or HEAD; that leaves GET.
-				if t.Method == http.MethodGet {
-					note := "<a href=\"" +
-						html.EscapeString(urlToRedirect) +
-						"\">Moved Permanently</a>.\n"
-
-					ctx.ResponseWriter().WriteString(note)
-				}
-				return
-			}
 		}
-		// not found
+		// not found or method not allowed.
 		break
 	}
 

@@ -29,6 +29,17 @@ Thanks to [Santosh Anand](https://github.com/santoshanand) the http://iris-go.co
 
 The amount of the next two or three donations you'll send they will be immediately transferred to his own account balance, so be generous please!
 
+# Su, 11 June 2017 | v7.0.5
+
+Iris now supports static paths and dynamic paths for the same path prefix with zero performance cost:
+
+`app.Get("/profile/{id:int}", handler)` and `app.Get("/profile/create", createHandler)` are not in conflict anymore.
+
+
+The the rest of the special Iris' routing features, including static & wildcard subdomains are still work like a charm.
+
+> This was one of the most popular community's feature requests. Click [here](https://github.com/kataras/iris/blob/master/_examples/beginner/routing/overview/main.go) to see a trivial example.
+
 # Sa, 10 June 2017 | v7.0.4
 
 - Simplify and add a test for the [basicauth middleware](https://github.com/kataras/iris/tree/master/middleware/basicauth), no need to be
@@ -102,7 +113,8 @@ General
     - `app.Adapt(iris.RenderPolicy(...))` -> removed and replaced with the ability to replace the whole context with a custom one or override some methods of it, see below.
 
 Routing
-- Remove of multiple routers, now we have the fresh Iris router which is based on top of the julien's [httprouter](https://github.com/julienschmidt/httprouter)
+- Remove of multiple routers, now we have the fresh Iris router which is based on top of the julien's [httprouter](https://github.com/julienschmidt/httprouter).
+    > Update 11 June 2017: As of 7.0.5 this is changed, read [here](https://github.com/kataras/iris/blob/master/HISTORY.md#su-11-june-2017--v705).
 - Subdomains routing algorithm has been improved.
 - Iris router is using a custom interpreter with parser and path evaluator to achieve the best expressiveness, with zero performance loss, you ever seen so far, i.e: 
     - `app.Get("/", "/users/{userid:int min(1)}", handler)`,
