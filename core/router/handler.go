@@ -5,7 +5,6 @@
 package router
 
 import (
-	"fmt"
 	"html"
 	"net/http"
 	"sort"
@@ -53,10 +52,6 @@ func (h *routerHandler) getTree(method, subdomain string) *tree {
 }
 
 func (h *routerHandler) addRoute(method, subdomain, path string, handlers context.Handlers) error {
-	if len(path) == 0 || path[0] != '/' {
-		return fmt.Errorf("router: path %q must begin with %q", path, "/")
-	}
-
 	t := h.getTree(method, subdomain)
 
 	if t == nil {

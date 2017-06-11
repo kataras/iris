@@ -28,6 +28,12 @@ func releaseResponseRecorder(w *ResponseRecorder) {
 	rrpool.Put(w)
 }
 
+// A ResponseRecorder is used mostly by context's transactions
+// in order to record and change if needed the body, status code and headers.
+//
+// Developers are not limited to manually ask to record a response.
+// To turn on the recorder from a Handler,
+// rec := context.Recorder()
 type ResponseRecorder struct {
 	ResponseWriter
 	// keep track of the body in order to be
@@ -39,12 +45,16 @@ type ResponseRecorder struct {
 
 var _ ResponseWriter = &ResponseRecorder{}
 
+// BeginRecord accepts its parent ResponseWriter and
+// prepares itself, the response recorder, to record and send response to the client.
 func (w *ResponseRecorder) BeginRecord(underline ResponseWriter) {
 	w.ResponseWriter = underline
 	w.headers = underline.Header()
 	w.ResetBody()
 }
 
+// EndResponse is auto-called when the whole client's request is done,
+// releases the response recorder and its underline ResponseWriter.
 func (w *ResponseRecorder) EndResponse() {
 	releaseResponseRecorder(w)
 	w.ResponseWriter.EndResponse()

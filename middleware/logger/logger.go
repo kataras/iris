@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package loger provides request logging via middleware. See _examples/beginner/request-logger
+// Package logger provides request logging via middleware. See _examples/beginner/request-logger
 package logger
 
 import (
@@ -58,7 +58,7 @@ func (l *requestLoggerMiddleware) ServeHTTP(ctx context.Context) {
 //
 // Receives an optional configuation.
 func New(cfg ...Config) context.Handler {
-	c := DefaultConfigurationReadOnly()
+	c := DefaultConfiguration()
 	if len(cfg) > 0 {
 		c = cfg[0]
 	}

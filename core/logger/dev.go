@@ -12,6 +12,9 @@ import (
 	"time"
 )
 
+// NewDevLogger returns a new logger of io.Writer which
+// formats its log message input and writes it
+// to the os.Stdout.
 func NewDevLogger(omitTimeFor ...string) io.Writer {
 	mu := &sync.Mutex{} // for now and last log
 	lastLog := time.Now()

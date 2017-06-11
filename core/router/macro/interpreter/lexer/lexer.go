@@ -8,6 +8,7 @@ import (
 	"github.com/kataras/iris/core/router/macro/interpreter/token"
 )
 
+// Lexer helps us to read/scan characters of a source and resolve their token types.
 type Lexer struct {
 	input   string
 	pos     int  // current pos in input, current char
@@ -15,6 +16,8 @@ type Lexer struct {
 	ch      byte // current char under examination
 }
 
+// New takes a source, series of chars, and returns
+// a new, ready to read from the first letter, lexer.
 func New(src string) *Lexer {
 	l := &Lexer{
 		input: src,
@@ -35,11 +38,13 @@ func (l *Lexer) readChar() {
 }
 
 const (
+	// Begin is the symbol which lexer should scan forward to.
 	Begin = '{' // token.LBRACE
-	End   = '}' // token.RBRACE
+	// End is the symbol which lexer should stop scanning.
+	End = '}' // token.RBRACE
 )
 
-func resolveTokenType(ch byte) token.TokenType {
+func resolveTokenType(ch byte) token.Type {
 	switch ch {
 	case Begin:
 		return token.LBRACE
@@ -71,6 +76,11 @@ func resolveTokenType(ch byte) token.TokenType {
 
 }
 
+// NextToken returns the next token in the series of characters.
+// It can be a single symbol, a token type or a literal.
+// It's able to return an EOF token too.
+//
+// It moves the cursor forward.
 func (l *Lexer) NextToken() (t token.Token) {
 	l.skipWhitespace()
 	typ := resolveTokenType(l.ch)
@@ -101,6 +111,13 @@ func (l *Lexer) NextToken() (t token.Token) {
 	return
 }
 
+// NextDynamicToken doesn't cares about the grammar.
+// It reads numbers or any unknown symbol,
+// it's being used by parser to skip all characters
+// between parameter function's arguemnts inside parenthesis,
+// in order to allow custom regexp on the end-language too.
+//
+// It moves the cursor forward.
 func (l *Lexer) NextDynamicToken() (t token.Token) {
 	// calculate anything, even spaces.
 
@@ -124,8 +141,11 @@ func (l *Lexer) readIdentifierFuncArgument() string {
 	return l.input[pos:l.pos]
 }
 
-// useful when we want to peek but no continue, i.e empty param functions 'even()'
-func (l *Lexer) PeekNextTokenType() token.TokenType {
+// PeekNextTokenType returns only the token type
+// of the next character and it does not move forward the cursor.
+// It's being used by parser to recognise empty functions, i.e `even()`
+// as valid functions with zero input arguments.
+func (l *Lexer) PeekNextTokenType() token.Type {
 	if len(l.input)-1 > l.pos {
 		ch := l.input[l.pos]
 		return resolveTokenType(ch)
@@ -133,7 +153,7 @@ func (l *Lexer) PeekNextTokenType() token.TokenType {
 	return resolveTokenType(0) // EOF
 }
 
-func (l *Lexer) newToken(tokenType token.TokenType, lit string) token.Token {
+func (l *Lexer) newToken(tokenType token.Type, lit string) token.Token {
 	t := token.Token{
 		Type:    tokenType,
 		Literal: lit,
@@ -151,7 +171,7 @@ func (l *Lexer) newToken(tokenType token.TokenType, lit string) token.Token {
 	return t
 }
 
-func (l *Lexer) newTokenRune(tokenType token.TokenType, ch byte) token.Token {
+func (l *Lexer) newTokenRune(tokenType token.Type, ch byte) token.Token {
 	return l.newToken(tokenType, string(ch))
 }
 

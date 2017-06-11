@@ -43,7 +43,7 @@ func main() {
 	// navigate to http://localhost:8080
 	// and open the ./logs.txt file
 	if err := app.Run(iris.Addr(":8080"), iris.WithoutBanner); err != nil {
-		app.Log("Shutdown with error: %v", err)
+		app.Log("Shutdown with error: %v\n", err)
 
 	}
 }
