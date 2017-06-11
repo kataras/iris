@@ -79,7 +79,7 @@ func (r Route) IsOnline() bool {
 	return r.Method != MethodNone
 }
 
-// formats the parsed to the underline httprouter's path syntax.
+// formats the parsed to the underline path syntax.
 // path = "/api/users/:id"
 // return "/api/users/%v"
 //

@@ -453,20 +453,14 @@ where context comes from github.com/kataras/iris/context.
 Until go 1.9 you will have to import that package too, after go 1.9 this will be not be necessary.
 
 Iris has the easiest and the most powerful routing process you have ever meet.
-If you're used to use the "httprouter"
-then you don't have to change a thing of a route's path.
 
 At the same time,
 Iris has its own interpeter(yes like a programming language)
 for route's path syntax and their dynamic path parameters parsing and evaluation,
 I am calling them "macros" for shortcut.
-In the following examples we will see only the second option, which has exactly the same speed
-compared to "httprouter".
 How? It calculates its needs and if not any special regexp needed then it just
-registers the route with the underline httprouter's path syntax,
+registers the route with the low-level path syntax,
 otherwise it pre-compiles the regexp and adds the necessary middleware(s).
-
-Note: the Iris's router follows the "httprouter"'s rules for routes confliction.
 
 Standard macro types for parameters:
 

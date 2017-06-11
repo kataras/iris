@@ -15,8 +15,6 @@ import (
 
 func main() {
 	app := iris.New()
-	// enable all (error) logs
-	// select the httprouter as the servemux
 
 	cookieName := "mycustomsessionid"
 	// AES only supports key sizes of 16, 24 or 32 bytes.

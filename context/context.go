@@ -89,8 +89,10 @@ func (r *RequestParams) Set(key, value string) {
 
 // Visit accepts a visitor which will be filled
 // by the key-value params.
-func (r *RequestParams) Visit(visitor func(key string, value interface{})) {
-	r.store.Visit(visitor)
+func (r *RequestParams) Visit(visitor func(key string, value string)) {
+	r.store.Visit(func(k string, v interface{}) {
+		visitor(k, v.(string)) // always string here.
+	})
 }
 
 // Get returns a path parameter's value based on its route's dynamic path key.
@@ -132,6 +134,11 @@ func (r RequestParams) GetIntUnslashed(key string) (int, error) {
 	return -1, memstore.ErrIntParse.Format(v)
 }
 
+// Len returns the full length of the parameters.
+func (r RequestParams) Len() int {
+	return r.store.Len()
+}
+
 // Context is the midle-man server's "object" for the clients.
 //
 // A New context is being acquired from a sync.Pool on each connection.
@@ -171,6 +178,14 @@ type Context interface {
 
 	// Request returns the original *http.Request, as expected.
 	Request() *http.Request
+
+	// Do calls the SetHandlers(handlers)
+	// and executes the first handler,
+	// handlers should not be empty.
+	//
+	// It's used by the router, developers may use that
+	// to replace and execute handlers immediately.
+	Do(Handlers)
 
 	// AddHandler can add handler(s)
 	// to the current request in serve-time,
@@ -817,6 +832,17 @@ func (ctx *context) Request() *http.Request {
 	return ctx.request
 }
 
+// Do calls the SetHandlers(handlers)
+// and executes the first handler,
+// handlers should not be empty.
+//
+// It's used by the router, developers may use that
+// to replace and execute handlers immediately.
+func (ctx *context) Do(handlers Handlers) {
+	ctx.handlers = handlers
+	ctx.handlers[0](ctx)
+}
+
 // AddHandler can add handler(s)
 // to the current request in serve-time,
 // these handlers are not persistenced to the router.
@@ -1230,20 +1256,23 @@ func (ctx *context) Redirect(urlToRedirect string, statusHeader ...int) {
 		httpStatus = statusHeader[0]
 	}
 
-	// we don't know the Method of the url to redirect,
-	// sure we can find it by reverse routing as we already implemented
-	// but it will take too much time for a simple redirect, it doesn't worth it.
-	// So we are checking the CURRENT Method for GET, HEAD,  CONNECT and TRACE.
-	// the
-	// Fixes: http: //support.iris-go.com/d/21-wrong-warning-message-while-redirecting
-	shouldCheckForCycle := urlToRedirect == ctx.Path() && ctx.Method() == http.MethodGet
-	// from POST to GET on the same path will give a warning message but developers don't use the iris.DevLogger
-	// for production, so I assume it's OK to let it logs it
-	// (it can solve issues when developer redirects to the same handler over and over again)
-	// Note: it doesn't stops the redirect, the developer gets what he/she expected.
-	if shouldCheckForCycle {
-		ctx.Application().Log("warning: redirect from: '%s' to: '%s',\ncurrent method: '%s'", ctx.Path(), urlToRedirect, ctx.Method())
-	}
+	// comment these because in some cases the the ctx.Request().URL.Path is already updated
+	// to the new one, so it shows a wrong warning message.
+	//
+	// // we don't know the Method of the url to redirect,
+	// // sure we can find it by reverse routing as we already implemented
+	// // but it will take too much time for a simple redirect, it doesn't worth it.
+	// // So we are checking the CURRENT Method for GET, HEAD,  CONNECT and TRACE.
+	// // the
+	// // Fixes: http: //support.iris-go.com/d/21-wrong-warning-message-while-redirecting
+	// shouldCheckForCycle := urlToRedirect == ctx.Path() && ctx.Method() == http.MethodGet
+	// // from POST to GET on the same path will give a warning message but developers don't use the iris.DevLogger
+	// // for production, so I assume it's OK to let it logs it
+	// // (it can solve issues when developer redirects to the same handler over and over again)
+	// // Note: it doesn't stops the redirect, the developer gets what he/she expected.
+	// if shouldCheckForCycle {
+	// 	ctx.Application().Log("warning: redirect from: '%s' to: '%s',\ncurrent method: '%s'", ctx.Path(), urlToRedirect, ctx.Method())
+	// }
 
 	http.Redirect(ctx.writer, ctx.request, urlToRedirect, httpStatus)
 }

@@ -31,7 +31,7 @@ func (l *Lexer) readChar() {
 		l.ch = l.input[l.readPos]
 	}
 	l.pos = l.readPos
-	l.readPos += 1
+	l.readPos++
 }
 
 const (

@@ -20,20 +20,14 @@ func main() {
 	// Until go 1.9 you will have to import that package too, after go 1.9 this will be not be necessary.
 	//
 	// Iris has the easiest and the most powerful routing process you have ever meet.
-	// If you're used to use the "httprouter"
-	// then you don't have to change a thing of a route's path.
 	//
 	// At the same time,
 	// Iris has its own interpeter(yes like a programming language)
 	// for route's path syntax and their dynamic path parameters parsing and evaluation,
 	// I am calling them "macros" for shortcut.
-	// In the following examples we will see only the second option, which has exactly the same speed
-	// compared to "httprouter".
 	// How? It calculates its needs and if not any special regexp needed then it just
-	// registers the route with the underline httprouter's path syntax,
+	// registers the route with the low-level underline  path syntax,
 	// otherwise it pre-compiles the regexp and adds the necessary middleware(s).
-	//
-	// Note: the Iris' router follows the "httprouter"'s rules for routes confliction.
 	//
 	// Standard macro types for parameters:
 	//  +------------------------+
@@ -142,6 +136,10 @@ func main() {
 		ctx.Writef("name: %s | level: %s", ctx.Params().Get("name"), ctx.Params().Get("level"))
 	})
 
+	app.Get("/lowercase/static", func(ctx context.Context) {
+		ctx.Writef("static and dynamic paths are not conflicted anymore!")
+	})
+
 	// let's use a trivial custom regexp that validates a single path parameter
 	// which its value is only lowercase letters.
 
@@ -160,12 +158,14 @@ func main() {
 	app.Get("/myfiles/{directory:path}", func(ctx context.Context) {
 		ctx.Writef("path type accepts any number of path segments, path after /myfiles/ is: %s", ctx.Params().Get("directory"))
 	}) // for wildcard path (any number of path segments) without validation you can use:
-	// /myfiles/*directory
+	// /myfiles/*
 
 	// "{param}"'s performance is exactly the same of ":param"'s.
 
-	// alternatives -> ":param" for single path parameter and "*paramPath" for wildcard path parameter
-	// acquire them by ctx.Params().Get as always.
+	// alternatives -> ":param" for single path parameter and "*" for wildcard path parameter.
+	// Note these:
+	// if  "/mypath/*" then the parameter name is "*".
+	// if  "/mypath/{myparam:path}" then the parameter has two names, one is the "*" and the other is the user-defined "myparam".
 
 	// WARNING:
 	// A path parameter name should contain only alphabetical letters, symbols, containing '_' and numbers are NOT allowed.

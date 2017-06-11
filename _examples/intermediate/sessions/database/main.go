@@ -30,9 +30,6 @@ func main() {
 
 	// the rest of the code stays the same.
 	app := iris.New()
-	// enable all (error) logs
-	// select the httprouter as the servemux
-
 	// Attach the session manager we just created
 	app.AttachSessionManager(mySessions)
 
