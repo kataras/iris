@@ -26,7 +26,7 @@ type stringWriter interface {
 	WriteString(string) (int, error)
 }
 
-// Log sends a message to the defined io.Writer logger, it's
+// Log sends a message to the defined logger of io.Writer logger, it's
 // just a help function for internal use but it can be used to a cusotom middleware too.
 //
 // See AttachLogger too.

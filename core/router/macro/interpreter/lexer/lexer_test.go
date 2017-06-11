@@ -14,7 +14,7 @@ func TestNextToken(t *testing.T) {
 	input := `{id:int min(1) max(5) else 404}`
 
 	tests := []struct {
-		expectedType    token.TokenType
+		expectedType    token.Type
 		expectedLiteral string
 	}{
 		{token.LBRACE, "{"},  // 0

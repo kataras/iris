@@ -91,7 +91,7 @@ func New() *Application {
 
 	app := &Application{
 		config:     &config,
-		logger:     logger.NewDevLogger(),
+		logger:     logger.NewDevLogger(banner),
 		APIBuilder: router.NewAPIBuilder(),
 		Router:     router.NewRouter(),
 	}

@@ -19,7 +19,7 @@ type Config struct {
 	Path bool
 }
 
-// DefaultConfig returns an options which all properties are true except EnableColors
-func DefaultConfigurationReadOnly() Config {
+// DefaultConfiguration returns an options which all properties are true except EnableColors
+func DefaultConfiguration() Config {
 	return Config{true, true, true, true}
 }

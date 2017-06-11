@@ -36,7 +36,7 @@ Iris now supports static paths and dynamic paths for the same path prefix with z
 `app.Get("/profile/{id:int}", handler)` and `app.Get("/profile/create", createHandler)` are not in conflict anymore.
 
 
-The the rest of the special Iris' routing features, including static & wildcard subdomains are still work like a charm.
+The rest of the special Iris' routing features, including static & wildcard subdomains are still work like a charm.
 
 > This was one of the most popular community's feature requests. Click [here](https://github.com/kataras/iris/blob/master/_examples/beginner/routing/overview/main.go) to see a trivial example.
 
