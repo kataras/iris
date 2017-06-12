@@ -75,7 +75,7 @@ func testEvaluatorRaw(macroEvaluator *Macro, input string, pass bool, i int, t *
 }
 
 func TestStringEvaluatorRaw(t *testing.T) {
-	f := NewMacroMap()
+	f := NewMap()
 
 	tests := []struct {
 		pass  bool
@@ -95,7 +95,7 @@ func TestStringEvaluatorRaw(t *testing.T) {
 }
 
 func TestIntEvaluatorRaw(t *testing.T) {
-	f := NewMacroMap()
+	f := NewMap()
 
 	tests := []struct {
 		pass  bool
@@ -114,7 +114,7 @@ func TestIntEvaluatorRaw(t *testing.T) {
 }
 
 func TestAlphabeticalEvaluatorRaw(t *testing.T) {
-	f := NewMacroMap()
+	f := NewMap()
 
 	tests := []struct {
 		pass  bool
@@ -133,7 +133,7 @@ func TestAlphabeticalEvaluatorRaw(t *testing.T) {
 }
 
 func TestFileEvaluatorRaw(t *testing.T) {
-	f := NewMacroMap()
+	f := NewMap()
 
 	tests := []struct {
 		pass  bool
@@ -152,7 +152,7 @@ func TestFileEvaluatorRaw(t *testing.T) {
 }
 
 func TestPathEvaluatorRaw(t *testing.T) {
-	f := NewMacroMap()
+	f := NewMap()
 
 	pathTests := []struct {
 		pass  bool
@@ -172,7 +172,7 @@ func TestPathEvaluatorRaw(t *testing.T) {
 }
 
 // func TestMapRegisterFunc(t *testing.T) {
-// 	m := NewMacroMap()
+// 	m := NewMap()
 // 	m.String.RegisterFunc("prefix", func(prefix string) EvaluatorFunc {
 // 		return func(paramValue string) bool {
 // 			return strings.HasPrefix(paramValue, prefix)
