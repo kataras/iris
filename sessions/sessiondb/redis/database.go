@@ -57,7 +57,7 @@ func (d *Database) Load(sid string) map[string]interface{} {
 func serialize(values map[string]interface{}) []byte {
 	val, err := SerializeBytes(values)
 	if err != nil {
-		println("On redisstore.serialize: " + err.Error())
+		return nil
 	}
 
 	return val

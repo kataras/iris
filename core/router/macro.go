@@ -183,6 +183,12 @@ func compileRoutePathAndHandlers(handlers context.Handlers, tmpl *macro.Template
 
 func convertTmplToNodePath(tmpl *macro.Template) (string, error) {
 	routePath := tmpl.Src
+	if len(tmpl.Params) > 0 {
+		if routePath[len(routePath)-1] == '/' {
+			routePath = routePath[0 : len(routePath)-2] // remove the last "/" if macro syntax instead of underline's
+		}
+	}
+
 	// if it has started with {} and it's valid
 	// then the tmpl.Params will be filled,
 	// so no any further check needed
@@ -191,7 +197,6 @@ func convertTmplToNodePath(tmpl *macro.Template) (string, error) {
 			if i != len(tmpl.Params)-1 {
 				return "", errors.New("parameter type \"ParamTypePath\" should be putted to the very last of a path")
 			}
-
 			routePath = strings.Replace(routePath, p.Src, WildcardParam(p.Name), 1)
 		} else {
 			routePath = strings.Replace(routePath, p.Src, Param(p.Name), 1)
@@ -210,13 +215,15 @@ func convertTmplToHandler(tmpl *macro.Template) context.Handler {
 	// 1. if we don't have, then we don't need to add a handler before the main route's handler (as I said, no performance if macro is not really used)
 	// 2. if we don't have any named params then we don't need a handler too.
 	for _, p := range tmpl.Params {
-		if len(p.Funcs) == 0 && (p.Type == ast.ParamTypeString || p.Type == ast.ParamTypePath) && p.ErrCode == http.StatusNotFound {
+		if len(p.Funcs) == 0 && (p.Type == ast.ParamTypeUnExpected || p.Type == ast.ParamTypeString || p.Type == ast.ParamTypePath) && p.ErrCode == http.StatusNotFound {
 		} else {
+			// println("we need handler for: " + tmpl.Src)
 			needMacroHandler = true
 		}
 	}
 
 	if !needMacroHandler {
+		// println("we don't need handler for: " + tmpl.Src)
 		return nil
 	}
 

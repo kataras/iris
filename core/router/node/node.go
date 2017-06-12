@@ -54,7 +54,7 @@ func (nodes *Nodes) Add(path string, handlers context.Handlers) error {
 			return err
 		}
 		// create a second, empty, dynamic parameter node without the last slash
-		if nidx := idx + 1; len(path) < nidx {
+		if nidx := idx + 1; len(path) > nidx {
 			if err := nodes.add(path[:nidx], nil, nil, true); err != nil {
 				return err
 			}

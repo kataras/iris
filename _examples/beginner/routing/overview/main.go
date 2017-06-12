@@ -10,11 +10,11 @@ func main() {
 
 	// GET: http://localhost:8080
 	app.Get("/", info)
+
 	// GET: http://localhost:8080/profile/kataras
 	app.Get("/profile/{username:string}", info)
-	// GET: http://localhost:8080/profile/backups/any/number/of/paths/here
-	app.Get("/profile/backups/{filepath:path}", info)
-
+	// GET: http://localhost:8080/profile/kataras/backups/any/number/of/paths/here
+	app.Get("/profile/{username:string}/backups/{filepath:path}", info)
 	// Favicon
 
 	// GET: http://localhost:8080/favicon.ico
@@ -101,7 +101,7 @@ func main() {
 
 	// GET: http://localhost:8080/
 	// GET: http://localhost:8080/profile/kataras
-	// GET: http://localhost:8080/profile/backups/any/number/of/paths/here
+	// GET: http://localhost:8080/profile/kataras/backups/any/number/of/paths/here
 
 	// GET: http://localhost:8080/users/help
 	// GET: http://localhost:8080/users
@@ -113,7 +113,9 @@ func main() {
 	// GET: http://admin.localhost:8080
 	// GET: http://admin.localhost:8080/settings
 	// GET: http://any_thing_here.localhost:8080
-	app.Run(iris.Addr(":8080"))
+	if err := app.Run(iris.Addr(":8080")); err != nil {
+		panic(err)
+	}
 }
 
 func info(ctx context.Context) {

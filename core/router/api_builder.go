@@ -147,6 +147,7 @@ func (rb *APIBuilder) Handle(method string, registeredPath string, handlers ...c
 	}
 	// global
 	rb.routes.register(r)
+
 	// per -party
 	rb.apiRoutes = append(rb.apiRoutes, r)
 	// should we remove the rb.apiRoutes on the .Party (new children party) ?, No, because the user maybe use this party later
@@ -161,6 +162,11 @@ func (rb *APIBuilder) Party(relativePath string, handlers ...context.Handler) Pa
 	dot := string(SubdomainIndicator[0])
 	if len(parentPath) > 0 && parentPath[0] == '/' && strings.HasSuffix(relativePath, dot) { // if ends with . , example: admin., it's subdomain->
 		parentPath = parentPath[1:] // remove first slash
+	}
+
+	// this is checked later on but for easier debug is better to do it here:
+	if rb.relativePath[0] == '/' && relativePath[0] == '/' {
+		parentPath = parentPath[1:] // remove  first slash if parent ended with / and new one started with /.
 	}
 
 	fullpath := parentPath + relativePath
