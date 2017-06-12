@@ -9,12 +9,20 @@ import (
 	"github.com/kataras/iris/core/router/macro/interpreter/parser"
 )
 
+// Template contains a route's path full parsed template.
+//
+// Fields:
+// Src is the raw source of the path, i.e /users/{id:int min(1)}
+// Params is the list of the Params that are being used to the
+// path,  i.e the min as param name and  1 as the param argument.
 type Template struct {
 	// Src is the original template given by the client
 	Src    string
 	Params []TemplateParam
 }
 
+// TemplateParam is the parsed macro parameter's template
+// they are being used to describe the param's syntax result.
 type TemplateParam struct {
 	Src string // the unparsed param'false source
 	// Type is not useful anywhere here but maybe
@@ -26,7 +34,11 @@ type TemplateParam struct {
 	Funcs         []EvaluatorFunc
 }
 
-func Parse(src string, macros *MacroMap) (*Template, error) {
+// Parse takes a full route path and a macro map (macro map contains the macro types with their registered param functions)
+// and returns a new Template.
+// It builds all the parameter functions for that template
+// and their evaluators, it's the api call that makes use the interpeter's parser -> lexer.
+func Parse(src string, macros *Map) (*Template, error) {
 	params, err := parser.Parse(src)
 	if err != nil {
 		return nil, err

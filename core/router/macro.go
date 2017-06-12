@@ -17,8 +17,8 @@ import (
 
 // defaultMacros returns a new macro map which
 // contains the default router's named param types functions.
-func defaultMacros() *macro.MacroMap {
-	macros := macro.NewMacroMap()
+func defaultMacros() *macro.Map {
+	macros := macro.NewMap()
 	// registers the String and Int default macro funcs
 	// user can add or override of his own funcs later on
 	// i.e:
@@ -31,7 +31,7 @@ func defaultMacros() *macro.MacroMap {
 	return macros
 }
 
-func registerBuiltinsMacroFuncs(out *macro.MacroMap) {
+func registerBuiltinsMacroFuncs(out *macro.Map) {
 	// register the String which is the default type if not
 	// parameter type is specified or
 	// if a given parameter into path given but the func doesn't exist on the

@@ -129,7 +129,8 @@ func TestParseParam(t *testing.T) {
 			}}, // 7
 
 	}
-	var p *ParamParser = new(ParamParser)
+
+	p := new(ParamParser)
 	for i, tt := range tests {
 		p.Reset(tt.expectedStatement.Src)
 		resultStmt, err := p.Parse()

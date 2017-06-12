@@ -14,6 +14,9 @@ import (
 	"github.com/kataras/iris/core/router/macro/interpreter/token"
 )
 
+// Parse takes a route "fullpath"
+// and returns its param statements
+// and an error on failure.
 func Parse(fullpath string) ([]*ast.ParamStatement, error) {
 	pathParts := strings.SplitN(fullpath, "/", -1)
 	p := new(ParamParser)
@@ -45,20 +48,27 @@ func Parse(fullpath string) ([]*ast.ParamStatement, error) {
 	return statements, nil
 }
 
+// ParamParser is the parser
+// which is being used by the Parse function
+// to parse path segments one by one
+// and return their parsed parameter statements (param name, param type its functions and the inline route's functions).
 type ParamParser struct {
 	src    string
 	errors []string
 }
 
+// NewParamParser receives a "src" of a single parameter
+// and returns a new ParamParser, ready to Parse.
 func NewParamParser(src string) *ParamParser {
 	p := new(ParamParser)
 	p.Reset(src)
 	return p
 }
 
+// Reset resets this ParamParser,
+// reset the errors and set the source to the input "src".
 func (p *ParamParser) Reset(src string) {
 	p.src = src
-
 	p.errors = []string{}
 }
 
@@ -66,8 +76,15 @@ func (p *ParamParser) appendErr(format string, a ...interface{}) {
 	p.errors = append(p.errors, fmt.Sprintf(format, a...))
 }
 
-const DefaultParamErrorCode = 404
-const DefaultParamType = ast.ParamTypeString
+const (
+	// DefaultParamErrorCode is the default http error code, 404 not found,
+	// per-parameter. An error code can be setted via
+	// the "else" keyword inside a route's path.
+	DefaultParamErrorCode = 404
+	// DefaultParamType when parameter type is missing use this param type, defaults to string
+	// and it should be remains unless earth split in two.
+	DefaultParamType = ast.ParamTypeString
+)
 
 func parseParamFuncArg(t token.Token) (a ast.ParamFuncArg, err error) {
 	if t.Type == token.INT {
@@ -83,6 +100,8 @@ func (p ParamParser) Error() error {
 	return nil
 }
 
+// Parse parses the p.src and returns its param statement
+// and an error on failure.
 func (p *ParamParser) Parse() (*ast.ParamStatement, error) {
 	l := lexer.New(p.src)
 
