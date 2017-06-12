@@ -114,7 +114,7 @@ func (l *Lexer) NextToken() (t token.Token) {
 // NextDynamicToken doesn't cares about the grammar.
 // It reads numbers or any unknown symbol,
 // it's being used by parser to skip all characters
-// between parameter function's arguemnts inside parenthesis,
+// between parameter function's arguments inside parenthesis,
 // in order to allow custom regexp on the end-language too.
 //
 // It moves the cursor forward.
