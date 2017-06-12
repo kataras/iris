@@ -60,7 +60,6 @@ func (h *routerHandler) addRoute(method, subdomain, path string, handlers contex
 		t = &tree{Method: method, Subdomain: subdomain, Nodes: &n}
 		h.trees = append(h.trees, t)
 	}
-
 	return t.Nodes.Add(path, handlers)
 }
 
@@ -99,7 +98,6 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 func (h *routerHandler) HandleRequest(ctx context.Context) {
 	method := ctx.Method()
 	path := ctx.Path()
-
 	if !ctx.Application().ConfigurationReadOnly().GetDisablePathCorrection() {
 
 		if len(path) > 1 && path[len(path)-1] == '/' {
@@ -165,7 +163,6 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 				continue
 			}
 		}
-
 		handlers := t.Nodes.Find(path, ctx.Params())
 		if len(handlers) > 0 {
 			ctx.Do(handlers)

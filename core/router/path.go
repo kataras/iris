@@ -102,6 +102,12 @@ func newSubdomainDivider(sep string) unis.DividerFunc {
 	subdomainDevider := unis.NewInvertOnFailureDivider(unis.NewDivider(sep))
 	return func(fullpath string) (string, string) {
 		subdomain, path := subdomainDevider.Divide(fullpath)
+		if len(path) > 1 {
+			if path[0] == '/' && path[1] == '/' {
+				path = path[1:]
+			}
+		}
+
 		return subdomain, path //cleanPath(path)
 	}
 }

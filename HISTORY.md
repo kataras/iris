@@ -29,6 +29,11 @@ Thanks to [Santosh Anand](https://github.com/santoshanand) the http://iris-go.co
 
 The amount of the next two or three donations you'll send they will be immediately transferred to his own account balance, so be generous please!
 
+# Mo, 12 June 2017 | v7.1.0
+
+Fix [that](https://github.com/iris-contrib/community-board/issues/10).
+
+
 # Su, 11 June 2017 | v7.0.5
 
 Iris now supports static paths and dynamic paths for the same path prefix with zero performance cost:
