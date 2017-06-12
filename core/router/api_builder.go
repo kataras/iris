@@ -73,7 +73,7 @@ type RoutesProvider interface { // api builder
 // and child routers.
 type APIBuilder struct {
 	// the api builder global macros registry
-	macros *macro.MacroMap
+	macros *macro.Map
 	// the api builder global handlers per status code registry (used for custom http errors)
 	errorCodeHandlers *ErrorCodeHandlers
 	// the api builder global routes repository
@@ -181,7 +181,9 @@ func (rb *APIBuilder) Party(relativePath string, handlers ...context.Handler) Pa
 
 // Macros returns the macro map which is responsible
 // to register custom macro functions for all routes.
-func (rb *APIBuilder) Macros() *macro.MacroMap {
+//
+// Learn more at:  https://github.com/kataras/iris/tree/master/_examples/beginner/routing/dynamic-path
+func (rb *APIBuilder) Macros() *macro.Map {
 	return rb.macros
 }
 
