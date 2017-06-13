@@ -18,6 +18,27 @@ Build your own web applications and portable APIs with the highest performance a
 
 If you're coming from [Node.js](https://nodejs.org) world, this is the [expressjs](https://github.com/expressjs/express)++ equivalent for the [Go Programming Language](https://golang.org).
 
+
+Table of contents
+-----------
+
+* [Installation](#installation)
+* [Feature overview](#feature-overview)
+* [Documentation](#documentation)
+    * [Examples](https://github.com/kataras/iris/tree/master/_examples)
+    * [Reload on source code changes](#reload-on-source-code-changes)
+* [Support](#support)
+    * [Buy me a cup of coffee?](#buy-me-a-cup-of-coffee)
+* [Third-party middleware list](#third-party-middleware)    
+* [Testing](#testing)
+* [Philosophy](#philosophy)
+* [People](#people)
+    * [Legends](#legends)
+    * [Contact](#contact)
+* [Versioning](#version)
+    * [When should I upgrade?](#should-i-upgrade-my-iris)
+    * [Where can I find older versions?](#where-can-i-find-older-versions)
+
 Installation
 -----------
 
@@ -160,71 +181,6 @@ $ rizla main.go
 
 > Psst: Wanna go to [_examples](https://github.com/kataras/iris/tree/master/_examples) to see more code-snippets?
 
-<details>
-<summary>Legends</summary>
-
-I'm sorry for taking this personally but I really need to thank each one of them because they stood up [♡](https://github.com/kataras/iris#support) for me when others tried to "bullying" my personality in order to deflame Iris.
-
-All of us should read and respect the official [golang](https://golang.org/conduct) and [iris](https://github.com/iris-contrib/community-board/blob/master/CODE-OF-CONDUCT.md) community **Code of Conduct**. This type of commitment and communication is the way of making Go great.
-
-<!-- on each chance, i.e when iris posts were trending on sites like dzone and medium they spamming an awful full of lies and deflamation blog post. We all should read and respect the official golang's and iris' Code of Conduct. -->
-
-[Juan Sebastián Suárez Valencia](https://github.com/Juanses) donated 20 EUR at September 11 of 2016
-
-[Bob Lee](https://github.com/li3p) donated 20 EUR at September 16 of 2016
-
-[Celso Luiz](https://github.com/celsosz) donated 50 EUR at September 29 of 2016
-
-[Ankur Srivastava](https://github.com/ansrivas) donated 20 EUR at October 2 of 2016
-
-[Damon Zhao](https://github.com/se77en) donated 20 EUR at October 21 of 2016
-
-[exponity - consulting & digital transformation](https://github.com/exponity) donated 30 EUR at November 4 of 2016
-
-[Thomas Fritz](https://github.com/thomasfr) donated 25 EUR at Jenuary 8 of 2017
-
-[Thanos V.](http://mykonosbiennale.com/) donated 20 EUR at Jenuary 16 of 2017
-
-[George Opritescu](https://github.com/International) donated 20 EUR at February 7 of 2017
-
-[Lex Tang](https://github.com/lexrus) donated 20 EUR at February 22 of 2017
-
-[Conrad Steenberg](https://github.com/hengestone) donated 25 EUR at March 23 of 2017
-
-<p>
-
-<a href="https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7">
-<img width="300" src="http://iris-go.com/comment28.png" />
-</a>
-
-<a href="https://twitter.com/gelnior/status/769100480706379776">
-<img width="300" src="http://iris-go.com/comment27.png" />
-</a>
-
-<br/>
-
-<a href="https://www.youtube.com/watch?v=jGx0LkuUs4A">
-<img  width="300" src="https://github.com/iris-contrib/website/raw/gh-pages/assets/gif_link_to_yt.gif" alt="What people say" />
-</a>
-
-<a href="https://www.youtube.com/watch?v=jGx0LkuUs4A">
-<img width ="300" src="https://github.com/iris-contrib/website/raw/gh-pages/assets/gif_link_to_yt2.gif" alt="What people say" />
-</a>
-
-<br/>
-
-<a href="https://twitter.com/_mgale/status/818591490305761280">
-<img width="300" width="630" src="http://iris-go.com/comment25.png" />
-</a>
-
-<a href="https://twitter.com/MeAlex07/status/822799954188075008">
-<img width="300" width="627" src="http://iris-go.com/comment26.png" />
-</a>
-
-</p>
-
-</details>
-
 Feature Overview
 -----------
 
@@ -267,7 +223,6 @@ Feature Overview
 - Highly customizable
 - Feels like you used iris forever, thanks to its Fluent API
 - And many others...
-
 
 Documentation
 -----------
@@ -384,8 +339,66 @@ The author of Iris is [@kataras](https://github.com/kataras).
 
 However the real Success of Iris belongs to you with your bug reports and feature requests that made this Framework so Unique.
 
-Contact
-------------
+
+### Legends
+
+I really need to thank each one of them because they stood up[♡](https://github.com/kataras/iris#support) to keep this project alive and active.
+
+[Juan Sebastián Suárez Valencia](https://github.com/Juanses) donated 20 EUR at September 11 of 2016
+
+[Bob Lee](https://github.com/li3p) donated 20 EUR at September 16 of 2016
+
+[Celso Luiz](https://github.com/celsosz) donated 50 EUR at September 29 of 2016
+
+[Ankur Srivastava](https://github.com/ansrivas) donated 20 EUR at October 2 of 2016
+
+[Damon Zhao](https://github.com/se77en) donated 20 EUR at October 21 of 2016
+
+[exponity - consulting & digital transformation](https://github.com/exponity) donated 30 EUR at November 4 of 2016
+
+[Thomas Fritz](https://github.com/thomasfr) donated 25 EUR at Jenuary 8 of 2017
+
+[Thanos V.](http://mykonosbiennale.com/) donated 20 EUR at Jenuary 16 of 2017
+
+[George Opritescu](https://github.com/International) donated 20 EUR at February 7 of 2017
+
+[Lex Tang](https://github.com/lexrus) donated 20 EUR at February 22 of 2017
+
+[Conrad Steenberg](https://github.com/hengestone) donated 25 EUR at March 23 of 2017
+
+<p>
+
+<a href="https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7">
+<img width="300" src="http://iris-go.com/comment28.png" />
+</a>
+
+<a href="https://twitter.com/gelnior/status/769100480706379776">
+<img width="300" src="http://iris-go.com/comment27.png" />
+</a>
+
+<br/>
+
+<a href="https://www.youtube.com/watch?v=jGx0LkuUs4A">
+<img  width="300" src="https://github.com/iris-contrib/website/raw/gh-pages/assets/gif_link_to_yt.gif" alt="What people say" />
+</a>
+
+<a href="https://www.youtube.com/watch?v=jGx0LkuUs4A">
+<img width ="300" src="https://github.com/iris-contrib/website/raw/gh-pages/assets/gif_link_to_yt2.gif" alt="What people say" />
+</a>
+
+<br/>
+
+<a href="https://twitter.com/_mgale/status/818591490305761280">
+<img width="300" width="630" src="http://iris-go.com/comment25.png" />
+</a>
+
+<a href="https://twitter.com/MeAlex07/status/822799954188075008">
+<img width="300" width="627" src="http://iris-go.com/comment26.png" />
+</a>
+
+</p>
+
+### Contact
 
 Besides the fact that we have a [community chat][Chat] for questions or reports and ideas, [stackoverflow](http://stackoverflow.com/) section for generic go+iris questions and the [iris support](http://support.iris-go.com) for bug reports and feature requests, you can also contact with me, as a person who is always open to help you:
 
