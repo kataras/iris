@@ -13,6 +13,7 @@ import (
 	"os/signal"
 	"sync"
 	"sync/atomic"
+	"syscall"
 
 	"github.com/kataras/iris/core/errors"
 	"github.com/kataras/iris/core/nettools"
@@ -138,7 +139,16 @@ func (su *Supervisor) supervise(blockFunc func() error) error {
 		// we do it here. These tasks are canceled already too.
 		go func() {
 			ch := make(chan os.Signal, 1)
-			signal.Notify(ch, os.Interrupt, os.Kill)
+			signal.Notify(ch,
+				// kill -SIGINT XXXX or Ctrl+c
+				os.Interrupt,
+				syscall.SIGINT, // register that too, it should be ok
+				// os.Kill  is equivalent with the syscall.SIGKILL
+				os.Kill,
+				syscall.SIGKILL, // register that too, it should be ok
+				// kill -SIGTERM XXXX
+				syscall.SIGTERM,
+			)
 			select {
 			case <-ch:
 				su.Scheduler.runOnInterrupt(host)
