@@ -29,6 +29,11 @@ Thanks to [Santosh Anand](https://github.com/santoshanand) the http://iris-go.co
 
 The amount of the next two or three donations you'll send they will be immediately transferred to his own account balance, so be generous please!
 
+
+# Tu, 13 June 2017 | v7.1.1
+
+Fix [that](https://github.com/iris-contrib/community-board/issues/11).
+
 # Mo, 12 June 2017 | v7.1.0
 
 Fix [that](https://github.com/iris-contrib/community-board/issues/10).

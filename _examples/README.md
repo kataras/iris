@@ -58,6 +58,7 @@ It doesn't contains "best ways" neither explains all its features. It's just a s
     * [Graceful Shutdown](intermediate/graceful-shutdown)
         * [Basic and simple](intermediate/graceful-shutdown/basic/main.go)
         * [Custom Host](intermediate/graceful-shutdown/custom-host/main.go)
+        * [Custom notifier](intermediate/graceful-shutdown/custom-notifier/main.go)
     * [Custom HTTP Server](intermediate/custom-httpserver)
         * [Iris way](intermediate/custom-httpserver/iris-way/main.go)
         * [Standar way](intermediate/custom-httpserver/std-way/main.go)

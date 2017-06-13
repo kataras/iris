@@ -12,7 +12,7 @@ import (
 // Before continue, please read the below notes:
 //
 // Current version of Iris is auto-graceful on control+C/command+C
-// or whenever host's .Shutdown called.
+// or kill command sent or whenever app.Shutdown called.
 //
 // In order to add a custom interrupt handler(ctrl+c/cmd+c) or
 // shutdown manually you have to "schedule a host supervisor's task" or
@@ -29,7 +29,7 @@ func main() {
 
 	// tasks are always running in their go-routine by-default.
 	//
-	// register custom interrupt handler, fires when ctrl+C/cmd+C pressed.
+	// register custom interrupt handler, fires when ctrl+C/cmd+C pressed or kill command sent.
 	app.Scheduler.Schedule(host.OnInterrupt(func(proc host.TaskProcess) {
 		println("Shutdown the server gracefully...")
 
