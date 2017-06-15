@@ -32,6 +32,13 @@ The amount of the next two or three donations you'll send they will be immediate
 
 # Th, 15 June 2017 | v7.2.0
 
+### Cache
+
+Declare the `iris.Cache alias` to the new, improved and most-suited for common usage, `cache.Handler function`.
+
+`iris.Cache` be used as middleware in the chain now, example [here](_examples/intermediate/cache-markdown/main.go). However [you can still use the cache as a wrapper](cache/cache_test.go) by importing the `github.com/kataras/iris/cache` package. 
+
+
 ### File server
 
 - **Fix** [that](https://github.com/iris-contrib/community-board/issues/12).
