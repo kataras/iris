@@ -267,7 +267,8 @@ type Context interface {
 
 	// Host returns the host part of the current url.
 	Host() string
-	// Subdomain returns the subdomain (string) of this request, if any.
+	// Subdomain returns the subdomain of this request, if any.
+	// Note that this is a fast method which does not cover all cases.
 	Subdomain() (subdomain string)
 	// RemoteAddr tries to return the real client's request IP.
 	RemoteAddr() string
@@ -400,9 +401,9 @@ type Context interface {
 	//
 	// Returns the number of bytes written and any write error encountered.
 	WriteString(body string) (int, error)
-	// SetClientCachedBody like SetBody but it sends with an expiration datetime
+	// WriteWithExpiration like SetBody but it sends with an expiration datetime
 	// which is managed by the client-side (all major web browsers supports this)
-	WriteWithExpiration(status int, bodyContent []byte, cType string, modtime time.Time) error
+	WriteWithExpiration(bodyContent []byte, cType string, modtime time.Time) error
 	// StreamWriter registers the given stream writer for populating
 	// response body.
 	//
@@ -907,7 +908,6 @@ func (ctx *context) NextHandler() Handler {
 	if ctx.IsStopped() {
 		return nil
 	}
-
 	nextIndex := ctx.currentHandlerIndex + 1
 	// check if it has a next middleware
 	if nextIndex < len(ctx.handlers) {
@@ -1048,11 +1048,19 @@ func (ctx *context) Host() string {
 	return h
 }
 
-// Subdomain returns the subdomain (string) of this request, if any.
+// Subdomain returns the subdomain of this request, if any.
+// Note that this is a fast method which does not cover all cases.
 func (ctx *context) Subdomain() (subdomain string) {
 	host := ctx.Host()
 	if index := strings.IndexByte(host, '.'); index > 0 {
 		subdomain = host[0:index]
+	}
+
+	// listening on iris-go.com:80
+	// subdomain = iris-go, but it's wrong, it should return ""
+	vhost := ctx.Application().ConfigurationReadOnly().GetVHost()
+	if strings.Contains(vhost, subdomain) { // then it's not subdomain
+		return ""
 	}
 
 	return
@@ -1422,7 +1430,7 @@ func (ctx *context) staticCachePassed(modtime time.Time) bool {
 
 // WriteWithExpiration like Write but it sends with an expiration datetime
 // which is managed by the client-side (all major web browsers supports this)
-func (ctx *context) WriteWithExpiration(status int, bodyContent []byte, cType string, modtime time.Time) error {
+func (ctx *context) WriteWithExpiration(bodyContent []byte, cType string, modtime time.Time) error {
 	if ctx.staticCachePassed(modtime) {
 		return nil
 	}
@@ -1431,7 +1439,6 @@ func (ctx *context) WriteWithExpiration(status int, bodyContent []byte, cType st
 
 	ctx.writer.Header().Set(contentTypeHeaderKey, cType)
 	ctx.writer.Header().Set(lastModifiedHeaderKey, modtimeFormatted)
-	ctx.StatusCode(status)
 
 	_, err := ctx.writer.Write(bodyContent)
 	return err

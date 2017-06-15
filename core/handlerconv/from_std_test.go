@@ -25,7 +25,7 @@ func TestFromStd(t *testing.T) {
 	app.Get("/handler", h)
 	app.Get("/func", hFunc)
 
-	e := httptest.New(app, t)
+	e := httptest.New(t, app)
 
 	e.GET("/handler").
 		Expect().Status(iris.StatusOK).Body().Equal(expected)
@@ -56,7 +56,7 @@ func TestFromStdWithNext(t *testing.T) {
 	app := iris.New()
 	app.Get("/handlerwithnext", h, next)
 
-	e := httptest.New(app, t)
+	e := httptest.New(t, app)
 
 	e.GET("/handlerwithnext").
 		Expect().Status(iris.StatusForbidden)

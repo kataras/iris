@@ -11,7 +11,7 @@ import (
 // $ go test -v
 func TestNewApp(t *testing.T) {
 	app := newApp()
-	e := httptest.New(app, t)
+	e := httptest.New(t, app)
 
 	// redirects to /admin without basic auth
 	e.GET("/").Expect().Status(iris.StatusUnauthorized)

@@ -67,7 +67,7 @@ func ProxyHandler(target *url.URL) *httputil.ReverseProxy {
 // It uses the httputil.NewSingleHostReverseProxy.
 //
 // Usage:
-// target,_ := url.Parse("https://mydomain.com")
+// target, _ := url.Parse("https://mydomain.com")
 // proxy := NewProxy("mydomain.com:80", target)
 // proxy.ListenAndServe() // use of proxy.Shutdown to close the proxy server.
 func NewProxy(hostAddr string, target *url.URL) *Supervisor {

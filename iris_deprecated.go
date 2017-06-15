@@ -32,13 +32,12 @@ func ToHandler(handler interface{}) context.Handler {
 
 // Cache provides cache capabilities to a route's handler.
 // Usage:
-// Get("/", Cache(func(ctx context.Context){
+// Get("/", iris.Cache(time.Duration(10*time.Second)), func(ctx context.Context){
 //    ctx.Writef("Hello, world!") // or a template or anything else
-// }, time.Duration(10*time.Second))) // duration of expiration
-// if <=time.Second then it tries to find it though request header's "cache-control" maxage value.
+// })
 //
-// Deprecated. Use "github.com/kataras/iris/cache" sub-package instead.
-var Cache = cache.CacheHandler
+// Deprecated. Use "github.com/kataras/iris/cache" sub-package which contains the full features instead.
+var Cache = cache.Handler
 
 // CheckErr is the old `Must`. It panics on errors as expected with
 // the old listen functions, change of this method will affect only ListenXXX functions.

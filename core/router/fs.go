@@ -24,6 +24,84 @@ import (
 	"github.com/kataras/iris/core/errors"
 )
 
+// StaticEmbeddedHandler returns a Handler which can serve
+// embedded into executable files.
+//
+//
+// Examples: https://github.com/kataras/iris/tree/master/_examples/file-server
+func StaticEmbeddedHandler(vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) context.Handler {
+	// Depends on the command the user gave to the go-bindata
+	// the assset path (names) may be or may not be prepended with a slash.
+	// What we do: we remove the ./ from the vdir which should be
+	// the same with the asset path (names).
+	// we don't pathclean, because that will prepend a slash
+	//					   go-bindata should give a correct path format.
+	// On serve time we check the "paramName" (which is the path after the "requestPath")
+	// so it has the first directory part missing, we use the "vdir" to complete it
+	// and match with the asset path (names).
+	if len(vdir) > 0 {
+		if vdir[0] == '.' {
+			vdir = vdir[1:]
+		}
+		if vdir[0] == '/' || vdir[0] == os.PathSeparator { // second check for /something, (or ./something if we had dot on 0 it will be removed
+			vdir = vdir[1:]
+		}
+	}
+
+	// collect the names we are care for,
+	// because not all Asset used here, we need the vdir's assets.
+	allNames := namesFn()
+
+	var names []string
+	for _, path := range allNames {
+		// i.e: path = public/css/main.css
+
+		// check if path is the path name we care for
+		if !strings.HasPrefix(path, vdir) {
+			continue
+		}
+
+		names = append(names, path)
+	}
+
+	modtime := time.Now()
+	h := func(ctx context.Context) {
+		reqPath := strings.TrimPrefix(ctx.Request().URL.Path, "/"+vdir)
+		// i.e : /css/main.css
+
+		for _, path := range names {
+			// in order to map "/" as "/index.html"
+			if path == "/index.html" && reqPath == "/" {
+				reqPath = "/index.html"
+			}
+
+			if path != vdir+reqPath {
+				continue
+			}
+
+			cType := TypeByFilename(path)
+
+			buf, err := assetFn(path) // remove the first slash
+
+			if err != nil {
+				continue
+			}
+
+			if err := ctx.WriteWithExpiration(buf, cType, modtime); err != nil {
+				ctx.StatusCode(http.StatusInternalServerError)
+				ctx.StopExecution()
+			}
+			return
+		}
+
+		// not found or error
+		ctx.NotFound()
+
+	}
+
+	return h
+}
+
 // Prioritize is a middleware which executes a route against this path
 // when the request's Path has a prefix of the route's STATIC PART
 // is not executing ExecRoute to determinate if it's valid, for performance reasons
@@ -230,6 +308,7 @@ func (w *fsHandler) Build() context.Handler {
 					// headers[contentEncodingHeader] = nil
 					// headers[contentLength] = nil
 				}
+				// ctx.Application().Log(errMsg)
 				ctx.StatusCode(prevStatusCode)
 				return
 			}
@@ -741,16 +820,13 @@ func serveFile(ctx context.Context, fs http.FileSystem, name string, redirect bo
 
 	f, err := fs.Open(name)
 	if err != nil {
-		msg, code := toHTTPError(err)
-		return msg, code
+		return err.Error(), 404
 	}
 	defer f.Close()
 
 	d, err := f.Stat()
 	if err != nil {
-		msg, code := toHTTPError(err)
-		return msg, code
-
+		return err.Error(), 404
 	}
 
 	if redirect {

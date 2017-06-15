@@ -84,20 +84,19 @@ type Party interface {
 	//
 	// Note:
 	// The only difference from package-level `StaticHandler`
-	// is that this `StaticHandler`` receives a request path which
-	// is appended to the party's relative path and stripped here,
-	// so `iris.StripPath` is useless and should not being used here.
+	// is that this `StaticHandler` receives a request path which
+	// is appended to the party's relative path and stripped here.
 	//
 	// Usage:
 	// app := iris.New()
 	// ...
 	// mySubdomainFsServer := app.Party("mysubdomain.")
-	// h := mySubdomainFsServer.StaticHandler("/static", "./static_files", false, false)
+	// h := mySubdomainFsServer.StaticHandler("./static_files", false, false)
 	// /* http://mysubdomain.mydomain.com/static/css/style.css */
 	// mySubdomainFsServer.Get("/static", h)
 	// ...
 	//
-	StaticHandler(requestPath string, systemPath string, showList bool, enableGzip bool, exceptRoutes ...*Route) context.Handler
+	StaticHandler(systemPath string, showList bool, enableGzip bool, exceptRoutes ...*Route) context.Handler
 
 	// StaticServe serves a directory as web resource
 	// it's the simpliest form of the Static* functions
@@ -114,6 +113,7 @@ type Party interface {
 	//
 	// Returns the GET *Route.
 	StaticContent(requestPath string, cType string, content []byte) (*Route, error)
+
 	// StaticEmbedded  used when files are distributed inside the app executable, using go-bindata mostly
 	// First parameter is the request path, the path which the files in the vdir will be served to, for example "/static"
 	// Second parameter is the (virtual) directory path, for example "./assets"
@@ -152,7 +152,7 @@ type Party interface {
 	// ending in "/index.html" to the same path, without the final
 	// "index.html".
 	//
-	// StaticWeb calls the StaticHandler(requestPath, systemPath, listingDirectories: false, gzip: false ).
+	// StaticWeb calls the StaticHandler(systemPath, listingDirectories: false, gzip: false ).
 	//
 	// Returns the GET *Route.
 	StaticWeb(requestPath string, systemPath string, exceptRoutes ...*Route) (*Route, error)

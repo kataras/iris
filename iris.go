@@ -41,7 +41,7 @@ const (
 	// Version is the current version number of the Iris Web framework.
 	//
 	// Look https://github.com/kataras/iris#where-can-i-find-older-versions for older versions.
-	Version = "7.1.1"
+	Version = "7.2.0"
 )
 
 const (
@@ -409,6 +409,23 @@ func (app *Application) SessionManager() (sessions.Sessions, error) {
 		return nil, errors.New("session manager is missing")
 	}
 	return app.sessions, nil
+}
+
+// SPA  accepts an "assetHandler" which can be the result of an
+// app.StaticHandler or app.StaticEmbeddedHandler.
+// It wraps the router and checks:
+// if it;s an asset, if the request contains "." (this behavior can be changed via /core/router.NewSPABuilder),
+// if the request is index, redirects back to the "/" in order to let the root handler to be executed,
+// if it's not an asset then it executes the router, so the rest of registered routes can be
+// executed without conflicts with the file server ("assetHandler").
+//
+// Use that instead of `StaticWeb` for root "/" file server.
+//
+// Example: https://github.com/kataras/iris/tree/master/_examples/beginner/file-server/single-page-application
+func (app *Application) SPA(assetHandler context.Handler) {
+	s := router.NewSPABuilder(assetHandler)
+	wrapper := s.BuildWrapper(app.ContextPool)
+	app.Router.WrapRouter(wrapper)
 }
 
 // ConfigurationReadOnly returns a structure which doesn't allow writing.

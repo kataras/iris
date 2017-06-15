@@ -76,6 +76,15 @@ func (nodes *Nodes) add(path string, paramNames []string, handlers context.Handl
 	// na to kanw na exei to node to diko tou wildcard parameter name
 	// kai sto telos na pernei auto, me vasi to *paramname
 	// alla edw mesa 9a ginete register vasi tou last /
+
+	// set the wildcard param name to the root and its children.
+	wildcardIdx := strings.IndexByte(path, '*')
+	wildcardParamName := ""
+	if wildcardIdx > 0 {
+		wildcardParamName = path[wildcardIdx+1:]
+		path = path[0:wildcardIdx-1] + "/" // replace *paramName with single slash
+	}
+
 loop:
 	for _, n := range *nodes {
 
@@ -97,14 +106,14 @@ loop:
 				children: Nodes{
 					{
 						s:                 n.s[i:],
-						wildcardParamName: n.wildcardParamName,
+						wildcardParamName: wildcardParamName,
 						paramNames:        n.paramNames,
 						children:          n.children,
 						handlers:          n.handlers,
 					},
 					{
 						s:                 path[i:],
-						wildcardParamName: n.wildcardParamName,
+						wildcardParamName: wildcardParamName,
 						paramNames:        paramNames,
 						handlers:          handlers,
 					},
@@ -117,12 +126,12 @@ loop:
 		if len(path) < len(n.s) {
 			*n = node{
 				s:                 n.s[:len(path)],
-				wildcardParamName: n.wildcardParamName,
+				wildcardParamName: wildcardParamName,
 				paramNames:        paramNames,
 				children: Nodes{
 					{
 						s:                 n.s[len(path):],
-						wildcardParamName: n.wildcardParamName,
+						wildcardParamName: wildcardParamName,
 						paramNames:        n.paramNames,
 						children:          n.children,
 						handlers:          n.handlers,
@@ -144,21 +153,12 @@ loop:
 			return nil
 		}
 		if len(n.handlers) > 0 { // n.handlers already setted
-			return ErrDublicate
+			return ErrDublicate.Append("for: %s", n.s)
 		}
 		n.paramNames = paramNames
 		n.handlers = handlers
 
 		return
-	}
-
-	// set the wildcard param name to the root.
-
-	wildcardIdx := strings.IndexByte(path, '*')
-	wildcardParamName := ""
-	if wildcardIdx > 0 {
-		wildcardParamName = path[wildcardIdx+1:]
-		path = path[0:wildcardIdx-1] + "/" // replace *paramName with single slash
 	}
 
 	n := &node{
