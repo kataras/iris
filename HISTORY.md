@@ -46,8 +46,8 @@ The amount of the next two or three donations you'll send they will be immediate
 
 Examples: 
 - [Embedding Files Into Executable App](_examples/beginner/file-server/embedding-files-into-app)
-- [Single Page Application](_examples/beginner/file-server/single-page-applications)
-- [Embedding Single Page Application](_examples/beginner/file-server/embedding-single-page-applications)
+- [Single Page Application](_examples/beginner/file-server/single-page-application)
+- [Embedding Single Page Application](_examples/beginner/file-server/embedding-single-page-application)
 
 > [app.StaticWeb](_examples/beginner/file-server/basic/main.go) doesn't works for root request path "/"  anymore, use the new `app.SPA` instead.   
 
