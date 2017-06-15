@@ -320,6 +320,7 @@ func (rb *APIBuilder) Any(registeredPath string, handlers ...context.Handler) er
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -353,21 +354,20 @@ func (rb *APIBuilder) registerResourceRoute(reqPath string, h context.Handler) (
 // Note:
 // The only difference from package-level `StaticHandler`
 // is that this `StaticHandler`` receives a request path which
-// is appended to the party's relative path and stripped here,
-// so `iris.StripPath` is useless and should not being used here.
+// is appended to the party's relative path and stripped here.
 //
 // Usage:
 // app := iris.New()
 // ...
 // mySubdomainFsServer := app.Party("mysubdomain.")
-// h := mySubdomainFsServer.StaticHandler("/static", "./static_files", false, false)
+// h := mySubdomainFsServer.StaticHandler("./static_files", false, false)
 // /* http://mysubdomain.mydomain.com/static/css/style.css */
 // mySubdomainFsServer.Get("/static", h)
 // ...
 //
-func (rb *APIBuilder) StaticHandler(reqPath string, systemPath string, showList bool, enableGzip bool, exceptRoutes ...*Route) context.Handler {
-	return StripPrefix(rb.relativePath+reqPath,
-		StaticHandler(systemPath, showList, enableGzip))
+func (rb *APIBuilder) StaticHandler(systemPath string, showList bool, enableGzip bool, exceptRoutes ...*Route) context.Handler {
+	// Note: this doesn't need to be here but we'll keep it for consistently
+	return StaticHandler(systemPath, showList, enableGzip)
 }
 
 // StaticServe serves a directory as web resource
@@ -414,12 +414,25 @@ func (rb *APIBuilder) StaticServe(systemPath string, requestPath ...string) (*Ro
 func (rb *APIBuilder) StaticContent(reqPath string, cType string, content []byte) (*Route, error) {
 	modtime := time.Now()
 	h := func(ctx context.Context) {
-		if err := ctx.WriteWithExpiration(http.StatusOK, content, cType, modtime); err != nil {
-			ctx.Application().Log("error while serving []byte via StaticContent: %s", err.Error())
+		if err := ctx.WriteWithExpiration(content, cType, modtime); err != nil {
+			ctx.NotFound()
+			// ctx.Application().Log("error while serving []byte via StaticContent: %s", err.Error())
 		}
 	}
 
 	return rb.registerResourceRoute(reqPath, h)
+}
+
+// StaticEmbeddedHandler returns a Handler which can serve
+// embedded into executable files.
+//
+//
+// Examples: https://github.com/kataras/iris/tree/master/_examples/file-server
+func (rb *APIBuilder) StaticEmbeddedHandler(vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) context.Handler {
+	// Notes:
+	// This doesn't need to be APIBuilder's scope,
+	// but we'll keep it here for consistently.
+	return StaticEmbeddedHandler(vdir, assetFn, namesFn)
 }
 
 // StaticEmbedded  used when files are distributed inside the app executable, using go-bindata mostly
@@ -430,78 +443,12 @@ func (rb *APIBuilder) StaticContent(reqPath string, cType string, content []byte
 //
 // Returns the GET *Route.
 //
-// Example: https://github.com/kataras/iris/tree/master/_examples/intermediate/serve-embedded-files
+// Examples: https://github.com/kataras/iris/tree/master/_examples/file-server
 func (rb *APIBuilder) StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) (*Route, error) {
-	paramName := "path"
+	fullpath := joinPath(rb.relativePath, requestPath)
+	requestPath = joinPath(fullpath, WildcardParam("file"))
 
-	requestPath = joinPath(requestPath, WildcardParam(paramName))
-
-	if len(vdir) > 0 {
-		if vdir[0] == '.' { // first check for .wrong
-			vdir = vdir[1:]
-		}
-		if vdir[0] == '/' || vdir[0] == os.PathSeparator { // second check for /something, (or ./something if we had dot on 0 it will be removed
-			vdir = vdir[1:]
-		}
-	}
-
-	// collect the names we are care for, because not all Asset used here, we need the vdir's assets.
-	allNames := namesFn()
-
-	var names []string
-	for _, path := range allNames {
-		// check if path is the path name we care for
-		if !strings.HasPrefix(path, vdir) {
-			continue
-		}
-		names = append(names, cleanPath(path))
-		// path = strings.Replace(path, "\\", "/", -1) // replace system paths with double slashes
-		// path = strings.Replace(path, "./", "/", -1) // replace ./assets/favicon.ico to /assets/favicon.ico in order to be ready for compare with the reqPath later
-		// path = path[len(vdir):]                     // set it as the its 'relative' ( we should re-setted it when assetFn will be used)
-		// names = append(names, path)
-	}
-
-	if len(names) == 0 {
-		return nil, errors.New("unable to locate any embedded files located to the (virtual) directory: " + vdir)
-	}
-
-	modtime := time.Now()
-	h := func(ctx context.Context) {
-		reqPath := ctx.Params().Get(paramName)
-		for _, path := range names {
-			// in order to map "/" as "/index.html"
-			// as requested here: https://github.com/kataras/iris/issues/633#issuecomment-281691851
-			if path == "/index.html" {
-				if reqPath[len(reqPath)-1] == '/' {
-					reqPath = "/index.html"
-				}
-			}
-
-			if path != reqPath {
-				continue
-			}
-
-			cType := TypeByExtension(path)
-			fullpath := vdir + path
-
-			buf, err := assetFn(fullpath)
-
-			if err != nil {
-				continue
-			}
-
-			if err := ctx.WriteWithExpiration(http.StatusOK, buf, cType, modtime); err != nil {
-				ctx.StatusCode(http.StatusInternalServerError)
-				ctx.StopExecution()
-			}
-			return
-		}
-
-		// not found or error
-		ctx.NotFound()
-
-	}
-
+	h := StripPrefix(fullpath, rb.StaticEmbeddedHandler(vdir, assetFn, namesFn))
 	return rb.registerResourceRoute(requestPath, h)
 }
 
@@ -569,7 +516,8 @@ func (rb *APIBuilder) Favicon(favPath string, requestPath ...string) (*Route, er
 		ctx.ResponseWriter().Header().Set(lastModifiedHeaderKey, modtime)
 		ctx.StatusCode(http.StatusOK)
 		if _, err := ctx.Write(cacheFav); err != nil {
-			ctx.Application().Log("error while trying to serve the favicon: %s", err.Error())
+			// ctx.Application().Log("error while trying to serve the favicon: %s", err.Error())
+			ctx.StatusCode(http.StatusInternalServerError)
 		}
 	}
 
@@ -596,13 +544,17 @@ func (rb *APIBuilder) Favicon(favPath string, requestPath ...string) (*Route, er
 // ending in "/index.html" to the same path, without the final
 // "index.html".
 //
-// StaticWeb calls the StaticHandler(requestPath, systemPath, listingDirectories: false, gzip: false ).
+// StaticWeb calls the StaticHandler(systemPath, listingDirectories: false, gzip: false ).
 //
 // Returns the GET *Route.
-func (rb *APIBuilder) StaticWeb(reqPath string, systemPath string, exceptRoutes ...*Route) (*Route, error) {
-	h := rb.StaticHandler(reqPath, systemPath, false, false, exceptRoutes...)
+func (rb *APIBuilder) StaticWeb(requestPath string, systemPath string, exceptRoutes ...*Route) (*Route, error) {
+
 	paramName := "file"
-	routePath := joinPath(reqPath, WildcardParam(paramName))
+
+	fullpath := joinPath(rb.relativePath, requestPath)
+
+	h := StripPrefix(fullpath, rb.StaticHandler(systemPath, false, false, exceptRoutes...))
+
 	handler := func(ctx context.Context) {
 		h(ctx)
 		// re-check the content type here for any case,
@@ -614,8 +566,8 @@ func (rb *APIBuilder) StaticWeb(reqPath string, systemPath string, exceptRoutes 
 			}
 		}
 	}
-
-	return rb.registerResourceRoute(routePath, handler)
+	requestPath = joinPath(fullpath, WildcardParam(paramName))
+	return rb.registerResourceRoute(requestPath, handler)
 }
 
 // OnErrorCode registers an error http status code

@@ -30,6 +30,54 @@ Thanks to [Santosh Anand](https://github.com/santoshanand) the http://iris-go.co
 The amount of the next two or three donations you'll send they will be immediately transferred to his own account balance, so be generous please!
 
 
+# Th, 15 June 2017 | v7.2.0
+
+### File server
+
+- **Fix** [that](https://github.com/iris-contrib/community-board/issues/12).
+
+- `app.StaticHandler(requestPath string, systemPath string, showList bool, gzip bool)` -> `app.StaticHandler(systemPath,showList bool, gzip bool)`
+
+- **New** feature for Single Page Applications, `app.SPA(assetHandler context.Handler)` implemented.
+
+- **New** `app.StaticEmbeddedHandler(vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string)` added in order to be able to pass that on `app.SPA(app.StaticEmbeddedHandler("./public", Asset, AssetNames))`.
+
+- **Fix** `app.StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string)`.
+
+Examples: 
+- [Embedding Files Into Executable App](_examples/beginner/file-server/embedding-files-into-app)
+- [Single Page Application](_examples/beginner/file-server/single-page-applications)
+- [Embedding Single Page Application](_examples/beginner/file-server/embedding-single-page-applications)
+
+> [app.StaticWeb](_examples/beginner/file-server/basic/main.go) doesn't works for root request path "/"  anymore, use the new `app.SPA` instead.   
+
+### WWW subdomain entry
+
+- [Example](_examples/intermediate/subdomains/www/main.go) added to copy all application's routes, including parties, to the `www.mydomain.com`
+
+
+### Wrapping the Router
+
+- [Example](_examples/beginner/routing/custom-wrapper/main.go) added to show you how you can use the `app.WrapRouter` 
+to implement a similar to `app.SPA` functionality, don't panic, it's easier than it sounds.
+
+
+### Testing
+
+- `httptest.New(app *iris.Application, t *testing.T)` -> `httptest.New(t *testing.T, app *iris.Application)`.
+
+- **New** `httptest.NewLocalListener() net.Listener` added.
+- **New** `httptest.NewLocalTLSListener(tcpListener net.Listener) net.Listener` added.
+
+Useful for testing tls-enabled servers: 
+
+Proxies are trying to understand local addresses in order to allow `InsecureSkipVerify`.
+
+-  `host.ProxyHandler(target *url.URL) *httputil.ReverseProxy`.
+-  `host.NewProxy(hostAddr string, target *url.URL) *Supervisor`.
+        
+    Tests [here](core/host/proxy_test.go).
+
 # Tu, 13 June 2017 | v7.1.1
 
 Fix [that](https://github.com/iris-contrib/community-board/issues/11).

@@ -168,3 +168,5 @@ func notFoundHandler(ctx context.Context) {
 // A path parameter name should contain only alphabetical letters, symbols, containing '_' and numbers are NOT allowed.
 // If route failed to be registered, the app will panic without any warnings
 // if you didn't catch the second return value(error) on .Handle/.Get....
+
+// See "file-server/single-page-application" to see how another feature, "WrapRouter", works.

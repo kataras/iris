@@ -18,7 +18,8 @@ import (
 // the validator for each of the incoming requests and post responses
 type Handler struct {
 
-	// bodyHandler the original route's handler
+	// bodyHandler the original route's handler.
+	// If nil then it tries to take the next handler from the chain.
 	bodyHandler context.Handler
 
 	// Rule optional validators for pre cache and post cache actions
@@ -71,8 +72,24 @@ func (h *Handler) AddRule(r rule.Rule) *Handler {
 func (h *Handler) ServeHTTP(ctx context.Context) {
 	// check for pre-cache validators, if at least one of them return false
 	// for this specific request, then skip the whole cache
+	bodyHandler := h.bodyHandler
+
+	if bodyHandler == nil {
+		if nextHandler := ctx.NextHandler(); nextHandler != nil {
+			// skip prepares the context to move to the next handler if the "nextHandler" has a ctx.Next() inside it,
+			// even if it's not executed because it's cached.
+			ctx.Skip()
+			bodyHandler = nextHandler
+		} else {
+			ctx.StatusCode(500)
+			ctx.WriteString("cache: empty body handler")
+			ctx.StopExecution()
+			return
+		}
+	}
+
 	if !h.rule.Claim(ctx) {
-		h.bodyHandler(ctx)
+		bodyHandler(ctx)
 		return
 	}
 
@@ -85,7 +102,7 @@ func (h *Handler) ServeHTTP(ctx context.Context) {
 		// because the net/http doesn't give us
 		// a built'n way to get the status code & body
 		recorder := ctx.Recorder()
-		h.bodyHandler(ctx)
+		bodyHandler(ctx)
 
 		// now that we have recordered the response,
 		// we are ready to check if that specific response is valid to be stored.

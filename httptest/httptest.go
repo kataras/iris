@@ -66,16 +66,9 @@ func DefaultConfiguration() *Configuration {
 	return &Configuration{URL: "", Debug: false}
 }
 
-// New Prepares and returns a new test framework based on the app
-// is useful when you need to have more than one test framework for the same iris instance
-// usage:
-// iris.Default.Get("/mypath", func(ctx context.Context){ctx.Write("my body")})
-// ...
-// e := httptest.New(iris.Default, t)
-// e.GET("/mypath").Expect().Status(iris.StatusOK).Body().Equal("my body")
-//
-// You can find example on the https://github.com/kataras/iris/glob/master/context_test.go
-func New(app *iris.Application, t *testing.T, setters ...OptionSetter) *httpexpect.Expect {
+// New Prepares and returns a new test framework based on the "app".
+// You can find example on the https://github.com/kataras/iris/tree/master/_examples/intermediate/httptest
+func New(t *testing.T, app *iris.Application, setters ...OptionSetter) *httpexpect.Expect {
 	conf := DefaultConfiguration()
 	for _, setter := range setters {
 		setter.Set(conf)
@@ -103,7 +96,8 @@ func New(app *iris.Application, t *testing.T, setters ...OptionSetter) *httpexpe
 	return httpexpect.WithConfig(testConfiguration)
 }
 
-// NewInsecure same as New but receives a single host instead of the whole framework
+// NewInsecure same as New but receives a single host instead of the whole framework.
+// Useful for testing running TLS servers.
 func NewInsecure(t *testing.T, setters ...OptionSetter) *httpexpect.Expect {
 	conf := DefaultConfiguration()
 	for _, setter := range setters {

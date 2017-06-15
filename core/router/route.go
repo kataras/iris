@@ -47,7 +47,6 @@ func NewRoute(method, subdomain, unparsedPath string,
 
 	path = cleanPath(path) // maybe unnecessary here but who cares in this moment
 	defaultName := method + subdomain + path
-
 	formattedPath := formatPath(path)
 
 	route := &Route{

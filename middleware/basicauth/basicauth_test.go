@@ -46,7 +46,7 @@ func h(ctx context.Context) {
 }
 func TestBasicAuth(t *testing.T) {
 	app := buildApp()
-	e := httptest.New(app, t)
+	e := httptest.New(t, app)
 
 	// redirects to /admin without basic auth
 	e.GET("/").Expect().Status(iris.StatusUnauthorized)

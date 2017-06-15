@@ -685,10 +685,10 @@ Static Files
     // ending in "/index.html" to the same path, without the final
     // "index.html".
     //
-    // StaticWeb calls the StaticHandler(requestPath, systemPath, listingDirectories: false, gzip: false ).
+    // StaticWeb calls the StaticHandler(systemPath, listingDirectories: false, gzip: false ).
     //
     // Returns the GET *Route.
-    StaticWeb(reqPath string, systemPath string, exceptRoutes ...*Route) (*Route, error)
+    StaticWeb(requestPath string, systemPath string, exceptRoutes ...*Route) (*Route, error)
 
 
 Example code:
@@ -720,7 +720,7 @@ Example code:
         app.Run(iris.Addr(":8080"))
     }
 
-
+More examples can be found here: https://github.com/kataras/iris/tree/master/_examples/beginner/file-server
 
 
 Middleware Ecosystem

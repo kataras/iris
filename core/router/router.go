@@ -102,6 +102,12 @@ func (router *Router) Downgraded() bool {
 	return router.mainHandler != nil && router.requestHandler == nil
 }
 
+// WrapperFunc is used as an expected input parameter signature
+// for the WrapRouter. It's a "low-level" signature which is compatible
+// with the net/http.
+// It's being used to run or no run the router based on a custom logic.
+type WrapperFunc func(w http.ResponseWriter, r *http.Request, firstNextIsTheRouter http.HandlerFunc)
+
 // WrapRouter adds a wrapper on the top of the main router.
 // Usually it's useful for third-party middleware
 // when need to wrap the entire application with a middleware like CORS.
@@ -111,7 +117,7 @@ func (router *Router) Downgraded() bool {
 // That means that the second wrapper will wrap the first, and so on.
 //
 // Before build.
-func (router *Router) WrapRouter(wrapperFunc func(w http.ResponseWriter, r *http.Request, firstNextIsTheRouter http.HandlerFunc)) {
+func (router *Router) WrapRouter(wrapperFunc WrapperFunc) {
 	router.mu.Lock()
 	defer router.mu.Unlock()
 

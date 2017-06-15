@@ -17,7 +17,7 @@ Example code:
 
 		 func main(){
 		 	app := iris.Default()
-		 	cachedHandler := cache.CacheHandler(h, 2 *time.Minute)
+		 	cachedHandler := cache.WrapHandler(h, 2 *time.Minute)
 		 	app.Get("/hello", cachedHandler)
 		 	app.Run(iris.Addr(":8080"))
 		 }
@@ -44,12 +44,12 @@ import (
 //
 // All type of responses are cached, templates, json, text, anything.
 //
-// You can add validators with this function
+// You can add validators with this function.
 func Cache(bodyHandler context.Handler, expiration time.Duration) *client.Handler {
 	return client.NewHandler(bodyHandler, expiration)
 }
 
-// CacheHandler accepts two parameters
+// WrapHandler accepts two parameters
 // first is the context.Handler which you want to cache its result
 // the second is, optional, the cache Entry's expiration duration
 // if the expiration <=2 seconds then expiration is taken by the "cache-control's maxage" header
@@ -57,9 +57,24 @@ func Cache(bodyHandler context.Handler, expiration time.Duration) *client.Handle
 //
 // All type of responses are cached, templates, json, text, anything.
 //
-// it returns the context.Handler, for more options use the .Cache .
-func CacheHandler(bodyHandler context.Handler, expiration time.Duration) context.Handler {
+// it returns a context.Handler, for more options use the .Cache .
+func WrapHandler(bodyHandler context.Handler, expiration time.Duration) context.Handler {
 	return Cache(bodyHandler, expiration).ServeHTTP
+}
+
+// Handler accepts one single parameter:
+// the cache Entry's expiration duration
+// if the expiration <=2 seconds then expiration is taken by the "cache-control's maxage" header
+// returns context.Handler.
+//
+// It's the same as Cache and WrapHandler but it sets the "bodyHandler" to the next handler in the chain.
+//
+// All type of responses are cached, templates, json, text, anything.
+//
+// it returns a context.Handler, for more options use the .Cache .
+func Handler(expiration time.Duration) context.Handler {
+	h := WrapHandler(nil, expiration)
+	return h
 }
 
 var (
