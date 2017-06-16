@@ -21,6 +21,16 @@ At any circumstances,
 
 Original Author keeps the creation rights.
 
+# About the future of Iris
+
+Clone the repository today because if I can't find a new lead maintainer for the [v7.2](https://github.com/kataras/iris-v7-29d) you, as community, will have to find a way to communicate about its future, the name "iris go" was taken by the company too, so it will be nice if the future main contributor change its name too, if you don't do it I will not beat you but I don't know the full company's law-plan for this, yet.
+  
+All donators, without any exception, will have my support for at least 6 months (for all iris versions), we have a private room at the [chat](https://kataras.rocket.chat/channel/iris).
+
+Don't worry **I will not let you down**, we're trying to find a decent open-source contributor to continue the Iris' open-source codebase. I'm already in touch with some good gophers but **If you're willing to maintain this project** please [send](#contact) me details about your experience, general bio and your github username.
+
+**I am really thankful for all of your support to me and the community, all donations, all bug reports, all comments without any exception. I did proceeded with all my physical abilities so far but unfortunately there weren't enough for my survivor. I'm really sorry if the latest news made iris open-source community disappointed but you have to see things from my point view, I was one step before bankruptcy, I had no other choice but accept the offer.**
+
 # ![Logo created by @santoshanand](logo_white_35_24.png) Iris 
 
 
