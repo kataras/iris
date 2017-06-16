@@ -1,4 +1,28 @@
+# IRIS HAS BEEN ACQUIRED
+
+Iris project has been acquired by a Dubai-based startup.
+ 
+Both sides agree that every related public data should remain open for at least 30 days.
+
+After the period of 30 days, company has the proprietary rights to delete or transfer this repository and all its related public data forever without any warnings.
+
+The company may or may not reveal its true identity to the public.   
+
+Transaction of the public domains still in-progress:
+
+- http://iris-go.com
+- https://kataras.rocket.chat/channel/iris
+
+View-accessed users can clone the current state of the project's public repositories and use without any warranties.
+
+From now on, Original Author owns a high position to the company's table.
+
+At any circumstances, 
+
+Original Author keeps the creation rights.
+
 # ![Logo created by @santoshanand](logo_white_35_24.png) Iris 
+
 
 A fast, cross-platform and efficient web framework with robust set of well-designed features, written entirely in Go.
 
