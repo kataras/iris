@@ -1,0 +1,60 @@
+package: iris
+import:
+- package: github.com/BurntSushi/toml
+- package: github.com/Joker/jade
+- package: github.com/Unknwon/i18n
+- package: github.com/aymerick/raymond
+- package: github.com/eknkc/amber
+- package: github.com/esemplastic/unis
+- package: github.com/flosch/pongo2
+- package: github.com/garyburd/redigo
+  subpackages:
+  - redis
+- package: github.com/gorilla/websocket
+- package: github.com/imdario/mergo
+- package: github.com/iris-contrib/httpexpect
+- package: github.com/kataras/iris
+  subpackages:
+  - cache
+  - cache/cfg
+  - cache/client
+  - cache/client/rule
+  - cache/entry
+  - cache/ruleset
+  - cache/uri
+  - context
+  - core/errors
+  - core/handlerconv
+  - core/host
+  - core/logger
+  - core/memstore
+  - core/nettools
+  - core/router
+  - core/router/macro
+  - core/router/macro/interpreter/ast
+  - core/router/macro/interpreter/lexer
+  - core/router/macro/interpreter/parser
+  - core/router/macro/interpreter/token
+  - core/router/node
+  - middleware/logger
+  - middleware/recover
+  - sessions
+  - sessions/sessiondb/redis/service
+  - typescript/npm
+  - view
+- package: github.com/klauspost/compress
+  subpackages:
+  - gzip
+- package: github.com/microcosm-cc/bluemonday
+- package: github.com/monoculum/formam
+- package: github.com/russross/blackfriday
+- package: github.com/satori/go.uuid
+- package: github.com/valyala/bytebufferpool
+- package: golang.org/x/crypto
+  subpackages:
+  - acme/autocert
+- package: golang.org/x/net
+  subpackages:
+  - html
+  - publicsuffix
+- package: gopkg.in/yaml.v2

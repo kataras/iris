@@ -2,3 +2,5 @@
 .vscode
 # turn off these for now
 specs
+.idea/
+/vendor/

@@ -1,0 +1,150 @@
+hash: deddc0dd022e982a92b4e4172581ab14f6990b45aab805eb1e0b17eb8e47cbbc
+updated: 2017-06-18T11:12:33.392228425+08:00
+imports:
+- name: github.com/ajg/form
+  version: 523a5da1a92f01b01f840b61689c0340a0243532
+- name: github.com/aymerick/raymond
+  version: 72acac2207479d21dd45898c2a4264246c818148
+  subpackages:
+  - ast
+  - lexer
+  - parser
+- name: github.com/BurntSushi/toml
+  version: b26d9c308763d68093482582cea63d69be07a0f0
+- name: github.com/davecgh/go-spew
+  version: 04cdfd42973bb9c8589fd6a731800cf222fde1a9
+  subpackages:
+  - spew
+- name: github.com/eknkc/amber
+  version: 5fa7895500976542b0e28bb266f42ff1c7ce07f5
+  subpackages:
+  - parser
+- name: github.com/esemplastic/unis
+  version: 6e30ed034e8cb31227b24057d030fdd0261bcfc6
+  subpackages:
+  - logger
+- name: github.com/fatih/structs
+  version: 7e5a8eef611ee84dd359503f3969f80df4c50723
+- name: github.com/flosch/pongo2
+  version: 1d0f0d3af150c4a65dfd424d742f7374819e7d29
+- name: github.com/garyburd/redigo
+  version: 57f1cd7de6175c96b423e7ac2534ff2b39e2ef79
+  subpackages:
+  - internal
+  - redis
+- name: github.com/gavv/monotime
+  version: 47d58efa69556a936a3c15eb2ed42706d968ab01
+- name: github.com/google/go-querystring
+  version: 53e6ce116135b80d037921a7fdd5138cf32d7a8a
+  subpackages:
+  - query
+- name: github.com/gorilla/websocket
+  version: a91eba7f97777409bc2c443f5534d41dd20c5720
+- name: github.com/imdario/mergo
+  version: d806ba8c21777d504a2090a2ca4913c750dd3a33
+- name: github.com/imkira/go-interpol
+  version: 5accad8134979a6ac504d456a6c7f1c53da237ca
+- name: github.com/iris-contrib/httpexpect
+  version: b6aa3332b2c006510bd4f4978f1c28354a61bb4d
+- name: github.com/Joker/jade
+  version: 35b3f5bdbcc920cd31f4870536dbc63be8530541
+- name: github.com/juju/errors
+  version: 8234c829496aaeae67c5c71235a2cbcc289e960a
+- name: github.com/kataras/iris
+  version: 20f30022705b5b0728c71cdcc819a319224a636e
+  subpackages:
+  - cache
+  - cache/cfg
+  - cache/client
+  - cache/client/rule
+  - cache/entry
+  - cache/ruleset
+  - cache/uri
+  - context
+  - core/errors
+  - core/handlerconv
+  - core/host
+  - core/logger
+  - core/memstore
+  - core/nettools
+  - core/router
+  - core/router/macro
+  - core/router/macro/interpreter/ast
+  - core/router/macro/interpreter/lexer
+  - core/router/macro/interpreter/parser
+  - core/router/macro/interpreter/token
+  - core/router/node
+  - httptest
+  - middleware/basicauth
+  - middleware/logger
+  - middleware/recover
+  - sessions
+  - sessions/sessiondb/redis/service
+  - typescript/npm
+  - view
+- name: github.com/klauspost/compress
+  version: f3dce52e0576655d55fd69e74b63da96ad1108f3
+  subpackages:
+  - flate
+  - gzip
+- name: github.com/klauspost/cpuid
+  version: 09cded8978dc9e80714c4d85b0322337b0a1e5e0
+- name: github.com/microcosm-cc/bluemonday
+  version: e79763773ab6222ca1d5a7cbd9d62d83c1f77081
+- name: github.com/monoculum/formam
+  version: 88e90f62a71cde99ada4c3155960af5c94d6b5bf
+- name: github.com/moul/http2curl
+  version: 4e24498b31dba4683efb9d35c1c8a91e2eda28c8
+- name: github.com/pmezard/go-difflib
+  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
+  subpackages:
+  - difflib
+- name: github.com/russross/blackfriday
+  version: 067529f716f4c3f5e37c8c95ddd59df1007290ae
+- name: github.com/satori/go.uuid
+  version: 5bf94b69c6b68ee1b541973bb8e1144db23a194b
+- name: github.com/sergi/go-diff
+  version: 24e2351369ec4949b2ed0dc5c477afdd4c4034e8
+  repo: https://github.com/sergi/go-diff
+  subpackages:
+  - diffmatchpatch
+- name: github.com/stretchr/testify
+  version: f6abca593680b2315d2075e0f5e2a9751e3f431a
+  subpackages:
+  - assert
+  - require
+- name: github.com/Unknwon/i18n
+  version: 8372b908b5876d26cfa46a85fc4851b981dad102
+- name: github.com/valyala/bytebufferpool
+  version: e746df99fe4a3986f4d4f79e13c1e0117ce9c2f7
+- name: github.com/xeipuuv/gojsonpointer
+  version: 6fe8760cad3569743d51ddbb243b26f8456742dc
+- name: github.com/xeipuuv/gojsonreference
+  version: e02fc20de94c78484cd5ffb007f8af96be030a45
+- name: github.com/xeipuuv/gojsonschema
+  version: 0c8571ac0ce161a5feb57375a9cdf148c98c0f70
+- name: github.com/yalp/jsonpath
+  version: 31a79c7593bb93eb10b163650d4a3e6ca190e4dc
+- name: github.com/yudai/gojsondiff
+  version: 9209d1532c51cabe0439993586a71c207b09a0ac
+  subpackages:
+  - formatter
+- name: github.com/yudai/golcs
+  version: d1c525dea8ce39ea9a783d33cf08932305373f2c
+  repo: https://github.com/yudai/golcs
+- name: golang.org/x/crypto
+  version: 850760c427c516be930bc91280636328f1a62286
+  subpackages:
+  - acme
+  - acme/autocert
+- name: golang.org/x/net
+  version: 973f3f3bbd50e92b13faa6c53ec16f49b45e851c
+  subpackages:
+  - html
+  - html/atom
+  - publicsuffix
+- name: gopkg.in/ini.v1
+  version: d3de07a94d22b4a0972deb4b96d790c2c0ce8333
+- name: gopkg.in/yaml.v2
+  version: cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b
+testImports: []
