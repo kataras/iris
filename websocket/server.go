@@ -8,8 +8,8 @@ import (
 	"sync"
 
 	"github.com/gorilla/websocket"
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
+	"github.com/cdren/iris"
+	"github.com/cdren/iris/context"
 )
 
 // Server is the websocket server,

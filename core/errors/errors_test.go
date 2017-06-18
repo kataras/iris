@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kataras/iris/core/errors"
+	"github.com/cdren/iris/core/errors"
 )
 
 var errMessage = "User with mail: %s already exists"

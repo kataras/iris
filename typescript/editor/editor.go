@@ -8,7 +8,7 @@ package editor
 //  | Editor usage                                               |
 //  +------------------------------------------------------------+
 //
-// 	import "github.com/kataras/iris/typescript/editor"
+// 	import "github.com/cdren/iris/typescript/editor"
 //  [...]
 //
 //  app := iris.New()
@@ -34,9 +34,9 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/core/host"
-	"github.com/kataras/iris/typescript/npm"
+	"github.com/cdren/iris"
+	"github.com/cdren/iris/core/host"
+	"github.com/cdren/iris/typescript/npm"
 )
 
 type (

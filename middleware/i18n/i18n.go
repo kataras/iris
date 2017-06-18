@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/Unknwon/i18n"
-	"github.com/kataras/iris/context"
+	"github.com/cdren/iris/context"
 )
 
 type i18nMiddleware struct {

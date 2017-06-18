@@ -3,8 +3,8 @@ package main
 import (
 	"time"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
+	"github.com/cdren/iris"
+	"github.com/cdren/iris/context"
 )
 
 var markdownContents = []byte(`## Hello Markdown
@@ -51,7 +51,7 @@ All features of Sundown are supported, including:
 *   **Standards compliant**. Output successfully validates using the
     W3C validation tool for HTML 4.01 and XHTML 1.0 Transitional.
 
-	[this is a link](https://github.com/kataras/iris) `)
+	[this is a link](https://github.com/cdren/iris) `)
 
 // Cache should not be used on handlers that contain dynamic data.
 // Cache is a good and a must-feature on static content, i.e "about page" or for a whole blog site.

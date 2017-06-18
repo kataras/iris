@@ -3,10 +3,10 @@ package main
 import (
 	"fmt"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
+	"github.com/cdren/iris"
+	"github.com/cdren/iris/context"
 
-	"github.com/kataras/iris/websocket"
+	"github.com/cdren/iris/websocket"
 )
 
 func handleConnection(c websocket.Connection) {

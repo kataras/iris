@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/middleware/logger"
+	"github.com/cdren/iris"
+	"github.com/cdren/iris/context"
+	"github.com/cdren/iris/middleware/logger"
 )
 
 func main() {

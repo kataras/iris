@@ -50,7 +50,7 @@ imports:
   version: 35b3f5bdbcc920cd31f4870536dbc63be8530541
 - name: github.com/juju/errors
   version: 8234c829496aaeae67c5c71235a2cbcc289e960a
-- name: github.com/kataras/iris
+- name: github.com/cdren/iris
   version: 20f30022705b5b0728c71cdcc819a319224a636e
   subpackages:
   - cache

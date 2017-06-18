@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/handlerconv"
-	"github.com/kataras/iris/httptest"
+	"github.com/cdren/iris"
+	"github.com/cdren/iris/context"
+	"github.com/cdren/iris/core/handlerconv"
+	"github.com/cdren/iris/httptest"
 )
 
 func TestFromStd(t *testing.T) {

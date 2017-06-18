@@ -11,8 +11,8 @@ import (
 	"github.com/BurntSushi/toml"
 	"gopkg.in/yaml.v2"
 
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/errors"
+	"github.com/cdren/iris/context"
+	"github.com/cdren/iris/core/errors"
 )
 
 var errConfigurationDecode = errors.New("error while trying to decode configuration")
@@ -203,7 +203,7 @@ type Configuration struct {
 	DisablePathCorrection bool `yaml:"DisablePathCorrection" toml:"DisablePathCorrection"`
 
 	// EnablePathEscape when is true then its escapes the path, the named parameters (if any).
-	// Change to false it if you want something like this https://github.com/kataras/iris/issues/135 to work
+	// Change to false it if you want something like this https://github.com/cdren/iris/issues/135 to work
 	//
 	// When do you need to Disable(false) it:
 	// accepts parameters with slash '/'
@@ -259,7 +259,7 @@ type Configuration struct {
 	// Context values' keys for various features.
 	//
 	// TranslateLanguageContextKey & TranslateFunctionContextKey are used by i18n handlers/middleware
-	// currently we have only one: https://github.com/kataras/iris/tree/master/middleware/i18n.
+	// currently we have only one: https://github.com/cdren/iris/tree/master/middleware/i18n.
 	//
 	// Defaults to "iris.translate" and "iris.language"
 	TranslateFunctionContextKey string `yaml:"TranslateFunctionContextKey" toml:"TranslateFunctionContextKey"`

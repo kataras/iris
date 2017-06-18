@@ -4,7 +4,7 @@ os:
   - osx
 go:
   - go1.8
-go_import_path: github.com/kataras/iris
+go_import_path: github.com/cdren/iris
 install:
   - go get ./...
 # install test dependencies

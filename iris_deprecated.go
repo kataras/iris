@@ -11,11 +11,11 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/kataras/iris/cache"
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/handlerconv"
-	"github.com/kataras/iris/core/host"
-	"github.com/kataras/iris/core/nettools"
+	"github.com/cdren/iris/cache"
+	"github.com/cdren/iris/context"
+	"github.com/cdren/iris/core/handlerconv"
+	"github.com/cdren/iris/core/host"
+	"github.com/cdren/iris/core/nettools"
 )
 
 // ToHandler converts native http.Handler & http.HandlerFunc to context.Handler.
@@ -36,7 +36,7 @@ func ToHandler(handler interface{}) context.Handler {
 //    ctx.Writef("Hello, world!") // or a template or anything else
 // })
 //
-// Deprecated. Use "github.com/kataras/iris/cache" sub-package which contains the full features instead.
+// Deprecated. Use "github.com/cdren/iris/cache" sub-package which contains the full features instead.
 var Cache = cache.Handler
 
 // CheckErr is the old `Must`. It panics on errors as expected with

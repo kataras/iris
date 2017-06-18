@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/host"
+	"github.com/cdren/iris"
+	"github.com/cdren/iris/context"
+	"github.com/cdren/iris/core/host"
 )
 
 // The difference from its parent main.go is that

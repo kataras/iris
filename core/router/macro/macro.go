@@ -10,7 +10,7 @@ import (
 	"regexp"
 	"unicode"
 
-	"github.com/kataras/iris/core/router/macro/interpreter/ast"
+	"github.com/cdren/iris/core/router/macro/interpreter/ast"
 )
 
 // EvaluatorFunc is the signature for both param types and param funcs.
@@ -239,7 +239,7 @@ type Map struct {
 // NewMap returns a new macro Map with default
 // type evaluators.
 //
-// Learn more at:  https://github.com/kataras/iris/tree/master/_examples/beginner/routing/dynamic-path
+// Learn more at:  https://github.com/cdren/iris/tree/master/_examples/beginner/routing/dynamic-path
 func NewMap() *Map {
 	return &Map{
 		// it allows everything, so no need for a regexp here.

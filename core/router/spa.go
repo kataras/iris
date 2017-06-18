@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/kataras/iris/context"
+	"github.com/cdren/iris/context"
 )
 
 // AssetValidator returns true if "filename"
@@ -55,9 +55,9 @@ func (s *SPABuilder) isAsset(reqPath string) bool {
 // with the declared configuration.
 //
 // It should be passed to the router's `WrapRouter`:
-// https://godoc.org/github.com/kataras/iris/core/router#Router.WrapRouter
+// https://godoc.org/github.com/cdren/iris/core/router#Router.WrapRouter
 //
-// Example: https://github.com/kataras/iris/tree/master/_examples/beginner/file-server/single-page-application-builder
+// Example: https://github.com/cdren/iris/tree/master/_examples/beginner/file-server/single-page-application-builder
 func (s *SPABuilder) BuildWrapper(cPool *context.Pool) WrapperFunc {
 
 	fileServer := s.AssetHandler

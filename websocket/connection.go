@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/kataras/iris/context"
+	"github.com/cdren/iris/context"
 )
 
 type (

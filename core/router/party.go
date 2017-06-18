@@ -5,7 +5,7 @@
 package router
 
 import (
-	"github.com/kataras/iris/context"
+	"github.com/cdren/iris/context"
 ) // Party is here to separate the concept of
 // api builder and the sub api builder.
 
@@ -122,7 +122,7 @@ type Party interface {
 	//
 	// Returns the GET *Route.
 	//
-	// Example: https://github.com/kataras/iris/tree/master/_examples/intermediate/serve-embedded-files
+	// Example: https://github.com/cdren/iris/tree/master/_examples/intermediate/serve-embedded-files
 	StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) (*Route, error)
 
 	// Favicon serves static favicon

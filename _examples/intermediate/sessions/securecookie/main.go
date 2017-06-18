@@ -6,9 +6,9 @@ package main
 // $ go run main.go
 
 import (
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/sessions"
+	"github.com/cdren/iris"
+	"github.com/cdren/iris/context"
+	"github.com/cdren/iris/sessions"
 
 	"github.com/gorilla/securecookie"
 )
@@ -30,7 +30,7 @@ func main() {
 	})
 
 	// OPTIONALLY:
-	// import "github.com/kataras/iris/sessions/sessiondb/redis"
+	// import "github.com/cdren/iris/sessions/sessiondb/redis"
 	// or import "github.com/kataras/go-sessions/sessiondb/$any_available_community_database"
 	// mySessions.UseDatabase(redis.New(...))
 

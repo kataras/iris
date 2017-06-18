@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/errors"
+	"github.com/cdren/iris/context"
+	"github.com/cdren/iris/core/errors"
 )
 
 // Router is the "director".

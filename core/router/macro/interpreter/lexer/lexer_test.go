@@ -7,7 +7,7 @@ package lexer
 import (
 	"testing"
 
-	"github.com/kataras/iris/core/router/macro/interpreter/token"
+	"github.com/cdren/iris/core/router/macro/interpreter/token"
 )
 
 func TestNextToken(t *testing.T) {

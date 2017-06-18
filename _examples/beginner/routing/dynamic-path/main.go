@@ -3,8 +3,8 @@ package main
 import (
 	"strconv"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
+	"github.com/cdren/iris"
+	"github.com/cdren/iris/context"
 )
 
 func main() {
@@ -16,7 +16,7 @@ func main() {
 
 	// Iris, like net/http std package registers route's handlers
 	// by a Handler, the Iris' type of handler is just a func(ctx context.Context)
-	// where context comes from github.com/kataras/iris/context.
+	// where context comes from github.com/cdren/iris/context.
 	// Until go 1.9 you will have to import that package too, after go 1.9 this will be not be necessary.
 	//
 	// Iris has the easiest and the most powerful routing process you have ever meet.

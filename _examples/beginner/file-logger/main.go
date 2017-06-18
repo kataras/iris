@@ -4,8 +4,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
+	"github.com/cdren/iris"
+	"github.com/cdren/iris/context"
 )
 
 // get a filename based on the date, file logs works that way the most times

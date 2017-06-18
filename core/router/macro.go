@@ -9,10 +9,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/errors"
-	"github.com/kataras/iris/core/router/macro"
-	"github.com/kataras/iris/core/router/macro/interpreter/ast"
+	"github.com/cdren/iris/context"
+	"github.com/cdren/iris/core/errors"
+	"github.com/cdren/iris/core/router/macro"
+	"github.com/cdren/iris/core/router/macro/interpreter/ast"
 )
 
 // defaultMacros returns a new macro map which

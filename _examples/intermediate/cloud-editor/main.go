@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/kataras/iris"
+	"github.com/cdren/iris"
 
-	"github.com/kataras/iris/typescript" // optionally
-	"github.com/kataras/iris/typescript/editor"
+	"github.com/cdren/iris/typescript" // optionally
+	"github.com/cdren/iris/typescript/editor"
 )
 
 func main() {

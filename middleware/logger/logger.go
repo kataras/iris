@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/kataras/iris/context"
+	"github.com/cdren/iris/context"
 )
 
 type requestLoggerMiddleware struct {

@@ -6,11 +6,11 @@ import (
 	"os"        // optional
 	"time"      // optional
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
+	"github.com/cdren/iris"
+	"github.com/cdren/iris/context"
 
-	"github.com/kataras/iris/view"
-	"github.com/kataras/iris/websocket"
+	"github.com/cdren/iris/view"
+	"github.com/cdren/iris/websocket"
 )
 
 type clientPage struct {

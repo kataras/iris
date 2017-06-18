@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kataras/iris/core/router/macro/interpreter/ast"
-	"github.com/kataras/iris/core/router/macro/interpreter/lexer"
-	"github.com/kataras/iris/core/router/macro/interpreter/token"
+	"github.com/cdren/iris/core/router/macro/interpreter/ast"
+	"github.com/cdren/iris/core/router/macro/interpreter/lexer"
+	"github.com/cdren/iris/core/router/macro/interpreter/token"
 )
 
 // Parse takes a route "fullpath"

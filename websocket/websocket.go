@@ -7,7 +7,7 @@ package websocket
 import (
 	"strings"
 
-	"github.com/kataras/iris"
+	"github.com/cdren/iris"
 )
 
 // New returns a new websocket server policy adaptor.

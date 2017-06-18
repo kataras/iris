@@ -15,19 +15,19 @@ import (
 	"time"
 
 	// context for the handlers
-	"github.com/kataras/iris/context"
+	"github.com/cdren/iris/context"
 	// core packages, needed to build the application
-	"github.com/kataras/iris/core/errors"
-	"github.com/kataras/iris/core/host"
-	"github.com/kataras/iris/core/logger"
-	"github.com/kataras/iris/core/nettools"
-	"github.com/kataras/iris/core/router"
+	"github.com/cdren/iris/core/errors"
+	"github.com/cdren/iris/core/host"
+	"github.com/cdren/iris/core/logger"
+	"github.com/cdren/iris/core/nettools"
+	"github.com/cdren/iris/core/router"
 	// sessions and view
-	"github.com/kataras/iris/sessions"
-	"github.com/kataras/iris/view"
+	"github.com/cdren/iris/sessions"
+	"github.com/cdren/iris/view"
 	// middleware used in Default method
-	requestLogger "github.com/kataras/iris/middleware/logger"
-	"github.com/kataras/iris/middleware/recover"
+	requestLogger "github.com/cdren/iris/middleware/logger"
+	"github.com/cdren/iris/middleware/recover"
 )
 
 const (
@@ -40,7 +40,7 @@ const (
 
 	// Version is the current version number of the Iris Web framework.
 	//
-	// Look https://github.com/kataras/iris#where-can-i-find-older-versions for older versions.
+	// Look https://github.com/cdren/iris#where-can-i-find-older-versions for older versions.
 	Version = "7.2.0"
 )
 
@@ -421,7 +421,7 @@ func (app *Application) SessionManager() (sessions.Sessions, error) {
 //
 // Use that instead of `StaticWeb` for root "/" file server.
 //
-// Example: https://github.com/kataras/iris/tree/master/_examples/beginner/file-server/single-page-application
+// Example: https://github.com/cdren/iris/tree/master/_examples/beginner/file-server/single-page-application
 func (app *Application) SPA(assetHandler context.Handler) {
 	s := router.NewSPABuilder(assetHandler)
 	wrapper := s.BuildWrapper(app.ContextPool)

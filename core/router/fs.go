@@ -20,15 +20,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/errors"
+	"github.com/cdren/iris/context"
+	"github.com/cdren/iris/core/errors"
 )
 
 // StaticEmbeddedHandler returns a Handler which can serve
 // embedded into executable files.
 //
 //
-// Examples: https://github.com/kataras/iris/tree/master/_examples/file-server
+// Examples: https://github.com/cdren/iris/tree/master/_examples/file-server
 func StaticEmbeddedHandler(vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) context.Handler {
 	// Depends on the command the user gave to the go-bindata
 	// the assset path (names) may be or may not be prepended with a slash.

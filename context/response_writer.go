@@ -12,7 +12,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/kataras/iris/core/errors"
+	"github.com/cdren/iris/core/errors"
 )
 
 // ResponseWriter interface is used by the context to serve an HTTP handler to

@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
+	"github.com/cdren/iris"
+	"github.com/cdren/iris/context"
 
-	"github.com/kataras/iris/sessions"
-	"github.com/kataras/iris/sessions/sessiondb/redis"
-	"github.com/kataras/iris/sessions/sessiondb/redis/service"
+	"github.com/cdren/iris/sessions"
+	"github.com/cdren/iris/sessions/sessiondb/redis"
+	"github.com/cdren/iris/sessions/sessiondb/redis/service"
 )
 
 func main() {

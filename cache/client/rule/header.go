@@ -5,9 +5,9 @@
 package rule
 
 import (
-	"github.com/kataras/iris/context"
+	"github.com/cdren/iris/context"
 
-	"github.com/kataras/iris/cache/ruleset"
+	"github.com/cdren/iris/cache/ruleset"
 )
 
 // The HeaderPredicate should be alived on each of $package/rule BUT GOLANG DOESN'T SUPPORT type alias and I don't want to have so many copies around

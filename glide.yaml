@@ -13,7 +13,7 @@ import:
 - package: github.com/gorilla/websocket
 - package: github.com/imdario/mergo
 - package: github.com/iris-contrib/httpexpect
-- package: github.com/kataras/iris
+- package: github.com/cdren/iris
   subpackages:
   - cache
   - cache/cfg

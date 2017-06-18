@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/kataras/iris"
+	"github.com/cdren/iris"
 )
 
 // Follow these steps first:

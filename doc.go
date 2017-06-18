@@ -31,13 +31,13 @@ Package iris is a fully-featured HTTP/2 backend web framework written entirely i
 
 Source code and other details for the project are available at GitHub:
 
-   https://github.com/kataras/iris
+   https://github.com/cdren/iris
 
 Installation
 
 The only requirement is the Go Programming Language, at least version 1.8
 
-    $ go get -u github.com/kataras/iris
+    $ go get -u github.com/cdren/iris
 
 
 Example code:
@@ -46,9 +46,9 @@ Example code:
     package main
 
     import (
-        "github.com/kataras/iris"
-        "github.com/kataras/iris/context"
-        "github.com/kataras/iris/view"
+        "github.com/cdren/iris"
+        "github.com/cdren/iris/context"
+        "github.com/cdren/iris/view"
     )
 
     // User is just a bindable object structure.
@@ -277,8 +277,8 @@ Example code:
     package main
 
     import (
-        "github.com/kataras/iris"
-        "github.com/kataras/iris/context"
+        "github.com/cdren/iris"
+        "github.com/cdren/iris/context"
     )
 
     func main() {
@@ -294,7 +294,7 @@ Example code:
         //
         // Third receiver should contains the route's handler(s), they are executed by order.
         app.Handle("GET", "/", func(ctx context.Context) {
-            // navigate to the middle of $GOPATH/src/github.com/kataras/iris/context/context.go
+            // navigate to the middle of $GOPATH/src/github.com/cdren/iris/context/context.go
             // to overview all context's method (there a lot of them, read that and you will learn how iris works too)
             ctx.HTML("Hello from " + ctx.Path()) // Hello from /
         })
@@ -424,7 +424,7 @@ Example code:
 
         // let's pass a value to the next handler
         // Values is the way handlers(or middleware) are communicating between each other.
-        ctx.Values().Set("donate_url", "https://github.com/kataras/iris#buy-me-a-cup-of-coffee")
+        ctx.Values().Set("donate_url", "https://github.com/cdren/iris#buy-me-a-cup-of-coffee")
         ctx.Next() // in order to execute the next handler in the chain, look donate route.
     }
 
@@ -449,7 +449,7 @@ with a single known paramete and custom http errors, now it's time to see wildca
 
 Iris, like net/http std package registers route's handlers
 by a Handler, the Iris' type of handler is just a func(ctx context.Context)
-where context comes from github.com/kataras/iris/context.
+where context comes from github.com/cdren/iris/context.
 Until go 1.9 you will have to import that package too, after go 1.9 this will be not be necessary.
 
 Iris has the easiest and the most powerful routing process you have ever meet.
@@ -654,7 +654,7 @@ Static Files
     //
     // Returns the GET *Route.
     //
-    // Example: https://github.com/kataras/iris/tree/master/_examples/intermediate/serve-embedded-files
+    // Example: https://github.com/cdren/iris/tree/master/_examples/intermediate/serve-embedded-files
     StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) (*Route, error)
 
     // Favicon serves static favicon
@@ -697,8 +697,8 @@ Example code:
     package main
 
     import (
-        "github.com/kataras/iris"
-        "github.com/kataras/iris/context"
+        "github.com/cdren/iris"
+        "github.com/cdren/iris/context"
     )
 
     func main() {
@@ -720,7 +720,7 @@ Example code:
         app.Run(iris.Addr(":8080"))
     }
 
-More examples can be found here: https://github.com/kataras/iris/tree/master/_examples/beginner/file-server
+More examples can be found here: https://github.com/cdren/iris/tree/master/_examples/beginner/file-server
 
 
 Middleware Ecosystem
@@ -775,8 +775,8 @@ Example code:
     import (
         "github.com/rs/cors"
 
-        "github.com/kataras/iris"
-        "github.com/kataras/iris/context"
+        "github.com/cdren/iris"
+        "github.com/cdren/iris/context"
     )
 
     func main() {
@@ -837,9 +837,9 @@ Example code:
     package main
 
     import (
-        "github.com/kataras/iris"
-        "github.com/kataras/iris/context"
-        "github.com/kataras/iris/view"
+        "github.com/cdren/iris"
+        "github.com/cdren/iris/context"
+        "github.com/cdren/iris/view"
     )
 
     func main() {
@@ -889,9 +889,9 @@ Example code:
     package main
 
     import (
-        "github.com/kataras/iris"
-        "github.com/kataras/iris/context"
-        "github.com/kataras/iris/view"
+        "github.com/cdren/iris"
+        "github.com/cdren/iris/context"
+        "github.com/cdren/iris/view"
     )
 
     func main() {
@@ -918,7 +918,7 @@ Example code:
     }
 
 
-A real example can be found here: https://github.com/kataras/iris/tree/master/_examples/intermediate/view/embedding-templates-into-app.
+A real example can be found here: https://github.com/cdren/iris/tree/master/_examples/intermediate/view/embedding-templates-into-app.
 
 Enable auto-reloading of templates on each request. Useful while developers are in dev mode
 as they no neeed to restart their app on every template edit.
@@ -931,7 +931,7 @@ Example code:
     app.AttachView(pugEngine)
 
 
-Each one of these template engines has different options located here: https://github.com/kataras/iris/tree/master/view .
+Each one of these template engines has different options located here: https://github.com/cdren/iris/tree/master/view .
 
 
 Sessions
@@ -954,9 +954,9 @@ Example code:
     package main
 
     import (
-        "github.com/kataras/iris"
-        "github.com/kataras/iris/context"
-        "github.com/kataras/iris/sessions"
+        "github.com/cdren/iris"
+        "github.com/cdren/iris/context"
+        "github.com/cdren/iris/sessions"
     )
 
     var (
@@ -1027,11 +1027,11 @@ If you enjoy what you just saw and want to learn more, please follow the below l
 
 Examples:
 
-    https://github.com/kataras/iris/tree/master/_examples
+    https://github.com/cdren/iris/tree/master/_examples
 
 Built'n Middleware:
 
-    https://github.com/kataras/iris/tree/master/middleware
+    https://github.com/cdren/iris/tree/master/middleware
 
 Community Middleware:
 

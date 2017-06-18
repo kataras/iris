@@ -8,7 +8,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/kataras/iris/sessions"
+	"github.com/cdren/iris/sessions"
 )
 
 // Application is the context's available Application instance, only things that are allowed to be happen inside the request are lived here.

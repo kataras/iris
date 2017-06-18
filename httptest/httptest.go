@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/iris-contrib/httpexpect"
-	"github.com/kataras/iris"
+	"github.com/cdren/iris"
 )
 
 type (
@@ -67,7 +67,7 @@ func DefaultConfiguration() *Configuration {
 }
 
 // New Prepares and returns a new test framework based on the "app".
-// You can find example on the https://github.com/kataras/iris/tree/master/_examples/intermediate/httptest
+// You can find example on the https://github.com/cdren/iris/tree/master/_examples/intermediate/httptest
 func New(t *testing.T, app *iris.Application, setters ...OptionSetter) *httpexpect.Expect {
 	conf := DefaultConfiguration()
 	for _, setter := range setters {

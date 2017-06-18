@@ -7,10 +7,10 @@ package client
 import (
 	"time"
 
-	"github.com/kataras/iris/cache/cfg"
-	"github.com/kataras/iris/cache/client/rule"
-	"github.com/kataras/iris/cache/entry"
-	"github.com/kataras/iris/context"
+	"github.com/cdren/iris/cache/cfg"
+	"github.com/cdren/iris/cache/client/rule"
+	"github.com/cdren/iris/cache/entry"
+	"github.com/cdren/iris/context"
 )
 
 // Handler the local cache service handler contains

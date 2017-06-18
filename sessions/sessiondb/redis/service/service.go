@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/garyburd/redigo/redis"
-	"github.com/kataras/iris/core/errors"
+	"github.com/cdren/iris/core/errors"
 )
 
 var (
