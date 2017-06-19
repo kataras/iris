@@ -1,4 +1,0 @@
-extends recursion.extends.amber
-
-block inner
-    | content

@@ -1,1 +1,0 @@
-Please navigate through https://github.com/iris-contrib/community-board first to read how you can contribute. You're awesome!
