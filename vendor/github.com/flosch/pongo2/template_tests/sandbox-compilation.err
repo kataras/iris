@@ -1,3 +1,0 @@
-{{ "hello"|banned_filter }}
-{% banned_tag %}
-{% include "../../test_not_existent" %}
