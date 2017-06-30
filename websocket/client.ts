@@ -20,10 +20,10 @@ const websocketMessagePrefix = "iris-websocket-message:";
 const websocketMessageSeparator = ";";
 
 const websocketMessagePrefixLen = websocketMessagePrefix.length;
-var websocketMessageSeparatorLen = websocketMessageSeparator.length;
-var websocketMessagePrefixAndSepIdx = websocketMessagePrefixLen + websocketMessageSeparatorLen - 1;
-var websocketMessagePrefixIdx = websocketMessagePrefixLen - 1;
-var websocketMessageSeparatorIdx = websocketMessageSeparatorLen - 1;
+let websocketMessageSeparatorLen = websocketMessageSeparator.length;
+let websocketMessagePrefixAndSepIdx = websocketMessagePrefixLen + websocketMessageSeparatorLen - 1;
+let websocketMessagePrefixIdx = websocketMessagePrefixLen - 1;
+let websocketMessageSeparatorIdx = websocketMessageSeparatorLen - 1;
 
 type onConnectFunc = () => void;
 type onWebsocketDisconnectFunc = () => void;

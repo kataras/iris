@@ -5,7 +5,7 @@ import (
 	"net"
 	"net/url"
 	"testing"
-
+	"strconv"
 	"github.com/cdren/iris"
 	"github.com/cdren/iris/context"
 	"github.com/cdren/iris/core/host"
@@ -15,6 +15,9 @@ import (
 func TestProxy(t *testing.T) {
 	expectedIndex := "ok /"
 	expectedAbout := "ok /about"
+	expectedDemo := "ok /name/demo"
+	expectedDemoId := "ok /id/1234"
+	expectedDemoIdMin := "ok /min/1234"
 	unexpectedRoute := "unexpected"
 
 	// proxySrv := iris.New()
@@ -34,12 +37,40 @@ func TestProxy(t *testing.T) {
 	go host.NewProxy("localhost:2017", u).ListenAndServe() // should be localhost/127.0.0.1:80 but travis throws permission denied.
 
 	app := iris.New()
+
+	app.Macros().Int.RegisterFunc("min", func(minValue int) func(string) bool {
+		// do anything before serve here [...]
+		// at this case we don't need to do anything
+		return func(paramValue string) bool {
+			n, err := strconv.Atoi(paramValue)
+			if err != nil {
+				return false
+			}
+			return n >= minValue
+		}
+	})
+
 	app.Get("/", func(ctx context.Context) {
 		ctx.WriteString(expectedIndex)
 	})
 
 	app.Get("/about", func(ctx context.Context) {
 		ctx.WriteString(expectedAbout)
+	})
+
+	app.Get("/name/{name}", func(ctx context.Context) {
+		name := ctx.Params().Get("name")
+		ctx.WriteString("ok /name/" + name)
+	})
+
+	app.Get("/id/{id:int}", func(ctx context.Context) {
+		id, _ := ctx.Params().GetInt("id")
+		ctx.WriteString("ok /id/" + strconv.Itoa(id))
+	})
+
+	app.Get("/min/{id:int min(1000)}", func(ctx context.Context) {
+		id, _ := ctx.Params().GetInt("id")
+		ctx.WriteString("ok /min/" + strconv.Itoa(id))
 	})
 
 	app.OnErrorCode(iris.StatusNotFound, func(ctx context.Context) {
@@ -56,5 +87,11 @@ func TestProxy(t *testing.T) {
 	e := httptest.NewInsecure(t, httptest.URL("http://localhost:2017"))
 	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedIndex)
 	e.GET("/about").Expect().Status(iris.StatusOK).Body().Equal(expectedAbout)
+	e.GET("/name/demo").Expect().Status(iris.StatusOK).Body().Equal(expectedDemo)
+	e.GET("/id/1234").Expect().Status(iris.StatusOK).Body().Equal(expectedDemoId)
+	e.GET("/id/notfound").Expect().Status(iris.StatusNotFound).Body().Equal(unexpectedRoute)
+	e.GET("/min/1234").Expect().Status(iris.StatusOK).Body().Equal(expectedDemoIdMin)
+	e.GET("/min/123").Expect().Status(iris.StatusNotFound).Body().Equal(unexpectedRoute)
+	e.GET("/min/notfound").Expect().Status(iris.StatusNotFound).Body().Equal(unexpectedRoute)
 	e.GET("/notfound").Expect().Status(iris.StatusNotFound).Body().Equal(unexpectedRoute)
 }

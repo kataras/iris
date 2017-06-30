@@ -14,6 +14,7 @@ import:
 - package: github.com/imdario/mergo
 - package: github.com/iris-contrib/httpexpect
 - package: github.com/cdren/iris
+  version: with-glide
   subpackages:
   - cache
   - cache/cfg

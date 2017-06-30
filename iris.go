@@ -377,6 +377,12 @@ func (app *Application) AttachView(viewEngine view.Engine) error {
 	return app.view.Register(viewEngine)
 }
 
+//alias AttachView
+func (app *Application) SetView(viewEngine view.Engine) error {
+	return app.AttachView(viewEngine)
+}
+
+
 // View executes and writes the result of a template file to the writer.
 //
 // First parameter is the writer to write the parsed template.

@@ -1,5 +1,5 @@
-hash: deddc0dd022e982a92b4e4172581ab14f6990b45aab805eb1e0b17eb8e47cbbc
-updated: 2017-06-18T11:12:33.392228425+08:00
+hash: 5b86501eb40666e74795ab90561cbd2be25257c754691b38a3093e558e490927
+updated: 2017-06-27T18:45:50.110556948+08:00
 imports:
 - name: github.com/ajg/form
   version: 523a5da1a92f01b01f840b61689c0340a0243532
@@ -11,6 +11,38 @@ imports:
   - parser
 - name: github.com/BurntSushi/toml
   version: b26d9c308763d68093482582cea63d69be07a0f0
+- name: github.com/cdren/iris
+  version: a652474a54ebd1d4315a4d4bb182f1923461474d
+  subpackages:
+  - cache
+  - cache/cfg
+  - cache/client
+  - cache/client/rule
+  - cache/entry
+  - cache/ruleset
+  - cache/uri
+  - context
+  - core/errors
+  - core/handlerconv
+  - core/host
+  - core/logger
+  - core/memstore
+  - core/nettools
+  - core/router
+  - core/router/macro
+  - core/router/macro/interpreter/ast
+  - core/router/macro/interpreter/lexer
+  - core/router/macro/interpreter/parser
+  - core/router/macro/interpreter/token
+  - core/router/node
+  - httptest
+  - middleware/basicauth
+  - middleware/logger
+  - middleware/recover
+  - sessions
+  - sessions/sessiondb/redis/service
+  - typescript/npm
+  - view
 - name: github.com/davecgh/go-spew
   version: 04cdfd42973bb9c8589fd6a731800cf222fde1a9
   subpackages:
@@ -50,38 +82,6 @@ imports:
   version: 35b3f5bdbcc920cd31f4870536dbc63be8530541
 - name: github.com/juju/errors
   version: 8234c829496aaeae67c5c71235a2cbcc289e960a
-- name: github.com/cdren/iris
-  version: 20f30022705b5b0728c71cdcc819a319224a636e
-  subpackages:
-  - cache
-  - cache/cfg
-  - cache/client
-  - cache/client/rule
-  - cache/entry
-  - cache/ruleset
-  - cache/uri
-  - context
-  - core/errors
-  - core/handlerconv
-  - core/host
-  - core/logger
-  - core/memstore
-  - core/nettools
-  - core/router
-  - core/router/macro
-  - core/router/macro/interpreter/ast
-  - core/router/macro/interpreter/lexer
-  - core/router/macro/interpreter/parser
-  - core/router/macro/interpreter/token
-  - core/router/node
-  - httptest
-  - middleware/basicauth
-  - middleware/logger
-  - middleware/recover
-  - sessions
-  - sessions/sessiondb/redis/service
-  - typescript/npm
-  - view
 - name: github.com/klauspost/compress
   version: f3dce52e0576655d55fd69e74b63da96ad1108f3
   subpackages:
