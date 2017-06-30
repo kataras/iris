@@ -6,7 +6,8 @@ package context
 
 import (
 	"bytes"
-	"encoding/json"
+	//"encoding/json"
+	json "github.com/json-iterator/go"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -151,7 +152,6 @@ func (r RequestParams) Len() int {
 // context.Context is very extensible and developers can override
 // its methods if that is actually needed.
 type Context interface {
-
 	// BeginRequest is executing once for each request
 	// it should prepare the (new or acquired from pool) context's fields for the new request.
 	//

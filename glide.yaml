@@ -59,3 +59,4 @@ import:
   - html
   - publicsuffix
 - package: gopkg.in/yaml.v2
+- package: github.com/json-iterator/go

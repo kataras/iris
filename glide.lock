@@ -1,5 +1,5 @@
-hash: 5b86501eb40666e74795ab90561cbd2be25257c754691b38a3093e558e490927
-updated: 2017-06-27T18:45:50.110556948+08:00
+hash: 0b89417e138b7ed8aee76ac93ef9b891d53db87b124d816ccdc39963c9ebb542
+updated: 2017-06-30T23:30:42.191405246+08:00
 imports:
 - name: github.com/ajg/form
   version: 523a5da1a92f01b01f840b61689c0340a0243532
@@ -12,7 +12,7 @@ imports:
 - name: github.com/BurntSushi/toml
   version: b26d9c308763d68093482582cea63d69be07a0f0
 - name: github.com/cdren/iris
-  version: a652474a54ebd1d4315a4d4bb182f1923461474d
+  version: 9578befeef83b60e0204fe557b62f4aea2fd49c9
   subpackages:
   - cache
   - cache/cfg
@@ -80,6 +80,8 @@ imports:
   version: b6aa3332b2c006510bd4f4978f1c28354a61bb4d
 - name: github.com/Joker/jade
   version: 35b3f5bdbcc920cd31f4870536dbc63be8530541
+- name: github.com/json-iterator/go
+  version: a3a2d1cd2562575419d98b4e7cb27899643d6d86
 - name: github.com/juju/errors
   version: 8234c829496aaeae67c5c71235a2cbcc289e960a
 - name: github.com/klauspost/compress
