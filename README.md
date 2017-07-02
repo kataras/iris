@@ -1,3 +1,37 @@
+# 02 July 2017
+
+### DEPRECATED
+
+Iris has been acquired so development is up to the community, there are two active iris-based communities so far.
+
+Use one of these projects instead:  
+
+https://github.com/get-ion/ion
+
+**Ion is a fast, simple and efficient micro web framework for Go. It provides a beautifully expressive and easy to use foundation for your next website, API, or distributed app.**
+
+- a bit faster than Iris version 7, based on `ab`
+- stable api
+- more examples
+- sessions, websockets, typescript and cloud editor(fixed) on different packages
+- test cov, including examples
+- slack bot for support automation
+- has a FAQ page which is part of the gitbook.com beta program
+- central issue portal
+- HuHu supported
+
+https://github.com/go-siris/siris
+
+**A fast, cross-platform and efficient web framework with robust set of well-designed features, written entirely in Go.**
+
+- three maintainers
+- plan to stabilize api, no unneeded changes
+- plan to increase test-coverage
+- plan to add more middlewares and examples
+
+
+> If your team's project is missing from this list, please contact with me.
+
 # IRIS HAS BEEN ACQUIRED
 
 Iris project has been acquired by a Dubai-based startup.
@@ -32,7 +66,6 @@ Don't worry **I will not let you down**, we're trying to find a decent open-sour
 **I am really thankful for all of your support to me and the community, all donations, all bug reports, all comments without any exception. I did proceeded with all my physical abilities so far but unfortunately there weren't enough for my survivor. I'm really sorry if the latest news made iris open-source community disappointed but you have to see things from my point view, I was one step before bankruptcy, I had no other choice but accept the offer.**
 
 # ![Logo created by @santoshanand](logo_white_35_24.png) Iris 
-
 
 A fast, cross-platform and efficient web framework with robust set of well-designed features, written entirely in Go.
 
