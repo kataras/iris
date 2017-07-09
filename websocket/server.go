@@ -301,8 +301,9 @@ func (s *server) LeaveAll(connID string) {
 				// fire the on room leave connection's listeners
 				s.connections.get(connID).fireOnLeave(name)
 				// the connection is inside this room, lets remove it
-				s.rooms[name][i] = s.rooms[name][len(s.rooms[name])-1]
-				s.rooms[name] = s.rooms[name][:len(s.rooms[name])-1]
+				/*s.rooms[name][i] = s.rooms[name][len(s.rooms[name])-1]
+				s.rooms[name] = s.rooms[name][:len(s.rooms[name])-1]*/
+				s.rooms[name] = append(s.rooms[name][:i], s.rooms[name][i+1:]...)
 			}
 		}
 	}
@@ -328,8 +329,9 @@ func (s *server) leave(roomName string, connID string) (left bool) {
 	if s.rooms[roomName] != nil {
 		for i := range s.rooms[roomName] {
 			if s.rooms[roomName][i] == connID {
-				s.rooms[roomName][i] = s.rooms[roomName][len(s.rooms[roomName])-1]
-				s.rooms[roomName] = s.rooms[roomName][:len(s.rooms[roomName])-1]
+				/*s.rooms[roomName][i] = s.rooms[roomName][len(s.rooms[roomName])-1]
+				s.rooms[roomName] = s.rooms[roomName][:len(s.rooms[roomName])-1]*/
+				s.rooms[roomName] = append(s.rooms[roomName][:i], s.rooms[roomName][i+1:]...)
 				left = true
 				break
 			}

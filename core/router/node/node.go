@@ -227,7 +227,7 @@ func (nodes Nodes) findChild(path string, params []string) (*node, []string) {
 
 		if child == nil || len(child.handlers) == 0 {
 			// is wildcard and it is not root neither has children
-			if n.s[len(n.s)-1] == '/' && !(!n.isDynamic() && n.root && (n.s == "/" || len(n.children) > 0)) {
+			if n.s[len(n.s)-1] == '/' && !(n.root && (n.s == "/" || len(n.children) > 0)) {
 				if len(n.handlers) == 0 {
 					return nil, nil
 				}
