@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 // Package typescript provides a typescript compiler with hot-reloader
 // and optionally a cloud-based editor, called 'alm-tools'.
 // typescript (by microsoft) and alm-tools (by @basarat) have their own (open-source) licenses
@@ -15,7 +11,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/kataras/iris"
 	"github.com/kataras/iris/typescript/npm"
 )
 
@@ -23,26 +18,55 @@ type (
 	// Typescript contains the unique iris' typescript loader, holds all necessary fields & methods.
 	Typescript struct {
 		Config *Config
-		// taken from framework
-		log func(format string, a ...interface{})
+		log    func(format string, a ...interface{})
 	}
 )
 
 // New creates & returns a new instnace typescript plugin
-func New() *Typescript {
+func New(cfg ...Config) *Typescript {
 	c := DefaultConfig()
-
-	if !strings.Contains(c.Ignore, nodeModules) {
-		c.Ignore += "," + nodeModules
+	if len(cfg) > 0 {
+		c = cfg[0]
 	}
 
 	return &Typescript{Config: &c}
 }
 
-// implementation
+var (
+	// NoOpLogger can be used as the logger argument, it prints nothing.
+	NoOpLogger = func(string, ...interface{}) {}
+)
+
+// Run starts the typescript filewatcher watcher and the typescript compiler.
+func (t *Typescript) Run(logger func(format string, a ...interface{})) {
+	c := t.Config
+	if c.Tsconfig == nil {
+		tsC := DefaultTsconfig()
+		c.Tsconfig = &tsC
+	}
+
+	if c.Dir == "" {
+		c.Tsconfig.CompilerOptions.OutDir = c.Dir
+	}
+
+	if c.Dir == "" {
+		c.Dir = "./"
+	}
+
+	if !strings.Contains(c.Ignore, nodeModules) {
+		c.Ignore += "," + nodeModules
+	}
+
+	if logger == nil {
+		logger = NoOpLogger
+	}
+
+	t.log = logger
+
+	t.start()
+}
 
 func (t *Typescript) start() {
-
 	if t.hasTypescriptFiles() {
 		//Can't check if permission denied returns always exists = true....
 
@@ -59,7 +83,7 @@ func (t *Typescript) start() {
 		projects := t.getTypescriptProjects()
 		if len(projects) > 0 {
 			watchedProjects := 0
-			//typescript project (.tsconfig) found
+			// typescript project (.tsconfig) found
 			for _, project := range projects {
 				cmd := npm.CommandBuilder("node", t.Config.Bin, "-p", project[0:strings.LastIndex(project, npm.PathSeparator)]) //remove the /tsconfig.json)
 				projectConfig, perr := FromFile(project)
@@ -74,70 +98,76 @@ func (t *Typescript) start() {
 					go func() {
 						_, err := cmd.Output()
 						if err != nil {
-							t.log(err.Error())
+							t.log("error when 'watch' is true: %v", err)
 							return
 						}
 					}()
 				} else {
-
 					_, err := cmd.Output()
 					if err != nil {
-						t.log(err.Error())
+						t.log("unexpected error from output: %v", err)
 						return
 					}
 
 				}
 
 			}
-			// t.log("%d Typescript project(s) compiled ( %d monitored by a background file watcher", len(projects), watchedProjects)
-		} else {
-			//search for standalone typescript (.ts) files and compile them
-			files := t.getTypescriptFiles()
-			if len(files) > 0 {
-				/* watchedFiles := 0
-				if t.Config.Tsconfig.CompilerOptions.Watch {
-					watchedFiles = len(files)
-				}*/
-				//it must be always > 0 if we came here, because of if hasTypescriptFiles == true.
-				for _, file := range files {
-					absPath, err := filepath.Abs(file)
-					if err != nil {
-						continue
-					}
-
-					//these will be used if no .tsconfig found.
-					// cmd := npm.CommandBuilder("node", t.Config.Bin)
-					// cmd.Arguments(t.Config.Bin, t.Config.Tsconfig.CompilerArgs()...)
-					// cmd.AppendArguments(absPath)
-					compilerArgs := t.Config.Tsconfig.CompilerArgs()
-					cmd := npm.CommandBuilder("node", t.Config.Bin)
-					for _, s := range compilerArgs {
-						cmd.AppendArguments(s)
-					}
-					cmd.AppendArguments(absPath)
-					go func() {
-						compilerMsgB, _ := cmd.Output()
-						compilerMsg := string(compilerMsgB)
-						cmd.Args = cmd.Args[0 : len(cmd.Args)-1] //remove the last, which is the file
-
-						if strings.Contains(compilerMsg, "error") {
-							t.log(compilerMsg)
-						}
-
-					}()
-
-				}
-				// t.log("%d Typescript file(s) compiled ( %d monitored by a background file watcher )", len(files), watchedFiles)
-			}
-
+			return
 		}
+		//search for standalone typescript (.ts) files and compile them
+		files := t.getTypescriptFiles()
+		if len(files) > 0 {
+			/* watchedFiles := 0
+			if t.Config.Tsconfig.CompilerOptions.Watch {
+				watchedFiles = len(files)
+			}*/
+			//it must be always > 0 if we came here, because of if hasTypescriptFiles == true.
+			for _, file := range files {
 
+				absPath, err := filepath.Abs(file)
+				if err != nil {
+					t.log("error while trying to resolve absolute path for %s: %v", file, err)
+					continue
+				}
+
+				// these will be used if no .tsconfig found.
+				// cmd := npm.CommandBuilder("node", t.Config.Bin)
+				// cmd.Arguments(t.Config.Bin, t.Config.Tsconfig.CompilerArgs()...)
+				// cmd.AppendArguments(absPath)
+				compilerArgs := t.Config.Tsconfig.CompilerArgs()
+				cmd := npm.CommandBuilder("node", t.Config.Bin)
+
+				for _, s := range compilerArgs {
+					cmd.AppendArguments(s)
+				}
+				cmd.AppendArguments(absPath)
+				go func() {
+					compilerMsgB, _ := cmd.Output()
+					compilerMsg := string(compilerMsgB)
+					cmd.Args = cmd.Args[0 : len(cmd.Args)-1] //remove the last, which is the file
+
+					if strings.Contains(compilerMsg, "error") {
+						t.log(compilerMsg)
+					}
+
+				}()
+
+			}
+			return
+		}
+		return
 	}
+	absPath, err := filepath.Abs(t.Config.Dir)
+	if err != nil {
+		t.log("no typescript file, the directory cannot be resolved: %v", err)
+		return
+	}
+	t.log("no typescript files found on : %s", absPath)
 }
 
 func (t *Typescript) hasTypescriptFiles() bool {
 	root := t.Config.Dir
-	ignoreFolders := strings.Split(t.Config.Ignore, ",")
+	ignoreFolders := t.getIgnoreFolders()
 	hasTs := false
 	if !npm.Exists(root) {
 		t.log("typescript error: directory '%s' couldn't be found,\nplease specify a valid path for your *.ts files", root)
@@ -145,18 +175,18 @@ func (t *Typescript) hasTypescriptFiles() bool {
 	}
 	// ignore error
 	filepath.Walk(root, func(path string, fi os.FileInfo, err error) error {
-
 		if fi.IsDir() {
 			return nil
 		}
-		for i := range ignoreFolders {
-			if strings.Contains(path, ignoreFolders[i]) {
-				return nil
+		for _, s := range ignoreFolders {
+			if strings.HasSuffix(path, s) || path == s {
+				return filepath.SkipDir
 			}
 		}
+
 		if strings.HasSuffix(path, ".ts") {
 			hasTs = true
-			return errors.New("Typescript found, hope that will stop here")
+			return errors.New("typescript found, hope that will stop here")
 		}
 
 		return nil
@@ -164,9 +194,21 @@ func (t *Typescript) hasTypescriptFiles() bool {
 	return hasTs
 }
 
+func (t *Typescript) getIgnoreFolders() (folders []string) {
+	ignoreFolders := strings.Split(t.Config.Ignore, ",")
+
+	for _, s := range ignoreFolders {
+		if s != "" {
+			folders = append(folders, s)
+		}
+	}
+
+	return folders
+}
+
 func (t *Typescript) getTypescriptProjects() []string {
 	var projects []string
-	ignoreFolders := strings.Split(t.Config.Ignore, ",")
+	ignoreFolders := t.getIgnoreFolders()
 
 	root := t.Config.Dir
 	//t.logger.Printf("\nSearching for typescript projects in %s", root)
@@ -176,9 +218,8 @@ func (t *Typescript) getTypescriptProjects() []string {
 		if fi.IsDir() {
 			return nil
 		}
-		for i := range ignoreFolders {
-			if strings.Contains(path, ignoreFolders[i]) {
-				//t.logger.Println(path + " ignored")
+		for _, s := range ignoreFolders {
+			if strings.HasSuffix(path, s) || path == s {
 				return filepath.SkipDir
 			}
 		}
@@ -196,7 +237,7 @@ func (t *Typescript) getTypescriptProjects() []string {
 // this is being called if getTypescriptProjects return 0 len, then we are searching for files using that:
 func (t *Typescript) getTypescriptFiles() []string {
 	var files []string
-	ignoreFolders := strings.Split(t.Config.Ignore, ",")
+	ignoreFolders := t.getIgnoreFolders()
 
 	root := t.Config.Dir
 
@@ -205,9 +246,8 @@ func (t *Typescript) getTypescriptFiles() []string {
 		if fi.IsDir() {
 			return nil
 		}
-		for i := range ignoreFolders {
-			if strings.Contains(path, ignoreFolders[i]) {
-				//t.logger.Println(path + " ignored")
+		for _, s := range ignoreFolders {
+			if strings.HasSuffix(path, s) || path == s {
 				return nil
 			}
 		}
@@ -220,10 +260,4 @@ func (t *Typescript) getTypescriptFiles() []string {
 		return nil
 	})
 	return files
-}
-
-// Attach attaches the typescript to one or more Iris instance(s).
-func (t *Typescript) Attach(app *iris.Application) {
-	t.log = app.Log
-	t.start()
 }

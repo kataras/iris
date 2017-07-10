@@ -822,7 +822,7 @@ func (v *evalVisitor) VisitBlock(node *ast.BlockStatement) interface{} {
 	expr := node.Expression.Accept(v)
 
 	if v.isHelperCall(node.Expression) || v.wasFuncCall(node.Expression) {
-		// it is the responsability of the helper/function to evaluate block
+		// it is the responsibility of the helper/function to evaluate block
 		result = expr
 	} else {
 		val := reflect.ValueOf(expr)

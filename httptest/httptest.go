@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package httptest
 
 import (
@@ -67,15 +63,16 @@ func DefaultConfiguration() *Configuration {
 }
 
 // New Prepares and returns a new test framework based on the "app".
-// You can find example on the https://github.com/kataras/iris/tree/master/_examples/intermediate/httptest
+// You can find example on the https://github.com/kataras/iris/tree/master/_examples/testing/httptest
 func New(t *testing.T, app *iris.Application, setters ...OptionSetter) *httpexpect.Expect {
 	conf := DefaultConfiguration()
 	for _, setter := range setters {
 		setter.Set(conf)
 	}
 
-	// disable logger
-	app.AttachLogger(nil)
+	// disable logger by setting it to the  "Panic" level, iris never uses this
+	// so it will never prints.
+	app.Logger().Level = 0
 	app.Build()
 
 	testConfiguration := httpexpect.Config{

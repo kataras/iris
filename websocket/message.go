@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package websocket
 
 import (
@@ -14,16 +10,6 @@ import (
 	"github.com/kataras/iris/core/errors"
 	"github.com/valyala/bytebufferpool"
 )
-
-// -------------------------------------------------------------------------------------
-// -------------------------------------------------------------------------------------
-// -----------------websocket messages and de/serialization implementation--------------
-// -------------------------------------------------------------------------------------
-// -------------------------------------------------------------------------------------
-
-/*
-serializer, [de]websocketMessageSerialize the messages from the client to the websocketServer and from the websocketServer to the client
-*/
 
 // The same values are exists on client side also
 const (

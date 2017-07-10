@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package typescript
 
 import (
@@ -169,9 +165,12 @@ func DefaultTsconfig() Tsconfig {
 			Jsx:              "react",
 			ModuleResolution: "classic",
 			Locale:           "en",
-			Watch:            true,
+			Watch:            false,
 			NoImplicitAny:    false,
 			SourceMap:        false,
+			Diagnostics:      true,
+			NoEmit:           false,
+			OutDir:           "", // taken from Config.Dir if it's not empty, otherwise ./ on Run()
 		},
 		Exclude: []string{"node_modules"},
 	}
@@ -183,7 +182,7 @@ func DefaultTsconfig() Tsconfig {
 func DefaultConfig() Config {
 	root, err := os.Getwd()
 	if err != nil {
-		panic("Typescript Adaptor: Cannot get the Current Working Directory !!! [os.getwd()]")
+		panic("typescript: cannot get the cwd")
 	}
 	compilerTsConfig := DefaultTsconfig()
 	c := Config{

@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package iris
 
 import (
@@ -99,10 +95,15 @@ type Configurator func(*Application)
 // variables for configurators don't need any receivers, functions
 // for them that need (helps code editors to recognise as variables without parenthesis completion).
 
-// WithoutBanner turns off the write banner on server startup.
-var WithoutBanner = func(app *Application) {
-	app.config.DisableBanner = true
+// WithoutStartupLog turns off the information send, once, to the terminal when the main server is open.
+var WithoutStartupLog = func(app *Application) {
+	app.config.DisableStartupLog = true
 }
+
+// WithoutBanner is a conversion for the `WithoutStartupLog` option.
+//
+// Turns off the information send, once, to the terminal when the main server is open.
+var WithoutBanner = WithoutStartupLog
 
 // WithoutInterruptHandler disables the automatic graceful server shutdown
 // when control/cmd+C pressed.
@@ -163,6 +164,42 @@ func WithCharset(charset string) Configurator {
 	}
 }
 
+// WithRemoteAddrHeader enables or adds a new or existing request header name
+// that can be used to validate the client's real IP.
+//
+// Existing values are:
+// "X-Real-Ip":             false,
+// "X-Forwarded-For":       false,
+// "CF-Connecting-IP": false
+//
+// Look `context.RemoteAddr()` for more.
+func WithRemoteAddrHeader(headerName string) Configurator {
+	return func(app *Application) {
+		if app.config.RemoteAddrHeaders == nil {
+			app.config.RemoteAddrHeaders = make(map[string]bool, 0)
+		}
+		app.config.RemoteAddrHeaders[headerName] = true
+	}
+}
+
+// WithoutRemoteAddrHeader disables an existing request header name
+// that can be used to validate the client's real IP.
+//
+// Existing values are:
+// "X-Real-Ip":             false,
+// "X-Forwarded-For":       false,
+// "CF-Connecting-IP": false
+//
+// Look `context.RemoteAddr()` for more.
+func WithoutRemoteAddrHeader(headerName string) Configurator {
+	return func(app *Application) {
+		if app.config.RemoteAddrHeaders == nil {
+			app.config.RemoteAddrHeaders = make(map[string]bool, 0)
+		}
+		app.config.RemoteAddrHeaders[headerName] = false
+	}
+}
+
 // WithOtherValue adds a value based on a key to the Other setting.
 //
 // See` Configuration`.
@@ -175,7 +212,7 @@ func WithOtherValue(key string, val interface{}) Configurator {
 	}
 }
 
-// Configuration the whole configuration for an Iris instance
+// Configuration the whole configuration for an iris instance
 // these can be passed via options also, look at the top of this file(configuration.go).
 // Configuration is a valid OptionSetter.
 type Configuration struct {
@@ -183,10 +220,10 @@ type Configuration struct {
 	// It can be retrieved by the context if needed (i.e router for subdomains)
 	vhost string
 
-	// DisableBanner if setted to true then it turns off the write banner on server startup.
+	// DisableStartupLog if setted to true then it turns off the write banner on server startup.
 	//
 	// Defaults to false.
-	DisableBanner bool `yaml:"DisableBanner" toml:"DisableBanner"`
+	DisableStartupLog bool `yaml:"DisableStartupLog" toml:"DisableStartupLog"`
 	// DisableInterruptHandler if setted to true then it disables the automatic graceful server shutdown
 	// when control/cmd+C pressed.
 	// Turn this to true if you're planning to handle this by your own via a custom host.Task.
@@ -238,7 +275,7 @@ type Configuration struct {
 	//
 	// Developer may want this option to setted as true in order to manually call the
 	// error handlers when needed via "context.FireStatusCode(>=400)".
-	// HTTP Custom error handlers are being registered via "framework.OnStatusCode(code, handler)".
+	// HTTP Custom error handlers are being registered via app.OnErrorCode(code, handler)".
 	//
 	// Defaults to false.
 	DisableAutoFireStatusCode bool `yaml:"DisableAutoFireStatusCode" toml:"DisableAutoFireStatusCode"`
@@ -281,7 +318,16 @@ type Configuration struct {
 	//
 	// Defaults to "iris.viewData"
 	ViewDataContextKey string `yaml:"ViewDataContextKey" toml:"ViewDataContextKey"`
-
+	// RemoteAddrHeaders returns the allowed request headers names
+	// that can be valid to parse the client's IP based on.
+	//
+	// Defaults to:
+	// "X-Real-Ip":             false,
+	// "X-Forwarded-For":       false,
+	// "CF-Connecting-IP": false
+	//
+	// Look `context.RemoteAddr()` for more.
+	RemoteAddrHeaders map[string]bool `yaml:"RemoteAddrHeaders" toml:"RemoteAddrHeaders"`
 	// Other are the custom, dynamic options, can be empty.
 	// This field used only by you to set any app's options you want
 	// or by custom adaptors, it's a way to simple communicate between your adaptors (if any)
@@ -379,6 +425,19 @@ func (c Configuration) GetViewDataContextKey() string {
 	return c.ViewDataContextKey
 }
 
+// GetRemoteAddrHeaders returns the allowed request headers names
+// that can be valid to parse the client's IP based on.
+//
+// Defaults to:
+// "X-Real-Ip":             false,
+// "X-Forwarded-For":       false,
+// "CF-Connecting-IP": false
+//
+// Look `context.RemoteAddr()` for more.
+func (c Configuration) GetRemoteAddrHeaders() map[string]bool {
+	return c.RemoteAddrHeaders
+}
+
 // GetOther returns the configuration.Other map.
 func (c Configuration) GetOther() map[string]interface{} {
 	return c.Other
@@ -396,8 +455,8 @@ func WithConfiguration(c Configuration) Configurator {
 	return func(app *Application) {
 		main := app.config
 
-		if v := c.DisableBanner; v {
-			main.DisableBanner = v
+		if v := c.DisableStartupLog; v {
+			main.DisableStartupLog = v
 		}
 
 		if v := c.DisableInterruptHandler; v {
@@ -448,6 +507,15 @@ func WithConfiguration(c Configuration) Configurator {
 			main.ViewDataContextKey = v
 		}
 
+		if v := c.RemoteAddrHeaders; len(v) > 0 {
+			if main.RemoteAddrHeaders == nil {
+				main.RemoteAddrHeaders = make(map[string]bool, 0)
+			}
+			for key, value := range v {
+				main.RemoteAddrHeaders[key] = value
+			}
+		}
+
 		if v := c.Other; len(v) > 0 {
 			if main.Other == nil {
 				main.Other = make(map[string]interface{}, 0)
@@ -459,10 +527,10 @@ func WithConfiguration(c Configuration) Configurator {
 	}
 }
 
-// DefaultConfiguration returns the default configuration for an Iris station, fills the main Configuration
+// DefaultConfiguration returns the default configuration for an iris station, fills the main Configuration
 func DefaultConfiguration() Configuration {
 	return Configuration{
-		DisableBanner:                     false,
+		DisableStartupLog:                 false,
 		DisableInterruptHandler:           false,
 		DisablePathCorrection:             false,
 		EnablePathEscape:                  false,
@@ -475,6 +543,11 @@ func DefaultConfiguration() Configuration {
 		TranslateLanguageContextKey:       "iris.language",
 		ViewLayoutContextKey:              "iris.viewLayout",
 		ViewDataContextKey:                "iris.viewData",
-		Other:                             make(map[string]interface{}, 0),
+		RemoteAddrHeaders: map[string]bool{
+			"X-Real-Ip":        false,
+			"X-Forwarded-For":  false,
+			"CF-Connecting-IP": false,
+		},
+		Other: make(map[string]interface{}, 0),
 	}
 }

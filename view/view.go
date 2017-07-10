@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package view
 
 import (
@@ -18,10 +14,9 @@ type View struct {
 	engines []Engine
 }
 
-// Register loads all the view engines' template files or embedded assets.
-func (v *View) Register(e Engine) error {
+// Register registers a view engine.
+func (v *View) Register(e Engine) {
 	v.engines = append(v.engines, e)
-	return nil
 }
 
 // Find receives a filename, gets its extension and returns the view engine responsible for that file extension

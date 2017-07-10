@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package client
 
 import (
@@ -30,9 +26,8 @@ var DefaultRuleSet = rule.Chained(
 	rule.Header(ruleset.NoCacheRule, ruleset.NoCacheRule),
 )
 
-// NoCache called when a particular handler is not valid for cache.
-// If this function called inside a handler then the handler is not cached
-// even if it's surrounded with the Cache/CacheFunc wrappers.
+// NoCache disables the cache for a particular request,
+// can be used as a middleware or called manually from the handler.
 func NoCache(ctx context.Context) {
 	ctx.Header(cfg.NoCacheHeader, "true")
 }

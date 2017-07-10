@@ -384,7 +384,7 @@ func filterAdd(in *Value, param *Value) (*Value, *Error) {
 		return AsValue(in.Integer() + param.Integer()), nil
 	}
 	// If in/param is not a number, we're relying on the
-	// Value's String() convertion and just add them both together
+	// Value's String() conversion and just add them both together
 	return AsValue(in.String() + param.String()), nil
 }
 

@@ -358,7 +358,7 @@ func (s *scanner) scanClassName() *token {
 	return nil
 }
 
-var rgxAttribute = regexp.MustCompile(`^\[([\w\-:@]+)\s*(?:=\s*(\"([^\"\\]*)\"|([^\]]+)))?\](?:\s*\?\s*(.*)$)?`)
+var rgxAttribute = regexp.MustCompile(`^\[([\w\-:@\.]+)\s*(?:=\s*(\"([^\"\\]*)\"|([^\]]+)))?\](?:\s*\?\s*(.*)$)?`)
 
 func (s *scanner) scanAttribute() *token {
 	if sm := rgxAttribute.FindStringSubmatch(s.buffer); len(sm) != 0 {

@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package router
 
 import (
@@ -59,6 +55,12 @@ func NewRoute(method, subdomain, unparsedPath string,
 		FormattedPath: formattedPath,
 	}
 	return route, nil
+}
+
+// String returns the form of METHOD, SUBDOMAIN, TMPL PATH
+func (r Route) String() string {
+	return fmt.Sprintf("%s %s%s",
+		r.Method, r.Subdomain, r.Tmpl().Src)
 }
 
 // Tmpl returns the path template, i

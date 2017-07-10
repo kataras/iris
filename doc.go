@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
+// Copyright (c) 2017 The Iris Authors. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -10,8 +10,8 @@
 // copyright notice, this list of conditions and the following disclaimer
 // in the documentation and/or other materials provided with the
 // distribution.
-//    * Neither the name of Gerasimos Maropoulos nor the name of his
-// username, kataras, may be used to endorse or promote products derived from
+//    * Neither the name of Iris nor the names of its
+// contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -27,15 +27,19 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*
-Package iris is a fully-featured HTTP/2 backend web framework written entirely in Google’s Go Language.
+Package iris provides a beautifully expressive and easy to use foundation for your next website, API, or distributed app.
 
 Source code and other details for the project are available at GitHub:
 
    https://github.com/kataras/iris
 
+Current Version
+
+8.0.0
+
 Installation
 
-The only requirement is the Go Programming Language, at least version 1.8
+The only requirement is the Go Programming Language, at least version 1.8.x
 
     $ go get -u github.com/kataras/iris
 
@@ -48,7 +52,6 @@ Example code:
     import (
         "github.com/kataras/iris"
         "github.com/kataras/iris/context"
-        "github.com/kataras/iris/view"
     )
 
     // User is just a bindable object structure.
@@ -66,7 +69,7 @@ Example code:
         // Define templates using the std html/template engine.
         // Parse and load all files inside "./views" folder with ".html" file extension.
         // Reload the templates on each request (development mode).
-        app.AttachView(view.HTML("./views", ".html").Reload(true))
+        app.RegisterView(iris.HTML("./views", ".html").Reload(true))
 
         // Regster custom handler for specific http errors.
         app.OnErrorCode(iris.StatusInternalServerError, func(ctx context.Context) {
@@ -81,7 +84,7 @@ Example code:
         })
 
         app.Use(func(ctx context.Context) {
-            ctx.Application().Log("Begin request for path: %s", ctx.Path())
+            ctx.Application().Logger().Infof("Begin request for path: %s", ctx.Path())
             ctx.Next()
         })
 
@@ -123,7 +126,7 @@ Example code:
     }
 
     func logThisMiddleware(ctx context.Context) {
-        ctx.Application().Log("Path: %s | IP: %s", ctx.Path(), ctx.RemoteAddr())
+        ctx.Application().Logger().Infof("Path: %s | IP: %s", ctx.Path(), ctx.RemoteAddr())
 
         // .Next is required to move forward to the chain of handlers,
         // if missing then it stops the execution at this handler.
@@ -161,6 +164,149 @@ Example code:
         ctx.View("users/create_verification.html")
     }
 
+Listening and gracefully shutdown
+
+You can listen to a server using any type of net.Listener or http.Server instance.
+The method for initialization of the server should be passed at the end, via `Run` function.
+
+Below you'll read some usage examples:
+
+
+    // Listening on tcp with network address 0.0.0.0:8080
+    app.Run(iris.Addr(":8080"))
+
+
+    // Same as before but using a custom http.Server which may being used somewhere else too
+    app.Run(iris.Server(&http.Server{Addr:":8080"}))
+
+
+    // Using a custom net.Listener
+    l, err := net.Listen("tcp4", ":8080")
+    if err != nil {
+        panic(err)
+    }
+    app.Run(iris.Listener(l))
+
+
+    // TLS using files
+    app.Run(iris.TLS("127.0.0.1:443", "mycert.cert", "mykey.key"))
+
+
+    // Automatic TLS
+    app.Run(iris.AutoTLS("localhost:443"))
+
+
+    // UNIX socket
+    l, err := netutil.UNIX("/tmpl/srv.sock", 0666)
+    if err != nil {
+    panic(err)
+    }
+
+    app.Run(iris.Listener(l))
+
+    // Using any func() error,
+    // the responsibility of starting up a listener is up to you with this way,
+    // for the sake of simplicity we will use the
+    // ListenAndServe function of the `net/http` package.
+    app.Run(iris.Raw(&http.Server{Addr:":8080"}).ListenAndServe)
+
+UNIX and BSD hosts can take advandage of the reuse port feature.
+
+Example code:
+
+
+    package main
+
+    import (
+        // Package tcplisten provides customizable TCP net.Listener with various
+        // performance-related options:
+        //
+        //   - SO_REUSEPORT. This option allows linear scaling server performance
+        //     on multi-CPU servers.
+        //     See https://www.nginx.com/blog/socket-sharding-nginx-release-1-9-1/ for details.
+        //
+        //   - TCP_DEFER_ACCEPT. This option expects the server reads from the accepted
+        //     connection before writing to them.
+        //
+        //   - TCP_FASTOPEN. See https://lwn.net/Articles/508865/ for details.
+        "github.com/valyala/tcplisten"
+
+        "github.com/kataras/iris"
+        "github.com/kataras/iris/context"
+    )
+
+    // $ go get github.com/valyala/tcplisten
+    // $ go run main.go
+
+    func main() {
+        app := iris.New()
+
+        app.Get("/", func(ctx context.Context) {
+            ctx.HTML("<b>Hello World!</b>")
+        })
+
+        listenerCfg := tcplisten.Config{
+            ReusePort:   true,
+            DeferAccept: true,
+            FastOpen:    true,
+        }
+
+        l, err := listenerCfg.NewListener("tcp", ":8080")
+        if err != nil {
+            panic(err)
+        }
+
+        app.Run(iris.Listener(l))
+    }
+
+That's all with listening, you have the full control when you need it.
+
+Let's continue by learning how to catch CONTROL+C/COMMAND+C or unix kill command and shutdown the server gracefuly.
+
+    Gracefully Shutdown on CONTROL+C/COMMAND+C or when kill command sent is ENABLED BY-DEFAULT.
+
+In order to manually manage what to do when app is interrupted,
+we have to disable the default behavior with the option `WithoutInterruptHandler`
+and register a new interrupt handler (globally, across all possible hosts).
+
+
+Example code:
+
+
+    package main
+
+    import (
+        stdContext "context"
+        "time"
+
+        "github.com/kataras/iris"
+        "github.com/kataras/iris/context"
+    )
+
+
+    func main() {
+        app := iris.New()
+
+        iris.RegisterOnInterrupt(func() {
+            timeout := 5 * time.Second
+            ctx, cancel := stdContext.WithTimeout(stdContext.Background(), timeout)
+            defer cancel()
+            // close all hosts
+            app.Shutdown(ctx)
+        })
+
+        app.Get("/", func(ctx context.Context) {
+            ctx.HTML(" <h1>hi, I just exist in order to see if the server is closed</h1>")
+        })
+
+        // http://localhost:8080
+        app.Run(iris.Addr(":8080"), iris.WithoutInterruptHandler)
+    }
+
+Read more about listening and gracefully shutdown by navigating to:
+
+    https://github.com/kataras/iris/tree/master/_examples/#http-listening
+
 
 Routing
 
@@ -180,7 +326,7 @@ Example code:
     })
 
 
-In order to make things easier for the user, Iris provides functions for all HTTP Methods.
+In order to make things easier for the user, iris provides functions for all HTTP Methods.
 The first parameter is the request path of the route,
 second variadic parameter should contains one or more context.Handler executed
 by the registered order when a user requests for that specific resouce path from the server.
@@ -252,7 +398,7 @@ Example code:
 Custom HTTP Errors
 
 
-Iris developers are able to register their own handlers for http statuses like 404 not found, 500 internal server error and so on.
+iris developers are able to register their own handlers for http statuses like 404 not found, 500 internal server error and so on.
 
 Example code:
 
@@ -268,7 +414,7 @@ Example code:
 
 Basic HTTP API
 
-With the help of Iris's expressionist router you can build any form of API you desire, with
+With the help of iris's expressionist router you can build any form of API you desire, with
 safety.
 
 Example code:
@@ -341,9 +487,9 @@ Example code:
         adminRoutes := app.Party("/admin", adminMiddleware)
 
         adminRoutes.Done(func(ctx context.Context) { // executes always last if ctx.Next()
-            ctx.Application().Log("response sent to " + ctx.Path())
+            ctx.Application().Logger().Infof("response sent to " + ctx.Path())
         })
-        // adminRoutes.Layout("/views/layouts/admin.html") // set a view layout for these routes, see more at intermediate/view examples.
+        // adminRoutes.Layout("/views/layouts/admin.html") // set a view layout for these routes, see more at view examples.
 
         // GET: http://localhost:8080/admin
         adminRoutes.Get("/", func(ctx context.Context) {
@@ -430,9 +576,9 @@ Example code:
 
     func donateFinishHandler(ctx context.Context) {
         // values can be any type of object so we could cast the value to a string
-        // but Iris provides an easy to do that, if donate_url is not defined, then it returns an empty string instead.
+        // but iris provides an easy to do that, if donate_url is not defined, then it returns an empty string instead.
         donateURL := ctx.Values().GetString("donate_url")
-        ctx.Application().Log("donate_url value was: " + donateURL)
+        ctx.Application().Logger().Infof("donate_url value was: " + donateURL)
         ctx.Writef("\n\nDonate sent(?).")
     }
 
@@ -447,15 +593,15 @@ At the previous example,
 we've seen static routes, group of routes, subdomains, wildcard subdomains, a small example of parameterized path
 with a single known paramete and custom http errors, now it's time to see wildcard parameters and macros.
 
-Iris, like net/http std package registers route's handlers
-by a Handler, the Iris' type of handler is just a func(ctx context.Context)
+iris, like net/http std package registers route's handlers
+by a Handler, the iris' type of handler is just a func(ctx context.Context)
 where context comes from github.com/kataras/iris/context.
 Until go 1.9 you will have to import that package too, after go 1.9 this will be not be necessary.
 
-Iris has the easiest and the most powerful routing process you have ever meet.
+iris has the easiest and the most powerful routing process you have ever meet.
 
 At the same time,
-Iris has its own interpeter(yes like a programming language)
+iris has its own interpeter(yes like a programming language)
 for route's path syntax and their dynamic path parameters parsing and evaluation,
 I am calling them "macros" for shortcut.
 How? It calculates its needs and if not any special regexp needed then it just
@@ -510,7 +656,7 @@ i.e:
     {param:int min(3)}
 
 
-Besides the fact that Iris provides the basic types and some default "macro funcs"
+Besides the fact that iris provides the basic types and some default "macro funcs"
 you are able to register your own too!.
 
 Register a named path parameter function:
@@ -581,7 +727,7 @@ Example code:
 	// let's use a trivial custom regexp that validates a single path parameter
 	// which its value is only lowercase letters.
 
-	// http://localhost:8080/lowercase/kataras
+	// http://localhost:8080/lowercase/anylowercase
 	app.Get("/lowercase/{name:string regexp(^[a-z]+)}", func(ctx context.Context) {
 		ctx.Writef("name should be only lowercase, otherwise this handler will never executed: %s", ctx.Params().Get("name"))
 	})
@@ -654,7 +800,7 @@ Static Files
     //
     // Returns the GET *Route.
     //
-    // Example: https://github.com/kataras/iris/tree/master/_examples/intermediate/serve-embedded-files
+    // Example: https://github.com/kataras/iris/tree/master/_examples/file-server/embedding-files-into-app
     StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) (*Route, error)
 
     // Favicon serves static favicon
@@ -704,17 +850,17 @@ Example code:
     func main() {
         app := iris.New()
 
-        // This will serve the ./static/favicons/iris_32_32.ico to: localhost:8080/favicon.ico
-        app.Favicon("./static/favicons/iris_32_32.ico")
+        // This will serve the ./static/favicons/ion_32_32.ico to: localhost:8080/favicon.ico
+        app.Favicon("./static/favicons/ion_32_32.ico")
 
-        // app.Favicon("./static/favicons/iris_32_32.ico", "/favicon_48_48.ico")
-        // This will serve the ./static/favicons/iris_32_32.ico to: localhost:8080/favicon_48_48.ico
+        // app.Favicon("./static/favicons/ion_32_32.ico", "/favicon_48_48.ico")
+        // This will serve the ./static/favicons/ion_32_32.ico to: localhost:8080/favicon_48_48.ico
 
         app.Get("/", func(ctx context.Context) {
             ctx.HTML(`<a href="/favicon.ico"> press here to see the favicon.ico</a>.
             At some browsers like chrome, it should be visible at the top-left side of the browser's window,
             because some browsers make requests to the /favicon.ico automatically,
-            so Iris serves your favicon in that path too (you can change it).`)
+            so iris serves your favicon in that path too (you can change it).`)
         }) // if favicon doesn't show to you, try to clear your browser's cache.
 
         app.Run(iris.Addr(":8080"))
@@ -764,7 +910,7 @@ Example code:
       })
 
 
-Iris is able to wrap and convert any external, third-party Handler you used to use to your web application.
+iris is able to wrap and convert any external, third-party Handler you used to use to your web application.
 Let's convert the https://github.com/rs/cors net/http external middleware which returns a `next form` handler.
 
 
@@ -802,7 +948,7 @@ Example code:
     }
 
     func h(ctx context.Context) {
-        ctx.Application().Log(ctx.Path())
+        ctx.Application().Logger().Infof(ctx.Path())
         ctx.Writef("Hello from %s", ctx.Path())
     }
 
@@ -810,7 +956,7 @@ Example code:
 View Engine
 
 
-Iris supports 5 template engines out-of-the-box, developers can still use any external golang template engine,
+iris supports 5 template engines out-of-the-box, developers can still use any external golang template engine,
 as `context.ResponseWriter()` is an `io.Writer`.
 
 All of these five template engines have common features with common API,
@@ -839,19 +985,18 @@ Example code:
     import (
         "github.com/kataras/iris"
         "github.com/kataras/iris/context"
-        "github.com/kataras/iris/view"
     )
 
     func main() {
         app := iris.New() // defaults to these
 
-        // - standard html  | view.HTML(...)
-        // - django         | view.Django(...)
-        // - pug(jade)      | view.Pug(...)
-        // - handlebars     | view.Handlebars(...)
-        // - amber          | view.Amber(...)
+        // - standard html  | iris.HTML(...)
+        // - django         | iris.Django(...)
+        // - pug(jade)      | iris.Pug(...)
+        // - handlebars     | iris.Handlebars(...)
+        // - amber          | iris.Amber(...)
 
-        tmpl := view.HTML("./templates", ".html")
+        tmpl := iris.HTML("./templates", ".html")
         tmpl.Reload(true) // reload templates on each request (development mode)
         // default template funcs are:
         //
@@ -863,7 +1008,7 @@ Example code:
         tmpl.AddFunc("greet", func(s string) string {
             return "Greetings " + s + "!"
         })
-        app.AttachView(tmpl)
+        app.RegisterView(tmpl)
 
         app.Get("/", hi)
 
@@ -873,7 +1018,7 @@ Example code:
 
     func hi(ctx context.Context) {
         ctx.ViewData("Title", "Hi Page")
-        ctx.ViewData("Name", "Iris") // {{.Name}} will render: Iris
+        ctx.ViewData("Name", "iris") // {{.Name}} will render: iris
         // ctx.ViewData("", myCcustomStruct{})
         ctx.View("hi.html")
     }
@@ -891,7 +1036,6 @@ Example code:
     import (
         "github.com/kataras/iris"
         "github.com/kataras/iris/context"
-        "github.com/kataras/iris/view"
     )
 
     func main() {
@@ -901,7 +1045,7 @@ Example code:
         // $ go build
         // $ ./embedding-templates-into-app
         // html files are not used, you can delete the folder and run the example
-        app.AttachView(view.HTML("./templates", ".html").Binary(Asset, AssetNames))
+        app.RegisterView(iris.HTML("./templates", ".html").Binary(Asset, AssetNames))
         app.Get("/", hi)
 
         // http://localhost:8080
@@ -918,7 +1062,7 @@ Example code:
     }
 
 
-A real example can be found here: https://github.com/kataras/iris/tree/master/_examples/intermediate/view/embedding-templates-into-app.
+A real example can be found here: https://github.com/kataras/iris/tree/master/_examples/view/embedding-templates-into-app.
 
 Enable auto-reloading of templates on each request. Useful while developers are in dev mode
 as they no neeed to restart their app on every template edit.
@@ -926,10 +1070,20 @@ as they no neeed to restart their app on every template edit.
 Example code:
 
 
-    pugEngine := view.Pug("./templates", ".jade")
+    pugEngine := iris.Pug("./templates", ".jade")
     pugEngine.Reload(true) // <--- set to true to re-build the templates on each request.
-    app.AttachView(pugEngine)
+    app.RegisterView(pugEngine)
 
+Note:
+
+In case you're wondering, the code behind the view engines derives from the "github.com/kataras/iris/view" package,
+access to the engines' variables can be granded by "github.com/kataras/iris" package too.
+
+    iris.HTML(...) is a shortcut of view.HTML(...)
+    iris.Django(...)     >> >>      view.Django(...)
+    iris.Pug(...)        >> >>      view.Pug(...)
+    iris.Handlebars(...) >> >>      view.Handlebars(...)
+    iris.Amber(...)      >> >>      view.Amber(...)
 
 Each one of these template engines has different options located here: https://github.com/kataras/iris/tree/master/view .
 
@@ -950,33 +1104,35 @@ which logs him in. Additionally he can visit /logout to revoke his access to our
 Example code:
 
 
-    // sessions.go
+    // main.go
     package main
 
     import (
         "github.com/kataras/iris"
         "github.com/kataras/iris/context"
+
         "github.com/kataras/iris/sessions"
     )
 
     var (
-        key = "my_sessionid"
+        cookieNameForSessionID = "mycookiesessionnameid"
+        sess                   = sessions.New(sessions.Config{Cookie: cookieNameForSessionID})
     )
 
     func secret(ctx context.Context) {
 
         // Check if user is authenticated
-        if auth, _ := ctx.Session().GetBoolean("authenticated"); !auth {
+        if auth, _ := sess.Start(ctx).GetBoolean("authenticated"); !auth {
             ctx.StatusCode(iris.StatusForbidden)
             return
         }
 
         // Print secret message
-        ctx.Writef("The cake is a lie!")
+        ctx.WriteString("The cake is a lie!")
     }
 
     func login(ctx context.Context) {
-        session := ctx.Session()
+        session := sess.Start(ctx)
 
         // Authentication goes here
         // ...
@@ -986,7 +1142,7 @@ Example code:
     }
 
     func logout(ctx context.Context) {
-        session := ctx.Session()
+        session := sess.Start(ctx)
 
         // Revoke users authentication
         session.Set("authenticated", false)
@@ -995,9 +1151,6 @@ Example code:
     func main() {
         app := iris.New()
 
-        sess := sessions.New(sessions.Config{Cookie: key})
-        app.AttachSessionManager(sess)
-
         app.Get("/secret", secret)
         app.Get("/login", login)
         app.Get("/logout", logout)
@@ -1005,19 +1158,135 @@ Example code:
         app.Run(iris.Addr(":8080"))
     }
 
+
 Running the example:
 
-    $ go run sessions.go
+
+    $ go get github.com/kataras/iris/sessions
+    $ go run main.go
 
     $ curl -s http://localhost:8080/secret
     Forbidden
 
     $ curl -s -I http://localhost:8080/login
-    Set-Cookie: mysessionid=MTQ4NzE5Mz...
+    Set-Cookie: mycookiesessionnameid=MTQ4NzE5Mz...
 
-    $ curl -s --cookie "mysessionid=MTQ4NzE5Mz..." http://localhost:8080/secret
+    $ curl -s --cookie "mycookiesessionnameid=MTQ4NzE5Mz..." http://localhost:8080/secret
     The cake is a lie!
 
+More examples:
+
+    https://github.com/kataras/iris/tree/master/sessions
+
+
+Websockets
+
+In this example we will create a small chat between web sockets via browser.
+
+Example Server Code:
+
+    // main.go
+    package main
+
+    import (
+        "fmt"
+
+        "github.com/kataras/iris"
+        "github.com/kataras/iris/context"
+
+        "github.com/kataras/iris/websocket"
+    )
+
+    func main() {
+        app := iris.New()
+
+        app.Get("/", func(ctx context.Context) {
+            ctx.ServeFile("websockets.html", false) // second parameter: enable gzip?
+        })
+
+        setupWebsocket(app)
+
+        // x2
+        // http://localhost:8080
+        // http://localhost:8080
+        // write something, press submit, see the result.
+        app.Run(iris.Addr(":8080"))
+    }
+
+    func setupWebsocket(app *iris.Application) {
+        // create our echo websocket server
+        ws := websocket.New(websocket.Config{
+            ReadBufferSize:  1024,
+            WriteBufferSize: 1024,
+        })
+        ws.OnConnection(handleConnection)
+
+        // register the server on an endpoint.
+        // see the inline javascript code i the websockets.html, this endpoint is used to connect to the server.
+        app.Get("/echo", ws.Handler())
+
+        // serve the javascript built'n client-side library,
+        // see weboskcets.html script tags, this path is used.
+        app.Any("/iris-ws.js", func(ctx context.Context) {
+            ctx.Write(websocket.ClientSource)
+        })
+    }
+
+    func handleConnection(c websocket.Connection) {
+        // Read events from browser
+        c.On("chat", func(msg string) {
+            // Print the message to the console, c.Context() is the iris's http context.
+            fmt.Printf("%s sent: %s\n", c.Context().RemoteAddr(), msg)
+            // Write message back to the client message owner:
+            // c.Emit("chat", msg)
+            c.To(websocket.Broadcast).Emit("chat", msg)
+        })
+    }
+
+Example Client(javascript) Code:
+
+    <!-- websockets.html -->
+    <input id="input" type="text" />
+    <button onclick="send()">Send</button>
+    <pre id="output"></pre>
+    <script src="/iris-ws.js"></script>
+    <script>
+        var input = document.getElementById("input");
+        var output = document.getElementById("output");
+
+        // Ws comes from the auto-served '/iris-ws.js'
+        var socket = new Ws("ws://localhost:8080/echo");
+        socket.OnConnect(function () {
+            output.innerHTML += "Status: Connected\n";
+        });
+
+        socket.OnDisconnect(function () {
+            output.innerHTML += "Status: Disconnected\n";
+        });
+
+        // read events from the server
+        socket.On("chat", function (msg) {
+            addMessage(msg)
+        });
+
+        function send() {
+            addMessage("Me: "+input.value) // write ourselves
+            socket.Emit("chat", input.value);// send chat event data to the websocket server
+            input.value = ""; // clear the input
+        }
+
+        function addMessage(msg) {
+            output.innerHTML += msg + "\n";
+        }
+    </script>
+
+
+Running the example:
+
+
+    $ go get github.com/kataras/iris/websocket
+    $ go run main.go
+    $ start http://localhost:8080
 
 
 That's the basics
@@ -1033,13 +1302,9 @@ Built'n Middleware:
 
     https://github.com/kataras/iris/tree/master/middleware
 
-Community Middleware:
-
-    https://github.com/iris-contrib/middleware
-
 Home Page:
 
-    http://iris-go.com
+    http://github.com/kataras/iris
 
 */
 package iris

@@ -1,12 +1,5 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 // Package memstore contains a store which is just
 // a collection of key-value entries with immutability capabilities.
-//
-// Created after that proposal: https://github.com/iris-contrib/community-board/issues/5
-// and it's being used by session entries (session lifetime) and context's entries (per-request).
 //
 // Developers can use that storage to their own apps if they like its behavior.
 // It's fast and in the same time you get read-only access (safety) when you need it.

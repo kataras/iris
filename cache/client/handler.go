@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package client
 
 import (
@@ -31,11 +27,12 @@ type Handler struct {
 	entry *entry.Entry
 }
 
-// NewHandler returns a new cached handler
+// NewHandler returns a new cached handler for the "bodyHandler"
+// which expires every "expiration".
 func NewHandler(bodyHandler context.Handler,
-	expireDuration time.Duration) *Handler {
+	expiration time.Duration) *Handler {
 
-	e := entry.NewEntry(expireDuration)
+	e := entry.NewEntry(expiration)
 
 	return &Handler{
 		bodyHandler: bodyHandler,

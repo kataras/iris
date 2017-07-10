@@ -13,6 +13,9 @@
 //
 //
 
+// Blackfriday markdown processor.
+//
+// Translates plain text with simple formatting rules into HTML or LaTeX.
 package blackfriday
 
 import (
@@ -22,7 +25,7 @@ import (
 	"unicode/utf8"
 )
 
-const VERSION = "1.5"
+const VERSION = "1.4"
 
 // These are the supported markdown parsing extensions.
 // OR these values together to select multiple extensions.
@@ -43,7 +46,6 @@ const (
 	EXTENSION_AUTO_HEADER_IDS                        // Create the header ID from the text
 	EXTENSION_BACKSLASH_LINE_BREAK                   // translate trailing backslashes into line breaks
 	EXTENSION_DEFINITION_LISTS                       // render definition lists
-	EXTENSION_JOIN_LINES                             // delete newline and join lines
 
 	commonHtmlFlags = 0 |
 		HTML_USE_XHTML |
@@ -384,9 +386,9 @@ func MarkdownOptions(input []byte, renderer Renderer, opts Options) []byte {
 }
 
 // first pass:
+// - extract references
+// - expand tabs
 // - normalize newlines
-// - extract references (outside of fenced code blocks)
-// - expand tabs (outside of fenced code blocks)
 // - copy everything else
 func firstPass(p *parser, input []byte) []byte {
 	var out bytes.Buffer
@@ -394,46 +396,46 @@ func firstPass(p *parser, input []byte) []byte {
 	if p.flags&EXTENSION_TAB_SIZE_EIGHT != 0 {
 		tabSize = TAB_SIZE_EIGHT
 	}
-	beg := 0
+	beg, end := 0, 0
 	lastFencedCodeBlockEnd := 0
-	for beg < len(input) {
-		// Find end of this line, then process the line.
-		end := beg
-		for end < len(input) && input[end] != '\n' && input[end] != '\r' {
-			end++
-		}
+	for beg < len(input) { // iterate over lines
+		if end = isReference(p, input[beg:], tabSize); end > 0 {
+			beg += end
+		} else { // skip to the next line
+			end = beg
+			for end < len(input) && input[end] != '\n' && input[end] != '\r' {
+				end++
+			}
 
-		if p.flags&EXTENSION_FENCED_CODE != 0 {
-			// track fenced code block boundaries to suppress tab expansion
-			// and reference extraction inside them:
-			if beg >= lastFencedCodeBlockEnd {
-				if i := p.fencedCodeBlock(&out, input[beg:], false); i > 0 {
-					lastFencedCodeBlockEnd = beg + i
+			if p.flags&EXTENSION_FENCED_CODE != 0 {
+				// track fenced code block boundaries to suppress tab expansion
+				// inside them:
+				if beg >= lastFencedCodeBlockEnd {
+					if i := p.fencedCode(&out, input[beg:], false); i > 0 {
+						lastFencedCodeBlockEnd = beg + i
+					}
 				}
 			}
-		}
 
-		// add the line body if present
-		if end > beg {
-			if end < lastFencedCodeBlockEnd { // Do not expand tabs while inside fenced code blocks.
-				out.Write(input[beg:end])
-			} else if refEnd := isReference(p, input[beg:], tabSize); refEnd > 0 {
-				beg += refEnd
-				continue
-			} else {
-				expandTabs(&out, input[beg:end], tabSize)
+			// add the line body if present
+			if end > beg {
+				if end < lastFencedCodeBlockEnd { // Do not expand tabs while inside fenced code blocks.
+					out.Write(input[beg:end])
+				} else {
+					expandTabs(&out, input[beg:end], tabSize)
+				}
 			}
-		}
+			out.WriteByte('\n')
 
-		if end < len(input) && input[end] == '\r' {
-			end++
-		}
-		if end < len(input) && input[end] == '\n' {
-			end++
-		}
-		out.WriteByte('\n')
+			if end < len(input) && input[end] == '\r' {
+				end++
+			}
+			if end < len(input) && input[end] == '\n' {
+				end++
+			}
 
-		beg = end
+			beg = end
+		}
 	}
 
 	// empty input?
@@ -633,11 +635,11 @@ func scanLinkRef(p *parser, data []byte, i int) (linkOffset, linkEnd, titleOffse
 		i++
 	}
 	linkOffset = i
-	if i == len(data) {
-		return
-	}
 	for i < len(data) && data[i] != ' ' && data[i] != '\t' && data[i] != '\n' && data[i] != '\r' {
 		i++
+	}
+	if i == len(data) {
+		return
 	}
 	linkEnd = i
 	if data[linkOffset] == '<' && data[linkEnd-1] == '>' {

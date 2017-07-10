@@ -10,9 +10,10 @@ import (
 	"errors"
 	"fmt"
 	"hash"
-	"hash/crc32"
 	"io"
 	"os"
+
+	"github.com/klauspost/crc32"
 )
 
 var (

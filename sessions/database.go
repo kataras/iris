@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package sessions
 
 // Database is the interface which all session databases should implement
@@ -10,7 +6,7 @@ package sessions
 // The scope of the database is to session somewhere the sessions in order to
 //  keep them after restarting the server, nothing more.
 // the values are sessiond by the underline session, the check for new sessions, or
-// 'this session value should added' are made automatically by q, you are able just to set the values to your backend database with Load function.
+// 'this session value should added' are made automatically you are able just to set the values to your backend database with Load function.
 // session database doesn't have any write or read access to the session, the loading of
 // the initial data is done by the Load(string) map[string]interfface{} function
 // synchronization are made automatically, you can register more than one session database

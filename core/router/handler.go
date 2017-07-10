@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package router
 
 import (
@@ -11,7 +7,9 @@ import (
 	"strings"
 
 	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/nettools"
+
+	"github.com/kataras/iris/core/errors"
+	"github.com/kataras/iris/core/netutil"
 	"github.com/kataras/iris/core/router/node"
 )
 
@@ -70,6 +68,13 @@ func NewDefaultHandler() RequestHandler {
 	return h
 }
 
+// RoutesProvider should be implemented by
+// iteral which contains the registered routes.
+type RoutesProvider interface { // api builder
+	GetRoutes() []*Route
+	GetRoute(routeName string) *Route
+}
+
 func (h *routerHandler) Build(provider RoutesProvider) error {
 	registeredRoutes := provider.GetRoutes()
 	h.trees = h.trees[0:0] // reset, inneed when rebuilding.
@@ -79,20 +84,24 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 		return len(registeredRoutes[i].Subdomain) >= len(registeredRoutes[j].Subdomain)
 	})
 
+	rp := errors.NewReporter()
+
 	for _, r := range registeredRoutes {
 		if r.Subdomain != "" {
 			h.hosts = true
 		}
+
 		// the only "bad" with this is if the user made an error
 		// on route, it will be stacked shown in this build state
 		// and no in the lines of the user's action, they should read
 		// the docs better. Or TODO: add a link here in order to help new users.
 		if err := h.addRoute(r.Method, r.Subdomain, r.Path, r.Handlers); err != nil {
-			return err
+			// node errors:
+			rp.Add("%v -> %s", err, r.String())
 		}
 	}
 
-	return nil
+	return rp.Return()
 }
 
 func (h *routerHandler) HandleRequest(ctx context.Context) {
@@ -134,14 +143,14 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 
 		if h.hosts && t.Subdomain != "" {
 			requestHost := ctx.Host()
-			if nettools.IsLoopbackSubdomain(requestHost) {
+			if netutil.IsLoopbackSubdomain(requestHost) {
 				// this fixes a bug when listening on
 				// 127.0.0.1:8080 for example
 				// and have a wildcard subdomain and a route registered to root domain.
 				continue // it's not a subdomain, it's something like 127.0.0.1 probably
 			}
 			// it's a dynamic wildcard subdomain, we have just to check if ctx.subdomain is not empty
-			if t.Subdomain == DynamicSubdomainIndicator {
+			if t.Subdomain == SubdomainWildcardIndicator {
 				// mydomain.com -> invalid
 				// localhost -> invalid
 				// sub.mydomain.com -> valid
