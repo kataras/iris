@@ -1,82 +1,12 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package websocket
 
 import (
 	"sync"
 
-	"github.com/gorilla/websocket"
-	"github.com/kataras/iris"
 	"github.com/kataras/iris/context"
+
+	"github.com/gorilla/websocket"
 )
-
-// Server is the websocket server,
-// listens on the config's port, the critical part is the event OnConnection
-type Server interface {
-	// Attach adapts the websocket server to an Iris instance.
-	// see websocket.go
-	Attach(app *iris.Application)
-
-	// Handler returns the iris.Handler
-	// which is setted to the 'Websocket Endpoint path',
-	// the client should target to this handler's developer's custom path
-	// ex: app.Any("/myendpoint", mywebsocket.Handler())
-	Handler() context.Handler
-
-	// OnConnection this is the main event you, as developer, will work with each of the websocket connections
-	OnConnection(cb ConnectionFunc)
-
-	/*
-	   connection actions, same as the connection's method,
-	    but these methods accept the connection ID,
-	    which is useful when the developer maps
-	    this id with a database field (using config.IDGenerator).
-	*/
-
-	// IsConnected returns true if the connection with that ID is connected to the server
-	// useful when you have defined a custom connection id generator (based on a database)
-	// and you want to check if that connection is already connected (on multiple tabs)
-	IsConnected(connID string) bool
-
-	// Join joins a websocket client to a room,
-	// first parameter is the room name and the second the connection.ID()
-	//
-	// You can use connection.Join("room name") instead.
-	Join(roomName string, connID string)
-
-	// LeaveAll kicks out a connection from ALL of its joined rooms
-	LeaveAll(connID string)
-
-	// Leave leaves a websocket client from a room,
-	// first parameter is the room name and the second the connection.ID()
-	//
-	// You can use connection.Leave("room name") instead.
-	// Returns true if the connection has actually left from the particular room.
-	Leave(roomName string, connID string) bool
-
-	// GetConnectionsByRoom returns a list of Connection
-	// are joined to this room.
-	GetConnectionsByRoom(roomName string) []Connection
-
-	// Disconnect force-disconnects a websocket connection
-	// based on its connection.ID()
-	// What it does?
-	// 1. remove the connection from the list
-	// 2. leave from all joined rooms
-	// 3. fire the disconnect callbacks, if any
-	// 4. close the underline connection and return its error, if any.
-	//
-	// You can use the connection.Disconnect() instead.
-	Disconnect(connID string) error
-}
-
-// -------------------------------------------------------------------------------------
-// -------------------------------------------------------------------------------------
-// --------------------------------Connection key-based list----------------------------
-// -------------------------------------------------------------------------------------
-// -------------------------------------------------------------------------------------
 
 type connectionKV struct {
 	key   string // the connection ID
@@ -147,57 +77,79 @@ func (cs *connections) remove(key string) (*connection, bool) {
 	return nil, false
 }
 
-// -------------------------------------------------------------------------------------
-// -------------------------------------------------------------------------------------
-// --------------------------------Server implementation--------------------------------
-// -------------------------------------------------------------------------------------
-// -------------------------------------------------------------------------------------
-
 type (
-	// ConnectionFunc is the callback which fires when a client/connection is connected to the server.
+	// ConnectionFunc is the callback which fires when a client/connection is connected to the Server.
 	// Receives one parameter which is the Connection
 	ConnectionFunc func(Connection)
 
-	// websocketRoomPayload is used as payload from the connection to the server
+	// websocketRoomPayload is used as payload from the connection to the Server
 	websocketRoomPayload struct {
 		roomName     string
 		connectionID string
 	}
 
-	// payloads, connection -> server
+	// payloads, connection -> Server
 	websocketMessagePayload struct {
 		from string
 		to   string
 		data []byte
 	}
 
-	server struct {
+	// Server is the websocket Server's implementation.
+	//
+	// It listens for websocket clients (either from the javascript client-side or from any websocket implementation).
+	// See `OnConnection` , to register a single event which will handle all incoming connections and
+	// the `Handler` which builds the upgrader handler that you can register to a route based on an Endpoint.
+	//
+	// To serve the built'n javascript client-side library look the `websocket.ClientHandler`.
+	Server struct {
 		config                Config
 		connections           connections
 		rooms                 map[string][]string // by default a connection is joined to a room which has the connection id as its name
 		mu                    sync.Mutex          // for rooms
 		onConnectionListeners []ConnectionFunc
-		//connectionPool        *sync.Pool // sadly I can't make this because the websocket connection is live until is closed.
+		//connectionPool        sync.Pool // sadly we can't make this because the websocket connection is live until is closed.
+		handler context.Handler
 	}
 )
 
-var _ Server = &server{}
+// New returns a new websocket Server based on a configuration.
+// See `OnConnection` , to register a single event which will handle all incoming connections and
+// the `Handler` which builds the upgrader handler that you can register to a route based on an Endpoint.
+//
+// To serve the built'n javascript client-side library look the `websocket.ClientHandler`.
+func New(cfg Config) *Server {
+	return &Server{
+		config: cfg.Validate(),
+		rooms:  make(map[string][]string, 0),
+		onConnectionListeners: make([]ConnectionFunc, 0),
+	}
+}
 
-// server implementation
-
-func (s *server) Handler() context.Handler {
+// Handler builds the handler based on the configuration and returns it.
+// It should be called once per Server, its result should be passed
+// as a middleware to an iris route which will be responsible
+// to register the websocket's endpoint.
+//
+// Endpoint is the path which the websocket Server will listen for clients/connections.
+//
+// To serve the built'n javascript client-side library look the `websocket.ClientHandler`.
+func (s *Server) Handler() context.Handler {
 	// build the upgrader once
 	c := s.config
 
 	upgrader := websocket.Upgrader{
-		ReadBufferSize:  c.ReadBufferSize,
-		WriteBufferSize: c.WriteBufferSize,
-		Error:           c.Error,
-		CheckOrigin:     c.CheckOrigin,
-		Subprotocols:    c.Subprotocols,
+		HandshakeTimeout:  c.HandshakeTimeout,
+		ReadBufferSize:    c.ReadBufferSize,
+		WriteBufferSize:   c.WriteBufferSize,
+		Error:             c.Error,
+		CheckOrigin:       c.CheckOrigin,
+		Subprotocols:      c.Subprotocols,
+		EnableCompression: c.EnableCompression,
 	}
+
 	return func(ctx context.Context) {
-		// Upgrade upgrades the HTTP server connection to the WebSocket protocol.
+		// Upgrade upgrades the HTTP Server connection to the WebSocket protocol.
 		//
 		// The responseHeader is included in the response to the client's upgrade
 		// request. Use the responseHeader to specify cookies (Set-Cookie) and the
@@ -207,8 +159,8 @@ func (s *server) Handler() context.Handler {
 		// response.
 		conn, err := upgrader.Upgrade(ctx.ResponseWriter(), ctx.Request(), ctx.ResponseWriter().Header())
 		if err != nil {
-			ctx.Application().Log("websocket error: %v", err)
-			ctx.StatusCode(iris.StatusServiceUnavailable)
+			ctx.Application().Logger().Warnf("websocket error: %v\n", err)
+			ctx.StatusCode(503) // Status Service Unavailable
 			return
 		}
 		s.handleConnection(ctx, conn)
@@ -216,12 +168,12 @@ func (s *server) Handler() context.Handler {
 }
 
 // handleConnection creates & starts to listening to a new connection
-func (s *server) handleConnection(ctx context.Context, websocketConn UnderlineConnection) {
+func (s *Server) handleConnection(ctx context.Context, websocketConn UnderlineConnection) {
 	// use the config's id generator (or the default) to create a websocket client/connection id
 	cid := s.config.IDGenerator(ctx)
 	// create the new connection
 	c := newConnection(ctx, s, websocketConn, cid)
-	// add the connection to the server's list
+	// add the connection to the Server's list
 	s.connections.add(cid, c)
 
 	// join to itself
@@ -230,7 +182,7 @@ func (s *server) handleConnection(ctx context.Context, websocketConn UnderlineCo
 	// NOTE TO ME: fire these first BEFORE startReader and startPinger
 	// in order to set the events and any messages to send
 	// the startPinger will send the OK to the client and only
-	// then the client is able to send and receive from server
+	// then the client is able to send and receive from Server
 	// when all things are ready and only then. DO NOT change this order.
 
 	// fire the on connection event callbacks, if any
@@ -251,25 +203,35 @@ func (s *server) handleConnection(ctx context.Context, websocketConn UnderlineCo
 	 his/her websocket connections without even use the connection itself.
 
 	 Another question may be:
-	 Q: Why you use server as the main actioner for all of the connection actions?
-	 	  For example the server.Disconnect(connID) manages the connection internal fields, is this code-style correct?
-	 A: It's the correct code-style for these type of applications and libraries, server manages all, the connnection's functions
-	 should just do some internal checks (if needed) and push the action to its parent, which is the server, the server is able to
+	 Q: Why you use Server as the main actioner for all of the connection actions?
+	 	  For example the Server.Disconnect(connID) manages the connection internal fields, is this code-style correct?
+	 A: It's the correct code-style for these type of applications and libraries, Server manages all, the connnection's functions
+	 should just do some internal checks (if needed) and push the action to its parent, which is the Server, the Server is able to
 	 remove a connection, the rooms of its connected and all these things, so in order to not split the logic, we have the main logic
-	 here, in the server, and let the connection with some exported functions whose exists for the per-connection action user's code-style.
+	 here, in the Server, and let the connection with some exported functions whose exists for the per-connection action user's code-style.
 
 	 Ok my english are s** I can feel it, but these comments are mostly for me.
 */
 
-// OnConnection this is the main event you, as developer, will work with each of the websocket connections
-func (s *server) OnConnection(cb ConnectionFunc) {
+/*
+   connection actions, same as the connection's method,
+    but these methods accept the connection ID,
+    which is useful when the developer maps
+    this id with a database field (using config.IDGenerator).
+*/
+
+// OnConnection is the main event you, as developer, will work with each of the websocket connections.
+func (s *Server) OnConnection(cb ConnectionFunc) {
+	if s.handler == nil {
+
+	}
 	s.onConnectionListeners = append(s.onConnectionListeners, cb)
 }
 
-// IsConnected returns true if the connection with that ID is connected to the server
+// IsConnected returns true if the connection with that ID is connected to the Server
 // useful when you have defined a custom connection id generator (based on a database)
 // and you want to check if that connection is already connected (on multiple tabs)
-func (s *server) IsConnected(connID string) bool {
+func (s *Server) IsConnected(connID string) bool {
 	c := s.connections.get(connID)
 	return c != nil
 }
@@ -278,14 +240,14 @@ func (s *server) IsConnected(connID string) bool {
 // first parameter is the room name and the second the connection.ID()
 //
 // You can use connection.Join("room name") instead.
-func (s *server) Join(roomName string, connID string) {
+func (s *Server) Join(roomName string, connID string) {
 	s.mu.Lock()
 	s.join(roomName, connID)
 	s.mu.Unlock()
 }
 
 // join used internally, no locks used.
-func (s *server) join(roomName string, connID string) {
+func (s *Server) join(roomName string, connID string) {
 	if s.rooms[roomName] == nil {
 		s.rooms[roomName] = make([]string, 0)
 	}
@@ -293,7 +255,7 @@ func (s *server) join(roomName string, connID string) {
 }
 
 // LeaveAll kicks out a connection from ALL of its joined rooms
-func (s *server) LeaveAll(connID string) {
+func (s *Server) LeaveAll(connID string) {
 	s.mu.Lock()
 	for name, connectionIDs := range s.rooms {
 		for i := range connectionIDs {
@@ -314,7 +276,7 @@ func (s *server) LeaveAll(connID string) {
 //
 // You can use connection.Leave("room name") instead.
 // Returns true if the connection has actually left from the particular room.
-func (s *server) Leave(roomName string, connID string) bool {
+func (s *Server) Leave(roomName string, connID string) bool {
 	s.mu.Lock()
 	left := s.leave(roomName, connID)
 	s.mu.Unlock()
@@ -322,7 +284,7 @@ func (s *server) Leave(roomName string, connID string) bool {
 }
 
 // leave used internally, no locks used.
-func (s *server) leave(roomName string, connID string) (left bool) {
+func (s *Server) leave(roomName string, connID string) (left bool) {
 	///THINK: we could add locks to its room but we still use the lock for the whole rooms or we can just do what we do with connections
 	// I will think about it on the next revision, so far we use the locks only for rooms so we are ok...
 	if s.rooms[roomName] != nil {
@@ -348,7 +310,7 @@ func (s *server) leave(roomName string, connID string) (left bool) {
 
 // GetConnectionsByRoom returns a list of Connection
 // which are joined to this room.
-func (s *server) GetConnectionsByRoom(roomName string) []Connection {
+func (s *Server) GetConnectionsByRoom(roomName string) []Connection {
 	s.mu.Lock()
 	var conns []Connection
 	if connIDs, found := s.rooms[roomName]; found {
@@ -370,7 +332,7 @@ func (s *server) GetConnectionsByRoom(roomName string) []Connection {
 //
 // You SHOULD use connection.EmitMessage/Emit/To().Emit/EmitMessage instead.
 // let's keep it unexported for the best.
-func (s *server) emitMessage(from, to string, data []byte) {
+func (s *Server) emitMessage(from, to string, data []byte) {
 	if to != All && to != Broadcast && s.rooms[to] != nil {
 		// it suppose to send the message to a specific room/or a user inside its own room
 		for _, connectionIDInsideRoom := range s.rooms[to] {
@@ -410,7 +372,7 @@ func (s *server) emitMessage(from, to string, data []byte) {
 // 4. close the underline connection and return its error, if any.
 //
 // You can use the connection.Disconnect() instead.
-func (s *server) Disconnect(connID string) (err error) {
+func (s *Server) Disconnect(connID string) (err error) {
 	// leave from all joined rooms before remove the actual connection from the list.
 	// note: we cannot use that to send data if the client is actually closed.
 	s.LeaveAll(connID)

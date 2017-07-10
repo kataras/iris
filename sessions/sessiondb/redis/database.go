@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package redis
 
 import (
@@ -11,22 +7,22 @@ import (
 	"github.com/kataras/iris/sessions/sessiondb/redis/service"
 )
 
-// Database the redis database for q sessions
+// Database the redis back-end session database for the sessions.
 type Database struct {
 	redis *service.Service
 }
 
-// New returns a new redis database
+// New returns a new redis database.
 func New(cfg ...service.Config) *Database {
 	return &Database{redis: service.New(cfg...)}
 }
 
-// Config returns the configuration for the redis server bridge, you can change them
+// Config returns the configuration for the redis server bridge, you can change them.
 func (d *Database) Config() *service.Config {
 	return d.redis.Config
 }
 
-// Load loads the values to the underline
+// Load loads the values to the underline.
 func (d *Database) Load(sid string) map[string]interface{} {
 	values := make(map[string]interface{})
 

@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package router
 
 import (
@@ -81,7 +77,7 @@ func defaultErrorCodeHandlers() *ErrorCodeHandlers {
 func statusText(statusCode int) context.Handler {
 	return func(ctx context.Context) {
 		if _, err := ctx.WriteString(http.StatusText(statusCode)); err != nil {
-			// ctx.Application().Log("(status code: %d) %s",
+			// ctx.Application().Logger().Infof("(status code: %d) %s",
 			// 	err.Error(), statusCode)
 		}
 	}

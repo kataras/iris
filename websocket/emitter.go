@@ -1,20 +1,10 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package websocket
-
-// -------------------------------------------------------------------------------------
-// -------------------------------------------------------------------------------------
-// --------------------------------Emitter implementation-------------------------------
-// -------------------------------------------------------------------------------------
-// -------------------------------------------------------------------------------------
 
 const (
 	// All is the string which the Emitter use to send a message to all
 	All = ""
 	// Broadcast is the string which the Emitter use to send a message to all except this connection
-	Broadcast = ";gowebsocket;to;all;except;me;"
+	Broadcast = ";ionwebsocket;to;all;except;me;"
 )
 
 type (

@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package context
 
 import (
@@ -74,7 +70,7 @@ func releaseGzipResponseWriter(w *GzipResponseWriter) {
 
 // GzipResponseWriter is an upgraded response writer which writes compressed data to the underline ResponseWriter.
 //
-// It's a separate response writer because Iris gives you the ability to "fallback" and "roll-back" the gzip encoding if something
+// It's a separate response writer because iris gives you the ability to "fallback" and "roll-back" the gzip encoding if something
 // went wrong with the response, and write http errors in plain form instead.
 type GzipResponseWriter struct {
 	ResponseWriter

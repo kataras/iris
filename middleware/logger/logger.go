@@ -1,8 +1,4 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
-// Package logger provides request logging via middleware. See _examples/beginner/request-logger
+// Package logger provides request logging via middleware. See _examples/http_request/request-logger
 package logger
 
 import (
@@ -49,7 +45,7 @@ func (l *requestLoggerMiddleware) ServeHTTP(ctx context.Context) {
 	}
 
 	//finally print the logs, no new line, the framework's logger is responsible how to render each log.
-	ctx.Application().Log("%v %4v %s %s %s", status, latency, ip, method, path)
+	ctx.Application().Logger().Infof("%v %4v %s %s %s", status, latency, ip, method, path)
 }
 
 // New creates and returns a new request logger middleware.

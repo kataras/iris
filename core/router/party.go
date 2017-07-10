@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package router
 
 import (
@@ -15,11 +11,17 @@ import (
 // Look the "APIBuilder" for its implementation.
 type Party interface {
 	// Party creates and returns a new child Party with the following features.
-	Party(relativePath string, handlers ...context.Handler) Party
+	Party(relativePath string, middleware ...context.Handler) Party
+	// Subdomain returns a new party which is responsible to register routes to
+	// this specific "subdomain".
+	//
+	// If called from a child party then the subdomain will be prepended to the path instead of appended.
+	// So if app.Subdomain("admin.").Subdomain("panel.") then the result is: "panel.admin.".
+	Subdomain(subdomain string, middleware ...context.Handler) Party
 
 	// Use appends Handler(s) to the current Party's routes and child routes.
 	// If the current Party is the root, then it registers the middleware to all child Parties' routes too.
-	Use(handlers ...context.Handler)
+	Use(middleware ...context.Handler)
 
 	// Done appends to the very end, Handler(s) to the current Party's routes and child routes
 	// The difference from .Use is that this/or these Handler(s) are being always running last.
@@ -29,7 +31,7 @@ type Party interface {
 	// if empty method is passed then handler(s) are being registered to all methods, same as .Any.
 	//
 	// Returns the read-only route information.
-	Handle(method string, registeredPath string, handlers ...context.Handler) (*Route, error)
+	Handle(method string, registeredPath string, handlers ...context.Handler) *Route
 
 	// None registers an "offline" route
 	// see context.ExecRoute(routeName) and
@@ -37,47 +39,47 @@ type Party interface {
 	// Offline(handleResultregistry.*Route)
 	//
 	// Returns the read-only route information.
-	None(path string, handlers ...context.Handler) (*Route, error)
+	None(path string, handlers ...context.Handler) *Route
 
 	// Get registers a route for the Get http method.
 	//
 	// Returns the read-only route information.
-	Get(path string, handlers ...context.Handler) (*Route, error)
+	Get(path string, handlers ...context.Handler) *Route
 	// Post registers a route for the Post http method.
 	//
 	// Returns the read-only route information.
-	Post(path string, handlers ...context.Handler) (*Route, error)
+	Post(path string, handlers ...context.Handler) *Route
 	// Put registers a route for the Put http method.
 	//
 	// Returns the read-only route information.
-	Put(path string, handlers ...context.Handler) (*Route, error)
+	Put(path string, handlers ...context.Handler) *Route
 	// Delete registers a route for the Delete http method.
 	//
 	// Returns the read-only route information.
-	Delete(path string, handlers ...context.Handler) (*Route, error)
+	Delete(path string, handlers ...context.Handler) *Route
 	// Connect registers a route for the Connect http method.
 	//
 	// Returns the read-only route information.
-	Connect(path string, handlers ...context.Handler) (*Route, error)
+	Connect(path string, handlers ...context.Handler) *Route
 	// Head registers a route for the Head http method.
 	//
 	// Returns the read-only route information.
-	Head(path string, handlers ...context.Handler) (*Route, error)
+	Head(path string, handlers ...context.Handler) *Route
 	// Options registers a route for the Options http method.
 	//
 	// Returns the read-only route information.
-	Options(path string, handlers ...context.Handler) (*Route, error)
+	Options(path string, handlers ...context.Handler) *Route
 	// Patch registers a route for the Patch http method.
 	//
 	// Returns the read-only route information.
-	Patch(path string, handlers ...context.Handler) (*Route, error)
+	Patch(path string, handlers ...context.Handler) *Route
 	// Trace registers a route for the Trace http method.
 	//
 	// Returns the read-only route information.
-	Trace(path string, handlers ...context.Handler) (*Route, error)
+	Trace(path string, handlers ...context.Handler) *Route
 	// Any registers a route for ALL of the http methods
 	// (Get,Post,Put,Head,Patch,Options,Connect,Delete).
-	Any(registeredPath string, handlers ...context.Handler) error
+	Any(registeredPath string, handlers ...context.Handler) []*Route
 
 	// StaticHandler returns a new Handler which is ready
 	// to serve all kind of static files.
@@ -96,7 +98,7 @@ type Party interface {
 	// mySubdomainFsServer.Get("/static", h)
 	// ...
 	//
-	StaticHandler(systemPath string, showList bool, enableGzip bool, exceptRoutes ...*Route) context.Handler
+	StaticHandler(systemPath string, showList bool, enableGzip bool) context.Handler
 
 	// StaticServe serves a directory as web resource
 	// it's the simpliest form of the Static* functions
@@ -107,12 +109,12 @@ type Party interface {
 	// it uses gzip compression (compression on each request, no file cache).
 	//
 	// Returns the GET *Route.
-	StaticServe(systemPath string, requestPath ...string) (*Route, error)
+	StaticServe(systemPath string, requestPath ...string) *Route
 	// StaticContent registers a GET and HEAD method routes to the requestPath
 	// that are ready to serve raw static bytes, memory cached.
 	//
 	// Returns the GET *Route.
-	StaticContent(requestPath string, cType string, content []byte) (*Route, error)
+	StaticContent(requestPath string, cType string, content []byte) *Route
 
 	// StaticEmbedded  used when files are distributed inside the app executable, using go-bindata mostly
 	// First parameter is the request path, the path which the files in the vdir will be served to, for example "/static"
@@ -122,8 +124,8 @@ type Party interface {
 	//
 	// Returns the GET *Route.
 	//
-	// Example: https://github.com/kataras/iris/tree/master/_examples/intermediate/serve-embedded-files
-	StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) (*Route, error)
+	// Example: https://github.com/kataras/iris/tree/master/_examples/file-server/embedding-files-into-app
+	StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) *Route
 
 	// Favicon serves static favicon
 	// accepts 2 parameters, second is optional
@@ -136,14 +138,13 @@ type Party interface {
 	// Note that you have to call it on every favicon you have to serve automatically (desktop, mobile and so on).
 	//
 	// Returns the GET *Route.
-	Favicon(favPath string, requestPath ...string) (*Route, error)
+	Favicon(favPath string, requestPath ...string) *Route
 	// StaticWeb returns a handler that serves HTTP requests
 	// with the contents of the file system rooted at directory.
 	//
 	// first parameter: the route path
 	// second parameter: the system directory
-	// third OPTIONAL parameter: the exception routes
-	//      (= give priority to these routes instead of the static handler)
+	//
 	// for more options look router.StaticHandler.
 	//
 	//     router.StaticWeb("/static", "./static")
@@ -155,7 +156,7 @@ type Party interface {
 	// StaticWeb calls the StaticHandler(systemPath, listingDirectories: false, gzip: false ).
 	//
 	// Returns the GET *Route.
-	StaticWeb(requestPath string, systemPath string, exceptRoutes ...*Route) (*Route, error)
+	StaticWeb(requestPath string, systemPath string) *Route
 
 	// Layout oerrides the parent template layout with a more specific layout for this Party
 	// returns this Party, to continue as normal

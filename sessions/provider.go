@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package sessions
 
 import (
@@ -16,10 +12,10 @@ type (
 	// It's the session memory manager
 	provider struct {
 		// we don't use RWMutex because all actions have read and write at the same action function.
-		// (or write to a *session's value which is race if we don't lock)
+		// (or write to a *Session's value which is race if we don't lock)
 		// narrow locks are fasters but are useless here.
 		mu        sync.Mutex
-		sessions  map[string]*session
+		sessions  map[string]*Session
 		databases []Database
 	}
 )
@@ -27,7 +23,7 @@ type (
 // newProvider returns a new sessions provider
 func newProvider() *provider {
 	return &provider{
-		sessions:  make(map[string]*session, 0),
+		sessions:  make(map[string]*Session, 0),
 		databases: make([]Database, 0),
 	}
 }
@@ -41,9 +37,8 @@ func (p *provider) RegisterDatabase(db Database) {
 }
 
 // newSession returns a new session from sessionid
-func (p *provider) newSession(sid string, expires time.Duration) *session {
-
-	sess := &session{
+func (p *provider) newSession(sid string, expires time.Duration) *Session {
+	sess := &Session{
 		sid:      sid,
 		provider: p,
 		values:   p.loadSessionValuesFromDB(sid),
@@ -92,7 +87,7 @@ func (p *provider) updateDatabases(sid string, store memstore.Store) {
 }
 
 // Init creates the session  and returns it
-func (p *provider) Init(sid string, expires time.Duration) Session {
+func (p *provider) Init(sid string, expires time.Duration) *Session {
 	newSession := p.newSession(sid, expires)
 	p.mu.Lock()
 	p.sessions[sid] = newSession
@@ -101,7 +96,7 @@ func (p *provider) Init(sid string, expires time.Duration) Session {
 }
 
 // Read returns the store which sid parameter belongs
-func (p *provider) Read(sid string, expires time.Duration) Session {
+func (p *provider) Read(sid string, expires time.Duration) *Session {
 	p.mu.Lock()
 	if sess, found := p.sessions[sid]; found {
 		sess.runFlashGC() // run the flash messages GC, new request here of existing session

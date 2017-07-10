@@ -1,4 +1,3 @@
-// black-box testing
 package cache_test
 
 import (

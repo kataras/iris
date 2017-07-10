@@ -1,9 +1,7 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
-// Package basicauth provides http basic authentication via middleware. See _examples/beginner/basicauth
+// Package basicauth provides http basic authentication via middleware. See _examples/authentication/basicauth
 package basicauth
+
+// test file: ../../_examples/authentication/basicauth/main_test.go
 
 import (
 	"encoding/base64"

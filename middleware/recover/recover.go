@@ -1,8 +1,4 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
-// Package recover provides recovery for specific routes or for the whole app via middleware. See _examples/beginner/recover
+// Package recover provides recovery for specific routes or for the whole app via middleware. See _examples/miscellaneous/recover
 package recover
 
 import (
@@ -23,9 +19,9 @@ func getRequestLogs(ctx context.Context) string {
 	return fmt.Sprintf("%v %s %s %s", status, path, method, ip)
 }
 
-// New returns a new recover middleware
-// it logs to the LoggerOut iris' configuration field if its IsDeveloper configuration field is enabled.
-// otherwise it just continues to serve
+// New returns a new recover middleware,
+// it recovers from panics and logs
+// the panic message to the application's logger "Warn" level.
 func New() context.Handler {
 	return func(ctx context.Context) {
 		defer func() {
@@ -49,12 +45,11 @@ func New() context.Handler {
 				logMessage := fmt.Sprintf("Recovered from a route's Handler('%s')\n", ctx.HandlerName())
 				logMessage += fmt.Sprintf("At Request: %s\n", getRequestLogs(ctx))
 				logMessage += fmt.Sprintf("Trace: %s\n", err)
-				logMessage += fmt.Sprintf("\n%s\n", stacktrace)
-				ctx.Application().Log(logMessage)
+				logMessage += fmt.Sprintf("\n%s", stacktrace)
+				ctx.Application().Logger().Warnln(logMessage)
 
-				ctx.StopExecution()
 				ctx.StatusCode(500)
-
+				ctx.StopExecution()
 			}
 		}()
 

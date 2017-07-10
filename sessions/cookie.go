@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package sessions
 
 import (
@@ -9,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/kataras/iris/context"
 )
 
 var (
@@ -21,24 +19,27 @@ var (
 
 // GetCookie returns cookie's value by it's name
 // returns empty string if nothing was found
-func GetCookie(name string, req *http.Request) string {
-	c, err := req.Cookie(name)
+func GetCookie(ctx context.Context, name string) string {
+	c, err := ctx.Request().Cookie(name)
 	if err != nil {
 		return ""
 	}
+
 	return c.Value
+
+	// return ctx.GetCookie(name)
 }
 
 // AddCookie adds a cookie
-func AddCookie(cookie *http.Cookie, res http.ResponseWriter) {
-	if v := cookie.String(); v != "" {
-		http.SetCookie(res, cookie)
-	}
+func AddCookie(ctx context.Context, cookie *http.Cookie) {
+	// http.SetCookie(ctx.ResponseWriter(), cookie)
+	// ctx.Request().AddCookie(cookie)
+	ctx.SetCookie(cookie)
 }
 
 // RemoveCookie deletes a cookie by it's name/key
-func RemoveCookie(name string, res http.ResponseWriter, req *http.Request) {
-	c, err := req.Cookie(name)
+func RemoveCookie(ctx context.Context, name string) {
+	c, err := ctx.Request().Cookie(name)
 	if err != nil {
 		return
 	}
@@ -48,7 +49,7 @@ func RemoveCookie(name string, res http.ResponseWriter, req *http.Request) {
 	c.MaxAge = -1
 	c.Value = ""
 	c.Path = "/"
-	AddCookie(c, res)
+	AddCookie(ctx, c)
 }
 
 // IsValidCookieDomain returns true if the receiver is a valid domain to set

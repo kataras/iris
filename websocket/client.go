@@ -1,20 +1,29 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package websocket
 
-// ------------------------------------------------------------------------------------
-// ------------------------------------------------------------------------------------
-// ----------------Client side websocket javascript source which is typescript compiled
-// ------------------------------------------------------------------------------------
-// ------------------------------------------------------------------------------------
+import (
+	"time"
+
+	"github.com/kataras/iris/context"
+)
+
+// ClientHandler is the handler which serves the javascript client-side
+// library. It uses a small cache based on the iris/context.StaticCacheDuration.
+func ClientHandler() context.Handler {
+	modNow := time.Now()
+	return func(ctx context.Context) {
+		ctx.ContentType("application/javascript")
+		if _, err := ctx.WriteWithExpiration(ClientSource, modNow); err != nil {
+			ctx.StatusCode(500)
+			ctx.StopExecution()
+			// ctx.Application().Logger().Infof("error while serving []byte via StaticContent: %s", err.Error())
+		}
+	}
+}
 
 // ClientSource the client-side javascript raw source code
 var ClientSource = []byte(`var websocketStringMessageType = 0;
 var websocketIntMessageType = 1;
 var websocketBoolMessageType = 2;
-// bytes is missing here for reasons I will explain somewhen
 var websocketJSONMessageType = 4;
 var websocketMessagePrefix = "iris-websocket-message:";
 var websocketMessageSeparator = ";";
@@ -102,7 +111,7 @@ var Ws = (function () {
         return this._msg(event, t, m);
     };
     Ws.prototype.decodeMessage = function (event, websocketMessage) {
-        //q-websocket-message;user;4;themarshaledstringfromajsonstruct
+        //iris-websocket-message;user;4;themarshaledstringfromajsonstruct
         var skipLen = websocketMessagePrefixLen + websocketMessageSeparatorLen + event.length + 2;
         if (websocketMessage.length < skipLen + 1) {
             return null;
@@ -145,7 +154,7 @@ var Ws = (function () {
     // if native message then calls the fireNativeMessage
     // else calls the fireMessage
     //
-    // remember q gives you the freedom of native websocket messages if you don't want to use this client side at all.
+    // remember iris gives you the freedom of native websocket messages if you don't want to use this client side at all.
     Ws.prototype.messageReceivedFromConn = function (evt) {
         //check if qws message
         var message = evt.data;
@@ -213,7 +222,7 @@ var Ws = (function () {
     Ws.prototype.EmitMessage = function (websocketMessage) {
         this.conn.send(websocketMessage);
     };
-    // Emit sends an q-custom websocket message
+    // Emit sends an iris-custom websocket message
     Ws.prototype.Emit = function (event, data) {
         var messageStr = this.encodeMessage(event, data);
         this.EmitMessage(messageStr);

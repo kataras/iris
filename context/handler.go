@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package context
 
 // A Handler responds to an HTTP request.
@@ -10,7 +6,7 @@ package context
 // it is not valid to use the Context after or concurrently with the completion of the Handler call.
 //
 // Depending on the HTTP client software, HTTP protocol version,
-// and any intermediaries between the client and the Iris server,
+// and any intermediaries between the client and the iris server,
 // it may not be possible to read from the Context.Request().Body after writing to the context.ResponseWriter().
 // Cautious handlers should read the Context.Request().Body first, and then reply.
 //

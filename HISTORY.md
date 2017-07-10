@@ -7,7 +7,7 @@
 
 ### Looking for previous versions?
 
-    https://github.com/kataras/iris#version
+    https://github.com/kataras/iris#-version
 
 
 ### Should I upgrade my Iris?
@@ -19,6 +19,142 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 For further installation support, please click [here](http://support.iris-go.com/d/16-how-to-install-iris-web-framework).
 
 
+# Mo, 10 July 2017 | v8.0.0
+
+## 📈 One and a half years with Iris and You...
+
+Despite the deflamations, the clickbait articles, the removed posts of mine at reddit/r/golang, the unexpected and inadequate ban from the gophers slack room by @dlsniper alone the previous week without any reason or inform, Iris is still here and will be.
+
+- 7070 github stars
+- 749 github forks
+- 1m total views at its documentation
+- ~800$ at donations (there're a lot for a golang open-source project, thanks to you)
+- ~550 reported bugs fixed
+- ~30 community feature requests have been implemented
+
+## 🔥 Reborn
+
+As you may have heard I have huge responsibilities on my new position at Dubai nowdays, therefore I don't have the needed time to work on this project anymore.
+
+After a month of negotiations and searching I succeed to find a decent software engineer to continue my work on the open source community.
+
+The leadership of this, open-source, repository was transfered to [hiveminded](https://github.com/hiveminded), the author of iris-based [get-ion/ion](https://github.com/get-ion/ion), he actually did an excellent job on the framework, he kept the code as minimal as possible and at the same time added more features, examples and middleware(s).
+
+These types of projects need heart and sacrifices to continue offer the best developer experience like a paid software, please do support him as you did with me!
+
+## 📰 Changelog
+
+> app. = `app := iris.New();` **app.**
+
+> ctx. = `func(ctx context.Context) {` **ctx.** `}`
+
+### Docker
+
+Docker and kubernetes integration showcase, see the [iris-contrib/cloud-native-go](https://github.com/iris-contrib/cloud-native-go) repository as an example.
+
+### Logger
+
+* Logger which was an `io.Writer` was replaced with the pluggable `logrus`.
+    * which you still attach an `io.Writer` with `app.Logger().Out = an io.Writer`.
+    * iris as always logs only critical errors, you can disable them with `app.Logger().Level = iris.NoLog`
+    * the request logger outputs the incoming requests as INFO level.
+
+### Sessions
+
+Remove `ctx.Session()` and `app.AttachSessionManager`, devs should import and use the `sessions` package as standalone, it's totally optional, devs can use any other session manager too. [Examples here](sessions#table-of-contents).
+
+### Websockets
+
+The `github.com/kataras/iris/websocket` package does not handle the endpoint and client side automatically anymore. Example code:
+
+```go
+func setupWebsocket(app *iris.Application) {
+    // create our echo websocket server
+    ws := websocket.New(websocket.Config{
+    	ReadBufferSize:  1024,
+    	WriteBufferSize: 1024,
+    })
+    ws.OnConnection(handleConnection)
+    // serve the javascript built'n client-side library,
+    // see weboskcets.html script tags, this path is used.
+    app.Any("/iris-ws.js", func(ctx context.Context) {
+    	ctx.Write(websocket.ClientSource)
+    })
+
+    // register the server on an endpoint.
+    // see the inline javascript code in the websockets.html, this endpoint is used to connect to the server.
+    app.Get("/echo", ws.Handler())
+}
+```
+
+> More examples [here](websocket#table-of-contents)
+
+### View
+
+Rename `app.AttachView(...)` to `app.RegisterView(...)`.
+
+Users can omit the import of `github.com/kataras/iris/view` and use the `github.com/kataras/iris` package to
+refer to the view engines, i.e: `app.RegisterView(iris.HTML("./templates", ".html"))` is the same as `import "github.com/kataras/iris/view" [...] app.RegisterView(view.HTML("./templates" ,".html"))`.
+
+> Examples [here](_examples/#view)
+
+### Security
+
+At previous versions, when you called `ctx.Remoteaddr()` Iris could parse and return the client's IP from the "X-Real-IP", "X-Forwarded-For" headers. This was a security leak as you can imagine, because the user can modify them. So we've disabled these headers by-default and add an option to add/remove request headers that are responsible to parse and return the client's real IP.
+
+```go
+// WithRemoteAddrHeader enables or adds a new or existing request header name
+// that can be used to validate the client's real IP.
+//
+// Existing values are:
+// "X-Real-Ip":             false,
+// "X-Forwarded-For":       false,
+// "CF-Connecting-IP": false
+//
+// Look `context.RemoteAddr()` for more.
+WithRemoteAddrHeader(headerName string) Configurator // enables a header.
+WithoutRemoteAddrHeader(headerName string) Configurator // disables a header.
+```
+For example, if you want to enable the "CF-Connecting-IP" header (cloudflare) 
+you have to add the `WithRemoteAddrHeader` option to the `app.Run` function, at the end of your program.
+
+```go
+app.Run(iris.Addr(":8080"), iris.WithRemoteAddrHeader("CF-Connecting-IP"))
+// This header name will be checked when ctx.RemoteAddr() called and if exists
+// it will return the client's IP, otherwise it will return the default *http.Request's `RemoteAddr` field.
+```
+
+### Miscellaneous
+
+Fix [typescript tools](typescript).
+
+[_examples](_examples/) folder has been ordered by feature and usage:
+    - contains tests on some examples
+    - new examples added, one of them shows how the `reuseport` feature on UNIX and BSD systems can be used to listen for incoming connections, [see here](_examples/#http-listening)
+
+
+Replace supervisor's tasks with events, like `RegisterOnShutdown`, `RegisterOnError`, `RegisterOnServe` and fix the (unharmful) race condition when output the banner to the console. Global notifier for interrupt signals which can be disabled via `app.Run([...], iris.WithoutInterruptHandler)`, look [graceful-shutdown](_examples/http-listening/graceful-shutdown/main.go) example for more.
+
+
+More handlers are ported to Iris (they can be used as they are without `iris.FromStd`), these handlers can be found at [iris-contrib/middleware](https://github.com/iris-contrib/middleware). Feel free to put your own there.
+
+
+| Middleware | Description | Example |
+| -----------|--------|-------------|
+| [jwt](https://github.com/iris-contrib/middleware/tree/master/jwt) | Middleware checks for a JWT on the `Authorization` header on incoming requests and decodes it. | [iris-contrib/middleware/jwt/_example](https://github.com/iris-contrib/middleware/tree/master/jwt/_example) |
+| [cors](https://github.com/iris-contrib/middleware/tree/master/cors) | HTTP Access Control. | [iris-contrib/middleware/cors/_example](https://github.com/iris-contrib/middleware/tree/master/cors/_example) |
+| [secure](https://github.com/iris-contrib/middleware/tree/master/secure) | Middleware that implements a few quick security wins. | [iris-contrib/middleware/secure/_example](https://github.com/iris-contrib/middleware/tree/master/secure/_example/main.go) |
+| [tollbooth](https://github.com/iris-contrib/middleware/tree/master/tollboothic) | Generic middleware to rate-limit HTTP requests. | [iris-contrib/middleware/tollbooth/_examples/limit-handler](https://github.com/iris-contrib/middleware/tree/master/tollbooth/_examples/limit-handler) |
+| [cloudwatch](https://github.com/iris-contrib/middleware/tree/master/cloudwatch) |  AWS cloudwatch metrics middleware. |[iris-contrib/middleware/cloudwatch/_example](https://github.com/iris-contrib/middleware/tree/master/cloudwatch/_example) |
+| [new relic](https://github.com/iris-contrib/middleware/tree/master/newrelic) | Official [New Relic Go Agent](https://github.com/newrelic/go-agent). | [iris-contrib/middleware/newrelic/_example](https://github.com/iris-contrib/middleware/tree/master/newrelic/_example) |
+| [prometheus](https://github.com/iris-contrib/middleware/tree/master/prometheus)| Easily create metrics endpoint for the [prometheus](http://prometheus.io) instrumentation tool | [iris-contrib/middleware/prometheus/_example](https://github.com/iris-contrib/middleware/tree/master/prometheus/_example) |
+
+
+v7.x is deprecated because it sold as it is and it is not part of the public, stable `gopkg.in` iris versions. Developers/users of this library should upgrade their apps to v8.x, the refactor process will cost nothing for most of you, as the most common API remains as it was. The changelog history from that are being presented below.
+
+
+# Th, 15 June 2017 | v7.2.0
+
 ### About our new home page
     http://iris-go.com
 
@@ -28,9 +164,6 @@ Thanks to [Santosh Anand](https://github.com/santoshanand) the http://iris-go.co
 
 
 The amount of the next two or three donations you'll send they will be immediately transferred to his own account balance, so be generous please!
-
-
-# Th, 15 June 2017 | v7.2.0
 
 ### Cache
 
@@ -52,20 +185,20 @@ Declare the `iris.Cache alias` to the new, improved and most-suited for common u
 - **Fix** `app.StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string)`.
 
 Examples: 
-- [Embedding Files Into Executable App](_examples/beginner/file-server/embedding-files-into-app)
-- [Single Page Application](_examples/beginner/file-server/single-page-application)
-- [Embedding Single Page Application](_examples/beginner/file-server/embedding-single-page-application)
+- [Embedding Files Into Executable App](_examples/file-server/embedding-files-into-app)
+- [Single Page Application](_examples/file-server/single-page-application)
+- [Embedding Single Page Application](_examples/file-server/embedding-single-page-application)
 
-> [app.StaticWeb](_examples/beginner/file-server/basic/main.go) doesn't works for root request path "/"  anymore, use the new `app.SPA` instead.   
+> [app.StaticWeb](_examples/file-server/basic/main.go) doesn't works for root request path "/"  anymore, use the new `app.SPA` instead.   
 
 ### WWW subdomain entry
 
-- [Example](_examples/intermediate/subdomains/www/main.go) added to copy all application's routes, including parties, to the `www.mydomain.com`
+- [Example](_examples/subdomains/www/main.go) added to copy all application's routes, including parties, to the `www.mydomain.com`
 
 
 ### Wrapping the Router
 
-- [Example](_examples/beginner/routing/custom-wrapper/main.go) added to show you how you can use the `app.WrapRouter` 
+- [Example](_examples/routing/custom-wrapper/main.go) added to show you how you can use the `app.WrapRouter` 
 to implement a similar to `app.SPA` functionality, don't panic, it's easier than it sounds.
 
 

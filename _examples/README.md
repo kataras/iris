@@ -1,110 +1,164 @@
 # Examples
 
-This folder provides easy to understand code snippets on how to get started with web development with the Go programming language using the [Iris](https://github.com/kataras/iris) web framework.
+Please do learn how [net/http](https://golang.org/pkg/net/http/) std package works, first.
 
-It doesn't contains "best ways" neither explains all its features. It's just a simple, practical cookbook for young Gophers!
+This folder provides easy to understand code snippets on how to get started with [iris](https://github.com/kataras/iris) micro web framework.
 
-## Table of contents
+It doesn't always contain the "best ways" but it does cover each important feature that will make you so excited to GO with iris!
 
-* [Level: Beginner](beginner)
-    * [Hello world](beginner/hello-world/main.go)
-    * [Overview](beginner/overview/main.go)
-    * [Listening](beginner/listening)
-        * [Common, with address](beginner/listening/listen-addr/main.go)
-        * [UNIX socket file](beginner/listening/listen-unix/main.go)
-        * [TLS](beginner/listening/listen-tls/main.go)
-        * [Letsencrypt (Automatic Certifications)](beginner/listening/listen-letsencrypt/main.go)
-        * [Custom TCP Listener](beginner/listening/custom-listener/main.go)
-    * [Configuration](beginner/configuration)
-        * [Basic way](beginner/configuration/basic/main.go)
-        * [Functional way](beginner/configuration/functional/main.go)
-        * [Import from YAML file](beginner/configuration/from-yaml-file/main.go)
-        * [Import from TOML file](beginner/configuration/from-toml-file/main.go)
-    * [Routing](beginner/routing)
-        * [Overview](beginner/routing/overview/main.go)
-        * [Basic](beginner/routing/basic/main.go)
-        * [Dynamic Path](beginner/routing/dynamic-path/main.go)
-        * [Reverse routing](beginner/routing/reverse/main.go)
-        * [Custom wrapper](beginner/routing/custom-wrapper/main.go)
-    * [Transform any third-party handler to iris-compatible handler](beginner/convert-handlers)
-        * [From func(http.ResponseWriter, *http.Request, http.HandlerFunc)](beginner/convert-handlers/negroni-like/main.go)
-        * [From http.Handler or http.HandlerFunc](beginner/convert-handlers/nethttp/main.go)
-    * [Internal Application File Logger](beginner/file-logger/main.go)
-    * [Custom HTTP Errors](beginner/http-errors/main.go)
-    * [Write JSON](beginner/write-json/main.go)
-    * [Read JSON](beginner/read-json/main.go)
-    * [Read Form](beginner/read-form/main.go)
-    * [Favicon](beginner/favicon/main.go)
-    * [File Server](beginner/file-server)
-        * [Basic](beginner/file-server/basic/main.go)
-        * [Embedding Files Into App Executable File](beginner/file-server/embedding-files-into-app/main.go)
-        * [Single Page Application](beginner/file-server/single-page-application/main.go)
-        * [Embedding Single Page Application](beginner/file-server/embedding-single-page-application/main.go)
-    * [Send Files](beginner/send-files/main.go)
-    * [Stream Writer](beginner/stream-writer/main.go)
-    * [Send An E-mail](beginner/e-mail/main.go)
-    * [Upload/Read Files](beginner/upload-files/main.go)
-    * [Recovery](beginner/recover/main.go)
-    * [Profiling (pprof)](beginner/pprof/main.go)
-    * [Request Logger](beginner/request-logger/main.go)
-    * [Basic Authentication](beginner/basicauth/main.go)
-* [Level: Intermediate](intermediate)
-    * [JWT](https://github.com/iris-contrib/middleware/blob/master/jwt/_example/main.go)
-    * [OAUth2](intermediate/oauth2/main.go)
-    * [CORS](https://github.com/iris-contrib/middleware/blob/master/cors/_example/main.go)
-    * [Transactions](intermediate/transactions/main.go)
-    * [HTTP Testing](intermediate/httptest/main_test.go)
-    * [Watch & Compile Typescript source files](intermediate/typescript/main.go)
-    * [Cloud Editor](intermediate/cloud-editor/main.go)
-    * [HTTP Access Control](intermediate/cors/main.go)
-    * [Cache Markdown](intermediate/cache-markdown/main.go)
-    * [Localization and Internationalization](intermediate/i18n/main.go)
-    * [Graceful Shutdown](intermediate/graceful-shutdown)
-        * [Basic and simple](intermediate/graceful-shutdown/basic/main.go)
-        * [Custom Host](intermediate/graceful-shutdown/custom-host/main.go)
-        * [Custom notifier](intermediate/graceful-shutdown/custom-notifier/main.go)
-    * [Custom HTTP Server](intermediate/custom-httpserver)
-        * [Iris way](intermediate/custom-httpserver/iris-way/main.go)
-        * [Standar way](intermediate/custom-httpserver/std-way/main.go)
-        * [More than one server](intermediate/custom-httpserver/multi/main.go)
-    * [Custom Context](intermediate/custom-context)
-        * [Method Overriding](intermediate/custom-context/method-overriding/main.go)
-    * [Route State](intermediate/route-state/main.go)
-    * [View Engine](intermediate/view)
-        * [Overview](intermediate/view/overview/main.go)
-        * [Hi](intermediate/view/template_html_0/main.go)
-        * [Showcase one simple Layout](intermediate/view/template_html_1/main.go)
-        * [Layouts `yield` and `render` tmpl funcs](intermediate/view/template_html_2/main.go)
-        * [Showcase of the `urlpath` tmpl func](intermediate/view/template_html_3/main.go)
-        * [Showcase of the `url` tmpl func](intermediate/view/template_html_4/main.go)
-        * [Inject Data Between Handlers](intermediate/view/context-view-data/main.go)
-        * [Embedding Templates Into App Executable File](intermediate/view/embedding-templates-into-app/main.go)
-    * [Sessions](intermediate/sessions)
-        * [Overview](intermediate/sessions/overview/main.go)
-        * [Encoding & Decoding the Session ID: Secure Cookie](intermediate/sessions/securecookie/main.go)
-        * [Standalone](intermediate/sessions/standalone/main.go)
-        * [Flash Messages](intermediate/sessions/flash-messages/main.go)
-        * [With A Back-End Database](intermediate/sessions/database/main.go)
-        * [Password Hashing](intermediate/sessions/password-hashing/main.go)
-    * [Websockets](intermediate/websockets)
-        * [Ridiculous Simple](intermediate/websockets/ridiculous-simple/main.go)
-        * [Overview](intermediate/websockets/overview/main.go)
-        * [Connection List](intermediate/websockets/connectionlist/main.go)
-        * [Native Messages](intermediate/websockets/native-messages/main.go)
-        * [Secure](intermediate/websockets/secure/main.go)
-        * [Custom Go Client](intermediate/websockets/custom-go-client/main.go)
-    * [Subdomains](intermediate/subdomains)
-        * [Single](intermediate/subdomains/single/main.go)
-        * [Multi](intermediate/subdomains/multi/main.go)
-        * [Wildcard](intermediate/subdomains/wildcard/main.go)
-        * [WWW](intermediate/subdomains/www/main.go)  
-* [Level: Advanced](advanced)
-    * [Online Visitors](advanced/online-visitors/main.go)
-    * [URL Shortener using BoltDB](advanced/url-shortener/main.go)
+### Overview
+
+- [Hello world!](hello-world/main.go)
+- [Glimpse](overview/main.go)
+- [Tutorial: Online Visitors](tutorial/online-visitors/main.go)
+- [Tutorial: URL Shortener using BoltDB](tutorial/url-shortener/main.go)
+
+### HTTP Listening 
+
+- [Common, with address](http-listening/listen-addr/main.go)
+- [UNIX socket file](http-listening/listen-unix/main.go)
+- [TLS](http-listening/listen-tls/main.go)
+- [Letsencrypt (Automatic Certifications)](http-listening/listen-letsencrypt/main.go)
+- Custom TCP Listener
+    * [common net.Listener](http-listening/custom-listener/main.go)
+    * [SO_REUSEPORT for unix systems](http-listening/custom-listener/unix-reuseport/main.go)
+- Custom HTTP Server
+    * [iris way](http-listening/custom-httpserver/iris-way/main.go)
+    * [std way](http-listening/custom-httpserver/std-way/main.go)
+    * [multi server instances](http-listening/custom-httpserver/multi/main.go)
+- Graceful Shutdown
+    * [using the `RegisterOnInterrupt`](http-listening/graceful-shutdown/default-notifier/main.go)
+    * [using a custom notifier](http-listening/graceful-shutdown/custom-notifier/main.go)
+   
+### Configuration
+
+- [Functional](configuration/functional/main.go)
+- [From Configuration Struct](configuration/from-configuration-struct/main.go)
+- [Import from YAML file](configuration/from-yaml-file/main.go)
+- [Import from TOML file](configuration/from-toml-file/main.go)
 
 
-You may want to check out examples for jwt, cors and the rest of community-maden middleware by clicking [here](https://github.com/iris-contrib/middleware)
+### Routing, Grouping, Dynamic Path Parameters, "Macros" and Custom Context
 
-> Do not forget to [star or watch the project](https://github.com/kataras/iris/stargazers) in order to stay updated with the latest tech trends, it takes some seconds for the sake of go!
+- [Overview](routing/overview/main.go)
+- [Basic](routing/basic/main.go)
+- [Custom HTTP Errors](routing/http-errors/main.go)
+- [Dynamic Path](routing/dynamic-path/main.go)
+- [Reverse routing](routing/reverse/main.go)
+- [Custom wrapper](routing/custom-wrapper/main.go)
+- Custom Context
+    * [Method Overriding](routing/custom-context/method-overriding/main.go)
+    * [New Implementation](routing/custom-context/new-implementation/main.go)
+- [Route State](routing/route-state/main.go)
 
-> Developers should read the official [documentation](https://godoc.org/github.com/kataras/iris) in depth, for deep understanding.
+### Subdomains
+
+- [Single](subdomains/single/main.go)
+- [Multi](subdomains/multi/main.go)
+- [Wildcard](subdomains/wildcard/main.go)
+- [WWW](subdomains/www/main.go) 
+
+### Convert `http.Handler/HandlerFunc`
+
+- [From func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)](convert-handlers/negroni-like/main.go)
+- [From http.Handler or http.HandlerFunc](convert-handlers/nethttp/main.go)
+
+### View 
+
+| Engine | Declaration |
+| -----------|-------------|
+| template/html | `iris.HTML(...)`       |
+| django        | `iris.Django(...)`     |
+| handlebars    | `iris.Handlebars(...)` |
+| amber         | `iris.Amber(...)`      |
+| pug(jade)     | `iris.Pug(...)`        |
+
+- [Overview](view/overview/main.go)
+- [Hi](view/template_html_0/main.go)
+- [A simple Layout](view/template_html_1/main.go)
+- [Layouts: `yield` and `render` tmpl funcs](view/template_html_2/main.go)
+- [The `urlpath` tmpl func](view/template_html_3/main.go)
+- [The `url` tmpl func](view/template_html_4/main.go)
+- [Inject Data Between Handlers](view/context-view-data/main.go)
+- [Embedding Templates Into App Executable File](view/embedding-templates-into-app/main.go)
+
+### Authentication
+
+- [Basic Authentication](authentication/basicauth/main.go)
+- [OAUth2](authentication/oauth2/main.go)
+- [JWT](https://github.com/iris-contrib/middleware/blob/master/jwt/_example/main.go)
+- [Sessions](#sessions)
+
+### File Server
+
+- [Favicon](file-server/favicon/main.go)
+- [Basic](file-server/basic/main.go)
+- [Embedding Files Into App Executable File](file-server/embedding-files-into-app/main.go)
+- [Send/Force-Download Files](file-server/send-files/main.go)
+- Single Page Applications
+    * [Single Page Application](file-server/single-page-application/basic/main.go)
+    * [Embedded Single Page Application](file-server/single-page-application/embedded-single-page-application/main.go)
+
+### How to Read from `context.Request() *http.Request`
+
+- [Bind JSON](http_request/read-json/main.go)
+- [Bind Form](http_request/read-form/main.go)
+- [Upload/Read Files](http_request/upload-files/main.go)
+
+> The `context.Request()` returns the same *http.Request you already know, these examples show some places where the  Context uses this object. Besides that you can use it as you did before iris.
+
+### How to Write to `context.ResponseWriter() http.ResponseWriter`
+
+- [Text, Markdown, HTML, JSON, JSONP, XML, Binary](http_responsewriter/write-rest/main.go)
+- [Stream Writer](http_responsewriter/stream-writer/main.go)
+- [Transactions](http_responsewriter/transactions/main.go)
+
+> The `context.ResponseWriter()` returns an enchament version of a http.ResponseWriter, these examples show some places where the Context uses this object. Besides that you can use it as you did before iris.
+
+### Miscellaneous
+
+- [Request Logger](http_request/request-logger/main.go)
+- [Localization and Internationalization](miscellaneous/i18n/main.go)
+- [Recovery](miscellaneous/recover/main.go)
+- [Profiling (pprof)](miscellaneous/pprof/main.go)
+- [Internal Application File Logger](miscellaneous/file-logger/main.go)
+
+#### More
+
+https://github.com/kataras/iris/tree/master/middleware#third-party-handlers
+
+### Testing
+
+The `httptest` package is your way for end-to-end HTTP testing, it uses the httpexpect library created by our friend, [gavv](https://github.com/gavv).
+
+[Example](testing/httptest/main_test.go)
+
+### Caching
+
+iris cache library lives on its own package: [https://github.com/kataras/iris/tree/master/cache](https://github.com/kataras/iris/tree/master/cache) **it contains examples**
+
+### Sessions
+
+iris session manager lives on its own package: [https://github.com/kataras/iris/tree/master/sessions](https://github.com/kataras/iris/tree/master/sessions) **it contains examples**
+
+> You're free to use your own favourite sessions package if you'd like so.
+
+### Websockets
+
+iris websocket library lives on its own package: [https://github.com/kataras/iris/tree/master/websocket](https://github.com/kataras/iris/tree/master/websocket) **it contains examples**
+
+> You're free to use your own favourite websockets package if you'd like so.
+
+### Typescript Automation Tools
+
+typescript automation tools have their own repository: [https://github.com/kataras/iris/tree/master/typescript](https://github.com/kataras/iris/tree/master/typescript) **it contains examples**
+
+> I'd like to tell you that you can use your favourite but I don't think you will find such a thing anywhere else.
+
+### Hey, You!
+
+Developers should read the [godocs](https://godoc.org/github.com/kataras/iris) for a better understanding.
+
+Psst, I almost forgot; do not forget to [star or watch](https://github.com/kataras/iris/stargazers) the project in order to stay updated with the latest tech trends, it never takes more than a second!
+
+

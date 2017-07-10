@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package view
 
 import (
@@ -122,7 +118,7 @@ func (s *HTMLEngine) Delims(left, right string) *HTMLEngine {
 //         // mainLayout.html is inside: "./templates/layouts/".
 //
 // Note: Layout can be changed for a specific call
-// action with the option: "layout" on the Iris' context.Render function.
+// action with the option: "layout" on the iris' context.Render function.
 func (s *HTMLEngine) Layout(layoutFile string) *HTMLEngine {
 	s.layout = layoutFile
 	return s
@@ -183,9 +179,7 @@ func (s *HTMLEngine) loadDirectory() error {
 
 	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if info == nil || info.IsDir() {
-
 		} else {
-
 			rel, err := filepath.Rel(dir, path)
 			if err != nil {
 				templateErr = err
@@ -203,26 +197,23 @@ func (s *HTMLEngine) loadDirectory() error {
 
 				contents := string(buf)
 
-				if err == nil {
+				name := filepath.ToSlash(rel)
+				tmpl := s.Templates.New(name)
 
-					name := filepath.ToSlash(rel)
-					tmpl := s.Templates.New(name)
-
-					if s.middleware != nil {
-						contents, err = s.middleware(name, contents)
-					}
-					if err != nil {
-						templateErr = err
-						return err
-					}
-					s.mu.Lock()
-					// Add our funcmaps.
-					if s.funcs != nil {
-						tmpl.Funcs(s.funcs)
-					}
-
-					tmpl.Funcs(emptyFuncs).Parse(contents)
-					s.mu.Unlock()
+				if s.middleware != nil {
+					contents, err = s.middleware(name, contents)
+				}
+				if err != nil {
+					templateErr = err
+					return err
+				}
+				s.mu.Lock()
+				// Add our funcmaps.
+				_, err = tmpl.Funcs(emptyFuncs).Funcs(s.funcs).Parse(contents)
+				s.mu.Unlock()
+				if err != nil {
+					templateErr = err
+					return err
 				}
 			}
 
@@ -282,11 +273,7 @@ func (s *HTMLEngine) loadAssets() error {
 			}
 
 			// Add our funcmaps.
-			if s.funcs != nil {
-				tmpl.Funcs(s.funcs)
-			}
-
-			tmpl.Funcs(emptyFuncs).Parse(contents)
+			tmpl.Funcs(emptyFuncs).Funcs(s.funcs).Parse(contents)
 		}
 	}
 	return templateErr

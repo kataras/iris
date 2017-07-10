@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package handlerconv
 
 import (
@@ -78,12 +74,12 @@ func FromStd(handler interface{}) context.Handler {
 func FromStdWithNext(h func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)) context.Handler {
 	return func(ctx context.Context) {
 		// take the next handler in route's chain
-		nextIrisHandler := ctx.NextHandler()
-		if nextIrisHandler != nil {
+		nextIonHandler := ctx.NextHandler()
+		if nextIonHandler != nil {
 			executed := false // we need to watch this in order to StopExecution from all next handlers
 			// if this next handler is not executed by the third-party net/http next-style Handlers.
 			nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				nextIrisHandler(ctx)
+				nextIonHandler(ctx)
 				executed = true
 			})
 

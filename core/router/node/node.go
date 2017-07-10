@@ -20,8 +20,8 @@ type node struct {
 	root              bool
 }
 
-// ErrDublicate returned from MakeChild when more than one routes have the same registered path.
-var ErrDublicate = errors.New("more than one routes have the same registered path")
+// ErrDublicate returnned from `Add` when two or more routes have the same registered path.
+var ErrDublicate = errors.New("two or more routes have the same registered path")
 
 // Add adds a node to the tree, returns an ErrDublicate error on failure.
 func (nodes *Nodes) Add(path string, handlers context.Handlers) error {
@@ -48,12 +48,22 @@ func (nodes *Nodes) Add(path string, handlers context.Handlers) error {
 		paramEnd -= paramEnd - paramStart
 	}
 
-	for _, idx := range paramsPos(path) {
+	var p []int
+	for i := 0; i < len(path); i++ {
+		idx := strings.IndexByte(path[i:], ':')
+		if idx == -1 {
+			break
+		}
+		p = append(p, idx+i)
+		i = idx + i
+	}
 
-		if err := nodes.add(path[:idx], nil, nil, true); err != nil { // take the static path to its own node
+	for _, idx := range p {
+
+		if err := nodes.add(path[:idx], nil, nil, true); err != nil {
 			return err
 		}
-		// create a second, empty, dynamic parameter node without the last slash
+
 		if nidx := idx + 1; len(path) > nidx {
 			if err := nodes.add(path[:nidx], nil, nil, true); err != nil {
 				return err
@@ -61,13 +71,12 @@ func (nodes *Nodes) Add(path string, handlers context.Handlers) error {
 		}
 	}
 
-	// last,  create the node filled by the full path, parameters and its handlers
 	if err := nodes.add(path, params, handlers, true); err != nil {
 		return err
 	}
 
-	// sort by static path, remember, they were already sorted by subdomains too.
-	nodes.Sort()
+	// prioritize by static path remember, they were already sorted by subdomains too.
+	nodes.prioritize()
 	return nil
 }
 
@@ -153,7 +162,7 @@ loop:
 			return nil
 		}
 		if len(n.handlers) > 0 { // n.handlers already setted
-			return ErrDublicate.Append("for: %s", n.s)
+			return ErrDublicate
 		}
 		n.paramNames = paramNames
 		n.handlers = handlers
@@ -216,7 +225,7 @@ func (nodes Nodes) findChild(path string, params []string) (*node, []string) {
 			continue
 		}
 
-		if len(path) == len(n.s) { // Node matched until the end of path.
+		if len(path) == len(n.s) {
 			if len(n.handlers) == 0 {
 				return nil, nil
 			}
@@ -226,7 +235,7 @@ func (nodes Nodes) findChild(path string, params []string) (*node, []string) {
 		child, childParamNames := n.children.findChild(path[len(n.s):], params)
 
 		if child == nil || len(child.handlers) == 0 {
-			// is wildcard and it is not root neither has children
+
 			if n.s[len(n.s)-1] == '/' && !(n.root && (n.s == "/" || len(n.children) > 0)) {
 				if len(n.handlers) == 0 {
 					return nil, nil
@@ -254,8 +263,8 @@ func (n *node) isDynamic() bool {
 	return n.s == ":"
 }
 
-// Sort sets the static paths first.
-func (nodes Nodes) Sort() {
+// prioritize sets the static paths first.
+func (nodes Nodes) prioritize() {
 
 	sort.Slice(nodes, func(i, j int) bool {
 		if nodes[i].isDynamic() {
@@ -268,18 +277,6 @@ func (nodes Nodes) Sort() {
 	})
 
 	for _, n := range nodes {
-		n.children.Sort()
+		n.children.prioritize()
 	}
-}
-
-func paramsPos(s string) (pos []int) {
-	for i := 0; i < len(s); i++ {
-		p := strings.IndexByte(s[i:], ':')
-		if p == -1 {
-			break
-		}
-		pos = append(pos, p+i)
-		i = p + i
-	}
-	return
 }

@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package router
 
 import (
@@ -10,8 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/esemplastic/unis"
-	"github.com/kataras/iris/core/nettools"
+	"github.com/kataras/iris/core/netutil"
 )
 
 const (
@@ -21,18 +16,6 @@ const (
 	// path parameter.
 	WildcardParamStart = "*"
 )
-
-// ResolveStaticPath receives a (dynamic) path and tries to return its static path part.
-func ResolveStaticPath(original string) string {
-	i := strings.Index(original, ParamStart)
-	v := strings.Index(original, WildcardParamStart)
-
-	return unis.NewChain(
-		unis.NewConditional(
-			unis.NewRangeEnd(i),
-			unis.NewRangeEnd(v)),
-		cleanPath).Process(original)
-}
 
 // Param receives a parameter name prefixed with the ParamStart symbol.
 func Param(name string) string {
@@ -47,8 +30,19 @@ func WildcardParam(name string) string {
 	return prefix(name, WildcardParamStart)
 }
 
-func prefix(str string, prefix string) string {
-	return unis.NewExclusivePrepender(prefix).Process(str)
+func prefix(s string, prefix string) string {
+	if !strings.HasPrefix(s, prefix) {
+		return prefix + s
+	}
+
+	return s
+}
+
+func suffix(s string, suffix string) string {
+	if !strings.HasSuffix(s, suffix) {
+		return s + suffix
+	}
+	return s
 }
 
 func joinPath(path1 string, path2 string) string {
@@ -65,59 +59,78 @@ func joinPath(path1 string, path2 string) string {
 //	   that is, replace "/.." by "/" at the beginning of a path.
 //
 // The returned path ends in a slash only if it is the root "/".
-var cleanPath = unis.NewChain(
-
-	unis.NewSuffixRemover("/"),
-	unis.NewTargetedJoiner(0, '/'),
-	unis.ProcessorFunc(path.Clean),
-	unis.NewReplacer(map[string]string{
-		"//": "/",
-		"\\": "/",
-	}),
-	unis.ProcessorFunc(func(s string) string {
-		if s == "" || s == "." {
-			return "/"
-		}
-		return s
-	}),
-)
-
-const (
-	// DynamicSubdomainIndicator where a registered path starts with '*.' then it contains a dynamic subdomain, if subdomain == "*." then its dynamic
-	//
-	// used internally by URLPath and the router serve.
-	DynamicSubdomainIndicator = "*."
-	// SubdomainIndicator where './' exists in a registered path then it contains subdomain
-	//
-	// used on router builder
-	SubdomainIndicator = "./"
-)
-
-func newSubdomainDivider(sep string) unis.DividerFunc {
-	// invert if indiciator not found
-	// because we need the first parameter to be the subdomain
-	// even if empty, but the second parameter
-	// should be the path, in order to normalize it
-	// (because of the reason of subdomains shouldn't be normalized as path)
-	subdomainDevider := unis.NewInvertOnFailureDivider(unis.NewDivider(sep))
-	return func(fullpath string) (string, string) {
-		subdomain, path := subdomainDevider.Divide(fullpath)
-		if len(path) > 1 {
-			if path[0] == '/' && path[1] == '/' {
-				path = path[1:]
-			}
-		}
-
-		return subdomain, path //cleanPath(path)
+func cleanPath(s string) string {
+	if s == "" || s == "." {
+		return "/"
 	}
+
+	// remove suffix "/"
+	if lidx := len(s) - 1; s[lidx] == '/' {
+		s = s[:lidx]
+	}
+
+	// prefix with "/"
+	s = prefix(s, "/")
+
+	// remove the os specific dir sep
+	s = strings.Replace(s, "\\", "/", -1)
+
+	// use std path to clean the path
+	s = path.Clean(s)
+
+	return s
 }
 
-// ExctractSubdomain checks if the path has subdomain and if it's
+const (
+	// SubdomainWildcardIndicator where a registered path starts with '*.'.
+	// if subdomain == "*." then its wildcard.
+	//
+	// used internally by router and api builder.
+	SubdomainWildcardIndicator = "*."
+
+	// SubdomainWildcardPrefix where a registered path starts with "*./",
+	// then this route should accept any subdomain.
+	SubdomainWildcardPrefix = SubdomainWildcardIndicator + "/"
+	// SubdomainPrefix where './' exists in a registered path then it contains subdomain
+	//
+	// used on api builder.
+	SubdomainPrefix = "./" // i.e subdomain./ -> Subdomain: subdomain. Path: /
+)
+
+func hasSubdomain(s string) bool {
+	if s == "" {
+		return false
+	}
+
+	// subdomain./path
+	// .*/path
+	//
+	// remember: path always starts with "/"
+	// if not start with "/" then it should be something else,
+	// we don't assume anything else but subdomain.
+	slashIdx := strings.IndexByte(s, '/')
+	return slashIdx > 0 || s[0] == SubdomainPrefix[0] || (len(s) >= 2 && s[0:2] == SubdomainWildcardIndicator)
+}
+
+// splitSubdomainAndPath checks if the path has subdomain and if it's
 // it splits the subdomain and path and returns them, otherwise it returns
-// an empty subdomain and the given path.
+// an empty subdomain and the clean path.
 //
 // First return value is the subdomain, second is the path.
-var exctractSubdomain = newSubdomainDivider(SubdomainIndicator)
+func splitSubdomainAndPath(fullUnparsedPath string) (subdomain string, path string) {
+	s := fullUnparsedPath
+	if s == "" || s == "/" {
+		return "", "/"
+	}
+
+	slashIdx := strings.IndexByte(s, '/')
+	if slashIdx == 0 {
+		// no subdomain
+		return "", cleanPath(s)
+	}
+
+	return s[0:slashIdx], cleanPath(s[slashIdx:]) // return subdomain without slash, path with slash
+}
 
 // RoutePathReverserOption option signature for the RoutePathReverser.
 type RoutePathReverserOption func(*RoutePathReverser)
@@ -142,7 +155,7 @@ func WithHost(host string) RoutePathReverserOption {
 	return func(ps *RoutePathReverser) {
 		ps.vhost = host
 		if ps.vscheme == "" {
-			ps.vscheme = nettools.ResolveScheme(host)
+			ps.vscheme = netutil.ResolveSchemeFromVHost(host)
 		}
 	}
 }
@@ -152,8 +165,8 @@ func WithHost(host string) RoutePathReverserOption {
 // a scheme and a host to be used in the URL function.
 func WithServer(srv *http.Server) RoutePathReverserOption {
 	return func(ps *RoutePathReverser) {
-		ps.vhost = nettools.ResolveVHost(srv.Addr)
-		ps.vscheme = nettools.ResolveSchemeFromServer(srv)
+		ps.vhost = netutil.ResolveVHost(srv.Addr)
+		ps.vscheme = netutil.ResolveSchemeFromServer(srv)
 	}
 }
 
@@ -222,7 +235,7 @@ func toStringSlice(args []interface{}) []string {
 // Remove the URL for now, it complicates things for the whole framework without a specific benefits,
 // developers can just concat the subdomain, (host can be auto-retrieve by browser using the Path).
 
-// URL same as Path but returns the full uri, i.e https://mysubdomain.mydomain.com/hello/kataras
+// URL same as Path but returns the full uri, i.e https://mysubdomain.mydomain.com/hello/iris
 func (ps *RoutePathReverser) URL(routeName string, paramValues ...interface{}) (url string) {
 	if ps.vhost == "" || ps.vscheme == "" {
 		return "not supported"
@@ -243,7 +256,7 @@ func (ps *RoutePathReverser) URL(routeName string, paramValues ...interface{}) (
 	scheme := ps.vscheme
 	// if it's dynamic subdomain then the first argument is the subdomain part
 	// for this part we are responsible not the custom routers
-	if r.Subdomain == DynamicSubdomainIndicator {
+	if r.Subdomain == SubdomainWildcardIndicator {
 		subdomain := args[0]
 		host = subdomain + "." + host
 		args = args[1:] // remove the subdomain part for the arguments,
