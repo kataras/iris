@@ -14,7 +14,7 @@ import (
 	"github.com/gorilla/securecookie"
 )
 
-func main() {
+func newApp() *iris.Application {
 	app := iris.New()
 
 	cookieName := "mycustomsessionid"
@@ -71,5 +71,10 @@ func main() {
 	// mySessions.DestroyByID
 	// mySessions.DestroyAll
 
+	return app
+}
+
+func main() {
+	app := newApp()
 	app.Run(iris.Addr(":8080"))
 }
