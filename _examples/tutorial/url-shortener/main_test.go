@@ -3,13 +3,15 @@ package main
 import (
 	"io/ioutil"
 	"os"
-	"time"
-
 	"testing"
+	"time"
 
 	"github.com/kataras/iris/httptest"
 )
 
+// TestURLShortener tests the simple tasks of our url shortener application.
+// Note that it's a pure test.
+// The rest possible checks is up to you, take it as as an exercise!
 func TestURLShortener(t *testing.T) {
 	// temp db file
 	f, err := ioutil.TempFile("", "shortener")
@@ -41,6 +43,7 @@ func TestURLShortener(t *testing.T) {
 	e.POST("/shorten").
 		WithFormField("url", originalURL).Expect().
 		Status(httptest.StatusOK).Body().Contains("<pre><a target='_new' href=")
+
 	keys2 := db.GetByValue(originalURL)
 	if got := len(keys2); got != 1 {
 		t.Fatalf("expected to have 1 keys even if we save the same original url but saved %d short urls", got)
