@@ -39,7 +39,7 @@ These types of projects need heart and sacrifices to continue offer the best dev
 ### 📑 Table of contents
 
 <a href="https://github.com/kataras/iris/_examples" alt="documentation and examples">
-	<img style="float:right" src="learn.jpg" width="140px" />
+	<img align="right" src="learn.jpg" width="125" />
 </a>
 
 * [Installation](#-installation)
@@ -78,7 +78,6 @@ The only requirement is the [Go Programming Language](https://golang.org/dl/), a
 
 ```sh
 $ go get -u github.com/kataras/iris
-$ go get -u github.com/iris-contrib/middleware/... # useful handlers, optionally
 ```
 
 > _iris_ takes advantage of the [vendor directory](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo) feature. You get truly reproducible builds, as this method guards against upstream renames and deletes.
@@ -184,6 +183,15 @@ Compared to the rest open source projects, this one is very active and you get a
 </details>
 
 ### 👥 Community
+
+The most useful community repository for _iris_ developers is the 
+[iris-contrib/middleware](https://github.com/iris-contrib/middleware) which contains some HTTP handlers that can help you finish a lot of your tasks even easier.
+
+```sh
+$ go get -u github.com/iris-contrib/middleware/...
+```
+
+> Feel free to put your own middleware there!
 
 Join the welcoming community of fellow _iris_ developers in [rocket.chat](https://kataras.rocket.chat/channel/iris).
 
