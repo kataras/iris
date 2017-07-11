@@ -38,6 +38,10 @@ These types of projects need heart and sacrifices to continue offer the best dev
 
 ### 📑 Table of contents
 
+<a href="https://github.com/kataras/iris/_examples" alt="documentation and examples">
+	<img style="float:right" src="learn.jpg" width="140px" />
+</a>
+
 * [Installation](#-installation)
 * [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#mo-10-july-2017--v800)
 * [Learn](#-learn)
@@ -58,7 +62,7 @@ These types of projects need heart and sacrifices to continue offer the best dev
 	* [Miscellaneous](_examples/#miscellaneous)
 	* [Typescript Automation Tools](typescript/#table-of-contents)
 	* [Tutorial: Online Visitors](_examples/tutorial/online-visitors)
-	* [Tutorial: URL Shortener using BoltDB](_examples/tutorial/url-shortener)
+	* [Tutorial: URL Shortener using BoltDB](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
 * [Middleware](middleware/)
 * [Dockerize](https://github.com/iris-contrib/cloud-native-go)
 * [Philosophy](#-philosophy)
@@ -74,6 +78,7 @@ The only requirement is the [Go Programming Language](https://golang.org/dl/), a
 
 ```sh
 $ go get -u github.com/kataras/iris
+$ go get -u github.com/iris-contrib/middleware/... # useful handlers, optionally
 ```
 
 > _iris_ takes advantage of the [vendor directory](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo) feature. You get truly reproducible builds, as this method guards against upstream renames and deletes.
