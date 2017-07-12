@@ -21,9 +21,6 @@ func main() {
 		ctx.Redirect("/test2")
 	})
 
-	// If http to https auto-redirect is one of your needs
-	// please look the code inside ion_deprecateed.go.ListenLETSENCRYPT to do it manually.
-
 	// NOTE: This may not work on local addresses like this,
 	// use it on a real domain, because
 	// it uses the 	"golang.org/x/crypto/acme/autocert" package.
