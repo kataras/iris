@@ -164,7 +164,7 @@ QG+tmveBBIYMed5YbWstZu/95lIHF+u8Hl+Z6xgveozfE5yqiUA=
 	keyFile.WriteString(testTLSKey)
 
 	// https://localhost
-	app.ListenTLS("localhost:443", certFile.Name(), keyFile.Name())
+	app.Run(iris.TLS("localhost:443", certFile.Name(), keyFile.Name()))
 
 	certFile.Close()
 	time.Sleep(50 * time.Millisecond)
