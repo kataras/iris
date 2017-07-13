@@ -9,7 +9,7 @@ func main() {
 	app := iris.New()
 
 	app.Get("/", func(ctx context.Context) {
-		ctx.HTML("<h1>Hello World!/</h1>")
+		ctx.HTML("<h1>Hello World!</h1>")
 	})
 
 	// http://localhost:8080
