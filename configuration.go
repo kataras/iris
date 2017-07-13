@@ -103,6 +103,8 @@ type Configurator func(*Application)
 // will return `nil` if the server's error was `http/iris#ErrServerClosed`.
 //
 // See `Configuration#IgnoreServerErrors []string` too.
+//
+// Example: https://github.com/kataras/iris/tree/master/_examples/http-listening/listen-addr/omit-server-errors
 func WithoutServerError(errors ...error) Configurator {
 	return func(app *Application) {
 		if len(errors) == 0 {
@@ -250,6 +252,8 @@ type Configuration struct {
 	// like the rest of the configuration fields.
 	//
 	// See `WithoutServerError(...)` function too.
+	//
+	// Example: https://github.com/kataras/iris/tree/master/_examples/http-listening/listen-addr/omit-server-errors
 	//
 	// Defaults to an empty slice.
 	IgnoreServerErrors []string `yaml:"IgnoreServerErrors" toml:"IgnoreServerErrors"`

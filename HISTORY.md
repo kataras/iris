@@ -58,7 +58,7 @@ WithoutServerError(errors ...error) Configurator
 By default no error is being ignored, of course.
 
 Example code:
-[_examples/http-listening/omit-server-errors](https://github.com/kataras/iris/tree/master/_examples/http-listening/omit-server-errors)
+[_examples/http-listening/omit-server-errors](https://github.com/kataras/iris/tree/master/_examples/http-listening/listen-addr/omit-server-errors)
 ```go
 package main
 
