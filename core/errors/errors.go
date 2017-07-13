@@ -37,6 +37,16 @@ func New(errMsg string) Error {
 	}
 }
 
+// NewFromErr same as `New` but pointer for nil checks without the need of the `Return()` function.
+func NewFromErr(err error) *Error {
+	if err == nil {
+		return nil
+	}
+
+	errp := New(err.Error())
+	return &errp
+}
+
 // Equal returns true if "e" and "e2" are matched, by their IDs.
 // It will always returns true if the "e2" is a children of "e"
 // or the error messages are exactly the same, otherwise false.
@@ -121,6 +131,17 @@ func (e Error) With(err error) error {
 	}
 
 	return e.Format(err.Error())
+}
+
+// Ignore will ignore the "err" and return nil.
+func (e Error) Ignore(err error) error {
+	if err == nil {
+		return e
+	}
+	if e.Error() == err.Error() {
+		return nil
+	}
+	return e
 }
 
 // Panic output the message and after panics.

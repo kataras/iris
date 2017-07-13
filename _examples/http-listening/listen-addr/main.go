@@ -12,8 +12,6 @@ func main() {
 		ctx.HTML("<h1>Hello World!/</h1>")
 	})
 
-	if err := app.Run(iris.Addr(":8080")); err != nil {
-		panic(err)
-	}
-
+	// http://localhost:8080
+	app.Run(iris.Addr(":8080"))
 }

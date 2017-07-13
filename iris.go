@@ -33,7 +33,7 @@ import (
 const (
 
 	// Version is the current version number of the Iris Web Framework.
-	Version = "8.0.0"
+	Version = "8.0.1"
 )
 
 // HTTP status codes as registered with IANA.
@@ -361,6 +361,8 @@ func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 		host.RegisterOnInterrupt(host.ShutdownOnInterrupt(su, shutdownTimeout))
 	}
 
+	su.IgnoredErrors = append(su.IgnoredErrors, app.config.IgnoreServerErrors...)
+
 	app.Hosts = append(app.Hosts, su)
 
 	return su
@@ -512,7 +514,7 @@ func (app *Application) Build() error {
 // ErrServerClosed is returned by the Server's Serve, ServeTLS, ListenAndServe,
 // and ListenAndServeTLS methods after a call to Shutdown or Close.
 //
-// Conversion for the http.ErrServerClosed.
+// A shortcut for the `http#ErrServerClosed`.
 var ErrServerClosed = http.ErrServerClosed
 
 // Run builds the framework and starts the desired `Runner` with or without configuration edits.
@@ -523,7 +525,9 @@ var ErrServerClosed = http.ErrServerClosed
 // then create a new host and run it manually by `go NewHost(*http.Server).Serve/ListenAndServe` etc...
 // or use an already created host:
 // h := NewHost(*http.Server)
-// Run(Raw(h.ListenAndServe), WithCharset("UTF-8"), WithRemoteAddrHeader("CF-Connecting-IP"))
+// Run(Raw(h.ListenAndServe), WithCharset("UTF-8"),
+//	   						  WithRemoteAddrHeader("CF-Connecting-IP"),
+//    						  WithoutServerError(iris.ErrServerClosed))
 //
 // The Application can go online with any type of server or iris's host with the help of
 // the following runners:
@@ -536,7 +540,6 @@ func (app *Application) Run(serve Runner, withOrWithout ...Configurator) error {
 	}
 
 	app.Configure(withOrWithout...)
-
 	// this will block until an error(unless supervisor's DeferFlow called from a Task).
 	err := serve(app)
 	if err != nil {

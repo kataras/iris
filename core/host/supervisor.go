@@ -26,9 +26,18 @@ type Supervisor struct {
 
 	mu sync.Mutex
 
-	onServe    []func(TaskHost)
-	onErr      []func(error)
-	onShutdown []func()
+	onServe []func(TaskHost)
+	// IgnoreErrors should contains the errors that should be ignored
+	// on both serve functions return statements and error handlers.
+	//
+	// i.e: http.ErrServerClosed.Error().
+	//
+	// Note that this will match the string value instead of the equality of the type's variables.
+	//
+	// Defaults to empty.
+	IgnoredErrors []string
+	onErr         []func(error)
+	onShutdown    []func()
 }
 
 // New returns a new host supervisor
@@ -103,17 +112,31 @@ func (su *Supervisor) RegisterOnError(cb func(error)) {
 	su.mu.Unlock()
 }
 
-func (su *Supervisor) notifyErr(err error) {
-	// if err == http.ErrServerClosed {
-	// 	su.notifyShutdown()
-	// 	return
-	// }
+func (su *Supervisor) validateErr(err error) error {
+	if err == nil {
+		return nil
+	}
 
 	su.mu.Lock()
-	for _, f := range su.onErr {
-		go f(err)
+	defer su.mu.Unlock()
+
+	for _, e := range su.IgnoredErrors {
+		if err.Error() == e {
+			return nil
+		}
 	}
-	su.mu.Unlock()
+	return err
+}
+
+func (su *Supervisor) notifyErr(err error) {
+	err = su.validateErr(err)
+	if err != nil {
+		su.mu.Lock()
+		for _, f := range su.onErr {
+			go f(err)
+		}
+		su.mu.Unlock()
+	}
 }
 
 // RegisterOnServe registers a function to call on
@@ -156,7 +179,7 @@ func (su *Supervisor) supervise(blockFunc func() error) error {
 		}
 	}
 
-	return err // start the server
+	return su.validateErr(err)
 }
 
 // Serve accepts incoming connections on the Listener l, creating a
@@ -171,7 +194,6 @@ func (su *Supervisor) supervise(blockFunc func() error) error {
 // Serve always returns a non-nil error. After Shutdown or Close, the
 // returned error is http.ErrServerClosed.
 func (su *Supervisor) Serve(l net.Listener) error {
-
 	return su.supervise(func() error { return su.Server.Serve(l) })
 }
 

@@ -95,6 +95,29 @@ type Configurator func(*Application)
 // variables for configurators don't need any receivers, functions
 // for them that need (helps code editors to recognise as variables without parenthesis completion).
 
+// WithoutServerError will cause to ignore the matched "errors"
+// from the main application's `Run` function.
+//
+// Usage:
+// err := app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed))
+// will return `nil` if the server's error was `http/iris#ErrServerClosed`.
+//
+// See `Configuration#IgnoreServerErrors []string` too.
+func WithoutServerError(errors ...error) Configurator {
+	return func(app *Application) {
+		if len(errors) == 0 {
+			return
+		}
+
+		errorsAsString := make([]string, len(errors), len(errors))
+		for i, e := range errors {
+			errorsAsString[i] = e.Error()
+		}
+
+		app.config.IgnoreServerErrors = append(app.config.IgnoreServerErrors, errorsAsString...)
+	}
+}
+
 // WithoutStartupLog turns off the information send, once, to the terminal when the main server is open.
 var WithoutStartupLog = func(app *Application) {
 	app.config.DisableStartupLog = true
@@ -219,6 +242,17 @@ type Configuration struct {
 	// vhost is private and setted only with .Run method, it cannot be changed after the first set.
 	// It can be retrieved by the context if needed (i.e router for subdomains)
 	vhost string
+
+	// IgnoreServerErrors will cause to ignore the matched "errors"
+	// from the main application's `Run` function.
+	// This is a slice of string, not a slice of error
+	// users can register these errors using yaml or toml configuration file
+	// like the rest of the configuration fields.
+	//
+	// See `WithoutServerError(...)` function too.
+	//
+	// Defaults to an empty slice.
+	IgnoreServerErrors []string `yaml:"IgnoreServerErrors" toml:"IgnoreServerErrors"`
 
 	// DisableStartupLog if setted to true then it turns off the write banner on server startup.
 	//
@@ -454,6 +488,10 @@ func (c Configuration) GetOther() map[string]interface{} {
 func WithConfiguration(c Configuration) Configurator {
 	return func(app *Application) {
 		main := app.config
+
+		if v := c.IgnoreServerErrors; len(v) > 0 {
+			main.IgnoreServerErrors = append(main.IgnoreServerErrors, v...)
+		}
 
 		if v := c.DisableStartupLog; v {
 			main.DisableStartupLog = v

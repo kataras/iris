@@ -1,0 +1,84 @@
+package main
+
+import (
+	"bytes"
+	stdContext "context"
+	"fmt"
+	"testing"
+	"time"
+
+	"github.com/kataras/iris"
+	"github.com/sirupsen/logrus"
+)
+
+func logger(app *iris.Application) *bytes.Buffer {
+	buf := &bytes.Buffer{}
+	app.Logger().Formatter = &logrus.TextFormatter{
+		DisableColors:    true,
+		DisableSorting:   true,
+		DisableTimestamp: true,
+	}
+
+	app.Logger().Out = buf
+
+	// disable the "Now running at...." in order to have a clean log of the error.
+	// we could attach that on `Run` but better to keep things simple here.
+	app.Configure(iris.WithoutStartupLog)
+	return buf
+}
+
+func TestListenAddr(t *testing.T) {
+	app := iris.New()
+	// we keep the logger running as well but in a controlled way.
+	log := logger(app)
+
+	// close the server at 3-6 seconds
+	go func() {
+		time.Sleep(3 * time.Second)
+		ctx, cancel := stdContext.WithTimeout(stdContext.TODO(), 3*time.Second)
+		defer cancel()
+		app.Shutdown(ctx)
+	}()
+
+	err := app.Run(iris.Addr(":9829"))
+	// in this case the error should be logged and return as well.
+	if err != iris.ErrServerClosed {
+		t.Fatalf("expecting err to be `iris.ErrServerClosed` but got: %v", err)
+	}
+
+	// println(log.Bytes())
+	// println(len(log.Bytes()))
+	expected := fmt.Sprintln("level=error msg=\"" + iris.ErrServerClosed.Error() + "\" ")
+	// println([]byte(expected))
+	// println(len([]byte(expected)))
+
+	if got := log.String(); expected != got {
+		t.Fatalf("expecting to log the:\n'%s'\ninstead of:\n'%s'", expected, got)
+	}
+}
+
+func TestListenAddrWithoutServerErr(t *testing.T) {
+	app := iris.New()
+	// we keep the logger running as well but in a controlled way.
+	log := logger(app)
+
+	// close the server at 3-6 seconds
+	go func() {
+		time.Sleep(3 * time.Second)
+		ctx, cancel := stdContext.WithTimeout(stdContext.TODO(), 3*time.Second)
+		defer cancel()
+		app.Shutdown(ctx)
+	}()
+
+	// we disable the ErrServerClosed, so the error should be nil when server is closed by `app.Shutdown`.
+
+	// so in this case the iris/http.ErrServerClosed should be NOT logged and NOT return.
+	err := app.Run(iris.Addr(":9827"), iris.WithoutServerError(iris.ErrServerClosed))
+	if err != nil {
+		t.Fatalf("expecting err to be nil but got: %v", err)
+	}
+
+	if got := log.String(); got != "" {
+		t.Fatalf("expecting to log nothing but logged: '%s'", got)
+	}
+}
