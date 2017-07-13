@@ -16,6 +16,7 @@ It doesn't always contain the "best ways" but it does cover each important featu
 ### HTTP Listening 
 
 - [Common, with address](http-listening/listen-addr/main.go)
+    * [omit server errors](http-listening/listen-addr/omit-server-errors)
 - [UNIX socket file](http-listening/listen-unix/main.go)
 - [TLS](http-listening/listen-tls/main.go)
 - [Letsencrypt (Automatic Certifications)](http-listening/listen-letsencrypt/main.go)

@@ -15,9 +15,83 @@
 Developers are not forced to upgrade if they don't really need it. Upgrade whenever you feel ready.
 > Iris uses the [vendor directory](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo) feature, so you get truly reproducible builds, as this method guards against upstream renames and deletes.
 
-**How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`. 
-For further installation support, please click [here](http://support.iris-go.com/d/16-how-to-install-iris-web-framework).
+**How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+# Th, 13 July 2017 | v8.0.1
+
+Nothing tremendous at this minor version.
+
+We've just added a configuration field in order to ignore errors received by the `Run` function, see below.
+
+[Configuration#IgnoreServerErrors](https://github.com/kataras/iris/blob/master/configuration.go#L255)
+```go
+type Configuration struct {
+    // [...]
+
+    // IgnoreServerErrors will cause to ignore the matched "errors"
+    // from the main application's `Run` function.
+    // This is a slice of string, not a slice of error
+    // users can register these errors using yaml or toml configuration file
+    // like the rest of the configuration fields.
+    //
+    // See `WithoutServerError(...)` function too.
+    //
+    // Defaults to an empty slice.
+    IgnoreServerErrors []string `yaml:"IgnoreServerErrors" toml:"IgnoreServerErrors"`
+
+    // [...]
+}
+```
+[Configuration#WithoutServerError](https://github.com/kataras/iris/blob/master/configuration.go#L106)
+```go
+// WithoutServerError will cause to ignore the matched "errors"
+// from the main application's `Run` function.
+//
+// Usage:
+// err := app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed))
+// will return `nil` if the server's error was `http/iris#ErrServerClosed`.
+//
+// See `Configuration#IgnoreServerErrors []string` too.
+WithoutServerError(errors ...error) Configurator
+```
+
+By default no error is being ignored, of course.
+
+Example code:
+[_examples/http-listening/omit-server-errors](https://github.com/kataras/iris/tree/master/_examples/http-listening/omit-server-errors)
+```go
+package main
+
+import (
+    "github.com/kataras/iris"
+    "github.com/kataras/iris/context"
+)
+
+func main() {
+    app := iris.New()
+
+    app.Get("/", func(ctx context.Context) {
+    	ctx.HTML("<h1>Hello World!/</h1>")
+    })
+
+    err := app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed))
+    if err != nil {
+        // do something
+    }
+    // same as:
+    // err := app.Run(iris.Addr(":8080"))
+    // if err != nil && (err != iris.ErrServerClosed || err.Error() != iris.ErrServerClosed.Error()) {
+    //     [...]
+    // }
+}
+```
+
+At first we didn't want to implement something like that because it's ridiculous easy to do it manually but a second thought came to us,
+that many applications are based on configuration, therefore it would be nice to have something to ignore errors
+by simply string values that can be passed to the application's configuration via `toml` or `yaml` files too.
+
+This feature has been implemented after a request of ignoring the `iris/http#ErrServerClosed` from the `Run` function: 
+https://github.com/kataras/iris/issues/668
 
 # Mo, 10 July 2017 | v8.0.0
 

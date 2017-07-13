@@ -106,12 +106,12 @@ func (r *Reporter) Describe(format string, err error) {
 
 // PrintStack prints all the errors to the given "printer".
 // Returns itself in order to be used as printer and return the full error in the same time.
-func (r Reporter) PrintStack(printer func(string, ...interface{})) error {
+func (r *Reporter) PrintStack(printer func(string, ...interface{})) error {
 	return PrintAndReturnErrors(r, printer)
 }
 
 // Stack returns the list of the errors in the stack.
-func (r Reporter) Stack() []Error {
+func (r *Reporter) Stack() []Error {
 	return r.wrapper.Stack
 }
 
@@ -127,12 +127,12 @@ func (r *Reporter) addStack(stack []Error) {
 }
 
 // Error implements the error, returns the full error string.
-func (r Reporter) Error() string {
+func (r *Reporter) Error() string {
 	return r.wrapper.Error()
 }
 
 // Return returns nil if the error is empty, otherwise returns the full error.
-func (r Reporter) Return() error {
+func (r *Reporter) Return() error {
 	if r.Error() == "" {
 		return nil
 	}
