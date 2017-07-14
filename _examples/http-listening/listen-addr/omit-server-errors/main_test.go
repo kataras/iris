@@ -4,20 +4,15 @@ import (
 	"bytes"
 	stdContext "context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/kataras/iris"
-	"github.com/sirupsen/logrus"
 )
 
 func logger(app *iris.Application) *bytes.Buffer {
 	buf := &bytes.Buffer{}
-	app.Logger().Formatter = &logrus.TextFormatter{
-		DisableColors:    true,
-		DisableSorting:   true,
-		DisableTimestamp: true,
-	}
 
 	app.Logger().Out = buf
 
@@ -48,11 +43,14 @@ func TestListenAddr(t *testing.T) {
 
 	// println(log.Bytes())
 	// println(len(log.Bytes()))
-	expected := fmt.Sprintln("level=error msg=\"" + iris.ErrServerClosed.Error() + "\" ")
+
+	expected := fmt.Sprintln("\"" + iris.ErrServerClosed.Error() + "\" ")
 	// println([]byte(expected))
 	// println(len([]byte(expected)))
 
-	if got := log.String(); expected != got {
+	got := log.String()
+	got = strings.Split(got, "msg=")[1]
+	if expected != got {
 		t.Fatalf("expecting to log the:\n'%s'\ninstead of:\n'%s'", expected, got)
 	}
 }
