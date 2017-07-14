@@ -34,7 +34,7 @@ It doesn't always contain the "best ways" but it does cover each important featu
 ### Configuration
 
 - [Functional](configuration/functional/main.go)
-- [From Configuration Struct](configuration/from-configuration-struct/main.go)
+* [From Configuration Struct](configuration/from-configuration-structure/main.go)
 - [Import from YAML file](configuration/from-yaml-file/main.go)
 - [Import from TOML file](configuration/from-toml-file/main.go)
 
