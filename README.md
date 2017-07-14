@@ -2,6 +2,8 @@
 
 Iris is a fast, simple and efficient micro web framework for Go. It provides a beautifully expressive and easy to use foundation for your next website, API, or distributed app.
 
+Web applications powered by Iris run everywhere, even [from an android device](https://medium.com/@kataras/how-to-turn-an-android-device-into-a-web-server-9816b28ab199).
+
 [![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=flat-square)](https://travis-ci.org/kataras/iris)
 [![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=flat-square)](http://goreportcard.com/report/kataras/iris)
 [![godocs](https://img.shields.io/badge/godocs-8.x.x-0366d6.svg?style=flat-square)](https://godoc.org/github.com/kataras/iris)
@@ -63,6 +65,7 @@ These types of projects need heart and sacrifices to continue offer the best dev
 	* [Typescript Automation Tools](typescript/#table-of-contents)
 	* [Tutorial: Online Visitors](_examples/tutorial/online-visitors)
 	* [Tutorial: URL Shortener using BoltDB](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
+	* [Tutorial: How to turn your Android Device into a fully featured Web Server](https://medium.com/@kataras/how-to-turn-an-android-device-into-a-web-server-9816b28ab199)
 * [Middleware](middleware/)
 * [Dockerize](https://github.com/iris-contrib/cloud-native-go)
 * [Philosophy](#-philosophy)
