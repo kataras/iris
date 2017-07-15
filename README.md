@@ -12,6 +12,7 @@ Web applications powered by Iris run everywhere, even [from an android device](h
 [![chat](https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square)](https://kataras.rocket.chat/channel/iris)
 
 <!--
+
 # Mo, 10 July 2017 | v8.0.0
 
 ### 📈 One and a half years with Iris and You...
@@ -34,6 +35,52 @@ The leadership of this, open-source, repository was transfered to [hiveminded](h
 These types of projects need heart and sacrifices to continue offer the best developer experience like a paid software, please do support him as you did with me!
 
 > Please [contact](https://kataras.rocket.chat/channel/iris) with the project team if you want to help at the development process!
+
+-->
+
+### 🔥 Hot features
+
+- Focus on high performance
+- Easy Fluent API
+- Highly customizable
+- Robust routing and middleware ecosystem
+    * build RESTful APIs with iris unique expressionist path interpreter
+	* dynamic path parameterized or wildcard routes are not conflict with static routes 
+	* remove trailing slash from the URL with option to redirect
+	* virtual hosts and subdomains made easy
+	* group API's and static or even dynamic subdomains
+	* `net/http` and `negroni-like` handlers are compatible via `iris.FromStd` 
+	* [learn the reasons that differ from what you've seen so far](_examples/#routing-grouping-dynamic-path-parameters-macros-and-custom-context)
+- Automatically install and serve certificates from https://letsencrypt.org
+- Request-Scoped Transactions
+- Body binding for JSON, XML, Forms, can be extended to use your own custom binders
+- More than 50 handy functions to send HTTP responses
+- View system: supporting more than 6+ template engines, with prerenders. You can still use your favorite
+- Graceful shutdown
+- Limit request body
+- Localization i18N
+- Serve static and embedded files
+- Cache
+- Log requests
+- Customizable format and output for the logger
+- Customizable HTTP errors
+- Compression (Gzip)
+- Authentication
+- OAuth, OAuth2 supporting 27+ popular websites
+- JWT
+- Basic Authentication
+- HTTP Sessions. You can still use your favorite
+- HTTP to HTTPS
+- HTTP to HTTPS WWW
+- Highly scalable rich content render (Markdown, JSON, JSONP, XML...)
+- Websocket-only API similar to socket.io. You can still use your favorite
+- Hot Reload on source code changes[*](https://github.com/kataras/rizla)
+- Typescript integration + Web IDE
+- And many other things that will surprise you
+
+<p>
+<img src="https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png" alt="Third-party source for transparency." />
+</p>
 
 ### 📑 Table of contents
 
