@@ -17,6 +17,89 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+# Su, 15 July 2017 | v8.0.2
+
+Okay my friends, this is a good time to upgrade, I did implement a feature that you were asking many times at the past.
+
+Iris' router can now handle root-level wildcard paths `app.Get("/{paramName:path})`.
+
+In case you're wondering: no it does not conflict with other static or dynamic routes, meaning that you can code something like this:
+
+```go
+// it isn't conflicts with the rest of the static routes or dynamic routes with a path prefix.
+app.Get("/{pathParamName:path}", myHandler) 
+```
+
+Or even like this:
+
+```go
+package main
+
+import (
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
+)
+
+func main() {
+	app := iris.New()
+
+	// this works as expected now,
+	// will handle all GET requests
+	// except:
+	// /                     -> because of app.Get("/", ...)
+	// /other/anything/here  -> because of app.Get("/other/{paramother:path}", ...)
+	// /other2/anything/here -> because of app.Get("/other2/{paramothersecond:path}", ...)
+	// /other2/static        -> because of app.Get("/other2/static", ...)
+	//
+	// It isn't conflicts with the rest of the routes, without routing performance cost!
+	//
+	// i.e /something/here/that/cannot/be/found/by/other/registered/routes/order/not/matters
+	app.Get("/{p:path}", h)
+
+	// this will handle only GET /
+	app.Get("/", staticPath)
+
+	// this will handle all GET requests starting with "/other/"
+	//
+	// i.e /other/more/than/one/path/parts
+	app.Get("/other/{paramother:path}", other)
+
+	// this will handle all GET requests starting with "/other2/"
+	// except /other2/static (because of the next static route)
+	//
+	// i.e /other2/more/than/one/path/parts
+	app.Get("/other2/{paramothersecond:path}", other2)
+
+	// this will handle only GET /other2/static
+	app.Get("/other2/static", staticPath)
+
+	app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed))
+}
+
+func h(ctx context.Context) {
+	param := ctx.Params().Get("p")
+	ctx.WriteString(param)
+}
+
+func other(ctx context.Context) {
+	param := ctx.Params().Get("paramother")
+	ctx.Writef("from other: %s", param)
+}
+
+func other2(ctx context.Context) {
+	param := ctx.Params().Get("paramothersecond")
+	ctx.Writef("from other2: %s", param)
+}
+
+func staticPath(ctx context.Context) {
+	ctx.Writef("from the static path: %s", ctx.Path())
+}
+``` 
+
+If you find any bugs with this change please send me a [chat message](https://kataras.rocket.chat/channel/iris) in order to investigate it, I'm totally free at weekends.
+
+Have fun and don't forget to [star](https://github.com/kataras/iris/stargazers) the github repository, it gives me power to continue publishing my work!
+
 # Th, 13 July 2017 | v8.0.1
 
 Nothing tremendous at this minor version.

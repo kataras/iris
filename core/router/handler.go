@@ -53,7 +53,7 @@ func (h *routerHandler) addRoute(method, subdomain, path string, handlers contex
 	t := h.getTree(method, subdomain)
 
 	if t == nil {
-		n := make(node.Nodes, 0)
+		n := node.Nodes{}
 		// first time we register a route to this method with this subdomain
 		t = &tree{Method: method, Subdomain: subdomain, Nodes: &n}
 		h.trees = append(h.trees, t)
@@ -81,7 +81,34 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 
 	// sort, subdomains goes first.
 	sort.Slice(registeredRoutes, func(i, j int) bool {
-		return len(registeredRoutes[i].Subdomain) >= len(registeredRoutes[j].Subdomain)
+		first, second := registeredRoutes[i], registeredRoutes[j]
+		lsub1 := len(first.Subdomain)
+		lsub2 := len(second.Subdomain)
+
+		firstSlashLen := strings.Count(first.Path, "/")
+		secondSlashLen := strings.Count(second.Path, "/")
+
+		if lsub1 == lsub2 && first.Method == second.Method {
+			if secondSlashLen < firstSlashLen {
+				// fixes order when wildcard root is registered before other wildcard paths
+				return true
+			}
+			if secondSlashLen == firstSlashLen {
+				// fixes order when static path with the same prefix with a wildcard path
+				// is registered after the wildcard path, although this is managed
+				// by the low-level node but it couldn't work if we registered a root level wildcard, this fixes it.
+				if len(first.Tmpl().Params) == 0 {
+					return false
+				}
+				if len(second.Tmpl().Params) == 0 {
+					return true
+				}
+			}
+		}
+
+		// the rest are handled inside the node
+		return lsub1 > lsub2
+
 	})
 
 	rp := errors.NewReporter()

@@ -34,17 +34,54 @@ It doesn't always contain the "best ways" but it does cover each important featu
 ### Configuration
 
 - [Functional](configuration/functional/main.go)
-* [From Configuration Struct](configuration/from-configuration-structure/main.go)
+- [From Configuration Struct](configuration/from-configuration-structure/main.go)
 - [Import from YAML file](configuration/from-yaml-file/main.go)
 - [Import from TOML file](configuration/from-toml-file/main.go)
 
 
 ### Routing, Grouping, Dynamic Path Parameters, "Macros" and Custom Context
 
+* `app.Get("{userid:int min(1)}", myHandler)`
+* `app.Post("{asset:path}", myHandler)`
+* `app.Put("{custom:string regexp([a-z]+)}", myHandler)`
+
+Note: unlike other routers you'd seen, iris' router can handle things like these:
+```go
+// Matches all GET requests prefixed with "/assets/"
+app.Get("/assets/{asset:path}", assetsWildcardHandler)
+
+// Matches only GET "/"
+app.Get("/", indexHandler)
+// Matches only GET "/about"
+app.Get("/about", aboutHandler)
+
+// Matches all GET requests prefixed with "/profile/"
+// and followed by a single path part
+app.Get("/profile/{username:string}", userHandler)
+// Matches only GET "/profile/me" because 
+// it does not conflict with /profile/{username:string}
+// or the root wildcard {root:path}
+app.Get("/profile/me", userHandler)
+
+// Matches all GET requests prefixed with /users/
+// and followed by a number which should be equal or bigger than 1
+app.Get("/user/{userid:int min(1)}", getUserHandler)
+// Matches all requests DELETE prefixed with /users/
+// and following by a number which should be equal or bigger than 1
+app.Delete("/user/{userid:int min(1)}", deleteUserHandler)
+
+// Matches all GET requests except "/", "/about", anything starts with "/assets/" etc...
+// because it does not conflict with the rest of the routes.
+app.Get("{root:path}", rootWildcardHandler)
+```
+
+Navigate through examples for a better understanding.
+
 - [Overview](routing/overview/main.go)
 - [Basic](routing/basic/main.go)
 - [Custom HTTP Errors](routing/http-errors/main.go)
 - [Dynamic Path](routing/dynamic-path/main.go)
+    * [Root Level Wildcard Path](routing/dynamic-path/root-wildcard/main.go)
 - [Reverse routing](routing/reverse/main.go)
 - [Custom wrapper](routing/custom-wrapper/main.go)
 - Custom Context

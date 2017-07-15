@@ -11,10 +11,7 @@ Web applications powered by Iris run everywhere, even [from an android device](h
 [![view examples](https://img.shields.io/badge/learn%20by-examples-0077b3.svg?style=flat-square)](https://github.com/kataras/iris/tree/master/_examples)
 [![chat](https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square)](https://kataras.rocket.chat/channel/iris)
 
-<p>
-<img src="https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png" alt="Third-party source for transparency." />
-</p>
-
+<!--
 # Mo, 10 July 2017 | v8.0.0
 
 ### 📈 One and a half years with Iris and You...
@@ -45,7 +42,7 @@ These types of projects need heart and sacrifices to continue offer the best dev
 </a>
 
 * [Installation](#-installation)
-* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#th-13-july-2017--v801)
+* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#su-15-july-2017--v802)
 * [Learn](#-learn)
 	* [HTTP Listening](_examples/#http-listening)
 	* [Configuration](_examples/#configuration)
@@ -218,7 +215,7 @@ _iris_ does not force you to use any specific ORM. With support for the most pop
 
 ### 📌 Version
 
-Current: **8.0.1**
+Current: **8.0.2**
 
 Each new release is pushed to the master. It stays there until the next version. When a next version is released then the previous version goes to its own branch with `gopkg.in` as its import path (and its own vendor folder), in order to keep it working "for-ever".
 
