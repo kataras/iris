@@ -71,7 +71,7 @@ func New(t *testing.T, app *iris.Application, setters ...OptionSetter) *httpexpe
 	}
 
 	// disable logger by setting it to the  "Panic" level, iris never uses this
-	// so it will never prints.
+	// so it will never print.
 	app.Logger().Level = 0
 	app.Build()
 

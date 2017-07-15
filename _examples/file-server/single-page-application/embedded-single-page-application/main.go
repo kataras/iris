@@ -25,6 +25,8 @@ func newApp() *iris.Application {
 	})
 
 	assetHandler := app.StaticEmbeddedHandler("./public", Asset, AssetNames)
+	// as an alternative of SPA you can take a look at the /routing/dynamic-path/root-wildcard
+	// example too
 	app.SPA(assetHandler)
 
 	return app
