@@ -89,7 +89,7 @@ These types of projects need heart and sacrifices to continue offer the best dev
 </a>
 
 * [Installation](#-installation)
-* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#su-15-july-2017--v802)
+* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#su-16-july-2017--v803)
 * [Learn](#-learn)
 	* [HTTP Listening](_examples/#http-listening)
 	* [Configuration](_examples/#configuration)
@@ -262,7 +262,7 @@ _iris_ does not force you to use any specific ORM. With support for the most pop
 
 ### 📌 Version
 
-Current: **8.0.2**
+Current: **8.0.3**
 
 Each new release is pushed to the master. It stays there until the next version. When a next version is released then the previous version goes to its own branch with `gopkg.in` as its import path (and its own vendor folder), in order to keep it working "for-ever".
 

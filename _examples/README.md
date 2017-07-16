@@ -11,7 +11,8 @@ It doesn't always contain the "best ways" but it does cover each important featu
 - [Hello world!](hello-world/main.go)
 - [Glimpse](overview/main.go)
 - [Tutorial: Online Visitors](tutorial/online-visitors/main.go)
-- [Tutorial: URL Shortener using BoltDB](tutorial/url-shortener/main.go)
+- [Tutorial: URL Shortener using BoltDB](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
+- [Tutorial: How to turn your Android Device into a fully featured Web Server](https://medium.com/@kataras/how-to-turn-an-android-device-into-a-web-server-9816b28ab199)
 
 ### HTTP Listening 
 
@@ -24,7 +25,7 @@ It doesn't always contain the "best ways" but it does cover each important featu
     * [common net.Listener](http-listening/custom-listener/main.go)
     * [SO_REUSEPORT for unix systems](http-listening/custom-listener/unix-reuseport/main.go)
 - Custom HTTP Server
-    * [iris way](http-listening/custom-httpserver/easy-way/main.go)
+    * [easy way](http-listening/custom-httpserver/easy-way/main.go)
     * [std way](http-listening/custom-httpserver/std-way/main.go)
     * [multi server instances](http-listening/custom-httpserver/multi/main.go)
 - Graceful Shutdown
@@ -81,12 +82,12 @@ Navigate through examples for a better understanding.
 - [Basic](routing/basic/main.go)
 - [Custom HTTP Errors](routing/http-errors/main.go)
 - [Dynamic Path](routing/dynamic-path/main.go)
-    * [Root Level Wildcard Path](routing/dynamic-path/root-wildcard/main.go)
+    * [root level wildcard path](routing/dynamic-path/root-wildcard/main.go)
 - [Reverse routing](routing/reverse/main.go)
 - [Custom wrapper](routing/custom-wrapper/main.go)
 - Custom Context
-    * [Method Overriding](routing/custom-context/method-overriding/main.go)
-    * [New Implementation](routing/custom-context/new-implementation/main.go)
+    * [method overriding](routing/custom-context/method-overriding/main.go)
+    * [new implementation](routing/custom-context/new-implementation/main.go)
 - [Route State](routing/route-state/main.go)
 
 ### Subdomains
@@ -134,8 +135,8 @@ Navigate through examples for a better understanding.
 - [Embedding Files Into App Executable File](file-server/embedding-files-into-app/main.go)
 - [Send/Force-Download Files](file-server/send-files/main.go)
 - Single Page Applications
-    * [Single Page Application](file-server/single-page-application/basic/main.go)
-    * [Embedded Single Page Application](file-server/single-page-application/embedded-single-page-application/main.go)
+    * [single Page Application](file-server/single-page-application/basic/main.go)
+    * [embedded Single Page Application](file-server/single-page-application/embedded-single-page-application/main.go)
 
 ### How to Read from `context.Request() *http.Request`
 
@@ -156,6 +157,7 @@ Navigate through examples for a better understanding.
 ### Miscellaneous
 
 - [Request Logger](http_request/request-logger/main.go)
+    * [log requests to a file](http_request/request-logger/request-logger-file/main.go)
 - [Localization and Internationalization](miscellaneous/i18n/main.go)
 - [Recovery](miscellaneous/recover/main.go)
 - [Profiling (pprof)](miscellaneous/pprof/main.go)
