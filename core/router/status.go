@@ -11,7 +11,7 @@ import (
 // of the list of all http error code handlers.
 type ErrorCodeHandler struct {
 	StatusCode int
-	Handler    context.Handler
+	Handlers   context.Handlers
 	mu         sync.Mutex
 }
 
@@ -41,12 +41,12 @@ func (ch *ErrorCodeHandler) Fire(ctx context.Context) {
 	// i.e
 	// users := app.Party("/users")
 	// users.Done(func(ctx context.Context){ if ctx.StatusCode() == 400 { /*  custom error code for /users */ }})
-	ch.Handler(ctx)
+	ctx.Do(ch.Handlers)
 }
 
-func (ch *ErrorCodeHandler) updateHandler(h context.Handler) {
+func (ch *ErrorCodeHandler) updateHandlers(handlers context.Handlers) {
 	ch.mu.Lock()
-	ch.Handler = h
+	ch.Handlers = handlers
 	ch.mu.Unlock()
 }
 
@@ -101,23 +101,24 @@ func (s *ErrorCodeHandlers) Get(statusCode int) *ErrorCodeHandler {
 // the body if recorder was enabled
 // and/or disable the gzip if gzip response recorder
 // was active.
-func (s *ErrorCodeHandlers) Register(statusCode int, handler context.Handler) *ErrorCodeHandler {
+func (s *ErrorCodeHandlers) Register(statusCode int, handlers ...context.Handler) *ErrorCodeHandler {
 	if statusCode < 400 {
 		return nil
 	}
 
 	h := s.Get(statusCode)
 	if h == nil {
+		// create new and add it
 		ch := &ErrorCodeHandler{
 			StatusCode: statusCode,
-			Handler:    handler,
+			Handlers:   handlers,
 		}
 		s.handlers = append(s.handlers, ch)
-		// create new and add it
+
 		return ch
 	}
-	// otherwise update the handler
-	h.updateHandler(handler)
+	// otherwise update the handlers
+	h.updateHandlers(handlers)
 	return h
 }
 

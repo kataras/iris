@@ -620,8 +620,61 @@ func (rb *APIBuilder) StaticWeb(requestPath string, systemPath string) *Route {
 // the body if recorder was enabled
 // and/or disable the gzip if gzip response recorder
 // was active.
-func (rb *APIBuilder) OnErrorCode(statusCode int, handler context.Handler) {
-	rb.errorCodeHandlers.Register(statusCode, handler)
+func (rb *APIBuilder) OnErrorCode(statusCode int, handlers ...context.Handler) {
+	rb.errorCodeHandlers.Register(statusCode, handlers...)
+}
+
+// OnAnyErrorCode registers a handler which called when error status code written.
+// Same as `OnErrorCode` but registers all http error codes.
+// See: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
+func (rb *APIBuilder) OnAnyErrorCode(handlers ...context.Handler) {
+	// we could register all >=400 and <=511 but this way
+	// could override custom status codes that iris developers can register for their
+	//  web apps whenever needed.
+	// There fore these are the hard coded http error statuses:
+	var errStatusCodes = []int{
+		http.StatusBadRequest,
+		http.StatusUnauthorized,
+		http.StatusPaymentRequired,
+		http.StatusForbidden,
+		http.StatusNotFound,
+		http.StatusMethodNotAllowed,
+		http.StatusNotAcceptable,
+		http.StatusProxyAuthRequired,
+		http.StatusRequestTimeout,
+		http.StatusConflict,
+		http.StatusGone,
+		http.StatusLengthRequired,
+		http.StatusPreconditionFailed,
+		http.StatusRequestEntityTooLarge,
+		http.StatusRequestURITooLong,
+		http.StatusUnsupportedMediaType,
+		http.StatusRequestedRangeNotSatisfiable,
+		http.StatusExpectationFailed,
+		http.StatusTeapot,
+		http.StatusUnprocessableEntity,
+		http.StatusLocked,
+		http.StatusFailedDependency,
+		http.StatusUpgradeRequired,
+		http.StatusPreconditionRequired,
+		http.StatusTooManyRequests,
+		http.StatusRequestHeaderFieldsTooLarge,
+		http.StatusUnavailableForLegalReasons,
+		http.StatusInternalServerError,
+		http.StatusNotImplemented,
+		http.StatusBadGateway,
+		http.StatusServiceUnavailable,
+		http.StatusGatewayTimeout,
+		http.StatusHTTPVersionNotSupported,
+		http.StatusVariantAlsoNegotiates,
+		http.StatusInsufficientStorage,
+		http.StatusLoopDetected,
+		http.StatusNotExtended,
+		http.StatusNetworkAuthenticationRequired}
+
+	for _, statusCode := range errStatusCodes {
+		rb.OnErrorCode(statusCode, handlers...)
+	}
 }
 
 // FireErrorCode executes an error http status code handler

@@ -17,7 +17,31 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
-# Su, 15 July 2017 | v8.0.2
+# Su, 16 July 2017 | v8.0.3
+
+No API changes.
+
+Relative issues: 
+
+- https://github.com/kataras/iris/issues/674
+- https://github.com/kataras/iris/issues/675
+- https://github.com/kataras/iris/issues/676
+
+### HTTP Errors
+
+Able to register a chain of Handlers (and middleware with `ctx.Next()` support like routes) for a specific error code, read more at [issues/674](https://github.com/kataras/iris/issues/674). Usage example can be found at [_examples/http_request/request-logger/main.go#L37](https://github.com/kataras/iris/blob/master/_examples/http_request/request-logger/main.go#L37).
+
+
+New function to register a Handler or a chain of Handlers for all official http error codes, by calling the new `app.OnAnyErrorCode(func(ctx context.Context){})`, read more at [issues/675](https://github.com/kataras/iris/issues/675). Usage example can be found at [_examples/http_request/request-logger/main.go#L42](https://github.com/kataras/iris/blob/master/_examples/http_request/request-logger/main.go#L42).
+
+### Request Logger
+
+Add `Configuration#LogFunc` and `Configuration#Columns` fields, read more at [issues/676](https://github.com/kataras/iris/issues/676). Example can be found at [_examples/http_request/request-logger/request-logger-file](https://github.com/kataras/iris/tree/master/_examples/http_request/request-logger/request-logger-file).
+
+
+Have fun and don't forget to [star](https://github.com/kataras/iris/stargazers) the github repository, it gives me power to continue publishing my work!
+
+# Sa, 15 July 2017 | v8.0.2
 
 Okay my friends, this is a good time to upgrade, I did implement a feature that you were asking many times at the past.
 

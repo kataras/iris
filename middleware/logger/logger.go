@@ -2,25 +2,49 @@
 package logger
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
 	"github.com/kataras/iris/context"
+
+	"github.com/ryanuber/columnize"
 )
 
 type requestLoggerMiddleware struct {
 	config Config
 }
 
+// New creates and returns a new request logger middleware.
+// Do not confuse it with the framework's Logger.
+// This is for the http requests.
+//
+// Receives an optional configuation.
+func New(cfg ...Config) context.Handler {
+	c := DefaultConfiguration()
+	if len(cfg) > 0 {
+		c = cfg[0]
+	}
+	c.buildSkipper()
+	l := &requestLoggerMiddleware{config: c}
+
+	return l.ServeHTTP
+}
+
 // Serve serves the middleware
 func (l *requestLoggerMiddleware) ServeHTTP(ctx context.Context) {
+	// skip logs and serve the main request immediately
+	if l.config.skip != nil {
+		if l.config.skip(ctx) {
+			ctx.Next()
+			return
+		}
+	}
+
 	//all except latency to string
 	var status, ip, method, path string
 	var latency time.Duration
 	var startTime, endTime time.Time
-	path = ctx.Path()
-	method = ctx.Method()
-
 	startTime = time.Now()
 
 	ctx.Next()
@@ -36,29 +60,36 @@ func (l *requestLoggerMiddleware) ServeHTTP(ctx context.Context) {
 		ip = ctx.RemoteAddr()
 	}
 
-	if !l.config.Method {
-		method = ""
+	if l.config.Method {
+		method = ctx.Method()
 	}
 
-	if !l.config.Path {
-		path = ""
+	if l.config.Path {
+		path = ctx.Path()
 	}
 
-	//finally print the logs, no new line, the framework's logger is responsible how to render each log.
-	ctx.Application().Logger().Infof("%v %4v %s %s %s", status, latency, ip, method, path)
+	// print the logs
+	if logFunc := l.config.LogFunc; logFunc != nil {
+		logFunc(endTime, latency, status, ip, method, path)
+		return
+	}
+	endTimeFormatted := endTime.Format("2006/01/02 - 15:04:05")
+	if l.config.Columns {
+		output := Columnize(endTimeFormatted, latency, status, ip, method, path)
+		ctx.Application().Logger().Out.Write([]byte(output))
+		return
+	}
+	// no new line, the framework's logger is responsible how to render each log.
+	ctx.Application().Logger().Infof("%s | %v %4v %s %s %s", endTimeFormatted, status, latency, ip, method, path)
 }
 
-// New creates and returns a new request logger middleware.
-// Do not confuse it with the framework's Logger.
-// This is for the http requests.
-//
-// Receives an optional configuation.
-func New(cfg ...Config) context.Handler {
-	c := DefaultConfiguration()
-	if len(cfg) > 0 {
-		c = cfg[0]
+// Columnize formats the given arguments as columns and returns the formatted output,
+// note that it appends a new line to the end.
+func Columnize(nowFormatted string, latency time.Duration, status, ip, method, path string) string {
+	outputC := []string{
+		"Time | Status | Latency | IP | Method | Path",
+		fmt.Sprintf("%s | %v | %4v | %s | %s | %s", nowFormatted, status, latency, ip, method, path),
 	}
-	l := &requestLoggerMiddleware{config: c}
-
-	return l.ServeHTTP
+	output := columnize.SimpleFormat(outputC) + "\n"
+	return output
 }
