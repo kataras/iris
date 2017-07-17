@@ -101,7 +101,7 @@ func StaticEmbeddedHandler(vdir string, assetFn func(name string) ([]byte, error
 // StaticHandler returns a new Handler which is ready
 // to serve all kind of static files.
 //
-// Developers can wrap this handler using the `iris.StripPrefix`
+// Developers can wrap this handler using the `router.StripPrefix`
 // for a fixed static path when the result handler is being, finally, registered to a route.
 //
 //
@@ -109,7 +109,7 @@ func StaticEmbeddedHandler(vdir string, assetFn func(name string) ([]byte, error
 // app := iris.New()
 // ...
 // fileserver := iris.StaticHandler("./static_files", false, false)
-// h := iris.StripPrefix("/static", fileserver)
+// h := router.StripPrefix("/static", fileserver)
 // /* http://mydomain.com/static/css/style.css */
 // app.Get("/static", h)
 // ...
@@ -288,7 +288,7 @@ func (w *fsHandler) Build() context.Handler {
 //
 // Usage:
 // fileserver := iris.StaticHandler("./static_files", false, false)
-// h := iris.StripPrefix("/static", fileserver)
+// h := router.StripPrefix("/static", fileserver)
 // app.Get("/static", h)
 //
 func StripPrefix(prefix string, h context.Handler) context.Handler {

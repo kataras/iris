@@ -10,36 +10,48 @@ import (
 // See `Configuration` too.
 type SkipperFunc func(ctx context.Context) bool
 
-// Config are the options of the logger middlweare
-// contains 4 bools
-// Status, IP, Method, Path
-// if set to true then these will print
+// Config contains the options for the logger middleware
+// can be optionally be passed to the `New`.
 type Config struct {
-	// Status displays status code (bool)
+	// Status displays status code (bool).
 	//
-	// Defaults to true
+	// Defaults to true.
 	Status bool
-	// IP displays request's remote address (bool)
+	// IP displays request's remote address (bool).
 	//
-	// Defaults to true
+	// Defaults to true.
 	IP bool
-	// Method displays the http method (bool)
+	// Method displays the http method (bool).
 	//
-	// Defaults to true
+	// Defaults to true.
 	Method bool
-	// Path displays the request path (bool)
+	// Path displays the request path (bool).
 	//
-	// Defaults to true
+	// Defaults to true.
 	Path bool
-	// Columns will display the logs as well formatted columns (bool)
+
+	// Columns will display the logs as well formatted columns (bool).
 	// If custom `LogFunc` has been provided then this field is useless and users should
 	// use the `Columinize` function of the logger to get the ouput result as columns.
 	//
-	// Defaults to true
+	// Defaults to true.
 	Columns bool
+
+	// MessageContextKey if not empty,
+	// the middleware will try to fetch
+	// the contents with `ctx.Values().Get(MessageContextKey)`
+	// and if available then these contents will be
+	// appended as part of the logs (with `%v`, in order to be able to set a struct too),
+	// if Columns field was setted to true then
+	// a new column will be added named 'Message'.
+	//
+	// Defaults to empty.
+	MessageContextKey string
+
 	// LogFunc is the writer which logs are written to,
 	// if missing the logger middleware uses the app.Logger().Infof instead.
-	LogFunc func(now time.Time, latency time.Duration, status, ip, method, path string)
+	// Note that message argument can be empty.
+	LogFunc func(now time.Time, latency time.Duration, status, ip, method, path string, message interface{})
 	// Skippers used to skip the logging i.e by `ctx.Path()` and serve
 	// the next/main handler immediately.
 	Skippers []SkipperFunc
@@ -48,12 +60,22 @@ type Config struct {
 	skip SkipperFunc
 }
 
-// DefaultConfiguration returns a default configuration
+// DefaultConfig returns a default config
 // that have all boolean fields to true,
-// LogFunc to nil,
-// and Skippers to nil.
-func DefaultConfiguration() Config {
-	return Config{true, true, true, true, true, nil, nil, nil}
+// all strings are empty,
+// LogFunc and Skippers to nil as well.
+func DefaultConfig() Config {
+	return Config{
+		Status:            true,
+		IP:                true,
+		Method:            true,
+		Path:              true,
+		Columns:           true,
+		MessageContextKey: "",
+		LogFunc:           nil,
+		Skippers:          nil,
+		skip:              nil,
+	}
 }
 
 // AddSkipper adds a skipper to the configuration.

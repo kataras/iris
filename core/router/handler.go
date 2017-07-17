@@ -218,11 +218,15 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 				continue
 			}
 		}
-		// RCF rfc2616 https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
-		// The response MUST include an Allow header containing a list of valid methods for the requested resource.
-		ctx.Header("Allow", methodAllowed)
-		ctx.StatusCode(http.StatusMethodNotAllowed)
-		return
+
+		if ctx.Method() != methodAllowed {
+			// RCF rfc2616 https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
+			// The response MUST include an Allow header containing a list of valid methods for the requested resource.
+			ctx.Header("Allow", methodAllowed)
+			ctx.StatusCode(http.StatusMethodNotAllowed)
+			return
+		}
+
 	}
 	ctx.StatusCode(http.StatusNotFound)
 }

@@ -2,14 +2,49 @@
 
 Iris is a fast, simple and efficient micro web framework for Go. It provides a beautifully expressive and easy to use foundation for your next website, API, or distributed app.
 
-Web applications powered by Iris run everywhere, even [from an android device](https://medium.com/@kataras/how-to-turn-an-android-device-into-a-web-server-9816b28ab199).
-
 [![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=flat-square)](https://travis-ci.org/kataras/iris)
 [![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=flat-square)](http://goreportcard.com/report/kataras/iris)
 [![godocs](https://img.shields.io/badge/godocs-8.x.x-0366d6.svg?style=flat-square)](https://godoc.org/github.com/kataras/iris)
 [![get support](https://img.shields.io/badge/get-support-cccc00.svg?style=flat-square)](http://support.iris-go.com)
 [![view examples](https://img.shields.io/badge/learn%20by-examples-0077b3.svg?style=flat-square)](https://github.com/kataras/iris/tree/master/_examples)
 [![chat](https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square)](https://kataras.rocket.chat/channel/iris)
+
+<p>
+<img src="https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png" alt="Third-party source for transparency." />
+</p>
+
+
+### 📑 Table of contents
+
+* [Installation](#-installation)
+* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#mo-17-july-2017--v804)
+* [Learn](#-learn)
+	* [HTTP Listening](_examples/#http-listening)
+	* [Configuration](_examples/#configuration)
+	* [Routing, Grouping, Dynamic Path Parameters, "Macros" and Custom Context](_examples/#routing-grouping-dynamic-path-parameters-macros-and-custom-context)
+	* [Subdomains](_examples/#subdomains)
+	* [Wrap `http.Handler/HandlerFunc`](_examples/#convert-httphandlerhandlerfunc)
+	* [View](_examples/#view)
+	* [Authentication](_examples/#authentication)
+	* [File Server](_examples/#file-server)
+	* [How to Read from `context.Request() *http.Request`](_examples/#how-to-read-from-contextrequest-httprequest)
+	* [How to Write to `context.ResponseWriter() http.ResponseWriter`](_examples/#how-to-write-to-contextresponsewriter-httpresponsewriter)
+	* [Test](_examples/#testing)	
+	* [Cache](cache/#table-of-contents)
+	* [Sessions](sessions/#table-of-contents)
+	* [Websockets](websocket/#table-of-contents)
+	* [Miscellaneous](_examples/#miscellaneous)
+	* [Typescript Automation Tools](typescript/#table-of-contents)
+	* [Tutorial: Online Visitors](_examples/tutorial/online-visitors)
+	* [Tutorial: URL Shortener using BoltDB](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
+	* [Tutorial: How to turn your Android Device into a fully featured Web Server](https://medium.com/@kataras/how-to-turn-an-android-device-into-a-web-server-9816b28ab199)
+* [Middleware](middleware/)
+* [Dockerize](https://github.com/iris-contrib/cloud-native-go)
+* [Community & Support](#-community)
+* [Versioning](#-version)
+    * [When should I upgrade?](#should-i-upgrade-my-iris)
+    * [Where can I find older versions?](#where-can-i-find-older-versions)
+* [People](#-people)
 
 <!--
 
@@ -37,87 +72,6 @@ These types of projects need heart and sacrifices to continue offer the best dev
 > Please [contact](https://kataras.rocket.chat/channel/iris) with the project team if you want to help at the development process!
 
 -->
-
-### 🔥 Hot features
-
-- Focus on high performance
-- Easy Fluent API
-- Highly customizable
-- Robust routing and middleware ecosystem
-    * build RESTful APIs with iris unique expressionist path interpreter
-	* dynamic path parameterized or wildcard routes are not conflict with static routes 
-	* remove trailing slash from the URL with option to redirect
-	* virtual hosts and subdomains made easy
-	* group API's and static or even dynamic subdomains
-	* `net/http` and `negroni-like` handlers are compatible via `iris.FromStd` 
-	* [learn the reasons that differ from what you've seen so far](_examples/#routing-grouping-dynamic-path-parameters-macros-and-custom-context)
-- Automatically install and serve certificates from https://letsencrypt.org
-- Request-Scoped Transactions
-- Body binding for JSON, XML, Forms, can be extended to use your own custom binders
-- More than 50 handy functions to send HTTP responses
-- View system: supporting more than 6+ template engines, with prerenders. You can still use your favorite
-- Graceful shutdown
-- Limit request body
-- Localization i18N
-- Serve static and embedded files
-- Cache
-- Log requests
-- Customizable format and output for the logger
-- Customizable HTTP errors
-- Compression (Gzip)
-- Authentication
-- OAuth, OAuth2 supporting 27+ popular websites
-- JWT
-- Basic Authentication
-- HTTP Sessions. You can still use your favorite
-- HTTP to HTTPS
-- HTTP to HTTPS WWW
-- Highly scalable rich content render (Markdown, JSON, JSONP, XML...)
-- Websocket-only API similar to socket.io. You can still use your favorite
-- Hot Reload on source code changes[*](https://github.com/kataras/rizla)
-- Typescript integration + Web IDE
-- And many other things that will surprise you
-
-<p>
-<img src="https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png" alt="Third-party source for transparency." />
-</p>
-
-### 📑 Table of contents
-
-<a href="https://github.com/kataras/iris/_examples" alt="documentation and examples">
-	<img align="right" src="learn.jpg" width="125" />
-</a>
-
-* [Installation](#-installation)
-* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#su-16-july-2017--v803)
-* [Learn](#-learn)
-	* [HTTP Listening](_examples/#http-listening)
-	* [Configuration](_examples/#configuration)
-	* [Routing, Grouping, Dynamic Path Parameters, "Macros" and Custom Context](_examples/#routing-grouping-dynamic-path-parameters-macros-and-custom-context)
-	* [Subdomains](_examples/#subdomains)
-	* [Wrap `http.Handler/HandlerFunc`](_examples/#convert-httphandlerhandlerfunc)
-	* [View](_examples/#view)
-	* [Authentication](_examples/#authentication)
-	* [File Server](_examples/#file-server)
-	* [How to Read from `context.Request() *http.Request`](_examples/#how-to-read-from-contextrequest-httprequest)
-	* [How to Write to `context.ResponseWriter() http.ResponseWriter`](_examples/#how-to-write-to-contextresponsewriter-httpresponsewriter)
-	* [Test](_examples/#testing)	
-	* [Cache](cache/#table-of-contents)
-	* [Sessions](sessions/#table-of-contents)
-	* [Websockets](websocket/#table-of-contents)
-	* [Miscellaneous](_examples/#miscellaneous)
-	* [Typescript Automation Tools](typescript/#table-of-contents)
-	* [Tutorial: Online Visitors](_examples/tutorial/online-visitors)
-	* [Tutorial: URL Shortener using BoltDB](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
-	* [Tutorial: How to turn your Android Device into a fully featured Web Server](https://medium.com/@kataras/how-to-turn-an-android-device-into-a-web-server-9816b28ab199)
-* [Middleware](middleware/)
-* [Dockerize](https://github.com/iris-contrib/cloud-native-go)
-* [Philosophy](#-philosophy)
-* [Support](#-support)
-* [Versioning](#-version)
-    * [When should I upgrade?](#should-i-upgrade-my-iris)
-    * [Where can I find older versions?](#where-can-i-find-older-versions)
-* [People](#-people)
 
 ### 🚀 Installation
 
@@ -215,7 +169,76 @@ go version go1.9beta2 windows/amd64
 </details>
 
 <details>
-<summary>Why another new web framework?</summary>
+<summary>Why a new web framework</summary>
+
+### Why
+
+Go is a great technology stack for building scalable, web-based, back-end systems for web 
+applications. 
+
+When you think about building web applications and web APIs, or simply building HTTP servers in Go, does your mind go to the standard net/http package?
+Then you have to deal with some common situations like dynamic routing (a.k.a parameterized), security and authentication, real-time communication and many other issues that net/http doesn't solve. 
+
+The net/http package is not complete enough to quickly build well-designed back-end web systems. When you realize this, you might be thinking along these lines:
+
+- Ok, the net/http package doesn't suit me, but there are so many frameworks, which one will work for me?!
+- Each one of them tells me that it is the best. I don't know what to do!
+
+##### The truth
+
+I did some deep research and benchmarks with 'wrk' and 'ab' in order to choose which framework would suit me and my new project. The results, sadly, were really disappointing to me.
+
+I started wondering if golang wasn't as fast on the web as I had read... but, before I let Golang go and continued to develop with nodejs, I told myself:
+
+> '**Makis, don't lose hope, give at least a chance to Golang. Try to build something totally new without basing it off the "slow" code you saw earlier; learn the secrets of this language and make *others* follow your steps!**'.
+
+These are the words I told myself that day [**13 March 2016**]. 
+
+The same day, later the night, I was reading a book about Greek mythology. I saw an ancient goddess' name and was inspired immediately to give a name to this new web framework (which I had already started writing) - **Iris**.
+
+ I'm still here [because Iris has succeed in being the fastest go web framework](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png)
+
+![](https://docs.iris-go.com/comment36.png)
+
+![](https://docs.iris-go.com/comment35.png)
+
+![](https://docs.iris-go.com/comment34.png)
+
+![](https://docs.iris-go.com/comment2.png)
+
+![](https://docs.iris-go.com/comment30.png)
+
+![](https://docs.iris-go.com/comment31.png)
+
+![](https://docs.iris-go.com/comment32.png)
+
+![](https://docs.iris-go.com/comment33.png)
+
+![](https://docs.iris-go.com/comment26.png)
+
+![](https://docs.iris-go.com/comment1.png)
+
+![](https://docs.iris-go.com/comment3.png)
+
+![](https://docs.iris-go.com/comment8.png)
+
+![](https://docs.iris-go.com/comment12.png)
+
+![](https://docs.iris-go.com/comment13.png)
+
+![](https://docs.iris-go.com/comment14.png)
+
+![](https://docs.iris-go.com/comment17.png)
+
+![](https://docs.iris-go.com/comment21.png)
+
+![](https://docs.iris-go.com/comment22.png)
+
+![](https://docs.iris-go.com/comment24.png)
+
+![](https://docs.iris-go.com/comment27.png)
+
+---- 
 
 _iris_ is easy, it has a familiar API while in the same has far more features than [Gin](https://github.com/gin-gonic/gin) or [Martini](https://github.com/go-martini/martini).
 
@@ -227,42 +250,96 @@ Unlike [fasthttp](https://github.com/valyala/fasthttp), iris provides full HTTP/
 
 Compared to the rest open source projects, this one is very active and you get answers almost immediately.
 
+### 🔥 Hot Features
+
+- Focus on high performance
+- Easy Fluent API
+- Highly customizable
+- Robust routing and middleware ecosystem
+    * Build RESTful APIs with iris unique expressionist path interpreter
+	* Dynamic path parameterized or wildcard routes are not conflict with static routes 
+	* Remove trailing slash from the URL with option to redirect
+	* Virtual hosts and subdomains made easy
+	* Group API's and static or even dynamic subdomains
+	* `net/http` and `negroni-like` handlers are compatible via `iris.FromStd` 
+	* Register custom handlers for any HTTP error
+	* Transactions and rollback when you need it
+	* Cache the response when you need it
+	* A single function to serve your embedded assets, always compatible with `go-bindata`
+	* HTTP to HTTPS
+ 	* HTTP to HTTPS WWW
+	* [learn the reasons that differ from what you've seen so far](_examples/#routing-grouping-dynamic-path-parameters-macros-and-custom-context)
+- Context
+	* Highly scalable rich content render (Markdown, JSON, JSONP, XML...)
+	* Body binders and handy functions to send HTTP responses
+	* Limit request body
+	* Serve static resources or embedded assets
+	* Localization i18N
+	* Compression (Gzip is built'n)
+- Authentication
+	* Basic Authentication
+	* OAuth, OAuth2 supporting 27+ popular websites
+	* JWT
+- Server
+	* Automatically install and serve certificates from https://letsencrypt.org when serving via TLS
+	* Gracefuly shutdown by-default
+	* Register on shutdown, error or interrupt events
+	* Attach more than one server, fully compatible with `net/http#Server`
+- View system: supporting 5 template engines. Fully compatible with `html/template`
+- HTTP Sessions library [you can still use your favorite if you want to]
+- Websocket library, its API similar to socket.io [you can still use your favorite if you want to]
+- Hot Reload on source code changes[*](https://github.com/kataras/rizla)
+- Typescript integration + Web IDE
+- And many other things that will surprise you
+
 </details>
-
-### 👥 Community
-
-The most useful community repository for _iris_ developers is the 
-[iris-contrib/middleware](https://github.com/iris-contrib/middleware) which contains some HTTP handlers that can help you finish a lot of your tasks even easier.
-
-```sh
-$ go get -u github.com/iris-contrib/middleware/...
-```
-
-> Feel free to put your own middleware there!
-
-Join the welcoming community of fellow _iris_ developers in [rocket.chat](https://kataras.rocket.chat/channel/iris).
 
 ### 📖 Learn
 
-The awesome _iris_ community is always adding new examples, [_examples](_examples/) is a great place to get started!
-
-Read the [godocs](https://godoc.org/github.com/kataras/iris) for a better understanding.
-
-### 🤔 Philosophy
+<a href="https://github.com/kataras/iris/_examples" alt="documentation and examples">
+	<img align="right" src="learn.jpg" width="125" />
+</a>
 
 The _iris_ philosophy is to provide robust tooling for HTTP, making it a great solution for single page applications, web sites, hybrids, or public HTTP APIs. Keep note that, today, iris is faster than apache+nginx itself.
 
 _iris_ does not force you to use any specific ORM. With support for the most popular template engines, websocket server and a fast sessions manager you can quickly craft your perfect application.
 
-### 💙 Support
+
+
+The awesome _iris_ community is always adding new examples, [_examples](_examples/) is a great place to get started!
+
+Read the [godocs](https://godoc.org/github.com/kataras/iris) for a better understanding.
+
+### 👥 Community
+
+Join the welcoming community of fellow _iris_ developers in [rocket.chat](https://kataras.rocket.chat/channel/iris)
 
 - [Post](http://support.iris-go.com) a feature request or report a bug
 - :star: and watch the public [repository](https://github.com/kataras/iris/stargazers), will keep you up to date
-- :earth_americas: publish [an article](https://medium.com/search?q=iris) or share a [tweet](https://twitter.com/hashtag/golang) about your personal experience with iris
+- :earth_americas: publish [an article](https://medium.com/search?q=iris) or share a [tweet](https://twitter.com/hashtag/golang) about your personal experience with iris.
+
+
+The most useful community repository for _iris_ developers is the 
+[iris-contrib/middleware](https://github.com/iris-contrib/middleware) which contains some HTTP handlers that can help you finish a lot of your tasks even easier. Feel free to push your own middleware there!
+
+```sh
+$ go get -u github.com/iris-contrib/middleware/...
+```
+
+#### 📈 One and a half years with You...
+
+- 7070 github stars
+- 749 github forks
+- 1m total views at its documentation
+- ~800$ at donations (there're a lot for a golang open-source project, thanks to you)
+- ~550 reported bugs fixed
+- ~30 community feature requests have been implemented
+
+Thank You for your trust!
 
 ### 📌 Version
 
-Current: **8.0.3**
+Current: **8.0.4**
 
 Each new release is pushed to the master. It stays there until the next version. When a next version is released then the previous version goes to its own branch with `gopkg.in` as its import path (and its own vendor folder), in order to keep it working "for-ever".
 
