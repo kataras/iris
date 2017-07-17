@@ -18,6 +18,11 @@ func main() {
 		Method: true,
 		// Path displays the request path
 		Path: true,
+		// Columns: true,
+
+		// if !empty then its contents derives from `ctx.Values().Get("logger_message")
+		// will be added to the logs.
+		MessageContextKey: "logger_message",
 	})
 
 	app.Use(customLogger)
@@ -40,6 +45,10 @@ func main() {
 	*/
 	// or catch all http errors:
 	app.OnAnyErrorCode(customLogger, func(ctx context.Context) {
+		// this should be added to the logs, at the end because of the `logger.Config#MessageContextKey`
+		ctx.Values().Set("logger_message",
+			"a dynamic message passed to the logs")
+
 		ctx.Writef("My Custom error page")
 	})
 

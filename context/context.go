@@ -803,10 +803,17 @@ func (ctx *context) BeginRequest(w http.ResponseWriter, r *http.Request) {
 // 2. release the response writer
 // and any other optional steps, depends on dev's application type.
 func (ctx *context) EndRequest() {
-	if ctx.GetStatusCode() >= 400 && ctx.writer.Written() == -1 {
-		if !ctx.Application().ConfigurationReadOnly().GetDisableAutoFireStatusCode() {
+	if ctx.GetStatusCode() >= 400 &&
+		!ctx.Application().ConfigurationReadOnly().GetDisableAutoFireStatusCode() {
+		// author's note:
+		// if recording, the error handler can handle
+		// the rollback and remove any response written before,
+		// we don't have to do anything here, written is -1 when Recording
+		// because we didn't flush the response yet
+		// if !recording  then check if the previous handler didn't send something
+		// to the client
+		if ctx.writer.Written() == -1 {
 			ctx.Application().FireErrorCode(ctx)
-			return
 		}
 	}
 
