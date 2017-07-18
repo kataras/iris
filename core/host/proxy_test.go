@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/url"
 	"testing"
+	"time"
 
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/context"
@@ -31,7 +32,23 @@ func TestProxy(t *testing.T) {
 	// proxySrv.Downgrade(p.ServeHTTP)
 	// go proxySrv.Run(iris.Addr(":80"), iris.WithoutBanner, iris.WithoutInterruptHandler)
 
-	go host.NewProxy("localhost:2017", u).ListenAndServe() // should be localhost/127.0.0.1:80 but travis throws permission denied.
+	proxy := host.NewProxy("", u)
+
+	addr := &net.TCPAddr{
+		IP:   net.IPv4(127, 0, 0, 1),
+		Port: 0,
+	}
+
+	listener, err := net.ListenTCP("tcp", addr)
+	if err != nil {
+		t.Fatalf("%v while creating listener", err)
+	}
+
+	go proxy.Serve(listener) // should be localhost/127.0.0.1:80 but travis throws permission denied.
+
+	t.Log(listener.Addr().String())
+	<-time.After(time.Second)
+	t.Log(listener.Addr().String())
 
 	app := iris.New()
 	app.Get("/", func(ctx context.Context) {
@@ -53,7 +70,7 @@ func TestProxy(t *testing.T) {
 	// main server
 	go app.Run(iris.Listener(httptest.NewLocalTLSListener(l)), iris.WithoutBanner)
 
-	e := httptest.NewInsecure(t, httptest.URL("http://localhost:2017"))
+	e := httptest.NewInsecure(t, httptest.URL("http://"+listener.Addr().String()))
 	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedIndex)
 	e.GET("/about").Expect().Status(iris.StatusOK).Body().Equal(expectedAbout)
 	e.GET("/notfound").Expect().Status(iris.StatusNotFound).Body().Equal(unexpectedRoute)
