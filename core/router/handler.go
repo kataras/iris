@@ -210,23 +210,22 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 	}
 
 	if ctx.Application().ConfigurationReadOnly().GetFireMethodNotAllowed() {
-		var methodAllowed string
 		for i := range h.trees {
 			t := h.trees[i]
-			methodAllowed = t.Method // keep track of the allowed method of the last checked tree
-			if ctx.Method() != methodAllowed {
-				continue
+			// a bit slower than previous implementation but @kataras let me to apply this change
+			// because it's more reliable.
+			//
+			// if `Configuration#FireMethodNotAllowed` is kept as defaulted(false) then this function will not
+			// run, therefore performance kept as before.
+			if t.Nodes.Exists(path) {
+				// RCF rfc2616 https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
+				// The response MUST include an Allow header containing a list of valid methods for the requested resource.
+				ctx.Header("Allow", t.Method)
+				ctx.StatusCode(http.StatusMethodNotAllowed)
+				return
 			}
 		}
-
-		if ctx.Method() != methodAllowed {
-			// RCF rfc2616 https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
-			// The response MUST include an Allow header containing a list of valid methods for the requested resource.
-			ctx.Header("Allow", methodAllowed)
-			ctx.StatusCode(http.StatusMethodNotAllowed)
-			return
-		}
-
 	}
+
 	ctx.StatusCode(http.StatusNotFound)
 }
