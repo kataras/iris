@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fatih/structs"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/monoculum/formam"
 	"github.com/russross/blackfriday"
@@ -485,6 +486,17 @@ type Context interface {
 	//
 	// Example: https://github.com/kataras/iris/tree/master/_examples/view/context-view-data/
 	ViewData(key string, value interface{})
+
+	// GetViewData returns the values registered by `context#ViewData`.
+	// The return value is `map[string]interface{}`, this means that
+	// if a custom struct registered to ViewData then this function
+	// will try to parse it to map, if failed then the return value is nil
+	// A check for nil is always a good practise if different
+	// kind of values or no data are registered via `ViewData`.
+	//
+	// Similarly to `viewData := ctx.Values().Get("iris.viewData")` or
+	// `viewData := ctx.Values().Get(ctx.Application().ConfigurationReadOnly().GetViewDataContextKey())`.
+	GetViewData() map[string]interface{}
 
 	// View renders templates based on the adapted view engines.
 	// First argument accepts the filename, relative to the view engine's Directory,
@@ -1624,6 +1636,43 @@ func (ctx *context) ViewData(key string, value interface{}) {
 	} else if data, ok := v.(Map); ok {
 		data[key] = value
 	}
+}
+
+// GetViewData returns the values registered by `context#ViewData`.
+// The return value is `map[string]interface{}`, this means that
+// if a custom struct registered to ViewData then this function
+// will try to parse it to map, if failed then the return value is nil
+// A check for nil is always a good practise if different
+// kind of values or no data are registered via `ViewData`.
+//
+// Similarly to `viewData := ctx.Values().Get("iris.viewData")` or
+// `viewData := ctx.Values().Get(ctx.Application().ConfigurationReadOnly().GetViewDataContextKey())`.
+func (ctx *context) GetViewData() map[string]interface{} {
+	viewDataContextKey := ctx.Application().ConfigurationReadOnly().GetViewDataContextKey()
+	v := ctx.Values().Get(viewDataContextKey)
+
+	// if no values found, then return nil
+	if v == nil {
+		return nil
+	}
+
+	// if struct, convert it to map[string]interface{}
+	if structs.IsStruct(v) {
+		return structs.Map(v)
+	}
+
+	// if pure map[string]interface{}
+	if viewData, ok := v.(map[string]interface{}); ok {
+		return viewData
+	}
+
+	// if context#Map
+	if viewData, ok := v.(Map); ok {
+		return viewData
+	}
+
+	// if failure, then return nil
+	return nil
 }
 
 // View renders templates based on the adapted view engines.

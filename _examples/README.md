@@ -121,6 +121,9 @@ Navigate through examples for a better understanding.
 - [Inject Data Between Handlers](view/context-view-data/main.go)
 - [Embedding Templates Into App Executable File](view/embedding-templates-into-app/main.go)
 
+
+You can serve [quicktemplate](https://github.com/valyala/quicktemplate) files too, simply by using the `context#ResponseWriter`, take a look at the [http_responsewriter/quicktemplate](http_responsewriter/quicktemplate) example.
+
 ### Authentication
 
 - [Basic Authentication](authentication/basicauth/main.go)
@@ -148,6 +151,7 @@ Navigate through examples for a better understanding.
 
 ### How to Write to `context.ResponseWriter() http.ResponseWriter`
 
+- [Write `valyala/quicktemplate` templates](http_responsewriter/quicktemplate)
 - [Text, Markdown, HTML, JSON, JSONP, XML, Binary](http_responsewriter/write-rest/main.go)
 - [Stream Writer](http_responsewriter/stream-writer/main.go)
 - [Transactions](http_responsewriter/transactions/main.go)
