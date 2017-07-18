@@ -108,6 +108,11 @@ func (rb *APIBuilder) GetReport() error {
 	return rb.reporter.Return()
 }
 
+// GetReporter returns the reporter for adding errors
+func (rb *APIBuilder) GetReporter() *errors.Reporter {
+	return rb.reporter
+}
+
 // Handle registers a route to the server's rb.
 // if empty method is passed then handler(s) are being registered to all methods, same as .Any.
 //
