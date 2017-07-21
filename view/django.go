@@ -1,10 +1,12 @@
 package view
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
+	stdPath "path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -21,6 +23,35 @@ type (
 	// FilterFunction conversion for pongo2.FilterFunction
 	FilterFunction func(in *Value, param *Value) (out *Value, err *Error)
 )
+
+type tDjangoAssetLoader struct {
+	baseDir  string
+	assetGet func(name string) ([]byte, error)
+}
+
+// Abs calculates the path to a given template. Whenever a path must be resolved
+// due to an import from another template, the base equals the parent template's path.
+func (dal *tDjangoAssetLoader) Abs(base, name string) string {
+	if stdPath.IsAbs(name) {
+		return name
+	}
+
+	return stdPath.Join(dal.baseDir, name)
+}
+
+// Get returns an io.Reader where the template's content can be read from.
+func (dal *tDjangoAssetLoader) Get(path string) (io.Reader, error) {
+	if stdPath.IsAbs(path) {
+		path = path[1:]
+	}
+
+	res, err := dal.assetGet(path)
+	if err {
+		return nil, err
+	}
+
+	return bytes.NewBuffer(res), nil
+}
 
 // DjangoEngine contains the amber view engine structure.
 type DjangoEngine struct {
