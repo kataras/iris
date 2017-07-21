@@ -230,12 +230,8 @@ func (s *DjangoEngine) loadAssets() error {
 	virtualDirectory, virtualExtension := s.directory, s.extension
 	assetFn, namesFn := s.assetFn, s.namesFn
 
-	var templateErr error
-	/*fsLoader, err := pongo2.NewLocalFileSystemLoader(virtualDirectory)
-	if err != nil {
-		return err
-	}*/
-	set := pongo2.NewSet("", pongo2.DefaultLoader)
+	// Make a file set with a template loader based on asset function
+	set := pongo2.NewSet("", &tDjangoAssetLoader{baseDir: s.directory, assetGet: s.assetFn})
 	set.Globals = getPongoContext(s.globals)
 
 	// set the filters
@@ -255,6 +251,8 @@ func (s *DjangoEngine) loadAssets() error {
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	var templateErr error
 
 	names := namesFn()
 	for _, path := range names {
