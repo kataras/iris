@@ -17,7 +17,7 @@ Iris is a fast, simple and efficient micro web framework for Go. It provides a b
 ### 📑 Table of contents
 
 * [Installation](#-installation)
-* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#mo-17-july-2017--v804)
+* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#sa-22-july-2017--v805)
 * [Learn](#-learn)
 	* [HTTP Listening](_examples/#http-listening)
 	* [Configuration](_examples/#configuration)
@@ -339,7 +339,7 @@ Thank You for your trust!
 
 ### 📌 Version
 
-Current: **8.0.4**
+Current: **8.0.5**
 
 Each new release is pushed to the master. It stays there until the next version. When a next version is released then the previous version goes to its own branch with `gopkg.in` as its import path (and its own vendor folder), in order to keep it working "for-ever".
 
