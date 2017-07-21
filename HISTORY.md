@@ -17,6 +17,26 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+# Sa, 22 July 2017 | v8.0.5
+
+No API Changes.
+
+### Django view engine
+
+@corebreaker pushed a [PR](https://github.com/kataras/iris/pull/682) to solve the [Problem for {%extends%} in Django Engine with embedded files](dhttps://github.com/kataras/iris/issues/681).
+
+### Logger
+
+Remove the `vendor/github.com/sirupsen/logrus` folder, as a temporary solution for the https://github.com/kataras/iris/issues/680#issuecomment-316196126.
+
+#### Future versions
+
+The logrus will be replaced with a custom implementation, because of that: https://github.com/kataras/iris/issues/680#issuecomment-316184570. 
+
+As far as we know, @kataras is working on this new implementation, see [here](https://github.com/kataras/iris/issues/680#issuecomment-316544906), 
+which will be compatible with the logrus package and other open-source golang loggers as well.
+
+
 # Mo, 17 July 2017 | v8.0.4
 
 No API changes.
