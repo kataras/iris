@@ -46,7 +46,7 @@ func (dal *tDjangoAssetLoader) Get(path string) (io.Reader, error) {
 	}
 
 	res, err := dal.assetGet(path)
-	if err {
+	if err != nil {
 		return nil, err
 	}
 
