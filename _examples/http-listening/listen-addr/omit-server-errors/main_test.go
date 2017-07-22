@@ -45,11 +45,13 @@ func TestListenAddr(t *testing.T) {
 	// println(len(log.Bytes()))
 
 	expected := fmt.Sprintln("\"" + iris.ErrServerClosed.Error() + "\" ")
+	expected = strings.TrimSpace(expected)
 	// println([]byte(expected))
 	// println(len([]byte(expected)))
 
 	got := log.String()
 	got = strings.Split(got, "msg=")[1]
+	got = strings.TrimSpace(got)
 	if expected != got {
 		t.Fatalf("expecting to log the:\n'%s'\ninstead of:\n'%s'", expected, got)
 	}
