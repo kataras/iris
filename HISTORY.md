@@ -17,9 +17,33 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
-# Sa, 22 July 2017 | v8.0.5
+# Sa, 22 July 2017 | v8.0.5 & v8.0.6
 
 No API Changes.
+
+### Performance
+
+Add an experimental [Configuration#EnableOptimizations](https://github.com/kataras/iris/blob/master/configuration.go#L170) option.
+
+```go
+type Configuration {
+    // [...]
+
+    // EnableOptimization when this field is true
+    // then the application tries to optimize for the best performance where is possible.
+    //
+    // Defaults to false.
+    EnableOptimizations bool `yaml:"EnableOptimizations" toml:"EnableOptimizations"`
+
+    // [...]
+}
+```
+
+Usage:
+
+```go
+app.Run(iris.Addr(":8080"), iris.WithOptimizations)
+```
 
 ### Django view engine
 
