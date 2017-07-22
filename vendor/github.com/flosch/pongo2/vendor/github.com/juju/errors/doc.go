@@ -5,7 +5,7 @@
 [godoc-link-here]
 
 The juju/errors provides an easy way to annotate errors without losing the
-orginal error context.
+original error context.
 
 The exported `New` and `Errorf` functions are designed to replace the
 `errors.New` and `fmt.Errorf` functions respectively. The same underlying

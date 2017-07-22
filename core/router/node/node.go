@@ -301,6 +301,11 @@ func (nodes Nodes) findChild(path string, params []string) (*node, []string) {
 		if n.rootWildcard {
 			// println("return from n.rootWildcard")
 			// single root wildcard
+			if len(path) < 2 {
+				// do not remove that, it seems useless but it's not,
+				// we had an error while production, this fixes that.
+				path = "/" + path
+			}
 			return n, append(params, path[1:])
 		}
 

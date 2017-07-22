@@ -61,11 +61,11 @@ Iris is a fast, simple and efficient micro web framework for Go. It provides a b
 
 ### 🔥 Reborn
 
-As you may have heard I have huge responsibilities on my new position at Dubai nowdays, therefore I don't have the needed time to work on this project anymore.
+As you may have heard I have huge responsibilities on my new position at Dubai nowadays, therefore I don't have the needed time to work on this project anymore.
 
 After almost a month of negotiations and searching I succeed to find a decent software engineer to continue my work on the open source community.
 
-The leadership of this, open-source, repository was transfered to [hiveminded](https://github.com/hiveminded).
+The leadership of this, open-source, repository was transferred to [hiveminded](https://github.com/hiveminded).
 
 These types of projects need heart and sacrifices to continue offer the best developer experience like a paid software, please do support him as you did with me!
 
@@ -158,7 +158,7 @@ We expect Go version 1.9 to be released in August, however you can install Go 1.
 ### Installing Go 1.9beta2
  
 1. Go to https://golang.org/dl/#go1.9beta2
-2. Download a compatible, with your OS, archieve, i.e `go1.9beta2.windows-amd64.zip`
+2. Download a compatible, with your OS, archive, i.e `go1.9beta2.windows-amd64.zip`
 3. Unzip the contents of `go1.9beta2.windows-amd64.zip/go` folder to your $GOROOT, i.e `C:\Go`
 4. Open a terminal and execute `go version`, it should output the go1.9beta2 version, i.e:
 ```sh
@@ -282,7 +282,7 @@ Compared to the rest open source projects, this one is very active and you get a
 	* JWT
 - Server
 	* Automatically install and serve certificates from https://letsencrypt.org when serving via TLS
-	* Gracefuly shutdown by-default
+	* Gracefully shutdown by-default
 	* Register on shutdown, error or interrupt events
 	* Attach more than one server, fully compatible with `net/http#Server`
 - View system: supporting 5 template engines. Fully compatible with `html/template`

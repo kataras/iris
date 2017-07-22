@@ -15,9 +15,9 @@ var errConfigurationDecode = errors.New("error while trying to decode configurat
 
 // YAML reads Configuration from a configuration.yml file.
 //
-// Accepts the absolute path of the configuration.yml.
+// Accepts the absolute path of the cfg.yml.
 // An error will be shown to the user via panic with the error message.
-// Error may occur when the configuration.yml doesn't exists or is not formatted correctly.
+// Error may occur when the cfg.yml doesn't exists or is not formatted correctly.
 //
 // Usage:
 // app := iris.Run(iris.Addr(":8080"), iris.WithConfiguration(iris.YAML("myconfig.yml")))
@@ -138,42 +138,49 @@ var WithoutInterruptHandler = func(app *Application) {
 
 // WithoutPathCorrection disables the PathCorrection setting.
 //
-// See` Configuration`.
+// See `Configuration`.
 var WithoutPathCorrection = func(app *Application) {
 	app.config.DisablePathCorrection = true
 }
 
 // WithoutBodyConsumptionOnUnmarshal disables BodyConsumptionOnUnmarshal setting.
 //
-// See` Configuration`.
+// See `Configuration`.
 var WithoutBodyConsumptionOnUnmarshal = func(app *Application) {
 	app.config.DisableBodyConsumptionOnUnmarshal = true
 }
 
 // WithoutAutoFireStatusCode disables the AutoFireStatusCode setting.
 //
-// See` Configuration`.
+// See `Configuration`.
 var WithoutAutoFireStatusCode = func(app *Application) {
 	app.config.DisableAutoFireStatusCode = true
 }
 
 // WithPathEscape enanbles the PathEscape setting.
 //
-// See` Configuration`.
+// See `Configuration`.
 var WithPathEscape = func(app *Application) {
 	app.config.EnablePathEscape = true
 }
 
+// WithOptimizations can force the application to optimize for the best performance where is possible.
+//
+// See `Configuration`.
+var WithOptimizations = func(app *Application) {
+	app.config.EnableOptimizations = true
+}
+
 // WithFireMethodNotAllowed enanbles the FireMethodNotAllowed setting.
 //
-// See` Configuration`.
+// See `Configuration`.
 var WithFireMethodNotAllowed = func(app *Application) {
 	app.config.FireMethodNotAllowed = true
 }
 
 // WithTimeFormat sets the TimeFormat setting.
 //
-// See` Configuration`.
+// See `Configuration`.
 func WithTimeFormat(timeformat string) Configurator {
 	return func(app *Application) {
 		app.config.TimeFormat = timeformat
@@ -182,7 +189,7 @@ func WithTimeFormat(timeformat string) Configurator {
 
 // WithCharset sets the Charset setting.
 //
-// See` Configuration`.
+// See `Configuration`.
 func WithCharset(charset string) Configurator {
 	return func(app *Application) {
 		app.config.Charset = charset
@@ -227,7 +234,7 @@ func WithoutRemoteAddrHeader(headerName string) Configurator {
 
 // WithOtherValue adds a value based on a key to the Other setting.
 //
-// See` Configuration`.
+// See `Configuration`.
 func WithOtherValue(key string, val interface{}) Configurator {
 	return func(app *Application) {
 		if app.config.Other == nil {
@@ -290,6 +297,11 @@ type Configuration struct {
 	// Defaults to false.
 	EnablePathEscape bool `yaml:"EnablePathEscape" toml:"EnablePathEscape"`
 
+	// EnableOptimization when this field is true
+	// then the application tries to optimize for the best performance where is possible.
+	//
+	// Defaults to false.
+	EnableOptimizations bool `yaml:"EnableOptimizations" toml:"EnableOptimizations"`
 	// FireMethodNotAllowed if it's true router checks for StatusMethodNotAllowed(405) and
 	//  fires the 405 error instead of 404
 	// Defaults to false.
@@ -366,10 +378,11 @@ type Configuration struct {
 	//
 	// Look `context.RemoteAddr()` for more.
 	RemoteAddrHeaders map[string]bool `yaml:"RemoteAddrHeaders" toml:"RemoteAddrHeaders"`
+
 	// Other are the custom, dynamic options, can be empty.
 	// This field used only by you to set any app's options you want
 	// or by custom adaptors, it's a way to simple communicate between your adaptors (if any)
-	// Defaults to a non-nil empty map
+	// Defaults to a non-nil empty map.
 	Other map[string]interface{} `yaml:"Other" toml:"Other"`
 }
 
@@ -384,7 +397,7 @@ func (c Configuration) GetVHost() string {
 	return c.vhost
 }
 
-// GetDisablePathCorrection returns the configuration.DisablePathCorrection,
+// GetDisablePathCorrection returns the Configuration#DisablePathCorrection,
 // DisablePathCorrection corrects and redirects the requested path to the registered path
 // for example, if /home/ path is requested but no handler for this Route found,
 // then the Router checks if /home handler exists, if yes,
@@ -393,18 +406,24 @@ func (c Configuration) GetDisablePathCorrection() bool {
 	return c.DisablePathCorrection
 }
 
-// GetEnablePathEscape is the configuration.EnablePathEscape,
+// GetEnablePathEscape is the Configuration#EnablePathEscape,
 // returns true when its escapes the path, the named parameters (if any).
 func (c Configuration) GetEnablePathEscape() bool {
 	return c.EnablePathEscape
 }
 
-// GetFireMethodNotAllowed returns the configuration.FireMethodNotAllowed.
+// GetEnableOptimizations returns whether
+// the application has performance optimizations enabled.
+func (c Configuration) GetEnableOptimizations() bool {
+	return c.EnableOptimizations
+}
+
+// GetFireMethodNotAllowed returns the Configuration#FireMethodNotAllowed.
 func (c Configuration) GetFireMethodNotAllowed() bool {
 	return c.FireMethodNotAllowed
 }
 
-// GetDisableBodyConsumptionOnUnmarshal returns the configuration.GetDisableBodyConsumptionOnUnmarshal,
+// GetDisableBodyConsumptionOnUnmarshal returns the Configuration#GetDisableBodyConsumptionOnUnmarshal,
 // manages the reading behavior of the context's body readers/binders.
 // If returns true then the body consumption by the `context.UnmarshalBody/ReadJSON/ReadXML`
 // is disabled.
@@ -417,19 +436,19 @@ func (c Configuration) GetDisableBodyConsumptionOnUnmarshal() bool {
 	return c.DisableBodyConsumptionOnUnmarshal
 }
 
-// GetDisableAutoFireStatusCode returns the configuration.DisableAutoFireStatusCode.
+// GetDisableAutoFireStatusCode returns the Configuration#DisableAutoFireStatusCode.
 // Returns true when the http error status code handler automatic execution turned off.
 func (c Configuration) GetDisableAutoFireStatusCode() bool {
 	return c.DisableAutoFireStatusCode
 }
 
-// GetTimeFormat returns the configuration.TimeFormat,
+// GetTimeFormat returns the Configuration#TimeFormat,
 // format for any kind of datetime parsing.
 func (c Configuration) GetTimeFormat() string {
 	return c.TimeFormat
 }
 
-// GetCharset returns the configuration.Charset,
+// GetCharset returns the Configuration#Charset,
 // the character encoding for various rendering
 // used for templates and the rest of the responses.
 func (c Configuration) GetCharset() string {
@@ -476,7 +495,7 @@ func (c Configuration) GetRemoteAddrHeaders() map[string]bool {
 	return c.RemoteAddrHeaders
 }
 
-// GetOther returns the configuration.Other map.
+// GetOther returns the Configuration#Other map.
 func (c Configuration) GetOther() map[string]interface{} {
 	return c.Other
 }
@@ -511,6 +530,10 @@ func WithConfiguration(c Configuration) Configurator {
 
 		if v := c.EnablePathEscape; v {
 			main.EnablePathEscape = v
+		}
+
+		if v := c.EnableOptimizations; v {
+			main.EnableOptimizations = v
 		}
 
 		if v := c.FireMethodNotAllowed; v {
@@ -590,6 +613,7 @@ func DefaultConfiguration() Configuration {
 			"X-Forwarded-For":  false,
 			"CF-Connecting-IP": false,
 		},
-		Other: make(map[string]interface{}, 0),
+		EnableOptimizations: false,
+		Other:               make(map[string]interface{}, 0),
 	}
 }

@@ -24,6 +24,10 @@ type ConfigurationReadOnly interface {
 	// returns true when its escapes the path, the named parameters (if any).
 	GetEnablePathEscape() bool
 
+	// GetEnableOptimizations returns whether
+	// the application has performance optimizations enabled.
+	GetEnableOptimizations() bool
+
 	// GetFireMethodNotAllowed returns the configuration.FireMethodNotAllowed.
 	GetFireMethodNotAllowed() bool
 	// GetDisableBodyConsumptionOnUnmarshal returns the configuration.GetDisableBodyConsumptionOnUnmarshal,

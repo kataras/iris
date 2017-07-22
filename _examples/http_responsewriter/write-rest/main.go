@@ -42,7 +42,6 @@ func main() {
 			Age:       25,
 		}
 
-		ctx.StatusCode(iris.StatusOK)
 		// Manually setting a content type: ctx.ContentType("application/javascript")
 		ctx.JSON(peter)
 	})
@@ -83,5 +82,13 @@ func main() {
 	// http://localhost:8080/jsonp
 	// http://localhost:8080/xml
 	// http://localhost:8080/markdown
-	app.Run(iris.Addr(":8080"))
+	//
+	// `iris.WithOptimizations` is an optional configurator,
+	// if passed to the `Run` then it will ensure that the application
+	// response to the client as fast as possible.
+	//
+	//
+	// `iris.WithoutServerError` is an optional configurator,
+	// if passed to the `Run` then it will not print its passed error as an actual server error.
+	app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed), iris.WithOptimizations)
 }
