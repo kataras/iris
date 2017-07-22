@@ -33,7 +33,7 @@ func WriteStartupLogOnServe(w io.Writer) func(TaskHost) {
 }
 
 // ShutdownOnInterrupt terminates the supervisor and its underline server when CMD+C/CTRL+C pressed.
-// This function should be registerd on Interrupt.
+// This function should be registered on Interrupt.
 func ShutdownOnInterrupt(su *Supervisor, shutdownTimeout time.Duration) func() {
 	return func() {
 		ctx, cancel := context.WithTimeout(context.TODO(), shutdownTimeout)

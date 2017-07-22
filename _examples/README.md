@@ -179,17 +179,32 @@ The `httptest` package is your way for end-to-end HTTP testing, it uses the http
 
 ### Caching
 
-iris cache library lives on its own package: [https://github.com/kataras/iris/tree/master/cache](https://github.com/kataras/iris/tree/master/cache) **it contains examples**
+iris cache library lives on its own [package](https://github.com/kataras/iris/tree/master/cache).
+
+- [Simple](cache/simple/main.go)
+
+> You're free to use your own favourite caching package if you'd like so.
 
 ### Sessions
+iris session manager lives on its own [package](https://github.com/kataras/iris/tree/master/sessions).
 
-iris session manager lives on its own package: [https://github.com/kataras/iris/tree/master/sessions](https://github.com/kataras/iris/tree/master/sessions) **it contains examples**
+- [Overview](sessions/overview/main.go)
+- [Standalone](sessions/standalone/main.go)
+- [Secure Cookie](sessions/securecookie/main.go)
+- [Flash Messages](sessions/flash-messages/main.go)
+- [Database](sessions/database/main.go)
 
 > You're free to use your own favourite sessions package if you'd like so.
 
 ### Websockets
 
-iris websocket library lives on its own package: [https://github.com/kataras/iris/tree/master/websocket](https://github.com/kataras/iris/tree/master/websocket) **it contains examples**
+iris websocket library lives on its own [package](https://github.com/kataras/iris/tree/master/websocket).
+
+- [Chat](websocket/chat/main.go)
+- [Native Messages](websocket/native-messages/main.go)
+- [Connection List](websocket/connectionlist/main.go)
+- [TLS Enabled](websocket/secure/main.go)
+- [Custom Raw Go Client](websocket/custom-go-client/main.go)
 
 > You're free to use your own favourite websockets package if you'd like so.
 

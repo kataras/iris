@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/fatih/structs"
+	"github.com/json-iterator/go"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/monoculum/formam"
 	"github.com/russross/blackfriday"
@@ -1344,16 +1345,22 @@ func (ctx *context) UnmarshalBody(v interface{}, unmarshaler Unmarshaler) error 
 	return unmarshaler.Unmarshal(rawData, &v)
 }
 
+func (ctx *context) shouldOptimize() bool {
+	return ctx.Application().ConfigurationReadOnly().GetEnableOptimizations()
+}
+
 // ReadJSON reads JSON from request's body and binds it to a value of any json-valid type.
 func (ctx *context) ReadJSON(jsonObject interface{}) error {
-	return ctx.UnmarshalBody(jsonObject, UnmarshalerFunc(json.Unmarshal))
-
+	var unmarshaler = json.Unmarshal
+	if ctx.shouldOptimize() {
+		unmarshaler = jsoniter.Unmarshal
+	}
+	return ctx.UnmarshalBody(jsonObject, UnmarshalerFunc(unmarshaler))
 }
 
 // ReadXML reads XML from request's body and binds it to a value of any xml-valid type.
 func (ctx *context) ReadXML(xmlObject interface{}) error {
 	return ctx.UnmarshalBody(xmlObject, UnmarshalerFunc(xml.Unmarshal))
-
 }
 
 var (
@@ -1780,15 +1787,28 @@ var (
 
 // WriteJSON marshals the given interface object and writes the JSON response to the 'writer'.
 // Ignores StatusCode, Gzip, StreamingJSON options.
-func WriteJSON(writer io.Writer, v interface{}, options JSON) (int, error) {
-	var result []byte
-	var err error
+func WriteJSON(writer io.Writer, v interface{}, options JSON, enableOptimization ...bool) (int, error) {
+	var (
+		result   []byte
+		err      error
+		optimize = len(enableOptimization) > 0 && enableOptimization[0]
+	)
 
 	if indent := options.Indent; indent != "" {
-		result, err = json.MarshalIndent(v, "", indent)
+		marshalIndent := json.MarshalIndent
+		if optimize {
+			marshalIndent = jsoniter.ConfigCompatibleWithStandardLibrary.MarshalIndent
+		}
+
+		result, err = marshalIndent(v, "", indent)
 		result = append(result, newLineB...)
 	} else {
-		result, err = json.Marshal(v)
+		marshal := json.Marshal
+		if optimize {
+			marshal = jsoniter.ConfigCompatibleWithStandardLibrary.Marshal
+		}
+
+		result, err = marshal(v)
 	}
 
 	if err != nil {
@@ -1811,20 +1831,32 @@ func WriteJSON(writer io.Writer, v interface{}, options JSON) (int, error) {
 var defaultJSONOptions = JSON{}
 
 // JSON marshals the given interface object and writes the JSON response to the client.
-func (ctx *context) JSON(v interface{}, opts ...JSON) (int, error) {
+func (ctx *context) JSON(v interface{}, opts ...JSON) (n int, err error) {
 	options := defaultJSONOptions
 
 	if len(opts) > 0 {
 		options = opts[0]
 	}
 
+	optimize := ctx.shouldOptimize()
+
 	ctx.ContentType(contentJSONHeaderValue)
 
 	if options.StreamingJSON {
-		enc := json.NewEncoder(ctx.writer)
-		enc.SetEscapeHTML(!options.UnescapeHTML)
-		enc.SetIndent(options.Prefix, options.Indent)
-		err := enc.Encode(v)
+		if optimize {
+			var jsoniterConfig = jsoniter.Config{
+				EscapeHTML:    !options.UnescapeHTML,
+				IndentionStep: 4,
+			}.Froze()
+			enc := jsoniterConfig.NewEncoder(ctx.writer)
+			err = enc.Encode(v)
+		} else {
+			enc := json.NewEncoder(ctx.writer)
+			enc.SetEscapeHTML(!options.UnescapeHTML)
+			enc.SetIndent(options.Prefix, options.Indent)
+			err = enc.Encode(v)
+		}
+
 		if err != nil {
 			ctx.StatusCode(http.StatusInternalServerError) // it handles the fallback to normal mode here which also removes the gzip headers.
 			return 0, err
@@ -1832,7 +1864,7 @@ func (ctx *context) JSON(v interface{}, opts ...JSON) (int, error) {
 		return ctx.writer.Written(), err
 	}
 
-	n, err := WriteJSON(ctx.writer, v, options)
+	n, err = WriteJSON(ctx.writer, v, options, optimize)
 	if err != nil {
 		ctx.StatusCode(http.StatusInternalServerError)
 		return 0, err
@@ -1846,14 +1878,21 @@ var (
 )
 
 // WriteJSONP marshals the given interface object and writes the JSON response to the writer.
-func WriteJSONP(writer io.Writer, v interface{}, options JSONP) (int, error) {
+func WriteJSONP(writer io.Writer, v interface{}, options JSONP, enableOptimization ...bool) (int, error) {
 	if callback := options.Callback; callback != "" {
 		writer.Write([]byte(callback + "("))
 		defer writer.Write(finishCallbackB)
 	}
 
+	optimize := len(enableOptimization) > 0 && enableOptimization[0]
+
 	if indent := options.Indent; indent != "" {
-		result, err := json.MarshalIndent(v, "", indent)
+		marshalIndent := json.MarshalIndent
+		if optimize {
+			marshalIndent = jsoniter.ConfigCompatibleWithStandardLibrary.MarshalIndent
+		}
+
+		result, err := marshalIndent(v, "", indent)
 		if err != nil {
 			return 0, err
 		}
@@ -1861,7 +1900,12 @@ func WriteJSONP(writer io.Writer, v interface{}, options JSONP) (int, error) {
 		return writer.Write(result)
 	}
 
-	result, err := json.Marshal(v)
+	marshal := json.Marshal
+	if optimize {
+		marshal = jsoniter.ConfigCompatibleWithStandardLibrary.Marshal
+	}
+
+	result, err := marshal(v)
 	if err != nil {
 		return 0, err
 	}
@@ -1880,7 +1924,7 @@ func (ctx *context) JSONP(v interface{}, opts ...JSONP) (int, error) {
 
 	ctx.ContentType(contentJavascriptHeaderValue)
 
-	n, err := WriteJSONP(ctx.writer, v, options)
+	n, err := WriteJSONP(ctx.writer, v, options, ctx.shouldOptimize())
 	if err != nil {
 		ctx.StatusCode(http.StatusInternalServerError)
 		return 0, err

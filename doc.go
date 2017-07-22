@@ -261,7 +261,7 @@ Example code:
 
 That's all with listening, you have the full control when you need it.
 
-Let's continue by learning how to catch CONTROL+C/COMMAND+C or unix kill command and shutdown the server gracefuly.
+Let's continue by learning how to catch CONTROL+C/COMMAND+C or unix kill command and shutdown the server gracefully.
 
     Gracefully Shutdown on CONTROL+C/COMMAND+C or when kill command sent is ENABLED BY-DEFAULT.
 

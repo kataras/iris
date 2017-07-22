@@ -105,7 +105,7 @@ func (su *Supervisor) newListener() (net.Listener, error) {
 	return l, nil
 }
 
-// RegisterOnError registers a function to call when errors occured by the underline http server.
+// RegisterOnError registers a function to call when errors occurred by the underline http server.
 func (su *Supervisor) RegisterOnError(cb func(error)) {
 	su.mu.Lock()
 	su.onErr = append(su.onErr, cb)

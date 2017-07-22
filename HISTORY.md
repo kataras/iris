@@ -23,7 +23,7 @@ No API Changes.
 
 ### Django view engine
 
-@corebreaker pushed a [PR](https://github.com/kataras/iris/pull/682) to solve the [Problem for {%extends%} in Django Engine with embedded files](dhttps://github.com/kataras/iris/issues/681).
+@corebreaker pushed a [PR](https://github.com/kataras/iris/pull/682) to solve the [Problem for {%extends%} in Django Engine with embedded files](https://github.com/kataras/iris/issues/681).
 
 ### Logger
 
@@ -248,11 +248,11 @@ Despite the deflamations, the clickbait articles, the removed posts of mine at r
 
 ## 🔥 Reborn
 
-As you may have heard I have huge responsibilities on my new position at Dubai nowdays, therefore I don't have the needed time to work on this project anymore.
+As you may have heard I have huge responsibilities on my new position at Dubai nowadays, therefore I don't have the needed time to work on this project anymore.
 
 After a month of negotiations and searching I succeed to find a decent software engineer to continue my work on the open source community.
 
-The leadership of this, open-source, repository was transfered to [hiveminded](https://github.com/hiveminded), the author of iris-based [get-ion/ion](https://github.com/get-ion/ion), he actually did an excellent job on the framework, he kept the code as minimal as possible and at the same time added more features, examples and middleware(s).
+The leadership of this, open-source, repository was transferred to [hiveminded](https://github.com/hiveminded), the author of iris-based [get-ion/ion](https://github.com/get-ion/ion), he actually did an excellent job on the framework, he kept the code as minimal as possible and at the same time added more features, examples and middleware(s).
 
 These types of projects need heart and sacrifices to continue offer the best developer experience like a paid software, please do support him as you did with me!
 

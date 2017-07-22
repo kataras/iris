@@ -11,11 +11,11 @@
 
 ## 🔥 Reborn
 
-As you may have heard I have huge responsibilities on my new position at Dubai nowdays, therefore I don't have the needed time to work on this project anymore.
+As you may have heard I have huge responsibilities on my new position at Dubai nowadays, therefore I don't have the needed time to work on this project anymore.
 
 After almost a month of negotiations and searching I succeed to find a decent software engineer to continue my work on the open source community.
 
-The leadership of this, open-source, repository was transfered to [hiveminded](https://github.com/hiveminded).
+The leadership of this, open-source, repository was transferred to [hiveminded](https://github.com/hiveminded).
 
 These types of projects need heart and sacrifices to continue offer the best developer experience like a paid software, please do support him as you did with me!
 

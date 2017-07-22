@@ -32,7 +32,7 @@ type Config struct {
 
 	// Columns will display the logs as well formatted columns (bool).
 	// If custom `LogFunc` has been provided then this field is useless and users should
-	// use the `Columinize` function of the logger to get the ouput result as columns.
+	// use the `Columinize` function of the logger to get the output result as columns.
 	//
 	// Defaults to true.
 	Columns bool
