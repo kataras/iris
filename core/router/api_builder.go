@@ -76,12 +76,20 @@ type APIBuilder struct {
 	// to the end-user.
 	reporter *errors.Reporter
 
-	// the per-party middleware
+	// the per-party handlers, order
+	// of handlers registration matters.
 	middleware context.Handlers
-	// the per-party routes (useful only for done middleware)
+	// the global middleware handlers, order of call doesn't matters, order
+	// of handlers registration matters. We need a secondary field for this
+	// because `UseGlobal` registers handlers that should be executed
+	// even before the `middleware` handlers, and in the same time keep the order
+	// of handlers registration, so the same type of handlers are being called in order.
+	beginGlobalHandlers context.Handlers
+	// the per-party routes registry (useful for `Done` and `UseGlobal` only)
 	apiRoutes []*Route
-	// the per-party done middleware
-	doneHandlers context.Handlers
+	// the per-party done handlers, order
+	// of handlers registration matters.
+	doneGlobalHandlers context.Handlers
 	// the per-party
 	relativePath string
 }
@@ -138,13 +146,16 @@ func (rb *APIBuilder) Handle(method string, registeredPath string, handlers ...c
 
 	fullpath := rb.relativePath + registeredPath // for now, keep the last "/" if any,  "/xyz/"
 
-	routeHandlers := joinHandlers(rb.middleware, handlers)
+	// global begin handlers -> middleware that are registered before route registration
+	// -> handlers that are passed to this Handle function.
+	routeHandlers := joinHandlers(append(rb.beginGlobalHandlers, rb.middleware...), handlers)
+	// -> done handlers after all
+	if len(rb.doneGlobalHandlers) > 0 {
+		routeHandlers = append(routeHandlers, rb.doneGlobalHandlers...) // register the done middleware, if any
+	}
 
 	// here we separate the subdomain and relative path
 	subdomain, path := splitSubdomainAndPath(fullpath)
-	if len(rb.doneHandlers) > 0 {
-		routeHandlers = append(routeHandlers, rb.doneHandlers...) // register the done middleware, if any
-	}
 
 	r, err := NewRoute(method, subdomain, path, routeHandlers, rb.macros)
 	if err != nil { // template path parser errors:
@@ -187,16 +198,17 @@ func (rb *APIBuilder) Party(relativePath string, handlers ...context.Handler) Pa
 	}
 
 	fullpath := parentPath + relativePath
-	// append the parent's +child's handlers
+	// append the parent's + child's handlers
 	middleware := joinHandlers(rb.middleware, handlers)
 
 	return &APIBuilder{
 		// global/api builder
-		macros:            rb.macros,
-		routes:            rb.routes,
-		errorCodeHandlers: rb.errorCodeHandlers,
-		doneHandlers:      rb.doneHandlers,
-		reporter:          rb.reporter,
+		macros:              rb.macros,
+		routes:              rb.routes,
+		errorCodeHandlers:   rb.errorCodeHandlers,
+		beginGlobalHandlers: rb.beginGlobalHandlers,
+		doneGlobalHandlers:  rb.doneGlobalHandlers,
+		reporter:            rb.reporter,
 		// per-party/children
 		middleware:   middleware,
 		relativePath: fullpath,
@@ -256,6 +268,12 @@ func (rb *APIBuilder) GetRoute(routeName string) *Route {
 
 // Use appends Handler(s) to the current Party's routes and child routes.
 // If the current Party is the root, then it registers the middleware to all child Parties' routes too.
+//
+// Call order matters, it should be called right before the routes that they care about these handlers.
+//
+// If it's called after the routes then these handlers will never be executed.
+// Use `UseGlobal` if you want to register begin handlers(middleware)
+// that should be always run before all application's routes.
 func (rb *APIBuilder) Use(middleware ...context.Handler) {
 	rb.middleware = append(rb.middleware, middleware...)
 }
@@ -263,27 +281,26 @@ func (rb *APIBuilder) Use(middleware ...context.Handler) {
 // Done appends to the very end, Handler(s) to the current Party's routes and child routes
 // The difference from .Use is that this/or these Handler(s) are being always running last.
 func (rb *APIBuilder) Done(handlers ...context.Handler) {
-	if len(rb.apiRoutes) > 0 { // register these middleware on previous-party-defined routes, it called after the party's route methods (Handle/HandleFunc/Get/Post/Put/Delete/...)
-		for i, n := 0, len(rb.apiRoutes); i < n; i++ {
-			routeInfo := rb.apiRoutes[i]
-			routeInfo.Handlers = append(routeInfo.Handlers, handlers...)
-		}
-	} else {
-		// register them on the doneHandlers, which will be used on Handle to append these middlweare as the last handler(s)
-		rb.doneHandlers = append(rb.doneHandlers, handlers...)
+	for _, r := range rb.routes.routes {
+		r.done(handlers) // append the handlers to the existing routes
 	}
+	// set as done handlers for the next routes as well.
+	rb.doneGlobalHandlers = append(rb.doneGlobalHandlers, handlers...)
 }
 
-// UseGlobal registers Handler middleware  to the beginning, prepends them instead of append
+// UseGlobal registers handlers that should run before all routes,
+// including all parties, subdomains
+// and other middleware that were registered before or will be after.
+// It doesn't care about call order, it will prepend the handlers to all
+// existing routes and the future routes that may being registered.
 //
-// Use it when you want to add a global middleware to all parties, to all routes in  all subdomains
-// It should be called right before Listen functions
+// It's always a good practise to call it right before the `Application#Run` function.
 func (rb *APIBuilder) UseGlobal(handlers ...context.Handler) {
 	for _, r := range rb.routes.routes {
-		r.Handlers = append(handlers, r.Handlers...) // prepend the handlers
+		r.use(handlers) // prepend the handlers to the existing routes
 	}
-	rb.middleware = append(handlers, rb.middleware...) // set as middleware on the next routes too
-	// rb.Use(handlers...)
+	// set as begin handlers for the next routes as well.
+	rb.beginGlobalHandlers = append(rb.beginGlobalHandlers, handlers...)
 }
 
 // None registers an "offline" route

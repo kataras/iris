@@ -17,7 +17,15 @@ type Route struct {
 	Subdomain string          // "admin."
 	tmpl      *macro.Template // Tmpl().Src: "/api/user/{id:int}"
 	Path      string          // "/api/user/:id"
-	Handlers  context.Handlers
+	// temp storage, they're appended to the Handlers on build.
+	// Execution happens before Handlers, can be empty.
+	beginHandlers context.Handlers
+	// Handlers are the main route's handlers, executed by order.
+	// Cannot be empty.
+	Handlers context.Handlers
+	// temp storage, they're appended to the Handlers on build.
+	// Execution happens after Begin and main Handler(s), can be empty.
+	doneHandlers context.Handlers
 	// FormattedPath all dynamic named parameters (if any) replaced with %v,
 	// used by Application to validate param values of a Route based on its name.
 	FormattedPath string
@@ -55,6 +63,47 @@ func NewRoute(method, subdomain, unparsedPath string,
 		FormattedPath: formattedPath,
 	}
 	return route, nil
+}
+
+// use adds explicit begin handlers(middleware) to this route,
+// It's being called internally, it's useless for outsiders
+// because `Handlers` field is exported.
+// The callers of this function are: `APIBuilder#UseGlobal` and `APIBuilder#Done`.
+//
+// BuildHandlers should be called to build the route's `Handlers`.
+func (r *Route) use(handlers context.Handlers) {
+	if len(handlers) == 0 {
+		return
+	}
+	r.beginHandlers = append(r.beginHandlers, handlers...)
+}
+
+// use adds explicit done handlers to this route.
+// It's being called internally, it's useless for outsiders
+// because `Handlers` field is exported.
+// The callers of this function are: `APIBuilder#UseGlobal` and `APIBuilder#Done`.
+//
+// BuildHandlers should be called to build the route's `Handlers`.
+func (r *Route) done(handlers context.Handlers) {
+	if len(handlers) == 0 {
+		return
+	}
+	r.doneHandlers = append(r.doneHandlers, handlers...)
+}
+
+// BuildHandlers is executed automatically by the router handler
+// at the `Application#Build` state. Do not call it manually, unless
+// you were defined your own request mux handler.
+func (r *Route) BuildHandlers() {
+	if len(r.beginHandlers) > 0 {
+		r.Handlers = append(r.beginHandlers, r.Handlers...)
+		r.beginHandlers = r.beginHandlers[0:0]
+	}
+
+	if len(r.doneHandlers) > 0 {
+		r.Handlers = append(r.Handlers, r.doneHandlers...)
+		r.doneHandlers = r.doneHandlers[0:0]
+	} // note: no mutex needed, this should be called in-sync when server is not running of course.
 }
 
 // String returns the form of METHOD, SUBDOMAIN, TMPL PATH

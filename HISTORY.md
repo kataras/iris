@@ -17,6 +17,10 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+# Sa, 23 July 2017 | v8.0.7
+
+Fix [It's true that with UseGlobal the "/path1.txt" route call the middleware but cause the prepend, the order is inversed](https://github.com/kataras/iris/issues/683#issuecomment-317229068)
+
 # Sa, 22 July 2017 | v8.0.5 & v8.0.6
 
 No API Changes.

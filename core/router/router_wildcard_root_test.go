@@ -82,7 +82,7 @@ func TestRouterWildcardAndStatic(t *testing.T) {
 		}},
 	}
 
-	testTheRoutes(t, tt, true)
+	testTheRoutes(t, tt, false)
 }
 
 func TestRouterWildcardRootMany(t *testing.T) {
@@ -108,7 +108,7 @@ func TestRouterWildcardRootMany(t *testing.T) {
 		}},
 	}
 
-	testTheRoutes(t, tt, true)
+	testTheRoutes(t, tt, false)
 }
 
 func TestRouterWildcardRootManyAndRootStatic(t *testing.T) {
@@ -137,7 +137,7 @@ func TestRouterWildcardRootManyAndRootStatic(t *testing.T) {
 		}},
 	}
 
-	testTheRoutes(t, tt, true)
+	testTheRoutes(t, tt, false)
 }
 
 func testTheRoutes(t *testing.T, tests []testRoute, debug bool) {
