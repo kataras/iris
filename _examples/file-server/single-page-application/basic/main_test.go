@@ -47,7 +47,7 @@ var urls = []resource{
 
 func TestSPA(t *testing.T) {
 	app := newApp()
-	e := httptest.New(t, app, httptest.Debug(true))
+	e := httptest.New(t, app, httptest.Debug(false))
 
 	for _, u := range urls {
 		url := u.String()
