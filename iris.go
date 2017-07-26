@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sirupsen/logrus"
+	"github.com/kataras/golog"
 
 	// context for the handlers
 	"github.com/kataras/iris/context"
@@ -33,7 +33,7 @@ import (
 const (
 
 	// Version is the current version number of the Iris Web Framework.
-	Version = "8.0.7"
+	Version = "8.1.0"
 )
 
 // HTTP status codes as registered with IANA.
@@ -137,8 +137,8 @@ type Application struct {
 	// all fields defaults to something that is working, developers don't have to set it.
 	config *Configuration
 
-	// the logrus logger instance, defaults to "Info" level messages (all except "Debug")
-	logger *logrus.Logger
+	// the golog logger instance, defaults to "Info" level messages (all except "Debug")
+	logger *golog.Logger
 
 	// view engine
 	view view.View
@@ -163,7 +163,7 @@ func New() *Application {
 
 	app := &Application{
 		config:     &config,
-		logger:     logrus.New(),
+		logger:     golog.Default,
 		APIBuilder: router.NewAPIBuilder(),
 		Router:     router.NewRouter(),
 	}
@@ -207,20 +207,19 @@ func (app *Application) ConfigurationReadOnly() context.ConfigurationReadOnly {
 // These are the different logging levels. You can set the logging level to log
 // on the application 's instance of logger, obtained with `app.Logger()`.
 //
-// These are conversions from logrus.
+// These are conversions from golog.
 const (
 	// NoLog level, logs nothing.
-	// It's the logrus' `PanicLevel` but it never used inside iris so it will never log.
-	NoLog = logrus.PanicLevel
+	NoLog = golog.DisableLevel
 	// ErrorLevel level. Logs. Used for errors that should definitely be noted.
 	// Commonly used for hooks to send errors to an error tracking service.
-	ErrorLevel = logrus.ErrorLevel
+	ErrorLevel = golog.ErrorLevel
 	// WarnLevel level. Non-critical entries that deserve eyes.
-	WarnLevel = logrus.WarnLevel
+	WarnLevel = golog.WarnLevel
 )
 
-// Logger returns the logrus logger instance(pointer) that is being used inside the "app".
-func (app *Application) Logger() *logrus.Logger {
+// Logger returns the golog logger instance(pointer) that is being used inside the "app".
+func (app *Application) Logger() *golog.Logger {
 	return app.logger
 }
 
@@ -264,13 +263,13 @@ func (app *Application) RegisterView(viewEngine view.Engine) {
 func (app *Application) View(writer io.Writer, filename string, layout string, bindingData interface{}) error {
 	if app.view.Len() == 0 {
 		err := errors.New("view engine is missing, use `RegisterView`")
-		app.Logger().Errorln(err)
+		app.Logger().Error(err)
 		return err
 	}
 
 	err := app.view.ExecuteWriter(writer, filename, layout, bindingData)
 	if err != nil {
-		app.Logger().Errorln(err)
+		app.Logger().Error(err)
 	}
 	return err
 }
@@ -328,7 +327,7 @@ func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 
 	// check if different ErrorLog provided, if not bind it with the framework's logger
 	if srv.ErrorLog == nil {
-		srv.ErrorLog = log.New(app.logger.Out, "[HTTP Server] ", 0)
+		srv.ErrorLog = log.New(app.logger.Printer.Output, "[HTTP Server] ", 0)
 	}
 
 	if srv.Addr == "" {
@@ -352,7 +351,7 @@ func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 
 	if !app.config.DisableStartupLog {
 		// show the available info to exit from app.
-		su.RegisterOnServe(host.WriteStartupLogOnServe(app.logger.Out)) // app.logger.Writer -> Info
+		su.RegisterOnServe(host.WriteStartupLogOnServe(app.logger.Printer.Output)) // app.logger.Writer -> Info
 	}
 
 	if !app.config.DisableInterruptHandler {
@@ -543,7 +542,7 @@ func (app *Application) Run(serve Runner, withOrWithout ...Configurator) error {
 	// this will block until an error(unless supervisor's DeferFlow called from a Task).
 	err := serve(app)
 	if err != nil {
-		app.Logger().Errorln(err)
+		app.Logger().Error(err)
 	}
 	return err
 }

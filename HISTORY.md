@@ -13,9 +13,45 @@
 ### Should I upgrade my Iris?
 
 Developers are not forced to upgrade if they don't really need it. Upgrade whenever you feel ready.
+
 > Iris uses the [vendor directory](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo) feature, so you get truly reproducible builds, as this method guards against upstream renames and deletes.
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`.
+
+
+# We, 26 July 2017 | v8.1.0
+
+The `app.Logger() *logrus.Logger` was replaced with a custom implementation [[golog](https://github.com/kataras/golog)], it's compatible with the [logrus](https://github.com/sirupsen/logrus) package and other open-source golang loggers as well, because of that: https://github.com/kataras/iris/issues/680#issuecomment-316184570. 
+
+The API didn't change much except these:
+
+-  the new implementation does not recognise `Fatal` and `Panic` because, actually, iris never panics
+- the old `app.Logger().Out = io.Writer` should be written as `app.Logger().SetOutput(io.Writer)`
+
+The new implementation, [golog](https://github.com/kataras/golog) is more featured
+and it completes more use cases than the before external implementation.
+
+At general you have to know that the low-level relative fields and functions are actually inside `app.Logger().Printer` object, i.e: `app.Logger().Printer.Output` to get the `io.Writer` or `app.Logger().Printer.AddOuput/SetOutput` to set or add more output(`io.Writer`) targets.
+
+### Integration
+
+I understand that many of you may use logrus outside of Iris too. To integrate an external `logrus` logger just 
+`Install` it-- all print operations will be handled by the provided `logrus instance`.
+
+```go
+import (
+    "github.com/kataras/iris"
+    "github.com/sirupsen/logrus"
+)
+
+package main(){
+    app := iris.New()
+    app.Logger().Install(logrus.StandardLogger()) // the package-level logrus instance
+    // [...]
+}
+```
+
+For more information about our new logger please navigate to: https://github.com/kataras/golog -  contributions are welcomed as well!
 
 # Sa, 23 July 2017 | v8.0.7
 

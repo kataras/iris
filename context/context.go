@@ -2231,7 +2231,7 @@ func (ctx *context) BeginTransaction(pipe func(t *Transaction)) {
 	t := newTransaction(ctx) // it calls this *context, so the overriding with a new pool's New of context.Context wil not work here.
 	defer func() {
 		if err := recover(); err != nil {
-			ctx.Application().Logger().Warnln(errTransactionInterrupted.Format(err).Error())
+			ctx.Application().Logger().Warn(errTransactionInterrupted.Format(err).Error())
 			// complete (again or not , doesn't matters) the scope without loud
 			t.Complete(nil)
 			// we continue as normal, no need to return here*

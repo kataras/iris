@@ -18,7 +18,8 @@ func main() {
 		Method: true,
 		// Path displays the request path
 		Path: true,
-		// Columns: true,
+
+		//Columns: true,
 
 		// if !empty then its contents derives from `ctx.Values().Get("logger_message")
 		// will be added to the logs.
@@ -57,6 +58,6 @@ func main() {
 	// http://localhost:8080/2
 	// http://lcoalhost:8080/notfoundhere
 	// see the output on the console.
-	app.Run(iris.Addr(":8080"))
+	app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed))
 
 }
