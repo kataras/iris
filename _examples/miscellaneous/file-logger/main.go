@@ -32,11 +32,11 @@ func main() {
 
 	app := iris.New()
 	// attach the file as logger, remember, iris' app logger is just an io.Writer.
-	app.Logger().Out = newLogFile()
+	app.Logger().SetOutput(newLogFile())
 
 	app.Get("/", func(ctx context.Context) {
 		// for the sake of simplicity, in order see the logs at the ./_today_.txt
-		ctx.Application().Logger().Infoln("Request path: " + ctx.Path())
+		ctx.Application().Logger().Info("Request path: " + ctx.Path())
 		ctx.Writef("hello")
 	})
 
@@ -44,7 +44,7 @@ func main() {
 	// and open the ./logs.txt file
 	if err := app.Run(iris.Addr(":8080"), iris.WithoutBanner); err != nil {
 		if err != iris.ErrServerClosed {
-			app.Logger().Warnln("Shutdown with error: " + err.Error())
+			app.Logger().Warn("Shutdown with error: " + err.Error())
 		}
 	}
 }

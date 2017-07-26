@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	stdContext "context"
-	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -14,7 +13,7 @@ import (
 func logger(app *iris.Application) *bytes.Buffer {
 	buf := &bytes.Buffer{}
 
-	app.Logger().Out = buf
+	app.Logger().SetOutput(buf)
 
 	// disable the "Now running at...." in order to have a clean log of the error.
 	// we could attach that on `Run` but better to keep things simple here.
@@ -41,20 +40,12 @@ func TestListenAddr(t *testing.T) {
 		t.Fatalf("expecting err to be `iris.ErrServerClosed` but got: %v", err)
 	}
 
-	// println(log.Bytes())
-	// println(len(log.Bytes()))
+	expectedMessage := iris.ErrServerClosed.Error()
 
-	expected := fmt.Sprintln("\"" + iris.ErrServerClosed.Error() + "\" ")
-	expected = strings.TrimSpace(expected)
-	// println([]byte(expected))
-	// println(len([]byte(expected)))
-
-	got := log.String()
-	got = strings.Split(got, "msg=")[1]
-	got = strings.TrimSpace(got)
-	if expected != got {
-		t.Fatalf("expecting to log the:\n'%s'\ninstead of:\n'%s'", expected, got)
+	if got := log.String(); !strings.Contains(got, expectedMessage) {
+		t.Fatalf("expecting to log to contains the:\n'%s'\ninstead of:\n'%s'", expectedMessage, got)
 	}
+
 }
 
 func TestListenAddrWithoutServerErr(t *testing.T) {

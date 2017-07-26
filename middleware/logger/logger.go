@@ -79,14 +79,15 @@ func (l *requestLoggerMiddleware) ServeHTTP(ctx context.Context) {
 		logFunc(endTime, latency, status, ip, method, path, message)
 		return
 	}
-	endTimeFormatted := endTime.Format("2006/01/02 - 15:04:05")
+
 	if l.config.Columns {
+		endTimeFormatted := endTime.Format("2006/01/02 - 15:04:05")
 		output := Columnize(endTimeFormatted, latency, status, ip, method, path, message)
-		ctx.Application().Logger().Out.Write([]byte(output))
+		ctx.Application().Logger().Printer.Output.Write([]byte(output))
 		return
 	}
 	// no new line, the framework's logger is responsible how to render each log.
-	line := fmt.Sprintf("%s | %v %4v %s %s %s", endTimeFormatted, status, latency, ip, method, path)
+	line := fmt.Sprintf("%v %4v %s %s %s", status, latency, ip, method, path)
 	if message != nil {
 		line += fmt.Sprintf(" %v", message)
 	}

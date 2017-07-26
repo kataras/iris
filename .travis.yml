@@ -7,7 +7,7 @@ go:
   - tip
 go_import_path: github.com/kataras/iris
 install:
-  - go get ./... # for iris-contrib/httpexpect and sirupsen/logrus
+  - go get ./... # for iris-contrib/httpexpect and kataras/golog
 script:
   - go test -v -cover ./...
 after_script:

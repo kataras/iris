@@ -4,7 +4,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/sirupsen/logrus"
+	"github.com/kataras/golog"
 )
 
 // Application is the context's owner.
@@ -14,8 +14,8 @@ type Application interface {
 	// ConfigurationReadOnly returns all the available configuration values can be used on a request.
 	ConfigurationReadOnly() ConfigurationReadOnly
 
-	// Logger returns the logrus logger instance(pointer) that is being used inside the "app".
-	Logger() *logrus.Logger
+	// Logger returns the golog logger instance(pointer) that is being used inside the "app".
+	Logger() *golog.Logger
 
 	// View executes and write the result of a template file to the writer.
 	//
