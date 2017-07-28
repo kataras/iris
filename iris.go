@@ -155,6 +155,9 @@ type Application struct {
 	//
 	// Hosts field is available after `Run` or `NewHost`.
 	Hosts []*host.Supervisor
+
+	// shutdown handler to register in Host Supervisors
+	shutdownHandlers []func(*host.Supervisor)
 }
 
 // New creates and returns a fresh empty iris *Application instance.
@@ -364,6 +367,17 @@ func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 
 	app.Hosts = append(app.Hosts, su)
 
+	makeHandler := func(handler func(supervisor *host.Supervisor)) func() {
+		return func() {
+			handler(su)
+		}
+	}
+
+	// register shutdown handlers
+	for _, handler := range app.shutdownHandlers {
+		su.RegisterOnShutdown(makeHandler(handler))
+	}
+
 	return su
 }
 
@@ -381,6 +395,22 @@ func (app *Application) Shutdown(ctx stdContext.Context) error {
 		}
 	}
 	return nil
+}
+
+// OnShutdown register a handler on all Host Supervisors which will be called when they shutdown.
+// A such handled can be registered anly when this Application instance in started.
+func (app *Application) OnHostShutdown(shutdownHandler func(*host.Supervisor)) {
+	app.shutdownHandlers = append(app.shutdownHandlers, shutdownHandler)
+
+	makeHandler := func(su *host.Supervisor) func() {
+		return func() {
+			shutdownHandler(su)
+		}
+	}
+
+	for _, su := range app.Hosts {
+		su.RegisterOnShutdown(makeHandler(su))
+	}
 }
 
 // Runner is just an interface which accepts the framework instance
