@@ -222,9 +222,6 @@ func (s *Server) handleConnection(ctx context.Context, websocketConn UnderlineCo
 
 // OnConnection is the main event you, as developer, will work with each of the websocket connections.
 func (s *Server) OnConnection(cb ConnectionFunc) {
-	if s.handler == nil {
-
-	}
 	s.onConnectionListeners = append(s.onConnectionListeners, cb)
 }
 
