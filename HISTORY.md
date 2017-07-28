@@ -28,10 +28,8 @@ The API didn't change much except these:
 -  the new implementation does not recognise `Fatal` and `Panic` because, actually, iris never panics
 - the old `app.Logger().Out = io.Writer` should be written as `app.Logger().SetOutput(io.Writer)`
 
-The new implementation, [golog](https://github.com/kataras/golog) is more featured
-and it completes more use cases than the before external implementation.
-
-At general you have to know that the low-level relative fields and functions are actually inside `app.Logger().Printer` object, i.e: `app.Logger().Printer.Output` to get the `io.Writer` or `app.Logger().Printer.AddOuput/SetOutput` to set or add more output(`io.Writer`) targets.
+The new implementation, [golog](https://github.com/kataras/golog) is featured, **[three times faster than logrus](https://github.com/kataras/golog/tree/master/_benchmarks)**
+and it completes every common usage.
 
 ### Integration
 
