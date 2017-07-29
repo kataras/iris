@@ -33,7 +33,7 @@ import (
 const (
 
 	// Version is the current version number of the Iris Web Framework.
-	Version = "8.1.0"
+	Version = "8.1.1"
 )
 
 // HTTP status codes as registered with IANA.
@@ -397,11 +397,20 @@ type Runner func(*Application) error
 // Listener can be used as an argument for the `Run` method.
 // It can start a server with a custom net.Listener via server's `Serve`.
 //
+// Second argument is optional, it accepts one or more
+// `func(*host.Configurator)` that are being executed
+// on that specific host that this function will create to start the server.
+// Via host configurators you can configure the back-end host supervisor,
+// i.e to add events for shutdown, serve or error.
+// An example of this use case can be found at:
+// https://github.com/kataras/iris/blob/master/_examples/http-listening/notify-on-shutdown/main.go
+//
 // See `Run` for more.
-func Listener(l net.Listener) Runner {
+func Listener(l net.Listener, hostConfigs ...host.Configurator) Runner {
 	return func(app *Application) error {
 		app.config.vhost = netutil.ResolveVHost(l.Addr().String())
 		return app.NewHost(new(http.Server)).
+			Configure(hostConfigs...).
 			Serve(l)
 	}
 }
@@ -409,10 +418,19 @@ func Listener(l net.Listener) Runner {
 // Server can be used as an argument for the `Run` method.
 // It can start a server with a *http.Server.
 //
+// Second argument is optional, it accepts one or more
+// `func(*host.Configurator)` that are being executed
+// on that specific host that this function will create to start the server.
+// Via host configurators you can configure the back-end host supervisor,
+// i.e to add events for shutdown, serve or error.
+// An example of this use case can be found at:
+// https://github.com/kataras/iris/blob/master/_examples/http-listening/notify-on-shutdown/main.go
+//
 // See `Run` for more.
-func Server(srv *http.Server) Runner {
+func Server(srv *http.Server, hostConfigs ...host.Configurator) Runner {
 	return func(app *Application) error {
 		return app.NewHost(srv).
+			Configure(hostConfigs...).
 			ListenAndServe()
 	}
 }
@@ -423,10 +441,19 @@ func Server(srv *http.Server) Runner {
 //
 // Addr should have the form of [host]:port, i.e localhost:8080 or :8080.
 //
+// Second argument is optional, it accepts one or more
+// `func(*host.Configurator)` that are being executed
+// on that specific host that this function will create to start the server.
+// Via host configurators you can configure the back-end host supervisor,
+// i.e to add events for shutdown, serve or error.
+// An example of this use case can be found at:
+// https://github.com/kataras/iris/blob/master/_examples/http-listening/notify-on-shutdown/main.go
+//
 // See `Run` for more.
-func Addr(addr string) Runner {
+func Addr(addr string, hostConfigs ...host.Configurator) Runner {
 	return func(app *Application) error {
 		return app.NewHost(&http.Server{Addr: addr}).
+			Configure(hostConfigs...).
 			ListenAndServe()
 	}
 }
@@ -439,10 +466,19 @@ func Addr(addr string) Runner {
 // Addr should have the form of [host]:port, i.e localhost:443 or :443.
 // CertFile & KeyFile should be filenames with their extensions.
 //
+// Second argument is optional, it accepts one or more
+// `func(*host.Configurator)` that are being executed
+// on that specific host that this function will create to start the server.
+// Via host configurators you can configure the back-end host supervisor,
+// i.e to add events for shutdown, serve or error.
+// An example of this use case can be found at:
+// https://github.com/kataras/iris/blob/master/_examples/http-listening/notify-on-shutdown/main.go
+//
 // See `Run` for more.
-func TLS(addr string, certFile, keyFile string) Runner {
+func TLS(addr string, certFile, keyFile string, hostConfigs ...host.Configurator) Runner {
 	return func(app *Application) error {
 		return app.NewHost(&http.Server{Addr: addr}).
+			Configure(hostConfigs...).
 			ListenAndServeTLS(certFile, keyFile)
 	}
 }
@@ -454,10 +490,19 @@ func TLS(addr string, certFile, keyFile string) Runner {
 //
 // Addr should have the form of [host]:port, i.e mydomain.com:443.
 //
+// Second argument is optional, it accepts one or more
+// `func(*host.Configurator)` that are being executed
+// on that specific host that this function will create to start the server.
+// Via host configurators you can configure the back-end host supervisor,
+// i.e to add events for shutdown, serve or error.
+// An example of this use case can be found at:
+// https://github.com/kataras/iris/blob/master/_examples/http-listening/notify-on-shutdown/main.go
+//
 // See `Run` for more.
-func AutoTLS(addr string) Runner {
+func AutoTLS(addr string, hostConfigs ...host.Configurator) Runner {
 	return func(app *Application) error {
 		return app.NewHost(&http.Server{Addr: addr}).
+			Configure(hostConfigs...).
 			ListenAndServeAutoTLS()
 	}
 }
