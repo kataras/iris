@@ -232,6 +232,13 @@ func WithoutRemoteAddrHeader(headerName string) Configurator {
 	}
 }
 
+// WithShutdownHandler register an on-shutdown handler
+func WithShutdownHandler(handler OnShutdown) Configurator {
+	return func(app *Application) {
+		app.RegisterOnShutdown(handler)
+	}
+}
+
 // WithOtherValue adds a value based on a key to the Other setting.
 //
 // See `Configuration`.
