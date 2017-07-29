@@ -21,6 +21,7 @@ It doesn't always contain the "best ways" but it does cover each important featu
 - [UNIX socket file](http-listening/listen-unix/main.go)
 - [TLS](http-listening/listen-tls/main.go)
 - [Letsencrypt (Automatic Certifications)](http-listening/listen-letsencrypt/main.go)
+- [Notify on shutdown](http-listening/notify-on-shutdown/main.go)
 - Custom TCP Listener
     * [common net.Listener](http-listening/custom-listener/main.go)
     * [SO_REUSEPORT for unix systems](http-listening/custom-listener/unix-reuseport/main.go)
@@ -31,7 +32,7 @@ It doesn't always contain the "best ways" but it does cover each important featu
 - Graceful Shutdown
     * [using the `RegisterOnInterrupt`](http-listening/graceful-shutdown/default-notifier/main.go)
     * [using a custom notifier](http-listening/graceful-shutdown/custom-notifier/main.go)
-    * [notify on shutdown](http-listening/graceful-shutdown/notify-on-shutdown/main.go)
+
 
 ### Configuration
 
