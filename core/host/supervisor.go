@@ -13,6 +13,12 @@ import (
 	"golang.org/x/crypto/acme/autocert"
 )
 
+// Configurator provides an easy way to modify
+// the Supervisor.
+//
+// Look the `Configure` func for more.
+type Configurator func(su *Supervisor)
+
 // Supervisor is the wrapper and the manager for a compatible server
 // and it's relative actions, called Tasks.
 //
@@ -52,6 +58,22 @@ func New(srv *http.Server) *Supervisor {
 		Server:      srv,
 		unblockChan: make(chan struct{}, 1),
 	}
+}
+
+// Configure accepts one or more `Configurator`.
+// With this function you can use simple functions
+// that are spread across your app to modify
+// the supervisor, these Configurators can be
+// used on any Supervisor instance.
+//
+// Look `Configurator` too.
+//
+// Returns itself.
+func (su *Supervisor) Configure(configurators ...Configurator) *Supervisor {
+	for _, conf := range configurators {
+		conf(su)
+	}
+	return su
 }
 
 // DeferFlow defers the flow of the exeuction,
