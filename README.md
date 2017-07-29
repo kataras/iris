@@ -10,6 +10,17 @@ Iris is a fast, simple and efficient micro web framework for Go. It provides a b
 [![view examples](https://img.shields.io/badge/learn%20by-examples-0077b3.svg?style=flat-square)](https://github.com/kataras/iris/tree/master/_examples)
 [![chat](https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square)](https://kataras.rocket.chat/channel/iris)
 <!-- [![godocs](https://img.shields.io/badge/godocs-8.x.x-0366d6.svg?style=flat-square)](https://godoc.org/github.com/kataras/iris) -->
+
+## 😃 Get Hired with Iris
+
+**You have always more possibilities to get hired when you have experience with Iris web framework.**
+
+Below you'll find a list of opening positions, the list can be updated by us or by the employers.
+
+| Company | Position | Job Details |
+| -----------|--------|-------------|
+| Kudo, an Indonesian startup technology company | Application Programming Interface Developer | https://glints.id/opportunities/jobs/5553 |
+
 <p>
 <img src="https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png" alt="Third-party source for transparency." />
 </p>
