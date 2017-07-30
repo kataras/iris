@@ -5,26 +5,17 @@ Iris is a fast, simple and efficient micro web framework for Go. It provides a b
 [![total used by](http://iris-go.com/graph?style=flat-square)](http://iris-go.com/graph)
 [![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=flat-square)](https://travis-ci.org/kataras/iris)
 [![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=flat-square)](http://goreportcard.com/report/kataras/iris)
+[![github issues](https://img.shields.io/github/issues/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/issues?q=is%3Aopen+is%3Aissue)
 [![github closed issues](https://img.shields.io/github/issues-closed-raw/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/issues?q=is%3Aissue+is%3Aclosed)
-[![issue stats](https://img.shields.io/issuestats/i/github/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/issues?q=is%3Aissue+is%3Aclosed)
 [![view examples](https://img.shields.io/badge/learn%20by-examples-0077b3.svg?style=flat-square)](https://github.com/kataras/iris/tree/master/_examples)
 [![chat](https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square)](https://kataras.rocket.chat/channel/iris)
+
+<!-- has issues, the img.shields.io's API is problematic for this resource: [![issue stats](https://img.shields.io/issuestats/i/github/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/issues?q=is%3Aissue+is%3Aclosed) -->
 <!-- [![godocs](https://img.shields.io/badge/godocs-8.x.x-0366d6.svg?style=flat-square)](https://godoc.org/github.com/kataras/iris) -->
-
-## 😃 Get Hired with Iris
-
-**You have always more possibilities to get hired when you have experience with Iris web framework.**
-
-Below you'll find a list of opening positions, the list can be updated by us or by the employers.
-
-| Company | Position | Job Details |
-| -----------|--------|-------------|
-| Kudo, an Indonesian startup technology company | Application Programming Interface Developer | https://glints.id/opportunities/jobs/5553 |
 
 <p>
 <img src="https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png" alt="Third-party source for transparency." />
 </p>
-
 
 ### 📑 Table of contents
 
@@ -56,6 +47,7 @@ Below you'll find a list of opening positions, the list can be updated by us or 
 * [Versioning](#-version)
     * [When should I upgrade?](#should-i-upgrade-my-iris)
     * [Where can I find older versions?](#where-can-i-find-older-versions)
+* [Get Hired](#-get-hired)
 * [People](#-people)
 
 <!--
@@ -165,17 +157,17 @@ func main() {
 }
 ```
 
-We expect Go version 1.9 to be released in August, however you can install Go 1.9 beta today.
+We expect Go version 1.9 to be released in August, however you can install Go 1.9 RC1 today.
 
-### Installing Go 1.9beta2
+### Installing Go 1.9rc1
  
-1. Go to https://golang.org/dl/#go1.9beta2
-2. Download a compatible, with your OS, archive, i.e `go1.9beta2.windows-amd64.zip`
-3. Unzip the contents of `go1.9beta2.windows-amd64.zip/go` folder to your $GOROOT, i.e `C:\Go`
-4. Open a terminal and execute `go version`, it should output the go1.9beta2 version, i.e:
+1. Go to https://golang.org/dl/#go1.9rc1
+2. Download a compatible, with your OS, archive or executable, i.e `go1.9rc1.windows-amd64.zip`
+3. Unzip the contents of `go1.9rc1.windows-amd64.zip` folder to your $GOROOT, i.e `C:\Go` or just execute the executable you've just download
+4. Open a terminal and execute `go version`, it should output the go1.9rc1 version, i.e:
 ```sh
-C:\Users\hiveminded>go version
-go version go1.9beta2 windows/amd64
+C:\Users\kataras>go version
+go version go1.9rc1 windows/amd64
 ```
 
 </details>
@@ -367,12 +359,24 @@ Testers should upgrade immediately, if you're willing to use _iris_ in productio
 
 Previous versions can be found at [releases page](https://github.com/kataras/iris/releases).
 
+### 😃 Get Hired
+
+Below you'll find a list of open positions that require at least **experience with the Iris web framework**.
+
+| Company | Position | Job Details |
+| -----------|--------|-------------|
+| Kudo, an Indonesian startup technology company | Application Programming Interface Developer | Navigate to: https://glints.id/opportunities/jobs/5553 |
+
+Employers that are looking for briliant Software Engineers with good experience on Go Programming Language and Iris can put their startup's or company's name here or, if privacy is the key, [contact with us](mailto:kataras2006@hotmail.com?subject=Employer%20That%20Hires%20Smart%20Devs) to suggest some good and well-tested freelancers that suits your needs.
+
 ### 🥇 People
 
-The original author of _iris_ is [Gerasimos Maropoulos](https://github.com/kataras)
+The original author of _iris_ is [Gerasimos Maropoulos](https://medium.com/@kataras)
 
 The current lead maintainer is [Bill Qeras, Jr.](https://github.com/hiveminded)
 
 [List of all contributors](https://github.com/kataras/iris/graphs/contributors)
+
+Help this project to continue deliver awesome and unique features with the higher code quality as possible
 
 [![](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=kataras2006%40hotmail%2ecom&lc=GR&item_name=Iris%20web%20framework&item_number=iriswebframeworkdonationid2016&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted)

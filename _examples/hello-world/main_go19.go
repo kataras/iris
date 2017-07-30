@@ -6,7 +6,16 @@ import (
 	"github.com/kataras/iris"
 )
 
+// Same as `main.go` for go1.8+ but it omits the
+// `github.com/kataras/iris/context` import path
+// because of the type alias feature of go 1.9.
+
 func main() {
+	// The `iris#Default` adds two built'n handlers
+	// that can recover from any http-relative panics
+	// and log the requests to the terminal.
+	//
+	// Use `iris#New` instead.
 	app := iris.Default()
 
 	// Method:   GET
