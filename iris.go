@@ -125,6 +125,9 @@ const (
 // to store the "offline" routes.
 const MethodNone = "NONE"
 
+// on-shutdown handler type used in delayed registration
+type OnShutdown func(*host.Supervisor)
+
 // Application is responsible to manage the state of the application.
 // It contains and handles all the necessary parts to create a fast web server.
 type Application struct {
@@ -155,6 +158,9 @@ type Application struct {
 	//
 	// Hosts field is available after `Run` or `NewHost`.
 	Hosts []*host.Supervisor
+
+	// on-shutdown handlers to register in Host Supervisors (delayed registration)
+	onShutdown []OnShutdown
 }
 
 // New creates and returns a fresh empty iris *Application instance.
@@ -364,7 +370,20 @@ func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 
 	app.Hosts = append(app.Hosts, su)
 
+	// register shutdown handlers to Host Spervisors
+	for _, handler := range app.onShutdown {
+		su.RegisterOnShutdown(app.makeShutdownHandlerForSupervisors(su, handler))
+	}
+
 	return su
+}
+
+// makeShutdownHandlerForSupervisors constructs a shutdown handled used in Host Supervisors
+// from an on-shutdown handler used in delayed registration
+func (app *Application) makeShutdownHandlerForSupervisors(su *host.Supervisor, handler OnShutdown) func() {
+	return func() {
+		handler(su)
+	}
 }
 
 // RegisterOnInterrupt registers a global function to call when CTRL+C/CMD+C pressed or a unix kill command received.
@@ -381,6 +400,18 @@ func (app *Application) Shutdown(ctx stdContext.Context) error {
 		}
 	}
 	return nil
+}
+
+// RegisterOnShutdown register a handler on all Host Supervisors which will be called when they shutdown.
+// A such handled can be registered anly when this Application instance in started.
+func (app *Application) RegisterOnShutdown(onShutdownHandler func(*host.Supervisor)) {
+	// Register the on-shutdown handler which will be user on each creation of an host
+	app.onShutdown = append(app.onShutdown, onShutdownHandler)
+
+	// Register shutdown handlers to already existing Host Spervisors
+	for _, su := range app.Hosts {
+		su.RegisterOnShutdown(app.makeShutdownHandlerForSupervisors(su, onShutdownHandler))
+	}
 }
 
 // Runner is just an interface which accepts the framework instance
