@@ -18,6 +18,12 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+# Su, 30 July 2017
+
+Greetings my friends, nothing special today, no version number yet.
+
+We just improve the, external, Iris Logging library and the `Columns` config field from `middleware/logger` defaults to `false` now. Upgrade with `go get -u github.com/kataras/iris` and have fun!
+
 # Sa, 29 July 2017 | v8.1.1
 
 No breaking changes, just an addition to make your life easier.

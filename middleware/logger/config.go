@@ -30,11 +30,11 @@ type Config struct {
 	// Defaults to true.
 	Path bool
 
-	// Columns will display the logs as well formatted columns (bool).
+	// Columns will display the logs as a formatted columns-rows text (bool).
 	// If custom `LogFunc` has been provided then this field is useless and users should
 	// use the `Columinize` function of the logger to get the output result as columns.
 	//
-	// Defaults to true.
+	// Defaults to false.
 	Columns bool
 
 	// MessageContextKey if not empty,
@@ -61,7 +61,7 @@ type Config struct {
 }
 
 // DefaultConfig returns a default config
-// that have all boolean fields to true,
+// that have all boolean fields to true except `Columns`,
 // all strings are empty,
 // LogFunc and Skippers to nil as well.
 func DefaultConfig() Config {
@@ -70,7 +70,7 @@ func DefaultConfig() Config {
 		IP:                true,
 		Method:            true,
 		Path:              true,
-		Columns:           true,
+		Columns:           false,
 		MessageContextKey: "",
 		LogFunc:           nil,
 		Skippers:          nil,
