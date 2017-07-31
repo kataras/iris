@@ -36,43 +36,76 @@ func (p *provider) RegisterDatabase(db Database) {
 	p.mu.Unlock()
 }
 
-// newSession returns a new session from sessionid
-func (p *provider) newSession(sid string, expires time.Duration) *Session {
-	sess := &Session{
-		sid:      sid,
-		provider: p,
-		values:   p.loadSessionValuesFromDB(sid),
-		flashes:  make(map[string]*flashMessage),
-	}
+// startAutoDestroy start a task which destoy the session when expire date is reached,
+// but only if `expires` parameter is positive. It updates the expire date of the session from `expires` parameter.
+func (p *provider) startAutoDestroy(s *Session, expires time.Duration) bool {
+	res := expires > 0
+	if res { // if not unlimited life duration and no -1 (cookie remove action is based on browser's session)
+		expireDate := time.Now().Add(expires)
 
-	if expires > 0 { // if not unlimited life duration and no -1 (cookie remove action is based on browser's session)
-		time.AfterFunc(expires, func() {
+		s.expireAt = &expireDate
+		s.timer = time.AfterFunc(expires, func() {
 			// the destroy makes the check if this session is exists then or not,
 			// this is used to destroy the session from the server-side also
 			// it's good to have here for security reasons, I didn't add it on the gc function to separate its action
-			p.Destroy(sid)
+			p.Destroy(s.sid)
 		})
 	}
+
+	return res
+}
+
+// newSession returns a new session from sessionid
+func (p *provider) newSession(sid string, expires time.Duration) *Session {
+	values, expireAt := p.loadSessionValuesFromDB(sid)
+
+	sess := &Session{
+		sid:      sid,
+		provider: p,
+		values:   values,
+		flashes:  make(map[string]*flashMessage),
+		expireAt: expireAt,
+	}
+
+	if (len(values) > 0) && (sess.expireAt != nil) {
+		// Restore expiration state
+		// However, if session save in database has no expiration date,
+		// therefore the expiration will be reinitialised with session configuration
+		expires = sess.expireAt.Sub(time.Now())
+	}
+
+	p.startAutoDestroy(sess, expires)
 
 	return sess
 }
 
-// can return nil
-func (p *provider) loadSessionValuesFromDB(sid string) memstore.Store {
+// can return nil memstore
+func (p *provider) loadSessionValuesFromDB(sid string) (memstore.Store, *time.Time) {
 	var store memstore.Store
+	var expireDate *time.Time
 
 	for i, n := 0, len(p.databases); i < n; i++ {
-		if dbValues := p.databases[i].Load(sid); dbValues != nil && len(dbValues) > 0 {
+		dbValues, currentExpireDate := p.databases[i].Load(sid)
+		if dbValues != nil && len(dbValues) > 0 {
 			for k, v := range dbValues {
 				store.Set(k, v)
 			}
 		}
+
+		if (currentExpireDate != nil) && ((expireDate == nil) || expireDate.After(*currentExpireDate)) {
+			expireDate = currentExpireDate
+		}
 	}
-	return store
+
+	// Check if session has already expired
+	if (expireDate != nil) && expireDate.Before(time.Now()) {
+		return nil, nil
+	}
+
+	return store, expireDate
 }
 
-func (p *provider) updateDatabases(sid string, store memstore.Store) {
-
+func (p *provider) updateDatabases(sess *Session, store memstore.Store) {
 	if l := store.Len(); l > 0 {
 		mapValues := make(map[string]interface{}, l)
 
@@ -81,7 +114,7 @@ func (p *provider) updateDatabases(sid string, store memstore.Store) {
 		})
 
 		for i, n := 0, len(p.databases); i < n; i++ {
-			p.databases[i].Update(sid, mapValues)
+			p.databases[i].Update(sess.sid, mapValues, sess.expireAt)
 		}
 	}
 }
@@ -95,17 +128,50 @@ func (p *provider) Init(sid string, expires time.Duration) *Session {
 	return newSession
 }
 
+// UpdateExpiraton update expire date of a session, plus it updates destroy task
+func (p *provider) UpdateExpiraton(sid string, expires time.Duration) (done bool) {
+	if expires <= 0 {
+		return false
+	}
+
+	p.mu.Lock()
+	sess, found := p.sessions[sid]
+	p.mu.Unlock()
+
+	if !found {
+		return false
+	}
+
+	if sess.timer == nil {
+		return p.startAutoDestroy(sess, expires)
+	} else {
+		if expires <= 0 {
+			sess.timer.Stop()
+			sess.timer = nil
+			sess.expireAt = nil
+		} else {
+			expireDate := time.Now().Add(expires)
+
+			sess.expireAt = &expireDate
+			sess.timer.Reset(expires)
+		}
+	}
+
+	return true
+}
+
 // Read returns the store which sid parameter belongs
 func (p *provider) Read(sid string, expires time.Duration) *Session {
 	p.mu.Lock()
 	if sess, found := p.sessions[sid]; found {
 		sess.runFlashGC() // run the flash messages GC, new request here of existing session
 		p.mu.Unlock()
+
 		return sess
 	}
 	p.mu.Unlock()
-	return p.Init(sid, expires) // if not found create new
 
+	return p.Init(sid, expires) // if not found create new
 }
 
 // Destroy destroys the session, removes all sessions and flash values,
@@ -116,8 +182,12 @@ func (p *provider) Destroy(sid string) {
 	if sess, found := p.sessions[sid]; found {
 		sess.values = nil
 		sess.flashes = nil
+		if sess.timer != nil {
+			sess.timer.Stop()
+		}
+
 		delete(p.sessions, sid)
-		p.updateDatabases(sid, nil)
+		p.updateDatabases(sess, nil)
 	}
 	p.mu.Unlock()
 
@@ -129,8 +199,12 @@ func (p *provider) Destroy(sid string) {
 func (p *provider) DestroyAll() {
 	p.mu.Lock()
 	for _, sess := range p.sessions {
+		if sess.timer != nil {
+			sess.timer.Stop()
+		}
+
 		delete(p.sessions, sess.ID())
-		p.updateDatabases(sess.ID(), nil)
+		p.updateDatabases(sess, nil)
 	}
 	p.mu.Unlock()
 

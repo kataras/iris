@@ -27,6 +27,8 @@ type (
 		flashes   map[string]*flashMessage
 		mu        sync.RWMutex
 		createdAt time.Time
+		expireAt  *time.Time // nil pointer means no expire date
+		timer     *time.Timer
 		provider  *provider
 	}
 
@@ -40,6 +42,22 @@ type (
 // ID returns the session's ID.
 func (s *Session) ID() string {
 	return s.sid
+}
+
+// HasExpireDate test if this session has an expire date, if not, this session never expires
+func (s *Session) HasExpireDate() bool {
+	return s.expireAt != nil
+}
+
+// GetExpireDate get the expire date, if this session has no expire date, the returned value has the zero value
+func (s *Session) GetExpireDate() time.Time {
+	var res time.Time
+
+	if s.expireAt != nil {
+		res = *s.expireAt
+	}
+
+	return res
 }
 
 // Get returns a value based on its "key".
@@ -322,7 +340,7 @@ func (s *Session) Delete(key string) bool {
 }
 
 func (s *Session) updateDatabases() {
-	s.provider.updateDatabases(s.sid, s.values)
+	s.provider.updateDatabases(s, s.values)
 }
 
 // DeleteFlash removes a flash message by its key.
