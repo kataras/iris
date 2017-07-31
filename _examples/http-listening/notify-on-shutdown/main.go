@@ -16,6 +16,8 @@ func main() {
 		ctx.HTML("<h1>Hello, try to refresh the page after ~10 secs</h1>")
 	})
 
+	// app.ConfigureHost(configureHost) -> or pass "configureHost" as `app.Addr` argument, same result.
+
 	app.Logger().Info("Wait 10 seconds and check your terminal again")
 	// simulate a shutdown action here...
 	go func() {
@@ -40,9 +42,9 @@ func main() {
 
 func configureHost(su *host.Supervisor) {
 	// here we have full access to the host that will be created
-	// inside the `Run` function.
+	// inside the `app.Run` function or `NewHost`.
 	//
-	// we register a shutdown "event" callback
+	// we're registering a shutdown "event" callback here:
 	su.RegisterOnShutdown(func() {
 		println("server is closed")
 	})

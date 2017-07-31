@@ -33,7 +33,7 @@ import (
 const (
 
 	// Version is the current version number of the Iris Web Framework.
-	Version = "8.1.1"
+	Version = "8.1.2"
 )
 
 // HTTP status codes as registered with IANA.
@@ -154,7 +154,8 @@ type Application struct {
 	// Additional Host Supervisors can be added to that list by calling the `app.NewHost` manually.
 	//
 	// Hosts field is available after `Run` or `NewHost`.
-	Hosts []*host.Supervisor
+	Hosts             []*host.Supervisor
+	hostConfigurators []host.Configurator
 }
 
 // New creates and returns a fresh empty iris *Application instance.
@@ -313,6 +314,28 @@ func (app *Application) SPA(assetHandler context.Handler) {
 	app.Router.WrapRouter(wrapper)
 }
 
+// ConfigureHost accepts one or more `host#Configuration`, these configurators functions
+// can access the host created by `app.Run`,
+// they're being executed when application is ready to being served to the public.
+//
+// It's an alternative way to interact with a host that is automatically created by
+// `app.Run`.
+//
+// These "configurators" can work side-by-side with the `iris#Addr, iris#Server, iris#TLS, iris#AutoTLS, iris#Listener`
+// final arguments("hostConfigs") too.
+//
+// Note that these application's host "configurators" will be shared with the rest of
+// the hosts that this app will may create (using `app.NewHost`), meaning that
+// `app.NewHost` will execute these "configurators" everytime that is being called as well.
+//
+// These "configurators" should be registered before the `app.Run` or `host.Serve/Listen` functions.
+func (app *Application) ConfigureHost(configurators ...host.Configurator) *Application {
+	app.mu.Lock()
+	app.hostConfigurators = append(app.hostConfigurators, configurators...)
+	app.mu.Unlock()
+	return app
+}
+
 // NewHost accepts a standar *http.Server object,
 // completes the necessary missing parts of that "srv"
 // and returns a new, ready-to-use, host (supervisor).
@@ -362,6 +385,8 @@ func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 
 	su.IgnoredErrors = append(su.IgnoredErrors, app.config.IgnoreServerErrors...)
 
+	su.Configure(app.hostConfigurators...)
+
 	app.Hosts = append(app.Hosts, su)
 
 	return su
@@ -404,6 +429,7 @@ type Runner func(*Application) error
 // i.e to add events for shutdown, serve or error.
 // An example of this use case can be found at:
 // https://github.com/kataras/iris/blob/master/_examples/http-listening/notify-on-shutdown/main.go
+// Look at the `ConfigureHost` too.
 //
 // See `Run` for more.
 func Listener(l net.Listener, hostConfigs ...host.Configurator) Runner {
@@ -425,6 +451,7 @@ func Listener(l net.Listener, hostConfigs ...host.Configurator) Runner {
 // i.e to add events for shutdown, serve or error.
 // An example of this use case can be found at:
 // https://github.com/kataras/iris/blob/master/_examples/http-listening/notify-on-shutdown/main.go
+// Look at the `ConfigureHost` too.
 //
 // See `Run` for more.
 func Server(srv *http.Server, hostConfigs ...host.Configurator) Runner {
@@ -448,6 +475,7 @@ func Server(srv *http.Server, hostConfigs ...host.Configurator) Runner {
 // i.e to add events for shutdown, serve or error.
 // An example of this use case can be found at:
 // https://github.com/kataras/iris/blob/master/_examples/http-listening/notify-on-shutdown/main.go
+// Look at the `ConfigureHost` too.
 //
 // See `Run` for more.
 func Addr(addr string, hostConfigs ...host.Configurator) Runner {
@@ -473,6 +501,7 @@ func Addr(addr string, hostConfigs ...host.Configurator) Runner {
 // i.e to add events for shutdown, serve or error.
 // An example of this use case can be found at:
 // https://github.com/kataras/iris/blob/master/_examples/http-listening/notify-on-shutdown/main.go
+// Look at the `ConfigureHost` too.
 //
 // See `Run` for more.
 func TLS(addr string, certFile, keyFile string, hostConfigs ...host.Configurator) Runner {
@@ -497,6 +526,7 @@ func TLS(addr string, certFile, keyFile string, hostConfigs ...host.Configurator
 // i.e to add events for shutdown, serve or error.
 // An example of this use case can be found at:
 // https://github.com/kataras/iris/blob/master/_examples/http-listening/notify-on-shutdown/main.go
+// Look at the `ConfigureHost` too.
 //
 // See `Run` for more.
 func AutoTLS(addr string, hostConfigs ...host.Configurator) Runner {
