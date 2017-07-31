@@ -35,6 +35,70 @@ func (s *Sessions) UseDatabase(db Database) {
 	s.provider.RegisterDatabase(db)
 }
 
+// updateCookie gains the ability of updating the session browser cookie to any method which wants to update it
+func (s *Sessions) updateCookie(sid string, ctx context.Context, expires time.Duration) {
+	cookie := &http.Cookie{}
+
+	// The RFC makes no mention of encoding url value, so here I think to encode both sessionid key and the value using the safe(to put and to use as cookie) url-encoding
+	cookie.Name = s.config.Cookie
+
+	cookie.Value = sid
+	cookie.Path = "/"
+	if !s.config.DisableSubdomainPersistence {
+
+		requestDomain := ctx.Request().URL.Host
+		if portIdx := strings.IndexByte(requestDomain, ':'); portIdx > 0 {
+			requestDomain = requestDomain[0:portIdx]
+		}
+		if IsValidCookieDomain(requestDomain) {
+
+			// RFC2109, we allow level 1 subdomains, but no further
+			// if we have localhost.com , we want the localhost.cos.
+			// so if we have something like: mysubdomain.localhost.com we want the localhost here
+			// if we have mysubsubdomain.mysubdomain.localhost.com we want the .mysubdomain.localhost.com here
+			// slow things here, especially the 'replace' but this is a good and understable( I hope) way to get the be able to set cookies from subdomains & domain with 1-level limit
+			if dotIdx := strings.LastIndexByte(requestDomain, '.'); dotIdx > 0 {
+				// is mysubdomain.localhost.com || mysubsubdomain.mysubdomain.localhost.com
+				s := requestDomain[0:dotIdx] // set mysubdomain.localhost || mysubsubdomain.mysubdomain.localhost
+				if secondDotIdx := strings.LastIndexByte(s, '.'); secondDotIdx > 0 {
+					//is mysubdomain.localhost ||  mysubsubdomain.mysubdomain.localhost
+					s = s[secondDotIdx+1:] // set to localhost || mysubdomain.localhost
+				}
+				// replace the s with the requestDomain before the domain's siffux
+				subdomainSuff := strings.LastIndexByte(requestDomain, '.')
+				if subdomainSuff > len(s) { // if it is actual exists as subdomain suffix
+					requestDomain = strings.Replace(requestDomain, requestDomain[0:subdomainSuff], s, 1) // set to localhost.com || mysubdomain.localhost.com
+				}
+			}
+			// finally set the .localhost.com (for(1-level) || .mysubdomain.localhost.com (for 2-level subdomain allow)
+			cookie.Domain = "." + requestDomain // . to allow persistence
+		}
+	}
+
+	cookie.HttpOnly = true
+	// MaxAge=0 means no 'Max-Age' attribute specified.
+	// MaxAge<0 means delete cookie now, equivalently 'Max-Age: 0'
+	// MaxAge>0 means Max-Age attribute present and given in seconds
+	if expires >= 0 {
+		if expires == 0 { // unlimited life
+			cookie.Expires = CookieExpireUnlimited
+		} else { // > 0
+			cookie.Expires = time.Now().Add(expires)
+		}
+		cookie.MaxAge = int(cookie.Expires.Sub(time.Now()).Seconds())
+	}
+
+	// set the cookie to secure if this is a tls wrapped request
+	// and the configuration allows it.
+	if ctx.Request().TLS != nil && s.config.CookieSecureTLS {
+		cookie.Secure = true
+	}
+
+	// encode the session id cookie client value right before send it.
+	cookie.Value = s.encodeCookieValue(cookie.Value)
+	AddCookie(ctx, cookie)
+}
+
 // Start should start the session for the particular request.
 func (s *Sessions) Start(ctx context.Context) *Session {
 	cookieValue := GetCookie(ctx, s.config.Cookie)
@@ -43,66 +107,7 @@ func (s *Sessions) Start(ctx context.Context) *Session {
 		sid := s.config.SessionIDGenerator()
 
 		sess := s.provider.Init(sid, s.config.Expires)
-		cookie := &http.Cookie{}
-
-		// The RFC makes no mention of encoding url value, so here I think to encode both sessionid key and the value using the safe(to put and to use as cookie) url-encoding
-		cookie.Name = s.config.Cookie
-
-		cookie.Value = sid
-		cookie.Path = "/"
-		if !s.config.DisableSubdomainPersistence {
-
-			requestDomain := ctx.Request().URL.Host
-			if portIdx := strings.IndexByte(requestDomain, ':'); portIdx > 0 {
-				requestDomain = requestDomain[0:portIdx]
-			}
-			if IsValidCookieDomain(requestDomain) {
-
-				// RFC2109, we allow level 1 subdomains, but no further
-				// if we have localhost.com , we want the localhost.cos.
-				// so if we have something like: mysubdomain.localhost.com we want the localhost here
-				// if we have mysubsubdomain.mysubdomain.localhost.com we want the .mysubdomain.localhost.com here
-				// slow things here, especially the 'replace' but this is a good and understable( I hope) way to get the be able to set cookies from subdomains & domain with 1-level limit
-				if dotIdx := strings.LastIndexByte(requestDomain, '.'); dotIdx > 0 {
-					// is mysubdomain.localhost.com || mysubsubdomain.mysubdomain.localhost.com
-					s := requestDomain[0:dotIdx] // set mysubdomain.localhost || mysubsubdomain.mysubdomain.localhost
-					if secondDotIdx := strings.LastIndexByte(s, '.'); secondDotIdx > 0 {
-						//is mysubdomain.localhost ||  mysubsubdomain.mysubdomain.localhost
-						s = s[secondDotIdx+1:] // set to localhost || mysubdomain.localhost
-					}
-					// replace the s with the requestDomain before the domain's siffux
-					subdomainSuff := strings.LastIndexByte(requestDomain, '.')
-					if subdomainSuff > len(s) { // if it is actual exists as subdomain suffix
-						requestDomain = strings.Replace(requestDomain, requestDomain[0:subdomainSuff], s, 1) // set to localhost.com || mysubdomain.localhost.com
-					}
-				}
-				// finally set the .localhost.com (for(1-level) || .mysubdomain.localhost.com (for 2-level subdomain allow)
-				cookie.Domain = "." + requestDomain // . to allow persistence
-			}
-		}
-
-		cookie.HttpOnly = true
-		// MaxAge=0 means no 'Max-Age' attribute specified.
-		// MaxAge<0 means delete cookie now, equivalently 'Max-Age: 0'
-		// MaxAge>0 means Max-Age attribute present and given in seconds
-		if s.config.Expires >= 0 {
-			if s.config.Expires == 0 { // unlimited life
-				cookie.Expires = CookieExpireUnlimited
-			} else { // > 0
-				cookie.Expires = time.Now().Add(s.config.Expires)
-			}
-			cookie.MaxAge = int(cookie.Expires.Sub(time.Now()).Seconds())
-		}
-
-		// set the cookie to secure if this is a tls wrapped request
-		// and the configuration allows it.
-		if ctx.Request().TLS != nil && s.config.CookieSecureTLS {
-			cookie.Secure = true
-		}
-
-		// encode the session id cookie client value right before send it.
-		cookie.Value = s.encodeCookieValue(cookie.Value)
-		AddCookie(ctx, cookie)
+		s.updateCookie(sid, ctx, s.config.Expires)
 
 		return sess
 	}
@@ -111,6 +116,18 @@ func (s *Sessions) Start(ctx context.Context) *Session {
 	sess := s.provider.Read(cookieValue, s.config.Expires)
 	return sess
 
+}
+
+// ShiftExpiraton move the expire date of a session to a new date by using session default timeout configuration
+func (s *Sessions) ShiftExpiraton(ctx context.Context, sid string) {
+	s.UpdateExpiraton(ctx, sid, s.config.Expires)
+}
+
+// UpdateExpiraton change expire date of a session to a new date by using timeout value passed by `expires` parameter
+func (s *Sessions) UpdateExpiraton(ctx context.Context, sid string, expires time.Duration) {
+	if s.provider.UpdateExpiraton(sid, expires) {
+		s.updateCookie(sid, ctx, expires)
+	}
 }
 
 // Destroy remove the session data and remove the associated cookie.
