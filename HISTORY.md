@@ -18,6 +18,12 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+# Tu, 01 August 2017 | v8.1.3
+
+- Add `Option` function to the `html view engine`: https://github.com/kataras/iris/issues/694
+- Fix sessions backend databases restore expiration: https://github.com/kataras/iris/issues/692 by @corebreaker
+- Add `PartyFunc`, same as `Party` but receives a function with the sub router as its argument instead
+
 # Mo, 31 July 2017 | v8.1.2
 
 Add a `ConfigureHost` function as an alternative way to customize the hosts via `host.Configurator`.
