@@ -126,6 +126,27 @@ func IsExist(lang string) bool {
 	return ok
 }
 
+// IsExistSimilar returns true if the language, or something similar
+// exists (e.g. en-US maps to en).
+// it returns the found name and whether it was able to match something.
+func IsExistSimilar(lang string) (string, bool) {
+	_, ok := locales.store[lang]
+	if ok {
+		return lang, true
+	}
+
+	// remove the internationalization element from the IETF code
+	code := strings.Split(lang, "-")[0]
+
+	for _, lc := range locales.store {
+		if strings.Contains(lc.lang, code) {
+			return lc.lang, true
+		}
+	}
+
+	return "", false
+}
+
 // IndexLang returns index of language locale,
 // it returns -1 if locale not exists.
 func IndexLang(lang string) int {
