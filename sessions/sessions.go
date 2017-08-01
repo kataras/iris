@@ -107,6 +107,8 @@ func (s *Sessions) Start(ctx context.Context) *Session {
 		sid := s.config.SessionIDGenerator()
 
 		sess := s.provider.Init(sid, s.config.Expires)
+		sess.isNew = len(sess.values) == 0
+
 		s.updateCookie(sid, ctx, s.config.Expires)
 
 		return sess
@@ -114,8 +116,8 @@ func (s *Sessions) Start(ctx context.Context) *Session {
 
 	cookieValue = s.decodeCookieValue(cookieValue)
 	sess := s.provider.Read(cookieValue, s.config.Expires)
-	return sess
 
+	return sess
 }
 
 // ShiftExpiraton move the expire date of a session to a new date by using session default timeout configuration
