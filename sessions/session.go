@@ -17,6 +17,7 @@ type (
 	// This is what will be returned when sess := sessions.Start().
 	Session struct {
 		sid    string
+		isNew  bool
 		values memstore.Store // here are the real values
 		// we could set the flash messages inside values but this will bring us more problems
 		// because of session databases and because of
@@ -26,7 +27,6 @@ type (
 		// NOTE: flashes are not managed by third-party, only inside session struct.
 		flashes   map[string]*flashMessage
 		mu        sync.RWMutex
-		createdAt time.Time
 		expireAt  *time.Time // nil pointer means no expire date
 		timer     *time.Timer
 		provider  *provider
@@ -42,6 +42,11 @@ type (
 // ID returns the session's ID.
 func (s *Session) ID() string {
 	return s.sid
+}
+
+// IsNew returns true if is's a new session
+func (s *Session) IsNew() bool {
+	return s.isNew
 }
 
 // HasExpireDate test if this session has an expire date, if not, this session never expires
@@ -285,6 +290,7 @@ func (s *Session) set(key string, value interface{}, immutable bool) {
 	s.mu.Unlock()
 
 	s.updateDatabases()
+	s.isNew = false
 }
 
 // Set fills the session with an entry"value", based on its "key".
@@ -336,6 +342,10 @@ func (s *Session) Delete(key string) bool {
 	s.mu.Unlock()
 
 	s.updateDatabases()
+	if removed {
+		s.isNew = false
+	}
+
 	return removed
 }
 
@@ -357,6 +367,7 @@ func (s *Session) Clear() {
 	s.mu.Unlock()
 
 	s.updateDatabases()
+	s.isNew = false
 }
 
 // ClearFlashes removes all flash messages.
