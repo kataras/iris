@@ -1,9 +1,9 @@
 package redis
 
 import (
-	"time"
 	"bytes"
 	"encoding/gob"
+	"time"
 
 	"github.com/kataras/iris/sessions/sessiondb/redis/service"
 )

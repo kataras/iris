@@ -276,6 +276,13 @@ func (app *Application) View(writer io.Writer, filename string, layout string, b
 }
 
 var (
+	// Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
+	// Party could also be named as 'Join' or 'Node' or 'Group' , Party chosen because it is fun.
+	//
+	// Look the `core/router#APIBuilder` for its implementation.
+	//
+	// A shortcut for the `core/router#Party`, useful when `PartyFunc` is being used.
+	Party router.Party
 	// LimitRequestBodySize is a middleware which sets a request body size limit
 	// for all next handlers in the chain.
 	//
