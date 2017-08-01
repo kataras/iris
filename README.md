@@ -40,7 +40,7 @@ Iris is a fast, simple and efficient micro web framework for Go. It provides a b
 	* [Typescript Automation Tools](typescript/#table-of-contents)
 	* [Tutorial: Online Visitors](_examples/tutorial/online-visitors)
 	* [Tutorial: URL Shortener using BoltDB](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
-	* [Tutorial: How to turn your Android Device into a fully featured Web Server](https://medium.com/@kataras/how-to-turn-an-android-device-into-a-web-server-9816b28ab199)
+	* [Tutorial: How to turn your Android Device into a fully featured Web Server (**MUST**)](https://twitter.com/ThePracticalDev/status/892022594031017988)
 * [Middleware](middleware/)
 * [Dockerize](https://github.com/iris-contrib/cloud-native-go)
 * [Community & Support](#-community)
@@ -201,6 +201,8 @@ These are the words I told myself that day [**13 March 2016**].
 The same day, later the night, I was reading a book about Greek mythology. I saw an ancient goddess' name and was inspired immediately to give a name to this new web framework (which I had already started writing) - **Iris**.
 
  I'm still here [because Iris has succeed in being the fastest go web framework](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png)
+
+[![](http://comments.iris-go.com/screens/comment37.png)](https://twitter.com/ThePracticalDev/status/892022594031017988)
 
 ![](https://docs.iris-go.com/comment36.png)
 
