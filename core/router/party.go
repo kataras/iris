@@ -2,7 +2,9 @@ package router
 
 import (
 	"github.com/kataras/iris/context"
-) // Party is here to separate the concept of
+)
+
+// Party is here to separate the concept of
 // api builder and the sub api builder.
 
 // Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
@@ -12,6 +14,23 @@ import (
 type Party interface {
 	// Party creates and returns a new child Party with the following features.
 	Party(relativePath string, middleware ...context.Handler) Party
+	// PartyFunc same as `Party`, groups routes that share a base path or/and same handlers.
+	// However this function accepts a function that receives this created Party instead.
+	// Returns the Party in order the caller to be able to use this created Party to continue the
+	// top-bottom routes "tree".
+	//
+	// Note: `iris#Party` and `core/router#Party` describes the exactly same interface.
+	//
+	// Usage:
+	// app.PartyFunc("/users", func(u iris.Party){
+	//	u.Use(authMiddleware, logMiddleware)
+	//	u.Get("/", getAllUsers)
+	//	u.Post("/", createOrUpdateUser)
+	//	u.Delete("/", deleteUser)
+	// })
+	//
+	// Look `Party` for more.
+	PartyFunc(relativePath string, partyBuilderFunc func(p Party)) Party
 	// Subdomain returns a new party which is responsible to register routes to
 	// this specific "subdomain".
 	//

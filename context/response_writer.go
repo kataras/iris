@@ -28,6 +28,10 @@ type ResponseWriter interface {
 	http.CloseNotifier
 	http.Pusher
 
+	// Naive returns the simple, underline and original http.ResponseWriter
+	// that backends this response writer.
+	Naive() http.ResponseWriter
+
 	// BeginResponse receives an http.ResponseWriter
 	// and initialize or reset the response writer's field's values.
 	BeginResponse(http.ResponseWriter)
@@ -116,6 +120,12 @@ const (
 	// StatusCodeWritten != 0 =>  when only status code written
 	StatusCodeWritten = 0
 )
+
+// Naive returns the simple, underline and original http.ResponseWriter
+// that backends this response writer.
+func (w *responseWriter) Naive() http.ResponseWriter {
+	return w.ResponseWriter
+}
 
 // BeginResponse receives an http.ResponseWriter
 // and initialize or reset the response writer's field's values.

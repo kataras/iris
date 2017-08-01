@@ -25,11 +25,11 @@ type (
 		// but without temp values (flash messages) which are removed after fetching.
 		// so introduce a new field here.
 		// NOTE: flashes are not managed by third-party, only inside session struct.
-		flashes   map[string]*flashMessage
-		mu        sync.RWMutex
-		expireAt  *time.Time // nil pointer means no expire date
-		timer     *time.Timer
-		provider  *provider
+		flashes  map[string]*flashMessage
+		mu       sync.RWMutex
+		expireAt *time.Time // nil pointer means no expire date
+		timer    *time.Timer
+		provider *provider
 	}
 
 	flashMessage struct {
