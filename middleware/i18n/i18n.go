@@ -31,9 +31,16 @@ func (i *i18nMiddleware) ServeHTTP(ctx context.Context) {
 			if len(language) > 0 {
 				wasByCookie = true
 			} else {
-				// try to get by the request headers(?)
-				if langHeader := ctx.GetHeader("Accept-Language"); i18n.IsExist(langHeader) {
-					language = langHeader
+				// try to get by the request headers.
+				langHeader := ctx.GetHeader("Accept-Language")
+				if len(langHeader) > 0 {
+					for _, langEntry := range strings.Split(langHeader, ",") {
+						lc := strings.Split(langEntry, ";")[0]
+						if lc, ok := i18n.IsExistSimilar(lc); ok {
+							language = lc
+							break
+						}
+					}
 				}
 			}
 		}
