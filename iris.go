@@ -205,21 +205,43 @@ func (app *Application) ConfigurationReadOnly() context.ConfigurationReadOnly {
 	return app.config
 }
 
-// These are the different logging levels. You can set the logging level to log
-// on the application 's instance of logger, obtained with `app.Logger()`.
-//
-// These are conversions from golog.
-const (
-	// NoLog level, logs nothing.
-	NoLog = golog.DisableLevel
-	// ErrorLevel level. Logs. Used for errors that should definitely be noted.
-	// Commonly used for hooks to send errors to an error tracking service.
-	ErrorLevel = golog.ErrorLevel
-	// WarnLevel level. Non-critical entries that deserve eyes.
-	WarnLevel = golog.WarnLevel
-)
-
 // Logger returns the golog logger instance(pointer) that is being used inside the "app".
+//
+// Available levels:
+// - "disable"
+// - "error"
+// - "warn"
+// - "info"
+// - "debug"
+// Usage: app.Logger().SetLevel("error")
+// Defaults to "info" level.
+//
+// Callers can use the application's logger which is
+// the same `golog.Default` logger,
+// to print custom logs too.
+// Usage:
+// app.Logger().Error/Errorf("...")
+// app.Logger().Warn/Warnf("...")
+// app.Logger().Info/Infof("...")
+// app.Logger().Debug/Debugf("...")
+//
+// Setting one or more outputs: app.Logger().SetOutput(io.Writer...)
+// Adding one or more outputs : app.Logger().AddOutput(io.Writer...)
+//
+// Adding custom levels requires import of the `github.com/kataras/golog` package:
+//	First we create our level to a golog.Level
+//	in order to be used in the Log functions.
+//	var SuccessLevel golog.Level = 5
+//	Register our level, just three fields.
+//	golog.Levels[SuccessLevel] = &golog.LevelMetadata{
+//		Name:    "success",
+//		RawText: "[SUCC]",
+//		// ColorfulText (Green Color[SUCC])
+//		ColorfulText: "\x1b[32m[SUCC]\x1b[0m",
+//	}
+// Usage:
+// app.Logger().SetLevel("success")
+// app.Logger().Logf(SuccessLevel, "a custom leveled log message")
 func (app *Application) Logger() *golog.Logger {
 	return app.logger
 }
@@ -363,6 +385,7 @@ func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 	if srv.Addr == "" {
 		srv.Addr = ":8080"
 	}
+	app.logger.Debugf("HTTP Server Addr: %s", srv.Addr)
 
 	// create the new host supervisor
 	// bind the constructed server and return it
@@ -377,21 +400,26 @@ func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 		// we need the host (without port if 80 or 443) in order to validate these, so:
 		app.config.vhost = netutil.ResolveVHost(srv.Addr)
 	}
+
+	app.logger.Debugf("VHost: %s", app.config.vhost)
+
 	// the below schedules some tasks that will run among the server
 
 	if !app.config.DisableStartupLog {
 		// show the available info to exit from app.
 		su.RegisterOnServe(host.WriteStartupLogOnServe(app.logger.Printer.Output)) // app.logger.Writer -> Info
+		app.logger.Debugf("Host: Register startup notifier")
 	}
 
 	if !app.config.DisableInterruptHandler {
 		// when CTRL+C/CMD+C pressed.
 		shutdownTimeout := 5 * time.Second
 		host.RegisterOnInterrupt(host.ShutdownOnInterrupt(su, shutdownTimeout))
+		app.logger.Debugf("Host: Register server shutdown on interrupt(CTRL+C/CMD+C)")
 	}
 
 	su.IgnoredErrors = append(su.IgnoredErrors, app.config.IgnoreServerErrors...)
-
+	app.logger.Debugf("Host: Server will ignore the following errors: %s", su.IgnoredErrors)
 	su.Configure(app.hostConfigurators...)
 
 	app.Hosts = append(app.Hosts, su)
@@ -407,8 +435,10 @@ var RegisterOnInterrupt = host.RegisterOnInterrupt
 // Shutdown gracefully terminates all the application's server hosts.
 // Returns an error on the first failure, otherwise nil.
 func (app *Application) Shutdown(ctx stdContext.Context) error {
-	for _, su := range app.Hosts {
+	for i, su := range app.Hosts {
+		app.logger.Debugf("Host[%d]: Shutdown now", i)
 		if err := su.Shutdown(ctx); err != nil {
+			app.logger.Debugf("Host[%d]: Error while trying to shutdown", i)
 			return err
 		}
 	}
@@ -554,7 +584,8 @@ func AutoTLS(addr string, hostConfigs ...host.Configurator) Runner {
 //
 // See `Run` for more.
 func Raw(f func() error) Runner {
-	return func(*Application) error {
+	return func(app *Application) error {
+		app.logger.Debugf("HTTP Server will start from unknown, external function")
 		return f()
 	}
 }
@@ -579,6 +610,7 @@ func (app *Application) Build() error {
 		}
 
 		if app.view.Len() > 0 {
+			app.logger.Debugf("%d registered view engine(s)", app.view.Len())
 			// view engine
 			// here is where we declare the closed-relative framework functions.
 			// Each engine has their defaults, i.e yield,render,render_r,partial, params...
@@ -621,10 +653,12 @@ func (app *Application) Run(serve Runner, withOrWithout ...Configurator) error {
 	}
 
 	app.Configure(withOrWithout...)
+	app.logger.Debugf("Application:  running using %d host(s)", len(app.Hosts)+1)
 	// this will block until an error(unless supervisor's DeferFlow called from a Task).
 	err := serve(app)
 	if err != nil {
 		app.Logger().Error(err)
 	}
+
 	return err
 }

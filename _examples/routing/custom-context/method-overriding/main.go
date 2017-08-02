@@ -38,6 +38,8 @@ func (ctx *MyContext) HTML(htmlContents string) (int, error) {
 
 func main() {
 	app := iris.New()
+	// app.Logger().SetLevel("debug")
+
 	// Register a view engine on .html files inside the ./view/** directory.
 	app.RegisterView(iris.HTML("./view", ".html"))
 
