@@ -282,7 +282,18 @@ type Context interface {
 	GetHeader(name string) string
 	// IsAjax returns true if this request is an 'ajax request'( XMLHttpRequest)
 	//
-	// Read more at: http://www.w3schools.com/ajax/
+	// There is no a 100% way of knowing that a request was made via Ajax.
+	// You should never trust data coming from the client, they can be easily overcome by spoofing.
+	//
+	// Note that "X-Requested-With" Header can be modified by any client(because of "X-"),
+	// so don't rely on IsAjax for really serious stuff,
+	// try to find another way of detecting the type(i.e, content type),
+	// there are many blogs that describe these problems and provide different kind of solutions,
+	// it's always depending on the application you're building,
+	// this is the reason why this `IsAjax`` is simple enough for general purpose use.
+	//
+	// Read more at: https://developer.mozilla.org/en-US/docs/AJAX
+	// and https://xhr.spec.whatwg.org/
 	IsAjax() bool
 
 	//  +------------------------------------------------------------+
@@ -1132,10 +1143,20 @@ func (ctx *context) GetHeader(name string) string {
 
 // IsAjax returns true if this request is an 'ajax request'( XMLHttpRequest)
 //
-// Read more at: http://www.w3schools.com/ajax/
+// There is no a 100% way of knowing that a request was made via Ajax.
+// You should never trust data coming from the client, they can be easily overcome by spoofing.
+//
+// Note that "X-Requested-With" Header can be modified by any client(because of "X-"),
+// so don't rely on IsAjax for really serious stuff,
+// try to find another way of detecting the type(i.e, content type),
+// there are many blogs that describe these problems and provide different kind of solutions,
+// it's always depending on the application you're building,
+// this is the reason why this `IsAjax`` is simple enough for general purpose use.
+//
+// Read more at: https://developer.mozilla.org/en-US/docs/AJAX
+// and https://xhr.spec.whatwg.org/
 func (ctx *context) IsAjax() bool {
-	return ctx.GetHeader("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest"
-
+	return ctx.GetHeader("X-Requested-With") == "XMLHttpRequest"
 }
 
 //  +------------------------------------------------------------+
