@@ -2,7 +2,7 @@
 
 Iris is a fast, simple and efficient micro web framework for Go. It provides a beautifully expressive and easy to use foundation for your next website, API, or distributed app.
 
-[![total used by](http://iris-go.com/graph?style=flat-square)](http://iris-go.com/graph)
+<!-- [![total used by](http://iris-go.com/graph?style=flat-square)](http://iris-go.com/graph) -->
 [![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=flat-square)](https://travis-ci.org/kataras/iris)
 [![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=flat-square)](http://goreportcard.com/report/kataras/iris)
 [![github issues](https://img.shields.io/github/issues/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/issues?q=is%3Aopen+is%3Aissue)
@@ -50,33 +50,6 @@ Iris is a fast, simple and efficient micro web framework for Go. It provides a b
     * [Where can I find older versions?](#where-can-i-find-older-versions)
 * [Get Hired](#-get-hired)
 * [People](#-people)
-
-<!--
-
-# Mo, 10 July 2017 | v8.0.0
-
-### 📈 One and a half years with Iris and You...
-
-- 7070 github stars
-- 749 github forks
-- 1m total views at its documentation
-- ~800$ at donations (there're a lot for a golang open-source project, thanks to you)
-- ~550 reported bugs fixed
-- ~30 community feature requests have been implemented
-
-### 🔥 Reborn
-
-As you may have heard I have huge responsibilities on my new position at Dubai nowadays, therefore I don't have the needed time to work on this project anymore.
-
-After almost a month of negotiations and searching I succeed to find a decent software engineer to continue my work on the open source community.
-
-The leadership of this, open-source, repository was transferred to [hiveminded](https://github.com/hiveminded).
-
-These types of projects need heart and sacrifices to continue offer the best developer experience like a paid software, please do support him as you did with me!
-
-> Please [contact](https://kataras.rocket.chat/channel/iris) with the project team if you want to help at the development process!
-
--->
 
 ### 🚀 Installation
 
@@ -203,7 +176,7 @@ The same day, later the night, I was reading a book about Greek mythology. I saw
 
  I'm still here [because Iris has succeed in being the fastest go web framework](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png)
 
-[![](http://comments.iris-go.com/screens/comment37.png)](https://twitter.com/ThePracticalDev/status/892022594031017988)
+[![](http://comments.iris-go.com/screens/comment37.png)](https://twitter.com/ThePracticalDev/status/892022594031017988) 
 
 ![](https://docs.iris-go.com/comment36.png)
 
@@ -312,7 +285,6 @@ The _iris_ philosophy is to provide robust tooling for HTTP, making it a great s
 _iris_ does not force you to use any specific ORM. With support for the most popular template engines, websocket server and a fast sessions manager you can quickly craft your perfect application.
 
 
-
 The awesome _iris_ community is always adding new examples, [_examples](_examples/) is a great place to get started!
 
 Read the [godocs](https://godoc.org/github.com/kataras/iris) for a better understanding.
@@ -335,11 +307,11 @@ $ go get -u github.com/iris-contrib/middleware/...
 
 #### 📈 One and a half years with You...
 
-- 7070 github stars
-- 749 github forks
+- 7210 github stars
+- 766 github forks
 - 1m total views at its documentation
 - ~800$ at donations (there're a lot for a golang open-source project, thanks to you)
-- ~550 reported bugs fixed
+- ~554 reported bugs fixed
 - ~30 community feature requests have been implemented
 
 Thank You for your trust!
