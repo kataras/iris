@@ -105,7 +105,9 @@ func (d *Database) Update(sid string, newValues map[string]interface{}, expireDa
 		})
 	}
 
-	ioutil.WriteFile(d.sessPath(sid), serialize(newValues), os.FileMode(PathFileMode))
+	if err := ioutil.WriteFile(d.sessPath(sid), serialize(newValues), os.FileMode(PathFileMode)); err != nil {
+		golog.Errorf("error while writing the session to the file: %v", err)
+	}
 }
 
 // SerializeBytes serializes the "m" into bytes using gob encoder and and returns the result.
