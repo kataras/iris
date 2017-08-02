@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/kataras/golog"
 )
@@ -30,9 +31,7 @@ func (d *Database) sessPath(sid string) string {
 }
 
 // Load loads the values to the underline
-func (d *Database) Load(sid string) map[string]interface{} {
-	values := make(map[string]interface{})
-
+func (d *Database) Load(sid string) (values map[string]interface{}, expireDate *time.Time) {
 	val, err := ioutil.ReadFile(d.sessPath(sid))
 
 	if err == nil {
@@ -43,7 +42,8 @@ func (d *Database) Load(sid string) map[string]interface{} {
 		golog.Errorf("load error: %v", err)
 	}
 
-	return values
+	// no expiration
+	return
 }
 
 // serialize the values to be stored as strings inside the session file-storage.
@@ -56,12 +56,31 @@ func serialize(values map[string]interface{}) []byte {
 	return val
 }
 
+func (d *Database) expireSess(sid string) {
+	go os.Remove(d.sessPath(sid))
+}
+
 // Update updates the session file-storage.
-func (d *Database) Update(sid string, newValues map[string]interface{}) {
+func (d *Database) Update(sid string, newValues map[string]interface{}, expireDate *time.Time) {
+	now := time.Now()
 	sessPath := d.sessPath(sid)
-	if len(newValues) == 0 {
-		go os.Remove(sessPath)
+	if len(newValues) == 0 { // means delete by call
+		d.expireSess(sid)
 		return
+	}
+
+	// delete the file on expiration
+	if expireDate != nil && !expireDate.IsZero() {
+		if expireDate.Before(now) {
+			// already expirated, delete it now and return.
+			d.expireSess(sid)
+			return
+		}
+		// otherwise set a timer to delete the file automatically
+		afterDur := expireDate.Sub(now)
+		time.AfterFunc(afterDur, func() {
+			go os.Remove(sessPath)
+		})
 	}
 
 	ioutil.WriteFile(sessPath, serialize(newValues), 0666)
