@@ -70,9 +70,8 @@ func New(t *testing.T, app *iris.Application, setters ...OptionSetter) *httpexpe
 		setter.Set(conf)
 	}
 
-	// disable logger by setting it to the  "Panic" level, iris never uses this
-	// so it will never print.
-	app.Logger().Level = 0
+	// disable the logger
+	app.Logger().SetLevel("disable")
 	app.Build()
 
 	testConfiguration := httpexpect.Config{

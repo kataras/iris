@@ -17,7 +17,8 @@ type User struct {
 
 func main() {
 	app := iris.New()
-	app.Logger().Level = iris.NoLog
+	// app.Logger().SetLevel("disable") to disable the logger
+
 	// Define templates using the std html/template engine.
 	// Parse and load all files inside "./views" folder with ".html" file extension.
 	// Reload the templates on each request (development mode).

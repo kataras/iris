@@ -1,6 +1,6 @@
 Last upgrade: Mo, 10 July 2017
 
-github.com/monoculum/formam/fomrma.go#L12
+github.com/monoculum/formam/formam.go#L12
 - BEFORE:
 const tagName = "formam"
 - AFTER:
