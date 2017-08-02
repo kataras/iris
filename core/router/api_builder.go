@@ -76,15 +76,12 @@ type APIBuilder struct {
 	// to the end-user.
 	reporter *errors.Reporter
 
-	// the per-party handlers, order
-	// of handlers registration matters.
-	middleware context.Handlers
-	// the global middleware handlers, order of call doesn't matters, order
+	// all handlers (middleware, per-perty, etc.) an, order of call doesn't matters, order
 	// of handlers registration matters. We need a secondary field for this
 	// because `UseGlobal` registers handlers that should be executed
 	// even before the `middleware` handlers, and in the same time keep the order
 	// of handlers registration, so the same type of handlers are being called in order.
-	beginGlobalHandlers context.Handlers
+	handlers *context.HandlerList
 	// the per-party routes registry (useful for `Done` and `UseGlobal` only)
 	apiRoutes []*Route
 	// the per-party done handlers, order
@@ -106,6 +103,7 @@ func NewAPIBuilder() *APIBuilder {
 		reporter:          errors.NewReporter(),
 		relativePath:      "/",
 		routes:            new(repository),
+		handlers:          context.NewHandlerList(),
 	}
 
 	return rb
@@ -146,18 +144,13 @@ func (rb *APIBuilder) Handle(method string, registeredPath string, handlers ...c
 
 	fullpath := rb.relativePath + registeredPath // for now, keep the last "/" if any,  "/xyz/"
 
-	// global begin handlers -> middleware that are registered before route registration
-	// -> handlers that are passed to this Handle function.
-	routeHandlers := joinHandlers(append(rb.beginGlobalHandlers, rb.middleware...), handlers)
-	// -> done handlers after all
-	if len(rb.doneGlobalHandlers) > 0 {
-		routeHandlers = append(routeHandlers, rb.doneGlobalHandlers...) // register the done middleware, if any
-	}
+	// Copies handlers
+	routeHandlers := rb.handlers.Copy().AppendToBottom(handlers).AppendToBottom(rb.doneGlobalHandlers)
 
 	// here we separate the subdomain and relative path
 	subdomain, path := splitSubdomainAndPath(fullpath)
 
-	r, err := NewRoute(method, subdomain, path, routeHandlers, rb.macros)
+	r, err := NewRoute(method, subdomain, path, routeHandlers.GetHandlers(), rb.macros)
 	if err != nil { // template path parser errors:
 		rb.reporter.Add("%v -> %s:%s:%s", err, method, subdomain, path)
 		return nil
@@ -198,19 +191,20 @@ func (rb *APIBuilder) Party(relativePath string, handlers ...context.Handler) Pa
 	}
 
 	fullpath := parentPath + relativePath
+
 	// append the parent's + child's handlers
-	middleware := joinHandlers(rb.middleware, handlers)
+	middlewares := rb.handlers.Copy().AppendToBottom(handlers)
 
 	return &APIBuilder{
 		// global/api builder
-		macros:              rb.macros,
-		routes:              rb.routes,
-		errorCodeHandlers:   rb.errorCodeHandlers,
-		beginGlobalHandlers: rb.beginGlobalHandlers,
-		doneGlobalHandlers:  rb.doneGlobalHandlers,
-		reporter:            rb.reporter,
+		macros:             rb.macros,
+		routes:             rb.routes,
+		errorCodeHandlers:  rb.errorCodeHandlers,
+		doneGlobalHandlers: rb.doneGlobalHandlers,
+		reporter:           rb.reporter,
+		// middlewares
+		handlers: middlewares,
 		// per-party/children
-		middleware:   middleware,
 		relativePath: fullpath,
 	}
 }
@@ -297,7 +291,7 @@ func (rb *APIBuilder) GetRoute(routeName string) *Route {
 // Use `UseGlobal` if you want to register begin handlers(middleware)
 // that should be always run before all application's routes.
 func (rb *APIBuilder) Use(middleware ...context.Handler) {
-	rb.middleware = append(rb.middleware, middleware...)
+	rb.handlers.AppendToBottom(context.Handlers(middleware))
 }
 
 // Done appends to the very end, Handler(s) to the current Party's routes and child routes
@@ -322,7 +316,7 @@ func (rb *APIBuilder) UseGlobal(handlers ...context.Handler) {
 		r.use(handlers) // prepend the handlers to the existing routes
 	}
 	// set as begin handlers for the next routes as well.
-	rb.beginGlobalHandlers = append(rb.beginGlobalHandlers, handlers...)
+	rb.handlers.AppendToTop(context.Handlers(handlers))
 }
 
 // None registers an "offline" route
@@ -747,17 +741,4 @@ func (rb *APIBuilder) Layout(tmplLayoutFile string) Party {
 	})
 
 	return rb
-}
-
-// joinHandlers uses to create a copy of all Handlers and return them in order to use inside the node
-func joinHandlers(Handlers1 context.Handlers, Handlers2 context.Handlers) context.Handlers {
-	nowLen := len(Handlers1)
-	totalLen := nowLen + len(Handlers2)
-	// create a new slice of Handlers in order to store all handlers, the already handlers(Handlers) and the new
-	newHandlers := make(context.Handlers, totalLen)
-	//copy the already Handlers to the just created
-	copy(newHandlers, Handlers1)
-	//start from there we finish, and store the new Handlers too
-	copy(newHandlers[nowLen:], Handlers2)
-	return newHandlers
 }
