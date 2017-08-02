@@ -101,7 +101,7 @@ func (s *Sessions) updateCookie(sid string, ctx context.Context, expires time.Du
 
 // Start should start the session for the particular request.
 func (s *Sessions) Start(ctx context.Context) *Session {
-	cookieValue := GetCookie(ctx, s.config.Cookie)
+	cookieValue := s.decodeCookieValue(GetCookie(ctx, s.config.Cookie))
 
 	if cookieValue == "" { // cookie doesn't exists, let's generate a session and add set a cookie
 		sid := s.config.SessionIDGenerator()
@@ -114,7 +114,6 @@ func (s *Sessions) Start(ctx context.Context) *Session {
 		return sess
 	}
 
-	cookieValue = s.decodeCookieValue(cookieValue)
 	sess := s.provider.Read(cookieValue, s.config.Expires)
 
 	return sess
@@ -127,12 +126,11 @@ func (s *Sessions) ShiftExpiraton(ctx context.Context) {
 
 // UpdateExpiraton change expire date of a session to a new date by using timeout value passed by `expires` parameter
 func (s *Sessions) UpdateExpiraton(ctx context.Context, expires time.Duration) {
-	cookieValue := GetCookie(ctx, s.config.Cookie)
+	cookieValue := s.decodeCookieValue(GetCookie(ctx, s.config.Cookie))
 
 	if cookieValue != "" {
-		sid := s.decodeCookieValue(cookieValue)
-		if s.provider.UpdateExpiraton(sid, expires) {
-			s.updateCookie(sid, ctx, expires)
+		if s.provider.UpdateExpiraton(cookieValue, expires) {
+			s.updateCookie(cookieValue, ctx, expires)
 		}
 	}
 }
@@ -172,7 +170,12 @@ func (s *Sessions) DestroyAll() {
 
 // let's keep these funcs simple, we can do it with two lines but we may add more things in the future.
 func (s *Sessions) decodeCookieValue(cookieValue string) string {
+	if cookieValue == "" {
+		return ""
+	}
+
 	var cookieValueDecoded *string
+
 	if decode := s.config.Decode; decode != nil {
 		err := decode(s.config.Cookie, cookieValue, &cookieValueDecoded)
 		if err == nil {
@@ -181,6 +184,7 @@ func (s *Sessions) decodeCookieValue(cookieValue string) string {
 			cookieValue = ""
 		}
 	}
+
 	return cookieValue
 }
 
