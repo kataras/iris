@@ -88,7 +88,7 @@ func (d *Database) Update(sid string, newValues map[string]interface{}, expireDa
 
 }
 
-// SerializeBytes serializa bytes using gob encoder and returns them
+// SerializeBytes serialize the "m" into bytes using the gob encoder and returns the result.
 func SerializeBytes(m interface{}) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	enc := gob.NewEncoder(buf)
@@ -99,7 +99,7 @@ func SerializeBytes(m interface{}) ([]byte, error) {
 	return nil, err
 }
 
-// DeserializeBytes converts the bytes to an object using gob decoder
+// DeserializeBytes converts the bytes to a go value and puts that to "m" using the gob decoder.
 func DeserializeBytes(b []byte, m interface{}) error {
 	dec := gob.NewDecoder(bytes.NewBuffer(b))
 	return dec.Decode(m) //no reference here otherwise doesn't work because of go remote object
