@@ -5,21 +5,11 @@ import (
 	"github.com/kataras/iris/context"
 
 	"github.com/kataras/iris/sessions"
-	"github.com/kataras/iris/sessions/sessiondb/redis"
-	"github.com/kataras/iris/sessions/sessiondb/redis/service"
+	"github.com/kataras/iris/sessions/sessiondb/file"
 )
 
 func main() {
-	// replace with your running redis' server settings:
-	db := redis.New(service.Config{Network: service.DefaultRedisNetwork,
-		Addr:          service.DefaultRedisAddr,
-		Password:      "",
-		Database:      "",
-		MaxIdle:       0,
-		MaxActive:     0,
-		IdleTimeout:   service.DefaultRedisIdleTimeout,
-		Prefix:        "",
-		MaxAgeSeconds: service.DefaultRedisMaxAgeSeconds}) // optionally configure the bridge between your redis server
+	db := file.New("./sessions/")
 
 	sess := sessions.New(sessions.Config{Cookie: "sessionscookieid"})
 
@@ -35,12 +25,12 @@ func main() {
 		ctx.Writef("You should navigate to the /set, /get, /delete, /clear,/destroy instead")
 	})
 	app.Get("/set", func(ctx context.Context) {
-
+		s := sess.Start(ctx)
 		//set session values
-		sess.Start(ctx).Set("name", "iris")
+		s.Set("name", "iris")
 
 		//test if setted here
-		ctx.Writef("All ok session setted to: %s", sess.Start(ctx).GetString("name"))
+		ctx.Writef("All ok session setted to: %s", s.GetString("name"))
 	})
 
 	app.Get("/get", func(ctx context.Context) {

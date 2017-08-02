@@ -11,6 +11,12 @@ import (
 	"github.com/kataras/golog"
 )
 
+var (
+	// PathFileMode for creating the sessions directory path, opening and write the session file.
+	// Defaults to 0666.
+	PathFileMode uint32 = 0666
+)
+
 // Database is the basic file-storage session database.
 type Database struct {
 	path string
@@ -22,7 +28,8 @@ func New(path string) *Database {
 	if lindex != os.PathSeparator && lindex != '/' {
 		path += string(os.PathSeparator)
 	}
-
+	// create directories if necessary
+	os.MkdirAll(path, os.FileMode(PathFileMode))
 	return &Database{path: path}
 }
 
@@ -32,18 +39,32 @@ func (d *Database) sessPath(sid string) string {
 
 // Load loads the values to the underline
 func (d *Database) Load(sid string) (values map[string]interface{}, expireDate *time.Time) {
-	val, err := ioutil.ReadFile(d.sessPath(sid))
+	sessPath := d.sessPath(sid)
+	f, err := os.OpenFile(sessPath, os.O_RDONLY, os.FileMode(PathFileMode))
+
+	if err != nil {
+		// we don't care if filepath doesn't exists yet, it will be created on Update.
+		return
+	}
+
+	defer f.Close()
+
+	val, err := ioutil.ReadAll(f)
+
+	if err != nil {
+		// we don't care if filepath doesn't exists yet, it will be created on Update.
+		golog.Errorf("error while reading the session file's data: %v", err)
+		return
+	}
 
 	if err == nil {
 		err = DeserializeBytes(val, &values)
+		if err != nil { // we care for this error only
+			golog.Errorf("load error: %v", err)
+		}
 	}
 
-	if err != nil {
-		golog.Errorf("load error: %v", err)
-	}
-
-	// no expiration
-	return
+	return // no expiration
 }
 
 // serialize the values to be stored as strings inside the session file-storage.
@@ -62,8 +83,7 @@ func (d *Database) expireSess(sid string) {
 
 // Update updates the session file-storage.
 func (d *Database) Update(sid string, newValues map[string]interface{}, expireDate *time.Time) {
-	now := time.Now()
-	sessPath := d.sessPath(sid)
+
 	if len(newValues) == 0 { // means delete by call
 		d.expireSess(sid)
 		return
@@ -71,6 +91,8 @@ func (d *Database) Update(sid string, newValues map[string]interface{}, expireDa
 
 	// delete the file on expiration
 	if expireDate != nil && !expireDate.IsZero() {
+		now := time.Now()
+
 		if expireDate.Before(now) {
 			// already expirated, delete it now and return.
 			d.expireSess(sid)
@@ -79,11 +101,11 @@ func (d *Database) Update(sid string, newValues map[string]interface{}, expireDa
 		// otherwise set a timer to delete the file automatically
 		afterDur := expireDate.Sub(now)
 		time.AfterFunc(afterDur, func() {
-			go os.Remove(sessPath)
+			d.expireSess(sid)
 		})
 	}
 
-	ioutil.WriteFile(sessPath, serialize(newValues), 0666)
+	ioutil.WriteFile(d.sessPath(sid), serialize(newValues), os.FileMode(PathFileMode))
 }
 
 // SerializeBytes serializes the "m" into bytes using gob encoder and and returns the result.
