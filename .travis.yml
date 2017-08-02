@@ -4,22 +4,19 @@ os:
   - osx
 go:
   - go1.8
+  - tip
 go_import_path: github.com/kataras/iris
 install:
-  - go get ./...
-# install test dependencies
-#  - go get golang.org/x/tools/cmd/cover
-#  - go get -v github.com/axw/gocov
-#  - go install github.com/axw/gocov/gocov
+  - go get ./... # for iris-contrib/httpexpect and kataras/golog
 script:
- # - gocov test | gocov report
- # the result of gocov is invalid because it tests the vendor too,
- # which its tests are removed to reduce the dl size. 
- # When I'll push my internal tests to github I'll do it
- # to do the test coverage all folders except vendor.
- # For now keep it commented.
- # - cd ./_examples
- # - go get ./...
- # - go test -v -cover ./...
- # - cd ./...
+  - go test -v -cover ./...
+after_script:
+  # examples
+  - cd ./_examples
+  - go get ./...
+  - go test -v -cover ./...
+  - cd ../
+  # typescript examples
+  - cd ./typescript/_examples
+  - go get ./...
   - go test -v -cover ./...

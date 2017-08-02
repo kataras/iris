@@ -1,10 +1,7 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ & Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package router
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -21,7 +18,6 @@ import (
 	"time"
 
 	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/errors"
 )
 
 // StaticEmbeddedHandler returns a Handler which can serve
@@ -86,8 +82,8 @@ func StaticEmbeddedHandler(vdir string, assetFn func(name string) ([]byte, error
 			if err != nil {
 				continue
 			}
-
-			if err := ctx.WriteWithExpiration(buf, cType, modtime); err != nil {
+			ctx.ContentType(cType)
+			if _, err := ctx.WriteWithExpiration(buf, modtime); err != nil {
 				ctx.StatusCode(http.StatusInternalServerError)
 				ctx.StopExecution()
 			}
@@ -102,40 +98,10 @@ func StaticEmbeddedHandler(vdir string, assetFn func(name string) ([]byte, error
 	return h
 }
 
-// Prioritize is a middleware which executes a route against this path
-// when the request's Path has a prefix of the route's STATIC PART
-// is not executing ExecRoute to determinate if it's valid, for performance reasons
-// if this function is not enough for you and you want to test more than one parameterized path
-// then use the:  if c := ExecRoute(r); c == nil { /*  move to the next, the route is not valid */ }
-//
-// You can find the Route by iris.Default.Routes().Lookup("theRouteName")
-// you can set a route name as: myRoute := iris.Default.Get("/mypath", handler)("theRouteName")
-// that will set a name to the route and returns its iris.Route instance for further usage.
-//
-// if the route found then it executes that and don't continue to the next handler
-// if not found then continue to the next handler
-func Prioritize(r *Route) context.Handler {
-	if r != nil {
-		return func(ctx context.Context) {
-			reqPath := ctx.Path()
-			staticPath := ResolveStaticPath(reqPath)
-			if strings.HasPrefix(reqPath, staticPath) {
-				ctx.Exec(r.Method, reqPath) // execute the route based on this request path
-				// we are done here.
-				return
-			}
-			// execute the next handler if no prefix
-			// here look, the only error we catch is the 404.
-			ctx.Next()
-		}
-	}
-	return func(ctx context.Context) { ctx.Next() }
-}
-
 // StaticHandler returns a new Handler which is ready
 // to serve all kind of static files.
 //
-// Developers can wrap this handler using the `iris.StripPrefix`
+// Developers can wrap this handler using the `router.StripPrefix`
 // for a fixed static path when the result handler is being, finally, registered to a route.
 //
 //
@@ -143,25 +109,23 @@ func Prioritize(r *Route) context.Handler {
 // app := iris.New()
 // ...
 // fileserver := iris.StaticHandler("./static_files", false, false)
-// h := iris.StripPrefix("/static", fileserver)
+// h := router.StripPrefix("/static", fileserver)
 // /* http://mydomain.com/static/css/style.css */
 // app.Get("/static", h)
 // ...
 //
-func StaticHandler(systemPath string, showList bool, enableGzip bool, exceptRoutes ...*Route) context.Handler {
+func StaticHandler(systemPath string, showList bool, enableGzip bool) context.Handler {
 	return NewStaticHandlerBuilder(systemPath).
 		Listing(showList).
 		Gzip(enableGzip).
-		Except(exceptRoutes...).
 		Build()
 }
 
 // StaticHandlerBuilder is the web file system's Handler builder
-// use that or the iris.StaticHandler/StaticWeb methods
+// use that or the iris.StaticHandler/StaticWeb methods.
 type StaticHandlerBuilder interface {
 	Gzip(enable bool) StaticHandlerBuilder
 	Listing(listDirectoriesOnOff bool) StaticHandlerBuilder
-	Except(r ...*Route) StaticHandlerBuilder
 	Build() context.Handler
 }
 
@@ -179,7 +143,6 @@ type fsHandler struct {
 	// these are init on the Build() call
 	filesystem http.FileSystem
 	once       sync.Once
-	exceptions []*Route
 	handler    context.Handler
 }
 
@@ -232,13 +195,6 @@ func (w *fsHandler) Gzip(enable bool) StaticHandlerBuilder {
 // Defaults to false
 func (w *fsHandler) Listing(listDirectoriesOnOff bool) StaticHandlerBuilder {
 	w.listDirectories = listDirectoriesOnOff
-	return w
-}
-
-// Except add a route exception,
-// gives priority to that Route over the static handler.
-func (w *fsHandler) Except(r ...*Route) StaticHandlerBuilder {
-	w.exceptions = append(w.exceptions, r...)
 	return w
 }
 
@@ -308,28 +264,13 @@ func (w *fsHandler) Build() context.Handler {
 					// headers[contentEncodingHeader] = nil
 					// headers[contentLength] = nil
 				}
-				// ctx.Application().Log(errMsg)
+				// ctx.Application().Logger().Infof(errMsg)
 				ctx.StatusCode(prevStatusCode)
 				return
 			}
 
 			// go to the next middleware
 			ctx.Next()
-		}
-
-		if len(w.exceptions) > 0 {
-			middleware := make(context.Handlers, len(w.exceptions)+1)
-			for i := range w.exceptions {
-				middleware[i] = Prioritize(w.exceptions[i])
-			}
-			middleware[len(w.exceptions)] = fileserver
-
-			w.handler = func(ctx context.Context) {
-				ctxHandlers := ctx.Handlers()
-				ctx.SetHandlers(append(middleware, ctxHandlers...))
-				ctx.Handlers()[0](ctx)
-			}
-			return
 		}
 
 		w.handler = fileserver
@@ -347,7 +288,7 @@ func (w *fsHandler) Build() context.Handler {
 //
 // Usage:
 // fileserver := iris.StaticHandler("./static_files", false, false)
-// h := iris.StripPrefix("/static", fileserver)
+// h := router.StripPrefix("/static", fileserver)
 // app.Get("/static", h)
 //
 func StripPrefix(prefix string, h context.Handler) context.Handler {
@@ -357,7 +298,7 @@ func StripPrefix(prefix string, h context.Handler) context.Handler {
 	// here we separate the path from the subdomain (if any), we care only for the path
 	// fixes a bug when serving static files via a subdomain
 	fixedPrefix := prefix
-	if dotWSlashIdx := strings.Index(fixedPrefix, SubdomainIndicator); dotWSlashIdx > 0 {
+	if dotWSlashIdx := strings.Index(fixedPrefix, SubdomainPrefix); dotWSlashIdx > 0 {
 		fixedPrefix = fixedPrefix[dotWSlashIdx+1:]
 	}
 	fixedPrefix = toWebPath(fixedPrefix)

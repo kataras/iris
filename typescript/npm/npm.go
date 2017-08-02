@@ -1,18 +1,15 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package npm
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 	"time"
 )
 
 var (
 	// nodeModulesPath is the path of the root npm modules
-	// Ex: C:\\Users\\kataras\\AppData\\Roaming\\npm\\node_modules
+	// Ex: C:\\Users\\iris\\AppData\\Roaming\\npm\\node_modules
 	nodeModulesPath string
 )
 
@@ -118,11 +115,10 @@ func NodeModuleAbs(relativePath string) string {
 // here we have two options
 //1 . search by command something like npm -ls -g --depth=x
 //2.  search on files, we choose the second
-func NodeModuleExists(executableRelativePath string) bool {
-	execAbsPath := NodeModuleAbs(executableRelativePath)
-	if execAbsPath == "" {
-		return false
+func NodeModuleExists(execPath string) bool {
+	if !filepath.IsAbs(execPath) {
+		execPath = NodeModuleAbs(execPath)
 	}
 
-	return Exists(execAbsPath)
+	return Exists(execPath)
 }

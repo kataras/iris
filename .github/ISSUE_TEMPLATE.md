@@ -1,5 +1,2 @@
-**Do not create** issues or proposals neither request features **here**.
-
-Navigate to the https://github.com/iris-contrib/community-board instead.
-
-[FAQ](https://github.com/iris-contrib/community-board#community-board)
+Documentation for the _iris_ project can be found at
+<https://github.com/kataras/iris#-learn>.

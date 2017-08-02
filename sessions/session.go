@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package sessions
 
 import (
@@ -14,11 +10,14 @@ import (
 )
 
 type (
-
-	// session is an 'object' which wraps the session provider with its session databases, only frontend user has access to this session object.
-	// implements the context.Session interface
-	session struct {
+	// Session should expose the Sessions's end-user API.
+	// It is the session's storage controller which you can
+	// save or retrieve values based on a key.
+	//
+	// This is what will be returned when sess := sessions.Start().
+	Session struct {
 		sid    string
+		isNew  bool
 		values memstore.Store // here are the real values
 		// we could set the flash messages inside values but this will bring us more problems
 		// because of session databases and because of
@@ -26,10 +25,11 @@ type (
 		// but without temp values (flash messages) which are removed after fetching.
 		// so introduce a new field here.
 		// NOTE: flashes are not managed by third-party, only inside session struct.
-		flashes   map[string]*flashMessage
-		mu        sync.RWMutex
-		createdAt time.Time
-		provider  *provider
+		flashes  map[string]*flashMessage
+		mu       sync.RWMutex
+		expireAt *time.Time // nil pointer means no expire date
+		timer    *time.Timer
+		provider *provider
 	}
 
 	flashMessage struct {
@@ -39,15 +39,34 @@ type (
 	}
 )
 
-var _ Session = &session{}
-
-// ID returns the session's id
-func (s *session) ID() string {
+// ID returns the session's ID.
+func (s *Session) ID() string {
 	return s.sid
 }
 
+// IsNew returns true if is's a new session
+func (s *Session) IsNew() bool {
+	return s.isNew
+}
+
+// HasExpireDate test if this session has an expire date, if not, this session never expires
+func (s *Session) HasExpireDate() bool {
+	return s.expireAt != nil
+}
+
+// GetExpireDate get the expire date, if this session has no expire date, the returned value has the zero value
+func (s *Session) GetExpireDate() time.Time {
+	var res time.Time
+
+	if s.expireAt != nil {
+		res = *s.expireAt
+	}
+
+	return res
+}
+
 // Get returns a value based on its "key".
-func (s *session) Get(key string) interface{} {
+func (s *Session) Get(key string) interface{} {
 	s.mu.RLock()
 	value := s.values.Get(key)
 	s.mu.RUnlock()
@@ -55,8 +74,8 @@ func (s *session) Get(key string) interface{} {
 	return value
 }
 
-// when running on the session manager removes any 'old' flash messages
-func (s *session) runFlashGC() {
+// when running on the session manager removes any 'old' flash messages.
+func (s *Session) runFlashGC() {
 	s.mu.Lock()
 	for key, v := range s.flashes {
 		if v.shouldRemove {
@@ -67,7 +86,7 @@ func (s *session) runFlashGC() {
 }
 
 // HasFlash returns true if this session has available flash messages.
-func (s *session) HasFlash() bool {
+func (s *Session) HasFlash() bool {
 	return len(s.flashes) > 0
 }
 
@@ -80,7 +99,7 @@ func (s *session) HasFlash() bool {
 //
 // Fetching a message deletes it from the session.
 // This means that a message is meant to be displayed only on the first page served to the user.
-func (s *session) GetFlash(key string) interface{} {
+func (s *Session) GetFlash(key string) interface{} {
 	fv, ok := s.peekFlashMessage(key)
 	if !ok {
 		return nil
@@ -92,7 +111,7 @@ func (s *session) GetFlash(key string) interface{} {
 // PeekFlash returns a stored flash message based on its "key".
 // Unlike GetFlash, this will keep the message valid for the next requests,
 // until GetFlashes or GetFlash("key").
-func (s *session) PeekFlash(key string) interface{} {
+func (s *Session) PeekFlash(key string) interface{} {
 	fv, ok := s.peekFlashMessage(key)
 	if !ok {
 		return nil
@@ -100,7 +119,7 @@ func (s *session) PeekFlash(key string) interface{} {
 	return fv.value
 }
 
-func (s *session) peekFlashMessage(key string) (*flashMessage, bool) {
+func (s *Session) peekFlashMessage(key string) (*flashMessage, bool) {
 	s.mu.Lock()
 	if fv, found := s.flashes[key]; found {
 		return fv, true
@@ -110,8 +129,8 @@ func (s *session) peekFlashMessage(key string) (*flashMessage, bool) {
 	return nil, false
 }
 
-// GetString same as Get but returns as string, if nil then returns an empty string
-func (s *session) GetString(key string) string {
+// GetString same as Get but returns as string, if nil then returns an empty string.
+func (s *Session) GetString(key string) string {
 	if value := s.Get(key); value != nil {
 		if v, ok := value.(string); ok {
 			return v
@@ -121,8 +140,8 @@ func (s *session) GetString(key string) string {
 	return ""
 }
 
-// GetFlashString same as GetFlash but returns as string, if nil then returns an empty string
-func (s *session) GetFlashString(key string) string {
+// GetFlashString same as GetFlash but returns as string, if nil then returns an empty string.
+func (s *Session) GetFlashString(key string) string {
 	if value := s.GetFlash(key); value != nil {
 		if v, ok := value.(string); ok {
 			return v
@@ -134,8 +153,8 @@ func (s *session) GetFlashString(key string) string {
 
 var errFindParse = errors.New("Unable to find the %s with key: %s. Found? %#v")
 
-// GetInt same as Get but returns as int, if not found then returns -1 and an error
-func (s *session) GetInt(key string) (int, error) {
+// GetInt same as Get but returns as int, if not found then returns -1 and an error.
+func (s *Session) GetInt(key string) (int, error) {
 	v := s.Get(key)
 
 	if vint, ok := v.(int); ok {
@@ -149,8 +168,8 @@ func (s *session) GetInt(key string) (int, error) {
 	return -1, errFindParse.Format("int", key, v)
 }
 
-// GetInt64 same as Get but returns as int64, if not found then returns -1 and an error
-func (s *session) GetInt64(key string) (int64, error) {
+// GetInt64 same as Get but returns as int64, if not found then returns -1 and an error.
+func (s *Session) GetInt64(key string) (int64, error) {
 	v := s.Get(key)
 
 	if vint64, ok := v.(int64); ok {
@@ -169,8 +188,8 @@ func (s *session) GetInt64(key string) (int64, error) {
 
 }
 
-// GetFloat32 same as Get but returns as float32, if not found then returns -1 and an error
-func (s *session) GetFloat32(key string) (float32, error) {
+// GetFloat32 same as Get but returns as float32, if not found then returns -1 and an error.
+func (s *Session) GetFloat32(key string) (float32, error) {
 	v := s.Get(key)
 
 	if vfloat32, ok := v.(float32); ok {
@@ -196,8 +215,8 @@ func (s *session) GetFloat32(key string) (float32, error) {
 	return -1, errFindParse.Format("float32", key, v)
 }
 
-// GetFloat64 same as Get but returns as float64, if not found then returns -1 and an error
-func (s *session) GetFloat64(key string) (float64, error) {
+// GetFloat64 same as Get but returns as float64, if not found then returns -1 and an error.
+func (s *Session) GetFloat64(key string) (float64, error) {
 	v := s.Get(key)
 
 	if vfloat32, ok := v.(float32); ok {
@@ -220,11 +239,11 @@ func (s *session) GetFloat64(key string) (float64, error) {
 }
 
 // GetBoolean same as Get but returns as boolean, if not found then returns -1 and an error
-func (s *session) GetBoolean(key string) (bool, error) {
+func (s *Session) GetBoolean(key string) (bool, error) {
 	v := s.Get(key)
 	// here we could check for "true", "false" and 0 for false and 1 for true
 	// but this may cause unexpected behavior from the developer if they expecting an error
-	// so we just check if bool, if yes then return that bool, otherwise return false and an error
+	// so we just check if bool, if yes then return that bool, otherwise return false and an error.
 	if vb, ok := v.(bool); ok {
 		return vb, nil
 	}
@@ -232,8 +251,8 @@ func (s *session) GetBoolean(key string) (bool, error) {
 	return false, errFindParse.Format("bool", key, v)
 }
 
-// GetAll returns a copy of all session's values
-func (s *session) GetAll() map[string]interface{} {
+// GetAll returns a copy of all session's values.
+func (s *Session) GetAll() map[string]interface{} {
 	items := make(map[string]interface{}, len(s.values))
 	s.mu.RLock()
 	for _, kv := range s.values {
@@ -244,8 +263,8 @@ func (s *session) GetAll() map[string]interface{} {
 }
 
 // GetFlashes returns all flash messages as map[string](key) and interface{} value
-// NOTE: this will cause at remove all current flash messages on the next request of the same user
-func (s *session) GetFlashes() map[string]interface{} {
+// NOTE: this will cause at remove all current flash messages on the next request of the same user.
+func (s *Session) GetFlashes() map[string]interface{} {
 	flashes := make(map[string]interface{}, len(s.flashes))
 	s.mu.Lock()
 	for key, v := range s.flashes {
@@ -257,11 +276,11 @@ func (s *session) GetFlashes() map[string]interface{} {
 }
 
 // VisitAll loop each one entry and calls the callback function func(key,value)
-func (s *session) VisitAll(cb func(k string, v interface{})) {
+func (s *Session) VisitAll(cb func(k string, v interface{})) {
 	s.values.Visit(cb)
 }
 
-func (s *session) set(key string, value interface{}, immutable bool) {
+func (s *Session) set(key string, value interface{}, immutable bool) {
 	s.mu.Lock()
 	if immutable {
 		s.values.SetImmutable(key, value)
@@ -271,10 +290,11 @@ func (s *session) set(key string, value interface{}, immutable bool) {
 	s.mu.Unlock()
 
 	s.updateDatabases()
+	s.isNew = false
 }
 
 // Set fills the session with an entry"value", based on its "key".
-func (s *session) Set(key string, value interface{}) {
+func (s *Session) Set(key string, value interface{}) {
 	s.set(key, value, false)
 }
 
@@ -284,7 +304,7 @@ func (s *session) Set(key string, value interface{}) {
 // if the entry was immutable, for your own safety.
 // Use it consistently, it's far slower than `Set`.
 // Read more about muttable and immutable go types: https://stackoverflow.com/a/8021081
-func (s *session) SetImmutable(key string, value interface{}) {
+func (s *Session) SetImmutable(key string, value interface{}) {
 	s.set(key, value, true)
 }
 
@@ -307,8 +327,8 @@ func (s *session) SetImmutable(key string, value interface{}) {
 // SetFlash("success", "Data saved!");
 //
 // In this example we used the key 'success'.
-// If you want to define more than one flash messages, you will have to use different keys
-func (s *session) SetFlash(key string, value interface{}) {
+// If you want to define more than one flash messages, you will have to use different keys.
+func (s *Session) SetFlash(key string, value interface{}) {
 	s.mu.Lock()
 	s.flashes[key] = &flashMessage{value: value}
 	s.mu.Unlock()
@@ -316,37 +336,42 @@ func (s *session) SetFlash(key string, value interface{}) {
 
 // Delete removes an entry by its key,
 // returns true if actually something was removed.
-func (s *session) Delete(key string) bool {
+func (s *Session) Delete(key string) bool {
 	s.mu.Lock()
 	removed := s.values.Remove(key)
 	s.mu.Unlock()
 
 	s.updateDatabases()
+	if removed {
+		s.isNew = false
+	}
+
 	return removed
 }
 
-func (s *session) updateDatabases() {
-	s.provider.updateDatabases(s.sid, s.values)
+func (s *Session) updateDatabases() {
+	s.provider.updateDatabases(s, s.values)
 }
 
-// DeleteFlash removes a flash message by its key
-func (s *session) DeleteFlash(key string) {
+// DeleteFlash removes a flash message by its key.
+func (s *Session) DeleteFlash(key string) {
 	s.mu.Lock()
 	delete(s.flashes, key)
 	s.mu.Unlock()
 }
 
-// Clear removes all entries
-func (s *session) Clear() {
+// Clear removes all entries.
+func (s *Session) Clear() {
 	s.mu.Lock()
 	s.values.Reset()
 	s.mu.Unlock()
 
 	s.updateDatabases()
+	s.isNew = false
 }
 
-// Clear removes all flash messages
-func (s *session) ClearFlashes() {
+// ClearFlashes removes all flash messages.
+func (s *Session) ClearFlashes() {
 	s.mu.Lock()
 	for key := range s.flashes {
 		delete(s.flashes, key)

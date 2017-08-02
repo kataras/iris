@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package sessions
 
 import (
@@ -13,8 +9,6 @@ import (
 const (
 	// DefaultCookieName the secret cookie's name for sessions
 	DefaultCookieName = "irissessionid"
-	// DefaultCookieLength is the default Session Manager's CookieLength, which is 32
-	DefaultCookieLength = 32
 )
 
 type (
@@ -73,7 +67,7 @@ type (
 		// that, but developers can change that with simple assignment.
 		SessionIDGenerator func() string
 
-		// DisableSubdomainPersistence set it to true in order dissallow your q subdomains to have access to the session cookie
+		// DisableSubdomainPersistence set it to true in order dissallow your subdomains to have access to the session cookie
 		//
 		// Defaults to false
 		DisableSubdomainPersistence bool

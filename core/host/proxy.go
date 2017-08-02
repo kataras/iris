@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package host
 
 import (
@@ -11,7 +7,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/kataras/iris/core/nettools"
+	"github.com/kataras/iris/core/netutil"
 )
 
 func singleJoiningSlash(a, b string) string {
@@ -52,7 +48,7 @@ func ProxyHandler(target *url.URL) *httputil.ReverseProxy {
 	}
 	p := &httputil.ReverseProxy{Director: director}
 
-	if nettools.IsLoopbackHost(target.Host) {
+	if netutil.IsLoopbackHost(target.Host) {
 		transport := &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		}

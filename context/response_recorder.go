@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package context
 
 import (
@@ -44,6 +40,12 @@ type ResponseRecorder struct {
 }
 
 var _ ResponseWriter = &ResponseRecorder{}
+
+// Naive returns the simple, underline and original http.ResponseWriter
+// that backends this response writer.
+func (w *ResponseRecorder) Naive() http.ResponseWriter {
+	return w.ResponseWriter.Naive()
+}
 
 // BeginRecord accepts its parent ResponseWriter and
 // prepares itself, the response recorder, to record and send response to the client.

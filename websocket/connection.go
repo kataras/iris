@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package websocket
 
 import (
@@ -142,6 +138,12 @@ type (
 		// ID returns the connection's identifier
 		ID() string
 
+		// Server returns the websocket server instance
+		// which this connection is listening to.
+		//
+		// Its connection-relative operations are safe for use.
+		Server() *Server
+
 		// Context returns the (upgraded) context.Context of this connection
 		// avoid using it, you normally don't need it,
 		// websocket has everything you need to authenticate the user BUT if it's necessary
@@ -150,12 +152,12 @@ type (
 
 		// OnDisconnect registers a callback which fires when this connection is closed by an error or manual
 		OnDisconnect(DisconnectFunc)
-		// OnStatusCode registers a callback which fires when this connection occurs an error
-		OnStatusCode(ErrorFunc)
+		// OnError registers a callback which fires when this connection occurs an error
+		OnError(ErrorFunc)
 		// FireStatusCode can be used to send a custom error message to the connection
 		//
-		// It does nothing more than firing the OnStatusCode listeners. It doesn't sends anything to the client.
-		FireStatusCode(errorMessage string)
+		// It does nothing more than firing the OnError listeners. It doesn't sends anything to the client.
+		FireOnError(errorMessage string)
 		// To defines where server should send a message
 		// returns an emitter to send messages
 		To(string) Emitter
@@ -209,7 +211,7 @@ type (
 		// access to the Context, use with causion, you can't use response writer as you imagine.
 		ctx    context.Context
 		values ConnectionValues
-		server *server
+		server *Server
 		// #119 , websocket writers are not protected by locks inside the gorilla's websocket code
 		// so we must protect them otherwise we're getting concurrent connection error on multi writers in the same time.
 		writerMu sync.Mutex
@@ -221,7 +223,7 @@ type (
 
 var _ Connection = &connection{}
 
-func newConnection(ctx context.Context, s *server, underlineConn UnderlineConnection, id string) *connection {
+func newConnection(ctx context.Context, s *Server, underlineConn UnderlineConnection, id string) *connection {
 	c := &connection{
 		underline:                underlineConn,
 		id:                       id,
@@ -334,7 +336,7 @@ func (c *connection) startReader() {
 		_, data, err := conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
-				c.FireStatusCode(err.Error())
+				c.FireOnError(err.Error())
 			}
 			break
 		} else {
@@ -397,6 +399,10 @@ func (c *connection) ID() string {
 	return c.id
 }
 
+func (c *connection) Server() *Server {
+	return c.server
+}
+
 func (c *connection) Context() context.Context {
 	return c.ctx
 }
@@ -415,11 +421,11 @@ func (c *connection) OnDisconnect(cb DisconnectFunc) {
 	c.onDisconnectListeners = append(c.onDisconnectListeners, cb)
 }
 
-func (c *connection) OnStatusCode(cb ErrorFunc) {
+func (c *connection) OnError(cb ErrorFunc) {
 	c.onErrorListeners = append(c.onErrorListeners, cb)
 }
 
-func (c *connection) FireStatusCode(errorMessage string) {
+func (c *connection) FireOnError(errorMessage string) {
 	for _, cb := range c.onErrorListeners {
 		cb(errorMessage)
 	}

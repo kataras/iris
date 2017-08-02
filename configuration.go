@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package iris
 
 import (
@@ -19,9 +15,9 @@ var errConfigurationDecode = errors.New("error while trying to decode configurat
 
 // YAML reads Configuration from a configuration.yml file.
 //
-// Accepts the absolute path of the configuration.yml.
+// Accepts the absolute path of the cfg.yml.
 // An error will be shown to the user via panic with the error message.
-// Error may occur when the configuration.yml doesn't exists or is not formatted correctly.
+// Error may occur when the cfg.yml doesn't exists or is not formatted correctly.
 //
 // Usage:
 // app := iris.Run(iris.Addr(":8080"), iris.WithConfiguration(iris.YAML("myconfig.yml")))
@@ -99,10 +95,40 @@ type Configurator func(*Application)
 // variables for configurators don't need any receivers, functions
 // for them that need (helps code editors to recognise as variables without parenthesis completion).
 
-// WithoutBanner turns off the write banner on server startup.
-var WithoutBanner = func(app *Application) {
-	app.config.DisableBanner = true
+// WithoutServerError will cause to ignore the matched "errors"
+// from the main application's `Run` function.
+//
+// Usage:
+// err := app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed))
+// will return `nil` if the server's error was `http/iris#ErrServerClosed`.
+//
+// See `Configuration#IgnoreServerErrors []string` too.
+//
+// Example: https://github.com/kataras/iris/tree/master/_examples/http-listening/listen-addr/omit-server-errors
+func WithoutServerError(errors ...error) Configurator {
+	return func(app *Application) {
+		if len(errors) == 0 {
+			return
+		}
+
+		errorsAsString := make([]string, len(errors), len(errors))
+		for i, e := range errors {
+			errorsAsString[i] = e.Error()
+		}
+
+		app.config.IgnoreServerErrors = append(app.config.IgnoreServerErrors, errorsAsString...)
+	}
 }
+
+// WithoutStartupLog turns off the information send, once, to the terminal when the main server is open.
+var WithoutStartupLog = func(app *Application) {
+	app.config.DisableStartupLog = true
+}
+
+// WithoutBanner is a conversion for the `WithoutStartupLog` option.
+//
+// Turns off the information send, once, to the terminal when the main server is open.
+var WithoutBanner = WithoutStartupLog
 
 // WithoutInterruptHandler disables the automatic graceful server shutdown
 // when control/cmd+C pressed.
@@ -112,42 +138,49 @@ var WithoutInterruptHandler = func(app *Application) {
 
 // WithoutPathCorrection disables the PathCorrection setting.
 //
-// See` Configuration`.
+// See `Configuration`.
 var WithoutPathCorrection = func(app *Application) {
 	app.config.DisablePathCorrection = true
 }
 
 // WithoutBodyConsumptionOnUnmarshal disables BodyConsumptionOnUnmarshal setting.
 //
-// See` Configuration`.
+// See `Configuration`.
 var WithoutBodyConsumptionOnUnmarshal = func(app *Application) {
 	app.config.DisableBodyConsumptionOnUnmarshal = true
 }
 
 // WithoutAutoFireStatusCode disables the AutoFireStatusCode setting.
 //
-// See` Configuration`.
+// See `Configuration`.
 var WithoutAutoFireStatusCode = func(app *Application) {
 	app.config.DisableAutoFireStatusCode = true
 }
 
 // WithPathEscape enanbles the PathEscape setting.
 //
-// See` Configuration`.
+// See `Configuration`.
 var WithPathEscape = func(app *Application) {
 	app.config.EnablePathEscape = true
 }
 
+// WithOptimizations can force the application to optimize for the best performance where is possible.
+//
+// See `Configuration`.
+var WithOptimizations = func(app *Application) {
+	app.config.EnableOptimizations = true
+}
+
 // WithFireMethodNotAllowed enanbles the FireMethodNotAllowed setting.
 //
-// See` Configuration`.
+// See `Configuration`.
 var WithFireMethodNotAllowed = func(app *Application) {
 	app.config.FireMethodNotAllowed = true
 }
 
 // WithTimeFormat sets the TimeFormat setting.
 //
-// See` Configuration`.
+// See `Configuration`.
 func WithTimeFormat(timeformat string) Configurator {
 	return func(app *Application) {
 		app.config.TimeFormat = timeformat
@@ -156,16 +189,52 @@ func WithTimeFormat(timeformat string) Configurator {
 
 // WithCharset sets the Charset setting.
 //
-// See` Configuration`.
+// See `Configuration`.
 func WithCharset(charset string) Configurator {
 	return func(app *Application) {
 		app.config.Charset = charset
 	}
 }
 
+// WithRemoteAddrHeader enables or adds a new or existing request header name
+// that can be used to validate the client's real IP.
+//
+// Existing values are:
+// "X-Real-Ip":             false,
+// "X-Forwarded-For":       false,
+// "CF-Connecting-IP": false
+//
+// Look `context.RemoteAddr()` for more.
+func WithRemoteAddrHeader(headerName string) Configurator {
+	return func(app *Application) {
+		if app.config.RemoteAddrHeaders == nil {
+			app.config.RemoteAddrHeaders = make(map[string]bool, 0)
+		}
+		app.config.RemoteAddrHeaders[headerName] = true
+	}
+}
+
+// WithoutRemoteAddrHeader disables an existing request header name
+// that can be used to validate the client's real IP.
+//
+// Existing values are:
+// "X-Real-Ip":             false,
+// "X-Forwarded-For":       false,
+// "CF-Connecting-IP": false
+//
+// Look `context.RemoteAddr()` for more.
+func WithoutRemoteAddrHeader(headerName string) Configurator {
+	return func(app *Application) {
+		if app.config.RemoteAddrHeaders == nil {
+			app.config.RemoteAddrHeaders = make(map[string]bool, 0)
+		}
+		app.config.RemoteAddrHeaders[headerName] = false
+	}
+}
+
 // WithOtherValue adds a value based on a key to the Other setting.
 //
-// See` Configuration`.
+// See `Configuration`.
 func WithOtherValue(key string, val interface{}) Configurator {
 	return func(app *Application) {
 		if app.config.Other == nil {
@@ -175,7 +244,7 @@ func WithOtherValue(key string, val interface{}) Configurator {
 	}
 }
 
-// Configuration the whole configuration for an Iris instance
+// Configuration the whole configuration for an iris instance
 // these can be passed via options also, look at the top of this file(configuration.go).
 // Configuration is a valid OptionSetter.
 type Configuration struct {
@@ -183,10 +252,23 @@ type Configuration struct {
 	// It can be retrieved by the context if needed (i.e router for subdomains)
 	vhost string
 
-	// DisableBanner if setted to true then it turns off the write banner on server startup.
+	// IgnoreServerErrors will cause to ignore the matched "errors"
+	// from the main application's `Run` function.
+	// This is a slice of string, not a slice of error
+	// users can register these errors using yaml or toml configuration file
+	// like the rest of the configuration fields.
+	//
+	// See `WithoutServerError(...)` function too.
+	//
+	// Example: https://github.com/kataras/iris/tree/master/_examples/http-listening/listen-addr/omit-server-errors
+	//
+	// Defaults to an empty slice.
+	IgnoreServerErrors []string `yaml:"IgnoreServerErrors" toml:"IgnoreServerErrors"`
+
+	// DisableStartupLog if setted to true then it turns off the write banner on server startup.
 	//
 	// Defaults to false.
-	DisableBanner bool `yaml:"DisableBanner" toml:"DisableBanner"`
+	DisableStartupLog bool `yaml:"DisableStartupLog" toml:"DisableStartupLog"`
 	// DisableInterruptHandler if setted to true then it disables the automatic graceful server shutdown
 	// when control/cmd+C pressed.
 	// Turn this to true if you're planning to handle this by your own via a custom host.Task.
@@ -215,6 +297,11 @@ type Configuration struct {
 	// Defaults to false.
 	EnablePathEscape bool `yaml:"EnablePathEscape" toml:"EnablePathEscape"`
 
+	// EnableOptimization when this field is true
+	// then the application tries to optimize for the best performance where is possible.
+	//
+	// Defaults to false.
+	EnableOptimizations bool `yaml:"EnableOptimizations" toml:"EnableOptimizations"`
 	// FireMethodNotAllowed if it's true router checks for StatusMethodNotAllowed(405) and
 	//  fires the 405 error instead of 404
 	// Defaults to false.
@@ -238,7 +325,7 @@ type Configuration struct {
 	//
 	// Developer may want this option to setted as true in order to manually call the
 	// error handlers when needed via "context.FireStatusCode(>=400)".
-	// HTTP Custom error handlers are being registered via "framework.OnStatusCode(code, handler)".
+	// HTTP Custom error handlers are being registered via app.OnErrorCode(code, handler)".
 	//
 	// Defaults to false.
 	DisableAutoFireStatusCode bool `yaml:"DisableAutoFireStatusCode" toml:"DisableAutoFireStatusCode"`
@@ -281,11 +368,21 @@ type Configuration struct {
 	//
 	// Defaults to "iris.viewData"
 	ViewDataContextKey string `yaml:"ViewDataContextKey" toml:"ViewDataContextKey"`
+	// RemoteAddrHeaders returns the allowed request headers names
+	// that can be valid to parse the client's IP based on.
+	//
+	// Defaults to:
+	// "X-Real-Ip":             false,
+	// "X-Forwarded-For":       false,
+	// "CF-Connecting-IP": false
+	//
+	// Look `context.RemoteAddr()` for more.
+	RemoteAddrHeaders map[string]bool `yaml:"RemoteAddrHeaders" toml:"RemoteAddrHeaders"`
 
 	// Other are the custom, dynamic options, can be empty.
 	// This field used only by you to set any app's options you want
 	// or by custom adaptors, it's a way to simple communicate between your adaptors (if any)
-	// Defaults to a non-nil empty map
+	// Defaults to a non-nil empty map.
 	Other map[string]interface{} `yaml:"Other" toml:"Other"`
 }
 
@@ -300,7 +397,7 @@ func (c Configuration) GetVHost() string {
 	return c.vhost
 }
 
-// GetDisablePathCorrection returns the configuration.DisablePathCorrection,
+// GetDisablePathCorrection returns the Configuration#DisablePathCorrection,
 // DisablePathCorrection corrects and redirects the requested path to the registered path
 // for example, if /home/ path is requested but no handler for this Route found,
 // then the Router checks if /home handler exists, if yes,
@@ -309,18 +406,24 @@ func (c Configuration) GetDisablePathCorrection() bool {
 	return c.DisablePathCorrection
 }
 
-// GetEnablePathEscape is the configuration.EnablePathEscape,
+// GetEnablePathEscape is the Configuration#EnablePathEscape,
 // returns true when its escapes the path, the named parameters (if any).
 func (c Configuration) GetEnablePathEscape() bool {
 	return c.EnablePathEscape
 }
 
-// GetFireMethodNotAllowed returns the configuration.FireMethodNotAllowed.
+// GetEnableOptimizations returns whether
+// the application has performance optimizations enabled.
+func (c Configuration) GetEnableOptimizations() bool {
+	return c.EnableOptimizations
+}
+
+// GetFireMethodNotAllowed returns the Configuration#FireMethodNotAllowed.
 func (c Configuration) GetFireMethodNotAllowed() bool {
 	return c.FireMethodNotAllowed
 }
 
-// GetDisableBodyConsumptionOnUnmarshal returns the configuration.GetDisableBodyConsumptionOnUnmarshal,
+// GetDisableBodyConsumptionOnUnmarshal returns the Configuration#GetDisableBodyConsumptionOnUnmarshal,
 // manages the reading behavior of the context's body readers/binders.
 // If returns true then the body consumption by the `context.UnmarshalBody/ReadJSON/ReadXML`
 // is disabled.
@@ -333,19 +436,19 @@ func (c Configuration) GetDisableBodyConsumptionOnUnmarshal() bool {
 	return c.DisableBodyConsumptionOnUnmarshal
 }
 
-// GetDisableAutoFireStatusCode returns the configuration.DisableAutoFireStatusCode.
+// GetDisableAutoFireStatusCode returns the Configuration#DisableAutoFireStatusCode.
 // Returns true when the http error status code handler automatic execution turned off.
 func (c Configuration) GetDisableAutoFireStatusCode() bool {
 	return c.DisableAutoFireStatusCode
 }
 
-// GetTimeFormat returns the configuration.TimeFormat,
+// GetTimeFormat returns the Configuration#TimeFormat,
 // format for any kind of datetime parsing.
 func (c Configuration) GetTimeFormat() string {
 	return c.TimeFormat
 }
 
-// GetCharset returns the configuration.Charset,
+// GetCharset returns the Configuration#Charset,
 // the character encoding for various rendering
 // used for templates and the rest of the responses.
 func (c Configuration) GetCharset() string {
@@ -379,7 +482,20 @@ func (c Configuration) GetViewDataContextKey() string {
 	return c.ViewDataContextKey
 }
 
-// GetOther returns the configuration.Other map.
+// GetRemoteAddrHeaders returns the allowed request headers names
+// that can be valid to parse the client's IP based on.
+//
+// Defaults to:
+// "X-Real-Ip":             false,
+// "X-Forwarded-For":       false,
+// "CF-Connecting-IP": false
+//
+// Look `context.RemoteAddr()` for more.
+func (c Configuration) GetRemoteAddrHeaders() map[string]bool {
+	return c.RemoteAddrHeaders
+}
+
+// GetOther returns the Configuration#Other map.
 func (c Configuration) GetOther() map[string]interface{} {
 	return c.Other
 }
@@ -396,8 +512,12 @@ func WithConfiguration(c Configuration) Configurator {
 	return func(app *Application) {
 		main := app.config
 
-		if v := c.DisableBanner; v {
-			main.DisableBanner = v
+		if v := c.IgnoreServerErrors; len(v) > 0 {
+			main.IgnoreServerErrors = append(main.IgnoreServerErrors, v...)
+		}
+
+		if v := c.DisableStartupLog; v {
+			main.DisableStartupLog = v
 		}
 
 		if v := c.DisableInterruptHandler; v {
@@ -410,6 +530,10 @@ func WithConfiguration(c Configuration) Configurator {
 
 		if v := c.EnablePathEscape; v {
 			main.EnablePathEscape = v
+		}
+
+		if v := c.EnableOptimizations; v {
+			main.EnableOptimizations = v
 		}
 
 		if v := c.FireMethodNotAllowed; v {
@@ -448,6 +572,15 @@ func WithConfiguration(c Configuration) Configurator {
 			main.ViewDataContextKey = v
 		}
 
+		if v := c.RemoteAddrHeaders; len(v) > 0 {
+			if main.RemoteAddrHeaders == nil {
+				main.RemoteAddrHeaders = make(map[string]bool, 0)
+			}
+			for key, value := range v {
+				main.RemoteAddrHeaders[key] = value
+			}
+		}
+
 		if v := c.Other; len(v) > 0 {
 			if main.Other == nil {
 				main.Other = make(map[string]interface{}, 0)
@@ -459,10 +592,10 @@ func WithConfiguration(c Configuration) Configurator {
 	}
 }
 
-// DefaultConfiguration returns the default configuration for an Iris station, fills the main Configuration
+// DefaultConfiguration returns the default configuration for an iris station, fills the main Configuration
 func DefaultConfiguration() Configuration {
 	return Configuration{
-		DisableBanner:                     false,
+		DisableStartupLog:                 false,
 		DisableInterruptHandler:           false,
 		DisablePathCorrection:             false,
 		EnablePathEscape:                  false,
@@ -475,6 +608,12 @@ func DefaultConfiguration() Configuration {
 		TranslateLanguageContextKey:       "iris.language",
 		ViewLayoutContextKey:              "iris.viewLayout",
 		ViewDataContextKey:                "iris.viewData",
-		Other:                             make(map[string]interface{}, 0),
+		RemoteAddrHeaders: map[string]bool{
+			"X-Real-Ip":        false,
+			"X-Forwarded-For":  false,
+			"CF-Connecting-IP": false,
+		},
+		EnableOptimizations: false,
+		Other:               make(map[string]interface{}, 0),
 	}
 }

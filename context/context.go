@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package context
 
 import (
@@ -26,13 +22,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fatih/structs"
+	"github.com/json-iterator/go"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/monoculum/formam"
 	"github.com/russross/blackfriday"
 
 	"github.com/kataras/iris/core/errors"
 	"github.com/kataras/iris/core/memstore"
-	"github.com/kataras/iris/sessions"
 )
 
 type (
@@ -142,7 +139,7 @@ func (r RequestParams) Len() int {
 // Context is the midle-man server's "object" for the clients.
 //
 // A New context is being acquired from a sync.Pool on each connection.
-// The Context is the most important thing on the Iris' http flow.
+// The Context is the most important thing on the iris's http flow.
 //
 // Developers send responses to the client's request through a Context.
 // Developers get request information from the client's request a Context.
@@ -155,7 +152,7 @@ type Context interface {
 	// BeginRequest is executing once for each request
 	// it should prepare the (new or acquired from pool) context's fields for the new request.
 	//
-	// To follow the Iris' flow, developer should:
+	// To follow the iris' flow, developer should:
 	// 1. reset handlers to nil
 	// 2. reset values to empty
 	// 3. reset sessions to nil
@@ -165,7 +162,7 @@ type Context interface {
 	BeginRequest(http.ResponseWriter, *http.Request)
 	// EndRequest is executing once after a response to the request was sent and this context is useless or released.
 	//
-	// To follow the Iris' flow, developer should:
+	// To follow the iris' flow, developer should:
 	// 1. flush the response writer's result
 	// 2. release the response writer
 	// and any other optional steps, depends on dev's application type.
@@ -249,7 +246,7 @@ type Context interface {
 	// Translate is the i18n (localization) middleware's function,
 	// it calls the Get("translate") to return the translated value.
 	//
-	// Example: https://github.com/kataras/iris/tree/master/_examples/intermediate/i18n
+	// Example: https://github.com/kataras/iris/tree/master/_examples/miscellaneous/i18n
 	Translate(format string, args ...interface{}) string
 
 	//  +------------------------------------------------------------+
@@ -270,7 +267,16 @@ type Context interface {
 	// Subdomain returns the subdomain of this request, if any.
 	// Note that this is a fast method which does not cover all cases.
 	Subdomain() (subdomain string)
-	// RemoteAddr tries to return the real client's request IP.
+	// RemoteAddr tries to parse and return the real client's request IP.
+	//
+	// Based on allowed headers names that can be modified from Configuration.RemoteAddrHeaders.
+	//
+	// If parse based on these headers fail then it will return the Request's `RemoteAddr` field
+	// which is filled by the server before the HTTP handler.
+	//
+	// Look `Configuration.RemoteAddrHeaders`,
+	//      `Configuration.WithRemoteAddrHeader(...)`,
+	//      `Configuration.WithoutRemoteAddrHeader(...)` for more.
 	RemoteAddr() string
 	// GetHeader returns the request header's value based on its name.
 	GetHeader(name string) string
@@ -344,7 +350,7 @@ type Context interface {
 
 	// NotFound emits an error 404 to the client, using the specific custom error error handler.
 	// Note that you may need to call ctx.StopExecution() if you don't want the next handlers
-	// to be executed. Next handlers are being executed on Iris because you can alt the
+	// to be executed. Next handlers are being executed on iris because you can alt the
 	// error code and change it to a more specific one, i.e
 	// users := app.Party("/users")
 	// users.Done(func(ctx context.Context){ if ctx.StatusCode() == 400 { /*  custom error code for /users */ }})
@@ -401,9 +407,9 @@ type Context interface {
 	//
 	// Returns the number of bytes written and any write error encountered.
 	WriteString(body string) (int, error)
-	// WriteWithExpiration like SetBody but it sends with an expiration datetime
-	// which is managed by the client-side (all major web browsers supports this)
-	WriteWithExpiration(bodyContent []byte, cType string, modtime time.Time) error
+	// WriteWithExpiration like Write but it sends with an expiration datetime
+	// which is refreshed every package-level `StaticCacheDuration` field.
+	WriteWithExpiration(body []byte, modtime time.Time) (int, error)
 	// StreamWriter registers the given stream writer for populating
 	// response body.
 	//
@@ -459,7 +465,7 @@ type Context interface {
 	//
 	// Look .ViewData and .View too.
 	//
-	// Example: https://github.com/kataras/iris/tree/master/_examples/intermediate/view/context-view-data/
+	// Example: https://github.com/kataras/iris/tree/master/_examples/view/context-view-data/
 	ViewLayout(layoutTmplFile string)
 
 	// ViewData saves one or more key-value pair in order to be passed if and when .View
@@ -479,8 +485,19 @@ type Context interface {
 	//
 	// Look .ViewLayout and .View too.
 	//
-	// Example: https://github.com/kataras/iris/tree/master/_examples/intermediate/view/context-view-data/
+	// Example: https://github.com/kataras/iris/tree/master/_examples/view/context-view-data/
 	ViewData(key string, value interface{})
+
+	// GetViewData returns the values registered by `context#ViewData`.
+	// The return value is `map[string]interface{}`, this means that
+	// if a custom struct registered to ViewData then this function
+	// will try to parse it to map, if failed then the return value is nil
+	// A check for nil is always a good practise if different
+	// kind of values or no data are registered via `ViewData`.
+	//
+	// Similarly to `viewData := ctx.Values().Get("iris.viewData")` or
+	// `viewData := ctx.Values().Get(ctx.Application().ConfigurationReadOnly().GetViewDataContextKey())`.
+	GetViewData() map[string]interface{}
 
 	// View renders templates based on the adapted view engines.
 	// First argument accepts the filename, relative to the view engine's Directory,
@@ -489,7 +506,7 @@ type Context interface {
 	//
 	// Look: .ViewData and .ViewLayout too.
 	//
-	// Examples: https://github.com/kataras/iris/tree/master/_examples/intermediate/view/
+	// Examples: https://github.com/kataras/iris/tree/master/_examples/view/
 	View(filename string) error
 
 	// Binary writes out the raw bytes as binary data.
@@ -533,7 +550,7 @@ type Context interface {
 	SendFile(filename string, destinationName string) error
 
 	//  +------------------------------------------------------------+
-	//  | Cookies, Session and Flashes                               |
+	//  | Cookies                                                    |
 	//  +------------------------------------------------------------+
 
 	// SetCookie adds a cookie
@@ -551,11 +568,6 @@ type Context interface {
 	// VisitAllCookies takes a visitor which loops
 	// on each (request's) cookies' name and value.
 	VisitAllCookies(visitor func(name string, value string))
-
-	// Session returns the current user's Session.
-	Session() sessions.Session
-	// SessionDestroy destroys the whole session and removes the session id cookie.
-	SessionDestroy()
 
 	// MaxAge returns the "cache-control" request header's value
 	// seconds as int64
@@ -589,7 +601,7 @@ type Context interface {
 	// this transaction scope is only for context's response.
 	// Transactions have their own middleware ecosystem also, look iris.go:UseTransaction.
 	//
-	// See https://github.com/kataras/iris/tree/master/_examples/advanced/transactions for more
+	// See https://github.com/kataras/iris/tree/master/_examples/ for more
 	BeginTransaction(pipe func(t *Transaction))
 	// SkipTransactions if called then skip the rest of the transactions
 	// or all of them if called before the first transaction
@@ -613,7 +625,7 @@ type Context interface {
 	//
 	// app.None(...) and app.Routes().Offline(route)/.Online(route, method)
 	//
-	// Example: https://github.com/kataras/iris/tree/master/_examples/intermediate/route-state
+	// Example: https://github.com/kataras/iris/tree/master/_examples/routing/route-state
 	//
 	// User can get the response by simple using rec := ctx.Recorder(); rec.Body()/rec.StatusCode()/rec.Header().
 	//
@@ -622,10 +634,10 @@ type Context interface {
 	// It's for extreme use cases, 99% of the times will never be useful for you.
 	Exec(method string, path string)
 
-	// Application returns the Iris framework instance which belongs to this context.
+	// Application returns the iris app instance which belongs to this context.
 	// Worth to notice that this function returns an interface
 	// of the Application, which contains methods that are safe
-	// to be executed at serve-time. The full framework's fields
+	// to be executed at serve-time. The full app's fields
 	// and methods are not available here for the developer's safety.
 	Application() Application
 
@@ -735,8 +747,8 @@ func Next(ctx Context) {
 	}
 }
 
-// LimitRequestBodySize is a middleware which sets a request body size limit for all next handlers
-// should be registered before all other handlers
+// LimitRequestBodySize is a middleware which sets a request body size limit
+// for all next handlers in the chain.
 var LimitRequestBodySize = func(maxRequestBodySizeBytes int64) Handler {
 	return func(ctx Context) {
 		ctx.SetMaxRequestBodySize(maxRequestBodySizeBytes)
@@ -760,12 +772,10 @@ type context struct {
 	params RequestParams  // url named parameters
 	values memstore.Store // generic storage, middleware communication
 
-	// the underline application framework
-	framework Application
+	// the underline application app
+	app Application
 	// the route's handlers
 	handlers Handlers
-	// the session, can be nil if never acquired
-	session sessions.Session
 	// the current position of the handler's chain
 	currentHandlerIndex int
 }
@@ -775,14 +785,14 @@ type context struct {
 // to a custom one.
 //
 // This context is received by the context pool.
-func NewContext(framework Application) Context {
-	return &context{framework: framework}
+func NewContext(app Application) Context {
+	return &context{app: app}
 }
 
 // BeginRequest is executing once for each request
 // it should prepare the (new or acquired from pool) context's fields for the new request.
 //
-// To follow the Iris' flow, developer should:
+// To follow the iris' flow, developer should:
 // 1. reset handlers to nil
 // 2. reset store to empty
 // 3. reset sessions to nil
@@ -791,7 +801,6 @@ func NewContext(framework Application) Context {
 // and any other optional steps, depends on dev's application type.
 func (ctx *context) BeginRequest(w http.ResponseWriter, r *http.Request) {
 	ctx.handlers = nil           // will be filled by router.Serve/HTTP
-	ctx.session = nil            // >>      >>     by sessions.Session()
 	ctx.values = ctx.values[0:0] // >>      >>     by context.Values().Set
 	ctx.params.store = ctx.params.store[0:0]
 	ctx.request = r
@@ -802,15 +811,22 @@ func (ctx *context) BeginRequest(w http.ResponseWriter, r *http.Request) {
 
 // EndRequest is executing once after a response to the request was sent and this context is useless or released.
 //
-// To follow the Iris' flow, developer should:
+// To follow the iris' flow, developer should:
 // 1. flush the response writer's result
 // 2. release the response writer
 // and any other optional steps, depends on dev's application type.
 func (ctx *context) EndRequest() {
-	if ctx.GetStatusCode() >= 400 && ctx.writer.Written() == -1 {
-		if !ctx.Application().ConfigurationReadOnly().GetDisableAutoFireStatusCode() {
+	if ctx.GetStatusCode() >= 400 &&
+		!ctx.Application().ConfigurationReadOnly().GetDisableAutoFireStatusCode() {
+		// author's note:
+		// if recording, the error handler can handle
+		// the rollback and remove any response written before,
+		// we don't have to do anything here, written is -1 when Recording
+		// because we didn't flush the response yet
+		// if !recording  then check if the previous handler didn't send something
+		// to the client
+		if ctx.writer.Written() == -1 {
 			ctx.Application().FireErrorCode(ctx)
-			return
 		}
 	}
 
@@ -961,7 +977,7 @@ func (ctx *context) Values() *memstore.Store {
 // Translate is the i18n (localization) middleware's function,
 // it calls the Get("translate") to return the translated value.
 //
-// Example: https://github.com/kataras/iris/tree/master/_examples/intermediate/i18n
+// Example: https://github.com/kataras/iris/tree/master/_examples/miscellaneous/i18n
 func (ctx *context) Translate(format string, args ...interface{}) string {
 	if cb, ok := ctx.values.Get(ctx.Application().ConfigurationReadOnly().GetTranslateFunctionContextKey()).(func(format string, args ...interface{}) string); ok {
 		return cb(format, args...)
@@ -1056,8 +1072,8 @@ func (ctx *context) Subdomain() (subdomain string) {
 		subdomain = host[0:index]
 	}
 
-	// listening on iris-go.com:80
-	// subdomain = iris-go, but it's wrong, it should return ""
+	// listening on mydomain.com:80
+	// subdomain = mydomain, but it's wrong, it should return ""
 	vhost := ctx.Application().ConfigurationReadOnly().GetVHost()
 	if strings.Contains(vhost, subdomain) { // then it's not subdomain
 		return ""
@@ -1066,30 +1082,46 @@ func (ctx *context) Subdomain() (subdomain string) {
 	return
 }
 
-// RemoteAddr tries to return the real client's request IP.
+// RemoteAddr tries to parse and return the real client's request IP.
+//
+// Based on allowed headers names that can be modified from Configuration.RemoteAddrHeaders.
+//
+// If parse based on these headers fail then it will return the Request's `RemoteAddr` field
+// which is filled by the server before the HTTP handler.
+//
+// Look `Configuration.RemoteAddrHeaders`,
+//      `Configuration.WithRemoteAddrHeader(...)`,
+//      `Configuration.WithoutRemoteAddrHeader(...)` for more.
 func (ctx *context) RemoteAddr() string {
-	header := ctx.GetHeader("X-Real-Ip")
-	realIP := strings.TrimSpace(header)
-	if realIP != "" {
-		return realIP
+
+	remoteHeaders := ctx.Application().ConfigurationReadOnly().GetRemoteAddrHeaders()
+
+	for headerName, enabled := range remoteHeaders {
+		if enabled {
+			headerValue := ctx.GetHeader(headerName)
+			// exception needed for 'X-Forwarded-For' only , if enabled.
+			if headerName == "X-Forwarded-For" {
+				idx := strings.IndexByte(headerValue, ',')
+				if idx >= 0 {
+					headerValue = headerValue[0:idx]
+				}
+			}
+
+			realIP := strings.TrimSpace(headerValue)
+			if realIP != "" {
+				return realIP
+			}
+		}
 	}
-	realIP = ctx.GetHeader("X-Forwarded-For")
-	idx := strings.IndexByte(realIP, ',')
-	if idx >= 0 {
-		realIP = realIP[0:idx]
-	}
-	realIP = strings.TrimSpace(realIP)
-	if realIP != "" {
-		return realIP
-	}
+
 	addr := strings.TrimSpace(ctx.request.RemoteAddr)
-	if len(addr) == 0 {
-		return ""
+	if addr != "" {
+		// if addr has port use the net.SplitHostPort otherwise(error occurs) take as it is
+		if ip, _, err := net.SplitHostPort(addr); err == nil {
+			return ip
+		}
 	}
-	// if addr has port use the net.SplitHostPort otherwise(error occurs) take as it is
-	if ip, _, err := net.SplitHostPort(addr); err == nil {
-		return ip
-	}
+
 	return addr
 }
 
@@ -1160,7 +1192,7 @@ func (ctx *context) StatusCode(statusCode int) {
 
 // NotFound emits an error 404 to the client, using the specific custom error error handler.
 // Note that you may need to call ctx.StopExecution() if you don't want the next handlers
-// to be executed. Next handlers are being executed on Iris because you can alt the
+// to be executed. Next handlers are being executed on iris because you can alt the
 // error code and change it to a more specific one, i.e
 // users := app.Party("/users")
 // users.Done(func(ctx context.Context){ if ctx.StatusCode() == 400 { /*  custom error code for /users */ }})
@@ -1264,24 +1296,6 @@ func (ctx *context) Redirect(urlToRedirect string, statusHeader ...int) {
 		httpStatus = statusHeader[0]
 	}
 
-	// comment these because in some cases the the ctx.Request().URL.Path is already updated
-	// to the new one, so it shows a wrong warning message.
-	//
-	// // we don't know the Method of the url to redirect,
-	// // sure we can find it by reverse routing as we already implemented
-	// // but it will take too much time for a simple redirect, it doesn't worth it.
-	// // So we are checking the CURRENT Method for GET, HEAD,  CONNECT and TRACE.
-	// // the
-	// // Fixes: http: //support.iris-go.com/d/21-wrong-warning-message-while-redirecting
-	// shouldCheckForCycle := urlToRedirect == ctx.Path() && ctx.Method() == http.MethodGet
-	// // from POST to GET on the same path will give a warning message but developers don't use the iris.DevLogger
-	// // for production, so I assume it's OK to let it logs it
-	// // (it can solve issues when developer redirects to the same handler over and over again)
-	// // Note: it doesn't stops the redirect, the developer gets what he/she expected.
-	// if shouldCheckForCycle {
-	// 	ctx.Application().Log("warning: redirect from: '%s' to: '%s',\ncurrent method: '%s'", ctx.Path(), urlToRedirect, ctx.Method())
-	// }
-
 	http.Redirect(ctx.writer, ctx.request, urlToRedirect, httpStatus)
 }
 
@@ -1331,16 +1345,22 @@ func (ctx *context) UnmarshalBody(v interface{}, unmarshaler Unmarshaler) error 
 	return unmarshaler.Unmarshal(rawData, &v)
 }
 
+func (ctx *context) shouldOptimize() bool {
+	return ctx.Application().ConfigurationReadOnly().GetEnableOptimizations()
+}
+
 // ReadJSON reads JSON from request's body and binds it to a value of any json-valid type.
 func (ctx *context) ReadJSON(jsonObject interface{}) error {
-	return ctx.UnmarshalBody(jsonObject, UnmarshalerFunc(json.Unmarshal))
-
+	var unmarshaler = json.Unmarshal
+	if ctx.shouldOptimize() {
+		unmarshaler = jsoniter.Unmarshal
+	}
+	return ctx.UnmarshalBody(jsonObject, UnmarshalerFunc(unmarshaler))
 }
 
 // ReadXML reads XML from request's body and binds it to a value of any xml-valid type.
 func (ctx *context) ReadXML(xmlObject interface{}) error {
 	return ctx.UnmarshalBody(xmlObject, UnmarshalerFunc(xml.Unmarshal))
-
 }
 
 var (
@@ -1356,7 +1376,7 @@ func (ctx *context) ReadForm(formObject interface{}) error {
 	}
 
 	// or dec := formam.NewDecoder(&formam.DecoderOptions{TagName: "form"})
-	// somewhere at the framework level. I did change the tagName to "form"
+	// somewhere at the app level. I did change the tagName to "form"
 	// inside its source code, so it's not needed for now.
 	return errReadBody.With(formam.Decode(values, formObject))
 }
@@ -1429,19 +1449,17 @@ func (ctx *context) staticCachePassed(modtime time.Time) bool {
 }
 
 // WriteWithExpiration like Write but it sends with an expiration datetime
-// which is managed by the client-side (all major web browsers supports this)
-func (ctx *context) WriteWithExpiration(bodyContent []byte, cType string, modtime time.Time) error {
+// which is refreshed every package-level `StaticCacheDuration` field.
+func (ctx *context) WriteWithExpiration(body []byte, modtime time.Time) (int, error) {
+
 	if ctx.staticCachePassed(modtime) {
-		return nil
+		return 0, nil
 	}
 
 	modtimeFormatted := modtime.UTC().Format(ctx.Application().ConfigurationReadOnly().GetTimeFormat())
+	ctx.Header(lastModifiedHeaderKey, modtimeFormatted)
 
-	ctx.writer.Header().Set(contentTypeHeaderKey, cType)
-	ctx.writer.Header().Set(lastModifiedHeaderKey, modtimeFormatted)
-
-	_, err := ctx.writer.Write(bodyContent)
-	return err
+	return ctx.writer.Write(body)
 }
 
 // StreamWriter registers the given stream writer for populating
@@ -1584,7 +1602,7 @@ const (
 //
 // Look .ViewData and .View too.
 //
-// Example: https://github.com/kataras/iris/tree/master/_examples/intermediate/view/context-view-data/
+// Example: https://github.com/kataras/iris/tree/master/_examples/view/context-view-data/
 func (ctx *context) ViewLayout(layoutTmplFile string) {
 	ctx.values.Set(ctx.Application().ConfigurationReadOnly().GetViewLayoutContextKey(), layoutTmplFile)
 }
@@ -1606,7 +1624,7 @@ func (ctx *context) ViewLayout(layoutTmplFile string) {
 //
 // Look .ViewLayout and .View too.
 //
-// Example: https://github.com/kataras/iris/tree/master/_examples/intermediate/view/context-view-data/
+// Example: https://github.com/kataras/iris/tree/master/_examples/view/context-view-data/
 func (ctx *context) ViewData(key string, value interface{}) {
 	viewDataContextKey := ctx.Application().ConfigurationReadOnly().GetViewDataContextKey()
 	if key == "" {
@@ -1620,9 +1638,48 @@ func (ctx *context) ViewData(key string, value interface{}) {
 		return
 	}
 
-	if data, ok := v.(Map); ok {
+	if data, ok := v.(map[string]interface{}); ok {
+		data[key] = value
+	} else if data, ok := v.(Map); ok {
 		data[key] = value
 	}
+}
+
+// GetViewData returns the values registered by `context#ViewData`.
+// The return value is `map[string]interface{}`, this means that
+// if a custom struct registered to ViewData then this function
+// will try to parse it to map, if failed then the return value is nil
+// A check for nil is always a good practise if different
+// kind of values or no data are registered via `ViewData`.
+//
+// Similarly to `viewData := ctx.Values().Get("iris.viewData")` or
+// `viewData := ctx.Values().Get(ctx.Application().ConfigurationReadOnly().GetViewDataContextKey())`.
+func (ctx *context) GetViewData() map[string]interface{} {
+	viewDataContextKey := ctx.Application().ConfigurationReadOnly().GetViewDataContextKey()
+	v := ctx.Values().Get(viewDataContextKey)
+
+	// if no values found, then return nil
+	if v == nil {
+		return nil
+	}
+
+	// if struct, convert it to map[string]interface{}
+	if structs.IsStruct(v) {
+		return structs.Map(v)
+	}
+
+	// if pure map[string]interface{}
+	if viewData, ok := v.(map[string]interface{}); ok {
+		return viewData
+	}
+
+	// if context#Map
+	if viewData, ok := v.(Map); ok {
+		return viewData
+	}
+
+	// if failure, then return nil
+	return nil
 }
 
 // View renders templates based on the adapted view engines.
@@ -1632,15 +1689,18 @@ func (ctx *context) ViewData(key string, value interface{}) {
 //
 // Look: .ViewData and .ViewLayout too.
 //
-// Examples: https://github.com/kataras/iris/tree/master/_examples/intermediate/view/
+// Examples: https://github.com/kataras/iris/tree/master/_examples/view/
 func (ctx *context) View(filename string) error {
 	ctx.ContentType(contentHTMLHeaderValue)
-	layout := ctx.values.GetString(ctx.Application().ConfigurationReadOnly().GetViewLayoutContextKey())
-	bindingData := ctx.values.Get(ctx.Application().ConfigurationReadOnly().GetViewDataContextKey())
+	cfg := ctx.Application().ConfigurationReadOnly()
+
+	layout := ctx.values.GetString(cfg.GetViewLayoutContextKey())
+	bindingData := ctx.values.Get(cfg.GetViewDataContextKey())
 
 	err := ctx.Application().View(ctx.writer, filename, layout, bindingData)
 	if err != nil {
 		ctx.StatusCode(http.StatusInternalServerError)
+		ctx.StopExecution()
 	}
 
 	return err
@@ -1682,6 +1742,36 @@ func (ctx *context) HTML(htmlContents string) (int, error) {
 	return ctx.writer.WriteString(htmlContents)
 }
 
+// JSON contains the options for the JSON (Context's) Renderer.
+type JSON struct {
+	// http-specific
+	StreamingJSON bool
+	// content-specific
+	UnescapeHTML bool
+	Indent       string
+	Prefix       string
+}
+
+// JSONP contains the options for the JSONP (Context's) Renderer.
+type JSONP struct {
+	// content-specific
+	Indent   string
+	Callback string
+}
+
+// XML contains the options for the XML (Context's) Renderer.
+type XML struct {
+	// content-specific
+	Indent string
+	Prefix string
+}
+
+// Markdown contains the options for the Markdown (Context's) Renderer.
+type Markdown struct {
+	// content-specific
+	Sanitize bool
+}
+
 var (
 	newLineB = []byte("\n")
 	// the html codes for unescaping
@@ -1697,15 +1787,28 @@ var (
 
 // WriteJSON marshals the given interface object and writes the JSON response to the 'writer'.
 // Ignores StatusCode, Gzip, StreamingJSON options.
-func WriteJSON(writer io.Writer, v interface{}, options JSON) (int, error) {
-	var result []byte
-	var err error
+func WriteJSON(writer io.Writer, v interface{}, options JSON, enableOptimization ...bool) (int, error) {
+	var (
+		result   []byte
+		err      error
+		optimize = len(enableOptimization) > 0 && enableOptimization[0]
+	)
 
 	if indent := options.Indent; indent != "" {
-		result, err = json.MarshalIndent(v, "", indent)
+		marshalIndent := json.MarshalIndent
+		if optimize {
+			marshalIndent = jsoniter.ConfigCompatibleWithStandardLibrary.MarshalIndent
+		}
+
+		result, err = marshalIndent(v, "", indent)
 		result = append(result, newLineB...)
 	} else {
-		result, err = json.Marshal(v)
+		marshal := json.Marshal
+		if optimize {
+			marshal = jsoniter.ConfigCompatibleWithStandardLibrary.Marshal
+		}
+
+		result, err = marshal(v)
 	}
 
 	if err != nil {
@@ -1728,20 +1831,32 @@ func WriteJSON(writer io.Writer, v interface{}, options JSON) (int, error) {
 var defaultJSONOptions = JSON{}
 
 // JSON marshals the given interface object and writes the JSON response to the client.
-func (ctx *context) JSON(v interface{}, opts ...JSON) (int, error) {
+func (ctx *context) JSON(v interface{}, opts ...JSON) (n int, err error) {
 	options := defaultJSONOptions
 
 	if len(opts) > 0 {
 		options = opts[0]
 	}
 
+	optimize := ctx.shouldOptimize()
+
 	ctx.ContentType(contentJSONHeaderValue)
 
 	if options.StreamingJSON {
-		enc := json.NewEncoder(ctx.writer)
-		enc.SetEscapeHTML(!options.UnescapeHTML)
-		enc.SetIndent(options.Prefix, options.Indent)
-		err := enc.Encode(v)
+		if optimize {
+			var jsoniterConfig = jsoniter.Config{
+				EscapeHTML:    !options.UnescapeHTML,
+				IndentionStep: 4,
+			}.Froze()
+			enc := jsoniterConfig.NewEncoder(ctx.writer)
+			err = enc.Encode(v)
+		} else {
+			enc := json.NewEncoder(ctx.writer)
+			enc.SetEscapeHTML(!options.UnescapeHTML)
+			enc.SetIndent(options.Prefix, options.Indent)
+			err = enc.Encode(v)
+		}
+
 		if err != nil {
 			ctx.StatusCode(http.StatusInternalServerError) // it handles the fallback to normal mode here which also removes the gzip headers.
 			return 0, err
@@ -1749,7 +1864,7 @@ func (ctx *context) JSON(v interface{}, opts ...JSON) (int, error) {
 		return ctx.writer.Written(), err
 	}
 
-	n, err := WriteJSON(ctx.writer, v, options)
+	n, err = WriteJSON(ctx.writer, v, options, optimize)
 	if err != nil {
 		ctx.StatusCode(http.StatusInternalServerError)
 		return 0, err
@@ -1763,14 +1878,21 @@ var (
 )
 
 // WriteJSONP marshals the given interface object and writes the JSON response to the writer.
-func WriteJSONP(writer io.Writer, v interface{}, options JSONP) (int, error) {
+func WriteJSONP(writer io.Writer, v interface{}, options JSONP, enableOptimization ...bool) (int, error) {
 	if callback := options.Callback; callback != "" {
 		writer.Write([]byte(callback + "("))
 		defer writer.Write(finishCallbackB)
 	}
 
+	optimize := len(enableOptimization) > 0 && enableOptimization[0]
+
 	if indent := options.Indent; indent != "" {
-		result, err := json.MarshalIndent(v, "", indent)
+		marshalIndent := json.MarshalIndent
+		if optimize {
+			marshalIndent = jsoniter.ConfigCompatibleWithStandardLibrary.MarshalIndent
+		}
+
+		result, err := marshalIndent(v, "", indent)
 		if err != nil {
 			return 0, err
 		}
@@ -1778,7 +1900,12 @@ func WriteJSONP(writer io.Writer, v interface{}, options JSONP) (int, error) {
 		return writer.Write(result)
 	}
 
-	result, err := json.Marshal(v)
+	marshal := json.Marshal
+	if optimize {
+		marshal = jsoniter.ConfigCompatibleWithStandardLibrary.Marshal
+	}
+
+	result, err := marshal(v)
 	if err != nil {
 		return 0, err
 	}
@@ -1797,7 +1924,7 @@ func (ctx *context) JSONP(v interface{}, opts ...JSONP) (int, error) {
 
 	ctx.ContentType(contentJavascriptHeaderValue)
 
-	n, err := WriteJSONP(ctx.writer, v, options)
+	n, err := WriteJSONP(ctx.writer, v, options, ctx.shouldOptimize())
 	if err != nil {
 		ctx.StatusCode(http.StatusInternalServerError)
 		return 0, err
@@ -2022,31 +2149,6 @@ func (ctx *context) VisitAllCookies(visitor func(name string, value string)) {
 	}
 }
 
-// Session returns the current user's Session.
-func (ctx *context) Session() sessions.Session {
-	sessmanager, err := ctx.Application().SessionManager()
-	if err != nil {
-		return nil
-	}
-
-	if ctx.session == nil {
-		ctx.session = sessmanager.Start(ctx.writer, ctx.request)
-	}
-
-	return ctx.session
-}
-
-// SessionDestroy destroys the whole session and removes the session id cookie.
-func (ctx *context) SessionDestroy() {
-	if sess := ctx.Session(); sess != nil {
-		sessmanager, err := ctx.Application().SessionManager()
-		if err != nil {
-			return
-		}
-		sessmanager.Destroy(ctx.writer, ctx.request)
-	}
-}
-
 var maxAgeExp = regexp.MustCompile(`maxage=(\d+)`)
 
 // MaxAge returns the "cache-control" request header's value
@@ -2115,7 +2217,7 @@ var errTransactionInterrupted = errors.New("transaction interrupted, recovery fr
 // this transaction scope is only for context's response.
 // Transactions have their own middleware ecosystem also, look iris.go:UseTransaction.
 //
-// See https://github.com/kataras/iris/tree/master/_examples/advanced/transactions for more
+// See https://github.com/kataras/iris/tree/master/_examples/ for more
 func (ctx *context) BeginTransaction(pipe func(t *Transaction)) {
 	// do NOT begin a transaction when the previous transaction has been failed
 	// and it was requested scoped or SkipTransactions called manually.
@@ -2129,7 +2231,7 @@ func (ctx *context) BeginTransaction(pipe func(t *Transaction)) {
 	t := newTransaction(ctx) // it calls this *context, so the overriding with a new pool's New of context.Context wil not work here.
 	defer func() {
 		if err := recover(); err != nil {
-			ctx.Application().Log(errTransactionInterrupted.Format(err).Error())
+			ctx.Application().Logger().Warn(errTransactionInterrupted.Format(err).Error())
 			// complete (again or not , doesn't matters) the scope without loud
 			t.Complete(nil)
 			// we continue as normal, no need to return here*
@@ -2181,7 +2283,7 @@ func (ctx *context) TransactionsSkipped() bool {
 //
 // app.None(...) and app.Routes().Offline(route)/.Online(route, method)
 //
-// Example: https://github.com/kataras/iris/tree/master/_examples/intermediate/route-state
+// Example: https://github.com/kataras/iris/tree/master/_examples/routing/route-state
 //
 // User can get the response by simple using rec := ctx.Recorder(); rec.Body()/rec.StatusCode()/rec.Header().
 //
@@ -2233,13 +2335,13 @@ func (ctx *context) Exec(method string, path string) {
 	}
 }
 
-// Application returns the Iris framework instance which belongs to this context.
+// Application returns the iris app instance which belongs to this context.
 // Worth to notice that this function returns an interface
 // of the Application, which contains methods that are safe
-// to be executed at serve-time. The full framework's fields
+// to be executed at serve-time. The full app's fields
 // and methods are not available here for the developer's safety.
 func (ctx *context) Application() Application {
-	return ctx.framework
+	return ctx.app
 }
 
 //  +--------------------------------------------------------------+

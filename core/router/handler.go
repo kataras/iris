@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package router
 
 import (
@@ -11,7 +7,9 @@ import (
 	"strings"
 
 	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/nettools"
+
+	"github.com/kataras/iris/core/errors"
+	"github.com/kataras/iris/core/netutil"
 	"github.com/kataras/iris/core/router/node"
 )
 
@@ -55,7 +53,7 @@ func (h *routerHandler) addRoute(method, subdomain, path string, handlers contex
 	t := h.getTree(method, subdomain)
 
 	if t == nil {
-		n := make(node.Nodes, 0)
+		n := node.Nodes{}
 		// first time we register a route to this method with this subdomain
 		t = &tree{Method: method, Subdomain: subdomain, Nodes: &n}
 		h.trees = append(h.trees, t)
@@ -70,29 +68,70 @@ func NewDefaultHandler() RequestHandler {
 	return h
 }
 
+// RoutesProvider should be implemented by
+// iteral which contains the registered routes.
+type RoutesProvider interface { // api builder
+	GetRoutes() []*Route
+	GetRoute(routeName string) *Route
+}
+
 func (h *routerHandler) Build(provider RoutesProvider) error {
 	registeredRoutes := provider.GetRoutes()
 	h.trees = h.trees[0:0] // reset, inneed when rebuilding.
 
 	// sort, subdomains goes first.
 	sort.Slice(registeredRoutes, func(i, j int) bool {
-		return len(registeredRoutes[i].Subdomain) >= len(registeredRoutes[j].Subdomain)
+		first, second := registeredRoutes[i], registeredRoutes[j]
+		lsub1 := len(first.Subdomain)
+		lsub2 := len(second.Subdomain)
+
+		firstSlashLen := strings.Count(first.Path, "/")
+		secondSlashLen := strings.Count(second.Path, "/")
+
+		if lsub1 == lsub2 && first.Method == second.Method {
+			if secondSlashLen < firstSlashLen {
+				// fixes order when wildcard root is registered before other wildcard paths
+				return true
+			}
+			if secondSlashLen == firstSlashLen {
+				// fixes order when static path with the same prefix with a wildcard path
+				// is registered after the wildcard path, although this is managed
+				// by the low-level node but it couldn't work if we registered a root level wildcard, this fixes it.
+				if len(first.Tmpl().Params) == 0 {
+					return false
+				}
+				if len(second.Tmpl().Params) == 0 {
+					return true
+				}
+			}
+		}
+
+		// the rest are handled inside the node
+		return lsub1 > lsub2
+
 	})
 
+	rp := errors.NewReporter()
+
 	for _, r := range registeredRoutes {
+		// build the r.Handlers based on begin and done handlers, if any.
+		r.BuildHandlers()
+
 		if r.Subdomain != "" {
 			h.hosts = true
 		}
+
 		// the only "bad" with this is if the user made an error
 		// on route, it will be stacked shown in this build state
 		// and no in the lines of the user's action, they should read
 		// the docs better. Or TODO: add a link here in order to help new users.
 		if err := h.addRoute(r.Method, r.Subdomain, r.Path, r.Handlers); err != nil {
-			return err
+			// node errors:
+			rp.Add("%v -> %s", err, r.String())
 		}
 	}
 
-	return nil
+	return rp.Return()
 }
 
 func (h *routerHandler) HandleRequest(ctx context.Context) {
@@ -134,14 +173,14 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 
 		if h.hosts && t.Subdomain != "" {
 			requestHost := ctx.Host()
-			if nettools.IsLoopbackSubdomain(requestHost) {
+			if netutil.IsLoopbackSubdomain(requestHost) {
 				// this fixes a bug when listening on
 				// 127.0.0.1:8080 for example
 				// and have a wildcard subdomain and a route registered to root domain.
 				continue // it's not a subdomain, it's something like 127.0.0.1 probably
 			}
 			// it's a dynamic wildcard subdomain, we have just to check if ctx.subdomain is not empty
-			if t.Subdomain == DynamicSubdomainIndicator {
+			if t.Subdomain == SubdomainWildcardIndicator {
 				// mydomain.com -> invalid
 				// localhost -> invalid
 				// sub.mydomain.com -> valid
@@ -174,19 +213,22 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 	}
 
 	if ctx.Application().ConfigurationReadOnly().GetFireMethodNotAllowed() {
-		var methodAllowed string
 		for i := range h.trees {
 			t := h.trees[i]
-			methodAllowed = t.Method // keep track of the allowed method of the last checked tree
-			if ctx.Method() != methodAllowed {
-				continue
+			// a bit slower than previous implementation but @kataras let me to apply this change
+			// because it's more reliable.
+			//
+			// if `Configuration#FireMethodNotAllowed` is kept as defaulted(false) then this function will not
+			// run, therefore performance kept as before.
+			if t.Nodes.Exists(path) {
+				// RCF rfc2616 https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
+				// The response MUST include an Allow header containing a list of valid methods for the requested resource.
+				ctx.Header("Allow", t.Method)
+				ctx.StatusCode(http.StatusMethodNotAllowed)
+				return
 			}
 		}
-		// RCF rfc2616 https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
-		// The response MUST include an Allow header containing a list of valid methods for the requested resource.
-		ctx.Header("Allow", methodAllowed)
-		ctx.StatusCode(http.StatusMethodNotAllowed)
-		return
 	}
+
 	ctx.StatusCode(http.StatusNotFound)
 }

@@ -1,0 +1,6 @@
+# These owners will be the default owners for everything in the repo.
+*       @kataras
+*.go    @hiveminded @kataras
+*.md    @hiveminded @kataras
+*.html  @hiveminded @kataras
+*.css   @hiveminded @kataras

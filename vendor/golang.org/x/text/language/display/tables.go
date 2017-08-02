@@ -1018,7 +1018,7 @@ var langHeaders = [252]header{
 			"ikanalimaɲikangɛrɛsikanangilɛkanesipaɲolkanperisanikantubabukanawusa" +
 			"kaninidikanoŋirikanƐndonezikanigibokanitalikanzapɔnekanjavanekankamb" +
 			"ojikankorekanmalɛzikanbirimanikannepalekanolandekanpɛnijabikanpolone" +
-			"kanpɔritigalikanrumanikanirisikanruwandakansomalikansuwɛdikantamulik" +
+			"kanpɔritigalikanrumanikanionikanruwandakansomalikansuwɛdikantamulik" +
 			"antayikanturikikanukɛrɛnikanurudukanwiyɛtinamukanyorubakansiniwakanz" +
 			"ulukan",
 		[]uint16{ // 181 elements
@@ -5904,17 +5904,17 @@ var langHeaders = [252]header{
 		},
 	},
 	{ // ga
-		"AfáirisAbcáisisAivéistisAfracáinisAcáinisAmáirisAragóinisAraibisAsaimisA" +
-			"váirisAidhmirisAsarbaiseáinisBaiscírisBealarúisisBulgáirisBioslaimis" +
-			"BeangáilisTibéidisBriotáinisBoisnisCatalóinisSeisnisSeamóirisCorsaic" +
+		"AfáionAbcáisisAivéistisAfracáinisAcáinisAmáionAragóinisAraibisAsaimisA" +
+			"váionAidhmionAsarbaiseáinisBaiscírisBealarúisisBulgáionBioslaimis" +
+			"BeangáilisTibéidisBriotáinisBoisnisCatalóinisSeisnisSeamóionCorsaic" +
 			"isCraísSeicisSlavais na hEaglaiseSuvaisisBreatnaisDanmhairgisGearmái" +
 			"nisDivéihisSeoinicisGréigisBéarlaEsperantoSpáinnisEastóinisBascaisPe" +
 			"irsisFuláinisFionlainnisFidsisFaróisFraincisFreaslainnis IartharachG" +
 			"aeilgeGaeilge na hAlbanGailísisGuaráinisGúisearáitisManainnisHásaisE" +
-			"abhraisHiondúisMotúis HíríCróitisCriól HáítíochUngáirisAirméinisHeir" +
-			"éirisInterlinguaIndinéisisInterlingueÍogbóisIniúipiaicisIdoÍoslainn" +
+			"abhraisHiondúisMotúis HíríCróitisCriól HáítíochUngáionAirméinisHeir" +
+			"éionInterlinguaIndinéisisInterlingueÍogbóisIniúipiaicisIdoÍoslainn" +
 			"isIodáilisIonúitisSeapáinisIáivisSeoirsisCongóisCiocúisCuainiáimisCa" +
-			"saicisKalaallisutCiméirisCannadaisCóiréisCanúirisCaismírisCoirdisCoi" +
+			"saicisKalaallisutCiméionCannadaisCóiréisCanúionCaismírisCoirdisCoi" +
 			"misCoirnisCirgisisLaidinLucsambuirgisLugandaisLiongáilisLaoisisLiotu" +
 			"áinisLúba-CataingisLaitvisMalagáisisMairsillisMaoraisMacadóinisMail" +
 			"éalaimisMongóilisMaraitisMalaeisMáltaisBurmaisNárúisNdeibéilis an T" +
@@ -5925,21 +5925,21 @@ var langHeaders = [252]header{
 			"hSangóisSiolóinisSlóvaicisSlóivéinisSamóisSeoinisSomáilisAlbáinisSei" +
 			"rbisSuaisisSeasóitisSundaisSualainnisSvahaílisTamailisTeileagúisTáid" +
 			"sícisTéalainnisTigrinisTuircméinisSuáinisTongaisTuircisSongaisTatair" +
-			"isTaihítisUigiúirisÚcráinisUrdúisÚisbéiceastáinisVeindisVítneaimisVo" +
+			"isTaihítisUigiúionÚcráinisUrdúisÚisbéiceastáinisVeindisVítneaimisVo" +
 			"lapükVallúnaisVolaifisCóisisGiúdaisIarúibisSiuáingisSínisSúlúisAdaig" +
-			"éisAidhniúisAcáidisSean-BhéarlaAramaisMapúitsisAstúirisBailísBaváir" +
-			"isBeimbisBuiriáitisBuiginisSeabúáinisMairisSeiricisCoptaisCaisiúibis" +
+			"éisAidhniúisAcáidisSean-BhéarlaAramaisMapúitsisAstúionBailísBaváir" +
+			"isBeimbisBuiriáitisBuiginisSeabúáinisMaionSeiricisCoptaisCaisiúibis" +
 			"TaitaZarmaisSorbais ÍochtarachMeán-OllainnisSean-ÉigiptisMeán-Bhéarl" +
 			"aFilipínisMeán-FhraincisSean-FhraincisFreaslainnis an TuaiscirtFriúi" +
 			"lisAetóipisMeán-Ard-GhearmáinisSean-Ard-GhearmáinisSean-GhréigisGear" +
 			"máinis EilvéiseachUaúisHaicéisHaváisHiondúis FhidsíHilgeanóinisHitis" +
 			"MongaisSorbais UachtarachHúipisIbibisIongúisLojbanIútlainnisCara-Cha" +
 			"lpáisConcáinisCairéilisCurúicisLaidínisPuinseáibis IartharachLiogúir" +
-			"isLiovóinisLombairdisMeindisMeán-GhaeilgeManapúirisMóháicisMairis Ia" +
-			"rtharachIlteangachaMioraindéisMarmhairisGearmáinis ÍochtarachNíobhai" +
+			"isLiovóinisLombairdisMeindisMeán-GhaeilgeManapúionMóháicisMaion Ia" +
+			"rtharachIlteangachaMioraindéisMarmhaionGearmáinis ÍochtarachNíobhai" +
 			"sSean-LochlainnisSútúis an TuaiscirtSean-PheirsisPrúisisCuitséisRoma" +
 			"inisArómáinisSachaisAramais ShamárachSantáilisSicilisAlbainisSean-Gh" +
-			"aeilgeTachelhitSáimis LuleSogdánaisSuiméirisSiricisSiléisisKlingonUd" +
+			"aeilgeTachelhitSáimis LuleSogdánaisSuiméionSiricisSiléisisKlingonUd" +
 			"mairtisTeanga AnaithnidVeinéisisPléimeannais IartharachCailmícisCant" +
 			"ainisSéalainnisZúinisGan ábhar teangeolaíochAraibis ChaighdeánachGea" +
 			"rmáinis OstarachArd-Ghearmáinis EilvéiseachBéarla AstrálachBéarla Ce" +
@@ -6046,10 +6046,10 @@ var langHeaders = [252]header{
 			"DzongkhaEweGreugaisBeurlaEsperantoSpàinntisEastoinisBasgaisPeirsisFu" +
 			"lahFionnlannaisFìdisFàrothaisFraingisFrìoslannais ShiarachGaeilgeGài" +
 			"dhligGailìsisGuaraníGujaratiGaelgHausaEabhraHindisHiri MotuCròthaisi" +
-			"sCrìtheol HaidhtiUngairisAirmeinisHereroInterlinguaInnd-InnsisInterl" +
+			"sCrìtheol HaidhtiUngaionAirmeinisHereroInterlinguaInnd-InnsisInterl" +
 			"ingueIgboYi SichuanInupiaqIdoInnis TìlisEadailtisInuktitutSeapanaisD" +
 			"eàbhanaisCairtbheilisKongoKikuyuKuanyamaCasachaisKalaallisutCmèarKan" +
-			"nadaCoirèanaisKanuriCaismirisCùrdaisKomiCòrnaisCìorgasaisLaideannLug" +
+			"nadaCoirèanaisKanuriCaismionCùrdaisKomiCòrnaisCìorgasaisLaideannLug" +
 			"samburgaisGandaCànan LimburgLingalaLàthoLiotuainisLuba-KatangaLaitbh" +
 			"eisMalagasaisMarshallaisMāoriMasadonaisMalayalamMongolaisMarathiMala" +
 			"idhisMaltaisBurmaisNabhruNdebele ThuathachNeapàlaisNdongaDuitsisNyno" +
@@ -6347,17 +6347,17 @@ var langHeaders = [252]header{
 	},
 	{ // gsw
 		"AfarAbchasischAvestischAfrikaansAkanAmharischAragonesischArabischAssames" +
-			"ischAwarischAymaraAserbaidschanischBaschkirischWiissrussischBulgaari" +
+			"ischAwarischAymaraAserbaidschanischBaschkionchWiissrussischBulgaari" +
 			"schBislamaBambaraBengalischTibeetischBrötoonischBosnischKatalaanisch" +
 			"TschetscheenischChamorroKorsischCreeTschechischChileslawischTschuwas" +
 			"chischWalisischTänischTüütschMalediivischDschongkhaEweGriechischÄngl" +
 			"ischEschperantoSchpanischEestnischBaskischPersischFulFinnischFidschi" +
-			"anischFäröischFranzösischFriesischIirischSchottisch-GäälischGalizisc" +
+			"anischFäröischFranzösischFriesischIionchSchottisch-GäälischGalizisc" +
 			"hGuaraniGujaratiManx-GäälischHaussaHebräischHindiHiri-MotuKroazischH" +
 			"aitischUngarischArmenischHereroInterlinguaIndonesischInterlingueIgbo" +
 			"Sezuanischs YiInupiakIdoIisländischItaliänischInukitutJapanischJavan" +
 			"ischGeorgischKongolesischKikuyu-SchpraachKwanyamaKasachischGröönländ" +
-			"ischKambodschanischKannadaKoreaanischKanuri-SchpraachKaschmirischKur" +
+			"ischKambodschanischKannadaKoreaanischKanuri-SchpraachKaschmionchKur" +
 			"dischKomi-SchpraachKornischKirgiisischLatiinLuxemburgischGanda-Schpr" +
 			"aachLimburgischLingalaLaozischLitauischLubaLettischMadagassischMarsc" +
 			"hallesischMaoriMazedonischMalayalamMongolischMarathiMalaiischMaltesi" +
@@ -6391,7 +6391,7 @@ var langHeaders = [252]header{
 			"aachLadinoLahndanischLambanischLesgischMongoRotse-SchpraachLuba-Lulu" +
 			"aLuiseno-SchpraachLunda-SchpraachLuo-SchpraachLushai-SchpraachMadure" +
 			"sischKhottaMaithiliMakassarischManding-SchpraachMassai-SchpraachMoks" +
-			"chamordwinischMandaresischMende-SchpraachMittelirischMicmac-Schpraac" +
+			"chamordwinischMandaresischMende-SchpraachMittelionchMicmac-Schpraac" +
 			"hMinangkabau-SchpraachMandschurischMeithei-SchpraachMohawk-Schpraach" +
 			"Mossi-SchpraachMehrschpraachigMuskogee-SchpraachMirandesischMarwaris" +
 			"chErzyaNeapolitanischNidertüütschNewarischNias-SchpraachNiue-Schpraa" +
@@ -6400,7 +6400,7 @@ var langHeaders = [252]header{
 			"ersischPampanggan-SchpraachPapiamentoPalauAltpersischPhönikischPonap" +
 			"eanischAltprovenzalischRajasthaniOschterinsel-SchpraachRarotonganisc" +
 			"hZigüünerschpraachAromunischSandawe-SchpraachJakutischSamaritanischS" +
-			"asakSantaliSizilianischSchottischSelkupischAltirischSchan-SchpraachS" +
+			"asakSantaliSizilianischSchottischSelkupischAltionchSchan-SchpraachS" +
 			"idamoSüüd-SamischLule-SamischInari-SamischSkolt-SamischSoninke-Schpr" +
 			"aachSogdischSrananischSerer-SchpraachSukuma-SchpraachSusuSumerischAl" +
 			"tsyrischSyrischTemneTereno-SchpraachTetum-SchpraachTigreTiv-Schpraac" +
@@ -8662,7 +8662,7 @@ var langHeaders = [252]header{
 		"akanliamarikilialabolibyelorisílibiligalilibengalilitshekɛlialemáligelek" +
 			"ilingɛlɛ́salisipanyelipelésanɛlifalansɛ́hausalihindiliongililindonez" +
 			"iigbolitalianolizapɔlizavalikambodzalikoreyalingálalimalezilibilimál" +
-			"inepalɛlifalamálipendzabilipolonɛlipulutugɛ́siliromanilirisíkinyarwa" +
+			"inepalɛlifalamálipendzabilipolonɛlipulutugɛ́siliromanilioníkinyarwa" +
 			"ndalisomalilisuwedɛlitamulilitayelitilikilikrɛniliurduliviyetinámiyo" +
 			"rubalisinwazulu",
 		[]uint16{ // 181 elements
@@ -8826,7 +8826,7 @@ var langHeaders = [252]header{
 		"LiakanLiamharikiArabiBelarusiBulegariBengaliTshekiLizelumaniGilikiLingel" +
 			"esaLihispaniaMpepajemiMfwàlànsaHausaHindiHongiliLindoneziaIgboLitali" +
 			"LiyapaniJavaLikoreyaTshilubaLimalezianepaliolandiLipunjabiMpoloniMpu" +
-			"tulugɛsiLiromaniLirisikinyarwandaLisomaliLisuwidiMtamuiliNtailandiNt" +
+			"tulugɛsiLiromaniLionikinyarwandaLisomaliLisuwidiMtamuiliNtailandiNt" +
 			"ulukiNkraniUrduLiviyetinamuNyorubashinɛNzulu",
 		[]uint16{ // 181 elements
 			// Entry 0 - 3F
@@ -10315,7 +10315,7 @@ var langHeaders = [252]header{
 			"lgariyaAfaan BaangladeshiAfaan BosniyaaAfaan KatalaaAfaan CzechWelis" +
 			"hiffaaAfaan DeenmaarkAfaan JarmaniiAfaan GiriikiIngliffaAfaan Espera" +
 			"ntooAfaan IspeenAfaan IstooniyaAfaan BaskuuAfaan PersiaAfaan Fiilaan" +
-			"diAfaan FaroeseAfaan FaransaayiiAfaan FirisiyaaniAfaan AyirishiiScot" +
+			"diAfaan FaroeseAfaan FaransaayiiAfaan FioniyaaniAfaan AyionhiiScot" +
 			"s GaelicAfaan GalishiiAfaan GuaraniAfaan GujaratiAfaan HebrewAfaan H" +
 			"indiiAfaan CroatianAfaan HangaariInterlinguaAfaan IndoneziyaAyiislan" +
 			"diffaaAfaan XaaliyaaniAfaan JapaniiAfaan JavaAfaan GeorgianAfaan Kan" +
@@ -16844,7 +16844,7 @@ var daLangIdx = []uint16{ // 613 elements
 
 const deLangStr string = "" + // Size: 5600 bytes
 	"AfarAbchasischAvestischAfrikaansAkanAmharischAragonesischArabischAssames" +
-	"ischAwarischAymaraAserbaidschanischBaschkirischWeißrussischBulgarischBis" +
+	"ischAwarischAymaraAserbaidschanischBaschkionchWeißrussischBulgarischBis" +
 	"lamaBambaraBengalischTibetischBretonischBosnischKatalanischTschetschenis" +
 	"chChamorroKorsischCreeTschechischKirchenslawischTschuwaschischWalisischD" +
 	"änischDeutschDhivehiDzongkhaEweGriechischEnglischEsperantoSpanischEstni" +
@@ -16868,7 +16868,7 @@ const deLangStr string = "" + // Size: 5600 bytes
 	"chTunesisches ArabischAfrihiliAghemAinuAkkadischAlabamaAleutischGegischS" +
 	"üd-AltaischAltenglischAngikaAramäischMapudungunAraonaArapahoAlgerisches" +
 	" ArabischArawakMarokkanisches ArabischÄgyptisches ArabischAsuAmerikanisc" +
-	"he GebärdenspracheAsturianischKotavaAwadhiBelutschischBalinesischBairisc" +
+	"he GebärdenspracheAsturianischKotavaAwadhiBelutschischBalinesischBaionc" +
 	"hBasaaBamunBatak TobaGhomalaBedauyeBembaBetawiBenaBafutBadagaWestliches " +
 	"BelutschiBhodschpuriBikolBiniBanjaresischKomBlackfootBishnupriyaBachtiar" +
 	"ischBraj-BhakhaBrahuiBodoAkooseBurjatischBuginesischBuluBlinMedumbaCaddo" +
@@ -16892,7 +16892,7 @@ const deLangStr string = "" + // Size: 5600 bytes
 	"hLivischLakotaLombardischMongoLoziNördliches LuriLettgallischLuba-LuluaL" +
 	"uisenoLundaLuoLushaiLuhyaKlassisches ChinesischLasischMaduresischMafaKho" +
 	"ttaMaithiliMakassarischMalinkeMassaiMabaMokschanischMandaresischMendeMer" +
-	"uMorisyenMittelirischMakhuwa-MeettoMeta’MicmacMinangkabauMandschurischMe" +
+	"uMorisyenMittelionchMakhuwa-MeettoMeta’MicmacMinangkabauMandschurischMe" +
 	"itheiMohawkMossiBergmariMundangMehrsprachigMuskogeeMirandesischMarwariMe" +
 	"ntawaiMyeneErsja-MordwinischMasanderanischMin NanNeapolitanischNamaNiede" +
 	"rdeutschNewariNiasNiueAo-NagaKwasioNgiemboonNogaiAltnordischNovialN’KoNo" +
@@ -16903,7 +16903,7 @@ const deLangStr string = "" + // Size: 5600 bytes
 	"nd-QuechuaRajasthaniRapanuiRarotonganischRomagnolTarifitRomboRomaniRotum" +
 	"anischRussinischRovianaAromunischRwaSandaweJakutischSamaritanischSamburu" +
 	"SasakSantaliSaurashtraNgambaySanguSizilianischSchottischSassarischSüdkur" +
-	"dischSenecaSenaSeriSelkupischKoyra SenniAltirischSamogitischTaschelhitSc" +
+	"dischSenecaSenaSeriSelkupischKoyra SenniAltionchSamogitischTaschelhitSc" +
 	"hanTschadisch-ArabischSidamoSchlesisch (Niederschlesisch)SelayarSüdsamis" +
 	"chLule-SamischInari-SamischSkolt-SamischSoninkeSogdischSrananischSererSa" +
 	"hoSaterfriesischSukumaSusuSumerischKomorischAltsyrischSyrischSchlesisch " +
@@ -17932,7 +17932,7 @@ const fiLangStr string = "" + // Size: 4736 bytes
 	"orazonylänköketšuaradžastanirapanuirarotongaromagnolitarifitromboromanir" +
 	"otumaruteenirovianaaromaniarwasandawejakuuttisamarianarameasamburusasaks" +
 	"antalisauraštringambaysangusisiliaskottisassarinsardieteläkurdisenecasen" +
-	"aseriselkuppikoyraboro sennimuinaisiirisamogiittitašelhitshantšadinarabi" +
+	"aseriselkuppikoyraboro sennimuinaisiionamogiittitašelhitshantšadinarabi" +
 	"asidamosleesiansaksaselayareteläsaameluulajansaameinarinsaamekoltansaame" +
 	"soninkesogdisrananserersahosaterlandinfriisisukumasususumerikomorimuinai" +
 	"ssyyriasyyriasleesiatulutemnetesoterenotetumtigretivtokelautsahuriklingo" +
@@ -22470,7 +22470,7 @@ const noLangStr string = "" + // Size: 4834 bytes
 	"esiskacoliadangmeadygeisktunisisk-arabiskafrihiliaghemainuakkadiskalabam" +
 	"aaleutiskgegisk-albansksøraltaiskgammelengelskangikaarameiskmapudungunar" +
 	"aonaarapahoalgerisk arabiskarawakmarokkansk-arabiskegyptisk arabiskasuam" +
-	"erikansk tegnspråkasturiskkotavaavadhibaluchibalinesiskbairiskbasaabamun" +
+	"erikansk tegnspråkasturiskkotavaavadhibaluchibalinesiskbaionkbasaabamun" +
 	"batak tobaghomalabejabembabetawibenabafutbadagavestbalutsjibhojpuribikol" +
 	"binibanjarkomsiksikabishnupriyabakhtiaribrajbrahuibodoakoseburjatiskbugi" +
 	"nesiskbulublinmedumbacaddokaribiskcayugaatsamcebuanskkigachibchatsjagata" +
@@ -23939,7 +23939,7 @@ var slLangIdx = []uint16{ // 613 elements
 
 const sqLangStr string = "" + // Size: 4427 bytes
 	"afarishtabkazishtafrikanishtakanishtamarishtaragonezishtarabishtasamezis" +
-	"htavarikishtajmarishtazerbajxhanishtbashkirishtbjellorusishtbullgarishtb" +
+	"htavarikishtajmarishtazerbajxhanishtbashkionhtbjellorusishtbullgarishtb" +
 	"islamishtbambarishtbengalishttibetishtbretonishtboshnjakishtkatalonishtç" +
 	"eçenishtkamoroishtkorsikishtçekishtsllavishte kisheçuvashishtuellsishtda" +
 	"nishtgjermanishtdivehishtxhongaishteveishtgreqishtanglishtesperantospanj" +
@@ -23949,7 +23949,7 @@ const sqLangStr string = "" + // Size: 4427 bytes
 	"htarmenishthereroishtinterlinguaindonezishtgjuha oksidentaleigboishtsish" +
 	"uanishtidoishtislandishtitalishtinuktitutishtjaponishtjavanishtgjeorgjis" +
 	"htkikujuishtkuanjamaishtkazakishtkalalisutishtkmerishtkanadishtkoreanish" +
-	"tkanurishtkashmirishtkurdishtkomishtkornishtkirgizishtlatinishtluksembur" +
+	"tkanurishtkashmionhtkurdishtkomishtkornishtkirgizishtlatinishtluksembur" +
 	"gishtgandaishtlimburgishtlingalishtlaosishtlituanishtluba-katangaishtlet" +
 	"onishtmalagezishtmarshallishtmaorishtmaqedonishtmalajalamishtmongolishtm" +
 	"aratishtmalajishtmaltishtbirmanishtnauruishtndebelishte veriorenepalisht" +
@@ -23991,7 +23991,7 @@ const sqLangStr string = "" + // Size: 4427 bytes
 	"amorianishtsiriakishttimneishttesoishttetumishttigreishtklingonishtpisin" +
 	"ishte tokutorokoishttumbukaishttuvaluishttasavakishttuvinianishttamaziat" +
 	"ishte atlase qendroreudmurtishtumbunduishtrutishtvaishtvunxhoishtualseri" +
-	"shtulajtaishtuarajishtuarlpirishtkalmikishtsogishtjangbenishtjembaishtka" +
+	"shtulajtaishtuarajishtuarlpionhtkalmikishtsogishtjangbenishtjembaishtka" +
 	"ntonezishttamaziatishte standarde marokenezunishtnuk ka përmbajtje gjuhë" +
 	"sorezazaishtarabishte standarde modernegjermanishte austriakegjermanisht" +
 	"e zvicerane (dialekti i Alpeve)anglishte australianeanglishte kanadezean" +
@@ -24392,15 +24392,15 @@ var srLatnLangIdx = []uint16{ // 613 elements
 
 const svLangStr string = "" + // Size: 5455 bytes
 	"afarabchaziskaavestiskaafrikaansakanamhariskaaragonesiskaarabiskaassames" +
-	"iskaavariskaaymaraazerbajdzjanskabasjkiriskavitryskabulgariskabislamabam" +
+	"iskaavariskaaymaraazerbajdzjanskabasjkionkavitryskabulgariskabislamabam" +
 	"barabengalitibetanskabretonskabosniskakatalanskatjetjenskachamorrokorsik" +
 	"anskacreetjeckiskakyrkslaviskatjuvasjiskawalesiskadanskatyskadivehidzong" +
 	"khaewegrekiskaengelskaesperantospanskaestniskabaskiskapersiskafulanifins" +
-	"kafijianskafäröiskafranskavästfrisiskairiskaskotsk gäliskagaliciskaguara" +
+	"kafijianskafäröiskafranskavästfrisiskaionkaskotsk gäliskagaliciskaguara" +
 	"nígujaratimanxhausahebreiskahindihirimotukroatiskahaitiskaungerskaarmeni" +
 	"skahererointerlinguaindonesiskainterlingueigboszezuan iinupiakidoisländs" +
 	"kaitalienskainuktitutjapanskajavanesiskageorgiskakikongokikuyukuanyamaka" +
-	"zakiskagrönländskakambodjanskakannadakoreanskakanurikashmiriskakurdiskak" +
+	"zakiskagrönländskakambodjanskakannadakoreanskakanurikashmionkakurdiskak" +
 	"omekorniskakirgisiskalatinluxemburgiskalugandalimburgiskalingalalaotiska" +
 	"litauiskaluba-katangalettiskamalagassiskamarshalliskamaorimakedonskamala" +
 	"yalammongoliskamarathimalajiskamaltesiskaburmesiskanaurunordndebelenepal" +
@@ -24438,7 +24438,7 @@ const svLangStr string = "" + // Size: 5455 bytes
 	"kiskakutenajladinolangilahndalambalezghienlingua franca novaliguriskaliv" +
 	"oniskalakotalombardiskamongolozinordlurilettgalliskaluba-lulualuiseñolun" +
 	"daluolushailuhyalitterär kineiskalaziskamaduresiskamafamagahimaithilimak" +
-	"asarmandemassajiskamabamoksjamandarmendemerumauritansk kreolmedeliriskam" +
+	"asarmandemassajiskamabamoksjamandarmendemerumauritansk kreolmedelionkam" +
 	"akhuwa-meettometa’mi’kmaqminangkabaumanchuriskamanipurimohawkmossivästma" +
 	"riskamundangflera språkmuskogeemirandesiskamarwarimentawaimyeneerjyamaza" +
 	"nderanimin nannapolitanskanamalågtyskanewariskaniasniueanskaao-nagakwasi" +
@@ -24450,7 +24450,7 @@ const svLangStr string = "" + // Size: 5455 bytes
 	"apanuirarotonganskaromagnolriffianskaromboromanirotumänskarusynrovianska" +
 	"arumänskarwasandawejakutiskasamaritanskasamburusasaksantalisaurashtranga" +
 	"mbaysangusicilianskaskotskasassaresisk sardiskasydkurdiskasenecasenaseri" +
-	"selkupGao-songhayforniriskasamogitiskatachelhitshanTchad-arabiskasidamol" +
+	"selkupGao-songhayfornionkasamogitiskatachelhitshanTchad-arabiskasidamol" +
 	"ågsilesiskaselayarsydsamiskalulesamiskaenaresamiskaskoltsamiskasoninkes" +
 	"ogdiskasranan tongoserersahosaterfrisiskasukumasususumeriskashimaoréklas" +
 	"sisk syriskasyriskasilesiskatulutemnetesoterenotetumtigrétivitokelauiska" +
@@ -26210,7 +26210,7 @@ var zhHantLangIdx = []uint16{ // 613 elements
 
 const zuLangStr string = "" + // Size: 4670 bytes
 	"isi-Afarisi-Abkhaziani-Afrikaansisi-Akanisi-Amharicisi-Aragoneseisi-Arab" +
-	"icisi-Assameseisi-Avaricisi-Aymaraisi-Azerbaijaniisi-Bashkirisi-Belarusi" +
+	"icisi-Assameseisi-Avaricisi-Aymaraisi-Azerbaijaniisi-Bashkioni-Belarusi" +
 	"anisi-Bulgarii-Bislamaisi-Bambaraisi-Bengaliisi-Tibetanisi-Bretonisi-Bos" +
 	"nianisi-Catalanisi-Chechenisi-Chamorroisi-Corsicanisi-Czechisi-Church Sl" +
 	"avicisi-Chuvashisi-Welshisi-Danishisi-Germanisi-Divehiisi-Dzongkhaisi-Ew" +
@@ -32983,7 +32983,7 @@ var regionHeaders = [252]header{
 	},
 	{ // bm
 		"AndɔrArabu mara kafoliAfiganistaŋAntiga-ni-BarbudaAngiyaAlibaniArimeniAn" +
-			"golaArizantinSamowa amerikaniOtirisiOsitiraliArubaAzɛrbayjaŋBozni-Ɛr" +
+			"golaArizantinSamowa amerikaniOtioniOsitiraliArubaAzɛrbayjaŋBozni-Ɛr" +
 			"izigoviniBarbadiBɛngiladɛsiBɛlizikiBurukina FasoBuligariBareyiniBuru" +
 			"ndiBenɛnBermudiBurinɛyiBoliviBereziliBahamasiButaŋBɔtisiwanaBelarusi" +
 			"BeliziKanadaKongo ka republiki demɔkratikiSantarafirikiKongoSuwisiKo" +
@@ -36217,7 +36217,7 @@ var regionHeaders = [252]header{
 			"toAn LiotuainLugsamburgAn LaitbheLibiaMorocoMonacoA’ MholdobhaAm Mon" +
 			"adh NeagrachNaomh MàrtainnMadagasgarEileanan MharshallA’ MhasadonMài" +
 			"liMiànmarDùthaich nam MongolMacàthu SAR na SìneNa h-Eileanan Mairian" +
-			"ach a TuathMairtinicMoratàineaMontsaratMaltaNa h-Eileanan Mhoiriseas" +
+			"ach a TuathMairtinicMoratàineaMontsaratMaltaNa h-Eileanan Mhoioneas" +
 			"Na h-Eileanan MhaladaibhMalabhaidhMeagsagoMalaidhseaMòsaimbicAn Nama" +
 			"ibCailleann NuadhNìgeirEilean NorfolkNigèiriaNiocaraguaNa Tìrean Ìsl" +
 			"eNirribhidhNeapàlNabhruNiueSealainn NuadhOmànPanamaPearùPoilinèis na" +
@@ -40233,7 +40233,7 @@ var regionHeaders = [252]header{
 	},
 	{ // rn
 		"AndoraLeta Zunze Ubumwe z’AbarabuAfuganisitaniAntigwa na BaribudaAngwila" +
-			"AlubaniyaArumeniyaAngolaArijantineSamowa nyamerikaOtirisheOsitaraliy" +
+			"AlubaniyaArumeniyaAngolaArijantineSamowa nyamerikaOtionheOsitaraliy" +
 			"aArubaAzerubayijaniBosiniya na HerigozevineBarubadosiBangaladeshiUbu" +
 			"biligiBurukina FasoBuligariyaBahareyiniUburundiBeneBerimudaBuruneyiB" +
 			"oliviyaBureziliBahamasiButaniBotswanaBelausiBelizeKanadaRepubulika I" +

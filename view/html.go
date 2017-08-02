@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package view
 
 import (
@@ -26,6 +22,7 @@ type (
 		namesFn   func() []string                   // for embedded, in combination with directory & extension
 		reload    bool                              // if true, each time the ExecuteWriter is called the templates will be reloaded.
 		// parser configuration
+		options     []string // text options
 		left        string
 		right       string
 		layout      string
@@ -102,6 +99,31 @@ func (s *HTMLEngine) Reload(developmentMode bool) *HTMLEngine {
 	return s
 }
 
+// Option sets options for the template. Options are described by
+// strings, either a simple string or "key=value". There can be at
+// most one equals sign in an option string. If the option string
+// is unrecognized or otherwise invalid, Option panics.
+//
+// Known options:
+//
+// missingkey: Control the behavior during execution if a map is
+// indexed with a key that is not present in the map.
+//	"missingkey=default" or "missingkey=invalid"
+//		The default behavior: Do nothing and continue execution.
+//		If printed, the result of the index operation is the string
+//		"<no value>".
+//	"missingkey=zero"
+//		The operation returns the zero value for the map type's element.
+//	"missingkey=error"
+//		Execution stops immediately with an error.
+//
+func (s *HTMLEngine) Option(opt ...string) *HTMLEngine {
+	s.mu.Lock()
+	s.options = append(s.options, opt...)
+	s.mu.Unlock()
+	return s
+}
+
 // Delims sets the action delimiters to the specified strings, to be used in
 // subsequent calls to Parse, ParseFiles, or ParseGlob. Nested template
 // definitions will inherit the settings. An empty delimiter stands for the
@@ -122,7 +144,7 @@ func (s *HTMLEngine) Delims(left, right string) *HTMLEngine {
 //         // mainLayout.html is inside: "./templates/layouts/".
 //
 // Note: Layout can be changed for a specific call
-// action with the option: "layout" on the Iris' context.Render function.
+// action with the option: "layout" on the iris' context.Render function.
 func (s *HTMLEngine) Layout(layoutFile string) *HTMLEngine {
 	s.layout = layoutFile
 	return s
@@ -183,9 +205,7 @@ func (s *HTMLEngine) loadDirectory() error {
 
 	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if info == nil || info.IsDir() {
-
 		} else {
-
 			rel, err := filepath.Rel(dir, path)
 			if err != nil {
 				templateErr = err
@@ -203,26 +223,23 @@ func (s *HTMLEngine) loadDirectory() error {
 
 				contents := string(buf)
 
-				if err == nil {
-
-					name := filepath.ToSlash(rel)
-					tmpl := s.Templates.New(name)
-
-					if s.middleware != nil {
-						contents, err = s.middleware(name, contents)
-					}
-					if err != nil {
-						templateErr = err
-						return err
-					}
-					s.mu.Lock()
-					// Add our funcmaps.
-					if s.funcs != nil {
-						tmpl.Funcs(s.funcs)
-					}
-
-					tmpl.Funcs(emptyFuncs).Parse(contents)
-					s.mu.Unlock()
+				name := filepath.ToSlash(rel)
+				tmpl := s.Templates.New(name)
+				tmpl.Option(s.options...)
+				if s.middleware != nil {
+					contents, err = s.middleware(name, contents)
+				}
+				if err != nil {
+					templateErr = err
+					return err
+				}
+				s.mu.Lock()
+				// Add our funcmaps.
+				_, err = tmpl.Funcs(emptyFuncs).Funcs(s.funcs).Parse(contents)
+				s.mu.Unlock()
+				if err != nil {
+					templateErr = err
+					return err
 				}
 			}
 
@@ -272,6 +289,7 @@ func (s *HTMLEngine) loadAssets() error {
 			contents := string(buf)
 			name := filepath.ToSlash(rel)
 			tmpl := s.Templates.New(name)
+			tmpl.Option(s.options...)
 
 			if s.middleware != nil {
 				contents, err = s.middleware(name, contents)
@@ -282,11 +300,7 @@ func (s *HTMLEngine) loadAssets() error {
 			}
 
 			// Add our funcmaps.
-			if s.funcs != nil {
-				tmpl.Funcs(s.funcs)
-			}
-
-			tmpl.Funcs(emptyFuncs).Parse(contents)
+			tmpl.Funcs(emptyFuncs).Funcs(s.funcs).Parse(contents)
 		}
 	}
 	return templateErr

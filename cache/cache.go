@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 /* Package cache provides cache capabilities with rich support of options and rules.
 
 Example code:
@@ -11,8 +7,8 @@ Example code:
 		 	"time"
 
 		 	"github.com/kataras/iris"
-		 	"github.com/kataras/iris/cache"
 		 	"github.com/kataras/iris/context"
+		 	"github.com/kataras/iris/cache"
 		 )
 
 		 func main(){
@@ -42,7 +38,7 @@ import (
 // if the expiration <=2 seconds then expiration is taken by the "cache-control's maxage" header
 // returns context.Handler, which you can use as your default router or per-route handler
 //
-// All type of responses are cached, templates, json, text, anything.
+// All types of response can be cached, templates, json, text, anything.
 //
 // You can add validators with this function.
 func Cache(bodyHandler context.Handler, expiration time.Duration) *client.Handler {
@@ -55,9 +51,9 @@ func Cache(bodyHandler context.Handler, expiration time.Duration) *client.Handle
 // if the expiration <=2 seconds then expiration is taken by the "cache-control's maxage" header
 // returns context.Handler, which you can use as your default router or per-route handler
 //
-// All type of responses are cached, templates, json, text, anything.
+// All types of response can be cached, templates, json, text, anything.
 //
-// it returns a context.Handler, for more options use the .Cache .
+// it returns a context.Handler, for more options use the `Cache`
 func WrapHandler(bodyHandler context.Handler, expiration time.Duration) context.Handler {
 	return Cache(bodyHandler, expiration).ServeHTTP
 }
@@ -69,17 +65,18 @@ func WrapHandler(bodyHandler context.Handler, expiration time.Duration) context.
 //
 // It's the same as Cache and WrapHandler but it sets the "bodyHandler" to the next handler in the chain.
 //
-// All type of responses are cached, templates, json, text, anything.
+// All types of response can be cached, templates, json, text, anything.
 //
-// it returns a context.Handler, for more options use the .Cache .
+// it returns a context.Handler which can be used as a middleware, for more options use the `Cache`.
+//
+// Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/#caching
 func Handler(expiration time.Duration) context.Handler {
 	h := WrapHandler(nil, expiration)
 	return h
 }
 
 var (
-	// NoCache called when a particular handler is not valid for cache.
-	// If this function called inside a handler then the handler is not cached
-	// even if it's surrounded with the Cache/CacheFunc/CacheRemote wrappers.
+	// NoCache disables the cache for a particular request,
+	// can be used as a middleware or called manually from the handler.
 	NoCache = client.NoCache
 )

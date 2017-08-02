@@ -430,7 +430,7 @@ func (v *Value) IterateOrder(fn func(idx, count int, key, value *Value) bool, em
 			panic("TODO: handle sort for type string")
 		}
 
-		// TODO(flosch): Not utf8-compatible (utf8-decoding neccessary)
+		// TODO(flosch): Not utf8-compatible (utf8-decoding necessary)
 		charCount := v.getResolvedValue().Len()
 		if charCount > 0 {
 			if reverse {

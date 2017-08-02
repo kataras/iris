@@ -1,13 +1,7 @@
-// Copyright 2017 Gerasimos Maropoulos. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package service
 
 import (
 	"time"
-
-	"github.com/imdario/mergo"
 )
 
 const (
@@ -43,7 +37,7 @@ type Config struct {
 	MaxAgeSeconds int
 }
 
-// DefaultConfig returns the default configuration for Redis service
+// DefaultConfig returns the default configuration for Redis service.
 func DefaultConfig() Config {
 	return Config{
 		Network:       DefaultRedisNetwork,
@@ -56,27 +50,4 @@ func DefaultConfig() Config {
 		Prefix:        "",
 		MaxAgeSeconds: DefaultRedisMaxAgeSeconds,
 	}
-}
-
-// Merge merges the default with the given config and returns the result
-func (c Config) Merge(cfg []Config) (config Config) {
-
-	if len(cfg) > 0 {
-		config = cfg[0]
-		mergo.Merge(&config, c)
-	} else {
-		_default := c
-		config = _default
-	}
-
-	return
-}
-
-// MergeSingle merges the default with the given config and returns the result
-func (c Config) MergeSingle(cfg Config) (config Config) {
-
-	config = cfg
-	mergo.Merge(&config, c)
-
-	return
 }

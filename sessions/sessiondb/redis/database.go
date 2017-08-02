@@ -1,33 +1,30 @@
-// Copyright 2017 Gerasimos Maropoulos. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package redis
 
 import (
 	"bytes"
 	"encoding/gob"
+	"time"
 
 	"github.com/kataras/iris/sessions/sessiondb/redis/service"
 )
 
-// Database the redis database for q sessions
+// Database the redis back-end session database for the sessions.
 type Database struct {
 	redis *service.Service
 }
 
-// New returns a new redis database
+// New returns a new redis database.
 func New(cfg ...service.Config) *Database {
 	return &Database{redis: service.New(cfg...)}
 }
 
-// Config returns the configuration for the redis server bridge, you can change them
+// Config returns the configuration for the redis server bridge, you can change them.
 func (d *Database) Config() *service.Config {
 	return d.redis.Config
 }
 
-// Load loads the values to the underline
-func (d *Database) Load(sid string) map[string]interface{} {
+// Load loads the values to the underline.
+func (d *Database) Load(sid string) (datas map[string]interface{}, expireDate *time.Time) {
 	values := make(map[string]interface{})
 
 	if !d.redis.Connected { //yes, check every first time's session for valid redis connection
@@ -42,6 +39,7 @@ func (d *Database) Load(sid string) map[string]interface{} {
 			}
 		}
 	}
+
 	//fetch the values from this session id and copy-> store them
 	val, err := d.redis.GetBytes(sid)
 	if err == nil {
@@ -49,8 +47,19 @@ func (d *Database) Load(sid string) map[string]interface{} {
 		DeserializeBytes(val, &values)
 	}
 
-	return values
+	datas, _ = values["session-data"].(map[string]interface{})
 
+	dbExpireDateValue, exists := values["expire-date"]
+	if !exists {
+		return
+	}
+
+	expireDateValue, ok := dbExpireDateValue.(time.Time)
+	if !ok {
+		return
+	}
+
+	return datas, &expireDateValue
 }
 
 // serialize the values to be stored as strings inside the Redis, we panic at any serialization error here
@@ -64,11 +73,17 @@ func serialize(values map[string]interface{}) []byte {
 }
 
 // Update updates the real redis store
-func (d *Database) Update(sid string, newValues map[string]interface{}) {
+func (d *Database) Update(sid string, newValues map[string]interface{}, expireDate *time.Time) {
 	if len(newValues) == 0 {
 		go d.redis.Delete(sid)
 	} else {
-		go d.redis.Set(sid, serialize(newValues)) //set/update all the values
+		datas := map[string]interface{}{"session-data": newValues}
+		if expireDate != nil {
+			datas["expire-date"] = *expireDate
+		}
+
+		//set/update all the values
+		go d.redis.Set(sid, serialize(datas))
 	}
 
 }

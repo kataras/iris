@@ -1,7 +1,3 @@
-// Copyright 2017 Gerasimos Maropoulos. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package service
 
 import (
@@ -268,9 +264,12 @@ func (r *Service) Connect() {
 }
 
 // New returns a Redis service filled by the passed config
-// to connect call the .Connect()
+// to connect call the .Connect().
 func New(cfg ...Config) *Service {
-	c := DefaultConfig().Merge(cfg)
+	c := DefaultConfig()
+	if len(cfg) > 0 {
+		c = cfg[0]
+	}
 	r := &Service{pool: &redis.Pool{}, Config: &c}
 	return r
 }

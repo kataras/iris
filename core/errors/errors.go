@@ -1,40 +1,72 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package errors
 
 import (
 	"fmt"
 	"runtime"
+	"strings"
+
+	"github.com/satori/go.uuid"
 )
 
 var (
 	// Prefix the error prefix, applies to each error's message.
 	Prefix = ""
-	// NewLine adds a new line to the end of each error's message
-	// defaults to true
-	NewLine = true
 )
 
 // Error holds the error message, this message never really changes
 type Error struct {
-	message  string
-	appended bool
+	// ID returns the unique id of the error, it's needed
+	// when we want to check if a specific error returned
+	// but the `Error() string` value is not the same because the error may be dynamic
+	// by a `Format` call.
+	ID string `json:"id"`
+	// The message of the error.
+	Message string `json:"message"`
+	// Apennded is true whenever it's a child error.
+	Appended bool `json:"appended"`
+	// Stack returns the list of the errors that are shown at `Error() string`.
+	Stack []Error `json:"stack"` // filled on AppendX.
 }
 
 // New creates and returns an Error with a pre-defined user output message
 // all methods below that doesn't accept a pointer receiver because actually they are not changing the original message
-func New(errMsg string) *Error {
-	if NewLine {
-		errMsg += "\n"
+func New(errMsg string) Error {
+	return Error{
+		ID:      uuid.NewV4().String(),
+		Message: Prefix + errMsg,
 	}
-	return &Error{message: Prefix + errMsg}
+}
+
+// NewFromErr same as `New` but pointer for nil checks without the need of the `Return()` function.
+func NewFromErr(err error) *Error {
+	if err == nil {
+		return nil
+	}
+
+	errp := New(err.Error())
+	return &errp
+}
+
+// Equal returns true if "e" and "e2" are matched, by their IDs.
+// It will always returns true if the "e2" is a children of "e"
+// or the error messages are exactly the same, otherwise false.
+func (e Error) Equal(e2 Error) bool {
+	return e.ID == e2.ID || e.Error() == e2.Error()
+}
+
+// Empty returns true if the "e" Error has no message on its stack.
+func (e Error) Empty() bool {
+	return e.Message == ""
+}
+
+// NotEmpty returns true if the "e" Error has got a non-empty message on its stack.
+func (e Error) NotEmpty() bool {
+	return !e.Empty()
 }
 
 // String returns the error message
 func (e Error) String() string {
-	return e.message
+	return e.Message
 }
 
 // Error returns the message of the actual error
@@ -46,34 +78,53 @@ func (e Error) Error() string {
 // Format returns a formatted new error based on the arguments
 // it does NOT change the original error's message
 func (e Error) Format(a ...interface{}) Error {
-	e.message = fmt.Sprintf(e.message, a...)
+	e.Message = fmt.Sprintf(e.Message, a...)
+	return e
+}
+
+func omitNewLine(message string) string {
+	if strings.HasSuffix(message, "\n") {
+		return message[0 : len(message)-2]
+	} else if strings.HasSuffix(message, "\\n") {
+		return message[0 : len(message)-3]
+	}
+	return message
+}
+
+// AppendInline appends an error to the stack.
+// It doesn't try to append a new line if needed.
+func (e Error) AppendInline(format string, a ...interface{}) Error {
+	msg := fmt.Sprintf(format, a...)
+	e.Message += msg
+	e.Appended = true
+	e.Stack = append(e.Stack, New(omitNewLine(msg)))
 	return e
 }
 
 // Append adds a message to the predefined error message and returns a new error
 // it does NOT change the original error's message
 func (e Error) Append(format string, a ...interface{}) Error {
-	// eCp := *e
-	if NewLine {
-		format += "\n"
+	// if new line is false then append this error but first
+	// we need to add a new line to the first, if it was true then it has the newline already.
+	if e.Message != "" {
+		e.Message += "\n"
 	}
-	e.message += fmt.Sprintf(format, a...)
-	e.appended = true
-	return e
+
+	return e.AppendInline(format, a...)
 }
 
-// AppendErr adds an error's message to the predefined error message and returns a new error
+// AppendErr adds an error's message to the predefined error message and returns a new error.
 // it does NOT change the original error's message
 func (e Error) AppendErr(err error) Error {
 	return e.Append(err.Error())
 }
 
-// IsAppended returns true if the Error instance is created using original's Error.Append/AppendErr func
-func (e Error) IsAppended() bool {
-	return e.appended
+// HasStack returns true if the Error instance is created using Append/AppendInline/AppendErr funcs.
+func (e Error) HasStack() bool {
+	return len(e.Stack) > 0
 }
 
-// With does the same thing as Format but it receives an error type which if it's nil it returns a nil error
+// With does the same thing as Format but it receives an error type which if it's nil it returns a nil error.
 func (e Error) With(err error) error {
 	if err == nil {
 		return nil
@@ -82,15 +133,26 @@ func (e Error) With(err error) error {
 	return e.Format(err.Error())
 }
 
-// Panic output the message and after panics
+// Ignore will ignore the "err" and return nil.
+func (e Error) Ignore(err error) error {
+	if err == nil {
+		return e
+	}
+	if e.Error() == err.Error() {
+		return nil
+	}
+	return e
+}
+
+// Panic output the message and after panics.
 func (e Error) Panic() {
 	_, fn, line, _ := runtime.Caller(1)
-	errMsg := e.message
+	errMsg := e.Message
 	errMsg += "\nCaller was: " + fmt.Sprintf("%s:%d", fn, line)
 	panic(errMsg)
 }
 
-// Panicf output the formatted message and after panics
+// Panicf output the formatted message and after panics.
 func (e Error) Panicf(args ...interface{}) {
 	_, fn, line, _ := runtime.Caller(1)
 	errMsg := e.Format(args...).Error()

@@ -1,32 +1,29 @@
-// Copyright 2017 Gerasimos Maropoulos, ΓΜ. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package editor
 
-//  +------------------------------------------------------------+
-//  | Editor usage                                               |
-//  +------------------------------------------------------------+
-//
-// 	import "github.com/kataras/iris/typescript/editor"
-//  [...]
-//
-//  app := iris.New()
-// 	e := editor.New(editor.Config{})
-// 	e.Attach(app)
-//
-//  [...]
-// 	app.Run(iris.Addr(":8080"))
+/* Package editor provides alm-tools cloud editor automation for the iris web framework.
 
-//
-//  +------------------------------------------------------------+
-//  | General notes for authentication                           |
-//  +------------------------------------------------------------+
-//
-// The Authorization specifies the authentication mechanism (in this case Basic) followed by the username and password.
-// Although, the string aHR0cHdhdGNoOmY= may look encrypted it is simply a base64 encoded version of <username>:<password>.
-// Would be readily available to anyone who could intercept the HTTP request.
+Usage:
 
+
+	import "github.com/kataras/iris/typescript/editor"
+	[...]
+
+	app := iris.New()
+	e := editor.New(editor.Config{})
+	e.Run(app.Logger().Infof)
+
+	[...]
+	app.Run(iris.Addr(":8080"))
+	e.Stop()
+
+
+General notes for authentication
+
+
+The Authorization specifies the authentication mechanism (in this case Basic) followed by the username and password.
+Although, the string aHR0cHdhdGNoOmY= may look encrypted it is simply a base64 encoded version of <username>:<password>.
+Would be readily available to anyone who could intercept the HTTP request.
+*/
 import (
 	"bufio"
 	"io"
@@ -34,8 +31,6 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/core/host"
 	"github.com/kataras/iris/typescript/npm"
 )
 
@@ -55,6 +50,11 @@ type (
 		process     *os.Process
 		debugOutput io.Writer
 	}
+)
+
+var (
+	// NoOpLogger can be used as the logger argument, it prints nothing.
+	NoOpLogger = func(string, ...interface{}) {}
 )
 
 // New creates and returns an Editor Plugin instance
@@ -110,9 +110,9 @@ func (e *Editor) DisableOutput() {
 	e.config.DisableOutput = true
 }
 
-// GetDescription EditorPlugin is a bridge between Iris and the alm-tools, the browser-based IDE for client-side sources.
+// GetDescription EditorPlugin is a bridge between iris and the alm-tools, the browser-based IDE for client-side sources.
 func (e *Editor) GetDescription() string {
-	return "A bridge between Iris and the alm-tools, the browser-based IDE."
+	return "A bridge between iris and the alm-tools, the browser-based IDE."
 }
 
 // we use that editorWriter to prefix the editor's output with "Editor Adaptor: "
@@ -120,9 +120,15 @@ type editorWriter struct {
 	underline io.Writer
 }
 
-// build runs before the server's listens,  creates the listener ( use of port parent hostname:DefaultPort if not exist)
-func (e *Editor) build(s *iris.Application) {
-	e.log = s.Log
+// Run starts the editor's server.
+//
+// Developers should call the `Stop` to shutdown the editor's server when main server will be closed.
+func (e *Editor) Run(logger func(format string, a ...interface{})) {
+	if logger == nil {
+		logger = NoOpLogger
+	}
+
+	e.log = logger
 	if e.config.Hostname == "" {
 		e.config.Hostname = "0.0.0.0"
 	}
@@ -138,8 +144,8 @@ func (e *Editor) build(s *iris.Application) {
 	e.start()
 }
 
-// close kills the editor's server when Iris is closed
-func (e *Editor) close(s *iris.Application) {
+// Stop kills the editor's server.
+func (e *Editor) Stop() {
 	if e.process != nil {
 		err := e.process.Kill()
 		if err != nil {
@@ -209,14 +215,4 @@ func (e *Editor) start() {
 
 	// no need, alm-tools post these
 	// e.logger.Printf("Editor is running at %s:%d | %s", e.config.Hostname, e.config.Port, e.config.WorkingDir)
-}
-
-// Attach adapts the editor to one or more Iris instance(s).
-func (e *Editor) Attach(app *iris.Application) {
-
-	e.build(app)
-
-	app.Scheduler.Schedule(host.OnInterrupt(func(proc host.TaskProcess) {
-		e.close(app)
-	}))
 }
