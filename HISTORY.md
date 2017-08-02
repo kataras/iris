@@ -22,7 +22,7 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 - Add `Option` function to the `html view engine`: https://github.com/kataras/iris/issues/694
 - Fix sessions backend databases restore expiration: https://github.com/kataras/iris/issues/692 by @corebreaker
-- Add `PartyFunc`, same as `Party` but receives a function with the sub router as its argument instead
+- Add `PartyFunc`, same as `Party` but receives a function with the sub router as its argument instead [GO1.9 Users-ONLY]
 
 # Mo, 31 July 2017 | v8.1.2
 

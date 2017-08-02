@@ -5,6 +5,7 @@ package iris
 import (
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/host"
+	"github.com/kataras/iris/core/router"
 )
 
 // TODO: When go 1.9 will be released
@@ -40,4 +41,12 @@ type (
 	// Used to add supervisor configurators on common Runners
 	// without the need of importing the `core/host` package.
 	Supervisor = host.Supervisor
+
+	// Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
+	// Party could also be named as 'Join' or 'Node' or 'Group' , Party chosen because it is fun.
+	//
+	// Look the `core/router#APIBuilder` for its implementation.
+	//
+	// A shortcut for the `core/router#Party`, useful when `PartyFunc` is being used.
+	Party = router.Party
 )
