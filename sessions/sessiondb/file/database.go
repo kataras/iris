@@ -110,7 +110,7 @@ func (d *Database) Update(sid string, newValues map[string]interface{}, expireDa
 	}
 }
 
-// SerializeBytes serializes the "m" into bytes using gob encoder and and returns the result.
+// SerializeBytes serializes the "m" into bytes using gob encoder and returns the result.
 func SerializeBytes(m interface{}) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	enc := gob.NewEncoder(buf)
