@@ -7,15 +7,20 @@ import (
 	"github.com/kataras/iris/context"
 
 	"github.com/kataras/iris/sessions"
-	"github.com/kataras/iris/sessions/sessiondb/file"
+	"github.com/kataras/iris/sessions/sessiondb/boltdb"
 )
 
 func main() {
-	db, _ := file.New("./sessions/", 0666)
+	db, _ := boltdb.New("./sessions/sessions.db", 0666, "users")
+
+	// close and unlock the database when control+C/cmd+C pressed
+	iris.RegisterOnInterrupt(func() {
+		db.Close()
+	})
 
 	sess := sessions.New(sessions.Config{
 		Cookie:  "sessionscookieid",
-		Expires: 45 * time.Minute, // <=0 means unlimited life
+		Expires: 1 * time.Minute, // <=0 means unlimited life
 	})
 
 	//

@@ -16,7 +16,7 @@ type (
 	// Entry is the entry of the context storage Store - .Values()
 	Entry struct {
 		Key       string
-		value     interface{}
+		ValueRaw  interface{}
 		immutable bool // if true then it can't change by its caller.
 	}
 
@@ -29,7 +29,7 @@ type (
 func (e Entry) Value() interface{} {
 	if e.immutable {
 		// take its value, no pointer even if setted with a rreference.
-		vv := reflect.Indirect(reflect.ValueOf(e.value))
+		vv := reflect.Indirect(reflect.ValueOf(e.ValueRaw))
 
 		// return copy of that slice
 		if vv.Type().Kind() == reflect.Slice {
@@ -48,18 +48,16 @@ func (e Entry) Value() interface{} {
 		// if was *value it will return value{}.
 		return vv.Interface()
 	}
-	return e.value
+	return e.ValueRaw
 }
 
-// the id is immutable(true or false)+key
-// so the users will be able to use the same key
-// to store two different entries (one immutable and other mutable).
-// or no? better no, that will confuse and maybe result on unexpected results.
-// I will just replace the value and the immutable bool value when Set if
-// a key is already exists.
-// func (e Entry) identifier() string {}
-
-func (r *Store) save(key string, value interface{}, immutable bool) {
+// Save same as `Set`
+// However, if "immutable" is true then saves it as immutable (same as `SetImmutable`).
+//
+//
+// Returns the entry and true if it was just inserted, meaning that
+// it will return the entry and a false boolean if the entry exists and it has been updated.
+func (r *Store) Save(key string, value interface{}, immutable bool) (Entry, bool) {
 	args := *r
 	n := len(args)
 
@@ -71,15 +69,15 @@ func (r *Store) save(key string, value interface{}, immutable bool) {
 				// if called by `SetImmutable`
 				// then allow the update, maybe it's a slice that user wants to update by SetImmutable method,
 				// we should allow this
-				kv.value = value
+				kv.ValueRaw = value
 				kv.immutable = immutable
 			} else if kv.immutable == false {
 				// if it was not immutable then user can alt it via `Set` and `SetImmutable`
-				kv.value = value
+				kv.ValueRaw = value
 				kv.immutable = immutable
 			}
 			// else it was immutable and called by `Set` then disallow the update
-			return
+			return *kv, false
 		}
 	}
 
@@ -89,25 +87,29 @@ func (r *Store) save(key string, value interface{}, immutable bool) {
 		args = args[:n+1]
 		kv := &args[n]
 		kv.Key = key
-		kv.value = value
+		kv.ValueRaw = value
 		kv.immutable = immutable
 		*r = args
-		return
+		return *kv, true
 	}
 
 	// add
 	kv := Entry{
 		Key:       key,
-		value:     value,
+		ValueRaw:  value,
 		immutable: immutable,
 	}
 	*r = append(args, kv)
+	return kv, true
 }
 
 // Set saves a value to the key-value storage.
+// Returns the entry and true if it was just inserted, meaning that
+// it will return the entry and a false boolean if the entry exists and it has been updated.
+//
 // See `SetImmutable` and `Get`.
-func (r *Store) Set(key string, value interface{}) {
-	r.save(key, value, false)
+func (r *Store) Set(key string, value interface{}) (Entry, bool) {
+	return r.Save(key, value, false)
 }
 
 // SetImmutable saves a value to the key-value storage.
@@ -116,10 +118,13 @@ func (r *Store) Set(key string, value interface{}) {
 // An Immutable entry should be only changed with a `SetImmutable`, simple `Set` will not work
 // if the entry was immutable, for your own safety.
 //
+// Returns the entry and true if it was just inserted, meaning that
+// it will return the entry and a false boolean if the entry exists and it has been updated.
+//
 // Use it consistently, it's far slower than `Set`.
 // Read more about muttable and immutable go types: https://stackoverflow.com/a/8021081
-func (r *Store) SetImmutable(key string, value interface{}) {
-	r.save(key, value, true)
+func (r *Store) SetImmutable(key string, value interface{}) (Entry, bool) {
+	return r.Save(key, value, true)
 }
 
 // Get returns the entry's value based on its key.
@@ -204,4 +209,10 @@ func (r *Store) Reset() {
 func (r *Store) Len() int {
 	args := *r
 	return len(args)
+}
+
+// Serialize returns the byte representation of the current Store.
+func (r Store) Serialize() []byte { // note: no pointer here, ignore linters if shows up.
+	b, _ := GobSerialize(r)
+	return b
 }

@@ -3,7 +3,6 @@ package sessions
 import (
 	"strconv"
 	"sync"
-	"time"
 
 	"github.com/kataras/iris/core/errors"
 	"github.com/kataras/iris/core/memstore"
@@ -27,8 +26,7 @@ type (
 		// NOTE: flashes are not managed by third-party, only inside session struct.
 		flashes  map[string]*flashMessage
 		mu       sync.RWMutex
-		expireAt *time.Time // nil pointer means no expire date
-		timer    *time.Timer
+		lifetime LifeTime
 		provider *provider
 	}
 
@@ -47,22 +45,6 @@ func (s *Session) ID() string {
 // IsNew returns true if is's a new session
 func (s *Session) IsNew() bool {
 	return s.isNew
-}
-
-// HasExpireDate test if this session has an expire date, if not, this session never expires
-func (s *Session) HasExpireDate() bool {
-	return s.expireAt != nil
-}
-
-// GetExpireDate get the expire date, if this session has no expire date, the returned value has the zero value
-func (s *Session) GetExpireDate() time.Time {
-	var res time.Time
-
-	if s.expireAt != nil {
-		res = *s.expireAt
-	}
-
-	return res
 }
 
 // Get returns a value based on its "key".
@@ -281,16 +263,34 @@ func (s *Session) VisitAll(cb func(k string, v interface{})) {
 }
 
 func (s *Session) set(key string, value interface{}, immutable bool) {
+	action := ActionCreate // defaults to create, means the first insert.
+
 	s.mu.Lock()
-	if immutable {
-		s.values.SetImmutable(key, value)
-	} else {
-		s.values.Set(key, value)
-	}
+	isFirst := s.values.Len() == 0
+	entry, isNew := s.values.Save(key, value, immutable)
+	s.isNew = false
+
 	s.mu.Unlock()
 
-	s.updateDatabases()
-	s.isNew = false
+	if !isFirst {
+		// we could use s.isNew
+		// which is setted at sessions.go#Start when values are empty
+		// but here we want the specific key-value pair's state.
+		if isNew {
+			action = ActionInsert
+		} else {
+			action = ActionUpdate
+		}
+	}
+
+	/// TODO: remove the expireAt pointer, wtf, we could use zero time instead,
+	// that was not my commit so I will ask for permission first...
+	// rename the expireAt to expiresAt, it seems to make more sense to me
+
+	p := acquireSyncPayload(s, action)
+	p.Value = entry
+
+	syncDatabases(s.provider.databases, p)
 }
 
 // Set fills the session with an entry"value", based on its "key".
@@ -339,18 +339,16 @@ func (s *Session) SetFlash(key string, value interface{}) {
 func (s *Session) Delete(key string) bool {
 	s.mu.Lock()
 	removed := s.values.Remove(key)
-	s.mu.Unlock()
-
-	s.updateDatabases()
 	if removed {
 		s.isNew = false
 	}
+	s.mu.Unlock()
+
+	p := acquireSyncPayload(s, ActionDelete)
+	p.Value = memstore.Entry{Key: key}
+	syncDatabases(s.provider.databases, p)
 
 	return removed
-}
-
-func (s *Session) updateDatabases() {
-	s.provider.updateDatabases(s, s.values)
 }
 
 // DeleteFlash removes a flash message by its key.
@@ -364,10 +362,11 @@ func (s *Session) DeleteFlash(key string) {
 func (s *Session) Clear() {
 	s.mu.Lock()
 	s.values.Reset()
+	s.isNew = false
 	s.mu.Unlock()
 
-	s.updateDatabases()
-	s.isNew = false
+	p := acquireSyncPayload(s, ActionClear)
+	syncDatabases(s.provider.databases, p)
 }
 
 // ClearFlashes removes all flash messages.

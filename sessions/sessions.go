@@ -36,7 +36,7 @@ func (s *Sessions) UseDatabase(db Database) {
 }
 
 // updateCookie gains the ability of updating the session browser cookie to any method which wants to update it
-func (s *Sessions) updateCookie(sid string, ctx context.Context, expires time.Duration) {
+func (s *Sessions) updateCookie(ctx context.Context, sid string, expires time.Duration) {
 	cookie := &http.Cookie{}
 
 	// The RFC makes no mention of encoding url value, so here I think to encode both sessionid key and the value using the safe(to put and to use as cookie) url-encoding
@@ -107,9 +107,9 @@ func (s *Sessions) Start(ctx context.Context) *Session {
 		sid := s.config.SessionIDGenerator()
 
 		sess := s.provider.Init(sid, s.config.Expires)
-		sess.isNew = len(sess.values) == 0
+		sess.isNew = sess.values.Len() == 0
 
-		s.updateCookie(sid, ctx, s.config.Expires)
+		s.updateCookie(ctx, sid, s.config.Expires)
 
 		return sess
 	}
@@ -119,18 +119,20 @@ func (s *Sessions) Start(ctx context.Context) *Session {
 	return sess
 }
 
-// ShiftExpiraton move the expire date of a session to a new date by using session default timeout configuration
+// ShiftExpiraton move the expire date of a session to a new date
+// by using session default timeout configuration.
 func (s *Sessions) ShiftExpiraton(ctx context.Context) {
 	s.UpdateExpiraton(ctx, s.config.Expires)
 }
 
-// UpdateExpiraton change expire date of a session to a new date by using timeout value passed by `expires` parameter
+// UpdateExpiraton change expire date of a session to a new date
+// by using timeout value passed by `expires` receiver.
 func (s *Sessions) UpdateExpiraton(ctx context.Context, expires time.Duration) {
 	cookieValue := s.decodeCookieValue(GetCookie(ctx, s.config.Cookie))
 
 	if cookieValue != "" {
 		if s.provider.UpdateExpiraton(cookieValue, expires) {
-			s.updateCookie(cookieValue, ctx, expires)
+			s.updateCookie(ctx, cookieValue, expires)
 		}
 	}
 }

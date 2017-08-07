@@ -26,7 +26,6 @@ func Configurator(app *iris.Application) {
 	}()
 
 	app.Get("/counter", func(ctx context.Context) {
-		ctx.Header("Content-Type", "text/plain")
 		ctx.Writef("Counter value = %d", counterValue)
 	})
 }

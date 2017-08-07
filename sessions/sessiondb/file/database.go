@@ -1,128 +1,214 @@
 package file
 
 import (
-	"bytes"
-	"encoding/gob"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/kataras/golog"
+	"github.com/kataras/iris/core/errors"
+	"github.com/kataras/iris/sessions"
 )
 
+// DefaultFileMode used as the default database's "fileMode"
+// for creating the sessions directory path, opening and write the session file.
 var (
-	// PathFileMode for creating the sessions directory path, opening and write the session file.
-	// Defaults to 0666.
-	PathFileMode uint32 = 0666
+	DefaultFileMode = 0666
 )
 
 // Database is the basic file-storage session database.
+//
+// What it does
+// It removes old(expired) session files, at init (`Cleanup`).
+// It creates a session file on the first inserted key-value session data.
+// It removes a session file on destroy.
+// It sync the session file to the session's memstore on any other action (insert, delete, clear).
+// It automatically remove the session files on runtime when a session is expired.
+//
+// Remember: sessions are not a storage for large data, everywhere: on any platform on any programming language.
 type Database struct {
-	path string
+	dir      string
+	fileMode os.FileMode // defaults to 0666 if missing.
+	// if true then it will use go routines to:
+	// append or re-write a file
+	// create a file
+	// remove a file
+	async bool
 }
 
-// New returns a new file-storage database instance based on the "path".
-func New(path string) *Database {
-	lindex := path[len(path)-1]
+// New creates and returns a new file-storage database instance based on the "path".
+// It will remove any old session files.
+func New(directoryPath string, fileMode os.FileMode) (*Database, error) {
+	lindex := directoryPath[len(directoryPath)-1]
 	if lindex != os.PathSeparator && lindex != '/' {
-		path += string(os.PathSeparator)
+		directoryPath += string(os.PathSeparator)
 	}
+
+	if fileMode <= 0 {
+		fileMode = os.FileMode(DefaultFileMode)
+	}
+
 	// create directories if necessary
-	os.MkdirAll(path, os.FileMode(PathFileMode))
-	return &Database{path: path}
+	if err := os.MkdirAll(directoryPath, fileMode); err != nil {
+		return nil, err
+	}
+
+	db := &Database{dir: directoryPath, fileMode: fileMode}
+	return db, db.Cleanup()
 }
 
-func (d *Database) sessPath(sid string) string {
-	return filepath.Join(d.path, sid)
+// Cleanup removes any invalid(have expired) session files, it's being called automatically on `New` as well.
+func (db *Database) Cleanup() error {
+	return filepath.Walk(db.dir, func(path string, info os.FileInfo, err error) error {
+		if info.IsDir() {
+			return nil
+		}
+		sessPath := path
+		storeDB, _ := db.load(sessPath) // we don't care about errors here, the file may be not a session a file at all.
+		if storeDB.Lifetime.HasExpired() {
+			os.Remove(path)
+		}
+		return nil
+	})
 }
 
-// Load loads the values to the underline
-func (d *Database) Load(sid string) (values map[string]interface{}, expireDate *time.Time) {
-	sessPath := d.sessPath(sid)
-	f, err := os.OpenFile(sessPath, os.O_RDONLY, os.FileMode(PathFileMode))
+// FileMode for creating the sessions directory path, opening and write the session file.
+//
+// Defaults to 0666.
+func (db *Database) FileMode(fileMode uint32) *Database {
+	db.fileMode = os.FileMode(fileMode)
+	return db
+}
+
+// Async if true passed then it will use go routines to:
+// append or re-write a file
+// create a file
+// remove a file.
+//
+// Defaults to false.
+func (db *Database) Async(useGoRoutines bool) *Database {
+	db.async = useGoRoutines
+	return db
+}
+
+func (db *Database) sessPath(sid string) string {
+	return filepath.Join(db.dir, sid)
+}
+
+// Load loads the values from the storage and returns them
+func (db *Database) Load(sid string) sessions.RemoteStore {
+	sessPath := db.sessPath(sid)
+	store, err := db.load(sessPath)
+	if err != nil {
+		golog.Error(err.Error())
+	}
+	return store
+}
+
+func (db *Database) load(fileName string) (storeDB sessions.RemoteStore, loadErr error) {
+	f, err := os.OpenFile(fileName, os.O_RDONLY, db.fileMode)
 
 	if err != nil {
-		// we don't care if filepath doesn't exists yet, it will be created on Update.
+		// we don't care if filepath doesn't exists yet, it will be created later on.
 		return
 	}
 
 	defer f.Close()
 
-	val, err := ioutil.ReadAll(f)
+	contents, err := ioutil.ReadAll(f)
 
 	if err != nil {
-		// we don't care if filepath doesn't exists yet, it will be created on Update.
-		golog.Errorf("error while reading the session file's data: %v", err)
+		loadErr = errors.New("error while reading the session file's data: %v").Format(err)
 		return
 	}
 
-	if err == nil {
-		err = DeserializeBytes(val, &values)
-		if err != nil { // we care for this error only
-			golog.Errorf("load error: %v", err)
-		}
-	}
+	storeDB, err = sessions.DecodeRemoteStore(contents)
 
-	return // no expiration
-}
-
-// serialize the values to be stored as strings inside the session file-storage.
-func serialize(values map[string]interface{}) []byte {
-	val, err := SerializeBytes(values)
-	if err != nil {
-		golog.Errorf("serialize error: %v", err)
-	}
-
-	return val
-}
-
-func (d *Database) expireSess(sid string) {
-	go os.Remove(d.sessPath(sid))
-}
-
-// Update updates the session file-storage.
-func (d *Database) Update(sid string, newValues map[string]interface{}, expireDate *time.Time) {
-
-	if len(newValues) == 0 { // means delete by call
-		d.expireSess(sid)
+	if err != nil { // we care for this error only
+		loadErr = errors.New("load error: %v").Format(err)
 		return
 	}
 
-	// delete the file on expiration
-	if expireDate != nil && !expireDate.IsZero() {
-		now := time.Now()
+	return
+}
 
-		if expireDate.Before(now) {
-			// already expirated, delete it now and return.
-			d.expireSess(sid)
-			return
+// Sync syncs the database.
+func (db *Database) Sync(p sessions.SyncPayload) {
+	if db.async {
+		go db.sync(p)
+	} else {
+		db.sync(p)
+	}
+}
+
+func (db *Database) sync(p sessions.SyncPayload) {
+
+	// if destroy then remove the file from the disk
+	if p.Action == sessions.ActionDestroy {
+		if err := db.destroy(p.SessionID); err != nil {
+			golog.Errorf("error while destroying and removing the session file: %v", err)
 		}
-		// otherwise set a timer to delete the file automatically
-		afterDur := expireDate.Sub(now)
-		time.AfterFunc(afterDur, func() {
-			d.expireSess(sid)
-		})
+		return
 	}
 
-	if err := ioutil.WriteFile(d.sessPath(sid), serialize(newValues), os.FileMode(PathFileMode)); err != nil {
-		golog.Errorf("error while writing the session to the file: %v", err)
+	if err := db.override(p.SessionID, p.Store); err != nil {
+		golog.Errorf("error while writing the session file: %v", err)
 	}
+
 }
 
-// SerializeBytes serializes the "m" into bytes using gob encoder and returns the result.
-func SerializeBytes(m interface{}) ([]byte, error) {
-	buf := new(bytes.Buffer)
-	enc := gob.NewEncoder(buf)
-	err := enc.Encode(m)
-	if err == nil {
-		return buf.Bytes(), nil
+// good idea but doesn't work, it is not just an array of entries
+// which can be appended with the gob...anyway session data should be small so we don't have problem
+// with that:
+
+// on insert new data, it appends to the file
+// func (db *Database) insert(sid string, entry memstore.Entry) error {
+// 	f, err := os.OpenFile(
+// 		db.sessPath(sid),
+// 		os.O_WRONLY|os.O_CREATE|os.O_RDWR|os.O_APPEND,
+// 		db.fileMode,
+// 	)
+
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	if _, err := f.Write(serializeEntry(entry)); err != nil {
+// 		f.Close()
+// 		return err
+// 	}
+
+// 	return f.Close()
+// }
+
+// removes all entries but keeps the file.
+// func (db *Database) clearAll(sid string) error {
+// 	return ioutil.WriteFile(
+// 		db.sessPath(sid),
+// 		[]byte{},
+// 		db.fileMode,
+// 	)
+// }
+
+// on update, remove and clear, it re-writes the file to the current values(may empty).
+func (db *Database) override(sid string, store sessions.RemoteStore) error {
+	s, err := store.Serialize()
+	if err != nil {
+		return err
 	}
-	return nil, err
+	return ioutil.WriteFile(
+		db.sessPath(sid),
+		s,
+		db.fileMode,
+	)
 }
 
-// DeserializeBytes converts the bytes to a go value and puts that to "m" using the gob decoder.
-func DeserializeBytes(b []byte, m interface{}) error {
-	dec := gob.NewDecoder(bytes.NewBuffer(b))
-	return dec.Decode(m) //no reference here otherwise doesn't work because of go remote object
+// on destroy, it removes the file
+func (db *Database) destroy(sid string) error {
+	return db.expireSess(sid)
+}
+
+func (db *Database) expireSess(sid string) error {
+	sessPath := db.sessPath(sid)
+	return os.Remove(sessPath)
 }

@@ -7,7 +7,7 @@ go:
   - tip
 go_import_path: github.com/kataras/iris
 install:
-  - go get ./... # for iris-contrib/httpexpect and kataras/golog
+  - go get ./... # for iris-contrib/httpexpect, kataras/golog, boltdb/bolt(sessiondb, optional)
 script:
   - go test -v -cover ./...
 after_script:
