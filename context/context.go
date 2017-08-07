@@ -628,13 +628,13 @@ type Context interface {
 	// BUT it isn't available by browsing, its handlers executed only when other handler's context call them
 	// it can validate paths, has sessions, path parameters and all.
 	//
-	// You can find the Route by app.Routes().Lookup("theRouteName")
+	// You can find the Route by app.GetRoute("theRouteName")
 	// you can set a route name as: myRoute := app.Get("/mypath", handler)("theRouteName")
 	// that will set a name to the route and returns its RouteInfo instance for further usage.
 	//
 	// It doesn't changes the global state, if a route was "offline" it remains offline.
 	//
-	// app.None(...) and app.Routes().Offline(route)/.Online(route, method)
+	// app.None(...) and app.GetRoutes().Offline(route)/.Online(route, method)
 	//
 	// Example: https://github.com/kataras/iris/tree/master/_examples/routing/route-state
 	//
@@ -2296,13 +2296,13 @@ func (ctx *context) TransactionsSkipped() bool {
 // BUT it isn't available by browsing, its handlers executed only when other handler's context call them
 // it can validate paths, has sessions, path parameters and all.
 //
-// You can find the Route by app.Routes().Lookup("theRouteName")
+// You can find the Route by app.GetRoute("theRouteName")
 // you can set a route name as: myRoute := app.Get("/mypath", handler)("theRouteName")
 // that will set a name to the route and returns its RouteInfo instance for further usage.
 //
 // It doesn't changes the global state, if a route was "offline" it remains offline.
 //
-// app.None(...) and app.Routes().Offline(route)/.Online(route, method)
+// app.None(...) and app.GetRoutes().Offline(route)/.Online(route, method)
 //
 // Example: https://github.com/kataras/iris/tree/master/_examples/routing/route-state
 //

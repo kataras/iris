@@ -194,9 +194,10 @@ iris session manager lives on its own [package](https://github.com/kataras/iris/
 - [Standalone](sessions/standalone/main.go)
 - [Secure Cookie](sessions/securecookie/main.go)
 - [Flash Messages](sessions/flash-messages/main.go)
-- [Database](sessions/database)
-    * [Redis](sessions/database/redis/main.go)
+- [Databases](sessions/database)
     * [File](sessions/database/file/main.go)
+    * [BoltDB](sessions/database/boltdb/main.go)
+    * [Redis](sessions/database/redis/main.go)
 
 > You're free to use your own favourite sessions package if you'd like so.
 

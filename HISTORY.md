@@ -18,6 +18,72 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+# Mo, 07 August 2017 | v8.2.0
+
+No Common-API Changes.
+
+Good news for [iris sessions back-end databases](_examples/sessions) users.
+
+<details>
+<summary>Info for session database authors</summary>
+Session Database API Changed to:
+
+```go
+type Database interface {
+	Load(sid string) RemoteStore
+	Sync(p SyncPayload)
+}
+
+// SyncPayload reports the state of the session inside a database sync action.
+type SyncPayload struct {
+	SessionID string
+
+	Action Action
+	// on insert it contains the new key and the value
+	// on update it contains the existing key and the new value
+	// on delete it contains the key (the value is nil)
+	// on clear it contains nothing (empty key, value is nil)
+	// on destroy it contains nothing (empty key, value is nil)
+	Value memstore.Entry
+	// Store contains the whole memory store, this store
+	// contains the current, updated from memory calls,
+	// session data (keys and values). This way
+	// the database has access to the whole session's data
+	// every time.
+	Store RemoteStore
+}
+
+
+// RemoteStore is a helper which is a wrapper
+// for the store, it can be used as the session "table" which will be
+// saved to the session database.
+type RemoteStore struct {
+	// Values contains the whole memory store, this store
+	// contains the current, updated from memory calls,
+	// session data (keys and values). This way
+	// the database has access to the whole session's data
+	// every time.
+	Values memstore.Store
+	// on insert it contains the expiration datetime
+	// on update it contains the new expiration datetime(if updated or the old one)
+	// on delete it will be zero
+	// on clear it will be zero
+	// on destroy it will be zero
+	Lifetime LifeTime
+}
+```
+
+Read more at [sessions/database.go](sessions/database.go), view how three built'n session databases are being implemented [here](sessions/sessiondb).
+</details> 
+
+All sessions databases are updated and they performant even faster than before.
+
+- **NEW** raw file-based session database implemented, example [here](_examples/sessions/database/file)
+- **NEW** [boltdb-based](https://github.com/boltdb/bolt) session database implemented, example [here](_examples/sessions/database/boltdb) (recommended as it's safer and faster)
+- [redis sessiondb](_examples/sessions/database/redis) updated to the latest api
+
+Under the cover, session database works entirely differently than before but nothing changed from the user's perspective, so upgrade with `go get -u github.com/kataras/iris` and sleep well.
+
 # Tu, 01 August 2017 | v8.1.3
 
 - Add `Option` function to the `html view engine`: https://github.com/kataras/iris/issues/694

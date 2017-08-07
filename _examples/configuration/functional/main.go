@@ -16,9 +16,9 @@ func main() {
 	// Prefix: "With", code editors will help you navigate through all
 	// configuration options without even a glitch to the documentation.
 
-	app.Run(iris.Addr(":8080"), iris.WithoutBanner, iris.WithCharset("UTF-8"))
+	app.Run(iris.Addr(":8080"), iris.WithoutStartupLog, iris.WithCharset("UTF-8"))
 
 	// or before run:
-	// app.Configure(iris.WithoutBanner, iris.WithCharset("UTF-8"))
+	// app.Configure(iris.WithoutStartupLog, iris.WithCharset("UTF-8"))
 	// app.Run(iris.Addr(":8080"))
 }

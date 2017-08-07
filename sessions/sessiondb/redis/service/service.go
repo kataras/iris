@@ -42,21 +42,21 @@ func (r *Service) CloseConnection() error {
 	return ErrRedisClosed
 }
 
-// Set sets to the redis
-// key string, value string, you can use utils.Serialize(&myobject{}) to convert an object to []byte
-func (r *Service) Set(key string, value []byte) (err error) { // map[interface{}]interface{}) (err error) {
+// Set sets a key-value to the redis store.
+// The expiration is setted by the MaxAgeSeconds.
+func (r *Service) Set(key string, value interface{}) error {
 	c := r.pool.Get()
 	defer c.Close()
-	if err = c.Err(); err != nil {
-		return
+	if c.Err() != nil {
+		return c.Err()
 	}
-	_, err = c.Do("SETEX", r.Config.Prefix+key, r.Config.MaxAgeSeconds, value)
-	return
+
+	_, err := c.Do("SETEX", r.Config.Prefix+key, r.Config.MaxAgeSeconds, value)
+	return err
 }
 
 // Get returns value, err by its key
-// you can use utils.Deserialize((.Get("yourkey"),&theobject{})
-//returns nil and a filled error if something wrong happens
+//returns nil and a filled error if something bad happened.
 func (r *Service) Get(key string) (interface{}, error) {
 	c := r.pool.Get()
 	defer c.Close()
@@ -72,6 +72,27 @@ func (r *Service) Get(key string) (interface{}, error) {
 	if redisVal == nil {
 		return nil, ErrKeyNotFound.Format(key)
 	}
+	return redisVal, nil
+}
+
+// GetAll returns all redis entries using the "SCAN" command (2.8+).
+func (r *Service) GetAll() (interface{}, error) {
+	c := r.pool.Get()
+	defer c.Close()
+	if err := c.Err(); err != nil {
+		return nil, err
+	}
+
+	redisVal, err := c.Do("SCAN", 0) // 0 -> cursor
+
+	if err != nil {
+		return nil, err
+	}
+
+	if redisVal == nil {
+		return nil, err
+	}
+
 	return redisVal, nil
 }
 
@@ -95,95 +116,6 @@ func (r *Service) GetBytes(key string) ([]byte, error) {
 	}
 
 	return redis.Bytes(redisVal, err)
-}
-
-// GetString returns value, err by its key
-// you can use utils.Deserialize((.GetString("yourkey"),&theobject{})
-//returns empty string and a filled error if something wrong happens
-func (r *Service) GetString(key string) (string, error) {
-	redisVal, err := r.Get(key)
-	if redisVal == nil {
-		return "", ErrKeyNotFound.Format(key)
-	}
-
-	sVal, err := redis.String(redisVal, err)
-	if err != nil {
-		return "", err
-	}
-	return sVal, nil
-}
-
-// GetInt returns value, err by its key
-// you can use utils.Deserialize((.GetInt("yourkey"),&theobject{})
-//returns -1 int and a filled error if something wrong happens
-func (r *Service) GetInt(key string) (int, error) {
-	redisVal, err := r.Get(key)
-	if redisVal == nil {
-		return -1, ErrKeyNotFound.Format(key)
-	}
-
-	intVal, err := redis.Int(redisVal, err)
-	if err != nil {
-		return -1, err
-	}
-	return intVal, nil
-}
-
-// GetStringMap returns map[string]string, err by its key
-//returns nil  and a filled error if something wrong happens
-func (r *Service) GetStringMap(key string) (map[string]string, error) {
-	redisVal, err := r.Get(key)
-	if redisVal == nil {
-		return nil, ErrKeyNotFound.Format(key)
-	}
-
-	_map, err := redis.StringMap(redisVal, err)
-	if err != nil {
-		return nil, err
-	}
-	return _map, nil
-}
-
-// GetAll returns all keys and their values from a specific key (map[string]string)
-// returns a filled error if something bad happened
-func (r *Service) GetAll(key string) (map[string]string, error) {
-	c := r.pool.Get()
-	defer c.Close()
-	if err := c.Err(); err != nil {
-		return nil, err
-	}
-
-	reply, err := c.Do("HGETALL", r.Config.Prefix+key)
-
-	if err != nil {
-		return nil, err
-	}
-	if reply == nil {
-		return nil, ErrKeyNotFound.Format(key)
-	}
-
-	return redis.StringMap(reply, err)
-
-}
-
-// GetAllKeysByPrefix returns all []string keys by a key prefix from the redis
-func (r *Service) GetAllKeysByPrefix(prefix string) ([]string, error) {
-	c := r.pool.Get()
-	defer c.Close()
-	if err := c.Err(); err != nil {
-		return nil, err
-	}
-
-	reply, err := c.Do("KEYS", r.Config.Prefix+prefix)
-
-	if err != nil {
-		return nil, err
-	}
-	if reply == nil {
-		return nil, ErrKeyNotFound.Format(prefix)
-	}
-	return redis.Strings(reply, err)
-
 }
 
 // Delete removes redis entry by specific key

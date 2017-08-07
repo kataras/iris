@@ -487,6 +487,7 @@ func (rb *APIBuilder) StaticServe(systemPath string, requestPath ...string) *Rou
 		}
 
 		if err := ctx.ServeFile(spath, true); err != nil {
+			ctx.Application().Logger().Warnf("while trying to serve static file: '%v' on IP: '%s'", err, ctx.RemoteAddr())
 			ctx.StatusCode(http.StatusInternalServerError)
 		}
 	})
