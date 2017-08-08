@@ -36,7 +36,10 @@ type Database struct {
 	async bool
 }
 
-// New creates and returns a new file-storage database instance based on the "path".
+// New creates and returns a new file-storage database instance based on the "directoryPath".
+// DirectoryPath should is the directory which the leveldb database will store the sessions,
+// i.e ./sessions/
+//
 // It will remove any old session files.
 func New(directoryPath string, fileMode os.FileMode) (*Database, error) {
 	lindex := directoryPath[len(directoryPath)-1]

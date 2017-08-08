@@ -18,6 +18,23 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+
+# Tu, 08 August 2017 | v8.2.1
+
+No API Changes. Great news for the unique iris sessions library, once again.
+
+**NEW**: [LevelDB-based](https://github.com/google/leveldb) session database implemented, example [here](_examples/sessions/database/leveldb/main.go).
+
+[Redis-based sessiondb](sessions/sessiondb/redis) has no longer the `MaxAgeSeconds` config field,
+this is passed automatically by the session manager, now.
+
+All [sessions databases](sessions/sessiondb) have an `Async(bool)` function, if turned on
+then all synchronization between the memory store and the back-end database will happen
+inside different go routines. By-default async is false but it's recommended to turn it on, it will make sessions to be stored faster, at most.
+
+All reported issues have been fixed, the API is simplified by `v8.2.0` so everyone can
+create and use any back-end storage for application's sessions persistence.
+
 # Mo, 07 August 2017 | v8.2.0
 
 No Common-API Changes.

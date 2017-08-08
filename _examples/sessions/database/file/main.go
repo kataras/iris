@@ -13,6 +13,9 @@ import (
 func main() {
 	db, _ := file.New("./sessions/", 0666)
 
+	// use different go routines to sync the database
+	db.Async(true)
+
 	sess := sessions.New(sessions.Config{
 		Cookie:  "sessionscookieid",
 		Expires: 45 * time.Minute, // <=0 means unlimited life

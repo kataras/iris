@@ -7,11 +7,12 @@ import (
 	"github.com/kataras/iris/context"
 
 	"github.com/kataras/iris/sessions"
-	"github.com/kataras/iris/sessions/sessiondb/boltdb"
+	"github.com/kataras/iris/sessions/sessiondb/leveldb"
 )
 
 func main() {
-	db, _ := boltdb.New("./sessions/sessions.db", 0666, "users")
+	db, _ := leveldb.New("./sessions/")
+
 	// use different go routines to sync the database
 	db.Async(true)
 
