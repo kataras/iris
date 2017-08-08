@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/context"
 
@@ -21,12 +23,14 @@ func main() {
 		IdleTimeout: service.DefaultRedisIdleTimeout,
 		Prefix:      ""}) // optionally configure the bridge between your redis server
 
+	// use go routines to query the database
+	db.Async(true)
 	// close connection when control+C/cmd+C
 	iris.RegisterOnInterrupt(func() {
 		db.Close()
 	})
 
-	sess := sessions.New(sessions.Config{Cookie: "sessionscookieid"})
+	sess := sessions.New(sessions.Config{Cookie: "sessionscookieid", Expires: 45 * time.Minute})
 
 	//
 	// IMPORTANT:
