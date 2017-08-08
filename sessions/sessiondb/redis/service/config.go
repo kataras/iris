@@ -11,8 +11,6 @@ const (
 	DefaultRedisAddr = "127.0.0.1:6379"
 	// DefaultRedisIdleTimeout the redis idle timeout option, time.Duration(5) * time.Minute
 	DefaultRedisIdleTimeout = time.Duration(5) * time.Minute
-	// DefaultRedisMaxAgeSeconds the redis storage last parameter (SETEX), 31556926.0 (1 year)
-	DefaultRedisMaxAgeSeconds = 31556926.0 //1 year
 )
 
 // Config the redis configuration used inside sessions
