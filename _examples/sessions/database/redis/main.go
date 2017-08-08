@@ -11,15 +11,20 @@ import (
 
 func main() {
 	// replace with your running redis' server settings:
-	db := redis.New(service.Config{Network: service.DefaultRedisNetwork,
-		Addr:          service.DefaultRedisAddr,
-		Password:      "",
-		Database:      "",
-		MaxIdle:       0,
-		MaxActive:     0,
-		IdleTimeout:   service.DefaultRedisIdleTimeout,
-		Prefix:        "",
-		MaxAgeSeconds: service.DefaultRedisMaxAgeSeconds}) // optionally configure the bridge between your redis server
+	db := redis.New(service.Config{
+		Network:     service.DefaultRedisNetwork,
+		Addr:        service.DefaultRedisAddr,
+		Password:    "",
+		Database:    "",
+		MaxIdle:     0,
+		MaxActive:   0,
+		IdleTimeout: service.DefaultRedisIdleTimeout,
+		Prefix:      ""}) // optionally configure the bridge between your redis server
+
+	// close connection when control+C/cmd+C
+	iris.RegisterOnInterrupt(func() {
+		db.Close()
+	})
 
 	sess := sessions.New(sessions.Config{Cookie: "sessionscookieid"})
 

@@ -44,15 +44,21 @@ func (r *Service) CloseConnection() error {
 
 // Set sets a key-value to the redis store.
 // The expiration is setted by the MaxAgeSeconds.
-func (r *Service) Set(key string, value interface{}) error {
+func (r *Service) Set(key string, value interface{}, secondsLifetime int) (err error) {
 	c := r.pool.Get()
 	defer c.Close()
 	if c.Err() != nil {
 		return c.Err()
 	}
 
-	_, err := c.Do("SETEX", r.Config.Prefix+key, r.Config.MaxAgeSeconds, value)
-	return err
+	// if has expiration, then use the "EX" to delete the key automatically.
+	if secondsLifetime > 0 {
+		_, err = c.Do("SETEX", r.Config.Prefix+key, secondsLifetime, value)
+	} else {
+		_, err = c.Do("SET", r.Config.Prefix+key, value)
+	}
+
+	return
 }
 
 // Get returns value, err by its key
@@ -162,10 +168,6 @@ func (r *Service) Connect() {
 
 	if c.Addr == "" {
 		c.Addr = DefaultRedisAddr
-	}
-
-	if c.MaxAgeSeconds <= 0 {
-		c.MaxAgeSeconds = DefaultRedisMaxAgeSeconds
 	}
 
 	pool := &redis.Pool{IdleTimeout: DefaultRedisIdleTimeout, MaxIdle: c.MaxIdle, MaxActive: c.MaxActive}
