@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/boltdb/bolt"
@@ -21,11 +22,12 @@ var (
 
 // Database the BoltDB(file-based) session storage.
 type Database struct {
-	path     string      // path included the name, i.e sessions/store.db
-	fileMode os.FileMode // defaults to 0666.
-	table    []byte
-	Service  *bolt.DB // `New` sets it but it can be override exactly after `New`, use with caution.
-	async    bool
+	table []byte
+	// Service is the underline BoltDB database connection,
+	// it's initialized at `New` or `NewFromDB`.
+	// Can be used to get stats.
+	Service *bolt.DB
+	async   bool
 }
 
 var (
@@ -58,22 +60,29 @@ func New(path string, fileMode os.FileMode, bucketName string) (*Database, error
 		&bolt.Options{Timeout: 15 * time.Second},
 	)
 
-	bucket := []byte(bucketName)
-
 	if err != nil {
 		golog.Errorf("unable to initialize the BoltDB-based session database: %v", err)
 		return nil, err
 	}
+
+	return NewFromDB(service, bucketName)
+}
+
+// NewFromDB same as `New` but accepts an already-created custom boltdb connection instead.
+func NewFromDB(service *bolt.DB, bucketName string) (*Database, error) {
+	if bucketName == "" {
+		return nil, ErrOptionsMissing
+	}
+	bucket := []byte(bucketName)
 
 	service.Update(func(tx *bolt.Tx) (err error) {
 		_, err = tx.CreateBucketIfNotExists(bucket)
 		return
 	})
 
-	db := &Database{path: path, fileMode: fileMode,
-		table: bucket, Service: service,
-	}
+	db := &Database{table: bucket, Service: service}
 
+	runtime.SetFinalizer(db, closeDB)
 	return db, db.Cleanup()
 }
 
@@ -214,6 +223,10 @@ func (db *Database) Len() (num int) {
 
 // Close shutdowns the BoltDB connection.
 func (db *Database) Close() error {
+	return closeDB(db)
+}
+
+func closeDB(db *Database) error {
 	err := db.Service.Close()
 	if err != nil {
 		golog.Warnf("closing the BoltDB connection: %v", err)

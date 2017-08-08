@@ -1,6 +1,8 @@
 package redis
 
 import (
+	"runtime"
+
 	"github.com/kataras/golog"
 	"github.com/kataras/iris/sessions"
 	"github.com/kataras/iris/sessions/sessiondb/redis/service"
@@ -14,10 +16,9 @@ type Database struct {
 
 // New returns a new redis database.
 func New(cfg ...service.Config) *Database {
-	return &Database{redis: service.New(cfg...)}
-	// Note: no need to clean up here, the redis should handle these automatically because of the "SETEX"
-	// but that expiration doesn't depend on the session, instead it depends on the `MaxAgeSeconds`
-	// of the redis database configuration.
+	db := &Database{redis: service.New(cfg...)}
+	runtime.SetFinalizer(db, closeDB)
+	return db
 }
 
 // Config returns the configuration for the redis server bridge, you can change them.
@@ -83,5 +84,14 @@ func (db *Database) sync(p sessions.SyncPayload) {
 		return
 	}
 
-	db.redis.Set(p.SessionID, storeB)
+	db.redis.Set(p.SessionID, storeB, p.Store.Lifetime.Second())
+}
+
+// Close shutdowns the redis connection.
+func (db *Database) Close() error {
+	return closeDB(db)
+}
+
+func closeDB(db *Database) error {
+	return db.redis.CloseConnection()
 }
