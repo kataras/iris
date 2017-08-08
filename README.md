@@ -45,6 +45,7 @@ Iris is a fast, simple and efficient micro web framework for Go. It provides a b
 * [Middleware](middleware/)
 * [Dockerize](https://github.com/iris-contrib/cloud-native-go)
 * [Community & Support](#-community)
+* [Blogs](http://iris-go.com/v8/blogs)
 * [Versioning](#-version)
     * [When should I upgrade?](#should-i-upgrade-my-iris)
     * [Where can I find older versions?](#where-can-i-find-older-versions)

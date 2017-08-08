@@ -2,7 +2,6 @@ package leveldb
 
 import (
 	"bytes"
-
 	"runtime"
 
 	"github.com/kataras/golog"
@@ -59,7 +58,7 @@ func New(directoryPath string) (*Database, error) {
 	return NewFromDB(service)
 }
 
-// NewFromDB same as `New` but accepts an already-created custom boltdb connection instead.
+// NewFromDB same as `New` but accepts an already-created custom leveldb connection instead.
 func NewFromDB(service *leveldb.DB) (*Database, error) {
 	if service == nil {
 		return nil, errors.New("underline database is missing")
@@ -153,7 +152,7 @@ func (db *Database) sync(p sessions.SyncPayload) {
 
 	if p.Action == sessions.ActionDestroy {
 		if err := db.destroy(bsid); err != nil {
-			golog.Errorf("error while destroying a session(%s) from boltdb: %v",
+			golog.Errorf("error while destroying a session(%s) from leveldb: %v",
 				p.SessionID, err)
 		}
 		return
