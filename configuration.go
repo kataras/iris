@@ -136,6 +136,11 @@ var WithoutInterruptHandler = func(app *Application) {
 	app.config.DisableInterruptHandler = true
 }
 
+// WithoutVersionCheck will disable the version checker and updater.
+var WithoutVersionCheck = func(app *Application) {
+	app.config.DisableVersionCheck = true
+}
+
 // WithoutPathCorrection disables the PathCorrection setting.
 //
 // See `Configuration`.
@@ -275,6 +280,11 @@ type Configuration struct {
 	//
 	// Defaults to false.
 	DisableInterruptHandler bool `yaml:"DisableInterruptHandler" toml:"DisableInterruptHandler"`
+
+	// DisableVersionCheck if true then process will be not be notified for any available updates.
+	//
+	// Defaults to false.
+	DisableVersionCheck bool `yaml:"DisableVersionCheck" toml:"DisableVersionCheck"`
 
 	// DisablePathCorrection corrects and redirects the requested path to the registered path
 	// for example, if /home/ path is requested but no handler for this Route found,
@@ -597,6 +607,7 @@ func DefaultConfiguration() Configuration {
 	return Configuration{
 		DisableStartupLog:                 false,
 		DisableInterruptHandler:           false,
+		DisableVersionCheck:               false,
 		DisablePathCorrection:             false,
 		EnablePathEscape:                  false,
 		FireMethodNotAllowed:              false,

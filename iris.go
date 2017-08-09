@@ -647,6 +647,11 @@ func (app *Application) Run(serve Runner, withOrWithout ...Configurator) error {
 
 	app.Configure(withOrWithout...)
 	app.logger.Debugf("Application:  running using %d host(s)", len(app.Hosts)+1)
+
+	if !app.config.DisableVersionCheck && app.logger.Printer.IsTerminal {
+		go CheckVersion()
+	}
+
 	// this will block until an error(unless supervisor's DeferFlow called from a Task).
 	err := serve(app)
 	if err != nil {

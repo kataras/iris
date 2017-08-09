@@ -191,7 +191,7 @@ func (db *Database) destroy(bsid []byte) error {
 // we store the whole data to the key-value pair of the root bucket
 // so we don't need a separate bucket for each session
 // this method could be faster if we had large data to store
-// but with sessions we recommend small ammount of data, so the method finally choosen
+// but with sessions we recommend small amount of data, so the method finally chosen
 // is faster (decode/encode the whole store + lifetime and return it as it's)
 //
 // func (db *Database) getSessBucket(tx *bolt.Tx, sid string) (*bolt.Bucket, error) {
