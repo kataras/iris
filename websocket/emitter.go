@@ -34,6 +34,10 @@ func (e *emitter) EmitMessage(nativeMessage []byte) error {
 }
 
 func (e *emitter) Emit(event string, data interface{}) error {
+	if e.conn.server.rooms[e.to] == nil {
+		return nil
+	}
+
 	message, err := websocketMessageSerialize(event, data)
 	if err != nil {
 		return err
