@@ -648,7 +648,7 @@ func (app *Application) Run(serve Runner, withOrWithout ...Configurator) error {
 	app.Configure(withOrWithout...)
 	app.logger.Debugf("Application:  running using %d host(s)", len(app.Hosts)+1)
 
-	if !app.config.DisableVersionChecker && app.logger.Printer.IsTerminal {
+	if !app.config.DisableVersionChecker && app.logger.Level != golog.DisableLevel {
 		go CheckVersion()
 	}
 
