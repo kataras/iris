@@ -168,6 +168,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) files to
 - [Recovery](miscellaneous/recover/main.go)
 - [Profiling (pprof)](miscellaneous/pprof/main.go)
 - [Internal Application File Logger](miscellaneous/file-logger/main.go)
+- [Google reCAPTCHA](miscellaneous/recaptcha/main.go)
 
 #### More
 

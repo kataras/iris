@@ -22,7 +22,7 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 No API Changes.
 
-- Implement [Google reCAPTCHA](middleware/recaptcha) middleware
+- Implement [Google reCAPTCHA](middleware/recaptcha) middleware, example [here](_examples/miscellaneous/recaptcha/main.go)
 - Fix [kataras/golog](https://github.com/kataras/golog) prints with colors on windows server 2012 while it shouldn't because its command line tool does not support 256bit colors
 - Improve the updater by a custom self-updated back-end version checker, can be disabled by:
 
