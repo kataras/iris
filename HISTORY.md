@@ -18,6 +18,26 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+# Th, 10 August 2017 | v8.2.2
+
+No API Changes.
+
+- Implement [Google reCAPTCHA](middleware/recaptcha) middleware
+- Fix [kataras/golog](https://github.com/kataras/golog) prints with colors on windows server 2012 while it shouldn't because its command line tool does not support 256bit colors
+- Improve the updater by a custom self-updated back-end version checker, can be disabled by:
+
+```go
+app.Run(iris.Addr(":8080"), iris.WithoutVersionChecker)
+```
+Or
+```go
+app.Configure(iris.WithoutVersionChecker)
+```
+Or 
+```go
+app.Configure(iris.WithConfiguration(iris.Configuration{DisableVersionChecker:true}))
+```
+
 
 # Tu, 08 August 2017 | v8.2.1
 

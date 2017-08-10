@@ -2,21 +2,21 @@ package iris
 
 import (
 	"bufio"
+	"encoding/json"
 	"io/ioutil"
-	"net"
-	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/hashicorp/go-version"
 	"github.com/kataras/golog"
+	"github.com/kataras/iris/core/netutil"
 )
 
 const (
-	versionURL = "https://raw.githubusercontent.com/kataras/iris/master/VERSION"
+	versionURL = "http://iris-go.com/version"
 	updateCmd  = "go get -u -f -v github.com/kataras/iris"
 )
 
@@ -29,28 +29,16 @@ func CheckVersion() {
 	})
 }
 
+type versionInfo struct {
+	Version         string `json:"version"`
+	ChangelogURL    string `json:"changelog_url"`
+	UpdateAvailable bool   `json:"update_available"`
+}
+
 func checkVersion() {
+	client := netutil.Client(time.Duration(15 * time.Second))
+	r, err := client.PostForm(versionURL, url.Values{"current_version": {Version}})
 
-	// open connection and read/write timeouts
-	timeout := time.Duration(10 * time.Second)
-
-	transport := http.Transport{
-		Dial: func(network string, addr string) (net.Conn, error) {
-			conn, err := net.DialTimeout(network, addr, timeout)
-			if err != nil {
-				golog.Debugf("%v", err)
-				return nil, err
-			}
-			conn.SetDeadline(time.Now().Add(timeout)) // skip error
-			return conn, nil
-		},
-	}
-
-	client := http.Client{
-		Transport: &transport,
-	}
-
-	r, err := client.Get(versionURL)
 	if err != nil {
 		golog.Debugf("%v", err)
 		return
@@ -68,53 +56,29 @@ func checkVersion() {
 		return
 	}
 
-	var (
-		fetchedVersion = string(b)
-		changelogURL   string
-	)
-
-	// 8.2.1:https://github.com/kataras/iris/blob/master/HISTORY.md#tu-08-august-2017--v821
-	if idx := strings.IndexByte(fetchedVersion, ':'); idx > 0 {
-		changelogURL = fetchedVersion[idx+1:]
-		fetchedVersion = fetchedVersion[0:idx]
-	}
-
-	latestVersion, err := version.NewVersion(fetchedVersion)
-	if err != nil {
-		golog.Debugf("while parsing latest version: %v", err)
+	v := new(versionInfo)
+	if err := json.Unmarshal(b, v); err != nil {
+		golog.Debugf("error while unmarshal the response body: %v", err)
 		return
 	}
 
-	currentVersion, err := version.NewVersion(Version)
-	if err != nil {
-		golog.Debugf("while parsing current version: %v", err)
+	if !v.UpdateAvailable {
 		return
 	}
 
-	if currentVersion.GreaterThan(latestVersion) {
-		golog.Debugf("current version is greater than latest version, report as bug")
-		return
+	format := "A more recent version has been found[%s > %s].\n"
+
+	if v.ChangelogURL != "" {
+		format += "Release notes: %s\n"
 	}
 
-	if currentVersion.Equal(latestVersion) {
-		return
-	}
+	format += "Update now?[%s]: "
 
 	// currentVersion.LessThan(latestVersion)
+	updaterYesInput := [...]string{"y", "yes"}
 
-	var updaterYesInput = [...]string{"y", "yes"}
-
-	text := "A more recent version has been found[%s > %s].\n"
-
-	if changelogURL != "" {
-		text += "Release notes: %s\n"
-	}
-
-	text += "Update now?[%s]: "
-
-	golog.Warnf(text,
-		latestVersion.String(), currentVersion.String(),
-		changelogURL,
+	golog.Warnf(format, v.Version, Version,
+		v.ChangelogURL,
 		updaterYesInput[0]+"/n")
 
 	silent := false
@@ -126,6 +90,7 @@ func checkVersion() {
 	if !silent {
 		if sc.Scan() {
 			inputText := sc.Text()
+
 			for _, s := range updaterYesInput {
 				if inputText == s {
 					shouldUpdate = true
@@ -146,6 +111,6 @@ func checkVersion() {
 			return
 		}
 
-		golog.Infof("Update process finished, current version: %s.\nManual restart is required to apply the changes.\n", latestVersion.String())
+		golog.Infof("Update process finished.\nManual restart is required to apply the changes.\n")
 	}
 }

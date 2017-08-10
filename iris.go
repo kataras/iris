@@ -32,7 +32,7 @@ import (
 
 const (
 	// Version is the current version number of the Iris Web Framework.
-	Version = "8.2.1"
+	Version = "8.2.2"
 )
 
 // HTTP status codes as registered with IANA.
@@ -648,7 +648,7 @@ func (app *Application) Run(serve Runner, withOrWithout ...Configurator) error {
 	app.Configure(withOrWithout...)
 	app.logger.Debugf("Application:  running using %d host(s)", len(app.Hosts)+1)
 
-	if !app.config.DisableVersionCheck && app.logger.Printer.IsTerminal {
+	if !app.config.DisableVersionChecker && app.logger.Printer.IsTerminal {
 		go CheckVersion()
 	}
 
