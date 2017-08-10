@@ -18,6 +18,14 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+# Th, 10 August 2017 | v8.2.3
+
+No API Changes.
+
+Fix https://github.com/kataras/iris/issues/714
+
+Continue to v8.2.2 for more...
+
 # Th, 10 August 2017 | v8.2.2
 
 No API Changes.
@@ -37,7 +45,6 @@ Or
 ```go
 app.Configure(iris.WithConfiguration(iris.Configuration{DisableVersionChecker:true}))
 ```
-
 
 # Tu, 08 August 2017 | v8.2.1
 
