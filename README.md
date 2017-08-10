@@ -2,6 +2,8 @@
 
 Iris is a fast, simple and efficient micro web framework for Go. It provides a beautifully expressive and easy to use foundation for your next website, API, or distributed app.
 
+[Star or watch](https://github.com/kataras/iris/stargazers) this repository, it is still in **active development mode**.
+
 <!-- [![total used by](http://iris-go.com/graph?style=flat-square)](http://iris-go.com/graph) -->
 [![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=flat-square)](https://travis-ci.org/kataras/iris)
 [![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=flat-square)](http://goreportcard.com/report/kataras/iris)
@@ -319,7 +321,7 @@ Thank You for your trust!
 
 ### 📌 Version
 
-Current: **8.2.2**
+Current: [VERSION](VERSION)
 
 Each new release is pushed to the master. It stays there until the next version. When a next version is released then the previous version goes to its own branch with `gopkg.in` as its import path (and its own vendor folder), in order to keep it working "for-ever".
 

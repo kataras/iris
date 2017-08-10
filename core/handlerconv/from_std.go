@@ -70,36 +70,14 @@ func FromStd(handler interface{}) context.Handler {
 
 }
 
-// FromStdWithNext receives a standar handler - middleware form - and returns a compatible context.Handler wrapper.
+// FromStdWithNext receives a standar handler - middleware form - and returns a
+// compatible context.Handler wrapper.
 func FromStdWithNext(h func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)) context.Handler {
 	return func(ctx context.Context) {
-		// take the next handler in route's chain
-		nextIonHandler := ctx.NextHandler()
-		if nextIonHandler != nil {
-			executed := false // we need to watch this in order to StopExecution from all next handlers
-			// if this next handler is not executed by the third-party net/http next-style Handlers.
-			nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				nextIonHandler(ctx)
-				executed = true
-			})
+		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx.Next()
+		})
 
-			h(ctx.ResponseWriter(), ctx.Request(), nextHandler)
-
-			// after third-party Handlers's job:
-			if executed {
-				// if next is executed then increment the position manually
-				// in order to the next handler not to be executed twice.
-				ctx.HandlerIndex(ctx.HandlerIndex(-1) + 1)
-			} else {
-				// otherwise StopExecution from all next handlers.
-				ctx.StopExecution()
-			}
-			return
-		}
-
-		// if not next handler found then this is not a 'valid' Handlers but
-		// some Handlers may don't care about next,
-		// so we just execute the handler with an empty net.
-		h(ctx.ResponseWriter(), ctx.Request(), http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+		h(ctx.ResponseWriter(), ctx.Request(), next)
 	}
 }
