@@ -36,7 +36,7 @@ type versionInfo struct {
 }
 
 func checkVersion() {
-	client := netutil.Client(time.Duration(15 * time.Second))
+	client := netutil.Client(time.Duration(20 * time.Second))
 	r, err := client.PostForm(versionURL, url.Values{"current_version": {Version}})
 
 	if err != nil {
@@ -66,7 +66,7 @@ func checkVersion() {
 		return
 	}
 
-	format := "A more recent version has been found[%s > %s].\n"
+	format := "A new version is available online[%s > %s].\n"
 
 	if v.ChangelogURL != "" {
 		format += "Release notes: %s\n"
@@ -107,7 +107,7 @@ func checkVersion() {
 		cmd.Stderr = os.Stdout
 
 		if err := cmd.Run(); err != nil {
-			golog.Warnf("unexpected message while trying to go get: %v", err)
+			golog.Warnf("unexpected message while trying to go get,\nif you edited the original source code then you've to remove the whole $GOPATH/src/github.com/kataras folder and execute `go get github.com/kataras/iris` manually\n%v", err)
 			return
 		}
 

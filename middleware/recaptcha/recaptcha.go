@@ -24,7 +24,11 @@ type Response struct {
 	Success     bool      `json:"success"`
 }
 
-var client = netutil.Client(time.Duration(10 * time.Second))
+// Client is the default `net/http#Client` instance which
+// is used to send requests to the Google API.
+//
+// Change Client only if you know what you're doing.
+var Client = netutil.Client(time.Duration(20 * time.Second))
 
 // New accepts the google's recaptcha secret key and returns
 // a middleware that verifies the request by sending a response to the google's API(V2-latest).
@@ -54,7 +58,7 @@ func SiteFerify(ctx context.Context, secret string) (response Response) {
 		return
 	}
 
-	r, err := client.PostForm(apiURL,
+	r, err := Client.PostForm(apiURL,
 		url.Values{
 			"secret":   {secret},
 			"response": {generatedResponseID},
