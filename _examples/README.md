@@ -160,6 +160,10 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) files to
 
 > The `context.ResponseWriter()` returns an enchament version of a http.ResponseWriter, these examples show some places where the Context uses this object. Besides that you can use it as you did before iris.
 
+### ORM
+
+- [Using xorm(Mysql, MyMysql, Postgres, Tidb, **SQLite**, MsSql, MsSql, Oracle)](orm/xorm/main.go)
+
 ### Miscellaneous
 
 - [Request Logger](http_request/request-logger/main.go)
