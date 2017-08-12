@@ -114,10 +114,10 @@ func StaticEmbeddedHandler(vdir string, assetFn func(name string) ([]byte, error
 // app.Get("/static", h)
 // ...
 //
-func StaticHandler(systemPath string, showList bool, enableGzip bool) context.Handler {
+func StaticHandler(systemPath string, showList bool, gzip bool) context.Handler {
 	return NewStaticHandlerBuilder(systemPath).
+		Gzip(gzip).
 		Listing(showList).
-		Gzip(enableGzip).
 		Build()
 }
 
@@ -138,12 +138,12 @@ type StaticHandlerBuilder interface {
 type fsHandler struct {
 	// user options, only directory is required.
 	directory       http.Dir
-	gzip            bool
 	listDirectories bool
 	// these are init on the Build() call
 	filesystem http.FileSystem
 	once       sync.Once
 	handler    context.Handler
+	begin      context.Handlers
 }
 
 func toWebPath(systemPath string) string {
@@ -177,8 +177,6 @@ func Abs(path string) string {
 func NewStaticHandlerBuilder(dir string) StaticHandlerBuilder {
 	return &fsHandler{
 		directory: http.Dir(Abs(dir)),
-		// gzip is disabled by default
-		gzip: false,
 		// list directories disabled by default
 		listDirectories: false,
 	}
@@ -187,7 +185,10 @@ func NewStaticHandlerBuilder(dir string) StaticHandlerBuilder {
 // Gzip if enable is true then gzip compression is enabled for this static directory
 // Defaults to false
 func (w *fsHandler) Gzip(enable bool) StaticHandlerBuilder {
-	w.gzip = enable
+	w.begin = append(w.begin, func(ctx context.Context) {
+		ctx.Gzip(true)
+		ctx.Next()
+	})
 	return w
 }
 
@@ -242,13 +243,14 @@ func (w *fsHandler) Build() context.Handler {
 			// Note the request.url.path is changed but request.RequestURI is not
 			// so on custom errors we use the requesturi instead.
 			// this can be changed
+
+			_, gzipEnabled := ctx.ResponseWriter().(*context.GzipResponseWriter)
 			_, prevStatusCode := serveFile(ctx,
 				w.filesystem,
 				path.Clean(upath),
 				false,
 				w.listDirectories,
-				(w.gzip && ctx.ClientSupportsGzip()),
-			)
+				gzipEnabled)
 
 			// check for any http errors after the file handler executed
 			if prevStatusCode >= 400 { // error found (404 or 400 or 500 usually)
@@ -272,9 +274,13 @@ func (w *fsHandler) Build() context.Handler {
 			// go to the next middleware
 			ctx.Next()
 		}
-
+		if len(w.begin) > 0 {
+			handlers := append(w.begin[0:], fileserver)
+			w.handler = func(ctx context.Context) {
+				ctx.Do(handlers)
+			}
+		}
 		w.handler = fileserver
-
 	})
 
 	return w.handler

@@ -117,7 +117,7 @@ type Party interface {
 	// mySubdomainFsServer.Get("/static", h)
 	// ...
 	//
-	StaticHandler(systemPath string, showList bool, enableGzip bool) context.Handler
+	StaticHandler(systemPath string, showList bool, gzip bool) context.Handler
 
 	// StaticServe serves a directory as web resource
 	// it's the simpliest form of the Static* functions
@@ -172,7 +172,7 @@ type Party interface {
 	// ending in "/index.html" to the same path, without the final
 	// "index.html".
 	//
-	// StaticWeb calls the StaticHandler(systemPath, listingDirectories: false, gzip: false ).
+	// StaticWeb calls the `StripPrefix(fullpath, NewStaticHandlerBuilder(systemPath).Listing(false).Build())`.
 	//
 	// Returns the GET *Route.
 	StaticWeb(requestPath string, systemPath string) *Route
