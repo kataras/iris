@@ -20,8 +20,16 @@ type MyContext struct {
 
 var _ context.Context = &MyContext{} // optionally: validate on compile-time if MyContext implements context.Context.
 
-// Optional Part 2:
-// The only one important if you will override the Context with an embedded context.Context inside it.
+// The only one important if you will override the Context
+// with an embedded context.Context inside it.
+// Required in order to run the handlers via this "*MyContext".
+func (ctx *MyContext) Do(handlers context.Handlers) {
+	context.Do(ctx, handlers)
+}
+
+// The second one important if you will override the Context
+// with an embedded context.Context inside it.
+// Required in order to run the chain of handlers via this "*MyContext".
 func (ctx *MyContext) Next() {
 	context.Next(ctx)
 }
@@ -40,17 +48,18 @@ func main() {
 	app := iris.New()
 	// app.Logger().SetLevel("debug")
 
-	// Register a view engine on .html files inside the ./view/** directory.
-	app.RegisterView(iris.HTML("./view", ".html"))
-
 	// The only one Required:
-	// here is how you define how your own context will be created and acquired from the iris' generic context pool.
+	// here is how you define how your own context will
+	// be created and acquired from the iris' generic context pool.
 	app.ContextPool.Attach(func() context.Context {
 		return &MyContext{
 			// Optional Part 3:
 			Context: context.NewContext(app),
 		}
 	})
+
+	// Register a view engine on .html files inside the ./view/** directory.
+	app.RegisterView(iris.HTML("./view", ".html"))
 
 	// register your route, as you normally do
 	app.Handle("GET", "/", recordWhichContextJustForProofOfConcept, func(ctx context.Context) {
