@@ -14,12 +14,13 @@ func main() {
 	// /                     -> because of app.Get("/", ...)
 	// /other/anything/here  -> because of app.Get("/other/{paramother:path}", ...)
 	// /other2/anything/here -> because of app.Get("/other2/{paramothersecond:path}", ...)
-	// /other2/static        -> because of app.Get("/other2/static", ...)
+	// /other2/static2        -> because of app.Get("/other2/static", ...)
 	//
 	// It isn't conflicts with the rest of the routes, without routing performance cost!
 	//
 	// i.e /something/here/that/cannot/be/found/by/other/registered/routes/order/not/matters
 	app.Get("/{p:path}", h)
+	// app.Get("/static/{p:path}", staticWildcardH)
 
 	// this will handle only GET /
 	app.Get("/", staticPath)
@@ -36,7 +37,7 @@ func main() {
 	app.Get("/other2/{paramothersecond:path}", other2)
 
 	// this will handle only GET "/other2/static"
-	app.Get("/other2/static", staticPath)
+	app.Get("/other2/static2", staticPathOther2)
 
 	app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed))
 }
@@ -44,6 +45,11 @@ func main() {
 func h(ctx context.Context) {
 	param := ctx.Params().Get("p")
 	ctx.WriteString(param)
+}
+
+func staticWildcardH(ctx context.Context) {
+	param := ctx.Params().Get("p")
+	ctx.WriteString("from staticWildcardH: param=" + param)
 }
 
 func other(ctx context.Context) {
@@ -57,5 +63,9 @@ func other2(ctx context.Context) {
 }
 
 func staticPath(ctx context.Context) {
-	ctx.Writef("from the static path: %s", ctx.Path())
+	ctx.Writef("from the static path(/): %s", ctx.Path())
+}
+
+func staticPathOther2(ctx context.Context) {
+	ctx.Writef("from the static path(/other2/static2): %s", ctx.Path())
 }

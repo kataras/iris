@@ -758,6 +758,19 @@ func Next(ctx Context) {
 	}
 }
 
+// Do calls the SetHandlers(handlers)
+// and executes the first handler,
+// handlers should not be empty.
+//
+// It's used by the router, developers may use that
+// to replace and execute handlers immediately.
+func Do(ctx Context, handlers Handlers) {
+	if len(handlers) > 0 {
+		ctx.SetHandlers(handlers)
+		handlers[0](ctx)
+	}
+}
+
 // LimitRequestBodySize is a middleware which sets a request body size limit
 // for all next handlers in the chain.
 var LimitRequestBodySize = func(maxRequestBodySizeBytes int64) Handler {

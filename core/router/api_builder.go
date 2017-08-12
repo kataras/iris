@@ -658,6 +658,7 @@ func (rb *APIBuilder) StaticWeb(requestPath string, systemPath string) *Route {
 	}
 
 	requestPath = joinPath(fullpath, WildcardParam(paramName))
+	// requestPath = fullpath + "/{file:path}"
 	return rb.registerResourceRoute(requestPath, handler)
 }
 
