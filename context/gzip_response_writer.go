@@ -99,31 +99,40 @@ func (w *GzipResponseWriter) EndResponse() {
 	w.ResponseWriter.EndResponse()
 }
 
-// Write compresses and writes that data to the underline response writer
+// Write prepares the data write to the gzip writer and finally to its
+// underline response writer, returns the uncompressed len(contents).
 func (w *GzipResponseWriter) Write(contents []byte) (int, error) {
 	// save the contents to serve them (only gzip data here)
 	w.chunks = append(w.chunks, contents...)
 	return len(w.chunks), nil
 }
 
+// WriteNow compresses and writes that data to the underline response writer,
+// returns the compressed written len.
+//
+// Use `WriteNow` instead of `Write`
+// when you need to know the compressed written size before
+// the `FlushResponse`, note that you can't post any new headers
+// after that, so that information is not closed to the handler anymore.
+func (w *GzipResponseWriter) WriteNow(contents []byte) (int, error) {
+	if w.disabled {
+		return w.ResponseWriter.Write(contents)
+	}
+
+	w.ResponseWriter.Header().Add(varyHeaderKey, "Accept-Encoding")
+	w.ResponseWriter.Header().Set(contentEncodingHeaderKey, "gzip")
+	// if not `WriteNow` but "Content-Length" header
+	// is exists, then delete it before `.Write`
+	// Content-Length should not be there.
+	// no, for now at least: w.ResponseWriter.Header().Del(contentLengthHeaderKey)
+
+	return w.gzipWriter.Write(contents)
+}
+
 // FlushResponse validates the response headers in order to be compatible with the gzip written data
 // and writes the data to the underline ResponseWriter.
 func (w *GzipResponseWriter) FlushResponse() {
-	if w.disabled {
-		w.ResponseWriter.Write(w.chunks)
-		// remove gzip headers: no need, we just add two of them if gzip was enabled, below
-		// headers := w.ResponseWriter.Header()
-		// headers[contentType] = nil
-		// headers["X-Content-Type-Options"] = nil
-		// headers[varyHeader] = nil
-		// headers[contentEncodingHeader] = nil
-		// headers[contentLength] = nil
-	} else {
-		// if it's not disable write all chunks gzip compressed with the correct response headers.
-		w.ResponseWriter.Header().Add(varyHeaderKey, "Accept-Encoding")
-		w.ResponseWriter.Header().Set(contentEncodingHeaderKey, "gzip")
-		w.gzipWriter.Write(w.chunks) // it writes to the underline ResponseWriter.
-	}
+	w.WriteNow(w.chunks)
 	w.ResponseWriter.FlushResponse()
 }
 

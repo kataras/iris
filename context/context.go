@@ -767,6 +767,13 @@ var LimitRequestBodySize = func(maxRequestBodySizeBytes int64) Handler {
 	}
 }
 
+// Gzip is a middleware which enables writing
+// using gzip compression, if client supports.
+var Gzip = func(ctx Context) {
+	ctx.Gzip(true)
+	ctx.Next()
+}
+
 // Map is just a shortcut of the map[string]interface{}.
 type Map map[string]interface{}
 

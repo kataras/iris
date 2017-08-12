@@ -303,6 +303,11 @@ var (
 	//
 	// A shortcut for the `context#LimitRequestBodySize`.
 	LimitRequestBodySize = context.LimitRequestBodySize
+	// Gzip is a middleware which enables writing
+	// using gzip compression, if client supports.
+	//
+	// A shortcut for the `context#Gzip`.
+	Gzip = context.Gzip
 	// FromStd converts native http.Handler, http.HandlerFunc & func(w, r, next) to context.Handler.
 	//
 	// Supported form types:

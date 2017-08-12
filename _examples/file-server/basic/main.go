@@ -9,6 +9,17 @@ func main() {
 
 	app.Favicon("./assets/favicon.ico")
 
+	// enable gzip, optionally:
+	// if used before the `StaticXXX` handlers then
+	// the content byte range feature is gone.
+	// recommend: turn off for large files especially
+	// when server has low memory,
+	// turn on for medium-sized files
+	// or for large-sized files if they are zipped already,
+	// i.e "zippedDir/file.gz"
+	//
+	// app.Use(iris.Gzip)
+
 	// first parameter is the request path
 	// second is the system directory
 	//
