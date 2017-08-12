@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
@@ -378,12 +379,38 @@ var errNoOverlap = errors.New("invalid range: failed to overlap")
 // The algorithm uses at most sniffLen bytes to make its decision.
 const sniffLen = 512
 
+func detectOrWriteContentType(ctx context.Context, name string, content io.ReadSeeker) (string, error) {
+	// If Content-Type isn't set, use the file's extension to find it, but
+	// if the Content-Type is unset explicitly, do not sniff the type.
+	ctypes, haveType := ctx.ResponseWriter().Header()["Content-Type"]
+	var ctype string
+
+	if !haveType {
+		ctype = TypeByExtension(filepath.Ext(name))
+		if ctype == "" {
+			// read a chunk to decide between utf-8 text and binary
+			var buf [sniffLen]byte
+			n, _ := io.ReadFull(content, buf[:])
+			ctype = http.DetectContentType(buf[:n])
+			_, err := content.Seek(0, io.SeekStart) // rewind to output whole file
+			if err != nil {
+				return "", err
+			}
+		}
+
+		ctx.ContentType(ctype)
+	} else if len(ctypes) > 0 {
+		ctype = ctypes[0]
+	}
+
+	return ctype, nil
+}
+
 // if name is empty, filename is unknown. (used for mime type, before sniffing)
 // if modtime.IsZero(), modtime is unknown.
 // content must be seeked to the beginning of the file.
 // The sizeFunc is called at most once. Its error, if any, is sent in the HTTP response.
-func serveContent(ctx context.Context, name string, modtime time.Time, sizeFunc func() (int64, error), content io.ReadSeeker, gzip bool) (string, int) /* we could use the TransactionErrResult but prefer not to create new objects for each of the errors on static file handlers*/ {
-
+func serveContent(ctx context.Context, name string, modtime time.Time, sizeFunc func() (int64, error), content io.ReadSeeker) (string, int) /* we could use the TransactionErrResult but prefer not to create new objects for each of the errors on static file handlers*/ {
 	setLastModified(ctx, modtime)
 	done, rangeReq := checkPreconditions(ctx, modtime)
 	if done {
@@ -394,27 +421,9 @@ func serveContent(ctx context.Context, name string, modtime time.Time, sizeFunc 
 
 	// If Content-Type isn't set, use the file's extension to find it, but
 	// if the Content-Type is unset explicitly, do not sniff the type.
-	ctypes, haveType := ctx.ResponseWriter().Header()["Content-Type"]
-	var ctype string
-
-	if !haveType {
-		ctype = TypeByExtension(filepath.Ext(name))
-		if ctype == "" {
-
-			// read a chunk to decide between utf-8 text and binary
-			var buf [sniffLen]byte
-			n, _ := io.ReadFull(content, buf[:])
-			ctype = http.DetectContentType(buf[:n])
-			_, err := content.Seek(0, io.SeekStart) // rewind to output whole file
-			if err != nil {
-				return "seeker can't seek", http.StatusInternalServerError
-
-			}
-		}
-
-		ctx.ContentType(ctype)
-	} else if len(ctypes) > 0 {
-		ctype = ctypes[0]
+	ctype, err := detectOrWriteContentType(ctx, name, content)
+	if err != nil {
+		return "while seeking", http.StatusInternalServerError
 	}
 
 	size, err := sizeFunc()
@@ -426,9 +435,6 @@ func serveContent(ctx context.Context, name string, modtime time.Time, sizeFunc 
 	sendSize := size
 	var sendContent io.Reader = content
 
-	if gzip {
-		_ = ctx.GzipResponseWriter()
-	}
 	if size >= 0 {
 		ranges, err := parseRange(rangeReq, size)
 		if err != nil {
@@ -496,7 +502,6 @@ func serveContent(ctx context.Context, name string, modtime time.Time, sizeFunc 
 		}
 		ctx.Header("Accept-Ranges", "bytes")
 		if ctx.ResponseWriter().Header().Get(contentEncodingHeaderKey) == "" {
-
 			ctx.Header(contentLengthHeaderKey, strconv.FormatInt(sendSize, 10))
 		}
 	}
@@ -827,12 +832,39 @@ func serveFile(ctx context.Context, fs http.FileSystem, name string, redirect bo
 		}
 		ctx.Header("Last-Modified", d.ModTime().UTC().Format(ctx.Application().ConfigurationReadOnly().GetTimeFormat()))
 		return dirList(ctx, f)
-
 	}
 
-	// serveContent will check modification time
-	sizeFunc := func() (int64, error) { return d.Size(), nil }
-	return serveContent(ctx, d.Name(), d.ModTime(), sizeFunc, f, gzip)
+	// if gzip disabled then continue using content byte ranges
+	if !gzip {
+		// serveContent will check modification time
+		sizeFunc := func() (int64, error) { return d.Size(), nil }
+		return serveContent(ctx, d.Name(), d.ModTime(), sizeFunc, f)
+	}
+
+	// else, set the last modified as "serveContent" does.
+	setLastModified(ctx, d.ModTime())
+
+	// write the file to the response writer.
+	contents, err := ioutil.ReadAll(f)
+	if err != nil {
+		ctx.Application().Logger().Debugf("err reading file: %v", err)
+		return "error reading the file", http.StatusInternalServerError
+	}
+
+	// Use `WriteNow` instead of `Write`
+	// because we need to know the compressed written size before
+	// the `FlushResponse`.
+	_, err = ctx.GzipResponseWriter().Write(contents)
+	if err != nil {
+		ctx.Application().Logger().Debugf("short write: %v", err)
+		return "short write", http.StatusInternalServerError
+	}
+
+	// try to find and send the correct content type based on the filename
+	// and the binary data inside "f".
+	detectOrWriteContentType(ctx, d.Name(), f)
+
+	return "", 200
 }
 
 // toHTTPError returns a non-specific HTTP error message and status code

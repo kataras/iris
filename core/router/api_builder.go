@@ -645,15 +645,18 @@ func (rb *APIBuilder) StaticWeb(requestPath string, systemPath string) *Route {
 
 	handler := func(ctx context.Context) {
 		h(ctx)
-		// re-check the content type here for any case,
-		// although the new code does it automatically but it's good to have it here.
 		if ctx.GetStatusCode() >= 200 && ctx.GetStatusCode() < 400 {
-			if fname := ctx.Params().Get(paramName); fname != "" {
-				cType := TypeByFilename(fname)
-				ctx.ContentType(cType)
+			// re-check the content type here for any case,
+			// although the new code does it automatically but it's good to have it here.
+			if _, exists := ctx.ResponseWriter().Header()["Content-Type"]; !exists {
+				if fname := ctx.Params().Get(paramName); fname != "" {
+					cType := TypeByFilename(fname)
+					ctx.ContentType(cType)
+				}
 			}
 		}
 	}
+
 	requestPath = joinPath(fullpath, WildcardParam(paramName))
 	return rb.registerResourceRoute(requestPath, handler)
 }
