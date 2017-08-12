@@ -18,6 +18,12 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+# Sa, 12 August 2017 | v8.2.4
+
+No API Changes.
+
+Fix https://github.com/kataras/iris/issues/717, users are welcomed to follow the thread for any questions or reports about Gzip and Static Files Handlers **only**.
+
 # Th, 10 August 2017 | v8.2.3
 
 No API Changes.
