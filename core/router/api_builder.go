@@ -450,9 +450,9 @@ func (rb *APIBuilder) registerResourceRoute(reqPath string, h context.Handler) *
 // mySubdomainFsServer.Get("/static", h)
 // ...
 //
-func (rb *APIBuilder) StaticHandler(systemPath string, showList bool, enableGzip bool) context.Handler {
+func (rb *APIBuilder) StaticHandler(systemPath string, showList bool, gzip bool) context.Handler {
 	// Note: this doesn't need to be here but we'll keep it for consistently
-	return StaticHandler(systemPath, showList, enableGzip)
+	return StaticHandler(systemPath, showList, gzip)
 }
 
 // StaticServe serves a directory as web resource
@@ -632,7 +632,7 @@ func (rb *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
 // ending in "/index.html" to the same path, without the final
 // "index.html".
 //
-// StaticWeb calls the StaticHandler(systemPath, listingDirectories: false, gzip: false ).
+// StaticWeb calls the `StripPrefix(fullpath, NewStaticHandlerBuilder(systemPath).Listing(false).Build())`.
 //
 // Returns the GET *Route.
 func (rb *APIBuilder) StaticWeb(requestPath string, systemPath string) *Route {
@@ -641,7 +641,7 @@ func (rb *APIBuilder) StaticWeb(requestPath string, systemPath string) *Route {
 
 	fullpath := joinPath(rb.relativePath, requestPath)
 
-	h := StripPrefix(fullpath, rb.StaticHandler(systemPath, false, false))
+	h := StripPrefix(fullpath, NewStaticHandlerBuilder(systemPath).Listing(false).Build())
 
 	handler := func(ctx context.Context) {
 		h(ctx)
