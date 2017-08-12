@@ -99,6 +99,11 @@ func checkVersion() {
 		}
 	}
 
+	if !shouldUpdate {
+		golog.Infof("Ignore updates? Disable version checker via:\napp.Run(..., iris.WithoutVersionChecker)")
+		return
+	}
+
 	if shouldUpdate {
 		goget := strings.Split(updateCmd, " ")
 		// go get -u github.com/:owner/:repo
@@ -111,6 +116,6 @@ func checkVersion() {
 			return
 		}
 
-		golog.Infof("Update process finished.\nManual restart is required to apply the changes.\n")
+		golog.Infof("Update process finished.\nManual restart is required to apply the changes...")
 	}
 }

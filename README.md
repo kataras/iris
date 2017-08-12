@@ -1,4 +1,8 @@
-# ![Logo created by @santoshanand](logo_white_35_24.png) Iris 
+<!-- # ![Logo created by @santoshanand](logo_white_35_24.png) Iris 
+-->
+<p align="center">
+<img src="iris_the_new_machine.gif">
+</p>
 
 Iris is a fast, simple and efficient micro web framework for Go. It provides a beautifully expressive and easy to use foundation for your next website, API, or distributed app.
 
