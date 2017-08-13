@@ -13,7 +13,6 @@ It doesn't always contain the "best ways" but it does cover each important featu
 - [Tutorial: Online Visitors](tutorial/online-visitors/main.go)
 - [Tutorial: URL Shortener using BoltDB](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
 - [Tutorial: How to turn your Android Device into a fully featured Web Server (**MUST**)](https://twitter.com/ThePracticalDev/status/892022594031017988)
-- [Tutorial: Controllers from scratch (**Coming soon as built'n feature, probably at v8.3**)](tutorial/mvc)
 
 ### HTTP Listening 
 
@@ -83,6 +82,7 @@ Navigate through examples for a better understanding.
 
 - [Overview](routing/overview/main.go)
 - [Basic](routing/basic/main.go)
+- [Controllers](routing/mvc)
 - [Custom HTTP Errors](routing/http-errors/main.go)
 - [Dynamic Path](routing/dynamic-path/main.go)
     * [root level wildcard path](routing/dynamic-path/root-wildcard/main.go)

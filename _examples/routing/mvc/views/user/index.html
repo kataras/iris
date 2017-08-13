@@ -1,0 +1,18 @@
+<html>
+
+<head>
+    <title>{{.title}}</title>
+</head>
+
+<body>
+    <h1> Hello {{.username}} </h1>
+
+
+    All fields inside a controller that are pointers or they tagged as `iris:"persistence"` are marked as persistence data, meaning
+    that they will not be reset-ed on each new request.
+    <h3>Persistence data from *DB.Connstring: {{.connstring}} </h3>
+    <h3>Persistence data from CreatedAt `iris:"persistence"`: {{.uptime}} seconds </h3>
+    <h3>{{.visit_count}}
+</body>
+
+</html>

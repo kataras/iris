@@ -100,7 +100,7 @@ var _ RoutesProvider = &APIBuilder{} // passed to the default request handler (r
 // NewAPIBuilder creates & returns a new builder
 // which is responsible to build the API and the router handler.
 func NewAPIBuilder() *APIBuilder {
-	rb := &APIBuilder{
+	api := &APIBuilder{
 		macros:            defaultMacros(),
 		errorCodeHandlers: defaultErrorCodeHandlers(),
 		reporter:          errors.NewReporter(),
@@ -108,74 +108,74 @@ func NewAPIBuilder() *APIBuilder {
 		routes:            new(repository),
 	}
 
-	return rb
+	return api
 }
 
 // GetReport returns an error may caused by party's methods.
-func (rb *APIBuilder) GetReport() error {
-	return rb.reporter.Return()
+func (api *APIBuilder) GetReport() error {
+	return api.reporter.Return()
 }
 
 // GetReporter returns the reporter for adding errors
-func (rb *APIBuilder) GetReporter() *errors.Reporter {
-	return rb.reporter
+func (api *APIBuilder) GetReporter() *errors.Reporter {
+	return api.reporter
 }
 
-// Handle registers a route to the server's rb.
+// Handle registers a route to the server's api.
 // if empty method is passed then handler(s) are being registered to all methods, same as .Any.
 //
 // Returns a *Route, app will throw any errors later on.
-func (rb *APIBuilder) Handle(method string, registeredPath string, handlers ...context.Handler) *Route {
-	// if registeredPath[0] != '/' {
+func (api *APIBuilder) Handle(method string, relativePath string, handlers ...context.Handler) *Route {
+	// if relativePath[0] != '/' {
 	// 	return nil, errors.New("path should start with slash and should not be empty")
 	// }
 
 	if method == "" || method == "ALL" || method == "ANY" { // then use like it was .Any
-		return rb.Any(registeredPath, handlers...)[0]
+		return api.Any(relativePath, handlers...)[0]
 	}
 
 	// no clean path yet because of subdomain indicator/separator which contains a dot.
 	// but remove the first slash if the relative has already ending with a slash
 	// it's not needed because later on we do normalize/clean the path, but better do it here too
 	// for any future updates.
-	if rb.relativePath[len(rb.relativePath)-1] == '/' {
-		if registeredPath[0] == '/' {
-			registeredPath = registeredPath[1:]
+	if api.relativePath[len(api.relativePath)-1] == '/' {
+		if relativePath[0] == '/' {
+			relativePath = relativePath[1:]
 		}
 	}
 
-	fullpath := rb.relativePath + registeredPath // for now, keep the last "/" if any,  "/xyz/"
+	fullpath := api.relativePath + relativePath // for now, keep the last "/" if any,  "/xyz/"
 
 	// global begin handlers -> middleware that are registered before route registration
 	// -> handlers that are passed to this Handle function.
-	routeHandlers := joinHandlers(append(rb.beginGlobalHandlers, rb.middleware...), handlers)
+	routeHandlers := joinHandlers(append(api.beginGlobalHandlers, api.middleware...), handlers)
 	// -> done handlers after all
-	if len(rb.doneGlobalHandlers) > 0 {
-		routeHandlers = append(routeHandlers, rb.doneGlobalHandlers...) // register the done middleware, if any
+	if len(api.doneGlobalHandlers) > 0 {
+		routeHandlers = append(routeHandlers, api.doneGlobalHandlers...) // register the done middleware, if any
 	}
 
 	// here we separate the subdomain and relative path
 	subdomain, path := splitSubdomainAndPath(fullpath)
 
-	r, err := NewRoute(method, subdomain, path, routeHandlers, rb.macros)
+	r, err := NewRoute(method, subdomain, path, routeHandlers, api.macros)
 	if err != nil { // template path parser errors:
-		rb.reporter.Add("%v -> %s:%s:%s", err, method, subdomain, path)
+		api.reporter.Add("%v -> %s:%s:%s", err, method, subdomain, path)
 		return nil
 	}
 
 	// global
-	rb.routes.register(r)
+	api.routes.register(r)
 
 	// per -party, used for done handlers
-	rb.apiRoutes = append(rb.apiRoutes, r)
+	api.apiRoutes = append(api.apiRoutes, r)
 
 	return r
 }
 
 // Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
 // Party could also be named as 'Join' or 'Node' or 'Group' , Party chosen because it is fun.
-func (rb *APIBuilder) Party(relativePath string, handlers ...context.Handler) Party {
-	parentPath := rb.relativePath
+func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) Party {
+	parentPath := api.relativePath
 	dot := string(SubdomainPrefix[0])
 	if len(parentPath) > 0 && parentPath[0] == '/' && strings.HasSuffix(relativePath, dot) {
 		// if ends with . , i.e admin., it's subdomain->
@@ -183,12 +183,12 @@ func (rb *APIBuilder) Party(relativePath string, handlers ...context.Handler) Pa
 	}
 
 	// this is checked later on but for easier debug is better to do it here:
-	if rb.relativePath[0] == '/' && relativePath[0] == '/' {
+	if api.relativePath[0] == '/' && relativePath[0] == '/' {
 		parentPath = parentPath[1:] // remove  first slash if parent ended with / and new one started with /.
 	}
 
 	// if it's subdomain then it has priority, i.e:
-	// rb.relativePath == "admin."
+	// api.relativePath == "admin."
 	// relativePath == "panel."
 	// then it should be panel.admin.
 	// instead of admin.panel.
@@ -199,16 +199,16 @@ func (rb *APIBuilder) Party(relativePath string, handlers ...context.Handler) Pa
 
 	fullpath := parentPath + relativePath
 	// append the parent's + child's handlers
-	middleware := joinHandlers(rb.middleware, handlers)
+	middleware := joinHandlers(api.middleware, handlers)
 
 	return &APIBuilder{
 		// global/api builder
-		macros:              rb.macros,
-		routes:              rb.routes,
-		errorCodeHandlers:   rb.errorCodeHandlers,
-		beginGlobalHandlers: rb.beginGlobalHandlers,
-		doneGlobalHandlers:  rb.doneGlobalHandlers,
-		reporter:            rb.reporter,
+		macros:              api.macros,
+		routes:              api.routes,
+		errorCodeHandlers:   api.errorCodeHandlers,
+		beginGlobalHandlers: api.beginGlobalHandlers,
+		doneGlobalHandlers:  api.doneGlobalHandlers,
+		reporter:            api.reporter,
 		// per-party/children
 		middleware:   middleware,
 		relativePath: fullpath,
@@ -231,8 +231,8 @@ func (rb *APIBuilder) Party(relativePath string, handlers ...context.Handler) Pa
 // })
 //
 // Look `Party` for more.
-func (rb *APIBuilder) PartyFunc(relativePath string, partyBuilderFunc func(p Party)) Party {
-	p := rb.Party(relativePath)
+func (api *APIBuilder) PartyFunc(relativePath string, partyBuilderFunc func(p Party)) Party {
+	p := api.Party(relativePath)
 	partyBuilderFunc(p)
 	return p
 }
@@ -242,50 +242,50 @@ func (rb *APIBuilder) PartyFunc(relativePath string, partyBuilderFunc func(p Par
 //
 // If called from a child party then the subdomain will be prepended to the path instead of appended.
 // So if app.Subdomain("admin.").Subdomain("panel.") then the result is: "panel.admin.".
-func (rb *APIBuilder) Subdomain(subdomain string, middleware ...context.Handler) Party {
-	if rb.relativePath == SubdomainWildcardIndicator {
+func (api *APIBuilder) Subdomain(subdomain string, middleware ...context.Handler) Party {
+	if api.relativePath == SubdomainWildcardIndicator {
 		// cannot concat wildcard subdomain with something else
-		rb.reporter.Add("cannot concat parent wildcard subdomain with anything else ->  %s , %s",
-			rb.relativePath, subdomain)
-		return rb
+		api.reporter.Add("cannot concat parent wildcard subdomain with anything else ->  %s , %s",
+			api.relativePath, subdomain)
+		return api
 	}
-	return rb.Party(subdomain, middleware...)
+	return api.Party(subdomain, middleware...)
 }
 
 // WildcardSubdomain returns a new party which is responsible to register routes to
 // a dynamic, wildcard(ed) subdomain. A dynamic subdomain is a subdomain which
 // can reply to any subdomain requests. Server will accept any subdomain
 // (if not static subdomain found) and it will search and execute the handlers of this party.
-func (rb *APIBuilder) WildcardSubdomain(middleware ...context.Handler) Party {
-	if hasSubdomain(rb.relativePath) {
+func (api *APIBuilder) WildcardSubdomain(middleware ...context.Handler) Party {
+	if hasSubdomain(api.relativePath) {
 		// cannot concat static subdomain with a dynamic one, wildcard should be at the root level
-		rb.reporter.Add("cannot concat static subdomain with a dynamic one. Dynamic subdomains should be at the root level -> %s",
-			rb.relativePath)
-		return rb
+		api.reporter.Add("cannot concat static subdomain with a dynamic one. Dynamic subdomains should be at the root level -> %s",
+			api.relativePath)
+		return api
 	}
-	return rb.Subdomain(SubdomainWildcardIndicator, middleware...)
+	return api.Subdomain(SubdomainWildcardIndicator, middleware...)
 }
 
 // Macros returns the macro map which is responsible
 // to register custom macro functions for all routes.
 //
 // Learn more at:  https://github.com/kataras/iris/tree/master/_examples/routing/dynamic-path
-func (rb *APIBuilder) Macros() *macro.Map {
-	return rb.macros
+func (api *APIBuilder) Macros() *macro.Map {
+	return api.macros
 }
 
 // GetRoutes returns the routes information,
 // some of them can be changed at runtime some others not.
 //
 // Needs refresh of the router to Method or Path or Handlers changes to take place.
-func (rb *APIBuilder) GetRoutes() []*Route {
-	return rb.routes.getAll()
+func (api *APIBuilder) GetRoutes() []*Route {
+	return api.routes.getAll()
 }
 
 // GetRoute returns the registered route based on its name, otherwise nil.
 // One note: "routeName" should be case-sensitive.
-func (rb *APIBuilder) GetRoute(routeName string) *Route {
-	return rb.routes.get(routeName)
+func (api *APIBuilder) GetRoute(routeName string) *Route {
+	return api.routes.get(routeName)
 }
 
 // Use appends Handler(s) to the current Party's routes and child routes.
@@ -296,18 +296,18 @@ func (rb *APIBuilder) GetRoute(routeName string) *Route {
 // If it's called after the routes then these handlers will never be executed.
 // Use `UseGlobal` if you want to register begin handlers(middleware)
 // that should be always run before all application's routes.
-func (rb *APIBuilder) Use(middleware ...context.Handler) {
-	rb.middleware = append(rb.middleware, middleware...)
+func (api *APIBuilder) Use(handlers ...context.Handler) {
+	api.middleware = append(api.middleware, handlers...)
 }
 
 // Done appends to the very end, Handler(s) to the current Party's routes and child routes
 // The difference from .Use is that this/or these Handler(s) are being always running last.
-func (rb *APIBuilder) Done(handlers ...context.Handler) {
-	for _, r := range rb.routes.routes {
+func (api *APIBuilder) Done(handlers ...context.Handler) {
+	for _, r := range api.routes.routes {
 		r.done(handlers) // append the handlers to the existing routes
 	}
 	// set as done handlers for the next routes as well.
-	rb.doneGlobalHandlers = append(rb.doneGlobalHandlers, handlers...)
+	api.doneGlobalHandlers = append(api.doneGlobalHandlers, handlers...)
 }
 
 // UseGlobal registers handlers that should run before all routes,
@@ -317,12 +317,12 @@ func (rb *APIBuilder) Done(handlers ...context.Handler) {
 // existing routes and the future routes that may being registered.
 //
 // It's always a good practise to call it right before the `Application#Run` function.
-func (rb *APIBuilder) UseGlobal(handlers ...context.Handler) {
-	for _, r := range rb.routes.routes {
+func (api *APIBuilder) UseGlobal(handlers ...context.Handler) {
+	for _, r := range api.routes.routes {
 		r.use(handlers) // prepend the handlers to the existing routes
 	}
 	// set as begin handlers for the next routes as well.
-	rb.beginGlobalHandlers = append(rb.beginGlobalHandlers, handlers...)
+	api.beginGlobalHandlers = append(api.beginGlobalHandlers, handlers...)
 }
 
 // None registers an "offline" route
@@ -331,83 +331,145 @@ func (rb *APIBuilder) UseGlobal(handlers ...context.Handler) {
 // Offline(handleResultRouteInfo)
 //
 // Returns a *Route and an error which will be filled if route wasn't registered successfully.
-func (rb *APIBuilder) None(path string, handlers ...context.Handler) *Route {
-	return rb.Handle(MethodNone, path, handlers...)
+func (api *APIBuilder) None(relativePath string, handlers ...context.Handler) *Route {
+	return api.Handle(MethodNone, relativePath, handlers...)
 }
 
 // Get registers a route for the Get http method.
 //
 // Returns a *Route and an error which will be filled if route wasn't registered successfully.
-func (rb *APIBuilder) Get(path string, handlers ...context.Handler) *Route {
-	return rb.Handle(http.MethodGet, path, handlers...)
+func (api *APIBuilder) Get(relativePath string, handlers ...context.Handler) *Route {
+	return api.Handle(http.MethodGet, relativePath, handlers...)
 }
 
 // Post registers a route for the Post http method.
 //
 // Returns a *Route and an error which will be filled if route wasn't registered successfully.
-func (rb *APIBuilder) Post(path string, handlers ...context.Handler) *Route {
-	return rb.Handle(http.MethodPost, path, handlers...)
+func (api *APIBuilder) Post(relativePath string, handlers ...context.Handler) *Route {
+	return api.Handle(http.MethodPost, relativePath, handlers...)
 }
 
 // Put registers a route for the Put http method.
 //
 // Returns a *Route and an error which will be filled if route wasn't registered successfully.
-func (rb *APIBuilder) Put(path string, handlers ...context.Handler) *Route {
-	return rb.Handle(http.MethodPut, path, handlers...)
+func (api *APIBuilder) Put(relativePath string, handlers ...context.Handler) *Route {
+	return api.Handle(http.MethodPut, relativePath, handlers...)
 }
 
 // Delete registers a route for the Delete http method.
 //
 // Returns a *Route and an error which will be filled if route wasn't registered successfully.
-func (rb *APIBuilder) Delete(path string, handlers ...context.Handler) *Route {
-	return rb.Handle(http.MethodDelete, path, handlers...)
+func (api *APIBuilder) Delete(relativePath string, handlers ...context.Handler) *Route {
+	return api.Handle(http.MethodDelete, relativePath, handlers...)
 }
 
 // Connect registers a route for the Connect http method.
 //
 // Returns a *Route and an error which will be filled if route wasn't registered successfully.
-func (rb *APIBuilder) Connect(path string, handlers ...context.Handler) *Route {
-	return rb.Handle(http.MethodConnect, path, handlers...)
+func (api *APIBuilder) Connect(relativePath string, handlers ...context.Handler) *Route {
+	return api.Handle(http.MethodConnect, relativePath, handlers...)
 }
 
 // Head registers a route for the Head http method.
 //
 // Returns a *Route and an error which will be filled if route wasn't registered successfully.
-func (rb *APIBuilder) Head(path string, handlers ...context.Handler) *Route {
-	return rb.Handle(http.MethodHead, path, handlers...)
+func (api *APIBuilder) Head(relativePath string, handlers ...context.Handler) *Route {
+	return api.Handle(http.MethodHead, relativePath, handlers...)
 }
 
 // Options registers a route for the Options http method.
 //
 // Returns a *Route and an error which will be filled if route wasn't registered successfully.
-func (rb *APIBuilder) Options(path string, handlers ...context.Handler) *Route {
-	return rb.Handle(http.MethodOptions, path, handlers...)
+func (api *APIBuilder) Options(relativePath string, handlers ...context.Handler) *Route {
+	return api.Handle(http.MethodOptions, relativePath, handlers...)
 }
 
 // Patch registers a route for the Patch http method.
 //
 // Returns a *Route and an error which will be filled if route wasn't registered successfully.
-func (rb *APIBuilder) Patch(path string, handlers ...context.Handler) *Route {
-	return rb.Handle(http.MethodPatch, path, handlers...)
+func (api *APIBuilder) Patch(relativePath string, handlers ...context.Handler) *Route {
+	return api.Handle(http.MethodPatch, relativePath, handlers...)
 }
 
 // Trace registers a route for the Trace http method.
 //
 // Returns a *Route and an error which will be filled if route wasn't registered successfully.
-func (rb *APIBuilder) Trace(path string, handlers ...context.Handler) *Route {
-	return rb.Handle(http.MethodTrace, path, handlers...)
+func (api *APIBuilder) Trace(relativePath string, handlers ...context.Handler) *Route {
+	return api.Handle(http.MethodTrace, relativePath, handlers...)
 }
 
 // Any registers a route for ALL of the http methods
 // (Get,Post,Put,Head,Patch,Options,Connect,Delete).
-func (rb *APIBuilder) Any(registeredPath string, handlers ...context.Handler) []*Route {
+func (api *APIBuilder) Any(relativePath string, handlers ...context.Handler) []*Route {
 	routes := make([]*Route, len(AllMethods), len(AllMethods))
 
 	for i, k := range AllMethods {
-		r := rb.Handle(k, registeredPath, handlers...)
+		r := api.Handle(k, relativePath, handlers...)
 		routes[i] = r
 	}
 
+	return routes
+}
+
+// Controller registers a `Controller` instance and returns the registered Routes.
+// The "controller" receiver should embed a field of `Controller` in order
+// to be compatible Iris `Controller`.
+//
+// It's just an alternative way of building an API for a specific
+// path, the controller can register all type of http methods.
+//
+// Keep note that this method is a bit slow
+// because of the reflection use however it's as fast as possible because
+// it does preparation before the serve-time handler but still
+// remains slower than the low-level handlers
+// such as `Handle, Get, Post, Put, Delete, Connect, Head, Trace, Patch` .
+//
+// An Example Controller can be:
+//
+// type IndexController struct {
+// 	Controller
+// }
+//
+// func (c *IndexController) Get() {
+// 	c.Tmpl = "index.html"
+// 	c.Data["title"] = "Index page"
+// 	c.Data["message"] = "Hello world!"
+// }
+//
+// Usage: app.Controller("/", new(IndexController))
+//
+//
+// Another example with persistence data:
+//
+// type UserController struct {
+// 	Controller
+//
+// 	CreatedAt time.Time `iris:"persistence"`
+// 	Title     string    `iris:"persistence"`
+// 	DB        *DB		`iris:"persistence"`
+// }
+//
+// // Get serves using the User controller when HTTP Method is "GET".
+// func (c *UserController) Get() {
+// 	c.Tmpl = "user/index.html"
+// 	c.Data["title"] = c.Title
+// 	c.Data["username"] = "kataras " + c.Params.Get("userid")
+// 	c.Data["connstring"] = c.DB.Connstring
+// 	c.Data["uptime"] = time.Now().Sub(c.CreatedAt).Seconds()
+// }
+//
+// Usage: app.Controller("/user/{id:int}", &UserController{
+// 	CreatedAt: time.Now(),
+// 	Title: "User page",
+// 	DB: yourDB,
+// })
+//
+// Read more at `router#Controller`.
+func (api *APIBuilder) Controller(relativePath string, controller interface{}) []*Route {
+	routes, err := registerController(api, relativePath, controller)
+	if err != nil {
+		api.reporter.Add("%v for path: '%s'", err, relativePath)
+	}
 	return routes
 }
 
@@ -428,9 +490,9 @@ const (
 	varyHeaderKey          = "Vary"
 )
 
-func (rb *APIBuilder) registerResourceRoute(reqPath string, h context.Handler) *Route {
-	rb.Head(reqPath, h)
-	return rb.Get(reqPath, h)
+func (api *APIBuilder) registerResourceRoute(reqPath string, h context.Handler) *Route {
+	api.Head(reqPath, h)
+	return api.Get(reqPath, h)
 }
 
 // StaticHandler returns a new Handler which is ready
@@ -450,7 +512,7 @@ func (rb *APIBuilder) registerResourceRoute(reqPath string, h context.Handler) *
 // mySubdomainFsServer.Get("/static", h)
 // ...
 //
-func (rb *APIBuilder) StaticHandler(systemPath string, showList bool, gzip bool) context.Handler {
+func (api *APIBuilder) StaticHandler(systemPath string, showList bool, gzip bool) context.Handler {
 	// Note: this doesn't need to be here but we'll keep it for consistently
 	return StaticHandler(systemPath, showList, gzip)
 }
@@ -464,7 +526,7 @@ func (rb *APIBuilder) StaticHandler(systemPath string, showList bool, gzip bool)
 // it uses gzip compression (compression on each request, no file cache).
 //
 // Returns the GET *Route.
-func (rb *APIBuilder) StaticServe(systemPath string, requestPath ...string) *Route {
+func (api *APIBuilder) StaticServe(systemPath string, requestPath ...string) *Route {
 	var reqPath string
 
 	if len(requestPath) == 0 {
@@ -475,7 +537,7 @@ func (rb *APIBuilder) StaticServe(systemPath string, requestPath ...string) *Rou
 		reqPath = requestPath[0]
 	}
 
-	return rb.Get(joinPath(reqPath, WildcardParam("file")), func(ctx context.Context) {
+	return api.Get(joinPath(reqPath, WildcardParam("file")), func(ctx context.Context) {
 		filepath := ctx.Params().Get("file")
 
 		spath := strings.Replace(filepath, "/", string(os.PathSeparator), -1)
@@ -497,7 +559,7 @@ func (rb *APIBuilder) StaticServe(systemPath string, requestPath ...string) *Rou
 // that are ready to serve raw static bytes, memory cached.
 //
 // Returns the GET *Route.
-func (rb *APIBuilder) StaticContent(reqPath string, cType string, content []byte) *Route {
+func (api *APIBuilder) StaticContent(reqPath string, cType string, content []byte) *Route {
 	modtime := time.Now()
 	h := func(ctx context.Context) {
 		ctx.ContentType(cType)
@@ -507,7 +569,7 @@ func (rb *APIBuilder) StaticContent(reqPath string, cType string, content []byte
 		}
 	}
 
-	return rb.registerResourceRoute(reqPath, h)
+	return api.registerResourceRoute(reqPath, h)
 }
 
 // StaticEmbeddedHandler returns a Handler which can serve
@@ -515,7 +577,7 @@ func (rb *APIBuilder) StaticContent(reqPath string, cType string, content []byte
 //
 //
 // Examples: https://github.com/kataras/iris/tree/master/_examples/file-server
-func (rb *APIBuilder) StaticEmbeddedHandler(vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) context.Handler {
+func (api *APIBuilder) StaticEmbeddedHandler(vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) context.Handler {
 	// Notes:
 	// This doesn't need to be APIBuilder's scope,
 	// but we'll keep it here for consistently.
@@ -531,12 +593,12 @@ func (rb *APIBuilder) StaticEmbeddedHandler(vdir string, assetFn func(name strin
 // Returns the GET *Route.
 //
 // Examples: https://github.com/kataras/iris/tree/master/_examples/file-server
-func (rb *APIBuilder) StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) *Route {
-	fullpath := joinPath(rb.relativePath, requestPath)
+func (api *APIBuilder) StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) *Route {
+	fullpath := joinPath(api.relativePath, requestPath)
 	requestPath = joinPath(fullpath, WildcardParam("file"))
 
-	h := StripPrefix(fullpath, rb.StaticEmbeddedHandler(vdir, assetFn, namesFn))
-	return rb.registerResourceRoute(requestPath, h)
+	h := StripPrefix(fullpath, api.StaticEmbeddedHandler(vdir, assetFn, namesFn))
+	return api.registerResourceRoute(requestPath, h)
 }
 
 // errDirectoryFileNotFound returns an error with message: 'Directory or file %s couldn't found. Trace: +error trace'
@@ -553,12 +615,12 @@ var errDirectoryFileNotFound = errors.New("Directory or file %s couldn't found. 
 // Note that you have to call it on every favicon you have to serve automatically (desktop, mobile and so on).
 //
 // Returns the GET *Route.
-func (rb *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
+func (api *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
 	favPath = Abs(favPath)
 
 	f, err := os.Open(favPath)
 	if err != nil {
-		rb.reporter.AddErr(errDirectoryFileNotFound.Format(favPath, err.Error()))
+		api.reporter.AddErr(errDirectoryFileNotFound.Format(favPath, err.Error()))
 		return nil
 	}
 
@@ -570,7 +632,7 @@ func (rb *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
 		f, err = os.Open(fav)
 		if err != nil {
 			//we try again with .png
-			return rb.Favicon(path.Join(favPath, "favicon.png"))
+			return api.Favicon(path.Join(favPath, "favicon.png"))
 		}
 		favPath = fav
 		fi, _ = f.Stat()
@@ -584,7 +646,7 @@ func (rb *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
 		// So we could panic but we don't,
 		// we just interrupt with a message
 		// to the (user-defined) logger.
-		rb.reporter.AddErr(errDirectoryFileNotFound.
+		api.reporter.AddErr(errDirectoryFileNotFound.
 			Format(favPath, "favicon: couldn't read the data bytes for file: "+err.Error()))
 		return nil
 	}
@@ -615,7 +677,7 @@ func (rb *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
 		reqPath = requestPath[0]
 	}
 
-	return rb.registerResourceRoute(reqPath, h)
+	return api.registerResourceRoute(reqPath, h)
 }
 
 // StaticWeb returns a handler that serves HTTP requests
@@ -626,7 +688,7 @@ func (rb *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
 //
 // for more options look router.StaticHandler.
 //
-//     rb.StaticWeb("/static", "./static")
+//     api.StaticWeb("/static", "./static")
 //
 // As a special case, the returned file server redirects any request
 // ending in "/index.html" to the same path, without the final
@@ -635,11 +697,11 @@ func (rb *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
 // StaticWeb calls the `StripPrefix(fullpath, NewStaticHandlerBuilder(systemPath).Listing(false).Build())`.
 //
 // Returns the GET *Route.
-func (rb *APIBuilder) StaticWeb(requestPath string, systemPath string) *Route {
+func (api *APIBuilder) StaticWeb(requestPath string, systemPath string) *Route {
 
 	paramName := "file"
 
-	fullpath := joinPath(rb.relativePath, requestPath)
+	fullpath := joinPath(api.relativePath, requestPath)
 
 	h := StripPrefix(fullpath, NewStaticHandlerBuilder(systemPath).Listing(false).Build())
 
@@ -659,7 +721,7 @@ func (rb *APIBuilder) StaticWeb(requestPath string, systemPath string) *Route {
 
 	requestPath = joinPath(fullpath, WildcardParam(paramName))
 	// requestPath = fullpath + "/{file:path}"
-	return rb.registerResourceRoute(requestPath, handler)
+	return api.registerResourceRoute(requestPath, handler)
 }
 
 // OnErrorCode registers an error http status code
@@ -669,14 +731,14 @@ func (rb *APIBuilder) StaticWeb(requestPath string, systemPath string) *Route {
 // the body if recorder was enabled
 // and/or disable the gzip if gzip response recorder
 // was active.
-func (rb *APIBuilder) OnErrorCode(statusCode int, handlers ...context.Handler) {
-	rb.errorCodeHandlers.Register(statusCode, handlers...)
+func (api *APIBuilder) OnErrorCode(statusCode int, handlers ...context.Handler) {
+	api.errorCodeHandlers.Register(statusCode, handlers...)
 }
 
 // OnAnyErrorCode registers a handler which called when error status code written.
 // Same as `OnErrorCode` but registers all http error codes.
 // See: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
-func (rb *APIBuilder) OnAnyErrorCode(handlers ...context.Handler) {
+func (api *APIBuilder) OnAnyErrorCode(handlers ...context.Handler) {
 	// we could register all >=400 and <=511 but this way
 	// could override custom status codes that iris developers can register for their
 	//  web apps whenever needed.
@@ -722,7 +784,7 @@ func (rb *APIBuilder) OnAnyErrorCode(handlers ...context.Handler) {
 		http.StatusNetworkAuthenticationRequired}
 
 	for _, statusCode := range errStatusCodes {
-		rb.OnErrorCode(statusCode, handlers...)
+		api.OnErrorCode(statusCode, handlers...)
 	}
 }
 
@@ -731,8 +793,8 @@ func (rb *APIBuilder) OnAnyErrorCode(handlers ...context.Handler) {
 //
 // If a handler is not already registered,
 // then it creates & registers a new trivial handler on the-fly.
-func (rb *APIBuilder) FireErrorCode(ctx context.Context) {
-	rb.errorCodeHandlers.Fire(ctx)
+func (api *APIBuilder) FireErrorCode(ctx context.Context) {
+	api.errorCodeHandlers.Fire(ctx)
 }
 
 // Layout oerrides the parent template layout with a more specific layout for this Party
@@ -745,13 +807,13 @@ func (rb *APIBuilder) FireErrorCode(ctx context.Context) {
 // 			ctx.MustRender("page1.html", nil)
 // 		})
 // 	}
-func (rb *APIBuilder) Layout(tmplLayoutFile string) Party {
-	rb.Use(func(ctx context.Context) {
+func (api *APIBuilder) Layout(tmplLayoutFile string) Party {
+	api.Use(func(ctx context.Context) {
 		ctx.ViewLayout(tmplLayoutFile)
 		ctx.Next()
 	})
 
-	return rb
+	return api
 }
 
 // joinHandlers uses to create a copy of all Handlers and return them in order to use inside the node

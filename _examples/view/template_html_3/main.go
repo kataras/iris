@@ -58,7 +58,7 @@ func main() {
 	})
 
 	// http://localhost:8080
-	// http://localhost/redirect/my-page1
+	// http://localhost:8080/redirect/my-page1
 	app.Run(iris.Addr(":8080"))
 
 }

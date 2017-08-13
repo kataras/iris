@@ -26,11 +26,11 @@ Iris is a fast, simple and efficient micro web framework for Go. It provides a b
 ### 📑 Table of contents
 
 * [Installation](#-installation)
-* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#th-12-august-2017--v824)
+* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#su-13-august-2017--v825)
 * [Learn](#-learn)
 	* [HTTP Listening](_examples/#http-listening)
 	* [Configuration](_examples/#configuration)
-	* [Routing, Grouping, Dynamic Path Parameters, "Macros" and Custom Context](_examples/#routing-grouping-dynamic-path-parameters-macros-and-custom-context)
+	* [Routing, Grouping, Controllers, Dynamic Path Parameters, "Macros" and Custom Context](_examples/#routing-grouping-dynamic-path-parameters-macros-and-custom-context)
 	* [Subdomains](_examples/#subdomains)
 	* [Wrap `http.Handler/HandlerFunc`](_examples/#convert-httphandlerhandlerfunc)
 	* [View](_examples/#view)
@@ -47,7 +47,6 @@ Iris is a fast, simple and efficient micro web framework for Go. It provides a b
 	* [Tutorial: Online Visitors](_examples/tutorial/online-visitors)
 	* [Tutorial: URL Shortener using BoltDB](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
 	* [Tutorial: How to turn your Android Device into a fully featured Web Server (**MUST**)](https://twitter.com/ThePracticalDev/status/892022594031017988)
-	* [Tutorial: Controllers from scratch (**Coming soon as built'n feature, probably at v8.3**)](_examples/tutorial/mvc)
 	* [POC: Convert the medium-sized project "Parrot" from native to Iris](https://github.com/iris-contrib/parrot)
 * [Middleware](middleware/)
 * [Dockerize](https://github.com/iris-contrib/cloud-native-go)
@@ -139,17 +138,17 @@ func main() {
 }
 ```
 
-We expect Go version 1.9 to be released in August, however you can install Go 1.9 RC1 today.
+We expect Go version 1.9 to be released in August, however you can install Go 1.9 RC2 today.
 
-### Installing Go 1.9rc1
+### Installing Go 1.9rc2
  
-1. Go to https://golang.org/dl/#go1.9rc1
-2. Download a compatible, with your OS, archive or executable, i.e `go1.9rc1.windows-amd64.zip`
-3. Unzip the contents of `go1.9rc1.windows-amd64.zip` folder to your $GOROOT, i.e `C:\Go` or just execute the executable you've just download
-4. Open a terminal and execute `go version`, it should output the go1.9rc1 version, i.e:
+1. Go to https://golang.org/dl/#go1.9rc2
+2. Download a compatible, with your OS, archive or executable, i.e `go1.9rc2.windows-amd64.zip`
+3. Unzip the contents of `go1.9rc2.windows-amd64.zip` folder to your $GOROOT, i.e `C:\Go` or just execute the executable you've just download
+4. Open a terminal and execute `go version`, it should output the go1.9rc2 version, i.e:
 ```sh
 C:\Users\kataras>go version
-go version go1.9rc1 windows/amd64
+go version go1.9rc2 windows/amd64
 ```
 
 </details>
@@ -249,6 +248,7 @@ Compared to the rest open source projects, this one is very active and you get a
 	* Remove trailing slash from the URL with option to redirect
 	* Virtual hosts and subdomains made easy
 	* Group API's and static or even dynamic subdomains
+	* MVC [**NEW**](_examples/routing/mvc)
 	* `net/http` and `negroni-like` handlers are compatible via `iris.FromStd` 
 	* Register custom handlers for any HTTP error
 	* Transactions and rollback when you need it

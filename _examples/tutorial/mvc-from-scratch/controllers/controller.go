@@ -3,7 +3,6 @@ package controllers
 import (
 	"reflect"
 	"strings"
-	// "unsafe"
 
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/context"
@@ -75,20 +74,14 @@ func RegisterController(app *iris.Application, path string, c interface{}) {
 			valF := val.Field(i)
 			// catch persistence data by tags, i.e:
 			// MyData string `iris:"persistence"`
+			// DB     *DB	 `iris:"persistence"`
 			if t, ok := f.Tag.Lookup("iris"); ok {
 				if t == "persistence" {
-					persistenceFields[i] = reflect.ValueOf(val.Field(i).Interface())
+					persistenceFields[i] = reflect.ValueOf(valF.Interface())
 					continue
 				}
 			}
 
-			// catch persistence data by pointer, i.e:
-			// DB *Database
-			if f.Type.Kind() == reflect.Ptr {
-				if !valF.IsNil() {
-					persistenceFields[i] = reflect.ValueOf(val.Field(i).Interface())
-				}
-			}
 		}
 	}
 

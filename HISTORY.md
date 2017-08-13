@@ -18,6 +18,86 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+# Su, 13 August 2017 | v8.2.5
+
+Good news for devs that are used to write their web apps using the `MVC-style` app architecture.
+
+Yesterday I wrote a [tutorial](tutorial/mvc-from-scratch) on how you can transform your raw `Handlers` to `Controllers` using the existing tools only ([Iris is the most modular web framework out there](https://medium.com/@corebreaker/iris-web-cd684b4685c7), we all have no doubt about this).
+
+Today, I did implement the `Controller` idea as **built'n feature inside Iris**.
+Our `Controller` supports many things among them are:
+
+- all HTTP Methods are supported, for example if want to serve `GET` then the controller should have a function named `Get()`, you can define more than one method function to serve in the same Controller struct
+- `persistence` data inside your Controller struct (share data between requests) via **`iris:"persistence"`** tag right to the field
+- optional `Init` function to perform any initialization before the methods, useful to call middlewares or when many methods use the same collection of data
+- access to the request path parameters via the `Params` field
+- access to the template file that should be rendered via the `Tmpl` field
+- access to the template data that should be rendered inside the template file via `Data` field
+- access to the template layout via the `Layout` field
+- access to the low-level `context.Context` via the `Ctx` field
+- flow as you used to, `Controllers` can be registered to any `Party`, including Subdomains, the Party's begin and done handlers work as expected. 
+
+It's very easy to get started, the only function you need to call instead of `app.Get/Post/Put/Delete/Connect/Head/Patch/Options/Trace` is the `app.Controller`.
+
+Example Code:
+
+```go
+// file: main.go
+
+package main
+
+import (
+    "github.com/kataras/iris"
+
+    "controllers"
+)
+
+func main() {
+    app := iris.New()
+    app.RegisterView(iris.HTML("./views", ".html"))
+
+    app.Controller("/", new(controllers.Index))
+
+    // http://localhost:8080/
+    app.Run(iris.Addr(":8080"))
+}
+
+```
+
+```go
+// file: controllers/index.go
+
+package controllers
+
+import (
+    "github.com/kataras/iris/core/router"
+)
+
+// Index is our index example controller.
+type Index struct {
+    router.Controller
+    // if you're using go1.9: 
+    // you can omit the /core/router import statement
+    // and just use the `iris.Controller` instead.
+}
+
+// will handle GET method on http://localhost:8080/
+func (c *Index) Get() {
+    c.Tmpl = "index.html"
+    c.Data["title"] = "Index page"
+    c.Data["message"] = "Hello world!"
+}
+
+// will handle POST method on http://localhost:8080/
+func (c *Index) Post() {}
+
+```
+
+> Tip: declare a func(c *Index) All() {} or Any() to register all HTTP Methods.
+
+A full example can be found at the [_examples/routing/mvc](_examples/routing/mvc) folder.
+
+
 # Sa, 12 August 2017 | v8.2.4
 
 No API Changes.

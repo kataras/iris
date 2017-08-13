@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/kataras/iris/_examples/tutorial/mvc/controllers"
-	"github.com/kataras/iris/_examples/tutorial/mvc/persistence"
+	"github.com/kataras/iris/_examples/tutorial/mvc-from-scratch/controllers"
+	"github.com/kataras/iris/_examples/tutorial/mvc-from-scratch/persistence"
 
 	"github.com/kataras/iris"
 )
@@ -18,7 +18,7 @@ func main() {
 	controllers.RegisterController(app, "/user/{userid:int}",
 		controllers.NewUserController(db))
 
-	// http://localhost/
+	// http://localhost:8080/
 	// http://localhost:8080/user/42
 	app.Run(iris.Addr(":8080"))
 }

@@ -1,26 +1,27 @@
+// +build !go1.9
+
 package controllers
 
 import (
 	"time"
 
-	"github.com/kataras/iris/_examples/tutorial/mvc/persistence"
+	"github.com/kataras/iris/_examples/routing/mvc/persistence"
+
+	"github.com/kataras/iris/core/router"
 )
 
 // User is our user example controller.
 type User struct {
-	Controller
+	router.Controller
 
-	// all fields with pointers(*)
-	// that are not nil
-	// and all fields with
-	// that are tagged with iris:"persistence"`
-	// are being persistence and kept
-	// between the requests, meaning that
-	// they will not be reset-ed on each new request,
+	// All fields with pointers(*) that are not nil
+	// and all fields that are tagged with iris:"persistence"`
+	// are being persistence and kept between the different requests,
+	// meaning that these data will not be reset-ed on each new request,
 	// they will be the same for all requests.
-	CreatedAt time.Time `iris:"persistence"`
-	Title     string    `iris:"persistence"`
-	DB        *persistence.Database
+	CreatedAt time.Time             `iris:"persistence"`
+	Title     string                `iris:"persistence"`
+	DB        *persistence.Database `iris:"persistence"`
 }
 
 func NewUserController(db *persistence.Database) *User {

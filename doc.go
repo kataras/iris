@@ -35,7 +35,7 @@ Source code and other details for the project are available at GitHub:
 
 Current Version
 
-8.2.4
+8.2.5
 
 Installation
 
@@ -678,6 +678,94 @@ Example code:
     func notFoundHandler(ctx context.Context) {
         ctx.HTML("Custom route for 404 not found http code, here you can render a view, html, json <b>any valid response</b>.")
     }
+
+
+Controllers
+
+It's very easy to get started, the only function you need to call
+instead of `app.Get/Post/Put/Delete/Connect/Head/Patch/Options/Trace`
+is the `app.Controller`.
+
+Characteristics:
+
+All HTTP Methods are supported, for example if want to serve `GET`
+then the controller should have a function named `Get()`,
+you can define more than one method function to serve in the same Controller struct.
+
+Persistence data inside your Controller struct (share data between requests)
+via `iris:"persistence"` tag right to the field.
+
+Optional `Init` function to perform any initialization before the methods,
+useful to call middlewares or when many methods use the same collection of data.
+
+Access to the request path parameters via the `Params` field.
+
+Access to the template file that should be rendered via the `Tmpl` field.
+
+Access to the template data that should be rendered inside
+the template file via `Data` field.
+
+Access to the template layout via the `Layout` field.
+
+Access to the low-level `context.Context` via the `Ctx` field.
+
+Flow as you used to, `Controllers` can be registered to any `Party`,
+including Subdomains, the Party's begin and done handlers work as expected.
+
+Example Code:
+
+
+    // file: main.go
+
+    package main
+
+    import (
+        "github.com/kataras/iris"
+
+        "controllers"
+    )
+
+    func main() {
+        app := iris.New()
+        app.RegisterView(iris.HTML("./views", ".html"))
+
+        app.Controller("/", new(controllers.Index))
+
+        // http://localhost:8080/
+        app.Run(iris.Addr(":8080"))
+    }
+
+
+    // file: controllers/index.go
+
+    package controllers
+
+    import (
+        "github.com/kataras/iris/core/router"
+    )
+
+    // Index is our index example controller.
+    type Index struct {
+        router.Controller
+        // if you're using go1.9:
+        // you can omit the /core/router import statement
+        // and just use the `iris.Controller` instead.
+    }
+
+    // will handle GET method on http://localhost:8080/
+    func (c *Index) Get() {
+        c.Tmpl = "index.html"
+        c.Data["title"] = "Index page"
+        c.Data["message"] = "Hello world!"
+    }
+
+    // will handle POST method on http://localhost:8080/
+    func (c *Index) Post() {}
+
+
+Tip: declare a func(c *Index) All() {} or Any() to register all HTTP Methods.
+
+A full example can be found at: https://github.com/kataras/iris/tree/master/_examples/routing/mvc.
 
 
 Parameterized Path
