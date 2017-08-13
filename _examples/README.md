@@ -12,7 +12,8 @@ It doesn't always contain the "best ways" but it does cover each important featu
 - [Glimpse](overview/main.go)
 - [Tutorial: Online Visitors](tutorial/online-visitors/main.go)
 - [Tutorial: URL Shortener using BoltDB](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
-- [Tutorial: How to turn your Android Device into a fully featured Web Server](https://medium.com/@kataras/how-to-turn-an-android-device-into-a-web-server-9816b28ab199)
+- [Tutorial: How to turn your Android Device into a fully featured Web Server (**MUST**)](https://twitter.com/ThePracticalDev/status/892022594031017988)
+- [Tutorial: Controllers from scratch (**Coming soon as built'n feature, probably at v8.3**)](tutorial/mvc)
 
 ### HTTP Listening 
 
@@ -193,6 +194,7 @@ iris cache library lives on its own [package](https://github.com/kataras/iris/tr
 > You're free to use your own favourite caching package if you'd like so.
 
 ### Sessions
+
 iris session manager lives on its own [package](https://github.com/kataras/iris/tree/master/sessions).
 
 - [Overview](sessions/overview/main.go)
