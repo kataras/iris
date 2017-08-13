@@ -80,6 +80,15 @@ func TestRouterWildcardAndStatic(t *testing.T) {
 		{"GET", "/some/static", h, []testRouteRequest{
 			{"GET", "", "/some/static", iris.StatusOK, same_as_request_path},
 		}},
+
+		{"GET", "/s/{p:path}", h2, []testRouteRequest{
+			{"GET", "", "/s/that/is/wildcard", iris.StatusForbidden, same_as_request_path},
+			{"GET", "", "/s/did", iris.StatusForbidden, same_as_request_path},
+			{"GET", "", "/s1/that/is/wildcard", iris.StatusNotFound, from_status_code},
+		}},
+		{"GET", "/s/static", h, []testRouteRequest{
+			{"GET", "", "/s/static", iris.StatusOK, same_as_request_path},
+		}},
 	}
 
 	testTheRoutes(t, tt, false)
