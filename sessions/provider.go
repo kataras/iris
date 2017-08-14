@@ -143,10 +143,10 @@ func (p *provider) Init(sid string, expires time.Duration) *Session {
 	return newSession
 }
 
-// UpdateExpiraton update expire date of a session.
+// UpdateExpiration update expire date of a session.
 // if expires > 0 then it updates the destroy task.
 // if expires <=0 then it does nothing, to destroy a session call the `Destroy` func instead.
-func (p *provider) UpdateExpiraton(sid string, expires time.Duration) bool {
+func (p *provider) UpdateExpiration(sid string, expires time.Duration) bool {
 	if expires <= 0 {
 		return false
 	}

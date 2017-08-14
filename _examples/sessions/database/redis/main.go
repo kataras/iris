@@ -76,7 +76,7 @@ func main() {
 
 	app.Get("/update", func(ctx context.Context) {
 		// updates expire date with a new date
-		sess.ShiftExpiraton(ctx)
+		sess.ShiftExpiration(ctx)
 	})
 
 	app.Run(iris.Addr(":8080"))

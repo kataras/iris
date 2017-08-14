@@ -98,30 +98,38 @@ func TestControllerPersistenceFields(t *testing.T) {
 		Body().Equal(data)
 }
 
-type testControllerInitFunc struct {
+type testControllerBeginAndEndRequestFunc struct {
 	router.Controller
 
 	Username string
 }
 
+// called before of every method (Get() or Post()).
+//
 // useful when more than one methods using the
 // same request values or context's function calls.
-func (t *testControllerInitFunc) Init(ctx context.Context) {
+func (t *testControllerBeginAndEndRequestFunc) BeginRequest(ctx context.Context) {
 	t.Username = ctx.Params().Get("username")
 	// or t.Params.Get("username") because the
-	// t.Ctx == ctx and is being initialized before this "Init"
+	// t.Ctx == ctx and is being initialized before this "BeginRequest"
 }
 
-func (t *testControllerInitFunc) Get() {
+// called after every method (Get() or Post()).
+func (t *testControllerBeginAndEndRequestFunc) EndRequest(ctx context.Context) {
+	ctx.Writef("done") // append "done" to the response
+}
+
+func (t *testControllerBeginAndEndRequestFunc) Get() {
 	t.Ctx.Writef(t.Username)
 }
 
-func (t *testControllerInitFunc) Post() {
+func (t *testControllerBeginAndEndRequestFunc) Post() {
 	t.Ctx.Writef(t.Username)
 }
-func TestControllerInitFunc(t *testing.T) {
+
+func TestControllerBeginAndEndRequestFunc(t *testing.T) {
 	app := iris.New()
-	app.Controller("/profile/{username}", new(testControllerInitFunc))
+	app.Controller("/profile/{username}", new(testControllerBeginAndEndRequestFunc))
 
 	e := httptest.New(t, app)
 	usernames := []string{
@@ -132,11 +140,13 @@ func TestControllerInitFunc(t *testing.T) {
 		"bill",
 		"whoisyourdaddy",
 	}
+	doneResponse := "done"
+
 	for _, username := range usernames {
 		e.GET("/profile/" + username).Expect().Status(httptest.StatusOK).
-			Body().Equal(username)
+			Body().Equal(username + doneResponse)
 		e.POST("/profile/" + username).Expect().Status(httptest.StatusOK).
-			Body().Equal(username)
+			Body().Equal(username + doneResponse)
 	}
 
 }

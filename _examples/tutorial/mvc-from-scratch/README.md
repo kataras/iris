@@ -76,7 +76,7 @@ func (c *UserController) Get() {
 }
 
 /* Can use more than one, the factory will make sure
-that the correct http methods are being registed  for this
+that the correct http methods are being registered  for this
 controller, uncommend these if you want:
 
 func (c *User) Post() {}

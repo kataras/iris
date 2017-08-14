@@ -18,6 +18,26 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+# Mo, 14 August 2017 | v8.2.6
+
+Able to call done/end handlers inside a `Controller`, via optional `EndRequest(ctx context.Context)` function inside the controller struct.
+
+```go
+// it's called after t.Get()/Post()/Put()/Delete()/Connect()/Head()/Patch()/Options()/Trace().
+func (t *testControllerEndRequestFunc) EndRequest(ctx context.Context) {
+    // 2.
+    // [your code goes here...]
+}
+
+// will handle "GET" request HTTP method only.
+func (t *testControllerEndRequestFunc) Get() {
+    // 1.
+    // [your code goes here...]
+}
+```
+
+Look at the [v8.2.5 changelog](#su-13-august-2017--v825) to learn more about the new Iris Controllers feature.
+
 # Su, 13 August 2017 | v8.2.5
 
 Good news for devs that are used to write their web apps using the `MVC-style` app architecture.
@@ -29,7 +49,8 @@ Our `Controller` supports many things among them are:
 
 - all HTTP Methods are supported, for example if want to serve `GET` then the controller should have a function named `Get()`, you can define more than one method function to serve in the same Controller struct
 - `persistence` data inside your Controller struct (share data between requests) via **`iris:"persistence"`** tag right to the field
-- optional `Init` function to perform any initialization before the methods, useful to call middlewares or when many methods use the same collection of data
+- optional `Init(ctx) or BeginRequest(ctx)` function to perform any initialization before the methods, useful to call middlewares or when many methods use the same collection of data
+- optional `Done(ctx) or EndRequest(ctx)` function to perform any finalization after the methods executed
 - access to the request path parameters via the `Params` field
 - access to the template file that should be rendered via the `Tmpl` field
 - access to the template data that should be rendered inside the template file via `Data` field

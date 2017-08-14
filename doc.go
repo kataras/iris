@@ -35,7 +35,7 @@ Source code and other details for the project are available at GitHub:
 
 Current Version
 
-8.2.5
+8.2.6
 
 Installation
 
@@ -695,9 +695,6 @@ you can define more than one method function to serve in the same Controller str
 Persistence data inside your Controller struct (share data between requests)
 via `iris:"persistence"` tag right to the field.
 
-Optional `Init` function to perform any initialization before the methods,
-useful to call middlewares or when many methods use the same collection of data.
-
 Access to the request path parameters via the `Params` field.
 
 Access to the template file that should be rendered via the `Tmpl` field.
@@ -711,6 +708,11 @@ Access to the low-level `context.Context` via the `Ctx` field.
 
 Flow as you used to, `Controllers` can be registered to any `Party`,
 including Subdomains, the Party's begin and done handlers work as expected.
+
+Optional `Init(ctx) or BeginRequest(ctx)` function to perform any initialization before the methods,
+useful to call middlewares or when many methods use the same collection of data.
+
+Optional `Done(ctx) or EndRequest(ctx)` function to perform any finalization after the methods executed.
 
 Example Code:
 
@@ -1448,7 +1450,7 @@ Example Code:
 
         app.Get("/update", func(ctx context.Context) {
             // updates expire date with a new date
-            sess.ShiftExpiraton(ctx)
+            sess.ShiftExpiration(ctx)
         })
 
         app.Run(iris.Addr(":8080"))
