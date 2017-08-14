@@ -164,7 +164,8 @@ func registerController(p Party, path string, c interface{}) ([]*Route, error) {
 		}
 	}
 
-	customInitFuncIndex, _ := getCustomInitFuncIndex(typ)
+	customInitFuncIndex, _ := getCustomFuncIndex(typ, customInitFuncNames...)
+	customEndFuncIndex, _ := getCustomFuncIndex(typ, customEndFuncNames...)
 
 	// check if has Any() or All()
 	// if yes, then register all http methods and
@@ -176,7 +177,7 @@ func registerController(p Party, path string, c interface{}) ([]*Route, error) {
 	if has {
 		routes := p.Any(path,
 			controllerToHandler(elem, persistenceFields,
-				baseControllerFieldIndex, m.Index, customInitFuncIndex))
+				baseControllerFieldIndex, m.Index, customInitFuncIndex, customEndFuncIndex))
 		return routes, nil
 	}
 
@@ -196,14 +197,14 @@ func registerController(p Party, path string, c interface{}) ([]*Route, error) {
 
 		r := p.Handle(method, path,
 			controllerToHandler(elem, persistenceFields,
-				baseControllerFieldIndex, httpMethodIndex, customInitFuncIndex))
+				baseControllerFieldIndex, httpMethodIndex, customInitFuncIndex, customEndFuncIndex))
 		routes = append(routes, r)
 	}
 	return routes, nil
 }
 
 func controllerToHandler(elem reflect.Type, persistenceFields map[int]reflect.Value,
-	baseControllerFieldIndex, httpMethodIndex int, customInitFuncIndex int) context.Handler {
+	baseControllerFieldIndex, httpMethodIndex, customInitFuncIndex, customEndFuncIndex int) context.Handler {
 	return func(ctx context.Context) {
 		// create a new controller instance of that type(>ptr).
 		c := reflect.New(elem)
@@ -229,10 +230,10 @@ func controllerToHandler(elem reflect.Type, persistenceFields map[int]reflect.Va
 		// init the new controller instance.
 		b.init(ctx)
 
-		// calls the higher "Init(ctx context.Context)",
+		// call the higher "Init/BeginRequest(ctx context.Context)",
 		// if exists.
-		if customInitFuncIndex > 0 {
-			callCustomInit(ctx, c, customInitFuncIndex)
+		if customInitFuncIndex >= 0 {
+			callCustomFuncHandler(ctx, c, customInitFuncIndex)
 		}
 
 		// if custom Init didn't stop the execution of the
@@ -242,22 +243,39 @@ func controllerToHandler(elem reflect.Type, persistenceFields map[int]reflect.Va
 			methodFunc.Interface().(func())()
 		}
 
+		if !ctx.IsStopped() {
+			// call the higher "Done/EndRequest(ctx context.Context)",
+			// if exists.
+			if customEndFuncIndex >= 0 {
+				callCustomFuncHandler(ctx, c, customEndFuncIndex)
+			}
+		}
+
 		// finally, execute the controller.
 		b.exec()
 	}
 }
 
-// Init can be used as a custom function
-// to init the new instance of controller
-// that is created on each new request.
-//
 // Useful when more than one methods are using the same
 // request data.
-const customInitFuncName = "Init"
+var (
+	// customInitFuncNames can be used as custom functions
+	// to init the new instance of controller
+	// that is created on each new request.
+	// One of these is valid, no both.
+	customInitFuncNames = []string{"Init", "BeginRequest"}
+	// customEndFuncNames can be used as custom functions
+	// to action when the method handler has been finished,
+	// this is the last step before server send the response to the client.
+	// One of these is valid, no both.
+	customEndFuncNames = []string{"Done", "EndRequest"}
+)
 
-func getCustomInitFuncIndex(typ reflect.Type) (initFuncIndex int, has bool) {
-	if m, has := typ.MethodByName(customInitFuncName); has {
-		return m.Index, has
+func getCustomFuncIndex(typ reflect.Type, funcNames ...string) (initFuncIndex int, has bool) {
+	for _, customInitFuncName := range funcNames {
+		if m, has := typ.MethodByName(customInitFuncName); has {
+			return m.Index, has
+		}
 	}
 
 	return -1, false
@@ -265,8 +283,8 @@ func getCustomInitFuncIndex(typ reflect.Type) (initFuncIndex int, has bool) {
 
 // the "cServeTime" is a new "c" instance
 // which is being used at serve time, inside the Handler.
-// it calls the custom "Init", the check of this
-// function made at build time, so it's a safe a call.
-func callCustomInit(ctx context.Context, cServeTime reflect.Value, initFuncIndex int) {
+// it calls the custom function (can be "Init", "BeginRequest", "End" and "EndRequest"),
+// the check of this function made at build time, so it's a safe a call.
+func callCustomFuncHandler(ctx context.Context, cServeTime reflect.Value, initFuncIndex int) {
 	cServeTime.Method(initFuncIndex).Interface().(func(ctx context.Context))(ctx)
 }

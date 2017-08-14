@@ -119,19 +119,19 @@ func (s *Sessions) Start(ctx context.Context) *Session {
 	return sess
 }
 
-// ShiftExpiraton move the expire date of a session to a new date
+// ShiftExpiration move the expire date of a session to a new date
 // by using session default timeout configuration.
-func (s *Sessions) ShiftExpiraton(ctx context.Context) {
-	s.UpdateExpiraton(ctx, s.config.Expires)
+func (s *Sessions) ShiftExpiration(ctx context.Context) {
+	s.UpdateExpiration(ctx, s.config.Expires)
 }
 
-// UpdateExpiraton change expire date of a session to a new date
+// UpdateExpiration change expire date of a session to a new date
 // by using timeout value passed by `expires` receiver.
-func (s *Sessions) UpdateExpiraton(ctx context.Context, expires time.Duration) {
+func (s *Sessions) UpdateExpiration(ctx context.Context, expires time.Duration) {
 	cookieValue := s.decodeCookieValue(GetCookie(ctx, s.config.Cookie))
 
 	if cookieValue != "" {
-		if s.provider.UpdateExpiraton(cookieValue, expires) {
+		if s.provider.UpdateExpiration(cookieValue, expires) {
 			s.updateCookie(ctx, cookieValue, expires)
 		}
 	}

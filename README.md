@@ -26,7 +26,7 @@ Iris is a fast, simple and efficient micro web framework for Go. It provides a b
 ### 📑 Table of contents
 
 * [Installation](#-installation)
-* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#su-13-august-2017--v825)
+* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#mo-14-august-2017--v826)
 * [Learn](#-learn)
 	* [HTTP Listening](_examples/#http-listening)
 	* [Configuration](_examples/#configuration)

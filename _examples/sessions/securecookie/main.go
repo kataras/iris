@@ -64,7 +64,7 @@ func newApp() *iris.Application {
 
 	app.Get("/update", func(ctx context.Context) {
 		// updates expire date with a new date
-		mySessions.ShiftExpiraton(ctx)
+		mySessions.ShiftExpiration(ctx)
 	})
 
 	app.Get("/destroy", func(ctx context.Context) {
