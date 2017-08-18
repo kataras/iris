@@ -137,6 +137,11 @@ var errFindParse = errors.New("Unable to find the %s with key: %s. Found? %#v")
 
 // GetInt same as Get but returns as int, if not found then returns -1 and an error.
 func (s *Session) GetInt(key string) (int, error) {
+	return s.GetIntDefault(key, -1)
+}
+
+// GetIntDefault same as Get but returns as int, if not found then returns the "defaultValue".
+func (s *Session) GetIntDefault(key string, defaultValue int) (int, error) {
 	v := s.Get(key)
 
 	if vint, ok := v.(int); ok {
@@ -147,7 +152,7 @@ func (s *Session) GetInt(key string) (int, error) {
 		return strconv.Atoi(vstring)
 	}
 
-	return -1, errFindParse.Format("int", key, v)
+	return defaultValue, errFindParse.Format("int", key, v)
 }
 
 // GetInt64 same as Get but returns as int64, if not found then returns -1 and an error.

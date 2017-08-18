@@ -2,6 +2,7 @@ package router
 
 import (
 	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/mvc/activator"
 )
 
 // Party is here to separate the concept of
@@ -51,6 +52,22 @@ type Party interface {
 	//
 	// Returns the read-only route information.
 	Handle(method string, registeredPath string, handlers ...context.Handler) *Route
+	// HandleMany works like `Handle` but can receive more than one
+	// paths separated by spaces and returns always a slice of *Route instead of a single instance of Route.
+	//
+	// It's useful only if the same handler can handle more than one request paths,
+	// otherwise use `Party` which can handle many paths with different handlers and middlewares.
+	//
+	// Usage:
+	// 	app.HandleMany(iris.MethodGet, "/user /user/{id:int} /user/me", userHandler)
+	// At the other side, with `Handle` we've had to write:
+	// 	app.Handle(iris.MethodGet, "/user", userHandler)
+	// 	app.Handle(iris.MethodGet, "/user/{id:int}", userByIDHandler)
+	// 	app.Handle(iris.MethodGet, "/user/me", userMeHandler)
+	//
+	// This method is used behind the scenes at the `Controller` function
+	// in order to handle more than one paths for the same controller instance.
+	HandleMany(method string, relativePath string, handlers ...context.Handler) []*Route
 
 	// None registers an "offline" route
 	// see context.ExecRoute(routeName) and
@@ -107,11 +124,15 @@ type Party interface {
 	// It's just an alternative way of building an API for a specific
 	// path, the controller can register all type of http methods.
 	//
-	// Keep note that this method is a bit slow
+	// Keep note that controllers are bit slow
 	// because of the reflection use however it's as fast as possible because
 	// it does preparation before the serve-time handler but still
 	// remains slower than the low-level handlers
-	// such as `Handle, Get, Post, Put, Delete, Connect, Head, Trace, Patch` .
+	// such as `Handle, Get, Post, Put, Delete, Connect, Head, Trace, Patch`.
+	//
+	//
+	// All fields that are tagged with iris:"persistence"` or binded
+	// are being persistence and kept the same between the different requests.
 	//
 	// An Example Controller can be:
 	//
@@ -128,33 +149,29 @@ type Party interface {
 	// Usage: app.Controller("/", new(IndexController))
 	//
 	//
-	// Another example with persistence data:
+	// Another example with bind:
 	//
 	// type UserController struct {
 	// 	Controller
 	//
-	// 	CreatedAt time.Time `iris:"persistence"`
-	// 	Title     string    `iris:"persistence"`
-	// 	DB        *DB		`iris:"persistence"`
+	// 	DB        *DB
+	// 	CreatedAt time.Time
+	//
 	// }
 	//
 	// // Get serves using the User controller when HTTP Method is "GET".
 	// func (c *UserController) Get() {
 	// 	c.Tmpl = "user/index.html"
-	// 	c.Data["title"] = c.Title
+	// 	c.Data["title"] = "User Page"
 	// 	c.Data["username"] = "kataras " + c.Params.Get("userid")
 	// 	c.Data["connstring"] = c.DB.Connstring
 	// 	c.Data["uptime"] = time.Now().Sub(c.CreatedAt).Seconds()
 	// }
 	//
-	// Usage: app.Controller("/user/{id:int}", &UserController{
-	// 	CreatedAt: time.Now(),
-	// 	Title: "User page",
-	// 	DB: yourDB,
-	// })
+	// Usage: app.Controller("/user/{id:int}", new(UserController), db, time.Now())
 	//
-	// Read more at `router#Controller`.
-	Controller(relativePath string, controller interface{}) []*Route
+	// Read more at `/mvc#Controller`.
+	Controller(relativePath string, controller activator.BaseController, bindValues ...interface{}) []*Route
 
 	// StaticHandler returns a new Handler which is ready
 	// to serve all kind of static files.

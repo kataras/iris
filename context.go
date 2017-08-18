@@ -6,6 +6,7 @@ import (
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/host"
 	"github.com/kataras/iris/core/router"
+	"github.com/kataras/iris/mvc"
 )
 
 // TODO: When go 1.9 will be released
@@ -16,9 +17,6 @@ import (
 // core/host/supervisor.go
 // context.go
 // _examples/hello-world/main_go19.go
-// _examples/routing/mvc/controllers/index_go19.go
-// _examples/routing/mvc/controllers/user_go19.go
-// _examples/routing/mvc/main_go19.go
 // _examples/tutorial/mvc-from-scratch/README.md
 type (
 	// Context is the midle-man server's "object" for the clients.
@@ -59,6 +57,7 @@ type (
 	//
 	// A shortcut for the `core/router#Party`, useful when `PartyFunc` is being used.
 	Party = router.Party
+
 	// Controller is the base controller for the high level controllers instances.
 	//
 	// This base controller is used as an alternative way of building
@@ -118,11 +117,11 @@ type (
 	//
 	// Look `core/router#APIBuilder#Controller` method too.
 	//
-	// A shortcut for the `core/router#Controller`,
+	// A shortcut for the `mvc#Controller`,
 	// useful when `app.Controller` is being used.
 	//
 	// A Controller can be declared by importing
-	// the "github.com/kataras/iris/core/router"
+	// the "github.com/kataras/iris/mvc"
 	// package for machines that have not installed go1.9 yet.
-	Controller = router.Controller
+	Controller = mvc.Controller
 )

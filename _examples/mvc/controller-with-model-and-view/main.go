@@ -1,11 +1,3 @@
-# Controllers from scratch
-
-This folder shows how [@kataras](https://github.com/kataras) started to develop
-the MVC idea inside the Iris web framework itself.
-
-**Now** it has been enhanced and it's a **built'n** feature and can be used as:
-
-```go
 package main
 
 import (
@@ -105,26 +97,3 @@ func (pc *ProfileController) Get() { // IMPORTANT
 	pc.Tmpl = "profile/profile.html"
 	pc.User = user
 }
-
-/* Can use more than one, the factory will make sure
-that the correct http methods are being registered for each route
-for this controller, uncomment these if you want:
-
-func (pc *ProfileController) Post() {}
-func (pc *ProfileController) Put() {}
-func (pc *ProfileController) Delete() {}
-func (pc *ProfileController) Connect() {}
-func (pc *ProfileController) Head() {}
-func (pc *ProfileController) Patch() {}
-func (pc *ProfileController) Options() {}
-func (pc *ProfileController) Trace() {}
-*/
-
-/*
-func (c *ProfileController) All() {}
-//        OR
-func (c *ProfileController) Any() {}
-*/
-```
-
-Example can be found at: [_examples/mvc](https://github.com/kataras/iris/tree/master/_examples/mvc).

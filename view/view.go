@@ -43,6 +43,12 @@ var (
 
 // ExecuteWriter calls the correct view Engine's ExecuteWriter func
 func (v *View) ExecuteWriter(w io.Writer, filename string, layout string, bindingData interface{}) error {
+	if len(filename) > 2 {
+		if filename[0] == '/' { // omit first slash
+			filename = filename[1:]
+		}
+	}
+
 	e := v.Find(filename)
 	if e == nil {
 		return errNoViewEngineForExt.Format(filepath.Ext(filename))
