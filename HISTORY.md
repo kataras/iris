@@ -18,6 +18,223 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+# Fr, 18 August 2017 | v8.3.0
+
+Good news for devs that are used to write their web apps using the `MVC` architecture pattern.
+
+Implement a whole new `mvc` package with additional support for models and easy binding.
+
+@kataras started to develop that feature by version 8.2.5, back then it didn't seem
+to be a large feature and maybe a game-changer, so it lived inside the `kataras/iris/core/router/controller.go` file.
+However with this version, so many things are implemented for the MVC and we needed a new whole package,
+this new package is the `kataras/iris/mvc`, but if you used go 1.9 to build then you don't have to do any refactor, you could use the `iris.Controller` type alias.
+
+People who used the mvc from its baby steps(v8.2.5) the only syntactic change you'll have to do is to rename the `router.Controller` to `mvc.Controller`:
+
+Before: 
+```go
+import "github.com/kataras/iris/core/router"
+type MyController struct {
+    router.Controller
+}
+```
+Now:
+```go
+import "github.com/kataras/iris/mvc"
+type MyController struct {
+    mvc.Controller
+    // if you build with go1.9 you can omit the import of mvc package
+    // and just use `iris.Controller` instead.
+}
+```
+
+### MVC (Model View Controller)
+
+![](_examples/mvc/web_mvc_diagram.png)
+
+From version 8.3 and after Iris has **first-class support for the MVC pattern**, you'll not find
+these stuff anywhere else in the Go world.
+
+
+Example Code
+
+
+```go
+package main
+
+import (
+	"sync"
+
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/mvc"
+)
+
+func main() {
+	app := iris.New()
+	app.RegisterView(iris.HTML("./views", ".html"))
+
+	// when we have a path separated by spaces
+	// then the Controller is registered to all of them one by one.
+	//
+	// myDB is binded to the controller's `*DB` field: use only structs and pointers.
+	app.Controller("/profile /profile/browse /profile/{id:int} /profile/me",
+		new(ProfileController), myDB) // IMPORTANT
+
+	app.Run(iris.Addr(":8080"))
+}
+
+// UserModel our example model which will render on the template.
+type UserModel struct {
+	ID       int64
+	Username string
+}
+
+// DB is our example database.
+type DB struct {
+	usersTable map[int64]UserModel
+	mu         sync.RWMutex
+}
+
+// GetUserByID imaginary database lookup based on user id.
+func (db *DB) GetUserByID(id int64) (u UserModel, found bool) {
+	db.mu.RLock()
+	u, found = db.usersTable[id]
+	db.mu.RUnlock()
+	return
+}
+
+var myDB = &DB{
+	usersTable: map[int64]UserModel{
+		1:  {1, "kataras"},
+		2:  {2, "makis"},
+		42: {42, "jdoe"},
+	},
+}
+
+// ProfileController our example user controller which controls
+// the paths of "/profile" "/profile/{id:int}" and "/profile/me".
+type ProfileController struct {
+	mvc.Controller // IMPORTANT
+
+	User UserModel `iris:"model"`
+	// we will bind it but you can also tag it with`iris:"persistence"`
+	// and init the controller with manual &PorifleController{DB: myDB}.
+	DB *DB
+}
+
+// Get method handles all "GET" HTTP Method requests of the controller's paths.
+func (pc *ProfileController) Get() { // IMPORTANT
+	path := pc.Path
+
+	// requested: /profile path
+	if path == "/profile" {
+		pc.Tmpl = "profile/index.html"
+		return
+	}
+	// requested: /profile/browse
+	// this exists only to proof the concept of changing the path:
+	// it will result to a redirection.
+	if path == "/profile/browse" {
+		pc.Path = "/profile"
+		return
+	}
+
+	// requested: /profile/me path
+	if path == "/profile/me" {
+		pc.Tmpl = "profile/me.html"
+		return
+	}
+
+	// requested: /profile/$ID
+	id, _ := pc.Params.GetInt64("id")
+
+	user, found := pc.DB.GetUserByID(id)
+	if !found {
+		pc.Status = iris.StatusNotFound
+		pc.Tmpl = "profile/notfound.html"
+		pc.Data["ID"] = id
+		return
+	}
+
+	pc.Tmpl = "profile/profile.html"
+	pc.User = user
+}
+
+
+/*
+func (pc *ProfileController) Post() {}
+func (pc *ProfileController) Put() {}
+func (pc *ProfileController) Delete() {}
+func (pc *ProfileController) Connect() {}
+func (pc *ProfileController) Head() {}
+func (pc *ProfileController) Patch() {}
+func (pc *ProfileController) Options() {}
+func (pc *ProfileController) Trace() {}
+*/
+
+/*
+func (pc *ProfileController) All() {}
+//        OR
+func (pc *ProfileController) Any() {}
+*/
+```
+
+Iris web framework supports Request data, Models, Persistence Data and Binding
+with the fastest possible execution.
+
+**Characteristics**
+
+All HTTP Methods are supported, for example if want to serve `GET`
+then the controller should have a function named `Get()`,
+you can define more than one method function to serve in the same Controller struct.
+
+Persistence data inside your Controller struct (share data between requests)
+via `iris:"persistence"` tag right to the field or Bind using `app.Controller("/" , new(myController), theBindValue)`.
+
+Models inside your Controller struct (set-ed at the Method function and rendered by the View)
+via `iris:"model"` tag right to the field, i.e ```User UserModel `iris:"model" name:"user"` ``` view will recognise it as `{{.user}}`.
+If `name` tag is missing then it takes the field's name, in this case the `"User"`.
+
+Access to the request path and its parameters via the `Path and Params` fields.
+
+Access to the template file that should be rendered via the `Tmpl` field.
+
+Access to the template data that should be rendered inside
+the template file via `Data` field.
+
+Access to the template layout via the `Layout` field.
+
+Access to the low-level `context.Context` via the `Ctx` field.
+
+Flow as you used to, `Controllers` can be registered to any `Party`,
+including Subdomains, the Party's begin and done handlers work as expected.
+
+Optional `BeginRequest(ctx)` function to perform any initialization before the method execution,
+useful to call middlewares or when many methods use the same collection of data.
+
+Optional `EndRequest(ctx)` function to perform any finalization after any method executed.
+
+Inheritance, see for example our `mvc.SessionController`, it has the `mvc.Controller` as an embedded field
+and it adds its logic to its `BeginRequest`, [here](https://github.com/kataras/iris/blob/master/mvc/session_controller.go). 
+
+**Using Iris MVC for code reuse** 
+
+By creating components that are independent of one another, developers are able to reuse components quickly and easily in other applications. The same (or similar) view for one application can be refactored for another application with different data because the view is simply handling how the data is being displayed to the user.
+
+If you're new to back-end web development read about the MVC architectural pattern first, a good start is that [wikipedia article](https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93controller).
+
+
+Follow the examples below,
+
+- [Hello world](_examples/mvc/hello-world/main.go)
+- [Session Controller](_examples/mvc/session-controller/main.go)
+- [A simple but featured Controller with model and views](_examples/mvc/controller-with-model-and-view).
+
+### Bugs
+
+Fix [#723](https://github.com/kataras/iris/issues/723) reported by @speedwheel.
+
+
 # Mo, 14 August 2017 | v8.2.6
 
 Able to call done/end handlers inside a `Controller`, via optional `EndRequest(ctx context.Context)` function inside the controller struct.
@@ -49,8 +266,8 @@ Our `Controller` supports many things among them are:
 
 - all HTTP Methods are supported, for example if want to serve `GET` then the controller should have a function named `Get()`, you can define more than one method function to serve in the same Controller struct
 - `persistence` data inside your Controller struct (share data between requests) via **`iris:"persistence"`** tag right to the field
-- optional `Init(ctx) or BeginRequest(ctx)` function to perform any initialization before the methods, useful to call middlewares or when many methods use the same collection of data
-- optional `Done(ctx) or EndRequest(ctx)` function to perform any finalization after the methods executed
+- optional `BeginRequest(ctx)` function to perform any initialization before the methods, useful to call middlewares or when many methods use the same collection of data
+- optional `EndRequest(ctx)` function to perform any finalization after the methods executed
 - access to the request path parameters via the `Params` field
 - access to the template file that should be rendered via the `Tmpl` field
 - access to the template data that should be rendered inside the template file via `Data` field
@@ -96,7 +313,7 @@ import (
 
 // Index is our index example controller.
 type Index struct {
-    router.Controller
+    mvc.Controller
     // if you're using go1.9: 
     // you can omit the /core/router import statement
     // and just use the `iris.Controller` instead.
@@ -116,7 +333,7 @@ func (c *Index) Post() {}
 
 > Tip: declare a func(c *Index) All() {} or Any() to register all HTTP Methods.
 
-A full example can be found at the [_examples/routing/mvc](_examples/routing/mvc) folder.
+A full example can be found at the [_examples/mvc](_examples/mvc) folder.
 
 
 # Sa, 12 August 2017 | v8.2.4

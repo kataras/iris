@@ -32,7 +32,7 @@ import (
 
 const (
 	// Version is the current version number of the Iris Web Framework.
-	Version = "8.2.6"
+	Version = "8.3.0"
 )
 
 // HTTP status codes as registered with IANA.
@@ -383,7 +383,7 @@ func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 	if srv.Addr == "" {
 		srv.Addr = ":8080"
 	}
-	app.logger.Debugf("HTTP Server Addr: %s", srv.Addr)
+	app.logger.Debugf("Host: addr is %s", srv.Addr)
 
 	// create the new host supervisor
 	// bind the constructed server and return it
@@ -399,25 +399,25 @@ func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 		app.config.vhost = netutil.ResolveVHost(srv.Addr)
 	}
 
-	app.logger.Debugf("VHost: %s", app.config.vhost)
+	app.logger.Debugf("Host: virtual host is %s", app.config.vhost)
 
 	// the below schedules some tasks that will run among the server
 
 	if !app.config.DisableStartupLog {
 		// show the available info to exit from app.
 		su.RegisterOnServe(host.WriteStartupLogOnServe(app.logger.Printer.Output)) // app.logger.Writer -> Info
-		app.logger.Debugf("Host: Register startup notifier")
+		app.logger.Debugf("Host: register startup notifier")
 	}
 
 	if !app.config.DisableInterruptHandler {
 		// when CTRL+C/CMD+C pressed.
 		shutdownTimeout := 5 * time.Second
 		host.RegisterOnInterrupt(host.ShutdownOnInterrupt(su, shutdownTimeout))
-		app.logger.Debugf("Host: Register server shutdown on interrupt(CTRL+C/CMD+C)")
+		app.logger.Debugf("Host: register server shutdown on interrupt(CTRL+C/CMD+C)")
 	}
 
 	su.IgnoredErrors = append(su.IgnoredErrors, app.config.IgnoreServerErrors...)
-	app.logger.Debugf("Host: Server will ignore the following errors: %s", su.IgnoredErrors)
+	app.logger.Debugf("Host: server will ignore the following errors: %s", su.IgnoredErrors)
 	su.Configure(app.hostConfigurators...)
 
 	app.Hosts = append(app.Hosts, su)
@@ -608,7 +608,7 @@ func (app *Application) Build() error {
 		}
 
 		if app.view.Len() > 0 {
-			app.logger.Debugf("%d registered view engine(s)", app.view.Len())
+			app.logger.Debugf("Application: %d registered view engine(s)", app.view.Len())
 			// view engine
 			// here is where we declare the closed-relative framework functions.
 			// Each engine has their defaults, i.e yield,render,render_r,partial, params...
@@ -651,7 +651,7 @@ func (app *Application) Run(serve Runner, withOrWithout ...Configurator) error {
 	}
 
 	app.Configure(withOrWithout...)
-	app.logger.Debugf("Application:  running using %d host(s)", len(app.Hosts)+1)
+	app.logger.Debugf("Application: running using %d host(s)", len(app.Hosts)+1)
 
 	if !app.config.DisableVersionChecker && app.logger.Level != golog.DisableLevel {
 		go CheckVersion()

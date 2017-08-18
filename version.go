@@ -7,17 +7,11 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"strings"
 	"sync"
 	"time"
 
 	"github.com/kataras/golog"
 	"github.com/kataras/iris/core/netutil"
-)
-
-const (
-	versionURL = "http://iris-go.com/version"
-	updateCmd  = "go get -u -f -v github.com/kataras/iris"
 )
 
 var checkVersionOnce = sync.Once{}
@@ -36,8 +30,8 @@ type versionInfo struct {
 }
 
 func checkVersion() {
-	client := netutil.Client(time.Duration(20 * time.Second))
-	r, err := client.PostForm(versionURL, url.Values{"current_version": {Version}})
+	client := netutil.Client(20 * time.Second)
+	r, err := client.PostForm("http://iris-go.com/version", url.Values{"current_version": {Version}})
 
 	if err != nil {
 		golog.Debugf("%v", err)
@@ -105,9 +99,8 @@ func checkVersion() {
 	}
 
 	if shouldUpdate {
-		goget := strings.Split(updateCmd, " ")
-		// go get -u github.com/:owner/:repo
-		cmd := exec.Command(goget[0], goget[1:]...)
+		repo := "github.com/kataras/iris"
+		cmd := exec.Command("go", "get", "-u", "-f", "-v", repo)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stdout
 
@@ -116,6 +109,6 @@ func checkVersion() {
 			return
 		}
 
-		golog.Infof("Update process finished.\nManual restart is required to apply the changes...")
+		golog.Infof("Update process finished.\nManual rebuild and restart is required to apply the changes...")
 	}
 }

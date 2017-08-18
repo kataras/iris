@@ -82,7 +82,7 @@ Navigate through examples for a better understanding.
 
 - [Overview](routing/overview/main.go)
 - [Basic](routing/basic/main.go)
-- [Controllers](routing/mvc)
+- [Controllers](mvc)
 - [Custom HTTP Errors](routing/http-errors/main.go)
 - [Dynamic Path](routing/dynamic-path/main.go)
     * [root level wildcard path](routing/dynamic-path/root-wildcard/main.go)
@@ -92,6 +92,66 @@ Navigate through examples for a better understanding.
     * [method overriding](routing/custom-context/method-overriding/main.go)
     * [new implementation](routing/custom-context/new-implementation/main.go)
 - [Route State](routing/route-state/main.go)
+
+### MVC
+
+![](mvc/web_mvc_diagram.png)
+
+Iris has **first-class support for the MVC (Model View Controller) pattern**, you'll not find
+these stuff anywhere else in the Go world.
+
+Iris web framework supports Request data, Models, Persistence Data and Binding
+with the fastest possible execution.
+
+**Characteristics**
+
+All HTTP Methods are supported, for example if want to serve `GET`
+then the controller should have a function named `Get()`,
+you can define more than one method function to serve in the same Controller struct.
+
+Persistence data inside your Controller struct (share data between requests)
+via `iris:"persistence"` tag right to the field or Bind using `app.Controller("/" , new(myController), theBindValue)`.
+
+Models inside your Controller struct (set-ed at the Method function and rendered by the View)
+via `iris:"model"` tag right to the field, i.e ```User UserModel `iris:"model" name:"user"` ``` view will recognise it as `{{.user}}`.
+If `name` tag is missing then it takes the field's name, in this case the `"User"`.
+
+Access to the request path and its parameters via the `Path and Params` fields.
+
+Access to the template file that should be rendered via the `Tmpl` field.
+
+Access to the template data that should be rendered inside
+the template file via `Data` field.
+
+Access to the template layout via the `Layout` field.
+
+Access to the low-level `context.Context` via the `Ctx` field.
+
+Flow as you used to, `Controllers` can be registered to any `Party`,
+including Subdomains, the Party's begin and done handlers work as expected.
+
+Optional `BeginRequest(ctx)` function to perform any initialization before the method execution,
+useful to call middlewares or when many methods use the same collection of data.
+
+Optional `EndRequest(ctx)` function to perform any finalization after any method executed.
+
+Inheritance, see for example our `mvc.SessionController`, it has the `mvc.Controller` as an embedded field
+and it adds its logic to its `BeginRequest`, [here](https://github.com/kataras/iris/blob/master/mvc/session_controller.go). 
+
+**Using Iris MVC for code reuse** 
+
+By creating components that are independent of one another, developers are able to reuse components quickly and easily in other applications. The same (or similar) view for one application can be refactored for another application with different data because the view is simply handling how the data is being displayed to the user.
+
+If you're new to back-end web development read about the MVC architectural pattern first, a good start is that [wikipedia article](https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93controller).
+
+
+Follow the examples below,
+
+- [Hello world](mvc/hello-world/main.go)
+- [Session Controller](mvc/session-controller/main.go)
+- [A simple but featured Controller with model and views](mvc/controller-with-model-and-view).
+
+
 
 ### Subdomains
 
@@ -213,11 +273,14 @@ iris session manager lives on its own [package](https://github.com/kataras/iris/
 
 iris websocket library lives on its own [package](https://github.com/kataras/iris/tree/master/websocket).
 
+The package is designed to work with raw websockets although its API is similar to the famous [socket.io](https://socket.io). I have read an article recently and I felt very contented about my decision to design a **fast** websocket-**only** package for Iris and not a backwards socket.io-like package. You can read that article by following this link: https://medium.com/@ivanderbyl/why-you-don-t-need-socket-io-6848f1c871cd.
+
 - [Chat](websocket/chat/main.go)
 - [Native Messages](websocket/native-messages/main.go)
 - [Connection List](websocket/connectionlist/main.go)
 - [TLS Enabled](websocket/secure/main.go)
 - [Custom Raw Go Client](websocket/custom-go-client/main.go)
+- [Third-Party socket.io](websocket/third-party-socketio/main.go)
 
 > You're free to use your own favourite websockets package if you'd like so.
 

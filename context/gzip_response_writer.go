@@ -1,6 +1,7 @@
 package context
 
 import (
+	"fmt"
 	"io"
 	"sync"
 
@@ -50,6 +51,11 @@ func releaseGzipWriter(gzipWriter *gzip.Writer) {
 func writeGzip(w io.Writer, b []byte) (int, error) {
 	gzipWriter := acquireGzipWriter(w)
 	n, err := gzipWriter.Write(b)
+	if err != nil {
+		releaseGzipWriter(gzipWriter)
+		return -1, err
+	}
+	err = gzipWriter.Flush()
 	releaseGzipWriter(gzipWriter)
 	return n, err
 }
@@ -64,7 +70,6 @@ func AcquireGzipResponseWriter() *GzipResponseWriter {
 }
 
 func releaseGzipResponseWriter(w *GzipResponseWriter) {
-	releaseGzipWriter(w.gzipWriter)
 	gzpool.Put(w)
 }
 
@@ -74,9 +79,8 @@ func releaseGzipResponseWriter(w *GzipResponseWriter) {
 // went wrong with the response, and write http errors in plain form instead.
 type GzipResponseWriter struct {
 	ResponseWriter
-	gzipWriter *gzip.Writer
-	chunks     []byte
-	disabled   bool
+	chunks   []byte
+	disabled bool
 }
 
 var _ ResponseWriter = &GzipResponseWriter{}
@@ -87,7 +91,7 @@ var _ ResponseWriter = &GzipResponseWriter{}
 // to change the response writer type.
 func (w *GzipResponseWriter) BeginGzipResponse(underline ResponseWriter) {
 	w.ResponseWriter = underline
-	w.gzipWriter = acquireGzipWriter(w.ResponseWriter)
+
 	w.chunks = w.chunks[0:0]
 	w.disabled = false
 }
@@ -107,6 +111,19 @@ func (w *GzipResponseWriter) Write(contents []byte) (int, error) {
 	return len(w.chunks), nil
 }
 
+// Writef formats according to a format specifier and writes to the response.
+//
+// Returns the number of bytes written and any write error encountered.
+func (w *GzipResponseWriter) Writef(format string, a ...interface{}) (n int, err error) {
+	return fmt.Fprintf(w, format, a...)
+}
+
+// WriteString prepares the string data write to the gzip writer and finally to its
+// underline response writer, returns the uncompressed len(contents).
+func (w *GzipResponseWriter) WriteString(s string) (int, error) {
+	return w.Write([]byte(s))
+}
+
 // WriteNow compresses and writes that data to the underline response writer,
 // returns the compressed written len.
 //
@@ -116,17 +133,35 @@ func (w *GzipResponseWriter) Write(contents []byte) (int, error) {
 // after that, so that information is not closed to the handler anymore.
 func (w *GzipResponseWriter) WriteNow(contents []byte) (int, error) {
 	if w.disabled {
+		// type noOp struct{}
+		//
+		// func (n noOp) Write([]byte) (int, error) {
+		// 	return 0, nil
+		// }
+		//
+		// var noop = noOp{}
+		// problem solved with w.gzipWriter.Reset(noop):
+		//
+		// the below Write called multiple times but not from here,
+		// the gzip writer does something to the writer, even if we don't call the
+		// w.gzipWriter.Write it does call the underline http.ResponseWriter
+		// multiple times, and therefore it changes the content-length
+		// the problem that results to the #723.
+		//
+		// Or a better idea, acquire and adapt the gzip writer on-time when is not disabled.
+		// So that is not needed any more:
+		// w.gzipWriter.Reset(noop)
 		return w.ResponseWriter.Write(contents)
 	}
 
 	w.ResponseWriter.Header().Add(varyHeaderKey, "Accept-Encoding")
 	w.ResponseWriter.Header().Set(contentEncodingHeaderKey, "gzip")
+
 	// if not `WriteNow` but "Content-Length" header
 	// is exists, then delete it before `.Write`
 	// Content-Length should not be there.
 	// no, for now at least: w.ResponseWriter.Header().Del(contentLengthHeaderKey)
-
-	return w.gzipWriter.Write(contents)
+	return writeGzip(w.ResponseWriter, contents)
 }
 
 // FlushResponse validates the response headers in order to be compatible with the gzip written data

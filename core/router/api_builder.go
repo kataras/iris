@@ -10,11 +10,12 @@ import (
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/errors"
 	"github.com/kataras/iris/core/router/macro"
+	"github.com/kataras/iris/mvc/activator"
 )
 
 const (
 	// MethodNone is a Virtual method
-	// to store the "offline" routes
+	// to store the "offline" routes.
 	MethodNone = "NONE"
 )
 
@@ -170,6 +171,36 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 	api.apiRoutes = append(api.apiRoutes, r)
 
 	return r
+}
+
+// HandleMany works like `Handle` but can receive more than one
+// paths separated by spaces and returns always a slice of *Route instead of a single instance of Route.
+//
+// It's useful only if the same handler can handle more than one request paths,
+// otherwise use `Party` which can handle many paths with different handlers and middlewares.
+//
+// Usage:
+// 	app.HandleMany(iris.MethodGet, "/user /user/{id:int} /user/me", userHandler)
+// At the other side, with `Handle` we've had to write:
+// 	app.Handle(iris.MethodGet, "/user", userHandler)
+// 	app.Handle(iris.MethodGet, "/user/{id:int}", userByIDHandler)
+// 	app.Handle(iris.MethodGet, "/user/me", userMeHandler)
+//
+// This method is used behind the scenes at the `Controller` function
+// in order to handle more than one paths for the same controller instance.
+func (api *APIBuilder) HandleMany(method string, relativePath string, handlers ...context.Handler) (routes []*Route) {
+	trimmedPath := strings.Trim(relativePath, " ")
+	// at least slash
+	// a space
+	// at least one other slash for the next path
+	// app.Controller("/user /user{id}", new(UserController))
+	paths := strings.Split(trimmedPath, " ")
+	for _, p := range paths {
+		if p != "" {
+			routes = append(routes, api.Handle(method, p, handlers...))
+		}
+	}
+	return
 }
 
 // Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
@@ -400,15 +431,13 @@ func (api *APIBuilder) Trace(relativePath string, handlers ...context.Handler) *
 
 // Any registers a route for ALL of the http methods
 // (Get,Post,Put,Head,Patch,Options,Connect,Delete).
-func (api *APIBuilder) Any(relativePath string, handlers ...context.Handler) []*Route {
-	routes := make([]*Route, len(AllMethods), len(AllMethods))
-
-	for i, k := range AllMethods {
-		r := api.Handle(k, relativePath, handlers...)
-		routes[i] = r
+func (api *APIBuilder) Any(relativePath string, handlers ...context.Handler) (routes []*Route) {
+	for _, m := range AllMethods {
+		r := api.HandleMany(m, relativePath, handlers...)
+		routes = append(routes, r...)
 	}
 
-	return routes
+	return
 }
 
 // Controller registers a `Controller` instance and returns the registered Routes.
@@ -418,11 +447,15 @@ func (api *APIBuilder) Any(relativePath string, handlers ...context.Handler) []*
 // It's just an alternative way of building an API for a specific
 // path, the controller can register all type of http methods.
 //
-// Keep note that this method is a bit slow
+// Keep note that controllers are bit slow
 // because of the reflection use however it's as fast as possible because
 // it does preparation before the serve-time handler but still
 // remains slower than the low-level handlers
-// such as `Handle, Get, Post, Put, Delete, Connect, Head, Trace, Patch` .
+// such as `Handle, Get, Post, Put, Delete, Connect, Head, Trace, Patch`.
+//
+//
+// All fields that are tagged with iris:"persistence"` or binded
+// are being persistence and kept the same between the different requests.
 //
 // An Example Controller can be:
 //
@@ -439,38 +472,53 @@ func (api *APIBuilder) Any(relativePath string, handlers ...context.Handler) []*
 // Usage: app.Controller("/", new(IndexController))
 //
 //
-// Another example with persistence data:
+// Another example with bind:
 //
 // type UserController struct {
 // 	Controller
 //
-// 	CreatedAt time.Time `iris:"persistence"`
-// 	Title     string    `iris:"persistence"`
-// 	DB        *DB		`iris:"persistence"`
+// 	DB        *DB
+// 	CreatedAt time.Time
+//
 // }
 //
 // // Get serves using the User controller when HTTP Method is "GET".
 // func (c *UserController) Get() {
 // 	c.Tmpl = "user/index.html"
-// 	c.Data["title"] = c.Title
+// 	c.Data["title"] = "User Page"
 // 	c.Data["username"] = "kataras " + c.Params.Get("userid")
 // 	c.Data["connstring"] = c.DB.Connstring
 // 	c.Data["uptime"] = time.Now().Sub(c.CreatedAt).Seconds()
 // }
 //
-// Usage: app.Controller("/user/{id:int}", &UserController{
-// 	CreatedAt: time.Now(),
-// 	Title: "User page",
-// 	DB: yourDB,
-// })
+// Usage: app.Controller("/user/{id:int}", new(UserController), db, time.Now())
 //
-// Read more at `router#Controller`.
-func (api *APIBuilder) Controller(relativePath string, controller interface{}) []*Route {
-	routes, err := registerController(api, relativePath, controller)
+// Read more at `/mvc#Controller`.
+func (api *APIBuilder) Controller(relativePath string, controller activator.BaseController,
+	bindValues ...interface{}) (routes []*Route) {
+	registerFunc := func(method string, handler context.Handler) {
+		if method == "ANY" || method == "ALL" {
+			routes = api.Any(relativePath, handler)
+		} else {
+			routes = append(routes, api.HandleMany(method, relativePath, handler)...)
+		}
+	}
+
+	// bind any values to the controller's relative fields
+	// and set them on each new request controller,
+	// binder is an alternative method
+	// of the persistence data control which requires the
+	// user already set the values manually to controller's fields
+	// and tag them with `iris:"persistence"`.
+	//
+	// don't worry it will never be handled if empty values.
+	err := activator.Register(controller, bindValues, nil, registerFunc)
+
 	if err != nil {
 		api.reporter.Add("%v for path: '%s'", err, relativePath)
 	}
-	return routes
+
+	return
 }
 
 // StaticCacheDuration expiration duration for INACTIVE file handlers, it's the only one global configuration

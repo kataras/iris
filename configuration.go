@@ -111,7 +111,7 @@ func WithoutServerError(errors ...error) Configurator {
 			return
 		}
 
-		errorsAsString := make([]string, len(errors), len(errors))
+		errorsAsString := make([]string, len(errors))
 		for i, e := range errors {
 			errorsAsString[i] = e.Error()
 		}
@@ -213,7 +213,7 @@ func WithCharset(charset string) Configurator {
 func WithRemoteAddrHeader(headerName string) Configurator {
 	return func(app *Application) {
 		if app.config.RemoteAddrHeaders == nil {
-			app.config.RemoteAddrHeaders = make(map[string]bool, 0)
+			app.config.RemoteAddrHeaders = make(map[string]bool)
 		}
 		app.config.RemoteAddrHeaders[headerName] = true
 	}
@@ -231,7 +231,7 @@ func WithRemoteAddrHeader(headerName string) Configurator {
 func WithoutRemoteAddrHeader(headerName string) Configurator {
 	return func(app *Application) {
 		if app.config.RemoteAddrHeaders == nil {
-			app.config.RemoteAddrHeaders = make(map[string]bool, 0)
+			app.config.RemoteAddrHeaders = make(map[string]bool)
 		}
 		app.config.RemoteAddrHeaders[headerName] = false
 	}
@@ -243,7 +243,7 @@ func WithoutRemoteAddrHeader(headerName string) Configurator {
 func WithOtherValue(key string, val interface{}) Configurator {
 	return func(app *Application) {
 		if app.config.Other == nil {
-			app.config.Other = make(map[string]interface{}, 0)
+			app.config.Other = make(map[string]interface{})
 		}
 		app.config.Other[key] = val
 	}
@@ -584,7 +584,7 @@ func WithConfiguration(c Configuration) Configurator {
 
 		if v := c.RemoteAddrHeaders; len(v) > 0 {
 			if main.RemoteAddrHeaders == nil {
-				main.RemoteAddrHeaders = make(map[string]bool, 0)
+				main.RemoteAddrHeaders = make(map[string]bool)
 			}
 			for key, value := range v {
 				main.RemoteAddrHeaders[key] = value
@@ -593,7 +593,7 @@ func WithConfiguration(c Configuration) Configurator {
 
 		if v := c.Other; len(v) > 0 {
 			if main.Other == nil {
-				main.Other = make(map[string]interface{}, 0)
+				main.Other = make(map[string]interface{})
 			}
 			for key, value := range v {
 				main.Other[key] = value
@@ -625,6 +625,6 @@ func DefaultConfiguration() Configuration {
 			"CF-Connecting-IP": false,
 		},
 		EnableOptimizations: false,
-		Other:               make(map[string]interface{}, 0),
+		Other:               make(map[string]interface{}),
 	}
 }

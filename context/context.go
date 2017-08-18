@@ -887,8 +887,7 @@ func (ctx *context) Request() *http.Request {
 // It's used by the router, developers may use that
 // to replace and execute handlers immediately.
 func (ctx *context) Do(handlers Handlers) {
-	ctx.handlers = handlers
-	ctx.handlers[0](ctx)
+	Do(ctx, handlers)
 }
 
 // AddHandler can add handler(s)
@@ -1453,6 +1452,7 @@ func (ctx *context) Write(rawBody []byte) (int, error) {
 //
 // Returns the number of bytes written and any write error encountered.
 func (ctx *context) Writef(format string, a ...interface{}) (n int, err error) {
+	ctx.ContentType(contentTextHeaderValue)
 	return ctx.writer.Writef(format, a...)
 }
 

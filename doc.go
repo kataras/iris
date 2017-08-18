@@ -35,7 +35,7 @@ Source code and other details for the project are available at GitHub:
 
 Current Version
 
-8.2.6
+8.3.0
 
 Installation
 
@@ -680,11 +680,108 @@ Example code:
     }
 
 
-Controllers
+MVC - Model View Controller
 
-It's very easy to get started, the only function you need to call
-instead of `app.Get/Post/Put/Delete/Connect/Head/Patch/Options/Trace`
-is the `app.Controller`.
+Iris has first-class support for the MVC pattern, you'll not find
+these stuff anywhere else in the Go world.
+
+Example Code
+
+    package main
+
+    import (
+        "github.com/kataras/iris"
+        "github.com/kataras/iris/mvc"
+
+        "github.com/kataras/iris/middleware/logger"
+        "github.com/kataras/iris/middleware/recover"
+    )
+
+    // This example is equivalent to the
+    // https://github.com/kataras/iris/blob/master/_examples/hello-world/main.go
+    //
+    // It seems that additional code you
+    // have to write doesn't worth it
+    // but remember that, this example
+    // does not make use of iris mvc features like
+    // the Model, Persistence or the View engine neither the Session,
+    // it's very simple for learning purposes,
+    // probably you'll never use such
+    // as simple controller anywhere in your app.
+
+    func main() {
+        app := iris.New()
+        // Optionally, add two built'n handlers
+        // that can recover from any http-relative panics
+        // and log the requests to the terminal.
+        app.Use(recover.New())
+        app.Use(logger.New())
+
+        app.Controller("/", new(IndexController))
+        app.Controller("/ping", new(PingController))
+        app.Controller("/hello", new(HelloController))
+
+        // http://localhost:8080
+        // http://localhost:8080/ping
+        // http://localhost:8080/hello
+        app.Run(iris.Addr(":8080"))
+    }
+
+    // IndexController serves the "/".
+    type IndexController struct {
+        // if you build with go1.9 you can omit the import of mvc package
+        // and just use `iris.Controller` instead.
+        mvc.Controller
+    }
+
+    // Get serves
+    // Method:   GET
+    // Resource: http://localhost:8080/
+    func (c *IndexController) Get() {
+        c.Ctx.HTML("<b>Welcome!</b>")
+    }
+
+    // PingController serves the "/ping".
+    type PingController struct {
+        mvc.Controller
+    }
+
+    // Get serves
+    // Method:   GET
+    // Resource: http://context:8080/ping
+    func (c *PingController) Get() {
+        c.Ctx.WriteString("pong")
+    }
+
+    // HelloController serves the "/hello".
+    type HelloController struct {
+        mvc.Controller
+    }
+
+    // Get serves
+    // Method:   GET
+    // Resource: http://localhost:8080/hello
+    func (c *HelloController) Get() {
+        c.Ctx.JSON(iris.Map{"message": "Hello iris web framework."})
+    }
+
+    // Can use more than one, the factory will make sure
+    // that the correct http methods are being registered for each route
+    // for this controller, uncomment these if you want:
+
+    // func (c *HelloController) Post() {}
+    // func (c *HelloController) Put() {}
+    // func (c *HelloController) Delete() {}
+    // func (c *HelloController) Connect() {}
+    // func (c *HelloController) Head() {}
+    // func (c *HelloController) Patch() {}
+    // func (c *HelloController) Options() {}
+    // func (c *HelloController) Trace() {}
+    // or All() or Any() to catch all http methods.
+
+
+Iris web framework supports Request data, Models, Persistence Data and Binding
+with the fastest possible execution.
 
 Characteristics:
 
@@ -693,9 +790,14 @@ then the controller should have a function named `Get()`,
 you can define more than one method function to serve in the same Controller struct.
 
 Persistence data inside your Controller struct (share data between requests)
-via `iris:"persistence"` tag right to the field.
+via `iris:"persistence"` tag right to the field or Bind using `app.Controller("/" , new(myController), theBindValue)`.
 
-Access to the request path parameters via the `Params` field.
+Models inside your Controller struct (set-ed at the Method function and rendered by the View)
+via `iris:"model"` tag right to the field, i.e User UserModel `iris:"model" name:"user"`
+view will recognise it as `{{.user}}`.
+If `name` tag is missing then it takes the field's name, in this case the `"User"`.
+
+Access to the request path and its parameters via the `Path and Params` fields.
 
 Access to the template file that should be rendered via the `Tmpl` field.
 
@@ -709,65 +811,31 @@ Access to the low-level `context.Context` via the `Ctx` field.
 Flow as you used to, `Controllers` can be registered to any `Party`,
 including Subdomains, the Party's begin and done handlers work as expected.
 
-Optional `Init(ctx) or BeginRequest(ctx)` function to perform any initialization before the methods,
+Optional `BeginRequest(ctx)` function to perform any initialization before the method execution,
 useful to call middlewares or when many methods use the same collection of data.
 
-Optional `Done(ctx) or EndRequest(ctx)` function to perform any finalization after the methods executed.
+Optional `EndRequest(ctx)` function to perform any finalization after any method executed.
 
-Example Code:
+Inheritance, see for example our `mvc.SessionController`, it has the `mvc.Controller` as an embedded field
+and it adds its logic to its `BeginRequest`. Source file: https://github.com/kataras/iris/blob/master/mvc/session_controller.go.
 
+Using Iris MVC for code reuse
 
-    // file: main.go
+By creating components that are independent of one another,
+developers are able to reuse components quickly and easily in other applications.
+The same (or similar) view for one application can be refactored for another application with
+different data because the view is simply handling how the data is being displayed to the user.
 
-    package main
+If you're new to back-end web development read about the MVC architectural pattern first,
+a good start is that wikipedia article: https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93controller.
 
-    import (
-        "github.com/kataras/iris"
+Follow the examples below,
 
-        "controllers"
-    )
+- Hello world: https://github.com/kataras/iris/blob/master/_examples/mvc/hello-world/main.go
 
-    func main() {
-        app := iris.New()
-        app.RegisterView(iris.HTML("./views", ".html"))
+- Session Controller usage: https://github.com/kataras/iris/blob/master/_examples/mvc/session-controller/main.go
 
-        app.Controller("/", new(controllers.Index))
-
-        // http://localhost:8080/
-        app.Run(iris.Addr(":8080"))
-    }
-
-
-    // file: controllers/index.go
-
-    package controllers
-
-    import (
-        "github.com/kataras/iris/core/router"
-    )
-
-    // Index is our index example controller.
-    type Index struct {
-        router.Controller
-        // if you're using go1.9:
-        // you can omit the /core/router import statement
-        // and just use the `iris.Controller` instead.
-    }
-
-    // will handle GET method on http://localhost:8080/
-    func (c *Index) Get() {
-        c.Tmpl = "index.html"
-        c.Data["title"] = "Index page"
-        c.Data["message"] = "Hello world!"
-    }
-
-    // will handle POST method on http://localhost:8080/
-    func (c *Index) Post() {}
-
-
-Tip: declare a func(c *Index) All() {} or Any() to register all HTTP Methods.
-
-A full example can be found at: https://github.com/kataras/iris/tree/master/_examples/routing/mvc.
+- A simple but featured Controller with model and views: https://github.com/kataras/iris/tree/master/_examples/mvc/controller-with-model-and-view
 
 
 Parameterized Path

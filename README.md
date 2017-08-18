@@ -4,9 +4,22 @@
 <img src="iris_the_new_machine.gif">
 </p>
 
+**Powered by [KeyCDN](https://www.keycdn.com/)**, A Simple, Fast and Reliable CDN.
+
 Iris is a fast, simple and efficient micro web framework for Go. It provides a beautifully expressive and easy to use foundation for your next website, API, or distributed app.
 
-[Star or watch](https://github.com/kataras/iris/stargazers) this repository, it is still in **active development mode**.
+We have no doubt you will able to find other web frameworks written in Golang
+and even put a real fight to learn and use them for quite some time but
+make no mistake, sooner or later you'll be using Iris, no because of the ergonomic  high-performant solution that it provides but its well-documented unique features are these will transform you to a real rockstar geek. 
+
+No matter what you're trying to build, Iris takes cover 
+every type of applications, from micro services to large monolithic web applications.
+It's actually the best piece of software for back-end web developers
+you could ever find online.
+
+Iris may have reached version 8, but we're not stopping there. We have many feature ideas on our board that we're anxious to add and other innovative web development solutions that we're planning to build into Iris.
+
+[Star or watch](https://github.com/kataras/iris/stargazers) this repository to stay updated at general technology progress. It's the only thing we ask from you, it's our sign.
 
 <!-- [![total used by](http://iris-go.com/graph?style=flat-square)](http://iris-go.com/graph) -->
 [![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=flat-square)](https://travis-ci.org/kataras/iris)
@@ -18,7 +31,6 @@ Iris is a fast, simple and efficient micro web framework for Go. It provides a b
 
 <!-- has issues, the img.shields.io's API is problematic for this resource: [![issue stats](https://img.shields.io/issuestats/i/github/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/issues?q=is%3Aissue+is%3Aclosed) -->
 <!-- [![godocs](https://img.shields.io/badge/godocs-8.x.x-0366d6.svg?style=flat-square)](https://godoc.org/github.com/kataras/iris) -->
-
 <p>
 <img src="https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png" alt="Third-party source for transparency." />
 </p>
@@ -30,7 +42,8 @@ Iris is a fast, simple and efficient micro web framework for Go. It provides a b
 * [Learn](#-learn)
 	* [HTTP Listening](_examples/#http-listening)
 	* [Configuration](_examples/#configuration)
-	* [Routing, Grouping, Controllers, Dynamic Path Parameters, "Macros" and Custom Context](_examples/#routing-grouping-dynamic-path-parameters-macros-and-custom-context)
+	* [Routing, Grouping, Dynamic Path Parameters, "Macros" and Custom Context](_examples/#routing-grouping-dynamic-path-parameters-macros-and-custom-context)
+	* [MVC (Model View Controller)](_examples/#mvc)
 	* [Subdomains](_examples/#subdomains)
 	* [Wrap `http.Handler/HandlerFunc`](_examples/#convert-httphandlerhandlerfunc)
 	* [View](_examples/#view)
@@ -248,7 +261,7 @@ Compared to the rest open source projects, this one is very active and you get a
 	* Remove trailing slash from the URL with option to redirect
 	* Virtual hosts and subdomains made easy
 	* Group API's and static or even dynamic subdomains
-	* MVC [**NEW**](_examples/routing/mvc)
+	* MVC [**NEW**](_examples/mvc)
 	* `net/http` and `negroni-like` handlers are compatible via `iris.FromStd` 
 	* Register custom handlers for any HTTP error
 	* Transactions and rollback when you need it
@@ -313,16 +326,18 @@ The most useful community repository for _iris_ developers is the
 $ go get -u github.com/iris-contrib/middleware/...
 ```
 
-#### 📈 One and a half years with You...
+#### 📈 One and a half years...
 
-- 7210 github stars
+[![total used by](http://iris-go.com/graph?style=flat-square)](http://iris-go.com/graph) 
+
+Iris exceeded all expectations, started as one-man project.
+
+- 7288 github stars
 - 766 github forks
 - 1m total views at its documentation
-- ~800$ at donations (there're a lot for a golang open-source project, thanks to you)
+- ~800$ at donations, small amount for the work we put here but it's a good start
 - ~554 reported bugs fixed
 - ~30 community feature requests have been implemented
-
-Thank You for your trust!
 
 ### 📌 Version
 
@@ -354,12 +369,23 @@ Employers that are looking for brilliant Software Engineers with good experience
 
 ### 🥇 People
 
-The original author of _iris_ is [Gerasimos Maropoulos](https://medium.com/@kataras)
+The original author of _Iris_ is [@kataras](https://github.com/kataras), you can reach him via
+- [Medium](https://medium.com/@kataras)
+- [Twitter](https://twitter.com/makismaropoulos)
+- [Dev.to](https://dev.to/@kataras)
+- [Facebook](https://facebook.com/kataras.gopher)
+- [Mail](mailto:kataras2006@hotmail.com?subject=Iris%20I%20need%20some%20help%20please)
 
-The current lead maintainer is [Bill Qeras, Jr.](https://github.com/hiveminded)
+[List of all Authors](AUTHORS)
 
-[List of all contributors](https://github.com/kataras/iris/graphs/contributors)
+[List of all Contributors](https://github.com/kataras/iris/graphs/contributors)
 
-Help this project to continue deliver awesome and unique features with the higher code quality as possible
+Help this project to continue deliver awesome and unique features with the higher code quality as possible by donating any amount
 
 [![](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=kataras2006%40hotmail%2ecom&lc=GR&item_name=Iris%20web%20framework&item_number=iriswebframeworkdonationid2016&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted)
+
+## License
+
+This software is licensed under the open-source 3-Clause BSD.
+
+You can find the license file [here](LICENSE), for any questions regarding the license please [contact](mailto:kataras2006@hotmail.com?subject=Iris%20License) us.

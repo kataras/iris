@@ -39,6 +39,7 @@ func (ch *ErrorCodeHandler) Fire(ctx context.Context) {
 			return
 		}
 	}
+
 	// ctx.StopExecution() // not uncomment this, is here to remember why to.
 	// note for me: I don't stopping the execution of the other handlers
 	// because may the user want to add a fallback error code
