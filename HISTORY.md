@@ -18,6 +18,84 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+# Sa, 19 August 2017 | v8.3.1
+
+First of all I want to thank you for the 100% green feedback you gratefully sent me you about
+my latest article `Go vs .NET Core in terms of HTTP performance`, published at [medium's hackernoon.com](https://hackernoon.com/go-vs-net-core-in-terms-of-http-performance-7535a61b67b8) and [dev.to](https://dev.to/kataras/go-vsnet-core-in-terms-of-http-performance). I really appreciate it💓
+
+No API Changes.
+
+However two more methods added to the `Controller`.
+
+- `RelPath() string`, returns the relative path based on the controller's name and the request path.
+- `RelTmpl() string`, returns the relative template directory based on the controller's name.
+
+These are useful when dealing with big `controllers`, they help you to keep align with any
+future changes inside your application. 
+
+Let's refactor our [ProfileController](_examples/mvc/controller-with-model-and-view/main.go) enhancemed by these two new functions.
+
+```go
+func (pc *ProfileController) tmpl(relativeTmplPath string) {
+	// the relative template files directory of this controller.
+	views := pc.RelTmpl()
+	pc.Tmpl = views + relativeTmplPath
+}
+
+func (pc *ProfileController) match(relativeRequestPath string) bool {
+	// the relative request path of this controller.
+	path := pc.RelPath()
+	return path == relativeRequestPath
+}
+
+func (pc *ProfileController) Get() {
+	// requested: "/profile"
+	// so relative path is "/" because of the ProfileController.
+	if pc.match("/") {
+
+		// views/profile/index.html
+		pc.tmpl("index.html")
+		return
+	}
+
+	// requested: "/profile/browse"
+	// so relative path is "/browse".
+	if pc.match("/browse") {
+		pc.Path = "/profile"
+		return
+	}
+
+	// requested: "/profile/me"
+	// so the relative path is "/me"
+	if pc.match("/me") {
+		
+		// views/profile/me.html
+		pc.tmpl("me.html")
+		return
+	}
+
+	// requested: "/profile/$ID"
+	// so the relative path is "/$ID"
+	id, _ := pc.Params.GetInt64("id")
+
+	user, found := pc.DB.GetUserByID(id)
+	if !found {
+		pc.Status = iris.StatusNotFound
+
+		// views/profile/notfound.html
+		pc.tmpl("notfound.html")
+		pc.Data["ID"] = id
+		return
+	}
+
+	// views/profile/profile.html
+	pc.tmpl("profile.html")
+	pc.User = user
+}
+```
+
+Want to learn more about these functions? Go to the [mvc/controller_test.go](mvc/controller_test.go) file and scroll to the bottom!
+
 # Fr, 18 August 2017 | v8.3.0
 
 Good news for devs that are used to write their web apps using the `MVC` architecture pattern.
@@ -206,6 +284,10 @@ Access to the template layout via the `Layout` field.
 
 Access to the low-level `context.Context` via the `Ctx` field.
 
+Get the relative request path by using the controller's name via `RelPath()`.
+
+Get the relative template path directory by using the controller's name via `RelTmpl`().
+
 Flow as you used to, `Controllers` can be registered to any `Party`,
 including Subdomains, the Party's begin and done handlers work as expected.
 
@@ -216,6 +298,7 @@ Optional `EndRequest(ctx)` function to perform any finalization after any method
 
 Inheritance, see for example our `mvc.SessionController`, it has the `mvc.Controller` as an embedded field
 and it adds its logic to its `BeginRequest`, [here](https://github.com/kataras/iris/blob/master/mvc/session_controller.go). 
+
 
 **Using Iris MVC for code reuse** 
 

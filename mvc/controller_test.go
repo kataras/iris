@@ -282,3 +282,60 @@ func TestControllerBind(t *testing.T) {
 	e.GET("/deep").Expect().Status(httptest.StatusOK).
 		Body().Equal(expected)
 }
+
+type (
+	UserController            struct{ mvc.Controller }
+	Profile                   struct{ mvc.Controller }
+	UserProfilePostController struct{ mvc.Controller }
+)
+
+func writeRelatives(c mvc.Controller) {
+	c.Ctx.JSON(iris.Map{
+		"RelPath":  c.RelPath(),
+		"TmplPath": c.RelTmpl(),
+	})
+}
+func (c *UserController) Get() {
+	writeRelatives(c.Controller)
+}
+
+func (c *Profile) Get() {
+	writeRelatives(c.Controller)
+}
+
+func (c *UserProfilePostController) Get() {
+	writeRelatives(c.Controller)
+}
+
+func TestControllerRelPathAndRelTmpl(t *testing.T) {
+	app := iris.New()
+	var tests = map[string]iris.Map{
+		// UserController
+		"/user":    {"RelPath": "/", "TmplPath": "user/"},
+		"/user/42": {"RelPath": "/42", "TmplPath": "user/"},
+		"/user/me": {"RelPath": "/me", "TmplPath": "user/"},
+		// Profile (without Controller suffix, should work as expected)
+		"/profile":    {"RelPath": "/", "TmplPath": "profile/"},
+		"/profile/42": {"RelPath": "/42", "TmplPath": "profile/"},
+		"/profile/me": {"RelPath": "/me", "TmplPath": "profile/"},
+		// UserProfilePost
+		"/user/profile/post":      {"RelPath": "/", "TmplPath": "user/profile/post/"},
+		"/user/profile/post/42":   {"RelPath": "/42", "TmplPath": "user/profile/post/"},
+		"/user/profile/post/mine": {"RelPath": "/mine", "TmplPath": "user/profile/post/"},
+	}
+
+	app.Controller("/user /user/me /user/{id}",
+		new(UserController))
+
+	app.Controller("/profile /profile/me /profile/{id}",
+		new(Profile))
+
+	app.Controller("/user/profile/post /user/profile/post/mine /user/profile/post/{id}",
+		new(UserProfilePostController))
+
+	e := httptest.New(t, app)
+	for path, tt := range tests {
+		e.GET(path).Expect().Status(httptest.StatusOK).JSON().Equal(tt)
+	}
+
+}
