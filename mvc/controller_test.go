@@ -290,7 +290,7 @@ type (
 )
 
 func writeRelatives(c mvc.Controller) {
-	c.Ctx.JSON(iris.Map{
+	c.Ctx.JSON(context.Map{
 		"RelPath":  c.RelPath(),
 		"TmplPath": c.RelTmpl(),
 	})
@@ -309,7 +309,7 @@ func (c *UserProfilePostController) Get() {
 
 func TestControllerRelPathAndRelTmpl(t *testing.T) {
 	app := iris.New()
-	var tests = map[string]iris.Map{
+	var tests = map[string]context.Map{
 		// UserController
 		"/user":    {"RelPath": "/", "TmplPath": "user/"},
 		"/user/42": {"RelPath": "/42", "TmplPath": "user/"},
