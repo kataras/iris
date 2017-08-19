@@ -35,7 +35,6 @@ Statistics        Avg      Stdev        Max
     others - 0
   Throughput:     8.61MB/s
 ```
-> 127210K Memory (private working set)
 
 ### Iris MVC
 ```bash
@@ -58,7 +57,6 @@ Statistics        Avg      Stdev        Max
     others - 0
   Throughput:    19.65MB/s
 ```
-> 126024K Memory (private working set)
 
 ### Iris
 ```bash
@@ -81,7 +79,6 @@ Statistics        Avg      Stdev        Max
     others - 0
   Throughput:    20.61MB/s
 ```
-> 11052K Memory (private working set)
 
 Click [here](screens) to navigate to the screenshots.
 
@@ -94,8 +91,8 @@ Click [here](screens) to navigate to the screenshots.
 * Memory usage - smaller is better.
 * LOC (Lines Of Code) - smaller is better.
 
-.NET Core MVC Application, written using 86 lines of code, ran for **2 minutes and 8 seconds** serving **39311.56** requests per second within **3.19ms** latency in average and **229.73ms** max, the memory usage of all these was 126MB (without the dotnet host).
+.NET Core MVC Application, written using 86 lines of code, ran for **2 minutes and 8 seconds** serving **39311.56** requests per second within **3.19ms** latency in average and **229.73ms** max, the memory usage of all these was ~126MB (without the dotnet host).
 
-Iris MVC Application, written using 27 lines of code, ran for **47 seconds** serving **105643.71** requests per second within **1.18ms** latency in average and **22.01ms** max, the memory usage of all these was 12MB.
+Iris MVC Application, written using 27 lines of code, ran for **47 seconds** serving **105643.71** requests per second within **1.18ms** latency in average and **22.01ms** max, the memory usage of all these was ~12MB.
 
-Iris Application, written using 22 lines of code, ran for **45 seconds** serving **110809.98** requests per second within **1.13ms** latency in average and **18.02ms** max, the memory usage of all these was 11MB.
+Iris Application, written using 22 lines of code, ran for **45 seconds** serving **110809.98** requests per second within **1.13ms** latency in average and **18.02ms** max, the memory usage of all these was ~11MB.
