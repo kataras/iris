@@ -18,7 +18,7 @@ func main() {
 // getHandler handles "GET" requests to "api/values/{id}".
 func getHandler(ctx context.Context) {
 	// id,_ := vc.Params.GetInt("id")
-	ctx.Writef("value")
+	ctx.WriteString("value")
 }
 
 // putHandler handles "PUT" requests to "api/values/{id}".

@@ -11,7 +11,7 @@ type ValuesController struct {
 // Get handles "GET" requests to "api/values/{id}".
 func (vc *ValuesController) Get() {
 	// id,_ := vc.Params.GetInt("id")
-	vc.Ctx.Writef("value")
+	vc.Ctx.WriteString("value")
 }
 
 // Put handles "PUT" requests to "api/values/{id}".

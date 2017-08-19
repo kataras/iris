@@ -115,13 +115,22 @@ func (w *GzipResponseWriter) Write(contents []byte) (int, error) {
 //
 // Returns the number of bytes written and any write error encountered.
 func (w *GzipResponseWriter) Writef(format string, a ...interface{}) (n int, err error) {
-	return fmt.Fprintf(w, format, a...)
+	n, err = fmt.Fprintf(w, format, a...)
+	if err == nil {
+		w.ResponseWriter.Header().Set(contentTextHeaderValue, "text/plain")
+	}
+
+	return
 }
 
 // WriteString prepares the string data write to the gzip writer and finally to its
 // underline response writer, returns the uncompressed len(contents).
-func (w *GzipResponseWriter) WriteString(s string) (int, error) {
-	return w.Write([]byte(s))
+func (w *GzipResponseWriter) WriteString(s string) (n int, err error) {
+	n, err = w.Write([]byte(s))
+	if err == nil {
+		w.ResponseWriter.Header().Set(contentTextHeaderValue, "text/plain")
+	}
+	return
 }
 
 // WriteNow compresses and writes that data to the underline response writer,

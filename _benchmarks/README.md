@@ -5,7 +5,7 @@
 
 ## Software
 
-* OS: Microsoft **Windows** [Version **10**.0.15063]
+* OS: Microsoft **Windows** [Version **10**.0.15063], power plan is "High performance"
 * HTTP Benchmark Tool: https://github.com/codesenberg/bombardier, latest version **1.1**
 * **.NET Core**: https://www.microsoft.com/net/core, latest version **2.0**
 * **Iris**: https://github.com/kataras/iris, latest version **8.3** built with [go1.8.3](https://golang.org)
@@ -25,15 +25,15 @@ Application started. Press Ctrl+C to shut down.
 ```bash
 $ bombardier -c 125 -n 5000000 http://localhost:5000/api/values/5
 Bombarding http://localhost:5000/api/values/5 with 5000000 requests using 125 connections
- 5000000 / 5000000 [====================================================================================] 100.00% 2m39s
+ 5000000 / 5000000 [=====================================================================================] 100.00% 2m8s
 Done!
 Statistics        Avg      Stdev        Max
-  Reqs/sec     31532.63   10360.09     259792
-  Latency        3.99ms     2.32ms   297.21ms
+  Reqs/sec     39311.56   11744.49     264000
+  Latency        3.19ms     1.61ms   229.73ms
   HTTP codes:
     1xx - 0, 2xx - 5000000, 3xx - 0, 4xx - 0, 5xx - 0
     others - 0
-  Throughput:     6.89MB/s
+  Throughput:     8.61MB/s
 ```
 > 127210K Memory (private working set)
 
@@ -48,17 +48,17 @@ Application started. Press CTRL+C to shut down.
 ```bash
 $ bombardier -c 125 -n 5000000 http://localhost:5000/api/values/5
 Bombarding http://localhost:5000/api/values/5 with 5000000 requests using 125 connections
- 5000000 / 5000000 [======================================================================================] 100.00% 58s
+ 5000000 / 5000000 [======================================================================================] 100.00% 47s
 Done!
 Statistics        Avg      Stdev        Max
-  Reqs/sec     86087.86    3432.38      93833
-  Latency        1.45ms   464.12us    42.53ms
+  Reqs/sec    105643.81    7687.79     122564
+  Latency        1.18ms   366.55us    22.01ms
   HTTP codes:
     1xx - 0, 2xx - 5000000, 3xx - 0, 4xx - 0, 5xx - 0
     others - 0
-  Throughput:    16.01MB/s
+  Throughput:    19.65MB/s
 ```
-> 11816K Memory (private working set)
+> 126024K Memory (private working set)
 
 ### Iris
 ```bash
@@ -71,17 +71,17 @@ Application started. Press CTRL+C to shut down.
 ```bash
 $ bombardier -c 125 -n 5000000 http://localhost:5000/api/values/5
 Bombarding http://localhost:5000/api/values/5 with 5000000 requests using 125 connections
- 5000000 / 5000000 [======================================================================================] 100.00% 48s
+ 5000000 / 5000000 [======================================================================================] 100.00% 45s
 Done!
 Statistics        Avg      Stdev        Max
-  Reqs/sec    102987.54    8333.43     120069
-  Latency        1.21ms   369.71us    23.52ms
+  Reqs/sec    110809.98    8209.87     128212
+  Latency        1.13ms   307.86us    18.02ms
   HTTP codes:
     1xx - 0, 2xx - 5000000, 3xx - 0, 4xx - 0, 5xx - 0
     others - 0
-  Throughput:    19.15MB/s
+  Throughput:    20.61MB/s
 ```
-> 11040K Memory (private working set)
+> 11052K Memory (private working set)
 
 Click [here](screens) to navigate to the screenshots.
 
@@ -94,8 +94,8 @@ Click [here](screens) to navigate to the screenshots.
 * Memory usage - smaller is better.
 * LOC (Lines Of Code) - smaller is better.
 
-.NET Core MVC Application, written using 86 lines of code, ran for **2 minutes and 39 seconds** serving **31532.63** requests per second and **3.99ms** latency in average and **297.21ms** max, the memory usage of all these was 127MB (without the dotnet host).
+.NET Core MVC Application, written using 86 lines of code, ran for **2 minutes and 8 seconds** serving **39311.56** requests per second within **3.19ms** latency in average and **229.73ms** max, the memory usage of all these was 126MB (without the dotnet host).
 
-Iris MVC Application, written using 27 lines of code, ran for **58 seconds** serving **86087.86** requests per second and **1.45ms** latency in average and **42.53ms** max, the memory usage of all these was 12MB.
+Iris MVC Application, written using 27 lines of code, ran for **47 seconds** serving **105643.71** requests per second within **1.18ms** latency in average and **22.01ms** max, the memory usage of all these was 12MB.
 
-Iris Application, written using 22 lines of code, ran for **48 seconds** serving **102987.54** requests per second and **1.21ms** latency in average and **23.52ms** max, the memory usage of all these was 11MB.
+Iris Application, written using 22 lines of code, ran for **45 seconds** serving **110809.98** requests per second within **1.13ms** latency in average and **18.02ms** max, the memory usage of all these was 11MB.
