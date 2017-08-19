@@ -38,7 +38,7 @@ Iris may have reached version 8, but we're not stopping there. We have many feat
 ### 📑 Table of contents
 
 * [Installation](#-installation)
-* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#fr-18-august-2017--v830)
+* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#sa-19-august-2017--v831)
 * [Learn](#-learn)
 	* [HTTP Listening](_examples/#http-listening)
 	* [Configuration](_examples/#configuration)
@@ -69,7 +69,6 @@ Iris may have reached version 8, but we're not stopping there. We have many feat
 	- [Iris, a modular web framework](https://medium.com/@corebreaker/iris-web-cd684b4685c7)
 	- [Deploying a Iris Golang app in hasura](https://docs.hasura.io/0.14/tutorials/deploying-a-go-iris-app.html)
 	- [How to Turn an Android Device into a Web Server](https://twitter.com/ThePracticalDev/status/892022594031017988)
-	- [Echo vs Iris vs .Net Core benchmark](https://medium.com/geekseat-development-blog/go-vs-iris-benchmark-f7822f84e86f)
 	- [A URL Shortener Service using Go, Iris and Bolt](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
 	- [Why I preferred Go over Node.js for simple Web Application](https://medium.com/@tigranbs/why-i-preferred-go-over-node-js-for-simple-web-application-d4a549e979b9)
 * [Versioning](#-version)
@@ -339,11 +338,11 @@ $ go get -u github.com/iris-contrib/middleware/...
 
 Iris exceeded all expectations, started as one-man project.
 
-- 7288 github stars
-- 766 github forks
+- 7300 github stars
+- 778 github forks
 - 1m total views at its documentation
-- ~800$ at donations, small amount for the work we put here but it's a good start
-- ~554 reported bugs fixed
+- ~819$ at donations, small amount for the work we put here but it's a good start
+- ~557 reported bugs fixed
 - ~30 community feature requests have been implemented
 
 ### 📌 Version

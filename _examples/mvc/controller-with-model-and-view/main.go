@@ -60,40 +60,53 @@ type ProfileController struct {
 	DB *DB
 }
 
+// These two functions are totally optional, of course, don't use them if you
+// don't need such as a coupled behavior.
+func (pc *ProfileController) tmpl(relativeTmplPath string) {
+	// the relative templates directory of this controller.
+	views := pc.RelTmpl()
+	pc.Tmpl = views + relativeTmplPath
+}
+
+func (pc *ProfileController) match(relativeRequestPath string) bool {
+	// the relative request path based on this controller's name.
+	path := pc.RelPath()
+	return path == relativeRequestPath
+}
+
 // Get method handles all "GET" HTTP Method requests of the controller's paths.
 func (pc *ProfileController) Get() { // IMPORTANT
-	path := pc.Path
-
-	// requested: /profile path
-	if path == "/profile" {
-		pc.Tmpl = "profile/index.html"
+	// requested: "/profile"
+	if pc.match("/") {
+		pc.tmpl("index.html")
 		return
 	}
-	// requested: /profile/browse
+
+	// requested: "/profile/browse"
 	// this exists only to proof the concept of changing the path:
 	// it will result to a redirection.
-	if path == "/profile/browse" {
+	if pc.match("/browse") {
 		pc.Path = "/profile"
 		return
 	}
 
-	// requested: /profile/me path
-	if path == "/profile/me" {
-		pc.Tmpl = "profile/me.html"
+	// requested: "/profile/me"
+	if pc.match("/me") {
+		pc.tmpl("me.html")
 		return
 	}
 
-	// requested: /profile/$ID
+	// requested: "/profile/$ID"
 	id, _ := pc.Params.GetInt64("id")
 
 	user, found := pc.DB.GetUserByID(id)
 	if !found {
 		pc.Status = iris.StatusNotFound
-		pc.Tmpl = "profile/notfound.html"
+		pc.tmpl("notfound.html")
 		pc.Data["ID"] = id
 		return
 	}
 
-	pc.Tmpl = "profile/profile.html"
+	pc.tmpl("profile.html")
 	pc.User = user
 }

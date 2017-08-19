@@ -1,6 +1,9 @@
 package mvc
 
 import (
+	"reflect"
+	"strings"
+
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/memstore"
 	"github.com/kataras/iris/mvc/activator"
@@ -58,8 +61,29 @@ import (
 //
 // Look `core/router/APIBuilder#Controller` method too.
 type Controller struct {
-	// path and path params.
-	Path   string
+	// Name contains the current controller's full name.
+	Name string
+	// contains the `Name` as different words, all lowercase,
+	// without the "Controller" suffix if exists.
+	// we need this as field because the activator
+	// we will not try to parse these if not needed
+	// it's up to the end-developer to call `RelPath()` or `RelTmpl()`
+	// which will result to fill them.
+	nameAsWords []string
+
+	// relPath the "as assume" relative request path.
+	//
+	// If UserController and request path is "/user/messages" then it's "/messages"
+	// if UserPostController and request path is "/user/post" then it's "/"
+	// if UserProfile and request path is "/user/profile/likes" then it's "/likes"
+	relPath string
+
+	// request path and its parameters, read-write.
+	// Path is the current request path.
+	Path string
+	// Params are the request path's parameters, i.e
+	// for route like "/user/{id}" and request to "/user/42"
+	// it contains the "id" = 42.
 	Params *context.RequestParams
 
 	// some info read and write,
@@ -67,6 +91,12 @@ type Controller struct {
 	Status int
 	Values *memstore.Store
 
+	// relTmpl the "as assume" relative path to the view root folder.
+	//
+	// If UserController then it's "user/"
+	// if UserPostController then it's "user/post/"
+	// if UserProfile then it's "user/profile/".
+	relTmpl string
 	// view read and write,
 	// can be already set-ed by previous handlers as well.
 	Layout string
@@ -77,9 +107,74 @@ type Controller struct {
 	Ctx context.Context
 }
 
+// SetName sets the controller's full name.
+// It's called internally.
+func (c *Controller) SetName(name string) {
+	c.Name = name
+}
+
+func (c *Controller) getNameWords() []string {
+	if len(c.nameAsWords) == 0 {
+		c.nameAsWords = findCtrlWords(c.Name)
+	}
+	return c.nameAsWords
+}
+
+const slashStr = "/"
+
+// RelPath tries to return the controller's name
+// without the "Controller" prefix, all lowercase
+// prefixed with slash and splited by slash appended
+// with the rest of the request path.
+// For example:
+// If UserController and request path is "/user/messages" then it's "/messages"
+// if UserPostController and request path is "/user/post" then it's "/"
+// if UserProfile and request path is "/user/profile/likes" then it's "/likes"
+//
+// It's useful for things like path checking and redirect.
+func (c *Controller) RelPath() string {
+	if c.relPath == "" {
+		w := c.getNameWords()
+		rel := strings.Join(w, slashStr)
+
+		reqPath := c.Ctx.Path()
+		if len(reqPath) == 0 {
+			// it never come here
+			// but to protect ourselves jsut return an empty slash.
+			return slashStr
+		}
+		// [1:]to ellimuate the prefixes like "//"
+		// request path has always "/"
+		rel = strings.Replace(c.Ctx.Path()[1:], rel, "", 1)
+		if rel == "" {
+			rel = slashStr
+		}
+		c.relPath = rel
+	}
+
+	return c.relPath
+}
+
+// RelTmpl tries to return the controller's name
+// without the "Controller" prefix, all lowercase
+// splited by slash and suffixed by slash.
+// For example:
+// If UserController then it's "user/"
+// if UserPostController then it's "user/post/"
+// if UserProfile then it's "user/profile/".
+//
+// It's useful to locate templates if the controller and views path have aligned names.
+func (c *Controller) RelTmpl() string {
+	if c.relTmpl == "" {
+		c.relTmpl = strings.Join(c.getNameWords(), slashStr) + slashStr
+	}
+	return c.relTmpl
+}
+
 // BeginRequest starts the main controller
 // it initialize the Ctx and other fields.
 //
+// It's called internally.
 // End-Developer can ovverride it but it still MUST be called.
 func (c *Controller) BeginRequest(ctx context.Context) {
 	// path and path params
@@ -101,6 +196,7 @@ func (c *Controller) BeginRequest(ctx context.Context) {
 // It checks for the fields and calls the necessary context's
 // methods to modify the response to the client.
 //
+// It's called internally.
 // End-Developer can ovveride it but still should be called at the end.
 func (c *Controller) EndRequest(ctx context.Context) {
 	if path := c.Path; path != "" && path != ctx.Path() {
@@ -125,5 +221,7 @@ func (c *Controller) EndRequest(ctx context.Context) {
 		ctx.View(view)
 	}
 }
+
+var ctrlSuffix = reflect.TypeOf(Controller{}).Name()
 
 var _ activator.BaseController = &Controller{}

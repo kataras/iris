@@ -16,7 +16,7 @@ type (
 	// think it as a "supervisor" of your Controller which
 	// cares about you.
 	TController struct {
-		// the type of the user/dev's "c" controller (interface{})
+		// the type of the user/dev's "c" controller (interface{}).
 		Type reflect.Type
 		// it's the first passed value of the controller instance,
 		// we need this to collect and save the persistence fields' values.
@@ -123,6 +123,7 @@ var (
 // End-User doesn't need to have any knowledge of this if she/he doesn't want to implement
 // a new Controller type.
 type BaseController interface {
+	SetName(name string)
 	BeginRequest(ctx context.Context)
 	EndRequest(ctx context.Context)
 }
@@ -201,6 +202,7 @@ func ActivateController(base BaseController, bindValues []interface{},
 // builds the handler for a type based on the method index (i.e Get() -> [0], Post() -> [1]).
 func buildMethodHandler(t TController, methodFuncIndex int) context.Handler {
 	elem := t.Type.Elem()
+	ctrlName := t.Value.Type().Name()
 	/*
 		// good idea, it speeds up the whole thing by ~1MB per 20MB at my personal
 		// laptop but this way the Model for example which is not a persistence
@@ -255,6 +257,7 @@ func buildMethodHandler(t TController, methodFuncIndex int) context.Handler {
 		// but if somone tries to "crack" that, then just stop the world in order to be notified,
 		// we don't want to go away from that type of mistake.
 		b := c.Interface().(BaseController)
+		b.SetName(ctrlName)
 
 		// init the request.
 		b.BeginRequest(ctx)
