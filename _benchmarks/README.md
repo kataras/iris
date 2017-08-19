@@ -15,7 +15,10 @@
 ### .NET Core MVC
 ```bash
 $ cd netcore-mvc
-$ dotnet run
+# Same as dotnet run -c Release 
+# because of the code and configuration,
+# scroll to the bottom for more.
+$ dotnet run 
 Hosting environment: Production
 Content root path: C:\mygopath\src\github.com\kataras\iris\_benchmarks\netcore-mvc
 Now listening on: http://localhost:5000
@@ -96,3 +99,12 @@ Click [here](screens) to navigate to the screenshots.
 Iris MVC Application, written using 27 lines of code, ran for **47 seconds** serving **105643.71** requests per second within **1.18ms** latency in average and **22.01ms** max, the memory usage of all these was ~12MB.
 
 Iris Application, written using 22 lines of code, ran for **45 seconds** serving **110809.98** requests per second within **1.13ms** latency in average and **18.02ms** max, the memory usage of all these was ~11MB.
+
+#### Notes for .NET Developers
+
+Don't try to tell "you're running from `dotnet run` and don't `dotnet run -c Release`", see the output first: `Hosting environment: Production`. It doesn't matter if you run `dotnet run` without arguments: if the configuration file says production or you don't use `if debug then do that`, then it runs as production.
+
+Want to put some of your benchmarks here? Go ahead and share your results with the rest of us:
+
+- https://dev.to/kataras/go-vsnet-core-in-terms-of-http-performance
+- https://medium.com/@kataras/go-vs-net-core-in-terms-of-http-performance-7535a61b67b8
