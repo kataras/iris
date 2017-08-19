@@ -1452,7 +1452,6 @@ func (ctx *context) Write(rawBody []byte) (int, error) {
 //
 // Returns the number of bytes written and any write error encountered.
 func (ctx *context) Writef(format string, a ...interface{}) (n int, err error) {
-	ctx.ContentType(contentTextHeaderValue)
 	return ctx.writer.Writef(format, a...)
 }
 
