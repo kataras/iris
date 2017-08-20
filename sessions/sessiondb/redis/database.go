@@ -2,6 +2,7 @@ package redis
 
 import (
 	"runtime"
+	"time"
 
 	"github.com/kataras/golog"
 	"github.com/kataras/iris/sessions"
@@ -84,7 +85,14 @@ func (db *Database) sync(p sessions.SyncPayload) {
 		return
 	}
 
-	db.redis.Set(p.SessionID, storeB, p.Store.Lifetime.Second())
+	// not expire if zero
+	seconds := 0
+
+	if lifetime := p.Store.Lifetime; !lifetime.IsZero() {
+		seconds = int(lifetime.Sub(time.Now()).Seconds())
+	}
+
+	db.redis.Set(p.SessionID, storeB, seconds)
 }
 
 // Close shutdowns the redis connection.
