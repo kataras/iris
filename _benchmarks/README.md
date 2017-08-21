@@ -158,7 +158,7 @@ This time we will compare the speed of the “low-level” .NET Core’s server
 
 ## Simple
 
-Spawn `1000000 requests` with 125 different "threads", tagrget to a dynamic registered route path, responds with a simple "value" text.
+Spawn `1000000 requests` with 125 different "threads", targeting to a dynamic registered route path, responds with a simple "value" text.
 
 ### .NET Core (Kestrel)
 
@@ -220,7 +220,7 @@ Iris Application written using **14 code of lines** ran for **8 seconds** servin
 
 ## Sessions
 
-Spawn `5000000 requests` with 125 different "threads" target a static request path, sets and gets a session with name `key` and string value `"value"` and write session value that to the response stream.
+Spawn `5000000 requests` with 125 different "threads" targeting a static request path, sets and gets a session based on the name `"key"` and string value `"value"` and write tat session value to the response stream.
 
 ### .NET Core (Kestrel) with Sessions
 
@@ -283,8 +283,17 @@ Iris with Sessions Application ran for **1 minute and 15 seconds** serving **667
 
 > Click [here](screens) to navigate to the screenshots.
 
-**Thank you all** for the 100% green feedback, have fun!
+
+### Articles
+
+ **Go vs .NET Core in terms of HTTP performance (Sa, 19 August 2017)**
 
 - https://medium.com/@kataras/go-vs-net-core-in-terms-of-http-performance-7535a61b67b8
 - https://dev.to/kataras/go-vsnet-core-in-terms-of-http-performance
 
+**Iris Go vs .NET Core Kestrel in terms of HTTP performance (Mo, 21 August 2017)** 
+
+- https://medium.com/@kataras/iris-go-vs-net-core-kestrel-in-terms-of-http-performance-806195dc93d5
+
+
+**Thank you all** for the 100% green feedback, have fun!
