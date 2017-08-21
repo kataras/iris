@@ -54,12 +54,17 @@ func (db *Database) Load(sid string) (storeDB sessions.RemoteStore) {
 		return
 	}
 
-	storeDB, ok := storeMaybe.(sessions.RemoteStore)
+	storeB, ok := storeMaybe.([]byte)
 	if !ok {
-		golog.Errorf(`error while trying to load session values(%s) from redis:
-		the retrieved value is not a sessions.RemoteStore type, please report that as bug, it should never occur`,
-			sid)
+		golog.Errorf("something wrong, store should be stored as []byte but stored as %#v", storeMaybe)
 		return
+	}
+
+	storeDB, err = sessions.DecodeRemoteStore(storeB) // decode the whole value, as a remote store
+	if err != nil {
+		golog.Errorf(`error while trying to load session values(%s) from redis:
+		the retrieved value is not a sessions.RemoteStore type, please report that as bug, that should never occur`,
+			sid)
 	}
 
 	return
