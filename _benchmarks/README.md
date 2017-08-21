@@ -169,7 +169,73 @@ Statistics        Avg      Stdev        Max
 
 Iris MVC with Templates Application ran for **37 seconds** serving **26656.76** requests per second with **192.51MB/s** within **1.18ms** latency in average and **22.52ms** max, the memory usage of all these was ~17MB.
 
+## Results with Sessions
+
+Here we will check the sessions performance, this time
+we wanna use the .NET Core raw, **not MVC** and Iris raw, not MVC respectfully.
+
+Spawn `5000000 requests` with 125 different "threads" that sets and gets a session with name `key` and string value `"value"` to the same static request path.
+
+### .NET Core with Sessions
+
+```bash
+$ cd netcore-sessions
+$ dotnet run -c Release
+Hosting environment: Production
+Content root path: C:\mygopath\src\github.com\kataras\iris\_benchmarks\netcore-sessions
+Now listening on: http://localhost:5000
+Application started. Press Ctrl+C to shut down.
+```
+
+```bash
+Bombarding http://localhost:5000/setget with 5000000 requests using 125 connections
+ 5000000 / 5000000 [====================================================================================] 100.00% 2m40s
+Done!
+Statistics        Avg      Stdev        Max
+  Reqs/sec     31844.77   13856.19     253746
+  Latency        4.02ms    15.57ms      0.96s
+  HTTP codes:
+    1xx - 0, 2xx - 5000000, 3xx - 0, 4xx - 0, 5xx - 0
+    others - 0
+  Throughput:    14.51MB/s
+```
+
+### Iris with Sessions
+
+```bash
+$ cd iris-sessions
+$ go run main.go
+Now listening on: http://localhost:5000
+Application started. Press CTRL+C to shut down.
+```
+
+```bash
+Bombarding http://localhost:5000/setget with 5000000 requests using 125 connections
+ 5000000 / 5000000 [====================================================================================] 100.00% 1m15s
+Done!
+Statistics        Avg      Stdev        Max
+  Reqs/sec     66749.70   32110.67     110445
+  Latency        1.88ms     9.13ms      1.94s
+  HTTP codes:
+    1xx - 0, 2xx - 5000000, 3xx - 0, 4xx - 0, 5xx - 0
+    others - 0
+  Throughput:    20.65MB/s
+```
+
+#### Summary
+
+* Time to complete the `5000000 requests` - smaller is better.
+* Reqs/sec - bigger is better.
+* Latency - smaller is better
+* Throughput - bigger is better.
+
+.NET Core with Sessions Application ran for **2 minutes and 40 seconds** serving **31844.77** requests per second with **14.51MB/s** within **4.02ms** latency in average and **0.96s** max.
+
+Iris with Sessions Application ran for **1 minute and 15 seconds** serving **66749.70** requests per second with **20.65MB/s** within **1.88ms** latency in average and **1.94s** max.
+
+
 **Thank you all** for the 100% green feedback, have fun!
 
-- https://dev.to/kataras/go-vsnet-core-in-terms-of-http-performance
 - https://medium.com/@kataras/go-vs-net-core-in-terms-of-http-performance-7535a61b67b8
+- https://dev.to/kataras/go-vsnet-core-in-terms-of-http-performance
+
