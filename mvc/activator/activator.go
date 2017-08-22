@@ -277,7 +277,7 @@ func buildMethodHandler(t TController, methodFuncIndex int) context.Handler {
 }
 
 // RegisterFunc used by the caller to register the result routes.
-type RegisterFunc func(httpMethod string, handler context.Handler)
+type RegisterFunc func(httpMethod string, handler ...context.Handler)
 
 // RegisterMethodHandlers receives a `TController`, description of the
 // user's controller, and calls the "registerFunc" for each of its
@@ -292,8 +292,19 @@ func RegisterMethodHandlers(t TController, registerFunc RegisterFunc) {
 	// http methods using the registerFunc, which is
 	// responsible to convert these into routes
 	// and add them to router via the APIBuilder.
+
+	var handlers context.Handlers
+
+	if t.binder != nil {
+		if m := t.binder.middleware; len(m) > 0 {
+			handlers = append(handlers, t.binder.middleware...)
+		}
+	}
+
 	for _, m := range t.Methods {
-		registerFunc(m.HTTPMethod, buildMethodHandler(t, m.Index))
+		methodHandler := buildMethodHandler(t, m.Index)
+		registeredHandlers := append(handlers, methodHandler)
+		registerFunc(m.HTTPMethod, registeredHandlers...)
 	}
 }
 

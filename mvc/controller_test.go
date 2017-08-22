@@ -171,6 +171,53 @@ func TestControllerBeginAndEndRequestFunc(t *testing.T) {
 	}
 }
 
+func TestControllerBeginAndEndRequestFuncBindMiddleware(t *testing.T) {
+	app := iris.New()
+	usernames := map[string]bool{
+		"kataras":        true,
+		"makis":          false,
+		"efi":            true,
+		"rg":             false,
+		"bill":           true,
+		"whoisyourdaddy": false,
+	}
+	middlewareCheck := func(ctx context.Context) {
+		for username, allow := range usernames {
+			if ctx.Params().Get("username") == username && allow {
+				ctx.Next()
+				return
+			}
+		}
+
+		ctx.StatusCode(httptest.StatusForbidden)
+		ctx.Writef("forbidden")
+	}
+
+	app.Controller("/profile/{username}", new(testControllerBeginAndEndRequestFunc), middlewareCheck)
+
+	e := httptest.New(t, app)
+
+	doneResponse := "done"
+
+	for username, allow := range usernames {
+		getEx := e.GET("/profile/" + username).Expect()
+		if allow {
+			getEx.Status(httptest.StatusOK).
+				Body().Equal(username + doneResponse)
+		} else {
+			getEx.Status(httptest.StatusForbidden).Body().Equal("forbidden")
+		}
+
+		postEx := e.POST("/profile/" + username).Expect()
+		if allow {
+			postEx.Status(httptest.StatusOK).
+				Body().Equal(username + doneResponse)
+		} else {
+			postEx.Status(httptest.StatusForbidden).Body().Equal("forbidden")
+		}
+	}
+}
+
 type Model struct {
 	Username string
 }

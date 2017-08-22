@@ -18,6 +18,46 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+
+# Tu, 22 August 2017 | v8.3.2
+
+
+### MVC
+
+When one or more values of handler type (`func(ctx context.Context)`) are passed
+right to the controller initialization then they will be recognised and act as middleware(s)
+that ran even before the controller activation, there is no reason to load
+the whole controller if the main handler or its `BeginRequest` are not "allowed" to be executed.
+
+Example Code
+
+```go
+func checkLogin(ctx context.Context) {
+	if !myCustomAuthMethodPassed {
+		// [set a status or redirect, you know what to do]
+		ctx.StatusCode(iris.StatusForbidden)
+		return
+	}
+
+	// [continue to the next handler, at this example is our controller itself]
+	ctx.Next()
+}
+
+// [...]
+app.Controller(new(ProfileController), checkLogin)
+// [...]
+```
+
+Usage of these kind of MVC features could be found at the [mvc/controller_test.go](https://github.com/kataras/iris/blob/master/mvc/controller_test.go#L174) source file.
+
+### Other minor enhancements
+
+- fix https://github.com/kataras/iris/issues/726[*](https://github.com/kataras/iris/commit/5e435fc54fe3dbf95308327c2180d1b444ef7e0d)
+- fix redis sessiondb expiration[*](https://github.com/kataras/iris/commit/85cfc91544c981e87e09c5aa86bad4b85d0b96d3)
+- update recursively when new version is available[*](https://github.com/kataras/iris/commit/cd3c223536c6a33653a7fcf1f0648123f2b968fd)
+- some minor session enhancements[*](https://github.com/kataras/iris/commit/2830f3b50ee9c526ac792c3ce1ec1c08c24ea024)
+
+
 # Sa, 19 August 2017 | v8.3.1
 
 First of all I want to thank you for the 100% green feedback you gratefully sent me you about

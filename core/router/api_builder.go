@@ -492,15 +492,16 @@ func (api *APIBuilder) Any(relativePath string, handlers ...context.Handler) (ro
 // }
 //
 // Usage: app.Controller("/user/{id:int}", new(UserController), db, time.Now())
+// Note: Binded values of context.Handler type are being recognised as middlewares by the router.
 //
 // Read more at `/mvc#Controller`.
 func (api *APIBuilder) Controller(relativePath string, controller activator.BaseController,
 	bindValues ...interface{}) (routes []*Route) {
-	registerFunc := func(method string, handler context.Handler) {
+	registerFunc := func(method string, handlers ...context.Handler) {
 		if method == "ANY" || method == "ALL" {
-			routes = api.Any(relativePath, handler)
+			routes = api.Any(relativePath, handlers...)
 		} else {
-			routes = append(routes, api.HandleMany(method, relativePath, handler)...)
+			routes = append(routes, api.HandleMany(method, relativePath, handlers...)...)
 		}
 	}
 
