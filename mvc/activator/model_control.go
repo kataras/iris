@@ -11,14 +11,16 @@ type modelControl struct {
 }
 
 func (mc *modelControl) Load(t *TController) error {
-	fields := lookupFields(t, func(f reflect.StructField) bool {
+	matcher := func(f reflect.StructField) bool {
 		if tag, ok := f.Tag.Lookup("iris"); ok {
 			if tag == "model" {
 				return true
 			}
 		}
 		return false
-	})
+	}
+
+	fields := lookupFields(t.Type.Elem(), matcher, nil)
 
 	if len(fields) == 0 {
 		// first is the `Controller` so we need to
@@ -34,15 +36,22 @@ func (mc *modelControl) Handle(ctx context.Context, c reflect.Value, methodFunc 
 	elem := c.Elem() // controller should always be a pointer at this state
 
 	for _, f := range mc.fields {
-		elemField := elem.Field(f.Index)
+
+		index := f.getIndex()
+		typ := f.getType()
+		name := f.getTagName()
+
+		elemField := elem.FieldByIndex(index)
 		// check if current controller's element field
 		// is valid, is not nil and it's type is the same (should be but make that check to be sure).
-		if !elemField.IsValid() || (elemField.Kind() == reflect.Ptr && elemField.IsNil()) || elemField.Type() != f.Type {
+		if !elemField.IsValid() ||
+			(elemField.Kind() == reflect.Ptr && elemField.IsNil()) ||
+			elemField.Type() != typ {
 			continue
 		}
+
 		fieldValue := elemField.Interface()
-		// fmt.Printf("setting %s to %#v", f.Name, fieldValue)
-		ctx.ViewData(f.Name, fieldValue)
+		ctx.ViewData(name, fieldValue)
 	}
 }
 

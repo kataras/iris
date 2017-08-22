@@ -104,8 +104,8 @@ type testControllerPersistence struct {
 	Data string `iris:"persistence"`
 }
 
-func (t *testControllerPersistence) Get() {
-	t.Ctx.WriteString(t.Data)
+func (c *testControllerPersistence) Get() {
+	c.Ctx.WriteString(c.Data)
 }
 
 func TestControllerPersistenceFields(t *testing.T) {
@@ -127,25 +127,25 @@ type testControllerBeginAndEndRequestFunc struct {
 //
 // useful when more than one methods using the
 // same request values or context's function calls.
-func (t *testControllerBeginAndEndRequestFunc) BeginRequest(ctx context.Context) {
-	t.Controller.BeginRequest(ctx)
-	t.Username = ctx.Params().Get("username")
+func (c *testControllerBeginAndEndRequestFunc) BeginRequest(ctx context.Context) {
+	c.Controller.BeginRequest(ctx)
+	c.Username = ctx.Params().Get("username")
 	// or t.Params.Get("username") because the
 	// t.Ctx == ctx and is being initialized at the t.Controller.BeginRequest.
 }
 
 // called after every method (Get() or Post()).
-func (t *testControllerBeginAndEndRequestFunc) EndRequest(ctx context.Context) {
+func (c *testControllerBeginAndEndRequestFunc) EndRequest(ctx context.Context) {
 	ctx.Writef("done") // append "done" to the response
-	t.Controller.EndRequest(ctx)
+	c.Controller.EndRequest(ctx)
 }
 
-func (t *testControllerBeginAndEndRequestFunc) Get() {
-	t.Ctx.Writef(t.Username)
+func (c *testControllerBeginAndEndRequestFunc) Get() {
+	c.Ctx.Writef(c.Username)
 }
 
-func (t *testControllerBeginAndEndRequestFunc) Post() {
-	t.Ctx.Writef(t.Username)
+func (c *testControllerBeginAndEndRequestFunc) Post() {
+	c.Ctx.Writef(c.Username)
 }
 
 func TestControllerBeginAndEndRequestFunc(t *testing.T) {
@@ -229,47 +229,39 @@ type testControllerModel struct {
 	TestModel2 Model `iris:"model"`
 }
 
-func (t *testControllerModel) Get() {
-	username := t.Ctx.Params().Get("username")
-	t.TestModel = Model{Username: username}
-	t.TestModel2 = Model{Username: username + "2"}
+func (c *testControllerModel) Get() {
+	username := c.Ctx.Params().Get("username")
+	c.TestModel = Model{Username: username}
+	c.TestModel2 = Model{Username: username + "2"}
 }
 
-func (t *testControllerModel) EndRequest(ctx context.Context) {
-	// t.Ctx == ctx
-
-	m, ok := t.Ctx.GetViewData()["myModel"]
-	if !ok {
-		t.Ctx.Writef("fail TestModel load and set")
+func writeModels(ctx context.Context, names ...string) {
+	if expected, got := len(names), len(ctx.GetViewData()); expected != got {
+		ctx.Writef("expected view data length: %d but got: %d for names: %s", expected, got, names)
 		return
 	}
 
-	model, ok := m.(Model)
+	for _, name := range names {
 
-	if !ok {
-		t.Ctx.Writef("fail to override the TestModel name by the tag")
-		return
+		m, ok := ctx.GetViewData()[name]
+		if !ok {
+			ctx.Writef("fail load and set the %s", name)
+			return
+		}
+
+		model, ok := m.(Model)
+		if !ok {
+			ctx.Writef("fail to override the %s' name by the tag", name)
+			return
+		}
+
+		ctx.Writef(model.Username)
 	}
+}
 
-	// test without custom name tag, should have the field's nae.
-	m, ok = t.Ctx.GetViewData()["TestModel2"]
-	if !ok {
-		t.Ctx.Writef("fail TestModel2 load and set")
-		return
-	}
-
-	model2, ok := m.(Model)
-
-	if !ok {
-		t.Ctx.Writef("fail to override the TestModel2 name by the tag")
-		return
-	}
-
-	// models are being rendered via the View at ViewData but
-	// we just test it here, so print it back.
-	t.Ctx.Writef(model.Username + model2.Username)
-
-	t.Controller.EndRequest(ctx)
+func (c *testControllerModel) EndRequest(ctx context.Context) {
+	writeModels(ctx, "myModel", "TestModel2")
+	c.Controller.EndRequest(ctx)
 }
 func TestControllerModel(t *testing.T) {
 	app := iris.New()
@@ -313,6 +305,7 @@ func (t *testControllerBindDeep) Get() {
 }
 func TestControllerBind(t *testing.T) {
 	app := iris.New()
+
 	t1, t2 := "my pointer title", "val title"
 	// test bind pointer to pointer of the correct type
 	myTitlePtr := &testBindType{title: t1}
@@ -384,5 +377,62 @@ func TestControllerRelPathAndRelTmpl(t *testing.T) {
 	for path, tt := range tests {
 		e.GET(path).Expect().Status(httptest.StatusOK).JSON().Equal(tt)
 	}
+}
 
+type testCtrl0 struct {
+	testCtrl00
+}
+
+func (c *testCtrl0) Get() {
+	username := c.Params.Get("username")
+	c.Model = Model{Username: username}
+}
+
+func (c *testCtrl0) EndRequest(ctx context.Context) {
+	writeModels(ctx, "myModel")
+
+	if c.TitlePointer == nil {
+		ctx.Writef("\nTitlePointer is nil!\n")
+	} else {
+		ctx.Writef(c.TitlePointer.title)
+	}
+
+	//should be the same as `.testCtrl000.testCtrl0000.EndRequest(ctx)`
+	c.testCtrl00.EndRequest(ctx)
+}
+
+type testCtrl00 struct {
+	testCtrl000
+
+	Model Model `iris:"model" name:"myModel"`
+}
+
+type testCtrl000 struct {
+	testCtrl0000
+
+	TitlePointer *testBindType
+}
+
+type testCtrl0000 struct {
+	mvc.Controller
+}
+
+func (c *testCtrl0000) EndRequest(ctx context.Context) {
+	ctx.Writef("finish")
+}
+
+func TestControllerInsideControllerRecursively(t *testing.T) {
+	var (
+		username = "gerasimos"
+		title    = "mytitle"
+		expected = username + title + "finish"
+	)
+
+	app := iris.New()
+	app.Controller("/user/{username}", new(testCtrl0),
+		&testBindType{title: title})
+
+	e := httptest.New(t, app)
+	e.GET("/user/" + username).Expect().
+		Status(httptest.StatusOK).Body().Equal(expected)
 }

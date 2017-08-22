@@ -151,8 +151,8 @@ func ActivateController(base BaseController, bindValues []interface{},
 	binder := newBinder(typ.Elem(), bindValues)
 	if binder != nil {
 		for _, bf := range binder.fields {
-			golog.Debugf("MVC %s: binder loaded for '%s' with field index of: %d",
-				ctrlName, bf.Name, bf.Index)
+			golog.Debugf("MVC %s: binder loaded for '%s' with value:\n%#v",
+				ctrlName, bf.getFullName(), bf.getValue())
 		}
 	}
 

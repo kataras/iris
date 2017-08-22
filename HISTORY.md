@@ -19,8 +19,22 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
 
-# Tu, 22 August 2017 | v8.3.2
+# We, 23 August 2017 | v8.3.3
 
+Better debug messages when using MVC.
+
+Add support for recursively binding and **custom controllers embedded to other custom controller**, that's the new feature. That simply means that Iris users are able to use "shared" controllers everywhere; when binding, using models, get/set persistence data, adding middleware, intercept request flow.
+
+This will help web authors to split the logic at different controllers. Those controllers can be also used as "standalone" to serve a page somewhere else in the application as well.
+
+My personal advice to you is to always organize and split your code nicely and wisely in order to avoid using such as an advanced MVC feature, at least any time soon.
+
+I'm aware that this is not always an easy task to do, therefore is here if you ever need it :)
+
+A ridiculous simple example of this feature can be found at the [mvc/controller_test.go](https://github.com/kataras/iris/blob/master/mvc/controller_test.go#L424) file.
+
+
+# Tu, 22 August 2017 | v8.3.2
 
 ### MVC
 
@@ -48,11 +62,11 @@ app.Controller(new(ProfileController), checkLogin)
 // [...]
 ```
 
-Usage of these kind of MVC features could be found at the [mvc/controller_test.go](https://github.com/kataras/iris/blob/master/mvc/controller_test.go#L174) source file.
+Usage of these kind of MVC features could be found at the [mvc/controller_test.go](https://github.com/kataras/iris/blob/master/mvc/controller_test.go#L174) file.
 
 ### Other minor enhancements
 
-- fix https://github.com/kataras/iris/issues/726[*](https://github.com/kataras/iris/commit/5e435fc54fe3dbf95308327c2180d1b444ef7e0d)
+- fix issue [#726](https://github.com/kataras/iris/issues/726)[*](https://github.com/kataras/iris/commit/5e435fc54fe3dbf95308327c2180d1b444ef7e0d)
 - fix redis sessiondb expiration[*](https://github.com/kataras/iris/commit/85cfc91544c981e87e09c5aa86bad4b85d0b96d3)
 - update recursively when new version is available[*](https://github.com/kataras/iris/commit/cd3c223536c6a33653a7fcf1f0648123f2b968fd)
 - some minor session enhancements[*](https://github.com/kataras/iris/commit/2830f3b50ee9c526ac792c3ce1ec1c08c24ea024)
@@ -336,7 +350,7 @@ useful to call middlewares or when many methods use the same collection of data.
 
 Optional `EndRequest(ctx)` function to perform any finalization after any method executed.
 
-Inheritance, see for example our `mvc.SessionController`, it has the `mvc.Controller` as an embedded field
+Inheritance, recursively, see for example our `mvc.SessionController`, it has the `mvc.Controller` as an embedded field
 and it adds its logic to its `BeginRequest`, [here](https://github.com/kataras/iris/blob/master/mvc/session_controller.go). 
 
 

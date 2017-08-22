@@ -66,77 +66,17 @@ func (b *binder) lookup(elem reflect.Type) (fields []field) {
 			continue
 		}
 
-		for i, n := 0, elem.NumField(); i < n; i++ {
-			elemField := elem.Field(i)
-			if elemField.Type == value.Type() {
-				// we area inside the correct type
-				// println("[0] prepare bind filed for " + elemField.Name)
-				fields = append(fields, field{
-					Index: i,
-					Name:  elemField.Name,
-					Type:  elemField.Type,
-					Value: value,
-				})
-				continue
-			}
-
-			f := lookupStruct(elemField.Type, value)
-			if f != nil {
-				fields = append(fields, field{
-					Index:    i,
-					Name:     elemField.Name,
-					Type:     elemField.Type,
-					embedded: f,
-				})
-			}
-
+		matcher := func(elemField reflect.StructField) bool {
+			return elemField.Type == value.Type()
 		}
+
+		handler := func(f *field) {
+			f.Value = value
+		}
+
+		fields = append(fields, lookupFields(elem, matcher, handler)...)
 	}
 	return
-}
-
-func lookupStruct(elem reflect.Type, value reflect.Value) *field {
-	// ignore if that field is not a struct
-	if elem.Kind() != reflect.Struct {
-		// and it's not a controller because we don't want to accidentally
-		// set fields to other user fields. Or no?
-		//  ||
-		// 	(elem.Name() != "" && !strings.HasSuffix(elem.Name(), "Controller")) {
-		return nil
-	}
-
-	// search by fields.
-	for i, n := 0, elem.NumField(); i < n; i++ {
-		elemField := elem.Field(i)
-		if elemField.Type == value.Type() {
-			// println("Types are equal of: " + elemField.Type.Name() + " " + elemField.Name + " and " + value.Type().Name())
-			// we area inside the correct type.
-			return &field{
-				Index: i,
-				Name:  elemField.Name,
-				Type:  elemField.Type,
-				Value: value,
-			}
-		}
-
-		// if field is struct and the value is struct
-		// then try inside its fields for a compatible
-		// field type.
-		if elemField.Type.Kind() == reflect.Struct && value.Type().Kind() == reflect.Struct {
-			elemFieldEmb := elem.Field(i)
-			f := lookupStruct(elemFieldEmb.Type, value)
-			if f != nil {
-				fp := &field{
-					Index:    i,
-					Name:     elemFieldEmb.Name,
-					Type:     elemFieldEmb.Type,
-					embedded: f,
-				}
-				return fp
-			}
-		}
-	}
-	return nil
 }
 
 func (b *binder) handle(c reflect.Value) {
