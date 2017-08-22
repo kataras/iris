@@ -220,7 +220,7 @@ Iris Application written using **14 code of lines** ran for **8 seconds** servin
 
 ## Sessions
 
-Spawn `5000000 requests` with 125 different "threads" targeting a static request path, sets and gets a session based on the name `"key"` and string value `"value"` and write tat session value to the response stream.
+Spawn `5000000 requests` with 125 different "threads" targeting a static request path, sets and gets a session based on the name `"key"` and string value `"value"` and write that session value to the response stream.
 
 ### .NET Core (Kestrel) with Sessions
 

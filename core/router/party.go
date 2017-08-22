@@ -169,6 +169,7 @@ type Party interface {
 	// }
 	//
 	// Usage: app.Controller("/user/{id:int}", new(UserController), db, time.Now())
+	// Note: Binded values of context.Handler type are being recognised as middlewares by the router.
 	//
 	// Read more at `/mvc#Controller`.
 	Controller(relativePath string, controller activator.BaseController, bindValues ...interface{}) []*Route

@@ -58,6 +58,7 @@ import (
 // }
 //
 // Usage: app.Controller("/user/{id:int}", new(UserController), db, time.Now())
+// Note: Binded values of context.Handler type are being recognised as middlewares by the router.
 //
 // Look `core/router/APIBuilder#Controller` method too.
 type Controller struct {
@@ -140,7 +141,7 @@ func (c *Controller) RelPath() string {
 		reqPath := c.Ctx.Path()
 		if len(reqPath) == 0 {
 			// it never come here
-			// but to protect ourselves jsut return an empty slash.
+			// but to protect ourselves just return an empty slash.
 			return slashStr
 		}
 		// [1:]to ellimuate the prefixes like "//"

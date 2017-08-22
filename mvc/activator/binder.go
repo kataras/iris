@@ -2,11 +2,17 @@ package activator
 
 import (
 	"reflect"
+
+	"github.com/kataras/iris/context"
 )
 
 type binder struct {
 	values []interface{}
 	fields []field
+
+	// saves any middleware that may need to be passed to the router,
+	// statically, to gain performance.
+	middleware context.Handlers
 }
 
 // binder accepts a value of something
@@ -26,19 +32,42 @@ func newBinder(elemType reflect.Type, values []interface{}) *binder {
 
 	// if nothing valid found return nil, so the caller
 	// can omit the binder.
-	if len(b.fields) == 0 {
+	if len(b.fields) == 0 && len(b.middleware) == 0 {
 		return nil
 	}
 
 	return b
 }
 
+func (b *binder) storeValueIfMiddleware(value reflect.Value) bool {
+	if value.CanInterface() {
+		if m, ok := value.Interface().(context.Handler); ok {
+			b.middleware = append(b.middleware, m)
+			return true
+		}
+		if m, ok := value.Interface().(func(context.Context)); ok {
+			b.middleware = append(b.middleware, m)
+			return true
+		}
+	}
+	return false
+}
+
 func (b *binder) lookup(elem reflect.Type) (fields []field) {
 	for _, v := range b.values {
 		value := reflect.ValueOf(v)
+		// handlers will be recognised as middleware, not struct fields.
+		// End-Developer has the option to call any handler inside
+		// the controller's `BeginRequest` and `EndRequest`, the
+		// state is respected from the method handler already.
+		if b.storeValueIfMiddleware(value) {
+			// stored as middleware, continue to the next field, we don't have
+			// to bind anything here.
+			continue
+		}
+
 		for i, n := 0, elem.NumField(); i < n; i++ {
 			elemField := elem.Field(i)
-
 			if elemField.Type == value.Type() {
 				// we area inside the correct type
 				// println("[0] prepare bind filed for " + elemField.Name)
@@ -111,6 +140,13 @@ func lookupStruct(elem reflect.Type, value reflect.Value) *field {
 }
 
 func (b *binder) handle(c reflect.Value) {
+	// we could make check for middlewares here but
+	// these could easly be used outside of the controller
+	// so we don't have to initialize a controller to call them
+	// so they don't belong actually here, we will register them to the
+	// router itself, before the controller's handler to gain performance,
+	// look `activator.go#RegisterMethodHandlers` for more.
+
 	elem := c.Elem() // controller should always be a pointer at this state
 	for _, f := range b.fields {
 		f.sendTo(elem)
