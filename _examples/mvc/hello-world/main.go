@@ -77,11 +77,15 @@ type HelloController struct {
 	mvc.Controller
 }
 
+type myJSONData struct {
+	Message string `json:"message"`
+}
+
 // Get serves
 // Method:   GET
 // Resource: http://localhost:8080/hello
 func (c *HelloController) Get() {
-	c.Ctx.JSON(iris.Map{"message": "Hello iris web framework."})
+	c.Ctx.JSON(myJSONData{"Hello iris web framework."})
 }
 
 /* Can use more than one, the factory will make sure

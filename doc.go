@@ -35,7 +35,7 @@ Source code and other details for the project are available at GitHub:
 
 Current Version
 
-8.3.2
+8.3.3
 
 Installation
 
@@ -820,7 +820,7 @@ useful to call middlewares or when many methods use the same collection of data.
 
 Optional `EndRequest(ctx)` function to perform any finalization after any method executed.
 
-Inheritance, see for example our `mvc.SessionController`, it has the `mvc.Controller` as an embedded field
+Inheritance, recursively, see for example our `mvc.SessionController`, it has the `mvc.Controller` as an embedded field
 and it adds its logic to its `BeginRequest`. Source file: https://github.com/kataras/iris/blob/master/mvc/session_controller.go.
 
 

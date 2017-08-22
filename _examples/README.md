@@ -33,14 +33,12 @@ It doesn't always contain the "best ways" but it does cover each important featu
     * [using the `RegisterOnInterrupt`](http-listening/graceful-shutdown/default-notifier/main.go)
     * [using a custom notifier](http-listening/graceful-shutdown/custom-notifier/main.go)
 
-
 ### Configuration
 
 - [Functional](configuration/functional/main.go)
 - [From Configuration Struct](configuration/from-configuration-structure/main.go)
 - [Import from YAML file](configuration/from-yaml-file/main.go)
 - [Import from TOML file](configuration/from-toml-file/main.go)
-
 
 ### Routing, Grouping, Dynamic Path Parameters, "Macros" and Custom Context
 
