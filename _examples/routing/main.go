@@ -55,6 +55,32 @@ func registerGamesRoutes(app *iris.Application) {
 		games.Post("/{gameID:int}/clans/{clanPublicID:int}/memberships/delete", h)
 		games.Post("/{gameID:int}/clans/{clanPublicID:int}/memberships/promote", h)
 		games.Post("/{gameID:int}/clans/{clanPublicID:int}/memberships/demote", h)
+
+		gamesCh := games.Party("/challenge")
+		{
+			// games/challenge
+			gamesCh.Get("/", h)
+
+			gamesChBeginner := gamesCh.Party("/beginner")
+			{
+				// games/challenge/beginner/start
+				gamesChBeginner.Get("/start", h)
+				levelBeginner := gamesChBeginner.Party("/level")
+				{
+					// games/challenge/beginner/level/first
+					levelBeginner.Get("/first", h)
+				}
+			}
+
+			gamesChIntermediate := gamesCh.Party("/intermediate")
+			{
+				// games/challenge/intermediate
+				gamesChIntermediate.Get("/", h)
+				// games/challenge/intermediate/start
+				gamesChIntermediate.Get("/start", h)
+			}
+		}
+
 	}
 }
 
@@ -62,6 +88,10 @@ func registerSubdomains(app *iris.Application) {
 	mysubdomain := app.Party("mysubdomain.")
 	// http://mysubdomain.myhost.com
 	mysubdomain.Get("/", h)
+
+	willdcardSubdomain := app.Party("*.")
+	willdcardSubdomain.Get("/", h)
+	willdcardSubdomain.Party("/party").Get("/", h)
 }
 
 func newApp() *iris.Application {
