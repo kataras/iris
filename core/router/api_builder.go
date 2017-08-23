@@ -319,6 +319,20 @@ func (api *APIBuilder) GetRoute(routeName string) *Route {
 	return api.routes.get(routeName)
 }
 
+// GetRouteReadOnly returns the registered "read-only" route based on its name, otherwise nil.
+// One note: "routeName" should be case-sensitive. Used by the context to get the current route.
+// It returns an interface instead to reduce wrong usage and to keep the decoupled design between
+// the context and the routes.
+//
+// Look `GetRoute` for more.
+func (api *APIBuilder) GetRouteReadOnly(routeName string) context.RouteReadOnly {
+	r := api.GetRoute(routeName)
+	if r == nil {
+		return nil
+	}
+	return routeReadOnlyWrapper{r}
+}
+
 // Use appends Handler(s) to the current Party's routes and child routes.
 // If the current Party is the root, then it registers the middleware to all child Parties' routes too.
 //

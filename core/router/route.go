@@ -50,7 +50,7 @@ func NewRoute(method, subdomain, unparsedPath string,
 	}
 
 	path = cleanPath(path) // maybe unnecessary here but who cares in this moment
-	defaultName := method + subdomain + path
+	defaultName := method + subdomain + tmpl.Src
 	formattedPath := formatPath(path)
 
 	route := &Route{
@@ -106,7 +106,7 @@ func (r *Route) BuildHandlers() {
 	} // note: no mutex needed, this should be called in-sync when server is not running of course.
 }
 
-// String returns the form of METHOD, SUBDOMAIN, TMPL PATH
+// String returns the form of METHOD, SUBDOMAIN, TMPL PATH.
 func (r Route) String() string {
 	return fmt.Sprintf("%s %s%s",
 		r.Method, r.Subdomain, r.Tmpl().Src)
@@ -183,4 +183,20 @@ func (r Route) ResolvePath(args ...string) string {
 		formattedPath = strings.Replace(formattedPath, "%v", s, 1)
 	}
 	return formattedPath
+}
+
+type routeReadOnlyWrapper struct {
+	*Route
+}
+
+func (rd routeReadOnlyWrapper) Name() string {
+	return rd.Route.Name
+}
+
+func (rd routeReadOnlyWrapper) Subdomain() string {
+	return rd.Route.Subdomain
+}
+
+func (rd routeReadOnlyWrapper) Path() string {
+	return rd.Route.tmpl.Src
 }
