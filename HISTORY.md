@@ -25,10 +25,10 @@ Give read access to the current request context's route, a feature that many of 
 ```go
 func(ctx context.Context) {
 	_ = ctx.GetCurrentRoute().Name()
-	//					 	 .Method() returns string, same as ctx.Method().
-	// 						 .Subdomain() returns string, the registered subdomain.
-	//                   	 .Path() returns string, the registered path.
-	//                   	 .IsOnline() returns boolean.
+	//					.Method() returns string, same as ctx.Method().
+	//					.Subdomain() returns string, the registered subdomain.
+	//					.Path() returns string, the registered path.
+	//					.IsOnline() returns boolean.
 }
 ```  
 
