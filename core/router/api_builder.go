@@ -214,8 +214,8 @@ func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) P
 	}
 
 	// this is checked later on but for easier debug is better to do it here:
-	if api.relativePath[0] == '/' && relativePath[0] == '/' {
-		parentPath = parentPath[1:] // remove  first slash if parent ended with / and new one started with /.
+	if api.relativePath[len(api.relativePath)-1] == '/' && relativePath[0] == '/' {
+		relativePath = relativePath[1:] // remove first slash if parent ended with / and new one started with /.
 	}
 
 	// if it's subdomain then it has priority, i.e:
