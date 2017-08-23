@@ -189,6 +189,10 @@ type routeReadOnlyWrapper struct {
 	*Route
 }
 
+func (rd routeReadOnlyWrapper) Method() string {
+	return rd.Route.Method
+}
+
 func (rd routeReadOnlyWrapper) Name() string {
 	return rd.Route.Name
 }

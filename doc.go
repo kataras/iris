@@ -35,7 +35,7 @@ Source code and other details for the project are available at GitHub:
 
 Current Version
 
-8.3.3
+8.3.4
 
 Installation
 
@@ -810,7 +810,7 @@ Access to the low-level `context.Context` via the `Ctx` field.
 
 Get the relative request path by using the controller's name via `RelPath()`.
 
-Get the relative template path directory by using the controller's name via `RelTmpl`().
+Get the relative template path directory by using the controller's name via `RelTmpl()`.
 
 Flow as you used to, `Controllers` can be registered to any `Party`,
 including Subdomains, the Party's begin and done handlers work as expected.
@@ -822,6 +822,8 @@ Optional `EndRequest(ctx)` function to perform any finalization after any method
 
 Inheritance, recursively, see for example our `mvc.SessionController`, it has the `mvc.Controller` as an embedded field
 and it adds its logic to its `BeginRequest`. Source file: https://github.com/kataras/iris/blob/master/mvc/session_controller.go.
+
+Read access to the current route  via the `Route` field.
 
 
 Using Iris MVC for code reuse
