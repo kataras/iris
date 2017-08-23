@@ -34,6 +34,14 @@ type Application interface {
 	// It is ready to use after Build state.
 	ServeHTTP(w http.ResponseWriter, r *http.Request)
 
+	// GetRouteReadOnly returns the registered "read-only" route based on its name, otherwise nil.
+	// One note: "routeName" should be case-sensitive. Used by the context to get the current route.
+	// It returns an interface instead to reduce wrong usage and to keep the decoupled design between
+	// the context and the routes.
+	//
+	// Look core/router/APIBuilder#GetRoute for more.
+	GetRouteReadOnly(routeName string) RouteReadOnly
+
 	// FireErrorCode executes an error http status code handler
 	// based on the context's status code.
 	//

@@ -49,7 +49,15 @@ func (h *routerHandler) getTree(method, subdomain string) *tree {
 	return nil
 }
 
-func (h *routerHandler) addRoute(method, subdomain, path string, handlers context.Handlers) error {
+func (h *routerHandler) addRoute(r *Route) error {
+	var (
+		routeName = r.Name
+		method    = r.Method
+		subdomain = r.Subdomain
+		path      = r.Path
+		handlers  = r.Handlers
+	)
+
 	t := h.getTree(method, subdomain)
 
 	if t == nil {
@@ -58,7 +66,7 @@ func (h *routerHandler) addRoute(method, subdomain, path string, handlers contex
 		t = &tree{Method: method, Subdomain: subdomain, Nodes: &n}
 		h.trees = append(h.trees, t)
 	}
-	return t.Nodes.Add(path, handlers)
+	return t.Nodes.Add(routeName, path, handlers)
 }
 
 // NewDefaultHandler returns the handler which is responsible
@@ -125,7 +133,7 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 		// on route, it will be stacked shown in this build state
 		// and no in the lines of the user's action, they should read
 		// the docs better. Or TODO: add a link here in order to help new users.
-		if err := h.addRoute(r.Method, r.Subdomain, r.Path, r.Handlers); err != nil {
+		if err := h.addRoute(r); err != nil {
 			// node errors:
 			rp.Add("%v -> %s", err, r.String())
 		}
@@ -202,8 +210,9 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 				continue
 			}
 		}
-		handlers := t.Nodes.Find(path, ctx.Params())
+		routeName, handlers := t.Nodes.Find(path, ctx.Params())
 		if len(handlers) > 0 {
+			ctx.SetCurrentRouteName(routeName)
 			ctx.Do(handlers)
 			// found
 			return

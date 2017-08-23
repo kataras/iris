@@ -13,6 +13,7 @@ type Nodes []*node
 
 type node struct {
 	s                 string
+	routeName         string
 	wildcardParamName string   // name of the wildcard parameter, only one per whole Node is allowed
 	paramNames        []string // only-names
 	childrenNodes     Nodes
@@ -28,7 +29,7 @@ var ErrDublicate = errors.New("two or more routes have the same registered path"
 /// TODO: clean up needed until v8.5
 
 // Add adds a node to the tree, returns an ErrDublicate error on failure.
-func (nodes *Nodes) Add(path string, handlers context.Handlers) error {
+func (nodes *Nodes) Add(routeName string, path string, handlers context.Handlers) error {
 	// println("[Add] adding path: " + path)
 	// resolve params and if that node should be added as root
 	var params []string
@@ -66,13 +67,13 @@ func (nodes *Nodes) Add(path string, handlers context.Handlers) error {
 	for _, idx := range p {
 		// print("-2 nodes.Add: path: " + path + " params len: ")
 		// println(len(params))
-		if err := nodes.add(path[:idx], nil, nil, true); err != nil {
+		if err := nodes.add(routeName, path[:idx], nil, nil, true); err != nil {
 			return err
 		}
 		// print("-1 nodes.Add: path: " + path + " params len: ")
 		// println(len(params))
 		if nidx := idx + 1; len(path) > nidx {
-			if err := nodes.add(path[:nidx], nil, nil, true); err != nil {
+			if err := nodes.add(routeName, path[:nidx], nil, nil, true); err != nil {
 				return err
 			}
 		}
@@ -80,7 +81,7 @@ func (nodes *Nodes) Add(path string, handlers context.Handlers) error {
 
 	// print("nodes.Add: path: " + path + " params len: ")
 	// println(len(params))
-	if err := nodes.add(path, params, handlers, true); err != nil {
+	if err := nodes.add(routeName, path, params, handlers, true); err != nil {
 		return err
 	}
 
@@ -89,7 +90,7 @@ func (nodes *Nodes) Add(path string, handlers context.Handlers) error {
 	return nil
 }
 
-func (nodes *Nodes) add(path string, paramNames []string, handlers context.Handlers, root bool) (err error) {
+func (nodes *Nodes) add(routeName, path string, paramNames []string, handlers context.Handlers, root bool) (err error) {
 
 	// println("[add] adding path: " + path)
 
@@ -115,6 +116,7 @@ func (nodes *Nodes) add(path string, paramNames []string, handlers context.Handl
 		n := &node{
 			rootWildcard:      rootWildcard,
 			s:                 path,
+			routeName:         routeName,
 			wildcardParamName: wildcardParamName,
 			paramNames:        paramNames,
 			handlers:          handlers,
@@ -154,6 +156,7 @@ loop:
 				childrenNodes: Nodes{
 					{
 						s:                 n.s[i:],
+						routeName:         n.routeName,
 						wildcardParamName: n.wildcardParamName, // wildcardParamName
 						paramNames:        n.paramNames,
 						childrenNodes:     n.childrenNodes,
@@ -161,6 +164,7 @@ loop:
 					},
 					{
 						s:                 path[i:],
+						routeName:         routeName,
 						wildcardParamName: wildcardParamName,
 						paramNames:        paramNames,
 						handlers:          handlers,
@@ -179,11 +183,13 @@ loop:
 
 			*n = node{
 				s:                 n.s[:len(path)],
+				routeName:         routeName,
 				wildcardParamName: wildcardParamName,
 				paramNames:        paramNames,
 				childrenNodes: Nodes{
 					{
 						s:                 n.s[len(path):],
+						routeName:         n.routeName,
 						wildcardParamName: n.wildcardParamName, // wildcardParamName
 						paramNames:        n.paramNames,
 						childrenNodes:     n.childrenNodes,
@@ -201,6 +207,7 @@ loop:
 			if n.wildcardParamName != "" {
 				n := &node{
 					s:                 path,
+					routeName:         routeName,
 					wildcardParamName: wildcardParamName,
 					paramNames:        paramNames,
 					handlers:          handlers,
@@ -211,7 +218,7 @@ loop:
 				return
 			}
 			// 	println("4. nodes.Add path: " + path[len(n.s):])
-			err = n.childrenNodes.add(path[len(n.s):], paramNames, handlers, false)
+			err = n.childrenNodes.add(routeName, path[len(n.s):], paramNames, handlers, false)
 			return err
 		}
 
@@ -230,6 +237,7 @@ loop:
 
 	n := &node{
 		s:                 path,
+		routeName:         routeName,
 		wildcardParamName: wildcardParamName,
 		paramNames:        paramNames,
 		handlers:          handlers,
@@ -243,7 +251,7 @@ loop:
 
 // Find resolves the path, fills its params
 // and returns the registered to the resolved node's handlers.
-func (nodes Nodes) Find(path string, params *context.RequestParams) context.Handlers {
+func (nodes Nodes) Find(path string, params *context.RequestParams) (string, context.Handlers) {
 	n, paramValues := nodes.findChild(path, nil)
 	if n != nil {
 		//	map the params,
@@ -270,10 +278,10 @@ func (nodes Nodes) Find(path string, params *context.RequestParams) context.Hand
 				params.Set(n.wildcardParamName, lastWildcardVal)
 			}
 		}
-		return n.handlers
+		return n.routeName, n.handlers
 	}
 
-	return nil
+	return "", nil
 }
 
 // Exists returns true if a node with that "path" exists,

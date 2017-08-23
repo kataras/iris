@@ -64,6 +64,10 @@ import (
 type Controller struct {
 	// Name contains the current controller's full name.
 	Name string
+
+	// Route is the current request context's route.
+	Route context.RouteReadOnly
+
 	// contains the `Name` as different words, all lowercase,
 	// without the "Controller" suffix if exists.
 	// we need this as field because the activator
@@ -178,6 +182,7 @@ func (c *Controller) RelTmpl() string {
 // It's called internally.
 // End-Developer can ovverride it but it still MUST be called.
 func (c *Controller) BeginRequest(ctx context.Context) {
+	c.Route = ctx.GetCurrentRoute()
 	// path and path params
 	c.Path = ctx.Path()
 	c.Params = ctx.Params()
