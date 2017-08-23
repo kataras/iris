@@ -18,6 +18,30 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+# We, 23 August 2017 | v8.3.4
+
+Give read access to the current request context's route, a feature that many of you asked a lot.
+
+```go
+func(ctx context.Context) {
+	_ = ctx.GetCurrentRoute().Name()
+	//					 	 .Method() returns string, same as ctx.Method().
+	// 						 .Subdomain() returns string, the registered subdomain.
+	//                   	 .Path() returns string, the registered path.
+	//                   	 .IsOnline() returns boolean.
+}
+```  
+
+```go
+type MyController struct {
+	mvc.Controller
+}
+
+func (c *MyController) Get(){
+	_ = c.Route.Name() // same as `c.Ctx.GetCurrentRoute().Name()`.
+	// [...]
+}
+```
 
 # We, 23 August 2017 | v8.3.3
 
@@ -340,7 +364,7 @@ Access to the low-level `context.Context` via the `Ctx` field.
 
 Get the relative request path by using the controller's name via `RelPath()`.
 
-Get the relative template path directory by using the controller's name via `RelTmpl`().
+Get the relative template path directory by using the controller's name via `RelTmpl()`.
 
 Flow as you used to, `Controllers` can be registered to any `Party`,
 including Subdomains, the Party's begin and done handlers work as expected.
@@ -353,6 +377,7 @@ Optional `EndRequest(ctx)` function to perform any finalization after any method
 Inheritance, recursively, see for example our `mvc.SessionController`, it has the `mvc.Controller` as an embedded field
 and it adds its logic to its `BeginRequest`, [here](https://github.com/kataras/iris/blob/master/mvc/session_controller.go). 
 
+Read access to the current route  via the `Route` field.
 
 **Using Iris MVC for code reuse** 
 
