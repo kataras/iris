@@ -65,8 +65,8 @@ type Controller struct {
 	// Name contains the current controller's full name.
 	Name string
 
-	// Route is the current request context's route.
-	Route context.RouteReadOnly
+	// currentRoute is the current request context's route.
+	currentRoute context.RouteReadOnly
 
 	// contains the `Name` as different words, all lowercase,
 	// without the "Controller" suffix if exists.
@@ -125,6 +125,14 @@ func (c *Controller) getNameWords() []string {
 	return c.nameAsWords
 }
 
+// Route returns the current request controller's context read-only access route.
+func (c *Controller) Route() context.RouteReadOnly {
+	if c.currentRoute == nil {
+		c.currentRoute = c.Ctx.GetCurrentRoute()
+	}
+	return c.currentRoute
+}
+
 const slashStr = "/"
 
 // RelPath tries to return the controller's name
@@ -150,11 +158,35 @@ func (c *Controller) RelPath() string {
 		}
 		// [1:]to ellimuate the prefixes like "//"
 		// request path has always "/"
-		rel = strings.Replace(c.Ctx.Path()[1:], rel, "", 1)
+		rel = strings.Replace(reqPath[1:], rel, "", 1)
 		if rel == "" {
 			rel = slashStr
 		}
 		c.relPath = rel
+		// this will return any dynamic path after the static one
+		// or a a slash "/":
+		//
+		// reqPath := c.Ctx.Path()
+		// if len(reqPath) == 0 {
+		// 	// it never come here
+		// 	// but to protect ourselves just return an empty slash.
+		// 	return slashStr
+		// }
+		// var routeVParams []string
+		// c.Params.Visit(func(key string, value string) {
+		// 	routeVParams = append(routeVParams, value)
+		// })
+
+		// rel := c.Route().StaticPath()
+		// println(rel)
+		// // [1:]to ellimuate the prefixes like "//"
+		// // request path has always "/"
+		// rel = strings.Replace(reqPath, rel[1:], "", 1)
+		// println(rel)
+		// if rel == "" {
+		// 	rel = slashStr
+		// }
+		// c.relPath = rel
 	}
 
 	return c.relPath
@@ -182,7 +214,6 @@ func (c *Controller) RelTmpl() string {
 // It's called internally.
 // End-Developer can ovverride it but it still MUST be called.
 func (c *Controller) BeginRequest(ctx context.Context) {
-	c.Route = ctx.GetCurrentRoute()
 	// path and path params
 	c.Path = ctx.Path()
 	c.Params = ctx.Params()

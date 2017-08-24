@@ -22,7 +22,9 @@ func main() {
 	app.Controller("/about", new(controllers.AboutController))
 	app.Controller("/contact", new(controllers.ContactController))
 
-	app.Run(iris.Addr(":5000"))
+	// 24 August 2017: Iris has a built'n version updater but we don't need it
+	// when benchmarking...
+	app.Run(iris.Addr(":5000"), iris.WithoutVersionChecker)
 }
 
 func configure(app *iris.Application) {

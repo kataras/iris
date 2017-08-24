@@ -38,10 +38,35 @@ type MyController struct {
 }
 
 func (c *MyController) Get(){
-	_ = c.Route.Name() // same as `c.Ctx.GetCurrentRoute().Name()`.
+	_ = c.Route().Name() // same as `c.Ctx.GetCurrentRoute().Name()`.
 	// [...]
 }
 ```
+
+**Updated: 24 August 2017**
+
+This evening, on the next version 8.3.5:
+
+Able to pre-calculate, register and map different (relative) paths inside a single controller
+with zero performance cost.
+
+Meaning that in the future you will be able to use something like these:
+
+If `app.Controller("/user", new(user.Controller))`
+
+- `func(c *Controller) Get()` - `GET:/user` , as usual.
+- `func(c *Controller) Post()` - `POST:/user`, as usual.
+- `func(c *Controller) GetLogin()` - `GET:/user/login`
+- `func(c *Controller) PostLogin()` - `POST:/user/login`
+- `func(c *Controller) GetProfileFollowers()` - `GET:/user/profile/followers`
+- `func(c *Controller) PostProfileFollowers()` - `POST:/user/profile/followers`
+- `func(c *Controller) GetBy()` - `GET:/user/{param}`
+- `func(c *Controller) GetByName(name string)` - `GET:/user/{name}`
+- `func(c *Controller) PostByName(name string)` - `POST:/user/{name}`
+- `func(c *Controller) GetByID(id int64 || int)` - `GET:/user/{id:int}`
+- `func(c *Controller) PostByID(id int64 || int)` - `POST:/user/{id:int}`
+
+Watch and stay tuned my friends.
 
 # We, 23 August 2017 | v8.3.3
 
