@@ -8,14 +8,14 @@
 
 Iris is a fast, simple and efficient micro web framework for Go. It provides a beautifully expressive and easy to use foundation for your next website, API, or distributed app.
 
-We have no doubt you will able to find other web frameworks written in Golang
-and even put a real fight to learn and use them for quite some time but
-make no mistake, sooner or later you'll be using Iris, no because of the ergonomic  high-performant solution that it provides but its well-documented unique features are these will transform you to a real rockstar geek. 
+We have no doubt you will able to find other web frameworks written in Go
+and even put up a real fight to learn and use them for quite some time but
+make no mistake, sooner or later you will be using Iris, not because of the ergonomic, high-performant solution that it provides but its well-documented unique features, as these will transform you to a real rockstar geek. 
 
-No matter what you're trying to build, Iris takes cover 
-every type of applications, from micro services to large monolithic web applications.
+No matter what you're trying to build, Iris covers 
+every type of application, from micro services to large monolithic web applications.
 It's actually the best piece of software for back-end web developers
-you could ever find online.
+you can find online.
 
 Iris may have reached version 8, but we're not stopping there. We have many feature ideas on our board that we're anxious to add and other innovative web development solutions that we're planning to build into Iris.
 
