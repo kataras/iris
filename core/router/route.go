@@ -165,6 +165,24 @@ func formatPath(path string) string {
 	return path
 }
 
+// StaticPath returns the static part of the original, registered route path.
+// if /user/{id} it will return /user
+// if /user/{id}/friend/{friendid:int} it will return /user too
+// if /assets/{filepath:path} it will return /assets.
+func (r Route) StaticPath() string {
+	src := r.tmpl.Src
+	bidx := strings.IndexByte(src, '{')
+	if bidx == -1 || len(src) <= bidx {
+		return src // no dynamic part found
+	}
+	if bidx == 0 { // found at first index,
+		// but never happens because of the prepended slash
+		return "/"
+	}
+
+	return src[:bidx]
+}
+
 // ResolvePath returns the formatted path's %v replaced with the args.
 func (r Route) ResolvePath(args ...string) string {
 	rpath, formattedPath := r.Path, r.FormattedPath

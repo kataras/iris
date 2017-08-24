@@ -183,8 +183,8 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 // 	app.HandleMany(iris.MethodGet, "/user /user/{id:int} /user/me", userHandler)
 // At the other side, with `Handle` we've had to write:
 // 	app.Handle(iris.MethodGet, "/user", userHandler)
-// 	app.Handle(iris.MethodGet, "/user/{id:int}", userByIDHandler)
-// 	app.Handle(iris.MethodGet, "/user/me", userMeHandler)
+// 	app.Handle(iris.MethodGet, "/user/{id:int}", userHandler)
+// 	app.Handle(iris.MethodGet, "/user/me", userHandler)
 //
 // This method is used behind the scenes at the `Controller` function
 // in order to handle more than one paths for the same controller instance.
