@@ -24,7 +24,7 @@ func main() {
 	// Reload the templates on each request (development mode).
 	app.RegisterView(view.HTML("./views", ".html").Reload(true))
 
-	// Regster custom handler for specific http errors.
+	// Register custom handler for specific http errors.
 	app.OnErrorCode(iris.StatusInternalServerError, func(ctx context.Context) {
 		// .Values are used to communicate between handlers, middleware.
 		errMessage := ctx.Values().GetString("error")

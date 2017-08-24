@@ -67,7 +67,7 @@ type PingController struct {
 
 // Get serves
 // Method:   GET
-// Resource: http://context:8080/ping
+// Resource: http://localhost:8080/ping
 func (c *PingController) Get() {
 	c.Ctx.WriteString("pong")
 }
