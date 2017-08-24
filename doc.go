@@ -71,7 +71,7 @@ Example code:
         // Reload the templates on each request (development mode).
         app.RegisterView(iris.HTML("./views", ".html").Reload(true))
 
-        // Regster custom handler for specific http errors.
+        // Register custom handler for specific http errors.
         app.OnErrorCode(iris.StatusInternalServerError, func(ctx context.Context) {
             // .Values are used to communicate between handlers, middleware.
             errMessage := ctx.Values().GetString("error")
@@ -748,7 +748,7 @@ Example Code
 
     // Get serves
     // Method:   GET
-    // Resource: http://context:8080/ping
+    // Resource: http://localhost:8080/ping
     func (c *PingController) Get() {
         c.Ctx.WriteString("pong")
     }
