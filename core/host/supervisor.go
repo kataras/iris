@@ -281,7 +281,7 @@ func (su *Supervisor) ListenAndServeTLS(certFile string, keyFile string) error {
 // If empty, certs will only be cached for the lifetime of the auto tls manager.
 //
 // Note: If domain is not empty and the server's port was "443" then
-// it will start a new server, automaticall for you, which will redirect all
+// it will start a new server, automatically for you, which will redirect all
 // http versions to their https as well.
 func (su *Supervisor) ListenAndServeAutoTLS(domain string, email string, cacheDir string) error {
 	var (
@@ -335,7 +335,6 @@ func (su *Supervisor) ListenAndServeAutoTLS(domain string, email string, cacheDi
 		redirectSrv := NewRedirection(":80", target, -1)
 		// register a shutdown callback to this
 		// supervisor in order to close the "secondary redirect server" as well.
-
 		su.RegisterOnShutdown(func() {
 			// give it some time to close itself...
 			timeout := 5 * time.Second
@@ -343,6 +342,7 @@ func (su *Supervisor) ListenAndServeAutoTLS(domain string, email string, cacheDi
 			defer cancel()
 			redirectSrv.Shutdown(ctx)
 		})
+
 		// start that redirect server using a different goroutine.
 		go redirectSrv.ListenAndServe()
 	}

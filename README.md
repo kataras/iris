@@ -137,7 +137,7 @@ $ go run main.go
 
 Go 1.9 just released.
 
-Dcumentation and examples will be updated soon to use the already-type aliases inside the framework, such as `iris.Context` instead of the origin pacage.
+Dcumentation and examples will be updated soon to use the already-type aliases inside the framework, such as `iris.Context` instead of the origin package.
 
 If you've installed [Go 1.9](https://golang.org/dl) then you can omit the `github.com/kataras/iris/context` package from the imports statement.
 
