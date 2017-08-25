@@ -5,12 +5,16 @@ import (
 	"crypto/tls"
 	"net"
 	"net/http"
+	"net/url"
+	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
+
+	"golang.org/x/crypto/acme/autocert"
 
 	"github.com/kataras/iris/core/errors"
 	"github.com/kataras/iris/core/netutil"
-	"golang.org/x/crypto/acme/autocert"
 )
 
 // Configurator provides an easy way to modify
@@ -231,46 +235,119 @@ func (su *Supervisor) ListenAndServe() error {
 	return su.Serve(l)
 }
 
-func setupHTTP2(cfg *tls.Config) {
-	cfg.NextProtos = append(cfg.NextProtos, "h2") // HTTP2
-}
-
 // ListenAndServeTLS acts identically to ListenAndServe, except that it
 // expects HTTPS connections. Additionally, files containing a certificate and
 // matching private key for the server must be provided. If the certificate
 // is signed by a certificate authority, the certFile should be the concatenation
 // of the server's certificate, any intermediates, and the CA's certificate.
 func (su *Supervisor) ListenAndServeTLS(certFile string, keyFile string) error {
-	if certFile == "" || keyFile == "" {
-		return errors.New("certFile or keyFile missing")
-	}
-	cfg := new(tls.Config)
-	var err error
-	cfg.Certificates = make([]tls.Certificate, 1)
-	if cfg.Certificates[0], err = tls.LoadX509KeyPair(certFile, keyFile); err != nil {
-		return err
+	su.manuallyTLS = true
+
+	if certFile != "" && keyFile != "" {
+		cfg := new(tls.Config)
+		var err error
+		cfg.Certificates = make([]tls.Certificate, 1)
+		if cfg.Certificates[0], err = tls.LoadX509KeyPair(certFile, keyFile); err != nil {
+			return err
+		}
+
+		su.Server.TLSConfig = cfg
+		return su.ListenAndServe()
 	}
 
-	setupHTTP2(cfg)
-	su.Server.TLSConfig = cfg
-	su.manuallyTLS = true
-	return su.ListenAndServe()
+	if su.Server.TLSConfig == nil {
+		return errors.New("certFile or keyFile missing")
+	}
+
+	return su.supervise(func() error { return su.Server.ListenAndServeTLS("", "") })
 }
 
 // ListenAndServeAutoTLS acts identically to ListenAndServe, except that it
-// expects HTTPS connections. server's certificates are auto generated from LETSENCRYPT using
+// expects HTTPS connections. Server's certificates are auto generated from LETSENCRYPT using
 // the golang/x/net/autocert package.
-func (su *Supervisor) ListenAndServeAutoTLS() error {
-	autoTLSManager := autocert.Manager{
-		Prompt: autocert.AcceptTOS,
+//
+// The whitelisted domains are separated by whitespace in "domain" argument, i.e "iris-go.com".
+// If empty, all hosts are currently allowed. This is not recommended,
+// as it opens a potential attack where clients connect to a server
+// by IP address and pretend to be asking for an incorrect host name.
+// Manager will attempt to obtain a certificate for that host, incorrectly,
+// eventually reaching the CA's rate limit for certificate requests
+// and making it impossible to obtain actual certificates.
+//
+// For an "e-mail" use a non-public one, letsencrypt needs that for your own security.
+//
+// The "cacheDir" is being, optionally, used to provide cache
+// stores and retrieves previously-obtained certificates.
+// If empty, certs will only be cached for the lifetime of the auto tls manager.
+//
+// Note: If domain is not empty and the server's port was "443" then
+// it will start a new server, automaticall for you, which will redirect all
+// http versions to their https as well.
+func (su *Supervisor) ListenAndServeAutoTLS(domain string, email string, cacheDir string) error {
+	var (
+		cache      autocert.Cache
+		hostPolicy autocert.HostPolicy
+	)
+
+	if cacheDir != "" {
+		cache = autocert.DirCache(cacheDir)
 	}
 
-	cfg := new(tls.Config)
-	cfg.GetCertificate = autoTLSManager.GetCertificate
-	setupHTTP2(cfg)
+	if domain != "" {
+		domains := strings.Split(domain, " ")
+		hostPolicy = autocert.HostWhitelist(domains...)
+	}
+
+	autoTLSManager := &autocert.Manager{
+		Prompt:     autocert.AcceptTOS,
+		HostPolicy: hostPolicy,
+		Email:      email,
+		Cache:      cache,
+	}
+
+	cfg := &tls.Config{
+		GetCertificate:           autoTLSManager.GetCertificate,
+		MinVersion:               tls.VersionTLS10,
+		PreferServerCipherSuites: true,
+		CurvePreferences: []tls.CurveID{
+			tls.X25519,
+		},
+	}
+
 	su.Server.TLSConfig = cfg
-	su.manuallyTLS = true
-	return su.ListenAndServe()
+
+	// Redirect all http://$path requests to their
+	// https://$path versions if a specific domain is passed on
+	// and the port was 443.
+	if hostPolicy != nil && netutil.ResolvePort(su.Server.Addr) == 443 {
+		// find the first domain if more than one.
+		spaceIdx := strings.IndexByte(domain, ' ')
+		if spaceIdx != -1 {
+			domain = domain[0:spaceIdx]
+		}
+		// create the url for the secured server.
+		target, err := url.Parse("https://" + domain)
+		if err != nil {
+			return err
+		}
+
+		// create the redirect server.
+		redirectSrv := NewRedirection(":80", target, -1)
+		// register a shutdown callback to this
+		// supervisor in order to close the "secondary redirect server" as well.
+
+		su.RegisterOnShutdown(func() {
+			// give it some time to close itself...
+			timeout := 5 * time.Second
+			ctx, cancel := context.WithTimeout(context.Background(), timeout)
+			defer cancel()
+			redirectSrv.Shutdown(ctx)
+		})
+		// start that redirect server using a different goroutine.
+		go redirectSrv.ListenAndServe()
+	}
+
+	return su.ListenAndServeTLS("", "")
 }
 
 // RegisterOnShutdown registers a function to call on Shutdown.
