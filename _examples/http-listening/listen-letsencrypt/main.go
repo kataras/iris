@@ -21,8 +21,8 @@ func main() {
 		ctx.Redirect("/test2")
 	})
 
-	// NOTE: This may not work on local addresses like this,
-	// use it on a real domain, because
-	// it uses the 	"golang.org/x/crypto/acme/autocert" package.
-	app.Run(iris.AutoTLS("localhost:443"))
+	// NOTE: This will not work on domains like this,
+	// use real whitelisted domain(or domains split by whitespaces)
+	// and a non-public e-mail instead.
+	app.Run(iris.AutoTLS(":443", "example.com", "mail@example.com"))
 }
