@@ -566,7 +566,7 @@ func TLS(addr string, certFile, keyFile string, hostConfigs ...host.Configurator
 // For an "e-mail" use a non-public one, letsencrypt needs that for your own security.
 //
 // Note: If domain is not empty and the server's port was "443" then
-// it will start a new server, automaticall for you, which will redirect all
+// it will start a new server, automatically for you, which will redirect all
 // http versions to their https as well.
 //
 // Last argument is optional, it accepts one or more
