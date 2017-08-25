@@ -135,11 +135,13 @@ $ go run main.go
 <details>
 <summary>Hello World with Go 1.9</summary>
 
-If you've installed Go 1.9 then you can omit the `github.com/kataras/iris/context` package from the imports statement.
+Go 1.9 just released.
+
+Dcumentation and examples will be updated soon to use the already-type aliases inside the framework, such as `iris.Context` instead of the origin pacage.
+
+If you've installed [Go 1.9](https://golang.org/dl) then you can omit the `github.com/kataras/iris/context` package from the imports statement.
 
 ```go
-// +build go1.9
-
 package main
 
 import "github.com/kataras/iris"
@@ -155,19 +157,6 @@ func main() {
 
 	app.Run(iris.Addr(":8080"))
 }
-```
-
-We expect Go version 1.9 to be released in August, however you can install Go 1.9 RC2 today.
-
-### Installing Go 1.9rc2
- 
-1. Go to https://golang.org/dl/#go1.9rc2
-2. Download a compatible, with your OS, archive or executable, i.e `go1.9rc2.windows-amd64.zip`
-3. Unzip the contents of `go1.9rc2.windows-amd64.zip` folder to your $GOROOT, i.e `C:\Go` or just execute the executable you've just download
-4. Open a terminal and execute `go version`, it should output the go1.9rc2 version, i.e:
-```sh
-C:\Users\kataras>go version
-go version go1.9rc2 windows/amd64
 ```
 
 </details>

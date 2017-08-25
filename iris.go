@@ -552,9 +552,24 @@ func TLS(addr string, certFile, keyFile string, hostConfigs ...host.Configurator
 // certifications created on the fly by the "autocert" golang/x package,
 // so localhost may not be working, use it at "production" machine.
 //
-// Addr should have the form of [host]:port, i.e mydomain.com:443.
+// Addr should have the form of [host]:port, i.e mydomain.com:443 or :443.
 //
-// Second argument is optional, it accepts one or more
+// The whitelisted domains are separated by whitespace in "domain" argument,
+// i.e "iris-go.com", can be different than "addr".
+// If empty, all hosts are currently allowed. This is not recommended,
+// as it opens a potential attack where clients connect to a server
+// by IP address and pretend to be asking for an incorrect host name.
+// Manager will attempt to obtain a certificate for that host, incorrectly,
+// eventually reaching the CA's rate limit for certificate requests
+// and making it impossible to obtain actual certificates.
+//
+// For an "e-mail" use a non-public one, letsencrypt needs that for your own security.
+//
+// Note: If domain is not empty and the server's port was "443" then
+// it will start a new server, automaticall for you, which will redirect all
+// http versions to their https as well.
+//
+// Last argument is optional, it accepts one or more
 // `func(*host.Configurator)` that are being executed
 // on that specific host that this function will create to start the server.
 // Via host configurators you can configure the back-end host supervisor,
@@ -563,12 +578,18 @@ func TLS(addr string, certFile, keyFile string, hostConfigs ...host.Configurator
 // https://github.com/kataras/iris/blob/master/_examples/http-listening/notify-on-shutdown/main.go
 // Look at the `ConfigureHost` too.
 //
-// See `Run` for more.
-func AutoTLS(addr string, hostConfigs ...host.Configurator) Runner {
+// Usage:
+// app.Run(iris.AutoTLS(":443", "example.com", "mail@example.com"))
+//
+// See `Run` and `core/host/Supervisor#ListenAndServeAutoTLS` for more.
+func AutoTLS(
+	addr string,
+	domain string, email string,
+	hostConfigs ...host.Configurator) Runner {
 	return func(app *Application) error {
 		return app.NewHost(&http.Server{Addr: addr}).
 			Configure(hostConfigs...).
-			ListenAndServeAutoTLS()
+			ListenAndServeAutoTLS(domain, email, "letscache")
 	}
 }
 
