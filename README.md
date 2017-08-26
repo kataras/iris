@@ -21,7 +21,7 @@ Iris may have reached version 8, but we're not stopping there. We have many feat
 
 [Star or watch](https://github.com/kataras/iris/stargazers) this repository to stay updated at general technology progress. It's the only thing we ask from you, it's our sign.
 
-<!-- [![total used by](http://iris-go.com/graph?style=flat-square)](http://iris-go.com/graph) -->
+<!-- [![total used by](https://iris-go.com/graph?style=flat-square)](https://iris-go.com/graph) -->
 [![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=flat-square)](https://travis-ci.org/kataras/iris)
 [![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=flat-square)](http://goreportcard.com/report/kataras/iris)
 [![github issues](https://img.shields.io/github/issues/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/issues?q=is%3Aopen+is%3Aissue)
@@ -64,7 +64,7 @@ Iris may have reached version 8, but we're not stopping there. We have many feat
 * [Middleware](middleware/)
 * [Dockerize](https://github.com/iris-contrib/cloud-native-go)
 * [Community & Support](#-community)
-* [Blogs](http://iris-go.com/v8/blogs)
+* [Blogs](https://iris-go.com/v8/blogs)
 	- [Go vs .NET Core in terms of HTTP performance](https://medium.com/@kataras/go-vs-net-core-in-terms-of-http-performance-7535a61b67b8)
 	- [Iris, a modular web framework](https://medium.com/@corebreaker/iris-web-cd684b4685c7)
 	- [Deploying a Iris Golang app in hasura](https://docs.hasura.io/0.14/tutorials/deploying-a-go-iris-app.html)
@@ -323,7 +323,7 @@ $ go get -u github.com/iris-contrib/middleware/...
 
 #### 📈 One and a half years...
 
-[![total used by](http://iris-go.com/graph?style=flat-square)](http://iris-go.com/graph) 
+[![total used by](https://iris-go.com/graph?style=flat-square)]() 
 
 Iris exceeded all expectations, started as one-man project.
 

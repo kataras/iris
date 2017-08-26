@@ -31,7 +31,7 @@ type versionInfo struct {
 
 func checkVersion() {
 	client := netutil.Client(20 * time.Second)
-	r, err := client.PostForm("http://iris-go.com/version", url.Values{"current_version": {Version}})
+	r, err := client.PostForm("https://iris-go.com/version", url.Values{"current_version": {Version}})
 
 	if err != nil {
 		golog.Debugf("%v", err)

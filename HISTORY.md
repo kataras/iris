@@ -1226,9 +1226,9 @@ v7.x is deprecated because it sold as it is and it is not part of the public, st
 # Th, 15 June 2017 | v7.2.0
 
 ### About our new home page
-    http://iris-go.com
+    https://iris-go.com
 
-Thanks to [Santosh Anand](https://github.com/santoshanand) the http://iris-go.com has been upgraded and it's really awesome!
+Thanks to [Santosh Anand](https://github.com/santoshanand) the https://iris-go.com has been upgraded and it's really awesome!
 
 [Santosh](https://github.com/santoshanand) is a freelancer, he has a great knowledge of nodejs and express js, Android, iOS, React Native, Vue.js etc, if you need a developer to find or create a solution for your problem or task, please contact with him.
 
