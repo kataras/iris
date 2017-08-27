@@ -2,6 +2,11 @@ package activator
 
 import (
 	"reflect"
+	"strings"
+
+	"github.com/kataras/iris/mvc/activator/methodfunc"
+	"github.com/kataras/iris/mvc/activator/model"
+	"github.com/kataras/iris/mvc/activator/persistence"
 
 	"github.com/kataras/golog"
 
@@ -16,92 +21,22 @@ type (
 	// think it as a "supervisor" of your Controller which
 	// cares about you.
 	TController struct {
+		// The name of the front controller struct.
+		Name string
+		// FullName it's the last package path segment + "." + the Name.
+		// i.e: if login-example/user/controller.go, the FullName is "user.Controller".
+		FullName string
 		// the type of the user/dev's "c" controller (interface{}).
 		Type reflect.Type
 		// it's the first passed value of the controller instance,
 		// we need this to collect and save the persistence fields' values.
 		Value reflect.Value
 
-		binder *binder // executed even before the BeginRequest if not nil.
-
-		controls []TControl // executed on request, after the BeginRequest and before the EndRequest.
-
-		// the actual method functions
-		// i.e for "GET" it's the `Get()`
-		//
-		// Here we have a strange relation by-design.
-		// It contains the methods
-		// but we have different handlers
-		// for each of these methods,
-		// while in the same time all of these
-		// are depend from this TypeInfo struct.
-		// So we have TypeInfo -> Methods -> Each(TypeInfo, Method.Index)
-		// -> Handler for X HTTPMethod, see `Register`.
-		Methods []MethodFunc
-	}
-	// MethodFunc is part of the `TController`,
-	// it contains the index for a specific http method,
-	// taken from user's controller struct.
-	MethodFunc struct {
-		Index      int
-		HTTPMethod string
+		binder                *binder // executed even before the BeginRequest if not nil.
+		modelController       *model.Controller
+		persistenceController *persistence.Controller
 	}
 )
-
-// ErrControlSkip never shows up, used to determinate
-// if a control's Load return error is critical or not,
-// `ErrControlSkip` means that activation can continue
-// and skip this control.
-var ErrControlSkip = errors.New("skip control")
-
-// TControl is an optional feature that an app can benefit
-// by using its own custom controls to control the flow
-// inside a controller, they are being registered per controller.
-//
-// Naming:
-// I could find better name such as 'Control',
-// but I can imagine the user's confusion about `Controller`
-// and `Control` types, they are different but they may
-// use that as embedded, so it can not start with the world "C..".
-// The best name that shows the relation between this
-// and the controller type info struct(TController) is the "TControl",
-// `TController` is prepended with "T" for the same reasons, it's different
-// than `Controller`, the TController is the "description" of the user's
-// `Controller` embedded field.
-type TControl interface { // or CoreControl?
-	// Load should returns nil  if its `Handle`
-	// should be called on serve time.
-	//
-	// if error is filled then controller info
-	// is not created and that error is returned to the
-	// high-level caller, but the `ErrControlSkip` can be used
-	// to skip the control without breaking the rest of the registration.
-	Load(t *TController) error
-	// Handle executes the control.
-	// It accepts the context, the new controller instance
-	// and the specific methodFunc based on the request.
-	Handle(ctx context.Context, controller reflect.Value, methodFunc func())
-}
-
-func isControlErr(err error) bool {
-	if err != nil {
-		if isSkipper(err) {
-			return false
-		}
-		return true
-	}
-
-	return false
-}
-
-func isSkipper(err error) bool {
-	if err != nil {
-		if err.Error() == ErrControlSkip.Error() {
-			return true
-		}
-	}
-	return false
-}
 
 // the parent package should complete this "interface"
 // it's not exported, so their functions
@@ -129,10 +64,7 @@ type BaseController interface {
 }
 
 // ActivateController returns a new controller type info description.
-// A  TController is not useful for the end-developer
-// but it can be used for debugging.
-func ActivateController(base BaseController, bindValues []interface{},
-	controls []TControl) (TController, error) {
+func ActivateController(base BaseController, bindValues []interface{}) (TController, error) {
 
 	// get and save the type.
 	typ := reflect.TypeOf(base)
@@ -146,129 +78,73 @@ func ActivateController(base BaseController, bindValues []interface{},
 	// values later on.
 	val := reflect.Indirect(reflect.ValueOf(base))
 	ctrlName := val.Type().Name()
+	pkgPath := val.Type().PkgPath()
+	fullName := pkgPath[strings.LastIndexByte(pkgPath, '/')+1:] + "." + ctrlName
 
 	// set the binder, can be nil this check at made at runtime.
 	binder := newBinder(typ.Elem(), bindValues)
 	if binder != nil {
 		for _, bf := range binder.fields {
 			golog.Debugf("MVC %s: binder loaded for '%s' with value:\n%#v",
-				ctrlName, bf.getFullName(), bf.getValue())
+				fullName, bf.GetFullName(), bf.GetValue())
 		}
 	}
 
 	t := TController{
-		Type:   typ,
-		Value:  val,
-		binder: binder,
-	}
-
-	// first the custom controls,
-	// after these, the persistence,
-	// the method control
-	// which can set the model and
-	// last the model control.
-	controls = append(controls, []TControl{
-		// PersistenceDataControl stores the optional data
-		// that will be shared among all requests.
-		PersistenceDataControl(),
-		// MethodControl is the actual method function
-		// i.e for "GET" it's the `Get()` that will be
-		// fired.
-		MethodControl(),
-		// ModelControl stores the optional models from
-		// the struct's fields values that
-		// are being setted by the method function
-		// and set them as ViewData.
-		ModelControl()}...)
-
-	for _, control := range controls {
-		err := control.Load(&t)
-		// fail on first control error if not ErrControlSkip.
-		if isControlErr(err) {
-			return t, err
-		}
-
-		if isSkipper(err) {
-			continue
-		}
-
-		golog.Debugf("MVC %s: succeed load of the %#v", ctrlName, control)
-		t.controls = append(t.controls, control)
+		Name:                  ctrlName,
+		FullName:              fullName,
+		Type:                  typ,
+		Value:                 val,
+		binder:                binder,
+		modelController:       model.Load(typ),
+		persistenceController: persistence.Load(typ, val),
 	}
 
 	return t, nil
 }
 
-// builds the handler for a type based on the method index (i.e Get() -> [0], Post() -> [1]).
-func buildMethodHandler(t TController, methodFuncIndex int) context.Handler {
-	elem := t.Type.Elem()
-	ctrlName := t.Value.Type().Name()
-	/*
-		// good idea, it speeds up the whole thing by ~1MB per 20MB at my personal
-		// laptop but this way the Model for example which is not a persistence
-		// variable can stay for the next request
-		// (if pointer receiver but if not then variables like `Tmpl` cannot stay)
-		// and that will have unexpected results.
-		// however we keep it here I want to see it every day in order to find a better way.
+// HandlerOf builds the handler for a type based on the specific method func.
+func (t TController) HandlerOf(methodFunc methodfunc.MethodFunc) context.Handler {
+	var (
+		// shared, per-controller
+		elem     = t.Type.Elem()
+		ctrlName = t.Name
 
-		type runtimeC struct {
-			method func()
-			c      reflect.Value
-			elem   reflect.Value
-			b      BaseController
-		}
-
-		pool := sync.Pool{
-			New: func() interface{} {
-
-				c := reflect.New(elem)
-				methodFunc := c.Method(methodFuncIndex).Interface().(func())
-				b, _ := c.Interface().(BaseController)
-
-				elem := c.Elem()
-				if t.binder != nil {
-					t.binder.handle(elem)
-				}
-
-				rc := runtimeC{
-					c:      c,
-					elem:   elem,
-					b:      b,
-					method: methodFunc,
-				}
-				return rc
-			},
-		}
-	*/
+		hasPersistenceData = t.persistenceController != nil
+		hasModels          = t.modelController != nil
+		// per-handler
+		handleRequest = methodFunc.MethodCall
+	)
 
 	return func(ctx context.Context) {
-		// // create a new controller instance of that type(>ptr).
+		// create a new controller instance of that type(>ptr).
 		c := reflect.New(elem)
-
 		if t.binder != nil {
 			t.binder.handle(c)
-			if ctx.IsStopped() {
-				return
-			}
 		}
 
-		// get the Controller embedded field's addr.
-		// it should never be invalid here because we made that checks on activation.
-		// but if somone tries to "crack" that, then just stop the world in order to be notified,
-		// we don't want to go away from that type of mistake.
 		b := c.Interface().(BaseController)
 		b.SetName(ctrlName)
 
+		// if has persistence data then set them
+		// before the end-developer's handler in order to be available there.
+		if hasPersistenceData {
+			t.persistenceController.Handle(c)
+		}
+
 		// init the request.
 		b.BeginRequest(ctx)
+		if ctx.IsStopped() {
+			return
+		}
 
-		methodFunc := c.Method(methodFuncIndex).Interface().(func())
-		// execute the controls by order, including the method control.
-		for _, control := range t.controls {
-			if ctx.IsStopped() {
-				break
-			}
-			control.Handle(ctx, c, methodFunc)
+		// the most important, execute the specific function
+		// from the controller that is responsible to handle
+		// this request, by method and path.
+		handleRequest(ctx, c.Method(methodFunc.Index).Interface())
+		// if had models, set them after the end-developer's handler.
+		if hasModels {
+			t.modelController.Handle(ctx, c)
 		}
 
 		// finally, execute the controller, don't check for IsStopped.
@@ -277,7 +153,7 @@ func buildMethodHandler(t TController, methodFuncIndex int) context.Handler {
 }
 
 // RegisterFunc used by the caller to register the result routes.
-type RegisterFunc func(httpMethod string, handler ...context.Handler)
+type RegisterFunc func(relPath string, httpMethod string, handler ...context.Handler)
 
 // RegisterMethodHandlers receives a `TController`, description of the
 // user's controller, and calls the "registerFunc" for each of its
@@ -286,37 +162,47 @@ type RegisterFunc func(httpMethod string, handler ...context.Handler)
 // Not useful for the end-developer, but may needed for debugging
 // at the future.
 func RegisterMethodHandlers(t TController, registerFunc RegisterFunc) {
+	var middleware context.Handlers
+
+	if t.binder != nil {
+		if m := t.binder.middleware; len(m) > 0 {
+			middleware = m
+		}
+	}
+	// the actual method functions
+	// i.e for "GET" it's the `Get()`.
+	methods := methodfunc.Resolve(t.Type)
+
 	// range over the type info's method funcs,
 	// build a new handler for each of these
 	// methods and register them to their
 	// http methods using the registerFunc, which is
 	// responsible to convert these into routes
 	// and add them to router via the APIBuilder.
-
-	var handlers context.Handlers
-
-	if t.binder != nil {
-		if m := t.binder.middleware; len(m) > 0 {
-			handlers = append(handlers, t.binder.middleware...)
+	for _, m := range methods {
+		h := t.HandlerOf(m)
+		if h == nil {
+			golog.Debugf("MVC %s: nil method handler found for %s", t.FullName, m.Name)
+			continue
 		}
-	}
+		registeredHandlers := append(middleware, h)
+		registerFunc(m.RelPath, m.HTTPMethod, registeredHandlers...)
 
-	for _, m := range t.Methods {
-		methodHandler := buildMethodHandler(t, m.Index)
-		registeredHandlers := append(handlers, methodHandler)
-		registerFunc(m.HTTPMethod, registeredHandlers...)
+		golog.Debugf("MVC %s: %s %s maps to function[%d] '%s'", t.FullName,
+			m.HTTPMethod,
+			m.RelPath,
+			m.Index,
+			m.Name)
 	}
 }
 
 // Register receives a "controller",
 // a pointer of an instance which embeds the `Controller`,
-// the value of "baseControllerFieldName" should be `Controller`
-// if embedded and "controls" that can intercept on controller
-// activation and on the controller's handler, at serve-time.
-func Register(controller BaseController, bindValues []interface{}, controls []TControl,
+// the value of "baseControllerFieldName" should be `Controller`.
+func Register(controller BaseController, bindValues []interface{},
 	registerFunc RegisterFunc) error {
 
-	t, err := ActivateController(controller, bindValues, controls)
+	t, err := ActivateController(controller, bindValues)
 	if err != nil {
 		return err
 	}

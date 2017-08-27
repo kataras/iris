@@ -21,6 +21,10 @@ const (
 	// Allows only numbers (0-9)
 	// Declaration: /mypath/{myparam:int}
 	ParamTypeInt
+	// ParamTypeLong is the integer, a number type.
+	// Allows only numbers (0-9)
+	// Declaration: /mypath/{myparam:long}
+	ParamTypeLong
 	// ParamTypeAlphabetical is the  alphabetical/letter type type.
 	// Allows letters only (upper or lowercase)
 	// Declaration:  /mypath/{myparam:alphabetical}
@@ -44,6 +48,7 @@ const (
 var paramTypes = map[string]ParamType{
 	"string":       ParamTypeString,
 	"int":          ParamTypeInt,
+	"long":         ParamTypeLong,
 	"alphabetical": ParamTypeAlphabetical,
 	"file":         ParamTypeFile,
 	"path":         ParamTypePath,

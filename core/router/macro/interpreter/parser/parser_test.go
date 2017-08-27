@@ -60,6 +60,7 @@ func TestParseParam(t *testing.T) {
 				},
 				ErrorCode: 404,
 			}}, // 0
+
 		{true,
 			ast.ParamStatement{
 				Src:  "{id:int range(1,5)}",
@@ -123,6 +124,13 @@ func TestParseParam(t *testing.T) {
 				},
 				ErrorCode: 404,
 			}}, // 7
+		{true,
+			ast.ParamStatement{
+				Src:       "{id:long else 404}",
+				Name:      "id",
+				Type:      ast.ParamTypeLong,
+				ErrorCode: 404,
+			}}, // 8
 
 	}
 

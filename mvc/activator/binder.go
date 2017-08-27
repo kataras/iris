@@ -3,12 +3,14 @@ package activator
 import (
 	"reflect"
 
+	"github.com/kataras/iris/mvc/activator/field"
+
 	"github.com/kataras/iris/context"
 )
 
 type binder struct {
 	values []interface{}
-	fields []field
+	fields []field.Field
 
 	// saves any middleware that may need to be passed to the router,
 	// statically, to gain performance.
@@ -53,7 +55,7 @@ func (b *binder) storeValueIfMiddleware(value reflect.Value) bool {
 	return false
 }
 
-func (b *binder) lookup(elem reflect.Type) (fields []field) {
+func (b *binder) lookup(elem reflect.Type) (fields []field.Field) {
 	for _, v := range b.values {
 		value := reflect.ValueOf(v)
 		// handlers will be recognised as middleware, not struct fields.
@@ -70,11 +72,11 @@ func (b *binder) lookup(elem reflect.Type) (fields []field) {
 			return elemField.Type == value.Type()
 		}
 
-		handler := func(f *field) {
+		handler := func(f *field.Field) {
 			f.Value = value
 		}
 
-		fields = append(fields, lookupFields(elem, matcher, handler)...)
+		fields = append(fields, field.LookupFields(elem, matcher, handler)...)
 	}
 	return
 }
@@ -89,6 +91,6 @@ func (b *binder) handle(c reflect.Value) {
 
 	elem := c.Elem() // controller should always be a pointer at this state
 	for _, f := range b.fields {
-		f.sendTo(elem)
+		f.SendTo(elem)
 	}
 }

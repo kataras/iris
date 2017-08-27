@@ -1,10 +1,13 @@
-package activator
+package field
 
 import (
 	"reflect"
 )
 
-type field struct {
+// Field is a controller's field
+// contains all the necessary, internal, information
+// to work with.
+type Field struct {
 	Name string // the field's original name
 	// but if a tag with `name: "other"`
 	// exist then this fill is filled, otherwise it's the same as the Name.
@@ -13,55 +16,55 @@ type field struct {
 	Type    reflect.Type
 	Value   reflect.Value
 
-	embedded *field
+	embedded *Field
 }
 
-// getIndex returns all the "dimensions"
+// GetIndex returns all the "dimensions"
 // of the controller struct field's position that this field is referring to,
 // recursively.
 // Usage: elem.FieldByIndex(field.getIndex())
 // for example the {0,1} means that the field is on the second field of the first's
 // field of this struct.
-func (ff field) getIndex() []int {
+func (ff Field) GetIndex() []int {
 	deepIndex := []int{ff.Index}
 
 	if emb := ff.embedded; emb != nil {
-		deepIndex = append(deepIndex, emb.getIndex()...)
+		deepIndex = append(deepIndex, emb.GetIndex()...)
 	}
 
 	return deepIndex
 }
 
-// getType returns the type of the referring field, recursively.
-func (ff field) getType() reflect.Type {
+// GetType returns the type of the referring field, recursively.
+func (ff Field) GetType() reflect.Type {
 	typ := ff.Type
 	if emb := ff.embedded; emb != nil {
-		return emb.getType()
+		return emb.GetType()
 	}
 
 	return typ
 }
 
-// getFullName returns the full name of that field
+// GetFullName returns the full name of that field
 // i.e: UserController.SessionController.Manager,
 // it's useful for debugging only.
-func (ff field) getFullName() string {
+func (ff Field) GetFullName() string {
 	name := ff.Name
 
 	if emb := ff.embedded; emb != nil {
-		return name + "." + emb.getFullName()
+		return name + "." + emb.GetFullName()
 	}
 
 	return name
 }
 
-// getTagName returns the tag name of the referring field
+// GetTagName returns the tag name of the referring field
 // recursively.
-func (ff field) getTagName() string {
+func (ff Field) GetTagName() string {
 	name := ff.TagName
 
 	if emb := ff.embedded; emb != nil {
-		return emb.getTagName()
+		return emb.GetTagName()
 	}
 
 	return name
@@ -74,10 +77,10 @@ func checkVal(val reflect.Value) bool {
 	return val.IsValid() && (val.Kind() == reflect.Ptr && !val.IsNil()) && val.CanInterface()
 }
 
-// getValue returns a valid value of the referring field, recursively.
-func (ff field) getValue() interface{} {
+// GetValue returns a valid value of the referring field, recursively.
+func (ff Field) GetValue() interface{} {
 	if ff.embedded != nil {
-		return ff.embedded.getValue()
+		return ff.embedded.GetValue()
 	}
 
 	if checkVal(ff.Value) {
@@ -87,17 +90,17 @@ func (ff field) getValue() interface{} {
 	return "undefinied value"
 }
 
-// sendTo should be used when this field or its embedded
+// SendTo should be used when this field or its embedded
 // has a Value on it.
 // It sets the field's value to the "elem" instance, it's the new controller.
-func (ff field) sendTo(elem reflect.Value) {
+func (ff Field) SendTo(elem reflect.Value) {
 	// note:
 	// we don't use the getters here
 	// because we do recursively search by our own here
 	// to be easier to debug if ever needed.
 	if embedded := ff.embedded; embedded != nil {
 		if ff.Index >= 0 {
-			embedded.sendTo(elem.Field(ff.Index))
+			embedded.SendTo(elem.Field(ff.Index))
 		}
 		return
 	}
@@ -121,18 +124,18 @@ func lookupTagName(elemField reflect.StructField) string {
 	return vname
 }
 
-// lookupFields iterates all "elem"'s fields and its fields
+// LookupFields iterates all "elem"'s fields and its fields
 // if structs, recursively.
 // Compares them to the "matcher", if they passed
 // then it executes the "handler" if any,
 // the handler can change the field as it wants to.
 //
 // It finally returns that collection of the valid fields, can be empty.
-func lookupFields(elem reflect.Type, matcher func(reflect.StructField) bool, handler func(*field)) (fields []field) {
+func LookupFields(elem reflect.Type, matcher func(reflect.StructField) bool, handler func(*Field)) (fields []Field) {
 	for i, n := 0, elem.NumField(); i < n; i++ {
 		elemField := elem.Field(i)
 		if matcher(elemField) {
-			field := field{
+			field := Field{
 				Index:   i,
 				Name:    elemField.Name,
 				TagName: lookupTagName(elemField),
@@ -150,7 +153,7 @@ func lookupFields(elem reflect.Type, matcher func(reflect.StructField) bool, han
 
 		f := lookupStructField(elemField.Type, matcher, handler)
 		if f != nil {
-			fields = append(fields, field{
+			fields = append(fields, Field{
 				Index:    i,
 				Name:     elemField.Name,
 				Type:     elemField.Type,
@@ -168,7 +171,7 @@ func lookupFields(elem reflect.Type, matcher func(reflect.StructField) bool, han
 // for both structured (embedded) fields and normal fields
 // but we keep that as it's, a new function like this
 // is easier for debugging, if ever needed.
-func lookupStructField(elem reflect.Type, matcher func(reflect.StructField) bool, handler func(*field)) *field {
+func lookupStructField(elem reflect.Type, matcher func(reflect.StructField) bool, handler func(*Field)) *Field {
 	// fmt.Printf("lookup struct for elem: %s\n", elem.Name())
 
 	// ignore if that field is not a struct
@@ -181,7 +184,7 @@ func lookupStructField(elem reflect.Type, matcher func(reflect.StructField) bool
 		elemField := elem.Field(i)
 		if matcher(elemField) {
 			// we area inside the correct type.
-			f := &field{
+			f := &Field{
 				Index:   i,
 				Name:    elemField.Name,
 				TagName: lookupTagName(elemField),
@@ -202,7 +205,7 @@ func lookupStructField(elem reflect.Type, matcher func(reflect.StructField) bool
 			elemFieldEmb := elem.Field(i)
 			f := lookupStructField(elemFieldEmb.Type, matcher, handler)
 			if f != nil {
-				fp := &field{
+				fp := &Field{
 					Index:    i,
 					Name:     elemFieldEmb.Name,
 					TagName:  lookupTagName(elemFieldEmb),

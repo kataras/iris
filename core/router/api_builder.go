@@ -197,6 +197,10 @@ func (api *APIBuilder) HandleMany(method string, relativePath string, handlers .
 	paths := strings.Split(trimmedPath, " ")
 	for _, p := range paths {
 		if p != "" {
+			if method == "ANY" || method == "ALL" {
+				routes = append(routes, api.Any(p, handlers...)...)
+				continue
+			}
 			routes = append(routes, api.Handle(method, p, handlers...))
 		}
 	}
@@ -511,12 +515,11 @@ func (api *APIBuilder) Any(relativePath string, handlers ...context.Handler) (ro
 // Read more at `/mvc#Controller`.
 func (api *APIBuilder) Controller(relativePath string, controller activator.BaseController,
 	bindValues ...interface{}) (routes []*Route) {
-	registerFunc := func(method string, handlers ...context.Handler) {
-		if method == "ANY" || method == "ALL" {
-			routes = api.Any(relativePath, handlers...)
-		} else {
-			routes = append(routes, api.HandleMany(method, relativePath, handlers...)...)
-		}
+
+	registerFunc := func(ifRelPath string, method string, handlers ...context.Handler) {
+		relPath := relativePath + ifRelPath
+		r := api.HandleMany(method, relPath, handlers...)
+		routes = append(routes, r...)
 	}
 
 	// bind any values to the controller's relative fields
@@ -527,9 +530,7 @@ func (api *APIBuilder) Controller(relativePath string, controller activator.Base
 	// and tag them with `iris:"persistence"`.
 	//
 	// don't worry it will never be handled if empty values.
-	err := activator.Register(controller, bindValues, nil, registerFunc)
-
-	if err != nil {
+	if err := activator.Register(controller, bindValues, registerFunc); err != nil {
 		api.reporter.Add("%v for path: '%s'", err, relativePath)
 	}
 

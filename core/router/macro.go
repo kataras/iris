@@ -36,6 +36,7 @@ func registerBuiltinsMacroFuncs(out *macro.Map) {
 	// these can be overridden by the user, later on.
 	registerStringMacroFuncs(out.String)
 	registerIntMacroFuncs(out.Int)
+	registerIntMacroFuncs(out.Long)
 	registerAlphabeticalMacroFuncs(out.Alphabetical)
 	registerFileMacroFuncs(out.File)
 	registerPathMacroFuncs(out.Path)
