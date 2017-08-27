@@ -3,7 +3,6 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/router"
 )
 
@@ -48,7 +47,7 @@ func main() {
 	mypath6Route := subdomain.Get("/mypath6/{paramfirst}/{paramsecond}/staticParam/{paramThirdAfterStatic}", emptyHandler)
 	mypath6Route.Name = "my-page6"
 
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		// for username5./mypath6...
 		paramsAsArray := []string{"username5", "theParam1", "theParam2", "paramThirdAfterStatic"}
 		ctx.ViewData("ParamsAsArray", paramsAsArray)
@@ -61,7 +60,7 @@ func main() {
 	app.Run(iris.Addr(host))
 }
 
-func emptyHandler(ctx context.Context) {
+func emptyHandler(ctx iris.Context) {
 	ctx.Writef("Hello from subdomain: %s , you're in path:  %s", ctx.Subdomain(), ctx.Path())
 }
 

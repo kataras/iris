@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 )
 
 func main() {
@@ -16,7 +15,7 @@ func main() {
 
 	app.RegisterView(tmpl)
 
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		if err := ctx.View("page1.html"); err != nil {
 			ctx.StatusCode(iris.StatusInternalServerError)
 			ctx.Writef(err.Error())
@@ -24,7 +23,7 @@ func main() {
 	})
 
 	// remove the layout for a specific route
-	app.Get("/nolayout", func(ctx context.Context) {
+	app.Get("/nolayout", func(ctx iris.Context) {
 		ctx.ViewLayout(iris.NoLayout)
 		if err := ctx.View("page1.html"); err != nil {
 			ctx.StatusCode(iris.StatusInternalServerError)
@@ -35,10 +34,10 @@ func main() {
 	// set a layout for a party, .Layout should be BEFORE any Get or other Handle party's method
 	my := app.Party("/my").Layout("layouts/mylayout.html")
 	{ // both of these will use the layouts/mylayout.html as their layout.
-		my.Get("/", func(ctx context.Context) {
+		my.Get("/", func(ctx iris.Context) {
 			ctx.View("page1.html")
 		})
-		my.Get("/other", func(ctx context.Context) {
+		my.Get("/other", func(ctx iris.Context) {
 			ctx.View("page1.html")
 		})
 	}

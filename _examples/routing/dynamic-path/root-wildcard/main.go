@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 )
 
 func main() {
@@ -42,30 +41,30 @@ func main() {
 	app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed))
 }
 
-func h(ctx context.Context) {
+func h(ctx iris.Context) {
 	param := ctx.Params().Get("p")
 	ctx.WriteString(param)
 }
 
-func staticWildcardH(ctx context.Context) {
+func staticWildcardH(ctx iris.Context) {
 	param := ctx.Params().Get("p")
 	ctx.WriteString("from staticWildcardH: param=" + param)
 }
 
-func other(ctx context.Context) {
+func other(ctx iris.Context) {
 	param := ctx.Params().Get("paramother")
 	ctx.Writef("from other: %s", param)
 }
 
-func other2(ctx context.Context) {
+func other2(ctx iris.Context) {
 	param := ctx.Params().Get("paramothersecond")
 	ctx.Writef("from other2: %s", param)
 }
 
-func staticPath(ctx context.Context) {
+func staticPath(ctx iris.Context) {
 	ctx.Writef("from the static path(/): %s", ctx.Path())
 }
 
-func staticPathOther2(ctx context.Context) {
+func staticPathOther2(ctx iris.Context) {
 	ctx.Writef("from the static path(/other2/static2): %s", ctx.Path())
 }

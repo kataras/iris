@@ -25,7 +25,6 @@ import (
 	"sort"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 
 	"github.com/kataras/iris/sessions"
 
@@ -95,7 +94,7 @@ func init() {
 // the URL query string. If you provide it in a different way,
 // assign your own function to this variable that returns the provider
 // name for your request.
-var GetProviderName = func(ctx context.Context) (string, error) {
+var GetProviderName = func(ctx iris.Context) (string, error) {
 	// try to get it from the url param "provider"
 	if p := ctx.URLParam("provider"); p != "" {
 		return p, nil
@@ -124,7 +123,7 @@ for the requested provider.
 
 See https://github.com/markbates/goth/examples/main.go to see this in action.
 */
-func BeginAuthHandler(ctx context.Context) {
+func BeginAuthHandler(ctx iris.Context) {
 	url, err := GetAuthURL(ctx)
 	if err != nil {
 		ctx.StatusCode(iris.StatusBadRequest)
@@ -145,7 +144,7 @@ as either "provider" or ":provider" or from the context's value of "provider" ke
 I would recommend using the BeginAuthHandler instead of doing all of these steps
 yourself, but that's entirely up to you.
 */
-func GetAuthURL(ctx context.Context) (string, error) {
+func GetAuthURL(ctx iris.Context) (string, error) {
 	providerName, err := GetProviderName(ctx)
 	if err != nil {
 		return "", err
@@ -173,7 +172,7 @@ func GetAuthURL(ctx context.Context) (string, error) {
 // If no state string is associated with the request, one will be generated.
 // This state is sent to the provider and can be retrieved during the
 // callback.
-var SetState = func(ctx context.Context) string {
+var SetState = func(ctx iris.Context) string {
 	state := ctx.URLParam("state")
 	if len(state) > 0 {
 		return state
@@ -186,7 +185,7 @@ var SetState = func(ctx context.Context) string {
 // GetState gets the state returned by the provider during the callback.
 // This is used to prevent CSRF attacks, see
 // http://tools.ietf.org/html/rfc6749#section-10.12
-var GetState = func(ctx context.Context) string {
+var GetState = func(ctx iris.Context) string {
 	return ctx.URLParam("state")
 }
 
@@ -199,7 +198,7 @@ as either "provider" or ":provider".
 
 See https://github.com/markbates/goth/examples/main.go to see this in action.
 */
-var CompleteUserAuth = func(ctx context.Context) (goth.User, error) {
+var CompleteUserAuth = func(ctx iris.Context) (goth.User, error) {
 	providerName, err := GetProviderName(ctx)
 	if err != nil {
 		return goth.User{}, err
@@ -237,7 +236,7 @@ var CompleteUserAuth = func(ctx context.Context) (goth.User, error) {
 }
 
 // Logout invalidates a user session.
-func Logout(ctx context.Context) error {
+func Logout(ctx iris.Context) error {
 	providerName, err := GetProviderName(ctx)
 	if err != nil {
 		return err
@@ -363,7 +362,7 @@ func main() {
 
 	// start of the router
 
-	app.Get("/auth/{provider}/callback", func(ctx context.Context) {
+	app.Get("/auth/{provider}/callback", func(ctx iris.Context) {
 
 		user, err := CompleteUserAuth(ctx)
 		if err != nil {
@@ -377,12 +376,12 @@ func main() {
 		}
 	})
 
-	app.Get("/logout/{provider}", func(ctx context.Context) {
+	app.Get("/logout/{provider}", func(ctx iris.Context) {
 		Logout(ctx)
 		ctx.Redirect("/", iris.StatusTemporaryRedirect)
 	})
 
-	app.Get("/auth/{provider}", func(ctx context.Context) {
+	app.Get("/auth/{provider}", func(ctx iris.Context) {
 		// try to get the user without re-authenticating
 		if gothUser, err := CompleteUserAuth(ctx); err == nil {
 			ctx.ViewData("", gothUser)
@@ -394,7 +393,7 @@ func main() {
 		}
 	})
 
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 
 		ctx.ViewData("", providerIndex)
 

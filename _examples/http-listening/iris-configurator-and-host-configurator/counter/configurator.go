@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/host"
 )
 
@@ -25,7 +24,7 @@ func Configurator(app *iris.Application) {
 		}) // or put the ticker outside of the gofunc and put the configurator before or after the app.Get, outside of this gofunc
 	}()
 
-	app.Get("/counter", func(ctx context.Context) {
+	app.Get("/counter", func(ctx iris.Context) {
 		ctx.Writef("Counter value = %d", counterValue)
 	})
 }

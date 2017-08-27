@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/view"
 
 	"github.com/kataras/iris/websocket"
 )
@@ -20,7 +18,7 @@ type clientPage struct {
 
 func main() {
 	app := iris.New()
-	app.RegisterView(view.HTML("./templates", ".html")) // select the html engine to serve templates
+	app.RegisterView(iris.HTML("./templates", ".html")) // select the html engine to serve templates
 
 	ws := websocket.New(websocket.Config{})
 
@@ -30,12 +28,12 @@ func main() {
 
 	// serve the javascript built'n client-side library,
 	// see weboskcets.html script tags, this path is used.
-	app.Any("/iris-ws.js", func(ctx context.Context) {
+	app.Any("/iris-ws.js", func(ctx iris.Context) {
 		ctx.Write(websocket.ClientSource)
 	})
 
 	app.StaticWeb("/js", "./static/js")
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		// send our custom javascript source file before client really asks for that
 		// using the go v1.8's HTTP/2 Push.
 		// Note that you have to listen using ListenTLS in order this to work.
@@ -49,7 +47,7 @@ func main() {
 	var myChatRoom = "room1"
 
 	ws.OnConnection(func(c websocket.Connection) {
-		// Context returns the (upgraded) context.Context of this connection
+		// Context returns the (upgraded) iris.Context of this connection
 		// avoid using it, you normally don't need it,
 		// websocket has everything you need to authenticate the user BUT if it's necessary
 		// then  you use it to receive user information, for example: from headers.

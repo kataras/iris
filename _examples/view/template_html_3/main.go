@@ -3,7 +3,6 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 )
 
 func main() {
@@ -30,7 +29,7 @@ func main() {
 	mypath6Route := app.Get("/mypath6/{paramfirst}/{paramsecond}/statichere/{paramThirdAfterStatic}", writePathHandler)
 	mypath6Route.Name = "my-page6"
 
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		// for /mypath6...
 		paramsAsArray := []string{"theParam1", "theParam2", "paramThirdAfterStatic"}
 		ctx.ViewData("ParamsAsArray", paramsAsArray)
@@ -39,7 +38,7 @@ func main() {
 		}
 	})
 
-	app.Get("/redirect/{namedRoute}", func(ctx context.Context) {
+	app.Get("/redirect/{namedRoute}", func(ctx iris.Context) {
 		routeName := ctx.Params().Get("namedRoute")
 		r := app.GetRoute(routeName)
 		if r == nil {
@@ -63,6 +62,6 @@ func main() {
 
 }
 
-func writePathHandler(ctx context.Context) {
+func writePathHandler(ctx iris.Context) {
 	ctx.Writef("Hello from %s.", ctx.Path())
 }

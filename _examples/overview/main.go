@@ -2,8 +2,6 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/view"
 )
 
 // User is just a bindable object structure.
@@ -22,10 +20,10 @@ func main() {
 	// Define templates using the std html/template engine.
 	// Parse and load all files inside "./views" folder with ".html" file extension.
 	// Reload the templates on each request (development mode).
-	app.RegisterView(view.HTML("./views", ".html").Reload(true))
+	app.RegisterView(iris.HTML("./views", ".html").Reload(true))
 
 	// Register custom handler for specific http errors.
-	app.OnErrorCode(iris.StatusInternalServerError, func(ctx context.Context) {
+	app.OnErrorCode(iris.StatusInternalServerError, func(ctx iris.Context) {
 		// .Values are used to communicate between handlers, middleware.
 		errMessage := ctx.Values().GetString("error")
 		if errMessage != "" {
@@ -36,22 +34,22 @@ func main() {
 		ctx.Writef("(Unexpected) internal server error")
 	})
 
-	app.Use(func(ctx context.Context) {
+	app.Use(func(ctx iris.Context) {
 		ctx.Application().Logger().Infof("Begin request for path: %s", ctx.Path())
 		ctx.Next()
 	})
-	// app.Done(func(ctx context.Context) {]})
-	app.Subdomain("wtf.").Post("/decode", func(ctx context.Context) {})
-	app.Subdomain("wtf.").Post("/decode", func(ctx context.Context) {})
+	// app.Done(func(ctx iris.Context) {]})
+	app.Subdomain("wtf.").Post("/decode", func(ctx iris.Context) {})
+	app.Subdomain("wtf.").Post("/decode", func(ctx iris.Context) {})
 	// Method POST: http://localhost:8080/decode
-	app.Post("/decode", func(ctx context.Context) {
+	app.Post("/decode", func(ctx iris.Context) {
 		var user User
 		ctx.ReadJSON(&user)
 		ctx.Writef("%s %s is %d years old and comes from %s", user.Firstname, user.Lastname, user.Age, user.City)
 	})
 
 	// Method GET: http://localhost:8080/encode
-	app.Get("/encode", func(ctx context.Context) {
+	app.Get("/encode", func(ctx iris.Context) {
 		doe := User{
 			Username:  "Johndoe",
 			Firstname: "John",
@@ -78,7 +76,7 @@ func main() {
 	app.Run(iris.Addr(":8080"), iris.WithCharset("UTF-8"))
 }
 
-func logThisMiddleware(ctx context.Context) {
+func logThisMiddleware(ctx iris.Context) {
 	ctx.Application().Logger().Infof("Path: %s | IP: %s", ctx.Path(), ctx.RemoteAddr())
 
 	// .Next is required to move forward to the chain of handlers,
@@ -86,7 +84,7 @@ func logThisMiddleware(ctx context.Context) {
 	ctx.Next()
 }
 
-func profileByUsername(ctx context.Context) {
+func profileByUsername(ctx iris.Context) {
 	// .Params are used to get dynamic path parameters.
 	username := ctx.Params().Get("username")
 	ctx.ViewData("Username", username)
@@ -95,7 +93,7 @@ func profileByUsername(ctx context.Context) {
 	ctx.View("users/profile.html")
 }
 
-func getUserByID(ctx context.Context) {
+func getUserByID(ctx iris.Context) {
 	userID := ctx.Params().Get("id") // Or convert directly using: .Values().GetInt/GetInt64 etc...
 	// your own db fetch here instead of user :=...
 	user := User{Username: "username" + userID}
@@ -103,7 +101,7 @@ func getUserByID(ctx context.Context) {
 	ctx.XML(user)
 }
 
-func createUser(ctx context.Context) {
+func createUser(ctx iris.Context) {
 	var user User
 	err := ctx.ReadForm(&user)
 	if err != nil {

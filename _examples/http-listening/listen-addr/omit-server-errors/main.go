@@ -2,13 +2,12 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 )
 
 func main() {
 	app := iris.New()
 
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		ctx.HTML("<h1>Hello World!</h1>")
 	})
 

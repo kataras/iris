@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 )
 
 // get a filename based on the date, file logs works that way the most times
@@ -34,7 +33,7 @@ func main() {
 	// attach the file as logger, remember, iris' app logger is just an io.Writer.
 	app.Logger().SetOutput(newLogFile())
 
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		// for the sake of simplicity, in order see the logs at the ./_today_.txt
 		ctx.Application().Logger().Info("Request path: " + ctx.Path())
 		ctx.Writef("hello")

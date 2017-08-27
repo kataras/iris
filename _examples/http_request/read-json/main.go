@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 )
 
 type Company struct {
@@ -11,7 +10,7 @@ type Company struct {
 	Other string
 }
 
-func MyHandler(ctx context.Context) {
+func MyHandler(ctx iris.Context) {
 	c := &Company{}
 	if err := ctx.ReadJSON(c); err != nil {
 		ctx.StatusCode(iris.StatusBadRequest)

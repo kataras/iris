@@ -26,7 +26,7 @@ func main() {
 	app := iris.New()
 
 	// Read
-	app.Post("/decode", func(ctx context.Context) {
+	app.Post("/decode", func(ctx iris.Context) {
 		var user User
 		ctx.ReadJSON(&user)
 
@@ -34,7 +34,7 @@ func main() {
 	})
 
 	// Write
-	app.Get("/encode", func(ctx context.Context) {
+	app.Get("/encode", func(ctx iris.Context) {
 		peter := User{
 			Firstname: "John",
 			Lastname:  "Doe",
@@ -48,28 +48,28 @@ func main() {
 
 	// Other content types,
 
-	app.Get("/binary", func(ctx context.Context) {
+	app.Get("/binary", func(ctx iris.Context) {
 		// useful when you want force-download of contents of raw bytes form.
 		ctx.Binary([]byte("Some binary data here."))
 	})
 
-	app.Get("/text", func(ctx context.Context) {
+	app.Get("/text", func(ctx iris.Context) {
 		ctx.Text("Plain text here")
 	})
 
-	app.Get("/json", func(ctx context.Context) {
+	app.Get("/json", func(ctx iris.Context) {
 		ctx.JSON(map[string]string{"hello": "json"}) // or myjsonStruct{hello:"json}
 	})
 
-	app.Get("/jsonp", func(ctx context.Context) {
+	app.Get("/jsonp", func(ctx iris.Context) {
 		ctx.JSONP(map[string]string{"hello": "jsonp"}, context.JSONP{Callback: "callbackName"})
 	})
 
-	app.Get("/xml", func(ctx context.Context) {
-		ctx.XML(ExampleXML{One: "hello", Two: "xml"}) // or context.Map{"One":"hello"...}
+	app.Get("/xml", func(ctx iris.Context) {
+		ctx.XML(ExampleXML{One: "hello", Two: "xml"}) // or iris.Map{"One":"hello"...}
 	})
 
-	app.Get("/markdown", func(ctx context.Context) {
+	app.Get("/markdown", func(ctx iris.Context) {
 		ctx.Markdown([]byte("# Hello Dynamic Markdown -- iris"))
 	})
 

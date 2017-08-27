@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/middleware/logger"
 )
 
@@ -18,11 +17,11 @@ func main() {
 	defer close()
 
 	app.Use(r)
-	app.OnAnyErrorCode(r, func(ctx context.Context) {
+	app.OnAnyErrorCode(r, func(ctx iris.Context) {
 		ctx.HTML("<h1> Error: Please try <a href ='/'> this </a> instead.</h1>")
 	})
 
-	h := func(ctx context.Context) {
+	h := func(ctx iris.Context) {
 		ctx.Writef("Hello from %s", ctx.Path())
 	}
 
@@ -66,7 +65,7 @@ var excludeExtensions = [...]string{
 	".svg",
 }
 
-func newRequestLogger() (h context.Handler, close func() error) {
+func newRequestLogger() (h iris.Handler, close func() error) {
 	close = func() error { return nil }
 
 	c := logger.Config{
@@ -93,7 +92,7 @@ func newRequestLogger() (h context.Handler, close func() error) {
 
 	//	we don't want to use the logger
 	// to log requests to assets and etc
-	c.AddSkipper(func(ctx context.Context) bool {
+	c.AddSkipper(func(ctx iris.Context) bool {
 		path := ctx.Path()
 		for _, ext := range excludeExtensions {
 			if strings.HasSuffix(path, ext) {

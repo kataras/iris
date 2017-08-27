@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 )
 
 func main() {
@@ -21,7 +20,7 @@ func main() {
 	// - {{ yield }}
 	// - {{ current }}
 	app.RegisterView(iris.HTML("./templates", ".html"))
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 
 		ctx.ViewData("Name", "iris") // the .Name inside the ./templates/hi.html
 		ctx.Gzip(true)               // enable gzip for big files

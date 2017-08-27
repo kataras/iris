@@ -3,7 +3,6 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 )
 
 func main() {
@@ -15,26 +14,26 @@ func main() {
 	admin := app.Party("admin.")
 	{
 		// admin.mydomain.com
-		admin.Get("/", func(c context.Context) {
+		admin.Get("/", func(c iris.Context) {
 			c.Writef("INDEX FROM admin.mydomain.com")
 		})
 		// admin.mydomain.com/hey
-		admin.Get("/hey", func(c context.Context) {
+		admin.Get("/hey", func(c iris.Context) {
 			c.Writef("HEY FROM admin.mydomain.com/hey")
 		})
 		// admin.mydomain.com/hey2
-		admin.Get("/hey2", func(c context.Context) {
+		admin.Get("/hey2", func(c iris.Context) {
 			c.Writef("HEY SECOND FROM admin.mydomain.com/hey")
 		})
 	}
 
 	// mydomain.com/
-	app.Get("/", func(c context.Context) {
+	app.Get("/", func(c iris.Context) {
 		c.Writef("INDEX FROM no-subdomain hey")
 	})
 
 	// mydomain.com/hey
-	app.Get("/hey", func(c context.Context) {
+	app.Get("/hey", func(c iris.Context) {
 		c.Writef("HEY FROM no-subdomain hey")
 	})
 

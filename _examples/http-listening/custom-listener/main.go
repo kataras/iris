@@ -4,17 +4,16 @@ import (
 	"net"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 )
 
 func main() {
 	app := iris.New()
 
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		ctx.Writef("Hello from the server")
 	})
 
-	app.Get("/mypath", func(ctx context.Context) {
+	app.Get("/mypath", func(ctx iris.Context) {
 		ctx.Writef("Hello from %s", ctx.Path())
 	})
 

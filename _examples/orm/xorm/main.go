@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 
 	"github.com/go-xorm/xorm"
 	_ "github.com/mattn/go-sqlite3"
@@ -55,14 +54,14 @@ func main() {
 		app.Logger().Fatalf("orm failed to initialized User table: %v", err)
 	}
 
-	app.Get("/insert", func(ctx context.Context) {
+	app.Get("/insert", func(ctx iris.Context) {
 		user := &User{Username: "kataras", Salt: "hash---", Password: "hashed", CreatedAt: time.Now(), UpdatedAt: time.Now()}
 		orm.Insert(user)
 
 		ctx.Writef("user inserted: %#v", user)
 	})
 
-	app.Get("/get", func(ctx context.Context) {
+	app.Get("/get", func(ctx iris.Context) {
 		user := User{ID: 1}
 		if ok, _ := orm.Get(&user); ok {
 			ctx.Writef("user found: %#v", user)

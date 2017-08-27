@@ -3,8 +3,6 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/view"
 )
 
 type Visitor struct {
@@ -17,16 +15,16 @@ func main() {
 	app := iris.New()
 
 	// set the view html template engine
-	app.RegisterView(view.HTML("./templates", ".html").Reload(true))
+	app.RegisterView(iris.HTML("./templates", ".html").Reload(true))
 
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		if err := ctx.View("form.html"); err != nil {
 			ctx.StatusCode(iris.StatusInternalServerError)
 			ctx.WriteString(err.Error())
 		}
 	})
 
-	app.Post("/form_action", func(ctx context.Context) {
+	app.Post("/form_action", func(ctx iris.Context) {
 		visitor := Visitor{}
 		err := ctx.ReadForm(&visitor)
 		if err != nil {

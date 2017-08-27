@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 )
 
 type mypage struct {
@@ -16,7 +15,7 @@ func main() {
 	app.RegisterView(iris.HTML("./templates", ".html").Layout("layout.html"))
 	// TIP: append .Reload(true) to reload the templates on each request.
 
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		ctx.Gzip(true)
 		ctx.ViewData("", mypage{"My Page title", "Hello world!"})
 		ctx.View("mypage.html")

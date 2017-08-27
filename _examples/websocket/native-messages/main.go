@@ -4,8 +4,6 @@ import (
 	"fmt"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/view"
 
 	"github.com/kataras/iris/websocket"
 )
@@ -26,7 +24,7 @@ type clientPage struct {
 func main() {
 	app := iris.New()
 
-	app.RegisterView(view.HTML("./templates", ".html")) // select the html engine to serve templates
+	app.RegisterView(iris.HTML("./templates", ".html")) // select the html engine to serve templates
 
 	ws := websocket.New(websocket.Config{
 	// to enable binary messages (useful for protobuf):
@@ -39,7 +37,7 @@ func main() {
 
 	app.StaticWeb("/js", "./static/js") // serve our custom javascript code
 
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		ctx.ViewData("", clientPage{"Client Page", "localhost:8080"})
 		ctx.View("client.html")
 	})

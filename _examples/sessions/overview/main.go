@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 
 	"github.com/kataras/iris/sessions"
 )
@@ -12,7 +11,7 @@ var (
 	sess                   = sessions.New(sessions.Config{Cookie: cookieNameForSessionID})
 )
 
-func secret(ctx context.Context) {
+func secret(ctx iris.Context) {
 
 	// Check if user is authenticated
 	if auth, _ := sess.Start(ctx).GetBoolean("authenticated"); !auth {
@@ -24,7 +23,7 @@ func secret(ctx context.Context) {
 	ctx.WriteString("The cake is a lie!")
 }
 
-func login(ctx context.Context) {
+func login(ctx iris.Context) {
 	session := sess.Start(ctx)
 
 	// Authentication goes here
@@ -34,7 +33,7 @@ func login(ctx context.Context) {
 	session.Set("authenticated", true)
 }
 
-func logout(ctx context.Context) {
+func logout(ctx iris.Context) {
 	session := sess.Start(ctx)
 
 	// Revoke users authentication

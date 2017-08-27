@@ -4,7 +4,6 @@ import (
 	"net/url"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 
 	"github.com/kataras/iris/core/host"
 )
@@ -12,11 +11,11 @@ import (
 func main() {
 	app := iris.New()
 
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		ctx.Writef("Hello from the SECURE server")
 	})
 
-	app.Get("/mypath", func(ctx context.Context) {
+	app.Get("/mypath", func(ctx iris.Context) {
 		ctx.Writef("Hello from the SECURE server on path /mypath")
 	})
 

@@ -123,7 +123,7 @@ the template file via `Data` field.
 
 Access to the template layout via the `Layout` field.
 
-Access to the low-level `context.Context` via the `Ctx` field.
+Access to the low-level `iris.Context/context.Context` via the `Ctx` field.
 
 Flow as you used to, `Controllers` can be registered to any `Party`,
 including Subdomains, the Party's begin and done handlers work as expected.
@@ -238,7 +238,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) files to
 - [Stream Writer](http_responsewriter/stream-writer/main.go)
 - [Transactions](http_responsewriter/transactions/main.go)
 
-> The `context.ResponseWriter()` returns an enchament version of a http.ResponseWriter, these examples show some places where the Context uses this object. Besides that you can use it as you did before iris.
+> The `context/context#ResponseWriter()` returns an enchament version of a http.ResponseWriter, these examples show some places where the Context uses this object. Besides that you can use it as you did before iris.
 
 ### ORM
 

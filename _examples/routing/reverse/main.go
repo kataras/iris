@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/router"
 )
 
@@ -12,7 +11,7 @@ func main() {
 	// you normally don't need it because of the {{ urlpath "routename" "path" "values" "here"}}
 	rv := router.NewRoutePathReverser(app)
 
-	myroute := app.Get("/anything/{anythingparameter:path}", func(ctx context.Context) {
+	myroute := app.Get("/anything/{anythingparameter:path}", func(ctx iris.Context) {
 		paramValue := ctx.Params().Get("anythingparameter")
 		ctx.Writef("The path after /anything is: %s", paramValue)
 	})
@@ -20,13 +19,13 @@ func main() {
 	myroute.Name = "myroute"
 
 	// useful for links, although iris' view engine has the {{ urlpath "routename" "path values"}} already.
-	app.Get("/reverse_myroute", func(ctx context.Context) {
+	app.Get("/reverse_myroute", func(ctx iris.Context) {
 		myrouteRequestPath := rv.Path(myroute.Name, "any/path")
 		ctx.HTML("Should be <b>/anything/any/path</b>: " + myrouteRequestPath)
 	})
 
 	// execute a route, similar to redirect but without redirect :)
-	app.Get("/execute_myroute", func(ctx context.Context) {
+	app.Get("/execute_myroute", func(ctx iris.Context) {
 		ctx.Exec("GET", "/anything/any/path") // like it was called by the client.
 	})
 

@@ -3,21 +3,20 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 )
 
 func main() {
 	app := iris.New()
 
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		ctx.Writef("Hello from SECURE SERVER!")
 	})
 
-	app.Get("/test2", func(ctx context.Context) {
+	app.Get("/test2", func(ctx iris.Context) {
 		ctx.Writef("Welcome to secure server from /test2!")
 	})
 
-	app.Get("/redirect", func(ctx context.Context) {
+	app.Get("/redirect", func(ctx iris.Context) {
 		ctx.Redirect("/test2")
 	})
 

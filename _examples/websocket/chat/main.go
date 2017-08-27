@@ -4,15 +4,13 @@ import (
 	"fmt"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
-
 	"github.com/kataras/iris/websocket"
 )
 
 func main() {
 	app := iris.New()
 
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		ctx.ServeFile("websockets.html", false) // second parameter: enable gzip?
 	})
 
@@ -39,7 +37,7 @@ func setupWebsocket(app *iris.Application) {
 
 	// serve the javascript built'n client-side library,
 	// see weboskcets.html script tags, this path is used.
-	app.Any("/iris-ws.js", func(ctx context.Context) {
+	app.Any("/iris-ws.js", func(ctx iris.Context) {
 		ctx.Write(websocket.ClientSource)
 	})
 }

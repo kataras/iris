@@ -4,7 +4,6 @@ import (
 	"strconv"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 )
 
 func main() {
@@ -15,7 +14,7 @@ func main() {
 	// with a single known paramete and custom http errors, now it's time to see wildcard parameters and macros.
 
 	// iris, like net/http std package registers route's handlers
-	// by a Handler, the iris' type of handler is just a func(ctx context.Context)
+	// by a Handler, the iris' type of handler is just a func(ctx iris.Context)
 	// where context comes from github.com/kataras/iris/context.
 	// Until go 1.9 you will have to import that package too, after go 1.9 this will be not be necessary.
 	//
@@ -92,7 +91,7 @@ func main() {
 	// })
 
 	// you can use the "string" type which is valid for a single path parameter that can be anything.
-	app.Get("/username/{name}", func(ctx context.Context) {
+	app.Get("/username/{name}", func(ctx iris.Context) {
 		ctx.Writef("Hello %s", ctx.Params().Get("name"))
 	}) // type is missing = {name:string}
 
@@ -116,7 +115,7 @@ func main() {
 	// http://localhost:8080/profile/id>=1
 	// this will throw 404 even if it's found as route on : /profile/0, /profile/blabla, /profile/-1
 	// macro parameter functions are optional of course.
-	app.Get("/profile/{id:int min(1)}", func(ctx context.Context) {
+	app.Get("/profile/{id:int min(1)}", func(ctx iris.Context) {
 		// second parameter is the error but it will always nil because we use macros,
 		// the validaton already happened.
 		id, _ := ctx.Params().GetInt("id")
@@ -124,7 +123,7 @@ func main() {
 	})
 
 	// to change the error code per route's macro evaluator:
-	app.Get("/profile/{id:int min(1)}/friends/{friendid:int min(1) else 504}", func(ctx context.Context) {
+	app.Get("/profile/{id:int min(1)}/friends/{friendid:int min(1) else 504}", func(ctx iris.Context) {
 		id, _ := ctx.Params().GetInt("id")
 		friendid, _ := ctx.Params().GetInt("friendid")
 		ctx.Writef("Hello id: %d looking for friend id: ", id, friendid)
@@ -132,11 +131,11 @@ func main() {
 
 	// http://localhost:8080/game/a-zA-Z/level/0-9
 	// remember, alphabetical is lowercase or uppercase letters only.
-	app.Get("/game/{name:alphabetical}/level/{level:int}", func(ctx context.Context) {
+	app.Get("/game/{name:alphabetical}/level/{level:int}", func(ctx iris.Context) {
 		ctx.Writef("name: %s | level: %s", ctx.Params().Get("name"), ctx.Params().Get("level"))
 	})
 
-	app.Get("/lowercase/static", func(ctx context.Context) {
+	app.Get("/lowercase/static", func(ctx iris.Context) {
 		ctx.Writef("static and dynamic paths are not conflicted anymore!")
 	})
 
@@ -144,18 +143,18 @@ func main() {
 	// which its value is only lowercase letters.
 
 	// http://localhost:8080/lowercase/anylowercase
-	app.Get("/lowercase/{name:string regexp(^[a-z]+)}", func(ctx context.Context) {
+	app.Get("/lowercase/{name:string regexp(^[a-z]+)}", func(ctx iris.Context) {
 		ctx.Writef("name should be only lowercase, otherwise this handler will never executed: %s", ctx.Params().Get("name"))
 	})
 
 	// http://localhost:8080/single_file/app.js
-	app.Get("/single_file/{myfile:file}", func(ctx context.Context) {
+	app.Get("/single_file/{myfile:file}", func(ctx iris.Context) {
 		ctx.Writef("file type validates if the parameter value has a form of a file name, got: %s", ctx.Params().Get("myfile"))
 	})
 
 	// http://localhost:8080/myfiles/any/directory/here/
 	// this is the only macro type that accepts any number of path segments.
-	app.Get("/myfiles/{directory:path}", func(ctx context.Context) {
+	app.Get("/myfiles/{directory:path}", func(ctx iris.Context) {
 		ctx.Writef("path type accepts any number of path segments, path after /myfiles/ is: %s", ctx.Params().Get("directory"))
 	}) // for wildcard path (any number of path segments) without validation you can use:
 	// /myfiles/*

@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 
 	"github.com/kataras/iris/typescript"
 )
@@ -17,7 +16,7 @@ func main() {
 
 	app.StaticWeb("/scripts", "./www") // serve the scripts
 
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		ctx.ServeFile("./www/index.html", false)
 	})
 

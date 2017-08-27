@@ -21,6 +21,17 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 # Su, 27 August 2017 | v8.4.0
 
+## Miscellaneous
+
+- Update `vendor blackfriday` package to its latest version, 2.0.0
+- Update [documentation](https://godoc.org/github.com/kataras/iris) for go 1.9
+- Update [_examples](_examples) folder for go 1.9
+- Update examples inside https://github.com/iris-contrib/middleware for go 1.9
+- Update https://github.com/kataras/iris-contrib/examples for go 1.9
+- Update https://iris-go.com/v8/recipe for go 1.9
+
+## Router
+
 Add a new macro type for path parameters, `long`, it's the go type `int64`.
 
 ```go
@@ -29,7 +40,7 @@ app.Get("/user/{id:long}", func(ctx context.Context) {
 })
 ```
 
-And the promise we gave to you some days ago.
+## MVC
 
 The ability to pre-calculate, register and map different (relative) paths inside a single controller
 with zero performance cost.
@@ -1413,7 +1424,7 @@ General
 - Several enhancements for the typescript transpiler, view engine, websocket server and sessions manager
 - All `Listen` methods replaced with a single `Run` method, see [here](https://github.com/kataras/iris/tree/master/_examples/beginner/listening)
 - Configuration, easier to modify the defaults, see [here](https://github.com/kataras/iris/tree/master/_examples/beginner/cofiguration)
-- `HandlerFunc` removed, just `Handler` of `func(context.Context)` where context.Context derives from `import "github.com/kataras/iris/context"` (on August this import path will be optional)
+- `HandlerFunc` removed, just `Handler` of `func(context.Context)` where context.Context derives from `import "github.com/kataras/iris/context"` (**NEW**: this import path is optional, use `iris.Context` if you've installed Go 1.9)
     - Simplify API, i.e: instead of `Handle,HandleFunc,Use,UseFunc,Done,DoneFunc,UseGlobal,UseGlobalFunc` use `Handle,Use,Done,UseGlobal`.
 - Response time decreased even more (9-35%, depends on the application)
 - The `Adaptors` idea replaced with a more structural design pattern, but you have to apply these changes: 

@@ -9,17 +9,15 @@ import (
 	"time"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/view"
 )
 
 func main() {
 	app := iris.New()
 
-	app.RegisterView(view.HTML("./templates", ".html"))
+	app.RegisterView(iris.HTML("./templates", ".html"))
 
 	// Serve the form.html to the user
-	app.Get("/upload", func(ctx context.Context) {
+	app.Get("/upload", func(ctx iris.Context) {
 		//create a token (optionally)
 
 		now := time.Now().Unix()
@@ -33,8 +31,8 @@ func main() {
 	})
 
 	// Handle the post request from the upload_form.html to the server
-	app.Post("/upload", context.LimitRequestBodySize(10<<20),
-		func(ctx context.Context) {
+	app.Post("/upload", iris.LimitRequestBodySize(10<<20),
+		func(ctx iris.Context) {
 			// or use ctx.SetMaxRequestBodySize(10 << 20)
 			//to limit the uploaded file(s) size.
 

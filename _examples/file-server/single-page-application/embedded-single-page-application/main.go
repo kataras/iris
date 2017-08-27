@@ -2,8 +2,6 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/view"
 )
 
 // $ go get -u github.com/jteeuwen/go-bindata/...
@@ -17,9 +15,9 @@ var page = struct {
 
 func newApp() *iris.Application {
 	app := iris.New()
-	app.RegisterView(view.HTML("./public", ".html").Binary(Asset, AssetNames))
+	app.RegisterView(iris.HTML("./public", ".html").Binary(Asset, AssetNames))
 
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		ctx.ViewData("Page", page)
 		ctx.View("index.html")
 	})

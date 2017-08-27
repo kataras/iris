@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 )
 
 func main() {
@@ -13,12 +12,12 @@ func main() {
 	app.Use(ionMiddleware)
 
 	// Method GET: http://localhost:8080/
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		ctx.HTML("Home")
 	})
 
 	// Method GET: http://localhost:8080/ok
-	app.Get("/ok", func(ctx context.Context) {
+	app.Get("/ok", func(ctx iris.Context) {
 		ctx.HTML("<b>Hello world!</b>")
 	})
 

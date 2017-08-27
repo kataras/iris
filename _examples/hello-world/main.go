@@ -1,10 +1,7 @@
-// +build !go1.9
-
 package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 
 	"github.com/kataras/iris/middleware/logger"
 	"github.com/kataras/iris/middleware/recover"
@@ -20,21 +17,21 @@ func main() {
 
 	// Method:   GET
 	// Resource: http://localhost:8080/
-	app.Handle("GET", "/", func(ctx context.Context) {
+	app.Handle("GET", "/", func(ctx iris.Context) {
 		ctx.HTML("<b>Welcome!</b>")
 	})
 
 	// same as app.Handle("GET", "/ping", [...])
 	// Method:   GET
 	// Resource: http://localhost:8080/ping
-	app.Get("/ping", func(ctx context.Context) {
+	app.Get("/ping", func(ctx iris.Context) {
 		ctx.WriteString("pong")
 	})
 
 	// Method:   GET
 	// Resource: http://localhost:8080/hello
-	app.Get("/hello", func(ctx context.Context) {
-		ctx.JSON(context.Map{"message": "Hello iris web framework."})
+	app.Get("/hello", func(ctx iris.Context) {
+		ctx.JSON(iris.Map{"message": "Hello iris web framework."})
 	})
 
 	// http://localhost:8080

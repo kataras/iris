@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 )
 
 // In this example you'll just see one use case of .WrapRouter.
@@ -20,15 +19,15 @@ func newApp() *iris.Application {
 
 	app := iris.New()
 
-	app.OnErrorCode(iris.StatusNotFound, func(ctx context.Context) {
+	app.OnErrorCode(iris.StatusNotFound, func(ctx iris.Context) {
 		ctx.HTML("<b>Resource Not found</b>")
 	})
 
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		ctx.ServeFile("./public/index.html", false)
 	})
 
-	app.Get("/profile/{username}", func(ctx context.Context) {
+	app.Get("/profile/{username}", func(ctx iris.Context) {
 		ctx.Writef("Hello %s", ctx.Params().Get("username"))
 	})
 

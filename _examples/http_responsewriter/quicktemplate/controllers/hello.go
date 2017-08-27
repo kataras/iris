@@ -3,11 +3,11 @@ package controllers
 import (
 	"github.com/kataras/iris/_examples/http_responsewriter/quicktemplate/templates"
 
-	"github.com/kataras/iris/context"
+	"github.com/kataras/iris"
 )
 
 // Hello renders our ../templates/hello.qtpl file using the compiled ../templates/hello.qtpl.go file.
-func Hello(ctx context.Context) {
+func Hello(ctx iris.Context) {
 	// vars := make(map[string]interface{})
 	// vars["message"] = "Hello World!"
 	// vars["name"] = ctx.Params().Get("name")
