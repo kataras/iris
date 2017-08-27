@@ -3,7 +3,7 @@ package main
 import (
 	"time"
 
-	"github.com/kataras/iris/_examples/mvc/login-example/user"
+	"github.com/kataras/iris/_examples/mvc/login/user"
 
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/sessions"
@@ -11,6 +11,8 @@ import (
 
 func main() {
 	app := iris.New()
+	// You got full debug messages, useful when using MVC and you want to make
+	// sure that your code is compatible with the Iris' MVC Architecture.
 	app.Logger().SetLevel("debug")
 
 	app.RegisterView(iris.HTML("./views", ".html").Layout("shared/layout.html"))
