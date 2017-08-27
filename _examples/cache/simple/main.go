@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 
 	"github.com/kataras/iris/cache"
 )
@@ -67,7 +66,7 @@ func main() {
 	app.Run(iris.Addr(":8080"))
 }
 
-func writeMarkdown(ctx context.Context) {
+func writeMarkdown(ctx iris.Context) {
 	// tap multiple times the browser's refresh button and you will
 	// see this println only once every 10 seconds.
 	println("Handler executed. Content refreshed.")

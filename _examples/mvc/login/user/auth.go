@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kataras/iris/context"
+	"github.com/kataras/iris"
 	"github.com/kataras/iris/mvc"
 )
 
@@ -29,7 +29,7 @@ type AuthController struct {
 }
 
 // BeginRequest saves login state to the context, the user id.
-func (c *AuthController) BeginRequest(ctx context.Context) {
+func (c *AuthController) BeginRequest(ctx iris.Context) {
 	c.SessionController.BeginRequest(ctx)
 
 	if userID := c.Session.Get(sessionIDKey); userID != nil {
@@ -116,7 +116,7 @@ func (c *AuthController) logout() {
 // AllowUser will check if this client is a logged user,
 // if not then it will redirect that guest to the login page
 // otherwise it will allow the execution of the next handler.
-func AllowUser(ctx context.Context) {
+func AllowUser(ctx iris.Context) {
 	if ctx.Values().Get(sessionIDKey) != nil {
 		ctx.Next()
 		return

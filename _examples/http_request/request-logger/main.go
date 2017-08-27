@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/middleware/logger"
 )
 
@@ -28,7 +27,7 @@ func main() {
 
 	app.Use(customLogger)
 
-	h := func(ctx context.Context) {
+	h := func(ctx iris.Context) {
 		ctx.Writef("Hello from %s", ctx.Path())
 	}
 	app.Get("/", h)
@@ -40,12 +39,12 @@ func main() {
 	// http errors have their own handlers, therefore
 	// registering a middleare should be done manually.
 	/*
-	 app.OnErrorCode(404 ,customLogger, func(ctx context.Context) {
+	 app.OnErrorCode(404 ,customLogger, func(ctx iris.Context) {
 	 	ctx.Writef("My Custom 404 error page ")
 	 })
 	*/
 	// or catch all http errors:
-	app.OnAnyErrorCode(customLogger, func(ctx context.Context) {
+	app.OnAnyErrorCode(customLogger, func(ctx iris.Context) {
 		// this should be added to the logs, at the end because of the `logger.Config#MessageContextKey`
 		ctx.Values().Set("logger_message",
 			"a dynamic message passed to the logs")

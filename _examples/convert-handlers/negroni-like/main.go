@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 )
 
 func main() {
@@ -13,14 +12,14 @@ func main() {
 	app.Use(ionMiddleware)
 
 	// Method GET: http://localhost:8080/
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		ctx.HTML("<h1> Home </h1>")
 		// this will print an error,
 		// this route's handler will never be executed because the middleware's criteria not passed.
 	})
 
 	// Method GET: http://localhost:8080/ok
-	app.Get("/ok", func(ctx context.Context) {
+	app.Get("/ok", func(ctx iris.Context) {
 		ctx.Writef("Hello world!")
 		// this will print "OK. Hello world!".
 	})

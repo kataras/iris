@@ -2,8 +2,6 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/view"
 )
 
 // same as embedded-single-page-application but without go-bindata, the files are "physical" stored in the
@@ -15,15 +13,15 @@ var page = struct {
 
 func newApp() *iris.Application {
 	app := iris.New()
-	app.RegisterView(view.HTML("./public", ".html"))
+	app.RegisterView(iris.HTML("./public", ".html"))
 
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		ctx.ViewData("Page", page)
 		ctx.View("index.html")
 	})
 
 	// or just serve index.html as it is:
-	// app.Get("/", func(ctx context.Context) {
+	// app.Get("/", func(ctx iris.Context) {
 	// 	ctx.ServeFile("index.html", false)
 	// })
 

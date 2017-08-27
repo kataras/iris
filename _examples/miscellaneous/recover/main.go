@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 
 	"github.com/kataras/iris/middleware/recover"
 )
@@ -14,7 +13,7 @@ func main() {
 
 	i := 0
 	// let's simmilate a panic every next request
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		i++
 		if i%2 == 0 {
 			panic("a panic here")

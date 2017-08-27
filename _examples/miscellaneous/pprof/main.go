@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 
 	"github.com/kataras/iris/middleware/pprof"
 )
@@ -10,7 +9,7 @@ import (
 func main() {
 	app := iris.New()
 
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		ctx.HTML("<h1> Please click <a href='/debug/pprof'>here</a>")
 	})
 

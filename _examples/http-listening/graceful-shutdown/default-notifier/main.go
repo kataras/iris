@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 )
 
 // Before continue:
@@ -26,7 +25,7 @@ func main() {
 		app.Shutdown(ctx)
 	})
 
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		ctx.HTML(" <h1>hi, I just exist in order to see if the server is closed</h1>")
 	})
 

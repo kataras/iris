@@ -5,14 +5,13 @@ import (
 	"time"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/host"
 )
 
 func main() {
 	app := iris.New()
 
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		ctx.HTML("<h1>Hello, try to refresh the page after ~10 secs</h1>")
 	})
 

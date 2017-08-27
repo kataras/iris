@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 
 	"github.com/kataras/iris/sessions"
 )
@@ -31,10 +30,10 @@ func main() {
 		// want to be crazy safe? Take a look at the "securecookie" example folder.
 	})
 
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		ctx.Writef("You should navigate to the /set, /get, /delete, /clear,/destroy instead")
 	})
-	app.Get("/set", func(ctx context.Context) {
+	app.Get("/set", func(ctx iris.Context) {
 
 		//set session values.
 		s := sess.Start(ctx)
@@ -52,29 +51,29 @@ func main() {
 		// Read more about muttable and immutable go types: https://stackoverflow.com/a/8021081
 	})
 
-	app.Get("/get", func(ctx context.Context) {
+	app.Get("/get", func(ctx iris.Context) {
 		// get a specific value, as string, if no found returns just an empty string
 		name := sess.Start(ctx).GetString("name")
 
 		ctx.Writef("The name on the /set was: %s", name)
 	})
 
-	app.Get("/delete", func(ctx context.Context) {
+	app.Get("/delete", func(ctx iris.Context) {
 		// delete a specific key
 		sess.Start(ctx).Delete("name")
 	})
 
-	app.Get("/clear", func(ctx context.Context) {
+	app.Get("/clear", func(ctx iris.Context) {
 		// removes all entries
 		sess.Start(ctx).Clear()
 	})
 
-	app.Get("/update", func(ctx context.Context) {
+	app.Get("/update", func(ctx iris.Context) {
 		// updates expire date
 		sess.ShiftExpiration(ctx)
 	})
 
-	app.Get("/destroy", func(ctx context.Context) {
+	app.Get("/destroy", func(ctx iris.Context) {
 
 		//destroy, removes the entire session data and cookie
 		sess.Destroy(ctx)
@@ -91,7 +90,7 @@ func main() {
 	//
 	// Use `SetImmutable` consistently, it's slower than `Set`.
 	// Read more about muttable and immutable go types: https://stackoverflow.com/a/8021081
-	app.Get("/set_immutable", func(ctx context.Context) {
+	app.Get("/set_immutable", func(ctx iris.Context) {
 		business := []businessModel{{Name: "Edward"}, {Name: "value 2"}}
 		s := sess.Start(ctx)
 		s.SetImmutable("businessEdit", business)
@@ -103,7 +102,7 @@ func main() {
 
 	})
 
-	app.Get("/get_immutable", func(ctx context.Context) {
+	app.Get("/get_immutable", func(ctx iris.Context) {
 		valSlice := sess.Start(ctx).Get("businessEdit")
 		if valSlice == nil {
 			ctx.HTML("please navigate to the <a href='/set_immutable'>/set_immutable</a> first")

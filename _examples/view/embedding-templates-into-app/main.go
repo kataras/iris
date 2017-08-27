@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 )
 
 func main() {
@@ -23,7 +22,7 @@ type page struct {
 	Title, Name string
 }
 
-func hi(ctx context.Context) {
+func hi(ctx iris.Context) {
 	ctx.ViewData("", page{Title: "Hi Page", Name: "iris"})
 	ctx.View("hi.html")
 }

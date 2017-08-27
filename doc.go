@@ -39,7 +39,7 @@ Current Version
 
 Installation
 
-The only requirement is the Go Programming Language, at least version 1.8
+The only requirement is the Go Programming Language, at least version 1.8 but 1.9 is highly recommended.
 
     $ go get -u github.com/kataras/iris
 
@@ -49,10 +49,7 @@ Example code:
 
     package main
 
-    import (
-        "github.com/kataras/iris"
-        "github.com/kataras/iris/context"
-    )
+    import "github.com/kataras/iris"
 
     // User is just a bindable object structure.
     type User struct {
@@ -72,7 +69,7 @@ Example code:
         app.RegisterView(iris.HTML("./views", ".html").Reload(true))
 
         // Register custom handler for specific http errors.
-        app.OnErrorCode(iris.StatusInternalServerError, func(ctx context.Context) {
+        app.OnErrorCode(iris.StatusInternalServerError, func(ctx iris.Context) {
             // .Values are used to communicate between handlers, middleware.
             errMessage := ctx.Values().GetString("error")
             if errMessage != "" {
@@ -83,22 +80,22 @@ Example code:
             ctx.Writef("(Unexpected) internal server error")
         })
 
-        app.Use(func(ctx context.Context) {
+        app.Use(func(ctx iris.Context) {
             ctx.Application().Logger().Infof("Begin request for path: %s", ctx.Path())
             ctx.Next()
         })
 
-        // app.Done(func(ctx context.Context) {})
+        // app.Done(func(ctx iris.Context) {})
 
         // Method POST: http://localhost:8080/decode
-        app.Post("/decode", func(ctx context.Context) {
+        app.Post("/decode", func(ctx iris.Context) {
             var user User
             ctx.ReadJSON(&user)
             ctx.Writef("%s %s is %d years old and comes from %s", user.Firstname, user.Lastname, user.Age, user.City)
         })
 
         // Method GET: http://localhost:8080/encode
-        app.Get("/encode", func(ctx context.Context) {
+        app.Get("/encode", func(ctx iris.Context) {
             doe := User{
                 Username:  "Johndoe",
                 Firstname: "John",
@@ -125,7 +122,7 @@ Example code:
         app.Run(iris.Addr(":8080"), iris.WithCharset("UTF-8"))
     }
 
-    func logThisMiddleware(ctx context.Context) {
+    func logThisMiddleware(ctx iris.Context) {
         ctx.Application().Logger().Infof("Path: %s | IP: %s", ctx.Path(), ctx.RemoteAddr())
 
         // .Next is required to move forward to the chain of handlers,
@@ -133,7 +130,7 @@ Example code:
         ctx.Next()
     }
 
-    func profileByUsername(ctx context.Context) {
+    func profileByUsername(ctx iris.Context) {
         // .Params are used to get dynamic path parameters.
         username := ctx.Params().Get("username")
         ctx.ViewData("Username", username)
@@ -142,7 +139,7 @@ Example code:
         ctx.View("users/profile.html")
     }
 
-    func getUserByID(ctx context.Context) {
+    func getUserByID(ctx iris.Context) {
         userID := ctx.Params().Get("id") // Or convert directly using: .Values().GetInt/GetInt64 etc...
         // your own db fetch here instead of user :=...
         user := User{Username: "username" + userID}
@@ -150,7 +147,7 @@ Example code:
         ctx.XML(user)
     }
 
-    func createUser(ctx context.Context) {
+    func createUser(ctx iris.Context) {
         var user User
         err := ctx.ReadForm(&user)
         if err != nil {
@@ -232,7 +229,6 @@ Example code:
         "github.com/valyala/tcplisten"
 
         "github.com/kataras/iris"
-        "github.com/kataras/iris/context"
     )
 
     // $ go get github.com/valyala/tcplisten
@@ -241,7 +237,7 @@ Example code:
     func main() {
         app := iris.New()
 
-        app.Get("/", func(ctx context.Context) {
+        app.Get("/", func(ctx iris.Context) {
             ctx.HTML("<b>Hello World!</b>")
         })
 
@@ -280,7 +276,6 @@ Example code:
         "time"
 
         "github.com/kataras/iris"
-        "github.com/kataras/iris/context"
     )
 
 
@@ -295,7 +290,7 @@ Example code:
             app.Shutdown(ctx)
         })
 
-        app.Get("/", func(ctx context.Context) {
+        app.Get("/", func(ctx iris.Context) {
             ctx.HTML(" <h1>hi, I just exist in order to see if the server is closed</h1>")
         })
 
@@ -350,14 +345,13 @@ Example Code:
         "time"
 
         "github.com/kataras/iris"
-        "github.com/kataras/iris/context"
         "github.com/kataras/iris/core/host"
     )
 
     func main() {
         app := iris.New()
 
-        app.Get("/", func(ctx context.Context) {
+        app.Get("/", func(ctx iris.Context) {
             ctx.HTML("<h1>Hello, try to refresh the page after ~10 secs</h1>")
         })
 
@@ -406,7 +400,7 @@ Routing
 All HTTP methods are supported, developers can also register handlers for same paths for different methods.
 The first parameter is the HTTP Method,
 second parameter is the request path of the route,
-third variadic parameter should contains one or more context.Handler executed
+third variadic parameter should contains one or more iris.Handler executed
 by the registered order when a user requests for that specific resouce path from the server.
 
 Example code:
@@ -414,14 +408,14 @@ Example code:
 
     app := iris.New()
 
-    app.Handle("GET", "/contact", func(ctx context.Context){
+    app.Handle("GET", "/contact", func(ctx iris.Context) {
         ctx.HTML("<h1> Hello from /contact </h1>")
     })
 
 
 In order to make things easier for the user, iris provides functions for all HTTP Methods.
 The first parameter is the request path of the route,
-second variadic parameter should contains one or more context.Handler executed
+second variadic parameter should contains one or more iris.Handler executed
 by the registered order when a user requests for that specific resouce path from the server.
 
 Example code:
@@ -459,7 +453,7 @@ Example code:
     // register the route for all HTTP Methods
     app.Any("/", handler)
 
-    func handler(ctx context.Context){
+    func handler(ctx iris.Context){
     ctx.Writef("Hello from method: %s and path: %s", ctx.Method(), ctx.Path())
     }
 
@@ -497,11 +491,11 @@ Example code:
 
 
     // when 404 then render the template $templatedir/errors/404.html
-    app.OnErrorCode(iris.StatusNotFound, func(ctx context.Context){
+    app.OnErrorCode(iris.StatusNotFound, func(ctx iris.Context){
         ctx.View("errors/404.html")
     })
 
-    app.OnErrorCode(500, func(ctx context.Context){
+    app.OnErrorCode(500, func(ctx iris.Context){
         // ...
     })
 
@@ -515,10 +509,7 @@ Example code:
 
     package main
 
-    import (
-        "github.com/kataras/iris"
-        "github.com/kataras/iris/context"
-    )
+    import "github.com/kataras/iris"
 
     func main() {
         app := iris.New()
@@ -529,23 +520,23 @@ Example code:
 
         // GET -> HTTP Method
         // / -> Path
-        // func(ctx context.Context) -> The route's handler.
+        // func(ctx iris.Context) -> The route's handler.
         //
         // Third receiver should contains the route's handler(s), they are executed by order.
-        app.Handle("GET", "/", func(ctx context.Context) {
+        app.Handle("GET", "/", func(ctx iris.Context) {
             // navigate to the middle of $GOPATH/src/github.com/kataras/iris/context/context.go
             // to overview all context's method (there a lot of them, read that and you will learn how iris works too)
             ctx.HTML("Hello from " + ctx.Path()) // Hello from /
         })
 
-        app.Get("/home", func(ctx context.Context) {
+        app.Get("/home", func(ctx iris.Context) {
             ctx.Writef(`Same as app.Handle("GET", "/", [...])`)
         })
 
         app.Get("/donate", donateHandler, donateFinishHandler)
 
         // Pssst, don't forget dynamic-path example for more "magic"!
-        app.Get("/api/users/{userid:int min(1)}", func(ctx context.Context) {
+        app.Get("/api/users/{userid:int min(1)}", func(ctx iris.Context) {
             userID, err := ctx.Params().GetInt("userid")
 
             if err != nil {
@@ -560,15 +551,15 @@ Example code:
                 "user_id": userID,
             })
         })
-        // app.Post("/", func(ctx context.Context){}) -> for POST http method.
-        // app.Put("/", func(ctx context.Context){})-> for "PUT" http method.
-        // app.Delete("/", func(ctx context.Context){})-> for "DELETE" http method.
-        // app.Options("/", func(ctx context.Context){})-> for "OPTIONS" http method.
-        // app.Trace("/", func(ctx context.Context){})-> for "TRACE" http method.
-        // app.Head("/", func(ctx context.Context){})-> for "HEAD" http method.
-        // app.Connect("/", func(ctx context.Context){})-> for "CONNECT" http method.
-        // app.Patch("/", func(ctx context.Context){})-> for "PATCH" http method.
-        // app.Any("/", func(ctx context.Context){}) for all http methods.
+        // app.Post("/", func(ctx iris.Context){}) -> for POST http method.
+        // app.Put("/", func(ctx iris.Context){})-> for "PUT" http method.
+        // app.Delete("/", func(ctx iris.Context){})-> for "DELETE" http method.
+        // app.Options("/", func(ctx iris.Context){})-> for "OPTIONS" http method.
+        // app.Trace("/", func(ctx iris.Context){})-> for "TRACE" http method.
+        // app.Head("/", func(ctx iris.Context){})-> for "HEAD" http method.
+        // app.Connect("/", func(ctx iris.Context){})-> for "CONNECT" http method.
+        // app.Patch("/", func(ctx iris.Context){})-> for "PATCH" http method.
+        // app.Any("/", func(ctx iris.Context){}) for all http methods.
 
         // More than one route can contain the same path with a different http mapped method.
         // You can catch any route creation errors with:
@@ -579,13 +570,13 @@ Example code:
 
         adminRoutes := app.Party("/admin", adminMiddleware)
 
-        adminRoutes.Done(func(ctx context.Context) { // executes always last if ctx.Next()
+        adminRoutes.Done(func(ctx iris.Context) { // executes always last if ctx.Next()
             ctx.Application().Logger().Infof("response sent to " + ctx.Path())
         })
         // adminRoutes.Layout("/views/layouts/admin.html") // set a view layout for these routes, see more at view examples.
 
         // GET: http://localhost:8080/admin
-        adminRoutes.Get("/", func(ctx context.Context) {
+        adminRoutes.Get("/", func(ctx iris.Context) {
             // [...]
             ctx.StatusCode(iris.StatusOK) // default is 200 == iris.StatusOK
             ctx.HTML("<h1>Hello from admin/</h1>")
@@ -594,11 +585,11 @@ Example code:
         })
 
         // GET: http://localhost:8080/admin/login
-        adminRoutes.Get("/login", func(ctx context.Context) {
+        adminRoutes.Get("/login", func(ctx iris.Context) {
             // [...]
         })
         // POST: http://localhost:8080/admin/login
-        adminRoutes.Post("/login", func(ctx context.Context) {
+        adminRoutes.Post("/login", func(ctx iris.Context) {
             // [...]
         })
 
@@ -608,18 +599,18 @@ Example code:
         { // braces are optional, it's just type of style, to group the routes visually.
 
             // http://v1.localhost:8080
-            v1.Get("/", func(ctx context.Context) {
+            v1.Get("/", func(ctx iris.Context) {
                 ctx.HTML("Version 1 API. go to <a href='" + ctx.Path() + "/api" + "'>/api/users</a>")
             })
 
             usersAPI := v1.Party("/api/users")
             {
                 // http://v1.localhost:8080/api/users
-                usersAPI.Get("/", func(ctx context.Context) {
+                usersAPI.Get("/", func(ctx iris.Context) {
                     ctx.Writef("All users")
                 })
                 // http://v1.localhost:8080/api/users/42
-                usersAPI.Get("/{userid:int}", func(ctx context.Context) {
+                usersAPI.Get("/{userid:int}", func(ctx iris.Context) {
                     ctx.Writef("user with id: %s", ctx.Params().Get("userid"))
                 })
             }
@@ -628,7 +619,7 @@ Example code:
         // wildcard subdomains.
         wildcardSubdomain := app.Party("*.")
         {
-            wildcardSubdomain.Get("/", func(ctx context.Context) {
+            wildcardSubdomain.Get("/", func(ctx iris.Context) {
                 ctx.Writef("Subdomain can be anything, now you're here from: %s", ctx.Subdomain())
             })
         }
@@ -652,22 +643,22 @@ Example code:
         app.Run(iris.Addr(":8080"))
     }
 
-    func adminMiddleware(ctx context.Context) {
+    func adminMiddleware(ctx iris.Context) {
         // [...]
         ctx.Next() // to move to the next handler, or don't that if you have any auth logic.
     }
 
-    func donateHandler(ctx context.Context) {
+    func donateHandler(ctx iris.Context) {
         ctx.Writef("Just like an inline handler, but it can be " +
             "used by other package, anywhere in your project.")
 
         // let's pass a value to the next handler
         // Values is the way handlers(or middleware) are communicating between each other.
-        ctx.Values().Set("donate_url", "https://github.com/kataras/iris#buy-me-a-cup-of-coffee")
+        ctx.Values().Set("donate_url", "https://github.com/kataras/iris#-people")
         ctx.Next() // in order to execute the next handler in the chain, look donate route.
     }
 
-    func donateFinishHandler(ctx context.Context) {
+    func donateFinishHandler(ctx iris.Context) {
         // values can be any type of object so we could cast the value to a string
         // but iris provides an easy to do that, if donate_url is not defined, then it returns an empty string instead.
         donateURL := ctx.Values().GetString("donate_url")
@@ -675,7 +666,7 @@ Example code:
         ctx.Writef("\n\nDonate sent(?).")
     }
 
-    func notFoundHandler(ctx context.Context) {
+    func notFoundHandler(ctx iris.Context) {
         ctx.HTML("Custom route for 404 not found http code, here you can render a view, html, json <b>any valid response</b>.")
     }
 
@@ -806,7 +797,7 @@ the template file via `Data` field.
 
 Access to the template layout via the `Layout` field.
 
-Access to the low-level `context.Context` via the `Ctx` field.
+Access to the low-level `iris.Context` via the `Ctx` field.
 
 Get the relative request path by using the controller's name via `RelPath()`.
 
@@ -873,11 +864,10 @@ we've seen static routes, group of routes, subdomains, wildcard subdomains, a sm
 with a single known paramete and custom http errors, now it's time to see wildcard parameters and macros.
 
 iris, like net/http std package registers route's handlers
-by a Handler, the iris' type of handler is just a func(ctx context.Context)
+by a Handler, the iris' type of handler is just a func(ctx iris.Context)
 where context comes from github.com/kataras/iris/context.
-Until go 1.9 you will have to import that package too, after go 1.9 this will be not be necessary.
 
-iris has the easiest and the most powerful routing process you have ever meet.
+Iris has the easiest and the most powerful routing process you have ever meet.
 
 At the same time,
 iris has its own interpeter(yes like a programming language)
@@ -959,7 +949,7 @@ Example code:
 
 
 	// you can use the "string" type which is valid for a single path parameter that can be anything.
-	app.Get("/username/{name}", func(ctx context.Context) {
+	app.Get("/username/{name}", func(ctx iris.Context) {
 		ctx.Writef("Hello %s", ctx.Params().Get("name"))
 	}) // type is missing = {name:string}
 
@@ -983,7 +973,7 @@ Example code:
 	// http://localhost:8080/profile/id>=1
 	// this will throw 404 even if it's found as route on : /profile/0, /profile/blabla, /profile/-1
 	// macro parameter functions are optional of course.
-	app.Get("/profile/{id:int min(1)}", func(ctx context.Context) {
+	app.Get("/profile/{id:int min(1)}", func(ctx iris.Context) {
 		// second parameter is the error but it will always nil because we use macros,
 		// the validaton already happened.
 		id, _ := ctx.Params().GetInt("id")
@@ -991,7 +981,7 @@ Example code:
 	})
 
 	// to change the error code per route's macro evaluator:
-	app.Get("/profile/{id:int min(1)}/friends/{friendid:int min(1) else 504}", func(ctx context.Context) {
+	app.Get("/profile/{id:int min(1)}/friends/{friendid:int min(1) else 504}", func(ctx iris.Context) {
 		id, _ := ctx.Params().GetInt("id")
 		friendid, _ := ctx.Params().GetInt("friendid")
 		ctx.Writef("Hello id: %d looking for friend id: ", id, friendid)
@@ -999,7 +989,7 @@ Example code:
 
 	// http://localhost:8080/game/a-zA-Z/level/0-9
 	// remember, alphabetical is lowercase or uppercase letters only.
-	app.Get("/game/{name:alphabetical}/level/{level:int}", func(ctx context.Context) {
+	app.Get("/game/{name:alphabetical}/level/{level:int}", func(ctx iris.Context) {
 		ctx.Writef("name: %s | level: %s", ctx.Params().Get("name"), ctx.Params().Get("level"))
 	})
 
@@ -1007,18 +997,18 @@ Example code:
 	// which its value is only lowercase letters.
 
 	// http://localhost:8080/lowercase/anylowercase
-	app.Get("/lowercase/{name:string regexp(^[a-z]+)}", func(ctx context.Context) {
+	app.Get("/lowercase/{name:string regexp(^[a-z]+)}", func(ctx iris.Context) {
 		ctx.Writef("name should be only lowercase, otherwise this handler will never executed: %s", ctx.Params().Get("name"))
 	})
 
 	// http://localhost:8080/single_file/app.js
-	app.Get("/single_file/{myfile:file}", func(ctx context.Context) {
+	app.Get("/single_file/{myfile:file}", func(ctx iris.Context) {
 		ctx.Writef("file type validates if the parameter value has a form of a file name, got: %s", ctx.Params().Get("myfile"))
 	})
 
 	// http://localhost:8080/myfiles/any/directory/here/
 	// this is the only macro type that accepts any number of path segments.
-	app.Get("/myfiles/{directory:path}", func(ctx context.Context) {
+	app.Get("/myfiles/{directory:path}", func(ctx iris.Context) {
 		ctx.Writef("path type accepts any number of path segments, path after /myfiles/ is: %s", ctx.Params().Get("directory"))
 	})
 
@@ -1121,10 +1111,7 @@ Example code:
 
     package main
 
-    import (
-        "github.com/kataras/iris"
-        "github.com/kataras/iris/context"
-    )
+    import "github.com/kataras/iris"
 
     func main() {
         app := iris.New()
@@ -1135,7 +1122,7 @@ Example code:
         // app.Favicon("./static/favicons/ion_32_32.ico", "/favicon_48_48.ico")
         // This will serve the ./static/favicons/ion_32_32.ico to: localhost:8080/favicon_48_48.ico
 
-        app.Get("/", func(ctx context.Context) {
+        app.Get("/", func(ctx iris.Context) {
             ctx.HTML(`<a href="/favicon.ico"> press here to see the favicon.ico</a>.
             At some browsers like chrome, it should be visible at the top-left side of the browser's window,
             because some browsers make requests to the /favicon.ico automatically,
@@ -1158,7 +1145,7 @@ Example code:
 
       // globally
       // before any routes, appends the middleware to all routes
-      app.Use(func(ctx context.Context){
+      app.Use(func(ctx iris.Context){
          // ... any code here
 
          ctx.Next() // in order to continue to the next handler,
@@ -1184,7 +1171,7 @@ Example code:
 
       // per wildcard, dynamic subdomain
       dynamicSub := app.Party(".*", firstMiddleware, secondMiddleware)
-      dynamicSub.Get("/", func(ctx context.Context){
+      dynamicSub.Get("/", func(ctx iris.Context){
         ctx.Writef("Hello from subdomain: "+ ctx.Subdomain())
       })
 
@@ -1201,7 +1188,6 @@ Example code:
         "github.com/rs/cors"
 
         "github.com/kataras/iris"
-        "github.com/kataras/iris/context"
     )
 
     func main() {
@@ -1226,7 +1212,7 @@ Example code:
         app.Run(iris.Addr(":8080"))
     }
 
-    func h(ctx context.Context) {
+    func h(ctx iris.Context) {
         ctx.Application().Logger().Infof(ctx.Path())
         ctx.Writef("Hello from %s", ctx.Path())
     }
@@ -1236,7 +1222,7 @@ View Engine
 
 
 iris supports 5 template engines out-of-the-box, developers can still use any external golang template engine,
-as `context.ResponseWriter()` is an `io.Writer`.
+as `context/context#ResponseWriter()` is an `io.Writer`.
 
 All of these five template engines have common features with common API,
 like Layout, Template Funcs, Party-specific layout, partial rendering and more.
@@ -1261,10 +1247,7 @@ Example code:
 
     package main
 
-    import (
-        "github.com/kataras/iris"
-        "github.com/kataras/iris/context"
-    )
+    import "github.com/kataras/iris"
 
     func main() {
         app := iris.New() // defaults to these
@@ -1295,7 +1278,7 @@ Example code:
         app.Run(iris.Addr(":8080"), iris.WithCharset("UTF-8")) // defaults to that but you can change it.
     }
 
-    func hi(ctx context.Context) {
+    func hi(ctx iris.Context) {
         ctx.ViewData("Title", "Hi Page")
         ctx.ViewData("Name", "iris") // {{.Name}} will render: iris
         // ctx.ViewData("", myCcustomStruct{})
@@ -1312,10 +1295,7 @@ Example code:
 
     package main
 
-    import (
-        "github.com/kataras/iris"
-        "github.com/kataras/iris/context"
-    )
+    import "github.com/kataras/iris"
 
     func main() {
         app := iris.New()
@@ -1335,7 +1315,7 @@ Example code:
         Title, Name string
     }
 
-    func hi(ctx context.Context) {
+    func hi(ctx iris.Context) {
         ctx.ViewData("", page{Title: "Hi Page", Name: "iris"})
         ctx.View("hi.html")
     }
@@ -1388,7 +1368,6 @@ Example code:
 
     import (
         "github.com/kataras/iris"
-        "github.com/kataras/iris/context"
 
         "github.com/kataras/iris/sessions"
     )
@@ -1398,7 +1377,7 @@ Example code:
         sess                   = sessions.New(sessions.Config{Cookie: cookieNameForSessionID})
     )
 
-    func secret(ctx context.Context) {
+    func secret(ctx iris.Context) {
 
         // Check if user is authenticated
         if auth, _ := sess.Start(ctx).GetBoolean("authenticated"); !auth {
@@ -1410,7 +1389,7 @@ Example code:
         ctx.WriteString("The cake is a lie!")
     }
 
-    func login(ctx context.Context) {
+    func login(ctx iris.Context) {
         session := sess.Start(ctx)
 
         // Authentication goes here
@@ -1420,7 +1399,7 @@ Example code:
         session.Set("authenticated", true)
     }
 
-    func logout(ctx context.Context) {
+    func logout(ctx iris.Context) {
         session := sess.Start(ctx)
 
         // Revoke users authentication
@@ -1464,7 +1443,6 @@ Example Code:
         "time"
 
         "github.com/kataras/iris"
-        "github.com/kataras/iris/context"
 
         "github.com/kataras/iris/sessions"
         "github.com/kataras/iris/sessions/sessiondb/boltdb" // <- IMPORTANT
@@ -1493,10 +1471,10 @@ Example Code:
         // the rest of the code stays the same.
         app := iris.New()
 
-        app.Get("/", func(ctx context.Context) {
+        app.Get("/", func(ctx iris.Context) {
             ctx.Writef("You should navigate to the /set, /get, /delete, /clear,/destroy instead")
         })
-        app.Get("/set", func(ctx context.Context) {
+        app.Get("/set", func(ctx iris.Context) {
             s := sess.Start(ctx)
             //set session values
             s.Set("name", "iris")
@@ -1505,7 +1483,7 @@ Example Code:
             ctx.Writef("All ok session setted to: %s", s.GetString("name"))
         })
 
-        app.Get("/set/{key}/{value}", func(ctx context.Context) {
+        app.Get("/set/{key}/{value}", func(ctx iris.Context) {
             key, value := ctx.Params().Get("key"), ctx.Params().Get("value")
             s := sess.Start(ctx)
             // set session values
@@ -1515,36 +1493,36 @@ Example Code:
             ctx.Writef("All ok session setted to: %s", s.GetString(key))
         })
 
-        app.Get("/get", func(ctx context.Context) {
+        app.Get("/get", func(ctx iris.Context) {
             // get a specific key, as string, if no found returns just an empty string
             name := sess.Start(ctx).GetString("name")
 
             ctx.Writef("The name on the /set was: %s", name)
         })
 
-        app.Get("/get/{key}", func(ctx context.Context) {
+        app.Get("/get/{key}", func(ctx iris.Context) {
             // get a specific key, as string, if no found returns just an empty string
             name := sess.Start(ctx).GetString(ctx.Params().Get("key"))
 
             ctx.Writef("The name on the /set was: %s", name)
         })
 
-        app.Get("/delete", func(ctx context.Context) {
+        app.Get("/delete", func(ctx iris.Context) {
             // delete a specific key
             sess.Start(ctx).Delete("name")
         })
 
-        app.Get("/clear", func(ctx context.Context) {
+        app.Get("/clear", func(ctx iris.Context) {
             // removes all entries
             sess.Start(ctx).Clear()
         })
 
-        app.Get("/destroy", func(ctx context.Context) {
+        app.Get("/destroy", func(ctx iris.Context) {
             //destroy, removes the entire session data and cookie
             sess.Destroy(ctx)
         })
 
-        app.Get("/update", func(ctx context.Context) {
+        app.Get("/update", func(ctx iris.Context) {
             // updates expire date with a new date
             sess.ShiftExpiration(ctx)
         })
@@ -1571,7 +1549,6 @@ Example Server Code:
         "fmt"
 
         "github.com/kataras/iris"
-        "github.com/kataras/iris/context"
 
         "github.com/kataras/iris/websocket"
     )
@@ -1579,7 +1556,7 @@ Example Server Code:
     func main() {
         app := iris.New()
 
-        app.Get("/", func(ctx context.Context) {
+        app.Get("/", func(ctx iris.Context) {
             ctx.ServeFile("websockets.html", false) // second parameter: enable gzip?
         })
 
@@ -1606,7 +1583,7 @@ Example Server Code:
 
         // serve the javascript built'n client-side library,
         // see weboskcets.html script tags, this path is used.
-        app.Any("/iris-ws.js", func(ctx context.Context) {
+        app.Any("/iris-ws.js", func(ctx iris.Context) {
             ctx.Write(websocket.ClientSource)
         })
     }

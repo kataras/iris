@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 )
 
 func main() {
@@ -14,7 +13,7 @@ func main() {
 	// app.Favicon("./static/favicons/favicon.ico.ico", "/favicon_16_16.ico")
 	// This will serve the ./static/favicons/favicon.ico.ico to: localhost:8080/favicon_16_16.ico
 
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		ctx.HTML(`<a href="/favicon.ico"> press here to see the favicon.ico</a>.
 		 At some browsers like chrome, it should be visible at the top-left side of the browser's window,
 		 because some browsers make requests to the /favicon.ico automatically,

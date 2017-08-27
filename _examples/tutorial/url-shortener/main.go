@@ -13,7 +13,6 @@ import (
 	"html/template"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 )
 
 func main() {
@@ -52,7 +51,7 @@ func newApp(db *DB) *iris.Application {
 	// Serve static files (css)
 	app.StaticWeb("/static", "./resources")
 
-	indexHandler := func(ctx context.Context) {
+	indexHandler := func(ctx iris.Context) {
 		ctx.ViewData("URL_COUNT", db.Len())
 		ctx.View("index.html")
 	}
@@ -60,7 +59,7 @@ func newApp(db *DB) *iris.Application {
 
 	// find and execute a short url by its key
 	// used on http://localhost:8080/u/dsaoj41u321dsa
-	execShortURL := func(ctx context.Context, key string) {
+	execShortURL := func(ctx iris.Context, key string) {
 		if key == "" {
 			ctx.StatusCode(iris.StatusBadRequest)
 			return
@@ -75,11 +74,11 @@ func newApp(db *DB) *iris.Application {
 
 		ctx.Redirect(value, iris.StatusTemporaryRedirect)
 	}
-	app.Get("/u/{shortkey}", func(ctx context.Context) {
+	app.Get("/u/{shortkey}", func(ctx iris.Context) {
 		execShortURL(ctx, ctx.Params().Get("shortkey"))
 	})
 
-	app.Post("/shorten", func(ctx context.Context) {
+	app.Post("/shorten", func(ctx iris.Context) {
 		formValue := ctx.FormValue("url")
 		if formValue == "" {
 			ctx.ViewData("FORM_RESULT", "You need to a enter a URL")
@@ -107,7 +106,7 @@ func newApp(db *DB) *iris.Application {
 		indexHandler(ctx) // no redirect, we need the FORM_RESULT.
 	})
 
-	app.Post("/clear_cache", func(ctx context.Context) {
+	app.Post("/clear_cache", func(ctx iris.Context) {
 		db.Clear()
 		ctx.Redirect("/")
 	})

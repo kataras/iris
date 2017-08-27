@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 )
 
 func newApp() *iris.Application {
@@ -53,7 +52,7 @@ func main() {
 	}
 }
 
-func info(ctx context.Context) {
+func info(ctx iris.Context) {
 	method := ctx.Method()
 	subdomain := ctx.Subdomain()
 	path := ctx.Path()

@@ -4,7 +4,6 @@ import (
 	"sync/atomic"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 
 	"github.com/kataras/iris/websocket"
 )
@@ -26,12 +25,12 @@ func main() {
 	// register static assets request path and system directory
 	app.StaticWeb("/js", "./static/assets/js")
 
-	h := func(ctx context.Context) {
+	h := func(ctx iris.Context) {
 		ctx.ViewData("", page{PageID: "index page"})
 		ctx.View("index.html")
 	}
 
-	h2 := func(ctx context.Context) {
+	h2 := func(ctx iris.Context) {
 		ctx.ViewData("", page{PageID: "other page"})
 		ctx.View("other.html")
 	}

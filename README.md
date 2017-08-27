@@ -72,14 +72,11 @@ Iris may have reached version 8, but we're not stopping there. We have many feat
 	- [A URL Shortener Service using Go, Iris and Bolt](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
 	- [Why I preferred Go over Node.js for simple Web Application](https://medium.com/@tigranbs/why-i-preferred-go-over-node-js-for-simple-web-application-d4a549e979b9)
 * [Versioning](#-version)
-    * [When should I upgrade?](#should-i-upgrade-my-iris)
-    * [Where can I find older versions?](#where-can-i-find-older-versions)
-* [Get Hired](#-get-hired)
 * [People](#-people)
 
 ### 🚀 Installation
 
-The only requirement is the [Go Programming Language](https://golang.org/dl/), at least version 1.8
+The only requirement is the [Go Programming Language](https://golang.org/dl/), at least version 1.8 but **1.9** is highly recommended.
 
 ```sh
 $ go get -u github.com/kataras/iris
@@ -90,10 +87,8 @@ $ go get -u github.com/kataras/iris
 ```go
 // file: main.go
 package main
-import (
-    "github.com/kataras/iris"
-    "github.com/kataras/iris/context"
-)
+import "github.com/kataras/iris"
+
 func main() {
     app := iris.New()
     // Load all templates from the "./templates" folder
@@ -103,14 +98,14 @@ func main() {
 
     // Method:    GET
     // Resource:  http://localhost:8080
-    app.Get("/", func(ctx context.Context) {
+    app.Get("/", func(ctx iris.Context) {
         // Bind: {{.message}} with "Hello world!"
         ctx.ViewData("message", "Hello world!")
         // Render template file: ./templates/hello.html
         ctx.View("hello.html")
     })
 
-    // Start the server using a network address and block.
+    // Start the server using a network address.
     app.Run(iris.Addr(":8080"))
 }
 ```
@@ -133,24 +128,27 @@ $ go run main.go
 ```
 
 <details>
-<summary>Hello World with Go 1.9</summary>
+<summary>Hello World with Go 1.8</summary>
 
-Go 1.9 just released.
+Iris declares all of its type alias at the same file in order to be easy to be discovered. 
 
-Dcumentation and examples will be updated soon to use the already-type aliases inside the framework, such as `iris.Context` instead of the origin package.
+> If you just upgraded to go 1.9 from 1.8 you can always search for a compatible type alias at the [context.go](context.go) file and opposite, if you use go 1.8 and you're new to Iris you can see [that](context.go) file to see the compatible packages. 
 
-If you've installed [Go 1.9](https://golang.org/dl) then you can omit the `github.com/kataras/iris/context` package from the imports statement.
+If Go 1.8 remains the basic host for your go apps then you should declare and use the `github.com/kataras/iris/context` package on your source file's imports statement.
 
 ```go
 package main
 
-import "github.com/kataras/iris"
+import (
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
+)
 
 func main() {
 	app := iris.New()
 	app.RegisterView(iris.HTML("./templates", ".html"))
-	
-	app.Get("/", func(ctx iris.Context) {
+
+	app.Get("/", func(ctx context.Context) {
 		ctx.ViewData("message", "Hello world!")
 		ctx.View("hello.html")
 	})
@@ -352,6 +350,7 @@ Testers should upgrade immediately, if you're willing to use _iris_ in productio
 
 Previous versions can be found at [releases page](https://github.com/kataras/iris/releases).
 
+<!--
 ### 😃 Get Hired
 
 Below you'll find a list of open positions that require at least **experience with the Iris web framework**.
@@ -361,6 +360,8 @@ Below you'll find a list of open positions that require at least **experience wi
 | Kudo, an Indonesian startup technology company | Application Programming Interface Developer | Navigate to: https://glints.id/opportunities/jobs/5553 |
 
 Employers that are looking for brilliant Software Engineers with good experience on Go Programming Language and Iris can put their startup's or company's name here or, if privacy is the key, [contact with us](mailto:kataras2006@hotmail.com?subject=Employer%20That%20Hires%20Smart%20Devs) to suggest some good and well-tested freelancers that suits your needs.
+
+-->
 
 ### 🥇 People
 

@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 
 	"github.com/kataras/iris/typescript/editor"
 )
@@ -13,7 +12,7 @@ func main() {
 	// when you edit a typescript file from the alm-tools
 	// it compiles it to javascript, have fun!
 
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		ctx.ServeFile("./www/index.html", false)
 	})
 

@@ -16,8 +16,6 @@ import (
 // README.md: Hello World with Go 1.9
 // core/host/supervisor.go
 // context.go
-// _examples/hello-world/main_go19.go
-// _examples/tutorial/mvc-from-scratch/README.md
 type (
 	// Context is the midle-man server's "object" for the clients.
 	//

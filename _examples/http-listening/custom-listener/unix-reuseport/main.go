@@ -17,7 +17,6 @@ import (
 	"github.com/valyala/tcplisten"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 )
 
 // $ go get github.com/valyala/tcplisten
@@ -26,7 +25,7 @@ import (
 func main() {
 	app := iris.New()
 
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		ctx.HTML("<b>Hello World!</b>")
 	})
 

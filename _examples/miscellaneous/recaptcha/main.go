@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 
 	"github.com/kataras/iris/middleware/recaptcha"
 )
@@ -34,12 +33,12 @@ var htmlForm = `<form action="/comment" method="POST">
     	<input type="submit" name="button" value="Verify">
 </form>`
 
-func showRecaptchaForm(ctx context.Context) {
+func showRecaptchaForm(ctx iris.Context) {
 	contents := fmt.Sprintf(htmlForm, publicDataSiteKey)
 	ctx.HTML(contents)
 }
 
-func postComment(ctx context.Context) {
+func postComment(ctx iris.Context) {
 	// [...]
-	ctx.JSON(context.Map{"success": true})
+	ctx.JSON(iris.Map{"success": true})
 }

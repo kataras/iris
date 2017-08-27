@@ -4,7 +4,6 @@ import (
 	"sync"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/sessions"
 )
 
@@ -25,7 +24,7 @@ var owner = &Owner{
 // Let's implement a context which will give us access
 // to the client's Session with a trivial `ctx.Session()` call.
 type Context struct {
-	context.Context
+	iris.Context
 	session *sessions.Session
 }
 
@@ -49,7 +48,7 @@ var contextPool = sync.Pool{New: func() interface{} {
 	return &Context{}
 }}
 
-func acquire(original context.Context) *Context {
+func acquire(original iris.Context) *Context {
 	ctx := contextPool.Get().(*Context)
 	ctx.Context = original // set the context to the original one in order to have access to iris's implementation.
 	ctx.session = nil      // reset the session
@@ -62,8 +61,8 @@ func release(ctx *Context) {
 
 // Handler will convert our handler of func(*Context) to an iris Handler,
 // in order to be compatible with the HTTP API.
-func Handler(h func(*Context)) context.Handler {
-	return func(original context.Context) {
+func Handler(h func(*Context)) iris.Handler {
+	return func(original iris.Context) {
 		ctx := acquire(original)
 		h(ctx)
 		release(ctx)

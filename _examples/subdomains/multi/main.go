@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 )
 
 func main() {
@@ -17,18 +16,18 @@ func main() {
 
 	dashboard := app.Party("dashboard.")
 	{
-		dashboard.Get("/", func(ctx context.Context) {
+		dashboard.Get("/", func(ctx iris.Context) {
 			ctx.Writef("HEY FROM dashboard")
 		})
 	}
 	system := app.Party("system.")
 	{
-		system.Get("/", func(ctx context.Context) {
+		system.Get("/", func(ctx iris.Context) {
 			ctx.Writef("HEY FROM system")
 		})
 	}
 
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		ctx.Writef("HEY FROM frontend /")
 	})
 	// http://domain.local:80

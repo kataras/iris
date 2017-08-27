@@ -5,7 +5,6 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 )
 
 // register a dynamic-wildcard subdomain to your server machine(dns/...) first, check ./hosts if you use windows.
@@ -20,15 +19,15 @@ func main() {
 	admin := app.Party("admin.")
 	{
 		// admin.mydomain.com
-		admin.Get("/", func(ctx context.Context) {
+		admin.Get("/", func(ctx iris.Context) {
 			ctx.Writef("INDEX FROM admin.mydomain.com")
 		})
 		// admin.mydomain.com/hey
-		admin.Get("/hey", func(ctx context.Context) {
+		admin.Get("/hey", func(ctx iris.Context) {
 			ctx.Writef("HEY FROM admin.mydomain.com/hey")
 		})
 		// admin.mydomain.com/hey2
-		admin.Get("/hey2", func(ctx context.Context) {
+		admin.Get("/hey2", func(ctx iris.Context) {
 			ctx.Writef("HEY SECOND FROM admin.mydomain.com/hey")
 		})
 	}*/
@@ -43,11 +42,11 @@ func main() {
 		dynamicSubdomains.Get("/something/{paramfirst}", dynamicSubdomainHandlerWithParam)
 	}
 
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		ctx.Writef("Hello from mydomain.com path: %s", ctx.Path())
 	})
 
-	app.Get("/hello", func(ctx context.Context) {
+	app.Get("/hello", func(ctx iris.Context) {
 		ctx.Writef("Hello from mydomain.com path: %s", ctx.Path())
 	})
 
@@ -58,14 +57,14 @@ func main() {
 	app.Run(iris.Addr("mydomain.com:8080")) // for beginners: look ../hosts file
 }
 
-func dynamicSubdomainHandler(ctx context.Context) {
+func dynamicSubdomainHandler(ctx iris.Context) {
 	username := ctx.Subdomain()
 	ctx.Writef("Hello from dynamic subdomain path: %s, here you can handle the route for dynamic subdomains, handle the user: %s", ctx.Path(), username)
 	// if  http://username4.mydomain.com:8080/ prints:
 	// Hello from dynamic subdomain path: /, here you can handle the route for dynamic subdomains, handle the user: username4
 }
 
-func dynamicSubdomainHandlerWithParam(ctx context.Context) {
+func dynamicSubdomainHandlerWithParam(ctx iris.Context) {
 	username := ctx.Subdomain()
 	ctx.Writef("Hello from dynamic subdomain path: %s, here you can handle the route for dynamic subdomains, handle the user: %s", ctx.Path(), username)
 	ctx.Writef("The paramfirst is: %s", ctx.Params().Get("paramfirst"))

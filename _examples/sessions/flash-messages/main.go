@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 
 	"github.com/kataras/iris/sessions"
 )
@@ -11,13 +10,13 @@ func main() {
 	app := iris.New()
 	sess := sessions.New(sessions.Config{Cookie: "myappsessionid"})
 
-	app.Get("/set", func(ctx context.Context) {
+	app.Get("/set", func(ctx iris.Context) {
 		s := sess.Start(ctx)
 		s.SetFlash("name", "iris")
 		ctx.Writef("Message setted, is available for the next request")
 	})
 
-	app.Get("/get", func(ctx context.Context) {
+	app.Get("/get", func(ctx iris.Context) {
 		s := sess.Start(ctx)
 		name := s.GetFlashString("name")
 		if name == "" {
@@ -27,7 +26,7 @@ func main() {
 		ctx.Writef("Hello %s", name)
 	})
 
-	app.Get("/test", func(ctx context.Context) {
+	app.Get("/test", func(ctx iris.Context) {
 		s := sess.Start(ctx)
 		name := s.GetFlashString("name")
 		if name == "" {

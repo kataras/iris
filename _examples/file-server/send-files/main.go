@@ -2,13 +2,12 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 )
 
 func main() {
 	app := iris.New()
 
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		file := "./files/first.zip"
 		ctx.SendFile(file, "c.zip")
 	})

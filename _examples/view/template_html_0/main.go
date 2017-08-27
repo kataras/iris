@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 )
 
 func main() {
@@ -34,7 +33,7 @@ func main() {
 	app.Run(iris.Addr(":8080"), iris.WithCharset("UTF-8")) // defaults to that but you can change it.
 }
 
-func hi(ctx context.Context) {
+func hi(ctx iris.Context) {
 	ctx.ViewData("Title", "Hi Page")
 	ctx.ViewData("Name", "iris") // {{.Name}} will render: iris
 	// ctx.ViewData("", myCcustomStruct{})

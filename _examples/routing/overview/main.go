@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 )
 
 func main() {
@@ -44,7 +43,7 @@ func main() {
 
 	usersRoutes := app.Party("/users")
 	// GET: http://localhost:8080/users/help
-	usersRoutes.Get("/help", func(ctx context.Context) {
+	usersRoutes.Get("/help", func(ctx iris.Context) {
 		ctx.Writef("GET / -- fetch all users\n")
 		ctx.Writef("GET /$ID -- fetch a user by id\n")
 		ctx.Writef("POST / -- create new user\n")
@@ -53,32 +52,32 @@ func main() {
 	})
 
 	// GET: http://localhost:8080/users
-	usersRoutes.Get("/", func(ctx context.Context) {
+	usersRoutes.Get("/", func(ctx iris.Context) {
 		ctx.Writef("get all users")
 	})
 
 	// GET: http://localhost:8080/users/42
 	// **/users/42 and /users/help works after iris version 7.0.5**
-	usersRoutes.Get("/{id:int}", func(ctx context.Context) {
+	usersRoutes.Get("/{id:int}", func(ctx iris.Context) {
 		id, _ := ctx.Params().GetInt("id")
 		ctx.Writef("get user by id: %d", id)
 	})
 
 	// POST: http://localhost:8080/users
-	usersRoutes.Post("/", func(ctx context.Context) {
+	usersRoutes.Post("/", func(ctx iris.Context) {
 		username, password := ctx.PostValue("username"), ctx.PostValue("password")
 		ctx.Writef("create user for username= %s and password= %s", username, password)
 	})
 
 	// PUT: http://localhost:8080/users
-	usersRoutes.Put("/{id:int}", func(ctx context.Context) {
+	usersRoutes.Put("/{id:int}", func(ctx iris.Context) {
 		id, _ := ctx.Params().GetInt("id") // or .Get to get its string represatantion.
 		username := ctx.PostValue("username")
 		ctx.Writef("update user for id= %d and new username= %s", id, username)
 	})
 
 	// DELETE: http://localhost:8080/users/42
-	usersRoutes.Delete("/{id:int}", func(ctx context.Context) {
+	usersRoutes.Delete("/{id:int}", func(ctx iris.Context) {
 		id, _ := ctx.Params().GetInt("id")
 		ctx.Writef("delete user by id: %d", id)
 	})
@@ -118,7 +117,7 @@ func main() {
 	}
 }
 
-func info(ctx context.Context) {
+func info(ctx iris.Context) {
 	method := ctx.Method()       // the http method requested a server's resource.
 	subdomain := ctx.Subdomain() // the subdomain, if any.
 

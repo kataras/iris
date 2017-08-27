@@ -4,7 +4,6 @@ import (
 	"io/ioutil"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 )
 
 /*
@@ -20,13 +19,13 @@ const notFoundHTML = "<h1> custom http error page </h1>"
 
 func registerErrors(app *iris.Application) {
 	// set a custom 404 handler
-	app.OnErrorCode(iris.StatusNotFound, func(ctx context.Context) {
+	app.OnErrorCode(iris.StatusNotFound, func(ctx iris.Context) {
 		ctx.HTML(notFoundHTML)
 	})
 }
 
 func registerGamesRoutes(app *iris.Application) {
-	gamesMiddleware := func(ctx context.Context) {
+	gamesMiddleware := func(ctx iris.Context) {
 		ctx.Next()
 	}
 
@@ -107,7 +106,7 @@ func newApp() *iris.Application {
 	// and sends back the same body
 	// remember, we have limit to that body in order
 	// to protect ourselves from "over heating".
-	app.Post("/", context.LimitRequestBodySize(maxBodySize), func(ctx context.Context) {
+	app.Post("/", iris.LimitRequestBodySize(maxBodySize), func(ctx iris.Context) {
 		// get request body
 		b, err := ioutil.ReadAll(ctx.Request().Body)
 		// if is larger then send a bad request status
@@ -123,7 +122,7 @@ func newApp() *iris.Application {
 	return app
 }
 
-func h(ctx context.Context) {
+func h(ctx iris.Context) {
 	method := ctx.Method()       // the http method requested a server's resource.
 	subdomain := ctx.Subdomain() // the subdomain, if any.
 

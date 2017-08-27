@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/middleware/basicauth"
 )
 
@@ -25,7 +24,7 @@ func newApp() *iris.Application {
 		app.Get("/mysecret", authentication, h)
 	*/
 
-	app.Get("/", func(ctx context.Context) { ctx.Redirect("/admin") })
+	app.Get("/", func(ctx iris.Context) { ctx.Redirect("/admin") })
 
 	// to party
 
@@ -49,7 +48,7 @@ func main() {
 	app.Run(iris.Addr(":8080"))
 }
 
-func h(ctx context.Context) {
+func h(ctx iris.Context) {
 	username, password, _ := ctx.Request().BasicAuth()
 	// third parameter it will be always true because the middleware
 	// makes sure for that, otherwise this handler will not be executed.

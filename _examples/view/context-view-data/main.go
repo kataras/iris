@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 )
 
 const (
@@ -19,7 +18,7 @@ func main() {
 	// set the view engine target to ./templates folder
 	app.RegisterView(iris.HTML("./templates", ".html").Reload(true))
 
-	app.Use(func(ctx context.Context) {
+	app.Use(func(ctx iris.Context) {
 		// set the title, current time and a layout in order to be used if and when the next handler(s) calls the .Render function
 		ctx.ViewData("Title", DefaultTitle)
 		now := time.Now().Format(ctx.Application().ConfigurationReadOnly().GetTimeFormat())
@@ -29,14 +28,14 @@ func main() {
 		ctx.Next()
 	})
 
-	app.Get("/", func(ctx context.Context) {
+	app.Get("/", func(ctx iris.Context) {
 		ctx.ViewData("BodyMessage", "a sample text here... setted by the route handler")
 		if err := ctx.View("index.html"); err != nil {
 			ctx.Application().Logger().Infof(err.Error())
 		}
 	})
 
-	app.Get("/about", func(ctx context.Context) {
+	app.Get("/about", func(ctx iris.Context) {
 		ctx.ViewData("Title", "My About Page")
 		ctx.ViewData("BodyMessage", "about text here... setted by the route handler")
 

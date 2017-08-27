@@ -2,13 +2,12 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 )
 
 func main() {
 	app := iris.New()
 
-	none := app.None("/invisible/{username}", func(ctx context.Context) {
+	none := app.None("/invisible/{username}", func(ctx iris.Context) {
 		ctx.Writef("Hello %s with method: %s", ctx.Values().GetString("username"), ctx.Method())
 
 		if from := ctx.Values().GetString("from"); from != "" {
@@ -16,7 +15,7 @@ func main() {
 		}
 	})
 
-	app.Get("/change", func(ctx context.Context) {
+	app.Get("/change", func(ctx iris.Context) {
 
 		if none.IsOnline() {
 			none.Method = iris.MethodNone
@@ -28,7 +27,7 @@ func main() {
 		app.RefreshRouter()
 	})
 
-	app.Get("/execute", func(ctx context.Context) {
+	app.Get("/execute", func(ctx iris.Context) {
 		// same as navigating to "http://localhost:8080/invisible/iris" when /change has being invoked and route state changed
 		// from "offline" to "online"
 		ctx.Values().Set("from", "/execute") // values and session can be shared when calling Exec from a "foreign" context.
