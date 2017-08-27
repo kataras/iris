@@ -2053,7 +2053,7 @@ func (ctx *context) XML(v interface{}, opts ...XML) (int, error) {
 
 // WriteMarkdown parses the markdown to html and renders these contents to the writer.
 func WriteMarkdown(writer io.Writer, markdownB []byte, options Markdown) (int, error) {
-	buf := blackfriday.MarkdownCommon(markdownB)
+	buf := blackfriday.Run(markdownB)
 	if options.Sanitize {
 		buf = bluemonday.UGCPolicy().SanitizeBytes(buf)
 	}
