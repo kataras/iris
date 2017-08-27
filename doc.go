@@ -35,7 +35,7 @@ Source code and other details for the project are available at GitHub:
 
 Current Version
 
-8.3.4
+8.4.0
 
 Installation
 
@@ -824,6 +824,27 @@ Inheritance, recursively, see for example our `mvc.SessionController`, it has th
 and it adds its logic to its `BeginRequest`. Source file: https://github.com/kataras/iris/blob/master/mvc/session_controller.go.
 
 Read access to the current route  via the `Route` field.
+
+Register one or more relative paths and able to get path parameters, i.e
+
+    If `app.Controller("/user", new(user.Controller))`
+
+    - `func(*Controller) Get()` - `GET:/user` , as usual.
+    - `func(*Controller) Post()` - `POST:/user`, as usual.
+    - `func(*Controller) GetLogin()` - `GET:/user/login`
+    - `func(*Controller) PostLogin()` - `POST:/user/login`
+    - `func(*Controller) GetProfileFollowers()` - `GET:/user/profile/followers`
+    - `func(*Controller) PostProfileFollowers()` - `POST:/user/profile/followers`
+    - `func(*Controller) GetBy(id int64)` - `GET:/user/{param:long}`
+    - `func(*Controller) PostBy(id int64)` - `POST:/user/{param:long}`
+
+    If `app.Controller("/profile", new(profile.Controller))`
+
+    - `func(*Controller) GetBy(username string)` - `GET:/profile/{param:string}`
+
+    If `app.Controller("/assets", new(file.Controller))`
+
+    - `func(*Controller) GetByWildard(path string)` - `GET:/assets/{param:path}`
 
 
 Using Iris MVC for code reuse

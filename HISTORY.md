@@ -18,6 +18,48 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+
+# Su, 27 August 2017 | v8.4.0
+
+Add a new macro type for path parameters, `long`, it's the go type `int64`.
+
+```go
+app.Get("/user/{id:long}", func(ctx context.Context) {
+	userID, _ := ctx.Params().GetInt64("id")
+})
+```
+
+And the promise we gave to you some days ago.
+
+The ability to pre-calculate, register and map different (relative) paths inside a single controller
+with zero performance cost.
+
+Meaning that after a `go get -u github.com/kataras/iris` you will be able to use things like these:
+
+If `app.Controller("/user", new(user.Controller))`
+
+- `func(*Controller) Get()` - `GET:/user` , as usual.
+- `func(*Controller) Post()` - `POST:/user`, as usual.
+- `func(*Controller) GetLogin()` - `GET:/user/login`
+- `func(*Controller) PostLogin()` - `POST:/user/login`
+- `func(*Controller) GetProfileFollowers()` - `GET:/user/profile/followers`
+- `func(*Controller) PostProfileFollowers()` - `POST:/user/profile/followers`
+- `func(*Controller) GetBy(id int64)` - `GET:/user/{param:long}`
+- `func(*Controller) PostBy(id int64)` - `POST:/user/{param:long}`
+
+If `app.Controller("/profile", new(profile.Controller))`
+
+- `func(*Controller) GetBy(username string)` - `GET:/profile/{param:string}`
+
+If `app.Controller("/assets", new(file.Controller))`
+
+- `func(*Controller) GetByWildard(path string)` - `GET:/assets/{param:path}`
+
+
+**Example** can be found at: [_examples/mvc/login/user/controller.go](_examples/mvc/login/user/controller.go).
+
+## Pretty [awesome](https://github.com/kataras/iris/stargazers), right?
+
 # We, 23 August 2017 | v8.3.4
 
 Give read access to the current request context's route, a feature that many of you asked a lot.

@@ -208,7 +208,7 @@ func (m *Macro) getFunc(funcName string) ParamEvaluatorBuilder {
 
 // Map contains the default macros mapped to their types.
 // This is the manager which is used by the caller to register custom
-// parameter functions per param-type (String, Int, Alphabetical, File, Path).
+// parameter functions per param-type (String, Int, Long, Alphabetical, File, Path).
 type Map struct {
 	// string type
 	// anything
@@ -216,6 +216,9 @@ type Map struct {
 	// int type
 	// only numbers (0-9)
 	Int *Macro
+	// long an int64 type
+	// only numbers (0-9)
+	Long *Macro
 	// alphabetical/letter type
 	// letters only (upper or lowercase)
 	Alphabetical *Macro
@@ -241,6 +244,7 @@ func NewMap() *Map {
 		// it allows everything, so no need for a regexp here.
 		String:       newMacro(func(string) bool { return true }),
 		Int:          newMacro(MustNewEvaluatorFromRegexp("^[0-9]+$")),
+		Long:         newMacro(MustNewEvaluatorFromRegexp("^[0-9]+$")),
 		Alphabetical: newMacro(MustNewEvaluatorFromRegexp("^[a-zA-Z ]+$")),
 		File:         newMacro(MustNewEvaluatorFromRegexp("^[a-zA-Z0-9_.-]*$")),
 		// it allows everything, we have String and Path as different
@@ -259,6 +263,8 @@ func (m *Map) Lookup(typ ast.ParamType) *Macro {
 	switch typ {
 	case ast.ParamTypeInt:
 		return m.Int
+	case ast.ParamTypeLong:
+		return m.Long
 	case ast.ParamTypeAlphabetical:
 		return m.Alphabetical
 	case ast.ParamTypeFile:

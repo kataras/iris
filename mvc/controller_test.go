@@ -436,3 +436,41 @@ func TestControllerInsideControllerRecursively(t *testing.T) {
 	e.GET("/user/" + username).Expect().
 		Status(httptest.StatusOK).Body().Equal(expected)
 }
+
+type testControllerRelPathFromFunc struct{ mvc.Controller }
+
+func (c *testControllerRelPathFromFunc) EndRequest(ctx context.Context) {
+	ctx.Writef("%s:%s", ctx.Method(), ctx.Path())
+	c.Controller.EndRequest(ctx)
+}
+
+func (c *testControllerRelPathFromFunc) Get()       {}
+func (c *testControllerRelPathFromFunc) GetLogin()  {}
+func (c *testControllerRelPathFromFunc) PostLogin() {}
+
+func (c *testControllerRelPathFromFunc) GetAdminLogin()        {}
+func (c *testControllerRelPathFromFunc) PutSomethingIntoThis() {}
+func (c *testControllerRelPathFromFunc) GetBy(int64)           {}
+
+func (c *testControllerRelPathFromFunc) GetByWildcard(string) {}
+
+func TestControllerRelPathFromFunc(t *testing.T) {
+	app := iris.New()
+	app.Controller("/", new(testControllerRelPathFromFunc))
+
+	e := httptest.New(t, app)
+	e.GET("/").Expect().Status(httptest.StatusOK).
+		Body().Equal("GET:/")
+	e.GET("/login").Expect().Status(httptest.StatusOK).
+		Body().Equal("GET:/login")
+	e.POST("/login").Expect().Status(httptest.StatusOK).
+		Body().Equal("POST:/login")
+	e.GET("/admin/login").Expect().Status(httptest.StatusOK).
+		Body().Equal("GET:/admin/login")
+	e.PUT("/something/into/this").Expect().Status(httptest.StatusOK).
+		Body().Equal("PUT:/something/into/this")
+	e.GET("/42").Expect().Status(httptest.StatusOK).
+		Body().Equal("GET:/42")
+	e.GET("/anything/here").Expect().Status(httptest.StatusOK).
+		Body().Equal("GET:/anything/here")
+}
