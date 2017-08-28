@@ -56,11 +56,10 @@ Iris may have reached version 8, but we're not stopping there. We have many feat
 	* [Sessions](_examples/#sessions)
 	* [Websockets](_examples/#websockets)
 	* [Miscellaneous](_examples/#miscellaneous)
+	* [POC: Convert the medium-sized project "Parrot" from native to Iris](https://github.com/iris-contrib/parrot)
 	* [Typescript Automation Tools](typescript/#table-of-contents)
 	* [Tutorial: Online Visitors](_examples/tutorial/online-visitors)
-	* [Tutorial: URL Shortener using BoltDB](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
-	* [Tutorial: How to turn your Android Device into a fully featured Web Server (**MUST**)](https://twitter.com/ThePracticalDev/status/892022594031017988)
-	* [POC: Convert the medium-sized project "Parrot" from native to Iris](https://github.com/iris-contrib/parrot)
+	* [Tutorial: Caddy](_examples/tutorial/caddy)
 * [Middleware](middleware/)
 * [Dockerize](https://github.com/iris-contrib/cloud-native-go)
 * [Community & Support](#-community)
@@ -84,18 +83,6 @@ $ go get -u github.com/kataras/iris
 ```
 
 > _iris_ takes advantage of the [vendor directory](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo) feature. You get truly reproducible builds, as this method guards against upstream renames and deletes.
-
-```html
-<!-- file: ./views/hello.html -->
-<html>
-<head>
-    <title>Hello Page</title>
-</head>
-<body>
-    <h1>{{.message}}</h1>
-</body>
-</html>
-```
 
 ```go
 // file: main.go
@@ -129,42 +116,18 @@ func main() {
     app.Run(iris.Addr(":8080"))
 }
 ```
-<details>
-<summary>Fan of the MVC Architectural Pattern? Click here</summary>
 
-```go
-package main
-
-import "github.com/kataras/iris"
-
-func main() {
-    app := iris.New()
-    app.RegisterView(iris.HTML("./views", ".html"))
-
-    app.Controller("/", new(Controller))
-
-    app.Run(iris.Addr(":8080"))
-}
-
-type Controller struct {
-    iris.Controller
-}
-
-// Method:    GET
-// Resource:  http://localhost:8080
-func (c *Controller) Get() {
-    c.Data["message"] = "Hello world!"
-    c.Tmpl = "hello.html"
-}
-
-// Method:    GET
-// Resource:  http://localhost:8080/user/42
-func (c *Controller) GetBy(id int64) {
-    c.Ctx.Writef("User ID: %d", id)
-}
+```html
+<!-- file: ./views/hello.html -->
+<html>
+<head>
+    <title>Hello Page</title>
+</head>
+<body>
+    <h1>{{.message}}</h1>
+</body>
+</html>
 ```
-
-</details>
 
 ```sh 
 $ go run main.go
@@ -199,6 +162,43 @@ func main() {
 	})
 
 	app.Run(iris.Addr(":8080"))
+}
+```
+
+</details>
+
+<details>
+<summary>Fan of the MVC Architectural Pattern? Click here</summary>
+
+```go
+package main
+
+import "github.com/kataras/iris"
+
+func main() {
+    app := iris.New()
+    app.RegisterView(iris.HTML("./views", ".html"))
+
+    app.Controller("/", new(Controller))
+
+    app.Run(iris.Addr(":8080"))
+}
+
+type Controller struct {
+    iris.Controller
+}
+
+// Method:    GET
+// Resource:  http://localhost:8080
+func (c *Controller) Get() {
+    c.Data["message"] = "Hello world!"
+    c.Tmpl = "hello.html"
+}
+
+// Method:    GET
+// Resource:  http://localhost:8080/user/42
+func (c *Controller) GetUserBy(id int64) {
+    c.Ctx.Writef("User ID: %d", id)
 }
 ```
 
