@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/mvc"
 
 	"github.com/kataras/iris/middleware/logger"
 	"github.com/kataras/iris/middleware/recover"
@@ -48,9 +47,8 @@ func main() {
 
 // IndexController serves the "/".
 type IndexController struct {
-	// if you build with go1.9 you can omit the import of mvc package
-	// and just use `iris.Controller` instead.
-	mvc.Controller
+	// if you build with go1.8 you have to use the mvc package, `mvc.Controller` instead.
+	iris.Controller
 }
 
 // Get serves
@@ -62,7 +60,7 @@ func (c *IndexController) Get() {
 
 // PingController serves the "/ping".
 type PingController struct {
-	mvc.Controller
+	iris.Controller
 }
 
 // Get serves
@@ -74,7 +72,7 @@ func (c *PingController) Get() {
 
 // HelloController serves the "/hello".
 type HelloController struct {
-	mvc.Controller
+	iris.Controller
 }
 
 type myJSONData struct {

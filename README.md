@@ -65,6 +65,7 @@ Iris may have reached version 8, but we're not stopping there. We have many feat
 * [Dockerize](https://github.com/iris-contrib/cloud-native-go)
 * [Community & Support](#-community)
 * [Blogs](https://iris-go.com/v8/blogs)
+	- [Iris Go vs .NET Core Kestrel in terms of HTTP performance](https://hackernoon.com/iris-go-vs-net-core-kestrel-in-terms-of-http-performance-806195dc93d5)
 	- [Go vs .NET Core in terms of HTTP performance](https://medium.com/@kataras/go-vs-net-core-in-terms-of-http-performance-7535a61b67b8)
 	- [Iris, a modular web framework](https://medium.com/@corebreaker/iris-web-cd684b4685c7)
 	- [Deploying a Iris Golang app in hasura](https://docs.hasura.io/0.14/tutorials/deploying-a-go-iris-app.html)
@@ -84,33 +85,8 @@ $ go get -u github.com/kataras/iris
 
 > _iris_ takes advantage of the [vendor directory](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo) feature. You get truly reproducible builds, as this method guards against upstream renames and deletes.
 
-```go
-// file: main.go
-package main
-import "github.com/kataras/iris"
-
-func main() {
-    app := iris.New()
-    // Load all templates from the "./templates" folder
-    // where extension is ".html" and parse them
-    // using the standard `html/template` package.
-    app.RegisterView(iris.HTML("./templates", ".html"))
-
-    // Method:    GET
-    // Resource:  http://localhost:8080
-    app.Get("/", func(ctx iris.Context) {
-        // Bind: {{.message}} with "Hello world!"
-        ctx.ViewData("message", "Hello world!")
-        // Render template file: ./templates/hello.html
-        ctx.View("hello.html")
-    })
-
-    // Start the server using a network address.
-    app.Run(iris.Addr(":8080"))
-}
-```
 ```html
-<!-- file: ./templates/hello.html -->
+<!-- file: ./views/hello.html -->
 <html>
 <head>
     <title>Hello Page</title>
@@ -120,6 +96,75 @@ func main() {
 </body>
 </html>
 ```
+
+```go
+// file: main.go
+package main
+import "github.com/kataras/iris"
+
+func main() {
+    app := iris.New()
+    // Load all templates from the "./views" folder
+    // where extension is ".html" and parse them
+    // using the standard `html/template` package.
+    app.RegisterView(iris.HTML("./views", ".html"))
+
+    // Method:    GET
+    // Resource:  http://localhost:8080
+    app.Get("/", func(ctx iris.Context) {
+        // Bind: {{.message}} with "Hello world!"
+        ctx.ViewData("message", "Hello world!")
+        // Render template file: ./views/hello.html
+        ctx.View("hello.html")
+    })
+
+    // Method:    GET
+    // Resource:  http://localhost:8080/user/42
+    app.Get("/user/{id:long}", func(ctx iris.Context) {
+        userID, _ := ctx.Params().GetInt64("id")
+        ctx.Writef("User ID: %d", userID)
+    })
+
+    // Start the server using a network address.
+    app.Run(iris.Addr(":8080"))
+}
+```
+<details>
+<summary>Fan of the MVC Architectural Pattern? Click here</summary>
+
+```go
+package main
+
+import "github.com/kataras/iris"
+
+func main() {
+    app := iris.New()
+    app.RegisterView(iris.HTML("./views", ".html"))
+
+    app.Controller("/", new(Controller))
+
+    app.Run(iris.Addr(":8080"))
+}
+
+type Controller struct {
+    iris.Controller
+}
+
+// Method:    GET
+// Resource:  http://localhost:8080
+func (c *Controller) Get() {
+    c.Data["message"] = "Hello world!"
+    c.Tmpl = "hello.html"
+}
+
+// Method:    GET
+// Resource:  http://localhost:8080/user/42
+func (c *Controller) GetBy(id int64) {
+    c.Ctx.Writef("User ID: %d", id)
+}
+```
+
+</details>
 
 ```sh 
 $ go run main.go
