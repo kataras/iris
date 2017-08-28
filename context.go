@@ -122,4 +122,8 @@ type (
 	// the "github.com/kataras/iris/mvc"
 	// package for machines that have not installed go1.9 yet.
 	Controller = mvc.Controller
+	// SessionController is a simple `Controller` implementation
+	// which requires a binded session manager in order to give
+	// direct access to the current client's session via its `Session` field.
+	SessionController = mvc.SessionController
 )

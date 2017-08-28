@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/mvc"
 )
 
 // paths
@@ -22,7 +21,7 @@ const (
 
 // AuthController is the user authentication controller, a custom shared controller.
 type AuthController struct {
-	mvc.SessionController
+	iris.SessionController
 
 	Source *DataSource
 	User   Model `iris:"model"`

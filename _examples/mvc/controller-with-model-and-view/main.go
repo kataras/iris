@@ -4,7 +4,6 @@ import (
 	"sync"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/mvc"
 )
 
 func main() {
@@ -52,7 +51,7 @@ var myDB = &DB{
 // ProfileController our example user controller which controls
 // the paths of "/profile" "/profile/{id:int}" and "/profile/me".
 type ProfileController struct {
-	mvc.Controller // IMPORTANT
+	iris.Controller // IMPORTANT
 
 	User UserModel `iris:"model"`
 	// we will bind it but you can also tag it with`iris:"persistence"`

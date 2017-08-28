@@ -682,7 +682,6 @@ Example Code
 
     import (
         "github.com/kataras/iris"
-        "github.com/kataras/iris/mvc"
 
         "github.com/kataras/iris/middleware/logger"
         "github.com/kataras/iris/middleware/recover"
@@ -720,9 +719,8 @@ Example Code
 
     // IndexController serves the "/".
     type IndexController struct {
-        // if you build with go1.9 you can omit the import of mvc package
-        // and just use `iris.Controller` instead.
-        mvc.Controller
+        // if you build with go1.8 you have to use the mvc package, `mvc.Controller` instead.
+        iris.Controller
     }
 
     // Get serves
@@ -734,7 +732,7 @@ Example Code
 
     // PingController serves the "/ping".
     type PingController struct {
-        mvc.Controller
+        iris.Controller
     }
 
     // Get serves
@@ -746,7 +744,7 @@ Example Code
 
     // HelloController serves the "/hello".
     type HelloController struct {
-        mvc.Controller
+        iris.Controller
     }
 
     // Get serves
@@ -811,7 +809,7 @@ useful to call middlewares or when many methods use the same collection of data.
 
 Optional `EndRequest(ctx)` function to perform any finalization after any method executed.
 
-Inheritance, recursively, see for example our `mvc.SessionController`, it has the `mvc.Controller` as an embedded field
+Inheritance, recursively, see for example our `mvc.SessionController/iris.SessionController`, it has the `mvc.Controller/iris.Controller` as an embedded field
 and it adds its logic to its `BeginRequest`. Source file: https://github.com/kataras/iris/blob/master/mvc/session_controller.go.
 
 Read access to the current route  via the `Route` field.

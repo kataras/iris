@@ -4,15 +4,12 @@ import (
 	"time"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/mvc"
 
 	"github.com/kataras/iris/sessions"
 )
 
 type VisitController struct {
-	// if you build with go1.9 you can omit the import of mvc package
-	// and just use `iris.Controller` instead.
-	mvc.SessionController
+	iris.SessionController
 
 	StartTime time.Time
 }
