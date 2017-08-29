@@ -23,9 +23,9 @@ import (
 	"time"
 
 	"github.com/fatih/structs"
+	"github.com/iris-contrib/form-binder"
 	"github.com/json-iterator/go"
 	"github.com/microcosm-cc/bluemonday"
-	"github.com/monoculum/formam"
 	"github.com/russross/blackfriday"
 
 	"github.com/kataras/iris/core/errors"
@@ -1450,10 +1450,10 @@ func (ctx *context) ReadForm(formObject interface{}) error {
 		return errors.New("An empty form passed on ReadForm")
 	}
 
-	// or dec := formam.NewDecoder(&formam.DecoderOptions{TagName: "form"})
+	// or dec := formbinder.NewDecoder(&formbinder.DecoderOptions{TagName: "form"})
 	// somewhere at the app level. I did change the tagName to "form"
 	// inside its source code, so it's not needed for now.
-	return errReadBody.With(formam.Decode(values, formObject))
+	return errReadBody.With(formbinder.Decode(values, formObject))
 }
 
 //  +------------------------------------------------------------+
