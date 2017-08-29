@@ -1,3 +1,3 @@
 # Contributing
 
-Read our [Code of Conduct](https://github.com/kataras/iris/CODE_OF_CONDUCT.md).
+Read our [Code of Conduct](https://github.com/kataras/iris/tree/master/CODE_OF_CONDUCT.md).
