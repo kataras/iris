@@ -1,0 +1,91 @@
+[[constraint]]
+  name = "github.com/BurntSushi/toml"
+  version = "0.3.0"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/Joker/jade"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/Unknwon/i18n"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/aymerick/raymond"
+
+[[constraint]]
+  name = "github.com/boltdb/bolt"
+  version = "3.3.3"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/eknkc/amber"
+
+[[constraint]]
+  name = "github.com/fatih/structs"
+  version = "1.0.0"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/flosch/pongo2"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/garyburd/redigo"
+
+[[constraint]]
+  name = "github.com/gorilla/websocket"
+  version = "1.2.0"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/iris-contrib/form-binder"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/iris-contrib/httpexpect"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/json-iterator/go"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/kataras/golog"
+
+[[constraint]]
+  name = "github.com/klauspost/compress"
+  version = "1.2.1"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/microcosm-cc/bluemonday"
+
+[[constraint]]
+  name = "github.com/russross/blackfriday"
+  version = "2.0.0"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/ryanuber/columnize"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/satori/go.uuid"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/syndtr/goleveldb"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/valyala/bytebufferpool"
+
+[[constraint]]
+  branch = "master"
+  name = "golang.org/x/crypto"
+
+[[constraint]]
+  branch = "v2"
+  name = "gopkg.in/yaml.v2"
