@@ -15,8 +15,8 @@
   name = "github.com/aymerick/raymond"
 
 [[constraint]]
+  branch = "master"
   name = "github.com/boltdb/bolt"
-  version = "3.3.3"
 
 [[constraint]]
   branch = "master"
