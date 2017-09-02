@@ -115,7 +115,7 @@ type Controller struct {
 	Data   map[string]interface{}
 
 	ContentType string
-	Text        string // or Text
+	Text        string // response as string
 
 	// give access to the request context itself.
 	Ctx context.Context
