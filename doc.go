@@ -163,10 +163,10 @@ Example code:
 
 Listening and gracefully shutdown
 
-You can listen to a server using any type of net.Listener or http.Server instance.
+You can start the server(s) listening to any type of `net.Listener` or even `http.Server` instance.
 The method for initialization of the server should be passed at the end, via `Run` function.
 
-Below you'll read some usage examples:
+Below you'll see some useful examples:
 
 
     // Listening on tcp with network address 0.0.0.0:8080
@@ -190,13 +190,22 @@ Below you'll read some usage examples:
 
 
     // Automatic TLS
-    app.Run(iris.AutoTLS("localhost:443"))
+    app.Run(iris.AutoTLS(":443", "example.com", "admin@example.com"))
 
 
     // UNIX socket
-    l, err := netutil.UNIX("/tmpl/srv.sock", 0666)
+    if errOs := os.Remove(socketFile); errOs != nil && !os.IsNotExist(errOs) {
+        app.Logger().Fatal(errOs)
+    }
+
+    l, err := net.Listen("unix", socketFile)
+
     if err != nil {
-    panic(err)
+        app.Logger().Fatal(err)
+    }
+
+    if err = os.Chmod(socketFile, mode); err != nil {
+        app.Logger().Fatal(err)
     }
 
     app.Run(iris.Listener(l))
@@ -454,7 +463,7 @@ Example code:
     app.Any("/", handler)
 
     func handler(ctx iris.Context){
-    ctx.Writef("Hello from method: %s and path: %s", ctx.Method(), ctx.Path())
+        ctx.Writef("Hello from method: %s and path: %s", ctx.Method(), ctx.Path())
     }
 
 
@@ -471,15 +480,12 @@ A group can have a nested group too.
 Example code:
 
 
-    users:= app.Party("/users", myAuthHandler)
+    users := app.Party("/users", myAuthMiddlewareHandler)
 
     // http://myhost.com/users/42/profile
-    users.Get("/{userid:int}/profile", userProfileHandler)
+    users.Get("/{id:int}/profile", userProfileHandler)
     // http://myhost.com/users/messages/1
-    users.Get("/inbox/{messageid:int}", userMessageHandler)
-
-    app.Run(iris.Addr("myhost.com:80"))
-
+    users.Get("/inbox/{id:int}", userMessageHandler)
 
 
 Custom HTTP Errors

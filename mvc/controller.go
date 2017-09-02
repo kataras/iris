@@ -63,10 +63,9 @@ import (
 // Look `core/router/APIBuilder#Controller` method too.
 type Controller struct {
 	// Name contains the current controller's full name.
+	//
+	// doesn't change on different paths.
 	Name string
-
-	// currentRoute is the current request context's route.
-	currentRoute context.RouteReadOnly
 
 	// contains the `Name` as different words, all lowercase,
 	// without the "Controller" suffix if exists.
@@ -74,6 +73,8 @@ type Controller struct {
 	// we will not try to parse these if not needed
 	// it's up to the end-developer to call `RelPath()` or `RelTmpl()`
 	// which will result to fill them.
+	//
+	// doesn't change on different paths.
 	nameAsWords []string
 
 	// relPath the "as assume" relative request path.
@@ -81,10 +82,12 @@ type Controller struct {
 	// If UserController and request path is "/user/messages" then it's "/messages"
 	// if UserPostController and request path is "/user/post" then it's "/"
 	// if UserProfile and request path is "/user/profile/likes" then it's "/likes"
+	//
+	// doesn't change on different paths.
 	relPath string
 
 	// request path and its parameters, read-write.
-	// Path is the current request path.
+	// Path is the current request path, if changed then it redirects.
 	Path string
 	// Params are the request path's parameters, i.e
 	// for route like "/user/{id}" and request to "/user/42"
@@ -101,12 +104,18 @@ type Controller struct {
 	// If UserController then it's "user/"
 	// if UserPostController then it's "user/post/"
 	// if UserProfile then it's "user/profile/".
+	//
+	// doesn't change on different paths.
 	relTmpl string
+
 	// view read and write,
 	// can be already set-ed by previous handlers as well.
 	Layout string
 	Tmpl   string
 	Data   map[string]interface{}
+
+	ContentType string
+	Text        string // or Text
 
 	// give access to the request context itself.
 	Ctx context.Context
@@ -127,10 +136,7 @@ func (c *Controller) getNameWords() []string {
 
 // Route returns the current request controller's context read-only access route.
 func (c *Controller) Route() context.RouteReadOnly {
-	if c.currentRoute == nil {
-		c.currentRoute = c.Ctx.GetCurrentRoute()
-	}
-	return c.currentRoute
+	return c.Ctx.GetCurrentRoute()
 }
 
 const slashStr = "/"
@@ -208,6 +214,13 @@ func (c *Controller) RelTmpl() string {
 	return c.relTmpl
 }
 
+// Write writes to the client via the context's ResponseWriter.
+// Controller completes the `io.Writer` interface for the shake of ease.
+func (c *Controller) Write(contents []byte) (int, error) {
+	c.tryWriteHeaders()
+	return c.Ctx.ResponseWriter().Write(contents)
+}
+
 // BeginRequest starts the main controller
 // it initialize the Ctx and other fields.
 //
@@ -221,10 +234,24 @@ func (c *Controller) BeginRequest(ctx context.Context) {
 	c.Status = ctx.GetStatusCode()
 	// share values
 	c.Values = ctx.Values()
-	// view
+	// view data for templates, remember
+	// each controller is a new instance, so
+	// checking for nil and then init those type of fields
+	// have no meaning.
 	c.Data = make(map[string]interface{}, 0)
+
 	// context itself
 	c.Ctx = ctx
+}
+
+func (c *Controller) tryWriteHeaders() {
+	if status := c.Status; status > 0 && status != c.Ctx.GetStatusCode() {
+		c.Ctx.StatusCode(status)
+	}
+
+	if contentType := c.ContentType; contentType != "" {
+		c.Ctx.ContentType(contentType)
+	}
 }
 
 // EndRequest is the final method which will be executed
@@ -236,25 +263,32 @@ func (c *Controller) BeginRequest(ctx context.Context) {
 // It's called internally.
 // End-Developer can ovveride it but still should be called at the end.
 func (c *Controller) EndRequest(ctx context.Context) {
-	if path := c.Path; path != "" && path != ctx.Path() {
-		// then redirect
-		ctx.Redirect(path)
+	if ctx.ResponseWriter().Written() > 0 {
 		return
 	}
 
-	if status := c.Status; status > 0 && status != ctx.GetStatusCode() {
-		ctx.StatusCode(status)
+	if path := c.Path; path != "" && path != ctx.Path() {
+		// then redirect and exit.
+		ctx.Redirect(path, c.Status)
+		return
+	}
+
+	c.tryWriteHeaders()
+	if response := c.Text; response != "" {
+		ctx.WriteString(response)
+		return // exit here
 	}
 
 	if view := c.Tmpl; view != "" {
 		if layout := c.Layout; layout != "" {
 			ctx.ViewLayout(layout)
 		}
-		if data := c.Data; data != nil {
+		if data := c.Data; len(data) > 0 {
 			for k, v := range data {
 				ctx.ViewData(k, v)
 			}
 		}
+
 		ctx.View(view)
 	}
 }

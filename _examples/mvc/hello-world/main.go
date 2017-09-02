@@ -35,9 +35,7 @@ func main() {
 	app.Use(recover.New())
 	app.Use(logger.New())
 
-	app.Controller("/", new(IndexController))
-	app.Controller("/ping", new(PingController))
-	app.Controller("/hello", new(HelloController))
+	app.Controller("/", new(ExampleController))
 
 	// http://localhost:8080
 	// http://localhost:8080/ping
@@ -45,63 +43,50 @@ func main() {
 	app.Run(iris.Addr(":8080"))
 }
 
-// IndexController serves the "/".
-type IndexController struct {
+// ExampleController serves the "/", "/ping" and "/hello".
+type ExampleController struct {
 	// if you build with go1.8 you have to use the mvc package, `mvc.Controller` instead.
 	iris.Controller
 }
 
 // Get serves
 // Method:   GET
-// Resource: http://localhost:8080/
-func (c *IndexController) Get() {
-	c.Ctx.HTML("<b>Welcome!</b>")
+// Resource: http://localhost:8080
+func (c *ExampleController) Get() {
+	c.ContentType = "text/html"
+	c.Text = "<h1>Welcome!</h1>"
 }
 
-// PingController serves the "/ping".
-type PingController struct {
-	iris.Controller
-}
-
-// Get serves
+// GetPing serves
 // Method:   GET
 // Resource: http://localhost:8080/ping
-func (c *PingController) Get() {
-	c.Ctx.WriteString("pong")
+func (c *ExampleController) GetPing() {
+	c.Text = "pong"
 }
 
-// HelloController serves the "/hello".
-type HelloController struct {
-	iris.Controller
-}
-
-type myJSONData struct {
-	Message string `json:"message"`
-}
-
-// Get serves
+// GetHello serves
 // Method:   GET
 // Resource: http://localhost:8080/hello
-func (c *HelloController) Get() {
-	c.Ctx.JSON(myJSONData{"Hello iris web framework."})
+func (c *ExampleController) GetHello() {
+	c.Ctx.JSON(iris.Map{"message": "Hello Iris!"})
 }
 
 /* Can use more than one, the factory will make sure
 that the correct http methods are being registered for each route
 for this controller, uncomment these if you want:
 
-func (c *HelloController) Post() {}
-func (c *HelloController) Put() {}
-func (c *HelloController) Delete() {}
-func (c *HelloController) Connect() {}
-func (c *HelloController) Head() {}
-func (c *HelloController) Patch() {}
-func (c *HelloController) Options() {}
-func (c *HelloController) Trace() {}
+func (c *ExampleController) Post() {}
+func (c *ExampleController) Put() {}
+func (c *ExampleController) Delete() {}
+func (c *ExampleController) Connect() {}
+func (c *ExampleController) Head() {}
+func (c *ExampleController) Patch() {}
+func (c *ExampleController) Options() {}
+func (c *ExampleController) Trace() {}
 */
 
 /*
-func (c *HelloController) All() {}
+func (c *ExampleController) All() {}
 //        OR
-func (c *HelloController) Any() {}
+func (c *ExampleController) Any() {}
 */

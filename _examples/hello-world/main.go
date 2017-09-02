@@ -16,9 +16,9 @@ func main() {
 	app.Use(logger.New())
 
 	// Method:   GET
-	// Resource: http://localhost:8080/
+	// Resource: http://localhost:8080
 	app.Handle("GET", "/", func(ctx iris.Context) {
-		ctx.HTML("<b>Welcome!</b>")
+		ctx.HTML("<h1>Welcome</h1>")
 	})
 
 	// same as app.Handle("GET", "/ping", [...])
@@ -31,7 +31,7 @@ func main() {
 	// Method:   GET
 	// Resource: http://localhost:8080/hello
 	app.Get("/hello", func(ctx iris.Context) {
-		ctx.JSON(iris.Map{"message": "Hello iris web framework."})
+		ctx.JSON(iris.Map{"message": "Hello Iris!"})
 	})
 
 	// http://localhost:8080
