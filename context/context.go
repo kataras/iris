@@ -1366,12 +1366,21 @@ func (ctx *context) FormFile(key string) (multipart.File, *multipart.FileHeader,
 func (ctx *context) Redirect(urlToRedirect string, statusHeader ...int) {
 	ctx.StopExecution()
 
-	httpStatus := http.StatusFound // a 'temporary-redirect-like' which works better than for our purpose
-	if len(statusHeader) > 0 && statusHeader[0] > 0 {
-		httpStatus = statusHeader[0]
+	// get the previous status code given by the end-developer.
+	status := ctx.GetStatusCode()
+	if len(statusHeader) > 0 {
+		// check if status code is passed via receivers.
+		if s := statusHeader[0]; s > 0 {
+			status = s
+		}
+	}
+	if status == 0 {
+		// if status remains zero then default it.
+		// a 'temporary-redirect-like' which works better than for our purpose
+		status = http.StatusFound
 	}
 
-	http.Redirect(ctx.writer, ctx.request, urlToRedirect, httpStatus)
+	http.Redirect(ctx.writer, ctx.request, urlToRedirect, status)
 }
 
 //  +------------------------------------------------------------+
