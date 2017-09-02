@@ -258,6 +258,10 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) files to
 
 https://github.com/kataras/iris/tree/master/middleware#third-party-handlers
 
+### Automated API Documentation
+
+- [yaag](apidoc/yaag/main.go)
+
 ### Testing
 
 The `httptest` package is your way for end-to-end HTTP testing, it uses the httpexpect library created by our friend, [gavv](https://github.com/gavv).
