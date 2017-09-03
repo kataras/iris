@@ -23,7 +23,7 @@ func main() {
 	// At the same time,
 	// iris has its own interpeter(yes like a programming language)
 	// for route's path syntax and their dynamic path parameters parsing and evaluation,
-	// I am calling them "macros" for shortcut.
+	// We call them "macros" for shortcut.
 	// How? It calculates its needs and if not any special regexp needed then it just
 	// registers the route with the low-level underline  path syntax,
 	// otherwise it pre-compiles the regexp and adds the necessary middleware(s).
@@ -39,6 +39,12 @@ func main() {
 	//  | {param:int}            |
 	//  +------------------------+
 	// int type
+	// only numbers (0-9)
+	//
+	// +------------------------+
+	// | {param:long}           |
+	// +------------------------+
+	// int64 type
 	// only numbers (0-9)
 	//
 	//  +------------------------+
@@ -63,14 +69,12 @@ func main() {
 	//  +------------------------+
 	// path type
 	// anything, should be the last part, more than one path segment,
-	// i.e: /path1/path2/path3 , ctx.Params().GetString("param") == "/path1/path2/path3"
+	// i.e: /path1/path2/path3 , ctx.Params().Get("param") == "/path1/path2/path3"
 	//
 	// if type is missing then parameter's type is defaulted to string, so
 	// {param} == {param:string}.
 	//
-	// If a function not found on that type then the "string"'s types functions are being used.
-	// i.e:
-	// {param:int min(3)}
+	// If a function not found on that type then the `string` macro type's functions are being used.
 	//
 	//
 	// Besides the fact that iris provides the basic types and some default "macro funcs"
@@ -167,16 +171,10 @@ func main() {
 	// if  "/mypath/{myparam:path}" then the parameter has two names, one is the "*" and the other is the user-defined "myparam".
 
 	// WARNING:
-	// A path parameter name should contain only alphabetical letters, symbols, containing '_' and numbers are NOT allowed.
-	// If route failed to be registered, the app will panic without any warnings
-	// if you didn't catch the second return value(error) on .Handle/.Get....
-
-	// Last, do not confuse ctx.Values() with ctx.Params().
-	// Path parameter's values goes to ctx.Params() and context's local storage
+	// A path parameter name should contain only alphabetical letters. Symbols like  '_' and numbers are NOT allowed.
+	// Last, do not confuse `ctx.Params()` with `ctx.Values()`.
+	// Path parameter's values goes to `ctx.Params()` and context's local storage
 	// that can be used to communicate between handlers and middleware(s) goes to
-	// ctx.Values(), path parameters and the rest of any custom values are separated for your own good.
-
-	if err := app.Run(iris.Addr(":8080")); err != nil {
-		panic(err)
-	}
+	// `ctx.Values()`.
+	app.Run(iris.Addr(":8080"))
 }

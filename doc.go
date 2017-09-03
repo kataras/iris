@@ -682,7 +682,7 @@ MVC - Model View Controller
 Iris has first-class support for the MVC pattern, you'll not find
 these stuff anywhere else in the Go world.
 
-Example Code
+Example Code:
 
     package main
 
@@ -865,7 +865,7 @@ Parameterized Path
 
 At the previous example,
 we've seen static routes, group of routes, subdomains, wildcard subdomains, a small example of parameterized path
-with a single known paramete and custom http errors, now it's time to see wildcard parameters and macros.
+with a single known parameter and custom http errors, now it's time to see wildcard parameters and macros.
 
 iris, like net/http std package registers route's handlers
 by a Handler, the iris' type of handler is just a func(ctx iris.Context)
@@ -876,7 +876,7 @@ Iris has the easiest and the most powerful routing process you have ever meet.
 At the same time,
 iris has its own interpeter(yes like a programming language)
 for route's path syntax and their dynamic path parameters parsing and evaluation,
-I am calling them "macros" for shortcut.
+We call them "macros" for shortcut.
 How? It calculates its needs and if not any special regexp needed then it just
 registers the route with the low-level path syntax,
 otherwise it pre-compiles the regexp and adds the necessary middleware(s).
@@ -893,6 +893,12 @@ Standard macro types for parameters:
     | {param:int}            |
     +------------------------+
     int type
+    only numbers (0-9)
+
+    +------------------------+
+    | {param:long}           |
+    +------------------------+
+    int64 type
     only numbers (0-9)
 
     +------------------------+
@@ -917,7 +923,7 @@ Standard macro types for parameters:
     +------------------------+
     path type
     anything, should be the last part, more than one path segment,
-    i.e: /path1/path2/path3 , ctx.Params().GetString("param") == "/path1/path2/path3"
+    i.e: /path1/path2/path3 , ctx.Params().Get("param") == "/path1/path2/path3"
 
 if type is missing then parameter's type is defaulted to string, so
 {param} == {param:string}.
@@ -949,7 +955,7 @@ so don't care about performance here, the only thing it runs at serve time is th
     })
 
 
-Example code:
+Example Code:
 
 
 	// you can use the "string" type which is valid for a single path parameter that can be anything.
@@ -1014,18 +1020,9 @@ Example code:
 	// this is the only macro type that accepts any number of path segments.
 	app.Get("/myfiles/{directory:path}", func(ctx iris.Context) {
 		ctx.Writef("path type accepts any number of path segments, path after /myfiles/ is: %s", ctx.Params().Get("directory"))
-	})
+    })
 
-    // for wildcard path (any number of path segments) without validation you can use:
-	// /myfiles/*directory
-	// "{param}"'s performance is exactly the same of ":param"'s.
-
-	// alternatives -> ":param" for single path parameter and "*paramPath" for wildcard path parameter
-	// acquire them by ctx.Params().Get as always.
-
-	if err := app.Run(iris.Addr(":8080")); err != nil {
-		panic(err)
-	}
+	app.Run(iris.Addr(":8080"))
 }
 
 
@@ -1658,13 +1655,18 @@ Examples:
 
     https://github.com/kataras/iris/tree/master/_examples
 
-Built'n Middleware:
+Middleware:
 
     https://github.com/kataras/iris/tree/master/middleware
+    https://github.com/iris-contrib/middleware
 
 Home Page:
 
-    http://github.com/kataras/iris
+    https://iris-go.com
+
+Book (in-progress):
+
+    https://docs.iris-go.com
 
 */
 package iris
