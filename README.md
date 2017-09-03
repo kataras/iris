@@ -4,8 +4,6 @@
 <img src="iris_the_new_machine.gif">
 </p>
 
-**Powered by [KeyCDN](https://www.keycdn.com/)**, A Simple, Fast and Reliable CDN.
-
 Iris is a fast, simple and efficient micro web framework for Go. It provides a beautifully expressive and easy to use foundation for your next website, API, or distributed app.
 
 We have no doubt you will able to find other web frameworks written in Go
@@ -19,7 +17,9 @@ you can find online.
 
 Iris may have reached version 8, but we're not stopping there. We have many feature ideas on our board that we're anxious to add and other innovative web development solutions that we're planning to build into Iris.
 
-[Star or watch](https://github.com/kataras/iris/stargazers) this repository to stay updated at general technology progress. It's the only thing we ask from you, it's our sign.
+[Star or watch](https://github.com/kataras/iris/stargazers) this repository to stay updated.
+
+**Accelerated by [KeyCDN](https://www.keycdn.com/)**, A Simple, Fast and Reliable CDN.
 
 <!-- [![total used by](https://iris-go.com/graph?style=flat-square)](https://iris-go.com/graph) -->
 [![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=flat-square)](https://travis-ci.org/kataras/iris)
@@ -40,10 +40,10 @@ Iris may have reached version 8, but we're not stopping there. We have many feat
 * [Installation](#-installation)
 * [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#su-27-august-2017--v840)
 * [Learn](#-learn)
-	* [HTTP Listening](_examples/#http-listening)
+    * [HTTP Listening](_examples/#http-listening)
 	* [Configuration](_examples/#configuration)
 	* [Routing, Grouping, Dynamic Path Parameters, "Macros" and Custom Context](_examples/#routing-grouping-dynamic-path-parameters-macros-and-custom-context)
-	* [MVC (Model View Controller)](_examples/#mvc)
+	* [MVC (Model View Controller)](_examples/#mvc) **NEW**
 	* [Subdomains](_examples/#subdomains)
 	* [Wrap `http.Handler/HandlerFunc`](_examples/#convert-httphandlerhandlerfunc)
 	* [View](_examples/#view)
