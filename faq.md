@@ -1,14 +1,28 @@
+# FAQ
+
 ## How to upgrade
 
 ```sh
 go get -u github.com/kataras/iris
 ```
 
+## Learning
+
+More than 50 practical examples, tutorials and articles at:
+
+- https://github.com/kataras/iris/tree/master/_examples
+- https://github.com/iris-contrib/examples
+- https://iris-go.com/v8/recipe
+- https://docs.iris-go.com (in-progress)
+- https://godoc.org/github.com/kataras/iris
+
+> [Stay tuned](https://github.com/kataras/iris/stargazers), community prepares even more tutorials.
+
+Want to help and join to the greatest community? Describe your skills and push your own sections at: https://github.com/kataras/build-a-better-web-together/issues/new
+
 ## Active development mode
 
-Many ideas to implement but no breaking changes.
-
-https://github.com/kataras/iris/issues/722
+Iris may have reached version 8, but we're not stopping there. We have many feature ideas on our board that we're anxious to add and other innovative web development solutions that we're planning to build into Iris.
 
 ## Can I found a job if I learn how to use Iris?
 
