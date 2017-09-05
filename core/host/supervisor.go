@@ -251,6 +251,8 @@ func (su *Supervisor) ListenAndServeTLS(certFile string, keyFile string) error {
 			return err
 		}
 
+		// manually inserted as pre-go 1.9 for any case.
+		cfg.NextProtos = []string{"h2", "http/1.1"}
 		su.Server.TLSConfig = cfg
 		return su.ListenAndServe()
 	}
