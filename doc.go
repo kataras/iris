@@ -1222,14 +1222,14 @@ Example code:
 View Engine
 
 
-iris supports 5 template engines out-of-the-box, developers can still use any external golang template engine,
+Iris supports 5 template engines out-of-the-box, developers can still use any external golang template engine,
 as `context/context#ResponseWriter()` is an `io.Writer`.
 
 All of these five template engines have common features with common API,
 like Layout, Template Funcs, Party-specific layout, partial rendering and more.
 
       The standard html,
-      its template parser is the golang.org/pkg/html/template/.
+      its template parser is the golang.org/pkg/html/template/
 
       Django,
       its template parser is the github.com/flosch/pongo2
@@ -1251,7 +1251,7 @@ Example code:
     import "github.com/kataras/iris"
 
     func main() {
-        app := iris.New() // defaults to these
+        app := iris.New()
 
         // - standard html  | iris.HTML(...)
         // - django         | iris.Django(...)
@@ -1268,9 +1268,13 @@ Example code:
         // - {{ render_r "header.html" }} // partial relative path to current page
         // - {{ yield }}
         // - {{ current }}
+
+        // register a custom template func.
         tmpl.AddFunc("greet", func(s string) string {
             return "Greetings " + s + "!"
         })
+
+        // register the view engine to the views, this will load the templates.
         app.RegisterView(tmpl)
 
         app.Get("/", hi)

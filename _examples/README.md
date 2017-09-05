@@ -90,6 +90,9 @@ Navigate through examples for a better understanding.
     * [method overriding](routing/custom-context/method-overriding/main.go)
     * [new implementation](routing/custom-context/new-implementation/main.go)
 - [Route State](routing/route-state/main.go)
+- [Writing a middleware](routing/writing-a-middleware)
+    * [per-route](routing/writing-a-middleware/per-route/main.go)
+    * [globally](routing/writing-a-middleware/globally/main.go)
 
 ### MVC
 
