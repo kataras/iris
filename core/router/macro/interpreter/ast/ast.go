@@ -18,11 +18,11 @@ const (
 	// Declaration: /mypath/{myparam:string} or /mypath{myparam}
 	ParamTypeString
 	// ParamTypeInt is the integer, a number type.
-	// Allows only possitive numbers (0-9)
+	// Allows only positive numbers (0-9)
 	// Declaration: /mypath/{myparam:int}
 	ParamTypeInt
 	// ParamTypeLong is the integer, a number type.
-	// Allows only possitive numbers (0-9)
+	// Allows only positive numbers (0-9)
 	// Declaration: /mypath/{myparam:long}
 	ParamTypeLong
 	// ParamTypeBoolean is the bool type.

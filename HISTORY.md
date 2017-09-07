@@ -37,7 +37,7 @@ Add `context.Params().GetBool(paramName string) (bool, error)` respectfully.
 
 ```go
 app := iris.New()
-app.Get("/mypath/{has:boolean}", func(ctx iris.Context){ // <--
+app.Get("/mypath/{has:boolean}", func(ctx iris.Context) { // <--
     // boolean first return value
     // error as second return value
     //

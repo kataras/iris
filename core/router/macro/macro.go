@@ -215,11 +215,11 @@ type Map struct {
 	// anything
 	String *Macro
 	// uint type
-	// only possitive numbers (+0-9)
+	// only positive numbers (+0-9)
 	// it could be uint/uint32 but we keep int for simplicity
 	Int *Macro
 	// long an int64 type
-	// only possitive numbers (+0-9)
+	// only positive numbers (+0-9)
 	// it could be uint64 but we keep int64 for simplicity
 	Long *Macro
 	// boolean as bool type
