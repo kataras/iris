@@ -444,15 +444,17 @@ func (c *testControllerRelPathFromFunc) EndRequest(ctx context.Context) {
 	c.Controller.EndRequest(ctx)
 }
 
-func (c *testControllerRelPathFromFunc) Get()       {}
+func (c *testControllerRelPathFromFunc) Get()                 {}
+func (c *testControllerRelPathFromFunc) GetBy(int64)          {}
+func (c *testControllerRelPathFromFunc) GetByWildcard(string) {}
+
 func (c *testControllerRelPathFromFunc) GetLogin()  {}
 func (c *testControllerRelPathFromFunc) PostLogin() {}
 
-func (c *testControllerRelPathFromFunc) GetAdminLogin()        {}
-func (c *testControllerRelPathFromFunc) PutSomethingIntoThis() {}
-func (c *testControllerRelPathFromFunc) GetBy(int64)           {}
+func (c *testControllerRelPathFromFunc) GetAdminLogin() {}
 
-func (c *testControllerRelPathFromFunc) GetByWildcard(string) {}
+func (c *testControllerRelPathFromFunc) PutSomethingIntoThis() {}
+func (c *testControllerRelPathFromFunc) GetSomethingBy(bool)   {}
 
 func TestControllerRelPathFromFunc(t *testing.T) {
 	app := iris.New()
@@ -461,6 +463,16 @@ func TestControllerRelPathFromFunc(t *testing.T) {
 	e := httptest.New(t, app)
 	e.GET("/").Expect().Status(httptest.StatusOK).
 		Body().Equal("GET:/")
+
+	e.GET("/42").Expect().Status(httptest.StatusOK).
+		Body().Equal("GET:/42")
+	e.GET("/something/true").Expect().Status(httptest.StatusOK).
+		Body().Equal("GET:/something/true")
+	e.GET("/something/false").Expect().Status(httptest.StatusOK).
+		Body().Equal("GET:/something/false")
+	e.GET("/something/truee").Expect().Status(httptest.StatusNotFound)
+	e.GET("/something/falsee").Expect().Status(httptest.StatusNotFound)
+
 	e.GET("/login").Expect().Status(httptest.StatusOK).
 		Body().Equal("GET:/login")
 	e.POST("/login").Expect().Status(httptest.StatusOK).

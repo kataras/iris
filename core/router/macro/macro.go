@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"strconv"
 	"unicode"
 
 	"github.com/kataras/iris/core/router/macro/interpreter/ast"
@@ -208,17 +209,23 @@ func (m *Macro) getFunc(funcName string) ParamEvaluatorBuilder {
 
 // Map contains the default macros mapped to their types.
 // This is the manager which is used by the caller to register custom
-// parameter functions per param-type (String, Int, Long, Alphabetical, File, Path).
+// parameter functions per param-type (String, Int, Long, Boolean, Alphabetical, File, Path).
 type Map struct {
 	// string type
 	// anything
 	String *Macro
-	// int type
-	// only numbers (0-9)
+	// uint type
+	// only possitive numbers (+0-9)
+	// it could be uint/uint32 but we keep int for simplicity
 	Int *Macro
 	// long an int64 type
-	// only numbers (0-9)
+	// only possitive numbers (+0-9)
+	// it could be uint64 but we keep int64 for simplicity
 	Long *Macro
+	// boolean as bool type
+	// a string which is "1" or "t" or "T" or "TRUE" or "true" or "True"
+	// or "0" or "f" or "F" or "FALSE" or "false" or "False".
+	Boolean *Macro
 	// alphabetical/letter type
 	// letters only (upper or lowercase)
 	Alphabetical *Macro
@@ -242,9 +249,15 @@ type Map struct {
 func NewMap() *Map {
 	return &Map{
 		// it allows everything, so no need for a regexp here.
-		String:       newMacro(func(string) bool { return true }),
-		Int:          newMacro(MustNewEvaluatorFromRegexp("^[0-9]+$")),
-		Long:         newMacro(MustNewEvaluatorFromRegexp("^[0-9]+$")),
+		String: newMacro(func(string) bool { return true }),
+		Int:    newMacro(MustNewEvaluatorFromRegexp("^[0-9]+$")),
+		Long:   newMacro(MustNewEvaluatorFromRegexp("^[0-9]+$")),
+		Boolean: newMacro(func(paramValue string) bool {
+			// a simple if statement is faster than regex ^(true|false|True|False|t|0|f|FALSE|TRUE)$
+			// in this case.
+			_, err := strconv.ParseBool(paramValue)
+			return err == nil
+		}),
 		Alphabetical: newMacro(MustNewEvaluatorFromRegexp("^[a-zA-Z ]+$")),
 		File:         newMacro(MustNewEvaluatorFromRegexp("^[a-zA-Z0-9_.-]*$")),
 		// it allows everything, we have String and Path as different
@@ -265,6 +278,8 @@ func (m *Map) Lookup(typ ast.ParamType) *Macro {
 		return m.Int
 	case ast.ParamTypeLong:
 		return m.Long
+	case ast.ParamTypeBoolean:
+		return m.Boolean
 	case ast.ParamTypeAlphabetical:
 		return m.Alphabetical
 	case ast.ParamTypeFile:

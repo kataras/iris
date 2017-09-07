@@ -107,6 +107,14 @@ func (r RequestParams) GetInt64(key string) (int64, error) {
 	return r.store.GetInt64(key)
 }
 
+// GetBool returns the user's value as bool, based on its key.
+// a string which is "1" or "t" or "T" or "TRUE" or "true" or "True"
+// or "0" or "f" or "F" or "FALSE" or "false" or "False".
+// Any other value returns an error.
+func (r RequestParams) GetBool(key string) (bool, error) {
+	return r.store.GetBool(key)
+}
+
 // GetDecoded returns the url-query-decoded user's value based on its key.
 func (r RequestParams) GetDecoded(key string) string {
 	return DecodeQuery(DecodeQuery(r.Get(key)))
@@ -1368,6 +1376,10 @@ func (ctx *context) Redirect(urlToRedirect string, statusHeader ...int) {
 
 	// get the previous status code given by the end-developer.
 	status := ctx.GetStatusCode()
+	if status < 300 { // the previous is not a RCF-valid redirect status.
+		status = 0
+	}
+
 	if len(statusHeader) > 0 {
 		// check if status code is passed via receivers.
 		if s := statusHeader[0]; s > 0 {

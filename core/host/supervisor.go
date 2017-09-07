@@ -254,7 +254,12 @@ func (su *Supervisor) ListenAndServeTLS(certFile string, keyFile string) error {
 		// manually inserted as pre-go 1.9 for any case.
 		cfg.NextProtos = []string{"h2", "http/1.1"}
 		su.Server.TLSConfig = cfg
-		return su.ListenAndServe()
+
+		// It does nothing more than the su.Server.ListenAndServeTLS anymore.
+		// - no hurt if we let it as it is
+		// - no problem if we remove it as well
+		// but let's comment this as proposed, fewer code is better:
+		// return su.ListenAndServe()
 	}
 
 	if su.Server.TLSConfig == nil {
