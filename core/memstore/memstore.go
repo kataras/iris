@@ -181,6 +181,14 @@ func (r *Store) GetInt64(key string) (int64, error) {
 	return strconv.ParseInt(r.GetString(key), 10, 64)
 }
 
+// GetBool returns the user's value as bool, based on its key.
+// a string which is "1" or "t" or "T" or "TRUE" or "true" or "True"
+// or "0" or "f" or "F" or "FALSE" or "false" or "False".
+// Any other value returns an error.
+func (r *Store) GetBool(key string) (bool, error) {
+	return strconv.ParseBool(key)
+}
+
 // Remove deletes an entry linked to that "key",
 // returns true if an entry is actually removed.
 func (r *Store) Remove(key string) bool {

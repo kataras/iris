@@ -53,6 +53,13 @@ func resolveCaller(p pathInfo) callerFunc {
 		}
 	}
 
+	if p.ParamType == paramTypeBoolean {
+		return func(ctx context.Context, f interface{}) {
+			paramValue, _ := ctx.Params().GetBool(paramName)
+			f.(func(bool))(paramValue)
+		}
+	}
+
 	// else it's string or path, both of them are simple strings.
 	return func(ctx context.Context, f interface{}) {
 		paramValue := ctx.Params().Get(paramName)

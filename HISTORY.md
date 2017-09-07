@@ -2,7 +2,7 @@
 
 ### Looking for free support?
 
-	http://support.iris-go.com
+    http://support.iris-go.com
     https://kataras.rocket.chat/channel/iris
 
 ### Looking for previous versions?
@@ -18,6 +18,72 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+# Th, 07 September 2017 | v8.4.1
+
+## Routing
+
+Add a macro type for booleans: `app.Get("/mypath/{paramName:boolean}", myHandler)`.
+
+```sh
++------------------------+
+| {param:boolean}        |
++------------------------+
+bool type
+only "1" or "t" or "T" or "TRUE" or "true" or "True"
+or "0" or "f" or "F" or "FALSE" or "false" or "False"
+```
+
+Add `context.Params().GetBool(paramName string) (bool, error)` respectfully.
+
+```go
+app := iris.New()
+app.Get("/mypath/{has:boolean}", func(ctx iris.Context){ // <--
+    // boolean first return value
+    // error as second return value
+    //
+    // error will be always nil here because
+    // we use the {has:boolean} so router
+    // makes sure that the parameter is a boolean
+    // otherwise it will return a 404 not found http error code
+    // skipping the call of this handler.
+    has, _ := ctx.Params().GetBool("has") // <--
+    if has {
+        ctx.HTML("<strong>it's true</strong>")
+    }else {
+        ctx.HTML("<strong>it's false</string>")
+    }
+})
+// [...]
+```
+
+## MVC
+
+Support for boolean method receivers, i.e `GetBy(bool), PostBy(bool)...`.
+
+
+```go
+app := iris.New()
+
+app.Controller("/equality", new(Controller))
+```
+
+```go
+type Controller struct {
+    iris.Controller
+}
+
+// handles the "/equality" path.
+func (c *Controller) Get() {
+
+}
+
+// registers and handles the path: "/equality/{param:boolean}".
+func (c *Controller) GetBy(is bool) { // <--
+    // [...]
+}
+```
+
+> Supported types for method functions receivers are: int, int64, bool and string.
 
 # Su, 27 August 2017 | v8.4.0
 

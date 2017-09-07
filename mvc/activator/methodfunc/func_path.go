@@ -20,15 +20,17 @@ type pathInfo struct {
 }
 
 const (
-	paramTypeInt    = "int"
-	paramTypeLong   = "long"
-	paramTypeString = "string"
-	paramTypePath   = "path"
+	paramTypeInt     = "int"
+	paramTypeLong    = "long"
+	paramTypeBoolean = "boolean"
+	paramTypeString  = "string"
+	paramTypePath    = "path"
 )
 
 var macroTypes = map[string]string{
 	"int":    paramTypeInt,
 	"int64":  paramTypeLong,
+	"bool":   paramTypeBoolean,
 	"string": paramTypeString,
 	// there is "path" param type but it's being captured "on-air"
 	// "file" param type is not supported by the current implementation, yet
@@ -71,7 +73,7 @@ func resolveRelativePath(info FuncInfo) (p pathInfo, ok bool) {
 			}
 		}
 
-		// int and string are supported.
+		// int, int64, bool and string are supported.
 		// as there is no way to get the parameter name
 		// we will use the "param" everywhere.
 		suffix := fmt.Sprintf("/{%s:%s}", paramName, paramType)

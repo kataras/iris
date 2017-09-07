@@ -131,6 +131,13 @@ func TestParseParam(t *testing.T) {
 				Type:      ast.ParamTypeLong,
 				ErrorCode: 404,
 			}}, // 8
+		{true,
+			ast.ParamStatement{
+				Src:       "{has:boolean else 404}",
+				Name:      "has",
+				Type:      ast.ParamTypeBoolean,
+				ErrorCode: 404,
+			}}, // 9
 
 	}
 

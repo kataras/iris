@@ -47,6 +47,13 @@ func main() {
 	// int64 type
 	// only numbers (0-9)
 	//
+	// +------------------------+
+	// | {param:boolean}        |
+	// +------------------------+
+	// bool type
+	// only "1" or "t" or "T" or "TRUE" or "true" or "True"
+	// or "0" or "f" or "F" or "FALSE" or "false" or "False"
+	//
 	//  +------------------------+
 	//  | {param:alphabetical}   |
 	//  +------------------------+

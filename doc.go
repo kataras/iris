@@ -832,7 +832,6 @@ Register one or more relative paths and able to get path parameters, i.e
     - `func(*Controller) PostProfileFollowers()` - `POST:/user/profile/followers`
     - `func(*Controller) GetBy(id int64)` - `GET:/user/{param:long}`
     - `func(*Controller) PostBy(id int64)` - `POST:/user/{param:long}`
-
     If `app.Controller("/profile", new(profile.Controller))`
 
     - `func(*Controller) GetBy(username string)` - `GET:/profile/{param:string}`
@@ -840,6 +839,12 @@ Register one or more relative paths and able to get path parameters, i.e
     If `app.Controller("/assets", new(file.Controller))`
 
     - `func(*Controller) GetByWildard(path string)` - `GET:/assets/{param:path}`
+
+    If `app.Controller("/equality", new(profile.Equality))`
+
+    - `func(*Controller) GetBy(is bool)` - `GET:/equality/{param:boolean}`
+
+    Supported types for method functions receivers: int, int64, bool and string.
 
 
 Using Iris MVC for code reuse
@@ -900,6 +905,13 @@ Standard macro types for parameters:
     +------------------------+
     int64 type
     only numbers (0-9)
+
+    +------------------------+
+    | {param:boolean}        |
+    +------------------------+
+    bool type
+    only "1" or "t" or "T" or "TRUE" or "true" or "True"
+    or "0" or "f" or "F" or "FALSE" or "false" or "False"
 
     +------------------------+
     | {param:alphabetical}   |
