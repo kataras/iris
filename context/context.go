@@ -71,15 +71,15 @@ func (u UnmarshalerFunc) Unmarshal(data []byte, v interface{}) error {
 	return u(data, v)
 }
 
-// RequestParams is a key string - value string storage which context's request params should implement.
-// RequestValues is for communication between middleware, RequestParams cannot be changed, are setted at the routing
-// time, stores the dynamic named parameters, can be empty if the route is static.
+// RequestParams is a key string - value string storage which
+// context's request dynamic path params are being kept.
+// Empty if the route is static.
 type RequestParams struct {
 	store memstore.Store
 }
 
-// Set shouldn't be used as a local storage, context's values store
-// is the local storage, not params.
+// Set adds a key-value pair to the path parameters values
+// it's being called internally so it shouldn't be used as a local storage by the user, use `ctx.Values()` instead.
 func (r *RequestParams) Set(key, value string) {
 	r.store.Set(key, value)
 }
@@ -97,27 +97,43 @@ func (r RequestParams) Get(key string) string {
 	return r.store.GetString(key)
 }
 
-// GetInt returns the param's value as int, based on its key.
+// GetTrim returns a path parameter's value without trailing spaces based on its route's dynamic path key.
+func (r RequestParams) GetTrim(key string) string {
+	return strings.TrimSpace(r.Get(key))
+}
+
+// GetEscape returns a path parameter's double-url-query-escaped value based on its route's dynamic path key.
+func (r RequestParams) GetEscape(key string) string {
+	return DecodeQuery(DecodeQuery(r.Get(key)))
+}
+
+// GetDecoded returns a path parameter's double-url-query-escaped value based on its route's dynamic path key.
+// same as `GetEscape`.
+func (r RequestParams) GetDecoded(key string) string {
+	return r.GetEscape(key)
+}
+
+// GetInt returns the path parameter's value as int, based on its key.
 func (r RequestParams) GetInt(key string) (int, error) {
 	return r.store.GetInt(key)
 }
 
-// GetInt64 returns the user's value as int64, based on its key.
+// GetInt64 returns the path paramete's value as int64, based on its key.
 func (r RequestParams) GetInt64(key string) (int64, error) {
 	return r.store.GetInt64(key)
 }
 
-// GetBool returns the user's value as bool, based on its key.
+// GetFloat64 returns a path parameter's value based as float64 on its route's dynamic path key.
+func (r RequestParams) GetFloat64(key string) (float64, error) {
+	return strconv.ParseFloat(r.Get(key), 64)
+}
+
+// GetBool returns the path parameter's value as bool, based on its key.
 // a string which is "1" or "t" or "T" or "TRUE" or "true" or "True"
 // or "0" or "f" or "F" or "FALSE" or "false" or "False".
 // Any other value returns an error.
 func (r RequestParams) GetBool(key string) (bool, error) {
 	return r.store.GetBool(key)
-}
-
-// GetDecoded returns the url-query-decoded user's value based on its key.
-func (r RequestParams) GetDecoded(key string) string {
-	return DecodeQuery(DecodeQuery(r.Get(key)))
 }
 
 // GetIntUnslashed same as Get but it removes the first slash if found.
@@ -350,12 +366,24 @@ type Context interface {
 
 	// URLParam returns the get parameter from a request , if any.
 	URLParam(name string) string
+	// URLParamTrim returns the url query parameter with trailing white spaces removed from a request,
+	// returns an error if parse failed.
+	URLParamTrim(name string) string
+	// URLParamTrim returns the escaped url query parameter from a request,
+	// returns an error if parse failed.
+	URLParamEscape(name string) string
 	// URLParamInt returns the url query parameter as int value from a request,
 	// returns an error if parse failed.
 	URLParamInt(name string) (int, error)
 	// URLParamInt64 returns the url query parameter as int64 value from a request,
 	// returns an error if parse failed.
 	URLParamInt64(name string) (int64, error)
+	// URLParamInt64 returns the url query parameter as float64 value from a request,
+	// returns an error if parse failed.
+	URLParamFloat64(name string) (float64, error)
+	// URLParamBool returns the url query parameter as boolean value from a request,
+	// returns an error if parse failed.
+	URLParamBool(name string) (bool, error)
 	// URLParams returns a map of GET query parameters separated by comma if more than one
 	// it returns an empty map if nothing found.
 	URLParams() map[string]string
@@ -367,9 +395,27 @@ type Context interface {
 	//
 	// NOTE: A check for nil is necessary.
 	FormValues() map[string][]string
+
 	// PostValue returns a form's only-post value by its name,
 	// same as Request.PostFormValue.
 	PostValue(name string) string
+	// PostValueTrim returns a form's only-post value without trailing spaces by its name.
+	PostValueTrim(name string) string
+	// PostValueEscape returns a form's only-post escaped value by its name.
+	PostValueEscape(name string) string
+	// PostValueInt returns a form's only-post value as int by its name.
+	PostValueInt(name string) (int, error)
+	// PostValueInt64 returns a form's only-post value as int64 by its name.
+	PostValueInt64(name string) (int64, error)
+	// PostValueFloat64 returns a form's only-post value as float64 by its name.
+	PostValueFloat64(name string) (float64, error)
+	// PostValue returns a form's only-post value as boolean by its name.
+	PostValueBool(name string) (bool, error)
+	// PostValues returns a form's only-post values.
+	// PostValues calls ParseMultipartForm and ParseForm if necessary and ignores
+	// any errors returned by these functions.
+	PostValues(name string) []string
+
 	// FormFile returns the first file for the provided form key.
 	// FormFile calls ctx.Request.ParseMultipartForm and ParseForm if necessary.
 	//
@@ -1298,6 +1344,18 @@ func (ctx *context) URLParam(name string) string {
 	return ctx.request.URL.Query().Get(name)
 }
 
+// URLParamTrim returns the url query parameter with trailing white spaces removed from a request,
+// returns an error if parse failed.
+func (ctx *context) URLParamTrim(name string) string {
+	return strings.TrimSpace(ctx.URLParam(name))
+}
+
+// URLParamTrim returns the escaped url query parameter from a request,
+// returns an error if parse failed.
+func (ctx *context) URLParamEscape(name string) string {
+	return DecodeQuery(ctx.URLParam(name))
+}
+
 // URLParamInt returns the url query parameter as int value from a request,
 // returns an error if parse failed.
 func (ctx *context) URLParamInt(name string) (int, error) {
@@ -1308,6 +1366,18 @@ func (ctx *context) URLParamInt(name string) (int, error) {
 // returns an error if parse failed.
 func (ctx *context) URLParamInt64(name string) (int64, error) {
 	return strconv.ParseInt(ctx.URLParam(name), 10, 64)
+}
+
+// URLParamInt64 returns the url query parameter as float64 value from a request,
+// returns an error if parse failed.
+func (ctx *context) URLParamFloat64(name string) (float64, error) {
+	return strconv.ParseFloat(ctx.URLParam(name), 64)
+}
+
+// URLParamBool returns the url query parameter as boolean value from a request,
+// returns an error if parse failed.
+func (ctx *context) URLParamBool(name string) (bool, error) {
+	return strconv.ParseBool(ctx.URLParam(name))
 }
 
 // URLParams returns a map of GET query parameters separated by comma if more than one
@@ -1356,6 +1426,57 @@ func (ctx *context) FormValues() map[string][]string {
 // same as Request.PostFormValue.
 func (ctx *context) PostValue(name string) string {
 	return ctx.request.PostFormValue(name)
+}
+
+// PostValueTrim returns a form's only-post value without trailing spaces by its name.
+func (ctx *context) PostValueTrim(name string) string {
+	return strings.TrimSpace(ctx.PostValue(name))
+}
+
+// PostValueEscape returns a form's only-post escaped value by its name.
+func (ctx *context) PostValueEscape(name string) string {
+	return DecodeQuery(ctx.PostValue(name))
+}
+
+// PostValueInt returns a form's only-post value as int by its name.
+func (ctx *context) PostValueInt(name string) (int, error) {
+	return strconv.Atoi(ctx.PostValue(name))
+}
+
+// PostValueInt64 returns a form's only-post value as int64 by its name.
+func (ctx *context) PostValueInt64(name string) (int64, error) {
+	return strconv.ParseInt(ctx.PostValue(name), 10, 64)
+}
+
+// PostValueFloat64 returns a form's only-post value as float64 by its name.
+func (ctx *context) PostValueFloat64(name string) (float64, error) {
+	return strconv.ParseFloat(ctx.PostValue(name), 64)
+}
+
+// PostValue returns a form's only-post value as boolean by its name.
+func (ctx *context) PostValueBool(name string) (bool, error) {
+	return strconv.ParseBool(ctx.PostValue(name))
+}
+
+const (
+	// DefaultMaxMemory is the default value
+	// for post values' max memory, defaults to
+	// 32MB.
+	// Can be also changed by the middleware `LimitRequestBodySize`
+	// or `context#SetMaxRequestBodySize`.
+	DefaultMaxMemory = 32 << 20 // 32 MB
+)
+
+// PostValues returns a form's only-post values.
+// PostValues calls ParseMultipartForm and ParseForm if necessary and ignores
+// any errors returned by these functions.
+func (ctx *context) PostValues(name string) []string {
+	r := ctx.request
+	if r.PostForm == nil {
+		r.ParseMultipartForm(DefaultMaxMemory)
+	}
+
+	return r.PostForm[name]
 }
 
 // FormFile returns the first file for the provided form key.
