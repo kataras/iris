@@ -23,7 +23,7 @@ import (
 	"time"
 
 	"github.com/fatih/structs"
-	"github.com/iris-contrib/form-binder"
+	formbinder "github.com/iris-contrib/formBinder"
 	"github.com/json-iterator/go"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday"

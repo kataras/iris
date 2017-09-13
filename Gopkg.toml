@@ -40,7 +40,7 @@
 
 [[constraint]]
   branch = "master"
-  name = "github.com/iris-contrib/form-binder"
+  name = "github.com/iris-contrib/formBinder"
 
 [[constraint]]
   branch = "master"
