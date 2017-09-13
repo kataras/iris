@@ -99,7 +99,7 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/iris-contrib/form-binder"
+  name = "github.com/iris-contrib/formBinder"
   packages = ["."]
   revision = "ed52a69d2bfbe92c9e8c5a35cad28da183ededdc"
 
