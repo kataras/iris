@@ -31,6 +31,7 @@ func login(ctx iris.Context) {
 
 	// Set user as authenticated
 	session.Set("authenticated", true)
+	ctx.WriteString("Logged in")
 }
 
 func logout(ctx iris.Context) {
@@ -38,6 +39,7 @@ func logout(ctx iris.Context) {
 
 	// Revoke users authentication
 	session.Set("authenticated", false)
+	ctx.WriteString("Logged out")
 }
 
 func main() {
