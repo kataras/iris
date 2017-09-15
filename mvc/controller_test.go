@@ -429,6 +429,7 @@ func TestControllerInsideControllerRecursively(t *testing.T) {
 	)
 
 	app := iris.New()
+
 	app.Controller("/user/{username}", new(testCtrl0),
 		&testBindType{title: title})
 
@@ -453,8 +454,9 @@ func (c *testControllerRelPathFromFunc) PostLogin() {}
 
 func (c *testControllerRelPathFromFunc) GetAdminLogin() {}
 
-func (c *testControllerRelPathFromFunc) PutSomethingIntoThis() {}
-func (c *testControllerRelPathFromFunc) GetSomethingBy(bool)   {}
+func (c *testControllerRelPathFromFunc) PutSomethingIntoThis()              {}
+func (c *testControllerRelPathFromFunc) GetSomethingBy(bool)                {}
+func (c *testControllerRelPathFromFunc) GetSomethingByElseThisBy(bool, int) {} // two input arguments
 
 func TestControllerRelPathFromFunc(t *testing.T) {
 	app := iris.New()
@@ -472,6 +474,8 @@ func TestControllerRelPathFromFunc(t *testing.T) {
 		Body().Equal("GET:/something/false")
 	e.GET("/something/truee").Expect().Status(httptest.StatusNotFound)
 	e.GET("/something/falsee").Expect().Status(httptest.StatusNotFound)
+	e.GET("/something/true/else/this/42").Expect().Status(httptest.StatusOK).
+		Body().Equal("GET:/something/true/else/this/42")
 
 	e.GET("/login").Expect().Status(httptest.StatusOK).
 		Body().Equal("GET:/login")

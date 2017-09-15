@@ -38,7 +38,7 @@ Iris may have reached version 8, but we're not stopping there. We have many feat
 ### 📑 Table of contents
 
 * [Installation](#-installation)
-* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#th-07-september-2017--v841)
+* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#fr-15-september-2017--v842)
 * [Learn](#-learn)
     * [HTTP Listening](_examples/#http-listening)
     * [Configuration](_examples/#configuration)

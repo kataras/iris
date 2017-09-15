@@ -18,6 +18,48 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+# Fr, 15 September 2017 | v8.4.2
+
+## MVC
+
+Support more than one dynamic method function receivers.
+
+```go
+package main
+
+import "github.com/kataras/iris"
+
+func main() {
+    app := iris.New()
+    app.Controller("/user", new(UserController))
+    app.Run(iris.Addr("localhost:8080"))
+}
+
+type UserController struct { iris.Controller }
+
+// Maps to GET /user
+// Request example: http://localhost:8080/user
+// as usual.
+func (c *UserController) Get() {
+    c.Text = "hello from /user"
+}
+
+// Maps to GET /user/{paramfirst:long}
+// Request example: http://localhost:8080/user/42
+// as usual.
+func (c *UserController) GetBy(userID int64) {
+    c.Ctx.Writef("hello user with id: %d", userID)
+}
+
+// NEW:
+// Maps to GET /user/{paramfirst:long}/business/{paramsecond:long}
+// Request example: http://localhost:8080/user/42/business/93
+func (c *UserController) GetByBusinessBy(userID int64, businessID int64) {
+    c.Ctx.Writef("fetch a business id: %d that user with id: %d owns, may make your db query faster",
+    businessID, userID)
+}
+```
+
 # Th, 07 September 2017 | v8.4.1
 
 ## Routing

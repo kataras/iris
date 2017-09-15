@@ -32,7 +32,7 @@ import (
 
 const (
 	// Version is the current version number of the Iris Web Framework.
-	Version = "8.4.1"
+	Version = "8.4.2"
 )
 
 // HTTP status codes as registered with IANA.
