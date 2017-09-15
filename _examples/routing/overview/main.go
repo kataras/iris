@@ -98,6 +98,11 @@ func main() {
 	// GET: http://any_thing_here.localhost:8080
 	dynamicSubdomainRoutes.Get("/", info)
 
+	app.Delete("/something", func(ctx iris.Context) {
+		name := ctx.URLParam("name")
+		ctx.Writef(name)
+	})
+
 	// GET: http://localhost:8080/
 	// GET: http://localhost:8080/profile/anyusername
 	// GET: http://localhost:8080/profile/anyusername/backups/any/number/of/paths/here
@@ -108,13 +113,12 @@ func main() {
 	// POST: http://localhost:8080/users
 	// PUT: http://localhost:8080/users
 	// DELETE: http://localhost:8080/users/42
+	// DELETE: http://localhost:8080/something?name=iris
 
 	// GET: http://admin.localhost:8080
 	// GET: http://admin.localhost:8080/settings
 	// GET: http://any_thing_here.localhost:8080
-	if err := app.Run(iris.Addr(":8080")); err != nil {
-		panic(err)
-	}
+	app.Run(iris.Addr(":8080"))
 }
 
 func info(ctx iris.Context) {

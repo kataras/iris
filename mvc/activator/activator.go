@@ -141,7 +141,7 @@ func (t TController) HandlerOf(methodFunc methodfunc.MethodFunc) context.Handler
 		// the most important, execute the specific function
 		// from the controller that is responsible to handle
 		// this request, by method and path.
-		handleRequest(ctx, c.Method(methodFunc.Index).Interface())
+		handleRequest(ctx, c.Method(methodFunc.Index))
 		// if had models, set them after the end-developer's handler.
 		if hasModels {
 			t.modelController.Handle(ctx, c)
