@@ -6,6 +6,7 @@ go:
 # - go1.8 works of course but
 # we must encourage users to update to the latest go version,
 # so examples are running on go 1.9 mode.
+  - go1.9
   - tip
 go_import_path: github.com/kataras/iris
 install:

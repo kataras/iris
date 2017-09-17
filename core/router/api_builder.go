@@ -783,8 +783,7 @@ func (api *APIBuilder) StaticWeb(requestPath string, systemPath string) *Route {
 		}
 	}
 
-	requestPath = joinPath(fullpath, WildcardParam(paramName))
-	// requestPath = fullpath + "/{file:path}"
+	requestPath = joinPath(requestPath, WildcardParam(paramName))
 	return api.registerResourceRoute(requestPath, handler)
 }
 
