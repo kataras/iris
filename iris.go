@@ -470,7 +470,7 @@ type Runner func(*Application) error
 func Listener(l net.Listener, hostConfigs ...host.Configurator) Runner {
 	return func(app *Application) error {
 		app.config.vhost = netutil.ResolveVHost(l.Addr().String())
-		return app.NewHost(new(http.Server)).
+		return app.NewHost(&http.Server{Addr: l.Addr().String()}).
 			Configure(hostConfigs...).
 			Serve(l)
 	}
