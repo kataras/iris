@@ -46,7 +46,7 @@ func (s *Sessions) updateCookie(ctx context.Context, sid string, expires time.Du
 	cookie.Path = "/"
 	if !s.config.DisableSubdomainPersistence {
 
-		requestDomain := ctx.Request().URL.Host
+		requestDomain := ctx.Host()
 		if portIdx := strings.IndexByte(requestDomain, ':'); portIdx > 0 {
 			requestDomain = requestDomain[0:portIdx]
 		}
