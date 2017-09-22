@@ -8,6 +8,7 @@ package memstore
 import (
 	"reflect"
 	"strconv"
+	"strings"
 
 	"github.com/kataras/iris/core/errors"
 )
@@ -127,8 +128,9 @@ func (r *Store) SetImmutable(key string, value interface{}) (Entry, bool) {
 	return r.Save(key, value, true)
 }
 
-// Get returns the entry's value based on its key.
-func (r *Store) Get(key string) interface{} {
+// GetDefault returns the entry's value based on its key.
+// If not found returns "def".
+func (r *Store) GetDefault(key string, def interface{}) interface{} {
 	args := *r
 	n := len(args)
 	for i := 0; i < n; i++ {
@@ -138,7 +140,13 @@ func (r *Store) Get(key string) interface{} {
 		}
 	}
 
-	return nil
+	return def
+}
+
+// Get returns the entry's value based on its key.
+// If not found returns nil.
+func (r *Store) Get(key string) interface{} {
+	return r.GetDefault(key, nil)
 }
 
 // Visit accepts a visitor which will be filled
@@ -151,34 +159,94 @@ func (r *Store) Visit(visitor func(key string, value interface{})) {
 	}
 }
 
-// GetString returns the entry's value as string, based on its key.
-func (r *Store) GetString(key string) string {
+// GetStringDefault returns the entry's value as string, based on its key.
+// If not found returns "def".
+func (r *Store) GetStringDefault(key string, def string) string {
 	if v, ok := r.Get(key).(string); ok {
 		return v
 	}
 
-	return ""
+	return def
+}
+
+// GetString returns the entry's value as string, based on its key.
+func (r *Store) GetString(key string) string {
+	return r.GetStringDefault(key, "")
+}
+
+// GetStringTrim returns the entry's string value without trailing spaces.
+func (r *Store) GetStringTrim(name string) string {
+	return strings.TrimSpace(r.GetString(name))
 }
 
 // ErrIntParse returns an error message when int parse failed
 // it's not statical error, it depends on the failed value.
 var ErrIntParse = errors.New("unable to find or parse the integer, found: %#v")
 
-// GetInt returns the entry's value as int, based on its key.
-func (r *Store) GetInt(key string) (int, error) {
+// GetIntDefault returns the entry's value as int, based on its key.
+// If not found returns "def".
+func (r *Store) GetIntDefault(key string, def int) (int, error) {
 	v := r.Get(key)
 	if vint, ok := v.(int); ok {
 		return vint, nil
 	} else if vstring, sok := v.(string); sok {
+		if vstring == "" {
+			return def, nil
+		}
 		return strconv.Atoi(vstring)
 	}
 
-	return -1, ErrIntParse.Format(v)
+	return def, nil
+}
+
+// GetInt returns the entry's value as int, based on its key.
+// If not found returns 0.
+func (r *Store) GetInt(key string) (int, error) {
+	return r.GetIntDefault(key, 0)
+}
+
+// GetInt64Default returns the entry's value as int64, based on its key.
+// If not found returns "def".
+func (r *Store) GetInt64Default(key string, def int64) (int64, error) {
+	v := r.Get(key)
+	if vint64, ok := v.(int64); ok {
+		return vint64, nil
+	} else if vstring, sok := v.(string); sok {
+		if vstring == "" {
+			return def, nil
+		}
+		return strconv.ParseInt(vstring, 10, 64)
+	}
+
+	return def, nil
 }
 
 // GetInt64 returns the entry's value as int64, based on its key.
+// If not found returns 0.0.
 func (r *Store) GetInt64(key string) (int64, error) {
-	return strconv.ParseInt(r.GetString(key), 10, 64)
+	return r.GetInt64Default(key, 0.0)
+}
+
+// GetFloat64Default returns the entry's value as float64, based on its key.
+// If not found returns "def".
+func (r *Store) GetFloat64Default(key string, def float64) (float64, error) {
+	v := r.Get(key)
+	if vfloat64, ok := v.(float64); ok {
+		return vfloat64, nil
+	} else if vstring, sok := v.(string); sok {
+		if vstring == "" {
+			return def, nil
+		}
+		return strconv.ParseFloat(vstring, 64)
+	}
+
+	return def, nil
+}
+
+// GetFloat64 returns the entry's value as float64, based on its key.
+// If not found returns 0.0.
+func (r *Store) GetFloat64(key string) (float64, error) {
+	return r.GetFloat64Default(key, 0.0)
 }
 
 // GetBool returns the user's value as bool, based on its key.
