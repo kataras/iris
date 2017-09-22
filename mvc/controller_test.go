@@ -456,6 +456,7 @@ func (c *testControllerRelPathFromFunc) GetAdminLogin() {}
 
 func (c *testControllerRelPathFromFunc) PutSomethingIntoThis()              {}
 func (c *testControllerRelPathFromFunc) GetSomethingBy(bool)                {}
+func (c *testControllerRelPathFromFunc) GetSomethingByBy(string, int)       {}
 func (c *testControllerRelPathFromFunc) GetSomethingByElseThisBy(bool, int) {} // two input arguments
 
 func TestControllerRelPathFromFunc(t *testing.T) {
@@ -474,6 +475,8 @@ func TestControllerRelPathFromFunc(t *testing.T) {
 		Body().Equal("GET:/something/false")
 	e.GET("/something/truee").Expect().Status(httptest.StatusNotFound)
 	e.GET("/something/falsee").Expect().Status(httptest.StatusNotFound)
+	e.GET("/something/kataras/42").Expect().Status(httptest.StatusOK).
+		Body().Equal("GET:/something/kataras/42")
 	e.GET("/something/true/else/this/42").Expect().Status(httptest.StatusOK).
 		Body().Equal("GET:/something/true/else/this/42")
 
