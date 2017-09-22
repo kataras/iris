@@ -364,6 +364,8 @@ type Context interface {
 	//  | Various Request and Post Data                              |
 	//  +------------------------------------------------------------+
 
+	// URLParamDefault returns the get parameter from a request, if not found then "def" is returned.
+	URLParamDefault(name string, def string) string
 	// URLParam returns the get parameter from a request , if any.
 	URLParam(name string) string
 	// URLParamTrim returns the url query parameter with trailing white spaces removed from a request,
@@ -372,13 +374,25 @@ type Context interface {
 	// URLParamTrim returns the escaped url query parameter from a request,
 	// returns an error if parse failed.
 	URLParamEscape(name string) string
+	// URLParamIntDefault returns the url query parameter as int value from a request,
+	// if not found then "def" is returned.
+	// Returns an error if parse failed.
+	URLParamIntDefault(name string, def int) (int, error)
 	// URLParamInt returns the url query parameter as int value from a request,
 	// returns an error if parse failed.
 	URLParamInt(name string) (int, error)
+	// URLParamInt64Default returns the url query parameter as int64 value from a request,
+	// if not found then "def" is returned.
+	// Returns an error if parse failed.
+	URLParamInt64Default(name string, def int64) (int64, error)
 	// URLParamInt64 returns the url query parameter as int64 value from a request,
 	// returns an error if parse failed.
 	URLParamInt64(name string) (int64, error)
-	// URLParamInt64 returns the url query parameter as float64 value from a request,
+	// URLParamFloat64Default returns the url query parameter as float64 value from a request,
+	// if not found then "def" is returned.
+	// Returns an error if parse failed.
+	URLParamFloat64Default(name string, def float64) (float64, error)
+	// URLParamFloat64 returns the url query parameter as float64 value from a request,
 	// returns an error if parse failed.
 	URLParamFloat64(name string) (float64, error)
 	// URLParamBool returns the url query parameter as boolean value from a request,
@@ -396,6 +410,10 @@ type Context interface {
 	// NOTE: A check for nil is necessary.
 	FormValues() map[string][]string
 
+	// PostValueDefault returns a form's only-post value by its name,
+	// if not found then "def" is returned,
+	// same as Request.PostFormValue.
+	PostValueDefault(name string, def string) string
 	// PostValue returns a form's only-post value by its name,
 	// same as Request.PostFormValue.
 	PostValue(name string) string
@@ -403,10 +421,19 @@ type Context interface {
 	PostValueTrim(name string) string
 	// PostValueEscape returns a form's only-post escaped value by its name.
 	PostValueEscape(name string) string
+	// PostValueIntDefault returns a form's only-post value as int by its name.
+	// If not found returns "def".
+	PostValueIntDefault(name string, def int) (int, error)
 	// PostValueInt returns a form's only-post value as int by its name.
 	PostValueInt(name string) (int, error)
+	// PostValueInt64Default returns a form's only-post value as int64 by its name.
+	// If not found returns "def".
+	PostValueInt64Default(name string, def int64) (int64, error)
 	// PostValueInt64 returns a form's only-post value as int64 by its name.
 	PostValueInt64(name string) (int64, error)
+	// PostValueFloat64Default returns a form's only-post value as float64 by its name.
+	// If not found returns "def".
+	PostValueFloat64Default(name string, def float64) (float64, error)
 	// PostValueFloat64 returns a form's only-post value as float64 by its name.
 	PostValueFloat64(name string) (float64, error)
 	// PostValue returns a form's only-post value as boolean by its name.
@@ -1339,9 +1366,18 @@ func (ctx *context) GetStatusCode() int {
 //  | Various Request and Post Data                              |
 //  +------------------------------------------------------------+
 
+// URLParamDefault returns the get parameter from a request, if not found then "def" is returned.
+func (ctx *context) URLParamDefault(name string, def string) string {
+	v := ctx.request.URL.Query().Get(name)
+	if v == "" {
+		return def
+	}
+	return v
+}
+
 // URLParam returns the get parameter from a request , if any.
 func (ctx *context) URLParam(name string) string {
-	return ctx.request.URL.Query().Get(name)
+	return ctx.URLParamDefault(name, "")
 }
 
 // URLParamTrim returns the url query parameter with trailing white spaces removed from a request,
@@ -1356,22 +1392,55 @@ func (ctx *context) URLParamEscape(name string) string {
 	return DecodeQuery(ctx.URLParam(name))
 }
 
+// URLParamIntDefault returns the url query parameter as int value from a request,
+// if not found then "def" is returned.
+// Returns an error if parse failed.
+func (ctx *context) URLParamIntDefault(name string, def int) (int, error) {
+	v := ctx.URLParam(name)
+	if v == "" {
+		return def, nil
+	}
+	return strconv.Atoi(v)
+}
+
 // URLParamInt returns the url query parameter as int value from a request,
 // returns an error if parse failed.
 func (ctx *context) URLParamInt(name string) (int, error) {
-	return strconv.Atoi(ctx.URLParam(name))
+	return ctx.URLParamIntDefault(name, 0)
+}
+
+// URLParamInt64Default returns the url query parameter as int64 value from a request,
+// if not found then "def" is returned.
+// Returns an error if parse failed.
+func (ctx *context) URLParamInt64Default(name string, def int64) (int64, error) {
+	v := ctx.URLParam(name)
+	if v == "" {
+		return def, nil
+	}
+	return strconv.ParseInt(v, 10, 64)
 }
 
 // URLParamInt64 returns the url query parameter as int64 value from a request,
 // returns an error if parse failed.
 func (ctx *context) URLParamInt64(name string) (int64, error) {
-	return strconv.ParseInt(ctx.URLParam(name), 10, 64)
+	return ctx.URLParamInt64Default(name, 0.0)
 }
 
-// URLParamInt64 returns the url query parameter as float64 value from a request,
+// URLParamFloat64Default returns the url query parameter as float64 value from a request,
+// if not found then "def" is returned.
+// Returns an error if parse failed.
+func (ctx *context) URLParamFloat64Default(name string, def float64) (float64, error) {
+	v := ctx.URLParam(name)
+	if v == "" {
+		return def, nil
+	}
+	return strconv.ParseFloat(v, 64)
+}
+
+// URLParamFloat64 returns the url query parameter as float64 value from a request,
 // returns an error if parse failed.
 func (ctx *context) URLParamFloat64(name string) (float64, error) {
-	return strconv.ParseFloat(ctx.URLParam(name), 64)
+	return ctx.URLParamFloat64Default(name, 0.0)
 }
 
 // URLParamBool returns the url query parameter as boolean value from a request,
@@ -1422,10 +1491,21 @@ func (ctx *context) FormValues() map[string][]string {
 
 }
 
+// PostValueDefault returns a form's only-post value by its name,
+// if not found then "def" is returned,
+// same as Request.PostFormValue.
+func (ctx *context) PostValueDefault(name string, def string) string {
+	v := ctx.request.PostFormValue(name)
+	if v == "" {
+		return def
+	}
+	return v
+}
+
 // PostValue returns a form's only-post value by its name,
 // same as Request.PostFormValue.
 func (ctx *context) PostValue(name string) string {
-	return ctx.request.PostFormValue(name)
+	return ctx.PostValueDefault(name, "")
 }
 
 // PostValueTrim returns a form's only-post value without trailing spaces by its name.
@@ -1438,19 +1518,52 @@ func (ctx *context) PostValueEscape(name string) string {
 	return DecodeQuery(ctx.PostValue(name))
 }
 
+// PostValueIntDefault returns a form's only-post value as int by its name.
+// If not found returns "def".
+func (ctx *context) PostValueIntDefault(name string, def int) (int, error) {
+	v := ctx.PostValue(name)
+	if v == "" {
+		return def, nil
+	}
+	return strconv.Atoi(v)
+}
+
 // PostValueInt returns a form's only-post value as int by its name.
+// If not found returns 0.
 func (ctx *context) PostValueInt(name string) (int, error) {
-	return strconv.Atoi(ctx.PostValue(name))
+	return ctx.PostValueIntDefault(name, 0)
+}
+
+// PostValueInt64Default returns a form's only-post value as int64 by its name.
+// If not found returns "def".
+func (ctx *context) PostValueInt64Default(name string, def int64) (int64, error) {
+	v := ctx.PostValue(name)
+	if v == "" {
+		return def, nil
+	}
+	return strconv.ParseInt(v, 10, 64)
 }
 
 // PostValueInt64 returns a form's only-post value as int64 by its name.
+// If not found returns 0.0.
 func (ctx *context) PostValueInt64(name string) (int64, error) {
-	return strconv.ParseInt(ctx.PostValue(name), 10, 64)
+	return ctx.PostValueInt64Default(name, 0.0)
+}
+
+// PostValueFloat64Default returns a form's only-post value as float64 by its name.
+// If not found returns "def".
+func (ctx *context) PostValueFloat64Default(name string, def float64) (float64, error) {
+	v := ctx.PostValue(name)
+	if v == "" {
+		return def, nil
+	}
+	return strconv.ParseFloat(v, 64)
 }
 
 // PostValueFloat64 returns a form's only-post value as float64 by its name.
+// If not found returns 0.0.
 func (ctx *context) PostValueFloat64(name string) (float64, error) {
-	return strconv.ParseFloat(ctx.PostValue(name), 64)
+	return ctx.PostValueFloat64Default(name, 0.0)
 }
 
 // PostValue returns a form's only-post value as boolean by its name.
