@@ -70,14 +70,23 @@ func (p *funcParser) parse() (*ast, error) {
 			typ := p.info.Type
 			funcArgPos++ // starting with 1 because in typ.NumIn() the first is the struct receiver.
 
-			if p.lexer.peekPrev() == tokenBy || typ.NumIn() == 1 { // ByBy, then act this second By like a path
-				a.relPath += "/" + strings.ToLower(w)
-				continue
-			}
+			// No need for these:
+			// ByBy will act like /{param:type}/{param:type} as users expected
+			// if func input arguments are there, else act By like normal path /by.
+			//
+			// if p.lexer.peekPrev() == tokenBy || typ.NumIn() == 1 { // ByBy, then act this second By like a path
+			// 	a.relPath += "/" + strings.ToLower(w)
+			// 	continue
+			// }
 
 			if typ.NumIn() <= funcArgPos {
-				return nil, errors.New("keyword 'By' found but length of input receivers are not match for " +
-					p.info.Name)
+				// old:
+				// return nil, errors.New("keyword 'By' found but length of input receivers are not match for " +
+				// 	p.info.Name)
+
+				// By found but input arguments are not there, so act like /by path without restricts.
+				a.relPath += "/" + strings.ToLower(w)
+				continue
 			}
 
 			var (
