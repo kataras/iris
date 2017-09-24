@@ -28,7 +28,7 @@ func RegisterOnInterrupt(cb func()) {
 func notifyInterrupt() {
 	w.mu.Lock()
 	for _, f := range w.onInterrupt {
-		go f()
+		f()
 	}
 	w.mu.Unlock()
 }
