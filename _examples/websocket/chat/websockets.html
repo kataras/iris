@@ -3,11 +3,16 @@
 <pre id="output"></pre>
 <script src="/iris-ws.js"></script>
 <script>
+	var scheme = document.location.protocol == "https:" ? "wss" : "ws";
+	var port = document.location.port ? (":" + document.location.port) : "";
+	// see app.Get("/echo", ws.Handler()) on main.go
+	var wsURL = scheme + "://" + document.location.hostname + port+"/echo"; 
+
 	var input = document.getElementById("input");
 	var output = document.getElementById("output");
 
 	// Ws comes from the auto-served '/iris-ws.js'
-	var socket = new Ws("ws://localhost:8080/echo");
+	var socket = new Ws(wsURL)
 	socket.OnConnect(function () {
 		output.innerHTML += "Status: Connected\n";
 	});
@@ -22,7 +27,7 @@
 	});
 
 	function send() {
-		addMessage("Me: "+input.value) // write ourselves
+		addMessage("Me: " + input.value) // write ourselves
 		socket.Emit("chat", input.value);// send chat event data to the websocket server
 		input.value = ""; // clear the input
 	}
@@ -30,4 +35,5 @@
 	function addMessage(msg) {
 		output.innerHTML += msg + "\n";
 	}
+
 </script>

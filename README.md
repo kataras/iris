@@ -1,8 +1,8 @@
-<!-- # ![Logo created by @santoshanand](logo_white_35_24.png) Iris 
--->
-<p align="center">
+# ![Logo created by @santoshanand](logo_white_35_24.png) Iris 
+
+<!-- <p align="center">
 <img src="iris_the_new_machine.gif">
-</p>
+</p> -->
 
 Iris is a fast, simple and efficient micro web framework for Go. It provides a beautifully expressive and easy to use foundation for your next website, API, or distributed app.
 
@@ -26,6 +26,7 @@ Iris may have reached version 8, but we're not stopping there. We have many feat
 [![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=flat-square)](http://goreportcard.com/report/kataras/iris)
 [![github issues](https://img.shields.io/github/issues/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/issues?q=is%3Aopen+is%3Aissue)
 [![github closed issues](https://img.shields.io/github/issues-closed-raw/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/issues?q=is%3Aissue+is%3Aclosed)
+[![release](https://img.shields.io/github/release/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/releases)
 [![view examples](https://img.shields.io/badge/learn%20by-examples-0077b3.svg?style=flat-square)](https://github.com/kataras/iris/tree/master/_examples)
 [![chat](https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square)](https://kataras.rocket.chat/channel/iris)
 
@@ -38,7 +39,7 @@ Iris may have reached version 8, but we're not stopping there. We have many feat
 ### 📑 Table of contents
 
 * [Installation](#-installation)
-* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#th-07-september-2017--v841)
+* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#fr-15-september-2017--v842)
 * [Learn](#-learn)
     * [HTTP Listening](_examples/#http-listening)
     * [Configuration](_examples/#configuration)
@@ -67,7 +68,7 @@ Iris may have reached version 8, but we're not stopping there. We have many feat
     - [Iris Go vs .NET Core Kestrel in terms of HTTP performance](https://hackernoon.com/iris-go-vs-net-core-kestrel-in-terms-of-http-performance-806195dc93d5)
     - [Go vs .NET Core in terms of HTTP performance](https://medium.com/@kataras/go-vs-net-core-in-terms-of-http-performance-7535a61b67b8)
     - [Iris, a modular web framework](https://medium.com/@corebreaker/iris-web-cd684b4685c7)
-    - [Deploying a Iris Golang app in hasura](https://docs.hasura.io/0.14/tutorials/deploying-a-go-iris-app.html)
+    - [Deploying a Iris Golang app in hasura](https://medium.com/@HasuraHQ/deploy-an-iris-golang-app-with-backend-apis-in-minutes-25a559bf530b)
     - [How to Turn an Android Device into a Web Server](https://twitter.com/ThePracticalDev/status/892022594031017988)
     - [A URL Shortener Service using Go, Iris and Bolt](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
     - [Why I preferred Go over Node.js for simple Web Application](https://medium.com/@tigranbs/why-i-preferred-go-over-node-js-for-simple-web-application-d4a549e979b9)

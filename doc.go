@@ -35,7 +35,7 @@ Source code and other details for the project are available at GitHub:
 
 Current Version
 
-8.4.0
+8.4.2
 
 Installation
 
@@ -820,6 +820,8 @@ and it adds its logic to its `BeginRequest`. Source file: https://github.com/kat
 
 Read access to the current route  via the `Route` field.
 
+Support for more than one input arguments (map to dynamic request path parameters).
+
 Register one or more relative paths and able to get path parameters, i.e
 
     If `app.Controller("/user", new(user.Controller))`
@@ -843,6 +845,7 @@ Register one or more relative paths and able to get path parameters, i.e
     If `app.Controller("/equality", new(profile.Equality))`
 
     - `func(*Controller) GetBy(is bool)` - `GET:/equality/{param:boolean}`
+    - `func(*Controller) GetByOtherBy(is bool, otherID int64)` - `GET:/equality/{paramfirst:boolean}/other/{paramsecond:long}`
 
     Supported types for method functions receivers: int, int64, bool and string.
 

@@ -2,13 +2,25 @@ package methodfunc
 
 import (
 	"reflect"
+
+	"github.com/kataras/golog"
+	"github.com/kataras/iris/context"
 )
 
 // MethodFunc the handler function.
 type MethodFunc struct {
 	FuncInfo
-	FuncCaller
-	RelPath string
+	// MethodCall fires the actual handler.
+	// The "ctx" is the current context, helps us to get any path parameter's values.
+	//
+	// The "f" is the controller's function which is responsible
+	// for that request for this http method.
+	// That function can accept one parameter.
+	//
+	// The default callers (and the only one for now)
+	// are pre-calculated by the framework.
+	MethodCall func(ctx context.Context, f reflect.Value)
+	RelPath    string
 }
 
 // Resolve returns all the method funcs
@@ -17,15 +29,16 @@ type MethodFunc struct {
 func Resolve(typ reflect.Type) (methodFuncs []MethodFunc) {
 	infos := fetchInfos(typ)
 	for _, info := range infos {
-		p, ok := resolveRelativePath(info)
-		if !ok {
+		parser := newFuncParser(info)
+		a, err := parser.parse()
+		if err != nil {
+			golog.Errorf("MVC: %s\n", err)
 			continue
 		}
-		caller := resolveCaller(p)
 		methodFunc := MethodFunc{
-			RelPath:    p.RelPath,
+			RelPath:    a.relPath,
 			FuncInfo:   info,
-			FuncCaller: caller,
+			MethodCall: buildMethodCall(a),
 		}
 
 		methodFuncs = append(methodFuncs, methodFunc)

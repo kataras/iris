@@ -290,6 +290,7 @@ iris session manager lives on its own [package](https://github.com/kataras/iris/
 - [Databases](sessions/database)
     * [File](sessions/database/file/main.go)
     * [BoltDB](sessions/database/boltdb/main.go)
+    * [Badger](sessions/database/badger/main.go)
     * [LevelDB](sessions/database/leveldb/main.go)
     * [Redis](sessions/database/redis/main.go)
 
