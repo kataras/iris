@@ -18,6 +18,15 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+
+# We, 27 September 2017 | v8.4.3
+
+- MVC: Support for `ByBy` syntax as requested at https://github.com/kataras/iris/issues/751
+- Fix https://github.com/kataras/iris/issues/760
+- @itcrow fixed https://github.com/kataras/iris/issues/757 with PR: https://github.com/kataras/iris/pull/758
+- @balthild fixed https://github.com/kataras/iris/issues/764 with PR: https://github.com/kataras/iris/pull/765
+- Add a new session database(back-end storage) supported by the [badger](github.com/dgraph-io/badger) key-value file-based storage, example [here](https://github.com/kataras/iris/commit/204f8474687bad1178d5108b501c6f0c7d927b9a#diff-26d58a00b7f90165fb32043676ed17a5)
+
 # Fr, 15 September 2017 | v8.4.2
 
 ## MVC
