@@ -17,9 +17,13 @@ you can find online.
 
 Iris may have reached version 8, but we're not stopping there. We have many feature ideas on our board that we're anxious to add and other innovative web development solutions that we're planning to build into Iris.
 
-[Star or watch](https://github.com/kataras/iris/stargazers) this repository to stay updated.
+[Star](https://github.com/kataras/iris/stargazers) and watch this github repository to stay up to date.
 
-**Accelerated by [KeyCDN](https://www.keycdn.com/)**, A Simple, Fast and Reliable CDN.
+Iris was built on top of the the [net/http](https://golang.org/pkg/net/http/) package, we own many thanks to [Brad Fitzpatrick](https://github.com/bradfitz) for that.
+
+**Accelerated** by [KeyCDN](https://www.keycdn.com/), A Simple, Fast and Reliable CDN.
+
+**We are developing** this project using the best code editor for Golang; [Visual Studio Code](https://code.visualstudio.com/) supported by [Microsoft](https://www.microsoft.com).
 
 <!-- [![total used by](https://iris-go.com/graph?style=flat-square)](https://iris-go.com/graph) -->
 [![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=flat-square)](https://travis-ci.org/kataras/iris)
@@ -83,7 +87,7 @@ The only requirement is the [Go Programming Language](https://golang.org/dl/), a
 $ go get -u github.com/kataras/iris
 ```
 
-> _iris_ takes advantage of the [vendor directory](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo) feature. You get truly reproducible builds, as this method guards against upstream renames and deletes.
+> _iris_ takes advantage of the [vendor directory](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo) feature. You get truly reproducible builds, as this method guards against upstream renames and deletes. 
 
 ```go
 // file: main.go
@@ -135,6 +139,8 @@ $ go run main.go
 > Now listening on: http://localhost:8080
 > Application started. Press CTRL+C to shut down.
 ```
+
+> Examples and docs are updated to Go 1.9, please refer to that [section](https://github.com/kataras/iris/blob/master/faq.md#type-aliases) before anything else.
 
 <details>
 <summary>Hello World with Go 1.8</summary>
@@ -343,7 +349,6 @@ Compared to the rest open source projects, this one is very active and you get a
 The _iris_ philosophy is to provide robust tooling for HTTP, making it a great solution for single page applications, web sites, hybrids, or public HTTP APIs. Keep note that, today, iris is faster than apache+nginx itself.
 
 _iris_ does not force you to use any specific ORM. With support for the most popular template engines, websocket server and a fast sessions manager you can quickly craft your perfect application.
-
 
 The awesome _iris_ community is always adding new examples, [_examples](_examples/) is a great place to get started!
 
