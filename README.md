@@ -39,7 +39,7 @@ Iris may have reached version 8, but we're not stopping there. We have many feat
 ### 📑 Table of contents
 
 * [Installation](#-installation)
-* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#fr-15-september-2017--v842)
+* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#we-27-september-2017--v843)
 * [Learn](#-learn)
     * [HTTP Listening](_examples/#http-listening)
     * [Configuration](_examples/#configuration)
@@ -135,28 +135,6 @@ $ go run main.go
 > Now listening on: http://localhost:8080
 > Application started. Press CTRL+C to shut down.
 ```
-
-### 💎 Type aliases
-
-Go version 1.9 introduced the [type alias](https://golang.org/doc/go1.9#language) feature.
-
-Iris uses the `type alias` feature to help you writing less code by omitting some package imports. The examples and documentation are written using Go 1.9 as well.
-
-If you build your Go app with Go 1.9 you can, optionally, use all Iris web framework's features by importing one single package, the `github.com/kataras/iris`.
-
-Available type aliases;
-
-
-| Go 1.8 | Go 1.8 usage | Go 1.9 (Optionally) | Go 1.9 usage |
-| -----------|--------|--------|--------|
-| `import "github.com/kataras/iris/context"` | `func(context.Context) {}`, `context.Handler`, `context.Map` | `import "github.com/kataras/iris"` | `func(iris.Context) {}`, `iris.Handler`,  `iris.Map` |
-| `import "github.com/kataras/iris/mvc"` | `type MyController struct { mvc.Controller }` , `mvc.SessionController` | `import "github.com/kataras/iris"` | `type MyController struct { iris.Controller }`, `iris.SessionController` |
-| `import "github.com/kataras/iris/core/router"` | `app.PartyFunc("/users", func(p router.Party) {})` | `import "github.com/kataras/iris"` | `app.PartyFunc("/users", func(p iris.Party) {})` |
-| `import "github.com/kataras/iris/core/host"` | `app.ConfigureHost(func(s *host.Supervisor) {})` | `import "github.com/kataras/iris"` | `app.ConfigureHost(func(s *iris.Supervisor) {})` |
-
-You can find all type aliases and their original package import statements at the [./context.go file](context.go).
-
-> Remember; this doesn't mean that you have to use those type alias, you can continue import the original packages as you did with Go version 1.8.
 
 <details>
 <summary>Hello World with Go 1.8</summary>
@@ -259,47 +237,47 @@ The same day, later the night, I was reading a book about Greek mythology. I saw
 
 [![](http://comments.iris-go.com/screens/comment37.png)](https://twitter.com/ThePracticalDev/status/892022594031017988) 
 
-![](https://docs.iris-go.com/comment36.png)
+![](https://comments.iris-go.com/comment36.png)
 
-![](https://docs.iris-go.com/comment35.png)
+![](https://comments.iris-go.com/comment35.png)
 
-![](https://docs.iris-go.com/comment34.png)
+![](https://comments.iris-go.com/comment34.png)
 
-![](https://docs.iris-go.com/comment2.png)
+![](https://comments.iris-go.com/comment2.png)
 
-![](https://docs.iris-go.com/comment30.png)
+![](https://comments.iris-go.com/comment30.png)
 
-![](https://docs.iris-go.com/comment31.png)
+![](https://comments.iris-go.com/comment31.png)
 
-![](https://docs.iris-go.com/comment32.png)
+![](https://comments.iris-go.com/comment32.png)
 
-![](https://docs.iris-go.com/comment33.png)
+![](https://comments.iris-go.com/comment33.png)
 
-![](https://docs.iris-go.com/comment26.png)
+![](https://comments.iris-go.com/comment26.png)
 
-![](https://docs.iris-go.com/comment1.png)
+![](https://comments.iris-go.com/comment1.png)
 
-![](https://docs.iris-go.com/comment3.png)
+![](https://comments.iris-go.com/comment3.png)
 
-![](https://docs.iris-go.com/comment8.png)
+![](https://comments.iris-go.com/comment8.png)
 
-![](https://docs.iris-go.com/comment12.png)
+![](https://comments.iris-go.com/comment12.png)
 
-![](https://docs.iris-go.com/comment13.png)
+![](https://comments.iris-go.com/comment13.png)
 
-![](https://docs.iris-go.com/comment14.png)
+![](https://comments.iris-go.com/comment14.png)
 
-![](https://docs.iris-go.com/comment17.png)
+![](https://comments.iris-go.com/comment17.png)
 
-![](https://docs.iris-go.com/comment21.png)
+![](https://comments.iris-go.com/comment21.png)
 
-![](https://docs.iris-go.com/comment22.png)
+![](https://comments.iris-go.com/comment22.png)
 
-![](https://docs.iris-go.com/comment24.png)
+![](https://comments.iris-go.com/comment24.png)
 
-![](https://docs.iris-go.com/comment27.png)
+![](https://comments.iris-go.com/comment27.png)
 
----- 
+----
 
 _iris_ is easy, it has a familiar API while in the same has far more features than [Gin](https://github.com/gin-gonic/gin) or [Martini](https://github.com/go-martini/martini).
 
@@ -355,6 +333,27 @@ Compared to the rest open source projects, this one is very active and you get a
 - And many other things that will surprise you
 
 </details>
+
+### 💎 Type aliases
+
+Go version 1.9 introduced the [type alias](https://golang.org/doc/go1.9#language) feature.
+
+Iris uses the `type alias` feature to help you writing less code by omitting some package imports. The examples and documentation are written using Go 1.9 as well.
+
+If you build your Go app with Go 1.9 you can, optionally, use all Iris web framework's features by importing one single package, the `github.com/kataras/iris`.
+
+Available type aliases;
+
+| Go 1.8 | Go 1.8 usage | Go 1.9 usage (optionally) |
+| -----------|--------|--------|--------|
+| `import "github.com/kataras/iris/context"` | `func(context.Context) {}`, `context.Handler`, `context.Map` |  `func(iris.Context) {}`, `iris.Handler`,  `iris.Map` |
+| `import "github.com/kataras/iris/mvc"` | `type MyController struct { mvc.Controller }` , `mvc.SessionController` | `type MyController struct { iris.Controller }`, `iris.SessionController` |
+| `import "github.com/kataras/iris/core/router"` | `app.PartyFunc("/users", func(p router.Party) {})` |  `app.PartyFunc("/users", func(p iris.Party) {})` |
+| `import "github.com/kataras/iris/core/host"` | `app.ConfigureHost(func(s *host.Supervisor) {})` | `app.ConfigureHost(func(s *iris.Supervisor) {})` |
+
+You can find all type aliases and their original package import statements at the [./context.go file](context.go).
+
+> Remember; this doesn't mean that you have to use those type alias, you can continue import the original packages as you did with Go version 1.8.
 
 ### 📖 Learn
 
