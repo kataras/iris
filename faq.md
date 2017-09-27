@@ -26,7 +26,7 @@ Want to help and join to the greatest community? Describe your skills and push y
 
 | build error | reason | solution |
 | -----------|--------|--------|
-| `undefinied iris.Context` | caused of using the **optional type alias** `iris.Context` instead of the `context.Context` when building with Go 1.8 | import the original package `github.com/kataras/iris/context` and declare as `func(context.Context){})` **or** download and install the [latest go version](https://golang.org/dl) |
+| `undefined iris.Context` | caused of using the **optional type alias** `iris.Context` instead of the `context.Context` when building with Go 1.8 | import the original package `github.com/kataras/iris/context` and declare as `func(context.Context){})` **or** download and install the [latest go version](https://golang.org/dl) _recommended_ |
 
 Type alias is a new feature, introduced at Go version 1.9, so if you want to use Iris' type aliases you have to build using the latest Go version. Nothing really changes for your application if you use type alias or not, Iris' type aliases helps you to omit import statements -- to reduce lines of code, nothing more.
 
@@ -49,7 +49,7 @@ Available type aliases;
 
 You can find all type aliases and their original package import statements at the [./context.go file](context.go).
 
-> Remember; this doesn't mean that you have to use those type alias, you can continue import the original packages as you did with Go version 1.8.
+> Remember; this doesn't mean that you have to use those type aliases, you can still import the original packages as you did with Go version 1.8, it's up to you.
 
 ## Active development mode
 
