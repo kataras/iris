@@ -17,13 +17,15 @@ you can find online.
 
 Iris may have reached version 8, but we're not stopping there. We have many feature ideas on our board that we're anxious to add and other innovative web development solutions that we're planning to build into Iris.
 
-[Star](https://github.com/kataras/iris/stargazers) and watch this github repository to stay up to date.
-
 Iris was built on top of the the [net/http](https://golang.org/pkg/net/http/) package, we own many thanks to [Brad Fitzpatrick](https://github.com/bradfitz) for that.
+
+If you're coming from <a href="https://nodejs.org/en/">Node.js</a> world, this is the <a href="https://github.com/expressjs/express">expressjs</a> equivalent for the <a href="https://golang.org">Go Programming Language.</a><br/>
 
 **Accelerated** by [KeyCDN](https://www.keycdn.com/), A Simple, Fast and Reliable CDN.
 
 **We are developing** this project using the best code editor for Golang; [Visual Studio Code](https://code.visualstudio.com/) supported by [Microsoft](https://www.microsoft.com).
+
+[Star](https://github.com/kataras/iris/stargazers) and watch this github repository to stay up to date.
 
 <!-- [![total used by](https://iris-go.com/graph?style=flat-square)](https://iris-go.com/graph) -->
 [![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=flat-square)](https://travis-ci.org/kataras/iris)
@@ -39,14 +41,35 @@ Iris was built on top of the the [net/http](https://golang.org/pkg/net/http/) pa
 
 ![Iris vs .NET Core(C#)](https://iris-go.com/images/benchmark-iris-vs-netcore.png)
 
-_Updated at: [Friday, 29 September 2017](_examples)_
-
 <details>
 <summary>Benchmarks from third-party source over the rest web frameworks</summary>
 
 ![Comparison with other frameworks](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png)
 
 </details>
+
+_Updated at: [Friday, 29 September 2017](_benchmarks)_
+
+</p>
+
+### [🎗️](#-people) Legends
+
+Help this project to continue deliver awesome and unique features with the higher code quality as possible by donating any amount via [PayPal](https://www.paypal.me/kataras)!
+
+| Name | Amount | Membership |
+| -----------|--------|--------|
+| [Juan Sebastián Suárez Valencia](https://github.com/Juanses) | 20 EUR |  Bronze |
+| [Bob Lee](https://github.com/li3p) | 20 EUR |  Bronze |
+| [Celso Luiz](https://github.com/celsosz) | 50 EUR |  **Silver** |
+| [Ankur Srivastava](https://github.com/ansrivas) | 20 EUR |  Bronze |
+| [Damon Zhao](https://github.com/se77en) | 20 EUR |  Bronze |
+| [Exponity - Tech Company](https://github.com/exponity) | 30 EUR |  Bronze |
+| [Thomas Fritz](https://github.com/thomasfr) | 25 EUR |  Bronze |
+| [Thanos V.](http://mykonosbiennale.com/) | 20 EUR |  Bronze |
+| [George Opritescu](https://github.com/International) | 20 EUR |  Bronze |
+| [Lex Tang](https://github.com/lexrus) | 20 EUR |  Bronze |
+| [Bill Q.](https://github.com/hiveminded) | 600 EUR |  **Gold** |
+| [Conrad Steenberg](https://github.com/hengestone) | 25 EUR |  Bronze |
 
 ### 📑 Table of contents
 
@@ -435,9 +458,9 @@ The original author of _Iris_ is [@kataras](https://github.com/kataras), you can
 
 [List of all Contributors](https://github.com/kataras/iris/graphs/contributors)
 
-Help this project to continue deliver awesome and unique features with the higher code quality as possible by donating any amount
+Help this project to continue deliver awesome and unique features with the higher code quality as possible by donating any amount via [PayPal](https://www.paypal.me/kataras)!
 
-[![](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=kataras2006%40hotmail%2ecom&lc=GR&item_name=Iris%20web%20framework&item_number=iriswebframeworkdonationid2016&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted)
+[![](https://www.paypalobjects.com/webstatic/paypalme/images/pp_logo_small.png)](https://www.paypal.me/kataras/20)
 
 ## License
 
