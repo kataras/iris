@@ -274,9 +274,22 @@ func (r *Store) GetBoolDefault(key string, def bool) (bool, error) {
 	if v == nil {
 		return def, nil
 	}
+
+	if vBoolean, ok := v.(bool); ok {
+		return vBoolean, nil
+	}
+
 	if vString, ok := v.(string); ok {
 		return strconv.ParseBool(vString)
 	}
+
+	if vInt, ok := v.(int); ok {
+		if vInt == 1 {
+			return true, nil
+		}
+		return false, nil
+	}
+
 	return def, nil
 }
 
