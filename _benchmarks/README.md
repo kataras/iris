@@ -14,11 +14,12 @@
 
 The first test will contain a simple application with a text response and the second will render templates + a layout.
 
-## Simple 
+## Simple
 
 We will compare two identical things here, in terms of application, the expected response and the stability of their run times, so we will not try to put more things in the game like `JSON` or `XML` encoders and decoders, just a simple text message. To achieve a fair comparison we will use the MVC architecture pattern on both sides, Go and .NET Core.
 
 ### .NET Core MVC
+
 ```bash
 $ cd netcore-mvc
 $ dotnet run -c Release
@@ -43,6 +44,7 @@ Statistics        Avg      Stdev        Max
 ```
 
 ### Iris MVC
+
 ```bash
 $ cd iris-mvc
 $ go run main.go
@@ -63,7 +65,6 @@ Statistics        Avg      Stdev        Max
     others - 0
   Throughput:    19.65MB/s
 ```
-
 
 Click [here](screens) to navigate to the screenshots.
 
@@ -104,6 +105,7 @@ Application started. Press Ctrl+C to shut down.
 ```
 
 ```bash
+$ bombardier -c 125 -n 1000000 http://localhost:5000
 Bombarding http://localhost:5000 with 1000000 requests using 125 connections
  1000000 / 1000000 [=====================================================================================] 100.00% 1m20s
 Done!
@@ -126,6 +128,7 @@ Application started. Press CTRL+C to shut down.
 ```
 
 ```bash
+$ bombardier -c 125 -n 1000000 http://localhost:5000
 Bombarding http://localhost:5000 with 1000000 requests using 125 connections
  1000000 / 1000000 [======================================================================================] 100.00% 37s
 Done!
@@ -172,6 +175,7 @@ Application started. Press Ctrl+C to shut down.
 ```
 
 ```bash
+$ bombardier -c 125 -n 1000000 http://localhost:5000/api/values/5
 Bombarding http://localhost:5000/api/values/5 with 1000000 requests using 125 connections
  1000000 / 1000000 [======================================================================================] 100.00% 10s
 Done!
@@ -194,6 +198,7 @@ Application started. Press CTRL+C to shut down.
 ```
 
 ```bash
+$ bombardier -c 125 -n 1000000 http://localhost:5000/api/values/5
 Bombarding http://localhost:5000/api/values/5 with 1000000 requests using 125 connections
  1000000 / 1000000 [=======================================================================================] 100.00% 8s
 Done!
@@ -204,6 +209,30 @@ Statistics        Avg      Stdev        Max
     1xx - 0, 2xx - 1000000, 3xx - 0, 4xx - 0, 5xx - 0
     others - 0
   Throughput:    21.93MB/s
+```
+
+### Node.js (Express)
+
+```bash
+$ cd expressjs
+$ npm install
+$ node app.js
+Now listening on: http://localhost:5000
+Application started. Press CTRL+C to shut down.
+```
+
+```bash
+$ bombardier -c 125 -n 1000000 http://localhost:5000/api/values/5
+Bombarding http://localhost:5000/api/values/5 with 1000000 requests using 125 connections
+ 1000000 / 1000000 [=======================================================================================] 100.00% 1m25s
+Done!
+Statistics        Avg      Stdev        Max
+  Reqs/sec    11665.30    628.41     21978
+  Latency        10.72ms   1.45ms    112.10ms
+  HTTP codes:
+    1xx - 0, 2xx - 1000000, 3xx - 0, 4xx - 0, 5xx - 0
+    others - 0
+  Throughput:    3.14MB/s
 ```
 
 ### Summary
@@ -217,6 +246,8 @@ Statistics        Avg      Stdev        Max
 .NET Core (Kestrel) Application written using **63 code of lines** ran for **10 seconds** serving **97884.57** requests per second with **17.73MB/s** within **1.28ms** latency in average and **61.04ms** max.
 
 Iris Application written using **14 code of lines** ran for **8 seconds** serving **117917.79** requests per second with **21.93MB/s** within **1.06ms** latency in average and **19.03ms** max.
+
+Node.js (Express) Application written using **12 code of lines** ran for **1 minute and 25 seconds** serving **11665.30** requests per second with **3.14MB/s** within **10.72ms** latency in average and **112.10ms** max.
 
 ## Sessions
 
@@ -234,6 +265,7 @@ Application started. Press Ctrl+C to shut down.
 ```
 
 ```bash
+$ bombardier -c 125 -n 5000000 http://localhost:5000/setget
 Bombarding http://localhost:5000/setget with 5000000 requests using 125 connections
  5000000 / 5000000 [====================================================================================] 100.00% 2m40s
 Done!
@@ -256,6 +288,7 @@ Application started. Press CTRL+C to shut down.
 ```
 
 ```bash
+$ bombardier -c 125 -n 5000000 http://localhost:5000/setget
 Bombarding http://localhost:5000/setget with 5000000 requests using 125 connections
  5000000 / 5000000 [====================================================================================] 100.00% 1m15s
 Done!
@@ -266,6 +299,30 @@ Statistics        Avg      Stdev        Max
     1xx - 0, 2xx - 5000000, 3xx - 0, 4xx - 0, 5xx - 0
     others - 0
   Throughput:    20.65MB/s
+```
+
+### Node.js (Express) with Sessions
+
+```bash
+$ cd expressjs-sessions
+$ npm install
+$ node app.js
+Now listening on: http://localhost:5000
+Application started. Press CTRL+C to shut down.
+```
+
+```bash
+$ bombardier -c 125 -n 5000000 http://localhost:5000/setget
+Bombarding http://localhost:5000/setget with 5000000 requests using 125 connections
+ 5000000 / 5000000 [====================================================================================] 100.00% 15m47s
+Done!
+Statistics        Avg      Stdev        Max
+  Reqs/sec      5634.27   2317.30         9945
+  Latency       22.17ms    8.19ms     119.08ms
+  HTTP codes:
+    1xx - 0, 2xx - 5000000, 3xx - 0, 4xx - 0, 5xx - 0
+    others - 0
+  Throughput:    1.48MB/s
 ```
 
 ### Summary
@@ -279,10 +336,9 @@ Statistics        Avg      Stdev        Max
 
 Iris with Sessions Application ran for **1 minute and 15 seconds** serving **66749.70** requests per second with **20.65MB/s** within **1.88ms** latency in average and **1.94s** max.
 
-> A new article based on the latest, Kestrel and Iris, benchmarks is coming. Stay tuned!
+Node.js (Express) with Sessions Application ran for **15 minutes and 47 seconds** serving **5634.27** requests per second with **1.48MB/s** within **22.17ms** latency in average and **119.08ms** max.
 
 > Click [here](screens) to navigate to the screenshots.
-
 
 ### Articles
 
@@ -294,6 +350,5 @@ Iris with Sessions Application ran for **1 minute and 15 seconds** serving **667
 **Iris Go vs .NET Core Kestrel in terms of HTTP performance (Mo, 21 August 2017)** 
 
 - https://medium.com/@kataras/iris-go-vs-net-core-kestrel-in-terms-of-http-performance-806195dc93d5
-
 
 **Thank you all** for the 100% green feedback, have fun!
