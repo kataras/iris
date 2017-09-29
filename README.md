@@ -1,8 +1,8 @@
-# ![Logo created by @santoshanand](logo_white_35_24.png) Iris 
+<!-- # ![Logo created by @santoshanand](logo_white_35_24.png) Iris -->
 
-<!-- <p align="center">
+<p align="center">
 <img src="iris_the_new_machine.gif">
-</p> -->
+</p>
 
 Iris is a fast, simple and efficient micro web framework for Go. It provides a beautifully expressive and easy to use foundation for your next website, API, or distributed app.
 
@@ -36,9 +36,17 @@ Iris was built on top of the the [net/http](https://golang.org/pkg/net/http/) pa
 
 <!-- has issues, the img.shields.io's API is problematic for this resource: [![issue stats](https://img.shields.io/issuestats/i/github/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/issues?q=is%3Aissue+is%3Aclosed) -->
 <!-- [![godocs](https://img.shields.io/badge/godocs-8.x.x-0366d6.svg?style=flat-square)](https://godoc.org/github.com/kataras/iris) -->
-<p>
-<img src="https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png" alt="Third-party source for transparency." />
-</p>
+
+![Iris vs .NET Core(C#)](https://iris-go.com/images/benchmark-iris-vs-netcore.png)
+
+_Updated at: [Friday, 29 September 2017](_examples)_
+
+<details>
+<summary>Benchmarks from third-party source over the rest web frameworks</summary>
+
+![Comparison with other frameworks](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png)
+
+</details>
 
 ### 📑 Table of contents
 
