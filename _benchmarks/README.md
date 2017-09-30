@@ -227,7 +227,7 @@ Bombarding http://localhost:5000/api/values/5 with 1000000 requests using 125 co
  1000000 / 1000000 [=======================================================================================] 100.00% 1m25s
 Done!
 Statistics        Avg      Stdev        Max
-  Reqs/sec    11665.30    628.41     21978
+  Reqs/sec      11665.30   628.41       21978
   Latency        10.72ms   1.45ms    112.10ms
   HTTP codes:
     1xx - 0, 2xx - 1000000, 3xx - 0, 4xx - 0, 5xx - 0
