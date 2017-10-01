@@ -2317,15 +2317,10 @@ func (ctx *context) ServeFile(filename string, gzipCompression bool) error {
 	defer f.Close()
 	fi, _ := f.Stat()
 	if fi.IsDir() {
-		filename = path.Join(filename, "index.html")
-		f, err = os.Open(filename)
-		if err != nil {
-			return fmt.Errorf("%d", 404)
-		}
-		fi, _ = f.Stat()
+		return ctx.ServeFile(path.Join(filename, "index.html"), gzipCompression)
 	}
-	return ctx.ServeContent(f, fi.Name(), fi.ModTime(), gzipCompression)
 
+	return ctx.ServeContent(f, fi.Name(), fi.ModTime(), gzipCompression)
 }
 
 // SendFile sends file for force-download to the client
