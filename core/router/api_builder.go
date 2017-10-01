@@ -661,7 +661,12 @@ func (api *APIBuilder) StaticEmbedded(requestPath string, vdir string, assetFn f
 	fullpath := joinPath(api.relativePath, requestPath)
 	requestPath = joinPath(fullpath, WildcardParam("file"))
 
-	h := StripPrefix(fullpath, api.StaticEmbeddedHandler(vdir, assetFn, namesFn))
+	h := api.StaticEmbeddedHandler(vdir, assetFn, namesFn)
+
+	if fullpath != "/" {
+		h = StripPrefix(fullpath, h)
+	}
+
 	return api.registerResourceRoute(requestPath, h)
 }
 
