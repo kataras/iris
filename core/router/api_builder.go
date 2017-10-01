@@ -534,6 +534,12 @@ func (api *APIBuilder) Controller(relativePath string, controller activator.Base
 		api.reporter.Add("%v for path: '%s'", err, relativePath)
 	}
 
+	if cInit, ok := controller.(interface {
+		Init(activator.RegisterFunc)
+	}); ok {
+		cInit.Init(registerFunc)
+	}
+
 	return
 }
 
@@ -800,6 +806,10 @@ func (api *APIBuilder) StaticWeb(requestPath string, systemPath string) *Route {
 // and/or disable the gzip if gzip response recorder
 // was active.
 func (api *APIBuilder) OnErrorCode(statusCode int, handlers ...context.Handler) {
+	if len(api.beginGlobalHandlers) > 0 {
+		handlers = joinHandlers(api.beginGlobalHandlers, handlers)
+	}
+
 	api.errorCodeHandlers.Register(statusCode, handlers...)
 }
 

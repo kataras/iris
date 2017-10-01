@@ -364,6 +364,8 @@ type Context interface {
 	//  | Various Request and Post Data                              |
 	//  +------------------------------------------------------------+
 
+	// URLParam returns true if the url parameter exists, otherwise false.
+	URLParamExists(name string) bool
 	// URLParamDefault returns the get parameter from a request, if not found then "def" is returned.
 	URLParamDefault(name string, def string) string
 	// URLParam returns the get parameter from a request , if any.
@@ -1236,6 +1238,7 @@ func (ctx *context) ContentType(cType string) {
 			cType += "; charset=" + charset
 		}
 	}
+
 	ctx.writer.Header().Set(contentTypeHeaderKey, cType)
 }
 
@@ -1272,6 +1275,16 @@ func (ctx *context) GetStatusCode() int {
 //  +------------------------------------------------------------+
 //  | Various Request and Post Data                              |
 //  +------------------------------------------------------------+
+
+// URLParam returns true if the url parameter exists, otherwise false.
+func (ctx *context) URLParamExists(name string) bool {
+	if q := ctx.request.URL.Query(); q != nil {
+		_, exists := q[name]
+		return exists
+	}
+
+	return false
+}
 
 // URLParamDefault returns the get parameter from a request, if not found then "def" is returned.
 func (ctx *context) URLParamDefault(name string, def string) string {
