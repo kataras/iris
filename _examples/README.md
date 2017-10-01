@@ -22,6 +22,7 @@ Structuring is always depends on your needs. We can't tell you how to design you
 
 - [Example 1](mvc/login)
 - [Example 2](structuring/mvc)
+- [Example 3](structuring/handler-based)
 
 ### HTTP Listening
 
