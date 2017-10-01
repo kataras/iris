@@ -14,7 +14,16 @@ It doesn't always contain the "best ways" but it does cover each important featu
 - [Tutorial: URL Shortener using BoltDB](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
 - [Tutorial: How to turn your Android Device into a fully featured Web Server (**MUST**)](https://twitter.com/ThePracticalDev/status/892022594031017988)
 
-### HTTP Listening 
+### Structuring
+
+Nothing stops you from using your favorite folder structure. Iris is a low level web framework, it has got MVC support but it doesn't limit your folder structure, this is your choice.
+
+Structuring is always depends on your needs. We can't tell you how to design your own application for sure but you're free to take a closer look to the examples below; you may find something useful that you can borrow for your app
+
+- [Example 1](mvc/login)
+- [Example 2](structuring/mvc)
+
+### HTTP Listening
 
 - [Common, with address](http-listening/listen-addr/main.go)
     * [omit server errors](http-listening/listen-addr/omit-server-errors/main.go)

@@ -76,6 +76,7 @@ Help this project to continue deliver awesome and unique features with the highe
 * [Installation](#-installation)
 * [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#we-27-september-2017--v843)
 * [Learn](#-learn)
+    * [Structuring](_examples/#structuring)
     * [HTTP Listening](_examples/#http-listening)
     * [Configuration](_examples/#configuration)
     * [Routing, Grouping, Dynamic Path Parameters, "Macros" and Custom Context](_examples/#routing-grouping-dynamic-path-parameters-macros-and-custom-context)
