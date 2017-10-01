@@ -74,7 +74,7 @@ Help this project to continue deliver awesome and unique features with the highe
 ### 📑 Table of contents
 
 * [Installation](#-installation)
-* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#we-27-september-2017--v843)
+* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#su-01-october-2017--v844)
 * [Learn](#-learn)
     * [Structuring](_examples/#structuring)
     * [HTTP Listening](_examples/#http-listening)
