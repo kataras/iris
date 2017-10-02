@@ -157,6 +157,23 @@ type Application struct {
 	hostConfigurators []host.Configurator
 }
 
+// NewWithConfig creates and returns a fresh empty iris *Application instance using the specified configuration.
+func NewWithConfig(config *Configuration) *Application {
+
+	app := &Application{
+		config:     &config,
+		logger:     golog.Default,
+		APIBuilder: router.NewAPIBuilder(),
+		Router:     router.NewRouter(),
+	}
+
+	app.ContextPool = context.New(func() context.Context {
+		return context.NewContext(app)
+	})
+
+	return app
+}
+
 // New creates and returns a fresh empty iris *Application instance.
 func New() *Application {
 	config := DefaultConfiguration()
