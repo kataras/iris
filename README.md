@@ -94,6 +94,7 @@ Help this project to continue deliver awesome and unique features with the highe
     * [Websockets](_examples/#websockets)
     * [Miscellaneous](_examples/#miscellaneous)
     * [POC: Convert the medium-sized project "Parrot" from native to Iris](https://github.com/iris-contrib/parrot)
+    * [POC: Isomorphic react/hot reloadable/redux/css-modules starter kit](https://github.com/kataras/iris-starter-kit)
     * [Typescript Automation Tools](typescript/#table-of-contents)
     * [Tutorial: Online Visitors](_examples/tutorial/online-visitors)
     * [Tutorial: Caddy](_examples/tutorial/caddy)
