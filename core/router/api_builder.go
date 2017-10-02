@@ -188,20 +188,28 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 //
 // This method is used behind the scenes at the `Controller` function
 // in order to handle more than one paths for the same controller instance.
-func (api *APIBuilder) HandleMany(method string, relativePath string, handlers ...context.Handler) (routes []*Route) {
-	trimmedPath := strings.Trim(relativePath, " ")
+func (api *APIBuilder) HandleMany(methodOrMulti string, relativePathorMulti string, handlers ...context.Handler) (routes []*Route) {
+	trimmedPath := strings.Trim(relativePathorMulti, " ")
+	trimmedMethod := strings.Trim(methodOrMulti, " ")
 	// at least slash
 	// a space
 	// at least one other slash for the next path
 	// app.Controller("/user /user{id}", new(UserController))
 	paths := strings.Split(trimmedPath, " ")
+	methods := strings.Split(trimmedMethod, " ")
 	for _, p := range paths {
 		if p != "" {
-			if method == "ANY" || method == "ALL" {
-				routes = append(routes, api.Any(p, handlers...)...)
-				continue
+			for _, method := range methods {
+				if method == "" {
+					method = "ANY"
+				}
+				if method == "ANY" || method == "ALL" {
+					routes = append(routes, api.Any(p, handlers...)...)
+					continue
+				}
+				routes = append(routes, api.Handle(method, p, handlers...))
 			}
-			routes = append(routes, api.Handle(method, p, handlers...))
+
 		}
 	}
 	return
@@ -699,18 +707,10 @@ func (api *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
 		return nil
 	}
 
-	// ignore error f.Close()
 	defer f.Close()
 	fi, _ := f.Stat()
 	if fi.IsDir() { // if it's dir the try to get the favicon.ico
-		fav := path.Join(favPath, "favicon.ico")
-		f, err = os.Open(fav)
-		if err != nil {
-			//we try again with .png
-			return api.Favicon(path.Join(favPath, "favicon.png"))
-		}
-		favPath = fav
-		fi, _ = f.Stat()
+		return api.Favicon(path.Join(favPath, "favicon.ico"))
 	}
 
 	cType := TypeByFilename(favPath)
@@ -747,7 +747,7 @@ func (api *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
 		}
 	}
 
-	reqPath := "/favicon" + path.Ext(fi.Name()) //we could use the filename, but because standards is /favicon.ico/.png.
+	reqPath := "/favicon" + path.Ext(fi.Name()) // we could use the filename, but because standards is /favicon.ico
 	if len(requestPath) > 0 && requestPath[0] != "" {
 		reqPath = requestPath[0]
 	}
