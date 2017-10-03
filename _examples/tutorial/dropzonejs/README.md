@@ -1,7 +1,7 @@
 This is the part 1 of 2 in DropzoneJS + Go series.
 
 - [Part 1: How to build a file upload form](README.md)
-- [Part 2: How to display existing files on server](README_NEXT.md)
+- [Part 2: How to display existing files on server](README_PART2.md)
 
 # DropzoneJS + Go: How to build a file upload form
 

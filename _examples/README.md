@@ -15,6 +15,7 @@ It doesn't always contain the "best ways" but it does cover each important featu
 - [Tutorial: How to turn your Android Device into a fully featured Web Server (**MUST**)](https://twitter.com/ThePracticalDev/status/892022594031017988)
 - [POC: Convert the medium-sized project "Parrot" from native to Iris](https://github.com/iris-contrib/parrot)
 - [POC: Isomorphic react/hot reloadable/redux/css-modules starter kit](https://github.com/kataras/iris-starter-kit)
+- [Tutorial: DropzoneJS Uploader](tutorial/dropzonejs)
 
 ### Structuring
 
