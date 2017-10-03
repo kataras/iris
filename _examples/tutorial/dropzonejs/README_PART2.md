@@ -1,7 +1,7 @@
 This is the part 2 of 2 in DropzoneJS + Go series.
 
 - [Part 1: How to build a file upload form](README.md)
-- [Part 2: How to display existing files on server](README_NEXT.md)
+- [Part 2: How to display existing files on server](README_PART2.md)
 
 # DropzoneJS + Go: How to display existing files on server
 
@@ -17,7 +17,7 @@ In this tutorial, we will show you how to display existing files on the server w
 
 ## Preparation
 
-Install the go package "nfnt/resize" with `go get github.com/nfnt/resize`, we need it to create thumbnails.
+Install the go package "github.com/nfnt/resize" with `go get github.com/nfnt/resize`, we need it to create thumbnails.
 
 In previous [tutorial](README.md). We have already set up a proper working DropzoneJs upload form. There is no additional file needed for this tutorial. What we need to do is to make some modifications to file below:
 

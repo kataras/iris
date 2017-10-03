@@ -98,6 +98,7 @@ Help this project to continue deliver awesome and unique features with the highe
     * [Typescript Automation Tools](typescript/#table-of-contents)
     * [Tutorial: Online Visitors](_examples/tutorial/online-visitors)
     * [Tutorial: Caddy](_examples/tutorial/caddy)
+    * [Tutorial: DropzoneJS Uploader](_examples/tutorial/dropzonejs)
 * [Middleware](middleware/)
 * [Dockerize](https://github.com/iris-contrib/cloud-native-go)
 * [Community & Support](#-community)
