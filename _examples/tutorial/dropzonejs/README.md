@@ -1,3 +1,10 @@
+# Articles
+
+- [How to build a file upload form using DropzoneJS and Go](https://dev.to/kataras/dropzonejs--go-series---part-1-474)
+- [How to display existing files on server using DropzoneJS and Go](https://dev.to/kataras/dropzonejs--go-series---part-2-4n1)
+
+# Content
+
 This is the part 1 of 2 in DropzoneJS + Go series.
 
 - [Part 1: How to build a file upload form](README.md)
@@ -145,7 +152,8 @@ func main() {
 7. If file is sent to the page, store the file object to a temporary "file" variable.
 8. Move uploaded file to destination based on the uploadsDir+uploaded file's name.
 
-**Run the server**
+### Runing the server
+
 Open the terminal at the current project's folder and execute:
 
 ```bash

@@ -1,3 +1,10 @@
+# Articles
+
+- [How to build a file upload form using DropzoneJS and Go](https://dev.to/kataras/dropzonejs--go-series---part-1-474)
+- [How to display existing files on server using DropzoneJS and Go](https://dev.to/kataras/dropzonejs--go-series---part-2-4n1)
+
+# Content
+
 This is the part 2 of 2 in DropzoneJS + Go series.
 
 - [Part 1: How to build a file upload form](README.md)
@@ -5,7 +12,7 @@ This is the part 2 of 2 in DropzoneJS + Go series.
 
 # DropzoneJS + Go: How to display existing files on server
 
-In this tutorial, we will show you how to display existing files on the server when using DropzoneJs and Go. This tutorial is based on [How to build a file upload form using DropzoneJs and Go](README.md). Make sure you have read it before proceeding to content in this tutorial.
+In this tutorial, we will show you how to display existing files on the server when using DropzoneJS and Go. This tutorial is based on [How to build a file upload form using DropzoneJS and Go](README.md). Make sure you have read it before proceeding to content in this tutorial.
 
 ## Table Of Content
 
@@ -276,8 +283,8 @@ Copy content below to "./views/upload.html". We will go through modifications in
 4. Retrieve files details from the new "/uploads" via ajax.
 5. Create mockFile using values from server. mockFile is simply JavaScript objects with properties of name and size. Then we call Dropzone's **addedfile** and **thumbnail** functions explicitly to put existing files to Dropzone upload area and generate its thumbnail.
 
+### Runing the server
 
-**Run the server**
 Open the terminal at the current project's folder and execute:
 
 ```bash
