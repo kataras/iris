@@ -6,9 +6,9 @@ Be part of the **first** Iris User Experience Report by submitting a simple form
 
 The form contains some questions that you may need to answer in order to learn more about you; learning more about you helps us to serve you with the best possible way!
 
-https://goo.gl/forms/vKMsg4bjHO09kGwb
+https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link
 
-<a href="https://goo.gl/forms/vKMsg4bjHO09kGwb2"><img src="https://iris-go.com/public/images/user_experience_report.png" alt="Iris User Experience Report - Header" width="400"></a>
+<a href="https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link"><img src="https://iris-go.com/public/images/user_experience_report.png" alt="Iris User Experience Report - Header" width="400"></a>
 
 <p align="center">
 <img src="iris_the_new_machine.gif">
