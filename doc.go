@@ -173,7 +173,7 @@ Below you'll see some useful examples:
     app.Run(iris.Addr(":8080"))
 
 
-    // Same as before but using a custom http.Server which may being used somewhere else too
+    // Same as before but using a custom http.Server which may be in use somewhere else too
     app.Run(iris.Server(&http.Server{Addr:":8080"}))
 
 
