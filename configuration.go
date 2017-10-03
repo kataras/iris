@@ -534,6 +534,10 @@ func WithConfiguration(c Configuration) Configurator {
 			main.DisableInterruptHandler = v
 		}
 
+		if v := c.DisableVersionChecker; v {
+			main.DisableVersionChecker = v
+		}
+
 		if v := c.DisablePathCorrection; v {
 			main.DisablePathCorrection = v
 		}
