@@ -158,7 +158,7 @@ type Application struct {
 }
 
 // NewWithConfig creates and returns a fresh empty iris *Application instance using the specified configuration.
-func NewWithConfig(config *Configuration) *Application {
+func NewWithConfig(config Configuration) *Application {
 
 	app := &Application{
 		config:     &config,
