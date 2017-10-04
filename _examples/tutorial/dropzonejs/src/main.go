@@ -55,7 +55,7 @@ func (f *uploadedFiles) scan(dir string) {
 	f.dir = dir
 	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 
-		// if it's directory or a thumbnail we saved ealier, skip it.
+		// if it's directory or a thumbnail we saved earlier, skip it.
 		if info.IsDir() || strings.HasPrefix(info.Name(), "thumbnail_") {
 			return nil
 		}

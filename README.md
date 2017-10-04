@@ -127,7 +127,7 @@ Help this project to continue deliver awesome and unique features with the highe
 
 ### 🚀 Installation
 
-The only requirement is the [Go Programming Language](https://golang.org/dl/), at least version 1.8 but **1.9** is highly recommended.
+The only requirement is the [Go Programming Language](https://golang.org/dl/), at least version 1.9.
 
 ```sh
 $ go get -u github.com/kataras/iris
@@ -158,6 +158,13 @@ func main() {
 
     // Method:    GET
     // Resource:  http://localhost:8080/user/42
+    //
+    // Need to use a custom regexp instead?
+    // Easy;
+    // Just mark the parameter's type to 'string'
+    // which accepts anything and make use of
+    // its `regexp` macro function, i.e:
+    // app.Get("/user/{id:string regexp(^[0-9]+$)}")
     app.Get("/user/{id:long}", func(ctx iris.Context) {
         userID, _ := ctx.Params().GetInt64("id")
         ctx.Writef("User ID: %d", userID)
@@ -167,6 +174,8 @@ func main() {
     app.Run(iris.Addr(":8080"))
 }
 ```
+
+> See all available path parameter types at: https://github.com/kataras/iris/blob/master/_examples/routing/dynamic-path/main.go#L31
 
 ```html
 <!-- file: ./views/hello.html -->
