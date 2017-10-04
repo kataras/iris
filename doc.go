@@ -110,6 +110,12 @@ Example code:
         // Method GET: http://localhost:8080/profile/anytypeofstring
         app.Get("/profile/{username:string}", profileByUsername)
 
+        // Want to use a custom regex expression instead?
+        // Easy: app.Get("/profile/{username:string regexp(^[a-zA-Z ]+$)}")
+        //
+        // If parameter type is missing then it's string which accepts anything,
+        // i.e: /{paramname} it's exactly the same as /{paramname:string}.
+
         usersRoutes := app.Party("/users", logThisMiddleware)
         {
             // Method GET: http://localhost:8080/users/42

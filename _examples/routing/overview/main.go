@@ -11,9 +11,19 @@ func main() {
 	app.Get("/", info)
 
 	// GET: http://localhost:8080/profile/anyusername
+	//
+	// Want to use a custom regex expression instead?
+	// Easy: app.Get("/profile/{username:string regexp(^[a-zA-Z ]+$)}")
 	app.Get("/profile/{username:string}", info)
+
+	// If parameter type is missing then it's string which accepts anything,
+	// i.e: /{paramname} it's exactly the same as /{paramname:string}.
+	// The below is exactly the same as
+	// {username:string}
+	//
 	// GET: http://localhost:8080/profile/anyusername/backups/any/number/of/paths/here
-	app.Get("/profile/{username:string}/backups/{filepath:path}", info)
+	app.Get("/profile/{username}/backups/{filepath:path}", info)
+
 	// Favicon
 
 	// GET: http://localhost:8080/favicon.ico

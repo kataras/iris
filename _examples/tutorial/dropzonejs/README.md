@@ -152,7 +152,7 @@ func main() {
 7. If file is sent to the page, store the file object to a temporary "file" variable.
 8. Move uploaded file to destination based on the uploadsDir+uploaded file's name.
 
-### Runing the server
+### Running the server
 
 Open the terminal at the current project's folder and execute:
 

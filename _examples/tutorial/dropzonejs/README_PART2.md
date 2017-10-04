@@ -98,7 +98,7 @@ func (f *uploadedFiles) scan(dir string) {
     f.dir = dir
     filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 
-        // if it's directory or a thumbnail we saved ealier, skip it.
+        // if it's directory or a thumbnail we saved earlier, skip it.
         if info.IsDir() || strings.HasPrefix(info.Name(), "thumbnail_") {
             return nil
         }
@@ -283,7 +283,7 @@ Copy content below to "./views/upload.html". We will go through modifications in
 4. Retrieve files details from the new "/uploads" via ajax.
 5. Create mockFile using values from server. mockFile is simply JavaScript objects with properties of name and size. Then we call Dropzone's **addedfile** and **thumbnail** functions explicitly to put existing files to Dropzone upload area and generate its thumbnail.
 
-### Runing the server
+### Running the server
 
 Open the terminal at the current project's folder and execute:
 
