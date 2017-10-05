@@ -149,7 +149,7 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 
 	// global begin handlers -> middleware that are registered before route registration
 	// -> handlers that are passed to this Handle function.
-	routeHandlers := joinHandlers(append(api.beginGlobalHandlers, api.middleware...), handlers)
+	routeHandlers := joinHandlers(api.middleware, handlers)
 	// -> done handlers after all
 	if len(api.doneGlobalHandlers) > 0 {
 		routeHandlers = append(routeHandlers, api.doneGlobalHandlers...) // register the done middleware, if any
@@ -163,6 +163,9 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 		api.reporter.Add("%v -> %s:%s:%s", err, method, subdomain, path)
 		return nil
 	}
+
+	// Add UseGlobal Handlers
+	r.use(api.beginGlobalHandlers)
 
 	// global
 	api.routes.register(r)
