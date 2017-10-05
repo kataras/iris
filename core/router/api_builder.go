@@ -545,12 +545,6 @@ func (api *APIBuilder) Controller(relativePath string, controller activator.Base
 		api.reporter.Add("%v for path: '%s'", err, relativePath)
 	}
 
-	if cInit, ok := controller.(interface {
-		Init(activator.RegisterFunc)
-	}); ok {
-		cInit.Init(registerFunc)
-	}
-
 	return
 }
 

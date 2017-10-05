@@ -7,6 +7,7 @@ import (
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/mvc"
+	"github.com/kataras/iris/mvc/activator"
 
 	"github.com/kataras/iris/core/router"
 	"github.com/kataras/iris/httptest"
@@ -492,4 +493,34 @@ func TestControllerRelPathFromFunc(t *testing.T) {
 		Body().Equal("GET:/42")
 	e.GET("/anything/here").Expect().Status(httptest.StatusOK).
 		Body().Equal("GET:/anything/here")
+}
+
+type testControllerActivateListener struct {
+	mvc.Controller
+
+	TitlePointer *testBindType
+}
+
+func (c *testControllerActivateListener) OnActivate(p *activator.ActivatePayload) {
+	p.EnsureBindValue(&testBindType{
+		title: "default title",
+	})
+}
+
+func (c *testControllerActivateListener) Get() {
+	c.Text = c.TitlePointer.title
+}
+
+func TestControllerActivateListener(t *testing.T) {
+	app := iris.New()
+	app.Controller("/", new(testControllerActivateListener))
+	app.Controller("/manual", new(testControllerActivateListener), &testBindType{
+		title: "my title",
+	})
+
+	e := httptest.New(t, app)
+	e.GET("/").Expect().Status(httptest.StatusOK).
+		Body().Equal("default title")
+	e.GET("/manual").Expect().Status(httptest.StatusOK).
+		Body().Equal("my title")
 }

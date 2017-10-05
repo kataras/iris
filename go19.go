@@ -9,13 +9,6 @@ import (
 	"github.com/kataras/iris/mvc"
 )
 
-// TODO: When go 1.9 will be released
-// split this file in order to separate the concepts.
-//
-// Files should change after go1.9 final release:
-// README.md: Hello World with Go 1.9
-// core/host/supervisor.go
-// context.go
 type (
 	// Context is the midle-man server's "object" for the clients.
 	//

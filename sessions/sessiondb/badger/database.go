@@ -22,7 +22,7 @@ type Database struct {
 	// Service is the underline badger database connection,
 	// it's initialized at `New` or `NewFromDB`.
 	// Can be used to get stats.
-	Service *badger.KV
+	Service *badger.DB
 	async   bool
 }
 
@@ -51,7 +51,7 @@ func New(directoryPath string) (*Database, error) {
 	opts.Dir = directoryPath
 	opts.ValueDir = directoryPath
 
-	service, err := badger.NewKV(&opts)
+	service, err := badger.Open(&opts)
 
 	if err != nil {
 		golog.Errorf("unable to initialize the badger-based session database: %v", err)
@@ -62,7 +62,7 @@ func New(directoryPath string) (*Database, error) {
 }
 
 // NewFromDB same as `New` but accepts an already-created custom badger connection instead.
-func NewFromDB(service *badger.KV) (*Database, error) {
+func NewFromDB(service *badger.DB) (*Database, error) {
 	if service == nil {
 		return nil, errors.New("underline database is missing")
 	}
@@ -75,30 +75,37 @@ func NewFromDB(service *badger.KV) (*Database, error) {
 
 // Cleanup removes any invalid(have expired) session entries,
 // it's being called automatically on `New` as well.
-func (db *Database) Cleanup() error {
+func (db *Database) Cleanup() (err error) {
 	rep := errors.NewReporter()
 
-	iter := db.Service.NewIterator(badger.DefaultIteratorOptions)
+	txn := db.Service.NewTransaction(true)
+	defer txn.Commit(nil)
+
+	iter := txn.NewIterator(badger.DefaultIteratorOptions)
+	defer iter.Close()
+
 	for iter.Rewind(); iter.Valid(); iter.Next() {
 		// Remember that the contents of the returned slice should not be modified, and
 		// only valid until the next call to Next.
 		item := iter.Item()
-		err := item.Value(func(b []byte) error {
-			storeDB, err := sessions.DecodeRemoteStore(b)
-			if err != nil {
-				return err
-			}
+		b, err := item.Value()
 
-			if storeDB.Lifetime.HasExpired() {
-				err = db.Service.Delete(item.Key())
-			}
-			return err
-		})
+		if rep.AddErr(err) {
+			continue
+		}
 
-		rep.AddErr(err)
+		storeDB, err := sessions.DecodeRemoteStore(b)
+		if rep.AddErr(err) {
+			continue
+		}
+
+		if storeDB.Lifetime.HasExpired() {
+			if err := txn.Delete(item.Key()); err != nil {
+				rep.AddErr(err)
+			}
+		}
 	}
 
-	iter.Close()
 	return rep.Return()
 }
 
@@ -112,21 +119,28 @@ func (db *Database) Async(useGoRoutines bool) *Database {
 // Load loads the sessions from the badger(key-value file-based) session storage.
 func (db *Database) Load(sid string) (storeDB sessions.RemoteStore) {
 	bsid := []byte(sid)
-	iter := db.Service.NewIterator(badger.DefaultIteratorOptions)
-	defer iter.Close()
 
-	iter.Seek(bsid)
-	if !iter.Valid() {
+	txn := db.Service.NewTransaction(false)
+	defer txn.Discard()
+
+	item, err := txn.Get(bsid)
+	if err != nil {
+		// Key not found, don't report this, session manager will create a new session as it should.
 		return
 	}
-	item := iter.Item()
-	item.Value(func(b []byte) (err error) {
-		storeDB, err = sessions.DecodeRemoteStore(b) // decode the whole value, as a remote store
-		if err != nil {
-			golog.Errorf("error while trying to load from the remote store: %v", err)
-		}
+
+	b, err := item.Value()
+
+	if err != nil {
+		golog.Errorf("error while trying to get the serialized session(%s) from the remote store: %v", sid, err)
 		return
-	})
+	}
+
+	storeDB, err = sessions.DecodeRemoteStore(b) // decode the whole value, as a remote store
+	if err != nil {
+		golog.Errorf("error while trying to load from the remote store: %v", err)
+	}
+
 	return
 }
 
@@ -155,19 +169,28 @@ func (db *Database) sync(p sessions.SyncPayload) {
 		golog.Errorf("error while serializing the remote store: %v", err)
 	}
 
-	// err = db.Service.Set(bsid, s, meta)
-	e := &badger.Entry{
-		Key:   bsid,
-		Value: s,
-	}
-	err = db.Service.BatchSet([]*badger.Entry{e})
+	txn := db.Service.NewTransaction(true)
+
+	err = txn.Set(bsid, s, 0x00)
 	if err != nil {
-		golog.Errorf("error while writing the session(%s) to the database: %v", p.SessionID, err)
+		txn.Discard()
+		golog.Errorf("error while trying to save the session(%s) to the database: %v", p.SessionID, err)
+		return
+	}
+	if err := txn.Commit(nil); err != nil { // Commit will call the Discard automatically.
+		golog.Errorf("error while committing the session(%s) changes to the database: %v", p.SessionID, err)
 	}
 }
 
 func (db *Database) destroy(bsid []byte) error {
-	return db.Service.Delete(bsid)
+	txn := db.Service.NewTransaction(true)
+
+	err := txn.Delete(bsid)
+	if err != nil {
+		return err
+	}
+
+	return txn.Commit(nil)
 }
 
 // Close shutdowns the badger connection.
