@@ -81,6 +81,8 @@ Help this project to continue deliver awesome and unique features with the highe
 | [Bill Q.](https://github.com/hiveminded) | 600 EUR |  **Gold** |
 | [Conrad Steenberg](https://github.com/hengestone) | 25 EUR |  Bronze |
 
+_Psst_, we've produced a small video about your feelings regrating to Iris! You can watch the video at https://www.youtube.com/watch?v=jGx0LkuUs4A.
+
 ### 📑 Table of contents
 
 * [Installation](#-installation)
@@ -113,8 +115,8 @@ Help this project to continue deliver awesome and unique features with the highe
 * [Dockerize](https://github.com/iris-contrib/cloud-native-go)
 * [Community & Support](#-community)
 * [Blogs](https://iris-go.com/v8/blogs)
-    - [How to build a file upload form using DropzoneJS and Go](https://dev.to/kataras/dropzonejs--go-series---part-1-474)
-    - [How to display existing files on server using DropzoneJS and Go](https://dev.to/kataras/dropzonejs--go-series---part-2-4n1)
+    - [How to build a file upload form using DropzoneJS and Go](https://hackernoon.com/how-to-build-a-file-upload-form-using-dropzonejs-and-go-8fb9f258a991)
+    - [How to display existing files on server using DropzoneJS and Go](https://hackernoon.com/how-to-display-existing-files-on-server-using-dropzonejs-and-go-53e24b57ba19)
     - [Iris Go vs .NET Core Kestrel in terms of HTTP performance](https://hackernoon.com/iris-go-vs-net-core-kestrel-in-terms-of-http-performance-806195dc93d5)
     - [Go vs .NET Core in terms of HTTP performance](https://medium.com/@kataras/go-vs-net-core-in-terms-of-http-performance-7535a61b67b8)
     - [Iris, a modular web framework](https://medium.com/@corebreaker/iris-web-cd684b4685c7)
