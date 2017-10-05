@@ -23,7 +23,8 @@ func (u *VisitController) Get() {
 	u.Session.Set("visits", visits)
 
 	// write the current, updated visits
-	u.Ctx.Writef("%d visits in %0.1f seconds", visits, time.Now().Sub(u.StartTime).Seconds())
+	u.Ctx.Writef("%d visit from my current session in %0.1f seconds of server's up-time",
+		visits, time.Now().Sub(u.StartTime).Seconds())
 }
 
 func main() {

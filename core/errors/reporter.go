@@ -56,23 +56,33 @@ func NewReporter() *Reporter {
 // AddErr adds an error to the error stack.
 // if "err" is a StackError then
 // each of these errors will be printed as individual.
-func (r *Reporter) AddErr(err error) {
+//
+// Returns true if this "err" is not nil and it's added to the reporter's stack.
+func (r *Reporter) AddErr(err error) bool {
 	if err == nil {
-		return
+		return false
 	}
 
 	if stackErr, ok := err.(StackError); ok {
 		r.addStack(stackErr.Stack())
-		return
+	} else {
+		r.mu.Lock()
+		r.wrapper = r.wrapper.AppendErr(err)
+		r.mu.Unlock()
 	}
 
-	r.mu.Lock()
-	r.wrapper = r.wrapper.AppendErr(err)
-	r.mu.Unlock()
+	return true
 }
 
 // Add adds a formatted message as an error to the error stack.
-func (r *Reporter) Add(format string, a ...interface{}) {
+//
+// Returns true if this "err" is not nil and it's added to the reporter's stack.
+func (r *Reporter) Add(format string, a ...interface{}) bool {
+
+	if format == "" && len(a) == 0 {
+		return false
+	}
+
 	//  usually used as:  "module: %v", err so
 	// check if the first argument is error and if that error is empty then don't add it.
 	if len(a) > 0 {
@@ -81,7 +91,7 @@ func (r *Reporter) Add(format string, a ...interface{}) {
 			Error() string
 		}); ok {
 			if e.Error() == "" {
-				return
+				return false
 			}
 		}
 	}
@@ -89,6 +99,7 @@ func (r *Reporter) Add(format string, a ...interface{}) {
 	r.mu.Lock()
 	r.wrapper = r.wrapper.Append(format, a...)
 	r.mu.Unlock()
+	return true
 }
 
 // Describe same as `Add` but if "err" is nil then it does nothing.
