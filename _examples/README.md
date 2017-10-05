@@ -330,10 +330,8 @@ typescript automation tools have their own repository: [https://github.com/katar
 
 > I'd like to tell you that you can use your favourite but I don't think you will find such a thing anywhere else.
 
-### Hey, You!
+### Hey, You
 
-Developers should read the [godocs](https://godoc.org/github.com/kataras/iris) for a better understanding.
+Developers should read the [godocs](https://godoc.org/github.com/kataras/iris) and https://docs.iris-go.com for a better understanding.
 
 Psst, I almost forgot; do not forget to [star or watch](https://github.com/kataras/iris/stargazers) the project in order to stay updated with the latest tech trends, it never takes more than a second!
-
-
