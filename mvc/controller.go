@@ -221,6 +221,12 @@ func (c *Controller) Write(contents []byte) (int, error) {
 	return c.Ctx.ResponseWriter().Write(contents)
 }
 
+// Writef formats according to a format specifier and writes to the response.
+func (c *Controller) Writef(format string, a ...interface{}) (int, error) {
+	c.tryWriteHeaders()
+	return c.Ctx.ResponseWriter().Writef(format, a...)
+}
+
 // BeginRequest starts the main controller
 // it initialize the Ctx and other fields.
 //

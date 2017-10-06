@@ -446,18 +446,20 @@ func (c *testControllerRelPathFromFunc) EndRequest(ctx context.Context) {
 	c.Controller.EndRequest(ctx)
 }
 
-func (c *testControllerRelPathFromFunc) Get()                 {}
-func (c *testControllerRelPathFromFunc) GetBy(int64)          {}
-func (c *testControllerRelPathFromFunc) GetByWildcard(string) {}
+func (c *testControllerRelPathFromFunc) Get()                         {}
+func (c *testControllerRelPathFromFunc) GetBy(int64)                  {}
+func (c *testControllerRelPathFromFunc) GetAnythingByWildcard(string) {}
 
 func (c *testControllerRelPathFromFunc) GetLogin()  {}
 func (c *testControllerRelPathFromFunc) PostLogin() {}
 
 func (c *testControllerRelPathFromFunc) GetAdminLogin() {}
 
-func (c *testControllerRelPathFromFunc) PutSomethingIntoThis()              {}
+func (c *testControllerRelPathFromFunc) PutSomethingIntoThis() {}
+
 func (c *testControllerRelPathFromFunc) GetSomethingBy(bool)                {}
 func (c *testControllerRelPathFromFunc) GetSomethingByBy(string, int)       {}
+func (c *testControllerRelPathFromFunc) GetSomethingNewBy(string, int)      {} // two input arguments, one By which is the latest word.
 func (c *testControllerRelPathFromFunc) GetSomethingByElseThisBy(bool, int) {} // two input arguments
 
 func TestControllerRelPathFromFunc(t *testing.T) {
@@ -478,6 +480,8 @@ func TestControllerRelPathFromFunc(t *testing.T) {
 	e.GET("/something/falsee").Expect().Status(httptest.StatusNotFound)
 	e.GET("/something/kataras/42").Expect().Status(httptest.StatusOK).
 		Body().Equal("GET:/something/kataras/42")
+	e.GET("/something/new/kataras/42").Expect().Status(httptest.StatusOK).
+		Body().Equal("GET:/something/new/kataras/42")
 	e.GET("/something/true/else/this/42").Expect().Status(httptest.StatusOK).
 		Body().Equal("GET:/something/true/else/this/42")
 

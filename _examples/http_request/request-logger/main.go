@@ -48,7 +48,6 @@ func main() {
 		// this should be added to the logs, at the end because of the `logger.Config#MessageContextKey`
 		ctx.Values().Set("logger_message",
 			"a dynamic message passed to the logs")
-
 		ctx.Writef("My Custom error page")
 	})
 

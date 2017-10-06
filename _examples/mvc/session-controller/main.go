@@ -18,7 +18,7 @@ func (u *VisitController) Get() {
 	// get the visits, before calcuate this new one.
 	visits, _ := u.Session.GetIntDefault("visits", 0)
 
-	// increment the visits counter and set them to the session.
+	// increment the visits and store to the session.
 	visits++
 	u.Session.Set("visits", visits)
 

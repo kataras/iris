@@ -67,7 +67,6 @@ func (p *funcParser) parse() (*ast, error) {
 		}
 
 		if w == tokenBy {
-			typ := p.info.Type
 			funcArgPos++ // starting with 1 because in typ.NumIn() the first is the struct receiver.
 
 			// No need for these:
@@ -79,45 +78,67 @@ func (p *funcParser) parse() (*ast, error) {
 			// 	continue
 			// }
 
-			if typ.NumIn() <= funcArgPos {
-				// old:
-				// return nil, errors.New("keyword 'By' found but length of input receivers are not match for " +
-				// 	p.info.Name)
-
-				// By found but input arguments are not there, so act like /by path without restricts.
-				a.relPath += "/" + strings.ToLower(w)
-				continue
+			if err := p.parsePathParam(a, w, funcArgPos); err != nil {
+				return nil, err
 			}
 
-			var (
-				paramKey  = genParamKey(funcArgPos) // paramfirst, paramsecond...
-				paramType = paramTypeString         // default string
-			)
-
-			// string, int...
-			goType := typ.In(funcArgPos).Name()
-
-			if p.lexer.peekNext() == tokenWildcard {
-				p.lexer.skip() // skip the Wildcard word.
-				paramType = paramTypePath
-			} else if pType, ok := macroTypes[goType]; ok {
-				// it's not wildcard, so check base on our available macro types.
-				paramType = pType
-			} else {
-				return nil, errors.New("invalid syntax for " + p.info.Name)
-			}
-
-			a.paramKeys = append(a.paramKeys, paramKey)
-			a.paramTypes = append(a.paramTypes, paramType)
-			// /{paramfirst:path}, /{paramfirst:long}...
-			a.relPath += fmt.Sprintf("/{%s:%s}", paramKey, paramType)
-			a.dynamic = true
 			continue
 		}
 
 		a.relPath += "/" + strings.ToLower(w)
 	}
 	return a, nil
+}
+
+func (p *funcParser) parsePathParam(a *ast, w string, funcArgPos int) error {
+	typ := p.info.Type
+
+	if typ.NumIn() <= funcArgPos {
+		// old:
+		// return nil, errors.New("keyword 'By' found but length of input receivers are not match for " +
+		// 	p.info.Name)
+
+		// By found but input arguments are not there, so act like /by path without restricts.
+		a.relPath += "/" + strings.ToLower(w)
+		return nil
+	}
+
+	var (
+		paramKey  = genParamKey(funcArgPos) // paramfirst, paramsecond...
+		paramType = paramTypeString         // default string
+	)
+
+	// string, int...
+	goType := typ.In(funcArgPos).Name()
+	nextWord := p.lexer.peekNext()
+
+	if nextWord == tokenWildcard {
+		p.lexer.skip() // skip the Wildcard word.
+		paramType = paramTypePath
+	} else if pType, ok := macroTypes[goType]; ok {
+		// it's not wildcard, so check base on our available macro types.
+		paramType = pType
+	} else {
+		return errors.New("invalid syntax for " + p.info.Name)
+	}
+
+	a.paramKeys = append(a.paramKeys, paramKey)
+	a.paramTypes = append(a.paramTypes, paramType)
+	// /{paramfirst:path}, /{paramfirst:long}...
+	a.relPath += fmt.Sprintf("/{%s:%s}", paramKey, paramType)
+	a.dynamic = true
+
+	if nextWord == "" && typ.NumIn() > funcArgPos+1 {
+		// By is the latest word but func is expected
+		// more path parameters values, i.e:
+		// GetBy(name string, age int)
+		// The caller (parse) doesn't need to know
+		// about the incremental funcArgPos because
+		// it will not need it.
+		return p.parsePathParam(a, nextWord, funcArgPos+1)
+	}
+
+	return nil
 }
 
 type ast struct {
