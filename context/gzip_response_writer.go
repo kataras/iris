@@ -117,7 +117,7 @@ func (w *GzipResponseWriter) Write(contents []byte) (int, error) {
 func (w *GzipResponseWriter) Writef(format string, a ...interface{}) (n int, err error) {
 	n, err = fmt.Fprintf(w, format, a...)
 	if err == nil {
-		w.ResponseWriter.Header().Set(contentTextHeaderValue, "text/plain")
+		w.ResponseWriter.Header().Set(contentTypeHeaderKey, contentTextHeaderValue)
 	}
 
 	return
@@ -128,7 +128,7 @@ func (w *GzipResponseWriter) Writef(format string, a ...interface{}) (n int, err
 func (w *GzipResponseWriter) WriteString(s string) (n int, err error) {
 	n, err = w.Write([]byte(s))
 	if err == nil {
-		w.ResponseWriter.Header().Set(contentTextHeaderValue, "text/plain")
+		w.ResponseWriter.Header().Set(contentTypeHeaderKey, contentTextHeaderValue)
 	}
 	return
 }
@@ -164,7 +164,7 @@ func (w *GzipResponseWriter) WriteNow(contents []byte) (int, error) {
 	}
 
 	w.ResponseWriter.Header().Add(varyHeaderKey, "Accept-Encoding")
-	w.ResponseWriter.Header().Set(contentEncodingHeaderKey, "gzip")
+	w.ResponseWriter.Header().Add(contentEncodingHeaderKey, "gzip")
 
 	// if not `WriteNow` but "Content-Length" header
 	// is exists, then delete it before `.Write`

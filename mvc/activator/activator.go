@@ -65,7 +65,6 @@ type BaseController interface {
 
 // ActivateController returns a new controller type info description.
 func ActivateController(base BaseController, bindValues []interface{}) (TController, error) {
-
 	// get and save the type.
 	typ := reflect.TypeOf(base)
 	if typ.Kind() != reflect.Ptr {
@@ -201,6 +200,8 @@ func RegisterMethodHandlers(t TController, registerFunc RegisterFunc) {
 // the value of "baseControllerFieldName" should be `Controller`.
 func Register(controller BaseController, bindValues []interface{},
 	registerFunc RegisterFunc) error {
+
+	CallOnActivate(controller, &bindValues, registerFunc)
 
 	t, err := ActivateController(controller, bindValues)
 	if err != nil {

@@ -46,6 +46,14 @@ func (c *Controller) PostRegister() {
 	// setting a session value was never easier.
 	c.Session.Set(sessionIDKey, user.ID)
 	// succeed, nothing more to do here, just redirect to the /user/me.
+
+	// When redirecting from POST to GET request you -should- use this HTTP status code,
+	// however there're some (complicated) alternatives if you
+	// search online or even the HTTP RFC.
+	c.Status = 303 // "See Other" RFC 7231
+
+	// Redirect to GET: /user/me
+	// by changing the Path (and the status code because we're in POST request at this case).
 	c.Path = pathMyProfile
 }
 

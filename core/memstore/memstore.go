@@ -162,8 +162,13 @@ func (r *Store) Visit(visitor func(key string, value interface{})) {
 // GetStringDefault returns the entry's value as string, based on its key.
 // If not found returns "def".
 func (r *Store) GetStringDefault(key string, def string) string {
-	if v, ok := r.Get(key).(string); ok {
-		return v
+	v := r.Get(key)
+	if v == nil {
+		return def
+	}
+
+	if vString, ok := v.(string); ok {
+		return vString
 	}
 
 	return def
@@ -187,6 +192,9 @@ var ErrIntParse = errors.New("unable to find or parse the integer, found: %#v")
 // If not found returns "def".
 func (r *Store) GetIntDefault(key string, def int) (int, error) {
 	v := r.Get(key)
+	if v == nil {
+		return def, nil
+	}
 	if vint, ok := v.(int); ok {
 		return vint, nil
 	} else if vstring, sok := v.(string); sok {
@@ -209,6 +217,9 @@ func (r *Store) GetInt(key string) (int, error) {
 // If not found returns "def".
 func (r *Store) GetInt64Default(key string, def int64) (int64, error) {
 	v := r.Get(key)
+	if v == nil {
+		return def, nil
+	}
 	if vint64, ok := v.(int64); ok {
 		return vint64, nil
 	} else if vstring, sok := v.(string); sok {
@@ -231,6 +242,9 @@ func (r *Store) GetInt64(key string) (int64, error) {
 // If not found returns "def".
 func (r *Store) GetFloat64Default(key string, def float64) (float64, error) {
 	v := r.Get(key)
+	if v == nil {
+		return def, nil
+	}
 	if vfloat64, ok := v.(float64); ok {
 		return vfloat64, nil
 	} else if vstring, sok := v.(string); sok {
@@ -249,12 +263,44 @@ func (r *Store) GetFloat64(key string) (float64, error) {
 	return r.GetFloat64Default(key, 0.0)
 }
 
+// GetBoolDefault returns the user's value as bool, based on its key.
+// a string which is "1" or "t" or "T" or "TRUE" or "true" or "True"
+// or "0" or "f" or "F" or "FALSE" or "false" or "False".
+// Any other value returns an error.
+//
+// If not found returns "def".
+func (r *Store) GetBoolDefault(key string, def bool) (bool, error) {
+	v := r.Get(key)
+	if v == nil {
+		return def, nil
+	}
+
+	if vBoolean, ok := v.(bool); ok {
+		return vBoolean, nil
+	}
+
+	if vString, ok := v.(string); ok {
+		return strconv.ParseBool(vString)
+	}
+
+	if vInt, ok := v.(int); ok {
+		if vInt == 1 {
+			return true, nil
+		}
+		return false, nil
+	}
+
+	return def, nil
+}
+
 // GetBool returns the user's value as bool, based on its key.
 // a string which is "1" or "t" or "T" or "TRUE" or "true" or "True"
 // or "0" or "f" or "F" or "FALSE" or "false" or "False".
 // Any other value returns an error.
+//
+// If not found returns false.
 func (r *Store) GetBool(key string) (bool, error) {
-	return strconv.ParseBool(key)
+	return r.GetBoolDefault(key, false)
 }
 
 // Remove deletes an entry linked to that "key",

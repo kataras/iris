@@ -13,8 +13,21 @@ It doesn't always contain the "best ways" but it does cover each important featu
 - [Tutorial: Online Visitors](tutorial/online-visitors/main.go)
 - [Tutorial: URL Shortener using BoltDB](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
 - [Tutorial: How to turn your Android Device into a fully featured Web Server (**MUST**)](https://twitter.com/ThePracticalDev/status/892022594031017988)
+- [POC: Convert the medium-sized project "Parrot" from native to Iris](https://github.com/iris-contrib/parrot)
+- [POC: Isomorphic react/hot reloadable/redux/css-modules starter kit](https://github.com/kataras/iris-starter-kit)
+- [Tutorial: DropzoneJS Uploader](tutorial/dropzonejs)
 
-### HTTP Listening 
+### Structuring
+
+Nothing stops you from using your favorite folder structure. Iris is a low level web framework, it has got MVC support but it doesn't limit your folder structure, this is your choice.
+
+Structuring is always depends on your needs. We can't tell you how to design your own application for sure but you're free to take a closer look to the examples below; you may find something useful that you can borrow for your app
+
+- [Example 1](mvc/login)
+- [Example 2](structuring/mvc)
+- [Example 3](structuring/handler-based)
+
+### HTTP Listening
 
 - [Common, with address](http-listening/listen-addr/main.go)
     * [omit server errors](http-listening/listen-addr/omit-server-errors/main.go)
@@ -317,10 +330,8 @@ typescript automation tools have their own repository: [https://github.com/katar
 
 > I'd like to tell you that you can use your favourite but I don't think you will find such a thing anywhere else.
 
-### Hey, You!
+### Hey, You
 
-Developers should read the [godocs](https://godoc.org/github.com/kataras/iris) for a better understanding.
+Developers should read the [godocs](https://godoc.org/github.com/kataras/iris) and https://docs.iris-go.com for a better understanding.
 
 Psst, I almost forgot; do not forget to [star or watch](https://github.com/kataras/iris/stargazers) the project in order to stay updated with the latest tech trends, it never takes more than a second!
-
-

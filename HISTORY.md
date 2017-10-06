@@ -18,6 +18,24 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+# Su, 01 October 2017 | v8.4.4
+
+- Fix https://github.com/kataras/iris/issues/762 reported by @xkylsoft
+- Fix https://github.com/kataras/iris/issues/771 reported by @cdren
+- Improvements to the memstore's `GetInt`, `GetInt64`, `GetFloat64`, `GetBool` and remove the `golang/net/context`'s interface completion from Context, read the [changes](https://github.com/kataras/iris/commit/caff55748eca4ecb4aa5a770995265b9b3aee544) for more
+- Add two examples for folder structuring as requested at https://github.com/kataras/iris/issues/748
+	* [Example 1](_examples/mvc/login)
+	* [Example 2](_examples/structuring/mvc)
+- Add node.js express [benchmarks](_benchmarks) similar to iris and netcore
+
+# We, 27 September 2017 | v8.4.3
+
+- MVC: Support for `ByBy` syntax as requested at https://github.com/kataras/iris/issues/751
+- Fix https://github.com/kataras/iris/issues/760
+- @itcrow fixed https://github.com/kataras/iris/issues/757 with PR: https://github.com/kataras/iris/pull/758
+- @balthild fixed https://github.com/kataras/iris/issues/764 with PR: https://github.com/kataras/iris/pull/765
+- Add a new session database(back-end storage) supported by the [badger](github.com/dgraph-io/badger) key-value file-based storage, example [here](https://github.com/kataras/iris/commit/204f8474687bad1178d5108b501c6f0c7d927b9a#diff-26d58a00b7f90165fb32043676ed17a5)
+
 # Fr, 15 September 2017 | v8.4.2
 
 ## MVC
