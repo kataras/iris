@@ -17,7 +17,7 @@ The comment was "I admire your dedication to iris and I am in love with its spee
 
 My answer to this is clear in simple words so that anyone can understand; Did you really believed those unsubstantial things even if you could take some time off to read the source code?🤔
 
-Iris was the one of the top github trending projects written in Go Programming Language for the 2016 and the most trending web framework in the globe. We couldn't even imagine that we will be the receiver of countless "[thank you for iris, finally a web framework I can work on](https://twitter.com/_mgale/status/818591490305761280)" comments from hundreds strangers around the globe!
+Iris was one of the top github trending projects written in Go Programming Language for the 2016 and the most trending web framework in the globe. We couldn't even imagine that we will be the receiver of countless "[thank you for iris, finally a web framework I can work on](https://twitter.com/_mgale/status/818591490305761280)" comments from hundreds strangers around the globe!
 
 Please do research before reading and assimilate everything, those blog spots are not always telling the whole truth, they are not so innocent :)
 
@@ -31,7 +31,7 @@ First of all, that article **is reffering 1.5 years ago**, to pretend that this 
 
 1. Iris does NOT use any third-party code inside it, like "httprouter" or "fasthttp". Just navigate to the source code. If you care about historical things you can search the project but it doesn't matter because the internal implementation of Iris changed a lot of times, a lot more than its public API changes:P.
 2. Iris makes use of its own routing mechanisms with a unique **language interpreter** in order to serve even the most demanding of us `/user/{id:int min(2)}`, `/alphabetical/{param:string regexp(^[a-zA-Z ]+$)}` et cetera.
-3. Iris has its own unique MVC architectural parser with hurt-breaking performance.
+3. Iris has its own unique MVC architectural parser with heart-breaking performance.
 4. Was it possible to do all those things and [much more](_examples) before Iris? Exaclty. Iris offers you all these for free, plus the unmatched performance.
 5. Iris is the result of hundreds(or thousands(?)) of hours of **FREE and UNPAID** work. There are people who actually found a decent job because of Iris. Thousands of Gophers are watching or/and helping to make Iris even better, the silent majority loves Iris even more.
 
@@ -40,7 +40,9 @@ That 23 years old, inhibited boy, who published that post had played you with th
 ```go
 /* end */
 ```
+
 </details>
+
 
 _Psst_, we've produced a small video about your feelings regrating to Iris! You can watch the whole video at https://www.youtube.com/watch?v=jGx0LkuUs4A.
 
@@ -203,7 +205,6 @@ Controller knows how to handle the "name" and "numTimes" at `GetWelcomeBy`, beca
 - [How to Turn an Android Device into a Web Server](https://twitter.com/ThePracticalDev/status/892022594031017988)
 - [A URL Shortener Service using Go, Iris and Bolt](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
 - [Why I preferred Go over Node.js for simple Web Application](https://medium.com/@tigranbs/why-i-preferred-go-over-node-js-for-simple-web-application-d4a549e979b9)
-
 
 Take some time, `don't say we didn't warn you`,  and continue your journey by [navigating to the bigger README page](README_BIG.md).
 
