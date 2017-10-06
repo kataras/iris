@@ -18,6 +18,17 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+
+# Fr, 06 October 2017 | v8.4.5
+
+- Badger team added support for transactions [yesterday](https://github.com/dgraph-io/badger/commit/06242925c2f2a5e73dc688e9049004029dd7f9f7), therefore the [badger session database](sessions/sessiondb/badger) is updated via https://github.com/kataras/iris/commit/0b48927562a2202809a7674ebedb738dc3da57e8.
+- MVC: Support more than one path parameters with a single `By`, when the `By` keyword is the last word and the func's input arguments are more than one i.e `GetBy(name string, age int)`, note that you can still use the older way of doing this; `GetByBy(string, int)`. It's an enhancement of the https://github.com/kataras/iris/issues/751  feature request.
+- MVC: Give controllers the ability to auto-initialize themselves by  `OnActivate` func derives from the new [ActivateListener](mvc/activator/activate_listener.go) interface, this can be used to perform any custom actions when the app registers the supported Controllers. See [mvc/session_controller.go](mvc/session_controller.go) for a good use case.
+- errors.Reporter.AddErr returns true if the error is added to the stack, otherwise false.
+- @ZaniaDeveloper fixed https://github.com/kataras/iris/issues/778 with PR: https://github.com/kataras/iris/pull/779.
+- Add `StatusSeeOther` at [mvc login example](https://github.com/kataras/iris/blob/master/_examples/mvc/login/user/controller.go#L53) for Redirection, reported by @motecshine at https://github.com/kataras/iris/issues/777.
+- Fix `DisableVersionChecker` configuration field is not being passed correctly when it was true via `iris.Run(..., iris.WithConfiguration{DisableVersionChecker:true, ...})` call.
+
 # Su, 01 October 2017 | v8.4.4
 
 - Fix https://github.com/kataras/iris/issues/762 reported by @xkylsoft

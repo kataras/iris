@@ -2,6 +2,14 @@ package main
 
 import (
 	"github.com/kataras/iris"
+	"github.com/kataras/iris/mvc"
+	// auto-completion does not working well with type aliases
+	// when embedded fields.
+	// We should complete a report on golang repo for that at some point.
+	//
+	// Therefore import the "mvc" package manually
+	// here at "hello-world" so users can see that
+	// import path somewhere else than the "FAQ" section.
 
 	"github.com/kataras/iris/middleware/logger"
 	"github.com/kataras/iris/middleware/recover"
@@ -45,8 +53,10 @@ func main() {
 
 // ExampleController serves the "/", "/ping" and "/hello".
 type ExampleController struct {
-	// if you build with go1.8 you have to use the mvc package, `mvc.Controller` instead.
-	iris.Controller
+	// if you build with go1.8 you have to use the mvc package always,
+	// otherwise
+	// you can simply use `iris.Controller`.
+	mvc.Controller
 }
 
 // Get serves
