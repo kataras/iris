@@ -3,8 +3,8 @@ package methodfunc
 import (
 	"reflect"
 
-	"github.com/kataras/golog"
 	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/core/errors"
 )
 
 // MethodFunc the handler function.
@@ -26,15 +26,17 @@ type MethodFunc struct {
 // Resolve returns all the method funcs
 // necessary information and actions to
 // perform the request.
-func Resolve(typ reflect.Type) (methodFuncs []MethodFunc) {
+func Resolve(typ reflect.Type) ([]MethodFunc, error) {
+	r := errors.NewReporter()
+	var methodFuncs []MethodFunc
 	infos := fetchInfos(typ)
 	for _, info := range infos {
 		parser := newFuncParser(info)
 		a, err := parser.parse()
-		if err != nil {
-			golog.Errorf("MVC: %s\n", err)
+		if r.AddErr(err) {
 			continue
 		}
+
 		methodFunc := MethodFunc{
 			RelPath:    a.relPath,
 			FuncInfo:   info,
@@ -44,5 +46,5 @@ func Resolve(typ reflect.Type) (methodFuncs []MethodFunc) {
 		methodFuncs = append(methodFuncs, methodFunc)
 	}
 
-	return
+	return methodFuncs, r.Return()
 }

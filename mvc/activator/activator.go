@@ -131,9 +131,15 @@ func (t TController) HandlerOf(methodFunc methodfunc.MethodFunc) context.Handler
 			t.persistenceController.Handle(c)
 		}
 
+		// if previous (binded) handlers stoped the execution
+		// we should know that.
+		if ctx.IsStopped() {
+			return
+		}
+
 		// init the request.
 		b.BeginRequest(ctx)
-		if ctx.IsStopped() {
+		if ctx.IsStopped() { // if begin request stopped the execution
 			return
 		}
 
@@ -146,7 +152,8 @@ func (t TController) HandlerOf(methodFunc methodfunc.MethodFunc) context.Handler
 			t.modelController.Handle(ctx, c)
 		}
 
-		// finally, execute the controller, don't check for IsStopped.
+		// end the request, don't check for stopped because this does the actual writing
+		// if no response written already.
 		b.EndRequest(ctx)
 	}
 }
@@ -170,8 +177,11 @@ func RegisterMethodHandlers(t TController, registerFunc RegisterFunc) {
 	}
 	// the actual method functions
 	// i.e for "GET" it's the `Get()`.
-	methods := methodfunc.Resolve(t.Type)
-
+	methods, err := methodfunc.Resolve(t.Type)
+	if err != nil {
+		golog.Errorf("MVC %s: %s", t.FullName, err.Error())
+		// don't stop here.
+	}
 	// range over the type info's method funcs,
 	// build a new handler for each of these
 	// methods and register them to their
@@ -181,7 +191,7 @@ func RegisterMethodHandlers(t TController, registerFunc RegisterFunc) {
 	for _, m := range methods {
 		h := t.HandlerOf(m)
 		if h == nil {
-			golog.Debugf("MVC %s: nil method handler found for %s", t.FullName, m.Name)
+			golog.Warnf("MVC %s: nil method handler found for %s", t.FullName, m.Name)
 			continue
 		}
 		registeredHandlers := append(middleware, h)

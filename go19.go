@@ -109,7 +109,7 @@ type (
 	// Look `core/router#APIBuilder#Controller` method too.
 	//
 	// A shortcut for the `mvc#Controller`,
-	// useful when `app.Controller` is being used.
+	// useful when `app.Controller` method is being used.
 	//
 	// A Controller can be declared by importing
 	// the "github.com/kataras/iris/mvc"
@@ -119,4 +119,61 @@ type (
 	// which requires a binded session manager in order to give
 	// direct access to the current client's session via its `Session` field.
 	SessionController = mvc.SessionController
+	// C is the lightweight BaseController type as an alternative of the `Controller` struct type.
+	// It contains only the Name of the controller and the Context, it's the best option
+	// to balance the performance cost reflection uses
+	// if your controller uses the new func output values dispatcher feature;
+	// func(c *ExampleController) Get() string |
+	// (string, string) |
+	// (string, int) |
+	// int |
+	// (int, string |
+	// (string, error) |
+	// error |
+	// (int, error) |
+	// (customStruct, error) |
+	// customStruct |
+	// (customStruct, int) |
+	// (customStruct, string) |
+	// Result or (Result, error)
+	// where Get is an HTTP Method func.
+	//
+	// Look `core/router#APIBuilder#Controller` method too.
+	//
+	// A shortcut for the `mvc#C`,
+	// useful when `app.Controller` method is being used.
+	//
+	// A C controller can be declared by importing
+	// the "github.com/kataras/iris/mvc" as well.
+	C = mvc.C
+	// Response completes the `mvc/activator/methodfunc.Result` interface.
+	// It's being used as an alternative return value which
+	// wraps the status code, the content type, a content as bytes or as string
+	// and an error, it's smart enough to complete the request and send the correct response to the client.
+	//
+	// A shortcut for the `mvc#Response`,
+	// useful when return values from method functions, i.e
+	// GetHelloworld() iris.Response { iris.Response{ Text:"Hello World!", Code: 200 }}
+	Response = mvc.Response
+	// View completes the `mvc/activator/methodfunc.Result` interface.
+	// It's being used as an alternative return value which
+	// wraps the template file name, layout, (any) view data, status code and error.
+	// It's smart enough to complete the request and send the correct response to the client.
+	//
+	// A shortcut for the `mvc#View`,
+	// useful when return values from method functions, i.e
+	// GetUser() iris.View { iris.View{ Name:"user.html", Data: currentUser } }
+	View = mvc.View
+	// Result is a response dispatcher.
+	// All types that complete this interface
+	// can be returned as values from the method functions.
+	// A shortcut for the `mvc#Result` which is a shortcut for `mvc/activator/methodfunc#Result`,
+	// useful when return values from method functions, i.e
+	// GetUser() iris.Result { iris.Response{} or a custom iris.Result }
+	// Can be also used for the TryResult function.
+	Result = mvc.Result
 )
+
+// Try is a shortcut for the function `mvc.Try` result.
+// See more at `mvc#Try` documentation.
+var Try = mvc.Try

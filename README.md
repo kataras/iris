@@ -8,41 +8,40 @@ Three days ago, _at 03 October_, we announced the first [Iris User Experience fo
 
 At overall, the results (so far) are very promising, high number of participations and the answers to the questions are near to the green feedback we were receiving over the past months from Gophers worldwide via our [rocket chat](https://chat.iris-go.com) and [author's twitter](https://twitter.com/makismaropoulos). **If you didn't complete the form yet, [please do so](https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link) as soon as possible!**
 
-However, as everything in life; nothing goes as expected, people are strange, we programmers even more. The last part of the form has a text area which participiations can add any "questions or comments", there we saw one comment that surprised me, in the bad sense. We respect all individual singularities the same, we do not discriminate between people. The data are anonymous, so the only place to answer to that person is, _surprisingly_, here!
+However, as everything in life; nothing goes as expected, people are strange, we programmers even more. The last part of the form has a text area which participiations can add any "questions or comments", there we saw one comment that surprised me the most, in the bad sense. We respect all individual singularities the same, we do not discriminate between people. The data are anonymous, so the only place to answer to that person is, _surprisingly_, here!
 
 <details>
 <summary>"I admire your dedication to iris and I am in love with its speed..."</summary>
 
 The comment was "I admire your dedication to iris and I am in love with its speed but.. I've read some things on that blog and blablabla..." you get the point, at the first we were happy and suddenly we saw that "but... I've" and we broke xD.
 
-My answer to this is clear in simple words so that anyone can understand; Did you really believed those unsubstantial things even if you could take some time off to read the source code?🤔
+The answer to this is clear in simple words so that anyone can understand; Did you really believed those unsubstantial things even if you could take some time off to read the source code?🤔
 
-Iris was one of the top github trending projects written in Go Programming Language for the 2016 and the most trending web framework in the globe. We couldn't even imagine that we will be the receiver of countless "[thank you for iris, finally a web framework I can work on](https://twitter.com/_mgale/status/818591490305761280)" comments from hundreds strangers around the globe!
+Iris was one of the top github trending projects written in Go Programming Language for the 2016 and the most trending web framework in the globe. We couldn't even imagine that we will be the receivers of countless "[thank you for iris, finally a web framework I can work on](https://twitter.com/_mgale/status/818591490305761280)" comments from hundreds strangers around the globe!
 
-Please do research before reading and assimilate everything, those blog spots are not always telling the whole truth, they are not so innocent :)
+Please do research before digestion, those blog posts are not always telling the whole truth, they are not so innocent :)
 
-Especially those from that kid which do not correspond to reality;
+Especially those from that kid that even don't correspond to reality;
 
 ```go
 /* start */
 ```
 
-First of all, that article **is reffering 1.5 years ago**, to pretend that this article speaks for the present is hilariously ridiculous! Iris is on version 8 now and it's not a router any more, it's a fully featured web framework with its own ecosystem.
+First of all, that article **is referring 1.5 years ago**, to pretend that this article speaks for the present is hilariously ridiculous! Iris is on version 8 now and it's not a router any more, it's a fully featured web framework with its own ecosystem.
 
 1. Iris does NOT use any third-party code inside it, like "httprouter" or "fasthttp". Just navigate to the source code. If you care about historical things you can search the project but it doesn't matter because the internal implementation of Iris changed a lot of times, a lot more than its public API changes:P.
 2. Iris makes use of its own routing mechanisms with a unique **language interpreter** in order to serve even the most demanding of us `/user/{id:int min(2)}`, `/alphabetical/{param:string regexp(^[a-zA-Z ]+$)}` et cetera.
 3. Iris has its own unique MVC architectural parser with heart-breaking performance.
-4. Was it possible to do all those things and [much more](_examples) before Iris? Exaclty. Iris offers you all these for free, plus the unmatched performance.
+4. Was it possible to do all those things and [much more](_examples) before Iris? Exactly. Iris offers you all these for free, plus the unmatched performance.
 5. Iris is the result of hundreds(or thousands(?)) of hours of **FREE and UNPAID** work. There are people who actually found a decent job because of Iris. Thousands of Gophers are watching or/and helping to make Iris even better, the silent majority loves Iris even more.
 
-That 23 years old, inhibited boy, who published that post had played you with the most immoral way! Reading the Iris' source code doesn't cost you a thing! Iris is free to use for everyone, Iris is an open-source software, no hidden spots. **Don't stuck on the past, get over that, Iris has succeed, move on now.**
+That 23 years old, inhibited boy, who published that post had played you with the most immoral way! Reading the Iris' source code doesn't cost you a thing! Iris is free to use for everyone, Iris is an open-source software, no hidden spots. **Don't stuck in the past, get over that, Iris has succeed, move on now.**
 
 ```go
 /* end */
 ```
 
 </details>
-
 
 _Psst_, we've produced a small video about your feelings regrating to Iris! You can watch the whole video at https://www.youtube.com/watch?v=jGx0LkuUs4A.
 
@@ -60,15 +59,15 @@ _Psst_, we've produced a small video about your feelings regrating to Iris! You 
 
 ## Installation
 
-The only requirement is the [Go Programming Language](https://golang.org/dl/), at least version 1.9.
+The only requirement is the [Go Programming Language](https://golang.org/dl/), at least version 1.9
 
 ```sh
 $ go get -u github.com/kataras/iris
 ```
 
-* Iris takes advantage of the [vendor directory](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo) feature. You get truly reproducible builds, as this method guards against upstream renames and deletes.
+- Iris takes advantage of the [vendor directory](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo) feature. You get truly reproducible builds, as this method guards against upstream renames and deletes.
 
-* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#fr-06-october-2017--v845)
+- [Latest changes | v8.5.0](https://github.com/kataras/iris/blob/master/HISTORY.md#su-09-october-2017--v850)
 
 ## Getting Started
 
@@ -132,6 +131,8 @@ $ go run main.go
 > Application started. Press CTRL+C to shut down.
 ```
 
+Guidelines for bootstrapping handler-based applications can be found at the [_examples/structuring/handler-based](_examples/structuring/handler-based) folder.
+
 ### Quick MVC Tutorial
 
 ```go
@@ -153,7 +154,7 @@ func main() {
 type HelloWorldController struct {
     mvc.Controller
 
-    // [ your fields here ]
+    // [ Your fields here ]
     // Request lifecycle data
     // Models
     // Database
@@ -163,21 +164,30 @@ type HelloWorldController struct {
 //
 // GET: /helloworld
 
-func (c *HelloWorldController) Get() {
-    c.Ctx.Text("This is my default action...")
+func (c *HelloWorldController) Get() string {
+    return "This is my default action..."
+}
+
+//
+// GET: /helloworld/{name:string}
+
+func (c *HelloWorldController) GetBy(name string) string {
+    return "Hello " + name
 }
 
 //
 // GET: /helloworld/welcome
 
-func (c *HelloWorldController) GetWelcome() {
-    c.Ctx.HTML("This is the <b>GetWelcome</b> action func...")
+func (c *HelloWorldController) GetWelcome() (string, int) {
+    return "This is the GetWelcome action func...", iris.StatusOK
 }
 
 //
 // GET: /helloworld/welcome/{name:string}/{numTimes:int}
 
 func (c *HelloWorldController) GetWelcomeBy(name string, numTimes int) {
+    // Access to the low-level Context,
+    // output arguments are optional of course so we don't have to use them here.
     c.Ctx.Writef("Hello %s, NumTimes is: %d", name, numTimes)
 }
 ```
@@ -188,9 +198,431 @@ Every `exported` func prefixed with an HTTP Method(`Get`, `Post`, `Put`, `Delete
 
 An HTTP endpoint is a targetable URL in the web application, such as `http://localhost:8080/helloworld`, and combines the protocol used: HTTP, the network location of the web server (including the TCP port): `localhost:8080` and the target URI `/helloworld`.
 
-The first comment states this is an [HTTP GET](https://www.w3schools.com/tags/ref_httpmethods.asp) method that is invoked by appending "/helloworld" to the base URL. The second comment specifies an [HTTP GET](https://www.w3schools.com/tags/ref_httpmethods.asp) method that is invoked by appending "/helloworld/welcome/" to the URL.
+The first comment states this is an [HTTP GET](https://www.w3schools.com/tags/ref_httpmethods.asp) method that is invoked by appending "/helloworld" to the base URL. The third comment specifies an [HTTP GET](https://www.w3schools.com/tags/ref_httpmethods.asp) method that is invoked by appending "/helloworld/welcome" to the URL.
 
-Controller knows how to handle the "name" and "numTimes" at `GetWelcomeBy`, because of the `By` keyword, and builds the dynamic route without boilerplate; the third comment specifies an [HTTP GET](https://www.w3schools.com/tags/ref_httpmethods.asp) dynamic method that is invoked by any URL that starts with "/helloworld/welcome" and followed by two more path parts, the first one can accept any value and the second can accept only numbers, i,e: "http://localhost:8080/helloworld/welcome/golang/32719", otherwise a [404 Not Found HTTP Error](https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.5) will be sent to the client instead.
+Controller knows how to handle the "name" on `GetBy` or the "name" and "numTimes" at `GetWelcomeBy`, because of the `By` keyword, and builds the dynamic route without boilerplate; the third comment specifies an [HTTP GET](https://www.w3schools.com/tags/ref_httpmethods.asp) dynamic method that is invoked by any URL that starts with "/helloworld/welcome" and followed by two more path parts, the first one can accept any value and the second can accept only numbers, i,e: "http://localhost:8080/helloworld/welcome/golang/32719", otherwise a [404 Not Found HTTP Error](https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.5) will be sent to the client instead.
+
+### Quick MVC Tutorial #2
+
+Iris has a very powerful and **blazing [fast](_benchmarks)** MVC support, you can return any value of any type from a method function
+and it will be sent to the client as expected.
+
+* if `string` then it's the body.
+* if `string` is the second output argument then it's the content type.
+* if `int` then it's the status code.
+* if `error` and not nil then (any type) response will be omitted and error's text with a 400 bad request will be rendered instead.
+* if `(int, error)` and error is not nil then the response result will be the error's text with the status code as `int`.
+* if  `custom struct` or `interface{}` or `slice` or `map` then it will be rendered as json, unless a `string` content type is following.
+* if `mvc.Result` then it executes its `Dispatch` function, so good design patters can be used to split the model's logic where needed.
+
+The example below is not intended to be used in production but it's a good showcase of some of the return types we saw before;
+
+```go
+package main
+
+import (
+    "github.com/kataras/iris"
+    "github.com/kataras/iris/middleware/basicauth"
+    "github.com/kataras/iris/mvc"
+)
+
+// Movie is our sample data structure.
+type Movie struct {
+    Name   string `json:"name"`
+    Year   int    `json:"year"`
+    Genre  string `json:"genre"`
+    Poster string `json:"poster"`
+}
+
+// movies contains our imaginary data source.
+var movies = []Movie{
+    {
+        Name:   "Casablanca",
+        Year:   1942,
+        Genre:  "Romance",
+        Poster: "https://iris-go.com/images/examples/mvc-movies/1.jpg",
+    },
+    {
+        Name:   "Gone with the Wind",
+        Year:   1939,
+        Genre:  "Romance",
+        Poster: "https://iris-go.com/images/examples/mvc-movies/2.jpg",
+    },
+    {
+        Name:   "Citizen Kane",
+        Year:   1941,
+        Genre:  "Mystery",
+        Poster: "https://iris-go.com/images/examples/mvc-movies/3.jpg",
+    },
+    {
+        Name:   "The Wizard of Oz",
+        Year:   1939,
+        Genre:  "Fantasy",
+        Poster: "https://iris-go.com/images/examples/mvc-movies/4.jpg",
+    },
+}
+
+
+var basicAuth = basicauth.New(basicauth.Config{
+    Users: map[string]string{
+        "admin": "password",
+    },
+})
+
+
+func main() {
+    app := iris.New()
+
+    app.Use(basicAuth)
+
+    app.Controller("/movies", new(MoviesController))
+
+    app.Run(iris.Addr(":8080"))
+}
+
+// MoviesController is our /movies controller.
+type MoviesController struct {
+    // mvc.C is just a lightweight alternative
+    // to the "mvc.Controller" controller type.
+    mvc.C
+}
+
+// Get returns list of the movies
+// Demo:
+// curl -i http://localhost:8080/movies
+func (c *MoviesController) Get() []Movie {
+    return movies
+}
+
+// GetBy returns a movie
+// Demo:
+// curl -i http://localhost:8080/movies/1
+func (c *MoviesController) GetBy(id int) Movie {
+    return movies[id]
+}
+
+// PutBy updates a movie
+// Demo:
+// curl -i -X PUT -F "genre=Thriller" -F "poster=@/Users/kataras/Downloads/out.gif" http://localhost:8080/movies/1
+func (c *MoviesController) PutBy(id int) Movie {
+    // get the movie
+    m := movies[id]
+
+    // get the request data for poster and genre
+    file, info, err := c.Ctx.FormFile("poster")
+    if err != nil {
+        c.Ctx.StatusCode(iris.StatusInternalServerError)
+        return Movie{}
+    }
+    file.Close()            // we don't need the file
+    poster := info.Filename // imagine that as the url of the uploaded file...
+    genre := c.Ctx.FormValue("genre")
+
+    // update the poster
+    m.Poster = poster
+    m.Genre = genre
+    movies[id] = m
+
+    return m
+}
+
+// DeleteBy deletes a movie
+// Demo:
+// curl -i -X DELETE -u admin:password http://localhost:8080/movies/1
+func (c *MoviesController) DeleteBy(id int) iris.Map {
+    // delete the entry from the movies slice
+    deleted := movies[id].Name
+    movies = append(movies[:id], movies[id+1:]...)
+    // and return the deleted movie's name
+    return iris.Map{"deleted": deleted}
+}
+```
+
+### Quick MVC Tutorial #3
+
+Nothing stops you from using your favorite **folder structure**. Iris is a low level web framework, it has got MVC first-class support but it doesn't limit your folder structure, this is your choice.
+
+Structuring depends on your own needs. We can't tell you how to design your own application for sure but you're free to take a closer look to one typical example below;
+
+[![folder structure example](_examples/mvc/using-method-result/folder_structure.png)](_examples/mvc/using-method-result)
+
+Shhh, let's spread the code itself.
+
+```go
+// file: controllers/hello_controller.go
+
+package controllers
+
+import (
+    "errors"
+
+    "github.com/kataras/iris/mvc"
+)
+
+// HelloController is our sample controller
+// it handles GET: /hello and GET: /hello/{name}
+type HelloController struct {
+    mvc.C
+}
+
+var helloView = mvc.View{
+    Name: "hello/index.html",
+    Data: map[string]interface{}{
+        "Title":     "Hello Page",
+        "MyMessage": "Welcome to my awesome website",
+    },
+}
+
+// Get will return a predefined view with bind data.
+//
+// `mvc.Result` is just an interface with a `Dispatch` function.
+// `mvc.Response` and `mvc.View` are the built'n result type dispatchers
+// you can even create custom response dispatchers by
+// implementing the `github.com/kataras/iris/mvc#Result` interface.
+func (c *HelloController) Get() mvc.Result {
+    return helloView
+}
+
+// you can define a standard error in order to be re-usable anywhere in your app.
+var errBadName = errors.New("bad name")
+
+// you can just return it as error or even better
+// wrap this error with an mvc.Response to make it an mvc.Result compatible type.
+var badName = mvc.Response{Err: errBadName, Code: 400}
+
+// GetBy returns a "Hello {name}" response.
+// Demos:
+// curl -i http://localhost:8080/hello/iris
+// curl -i http://localhost:8080/hello/anything
+func (c *HelloController) GetBy(name string) mvc.Result {
+    if name != "iris" {
+        return badName
+        // or
+        // GetBy(name string) (mvc.Result, error) {
+        //  return nil, errBadName
+        // }
+    }
+
+    // return mvc.Response{Text: "Hello " + name} OR:
+    return mvc.View{
+        Name: "hello/name.html",
+        Data: name,
+    }
+}
+```
+
+```html
+<!-- file: views/hello/index.html -->
+<html>
+
+<head>
+    <title>{{.Title}} - My App</title>
+</head>
+
+<body>
+    <p>{{.MyMessage}}</p>
+</body>
+
+</html>
+```
+
+```html
+<!-- file: views/hello/name.html -->
+<html>
+
+<head>
+    <title>{{.}}' Portfolio - My App</title>
+</head>
+
+<body>
+    <h1>Hello {{.}}</h1>
+</body>
+
+</html>
+```
+
+> Navigate to the [_examples/view](_examples/#view) for more examples
+like shared layouts, tmpl funcs, reverse routing and more!
+
+```go
+// file: models/movie.go
+
+package models
+
+// Movie is our sample data structure.
+type Movie struct {
+    Name   string `json:"name"`
+    Year   int    `json:"year"`
+    Genre  string `json:"genre"`
+    Poster string `json:"poster"`
+}
+```
+
+```go
+// file: controllers/movies_controller.go
+
+package controllers
+
+import (
+    "github.com/kataras/iris/_examples/mvc/using-method-result/datasource"
+    "github.com/kataras/iris/_examples/mvc/using-method-result/models"
+
+    "github.com/kataras/iris"
+    "github.com/kataras/iris/mvc"
+)
+
+// MoviesController is our /movies controller.
+type MoviesController struct {
+    mvc.C
+}
+
+// Get returns list of the movies.
+// Demo:
+// curl -i http://localhost:8080/movies
+func (c *MoviesController) Get() []models.Movie {
+    return datasource.Movies
+}
+
+// GetBy returns a movie.
+// Demo:
+// curl -i http://localhost:8080/movies/1
+func (c *MoviesController) GetBy(id int) models.Movie {
+    return datasource.Movies[id]
+}
+
+// PutBy updates a movie.
+// Demo:
+// curl -i -X PUT -F "genre=Thriller" -F "poster=@/Users/kataras/Downloads/out.gif" http://localhost:8080/movies/1
+func (c *MoviesController) PutBy(id int) (models.Movie, int) {
+    // get the movie
+    m := datasource.Movies[id]
+
+    // get the request data for poster and genre
+    file, info, err := c.Ctx.FormFile("poster")
+    if err != nil {
+        return models.Movie{}, iris.StatusInternalServerError
+    }
+    // we don't need the file so close it now
+    file.Close()
+
+    // imagine that is the url of the uploaded file...
+    poster := info.Filename
+    genre := c.Ctx.FormValue("genre")
+
+    // update the poster
+    m.Poster = poster
+    m.Genre = genre
+    datasource.Movies[id] = m
+
+    return m, iris.StatusOK
+}
+
+// DeleteBy deletes a movie.
+// Demo:
+// curl -i -X DELETE -u admin:password http://localhost:8080/movies/1
+func (c *MoviesController) DeleteBy(id int) iris.Map {
+    // delete the entry from the movies slice
+    deleted := datasource.Movies[id].Name
+    datasource.Movies = append(datasource.Movies[:id], datasource.Movies[id+1:]...)
+    // and return the deleted movie's name
+    return iris.Map{"deleted": deleted}
+}
+```
+
+```go
+// file: datasource/movies.go
+
+package datasource
+
+import "github.com/kataras/iris/_examples/mvc/using-method-result/models"
+
+// Movies is our imaginary data source.
+var Movies = []models.Movie{
+    {
+        Name:   "Casablanca",
+        Year:   1942,
+        Genre:  "Romance",
+        Poster: "https://iris-go.com/images/examples/mvc-movies/1.jpg",
+    },
+    {
+        Name:   "Gone with the Wind",
+        Year:   1939,
+        Genre:  "Romance",
+        Poster: "https://iris-go.com/images/examples/mvc-movies/2.jpg",
+    },
+    {
+        Name:   "Citizen Kane",
+        Year:   1941,
+        Genre:  "Mystery",
+        Poster: "https://iris-go.com/images/examples/mvc-movies/3.jpg",
+    },
+    {
+        Name:   "The Wizard of Oz",
+        Year:   1939,
+        Genre:  "Fantasy",
+        Poster: "https://iris-go.com/images/examples/mvc-movies/4.jpg",
+    },
+    {
+        Name:   "North by Northwest",
+        Year:   1959,
+        Genre:  "Thriller",
+        Poster: "https://iris-go.com/images/examples/mvc-movies/5.jpg",
+    },
+}
+```
+
+```go
+// file: middleware/basicauth.go
+
+package middleware
+
+import "github.com/kataras/iris/middleware/basicauth"
+
+// BasicAuth middleware sample.
+var BasicAuth = basicauth.New(basicauth.Config{
+    Users: map[string]string{
+        "admin": "password",
+    },
+})
+```
+
+```go
+// file: main.go
+
+package main
+
+import (
+    "github.com/kataras/iris/_examples/mvc/using-method-result/controllers"
+    "github.com/kataras/iris/_examples/mvc/using-method-result/middleware"
+
+    "github.com/kataras/iris"
+)
+
+func main() {
+    app := iris.New()
+    // Load the template files.
+    app.RegisterView(iris.HTML("./views", ".html"))
+
+    // Register our controllers.
+    app.Controller("/hello", new(controllers.HelloController))
+    // Add the basic authentication(admin:password) middleware
+    // for the /movies based requests.
+    app.Controller("/movies", new(controllers.MoviesController), middleware.BasicAuth)
+
+    // Start the web server at localhost:8080
+    // http://localhost:8080/hello
+    // http://localhost:8080/hello/iris
+    // http://localhost:8080/movies/1
+    app.Run(
+        iris.Addr("localhost:8080"),
+        iris.WithoutVersionChecker,
+        iris.WithoutServerError(iris.ErrServerClosed),
+        iris.WithOptimizations, // enables faster json serialization and more
+    )
+}
+```
+
+More folder structure guidelines can be found at the [_examples/#structuring](_examples/#structuring) section.
 
 ## 😃 Do you like what you see so far?
 
@@ -206,7 +638,7 @@ Controller knows how to handle the "name" and "numTimes" at `GetWelcomeBy`, beca
 - [A URL Shortener Service using Go, Iris and Bolt](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
 - [Why I preferred Go over Node.js for simple Web Application](https://medium.com/@tigranbs/why-i-preferred-go-over-node-js-for-simple-web-application-d4a549e979b9)
 
-Take some time, `don't say we didn't warn you`,  and continue your journey by [navigating to the bigger README page](README_BIG.md).
+Take some time, `don't say we didn't warn you`,  and continue your journey by [navigating to the next README page](README_NEXT.md).
 
 ## License
 

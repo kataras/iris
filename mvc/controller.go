@@ -9,6 +9,56 @@ import (
 	"github.com/kataras/iris/mvc/activator"
 )
 
+// C is the lightweight BaseController type as an alternative of the `Controller` struct type.
+// It contains only the Name of the controller and the Context, it's the best option
+// to balance the performance cost reflection uses
+// if your controller uses the new func output values dispatcher feature;
+// func(c *ExampleController) Get() string |
+// (string, string) |
+// (string, int) |
+// int |
+// (int, string |
+// (string, error) |
+// error |
+// (int, error) |
+// (customStruct, error) |
+// customStruct |
+// (customStruct, int) |
+// (customStruct, string) |
+// Result or (Result, error)
+// where Get is an HTTP Method func.
+//
+// Look `core/router#APIBuilder#Controller` method too.
+//
+// It completes the `activator.BaseController` interface.
+//
+// Example at: https://github.com/kataras/iris/tree/master/_examples/mvc/using-method-result/controllers.
+// Example usage at: https://github.com/kataras/iris/blob/master/mvc/method_result_test.go#L17.
+type C struct {
+	// The Name of the `C` controller.
+	Name string
+	// The current context.Context.
+	//
+	// we have to name it for two reasons:
+	// 1: can't ignore these via reflection, it doesn't give an option to
+	// see if the functions is derived from another type.
+	// 2: end-developer may want to use some method functions
+	// or any fields that could be conflict with the context's.
+	Ctx context.Context
+}
+
+var _ activator.BaseController = &C{}
+
+// SetName sets the controller's full name.
+// It's called internally.
+func (c *C) SetName(name string) { c.Name = name }
+
+// BeginRequest starts the request by initializing the `Context` field.
+func (c *C) BeginRequest(ctx context.Context) { c.Ctx = ctx }
+
+// EndRequest does nothing, is here to complete the `BaseController` interface.
+func (c *C) EndRequest(ctx context.Context) {}
+
 // Controller is the base controller for the high level controllers instances.
 //
 // This base controller is used as an alternative way of building
@@ -61,6 +111,8 @@ import (
 // Note: Binded values of context.Handler type are being recognised as middlewares by the router.
 //
 // Look `core/router/APIBuilder#Controller` method too.
+//
+// It completes the `activator.BaseController` interface.
 type Controller struct {
 	// Name contains the current controller's full name.
 	//
@@ -120,6 +172,10 @@ type Controller struct {
 	// give access to the request context itself.
 	Ctx context.Context
 }
+
+var _ activator.BaseController = &Controller{}
+
+var ctrlSuffix = reflect.TypeOf(Controller{}).Name()
 
 // SetName sets the controller's full name.
 // It's called internally.
@@ -238,6 +294,7 @@ func (c *Controller) BeginRequest(ctx context.Context) {
 	c.Params = ctx.Params()
 	// response status code
 	c.Status = ctx.GetStatusCode()
+
 	// share values
 	c.Values = ctx.Values()
 	// view data for templates, remember
@@ -251,12 +308,12 @@ func (c *Controller) BeginRequest(ctx context.Context) {
 }
 
 func (c *Controller) tryWriteHeaders() {
-	if status := c.Status; status > 0 && status != c.Ctx.GetStatusCode() {
-		c.Ctx.StatusCode(status)
+	if c.Status > 0 && c.Status != c.Ctx.GetStatusCode() {
+		c.Ctx.StatusCode(c.Status)
 	}
 
-	if contentType := c.ContentType; contentType != "" {
-		c.Ctx.ContentType(contentType)
+	if c.ContentType != "" {
+		c.Ctx.ContentType(c.ContentType)
 	}
 }
 
@@ -269,7 +326,7 @@ func (c *Controller) tryWriteHeaders() {
 // It's called internally.
 // End-Developer can ovveride it but still should be called at the end.
 func (c *Controller) EndRequest(ctx context.Context) {
-	if ctx.ResponseWriter().Written() > 0 {
+	if ctx.ResponseWriter().Written() >= 0 { // status code only (0) or actual body written(>0)
 		return
 	}
 
@@ -289,16 +346,10 @@ func (c *Controller) EndRequest(ctx context.Context) {
 		if layout := c.Layout; layout != "" {
 			ctx.ViewLayout(layout)
 		}
-		if data := c.Data; len(data) > 0 {
-			for k, v := range data {
-				ctx.ViewData(k, v)
-			}
+		if len(c.Data) > 0 {
+			ctx.Values().Set(ctx.Application().ConfigurationReadOnly().GetViewDataContextKey(), c.Data)
 		}
 
 		ctx.View(view)
 	}
 }
-
-var ctrlSuffix = reflect.TypeOf(Controller{}).Name()
-
-var _ activator.BaseController = &Controller{}

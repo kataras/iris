@@ -19,13 +19,14 @@ It doesn't always contain the "best ways" but it does cover each important featu
 
 ### Structuring
 
-Nothing stops you from using your favorite folder structure. Iris is a low level web framework, it has got MVC support but it doesn't limit your folder structure, this is your choice.
+Nothing stops you from using your favorite folder structure. Iris is a low level web framework, it has got MVC first-class support but it doesn't limit your folder structure, this is your choice.
 
-Structuring is always depends on your needs. We can't tell you how to design your own application for sure but you're free to take a closer look to the examples below; you may find something useful that you can borrow for your app
+Structuring depends on your own needs. We can't tell you how to design your own application for sure but you're free to take a closer look to the examples below; you may find something useful that you can borrow for your app
 
 - [Example 1](mvc/login)
 - [Example 2](structuring/mvc)
 - [Example 3](structuring/handler-based)
+- [Example 4](mvc/using-method-result)
 
 ### HTTP Listening
 
@@ -200,7 +201,7 @@ Follow the examples below,
 - [From func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)](convert-handlers/negroni-like/main.go)
 - [From http.Handler or http.HandlerFunc](convert-handlers/nethttp/main.go)
 
-### View 
+### View
 
 | Engine | Declaration |
 | -----------|-------------|

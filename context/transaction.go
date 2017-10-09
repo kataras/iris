@@ -101,7 +101,7 @@ func (t *Transaction) Complete(err error) {
 	if err != nil {
 		t.hasError = true
 
-		statusCode := 504 // bad request
+		statusCode := 400 // bad request
 		reason := err.Error()
 		cType := "text/plain; charset=" + t.context.Application().ConfigurationReadOnly().GetCharset()
 

@@ -173,7 +173,6 @@ func LookupFields(elem reflect.Type, matcher func(reflect.StructField) bool, han
 // is easier for debugging, if ever needed.
 func lookupStructField(elem reflect.Type, matcher func(reflect.StructField) bool, handler func(*Field)) *Field {
 	// fmt.Printf("lookup struct for elem: %s\n", elem.Name())
-
 	// ignore if that field is not a struct
 	if elem.Kind() != reflect.Struct {
 		return nil
@@ -182,6 +181,7 @@ func lookupStructField(elem reflect.Type, matcher func(reflect.StructField) bool
 	// search by fields.
 	for i, n := 0, elem.NumField(); i < n; i++ {
 		elemField := elem.Field(i)
+
 		if matcher(elemField) {
 			// we area inside the correct type.
 			f := &Field{

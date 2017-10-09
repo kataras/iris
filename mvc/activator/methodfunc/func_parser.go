@@ -87,6 +87,22 @@ func (p *funcParser) parse() (*ast, error) {
 
 		a.relPath += "/" + strings.ToLower(w)
 	}
+
+	// This fixes a problem when developer misses to append the keyword `By`
+	// to the method function when input arguments are declared (for path parameters binding).
+	// We could just use it with `By` keyword but this is not a good practise
+	// because what happens if we will become naive and declare something like
+	// Get(id int) and GetBy(username string) or GetBy(id int) ? it's not working because of duplication of the path.
+	// Docs are clear about that but we are humans, they may do a mistake by accident but
+	// framework will not allow that.
+	// So the best thing we can do to help prevent those errors is by printing that message
+	// below to the developer.
+	// Note: it should be at the end of the words loop because a.dynamic may be true later on.
+	if numIn := p.info.Type.NumIn(); numIn > 1 && !a.dynamic {
+		return nil, fmt.Errorf("found %d input arguments but keyword 'By' is missing from '%s'",
+			// -1 because end-developer wants to know the actual input arguments, without the struct holder.
+			numIn-1, p.info.Name)
+	}
 	return a, nil
 }
 
@@ -160,6 +176,10 @@ type ast struct {
 // }
 
 func (a *ast) paramValues(ctx context.Context) []reflect.Value {
+	if !a.dynamic {
+		return nil
+	}
+
 	l := len(a.paramKeys)
 	values := make([]reflect.Value, l, l)
 	for i := 0; i < l; i++ {

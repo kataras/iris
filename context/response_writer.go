@@ -61,6 +61,10 @@ type ResponseWriter interface {
 	// > 0 means that the reply was written and it's the total number of bytes were written.
 	Written() int
 
+	// SetWritten sets manually a value for written, it can be
+	// NoWritten(-1) or StatusCodeWritten(0), > 0 means body length which is useless here.
+	SetWritten(int)
+
 	// SetBeforeFlush registers the unique callback which called exactly before the response is flushed to the client.
 	SetBeforeFlush(cb func())
 	// GetBeforeFlush returns (not execute) the before flush callback, or nil if not setted by SetBeforeFlush.
@@ -143,6 +147,14 @@ func (w *responseWriter) EndResponse() {
 	releaseResponseWriter(w)
 }
 
+// SetWritten sets manually a value for written, it can be
+// NoWritten(-1) or StatusCodeWritten(0), > 0 means body length which is useless here.
+func (w *responseWriter) SetWritten(n int) {
+	if n >= NoWritten && n <= StatusCodeWritten {
+		w.written = n
+	}
+}
+
 // Written should returns the total length of bytes that were being written to the client.
 // In addition iris provides some variables to help low-level actions:
 // NoWritten, means that nothing were written yet and the response writer is still live.
@@ -151,11 +163,6 @@ func (w *responseWriter) EndResponse() {
 func (w *responseWriter) Written() int {
 	return w.written
 }
-
-// prin to write na benei to write header
-// meta to write den ginete edw
-// prepei omws kai mono me WriteHeader kai xwris Write na pigenei to status code
-// ara...wtf prepei na exw function flushStatusCode kai na elenxei an exei dw9ei status code na to kanei write aliws 200
 
 // WriteHeader sends an HTTP response header with status code.
 // If WriteHeader is not called explicitly, the first call to Write

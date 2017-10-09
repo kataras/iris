@@ -32,12 +32,18 @@ type Configuration struct {
 	// Debug if true then debug messages from the httpexpect will be shown when a test runs
 	// Defaults to false.
 	Debug bool
+	// LogLevel sets the application's log level.
+	// Defaults to "disable" when testing.
+	LogLevel string
 }
 
 // Set implements the OptionSetter for the Configuration itself
 func (c Configuration) Set(main *Configuration) {
 	main.URL = c.URL
 	main.Debug = c.Debug
+	if c.LogLevel != "" {
+		main.LogLevel = c.LogLevel
+	}
 }
 
 var (
@@ -55,11 +61,19 @@ var (
 			c.Debug = val
 		}
 	}
+
+	// LogLevel sets the application's log level "val".
+	// Defaults to disabled when testing.
+	LogLevel = func(val string) OptionSet {
+		return func(c *Configuration) {
+			c.LogLevel = val
+		}
+	}
 )
 
 // DefaultConfiguration returns the default configuration for the httptest.
 func DefaultConfiguration() *Configuration {
-	return &Configuration{URL: "", Debug: false}
+	return &Configuration{URL: "", Debug: false, LogLevel: "disable"}
 }
 
 // New Prepares and returns a new test framework based on the "app".
@@ -71,7 +85,7 @@ func New(t *testing.T, app *iris.Application, setters ...OptionSetter) *httpexpe
 	}
 
 	// disable the logger
-	app.Logger().SetLevel("disable")
+	app.Logger().SetLevel(conf.LogLevel)
 	app.Build()
 
 	testConfiguration := httpexpect.Config{
