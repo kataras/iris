@@ -71,13 +71,13 @@ func TestControllerMethodFuncs(t *testing.T) {
 	e := httptest.New(t, app)
 	for _, method := range router.AllMethods {
 
-		e.Request(method, "/").Expect().Status(httptest.StatusOK).
+		e.Request(method, "/").Expect().Status(iris.StatusOK).
 			Body().Equal(method)
 
-		e.Request(method, "/all").Expect().Status(httptest.StatusOK).
+		e.Request(method, "/all").Expect().Status(iris.StatusOK).
 			Body().Equal(method)
 
-		e.Request(method, "/any").Expect().Status(httptest.StatusOK).
+		e.Request(method, "/any").Expect().Status(iris.StatusOK).
 			Body().Equal(method)
 	}
 }
@@ -89,13 +89,13 @@ func TestControllerMethodAndPathHandleMany(t *testing.T) {
 	e := httptest.New(t, app)
 	for _, method := range router.AllMethods {
 
-		e.Request(method, "/").Expect().Status(httptest.StatusOK).
+		e.Request(method, "/").Expect().Status(iris.StatusOK).
 			Body().Equal(method)
 
-		e.Request(method, "/path1").Expect().Status(httptest.StatusOK).
+		e.Request(method, "/path1").Expect().Status(iris.StatusOK).
 			Body().Equal(method)
 
-		e.Request(method, "/path2").Expect().Status(httptest.StatusOK).
+		e.Request(method, "/path2").Expect().Status(iris.StatusOK).
 			Body().Equal(method)
 	}
 }
@@ -114,7 +114,7 @@ func TestControllerPersistenceFields(t *testing.T) {
 	app := iris.New()
 	app.Controller("/", &testControllerPersistence{Data: data})
 	e := httptest.New(t, app)
-	e.GET("/").Expect().Status(httptest.StatusOK).
+	e.GET("/").Expect().Status(iris.StatusOK).
 		Body().Equal(data)
 }
 
@@ -165,9 +165,9 @@ func TestControllerBeginAndEndRequestFunc(t *testing.T) {
 	doneResponse := "done"
 
 	for _, username := range usernames {
-		e.GET("/profile/" + username).Expect().Status(httptest.StatusOK).
+		e.GET("/profile/" + username).Expect().Status(iris.StatusOK).
 			Body().Equal(username + doneResponse)
-		e.POST("/profile/" + username).Expect().Status(httptest.StatusOK).
+		e.POST("/profile/" + username).Expect().Status(iris.StatusOK).
 			Body().Equal(username + doneResponse)
 	}
 }
@@ -190,7 +190,7 @@ func TestControllerBeginAndEndRequestFuncBindMiddleware(t *testing.T) {
 			}
 		}
 
-		ctx.StatusCode(httptest.StatusForbidden)
+		ctx.StatusCode(iris.StatusForbidden)
 		ctx.Writef("forbidden")
 	}
 
@@ -203,18 +203,18 @@ func TestControllerBeginAndEndRequestFuncBindMiddleware(t *testing.T) {
 	for username, allow := range usernames {
 		getEx := e.GET("/profile/" + username).Expect()
 		if allow {
-			getEx.Status(httptest.StatusOK).
+			getEx.Status(iris.StatusOK).
 				Body().Equal(username + doneResponse)
 		} else {
-			getEx.Status(httptest.StatusForbidden).Body().Equal("forbidden")
+			getEx.Status(iris.StatusForbidden).Body().Equal("forbidden")
 		}
 
 		postEx := e.POST("/profile/" + username).Expect()
 		if allow {
-			postEx.Status(httptest.StatusOK).
+			postEx.Status(iris.StatusOK).
 				Body().Equal(username + doneResponse)
 		} else {
-			postEx.Status(httptest.StatusForbidden).Body().Equal("forbidden")
+			postEx.Status(iris.StatusForbidden).Body().Equal("forbidden")
 		}
 	}
 }
@@ -275,7 +275,7 @@ func TestControllerModel(t *testing.T) {
 	}
 
 	for _, username := range usernames {
-		e.GET("/model/" + username).Expect().Status(httptest.StatusOK).
+		e.GET("/model/" + username).Expect().Status(iris.StatusOK).
 			Body().Equal(username + username + "2")
 	}
 }
@@ -318,9 +318,9 @@ func TestControllerBind(t *testing.T) {
 
 	e := httptest.New(t, app)
 	expected := t1 + t2
-	e.GET("/").Expect().Status(httptest.StatusOK).
+	e.GET("/").Expect().Status(iris.StatusOK).
 		Body().Equal(expected)
-	e.GET("/deep").Expect().Status(httptest.StatusOK).
+	e.GET("/deep").Expect().Status(iris.StatusOK).
 		Body().Equal(expected)
 }
 
@@ -376,7 +376,7 @@ func TestControllerRelPathAndRelTmpl(t *testing.T) {
 
 	e := httptest.New(t, app)
 	for path, tt := range tests {
-		e.GET(path).Expect().Status(httptest.StatusOK).JSON().Equal(tt)
+		e.GET(path).Expect().Status(iris.StatusOK).JSON().Equal(tt)
 	}
 }
 
@@ -436,7 +436,7 @@ func TestControllerInsideControllerRecursively(t *testing.T) {
 
 	e := httptest.New(t, app)
 	e.GET("/user/" + username).Expect().
-		Status(httptest.StatusOK).Body().Equal(expected)
+		Status(iris.StatusOK).Body().Equal(expected)
 }
 
 type testControllerRelPathFromFunc struct{ mvc.Controller }
@@ -467,35 +467,35 @@ func TestControllerRelPathFromFunc(t *testing.T) {
 	app.Controller("/", new(testControllerRelPathFromFunc))
 
 	e := httptest.New(t, app)
-	e.GET("/").Expect().Status(httptest.StatusOK).
+	e.GET("/").Expect().Status(iris.StatusOK).
 		Body().Equal("GET:/")
 
-	e.GET("/42").Expect().Status(httptest.StatusOK).
+	e.GET("/42").Expect().Status(iris.StatusOK).
 		Body().Equal("GET:/42")
-	e.GET("/something/true").Expect().Status(httptest.StatusOK).
+	e.GET("/something/true").Expect().Status(iris.StatusOK).
 		Body().Equal("GET:/something/true")
-	e.GET("/something/false").Expect().Status(httptest.StatusOK).
+	e.GET("/something/false").Expect().Status(iris.StatusOK).
 		Body().Equal("GET:/something/false")
-	e.GET("/something/truee").Expect().Status(httptest.StatusNotFound)
-	e.GET("/something/falsee").Expect().Status(httptest.StatusNotFound)
-	e.GET("/something/kataras/42").Expect().Status(httptest.StatusOK).
+	e.GET("/something/truee").Expect().Status(iris.StatusNotFound)
+	e.GET("/something/falsee").Expect().Status(iris.StatusNotFound)
+	e.GET("/something/kataras/42").Expect().Status(iris.StatusOK).
 		Body().Equal("GET:/something/kataras/42")
-	e.GET("/something/new/kataras/42").Expect().Status(httptest.StatusOK).
+	e.GET("/something/new/kataras/42").Expect().Status(iris.StatusOK).
 		Body().Equal("GET:/something/new/kataras/42")
-	e.GET("/something/true/else/this/42").Expect().Status(httptest.StatusOK).
+	e.GET("/something/true/else/this/42").Expect().Status(iris.StatusOK).
 		Body().Equal("GET:/something/true/else/this/42")
 
-	e.GET("/login").Expect().Status(httptest.StatusOK).
+	e.GET("/login").Expect().Status(iris.StatusOK).
 		Body().Equal("GET:/login")
-	e.POST("/login").Expect().Status(httptest.StatusOK).
+	e.POST("/login").Expect().Status(iris.StatusOK).
 		Body().Equal("POST:/login")
-	e.GET("/admin/login").Expect().Status(httptest.StatusOK).
+	e.GET("/admin/login").Expect().Status(iris.StatusOK).
 		Body().Equal("GET:/admin/login")
-	e.PUT("/something/into/this").Expect().Status(httptest.StatusOK).
+	e.PUT("/something/into/this").Expect().Status(iris.StatusOK).
 		Body().Equal("PUT:/something/into/this")
-	e.GET("/42").Expect().Status(httptest.StatusOK).
+	e.GET("/42").Expect().Status(iris.StatusOK).
 		Body().Equal("GET:/42")
-	e.GET("/anything/here").Expect().Status(httptest.StatusOK).
+	e.GET("/anything/here").Expect().Status(iris.StatusOK).
 		Body().Equal("GET:/anything/here")
 }
 
@@ -523,8 +523,8 @@ func TestControllerActivateListener(t *testing.T) {
 	})
 
 	e := httptest.New(t, app)
-	e.GET("/").Expect().Status(httptest.StatusOK).
+	e.GET("/").Expect().Status(iris.StatusOK).
 		Body().Equal("default title")
-	e.GET("/manual").Expect().Status(httptest.StatusOK).
+	e.GET("/manual").Expect().Status(iris.StatusOK).
 		Body().Equal("my title")
 }

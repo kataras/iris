@@ -35,7 +35,7 @@ func (ch *ErrorCodeHandler) Fire(ctx context.Context) {
 		// if we can't reset the body and the body has been filled
 		// which means that the status code already sent,
 		// then do not fire this custom error code.
-		if ctx.ResponseWriter().Written() != -1 {
+		if ctx.ResponseWriter().Written() > 0 { // != -1, rel: context/context.go#EndRequest
 			return
 		}
 	}

@@ -18,6 +18,157 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+# Su, 09 October 2017 | v8.5.0
+
+## MVC
+
+Great news for our **MVC** Fans or if you're not you may want to use that powerful feature today, because of the smart coding and decisions the performance is quite the same to the pure handlers, see [_benchmarks](_benchmarks).
+
+Iris now gives you the ability to render a response based on the **output values** returned method functions!
+
+You can return any value of any type from a method function
+and it will be sent to the client as expected.
+
+* if `string` then it's the body.
+* if `string` is the second output argument then it's the content type.
+* if `int` then it's the status code.
+* if `error` and not nil then (any type) response will be omitted and error's text with a 400 bad request will be rendered instead.
+* if `(int, error)` and error is not nil then the response result will be the error's text with the status code as `int`.
+* if  `custom struct` or `interface{}` or `slice` or `map` then it will be rendered as json, unless a `string` content type is following.
+* if `mvc.Result` then it executes its `Dispatch` function, so good design patters can be used to split the model's logic where needed.
+
+The example below is not intended to be used in production but it's a good showcase of some of the return types we saw before;
+
+```go
+package main
+
+import (
+    "github.com/kataras/iris"
+    "github.com/kataras/iris/middleware/basicauth"
+    "github.com/kataras/iris/mvc"
+)
+
+// Movie is our sample data structure.
+type Movie struct {
+    Name   string `json:"name"`
+    Year   int    `json:"year"`
+    Genre  string `json:"genre"`
+    Poster string `json:"poster"`
+}
+
+// movies contains our imaginary data source.
+var movies = []Movie{
+    {
+        Name:   "Casablanca",
+        Year:   1942,
+        Genre:  "Romance",
+        Poster: "https://iris-go.com/images/examples/mvc-movies/1.jpg",
+    },
+    {
+        Name:   "Gone with the Wind",
+        Year:   1939,
+        Genre:  "Romance",
+        Poster: "https://iris-go.com/images/examples/mvc-movies/2.jpg",
+    },
+    {
+        Name:   "Citizen Kane",
+        Year:   1941,
+        Genre:  "Mystery",
+        Poster: "https://iris-go.com/images/examples/mvc-movies/3.jpg",
+    },
+    {
+        Name:   "The Wizard of Oz",
+        Year:   1939,
+        Genre:  "Fantasy",
+        Poster: "https://iris-go.com/images/examples/mvc-movies/4.jpg",
+    },
+}
+
+
+var basicAuth = basicauth.New(basicauth.Config{
+    Users: map[string]string{
+        "admin": "password",
+    },
+})
+
+
+func main() {
+    app := iris.New()
+
+    app.Use(basicAuth)
+
+    app.Controller("/movies", new(MoviesController))
+
+    app.Run(iris.Addr(":8080"))
+}
+
+// MoviesController is our /movies controller.
+type MoviesController struct {
+    // mvc.C is just a lightweight lightweight alternative
+    // to the "mvc.Controller" controller type,
+    // use it when you don't need mvc.Controller's fields
+    // (you don't need those fields when you return values from the method functions).
+    mvc.C
+}
+
+// Get returns list of the movies
+// Demo:
+// curl -i http://localhost:8080/movies
+func (c *MoviesController) Get() []Movie {
+    return movies
+}
+
+// GetBy returns a movie
+// Demo:
+// curl -i http://localhost:8080/movies/1
+func (c *MoviesController) GetBy(id int) Movie {
+    return movies[id]
+}
+
+// PutBy updates a movie
+// Demo:
+// curl -i -X PUT -F "genre=Thriller" -F "poster=@/Users/kataras/Downloads/out.gif" http://localhost:8080/movies/1
+func (c *MoviesController) PutBy(id int) Movie {
+    // get the movie
+    m := movies[id]
+
+    // get the request data for poster and genre
+    file, info, err := c.Ctx.FormFile("poster")
+    if err != nil {
+        c.Ctx.StatusCode(iris.StatusInternalServerError)
+        return Movie{}
+    }
+    file.Close()            // we don't need the file
+    poster := info.Filename // imagine that as the url of the uploaded file...
+    genre := c.Ctx.FormValue("genre")
+
+    // update the poster
+    m.Poster = poster
+    m.Genre = genre
+    movies[id] = m
+
+    return m
+}
+
+// DeleteBy deletes a movie
+// Demo:
+// curl -i -X DELETE -u admin:password http://localhost:8080/movies/1
+func (c *MoviesController) DeleteBy(id int) iris.Map {
+    // delete the entry from the movies slice
+    deleted := movies[id].Name
+    movies = append(movies[:id], movies[id+1:]...)
+    // and return the deleted movie's name
+    return iris.Map{"deleted": deleted}
+}
+```
+
+Another good example with a typical folder structure, that many developers are used to work, is located at the new [README.md](README.md) under the [Quick MVC Tutorial #3](README.md#quick-mvc-tutorial--3) section.
+
+### The complete example source code can be found at [_examples/mvc/using-method-result](_examples/mvc/using-method-result) folder.
+
+----
+
+Upgrade with `go get -u -v github.com/kataras/iris` or let the auto-updater to do its job.
 
 # Fr, 06 October 2017 | v8.4.5
 

@@ -858,11 +858,22 @@ func (ctx *context) EndRequest() {
 		// author's note:
 		// if recording, the error handler can handle
 		// the rollback and remove any response written before,
-		// we don't have to do anything here, written is -1 when Recording
+		// we don't have to do anything here, written is <=0 (-1 for default empty, even no status code)
+		// when Recording
 		// because we didn't flush the response yet
 		// if !recording  then check if the previous handler didn't send something
-		// to the client
-		if ctx.writer.Written() == -1 {
+		// to the client.
+		if ctx.writer.Written() <= 0 {
+			// Author's notes:
+			// previously: == -1,
+			// <=0 means even if empty write called which has meaning;
+			// rel: core/router/status.go#Fire-else
+			// mvc/activator/funcmethod/func_result_dispatcher.go#DispatchCommon-write
+			// mvc/response.go#defaultFailureResponse - no text given but
+			// status code should be fired, but it couldn't because of the .Write
+			// action, the .Written() was 0 even on empty response, this 0 means that
+			// a status code given, the previous check of the "== -1" didn't make check for that,
+			// we do now.
 			ctx.Application().FireErrorCode(ctx)
 		}
 	}
@@ -1233,7 +1244,7 @@ func (ctx *context) ContentType(cType string) {
 	}
 	// if doesn't contain a charset already then append it
 	if !strings.Contains(cType, "charset") {
-		if cType != contentBinaryHeaderValue {
+		if cType != ContentBinaryHeaderValue {
 			charset := ctx.Application().ConfigurationReadOnly().GetCharset()
 			cType += "; charset=" + charset
 		}
@@ -1941,7 +1952,7 @@ func (ctx *context) GetViewData() map[string]interface{} {
 //
 // Examples: https://github.com/kataras/iris/tree/master/_examples/view/
 func (ctx *context) View(filename string) error {
-	ctx.ContentType(contentHTMLHeaderValue)
+	ctx.ContentType(ContentHTMLHeaderValue)
 	cfg := ctx.Application().ConfigurationReadOnly()
 
 	layout := ctx.values.GetString(cfg.GetViewLayoutContextKey())
@@ -1957,38 +1968,38 @@ func (ctx *context) View(filename string) error {
 }
 
 const (
-	// contentBinaryHeaderValue header value for binary data.
-	contentBinaryHeaderValue = "application/octet-stream"
-	// contentHTMLHeaderValue is the  string of text/html response header's content type value.
-	contentHTMLHeaderValue = "text/html"
-	// ContentJSON header value for JSON data.
-	contentJSONHeaderValue = "application/json"
-	// ContentJSONP header value for JSONP & Javascript data.
-	contentJavascriptHeaderValue = "application/javascript"
-	// contentTextHeaderValue header value for Text data.
-	contentTextHeaderValue = "text/plain"
-	// contentXMLHeaderValue header value for XML data.
-	contentXMLHeaderValue = "text/xml"
+	// ContentBinaryHeaderValue header value for binary data.
+	ContentBinaryHeaderValue = "application/octet-stream"
+	// ContentHTMLHeaderValue is the  string of text/html response header's content type value.
+	ContentHTMLHeaderValue = "text/html"
+	// ContentJSONHeaderValue header value for JSON data.
+	ContentJSONHeaderValue = "application/json"
+	// ContentJavascriptHeaderValue header value for JSONP & Javascript data.
+	ContentJavascriptHeaderValue = "application/javascript"
+	// ContentTextHeaderValue header value for Text data.
+	ContentTextHeaderValue = "text/plain"
+	// ContentXMLHeaderValue header value for XML data.
+	ContentXMLHeaderValue = "text/xml"
 
-	// contentMarkdownHeaderValue custom key/content type, the real is the text/html.
-	contentMarkdownHeaderValue = "text/markdown"
+	// ContentMarkdownHeaderValue custom key/content type, the real is the text/html.
+	ContentMarkdownHeaderValue = "text/markdown"
 )
 
 // Binary writes out the raw bytes as binary data.
 func (ctx *context) Binary(data []byte) (int, error) {
-	ctx.ContentType(contentBinaryHeaderValue)
+	ctx.ContentType(ContentBinaryHeaderValue)
 	return ctx.Write(data)
 }
 
 // Text writes out a string as plain text.
 func (ctx *context) Text(text string) (int, error) {
-	ctx.ContentType(contentTextHeaderValue)
+	ctx.ContentType(ContentTextHeaderValue)
 	return ctx.writer.WriteString(text)
 }
 
 // HTML writes out a string as text/html.
 func (ctx *context) HTML(htmlContents string) (int, error) {
-	ctx.ContentType(contentHTMLHeaderValue)
+	ctx.ContentType(ContentHTMLHeaderValue)
 	return ctx.writer.WriteString(htmlContents)
 }
 
@@ -2078,11 +2089,13 @@ func WriteJSON(writer io.Writer, v interface{}, options JSON, enableOptimization
 	return writer.Write(result)
 }
 
-var defaultJSONOptions = JSON{}
+// DefaultJSONOptions is the optional settings that are being used
+// inside `ctx.JSON`.
+var DefaultJSONOptions = JSON{}
 
 // JSON marshals the given interface object and writes the JSON response to the client.
 func (ctx *context) JSON(v interface{}, opts ...JSON) (n int, err error) {
-	options := defaultJSONOptions
+	options := DefaultJSONOptions
 
 	if len(opts) > 0 {
 		options = opts[0]
@@ -2090,7 +2103,7 @@ func (ctx *context) JSON(v interface{}, opts ...JSON) (n int, err error) {
 
 	optimize := ctx.shouldOptimize()
 
-	ctx.ContentType(contentJSONHeaderValue)
+	ctx.ContentType(ContentJSONHeaderValue)
 
 	if options.StreamingJSON {
 		if optimize {
@@ -2162,17 +2175,19 @@ func WriteJSONP(writer io.Writer, v interface{}, options JSONP, enableOptimizati
 	return writer.Write(result)
 }
 
-var defaultJSONPOptions = JSONP{}
+// DefaultJSONPOptions is the optional settings that are being used
+// inside `ctx.JSONP`.
+var DefaultJSONPOptions = JSONP{}
 
 // JSONP marshals the given interface object and writes the JSON response to the client.
 func (ctx *context) JSONP(v interface{}, opts ...JSONP) (int, error) {
-	options := defaultJSONPOptions
+	options := DefaultJSONPOptions
 
 	if len(opts) > 0 {
 		options = opts[0]
 	}
 
-	ctx.ContentType(contentJavascriptHeaderValue)
+	ctx.ContentType(ContentJavascriptHeaderValue)
 
 	n, err := WriteJSONP(ctx.writer, v, options, ctx.shouldOptimize())
 	if err != nil {
@@ -2205,17 +2220,19 @@ func WriteXML(writer io.Writer, v interface{}, options XML) (int, error) {
 	return writer.Write(result)
 }
 
-var defaultXMLOptions = XML{}
+// DefaultXMLOptions is the optional settings that are being used
+// from `ctx.XML`.
+var DefaultXMLOptions = XML{}
 
 // XML marshals the given interface object and writes the XML response to the client.
 func (ctx *context) XML(v interface{}, opts ...XML) (int, error) {
-	options := defaultXMLOptions
+	options := DefaultXMLOptions
 
 	if len(opts) > 0 {
 		options = opts[0]
 	}
 
-	ctx.ContentType(contentXMLHeaderValue)
+	ctx.ContentType(ContentXMLHeaderValue)
 
 	n, err := WriteXML(ctx.writer, v, options)
 	if err != nil {
@@ -2235,17 +2252,19 @@ func WriteMarkdown(writer io.Writer, markdownB []byte, options Markdown) (int, e
 	return writer.Write(buf)
 }
 
-var defaultMarkdownOptions = Markdown{}
+// DefaultMarkdownOptions is the optional settings that are being used
+// from `WriteMarkdown` and `ctx.Markdown`.
+var DefaultMarkdownOptions = Markdown{}
 
 // Markdown parses the markdown to html and renders to the client.
 func (ctx *context) Markdown(markdownB []byte, opts ...Markdown) (int, error) {
-	options := defaultMarkdownOptions
+	options := DefaultMarkdownOptions
 
 	if len(opts) > 0 {
 		options = opts[0]
 	}
 
-	ctx.ContentType(contentHTMLHeaderValue)
+	ctx.ContentType(ContentHTMLHeaderValue)
 
 	n, err := WriteMarkdown(ctx.writer, markdownB, options)
 	if err != nil {

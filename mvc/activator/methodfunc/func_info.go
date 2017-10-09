@@ -51,7 +51,6 @@ func fetchInfos(typ reflect.Type) (methods []FuncInfo) {
 	// search the entire controller
 	// for any compatible method function
 	// and add that.
-
 	for i, n := 0, typ.NumMethod(); i < n; i++ {
 		m := typ.Method(i)
 		name := m.Name

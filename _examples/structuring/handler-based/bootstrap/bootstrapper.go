@@ -6,6 +6,8 @@ import (
 	"github.com/gorilla/securecookie"
 
 	"github.com/kataras/iris"
+	"github.com/kataras/iris/middleware/logger"
+	"github.com/kataras/iris/middleware/recover"
 	"github.com/kataras/iris/sessions"
 	"github.com/kataras/iris/websocket"
 )
@@ -103,6 +105,10 @@ func (b *Bootstrapper) Bootstrap() *Bootstrapper {
 	// static files
 	b.Favicon(StaticAssets + Favicon)
 	b.StaticWeb(StaticAssets[1:len(StaticAssets)-1], StaticAssets)
+
+	// middleware, after static files
+	b.Use(recover.New())
+	b.Use(logger.New())
 
 	return b
 }
