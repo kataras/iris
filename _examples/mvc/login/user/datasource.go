@@ -27,7 +27,7 @@ func NewDataSource() *DataSource {
 	}
 }
 
-// GetBy returns receives a query function
+// GetBy receives a query function
 // which is fired for every single user model inside
 // our imaginary database.
 // When that function returns true then it stops the iteration.
