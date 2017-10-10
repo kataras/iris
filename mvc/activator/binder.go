@@ -71,11 +71,12 @@ func (b *binder) lookup(elem reflect.Type) (fields []field.Field) {
 		matcher := func(elemField reflect.StructField) bool {
 			// If the controller's field is interface then check
 			// if the given binded value implements that interface.
-			// i.e MovieController { Service services.MoviesController /* interface */ }
+			// i.e MovieController { Service services.MovieService /* interface */ }
 			// app.Controller("/", new(MovieController),
 			// 	services.NewMovieMemoryService(...))
-			// services.NewMovieMemoryService returns a *MovieMemoryService
-			// that implements the MovieService interface.
+			//
+			// `services.NewMovieMemoryService` returns a `*MovieMemoryService`
+			// that implements the `MovieService` interface.
 			if elemField.Type.Kind() == reflect.Interface {
 				return value.Type().Implements(elemField.Type)
 			}

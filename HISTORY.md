@@ -24,6 +24,10 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 Great news for our **MVC** Fans or if you're not you may want to use that powerful feature today, because of the smart coding and decisions the performance is quite the same to the pure handlers, see [_benchmarks](_benchmarks).
 
+A Controller's field that is an interface can now be binded to any type that implements that interface.
+
+Ability to send HTTP responses based on the Controller's method function's output values, see below;
+
 Iris now gives you the ability to render a response based on the **output values** returned from the controller's method functions!
 
 You can return any value of any type from a method function
@@ -163,8 +167,6 @@ func (c *MoviesController) DeleteBy(id int) iris.Map {
 ```
 
 Another good example with a typical folder structure, that many developers are used to work, is located at the new [README.md](README.md) under the [Quick MVC Tutorial #3](README.md#quick-mvc-tutorial-3) section.
-
-### The complete example source code can be found at [_examples/mvc/using-method-result](_examples/mvc/using-method-result) folder.
 
 # Fr, 06 October 2017 | v8.4.5
 
