@@ -86,7 +86,7 @@ _Psst_, we've produced a small video about your feelings regrating to Iris! You 
 ### 📑 Table Of Content
 
 * [Installation](#-installation)
-* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#mo-09-october-2017--v850)
+* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#tu-10-october-2017--v851)
 * [Learn](#-learn)
     * [Structuring](_examples/#structuring)
     * [HTTP Listening](_examples/#http-listening)

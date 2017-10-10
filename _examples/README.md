@@ -174,20 +174,41 @@ If `app.Controller("/assets", new(file.Controller))`
 
 - `func(*Controller) GetByWildard(path string)` - `GET:/assets/{param:path}`
 
+    Supported types for method functions receivers: int, int64, bool and string.
+
+Response via output arguments, optionally, i.e
+
+```go
+func(c *ExampleController) Get() string |
+                                (string, string) |
+                                (string, int) |
+                                int |
+                                (int, string |
+                                (string, error) |
+                                error |
+                                (int, error) |
+                                (customStruct, error) |
+                                customStruct |
+                                (customStruct, int) |
+                                (customStruct, string) |
+                                mvc.Result or (mvc.Result, error)
+```
+
+where [mvc.Result](https://github.com/kataras/iris/blob/master/mvc/method_result.go) is an interface which contains only that function: `Dispatch(ctx iris.Context)`.
+
 **Using Iris MVC for code reuse** 
 
 By creating components that are independent of one another, developers are able to reuse components quickly and easily in other applications. The same (or similar) view for one application can be refactored for another application with different data because the view is simply handling how the data is being displayed to the user.
 
 If you're new to back-end web development read about the MVC architectural pattern first, a good start is that [wikipedia article](https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93controller).
 
-
 Follow the examples below,
 
 - [Hello world](mvc/hello-world/main.go)
 - [Session Controller](mvc/session-controller/main.go)
-- [A simple but featured Controller with model and views](mvc/controller-with-model-and-view).
+- [A simple but featured Controller with model and views](mvc/controller-with-model-and-view)
 - [Login showcase](mvc/login/main.go) **NEW**
-
+- [Using Method Result (plus Service-oriented design)](mvc/using-method-result)
 
 ### Subdomains
 

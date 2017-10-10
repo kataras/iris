@@ -67,7 +67,7 @@ $ go get -u github.com/kataras/iris
 
 - Iris takes advantage of the [vendor directory](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo) feature. You get truly reproducible builds, as this method guards against upstream renames and deletes.
 
-- [Latest changes | v8.5.0](https://github.com/kataras/iris/blob/master/HISTORY.md#mo-09-october-2017--v850)
+- [Latest changes | v8.5.1](https://github.com/kataras/iris/blob/master/HISTORY.md#tu-10-october-2017--v851)
 
 ## Getting Started
 
@@ -697,7 +697,6 @@ func (s *MovieMemoryService) GetAll() []models.Movie {
     return movies
 }
 ```
-
 
 ```go
 // file: controllers/movie_controller.go

@@ -18,6 +18,12 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+# Tu, 10 October 2017 | v8.5.1
+
+## MVC
+
+- fix any manual or before middleware's `ctx.ViewData(key, value)` gets overridden by setting `mvc.Controller.Data` or `return mvc.View {Data: ...}`. See the [test case](mvc/method_result_test.go#L226).
+
 # Mo, 09 October 2017 | v8.5.0
 
 ## MVC

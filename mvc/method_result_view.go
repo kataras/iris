@@ -5,6 +5,8 @@ import (
 
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/mvc/activator/methodfunc"
+
+	"github.com/fatih/structs"
 )
 
 // View completes the `methodfunc.Result` interface.
@@ -66,12 +68,32 @@ func (r View) Dispatch(ctx context.Context) { // r as Response view.
 		}
 
 		if r.Data != nil {
-			ctx.Values().Set(
-				ctx.Application().ConfigurationReadOnly().GetViewDataContextKey(),
-				r.Data,
-			)
+			// In order to respect any c.Ctx.ViewData that may called manually before;
+			dataKey := ctx.Application().ConfigurationReadOnly().GetViewDataContextKey()
+			if ctx.Values().Get(dataKey) == nil {
+				// if no c.Ctx.ViewData then it's empty do a
+				// pure set, it's faster.
+				ctx.Values().Set(dataKey, r.Data)
+			} else {
+				// else check if r.Data is map or struct, if struct convert it to map,
+				// do a range loop and set the data one by one.
+				// context.Map is actually a map[string]interface{} but we have to make that check;
+				if m, ok := r.Data.(map[string]interface{}); ok {
+					setViewData(ctx, m)
+				} else if m, ok := r.Data.(context.Map); ok {
+					setViewData(ctx, m)
+				} else if structs.IsStruct(r.Data) {
+					setViewData(ctx, structs.Map(r))
+				}
+			}
 		}
 
 		ctx.View(r.Name)
+	}
+}
+
+func setViewData(ctx context.Context, data map[string]interface{}) {
+	for k, v := range data {
+		ctx.ViewData(k, v)
 	}
 }
