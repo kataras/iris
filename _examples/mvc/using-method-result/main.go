@@ -20,7 +20,7 @@ func main() {
 	// Register our controllers.
 	app.Controller("/hello", new(controllers.HelloController))
 
-	// Create our movie service (memory), we will bind it to the movies controller.
+	// Create our movie service (memory), we will bind it to the movie controller.
 	service := services.NewMovieServiceFromMemory(datasource.Movies)
 
 	app.Controller("/movies", new(controllers.MovieController),
