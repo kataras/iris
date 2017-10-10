@@ -235,7 +235,7 @@ func (t *testControllerViewResultRespectCtxViewData) BeginRequest(ctx context.Co
 
 func (t *testControllerViewResultRespectCtxViewData) EndRequest(ctx context.Context) {
 	t.C.EndRequest(ctx)
-	// check if data is not overriden by return mvc.View {Data: context.Map...}
+	// check if data is not overridden by return mvc.View {Data: context.Map...}
 
 	dataWritten := ctx.GetViewData()
 	if dataWritten == nil {
@@ -245,7 +245,7 @@ func (t *testControllerViewResultRespectCtxViewData) EndRequest(ctx context.Cont
 
 	if dataWritten["name_begin"] == nil {
 		t.T.Fatalf(`view data[name_begin] is nil, 
-			BeginRequest's ctx.ViewData call have been overriden  by Get's return mvc.View {Data: }.
+			BeginRequest's ctx.ViewData call have been overridden  by Get's return mvc.View {Data: }.
 			Total view data: %v`, dataWritten)
 	}
 
