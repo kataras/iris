@@ -347,7 +347,19 @@ func (c *Controller) EndRequest(ctx context.Context) {
 			ctx.ViewLayout(layout)
 		}
 		if len(c.Data) > 0 {
-			ctx.Values().Set(ctx.Application().ConfigurationReadOnly().GetViewDataContextKey(), c.Data)
+			dataKey := ctx.Application().ConfigurationReadOnly().GetViewDataContextKey()
+			// In order to respect any c.Ctx.ViewData that may called manually before;
+			if ctx.Values().Get(dataKey) == nil {
+				// if no c.Ctx.ViewData then it's empty do a
+				// pure set, it's faster.
+				ctx.Values().Set(dataKey, c.Data)
+			} else {
+				// else do a range loop and set the data one by one.
+				for k, v := range c.Data {
+					ctx.ViewData(k, v)
+				}
+			}
+
 		}
 
 		ctx.View(view)

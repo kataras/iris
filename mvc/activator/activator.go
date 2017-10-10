@@ -131,7 +131,7 @@ func (t TController) HandlerOf(methodFunc methodfunc.MethodFunc) context.Handler
 			t.persistenceController.Handle(c)
 		}
 
-		// if previous (binded) handlers stoped the execution
+		// if previous (binded) handlers stopped the execution
 		// we should know that.
 		if ctx.IsStopped() {
 			return
