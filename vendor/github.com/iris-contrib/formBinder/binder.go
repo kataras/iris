@@ -10,6 +10,25 @@ import (
 
 const tagName = "form"
 
+var timeFormat = []string{
+	"2006-01-02",
+	time.ANSIC,
+	time.UnixDate,
+	time.RubyDate,
+	time.RFC822,
+	time.RFC822Z,
+	time.RFC850,
+	time.RFC1123,
+	time.RFC1123Z,
+	time.RFC3339,
+	time.RFC3339Nano,
+	time.Kitchen,
+	time.Stamp,
+	time.StampMilli,
+	time.StampMicro,
+	time.StampNano,
+}
+
 // A pathMap holds the values of a map with its key and values correspondent
 type pathMap struct {
 	ma    reflect.Value
@@ -436,7 +455,14 @@ func (dec *Decoder) decode() error {
 	case reflect.Struct:
 		switch dec.curr.Interface().(type) {
 		case time.Time:
-			t, err := time.Parse("2006-01-02", dec.value)
+			var t time.Time
+			var err error
+			for _, layout := range timeFormat {
+				t, err = time.Parse(layout, dec.value)
+				if err == nil {
+					break
+				}
+			}
 			if err != nil {
 				return newError(fmt.Errorf("formam: the value of field \"%v\" in path \"%v\" is not a valid datetime", dec.field, dec.path))
 			}

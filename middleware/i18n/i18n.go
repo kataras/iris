@@ -1,11 +1,12 @@
-// Package i18n provides internalization and localization via middleware. See _examples/miscellaneous/i18n
+// Package i18n provides internalization and localization via middleware.
+// See _examples/miscellaneous/i18n
 package i18n
 
 import (
 	"reflect"
 	"strings"
 
-	"github.com/Unknwon/i18n"
+	"github.com/iris-contrib/i18n"
 	"github.com/kataras/iris/context"
 )
 

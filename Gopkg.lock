@@ -15,9 +15,9 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/Unknwon/i18n"
+  name = "github.com/iris-contrib/i18n"
   packages = ["."]
-  revision = "8372b908b5876d26cfa46a85fc4851b981dad102"
+  revision = "976ad7f3463c8f0b8fd949cf5e78a73a1828c96d"
 
 [[projects]]
   name = "github.com/ajg/form"
@@ -36,6 +36,12 @@
   packages = ["."]
   revision = "2f1ce7a837dcb8da3ec595b1dac9d0632f0f99e8"
   version = "v1.3.1"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/dgraph-io/badger"
+  packages = ["."]
+  revision = "d8b951787ebe5c42286475df8a3dea25045bda1a"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"
@@ -101,7 +107,7 @@
   branch = "master"
   name = "github.com/iris-contrib/formBinder"
   packages = ["."]
-  revision = "ed52a69d2bfbe92c9e8c5a35cad28da183ededdc"
+  revision = "ad9fb86c356f971f30319c40ddbdcf72129a2791"
 
 [[projects]]
   branch = "master"
