@@ -44,18 +44,26 @@ type (
 	TagParser func(doc *Parser, start *Token, arguments *Parser) (INodeTag, *Error)
 )
 
+// GetValue returns the `Value` as *pongo2.Value type.
+// This method was added by balthild at https://github.com/kataras/iris/pull/765
 func (value *Value) GetValue() *pongo2.Value {
 	return (*pongo2.Value)(value)
 }
 
+// GetError returns the `Error` as *pongo2.Error type.
+// This method was added by balthild at https://github.com/kataras/iris/pull/765
 func (error *Error) GetError() *pongo2.Error {
 	return (*pongo2.Error)(error)
 }
 
+// GetParser returns the `Parser` as *pongo2.Parser type.
+// This method was added by balthild at https://github.com/kataras/iris/pull/765
 func (parser *Parser) GetParser() *pongo2.Parser {
 	return (*pongo2.Parser)(parser)
 }
 
+// GetToken returns the `Token` as *pongo2.Token type.
+// This method was added by balthild at https://github.com/kataras/iris/pull/765
 func (token *Token) GetToken() *pongo2.Token {
 	return (*pongo2.Token)(token)
 }
