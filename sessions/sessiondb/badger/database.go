@@ -51,7 +51,7 @@ func New(directoryPath string) (*Database, error) {
 	opts.Dir = directoryPath
 	opts.ValueDir = directoryPath
 
-	service, err := badger.Open(&opts)
+	service, err := badger.Open(opts)
 
 	if err != nil {
 		golog.Errorf("unable to initialize the badger-based session database: %v", err)
