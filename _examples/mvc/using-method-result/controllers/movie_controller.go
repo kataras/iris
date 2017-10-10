@@ -1,4 +1,4 @@
-// file: controllers/movies_controller.go
+// file: controllers/movie_controller.go
 
 package controllers
 
@@ -68,13 +68,12 @@ func (c *MovieController) PutBy(id int64) (models.Movie, error) {
 // Demo:
 // curl -i -X DELETE -u admin:password http://localhost:8080/movies/1
 func (c *MovieController) DeleteBy(id int64) interface{} {
-	// delete the entry from the movies slice.
 	wasDel := c.Service.DeleteByID(id)
 	if wasDel {
-		// and return the deleted movie's ID
+		// return the deleted movie's ID
 		return iris.Map{"deleted": id}
 	}
-	// here we can see that a method function can return any of those two types(map or int),
+	// right here we can see that a method function can return any of those two types(map or int),
 	// we don't have to specify the return type to a specific type.
 	return iris.StatusBadRequest
 }

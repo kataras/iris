@@ -471,7 +471,7 @@ type Movie struct {
 // simple checks can be added here.
 //
 // It's just a showcase,
-// imagine what possible this opens when you designing a bigger application.
+// imagine the potentials this feature gives when designing a bigger application.
 //
 // This is called where the return value from a controller's method functions
 // is type of `Movie`.
@@ -700,7 +700,7 @@ func (s *MovieMemoryService) GetAll() []models.Movie {
 
 
 ```go
-// file: controllers/movies_controller.go
+// file: controllers/movie_controller.go
 
 package controllers
 
@@ -770,7 +770,6 @@ func (c *MovieController) PutBy(id int64) (models.Movie, error) {
 // Demo:
 // curl -i -X DELETE -u admin:password http://localhost:8080/movies/1
 func (c *MovieController) DeleteBy(id int64) interface{} {
-    // delete the entry from the movies slice.
     wasDel := c.Service.DeleteByID(id)
     if wasDel {
         // and return the deleted movie's ID

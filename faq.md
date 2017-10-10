@@ -55,7 +55,7 @@ You can find all type aliases and their original package import statements at th
 
 Iris may have reached version 8, but we're not stopping there. We have many feature ideas on our board that we're anxious to add and other innovative web development solutions that we're planning to build into Iris.
 
-## Can I found a job if I learn how to use Iris?
+## Can I find a job if I learn how to use Iris?
 
 Yes, not only because you will learn Golang in the same time, but there are some positions
 open for Iris-specific developers the time we speak.
@@ -79,5 +79,3 @@ https://github.com/kataras/iris/issues/646
 By normal people like you, who help us by donating small or larger amounts of money.
 
 Help this project to continue deliver awesome and unique features with the higher code quality as possible by donating any amount via [PayPal](https://www.paypal.me/kataras)!
-
-[![](https://www.paypalobjects.com/webstatic/paypalme/images/pp_logo_small.png)](https://www.paypal.me/kataras)

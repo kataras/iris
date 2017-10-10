@@ -24,7 +24,7 @@ type Movie struct {
 // simple checks can be added here.
 //
 // It's just a showcase,
-// imagine what possible this opens when you designing a bigger application.
+// imagine the potentials this feature gives when designing a bigger application.
 //
 // This is called where the return value from a controller's method functions
 // is type of `Movie`.
