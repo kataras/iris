@@ -8,7 +8,7 @@
 
 [[constraint]]
   branch = "master"
-  name = "github.com/Unknwon/i18n"
+  name = "github.com/iris-contrib/i18n"
 
 [[constraint]]
   branch = "master"
@@ -17,6 +17,10 @@
 [[constraint]]
   branch = "master"
   name = "github.com/boltdb/bolt"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/dgraph-io/badger"
 
 [[constraint]]
   branch = "master"
