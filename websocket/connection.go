@@ -477,6 +477,10 @@ func (c *connection) OnLeave(roomLeaveCb LeaveRoomFunc) {
 }
 
 func (c *connection) fireOnLeave(roomName string) {
+	// check if connection is already closed
+	if c == nil {
+		return
+	}
 	// fire the onRoomLeaveListeners
 	for i := range c.onRoomLeaveListeners {
 		c.onRoomLeaveListeners[i](roomName)
