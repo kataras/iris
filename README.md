@@ -55,7 +55,11 @@ That 23 years old, inhibited boy, who published that post had played you with th
 </details>
 -->
 
-_Psst_, we've produced a small video about your feelings regrating to Iris! You can watch the whole video at https://www.youtube.com/watch?v=jGx0LkuUs4A.
+Iris may have reached version 8, but we're not stopping there. We have many feature ideas on our board that we're anxious to add and other innovative web development solutions that we're planning to build into Iris.
+
+[Star](https://github.com/kataras/iris/stargazers) and watch this github repository to stay up to date, we're pushing **new examples every single day!**
+
+_Psst_, we've produced a small video about your feelings regrating to Iris! You can watch it via youtube at https://www.youtube.com/watch?v=jGx0LkuUs4A.
 
 [![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=flat-square)](https://travis-ci.org/kataras/iris)
 [![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=flat-square)](http://goreportcard.com/report/kataras/iris)
@@ -144,7 +148,9 @@ $ go run main.go
 > Application started. Press CTRL+C to shut down.
 ```
 
-Guidelines for bootstrapping handler-based applications can be found at the [_examples/structuring/handler-based](_examples/structuring/handler-based) folder.
+> Wanna re-start your app automatically when source code changes happens? Install the [rizla](https://github.com/kataras/rizla) tool and run `rizla main.go` instead of `go run main.go`.
+
+Guidelines for bootstrapping applications can be found at the [_examples/structuring](_examples/#structuring).
 
 ### Quick MVC Tutorial
 

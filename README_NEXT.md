@@ -197,7 +197,9 @@ $ go run main.go
 > Application started. Press CTRL+C to shut down.
 ```
 
-> Examples and docs are updated to Go 1.9, please refer to that [section](https://github.com/kataras/iris/blob/master/faq.md#type-aliases) before anything else.
+> Wanna re-start your app automatically when source code changes happens? Install the [rizla](https://github.com/kataras/rizla) tool and run `rizla main.go` instead of `go run main.go`.
+
+Examples and docs are updated to Go 1.9, please refer to [that FAQ section](https://github.com/kataras/iris/blob/master/faq.md#type-aliases).
 
 <details>
 <summary>Hello World with Go 1.8</summary>
