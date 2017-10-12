@@ -22,7 +22,7 @@ func (m Movie) IsValid() bool {
 ```
 
 Iris is able to convert any custom data Structure into an HTTP Response Dispatcher,
-so theoritically, something like the following is permitted if it's really necessary;
+so theoretically, something like the following is permitted if it's really necessary;
 
 ```go
 // Dispatch completes the `kataras/iris/mvc#Result` interface.

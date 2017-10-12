@@ -171,7 +171,7 @@ func DispatchFuncResult(ctx context.Context, values []reflect.Value) {
 			found = b
 			if !found {
 				// skip everything, we don't care about other return values,
-				// this boolean is the heighest in order.
+				// this boolean is the higher in order.
 				break
 			}
 			continue

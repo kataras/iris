@@ -499,68 +499,7 @@ However two more methods added to the `Controller`.
 - `RelTmpl() string`, returns the relative template directory based on the controller's name.
 
 These are useful when dealing with big `controllers`, they help you to keep align with any
-future changes inside your application. 
-
-Let's refactor our [ProfileController](_examples/mvc/controller-with-model-and-view/main.go) enhancemed by these two new functions.
-
-```go
-func (pc *ProfileController) tmpl(relativeTmplPath string) {
-	// the relative template files directory of this controller.
-	views := pc.RelTmpl()
-	pc.Tmpl = views + relativeTmplPath
-}
-
-func (pc *ProfileController) match(relativeRequestPath string) bool {
-	// the relative request path of this controller.
-	path := pc.RelPath()
-	return path == relativeRequestPath
-}
-
-func (pc *ProfileController) Get() {
-	// requested: "/profile"
-	// so relative path is "/" because of the ProfileController.
-	if pc.match("/") {
-
-		// views/profile/index.html
-		pc.tmpl("index.html")
-		return
-	}
-
-	// requested: "/profile/browse"
-	// so relative path is "/browse".
-	if pc.match("/browse") {
-		pc.Path = "/profile"
-		return
-	}
-
-	// requested: "/profile/me"
-	// so the relative path is "/me"
-	if pc.match("/me") {
-		
-		// views/profile/me.html
-		pc.tmpl("me.html")
-		return
-	}
-
-	// requested: "/profile/$ID"
-	// so the relative path is "/$ID"
-	id, _ := pc.Params.GetInt64("id")
-
-	user, found := pc.DB.GetUserByID(id)
-	if !found {
-		pc.Status = iris.StatusNotFound
-
-		// views/profile/notfound.html
-		pc.tmpl("notfound.html")
-		pc.Data["ID"] = id
-		return
-	}
-
-	// views/profile/profile.html
-	pc.tmpl("profile.html")
-	pc.User = user
-}
-```
+future changes inside your application.
 
 Want to learn more about these functions? Go to the [mvc/controller_test.go](mvc/controller_test.go) file and scroll to the bottom!
 
@@ -769,7 +708,7 @@ and it adds its logic to its `BeginRequest`, [here](https://github.com/kataras/i
 
 Read access to the current route  via the `Route` field.
 
-**Using Iris MVC for code reuse** 
+**Using Iris MVC for code reuse**
 
 By creating components that are independent of one another, developers are able to reuse components quickly and easily in other applications. The same (or similar) view for one application can be refactored for another application with different data because the view is simply handling how the data is being displayed to the user.
 
@@ -778,9 +717,7 @@ If you're new to back-end web development read about the MVC architectural patte
 
 Follow the examples below,
 
-- [Hello world](_examples/mvc/hello-world/main.go)
-- [Session Controller](_examples/mvc/session-controller/main.go)
-- [A simple but featured Controller with model and views](_examples/mvc/controller-with-model-and-view).
+https://github.com/kataras/iris/tree/master/_examples/#mvc
 
 ### Bugs
 

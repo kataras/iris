@@ -55,31 +55,53 @@ func main() {
 type ExampleController struct {
 	// if you build with go1.8 you have to use the mvc package always,
 	// otherwise
-	// you can simply use `iris.Controller`.
-	mvc.Controller
+	// you can, optionally
+	// use the type alias `iris.C`,
+	// same for
+	// context.Context -> iris.Context,
+	// mvc.Result -> iris.Result,
+	// mvc.Response -> iris.Response,
+	// mvc.View -> iris.View
+	mvc.C
 }
 
 // Get serves
 // Method:   GET
 // Resource: http://localhost:8080
-func (c *ExampleController) Get() {
-	c.ContentType = "text/html"
-	c.Text = "<h1>Welcome!</h1>"
+func (c *ExampleController) Get() mvc.Result {
+	return mvc.Response{
+		ContentType: "text/html",
+		Text:        "<h1>Welcome</h1>",
+	}
 }
 
 // GetPing serves
 // Method:   GET
 // Resource: http://localhost:8080/ping
-func (c *ExampleController) GetPing() {
-	c.Text = "pong"
+func (c *ExampleController) GetPing() string {
+	return "pong"
 }
 
 // GetHello serves
 // Method:   GET
 // Resource: http://localhost:8080/hello
-func (c *ExampleController) GetHello() {
-	c.Ctx.JSON(iris.Map{"message": "Hello Iris!"})
+func (c *ExampleController) GetHello() interface{} {
+	return map[string]string{"message": "Hello Iris!"}
 }
+
+// GetUserBy serves
+// Method:   GET
+// Resource: http://localhost:8080/user/{username:string}
+// By is a reserved "keyword" to tell the framework that you're going to
+// bind path parameters in the function's input arguments, and it also
+// helps to have "Get" and "GetBy" in the same controller.
+//
+// func (c *ExampleController) GetUserBy(username string) mvc.Result {
+// 	return mvc.View{
+// 		Name: "user/username.html",
+// 		Data: username,
+// 	}
+// }
 
 /* Can use more than one, the factory will make sure
 that the correct http methods are being registered for each route

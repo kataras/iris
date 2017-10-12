@@ -206,7 +206,7 @@ func (bl *Bloom) Size(sz uint64) {
 // Clear
 // resets the Bloom filter
 func (bl *Bloom) Clear() {
-	for i, _ := range (*bl).bitset {
+	for i := range (*bl).bitset {
 		(*bl).bitset[i] = 0
 	}
 }
