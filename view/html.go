@@ -176,11 +176,34 @@ func (s *HTMLEngine) AddFunc(funcName string, funcBody interface{}) {
 }
 
 // Load parses the templates to the engine.
-// It's alos responsible to add the necessary global functions.
+// It's also responsible to add the necessary global functions.
 //
 // Returns an error if something bad happens, user is responsible to catch it.
 func (s *HTMLEngine) Load() error {
 	if s.assetFn != nil && s.namesFn != nil {
+		// NOT NECESSARY "fix" of https://github.com/kataras/iris/issues/784,
+		// IT'S BAD CODE WRITTEN WE KEEP HERE ONLY FOR A REMINDER
+		// for any future questions.
+		//
+		// if strings.HasPrefix(s.directory, "../") {
+		// 	// this and some more additions are fixes for https://github.com/kataras/iris/issues/784
+		// 	// however, the dev SHOULD
+		// 	// run the go-bindata command from the "$dir" parent directory
+		// 	// and just use the ./$dir in the declaration,
+		// 	// so all these fixes are not really necessary but they are here
+		// 	// for the future
+		// 	dir, err := filepath.Abs(s.directory)
+		// 	// the absolute dir here can be invalid if running from other
+		// 	// folder but we really don't care
+		// 	// when we're working with the bindata because
+		// 	// we only care for its relative directory
+		// 	// see `loadAssets` for more.
+		// 	if err != nil {
+		// 		return err
+		// 	}
+		// 	s.directory = dir
+		// }
+
 		// embedded
 		return s.loadAssets()
 	}
@@ -269,34 +292,67 @@ func (s *HTMLEngine) loadAssets() error {
 	}
 
 	for _, path := range names {
+		// if filepath.IsAbs(virtualDirectory) {
+		// 	// fixes https://github.com/kataras/iris/issues/784
+		// 	// we take the absolute fullpath of the template file.
+		// 	pathFileAbs, err := filepath.Abs(path)
+		// 	if err != nil {
+		// 		templateErr = err
+		// 		continue
+		// 	}
+		//
+		// 	path = pathFileAbs
+		// }
+
+		// bindata may contain more files than the templates
+		// so keep that check as it's.
 		if !strings.HasPrefix(path, virtualDirectory) {
 			continue
 		}
+
 		ext := filepath.Ext(path)
+		// check if extension matches
 		if ext == virtualExtension {
 
+			// take the relative path of the path as base of
+			// virtualDirectory (the absolute path of the view engine that dev passed).
 			rel, err := filepath.Rel(virtualDirectory, path)
 			if err != nil {
 				templateErr = err
-				return err
+				continue
 			}
+
+			// // take the current working directory
+			// cpath, err := filepath.Abs(".")
+			// if err == nil {
+			// 	// set the path as relative to "path" of the current working dir.
+			// 	// fixes https://github.com/kataras/iris/issues/784
+			// 	rpath, err := filepath.Rel(cpath, path)
+			// 	// fix view: Asset  not found for path ''
+			// 	if err == nil && rpath != "" {
+			// 		path = rpath
+			// 	}
+			// }
 
 			buf, err := assetFn(path)
 			if err != nil {
-				templateErr = err
-				return err
+				templateErr = fmt.Errorf("%v for path '%s'", err, path)
+				continue
 			}
+
 			contents := string(buf)
 			name := filepath.ToSlash(rel)
+
+			// name should be the filename of the template.
 			tmpl := s.Templates.New(name)
 			tmpl.Option(s.options...)
 
 			if s.middleware != nil {
 				contents, err = s.middleware(name, contents)
-			}
-			if err != nil {
-				templateErr = err
-				return err
+				if err != nil {
+					templateErr = fmt.Errorf("%v for name '%s'", err, name)
+					continue
+				}
 			}
 
 			// Add our funcmaps.
