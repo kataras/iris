@@ -1,4 +1,4 @@
-// file: middleware/basicauth.go
+// file: web/middleware/basicauth.go
 
 package middleware
 

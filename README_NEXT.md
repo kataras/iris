@@ -1,8 +1,8 @@
 <!-- # ![Logo created by @santoshanand](logo_white_35_24.png) Iris -->
 
-## 03, October 2017 | Iris User Experience Report
+# 03, October 2017 | Iris User Experience Report
 
-Be part of the **first** Iris User Experience Report by submitting a simple form, it won't take more than **5 minutes**.
+Be part of the **first** Iris User Experience Report by submitting a simple form, it won't take more than **2 minutes**.
 
 The form contains some questions that you may need to answer in order to learn more about you; learning more about you helps us to serve you with the best possible way!
 
@@ -86,7 +86,7 @@ _Psst_, we've produced a small video about your feelings regrating to Iris! You 
 ### 📑 Table Of Content
 
 * [Installation](#-installation)
-* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#tu-10-october-2017--v851)
+* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#th-12-october-2017--v852)
 * [Learn](#-learn)
     * [Structuring](_examples/#structuring)
     * [HTTP Listening](_examples/#http-listening)

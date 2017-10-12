@@ -19,7 +19,7 @@ import (
 // All types that complete this interface
 // can be returned as values from the method functions.
 //
-// Example at: https://github.com/kataras/iris/tree/master/_examples/mvc/using-method-result.
+// Example at: https://github.com/kataras/iris/tree/master/_examples/mvc/overview.
 type Result interface { // NOTE: Should be always compatible with the methodfunc.Result.
 	// Dispatch should sends the response to the context's response writer.
 	Dispatch(ctx context.Context)

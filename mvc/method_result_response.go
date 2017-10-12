@@ -39,5 +39,5 @@ func (r Response) Dispatch(ctx context.Context) {
 		r.Content = []byte(s)
 	}
 
-	methodfunc.DispatchCommon(ctx, r.Code, r.ContentType, r.Content, r.Object, r.Err)
+	methodfunc.DispatchCommon(ctx, r.Code, r.ContentType, r.Content, r.Object, r.Err, true)
 }

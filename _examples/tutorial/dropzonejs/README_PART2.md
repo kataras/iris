@@ -110,11 +110,11 @@ func (f *uploadedFiles) scan(dir string) {
 
 // add the file's Name and Size to the uploadedFiles memory list
 func (f *uploadedFiles) add(name string, size int64) uploadedFile {
-    f.mu.Lock()
     uf := uploadedFile{
         Name: name,
         Size: size,
     }
+    f.mu.Lock()
     f.items = append(f.items, uf)
     f.mu.Unlock()
 

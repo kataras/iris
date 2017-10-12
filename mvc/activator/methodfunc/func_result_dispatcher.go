@@ -40,7 +40,15 @@ func DispatchErr(ctx context.Context, status int, err error) {
 // DispatchCommon is being used internally to send
 // commonly used data to the response writer with a smart way.
 func DispatchCommon(ctx context.Context,
-	statusCode int, contentType string, content []byte, v interface{}, err error) {
+	statusCode int, contentType string, content []byte, v interface{}, err error, found bool) {
+
+	// if we have a false boolean as a return value
+	// then skip everything and fire a not found,
+	// we even don't care about the given status code or the object or the content.
+	if !found {
+		ctx.NotFound()
+		return
+	}
 
 	status := statusCode
 	if status == 0 {
@@ -99,16 +107,25 @@ func DispatchCommon(ctx context.Context,
 // func(c *ExampleController) Get() string |
 // (string, string) |
 // (string, int) |
+// ...
 // int |
 // (int, string |
 // (string, error) |
+// ...
 // error |
 // (int, error) |
 // (customStruct, error) |
+// ...
+// bool |
+// (int, bool) |
+// (string, bool) |
+// (customStruct, bool) |
+// ...
 // customStruct |
 // (customStruct, int) |
 // (customStruct, string) |
-// Result or (Result, error)
+// Result or (Result, error) and so on...
+//
 // where Get is an HTTP METHOD.
 func DispatchFuncResult(ctx context.Context, values []reflect.Value) {
 	numOut := len(values)
@@ -117,11 +134,27 @@ func DispatchFuncResult(ctx context.Context, values []reflect.Value) {
 	}
 
 	var (
-		statusCode  int
+		// if statusCode > 0 then send this status code.
+		// Except when err != nil then check if status code is < 400 and
+		// if it's set it as DefaultErrStatusCode.
+		// Except when found == false, then the status code is 404.
+		statusCode int
+		// if not empty then use that as content type,
+		// if empty and custom != nil then set it to application/json.
 		contentType string
-		content     []byte
-		custom      interface{}
-		err         error
+		// if len > 0 then write that to the response writer as raw bytes,
+		// except when found == false or err != nil or custom != nil.
+		content []byte
+		// if not nil then check
+		// for content type (or json default) and send the custom data object
+		// except when found == false or err != nil.
+		custom interface{}
+		// if not nil then check for its status code,
+		// if not status code or < 400 then set it as DefaultErrStatusCode
+		// and fire the error's text.
+		err error
+		// if false then skip everything and fire 404.
+		found = true // defaults to true of course, otherwise will break :)
 	)
 
 	for _, v := range values {
@@ -133,6 +166,16 @@ func DispatchFuncResult(ctx context.Context, values []reflect.Value) {
 		}
 
 		f := v.Interface()
+
+		if b, ok := f.(bool); ok {
+			found = b
+			if !found {
+				// skip everything, we don't care about other return values,
+				// this boolean is the heighest in order.
+				break
+			}
+			continue
+		}
 
 		if i, ok := f.(int); ok {
 			statusCode = i
@@ -183,5 +226,5 @@ func DispatchFuncResult(ctx context.Context, values []reflect.Value) {
 
 	}
 
-	DispatchCommon(ctx, statusCode, contentType, content, custom, err)
+	DispatchCommon(ctx, statusCode, contentType, content, custom, err, found)
 }

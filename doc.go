@@ -35,7 +35,7 @@ Source code and other details for the project are available at GitHub:
 
 Current Version
 
-8.5.1
+8.5.2
 
 Installation
 
@@ -860,18 +860,23 @@ Response via output arguments, optionally, i.e
     func(c *ExampleController) Get() string |
     (string, string) |
     (string, int) |
-    int |
-    (int, string |
     (string, error) |
+    int |
+    (int, string) |
+    (any, int) |
     error |
     (int, error) |
     (customStruct, error) |
+    (any, error) |
+    bool |
+    (any, bool)
     customStruct |
     (customStruct, int) |
     (customStruct, string) |
-    Result or (Result, error)
+    `Result` or (`Result`, error)
 
-where Result is an interface which contains only that function: Dispatch(ctx iris.Context)
+Where `any` means everything, from custom structs to standard language's types-.
+`Result` is an interface which contains only that function: Dispatch(ctx iris.Context)
 and Get where HTTP Method function(Post, Put, Delete...).
 
 
@@ -883,10 +888,12 @@ and it will be sent to the client as expected.
 * if `string` then it's the body.
 * if `string` is the second output argument then it's the content type.
 * if `int` then it's the status code.
+* if `bool` is false then it throws 404 not found http error by skipping everything else.
 * if `error` and not nil then (any type) response will be omitted and error's text with a 400 bad request will be rendered instead.
 * if `(int, error)` and error is not nil then the response result will be the error's text with the status code as `int`.
 * if  `custom struct` or `interface{}` or `slice` or `map` then it will be rendered as json, unless a `string` content type is following.
 * if `mvc.Result` then it executes its `Dispatch` function, so good design patters can be used to split the model's logic where needed.
+
 
 The example below is not intended to be used in production but it's a good showcase of some of the return types we saw before;
 
@@ -1014,7 +1021,7 @@ The example below is not intended to be used in production but it's a good showc
 
 Another good example with a typical folder structure,
 that many developers are used to work, can be found at:
-https://github.com/kataras/iris/tree/master/_examples/mvc/using-method-result.
+https://github.com/kataras/iris/tree/master/_examples/mvc/overview.
 
 
 Using Iris MVC for code reuse

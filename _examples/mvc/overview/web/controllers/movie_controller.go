@@ -1,12 +1,12 @@
-// file: controllers/movie_controller.go
+// file: web/controllers/movie_controller.go
 
 package controllers
 
 import (
 	"errors"
 
-	"github.com/kataras/iris/_examples/mvc/using-method-result/models"
-	"github.com/kataras/iris/_examples/mvc/using-method-result/services"
+	"github.com/kataras/iris/_examples/mvc/overview/datamodels"
+	"github.com/kataras/iris/_examples/mvc/overview/services"
 
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/mvc"
@@ -28,26 +28,36 @@ type MovieController struct {
 // Get returns list of the movies.
 // Demo:
 // curl -i http://localhost:8080/movies
-func (c *MovieController) Get() []models.Movie {
+//
+// The correct way if you have sensitive data:
+// func (c *MovieController) Get() (results []viewmodels.Movie) {
+// 	data := c.Service.GetAll()
+//
+// 	for _, movie := range data {
+// 		results = append(results, viewmodels.Movie{movie})
+// 	}
+// 	return
+// }
+// otherwise just return the datamodels.
+func (c *MovieController) Get() (results []datamodels.Movie) {
 	return c.Service.GetAll()
 }
 
 // GetBy returns a movie.
 // Demo:
 // curl -i http://localhost:8080/movies/1
-func (c *MovieController) GetBy(id int64) models.Movie {
-	m, _ := c.Service.GetByID(id)
-	return m
+func (c *MovieController) GetBy(id int64) (movie datamodels.Movie, found bool) {
+	return c.Service.GetByID(id) // it will throw 404 if not found.
 }
 
 // PutBy updates a movie.
 // Demo:
 // curl -i -X PUT -F "genre=Thriller" -F "poster=@/Users/kataras/Downloads/out.gif" http://localhost:8080/movies/1
-func (c *MovieController) PutBy(id int64) (models.Movie, error) {
+func (c *MovieController) PutBy(id int64) (datamodels.Movie, error) {
 	// get the request data for poster and genre
 	file, info, err := c.Ctx.FormFile("poster")
 	if err != nil {
-		return models.Movie{}, errors.New("failed due form file 'poster' missing")
+		return datamodels.Movie{}, errors.New("failed due form file 'poster' missing")
 	}
 	// we don't need the file so close it now.
 	file.Close()
@@ -56,12 +66,7 @@ func (c *MovieController) PutBy(id int64) (models.Movie, error) {
 	poster := info.Filename
 	genre := c.Ctx.FormValue("genre")
 
-	// update the movie and return it.
-	return c.Service.InsertOrUpdate(models.Movie{
-		ID:     id,
-		Poster: poster,
-		Genre:  genre,
-	})
+	return c.Service.UpdatePosterAndGenreByID(id, poster, genre)
 }
 
 // DeleteBy deletes a movie.
