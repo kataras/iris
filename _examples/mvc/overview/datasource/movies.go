@@ -2,10 +2,10 @@
 
 package datasource
 
-import "github.com/kataras/iris/_examples/mvc/using-method-result/models"
+import "github.com/kataras/iris/_examples/mvc/overview/datamodels"
 
 // Movies is our imaginary data source.
-var Movies = map[int64]models.Movie{
+var Movies = map[int64]datamodels.Movie{
 	1: {
 		ID:     1,
 		Name:   "Casablanca",

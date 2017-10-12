@@ -26,7 +26,7 @@ Structuring depends on your own needs. We can't tell you how to design your own 
 - [Example 1](mvc/login)
 - [Example 2](structuring/mvc)
 - [Example 3](structuring/handler-based)
-- [Example 4](mvc/using-method-result)
+- [Example 4](mvc/overview)
 
 ### HTTP Listening
 
@@ -204,11 +204,14 @@ If you're new to back-end web development read about the MVC architectural patte
 
 Follow the examples below,
 
+- [Overview - Plus Repository and Service layers](mvc/overview) **NEW**
+
+<!--
 - [Hello world](mvc/hello-world/main.go)
 - [Session Controller](mvc/session-controller/main.go)
 - [A simple but featured Controller with model and views](mvc/controller-with-model-and-view)
-- [Login showcase](mvc/login/main.go) **NEW**
-- [Using Method Result (plus Service-oriented design)](mvc/using-method-result)
+- [Login showcase](mvc/login/main.go)
+-->
 
 ### Subdomains
 

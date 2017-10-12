@@ -18,6 +18,26 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`.
 
+# Th, 12 October 2017 | v8.5.2
+
+This version is part of the [releases](https://github.com/kataras/iris/releases).
+
+## MVC
+
+Add `bool` as a supported return value, if false then skips everything else and fires 404 not found.
+
+New example which covers the Service and Repository layers side-by-side with the MVC Architectural pattern, clean and simple: [_examples/mvc/overview](_examples/mvc/overview).
+
+## Websocket
+
+Fix(?) https://github.com/kataras/iris/issues/782 by @jerson with PR:  https://github.com/kataras/iris/pull/783.
+
+## Minor
+
+Add some minor comments for the view/django's origin type getters-- as pushed at PR: [#765](https://github.com/kataras/iris/pull/765).
+
+[sessions/sessiondb/badger](sessions/sessiondb/badger) vendored with: https://github.com/kataras/iris/commit/e7517ec79b45673e7cad353e52023ebd7237cf38.
+
 # Tu, 10 October 2017 | v8.5.1
 
 ## MVC

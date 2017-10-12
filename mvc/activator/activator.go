@@ -46,8 +46,8 @@ type (
 
 var (
 	// ErrMissingControllerInstance is a static error which fired from `Controller` when
-	// the passed "c" instnace is not a valid type of `Controller`.
-	ErrMissingControllerInstance = errors.New("controller should have a field of Controller type")
+	// the passed "c" instnace is not a valid type of `Controller` or `C`.
+	ErrMissingControllerInstance = errors.New("controller should have a field of mvc.Controller or mvc.C type")
 	// ErrInvalidControllerType fired when the "Controller" field is not
 	// the correct type.
 	ErrInvalidControllerType = errors.New("controller instance is not a valid implementation")

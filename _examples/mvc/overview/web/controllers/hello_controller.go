@@ -1,4 +1,4 @@
-// file: controllers/hello_controller.go
+// file: web/controllers/hello_controller.go
 
 package controllers
 
