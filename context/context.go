@@ -242,6 +242,44 @@ type Context interface {
 	//
 	// Look Handlers(), Next() and StopExecution() too.
 	HandlerIndex(n int) (currentIndex int)
+	// Proceed is an alternative way to check if a particular handler
+	// has been executed and called the `ctx.Next` function inside it.
+	// This is useful only when you run a handler inside
+	// another handler. It justs checks for before index and the after index.
+	//
+	// A usecase example is when you want to execute a middleware
+	// inside controller's `BeginRequest` that calls the `ctx.Next` inside it.
+	// The Controller looks the whole flow (BeginRequest, method handler, EndRequest)
+	// as one handler, so `ctx.Next` will not be reflected to the method handler
+	// if called from the `BeginRequest`.
+	//
+	// Although `BeginRequest` should NOT be used to call other handlers,
+	// the `BeginRequest` has been introduced to be able to set
+	// common data to all method handlers before their execution.
+	// Controllers can accept middleware(s) from the `app.Controller`
+	// function.
+	//
+	// That said let's see an example of `ctx.Proceed`:
+	//
+	// var authMiddleware = basicauth.New(basicauth.Config{
+	// 	Users: map[string]string{
+	// 		"admin": "password",
+	// 	},
+	// })
+	//
+	// func (c *UsersController) BeginRequest(ctx iris.Context) {
+	//	c.C.BeginRequest(ctx) // call the parent's base controller BeginRequest first.
+	// 	if !ctx.Proceed(authMiddleware) {
+	// 		ctx.StopExecution()
+	// 	}
+	// }
+	// This Get() will be executed in the same handler as `BeginRequest`,
+	// internally controller checks for `ctx.StopExecution`.
+	// So it will not be fired if BeginRequest called the `StopExecution`.
+	// func(c *UsersController) Get() []models.User {
+	//	  return c.Service.GetAll()
+	//}
+	Proceed(Handler) bool
 	// HandlerName returns the current handler's name, helpful for debugging.
 	HandlerName() string
 	// Next calls all the next handler from the handlers chain,
@@ -256,7 +294,8 @@ type Context interface {
 	// Skip skips/ignores the next handler from the handlers chain,
 	// it should be used inside a middleware.
 	Skip()
-	// StopExecution if called then the following .Next calls are ignored.
+	// StopExecution if called then the following .Next calls are ignored,
+	// as a result the next handlers in the chain will not be fire.
 	StopExecution()
 	// IsStopped checks and returns true if the current position of the Context is 255,
 	// means that the StopExecution() was called.
@@ -353,11 +392,15 @@ type Context interface {
 	// Look StatusCode too.
 	GetStatusCode() int
 
-	// Redirect redirect sends a redirect response the client
+	// Redirect sends a redirect response to the client
+	// to a specific url or relative path.
 	// accepts 2 parameters string and an optional int
 	// first parameter is the url to redirect
-	// second parameter is the http status should send, default is 302 (StatusFound),
-	// you can set it to 301 (Permant redirect), if that's nessecery
+	// second parameter is the http status should send,
+	// default is 302 (StatusFound),
+	// you can set it to 301 (Permant redirect)
+	// or 303 (StatusSeeOther) if POST method,
+	// or StatusTemporaryRedirect(307) if that's nessecery.
 	Redirect(urlToRedirect string, statusHeader ...int)
 
 	//  +------------------------------------------------------------+
@@ -963,6 +1006,52 @@ func (ctx *context) HandlerIndex(n int) (currentIndex int) {
 	return n
 }
 
+// Proceed is an alternative way to check if a particular handler
+// has been executed and called the `ctx.Next` function inside it.
+// This is useful only when you run a handler inside
+// another handler. It justs checks for before index and the after index.
+//
+// A usecase example is when you want to execute a middleware
+// inside controller's `BeginRequest` that calls the `ctx.Next` inside it.
+// The Controller looks the whole flow (BeginRequest, method handler, EndRequest)
+// as one handler, so `ctx.Next` will not be reflected to the method handler
+// if called from the `BeginRequest`.
+//
+// Although `BeginRequest` should NOT be used to call other handlers,
+// the `BeginRequest` has been introduced to be able to set
+// common data to all method handlers before their execution.
+// Controllers can accept middleware(s) from the `app.Controller`
+// function.
+//
+// That said let's see an example of `ctx.Proceed`:
+//
+// var authMiddleware = basicauth.New(basicauth.Config{
+// 	Users: map[string]string{
+// 		"admin": "password",
+// 	},
+// })
+//
+// func (c *UsersController) BeginRequest(ctx iris.Context) {
+//	c.C.BeginRequest(ctx) // call the parent's base controller BeginRequest first.
+// 	if !ctx.Proceed(authMiddleware) {
+// 		ctx.StopExecution()
+// 	}
+// }
+// This Get() will be executed in the same handler as `BeginRequest`,
+// internally controller checks for `ctx.StopExecution`.
+// So it will not be fired if BeginRequest called the `StopExecution`.
+// func(c *UsersController) Get() []models.User {
+//	  return c.Service.GetAll()
+//}
+func (ctx *context) Proceed(h Handler) bool {
+	beforeIdx := ctx.currentHandlerIndex
+	h(ctx)
+	if ctx.currentHandlerIndex > beforeIdx && !ctx.IsStopped() {
+		return true
+	}
+	return false
+}
+
 // HandlerName returns the current handler's name, helpful for debugging.
 func (ctx *context) HandlerName() string {
 	return runtime.FuncForPC(reflect.ValueOf(ctx.handlers[ctx.currentHandlerIndex]).Pointer()).Name()
@@ -1006,7 +1095,8 @@ func (ctx *context) Skip() {
 
 const stopExecutionIndex = -1 // I don't set to a max value because we want to be able to reuse the handlers even if stopped with .Skip
 
-// StopExecution if called then the following .Next calls are ignored.
+// StopExecution if called then the following .Next calls are ignored,
+// as a result the next handlers in the chain will not be fire.
 func (ctx *context) StopExecution() {
 	ctx.currentHandlerIndex = stopExecutionIndex
 }
@@ -1531,14 +1621,17 @@ func (ctx *context) FormFile(key string) (multipart.File, *multipart.FileHeader,
 	return ctx.request.FormFile(key)
 }
 
-// Redirect redirect sends a redirect response the client
+// Redirect sends a redirect response to the client
+// to a specific url or relative path.
 // accepts 2 parameters string and an optional int
 // first parameter is the url to redirect
-// second parameter is the http status should send, default is 302 (StatusFound),
-// you can set it to 301 (Permant redirect), if that's nessecery
+// second parameter is the http status should send,
+// default is 302 (StatusFound),
+// you can set it to 301 (Permant redirect)
+// or 303 (StatusSeeOther) if POST method,
+// or StatusTemporaryRedirect(307) if that's nessecery.
 func (ctx *context) Redirect(urlToRedirect string, statusHeader ...int) {
 	ctx.StopExecution()
-
 	// get the previous status code given by the end-developer.
 	status := ctx.GetStatusCode()
 	if status < 300 { // the previous is not a RCF-valid redirect status.
