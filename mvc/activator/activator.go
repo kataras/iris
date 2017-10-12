@@ -59,7 +59,7 @@ var (
 // a new Controller type.
 // Controller looks the whole flow as one handler, so `ctx.Next`
 // inside `BeginRequest` is not be respected.
-// Alternative way to check if a middleware was procceed succesfully
+// Alternative way to check if a middleware was procceed successfully
 // and called its `ctx.Next` is the `ctx.Proceed(handler) bool`.
 // You have to navigate to the `context/context#Proceed` function's documentation.
 type BaseController interface {

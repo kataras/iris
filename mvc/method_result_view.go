@@ -37,7 +37,7 @@ var DefaultViewExt = ".html"
 
 func ensureExt(s string) string {
 	if len(s) == 0 {
-		return "index.html"
+		return "index" + DefaultViewExt
 	}
 
 	if strings.IndexByte(s, dotB) < 1 {

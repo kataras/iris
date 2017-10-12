@@ -183,15 +183,18 @@ func(c *ExampleController) Get() string |
                                 (string, string) |
                                 (string, int) |
                                 int |
-                                (int, string |
+                                (int, string) |
                                 (string, error) |
+                                bool |
+                                (any, bool) |
+                                (bool, any) |
                                 error |
                                 (int, error) |
                                 (customStruct, error) |
                                 customStruct |
                                 (customStruct, int) |
                                 (customStruct, string) |
-                                mvc.Result or (mvc.Result, error)
+                                mvc.Result or (mvc.Result, error) and so on...
 ```
 
 where [mvc.Result](https://github.com/kataras/iris/blob/master/mvc/method_result.go) is an interface which contains only that function: `Dispatch(ctx iris.Context)`.
@@ -204,13 +207,20 @@ If you're new to back-end web development read about the MVC architectural patte
 
 Follow the examples below,
 
+- [Hello world](mvc/hello-world/main.go) **UPDATED**
+- [Session Controller](mvc/session-controller/main.go) **UPDATED**
 - [Overview - Plus Repository and Service layers](mvc/overview) **NEW**
 - [Login showcase - Plus Repository and Service layers](mvc/login) **NEW**
 
-<!--
-- [Hello world](mvc/hello-world/main.go)
-- [Session Controller](mvc/session-controller/main.go)
-- [A simple but featured Controller with model and views](mvc/controller-with-model-and-view)
+<!-- 
+Why updated?
+Old method works, as promised no breaking changes.
+But mvc.C as controller marker and mvc.Result on method functions return value
+is more lightweight and faster than `mvc.Controller` because `mvc.Controller` initializes
+some fields like `Data, Path`... and Data is a map even if not used, at the opossite hand
+`mvc.C` just initializes the context `Ctx` field, the dev has all the `mvc.Controller`'s features
+by the `mvc.Result` built'n types like `mvc.Response` and `mvc.View` PLUS she/he can
+convert any custom type into a response dispatcher by implementing the `mvc.Result` interface.  
 -->
 
 ### Subdomains
