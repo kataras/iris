@@ -205,12 +205,12 @@ If you're new to back-end web development read about the MVC architectural patte
 Follow the examples below,
 
 - [Overview - Plus Repository and Service layers](mvc/overview) **NEW**
+- [Login showcase - Plus Repository and Service layers](mvc/login) **NEW**
 
 <!--
 - [Hello world](mvc/hello-world/main.go)
 - [Session Controller](mvc/session-controller/main.go)
 - [A simple but featured Controller with model and views](mvc/controller-with-model-and-view)
-- [Login showcase](mvc/login/main.go)
 -->
 
 ### Subdomains

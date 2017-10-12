@@ -57,6 +57,11 @@ var (
 // which the main request `Controller` will implement automatically.
 // End-User doesn't need to have any knowledge of this if she/he doesn't want to implement
 // a new Controller type.
+// Controller looks the whole flow as one handler, so `ctx.Next`
+// inside `BeginRequest` is not be respected.
+// Alternative way to check if a middleware was procceed succesfully
+// and called its `ctx.Next` is the `ctx.Proceed(handler) bool`.
+// You have to navigate to the `context/context#Proceed` function's documentation.
 type BaseController interface {
 	SetName(name string)
 	BeginRequest(ctx context.Context)
