@@ -203,9 +203,9 @@ func AssetNames() []string {
 
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
-	"templates/layouts/layout.html": templatesLayoutsLayoutHtml,
-	"templates/layouts/mylayout.html": templatesLayoutsMylayoutHtml,
-	"templates/page1.html": templatesPage1Html,
+	"templates/layouts/layout.html":          templatesLayoutsLayoutHtml,
+	"templates/layouts/mylayout.html":        templatesLayoutsMylayoutHtml,
+	"templates/page1.html":                   templatesPage1Html,
 	"templates/partials/page1_partial1.html": templatesPartialsPage1_partial1Html,
 }
 
@@ -248,15 +248,16 @@ type bintree struct {
 	Func     func() (*asset, error)
 	Children map[string]*bintree
 }
+
 var _bintree = &bintree{nil, map[string]*bintree{
-	"templates": &bintree{nil, map[string]*bintree{
-		"layouts": &bintree{nil, map[string]*bintree{
-			"layout.html": &bintree{templatesLayoutsLayoutHtml, map[string]*bintree{}},
-			"mylayout.html": &bintree{templatesLayoutsMylayoutHtml, map[string]*bintree{}},
+	"templates": {nil, map[string]*bintree{
+		"layouts": {nil, map[string]*bintree{
+			"layout.html":   {templatesLayoutsLayoutHtml, map[string]*bintree{}},
+			"mylayout.html": {templatesLayoutsMylayoutHtml, map[string]*bintree{}},
 		}},
-		"page1.html": &bintree{templatesPage1Html, map[string]*bintree{}},
-		"partials": &bintree{nil, map[string]*bintree{
-			"page1_partial1.html": &bintree{templatesPartialsPage1_partial1Html, map[string]*bintree{}},
+		"page1.html": {templatesPage1Html, map[string]*bintree{}},
+		"partials": {nil, map[string]*bintree{
+			"page1_partial1.html": {templatesPartialsPage1_partial1Html, map[string]*bintree{}},
 		}},
 	}},
 }}
@@ -307,4 +308,3 @@ func _filePath(dir, name string) string {
 	cannonicalName := strings.Replace(name, "\\", "/", -1)
 	return filepath.Join(append([]string{dir}, strings.Split(cannonicalName, "/")...)...)
 }
-
