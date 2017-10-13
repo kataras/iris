@@ -25,6 +25,7 @@ Most of the experimental handlers are ported to work with _iris_'s handler form,
 | [new relic](https://github.com/iris-contrib/middleware/tree/master/newrelic) | Official [New Relic Go Agent](https://github.com/newrelic/go-agent). | [iris-contrib/middleware/newrelic/_example](https://github.com/iris-contrib/middleware/tree/master/newrelic/_example) |
 | [prometheus](https://github.com/iris-contrib/middleware/tree/master/prometheus)| Easily create metrics endpoint for the [prometheus](http://prometheus.io) instrumentation tool | [iris-contrib/middleware/prometheus/_example](https://github.com/iris-contrib/middleware/tree/master/prometheus/_example) |
 | [casbin](https://github.com/iris-contrib/middleware/tree/master/casbin)| An authorization library that supports access control models like ACL, RBAC, ABAC | [iris-contrib/middleware/casbin/_examples](https://github.com/iris-contrib/middleware/tree/master/casbin/_examples) |
+| [raven](https://github.com/iris-contrib/middleware/tree/master/raven)| Sentry client in Go | [raven/_example](https://github.com/iris-contrib/middleware/blob/master/raven/_example/main.go) |
 
 Third-Party Handlers
 ------------
@@ -46,6 +47,5 @@ Here's a small list of useful third-party handlers:
 | [VanGoH](https://github.com/auroratechnologies/vangoh) | Configurable [AWS-Style](http://docs.aws.amazon.com/AmazonS3/latest/dev/RESTAuthentication.html) HMAC authentication middleware |
 | [xrequestid](https://github.com/pilu/xrequestid) | Middleware that assigns a random X-Request-Id header to each request |
 | [digits](https://github.com/bamarni/digits) | Middleware that handles [Twitter Digits](https://get.digits.com/) authentication |
-
 
 > Feel free to put up your own middleware in this list!
