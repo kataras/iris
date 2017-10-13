@@ -234,6 +234,7 @@ convert any custom type into a response dispatcher by implementing the `mvc.Resu
 
 - [From func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)](convert-handlers/negroni-like/main.go)
 - [From http.Handler or http.HandlerFunc](convert-handlers/nethttp/main.go)
+- [From func(http.HandlerFunc) http.HandlerFunc](convert-handlers/real-usecase-raven/writing-middleware/main.go)
 
 ### View
 

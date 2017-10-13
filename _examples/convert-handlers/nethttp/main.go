@@ -8,8 +8,8 @@ import (
 
 func main() {
 	app := iris.New()
-	ionMiddleware := iris.FromStd(nativeTestMiddleware)
-	app.Use(ionMiddleware)
+	irisMiddleware := iris.FromStd(nativeTestMiddleware)
+	app.Use(irisMiddleware)
 
 	// Method GET: http://localhost:8080/
 	app.Get("/", func(ctx iris.Context) {
