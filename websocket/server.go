@@ -378,8 +378,6 @@ func (s *Server) Disconnect(connID string) (err error) {
 	if c, ok := s.connections.remove(connID); ok {
 		if !c.disconnected {
 			c.disconnected = true
-			// stop the ping timer
-			c.pinger.Stop()
 
 			// fire the disconnect callbacks, if any
 			c.fireDisconnect()
