@@ -196,7 +196,6 @@ type (
 		underline                UnderlineConnection
 		id                       string
 		messageType              int
-		pinger                   *time.Ticker
 		disconnected             bool
 		onDisconnectListeners    []DisconnectFunc
 		onRoomLeaveListeners     []LeaveRoomFunc
@@ -298,17 +297,18 @@ func (c *connection) startPinger() {
 
 	c.underline.SetPingHandler(pingHandler)
 
-	// start a new timer ticker based on the configuration
-	c.pinger = time.NewTicker(c.server.config.PingPeriod)
-
 	go func() {
 		for {
-			// wait for each tick
-			<-c.pinger.C
+			// using sleep avoids the ticker error that causes a memory leak
+			time.Sleep(c.server.config.PingPeriod)
+			if c.disconnected {
+				// verifies if already disconected
+				break
+			}
 			// try to ping the client, if failed then it disconnects
 			err := c.write(websocket.PingMessage, []byte{})
-			if err!=nil{
-				//must stop to exit the loop and finish the go routine
+			if err != nil {
+				// must stop to exit the loop and finish the go routine
 				break
 			}
 		}
