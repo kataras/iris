@@ -305,6 +305,13 @@ func (s *Server) leave(roomName string, connID string) (left bool) {
 	return
 }
 
+// GetTotalConnections returns the number of total connections
+func (s *Server) GetTotalConnections() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return len(s.connections)
+}
+
 // GetConnectionsByRoom returns a list of Connection
 // which are joined to this room.
 func (s *Server) GetConnectionsByRoom(roomName string) []Connection {
