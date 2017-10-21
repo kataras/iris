@@ -110,9 +110,16 @@ EnablePathEscape: false
 FireMethodNotAllowed: true
 EnableOptimizations: true
 DisableBodyConsumptionOnUnmarshal: true
-TimeFormat: Mon, 01 Jan 2006 15:04:05 GMT
-Charset: UTF-8
+TimeFormat: "Mon, 01 Jan 2006 15:04:05 GMT"
+Charset: "UTF-8"
 
+RemoteAddrHeaders:
+  X-Real-Ip: true
+  X-Forwarded-For: true
+  CF-Connecting-IP: true
+
+Other:
+  MyServerName: "Iris: https://github.com/kataras/iris"
 `
 	yamlFile.WriteString(yamlConfigurationContents)
 	filename := yamlFile.Name()
@@ -151,6 +158,35 @@ Charset: UTF-8
 	if expected := "UTF-8"; c.Charset != expected {
 		t.Fatalf("error on TestConfigurationYAML: Expected Charset %s but got %s", expected, c.Charset)
 	}
+
+	if len(c.RemoteAddrHeaders) == 0 {
+		t.Fatalf("error on TestConfigurationYAML: Expected RemoteAddrHeaders to be filled")
+	}
+
+	expectedRemoteAddrHeaders := map[string]bool{
+		"X-Real-Ip":        true,
+		"X-Forwarded-For":  true,
+		"CF-Connecting-IP": true,
+	}
+
+	if expected, got := len(c.RemoteAddrHeaders), len(expectedRemoteAddrHeaders); expected != got {
+		t.Fatalf("error on TestConfigurationYAML: Expected RemoteAddrHeaders' len(%d) and got(%d), len is not the same", expected, got)
+	}
+
+	for k, v := range c.RemoteAddrHeaders {
+		if expected, got := expectedRemoteAddrHeaders[k], v; expected != got {
+			t.Fatalf("error on TestConfigurationYAML: Expected RemoteAddrHeaders[%s] = %t but got %t", k, expected, got)
+		}
+	}
+
+	if len(c.Other) == 0 {
+		t.Fatalf("error on TestConfigurationYAML: Expected Other to be filled")
+	}
+
+	if expected, got := "Iris: https://github.com/kataras/iris", c.Other["MyServerName"]; expected != got {
+		t.Fatalf("error on TestConfigurationYAML: Expected Other['MyServerName'] %s but got %s", expected, got)
+	}
+
 }
 
 func TestConfigurationTOML(t *testing.T) {
@@ -175,9 +211,14 @@ DisableBodyConsumptionOnUnmarshal = true
 TimeFormat = "Mon, 01 Jan 2006 15:04:05 GMT"
 Charset = "UTF-8"
 
+[RemoteAddrHeaders]
+    X-Real-Ip = true
+    X-Forwarded-For = true
+    CF-Connecting-IP = true
+
 [Other]
 	# Indentation (tabs and/or spaces) is allowed but not required
-	MyServerName = "Iris"
+	MyServerName = "Iris: https://github.com/kataras/iris"
 
 `
 	tomlFile.WriteString(tomlConfigurationContents)
@@ -216,5 +257,33 @@ Charset = "UTF-8"
 
 	if expected := "UTF-8"; c.Charset != expected {
 		t.Fatalf("error on TestConfigurationTOML: Expected Charset %s but got %s", expected, c.Charset)
+	}
+
+	if len(c.RemoteAddrHeaders) == 0 {
+		t.Fatalf("error on TestConfigurationTOML: Expected RemoteAddrHeaders to be filled")
+	}
+
+	expectedRemoteAddrHeaders := map[string]bool{
+		"X-Real-Ip":        true,
+		"X-Forwarded-For":  true,
+		"CF-Connecting-IP": true,
+	}
+
+	if expected, got := len(c.RemoteAddrHeaders), len(expectedRemoteAddrHeaders); expected != got {
+		t.Fatalf("error on TestConfigurationTOML: Expected RemoteAddrHeaders' len(%d) and got(%d), len is not the same", expected, got)
+	}
+
+	for k, v := range c.RemoteAddrHeaders {
+		if expected, got := expectedRemoteAddrHeaders[k], v; expected != got {
+			t.Fatalf("error on TestConfigurationTOML: Expected RemoteAddrHeaders[%s] = %t but got %t", k, expected, got)
+		}
+	}
+
+	if len(c.Other) == 0 {
+		t.Fatalf("error on TestConfigurationTOML: Expected Other to be filled")
+	}
+
+	if expected, got := "Iris: https://github.com/kataras/iris", c.Other["MyServerName"]; expected != got {
+		t.Fatalf("error on TestConfigurationTOML: Expected Other['MyServerName'] %s but got %s", expected, got)
 	}
 }

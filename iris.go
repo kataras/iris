@@ -303,6 +303,12 @@ var (
 	//
 	// A shortcut for the `context#LimitRequestBodySize`.
 	LimitRequestBodySize = context.LimitRequestBodySize
+	// StaticEmbeddedHandler returns a Handler which can serve
+	// embedded into executable files.
+	//
+	//
+	// Examples: https://github.com/kataras/iris/tree/master/_examples/file-server
+	StaticEmbeddedHandler = router.StaticEmbeddedHandler
 	// Gzip is a middleware which enables writing
 	// using gzip compression, if client supports.
 	//
