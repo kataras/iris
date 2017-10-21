@@ -421,7 +421,6 @@ Join the welcoming community of fellow _iris_ developers in [rocket.chat](https:
 - :star: and watch the public [repository](https://github.com/kataras/iris/stargazers), will keep you up to date
 - :earth_americas: publish [an article](https://medium.com/search?q=iris) or share a [tweet](https://twitter.com/hashtag/golang) about your personal experience with iris.
 
-
 The most useful community repository for _iris_ developers is the 
 [iris-contrib/middleware](https://github.com/iris-contrib/middleware) which contains some HTTP handlers that can help you finish a lot of your tasks even easier. Feel free to push your own middleware there!
 
