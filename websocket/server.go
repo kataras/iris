@@ -106,7 +106,7 @@ type (
 		config                Config
 		connections           connections
 		rooms                 map[string][]string // by default a connection is joined to a room which has the connection id as its name
-		mu                    sync.RWMutex          // for rooms
+		mu                    sync.RWMutex        // for rooms
 		onConnectionListeners []ConnectionFunc
 		//connectionPool        sync.Pool // sadly we can't make this because the websocket connection is live until is closed.
 		handler context.Handler
@@ -308,7 +308,7 @@ func (s *Server) leave(roomName string, connID string) (left bool) {
 // GetTotalConnections returns the number of total connections
 func (s *Server) GetTotalConnections() int {
 	s.mu.RLock()
-	l:= len(s.connections)
+	l := len(s.connections)
 	s.mu.RUnlock()
 	return l
 }
@@ -316,8 +316,10 @@ func (s *Server) GetTotalConnections() int {
 // GetConnections returns all connections
 func (s *Server) GetConnections() []Connection {
 	s.mu.RLock()
-	conns:= make([]Connection, len(s.connections))
-	copy(conns, s.connections)
+	conns := make([]Connection, len(s.connections), len(s.connections))
+	for i, c := range s.connections {
+		conns[i] = c.value
+	}
 	s.mu.RUnlock()
 	return conns
 }
