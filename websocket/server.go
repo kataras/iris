@@ -308,25 +308,22 @@ func (s *Server) leave(roomName string, connID string) (left bool) {
 // GetTotalConnections returns the number of total connections
 func (s *Server) GetTotalConnections() int {
 	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return len(s.connections)
+	l:= len(s.connections)
+	s.mu.RUnlock()
+	return l
 }
 
 // GetConnections returns all connections
 func (s *Server) GetConnections() []Connection {
-	s.mu.Lock()
-	var conns []Connection
-	for _, conn := range s.connections {
-		conns = append(conns, conn.value)
-	}
-	s.mu.Unlock()
+	s.mu.RLock()
+	conns:= make([]Connection, len(s.connections))
+	copy(conns, s.connections)
+	s.mu.RUnlock()
 	return conns
 }
 
 // GetConnection returns single connection
 func (s *Server) GetConnection(key string) Connection {
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	return s.connections.get(key)
 }
 
