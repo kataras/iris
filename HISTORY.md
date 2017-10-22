@@ -1,14 +1,13 @@
 # FAQ
 
-### Looking for free support?
+### Looking for free and real-time support?
 
     http://support.iris-go.com
-    https://kataras.rocket.chat/channel/iris
+    https://chat.iris-go.com
 
 ### Looking for previous versions?
 
-    https://github.com/kataras/iris#-version
-
+    https://github.com/kataras/iris/releases
 
 ### Should I upgrade my Iris?
 
@@ -16,7 +15,33 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 > Iris uses the [vendor directory](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo) feature, so you get truly reproducible builds, as this method guards against upstream renames and deletes.
 
-**How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris`.
+**How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris` or let the automatic updater do that for you.
+
+# Su, 22 October 2017 | v8.5.3
+
+- FIX: [Websocket: memory leak on startPinger](https://github.com/kataras/iris/issues/787) by @jerson with PR: https://github.com/kataras/iris/pull/788
+- FIX: [Websocket: time.Ticker cause memory leak](https://github.com/kataras/iris/issues/791) by @jerson with PR: https://github.com/kataras/iris/pull/792
+- NEW: [Websocket: total connections](https://github.com/kataras/iris/issues/793) by @jerson with PR: https://github.com/kataras/iris/pull/795
+- NEW: Add a `raven` middleware inside [iris-contrib/middleware/raven](https://github.com/iris-contrib/middleware/tree/master/raven) as requested at "[Can I use iris with sentry?](https://github.com/kataras/iris/issues/785)"
+
+### 🎗️ People that you should follow
+
+Help this project to continue deliver awesome and unique features with the higher code quality as possible by donating any amount via [PayPal](https://www.paypal.me/kataras) or [Bitcoins](https://iris-go.com/v8/donate)!
+
+| Name | Amount | Membership |
+| -----------|--------|--------|
+| [Juan Sebastián Suárez Valencia](https://github.com/Juanses) | 20 EUR |  Bronze |
+| [Bob Lee](https://github.com/li3p) | 20 EUR |  Bronze |
+| [Celso Luiz](https://github.com/celsosz) | 50 EUR |  **Silver** |
+| [Ankur Srivastava](https://github.com/ansrivas) | 20 EUR |  Bronze |
+| [Damon Zhao](https://github.com/se77en) | 20 EUR |  Bronze |
+| [Exponity - Tech Company](https://github.com/exponity) | 30 EUR |  Bronze |
+| [Thomas Fritz](https://github.com/thomasfr) | 25 EUR |  Bronze |
+| [Thanos V.](http://mykonosbiennale.com/) | 20 EUR |  Bronze |
+| [George Opritescu](https://github.com/International) | 20 EUR |  Bronze |
+| [Lex Tang](https://github.com/lexrus) | 20 EUR |  Bronze |
+| [Bill Q.](https://github.com/hiveminded) | 600 EUR |  **Gold** |
+| [Conrad Steenberg](https://github.com/hengestone) | 25 EUR |  Bronze |
 
 # Th, 12 October 2017 | v8.5.2
 

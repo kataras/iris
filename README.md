@@ -1,3 +1,5 @@
+<!-- Moved to README_NEXT.md only.
+
 # 03, October 2017 | Iris User Experience Report
 
 Be part of the Iris evolution!
@@ -7,7 +9,7 @@ Complete the **first** Iris User Experience Report by submitting a simple form, 
 The form contains some questions that you may need to answer in order to learn more about you; learning more about you helps us to serve you with the best possible way!
 
 https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link
-
+-->
 # ![Logo created by @santoshanand](logo_white_35_24.png) Iris
 
 Iris is a fast, simple and efficient micro web framework for Go. It provides a beautifully expressive and easy to use foundation for your next website, API, or distributed app.
@@ -72,6 +74,14 @@ _Psst_, we've produced a small video about your feelings regrating to Iris! You 
 
 [![Iris vs .NET Core(C#) vs Node.js (Express)](https://iris-go.com/images/benchmark-new-gray.png)](_benchmarks)
 
+<details>
+<summary>Benchmarks from third-party source over the rest web frameworks</summary>
+
+![Comparison with other frameworks](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png)
+
+_Updated at: [Friday, 29 September 2017](_benchmarks)_
+</details>
+
 </p>
 
 ## Installation
@@ -82,9 +92,9 @@ The only requirement is the [Go Programming Language](https://golang.org/dl/), a
 $ go get -u github.com/kataras/iris
 ```
 
-- Iris takes advantage of the [vendor directory](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo) feature. You get truly reproducible builds, as this method guards against upstream renames and deletes.
+Iris takes advantage of the [vendor directory](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo) feature. You get truly reproducible builds, as this method guards against upstream renames and deletes.
 
-- [Latest changes | v8.5.2](https://github.com/kataras/iris/blob/master/HISTORY.md#th-12-october-2017--v852)
+[Latest changes | v8.5.3](https://github.com/kataras/iris/blob/master/HISTORY.md#su-22-october-2017--v853)
 
 ## Getting Started
 
@@ -171,7 +181,7 @@ func main() {
 }
 
 type HelloWorldController struct {
-    mvc.Controller
+    mvc.C
 
     // [ Your fields here ]
     // Request lifecycle data
@@ -1008,7 +1018,7 @@ func main() {
 
 More folder structure guidelines can be found at the [_examples/#structuring](_examples/#structuring) section.
 
-## 😃 Do you like what you see so far?
+## 😃 Do you like what you learnt so far?
 
 > Prepare yourself a cup of coffee, or tea, whatever enjoys you the most!
 
