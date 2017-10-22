@@ -16,17 +16,18 @@ It doesn't always contain the "best ways" but it does cover each important featu
 - [POC: Convert the medium-sized project "Parrot" from native to Iris](https://github.com/iris-contrib/parrot)
 - [POC: Isomorphic react/hot reloadable/redux/css-modules starter kit](https://github.com/kataras/iris-starter-kit)
 - [Tutorial: DropzoneJS Uploader](tutorial/dropzonejs)
+- [Tutorial: Caddy](tutorial/caddy)
 
 ### Structuring
 
 Nothing stops you from using your favorite folder structure. Iris is a low level web framework, it has got MVC first-class support but it doesn't limit your folder structure, this is your choice.
 
-Structuring depends on your own needs. We can't tell you how to design your own application for sure but you're free to take a closer look to the examples below; you may find something useful that you can borrow for your app
+Structuring depends on your own needs. We can't tell you how to design your own application for sure but you're free to take a closer look to the examples below; you may find something useful that you can borrow for your app;
 
-- [Example 1](mvc/login)
-- [Example 2](structuring/mvc)
-- [Example 3](structuring/handler-based)
-- [Example 4](mvc/overview)
+- [Bootstrapper](structuring/bootstrap)
+- [MVC with Repository and Service layer Overview](structuring/mvc-plus-repository-and-service-layers)
+- [Login (MVC with Single Responsibility package)](structuring/login-mvc-single-responsible-package)
+- [Login (MVC with Datamodels, Datasource, Repository and Service layer)](structuring/login-mvc)
 
 ### HTTP Listening
 

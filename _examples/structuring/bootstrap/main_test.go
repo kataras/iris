@@ -6,7 +6,7 @@ import (
 	"github.com/kataras/iris/httptest"
 )
 
-// TestApp runs by `$ go test -v`.
+// go test -v
 func TestApp(t *testing.T) {
 	e := httptest.New(t, app.Application)
 
