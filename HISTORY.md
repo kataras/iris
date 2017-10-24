@@ -1439,7 +1439,7 @@ The leadership of this, open-source, repository was transferred to [hiveminded](
 
 UPDATE:
 
-> [I am](https://github.com/hiveminded) voluntarily quiting this responsibility because I've been re-positioned as the new Lead Product Manager of the company I'm working for many years, which I accepted with honor. That's a very time consuming position I'm responsible to accomplish and deliver, therefore, I transfer all my rights back to @kataras and I resign from any copyrights over this project.
+> [I am](https://github.com/hiveminded) voluntarily quiting this responsibility because I've been re-positioned as the new Lead Product Manager of the company I'm working for many years, which I accepted with honor. That's a very time consuming position I'm responsible to accomplish and deliver, therefore, I transfer all my rights back to @kataras and I resign from any copyrights over this project. My contribution clearly didn't make the difference but I owe a big "thank you" to Gerasimos for the chance he gave me and I hope the bests for him and iris. Thank you all.
 
 These types of projects need heart and sacrifices to continue offer the best developer experience like a paid software, please do support him as you did with me!
 
