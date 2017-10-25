@@ -88,9 +88,9 @@ func profileByUsername(ctx iris.Context) {
 	// .Params are used to get dynamic path parameters.
 	username := ctx.Params().Get("username")
 	ctx.ViewData("Username", username)
-	// renders "./views/users/profile.html"
+	// renders "./views/user/profile.html"
 	// with {{ .Username }} equals to the username dynamic path parameter.
-	ctx.View("users/profile.html")
+	ctx.View("user/profile.html")
 }
 
 func getUserByID(ctx iris.Context) {
@@ -109,8 +109,8 @@ func createUser(ctx iris.Context) {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		return
 	}
-	// renders "./views/users/create_verification.html"
+	// renders "./views/user/create_verification.html"
 	// with {{ . }} equals to the User object, i.e {{ .Username }} , {{ .Firstname}} etc...
 	ctx.ViewData("", user)
-	ctx.View("users/create_verification.html")
+	ctx.View("user/create_verification.html")
 }

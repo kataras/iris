@@ -2,7 +2,7 @@
 
 ### Looking for free and real-time support?
 
-    http://support.iris-go.com
+    https://support.iris-go.com
     https://chat.iris-go.com
 
 ### Looking for previous versions?
@@ -17,6 +17,14 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris` or let the automatic updater do that for you.
 
+# Th, 26 October 2017 | v8.5.4
+
+No new features or fixes (all reported bugs are fixed) in this version, just a tiny improvement.
+
+- ENHANCEMENT: More friendly version checker!
+
+> Remember: If you don't want to keep the version checker and you're pretty sure that you will be able to keep your server up-to-date manually, then you can disable the auto updater via; `app.Run(..., iris.WithoutVersionChecker)`.
+
 # Su, 22 October 2017 | v8.5.3
 
 - FIX: [Websocket: memory leak on startPinger](https://github.com/kataras/iris/issues/787) by @jerson with PR: https://github.com/kataras/iris/pull/788
@@ -26,7 +34,7 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 ### 🎗️ People that you should follow
 
-Help this project to continue deliver awesome and unique features with the higher code quality as possible by donating any amount via [PayPal](https://www.paypal.me/kataras) or [Bitcoins](https://iris-go.com/v8/donate)!
+Help this project to continue deliver awesome and unique features with the higher code quality as possible by donating any amount via [PayPal](https://www.paypal.me/kataras) or [BTC](https://iris-go.com/v8/donate)!
 
 | Name | Amount | Membership |
 | -----------|--------|--------|

@@ -59,6 +59,14 @@
   name = "github.com/kataras/golog"
 
 [[constraint]]
+  branch = "master"
+  name = "github.com/kataras/survey"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/skratchdot/open-golang"
+
+[[constraint]]
   name = "github.com/klauspost/compress"
   version = "1.2.1"
 

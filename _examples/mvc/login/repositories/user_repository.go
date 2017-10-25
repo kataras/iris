@@ -58,6 +58,7 @@ func (r *userMemoryRepository) Exec(query Query, action Query, actionLimit int, 
 		ok = query(user)
 		if ok {
 			if action(user) {
+				loops++
 				if actionLimit >= loops {
 					break // break
 				}

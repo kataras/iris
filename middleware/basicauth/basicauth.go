@@ -103,6 +103,7 @@ func (b *basicAuthMiddleware) Serve(ctx context.Context) {
 	auth, found := b.findAuth(ctx.GetHeader("Authorization"))
 	if !found {
 		b.askForCredentials(ctx)
+		ctx.StopExecution()
 		return
 		// don't continue to the next handler
 	}
@@ -115,6 +116,7 @@ func (b *basicAuthMiddleware) Serve(ctx context.Context) {
 
 		if time.Now().After(auth.expires) {
 			b.askForCredentials(ctx) // ask for authentication again
+			ctx.StopExecution()
 			return
 		}
 	}
