@@ -1,76 +1,10 @@
-<!-- Moved to README_NEXT.md only.
+# ![Logo created by @santoshanand](logo_white_35_24.png) Iris [![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=flat-square)](https://travis-ci.org/kataras/iris) [![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=flat-square)](http://goreportcard.com/report/kataras/iris) [![github issues](https://img.shields.io/github/issues/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/issues?q=is%3Aopen+is%3Aissue) [![github closed issues](https://img.shields.io/github/issues-closed-raw/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/issues?q=is%3Aissue+is%3Aclosed) [![release](https://img.shields.io/github/release/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/releases) [![view examples](https://img.shields.io/badge/learn%20by-examples-0077b3.svg?style=flat-square)](https://github.com/kataras/iris/tree/master/_examples) [![chat](https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square)](https://kataras.rocket.chat/channel/iris) [![CLA assistant](https://cla-assistant.io/readme/badge/kataras/iris?style=flat-square)](https://cla-assistant.io/kataras/iris)
 
-# 03, October 2017 | Iris User Experience Report
+Iris is a fast, simple and efficient web framework for Go.
 
-Be part of the Iris evolution!
+Iris provides a beautifully expressive and easy to use foundation for your next website, API, or distributed app.
 
-Complete the **first** Iris User Experience Report by submitting a simple form, it won't take more than **2 minutes**.
-
-The form contains some questions that you may need to answer in order to learn more about you; learning more about you helps us to serve you with the best possible way!
-
-https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link
--->
-# ![Logo created by @santoshanand](logo_white_35_24.png) Iris
-
-Iris is a fast, simple and efficient micro web framework for Go. It provides a beautifully expressive and easy to use foundation for your next website, API, or distributed app.
-
-<!-- When we have completed the overall results, re-write this section:  
-### About our User Experience Report
-
-A week ago, _at 03 October_, we announced the first [Iris User Experience form-based Report](https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link) to let us learn more about you and any issues that troubles you with Iris (if any).
-
-At overall, the results (so far) are very promising, high number of participations and the answers to the questions are near to the green feedback we were receiving over the past months from Gophers worldwide via our [rocket chat](https://chat.iris-go.com) and [author's twitter](https://twitter.com/makismaropoulos). **If you didn't complete the form yet, [please do so](https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link) as soon as possible!**
-
-However, as everything in life; nothing goes as expected, people are strange, we programmers even more. The last part of the form has a text area which participiations can add any "questions or comments", there we saw one comment that surprised me the most, in the bad sense. We respect all individual singularities the same, we do not discriminate between people. The data are anonymous, so the only place to answer to that person is, _surprisingly_, here!
-
-<details>
-<summary>"I admire your dedication to iris and I am in love with its speed..."</summary>
-
-The comment was "I admire your dedication to iris and I am in love with its speed but.. I've read some things on that blog and blablabla..." you get the point, at the first we were happy and suddenly we saw that "but... I've" and we broke xD.
-
-The answer to this is clear in simple words so that anyone can understand; Did you really believed those unsubstantial things even if you could take some time off to read the source code?🤔
-
-Iris was one of the top github trending projects written in Go Programming Language for the 2016 and the most trending web framework in the globe. We couldn't even imagine that we will be the receivers of countless "[thank you for iris, finally a web framework I can work on](https://twitter.com/_mgale/status/818591490305761280)" comments from hundreds strangers around the globe!
-
-Please do research before digestion, those blog posts are not always telling the whole truth, they are not so innocent :)
-
-Especially those from that kid that even don't correspond to reality;
-
-```go
-/* start */
-```
-
-First of all, that article **is referring 1.5 years ago**, to pretend that this article speaks for the present is hilariously ridiculous! Iris is on version 8 now and it's not a router any more, it's a fully featured web framework with its own ecosystem.
-
-1. Iris does NOT use any third-party code inside it, like "httprouter" or "fasthttp". Just navigate to the source code. If you care about historical things you can search the project but it doesn't matter because the internal implementation of Iris changed a lot of times, a lot more than its public API changes:P.
-2. Iris makes use of its own routing mechanisms with a unique **language interpreter** in order to serve even the most demanding of us `/user/{id:int min(2)}`, `/alphabetical/{param:string regexp(^[a-zA-Z ]+$)}` et cetera.
-3. Iris has its own unique MVC architectural parser with heart-breaking performance.
-4. Was it possible to do all those things and [much more](_examples) before Iris? Exactly. Iris offers you all these for free, plus the unmatched performance.
-5. Iris is the result of hundreds(or thousands(?)) of hours of **FREE and UNPAID** work. There are people who actually found a decent job because of Iris. Thousands of Gophers are watching or/and helping to make Iris even better, the silent majority loves Iris even more.
-
-That 23 years old, inhibited boy, who published that post had played you with the most immoral way! Reading the Iris' source code doesn't cost you a thing! Iris is free to use for everyone, Iris is an open-source software, no hidden spots. **Don't stuck in the past, get over that, Iris has succeed, move on now.**
-
-```go
-/* end */
-```
-
-</details>
--->
-
-Iris may have reached version 8, but we're not stopping there. We have many feature ideas on our board that we're anxious to add and other innovative web development solutions that we're planning to build into Iris.
-
-[Star](https://github.com/kataras/iris/stargazers) and watch this github repository to stay up to date, we're pushing **new examples every single day!**
-
-_Psst_, we've produced a small video about your feelings regrating to Iris! You can watch it via youtube at https://www.youtube.com/watch?v=jGx0LkuUs4A.
-
-[![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=flat-square)](https://travis-ci.org/kataras/iris)
-[![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=flat-square)](http://goreportcard.com/report/kataras/iris)
-[![github issues](https://img.shields.io/github/issues/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/issues?q=is%3Aopen+is%3Aissue)
-[![github closed issues](https://img.shields.io/github/issues-closed-raw/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/issues?q=is%3Aissue+is%3Aclosed)
-[![release](https://img.shields.io/github/release/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/releases)
-[![view examples](https://img.shields.io/badge/learn%20by-examples-0077b3.svg?style=flat-square)](https://github.com/kataras/iris/tree/master/_examples)
-[![chat](https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square)](https://kataras.rocket.chat/channel/iris)
-[![CLA assistant](https://cla-assistant.io/readme/badge/kataras/iris?style=flat-square)](https://cla-assistant.io/kataras/iris)
+Learn what [others say about Iris](https://www.youtube.com/watch?v=jGx0LkuUs4A) and [star](https://github.com/kataras/iris/stargazers) this github repository to stay [up to date](https://facebook.com/iris.framework).
 
 [![Iris vs .NET Core(C#) vs Node.js (Express)](https://iris-go.com/images/benchmark-new-gray.png)](_benchmarks)
 
@@ -82,11 +16,67 @@ _Psst_, we've produced a small video about your feelings regrating to Iris! You 
 _Updated at: [Friday, 29 September 2017](_benchmarks)_
 </details>
 
+We have no doubt you will able to find other web frameworks written in Go
+and even put up a real fight to learn and use them for quite some time but
+make no mistake, sooner or later you will be using Iris, not because of the ergonomic, high-performant solution that it provides but its well-documented unique features, as these will transform you to a real rockstar geek.
+
+No matter what you're trying to build, Iris covers 
+every type of application, from micro services to large monolithic web applications.
+It's actually the best piece of software for back-end web developers
+you can find online.
+
+Iris may have reached version 8, but we're not stopping there. We have many feature ideas on our board that we're anxious to add and other innovative web development solutions that we're planning to build into Iris.
+
+## Built with ♥️
+
 <a target='_blank' rel='nofollow' href='https://app.codesponsor.io/link/Qw6E1MTHvUJW6BtwUUf9qwsy/kataras/iris'>
-  <img alt='Sponsor' width='888' height='68' src='https://app.codesponsor.io/embed/Qw6E1MTHvUJW6BtwUUf9qwsy/kataras/iris.svg' />
+  <img alt='Sponsor' width='700' height='60' src='https://app.codesponsor.io/embed/Qw6E1MTHvUJW6BtwUUf9qwsy/kataras/iris.svg' />
 </a>
 
-</p>
+Accelerated by [KeyCDN](https://www.keycdn.com/), a simple, fast and reliable CDN.
+
+We are developing this project using the best code editor for Golang; [Visual Studio Code](https://code.visualstudio.com/) supported by [Microsoft](https://www.microsoft.com).
+
+Iris was built on top of the the [net/http](https://golang.org/pkg/net/http/) package, we own many thanks to [Brad Fitzpatrick](https://github.com/bradfitz) for that.
+
+If you're coming from [nodejs](https://nodejs.org) world, Iris is the [expressjs](https://github.com/expressjs/express) equivalent for Gophers.
+
+## Table Of Content
+
+* [Installation](#installation)
+* [Latest changes](#th-26-october-2017--v854)
+* [Getting started](#getting-started)
+* [Learn](_examples/)
+    * [MVC (Model View Controller)](_examples/#mvc) **NEW**
+    * [Structuring](_examples/#structuring) **NEW**
+    * [HTTP Listening](_examples/#http-listening)
+    * [Configuration](_examples/#configuration)
+    * [Routing, Grouping, Dynamic Path Parameters, "Macros" and Custom Context](_examples/#routing-grouping-dynamic-path-parameters-macros-and-custom-context)
+    * [Subdomains](_examples/#subdomains)
+    * [Wrap `http.Handler/HandlerFunc`](_examples/#convert-httphandlerhandlerfunc)
+    * [View](_examples/#view)
+    * [Authentication](_examples/#authentication)
+    * [File Server](_examples/#file-server)
+    * [How to Read from `context.Request() *http.Request`](_examples/#how-to-read-from-contextrequest-httprequest)
+    * [How to Write to `context.ResponseWriter() http.ResponseWriter`](_examples/#how-to-write-to-contextresponsewriter-httpresponsewriter)
+    * [Test](_examples/#testing)	
+    * [Cache](_examples/#caching)
+    * [Sessions](_examples/#sessions)
+    * [Websockets](_examples/#websockets)
+    * [Miscellaneous](_examples/#miscellaneous)
+    * [POC: Convert the medium-sized project "Parrot" from native to Iris](https://github.com/iris-contrib/parrot)
+    * [POC: Isomorphic react/hot reloadable/redux/css-modules starter kit](https://github.com/kataras/iris-starter-kit)
+    * [Typescript Automation Tools](typescript/#table-of-contents)
+    * [Tutorial: A URL Shortener Service using Go, Iris and Bolt](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
+    * [Tutorial: Online Visitors](_examples/tutorial/online-visitors)
+    * [Tutorial: Caddy](_examples/tutorial/caddy)
+    * [Tutorial: DropzoneJS Uploader](https://hackernoon.com/how-to-build-a-file-upload-form-using-dropzonejs-and-go-8fb9f258a991)
+* [Middleware](middleware/)
+* [Dockerize](https://github.com/iris-contrib/cloud-native-go)
+* [Contributing](CONTRIBUTING.md)
+* [FAQ](FAQ.md)
+* [What's next?](#you-are-ready-to-move-to-the-next-step-and-get-closer-to-becoming-a-pro-gopher)
+* [People](#people)
 
 ## Installation
 
@@ -97,8 +87,6 @@ $ go get -u github.com/kataras/iris
 ```
 
 Iris takes advantage of the [vendor directory](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo) feature. You get truly reproducible builds, as this method guards against upstream renames and deletes.
-
-[Latest changes | v8.5.3](https://github.com/kataras/iris/blob/master/HISTORY.md#su-22-october-2017--v853)
 
 ## Getting Started
 
@@ -316,8 +304,6 @@ func main() {
 
 // MoviesController is our /movies controller.
 type MoviesController struct {
-    // mvc.C is just a lightweight alternative
-    // to the "mvc.Controller" controller type.
     mvc.C
 }
 
@@ -521,6 +507,7 @@ func (r *movieMemoryRepository) Exec(query Query, action Query, actionLimit int,
         ok = query(movie)
         if ok {
             if action(movie) {
+                loops++
                 if actionLimit >= loops {
                     break // break
                 }
@@ -785,10 +772,6 @@ import (
 
 // MovieController is our /movies controller.
 type MovieController struct {
-    // mvc.C is just a lightweight lightweight alternative
-    // to the "mvc.Controller" controller type,
-    // use it when you don't need mvc.Controller's fields
-    // (you don't need those fields when you return values from the method functions).
     mvc.C
 
     // Our MovieService, it's an interface which
@@ -1022,22 +1005,47 @@ func main() {
 
 More folder structure guidelines can be found at the [_examples/#structuring](_examples/#structuring) section.
 
-## 😃 Do you like what you learnt so far?
+## You are ready to move to the next step and get closer to becoming a pro gopher
 
-> Prepare yourself a cup of coffee, or tea, whatever enjoys you the most!
+Congratulations, since you've made it so far, we've crafted just for you some next level content to turn you into a real pro gopher 😃
 
-- [How to build a file upload form using DropzoneJS and Go](https://hackernoon.com/how-to-build-a-file-upload-form-using-dropzonejs-and-go-8fb9f258a991)
-- [How to display existing files on server using DropzoneJS and Go](https://hackernoon.com/how-to-display-existing-files-on-server-using-dropzonejs-and-go-53e24b57ba19)
-- [Iris Go vs .NET Core Kestrel in terms of HTTP performance](https://hackernoon.com/iris-go-vs-net-core-kestrel-in-terms-of-http-performance-806195dc93d5)
-- [Go vs .NET Core in terms of HTTP performance](https://medium.com/@kataras/go-vs-net-core-in-terms-of-http-performance-7535a61b67b8)
-- [Iris, a modular web framework](https://medium.com/@corebreaker/iris-web-cd684b4685c7)
-- [Deploying a Iris Golang app in hasura](https://medium.com/@HasuraHQ/deploy-an-iris-golang-app-with-backend-apis-in-minutes-25a559bf530b)
-- [How to Turn an Android Device into a Web Server](https://twitter.com/ThePracticalDev/status/892022594031017988)
-- [A URL Shortener Service using Go, Iris and Bolt](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
-- [Why I preferred Go over Node.js for simple Web Application](https://medium.com/@tigranbs/why-i-preferred-go-over-node-js-for-simple-web-application-d4a549e979b9)
+> Don't forget to prepare yourself a cup of coffee, or tea, whatever enjoys you the most!
 
-Take some time, `don't say we didn't warn you`,  and continue your journey by [navigating to the next README page](README_NEXT.md).
+* [How to build a file upload form using DropzoneJS and Go](https://hackernoon.com/how-to-build-a-file-upload-form-using-dropzonejs-and-go-8fb9f258a991)
+* [How to display existing files on server using DropzoneJS and Go](https://hackernoon.com/how-to-display-existing-files-on-server-using-dropzonejs-and-go-53e24b57ba19)
+* [Iris, a modular web framework](https://medium.com/@corebreaker/iris-web-cd684b4685c7)
+* [Go vs .NET Core in terms of HTTP performance](https://medium.com/@kataras/go-vs-net-core-in-terms-of-http-performance-7535a61b67b8)
+* [Iris Go vs .NET Core Kestrel in terms of HTTP performance](https://hackernoon.com/iris-go-vs-net-core-kestrel-in-terms-of-http-performance-806195dc93d5)
+* [How to Turn an Android Device into a Web Server](https://twitter.com/ThePracticalDev/status/892022594031017988)
+* [Deploying a Iris Golang app in hasura](https://medium.com/@HasuraHQ/deploy-an-iris-golang-app-with-backend-apis-in-minutes-25a559bf530b)
+* [A URL Shortener Service using Go, Iris and Bolt](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
+
+## People
+
+The author of Iris is [@kataras](https://github.com/kataras), you can reach him via;
+
+* [Medium](https://medium.com/@kataras)
+* [Twitter](https://twitter.com/makismaropoulos)
+* [Dev.to](https://dev.to/@kataras)
+* [Facebook](https://facebook.com/iris.framework)
+* [Mail](mailto:kataras2006@hotmail.com?subject=Iris%20I%20need%20some%20help%20please)
+
+[List of all Authors](AUTHORS)
+
+[List of all Contributors](https://github.com/kataras/iris/graphs/contributors)
+
+Help this project to continue deliver awesome and unique features with the higher code quality as possible by donating any amount via [PayPal](https://www.paypal.me/kataras) or [BTC](https://iris-go.com/v8/donate)!
+
+### 03, October 2017 | Iris User Experience Report
+
+Be part of the **first** Iris User Experience Report by submitting a simple form, it won't take more than **2 minutes**.
+
+The form contains some questions that you may need to answer in order to learn more about you; learning more about you helps us to serve you with the best possible way!
+
+https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link
 
 ## License
 
 Iris is licensed under the 3-Clause BSD [License](LICENSE). Iris is 100% open-source software.
+
+For any questions regarding the license please [contact us](mailto:kataras2006@hotmail.com?subject=Iris%20License).

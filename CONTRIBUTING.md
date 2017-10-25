@@ -14,12 +14,33 @@ First of all read our [Code of Conduct](https://github.com/kataras/iris/tree/mas
 3. Make your changes.
 4. Compare & Push the PR from [here](https://github.com/kataras/iris/compare).
 
+## Donate
+
+Help this project to continue deliver awesome and unique features with the higher code quality as possible by donating any amount via [PayPal](https://www.paypal.me/kataras) or [BTC](https://iris-go.com/v8/donate)!
+
+| Name | Amount | Membership |
+| -----------|--------|--------|
+| [Juan Sebastián Suárez Valencia](https://github.com/Juanses) | 20 EUR |  Bronze |
+| [Bob Lee](https://github.com/li3p) | 20 EUR |  Bronze |
+| [Celso Luiz](https://github.com/celsosz) | 50 EUR |  **Silver** |
+| [Ankur Srivastava](https://github.com/ansrivas) | 20 EUR |  Bronze |
+| [Damon Zhao](https://github.com/se77en) | 20 EUR |  Bronze |
+| [Exponity - Tech Company](https://github.com/exponity) | 30 EUR |  Bronze |
+| [Thomas Fritz](https://github.com/thomasfr) | 25 EUR |  Bronze |
+| [Thanos V.](http://mykonosbiennale.com/) | 20 EUR |  Bronze |
+| [George Opritescu](https://github.com/International) | 20 EUR |  Bronze |
+| [Lex Tang](https://github.com/lexrus) | 20 EUR |  Bronze |
+| [Bill Q.](https://github.com/hiveminded) | 600 EUR |  **Gold** |
+| [Conrad Steenberg](https://github.com/hengestone) | 25 EUR |  Bronze |
+
 ## Share
 
 ### Writing
 
 Write an article about Iris in https://medium.com , https://dev.to or if you're being a hackathon at https://hackernoon.com, some examples:
 
+* [How to build a file upload form using DropzoneJS and Go](https://hackernoon.com/how-to-build-a-file-upload-form-using-dropzonejs-and-go-8fb9f258a991)
+* [How to display existing files on server using DropzoneJS and Go](https://hackernoon.com/how-to-display-existing-files-on-server-using-dropzonejs-and-go-53e24b57ba19)
 * [Iris Go vs .NET Core Kestrel in terms of HTTP performance](https://hackernoon.com/iris-go-vs-net-core-kestrel-in-terms-of-http-performance-806195dc93d5)
 * [Go vs .NET Core in terms of HTTP performance](https://medium.com/@kataras/go-vs-net-core-in-terms-of-http-performance-7535a61b67b8)
 * [Iris, a modular web framework](https://medium.com/@corebreaker/iris-web-cd684b4685c7)

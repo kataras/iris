@@ -279,6 +279,7 @@ type Context interface {
 	// func(c *UsersController) Get() []models.User {
 	//	  return c.Service.GetAll()
 	//}
+	// Alternative way is `!ctx.IsStopped()` if middleware make use of the `ctx.StopExecution()` on failure.
 	Proceed(Handler) bool
 	// HandlerName returns the current handler's name, helpful for debugging.
 	HandlerName() string
@@ -1043,6 +1044,7 @@ func (ctx *context) HandlerIndex(n int) (currentIndex int) {
 // func(c *UsersController) Get() []models.User {
 //	  return c.Service.GetAll()
 //}
+// Alternative way is `!ctx.IsStopped()` if middleware make use of the `ctx.StopExecution()` on failure.
 func (ctx *context) Proceed(h Handler) bool {
 	beforeIdx := ctx.currentHandlerIndex
 	h(ctx)

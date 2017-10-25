@@ -60,6 +60,7 @@ func (r *movieMemoryRepository) Exec(query Query, action Query, actionLimit int,
 		ok = query(movie)
 		if ok {
 			if action(movie) {
+				loops++
 				if actionLimit >= loops {
 					break // break
 				}
