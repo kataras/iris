@@ -29,7 +29,7 @@ Not any new features or fixes (all reported bugs are fixed) in this version, jus
 
 > Remember: If you don't want to keep the version checker and you're pretty sure that you will be able to keep your server up-to-date manually, then you can disable the auto updater via; `app.Run(..., iris.WithoutVersionChecker)`.
 
-## We need your help with translations into your native language.
+## We need your help with translations into your native language
 
 Iris needs your help, please think about contributing to the translation of the [README](README.md) and https://iris-go.com, you will be rewarded.
 

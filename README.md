@@ -1034,7 +1034,15 @@ The author of Iris is [@kataras](https://github.com/kataras), you can reach him 
 
 [List of all Contributors](https://github.com/kataras/iris/graphs/contributors)
 
-Help this project to continue deliver awesome and unique features with the higher code quality as possible by donating any amount via [PayPal](https://www.paypal.me/kataras) or [BTC](https://iris-go.com/v8/donate)!
+Help this project to continue deliver awesome and unique features with the higher code quality as possible by donating any amount via [PayPal](https://www.paypal.me/kataras) or [BTC](https://iris-go.com/v8/donate).
+
+For more information about contributing to the Iris project please check the [CONTRIBUTING.md file](CONTRIBUTING.md).
+
+### We need your help with translations into your native language
+
+Iris needs your help, please think about contributing to the translation of the [README](README.md) and https://iris-go.com, you will be rewarded.
+
+Instructions can be found at: https://github.com/kataras/iris/issues/796
 
 ### 03, October 2017 | Iris User Experience Report
 
