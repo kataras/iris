@@ -24,14 +24,6 @@ func TestProxy(t *testing.T) {
 		t.Fatalf("%v while parsing url", err)
 	}
 
-	// p := host.ProxyHandler(u)
-	// transport := &http.Transport{
-	// 	TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	// }
-	// p.Transport = transport
-	// proxySrv.Downgrade(p.ServeHTTP)
-	// go proxySrv.Run(iris.Addr(":80"), iris.WithoutBanner, iris.WithoutInterruptHandler)
-
 	proxy := host.NewProxy("", u)
 
 	addr := &net.TCPAddr{
@@ -68,7 +60,7 @@ func TestProxy(t *testing.T) {
 		t.Fatalf("%v while creating tcp4 listener for new tls local test listener", err)
 	}
 	// main server
-	go app.Run(iris.Listener(httptest.NewLocalTLSListener(l)), iris.WithoutBanner)
+	go app.Run(iris.Listener(httptest.NewLocalTLSListener(l)), iris.WithoutVersionChecker, iris.WithoutStartupLog)
 
 	e := httptest.NewInsecure(t, httptest.URL("http://"+listener.Addr().String()))
 	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedIndex)
