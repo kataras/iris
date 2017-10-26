@@ -33,6 +33,14 @@ Help this project to continue deliver awesome and unique features with the highe
 | [Bill Q.](https://github.com/hiveminded) | 600 EUR |  **Gold** |
 | [Conrad Steenberg](https://github.com/hengestone) | 25 EUR |  Bronze |
 
+## Translate
+
+We need your help with translations into your native language.
+
+Iris needs your help, please think about contributing to the translation of the [README](README.md) and https://iris-go.com, you will be rewarded.
+
+Chinese: https://github.com/kataras/iris/issues/796
+
 ## Share
 
 ### Writing

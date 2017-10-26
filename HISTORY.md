@@ -2,7 +2,7 @@
 
 ### Looking for free and real-time support?
 
-    https://support.iris-go.com
+    https://github.com/kataras/iris/issues
     https://chat.iris-go.com
 
 ### Looking for previous versions?
