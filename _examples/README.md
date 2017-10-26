@@ -26,7 +26,7 @@ Structuring depends on your own needs. We can't tell you how to design your own 
 
 - [Bootstrapper](structuring/bootstrap)
 - [MVC with Repository and Service layer Overview](structuring/mvc-plus-repository-and-service-layers)
-- [Login (MVC with Single Responsibility package)](structuring/login-mvc-single-responsible-package)
+- [Login (MVC with Single Responsibility package)](structuring/login-mvc-single-responsibility-package)
 - [Login (MVC with Datamodels, Datasource, Repository and Service layer)](structuring/login-mvc)
 
 ### HTTP Listening
