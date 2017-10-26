@@ -19,11 +19,21 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 # Th, 26 October 2017 | v8.5.4
 
-No new features or fixes (all reported bugs are fixed) in this version, just a tiny improvement.
+This version is part of the [releases](https://github.com/kataras/iris/releases).
 
-- ENHANCEMENT: More friendly version checker!
+## Version Updater
+
+Not any new features or fixes (all reported bugs are fixed) in this version, just a tiny improvement.
+
+**More friendly version checker!**
 
 > Remember: If you don't want to keep the version checker and you're pretty sure that you will be able to keep your server up-to-date manually, then you can disable the auto updater via; `app.Run(..., iris.WithoutVersionChecker)`.
+
+## We need your help with translations into your native language.
+
+Iris needs your help, please think about contributing to the translation of the [README](README.md) and https://iris-go.com, you will be rewarded.
+
+For Chinese Gophers: https://github.com/kataras/iris/issues/796
 
 # Su, 22 October 2017 | v8.5.3
 
