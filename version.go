@@ -34,7 +34,7 @@ type versionInfo struct {
 }
 
 func checkVersion() {
-	client := netutil.Client(30 * time.Second)
+	client := netutil.Client(25 * time.Second)
 	r, err := client.PostForm("https://iris-go.com/version", url.Values{"current_version": {Version}})
 
 	if err != nil {
@@ -60,18 +60,6 @@ func checkVersion() {
 		return
 	}
 
-	if !v.UpdateAvailable {
-		return
-	}
-
-	// shouldUpdate := false
-	// prompt := &survey.Confirm{
-	// 	Message: shouldUpdateNowMsg,
-	// }
-
-	// if err := survey.AskOne(prompt, &shouldUpdate, nil); err != nil {
-	// 	return
-	// }
 	var qs []*survey.Question
 
 	// on help? when asking for installing the new update
@@ -157,7 +145,7 @@ func checkVersion() {
 		}
 
 		golog.Infof("Update process finished.\nManual rebuild and restart is required to apply the changes...\n")
-	} else {
+	} else if v.UpdateAvailable { // if update was available but choosen not to update.
 		golog.Infof(ignoreUpdatesMsg)
 	}
 }

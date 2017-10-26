@@ -39,7 +39,7 @@ We need your help with translations into your native language.
 
 Iris needs your help, please think about contributing to the translation of the [README](README.md) and https://iris-go.com, you will be rewarded.
 
-Chinese: https://github.com/kataras/iris/issues/796
+Instructions can be found at: https://github.com/kataras/iris/issues/796
 
 ## Share
 
