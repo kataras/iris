@@ -58,7 +58,7 @@ All features of Sundown are supported, including:
 // Cache is a good and a must-feature on static content, i.e "about page" or for a whole blog site.
 func main() {
 	app := iris.New()
-
+	app.Logger().SetLevel("debug")
 	app.Get("/", cache.Handler(10*time.Second), writeMarkdown)
 	// saves its content on the first request and serves it instead of re-calculating the content.
 	// After 10 seconds it will be cleared and resetted.

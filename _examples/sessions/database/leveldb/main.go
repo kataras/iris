@@ -12,9 +12,6 @@ import (
 func main() {
 	db, _ := leveldb.New("./sessions/")
 
-	// use different go routines to sync the database
-	db.Async(true)
-
 	// close and unlock the database when control+C/cmd+C pressed
 	iris.RegisterOnInterrupt(func() {
 		db.Close()
