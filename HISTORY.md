@@ -23,6 +23,8 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 - improve the updater's performance and moved that into the framework itself,
     - ask for authentication only when a new version is released.
 - sessiondb's `.Async` functions do nothing now, all session databases(back-end persistence storage) should run in-sync, @speedwheel helped to find a misbehavior because of that setting,
+- the [configuration](configuration.go) now has `json` fields tag like `yaml` and `toml` did in order to be able to be fetched from a json file directly using the `encoding/json` package,
+- fix the `context#GetFloat64`, 
 - we are on [opencollective](http://opencollective.com/iris) and sponsored by [codesponsor](https://codesponsor.io/) now.
 
 _TODO;_ 
