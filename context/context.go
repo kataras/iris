@@ -125,7 +125,7 @@ func (r RequestParams) GetInt64(key string) (int64, error) {
 
 // GetFloat64 returns a path parameter's value based as float64 on its route's dynamic path key.
 func (r RequestParams) GetFloat64(key string) (float64, error) {
-	return strconv.ParseFloat(r.Get(key), 64)
+	return r.store.GetFloat64(key)
 }
 
 // GetBool returns the path parameter's value as bool, based on its key.

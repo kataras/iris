@@ -13,7 +13,7 @@ import (
 // DefaultFileMode used as the default database's "fileMode"
 // for creating the sessions directory path, opening and write the session file.
 var (
-	DefaultFileMode = 0666
+	DefaultFileMode = 0755
 )
 
 // Database is the basic file-storage session database.
@@ -28,12 +28,7 @@ var (
 // Remember: sessions are not a storage for large data, everywhere: on any platform on any programming language.
 type Database struct {
 	dir      string
-	fileMode os.FileMode // defaults to 0666 if missing.
-	// if true then it will use go routines to:
-	// append or re-write a file
-	// create a file
-	// remove a file
-	async bool
+	fileMode os.FileMode // defaults to DefaultFileMode if missing.
 }
 
 // New creates and returns a new file-storage database instance based on the "directoryPath".
@@ -77,20 +72,15 @@ func (db *Database) Cleanup() error {
 
 // FileMode for creating the sessions directory path, opening and write the session file.
 //
-// Defaults to 0666.
+// Defaults to 0755.
 func (db *Database) FileMode(fileMode uint32) *Database {
 	db.fileMode = os.FileMode(fileMode)
 	return db
 }
 
-// Async if true passed then it will use go routines to:
-// append or re-write a file
-// create a file
-// remove a file.
-//
-// Defaults to false.
+// Async is DEPRECATED
+// if it was true then it could use different to update the back-end storage, now it does nothing.
 func (db *Database) Async(useGoRoutines bool) *Database {
-	db.async = useGoRoutines
 	return db
 }
 
@@ -137,11 +127,7 @@ func (db *Database) load(fileName string) (storeDB sessions.RemoteStore, loadErr
 
 // Sync syncs the database.
 func (db *Database) Sync(p sessions.SyncPayload) {
-	if db.async {
-		go db.sync(p)
-	} else {
-		db.sync(p)
-	}
+	db.sync(p)
 }
 
 func (db *Database) sync(p sessions.SyncPayload) {

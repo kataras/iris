@@ -27,7 +27,6 @@ type Database struct {
 	// it's initialized at `New` or `NewFromDB`.
 	// Can be used to get stats.
 	Service *leveldb.DB
-	async   bool
 }
 
 // New creates and returns a new LevelDB(file-based) storage
@@ -98,10 +97,9 @@ func (db *Database) Cleanup() error {
 	return iter.Error()
 }
 
-// Async if true passed then it will use different
-// go routines to update the LevelDB(file-based) storage.
+// Async is DEPRECATED
+// if it was true then it could use different to update the back-end storage, now it does nothing.
 func (db *Database) Async(useGoRoutines bool) *Database {
-	db.async = useGoRoutines
 	return db
 }
 
@@ -140,11 +138,7 @@ func (db *Database) Load(sid string) (storeDB sessions.RemoteStore) {
 
 // Sync syncs the database with the session's (memory) store.
 func (db *Database) Sync(p sessions.SyncPayload) {
-	if db.async {
-		go db.sync(p)
-	} else {
-		db.sync(p)
-	}
+	db.sync(p)
 }
 
 func (db *Database) sync(p sessions.SyncPayload) {

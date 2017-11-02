@@ -17,6 +17,19 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris` or let the automatic updater do that for you.
 
+# Tu, 02 November 2017 | v8.5.5
+
+- fix [audio/mpeg3 does not appear to be a valid registered mime type#798](https://github.com/kataras/iris/issues/798]) reported by @kryptodev,
+- improve the updater's performance and moved that into the framework itself,
+    - ask for authentication only when a new version is released.
+- sessiondb's `.Async` functions do nothing now, all session databases(back-end persistence storage) should run in-sync, @speedwheel helped to find a misbehavior because of that setting,
+- we are on [opencollective](http://opencollective.com/iris) and sponsored by [codesponsor](https://codesponsor.io/) now.
+
+_TODO;_ 
+
+- give the ability to customize the mvc path-method-and path parameters mapping,
+- make a github bot which will post the monthly usage and even earnings statistics in a public github markdown file, hope that users will love that type of transparency we will introduce here.
+
 # Th, 26 October 2017 | v8.5.4
 
 This version is part of the [releases](https://github.com/kataras/iris/releases).
