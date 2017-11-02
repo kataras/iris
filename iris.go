@@ -17,6 +17,7 @@ import (
 	// core packages, needed to build the application
 	"github.com/kataras/iris/core/errors"
 	"github.com/kataras/iris/core/host"
+	"github.com/kataras/iris/core/maintenance"
 	"github.com/kataras/iris/core/netutil"
 	"github.com/kataras/iris/core/router"
 	// handlerconv conversions
@@ -26,13 +27,14 @@ import (
 	// view
 	"github.com/kataras/iris/view"
 	// middleware used in Default method
+
 	requestLogger "github.com/kataras/iris/middleware/logger"
 	"github.com/kataras/iris/middleware/recover"
 )
 
-const (
+var (
 	// Version is the current version number of the Iris Web Framework.
-	Version = "8.5.4"
+	Version = maintenance.Version
 )
 
 // HTTP status codes as registered with IANA.
@@ -663,9 +665,7 @@ var ErrServerClosed = http.ErrServerClosed
 // then create a new host and run it manually by `go NewHost(*http.Server).Serve/ListenAndServe` etc...
 // or use an already created host:
 // h := NewHost(*http.Server)
-// Run(Raw(h.ListenAndServe), WithCharset("UTF-8"),
-//	   						  WithRemoteAddrHeader("CF-Connecting-IP"),
-//    						  WithoutServerError(iris.ErrServerClosed))
+// Run(Raw(h.ListenAndServe), WithCharset("UTF-8"), WithRemoteAddrHeader("CF-Connecting-IP"))
 //
 // The Application can go online with any type of server or iris's host with the help of
 // the following runners:
@@ -680,8 +680,8 @@ func (app *Application) Run(serve Runner, withOrWithout ...Configurator) error {
 	app.Configure(withOrWithout...)
 	app.logger.Debugf("Application: running using %d host(s)", len(app.Hosts)+1)
 
-	if !app.config.DisableVersionChecker && app.logger.Level != golog.DisableLevel {
-		go CheckVersion()
+	if !app.config.DisableVersionChecker {
+		go maintenance.Start()
 	}
 
 	// this will block until an error(unless supervisor's DeferFlow called from a Task).

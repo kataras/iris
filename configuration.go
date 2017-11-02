@@ -137,6 +137,9 @@ var WithoutInterruptHandler = func(app *Application) {
 }
 
 // WithoutVersionChecker will disable the version checker and updater.
+// The Iris server will be not
+// receive automatic updates if you pass this
+// to the `Run` function. Use it only while you're ready for Production environment.
 var WithoutVersionChecker = func(app *Application) {
 	app.config.DisableVersionChecker = true
 }
@@ -268,23 +271,23 @@ type Configuration struct {
 	// Example: https://github.com/kataras/iris/tree/master/_examples/http-listening/listen-addr/omit-server-errors
 	//
 	// Defaults to an empty slice.
-	IgnoreServerErrors []string `yaml:"IgnoreServerErrors" toml:"IgnoreServerErrors"`
+	IgnoreServerErrors []string `json:"ignoreServerErrors,omitempty" yaml:"IgnoreServerErrors" toml:"IgnoreServerErrors"`
 
 	// DisableStartupLog if setted to true then it turns off the write banner on server startup.
 	//
 	// Defaults to false.
-	DisableStartupLog bool `yaml:"DisableStartupLog" toml:"DisableStartupLog"`
+	DisableStartupLog bool `json:"disableStartupLog,omitempty" yaml:"DisableStartupLog" toml:"DisableStartupLog"`
 	// DisableInterruptHandler if setted to true then it disables the automatic graceful server shutdown
 	// when control/cmd+C pressed.
 	// Turn this to true if you're planning to handle this by your own via a custom host.Task.
 	//
 	// Defaults to false.
-	DisableInterruptHandler bool `yaml:"DisableInterruptHandler" toml:"DisableInterruptHandler"`
+	DisableInterruptHandler bool `json:"disableInterruptHandler,omitempty" yaml:"DisableInterruptHandler" toml:"DisableInterruptHandler"`
 
 	// DisableVersionChecker if true then process will be not be notified for any available updates.
 	//
 	// Defaults to false.
-	DisableVersionChecker bool `yaml:"DisableVersionChecker" toml:"DisableVersionChecker"`
+	DisableVersionChecker bool `json:"disableVersionChecker,omitempty" yaml:"DisableVersionChecker" toml:"DisableVersionChecker"`
 
 	// DisablePathCorrection corrects and redirects the requested path to the registered path
 	// for example, if /home/ path is requested but no handler for this Route found,
@@ -292,7 +295,7 @@ type Configuration struct {
 	// (permant)redirects the client to the correct path /home
 	//
 	// Defaults to false.
-	DisablePathCorrection bool `yaml:"DisablePathCorrection" toml:"DisablePathCorrection"`
+	DisablePathCorrection bool `json:"disablePathCorrection,omitempty" yaml:"DisablePathCorrection" toml:"DisablePathCorrection"`
 
 	// EnablePathEscape when is true then its escapes the path, the named parameters (if any).
 	// Change to false it if you want something like this https://github.com/kataras/iris/issues/135 to work
@@ -305,17 +308,17 @@ type Configuration struct {
 	// projectName, _ := url.QueryUnescape(c.Param("project").
 	//
 	// Defaults to false.
-	EnablePathEscape bool `yaml:"EnablePathEscape" toml:"EnablePathEscape"`
+	EnablePathEscape bool `json:"enablePathEscape,omitempty" yaml:"EnablePathEscape" toml:"EnablePathEscape"`
 
 	// EnableOptimization when this field is true
 	// then the application tries to optimize for the best performance where is possible.
 	//
 	// Defaults to false.
-	EnableOptimizations bool `yaml:"EnableOptimizations" toml:"EnableOptimizations"`
+	EnableOptimizations bool `json:"enableOptimizations,omitempty" yaml:"EnableOptimizations" toml:"EnableOptimizations"`
 	// FireMethodNotAllowed if it's true router checks for StatusMethodNotAllowed(405) and
 	//  fires the 405 error instead of 404
 	// Defaults to false.
-	FireMethodNotAllowed bool `yaml:"FireMethodNotAllowed" toml:"FireMethodNotAllowed"`
+	FireMethodNotAllowed bool `json:"fireMethodNotAllowed,omitempty" yaml:"FireMethodNotAllowed" toml:"FireMethodNotAllowed"`
 
 	// DisableBodyConsumptionOnUnmarshal manages the reading behavior of the context's body readers/binders.
 	// If setted to true then it
@@ -325,7 +328,7 @@ type Configuration struct {
 	// if this field setted to true then a new buffer will be created to read from and the request body.
 	// The body will not be changed and existing data before the
 	// context.UnmarshalBody/ReadJSON/ReadXML will be not consumed.
-	DisableBodyConsumptionOnUnmarshal bool `yaml:"DisableBodyConsumptionOnUnmarshal" toml:"DisableBodyConsumptionOnUnmarshal"`
+	DisableBodyConsumptionOnUnmarshal bool `json:"disableBodyConsumptionOnUnmarshal,omitempty" yaml:"DisableBodyConsumptionOnUnmarshal" toml:"DisableBodyConsumptionOnUnmarshal"`
 
 	// DisableAutoFireStatusCode if true then it turns off the http error status code handler automatic execution
 	// from "context.StatusCode(>=400)" and instead app should manually call the "context.FireStatusCode(>=400)".
@@ -338,16 +341,16 @@ type Configuration struct {
 	// HTTP Custom error handlers are being registered via app.OnErrorCode(code, handler)".
 	//
 	// Defaults to false.
-	DisableAutoFireStatusCode bool `yaml:"DisableAutoFireStatusCode" toml:"DisableAutoFireStatusCode"`
+	DisableAutoFireStatusCode bool `json:"disableAutoFireStatusCode,omitempty" yaml:"DisableAutoFireStatusCode" toml:"DisableAutoFireStatusCode"`
 
 	// TimeFormat time format for any kind of datetime parsing
 	// Defaults to  "Mon, 02 Jan 2006 15:04:05 GMT".
-	TimeFormat string `yaml:"TimeFormat" toml:"TimeFormat"`
+	TimeFormat string `json:"timeFormat,omitempty" yaml:"TimeFormat" toml:"TimeFormat"`
 
 	// Charset character encoding for various rendering
 	// used for templates and the rest of the responses
 	// Defaults to "UTF-8".
-	Charset string `yaml:"Charset" toml:"Charset"`
+	Charset string `json:"charset,omitempty" yaml:"Charset" toml:"Charset"`
 
 	//  +----------------------------------------------------+
 	//  | Context's keys for values used on various featuers |
@@ -359,11 +362,11 @@ type Configuration struct {
 	// currently we have only one: https://github.com/kataras/iris/tree/master/middleware/i18n.
 	//
 	// Defaults to "iris.translate" and "iris.language"
-	TranslateFunctionContextKey string `yaml:"TranslateFunctionContextKey" toml:"TranslateFunctionContextKey"`
+	TranslateFunctionContextKey string `json:"translateFunctionContextKey,omitempty" yaml:"TranslateFunctionContextKey" toml:"TranslateFunctionContextKey"`
 	// TranslateLanguageContextKey used for i18n.
 	//
 	// Defaults to "iris.language"
-	TranslateLanguageContextKey string `yaml:"TranslateLanguageContextKey" toml:"TranslateLanguageContextKey"`
+	TranslateLanguageContextKey string `json:"translateLanguageContextKey,omitempty" yaml:"TranslateLanguageContextKey" toml:"TranslateLanguageContextKey"`
 
 	// GetViewLayoutContextKey is the key of the context's user values' key
 	// which is being used to set the template
@@ -371,13 +374,13 @@ type Configuration struct {
 	// Overrides the parent's or the configuration's.
 	//
 	// Defaults to "iris.ViewLayout"
-	ViewLayoutContextKey string `yaml:"ViewLayoutContextKey" toml:"ViewLayoutContextKey"`
+	ViewLayoutContextKey string `json:"viewLayoutContextKey,omitempty" yaml:"ViewLayoutContextKey" toml:"ViewLayoutContextKey"`
 	// GetViewDataContextKey is the key of the context's user values' key
 	// which is being used to set the template
 	// binding data from a middleware or the main handler.
 	//
 	// Defaults to "iris.viewData"
-	ViewDataContextKey string `yaml:"ViewDataContextKey" toml:"ViewDataContextKey"`
+	ViewDataContextKey string `json:"viewDataContextKey,omitempty" yaml:"ViewDataContextKey" toml:"ViewDataContextKey"`
 	// RemoteAddrHeaders returns the allowed request headers names
 	// that can be valid to parse the client's IP based on.
 	//
@@ -387,13 +390,13 @@ type Configuration struct {
 	// "CF-Connecting-IP": false
 	//
 	// Look `context.RemoteAddr()` for more.
-	RemoteAddrHeaders map[string]bool `yaml:"RemoteAddrHeaders" toml:"RemoteAddrHeaders"`
+	RemoteAddrHeaders map[string]bool `json:"remoteAddrHeaders,omitempty" yaml:"RemoteAddrHeaders" toml:"RemoteAddrHeaders"`
 
 	// Other are the custom, dynamic options, can be empty.
 	// This field used only by you to set any app's options you want
 	// or by custom adaptors, it's a way to simple communicate between your adaptors (if any)
 	// Defaults to a non-nil empty map.
-	Other map[string]interface{} `yaml:"Other" toml:"Other"`
+	Other map[string]interface{} `json:"other,omitempty" yaml:"Other" toml:"Other"`
 }
 
 var _ context.ConfigurationReadOnly = &Configuration{}

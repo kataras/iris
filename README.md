@@ -1,5 +1,9 @@
 # ![Logo created by @santoshanand](logo_white_35_24.png) Iris [![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=flat-square)](https://travis-ci.org/kataras/iris)[![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=flat-square)](http://goreportcard.com/report/kataras/iris)[![github closed issues](https://img.shields.io/github/issues-closed-raw/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/issues?q=is%3Aissue+is%3Aclosed)[![release](https://img.shields.io/github/release/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/releases)[![view examples](https://img.shields.io/badge/learn%20by-examples-0077b3.svg?style=flat-square)](https://github.com/kataras/iris/tree/master/_examples)[![chat](https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square)](https://kataras.rocket.chat/channel/iris)[![CLA assistant](https://cla-assistant.io/readme/badge/kataras/iris?style=flat-square)](https://cla-assistant.io/kataras/iris)
 
+<a target='_blank' rel='nofollow' href='https://app.codesponsor.io/link/Qw6E1MTHvUJW6BtwUUf9qwsy/kataras/iris'>
+  <img alt='Sponsor' width='888' height='68' src='https://app.codesponsor.io/embed/Qw6E1MTHvUJW6BtwUUf9qwsy/kataras/iris.svg' />
+</a>
+
 Iris is a fast, simple and efficient web framework for Go.
 
 Iris provides a beautifully expressive and easy to use foundation for your next website, API, or distributed app.
@@ -16,6 +20,8 @@ Learn what [others say about Iris](https://www.youtube.com/watch?v=jGx0LkuUs4A) 
 _Updated at: [Friday, 29 September 2017](_benchmarks)_
 </details>
 
+## Built with ♥️
+
 We have no doubt you will able to find other web frameworks written in Go
 and even put up a real fight to learn and use them for quite some time but
 make no mistake, sooner or later you will be using Iris, not because of the ergonomic, high-performant solution that it provides but its well-documented unique features, as these will transform you to a real rockstar geek.
@@ -27,24 +33,16 @@ you can find online.
 
 Iris may have reached version 8, but we're not stopping there. We have many feature ideas on our board that we're anxious to add and other innovative web development solutions that we're planning to build into Iris.
 
-## Built with ♥️
-
-<a target='_blank' rel='nofollow' href='https://app.codesponsor.io/link/Qw6E1MTHvUJW6BtwUUf9qwsy/kataras/iris'>
-  <img alt='Sponsor' width='700' height='60' src='https://app.codesponsor.io/embed/Qw6E1MTHvUJW6BtwUUf9qwsy/kataras/iris.svg' />
-</a>
-
 Accelerated by [KeyCDN](https://www.keycdn.com/), a simple, fast and reliable CDN.
 
 We are developing this project using the best code editor for Golang; [Visual Studio Code](https://code.visualstudio.com/) supported by [Microsoft](https://www.microsoft.com).
-
-Iris was built on top of the the [net/http](https://golang.org/pkg/net/http/) package, we own many thanks to [Brad Fitzpatrick](https://github.com/bradfitz) for that.
 
 If you're coming from [nodejs](https://nodejs.org) world, Iris is the [expressjs](https://github.com/expressjs/express) equivalent for Gophers.
 
 ## Table Of Content
 
 * [Installation](#installation)
-* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#th-26-october-2017--v854)
+* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#tu-02-november-2017--v855)
 * [Getting started](#getting-started)
 * [Learn](_examples/)
     * [MVC (Model View Controller)](_examples/#mvc) **NEW**
@@ -80,7 +78,7 @@ If you're coming from [nodejs](https://nodejs.org) world, Iris is the [expressjs
 
 ## Installation
 
-The only requirement is the [Go Programming Language](https://golang.org/dl/), at least version 1.9
+The only requirement is the [Go Programming Language](https://golang.org/dl/)
 
 ```sh
 $ go get -u github.com/kataras/iris

@@ -14,7 +14,7 @@ import (
 // DefaultFileMode used as the default database's "fileMode"
 // for creating the sessions directory path, opening and write the session file.
 var (
-	DefaultFileMode = 0666
+	DefaultFileMode = 0755
 )
 
 // Database the badger(key-value file-based) session storage.
@@ -23,7 +23,6 @@ type Database struct {
 	// it's initialized at `New` or `NewFromDB`.
 	// Can be used to get stats.
 	Service *badger.DB
-	async   bool
 }
 
 // New creates and returns a new badger(key-value file-based) storage
@@ -109,10 +108,9 @@ func (db *Database) Cleanup() (err error) {
 	return rep.Return()
 }
 
-// Async if true passed then it will use different
-// go routines to update the badger(key-value file-based) storage.
+// Async is DEPRECATED
+// if it was true then it could use different to update the back-end storage, now it does nothing.
 func (db *Database) Async(useGoRoutines bool) *Database {
-	db.async = useGoRoutines
 	return db
 }
 
@@ -146,11 +144,7 @@ func (db *Database) Load(sid string) (storeDB sessions.RemoteStore) {
 
 // Sync syncs the database with the session's (memory) store.
 func (db *Database) Sync(p sessions.SyncPayload) {
-	if db.async {
-		go db.sync(p)
-	} else {
-		db.sync(p)
-	}
+	db.sync(p)
 }
 
 func (db *Database) sync(p sessions.SyncPayload) {

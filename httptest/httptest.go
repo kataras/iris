@@ -84,7 +84,8 @@ func New(t *testing.T, app *iris.Application, setters ...OptionSetter) *httpexpe
 		setter.Set(conf)
 	}
 
-	// disable the logger
+	// set the logger or disable it (default) and disable the updater (for any case).
+	app.Configure(iris.WithoutVersionChecker)
 	app.Logger().SetLevel(conf.LogLevel)
 	app.Build()
 

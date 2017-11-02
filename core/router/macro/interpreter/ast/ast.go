@@ -2,6 +2,7 @@ package ast
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 )
 
@@ -49,6 +50,40 @@ const (
 	// Declaration: /mypath/{myparam:path}
 	ParamTypePath
 )
+
+// Not because for a single reason
+// a string may be a
+// ParamTypeString or a ParamTypeFile
+// or a ParamTypePath or ParamTypeAlphabetical.
+//
+// func ParamTypeFromStd(k reflect.Kind) ParamType {
+
+// Kind returns the std kind of this param type.
+func (pt ParamType) Kind() reflect.Kind {
+	switch pt {
+	case ParamTypeAlphabetical:
+		fallthrough
+	case ParamTypeFile:
+		fallthrough
+	case ParamTypePath:
+		fallthrough
+	case ParamTypeString:
+		return reflect.String
+	case ParamTypeInt:
+		return reflect.Int
+	case ParamTypeLong:
+		return reflect.Int64
+	case ParamTypeBoolean:
+		return reflect.Bool
+	}
+	return reflect.Invalid // 0
+}
+
+// Assignable returns true if the "k" standard type
+// is assignabled to this ParamType.
+func (pt ParamType) Assignable(k reflect.Kind) bool {
+	return pt.Kind() == k
+}
 
 var paramTypes = map[string]ParamType{
 	"string":       ParamTypeString,
