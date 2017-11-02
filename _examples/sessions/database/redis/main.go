@@ -22,8 +22,6 @@ func main() {
 		IdleTimeout: service.DefaultRedisIdleTimeout,
 		Prefix:      ""}) // optionally configure the bridge between your redis server
 
-	// use go routines to query the database
-	db.Async(true)
 	// close connection when control+C/cmd+C
 	iris.RegisterOnInterrupt(func() {
 		db.Close()
