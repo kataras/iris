@@ -17,7 +17,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
-	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -1056,7 +1055,7 @@ func (ctx *context) Proceed(h Handler) bool {
 
 // HandlerName returns the current handler's name, helpful for debugging.
 func (ctx *context) HandlerName() string {
-	return runtime.FuncForPC(reflect.ValueOf(ctx.handlers[ctx.currentHandlerIndex]).Pointer()).Name()
+	return HandlerName(ctx.handlers[ctx.currentHandlerIndex])
 }
 
 // Do sets the handler index to zero, executes the first handler

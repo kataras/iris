@@ -23,15 +23,17 @@ func CheckForUpdates() {
 	updateAvailale := v.Compare(Version) == version.Smaller
 
 	if updateAvailale {
-		has, ft := hasInternetConnection()
-		canUpdate := (has && ft && ask()) || !has || !ft
-		if canUpdate {
-			installVersion(v)
+		if confirmUpdate(v) {
+			has, ft := hasInternetConnection()
+			canUpdate := (has && ft && ask()) || !has || !ft
+			if canUpdate {
+				installVersion()
+			}
 		}
 	}
 }
 
-func installVersion(v version.Version) {
+func confirmUpdate(v version.Version) bool {
 	// on help? when asking for installing the new update
 	// and when answering "No".
 	ignoreUpdatesMsg := "Would you like to ignore future updates? Disable the version checker via:\napp.Run(..., iris.WithoutVersionChecker)"
@@ -47,25 +49,23 @@ func installVersion(v version.Version) {
 		Message: shouldUpdateNowMsg,
 		Help:    ignoreUpdatesMsg,
 	}, &confirmUpdate, nil)
+	return confirmUpdate // it's true only when update was available and user typed "yes".
+}
 
-	// run the updater last, so the user can star the repo and at the same time
-	// the app will update her/his local iris.
-	if confirmUpdate { // it's true only when update was available and user typed "yes".
-		repo := "github.com/kataras/iris/..."
-		cmd := exec.Command("go", "get", "-u", "-v", repo)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stdout
+func installVersion() {
+	golog.Infof("Downloading...\n")
+	repo := "github.com/kataras/iris/..."
+	cmd := exec.Command("go", "get", "-u", "-v", repo)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stdout
 
-		if err := cmd.Run(); err != nil {
-			golog.Warnf("unexpected message while trying to go get,\nif you edited the original source code then you've to remove the whole $GOPATH/src/github.com/kataras folder and execute `go get -u github.com/kataras/iris/...` manually\n%v", err)
-			return
-		}
-
-		golog.Infof("Update process finished.\nManual rebuild and restart is required to apply the changes...\n")
+	if err := cmd.Run(); err != nil {
+		golog.Warnf("unexpected message while trying to go get,\nif you edited the original source code then you've to remove the whole $GOPATH/src/github.com/kataras folder and execute `go get -u github.com/kataras/iris/...` manually\n%v", err)
 		return
 	}
 
-	// if update was available but chosen not to update then just continue...
+	golog.Infof("Update process finished.\nManual rebuild and restart is required to apply the changes...\n")
+	return
 }
 
 /* Author's note:

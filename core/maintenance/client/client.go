@@ -10,7 +10,7 @@ import (
 	"github.com/kataras/iris/core/netutil"
 )
 
-const host = "http://live.iris-go.com"
+const host = "https://live.iris-go.com"
 
 // PostForm performs the PostForm with a secure client.
 func PostForm(p string, data url.Values) (*http.Response, error) {

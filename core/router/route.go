@@ -22,7 +22,8 @@ type Route struct {
 	beginHandlers context.Handlers
 	// Handlers are the main route's handlers, executed by order.
 	// Cannot be empty.
-	Handlers context.Handlers
+	Handlers        context.Handlers
+	mainHandlerName string
 	// temp storage, they're appended to the Handlers on build.
 	// Execution happens after Begin and main Handler(s), can be empty.
 	doneHandlers context.Handlers
@@ -36,7 +37,7 @@ type Route struct {
 // handlers and the macro container which all routes should share.
 // It parses the path based on the "macros",
 // handlers are being changed to validate the macros at serve time, if needed.
-func NewRoute(method, subdomain, unparsedPath string,
+func NewRoute(method, subdomain, unparsedPath, mainHandlerName string,
 	handlers context.Handlers, macros *macro.Map) (*Route, error) {
 
 	tmpl, err := macro.Parse(unparsedPath, macros)
@@ -54,13 +55,14 @@ func NewRoute(method, subdomain, unparsedPath string,
 	formattedPath := formatPath(path)
 
 	route := &Route{
-		Name:          defaultName,
-		Method:        method,
-		Subdomain:     subdomain,
-		tmpl:          tmpl,
-		Path:          path,
-		Handlers:      handlers,
-		FormattedPath: formattedPath,
+		Name:            defaultName,
+		Method:          method,
+		Subdomain:       subdomain,
+		tmpl:            tmpl,
+		Path:            path,
+		Handlers:        handlers,
+		mainHandlerName: mainHandlerName,
+		FormattedPath:   formattedPath,
 	}
 	return route, nil
 }
@@ -203,6 +205,27 @@ func (r Route) ResolvePath(args ...string) string {
 	return formattedPath
 }
 
+// Trace returns some debug infos as a string sentence.
+// Should be called after Build.
+func (r Route) Trace() string {
+	printfmt := fmt.Sprintf("%s:", r.Method)
+	if r.Subdomain != "" {
+		printfmt += fmt.Sprintf(" %s", r.Subdomain)
+	}
+	printfmt += fmt.Sprintf(" %s ", r.Tmpl().Src)
+	if l := len(r.Handlers); l > 1 {
+		printfmt += fmt.Sprintf("-> %s() and %d more", r.mainHandlerName, l-1)
+	} else {
+		printfmt += fmt.Sprintf("-> %s()", r.mainHandlerName)
+	}
+
+	// printfmt := fmt.Sprintf("%s: %s >> %s", r.Method, r.Subdomain+r.Tmpl().Src, r.mainHandlerName)
+	// if l := len(r.Handlers); l > 0 {
+	// 	printfmt += fmt.Sprintf(" and %d more", l)
+	// }
+	return printfmt // without new line.
+}
+
 type routeReadOnlyWrapper struct {
 	*Route
 }
@@ -221,4 +244,8 @@ func (rd routeReadOnlyWrapper) Subdomain() string {
 
 func (rd routeReadOnlyWrapper) Path() string {
 	return rd.Route.tmpl.Src
+}
+
+func (rd routeReadOnlyWrapper) Trace() string {
+	return rd.Route.Trace()
 }
