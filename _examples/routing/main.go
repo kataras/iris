@@ -141,6 +141,7 @@ func h(ctx iris.Context) {
 
 func main() {
 	app := newApp()
+	app.Logger().SetLevel("debug")
 
 	/*
 		// GET

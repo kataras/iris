@@ -1,44 +1,40 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/kataras/iris"
-
 	"github.com/kataras/iris/middleware/recaptcha"
 )
 
-// publicDataSiteKey and secretKey and should be obtained by https://www.google.com/recaptcha.
+// keys should be obtained by https://www.google.com/recaptcha
 const (
-	publicDataSiteKey = ""
-	secretKey         = ""
+	recaptchaPublic = ""
+	recaptchaSecret = ""
 )
+
+func showRecaptchaForm(ctx iris.Context, path string) {
+	ctx.HTML(recaptcha.GetFormHTML(recaptchaPublic, path))
+}
 
 func main() {
 	app := iris.New()
 
-	r := recaptcha.New(secretKey)
+	// On both Get and Post on this example, so you can easly
+	// use a single route to show a form and the main subject if recaptcha's validation result succeed.
+	app.HandleMany("GET POST", "/", func(ctx iris.Context) {
+		if ctx.Method() == iris.MethodGet {
+			showRecaptchaForm(ctx, "/")
+			return
+		}
 
-	app.Get("/comment", showRecaptchaForm)
+		result := recaptcha.SiteFerify(ctx, recaptchaSecret)
+		if !result.Success {
+			/* redirect here if u want or do nothing */
+			ctx.HTML("<b> failed please try again </b>")
+			return
+		}
 
-	// pass the middleware before the main handler or use the `recaptcha.SiteVerify`.
-	app.Post("/comment", r, postComment)
+		ctx.Writef("succeed.")
+	})
 
 	app.Run(iris.Addr(":8080"))
-}
-
-var htmlForm = `<form action="/comment" method="POST">
-	    <script src="https://www.google.com/recaptcha/api.js"></script>
-		<div class="g-recaptcha" data-sitekey="%s"></div>
-    	<input type="submit" name="button" value="Verify">
-</form>`
-
-func showRecaptchaForm(ctx iris.Context) {
-	contents := fmt.Sprintf(htmlForm, publicDataSiteKey)
-	ctx.HTML(contents)
-}
-
-func postComment(ctx iris.Context) {
-	// [...]
-	ctx.JSON(iris.Map{"success": true})
 }

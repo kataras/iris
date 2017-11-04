@@ -425,7 +425,10 @@ func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 	}
 
 	su.IgnoredErrors = append(su.IgnoredErrors, app.config.IgnoreServerErrors...)
-	app.logger.Debugf("Host: server will ignore the following errors: %s", su.IgnoredErrors)
+	if len(su.IgnoredErrors) > 0 {
+		app.logger.Debugf("Host: server will ignore the following errors: %s", su.IgnoredErrors)
+	}
+
 	su.Configure(app.hostConfigurators...)
 
 	app.Hosts = append(app.Hosts, su)

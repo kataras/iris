@@ -1,5 +1,10 @@
 package context
 
+import (
+	"reflect"
+	"runtime"
+)
+
 // A Handler responds to an HTTP request.
 // It writes reply headers and data to the Context.ResponseWriter() and then return.
 // Returning signals that the request is finished;
@@ -20,3 +25,12 @@ type Handler func(Context)
 //
 // See `Handler` for more.
 type Handlers []Handler
+
+// HandlerName returns the name, the handler function informations.
+// Same as `context.HandlerName`.
+func HandlerName(h Handler) string {
+	pc := reflect.ValueOf(h).Pointer()
+	// l, n := runtime.FuncForPC(pc).FileLine(pc)
+	// return fmt.Sprintf("%s:%d", l, n)
+	return runtime.FuncForPC(pc).Name()
+}

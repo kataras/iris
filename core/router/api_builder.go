@@ -146,6 +146,13 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 	}
 
 	fullpath := api.relativePath + relativePath // for now, keep the last "/" if any,  "/xyz/"
+	if len(handlers) == 0 {
+		api.reporter.Add("missing handlers for route %s: %s", method, fullpath)
+		return nil
+	}
+
+	// before join the middleware + handlers + done handlers.
+	possibleMainHandlerName := context.HandlerName(handlers[0])
 
 	// global begin handlers -> middleware that are registered before route registration
 	// -> handlers that are passed to this Handle function.
@@ -158,7 +165,7 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 	// here we separate the subdomain and relative path
 	subdomain, path := splitSubdomainAndPath(fullpath)
 
-	r, err := NewRoute(method, subdomain, path, routeHandlers, api.macros)
+	r, err := NewRoute(method, subdomain, path, possibleMainHandlerName, routeHandlers, api.macros)
 	if err != nil { // template path parser errors:
 		api.reporter.Add("%v -> %s:%s:%s", err, method, subdomain, path)
 		return nil
