@@ -1,7 +1,7 @@
 # Articles
 
-- [How to build a file upload form using DropzoneJS and Go](https://dev.to/kataras/dropzonejs--go-series---part-1-474)
-- [How to display existing files on server using DropzoneJS and Go](https://dev.to/kataras/dropzonejs--go-series---part-2-4n1)
+* [How to build a file upload form using DropzoneJS and Go](https://hackernoon.com/how-to-build-a-file-upload-form-using-dropzonejs-and-go-8fb9f258a991)
+* [How to display existing files on server using DropzoneJS and Go](https://hackernoon.com/how-to-display-existing-files-on-server-using-dropzonejs-and-go-53e24b57ba19)
 
 # Content
 

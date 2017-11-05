@@ -42,7 +42,7 @@ If you're coming from [nodejs](https://nodejs.org) world, Iris is the [expressjs
 ## Table Of Content
 
 * [Installation](#installation)
-* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#tu-02-november-2017--v855)
+* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#su-05-november-2017--v856)
 * [Getting started](#getting-started)
 * [Learn](_examples/)
     * [MVC (Model View Controller)](_examples/#mvc) **NEW**
@@ -74,7 +74,7 @@ If you're coming from [nodejs](https://nodejs.org) world, Iris is the [expressjs
 * [Dockerize](https://github.com/iris-contrib/cloud-native-go)
 * [Contributing](CONTRIBUTING.md)
 * [FAQ](FAQ.md)
-* [What's next?](#you-are-ready-to-move-to-the-next-step-and-get-closer-to-becoming-a-pro-gopher)
+* [What's next?](#now-you-are-ready-to-move-to-the-next-step-and-get-closer-to-becoming-a-pro-gopher)
 * [People](#people)
 
 ## Installation

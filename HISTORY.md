@@ -17,6 +17,18 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris` or let the automatic updater do that for you.
 
+# Su, 05 November 2017 | v8.5.6
+
+- **DEPRECATE** the `app.StaticServe`, use `app.StaticWeb` which does the same thing but better or `iris/app.StaticHandler` which gives you more options to work on.
+- add some debug messages for route registrations, to be aligned with the mvc debug messages.
+- improve the https://iris-go.com/v8/recipe  -- now you can see other files like assets as well -- lexical order of categories instead of "level".
+- add [8 more examples](_examples/tree/master/experimental-handlers) to this repository, originally lived at https://github.com/iris-contrib/middleware and https://github.com/iris-contrib/examples/tree/master/experimental-handlers.
+
+_TODO;_ 
+
+- [ ] give the ability to customize the mvc path-method-and path parameters mapping,
+- [ ] make a github bot which will post the monthly usage and even earnings statistics in a public github markdown file, hope that users will love that type of transparency we will introduce here.
+
 # Tu, 02 November 2017 | v8.5.5
 
 - fix [audio/mpeg3 does not appear to be a valid registered mime type#798](https://github.com/kataras/iris/issues/798]) reported by @kryptodev,

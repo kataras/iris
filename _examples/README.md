@@ -263,7 +263,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) files to
 
 - [Basic Authentication](authentication/basicauth/main.go)
 - [OAUth2](authentication/oauth2/main.go)
-- [JWT](https://github.com/iris-contrib/middleware/blob/master/jwt/_example/main.go)
+- [JWT](experimental-handlers/jwt/main.go)
 - [Sessions](#sessions)
 
 ### File Server
@@ -306,6 +306,18 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) files to
 - [Profiling (pprof)](miscellaneous/pprof/main.go)
 - [Internal Application File Logger](miscellaneous/file-logger/main.go)
 - [Google reCAPTCHA](miscellaneous/recaptcha/main.go)
+
+### Experimental Handlers
+
+* [Casbin wrapper](experimental-handlers/casbin/wrapper/main.go)
+* [Casbin middleware](experimental-handlers/casbin/middleware/main.go)
+* [Cloudwatch](experimental-handlers/cloudwatch/simple/main.go)
+* [CORS](experimental-handlers/cors/simple/main.go)
+* [JWT](experimental-handlers/jwt/main.go)
+* [Newrelic](experimental-handlers/newrelic/simple/main.go)
+* [Prometheus](experimental-handlers/prometheus/simple/main.go)
+* [Secure](experimental-handlers/secure/simple/main.go)
+* [Tollboothic](experimental-handlers/tollboothic/limit-handler/main.go)
 
 #### More
 

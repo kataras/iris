@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 
 	"github.com/betacraft/yaag/irisyaag"
 	"github.com/betacraft/yaag/yaag"
@@ -27,21 +26,21 @@ func main() {
 	})
 	app.Use(irisyaag.New()) // <- IMPORTANT, register the middleware.
 
-	app.Get("/json", func(ctx context.Context) {
-		ctx.JSON(context.Map{"result": "Hello World!"})
+	app.Get("/json", func(ctx iris.Context) {
+		ctx.JSON(iris.Map{"result": "Hello World!"})
 	})
 
-	app.Get("/plain", func(ctx context.Context) {
+	app.Get("/plain", func(ctx iris.Context) {
 		ctx.Text("Hello World!")
 	})
 
-	app.Get("/xml", func(ctx context.Context) {
+	app.Get("/xml", func(ctx iris.Context) {
 		ctx.XML(myXML{Result: "Hello World!"})
 	})
 
-	app.Get("/complex", func(ctx context.Context) {
+	app.Get("/complex", func(ctx iris.Context) {
 		value := ctx.URLParam("key")
-		ctx.JSON(context.Map{"value": value})
+		ctx.JSON(iris.Map{"value": value})
 	})
 
 	// Run our HTTP Server.
