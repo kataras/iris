@@ -2,5 +2,5 @@
 
 - [Basic Authentication](basicauth/main.go)
 - [OAUth2](oauth2/main.go)
-- [JWT](https://github.com/iris-contrib/middleware/blob/master/jwt/_example/main.go)
+- [JWT](https://github.com/kataras/iris/blob/master/_examples/experimental-handlers/jwt/main.go)
 - [Sessions](https://github.com/kataras/iris/tree/master/_examples/#sessions)
