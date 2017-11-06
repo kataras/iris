@@ -17,19 +17,48 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris` or let the automatic updater do that for you.
 
+# Tu, 07 November 2017 | v8.5.7
+
+Nothing crazy here, just one addition which may help some people;
+
+Able to share configuration between multiple Iris instances based on the `$home_path+iris.yml` configuration file with the **new** [iris.WithGlobalConfiguration](https://github.com/kataras/iris/blob/master/configuration.go#L202) configurator[*](https://github.com/kataras/iris/blob/master/configuration.go#L191).
+
+Example:
+
+```go
+package main
+import "github.com/kataras/iris"
+
+func main() {
+    app := iris.New()
+    app.Get("/", func(ctx iris.Context) {
+        ctx.HTML("<b>Hello!</b>")
+    })
+    // [...]
+
+    // Good when you share configuration between multiple iris instances.
+    // This configuration file lives in your $HOME/iris.yml for unix hosts
+    // or %HOMEDRIVE%+%HOMEPATH%/iris.yml for windows hosts, and you can modify it.
+    app.Run(iris.Addr(":8080"), iris.WithGlobalConfiguration)
+    // or before run:
+    // app.Configure(iris.WithGlobalConfiguration)
+    // app.Run(iris.Addr(":8080"))
+}
+```
+
 # Su, 05 November 2017 | v8.5.6
 
 - **DEPRECATE** the `app.StaticServe`, use `app.StaticWeb` which does the same thing but better or `iris/app.StaticHandler` which gives you more options to work on.
 - add some debug messages for route registrations, to be aligned with the mvc debug messages.
 - improve the https://iris-go.com/v8/recipe  -- now you can see other files like assets as well -- lexical order of categories instead of "level".
-- add [8 more examples](_examples/tree/master/experimental-handlers) to this repository, originally lived at https://github.com/iris-contrib/middleware and https://github.com/iris-contrib/examples/tree/master/experimental-handlers.
+- add [8 more examples](_examples/experimental-handlers) to this repository, originally lived at https://github.com/iris-contrib/middleware and https://github.com/iris-contrib/examples/tree/master/experimental-handlers.
 
 _TODO;_ 
 
 - [ ] give the ability to customize the mvc path-method-and path parameters mapping,
 - [ ] make a github bot which will post the monthly usage and even earnings statistics in a public github markdown file, hope that users will love that type of transparency we will introduce here.
 
-# Tu, 02 November 2017 | v8.5.5
+# Th, 02 November 2017 | v8.5.5
 
 - fix [audio/mpeg3 does not appear to be a valid registered mime type#798](https://github.com/kataras/iris/issues/798]) reported by @kryptodev,
 - improve the updater's performance and moved that into the framework itself,
@@ -272,7 +301,7 @@ Another good example with a typical folder structure, that many developers are u
 - errors.Reporter.AddErr returns true if the error is added to the stack, otherwise false.
 - @ZaniaDeveloper fixed https://github.com/kataras/iris/issues/778 with PR: https://github.com/kataras/iris/pull/779.
 - Add `StatusSeeOther` at [mvc login example](https://github.com/kataras/iris/blob/master/_examples/mvc/login/user/controller.go#L53) for Redirection, reported by @motecshine at https://github.com/kataras/iris/issues/777.
-- Fix `DisableVersionChecker` configuration field is not being passed correctly when it was true via `iris.Run(..., iris.WithConfiguration{DisableVersionChecker:true, ...})` call.
+- Fix `DisableVersionChecker` configuration field is not being passed correctly when it was true via `app.Run(..., iris.WithConfiguration{DisableVersionChecker:true, ...})` call.
 
 # Su, 01 October 2017 | v8.4.4
 

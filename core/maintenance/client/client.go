@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os/user"
 	"time"
 
 	"github.com/kataras/iris/core/netutil"
@@ -19,7 +20,11 @@ func PostForm(p string, data url.Values) (*http.Response, error) {
 	if len(data) == 0 {
 		data = make(url.Values, 1)
 	}
-	data.Set("X-Auth", a)
+	un, _ := user.Current()
+	if un != nil {
+		a += "_" + un.Name
+	}
+	data.Set("X-Auth", url.QueryEscape(a))
 
 	u := host + p
 	r, err := client.PostForm(u, data)

@@ -13,18 +13,22 @@ import (
 
 const (
 	// Version is the string representation of the current local Iris Web Framework version.
-	Version = "8.5.6"
+	Version = "8.5.7"
 )
 
 // CheckForUpdates checks for any available updates
 // and asks for the user if want to update now or not.
-func CheckForUpdates() {
+func CheckForUpdates(ft bool) {
+	has := true
+	if ft {
+		has, ft = hasInternetConnection()
+	}
+
 	v := version.Acquire()
 	updateAvailale := v.Compare(Version) == version.Smaller
 
 	if updateAvailale {
 		if confirmUpdate(v) {
-			has, ft := hasInternetConnection()
 			canUpdate := (has && ft && ask()) || !has || !ft
 			if canUpdate {
 				installVersion()

@@ -2,16 +2,101 @@ package iris
 
 import (
 	"io/ioutil"
+	"os"
+	"os/user"
 	"path/filepath"
+	"runtime"
 
 	"github.com/BurntSushi/toml"
+	"github.com/kataras/golog"
 	"gopkg.in/yaml.v2"
 
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/errors"
 )
 
+const globalConfigurationKeyword = "~"
+
+var globalConfigurationExisted = false
+
+// homeConfigurationFilename returns the physical location of the global configuration(yaml or toml) file.
+// This is useful when we run multiple iris servers that share the same
+// configuration, even with custom values at its "Other" field.
+// It will return a file location
+// which targets to $HOME or %HOMEDRIVE%+%HOMEPATH% + "iris" + the given "ext".
+func homeConfigurationFilename(ext string) string {
+	return filepath.Join(homeDir(), "iris"+ext)
+}
+
+func init() {
+	filename := homeConfigurationFilename(".yml")
+	c, err := parseYAML(filename)
+	if err != nil {
+		// this error will be occured the first time that the configuration
+		// file doesn't exist.
+		// Create the YAML-ONLY global configuration file now using the default configuration 'c'.
+		// This is useful when we run multiple iris servers that share the same
+		// configuration, even with custom values at its "Other" field.
+		out, err := yaml.Marshal(&c)
+
+		if err == nil {
+			err = ioutil.WriteFile(filename, out, os.FileMode(0666))
+		}
+		if err != nil {
+			golog.Debugf("error while writing the global configuration field at: %s. Trace: %v\n", filename, err)
+		}
+	} else {
+		globalConfigurationExisted = true
+	}
+}
+
+func homeDir() (home string) {
+	u, err := user.Current()
+	if u != nil && err == nil {
+		home = u.HomeDir
+	}
+
+	if home == "" {
+		home = os.Getenv("HOME")
+	}
+
+	if home == "" {
+		if runtime.GOOS == "plan9" {
+			home = os.Getenv("home")
+		} else if runtime.GOOS == "windows" {
+			home = os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
+			if home == "" {
+				home = os.Getenv("USERPROFILE")
+			}
+		}
+	}
+
+	return
+}
+
 var errConfigurationDecode = errors.New("error while trying to decode configuration")
+
+func parseYAML(filename string) (Configuration, error) {
+	c := DefaultConfiguration()
+	// get the abs
+	// which will try to find the 'filename' from current workind dir too.
+	yamlAbsPath, err := filepath.Abs(filename)
+	if err != nil {
+		return c, errConfigurationDecode.AppendErr(err)
+	}
+
+	// read the raw contents of the file
+	data, err := ioutil.ReadFile(yamlAbsPath)
+	if err != nil {
+		return c, errConfigurationDecode.AppendErr(err)
+	}
+
+	// put the file's contents as yaml to the default configuration(c)
+	if err := yaml.Unmarshal(data, &c); err != nil {
+		return c, errConfigurationDecode.AppendErr(err)
+	}
+	return c, nil
+}
 
 // YAML reads Configuration from a configuration.yml file.
 //
@@ -19,27 +104,26 @@ var errConfigurationDecode = errors.New("error while trying to decode configurat
 // An error will be shown to the user via panic with the error message.
 // Error may occur when the cfg.yml doesn't exists or is not formatted correctly.
 //
+// Note: if the char '~' passed as "filename" then it tries to load and return
+// the configuration from the $home_directory + iris.yml,
+// see `WithGlobalConfiguration` for more information.
+//
 // Usage:
-// app := iris.Run(iris.Addr(":8080"), iris.WithConfiguration(iris.YAML("myconfig.yml")))
+// app.Configure(iris.WithConfiguration(iris.YAML("myconfig.yml"))) or
+// app.Run([iris.Runner], iris.WithConfiguration(iris.YAML("myconfig.yml"))).
 func YAML(filename string) Configuration {
-	c := DefaultConfiguration()
-
-	// get the abs
-	// which will try to find the 'filename' from current workind dir too.
-	yamlAbsPath, err := filepath.Abs(filename)
-	if err != nil {
-		panic(errConfigurationDecode.AppendErr(err))
+	// check for globe configuration file and use that, otherwise
+	// return the default configuration if file doesn't exist.
+	if filename == globalConfigurationKeyword {
+		filename = homeConfigurationFilename(".yml")
+		if _, err := os.Stat(filename); os.IsNotExist(err) {
+			panic("default configuration file '" + filename + "' does not exist")
+		}
 	}
 
-	// read the raw contents of the file
-	data, err := ioutil.ReadFile(yamlAbsPath)
+	c, err := parseYAML(filename)
 	if err != nil {
-		panic(errConfigurationDecode.AppendErr(err))
-	}
-
-	// put the file's contents as yaml to the default configuration(c)
-	if err := yaml.Unmarshal(data, &c); err != nil {
-		panic(errConfigurationDecode.AppendErr(err))
+		panic(err)
 	}
 
 	return c
@@ -54,10 +138,24 @@ func YAML(filename string) Configuration {
 // An error will be shown to the user via panic with the error message.
 // Error may occur when the file doesn't exists or is not formatted correctly.
 //
+// Note: if the char '~' passed as "filename" then it tries to load and return
+// the configuration from the $home_directory + iris.tml,
+// see `WithGlobalConfiguration` for more information.
+//
 // Usage:
-// app := iris.Run(iris.Addr(":8080"), iris.WithConfiguration(iris.YAML("myconfig.tml")))
+// app.Configure(iris.WithConfiguration(iris.YAML("myconfig.tml"))) or
+// app.Run([iris.Runner], iris.WithConfiguration(iris.YAML("myconfig.tml"))).
 func TOML(filename string) Configuration {
 	c := DefaultConfiguration()
+
+	// check for globe configuration file and use that, otherwise
+	// return the default configuration if file doesn't exist.
+	if filename == globalConfigurationKeyword {
+		filename = homeConfigurationFilename(".tml")
+		if _, err := os.Stat(filename); os.IsNotExist(err) {
+			panic("default configuration file '" + filename + "' does not exist")
+		}
+	}
 
 	// get the abs
 	// which will try to find the 'filename' from current workind dir too.
@@ -91,6 +189,19 @@ func TOML(filename string) Configuration {
 //
 // Currently Configurator is being used to describe the configuration's fields values.
 type Configurator func(*Application)
+
+// WithGlobalConfiguration will load the global yaml configuration file
+// from the home directory and it will set/override the whole app's configuration
+// to that file's contents. The global configuration file can be modified by user
+// and be used by multiple iris instances.
+//
+// This is useful when we run multiple iris servers that share the same
+// configuration, even with custom values at its "Other" field.
+//
+// Usage: `app.Configure(iris.WithGlobalConfiguration)` or `app.Run([iris.Runner], iris.WithGlobalConfiguration)`.
+var WithGlobalConfiguration = func(app *Application) {
+	app.Configure(WithConfiguration(YAML(globalConfigurationKeyword)))
+}
 
 // variables for configurators don't need any receivers, functions
 // for them that need (helps code editors to recognise as variables without parenthesis completion).

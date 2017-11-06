@@ -89,6 +89,19 @@ func TestConfigurationOptionsDeep(t *testing.T) {
 		t.Fatalf("DEEP configuration is not the same after New expected:\n %#v \ngot:\n %#v", expected, has)
 	}
 }
+func TestConfigurationGlobal(t *testing.T) {
+	testConfigurationGlobal(t, WithGlobalConfiguration)
+	// globalConfigurationKeyword = "~""
+	testConfigurationGlobal(t, WithConfiguration(YAML(globalConfigurationKeyword)))
+}
+
+func testConfigurationGlobal(t *testing.T, c Configurator) {
+	app := New().Configure(c)
+
+	if has, expected := *app.config, DefaultConfiguration(); !reflect.DeepEqual(has, expected) {
+		t.Fatalf("global configuration (which should be defaulted) is not the same with the default one:\n %#v \ngot:\n %#v", has, expected)
+	}
+}
 
 func TestConfigurationYAML(t *testing.T) {
 	yamlFile, ferr := ioutil.TempFile("", "configuration.yml")

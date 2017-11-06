@@ -42,7 +42,7 @@ If you're coming from [nodejs](https://nodejs.org) world, Iris is the [expressjs
 ## Table Of Content
 
 * [Installation](#installation)
-* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#su-05-november-2017--v856)
+* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#tu-07-november-2017--v857)
 * [Getting started](#getting-started)
 * [Learn](_examples/)
     * [MVC (Model View Controller)](_examples/#mvc) **NEW**

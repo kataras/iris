@@ -53,6 +53,7 @@ Structuring depends on your own needs. We can't tell you how to design your own 
 - [Functional](configuration/functional/main.go)
 - [From Configuration Struct](configuration/from-configuration-structure/main.go)
 - [Import from YAML file](configuration/from-yaml-file/main.go)
+    * [Share Configuration between multiple instances](configuration/from-yaml-file/shared-configuration/main.go)
 - [Import from TOML file](configuration/from-toml-file/main.go)
 
 ### Routing, Grouping, Dynamic Path Parameters, "Macros" and Custom Context
