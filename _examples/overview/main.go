@@ -39,8 +39,9 @@ func main() {
 		ctx.Next()
 	})
 	// app.Done(func(ctx iris.Context) {]})
-	app.Subdomain("wtf.").Post("/decode", func(ctx iris.Context) {})
-	app.Subdomain("wtf.").Post("/decode", func(ctx iris.Context) {})
+
+	// POST: scheme://mysubdomain.$domain.com/decode
+	app.Subdomain("mysubdomain.").Post("/decode", func(ctx iris.Context) {})
 	// Method POST: http://localhost:8080/decode
 	app.Post("/decode", func(ctx iris.Context) {
 		var user User
@@ -73,7 +74,7 @@ func main() {
 	}
 
 	// Listen for incoming HTTP/1.x & HTTP/2 clients on localhost port 8080.
-	app.Run(iris.Addr(":8080"), iris.WithCharset("UTF-8"))
+	app.Run(iris.Addr(":8080"), iris.WithCharset("UTF-8"), iris.WithoutVersionChecker)
 }
 
 func logThisMiddleware(ctx iris.Context) {
