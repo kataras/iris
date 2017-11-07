@@ -73,3 +73,37 @@ We're preparing the new version of the [Build A Better Web, Together](https://gi
 If you want to be part of this and you've time for collaboration, please open a new [issue](https://github.com/kataras/build-a-better-web-together/issues/new) and write some words about yourself and your overall experience at tech. At the end of the day you will be granded with `write access` in order to push your sections without our approval at all.
 
 All new contributors of that book will receive prizes!
+
+## Financial contributions
+
+We also welcome financial contributions in full transparency on our [open collective](https://opencollective.com/iris).
+Anyone can file an expense. If the expense makes sense for the development of the community, it will be "merged" in the ledger of our open collective by the core contributors and the person who filed the expense will be reimbursed.
+
+## Credits
+
+
+### Contributors
+
+Thank you to all the people who have already contributed to iris!
+<a href="graphs/contributors"><img src="https://opencollective.com/iris/contributors.svg?width=890" /></a>
+
+### Backers
+
+Thank you to all our backers! [Become a backer](https://opencollective.com/iris#backer)
+
+<a href="https://opencollective.com/iris#backers" target="_blank"><img src="https://opencollective.com/iris/backers.svg?width=890"></a>
+
+### Sponsors
+
+Thank you to all our sponsors! (please ask your company to also support this open source project by [becoming a sponsor](https://opencollective.com/iris#sponsor))
+
+<a href="https://opencollective.com/iris/sponsor/0/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/0/avatar.svg"></a>
+<a href="https://opencollective.com/iris/sponsor/1/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/1/avatar.svg"></a>
+<a href="https://opencollective.com/iris/sponsor/2/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/2/avatar.svg"></a>
+<a href="https://opencollective.com/iris/sponsor/3/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/3/avatar.svg"></a>
+<a href="https://opencollective.com/iris/sponsor/4/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/4/avatar.svg"></a>
+<a href="https://opencollective.com/iris/sponsor/5/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/5/avatar.svg"></a>
+<a href="https://opencollective.com/iris/sponsor/6/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/6/avatar.svg"></a>
+<a href="https://opencollective.com/iris/sponsor/7/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/7/avatar.svg"></a>
+<a href="https://opencollective.com/iris/sponsor/8/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/8/avatar.svg"></a>
+<a href="https://opencollective.com/iris/sponsor/9/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/9/avatar.svg"></a>
