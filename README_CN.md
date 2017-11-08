@@ -240,9 +240,16 @@ func (c *HelloWorldController) GetWelcomeBy(name string, numTimes int) {
 
 Every `exported` func prefixed with an HTTP Method(`Get`, `Post`, `Put`, `Delete`...) in a controller is callable as an HTTP endpoint. In the sample above, all funcs writes a string to the response. Note the comments preceding each method.
 
+在Web应用中一个HTTP访问的资源就是一个URL，比如`http://localhost:8080/helloworld`是由，HTTP协议、Web服务网络位置（包括TCP端口）：`localhost:8080`以及资源名称URI `/helloworld`组成的。
+
 An HTTP endpoint is a targetable URL in the web application, such as `http://localhost:8080/helloworld`, and combines the protocol used: HTTP, the network location of the web server (including the TCP port): `localhost:8080` and the target URI `/helloworld`.
 
+上面例子第一个方法映射到[HTTP GET](https://www.w3schools.com/tags/ref_httpmethods.asp)方法，访问资源是"/helloworld"，第三个方法映射到[HTTP GET](https://www.w3schools.com/tags/ref_httpmethods.asp)方法，访问资源是"/helloworld/welcome"
+
 The first comment states this is an [HTTP GET](https://www.w3schools.com/tags/ref_httpmethods.asp) method that is invoked by appending "/helloworld" to the base URL. The third comment specifies an [HTTP GET](https://www.w3schools.com/tags/ref_httpmethods.asp) method that is invoked by appending "/helloworld/welcome" to the URL.
+
+
+Controller在处理`GetBy`方法时可以识别‘name’参数，以及`GetWelcomeBy`方法时也可以识别‘name’和‘numTimes’参数，因为Controller在识别`By`关键字后可以动态灵活的处理路由；上面第四个方法指示使用 [HTTP GET](https://www.w3schools.com/tags/ref_httpmethods.asp)方法，而且只处理以"/helloworld/welcome"开头的资源位置路径，并且此路径还得包括两部分，第一部分类型没有限制，第二部分只能是数字类型，比如"http://localhost:8080/helloworld/welcome/golang/32719" 是合法的，其它的就会给客户端返回[404 找不到](https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.5)的提示
 
 Controller knows how to handle the "name" on `GetBy` or the "name" and "numTimes" at `GetWelcomeBy`, because of the `By` keyword, and builds the dynamic route without boilerplate; the third comment specifies an [HTTP GET](https://www.w3schools.com/tags/ref_httpmethods.asp) dynamic method that is invoked by any URL that starts with "/helloworld/welcome" and followed by two more path parts, the first one can accept any value and the second can accept only numbers, i,e: "http://localhost:8080/helloworld/welcome/golang/32719", otherwise a [404 Not Found HTTP Error](https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.5) will be sent to the client instead.
 
