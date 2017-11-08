@@ -28,31 +28,43 @@ _Updated at: [Friday, 29 September 2017](_benchmarks)_
 ## Built with ♥️
 ## Built with ♥️
 
-在发现Iris之前，我想你一定也看过其他Go Web开发框架，或许你已经摩拳擦掌并马上就要用上了，但我会很遗憾的告诉你，不管怎样，你将来还是会使用Iris的。不仅仅因为Iris性能卓越和使用简单，更重要的是Iris非常独特，他能让你成为真正的极客界的摇滚明星。
+在发现Iris之前，我想你一定也看过其它Go Web开发框架，或许你已经摩拳擦掌并马上就要用上了，但我会很遗憾的告诉你，不管怎样，你将来还是会使用Iris的。不仅仅因为Iris性能卓越和使用简单，更重要的是Iris非常独特，他能让你成为真正的极客界的摇滚明星。
 
 We have no doubt you will able to find other web frameworks written in Go
 and even put up a real fight to learn and use them for quite some time but
 make no mistake, sooner or later you will be using Iris, not because of the ergonomic, high-performant solution that it provides but its well-documented unique features, as these will transform you to a real rockstar geek.
+
+不管你是想开发微服务或者大型Web应用，Iris都能满足你的需求，Iris可能是你在网上能找到最好的Web后台开发软件了。
 
 No matter what you're trying to build, Iris covers 
 every type of application, from micro services to large monolithic web applications.
 It's actually the best piece of software for back-end web developers
 you can find online.
 
+Iris现在已经到第8版了，但是我们从未停止开发。有很多非常棒的功能已经提上开发日程了，而且我们非常乐意加入很多有创意的想法。
+
 Iris may have reached version 8, but we're not stopping there. We have many feature ideas on our board that we're anxious to add and other innovative web development solutions that we're planning to build into Iris.
+
+如果你想用CDN加速，我推荐用[KeyCDN](https://www.keycdn.com/)，因为KeyCDN简单、速度快而且稳定。
 
 Accelerated by [KeyCDN](https://www.keycdn.com/), a simple, fast and reliable CDN.
 
+我们用[微软](https://www.microsoft.com)开发的[Visual Studio Code](https://code.visualstudio.com/)来做为开发Golang的IDE。 
+
 We are developing this project using the best code editor for Golang; [Visual Studio Code](https://code.visualstudio.com/) supported by [Microsoft](https://www.microsoft.com).
+
+如果你之前使用[nodejs](https://nodejs.org)做开发，恭喜你，Iris使用基本和[expressjs](https://github.com/expressjs/express)一样。
 
 If you're coming from [nodejs](https://nodejs.org) world, Iris is the [expressjs](https://github.com/expressjs/express) equivalent for Gophers.
 
+## 内容列表
+
 ## Table Of Content
 
-* [Installation](#installation)
-* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#tu-07-november-2017--v857)
-* [Getting started](#getting-started)
-* [Learn](_examples/)
+* [安装](#installation)
+* [最近更新](https://github.com/kataras/iris/blob/master/HISTORY.md#tu-07-november-2017--v857)
+* [快速入门](#getting-started)
+* [进阶](_examples/)
     * [MVC (Model View Controller)](_examples/#mvc) **NEW**
     * [Structuring](_examples/#structuring) **NEW**
     * [HTTP Listening](_examples/#http-listening)
@@ -78,24 +90,26 @@ If you're coming from [nodejs](https://nodejs.org) world, Iris is the [expressjs
     * [Tutorial: Caddy](_examples/tutorial/caddy)
     * [Tutorial: DropzoneJS Uploader](https://hackernoon.com/how-to-build-a-file-upload-form-using-dropzonejs-and-go-8fb9f258a991)
     * [Tutorial:Iris Go Framework + MongoDB](https://medium.com/go-language/iris-go-framework-mongodb-552e349eab9c)
-* [Middleware](middleware/)
-* [Dockerize](https://github.com/iris-contrib/cloud-native-go)
-* [Contributing](CONTRIBUTING.md)
-* [FAQ](FAQ.md)
-* [What's next?](#now-you-are-ready-to-move-to-the-next-step-and-get-closer-to-becoming-a-pro-gopher)
-* [People](#people)
+* [中间件](middleware/)
+* [Docker例子](https://github.com/iris-contrib/cloud-native-go)
+* [贡献](CONTRIBUTING.md)
+* [常见问题](FAQ.md)
+* [更新计划?](#now-you-are-ready-to-move-to-the-next-step-and-get-closer-to-becoming-a-pro-gopher)
+* [人员](#people)
 
-## Installation
+## 安装
 
+仅仅依赖[Go语言](https://golang.org/dl/)
 The only requirement is the [Go Programming Language](https://golang.org/dl/)
 
 ```sh
 $ go get -u github.com/kataras/iris
 ```
+Iris使用[vendor](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo) 包依赖管理方式。vendor包管理的方式可以有效处理包依赖更新问题
 
 Iris takes advantage of the [vendor directory](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo) feature. You get truly reproducible builds, as this method guards against upstream renames and deletes.
 
-## Getting Started
+## 入门
 
 ```go
 package main
@@ -104,40 +118,37 @@ import "github.com/kataras/iris"
 
 func main() {
     app := iris.New()
-    // Load all templates from the "./views" folder
-    // where extension is ".html" and parse them
-    // using the standard `html/template` package.
+    // 从"./views"目录加载HTML模板
+    // 模板解析html后缀文件
+    // 此方式是用`html/template`标准包(Iris的模板引擎)
     app.RegisterView(iris.HTML("./views", ".html"))
 
-    // Method:    GET
-    // Resource:  http://localhost:8080
+    // HTTP方法： GET
+    // 路径：     http://localhost:8080
     app.Get("/", func(ctx iris.Context) {
-        // Bind: {{.message}} with "Hello world!"
+        // {{.message}} 和 "Hello world!" 字串绑定
         ctx.ViewData("message", "Hello world!")
-        // Render template file: ./views/hello.html
+        // 映射HTML模板文件路径 ./views/hello.html
         ctx.View("hello.html")
     })
 
-    // Method:    GET
-    // Resource:  http://localhost:8080/user/42
+    // HTTP方法:    GET
+    // 路径:  http://localhost:8080/user/42
     //
-    // Need to use a custom regexp instead?
-    // Easy;
-    // Just mark the parameter's type to 'string'
-    // which accepts anything and make use of
-    // its `regexp` macro function, i.e:
-    // app.Get("/user/{id:string regexp(^[0-9]+$)}")
+    // 想在路径中用正则吗？So easy!
+    // 如下所示
+    // app.Get("/user/{id:string regexp(^[0-9]+$)}")
     app.Get("/user/{id:long}", func(ctx iris.Context) {
         userID, _ := ctx.Params().GetInt64("id")
         ctx.Writef("User ID: %d", userID)
     })
 
-    // Start the server using a network address.
+    // 绑定端口并启动服务.
     app.Run(iris.Addr(":8080"))
 }
 ```
 
-> Learn more about path parameter's types by clicking [here](https://github.com/kataras/iris/blob/master/_examples/routing/dynamic-path/main.go#L31).
+> 想要了解更多关于路径参数配置，戳 [这里](https://github.com/kataras/iris/blob/master/_examples/routing/dynamic-path/main.go#L31).
 
 ```html
 <!-- file: ./views/hello.html -->
@@ -153,15 +164,16 @@ func main() {
 
 ```sh
 $ go run main.go
-> Now listening on: http://localhost:8080
-> Application started. Press CTRL+C to shut down.
+> 在这里监听服务: http://localhost:8080
+> 应用已经启动按键 CTRL+C 停止服务
 ```
 
-> Wanna re-start your app automatically when source code changes happens? Install the [rizla](https://github.com/kataras/rizla) tool and run `rizla main.go` instead of `go run main.go`.
+> 想要实现当代码改变后自动重启应用吗？那就装个[rizla](https://github.com/kataras/rizla)工具，启动go文件用 `rizla main.go` 来代替 `go run main.go`.
 
-Guidelines for bootstrapping applications can be found at the [_examples/structuring](_examples/#structuring).
+Iris的一些开发约定可以看看这里[_examples/structuring](_examples/#structuring)。
 
-### Quick MVC Tutorial
+
+### MVC指南
 
 ```go
 package main
@@ -218,9 +230,13 @@ func (c *HelloWorldController) GetWelcomeBy(name string, numTimes int) {
     // output arguments are optional of course so we don't have to use them here.
     c.Ctx.Writef("Hello %s, NumTimes is: %d", name, numTimes)
 }
+
 ```
+> [_examples/mvc](_examples/mvc) 和 [mvc/controller_test.go](https://github.com/kataras/iris/blob/master/mvc/controller_test.go) 两个简单的例子可以让你更好的了解 Iris MVC 的使用方式
 
 > The [_examples/mvc](_examples/mvc) and [mvc/controller_test.go](https://github.com/kataras/iris/blob/master/mvc/controller_test.go) files explain each feature with simple paradigms, they show how you can take advandage of the Iris MVC Binder, Iris MVC Models and many more...
+
+每一个在controller中导出的Go方法名都和HTTP方法(`Get`, `Post`, `Put`, `Delete`...) 一一对应
 
 Every `exported` func prefixed with an HTTP Method(`Get`, `Post`, `Put`, `Delete`...) in a controller is callable as an HTTP endpoint. In the sample above, all funcs writes a string to the response. Note the comments preceding each method.
 
