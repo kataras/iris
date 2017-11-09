@@ -478,7 +478,7 @@ var Movies = map[int64]datamodels.Movie{
 
 #### 数据仓库
 
-数据仓库层用来直接访问数据源
+数据仓库层直接访问数据源
 
 ```go
 // file: repositories/movie_repository.go
@@ -550,6 +550,12 @@ func (r *movieMemoryRepository) Exec(query Query, action Query, actionLimit int,
     return
 }
 
+// Select方法返回从模拟数据源找出的一个movie数据。
+// 当找到时就返回true，并停止迭代
+//
+// Select 将会返回查询到的最新找到的movie数据，这样可以减少代码量
+//
+// 自从我第一次想到用这种简单的原型函数后，我就经常用它了，希望这也对你有用
 // Select receives a query function
 // which is fired for every single movie model inside
 // our imaginary data source.
@@ -568,7 +574,8 @@ func (r *movieMemoryRepository) Select(query Query) (movie datamodels.Movie, fou
         return true
     }, 1, ReadOnlyMode)
 
-    // set an empty datamodels.Movie if not found at all.
+    // 如果没有找到就让datamodels.Movie为空
+    // set an empty datamodels.Movie if not found at all.
     if !found {
         movie = datamodels.Movie{}
     }
@@ -576,6 +583,8 @@ func (r *movieMemoryRepository) Select(query Query) (movie datamodels.Movie, fou
     return
 }
 
+//如果要查找很多值，用法基本一致，不过会返回datamodels.Movie slice。
+// 如果limit<=0，将返回全部数据
 // SelectMany same as Select but returns one or more datamodels.Movie as a slice.
 // If limit <=0 then it returns everything.
 func (r *movieMemoryRepository) SelectMany(query Query, limit int) (results []datamodels.Movie) {
@@ -587,15 +596,20 @@ func (r *movieMemoryRepository) SelectMany(query Query, limit int) (results []da
     return
 }
 
+//插入或跟新数据
 // InsertOrUpdate adds or updates a movie to the (memory) storage.
 //
+// 返回一个新的movie对象和error对象
 // Returns the new movie and an error if any.
 func (r *movieMemoryRepository) InsertOrUpdate(movie datamodels.Movie) (datamodels.Movie, error) {
     id := movie.ID
 
     if id == 0 { // Create new action
         var lastID int64
-        // find the biggest ID in order to not have duplications
+        // 为了数据不重复，找到最大的ID
+        // 生成环境你可以用第三方库生成一个UUID字串
+        
+        // find the biggest ID in order to not have duplications
         // in productions apps you can use a third-party
         // library to generate a UUID as string.
         r.mu.RLock()
@@ -616,8 +630,11 @@ func (r *movieMemoryRepository) InsertOrUpdate(movie datamodels.Movie) (datamode
 
         return movie, nil
     }
-
-    // Update action based on the movie.ID,
+    //通过movie.ID更新数据
+    //这里举个例子看如果更新poster和genre非空值
+    //其实我们可以直接更新对象r.source[id] = movie
+    //用Select的话如下所示
+    // Update action based on the movie.ID,
     // here we will allow updating the poster and genre if not empty.
     // Alternatively we could do pure replace instead:
     // r.source[id] = movie
@@ -626,11 +643,12 @@ func (r *movieMemoryRepository) InsertOrUpdate(movie datamodels.Movie) (datamode
         return m.ID == id
     })
 
-    if !exists { // ID is not a real one, return an error.
+    if !exists { // ID不存在，返回error ID is not a real one, return an error.
         return datamodels.Movie{}, errors.New("failed to update a nonexistent movie")
     }
 
-    // or comment these and r.source[id] = m for pure replace
+    // 或者直接对象操作替换
+    // or comment these and r.source[id] = m for pure replace
     if movie.Poster != "" {
         current.Poster = movie.Poster
     }
@@ -655,7 +673,9 @@ func (r *movieMemoryRepository) Delete(query Query, limit int) bool {
 }
 ```
 
-#### Services
+#### 服务层
+
+服务层主要调用“数据仓库”和“数据模型”的方法（即使是数据模型很简单的应用）。这一层将包含主要的数据处理逻辑。
 
 The layer which has access to call functions from the "repositories" and "models" (or even "datamodels" if simple application). It should contain the most of the domain logic.
 
@@ -669,6 +689,9 @@ import (
     "github.com/kataras/iris/_examples/mvc/overview/repositories"
 )
 
+// MovieService主要包括对movie的CRUID（增删改查）操作。
+// MovieService主要调用movie 数据仓库的方法。
+// 
 // MovieService handles some of the CRUID operations of the movie datamodel.
 // It depends on a movie repository for its actions.
 // It's here to decouple the data source from the higher level compoments.
