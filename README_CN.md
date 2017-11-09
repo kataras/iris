@@ -691,7 +691,10 @@ import (
 
 // MovieService主要包括对movie的CRUID（增删改查）操作。
 // MovieService主要调用movie 数据仓库的方法。
-// 
+// 下面例子的数据源是从更高级别的组件
+// 这样可以用同样的逻辑可以返回不同的数据仓库
+// MovieService是一个接口，任何实现的地方等能用，这样替换不同的业务逻辑可以用来测试
+
 // MovieService handles some of the CRUID operations of the movie datamodel.
 // It depends on a movie repository for its actions.
 // It's here to decouple the data source from the higher level compoments.
@@ -705,7 +708,7 @@ type MovieService interface {
     UpdatePosterAndGenreByID(id int64, poster string, genre string) (datamodels.Movie, error)
 }
 
-// NewMovieService returns the default movie service.
+// NewMovieService 返回一个 movie 服务.
 func NewMovieService(repo repositories.MovieRepository) MovieService {
     return &movieService{
         repo: repo,
@@ -716,21 +719,22 @@ type movieService struct {
     repo repositories.MovieRepository
 }
 
-// GetAll returns all movies.
+// GetAll 返回所有 movies.
 func (s *movieService) GetAll() []datamodels.Movie {
     return s.repo.SelectMany(func(_ datamodels.Movie) bool {
         return true
     }, -1)
 }
 
-// GetByID returns a movie based on its id.
+// GetByID 是通过id找到movie.
 func (s *movieService) GetByID(id int64) (datamodels.Movie, bool) {
     return s.repo.Select(func(m datamodels.Movie) bool {
         return m.ID == id
     })
 }
 
-// UpdatePosterAndGenreByID updates a movie's poster and genre.
+
+// UpdatePosterAndGenreByID 更新一个 movie的 poster 和 genre.
 func (s *movieService) UpdatePosterAndGenreByID(id int64, poster string, genre string) (datamodels.Movie, error) {
     // update the movie and return it.
     return s.repo.InsertOrUpdate(datamodels.Movie{
@@ -740,9 +744,9 @@ func (s *movieService) UpdatePosterAndGenreByID(id int64, poster string, genre s
     })
 }
 
-// DeleteByID deletes a movie by its id.
+// DeleteByID 通过id删除一个movie
 //
-// Returns true if deleted otherwise false.
+// 返回true表示成功，其它都是失败
 func (s *movieService) DeleteByID(id int64) bool {
     return s.repo.Delete(func(m datamodels.Movie) bool {
         return m.ID == id
@@ -750,8 +754,9 @@ func (s *movieService) DeleteByID(id int64) bool {
 }
 ```
 
-#### View Models
+#### 视图模型
 
+视图模型处理给客户端看的
 There should be the view models, the structure that the client will be able to see.
 
 Example:
