@@ -253,21 +253,23 @@ Controller在处理`GetBy`方法时可以识别‘name’参数，以及`GetWelc
 
 Controller knows how to handle the "name" on `GetBy` or the "name" and "numTimes" at `GetWelcomeBy`, because of the `By` keyword, and builds the dynamic route without boilerplate; the third comment specifies an [HTTP GET](https://www.w3schools.com/tags/ref_httpmethods.asp) dynamic method that is invoked by any URL that starts with "/helloworld/welcome" and followed by two more path parts, the first one can accept any value and the second can accept only numbers, i,e: "http://localhost:8080/helloworld/welcome/golang/32719", otherwise a [404 Not Found HTTP Error](https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.5) will be sent to the client instead.
 
-### Quick MVC Tutorial #2
+### MVC 快速指南 2
+
+Iris对MVC的支持非常 **棒[高性能](_benchmarks)** ， 通过方法的返回值，Iris可以给客户端返回任意类型的数据。
 
 Iris has a very powerful and **blazing [fast](_benchmarks)** MVC support, you can return any value of any type from a method function
 and it will be sent to the client as expected.
 
-* if `string` then it's the body.
-* if `string` is the second output argument then it's the content type.
-* if `int` then it's the status code.
-* if `error` and not nil then (any type) response will be omitted and error's text with a 400 bad request will be rendered instead.
-* if `(int, error)` and error is not nil then the response result will be the error's text with the status code as `int`.
-* if `bool` is false then it throws 404 not found http error by skipping everything else.
-* if  `custom struct` or `interface{}` or `slice` or `map` then it will be rendered as json, unless a `string` content type is following.
-* if `mvc.Result` then it executes its `Dispatch` function, so good design patters can be used to split the model's logic where needed.
+*  如果是 `string` 类型，就直接返回字符串
+*  如果第二个返回值是 `string` 类型，那么这个值就是ContentType的值
+*  如果是 `int` 类型，这个值就是HTTP状态码
+*  如果 `error` 值不是空，Iris 将会把这个值作为HTTP400页面的返回值内容
+*  如果是 `(int, error)` 类型，并且error不为空，那么Iris返回error的内容，同时把 `int` 值作为HTTP状态码
+*  如果返回 `bool` 类型，并且值是 false ，Iris直接返回404页面
+*  如果返回自定义` struct` 、 `interface{}` 、 `slice` 及 `map` ，Iris 将按照JSON的方式返回，注意如果第二个返回值是 `string`，那么Iris就按照这个 `string` 值的ContentType处理了(不一定是'application/json')
+*  如果 `mvc.Result` 调用了 `Dispatch` 函数, 就会按照自己的逻辑重新处理
 
-The example below is not intended to be used in production but it's a good showcase of some of the return types we saw before;
+下面这些例子仅供参考，生产环境谨慎使用
 
 ```go
 package main
@@ -278,7 +280,7 @@ import (
     "github.com/kataras/iris/mvc"
 )
 
-// Movie is our sample data structure.
+// Movie 是自定义数据结构
 type Movie struct {
     Name   string `json:"name"`
     Year   int    `json:"year"`
@@ -286,7 +288,7 @@ type Movie struct {
     Poster string `json:"poster"`
 }
 
-// movies contains our imaginary data source.
+// movies 对象模拟数据
 var movies = []Movie{
     {
         Name:   "Casablanca",
@@ -332,7 +334,7 @@ func main() {
     app.Run(iris.Addr(":8080"))
 }
 
-// MoviesController is our /movies controller.
+// MoviesController 是 /movies controller.
 type MoviesController struct {
     mvc.C
 }
