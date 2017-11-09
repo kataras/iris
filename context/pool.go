@@ -44,3 +44,10 @@ func (c *Pool) Release(ctx Context) {
 	ctx.EndRequest()
 	c.pool.Put(ctx)
 }
+
+// ReleaseLight will just release the object back to the pool, but the
+// clean method is caller's responsibility now, currently this is only used
+// on `SPABuilder`.
+func (c *Pool) ReleaseLight(ctx Context) {
+	c.pool.Put(ctx)
+}

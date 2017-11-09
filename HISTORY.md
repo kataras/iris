@@ -17,6 +17,13 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris` or let the automatic updater do that for you.
 
+# Th, 09 November 2017 | v8.5.8
+
+- **IMPROVE** the `Single Page Application builder`[*](https://github.com/kataras/blob/master/core/router/router_spa_wrapper.go) and fix https://github.com/kataras/iris/issues/803 reported by @ionutvilie, a new example is located [here](_examples/file-server/embedded-single-page-application-with-other-routes).
+    * `app.SPA` now returns the `*SPABuilder` and you can change some of its fields manually, i.e; 
+        * `IndexNames` defaulted to empty but can be seted to `[]{"index.html"}` or call the **new** `AddIndexName` from the `app.SPA` manually if dynamic view on root has registered, see [here](_examples/file-server/single-page-application/embedded-single-page-application) how.
+    * `AssetValidator` exists as it was and it's checked before the spa file server but it allows everything by-default because the real validation happens internally; if body was written or not, if not then reset the context's response writer and execute the router, as previously, otherwise release the context and send the response to the client.
+ 
 # Tu, 07 November 2017 | v8.5.7
 
 Nothing crazy here, just one addition which may help some people;

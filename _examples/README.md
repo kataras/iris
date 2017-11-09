@@ -17,6 +17,7 @@ It doesn't always contain the "best ways" but it does cover each important featu
 - [POC: Isomorphic react/hot reloadable/redux/css-modules starter kit](https://github.com/kataras/iris-starter-kit)
 - [Tutorial: DropzoneJS Uploader](tutorial/dropzonejs)
 - [Tutorial: Caddy](tutorial/caddy)
+- [Tutorial:Iris Go Framework + MongoDB](https://medium.com/go-language/iris-go-framework-mongodb-552e349eab9c)
 
 ### Structuring
 
@@ -276,6 +277,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) files to
 - Single Page Applications
     * [single Page Application](file-server/single-page-application/basic/main.go)
     * [embedded Single Page Application](file-server/single-page-application/embedded-single-page-application/main.go)
+    * [embedded Single Page Application with other routes](file-server/single-page-application/embedded-single-page-application-with-other-routes/main.go)
 
 ### How to Read from `context.Request() *http.Request`
 
