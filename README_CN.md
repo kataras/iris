@@ -1026,7 +1026,7 @@ var BasicAuth = basicauth.New(basicauth.Config{
 
 #### 程序入口
 
-程序入口可以将任何创建的组件包含进来
+程序入口可以将任何组件包含进来
 This file creates any necessary component and links them together.
 
 ```go
@@ -1088,6 +1088,7 @@ More folder structure guidelines can be found at the [_examples/#structuring](_e
 ## 现在你已经准备好进入下一个阶段了，又向专家级gopher更近一步了
 ## Now you are ready to move to the next step and get closer to becoming a pro gopher
 
+恭喜你看到这里了，我们为你准备了更高水平的内容，
 Congratulations, since you've made it so far, we've crafted just for you some next level content to turn you into a real pro gopher 😃
 
 > Don't forget to prepare yourself a cup of coffee, or tea, whatever enjoys you the most!
