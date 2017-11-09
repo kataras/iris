@@ -343,10 +343,11 @@ var (
 // Use that instead of `StaticWeb` for root "/" file server.
 //
 // Example: https://github.com/kataras/iris/tree/master/_examples/file-server/single-page-application
-func (app *Application) SPA(assetHandler context.Handler) {
+func (app *Application) SPA(assetHandler context.Handler) *router.SPABuilder {
 	s := router.NewSPABuilder(assetHandler)
 	wrapper := s.BuildWrapper(app.ContextPool)
 	app.Router.WrapRouter(wrapper)
+	return s
 }
 
 // ConfigureHost accepts one or more `host#Configuration`, these configurators functions

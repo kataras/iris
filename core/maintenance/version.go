@@ -13,7 +13,7 @@ import (
 
 const (
 	// Version is the string representation of the current local Iris Web Framework version.
-	Version = "8.5.7"
+	Version = "8.5.8"
 )
 
 // CheckForUpdates checks for any available updates

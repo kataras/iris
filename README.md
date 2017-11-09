@@ -44,7 +44,7 @@ If you're coming from [nodejs](https://nodejs.org) world, Iris is the [expressjs
 ## Table Of Content
 
 * [Installation](#installation)
-* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#tu-07-november-2017--v857)
+* [Latest changes](https://github.com/kataras/iris/blob/master/HISTORY.md#th-09-november-2017--v858)
 * [Getting started](#getting-started)
 * [Learn](_examples/)
     * [MVC (Model View Controller)](_examples/#mvc) **NEW**
@@ -145,11 +145,7 @@ func main() {
 </html>
 ```
 
-```sh
-$ go run main.go
-> Now listening on: http://localhost:8080
-> Application started. Press CTRL+C to shut down.
-```
+![overview screen](https://github.com/kataras/build-a-better-web-together/raw/master/overview_screen_1.png)
 
 > Wanna re-start your app automatically when source code changes happens? Install the [rizla](https://github.com/kataras/rizla) tool and run `rizla main.go` instead of `go run main.go`.
 
