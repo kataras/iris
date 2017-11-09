@@ -392,9 +392,15 @@ func (c *MoviesController) DeleteBy(id int) iris.Map {
 
 ### MVC 快速指南 3
 
-
+Iris是一个底层的Web开发框架，如果你喜欢按 **目录结构** 的约定方式开发，那么Iris框架对此毫无影响。
 
 Nothing stops you from using your favorite **folder structure**. Iris is a low level web framework, it has got MVC first-class support but it doesn't limit your folder structure, this is your choice.
+
+你可以根据自己的需求来创建目录结构，但是我建议你还是最好看看如下的目录结构例子：
+
+[![目录结构例子](_examples/mvc/overview/folder_structure.png)](_examples/mvc/overview)
+
+好了，直接上代码。
 
 Structuring depends on your own needs. We can't tell you how to design your own application for sure but you're free to take a closer look to one typical example below;
 
@@ -402,20 +408,16 @@ Structuring depends on your own needs. We can't tell you how to design your own 
 
 Shhh, let's spread the code itself.
 
-#### Data Model Layer
+#### 数据模型层
 
 ```go
 // file: datamodels/movie.go
 
 package datamodels
 
-// Movie is our sample data structure.
-// Keep note that the tags for public-use (for our web app)
-// should be kept in other file like "web/viewmodels/movie.go"
-// which could wrap by embedding the datamodels.Movie or
-// declare new fields instead butwe will use this datamodel
-// as the only one Movie model in our application,
-// for the shake of simplicty.
+// Movie是我们例子数据结构
+// 此Movie对象可能会在"web/viewmodels/movie.go"的文件里持有
+// Movie的数据模型在应用中只有一个，这样使用就很简单了
 type Movie struct {
     ID     int64  `json:"id"`
     Name   string `json:"name"`
@@ -434,7 +436,7 @@ package datasource
 
 import "github.com/kataras/iris/_examples/mvc/overview/datamodels"
 
-// Movies is our imaginary data source.
+// Movies是模拟的数据源
 var Movies = map[int64]datamodels.Movie{
     1: {
         ID:     1,
@@ -474,9 +476,9 @@ var Movies = map[int64]datamodels.Movie{
 }
 ```
 
-#### Repositories
+#### 数据仓库
 
-The layer which has direct access to the "datasource" and can manipulate data directly.
+数据仓库层用来直接访问数据源
 
 ```go
 // file: repositories/movie_repository.go
@@ -490,12 +492,10 @@ import (
     "github.com/kataras/iris/_examples/mvc/overview/datamodels"
 )
 
-// Query represents the visitor and action queries.
+// Query 是数据访问的集合入口
 type Query func(datamodels.Movie) bool
 
-// MovieRepository handles the basic operations of a movie entity/model.
-// It's an interface in order to be testable, i.e a memory movie repository or
-// a connected to an sql database.
+// MovieRepository 中会有对movie实体的基本操作
 type MovieRepository interface {
     Exec(query Query, action Query, limit int, mode int) (ok bool)
 
@@ -506,23 +506,21 @@ type MovieRepository interface {
     Delete(query Query, limit int) (deleted bool)
 }
 
-// NewMovieRepository returns a new movie memory-based repository,
-// the one and only repository type in our example.
+// NewMovieRepository 返回movie内存数据
 func NewMovieRepository(source map[int64]datamodels.Movie) MovieRepository {
     return &movieMemoryRepository{source: source}
 }
 
-// movieMemoryRepository is a "MovieRepository"
-// which manages the movies using the memory data source (map).
+// movieMemoryRepository 就是 "MovieRepository"，它管理movie的内存数据
 type movieMemoryRepository struct {
     source map[int64]datamodels.Movie
     mu     sync.RWMutex
 }
 
 const (
-    // ReadOnlyMode will RLock(read) the data .
+    // 只读模式
     ReadOnlyMode = iota
-    // ReadWriteMode will Lock(read/write) the data.
+    // 写模式
     ReadWriteMode
 )
 
