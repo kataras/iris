@@ -652,7 +652,7 @@ func (r *movieMemoryRepository) InsertOrUpdate(movie datamodels.Movie) (datamode
     if movie.Poster != "" {
         current.Poster = movie.Poster
     }
-
+    
     if movie.Genre != "" {
         current.Genre = movie.Genre
     }
@@ -756,9 +756,10 @@ func (s *movieService) DeleteByID(id int64) bool {
 
 #### 视图模型
 
-视图模型处理给客户端看的
+视图模型将处理结果返回给客户端
 There should be the view models, the structure that the client will be able to see.
 
+例子：
 Example:
 
 ```go
@@ -773,28 +774,38 @@ type Movie struct {
 }
 
 func (m Movie) IsValid() bool {
-    /* do some checks and return true if it's valid... */
+    /* 做一些检测，如果ID合法就返回true */
     return m.ID > 0
 }
 ```
+
+Iris允许在HTTP Response Dispatcher中使用任何自定义数据结构，所以理论上下面的代码不建议使用
 
 Iris is able to convert any custom data Structure into an HTTP Response Dispatcher,
 so theoretically, something like the following is permitted if it's really necessary;
 
 ```go
+// Dispatch实现了`kataras/iris/mvc#Result`接口。在函数最后发送了一个`Movie`对象作为http response对象。
+// 如果ID小于等于0就回返回404，或者就返回json数据。
+//（这样就像控制器的方法默认返回自定义类型一样）
 // Dispatch completes the `kataras/iris/mvc#Result` interface.
 // Sends a `Movie` as a controlled http response.
 // If its ID is zero or less then it returns a 404 not found error
 // else it returns its json representation,
 // (just like the controller's functions do for custom types by default).
 //
+// 不要在这里写过多的代码，应用的主要逻辑不在这里
+// 在方法返回之前可以做个简单验证处理等等；
 // Don't overdo it, the application's logic should not be here.
 // It's just one more step of validation before the response,
 // simple checks can be added here.
 //
+// 这里只是一个小例子，想想这个优势在设计大型应用是很有作用的
 // It's just a showcase,
 // imagine the potentials this feature gives when designing a bigger application.
 //
+// 这个方法是在`Movie`类型的控制器调用的。
+// 例子在这里：`controllers/movie_controller.go#GetBy`。
 // This is called where the return value from a controller's method functions
 // is type of `Movie`.
 // For example the `controllers/movie_controller.go#GetBy`.
@@ -806,13 +817,14 @@ func (m Movie) Dispatch(ctx context.Context) {
     ctx.JSON(m, context.JSON{Indent: " "})
 }
 ```
-
+然而，我们仅仅用"datamodels"作为一个数据模型包是因为Movie数据结构没有包含敏感数据，客户端可以访问到其所有字段，我们不需要再有额外的功能去做验证处理了
 However, we will use the "datamodels" as the only one models package because
 Movie structure doesn't contain any sensitive data, clients are able to see all of its fields
 and we don't need any extra functionality or validation inside it.
 
-#### Controllers
+#### 控制器
 
+控制器处理Web请求，它是服务层和客户端之间的桥梁
 Handles web requests, bridge between the services and the client.
 
 ```go
@@ -830,20 +842,21 @@ import (
     "github.com/kataras/iris/mvc"
 )
 
-// MovieController is our /movies controller.
+// MovieController是/movies的控制器
 type MovieController struct {
     mvc.C
 
-    // Our MovieService, it's an interface which
+    // MovieService是一个接口，主app对象会持有它
+    // Our MovieService, it's an interface which
     // is binded from the main application.
     Service services.MovieService
 }
 
-// Get returns list of the movies.
-// Demo:
+// 获取movies列表
+// 例子：
 // curl -i http://localhost:8080/movies
 //
-// The correct way if you have sensitive data:
+// 如果你有一些敏感的数据要处理的话，可以按照如下所示的方式：
 // func (c *MovieController) Get() (results []viewmodels.Movie) {
 //  data := c.Service.GetAll()
 //
@@ -852,47 +865,49 @@ type MovieController struct {
 //  }
 //  return
 // }
-// otherwise just return the datamodels.
+//否则直接返回数据模型
 func (c *MovieController) Get() (results []datamodels.Movie) {
     return c.Service.GetAll()
 }
 
-// GetBy returns a movie.
-// Demo:
+// GetBy返回一个movie对象
+// 例子：
 // curl -i http://localhost:8080/movies/1
 func (c *MovieController) GetBy(id int64) (movie datamodels.Movie, found bool) {
-    return c.Service.GetByID(id) // it will throw 404 if not found.
+    return c.Service.GetByID(id) // 404 没有找到
 }
 
-// PutBy updates a movie.
-// Demo:
+// PutBy更新一个movie.
+// 例子:
 // curl -i -X PUT -F "genre=Thriller" -F "poster=@/Users/kataras/Downloads/out.gif" http://localhost:8080/movies/1
 func (c *MovieController) PutBy(id int64) (datamodels.Movie, error) {
-    // get the request data for poster and genre
+    // 从请求中获取poster和genre
     file, info, err := c.Ctx.FormFile("poster")
     if err != nil {
         return datamodels.Movie{}, errors.New("failed due form file 'poster' missing")
     }
-    // we don't need the file so close it now.
-    file.Close()
+    // 关闭文件
+    file.Close()
 
-    // imagine that is the url of the uploaded file...
+    //想象这就是一个上传文件的url
     poster := info.Filename
     genre := c.Ctx.FormValue("genre")
 
     return c.Service.UpdatePosterAndGenreByID(id, poster, genre)
 }
 
-// DeleteBy deletes a movie.
-// Demo:
+// DeleteBy删除一个movie对象
+// 例子:
 // curl -i -X DELETE -u admin:password http://localhost:8080/movies/1
 func (c *MovieController) DeleteBy(id int64) interface{} {
     wasDel := c.Service.DeleteByID(id)
     if wasDel {
-        // return the deleted movie's ID
+        // 返回要删除的ID
         return iris.Map{"deleted": id}
     }
-    // right here we can see that a method function can return any of those two types(map or int),
+    //现在我们可以看到这里可以返回一个有2个返回值(map或int)的函数
+    //我们并没有指定一个返回的类型
+    // right here we can see that a method function can return any of those two types(map or int),
     // we don't have to specify the return type to a specific type.
     return iris.StatusBadRequest
 }
@@ -909,8 +924,8 @@ import (
     "github.com/kataras/iris/mvc"
 )
 
-// HelloController is our sample controller
-// it handles GET: /hello and GET: /hello/{name}
+// HelloController是控制器的例子
+// 下面会处理GET: /hello and GET: /hello/{name}
 type HelloController struct {
     mvc.C
 }
@@ -923,17 +938,16 @@ var helloView = mvc.View{
     },
 }
 
-// Get will return a predefined view with bind data.
+// Get会返回预定义绑定数据的视图
 //
-// `mvc.Result` is just an interface with a `Dispatch` function.
-// `mvc.Response` and `mvc.View` are the built'n result type dispatchers
-// you can even create custom response dispatchers by
-// implementing the `github.com/kataras/iris/mvc#Result` interface.
+// `mvc.Result`是一个含有`Dispatch`方法的接口
+// `mvc.Response` 和 `mvc.View` dispatchers 内置类型
+// 你也可以通过实现`github.com/kataras/iris/mvc#Result`接口来自定义dispatchers
 func (c *HelloController) Get() mvc.Result {
     return helloView
 }
 
-// you can define a standard error in order to be re-usable anywhere in your app.
+// 你可以定义一个标准通用的error
 var errBadName = errors.New("bad name")
 
 // you can just return it as error or even better
