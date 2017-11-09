@@ -950,24 +950,25 @@ func (c *HelloController) Get() mvc.Result {
 // 你可以定义一个标准通用的error
 var errBadName = errors.New("bad name")
 
+//你也可以将error包裹在mvc.Response中，这样就和mvc.Result类型兼容了
 // you can just return it as error or even better
 // wrap this error with an mvc.Response to make it an mvc.Result compatible type.
 var badName = mvc.Response{Err: errBadName, Code: 400}
 
-// GetBy returns a "Hello {name}" response.
-// Demos:
+// GetBy 返回 "Hello {name}" response
+// 例子:
 // curl -i http://localhost:8080/hello/iris
 // curl -i http://localhost:8080/hello/anything
 func (c *HelloController) GetBy(name string) mvc.Result {
     if name != "iris" {
         return badName
-        // or
-        // GetBy(name string) (mvc.Result, error) {
+        // 或者
+        // GetBy(name string) (mvc.Result, error) {
         //  return nil, errBadName
         // }
     }
 
-    // return mvc.Response{Text: "Hello " + name} OR:
+    // 返回 mvc.Response{Text: "Hello " + name} 或者:
     return mvc.View{
         Name: "hello/name.html",
         Data: name,
@@ -982,7 +983,7 @@ package middleware
 
 import "github.com/kataras/iris/middleware/basicauth"
 
-// BasicAuth middleware sample.
+// BasicAuth 中间件例
 var BasicAuth = basicauth.New(basicauth.Config{
     Users: map[string]string{
         "admin": "password",
@@ -1020,11 +1021,12 @@ var BasicAuth = basicauth.New(basicauth.Config{
 </html>
 ```
 
-> Navigate to the [_examples/view](_examples/#view) for more examples
-like shared layouts, tmpl funcs, reverse routing and more!
+> 戳[_examples/view](_examples/#view) 可以找到更多关于layouts，tmpl，routing的例子
 
-#### Main
 
+#### 程序入口
+
+程序入口可以将任何创建的组件包含进来
 This file creates any necessary component and links them together.
 
 ```go
@@ -1045,25 +1047,27 @@ import (
 func main() {
     app := iris.New()
 
-    // Load the template files.
-    app.RegisterView(iris.HTML("./web/views", ".html"))
+    // 加载模板文件
+    app.RegisterView(iris.HTML("./web/views", ".html"))
 
-    // Register our controllers.
-    app.Controller("/hello", new(controllers.HelloController))
+    // 注册控制器
+    app.Controller("/hello", new(controllers.HelloController))
 
-    // Create our movie repository with some (memory) data from the datasource.
-    repo := repositories.NewMovieRepository(datasource.Movies)
-    // Create our movie service, we will bind it to the movie controller.
-    movieService := services.NewMovieService(repo)
+    // 创建movie 数据仓库，次仓库包含的是内存级的数据源
+    repo := repositories.NewMovieRepository(datasource.Movies)
+    // 创建movie服务, 然后将其与控制器绑定
+    movieService := services.NewMovieService(repo)
 
     app.Controller("/movies", new(controllers.MovieController),
         // Bind the "movieService" to the MovieController's Service (interface) field.
-        movieService,
-        // Add the basic authentication(admin:password) middleware
+        // 将"movieService"绑定在 MovieController的Service接口
+        movieService,
+        // 为/movies请求添加basic authentication(admin:password)中间件
+        // Add the basic authentication(admin:password) middleware
         // for the /movies based requests.
         middleware.BasicAuth)
 
-    // Start the web server at localhost:8080
+    // 启动应用localhost:8080
     // http://localhost:8080/hello
     // http://localhost:8080/hello/iris
     // http://localhost:8080/movies
@@ -1072,13 +1076,16 @@ func main() {
         iris.Addr("localhost:8080"),
         iris.WithoutVersionChecker,
         iris.WithoutServerError(iris.ErrServerClosed),
-        iris.WithOptimizations, // enables faster json serialization and more
-    )
+        iris.WithOptimizations, // 可以启用快速json序列化等优化配置
+    )
 }
 ```
 
+更多指南戳 [_examples/#structuring](_examples/#structuring)
+
 More folder structure guidelines can be found at the [_examples/#structuring](_examples/#structuring) section.
 
+## 现在你已经准备好进入下一个阶段了，又向专家级gopher更近一步了
 ## Now you are ready to move to the next step and get closer to becoming a pro gopher
 
 Congratulations, since you've made it so far, we've crafted just for you some next level content to turn you into a real pro gopher 😃
