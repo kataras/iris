@@ -288,7 +288,7 @@ type Movie struct {
     Poster string `json:"poster"`
 }
 
-// movies 对象模拟数据
+// movies 对象模拟数据源
 var movies = []Movie{
     {
         Name:   "Casablanca",
@@ -339,38 +339,38 @@ type MoviesController struct {
     mvc.C
 }
 
-// Get returns list of the movies
-// Demo:
+// 返回 movies列表
+// 例子:
 // curl -i http://localhost:8080/movies
 func (c *MoviesController) Get() []Movie {
     return movies
 }
 
-// GetBy returns a movie
-// Demo:
+// GetBy 返回一个 movie
+// 例子:
 // curl -i http://localhost:8080/movies/1
 func (c *MoviesController) GetBy(id int) Movie {
     return movies[id]
 }
 
-// PutBy updates a movie
-// Demo:
+// PutBy 更新一个 movie
+// 例子:
 // curl -i -X PUT -F "genre=Thriller" -F "poster=@/Users/kataras/Downloads/out.gif" http://localhost:8080/movies/1
 func (c *MoviesController) PutBy(id int) Movie {
-    // get the movie
+    // 获取一个 movie
     m := movies[id]
 
-    // get the request data for poster and genre
-    file, info, err := c.Ctx.FormFile("poster")
+    // 获取一个poster文件
+    file, info, err := c.Ctx.FormFile("poster")
     if err != nil {
         c.Ctx.StatusCode(iris.StatusInternalServerError)
         return Movie{}
     }
-    file.Close()            // we don't need the file
-    poster := info.Filename // imagine that as the url of the uploaded file...
+    file.Close()            // 我们不需要这个文件
+    poster := info.Filename // 比如这就是上传的文件url
     genre := c.Ctx.FormValue("genre")
 
-    // update the poster
+    // 更新poster
     m.Poster = poster
     m.Genre = genre
     movies[id] = m
@@ -378,19 +378,21 @@ func (c *MoviesController) PutBy(id int) Movie {
     return m
 }
 
-// DeleteBy deletes a movie
-// Demo:
+// DeleteBy 删除一个 movie
+// 例子:
 // curl -i -X DELETE -u admin:password http://localhost:8080/movies/1
 func (c *MoviesController) DeleteBy(id int) iris.Map {
-    // delete the entry from the movies slice
-    deleted := movies[id].Name
+    //从movies slice中删除索引
+    deleted := movies[id].Name
     movies = append(movies[:id], movies[id+1:]...)
-    // and return the deleted movie's name
-    return iris.Map{"deleted": deleted}
+    // 返回删除movie的名称
+    return iris.Map{"deleted": deleted}
 }
 ```
 
-### Quick MVC Tutorial #3
+### MVC 快速指南 3
+
+
 
 Nothing stops you from using your favorite **folder structure**. Iris is a low level web framework, it has got MVC first-class support but it doesn't limit your folder structure, this is your choice.
 
