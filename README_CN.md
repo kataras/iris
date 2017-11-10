@@ -221,7 +221,7 @@ Controller在处理`GetBy`方法时可以识别路径‘name’参数，`GetWelc
 
 ### MVC 快速指南 2
 
-Iris对MVC的支持非常 **棒[基准测试](_benchmarks)** ，Iris通过方法的返回值，可以给客户端返回任意类型的数据：
+Iris对MVC的支持非常**棒[看看基准测试](_benchmarks)** ，Iris通过方法的返回值，可以给客户端返回任意类型的数据：
 
 *  如果返回的是 `string` 类型，就直接给客户端返回字符串
 *  如果第二个返回值是 `string` 类型，那么这个值就是ContentType(HTTP header)的值
