@@ -66,22 +66,22 @@ If you're coming from [nodejs](https://nodejs.org) world, Iris is the [expressjs
 * [快速入门](#getting-started)
 * [进阶](_examples/)
     * [MVC (Model View Controller)](_examples/#mvc) **NEW**
-    * [Structuring](_examples/#structuring) **NEW**
-    * [HTTP Listening](_examples/#http-listening)
-    * [Configuration](_examples/#configuration)
-    * [Routing, Grouping, Dynamic Path Parameters, "Macros" and Custom Context](_examples/#routing-grouping-dynamic-path-parameters-macros-and-custom-context)
-    * [Subdomains](_examples/#subdomains)
-    * [Wrap `http.Handler/HandlerFunc`](_examples/#convert-httphandlerhandlerfunc)
-    * [View](_examples/#view)
-    * [Authentication](_examples/#authentication)
-    * [File Server](_examples/#file-server)
-    * [How to Read from `context.Request() *http.Request`](_examples/#how-to-read-from-contextrequest-httprequest)
-    * [How to Write to `context.ResponseWriter() http.ResponseWriter`](_examples/#how-to-write-to-contextresponsewriter-httpresponsewriter)
-    * [Test](_examples/#testing)	
-    * [Cache](_examples/#caching)
-    * [Sessions](_examples/#sessions)
+    * [结构](_examples/#structuring) **NEW**
+    * [HTTP 监听](_examples/#http-listening)
+    * [配置](_examples/#configuration)
+    * [路由，分组，动态参数，“宏定义”已经自定义Context](_examples/#routing-grouping-dynamic-path-parameters-macros-and-custom-context)
+    * [子域名处理](_examples/#subdomains)
+    * [`http.Handler/HandlerFunc` 使用](_examples/#convert-httphandlerhandlerfunc)
+    * [视图处理](_examples/#view)
+    * [认证](_examples/#authentication)
+    * [文件服务器](_examples/#file-server)
+    * [如何从`context.Request() *http.Request` 读数据](_examples/#how-to-read-from-contextrequest-httprequest)
+    * [如何给`context.ResponseWriter() http.ResponseWriter`写数据](_examples/#how-to-write-to-contextresponsewriter-httpresponsewriter)
+    * [测试](_examples/#testing)	
+    * [缓存](_examples/#caching)
+    * [会话](_examples/#sessions)
     * [Websockets](_examples/#websockets)
-    * [Miscellaneous](_examples/#miscellaneous)
+    * [其它杂项](_examples/#miscellaneous)
     * [POC: Convert the medium-sized project "Parrot" from native to Iris](https://github.com/iris-contrib/parrot)
     * [POC: Isomorphic react/hot reloadable/redux/css-modules starter kit](https://github.com/kataras/iris-starter-kit)
     * [Typescript Automation Tools](typescript/#table-of-contents)
@@ -100,14 +100,11 @@ If you're coming from [nodejs](https://nodejs.org) world, Iris is the [expressjs
 ## 安装
 
 仅仅依赖[Go语言](https://golang.org/dl/)
-The only requirement is the [Go Programming Language](https://golang.org/dl/)
 
 ```sh
 $ go get -u github.com/kataras/iris
 ```
 Iris使用[vendor](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo) 包依赖管理方式。vendor包管理的方式可以有效处理包依赖更新问题
-
-Iris takes advantage of the [vendor directory](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo) feature. You get truly reproducible builds, as this method guards against upstream renames and deletes.
 
 ## 入门
 
@@ -148,7 +145,7 @@ func main() {
 }
 ```
 
-> 想要了解更多关于路径参数配置，戳 [这里](https://github.com/kataras/iris/blob/master/_examples/routing/dynamic-path/main.go#L31).
+> 想要了解更多关于路径参数配置，戳[这里](https://github.com/kataras/iris/blob/master/_examples/routing/dynamic-path/main.go#L31).
 
 ```html
 <!-- file: ./views/hello.html -->
@@ -168,10 +165,9 @@ $ go run main.go
 > 应用已经启动按键 CTRL+C 停止服务
 ```
 
-> 想要实现当代码改变后自动重启应用吗？那就装个[rizla](https://github.com/kataras/rizla)工具，启动go文件用 `rizla main.go` 来代替 `go run main.go`.
+> 想要实现当代码改变后自动重启应用吗？那就装个[rizla](https://github.com/kataras/rizla)工具，启动go文件用 `rizla main.go` 来代替 `go run main.go`。
 
 Iris的一些开发约定可以看看这里[_examples/structuring](_examples/#structuring)。
-
 
 ### MVC指南
 
@@ -234,37 +230,25 @@ func (c *HelloWorldController) GetWelcomeBy(name string, numTimes int) {
 ```
 > [_examples/mvc](_examples/mvc) 和 [mvc/controller_test.go](https://github.com/kataras/iris/blob/master/mvc/controller_test.go) 两个简单的例子可以让你更好的了解 Iris MVC 的使用方式
 
-> The [_examples/mvc](_examples/mvc) and [mvc/controller_test.go](https://github.com/kataras/iris/blob/master/mvc/controller_test.go) files explain each feature with simple paradigms, they show how you can take advandage of the Iris MVC Binder, Iris MVC Models and many more...
-
 每一个在controller中导出的Go方法名都和HTTP方法(`Get`, `Post`, `Put`, `Delete`...) 一一对应
 
-Every `exported` func prefixed with an HTTP Method(`Get`, `Post`, `Put`, `Delete`...) in a controller is callable as an HTTP endpoint. In the sample above, all funcs writes a string to the response. Note the comments preceding each method.
-
-在Web应用中一个HTTP访问的资源就是一个URL，比如`http://localhost:8080/helloworld`是由，HTTP协议、Web服务网络位置（包括TCP端口）：`localhost:8080`以及资源名称URI `/helloworld`组成的。
-
-An HTTP endpoint is a targetable URL in the web application, such as `http://localhost:8080/helloworld`, and combines the protocol used: HTTP, the network location of the web server (including the TCP port): `localhost:8080` and the target URI `/helloworld`.
+在Web应用中一个HTTP访问的资源就是一个URL（统一资源定位符），比如`http://localhost:8080/helloworld`是由HTTP协议、Web服务网络位置（包括TCP端口）：`localhost:8080`以及资源名称URI（统一资源标志符） `/helloworld`组成的。
 
 上面例子第一个方法映射到[HTTP GET](https://www.w3schools.com/tags/ref_httpmethods.asp)方法，访问资源是"/helloworld"，第三个方法映射到[HTTP GET](https://www.w3schools.com/tags/ref_httpmethods.asp)方法，访问资源是"/helloworld/welcome"
 
-The first comment states this is an [HTTP GET](https://www.w3schools.com/tags/ref_httpmethods.asp) method that is invoked by appending "/helloworld" to the base URL. The third comment specifies an [HTTP GET](https://www.w3schools.com/tags/ref_httpmethods.asp) method that is invoked by appending "/helloworld/welcome" to the URL.
 
+Controller在处理`GetBy`方法时可以识别路径‘name’参数，`GetWelcomeBy`方法可以识别路径‘name’和‘numTimes’参数，因为Controller在识别`By`关键字后可以动态灵活的处理路由；上面第四个方法指示使用 [HTTP GET](https://www.w3schools.com/tags/ref_httpmethods.asp)方法，而且只处理以"/helloworld/welcome"开头的资源位置路径，并且此路径还得包括两部分，第一部分类型没有限制，第二部分只能是数字类型，比如"http://localhost:8080/helloworld/welcome/golang/32719" 是合法的，其它的就会给客户端返回[404 找不到](https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.5)的提示
 
-Controller在处理`GetBy`方法时可以识别‘name’参数，以及`GetWelcomeBy`方法时也可以识别‘name’和‘numTimes’参数，因为Controller在识别`By`关键字后可以动态灵活的处理路由；上面第四个方法指示使用 [HTTP GET](https://www.w3schools.com/tags/ref_httpmethods.asp)方法，而且只处理以"/helloworld/welcome"开头的资源位置路径，并且此路径还得包括两部分，第一部分类型没有限制，第二部分只能是数字类型，比如"http://localhost:8080/helloworld/welcome/golang/32719" 是合法的，其它的就会给客户端返回[404 找不到](https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.5)的提示
-
-Controller knows how to handle the "name" on `GetBy` or the "name" and "numTimes" at `GetWelcomeBy`, because of the `By` keyword, and builds the dynamic route without boilerplate; the third comment specifies an [HTTP GET](https://www.w3schools.com/tags/ref_httpmethods.asp) dynamic method that is invoked by any URL that starts with "/helloworld/welcome" and followed by two more path parts, the first one can accept any value and the second can accept only numbers, i,e: "http://localhost:8080/helloworld/welcome/golang/32719", otherwise a [404 Not Found HTTP Error](https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.5) will be sent to the client instead.
 
 ### MVC 快速指南 2
 
-Iris对MVC的支持非常 **棒[高性能](_benchmarks)** ， 通过方法的返回值，Iris可以给客户端返回任意类型的数据。
+Iris对MVC的支持非常 **棒[高性能](_benchmarks)** ， Iris通过方法的返回值，可以给客户端返回任意类型的数据：
 
-Iris has a very powerful and **blazing [fast](_benchmarks)** MVC support, you can return any value of any type from a method function
-and it will be sent to the client as expected.
-
-*  如果是 `string` 类型，就直接返回字符串
-*  如果第二个返回值是 `string` 类型，那么这个值就是ContentType的值
-*  如果是 `int` 类型，这个值就是HTTP状态码
-*  如果 `error` 值不是空，Iris 将会把这个值作为HTTP400页面的返回值内容
-*  如果是 `(int, error)` 类型，并且error不为空，那么Iris返回error的内容，同时把 `int` 值作为HTTP状态码
+*  如果返回的是 `string` 类型，就直接给客户端返回字符串
+*  如果第二个返回值是 `string` 类型，那么这个值就是ContentType(HTTP header)的值
+*  如果返回的是 `int` 类型，这个值就是HTTP状态码
+*  如果返回 `error` 值不是空，Iris 将会把这个值作为HTTP 400页面的返回值内容
+*  如果返回 `(int, error)` 类型，并且error不为空，那么Iris返回error的内容，同时把 `int` 值作为HTTP状态码
 *  如果返回 `bool` 类型，并且值是 false ，Iris直接返回404页面
 *  如果返回自定义` struct` 、 `interface{}` 、 `slice` 及 `map` ，Iris 将按照JSON的方式返回，注意如果第二个返回值是 `string`，那么Iris就按照这个 `string` 值的ContentType处理了(不一定是'application/json')
 *  如果 `mvc.Result` 调用了 `Dispatch` 函数, 就会按照自己的逻辑重新处理
@@ -394,19 +378,12 @@ func (c *MoviesController) DeleteBy(id int) iris.Map {
 
 Iris是一个底层的Web开发框架，如果你喜欢按 **目录结构** 的约定方式开发，那么Iris框架对此毫无影响。
 
-Nothing stops you from using your favorite **folder structure**. Iris is a low level web framework, it has got MVC first-class support but it doesn't limit your folder structure, this is your choice.
-
 你可以根据自己的需求来创建目录结构，但是我建议你还是最好看看如下的目录结构例子：
 
 [![目录结构例子](_examples/mvc/overview/folder_structure.png)](_examples/mvc/overview)
 
 好了，直接上代码。
 
-Structuring depends on your own needs. We can't tell you how to design your own application for sure but you're free to take a closer look to one typical example below;
-
-[![folder structure example](_examples/mvc/overview/folder_structure.png)](_examples/mvc/overview)
-
-Shhh, let's spread the code itself.
 
 #### 数据模型层
 
@@ -416,7 +393,7 @@ Shhh, let's spread the code itself.
 package datamodels
 
 // Movie是我们例子数据结构
-// 此Movie对象可能会在"web/viewmodels/movie.go"的文件里持有
+// 此Movie可能会定义在类似"web/viewmodels/movie.go"的文件
 // Movie的数据模型在应用中只有一个，这样使用就很简单了
 type Movie struct {
     ID     int64  `json:"id"`
@@ -520,7 +497,7 @@ type movieMemoryRepository struct {
 const (
     // 只读模式
     ReadOnlyMode = iota
-    // 写模式
+    // 读写模式
     ReadWriteMode
 )
 
@@ -556,18 +533,6 @@ func (r *movieMemoryRepository) Exec(query Query, action Query, actionLimit int,
 // Select 将会返回查询到的最新找到的movie数据，这样可以减少代码量
 //
 // 自从我第一次想到用这种简单的原型函数后，我就经常用它了，希望这也对你有用
-// Select receives a query function
-// which is fired for every single movie model inside
-// our imaginary data source.
-// When that function returns true then it stops the iteration.
-//
-// It returns the query's return last known "found" value
-// and the last known movie model
-// to help callers to reduce the LOC.
-//
-// It's actually a simple but very clever prototype function
-// I'm using everywhere since I firstly think of it,
-// hope you'll find it very useful as well.
 func (r *movieMemoryRepository) Select(query Query) (movie datamodels.Movie, found bool) {
     found = r.Exec(query, func(m datamodels.Movie) bool {
         movie = m
@@ -583,10 +548,8 @@ func (r *movieMemoryRepository) Select(query Query) (movie datamodels.Movie, fou
     return
 }
 
-//如果要查找很多值，用法基本一致，不过会返回datamodels.Movie slice。
+// 如果要查找很多值，用法基本一致，不过会返回datamodels.Movie slice。
 // 如果limit<=0，将返回全部数据
-// SelectMany same as Select but returns one or more datamodels.Movie as a slice.
-// If limit <=0 then it returns everything.
 func (r *movieMemoryRepository) SelectMany(query Query, limit int) (results []datamodels.Movie) {
     r.Exec(query, func(m datamodels.Movie) bool {
         results = append(results, m)
@@ -596,22 +559,16 @@ func (r *movieMemoryRepository) SelectMany(query Query, limit int) (results []da
     return
 }
 
-//插入或跟新数据
-// InsertOrUpdate adds or updates a movie to the (memory) storage.
+// 插入或更新数据
 //
 // 返回一个新的movie对象和error对象
-// Returns the new movie and an error if any.
 func (r *movieMemoryRepository) InsertOrUpdate(movie datamodels.Movie) (datamodels.Movie, error) {
     id := movie.ID
 
     if id == 0 { // Create new action
         var lastID int64
-        // 为了数据不重复，找到最大的ID
-        // 生成环境你可以用第三方库生成一个UUID字串
-        
-        // find the biggest ID in order to not have duplications
-        // in productions apps you can use a third-party
-        // library to generate a UUID as string.
+        // 为了数据不重复，找到最大的ID。
+        // 生产环境你可以用第三方库生成一个UUID字串
         r.mu.RLock()
         for _, item := range r.source {
             if item.ID > lastID {
@@ -631,19 +588,14 @@ func (r *movieMemoryRepository) InsertOrUpdate(movie datamodels.Movie) (datamode
         return movie, nil
     }
     //通过movie.ID更新数据
-    //这里举个例子看如果更新poster和genre非空值
+    //这里举个例子看如果更新非空的poster和genre
     //其实我们可以直接更新对象r.source[id] = movie
     //用Select的话如下所示
-    // Update action based on the movie.ID,
-    // here we will allow updating the poster and genre if not empty.
-    // Alternatively we could do pure replace instead:
-    // r.source[id] = movie
-    // and comment the code below;
     current, exists := r.Select(func(m datamodels.Movie) bool {
         return m.ID == id
     })
 
-    if !exists { // ID不存在，返回error ID is not a real one, return an error.
+    if !exists { // ID不存在，返回error ID
         return datamodels.Movie{}, errors.New("failed to update a nonexistent movie")
     }
 
@@ -657,8 +609,8 @@ func (r *movieMemoryRepository) InsertOrUpdate(movie datamodels.Movie) (datamode
         current.Genre = movie.Genre
     }
 
-    // map-specific thing
-    r.mu.Lock()
+    // 类map结构的处理
+    r.mu.Lock()
     r.source[id] = current
     r.mu.Unlock()
 
@@ -677,7 +629,6 @@ func (r *movieMemoryRepository) Delete(query Query, limit int) bool {
 
 服务层主要调用“数据仓库”和“数据模型”的方法（即使是数据模型很简单的应用）。这一层将包含主要的数据处理逻辑。
 
-The layer which has access to call functions from the "repositories" and "models" (or even "datamodels" if simple application). It should contain the most of the domain logic.
 
 ```go
 // file: services/movie_service.go
@@ -691,16 +642,9 @@ import (
 
 // MovieService主要包括对movie的CRUID（增删改查）操作。
 // MovieService主要调用movie 数据仓库的方法。
-// 下面例子的数据源是从更高级别的组件
+// 下面例子的数据源是更高级别的组件
 // 这样可以用同样的逻辑可以返回不同的数据仓库
-// MovieService是一个接口，任何实现的地方等能用，这样替换不同的业务逻辑可以用来测试
-
-// MovieService handles some of the CRUID operations of the movie datamodel.
-// It depends on a movie repository for its actions.
-// It's here to decouple the data source from the higher level compoments.
-// As a result a different repository type can be used with the same logic without any aditional changes.
-// It's an interface and it's used as interface everywhere
-// because we may need to change or try an experimental different domain logic at the future.
+// MovieService是一个接口，任何实现的地方都能用，这样可以替换不同的业务逻辑用来测试
 type MovieService interface {
     GetAll() []datamodels.Movie
     GetByID(id int64) (datamodels.Movie, bool)
@@ -757,7 +701,6 @@ func (s *movieService) DeleteByID(id int64) bool {
 #### 视图模型
 
 视图模型将处理结果返回给客户端
-There should be the view models, the structure that the client will be able to see.
 
 例子：
 Example:
@@ -779,36 +722,21 @@ func (m Movie) IsValid() bool {
 }
 ```
 
-Iris允许在HTTP Response Dispatcher中使用任何自定义数据结构，所以理论上下面的代码不建议使用
-
-Iris is able to convert any custom data Structure into an HTTP Response Dispatcher,
-so theoretically, something like the following is permitted if it's really necessary;
+Iris允许在HTTP Response Dispatcher中使用任何自定义数据结构，
+所以理论上来说，除非万不得已，下面的代码不建议使用
 
 ```go
 // Dispatch实现了`kataras/iris/mvc#Result`接口。在函数最后发送了一个`Movie`对象作为http response对象。
 // 如果ID小于等于0就回返回404，或者就返回json数据。
 //（这样就像控制器的方法默认返回自定义类型一样）
-// Dispatch completes the `kataras/iris/mvc#Result` interface.
-// Sends a `Movie` as a controlled http response.
-// If its ID is zero or less then it returns a 404 not found error
-// else it returns its json representation,
-// (just like the controller's functions do for custom types by default).
 //
 // 不要在这里写过多的代码，应用的主要逻辑不在这里
 // 在方法返回之前可以做个简单验证处理等等；
-// Don't overdo it, the application's logic should not be here.
-// It's just one more step of validation before the response,
-// simple checks can be added here.
 //
 // 这里只是一个小例子，想想这个优势在设计大型应用是很有作用的
-// It's just a showcase,
-// imagine the potentials this feature gives when designing a bigger application.
 //
 // 这个方法是在`Movie`类型的控制器调用的。
 // 例子在这里：`controllers/movie_controller.go#GetBy`。
-// This is called where the return value from a controller's method functions
-// is type of `Movie`.
-// For example the `controllers/movie_controller.go#GetBy`.
 func (m Movie) Dispatch(ctx context.Context) {
     if !m.IsValid() {
         ctx.NotFound()
@@ -817,15 +745,12 @@ func (m Movie) Dispatch(ctx context.Context) {
     ctx.JSON(m, context.JSON{Indent: " "})
 }
 ```
-然而，我们仅仅用"datamodels"作为一个数据模型包是因为Movie数据结构没有包含敏感数据，客户端可以访问到其所有字段，我们不需要再有额外的功能去做验证处理了
-However, we will use the "datamodels" as the only one models package because
-Movie structure doesn't contain any sensitive data, clients are able to see all of its fields
-and we don't need any extra functionality or validation inside it.
+然而，我们仅仅用"datamodels"作为一个数据模型包，是因为Movie数据结构没有包含敏感数据，客户端可以访问到其所有字段，我们不需要再有额外的功能去做验证处理了
+
 
 #### 控制器
 
 控制器处理Web请求，它是服务层和客户端之间的桥梁
-Handles web requests, bridge between the services and the client.
 
 ```go
 // file: web/controllers/movie_controller.go
@@ -847,8 +772,6 @@ type MovieController struct {
     mvc.C
 
     // MovieService是一个接口，主app对象会持有它
-    // Our MovieService, it's an interface which
-    // is binded from the main application.
     Service services.MovieService
 }
 
@@ -907,8 +830,6 @@ func (c *MovieController) DeleteBy(id int64) interface{} {
     }
     //现在我们可以看到这里可以返回一个有2个返回值(map或int)的函数
     //我们并没有指定一个返回的类型
-    // right here we can see that a method function can return any of those two types(map or int),
-    // we don't have to specify the return type to a specific type.
     return iris.StatusBadRequest
 }
 ```
@@ -951,8 +872,6 @@ func (c *HelloController) Get() mvc.Result {
 var errBadName = errors.New("bad name")
 
 //你也可以将error包裹在mvc.Response中，这样就和mvc.Result类型兼容了
-// you can just return it as error or even better
-// wrap this error with an mvc.Response to make it an mvc.Result compatible type.
 var badName = mvc.Response{Err: errBadName, Code: 400}
 
 // GetBy 返回 "Hello {name}" response
@@ -1027,7 +946,6 @@ var BasicAuth = basicauth.New(basicauth.Config{
 #### 程序入口
 
 程序入口可以将任何组件包含进来
-This file creates any necessary component and links them together.
 
 ```go
 // file: main.go
@@ -1059,12 +977,9 @@ func main() {
     movieService := services.NewMovieService(repo)
 
     app.Controller("/movies", new(controllers.MovieController),
-        // Bind the "movieService" to the MovieController's Service (interface) field.
         // 将"movieService"绑定在 MovieController的Service接口
         movieService,
         // 为/movies请求添加basic authentication(admin:password)中间件
-        // Add the basic authentication(admin:password) middleware
-        // for the /movies based requests.
         middleware.BasicAuth)
 
     // 启动应用localhost:8080
@@ -1083,16 +998,11 @@ func main() {
 
 更多指南戳 [_examples/#structuring](_examples/#structuring)
 
-More folder structure guidelines can be found at the [_examples/#structuring](_examples/#structuring) section.
-
-## 现在你已经准备好进入下一个阶段了，又向专家级gopher更近一步了
-## Now you are ready to move to the next step and get closer to becoming a pro gopher
+## 现在你已经准备好进入下一阶段，又向专家级gopher迈进一步了
 
 恭喜你看到这里了，我们为你准备了更高水平的内容，向真正的专家级gopher进军吧😃
-Congratulations, since you've made it so far, we've crafted just for you some next level content to turn you into a real pro gopher 😃
 
-> 准备好咖啡，尽情享受吧
-> Don't forget to prepare yourself a cup of coffee, or tea, whatever enjoys you the most!
+> 准备好咖啡，尽情享受吧！
 
 * [Iris Go 矿建+ MongoDB](https://medium.com/go-language/iris-go-framework-mongodb-552e349eab9c)
 * [用DropzoneJS 和 Go来构建表单文件上传](https://hackernoon.com/how-to-build-a-file-upload-form-using-dropzonejs-and-go-8fb9f258a991)
@@ -1120,14 +1030,11 @@ Congratulations, since you've made it so far, we've crafted just for you some ne
 
 你可以通过[PayPal](https://www.paypal.me/kataras) 或 [BTC](https://iris-go.com/v8/donate)来捐赠这个项目，这样可以促进开发者们创造更棒、更优秀的Iris。
 
-Help this project to continue deliver awesome and unique features with the higher code quality as possible by donating any amount via [PayPal](https://www.paypal.me/kataras) or [BTC](https://iris-go.com/v8/donate).
-
 [如何贡献代码](CONTRIBUTING.md)
-For more information about contributing to the Iris project please check the [CONTRIBUTING.md file](CONTRIBUTING.md).
 
 ### 我们期待你能帮助我们翻译Iris文档
 
-Iris需要你的帮助，你可以帮助我们翻译[README](README.md)和https://iris-go.com ，同时你也会得到奖励的。
+Iris需要你的帮助，帮助我们翻译[README](README.md)和https://iris-go.com ，同时你也会得到奖励的。
 
 你可以在这里https://github.com/kataras/iris/issues/796 看到详细的有关翻译的信息
 
