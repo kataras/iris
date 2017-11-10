@@ -21,49 +21,6 @@ import (
 	"github.com/kataras/iris/context"
 )
 
-func calculateAssetValidator(vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) AssetValidator {
-	if len(vdir) > 0 {
-		if vdir[0] == '.' {
-			vdir = vdir[1:]
-		}
-		if vdir[0] == '/' || vdir[0] == os.PathSeparator { // second check for /something, (or ./something if we had dot on 0 it will be removed
-			vdir = vdir[1:]
-		}
-	}
-
-	// collect the names we are care for,
-	// because not all Asset used here, we need the vdir's assets.
-	allNames := namesFn()
-
-	var names []string
-	for _, path := range allNames {
-		// i.e: path = public/css/main.css
-
-		// check if path is the path name we care for
-		if !strings.HasPrefix(path, vdir) {
-			continue
-		}
-
-		names = append(names, path)
-	}
-
-	return func(reqPath string) bool {
-		reqPath = strings.TrimPrefix(reqPath, "/"+vdir)
-
-		for _, path := range names {
-			// in order to map "/" as "/index.html"
-			if path == "/index.html" && reqPath == "/" {
-				reqPath = "/index.html"
-			}
-
-			if path == vdir+reqPath {
-				return true
-			}
-		}
-		return false
-	}
-}
-
 // StaticEmbeddedHandler returns a Handler which can serve
 // embedded into executable files.
 //
@@ -809,7 +766,7 @@ func serveFile(ctx context.Context, fs http.FileSystem, name string, redirect bo
 	// can't use Redirect() because that would make the path absolute,
 	// which would be a problem running under StripPrefix
 	if strings.HasSuffix(ctx.Request().URL.Path, indexPage) {
-		localRedirect(ctx.ResponseWriter(), ctx.Request(), "./")
+		localRedirect(ctx, "./")
 		return "", http.StatusMovedPermanently
 	}
 
@@ -830,12 +787,12 @@ func serveFile(ctx context.Context, fs http.FileSystem, name string, redirect bo
 		url := ctx.Request().URL.Path
 		if d.IsDir() {
 			if url[len(url)-1] != '/' {
-				localRedirect(ctx.ResponseWriter(), ctx.Request(), path.Base(url)+"/")
+				localRedirect(ctx, path.Base(url)+"/")
 				return "", http.StatusMovedPermanently
 			}
 		} else {
 			if url[len(url)-1] == '/' {
-				localRedirect(ctx.ResponseWriter(), ctx.Request(), "../"+path.Base(url))
+				localRedirect(ctx, "../"+path.Base(url))
 				return "", http.StatusMovedPermanently
 			}
 		}
@@ -845,7 +802,7 @@ func serveFile(ctx context.Context, fs http.FileSystem, name string, redirect bo
 	if d.IsDir() {
 		url := ctx.Request().URL.Path
 		if url[len(url)-1] != '/' {
-			localRedirect(ctx.ResponseWriter(), ctx.Request(), path.Base(url)+"/")
+			localRedirect(ctx, path.Base(url)+"/")
 			return "", http.StatusMovedPermanently
 		}
 	}
@@ -928,14 +885,13 @@ func toHTTPError(err error) (msg string, httpStatus int) {
 
 // localRedirect gives a Moved Permanently response.
 // It does not convert relative paths to absolute paths like Redirect does.
-func localRedirect(w http.ResponseWriter, r *http.Request, newPath string) {
-	if q := r.URL.RawQuery; q != "" {
+func localRedirect(ctx context.Context, newPath string) {
+	if q := ctx.Request().URL.RawQuery; q != "" {
 		newPath += "?" + q
 	}
-	w.Header().Set("Location", newPath)
-	w.WriteHeader(http.StatusMovedPermanently)
-	// ctx.Header("Location", newPath)
-	// ctx.StatusCode(http.StatusMovedPermanently)
+
+	ctx.Header("Location", newPath)
+	ctx.StatusCode(http.StatusMovedPermanently)
 }
 
 func containsDotDot(v string) bool {

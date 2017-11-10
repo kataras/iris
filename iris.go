@@ -334,19 +334,14 @@ var (
 
 // SPA  accepts an "assetHandler" which can be the result of an
 // app.StaticHandler or app.StaticEmbeddedHandler.
-// It wraps the router and checks:
-// if it;s an asset, if the request contains "." (this behavior can be changed via /core/router.NewSPABuilder),
-// if the request is index, redirects back to the "/" in order to let the root handler to be executed,
-// if it's not an asset then it executes the router, so the rest of registered routes can be
-// executed without conflicts with the file server ("assetHandler").
-//
-// Use that instead of `StaticWeb` for root "/" file server.
+// Use that when you want to navigate from /index.html to / automatically
+// it's a helper function which just makes some checks based on the `IndexNames` and `AssetValidators`
+// before the assetHandler call.
 //
 // Example: https://github.com/kataras/iris/tree/master/_examples/file-server/single-page-application
 func (app *Application) SPA(assetHandler context.Handler) *router.SPABuilder {
 	s := router.NewSPABuilder(assetHandler)
-	wrapper := s.BuildWrapper(app.ContextPool)
-	app.Router.WrapRouter(wrapper)
+	app.APIBuilder.HandleMany("GET HEAD", "/{f:path}", s.Handler)
 	return s
 }
 
