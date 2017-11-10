@@ -6,26 +6,23 @@
   <img alt='Sponsor' width='888' height='68' src='https://app.codesponsor.io/embed/Qw6E1MTHvUJW6BtwUUf9qwsy/kataras/iris.svg' />
 </a>
 
-Iris是一个超快，使用简单并且非常高效的Go语言Web开发框架。
-Iris is a fast, simple and efficient web framework for Go.
+Iris是一个超快、简单并且高效的Go语言Web开发框架。
 
-Iris功能很强大，但使用又很简单，它将会是你下一个网站、API服务或者分布式应用基础框架的不二之选。
-Iris provides a beautifully expressive and easy to use foundation for your next website, API, or distributed app.
+Iris功能很强大，使用又很简单，它将会是你下一个网站、API服务或者分布式应用基础框架的不二之选。
 
 看看[别人是如何评价Iris](https://www.youtube.com/watch?v=jGx0LkuUs4A)，同时欢迎各位[成为Iris星探](https://github.com/kataras/iris/stargazers)，或者关注[Iris facebook主页](https://facebook.com/iris.framework)。
-Learn what [others say about Iris](https://www.youtube.com/watch?v=jGx0LkuUs4A) and [star](https://github.com/kataras/iris/stargazers) this github repository to stay [up to date](https://facebook.com/iris.framework).
 
 [![Iris vs .NET Core(C#) vs Node.js (Express)](https://iris-go.com/images/benchmark-new-gray.png)](_benchmarks)
 
 <details>
-<summary>上图是第三发机构发布的REST Web框架的基准测试Benchmarks from third-party source over the rest web frameworks</summary>
+<summary>上图是第三发机构发布的REST Web框架的基准测试
 
 ![Comparison with other frameworks](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png)
 
 _Updated at: [Friday, 29 September 2017](_benchmarks)_
 </details>
 
-## Built with ♥️
+## 前言 ♥️
 
 在发现Iris之前，我想你一定也看过其它Go Web开发框架。也许你已经摩拳擦掌并马上要使用了，但我会很遗憾的告诉你，不管怎样你将来还是会使用Iris的，不仅仅因为Iris性能卓越和使用简单，更重要的是Iris独树一帜，他可以让你成为真正的极客界摇滚明星。
 
@@ -41,8 +38,6 @@ Iris现在已经到第8版了，但是我们从未停止开发。有很多非常
 
 
 ## 内容列表
-
-## Table Of Content
 
 * [安装](#installation)
 * [最近更新](https://github.com/kataras/iris/blob/master/HISTORY.md#tu-07-november-2017--v857)
@@ -225,7 +220,7 @@ Controller在处理`GetBy`方法时可以识别路径‘name’参数，`GetWelc
 
 ### MVC 快速指南 2
 
-Iris对MVC的支持非常 **棒[高性能](_benchmarks)** ， Iris通过方法的返回值，可以给客户端返回任意类型的数据：
+Iris对MVC的支持非常 **棒[基准测试](_benchmarks)** ，Iris通过方法的返回值，可以给客户端返回任意类型的数据：
 
 *  如果返回的是 `string` 类型，就直接给客户端返回字符串
 *  如果第二个返回值是 `string` 类型，那么这个值就是ContentType(HTTP header)的值
@@ -387,7 +382,7 @@ type Movie struct {
 }
 ```
 
-#### Data Source / Data Store Layer
+#### 数据层 / 数据存储层
 
 ```go
 // file: datasource/movies.go
