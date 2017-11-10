@@ -26,36 +26,19 @@ _Updated at: [Friday, 29 September 2017](_benchmarks)_
 </details>
 
 ## Built with ♥️
-## Built with ♥️
 
-在发现Iris之前，我想你一定也看过其它Go Web开发框架，或许你已经摩拳擦掌并马上就要用上了，但我会很遗憾的告诉你，不管怎样，你将来还是会使用Iris的。不仅仅因为Iris性能卓越和使用简单，更重要的是Iris非常独特，他能让你成为真正的极客界的摇滚明星。
+在发现Iris之前，我想你一定也看过其它Go Web开发框架。也许你已经摩拳擦掌并马上要使用了，但我会很遗憾的告诉你，不管怎样你将来还是会使用Iris的，不仅仅因为Iris性能卓越和使用简单，更重要的是Iris独树一帜，他可以让你成为真正的极客界摇滚明星。
 
-We have no doubt you will able to find other web frameworks written in Go
-and even put up a real fight to learn and use them for quite some time but
-make no mistake, sooner or later you will be using Iris, not because of the ergonomic, high-performant solution that it provides but its well-documented unique features, as these will transform you to a real rockstar geek.
-
-不管你是想开发微服务或者大型Web应用，Iris都能满足你的需求，Iris可能是你在网上能找到最好的Web后台开发软件了。
-
-No matter what you're trying to build, Iris covers 
-every type of application, from micro services to large monolithic web applications.
-It's actually the best piece of software for back-end web developers
-you can find online.
+不管你是想开发微服务或者大型Web应用，Iris都能满足你的需求。Iris可能是你在网上能找到最好的Web后台开发软件了。
 
 Iris现在已经到第8版了，但是我们从未停止开发。有很多非常棒的功能已经提上开发日程了，而且我们非常乐意加入很多有创意的想法。
 
-Iris may have reached version 8, but we're not stopping there. We have many feature ideas on our board that we're anxious to add and other innovative web development solutions that we're planning to build into Iris.
-
 如果你想用CDN加速，我推荐用[KeyCDN](https://www.keycdn.com/)，因为KeyCDN简单、速度快而且稳定。
 
-Accelerated by [KeyCDN](https://www.keycdn.com/), a simple, fast and reliable CDN.
-
-我们用[微软](https://www.microsoft.com)开发的[Visual Studio Code](https://code.visualstudio.com/)来做为开发Golang的IDE。 
-
-We are developing this project using the best code editor for Golang; [Visual Studio Code](https://code.visualstudio.com/) supported by [Microsoft](https://www.microsoft.com).
+我们用[微软](https://www.microsoft.com)开发的[Visual Studio Code](https://code.visualstudio.com/)来开发Golang应用。
 
 如果你之前使用[nodejs](https://nodejs.org)做开发，恭喜你，Iris使用基本和[expressjs](https://github.com/expressjs/express)一样。
 
-If you're coming from [nodejs](https://nodejs.org) world, Iris is the [expressjs](https://github.com/expressjs/express) equivalent for Gophers.
 
 ## 内容列表
 
@@ -82,14 +65,14 @@ If you're coming from [nodejs](https://nodejs.org) world, Iris is the [expressjs
     * [会话](_examples/#sessions)
     * [Websockets](_examples/#websockets)
     * [其它杂项](_examples/#miscellaneous)
-    * [POC: Convert the medium-sized project "Parrot" from native to Iris](https://github.com/iris-contrib/parrot)
-    * [POC: Isomorphic react/hot reloadable/redux/css-modules starter kit](https://github.com/kataras/iris-starter-kit)
-    * [Typescript Automation Tools](typescript/#table-of-contents)
-    * [Tutorial: A URL Shortener Service using Go, Iris and Bolt](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
-    * [Tutorial: Online Visitors](_examples/tutorial/online-visitors)
-    * [Tutorial: Caddy](_examples/tutorial/caddy)
-    * [Tutorial: DropzoneJS Uploader](https://hackernoon.com/how-to-build-a-file-upload-form-using-dropzonejs-and-go-8fb9f258a991)
-    * [Tutorial:Iris Go Framework + MongoDB](https://medium.com/go-language/iris-go-framework-mongodb-552e349eab9c)
+    * [将"Parrot"项目转换为Iris实现](https://github.com/iris-contrib/parrot)
+    * [Iris和react/hot reloadable/redux/css-modules配合使用](https://github.com/kataras/iris-starter-kit)
+    * [Typescript自动化操作工具](typescript/#table-of-contents)
+    * [指南: 用Iris和Bolt实现短连接服务](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
+    * [指南: 如何统计在线访问人数](_examples/tutorial/online-visitors)
+    * [指南: Caddy](_examples/tutorial/caddy)
+    * [指南: 如何用DropzoneJS上传文件](https://hackernoon.com/how-to-build-a-file-upload-form-using-dropzonejs-and-go-8fb9f258a991)
+    * [指南: Iris+MongoDB](https://medium.com/go-language/iris-go-framework-mongodb-552e349eab9c)
 * [中间件](middleware/)
 * [Docker例子](https://github.com/iris-contrib/cloud-native-go)
 * [贡献](CONTRIBUTING.md)
