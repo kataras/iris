@@ -6,6 +6,7 @@
   <img alt='Sponsor' width='888' height='68' src='https://app.codesponsor.io/embed/Qw6E1MTHvUJW6BtwUUf9qwsy/kataras/iris.svg' />
 </a>
 
+
 Iris是一个超快、简单并且高效的Go语言Web开发框架。
 
 Iris功能很强大，使用又很简单，它将会是你下一个网站、API服务或者分布式应用基础框架的不二之选。
@@ -19,7 +20,7 @@ Iris功能很强大，使用又很简单，它将会是你下一个网站、API�
 
 ![Comparison with other frameworks](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png)
 
-_Updated at: [Friday, 29 September 2017](_benchmarks)_
+更新于: [2017年9月29，星期五](_benchmarks)_
 </details>
 
 ## 前言 ♥️
@@ -982,7 +983,7 @@ func main() {
 
 > 准备好咖啡，尽情享受吧！
 
-* [Iris Go 矿建+ MongoDB](https://medium.com/go-language/iris-go-framework-mongodb-552e349eab9c)
+* [Iris框架+MongoDB](https://medium.com/go-language/iris-go-framework-mongodb-552e349eab9c)
 * [用DropzoneJS 和 Go来构建表单文件上传](https://hackernoon.com/how-to-build-a-file-upload-form-using-dropzonejs-and-go-8fb9f258a991)
 * [用DropzoneJS 和 Go来呈现服务器上的问题](https://hackernoon.com/how-to-display-existing-files-on-server-using-dropzonejs-and-go-53e24b57ba19)
 * [Iris模块化Web开发框架](https://medium.com/@corebreaker/iris-web-cd684b4685c7)
