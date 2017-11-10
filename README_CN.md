@@ -25,7 +25,7 @@ Iris功能很强大，使用又很简单，它将会是你下一个网站、API�
 
 ## 前言 ♥️
 
-在发现Iris之前，我想你一定也看过其它Go Web开发框架。也许你已经摩拳擦掌并马上要使用了，但我会很遗憾的告诉你，不管怎样你将来还是会使用Iris的，不仅仅因为Iris性能卓越和使用简单，更重要的是Iris独树一帜，他可以让你成为真正的极客界摇滚明星。
+在发现Iris之前，我想你一定也看过其它Go Web开发框架。也许你已经摩拳擦掌并马上要使用了，但我会很遗憾的告诉你，将来你还是会使用Iris的。不仅仅因为Iris性能卓越和使用简单，更重要的是Iris独树一帜，他可以让你成为真正的极客界摇滚明星。
 
 不管你是想开发微服务或者大型Web应用，Iris都能满足你的需求。Iris可能是你在网上能找到最好的Web后台开发软件了。
 
@@ -36,7 +36,6 @@ Iris现在已经到第8版了，但是我们从未停止开发。有很多非常
 我们用[微软](https://www.microsoft.com)开发的[Visual Studio Code](https://code.visualstudio.com/)来开发Golang应用。
 
 如果你之前使用[nodejs](https://nodejs.org)做开发，恭喜你，Iris使用基本和[expressjs](https://github.com/expressjs/express)一样。
-
 
 ## 内容列表
 
