@@ -95,7 +95,7 @@ If you're coming from [nodejs](https://nodejs.org) world, Iris is the [expressjs
 * [贡献](CONTRIBUTING.md)
 * [常见问题](FAQ.md)
 * [更新计划?](#now-you-are-ready-to-move-to-the-next-step-and-get-closer-to-becoming-a-pro-gopher)
-* [人员](#people)
+* [开发者](#people)
 
 ## 安装
 
@@ -1088,24 +1088,25 @@ More folder structure guidelines can be found at the [_examples/#structuring](_e
 ## 现在你已经准备好进入下一个阶段了，又向专家级gopher更近一步了
 ## Now you are ready to move to the next step and get closer to becoming a pro gopher
 
-恭喜你看到这里了，我们为你准备了更高水平的内容，
+恭喜你看到这里了，我们为你准备了更高水平的内容，向真正的专家级gopher进军吧😃
 Congratulations, since you've made it so far, we've crafted just for you some next level content to turn you into a real pro gopher 😃
 
+> 准备好咖啡，尽情享受吧
 > Don't forget to prepare yourself a cup of coffee, or tea, whatever enjoys you the most!
 
-* [Iris Go Framework + MongoDB](https://medium.com/go-language/iris-go-framework-mongodb-552e349eab9c)
-* [How to build a file upload form using DropzoneJS and Go](https://hackernoon.com/how-to-build-a-file-upload-form-using-dropzonejs-and-go-8fb9f258a991)
-* [How to display existing files on server using DropzoneJS and Go](https://hackernoon.com/how-to-display-existing-files-on-server-using-dropzonejs-and-go-53e24b57ba19)
-* [Iris, a modular web framework](https://medium.com/@corebreaker/iris-web-cd684b4685c7)
-* [Go vs .NET Core in terms of HTTP performance](https://medium.com/@kataras/go-vs-net-core-in-terms-of-http-performance-7535a61b67b8)
-* [Iris Go vs .NET Core Kestrel in terms of HTTP performance](https://hackernoon.com/iris-go-vs-net-core-kestrel-in-terms-of-http-performance-806195dc93d5)
-* [How to Turn an Android Device into a Web Server](https://twitter.com/ThePracticalDev/status/892022594031017988)
-* [Deploying a Iris Golang app in hasura](https://medium.com/@HasuraHQ/deploy-an-iris-golang-app-with-backend-apis-in-minutes-25a559bf530b)
-* [A URL Shortener Service using Go, Iris and Bolt](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
+* [Iris Go 矿建+ MongoDB](https://medium.com/go-language/iris-go-framework-mongodb-552e349eab9c)
+* [用DropzoneJS 和 Go来构建表单文件上传](https://hackernoon.com/how-to-build-a-file-upload-form-using-dropzonejs-and-go-8fb9f258a991)
+* [用DropzoneJS 和 Go来呈现服务器上的问题](https://hackernoon.com/how-to-display-existing-files-on-server-using-dropzonejs-and-go-53e24b57ba19)
+* [Iris模块化Web开发框架](https://medium.com/@corebreaker/iris-web-cd684b4685c7)
+* [按照 HTTP 性能来比较Go 和 .NET Core](https://medium.com/@kataras/go-vs-net-core-in-terms-of-http-performance-7535a61b67b8)
+* [按照 HTTP 性能来比较Go 和 .NET Core Kestrel](https://hackernoon.com/iris-go-vs-net-core-kestrel-in-terms-of-http-performance-806195dc93d5)
+* [在Android设备上搭建Web服务器](https://twitter.com/ThePracticalDev/status/892022594031017988)
+* [在hasura上部署Iris应用](https://medium.com/@HasuraHQ/deploy-an-iris-golang-app-with-backend-apis-in-minutes-25a559bf530b)
+* [用Iris 和 Bolt实现短连接服务](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
 
-## People
+## 作者
 
-The author of Iris is [@kataras](https://github.com/kataras), you can reach him via;
+ Iris的作者是[@kataras](https://github.com/kataras), 你可以通过以下方式来了解作者：
 
 * [Medium](https://medium.com/@kataras)
 * [Twitter](https://twitter.com/makismaropoulos)
@@ -1113,42 +1114,46 @@ The author of Iris is [@kataras](https://github.com/kataras), you can reach him 
 * [Facebook](https://facebook.com/iris.framework)
 * [Mail](mailto:kataras2006@hotmail.com?subject=Iris%20I%20need%20some%20help%20please)
 
-[List of all Authors](AUTHORS)
+[作者](AUTHORS)
 
-[List of all Contributors](https://github.com/kataras/iris/graphs/contributors)
+[贡献者列表](https://github.com/kataras/iris/graphs/contributors)
+
+你可以通过[PayPal](https://www.paypal.me/kataras) 或 [BTC](https://iris-go.com/v8/donate)来捐赠这个项目，这样可以促进开发者们创造更棒、更优秀的Iris。
 
 Help this project to continue deliver awesome and unique features with the higher code quality as possible by donating any amount via [PayPal](https://www.paypal.me/kataras) or [BTC](https://iris-go.com/v8/donate).
 
+[如何贡献代码](CONTRIBUTING.md)
 For more information about contributing to the Iris project please check the [CONTRIBUTING.md file](CONTRIBUTING.md).
 
-### We need your help with translations into your native language
+### 我们期待你能帮助我们翻译Iris文档
 
-Iris needs your help, please think about contributing to the translation of the [README](README.md) and https://iris-go.com, you will be rewarded.
+Iris需要你的帮助，你可以帮助我们翻译[README](README.md)和https://iris-go.com ，同时你也会得到奖励的。
 
-Instructions can be found at: https://github.com/kataras/iris/issues/796
+你可以在这里https://github.com/kataras/iris/issues/796 看到详细的有关翻译的信息
 
-### 03, October 2017 | Iris User Experience Report
 
-Be part of the **first** Iris User Experience Report by submitting a simple form, it won't take more than **2 minutes**.
+### Iris 用户体验反馈 | 2017年10月3号 
 
-The form contains some questions that you may need to answer in order to learn more about you; learning more about you helps us to serve you with the best possible way!
+**请放心** Iris用户体验反馈就是一些简单的表单提交，**2分钟**就能搞定。
+
+这些表单里有些问题是为了更好的了解你，了解你可以让我们更好的为你服务。
 
 https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link
 
-## Contributors
+## 贡献者列表
 
-This project exists thanks to all the people who contribute. [Contribute](CONTRIBUTING.md).
+非常感谢所有对Iris的贡献者，没有你们就没有Iris [Contribute](CONTRIBUTING.md)
 <a href="graphs/contributors"><img src="https://opencollective.com/iris/contributors.svg?width=890" /></a>
 
-## Backers
+## 资助者
 
-Thank you to all our backers! 🙏 [Become a backer](https://opencollective.com/iris#backer)
+万分感谢所有的资助者🙏 [成为资助者](https://opencollective.com/iris#backer)
 
 <a href="https://opencollective.com/iris#backers" target="_blank"><img src="https://opencollective.com/iris/backers.svg?width=890"></a>
 
-## Sponsors
+## 赞助商
 
-Support this project by becoming a sponsor. Your logo will show up here with a link to your website. [Become a sponsor](https://opencollective.com/iris#sponsor)
+资助Iris，你将是Iris的赞助商，你的logo将会出现在下面的列表中，[成为赞助商](https://opencollective.com/iris#sponsor)
 
 <a href="https://opencollective.com/iris/sponsor/0/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/0/avatar.svg"></a>
 <a href="https://opencollective.com/iris/sponsor/1/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/1/avatar.svg"></a>
@@ -1161,8 +1166,7 @@ Support this project by becoming a sponsor. Your logo will show up here with a l
 <a href="https://opencollective.com/iris/sponsor/8/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/8/avatar.svg"></a>
 <a href="https://opencollective.com/iris/sponsor/9/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/9/avatar.svg"></a>
 
-## License
+## 开源许可证
 
-Iris is licensed under the 3-Clause BSD [License](LICENSE). Iris is 100% open-source software.
-
-For any questions regarding the license please [contact us](mailto:kataras2006@hotmail.com?subject=Iris%20License).
+Iris使用3-Clause BSD [许可证](LICENSE)开源许可 。Iris绝对是100%开源的。
+对这个许可有任何疑问请[联系我们](mailto:kataras2006@hotmail.com?subject=Iris%20License)
