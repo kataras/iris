@@ -1027,7 +1027,7 @@ https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVD
 
 ## 贡献者列表
 
-非常感谢所有对Iris的贡献者，没有你们就没有Iris [Contribute](CONTRIBUTING.md)
+非常感谢所有对Iris的贡献者，没有你们就没有Iris [贡献者](CONTRIBUTING.md)
 <a href="graphs/contributors"><img src="https://opencollective.com/iris/contributors.svg?width=890" /></a>
 
 ## 资助者
