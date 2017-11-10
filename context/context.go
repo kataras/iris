@@ -2573,7 +2573,7 @@ var errTransactionInterrupted = errors.New("transaction interrupted, recovery fr
 // it's not covers all paths,
 // such as databases, this should be managed by the libraries you use to make your database connection,
 // this transaction scope is only for context's response.
-// Transactions have their own middleware ecosystem also, look iris.go:UseTransaction.
+// Transactions have their own middleware ecosystem also.
 //
 // See https://github.com/kataras/iris/tree/master/_examples/ for more
 func (ctx *context) BeginTransaction(pipe func(t *Transaction)) {

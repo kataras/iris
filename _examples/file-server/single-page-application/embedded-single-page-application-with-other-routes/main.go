@@ -13,8 +13,7 @@ func newApp() *iris.Application {
 		ctx.Writef("404 not found here")
 	})
 
-	assetHandler := app.StaticEmbeddedHandler("./public", Asset, AssetNames)
-	app.SPA(assetHandler)
+	app.StaticEmbedded("/", "./public", Asset, AssetNames)
 
 	// Note:
 	// if you want a dynamic index page then see the file-server/embedded-single-page-application
