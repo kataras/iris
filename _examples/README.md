@@ -309,6 +309,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) files to
 - [Profiling (pprof)](miscellaneous/pprof/main.go)
 - [Internal Application File Logger](miscellaneous/file-logger/main.go)
 - [Google reCAPTCHA](miscellaneous/recaptcha/main.go)
+- [Cross-Site Request Forgery Protection](miscellaneous/csrf/main.go) 
 
 ### Experimental Handlers
 
