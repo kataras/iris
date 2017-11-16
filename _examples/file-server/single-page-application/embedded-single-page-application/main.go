@@ -25,7 +25,13 @@ func newApp() *iris.Application {
 	assetHandler := app.StaticEmbeddedHandler("./public", Asset, AssetNames)
 	// as an alternative of SPA you can take a look at the /routing/dynamic-path/root-wildcard
 	// example too
-	app.SPA(assetHandler)
+	// or
+	// app.StaticEmbedded if you don't want to redirect on index.html and simple serve your SPA app (recommended).
+
+	// public/index.html is a dynamic view, it's handlded by root,
+	// and we don't want to be visible as a raw data, so we will
+	// the return value of `app.SPA` to modify the `IndexNames` by;
+	app.SPA(assetHandler).AddIndexName("index.html")
 
 	return app
 }

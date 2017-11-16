@@ -11,8 +11,6 @@ import (
 
 func main() {
 	db, _ := boltdb.New("./sessions/sessions.db", 0666, "users")
-	// use different go routines to sync the database
-	db.Async(true)
 
 	// close and unlock the database when control+C/cmd+C pressed
 	iris.RegisterOnInterrupt(func() {

@@ -35,7 +35,7 @@ Source code and other details for the project are available at GitHub:
 
 Current Version
 
-8.5.4
+8.5.8
 
 Installation
 
@@ -333,7 +333,7 @@ Example Code:
 
     h := app.NewHost(&http.Server{Addr:":8080"})
     h.RegisterOnShutdown(func(){
-        println("server was closed!")
+        println("terminate")
     })
 
     app.Run(iris.Raw(h.ListenAndServe))
@@ -398,7 +398,7 @@ Example Code:
         //
         // we register a shutdown "event" callback
         su.RegisterOnShutdown(func() {
-            println("server is closed")
+            println("terminate")
         })
         // su.RegisterOnError
         // su.RegisterOnServe

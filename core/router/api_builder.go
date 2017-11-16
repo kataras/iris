@@ -146,6 +146,13 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 	}
 
 	fullpath := api.relativePath + relativePath // for now, keep the last "/" if any,  "/xyz/"
+	if len(handlers) == 0 {
+		api.reporter.Add("missing handlers for route %s: %s", method, fullpath)
+		return nil
+	}
+
+	// before join the middleware + handlers + done handlers.
+	possibleMainHandlerName := context.HandlerName(handlers[0])
 
 	// global begin handlers -> middleware that are registered before route registration
 	// -> handlers that are passed to this Handle function.
@@ -158,7 +165,7 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 	// here we separate the subdomain and relative path
 	subdomain, path := splitSubdomainAndPath(fullpath)
 
-	r, err := NewRoute(method, subdomain, path, routeHandlers, api.macros)
+	r, err := NewRoute(method, subdomain, path, possibleMainHandlerName, routeHandlers, api.macros)
 	if err != nil { // template path parser errors:
 		api.reporter.Add("%v -> %s:%s:%s", err, method, subdomain, path)
 		return nil
@@ -592,15 +599,9 @@ func (api *APIBuilder) StaticHandler(systemPath string, showList bool, gzip bool
 	return StaticHandler(systemPath, showList, gzip)
 }
 
-// StaticServe serves a directory as web resource
-// it's the simpliest form of the Static* functions
-// Almost same usage as StaticWeb
-// accepts only one required parameter which is the systemPath,
-// the same path will be used to register the GET and HEAD method routes.
-// If second parameter is empty, otherwise the requestPath is the second parameter
-// it uses gzip compression (compression on each request, no file cache).
-//
-// Returns the GET *Route.
+// StaticServe serves a directory as web resource.
+// Same as `StaticWeb`.
+// DEPRECATED; use `StaticWeb` or `StaticHandler` (for more options) instead.
 func (api *APIBuilder) StaticServe(systemPath string, requestPath ...string) *Route {
 	var reqPath string
 
@@ -612,22 +613,7 @@ func (api *APIBuilder) StaticServe(systemPath string, requestPath ...string) *Ro
 		reqPath = requestPath[0]
 	}
 
-	return api.Get(joinPath(reqPath, WildcardParam("file")), func(ctx context.Context) {
-		filepath := ctx.Params().Get("file")
-
-		spath := strings.Replace(filepath, "/", string(os.PathSeparator), -1)
-		spath = path.Join(systemPath, spath)
-
-		if !DirectoryExists(spath) {
-			ctx.NotFound()
-			return
-		}
-
-		if err := ctx.ServeFile(spath, true); err != nil {
-			ctx.Application().Logger().Warnf("while trying to serve static file: '%v' on IP: '%s'", err, ctx.RemoteAddr())
-			ctx.StatusCode(http.StatusInternalServerError)
-		}
-	})
+	return api.StaticWeb(reqPath, systemPath)
 }
 
 // StaticContent registers a GET and HEAD method routes to the requestPath

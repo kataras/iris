@@ -102,7 +102,7 @@ func (nodes *Nodes) add(routeName, path string, paramNames []string, handlers co
 	// set the wildcard param name to the root and its children.
 	wildcardIdx := strings.IndexByte(path, '*')
 	wildcardParamName := ""
-	if wildcardIdx > 0 && len(paramNames) == 0 {
+	if wildcardIdx > 0 && len(paramNames) == 0 { // 27 Oct comment: && len(paramNames) == 0 {
 		wildcardParamName = path[wildcardIdx+1:]
 		path = path[0:wildcardIdx-1] + "/" // replace *paramName with single slash
 
@@ -213,12 +213,14 @@ loop:
 					handlers:          handlers,
 					root:              root,
 				}
-				// 	println("3.5. nodes.Add path: " + n.s)
+				// println("3.5. nodes.Add path: " + n.s)
 				*nodes = append(*nodes, n)
 				return
 			}
-			// 	println("4. nodes.Add path: " + path[len(n.s):])
-			err = n.childrenNodes.add(routeName, path[len(n.s):], paramNames, handlers, false)
+
+			pathToAdd := path[len(n.s):]
+			// println("4. nodes.Add path: " + pathToAdd)
+			err = n.childrenNodes.add(routeName, pathToAdd, paramNames, handlers, false)
 			return err
 		}
 
@@ -231,9 +233,18 @@ loop:
 		}
 		n.paramNames = paramNames
 		n.handlers = handlers
-
 		return
 	}
+
+	// START
+	// Author's note:
+	// 27 Oct 2017; fixes s|i|l+static+p
+	//			    without breaking the current tests.
+	if wildcardIdx > 0 {
+		wildcardParamName = path[wildcardIdx+1:]
+		path = path[0:wildcardIdx-1] + "/"
+	}
+	// END
 
 	n := &node{
 		s:                 path,

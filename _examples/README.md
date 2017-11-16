@@ -17,6 +17,7 @@ It doesn't always contain the "best ways" but it does cover each important featu
 - [POC: Isomorphic react/hot reloadable/redux/css-modules starter kit](https://github.com/kataras/iris-starter-kit)
 - [Tutorial: DropzoneJS Uploader](tutorial/dropzonejs)
 - [Tutorial: Caddy](tutorial/caddy)
+- [Tutorial:Iris Go Framework + MongoDB](https://medium.com/go-language/iris-go-framework-mongodb-552e349eab9c)
 
 ### Structuring
 
@@ -53,6 +54,7 @@ Structuring depends on your own needs. We can't tell you how to design your own 
 - [Functional](configuration/functional/main.go)
 - [From Configuration Struct](configuration/from-configuration-structure/main.go)
 - [Import from YAML file](configuration/from-yaml-file/main.go)
+    * [Share Configuration between multiple instances](configuration/from-yaml-file/shared-configuration/main.go)
 - [Import from TOML file](configuration/from-toml-file/main.go)
 
 ### Routing, Grouping, Dynamic Path Parameters, "Macros" and Custom Context
@@ -263,7 +265,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) files to
 
 - [Basic Authentication](authentication/basicauth/main.go)
 - [OAUth2](authentication/oauth2/main.go)
-- [JWT](https://github.com/iris-contrib/middleware/blob/master/jwt/_example/main.go)
+- [JWT](experimental-handlers/jwt/main.go)
 - [Sessions](#sessions)
 
 ### File Server
@@ -275,6 +277,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) files to
 - Single Page Applications
     * [single Page Application](file-server/single-page-application/basic/main.go)
     * [embedded Single Page Application](file-server/single-page-application/embedded-single-page-application/main.go)
+    * [embedded Single Page Application with other routes](file-server/single-page-application/embedded-single-page-application-with-other-routes/main.go)
 
 ### How to Read from `context.Request() *http.Request`
 
@@ -306,6 +309,19 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) files to
 - [Profiling (pprof)](miscellaneous/pprof/main.go)
 - [Internal Application File Logger](miscellaneous/file-logger/main.go)
 - [Google reCAPTCHA](miscellaneous/recaptcha/main.go)
+- [Cross-Site Request Forgery Protection](miscellaneous/csrf/main.go) 
+
+### Experimental Handlers
+
+* [Casbin wrapper](experimental-handlers/casbin/wrapper/main.go)
+* [Casbin middleware](experimental-handlers/casbin/middleware/main.go)
+* [Cloudwatch](experimental-handlers/cloudwatch/simple/main.go)
+* [CORS](experimental-handlers/cors/simple/main.go)
+* [JWT](experimental-handlers/jwt/main.go)
+* [Newrelic](experimental-handlers/newrelic/simple/main.go)
+* [Prometheus](experimental-handlers/prometheus/simple/main.go)
+* [Secure](experimental-handlers/secure/simple/main.go)
+* [Tollboothic](experimental-handlers/tollboothic/limit-handler/main.go)
 
 #### More
 

@@ -17,7 +17,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
-	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -125,7 +124,7 @@ func (r RequestParams) GetInt64(key string) (int64, error) {
 
 // GetFloat64 returns a path parameter's value based as float64 on its route's dynamic path key.
 func (r RequestParams) GetFloat64(key string) (float64, error) {
-	return strconv.ParseFloat(r.Get(key), 64)
+	return r.store.GetFloat64(key)
 }
 
 // GetBool returns the path parameter's value as bool, based on its key.
@@ -1056,7 +1055,7 @@ func (ctx *context) Proceed(h Handler) bool {
 
 // HandlerName returns the current handler's name, helpful for debugging.
 func (ctx *context) HandlerName() string {
-	return runtime.FuncForPC(reflect.ValueOf(ctx.handlers[ctx.currentHandlerIndex]).Pointer()).Name()
+	return HandlerName(ctx.handlers[ctx.currentHandlerIndex])
 }
 
 // Do sets the handler index to zero, executes the first handler
@@ -2574,7 +2573,7 @@ var errTransactionInterrupted = errors.New("transaction interrupted, recovery fr
 // it's not covers all paths,
 // such as databases, this should be managed by the libraries you use to make your database connection,
 // this transaction scope is only for context's response.
-// Transactions have their own middleware ecosystem also, look iris.go:UseTransaction.
+// Transactions have their own middleware ecosystem also.
 //
 // See https://github.com/kataras/iris/tree/master/_examples/ for more
 func (ctx *context) BeginTransaction(pipe func(t *Transaction)) {

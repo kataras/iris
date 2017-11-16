@@ -17,6 +17,7 @@ import (
 	// core packages, needed to build the application
 	"github.com/kataras/iris/core/errors"
 	"github.com/kataras/iris/core/host"
+	"github.com/kataras/iris/core/maintenance"
 	"github.com/kataras/iris/core/netutil"
 	"github.com/kataras/iris/core/router"
 	// handlerconv conversions
@@ -26,13 +27,14 @@ import (
 	// view
 	"github.com/kataras/iris/view"
 	// middleware used in Default method
+
 	requestLogger "github.com/kataras/iris/middleware/logger"
 	"github.com/kataras/iris/middleware/recover"
 )
 
-const (
+var (
 	// Version is the current version number of the Iris Web Framework.
-	Version = "8.5.4"
+	Version = maintenance.Version
 )
 
 // HTTP status codes as registered with IANA.
@@ -332,19 +334,15 @@ var (
 
 // SPA  accepts an "assetHandler" which can be the result of an
 // app.StaticHandler or app.StaticEmbeddedHandler.
-// It wraps the router and checks:
-// if it;s an asset, if the request contains "." (this behavior can be changed via /core/router.NewSPABuilder),
-// if the request is index, redirects back to the "/" in order to let the root handler to be executed,
-// if it's not an asset then it executes the router, so the rest of registered routes can be
-// executed without conflicts with the file server ("assetHandler").
-//
-// Use that instead of `StaticWeb` for root "/" file server.
+// Use that when you want to navigate from /index.html to / automatically
+// it's a helper function which just makes some checks based on the `IndexNames` and `AssetValidators`
+// before the assetHandler call.
 //
 // Example: https://github.com/kataras/iris/tree/master/_examples/file-server/single-page-application
-func (app *Application) SPA(assetHandler context.Handler) {
+func (app *Application) SPA(assetHandler context.Handler) *router.SPABuilder {
 	s := router.NewSPABuilder(assetHandler)
-	wrapper := s.BuildWrapper(app.ContextPool)
-	app.Router.WrapRouter(wrapper)
+	app.APIBuilder.HandleMany("GET HEAD", "/{f:path}", s.Handler)
+	return s
 }
 
 // ConfigureHost accepts one or more `host#Configuration`, these configurators functions
@@ -423,7 +421,10 @@ func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 	}
 
 	su.IgnoredErrors = append(su.IgnoredErrors, app.config.IgnoreServerErrors...)
-	app.logger.Debugf("Host: server will ignore the following errors: %s", su.IgnoredErrors)
+	if len(su.IgnoredErrors) > 0 {
+		app.logger.Debugf("Host: server will ignore the following errors: %s", su.IgnoredErrors)
+	}
+
 	su.Configure(app.hostConfigurators...)
 
 	app.Hosts = append(app.Hosts, su)
@@ -663,9 +664,7 @@ var ErrServerClosed = http.ErrServerClosed
 // then create a new host and run it manually by `go NewHost(*http.Server).Serve/ListenAndServe` etc...
 // or use an already created host:
 // h := NewHost(*http.Server)
-// Run(Raw(h.ListenAndServe), WithCharset("UTF-8"),
-//	   						  WithRemoteAddrHeader("CF-Connecting-IP"),
-//    						  WithoutServerError(iris.ErrServerClosed))
+// Run(Raw(h.ListenAndServe), WithCharset("UTF-8"), WithRemoteAddrHeader("CF-Connecting-IP"))
 //
 // The Application can go online with any type of server or iris's host with the help of
 // the following runners:
@@ -680,8 +679,8 @@ func (app *Application) Run(serve Runner, withOrWithout ...Configurator) error {
 	app.Configure(withOrWithout...)
 	app.logger.Debugf("Application: running using %d host(s)", len(app.Hosts)+1)
 
-	if !app.config.DisableVersionChecker && app.logger.Level != golog.DisableLevel {
-		go CheckVersion()
+	if !app.config.DisableVersionChecker {
+		go maintenance.Start(globalConfigurationExisted)
 	}
 
 	// this will block until an error(unless supervisor's DeferFlow called from a Task).

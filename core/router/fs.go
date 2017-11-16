@@ -889,6 +889,7 @@ func localRedirect(ctx context.Context, newPath string) {
 	if q := ctx.Request().URL.RawQuery; q != "" {
 		newPath += "?" + q
 	}
+
 	ctx.Header("Location", newPath)
 	ctx.StatusCode(http.StatusMovedPermanently)
 }

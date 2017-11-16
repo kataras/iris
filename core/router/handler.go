@@ -1,6 +1,7 @@
 package router
 
 import (
+	"github.com/kataras/golog"
 	"html"
 	"net/http"
 	"sort"
@@ -136,7 +137,9 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 		if err := h.addRoute(r); err != nil {
 			// node errors:
 			rp.Add("%v -> %s", err, r.String())
+			continue
 		}
+		golog.Debugf(r.Trace())
 	}
 
 	return rp.Return()

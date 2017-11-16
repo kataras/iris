@@ -17,6 +17,69 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris` or let the automatic updater do that for you.
 
+# Th, 09 November 2017 | v8.5.8
+
+- **IMPROVE** the `Single Page Application builder`[*](https://github.com/kataras/blob/master/core/router/router_spa_wrapper.go) and fix https://github.com/kataras/iris/issues/803 reported by @ionutvilie, a new example is located [here](_examples/file-server/embedded-single-page-application-with-other-routes).
+    * `app.SPA` now returns the `*SPABuilder` and you can change some of its fields manually, i.e; 
+        * `IndexNames` defaulted to empty but can be seted to `[]{"index.html"}` or call the **new** `AddIndexName` from the `app.SPA` manually if dynamic view on root has registered, see [here](_examples/file-server/single-page-application/embedded-single-page-application) how.
+    * `AssetValidator` exists as it was and it's checked before the spa file server but it allows everything by-default because the real validation happens internally; if body was written or not, if not then reset the context's response writer and execute the router, as previously, otherwise release the context and send the response to the client.
+ 
+# Tu, 07 November 2017 | v8.5.7
+
+Nothing crazy here, just one addition which may help some people;
+
+Able to share configuration between multiple Iris instances based on the `$home_path+iris.yml` configuration file with the **new** [iris.WithGlobalConfiguration](https://github.com/kataras/iris/blob/master/configuration.go#L202) configurator[*](https://github.com/kataras/iris/blob/master/configuration.go#L191).
+
+Example:
+
+```go
+package main
+import "github.com/kataras/iris"
+
+func main() {
+    app := iris.New()
+    app.Get("/", func(ctx iris.Context) {
+        ctx.HTML("<b>Hello!</b>")
+    })
+    // [...]
+
+    // Good when you share configuration between multiple iris instances.
+    // This configuration file lives in your $HOME/iris.yml for unix hosts
+    // or %HOMEDRIVE%+%HOMEPATH%/iris.yml for windows hosts, and you can modify it.
+    app.Run(iris.Addr(":8080"), iris.WithGlobalConfiguration)
+    // or before run:
+    // app.Configure(iris.WithGlobalConfiguration)
+    // app.Run(iris.Addr(":8080"))
+}
+```
+
+# Su, 05 November 2017 | v8.5.6
+
+- **DEPRECATE** the `app.StaticServe`, use `app.StaticWeb` which does the same thing but better or `iris/app.StaticHandler` which gives you more options to work on.
+- add some debug messages for route registrations, to be aligned with the mvc debug messages.
+- improve the https://iris-go.com/v8/recipe  -- now you can see other files like assets as well -- lexical order of categories instead of "level".
+- add [8 more examples](_examples/experimental-handlers) to this repository, originally lived at https://github.com/iris-contrib/middleware and https://github.com/iris-contrib/examples/tree/master/experimental-handlers.
+
+_TODO;_ 
+
+- [ ] give the ability to customize the mvc path-method-and path parameters mapping,
+- [ ] make a github bot which will post the monthly usage and even earnings statistics in a public github markdown file, hope that users will love that type of transparency we will introduce here.
+
+# Th, 02 November 2017 | v8.5.5
+
+- fix [audio/mpeg3 does not appear to be a valid registered mime type#798](https://github.com/kataras/iris/issues/798]) reported by @kryptodev,
+- improve the updater's performance and moved that into the framework itself,
+    - ask for authentication only when a new version is released.
+- sessiondb's `.Async` functions do nothing now, all session databases(back-end persistence storage) should run in-sync, @speedwheel helped to find a misbehavior because of that setting,
+- the [configuration](configuration.go) now has `json` fields tag like `yaml` and `toml` did in order to be able to be fetched from a json file directly using the `encoding/json` package,
+- fix the `context#GetFloat64`, 
+- we are on [opencollective](http://opencollective.com/iris) and sponsored by [codesponsor](https://codesponsor.io/) now.
+
+_TODO;_ 
+
+- give the ability to customize the mvc path-method-and path parameters mapping,
+- make a github bot which will post the monthly usage and even earnings statistics in a public github markdown file, hope that users will love that type of transparency we will introduce here.
+
 # Th, 26 October 2017 | v8.5.4
 
 This version is part of the [releases](https://github.com/kataras/iris/releases).
@@ -245,7 +308,7 @@ Another good example with a typical folder structure, that many developers are u
 - errors.Reporter.AddErr returns true if the error is added to the stack, otherwise false.
 - @ZaniaDeveloper fixed https://github.com/kataras/iris/issues/778 with PR: https://github.com/kataras/iris/pull/779.
 - Add `StatusSeeOther` at [mvc login example](https://github.com/kataras/iris/blob/master/_examples/mvc/login/user/controller.go#L53) for Redirection, reported by @motecshine at https://github.com/kataras/iris/issues/777.
-- Fix `DisableVersionChecker` configuration field is not being passed correctly when it was true via `iris.Run(..., iris.WithConfiguration{DisableVersionChecker:true, ...})` call.
+- Fix `DisableVersionChecker` configuration field is not being passed correctly when it was true via `app.Run(..., iris.WithConfiguration{DisableVersionChecker:true, ...})` call.
 
 # Su, 01 October 2017 | v8.4.4
 

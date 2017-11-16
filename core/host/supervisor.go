@@ -190,8 +190,6 @@ func (su *Supervisor) supervise(blockFunc func() error) error {
 
 	su.notifyServe(host)
 
-	tryStartInterruptNotifier()
-
 	err := blockFunc()
 	su.notifyErr(err)
 

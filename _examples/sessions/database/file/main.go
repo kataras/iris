@@ -5,19 +5,19 @@ import (
 
 	"github.com/kataras/iris"
 
+	"github.com/gorilla/securecookie"
 	"github.com/kataras/iris/sessions"
 	"github.com/kataras/iris/sessions/sessiondb/file"
 )
 
 func main() {
-	db, _ := file.New("./sessions/", 0666)
-
-	// use different go routines to sync the database
-	db.Async(true)
+	db, _ := file.New("./sessions/", 0755)
 
 	sess := sessions.New(sessions.Config{
 		Cookie:  "sessionscookieid",
-		Expires: 45 * time.Minute, // <=0 means unlimited life
+		Expires: 24 * time.Hour, // <=0 means unlimited life
+		Encoding: securecookie.New([]byte("C2O6J6oYTd0CBCNERkWZK8jGOXTXf9X2"),
+			[]byte("UTp6fJsicraGxA2cslELrrLX7msg5jfE")),
 	})
 
 	//
@@ -84,5 +84,5 @@ func main() {
 		sess.ShiftExpiration(ctx)
 	})
 
-	app.Run(iris.Addr(":8080"))
+	app.Run(iris.Addr(":8080"), iris.WithoutVersionChecker)
 }
