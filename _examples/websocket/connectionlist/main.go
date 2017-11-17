@@ -77,7 +77,7 @@ func main() {
 
 	go func() {
 		i := 0
-		for {
+		for range time.Tick(1*time.Second){ //another way to get clock signal
 			mutex.Lock()
 			broadcast(Conn, fmt.Sprintf("aaaa2 %d\n", i))
 			mutex.Unlock()
