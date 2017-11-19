@@ -9,6 +9,7 @@
   "author": "Gerasimos (Makis) Maropoulos <kataras2006@hotmail.com>",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.16.0"
+    "express": "^4.16.0",
+    "throng": "4.0.0"
   }
 }
