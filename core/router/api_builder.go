@@ -225,8 +225,10 @@ func (api *APIBuilder) HandleMany(methodOrMulti string, relativePathorMulti stri
 	return
 }
 
-// Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
-// Party could also be named as 'Join' or 'Node' or 'Group' , Party chosen because it is fun.
+// Party groups routes which may have the same prefix and share same handlers,
+// returns that new rich subrouter.
+//
+// You can even declare a subdomain with relativePath as "mysub." or see `Subdomain`.
 func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) Party {
 	parentPath := api.relativePath
 	dot := string(SubdomainPrefix[0])
