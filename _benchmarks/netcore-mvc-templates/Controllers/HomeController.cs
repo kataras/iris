@@ -17,6 +17,7 @@ namespace netcore_mvc_templates.Controllers
 
         public IActionResult About()
         {
+            ViewData["Title"] = "About Page";
             ViewData["Message"] = "Your application description page.";
 
             return View();
@@ -24,6 +25,7 @@ namespace netcore_mvc_templates.Controllers
 
         public IActionResult Contact()
         {
+            ViewData["Title"] = "Contact Page";
             ViewData["Message"] = "Your contact page.";
 
             return View();
