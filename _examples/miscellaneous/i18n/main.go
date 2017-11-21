@@ -8,13 +8,14 @@ import (
 func newApp() *iris.Application {
 	app := iris.New()
 
-	app.Use(i18n.New(i18n.Config{
+	globalLocale := i18n.New(i18n.Config{
 		Default:      "en-US",
 		URLParameter: "lang",
 		Languages: map[string]string{
 			"en-US": "./locales/locale_en-US.ini",
 			"el-GR": "./locales/locale_el-GR.ini",
-			"zh-CN": "./locales/locale_zh-CN.ini"}}))
+			"zh-CN": "./locales/locale_zh-CN.ini"}})
+	app.Use(globalLocale)
 
 	app.Get("/", func(ctx iris.Context) {
 
@@ -41,6 +42,23 @@ func newApp() *iris.Application {
 		ctx.Writef("From the language %s translated output: %s", language, hi)
 	})
 
+	multiLocale := i18n.New(i18n.Config{
+		Default:      "en-US",
+		URLParameter: "lang",
+		Languages: map[string]string{
+			"en-US": "./locales/locale_multi_first_en-US.ini, ./locales/locale_multi_second_en-US.ini",
+			"el-GR": "./locales/locale_multi_first_el-GR.ini, ./locales/locale_multi_second_el-GR.ini"}})
+
+	app.Get("/multi", multiLocale, func(ctx iris.Context) {
+		language := ctx.Values().GetString(ctx.Application().ConfigurationReadOnly().GetTranslateLanguageContextKey())
+
+		fromFirstFileValue := i18n.Translate(ctx, "key1")
+		fromSecondFileValue := i18n.Translate(ctx, "key2")
+		ctx.Writef("From the language: %s, translated output:\n%s=%s\n%s=%s",
+			language, "key1", fromFirstFileValue,
+			"key2", fromSecondFileValue)
+	})
+
 	return app
 }
 
@@ -48,7 +66,13 @@ func main() {
 	app := newApp()
 
 	// go to http://localhost:8080/?lang=el-GR
-	// or http://localhost:8080
+	// or http://localhost:8080 (default is en-US)
 	// or http://localhost:8080/?lang=zh-CN
+	//
+	// go to http://localhost:8080/multi?lang=el-GR
+	// or http://localhost:8080/multi (default is en-US)
+	// or http://localhost:8080/multi?lang=en-US
+	//
+	// or use cookies to set the language.
 	app.Run(iris.Addr(":8080"))
 }
