@@ -13,7 +13,10 @@ import (
 //
 // Look the "APIBuilder" for its implementation.
 type Party interface {
-	// Party creates and returns a new child Party with the following features.
+	// Party groups routes which may have the same prefix and share same handlers,
+	// returns that new rich subrouter.
+	//
+	// You can even declare a subdomain with relativePath as "mysub." or see `Subdomain`.
 	Party(relativePath string, middleware ...context.Handler) Party
 	// PartyFunc same as `Party`, groups routes that share a base path or/and same handlers.
 	// However this function accepts a function that receives this created Party instead.

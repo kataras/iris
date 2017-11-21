@@ -32,11 +32,49 @@ var (
 	locales = &localeStore{store: make(map[string]*locale)}
 )
 
+// add support for multi language file per language.
+// ini has already implement a  *ini.File#Append
+// BUT IT DOESN'T F WORKING, SO:
+type localeFiles struct {
+	files []*ini.File
+}
+
+// Get returns a the value from the "keyName" on the "sectionName"
+// by searching all loc.files.
+func (loc *localeFiles) GetKey(sectionName, keyName string) (*ini.Key, error) {
+	for _, f := range loc.files {
+		// returns the first available.
+		// section is the same for both files if key exists.
+		if sec, serr := f.GetSection(sectionName); serr == nil && sec != nil {
+			if k, err := sec.GetKey(keyName); err == nil && k != nil {
+				return k, err
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("not found")
+}
+
+// Reload reloads and parses all data sources.
+func (loc *localeFiles) Reload() error {
+	for _, f := range loc.files {
+		if err := f.Reload(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (loc *localeFiles) addFile(file *ini.File) error {
+	loc.files = append(loc.files, file)
+	return loc.Reload()
+}
+
 type locale struct {
 	id       int
 	lang     string
 	langDesc string
-	message  *ini.File
+	message  *localeFiles
 }
 
 type localeStore struct {
@@ -49,29 +87,49 @@ type localeStore struct {
 // Get target language string
 func (d *localeStore) Get(lang, section, format string) (string, bool) {
 	if locale, ok := d.store[lang]; ok {
-		if key, err := locale.message.Section(section).GetKey(format); err == nil {
+		// println(lang + " language found, let's see keys")
+		if key, err := locale.message.GetKey(section, format); err == nil && key != nil {
+			// println("value for section= " + section + "and key=" + format + " found")
 			return key.Value(), true
 		}
 	}
 
 	if len(d.defaultLang) > 0 && lang != d.defaultLang {
+		// println("use the default lang: " + d.defaultLang)
 		return d.Get(d.defaultLang, section, format)
 	}
 
 	return "", false
 }
 
-func (d *localeStore) Add(lc *locale) bool {
-	if _, ok := d.store[lc.lang]; ok {
-		return false
+func (d *localeStore) Add(lang, langDesc string, source interface{}, others ...interface{}) error {
+
+	file, err := ini.Load(source, others...)
+	if err != nil {
+		return err
+	}
+	file.BlockMode = false
+
+	// if already exists add the file on this language.
+	lc, ok := d.store[lang]
+	if !ok {
+		// println("add lang and init message: " + lang)
+		// create a new one if doesn't exist.
+
+		lc = new(locale)
+		lc.message = new(localeFiles)
+		lc.lang = lang
+		lc.langDesc = langDesc
+		lc.id = len(d.langs)
+		// add the first language if not exists.
+		d.langs = append(d.langs, lang)
+		d.langDescs = append(d.langDescs, langDesc)
+		d.store[lang] = lc
 	}
 
-	lc.id = len(d.langs)
-	d.langs = append(d.langs, lc.lang)
-	d.langDescs = append(d.langDescs, lc.langDesc)
-	d.store[lc.lang] = lc
+	// println("append a file for language: " + lang)
 
-	return true
+	return lc.message.addFile(file)
 }
 
 func (d *localeStore) Reload(langs ...string) (err error) {
@@ -180,19 +238,7 @@ func GetDescriptionByLang(lang string) string {
 }
 
 func SetMessageWithDesc(lang, langDesc string, localeFile interface{}, otherLocaleFiles ...interface{}) error {
-	message, err := ini.Load(localeFile, otherLocaleFiles...)
-	if err == nil {
-		message.BlockMode = false
-		lc := new(locale)
-		lc.lang = lang
-		lc.langDesc = langDesc
-		lc.message = message
-
-		if locales.Add(lc) == false {
-			return ErrLangAlreadyExist
-		}
-	}
-	return err
+	return locales.Add(lang, langDesc, localeFile, otherLocaleFiles...)
 }
 
 // SetMessage sets the message file for localization.

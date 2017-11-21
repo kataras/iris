@@ -22,7 +22,8 @@ func (i *i18nMiddleware) ServeHTTP(ctx context.Context) {
 	language := i.config.Default
 
 	langKey := ctx.Application().ConfigurationReadOnly().GetTranslateLanguageContextKey()
-	if ctx.Values().GetString(langKey) == "" {
+	language = ctx.Values().GetString(langKey)
+	if language == "" {
 		// try to get by url parameter
 		language = ctx.URLParam(i.config.URLParameter)
 		if language == "" {
@@ -52,8 +53,9 @@ func (i *i18nMiddleware) ServeHTTP(ctx context.Context) {
 		if language == "" {
 			language = i.config.Default
 		}
-	}
 
+		ctx.Values().Set(langKey, language)
+	}
 	locale := i18n.Locale{Lang: language}
 
 	// if unexpected language given, the middleware will  transtlate to the default language, the language key should be
@@ -61,7 +63,7 @@ func (i *i18nMiddleware) ServeHTTP(ctx context.Context) {
 	if indexLang := locale.Index(); indexLang == -1 {
 		locale.Lang = i.config.Default
 	}
-	ctx.Values().Set(langKey, locale.Lang)
+
 	translateFuncKey := ctx.Application().ConfigurationReadOnly().GetTranslateFunctionContextKey()
 	ctx.Values().Set(translateFuncKey, locale.Tr)
 	ctx.Next()
@@ -82,16 +84,23 @@ func New(c Config) context.Handler {
 	i := &i18nMiddleware{config: c}
 	firstlanguage := ""
 	//load the files
-	for k, v := range c.Languages {
-		if !strings.HasSuffix(v, ".ini") {
-			v += ".ini"
-		}
-		err := i18n.SetMessage(k, v)
-		if err != nil && err != i18n.ErrLangAlreadyExist {
-			panic("iris i18n Middleware: Failed to set locale file" + k + " Error:" + err.Error())
-		}
-		if firstlanguage == "" {
-			firstlanguage = k
+	for k, langFileOrFiles := range c.Languages {
+		// remove all spaces.
+		langFileOrFiles = strings.Replace(langFileOrFiles, " ", "", -1)
+		// note: if only one, then the first element is the "v".
+		languages := strings.Split(langFileOrFiles, ",")
+
+		for _, v := range languages { // loop each of the files separated by comma, if any.
+			if !strings.HasSuffix(v, ".ini") {
+				v += ".ini"
+			}
+			err := i18n.SetMessage(k, v)
+			if err != nil && err != i18n.ErrLangAlreadyExist {
+				panic("Failed to set locale file'" + k + "' Error:" + err.Error())
+			}
+			if firstlanguage == "" {
+				firstlanguage = k
+			}
 		}
 	}
 	// if not default language setted then set to the first of the i.config.Languages
