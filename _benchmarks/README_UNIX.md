@@ -26,7 +26,7 @@ Go ahead to the [README.md](README.md) and read how you can reproduce the benchm
 ### Native
 
 | Name | Throughput | Reqs/sec | Latency | Time To Complete | Total Requests |
-|-------|:-----------|:--------|:-------------|---------|------|------|
+|-------|:-----------|:--------|:-------------|---------|------|
 | Iris | **29.31MB/s** | 157628 | 791.58us | 6s | 1000000 |
 | Kestrel | **25.28MB/s** | 139642 | 0.89ms | 7s | 1000000 |
 | Node.js | **13.69MB/s** | 50907 | 2.45ms | 19s | 1000000 |

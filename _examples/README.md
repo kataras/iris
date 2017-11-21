@@ -308,20 +308,20 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) files to
 - [Recovery](miscellaneous/recover/main.go)
 - [Profiling (pprof)](miscellaneous/pprof/main.go)
 - [Internal Application File Logger](miscellaneous/file-logger/main.go)
-- [Google reCAPTCHA](miscellaneous/recaptcha/main.go)
-- [Cross-Site Request Forgery Protection](miscellaneous/csrf/main.go) 
+- [Google reCAPTCHA](miscellaneous/recaptcha/main.go) 
 
 ### Experimental Handlers
 
-* [Casbin wrapper](experimental-handlers/casbin/wrapper/main.go)
-* [Casbin middleware](experimental-handlers/casbin/middleware/main.go)
-* [Cloudwatch](experimental-handlers/cloudwatch/simple/main.go)
-* [CORS](experimental-handlers/cors/simple/main.go)
-* [JWT](experimental-handlers/jwt/main.go)
-* [Newrelic](experimental-handlers/newrelic/simple/main.go)
-* [Prometheus](experimental-handlers/prometheus/simple/main.go)
-* [Secure](experimental-handlers/secure/simple/main.go)
-* [Tollboothic](experimental-handlers/tollboothic/limit-handler/main.go)
+- [Casbin wrapper](experimental-handlers/casbin/wrapper/main.go)
+- [Casbin middleware](experimental-handlers/casbin/middleware/main.go)
+- [Cloudwatch](experimental-handlers/cloudwatch/simple/main.go)
+- [CORS](experimental-handlers/cors/simple/main.go)
+- [JWT](experimental-handlers/jwt/main.go)
+- [Newrelic](experimental-handlers/newrelic/simple/main.go)
+- [Prometheus](experimental-handlers/prometheus/simple/main.go)
+- [Secure](experimental-handlers/secure/simple/main.go)
+- [Tollboothic](experimental-handlers/tollboothic/limit-handler/main.go)
+- [Cross-Site Request Forgery Protection](experimental-handlers/csrf/main.go)
 
 #### More
 
