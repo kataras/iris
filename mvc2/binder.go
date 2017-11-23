@@ -2,8 +2,6 @@ package mvc2
 
 import (
 	"reflect"
-
-	"github.com/kataras/iris/context"
 )
 
 // InputBinder is the result of `MakeBinder`.
@@ -12,20 +10,50 @@ import (
 // and a function which will accept a context and returns a value of something.
 type InputBinder struct {
 	BindType reflect.Type
-	BindFunc func(context.Context) reflect.Value
+	BindFunc func(ctx []reflect.Value) reflect.Value
 }
 
-// MustMakeBinder calls the `MakeBinder` and returns its first result, see its docs.
+// getBindersForInput returns a map of the responsible binders for the "expected" types,
+// which are the expected input parameters' types,
+// based on the available "binders" collection.
+//
+// It returns a map which its key is the index of the "expected" which
+// a valid binder for that in's type found,
+// the value is the pointer of the responsible `InputBinder`.
+//
+// Check of "a nothing responsible for those expected types"
+// should be done using the `len(m) == 0`.
+func getBindersForInput(binders []*InputBinder, expected ...reflect.Type) map[int]*InputBinder {
+	var m map[int]*InputBinder
+
+	for idx, in := range expected {
+		for _, b := range binders {
+			// if same type or the result of binder implements the expected in's type.
+			if equalTypes(b.BindType, in) {
+				if m == nil {
+					m = make(map[int]*InputBinder)
+				}
+				// fmt.Printf("set index: %d to type: %s where input type is: %s\n", idx, b.BindType.String(), in.String())
+				m[idx] = b
+				break
+			}
+		}
+	}
+
+	return m
+}
+
+// MustMakeFuncInputBinder calls the `MakeFuncInputBinder` and returns its first result, see its docs.
 // It panics on error.
-func MustMakeBinder(binder interface{}) *InputBinder {
-	b, err := MakeBinder(binder)
+func MustMakeFuncInputBinder(binder interface{}) *InputBinder {
+	b, err := MakeFuncInputBinder(binder)
 	if err != nil {
 		panic(err)
 	}
 	return b
 }
 
-// MakeBinder takes a binder function or a struct which contains a "Bind"
+// MakeFuncInputBinder takes a binder function or a struct which contains a "Bind"
 // function and returns an `InputBinder`, which Iris uses to
 // resolve and set the input parameters when a handler is executed.
 //
@@ -37,7 +65,7 @@ func MustMakeBinder(binder interface{}) *InputBinder {
 // The return type of the "binder" should be a value instance, not a pointer, for your own protection.
 // The binder function should return only one value and
 // it can accept only one input argument, the Iris' Context (`context.Context` or `iris.Context`).
-func MakeBinder(binder interface{}) (*InputBinder, error) {
+func MakeFuncInputBinder(binder interface{}) (*InputBinder, error) {
 	v := reflect.ValueOf(binder)
 
 	// check if it's a struct or a pointer to a struct
@@ -48,10 +76,10 @@ func MakeBinder(binder interface{}) (*InputBinder, error) {
 		}
 	}
 
-	return makeBinder(v)
+	return makeFuncInputBinder(v)
 }
 
-func makeBinder(fn reflect.Value) (*InputBinder, error) {
+func makeFuncInputBinder(fn reflect.Value) (*InputBinder, error) {
 	typ := indirectTyp(fn.Type())
 
 	// invalid if not a func.
@@ -77,8 +105,9 @@ func makeBinder(fn reflect.Value) (*InputBinder, error) {
 	outTyp := typ.Out(0)
 	zeroOutVal := reflect.New(outTyp).Elem()
 
-	bf := func(ctx context.Context) reflect.Value {
-		results := fn.Call([]reflect.Value{reflect.ValueOf(ctx)})
+	bf := func(ctxValue []reflect.Value) reflect.Value {
+		// []reflect.Value{reflect.ValueOf(ctx)}
+		results := fn.Call(ctxValue)
 		if len(results) == 0 {
 			return zeroOutVal
 		}
@@ -94,34 +123,4 @@ func makeBinder(fn reflect.Value) (*InputBinder, error) {
 		BindType: outTyp,
 		BindFunc: bf,
 	}, nil
-}
-
-// searchBinders returns a map of the responsible binders for the "expected" types,
-// which are the expected input parameters' types,
-// based on the available "binders" collection.
-//
-// It returns a map which its key is the index of the "expected" which
-// a valid binder for that in's type found,
-// the value is the pointer of the responsible `InputBinder`.
-//
-// Check of "a nothing responsible for those expected types"
-// should be done using the `len(m) == 0`.
-func searchBinders(binders []*InputBinder, expected ...reflect.Type) map[int]*InputBinder {
-	var m map[int]*InputBinder
-
-	for idx, in := range expected {
-		for _, b := range binders {
-			// if same type or the result of binder implements the expected in's type.
-			if b.BindType == in || (in.Kind() == reflect.Interface && b.BindType.Implements(in)) {
-				if m == nil {
-					m = make(map[int]*InputBinder)
-				}
-				// fmt.Printf("set index: %d to type: %s where input type is: %s\n", idx, b.BindType.String(), in.String())
-				m[idx] = b
-				break
-			}
-		}
-	}
-
-	return m
 }

@@ -32,3 +32,15 @@ func goodVal(v reflect.Value) bool {
 func isFunc(typ reflect.Type) bool {
 	return typ.Kind() == reflect.Func
 }
+
+func equalTypes(in reflect.Type, v reflect.Type) bool {
+	if in == v {
+		return true
+	}
+	// if accepts an interface, check if the given "v" type does
+	// implement this.
+	if in.Kind() == reflect.Interface {
+		return v.Implements(in)
+	}
+	return false
+}
