@@ -28,13 +28,13 @@ func (t *testBinderStruct) Bind(ctx context.Context) testUserStruct {
 	return testBinderFunc(ctx)
 }
 
-func TestMakeBinder(t *testing.T) {
-	testMakeBinder(t, testBinderFunc)
-	testMakeBinder(t, new(testBinderStruct))
+func TestMakeFuncInputBinder(t *testing.T) {
+	testMakeFuncInputBinder(t, testBinderFunc)
+	testMakeFuncInputBinder(t, new(testBinderStruct))
 }
 
-func testMakeBinder(t *testing.T, binder interface{}) {
-	b, err := MakeBinder(binder)
+func testMakeFuncInputBinder(t *testing.T, binder interface{}) {
+	b, err := MakeFuncInputBinder(binder)
 	if err != nil {
 		t.Fatalf("failed to make binder: %v", err)
 	}
@@ -54,8 +54,8 @@ func testMakeBinder(t *testing.T, binder interface{}) {
 	ctx := context.NewContext(nil)
 	ctx.Params().Set("id", fmt.Sprintf("%v", expected.ID))
 	ctx.Params().Set("username", expected.Username)
-
-	v := b.BindFunc(ctx)
+	ctxValue := []reflect.Value{reflect.ValueOf(ctx)}
+	v := b.BindFunc(ctxValue)
 	if !v.CanInterface() {
 		t.Fatalf("result of binder func cannot be interfaced: %#+v", v)
 	}
@@ -70,7 +70,16 @@ func testMakeBinder(t *testing.T, binder interface{}) {
 	}
 }
 
-// TestSearchBinders will test two available binders, one for int
+func testCheck(t *testing.T, testName string, shouldPass bool, errString string) {
+	if shouldPass && errString != "" {
+		t.Fatalf("[%s] %s", testName, errString)
+	}
+	if !shouldPass && errString == "" {
+		t.Fatalf("[%s] expected not to pass", testName)
+	}
+}
+
+// TestGetBindersForInput will test two available binders, one for int
 // and other for a string,
 // the first input will contains both of them in the same order,
 // the second will contain both of them as well but with a different order,
@@ -80,13 +89,13 @@ func testMakeBinder(t *testing.T, binder interface{}) {
 // the last one will contain a struct and should fail,
 // that no of othe available binders will support it,
 // so no len of the result should be zero there.
-func TestSearchBinders(t *testing.T) {
+func TestGetBindersForInput(t *testing.T) {
 	// binders
 	var (
-		stringBinder = MustMakeBinder(func(ctx context.Context) string {
+		stringBinder = MustMakeFuncInputBinder(func(ctx context.Context) string {
 			return "a string"
 		})
-		intBinder = MustMakeBinder(func(ctx context.Context) int {
+		intBinder = MustMakeFuncInputBinder(func(ctx context.Context) int {
 			return 42
 		})
 	)
@@ -96,48 +105,39 @@ func TestSearchBinders(t *testing.T) {
 		intType    = reflect.TypeOf(1)
 	)
 
-	check := func(testName string, shouldPass bool, errString string) {
-		if shouldPass && errString != "" {
-			t.Fatalf("[%s] %s", testName, errString)
-		}
-		if !shouldPass && errString == "" {
-			t.Fatalf("[%s] expected not to pass", testName)
-		}
-	}
-
 	// 1
-	check("test1", true, testSearchBinders(t, []*InputBinder{intBinder, stringBinder},
+	testCheck(t, "test1", true, testGetBindersForInput(t, []*InputBinder{intBinder, stringBinder},
 		[]interface{}{"a string", 42}, stringType, intType))
 	availableBinders := []*InputBinder{stringBinder, intBinder} // different order than the fist test.
 	// 2
-	check("test2", true, testSearchBinders(t, availableBinders,
+	testCheck(t, "test2", true, testGetBindersForInput(t, availableBinders,
 		[]interface{}{"a string", 42}, stringType, intType))
 	// 3
-	check("test-3-fail", false, testSearchBinders(t, availableBinders,
+	testCheck(t, "test-3-fail", false, testGetBindersForInput(t, availableBinders,
 		[]interface{}{42}, stringType, intType))
 	// 4
-	check("test-4-fail", false, testSearchBinders(t, availableBinders,
+	testCheck(t, "test-4-fail", false, testGetBindersForInput(t, availableBinders,
 		[]interface{}{"a string"}, stringType, intType))
 	// 5
-	check("test-5-fail", false, testSearchBinders(t, availableBinders,
+	testCheck(t, "test-5-fail", false, testGetBindersForInput(t, availableBinders,
 		[]interface{}{42, 42}, stringType, intType))
 	// 6
-	check("test-6-fail", false, testSearchBinders(t, availableBinders,
+	testCheck(t, "test-6-fail", false, testGetBindersForInput(t, availableBinders,
 		[]interface{}{testUserStruct{}}, stringType, intType))
 
 }
 
-func testSearchBinders(t *testing.T, binders []*InputBinder, expectingResults []interface{}, in ...reflect.Type) (errString string) {
-	m := searchBinders(binders, in...)
+func testGetBindersForInput(t *testing.T, binders []*InputBinder, expectingResults []interface{}, in ...reflect.Type) (errString string) {
+	m := getBindersForInput(binders, in...)
 
-	if len(m) != len(expectingResults) {
-		return "expected results length and valid binders to be equal, so each input has one binder"
+	if expected, got := len(expectingResults), len(m); expected != got {
+		return fmt.Sprintf("expected results length(%d) and valid binders length(%d) to be equal, so each input has one binder", expected, got)
 	}
 
-	ctx := context.NewContext(nil)
+	ctxValue := []reflect.Value{reflect.ValueOf(context.NewContext(nil))}
 	for idx, expected := range expectingResults {
 		if m[idx] != nil {
-			v := m[idx].BindFunc(ctx)
+			v := m[idx].BindFunc(ctxValue)
 			if got := v.Interface(); got != expected {
 				return fmt.Sprintf("expected result[%d] to be: %v but got: %v", idx, expected, got)
 			}
