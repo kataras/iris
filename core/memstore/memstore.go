@@ -25,6 +25,150 @@ type (
 	Store []Entry
 )
 
+func (e Entry) GetByKindOrNil(k reflect.Kind) interface{} {
+	switch k {
+	case reflect.String:
+		v := e.StringDefault("__$nf")
+		if v == "__$nf" {
+			return nil
+		}
+		return v
+	case reflect.Int:
+		v, err := e.IntDefault(-1)
+		if err != nil || v == -1 {
+			return nil
+		}
+		return v
+	case reflect.Int64:
+		v, err := e.Int64Default(-1)
+		if err != nil || v == -1 {
+			return nil
+		}
+		return v
+	case reflect.Bool:
+		v, err := e.BoolDefault(false)
+		if err != nil {
+			return nil
+		}
+		return v
+	default:
+		return e.ValueRaw
+	}
+}
+
+// StringDefault returns the entry's value as string.
+// If not found returns "def".
+func (e Entry) StringDefault(def string) string {
+	v := e.ValueRaw
+
+	if vString, ok := v.(string); ok {
+		return vString
+	}
+
+	return def
+}
+
+// String returns the entry's value as string.
+func (e Entry) String() string {
+	return e.StringDefault("")
+}
+
+// StringTrim returns the entry's string value without trailing spaces.
+func (e Entry) StringTrim() string {
+	return strings.TrimSpace(e.String())
+}
+
+// ErrIntParse returns an error message when int parse failed
+// it's not statical error, it depends on the failed value.
+var ErrIntParse = errors.New("unable to find or parse the integer, found: %#v")
+
+// IntDefault returns the entry's value as int.
+// If not found returns "def".
+func (e Entry) IntDefault(def int) (int, error) {
+	v := e.ValueRaw
+	if v == nil {
+		return def, nil
+	}
+	if vint, ok := v.(int); ok {
+		return vint, nil
+	} else if vstring, sok := v.(string); sok {
+		if vstring == "" {
+			return def, nil
+		}
+		return strconv.Atoi(vstring)
+	}
+
+	return def, nil
+}
+
+// Int64Default returns the entry's value as int64.
+// If not found returns "def".
+func (e Entry) Int64Default(def int64) (int64, error) {
+	v := e.ValueRaw
+	if v == nil {
+		return def, nil
+	}
+	if vint64, ok := v.(int64); ok {
+		return vint64, nil
+	} else if vstring, sok := v.(string); sok {
+		if vstring == "" {
+			return def, nil
+		}
+		return strconv.ParseInt(vstring, 10, 64)
+	}
+
+	return def, nil
+}
+
+// Float64Default returns the entry's value as float64.
+// If not found returns "def".
+func (e Entry) Float64Default(def float64) (float64, error) {
+	v := e.ValueRaw
+	if v == nil {
+		return def, nil
+	}
+	if vfloat64, ok := v.(float64); ok {
+		return vfloat64, nil
+	} else if vstring, sok := v.(string); sok {
+		if vstring == "" {
+			return def, nil
+		}
+		return strconv.ParseFloat(vstring, 64)
+	}
+
+	return def, nil
+}
+
+// BoolDefault returns the user's value as bool.
+// a string which is "1" or "t" or "T" or "TRUE" or "true" or "True"
+// or "0" or "f" or "F" or "FALSE" or "false" or "False".
+// Any other value returns an error.
+//
+// If not found returns "def".
+func (e Entry) BoolDefault(def bool) (bool, error) {
+	v := e.ValueRaw
+	if v == nil {
+		return def, nil
+	}
+
+	if vBoolean, ok := v.(bool); ok {
+		return vBoolean, nil
+	}
+
+	if vString, ok := v.(string); ok {
+		return strconv.ParseBool(vString)
+	}
+
+	if vInt, ok := v.(int); ok {
+		if vInt == 1 {
+			return true, nil
+		}
+		return false, nil
+	}
+
+	return def, nil
+}
+
 // Value returns the value of the entry,
 // respects the immutable.
 func (e Entry) Value() interface{} {
@@ -128,19 +272,35 @@ func (r *Store) SetImmutable(key string, value interface{}) (Entry, bool) {
 	return r.Save(key, value, true)
 }
 
-// GetDefault returns the entry's value based on its key.
-// If not found returns "def".
-func (r *Store) GetDefault(key string, def interface{}) interface{} {
+// GetEntry returns a pointer to the "Entry" found with the given "key"
+// if nothing found then it returns nil, so be careful with that,
+// it's not supposed to be used by end-developers.
+func (r *Store) GetEntry(key string) *Entry {
 	args := *r
 	n := len(args)
 	for i := 0; i < n; i++ {
 		kv := &args[i]
 		if kv.Key == key {
-			return kv.Value()
+			return kv
 		}
 	}
 
-	return def
+	return nil
+}
+
+// GetDefault returns the entry's value based on its key.
+// If not found returns "def".
+// This function checks for immutability as well, the rest don't.
+func (r *Store) GetDefault(key string, def interface{}) interface{} {
+	v := r.GetEntry(key)
+	if v == nil || v.ValueRaw == nil {
+		return def
+	}
+	vv := v.Value()
+	if vv == nil {
+		return def
+	}
+	return vv
 }
 
 // Get returns the entry's value based on its key.
@@ -162,16 +322,12 @@ func (r *Store) Visit(visitor func(key string, value interface{})) {
 // GetStringDefault returns the entry's value as string, based on its key.
 // If not found returns "def".
 func (r *Store) GetStringDefault(key string, def string) string {
-	v := r.Get(key)
+	v := r.GetEntry(key)
 	if v == nil {
 		return def
 	}
 
-	if vString, ok := v.(string); ok {
-		return vString
-	}
-
-	return def
+	return v.StringDefault(def)
 }
 
 // GetString returns the entry's value as string, based on its key.
@@ -184,27 +340,14 @@ func (r *Store) GetStringTrim(name string) string {
 	return strings.TrimSpace(r.GetString(name))
 }
 
-// ErrIntParse returns an error message when int parse failed
-// it's not statical error, it depends on the failed value.
-var ErrIntParse = errors.New("unable to find or parse the integer, found: %#v")
-
 // GetIntDefault returns the entry's value as int, based on its key.
 // If not found returns "def".
 func (r *Store) GetIntDefault(key string, def int) (int, error) {
-	v := r.Get(key)
+	v := r.GetEntry(key)
 	if v == nil {
 		return def, nil
 	}
-	if vint, ok := v.(int); ok {
-		return vint, nil
-	} else if vstring, sok := v.(string); sok {
-		if vstring == "" {
-			return def, nil
-		}
-		return strconv.Atoi(vstring)
-	}
-
-	return def, nil
+	return v.IntDefault(def)
 }
 
 // GetInt returns the entry's value as int, based on its key.
@@ -216,20 +359,11 @@ func (r *Store) GetInt(key string) (int, error) {
 // GetInt64Default returns the entry's value as int64, based on its key.
 // If not found returns "def".
 func (r *Store) GetInt64Default(key string, def int64) (int64, error) {
-	v := r.Get(key)
+	v := r.GetEntry(key)
 	if v == nil {
 		return def, nil
 	}
-	if vint64, ok := v.(int64); ok {
-		return vint64, nil
-	} else if vstring, sok := v.(string); sok {
-		if vstring == "" {
-			return def, nil
-		}
-		return strconv.ParseInt(vstring, 10, 64)
-	}
-
-	return def, nil
+	return v.Int64Default(def)
 }
 
 // GetInt64 returns the entry's value as int64, based on its key.
@@ -241,20 +375,11 @@ func (r *Store) GetInt64(key string) (int64, error) {
 // GetFloat64Default returns the entry's value as float64, based on its key.
 // If not found returns "def".
 func (r *Store) GetFloat64Default(key string, def float64) (float64, error) {
-	v := r.Get(key)
+	v := r.GetEntry(key)
 	if v == nil {
 		return def, nil
 	}
-	if vfloat64, ok := v.(float64); ok {
-		return vfloat64, nil
-	} else if vstring, sok := v.(string); sok {
-		if vstring == "" {
-			return def, nil
-		}
-		return strconv.ParseFloat(vstring, 64)
-	}
-
-	return def, nil
+	return v.Float64Default(def)
 }
 
 // GetFloat64 returns the entry's value as float64, based on its key.
@@ -270,27 +395,11 @@ func (r *Store) GetFloat64(key string) (float64, error) {
 //
 // If not found returns "def".
 func (r *Store) GetBoolDefault(key string, def bool) (bool, error) {
-	v := r.Get(key)
+	v := r.GetEntry(key)
 	if v == nil {
 		return def, nil
 	}
-
-	if vBoolean, ok := v.(bool); ok {
-		return vBoolean, nil
-	}
-
-	if vString, ok := v.(string); ok {
-		return strconv.ParseBool(vString)
-	}
-
-	if vInt, ok := v.(int); ok {
-		if vInt == 1 {
-			return true, nil
-		}
-		return false, nil
-	}
-
-	return def, nil
+	return v.BoolDefault(def)
 }
 
 // GetBool returns the user's value as bool, based on its key.
