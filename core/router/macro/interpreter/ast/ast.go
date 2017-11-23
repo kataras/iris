@@ -51,6 +51,23 @@ const (
 	ParamTypePath
 )
 
+// ValidKind will return true if at least one param type is supported
+// for this std kind.
+func ValidKind(k reflect.Kind) bool {
+	switch k {
+	case reflect.String:
+		fallthrough
+	case reflect.Int:
+		fallthrough
+	case reflect.Int64:
+		fallthrough
+	case reflect.Bool:
+		return true
+	default:
+		return false
+	}
+}
+
 // Not because for a single reason
 // a string may be a
 // ParamTypeString or a ParamTypeFile
@@ -105,6 +122,7 @@ var paramTypes = map[string]ParamType{
 // Available:
 // "string"
 // "int"
+// "long"
 // "alphabetical"
 // "file"
 // "path"

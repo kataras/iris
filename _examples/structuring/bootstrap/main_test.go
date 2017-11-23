@@ -8,6 +8,7 @@ import (
 
 // go test -v
 func TestApp(t *testing.T) {
+	app := newApp()
 	e := httptest.New(t, app.Application)
 
 	// test our routes
