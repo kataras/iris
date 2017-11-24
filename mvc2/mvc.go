@@ -45,5 +45,6 @@ func (m *Mvc) RegisterService(services ...interface{}) error {
 }
 
 func (m *Mvc) Handler(handler interface{}) context.Handler {
-	return makeHandler(handler, m.binders)
+	h, _ := MakeHandler(handler, m.binders) // it logs errors already, so on any error the "h" will be nil.
+	return h
 }
