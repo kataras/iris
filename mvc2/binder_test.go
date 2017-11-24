@@ -22,15 +22,8 @@ func testBinderFunc(ctx context.Context) testUserStruct {
 	}
 }
 
-type testBinderStruct struct{}
-
-func (t *testBinderStruct) Bind(ctx context.Context) testUserStruct {
-	return testBinderFunc(ctx)
-}
-
 func TestMakeFuncInputBinder(t *testing.T) {
 	testMakeFuncInputBinder(t, testBinderFunc)
-	testMakeFuncInputBinder(t, new(testBinderStruct))
 }
 
 func testMakeFuncInputBinder(t *testing.T, binder interface{}) {

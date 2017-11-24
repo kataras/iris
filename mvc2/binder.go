@@ -68,29 +68,41 @@ func MustMakeFuncInputBinder(binder interface{}) *InputBinder {
 	return b
 }
 
+type binderType uint32
+
+const (
+	functionType binderType = iota
+	serviceType
+	invalidType
+)
+
+func resolveBinderType(binder interface{}) binderType {
+	if binder == nil {
+		return invalidType
+	}
+
+	switch indirectTyp(reflect.TypeOf(binder)).Kind() {
+	case reflect.Func:
+		return functionType
+	case reflect.Struct:
+		return serviceType
+	}
+
+	return invalidType
+}
+
 // MakeFuncInputBinder takes a binder function or a struct which contains a "Bind"
 // function and returns an `InputBinder`, which Iris uses to
 // resolve and set the input parameters when a handler is executed.
 //
 // The "binder" can have the following form:
-// `func(iris.Context) UserViewModel`
-// and a struct which contains a "Bind" method
-// of the same binder form that was described above.
+// `func(iris.Context) UserViewModel`.
 //
 // The return type of the "binder" should be a value instance, not a pointer, for your own protection.
 // The binder function should return only one value and
 // it can accept only one input argument, the Iris' Context (`context.Context` or `iris.Context`).
 func MakeFuncInputBinder(binder interface{}) (*InputBinder, error) {
 	v := reflect.ValueOf(binder)
-
-	// check if it's a struct or a pointer to a struct
-	// and contains a "Bind" method, if yes use that as the binder func.
-	if indirectTyp(v.Type()).Kind() == reflect.Struct {
-		if m := v.MethodByName("Bind"); m.IsValid() && m.CanInterface() {
-			v = m
-		}
-	}
-
 	return makeFuncInputBinder(v)
 }
 

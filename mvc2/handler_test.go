@@ -40,39 +40,51 @@ func (s *testServiceImpl) Say(message string) string {
 	return s.prefix + " " + message
 }
 
+var (
+	// binders, as user-defined
+	testBinderFuncUserStruct = testBinderFunc
+	testBinderService        = &testServiceImpl{prefix: "say"}
+	testBinderFuncParam      = func(ctx iris.Context) string {
+		return ctx.Params().Get("param")
+	}
+
+	// consumers
+	// a context as first input arg, which is not needed to be binded manually,
+	// and a user struct which is binded to the input arg by the #1 func(ctx) any binder.
+	testConsumeUserHandler = func(ctx iris.Context, user testUserStruct) {
+		ctx.JSON(user)
+	}
+
+	// just one input arg, the service which is binded by the #2 service binder.
+	testConsumeServiceHandler = func(service testService) string {
+		return service.Say("something")
+	}
+	// just one input arg, a standar string which is binded by the #3 func(ctx) any binder.
+	testConsumeParamHandler = func(myParam string) string {
+		return "param is: " + myParam
+	}
+)
+
 func TestMakeHandler(t *testing.T) {
 	binders := []*InputBinder{
 		// #1
-		MustMakeFuncInputBinder(testBinderFunc),
+		MustMakeFuncInputBinder(testBinderFuncUserStruct),
 		// #2
-		MustMakeServiceInputBinder(&testServiceImpl{prefix: "say"}),
+		MustMakeServiceInputBinder(testBinderService),
 		// #3
-		MustMakeFuncInputBinder(func(ctx iris.Context) string {
-			return ctx.Params().Get("param")
-		}),
+		MustMakeFuncInputBinder(testBinderFuncParam),
 	}
 
 	var (
-		// a context as first input arg, which is not needed to be binded manually,
-		// and a user struct which is binded to the input arg by the #1 func(ctx) any binder.
-		consumeUserHandler = func(ctx iris.Context, user testUserStruct) {
-			ctx.JSON(user)
-		}
-		h1 = MustMakeHandler(consumeUserHandler, binders)
-
-		// just one input arg, the service which is binded by the #2 service binder.
-		consumeServiceHandler = func(service testService) string {
-			return service.Say("something")
-		}
-		h2 = MustMakeHandler(consumeServiceHandler, binders)
-
-		// just one input arg, a standar string which is binded by the #3 func(ctx) any binder.
-		consumeParamHandler = func(myParam string) string {
-			return "param is: " + myParam
-		}
-		h3 = MustMakeHandler(consumeParamHandler, binders)
+		h1 = MustMakeHandler(testConsumeUserHandler, binders)
+		h2 = MustMakeHandler(testConsumeServiceHandler, binders)
+		h3 = MustMakeHandler(testConsumeParamHandler, binders)
 	)
 
+	testAppWithMvcHandlers(t, h1, h2, h3)
+}
+
+func testAppWithMvcHandlers(t *testing.T, h1, h2, h3 iris.Handler) {
 	app := iris.New()
 	app.Get("/{id:long}/{username:string}", h1)
 	app.Get("/service", h2)
