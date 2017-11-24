@@ -20,28 +20,44 @@ func New() *Mvc {
 	return new(Mvc)
 }
 
-func (m *Mvc) RegisterBinder(binders ...interface{}) error {
-	for _, binder := range binders {
-		b, err := MakeFuncInputBinder(binder)
-		if err != nil {
-			return err
+func (m *Mvc) Child() *Mvc {
+	child := New()
+
+	// copy the current parent's ctx func binders and services to this new child.
+	if len(m.binders) > 0 {
+		binders := make([]*InputBinder, len(m.binders), len(m.binders))
+		for i, v := range m.binders {
+			binders[i] = v
 		}
-		m.binders = append(m.binders, b)
+		child.binders = binders
 	}
 
-	return nil
+	return child
 }
 
-func (m *Mvc) RegisterService(services ...interface{}) error {
-	for _, service := range services {
-		b, err := MakeServiceInputBinder(service)
-		if err != nil {
-			return err
+func (m *Mvc) In(binders ...interface{}) {
+	for _, binder := range binders {
+		typ := resolveBinderType(binder)
+
+		var (
+			b   *InputBinder
+			err error
+		)
+
+		if typ == functionType {
+			b, err = MakeFuncInputBinder(binder)
+		} else if typ == serviceType {
+			b, err = MakeServiceInputBinder(binder)
+		} else {
+			err = errBad
 		}
+
+		if err != nil {
+			continue
+		}
+
 		m.binders = append(m.binders, b)
 	}
-
-	return nil
 }
 
 func (m *Mvc) Handler(handler interface{}) context.Handler {
