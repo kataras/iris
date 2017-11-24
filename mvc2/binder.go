@@ -10,6 +10,10 @@ import (
 // and a function which will accept a context and returns a value of something.
 type InputBinder struct {
 	BindType reflect.Type
+	// ctx is slice because all binder functions called by
+	// their `.Call` method which accepts a slice of reflect.Value,
+	// so on the handler maker we will allocate a slice of a single ctx once
+	// and used to all binders.
 	BindFunc func(ctx []reflect.Value) reflect.Value
 }
 
@@ -27,6 +31,17 @@ func getBindersForInput(binders []*InputBinder, expected ...reflect.Type) map[in
 	var m map[int]*InputBinder
 
 	for idx, in := range expected {
+		if idx == 0 && isContext(in) {
+			// if the first is context then set it directly here.
+			m = make(map[int]*InputBinder)
+			m[0] = &InputBinder{
+				BindType: contextTyp,
+				BindFunc: func(ctxValues []reflect.Value) reflect.Value {
+					return ctxValues[0]
+				},
+			}
+			continue
+		}
 		for _, b := range binders {
 			// if same type or the result of binder implements the expected in's type.
 			if equalTypes(b.BindType, in) {
