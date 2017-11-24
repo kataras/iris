@@ -33,15 +33,30 @@ var (
 	emptyIn    = []reflect.Value{}
 )
 
-func makeHandler(handler interface{}, binders []*InputBinder) context.Handler {
+// MustMakeHandler calls the `MakeHandler` and returns its first resultthe low-level handler), see its docs.
+// It panics on error.
+func MustMakeHandler(handler interface{}, binders []*InputBinder) context.Handler {
+	h, err := MakeHandler(handler, binders)
+	if err != nil {
+		panic(err)
+	}
+	return h
+}
+
+// MakeHandler accepts a "handler" function which can accept any input that matches
+// with the "binders" and any output, that matches the mvc types, like string, int (string,int),
+// custom structs, Result(View | Response) and anything that you already know that mvc implementation supports,
+// and returns a low-level `context/iris.Handler` which can be used anywhere in the Iris Application,
+// as middleware or as simple route handler or party handler or subdomain handler-router.
+func MakeHandler(handler interface{}, binders []*InputBinder) (context.Handler, error) {
 	if err := validateHandler(handler); err != nil {
 		golog.Errorf("mvc handler: %v", err)
-		return nil
+		return nil, err
 	}
 
 	if h, is := isContextHandler(handler); is {
 		golog.Warnf("mvc handler: you could just use the low-level API to register a context handler instead")
-		return h
+		return h, nil
 	}
 
 	typ := indirectTyp(reflect.TypeOf(handler))
@@ -53,14 +68,15 @@ func makeHandler(handler interface{}, binders []*InputBinder) context.Handler {
 
 	m := getBindersForInput(binders, typIn...)
 	if len(m) != n {
-		golog.Errorf("mvc handler: input arguments length(%d) and valid binders length(%d) are not equal", n, len(m))
-		return nil
+		err := fmt.Errorf("input arguments length(%d) of types(%s) and valid binders length(%d) are not equal", n, typIn, len(m))
+		golog.Errorf("mvc handler: %v", err)
+		return nil, err
 	}
 
 	hasIn := len(m) > 0
 	fn := reflect.ValueOf(handler)
 
-	return func(ctx context.Context) {
+	resultHandler := func(ctx context.Context) {
 		if !hasIn {
 			methodfunc.DispatchFuncResult(ctx, fn.Call(emptyIn))
 			return
@@ -81,4 +97,6 @@ func makeHandler(handler interface{}, binders []*InputBinder) context.Handler {
 		}
 		methodfunc.DispatchFuncResult(ctx, fn.Call(in))
 	}
+
+	return resultHandler, nil
 }
