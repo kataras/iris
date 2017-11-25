@@ -67,6 +67,12 @@ func MakeHandler(handler interface{}, binders []*InputBinder) (context.Handler, 
 	}
 
 	m := getBindersForInput(binders, typIn...)
+
+	/*
+		// no f. this, it's too complicated and it will be harder to maintain later on:
+		// the only case that these are not equal is when
+		// binder returns a slice and input contains one or more inputs.
+	*/
 	if len(m) != n {
 		err := fmt.Errorf("input arguments length(%d) of types(%s) and valid binders length(%d) are not equal", n, typIn, len(m))
 		golog.Errorf("mvc handler: %v", err)
@@ -76,12 +82,15 @@ func MakeHandler(handler interface{}, binders []*InputBinder) (context.Handler, 
 	hasIn := len(m) > 0
 	fn := reflect.ValueOf(handler)
 
-	resultHandler := func(ctx context.Context) {
-		if !hasIn {
+	// if has no input to bind then execute the "handler" using the mvc style
+	// for any output parameters.
+	if !hasIn {
+		return func(ctx context.Context) {
 			methodfunc.DispatchFuncResult(ctx, fn.Call(emptyIn))
-			return
-		}
+		}, nil
+	}
 
+	return func(ctx context.Context) {
 		// we could use other tricks for "in"
 		// here but let's stick to that which is clearly
 		// that it doesn't keep any previous state
@@ -94,9 +103,35 @@ func MakeHandler(handler interface{}, binders []*InputBinder) (context.Handler, 
 		ctxValues := []reflect.Value{reflect.ValueOf(ctx)}
 		for k, v := range m {
 			in[k] = v.BindFunc(ctxValues)
+			/*
+				// no f. this, it's too complicated and it will be harder to maintain later on:
+				// now an additional check if it's array and has more inputs of the same type
+				// and all these results to the expected inputs.
+				// 																		   n-1: if has more to set.
+				result := v.BindFunc(ctxValues)
+				if isSliceAndExpectedItem(result.Type(), in, k) {
+					// if kind := result.Kind(); (kind == reflect.Slice || kind == reflect.Array) && n-1 > k {
+					prev := 0
+					for j, nn := 1, result.Len(); j < nn; j++ {
+						item := result.Slice(prev, j)
+						prev++
+						// remember; we already set the inputs type, so we know
+						// what the function expected to have.
+						if !equalTypes(item.Type(), in[k+1].Type()) {
+							break
+						}
+
+						in[k+1] = item
+					}
+				} else {
+					in[k] = result
+				}
+			*/
+
+			if ctx.IsStopped() {
+				return
+			}
 		}
 		methodfunc.DispatchFuncResult(ctx, fn.Call(in))
-	}
-
-	return resultHandler, nil
+	}, nil
 }
