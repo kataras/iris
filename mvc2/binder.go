@@ -42,8 +42,19 @@ func getBindersForInput(binders []*InputBinder, expected ...reflect.Type) map[in
 			}
 			continue
 		}
+
 		for _, b := range binders {
 			// if same type or the result of binder implements the expected in's type.
+			/*
+				// no f. this, it's too complicated and it will be harder to maintain later on:
+				// if has slice we can't know the returning len from now
+				// so the expected input length and the len(m) are impossible to guess.
+				if isSliceAndExpectedItem(b.BindType, expected, idx) {
+					hasSlice = true
+					m[idx] = b
+					continue
+				}
+			*/
 			if equalTypes(b.BindType, in) {
 				if m == nil {
 					m = make(map[int]*InputBinder)
@@ -134,7 +145,7 @@ func makeFuncInputBinder(fn reflect.Value) (*InputBinder, error) {
 
 	bf := func(ctxValue []reflect.Value) reflect.Value {
 		// []reflect.Value{reflect.ValueOf(ctx)}
-		results := fn.Call(ctxValue)
+		results := fn.Call(ctxValue) // ctxValue is like that because of; read makeHandler.
 		if len(results) == 0 {
 			return zeroOutVal
 		}

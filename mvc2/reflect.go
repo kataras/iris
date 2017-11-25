@@ -33,6 +33,19 @@ func isFunc(typ reflect.Type) bool {
 	return typ.Kind() == reflect.Func
 }
 
+/*
+// no f. this, it's too complicated and it will be harder to maintain later on:
+func isSliceAndExpectedItem(got reflect.Type, in []reflect.Type, currentBindersIdx int) bool {
+	kind := got.Kind()
+	// if got result is slice or array.
+	return (kind == reflect.Slice || kind == reflect.Array) &&
+		// if has expected next input.
+		len(in)-1 > currentBindersIdx &&
+		// if the current input's type is not the same as got (if it's not a slice of that types or anything else).
+		equalTypes(got, in[currentBindersIdx])
+}
+*/
+
 func equalTypes(got reflect.Type, expected reflect.Type) bool {
 	if got == expected {
 		return true
