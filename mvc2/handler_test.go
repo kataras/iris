@@ -28,22 +28,25 @@ func testBinderFunc(ctx iris.Context) testUserStruct {
 
 // service
 type (
-	testService interface {
+	// these TestService and TestServiceImpl could be in lowercase, unexported
+	// but the `Say` method should be exported however we have those exported
+	// because of the controller handler test.
+	TestService interface {
 		Say(string) string
 	}
-	testServiceImpl struct {
+	TestServiceImpl struct {
 		prefix string
 	}
 )
 
-func (s *testServiceImpl) Say(message string) string {
+func (s *TestServiceImpl) Say(message string) string {
 	return s.prefix + " " + message
 }
 
 var (
 	// binders, as user-defined
 	testBinderFuncUserStruct = testBinderFunc
-	testBinderService        = &testServiceImpl{prefix: "say"}
+	testBinderService        = &TestServiceImpl{prefix: "say"}
 	testBinderFuncParam      = func(ctx iris.Context) string {
 		return ctx.Params().Get("param")
 	}
@@ -56,7 +59,7 @@ var (
 	}
 
 	// just one input arg, the service which is binded by the #2 service binder.
-	testConsumeServiceHandler = func(service testService) string {
+	testConsumeServiceHandler = func(service TestService) string {
 		return service.Say("something")
 	}
 	// just one input arg, a standar string which is binded by the #3 func(ctx) any binder.

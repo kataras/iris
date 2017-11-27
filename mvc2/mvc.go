@@ -35,7 +35,7 @@ func (m *Mvc) Child() *Mvc {
 	return child
 }
 
-func (m *Mvc) In(binders ...interface{}) {
+func (m *Mvc) In(binders ...interface{}) *Mvc {
 	for _, binder := range binders {
 		typ := resolveBinderType(binder)
 
@@ -58,6 +58,8 @@ func (m *Mvc) In(binders ...interface{}) {
 
 		m.binders = append(m.binders, b)
 	}
+
+	return m
 }
 
 func (m *Mvc) Handler(handler interface{}) context.Handler {

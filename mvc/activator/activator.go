@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/kataras/iris/core/router/macro"
 	"github.com/kataras/iris/mvc/activator/methodfunc"
 	"github.com/kataras/iris/mvc/activator/model"
 	"github.com/kataras/iris/mvc/activator/persistence"
@@ -31,6 +32,12 @@ type (
 		// it's the first passed value of the controller instance,
 		// we need this to collect and save the persistence fields' values.
 		Value reflect.Value
+
+		valuePtr reflect.Value
+		// // Methods and handlers, available after the Activate, can be seted `OnActivate` event as well.
+		// Methods []methodfunc.MethodFunc
+
+		Router RegisterFunc
 
 		binder                *binder // executed even before the BeginRequest if not nil.
 		modelController       *model.Controller
@@ -69,37 +76,33 @@ type BaseController interface {
 }
 
 // ActivateController returns a new controller type info description.
-func ActivateController(base BaseController, bindValues []interface{}) (TController, error) {
+func newController(base BaseController, router RegisterFunc) (*TController, error) {
 	// get and save the type.
 	typ := reflect.TypeOf(base)
 	if typ.Kind() != reflect.Ptr {
 		typ = reflect.PtrTo(typ)
 	}
 
+	valPointer := reflect.ValueOf(base) // or value raw
+
 	// first instance value, needed to validate
 	// the actual type of the controller field
 	// and to collect and save the instance's persistence fields'
 	// values later on.
-	val := reflect.Indirect(reflect.ValueOf(base))
+	val := reflect.Indirect(valPointer)
+
 	ctrlName := val.Type().Name()
 	pkgPath := val.Type().PkgPath()
 	fullName := pkgPath[strings.LastIndexByte(pkgPath, '/')+1:] + "." + ctrlName
 
-	// set the binder, can be nil this check at made at runtime.
-	binder := newBinder(typ.Elem(), bindValues)
-	if binder != nil {
-		for _, bf := range binder.fields {
-			golog.Debugf("MVC %s: binder loaded for '%s' with value:\n%#v",
-				fullName, bf.GetFullName(), bf.GetValue())
-		}
-	}
-
-	t := TController{
+	t := &TController{
 		Name:                  ctrlName,
 		FullName:              fullName,
 		Type:                  typ,
 		Value:                 val,
-		binder:                binder,
+		valuePtr:              valPointer,
+		Router:                router,
+		binder:                &binder{elemType: typ.Elem()},
 		modelController:       model.Load(typ),
 		persistenceController: persistence.Load(typ, val),
 	}
@@ -107,12 +110,35 @@ func ActivateController(base BaseController, bindValues []interface{}) (TControl
 	return t, nil
 }
 
+// BindValueTypeExists returns true if at least one type of "bindValue"
+// is already binded to this `TController`.
+func (t *TController) BindValueTypeExists(bindValue interface{}) bool {
+	valueTyp := reflect.TypeOf(bindValue)
+	for _, bindedValue := range t.binder.values {
+		// type already exists, remember: binding here is per-type.
+		if typ := reflect.TypeOf(bindedValue); typ == valueTyp ||
+			(valueTyp.Kind() == reflect.Interface && typ.Implements(valueTyp)) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// BindValue binds a value to a controller's field when request is served.
+func (t *TController) BindValue(bindValues ...interface{}) {
+	for _, bindValue := range bindValues {
+		t.binder.bind(bindValue)
+	}
+}
+
 // HandlerOf builds the handler for a type based on the specific method func.
-func (t TController) HandlerOf(methodFunc methodfunc.MethodFunc) context.Handler {
+func (t *TController) HandlerOf(methodFunc methodfunc.MethodFunc) context.Handler {
 	var (
 		// shared, per-controller
-		elem     = t.Type.Elem()
-		ctrlName = t.Name
+		elem      = t.Type.Elem()
+		ctrlName  = t.Name
+		hasBinder = !t.binder.isEmpty()
 
 		hasPersistenceData = t.persistenceController != nil
 		hasModels          = t.modelController != nil
@@ -123,7 +149,7 @@ func (t TController) HandlerOf(methodFunc methodfunc.MethodFunc) context.Handler
 	return func(ctx context.Context) {
 		// create a new controller instance of that type(>ptr).
 		c := reflect.New(elem)
-		if t.binder != nil {
+		if hasBinder {
 			t.binder.handle(c)
 		}
 
@@ -163,29 +189,38 @@ func (t TController) HandlerOf(methodFunc methodfunc.MethodFunc) context.Handler
 	}
 }
 
-// RegisterFunc used by the caller to register the result routes.
-type RegisterFunc func(relPath string, httpMethod string, handler ...context.Handler)
-
-// RegisterMethodHandlers receives a `TController`, description of the
-// user's controller, and calls the "registerFunc" for each of its
-// method handlers.
-//
-// Not useful for the end-developer, but may needed for debugging
-// at the future.
-func RegisterMethodHandlers(t TController, registerFunc RegisterFunc) {
+func (t *TController) registerMethodFunc(m methodfunc.MethodFunc) {
 	var middleware context.Handlers
 
-	if t.binder != nil {
+	if !t.binder.isEmpty() {
 		if m := t.binder.middleware; len(m) > 0 {
 			middleware = m
 		}
 	}
+
+	h := t.HandlerOf(m)
+	if h == nil {
+		golog.Warnf("MVC %s: nil method handler found for %s", t.FullName, m.Name)
+		return
+	}
+
+	registeredHandlers := append(middleware, h)
+	t.Router(m.HTTPMethod, m.RelPath, registeredHandlers...)
+
+	golog.Debugf("MVC %s: %s %s maps to function[%d] '%s'", t.FullName,
+		m.HTTPMethod,
+		m.RelPath,
+		m.Index,
+		m.Name)
+}
+
+func (t *TController) resolveAndRegisterMethods() {
 	// the actual method functions
 	// i.e for "GET" it's the `Get()`.
 	methods, err := methodfunc.Resolve(t.Type)
 	if err != nil {
 		golog.Errorf("MVC %s: %s", t.FullName, err.Error())
-		// don't stop here.
+		return
 	}
 	// range over the type info's method funcs,
 	// build a new handler for each of these
@@ -194,21 +229,96 @@ func RegisterMethodHandlers(t TController, registerFunc RegisterFunc) {
 	// responsible to convert these into routes
 	// and add them to router via the APIBuilder.
 	for _, m := range methods {
-		h := t.HandlerOf(m)
-		if h == nil {
-			golog.Warnf("MVC %s: nil method handler found for %s", t.FullName, m.Name)
-			continue
-		}
-		registeredHandlers := append(middleware, h)
-		registerFunc(m.RelPath, m.HTTPMethod, registeredHandlers...)
-
-		golog.Debugf("MVC %s: %s %s maps to function[%d] '%s'", t.FullName,
-			m.HTTPMethod,
-			m.RelPath,
-			m.Index,
-			m.Name)
+		t.registerMethodFunc(m)
 	}
 }
+
+// Handle registers a method func but with a custom http method and relative route's path,
+// it respects the rest of the controller's rules and guidelines.
+func (t *TController) Handle(httpMethod, path, handlerFuncName string) bool {
+	cTyp := t.Type // with the pointer.
+	m, exists := cTyp.MethodByName(handlerFuncName)
+	if !exists {
+		golog.Errorf("MVC: function '%s' doesn't exist inside the '%s' controller",
+			handlerFuncName, t.FullName)
+		return false
+	}
+
+	info := methodfunc.FuncInfo{
+		Name:       m.Name,
+		Trailing:   m.Name,
+		Type:       m.Type,
+		Index:      m.Index,
+		HTTPMethod: httpMethod,
+	}
+
+	tmpl, err := macro.Parse(path, macro.NewMap())
+	if err != nil {
+		golog.Errorf("MVC: fail to parse the path for '%s.%s': %v", t.FullName, handlerFuncName, err)
+		return false
+	}
+
+	paramKeys := make([]string, len(tmpl.Params), len(tmpl.Params))
+	for i, param := range tmpl.Params {
+		paramKeys[i] = param.Name
+	}
+
+	methodFunc, err := methodfunc.ResolveMethodFunc(info, paramKeys...)
+	if err != nil {
+		golog.Errorf("MVC: function '%s' inside the '%s' controller: %v", handlerFuncName, t.FullName, err)
+		return false
+	}
+
+	methodFunc.RelPath = path
+
+	t.registerMethodFunc(methodFunc)
+	return true
+}
+
+// func (t *TController) getMethodFuncByName(funcName string) (methodfunc.MethodFunc, bool) {
+// 	cVal := t.Value
+// 	cTyp := t.Type // with the pointer.
+// 	m, exists := cTyp.MethodByName(funcName)
+// 	if !exists {
+// 		golog.Errorf("MVC: function '%s' doesn't exist inside the '%s' controller",
+// 			funcName, cTyp.String())
+// 		return methodfunc.MethodFunc{}, false
+// 	}
+
+// 	fn := cVal.MethodByName(funcName)
+// 	if !fn.IsValid() {
+// 		golog.Errorf("MVC: function '%s' inside the '%s' controller has not a valid value",
+// 			funcName, cTyp.String())
+// 		return methodfunc.MethodFunc{}, false
+// 	}
+
+// 	info, ok := methodfunc.FetchFuncInfo(m)
+// 	if !ok {
+// 		golog.Errorf("MVC: could not resolve the func info from '%s'", funcName)
+// 		return methodfunc.MethodFunc{}, false
+// 	}
+
+// 	methodFunc, err := methodfunc.ResolveMethodFunc(info)
+// 	if err != nil {
+// 		golog.Errorf("MVC: %v", err)
+// 		return methodfunc.MethodFunc{}, false
+// 	}
+
+// 	return methodFunc, true
+// }
+
+// // RegisterName registers a function by its name
+// func (t *TController) RegisterName(funcName string) bool {
+// 	methodFunc, ok := t.getMethodFuncByName(funcName)
+// 	if !ok {
+// 		return false
+// 	}
+// 	t.registerMethodFunc(methodFunc)
+// 	return true
+// }
+
+// RegisterFunc used by the caller to register the result routes.
+type RegisterFunc func(httpMethod string, relPath string, handler ...context.Handler)
 
 // Register receives a "controller",
 // a pointer of an instance which embeds the `Controller`,
@@ -216,13 +326,21 @@ func RegisterMethodHandlers(t TController, registerFunc RegisterFunc) {
 func Register(controller BaseController, bindValues []interface{},
 	registerFunc RegisterFunc) error {
 
-	CallOnActivate(controller, &bindValues, registerFunc)
-
-	t, err := ActivateController(controller, bindValues)
+	t, err := newController(controller, registerFunc)
 	if err != nil {
 		return err
 	}
 
-	RegisterMethodHandlers(t, registerFunc)
+	t.BindValue(bindValues...)
+
+	CallOnActivate(controller, t)
+
+	for _, bf := range t.binder.fields {
+		golog.Debugf("MVC %s: binder loaded for '%s' with value:\n%#v",
+			t.FullName, bf.GetFullName(), bf.GetValue())
+	}
+
+	t.resolveAndRegisterMethods()
+
 	return nil
 }

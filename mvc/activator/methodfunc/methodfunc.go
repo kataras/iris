@@ -31,20 +31,38 @@ func Resolve(typ reflect.Type) ([]MethodFunc, error) {
 	var methodFuncs []MethodFunc
 	infos := fetchInfos(typ)
 	for _, info := range infos {
-		parser := newFuncParser(info)
-		a, err := parser.parse()
+		methodFunc, err := ResolveMethodFunc(info)
 		if r.AddErr(err) {
 			continue
 		}
-
-		methodFunc := MethodFunc{
-			RelPath:    a.relPath,
-			FuncInfo:   info,
-			MethodCall: buildMethodCall(a),
-		}
-
 		methodFuncs = append(methodFuncs, methodFunc)
 	}
 
 	return methodFuncs, r.Return()
+}
+
+// ResolveMethodFunc resolves a single `MethodFunc` from a single `FuncInfo`.
+func ResolveMethodFunc(info FuncInfo, paramKeys ...string) (MethodFunc, error) {
+	parser := newFuncParser(info)
+	a, err := parser.parse()
+	if err != nil {
+		return MethodFunc{}, err
+	}
+
+	if len(paramKeys) > 0 {
+		a.paramKeys = paramKeys
+	}
+
+	methodFunc := MethodFunc{
+		RelPath:    a.relPath,
+		FuncInfo:   info,
+		MethodCall: buildMethodCall(a),
+	}
+
+	/* TODO: split the method path and ast param keys, and all that
+	because now we want to use custom param keys but 'paramfirst' is set-ed.
+
+	*/
+
+	return methodFunc, nil
 }

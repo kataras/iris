@@ -2,6 +2,7 @@ package router
 
 import (
 	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/core/router/macro"
 	"github.com/kataras/iris/mvc/activator"
 )
 
@@ -13,6 +14,12 @@ import (
 //
 // Look the "APIBuilder" for its implementation.
 type Party interface {
+	// Macros returns the macro map which is responsible
+	// to register custom macro functions for all routes.
+	//
+	// Learn more at:  https://github.com/kataras/iris/tree/master/_examples/routing/dynamic-path
+	Macros() *macro.Map
+
 	// Party groups routes which may have the same prefix and share same handlers,
 	// returns that new rich subrouter.
 	//

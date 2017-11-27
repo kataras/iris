@@ -9,8 +9,7 @@ import (
 )
 
 func TestMvcInAndHandler(t *testing.T) {
-	m := New()
-	m.In(testBinderFuncUserStruct, testBinderService, testBinderFuncParam)
+	m := New().In(testBinderFuncUserStruct, testBinderService, testBinderFuncParam)
 
 	var (
 		h1 = m.Handler(testConsumeUserHandler)
