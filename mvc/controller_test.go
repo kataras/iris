@@ -306,6 +306,7 @@ func (t *testControllerBindDeep) Get() {
 }
 func TestControllerBind(t *testing.T) {
 	app := iris.New()
+	// app.Logger().SetLevel("debug")
 
 	t1, t2 := "my pointer title", "val title"
 	// test bind pointer to pointer of the correct type
@@ -505,8 +506,8 @@ type testControllerActivateListener struct {
 	TitlePointer *testBindType
 }
 
-func (c *testControllerActivateListener) OnActivate(p *activator.ActivatePayload) {
-	p.EnsureBindValue(&testBindType{
+func (c *testControllerActivateListener) OnActivate(t *activator.TController) {
+	t.BindValue(&testBindType{
 		title: "default title",
 	})
 }

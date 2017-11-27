@@ -24,8 +24,9 @@ type SessionController struct {
 // every single time the dev registers a specific SessionController-based controller.
 // It makes sure that its "Manager" field is filled
 // even if the caller didn't provide any sessions manager via the `app.Controller` function.
-func (s *SessionController) OnActivate(p *activator.ActivatePayload) {
-	if p.EnsureBindValue(defaultManager) {
+func (s *SessionController) OnActivate(t *activator.TController) {
+	if !t.BindValueTypeExists(defaultManager) {
+		t.BindValue(defaultManager)
 		golog.Warnf(`MVC SessionController: couldn't find any "*sessions.Sessions" bindable value to fill the "Manager" field, 
 therefore this controller is using the default sessions manager instead.
 Please refer to the documentation to learn how you can provide the session manager`)

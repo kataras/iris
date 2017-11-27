@@ -53,36 +53,47 @@ func fetchInfos(typ reflect.Type) (methods []FuncInfo) {
 	// and add that.
 	for i, n := 0, typ.NumMethod(); i < n; i++ {
 		m := typ.Method(i)
-		name := m.Name
 
-		for _, method := range availableMethods {
-			possibleMethodFuncName := methodTitle(method)
-
-			if strings.Index(name, possibleMethodFuncName) == 0 {
-				trailing := ""
-				// if has chars after the method itself
-				if lname, lmethod := len(name), len(possibleMethodFuncName); lname > lmethod {
-					ch := rune(name[lmethod])
-					// if the next char is upper, otherise just skip the whole func info.
-					if unicode.IsUpper(ch) {
-						trailing = name[lmethod:]
-					} else {
-						continue
-					}
-				}
-
-				methodInfo := FuncInfo{
-					Name:       name,
-					Trailing:   trailing,
-					Type:       m.Type,
-					HTTPMethod: method,
-					Index:      m.Index,
-				}
-				methods = append(methods, methodInfo)
-			}
+		if method, ok := FetchFuncInfo(m); ok {
+			methods = append(methods, method)
 		}
 	}
 	return
+}
+
+// FetchFuncInfo returns a FuncInfo based on the method of the controller.
+func FetchFuncInfo(m reflect.Method) (FuncInfo, bool) {
+	name := m.Name
+
+	for _, method := range availableMethods {
+		possibleMethodFuncName := methodTitle(method)
+
+		if strings.Index(name, possibleMethodFuncName) == 0 {
+			trailing := ""
+			// if has chars after the method itself
+			if lname, lmethod := len(name), len(possibleMethodFuncName); lname > lmethod {
+				ch := rune(name[lmethod])
+				// if the next char is upper, otherise just skip the whole func info.
+				if unicode.IsUpper(ch) {
+					trailing = name[lmethod:]
+				} else {
+					continue
+				}
+			}
+
+			info := FuncInfo{
+				Name:       name,
+				Trailing:   trailing,
+				Type:       m.Type,
+				HTTPMethod: method,
+				Index:      m.Index,
+			}
+			return info, true
+
+		}
+	}
+
+	return FuncInfo{}, false
 }
 
 func methodTitle(httpMethod string) string {

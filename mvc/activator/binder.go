@@ -8,7 +8,15 @@ import (
 	"github.com/kataras/iris/context"
 )
 
+// binder accepts a value of something
+// and tries to find its equalivent type
+// inside the controller and sets that to it,
+// after that each new instance of the controller will have
+// this value on the specific field, like persistence data control does.
+
 type binder struct {
+	elemType reflect.Type
+	// values and fields are matched on the `match`.
 	values []interface{}
 	fields []field.Field
 
@@ -17,28 +25,24 @@ type binder struct {
 	middleware context.Handlers
 }
 
-// binder accepts a value of something
-// and tries to find its equalivent type
-// inside the controller and sets that to it,
-// after that each new instance of the controller will have
-// this value on the specific field, like persistence data control does.
-//
-// returns a nil binder if values are not valid bindable data to the controller type.
-func newBinder(elemType reflect.Type, values []interface{}) *binder {
-	if len(values) == 0 {
-		return nil
+func (b *binder) bind(value interface{}) {
+	if value == nil {
+		return
 	}
 
-	b := &binder{values: values}
-	b.fields = b.lookup(elemType)
+	b.values = append(b.values, value) // keep values.
 
+	b.match(value)
+}
+
+func (b *binder) isEmpty() bool {
 	// if nothing valid found return nil, so the caller
 	// can omit the binder.
 	if len(b.fields) == 0 && len(b.middleware) == 0 {
-		return nil
+		return true
 	}
 
-	return b
+	return false
 }
 
 func (b *binder) storeValueIfMiddleware(value reflect.Value) bool {
@@ -55,41 +59,38 @@ func (b *binder) storeValueIfMiddleware(value reflect.Value) bool {
 	return false
 }
 
-func (b *binder) lookup(elem reflect.Type) (fields []field.Field) {
-	for _, v := range b.values {
-		value := reflect.ValueOf(v)
-		// handlers will be recognised as middleware, not struct fields.
-		// End-Developer has the option to call any handler inside
-		// the controller's `BeginRequest` and `EndRequest`, the
-		// state is respected from the method handler already.
-		if b.storeValueIfMiddleware(value) {
-			// stored as middleware, continue to the next field, we don't have
-			// to bind anything here.
-			continue
-		}
-
-		matcher := func(elemField reflect.StructField) bool {
-			// If the controller's field is interface then check
-			// if the given binded value implements that interface.
-			// i.e MovieController { Service services.MovieService /* interface */ }
-			// app.Controller("/", new(MovieController),
-			// 	services.NewMovieMemoryService(...))
-			//
-			// `services.NewMovieMemoryService` returns a `*MovieMemoryService`
-			// that implements the `MovieService` interface.
-			if elemField.Type.Kind() == reflect.Interface {
-				return value.Type().Implements(elemField.Type)
-			}
-			return elemField.Type == value.Type()
-		}
-
-		handler := func(f *field.Field) {
-			f.Value = value
-		}
-
-		fields = append(fields, field.LookupFields(elem, matcher, handler)...)
+func (b *binder) match(v interface{}) {
+	value := reflect.ValueOf(v)
+	// handlers will be recognised as middleware, not struct fields.
+	// End-Developer has the option to call any handler inside
+	// the controller's `BeginRequest` and `EndRequest`, the
+	// state is respected from the method handler already.
+	if b.storeValueIfMiddleware(value) {
+		// stored as middleware, continue to the next field, we don't have
+		// to bind anything here.
+		return
 	}
-	return
+
+	matcher := func(elemField reflect.StructField) bool {
+		// If the controller's field is interface then check
+		// if the given binded value implements that interface.
+		// i.e MovieController { Service services.MovieService /* interface */ }
+		// app.Controller("/", new(MovieController),
+		// 	services.NewMovieMemoryService(...))
+		//
+		// `services.NewMovieMemoryService` returns a `*MovieMemoryService`
+		// that implements the `MovieService` interface.
+		if elemField.Type.Kind() == reflect.Interface {
+			return value.Type().Implements(elemField.Type)
+		}
+		return elemField.Type == value.Type()
+	}
+
+	handler := func(f *field.Field) {
+		f.Value = value
+	}
+
+	b.fields = append(b.fields, field.LookupFields(b.elemType, matcher, handler)...)
 }
 
 func (b *binder) handle(c reflect.Value) {

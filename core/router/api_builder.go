@@ -190,11 +190,11 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 // otherwise use `Party` which can handle many paths with different handlers and middlewares.
 //
 // Usage:
-// 	app.HandleMany(iris.MethodGet, "/user /user/{id:int} /user/me", userHandler)
+// 	app.HandleMany("GET", "/user /user/{id:int} /user/me", genericUserHandler)
 // At the other side, with `Handle` we've had to write:
-// 	app.Handle(iris.MethodGet, "/user", userHandler)
-// 	app.Handle(iris.MethodGet, "/user/{id:int}", userHandler)
-// 	app.Handle(iris.MethodGet, "/user/me", userHandler)
+// 	app.Handle("GET", "/user", userHandler)
+// 	app.Handle("GET", "/user/{id:int}", userByIDHandler)
+// 	app.Handle("GET", "/user/me", userMeHandler)
 //
 // This method is used behind the scenes at the `Controller` function
 // in order to handle more than one paths for the same controller instance.
@@ -536,7 +536,7 @@ func (api *APIBuilder) Any(relativePath string, handlers ...context.Handler) (ro
 func (api *APIBuilder) Controller(relativePath string, controller activator.BaseController,
 	bindValues ...interface{}) (routes []*Route) {
 
-	registerFunc := func(ifRelPath string, method string, handlers ...context.Handler) {
+	registerFunc := func(method string, ifRelPath string, handlers ...context.Handler) {
 		relPath := relativePath + ifRelPath
 		r := api.HandleMany(method, relPath, handlers...)
 		routes = append(routes, r...)
