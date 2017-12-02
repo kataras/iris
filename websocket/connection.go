@@ -131,6 +131,8 @@ type (
 	// MessageFunc is the second argument to the Emitter's Emit functions.
 	// A callback which should receives one parameter of type string, int, bool or any valid JSON/Go struct
 	MessageFunc interface{}
+	// PingFunc is the callback which fires each ping
+	PingFunc func()
 	// Connection is the front-end API that you will use to communicate with the client side
 	Connection interface {
 		// Emitter implements EmitMessage & Emit
@@ -154,6 +156,8 @@ type (
 		OnDisconnect(DisconnectFunc)
 		// OnError registers a callback which fires when this connection occurs an error
 		OnError(ErrorFunc)
+		// OnPing  registers a callback which fires on each ping
+		OnPing(PingFunc)
 		// FireStatusCode can be used to send a custom error message to the connection
 		//
 		// It does nothing more than firing the OnError listeners. It doesn't sends anything to the client.
@@ -200,6 +204,7 @@ type (
 		onDisconnectListeners    []DisconnectFunc
 		onRoomLeaveListeners     []LeaveRoomFunc
 		onErrorListeners         []ErrorFunc
+		onPingListeners          []PingFunc
 		onNativeMessageListeners []NativeMessageFunc
 		onEventListeners         map[string][]MessageFunc
 		// these were  maden for performance only
@@ -305,6 +310,8 @@ func (c *connection) startPinger() {
 				// verifies if already disconected
 				break
 			}
+			//fire all OnPing methods
+			c.fireOnPing()
 			// try to ping the client, if failed then it disconnects
 			err := c.write(websocket.PingMessage, []byte{})
 			if err != nil {
@@ -430,6 +437,10 @@ func (c *connection) OnError(cb ErrorFunc) {
 	c.onErrorListeners = append(c.onErrorListeners, cb)
 }
 
+func (c *connection) OnPing(cb PingFunc) {
+	c.onPingListeners = append(c.onPingListeners, cb)
+}
+
 func (c *connection) FireOnError(errorMessage string) {
 	for _, cb := range c.onErrorListeners {
 		cb(errorMessage)
@@ -489,6 +500,13 @@ func (c *connection) fireOnLeave(roomName string) {
 	// fire the onRoomLeaveListeners
 	for i := range c.onRoomLeaveListeners {
 		c.onRoomLeaveListeners[i](roomName)
+	}
+}
+
+func (c *connection) fireOnPing() {
+	// fire the onPingListeners
+	for i := range c.onPingListeners {
+		c.onPingListeners[i]()
 	}
 }
 
