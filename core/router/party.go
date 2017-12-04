@@ -2,6 +2,7 @@ package router
 
 import (
 	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/core/errors"
 	"github.com/kataras/iris/core/router/macro"
 	"github.com/kataras/iris/mvc/activator"
 )
@@ -14,6 +15,8 @@ import (
 //
 // Look the "APIBuilder" for its implementation.
 type Party interface {
+	// GetReporter returns the reporter for adding errors
+	GetReporter() *errors.Reporter
 	// Macros returns the macro map which is responsible
 	// to register custom macro functions for all routes.
 	//

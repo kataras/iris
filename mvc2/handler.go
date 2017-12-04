@@ -35,8 +35,8 @@ var (
 
 // MustMakeHandler calls the `MakeHandler` and returns its first resultthe low-level handler), see its docs.
 // It panics on error.
-func MustMakeHandler(handler interface{}, binders []*InputBinder) context.Handler {
-	h, err := MakeHandler(handler, binders)
+func MustMakeHandler(handler interface{}, binders ...interface{}) context.Handler {
+	h, err := MakeHandler(handler, binders...)
 	if err != nil {
 		panic(err)
 	}
@@ -48,7 +48,7 @@ func MustMakeHandler(handler interface{}, binders []*InputBinder) context.Handle
 // custom structs, Result(View | Response) and anything that you already know that mvc implementation supports,
 // and returns a low-level `context/iris.Handler` which can be used anywhere in the Iris Application,
 // as middleware or as simple route handler or party handler or subdomain handler-router.
-func MakeHandler(handler interface{}, binders []*InputBinder) (context.Handler, error) {
+func MakeHandler(handler interface{}, binders ...interface{}) (context.Handler, error) {
 	if err := validateHandler(handler); err != nil {
 		golog.Errorf("mvc handler: %v", err)
 		return nil, err
@@ -59,79 +59,71 @@ func MakeHandler(handler interface{}, binders []*InputBinder) (context.Handler, 
 		return h, nil
 	}
 
-	typ := indirectTyp(reflect.TypeOf(handler))
-	n := typ.NumIn()
-	typIn := make([]reflect.Type, n, n)
-	for i := 0; i < n; i++ {
-		typIn[i] = typ.In(i)
+	inputBinders := make([]reflect.Value, len(binders), len(binders))
+
+	for i := range binders {
+		inputBinders[i] = reflect.ValueOf(binders[i])
 	}
 
-	m := getBindersForInput(binders, typIn...)
+	return makeHandler(reflect.ValueOf(handler), inputBinders), nil
 
-	/*
-		// no f. this, it's too complicated and it will be harder to maintain later on:
-		// the only case that these are not equal is when
-		// binder returns a slice and input contains one or more inputs.
-	*/
-	if len(m) != n {
-		err := fmt.Errorf("input arguments length(%d) of types(%s) and valid binders length(%d) are not equal", n, typIn, len(m))
-		golog.Errorf("mvc handler: %v", err)
-		return nil, err
-	}
+	// typ := indirectTyp(reflect.TypeOf(handler))
+	// n := typ.NumIn()
+	// typIn := make([]reflect.Type, n, n)
+	// for i := 0; i < n; i++ {
+	// 	typIn[i] = typ.In(i)
+	// }
 
-	hasIn := len(m) > 0
-	fn := reflect.ValueOf(handler)
+	// m := getBindersForInput(binders, typIn...)
+	// if len(m) != n {
+	// 	err := fmt.Errorf("input arguments length(%d) of types(%s) and valid binders length(%d) are not equal", n, typIn, len(m))
+	// 	golog.Errorf("mvc handler: %v", err)
+	// 	return nil, err
+	// }
 
-	// if has no input to bind then execute the "handler" using the mvc style
-	// for any output parameters.
-	if !hasIn {
+	// return makeHandler(reflect.ValueOf(handler), m), nil
+}
+
+func makeHandler(fn reflect.Value, inputBinders []reflect.Value) context.Handler {
+	inLen := fn.Type().NumIn()
+
+	if inLen == 0 {
 		return func(ctx context.Context) {
 			methodfunc.DispatchFuncResult(ctx, fn.Call(emptyIn))
-		}, nil
+		}
 	}
 
+	s := getServicesFor(fn, inputBinders)
+	if len(s) == 0 {
+		golog.Errorf("mvc handler: input arguments length(%d) and valid binders length(%d) are not equal", inLen, len(s))
+		return nil
+	}
+
+	n := fn.Type().NumIn()
+	// contextIndex := -1
+	// if n > 0 {
+	// 	if isContext(fn.Type().In(0)) {
+	// 		contextIndex = 0
+	// 	}
+	// }
 	return func(ctx context.Context) {
-		// we could use other tricks for "in"
-		// here but let's stick to that which is clearly
-		// that it doesn't keep any previous state
-		// and it allocates exactly what we need,
-		// so we can set via index instead of append.
-		// The other method we could use is to
-		// declare the in on the build state (before the return)
-		// and use in[0:0] with append later on.
+		ctxValue := []reflect.Value{reflect.ValueOf(ctx)}
+
 		in := make([]reflect.Value, n, n)
-		ctxValues := []reflect.Value{reflect.ValueOf(ctx)}
-		for k, v := range m {
-			in[k] = v.BindFunc(ctxValues)
-			/*
-				// no f. this, it's too complicated and it will be harder to maintain later on:
-				// now an additional check if it's array and has more inputs of the same type
-				// and all these results to the expected inputs.
-				// 																		   n-1: if has more to set.
-				result := v.BindFunc(ctxValues)
-				if isSliceAndExpectedItem(result.Type(), in, k) {
-					// if kind := result.Kind(); (kind == reflect.Slice || kind == reflect.Array) && n-1 > k {
-					prev := 0
-					for j, nn := 1, result.Len(); j < nn; j++ {
-						item := result.Slice(prev, j)
-						prev++
-						// remember; we already set the inputs type, so we know
-						// what the function expected to have.
-						if !equalTypes(item.Type(), in[k+1].Type()) {
-							break
-						}
+		// if contextIndex >= 0 {
+		// 	in[contextIndex] = ctxValue[0]
+		// }
+		// ctxValues := []reflect.Value{reflect.ValueOf(ctx)}
+		// for k, v := range m {
+		// 	in[k] = v.BindFunc(ctxValues)
+		// 	if ctx.IsStopped() {
+		// 		return
+		// 	}
+		// }
+		// methodfunc.DispatchFuncResult(ctx, fn.Call(in))
 
-						in[k+1] = item
-					}
-				} else {
-					in[k] = result
-				}
-			*/
+		s.FillFuncInput(ctxValue, &in)
 
-			if ctx.IsStopped() {
-				return
-			}
-		}
 		methodfunc.DispatchFuncResult(ctx, fn.Call(in))
-	}, nil
+	}
 }

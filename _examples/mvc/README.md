@@ -175,7 +175,7 @@ func (c *HelloWorldController) Any() {} handles All method requests
 */
 ```
 
-> The [_examples/mvc](https://github.com/kataras/iris/tree/master/_examples/mvc) and [mvc/controller_test.go](https://github.com/kataras/iris/blob/master/mvc/controller_test.go) files explain each feature with simple paradigms, they show how you can take advandage of the Iris MVC Binder, Iris MVC Models and many more...
+> The [_examples/mvc](https://github.com/kataras/iris/tree/master/_examples/mvc) and [mvc/controller_test.go](https://github.com/kataras/iris/blob/master/mvc/controller_test.go) files explain each feature with simple paradigms, they show how you can take advantage of the Iris MVC Binder, Iris MVC Models and many more...
 
 Every `exported` func prefixed with an HTTP Method(`Get`, `Post`, `Put`, `Delete`...) in a controller is callable as an HTTP endpoint. In the sample above, all funcs writes a string to the response. Note the comments preceding each method.
 

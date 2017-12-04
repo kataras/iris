@@ -23,7 +23,7 @@ type Route struct {
 	// Handlers are the main route's handlers, executed by order.
 	// Cannot be empty.
 	Handlers        context.Handlers
-	mainHandlerName string
+	MainHandlerName string
 	// temp storage, they're appended to the Handlers on build.
 	// Execution happens after Begin and main Handler(s), can be empty.
 	doneHandlers context.Handlers
@@ -61,7 +61,7 @@ func NewRoute(method, subdomain, unparsedPath, mainHandlerName string,
 		tmpl:            tmpl,
 		Path:            path,
 		Handlers:        handlers,
-		mainHandlerName: mainHandlerName,
+		MainHandlerName: mainHandlerName,
 		FormattedPath:   formattedPath,
 	}
 	return route, nil
@@ -214,12 +214,12 @@ func (r Route) Trace() string {
 	}
 	printfmt += fmt.Sprintf(" %s ", r.Tmpl().Src)
 	if l := len(r.Handlers); l > 1 {
-		printfmt += fmt.Sprintf("-> %s() and %d more", r.mainHandlerName, l-1)
+		printfmt += fmt.Sprintf("-> %s() and %d more", r.MainHandlerName, l-1)
 	} else {
-		printfmt += fmt.Sprintf("-> %s()", r.mainHandlerName)
+		printfmt += fmt.Sprintf("-> %s()", r.MainHandlerName)
 	}
 
-	// printfmt := fmt.Sprintf("%s: %s >> %s", r.Method, r.Subdomain+r.Tmpl().Src, r.mainHandlerName)
+	// printfmt := fmt.Sprintf("%s: %s >> %s", r.Method, r.Subdomain+r.Tmpl().Src, r.MainHandlerName)
 	// if l := len(r.Handlers); l > 0 {
 	// 	printfmt += fmt.Sprintf(" and %d more", l)
 	// }
