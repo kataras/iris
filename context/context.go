@@ -382,7 +382,12 @@ type Context interface {
 	// Read more at: https://developer.mozilla.org/en-US/docs/AJAX
 	// and https://xhr.spec.whatwg.org/
 	IsAjax() bool
-
+	// IsMobile checks if client is using a mobile device(phone or tablet) to communicate with this server.
+	// If the return value is true that means that the http client using a mobile
+	// device to communicate with the server, otherwise false.
+	//
+	// Keep note that this checks the "User-Agent" request header.
+	IsMobile() bool
 	//  +------------------------------------------------------------+
 	//  | Response Headers helpers                                   |
 	//  +------------------------------------------------------------+
@@ -1314,6 +1319,18 @@ func (ctx *context) GetHeader(name string) string {
 // and https://xhr.spec.whatwg.org/
 func (ctx *context) IsAjax() bool {
 	return ctx.GetHeader("X-Requested-With") == "XMLHttpRequest"
+}
+
+var isMobileRegex = regexp.MustCompile(`(?i)(android|avantgo|blackberry|bolt|boost|cricket|docomo|fone|hiptop|mini|mobi|palm|phone|pie|tablet|up\.browser|up\.link|webos|wos)`)
+
+// IsMobile checks if client is using a mobile device(phone or tablet) to communicate with this server.
+// If the return value is true that means that the http client using a mobile
+// device to communicate with the server, otherwise false.
+//
+// Keep note that this checks the "User-Agent" request header.
+func (ctx *context) IsMobile() bool {
+	s := ctx.GetHeader("User-Agent")
+	return isMobileRegex.MatchString(s)
 }
 
 //  +------------------------------------------------------------+
