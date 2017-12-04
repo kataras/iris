@@ -213,7 +213,7 @@ func (s *AmberEngine) ExecuteWriter(w io.Writer, filename string, layout string,
 	}
 
 	if tmpl := s.fromCache(filename); tmpl != nil {
-		return tmpl.ExecuteTemplate(w, filename, bindingData)
+		return tmpl.Execute(w, bindingData)
 	}
 
 	return fmt.Errorf("Template with name %s doesn't exists in the dir", filename)
