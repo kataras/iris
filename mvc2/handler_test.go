@@ -69,19 +69,19 @@ var (
 )
 
 func TestMakeHandler(t *testing.T) {
-	binders := []*InputBinder{
-		// #1
-		MustMakeFuncInputBinder(testBinderFuncUserStruct),
-		// #2
-		MustMakeServiceInputBinder(testBinderService),
-		// #3
-		MustMakeFuncInputBinder(testBinderFuncParam),
-	}
+	// binders := []*InputBinder{
+	// 	// #1
+	// 	MustMakeFuncInputBinder(testBinderFuncUserStruct),
+	// 	// #2
+	// 	MustMakeServiceInputBinder(testBinderService),
+	// 	// #3
+	// 	MustMakeFuncInputBinder(testBinderFuncParam),
+	// }
 
 	var (
-		h1 = MustMakeHandler(testConsumeUserHandler, binders)
-		h2 = MustMakeHandler(testConsumeServiceHandler, binders)
-		h3 = MustMakeHandler(testConsumeParamHandler, binders)
+		h1 = MustMakeHandler(testConsumeUserHandler, testBinderFuncUserStruct)
+		h2 = MustMakeHandler(testConsumeServiceHandler, testBinderService)
+		h3 = MustMakeHandler(testConsumeParamHandler, testBinderFuncParam)
 	)
 
 	testAppWithMvcHandlers(t, h1, h2, h3)

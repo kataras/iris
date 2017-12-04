@@ -222,7 +222,7 @@ Below you'll see some useful examples:
     // ListenAndServe function of the `net/http` package.
     app.Run(iris.Raw(&http.Server{Addr:":8080"}).ListenAndServe)
 
-UNIX and BSD hosts can take advandage of the reuse port feature.
+UNIX and BSD hosts can take advantage of the reuse port feature.
 
 Example code:
 

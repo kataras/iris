@@ -58,3 +58,50 @@ func equalTypes(got reflect.Type, expected reflect.Type) bool {
 	}
 	return false
 }
+
+// for controller only.
+
+func structFieldIgnored(f reflect.StructField) bool {
+	if !f.Anonymous {
+		return true // if not anonymous(embedded), ignore it.
+	}
+
+	s := f.Tag.Get("ignore")
+	return s == "true" // if has an ignore tag then ignore it.
+}
+
+type field struct {
+	Type  reflect.Type
+	Index []int  // the index of the field, slice if it's part of a embedded struct
+	Name  string // the actual name
+
+	// this could be empty, but in our cases it's not,
+	// it's filled with the service and it's filled from the lookupFields' caller.
+	AnyValue reflect.Value
+}
+
+func lookupFields(typ reflect.Type, parentIndex int) (fields []field) {
+	for i, n := 0, typ.NumField(); i < n; i++ {
+		f := typ.Field(i)
+
+		if f.Type.Kind() == reflect.Struct && !structFieldIgnored(f) {
+			fields = append(fields, lookupFields(f.Type, i)...)
+			continue
+		}
+
+		index := []int{i}
+		if parentIndex >= 0 {
+			index = append([]int{parentIndex}, index...)
+		}
+
+		field := field{
+			Type:  f.Type,
+			Name:  f.Name,
+			Index: index,
+		}
+
+		fields = append(fields, field)
+	}
+
+	return
+}
