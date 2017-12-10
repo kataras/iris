@@ -11,7 +11,6 @@ import (
 	"github.com/kataras/iris/core/router"
 	"github.com/kataras/iris/core/router/macro"
 	"github.com/kataras/iris/core/router/macro/interpreter/ast"
-	"github.com/kataras/iris/mvc/activator/methodfunc"
 )
 
 type BaseController interface {
@@ -72,38 +71,52 @@ type ControllerActivator struct {
 	Router router.Party
 
 	initRef BaseController // the BaseController as it's passed from the end-dev.
-
+	Type    reflect.Type   // raw type of the BaseController (initRef).
 	// FullName it's the last package path segment + "." + the Name.
 	// i.e: if login-example/user/controller.go, the FullName is "user.Controller".
 	FullName string
 
-	// key = the method's name.
-	methods map[string]reflect.Method
+	// the methods names that is already binded to a handler,
+	// the BeginRequest, EndRequest and OnActivate are reserved by the internal implementation.
+	reservedMethods []string
 
-	// services []field
-	// bindServices func(elem reflect.Value)
-	s services
+	// input are always empty after the `activate`
+	// are used to build the bindings, and we need this field
+	// because we have 3 states (Engine.Input, OnActivate, Bind)
+	// that we can add or override binding values.
+	input []reflect.Value
+
+	// the bindings that comes from input (and Engine) and can be binded to the controller's(initRef) fields.
+	bindings *targetStruct
 }
 
-func newControllerActivator(engine *Engine, router router.Party, controller BaseController) *ControllerActivator {
+var emptyMethod = reflect.Method{}
+
+func newControllerActivator(router router.Party, controller BaseController, bindValues ...reflect.Value) *ControllerActivator {
 	c := &ControllerActivator{
-		Engine:  engine,
 		Router:  router,
 		initRef: controller,
+		reservedMethods: []string{
+			"BeginRequest",
+			"EndRequest",
+			"OnActivate",
+		},
+		// the following will make sure that if
+		// the controller's has set-ed pointer struct fields by the end-dev
+		// we will include them to the bindings.
+		// set bindings to the non-zero pointer fields' values that may be set-ed by
+		// the end-developer when declaring the controller,
+		// activate listeners needs them in order to know if something set-ed already or not,
+		// look `BindTypeExists`.
+		input: append(lookupNonZeroFieldsValues(reflect.ValueOf(controller)), bindValues...),
 	}
 
 	c.analyze()
 	return c
 }
 
-var reservedMethodNames = []string{
-	"BeginRequest",
-	"EndRequest",
-	"OnActivate",
-}
-
-func isReservedMethod(name string) bool {
-	for _, s := range reservedMethodNames {
+func (c *ControllerActivator) isReservedMethod(name string) bool {
+	for _, s := range c.reservedMethods {
 		if s == name {
 			return true
 		}
@@ -113,55 +126,86 @@ func isReservedMethod(name string) bool {
 }
 
 func (c *ControllerActivator) analyze() {
-
 	// set full name.
-	{
-		// first instance value, needed to validate
-		// the actual type of the controller field
-		// and to collect and save the instance's persistence fields'
-		// values later on.
-		val := reflect.Indirect(reflect.ValueOf(c.initRef))
 
-		ctrlName := val.Type().Name()
-		pkgPath := val.Type().PkgPath()
-		fullName := pkgPath[strings.LastIndexByte(pkgPath, '/')+1:] + "." + ctrlName
-		c.FullName = fullName
-	}
+	// first instance value, needed to validate
+	// the actual type of the controller field
+	// and to collect and save the instance's persistence fields'
+	// values later on.
+	typ := reflect.TypeOf(c.initRef) // type with pointer
+	elemTyp := indirectTyp(typ)
 
-	// set all available, exported methods.
-	{
-		typ := reflect.TypeOf(c.initRef) // typ, with pointer
-		n := typ.NumMethod()
-		c.methods = make(map[string]reflect.Method, n)
-		for i := 0; i < n; i++ {
-			m := typ.Method(i)
-			key := m.Name
+	ctrlName := elemTyp.Name()
+	pkgPath := elemTyp.PkgPath()
+	fullName := pkgPath[strings.LastIndexByte(pkgPath, '/')+1:] + "." + ctrlName
+	c.FullName = fullName
+	c.Type = typ
 
-			if !isReservedMethod(key) {
-				c.methods[key] = m
-			}
+	// register all available, exported methods to handlers if possible.
+	n := typ.NumMethod()
+	for i := 0; i < n; i++ {
+		m := typ.Method(i)
+		funcName := m.Name
+
+		if c.isReservedMethod(funcName) {
+			continue
 		}
+
+		httpMethod, httpPath, err := parse(m)
+		if err != nil && err != errSkip {
+			err = fmt.Errorf("MVC: fail to parse the path and method for '%s.%s': %v", c.FullName, m.Name, err)
+			c.Router.GetReporter().AddErr(err)
+			continue
+		}
+
+		c.Handle(httpMethod, httpPath, funcName)
 	}
 
-	// set field index with matching service binders, if any.
-	{
-		// typ := indirectTyp(reflect.TypeOf(c.initRef)) // element's typ.
-
-		c.s = getServicesFor(reflect.ValueOf(c.initRef), c.Engine.Input)
-		// c.bindServices = getServicesBinderForStruct(c.Engine.binders, typ)
-	}
-
-	c.analyzeAndRegisterMethods()
 }
 
+// SetBindings will override any bindings with the new "values".
+func (c *ControllerActivator) SetBindings(values ...reflect.Value) {
+	// set field index with matching binders, if any.
+	c.bindings = newTargetStruct(reflect.ValueOf(c.initRef), values...)
+	c.input = c.input[0:0]
+}
+
+// Bind binds values to this controller, if you want to share
+// binding values between controllers use the Engine's `Bind` function instead.
+func (c *ControllerActivator) Bind(values ...interface{}) {
+	for _, val := range values {
+		if v := reflect.ValueOf(val); goodVal(v) {
+			c.input = append(c.input, v)
+		}
+	}
+}
+
+// BindTypeExists returns true if a binder responsible to
+// bind and return a type of "typ" is already registered to this controller.
+func (c *ControllerActivator) BindTypeExists(typ reflect.Type) bool {
+	for _, in := range c.input {
+		if equalTypes(in.Type(), typ) {
+			return true
+		}
+	}
+	return false
+}
+
+func (c *ControllerActivator) activate() {
+	c.SetBindings(c.input...)
+}
+
+var emptyIn = []reflect.Value{}
+
 func (c *ControllerActivator) Handle(method, path, funcName string, middleware ...context.Handler) error {
-	if method == "" || path == "" || funcName == "" || isReservedMethod(funcName) {
+	if method == "" || path == "" || funcName == "" ||
+		c.isReservedMethod(funcName) {
 		// isReservedMethod -> if it's already registered
 		// by a previous Handle or analyze methods internally.
 		return errSkip
 	}
 
-	m, ok := c.methods[funcName]
+	m, ok := c.Type.MethodByName(funcName)
 	if !ok {
 		err := fmt.Errorf("MVC: function '%s' doesn't exist inside the '%s' controller",
 			funcName, c.FullName)
@@ -176,105 +220,84 @@ func (c *ControllerActivator) Handle(method, path, funcName string, middleware .
 		return err
 	}
 
-	fmt.Printf("===============%s.%s==============\n", c.FullName, funcName)
-	funcIn := getInputArgsFromFunc(m.Type)[1:] // except the receiver, which is the controller pointer itself.
+	// add this as a reserved method name in order to
+	// be sure that the same func will not be registered again, even if a custom .Handle later on.
+	c.reservedMethods = append(c.reservedMethods, funcName)
 
-	// get any binders for this func, if any, and
-	// take param binders, we can bind them because we know the path here.
-	// binders := joinBindersMap(
-	// 	getBindersForInput(c.Engine.binders, funcIn...),
-	// 	getPathParamsBindersForInput(tmpl.Params, funcIn...))
+	// fmt.Printf("===============%s.%s==============\n", c.FullName, funcName)
 
-	s := getServicesFor(m.Func, getPathParamsForInput(tmpl.Params, funcIn...))
-	// s.AddSource(indirectVal(reflect.ValueOf(c.initRef)), c.Engine.Input...)
+	funcIn := getInputArgsFromFunc(m.Type) // except the receiver, which is the controller pointer itself.
 
-	typ := reflect.TypeOf(c.initRef)
-	elem := indirectTyp(typ) // the value, not the pointer.
-	hasInputBinders := len(s) > 0
-	hasStructBinders := len(c.s) > 0
-	n := len(funcIn) + 1
+	pathParams := getPathParamsForInput(tmpl.Params, funcIn[1:]...)
+	funcBindings := newTargetFunc(m.Func, pathParams...)
 
-	// be, _ := typ.MethodByName("BeginRequest")
-	// en, _ := typ.MethodByName("EndRequest")
-	// beginIndex, endIndex := be.Index, en.Index
+	elemTyp := indirectTyp(c.Type) // the element value, not the pointer.
+
+	n := len(funcIn)
 
 	handler := func(ctx context.Context) {
 
 		// create a new controller instance of that type(>ptr).
-		ctrl := reflect.New(elem)
-		//ctrlAndCtxValues := []reflect.Value{ctrl, ctxValue[0]}
-		// ctrl.MethodByName("BeginRequest").Call(ctxValue)
-		//begin.Func.Call(ctrlAndCtxValues)
+		ctrl := reflect.New(elemTyp)
 		b := ctrl.Interface().(BaseController) // the Interface(). is faster than MethodByName or pre-selected methods.
 		// init the request.
 		b.BeginRequest(ctx)
-		//ctrl.Method(beginIndex).Call(ctxValue)
+
 		// if begin request stopped the execution.
 		if ctx.IsStopped() {
 			return
 		}
 
-		if hasStructBinders {
-			elem := ctrl.Elem()
-			c.s.FillStructStaticValues(elem)
-		}
-
-		if !hasInputBinders {
-			methodfunc.DispatchFuncResult(ctx, ctrl.Method(m.Index).Call(emptyIn))
+		if !c.bindings.Valid && !funcBindings.Valid {
+			DispatchFuncResult(ctx, ctrl.Method(m.Index).Call(emptyIn))
 		} else {
-			in := make([]reflect.Value, n, n)
-			// in[0] = ctrl.Elem()
-			in[0] = ctrl
-			s.FillFuncInput([]reflect.Value{reflect.ValueOf(ctx)}, &in)
-			methodfunc.DispatchFuncResult(ctx, m.Func.Call(in))
-			// in := make([]reflect.Value, n, n)
-			// ctxValues := []reflect.Value{reflect.ValueOf(ctx)}
-			// for k, v := range binders {
-			// 	in[k] = v.BindFunc(ctxValues)
+			ctxValue := reflect.ValueOf(ctx)
 
-			// 	if ctx.IsStopped() {
-			// 		return
-			// 	}
-			// }
-			// methodfunc.DispatchFuncResult(ctx, ctrl.Method(m.Index).Call(in))
+			if c.bindings.Valid {
+				elem := ctrl.Elem()
+				c.bindings.Fill(elem, ctxValue)
+				if ctx.IsStopped() {
+					return
+				}
+
+				// we do this in order to reduce in := make...
+				// if not func input binders, we execute the handler with empty input args.
+				if !funcBindings.Valid {
+					DispatchFuncResult(ctx, ctrl.Method(m.Index).Call(emptyIn))
+				}
+			}
+			// otherwise, it has one or more valid input binders,
+			// make the input and call the func using those.
+			if funcBindings.Valid {
+				in := make([]reflect.Value, n, n)
+				in[0] = ctrl
+				funcBindings.Fill(&in, ctxValue)
+				if ctx.IsStopped() {
+					return
+				}
+
+				DispatchFuncResult(ctx, m.Func.Call(in))
+			}
+
 		}
 
 		// end the request, don't check for stopped because this does the actual writing
 		// if no response written already.
 		b.EndRequest(ctx)
-		// ctrl.MethodByName("EndRequest").Call(ctxValue)
-		// end.Func.Call(ctrlAndCtxValues)
-		//ctrl.Method(endIndex).Call(ctxValue)
 	}
 
 	// register the handler now.
-	r := c.Router.Handle(method, path, append(middleware, handler)...)
-	// change the main handler's name in order to respect the controller's and give
-	// a proper debug message.
-	r.MainHandlerName = fmt.Sprintf("%s.%s", c.FullName, funcName)
-	// add this as a reserved method name in order to
-	// be sure that the same func will not be registered again, even if a custom .Handle later on.
-	reservedMethodNames = append(reservedMethodNames, funcName)
+	c.Router.Handle(method, path, append(middleware, handler)...).
+		// change the main handler's name in order to respect the controller's and give
+		// a proper debug message.
+		MainHandlerName = fmt.Sprintf("%s.%s", c.FullName, funcName)
+
 	return nil
-}
-
-func (c *ControllerActivator) analyzeAndRegisterMethods() {
-	for _, m := range c.methods {
-		funcName := m.Name
-		httpMethod, httpPath, err := parse(m)
-		if err != nil && err != errSkip {
-			err = fmt.Errorf("MVC: fail to parse the path and method for '%s.%s': %v", c.FullName, m.Name, err)
-			c.Router.GetReporter().AddErr(err)
-			continue
-		}
-
-		c.Handle(httpMethod, httpPath, funcName)
-	}
 }
 
 const (
 	tokenBy       = "By"
-	tokenWildcard = "Wildcard" // i.e ByWildcard
+	tokenWildcard = "Wildcard" // "ByWildcard".
 )
 
 // word lexer, not characters.
@@ -393,13 +416,15 @@ func methodTitle(httpMethod string) string {
 
 var errSkip = errors.New("skip")
 
+var allMethods = append(router.AllMethods[0:], []string{"ALL", "ANY"}...)
+
 func (p *parser) parse() (method, path string, err error) {
 	funcArgPos := 0
 	path = "/"
 	// take the first word and check for the method.
 	w := p.lexer.next()
 
-	for _, httpMethod := range router.AllMethods {
+	for _, httpMethod := range allMethods {
 		possibleMethodFuncName := methodTitle(httpMethod)
 		if strings.Index(w, possibleMethodFuncName) == 0 {
 			method = httpMethod
@@ -437,9 +462,9 @@ func (p *parser) parse() (method, path string, err error) {
 
 			continue
 		}
-
 		// static path.
 		path += "/" + strings.ToLower(w)
+
 	}
 
 	return

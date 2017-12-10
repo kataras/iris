@@ -4,6 +4,7 @@ package mvc2_test
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/kataras/iris"
@@ -69,19 +70,10 @@ var (
 )
 
 func TestMakeHandler(t *testing.T) {
-	// binders := []*InputBinder{
-	// 	// #1
-	// 	MustMakeFuncInputBinder(testBinderFuncUserStruct),
-	// 	// #2
-	// 	MustMakeServiceInputBinder(testBinderService),
-	// 	// #3
-	// 	MustMakeFuncInputBinder(testBinderFuncParam),
-	// }
-
 	var (
-		h1 = MustMakeHandler(testConsumeUserHandler, testBinderFuncUserStruct)
-		h2 = MustMakeHandler(testConsumeServiceHandler, testBinderService)
-		h3 = MustMakeHandler(testConsumeParamHandler, testBinderFuncParam)
+		h1 = MustMakeHandler(testConsumeUserHandler, reflect.ValueOf(testBinderFuncUserStruct))
+		h2 = MustMakeHandler(testConsumeServiceHandler, reflect.ValueOf(testBinderService))
+		h3 = MustMakeHandler(testConsumeParamHandler, reflect.ValueOf(testBinderFuncParam))
 	)
 
 	testAppWithMvcHandlers(t, h1, h2, h3)

@@ -394,18 +394,18 @@ func (r View) Dispatch(ctx context.Context) { // r as Response view.
 			// In order to respect any c.Ctx.ViewData that may called manually before;
 			dataKey := ctx.Application().ConfigurationReadOnly().GetViewDataContextKey()
 			if ctx.Values().Get(dataKey) == nil {
-				// if no c.Ctx.ViewData then it's empty do a
-				// pure set, it's faster.
+				// if no c.Ctx.ViewData set-ed before (the most common scenario) then do a
+				// simple set, it's faster.
 				ctx.Values().Set(dataKey, r.Data)
 			} else {
 				// else check if r.Data is map or struct, if struct convert it to map,
-				// do a range loop and set the data one by one.
-				// context.Map is actually a map[string]interface{} but we have to make that check;
+				// do a range loop and modify the data one by one.
+				// context.Map is actually a map[string]interface{} but we have to make that check:
 				if m, ok := r.Data.(map[string]interface{}); ok {
 					setViewData(ctx, m)
 				} else if m, ok := r.Data.(context.Map); ok {
 					setViewData(ctx, m)
-				} else if structs.IsStruct(r.Data) {
+				} else if indirectVal(reflect.ValueOf(r.Data)).Kind() == reflect.Struct {
 					setViewData(ctx, structs.Map(r))
 				}
 			}

@@ -697,18 +697,23 @@ type Context interface {
 	// ServeContent serves content, headers are autoset
 	// receives three parameters, it's low-level function, instead you can use .ServeFile(string,bool)/SendFile(string,string)
 	//
-	// You can define your own "Content-Type" header also, after this function call
-	// Doesn't implements resuming (by range), use ctx.SendFile instead
+	//
+	// You can define your own "Content-Type" with `context#ContentType`, before this function call.
+	//
+	// This function doesn't support resuming (by range),
+	// use ctx.SendFile or router's `StaticWeb` instead.
 	ServeContent(content io.ReadSeeker, filename string, modtime time.Time, gzipCompression bool) error
-	// ServeFile serves a view file, to send a file ( zip for example) to the client you should use the SendFile(serverfilename,clientfilename)
+	// ServeFile serves a file (to send a file, a zip for example to the client you should use the `SendFile` instead)
 	// receives two parameters
 	// filename/path (string)
 	// gzipCompression (bool)
 	//
-	// You can define your own "Content-Type" header also, after this function call
-	// This function doesn't implement resuming (by range), use ctx.SendFile instead
+	// You can define your own "Content-Type" with `context#ContentType`, before this function call.
 	//
-	// Use it when you want to serve css/js/... files to the client, for bigger files and 'force-download' use the SendFile.
+	// This function doesn't support resuming (by range),
+	// use ctx.SendFile or router's `StaticWeb` instead.
+	//
+	// Use it when you want to serve dynamic files to the client.
 	ServeFile(filename string, gzipCompression bool) error
 	// SendFile sends file for force-download to the client
 	//
@@ -806,6 +811,11 @@ type Context interface {
 	// to be executed at serve-time. The full app's fields
 	// and methods are not available here for the developer's safety.
 	Application() Application
+
+	// String returns the string representation of this request.
+	// Each context has a unique string representation, so this can be used
+	// as an "ID" as well, if needed.
+	String() string
 }
 
 // Next calls all the next handler from the handlers chain,
@@ -857,7 +867,11 @@ type Map map[string]interface{}
 //  +------------------------------------------------------------+
 
 type context struct {
-	// the http.ResponseWriter wrapped by custom writer
+	// the unique id, it's empty until `String` function is called,
+	// it's here to cache the random, unique context's id, although `String`
+	// returns more than this.
+	id string
+	// the http.ResponseWriter wrapped by custom writer.
 	writer ResponseWriter
 	// the original http.Request
 	request *http.Request
@@ -865,10 +879,10 @@ type context struct {
 	currentRouteName string
 
 	// the local key-value storage
-	params RequestParams  // url named parameters
-	values memstore.Store // generic storage, middleware communication
+	params RequestParams  // url named parameters.
+	values memstore.Store // generic storage, middleware communication.
 
-	// the underline application app
+	// the underline application app.
 	app Application
 	// the route's handlers
 	handlers Handlers
@@ -2719,6 +2733,19 @@ func (ctx *context) Exec(method string, path string) {
 		// 	ctx.Values().Set(key, value)
 		// })
 	}
+}
+
+// String returns the string representation of this request.
+// Each context has a unique string representation, so this can be used
+// as an "ID" as well, if needed.
+func (ctx *context) String() (s string) {
+	if ctx.id == "" {
+		// set the id here.
+
+		s = "..."
+	}
+
+	return
 }
 
 // Application returns the iris app instance which belongs to this context.

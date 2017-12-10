@@ -1,34 +1,30 @@
 package mvc2_test
 
 import (
-	"fmt"
 	"testing"
-	"time"
 
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/httptest"
-	// "github.com/kataras/iris/mvc"
-	// "github.com/kataras/iris/mvc/activator/methodfunc"
 	. "github.com/kataras/iris/mvc2"
 )
 
-type testController struct {
+type testControllerHandle struct {
 	C
 	Service TestService
 
 	reqField string
 }
 
-func (c *testController) Get() string {
+func (c *testControllerHandle) Get() string {
 	return "index"
 }
 
-func (c *testController) BeginRequest(ctx iris.Context) {
+func (c *testControllerHandle) BeginRequest(ctx iris.Context) {
 	c.C.BeginRequest(ctx)
 	c.reqField = ctx.URLParam("reqfield")
 }
 
-func (c *testController) OnActivate(t *ControllerActivator) { // OnActivate(t *mvc.TController) {
+func (c *testControllerHandle) OnActivate(t *ControllerActivator) { // OnActivate(t *mvc.TController) {
 	// t.Handle("GET", "/", "Get")
 	t.Handle("GET", "/histatic", "HiStatic")
 	t.Handle("GET", "/hiservice", "HiService")
@@ -36,31 +32,29 @@ func (c *testController) OnActivate(t *ControllerActivator) { // OnActivate(t *m
 	t.Handle("GET", "/hiparamempyinput/{ps:string}", "HiParamEmptyInputBy")
 }
 
-func (c *testController) HiStatic() string {
+func (c *testControllerHandle) HiStatic() string {
 	return c.reqField
 }
 
-func (c *testController) HiService() string {
+func (c *testControllerHandle) HiService() string {
 	return c.Service.Say("hi")
 }
 
-func (c *testController) HiParamBy(v string) string {
+func (c *testControllerHandle) HiParamBy(v string) string {
 	return v
 }
 
-func (c *testController) HiParamEmptyInputBy() string {
+func (c *testControllerHandle) HiParamEmptyInputBy() string {
 	return "empty in but served with ctx.Params.Get('ps')=" + c.Ctx.Params().Get("ps")
 }
 
-func TestControllerHandler(t *testing.T) {
+func TestControllerHandle(t *testing.T) {
 	app := iris.New()
-	// app.Controller("/", new(testController), &TestServiceImpl{prefix: "service:"})
-	m := New()
-	m.Bind(&TestServiceImpl{prefix: "service:"}).Controller(app, new(testController))
-	e := httptest.New(t, app, httptest.LogLevel("debug"))
 
-	fmt.Printf("\n\n\n")
-	now := time.Now()
+	m := New()
+	m.Bind(&TestServiceImpl{prefix: "service:"}).Controller(app, new(testControllerHandle))
+	e := httptest.New(t, app)
+
 	// test the index, is not part of the current package's implementation but do it.
 	e.GET("/").Expect().Status(httptest.StatusOK).Body().Equal("index")
 
@@ -84,7 +78,4 @@ func TestControllerHandler(t *testing.T) {
 		Body().Equal("value")
 	e.GET("/hiparamempyinput/value").Expect().Status(httptest.StatusOK).
 		Body().Equal("empty in but served with ctx.Params.Get('ps')=value")
-
-	endTime := time.Now().Sub(now)
-	fmt.Printf("end at %dns\n", endTime.Nanoseconds())
 }
