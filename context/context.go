@@ -19,6 +19,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/fatih/structs"
@@ -813,8 +814,12 @@ type Context interface {
 	Application() Application
 
 	// String returns the string representation of this request.
-	// Each context has a unique string representation, so this can be used
-	// as an "ID" as well, if needed.
+	// Each context has a unique string representation.
+	// It can be used for simple debugging scenarions, i.e print context as string.
+	//
+	// What it returns? A number which declares the length of the
+	// total `String` calls per executable application, followed
+	// by the remote IP (the client) and finally the method:url.
 	String() string
 }
 
@@ -867,10 +872,10 @@ type Map map[string]interface{}
 //  +------------------------------------------------------------+
 
 type context struct {
-	// the unique id, it's empty until `String` function is called,
+	// the unique id, it's zero until `String` function is called,
 	// it's here to cache the random, unique context's id, although `String`
 	// returns more than this.
-	id string
+	id uint64
 	// the http.ResponseWriter wrapped by custom writer.
 	writer ResponseWriter
 	// the original http.Request
@@ -2735,19 +2740,6 @@ func (ctx *context) Exec(method string, path string) {
 	}
 }
 
-// String returns the string representation of this request.
-// Each context has a unique string representation, so this can be used
-// as an "ID" as well, if needed.
-func (ctx *context) String() (s string) {
-	if ctx.id == "" {
-		// set the id here.
-
-		s = "..."
-	}
-
-	return
-}
-
 // Application returns the iris app instance which belongs to this context.
 // Worth to notice that this function returns an interface
 // of the Application, which contains methods that are safe
@@ -2755,4 +2747,29 @@ func (ctx *context) String() (s string) {
 // and methods are not available here for the developer's safety.
 func (ctx *context) Application() Application {
 	return ctx.app
+}
+
+var lastCapturedContextID uint64
+
+// LastCapturedContextID returns the total number of `context#String` calls.
+func LastCapturedContextID() uint64 {
+	return atomic.LoadUint64(&lastCapturedContextID)
+}
+
+// String returns the string representation of this request.
+// Each context has a unique string representation.
+// It can be used for simple debugging scenarions, i.e print context as string.
+//
+// What it returns? A number which declares the length of the
+// total `String` calls per executable application, followed
+// by the remote IP (the client) and finally the method:url.
+func (ctx *context) String() string {
+	if ctx.id == 0 {
+		// set the id here.
+		forward := atomic.AddUint64(&lastCapturedContextID, 1)
+		ctx.id = forward
+	}
+
+	return fmt.Sprintf("[%d] %s ▶ %s:%s",
+		ctx.id, ctx.RemoteAddr(), ctx.Method(), ctx.Request().RequestURI)
 }
