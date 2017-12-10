@@ -8,7 +8,7 @@ import (
 	. "github.com/kataras/iris/mvc2"
 )
 
-func TestMvcInAndHandler(t *testing.T) {
+func TestMvcEngineInAndHandler(t *testing.T) {
 	m := New().Bind(testBinderFuncUserStruct, testBinderService, testBinderFuncParam)
 
 	var (

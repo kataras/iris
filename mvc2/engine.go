@@ -4,6 +4,7 @@ import (
 	"errors"
 	"reflect"
 
+	"github.com/kataras/golog"
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/router"
 )
@@ -15,8 +16,6 @@ var (
 )
 
 type Engine struct {
-	binders []*InputBinder
-
 	Input []reflect.Value
 }
 
@@ -24,80 +23,53 @@ func New() *Engine {
 	return new(Engine)
 }
 
-func (e *Engine) Child() *Engine {
-	child := New()
-
-	// copy the current parent's ctx func binders and services to this new child.
-	// if l := len(e.binders); l > 0 {
-	// 	binders := make([]*InputBinder, l, l)
-	// 	copy(binders, e.binders)
-	// 	child.binders = binders
-	// }
-	if l := len(e.Input); l > 0 {
-		input := make([]reflect.Value, l, l)
-		copy(input, e.Input)
-		child.Input = input
-	}
-	return child
-}
-
-func (e *Engine) Bind(binders ...interface{}) *Engine {
-	for _, binder := range binders {
-		// typ := resolveBinderType(binder)
-
-		// var (
-		// 	b   *InputBinder
-		// 	err error
-		// )
-
-		// if typ == functionType {
-		// 	b, err = MakeFuncInputBinder(binder)
-		// } else if typ == serviceType {
-		// 	b, err = MakeServiceInputBinder(binder)
-		// } else {
-		// 	err = errBad
-		// }
-
-		// if err != nil {
-		// 	continue
-		// }
-
-		// e.binders = append(e.binders, b)
-
-		e.Input = append(e.Input, reflect.ValueOf(binder))
+func (e *Engine) Bind(values ...interface{}) *Engine {
+	for _, val := range values {
+		if v := reflect.ValueOf(val); goodVal(v) {
+			e.Input = append(e.Input, v)
+		}
 	}
 
 	return e
 }
 
-// BindTypeExists returns true if a binder responsible to
-// bind and return a type of "typ" is already registered.
-func (e *Engine) BindTypeExists(typ reflect.Type) bool {
-	// for _, b := range e.binders {
-	// 	if equalTypes(b.BindType, typ) {
-	// 		return true
-	// 	}
-	// }
-	for _, in := range e.Input {
-		if equalTypes(in.Type(), typ) {
-			return true
-		}
+func (e *Engine) Child() *Engine {
+	child := New()
+
+	// copy the current parent's ctx func binders and services to this new child.
+	if l := len(e.Input); l > 0 {
+		input := make([]reflect.Value, l, l)
+		copy(input, e.Input)
+		child.Input = input
 	}
-	return false
+
+	return child
 }
 
 func (e *Engine) Handler(handler interface{}) context.Handler {
-	h, _ := MakeHandler(handler, e.binders) // it logs errors already, so on any error the "h" will be nil.
+	h, err := MakeHandler(handler, e.Input...)
+	if err != nil {
+		golog.Errorf("mvc handler: %v", err)
+	}
 	return h
 }
 
-type ActivateListener interface {
-	OnActivate(*ControllerActivator)
-}
+func (e *Engine) Controller(router router.Party, controller BaseController, onActivate ...func(*ControllerActivator)) {
+	ca := newControllerActivator(router, controller, e.Input...)
 
-func (e *Engine) Controller(router router.Party, controller BaseController) {
-	ca := newControllerActivator(e, router, controller)
-	if al, ok := controller.(ActivateListener); ok {
-		al.OnActivate(ca)
+	// give a priority to the "onActivate"
+	// callbacks, if any.
+	for _, cb := range onActivate {
+		cb(ca)
 	}
+
+	// check if controller has an "OnActivate" function
+	// which accepts the controller activator and call it.
+	if activateListener, ok := controller.(interface {
+		OnActivate(*ControllerActivator)
+	}); ok {
+		activateListener.OnActivate(ca)
+	}
+
+	ca.activate()
 }

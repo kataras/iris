@@ -1,6 +1,13 @@
 package mvc2
 
-import "reflect"
+import (
+	"reflect"
+
+	"github.com/kataras/iris/context"
+	"github.com/kataras/pkg/zerocheck"
+)
+
+var contextTyp = reflect.TypeOf(context.NewContext(nil))
 
 func isContext(inTyp reflect.Type) bool {
 	return inTyp.String() == "context.Context" // I couldn't find another way; context/context.go is not exported.
@@ -29,22 +36,11 @@ func goodVal(v reflect.Value) bool {
 	return v.IsValid()
 }
 
-func isFunc(typ reflect.Type) bool {
-	return typ.Kind() == reflect.Func
+func isFunc(kindable interface {
+	Kind() reflect.Kind
+}) bool {
+	return kindable.Kind() == reflect.Func
 }
-
-/*
-// no f. this, it's too complicated and it will be harder to maintain later on:
-func isSliceAndExpectedItem(got reflect.Type, in []reflect.Type, currentBindersIdx int) bool {
-	kind := got.Kind()
-	// if got result is slice or array.
-	return (kind == reflect.Slice || kind == reflect.Array) &&
-		// if has expected next input.
-		len(in)-1 > currentBindersIdx &&
-		// if the current input's type is not the same as got (if it's not a slice of that types or anything else).
-		equalTypes(got, in[currentBindersIdx])
-}
-*/
 
 func equalTypes(got reflect.Type, expected reflect.Type) bool {
 	if got == expected {
@@ -59,8 +55,16 @@ func equalTypes(got reflect.Type, expected reflect.Type) bool {
 	return false
 }
 
-// for controller only.
+func getInputArgsFromFunc(funcTyp reflect.Type) []reflect.Type {
+	n := funcTyp.NumIn()
+	funcIn := make([]reflect.Type, n, n)
+	for i := 0; i < n; i++ {
+		funcIn[i] = funcTyp.In(i)
+	}
+	return funcIn
+}
 
+// for controller's fields only.
 func structFieldIgnored(f reflect.StructField) bool {
 	if !f.Anonymous {
 		return true // if not anonymous(embedded), ignore it.
@@ -76,22 +80,28 @@ type field struct {
 	Name  string // the actual name
 
 	// this could be empty, but in our cases it's not,
-	// it's filled with the service and it's filled from the lookupFields' caller.
+	// it's filled with the bind object (as service which means as static value)
+	// and it's filled from the lookupFields' caller.
 	AnyValue reflect.Value
 }
 
-func lookupFields(typ reflect.Type, parentIndex int) (fields []field) {
-	for i, n := 0, typ.NumField(); i < n; i++ {
-		f := typ.Field(i)
+func lookupFields(elemTyp reflect.Type, parentIndex []int) (fields []field) {
+	if elemTyp.Kind() != reflect.Struct {
+		return
+	}
 
-		if f.Type.Kind() == reflect.Struct && !structFieldIgnored(f) {
-			fields = append(fields, lookupFields(f.Type, i)...)
+	for i, n := 0, elemTyp.NumField(); i < n; i++ {
+		f := elemTyp.Field(i)
+
+		if indirectTyp(f.Type).Kind() == reflect.Struct &&
+			!structFieldIgnored(f) {
+			fields = append(fields, lookupFields(f.Type, append(parentIndex, i))...)
 			continue
 		}
 
 		index := []int{i}
-		if parentIndex >= 0 {
-			index = append([]int{parentIndex}, index...)
+		if len(parentIndex) > 0 {
+			index = append(parentIndex, i)
 		}
 
 		field := field{
@@ -101,6 +111,19 @@ func lookupFields(typ reflect.Type, parentIndex int) (fields []field) {
 		}
 
 		fields = append(fields, field)
+	}
+
+	return
+}
+
+func lookupNonZeroFieldsValues(v reflect.Value) (bindValues []reflect.Value) {
+	elem := indirectVal(v)
+	fields := lookupFields(indirectTyp(v.Type()), nil)
+	for _, f := range fields {
+
+		if fieldVal := elem.FieldByIndex(f.Index); f.Type.Kind() == reflect.Ptr && !zerocheck.IsZero(fieldVal) {
+			bindValues = append(bindValues, fieldVal)
+		}
 	}
 
 	return

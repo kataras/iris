@@ -14,7 +14,7 @@ var defaultManager = sessions.New(sessions.Config{})
 // which requires a binded session manager in order to give
 // direct access to the current client's session via its `Session` field.
 type SessionController struct {
-	Controller
+	C
 
 	Manager *sessions.Sessions
 	Session *sessions.Session
@@ -36,7 +36,7 @@ Please refer to the documentation to learn how you can provide the session manag
 // BeginRequest calls the Controller's BeginRequest
 // and tries to initialize the current user's Session.
 func (s *SessionController) BeginRequest(ctx context.Context) {
-	s.Controller.BeginRequest(ctx)
+	s.C.BeginRequest(ctx)
 	if s.Manager == nil {
 		ctx.Application().Logger().Errorf(`MVC SessionController: sessions manager is nil, report this as a bug 
 because the SessionController should predict this on its activation state and use a default one automatically`)
