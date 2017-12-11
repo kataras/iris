@@ -404,8 +404,6 @@ func TestControllerRelPathFromFunc(t *testing.T) {
 	e.GET("/anything/here").Expect().Status(iris.StatusOK).
 		Body().Equal("GET:/anything/here")
 
-	e.GET("/params/without/keyword/param1/param2").Expect().Status(iris.StatusOK).
-		Body().Equal("PUT:/params/without/keyword/param1/param2")
 }
 
 type testControllerActivateListener struct {

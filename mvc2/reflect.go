@@ -2,6 +2,7 @@ package mvc2
 
 import (
 	"reflect"
+	"strings"
 
 	"github.com/kataras/iris/context"
 	"github.com/kataras/pkg/zerocheck"
@@ -53,6 +54,16 @@ func equalTypes(got reflect.Type, expected reflect.Type) bool {
 		return got.Implements(expected)
 	}
 	return false
+}
+
+func getNameOf(typ reflect.Type) string {
+	elemTyp := indirectTyp(typ)
+
+	typName := elemTyp.Name()
+	pkgPath := elemTyp.PkgPath()
+	fullname := pkgPath[strings.LastIndexByte(pkgPath, '/')+1:] + "." + typName
+
+	return fullname
 }
 
 func getInputArgsFromFunc(funcTyp reflect.Type) []reflect.Type {
