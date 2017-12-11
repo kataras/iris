@@ -166,8 +166,8 @@ func (c *ControllerActivator) analyze() {
 // SetBindings will override any bindings with the new "values".
 func (c *ControllerActivator) SetBindings(values ...reflect.Value) {
 	// set field index with matching binders, if any.
+	c.input = values
 	c.bindings = newTargetStruct(reflect.ValueOf(c.initRef), values...)
-	c.input = c.input[0:0]
 }
 
 // Bind binds values to this controller, if you want to share
