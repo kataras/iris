@@ -56,6 +56,13 @@ type (
 		// Defaults to false.
 		CookieSecureTLS bool
 
+		// AllowReclaim will allow to
+		// Destroy and Start a session in the same request handler.
+		// All it does is that it removes the cookie for both `Request` and `ResponseWriter`.
+		//
+		// Defaults to false.
+		AllowReclaim bool
+
 		// Encode the cookie value if not nil.
 		// Should accept as first argument the cookie name (config.Cookie)
 		//         as second argument the server's generated session id.
