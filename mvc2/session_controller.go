@@ -1,9 +1,6 @@
 package mvc2
 
 import (
-	"reflect"
-
-	"github.com/kataras/golog"
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/sessions"
 )
@@ -25,11 +22,11 @@ type SessionController struct {
 // It makes sure that its "Manager" field is filled
 // even if the caller didn't provide any sessions manager via the `app.Controller` function.
 func (s *SessionController) OnActivate(ca *ControllerActivator) {
-	if !ca.BindTypeExists(reflect.TypeOf(defaultManager)) {
-		ca.Bind(defaultManager)
-		golog.Warnf(`MVC SessionController: couldn't find any "*sessions.Sessions" bindable value to fill the "Manager" field, 
-therefore this controller is using the default sessions manager instead.
-Please refer to the documentation to learn how you can provide the session manager`)
+	if didntBindManually := ca.BindIfNotExists(defaultManager); didntBindManually {
+		ca.Router.GetReporter().Add(
+			`MVC SessionController: couldn't find any "*sessions.Sessions" bindable value to fill the "Manager" field, 
+			therefore this controller is using the default sessions manager instead.
+			Please refer to the documentation to learn how you can provide the session manager`)
 	}
 }
 

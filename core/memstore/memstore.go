@@ -25,6 +25,13 @@ type (
 	Store []Entry
 )
 
+// GetByKindOrNil will try to get this entry's value of "k" kind,
+// if value is not that kind it will NOT try to convert it the "k", instead
+// it will return nil, except if boolean; then it will return false
+// even if the value was not bool.
+//
+// If the "k" kind is not a string or int or int64 or bool
+// then it will return the raw value of the entry as it's.
 func (e Entry) GetByKindOrNil(k reflect.Kind) interface{} {
 	switch k {
 	case reflect.String:

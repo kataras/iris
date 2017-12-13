@@ -2,7 +2,6 @@
 package mvc2_test
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/kataras/iris"
@@ -413,7 +412,7 @@ type testControllerActivateListener struct {
 }
 
 func (c *testControllerActivateListener) OnActivate(ca *ControllerActivator) {
-	if !ca.BindTypeExists(reflect.TypeOf(&testBindType{})) {
+	if !ca.BindExists(&testBindType{}) {
 		ca.Bind(&testBindType{
 			title: "default title",
 		})

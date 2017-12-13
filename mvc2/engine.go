@@ -37,8 +37,8 @@ func (e *Engine) Child() *Engine {
 	child := New()
 
 	// copy the current parent's ctx func binders and services to this new child.
-	if l := len(e.Input); l > 0 {
-		input := make([]reflect.Value, l, l)
+	if n := len(e.Input); n > 0 {
+		input := make([]reflect.Value, n, n)
 		copy(input, e.Input)
 		child.Input = input
 	}
@@ -54,7 +54,7 @@ func (e *Engine) Handler(handler interface{}) context.Handler {
 	return h
 }
 
-func (e *Engine) Controller(router router.Party, controller BaseController, onActivate ...func(*ControllerActivator)) {
+func (e *Engine) Controller(router router.Party, controller interface{}, onActivate ...func(*ControllerActivator)) {
 	ca := newControllerActivator(router, controller, e.Input...)
 
 	// give a priority to the "onActivate"

@@ -62,8 +62,10 @@ type C struct {
 
 var _ BaseController = &C{}
 
-// BeginRequest starts the request by initializing the `Context` field.
-func (c *C) BeginRequest(ctx context.Context) { c.Ctx = ctx }
+// BeginRequest does nothing anymore, is here to complet ethe `BaseController` interface.
+// BaseController is not required anymore, `Ctx` is binded automatically by the engine's
+// wrapped Handler.
+func (c *C) BeginRequest(ctx context.Context) {}
 
 // EndRequest does nothing, is here to complete the `BaseController` interface.
 func (c *C) EndRequest(ctx context.Context) {}
@@ -91,13 +93,13 @@ type ControllerActivator struct {
 	// are used to build the bindings, and we need this field
 	// because we have 3 states (Engine.Input, OnActivate, Bind)
 	// that we can add or override binding values.
-	input []reflect.Value
+	ValueStore // TODO: or ... this is dirty code I will have to re format it a bit tomorrow.
 
 	// the bindings that comes from input (and Engine) and can be binded to the controller's(initRef) fields.
 	bindings *targetStruct
 }
 
-func newControllerActivator(router router.Party, controller BaseController, bindValues ...reflect.Value) *ControllerActivator {
+func newControllerActivator(router router.Party, controller interface{}, bindValues ...reflect.Value) *ControllerActivator {
 	var (
 		val = reflect.ValueOf(controller)
 		typ = val.Type()
@@ -128,6 +130,9 @@ func newControllerActivator(router router.Party, controller BaseController, bind
 		// are being appended to the slice at the `parseMethods`,
 		// if a new method is registered via `Handle` its function name
 		// is also appended to that slice.
+		//
+		// TODO: now that BaseController is totally optionally
+		// we have to check if BeginRequest and EndRequest should be here.
 		reservedMethods: []string{
 			"BeginRequest",
 			"EndRequest",
@@ -136,10 +141,9 @@ func newControllerActivator(router router.Party, controller BaseController, bind
 		// set the input as []reflect.Value in order to be able
 		// to check if a bind type is already exists, or even
 		// override the structBindings that are being generated later on.
-		input: bindValues,
+		ValueStore: bindValues,
 	}
 
-	c.parseMethods()
 	return c
 }
 
@@ -178,33 +182,13 @@ func (c *ControllerActivator) parseMethods() {
 // SetBindings will override any bindings with the new "values".
 func (c *ControllerActivator) SetBindings(values ...reflect.Value) {
 	// set field index with matching binders, if any.
-	c.input = values
+	c.ValueStore = values
 	c.bindings = newTargetStruct(c.Value, values...)
 }
 
-// Bind binds values to this controller, if you want to share
-// binding values between controllers use the Engine's `Bind` function instead.
-func (c *ControllerActivator) Bind(values ...interface{}) {
-	for _, val := range values {
-		if v := reflect.ValueOf(val); goodVal(v) {
-			c.input = append(c.input, v)
-		}
-	}
-}
-
-// BindTypeExists returns true if a binder responsible to
-// bind and return a type of "typ" is already registered to this controller.
-func (c *ControllerActivator) BindTypeExists(typ reflect.Type) bool {
-	for _, in := range c.input {
-		if equalTypes(in.Type(), typ) {
-			return true
-		}
-	}
-	return false
-}
-
 func (c *ControllerActivator) activate() {
-	c.SetBindings(c.input...)
+	c.SetBindings(c.ValueStore...)
+	c.parseMethods()
 }
 
 var emptyIn = []reflect.Value{}
@@ -255,32 +239,50 @@ func (c *ControllerActivator) Handle(method, path, funcName string, middleware .
 	// get the function's input arguments' bindings.
 	funcBindings := newTargetFunc(m.Func, pathParams...)
 
-	// the element value, not the pointer.
-	elemTyp := indirectTyp(c.Type)
-
 	// we will make use of 'n' to make a slice of reflect.Value
 	// to pass into if the function has input arguments that
 	// are will being filled by the funcBindings.
 	n := len(funcIn)
-	handler := func(ctx context.Context) {
+	// the element value, not the pointer, wil lbe used to create a
+	// new controller on each incoming request.
+	elemTyp := indirectTyp(c.Type)
 
+	implementsBase := isBaseController(c.Type)
+
+	handler := func(ctx context.Context) {
 		// create a new controller instance of that type(>ptr).
 		ctrl := reflect.New(elemTyp)
-		// the Interface(). is faster than MethodByName or pre-selected methods.
-		b := ctrl.Interface().(BaseController)
-		// init the request.
-		b.BeginRequest(ctx)
 
-		// if begin request stopped the execution.
-		if ctx.IsStopped() {
-			return
+		// // the Interface(). is faster than MethodByName or pre-selected methods.
+		// b := ctrl.Interface().(BaseController)
+		// // init the request.
+		// b.BeginRequest(ctx)
+
+		// // if begin request stopped the execution.
+		// if ctx.IsStopped() {
+		// 	return
+		// }
+
+		if implementsBase {
+			// the Interface(). is faster than MethodByName or pre-selected methods.
+			b := ctrl.Interface().(BaseController)
+			// init the request.
+			b.BeginRequest(ctx)
+
+			// if begin request stopped the execution.
+			if ctx.IsStopped() {
+				return
+			}
+
+			// EndRequest will be called at any case except the `BeginRequest` is
+			// stopped.
+			defer b.EndRequest(ctx)
 		}
 
 		if !c.bindings.Valid && !funcBindings.Valid {
 			DispatchFuncResult(ctx, ctrl.Method(m.Index).Call(emptyIn))
 		} else {
 			ctxValue := reflect.ValueOf(ctx)
-
 			if c.bindings.Valid {
 				elem := ctrl.Elem()
 				c.bindings.Fill(elem, ctxValue)
@@ -309,11 +311,11 @@ func (c *ControllerActivator) Handle(method, path, funcName string, middleware .
 
 		}
 
-		if ctx.IsStopped() {
-			return
-		}
+		// if ctx.IsStopped() {
+		// 	return
+		// }
 
-		b.EndRequest(ctx)
+		// b.EndRequest(ctx)
 	}
 
 	// register the handler now.
