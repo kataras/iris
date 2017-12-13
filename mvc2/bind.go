@@ -86,6 +86,20 @@ func makeBindObject(v reflect.Value) (b bindObject, err error) {
 	return
 }
 
+// newContextBindObject is being used on both targetFunc and targetStruct.
+// if the func's input argument or the struct's field is a type of Context
+// then we can do a fast binding using the ctxValue
+// which is used as slice of reflect.Value, because of the final method's `Call`.
+func newContextBindObject() *bindObject {
+	return &bindObject{
+		Type:     contextTyp,
+		BindType: functionResultType,
+		ReturnValue: func(ctxValue []reflect.Value) reflect.Value {
+			return ctxValue[0]
+		},
+	}
+}
+
 func (b *bindObject) IsAssignable(to reflect.Type) bool {
 	return equalTypes(b.Type, to)
 }
@@ -120,6 +134,15 @@ func newTargetStruct(v reflect.Value, bindValues ...reflect.Value) *targetStruct
 
 	fields := lookupFields(typ, nil)
 	for _, f := range fields {
+		// if it's context then bind it directly here and continue to the next field.
+		if isContext(f.Type) {
+			s.Fields = append(s.Fields, &targetField{
+				FieldIndex: f.Index,
+				Object:     newContextBindObject(),
+			})
+			continue
+		}
+
 		for _, val := range bindValues {
 			// the binded values to the struct's fields.
 			b, err := makeBindObject(val)
@@ -147,12 +170,9 @@ func newTargetStruct(v reflect.Value, bindValues ...reflect.Value) *targetStruct
 func (s *targetStruct) Fill(destElem reflect.Value, ctx ...reflect.Value) {
 	for _, f := range s.Fields {
 		f.Object.Assign(ctx, func(v reflect.Value) {
-			// defer func() {
-			// 	if err := recover(); err != nil {
-			// 		fmt.Printf("for index: %#v on: %s where num fields are: %d\n",
-			// 			f.FieldIndex, f.Object.Type.String(), destElem.NumField())
-			// 	}
-			// }()
+			// if isContext(v.Type()) {
+			// 	println("WTF BIND CONTEXT TYPE WHEN BASE CONTROLLER?")
+			// }
 			destElem.FieldByIndex(f.FieldIndex).Set(v)
 		})
 	}
@@ -187,13 +207,7 @@ func newTargetFunc(fn reflect.Value, bindValues ...reflect.Value) *targetFunc {
 		if isContext(inTyp) {
 			s.Inputs = append(s.Inputs, &targetFuncInput{
 				InputIndex: i,
-				Object: &bindObject{
-					Type:     contextTyp,
-					BindType: functionResultType,
-					ReturnValue: func(ctxValue []reflect.Value) reflect.Value {
-						return ctxValue[0]
-					},
-				},
+				Object:     newContextBindObject(),
 			})
 			continue
 		}

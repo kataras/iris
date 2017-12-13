@@ -8,10 +8,16 @@ import (
 	"github.com/kataras/pkg/zerocheck"
 )
 
-var contextTyp = reflect.TypeOf(context.NewContext(nil))
+var baseControllerTyp = reflect.TypeOf((*BaseController)(nil)).Elem()
+
+func isBaseController(ctrlTyp reflect.Type) bool {
+	return ctrlTyp.Implements(baseControllerTyp)
+}
+
+var contextTyp = reflect.TypeOf((*context.Context)(nil)).Elem()
 
 func isContext(inTyp reflect.Type) bool {
-	return inTyp.String() == "context.Context" // I couldn't find another way; context/context.go is not exported.
+	return inTyp.Implements(contextTyp)
 }
 
 func indirectVal(v reflect.Value) reflect.Value {

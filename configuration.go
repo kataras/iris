@@ -32,7 +32,7 @@ func init() {
 	filename := homeConfigurationFilename(".yml")
 	c, err := parseYAML(filename)
 	if err != nil {
-		// this error will be occured the first time that the configuration
+		// this error will be occurred the first time that the configuration
 		// file doesn't exist.
 		// Create the YAML-ONLY global configuration file now using the default configuration 'c'.
 		// This is useful when we run multiple iris servers that share the same
