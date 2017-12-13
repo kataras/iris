@@ -2523,7 +2523,7 @@ func (ctx *context) RemoveCookie(name string) {
 	c.Expires = exp
 	c.MaxAge = -1
 	ctx.SetCookie(c)
-	// delete request's cookie also, which is temporary available
+	// delete request's cookie also, which is temporary available.
 	ctx.request.Header.Set("Cookie", "")
 }
 

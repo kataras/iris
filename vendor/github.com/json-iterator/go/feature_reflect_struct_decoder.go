@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"strings"
 	"unsafe"
 )
 
@@ -426,18 +427,36 @@ func (decoder *generalStructDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) 
 	if !iter.readObjectStart() {
 		return
 	}
-	fieldBytes := iter.readObjectFieldAsBytes()
-	field := *(*string)(unsafe.Pointer(&fieldBytes))
-	fieldDecoder := decoder.fields[field]
+	var fieldBytes []byte
+	var field string
+	if iter.cfg.objectFieldMustBeSimpleString {
+		fieldBytes = iter.readObjectFieldAsBytes()
+		field = *(*string)(unsafe.Pointer(&fieldBytes))
+	} else {
+		field = iter.ReadString()
+		c := iter.nextToken()
+		if c != ':' {
+			iter.ReportError("ReadObject", "expect : after object field, but found "+string([]byte{c}))
+		}
+	}
+	fieldDecoder := decoder.fields[strings.ToLower(field)]
 	if fieldDecoder == nil {
 		iter.Skip()
 	} else {
 		fieldDecoder.Decode(ptr, iter)
 	}
 	for iter.nextToken() == ',' {
-		fieldBytes = iter.readObjectFieldAsBytes()
-		field = *(*string)(unsafe.Pointer(&fieldBytes))
-		fieldDecoder = decoder.fields[field]
+		if iter.cfg.objectFieldMustBeSimpleString {
+			fieldBytes := iter.readObjectFieldAsBytes()
+			field = *(*string)(unsafe.Pointer(&fieldBytes))
+		} else {
+			field = iter.ReadString()
+			c := iter.nextToken()
+			if c != ':' {
+				iter.ReportError("ReadObject", "expect : after object field, but found "+string([]byte{c}))
+			}
+		}
+		fieldDecoder = decoder.fields[strings.ToLower(field)]
 		if fieldDecoder == nil {
 			iter.Skip()
 		} else {
@@ -455,7 +474,7 @@ type skipObjectDecoder struct {
 
 func (decoder *skipObjectDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
 	valueType := iter.WhatIsNext()
-	if valueType != Object && valueType != Nil {
+	if valueType != ObjectValue && valueType != NilValue {
 		iter.ReportError("skipObjectDecoder", "expect object or null")
 		return
 	}

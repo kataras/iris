@@ -16,7 +16,7 @@ func (any *invalidAny) LastError() error {
 }
 
 func (any *invalidAny) ValueType() ValueType {
-	return Invalid
+	return InvalidValue
 }
 
 func (any *invalidAny) MustBeValid() Any {

@@ -14,7 +14,7 @@ func (any *floatAny) Parse() *Iterator {
 }
 
 func (any *floatAny) ValueType() ValueType {
-	return Number
+	return NumberValue
 }
 
 func (any *floatAny) MustBeValid() Any {

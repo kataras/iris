@@ -38,7 +38,8 @@ func AddCookie(ctx context.Context, cookie *http.Cookie) {
 }
 
 // RemoveCookie deletes a cookie by it's name/key
-func RemoveCookie(ctx context.Context, name string) {
+// If "purge" is true then it removes the, temp, cookie from the request as well.
+func RemoveCookie(ctx context.Context, name string, purge bool) {
 	c, err := ctx.Request().Cookie(name)
 	if err != nil {
 		return
@@ -50,6 +51,11 @@ func RemoveCookie(ctx context.Context, name string) {
 	c.Value = ""
 	c.Path = "/"
 	AddCookie(ctx, c)
+
+	if purge {
+		// delete request's cookie also, which is temporary available.
+		ctx.Request().Header.Set("Cookie", "")
+	}
 }
 
 // IsValidCookieDomain returns true if the receiver is a valid domain to set

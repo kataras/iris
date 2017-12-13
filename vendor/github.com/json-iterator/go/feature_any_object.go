@@ -13,7 +13,7 @@ type objectLazyAny struct {
 }
 
 func (any *objectLazyAny) ValueType() ValueType {
-	return Object
+	return ObjectValue
 }
 
 func (any *objectLazyAny) MustBeValid() Any {
@@ -91,7 +91,7 @@ func (any *objectLazyAny) Get(path ...interface{}) Any {
 			defer any.cfg.ReturnIterator(iter)
 			iter.ReadMapCB(func(iter *Iterator, field string) bool {
 				mapped := locatePath(iter, path[1:])
-				if mapped.ValueType() != Invalid {
+				if mapped.ValueType() != InvalidValue {
 					mappedAll[field] = mapped
 				}
 				return true
@@ -149,7 +149,7 @@ func wrapStruct(val interface{}) *objectAny {
 }
 
 func (any *objectAny) ValueType() ValueType {
-	return Object
+	return ObjectValue
 }
 
 func (any *objectAny) MustBeValid() Any {
@@ -224,7 +224,7 @@ func (any *objectAny) Get(path ...interface{}) Any {
 				field := any.val.Field(i)
 				if field.CanInterface() {
 					mapped := Wrap(field.Interface()).Get(path[1:]...)
-					if mapped.ValueType() != Invalid {
+					if mapped.ValueType() != InvalidValue {
 						mappedAll[any.val.Type().Field(i).Name] = mapped
 					}
 				}
@@ -268,7 +268,7 @@ func wrapMap(val interface{}) *mapAny {
 }
 
 func (any *mapAny) ValueType() ValueType {
-	return Object
+	return ObjectValue
 }
 
 func (any *mapAny) MustBeValid() Any {
@@ -337,7 +337,7 @@ func (any *mapAny) Get(path ...interface{}) Any {
 				keyAsStr := key.String()
 				element := Wrap(any.val.MapIndex(key).Interface())
 				mapped := element.Get(path[1:]...)
-				if mapped.ValueType() != Invalid {
+				if mapped.ValueType() != InvalidValue {
 					mappedAll[keyAsStr] = mapped
 				}
 			}
