@@ -289,6 +289,8 @@ func writeStringSlowPathWithHTMLEscaped(stream *Stream, i int, s string, valLen 
 			if start < i {
 				stream.WriteRaw(s[start:i])
 			}
+			stream.WriteRaw(`\ufffd`)
+			i++
 			start = i
 			continue
 		}

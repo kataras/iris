@@ -13,7 +13,7 @@ type arrayLazyAny struct {
 }
 
 func (any *arrayLazyAny) ValueType() ValueType {
-	return Array
+	return ArrayValue
 }
 
 func (any *arrayLazyAny) MustBeValid() Any {
@@ -117,7 +117,7 @@ func (any *arrayLazyAny) Get(path ...interface{}) Any {
 			arr := make([]Any, 0)
 			iter.ReadArrayCB(func(iter *Iterator) bool {
 				found := iter.readAny().Get(path[1:]...)
-				if found.ValueType() != Invalid {
+				if found.ValueType() != InvalidValue {
 					arr = append(arr, found)
 				}
 				return true
@@ -162,7 +162,7 @@ func wrapArray(val interface{}) *arrayAny {
 }
 
 func (any *arrayAny) ValueType() ValueType {
-	return Array
+	return ArrayValue
 }
 
 func (any *arrayAny) MustBeValid() Any {
@@ -253,7 +253,7 @@ func (any *arrayAny) Get(path ...interface{}) Any {
 			mappedAll := make([]Any, 0)
 			for i := 0; i < any.val.Len(); i++ {
 				mapped := Wrap(any.val.Index(i).Interface()).Get(path[1:]...)
-				if mapped.ValueType() != Invalid {
+				if mapped.ValueType() != InvalidValue {
 					mappedAll = append(mappedAll, mapped)
 				}
 			}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"strings"
 	"unsafe"
 )
 
@@ -28,7 +29,7 @@ func encoderOfStruct(cfg *frozenConfig, typ reflect.Type) (ValEncoder, error) {
 				if old.toName != toName {
 					continue
 				}
-				old.ignored, new.ignored = resolveConflictBinding(old.binding, new.binding)
+				old.ignored, new.ignored = resolveConflictBinding(cfg, old.binding, new.binding)
 			}
 			orderedBindings = append(orderedBindings, new)
 		}
@@ -48,9 +49,9 @@ func encoderOfStruct(cfg *frozenConfig, typ reflect.Type) (ValEncoder, error) {
 	return &structEncoder{structDescriptor.onePtrEmbedded, structDescriptor.onePtrOptimization, finalOrderedFields}, nil
 }
 
-func resolveConflictBinding(old, new *Binding) (ignoreOld, ignoreNew bool) {
-	newTagged := new.Field.Tag.Get("json") != ""
-	oldTagged := old.Field.Tag.Get("json") != ""
+func resolveConflictBinding(cfg *frozenConfig, old, new *Binding) (ignoreOld, ignoreNew bool) {
+	newTagged := new.Field.Tag.Get(cfg.getTagKey()) != ""
+	oldTagged := old.Field.Tag.Get(cfg.getTagKey()) != ""
 	if newTagged {
 		if oldTagged {
 			if len(old.levels) > len(new.levels) {
@@ -90,7 +91,7 @@ func decoderOfStruct(cfg *frozenConfig, typ reflect.Type) (ValDecoder, error) {
 				bindings[fromName] = binding
 				continue
 			}
-			ignoreOld, ignoreNew := resolveConflictBinding(old, binding)
+			ignoreOld, ignoreNew := resolveConflictBinding(cfg, old, binding)
 			if ignoreOld {
 				delete(bindings, fromName)
 			}
@@ -101,7 +102,7 @@ func decoderOfStruct(cfg *frozenConfig, typ reflect.Type) (ValDecoder, error) {
 	}
 	fields := map[string]*structFieldDecoder{}
 	for k, binding := range bindings {
-		fields[k] = binding.Decoder.(*structFieldDecoder)
+		fields[strings.ToLower(k)] = binding.Decoder.(*structFieldDecoder)
 	}
 	return createStructDecoder(typ, fields)
 }

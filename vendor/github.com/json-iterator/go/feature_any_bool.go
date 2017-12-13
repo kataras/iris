@@ -61,7 +61,7 @@ func (any *trueAny) GetInterface() interface{} {
 }
 
 func (any *trueAny) ValueType() ValueType {
-	return Bool
+	return BoolValue
 }
 
 func (any *trueAny) MustBeValid() Any {
@@ -129,7 +129,7 @@ func (any *falseAny) GetInterface() interface{} {
 }
 
 func (any *falseAny) ValueType() ValueType {
-	return Bool
+	return BoolValue
 }
 
 func (any *falseAny) MustBeValid() Any {
