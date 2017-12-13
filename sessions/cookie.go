@@ -39,17 +39,7 @@ func AddCookie(ctx context.Context, cookie *http.Cookie) {
 
 // RemoveCookie deletes a cookie by it's name/key
 func RemoveCookie(ctx context.Context, name string) {
-	c, err := ctx.Request().Cookie(name)
-	if err != nil {
-		return
-	}
-
-	c.Expires = CookieExpireDelete
-	// MaxAge<0 means delete cookie now, equivalently 'Max-Age: 0'
-	c.MaxAge = -1
-	c.Value = ""
-	c.Path = "/"
-	AddCookie(ctx, c)
+	ctx.RemoveCookie(name)
 }
 
 // IsValidCookieDomain returns true if the receiver is a valid domain to set
