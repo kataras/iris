@@ -292,6 +292,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 - [Write `valyala/quicktemplate` templates](http_responsewriter/quicktemplate)
 - [Write `shiyanhui/hero` templates](http_responsewriter/hero)
 - [Text, Markdown, HTML, JSON, JSONP, XML, Binary](http_responsewriter/write-rest/main.go)
+- [Write Gzip](http_responsewriter/write-gzip/main.go)
 - [Stream Writer](http_responsewriter/stream-writer/main.go)
 - [Transactions](http_responsewriter/transactions/main.go)
 
