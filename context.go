@@ -22,7 +22,7 @@ import (
 	"github.com/iris-contrib/formBinder"
 	"github.com/kataras/go-errors"
 	"github.com/kataras/go-fs"
-	"github.com/kataras/go-sessions"
+	"gopkg.in/kataras/go-sessions.v0"
 	"github.com/valyala/fasthttp"
 )
 
