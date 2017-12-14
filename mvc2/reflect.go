@@ -110,6 +110,10 @@ func lookupFields(elemTyp reflect.Type, parentIndex []int) (fields []field) {
 	for i, n := 0, elemTyp.NumField(); i < n; i++ {
 		f := elemTyp.Field(i)
 
+		if f.PkgPath != "" {
+			continue // skip unexported.
+		}
+
 		if indirectTyp(f.Type).Kind() == reflect.Struct &&
 			!structFieldIgnored(f) {
 			fields = append(fields, lookupFields(f.Type, append(parentIndex, i))...)

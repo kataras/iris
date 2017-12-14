@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/kataras/di"
+
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/router"
 	"github.com/kataras/iris/core/router/macro"
@@ -89,17 +91,16 @@ type ControllerActivator struct {
 	// the BeginRequest, EndRequest and OnActivate are reserved by the internal implementation.
 	reservedMethods []string
 
-	// input are always empty after the `activate`
-	// are used to build the bindings, and we need this field
-	// because we have 3 states (Engine.Input, OnActivate, Bind)
-	// that we can add or override binding values.
-	ValueStore // TODO: or ... this is dirty code I will have to re format it a bit tomorrow.
+	// the bindings that comes from the Engine and the controller's filled fields if any.
+	// Can be binded to the the new controller's fields and method that is fired
+	// on incoming requests.
+	Dependencies *di.D
 
-	// the bindings that comes from input (and Engine) and can be binded to the controller's(initRef) fields.
-	bindings *targetStruct
+	// on activate.
+	injector *di.StructInjector
 }
 
-func newControllerActivator(router router.Party, controller interface{}, bindValues ...reflect.Value) *ControllerActivator {
+func newControllerActivator(router router.Party, controller interface{}, d *di.D) *ControllerActivator {
 	var (
 		val = reflect.ValueOf(controller)
 		typ = val.Type()
@@ -115,7 +116,7 @@ func newControllerActivator(router router.Party, controller interface{}, bindVal
 	// the end-developer when declaring the controller,
 	// activate listeners needs them in order to know if something set-ed already or not,
 	// look `BindTypeExists`.
-	bindValues = append(lookupNonZeroFieldsValues(val), bindValues...)
+	d.Values = append(lookupNonZeroFieldsValues(val), d.Values...)
 
 	c := &ControllerActivator{
 		// give access to the Router to the end-devs if they need it for some reason,
@@ -133,18 +134,20 @@ func newControllerActivator(router router.Party, controller interface{}, bindVal
 		//
 		// TODO: now that BaseController is totally optionally
 		// we have to check if BeginRequest and EndRequest should be here.
-		reservedMethods: []string{
-			"BeginRequest",
-			"EndRequest",
-			"OnActivate",
-		},
-		// set the input as []reflect.Value in order to be able
-		// to check if a bind type is already exists, or even
-		// override the structBindings that are being generated later on.
-		ValueStore: bindValues,
+		reservedMethods: whatReservedMethods(typ),
+		Dependencies:    d,
 	}
 
 	return c
+}
+
+func whatReservedMethods(typ reflect.Type) []string {
+	methods := []string{"OnActivate"}
+	if isBaseController(typ) {
+		methods = append(methods, "BeginRequest", "EndRequest")
+	}
+
+	return methods
 }
 
 // checks if a method is already registered.
@@ -178,15 +181,8 @@ func (c *ControllerActivator) parseMethods() {
 	}
 }
 
-// SetBindings will override any bindings with the new "values".
-func (c *ControllerActivator) SetBindings(values ...reflect.Value) {
-	// set field index with matching binders, if any.
-	c.ValueStore = values
-	c.bindings = newTargetStruct(c.Value, values...)
-}
-
 func (c *ControllerActivator) activate() {
-	c.SetBindings(c.ValueStore...)
+	c.injector = c.Dependencies.Struct(c.Value)
 	c.parseMethods()
 }
 
@@ -236,11 +232,13 @@ func (c *ControllerActivator) Handle(method, path, funcName string, middleware .
 	// end-dev's controller pointer.
 	pathParams := getPathParamsForInput(tmpl.Params, funcIn[1:]...)
 	// get the function's input arguments' bindings.
-	funcBindings := newTargetFunc(m.Func, pathParams...)
+	funcDependencies := c.Dependencies.Clone()
+	funcDependencies.Add(pathParams...)
+	funcInjector := funcDependencies.Func(m.Func)
 
 	// we will make use of 'n' to make a slice of reflect.Value
 	// to pass into if the function has input arguments that
-	// are will being filled by the funcBindings.
+	// are will being filled by the funcDependencies.
 	n := len(funcIn)
 	// the element value, not the pointer, wil lbe used to create a
 	// new controller on each incoming request.
@@ -249,18 +247,7 @@ func (c *ControllerActivator) Handle(method, path, funcName string, middleware .
 	implementsBase := isBaseController(c.Type)
 
 	handler := func(ctx context.Context) {
-		// create a new controller instance of that type(>ptr).
 		ctrl := reflect.New(elemTyp)
-
-		// // the Interface(). is faster than MethodByName or pre-selected methods.
-		// b := ctrl.Interface().(BaseController)
-		// // init the request.
-		// b.BeginRequest(ctx)
-
-		// // if begin request stopped the execution.
-		// if ctx.IsStopped() {
-		// 	return
-		// }
 
 		if implementsBase {
 			// the Interface(). is faster than MethodByName or pre-selected methods.
@@ -273,34 +260,32 @@ func (c *ControllerActivator) Handle(method, path, funcName string, middleware .
 				return
 			}
 
-			// EndRequest will be called at any case except the `BeginRequest` is
-			// stopped.
 			defer b.EndRequest(ctx)
 		}
 
-		if !c.bindings.Valid && !funcBindings.Valid {
+		if !c.injector.Valid && !funcInjector.Valid {
 			DispatchFuncResult(ctx, ctrl.Method(m.Index).Call(emptyIn))
 		} else {
 			ctxValue := reflect.ValueOf(ctx)
-			if c.bindings.Valid {
+			if c.injector.Valid {
 				elem := ctrl.Elem()
-				c.bindings.Fill(elem, ctxValue)
+				c.injector.InjectElem(elem, ctxValue)
 				if ctx.IsStopped() {
 					return
 				}
 
 				// we do this in order to reduce in := make...
 				// if not func input binders, we execute the handler with empty input args.
-				if !funcBindings.Valid {
+				if !funcInjector.Valid {
 					DispatchFuncResult(ctx, ctrl.Method(m.Index).Call(emptyIn))
 				}
 			}
 			// otherwise, it has one or more valid input binders,
 			// make the input and call the func using those.
-			if funcBindings.Valid {
+			if funcInjector.Valid {
 				in := make([]reflect.Value, n, n)
 				in[0] = ctrl
-				funcBindings.Fill(&in, ctxValue)
+				funcInjector.Inject(&in, ctxValue)
 				if ctx.IsStopped() {
 					return
 				}
@@ -309,12 +294,6 @@ func (c *ControllerActivator) Handle(method, path, funcName string, middleware .
 			}
 
 		}
-
-		// if ctx.IsStopped() {
-		// 	return
-		// }
-
-		// b.EndRequest(ctx)
 	}
 
 	// register the handler now.

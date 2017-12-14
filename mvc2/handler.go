@@ -2,6 +2,7 @@ package mvc2
 
 import (
 	"fmt"
+	"github.com/kataras/di"
 	"reflect"
 	"runtime"
 
@@ -64,7 +65,7 @@ func MakeHandler(handler interface{}, bindValues ...reflect.Value) (context.Hand
 		return h, nil
 	}
 
-	s := newTargetFunc(fn, bindValues...)
+	s := di.MakeFuncInjector(fn, hijacker, typeChecker, bindValues...)
 	if !s.Valid {
 		pc := fn.Pointer()
 		fpc := runtime.FuncForPC(pc)
@@ -72,14 +73,14 @@ func MakeHandler(handler interface{}, bindValues ...reflect.Value) (context.Hand
 		callerName := fpc.Name()
 
 		err := fmt.Errorf("input arguments length(%d) and valid binders length(%d) are not equal for typeof '%s' which is defined at %s:%d by %s",
-			n, len(s.Inputs), fn.Type().String(), callerFileName, callerLineNumber, callerName)
+			n, s.Length, fn.Type().String(), callerFileName, callerLineNumber, callerName)
 		return nil, err
 	}
 
 	h := func(ctx context.Context) {
 		in := make([]reflect.Value, n, n)
 
-		s.Fill(&in, reflect.ValueOf(ctx))
+		s.Inject(&in, reflect.ValueOf(ctx))
 		if ctx.IsStopped() {
 			return
 		}
