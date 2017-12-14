@@ -2,9 +2,10 @@ package mvc2
 
 import (
 	"errors"
-	"reflect"
 
+	"github.com/kataras/di"
 	"github.com/kataras/golog"
+
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/router"
 )
@@ -16,38 +17,28 @@ var (
 )
 
 type Engine struct {
-	Input []reflect.Value
+	dependencies *di.D
 }
 
 func New() *Engine {
-	return new(Engine)
+	return &Engine{
+		dependencies: di.New().Hijack(hijacker).GoodFunc(typeChecker),
+	}
 }
 
 func (e *Engine) Bind(values ...interface{}) *Engine {
-	for _, val := range values {
-		if v := reflect.ValueOf(val); goodVal(v) {
-			e.Input = append(e.Input, v)
-		}
-	}
-
+	e.dependencies.Bind(values...)
 	return e
 }
 
 func (e *Engine) Child() *Engine {
 	child := New()
-
-	// copy the current parent's ctx func binders and services to this new child.
-	if n := len(e.Input); n > 0 {
-		input := make([]reflect.Value, n, n)
-		copy(input, e.Input)
-		child.Input = input
-	}
-
+	child.dependencies = e.dependencies.Clone()
 	return child
 }
 
 func (e *Engine) Handler(handler interface{}) context.Handler {
-	h, err := MakeHandler(handler, e.Input...)
+	h, err := MakeHandler(handler, e.dependencies.Values...)
 	if err != nil {
 		golog.Errorf("mvc handler: %v", err)
 	}
@@ -55,7 +46,7 @@ func (e *Engine) Handler(handler interface{}) context.Handler {
 }
 
 func (e *Engine) Controller(router router.Party, controller interface{}, onActivate ...func(*ControllerActivator)) {
-	ca := newControllerActivator(router, controller, e.Input...)
+	ca := newControllerActivator(router, controller, e.dependencies)
 
 	// give a priority to the "onActivate"
 	// callbacks, if any.

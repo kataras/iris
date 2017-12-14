@@ -1,8 +1,10 @@
 package controllers
 
+// import "github.com/kataras/iris/mvc2"
+
 // ValuesController is the equivalent
 // `ValuesController` of the .net core 2.0 mvc application.
-type ValuesController struct{}
+type ValuesController struct{} //{ mvc2.C }
 
 /* on windows tests(older) the Get was:
 func (vc *ValuesController) Get() {

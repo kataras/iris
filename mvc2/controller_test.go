@@ -421,8 +421,8 @@ type testControllerActivateListener struct {
 }
 
 func (c *testControllerActivateListener) OnActivate(ca *ControllerActivator) {
-	if !ca.BindExists(&testBindType{}) {
-		ca.Bind(&testBindType{
+	if !ca.Dependencies.BindExists(&testBindType{}) {
+		ca.Dependencies.Bind(&testBindType{
 			title: "default title",
 		})
 	}

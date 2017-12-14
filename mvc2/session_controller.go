@@ -22,7 +22,7 @@ type SessionController struct {
 // It makes sure that its "Manager" field is filled
 // even if the caller didn't provide any sessions manager via the `app.Controller` function.
 func (s *SessionController) OnActivate(ca *ControllerActivator) {
-	if didntBindManually := ca.BindIfNotExists(defaultSessionManager); didntBindManually {
+	if didntBindManually := ca.Dependencies.BindIfNotExists(defaultSessionManager); didntBindManually {
 		ca.Router.GetReporter().Add(
 			`MVC SessionController: couldn't find any "*sessions.Sessions" bindable value to fill the "Manager" field, 
 			therefore this controller is using the default sessions manager instead.

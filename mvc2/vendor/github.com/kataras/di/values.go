@@ -1,26 +1,32 @@
-package mvc2
+package di
 
 import (
 	"reflect"
 )
 
-/// TODO:
-// create another package because these bindings things are useful
-// for other libraries I'm working on, so something like github.com/kataras/di
-// will be great, combine these with the bind.go and controller's inside handler
-// but generic things.
+type Values []reflect.Value
 
-type ValueStore []reflect.Value
+func NewValues() Values {
+	return Values{}
+}
 
 // Bind binds values to this controller, if you want to share
 // binding values between controllers use the Engine's `Bind` function instead.
-func (bv *ValueStore) Bind(values ...interface{}) {
+func (bv *Values) Bind(values ...interface{}) {
 	for _, val := range values {
 		bv.bind(reflect.ValueOf(val))
 	}
 }
 
-func (bv *ValueStore) bind(v reflect.Value) {
+// Add same as `Bind` but accepts reflect.Value
+// instead.
+func (bv *Values) Add(values ...reflect.Value) {
+	for _, v := range values {
+		bv.bind(v)
+	}
+}
+
+func (bv *Values) bind(v reflect.Value) {
 	if !goodVal(v) {
 		return
 	}
@@ -34,11 +40,11 @@ func (bv *ValueStore) bind(v reflect.Value) {
 // The "n" indicates the number of elements to remove, if <=0 then it's 1,
 // this is useful because you may have bind more than one value to two or more fields
 // with the same type.
-func (bv *ValueStore) Unbind(value interface{}, n int) bool {
+func (bv *Values) Unbind(value interface{}, n int) bool {
 	return bv.unbind(reflect.TypeOf(value), n)
 }
 
-func (bv *ValueStore) unbind(typ reflect.Type, n int) (ok bool) {
+func (bv *Values) unbind(typ reflect.Type, n int) (ok bool) {
 	input := *bv
 	for i, in := range input {
 		if equalTypes(in.Type(), typ) {
@@ -58,11 +64,11 @@ func (bv *ValueStore) unbind(typ reflect.Type, n int) (ok bool) {
 
 // BindExists returns true if a binder responsible to
 // bind and return a type of "typ" is already registered to this controller.
-func (bv *ValueStore) BindExists(value interface{}) bool {
+func (bv *Values) BindExists(value interface{}) bool {
 	return bv.bindTypeExists(reflect.TypeOf(value))
 }
 
-func (bv *ValueStore) bindTypeExists(typ reflect.Type) bool {
+func (bv *Values) bindTypeExists(typ reflect.Type) bool {
 	input := *bv
 	for _, in := range input {
 		if equalTypes(in.Type(), typ) {
@@ -77,11 +83,11 @@ func (bv *ValueStore) bindTypeExists(typ reflect.Type) bool {
 //
 // Returns false if binded already or the value is not the proper one for binding,
 // otherwise true.
-func (bv *ValueStore) BindIfNotExists(value interface{}) bool {
+func (bv *Values) BindIfNotExists(value interface{}) bool {
 	return bv.bindIfNotExists(reflect.ValueOf(value))
 }
 
-func (bv *ValueStore) bindIfNotExists(v reflect.Value) bool {
+func (bv *Values) bindIfNotExists(v reflect.Value) bool {
 	var (
 		typ = v.Type() // no element, raw things here.
 	)
