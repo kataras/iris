@@ -599,13 +599,11 @@ type Context interface {
 	ClientSupportsGzip() bool
 	// WriteGzip accepts bytes, which are compressed to gzip format and sent to the client.
 	// returns the number of bytes written and an error ( if the client doesn' supports gzip compression)
-	//
-	// This function writes temporary gzip contents, the ResponseWriter is untouched.
+	// You may re-use this function in the same handler
+	// to write more data many times without any troubles.
 	WriteGzip(b []byte) (int, error)
 	// TryWriteGzip accepts bytes, which are compressed to gzip format and sent to the client.
 	// If client does not supprots gzip then the contents are written as they are, uncompressed.
-	//
-	// This function writes temporary gzip contents, the ResponseWriter is untouched.
 	TryWriteGzip(b []byte) (int, error)
 	// GzipResponseWriter converts the current response writer into a response writer
 	// which when its .Write called it compress the data to gzip and writes them to the client.
@@ -1900,28 +1898,18 @@ var (
 // WriteGzip accepts bytes, which are compressed to gzip format and sent to the client.
 // returns the number of bytes written and an error ( if the client doesn' supports gzip compression)
 //
-// This function writes temporary gzip contents, the ResponseWriter is untouched.
+// You may re-use this function in the same handler
+// to write more data many times without any troubles.
 func (ctx *context) WriteGzip(b []byte) (int, error) {
-	if ctx.ClientSupportsGzip() {
-		ctx.writer.Header().Add(varyHeaderKey, acceptEncodingHeaderKey)
-
-		gzipWriter := acquireGzipWriter(ctx.writer)
-		defer releaseGzipWriter(gzipWriter)
-		n, err := gzipWriter.Write(b)
-
-		if err == nil {
-			ctx.Header(contentEncodingHeaderKey, "gzip")
-		} // else write the contents as it is? no let's create a new func for this
-		return n, err
+	if !ctx.ClientSupportsGzip() {
+		return 0, errClientDoesNotSupportGzip
 	}
 
-	return 0, errClientDoesNotSupportGzip
+	return ctx.GzipResponseWriter().Write(b)
 }
 
 // TryWriteGzip accepts bytes, which are compressed to gzip format and sent to the client.
 // If client does not supprots gzip then the contents are written as they are, uncompressed.
-//
-// This function writes temporary gzip contents, the ResponseWriter is untouched.
 func (ctx *context) TryWriteGzip(b []byte) (int, error) {
 	n, err := ctx.WriteGzip(b)
 	if err != nil {
