@@ -160,7 +160,6 @@ func (c *ControllerActivator) isReservedMethod(name string) bool {
 
 // register all available, exported methods to handlers if possible.
 func (c *ControllerActivator) parseMethods() {
-
 	n := c.Type.NumMethod()
 	for i := 0; i < n; i++ {
 		m := c.Type.Method(i)

@@ -5,7 +5,7 @@ import (
 	"github.com/kataras/iris/sessions"
 )
 
-var defaultManager = sessions.New(sessions.Config{})
+var defaultSessionManager = sessions.New(sessions.Config{})
 
 // SessionController is a simple `Controller` implementation
 // which requires a binded session manager in order to give
@@ -22,7 +22,7 @@ type SessionController struct {
 // It makes sure that its "Manager" field is filled
 // even if the caller didn't provide any sessions manager via the `app.Controller` function.
 func (s *SessionController) OnActivate(ca *ControllerActivator) {
-	if didntBindManually := ca.BindIfNotExists(defaultManager); didntBindManually {
+	if didntBindManually := ca.BindIfNotExists(defaultSessionManager); didntBindManually {
 		ca.Router.GetReporter().Add(
 			`MVC SessionController: couldn't find any "*sessions.Sessions" bindable value to fill the "Manager" field, 
 			therefore this controller is using the default sessions manager instead.

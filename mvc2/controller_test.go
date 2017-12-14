@@ -260,6 +260,12 @@ func (t *testControllerBindStruct) Get() {
 	t.Ctx.Writef(t.TitlePointer.title + t.TitleValue.title + t.Other)
 }
 
+// test if context can be binded to the controller's function
+// without need to declare it to a struct if not needed.
+func (t *testControllerBindStruct) GetCtx(ctx iris.Context) {
+	ctx.StatusCode(iris.StatusContinue)
+}
+
 type testControllerBindDeep struct {
 	testControllerBindStruct
 }
@@ -268,6 +274,7 @@ func (t *testControllerBindDeep) Get() {
 	// 	t.testControllerBindStruct.Get()
 	t.Ctx.Writef(t.TitlePointer.title + t.TitleValue.title + t.Other)
 }
+
 func TestControllerBind(t *testing.T) {
 	app := iris.New()
 	// app.Logger().SetLevel("debug")
@@ -287,6 +294,8 @@ func TestControllerBind(t *testing.T) {
 	expected := t1 + t2
 	e.GET("/").Expect().Status(iris.StatusOK).
 		Body().Equal(expected)
+	e.GET("/ctx").Expect().Status(iris.StatusContinue)
+
 	e.GET("/deep").Expect().Status(iris.StatusOK).
 		Body().Equal(expected)
 }
