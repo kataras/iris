@@ -101,3 +101,29 @@ func testAppWithMvcHandlers(t *testing.T, h1, h2, h3 iris.Handler) {
 	e.GET("/param/the_param_value").Expect().Status(httptest.StatusOK).
 		Body().Equal("param is: the_param_value")
 }
+
+// TestBindFunctionAsFunctionInputArgument tests to bind
+// a whole dynamic function based on the current context
+// as an input argument in the mvc-like handler's function.
+func TestBindFunctionAsFunctionInputArgument(t *testing.T) {
+	app := iris.New()
+	postsBinder := func(ctx iris.Context) func(string) string {
+		return ctx.PostValue // or FormValue, the same here.
+	}
+
+	h := MustMakeHandler(func(get func(string) string) string {
+		// send the `ctx.PostValue/FormValue("username")` value
+		// to the client.
+		return get("username")
+	},
+		// bind the function binder.
+		reflect.ValueOf(postsBinder))
+
+	app.Post("/", h)
+
+	e := httptest.New(t, app)
+
+	expectedUsername := "kataras"
+	e.POST("/").WithFormField("username", expectedUsername).
+		Expect().Status(iris.StatusOK).Body().Equal(expectedUsername)
+}
