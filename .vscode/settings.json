@@ -1,0 +1,53 @@
+// Place your settings in this file to overwrite the default settings
+{
+    "editor.fontFamily": "'Fira Code'",
+    "editor.fontWeight": "400",
+    "editor.renderIndentGuides": false,
+    "editor.fontSize": 16, // 15
+    "editor.fontLigatures": true, 
+    "editor.cursorStyle": "line",
+    "editor.cursorBlinking": "smooth",
+    "editor.tabSize": 4,
+    "editor.formatOnSave": false, // for non-golang
+    // Configure glob patterns for excluding files and folders.
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "vendor": true
+    },
+    // Specifies Lint tool name.
+    "go.lintTool": "golint",
+    "window.zoomLevel": 2,
+    "editor.minimap.enabled": true,
+    "files.autoSave": "off",
+    "go.formatTool": "gofmt",
+    "go.buildOnSave": "package",
+    "editor.suggestFontSize": 14,
+    "terminal.integrated.fontSize": 13,
+    "terminal.integrated.fontFamily": "Fira Code",
+    "workbench.colorTheme": "One Dark Pro",
+    "workbench.iconTheme": "vscode-great-icons",
+    "workbench.activityBar.visible": true, // optionally toggles the workbench controls
+    "workbench.editor.enablePreview": false, // it's a good feature if it's on but I want to keep the windows on, mostly when I navigate to a native source code.
+    "workbench.editor.enablePreviewFromQuickOpen": false,
+    "workbench.statusBar.visible": true,
+    "workbench.editor.closeOnFileDelete": true,
+    "workbench.sideBar.location": "left",
+    "window.menuBarVisibility": "default",
+    // "Gerasimos Maropoulos | Software Developer editing ${dirty}${activeEditorShort} inside ${separator}${rootName}${separator}",
+    "window.restoreFullscreen": false,
+    // Enable usage data and errors to be sent to Microsoft.
+    "telemetry.enableTelemetry": false,
+    // Enable crash reports to be sent to Microsoft.
+    // This option requires restart to take effect.
+    "telemetry.enableCrashReporter": false,
+    // Whether git is enabled
+    "git.enabled": true,
+    "workbench.startupEditor": "newUntitledFile",
+    "extensions.ignoreRecommendations": true,
+    "git.enableSmartCommit": true // I always turn off git on my editors, I am managing git diffs and pushes by programs like Github Desktop or Kraken.
+
+}

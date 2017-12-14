@@ -72,8 +72,8 @@ import (
 	"github.com/kataras/go-sessions"
 	"github.com/kataras/go-template"
 	"github.com/kataras/go-template/html"
-	"gopkg.in/kataras/iris.v5/utils"
 	"github.com/valyala/fasthttp"
+	"gopkg.in/kataras/iris.v5/utils"
 )
 
 const (

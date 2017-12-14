@@ -19,10 +19,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iris-contrib/formBinder"
+	formBinder "github.com/iris-contrib/formBinder"
 	"github.com/kataras/go-errors"
 	"github.com/kataras/go-fs"
-	"gopkg.in/kataras/go-sessions.v0"
+	"github.com/kataras/go-sessions"
 	"github.com/valyala/fasthttp"
 )
 

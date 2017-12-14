@@ -1,0 +1,13 @@
+// Place your key bindings in this file to overwrite the defaults
+[
+    {
+        "key": "ctrl+k f",
+        "command": "editor.foldAll",
+        "when": "editorTextFocus"
+    },
+    {
+        "key": "ctrl+j f",
+        "command": "editor.unfoldAll",
+        "when": "editorTextFocus"
+    }
+]
