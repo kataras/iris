@@ -2,7 +2,7 @@ package mvc2
 
 import (
 	"fmt"
-	"github.com/kataras/di"
+	"github.com/kataras/iris/mvc2/di"
 	"reflect"
 	"runtime"
 
@@ -23,7 +23,7 @@ func isContextHandler(handler interface{}) (context.Handler, bool) {
 }
 
 func validateHandler(handler interface{}) error {
-	if typ := reflect.TypeOf(handler); !isFunc(typ) {
+	if typ := reflect.TypeOf(handler); !di.IsFunc(typ) {
 		return fmt.Errorf("handler expected to be a kind of func but got typeof(%s)", typ.String())
 	}
 	return nil

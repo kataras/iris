@@ -16,18 +16,21 @@ type (
 		fn reflect.Value
 
 		inputs []*targetFuncInput
+		// Length is the number of the valid, final binded input arguments.
 		Length int
-		Valid  bool // is True when contains func inputs and it's a valid target func.
+		// Valid is True when `Length` is > 0, it's statically set-ed for
+		// performance reasons.
+		Valid bool //
 	}
 )
 
 func MakeFuncInjector(fn reflect.Value, hijack Hijacker, goodFunc TypeChecker, values ...reflect.Value) *FuncInjector {
-	typ := indirectTyp(fn.Type())
+	typ := IndirectType(fn.Type())
 	s := &FuncInjector{
 		fn: fn,
 	}
 
-	if !isFunc(typ) {
+	if !IsFunc(typ) {
 		return s
 	}
 

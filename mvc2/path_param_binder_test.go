@@ -7,7 +7,8 @@ import (
 )
 
 func TestPathParamsBinder(t *testing.T) {
-	m := New().Bind(PathParamsBinder)
+	m := NewEngine()
+	m.Dependencies.Add(PathParamsBinder)
 
 	got := ""
 
@@ -25,7 +26,8 @@ func TestPathParamsBinder(t *testing.T) {
 	}
 }
 func TestPathParamBinder(t *testing.T) {
-	m := New().Bind(PathParamBinder("username"))
+	m := NewEngine()
+	m.Dependencies.Add(PathParamBinder("username"))
 
 	got := ""
 	executed := false

@@ -10,41 +10,36 @@ func NewValues() Values {
 	return Values{}
 }
 
-// Bind binds values to this controller, if you want to share
+// Add binds values to this controller, if you want to share
 // binding values between controllers use the Engine's `Bind` function instead.
-func (bv *Values) Bind(values ...interface{}) {
+func (bv *Values) Add(values ...interface{}) {
 	for _, val := range values {
-		bv.bind(reflect.ValueOf(val))
+		bv.AddValue(reflect.ValueOf(val))
 	}
 }
 
-// Add same as `Bind` but accepts reflect.Value
+// AddValue same as `Add` but accepts reflect.Value
 // instead.
-func (bv *Values) Add(values ...reflect.Value) {
+func (bv *Values) AddValue(values ...reflect.Value) {
 	for _, v := range values {
-		bv.bind(v)
+		if !goodVal(v) {
+			continue
+		}
+		*bv = append(*bv, v)
 	}
 }
 
-func (bv *Values) bind(v reflect.Value) {
-	if !goodVal(v) {
-		return
-	}
-
-	*bv = append(*bv, v)
-}
-
-// Unbind unbinds a binding value based on the type,
+// Remove unbinds a binding value based on the type,
 // it returns true if at least one field is not binded anymore.
 //
 // The "n" indicates the number of elements to remove, if <=0 then it's 1,
 // this is useful because you may have bind more than one value to two or more fields
 // with the same type.
-func (bv *Values) Unbind(value interface{}, n int) bool {
-	return bv.unbind(reflect.TypeOf(value), n)
+func (bv *Values) Remove(value interface{}, n int) bool {
+	return bv.remove(reflect.TypeOf(value), n)
 }
 
-func (bv *Values) unbind(typ reflect.Type, n int) (ok bool) {
+func (bv *Values) remove(typ reflect.Type, n int) (ok bool) {
 	input := *bv
 	for i, in := range input {
 		if equalTypes(in.Type(), typ) {
@@ -62,13 +57,13 @@ func (bv *Values) unbind(typ reflect.Type, n int) (ok bool) {
 	return
 }
 
-// BindExists returns true if a binder responsible to
+// Has returns true if a binder responsible to
 // bind and return a type of "typ" is already registered to this controller.
-func (bv *Values) BindExists(value interface{}) bool {
-	return bv.bindTypeExists(reflect.TypeOf(value))
+func (bv *Values) Has(value interface{}) bool {
+	return bv.valueTypeExists(reflect.TypeOf(value))
 }
 
-func (bv *Values) bindTypeExists(typ reflect.Type) bool {
+func (bv *Values) valueTypeExists(typ reflect.Type) bool {
 	input := *bv
 	for _, in := range input {
 		if equalTypes(in.Type(), typ) {
@@ -78,16 +73,16 @@ func (bv *Values) bindTypeExists(typ reflect.Type) bool {
 	return false
 }
 
-// BindIfNotExists bind a value to the controller's field with the same type,
+// AddOnce binds a value to the controller's field with the same type,
 // if it's not binded already.
 //
 // Returns false if binded already or the value is not the proper one for binding,
 // otherwise true.
-func (bv *Values) BindIfNotExists(value interface{}) bool {
-	return bv.bindIfNotExists(reflect.ValueOf(value))
+func (bv *Values) AddOnce(value interface{}) bool {
+	return bv.addIfNotExists(reflect.ValueOf(value))
 }
 
-func (bv *Values) bindIfNotExists(v reflect.Value) bool {
+func (bv *Values) addIfNotExists(v reflect.Value) bool {
 	var (
 		typ = v.Type() // no element, raw things here.
 	)
@@ -96,10 +91,10 @@ func (bv *Values) bindIfNotExists(v reflect.Value) bool {
 		return false
 	}
 
-	if bv.bindTypeExists(typ) {
+	if bv.valueTypeExists(typ) {
 		return false
 	}
 
-	bv.bind(v)
+	bv.AddValue(v)
 	return true
 }

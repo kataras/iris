@@ -63,7 +63,7 @@ func (c *testControllerAny) Any() {
 func TestControllerMethodFuncs(t *testing.T) {
 	app := iris.New()
 
-	m := New()
+	m := NewEngine()
 	m.Controller(app, new(testController))
 	m.Controller(app.Party("/all"), new(testControllerAll))
 	m.Controller(app.Party("/any"), new(testControllerAny))
@@ -113,7 +113,7 @@ func (c *testControllerBeginAndEndRequestFunc) Post() {
 
 func TestControllerBeginAndEndRequestFunc(t *testing.T) {
 	app := iris.New()
-	New().Controller(app.Party("/profile/{username}"), new(testControllerBeginAndEndRequestFunc))
+	NewEngine().Controller(app.Party("/profile/{username}"), new(testControllerBeginAndEndRequestFunc))
 
 	e := httptest.New(t, app)
 	usernames := []string{
@@ -156,7 +156,7 @@ func TestControllerBeginAndEndRequestFuncBindMiddleware(t *testing.T) {
 		ctx.Writef("forbidden")
 	}
 
-	New().Controller(app.Party("/profile/{username}", middlewareCheck),
+	NewEngine().Controller(app.Party("/profile/{username}", middlewareCheck),
 		new(testControllerBeginAndEndRequestFunc))
 
 	e := httptest.New(t, app)
@@ -230,7 +230,7 @@ func (c *testControllerEndRequestAwareness) EndRequest(ctx context.Context) {
 
 func TestControllerEndRequestAwareness(t *testing.T) {
 	app := iris.New()
-	New().Controller(app.Party("/era/{username}"), new(testControllerEndRequestAwareness))
+	NewEngine().Controller(app.Party("/era/{username}"), new(testControllerEndRequestAwareness))
 
 	e := httptest.New(t, app)
 	usernames := []string{
@@ -284,8 +284,8 @@ func TestControllerBind(t *testing.T) {
 	myTitlePtr := &testBindType{title: t1}
 	// test bind value to value of the correct type
 	myTitleV := testBindType{title: t2}
-	m := New()
-	m.Bind(myTitlePtr, myTitleV)
+	m := NewEngine()
+	m.Dependencies.Add(myTitlePtr, myTitleV)
 	//			or just app
 	m.Controller(app.Party("/"), new(testControllerBindStruct))
 	m.Controller(app.Party("/deep"), new(testControllerBindDeep))
@@ -345,8 +345,9 @@ func TestControllerInsideControllerRecursively(t *testing.T) {
 	)
 
 	app := iris.New()
-	New().Bind(&testBindType{title: title}).
-		Controller(app.Party("/user/{username}"), new(testCtrl0))
+	m := NewEngine()
+	m.Dependencies.Add(&testBindType{title: title})
+	m.Controller(app.Party("/user/{username}"), new(testCtrl0))
 
 	e := httptest.New(t, app)
 	e.GET("/user/" + username).Expect().
@@ -378,7 +379,7 @@ func (c *testControllerRelPathFromFunc) GetSomethingByElseThisBy(bool, int) {} /
 
 func TestControllerRelPathFromFunc(t *testing.T) {
 	app := iris.New()
-	New().Controller(app, new(testControllerRelPathFromFunc))
+	NewEngine().Controller(app, new(testControllerRelPathFromFunc))
 
 	e := httptest.New(t, app)
 	e.GET("/").Expect().Status(iris.StatusOK).
@@ -420,12 +421,8 @@ type testControllerActivateListener struct {
 	TitlePointer *testBindType
 }
 
-func (c *testControllerActivateListener) OnActivate(ca *ControllerActivator) {
-	if !ca.Dependencies.BindExists(&testBindType{}) {
-		ca.Dependencies.Bind(&testBindType{
-			title: "default title",
-		})
-	}
+func (c *testControllerActivateListener) BeforeActivate(ca *ControllerActivator) {
+	ca.Dependencies.AddOnce(&testBindType{title: "default title"})
 }
 
 func (c *testControllerActivateListener) Get() string {
@@ -434,12 +431,14 @@ func (c *testControllerActivateListener) Get() string {
 
 func TestControllerActivateListener(t *testing.T) {
 	app := iris.New()
-	New().Controller(app, new(testControllerActivateListener))
-	New().Bind(&testBindType{ // will bind to all controllers under this .New() MVC Engine.
+	NewEngine().Controller(app, new(testControllerActivateListener))
+	m := NewEngine()
+	m.Dependencies.Add(&testBindType{ // will bind to all controllers under this .New() MVC Engine.
 		title: "my title",
-	}).Controller(app.Party("/manual"), new(testControllerActivateListener))
+	})
+	m.Controller(app.Party("/manual"), new(testControllerActivateListener))
 	// or
-	New().Controller(app.Party("/manual2"), &testControllerActivateListener{
+	NewEngine().Controller(app.Party("/manual2"), &testControllerActivateListener{
 		TitlePointer: &testBindType{
 			title: "my title",
 		},

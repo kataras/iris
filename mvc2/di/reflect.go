@@ -1,9 +1,6 @@
 package di
 
-import (
-	"reflect"
-	"strings"
-)
+import "reflect"
 
 var emptyIn = []reflect.Value{}
 
@@ -57,11 +54,11 @@ func IsZero(v reflect.Value) bool {
 	return v.Interface() == zero.Interface()
 }
 
-func indirectVal(v reflect.Value) reflect.Value {
+func IndirectValue(v reflect.Value) reflect.Value {
 	return reflect.Indirect(v)
 }
 
-func valueOf(o interface{}) reflect.Value {
+func ValueOf(o interface{}) reflect.Value {
 	if v, ok := o.(reflect.Value); ok {
 		return v
 	}
@@ -69,7 +66,7 @@ func valueOf(o interface{}) reflect.Value {
 	return reflect.ValueOf(o)
 }
 
-func indirectTyp(typ reflect.Type) reflect.Type {
+func IndirectType(typ reflect.Type) reflect.Type {
 	switch typ.Kind() {
 	case reflect.Ptr, reflect.Array, reflect.Chan, reflect.Map, reflect.Slice:
 		return typ.Elem()
@@ -88,7 +85,7 @@ func goodVal(v reflect.Value) bool {
 	return v.IsValid()
 }
 
-func isFunc(kindable interface {
+func IsFunc(kindable interface {
 	Kind() reflect.Kind
 }) bool {
 	return kindable.Kind() == reflect.Func
@@ -105,25 +102,6 @@ func equalTypes(got reflect.Type, expected reflect.Type) bool {
 		return got.Implements(expected)
 	}
 	return false
-}
-
-func getNameOf(typ reflect.Type) string {
-	elemTyp := indirectTyp(typ)
-
-	typName := elemTyp.Name()
-	pkgPath := elemTyp.PkgPath()
-	fullname := pkgPath[strings.LastIndexByte(pkgPath, '/')+1:] + "." + typName
-
-	return fullname
-}
-
-func getInputArgsFromFunc(funcTyp reflect.Type) []reflect.Type {
-	n := funcTyp.NumIn()
-	funcIn := make([]reflect.Type, n, n)
-	for i := 0; i < n; i++ {
-		funcIn[i] = funcTyp.In(i)
-	}
-	return funcIn
 }
 
 // for controller's fields only.
@@ -155,7 +133,7 @@ func lookupFields(elemTyp reflect.Type, parentIndex []int) (fields []field) {
 	for i, n := 0, elemTyp.NumField(); i < n; i++ {
 		f := elemTyp.Field(i)
 
-		if indirectTyp(f.Type).Kind() == reflect.Struct &&
+		if IndirectType(f.Type).Kind() == reflect.Struct &&
 			!structFieldIgnored(f) {
 			fields = append(fields, lookupFields(f.Type, append(parentIndex, i))...)
 			continue
@@ -185,9 +163,12 @@ func lookupFields(elemTyp reflect.Type, parentIndex []int) (fields []field) {
 	return
 }
 
-func lookupNonZeroFieldsValues(v reflect.Value) (bindValues []reflect.Value) {
-	elem := indirectVal(v)
-	fields := lookupFields(indirectTyp(v.Type()), nil)
+// LookupNonZeroFieldsValues lookup for filled fields based on the "v" struct value instance.
+// It returns a slice of reflect.Value (same type as `Values`) that can be binded,
+// like the end-developer's custom values.
+func LookupNonZeroFieldsValues(v reflect.Value) (bindValues []reflect.Value) {
+	elem := IndirectValue(v)
+	fields := lookupFields(IndirectType(v.Type()), nil)
 	for _, f := range fields {
 
 		if fieldVal := elem.FieldByIndex(f.Index); f.Type.Kind() == reflect.Ptr && !IsZero(fieldVal) {

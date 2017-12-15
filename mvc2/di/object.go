@@ -5,10 +5,10 @@ import (
 	"reflect"
 )
 
-type bindType uint32
+type BindType uint32
 
 const (
-	Static  bindType = iota // simple assignable value, a static value.
+	Static  BindType = iota // simple assignable value, a static value.
 	Dynamic                 // dynamic value, depends on some input arguments from the caller.
 )
 
@@ -16,17 +16,12 @@ type BindObject struct {
 	Type  reflect.Type // the Type of 'Value' or the type of the returned 'ReturnValue' .
 	Value reflect.Value
 
-	BindType    bindType
+	BindType    BindType
 	ReturnValue func([]reflect.Value) reflect.Value
 }
 
-// ReturnValueBad can be customized to skip func binders that are not allowed, a custom logic.
-var ReturnValueBad = func(reflect.Type) bool {
-	return false
-}
-
 func MakeBindObject(v reflect.Value, goodFunc TypeChecker) (b BindObject, err error) {
-	if isFunc(v) {
+	if IsFunc(v) {
 		b.BindType = Dynamic
 		b.ReturnValue, b.Type, err = MakeReturnValue(v, goodFunc)
 	} else {
@@ -52,7 +47,7 @@ var errBad = errors.New("bad")
 // The return type of the "fn" should be a value instance, not a pointer, for your own protection.
 // The binder function should return only one value.
 func MakeReturnValue(fn reflect.Value, goodFunc TypeChecker) (func([]reflect.Value) reflect.Value, reflect.Type, error) {
-	typ := indirectTyp(fn.Type())
+	typ := IndirectType(fn.Type())
 
 	// invalid if not a func.
 	if typ.Kind() != reflect.Func {

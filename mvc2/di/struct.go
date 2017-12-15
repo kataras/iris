@@ -18,7 +18,7 @@ type (
 
 func MakeStructInjector(v reflect.Value, hijack Hijacker, goodFunc TypeChecker, values ...reflect.Value) *StructInjector {
 	s := &StructInjector{
-		elemType: indirectTyp(v.Type()),
+		elemType: IndirectType(v.Type()),
 	}
 
 	fields := lookupFields(s.elemType, nil)
@@ -64,7 +64,7 @@ func (s *StructInjector) Inject(dest interface{}, ctx ...reflect.Value) {
 		return
 	}
 
-	v := indirectVal(valueOf(dest))
+	v := IndirectValue(ValueOf(dest))
 	s.InjectElem(v, ctx...)
 }
 

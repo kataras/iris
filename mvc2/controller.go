@@ -3,8 +3,9 @@ package mvc2
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
-	"github.com/kataras/di"
+	"github.com/kataras/iris/mvc2/di"
 
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/router"
@@ -75,9 +76,9 @@ func (c *C) EndRequest(ctx context.Context) {}
 // ControllerActivator returns a new controller type info description.
 // Its functionality can be overriden by the end-dev.
 type ControllerActivator struct {
-	// the router is used on the `Activate` and can be used by end-dev on the `OnActivate`
+	// the router is used on the `Activate` and can be used by end-dev on the `BeforeActivate`
 	// to register any custom controller's functions as handlers but we will need it here
-	// in order to not create a new type like `ActivationPayload` for the `OnActivate`.
+	// in order to not create a new type like `ActivationPayload` for the `BeforeActivate`.
 	Router router.Party
 
 	// initRef BaseController // the BaseController as it's passed from the end-dev.
@@ -88,7 +89,7 @@ type ControllerActivator struct {
 	FullName string
 
 	// the methods names that is already binded to a handler,
-	// the BeginRequest, EndRequest and OnActivate are reserved by the internal implementation.
+	// the BeginRequest, EndRequest and BeforeActivate are reserved by the internal implementation.
 	reservedMethods []string
 
 	// the bindings that comes from the Engine and the controller's filled fields if any.
@@ -98,6 +99,16 @@ type ControllerActivator struct {
 
 	// on activate.
 	injector *di.StructInjector
+}
+
+func getNameOf(typ reflect.Type) string {
+	elemTyp := di.IndirectType(typ)
+
+	typName := elemTyp.Name()
+	pkgPath := elemTyp.PkgPath()
+	fullname := pkgPath[strings.LastIndexByte(pkgPath, '/')+1:] + "." + typName
+
+	return fullname
 }
 
 func newControllerActivator(router router.Party, controller interface{}, d *di.D) *ControllerActivator {
@@ -116,7 +127,7 @@ func newControllerActivator(router router.Party, controller interface{}, d *di.D
 	// the end-developer when declaring the controller,
 	// activate listeners needs them in order to know if something set-ed already or not,
 	// look `BindTypeExists`.
-	d.Values = append(lookupNonZeroFieldsValues(val), d.Values...)
+	d.Values = append(di.LookupNonZeroFieldsValues(val), d.Values...)
 
 	c := &ControllerActivator{
 		// give access to the Router to the end-devs if they need it for some reason,
@@ -142,7 +153,7 @@ func newControllerActivator(router router.Party, controller interface{}, d *di.D
 }
 
 func whatReservedMethods(typ reflect.Type) []string {
-	methods := []string{"OnActivate"}
+	methods := []string{"BeforeActivate"}
 	if isBaseController(typ) {
 		methods = append(methods, "BeginRequest", "EndRequest")
 	}
@@ -182,7 +193,6 @@ func (c *ControllerActivator) parseMethods() {
 }
 
 func (c *ControllerActivator) activate() {
-	c.injector = c.Dependencies.Struct(c.Value)
 	c.parseMethods()
 }
 
@@ -233,18 +243,40 @@ func (c *ControllerActivator) Handle(method, path, funcName string, middleware .
 	pathParams := getPathParamsForInput(tmpl.Params, funcIn[1:]...)
 	// get the function's input arguments' bindings.
 	funcDependencies := c.Dependencies.Clone()
-	funcDependencies.Add(pathParams...)
+	funcDependencies.AddValue(pathParams...)
 	funcInjector := funcDependencies.Func(m.Func)
 
-	// we will make use of 'n' to make a slice of reflect.Value
-	// to pass into if the function has input arguments that
-	// are will being filled by the funcDependencies.
-	n := len(funcIn)
 	// the element value, not the pointer, wil lbe used to create a
 	// new controller on each incoming request.
-	elemTyp := indirectTyp(c.Type)
 
-	implementsBase := isBaseController(c.Type)
+	// Remember:
+	// we cannot simply do that and expect to work:
+	// hasStructInjector = c.injector != nil && c.injector.Valid
+	// hasFuncInjector   = funcInjector != nil && funcInjector.Valid
+	// because
+	// the `Handle` can be called from `BeforeActivate` callbacks
+	// and before activation, the c.injector is nil because
+	// we may not have the dependencies binded yet. But if `c.injector.Valid`
+	// inside the Handelr works because it's set on the `activate()` method.
+	// To solve this we can make check on the FIRST `Handle`,
+	// if c.injector is nil, then set it with the current bindings,
+	// so the user should bind the dependencies needed before the `Handle`
+	// this is a logical flow, so we will choose that one ->
+	if c.injector == nil {
+		c.injector = c.Dependencies.Struct(c.Value)
+	}
+	var (
+		hasStructInjector = c.injector != nil && c.injector.Valid
+		hasFuncInjector   = funcInjector != nil && funcInjector.Valid
+
+		implementsBase = isBaseController(c.Type)
+		// we will make use of 'n' to make a slice of reflect.Value
+		// to pass into if the function has input arguments that
+		// are will being filled by the funcDependencies.
+		n = len(funcIn)
+
+		elemTyp = di.IndirectType(c.Type)
+	)
 
 	handler := func(ctx context.Context) {
 		ctrl := reflect.New(elemTyp)
@@ -263,11 +295,11 @@ func (c *ControllerActivator) Handle(method, path, funcName string, middleware .
 			defer b.EndRequest(ctx)
 		}
 
-		if !c.injector.Valid && !funcInjector.Valid {
+		if !hasStructInjector && !hasFuncInjector {
 			DispatchFuncResult(ctx, ctrl.Method(m.Index).Call(emptyIn))
 		} else {
 			ctxValue := reflect.ValueOf(ctx)
-			if c.injector.Valid {
+			if hasStructInjector {
 				elem := ctrl.Elem()
 				c.injector.InjectElem(elem, ctxValue)
 				if ctx.IsStopped() {
@@ -276,13 +308,13 @@ func (c *ControllerActivator) Handle(method, path, funcName string, middleware .
 
 				// we do this in order to reduce in := make...
 				// if not func input binders, we execute the handler with empty input args.
-				if !funcInjector.Valid {
+				if !hasFuncInjector {
 					DispatchFuncResult(ctx, ctrl.Method(m.Index).Call(emptyIn))
 				}
 			}
 			// otherwise, it has one or more valid input binders,
 			// make the input and call the func using those.
-			if funcInjector.Valid {
+			if hasFuncInjector {
 				in := make([]reflect.Value, n, n)
 				in[0] = ctrl
 				funcInjector.Inject(&in, ctxValue)
