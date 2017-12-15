@@ -96,7 +96,7 @@ func (s *Sessions) updateCookie(ctx context.Context, sid string, expires time.Du
 
 	// encode the session id cookie client value right before send it.
 	cookie.Value = s.encodeCookieValue(cookie.Value)
-	AddCookie(ctx, cookie)
+	AddCookie(ctx, cookie, s.config.AllowReclaim)
 }
 
 // Start should start the session for the particular request.
@@ -131,7 +131,8 @@ func (s *Sessions) UpdateExpiration(ctx context.Context, expires time.Duration) 
 	cookieValue := s.decodeCookieValue(GetCookie(ctx, s.config.Cookie))
 
 	if cookieValue != "" {
-		if s.provider.UpdateExpiration(cookieValue, expires) {
+		// we should also allow it to expire when the browser closed
+		if s.provider.UpdateExpiration(cookieValue, expires) || expires == -1 {
 			s.updateCookie(ctx, cookieValue, expires)
 		}
 	}
