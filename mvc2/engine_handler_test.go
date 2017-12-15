@@ -9,7 +9,8 @@ import (
 )
 
 func TestMvcEngineInAndHandler(t *testing.T) {
-	m := New().Bind(testBinderFuncUserStruct, testBinderService, testBinderFuncParam)
+	m := NewEngine()
+	m.Dependencies.Add(testBinderFuncUserStruct, testBinderService, testBinderFuncParam)
 
 	var (
 		h1 = m.Handler(testConsumeUserHandler)

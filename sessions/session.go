@@ -167,6 +167,26 @@ func (s *Session) GetIntDefault(key string, defaultValue int) (int, error) {
 	return defaultValue, errFindParse.Format("int", key, v)
 }
 
+// Increment increments the stored int value saved as "key" by +"n".
+// If value doesn't exist on that "key" then it creates one with the "n" as its value.
+// It returns the new, incremented, value.
+func (s *Session) Increment(key string, n int) (newValue int) {
+	newValue, _ = s.GetIntDefault(key, 0)
+	newValue += n
+	s.Set(key, newValue)
+	return
+}
+
+// Decrement decrements the stored int value saved as "key" by -"n".
+// If value doesn't exist on that "key" then it creates one with the "n" as its value.
+// It returns the new, decremented, value even if it's less than zero.
+func (s *Session) Decrement(key string, n int) (newValue int) {
+	newValue, _ = s.GetIntDefault(key, 0)
+	newValue -= n
+	s.Set(key, newValue)
+	return
+}
+
 // GetInt64 same as `Get` but returns its int64 representation,
 // if key doesn't exist then it returns -1.
 func (s *Session) GetInt64(key string) (int64, error) {

@@ -71,7 +71,7 @@ func (c *testControllerMethodResult) GetThingWithTryDefaultBy(index int) Result 
 
 func TestControllerMethodResult(t *testing.T) {
 	app := iris.New()
-	New().Controller(app, new(testControllerMethodResult))
+	NewEngine().Controller(app, new(testControllerMethodResult))
 
 	e := httptest.New(t, app)
 
@@ -175,7 +175,7 @@ func (c *testControllerMethodResultTypes) GetCustomStructWithError() (s testCust
 
 func TestControllerMethodResultTypes(t *testing.T) {
 	app := iris.New()
-	New().Controller(app, new(testControllerMethodResultTypes))
+	NewEngine().Controller(app, new(testControllerMethodResultTypes))
 
 	e := httptest.New(t, app, httptest.LogLevel("debug"))
 
@@ -266,8 +266,8 @@ func (t *testControllerViewResultRespectCtxViewData) Get() Result {
 
 func TestControllerViewResultRespectCtxViewData(t *testing.T) {
 	app := iris.New()
-	New().Controller(app, new(testControllerViewResultRespectCtxViewData), func(ca *ControllerActivator) {
-		ca.Dependencies.Bind(t)
+	NewEngine().Controller(app, new(testControllerViewResultRespectCtxViewData), func(ca *ControllerActivator) {
+		ca.Dependencies.Add(t)
 	})
 	e := httptest.New(t, app)
 

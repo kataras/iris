@@ -24,12 +24,11 @@ func (c *testControllerHandle) BeginRequest(ctx iris.Context) {
 	c.reqField = ctx.URLParam("reqfield")
 }
 
-func (c *testControllerHandle) OnActivate(t *ControllerActivator) { // OnActivate(t *mvc.TController) {
-	// t.Handle("GET", "/", "Get")
-	t.Handle("GET", "/histatic", "HiStatic")
-	t.Handle("GET", "/hiservice", "HiService")
-	t.Handle("GET", "/hiparam/{ps:string}", "HiParamBy")
-	t.Handle("GET", "/hiparamempyinput/{ps:string}", "HiParamEmptyInputBy")
+func (c *testControllerHandle) BeforeActivate(ca *ControllerActivator) { // BeforeActivate(t *mvc.TController) {
+	ca.Handle("GET", "/histatic", "HiStatic")
+	ca.Handle("GET", "/hiservice", "HiService")
+	ca.Handle("GET", "/hiparam/{ps:string}", "HiParamBy")
+	ca.Handle("GET", "/hiparamempyinput/{ps:string}", "HiParamEmptyInputBy")
 }
 
 func (c *testControllerHandle) HiStatic() string {
@@ -51,8 +50,10 @@ func (c *testControllerHandle) HiParamEmptyInputBy() string {
 func TestControllerHandle(t *testing.T) {
 	app := iris.New()
 
-	m := New()
-	m.Bind(&TestServiceImpl{prefix: "service:"}).Controller(app, new(testControllerHandle))
+	m := NewEngine()
+	m.Dependencies.Add(&TestServiceImpl{prefix: "service:"})
+	m.Controller(app, new(testControllerHandle))
+
 	e := httptest.New(t, app)
 
 	// test the index, is not part of the current package's implementation but do it.

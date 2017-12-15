@@ -1,7 +1,7 @@
 package mvc2
 
 import (
-	"github.com/kataras/di"
+	"github.com/kataras/iris/mvc2/di"
 	"reflect"
 )
 

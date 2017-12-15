@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/fatih/structs"
+	"github.com/kataras/iris/mvc2/di"
+
 	"github.com/kataras/iris/context"
 )
 
@@ -405,7 +407,7 @@ func (r View) Dispatch(ctx context.Context) { // r as Response view.
 					setViewData(ctx, m)
 				} else if m, ok := r.Data.(context.Map); ok {
 					setViewData(ctx, m)
-				} else if indirectVal(reflect.ValueOf(r.Data)).Kind() == reflect.Struct {
+				} else if di.IndirectValue(reflect.ValueOf(r.Data)).Kind() == reflect.Struct {
 					setViewData(ctx, structs.Map(r))
 				}
 			}
