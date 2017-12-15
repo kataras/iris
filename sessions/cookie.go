@@ -53,6 +53,11 @@ func RemoveCookie(ctx context.Context, name string, purge bool) {
 	c.Value = ""
 	c.Path = "/"
 	AddCookie(ctx, c, purge)
+
+	if purge {
+		// delete request's cookie also, which is temporary available.
+		ctx.Request().Header.Set("Cookie", "")
+	}
 }
 
 // IsValidCookieDomain returns true if the receiver is a valid domain to set
