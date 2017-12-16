@@ -27,25 +27,11 @@ func getPathParamsForInput(params []macro.TemplateParam, funcIn ...reflect.Type)
 			// 	fmt.Printf("%s input arg type vs %s param type\n", in.Kind().String(), p.Type.Kind().String())
 			if paramType.Assignable(in.Kind()) {
 				consumedParams[j] = true
-				// fmt.Printf("path_param_binder.go: bind path param func for paramName = '%s' and paramType = '%s'\n", paramName, paramType.String())
+				// fmt.Printf("param.go: bind path param func for paramName = '%s' and paramType = '%s'\n", paramName, paramType.String())
 				values = append(values, makeFuncParamGetter(paramType, paramName))
 			}
 		}
 	}
-	// funcInIdx := 0
-	// // it's a valid param type.
-	// for _, p := range params {
-	// 	in := funcIn[funcInIdx]
-	// 	paramType := p.Type
-	// 	paramName := p.Name
-	// 	// 	fmt.Printf("%s input arg type vs %s param type\n", in.Kind().String(), p.Type.Kind().String())
-	// 	if paramType.Assignable(in.Kind()) {
-	// 		// fmt.Printf("path_param_binder.go: bind path param func for paramName = '%s' and paramType = '%s'\n", paramName, paramType.String())
-	// 		values = append(values, makeFuncParamGetter(paramType, paramName))
-	// 	}
-
-	// 	funcInIdx++
-	// }
 
 	return
 }

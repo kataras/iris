@@ -58,6 +58,8 @@ func getNameOf(typ reflect.Type) string {
 	return fullname
 }
 
+/// TODO: activate controllers with go routines so the startup time of iris
+// can be improved on huge applications.
 func newControllerActivator(router router.Party, controller interface{}, d *di.D) *ControllerActivator {
 	var (
 		val = reflect.ValueOf(controller)
@@ -215,20 +217,125 @@ func (c *ControllerActivator) Handle(method, path, funcName string, middleware .
 	if c.injector == nil {
 		c.injector = c.Dependencies.Struct(c.Value)
 	}
+
+	handler := buildHandler(m, c.Type, c.Value, c.injector, funcInjector, funcIn)
+
+	// register the handler now.
+	route := c.Router.Handle(method, path, append(middleware, handler)...)
+	if route != nil {
+		// change the main handler's name in order to respect the controller's and give
+		// a proper debug message.
+		route.MainHandlerName = fmt.Sprintf("%s.%s", c.FullName, funcName)
+	}
+
+	return route
+}
+
+// buildHandler has many many dublications but we do that to achieve the best
+// performance possible, to use the information we know
+// and calculate what is needed and what not in serve-time.
+func buildHandler(m reflect.Method, typ reflect.Type, initRef reflect.Value, structInjector *di.StructInjector, funcInjector *di.FuncInjector, funcIn []reflect.Type) context.Handler {
 	var (
-		hasStructInjector = c.injector != nil && c.injector.Valid
+		hasStructInjector = structInjector != nil && structInjector.Valid
 		hasFuncInjector   = funcInjector != nil && funcInjector.Valid
 
-		implementsBase = isBaseController(c.Type)
+		implementsBase = isBaseController(typ)
 		// we will make use of 'n' to make a slice of reflect.Value
 		// to pass into if the function has input arguments that
 		// are will being filled by the funcDependencies.
 		n = len(funcIn)
 
-		elemTyp = di.IndirectType(c.Type)
+		elemTyp = di.IndirectType(typ)
 	)
 
-	handler := func(ctx context.Context) {
+	// if it doesn't implements the base controller,
+	// it may have struct injector and/or func injector.
+	if !implementsBase {
+
+		if !hasStructInjector {
+			// if the controller doesn't have a struct injector
+			// and the controller's fields are empty
+			// then we don't need a new controller instance, we use the passed controller instance.
+			if elemTyp.NumField() == 0 {
+				if !hasFuncInjector {
+					return func(ctx context.Context) {
+						DispatchFuncResult(ctx, initRef.Method(m.Index).Call(emptyIn))
+					}
+				}
+
+				return func(ctx context.Context) {
+					in := make([]reflect.Value, n, n)
+					in[0] = initRef
+					funcInjector.Inject(&in, reflect.ValueOf(ctx))
+					if ctx.IsStopped() {
+						return
+					}
+
+					DispatchFuncResult(ctx, m.Func.Call(in))
+				}
+			}
+			// it has fields, so it's request-scoped, even without struct injector
+			// it's safe to create a new controller on each request because the end-dev
+			// may use the controller's fields for request-scoping, so they should be
+			// zero on the next request.
+			if !hasFuncInjector {
+				return func(ctx context.Context) {
+					DispatchFuncResult(ctx, reflect.New(elemTyp).Method(m.Index).Call(emptyIn))
+				}
+			}
+			return func(ctx context.Context) {
+				in := make([]reflect.Value, n, n)
+				in[0] = reflect.New(elemTyp)
+				funcInjector.Inject(&in, reflect.ValueOf(ctx))
+				if ctx.IsStopped() {
+					return
+				}
+
+				DispatchFuncResult(ctx, m.Func.Call(in))
+			}
+		}
+
+		// it has struct injector for sure and maybe a func injector.
+		if !hasFuncInjector {
+			return func(ctx context.Context) {
+				ctrl := reflect.New(elemTyp)
+				ctxValue := reflect.ValueOf(ctx)
+				elem := ctrl.Elem()
+				structInjector.InjectElem(elem, ctxValue)
+				if ctx.IsStopped() {
+					return
+				}
+
+				DispatchFuncResult(ctx, ctrl.Method(m.Index).Call(emptyIn))
+			}
+		}
+
+		// has struct injector and func injector.
+		return func(ctx context.Context) {
+			ctrl := reflect.New(elemTyp)
+			ctxValue := reflect.ValueOf(ctx)
+
+			elem := ctrl.Elem()
+			structInjector.InjectElem(elem, ctxValue)
+			if ctx.IsStopped() {
+				return
+			}
+
+			in := make([]reflect.Value, n, n)
+			in[0] = ctrl
+			funcInjector.Inject(&in, ctxValue)
+			if ctx.IsStopped() {
+				return
+			}
+
+			DispatchFuncResult(ctx, m.Func.Call(in))
+		}
+
+	}
+
+	// if implements the base controller,
+	// it may have struct injector and func injector as well.
+	return func(ctx context.Context) {
 		ctrl := reflect.New(elemTyp)
 
 		if implementsBase {
@@ -251,7 +358,7 @@ func (c *ControllerActivator) Handle(method, path, funcName string, middleware .
 			ctxValue := reflect.ValueOf(ctx)
 			if hasStructInjector {
 				elem := ctrl.Elem()
-				c.injector.InjectElem(elem, ctxValue)
+				structInjector.InjectElem(elem, ctxValue)
 				if ctx.IsStopped() {
 					return
 				}
@@ -277,14 +384,4 @@ func (c *ControllerActivator) Handle(method, path, funcName string, middleware .
 
 		}
 	}
-
-	// register the handler now.
-	route := c.Router.Handle(method, path, append(middleware, handler)...)
-	if route != nil {
-		// change the main handler's name in order to respect the controller's and give
-		// a proper debug message.
-		route.MainHandlerName = fmt.Sprintf("%s.%s", c.FullName, funcName)
-	}
-
-	return route
 }

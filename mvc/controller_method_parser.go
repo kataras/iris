@@ -231,7 +231,7 @@ func (p *methodParser) parsePathParam(path string, w string, funcArgPos int) (st
 			// so retry with the "funcArgPos" incremented.
 			//
 			// the "funcArgPos" will be updated to the caller as well
-			// because we return it as well.
+			// because we return it among the path and the error.
 			return p.parsePathParam(path, w, funcArgPos+1)
 		}
 		return "", 0, errors.New("invalid syntax for " + p.fn.Name)

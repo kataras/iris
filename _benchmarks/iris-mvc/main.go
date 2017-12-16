@@ -5,7 +5,7 @@ package main
 // with bindings or without).
 
 import (
-	"github.com/kataras/iris/_benchmarks/iris-mvc2/controllers"
+	"github.com/kataras/iris/_benchmarks/iris-mvc/controllers"
 
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/mvc"
@@ -16,3 +16,5 @@ func main() {
 	mvc.New(app.Party("/api/values/{id}")).Register(new(controllers.ValuesController))
 	app.Run(iris.Addr(":5000"), iris.WithoutVersionChecker)
 }
+
+// +2MB/s faster than the previous implementation, 0.4MB/s difference from the raw handlers.
