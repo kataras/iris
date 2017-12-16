@@ -4,7 +4,7 @@ import (
 	"github.com/kataras/iris/_examples/mvc/login/datamodels"
 	"github.com/kataras/iris/_examples/mvc/login/services"
 
-	"github.com/kataras/iris/mvc"
+	"github.com/kataras/iris"
 )
 
 // UsersController is our /users API controller.
@@ -14,8 +14,14 @@ import (
 // DELETE			/users/{id:long} | delete by id
 // Requires basic authentication.
 type UsersController struct {
-	mvc.C
+	// context is auto-binded by Iris on each request,
+	// remember that on each incoming request iris creates a new UserController each time,
+	// so all fields are request-scoped by-default, only dependency injection is able to set
+	// custom fields like the Service which is the same for all requests (static binding).
+	Ctx iris.Context
 
+	// Our UserService, it's an interface which
+	// is binded from the main application.
 	Service services.UserService
 }
 

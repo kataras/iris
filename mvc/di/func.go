@@ -1,6 +1,9 @@
 package di
 
-import "reflect"
+import (
+	"fmt"
+	"reflect"
+)
 
 type (
 	targetFuncInput struct {
@@ -18,7 +21,9 @@ type (
 		Length int
 		// Valid is True when `Length` is > 0, it's statically set-ed for
 		// performance reasons.
-		Valid bool //
+		Valid bool
+
+		trace string // for debug info.
 	}
 )
 
@@ -83,7 +88,27 @@ func MakeFuncInjector(fn reflect.Value, hijack Hijacker, goodFunc TypeChecker, v
 	// s.Length = n
 	s.Length = len(s.inputs)
 	s.Valid = s.Length > 0
+
+	for i, in := range s.inputs {
+		bindmethodTyp := "Static"
+
+		if in.Object.BindType == Dynamic {
+			bindmethodTyp = "Dynamic"
+		}
+
+		typIn := typ.In(in.InputIndex)
+		// remember: on methods that are part of a struct (i.e controller)
+		// the input index  = 1 is the begggining instead of the 0,
+		// because the 0 is the controller receiver pointer of the method.
+
+		s.trace += fmt.Sprintf("[%d] %s binding: '%s' for input position: %d and type: '%s'\n", i+1, bindmethodTyp, in.Object.Type.String(), in.InputIndex, typIn.String())
+	}
+
 	return s
+}
+
+func (s *FuncInjector) String() string {
+	return s.trace
 }
 
 func (s *FuncInjector) Inject(in *[]reflect.Value, ctx ...reflect.Value) {
