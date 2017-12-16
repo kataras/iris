@@ -1,14 +1,14 @@
-# MVC Internals
+# MVC Engine's Internals
 
 * `MakeHandler` - accepts a function which accepts any input and outputs any result, and any optional values that will be used as binders, if needed they will be converted in order to be faster at serve-time. Returns a `context/iris#Handler` and a non-nil error if passed function cannot be wrapped to a raw `context/iris#Handler`
-* `Engine` - The "manager" of the controllers and handlers, can be grouped and an `Engine` can have any number of children.
-    * `Engine#Bind` Binds values to be used inside on one or more handlers and controllers
-    * `Engine#Handler` - Creates and returns a new mvc handler, which accept any input parameters (calculated by the binders) and output any result which will be sent as a response to the HTTP Client. Calls the `MakeHandler` with the Engine's `Input` values as the binders
-    * `Engine#Controller` - Creates and activates a controller based on a struct which has the `C` as an embedded , anonymous, field and defines methods to be used as routes. Can accept any optional activator listeners in order to bind any custom routes or change the bindings, called once at startup
-* `C`
     * Struct fields with `Struct Binding`
     * Methods with `Dynamic Binding`
-
+* `Engine` - The "manager" of the controllers and handlers, can be grouped and an `Engine` can have any number of children.
+    * `Engine#Bind` Binds values to be used inside on one or more handlers and controllers
+    * `Engine#Handler` - Creates and returns a new mvc handler, which accept any input parameters (calculated by the binders) and output any result which will be sent as a response to the HTTP Client. Calls the `MakeHandler` with the Engine's `Dependencies.Values` as the binders
+    * `Engine#Controller` - Creates and activates a controller based on a struct which has the `C` as an embedded , anonymous, field and defines methods to be used as routes. Can accept any optional activator listeners in order to bind any custom routes or change the bindings, called once at startup.
+* The highest level feature of this package is the `Application` which contains
+an `iris.Party` as its Router and an `Engine`. A new `Application` is created with `New(iris.Party)` and registers a new `Engine` for itself, `Engines` can be shared via the `Application#NewChild` or by manually creating an `&Application{ Engine: engine, Router: subRouter }`. The `Application` is being used to build complete `mvc applications through controllers`, it doesn't contain any method to convert mvc handlers to raw handlers, although its `Engine` can do that but it's not a common scenario. 
 
 Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/mvc.
 
@@ -21,8 +21,6 @@ First of all, they can be binded to `func input arguments` (custom handlers) or 
 func myHandler(user User) {}
 
 type myController struct {
-    C
-
     // consume the user here, as struct field.
     user User 
 }
@@ -55,7 +53,7 @@ myHandler := func(user User) {
 
 ### Static Binding
 
-`Value (Service)`, this is used to bind a value instance, like a service or a database connection.
+`Static Value (Service)`, this is used to bind a value instance, like a service or a database connection.
 
 ```go
 // optional but we declare interface most of the times to 
@@ -80,7 +78,7 @@ myHandler := func(service Service) {
 }
 ```
 
-### Bind
+### Add Dependencies
 
 #### For Handlers
 
@@ -90,10 +88,11 @@ MakeHandler is used to create a handler based on a function which can accept any
 h, err := MakeHandler(myHandler, reflect.ValueOf(myBinder))
 ```
 
-Values passed in `Bind` are binded to all handlers and controllers that are expected a type of the returned value, in this case the myBinder indicates a dynamic/serve-time function which returns a User, as shown above.
+Values passed in `Dependencies` are binded to all handlers and controllers that are expected a type of the returned value, in this case the myBinder indicates a dynamic/serve-time function which returns a User, as shown above.
 
 ```go
-m := New().Bind(myBinder)
+m := NewEngine()
+m.Dependencies.Add(myBinder)
 
 h := m.Handler(myHandler)
 ```
@@ -102,17 +101,20 @@ h := m.Handler(myHandler)
 
 ```go
 app := iris.New()
-New().Bind(myBinder).Controller(app, new(myController))
+m := NewEngine()
+m.Dependencies.Add(myBinder)
+m.Controller(app, new(myController))
 // ...
 ```
 
 ```go
 sub := app.Party("/sub")
-New().Controller(sub, &myController{service: myService})
+m := NewEngine()
+m.Controller(sub, &myController{service: myService})
 ```
 
 ```go
-New().Controller(sub.Party("/subsub"), new(myController), func(ca *ControllerActivator) {
-    ca.Bind(myService)
+NewEngine().Controller(sub.Party("/subsub"), new(myController), func(ca *ControllerActivator) {
+    ca.Dependencies.Add(myService)
 })
 ```
