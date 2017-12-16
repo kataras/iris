@@ -58,8 +58,6 @@ func getNameOf(typ reflect.Type) string {
 	return fullname
 }
 
-/// TODO: activate controllers with go routines so the startup time of iris
-// can be improved on huge applications.
 func newControllerActivator(router router.Party, controller interface{}, d *di.D) *ControllerActivator {
 	var (
 		val = reflect.ValueOf(controller)
@@ -121,24 +119,30 @@ func (c *ControllerActivator) isReservedMethod(name string) bool {
 	return false
 }
 
+func (c *ControllerActivator) parseMethod(m reflect.Method) {
+	httpMethod, httpPath, err := parseMethod(m, c.isReservedMethod)
+	if err != nil {
+		if err != errSkip {
+			err = fmt.Errorf("MVC: fail to parse the route path and HTTP method for '%s.%s': %v", c.FullName, m.Name, err)
+			c.Router.GetReporter().AddErr(err)
+
+		}
+		return
+	}
+
+	c.Handle(httpMethod, httpPath, m.Name)
+}
+
 // register all available, exported methods to handlers if possible.
 func (c *ControllerActivator) parseMethods() {
 	n := c.Type.NumMethod()
+	//	wg := &sync.WaitGroup{}
+	// wg.Add(n)
 	for i := 0; i < n; i++ {
 		m := c.Type.Method(i)
-
-		httpMethod, httpPath, err := parseMethod(m, c.isReservedMethod)
-		if err != nil {
-			if err != errSkip {
-				err = fmt.Errorf("MVC: fail to parse the route path and HTTP method for '%s.%s': %v", c.FullName, m.Name, err)
-				c.Router.GetReporter().AddErr(err)
-
-			}
-			continue
-		}
-
-		c.Handle(httpMethod, httpPath, m.Name)
+		c.parseMethod(m)
 	}
+	// wg.Wait()
 }
 
 func (c *ControllerActivator) activate() {
@@ -248,7 +252,7 @@ func buildHandler(m reflect.Method, typ reflect.Type, initRef reflect.Value, str
 		elemTyp = di.IndirectType(typ)
 	)
 
-	// if it doesn't implements the base controller,
+	// if it doesn't implement the base controller,
 	// it may have struct injector and/or func injector.
 	if !implementsBase {
 
