@@ -2,6 +2,7 @@ package mvc
 
 import (
 	"fmt"
+	"github.com/kataras/golog"
 	"reflect"
 	"strings"
 
@@ -220,9 +221,17 @@ func (c *ControllerActivator) Handle(method, path, funcName string, middleware .
 	// this is a logical flow, so we will choose that one ->
 	if c.injector == nil {
 		c.injector = c.Dependencies.Struct(c.Value)
+		if c.injector.Valid {
+			golog.Debugf("MVC dependencies of '%s':\n%s", c.FullName, c.injector.String())
+		}
+
 	}
 
-	handler := buildHandler(m, c.Type, c.Value, c.injector, funcInjector, funcIn)
+	if funcInjector.Valid {
+		golog.Debugf("MVC dependencies of method '%s.%s':\n%s", c.FullName, funcName, funcInjector.String())
+	}
+
+	handler := buildControllerHandler(m, c.Type, c.Value, c.injector, funcInjector, funcIn)
 
 	// register the handler now.
 	route := c.Router.Handle(method, path, append(middleware, handler)...)
@@ -235,10 +244,10 @@ func (c *ControllerActivator) Handle(method, path, funcName string, middleware .
 	return route
 }
 
-// buildHandler has many many dublications but we do that to achieve the best
+// buildControllerHandler has many many dublications but we do that to achieve the best
 // performance possible, to use the information we know
 // and calculate what is needed and what not in serve-time.
-func buildHandler(m reflect.Method, typ reflect.Type, initRef reflect.Value, structInjector *di.StructInjector, funcInjector *di.FuncInjector, funcIn []reflect.Type) context.Handler {
+func buildControllerHandler(m reflect.Method, typ reflect.Type, initRef reflect.Value, structInjector *di.StructInjector, funcInjector *di.FuncInjector, funcIn []reflect.Type) context.Handler {
 	var (
 		hasStructInjector = structInjector != nil && structInjector.Valid
 		hasFuncInjector   = funcInjector != nil && funcInjector.Valid

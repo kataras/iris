@@ -31,6 +31,16 @@ type (
 	}
 )
 
+// Destroy destroys this session, it removes all sessions and flash values,
+// the session entry from the server and updates the registered session databases,
+// note that this method does NOT removes the client's cookie, although
+// it should be re-seted if new session is attached to that (client).
+//
+// Use the session's manager `Destroy(ctx)` in order to remove the cookie as well.
+func (s *Session) Destroy() {
+	s.provider.deleteSession(s)
+}
+
 // ID returns the session's ID.
 func (s *Session) ID() string {
 	return s.sid

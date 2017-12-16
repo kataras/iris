@@ -6,7 +6,7 @@ import (
 	"github.com/kataras/iris/_examples/mvc/login/datamodels"
 	"github.com/kataras/iris/_examples/mvc/login/services"
 
-	"github.com/kataras/iris/context"
+	"github.com/kataras/iris"
 	"github.com/kataras/iris/mvc"
 	"github.com/kataras/iris/sessions"
 )
@@ -20,37 +20,19 @@ import (
 // GET 				/user/me
 // All HTTP Methods /user/logout
 type UserController struct {
-	// mvc.C is just a lightweight lightweight alternative
-	// to the "mvc.Controller" controller type,
-	// use it when you don't need mvc.Controller's fields
-	// (you don't need those fields when you return values from the method functions).
-	mvc.C
+	// context is auto-binded by Iris on each request,
+	// remember that on each incoming request iris creates a new UserController each time,
+	// so all fields are request-scoped by-default, only dependency injection is able to set
+	// custom fields like the Service which is the same for all requests (static binding)
+	// and the Session which depends on the current context (dynamic binding).
+	Ctx iris.Context
 
 	// Our UserService, it's an interface which
 	// is binded from the main application.
 	Service services.UserService
 
-	// Session-relative things.
-	Manager *sessions.Sessions
+	// Session, binded using dependency injection from the main.go.
 	Session *sessions.Session
-}
-
-// BeginRequest will set the current session to the controller.
-//
-// Remember: iris.Context and context.Context is exactly the same thing,
-// iris.Context is just a type alias for go 1.9 users.
-// We use context.Context here because we don't need all iris' root functions,
-// when we see the import paths, we make it visible to ourselves that this file is using only the context.
-func (c *UserController) BeginRequest(ctx context.Context) {
-	c.C.BeginRequest(ctx)
-
-	if c.Manager == nil {
-		ctx.Application().Logger().Errorf(`UserController: sessions manager is nil, you should bind it`)
-		ctx.StopExecution() // dont run the main method handler and any "done" handlers.
-		return
-	}
-
-	c.Session = c.Manager.Start(ctx)
 }
 
 const userIDKey = "UserID"
@@ -65,12 +47,12 @@ func (c *UserController) isLoggedIn() bool {
 }
 
 func (c *UserController) logout() {
-	c.Manager.DestroyByID(c.Session.ID())
+	c.Session.Destroy()
 }
 
 var registerStaticView = mvc.View{
 	Name: "user/register.html",
-	Data: context.Map{"Title": "User Registration"},
+	Data: iris.Map{"Title": "User Registration"},
 }
 
 // GetRegister handles GET: http://localhost:8080/user/register.
@@ -119,7 +101,7 @@ func (c *UserController) PostRegister() mvc.Result {
 
 var loginStaticView = mvc.View{
 	Name: "user/login.html",
-	Data: context.Map{"Title": "User Login"},
+	Data: iris.Map{"Title": "User Login"},
 }
 
 // GetLogin handles GET: http://localhost:8080/user/login.
@@ -172,7 +154,7 @@ func (c *UserController) GetMe() mvc.Result {
 
 	return mvc.View{
 		Name: "user/me.html",
-		Data: context.Map{
+		Data: iris.Map{
 			"Title": "Profile of " + u.Username,
 			"User":  u,
 		},

@@ -1,6 +1,9 @@
 package di
 
-import "reflect"
+import (
+	"fmt"
+	"reflect"
+)
 
 type (
 	targetStructField struct {
@@ -13,6 +16,8 @@ type (
 		//
 		fields []*targetStructField
 		Valid  bool // is True when contains fields and it's a valid target struct.
+
+		trace string // for debug info.
 	}
 )
 
@@ -56,7 +61,23 @@ func MakeStructInjector(v reflect.Value, hijack Hijacker, goodFunc TypeChecker, 
 	}
 
 	s.Valid = len(s.fields) > 0
+
+	if s.Valid {
+		for i, f := range s.fields {
+			bindmethodTyp := "Static"
+			if f.Object.BindType == Dynamic {
+				bindmethodTyp = "Dynamic"
+			}
+			elemField := s.elemType.FieldByIndex(f.FieldIndex)
+			s.trace += fmt.Sprintf("[%d] %s binding: '%s' for field '%s %s'\n", i+1, bindmethodTyp, f.Object.Type.String(), elemField.Name, elemField.Type.String())
+		}
+	}
+
 	return s
+}
+
+func (s *StructInjector) String() string {
+	return s.trace
 }
 
 func (s *StructInjector) Inject(dest interface{}, ctx ...reflect.Value) {
