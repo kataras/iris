@@ -31,10 +31,12 @@ type (
 	}
 )
 
-// Destroy destroys this session, it removes all sessions and flash values,
-// the session entry from the server and updates the registered session databases,
-// note that this method does NOT removes the client's cookie, although
-// it should be re-seted if new session is attached to that (client).
+// Destroy destroys this session, it removes its session values and any flashes.
+// This session entry will be removed from the server,
+// the registered session databases will be notified for this deletion as well.
+//
+// Note that this method does NOT remove the client's cookie, although
+// it should be reseted if new session is attached to that (client).
 //
 // Use the session's manager `Destroy(ctx)` in order to remove the cookie as well.
 func (s *Session) Destroy() {
