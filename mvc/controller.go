@@ -2,15 +2,15 @@ package mvc
 
 import (
 	"fmt"
-	"github.com/kataras/golog"
 	"reflect"
 	"strings"
-
-	"github.com/kataras/iris/mvc/di"
 
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/router"
 	"github.com/kataras/iris/core/router/macro"
+	"github.com/kataras/iris/mvc/di"
+
+	"github.com/kataras/golog"
 )
 
 // BaseController is the optional controller interface, if it's
