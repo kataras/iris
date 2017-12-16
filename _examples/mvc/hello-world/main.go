@@ -28,7 +28,9 @@ import (
 // what suits you best with Iris, low-level handlers: performance
 // or high-level controllers: easier to maintain and smaller codebase on large applications.
 
-func main() {
+// Of course you can put all these to main func, it's just a separate function
+// for the main_test.go.
+func newApp() *iris.Application {
 	app := iris.New()
 	// Optionally, add two built'n handlers
 	// that can recover from any http-relative panics
@@ -38,6 +40,11 @@ func main() {
 
 	// Register a controller based on the root Router, "/".
 	mvc.New(app).Register(new(ExampleController))
+	return app
+}
+
+func main() {
+	app := newApp()
 
 	// http://localhost:8080
 	// http://localhost:8080/ping
