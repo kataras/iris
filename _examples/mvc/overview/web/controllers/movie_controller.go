@@ -9,17 +9,10 @@ import (
 	"github.com/kataras/iris/_examples/mvc/overview/services"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/mvc"
 )
 
 // MovieController is our /movies controller.
 type MovieController struct {
-	// mvc.C is just a lightweight lightweight alternative
-	// to the "mvc.Controller" controller type,
-	// use it when you don't need mvc.Controller's fields
-	// (you don't need those fields when you return values from the method functions).
-	mvc.C
-
 	// Our MovieService, it's an interface which
 	// is binded from the main application.
 	Service services.MovieService
@@ -53,9 +46,9 @@ func (c *MovieController) GetBy(id int64) (movie datamodels.Movie, found bool) {
 // PutBy updates a movie.
 // Demo:
 // curl -i -X PUT -F "genre=Thriller" -F "poster=@/Users/kataras/Downloads/out.gif" http://localhost:8080/movies/1
-func (c *MovieController) PutBy(id int64) (datamodels.Movie, error) {
+func (c *MovieController) PutBy(ctx iris.Context, id int64) (datamodels.Movie, error) {
 	// get the request data for poster and genre
-	file, info, err := c.Ctx.FormFile("poster")
+	file, info, err := ctx.FormFile("poster")
 	if err != nil {
 		return datamodels.Movie{}, errors.New("failed due form file 'poster' missing")
 	}
@@ -64,7 +57,7 @@ func (c *MovieController) PutBy(id int64) (datamodels.Movie, error) {
 
 	// imagine that is the url of the uploaded file...
 	poster := info.Filename
-	genre := c.Ctx.FormValue("genre")
+	genre := ctx.FormValue("genre")
 
 	return c.Service.UpdatePosterAndGenreByID(id, poster, genre)
 }

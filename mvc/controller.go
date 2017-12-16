@@ -1,77 +1,24 @@
-package mvc2
+package mvc
 
 import (
 	"fmt"
 	"reflect"
 	"strings"
 
-	"github.com/kataras/iris/mvc2/di"
+	"github.com/kataras/iris/mvc/di"
 
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/router"
 	"github.com/kataras/iris/core/router/macro"
 )
 
-// BaseController is the controller interface,
-// which the main request `C` will implement automatically.
-// End-dev doesn't need to have any knowledge of this if she/he doesn't want to implement
-// a new Controller type.
-// Controller looks the whole flow as one handler, so `ctx.Next`
-// inside `BeginRequest` is not be respected.
-// Alternative way to check if a middleware was procceed successfully
-// and called its `ctx.Next` is the `ctx.Proceed(handler) bool`.
-// You have to navigate to the `context/context#Proceed` function's documentation.
+// BaseController is the optional controller interface, if it's
+// completed by the end controller then the BeginRequest and EndRequest
+// are called between the controller's method responsible for the incoming request.
 type BaseController interface {
 	BeginRequest(context.Context)
 	EndRequest(context.Context)
 }
-
-// C is the basic BaseController type that can be used as an embedded anonymous field
-// to custom end-dev controllers.
-//
-// func(c *ExampleController) Get() string |
-// (string, string) |
-// (string, int) |
-// int |
-// (int, string |
-// (string, error) |
-// bool |
-// (any, bool) |
-// error |
-// (int, error) |
-// (customStruct, error) |
-// customStruct |
-// (customStruct, int) |
-// (customStruct, string) |
-// Result or (Result, error)
-// where Get is an HTTP Method func.
-//
-// Look `core/router#APIBuilder#Controller` method too.
-//
-// It completes the `activator.BaseController` interface.
-//
-// Example at: https://github.com/kataras/iris/tree/master/_examples/mvc/overview/web/controllers.
-// Example usage at: https://github.com/kataras/iris/blob/master/mvc/method_result_test.go#L17.
-type C struct {
-	// The current context.Context.
-	//
-	// we have to name it for two reasons:
-	// 1: can't ignore these via reflection, it doesn't give an option to
-	// see if the functions is derived from another type.
-	// 2: end-developer may want to use some method functions
-	// or any fields that could be conflict with the context's.
-	Ctx context.Context
-}
-
-var _ BaseController = &C{}
-
-// BeginRequest does nothing anymore, is here to complet ethe `BaseController` interface.
-// BaseController is not required anymore, `Ctx` is binded automatically by the engine's
-// wrapped Handler.
-func (c *C) BeginRequest(ctx context.Context) {}
-
-// EndRequest does nothing, is here to complete the `BaseController` interface.
-func (c *C) EndRequest(ctx context.Context) {}
 
 // ControllerActivator returns a new controller type info description.
 // Its functionality can be overriden by the end-dev.
@@ -244,7 +191,10 @@ func (c *ControllerActivator) Handle(method, path, funcName string, middleware .
 	// get the function's input arguments' bindings.
 	funcDependencies := c.Dependencies.Clone()
 	funcDependencies.AddValue(pathParams...)
+
+	// fmt.Printf("for %s | values: %s\n", funcName, funcDependencies.Values)
 	funcInjector := funcDependencies.Func(m.Func)
+	// fmt.Printf("actual injector's inputs length: %d\n", funcInjector.Length)
 
 	// the element value, not the pointer, wil lbe used to create a
 	// new controller on each incoming request.

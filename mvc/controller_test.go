@@ -1,5 +1,5 @@
 // black-box testing
-package mvc2_test
+package mvc_test
 
 import (
 	"testing"
@@ -8,56 +8,57 @@ import (
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/router"
 	"github.com/kataras/iris/httptest"
-	. "github.com/kataras/iris/mvc2"
+
+	. "github.com/kataras/iris/mvc"
 )
 
 type testController struct {
-	C
+	Ctx context.Context
 }
 
-var writeMethod = func(c C) {
-	c.Ctx.Writef(c.Ctx.Method())
+var writeMethod = func(ctx context.Context) {
+	ctx.Writef(ctx.Method())
 }
 
 func (c *testController) Get() {
-	writeMethod(c.C)
+	writeMethod(c.Ctx)
 }
 func (c *testController) Post() {
-	writeMethod(c.C)
+	writeMethod(c.Ctx)
 }
 func (c *testController) Put() {
-	writeMethod(c.C)
+	writeMethod(c.Ctx)
 }
 func (c *testController) Delete() {
-	writeMethod(c.C)
+	writeMethod(c.Ctx)
 }
 func (c *testController) Connect() {
-	writeMethod(c.C)
+	writeMethod(c.Ctx)
 }
 func (c *testController) Head() {
-	writeMethod(c.C)
+	writeMethod(c.Ctx)
 }
 func (c *testController) Patch() {
-	writeMethod(c.C)
+	writeMethod(c.Ctx)
 }
 func (c *testController) Options() {
-	writeMethod(c.C)
+	writeMethod(c.Ctx)
 }
 func (c *testController) Trace() {
-	writeMethod(c.C)
+	writeMethod(c.Ctx)
 }
 
 type (
-	testControllerAll struct{ C }
-	testControllerAny struct{ C } // exactly the same as All.
+	testControllerAll struct{ Ctx context.Context }
+	testControllerAny struct{ Ctx context.Context } // exactly the same as All.
 )
 
 func (c *testControllerAll) All() {
-	writeMethod(c.C)
+	writeMethod(c.Ctx)
 }
 
 func (c *testControllerAny) Any() {
-	writeMethod(c.C)
+	writeMethod(c.Ctx)
 }
 
 func TestControllerMethodFuncs(t *testing.T) {
@@ -83,7 +84,7 @@ func TestControllerMethodFuncs(t *testing.T) {
 }
 
 type testControllerBeginAndEndRequestFunc struct {
-	C
+	Ctx context.Context
 
 	Username string
 }
@@ -93,14 +94,12 @@ type testControllerBeginAndEndRequestFunc struct {
 // useful when more than one methods using the
 // same request values or context's function calls.
 func (c *testControllerBeginAndEndRequestFunc) BeginRequest(ctx context.Context) {
-	c.C.BeginRequest(ctx)
 	c.Username = ctx.Params().Get("username")
 }
 
 // called after every method (Get() or Post()).
 func (c *testControllerBeginAndEndRequestFunc) EndRequest(ctx context.Context) {
 	ctx.Writef("done") // append "done" to the response
-	c.C.EndRequest(ctx)
 }
 
 func (c *testControllerBeginAndEndRequestFunc) Get() {
@@ -187,7 +186,7 @@ type Model struct {
 }
 
 type testControllerEndRequestAwareness struct {
-	C
+	Ctx context.Context
 }
 
 func (c *testControllerEndRequestAwareness) Get() {
@@ -223,9 +222,9 @@ func writeModels(ctx context.Context, names ...string) {
 	}
 }
 
+func (c *testControllerEndRequestAwareness) BeginRequest(ctx context.Context) {}
 func (c *testControllerEndRequestAwareness) EndRequest(ctx context.Context) {
 	writeModels(ctx, "TestModel", "myModel")
-	c.C.EndRequest(ctx)
 }
 
 func TestControllerEndRequestAwareness(t *testing.T) {
@@ -249,7 +248,8 @@ type testBindType struct {
 }
 
 type testControllerBindStruct struct {
-	C
+	Ctx context.Context
+
 	//  should start with upper letter of course
 	TitlePointer *testBindType // should have the value of the "myTitlePtr" on test
 	TitleValue   testBindType  // should have the value of the "myTitleV" on test
@@ -320,6 +320,8 @@ func (c *testCtrl0) EndRequest(ctx context.Context) {
 }
 
 type testCtrl00 struct {
+	Ctx context.Context
+
 	testCtrl000
 }
 
@@ -330,9 +332,9 @@ type testCtrl000 struct {
 }
 
 type testCtrl0000 struct {
-	C
 }
 
+func (c *testCtrl0000) BeginRequest(ctx context.Context) {}
 func (c *testCtrl0000) EndRequest(ctx context.Context) {
 	ctx.Writef("finish")
 }
@@ -354,11 +356,11 @@ func TestControllerInsideControllerRecursively(t *testing.T) {
 		Status(iris.StatusOK).Body().Equal(expected)
 }
 
-type testControllerRelPathFromFunc struct{ C }
+type testControllerRelPathFromFunc struct{}
 
+func (c *testControllerRelPathFromFunc) BeginRequest(ctx context.Context) {}
 func (c *testControllerRelPathFromFunc) EndRequest(ctx context.Context) {
 	ctx.Writef("%s:%s", ctx.Method(), ctx.Path())
-	c.C.EndRequest(ctx)
 }
 
 func (c *testControllerRelPathFromFunc) Get()                         {}
@@ -416,8 +418,6 @@ func TestControllerRelPathFromFunc(t *testing.T) {
 }
 
 type testControllerActivateListener struct {
-	C
-
 	TitlePointer *testBindType
 }
 

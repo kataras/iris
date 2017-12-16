@@ -1,11 +1,11 @@
-package mvc2_test
+package mvc_test
 
 // black-box in combination with the handler_test
 
 import (
 	"testing"
 
-	. "github.com/kataras/iris/mvc2"
+	. "github.com/kataras/iris/mvc"
 )
 
 func TestMvcEngineInAndHandler(t *testing.T) {

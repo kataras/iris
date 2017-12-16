@@ -3,13 +3,6 @@ package main
 import (
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/mvc"
-	// auto-completion does not working well with type aliases
-	// when embedded fields.
-	// We should complete a report on golang repo for that at some point.
-	//
-	// Therefore import the "mvc" package manually
-	// here at "hello-world" so users can see that
-	// import path somewhere else than the "FAQ" section.
 
 	"github.com/kataras/iris/middleware/logger"
 	"github.com/kataras/iris/middleware/recover"
@@ -43,27 +36,18 @@ func main() {
 	app.Use(recover.New())
 	app.Use(logger.New())
 
-	app.Controller("/", new(ExampleController))
+	// Register a controller based on the root Router, "/".
+	mvc.New(app).Register(new(ExampleController))
 
 	// http://localhost:8080
 	// http://localhost:8080/ping
 	// http://localhost:8080/hello
+	// http://localhost:8080/custom_path
 	app.Run(iris.Addr(":8080"))
 }
 
 // ExampleController serves the "/", "/ping" and "/hello".
-type ExampleController struct {
-	// if you build with go1.8 you have to use the mvc package always,
-	// otherwise
-	// you can, optionally
-	// use the type alias `iris.C`,
-	// same for
-	// context.Context -> iris.Context,
-	// mvc.Result -> iris.Result,
-	// mvc.Response -> iris.Response,
-	// mvc.View -> iris.View
-	mvc.C
-}
+type ExampleController struct{}
 
 // Get serves
 // Method:   GET
@@ -87,6 +71,31 @@ func (c *ExampleController) GetPing() string {
 // Resource: http://localhost:8080/hello
 func (c *ExampleController) GetHello() interface{} {
 	return map[string]string{"message": "Hello Iris!"}
+}
+
+// BeforeActivate called once, before the controller adapted to the main application
+// and of course before the server ran.
+// After version 9 you can also add custom routes for a specific controller's methods.
+// Here you can register custom method's handlers
+// use the standard router with `ca.Router` to do something that you can do without mvc as well,
+// and add dependencies that will be binded to a controller's fields or method function's input arguments.
+func (c *ExampleController) BeforeActivate(ca *mvc.ControllerActivator) {
+	anyMiddlewareHere := func(ctx iris.Context) {
+		ctx.Application().Logger().Warnf("Inside /custom_path")
+		ctx.Next()
+	}
+	ca.Handle("GET", "/custom_path", "CustomHandlerWithoutFollowingTheNamingGuide", anyMiddlewareHere)
+
+	// or even add a global middleware based on this controller's router,
+	// which in this example is the root "/":
+	// ca.Router.Use(myMiddleware)
+}
+
+// CustomHandlerWithoutFollowingTheNamingGuide serves
+// Method:   GET
+// Resource: http://localhost:8080/custom_path
+func (c *ExampleController) CustomHandlerWithoutFollowingTheNamingGuide() string {
+	return "hello from the custom handler without following the naming guide"
 }
 
 // GetUserBy serves
@@ -121,4 +130,14 @@ func (c *ExampleController) Trace() {}
 func (c *ExampleController) All() {}
 //        OR
 func (c *ExampleController) Any() {}
+
+
+
+func (c *ExampleController) BeforeActivate(ca *mvc.ControllerActivator) {
+	// 1 -> the HTTP Method
+	// 2 -> the route's path
+	// 3 -> this controller's method name that should be handler for that route.
+	ca.Handle("GET", "/mypath/{param}", "DoIt", optionalMiddlewareHere...)
+}
+
 */

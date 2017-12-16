@@ -5,8 +5,9 @@ import (
 	"github.com/kataras/iris/_examples/tutorial/vuejs-todo-mvc/src/web/controllers"
 
 	"github.com/kataras/iris"
-	mvc "github.com/kataras/iris/mvc2"
 	"github.com/kataras/iris/sessions"
+
+	"github.com/kataras/iris/mvc"
 )
 
 func main() {
@@ -22,14 +23,16 @@ func main() {
 		Cookie: "_iris_session",
 	})
 
-	m := mvc.New()
+	m := mvc.New(app.Party("/todo"))
 
-	// any bindings here...
-	m.Bind(mvc.Session(sess))
+	// any dependencies bindings here...
+	m.AddDependencies(
+		mvc.Session(sess),
+		new(todo.MemoryService),
+	)
 
-	m.Bind(new(todo.MemoryService))
 	// controllers registration here...
-	m.Controller(app.Party("/todo"), new(controllers.TodoController))
+	m.Register(new(controllers.TodoController))
 
 	// start the web server at http://localhost:8080
 	app.Run(iris.Addr(":8080"), iris.WithoutVersionChecker, iris.WithOptimizations)

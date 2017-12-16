@@ -1,8 +1,6 @@
 package di
 
-import (
-	"reflect"
-)
+import "reflect"
 
 type (
 	targetFuncInput struct {
@@ -50,7 +48,6 @@ func MakeFuncInjector(fn reflect.Value, hijack Hijacker, goodFunc TypeChecker, v
 					InputIndex: i,
 					Object:     b,
 				})
-
 				continue
 			}
 		}
@@ -69,6 +66,7 @@ func MakeFuncInjector(fn reflect.Value, hijack Hijacker, goodFunc TypeChecker, v
 			}
 
 			if b.IsAssignable(inTyp) {
+				// println(inTyp.String() + " is assignable to " + val.Type().String())
 				// fmt.Printf("binded input index: %d for type: %s and value: %v with pointer: %v\n",
 				// 	i, b.Type.String(), val.String(), val.Pointer())
 				s.inputs = append(s.inputs, &targetFuncInput{
@@ -82,8 +80,9 @@ func MakeFuncInjector(fn reflect.Value, hijack Hijacker, goodFunc TypeChecker, v
 		}
 	}
 
-	s.Length = n
-	s.Valid = len(s.inputs) > 0
+	// s.Length = n
+	s.Length = len(s.inputs)
+	s.Valid = s.Length > 0
 	return s
 }
 
