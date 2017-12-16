@@ -1,4 +1,4 @@
-package mvc2_test
+package mvc_test
 
 import (
 	"errors"
@@ -7,14 +7,15 @@ import (
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/httptest"
-	. "github.com/kataras/iris/mvc2"
+
+	. "github.com/kataras/iris/mvc"
 )
 
 // activator/methodfunc/func_caller.go.
 // and activator/methodfunc/func_result_dispatcher.go
 
 type testControllerMethodResult struct {
-	C
+	Ctx context.Context
 }
 
 func (c *testControllerMethodResult) Get() Result {
@@ -105,7 +106,7 @@ func TestControllerMethodResult(t *testing.T) {
 }
 
 type testControllerMethodResultTypes struct {
-	C
+	Ctx context.Context
 }
 
 func (c *testControllerMethodResultTypes) GetText() string {
@@ -227,16 +228,13 @@ func TestControllerMethodResultTypes(t *testing.T) {
 
 type testControllerViewResultRespectCtxViewData struct {
 	T *testing.T
-	C
 }
 
 func (t *testControllerViewResultRespectCtxViewData) BeginRequest(ctx context.Context) {
-	t.C.BeginRequest(ctx)
 	ctx.ViewData("name_begin", "iris_begin")
 }
 
 func (t *testControllerViewResultRespectCtxViewData) EndRequest(ctx context.Context) {
-	t.C.EndRequest(ctx)
 	// check if data is not overridden by return View {Data: context.Map...}
 
 	dataWritten := ctx.GetViewData()

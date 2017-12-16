@@ -1,27 +1,20 @@
-package mvc2_test
+package mvc_test
 
 import (
 	"testing"
 
 	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/httptest"
-	. "github.com/kataras/iris/mvc2"
+
+	. "github.com/kataras/iris/mvc"
 )
 
 type testControllerHandle struct {
-	C
+	Ctx     context.Context
 	Service TestService
 
 	reqField string
-}
-
-func (c *testControllerHandle) Get() string {
-	return "index"
-}
-
-func (c *testControllerHandle) BeginRequest(ctx iris.Context) {
-	c.C.BeginRequest(ctx)
-	c.reqField = ctx.URLParam("reqfield")
 }
 
 func (c *testControllerHandle) BeforeActivate(ca *ControllerActivator) { // BeforeActivate(t *mvc.TController) {
@@ -29,6 +22,16 @@ func (c *testControllerHandle) BeforeActivate(ca *ControllerActivator) { // Befo
 	ca.Handle("GET", "/hiservice", "HiService")
 	ca.Handle("GET", "/hiparam/{ps:string}", "HiParamBy")
 	ca.Handle("GET", "/hiparamempyinput/{ps:string}", "HiParamEmptyInputBy")
+}
+
+func (c *testControllerHandle) BeginRequest(ctx iris.Context) {
+	c.reqField = ctx.URLParam("reqfield")
+}
+
+func (c *testControllerHandle) EndRequest(ctx iris.Context) {}
+
+func (c *testControllerHandle) Get() string {
+	return "index"
 }
 
 func (c *testControllerHandle) HiStatic() string {

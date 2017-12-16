@@ -1,4 +1,4 @@
-package mvc2_test
+package mvc_test
 
 // black-box
 
@@ -9,7 +9,8 @@ import (
 
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/httptest"
-	. "github.com/kataras/iris/mvc2"
+
+	. "github.com/kataras/iris/mvc"
 )
 
 // dynamic func

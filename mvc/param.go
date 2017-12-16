@@ -1,4 +1,4 @@
-package mvc2
+package mvc
 
 import (
 	"reflect"
@@ -16,20 +16,36 @@ func getPathParamsForInput(params []macro.TemplateParam, funcIn ...reflect.Type)
 		return
 	}
 
-	funcInIdx := 0
-	// it's a valid param type.
-	for _, p := range params {
-		in := funcIn[funcInIdx]
-		paramType := p.Type
-		paramName := p.Name
-		// 	fmt.Printf("%s input arg type vs %s param type\n", in.Kind().String(), p.Type.Kind().String())
-		if paramType.Assignable(in.Kind()) {
-			// fmt.Printf("path_param_binder.go: bind path param func for paramName = '%s' and paramType = '%s'\n", paramName, paramType.String())
-			values = append(values, makeFuncParamGetter(paramType, paramName))
+	consumedParams := make(map[int]bool, 0)
+	for _, in := range funcIn {
+		for j, p := range params {
+			if _, consumed := consumedParams[j]; consumed {
+				continue
+			}
+			paramType := p.Type
+			paramName := p.Name
+			// 	fmt.Printf("%s input arg type vs %s param type\n", in.Kind().String(), p.Type.Kind().String())
+			if paramType.Assignable(in.Kind()) {
+				consumedParams[j] = true
+				// fmt.Printf("path_param_binder.go: bind path param func for paramName = '%s' and paramType = '%s'\n", paramName, paramType.String())
+				values = append(values, makeFuncParamGetter(paramType, paramName))
+			}
 		}
-
-		funcInIdx++
 	}
+	// funcInIdx := 0
+	// // it's a valid param type.
+	// for _, p := range params {
+	// 	in := funcIn[funcInIdx]
+	// 	paramType := p.Type
+	// 	paramName := p.Name
+	// 	// 	fmt.Printf("%s input arg type vs %s param type\n", in.Kind().String(), p.Type.Kind().String())
+	// 	if paramType.Assignable(in.Kind()) {
+	// 		// fmt.Printf("path_param_binder.go: bind path param func for paramName = '%s' and paramType = '%s'\n", paramName, paramType.String())
+	// 		values = append(values, makeFuncParamGetter(paramType, paramName))
+	// 	}
+
+	// 	funcInIdx++
+	// }
 
 	return
 }

@@ -1,8 +1,6 @@
 package di
 
-import (
-	"reflect"
-)
+import "reflect"
 
 type Values []reflect.Value
 

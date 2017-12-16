@@ -4,8 +4,9 @@ import (
 	"github.com/kataras/iris/_examples/tutorial/vuejs-todo-mvc/src/todo"
 
 	"github.com/kataras/iris"
-	mvc "github.com/kataras/iris/mvc2"
 	"github.com/kataras/iris/sessions"
+
+	"github.com/kataras/iris/mvc"
 )
 
 // TodoController is our TODO app's web controller.
@@ -38,10 +39,6 @@ func (c *TodoController) BeforeActivate(ca *mvc.ControllerActivator) {
 	})
 
 	// ca.Router.Use(...).Done(...).Layout(...)
-	// TODO:(?)
-	// m := ca.Method("PutCompleteBy")
-	// m.Route.Use(...).Done(...) <- we don't have the route here but I can find something to solve this.
-	// m.Dependencies.Add(...)
 }
 
 // Get handles the GET: /todo route.

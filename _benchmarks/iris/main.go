@@ -1,13 +1,10 @@
 package main
 
-import (
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
-)
+import "github.com/kataras/iris"
 
 func main() {
 	app := iris.New()
-	app.Get("/api/values/{id}", func(ctx context.Context) {
+	app.Get("/api/values/{id}", func(ctx iris.Context) {
 		ctx.WriteString("value")
 	})
 

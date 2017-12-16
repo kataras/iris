@@ -1,11 +1,11 @@
-package mvc2
+package mvc
 
 import (
 	"reflect"
 	"strings"
 
 	"github.com/fatih/structs"
-	"github.com/kataras/iris/mvc2/di"
+	"github.com/kataras/iris/mvc/di"
 
 	"github.com/kataras/iris/context"
 )

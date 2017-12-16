@@ -6,7 +6,7 @@ import (
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/sessions"
 
-	mvc "github.com/kataras/iris/mvc2"
+	"github.com/kataras/iris/mvc"
 )
 
 func main() {

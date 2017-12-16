@@ -1,4 +1,4 @@
-package mvc2
+package mvc
 
 import (
 	"github.com/kataras/iris/context"
@@ -11,8 +11,6 @@ var defaultSessionManager = sessions.New(sessions.Config{})
 // which requires a binded session manager in order to give
 // direct access to the current client's session via its `Session` field.
 type SessionController struct {
-	C
-
 	Manager *sessions.Sessions
 	Session *sessions.Session
 }
@@ -30,10 +28,8 @@ func (s *SessionController) BeforeActivate(ca *ControllerActivator) {
 	}
 }
 
-// BeginRequest calls the Controller's BeginRequest
-// and tries to initialize the current user's Session.
+// BeginRequest initializes the current user's Session.
 func (s *SessionController) BeginRequest(ctx context.Context) {
-	s.C.BeginRequest(ctx)
 	if s.Manager == nil {
 		ctx.Application().Logger().Errorf(`MVC SessionController: sessions manager is nil, report this as a bug 
 because the SessionController should predict this on its activation state and use a default one automatically`)
@@ -42,3 +38,6 @@ because the SessionController should predict this on its activation state and us
 
 	s.Session = s.Manager.Start(ctx)
 }
+
+// EndRequest is here to complete the `BaseController`.
+func (s *SessionController) EndRequest(ctx context.Context) {}

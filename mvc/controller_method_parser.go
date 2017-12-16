@@ -1,4 +1,4 @@
-package mvc2
+package mvc
 
 import (
 	"errors"
@@ -96,20 +96,31 @@ func (l *methodLexer) peekPrev() (w string) {
 }
 
 var posWords = map[int]string{
-	0: "",
-	1: "first",
-	2: "second",
-	3: "third",
-	4: "forth",
-	5: "five",
-	6: "sixth",
-	7: "seventh",
-	8: "eighth",
-	9: "ninth",
+	0:  "",
+	1:  "first",
+	2:  "second",
+	3:  "third",
+	4:  "forth",
+	5:  "five",
+	6:  "sixth",
+	7:  "seventh",
+	8:  "eighth",
+	9:  "ninth",
+	10: "tenth",
+	11: "eleventh",
+	12: "twelfth",
+	13: "thirteenth",
+	14: "fourteenth",
+	15: "fifteenth",
+	16: "sixteenth",
+	17: "seventeenth",
+	18: "eighteenth",
+	19: "nineteenth",
+	20: "twentieth",
 }
 
 func genParamKey(argIdx int) string {
-	return "param" + posWords[argIdx] // paramfirst, paramsecond...
+	return "arg" + posWords[argIdx] // argfirst, argsecond...
 }
 
 type methodParser struct {
@@ -176,7 +187,7 @@ func (p *methodParser) parse() (method, path string, err error) {
 			// 	continue
 			// }
 
-			if path, err = p.parsePathParam(path, w, funcArgPos); err != nil {
+			if path, funcArgPos, err = p.parsePathParam(path, w, funcArgPos); err != nil {
 				return "", "", err
 			}
 
@@ -184,24 +195,22 @@ func (p *methodParser) parse() (method, path string, err error) {
 		}
 		// static path.
 		path += "/" + strings.ToLower(w)
-
 	}
-
 	return
 }
 
-func (p *methodParser) parsePathParam(path string, w string, funcArgPos int) (string, error) {
+func (p *methodParser) parsePathParam(path string, w string, funcArgPos int) (string, int, error) {
 	typ := p.fn.Type
 
 	if typ.NumIn() <= funcArgPos {
 
 		// By found but input arguments are not there, so act like /by path without restricts.
 		path += "/" + strings.ToLower(w)
-		return path, nil
+		return path, funcArgPos, nil
 	}
 
 	var (
-		paramKey  = genParamKey(funcArgPos) // paramfirst, paramsecond...
+		paramKey  = genParamKey(funcArgPos) // argfirst, argsecond...
 		paramType = ast.ParamTypeString     // default string
 	)
 
@@ -216,10 +225,19 @@ func (p *methodParser) parsePathParam(path string, w string, funcArgPos int) (st
 		// it's not wildcard, so check base on our available macro types.
 		paramType = pType
 	} else {
-		return "", errors.New("invalid syntax for " + p.fn.Name)
+		if typ.NumIn() > funcArgPos {
+			// has more input arguments but we are not in the correct
+			// index now, maybe the first argument was an `iris/context.Context`
+			// so retry with the "funcArgPos" incremented.
+			//
+			// the "funcArgPos" will be updated to the caller as well
+			// because we return it as well.
+			return p.parsePathParam(path, w, funcArgPos+1)
+		}
+		return "", 0, errors.New("invalid syntax for " + p.fn.Name)
 	}
 
-	// /{paramfirst:path}, /{paramfirst:long}...
+	// /{argfirst:path}, /{argfirst:long}...
 	path += fmt.Sprintf("/{%s:%s}", paramKey, paramType.String())
 
 	if nextWord == "" && typ.NumIn() > funcArgPos+1 {
@@ -232,5 +250,5 @@ func (p *methodParser) parsePathParam(path string, w string, funcArgPos int) (st
 		return p.parsePathParam(path, nextWord, funcArgPos+1)
 	}
 
-	return path, nil
+	return path, funcArgPos, nil
 }

@@ -1,8 +1,8 @@
-package mvc2
+package mvc
 
 import (
 	"fmt"
-	"github.com/kataras/iris/mvc2/di"
+	"github.com/kataras/iris/mvc/di"
 	"reflect"
 	"runtime"
 
@@ -39,8 +39,8 @@ func MustMakeHandler(handler interface{}, bindValues ...reflect.Value) context.H
 	return h
 }
 
-// MakeHandler accepts a "handler" function which can accept any input that matches
-// with the "binders" and any output, that matches the mvc types, like string, int (string,int),
+// MakeHandler accepts a "handler" function which can accept any input arguments that match
+// with the "bindValues" types and any output result, that matches the mvc types, like string, int (string,int),
 // custom structs, Result(View | Response) and anything that you already know that mvc implementation supports,
 // and returns a low-level `context/iris.Handler` which can be used anywhere in the Iris Application,
 // as middleware or as simple route handler or party handler or subdomain handler-router.
