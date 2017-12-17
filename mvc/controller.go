@@ -21,29 +21,50 @@ type BaseController interface {
 	EndRequest(context.Context)
 }
 
+type shared interface {
+	Name() string
+	Router() router.Party
+	Handle(method, path, funcName string, middleware ...context.Handler) *router.Route
+}
+
+type BeforeActivation interface {
+	shared
+	Dependencies() *di.Values
+}
+
+type AfterActivation interface {
+	shared
+	DependenciesReadOnly() di.ValuesReadOnly
+	IsRequestScoped() bool
+}
+
+var (
+	_ BeforeActivation = (*ControllerActivator)(nil)
+	_ AfterActivation  = (*ControllerActivator)(nil)
+)
+
 // ControllerActivator returns a new controller type info description.
 // Its functionality can be overriden by the end-dev.
 type ControllerActivator struct {
-	// the router is used on the `Activate` and can be used by end-dev on the `BeforeActivate`
-	// to register any custom controller's functions as handlers but we will need it here
-	// in order to not create a new type like `ActivationPayload` for the `BeforeActivate`.
-	Router router.Party
+	// the router is used on the `Activate` and can be used by end-dev on the `BeforeActivation`
+	// to register any custom controller's methods as handlers.
+	router router.Party
 
 	// initRef BaseController // the BaseController as it's passed from the end-dev.
 	Value reflect.Value // the BaseController's Value.
 	Type  reflect.Type  // raw type of the BaseController (initRef).
 	// FullName it's the last package path segment + "." + the Name.
 	// i.e: if login-example/user/controller.go, the FullName is "user.Controller".
-	FullName string
+	fullName string
 
 	// the methods names that is already binded to a handler,
-	// the BeginRequest, EndRequest and BeforeActivate are reserved by the internal implementation.
+	// the BeginRequest, EndRequest and BeforeActivation are reserved by the internal implementation.
 	reservedMethods []string
 
 	// the bindings that comes from the Engine and the controller's filled fields if any.
 	// Can be binded to the the new controller's fields and method that is fired
 	// on incoming requests.
-	Dependencies *di.D
+	dependencies di.Values
 
 	// on activate.
 	injector *di.StructInjector
@@ -59,7 +80,7 @@ func getNameOf(typ reflect.Type) string {
 	return fullname
 }
 
-func newControllerActivator(router router.Party, controller interface{}, d *di.D) *ControllerActivator {
+func newControllerActivator(router router.Party, controller interface{}, dependencies di.Values) *ControllerActivator {
 	var (
 		val = reflect.ValueOf(controller)
 		typ = val.Type()
@@ -68,13 +89,17 @@ func newControllerActivator(router router.Party, controller interface{}, d *di.D
 		fullName = getNameOf(typ)
 	)
 
+	// add the manual filled fields to the dependencies.
+	filledFieldValues := di.LookupNonZeroFieldsValues(val)
+	dependencies.AddValue(filledFieldValues...)
+
 	c := &ControllerActivator{
 		// give access to the Router to the end-devs if they need it for some reason,
 		// i.e register done handlers.
-		Router:   router,
+		router:   router,
 		Value:    val,
 		Type:     typ,
-		FullName: fullName,
+		fullName: fullName,
 		// set some methods that end-dev cann't use accidentally
 		// to register a route via the `Handle`,
 		// all available exported and compatible methods
@@ -85,32 +110,35 @@ func newControllerActivator(router router.Party, controller interface{}, d *di.D
 		// TODO: now that BaseController is totally optionally
 		// we have to check if BeginRequest and EndRequest should be here.
 		reservedMethods: whatReservedMethods(typ),
-		Dependencies:    d,
-	}
-
-	filledFieldValues := di.LookupNonZeroFieldsValues(val)
-	c.Dependencies.AddValue(filledFieldValues...)
-
-	if len(filledFieldValues) == di.IndirectType(typ).NumField() {
-		// all fields are filled by the end-developer,
-		// the controller doesn't contain any other field, not any dynamic binding as well.
-		// Therefore we don't need to create a new controller each time.
-		// Set the c.injector now instead on the first `Handle` and set it to invalid state
-		// in order to `buildControllerHandler` ignore
-		// creating new controller value on each incoming request.
-		c.injector = &di.StructInjector{Valid: false}
+		dependencies:    dependencies,
 	}
 
 	return c
 }
 
 func whatReservedMethods(typ reflect.Type) []string {
-	methods := []string{"BeforeActivate"}
+	methods := []string{"BeforeActivation", "AfterActivation"}
 	if isBaseController(typ) {
 		methods = append(methods, "BeginRequest", "EndRequest")
 	}
 
 	return methods
+}
+
+func (c *ControllerActivator) Dependencies() *di.Values {
+	return &c.dependencies
+}
+
+func (c *ControllerActivator) DependenciesReadOnly() di.ValuesReadOnly {
+	return c.dependencies
+}
+
+func (c *ControllerActivator) Name() string {
+	return c.fullName
+}
+
+func (c *ControllerActivator) Router() router.Party {
+	return c.router
 }
 
 // IsRequestScoped returns new if each request has its own instance
@@ -150,8 +178,8 @@ func (c *ControllerActivator) parseMethod(m reflect.Method) {
 	httpMethod, httpPath, err := parseMethod(m, c.isReservedMethod)
 	if err != nil {
 		if err != errSkip {
-			err = fmt.Errorf("MVC: fail to parse the route path and HTTP method for '%s.%s': %v", c.FullName, m.Name, err)
-			c.Router.GetReporter().AddErr(err)
+			err = fmt.Errorf("MVC: fail to parse the route path and HTTP method for '%s.%s': %v", c.fullName, m.Name, err)
+			c.router.GetReporter().AddErr(err)
 
 		}
 		return
@@ -197,16 +225,16 @@ func (c *ControllerActivator) Handle(method, path, funcName string, middleware .
 	m, ok := c.Type.MethodByName(funcName)
 	if !ok {
 		err := fmt.Errorf("MVC: function '%s' doesn't exist inside the '%s' controller",
-			funcName, c.FullName)
-		c.Router.GetReporter().AddErr(err)
+			funcName, c.fullName)
+		c.router.GetReporter().AddErr(err)
 		return nil
 	}
 
 	// parse a route template which contains the parameters organised.
-	tmpl, err := macro.Parse(path, c.Router.Macros())
+	tmpl, err := macro.Parse(path, c.router.Macros())
 	if err != nil {
-		err = fmt.Errorf("MVC: fail to parse the path for '%s.%s': %v", c.FullName, funcName, err)
-		c.Router.GetReporter().AddErr(err)
+		err = fmt.Errorf("MVC: fail to parse the path for '%s.%s': %v", c.fullName, funcName, err)
+		c.router.GetReporter().AddErr(err)
 		return nil
 	}
 
@@ -222,11 +250,11 @@ func (c *ControllerActivator) Handle(method, path, funcName string, middleware .
 	// end-dev's controller pointer.
 	pathParams := getPathParamsForInput(tmpl.Params, funcIn[1:]...)
 	// get the function's input arguments' bindings.
-	funcDependencies := c.Dependencies.Clone()
+	funcDependencies := c.dependencies.Clone()
 	funcDependencies.AddValue(pathParams...)
 
-	// fmt.Printf("for %s | values: %s\n", funcName, funcDependencies.Values)
-	funcInjector := funcDependencies.Func(m.Func)
+	// fmt.Printf("for %s | values: %s\n", funcName, funcDependencies)
+	funcInjector := di.MakeFuncInjector(m.Func, hijacker, typeChecker, funcDependencies...)
 	// fmt.Printf("actual injector's inputs length: %d\n", funcInjector.Length)
 
 	// the element value, not the pointer, wil lbe used to create a
@@ -237,7 +265,7 @@ func (c *ControllerActivator) Handle(method, path, funcName string, middleware .
 	// hasStructInjector = c.injector != nil && c.injector.Valid
 	// hasFuncInjector   = funcInjector != nil && funcInjector.Valid
 	// because
-	// the `Handle` can be called from `BeforeActivate` callbacks
+	// the `Handle` can be called from `BeforeActivation` callbacks
 	// and before activation, the c.injector is nil because
 	// we may not have the dependencies binded yet. But if `c.injector.Valid`
 	// inside the Handelr works because it's set on the `activate()` method.
@@ -246,24 +274,48 @@ func (c *ControllerActivator) Handle(method, path, funcName string, middleware .
 	// so the user should bind the dependencies needed before the `Handle`
 	// this is a logical flow, so we will choose that one ->
 	if c.injector == nil {
-		c.injector = c.Dependencies.Struct(c.Value)
+		// check if manually filled + any dependencies are only static, if so
+		// and the total struct's fields are equal these static dependencies length
+		// then we don't need to create a new struct on each request.
+		//
+		// We use our custom NumFields here because the std "reflect" package
+		// checks only for the current struct and not for embedded's exported fields.
+		totalFieldsLength := di.NumFields(di.IndirectType(c.Type))
+
+		// first, set these bindings to the passed controller, they will be useless
+		// if the struct contains any dynamic value because this controller will
+		// be never fired as it's but we make that in order to get the length of the static
+		// matched dependencies of the struct.
+		c.injector = di.MakeStructInjector(c.Value, hijacker, typeChecker, c.dependencies...)
+		matchedStaticDependenciesLength := c.injector.InjectElemStaticOnly(di.IndirectValue(c.Value))
+
 		if c.injector.Valid {
-			golog.Debugf("MVC dependencies of '%s':\n%s", c.FullName, c.injector.String())
+			golog.Debugf("MVC dependencies of '%s':\n%s", c.fullName, c.injector.String())
+		}
+
+		if matchedStaticDependenciesLength == totalFieldsLength {
+			// all fields are filled by the end-developer or via static dependencies (if context is there then it will be filled by the MakeStructInjector so we don't worry about it),
+			// the controller doesn't contain any other field neither any dynamic binding as well.
+			// Therefore we don't need to create a new controller each time.
+			// Set the c.injector now instead on the first `Handle` and set it to invalid state
+			// in order to `buildControllerHandler` ignore the
+			// creation of a new controller value on each incoming request.
+			c.injector = &di.StructInjector{Valid: false}
 		}
 	}
 
 	if funcInjector.Valid {
-		golog.Debugf("MVC dependencies of method '%s.%s':\n%s", c.FullName, funcName, funcInjector.String())
+		golog.Debugf("MVC dependencies of method '%s.%s':\n%s", c.fullName, funcName, funcInjector.String())
 	}
 
 	handler := buildControllerHandler(m, c.Type, c.Value, c.injector, funcInjector, funcIn)
 
 	// register the handler now.
-	route := c.Router.Handle(method, path, append(middleware, handler)...)
+	route := c.router.Handle(method, path, append(middleware, handler)...)
 	if route != nil {
 		// change the main handler's name in order to respect the controller's and give
 		// a proper debug message.
-		route.MainHandlerName = fmt.Sprintf("%s.%s", c.FullName, funcName)
+		route.MainHandlerName = fmt.Sprintf("%s.%s", c.fullName, funcName)
 	}
 
 	return route

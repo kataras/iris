@@ -97,6 +97,17 @@ func (s *StructInjector) InjectElem(destElem reflect.Value, ctx ...reflect.Value
 	}
 }
 
+func (s *StructInjector) InjectElemStaticOnly(destElem reflect.Value) (n int) {
+	for _, f := range s.fields {
+		if f.Object.BindType != Static {
+			continue
+		}
+		destElem.FieldByIndex(f.FieldIndex).Set(f.Object.Value)
+		n++
+	}
+	return
+}
+
 func (s *StructInjector) New(ctx ...reflect.Value) reflect.Value {
 	dest := reflect.New(s.elemType)
 	s.InjectElem(dest, ctx...)

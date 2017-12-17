@@ -114,7 +114,7 @@ m.Controller(sub, &myController{service: myService})
 ```
 
 ```go
-NewEngine().Controller(sub.Party("/subsub"), new(myController), func(ca *ControllerActivator) {
-    ca.Dependencies.Add(myService)
+NewEngine().Controller(sub.Party("/subsub"), new(myController), func(b mvc.BeforeActivation) {
+    b.Dependencies().Add(myService)
 })
 ```

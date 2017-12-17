@@ -25,13 +25,13 @@ func newApp(engine *Engine, subRouter router.Party) *Application {
 	}
 }
 
-// New returns a new mvc Application based on a "subRouter".
+// New returns a new mvc Application based on a "party".
 // Application creates a new engine which is responsible for binding the dependencies
 // and creating and activating the app's controller(s).
 //
-// Example: `New(app.Party("/todo"))`.
-func New(subRouter router.Party) *Application {
-	return newApp(NewEngine(), subRouter)
+// Example: `New(app.Party("/todo"))` or `New(app)` as it's the same as `New(app.Party("/"))`.
+func New(party router.Party) *Application {
+	return newApp(NewEngine(), party)
 }
 
 // Configure can be used to pass one or more functions that accept this
@@ -53,7 +53,7 @@ func (app *Application) Configure(configurators ...func(*Application)) *Applicat
 // controller's methods, if matching.
 //
 // The dependencies can be changed per-controller as well via a `beforeActivate`
-// on the `Register` method or when the controller has the `BeforeActivate(c *ControllerActivator)`
+// on the `Register` method or when the controller has the `BeforeActivation(c *ControllerActivator)`
 // method defined.
 //
 // It returns this Application.
@@ -75,16 +75,17 @@ func (app *Application) AddDependencies(values ...interface{}) *Application {
 // It returns this Application.
 //
 // Example: `.Register(new(TodoController))`.
-func (app *Application) Register(controller interface{}, beforeActivate ...func(*ControllerActivator)) *Application {
+func (app *Application) Register(controller interface{}, beforeActivate ...func(BeforeActivation)) *Application {
 	app.Engine.Controller(app.Router, controller, beforeActivate...)
 	return app
 }
 
-// NewChild creates and returns a new Application which will be adapted
-// to the "subRouter", it adopts
-// the dependencies bindings from the parent(current) one.
+// NewChild creates and returns a new MVC Application which will be adapted
+// to the "party", it adopts
+// the parent's (current) dependencies, the "party" may be
+// a totally new router or a child path one via the parent's `.Router.Party`.
 //
-// Example: `.NewChild(irisApp.Party("/sub")).Register(new(TodoSubController))`.
-func (app *Application) NewChild(subRouter router.Party) *Application {
-	return newApp(app.Engine.Clone(), subRouter)
+// Example: `.NewChild(irisApp.Party("/path")).Register(new(TodoSubController))`.
+func (app *Application) NewChild(party router.Party) *Application {
+	return newApp(app.Engine.Clone(), party)
 }

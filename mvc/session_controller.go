@@ -15,13 +15,13 @@ type SessionController struct {
 	Session *sessions.Session
 }
 
-// BeforeActivate called, once per application lifecycle NOT request,
+// BeforeActivation called, once per application lifecycle NOT request,
 // every single time the dev registers a specific SessionController-based controller.
 // It makes sure that its "Manager" field is filled
 // even if the caller didn't provide any sessions manager via the `app.Controller` function.
-func (s *SessionController) BeforeActivate(ca *ControllerActivator) {
-	if didntBindManually := ca.Dependencies.AddOnce(defaultSessionManager); didntBindManually {
-		ca.Router.GetReporter().Add(
+func (s *SessionController) BeforeActivation(b BeforeActivation) {
+	if didntBindManually := b.Dependencies().AddOnce(defaultSessionManager); didntBindManually {
+		b.Router().GetReporter().Add(
 			`MVC SessionController: couldn't find any "*sessions.Sessions" bindable value to fill the "Manager" field, 
 			therefore this controller is using the default sessions manager instead.
 			Please refer to the documentation to learn how you can provide the session manager`)

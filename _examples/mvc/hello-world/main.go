@@ -80,22 +80,22 @@ func (c *ExampleController) GetHello() interface{} {
 	return map[string]string{"message": "Hello Iris!"}
 }
 
-// BeforeActivate called once, before the controller adapted to the main application
+// BeforeActivation called once, before the controller adapted to the main application
 // and of course before the server ran.
 // After version 9 you can also add custom routes for a specific controller's methods.
 // Here you can register custom method's handlers
 // use the standard router with `ca.Router` to do something that you can do without mvc as well,
 // and add dependencies that will be binded to a controller's fields or method function's input arguments.
-func (c *ExampleController) BeforeActivate(ca *mvc.ControllerActivator) {
+func (c *ExampleController) BeforeActivation(b mvc.BeforeActivation) {
 	anyMiddlewareHere := func(ctx iris.Context) {
 		ctx.Application().Logger().Warnf("Inside /custom_path")
 		ctx.Next()
 	}
-	ca.Handle("GET", "/custom_path", "CustomHandlerWithoutFollowingTheNamingGuide", anyMiddlewareHere)
+	b.Handle("GET", "/custom_path", "CustomHandlerWithoutFollowingTheNamingGuide", anyMiddlewareHere)
 
 	// or even add a global middleware based on this controller's router,
 	// which in this example is the root "/":
-	// ca.Router.Use(myMiddleware)
+	// b.Router().Use(myMiddleware)
 }
 
 // CustomHandlerWithoutFollowingTheNamingGuide serves
@@ -140,11 +140,13 @@ func (c *ExampleController) Any() {}
 
 
 
-func (c *ExampleController) BeforeActivate(ca *mvc.ControllerActivator) {
+func (c *ExampleController) BeforeActivation(b mvc.BeforeActivation) {
 	// 1 -> the HTTP Method
 	// 2 -> the route's path
 	// 3 -> this controller's method name that should be handler for that route.
-	ca.Handle("GET", "/mypath/{param}", "DoIt", optionalMiddlewareHere...)
+	b.Handle("GET", "/mypath/{param}", "DoIt", optionalMiddlewareHere...)
 }
+
+func (c *ExampleController) AfterActivation(a mvc.AfterActivation)
 
 */

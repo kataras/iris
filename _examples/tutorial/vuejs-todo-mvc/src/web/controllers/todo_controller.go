@@ -16,11 +16,11 @@ type TodoController struct {
 	Session *sessions.Session
 }
 
-// BeforeActivate called once before the server ran, and before
+// BeforeActivation called once before the server ran, and before
 // the routes and dependency binder builded.
 // You can bind custom things to the controller, add new methods, add middleware,
 // add dependencies to the struct or the method(s) and more.
-func (c *TodoController) BeforeActivate(ca *mvc.ControllerActivator) {
+func (c *TodoController) BeforeActivation(ca *mvc.ControllerActivator) {
 	// this could be binded to a controller's function input argument
 	// if any, or struct field if any:
 	ca.Dependencies.Add(func(ctx iris.Context) todo.Item {
