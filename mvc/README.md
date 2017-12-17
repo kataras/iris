@@ -1,4 +1,4 @@
-# MVC Engine's Internals
+# MVC Internals
 
 * `MakeHandler` - accepts a function which accepts any input and outputs any result, and any optional values that will be used as binders, if needed they will be converted in order to be faster at serve-time. Returns a `context/iris#Handler` and a non-nil error if passed function cannot be wrapped to a raw `context/iris#Handler`
     * Struct fields with `Struct Binding`

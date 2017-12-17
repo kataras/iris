@@ -433,7 +433,7 @@ func TestControllerActivateListener(t *testing.T) {
 	app := iris.New()
 	NewEngine().Controller(app, new(testControllerActivateListener))
 	m := NewEngine()
-	m.Dependencies.Add(&testBindType{ // will bind to all controllers under this .New() MVC Engine.
+	m.Dependencies.Add(&testBindType{
 		title: "my title",
 	})
 	m.Controller(app.Party("/manual"), new(testControllerActivateListener))
@@ -450,5 +450,40 @@ func TestControllerActivateListener(t *testing.T) {
 	e.GET("/manual").Expect().Status(iris.StatusOK).
 		Body().Equal("my title")
 	e.GET("/manual2").Expect().Status(iris.StatusOK).
+		Body().Equal("my title")
+}
+
+type testControllerNotCreateNewDueManuallySettingAllFields struct {
+	TitlePointer *testBindType
+}
+
+func (c *testControllerNotCreateNewDueManuallySettingAllFields) Get() string {
+	return c.TitlePointer.title
+}
+
+func TestControllerNotCreateNewDueManuallySettingAllFields(t *testing.T) {
+	app := iris.New()
+	NewEngine().Controller(app, &testControllerNotCreateNewDueManuallySettingAllFields{
+		TitlePointer: &testBindType{
+			title: "my title",
+		},
+	}, func(ca *ControllerActivator) {
+		if n := len(ca.Dependencies.Values); n != 1 {
+			t.Fatalf(`expecting 1 dependency, the 'TitlePointer' which we manually insert
+				and the fields length is 1 so it will not create a new controller on each request
+				however the dependencies are available here
+				although the struct injector is being ignored when
+				creating the controller's handlers because we set it to invalidate state at "newControllerActivator"
+				--  got dependencies length: %d`, n)
+		}
+
+		if ca.IsRequestScoped() {
+			t.Fatalf(`this controller shouldn't be tagged used as request scoped(create new instances on each request),
+			 it doesn't contain any dynamic value or dependencies that should be binded via the iris mvc engine`)
+		}
+	})
+
+	e := httptest.New(t, app)
+	e.GET("/").Expect().Status(iris.StatusOK).
 		Body().Equal("my title")
 }
