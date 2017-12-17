@@ -20,7 +20,7 @@ import (
 //
 // For a more high-level structure please take a look at the "mvc.go#Application".
 type Engine struct {
-	Dependencies *di.D
+	Dependencies di.Values
 }
 
 // NewEngine returns a new engine, a container for dependencies and a factory
@@ -28,7 +28,7 @@ type Engine struct {
 // Please take a look at the structure's documentation for more information.
 func NewEngine() *Engine {
 	return &Engine{
-		Dependencies: di.New().Hijack(hijacker).GoodFunc(typeChecker),
+		Dependencies: di.NewValues(),
 	}
 }
 
@@ -46,7 +46,7 @@ func (e *Engine) Clone() *Engine {
 // It returns a standard `iris/context.Handler` which can be used anywhere in an Iris Application,
 // as middleware or as simple route handler or subdomain's handler.
 func (e *Engine) Handler(handler interface{}) context.Handler {
-	h, err := MakeHandler(handler, e.Dependencies.Values...)
+	h, err := MakeHandler(handler, e.Dependencies.Clone()...)
 	if err != nil {
 		golog.Errorf("mvc handler: %v", err)
 	}
@@ -84,8 +84,8 @@ func (e *Engine) Handler(handler interface{}) context.Handler {
 // where Get is an HTTP Method func.
 //
 // Examples at: https://github.com/kataras/iris/tree/master/_examples/mvc.
-func (e *Engine) Controller(router router.Party, controller interface{}, beforeActivate ...func(*ControllerActivator)) {
-	ca := newControllerActivator(router, controller, e.Dependencies)
+func (e *Engine) Controller(router router.Party, controller interface{}, beforeActivate ...func(BeforeActivation)) {
+	ca := newControllerActivator(router, controller, e.Dependencies.Clone())
 
 	// give a priority to the "beforeActivate"
 	// callbacks, if any.
@@ -93,13 +93,19 @@ func (e *Engine) Controller(router router.Party, controller interface{}, beforeA
 		cb(ca)
 	}
 
-	// check if controller has an "BeforeActivate" function
+	// check if controller has an "BeforeActivation" function
 	// which accepts the controller activator and call it.
 	if activateListener, ok := controller.(interface {
-		BeforeActivate(*ControllerActivator)
+		BeforeActivation(BeforeActivation)
 	}); ok {
-		activateListener.BeforeActivate(ca)
+		activateListener.BeforeActivation(ca)
 	}
 
 	ca.activate()
+
+	if afterActivateListener, ok := controller.(interface {
+		AfterActivation(AfterActivation)
+	}); ok {
+		afterActivateListener.AfterActivation(ca)
+	}
 }

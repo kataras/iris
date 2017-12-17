@@ -275,7 +275,7 @@ func (t *testControllerBindDeep) Get() {
 	t.Ctx.Writef(t.TitlePointer.title + t.TitleValue.title + t.Other)
 }
 
-func TestControllerBind(t *testing.T) {
+func TestControllerDependencies(t *testing.T) {
 	app := iris.New()
 	// app.Logger().SetLevel("debug")
 
@@ -421,8 +421,8 @@ type testControllerActivateListener struct {
 	TitlePointer *testBindType
 }
 
-func (c *testControllerActivateListener) BeforeActivate(ca *ControllerActivator) {
-	ca.Dependencies.AddOnce(&testBindType{title: "default title"})
+func (c *testControllerActivateListener) BeforeActivation(b BeforeActivation) {
+	b.Dependencies().AddOnce(&testBindType{title: "default title"})
 }
 
 func (c *testControllerActivateListener) Get() string {
@@ -454,7 +454,25 @@ func TestControllerActivateListener(t *testing.T) {
 }
 
 type testControllerNotCreateNewDueManuallySettingAllFields struct {
+	T *testing.T
+
 	TitlePointer *testBindType
+}
+
+func (c *testControllerNotCreateNewDueManuallySettingAllFields) AfterActivation(a AfterActivation) {
+	if n := a.DependenciesReadOnly().Len(); n != 2 {
+		c.T.Fatalf(`expecting 2 dependency, the 'T' and the 'TitlePointer' that we manually insert
+			and the fields total length is 2 so it will not create a new controller on each request
+			however the dependencies are available here
+			although the struct injector is being ignored when
+			creating the controller's handlers because we set it to invalidate state at "newControllerActivator"
+			--  got dependencies length: %d`, n)
+	}
+
+	if a.IsRequestScoped() {
+		c.T.Fatalf(`this controller shouldn't be tagged used as request scoped(create new instances on each request),
+		 it doesn't contain any dynamic value or dependencies that should be binded via the iris mvc engine`)
+	}
 }
 
 func (c *testControllerNotCreateNewDueManuallySettingAllFields) Get() string {
@@ -464,23 +482,12 @@ func (c *testControllerNotCreateNewDueManuallySettingAllFields) Get() string {
 func TestControllerNotCreateNewDueManuallySettingAllFields(t *testing.T) {
 	app := iris.New()
 	NewEngine().Controller(app, &testControllerNotCreateNewDueManuallySettingAllFields{
+		T: t,
 		TitlePointer: &testBindType{
 			title: "my title",
 		},
-	}, func(ca *ControllerActivator) {
-		if n := len(ca.Dependencies.Values); n != 1 {
-			t.Fatalf(`expecting 1 dependency, the 'TitlePointer' which we manually insert
-				and the fields length is 1 so it will not create a new controller on each request
-				however the dependencies are available here
-				although the struct injector is being ignored when
-				creating the controller's handlers because we set it to invalidate state at "newControllerActivator"
-				--  got dependencies length: %d`, n)
-		}
+	}, func(b BeforeActivation) {
 
-		if ca.IsRequestScoped() {
-			t.Fatalf(`this controller shouldn't be tagged used as request scoped(create new instances on each request),
-			 it doesn't contain any dynamic value or dependencies that should be binded via the iris mvc engine`)
-		}
 	})
 
 	e := httptest.New(t, app)

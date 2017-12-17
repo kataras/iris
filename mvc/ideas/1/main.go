@@ -69,12 +69,26 @@ type TodoController struct {
 	Session *sessions.Session
 }
 
+func (c *TodoController) BeforeActivation(b mvc.BeforeActivation) {
+	b.Handle("GET", "/custom", "Custom")
+}
+
+func (c *TodoController) AfterActivation(b mvc.BeforeActivation) {
+	if !b.IsRequestScoped() {
+		panic("TodoController should be request scoped, we have a 'Session' which depends on the context.")
+	}
+}
+
 func (c *TodoController) Get() string {
 	count := c.Session.Increment("count", 1)
 
 	body := fmt.Sprintf("Hello from TodoController\nTotal visits from you: %d", count)
 	c.Logger.Log(body)
 	return body
+}
+
+func (c *TodoController) Custom() string {
+	return "custom"
 }
 
 type TodoSubController struct {

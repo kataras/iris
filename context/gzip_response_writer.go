@@ -83,7 +83,7 @@ type GzipResponseWriter struct {
 	disabled bool
 }
 
-var _ ResponseWriter = &GzipResponseWriter{}
+var _ ResponseWriter = (*GzipResponseWriter)(nil)
 
 // BeginGzipResponse accepts a ResponseWriter
 // and prepares the new gzip response writer.

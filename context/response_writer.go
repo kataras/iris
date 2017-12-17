@@ -115,7 +115,7 @@ type responseWriter struct {
 	beforeFlush func()
 }
 
-var _ ResponseWriter = &responseWriter{}
+var _ ResponseWriter = (*responseWriter)(nil)
 
 const (
 	defaultStatusCode = http.StatusOK

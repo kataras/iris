@@ -125,6 +125,12 @@ type field struct {
 	AnyValue reflect.Value
 }
 
+// NumFields returns the total number of fields, and the embedded, even if the embedded struct is not exported,
+// it will check for its exported fields.
+func NumFields(elemTyp reflect.Type) int {
+	return len(lookupFields(elemTyp, nil))
+}
+
 func lookupFields(elemTyp reflect.Type, parentIndex []int) (fields []field) {
 	if elemTyp.Kind() != reflect.Struct {
 		return

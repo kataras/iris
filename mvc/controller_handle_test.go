@@ -17,11 +17,11 @@ type testControllerHandle struct {
 	reqField string
 }
 
-func (c *testControllerHandle) BeforeActivate(ca *ControllerActivator) { // BeforeActivate(t *mvc.TController) {
-	ca.Handle("GET", "/histatic", "HiStatic")
-	ca.Handle("GET", "/hiservice", "HiService")
-	ca.Handle("GET", "/hiparam/{ps:string}", "HiParamBy")
-	ca.Handle("GET", "/hiparamempyinput/{ps:string}", "HiParamEmptyInputBy")
+func (c *testControllerHandle) BeforeActivation(b BeforeActivation) { // BeforeActivation(t *mvc.TController) {
+	b.Handle("GET", "/histatic", "HiStatic")
+	b.Handle("GET", "/hiservice", "HiService")
+	b.Handle("GET", "/hiparam/{ps:string}", "HiParamBy")
+	b.Handle("GET", "/hiparamempyinput/{ps:string}", "HiParamEmptyInputBy")
 }
 
 func (c *testControllerHandle) BeginRequest(ctx iris.Context) {

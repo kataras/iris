@@ -821,6 +821,8 @@ type Context interface {
 	String() string
 }
 
+var _ Context = (*context)(nil)
+
 // Next calls all the next handler from the handlers chain,
 // it should be used inside a middleware.
 func Next(ctx Context) {

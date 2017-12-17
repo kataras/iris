@@ -2,10 +2,33 @@ package di
 
 import "reflect"
 
+type ValuesReadOnly interface {
+	// Has returns true if a binder responsible to
+	// bind and return a type of "typ" is already registered to this controller.
+	Has(value interface{}) bool
+	// Len returns the length of the values.
+	Len() int
+}
+
 type Values []reflect.Value
 
 func NewValues() Values {
 	return Values{}
+}
+
+// Clone returns a copy of the current values.
+func (bv Values) Clone() Values {
+	if n := len(bv); n > 0 {
+		values := make(Values, n, n)
+		copy(values, bv)
+		return values
+	}
+
+	return NewValues()
+}
+
+func (bv Values) Len() int {
+	return len(bv)
 }
 
 // Add binds values to this controller, if you want to share
@@ -57,13 +80,12 @@ func (bv *Values) remove(typ reflect.Type, n int) (ok bool) {
 
 // Has returns true if a binder responsible to
 // bind and return a type of "typ" is already registered to this controller.
-func (bv *Values) Has(value interface{}) bool {
+func (bv Values) Has(value interface{}) bool {
 	return bv.valueTypeExists(reflect.TypeOf(value))
 }
 
-func (bv *Values) valueTypeExists(typ reflect.Type) bool {
-	input := *bv
-	for _, in := range input {
+func (bv Values) valueTypeExists(typ reflect.Type) bool {
+	for _, in := range bv {
 		if equalTypes(in.Type(), typ) {
 			return true
 		}

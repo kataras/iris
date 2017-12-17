@@ -44,19 +44,11 @@ func (d *D) GoodFunc(fn TypeChecker) *D {
 // Clone returns a new Dependency Injection container, it adopts the
 // parent's (current "D") hijacker, good func type checker and all dependencies values.
 func (d *D) Clone() *D {
-	clone := New()
-	clone.hijacker = d.hijacker
-	clone.goodFunc = d.goodFunc
-
-	// copy the current dynamic bindings (func binders)
-	// and static struct bindings (services) to this new child.
-	if n := len(d.Values); n > 0 {
-		values := make(Values, n, n)
-		copy(values, d.Values)
-		clone.Values = values
+	return &D{
+		Values:   d.Values.Clone(),
+		hijacker: d.hijacker,
+		goodFunc: d.goodFunc,
 	}
-
-	return clone
 }
 
 // Struct is being used to return a new injector based on

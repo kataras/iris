@@ -264,8 +264,8 @@ func (t *testControllerViewResultRespectCtxViewData) Get() Result {
 
 func TestControllerViewResultRespectCtxViewData(t *testing.T) {
 	app := iris.New()
-	NewEngine().Controller(app, new(testControllerViewResultRespectCtxViewData), func(ca *ControllerActivator) {
-		ca.Dependencies.Add(t)
+	NewEngine().Controller(app, new(testControllerViewResultRespectCtxViewData), func(b BeforeActivation) {
+		b.Dependencies().Add(t)
 	})
 	e := httptest.New(t, app)
 
