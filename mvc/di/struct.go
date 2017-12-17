@@ -15,9 +15,8 @@ type (
 		elemType reflect.Type
 		//
 		fields []*targetStructField
-		Valid  bool // is True when contains fields and it's a valid target struct.
-
-		trace string // for debug info.
+		Valid  bool   // is true when contains fields and it's a valid target struct.
+		trace  string // for debug info.
 	}
 )
 

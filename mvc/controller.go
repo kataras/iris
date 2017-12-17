@@ -68,15 +68,6 @@ func newControllerActivator(router router.Party, controller interface{}, d *di.D
 		fullName = getNameOf(typ)
 	)
 
-	// the following will make sure that if
-	// the controller's has set-ed pointer struct fields by the end-dev
-	// we will include them to the bindings.
-	// set bindings to the non-zero pointer fields' values that may be set-ed by
-	// the end-developer when declaring the controller,
-	// activate listeners needs them in order to know if something set-ed already or not,
-	// look `BindTypeExists`.
-	d.Values = append(di.LookupNonZeroFieldsValues(val), d.Values...)
-
 	c := &ControllerActivator{
 		// give access to the Router to the end-devs if they need it for some reason,
 		// i.e register done handlers.
@@ -97,6 +88,19 @@ func newControllerActivator(router router.Party, controller interface{}, d *di.D
 		Dependencies:    d,
 	}
 
+	filledFieldValues := di.LookupNonZeroFieldsValues(val)
+	c.Dependencies.AddValue(filledFieldValues...)
+
+	if len(filledFieldValues) == di.IndirectType(typ).NumField() {
+		// all fields are filled by the end-developer,
+		// the controller doesn't contain any other field, not any dynamic binding as well.
+		// Therefore we don't need to create a new controller each time.
+		// Set the c.injector now instead on the first `Handle` and set it to invalid state
+		// in order to `buildControllerHandler` ignore
+		// creating new controller value on each incoming request.
+		c.injector = &di.StructInjector{Valid: false}
+	}
+
 	return c
 }
 
@@ -107,6 +111,28 @@ func whatReservedMethods(typ reflect.Type) []string {
 	}
 
 	return methods
+}
+
+// IsRequestScoped returns new if each request has its own instance
+// of the controller and it contains dependencies that are not manually
+// filled by the struct initialization from the caller.
+func (c *ControllerActivator) IsRequestScoped() bool {
+	// if the c.injector == nil means that is not seted to invalidate state,
+	// so it contains more fields that are filled by the end-dev.
+	// This "strange" check happens because the `IsRequestScoped` may
+	// called before the controller activation complete its task (see Handle: if c.injector == nil).
+	if c.injector == nil { // is nil so it contains more fields, maybe request-scoped or dependencies.
+		return true
+	}
+	if c.injector.Valid {
+		// if injector is not nil:
+		// if it is !Valid then all fields are manually filled by the end-dev (see `newControllerActivator`).
+		// if it is Valid then it's filled on the first `Handle`
+		// and it has more than one valid dependency from the registered values.
+		return true
+	}
+	// it's not nil and it's !Valid.
+	return false
 }
 
 // checks if a method is already registered.
@@ -224,7 +250,6 @@ func (c *ControllerActivator) Handle(method, path, funcName string, middleware .
 		if c.injector.Valid {
 			golog.Debugf("MVC dependencies of '%s':\n%s", c.FullName, c.injector.String())
 		}
-
 	}
 
 	if funcInjector.Valid {
@@ -267,38 +292,18 @@ func buildControllerHandler(m reflect.Method, typ reflect.Type, initRef reflect.
 
 		if !hasStructInjector {
 			// if the controller doesn't have a struct injector
-			// and the controller's fields are empty
+			// and the controller's fields are empty or all set-ed by the end-dev
 			// then we don't need a new controller instance, we use the passed controller instance.
-			if elemTyp.NumField() == 0 {
-				if !hasFuncInjector {
-					return func(ctx context.Context) {
-						DispatchFuncResult(ctx, initRef.Method(m.Index).Call(emptyIn))
-					}
-				}
 
-				return func(ctx context.Context) {
-					in := make([]reflect.Value, n, n)
-					in[0] = initRef
-					funcInjector.Inject(&in, reflect.ValueOf(ctx))
-					if ctx.IsStopped() {
-						return
-					}
-
-					DispatchFuncResult(ctx, m.Func.Call(in))
-				}
-			}
-			// it has fields, so it's request-scoped, even without struct injector
-			// it's safe to create a new controller on each request because the end-dev
-			// may use the controller's fields for request-scoping, so they should be
-			// zero on the next request.
 			if !hasFuncInjector {
 				return func(ctx context.Context) {
-					DispatchFuncResult(ctx, reflect.New(elemTyp).Method(m.Index).Call(emptyIn))
+					DispatchFuncResult(ctx, initRef.Method(m.Index).Call(emptyIn))
 				}
 			}
+
 			return func(ctx context.Context) {
 				in := make([]reflect.Value, n, n)
-				in[0] = reflect.New(elemTyp)
+				in[0] = initRef
 				funcInjector.Inject(&in, reflect.ValueOf(ctx))
 				if ctx.IsStopped() {
 					return

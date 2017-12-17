@@ -178,7 +178,7 @@ func TestControllerMethodResultTypes(t *testing.T) {
 	app := iris.New()
 	NewEngine().Controller(app, new(testControllerMethodResultTypes))
 
-	e := httptest.New(t, app, httptest.LogLevel("debug"))
+	e := httptest.New(t, app)
 
 	e.GET("/text").Expect().Status(iris.StatusOK).
 		Body().Equal("text")
