@@ -1,3 +1,23 @@
+## I'm working hard on the [dev](https://github.com/kataras/iris/tree/dev) branch for the next release of Iris, v9. 
+
+Do you remember, last Christmas? I did publish the version 6 with net/http and HTTP/2 support, and you've embraced Iris with so much love, ultimately it was a successful move.
+
+I tend to make surprises by giving you the most unique and useful features, especially on Christmas period.
+
+This year, I intend to give you more gifts.
+
+Don't worry, it will not contain any breaking changes, except of some MVC concepts that are re-designed.
+
+The new Iris' MVC Ecosystem is ready on the [dev/mvc](https://github.com/kataras/iris/tree/dev/mvc). It contains features that you've never saw before, in any programming language framework. It is also, by far, the fastest MVC implementation ever created, very close to raw handlers - it's Iris, it's superior, we couldn't expect something different after all :) Treat that with respect as it treats you :)
+
+I'm doing my bests to get it ready before Christmas.
+
+Star or watch the repository to stay up to date and get ready for the most amazing features!
+
+Yours faithfully, [Gerasimos Maropoulos](https://twitter.com/MakisMaropoulos).
+
+------
+
 # [![Logo created by @santoshanand](logo_white_35_24.png)](https://iris-go.com) Iris
 
 [![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=flat-square)](https://travis-ci.org/kataras/iris)[![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=flat-square)](http://goreportcard.com/report/kataras/iris)[![github closed issues](https://img.shields.io/github/issues-closed-raw/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/issues?q=is%3Aissue+is%3Aclosed)[![release](https://img.shields.io/github/release/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/releases)[![view examples](https://img.shields.io/badge/learn%20by-examples-0077b3.svg?style=flat-square)](https://github.com/kataras/iris/tree/master/_examples)[![chat](https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square)](https://kataras.rocket.chat/channel/iris)[![CLA assistant](https://cla-assistant.io/readme/badge/kataras/iris?style=flat-square)](https://cla-assistant.io/kataras/iris)
