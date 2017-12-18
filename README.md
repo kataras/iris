@@ -4,7 +4,7 @@ Do you remember, last Christmas? I did publish the version 6 with net/http and H
 
 I tend to make surprises by giving you the most unique and useful features, especially on Christmas period.
 
-This year, I intend to do give you more gifts.
+This year, I intend to give you more gifts.
 
 Don't worry, it will not contain any breaking changes, except of some MVC concepts that are re-designed.
 
