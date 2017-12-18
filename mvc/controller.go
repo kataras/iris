@@ -44,7 +44,7 @@ var (
 )
 
 // ControllerActivator returns a new controller type info description.
-// Its functionality can be overriden by the end-dev.
+// Its functionality can be overridden by the end-dev.
 type ControllerActivator struct {
 	// the router is used on the `Activate` and can be used by end-dev on the `BeforeActivation`
 	// to register any custom controller's methods as handlers.

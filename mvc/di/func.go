@@ -13,7 +13,7 @@ type (
 
 	FuncInjector struct {
 		// the original function, is being used
-		// only the .Call, which is refering to the same function, always.
+		// only the .Call, which is referring to the same function, always.
 		fn reflect.Value
 
 		inputs []*targetFuncInput

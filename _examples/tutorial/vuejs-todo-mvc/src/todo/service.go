@@ -47,7 +47,7 @@ func (s *MemoryService) Save(newItem Item) error {
 		newItem.ID = s.getLatestID() + 1
 	}
 
-	//  full replace here for the shake of simplicy)
+	//  full replace here for the shake of simplicity)
 	s.items[newItem.ID] = newItem
 	return nil
 }

@@ -813,7 +813,7 @@ type Context interface {
 
 	// String returns the string representation of this request.
 	// Each context has a unique string representation.
-	// It can be used for simple debugging scenarions, i.e print context as string.
+	// It can be used for simple debugging scenarios, i.e print context as string.
 	//
 	// What it returns? A number which declares the length of the
 	// total `String` calls per executable application, followed
@@ -2748,7 +2748,7 @@ func LastCapturedContextID() uint64 {
 
 // String returns the string representation of this request.
 // Each context has a unique string representation.
-// It can be used for simple debugging scenarions, i.e print context as string.
+// It can be used for simple debugging scenarios, i.e print context as string.
 //
 // What it returns? A number which declares the length of the
 // total `String` calls per executable application, followed

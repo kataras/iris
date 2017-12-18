@@ -28,14 +28,14 @@ func New() *D {
 	return &D{}
 }
 
-// Hijack sets a hijacker function, read the `Hijacker` type for more explaination.
+// Hijack sets a hijacker function, read the `Hijacker` type for more explanation.
 func (d *D) Hijack(fn Hijacker) *D {
 	d.hijacker = fn
 	return d
 }
 
 // GoodFunc sets a type checker for a valid function that can be binded,
-// read the `TypeChecker` type for more explaination.
+// read the `TypeChecker` type for more explanation.
 func (d *D) GoodFunc(fn TypeChecker) *D {
 	d.goodFunc = fn
 	return d
