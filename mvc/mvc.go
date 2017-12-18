@@ -53,7 +53,7 @@ func (app *Application) Configure(configurators ...func(*Application)) *Applicat
 // controller's methods, if matching.
 //
 // The dependencies can be changed per-controller as well via a `beforeActivate`
-// on the `Register` method or when the controller has the `BeforeActivation(c *ControllerActivator)`
+// on the `Register` method or when the controller has the `BeforeActivation(b BeforeActivation)`
 // method defined.
 //
 // It returns this Application.
