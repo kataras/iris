@@ -147,6 +147,8 @@ func (c *ExampleController) BeforeActivation(b mvc.BeforeActivation) {
 	b.Handle("GET", "/mypath/{param}", "DoIt", optionalMiddlewareHere...)
 }
 
-func (c *ExampleController) AfterActivation(a mvc.AfterActivation)
+// After activation, all dependencies are set-ed - so read only access on them
+// but still possible to add custom controller or simple standard handlers.
+func (c *ExampleController) AfterActivation(a mvc.AfterActivation) {}
 
 */

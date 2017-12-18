@@ -73,8 +73,8 @@ func (c *TodoController) BeforeActivation(b mvc.BeforeActivation) {
 	b.Handle("GET", "/custom", "Custom")
 }
 
-func (c *TodoController) AfterActivation(b mvc.BeforeActivation) {
-	if !b.IsRequestScoped() {
+func (c *TodoController) AfterActivation(a mvc.AfterActivation) {
+	if !a.IsRequestScoped() {
 		panic("TodoController should be request scoped, we have a 'Session' which depends on the context.")
 	}
 }
