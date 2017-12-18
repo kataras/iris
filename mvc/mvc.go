@@ -3,7 +3,7 @@ package mvc
 import "github.com/kataras/iris/core/router"
 
 // Application is the high-level compoment of the "mvc" package.
-// It's the API that you will be using to register controllers among wih their
+// It's the API that you will be using to register controllers among with their
 // dependencies that your controllers may expecting.
 // It contains the Router(iris.Party) in order to be able to register
 // template layout, middleware, done handlers as you used with the
