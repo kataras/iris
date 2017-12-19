@@ -83,13 +83,14 @@ func MakeStructInjector(v reflect.Value, hijack Hijacker, goodFunc TypeChecker, 
 
 	s.HasFields = len(s.fields) > 0
 	// set the overall state of this injector.
-	s.setState()
 	s.fillStruct()
+	s.setState()
 
 	return s
 }
 
 // set the state, once.
+// Here the "initRef" have already the static bindings and the manually-filled fields.
 func (s *StructInjector) setState() {
 	// note for zero length of struct's fields:
 	// if struct doesn't contain any field
@@ -102,21 +103,31 @@ func (s *StructInjector) setState() {
 	// added the `.State` now.
 
 	staticBindingsFieldsLength := s.countBindType(Static)
-	structFieldsLength := NumFields(s.elemType, false)
+	allStructFieldsLength := NumFields(s.elemType, false)
+	// check if unexported(and exported) fields are set-ed manually or via binding (at this time we have all fields set-ed inside the "initRef")
+	// i.e &Controller{unexportedField: "my value"}
+	// or dependencies values = "my value" and Controller struct {Field string}
+	// if so then set the temp staticBindingsFieldsLength to that number, so for example:
+	// if static binding length is 0
+	// but an unexported field is set-ed then act that as singleton.
+	if allStructFieldsLength > staticBindingsFieldsLength {
+		structFieldsUnexportedNonZero := LookupNonZeroFieldsValues(s.initRef, false)
+		staticBindingsFieldsLength = len(structFieldsUnexportedNonZero)
+	}
 
 	// println("staticBindingsFieldsLength: ", staticBindingsFieldsLength)
-	// println("structFieldsLength: ", structFieldsLength)
+	// println("allStructFieldsLength: ", allStructFieldsLength)
 
 	// if the number of static values binded is equal to the
 	// total struct's fields(including unexported fields this time) then set as singleton.
-	if staticBindingsFieldsLength == structFieldsLength {
+	if staticBindingsFieldsLength == allStructFieldsLength {
 		s.State = Singleton
+		// the default is `Stateless`, which means that a new instance should be created
+		//  on each inject action by the caller.
 		return
 	}
 
 	s.CanInject = s.State == Stateless && s.HasFields
-	// the default is `Stateless`, which means that a new instance should be created
-	//  on each inject action by the caller.
 }
 
 // fill the static bindings values once.
