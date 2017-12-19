@@ -143,7 +143,7 @@ func (s *StructInjector) fillStruct() {
 		// if field is Static then set it to the value that passed by the caller,
 		// so will have the static bindings already and we can just use that value instead
 		// of creating new instance.
-		if s.State == Singleton && f.Object.BindType == Static {
+		if f.Object.BindType == Static {
 			destElem.FieldByIndex(f.FieldIndex).Set(f.Object.Value)
 		}
 	}
