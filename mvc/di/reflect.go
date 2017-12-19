@@ -66,6 +66,13 @@ func ValueOf(o interface{}) reflect.Value {
 	return reflect.ValueOf(o)
 }
 
+func ValuesOf(valuesAsInterface []interface{}) (values []reflect.Value) {
+	for _, v := range valuesAsInterface {
+		values = append(values, ValueOf(v))
+	}
+	return
+}
+
 func IndirectType(typ reflect.Type) reflect.Type {
 	switch typ.Kind() {
 	case reflect.Ptr, reflect.Array, reflect.Chan, reflect.Map, reflect.Slice:
@@ -115,9 +122,10 @@ func structFieldIgnored(f reflect.StructField) bool {
 }
 
 type field struct {
-	Type  reflect.Type
-	Index []int  // the index of the field, slice if it's part of a embedded struct
-	Name  string // the actual name
+	Type   reflect.Type
+	Name   string // the actual name.
+	Index  []int  // the index of the field, slice if it's part of a embedded struct
+	CanSet bool   // is true if it's exported.
 
 	// this could be empty, but in our cases it's not,
 	// it's filled with the bind object (as service which means as static value)
@@ -127,11 +135,11 @@ type field struct {
 
 // NumFields returns the total number of fields, and the embedded, even if the embedded struct is not exported,
 // it will check for its exported fields.
-func NumFields(elemTyp reflect.Type) int {
-	return len(lookupFields(elemTyp, nil))
+func NumFields(elemTyp reflect.Type, skipUnexported bool) int {
+	return len(lookupFields(elemTyp, skipUnexported, nil))
 }
 
-func lookupFields(elemTyp reflect.Type, parentIndex []int) (fields []field) {
+func lookupFields(elemTyp reflect.Type, skipUnexported bool, parentIndex []int) (fields []field) {
 	if elemTyp.Kind() != reflect.Struct {
 		return
 	}
@@ -141,14 +149,15 @@ func lookupFields(elemTyp reflect.Type, parentIndex []int) (fields []field) {
 
 		if IndirectType(f.Type).Kind() == reflect.Struct &&
 			!structFieldIgnored(f) {
-			fields = append(fields, lookupFields(f.Type, append(parentIndex, i))...)
+			fields = append(fields, lookupFields(f.Type, skipUnexported, append(parentIndex, i))...)
 			continue
 		}
 
 		// skip unexported fields here,
 		// after the check for embedded structs, these can be binded if their
 		// fields are exported.
-		if f.PkgPath != "" {
+		isExported := f.PkgPath == ""
+		if skipUnexported && !isExported {
 			continue
 		}
 
@@ -158,9 +167,10 @@ func lookupFields(elemTyp reflect.Type, parentIndex []int) (fields []field) {
 		}
 
 		field := field{
-			Type:  f.Type,
-			Name:  f.Name,
-			Index: index,
+			Type:   f.Type,
+			Name:   f.Name,
+			Index:  index,
+			CanSet: isExported,
 		}
 
 		fields = append(fields, field)
@@ -172,12 +182,13 @@ func lookupFields(elemTyp reflect.Type, parentIndex []int) (fields []field) {
 // LookupNonZeroFieldsValues lookup for filled fields based on the "v" struct value instance.
 // It returns a slice of reflect.Value (same type as `Values`) that can be binded,
 // like the end-developer's custom values.
-func LookupNonZeroFieldsValues(v reflect.Value) (bindValues []reflect.Value) {
+func LookupNonZeroFieldsValues(v reflect.Value, skipUnexported bool) (bindValues []reflect.Value) {
 	elem := IndirectValue(v)
-	fields := lookupFields(IndirectType(v.Type()), nil)
-	for _, f := range fields {
+	fields := lookupFields(IndirectType(v.Type()), skipUnexported, nil)
 
-		if fieldVal := elem.FieldByIndex(f.Index); f.Type.Kind() == reflect.Ptr && !IsZero(fieldVal) {
+	for _, f := range fields {
+		if fieldVal := elem.FieldByIndex(f.Index); /*f.Type.Kind() == reflect.Ptr &&*/
+		!IsZero(fieldVal) {
 			bindValues = append(bindValues, fieldVal)
 		}
 	}

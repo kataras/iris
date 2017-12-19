@@ -165,8 +165,7 @@ func DispatchCommon(ctx context.Context,
 //
 // where Get is an HTTP METHOD.
 func DispatchFuncResult(ctx context.Context, values []reflect.Value) {
-	numOut := len(values)
-	if numOut == 0 {
+	if len(values) == 0 {
 		return
 	}
 
@@ -195,54 +194,107 @@ func DispatchFuncResult(ctx context.Context, values []reflect.Value) {
 	)
 
 	for _, v := range values {
+
 		// order of these checks matters
 		// for example, first  we need to check for status code,
 		// secondly the string (for content type and content)...
+		// if !v.IsValid() || !v.CanInterface() {
+		// 	continue
+		// }
 		if !v.IsValid() {
 			continue
 		}
 
 		f := v.Interface()
+		/*
+				if b, ok := f.(bool); ok {
+					found = b
+					if !found {
+						// skip everything, we don't care about other return values,
+						// this boolean is the higher in order.
+						break
+					}
+					continue
+				}
 
-		if b, ok := f.(bool); ok {
-			found = b
+				if i, ok := f.(int); ok {
+					statusCode = i
+					continue
+				}
+
+				if s, ok := f.(string); ok {
+					// a string is content type when it contains a slash and
+					// content or custom struct is being calculated already;
+					// (string -> content, string-> content type)
+					// (customStruct, string -> content type)
+					if (len(content) > 0 || custom != nil) && strings.IndexByte(s, slashB) > 0 {
+						contentType = s
+					} else {
+						// otherwise is content
+						content = []byte(s)
+					}
+
+					continue
+				}
+
+				if b, ok := f.([]byte); ok {
+					// it's raw content, get the latest
+					content = b
+					continue
+				}
+
+				if e, ok := f.(compatibleErr); ok {
+					if e != nil { // it's always not nil but keep it here.
+						err = e
+						if statusCode < 400 {
+							statusCode = DefaultErrStatusCode
+						}
+						break // break on first error, error should be in the end but we
+						// need to know break the dispatcher if any error.
+						// at the end; we don't want to write anything to the response if error is not nil.
+					}
+					continue
+				}
+
+				// else it's a custom struct or a dispatcher, we'll decide later
+				// because content type and status code matters
+				// do that check in order to be able to correctly dispatch:
+				// (customStruct, error) -> customStruct filled and error is nil
+				if custom == nil && f != nil {
+					custom = f
+				}
+
+			}
+
+		*/
+		switch value := f.(type) {
+		case bool:
+			found = value
 			if !found {
-				// skip everything, we don't care about other return values,
+				// skip everything, skip other values, we don't care about other return values,
 				// this boolean is the higher in order.
 				break
 			}
-			continue
-		}
-
-		if i, ok := f.(int); ok {
-			statusCode = i
-			continue
-		}
-
-		if s, ok := f.(string); ok {
+		case int:
+			statusCode = value
+		case string:
 			// a string is content type when it contains a slash and
 			// content or custom struct is being calculated already;
 			// (string -> content, string-> content type)
 			// (customStruct, string -> content type)
-			if (len(content) > 0 || custom != nil) && strings.IndexByte(s, slashB) > 0 {
-				contentType = s
+			if (len(content) > 0 || custom != nil) && strings.IndexByte(value, slashB) > 0 {
+				contentType = value
 			} else {
 				// otherwise is content
-				content = []byte(s)
+				content = []byte(value)
 			}
 
-			continue
-		}
-
-		if b, ok := f.([]byte); ok {
+		case []byte:
 			// it's raw content, get the latest
-			content = b
-			continue
-		}
-
-		if e, ok := f.(compatibleErr); ok {
-			if e != nil { // it's always not nil but keep it here.
-				err = e
+			content = value
+		case compatibleErr:
+			if value != nil { // it's always not nil but keep it here.
+				err = value
 				if statusCode < 400 {
 					statusCode = DefaultErrStatusCode
 				}
@@ -250,17 +302,15 @@ func DispatchFuncResult(ctx context.Context, values []reflect.Value) {
 				// need to know break the dispatcher if any error.
 				// at the end; we don't want to write anything to the response if error is not nil.
 			}
-			continue
+		default:
+			// else it's a custom struct or a dispatcher, we'll decide later
+			// because content type and status code matters
+			// do that check in order to be able to correctly dispatch:
+			// (customStruct, error) -> customStruct filled and error is nil
+			if custom == nil && f != nil {
+				custom = f
+			}
 		}
-
-		// else it's a custom struct or a dispatcher, we'll decide later
-		// because content type and status code matters
-		// do that check in order to be able to correctly dispatch:
-		// (customStruct, error) -> customStruct filled and error is nil
-		if custom == nil && f != nil {
-			custom = f
-		}
-
 	}
 
 	DispatchCommon(ctx, statusCode, contentType, content, custom, err, found)

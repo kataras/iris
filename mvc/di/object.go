@@ -12,6 +12,15 @@ const (
 	Dynamic                 // dynamic value, depends on some input arguments from the caller.
 )
 
+func bindTypeString(typ BindType) string {
+	switch typ {
+	case Dynamic:
+		return "Dynamic"
+	default:
+		return "Static"
+	}
+}
+
 type BindObject struct {
 	Type  reflect.Type // the Type of 'Value' or the type of the returned 'ReturnValue' .
 	Value reflect.Value

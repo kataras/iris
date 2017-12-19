@@ -8,6 +8,8 @@ type ValuesReadOnly interface {
 	Has(value interface{}) bool
 	// Len returns the length of the values.
 	Len() int
+	// Clone returns a copy of the current values.
+	Clone() Values
 }
 
 type Values []reflect.Value
@@ -27,21 +29,29 @@ func (bv Values) Clone() Values {
 	return NewValues()
 }
 
+// CloneWithFieldsOf will return a copy of the current values
+// plus the "v" struct's fields that are filled(non-zero) by the caller.
+func (bv Values) CloneWithFieldsOf(s interface{}) Values {
+	values := bv.Clone()
+
+	// add the manual filled fields to the dependencies.
+	filledFieldValues := LookupNonZeroFieldsValues(ValueOf(s), true)
+	values = append(values, filledFieldValues...)
+	return values
+}
+
 func (bv Values) Len() int {
 	return len(bv)
 }
 
-// Add binds values to this controller, if you want to share
-// binding values between controllers use the Engine's `Bind` function instead.
+// Add adds values as dependencies, if the struct's fields
+// or the function's input arguments needs them, they will be defined as
+// bindings (at build-time) and they will be used (at serve-time).
 func (bv *Values) Add(values ...interface{}) {
-	for _, val := range values {
-		bv.AddValue(reflect.ValueOf(val))
-	}
+	bv.AddValues(ValuesOf(values)...)
 }
 
-// AddValue same as `Add` but accepts reflect.Value
-// instead.
-func (bv *Values) AddValue(values ...reflect.Value) {
+func (bv *Values) AddValues(values ...reflect.Value) {
 	for _, v := range values {
 		if !goodVal(v) {
 			continue
@@ -115,6 +125,6 @@ func (bv *Values) addIfNotExists(v reflect.Value) bool {
 		return false
 	}
 
-	bv.AddValue(v)
+	bv.Add(v)
 	return true
 }
