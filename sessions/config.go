@@ -58,7 +58,8 @@ type (
 
 		// AllowReclaim will allow to
 		// Destroy and Start a session in the same request handler.
-		// All it does is that it removes the cookie for both `Request` and `ResponseWriter`.
+		// All it does is that it removes the cookie for both `Request` and `ResponseWriter` while `Destroy`
+		// or add a new cookie to `Request` while `Start`.
 		//
 		// Defaults to false.
 		AllowReclaim bool

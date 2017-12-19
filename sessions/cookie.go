@@ -31,9 +31,11 @@ func GetCookie(ctx context.Context, name string) string {
 }
 
 // AddCookie adds a cookie
-func AddCookie(ctx context.Context, cookie *http.Cookie) {
+func AddCookie(ctx context.Context, cookie *http.Cookie, reclaim bool) {
 	// http.SetCookie(ctx.ResponseWriter(), cookie)
-	// ctx.Request().AddCookie(cookie)
+	if reclaim {
+		ctx.Request().AddCookie(cookie)
+	}
 	ctx.SetCookie(cookie)
 }
 
@@ -50,7 +52,7 @@ func RemoveCookie(ctx context.Context, name string, purge bool) {
 	c.MaxAge = -1
 	c.Value = ""
 	c.Path = "/"
-	AddCookie(ctx, c)
+	AddCookie(ctx, c, purge)
 
 	if purge {
 		// delete request's cookie also, which is temporary available.
