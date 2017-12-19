@@ -15,6 +15,7 @@ import (
 // Therefore I should reduce some "freedom of change" for the shake of code maintanability in the core/router files: handler.go | router.go and single change on APIBuilder's field.
 func main() {
 	app := iris.New()
+	app.Logger().SetLevel("debug")
 	mvc.New(app.Party("/todo")).Configure(TodoApp)
 	// no let's have a clear "mvc" package without any conversions and type aliases,
 	// it's one extra import path for a whole new world, it worths it.
@@ -74,8 +75,8 @@ func (c *TodoController) BeforeActivation(b mvc.BeforeActivation) {
 }
 
 func (c *TodoController) AfterActivation(a mvc.AfterActivation) {
-	if !a.IsRequestScoped() {
-		panic("TodoController should be request scoped, we have a 'Session' which depends on the context.")
+	if a.Singleton() {
+		panic("TodoController should be stateless, a request-scoped, we have a 'Session' which depends on the context.")
 	}
 }
 

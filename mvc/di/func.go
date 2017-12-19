@@ -85,22 +85,15 @@ func MakeFuncInjector(fn reflect.Value, hijack Hijacker, goodFunc TypeChecker, v
 		}
 	}
 
-	// s.Length = n
 	s.Length = len(s.inputs)
 	s.Valid = s.Length > 0
 
 	for i, in := range s.inputs {
-		bindmethodTyp := "Static"
-
-		if in.Object.BindType == Dynamic {
-			bindmethodTyp = "Dynamic"
-		}
-
+		bindmethodTyp := bindTypeString(in.Object.BindType)
 		typIn := typ.In(in.InputIndex)
 		// remember: on methods that are part of a struct (i.e controller)
 		// the input index  = 1 is the begggining instead of the 0,
 		// because the 0 is the controller receiver pointer of the method.
-
 		s.trace += fmt.Sprintf("[%d] %s binding: '%s' for input position: %d and type: '%s'\n", i+1, bindmethodTyp, in.Object.Type.String(), in.InputIndex, typIn.String())
 	}
 

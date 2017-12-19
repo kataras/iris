@@ -469,8 +469,8 @@ func (c *testControllerNotCreateNewDueManuallySettingAllFields) AfterActivation(
 			--  got dependencies length: %d`, n)
 	}
 
-	if a.IsRequestScoped() {
-		c.T.Fatalf(`this controller shouldn't be tagged used as request scoped(create new instances on each request),
+	if !a.Singleton() {
+		c.T.Fatalf(`this controller should be tagged as Singleton. It shouldn't be tagged used as request scoped(create new instances on each request),
 		 it doesn't contain any dynamic value or dependencies that should be binded via the iris mvc engine`)
 	}
 }

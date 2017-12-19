@@ -85,7 +85,9 @@ func (e *Engine) Handler(handler interface{}) context.Handler {
 //
 // Examples at: https://github.com/kataras/iris/tree/master/_examples/mvc.
 func (e *Engine) Controller(router router.Party, controller interface{}, beforeActivate ...func(BeforeActivation)) {
-	ca := newControllerActivator(router, controller, e.Dependencies.Clone())
+	// add the manual filled fields to the dependencies.
+	dependencies := e.Dependencies.CloneWithFieldsOf(controller)
+	ca := newControllerActivator(router, controller, dependencies)
 
 	// give a priority to the "beforeActivate"
 	// callbacks, if any.

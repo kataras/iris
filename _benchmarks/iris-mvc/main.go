@@ -13,7 +13,9 @@ import (
 
 func main() {
 	app := iris.New()
-	mvc.New(app.Party("/api/values/{id}")).Register(new(controllers.ValuesController))
+	mvc.New(app.Party("/api/values/{id}")).
+		Register(new(controllers.ValuesController))
+
 	app.Run(iris.Addr(":5000"), iris.WithoutVersionChecker)
 }
 
