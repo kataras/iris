@@ -137,6 +137,9 @@ type (
 	Connection interface {
 		// Emitter implements EmitMessage & Emit
 		Emitter
+		// Err is not nil if the upgrader failed to upgrade http to websocket connection.
+		Err() error
+
 		// ID returns the connection's identifier
 		ID() string
 
@@ -181,6 +184,11 @@ type (
 		// Note: the callback(s) called right before the server deletes the connection from the room
 		// so the connection theoretical can still send messages to its room right before it is being disconnected.
 		OnLeave(roomLeaveCb LeaveRoomFunc)
+		// Wait starts the pinger and the messages reader,
+		// it's named as "Wait" because it should be called LAST,
+		// after the "On" events IF server's `Upgrade` is used,
+		// otherise you don't have to call it because the `Handler()` does it automatically.
+		Wait()
 		// Disconnect disconnects the client, close the underline websocket conn and removes it from the conn list
 		// returns the error, if any, from the underline connection
 		Disconnect() error
@@ -197,6 +205,7 @@ type (
 	}
 
 	connection struct {
+		err                      error
 		underline                UnderlineConnection
 		id                       string
 		messageType              int
@@ -207,6 +216,7 @@ type (
 		onPingListeners          []PingFunc
 		onNativeMessageListeners []NativeMessageFunc
 		onEventListeners         map[string][]MessageFunc
+		started                  bool
 		// these were  maden for performance only
 		self      Emitter // pre-defined emitter than sends message to its self client
 		broadcast Emitter // pre-defined emitter that sends message to all except this
@@ -237,6 +247,7 @@ func newConnection(ctx context.Context, s *Server, underlineConn UnderlineConnec
 		onErrorListeners:         make([]ErrorFunc, 0),
 		onNativeMessageListeners: make([]NativeMessageFunc, 0),
 		onEventListeners:         make(map[string][]MessageFunc, 0),
+		started:                  false,
 		ctx:                      ctx,
 		server:                   s,
 	}
@@ -250,6 +261,11 @@ func newConnection(ctx context.Context, s *Server, underlineConn UnderlineConnec
 	c.all = newEmitter(c, All)
 
 	return c
+}
+
+// Err is not nil if the upgrader failed to upgrade http to websocket connection.
+func (c *connection) Err() error {
+	return c.err
 }
 
 // write writes a raw websocket message with a specific type to the client
@@ -320,6 +336,13 @@ func (c *connection) startPinger() {
 			}
 		}
 	}()
+}
+
+func (c *connection) fireOnPing() {
+	// fire the onPingListeners
+	for i := range c.onPingListeners {
+		c.onPingListeners[i]()
+	}
 }
 
 func (c *connection) startReader() {
@@ -503,11 +526,20 @@ func (c *connection) fireOnLeave(roomName string) {
 	}
 }
 
-func (c *connection) fireOnPing() {
-	// fire the onPingListeners
-	for i := range c.onPingListeners {
-		c.onPingListeners[i]()
+// Wait starts the pinger and the messages reader,
+// it's named as "Wait" because it should be called LAST,
+// after the "On" events IF server's `Upgrade` is used,
+// otherise you don't have to call it because the `Handler()` does it automatically.
+func (c *connection) Wait() {
+	if c.started {
+		return
 	}
+	c.started = true
+	// start the ping
+	c.startPinger()
+
+	// start the messages reader
+	c.startReader()
 }
 
 func (c *connection) Disconnect() error {
