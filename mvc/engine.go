@@ -84,30 +84,24 @@ func (e *Engine) Handler(handler interface{}) context.Handler {
 // where Get is an HTTP Method func.
 //
 // Examples at: https://github.com/kataras/iris/tree/master/_examples/mvc.
-func (e *Engine) Controller(router router.Party, controller interface{}, beforeActivate ...func(BeforeActivation)) {
-	// add the manual filled fields to the dependencies.
-	dependencies := e.Dependencies.CloneWithFieldsOf(controller)
-	ca := newControllerActivator(router, controller, dependencies)
+func (e *Engine) Controller(router router.Party, controller interface{}) {
+	// initialize the controller's activator, nothing too magical so far.
+	c := newControllerActivator(router, controller, e.Dependencies)
 
-	// give a priority to the "beforeActivate"
-	// callbacks, if any.
-	for _, cb := range beforeActivate {
-		cb(ca)
-	}
-
-	// check if controller has an "BeforeActivation" function
-	// which accepts the controller activator and call it.
-	if activateListener, ok := controller.(interface {
+	// check the controller's "BeforeActivation" or/and "AfterActivation" method(s) between the `activate`
+	// call, which is simply parses the controller's methods, end-dev can register custom controller's methods
+	// by using the BeforeActivation's (a ControllerActivation) `.Handle` method.
+	if before, ok := controller.(interface {
 		BeforeActivation(BeforeActivation)
 	}); ok {
-		activateListener.BeforeActivation(ca)
+		before.BeforeActivation(c)
 	}
 
-	ca.activate()
+	c.activate()
 
-	if afterActivateListener, ok := controller.(interface {
+	if after, okAfter := controller.(interface {
 		AfterActivation(AfterActivation)
-	}); ok {
-		afterActivateListener.AfterActivation(ca)
+	}); okAfter {
+		after.AfterActivation(c)
 	}
 }

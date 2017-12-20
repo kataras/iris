@@ -57,15 +57,14 @@ func (d *D) Clone() *D {
 // with the injector's `Inject` and `InjectElem` methods.
 func (d *D) Struct(s interface{}) *StructInjector {
 	if s == nil {
-		return nil
+		return &StructInjector{HasFields: false}
 	}
-	v := ValueOf(s)
 
 	return MakeStructInjector(
-		v,
+		ValueOf(s),
 		d.hijacker,
 		d.goodFunc,
-		d.Values...,
+		d.Values.CloneWithFieldsOf(s)...,
 	)
 }
 
@@ -75,6 +74,10 @@ func (d *D) Struct(s interface{}) *StructInjector {
 // to the function's input argument when called
 // with the injector's `Fill` method.
 func (d *D) Func(fn interface{}) *FuncInjector {
+	if fn == nil {
+		return &FuncInjector{Valid: false}
+	}
+
 	return MakeFuncInjector(
 		ValueOf(fn),
 		d.hijacker,

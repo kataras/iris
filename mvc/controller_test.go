@@ -486,8 +486,6 @@ func TestControllerNotCreateNewDueManuallySettingAllFields(t *testing.T) {
 		TitlePointer: &testBindType{
 			title: "my title",
 		},
-	}, func(b BeforeActivation) {
-
 	})
 
 	e := httptest.New(t, app)

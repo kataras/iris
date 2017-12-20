@@ -50,7 +50,9 @@ func TestPathParamBinder(t *testing.T) {
 		t.Fatalf("expected the param 'username' to be '%s' but got '%s'", expectedUsername, got)
 	}
 
-	// test the non executed if param not found.
+	/* this is useless, we don't need to check if ctx.Stopped
+	   inside bindings, this is middleware's job.
+	// test the non executed if param not found -> this is already done in Iris if real context, so ignore it.
 	executed = false
 	got = ""
 
@@ -63,4 +65,5 @@ func TestPathParamBinder(t *testing.T) {
 	if executed {
 		t.Fatalf("expected the handler to not be executed")
 	}
+	*/
 }

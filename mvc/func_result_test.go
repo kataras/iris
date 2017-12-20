@@ -264,9 +264,10 @@ func (t *testControllerViewResultRespectCtxViewData) Get() Result {
 
 func TestControllerViewResultRespectCtxViewData(t *testing.T) {
 	app := iris.New()
-	NewEngine().Controller(app, new(testControllerViewResultRespectCtxViewData), func(b BeforeActivation) {
-		b.Dependencies().Add(t)
-	})
+	m := NewEngine()
+	m.Dependencies.Add(t)
+	m.Controller(app.Party("/"), new(testControllerViewResultRespectCtxViewData))
+
 	e := httptest.New(t, app)
 
 	e.GET("/").Expect().Status(iris.StatusInternalServerError)

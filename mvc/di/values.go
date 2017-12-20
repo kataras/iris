@@ -2,16 +2,6 @@ package di
 
 import "reflect"
 
-type ValuesReadOnly interface {
-	// Has returns true if a binder responsible to
-	// bind and return a type of "typ" is already registered to this controller.
-	Has(value interface{}) bool
-	// Len returns the length of the values.
-	Len() int
-	// Clone returns a copy of the current values.
-	Clone() Values
-}
-
 type Values []reflect.Value
 
 func NewValues() Values {
@@ -30,7 +20,7 @@ func (bv Values) Clone() Values {
 }
 
 // CloneWithFieldsOf will return a copy of the current values
-// plus the "v" struct's fields that are filled(non-zero) by the caller.
+// plus the "s" struct's fields that are filled(non-zero) by the caller.
 func (bv Values) CloneWithFieldsOf(s interface{}) Values {
 	values := bv.Clone()
 

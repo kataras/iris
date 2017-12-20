@@ -24,7 +24,7 @@ type BaseController interface {
 type shared interface {
 	Name() string
 	Router() router.Party
-	Handle(method, path, funcName string, middleware ...context.Handler) *router.Route
+	Handle(httpMethod, path, funcName string, middleware ...context.Handler) *router.Route
 }
 
 type BeforeActivation interface {
@@ -34,7 +34,7 @@ type BeforeActivation interface {
 
 type AfterActivation interface {
 	shared
-	DependenciesReadOnly() di.ValuesReadOnly
+	DependenciesReadOnly() ValuesReadOnly
 	Singleton() bool
 }
 
@@ -66,12 +66,12 @@ type ControllerActivator struct {
 	// on incoming requests.
 	dependencies di.Values
 
-	// on activate.
+	// initialized on the first `Handle`.
 	injector *di.StructInjector
 }
 
-func getNameOf(typ reflect.Type) string {
-	elemTyp := di.IndirectType(typ)
+func NameOf(v interface{}) string {
+	elemTyp := di.IndirectType(di.ValueOf(v).Type())
 
 	typName := elemTyp.Name()
 	pkgPath := elemTyp.PkgPath()
@@ -80,22 +80,17 @@ func getNameOf(typ reflect.Type) string {
 	return fullname
 }
 
-func newControllerActivator(router router.Party, controller interface{}, dependencies di.Values) *ControllerActivator {
-	var (
-		val = reflect.ValueOf(controller)
-		typ = val.Type()
-
-		// the full name of the controller: its type including the package path.
-		fullName = getNameOf(typ)
-	)
+func newControllerActivator(router router.Party, controller interface{}, dependencies []reflect.Value) *ControllerActivator {
+	typ := reflect.TypeOf(controller)
 
 	c := &ControllerActivator{
 		// give access to the Router to the end-devs if they need it for some reason,
 		// i.e register done handlers.
-		router:   router,
-		Value:    val,
-		Type:     typ,
-		fullName: fullName,
+		router: router,
+		Value:  reflect.ValueOf(controller),
+		Type:   typ,
+		// the full name of the controller: its type including the package path.
+		fullName: NameOf(controller),
 		// set some methods that end-dev cann't use accidentally
 		// to register a route via the `Handle`,
 		// all available exported and compatible methods
@@ -106,7 +101,8 @@ func newControllerActivator(router router.Party, controller interface{}, depende
 		// TODO: now that BaseController is totally optionally
 		// we have to check if BeginRequest and EndRequest should be here.
 		reservedMethods: whatReservedMethods(typ),
-		dependencies:    dependencies,
+		// CloneWithFieldsOf: include the manual fill-ed controller struct's fields to the dependencies.
+		dependencies: di.Values(dependencies).CloneWithFieldsOf(controller),
 	}
 
 	return c
@@ -125,7 +121,20 @@ func (c *ControllerActivator) Dependencies() *di.Values {
 	return &c.dependencies
 }
 
-func (c *ControllerActivator) DependenciesReadOnly() di.ValuesReadOnly {
+type ValuesReadOnly interface {
+	// Has returns true if a binder responsible to
+	// bind and return a type of "typ" is already registered to this controller.
+	Has(value interface{}) bool
+	// Len returns the length of the values.
+	Len() int
+	// Clone returns a copy of the current values.
+	Clone() di.Values
+	// CloneWithFieldsOf will return a copy of the current values
+	// plus the "s" struct's fields that are filled(non-zero) by the caller.
+	CloneWithFieldsOf(s interface{}) di.Values
+}
+
+func (c *ControllerActivator) DependenciesReadOnly() ValuesReadOnly {
 	return c.dependencies
 }
 
@@ -144,9 +153,9 @@ func (c *ControllerActivator) Router() router.Party {
 // any unexported fields and all fields are services-like, static.
 func (c *ControllerActivator) Singleton() bool {
 	if c.injector == nil {
-		panic("MVC: IsRequestScoped used on an invalid state the API gives access to it only `AfterActivation`, report this as bug")
+		panic("MVC: Singleton used on an invalid state the API gives access to it only `AfterActivation`, report this as bug")
 	}
-	return c.injector.State == di.Singleton
+	return c.injector.Scope == di.Singleton
 }
 
 // checks if a method is already registered.
@@ -160,18 +169,12 @@ func (c *ControllerActivator) isReservedMethod(name string) bool {
 	return false
 }
 
-func (c *ControllerActivator) parseMethod(m reflect.Method) {
-	httpMethod, httpPath, err := parseMethod(m, c.isReservedMethod)
-	if err != nil {
-		if err != errSkip {
-			err = fmt.Errorf("MVC: fail to parse the route path and HTTP method for '%s.%s': %v", c.fullName, m.Name, err)
-			c.router.GetReporter().AddErr(err)
+func (c *ControllerActivator) activate() {
+	c.parseMethods()
+}
 
-		}
-		return
-	}
-
-	c.Handle(httpMethod, httpPath, m.Name)
+func (c *ControllerActivator) addErr(err error) bool {
+	return c.router.GetReporter().AddErr(err)
 }
 
 // register all available, exported methods to handlers if possible.
@@ -183,8 +186,17 @@ func (c *ControllerActivator) parseMethods() {
 	}
 }
 
-func (c *ControllerActivator) activate() {
-	c.parseMethods()
+func (c *ControllerActivator) parseMethod(m reflect.Method) {
+	httpMethod, httpPath, err := parseMethod(m, c.isReservedMethod)
+	if err != nil {
+		if err != errSkip {
+			c.addErr(fmt.Errorf("MVC: fail to parse the route path and HTTP method for '%s.%s': %v", c.fullName, m.Name, err))
+		}
+
+		return
+	}
+
+	c.Handle(httpMethod, httpPath, m.Name)
 }
 
 // Handle registers a route based on a http method, the route's path
@@ -202,44 +214,18 @@ func (c *ControllerActivator) Handle(method, path, funcName string, middleware .
 		return nil
 	}
 
-	// Remember:
-	// we cannot simply do that and expect to work:
-	// hasStructInjector = c.injector != nil && c.injector.Valid
-	// hasFuncInjector   = funcInjector != nil && funcInjector.Valid
-	// because
-	// the `Handle` can be called from `BeforeActivation` callbacks
-	// and before activation, the c.injector is nil because
-	// we may not have the dependencies binded yet. But if `c.injector.Valid`
-	// inside the Handelr works because it's set on the `activate()` method.
-	// To solve this we can make check on the FIRST `Handle`,
-	// if c.injector is nil, then set it with the current bindings,
-	// so the user should bind the dependencies needed before the `Handle`
-	// this is a logical flow, so we will choose that one ->
-	if c.injector == nil {
-		// first, set these bindings to the passed controller, they will be useless
-		// if the struct contains any dynamic value because this controller will
-		// be never fired as it's but we make that in order to get the length of the static
-		// matched dependencies of the struct.
-		c.injector = di.MakeStructInjector(c.Value, hijacker, typeChecker, c.dependencies...)
-		if c.injector.HasFields {
-			golog.Debugf("MVC dependencies of '%s':\n%s", c.fullName, c.injector.String())
-		}
-	}
-
 	// get the method from the controller type.
 	m, ok := c.Type.MethodByName(funcName)
 	if !ok {
-		err := fmt.Errorf("MVC: function '%s' doesn't exist inside the '%s' controller",
-			funcName, c.fullName)
-		c.router.GetReporter().AddErr(err)
+		c.addErr(fmt.Errorf("MVC: function '%s' doesn't exist inside the '%s' controller",
+			funcName, c.fullName))
 		return nil
 	}
 
 	// parse a route template which contains the parameters organised.
 	tmpl, err := macro.Parse(path, c.router.Macros())
 	if err != nil {
-		err = fmt.Errorf("MVC: fail to parse the path for '%s.%s': %v", c.fullName, funcName, err)
-		c.router.GetReporter().AddErr(err)
+		c.addErr(fmt.Errorf("MVC: fail to parse the path for '%s.%s': %v", c.fullName, funcName, err))
 		return nil
 	}
 
@@ -257,16 +243,19 @@ func (c *ControllerActivator) Handle(method, path, funcName string, middleware .
 
 	// register the handler now.
 	route := c.router.Handle(method, path, append(middleware, handler)...)
-	if route != nil {
-		// change the main handler's name in order to respect the controller's and give
-		// a proper debug message.
-		route.MainHandlerName = fmt.Sprintf("%s.%s", c.fullName, funcName)
-
-		// add this as a reserved method name in order to
-		// be sure that the same func will not be registered again,
-		// even if a custom .Handle later on.
-		c.reservedMethods = append(c.reservedMethods, funcName)
+	if route == nil {
+		c.addErr(fmt.Errorf("MVC: unable to register a route for the path for '%s.%s'", c.fullName, funcName))
+		return nil
 	}
+
+	// change the main handler's name in order to respect the controller's and give
+	// a proper debug message.
+	route.MainHandlerName = fmt.Sprintf("%s.%s", c.fullName, funcName)
+
+	// add this as a reserved method name in order to
+	// be sure that the same func will not be registered again,
+	// even if a custom .Handle later on.
+	c.reservedMethods = append(c.reservedMethods, funcName)
 
 	return route
 }
@@ -274,6 +263,20 @@ func (c *ControllerActivator) Handle(method, path, funcName string, middleware .
 var emptyIn = []reflect.Value{}
 
 func (c *ControllerActivator) handlerOf(m reflect.Method, funcDependencies []reflect.Value) context.Handler {
+	// Remember:
+	// The `Handle->handlerOf` can be called from `BeforeActivation` event
+	// then, the c.injector is nil because
+	// we may not have the dependencies binded yet.
+	// To solve this we're doing a check on the FIRST `Handle`,
+	// if c.injector is nil, then set it with the current bindings,
+	// these bindings can change after, so first add dependencies and after register routes.
+	if c.injector == nil {
+		c.injector = di.MakeStructInjector(c.Value, hijacker, typeChecker, c.dependencies...)
+		if c.injector.HasFields {
+			golog.Debugf("MVC dependencies of '%s':\n%s", c.fullName, c.injector.String())
+		}
+	}
+
 	// fmt.Printf("for %s | values: %s\n", funcName, funcDependencies)
 	funcInjector := di.MakeFuncInjector(m.Func, hijacker, typeChecker, funcDependencies...)
 	// fmt.Printf("actual injector's inputs length: %d\n", funcInjector.Length)
@@ -291,14 +294,14 @@ func (c *ControllerActivator) handlerOf(m reflect.Method, funcDependencies []ref
 
 	if !implementsBase && !hasBindableFields && !hasBindableFuncInputs {
 		return func(ctx context.Context) {
-			DispatchFuncResult(ctx, call(c.injector.NewAsSlice()))
+			DispatchFuncResult(ctx, call(c.injector.AcquireSlice()))
 		}
 	}
 
 	n := m.Type.NumIn()
 	return func(ctx context.Context) {
 		var (
-			ctrl     = c.injector.New()
+			ctrl     = c.injector.Acquire()
 			ctxValue reflect.Value
 		)
 

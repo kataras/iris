@@ -6,6 +6,7 @@ import (
 	"github.com/kataras/iris/_examples/structuring/login-mvc-single-responsibility-package/user"
 
 	"github.com/kataras/iris"
+	"github.com/kataras/iris/mvc"
 	"github.com/kataras/iris/sessions"
 )
 
@@ -19,13 +20,7 @@ func main() {
 
 	app.StaticWeb("/public", "./public")
 
-	manager := sessions.New(sessions.Config{
-		Cookie:  "sessioncookiename",
-		Expires: 24 * time.Hour,
-	})
-	users := user.NewDataSource()
-
-	app.Controller("/user", new(user.Controller), manager, users)
+	mvc.Configure(app, configureMVC)
 
 	// http://localhost:8080/user/register
 	// http://localhost:8080/user/login
@@ -35,9 +30,22 @@ func main() {
 	app.Run(iris.Addr(":8080"), configure)
 }
 
+func configureMVC(app *mvc.Application) {
+	manager := sessions.New(sessions.Config{
+		Cookie:  "sessioncookiename",
+		Expires: 24 * time.Hour,
+	})
+
+	userApp := app.NewChild(app.Router.Party("/user"))
+	userApp.AddDependencies(
+		user.NewDataSource(),
+		mvc.Session(manager),
+	)
+	userApp.Register(new(user.Controller))
+}
+
 func configure(app *iris.Application) {
 	app.Configure(
 		iris.WithoutServerError(iris.ErrServerClosed),
-		iris.WithCharset("UTF-8"),
 	)
 }

@@ -5,10 +5,10 @@ import (
 	"reflect"
 )
 
-type State uint8
+type Scope uint8
 
 const (
-	Stateless State = iota
+	Stateless Scope = iota
 	Singleton
 )
 
@@ -29,7 +29,7 @@ type (
 		// see `setState`.
 		HasFields bool
 		CanInject bool // if any bindable fields when the state is NOT singleton.
-		State     State
+		Scope     Scope
 	}
 )
 
@@ -121,13 +121,13 @@ func (s *StructInjector) setState() {
 	// if the number of static values binded is equal to the
 	// total struct's fields(including unexported fields this time) then set as singleton.
 	if staticBindingsFieldsLength == allStructFieldsLength {
-		s.State = Singleton
+		s.Scope = Singleton
 		// the default is `Stateless`, which means that a new instance should be created
 		//  on each inject action by the caller.
 		return
 	}
 
-	s.CanInject = s.State == Stateless && s.HasFields
+	s.CanInject = s.Scope == Stateless && s.HasFields
 }
 
 // fill the static bindings values once.
@@ -177,15 +177,15 @@ func (s *StructInjector) InjectElem(destElem reflect.Value, ctx ...reflect.Value
 	}
 }
 
-func (s *StructInjector) New() reflect.Value {
-	if s.State == Singleton {
+func (s *StructInjector) Acquire() reflect.Value {
+	if s.Scope == Singleton {
 		return s.initRef
 	}
 	return reflect.New(s.elemType)
 }
 
-func (s *StructInjector) NewAsSlice() []reflect.Value {
-	if s.State == Singleton {
+func (s *StructInjector) AcquireSlice() []reflect.Value {
+	if s.Scope == Singleton {
 		return s.initRefAsSlice
 	}
 	return []reflect.Value{reflect.New(s.elemType)}
