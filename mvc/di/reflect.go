@@ -4,8 +4,11 @@ import "reflect"
 
 var emptyIn = []reflect.Value{}
 
-// IsZero returns true if a value is nil, remember boolean's false is zero.
+// IsZero returns true if a value is nil.
 // Remember; fields to be checked should be exported otherwise it returns false.
+// Notes for users:
+// Boolean's zero value is false, even if not set-ed.
+// UintXX are not zero on 0 because they are pointers to.
 func IsZero(v reflect.Value) bool {
 	switch v.Kind() {
 	case reflect.Struct:
