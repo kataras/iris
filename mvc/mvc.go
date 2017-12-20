@@ -34,6 +34,26 @@ func New(party router.Party) *Application {
 	return newApp(NewEngine(), party)
 }
 
+// Configure creates a new controller and configures it,
+// this function simply calls the `New(party)` and its `.Configure(configurators...)`.
+//
+// A call of `mvc.New(app.Party("/path").Configure(buildMyMVC)` is equal to
+//           	 `mvc.Configure(app.Party("/path"), buildMyMVC)`.
+//
+// Read more at `New() Application` and `Application#Configure` methods.
+func Configure(party router.Party, configurators ...func(*Application)) *Application {
+	// Author's Notes->
+	// About the Configure's comment: +5 space to be shown in equal width to the previous or after line.
+	//
+	// About the Configure's design choosen:
+	// Yes, we could just have a `New(party, configurators...)`
+	// but I think the `New()` and `Configure(configurators...)` API seems more native to programmers,
+	// at least to me and the people I ask for their opinion between them.
+	// Because the `New()` can actually return something that can be fully configured without its `Configure`,
+	// its `Configure` is there just to design the apps better and help end-devs to split their code wisely.
+	return New(party).Configure(configurators...)
+}
+
 // Configure can be used to pass one or more functions that accept this
 // Application, use this to add dependencies and controller(s).
 //
@@ -52,9 +72,9 @@ func (app *Application) Configure(configurators ...func(*Application)) *Applicat
 // will be binded to the controller's field, if matching or to the
 // controller's methods, if matching.
 //
-// The dependencies can be changed per-controller as well via a `beforeActivate`
-// on the `Register` method or when the controller has the `BeforeActivation(b BeforeActivation)`
-// method defined.
+// These dependencies "values" can be changed per-controller as well,
+// via controller's `BeforeActivation` and `AfterActivation` methods,
+// look the `Register` method for more.
 //
 // It returns this Application.
 //
@@ -68,15 +88,16 @@ func (app *Application) AddDependencies(values ...interface{}) *Application {
 // It accept any custom struct which its functions will be transformed
 // to routes.
 //
-// The second, optional and variadic argument is the "beforeActive",
-// use that when you want to modify the controller before the activation
-// and registration to the main Iris Application.
+// If "controller" has `BeforeActivation(b mvc.BeforeActivation)`
+// or/and `AfterActivation(a mvc.AfterActivation)` then these will be called between the controller's `.activate`,
+// use those when you want to modify the controller before or/and after
+// the controller will be registered to the main Iris Application.
 //
-// It returns this Application.
+// It returns this mvc Application.
 //
 // Example: `.Register(new(TodoController))`.
-func (app *Application) Register(controller interface{}, beforeActivate ...func(BeforeActivation)) *Application {
-	app.Engine.Controller(app.Router, controller, beforeActivate...)
+func (app *Application) Register(controller interface{}) *Application {
+	app.Engine.Controller(app.Router, controller)
 	return app
 }
 

@@ -10,6 +10,9 @@ var defaultSessionManager = sessions.New(sessions.Config{})
 // SessionController is a simple `Controller` implementation
 // which requires a binded session manager in order to give
 // direct access to the current client's session via its `Session` field.
+//
+// SessionController is deprecated please use the `mvc.Session(manager)` instead, it's more useful,
+// also *sessions.Session type can now `Destroy` itself without the need of the manager, embrace it.
 type SessionController struct {
 	Manager *sessions.Sessions
 	Session *sessions.Session

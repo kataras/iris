@@ -65,26 +65,23 @@ func MakeHandler(handler interface{}, bindValues ...reflect.Value) (context.Hand
 		return h, nil
 	}
 
-	s := di.MakeFuncInjector(fn, hijacker, typeChecker, bindValues...)
-	if !s.Valid {
+	funcInjector := di.MakeFuncInjector(fn, hijacker, typeChecker, bindValues...)
+	if !funcInjector.Valid {
 		pc := fn.Pointer()
 		fpc := runtime.FuncForPC(pc)
 		callerFileName, callerLineNumber := fpc.FileLine(pc)
 		callerName := fpc.Name()
 
 		err := fmt.Errorf("input arguments length(%d) and valid binders length(%d) are not equal for typeof '%s' which is defined at %s:%d by %s",
-			n, s.Length, fn.Type().String(), callerFileName, callerLineNumber, callerName)
+			n, funcInjector.Length, fn.Type().String(), callerFileName, callerLineNumber, callerName)
 		return nil, err
 	}
 
 	h := func(ctx context.Context) {
-		in := make([]reflect.Value, n, n)
-
-		s.Inject(&in, reflect.ValueOf(ctx))
-		if ctx.IsStopped() {
-			return
-		}
-		DispatchFuncResult(ctx, fn.Call(in))
+		// in := make([]reflect.Value, n, n)
+		// funcInjector.Inject(&in, reflect.ValueOf(ctx))
+		// DispatchFuncResult(ctx, fn.Call(in))
+		DispatchFuncResult(ctx, funcInjector.Call(reflect.ValueOf(ctx)))
 	}
 
 	return h, nil
