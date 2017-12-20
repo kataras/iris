@@ -212,8 +212,10 @@ Follow the examples below,
 
 - [Hello world](mvc/hello-world/main.go) **UPDATED**
 - [Session Controller](mvc/session-controller/main.go) **UPDATED**
-- [Overview - Plus Repository and Service layers](mvc/overview) **NEW**
-- [Login showcase - Plus Repository and Service layers](mvc/login) **NEW**
+- [Overview - Plus Repository and Service layers](mvc/overview) **UPDATED**
+- [Login showcase - Plus Repository and Service layers](mvc/login) **UPDATED**
+- [Singleton](mvc/singleton) **NEW**
+- [Websocket Controller](mvc/websocket) **NEW**
 
 <!-- 
 Why updated?
