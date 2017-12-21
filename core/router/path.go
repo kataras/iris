@@ -45,6 +45,26 @@ func suffix(s string, suffix string) string {
 	return s
 }
 
+func splitMethod(methodMany string) []string {
+	methodMany = strings.Trim(methodMany, " ")
+	return strings.Split(methodMany, " ")
+}
+
+func splitPath(pathMany string) (paths []string) {
+	pathMany = strings.Trim(pathMany, " ")
+	pathsWithoutSlashFromFirstAndSoOn := strings.Split(pathMany, " /")
+	for _, path := range pathsWithoutSlashFromFirstAndSoOn {
+		if path == "" {
+			continue
+		}
+		if path[0] != '/' {
+			path = "/" + path
+		}
+		paths = append(paths, path)
+	}
+	return
+}
+
 func joinPath(path1 string, path2 string) string {
 	return path.Join(path1, path2)
 }
