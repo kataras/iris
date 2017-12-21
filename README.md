@@ -1,4 +1,4 @@
-## I'm working hard on the [dev](https://github.com/kataras/iris/tree/dev) branch for the next release of Iris, v9. 
+## I'm working hard on the [dev](https://github.com/kataras/iris/tree/dev) branch for the next release of Iris. 
 
 Do you remember, last Christmas? I did publish the version 6 with net/http and HTTP/2 support, and you've embraced Iris with so much love, ultimately it was a successful move.
 

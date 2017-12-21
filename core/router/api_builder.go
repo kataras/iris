@@ -199,14 +199,12 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 // This method is used behind the scenes at the `Controller` function
 // in order to handle more than one paths for the same controller instance.
 func (api *APIBuilder) HandleMany(methodOrMulti string, relativePathorMulti string, handlers ...context.Handler) (routes []*Route) {
-	trimmedPath := strings.Trim(relativePathorMulti, " ")
-	trimmedMethod := strings.Trim(methodOrMulti, " ")
 	// at least slash
 	// a space
 	// at least one other slash for the next path
 	// app.Controller("/user /user{id}", new(UserController))
-	paths := strings.Split(trimmedPath, " ")
-	methods := strings.Split(trimmedMethod, " ")
+	paths := splitPath(relativePathorMulti)
+	methods := splitMethod(methodOrMulti)
 	for _, p := range paths {
 		if p != "" {
 			for _, method := range methods {
