@@ -27,11 +27,27 @@ type shared interface {
 	Handle(httpMethod, path, funcName string, middleware ...context.Handler) *router.Route
 }
 
+// BeforeActivation is being used as the onle one input argument of a
+// `func(c *Controller) BeforeActivation(b mvc.BeforeActivation) {}`.
+//
+// It's being called before the controller's dependencies binding to the fields or the input arguments
+// but before server ran.
+//
+// It's being used to customize a controller if needed inside the controller itself,
+// it's called once per application.
 type BeforeActivation interface {
 	shared
 	Dependencies() *di.Values
 }
 
+// AfterActivation is being used as the onle one input argument of a
+// `func(c *Controller) AfterActivation(a mvc.AfterActivation) {}`.
+//
+// It's being called after the `BeforeActivation`,
+// and after controller's dependencies binded to the fields or the input arguments but before server ran.
+//
+// It's being used to customize a controller if needed inside the controller itself,
+// it's called once per application.
 type AfterActivation interface {
 	shared
 	DependenciesReadOnly() ValuesReadOnly
@@ -70,6 +86,8 @@ type ControllerActivator struct {
 	injector *di.StructInjector
 }
 
+// NameOf returns the package name + the struct type's name,
+// it's used to take the full name of an Controller, the `ControllerActivator#Name`.
 func NameOf(v interface{}) string {
 	elemTyp := di.IndirectType(di.ValueOf(v).Type())
 
@@ -117,10 +135,15 @@ func whatReservedMethods(typ reflect.Type) []string {
 	return methods
 }
 
+// Dependencies returns the write and read access of the dependencies that are
+// came from the parent MVC Application, with this you can customize
+// the dependencies per controller, used at the `BeforeActivation`.
 func (c *ControllerActivator) Dependencies() *di.Values {
 	return &c.dependencies
 }
 
+// ValuesReadOnly returns the read-only access type of the controller's dependencies.
+// Used at `AfterActivation`.
 type ValuesReadOnly interface {
 	// Has returns true if a binder responsible to
 	// bind and return a type of "typ" is already registered to this controller.
@@ -134,14 +157,26 @@ type ValuesReadOnly interface {
 	CloneWithFieldsOf(s interface{}) di.Values
 }
 
+// DependenciesReadOnly returns the read-only access type of the controller's dependencies.
+// Used at `AfterActivation`.
 func (c *ControllerActivator) DependenciesReadOnly() ValuesReadOnly {
 	return c.dependencies
 }
 
+// Name returns the full name of the controller, its package name + the type name.
+// Can used at both `BeforeActivation` and `AfterActivation`.
 func (c *ControllerActivator) Name() string {
 	return c.fullName
 }
 
+// Router is the standard Iris router's public API.
+// With this you can register middleware, view layouts, subdomains, serve static files
+// and even add custom standard iris handlers as normally.
+//
+// This Router is the router instance that came from the parent MVC Application,
+// it's the `app.Party(...)` argument.
+//
+// Can used at both `BeforeActivation` and `AfterActivation`.
 func (c *ControllerActivator) Router() router.Party {
 	return c.router
 }
