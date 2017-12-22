@@ -45,7 +45,7 @@ func Configure(party router.Party, configurators ...func(*Application)) *Applica
 	// Author's Notes->
 	// About the Configure's comment: +5 space to be shown in equal width to the previous or after line.
 	//
-	// About the Configure's design choosen:
+	// About the Configure's design chosen:
 	// Yes, we could just have a `New(party, configurators...)`
 	// but I think the `New()` and `Configure(configurators...)` API seems more native to programmers,
 	// at least to me and the people I ask for their opinion between them.
