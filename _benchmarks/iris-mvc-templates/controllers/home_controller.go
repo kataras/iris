@@ -2,7 +2,7 @@ package controllers
 
 import "github.com/kataras/iris/mvc"
 
-type HomeController struct{ mvc.C }
+type HomeController struct{}
 
 func (c *HomeController) Get() mvc.Result {
 	return mvc.View{Name: "index.html"}

@@ -21,7 +21,7 @@ type SessionController struct {
 // BeforeActivation called, once per application lifecycle NOT request,
 // every single time the dev registers a specific SessionController-based controller.
 // It makes sure that its "Manager" field is filled
-// even if the caller didn't provide any sessions manager via the `app.Controller` function.
+// even if the caller didn't provide any sessions manager via the MVC's Application's `Register` function.
 func (s *SessionController) BeforeActivation(b BeforeActivation) {
 	if didntBindManually := b.Dependencies().AddOnce(defaultSessionManager); didntBindManually {
 		b.Router().GetReporter().Add(

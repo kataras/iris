@@ -25,25 +25,6 @@ type UsersController struct {
 	Service services.UserService
 }
 
-// This could be possible but we should not call handlers inside the `BeginRequest`.
-// Because `BeginRequest` was introduced to set common, shared variables between all method handlers
-// before their execution.
-// We will add this middleware from our `app.Controller` call.
-//
-// var authMiddleware = basicauth.New(basicauth.Config{
-// 	Users: map[string]string{
-// 		"admin": "password",
-// 	},
-// })
-//
-// func (c *UsersController) BeginRequest(ctx iris.Context) {
-//	c.C.BeginRequest(ctx)
-//
-// 	if !ctx.Proceed(authMiddleware) {
-// 		ctx.StopExecution()
-// 	}
-// }
-
 // Get returns list of the users.
 // Demo:
 // curl -i -u admin:password http://localhost:8080/users

@@ -201,7 +201,6 @@ func (api *APIBuilder) HandleMany(methodOrMulti string, relativePathorMulti stri
 	// at least slash
 	// a space
 	// at least one other slash for the next path
-	// app.Controller("/user /user{id}", new(UserController))
 	paths := splitPath(relativePathorMulti)
 	methods := splitMethod(methodOrMulti)
 	for _, p := range paths {
