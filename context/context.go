@@ -267,8 +267,7 @@ type Context interface {
 	// Although `BeginRequest` should NOT be used to call other handlers,
 	// the `BeginRequest` has been introduced to be able to set
 	// common data to all method handlers before their execution.
-	// Controllers can accept middleware(s) from the `app.Controller`
-	// function.
+	// Controllers can accept middleware(s) from the MVC's Application's Router as normally.
 	//
 	// That said let's see an example of `ctx.Proceed`:
 	//
@@ -279,7 +278,6 @@ type Context interface {
 	// })
 	//
 	// func (c *UsersController) BeginRequest(ctx iris.Context) {
-	//	c.C.BeginRequest(ctx) // call the parent's base controller BeginRequest first.
 	// 	if !ctx.Proceed(authMiddleware) {
 	// 		ctx.StopExecution()
 	// 	}
@@ -1055,8 +1053,7 @@ func (ctx *context) HandlerIndex(n int) (currentIndex int) {
 // Although `BeginRequest` should NOT be used to call other handlers,
 // the `BeginRequest` has been introduced to be able to set
 // common data to all method handlers before their execution.
-// Controllers can accept middleware(s) from the `app.Controller`
-// function.
+// Controllers can accept middleware(s) from the MVC's Application's Router as normally.
 //
 // That said let's see an example of `ctx.Proceed`:
 //
@@ -1067,7 +1064,6 @@ func (ctx *context) HandlerIndex(n int) (currentIndex int) {
 // })
 //
 // func (c *UsersController) BeginRequest(ctx iris.Context) {
-//	c.C.BeginRequest(ctx) // call the parent's base controller BeginRequest first.
 // 	if !ctx.Proceed(authMiddleware) {
 // 		ctx.StopExecution()
 // 	}

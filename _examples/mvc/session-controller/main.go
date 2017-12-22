@@ -17,7 +17,7 @@ type VisitController struct {
 	// its initialization happens by the dependency function that we've added to the `visitApp`.
 	Session *sessions.Session
 
-	// A time.time which is binded from the `app.Controller`,
+	// A time.time which is binded from the MVC,
 	// order of binded fields doesn't matter.
 	StartTime time.Time
 }
