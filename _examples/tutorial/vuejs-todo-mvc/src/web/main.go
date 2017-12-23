@@ -6,12 +6,14 @@ import (
 
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/sessions"
+	"github.com/kataras/iris/websocket"
 
 	"github.com/kataras/iris/mvc"
 )
 
 func main() {
 	app := iris.New()
+
 	// serve our app in public, public folder
 	// contains the client-side vue.js application,
 	// no need for any server-side template here,
@@ -20,20 +22,28 @@ func main() {
 	app.StaticWeb("/", "./public")
 
 	sess := sessions.New(sessions.Config{
-		Cookie: "_iris_session",
+		Cookie: "iris_session",
 	})
 
-	m := mvc.New(app.Party("/todo"))
+	ws := websocket.New(websocket.Config{})
 
+	// create our mvc application targeted to /todos relative sub path.
+	m := mvc.New(app.Party("/todos"))
 	// any dependencies bindings here...
 	m.AddDependencies(
+		todo.NewMemoryService(),
 		mvc.Session(sess),
-		new(todo.MemoryService),
+		ws.Upgrade,
 	)
+
+	// http://localhost:8080/iris-ws.js
+	// serve the javascript client library to communicate with
+	// the iris high level websocket event system.
+	m.Router.Any("/iris-ws.js", websocket.ClientHandler())
 
 	// controllers registration here...
 	m.Register(new(controllers.TodoController))
 
 	// start the web server at http://localhost:8080
-	app.Run(iris.Addr(":8080"), iris.WithoutVersionChecker, iris.WithOptimizations)
+	app.Run(iris.Addr(":8080"), iris.WithoutVersionChecker)
 }

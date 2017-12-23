@@ -1,19 +1,42 @@
-// Full spec-compliant TodoMVC with localStorage persistence
+// Full spec-compliant TodoMVC with Iris
 // and hash-based routing in ~120 effective lines of JavaScript.
 
-// localStorage persistence
-var STORAGE_KEY = 'todos-vuejs-2.0'
+// var socket = new Ws("ws://localhost:8080/todos/sync");
+
+// socket.On("saved", function () {
+//   console.log("receive: on saved");
+//   todoStorage.fetch();
+// });
+
+var todos = [];
+
 var todoStorage = {
   fetch: function () {
-    var todos = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
-    todos.forEach(function (todo, index) {
-      todo.id = index
-    })
-    todoStorage.uid = todos.length
+    axios.get("/todos").then(response => {
+      if (response.data == null) {
+        return;
+      }
+      for (var i = 0; i < response.data.length; i++) {
+        // if (todos.length <=i || todos[i] === null) {
+        //   todos.push(response.data[i]);
+        // } else {
+        //   todos[i] = response.data[i];
+        // }
+        todos.push(response.data[i]);
+      }
+    });
+
     return todos
   },
   save: function (todos) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(todos))
+    axios.post("/todos", JSON.stringify(todos)).then(response => {
+      if (!response.data.success) {
+        window.alert("saving had a failure");
+        return;
+      }
+      // console.log("send: save");
+      // socket.Emit("save")
+    });
   }
 }
 
@@ -44,11 +67,18 @@ var app = new Vue({
     visibility: 'all'
   },
 
-  // watch todos change for localStorage persistence
+  // watch todos change for persistence
   watch: {
     todos: {
       handler: function (todos) {
-        todoStorage.save(todos)
+        // // saved by this client.
+        // if (todos[todos.length - 1].id === 0) {
+        //   todoStorage.save(todos);
+        // } else {
+        //   console.log("item cannot be saved, already exists.");
+        //   console.log(todos[todos.length - 1]);
+        // }
+        todoStorage.save(todos);
       },
       deep: true
     }
@@ -90,7 +120,7 @@ var app = new Vue({
         return
       }
       this.todos.push({
-        id: todoStorage.uid++,
+        id: 0, // just for the client-side.
         title: value,
         completed: false
       })
@@ -140,7 +170,7 @@ var app = new Vue({
 })
 
 // handle routing
-function onHashChange () {
+function onHashChange() {
   var visibility = window.location.hash.replace(/#\/?/, '')
   if (filters[visibility]) {
     app.visibility = visibility
