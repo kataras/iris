@@ -21,28 +21,34 @@ func main() {
 	// back-end services, you can just stop afer this line and start the server.
 	app.StaticWeb("/", "./public")
 
+	// configure the http sessions.
 	sess := sessions.New(sessions.Config{
 		Cookie: "iris_session",
 	})
 
+	// configure the websocket server.
 	ws := websocket.New(websocket.Config{})
 
+	// create a sub router and register the client-side library for the iris websockets,
+	// you could skip it but iris websockets supports socket.io-like API.
+	todosRouter := app.Party("/todos")
+	// http://localhost:8080/todos/iris-ws.js
+	// serve the javascript client library to communicate with
+	// the iris high level websocket event system.
+	todosRouter.Any("/iris-ws.js", websocket.ClientHandler())
+
 	// create our mvc application targeted to /todos relative sub path.
-	m := mvc.New(app.Party("/todos"))
+	todosApp := mvc.New(todosRouter)
+
 	// any dependencies bindings here...
-	m.AddDependencies(
+	todosApp.AddDependencies(
 		todo.NewMemoryService(),
 		mvc.Session(sess),
 		ws.Upgrade,
 	)
 
-	// http://localhost:8080/iris-ws.js
-	// serve the javascript client library to communicate with
-	// the iris high level websocket event system.
-	m.Router.Any("/iris-ws.js", websocket.ClientHandler())
-
 	// controllers registration here...
-	m.Register(new(controllers.TodoController))
+	todosApp.Register(new(controllers.TodoController))
 
 	// start the web server at http://localhost:8080
 	app.Run(iris.Addr(":8080"), iris.WithoutVersionChecker)
