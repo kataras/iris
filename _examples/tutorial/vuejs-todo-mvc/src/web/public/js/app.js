@@ -1,32 +1,35 @@
 // Full spec-compliant TodoMVC with Iris
 // and hash-based routing in ~120 effective lines of JavaScript.
 
-// var socket = new Ws("ws://localhost:8080/todos/sync");
+var socket = new Ws("ws://localhost:8080/todos/sync");
 
-// socket.On("saved", function () {
-//   console.log("receive: on saved");
-//   todoStorage.fetch();
-// });
+socket.On("saved", function () {
+  // console.log("receive: on saved");
+  fetchTodos(function (items) {
+    app.todos = items
+  });
+});
 
-var todos = [];
+
+function fetchTodos(onComplete) {
+  axios.get("/todos").then(response => {
+    if (response.data == null) {
+      return;
+    }
+
+    onComplete(response.data);
+  });
+}
 
 var todoStorage = {
   fetch: function () {
-    axios.get("/todos").then(response => {
-      if (response.data == null) {
-        return;
-      }
-      for (var i = 0; i < response.data.length; i++) {
-        // if (todos.length <=i || todos[i] === null) {
-        //   todos.push(response.data[i]);
-        // } else {
-        //   todos[i] = response.data[i];
-        // }
-        todos.push(response.data[i]);
+    var todos = [];
+    fetchTodos(function (items) {
+      for (var i = 0; i < items.length; i++) {
+        todos.push(items[i]);
       }
     });
-
-    return todos
+    return todos;
   },
   save: function (todos) {
     axios.post("/todos", JSON.stringify(todos)).then(response => {
@@ -35,7 +38,7 @@ var todoStorage = {
         return;
       }
       // console.log("send: save");
-      // socket.Emit("save")
+      socket.Emit("save")
     });
   }
 }
@@ -62,27 +65,27 @@ var app = new Vue({
   // app initial state
   data: {
     todos: todoStorage.fetch(),
+    hasChanges: false,
     newTodo: '',
     editedTodo: null,
     visibility: 'all'
   },
 
-  // watch todos change for persistence
-  watch: {
-    todos: {
-      handler: function (todos) {
-        // // saved by this client.
-        // if (todos[todos.length - 1].id === 0) {
-        //   todoStorage.save(todos);
-        // } else {
-        //   console.log("item cannot be saved, already exists.");
-        //   console.log(todos[todos.length - 1]);
-        // }
-        todoStorage.save(todos);
-      },
-      deep: true
-    }
-  },
+  // we will not use the "watch" as it works with the fields like "hasChanges"
+  // and callbacks to make it true but let's keep things very simple as it's just a small getting started. 
+  // // watch todos change for persistence
+  // watch: {
+  //   todos: {
+  //     handler: function (todos) {
+  //       if (app.hasChanges) {
+  //         todoStorage.save(todos);
+  //         app.hasChanges = false;
+  //       }
+
+  //     },
+  //     deep: true
+  //   }
+  // },
 
   // computed properties
   // http://vuejs.org/guide/computed.html
@@ -101,6 +104,7 @@ var app = new Vue({
         this.todos.forEach(function (todo) {
           todo.completed = value
         })
+        this.notifyChange();
       }
     }
   },
@@ -114,21 +118,34 @@ var app = new Vue({
   // methods that implement data logic.
   // note there's no DOM manipulation here at all.
   methods: {
+    notifyChange: function () {
+      todoStorage.save(this.todos)
+    },
     addTodo: function () {
       var value = this.newTodo && this.newTodo.trim()
       if (!value) {
         return
       }
       this.todos.push({
-        id: 0, // just for the client-side.
+        id: this.todos.length + 1, // just for the client-side.
         title: value,
         completed: false
       })
       this.newTodo = ''
+      this.notifyChange();
     },
 
+    completeTodo: function (todo) {
+      if (todo.completed) {
+        todo.completed = false;
+      } else {
+        todo.completed = true;
+      }
+      this.notifyChange();
+    },
     removeTodo: function (todo) {
       this.todos.splice(this.todos.indexOf(todo), 1)
+      this.notifyChange();
     },
 
     editTodo: function (todo) {
@@ -141,10 +158,11 @@ var app = new Vue({
         return
       }
       this.editedTodo = null
-      todo.title = todo.title.trim()
+      todo.title = todo.title.trim();
       if (!todo.title) {
-        this.removeTodo(todo)
+        this.removeTodo(todo);
       }
+      this.notifyChange();
     },
 
     cancelEdit: function (todo) {
@@ -153,7 +171,8 @@ var app = new Vue({
     },
 
     removeCompleted: function () {
-      this.todos = filters.active(this.todos)
+      this.todos = filters.active(this.todos);
+      this.notifyChange();
     }
   },
 
