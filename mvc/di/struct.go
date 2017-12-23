@@ -18,6 +18,8 @@ type (
 		FieldIndex []int
 	}
 
+	// StructInjector keeps the data that are needed in order to do the binding injection
+	// as fast as possible and with the best possible and safest way.
 	StructInjector struct {
 		initRef        reflect.Value
 		initRefAsSlice []reflect.Value // useful when the struct is passed on a func as input args via reflection.
@@ -42,6 +44,12 @@ func (s *StructInjector) countBindType(typ BindType) (n int) {
 	return
 }
 
+// MakeStructInjector returns a new struct injector, which will be the object
+// that the caller should use to bind exported fields or
+// embedded unexported fields that contain exported fields
+// of the "v" struct value or pointer.
+//
+// The hijack and the goodFunc are optional, the "values" is the dependencies values.
 func MakeStructInjector(v reflect.Value, hijack Hijacker, goodFunc TypeChecker, values ...reflect.Value) *StructInjector {
 	s := &StructInjector{
 		initRef:        v,
@@ -149,6 +157,7 @@ func (s *StructInjector) fillStruct() {
 	}
 }
 
+// String returns a debug trace message.
 func (s *StructInjector) String() (trace string) {
 	for i, f := range s.fields {
 		elemField := s.elemType.FieldByIndex(f.FieldIndex)

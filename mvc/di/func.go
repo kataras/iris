@@ -11,6 +11,8 @@ type (
 		InputIndex int
 	}
 
+	// FuncInjector keeps the data that are needed in order to do the binding injection
+	// as fast as possible and with the best possible and safest way.
 	FuncInjector struct {
 		// the original function, is being used
 		// only the .Call, which is referring to the same function, always.
@@ -27,6 +29,10 @@ type (
 	}
 )
 
+// MakeFuncInjector returns a new func injector, which will be the object
+// that the caller should use to bind input arguments of the "fn" function.
+//
+// The hijack and the goodFunc are optional, the "values" is the dependencies values.
 func MakeFuncInjector(fn reflect.Value, hijack Hijacker, goodFunc TypeChecker, values ...reflect.Value) *FuncInjector {
 	typ := IndirectType(fn.Type())
 	s := &FuncInjector{
@@ -100,10 +106,14 @@ func MakeFuncInjector(fn reflect.Value, hijack Hijacker, goodFunc TypeChecker, v
 	return s
 }
 
+// String returns a debug trace text.
 func (s *FuncInjector) String() string {
 	return s.trace
 }
 
+// Inject accepts an already created slice of input arguments
+// and fills them, the "ctx" is optional and it's used
+// on the dependencies that depends on one or more input arguments, these are the "ctx".
 func (s *FuncInjector) Inject(in *[]reflect.Value, ctx ...reflect.Value) {
 	args := *in
 	for _, input := range s.inputs {
@@ -118,6 +128,12 @@ func (s *FuncInjector) Inject(in *[]reflect.Value, ctx ...reflect.Value) {
 	*in = args
 }
 
+// Call calls the "Inject" with a new slice of input arguments
+// that are computed by the length of the input argument from the MakeFuncInjector's "fn" function.
+//
+// If the function needs a receiver, so
+// the caller should be able to in[0] = receiver before injection,
+// then the `Inject` method should be used instead.
 func (s *FuncInjector) Call(ctx ...reflect.Value) []reflect.Value {
 	in := make([]reflect.Value, s.Length, s.Length)
 	s.Inject(&in, ctx...)

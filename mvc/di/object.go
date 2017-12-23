@@ -5,11 +5,17 @@ import (
 	"reflect"
 )
 
+// BindType is the type of a binded object/value, it's being used to
+// check if the value is accessible after a function call with a  "ctx" when needed ( Dynamic type)
+// or it's just a struct value (a service | Static type).
 type BindType uint32
 
 const (
-	Static  BindType = iota // simple assignable value, a static value.
-	Dynamic                 // dynamic value, depends on some input arguments from the caller.
+	// Static is the simple assignable value, a static value.
+	Static BindType = iota
+	// Dynamic returns a value but it depends on some input arguments from the caller,
+	// on serve time.
+	Dynamic
 )
 
 func bindTypeString(typ BindType) string {
@@ -21,6 +27,9 @@ func bindTypeString(typ BindType) string {
 	}
 }
 
+// BindObject contains the dependency value's read-only information.
+// FuncInjector and StructInjector keeps information about their
+// input arguments/or fields, these properties contain a `BindObject` inside them.
 type BindObject struct {
 	Type  reflect.Type // the Type of 'Value' or the type of the returned 'ReturnValue' .
 	Value reflect.Value
@@ -29,6 +38,11 @@ type BindObject struct {
 	ReturnValue func([]reflect.Value) reflect.Value
 }
 
+// MakeBindObject accepts any "v" value, struct, pointer or a function
+// and a type checker that is used to check if the fields (if "v.elem()" is struct)
+// or the input arguments (if "v.elem()" is func)
+// are valid to be included as the final object's dependencies, even if the caller added more
+// the "di" is smart enough to select what each "v" needs and what not before serve time.
 func MakeBindObject(v reflect.Value, goodFunc TypeChecker) (b BindObject, err error) {
 	if IsFunc(v) {
 		b.BindType = Dynamic
@@ -93,10 +107,13 @@ func MakeReturnValue(fn reflect.Value, goodFunc TypeChecker) (func([]reflect.Val
 	return bf, outTyp, nil
 }
 
+// IsAssignable checks if "to" type can be used as "b.Value/ReturnValue".
 func (b *BindObject) IsAssignable(to reflect.Type) bool {
 	return equalTypes(b.Type, to)
 }
 
+// Assign sets the values to a setter, "toSetter" contains the setter, so the caller
+// can use it for multiple and different structs/functions as well.
 func (b *BindObject) Assign(ctx []reflect.Value, toSetter func(reflect.Value)) {
 	if b.BindType == Dynamic {
 		toSetter(b.ReturnValue(ctx))

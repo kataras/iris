@@ -1,53 +1,31 @@
 package todo
 
 type Service interface {
-	GetByID(id int64) (Item, bool)
-	GetByOwner(owner string) []Item
-	Complete(item Item) bool
-	Save(newItem Item) error
+	Get(owner string) []Item
+	Save(owner string, newItems []Item) error
 }
 
 type MemoryService struct {
-	items map[int64]Item
+	items map[string][]Item
 }
 
-func (s *MemoryService) getLatestID() (id int64) {
-	for k := range s.items {
-		if k > id {
-			id = k
+func NewMemoryService() *MemoryService {
+	return &MemoryService{make(map[string][]Item, 0)}
+}
+
+func (s *MemoryService) Get(sessionOwner string) (items []Item) {
+	return s.items[sessionOwner]
+}
+
+func (s *MemoryService) Save(sessionOwner string, newItems []Item) error {
+	var prevID int64
+	for i := range newItems {
+		if newItems[i].ID == 0 {
+			newItems[i].ID = prevID
+			prevID++
 		}
 	}
 
-	return
-}
-
-func (s *MemoryService) GetByID(id int64) (Item, bool) {
-	item, found := s.items[id]
-	return item, found
-}
-
-func (s *MemoryService) GetByOwner(owner string) (items []Item) {
-	for _, item := range s.items {
-		if item.OwnerID != owner {
-			continue
-		}
-		items = append(items, item)
-	}
-	return
-}
-
-func (s *MemoryService) Complete(item Item) bool {
-	item.CurrentState = StateCompleted
-	return s.Save(item) == nil
-}
-
-func (s *MemoryService) Save(newItem Item) error {
-	if newItem.ID == 0 {
-		// create
-		newItem.ID = s.getLatestID() + 1
-	}
-
-	//  full replace here for the shake of simplicity)
-	s.items[newItem.ID] = newItem
+	s.items[sessionOwner] = newItems
 	return nil
 }

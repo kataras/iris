@@ -2,8 +2,11 @@ package di
 
 import "reflect"
 
+// Values is a shortcut of []reflect.Value,
+// it makes easier to remove and add dependencies.
 type Values []reflect.Value
 
+// NewValues returns new empty (dependencies) values.
 func NewValues() Values {
 	return Values{}
 }
@@ -30,6 +33,7 @@ func (bv Values) CloneWithFieldsOf(s interface{}) Values {
 	return values
 }
 
+// Len returns the length of the current "bv" values slice.
 func (bv Values) Len() int {
 	return len(bv)
 }
@@ -41,6 +45,8 @@ func (bv *Values) Add(values ...interface{}) {
 	bv.AddValues(ValuesOf(values)...)
 }
 
+// AddValues same as `Add` but accepts reflect.Value dependencies instead of interface{}
+// and appends them to the list if they pass some checks.
 func (bv *Values) AddValues(values ...reflect.Value) {
 	for _, v := range values {
 		if !goodVal(v) {
