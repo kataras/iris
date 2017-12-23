@@ -54,7 +54,7 @@ func (c *TodoController) Post(newItems []todo.Item) PostItemResponse {
 func (c *TodoController) GetSync(conn websocket.Connection) {
 	conn.Join(c.Session.ID())
 	conn.On("save", func() { // "save" event from client.
-		conn.To(c.Session.ID()).Emit("saved", nil) // fire a "save" event to the rest of the clients.
+		conn.To(c.Session.ID()).Emit("saved", nil) // fire a "saved" event to the rest of the clients w.
 	})
 
 	conn.Wait()

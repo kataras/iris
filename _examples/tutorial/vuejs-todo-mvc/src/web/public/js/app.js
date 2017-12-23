@@ -13,7 +13,7 @@ socket.On("saved", function () {
 
 function fetchTodos(onComplete) {
   axios.get("/todos").then(response => {
-    if (response.data == null) {
+    if (response.data === null) {
       return;
     }
 
@@ -65,7 +65,6 @@ var app = new Vue({
   // app initial state
   data: {
     todos: todoStorage.fetch(),
-    hasChanges: false,
     newTodo: '',
     editedTodo: null,
     visibility: 'all'
