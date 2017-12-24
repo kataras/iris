@@ -369,7 +369,7 @@ func (s *Session) set(key string, value interface{}, immutable bool) {
 	syncDatabases(s.provider.databases, p)
 }
 
-// Set fills the session with an entry"value", based on its "key".
+// Set fills the session with an entry "value", based on its "key".
 func (s *Session) Set(key string, value interface{}) {
 	s.set(key, value, false)
 }
