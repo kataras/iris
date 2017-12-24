@@ -22,8 +22,8 @@ Some trivial examples,
 ```go
 import "github.com/kataras/iris/sessions"
 
-sess := sessions.Start(http.ResponseWriter, *http.Request)
-sess.
+manager := sessions.Start(iris.Context)
+manager.
   ID() string
   Get(string) interface{}
   HasFlash() bool
