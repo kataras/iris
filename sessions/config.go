@@ -39,7 +39,7 @@ type Encoding interface {
 }
 
 type (
-	// Config is the configuration for sessions. Please review it well before using sessions.
+	// Config is the configuration for sessions. Please read it before using sessions.
 	Config struct {
 		// Cookie string, the session's client cookie name, for example: "mysessionid"
 		//
@@ -89,6 +89,8 @@ type (
 
 		// Encoding same as Encode and Decode but receives a single instance which
 		// completes the "CookieEncoder" interface, `Encode` and `Decode` functions.
+		//
+		// Defaults to nil.
 		Encoding Encoding
 
 		// Expires the duration of which the cookie must expires (created_time.Add(Expires)).
