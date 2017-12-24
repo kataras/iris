@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/kataras/iris"
-
 	"github.com/kataras/iris/sessions"
 )
 
@@ -25,21 +24,20 @@ func main() {
 		// or set a value, like 2 hours:
 		Expires: time.Hour * 2,
 		// if you want to invalid cookies on different subdomains
-		// of the same host, then enable it
-		DisableSubdomainPersistence: false,
-		// want to be crazy safe? Take a look at the "securecookie" example folder.
+		// of the same host, then enable it.
+		// Defaults to false.
+		DisableSubdomainPersistence: true,
 	})
 
 	app.Get("/", func(ctx iris.Context) {
 		ctx.Writef("You should navigate to the /set, /get, /delete, /clear,/destroy instead")
 	})
 	app.Get("/set", func(ctx iris.Context) {
-
 		//set session values.
 		s := sess.Start(ctx)
 		s.Set("name", "iris")
 
-		//test if setted here
+		//test if setted here.
 		ctx.Writef("All ok session setted to: %s", s.GetString("name"))
 
 		// Set will set the value as-it-is,
@@ -52,7 +50,8 @@ func main() {
 	})
 
 	app.Get("/get", func(ctx iris.Context) {
-		// get a specific value, as string, if no found returns just an empty string
+		// get a specific value, as string,
+		// if not found then it returns just an empty string.
 		name := sess.Start(ctx).GetString("name")
 
 		ctx.Writef("The name on the /set was: %s", name)
@@ -64,17 +63,16 @@ func main() {
 	})
 
 	app.Get("/clear", func(ctx iris.Context) {
-		// removes all entries
+		// removes all entries.
 		sess.Start(ctx).Clear()
 	})
 
 	app.Get("/update", func(ctx iris.Context) {
-		// updates expire date
+		// updates expire date.
 		sess.ShiftExpiration(ctx)
 	})
 
 	app.Get("/destroy", func(ctx iris.Context) {
-
 		//destroy, removes the entire session data and cookie
 		sess.Destroy(ctx)
 	})
