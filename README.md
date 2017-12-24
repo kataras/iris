@@ -14,15 +14,7 @@ Learn what [others say about Iris](https://www.youtube.com/watch?v=jGx0LkuUs4A) 
 Support this project by becoming a sponsor. Your logo will show up here with a link to your website. [Become a sponsor](https://opencollective.com/iris#sponsor)
 
 <a href="https://opencollective.com/iris/sponsor/0/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/0/avatar.svg"></a>
-<a href="https://opencollective.com/iris/sponsor/1/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/1/avatar.svg"></a>
-<a href="https://opencollective.com/iris/sponsor/2/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/2/avatar.svg"></a>
-<a href="https://opencollective.com/iris/sponsor/3/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/3/avatar.svg"></a>
-<a href="https://opencollective.com/iris/sponsor/4/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/4/avatar.svg"></a>
-<a href="https://opencollective.com/iris/sponsor/5/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/5/avatar.svg"></a>
-<a href="https://opencollective.com/iris/sponsor/6/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/6/avatar.svg"></a>
-<a href="https://opencollective.com/iris/sponsor/7/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/7/avatar.svg"></a>
-<a href="https://opencollective.com/iris/sponsor/8/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/8/avatar.svg"></a>
-<a href="https://opencollective.com/iris/sponsor/9/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/9/avatar.svg"></a>
+<a href="https://opencollective.com/iris/sponsor/1/website" target="_blank">
 
 ## [Benchmarks](_benchmarks)
 
@@ -36,7 +28,7 @@ Support this project by becoming a sponsor. Your logo will show up here with a l
 _Updated at: [Tuesday, 21 November 2017](_benchmarks/README_UNIX.md)_
 </details>
 
-## Getting started
+## Installation
 
 The only requirement is the [Go Programming Language](https://golang.org/dl/)
 
@@ -46,6 +38,7 @@ $ go get -u github.com/kataras/iris
 
 Iris takes advantage of the [vendor directory](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo) feature. You get truly reproducible builds, as this method guards against upstream renames and deletes.
 
+### Learn
 
 [![](cheatsheet.png)](https://iris-go.com/v10)
 
