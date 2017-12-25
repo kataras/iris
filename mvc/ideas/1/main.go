@@ -36,7 +36,7 @@ func TodoApp(app *mvc.Application) {
 	// can be either a function which accepts an iris.Context and returns a single value (dynamic binding)
 	// or a static struct value (service).
 	app.AddDependencies(
-		mvc.Session(sessions.New(sessions.Config{})),
+		sessions.New(sessions.Config{})).Start,
 		&prefixedLogger{prefix: "DEV"},
 	)
 

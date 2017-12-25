@@ -8,7 +8,8 @@ import (
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/router"
 	"github.com/kataras/iris/core/router/macro"
-	"github.com/kataras/iris/mvc/di"
+	"github.com/kataras/iris/hero"
+	"github.com/kataras/iris/hero/di"
 
 	"github.com/kataras/golog"
 )
@@ -306,30 +307,30 @@ func (c *ControllerActivator) handlerOf(m reflect.Method, funcDependencies []ref
 	// if c.injector is nil, then set it with the current bindings,
 	// these bindings can change after, so first add dependencies and after register routes.
 	if c.injector == nil {
-		c.injector = di.MakeStructInjector(c.Value, hijacker, typeChecker, c.dependencies...)
-		if c.injector.HasFields {
+		c.injector = di.Struct(c.Value, c.dependencies...)
+		if c.injector.Has {
 			golog.Debugf("MVC dependencies of '%s':\n%s", c.fullName, c.injector.String())
 		}
 	}
 
 	// fmt.Printf("for %s | values: %s\n", funcName, funcDependencies)
-	funcInjector := di.MakeFuncInjector(m.Func, hijacker, typeChecker, funcDependencies...)
+	funcInjector := di.Func(m.Func, funcDependencies...)
 	// fmt.Printf("actual injector's inputs length: %d\n", funcInjector.Length)
-	if funcInjector.Valid {
+	if funcInjector.Has {
 		golog.Debugf("MVC dependencies of method '%s.%s':\n%s", c.fullName, m.Name, funcInjector.String())
 	}
 
 	var (
 		implementsBase        = isBaseController(c.Type)
 		hasBindableFields     = c.injector.CanInject
-		hasBindableFuncInputs = funcInjector.Valid
+		hasBindableFuncInputs = funcInjector.Has
 
 		call = m.Func.Call
 	)
 
 	if !implementsBase && !hasBindableFields && !hasBindableFuncInputs {
 		return func(ctx context.Context) {
-			DispatchFuncResult(ctx, call(c.injector.AcquireSlice()))
+			hero.DispatchFuncResult(ctx, call(c.injector.AcquireSlice()))
 		}
 	}
 
@@ -371,11 +372,11 @@ func (c *ControllerActivator) handlerOf(m reflect.Method, funcDependencies []ref
 			in := make([]reflect.Value, n, n)
 			in[0] = ctrl
 			funcInjector.Inject(&in, ctxValue)
-			DispatchFuncResult(ctx, call(in))
+			hero.DispatchFuncResult(ctx, call(in))
 			return
 		}
 
-		DispatchFuncResult(ctx, ctrl.Method(m.Index).Call(emptyIn))
+		hero.DispatchFuncResult(ctx, ctrl.Method(m.Index).Call(emptyIn))
 	}
 
 }

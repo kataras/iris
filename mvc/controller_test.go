@@ -64,10 +64,9 @@ func (c *testControllerAny) Any() {
 func TestControllerMethodFuncs(t *testing.T) {
 	app := iris.New()
 
-	m := NewEngine()
-	m.Controller(app, new(testController))
-	m.Controller(app.Party("/all"), new(testControllerAll))
-	m.Controller(app.Party("/any"), new(testControllerAny))
+	New(app).Register(new(testController))
+	New(app.Party("/all")).Register(new(testControllerAll))
+	New(app.Party("/any")).Register(new(testControllerAny))
 
 	e := httptest.New(t, app)
 	for _, method := range router.AllMethods {
@@ -112,7 +111,8 @@ func (c *testControllerBeginAndEndRequestFunc) Post() {
 
 func TestControllerBeginAndEndRequestFunc(t *testing.T) {
 	app := iris.New()
-	NewEngine().Controller(app.Party("/profile/{username}"), new(testControllerBeginAndEndRequestFunc))
+	New(app.Party("/profile/{username}")).
+		Register(new(testControllerBeginAndEndRequestFunc))
 
 	e := httptest.New(t, app)
 	usernames := []string{
@@ -155,8 +155,10 @@ func TestControllerBeginAndEndRequestFuncBindMiddleware(t *testing.T) {
 		ctx.Writef("forbidden")
 	}
 
-	NewEngine().Controller(app.Party("/profile/{username}", middlewareCheck),
-		new(testControllerBeginAndEndRequestFunc))
+	app.PartyFunc("/profile/{username}", func(r iris.Party) {
+		r.Use(middlewareCheck)
+		New(r).Register(new(testControllerBeginAndEndRequestFunc))
+	})
 
 	e := httptest.New(t, app)
 
@@ -229,7 +231,7 @@ func (c *testControllerEndRequestAwareness) EndRequest(ctx context.Context) {
 
 func TestControllerEndRequestAwareness(t *testing.T) {
 	app := iris.New()
-	NewEngine().Controller(app.Party("/era/{username}"), new(testControllerEndRequestAwareness))
+	New(app.Party("/era/{username}")).Register(new(testControllerEndRequestAwareness))
 
 	e := httptest.New(t, app)
 	usernames := []string{
@@ -284,11 +286,10 @@ func TestControllerDependencies(t *testing.T) {
 	myTitlePtr := &testBindType{title: t1}
 	// test bind value to value of the correct type
 	myTitleV := testBindType{title: t2}
-	m := NewEngine()
-	m.Dependencies.Add(myTitlePtr, myTitleV)
-	//			or just app
-	m.Controller(app.Party("/"), new(testControllerBindStruct))
-	m.Controller(app.Party("/deep"), new(testControllerBindDeep))
+	m := New(app)
+	m.AddDependencies(myTitlePtr, myTitleV)
+	m.Register(new(testControllerBindStruct))
+	m.NewChild(app.Party("/deep")).Register(new(testControllerBindDeep))
 
 	e := httptest.New(t, app)
 	expected := t1 + t2
@@ -347,9 +348,9 @@ func TestControllerInsideControllerRecursively(t *testing.T) {
 	)
 
 	app := iris.New()
-	m := NewEngine()
-	m.Dependencies.Add(&testBindType{title: title})
-	m.Controller(app.Party("/user/{username}"), new(testCtrl0))
+	m := New(app.Party("/user/{username}"))
+	m.AddDependencies(&testBindType{title: title})
+	m.Register(new(testCtrl0))
 
 	e := httptest.New(t, app)
 	e.GET("/user/" + username).Expect().
@@ -381,7 +382,7 @@ func (c *testControllerRelPathFromFunc) GetSomethingByElseThisBy(bool, int) {} /
 
 func TestControllerRelPathFromFunc(t *testing.T) {
 	app := iris.New()
-	NewEngine().Controller(app, new(testControllerRelPathFromFunc))
+	New(app).Register(new(testControllerRelPathFromFunc))
 
 	e := httptest.New(t, app)
 	e.GET("/").Expect().Status(iris.StatusOK).
@@ -431,14 +432,14 @@ func (c *testControllerActivateListener) Get() string {
 
 func TestControllerActivateListener(t *testing.T) {
 	app := iris.New()
-	NewEngine().Controller(app, new(testControllerActivateListener))
-	m := NewEngine()
-	m.Dependencies.Add(&testBindType{
+	New(app).Register(new(testControllerActivateListener))
+	m := New(app)
+	m.AddDependencies(&testBindType{
 		title: "my title",
 	})
-	m.Controller(app.Party("/manual"), new(testControllerActivateListener))
+	m.NewChild(m.Router.Party("/manual")).Register(new(testControllerActivateListener))
 	// or
-	NewEngine().Controller(app.Party("/manual2"), &testControllerActivateListener{
+	m.NewChild(m.Router.Party("/manual2")).Register(&testControllerActivateListener{
 		TitlePointer: &testBindType{
 			title: "my title",
 		},
@@ -481,7 +482,7 @@ func (c *testControllerNotCreateNewDueManuallySettingAllFields) Get() string {
 
 func TestControllerNotCreateNewDueManuallySettingAllFields(t *testing.T) {
 	app := iris.New()
-	NewEngine().Controller(app, &testControllerNotCreateNewDueManuallySettingAllFields{
+	New(app).Register(&testControllerNotCreateNewDueManuallySettingAllFields{
 		T: t,
 		TitlePointer: &testBindType{
 			title: "my title",

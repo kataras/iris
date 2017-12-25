@@ -39,7 +39,7 @@ func configureMVC(app *mvc.Application) {
 	userApp := app.NewChild(app.Router.Party("/user"))
 	userApp.AddDependencies(
 		user.NewDataSource(),
-		mvc.Session(manager),
+		manager.Start,
 	)
 	userApp.Register(new(user.Controller))
 }

@@ -78,8 +78,8 @@ Optional `EndRequest(ctx)` function to perform any finalization after any method
 
 Inheritance, recursively, see for example our `mvc.SessionController`, it has the `Session *sessions.Session` and `Manager *sessions.Sessions` as embedded fields
 which are filled by its `BeginRequest`, [here](https://github.com/kataras/iris/blob/master/mvc/session_controller.go).
-This is just an example, you could use the `mvc.Session(mySessions)` as a dependency to the MVC Application, i.e
-`mvcApp.AddDependencies(mvc.Session(sessions.New(sessions.Config{Cookie: "iris_session_id"})))`.
+This is just an example, you could use the `sessions.Session` as a dependency to the MVC Application, i.e
+`mvcApp.AddDependencies(sessions.New(sessions.Config{Cookie: "iris_session_id"}).Start)`.
 
 Access to the dynamic path parameters via the controller's methods' input arguments, no binding is needed.
 When you use the Iris' default syntax to parse handlers from a controller, you need to suffix the methods

@@ -52,10 +52,7 @@ func newApp() *iris.Application {
 		// If dependencies are registered without field or function's input arguments as
 		// consumers then those dependencies are being ignored before the server ran,
 		// so you can bind many dependecies and use them in different controllers.
-		// func(ctx iris.Context) *sessions.Session {
-		// 	return sess.Start(ctx)
-		// }, -> same as mvc.Session(sess):
-		mvc.Session(sess),
+		sess.Start,
 		time.Now(),
 	)
 	visitApp.Register(new(VisitController))

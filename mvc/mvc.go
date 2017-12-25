@@ -1,6 +1,9 @@
 package mvc
 
-import "github.com/kataras/iris/core/router"
+import (
+	"github.com/kataras/iris/core/router"
+	"github.com/kataras/iris/hero/di"
+)
 
 // Application is the high-level compoment of the "mvc" package.
 // It's the API that you will be using to register controllers among with their
@@ -14,14 +17,14 @@ import "github.com/kataras/iris/core/router"
 //
 // See `mvc#New` for more.
 type Application struct {
-	Engine *Engine
-	Router router.Party
+	Dependencies di.Values
+	Router       router.Party
 }
 
-func newApp(engine *Engine, subRouter router.Party) *Application {
+func newApp(subRouter router.Party, values di.Values) *Application {
 	return &Application{
-		Engine: engine,
-		Router: subRouter,
+		Router:       subRouter,
+		Dependencies: values,
 	}
 }
 
@@ -31,7 +34,7 @@ func newApp(engine *Engine, subRouter router.Party) *Application {
 //
 // Example: `New(app.Party("/todo"))` or `New(app)` as it's the same as `New(app.Party("/"))`.
 func New(party router.Party) *Application {
-	return newApp(NewEngine(), party)
+	return newApp(party, di.NewValues())
 }
 
 // Configure creates a new controller and configures it,
@@ -80,7 +83,7 @@ func (app *Application) Configure(configurators ...func(*Application)) *Applicat
 //
 // Example: `.AddDependencies(loggerService{prefix: "dev"}, func(ctx iris.Context) User {...})`.
 func (app *Application) AddDependencies(values ...interface{}) *Application {
-	app.Engine.Dependencies.Add(values...)
+	app.Dependencies.Add(values...)
 	return app
 }
 
@@ -95,9 +98,59 @@ func (app *Application) AddDependencies(values ...interface{}) *Application {
 //
 // It returns this mvc Application.
 //
-// Example: `.Register(new(TodoController))`.
+// Usage: `.Register(new(TodoController))`.
+//
+// Controller accepts a sub router and registers any custom struct
+// as controller, if struct doesn't have any compatible methods
+// neither are registered via `ControllerActivator`'s `Handle` method
+// then the controller is not registered at all.
+//
+// A Controller may have one or more methods
+// that are wrapped to a handler and registered as routes before the server ran.
+// The controller's method can accept any input argument that are previously binded
+// via the dependencies or route's path accepts dynamic path parameters.
+// The controller's fields are also bindable via the dependencies, either a
+// static value (service) or a function (dynamically) which accepts a context
+// and returns a single value (this type is being used to find the relative field or method's input argument).
+//
+// func(c *ExampleController) Get() string |
+// (string, string) |
+// (string, int) |
+// int |
+// (int, string |
+// (string, error) |
+// bool |
+// (any, bool) |
+// error |
+// (int, error) |
+// (customStruct, error) |
+// customStruct |
+// (customStruct, int) |
+// (customStruct, string) |
+// Result or (Result, error)
+// where Get is an HTTP Method func.
+//
+// Examples at: https://github.com/kataras/iris/tree/master/_examples/mvc
 func (app *Application) Register(controller interface{}) *Application {
-	app.Engine.Controller(app.Router, controller)
+	// initialize the controller's activator, nothing too magical so far.
+	c := newControllerActivator(app.Router, controller, app.Dependencies)
+
+	// check the controller's "BeforeActivation" or/and "AfterActivation" method(s) between the `activate`
+	// call, which is simply parses the controller's methods, end-dev can register custom controller's methods
+	// by using the BeforeActivation's (a ControllerActivation) `.Handle` method.
+	if before, ok := controller.(interface {
+		BeforeActivation(BeforeActivation)
+	}); ok {
+		before.BeforeActivation(c)
+	}
+
+	c.activate()
+
+	if after, okAfter := controller.(interface {
+		AfterActivation(AfterActivation)
+	}); okAfter {
+		after.AfterActivation(c)
+	}
 	return app
 }
 
@@ -108,5 +161,5 @@ func (app *Application) Register(controller interface{}) *Application {
 //
 // Example: `.NewChild(irisApp.Party("/path")).Register(new(TodoSubController))`.
 func (app *Application) NewChild(party router.Party) *Application {
-	return newApp(app.Engine.Clone(), party)
+	return newApp(party, app.Dependencies.Clone())
 }
