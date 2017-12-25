@@ -92,15 +92,27 @@ func (r *RequestParams) Visit(visitor func(key string, value string)) {
 	})
 }
 
-// GetEntry returns the internal Entry of the memstore, as value
-// if not found then it returns a zero Entry and false.
+var emptyEntry memstore.Entry
+
+// GetEntryAt returns the internal Entry of the memstore based on its index,
+// the stored index by the router.
+// If not found then it returns a zero Entry and false.
+func (r RequestParams) GetEntryAt(index int) (memstore.Entry, bool) {
+	if len(r.store) > index {
+		return r.store[index], true
+	}
+	return emptyEntry, false
+}
+
+// GetEntry returns the internal Entry of the memstore based on its "key".
+// If not found then it returns a zero Entry and false.
 func (r RequestParams) GetEntry(key string) (memstore.Entry, bool) {
 	// we don't return the pointer here, we don't want to give the end-developer
 	// the strength to change the entry that way.
 	if e := r.store.GetEntry(key); e != nil {
 		return *e, true
 	}
-	return memstore.Entry{}, false
+	return emptyEntry, false
 }
 
 // Get returns a path parameter's value based on its route's dynamic path key.
