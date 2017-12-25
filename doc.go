@@ -1663,9 +1663,9 @@ useful to call middlewares or when many methods use the same collection of data.
 
 Optional `EndRequest(ctx)` function to perform any finalization after any method executed.
 
-Session dependency via `mvc.Session(mySessions)` to the MVC Application, i.e
+Session dynamic dependency via manager's `Start` to the MVC Application, i.e
 
-    mvcApp.AddDependencies(mvc.Session(sessions.New(sessions.Config{Cookie: "iris_session_id"})))
+    mvcApp.AddDependencies(sessions.New(sessions.Config{Cookie: "iris_session_id"}).Start)
 
 Inheritance, recursively.
 

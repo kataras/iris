@@ -43,7 +43,7 @@ func main() {
 	// any dependencies bindings here...
 	todosApp.AddDependencies(
 		todo.NewMemoryService(),
-		mvc.Session(sess),
+		sess.Start,
 		ws.Upgrade,
 	)
 

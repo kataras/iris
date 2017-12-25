@@ -10,6 +10,23 @@ import (
 	. "github.com/kataras/iris/mvc"
 )
 
+// service
+type (
+	// these TestService and TestServiceImpl could be in lowercase, unexported
+	// but the `Say` method should be exported however we have those exported
+	// because of the controller handler test.
+	TestService interface {
+		Say(string) string
+	}
+	TestServiceImpl struct {
+		prefix string
+	}
+)
+
+func (s *TestServiceImpl) Say(message string) string {
+	return s.prefix + " " + message
+}
+
 type testControllerHandle struct {
 	Ctx     context.Context
 	Service TestService
@@ -53,9 +70,9 @@ func (c *testControllerHandle) HiParamEmptyInputBy() string {
 func TestControllerHandle(t *testing.T) {
 	app := iris.New()
 
-	m := NewEngine()
-	m.Dependencies.Add(&TestServiceImpl{prefix: "service:"})
-	m.Controller(app, new(testControllerHandle))
+	m := New(app)
+	m.AddDependencies(&TestServiceImpl{prefix: "service:"})
+	m.Register(new(testControllerHandle))
 
 	e := httptest.New(t, app)
 

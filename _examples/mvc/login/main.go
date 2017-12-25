@@ -64,7 +64,7 @@ func main() {
 	user := mvc.New(app.Party("/user"))
 	user.AddDependencies(
 		userService,
-		mvc.Session(sessManager),
+		sessManager.Start,
 	)
 	user.Register(new(controllers.UserController))
 
