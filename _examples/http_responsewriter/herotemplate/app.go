@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"log"
 
-	"github.com/kataras/iris/_examples/http_responsewriter/hero/template"
+	"github.com/kataras/iris/_examples/http_responsewriter/herotemplate/template"
 
 	"github.com/kataras/iris"
 )

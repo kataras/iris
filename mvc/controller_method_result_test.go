@@ -11,9 +11,6 @@ import (
 	. "github.com/kataras/iris/mvc"
 )
 
-// activator/methodfunc/func_caller.go.
-// and activator/methodfunc/func_result_dispatcher.go
-
 type testControllerMethodResult struct {
 	Ctx context.Context
 }

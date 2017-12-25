@@ -1,0 +1,11 @@
+I can do one of the followings to this "di" folder when I finish the cleanup and document it a bit,
+although I'm sick I will try to finish it tomorrow.
+
+End-users don't need this.
+1) So, rename this to "internal".
+
+I don't know if something similar exist in Go,
+it's a dependency injection framework at the end, and a very fast one.
+
+2) So I'm thinking to push it to a different repo,
+  like https://github.com/kataras/di or even to my small common https://github.com/kataras/pkg collection. 

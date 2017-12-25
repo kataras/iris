@@ -1,4 +1,4 @@
-package mvc
+package hero
 
 import (
 	"github.com/kataras/iris/context"

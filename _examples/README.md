@@ -299,7 +299,7 @@ convert any custom type into a response dispatcher by implementing the `mvc.Resu
 - [Embedding Templates Into App Executable File](view/embedding-templates-into-app/main.go)
 
 
-You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [hero](https://github.com/shiyanhui/hero/hero) files too, simply by using the `context#ResponseWriter`, take a look at the [http_responsewriter/quicktemplate](http_responsewriter/quicktemplate) and [http_responsewriter/hero] examples.
+You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [hero templates](https://github.com/shiyanhui/hero/hero) files too, simply by using the `context#ResponseWriter`, take a look at the [http_responsewriter/quicktemplate](http_responsewriter/quicktemplate) and [http_responsewriter/herotemplate](http_responsewriter/herotemplate) examples.
 
 ### Authentication
 
@@ -330,7 +330,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 ### How to Write to `context.ResponseWriter() http.ResponseWriter`
 
 - [Write `valyala/quicktemplate` templates](http_responsewriter/quicktemplate)
-- [Write `shiyanhui/hero` templates](http_responsewriter/hero)
+- [Write `shiyanhui/hero` templates](http_responsewriter/herotemplate)
 - [Text, Markdown, HTML, JSON, JSONP, XML, Binary](http_responsewriter/write-rest/main.go)
 - [Write Gzip](http_responsewriter/write-gzip/main.go)
 - [Stream Writer](http_responsewriter/stream-writer/main.go)
