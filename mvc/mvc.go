@@ -3,7 +3,24 @@ package mvc
 import (
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/router"
+	"github.com/kataras/iris/hero"
 	"github.com/kataras/iris/hero/di"
+)
+
+var (
+	// HeroDependencies let you share bindable dependencies between
+	// package-level hero's registered dependencies and all MVC instances that comes later.
+	//
+	// `hero.Register(...)`
+	// `myMVC := mvc.New(app.Party(...))`
+	// the "myMVC" registers the dependencies provided by the `hero.Register` func
+	// automatically.
+	//
+	// Set it to false to disable that behavior, you have to use the `mvc#Register`
+	// even if you had register dependencies with the `hero` package.
+	//
+	// Defaults to true.
+	HeroDependencies = true
 )
 
 // Application is the high-level compoment of the "mvc" package.
@@ -35,7 +52,11 @@ func newApp(subRouter router.Party, values di.Values) *Application {
 //
 // Example: `New(app.Party("/todo"))` or `New(app)` as it's the same as `New(app.Party("/"))`.
 func New(party router.Party) *Application {
-	return newApp(party, di.NewValues())
+	values := di.NewValues()
+	if HeroDependencies {
+		values = hero.Dependencies().Clone()
+	}
+	return newApp(party, values)
 }
 
 // Configure creates a new controller and configures it,
@@ -164,7 +185,8 @@ func (app *Application) Clone(party router.Party) *Application {
 }
 
 // Party returns a new child mvc Application based on the current path + "relativePath".
-// The new mvc Application has the same dependencies of the current mvc Application.
+// The new mvc Application has the same dependencies of the current mvc Application,
+// until otherwise specified later manually.
 //
 // The router's root path of this child will be the current mvc Application's root path + "relativePath".
 func (app *Application) Party(relativePath string, middleware ...context.Handler) *Application {
