@@ -486,7 +486,7 @@ type Context interface {
 	// FormValues returns the parsed form data, including both the URL
 	// field's query parameters and the POST or PUT form data.
 	//
-	// The default form's memory maximum size is 32MB, it can be changed by the `context#DefaultMaxMemory`.
+	// The default form's memory maximum size is 32MB, it can be changed by the `context#DefaultPostMaxMemory`.
 	//
 	// NOTE: A check for nil is necessary.
 	FormValues() map[string][]string
@@ -540,11 +540,11 @@ type Context interface {
 	// PostValues returns all the parsed form data from POST, PATCH,
 	// or PUT body parameters based on a "name" as a string slice.
 	//
-	// The default form's memory maximum size is 32MB, it can be changed by the `context#DefaultMaxMemory`.
+	// The default form's memory maximum size is 32MB, it can be changed by the `context#DefaultPostMaxMemory`.
 	PostValues(name string) []string
 	// FormFile returns the first uploaded file that received from the client.
 	//
-	// The default form's memory maximum size is 32MB, it can be changed by the `context#DefaultMaxMemory`.
+	// The default form's memory maximum size is 32MB, it can be changed by the `context#DefaultPostMaxMemory`.
 	FormFile(key string) (multipart.File, *multipart.FileHeader, error)
 
 	//  +------------------------------------------------------------+
@@ -668,7 +668,6 @@ type Context interface {
 	//
 	// Example: https://github.com/kataras/iris/tree/master/_examples/view/context-view-data/
 	ViewLayout(layoutTmplFile string)
-
 	// ViewData saves one or more key-value pair in order to be passed if and when .View
 	// is being called afterwards, in the same request.
 	// Useful when need to set or/and change template data from previous hanadlers in the chain.
@@ -688,7 +687,6 @@ type Context interface {
 	//
 	// Example: https://github.com/kataras/iris/tree/master/_examples/view/context-view-data/
 	ViewData(key string, value interface{})
-
 	// GetViewData returns the values registered by `context#ViewData`.
 	// The return value is `map[string]interface{}`, this means that
 	// if a custom struct registered to ViewData then this function
@@ -699,16 +697,20 @@ type Context interface {
 	// Similarly to `viewData := ctx.Values().Get("iris.viewData")` or
 	// `viewData := ctx.Values().Get(ctx.Application().ConfigurationReadOnly().GetViewDataContextKey())`.
 	GetViewData() map[string]interface{}
-
-	// View renders templates based on the adapted view engines.
-	// First argument accepts the filename, relative to the view engine's Directory,
+	// View renders a template based on the registered view engine(s).
+	// First argument accepts the filename, relative to the view engine's Directory and Extension,
 	// i.e: if directory is "./templates" and want to render the "./templates/users/index.html"
 	// then you pass the "users/index.html" as the filename argument.
 	//
-	// Look: .ViewData and .ViewLayout too.
+	// The second optional argument can receive a single "view model"
+	// that will be binded to the view template if it's not nil,
+	// otherwise it will check for previous view data stored by the `ViewData`
+	// even if stored at any previous handler(middleware) for the same request.
 	//
-	// Examples: https://github.com/kataras/iris/tree/master/_examples/view/
-	View(filename string) error
+	// Look .ViewData` and .ViewLayout too.
+	//
+	// Examples: https://github.com/kataras/iris/tree/master/_examples/view
+	View(filename string, optionalViewModel ...interface{}) error
 
 	// Binary writes out the raw bytes as binary data.
 	Binary(data []byte) (int, error)
@@ -1600,7 +1602,7 @@ func (ctx *context) FormValue(name string) string {
 // FormValues returns the parsed form data, including both the URL
 // field's query parameters and the POST or PUT form data.
 //
-// The default form's memory maximum size is 32MB, it can be changed by the `context#DefaultMaxMemory`.
+// The default form's memory maximum size is 32MB, it can be changed by the `context#DefaultPostMaxMemory`.
 //
 // NOTE: A check for nil is necessary.
 func (ctx *context) FormValues() map[string][]string {
@@ -1624,7 +1626,7 @@ func (ctx *context) form() (form map[string][]string, found bool) {
 	// therefore we don't need to call it here, although it doesn't hurt.
 	// After one call to ParseMultipartForm or ParseForm,
 	// subsequent calls have no effect, are idempotent.
-	ctx.request.ParseMultipartForm(DefaultMaxMemory)
+	ctx.request.ParseMultipartForm(ctx.Application().ConfigurationReadOnly().GetPostMaxMemory())
 
 	if form := ctx.request.Form; len(form) > 0 {
 		return form, true
@@ -1733,19 +1735,10 @@ func (ctx *context) PostValueBool(name string) (bool, error) {
 	return strconv.ParseBool(ctx.PostValue(name))
 }
 
-const (
-	// DefaultMaxMemory is the default value
-	// for body max memory, defaults to
-	// 32MB.
-	// Can be also changed by the middleware `LimitRequestBodySize`
-	// or `context#SetMaxRequestBodySize`.
-	DefaultMaxMemory = 32 << 20 // 32 MB
-)
-
 // PostValues returns all the parsed form data from POST, PATCH,
 // or PUT body parameters based on a "name" as a string slice.
 //
-// The default form's memory maximum size is 32MB, it can be changed by the `context#DefaultMaxMemory`.
+// The default form's memory maximum size is 32MB, it can be changed by the `context#DefaultPostMaxMemory`.
 func (ctx *context) PostValues(name string) []string {
 	ctx.form()
 	return ctx.request.PostForm[name]
@@ -1753,9 +1746,39 @@ func (ctx *context) PostValues(name string) []string {
 
 // FormFile returns the first uploaded file that received from the client.
 //
-// The default form's memory maximum size is 32MB, it can be changed by the `context#DefaultMaxMemory`.
+// The default form's memory maximum size is 32MB, it can be changed by the `context#DefaultPostMaxMemory`.
 func (ctx *context) FormFile(key string) (multipart.File, *multipart.FileHeader, error) {
 	return ctx.request.FormFile(key)
+}
+
+// Copiable is the interface which should be completed
+// by files or not that intend to be used inside the `context#CopyFile`.
+// This interface allows testing file uploads to your http test as well.
+//
+// See `CopyFile` for more.
+type Copiable interface {
+	Open() (io.ReadCloser, error)
+}
+
+// CopyFile copies a `context#Copiable` "file", that can be acquired by a `context.FormFile`
+// as well, to the "dest".
+//
+// Returns the copied length as int64 and
+// an error if file is not exist, or new file can't be created or closed at the end.
+func CopyFile(file Copiable, dest string) (int64, error) {
+	src, err := file.Open()
+	if err != nil {
+		return 0, err
+	}
+	defer src.Close()
+
+	out, err := os.Create(dest)
+	if err != nil {
+		return 0, err
+	}
+	defer out.Close()
+
+	return io.Copy(out, src)
 }
 
 // Redirect sends a redirect response to the client
@@ -2163,20 +2186,32 @@ func (ctx *context) GetViewData() map[string]interface{} {
 	return nil
 }
 
-// View renders templates based on the adapted view engines.
-// First argument accepts the filename, relative to the view engine's Directory,
+// View renders a template based on the registered view engine(s).
+// First argument accepts the filename, relative to the view engine's Directory and Extension,
 // i.e: if directory is "./templates" and want to render the "./templates/users/index.html"
 // then you pass the "users/index.html" as the filename argument.
 //
-// Look: .ViewData and .ViewLayout too.
+// The second optional argument can receive a single "view model"
+// that will be binded to the view template if it's not nil,
+// otherwise it will check for previous view data stored by the `ViewData`
+// even if stored at any previous handler(middleware) for the same request.
 //
-// Examples: https://github.com/kataras/iris/tree/master/_examples/view/
-func (ctx *context) View(filename string) error {
+// Look .ViewData and .ViewLayout too.
+//
+// Examples: https://github.com/kataras/iris/tree/master/_examples/view
+func (ctx *context) View(filename string, optionalViewModel ...interface{}) error {
 	ctx.ContentType(ContentHTMLHeaderValue)
 	cfg := ctx.Application().ConfigurationReadOnly()
 
 	layout := ctx.values.GetString(cfg.GetViewLayoutContextKey())
-	bindingData := ctx.values.Get(cfg.GetViewDataContextKey())
+
+	var bindingData interface{}
+	if len(optionalViewModel) > 0 {
+		// a nil can override the existing data or model sent by `ViewData`.
+		bindingData = optionalViewModel[0]
+	} else {
+		bindingData = ctx.values.Get(cfg.GetViewDataContextKey())
+	}
 
 	err := ctx.Application().View(ctx.writer, filename, layout, bindingData)
 	if err != nil {
