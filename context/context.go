@@ -486,7 +486,8 @@ type Context interface {
 	// FormValues returns the parsed form data, including both the URL
 	// field's query parameters and the POST or PUT form data.
 	//
-	// The default form's memory maximum size is 32MB, it can be changed by the `context#DefaultPostMaxMemory`.
+	// The default form's memory maximum size is 32MB, it can be changed by the
+	// `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
 	//
 	// NOTE: A check for nil is necessary.
 	FormValues() map[string][]string
@@ -540,11 +541,13 @@ type Context interface {
 	// PostValues returns all the parsed form data from POST, PATCH,
 	// or PUT body parameters based on a "name" as a string slice.
 	//
-	// The default form's memory maximum size is 32MB, it can be changed by the `context#DefaultPostMaxMemory`.
+	// The default form's memory maximum size is 32MB, it can be changed by the
+	// `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
 	PostValues(name string) []string
 	// FormFile returns the first uploaded file that received from the client.
 	//
-	// The default form's memory maximum size is 32MB, it can be changed by the `context#DefaultPostMaxMemory`.
+	// The default form's memory maximum size is 32MB, it can be changed by the
+	//  `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
 	FormFile(key string) (multipart.File, *multipart.FileHeader, error)
 
 	//  +------------------------------------------------------------+
@@ -1602,8 +1605,8 @@ func (ctx *context) FormValue(name string) string {
 // FormValues returns the parsed form data, including both the URL
 // field's query parameters and the POST or PUT form data.
 //
-// The default form's memory maximum size is 32MB, it can be changed by the `context#DefaultPostMaxMemory`.
-//
+// The default form's memory maximum size is 32MB, it can be changed by the
+// `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
 // NOTE: A check for nil is necessary.
 func (ctx *context) FormValues() map[string][]string {
 	form, _ := ctx.form()
@@ -1738,7 +1741,8 @@ func (ctx *context) PostValueBool(name string) (bool, error) {
 // PostValues returns all the parsed form data from POST, PATCH,
 // or PUT body parameters based on a "name" as a string slice.
 //
-// The default form's memory maximum size is 32MB, it can be changed by the `context#DefaultPostMaxMemory`.
+// The default form's memory maximum size is 32MB, it can be changed by the
+// `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
 func (ctx *context) PostValues(name string) []string {
 	ctx.form()
 	return ctx.request.PostForm[name]
@@ -1746,8 +1750,10 @@ func (ctx *context) PostValues(name string) []string {
 
 // FormFile returns the first uploaded file that received from the client.
 //
-// The default form's memory maximum size is 32MB, it can be changed by the `context#DefaultPostMaxMemory`.
+// The default form's memory maximum size is 32MB, it can be changed by the
+// `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
 func (ctx *context) FormFile(key string) (multipart.File, *multipart.FileHeader, error) {
+	ctx.request.ParseMultipartForm(ctx.Application().ConfigurationReadOnly().GetPostMaxMemory())
 	return ctx.request.FormFile(key)
 }
 
