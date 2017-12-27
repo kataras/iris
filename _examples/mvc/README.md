@@ -135,11 +135,11 @@ If you're new to back-end web development read about the MVC architectural patte
 
 ## Examples
 
-- [Hello world](mvc/hello-world/main.go) **UPDATED**
-- [Session Controller](mvc/session-controller/main.go) **UPDATED**
-- [Overview - Plus Repository and Service layers](mvc/overview) **UPDATED**
-- [Login showcase - Plus Repository and Service layers](mvc/login) **UPDATED**
-- [Singleton](mvc/singleton) **NEW**
-- [Websocket Controller](mvc/websocket) **NEW**
+- [Hello world](hello-world/main.go) **UPDATED**
+- [Session Controller](session-controller/main.go) **UPDATED**
+- [Overview - Plus Repository and Service layers](overview) **UPDATED**
+- [Login showcase - Plus Repository and Service layers](login) **UPDATED**
+- [Singleton](singleton) **NEW**
+- [Websocket Controller](websocket) **NEW**
 
 Folder structure guidelines can be found at the [_examples/#structuring](https://github.com/kataras/iris/tree/master/_examples/#structuring) section.
