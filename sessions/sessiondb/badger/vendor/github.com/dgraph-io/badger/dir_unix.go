@@ -28,18 +28,18 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-// DirectoryLockGuard holds a lock on a directory and a pid file inside.  The pid file isn't part
+// directoryLockGuard holds a lock on a directory and a pid file inside.  The pid file isn't part
 // of the locking mechanism, it's just advisory.
-type DirectoryLockGuard struct {
+type directoryLockGuard struct {
 	// File handle on the directory, which we've flocked.
 	f *os.File
 	// The absolute path to our pid file.
 	path string
 }
 
-// AcquireDirectoryLock gets an exclusive lock on the directory (using flock).  It writes our pid
+// acquireDirectoryLock gets an exclusive lock on the directory (using flock).  It writes our pid
 // to dirPath/pidFileName for convenience.
-func AcquireDirectoryLock(dirPath string, pidFileName string) (*DirectoryLockGuard, error) {
+func acquireDirectoryLock(dirPath string, pidFileName string) (*directoryLockGuard, error) {
 	// Convert to absolute path so that Release still works even if we do an unbalanced
 	// chdir in the meantime.
 	absPidFilePath, err := filepath.Abs(filepath.Join(dirPath, pidFileName))
@@ -67,11 +67,11 @@ func AcquireDirectoryLock(dirPath string, pidFileName string) (*DirectoryLockGua
 			"Cannot write pid file %q", absPidFilePath)
 	}
 
-	return &DirectoryLockGuard{f, absPidFilePath}, nil
+	return &directoryLockGuard{f, absPidFilePath}, nil
 }
 
 // Release deletes the pid file and releases our lock on the directory.
-func (guard *DirectoryLockGuard) Release() error {
+func (guard *directoryLockGuard) release() error {
 	// It's important that we remove the pid file first.
 	err := os.Remove(guard.path)
 	if closeErr := guard.f.Close(); err == nil {
@@ -83,5 +83,5 @@ func (guard *DirectoryLockGuard) Release() error {
 	return err
 }
 
-// OpenDir opens a directory for syncing.
-func OpenDir(path string) (*os.File, error) { return os.Open(path) }
+// openDir opens a directory for syncing.
+func openDir(path string) (*os.File, error) { return os.Open(path) }

@@ -175,10 +175,8 @@ func (t *Table) Close() error {
 	if t.loadingMode == options.MemoryMap {
 		y.Munmap(t.mmap)
 	}
-	if err := t.fd.Close(); err != nil {
-		return err
-	}
-	return nil
+
+	return t.fd.Close()
 }
 
 func (t *Table) read(off int, sz int) ([]byte, error) {

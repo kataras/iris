@@ -41,8 +41,8 @@ import (
 // and contains a sequence of ManifestChange's (file creations/deletions) which we use to
 // reconstruct the manifest at startup.
 type Manifest struct {
-	Levels []LevelManifest
-	Tables map[uint64]TableManifest
+	Levels []levelManifest
+	Tables map[uint64]tableManifest
 
 	// Contains total number of creation and deletion changes in the manifest -- used to compute
 	// whether it'd be useful to rewrite the manifest.
@@ -51,22 +51,22 @@ type Manifest struct {
 }
 
 func createManifest() Manifest {
-	levels := make([]LevelManifest, 0)
+	levels := make([]levelManifest, 0)
 	return Manifest{
 		Levels: levels,
-		Tables: make(map[uint64]TableManifest),
+		Tables: make(map[uint64]tableManifest),
 	}
 }
 
-// LevelManifest contains information about LSM tree levels
+// levelManifest contains information about LSM tree levels
 // in the MANIFEST file.
-type LevelManifest struct {
+type levelManifest struct {
 	Tables map[uint64]struct{} // Set of table id's
 }
 
-// TableManifest contains information about a specific level
+// tableManifest contains information about a specific level
 // in the LSM tree.
-type TableManifest struct {
+type tableManifest struct {
 	Level uint8
 }
 
@@ -150,7 +150,7 @@ func helpOpenOrCreateManifestFile(dir string, deletionsThreshold int) (ret *mani
 		return nil, Manifest{}, err
 	}
 
-	if _, err = fp.Seek(0, os.SEEK_END); err != nil {
+	if _, err = fp.Seek(0, io.SeekEnd); err != nil {
 		_ = fp.Close()
 		return nil, Manifest{}, err
 	}
@@ -211,7 +211,7 @@ func (mf *manifestFile) addChanges(changesParam []*protos.ManifestChange) error 
 var magicText = [4]byte{'B', 'd', 'g', 'r'}
 
 // The magic version number.
-const magicVersion = 2
+const magicVersion = 4
 
 func helpRewrite(dir string, m *Manifest) (*os.File, int, error) {
 	rewritePath := filepath.Join(dir, manifestRewriteFilename)
@@ -260,7 +260,7 @@ func helpRewrite(dir string, m *Manifest) (*os.File, int, error) {
 	if err != nil {
 		return nil, 0, err
 	}
-	if _, err := fp.Seek(0, os.SEEK_END); err != nil {
+	if _, err := fp.Seek(0, io.SeekEnd); err != nil {
 		fp.Close()
 		return nil, 0, err
 	}
@@ -324,7 +324,7 @@ func ReplayManifestFile(fp *os.File) (ret Manifest, truncOffset int64, err error
 	if _, err := io.ReadFull(&r, magicBuf[:]); err != nil {
 		return Manifest{}, 0, errBadMagic
 	}
-	if bytes.Compare(magicBuf[0:4], magicText[:]) != 0 {
+	if !bytes.Equal(magicBuf[0:4], magicText[:]) {
 		return Manifest{}, 0, errBadMagic
 	}
 	version := binary.BigEndian.Uint32(magicBuf[4:8])
@@ -333,9 +333,8 @@ func ReplayManifestFile(fp *os.File) (ret Manifest, truncOffset int64, err error
 			fmt.Errorf("manifest has unsupported version: %d (we support %d)", version, magicVersion)
 	}
 
-	offset := r.count
-
 	build := createManifest()
+	var offset int64
 	for {
 		offset = r.count
 		var lenCrcBuf [8]byte
@@ -377,11 +376,11 @@ func applyManifestChange(build *Manifest, tc *protos.ManifestChange) error {
 		if _, ok := build.Tables[tc.Id]; ok {
 			return fmt.Errorf("MANIFEST invalid, table %d exists", tc.Id)
 		}
-		build.Tables[tc.Id] = TableManifest{
+		build.Tables[tc.Id] = tableManifest{
 			Level: uint8(tc.Level),
 		}
 		for len(build.Levels) <= int(tc.Level) {
-			build.Levels = append(build.Levels, LevelManifest{make(map[uint64]struct{})})
+			build.Levels = append(build.Levels, levelManifest{make(map[uint64]struct{})})
 		}
 		build.Levels[tc.Level].Tables[tc.Id] = struct{}{}
 		build.Creations++

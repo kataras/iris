@@ -239,6 +239,7 @@ func (s *levelHandler) get(key []byte) (y.ValueStruct, error) {
 	tables, decr := s.getTableForKey(key)
 	keyNoTs := y.ParseKey(key)
 
+	var maxVs y.ValueStruct
 	for _, th := range tables {
 		if th.DoesNotHave(keyNoTs) {
 			y.NumLSMBloomHits.Add(s.strLevel, 1)
@@ -254,12 +255,13 @@ func (s *levelHandler) get(key []byte) (y.ValueStruct, error) {
 			continue
 		}
 		if y.SameKey(key, it.Key()) {
-			vs := it.Value()
-			vs.Version = y.ParseTs(it.Key())
-			return vs, decr()
+			if version := y.ParseTs(it.Key()); maxVs.Version < version {
+				maxVs = it.Value()
+				maxVs.Version = version
+			}
 		}
 	}
-	return y.ValueStruct{}, decr()
+	return maxVs, decr()
 }
 
 // appendIterators appends iterators to an array of iterators, for merging.
