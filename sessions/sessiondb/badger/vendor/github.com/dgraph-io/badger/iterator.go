@@ -20,6 +20,9 @@ import (
 	"bytes"
 	"fmt"
 	"sync"
+	"time"
+
+	"github.com/dgraph-io/badger/options"
 
 	"github.com/dgraph-io/badger/y"
 	farm "github.com/dgryski/go-farm"
@@ -28,26 +31,26 @@ import (
 type prefetchStatus uint8
 
 const (
-	empty prefetchStatus = iota
-	prefetched
+	prefetched prefetchStatus = iota + 1
 )
 
 // Item is returned during iteration. Both the Key() and Value() output is only valid until
 // iterator.Next() is called.
 type Item struct {
-	status   prefetchStatus
-	err      error
-	wg       sync.WaitGroup
-	db       *DB
-	key      []byte
-	vptr     []byte
-	meta     byte
-	userMeta byte
-	val      []byte
-	slice    *y.Slice // Used only during prefetching.
-	next     *Item
-	version  uint64
-	txn      *Txn
+	status    prefetchStatus
+	err       error
+	wg        sync.WaitGroup
+	db        *DB
+	key       []byte
+	vptr      []byte
+	meta      byte // We need to store meta to know about bitValuePointer.
+	userMeta  byte
+	expiresAt uint64
+	val       []byte
+	slice     *y.Slice // Used only during prefetching.
+	next      *Item
+	version   uint64
+	txn       *Txn
 }
 
 // ToString returns a string representation of Item
@@ -71,8 +74,13 @@ func (item *Item) Version() uint64 {
 
 // Value retrieves the value of the item from the value log.
 //
-// The returned value is only valid as long as item is valid, or transaction is valid. So, if you
-// need to use it outside, please parse or copy it.
+// This method must be called within a transaction. Calling it outside a
+// transaction is considered undefined behavior. If an iterator is being used,
+// then Item.Value() is defined in the current iteration only, because items are
+// reused.
+//
+// If you need to use a value outside a transaction, please use Item.ValueCopy
+// instead, or copy it yourself.
 func (item *Item) Value() ([]byte, error) {
 	item.wg.Wait()
 	if item.status == prefetched {
@@ -85,13 +93,25 @@ func (item *Item) Value() ([]byte, error) {
 	return buf, err
 }
 
+// ValueCopy returns a copy of the value of the item from the value log, writing it to dst slice.
+// If nil is passed, or capacity of dst isn't sufficient, a new slice would be allocated and
+// returned. Tip: It might make sense to reuse the returned slice as dst argument for the next call.
+//
+// This function is useful in long running iterate/update transactions to avoid a write deadlock.
+// See Github issue: https://github.com/dgraph-io/badger/issues/315
+func (item *Item) ValueCopy(dst []byte) ([]byte, error) {
+	item.wg.Wait()
+	if item.status == prefetched {
+		return y.SafeCopy(dst, item.val), item.err
+	}
+	buf, cb, err := item.yieldItemValue()
+	defer runCallback(cb)
+	return y.SafeCopy(dst, buf), err
+}
+
 func (item *Item) hasValue() bool {
 	if item.meta == 0 && item.vptr == nil {
 		// key not found
-		return false
-	}
-	if (item.meta & bitDelete) != 0 {
-		// Tombstone encountered.
 		return false
 	}
 	return true
@@ -114,7 +134,7 @@ func (item *Item) yieldItemValue() ([]byte, func(), error) {
 
 	var vp valuePointer
 	vp.Decode(item.vptr)
-	return item.db.vlog.Read(vp)
+	return item.db.vlog.Read(vp, item.slice)
 }
 
 func runCallback(cb func()) {
@@ -132,9 +152,13 @@ func (item *Item) prefetchValue() {
 	if val == nil {
 		return
 	}
-	buf := item.slice.Resize(len(val))
-	copy(buf, val)
-	item.val = buf
+	if item.db.opt.ValueLogLoadingMode == options.MemoryMap {
+		buf := item.slice.Resize(len(val))
+		copy(buf, val)
+		item.val = buf
+	} else {
+		item.val = val
+	}
 }
 
 // EstimatedSize returns approximate size of the key-value pair.
@@ -158,6 +182,12 @@ func (item *Item) EstimatedSize() int64 {
 // is used to interpret the value.
 func (item *Item) UserMeta() byte {
 	return item.userMeta
+}
+
+// ExpiresAt returns a Unix time value indicating when the item will be
+// considered expired. 0 indicates that the item will never expire.
+func (item *Item) ExpiresAt() uint64 {
+	return item.expiresAt
 }
 
 // TODO: Switch this to use linked list container in Go.
@@ -238,6 +268,9 @@ func (txn *Txn) NewIterator(opt IteratorOptions) *Iterator {
 	defer decr()
 	txn.db.vlog.incrIteratorCount()
 	var iters []y.Iterator
+	if itr := txn.newPendingWritesIterator(opt.Reverse); itr != nil {
+		iters = append(iters, itr)
+	}
 	for i := 0; i < len(tables); i++ {
 		iters = append(iters, tables[i].NewUniIterator(opt.Reverse))
 	}
@@ -305,6 +338,16 @@ func (it *Iterator) Next() {
 	}
 }
 
+func isDeletedOrExpired(meta byte, expiresAt uint64) bool {
+	if meta&bitDelete > 0 {
+		return true
+	}
+	if expiresAt == 0 {
+		return false
+	}
+	return expiresAt <= uint64(time.Now().Unix())
+}
+
 // parseItem is a complex function because it needs to handle both forward and reverse iteration
 // implementation. We store keys such that their versions are sorted in descending order. This makes
 // forward iteration efficient, but revese iteration complicated. This tradeoff is better because
@@ -337,6 +380,8 @@ func (it *Iterator) parseItem() bool {
 	}
 
 	if it.opt.AllVersions {
+		// Return deleted or expired values also, otherwise user can't figure out
+		// whether the key was deleted.
 		item := it.newItem()
 		it.fill(item)
 		setItem(item)
@@ -356,12 +401,13 @@ func (it *Iterator) parseItem() bool {
 		// Consider keys: a 5, b 7 (del), b 5. When iterating, lastKey = a.
 		// Then we see b 7, which is deleted. If we don't store lastKey = b, we'll then return b 5,
 		// which is wrong. Therefore, update lastKey here.
-		it.lastKey = y.Safecopy(it.lastKey, mi.Key())
+		it.lastKey = y.SafeCopy(it.lastKey, mi.Key())
 	}
 
 FILL:
 	// If deleted, advance and return.
-	if mi.Value().Meta&bitDelete > 0 {
+	vs := mi.Value()
+	if isDeletedOrExpired(vs.Meta, vs.ExpiresAt) {
 		mi.Next()
 		return false
 	}
@@ -380,7 +426,7 @@ FILL:
 	// Reverse direction.
 	nextTs := y.ParseTs(mi.Key())
 	mik := y.ParseKey(mi.Key())
-	if nextTs <= it.readTs && bytes.Compare(mik, item.key) == 0 {
+	if nextTs <= it.readTs && bytes.Equal(mik, item.key) {
 		// This is a valid potential candidate.
 		goto FILL
 	}
@@ -393,11 +439,12 @@ func (it *Iterator) fill(item *Item) {
 	vs := it.iitr.Value()
 	item.meta = vs.Meta
 	item.userMeta = vs.UserMeta
+	item.expiresAt = vs.ExpiresAt
 
 	item.version = y.ParseTs(it.iitr.Key())
-	item.key = y.Safecopy(item.key, y.ParseKey(it.iitr.Key()))
+	item.key = y.SafeCopy(item.key, y.ParseKey(it.iitr.Key()))
 
-	item.vptr = y.Safecopy(item.vptr, vs.Value)
+	item.vptr = y.SafeCopy(item.vptr, vs.Value)
 	item.val = nil
 	if it.opt.PrefetchValues {
 		item.wg.Add(1)

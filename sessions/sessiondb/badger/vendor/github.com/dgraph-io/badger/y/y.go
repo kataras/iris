@@ -75,9 +75,16 @@ func OpenTruncFile(filename string, sync bool) (*os.File, error) {
 	return os.OpenFile(filename, flags, 0666)
 }
 
-// Safecopy does append(a[:0], src...).
-func Safecopy(a []byte, src []byte) []byte {
+// SafeCopy does append(a[:0], src...).
+func SafeCopy(a []byte, src []byte) []byte {
 	return append(a[:0], src...)
+}
+
+// Copy copies a byte slice and returns the copied slice.
+func Copy(a []byte) []byte {
+	b := make([]byte, len(a))
+	copy(b, a)
+	return b
 }
 
 // KeyWithTs generates a new key by appending ts to key.
@@ -101,7 +108,7 @@ func ParseTs(key []byte) uint64 {
 // a<timestamp> would be sorted higher than aa<timestamp> if we use bytes.compare
 // All keys should have timestamp.
 func CompareKeys(key1 []byte, key2 []byte) int {
-	AssertTruef(len(key1) > 8 && len(key2) > 8, "%q %q", key1, key2)
+	AssertTrue(len(key1) > 8 && len(key2) > 8)
 	if cmp := bytes.Compare(key1[:len(key1)-8], key2[:len(key2)-8]); cmp != 0 {
 		return cmp
 	}

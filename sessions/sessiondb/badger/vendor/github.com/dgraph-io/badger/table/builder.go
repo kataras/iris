@@ -85,8 +85,8 @@ type Builder struct {
 // NewTableBuilder makes a new TableBuilder.
 func NewTableBuilder() *Builder {
 	return &Builder{
-		keyBuf:     newBuffer(32 << 20),
-		buf:        newBuffer(64 << 20),
+		keyBuf:     newBuffer(1 << 20),
+		buf:        newBuffer(1 << 20),
 		prevOffset: math.MaxUint32, // Used for the first element!
 	}
 }
@@ -144,11 +144,7 @@ func (b *Builder) addHelper(key []byte, v y.ValueStruct) {
 	b.buf.Write(hbuf[:])
 	b.buf.Write(diffKey) // We only need to store the key difference.
 
-	// This should be kept in sync with ValueStruct encode function.
-	b.buf.WriteByte(v.Meta) // Meta byte precedes actual value.
-	b.buf.WriteByte(v.UserMeta)
-	b.buf.Write(v.Value)
-
+	v.EncodeTo(b.buf)
 	b.counter++ // Increment number of keys added for this current block.
 }
 

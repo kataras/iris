@@ -21,7 +21,6 @@ import (
 	"math/rand"
 	"os"
 	"sort"
-	"sync"
 	"time"
 
 	"golang.org/x/net/trace"
@@ -33,16 +32,12 @@ import (
 )
 
 type levelsController struct {
-	elog trace.EventLog
+	nextFileID uint64 // Atomic
+	elog       trace.EventLog
 
 	// The following are initialized once and const.
 	levels []*levelHandler
 	kv     *DB
-
-	nextFileID uint64 // Atomic
-
-	// For ending compactions.
-	compactWorkersWg sync.WaitGroup
 
 	cstatus compactStatus
 }
@@ -656,15 +651,15 @@ func (s *levelsController) close() error {
 }
 
 // get returns the found value if any. If not found, we return nil.
-func (s *levelsController) get(key []byte) (y.ValueStruct, error) {
+func (s *levelsController) get(key []byte, maxVs y.ValueStruct) (y.ValueStruct, error) {
 	// It's important that we iterate the levels from 0 on upward.  The reason is, if we iterated
 	// in opposite order, or in parallel (naively calling all the h.RLock() in some order) we could
 	// read level L's tables post-compaction and level L+1's tables pre-compaction.  (If we do
 	// parallelize this, we will need to call the h.RLock() function by increasing order of level
 	// number.)
 
-	var maxVs y.ValueStruct
-	for l, h := range s.levels {
+	version := y.ParseTs(key)
+	for _, h := range s.levels {
 		vs, err := h.get(key) // Calls h.RLock() and h.RUnlock().
 		if err != nil {
 			return y.ValueStruct{}, errors.Wrapf(err, "get key: %q", key)
@@ -672,7 +667,7 @@ func (s *levelsController) get(key []byte) (y.ValueStruct, error) {
 		if vs.Value == nil && vs.Meta == 0 {
 			continue
 		}
-		if l == 0 {
+		if vs.Version == version {
 			return vs, nil
 		}
 		if maxVs.Version < vs.Version {

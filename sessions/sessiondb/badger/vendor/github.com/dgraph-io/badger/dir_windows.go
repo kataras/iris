@@ -28,15 +28,15 @@ import (
 	"github.com/pkg/errors"
 )
 
-func OpenDir(path string) (*os.File, error) {
-	fd, err := openDir(path)
+func openDir(path string) (*os.File, error) {
+	fd, err := openDirWin(path)
 	if err != nil {
 		return nil, err
 	}
 	return os.NewFile(uintptr(fd), path), nil
 }
 
-func openDir(path string) (fd syscall.Handle, err error) {
+func openDirWin(path string) (fd syscall.Handle, err error) {
 	if len(path) == 0 {
 		return syscall.InvalidHandle, syscall.ERROR_FILE_NOT_FOUND
 	}
@@ -52,12 +52,12 @@ func openDir(path string) (fd syscall.Handle, err error) {
 }
 
 // DirectoryLockGuard holds a lock on the directory.
-type DirectoryLockGuard struct {
+type directoryLockGuard struct {
 	path string
 }
 
 // AcquireDirectoryLock acquires exclusive access to a directory.
-func AcquireDirectoryLock(dirPath string, pidFileName string) (*DirectoryLockGuard, error) {
+func acquireDirectoryLock(dirPath string, pidFileName string) (*directoryLockGuard, error) {
 	// Convert to absolute path so that Release still works even if we do an unbalanced
 	// chdir in the meantime.
 	absLockFilePath, err := filepath.Abs(filepath.Join(dirPath, pidFileName))
@@ -79,11 +79,11 @@ func AcquireDirectoryLock(dirPath string, pidFileName string) (*DirectoryLockGua
 	if closeErr != nil {
 		return nil, errors.Wrap(closeErr, "Cannot close pid lock file")
 	}
-	return &DirectoryLockGuard{path: absLockFilePath}, nil
+	return &directoryLockGuard{path: absLockFilePath}, nil
 }
 
 // Release removes the directory lock.
-func (g *DirectoryLockGuard) Release() error {
+func (g *directoryLockGuard) release() error {
 	path := g.path
 	g.path = ""
 	return os.Remove(path)

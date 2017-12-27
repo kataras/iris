@@ -110,7 +110,8 @@ func (itr *blockIterator) SeekToLast() {
 // parseKV would allocate a new byte slice for key and for value.
 func (itr *blockIterator) parseKV(h header) {
 	if cap(itr.key) < int(h.plen+h.klen) {
-		itr.key = make([]byte, 2*(h.plen+h.klen))
+		sz := int(h.plen) + int(h.klen) // Convert to int before adding to avoid uint16 overflow.
+		itr.key = make([]byte, 2*sz)
 	}
 	itr.key = itr.key[:h.plen+h.klen]
 	copy(itr.key, itr.baseKey[:h.plen])
@@ -122,7 +123,7 @@ func (itr *blockIterator) parseKV(h header) {
 			itr.pos, h.klen, h.vlen, len(itr.data), h)
 		return
 	}
-	itr.val = y.Safecopy(itr.val, itr.data[itr.pos:itr.pos+uint32(h.vlen)])
+	itr.val = y.SafeCopy(itr.val, itr.data[itr.pos:itr.pos+uint32(h.vlen)])
 	itr.pos += uint32(h.vlen)
 }
 
@@ -169,7 +170,7 @@ func (itr *blockIterator) Prev() {
 	itr.pos = itr.last.prev
 
 	var h header
-	y.AssertTruef(itr.pos >= 0 && itr.pos < uint32(len(itr.data)), "%d %d", itr.pos, len(itr.data))
+	y.AssertTruef(itr.pos < uint32(len(itr.data)), "%d %d", itr.pos, len(itr.data))
 	itr.pos += uint32(h.Decode(itr.data[itr.pos:]))
 	itr.parseKV(h)
 	itr.last = h
@@ -279,8 +280,7 @@ func (itr *Iterator) seekFrom(key []byte, whence int) {
 	case current:
 	}
 
-	var idx int
-	idx = sort.Search(len(itr.t.blockIndex), func(idx int) bool {
+	idx := sort.Search(len(itr.t.blockIndex), func(idx int) bool {
 		ko := itr.t.blockIndex[idx]
 		return y.CompareKeys(ko.key, key) > 0
 	})

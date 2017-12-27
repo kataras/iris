@@ -19,17 +19,10 @@ syntax = "proto3";
 
 package protos;
 
-message ManifestChangeSet {
-        // A set of changes that are applied atomically.
-        repeated ManifestChange changes = 1;
-}
-
-message ManifestChange {
-        uint64 Id = 1;
-        enum Operation {
-                CREATE = 0;
-                DELETE = 1;
-        }
-        Operation Op = 2;
-        uint32 Level = 3;  // Only used for CREATE
+message KVPair {
+        bytes key = 1;
+        bytes value = 2;
+        bytes  userMeta = 3;
+        uint64 version = 4;
+        uint64 expires_at = 5;
 }

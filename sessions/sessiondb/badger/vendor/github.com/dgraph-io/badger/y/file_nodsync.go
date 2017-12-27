@@ -1,4 +1,4 @@
-// +build dragonfly freebsd windows
+// +build dragonfly freebsd windows darwin
 
 /*
  * Copyright 2017 Dgraph Labs, Inc. and Contributors

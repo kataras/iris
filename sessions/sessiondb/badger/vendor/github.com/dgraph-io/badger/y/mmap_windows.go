@@ -20,7 +20,6 @@ package y
 
 import (
 	"fmt"
-	"math"
 	"os"
 	"syscall"
 	"unsafe"
@@ -67,7 +66,17 @@ func Mmap(fd *os.File, write bool, size int64) ([]byte, error) {
 		return nil, os.NewSyscallError("CloseHandle", err)
 	}
 
-	data := (*[math.MaxUint32]byte)(unsafe.Pointer(addr))[:size]
+	// Slice memory layout
+	// Copied this snippet from golang/sys package
+	var sl = struct {
+		addr uintptr
+		len  int
+		cap  int
+	}{addr, int(size), int(size)}
+
+	// Use unsafe to turn sl into a []byte.
+	data := *(*[]byte)(unsafe.Pointer(&sl))
+
 	return data, nil
 }
 

@@ -96,17 +96,55 @@ func hashLen33to64(s []byte) uint64 {
 	return hashLen16Mul(rotate64(e+f, 43)+rotate64(g, 30)+h, e+rotate64(f+a, 18)+g, mul)
 }
 
-// NOTE: s must be <= 64 bytes
 func naHash64(s []byte) uint64 {
 	slen := len(s)
-	const seed uint64 = 81
-	if slen <= 16 {
-		return hashLen0to16(s)
-	}
+	var seed uint64 = 81
 	if slen <= 32 {
+		if slen <= 16 {
+			return hashLen0to16(s)
+		}
 		return hashLen17to32(s)
 	}
-	return hashLen33to64(s)
+	if slen <= 64 {
+		return hashLen33to64(s)
+	}
+	// For strings over 64 bytes we loop.
+	// Internal state consists of 56 bytes: v, w, x, y, and z.
+	v := uint128{0, 0}
+	w := uint128{0, 0}
+	x := seed*k2 + fetch64(s, 0)
+	y := seed*k1 + 113
+	z := shiftMix(y*k2+113) * k2
+	// Set end so that after the loop we have 1 to 64 bytes left to process.
+	endIdx := ((slen - 1) / 64) * 64
+	last64Idx := endIdx + ((slen - 1) & 63) - 63
+	last64 := s[last64Idx:]
+	for len(s) > 64 {
+		x = rotate64(x+y+v.lo+fetch64(s, 8), 37) * k1
+		y = rotate64(y+v.hi+fetch64(s, 48), 42) * k1
+		x ^= w.hi
+		y += v.lo + fetch64(s, 40)
+		z = rotate64(z+w.lo, 33) * k1
+		v.lo, v.hi = weakHashLen32WithSeeds(s, v.hi*k1, x+w.lo)
+		w.lo, w.hi = weakHashLen32WithSeeds(s[32:], z+w.hi, y+fetch64(s, 16))
+		x, z = z, x
+		s = s[64:]
+	}
+	mul := k1 + ((z & 0xff) << 1)
+	// Make s point to the last 64 bytes of input.
+	s = last64
+	w.lo += (uint64(slen-1) & 63)
+	v.lo += w.lo
+	w.lo += v.lo
+	x = rotate64(x+y+v.lo+fetch64(s, 8), 37) * mul
+	y = rotate64(y+v.hi+fetch64(s, 48), 42) * mul
+	x ^= w.hi * 9
+	y += v.lo*9 + fetch64(s, 40)
+	z = rotate64(z+w.lo, 33) * mul
+	v.lo, v.hi = weakHashLen32WithSeeds(s, v.hi*mul, x+w.lo)
+	w.lo, w.hi = weakHashLen32WithSeeds(s[32:], z+w.hi, y+fetch64(s, 16))
+	x, z = z, x
+	return hashLen16Mul(hashLen16Mul(v.lo, w.lo, mul)+shiftMix(y)*k0+z, hashLen16Mul(v.hi, w.hi, mul)+x, mul)
 }
 
 func naHash64WithSeed(s []byte, seed uint64) uint64 {

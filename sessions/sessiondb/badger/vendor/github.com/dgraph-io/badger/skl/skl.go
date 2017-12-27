@@ -50,18 +50,19 @@ const (
 const MaxNodeSize = int(unsafe.Sizeof(node{}))
 
 type node struct {
+	// Multiple parts of the value are encoded as a single uint64 so that it
+	// can be atomically loaded and stored:
+	//   value offset: uint32 (bits 0-31)
+	//   value size  : uint16 (bits 32-47)
+	// 12 bytes are allocated to ensure 8 byte alignment also on 32bit systems.
+	value [12]byte
+
 	// A byte slice is 24 bytes. We are trying to save space here.
 	keyOffset uint32 // Immutable. No need to lock to access key.
 	keySize   uint16 // Immutable. No need to lock to access key.
 
 	// Height of the tower.
 	height uint16
-
-	// Multiple parts of the value are encoded as a single uint64 so that it
-	// can be atomically loaded and stored:
-	//   value offset: uint32 (bits 0-31)
-	//   value size  : uint16 (bits 32-47)
-	value uint64
 
 	// Most nodes do not need to use the full height of the tower, since the
 	// probability of each successive level decreases exponentially. Because
@@ -108,7 +109,7 @@ func newNode(arena *Arena, key []byte, v y.ValueStruct, height int) *node {
 	node.keyOffset = arena.putKey(key)
 	node.keySize = uint16(len(key))
 	node.height = uint16(height)
-	node.value = encodeValue(arena.putVal(v), v.EncodedSize())
+	*node.value64BitAlignedPtr() = encodeValue(arena.putVal(v), v.EncodedSize())
 	return node
 }
 
@@ -134,8 +135,15 @@ func NewSkiplist(arenaSize int64) *Skiplist {
 	}
 }
 
+func (s *node) value64BitAlignedPtr() *uint64 {
+	if uintptr(unsafe.Pointer(&s.value))%8 == 0 {
+		return (*uint64)(unsafe.Pointer(&s.value))
+	}
+	return (*uint64)(unsafe.Pointer(&s.value[4]))
+}
+
 func (s *node) getValueOffset() (uint32, uint16) {
-	value := atomic.LoadUint64(&s.value)
+	value := atomic.LoadUint64(s.value64BitAlignedPtr())
 	return decodeValue(value)
 }
 
@@ -146,7 +154,7 @@ func (s *node) key(arena *Arena) []byte {
 func (s *node) setValue(arena *Arena, v y.ValueStruct) {
 	valOffset := arena.putVal(v)
 	value := encodeValue(valOffset, v.EncodedSize())
-	atomic.StoreUint64(&s.value, value)
+	atomic.StoreUint64(s.value64BitAlignedPtr(), value)
 }
 
 func (s *node) getNextOffset(h int) uint32 {
