@@ -67,8 +67,8 @@ func (r *ConnectionValues) Reset() {
 	*r = (*r)[:0]
 }
 
-// UnderlineConnection is used for compatible with fasthttp and net/http underline websocket libraries
-// we only need ~8 funcs from websocket.Conn so:
+// UnderlineConnection is the underline connection, nothing to think about,
+// it's used internally mostly but can be used for extreme cases with other libraries.
 type UnderlineConnection interface {
 	// SetWriteDeadline sets the write deadline on the underlying network
 	// connection. After a write has timed out, the websocket state is corrupt and
@@ -118,13 +118,13 @@ type UnderlineConnection interface {
 // -------------------------------------------------------------------------------------
 
 type (
-	// DisconnectFunc is the callback which fires when a client/connection closed
+	// DisconnectFunc is the callback which is fired when a client/connection closed
 	DisconnectFunc func()
-	// LeaveRoomFunc is the callback which fires when a client/connection leaves from any room.
+	// LeaveRoomFunc is the callback which is fired when a client/connection leaves from any room.
 	// This is called automatically when client/connection disconnected
 	// (because websocket server automatically leaves from all joined rooms)
 	LeaveRoomFunc func(roomName string)
-	// ErrorFunc is the callback which fires when an error happens
+	// ErrorFunc is the callback which fires whenever an error occurs
 	ErrorFunc (func(string))
 	// NativeMessageFunc is the callback for native websocket messages, receives one []byte parameter which is the raw client's message
 	NativeMessageFunc func([]byte)
@@ -155,26 +155,26 @@ type (
 		// then  you use it to receive user information, for example: from headers
 		Context() context.Context
 
-		// OnDisconnect registers a callback which fires when this connection is closed by an error or manual
+		// OnDisconnect registers a callback which is fired when this connection is closed by an error or manual
 		OnDisconnect(DisconnectFunc)
 		// OnError registers a callback which fires when this connection occurs an error
 		OnError(ErrorFunc)
 		// OnPing  registers a callback which fires on each ping
 		OnPing(PingFunc)
-		// FireStatusCode can be used to send a custom error message to the connection
+		// FireOnError can be used to send a custom error message to the connection
 		//
-		// It does nothing more than firing the OnError listeners. It doesn't sends anything to the client.
+		// It does nothing more than firing the OnError listeners. It doesn't send anything to the client.
 		FireOnError(errorMessage string)
-		// To defines where server should send a message
-		// returns an emitter to send messages
+		// To defines on what "room" (see Join) the server should send a message
+		// returns an Emmiter(`EmitMessage` & `Emit`) to send messages.
 		To(string) Emitter
 		// OnMessage registers a callback which fires when native websocket message received
 		OnMessage(NativeMessageFunc)
-		// On registers a callback to a particular event which fires when a message to this event received
+		// On registers a callback to a particular event which is fired when a message to this event is received
 		On(string, MessageFunc)
-		// Join join a connection to a room, it doesn't check if connection is already there, so care
+		// Join registers this connection to a room, if it doesn't exist then it creates a new. One room can have one or more connections. One connection can be joined to many rooms. All connections are joined to a room specified by their `ID` automatically.
 		Join(string)
-		// Leave removes a connection from a room
+		// Leave removes this connection entry from a room
 		// Returns true if the connection has actually left from the particular room.
 		Leave(string) bool
 		// OnLeave registers a callback which fires when this connection left from any joined room.
