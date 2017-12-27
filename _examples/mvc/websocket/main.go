@@ -31,9 +31,9 @@ func configureMVC(m *mvc.Application) {
 	m.Router.Any("/iris-ws.js", websocket.ClientHandler())
 
 	// This will bind the result of ws.Upgrade which is a websocket.Connection
-	// to the controller(s) registered via `m.Register`.
-	m.AddDependencies(ws.Upgrade)
-	m.Register(new(websocketController))
+	// to the controller(s) served by the `m.Handle`.
+	m.Register(ws.Upgrade)
+	m.Handle(new(websocketController))
 }
 
 var visits uint64

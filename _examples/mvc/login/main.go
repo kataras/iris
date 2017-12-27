@@ -36,7 +36,7 @@ func main() {
 		ctx.View("shared/error.html")
 	})
 
-	// ---- Register our controllers. ----
+	// ---- Serve our controllers. ----
 
 	// Prepare our repositories and services.
 	db, err := datasource.LoadUsers(datasource.Memory)
@@ -53,8 +53,8 @@ func main() {
 	// for the /users based requests.
 	users.Router.Use(middleware.BasicAuth)
 	// Bind the "userService" to the UserController's Service (interface) field.
-	users.AddDependencies(userService)
-	users.Register(new(controllers.UsersController))
+	users.Register(userService)
+	users.Handle(new(controllers.UsersController))
 
 	// "/user" based mvc application.
 	sessManager := sessions.New(sessions.Config{
@@ -62,11 +62,11 @@ func main() {
 		Expires: 24 * time.Hour,
 	})
 	user := mvc.New(app.Party("/user"))
-	user.AddDependencies(
+	user.Register(
 		userService,
 		sessManager.Start,
 	)
-	user.Register(new(controllers.UserController))
+	user.Handle(new(controllers.UserController))
 
 	// http://localhost:8080/noexist
 	// and all controller's methods like

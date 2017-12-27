@@ -127,8 +127,7 @@ All HTTP Methods are supported, for example if want to serve `GET`
 then the controller should have a function named `Get()`,
 you can define more than one method function to serve in the same Controller.
 
-Register custom controller's struct's methods as handlers with custom paths(even with regex parametermized path) 
-via the `BeforeActivation` custom event callback, per-controller. Example:
+Serve custom controller's struct's methods as handlers with custom paths(even with regex parametermized path) via the `BeforeActivation` custom event callback, per-controller. Example:
 
 ```go
 import (
@@ -143,9 +142,9 @@ func main() {
 }
 
 func myMVC(app *mvc.Application) {
-    // app.AddDependencies(...)
+    // app.Register(...)
     // app.Router.Use/UseGlobal/Done(...)
-    app.Register(new(MyController))
+    app.Handle(new(MyController))
 }
 
 type MyController struct {}
@@ -192,13 +191,13 @@ Optional `EndRequest(ctx)` function to perform any finalization after any method
 Inheritance, recursively, see for example our `mvc.SessionController`, it has the `Session *sessions.Session` and `Manager *sessions.Sessions` as embedded fields
 which are filled by its `BeginRequest`, [here](https://github.com/kataras/iris/blob/master/mvc/session_controller.go).
 This is just an example, you could use the `sessions.Session` which returned from the manager's `Start` as a dynamic dependency to the MVC Application, i.e
-`mvcApp.AddDependencies(sessions.New(sessions.Config{Cookie: "iris_session_id"}).Start)`.
+`mvcApp.Register(sessions.New(sessions.Config{Cookie: "iris_session_id"}).Start)`.
 
 Access to the dynamic path parameters via the controller's methods' input arguments, no binding is needed.
 When you use the Iris' default syntax to parse handlers from a controller, you need to suffix the methods
 with the `By` word, uppercase is a new sub path. Example:
 
-If `mvc.New(app.Party("/user")).Register(new(user.Controller))`
+If `mvc.New(app.Party("/user")).Handle(new(user.Controller))`
 
 - `func(*Controller) Get()` - `GET:/user`.
 - `func(*Controller) Post()` - `POST:/user`.
@@ -209,11 +208,11 @@ If `mvc.New(app.Party("/user")).Register(new(user.Controller))`
 - `func(*Controller) GetBy(id int64)` - `GET:/user/{param:long}`
 - `func(*Controller) PostBy(id int64)` - `POST:/user/{param:long}`
 
-If `mvc.New(app.Party("/profile")).Register(new(profile.Controller))`
+If `mvc.New(app.Party("/profile")).Handle(new(profile.Controller))`
 
 - `func(*Controller) GetBy(username string)` - `GET:/profile/{param:string}`
 
-If `mvc.New(app.Party("/assets")).Register(new(file.Controller))`
+If `mvc.New(app.Party("/assets")).Handle(new(file.Controller))`
 
 - `func(*Controller) GetByWildard(path string)` - `GET:/assets/{param:path}`
 

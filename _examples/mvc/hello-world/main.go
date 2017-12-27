@@ -38,8 +38,8 @@ func newApp() *iris.Application {
 	app.Use(recover.New())
 	app.Use(logger.New())
 
-	// Register a controller based on the root Router, "/".
-	mvc.New(app).Register(new(ExampleController))
+	// Serve a controller based on the root Router, "/".
+	mvc.New(app).Handle(new(ExampleController))
 	return app
 }
 

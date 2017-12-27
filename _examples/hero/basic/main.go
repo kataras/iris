@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/kataras/iris"
-
 	"github.com/kataras/iris/hero"
 )
 

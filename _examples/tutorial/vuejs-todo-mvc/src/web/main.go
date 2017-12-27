@@ -41,14 +41,14 @@ func main() {
 	todosApp := mvc.New(todosRouter)
 
 	// any dependencies bindings here...
-	todosApp.AddDependencies(
+	todosApp.Register(
 		todo.NewMemoryService(),
 		sess.Start,
 		ws.Upgrade,
 	)
 
 	// controllers registration here...
-	todosApp.Register(new(controllers.TodoController))
+	todosApp.Handle(new(controllers.TodoController))
 
 	// start the web server at http://localhost:8080
 	app.Run(iris.Addr(":8080"), iris.WithoutVersionChecker)

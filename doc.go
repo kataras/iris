@@ -1504,8 +1504,8 @@ Example Code:
         app.Use(recover.New())
         app.Use(logger.New())
 
-        // Register a controller based on the root Router, "/".
-        mvc.New(app).Register(new(ExampleController))
+        // Serve a controller based on the root Router, "/".
+        mvc.New(app).Handle(new(ExampleController))
 
         // http://localhost:8080
         // http://localhost:8080/ping
@@ -1613,9 +1613,9 @@ via the `BeforeActivation` custom event callback, per-controller. Example:
     }
 
     func myMVC(app *mvc.Application) {
-        // app.AddDependencies(...)
+        // app.Register(...)
         // app.Router.Use/UseGlobal/Done(...)
-        app.Register(new(MyController))
+        app.Handle(new(MyController))
     }
 
     type MyController struct {}
@@ -1665,7 +1665,7 @@ Optional `EndRequest(ctx)` function to perform any finalization after any method
 
 Session dynamic dependency via manager's `Start` to the MVC Application, i.e
 
-    mvcApp.AddDependencies(sessions.New(sessions.Config{Cookie: "iris_session_id"}).Start)
+    mvcApp.Register(sessions.New(sessions.Config{Cookie: "iris_session_id"}).Start)
 
 Inheritance, recursively.
 
@@ -1675,7 +1675,7 @@ with the `By` word, uppercase is a new sub path. Example:
 
 Register one or more relative paths and able to get path parameters, i.e
 
-    If `mvc.New(app.Party("/user")).Register(new(user.Controller))`
+    If `mvc.New(app.Party("/user")).Handle(new(user.Controller))`
 
     - `func(*Controller) Get()` - `GET:/user` , as usual.
     - `func(*Controller) Post()` - `POST:/user`, as usual.
@@ -1686,15 +1686,15 @@ Register one or more relative paths and able to get path parameters, i.e
     - `func(*Controller) GetBy(id int64)` - `GET:/user/{param:long}`
     - `func(*Controller) PostBy(id int64)` - `POST:/user/{param:long}`
 
-    If `mvc.New(app.Party("/profile")).Register(new(profile.Controller))`
+    If `mvc.New(app.Party("/profile")).Handle(new(profile.Controller))`
 
     - `func(*Controller) GetBy(username string)` - `GET:/profile/{param:string}`
 
-    If `mvc.New(app.Party("/assets")).Register(new(file.Controller))`
+    If `mvc.New(app.Party("/assets")).Handle(new(file.Controller))`
 
     - `func(*Controller) GetByWildard(path string)` - `GET:/assets/{param:path}`
 
-    If `mvc.New(app.Party("/equality")).Register(new(profile.Equality))`
+    If `mvc.New(app.Party("/equality")).Handle(new(profile.Equality))`
 
     - `func(*Controller) GetBy(is bool)` - `GET:/equality/{param:boolean}`
     - `func(*Controller) GetByOtherBy(is bool, otherID int64)` - `GET:/equality/{paramfirst:boolean}/other/{paramsecond:long}`

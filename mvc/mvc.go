@@ -1,6 +1,7 @@
 package mvc
 
 import (
+	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/router"
 	"github.com/kataras/iris/hero/di"
 )
@@ -68,7 +69,7 @@ func (app *Application) Configure(configurators ...func(*Application)) *Applicat
 	return app
 }
 
-// AddDependencies adds one or more values as dependencies.
+// Register appends one or more values as dependencies.
 // The value can be a single struct value-instance or a function
 // which has one input and one output, the input should be
 // an `iris.Context` and the output can be any type, that output type
@@ -77,17 +78,17 @@ func (app *Application) Configure(configurators ...func(*Application)) *Applicat
 //
 // These dependencies "values" can be changed per-controller as well,
 // via controller's `BeforeActivation` and `AfterActivation` methods,
-// look the `Register` method for more.
+// look the `Handle` method for more.
 //
 // It returns this Application.
 //
-// Example: `.AddDependencies(loggerService{prefix: "dev"}, func(ctx iris.Context) User {...})`.
-func (app *Application) AddDependencies(values ...interface{}) *Application {
+// Example: `.Register(loggerService{prefix: "dev"}, func(ctx iris.Context) User {...})`.
+func (app *Application) Register(values ...interface{}) *Application {
 	app.Dependencies.Add(values...)
 	return app
 }
 
-// Register adds a controller for the current Router.
+// Handle serves a controller for the current mvc application's Router.
 // It accept any custom struct which its functions will be transformed
 // to routes.
 //
@@ -98,7 +99,7 @@ func (app *Application) AddDependencies(values ...interface{}) *Application {
 //
 // It returns this mvc Application.
 //
-// Usage: `.Register(new(TodoController))`.
+// Usage: `.Handle(new(TodoController))`.
 //
 // Controller accepts a sub router and registers any custom struct
 // as controller, if struct doesn't have any compatible methods
@@ -131,7 +132,7 @@ func (app *Application) AddDependencies(values ...interface{}) *Application {
 // where Get is an HTTP Method func.
 //
 // Examples at: https://github.com/kataras/iris/tree/master/_examples/mvc
-func (app *Application) Register(controller interface{}) *Application {
+func (app *Application) Handle(controller interface{}) *Application {
 	// initialize the controller's activator, nothing too magical so far.
 	c := newControllerActivator(app.Router, controller, app.Dependencies)
 
@@ -154,12 +155,18 @@ func (app *Application) Register(controller interface{}) *Application {
 	return app
 }
 
-// NewChild creates and returns a new MVC Application which will be adapted
-// to the "party", it adopts
-// the parent's (current) dependencies, the "party" may be
-// a totally new router or a child path one via the parent's `.Router.Party`.
+// Clone returns a new mvc Application which has the dependencies
+// of the current mvc Mpplication's dependencies.
 //
-// Example: `.NewChild(irisApp.Party("/path")).Register(new(TodoSubController))`.
-func (app *Application) NewChild(party router.Party) *Application {
+// Example: `.Clone(app.Party("/path")).Handle(new(TodoSubController))`.
+func (app *Application) Clone(party router.Party) *Application {
 	return newApp(party, app.Dependencies.Clone())
+}
+
+// Party returns a new child mvc Application based on the current path + "relativePath".
+// The new mvc Application has the same dependencies of the current mvc Application.
+//
+// The router's root path of this child will be the current mvc Application's root path + "relativePath".
+func (app *Application) Party(relativePath string, middleware ...context.Handler) *Application {
+	return app.Clone(app.Router.Party(relativePath, middleware...))
 }
