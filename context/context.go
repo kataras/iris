@@ -475,51 +475,76 @@ type Context interface {
 	// it returns an empty map if nothing found.
 	URLParams() map[string]string
 
-	// FormValue returns a single form value by its name/key
+	// FormValueDefault returns a single parsed form value by its "name",
+	// including both the URL field's query parameters and the POST or PUT form data.
+	//
+	// Returns the "def" if not found.
+	FormValueDefault(name string, def string) string
+	// FormValue returns a single parsed form value by its "name",
+	// including both the URL field's query parameters and the POST or PUT form data.
 	FormValue(name string) string
-	// FormValues returns all post data values with their keys
-	// form data, get, post & put query arguments
+	// FormValues returns the parsed form data, including both the URL
+	// field's query parameters and the POST or PUT form data.
+	//
+	// The default form's memory maximum size is 32MB, it can be changed by the `context#DefaultMaxMemory`.
 	//
 	// NOTE: A check for nil is necessary.
 	FormValues() map[string][]string
 
-	// PostValueDefault returns a form's only-post value by its name,
-	// if not found then "def" is returned,
-	// same as Request.PostFormValue.
-	PostValueDefault(name string, def string) string
-	// PostValue returns a form's only-post value by its name,
-	// same as Request.PostFormValue.
-	PostValue(name string) string
-	// PostValueTrim returns a form's only-post value without trailing spaces by its name.
-	PostValueTrim(name string) string
-	// PostValueEscape returns a form's only-post escaped value by its name.
-	PostValueEscape(name string) string
-	// PostValueIntDefault returns a form's only-post value as int by its name.
-	// If not found returns "def".
-	PostValueIntDefault(name string, def int) (int, error)
-	// PostValueInt returns a form's only-post value as int by its name.
-	PostValueInt(name string) (int, error)
-	// PostValueInt64Default returns a form's only-post value as int64 by its name.
-	// If not found returns "def".
-	PostValueInt64Default(name string, def int64) (int64, error)
-	// PostValueInt64 returns a form's only-post value as int64 by its name.
-	PostValueInt64(name string) (int64, error)
-	// PostValueFloat64Default returns a form's only-post value as float64 by its name.
-	// If not found returns "def".
-	PostValueFloat64Default(name string, def float64) (float64, error)
-	// PostValueFloat64 returns a form's only-post value as float64 by its name.
-	PostValueFloat64(name string) (float64, error)
-	// PostValue returns a form's only-post value as boolean by its name.
-	PostValueBool(name string) (bool, error)
-	// PostValues returns a form's only-post values.
-	// PostValues calls ParseMultipartForm and ParseForm if necessary and ignores
-	// any errors returned by these functions.
-	PostValues(name string) []string
-
-	// FormFile returns the first file for the provided form key.
-	// FormFile calls ctx.Request.ParseMultipartForm and ParseForm if necessary.
+	// PostValueDefault returns the parsed form data from POST, PATCH,
+	// or PUT body parameters based on a "name".
 	//
-	// same as Request.FormFile.
+	// If not found then "def" is returned instead.
+	PostValueDefault(name string, def string) string
+	// PostValue returns the parsed form data from POST, PATCH,
+	// or PUT body parameters based on a "name"
+	PostValue(name string) string
+	// PostValueTrim returns the parsed form data from POST, PATCH,
+	// or PUT body parameters based on a "name",  without trailing spaces.
+	PostValueTrim(name string) string
+	// PostValueIntDefault returns the parsed form data from POST, PATCH,
+	// or PUT body parameters based on a "name", as int.
+	//
+	// If not found returns the "def".
+	PostValueIntDefault(name string, def int) (int, error)
+	// PostValueInt returns the parsed form data from POST, PATCH,
+	// or PUT body parameters based on a "name", as int.
+	//
+	// If not found returns 0.
+	PostValueInt(name string) (int, error)
+	// PostValueInt64Default returns the parsed form data from POST, PATCH,
+	// or PUT body parameters based on a "name", as int64.
+	//
+	// If not found returns the "def".
+	PostValueInt64Default(name string, def int64) (int64, error)
+	// PostValueInt64 returns the parsed form data from POST, PATCH,
+	// or PUT body parameters based on a "name", as float64.
+	//
+	// If not found returns 0.0.
+	PostValueInt64(name string) (int64, error)
+	// PostValueInt64Default returns the parsed form data from POST, PATCH,
+	// or PUT body parameters based on a "name", as float64.
+	//
+	// If not found returns the "def".
+	PostValueFloat64Default(name string, def float64) (float64, error)
+	/// PostValueInt64Default returns the parsed form data from POST, PATCH,
+	// or PUT body parameters based on a "name", as float64.
+	//
+	// If not found returns 0.0.
+	PostValueFloat64(name string) (float64, error)
+	// PostValueInt64Default returns the parsed form data from POST, PATCH,
+	// or PUT body parameters based on a "name", as bool.
+	//
+	// If not found or value is false, then it returns false, otherwise true.
+	PostValueBool(name string) (bool, error)
+	// PostValues returns all the parsed form data from POST, PATCH,
+	// or PUT body parameters based on a "name" as a string slice.
+	//
+	// The default form's memory maximum size is 32MB, it can be changed by the `context#DefaultMaxMemory`.
+	PostValues(name string) []string
+	// FormFile returns the first uploaded file that received from the client.
+	//
+	// The default form's memory maximum size is 32MB, it can be changed by the `context#DefaultMaxMemory`.
 	FormFile(key string) (multipart.File, *multipart.FileHeader, error)
 
 	//  +------------------------------------------------------------+
@@ -1543,62 +1568,107 @@ func (ctx *context) URLParams() map[string]string {
 	return values
 }
 
-func (ctx *context) askParseForm() error {
-	if ctx.request.Form == nil {
-		if err := ctx.request.ParseForm(); err != nil {
-			return err
+// No need anymore, net/http checks for the Form already.
+// func (ctx *context) askParseForm() error {
+// 	if ctx.request.Form == nil {
+// 		if err := ctx.request.ParseForm(); err != nil {
+// 			return err
+// 		}
+// 	}
+// 	return nil
+// }
+
+// FormValueDefault returns a single parsed form value by its "name",
+// including both the URL field's query parameters and the POST or PUT form data.
+//
+// Returns the "def" if not found.
+func (ctx *context) FormValueDefault(name string, def string) string {
+	if form, has := ctx.form(); has {
+		if v := form[name]; len(v) > 0 {
+			return v[0]
 		}
 	}
-	return nil
+	return def
 }
 
-// FormValue returns a single form value by its name/key
+// FormValue returns a single parsed form value by its "name",
+// including both the URL field's query parameters and the POST or PUT form data.
 func (ctx *context) FormValue(name string) string {
-	return ctx.request.FormValue(name)
+	return ctx.FormValueDefault(name, "")
 }
 
-// FormValues returns all post data values with their keys
-// form data, get, post & put query arguments
+// FormValues returns the parsed form data, including both the URL
+// field's query parameters and the POST or PUT form data.
+//
+// The default form's memory maximum size is 32MB, it can be changed by the `context#DefaultMaxMemory`.
 //
 // NOTE: A check for nil is necessary.
 func (ctx *context) FormValues() map[string][]string {
-	//  we skip the check of multipart form, takes too much memory, if user wants it can do manually now.
-	if err := ctx.askParseForm(); err != nil {
-		return nil
-	}
-	return ctx.request.Form // nothing more to do, it's already contains both query and post & put args.
-
+	form, _ := ctx.form()
+	return form
 }
 
-// PostValueDefault returns a form's only-post value by its name,
-// if not found then "def" is returned,
-// same as Request.PostFormValue.
+// Form contains the parsed form data, including both the URL
+// field's query parameters and the POST or PUT form data.
+func (ctx *context) form() (form map[string][]string, found bool) {
+	/*
+		net/http/request.go#1219
+		for k, v := range f.Value {
+			r.Form[k] = append(r.Form[k], v...)
+			// r.PostForm should also be populated. See Issue 9305.
+			r.PostForm[k] = append(r.PostForm[k], v...)
+		}
+	*/
+
+	// ParseMultipartForm calls `request.ParseForm` automatically
+	// therefore we don't need to call it here, although it doesn't hurt.
+	// After one call to ParseMultipartForm or ParseForm,
+	// subsequent calls have no effect, are idempotent.
+	ctx.request.ParseMultipartForm(DefaultMaxMemory)
+
+	if form := ctx.request.Form; len(form) > 0 {
+		return form, true
+	}
+
+	if form := ctx.request.PostForm; len(form) > 0 {
+		return form, true
+	}
+
+	if form := ctx.request.MultipartForm.Value; len(form) > 0 {
+		return form, true
+	}
+
+	return nil, false
+}
+
+// PostValueDefault returns the parsed form data from POST, PATCH,
+// or PUT body parameters based on a "name".
+//
+// If not found then "def" is returned instead.
 func (ctx *context) PostValueDefault(name string, def string) string {
-	v := ctx.request.PostFormValue(name)
-	if v == "" {
-		return def
+	ctx.form()
+	if v := ctx.request.PostForm[name]; len(v) > 0 {
+		return v[0]
 	}
-	return v
+	return def
 }
 
-// PostValue returns a form's only-post value by its name,
-// same as Request.PostFormValue.
+// PostValue returns the parsed form data from POST, PATCH,
+// or PUT body parameters based on a "name"
 func (ctx *context) PostValue(name string) string {
 	return ctx.PostValueDefault(name, "")
 }
 
-// PostValueTrim returns a form's only-post value without trailing spaces by its name.
+// PostValueTrim returns the parsed form data from POST, PATCH,
+// or PUT body parameters based on a "name",  without trailing spaces.
 func (ctx *context) PostValueTrim(name string) string {
 	return strings.TrimSpace(ctx.PostValue(name))
 }
 
-// PostValueEscape returns a form's only-post escaped value by its name.
-func (ctx *context) PostValueEscape(name string) string {
-	return DecodeQuery(ctx.PostValue(name))
-}
-
-// PostValueIntDefault returns a form's only-post value as int by its name.
-// If not found returns "def".
+// PostValueIntDefault returns the parsed form data from POST, PATCH,
+// or PUT body parameters based on a "name", as int.
+//
+// If not found returns the "def".
 func (ctx *context) PostValueIntDefault(name string, def int) (int, error) {
 	v := ctx.PostValue(name)
 	if v == "" {
@@ -1607,14 +1677,18 @@ func (ctx *context) PostValueIntDefault(name string, def int) (int, error) {
 	return strconv.Atoi(v)
 }
 
-// PostValueInt returns a form's only-post value as int by its name.
+// PostValueInt returns the parsed form data from POST, PATCH,
+// or PUT body parameters based on a "name", as int.
+//
 // If not found returns 0.
 func (ctx *context) PostValueInt(name string) (int, error) {
 	return ctx.PostValueIntDefault(name, 0)
 }
 
-// PostValueInt64Default returns a form's only-post value as int64 by its name.
-// If not found returns "def".
+// PostValueInt64Default returns the parsed form data from POST, PATCH,
+// or PUT body parameters based on a "name", as int64.
+//
+// If not found returns the "def".
 func (ctx *context) PostValueInt64Default(name string, def int64) (int64, error) {
 	v := ctx.PostValue(name)
 	if v == "" {
@@ -1623,14 +1697,18 @@ func (ctx *context) PostValueInt64Default(name string, def int64) (int64, error)
 	return strconv.ParseInt(v, 10, 64)
 }
 
-// PostValueInt64 returns a form's only-post value as int64 by its name.
+// PostValueInt64 returns the parsed form data from POST, PATCH,
+// or PUT body parameters based on a "name", as float64.
+//
 // If not found returns 0.0.
 func (ctx *context) PostValueInt64(name string) (int64, error) {
 	return ctx.PostValueInt64Default(name, 0.0)
 }
 
-// PostValueFloat64Default returns a form's only-post value as float64 by its name.
-// If not found returns "def".
+// PostValueInt64Default returns the parsed form data from POST, PATCH,
+// or PUT body parameters based on a "name", as float64.
+//
+// If not found returns the "def".
 func (ctx *context) PostValueFloat64Default(name string, def float64) (float64, error) {
 	v := ctx.PostValue(name)
 	if v == "" {
@@ -1639,42 +1717,43 @@ func (ctx *context) PostValueFloat64Default(name string, def float64) (float64, 
 	return strconv.ParseFloat(v, 64)
 }
 
-// PostValueFloat64 returns a form's only-post value as float64 by its name.
+// PostValueInt64Default returns the parsed form data from POST, PATCH,
+// or PUT body parameters based on a "name", as float64.
+//
 // If not found returns 0.0.
 func (ctx *context) PostValueFloat64(name string) (float64, error) {
 	return ctx.PostValueFloat64Default(name, 0.0)
 }
 
-// PostValue returns a form's only-post value as boolean by its name.
+// PostValueInt64Default returns the parsed form data from POST, PATCH,
+// or PUT body parameters based on a "name", as bool.
+//
+// If not found or value is false, then it returns false, otherwise true.
 func (ctx *context) PostValueBool(name string) (bool, error) {
 	return strconv.ParseBool(ctx.PostValue(name))
 }
 
 const (
 	// DefaultMaxMemory is the default value
-	// for post values' max memory, defaults to
+	// for body max memory, defaults to
 	// 32MB.
 	// Can be also changed by the middleware `LimitRequestBodySize`
 	// or `context#SetMaxRequestBodySize`.
 	DefaultMaxMemory = 32 << 20 // 32 MB
 )
 
-// PostValues returns a form's only-post values.
-// PostValues calls ParseMultipartForm and ParseForm if necessary and ignores
-// any errors returned by these functions.
+// PostValues returns all the parsed form data from POST, PATCH,
+// or PUT body parameters based on a "name" as a string slice.
+//
+// The default form's memory maximum size is 32MB, it can be changed by the `context#DefaultMaxMemory`.
 func (ctx *context) PostValues(name string) []string {
-	r := ctx.request
-	if r.PostForm == nil {
-		r.ParseMultipartForm(DefaultMaxMemory)
-	}
-
-	return r.PostForm[name]
+	ctx.form()
+	return ctx.request.PostForm[name]
 }
 
-// FormFile returns the first file for the provided form key.
-// FormFile calls ctx.request.ParseMultipartForm and ParseForm if necessary.
+// FormFile returns the first uploaded file that received from the client.
 //
-// same as Request.FormFile.
+// The default form's memory maximum size is 32MB, it can be changed by the `context#DefaultMaxMemory`.
 func (ctx *context) FormFile(key string) (multipart.File, *multipart.FileHeader, error) {
 	return ctx.request.FormFile(key)
 }
