@@ -1569,7 +1569,7 @@ for this controller, uncomment these if you want:
     func (c *ExampleController) Options() {}
     func (c *ExampleController) Trace() {}
 */
-
+//
 /*
     func (c *ExampleController) All() {}
     //        OR
