@@ -1,2 +1,0 @@
-Remove the "ideas" folder or move this example somewhere in the _examples/mvc or even make a https://medium.com/@kataras
-small tutorial about Iris' new MVC implementation.

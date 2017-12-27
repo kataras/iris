@@ -27,6 +27,7 @@ import (
 	"github.com/json-iterator/go"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday"
+	"gopkg.in/yaml.v2"
 
 	"github.com/kataras/iris/core/errors"
 	"github.com/kataras/iris/core/memstore"
@@ -696,9 +697,10 @@ type Context interface {
 	JSONP(v interface{}, options ...JSONP) (int, error)
 	// XML marshals the given interface object and writes the XML response.
 	XML(v interface{}, options ...XML) (int, error)
-	// Markdown parses the markdown to html and renders to client.
+	// Markdown parses the markdown to html and renders its result to the client.
 	Markdown(markdownB []byte, options ...Markdown) (int, error)
-
+	// YAML parses the "v" using the yaml parser and renders its result to the client.
+	YAML(v interface{}) (int, error)
 	//  +------------------------------------------------------------+
 	//  | Serve files                                                |
 	//  +------------------------------------------------------------+
@@ -2119,9 +2121,10 @@ const (
 	ContentTextHeaderValue = "text/plain"
 	// ContentXMLHeaderValue header value for XML data.
 	ContentXMLHeaderValue = "text/xml"
-
 	// ContentMarkdownHeaderValue custom key/content type, the real is the text/html.
 	ContentMarkdownHeaderValue = "text/markdown"
+	// ContentYAMLHeaderValue header value for YAML data.
+	ContentYAMLHeaderValue = "application/x-yaml"
 )
 
 // Binary writes out the raw bytes as binary data.
@@ -2382,7 +2385,7 @@ func (ctx *context) XML(v interface{}, opts ...XML) (int, error) {
 	return n, err
 }
 
-// WriteMarkdown parses the markdown to html and renders these contents to the writer.
+// WriteMarkdown parses the markdown to html and writes these contents to the writer.
 func WriteMarkdown(writer io.Writer, markdownB []byte, options Markdown) (int, error) {
 	buf := blackfriday.Run(markdownB)
 	if options.Sanitize {
@@ -2395,7 +2398,7 @@ func WriteMarkdown(writer io.Writer, markdownB []byte, options Markdown) (int, e
 // from `WriteMarkdown` and `ctx.Markdown`.
 var DefaultMarkdownOptions = Markdown{}
 
-// Markdown parses the markdown to html and renders to the client.
+// Markdown parses the markdown to html and renders its result to the client.
 func (ctx *context) Markdown(markdownB []byte, opts ...Markdown) (int, error) {
 	options := DefaultMarkdownOptions
 
@@ -2412,6 +2415,18 @@ func (ctx *context) Markdown(markdownB []byte, opts ...Markdown) (int, error) {
 	}
 
 	return n, err
+}
+
+// YAML marshals the "v" using the yaml marshaler and renders its result to the client.
+func (ctx *context) YAML(v interface{}) (int, error) {
+	out, err := yaml.Marshal(v)
+	if err != nil {
+		ctx.StatusCode(http.StatusInternalServerError)
+		return 0, err
+	}
+
+	ctx.ContentType(ContentYAMLHeaderValue)
+	return ctx.Write(out)
 }
 
 //  +------------------------------------------------------------+
@@ -2511,7 +2526,7 @@ var (
 func (ctx *context) SetCookieKV(name, value string) {
 	c := &http.Cookie{}
 	c.Name = name
-	c.Value = value
+	c.Value = url.QueryEscape(value)
 	c.HttpOnly = true
 	c.Expires = time.Now().Add(SetCookieKVExpiration)
 	c.MaxAge = int(SetCookieKVExpiration.Seconds())
@@ -2525,7 +2540,8 @@ func (ctx *context) GetCookie(name string) string {
 	if err != nil {
 		return ""
 	}
-	return cookie.Value
+	value, _ := url.QueryUnescape(cookie.Value)
+	return value
 }
 
 // RemoveCookie deletes a cookie by it's name.
