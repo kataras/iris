@@ -9,10 +9,6 @@ import (
 	"github.com/kataras/iris/mvc"
 )
 
-// TODO: It's not here but this file is what I'll see before the commit in order to delete it:
-// Think a way to simplify the router cycle, I did create it to support any type of router
-// but as I see nobody wants to override the iris router's behavior(I'm not speaking about wrapper, this will stay of course because it's useful on security-critical middlewares) because it's the best by far.
-// Therefore I should reduce some "freedom of change" for the shake of code maintanability in the core/router files: handler.go | router.go and single change on APIBuilder's field.
 func main() {
 	app := iris.New()
 	app.Logger().SetLevel("debug")
