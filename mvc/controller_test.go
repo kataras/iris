@@ -482,7 +482,7 @@ func (c *testControllerNotCreateNewDueManuallySettingAllFields) Get() string {
 
 func TestControllerNotCreateNewDueManuallySettingAllFields(t *testing.T) {
 	app := iris.New()
-	New(app).Register(&testControllerNotCreateNewDueManuallySettingAllFields{
+	New(app).Handle(&testControllerNotCreateNewDueManuallySettingAllFields{
 		T: t,
 		TitlePointer: &testBindType{
 			title: "my title",
