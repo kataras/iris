@@ -12,7 +12,7 @@ var defaultSessionManager = sessions.New(sessions.Config{})
 // direct access to the current client's session via its `Session` field.
 //
 // SessionController is deprecated please use the new dependency injection's methods instead,
-// i.e `mvcApp.AddDependencies(sessions.New(sessions.Config{}).Start)`.
+// i.e `mvcApp.Register(sessions.New(sessions.Config{}).Start)`.
 // It's more controlled by you,
 // also *sessions.Session type can now `Destroy` itself without the need of the manager, embrace it.
 type SessionController struct {
@@ -23,7 +23,7 @@ type SessionController struct {
 // BeforeActivation called, once per application lifecycle NOT request,
 // every single time the dev registers a specific SessionController-based controller.
 // It makes sure that its "Manager" field is filled
-// even if the caller didn't provide any sessions manager via the MVC's Application's `Register` function.
+// even if the caller didn't provide any sessions manager via the MVC's Application's `Handle` function.
 func (s *SessionController) BeforeActivation(b BeforeActivation) {
 	if didntBindManually := b.Dependencies().AddOnce(defaultSessionManager); didntBindManually {
 		b.Router().GetReporter().Add(

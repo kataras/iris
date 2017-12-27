@@ -10,7 +10,7 @@ import (
 
 func main() {
 	app := iris.New()
-	mvc.New(app.Party("/")).Register(&globalVisitorsController{visits: 0})
+	mvc.New(app.Party("/")).Handle(&globalVisitorsController{visits: 0})
 
 	// http://localhost:8080
 	app.Run(iris.Addr(":8080"))

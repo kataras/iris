@@ -11,7 +11,7 @@ func main() {
 	templates := iris.HTML("./views", ".html").Layout("shared/layout.html")
 	app.RegisterView(templates)
 
-	mvc.New(app).Register(new(Controller))
+	mvc.New(app).Handle(new(Controller))
 
 	// http://localhost:9091
 	app.Run(iris.Addr(":9091"))

@@ -26,7 +26,7 @@ func main() {
 	movieService := services.NewMovieService(repo)
 	hero.Register(movieService)
 
-	// Register our routes with hero handlers.
+	// Serve our routes with hero handlers.
 	app.PartyFunc("/hello", func(r iris.Party) {
 		r.Get("/", hero.Handler(routes.Hello))
 		r.Get("/{name}", hero.Handler(routes.HelloName))

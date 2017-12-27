@@ -20,11 +20,11 @@ func main() {
 	// Load the template files.
 	app.RegisterView(iris.HTML("./web/views", ".html"))
 
-	// Register our controllers.
-	mvc.New(app.Party("/hello")).Register(new(controllers.HelloController))
+	// Serve our controllers.
+	mvc.New(app.Party("/hello")).Handle(new(controllers.HelloController))
 	// You can also split the code you write to configure an mvc.Application
-	// using the `Configure` method, as shown below.
-	mvc.New(app.Party("/movies")).Configure(movies)
+	// using the `mvc.Configure` method, as shown below.
+	mvc.Configure(app.Party("/movies"), movies)
 
 	// http://localhost:8080/hello
 	// http://localhost:8080/hello/iris
@@ -52,10 +52,11 @@ func movies(app *mvc.Application) {
 	repo := repositories.NewMovieRepository(datasource.Movies)
 	// Create our movie service, we will bind it to the movie app's dependencies.
 	movieService := services.NewMovieService(repo)
-	app.AddDependencies(movieService)
+	app.Register(movieService)
 
-	// Register our movies controller.
-	// Note that you can register more than one controller
-	// you can alos create child mvc apps using the `movies.NewChild()` if you want.
-	app.Register(new(controllers.MovieController))
+	// serve our movies controller.
+	// Note that you can serve more than one controller
+	// you can also create child mvc apps using the `movies.Party(relativePath)` or `movies.Clone(app.Party(...))`
+	// if you want.
+	app.Handle(new(controllers.MovieController))
 }

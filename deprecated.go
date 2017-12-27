@@ -31,18 +31,18 @@ func (app *Application) Controller(relPath string, c interface{}, _ ...interface
                 // ...
             )
         
-            // or use it like this:          ).AddDependencies(...).Register(new(%s))
+            // or use it like this:          ).Register(...).Handle(new(%s))
             mvc.Configure(app.Party("%s"), myMVC)
         
             func myMVC(mvcApp *mvc.Application) {
-                mvcApp.AddDependencies(
+                mvcApp.Register(
                     Struct_Values_Dependencies_Binded_To_The_Fields_Or_And_To_Methods,
                     Or_And_Func_Values_Dependencies_Binded_To_The_Fields_Or_And_To_Methods,
                 )
         
                 mvcApp.Router.Use(Any_Middleware)
         
-                mvcApp.Register(new(%s))
+                mvcApp.Handle(new(%s))
             }
         
         The new MVC implementation contains a lot more than the above,

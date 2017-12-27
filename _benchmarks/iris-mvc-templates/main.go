@@ -22,7 +22,7 @@ func main() {
 	app.StaticWeb("/public", publicDir)
 	app.OnAnyErrorCode(onError)
 
-	mvc.New(app).Register(new(controllers.HomeController))
+	mvc.New(app).Handle(new(controllers.HomeController))
 
 	app.Run(iris.Addr(":5000"), iris.WithoutVersionChecker)
 }

@@ -10,10 +10,10 @@ type postValue func(string) string
 func main() {
 	app := iris.New()
 
-	mvc.New(app.Party("/user")).AddDependencies(
+	mvc.New(app.Party("/user")).Register(
 		func(ctx iris.Context) postValue {
 			return ctx.PostValue
-		}).Register(new(UserController))
+		}).Handle(new(UserController))
 
 	// GET http://localhost:9092/user
 	// GET http://localhost:9092/user/42

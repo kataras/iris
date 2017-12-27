@@ -42,7 +42,7 @@ func newApp() *iris.Application {
 	visitApp := mvc.New(app.Party("/"))
 	// bind the current *session.Session, which is required, to the `VisitController.Session`
 	// and the time.Now() to the `VisitController.StartTime`.
-	visitApp.AddDependencies(
+	visitApp.Register(
 		// if dependency is a function which accepts
 		// a Context and returns a single value
 		// then the result type of this function is resolved by the controller
@@ -55,7 +55,7 @@ func newApp() *iris.Application {
 		sess.Start,
 		time.Now(),
 	)
-	visitApp.Register(new(VisitController))
+	visitApp.Handle(new(VisitController))
 
 	return app
 }

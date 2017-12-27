@@ -36,12 +36,12 @@ func configureMVC(app *mvc.Application) {
 		Expires: 24 * time.Hour,
 	})
 
-	userApp := app.NewChild(app.Router.Party("/user"))
-	userApp.AddDependencies(
+	userApp := app.Party("/user")
+	userApp.Register(
 		user.NewDataSource(),
 		manager.Start,
 	)
-	userApp.Register(new(user.Controller))
+	userApp.Handle(new(user.Controller))
 }
 
 func configure(app *iris.Application) {

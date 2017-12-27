@@ -71,8 +71,8 @@ func TestControllerHandle(t *testing.T) {
 	app := iris.New()
 
 	m := New(app)
-	m.AddDependencies(&TestServiceImpl{prefix: "service:"})
-	m.Register(new(testControllerHandle))
+	m.Register(&TestServiceImpl{prefix: "service:"})
+	m.Handle(new(testControllerHandle))
 
 	e := httptest.New(t, app)
 

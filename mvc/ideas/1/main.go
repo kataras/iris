@@ -16,11 +16,7 @@ import (
 func main() {
 	app := iris.New()
 	app.Logger().SetLevel("debug")
-	mvc.New(app.Party("/todo")).Configure(TodoApp)
-	// no let's have a clear "mvc" package without any conversions and type aliases,
-	// it's one extra import path for a whole new world, it worths it.
-	//
-	// app.UseMVC(app.Party("/todo")).Configure(func(app *iris.MVCApplication))
+	mvc.Configure(app.Party("/todo"), TodoApp)
 
 	app.Run(iris.Addr(":8080"))
 }
@@ -32,20 +28,20 @@ func TodoApp(app *mvc.Application) {
 		ctx.Next()
 	})
 
-	// Add dependencies which will be binding to the controller(s),
+	// Register dependencies which will be binding to the controller(s),
 	// can be either a function which accepts an iris.Context and returns a single value (dynamic binding)
 	// or a static struct value (service).
-	app.AddDependencies(
+	app.Register(
 		sessions.New(sessions.Config{}).Start,
 		&prefixedLogger{prefix: "DEV"},
 	)
 
-	app.Register(new(TodoController))
+	app.Handle(new(TodoController))
 
 	// All dependencies of the parent *mvc.Application
 	// are cloned to that new child, thefore it has access to the same session as well.
-	app.NewChild(app.Router.Party("/sub")).
-		Register(new(TodoSubController))
+	app.Party("/sub").
+		Handle(new(TodoSubController))
 }
 
 // If controller's fields (or even its functions) expecting an interface
