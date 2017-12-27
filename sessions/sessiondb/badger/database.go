@@ -165,7 +165,7 @@ func (db *Database) sync(p sessions.SyncPayload) {
 
 	txn := db.Service.NewTransaction(true)
 
-	err = txn.Set(bsid, s, 0x00)
+	err = txn.Set(bsid, s)
 	if err != nil {
 		txn.Discard()
 		golog.Errorf("error while trying to save the session(%s) to the database: %v", p.SessionID, err)
