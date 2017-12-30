@@ -65,7 +65,7 @@ func (c *websocketController) update() {
 	// visits++
 	newCount := increment()
 
-	// This will call the "visit" event on all clients, incuding the current
+	// This will call the "visit" event on all clients, including the current
 	// with the 'newCount' variable.
 	//
 	// There are many ways that u can do it and faster, for example u can just send a new visitor

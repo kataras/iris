@@ -11,6 +11,7 @@ It doesn't always contain the "best ways" but it does cover each important featu
 - [Hello world!](hello-world/main.go)
 - [Glimpse](overview/main.go)
 - [Tutorial: Online Visitors](tutorial/online-visitors/main.go)
+- [Tutorial: Vue.js Todo MVC](tutorial/vuejs-todo-mvc)
 - [Tutorial: URL Shortener using BoltDB](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
 - [Tutorial: How to turn your Android Device into a fully featured Web Server (**MUST**)](https://twitter.com/ThePracticalDev/status/892022594031017988)
 - [POC: Convert the medium-sized project "Parrot" from native to Iris](https://github.com/iris-contrib/parrot)
@@ -18,7 +19,6 @@ It doesn't always contain the "best ways" but it does cover each important featu
 - [Tutorial: DropzoneJS Uploader](tutorial/dropzonejs)
 - [Tutorial: Caddy](tutorial/caddy)
 - [Tutorial:Iris Go Framework + MongoDB](https://medium.com/go-language/iris-go-framework-mongodb-552e349eab9c)
-
 ### Structuring
 
 Nothing stops you from using your favorite folder structure. Iris is a low level web framework, it has got MVC first-class support but it doesn't limit your folder structure, this is your choice.
@@ -253,17 +253,7 @@ Follow the examples below,
 - [Login showcase - Plus Repository and Service layers](mvc/login) **UPDATED**
 - [Singleton](mvc/singleton) **NEW**
 - [Websocket Controller](mvc/websocket) **NEW**
-
-<!-- 
-Why updated?
-Old method works, as promised no breaking changes.
-But mvc.C as controller marker and mvc.Result on method functions return value
-is more lightweight and faster than `mvc.Controller` because `mvc.Controller` initializes
-some fields like `Data, Path`... and Data is a map even if not used, at the opossite hand
-`mvc.C` just initializes the context `Ctx` field, the dev has all the `mvc.Controller`'s features
-by the `mvc.Result` built'n types like `mvc.Response` and `mvc.View` PLUS she/he can
-convert any custom type into a response dispatcher by implementing the `mvc.Result` interface.  
--->
+- [Vue.js Todo MVC](tutorial/vuejs-todo-mvc) **NEW**
 
 ### Subdomains
 

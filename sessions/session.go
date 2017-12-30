@@ -132,6 +132,14 @@ func (s *Session) GetStringDefault(key string, defaultValue string) string {
 		if v, ok := value.(string); ok {
 			return v
 		}
+
+		if v, ok := value.(int); ok {
+			return strconv.Itoa(v)
+		}
+
+		if v, ok := value.(int64); ok {
+			return strconv.FormatInt(v, 10)
+		}
 	}
 
 	return defaultValue

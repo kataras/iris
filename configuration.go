@@ -523,8 +523,8 @@ type Configuration struct {
 	RemoteAddrHeaders map[string]bool `json:"remoteAddrHeaders,omitempty" yaml:"RemoteAddrHeaders" toml:"RemoteAddrHeaders"`
 
 	// Other are the custom, dynamic options, can be empty.
-	// This field used only by you to set any app's options you want
-	// or by custom adaptors, it's a way to simple communicate between your adaptors (if any)
+	// This field used only by you to set any app's options you want.
+	//
 	// Defaults to a non-nil empty map.
 	Other map[string]interface{} `json:"other,omitempty" yaml:"Other" toml:"Other"`
 }
