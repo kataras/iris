@@ -311,12 +311,6 @@ var (
 	//
 	// Examples: https://github.com/kataras/iris/tree/master/_examples/file-server
 	StaticEmbeddedHandler = router.StaticEmbeddedHandler
-	// CopyFile copies a `context#Copiable` "file", that can be acquired by a `context.FormFile`
-	// as well, to the "dest".
-	//
-	// Returns the copied length as int64 and
-	// an error if file is not exist, or new file can't be created or closed at the end.
-	CopyFile = context.CopyFile
 	// Gzip is a middleware which enables writing
 	// using gzip compression, if client supports.
 	//

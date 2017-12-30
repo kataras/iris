@@ -549,7 +549,22 @@ type Context interface {
 	// The default form's memory maximum size is 32MB, it can be changed by the
 	//  `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
 	FormFile(key string) (multipart.File, *multipart.FileHeader, error)
-
+	// UploadFormFiles uploads any received file(s) from the client
+	// to the system physical location "destDirectory".
+	// The root directory must already exists.
+	// Note that it doesn't check if request body streamed.
+	//
+	// Returns the copied length as int64 and
+	// a not nil error if at least one new file
+	// can't be created due to the operating system's permissions or
+	// http.ErrMissingFile if no file received.
+	//
+	// If you want to receive & accept files and manage them manually you can use the `context#FormFile`
+	// instead and create a copy function that suits your needs, the below is for generic usage.
+	//
+	// The default form's memory maximum size is 32MB, it can be changed by the
+	//  `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
+	UploadFormFiles(destDirectory string) (int64, error)
 	//  +------------------------------------------------------------+
 	//  | Custom HTTP Errors                                         |
 	//  +------------------------------------------------------------+
@@ -1750,29 +1765,98 @@ func (ctx *context) PostValues(name string) []string {
 
 // FormFile returns the first uploaded file that received from the client.
 //
+//
 // The default form's memory maximum size is 32MB, it can be changed by the
 // `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
 func (ctx *context) FormFile(key string) (multipart.File, *multipart.FileHeader, error) {
+	// we don't have access to see if the request is body stream
+	// and then the ParseMultipartForm can be useless
+	// here but do it in order to apply the post limit,
+	// the internal request.FormFile will not do it if that's filled
+	// and it's not a stream body.
 	ctx.request.ParseMultipartForm(ctx.Application().ConfigurationReadOnly().GetPostMaxMemory())
 	return ctx.request.FormFile(key)
 }
 
+// UploadFormFiles uploads any received file(s) from the client
+// to the system physical location "destDirectory".
+// The root directory must already exists.
+//
+// Note that it doesn't check if request body streamed.
+//
+// Returns the copied length as int64 and
+// a not nil error if at least one new file
+// can't be created due to the operating system's permissions or
+// http.ErrMissingFile if no file received.
+//
+// If you want to receive & accept files and manage them manually you can use the `context#FormFile`
+// instead and create a copy function that suits your needs, the below is for generic usage.
+//
+// The default form's memory maximum size is 32MB, it can be changed by the
+//  `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
+func (ctx *context) UploadFormFiles(destDirectory string) (n int64, err error) {
+	err = ctx.request.ParseMultipartForm(ctx.Application().ConfigurationReadOnly().GetPostMaxMemory())
+	if err != nil {
+		return 0, err
+	}
+
+	if ctx.request.MultipartForm != nil {
+		if fhs := ctx.request.MultipartForm.File; fhs != nil {
+			for _, files := range fhs {
+				for _, file := range files {
+					n0, err0 := uploadTo(file, destDirectory)
+					if err0 != nil {
+						return 0, err0
+					}
+					n += n0
+				}
+			}
+		}
+	}
+
+	return 0, http.ErrMissingFile
+}
+
+func uploadTo(fh *multipart.FileHeader, destDirectory string) (int64, error) {
+	src, err := fh.Open()
+	if err != nil {
+		return 0, err
+	}
+	defer src.Close()
+
+	out, err := os.Create(filepath.Join(destDirectory, fh.Filename))
+	if err != nil {
+		return 0, err
+	}
+	defer out.Close()
+
+	return io.Copy(out, src)
+}
+
+/* Good idea of mine but it doesn't work of course...
+// Go can't use `io.ReadCloser` function return value the same
+// as with other function that returns a `multipart.File`, even if
+// multipart.File is an `io.ReadCloser`.
+// So comment all those and implement a function inside the context itself.
+//
 // Copiable is the interface which should be completed
 // by files or not that intend to be used inside the `context#CopyFile`.
 // This interface allows testing file uploads to your http test as well.
 //
 // See `CopyFile` for more.
-type Copiable interface {
-	Open() (io.ReadCloser, error)
-}
+// type Copiable interface {
+// 	Open() (io.ReadCloser, error)
+// }
+//
 
-// CopyFile copies a `context#Copiable` "file", that can be acquired by a `context.FormFile`
-// as well, to the "dest".
+
+// CopyFile copies a `context#Copiable` "file", that can be acquired by the second argument of
+// a `context.FormFile` (*multipart.FileHeader) as well, to the "dest".
 //
 // Returns the copied length as int64 and
 // an error if file is not exist, or new file can't be created or closed at the end.
 func CopyFile(file Copiable, dest string) (int64, error) {
-	src, err := file.Open()
+	src, err := fileOpen()
 	if err != nil {
 		return 0, err
 	}
@@ -1786,6 +1870,8 @@ func CopyFile(file Copiable, dest string) (int64, error) {
 
 	return io.Copy(out, src)
 }
+
+*/
 
 // Redirect sends a redirect response to the client
 // to a specific url or relative path.

@@ -32,17 +32,25 @@ func TodoApp(app *mvc.Application) {
 		&prefixedLogger{prefix: "DEV"},
 	)
 
+	// GET: http://localhost:8080/todo
+	// GET: http://localhost:8080/todo/custom
 	app.Handle(new(TodoController))
 
 	// All dependencies of the parent *mvc.Application
-	// are cloned to that new child, thefore it has access to the same session as well.
+	// are cloned to this new child,
+	// thefore it has access to the same session as well.
+	// GET: http://localhost:8080/todo/sub
 	app.Party("/sub").
 		Handle(new(TodoSubController))
 }
 
 // If controller's fields (or even its functions) expecting an interface
-// but a struct value is binded then it will check if that struct value implements
-// the interface and if true then it will bind it as expected.
+// but a struct value is binded then it will check
+// if that struct value implements
+// the interface and if true then it will add this to the
+// available bindings, as expected, before the server ran of course,
+// remember? Iris always uses the best possible way to reduce load
+// on serving web resources.
 
 type LoggerService interface {
 	Log(string)

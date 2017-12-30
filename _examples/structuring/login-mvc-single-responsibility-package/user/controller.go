@@ -82,7 +82,7 @@ func (c *Controller) PostRegister(form formValue) mvc.Result {
 // you can use variables-- that are initialized before server start
 // so you can win some time on serving.
 // You can do it else where as well but I let them as pracise for you,
-// essentialy you can understand by just looking below.
+// essentially you can understand by just looking below.
 var userLoginView = mvc.View{
 	Name: PathLogin.Path + ".html",
 	Data: page{"User Login"},
