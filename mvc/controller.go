@@ -25,6 +25,7 @@ type BaseController interface {
 type shared interface {
 	Name() string
 	Router() router.Party
+	GetRoute(methodName string) *router.Route
 	Handle(httpMethod, path, funcName string, middleware ...context.Handler) *router.Route
 }
 
@@ -74,9 +75,10 @@ type ControllerActivator struct {
 	// i.e: if login-example/user/controller.go, the FullName is "user.Controller".
 	fullName string
 
-	// the methods names that is already binded to a handler,
-	// the BeginRequest, EndRequest and BeforeActivation are reserved by the internal implementation.
-	reservedMethods []string
+	// the already-registered routes, key = the controller's function name.
+	// End-devs can change some properties of the *Route on the `BeforeActivator` by using the
+	// `GetRoute(functionName)`. It's also protects for duplicatations.
+	routes map[string]*router.Route
 
 	// the bindings that comes from the Engine and the controller's filled fields if any.
 	// Can be binded to the the new controller's fields and method that is fired
@@ -116,10 +118,7 @@ func newControllerActivator(router router.Party, controller interface{}, depende
 		// are being appended to the slice at the `parseMethods`,
 		// if a new method is registered via `Handle` its function name
 		// is also appended to that slice.
-		//
-		// TODO: now that BaseController is totally optionally
-		// we have to check if BeginRequest and EndRequest should be here.
-		reservedMethods: whatReservedMethods(typ),
+		routes: whatReservedMethods(typ),
 		// CloneWithFieldsOf: include the manual fill-ed controller struct's fields to the dependencies.
 		dependencies: di.Values(dependencies).CloneWithFieldsOf(controller),
 	}
@@ -127,13 +126,20 @@ func newControllerActivator(router router.Party, controller interface{}, depende
 	return c
 }
 
-func whatReservedMethods(typ reflect.Type) []string {
+func whatReservedMethods(typ reflect.Type) map[string]*router.Route {
 	methods := []string{"BeforeActivation", "AfterActivation"}
+	//  BeforeActivatior/AfterActivation are not routes but they are
+	// reserved names*
 	if isBaseController(typ) {
 		methods = append(methods, "BeginRequest", "EndRequest")
 	}
 
-	return methods
+	routes := make(map[string]*router.Route, len(methods))
+	for _, m := range methods {
+		routes[m] = &router.Route{}
+	}
+
+	return routes
 }
 
 // Dependencies returns the write and read access of the dependencies that are
@@ -182,6 +188,24 @@ func (c *ControllerActivator) Router() router.Party {
 	return c.router
 }
 
+// GetRoute returns a registered route based on the controller's method name.
+// It can be used to change the route's name, which is useful for reverse routing
+// inside views. Custom routes can be registered with `Handle`, which returns the *Route.
+// This method exists mostly for the automatic method parsing based on the known patterns
+// inside a controller.
+//
+// A check for `nil` is necessary for unregistered methods.
+//
+// See `Handle` too.
+func (c *ControllerActivator) GetRoute(methodName string) *router.Route {
+	for name, route := range c.routes {
+		if name == methodName {
+			return route
+		}
+	}
+	return nil
+}
+
 // Singleton returns new if all incoming clients' requests
 // have the same controller instance.
 // This is done automatically by iris to reduce the creation
@@ -196,8 +220,8 @@ func (c *ControllerActivator) Singleton() bool {
 
 // checks if a method is already registered.
 func (c *ControllerActivator) isReservedMethod(name string) bool {
-	for _, s := range c.reservedMethods {
-		if s == name {
+	for methodName := range c.routes {
+		if methodName == name {
 			return true
 		}
 	}
@@ -291,7 +315,7 @@ func (c *ControllerActivator) Handle(method, path, funcName string, middleware .
 	// add this as a reserved method name in order to
 	// be sure that the same func will not be registered again,
 	// even if a custom .Handle later on.
-	c.reservedMethods = append(c.reservedMethods, funcName)
+	c.routes[funcName] = route
 
 	return route
 }
