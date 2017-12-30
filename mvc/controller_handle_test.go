@@ -34,11 +34,29 @@ type testControllerHandle struct {
 	reqField string
 }
 
-func (c *testControllerHandle) BeforeActivation(b BeforeActivation) { // BeforeActivation(t *mvc.TController) {
+func (c *testControllerHandle) BeforeActivation(b BeforeActivation) {
 	b.Handle("GET", "/histatic", "HiStatic")
 	b.Handle("GET", "/hiservice", "HiService")
 	b.Handle("GET", "/hiparam/{ps:string}", "HiParamBy")
 	b.Handle("GET", "/hiparamempyinput/{ps:string}", "HiParamEmptyInputBy")
+}
+
+// test `GetRoute` for custom routes.
+func (c *testControllerHandle) AfterActivation(a AfterActivation) {
+	// change automatic parser's route change name.
+	rget := a.GetRoute("Get")
+	if rget == nil {
+		panic("route from function name: 'Get' doesn't exist on `AfterActivation`")
+	}
+	rget.Name = "index_route"
+
+	// change a custom route's name.
+	r := a.GetRoute("HiStatic")
+	if r == nil {
+		panic("route from function name: HiStatic doesn't exist on `AfterActivation`")
+	}
+	// change the name here, and test if name changed in the handler.
+	r.Name = "hi_static_route"
 }
 
 func (c *testControllerHandle) BeginRequest(ctx iris.Context) {
@@ -48,10 +66,17 @@ func (c *testControllerHandle) BeginRequest(ctx iris.Context) {
 func (c *testControllerHandle) EndRequest(ctx iris.Context) {}
 
 func (c *testControllerHandle) Get() string {
+	if c.Ctx.GetCurrentRoute().Name() != "index_route" {
+		return "Get's route's name didn't change on AfterActivation"
+	}
 	return "index"
 }
 
 func (c *testControllerHandle) HiStatic() string {
+	if c.Ctx.GetCurrentRoute().Name() != "hi_static_route" {
+		return "HiStatic's route's name didn't change on AfterActivation"
+	}
+
 	return c.reqField
 }
 
