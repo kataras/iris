@@ -31,6 +31,18 @@ type (
 	}
 )
 
+// Destroy destroys this session, it removes its session values and any flashes.
+// This session entry will be removed from the server,
+// the registered session databases will be notified for this deletion as well.
+//
+// Note that this method does NOT remove the client's cookie, although
+// it should be reseted if new session is attached to that (client).
+//
+// Use the session's manager `Destroy(ctx)` in order to remove the cookie as well.
+func (s *Session) Destroy() {
+	s.provider.deleteSession(s)
+}
+
 // ID returns the session's ID.
 func (s *Session) ID() string {
 	return s.sid
@@ -120,6 +132,14 @@ func (s *Session) GetStringDefault(key string, defaultValue string) string {
 		if v, ok := value.(string); ok {
 			return v
 		}
+
+		if v, ok := value.(int); ok {
+			return strconv.Itoa(v)
+		}
+
+		if v, ok := value.(int64); ok {
+			return strconv.FormatInt(v, 10)
+		}
 	}
 
 	return defaultValue
@@ -165,6 +185,26 @@ func (s *Session) GetIntDefault(key string, defaultValue int) (int, error) {
 	}
 
 	return defaultValue, errFindParse.Format("int", key, v)
+}
+
+// Increment increments the stored int value saved as "key" by +"n".
+// If value doesn't exist on that "key" then it creates one with the "n" as its value.
+// It returns the new, incremented, value.
+func (s *Session) Increment(key string, n int) (newValue int) {
+	newValue, _ = s.GetIntDefault(key, 0)
+	newValue += n
+	s.Set(key, newValue)
+	return
+}
+
+// Decrement decrements the stored int value saved as "key" by -"n".
+// If value doesn't exist on that "key" then it creates one with the "n" as its value.
+// It returns the new, decremented, value even if it's less than zero.
+func (s *Session) Decrement(key string, n int) (newValue int) {
+	newValue, _ = s.GetIntDefault(key, 0)
+	newValue -= n
+	s.Set(key, newValue)
+	return
 }
 
 // GetInt64 same as `Get` but returns its int64 representation,
@@ -337,7 +377,7 @@ func (s *Session) set(key string, value interface{}, immutable bool) {
 	syncDatabases(s.provider.databases, p)
 }
 
-// Set fills the session with an entry"value", based on its "key".
+// Set fills the session with an entry "value", based on its "key".
 func (s *Session) Set(key string, value interface{}) {
 	s.set(key, value, false)
 }

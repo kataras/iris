@@ -89,5 +89,5 @@ func main() {
 		sess.ShiftExpiration(ctx)
 	})
 
-	app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed), iris.WithoutVersionChecker)
+	app.Run(iris.Addr(":8080"))
 }

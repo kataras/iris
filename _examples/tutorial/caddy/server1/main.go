@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/kataras/iris"
+	"github.com/kataras/iris/mvc"
 )
 
 func main() {
@@ -10,7 +11,7 @@ func main() {
 	templates := iris.HTML("./views", ".html").Layout("shared/layout.html")
 	app.RegisterView(templates)
 
-	app.Controller("/", new(Controller))
+	mvc.New(app).Handle(new(Controller))
 
 	// http://localhost:9091
 	app.Run(iris.Addr(":9091"))
@@ -21,22 +22,28 @@ type Layout struct {
 	Title string
 }
 
-// Controller is our example controller.
+// Controller is our example controller, request-scoped, each request has its own instance.
 type Controller struct {
-	iris.Controller
-
-	Layout Layout `iris:"model"`
+	Layout Layout
 }
 
-// BeginRequest is the first method fires when client requests from this Controller's path.
+// BeginRequest is the first method fired when client requests from this Controller's root path.
 func (c *Controller) BeginRequest(ctx iris.Context) {
-	c.Controller.BeginRequest(ctx)
-
 	c.Layout.Title = "Home Page"
 }
 
+// EndRequest is the last method fired.
+// It's here just to complete the BaseController
+// in order to be tell iris to call the `BeginRequest` before the main method.
+func (c *Controller) EndRequest(ctx iris.Context) {}
+
 // Get handles GET http://localhost:9091
-func (c *Controller) Get() {
-	c.Tmpl = "index.html"
-	c.Data["Message"] = "Welcome to my website!"
+func (c *Controller) Get() mvc.View {
+	return mvc.View{
+		Name: "index.html",
+		Data: iris.Map{
+			"Layout":  c.Layout,
+			"Message": "Welcome to my website!",
+		},
+	}
 }

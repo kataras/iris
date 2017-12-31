@@ -1,15 +1,22 @@
 package main
 
+/// TODO: remove this on the "master" branch, or even replace it
+// with the "iris-mvc" (the new implementatioin is even faster, close to handlers version,
+// with bindings or without).
+
 import (
-	"github.com/kataras/iris"
 	"github.com/kataras/iris/_benchmarks/iris-mvc/controllers"
+
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/mvc"
 )
 
 func main() {
 	app := iris.New()
-	app.Controller("/api/values/{id}", new(controllers.ValuesController))
+	mvc.New(app.Party("/api/values/{id}")).
+		Handle(new(controllers.ValuesController))
 
-	// 24 August 2017: Iris has a built'n version updater but we don't need it
-	// when benchmarking...
 	app.Run(iris.Addr(":5000"), iris.WithoutVersionChecker)
 }
+
+// +2MB/s faster than the previous implementation, 0.4MB/s difference from the raw handlers.

@@ -5,6 +5,7 @@ import (
 
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/mvc"
 )
 
 const (
@@ -17,21 +18,13 @@ const (
 
 func main() {
 	app := iris.New()
-	app.Configure(configure)
-
-	// app.Controller("/", new(controllers.IndexController))
-	// app.Controller("/about", new(controllers.AboutController))
-	// app.Controller("/contact", new(controllers.ContactController))
-
-	app.Controller("/", new(controllers.HomeController))
-
-	app.Run(iris.Addr(":5000"), iris.WithoutVersionChecker)
-}
-
-func configure(app *iris.Application) {
 	app.RegisterView(iris.HTML("./views", ".html").Layout("shared/layout.html"))
 	app.StaticWeb("/public", publicDir)
 	app.OnAnyErrorCode(onError)
+
+	mvc.New(app).Handle(new(controllers.HomeController))
+
+	app.Run(iris.Addr(":5000"), iris.WithoutVersionChecker)
 }
 
 type err struct {

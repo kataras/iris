@@ -6,67 +6,67 @@ import (
 
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/mvc"
-	"github.com/kataras/iris/mvc/activator"
-
 	"github.com/kataras/iris/core/router"
 	"github.com/kataras/iris/httptest"
+
+	. "github.com/kataras/iris/mvc"
 )
 
 type testController struct {
-	mvc.Controller
+	Ctx context.Context
 }
 
-var writeMethod = func(c mvc.Controller) {
-	c.Ctx.Writef(c.Ctx.Method())
+var writeMethod = func(ctx context.Context) {
+	ctx.Writef(ctx.Method())
 }
 
 func (c *testController) Get() {
-	writeMethod(c.Controller)
+	writeMethod(c.Ctx)
 }
 func (c *testController) Post() {
-	writeMethod(c.Controller)
+	writeMethod(c.Ctx)
 }
 func (c *testController) Put() {
-	writeMethod(c.Controller)
+	writeMethod(c.Ctx)
 }
 func (c *testController) Delete() {
-	writeMethod(c.Controller)
+	writeMethod(c.Ctx)
 }
 func (c *testController) Connect() {
-	writeMethod(c.Controller)
+	writeMethod(c.Ctx)
 }
 func (c *testController) Head() {
-	writeMethod(c.Controller)
+	writeMethod(c.Ctx)
 }
 func (c *testController) Patch() {
-	writeMethod(c.Controller)
+	writeMethod(c.Ctx)
 }
 func (c *testController) Options() {
-	writeMethod(c.Controller)
+	writeMethod(c.Ctx)
 }
 func (c *testController) Trace() {
-	writeMethod(c.Controller)
+	writeMethod(c.Ctx)
 }
 
 type (
-	testControllerAll struct{ mvc.Controller }
-	testControllerAny struct{ mvc.Controller } // exactly the same as All
+	testControllerAll struct{ Ctx context.Context }
+	testControllerAny struct{ Ctx context.Context } // exactly the same as All.
 )
 
 func (c *testControllerAll) All() {
-	writeMethod(c.Controller)
+	writeMethod(c.Ctx)
 }
 
 func (c *testControllerAny) Any() {
-	writeMethod(c.Controller)
+	writeMethod(c.Ctx)
 }
 
 func TestControllerMethodFuncs(t *testing.T) {
 	app := iris.New()
-	app.Controller("/", new(testController))
-	app.Controller("/all", new(testControllerAll))
-	app.Controller("/any", new(testControllerAny))
+
+	New(app).Handle(new(testController))
+	New(app.Party("/all")).Handle(new(testControllerAll))
+	New(app.Party("/any")).Handle(new(testControllerAny))
 
 	e := httptest.New(t, app)
 	for _, method := range router.AllMethods {
@@ -82,44 +82,8 @@ func TestControllerMethodFuncs(t *testing.T) {
 	}
 }
 
-func TestControllerMethodAndPathHandleMany(t *testing.T) {
-	app := iris.New()
-	app.Controller("/ /path1 /path2 /path3", new(testController))
-
-	e := httptest.New(t, app)
-	for _, method := range router.AllMethods {
-
-		e.Request(method, "/").Expect().Status(iris.StatusOK).
-			Body().Equal(method)
-
-		e.Request(method, "/path1").Expect().Status(iris.StatusOK).
-			Body().Equal(method)
-
-		e.Request(method, "/path2").Expect().Status(iris.StatusOK).
-			Body().Equal(method)
-	}
-}
-
-type testControllerPersistence struct {
-	mvc.Controller
-	Data string `iris:"persistence"`
-}
-
-func (c *testControllerPersistence) Get() {
-	c.Ctx.WriteString(c.Data)
-}
-
-func TestControllerPersistenceFields(t *testing.T) {
-	data := "this remains the same for all requests"
-	app := iris.New()
-	app.Controller("/", &testControllerPersistence{Data: data})
-	e := httptest.New(t, app)
-	e.GET("/").Expect().Status(iris.StatusOK).
-		Body().Equal(data)
-}
-
 type testControllerBeginAndEndRequestFunc struct {
-	mvc.Controller
+	Ctx context.Context
 
 	Username string
 }
@@ -129,16 +93,12 @@ type testControllerBeginAndEndRequestFunc struct {
 // useful when more than one methods using the
 // same request values or context's function calls.
 func (c *testControllerBeginAndEndRequestFunc) BeginRequest(ctx context.Context) {
-	c.Controller.BeginRequest(ctx)
 	c.Username = ctx.Params().Get("username")
-	// or t.Params.Get("username") because the
-	// t.Ctx == ctx and is being initialized at the t.Controller.BeginRequest.
 }
 
 // called after every method (Get() or Post()).
 func (c *testControllerBeginAndEndRequestFunc) EndRequest(ctx context.Context) {
 	ctx.Writef("done") // append "done" to the response
-	c.Controller.EndRequest(ctx)
 }
 
 func (c *testControllerBeginAndEndRequestFunc) Get() {
@@ -151,7 +111,8 @@ func (c *testControllerBeginAndEndRequestFunc) Post() {
 
 func TestControllerBeginAndEndRequestFunc(t *testing.T) {
 	app := iris.New()
-	app.Controller("/profile/{username}", new(testControllerBeginAndEndRequestFunc))
+	New(app.Party("/profile/{username}")).
+		Handle(new(testControllerBeginAndEndRequestFunc))
 
 	e := httptest.New(t, app)
 	usernames := []string{
@@ -194,7 +155,10 @@ func TestControllerBeginAndEndRequestFuncBindMiddleware(t *testing.T) {
 		ctx.Writef("forbidden")
 	}
 
-	app.Controller("/profile/{username}", new(testControllerBeginAndEndRequestFunc), middlewareCheck)
+	app.PartyFunc("/profile/{username}", func(r iris.Party) {
+		r.Use(middlewareCheck)
+		New(r).Handle(new(testControllerBeginAndEndRequestFunc))
+	})
 
 	e := httptest.New(t, app)
 
@@ -223,17 +187,17 @@ type Model struct {
 	Username string
 }
 
-type testControllerModel struct {
-	mvc.Controller
-
-	TestModel  Model `iris:"model" name:"myModel"`
-	TestModel2 Model `iris:"model"`
+type testControllerEndRequestAwareness struct {
+	Ctx context.Context
 }
 
-func (c *testControllerModel) Get() {
+func (c *testControllerEndRequestAwareness) Get() {
 	username := c.Ctx.Params().Get("username")
-	c.TestModel = Model{Username: username}
-	c.TestModel2 = Model{Username: username + "2"}
+	c.Ctx.Values().Set(c.Ctx.Application().ConfigurationReadOnly().GetViewDataContextKey(),
+		map[string]interface{}{
+			"TestModel": Model{Username: username},
+			"myModel":   Model{Username: username + "2"},
+		})
 }
 
 func writeModels(ctx context.Context, names ...string) {
@@ -260,13 +224,14 @@ func writeModels(ctx context.Context, names ...string) {
 	}
 }
 
-func (c *testControllerModel) EndRequest(ctx context.Context) {
-	writeModels(ctx, "myModel", "TestModel2")
-	c.Controller.EndRequest(ctx)
+func (c *testControllerEndRequestAwareness) BeginRequest(ctx context.Context) {}
+func (c *testControllerEndRequestAwareness) EndRequest(ctx context.Context) {
+	writeModels(ctx, "TestModel", "myModel")
 }
-func TestControllerModel(t *testing.T) {
+
+func TestControllerEndRequestAwareness(t *testing.T) {
 	app := iris.New()
-	app.Controller("/model/{username}", new(testControllerModel))
+	New(app.Party("/era/{username}")).Handle(new(testControllerEndRequestAwareness))
 
 	e := httptest.New(t, app)
 	usernames := []string{
@@ -275,7 +240,7 @@ func TestControllerModel(t *testing.T) {
 	}
 
 	for _, username := range usernames {
-		e.GET("/model/" + username).Expect().Status(iris.StatusOK).
+		e.GET("/era/" + username).Expect().Status(iris.StatusOK).
 			Body().Equal(username + username + "2")
 	}
 }
@@ -285,7 +250,8 @@ type testBindType struct {
 }
 
 type testControllerBindStruct struct {
-	mvc.Controller
+	Ctx context.Context
+
 	//  should start with upper letter of course
 	TitlePointer *testBindType // should have the value of the "myTitlePtr" on test
 	TitleValue   testBindType  // should have the value of the "myTitleV" on test
@@ -296,6 +262,12 @@ func (t *testControllerBindStruct) Get() {
 	t.Ctx.Writef(t.TitlePointer.title + t.TitleValue.title + t.Other)
 }
 
+// test if context can be binded to the controller's function
+// without need to declare it to a struct if not needed.
+func (t *testControllerBindStruct) GetCtx(ctx iris.Context) {
+	ctx.StatusCode(iris.StatusContinue)
+}
+
 type testControllerBindDeep struct {
 	testControllerBindStruct
 }
@@ -304,94 +276,40 @@ func (t *testControllerBindDeep) Get() {
 	// 	t.testControllerBindStruct.Get()
 	t.Ctx.Writef(t.TitlePointer.title + t.TitleValue.title + t.Other)
 }
-func TestControllerBind(t *testing.T) {
+
+func TestControllerDependencies(t *testing.T) {
 	app := iris.New()
+	// app.Logger().SetLevel("debug")
 
 	t1, t2 := "my pointer title", "val title"
 	// test bind pointer to pointer of the correct type
 	myTitlePtr := &testBindType{title: t1}
 	// test bind value to value of the correct type
 	myTitleV := testBindType{title: t2}
-
-	app.Controller("/", new(testControllerBindStruct), myTitlePtr, myTitleV)
-	app.Controller("/deep", new(testControllerBindDeep), myTitlePtr, myTitleV)
+	m := New(app)
+	m.Register(myTitlePtr, myTitleV)
+	m.Handle(new(testControllerBindStruct))
+	m.Clone(app.Party("/deep")).Handle(new(testControllerBindDeep))
 
 	e := httptest.New(t, app)
 	expected := t1 + t2
 	e.GET("/").Expect().Status(iris.StatusOK).
 		Body().Equal(expected)
+	e.GET("/ctx").Expect().Status(iris.StatusContinue)
+
 	e.GET("/deep").Expect().Status(iris.StatusOK).
 		Body().Equal(expected)
-}
-
-type (
-	UserController            struct{ mvc.Controller }
-	Profile                   struct{ mvc.Controller }
-	UserProfilePostController struct{ mvc.Controller }
-)
-
-func writeRelatives(c mvc.Controller) {
-	c.Ctx.JSON(context.Map{
-		"RelPath":  c.RelPath(),
-		"TmplPath": c.RelTmpl(),
-	})
-}
-func (c *UserController) Get() {
-	writeRelatives(c.Controller)
-}
-
-func (c *Profile) Get() {
-	writeRelatives(c.Controller)
-}
-
-func (c *UserProfilePostController) Get() {
-	writeRelatives(c.Controller)
-}
-
-func TestControllerRelPathAndRelTmpl(t *testing.T) {
-	app := iris.New()
-	var tests = map[string]context.Map{
-		// UserController
-		"/user":    {"RelPath": "/", "TmplPath": "user/"},
-		"/user/42": {"RelPath": "/42", "TmplPath": "user/"},
-		"/user/me": {"RelPath": "/me", "TmplPath": "user/"},
-		// Profile (without Controller suffix, should work as expected)
-		"/profile":    {"RelPath": "/", "TmplPath": "profile/"},
-		"/profile/42": {"RelPath": "/42", "TmplPath": "profile/"},
-		"/profile/me": {"RelPath": "/me", "TmplPath": "profile/"},
-		// UserProfilePost
-		"/user/profile/post":      {"RelPath": "/", "TmplPath": "user/profile/post/"},
-		"/user/profile/post/42":   {"RelPath": "/42", "TmplPath": "user/profile/post/"},
-		"/user/profile/post/mine": {"RelPath": "/mine", "TmplPath": "user/profile/post/"},
-	}
-
-	app.Controller("/user /user/me /user/{id}",
-		new(UserController))
-
-	app.Controller("/profile /profile/me /profile/{id}",
-		new(Profile))
-
-	app.Controller("/user/profile/post /user/profile/post/mine /user/profile/post/{id}",
-		new(UserProfilePostController))
-
-	e := httptest.New(t, app)
-	for path, tt := range tests {
-		e.GET(path).Expect().Status(iris.StatusOK).JSON().Equal(tt)
-	}
 }
 
 type testCtrl0 struct {
 	testCtrl00
 }
 
-func (c *testCtrl0) Get() {
-	username := c.Params.Get("username")
-	c.Model = Model{Username: username}
+func (c *testCtrl0) Get() string {
+	return c.Ctx.Params().Get("username")
 }
 
 func (c *testCtrl0) EndRequest(ctx context.Context) {
-	writeModels(ctx, "myModel")
-
 	if c.TitlePointer == nil {
 		ctx.Writef("\nTitlePointer is nil!\n")
 	} else {
@@ -403,9 +321,9 @@ func (c *testCtrl0) EndRequest(ctx context.Context) {
 }
 
 type testCtrl00 struct {
-	testCtrl000
+	Ctx context.Context
 
-	Model Model `iris:"model" name:"myModel"`
+	testCtrl000
 }
 
 type testCtrl000 struct {
@@ -415,9 +333,9 @@ type testCtrl000 struct {
 }
 
 type testCtrl0000 struct {
-	mvc.Controller
 }
 
+func (c *testCtrl0000) BeginRequest(ctx context.Context) {}
 func (c *testCtrl0000) EndRequest(ctx context.Context) {
 	ctx.Writef("finish")
 }
@@ -430,20 +348,20 @@ func TestControllerInsideControllerRecursively(t *testing.T) {
 	)
 
 	app := iris.New()
-
-	app.Controller("/user/{username}", new(testCtrl0),
-		&testBindType{title: title})
+	m := New(app.Party("/user/{username}"))
+	m.Register(&testBindType{title: title})
+	m.Handle(new(testCtrl0))
 
 	e := httptest.New(t, app)
 	e.GET("/user/" + username).Expect().
 		Status(iris.StatusOK).Body().Equal(expected)
 }
 
-type testControllerRelPathFromFunc struct{ mvc.Controller }
+type testControllerRelPathFromFunc struct{}
 
+func (c *testControllerRelPathFromFunc) BeginRequest(ctx context.Context) {}
 func (c *testControllerRelPathFromFunc) EndRequest(ctx context.Context) {
 	ctx.Writef("%s:%s", ctx.Method(), ctx.Path())
-	c.Controller.EndRequest(ctx)
 }
 
 func (c *testControllerRelPathFromFunc) Get()                         {}
@@ -464,7 +382,7 @@ func (c *testControllerRelPathFromFunc) GetSomethingByElseThisBy(bool, int) {} /
 
 func TestControllerRelPathFromFunc(t *testing.T) {
 	app := iris.New()
-	app.Controller("/", new(testControllerRelPathFromFunc))
+	New(app).Handle(new(testControllerRelPathFromFunc))
 
 	e := httptest.New(t, app)
 	e.GET("/").Expect().Status(iris.StatusOK).
@@ -497,34 +415,81 @@ func TestControllerRelPathFromFunc(t *testing.T) {
 		Body().Equal("GET:/42")
 	e.GET("/anything/here").Expect().Status(iris.StatusOK).
 		Body().Equal("GET:/anything/here")
+
 }
 
 type testControllerActivateListener struct {
-	mvc.Controller
-
 	TitlePointer *testBindType
 }
 
-func (c *testControllerActivateListener) OnActivate(p *activator.ActivatePayload) {
-	p.EnsureBindValue(&testBindType{
-		title: "default title",
-	})
+func (c *testControllerActivateListener) BeforeActivation(b BeforeActivation) {
+	b.Dependencies().AddOnce(&testBindType{title: "default title"})
 }
 
-func (c *testControllerActivateListener) Get() {
-	c.Text = c.TitlePointer.title
+func (c *testControllerActivateListener) Get() string {
+	return c.TitlePointer.title
 }
 
 func TestControllerActivateListener(t *testing.T) {
 	app := iris.New()
-	app.Controller("/", new(testControllerActivateListener))
-	app.Controller("/manual", new(testControllerActivateListener), &testBindType{
+	New(app).Handle(new(testControllerActivateListener))
+	m := New(app)
+	m.Register(&testBindType{
 		title: "my title",
+	})
+	m.Party("/manual").Handle(new(testControllerActivateListener))
+	// or
+	m.Party("/manual2").Handle(&testControllerActivateListener{
+		TitlePointer: &testBindType{
+			title: "my title",
+		},
 	})
 
 	e := httptest.New(t, app)
 	e.GET("/").Expect().Status(iris.StatusOK).
 		Body().Equal("default title")
 	e.GET("/manual").Expect().Status(iris.StatusOK).
+		Body().Equal("my title")
+	e.GET("/manual2").Expect().Status(iris.StatusOK).
+		Body().Equal("my title")
+}
+
+type testControllerNotCreateNewDueManuallySettingAllFields struct {
+	T *testing.T
+
+	TitlePointer *testBindType
+}
+
+func (c *testControllerNotCreateNewDueManuallySettingAllFields) AfterActivation(a AfterActivation) {
+	if n := a.DependenciesReadOnly().Len(); n != 2 {
+		c.T.Fatalf(`expecting 2 dependency, the 'T' and the 'TitlePointer' that we manually insert
+			and the fields total length is 2 so it will not create a new controller on each request
+			however the dependencies are available here
+			although the struct injector is being ignored when
+			creating the controller's handlers because we set it to invalidate state at "newControllerActivator"
+			--  got dependencies length: %d`, n)
+	}
+
+	if !a.Singleton() {
+		c.T.Fatalf(`this controller should be tagged as Singleton. It shouldn't be tagged used as request scoped(create new instances on each request),
+		 it doesn't contain any dynamic value or dependencies that should be binded via the iris mvc engine`)
+	}
+}
+
+func (c *testControllerNotCreateNewDueManuallySettingAllFields) Get() string {
+	return c.TitlePointer.title
+}
+
+func TestControllerNotCreateNewDueManuallySettingAllFields(t *testing.T) {
+	app := iris.New()
+	New(app).Handle(&testControllerNotCreateNewDueManuallySettingAllFields{
+		T: t,
+		TitlePointer: &testBindType{
+			title: "my title",
+		},
+	})
+
+	e := httptest.New(t, app)
+	e.GET("/").Expect().Status(iris.StatusOK).
 		Body().Equal("my title")
 }

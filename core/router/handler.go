@@ -1,14 +1,14 @@
 package router
 
 import (
-	"github.com/kataras/golog"
 	"html"
 	"net/http"
 	"sort"
 	"strings"
 
-	"github.com/kataras/iris/context"
+	"github.com/kataras/golog"
 
+	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/errors"
 	"github.com/kataras/iris/core/netutil"
 	"github.com/kataras/iris/core/router/node"

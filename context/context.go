@@ -19,6 +19,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/fatih/structs"
@@ -26,6 +27,7 @@ import (
 	"github.com/json-iterator/go"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday"
+	"gopkg.in/yaml.v2"
 
 	"github.com/kataras/iris/core/errors"
 	"github.com/kataras/iris/core/memstore"
@@ -91,15 +93,27 @@ func (r *RequestParams) Visit(visitor func(key string, value string)) {
 	})
 }
 
-// GetEntry returns the internal Entry of the memstore, as value
-// if not found then it returns a zero Entry and false.
+var emptyEntry memstore.Entry
+
+// GetEntryAt returns the internal Entry of the memstore based on its index,
+// the stored index by the router.
+// If not found then it returns a zero Entry and false.
+func (r RequestParams) GetEntryAt(index int) (memstore.Entry, bool) {
+	if len(r.store) > index {
+		return r.store[index], true
+	}
+	return emptyEntry, false
+}
+
+// GetEntry returns the internal Entry of the memstore based on its "key".
+// If not found then it returns a zero Entry and false.
 func (r RequestParams) GetEntry(key string) (memstore.Entry, bool) {
 	// we don't return the pointer here, we don't want to give the end-developer
 	// the strength to change the entry that way.
 	if e := r.store.GetEntry(key); e != nil {
 		return *e, true
 	}
-	return memstore.Entry{}, false
+	return emptyEntry, false
 }
 
 // Get returns a path parameter's value based on its route's dynamic path key.
@@ -266,8 +280,7 @@ type Context interface {
 	// Although `BeginRequest` should NOT be used to call other handlers,
 	// the `BeginRequest` has been introduced to be able to set
 	// common data to all method handlers before their execution.
-	// Controllers can accept middleware(s) from the `app.Controller`
-	// function.
+	// Controllers can accept middleware(s) from the MVC's Application's Router as normally.
 	//
 	// That said let's see an example of `ctx.Proceed`:
 	//
@@ -278,7 +291,6 @@ type Context interface {
 	// })
 	//
 	// func (c *UsersController) BeginRequest(ctx iris.Context) {
-	//	c.C.BeginRequest(ctx) // call the parent's base controller BeginRequest first.
 	// 	if !ctx.Proceed(authMiddleware) {
 	// 		ctx.StopExecution()
 	// 	}
@@ -463,52 +475,104 @@ type Context interface {
 	// it returns an empty map if nothing found.
 	URLParams() map[string]string
 
-	// FormValue returns a single form value by its name/key
+	// FormValueDefault returns a single parsed form value by its "name",
+	// including both the URL field's query parameters and the POST or PUT form data.
+	//
+	// Returns the "def" if not found.
+	FormValueDefault(name string, def string) string
+	// FormValue returns a single parsed form value by its "name",
+	// including both the URL field's query parameters and the POST or PUT form data.
 	FormValue(name string) string
-	// FormValues returns all post data values with their keys
-	// form data, get, post & put query arguments
+	// FormValues returns the parsed form data, including both the URL
+	// field's query parameters and the POST or PUT form data.
+	//
+	// The default form's memory maximum size is 32MB, it can be changed by the
+	// `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
 	//
 	// NOTE: A check for nil is necessary.
 	FormValues() map[string][]string
 
-	// PostValueDefault returns a form's only-post value by its name,
-	// if not found then "def" is returned,
-	// same as Request.PostFormValue.
-	PostValueDefault(name string, def string) string
-	// PostValue returns a form's only-post value by its name,
-	// same as Request.PostFormValue.
-	PostValue(name string) string
-	// PostValueTrim returns a form's only-post value without trailing spaces by its name.
-	PostValueTrim(name string) string
-	// PostValueEscape returns a form's only-post escaped value by its name.
-	PostValueEscape(name string) string
-	// PostValueIntDefault returns a form's only-post value as int by its name.
-	// If not found returns "def".
-	PostValueIntDefault(name string, def int) (int, error)
-	// PostValueInt returns a form's only-post value as int by its name.
-	PostValueInt(name string) (int, error)
-	// PostValueInt64Default returns a form's only-post value as int64 by its name.
-	// If not found returns "def".
-	PostValueInt64Default(name string, def int64) (int64, error)
-	// PostValueInt64 returns a form's only-post value as int64 by its name.
-	PostValueInt64(name string) (int64, error)
-	// PostValueFloat64Default returns a form's only-post value as float64 by its name.
-	// If not found returns "def".
-	PostValueFloat64Default(name string, def float64) (float64, error)
-	// PostValueFloat64 returns a form's only-post value as float64 by its name.
-	PostValueFloat64(name string) (float64, error)
-	// PostValue returns a form's only-post value as boolean by its name.
-	PostValueBool(name string) (bool, error)
-	// PostValues returns a form's only-post values.
-	// PostValues calls ParseMultipartForm and ParseForm if necessary and ignores
-	// any errors returned by these functions.
-	PostValues(name string) []string
-
-	// FormFile returns the first file for the provided form key.
-	// FormFile calls ctx.Request.ParseMultipartForm and ParseForm if necessary.
+	// PostValueDefault returns the parsed form data from POST, PATCH,
+	// or PUT body parameters based on a "name".
 	//
-	// same as Request.FormFile.
+	// If not found then "def" is returned instead.
+	PostValueDefault(name string, def string) string
+	// PostValue returns the parsed form data from POST, PATCH,
+	// or PUT body parameters based on a "name"
+	PostValue(name string) string
+	// PostValueTrim returns the parsed form data from POST, PATCH,
+	// or PUT body parameters based on a "name",  without trailing spaces.
+	PostValueTrim(name string) string
+	// PostValueIntDefault returns the parsed form data from POST, PATCH,
+	// or PUT body parameters based on a "name", as int.
+	//
+	// If not found returns the "def".
+	PostValueIntDefault(name string, def int) (int, error)
+	// PostValueInt returns the parsed form data from POST, PATCH,
+	// or PUT body parameters based on a "name", as int.
+	//
+	// If not found returns 0.
+	PostValueInt(name string) (int, error)
+	// PostValueInt64Default returns the parsed form data from POST, PATCH,
+	// or PUT body parameters based on a "name", as int64.
+	//
+	// If not found returns the "def".
+	PostValueInt64Default(name string, def int64) (int64, error)
+	// PostValueInt64 returns the parsed form data from POST, PATCH,
+	// or PUT body parameters based on a "name", as float64.
+	//
+	// If not found returns 0.0.
+	PostValueInt64(name string) (int64, error)
+	// PostValueInt64Default returns the parsed form data from POST, PATCH,
+	// or PUT body parameters based on a "name", as float64.
+	//
+	// If not found returns the "def".
+	PostValueFloat64Default(name string, def float64) (float64, error)
+	/// PostValueInt64Default returns the parsed form data from POST, PATCH,
+	// or PUT body parameters based on a "name", as float64.
+	//
+	// If not found returns 0.0.
+	PostValueFloat64(name string) (float64, error)
+	// PostValueInt64Default returns the parsed form data from POST, PATCH,
+	// or PUT body parameters based on a "name", as bool.
+	//
+	// If not found or value is false, then it returns false, otherwise true.
+	PostValueBool(name string) (bool, error)
+	// PostValues returns all the parsed form data from POST, PATCH,
+	// or PUT body parameters based on a "name" as a string slice.
+	//
+	// The default form's memory maximum size is 32MB, it can be changed by the
+	// `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
+	PostValues(name string) []string
+	// FormFile returns the first uploaded file that received from the client.
+	//
+	// The default form's memory maximum size is 32MB, it can be changed by the
+	//  `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
 	FormFile(key string) (multipart.File, *multipart.FileHeader, error)
+	// UploadFormFiles uploads any received file(s) from the client
+	// to the system physical location "destDirectory".
+	//
+	// The second optional argument "before" gives caller the chance to
+	// modify the *miltipart.FileHeader before saving to the disk,
+	// it can be used to change a file's name based on the current request,
+	// all FileHeader's options can be changed. You can ignore it if
+	// you don't need to use this capability before saving a file to the disk.
+	//
+	// Note that it doesn't check if request body streamed.
+	//
+	// Returns the copied length as int64 and
+	// a not nil error if at least one new file
+	// can't be created due to the operating system's permissions or
+	// http.ErrMissingFile if no file received.
+	//
+	// If you want to receive & accept files and manage them manually you can use the `context#FormFile`
+	// instead and create a copy function that suits your needs, the below is for generic usage.
+	//
+	// The default form's memory maximum size is 32MB, it can be changed by the
+	//  `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
+	//
+	// See `FormFile` to a more controlled to receive a file.
+	UploadFormFiles(destDirectory string, before ...func(Context, *multipart.FileHeader)) (n int64, err error)
 
 	//  +------------------------------------------------------------+
 	//  | Custom HTTP Errors                                         |
@@ -631,7 +695,6 @@ type Context interface {
 	//
 	// Example: https://github.com/kataras/iris/tree/master/_examples/view/context-view-data/
 	ViewLayout(layoutTmplFile string)
-
 	// ViewData saves one or more key-value pair in order to be passed if and when .View
 	// is being called afterwards, in the same request.
 	// Useful when need to set or/and change template data from previous hanadlers in the chain.
@@ -651,7 +714,6 @@ type Context interface {
 	//
 	// Example: https://github.com/kataras/iris/tree/master/_examples/view/context-view-data/
 	ViewData(key string, value interface{})
-
 	// GetViewData returns the values registered by `context#ViewData`.
 	// The return value is `map[string]interface{}`, this means that
 	// if a custom struct registered to ViewData then this function
@@ -662,16 +724,20 @@ type Context interface {
 	// Similarly to `viewData := ctx.Values().Get("iris.viewData")` or
 	// `viewData := ctx.Values().Get(ctx.Application().ConfigurationReadOnly().GetViewDataContextKey())`.
 	GetViewData() map[string]interface{}
-
-	// View renders templates based on the adapted view engines.
-	// First argument accepts the filename, relative to the view engine's Directory,
+	// View renders a template based on the registered view engine(s).
+	// First argument accepts the filename, relative to the view engine's Directory and Extension,
 	// i.e: if directory is "./templates" and want to render the "./templates/users/index.html"
 	// then you pass the "users/index.html" as the filename argument.
 	//
-	// Look: .ViewData and .ViewLayout too.
+	// The second optional argument can receive a single "view model"
+	// that will be binded to the view template if it's not nil,
+	// otherwise it will check for previous view data stored by the `ViewData`
+	// even if stored at any previous handler(middleware) for the same request.
 	//
-	// Examples: https://github.com/kataras/iris/tree/master/_examples/view/
-	View(filename string) error
+	// Look .ViewData` and .ViewLayout too.
+	//
+	// Examples: https://github.com/kataras/iris/tree/master/_examples/view
+	View(filename string, optionalViewModel ...interface{}) error
 
 	// Binary writes out the raw bytes as binary data.
 	Binary(data []byte) (int, error)
@@ -685,9 +751,10 @@ type Context interface {
 	JSONP(v interface{}, options ...JSONP) (int, error)
 	// XML marshals the given interface object and writes the XML response.
 	XML(v interface{}, options ...XML) (int, error)
-	// Markdown parses the markdown to html and renders to client.
+	// Markdown parses the markdown to html and renders its result to the client.
 	Markdown(markdownB []byte, options ...Markdown) (int, error)
-
+	// YAML parses the "v" using the yaml parser and renders its result to the client.
+	YAML(v interface{}) (int, error)
 	//  +------------------------------------------------------------+
 	//  | Serve files                                                |
 	//  +------------------------------------------------------------+
@@ -695,18 +762,23 @@ type Context interface {
 	// ServeContent serves content, headers are autoset
 	// receives three parameters, it's low-level function, instead you can use .ServeFile(string,bool)/SendFile(string,string)
 	//
-	// You can define your own "Content-Type" header also, after this function call
-	// Doesn't implements resuming (by range), use ctx.SendFile instead
+	//
+	// You can define your own "Content-Type" with `context#ContentType`, before this function call.
+	//
+	// This function doesn't support resuming (by range),
+	// use ctx.SendFile or router's `StaticWeb` instead.
 	ServeContent(content io.ReadSeeker, filename string, modtime time.Time, gzipCompression bool) error
-	// ServeFile serves a view file, to send a file ( zip for example) to the client you should use the SendFile(serverfilename,clientfilename)
+	// ServeFile serves a file (to send a file, a zip for example to the client you should use the `SendFile` instead)
 	// receives two parameters
 	// filename/path (string)
 	// gzipCompression (bool)
 	//
-	// You can define your own "Content-Type" header also, after this function call
-	// This function doesn't implement resuming (by range), use ctx.SendFile instead
+	// You can define your own "Content-Type" with `context#ContentType`, before this function call.
 	//
-	// Use it when you want to serve css/js/... files to the client, for bigger files and 'force-download' use the SendFile.
+	// This function doesn't support resuming (by range),
+	// use ctx.SendFile or router's `StaticWeb` instead.
+	//
+	// Use it when you want to serve dynamic files to the client.
 	ServeFile(filename string, gzipCompression bool) error
 	// SendFile sends file for force-download to the client
 	//
@@ -804,7 +876,18 @@ type Context interface {
 	// to be executed at serve-time. The full app's fields
 	// and methods are not available here for the developer's safety.
 	Application() Application
+
+	// String returns the string representation of this request.
+	// Each context has a unique string representation.
+	// It can be used for simple debugging scenarios, i.e print context as string.
+	//
+	// What it returns? A number which declares the length of the
+	// total `String` calls per executable application, followed
+	// by the remote IP (the client) and finally the method:url.
+	String() string
 }
+
+var _ Context = (*context)(nil)
 
 // Next calls all the next handler from the handlers chain,
 // it should be used inside a middleware.
@@ -855,7 +938,11 @@ type Map map[string]interface{}
 //  +------------------------------------------------------------+
 
 type context struct {
-	// the http.ResponseWriter wrapped by custom writer
+	// the unique id, it's zero until `String` function is called,
+	// it's here to cache the random, unique context's id, although `String`
+	// returns more than this.
+	id uint64
+	// the http.ResponseWriter wrapped by custom writer.
 	writer ResponseWriter
 	// the original http.Request
 	request *http.Request
@@ -863,10 +950,10 @@ type context struct {
 	currentRouteName string
 
 	// the local key-value storage
-	params RequestParams  // url named parameters
-	values memstore.Store // generic storage, middleware communication
+	params RequestParams  // url named parameters.
+	values memstore.Store // generic storage, middleware communication.
 
-	// the underline application app
+	// the underline application app.
 	app Application
 	// the route's handlers
 	handlers Handlers
@@ -1034,8 +1121,7 @@ func (ctx *context) HandlerIndex(n int) (currentIndex int) {
 // Although `BeginRequest` should NOT be used to call other handlers,
 // the `BeginRequest` has been introduced to be able to set
 // common data to all method handlers before their execution.
-// Controllers can accept middleware(s) from the `app.Controller`
-// function.
+// Controllers can accept middleware(s) from the MVC's Application's Router as normally.
 //
 // That said let's see an example of `ctx.Proceed`:
 //
@@ -1046,7 +1132,6 @@ func (ctx *context) HandlerIndex(n int) (currentIndex int) {
 // })
 //
 // func (c *UsersController) BeginRequest(ctx iris.Context) {
-//	c.C.BeginRequest(ctx) // call the parent's base controller BeginRequest first.
 // 	if !ctx.Proceed(authMiddleware) {
 // 		ctx.StopExecution()
 // 	}
@@ -1512,62 +1597,107 @@ func (ctx *context) URLParams() map[string]string {
 	return values
 }
 
-func (ctx *context) askParseForm() error {
-	if ctx.request.Form == nil {
-		if err := ctx.request.ParseForm(); err != nil {
-			return err
+// No need anymore, net/http checks for the Form already.
+// func (ctx *context) askParseForm() error {
+// 	if ctx.request.Form == nil {
+// 		if err := ctx.request.ParseForm(); err != nil {
+// 			return err
+// 		}
+// 	}
+// 	return nil
+// }
+
+// FormValueDefault returns a single parsed form value by its "name",
+// including both the URL field's query parameters and the POST or PUT form data.
+//
+// Returns the "def" if not found.
+func (ctx *context) FormValueDefault(name string, def string) string {
+	if form, has := ctx.form(); has {
+		if v := form[name]; len(v) > 0 {
+			return v[0]
 		}
 	}
-	return nil
+	return def
 }
 
-// FormValue returns a single form value by its name/key
+// FormValue returns a single parsed form value by its "name",
+// including both the URL field's query parameters and the POST or PUT form data.
 func (ctx *context) FormValue(name string) string {
-	return ctx.request.FormValue(name)
+	return ctx.FormValueDefault(name, "")
 }
 
-// FormValues returns all post data values with their keys
-// form data, get, post & put query arguments
+// FormValues returns the parsed form data, including both the URL
+// field's query parameters and the POST or PUT form data.
 //
+// The default form's memory maximum size is 32MB, it can be changed by the
+// `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
 // NOTE: A check for nil is necessary.
 func (ctx *context) FormValues() map[string][]string {
-	//  we skip the check of multipart form, takes too much memory, if user wants it can do manually now.
-	if err := ctx.askParseForm(); err != nil {
-		return nil
-	}
-	return ctx.request.Form // nothing more to do, it's already contains both query and post & put args.
-
+	form, _ := ctx.form()
+	return form
 }
 
-// PostValueDefault returns a form's only-post value by its name,
-// if not found then "def" is returned,
-// same as Request.PostFormValue.
+// Form contains the parsed form data, including both the URL
+// field's query parameters and the POST or PUT form data.
+func (ctx *context) form() (form map[string][]string, found bool) {
+	/*
+		net/http/request.go#1219
+		for k, v := range f.Value {
+			r.Form[k] = append(r.Form[k], v...)
+			// r.PostForm should also be populated. See Issue 9305.
+			r.PostForm[k] = append(r.PostForm[k], v...)
+		}
+	*/
+
+	// ParseMultipartForm calls `request.ParseForm` automatically
+	// therefore we don't need to call it here, although it doesn't hurt.
+	// After one call to ParseMultipartForm or ParseForm,
+	// subsequent calls have no effect, are idempotent.
+	ctx.request.ParseMultipartForm(ctx.Application().ConfigurationReadOnly().GetPostMaxMemory())
+
+	if form := ctx.request.Form; len(form) > 0 {
+		return form, true
+	}
+
+	if form := ctx.request.PostForm; len(form) > 0 {
+		return form, true
+	}
+
+	if form := ctx.request.MultipartForm.Value; len(form) > 0 {
+		return form, true
+	}
+
+	return nil, false
+}
+
+// PostValueDefault returns the parsed form data from POST, PATCH,
+// or PUT body parameters based on a "name".
+//
+// If not found then "def" is returned instead.
 func (ctx *context) PostValueDefault(name string, def string) string {
-	v := ctx.request.PostFormValue(name)
-	if v == "" {
-		return def
+	ctx.form()
+	if v := ctx.request.PostForm[name]; len(v) > 0 {
+		return v[0]
 	}
-	return v
+	return def
 }
 
-// PostValue returns a form's only-post value by its name,
-// same as Request.PostFormValue.
+// PostValue returns the parsed form data from POST, PATCH,
+// or PUT body parameters based on a "name"
 func (ctx *context) PostValue(name string) string {
 	return ctx.PostValueDefault(name, "")
 }
 
-// PostValueTrim returns a form's only-post value without trailing spaces by its name.
+// PostValueTrim returns the parsed form data from POST, PATCH,
+// or PUT body parameters based on a "name",  without trailing spaces.
 func (ctx *context) PostValueTrim(name string) string {
 	return strings.TrimSpace(ctx.PostValue(name))
 }
 
-// PostValueEscape returns a form's only-post escaped value by its name.
-func (ctx *context) PostValueEscape(name string) string {
-	return DecodeQuery(ctx.PostValue(name))
-}
-
-// PostValueIntDefault returns a form's only-post value as int by its name.
-// If not found returns "def".
+// PostValueIntDefault returns the parsed form data from POST, PATCH,
+// or PUT body parameters based on a "name", as int.
+//
+// If not found returns the "def".
 func (ctx *context) PostValueIntDefault(name string, def int) (int, error) {
 	v := ctx.PostValue(name)
 	if v == "" {
@@ -1576,14 +1706,18 @@ func (ctx *context) PostValueIntDefault(name string, def int) (int, error) {
 	return strconv.Atoi(v)
 }
 
-// PostValueInt returns a form's only-post value as int by its name.
+// PostValueInt returns the parsed form data from POST, PATCH,
+// or PUT body parameters based on a "name", as int.
+//
 // If not found returns 0.
 func (ctx *context) PostValueInt(name string) (int, error) {
 	return ctx.PostValueIntDefault(name, 0)
 }
 
-// PostValueInt64Default returns a form's only-post value as int64 by its name.
-// If not found returns "def".
+// PostValueInt64Default returns the parsed form data from POST, PATCH,
+// or PUT body parameters based on a "name", as int64.
+//
+// If not found returns the "def".
 func (ctx *context) PostValueInt64Default(name string, def int64) (int64, error) {
 	v := ctx.PostValue(name)
 	if v == "" {
@@ -1592,14 +1726,18 @@ func (ctx *context) PostValueInt64Default(name string, def int64) (int64, error)
 	return strconv.ParseInt(v, 10, 64)
 }
 
-// PostValueInt64 returns a form's only-post value as int64 by its name.
+// PostValueInt64 returns the parsed form data from POST, PATCH,
+// or PUT body parameters based on a "name", as float64.
+//
 // If not found returns 0.0.
 func (ctx *context) PostValueInt64(name string) (int64, error) {
 	return ctx.PostValueInt64Default(name, 0.0)
 }
 
-// PostValueFloat64Default returns a form's only-post value as float64 by its name.
-// If not found returns "def".
+// PostValueInt64Default returns the parsed form data from POST, PATCH,
+// or PUT body parameters based on a "name", as float64.
+//
+// If not found returns the "def".
 func (ctx *context) PostValueFloat64Default(name string, def float64) (float64, error) {
 	v := ctx.PostValue(name)
 	if v == "" {
@@ -1608,45 +1746,155 @@ func (ctx *context) PostValueFloat64Default(name string, def float64) (float64, 
 	return strconv.ParseFloat(v, 64)
 }
 
-// PostValueFloat64 returns a form's only-post value as float64 by its name.
+// PostValueInt64Default returns the parsed form data from POST, PATCH,
+// or PUT body parameters based on a "name", as float64.
+//
 // If not found returns 0.0.
 func (ctx *context) PostValueFloat64(name string) (float64, error) {
 	return ctx.PostValueFloat64Default(name, 0.0)
 }
 
-// PostValue returns a form's only-post value as boolean by its name.
+// PostValueInt64Default returns the parsed form data from POST, PATCH,
+// or PUT body parameters based on a "name", as bool.
+//
+// If not found or value is false, then it returns false, otherwise true.
 func (ctx *context) PostValueBool(name string) (bool, error) {
 	return strconv.ParseBool(ctx.PostValue(name))
 }
 
-const (
-	// DefaultMaxMemory is the default value
-	// for post values' max memory, defaults to
-	// 32MB.
-	// Can be also changed by the middleware `LimitRequestBodySize`
-	// or `context#SetMaxRequestBodySize`.
-	DefaultMaxMemory = 32 << 20 // 32 MB
-)
-
-// PostValues returns a form's only-post values.
-// PostValues calls ParseMultipartForm and ParseForm if necessary and ignores
-// any errors returned by these functions.
+// PostValues returns all the parsed form data from POST, PATCH,
+// or PUT body parameters based on a "name" as a string slice.
+//
+// The default form's memory maximum size is 32MB, it can be changed by the
+// `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
 func (ctx *context) PostValues(name string) []string {
-	r := ctx.request
-	if r.PostForm == nil {
-		r.ParseMultipartForm(DefaultMaxMemory)
-	}
-
-	return r.PostForm[name]
+	ctx.form()
+	return ctx.request.PostForm[name]
 }
 
-// FormFile returns the first file for the provided form key.
-// FormFile calls ctx.request.ParseMultipartForm and ParseForm if necessary.
+// FormFile returns the first uploaded file that received from the client.
 //
-// same as Request.FormFile.
+//
+// The default form's memory maximum size is 32MB, it can be changed by the
+// `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
 func (ctx *context) FormFile(key string) (multipart.File, *multipart.FileHeader, error) {
+	// we don't have access to see if the request is body stream
+	// and then the ParseMultipartForm can be useless
+	// here but do it in order to apply the post limit,
+	// the internal request.FormFile will not do it if that's filled
+	// and it's not a stream body.
+	ctx.request.ParseMultipartForm(ctx.Application().ConfigurationReadOnly().GetPostMaxMemory())
 	return ctx.request.FormFile(key)
 }
+
+// UploadFormFiles uploads any received file(s) from the client
+// to the system physical location "destDirectory".
+//
+// The second optional argument "before" gives caller the chance to
+// modify the *miltipart.FileHeader before saving to the disk,
+// it can be used to change a file's name based on the current request,
+// all FileHeader's options can be changed. You can ignore it if
+// you don't need to use this capability before saving a file to the disk.
+//
+// Note that it doesn't check if request body streamed.
+//
+// Returns the copied length as int64 and
+// a not nil error if at least one new file
+// can't be created due to the operating system's permissions or
+// http.ErrMissingFile if no file received.
+//
+// If you want to receive & accept files and manage them manually you can use the `context#FormFile`
+// instead and create a copy function that suits your needs, the below is for generic usage.
+//
+// The default form's memory maximum size is 32MB, it can be changed by the
+//  `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
+//
+// See `FormFile` to a more controlled to receive a file.
+func (ctx *context) UploadFormFiles(destDirectory string, before ...func(Context, *multipart.FileHeader)) (n int64, err error) {
+	err = ctx.request.ParseMultipartForm(ctx.Application().ConfigurationReadOnly().GetPostMaxMemory())
+	if err != nil {
+		return 0, err
+	}
+
+	if ctx.request.MultipartForm != nil {
+		if fhs := ctx.request.MultipartForm.File; fhs != nil {
+			for _, files := range fhs {
+				for _, file := range files {
+
+					for _, b := range before {
+						b(ctx, file)
+					}
+
+					n0, err0 := uploadTo(file, destDirectory)
+					if err0 != nil {
+						return 0, err0
+					}
+					n += n0
+				}
+			}
+		}
+	}
+
+	return 0, http.ErrMissingFile
+}
+
+func uploadTo(fh *multipart.FileHeader, destDirectory string) (int64, error) {
+	src, err := fh.Open()
+	if err != nil {
+		return 0, err
+	}
+	defer src.Close()
+
+	out, err := os.OpenFile(filepath.Join(destDirectory, fh.Filename),
+		os.O_WRONLY|os.O_CREATE, os.FileMode(0666))
+
+	if err != nil {
+		return 0, err
+	}
+	defer out.Close()
+
+	return io.Copy(out, src)
+}
+
+/* Good idea of mine but it doesn't work of course...
+// Go can't use `io.ReadCloser` function return value the same
+// as with other function that returns a `multipart.File`, even if
+// multipart.File is an `io.ReadCloser`.
+// So comment all those and implement a function inside the context itself.
+//
+// Copiable is the interface which should be completed
+// by files or not that intend to be used inside the `context#CopyFile`.
+// This interface allows testing file uploads to your http test as well.
+//
+// See `CopyFile` for more.
+// type Copiable interface {
+// 	Open() (io.ReadCloser, error)
+// }
+//
+
+
+// CopyFile copies a `context#Copiable` "file", that can be acquired by the second argument of
+// a `context.FormFile` (*multipart.FileHeader) as well, to the "dest".
+//
+// Returns the copied length as int64 and
+// an error if file is not exist, or new file can't be created or closed at the end.
+func CopyFile(file Copiable, dest string) (int64, error) {
+	src, err := fileOpen()
+	if err != nil {
+		return 0, err
+	}
+	defer src.Close()
+
+	out, err := os.Create(dest)
+	if err != nil {
+		return 0, err
+	}
+	defer out.Close()
+
+	return io.Copy(out, src)
+}
+
+*/
 
 // Redirect sends a redirect response to the client
 // to a specific url or relative path.
@@ -2053,20 +2301,32 @@ func (ctx *context) GetViewData() map[string]interface{} {
 	return nil
 }
 
-// View renders templates based on the adapted view engines.
-// First argument accepts the filename, relative to the view engine's Directory,
+// View renders a template based on the registered view engine(s).
+// First argument accepts the filename, relative to the view engine's Directory and Extension,
 // i.e: if directory is "./templates" and want to render the "./templates/users/index.html"
 // then you pass the "users/index.html" as the filename argument.
 //
-// Look: .ViewData and .ViewLayout too.
+// The second optional argument can receive a single "view model"
+// that will be binded to the view template if it's not nil,
+// otherwise it will check for previous view data stored by the `ViewData`
+// even if stored at any previous handler(middleware) for the same request.
 //
-// Examples: https://github.com/kataras/iris/tree/master/_examples/view/
-func (ctx *context) View(filename string) error {
+// Look .ViewData and .ViewLayout too.
+//
+// Examples: https://github.com/kataras/iris/tree/master/_examples/view
+func (ctx *context) View(filename string, optionalViewModel ...interface{}) error {
 	ctx.ContentType(ContentHTMLHeaderValue)
 	cfg := ctx.Application().ConfigurationReadOnly()
 
 	layout := ctx.values.GetString(cfg.GetViewLayoutContextKey())
-	bindingData := ctx.values.Get(cfg.GetViewDataContextKey())
+
+	var bindingData interface{}
+	if len(optionalViewModel) > 0 {
+		// a nil can override the existing data or model sent by `ViewData`.
+		bindingData = optionalViewModel[0]
+	} else {
+		bindingData = ctx.values.Get(cfg.GetViewDataContextKey())
+	}
 
 	err := ctx.Application().View(ctx.writer, filename, layout, bindingData)
 	if err != nil {
@@ -2090,9 +2350,10 @@ const (
 	ContentTextHeaderValue = "text/plain"
 	// ContentXMLHeaderValue header value for XML data.
 	ContentXMLHeaderValue = "text/xml"
-
 	// ContentMarkdownHeaderValue custom key/content type, the real is the text/html.
 	ContentMarkdownHeaderValue = "text/markdown"
+	// ContentYAMLHeaderValue header value for YAML data.
+	ContentYAMLHeaderValue = "application/x-yaml"
 )
 
 // Binary writes out the raw bytes as binary data.
@@ -2353,7 +2614,7 @@ func (ctx *context) XML(v interface{}, opts ...XML) (int, error) {
 	return n, err
 }
 
-// WriteMarkdown parses the markdown to html and renders these contents to the writer.
+// WriteMarkdown parses the markdown to html and writes these contents to the writer.
 func WriteMarkdown(writer io.Writer, markdownB []byte, options Markdown) (int, error) {
 	buf := blackfriday.Run(markdownB)
 	if options.Sanitize {
@@ -2366,7 +2627,7 @@ func WriteMarkdown(writer io.Writer, markdownB []byte, options Markdown) (int, e
 // from `WriteMarkdown` and `ctx.Markdown`.
 var DefaultMarkdownOptions = Markdown{}
 
-// Markdown parses the markdown to html and renders to the client.
+// Markdown parses the markdown to html and renders its result to the client.
 func (ctx *context) Markdown(markdownB []byte, opts ...Markdown) (int, error) {
 	options := DefaultMarkdownOptions
 
@@ -2383,6 +2644,18 @@ func (ctx *context) Markdown(markdownB []byte, opts ...Markdown) (int, error) {
 	}
 
 	return n, err
+}
+
+// YAML marshals the "v" using the yaml marshaler and renders its result to the client.
+func (ctx *context) YAML(v interface{}) (int, error) {
+	out, err := yaml.Marshal(v)
+	if err != nil {
+		ctx.StatusCode(http.StatusInternalServerError)
+		return 0, err
+	}
+
+	ctx.ContentType(ContentYAMLHeaderValue)
+	return ctx.Write(out)
 }
 
 //  +------------------------------------------------------------+
@@ -2482,7 +2755,7 @@ var (
 func (ctx *context) SetCookieKV(name, value string) {
 	c := &http.Cookie{}
 	c.Name = name
-	c.Value = value
+	c.Value = url.QueryEscape(value)
 	c.HttpOnly = true
 	c.Expires = time.Now().Add(SetCookieKVExpiration)
 	c.MaxAge = int(SetCookieKVExpiration.Seconds())
@@ -2496,7 +2769,8 @@ func (ctx *context) GetCookie(name string) string {
 	if err != nil {
 		return ""
 	}
-	return cookie.Value
+	value, _ := url.QueryUnescape(cookie.Value)
+	return value
 }
 
 // RemoveCookie deletes a cookie by it's name.
@@ -2716,4 +2990,29 @@ func (ctx *context) Exec(method string, path string) {
 // and methods are not available here for the developer's safety.
 func (ctx *context) Application() Application {
 	return ctx.app
+}
+
+var lastCapturedContextID uint64
+
+// LastCapturedContextID returns the total number of `context#String` calls.
+func LastCapturedContextID() uint64 {
+	return atomic.LoadUint64(&lastCapturedContextID)
+}
+
+// String returns the string representation of this request.
+// Each context has a unique string representation.
+// It can be used for simple debugging scenarios, i.e print context as string.
+//
+// What it returns? A number which declares the length of the
+// total `String` calls per executable application, followed
+// by the remote IP (the client) and finally the method:url.
+func (ctx *context) String() string {
+	if ctx.id == 0 {
+		// set the id here.
+		forward := atomic.AddUint64(&lastCapturedContextID, 1)
+		ctx.id = forward
+	}
+
+	return fmt.Sprintf("[%d] %s ▶ %s:%s",
+		ctx.id, ctx.RemoteAddr(), ctx.Method(), ctx.Request().RequestURI)
 }

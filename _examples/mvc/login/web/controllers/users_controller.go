@@ -4,7 +4,7 @@ import (
 	"github.com/kataras/iris/_examples/mvc/login/datamodels"
 	"github.com/kataras/iris/_examples/mvc/login/services"
 
-	"github.com/kataras/iris/mvc"
+	"github.com/kataras/iris"
 )
 
 // UsersController is our /users API controller.
@@ -14,29 +14,16 @@ import (
 // DELETE			/users/{id:long} | delete by id
 // Requires basic authentication.
 type UsersController struct {
-	mvc.C
+	// Optionally: context is auto-binded by Iris on each request,
+	// remember that on each incoming request iris creates a new UserController each time,
+	// so all fields are request-scoped by-default, only dependency injection is able to set
+	// custom fields like the Service which is the same for all requests (static binding).
+	Ctx iris.Context
 
+	// Our UserService, it's an interface which
+	// is binded from the main application.
 	Service services.UserService
 }
-
-// This could be possible but we should not call handlers inside the `BeginRequest`.
-// Because `BeginRequest` was introduced to set common, shared variables between all method handlers
-// before their execution.
-// We will add this middleware from our `app.Controller` call.
-//
-// var authMiddleware = basicauth.New(basicauth.Config{
-// 	Users: map[string]string{
-// 		"admin": "password",
-// 	},
-// })
-//
-// func (c *UsersController) BeginRequest(ctx iris.Context) {
-//	c.C.BeginRequest(ctx)
-//
-// 	if !ctx.Proceed(authMiddleware) {
-// 		ctx.StopExecution()
-// 	}
-// }
 
 // Get returns list of the users.
 // Demo:
@@ -97,5 +84,5 @@ func (c *UsersController) DeleteBy(id int64) interface{} {
 	// right here we can see that a method function
 	// can return any of those two types(map or int),
 	// we don't have to specify the return type to a specific type.
-	return 400 // same as `iris.StatusBadRequest`.
+	return iris.StatusBadRequest // same as 400.
 }

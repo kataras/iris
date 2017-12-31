@@ -106,8 +106,9 @@ class Ws {
             //propably json-object
             t = websocketJSONMessageType;
             m = JSON.stringify(data);
-        } else {
-            console.log("Invalid, javascript-side should contains an empty second parameter.");
+        } else if (data !== null && typeof (data) !== "undefined") {
+            // if it has a second parameter but it's not a type we know, then fire this:
+            console.log("unsupported type of input argument passed, try to not include this argument to the 'Emit'");
         }
 
         return this._msg(event, t, m);

@@ -66,7 +66,7 @@ func main() {
 }
 ```
 
-UNIX and BSD hosts can take advandage of the reuse port feature
+UNIX and BSD hosts can take advantage of the reuse port feature
 
 ```go
 package main
