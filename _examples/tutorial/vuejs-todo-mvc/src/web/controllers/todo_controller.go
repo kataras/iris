@@ -52,6 +52,10 @@ func (c *TodoController) Post(newItems []todo.Item) PostItemResponse {
 }
 
 func (c *TodoController) GetSync(conn websocket.Connection) {
+	// join to the session in order to send "saved"
+	// events only to a single user, that means
+	// that if user has opened more than one browser window/tab
+	// of the same session then the changes will be reflected to one another.
 	conn.Join(c.Session.ID())
 	conn.On("save", func() { // "save" event from client.
 		conn.To(c.Session.ID()).Emit("saved", nil) // fire a "saved" event to the rest of the clients w.

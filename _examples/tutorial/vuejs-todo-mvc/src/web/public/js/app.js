@@ -1,5 +1,5 @@
 // Full spec-compliant TodoMVC with Iris
-// and hash-based routing in ~120 effective lines of JavaScript.
+// and hash-based routing in ~200 effective lines of JavaScript.
 
 var socket = new Ws("ws://localhost:8080/todos/sync");
 
