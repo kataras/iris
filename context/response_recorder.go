@@ -39,7 +39,7 @@ type ResponseRecorder struct {
 	headers http.Header
 }
 
-var _ ResponseWriter = &ResponseRecorder{}
+var _ ResponseWriter = (*ResponseRecorder)(nil)
 
 // Naive returns the simple, underline and original http.ResponseWriter
 // that backends this response writer.

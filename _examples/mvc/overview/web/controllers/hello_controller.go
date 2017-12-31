@@ -10,9 +10,7 @@ import (
 
 // HelloController is our sample controller
 // it handles GET: /hello and GET: /hello/{name}
-type HelloController struct {
-	mvc.C
-}
+type HelloController struct{}
 
 var helloView = mvc.View{
 	Name: "hello/index.html",
@@ -27,12 +25,12 @@ var helloView = mvc.View{
 // `mvc.Result` is just an interface with a `Dispatch` function.
 // `mvc.Response` and `mvc.View` are the built'n result type dispatchers
 // you can even create custom response dispatchers by
-// implementing the `github.com/kataras/iris/mvc#Result` interface.
+// implementing the `github.com/kataras/iris/hero#Result` interface.
 func (c *HelloController) Get() mvc.Result {
 	return helloView
 }
 
-// you can define a standard error in order to be re-usable anywhere in your app.
+// you can define a standard error in order to re-use anywhere in your app.
 var errBadName = errors.New("bad name")
 
 // you can just return it as error or even better

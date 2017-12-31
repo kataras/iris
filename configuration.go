@@ -315,6 +315,18 @@ func WithCharset(charset string) Configurator {
 	}
 }
 
+// WithPostMaxMemory sets the maximum post data size
+// that a client can send to the server, this differs
+// from the overral request body size which can be modified
+// by the `context#SetMaxRequestBodySize` or `iris#LimitRequestBodySize`.
+//
+// Defaults to 32MB or 32 << 20 if you prefer.
+func WithPostMaxMemory(limit int64) Configurator {
+	return func(app *Application) {
+		app.config.PostMaxMemory = limit
+	}
+}
+
 // WithRemoteAddrHeader enables or adds a new or existing request header name
 // that can be used to validate the client's real IP.
 //
@@ -463,6 +475,13 @@ type Configuration struct {
 	// Defaults to "UTF-8".
 	Charset string `json:"charset,omitempty" yaml:"Charset" toml:"Charset"`
 
+	// PostMaxMemory sets the maximum post data size
+	// that a client can send to the server, this differs
+	// from the overral request body size which can be modified
+	// by the `context#SetMaxRequestBodySize` or `iris#LimitRequestBodySize`.
+	//
+	// Defaults to 32MB or 32 << 20 if you prefer.
+	PostMaxMemory int64 `json:"postMaxMemory" yaml:"PostMaxMemory" toml:"PostMaxMemory"`
 	//  +----------------------------------------------------+
 	//  | Context's keys for values used on various featuers |
 	//  +----------------------------------------------------+
@@ -504,8 +523,8 @@ type Configuration struct {
 	RemoteAddrHeaders map[string]bool `json:"remoteAddrHeaders,omitempty" yaml:"RemoteAddrHeaders" toml:"RemoteAddrHeaders"`
 
 	// Other are the custom, dynamic options, can be empty.
-	// This field used only by you to set any app's options you want
-	// or by custom adaptors, it's a way to simple communicate between your adaptors (if any)
+	// This field used only by you to set any app's options you want.
+	//
 	// Defaults to a non-nil empty map.
 	Other map[string]interface{} `json:"other,omitempty" yaml:"Other" toml:"Other"`
 }
@@ -577,6 +596,16 @@ func (c Configuration) GetTimeFormat() string {
 // used for templates and the rest of the responses.
 func (c Configuration) GetCharset() string {
 	return c.Charset
+}
+
+// GetPostMaxMemory returns the maximum configured post data size
+// that a client can send to the server, this differs
+// from the overral request body size which can be modified
+// by the `context#SetMaxRequestBodySize` or `iris#LimitRequestBodySize`.
+//
+// Defaults to 32MB or 32 << 20 if you prefer.
+func (c Configuration) GetPostMaxMemory() int64 {
+	return c.PostMaxMemory
 }
 
 // GetTranslateFunctionContextKey returns the configuration's TranslateFunctionContextKey value,
@@ -684,6 +713,10 @@ func WithConfiguration(c Configuration) Configurator {
 			main.Charset = v
 		}
 
+		if v := c.PostMaxMemory; v > 0 {
+			main.PostMaxMemory = v
+		}
+
 		if v := c.TranslateFunctionContextKey; v != "" {
 			main.TranslateFunctionContextKey = v
 		}
@@ -733,10 +766,17 @@ func DefaultConfiguration() Configuration {
 		DisableAutoFireStatusCode:         false,
 		TimeFormat:                        "Mon, Jan 02 2006 15:04:05 GMT",
 		Charset:                           "UTF-8",
-		TranslateFunctionContextKey:       "iris.translate",
-		TranslateLanguageContextKey:       "iris.language",
-		ViewLayoutContextKey:              "iris.viewLayout",
-		ViewDataContextKey:                "iris.viewData",
+
+		// PostMaxMemory is for post body max memory.
+		//
+		// The request body the size limit
+		// can be set by the middleware `LimitRequestBodySize`
+		// or `context#SetMaxRequestBodySize`.
+		PostMaxMemory:               32 << 20, // 32MB
+		TranslateFunctionContextKey: "iris.translate",
+		TranslateLanguageContextKey: "iris.language",
+		ViewLayoutContextKey:        "iris.viewLayout",
+		ViewDataContextKey:          "iris.viewData",
 		RemoteAddrHeaders: map[string]bool{
 			"X-Real-Ip":        false,
 			"X-Forwarded-For":  false,

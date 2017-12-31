@@ -4,8 +4,9 @@ import (
 	"crypto/md5"
 	"fmt"
 	"io"
-	"os"
+	"mime/multipart"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/kataras/iris"
@@ -26,43 +27,39 @@ func main() {
 		token := fmt.Sprintf("%x", h.Sum(nil))
 
 		// render the form with the token for any use you'd like.
-		ctx.ViewData("", token)
-		ctx.View("upload_form.html")
+		ctx.View("upload_form.html", token)
 	})
 
-	// Handle the post request from the upload_form.html to the server
-	app.Post("/upload", iris.LimitRequestBodySize(10<<20),
-		func(ctx iris.Context) {
-			// or use ctx.SetMaxRequestBodySize(10 << 20)
-			// to limit the uploaded file(s) size.
+	// Handle the post request from the upload_form.html to the server.
+	app.Post("/upload", func(ctx iris.Context) {
+		//
+		// UploadFormFiles
+		// uploads any number of incoming files (multiple property on the form input).
+		//
 
-			// Get the file from the request
-			file, info, err := ctx.FormFile("uploadfile")
+		// second argument is totally optionally,
+		// it can be used to change a file's name based on the request,
+		// at this example we will showcase how to use it
+		// by prefixing the uploaded file with the current user's ip.
+		ctx.UploadFormFiles("./uploads", beforeSave)
+	})
 
-			if err != nil {
-				ctx.StatusCode(iris.StatusInternalServerError)
-				ctx.HTML("Error while uploading: <b>" + err.Error() + "</b>")
-				return
-			}
+	// start the server at http://localhost:8080 with post limit at 32 MB.
+	app.Run(iris.Addr(":8080"), iris.WithPostMaxMemory(32<<20))
+}
 
-			defer file.Close()
-			fname := info.Filename
+func beforeSave(ctx iris.Context, file *multipart.FileHeader) {
+	ip := ctx.RemoteAddr()
+	// make sure you format the ip in a way
+	// that can be used for a file name (simple case):
+	ip = strings.Replace(ip, ".", "_", -1)
+	ip = strings.Replace(ip, ":", "_", -1)
 
-			// Create a file with the same name
-			// assuming that you have a folder named 'uploads'
-			out, err := os.OpenFile("./uploads/"+fname,
-				os.O_WRONLY|os.O_CREATE, 0666)
-
-			if err != nil {
-				ctx.StatusCode(iris.StatusInternalServerError)
-				ctx.HTML("Error while uploading: <b>" + err.Error() + "</b>")
-				return
-			}
-			defer out.Close()
-
-			io.Copy(out, file)
-		})
-
-	// start the server at http://localhost:8080
-	app.Run(iris.Addr(":8080"))
+	// you can use the time.Now, to prefix or suffix the files
+	// based on the current time as well, as an exercise.
+	// i.e unixTime :=	time.Now().Unix()
+	// prefix the Filename with the $IP-
+	// no need for more actions, internal uploader will use this
+	// name to save the file into the "./uploads" folder.
+	file.Filename = ip + "-" + file.Filename
 }

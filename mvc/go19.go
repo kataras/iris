@@ -2,26 +2,20 @@
 
 package mvc
 
-import (
-	"html/template"
-
-	"github.com/kataras/iris/mvc/activator"
-)
+import "github.com/kataras/iris/hero"
 
 type (
-	// HTML wraps the "s" with the template.HTML
-	// in order to be marked as safe content, to be rendered as html and not escaped.
-	HTML = template.HTML
 
-	// ActivatePayload contains the necessary information and the ability
-	// to alt a controller's registration options, i.e the binder.
-	//
-	// With `ActivatePayload` the `Controller` can register custom routes
-	// or modify the provided values that will be binded to the
-	// controller later on.
-	//
-	// Look the `mvc/activator#ActivatePayload` for its implementation.
-	//
-	// A shortcut for the `mvc/activator#ActivatePayload`, useful when `OnActivate` is being used.
-	ActivatePayload = activator.ActivatePayload
+	// Result is a type alias for the `hero#Result`, useful for output controller's methods.
+	Result = hero.Result
+	// Response is a type alias for the `hero#Response`, useful for output controller's methods.
+	Response = hero.Response
+	// View is a type alias for the `hero#View`, useful for output controller's methods.
+	View = hero.View
+)
+
+var (
+	// Try is a type alias for the `hero#Try`,
+	// useful to return a result based on two cases: failure(including panics) and a succeess.
+	Try = hero.Try
 )

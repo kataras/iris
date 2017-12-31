@@ -10,7 +10,6 @@ import (
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/errors"
 	"github.com/kataras/iris/core/router/macro"
-	"github.com/kataras/iris/mvc/activator"
 )
 
 const (
@@ -190,11 +189,11 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 // otherwise use `Party` which can handle many paths with different handlers and middlewares.
 //
 // Usage:
-// 	app.HandleMany(iris.MethodGet, "/user /user/{id:int} /user/me", userHandler)
+// 	app.HandleMany("GET", "/user /user/{id:int} /user/me", genericUserHandler)
 // At the other side, with `Handle` we've had to write:
-// 	app.Handle(iris.MethodGet, "/user", userHandler)
-// 	app.Handle(iris.MethodGet, "/user/{id:int}", userHandler)
-// 	app.Handle(iris.MethodGet, "/user/me", userHandler)
+// 	app.Handle("GET", "/user", userHandler)
+// 	app.Handle("GET", "/user/{id:int}", userByIDHandler)
+// 	app.Handle("GET", "/user/me", userMeHandler)
 //
 // This method is used behind the scenes at the `Controller` function
 // in order to handle more than one paths for the same controller instance.
@@ -202,7 +201,6 @@ func (api *APIBuilder) HandleMany(methodOrMulti string, relativePathorMulti stri
 	// at least slash
 	// a space
 	// at least one other slash for the next path
-	// app.Controller("/user /user{id}", new(UserController))
 	paths := splitPath(relativePathorMulti)
 	methods := splitMethod(methodOrMulti)
 	for _, p := range paths {
@@ -471,85 +469,6 @@ func (api *APIBuilder) Any(relativePath string, handlers ...context.Handler) (ro
 	for _, m := range AllMethods {
 		r := api.HandleMany(m, relativePath, handlers...)
 		routes = append(routes, r...)
-	}
-
-	return
-}
-
-// Controller registers a `Controller` instance and returns the registered Routes.
-// The "controller" receiver should embed a field of `Controller` in order
-// to be compatible Iris `Controller`.
-//
-// It's just an alternative way of building an API for a specific
-// path, the controller can register all type of http methods.
-//
-// Keep note that controllers are bit slow
-// because of the reflection use however it's as fast as possible because
-// it does preparation before the serve-time handler but still
-// remains slower than the low-level handlers
-// such as `Handle, Get, Post, Put, Delete, Connect, Head, Trace, Patch`.
-//
-//
-// All fields that are tagged with iris:"persistence"` or binded
-// are being persistence and kept the same between the different requests.
-//
-// An Example Controller can be:
-//
-// type IndexController struct {
-// 	Controller
-// }
-//
-// func (c *IndexController) Get() {
-// 	c.Tmpl = "index.html"
-// 	c.Data["title"] = "Index page"
-// 	c.Data["message"] = "Hello world!"
-// }
-//
-// Usage: app.Controller("/", new(IndexController))
-//
-//
-// Another example with bind:
-//
-// type UserController struct {
-// 	Controller
-//
-// 	DB        *DB
-// 	CreatedAt time.Time
-//
-// }
-//
-// // Get serves using the User controller when HTTP Method is "GET".
-// func (c *UserController) Get() {
-// 	c.Tmpl = "user/index.html"
-// 	c.Data["title"] = "User Page"
-// 	c.Data["username"] = "kataras " + c.Params.Get("userid")
-// 	c.Data["connstring"] = c.DB.Connstring
-// 	c.Data["uptime"] = time.Now().Sub(c.CreatedAt).Seconds()
-// }
-//
-// Usage: app.Controller("/user/{id:int}", new(UserController), db, time.Now())
-// Note: Binded values of context.Handler type are being recognised as middlewares by the router.
-//
-// Read more at `/mvc#Controller`.
-func (api *APIBuilder) Controller(relativePath string, controller activator.BaseController,
-	bindValues ...interface{}) (routes []*Route) {
-
-	registerFunc := func(ifRelPath string, method string, handlers ...context.Handler) {
-		relPath := relativePath + ifRelPath
-		r := api.HandleMany(method, relPath, handlers...)
-		routes = append(routes, r...)
-	}
-
-	// bind any values to the controller's relative fields
-	// and set them on each new request controller,
-	// binder is an alternative method
-	// of the persistence data control which requires the
-	// user already set the values manually to controller's fields
-	// and tag them with `iris:"persistence"`.
-	//
-	// don't worry it will never be handled if empty values.
-	if err := activator.Register(controller, bindValues, registerFunc); err != nil {
-		api.reporter.Add("%v for path: '%s'", err, relativePath)
 	}
 
 	return

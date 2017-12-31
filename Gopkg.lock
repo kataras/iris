@@ -122,12 +122,6 @@
   revision = "20e139a6d2469769ae88e0a3579ba5df71839ca7"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/skratchdot/open-golang"
-  packages = ["."]
-  revision = "75fb7ed4208cf72d323d7d02fd1a5964a7a9073c"
-
-[[projects]]
   name = "github.com/klauspost/compress"
   packages = ["flate","gzip"]
   revision = "6c8db69c4b49dd4df1fff66996cf556176d0b9bf"

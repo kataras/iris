@@ -6,51 +6,52 @@ import (
 	"strings"
 
 	"github.com/kataras/iris"
+	"github.com/kataras/iris/mvc"
+	"github.com/kataras/iris/sessions"
 )
+
+const sessionIDKey = "UserID"
 
 // paths
-const (
-	PathLogin  = "/user/login"
-	PathLogout = "/user/logout"
-)
-
-// the session key for the user id comes from the Session.
-const (
-	sessionIDKey = "UserID"
+var (
+	PathLogin  = mvc.Response{Path: "/user/login"}
+	PathLogout = mvc.Response{Path: "/user/logout"}
 )
 
 // AuthController is the user authentication controller, a custom shared controller.
 type AuthController struct {
-	iris.SessionController
+	// context is auto-binded if struct depends on this,
+	// in this controller we don't we do everything with mvc-style,
+	// and that's neither the 30% of its features.
+	// Ctx iris.Context
 
-	Source *DataSource
-	User   Model `iris:"model"`
+	Source  *DataSource
+	Session *sessions.Session
+
+	// the whole controller is request-scoped because we already depend on Session, so
+	// this will be new for each new incoming request, BeginRequest sets that based on the session.
+	UserID int64
 }
 
 // BeginRequest saves login state to the context, the user id.
 func (c *AuthController) BeginRequest(ctx iris.Context) {
-	c.SessionController.BeginRequest(ctx)
+	c.UserID, _ = c.Session.GetInt64(sessionIDKey)
+}
 
-	if userID := c.Session.Get(sessionIDKey); userID != nil {
-		ctx.Values().Set(sessionIDKey, userID)
+// EndRequest is here just to complete the BaseController
+// in order to be tell iris to call the `BeginRequest` before the main method.
+func (c *AuthController) EndRequest(ctx iris.Context) {}
+
+func (c *AuthController) fireError(err error) mvc.View {
+	return mvc.View{
+		Code: iris.StatusBadRequest,
+		Name: "shared/error.html",
+		Data: iris.Map{"Title": "User Error", "Message": strings.ToUpper(err.Error())},
 	}
 }
 
-func (c *AuthController) fireError(err error) {
-	if err != nil {
-		c.Ctx.Application().Logger().Debug(err.Error())
-
-		c.Status = 400
-		c.Data["Title"] = "User Error"
-		c.Data["Message"] = strings.ToUpper(err.Error())
-		c.Tmpl = "shared/error.html"
-	}
-}
-
-func (c *AuthController) redirectTo(id int64) {
-	if id > 0 {
-		c.Path = "/user/" + strconv.Itoa(int(id))
-	}
+func (c *AuthController) redirectTo(id int64) mvc.Response {
+	return mvc.Response{Path: "/user/" + strconv.Itoa(int(id))}
 }
 
 func (c *AuthController) createOrUpdate(firstname, username, password string) (user Model, err error) {
@@ -75,8 +76,8 @@ func (c *AuthController) createOrUpdate(firstname, username, password string) (u
 
 func (c *AuthController) isLoggedIn() bool {
 	// we don't search by session, we have the user id
-	// already by the `SaveState` middleware.
-	return c.Values.Get(sessionIDKey) != nil
+	// already by the `BeginRequest` middleware.
+	return c.UserID > 0
 }
 
 func (c *AuthController) verify(username, password string) (user Model, err error) {
@@ -101,24 +102,9 @@ func (c *AuthController) verify(username, password string) (user Model, err erro
 // if logged in then destroy the session
 // and redirect to the login page
 // otherwise redirect to the registration page.
-func (c *AuthController) logout() {
+func (c *AuthController) logout() mvc.Response {
 	if c.isLoggedIn() {
-		// c.Manager is the Sessions manager created
-		// by the embedded SessionController, automatically.
-		c.Manager.DestroyByID(c.Session.ID())
-		return
+		c.Session.Destroy()
 	}
-
-	c.Path = PathLogin
-}
-
-// AllowUser will check if this client is a logged user,
-// if not then it will redirect that guest to the login page
-// otherwise it will allow the execution of the next handler.
-func AllowUser(ctx iris.Context) {
-	if ctx.Values().Get(sessionIDKey) != nil {
-		ctx.Next()
-		return
-	}
-	ctx.Redirect(PathLogin)
+	return PathLogin
 }

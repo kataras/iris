@@ -2,13 +2,18 @@ package main
 
 import (
 	"github.com/kataras/iris"
+	"github.com/kataras/iris/mvc"
 )
 
-func main() {
+type postValue func(string) string
 
+func main() {
 	app := iris.New()
 
-	app.Controller("/user", new(UserController))
+	mvc.New(app.Party("/user")).Register(
+		func(ctx iris.Context) postValue {
+			return ctx.PostValue
+		}).Handle(new(UserController))
 
 	// GET http://localhost:9092/user
 	// GET http://localhost:9092/user/42
@@ -20,37 +25,44 @@ func main() {
 }
 
 // UserController is our user example controller.
-type UserController struct {
-	iris.Controller
-}
+type UserController struct{}
 
 // Get handles GET /user
-func (c *UserController) Get() {
-	c.Ctx.Writef("Select all users")
+func (c *UserController) Get() string {
+	return "Select all users"
 }
 
-// GetBy handles GET /user/42
-func (c *UserController) GetBy(id int) {
-	c.Ctx.Writef("Select user by ID: %d", id)
+// User is our test User model, nothing tremendous here.
+type User struct{ ID int64 }
+
+// GetBy handles GET /user/42, equal to .Get("/user/{id:long}")
+func (c *UserController) GetBy(id int64) User {
+	// Select User by ID == $id.
+	return User{id}
 }
 
 // Post handles POST /user
-func (c *UserController) Post() {
-	username := c.Ctx.PostValue("username")
-	c.Ctx.Writef("Create by user with username: %s", username)
+func (c *UserController) Post(post postValue) string {
+	username := post("username")
+	return "Create by user with username: " + username
 }
 
 // PutBy handles PUT /user/42
-func (c *UserController) PutBy(id int) {
-	c.Ctx.Writef("Update user by ID: %d", id)
+func (c *UserController) PutBy(id int) string {
+	// Update user by ID == $id
+	return "User updated"
 }
 
 // DeleteBy handles DELETE /user/42
-func (c *UserController) DeleteBy(id int) {
-	c.Ctx.Writef("Delete user by ID: %d", id)
+func (c *UserController) DeleteBy(id int) bool {
+	// Delete user by ID == %id
+	//
+	// when boolean then true = iris.StatusOK, false = iris.StatusNotFound
+	return true
 }
 
 // GetFollowersBy handles GET /user/followers/42
-func (c *UserController) GetFollowersBy(id int) {
-	c.Ctx.Writef("Select all followers by user ID: %d", id)
+func (c *UserController) GetFollowersBy(id int) []User {
+	// Select all followers by user ID == $id
+	return []User{ /* ... */ }
 }

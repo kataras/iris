@@ -5,9 +5,11 @@
 //
 
 //line hello.qtpl:3
+
 package templates
 
 //line hello.qtpl:3
+
 import (
 	qtio422016 "io"
 
@@ -15,17 +17,20 @@ import (
 )
 
 //line hello.qtpl:3
+
 var (
 	_ = qtio422016.Copy
 	_ = qt422016.AcquireByteBuffer
 )
 
 //line hello.qtpl:4
+
 type Hello struct {
 	Vars map[string]interface{}
 }
 
 //line hello.qtpl:9
+
 func (h *Hello) StreamBody(qw422016 *qt422016.Writer) {
 	//line hello.qtpl:9
 	qw422016.N().S(`
@@ -43,9 +48,11 @@ func (h *Hello) StreamBody(qw422016 *qt422016.Writer) {
 	</div>
 `)
 //line hello.qtpl:14
+
 }
 
 //line hello.qtpl:14
+
 func (h *Hello) WriteBody(qq422016 qtio422016.Writer) {
 	//line hello.qtpl:14
 	qw422016 := qt422016.AcquireWriter(qq422016)
@@ -54,9 +61,11 @@ func (h *Hello) WriteBody(qq422016 qtio422016.Writer) {
 	//line hello.qtpl:14
 	qt422016.ReleaseWriter(qw422016)
 //line hello.qtpl:14
+
 }
 
 //line hello.qtpl:14
+
 func (h *Hello) Body() string {
 	//line hello.qtpl:14
 	qb422016 := qt422016.AcquireByteBuffer()
@@ -69,4 +78,5 @@ func (h *Hello) Body() string {
 	//line hello.qtpl:14
 	return qs422016
 //line hello.qtpl:14
+
 }
