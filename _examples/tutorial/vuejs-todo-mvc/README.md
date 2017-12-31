@@ -1,5 +1,9 @@
 # A Todo MVC Application using Iris and Vue.js
 
+Vue.js is a front-end framework for building web applications using javascript. It has a blazing fast Virtual DOM renderer.
+
+Iris is a back-end framework for building web applications using The Go Programming Language (disclaimer: author here). It's one of the fastest and featured web frameworks out there. We wanna use this to serve our "todo service".
+
 ## The Tools
 
 Programming Languages are just tools for us, but we need a safe, fast and “cross-platform” programming language to power our service.
@@ -20,10 +24,10 @@ Extensive information about downloading & installing Go can be found [here](http
 
 Many articles have been written, in the past, that lead developers not to use a web framework because they are useless and "bad". I have to tell you that there is no such thing, it always depends on the (web) framework that you’re going to use. At production environment,  we don’t have the time or the experience to code everything that we wanna use in the applications, and if we could are we sure that we can do better and safely than others? In short term: **Good frameworks are helpful tools for any developer, company or startup and "bad" frameworks are waste of time, crystal clear.**
 
-You’ll need only two dependencies:
+You’ll need two dependencies:
 
-1. The Iris Web Framework, for our server-side requirements. Can be found [here](https://github.com/kataras/iris), latest v10.
-2. Vue.js, for our client-side requirements. Download it from [here](https://vuejs.org/), latest v2.
+1. Vue.js, for our client-side requirements. Download it from [here](https://vuejs.org/), latest v2.
+2. The Iris Web Framework, for our server-side requirements. Can be found [here](https://github.com/kataras/iris), latest v10.
 
 > If you have Go already installed then just execute `go get -u github.com/kataras/iris` to install the Iris Web Framework.
 
@@ -34,7 +38,7 @@ If we are all in the same page, it’s time to learn how we can create a live to
 We're going to use a vue.js todo application which uses browser'
 s local storage and doesn't have any user-specified features like live sync between browser's tabs, you can find the original version inside the vue's [docs](https://vuejs.org/v2/examples/todomvc.html).
 
-Assuming that you know how %GOPATH% works, create an empty folder with any name in the %GOPATH%/src directory, we will create those files:
+Assuming that you know how %GOPATH% works, create an empty folder, i.e "vuejs-todo-mvc" in the %GOPATH%/src directory, there you will create those files:
 
 - web/public/js/app.js
 - web/public/index.html
@@ -48,7 +52,7 @@ _Read the comments in the source code, they may be very helpful_
 ### The client-side (vue.js)
 
 ```js
-/* file: web/public/js/app.js */
+/* file: vuejs-todo-mvc/web/public/js/app.js */
 // Full spec-compliant TodoMVC with Iris
 // and hash-based routing in ~200 effective lines of JavaScript.
 
@@ -259,7 +263,7 @@ app.$mount('.todoapp')
 Let's add our view, the static html.
 
 ```html
-<!-- file: web/public/index.html -->
+<!-- file: vuejs-todo-mvc/web/public/index.html -->
 <!doctype html>
 <html data-framework="vue">
 
@@ -339,7 +343,7 @@ Let's add our view, the static html.
 Our view model.
 
 ```go
-// file: todo/item.go
+// file: vuejs-todo-mvc/todo/item.go
 package todo
 
 type Item struct {
@@ -353,7 +357,7 @@ type Item struct {
 Our service.
 
 ```go
-// file: todo/service.go
+// file: vuejs-todo-mvc/todo/service.go
 package todo
 
 import (
@@ -405,11 +409,11 @@ func (s *MemoryService) Save(sessionOwner string, newItems []Item) error {
 We are going to use some of the MVC functionalities of the iris web framework here but you can do the same with the standard API as well.
 
 ```go
-// file: controllers/todo_controller.go
+// file: vuejs-todo-mvc/controllers/todo_controller.go
 package controllers
 
 import (
-    "vuejs-todo-mvc/src/todo"
+    "vuejs-todo-mvc/todo"
 
     "github.com/kataras/iris"
     "github.com/kataras/iris/mvc"
@@ -476,8 +480,8 @@ And finally our main application's endpoint.
 package main
 
 import (
-    "vuejs-todo-mvc/src/todo"
-    "vuejs-todo-mvc/src/web/controllers"
+    "vuejs-todo-mvc/todo"
+    "vuejs-todo-mvc/web/controllers"
 
     "github.com/kataras/iris"
     "github.com/kataras/iris/sessions"
@@ -547,6 +551,12 @@ Open one or more browser tabs at: http://localhost:8080 and have fun!
 
 The whole project, all the files you saw in this article are located at: https://github.com/kataras/iris/tree/master/_examples/tutorial/vuejs-todo-mvc
 
+## References
+
+https://vuejs.org/v2/examples/todomvc.html (using browser's local storage)
+
+https://github.com/kataras/iris/tree/master/_examples/mvc (mvc examples and features overview repository)
+
 ## Thank you, once again
 
 Happy new year and thank you for your pattience, once again:) Don't hesitate to post any questions and provide feedback(I'm very active dev therefore you will be heard here!)
@@ -555,9 +565,3 @@ Don't forget to check out my medium profile and twitter as well, I'm posting som
 
 - https://medium.com/@kataras 
 - https://twitter.com/MakisMaropoulos
-
-## References
-
-https://vuejs.org/v2/examples/todomvc.html (using browser's local storage)
-
-https://github.com/kataras/iris/tree/master/_examples/mvc (mvc examples and features overview repository)
