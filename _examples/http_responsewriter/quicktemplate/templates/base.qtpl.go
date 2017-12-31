@@ -5,9 +5,11 @@
 //
 
 //line base.qtpl:3
+
 package templates
 
 //line base.qtpl:3
+
 import (
 	qtio422016 "io"
 
@@ -15,12 +17,14 @@ import (
 )
 
 //line base.qtpl:3
+
 var (
 	_ = qtio422016.Copy
 	_ = qt422016.AcquireByteBuffer
 )
 
 //line base.qtpl:4
+
 type Partial interface {
 	//line base.qtpl:4
 	Body() string
@@ -29,11 +33,13 @@ type Partial interface {
 	//line base.qtpl:4
 	WriteBody(qq422016 qtio422016.Writer)
 //line base.qtpl:4
+
 }
 
 // Template writes a template implementing the Partial interface.
 
 //line base.qtpl:11
+
 func StreamTemplate(qw422016 *qt422016.Writer, p Partial) {
 	//line base.qtpl:11
 	qw422016.N().S(`
@@ -61,9 +67,11 @@ func StreamTemplate(qw422016 *qt422016.Writer, p Partial) {
 </html>
 `)
 //line base.qtpl:30
+
 }
 
 //line base.qtpl:30
+
 func WriteTemplate(qq422016 qtio422016.Writer, p Partial) {
 	//line base.qtpl:30
 	qw422016 := qt422016.AcquireWriter(qq422016)
@@ -72,9 +80,11 @@ func WriteTemplate(qq422016 qtio422016.Writer, p Partial) {
 	//line base.qtpl:30
 	qt422016.ReleaseWriter(qw422016)
 //line base.qtpl:30
+
 }
 
 //line base.qtpl:30
+
 func Template(p Partial) string {
 	//line base.qtpl:30
 	qb422016 := qt422016.AcquireByteBuffer()
@@ -87,21 +97,27 @@ func Template(p Partial) string {
 	//line base.qtpl:30
 	return qs422016
 //line base.qtpl:30
+
 }
 
 // Base template implementation. Other pages may inherit from it if they need
 // overriding only certain Partial methods.
 
 //line base.qtpl:35
+
 type Base struct{}
 
 //line base.qtpl:36
+
 func (b *Base) StreamBody(qw422016 *qt422016.Writer) {
 //line base.qtpl:36
-qw422016.N().S(`This is the base body`) }
+
+	qw422016.N().S(`This is the base body`)
+}
 
 //line base.qtpl:36
 //line base.qtpl:36
+
 func (b *Base) WriteBody(qq422016 qtio422016.Writer) {
 	//line base.qtpl:36
 	qw422016 := qt422016.AcquireWriter(qq422016)
@@ -110,9 +126,11 @@ func (b *Base) WriteBody(qq422016 qtio422016.Writer) {
 	//line base.qtpl:36
 	qt422016.ReleaseWriter(qw422016)
 //line base.qtpl:36
+
 }
 
 //line base.qtpl:36
+
 func (b *Base) Body() string {
 	//line base.qtpl:36
 	qb422016 := qt422016.AcquireByteBuffer()
@@ -125,4 +143,5 @@ func (b *Base) Body() string {
 	//line base.qtpl:36
 	return qs422016
 //line base.qtpl:36
+
 }

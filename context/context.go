@@ -551,7 +551,13 @@ type Context interface {
 	FormFile(key string) (multipart.File, *multipart.FileHeader, error)
 	// UploadFormFiles uploads any received file(s) from the client
 	// to the system physical location "destDirectory".
-	// The root directory must already exists.
+	//
+	// The second optional argument "before" gives caller the chance to
+	// modify the *miltipart.FileHeader before saving to the disk,
+	// it can be used to change a file's name based on the current request,
+	// all FileHeader's options can be changed. You can ignore it if
+	// you don't need to use this capability before saving a file to the disk.
+	//
 	// Note that it doesn't check if request body streamed.
 	//
 	// Returns the copied length as int64 and
@@ -564,7 +570,10 @@ type Context interface {
 	//
 	// The default form's memory maximum size is 32MB, it can be changed by the
 	//  `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
-	UploadFormFiles(destDirectory string) (int64, error)
+	//
+	// See `FormFile` to a more controlled to receive a file.
+	UploadFormFiles(destDirectory string, before ...func(Context, *multipart.FileHeader)) (n int64, err error)
+
 	//  +------------------------------------------------------------+
 	//  | Custom HTTP Errors                                         |
 	//  +------------------------------------------------------------+
@@ -1780,7 +1789,12 @@ func (ctx *context) FormFile(key string) (multipart.File, *multipart.FileHeader,
 
 // UploadFormFiles uploads any received file(s) from the client
 // to the system physical location "destDirectory".
-// The root directory must already exists.
+//
+// The second optional argument "before" gives caller the chance to
+// modify the *miltipart.FileHeader before saving to the disk,
+// it can be used to change a file's name based on the current request,
+// all FileHeader's options can be changed. You can ignore it if
+// you don't need to use this capability before saving a file to the disk.
 //
 // Note that it doesn't check if request body streamed.
 //
@@ -1794,7 +1808,9 @@ func (ctx *context) FormFile(key string) (multipart.File, *multipart.FileHeader,
 //
 // The default form's memory maximum size is 32MB, it can be changed by the
 //  `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
-func (ctx *context) UploadFormFiles(destDirectory string) (n int64, err error) {
+//
+// See `FormFile` to a more controlled to receive a file.
+func (ctx *context) UploadFormFiles(destDirectory string, before ...func(Context, *multipart.FileHeader)) (n int64, err error) {
 	err = ctx.request.ParseMultipartForm(ctx.Application().ConfigurationReadOnly().GetPostMaxMemory())
 	if err != nil {
 		return 0, err
@@ -1804,6 +1820,11 @@ func (ctx *context) UploadFormFiles(destDirectory string) (n int64, err error) {
 		if fhs := ctx.request.MultipartForm.File; fhs != nil {
 			for _, files := range fhs {
 				for _, file := range files {
+
+					for _, b := range before {
+						b(ctx, file)
+					}
+
 					n0, err0 := uploadTo(file, destDirectory)
 					if err0 != nil {
 						return 0, err0
@@ -1824,7 +1845,9 @@ func uploadTo(fh *multipart.FileHeader, destDirectory string) (int64, error) {
 	}
 	defer src.Close()
 
-	out, err := os.Create(filepath.Join(destDirectory, fh.Filename))
+	out, err := os.OpenFile(filepath.Join(destDirectory, fh.Filename),
+		os.O_WRONLY|os.O_CREATE, os.FileMode(0666))
+
 	if err != nil {
 		return 0, err
 	}

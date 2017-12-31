@@ -12,12 +12,12 @@ import (
 func main() {
 	app := iris.New()
 	app.Logger().SetLevel("debug")
-	mvc.Configure(app.Party("/todo"), TodoApp)
+	mvc.Configure(app.Party("/basic"), basicMVC)
 
 	app.Run(iris.Addr(":8080"))
 }
 
-func TodoApp(app *mvc.Application) {
+func basicMVC(app *mvc.Application) {
 	// You can use normal middlewares at MVC apps of course.
 	app.Router.Use(func(ctx iris.Context) {
 		ctx.Application().Logger().Infof("Path: %s", ctx.Path())
@@ -32,16 +32,16 @@ func TodoApp(app *mvc.Application) {
 		&prefixedLogger{prefix: "DEV"},
 	)
 
-	// GET: http://localhost:8080/todo
-	// GET: http://localhost:8080/todo/custom
-	app.Handle(new(TodoController))
+	// GET: http://localhost:8080/basic
+	// GET: http://localhost:8080/basic/custom
+	app.Handle(new(basicController))
 
 	// All dependencies of the parent *mvc.Application
 	// are cloned to this new child,
 	// thefore it has access to the same session as well.
-	// GET: http://localhost:8080/todo/sub
+	// GET: http://localhost:8080/basic/sub
 	app.Party("/sub").
-		Handle(new(TodoSubController))
+		Handle(new(basicSubController))
 }
 
 // If controller's fields (or even its functions) expecting an interface
@@ -64,39 +64,39 @@ func (s *prefixedLogger) Log(msg string) {
 	fmt.Printf("%s: %s\n", s.prefix, msg)
 }
 
-type TodoController struct {
+type basicController struct {
 	Logger LoggerService
 
 	Session *sessions.Session
 }
 
-func (c *TodoController) BeforeActivation(b mvc.BeforeActivation) {
+func (c *basicController) BeforeActivation(b mvc.BeforeActivation) {
 	b.Handle("GET", "/custom", "Custom")
 }
 
-func (c *TodoController) AfterActivation(a mvc.AfterActivation) {
+func (c *basicController) AfterActivation(a mvc.AfterActivation) {
 	if a.Singleton() {
-		panic("TodoController should be stateless, a request-scoped, we have a 'Session' which depends on the context.")
+		panic("basicController should be stateless, a request-scoped, we have a 'Session' which depends on the context.")
 	}
 }
 
-func (c *TodoController) Get() string {
+func (c *basicController) Get() string {
 	count := c.Session.Increment("count", 1)
 
-	body := fmt.Sprintf("Hello from TodoController\nTotal visits from you: %d", count)
+	body := fmt.Sprintf("Hello from basicController\nTotal visits from you: %d", count)
 	c.Logger.Log(body)
 	return body
 }
 
-func (c *TodoController) Custom() string {
+func (c *basicController) Custom() string {
 	return "custom"
 }
 
-type TodoSubController struct {
+type basicSubController struct {
 	Session *sessions.Session
 }
 
-func (c *TodoSubController) Get() string {
+func (c *basicSubController) Get() string {
 	count, _ := c.Session.GetIntDefault("count", 1)
-	return fmt.Sprintf("Hello from TodoSubController.\nRead-only visits count: %d", count)
+	return fmt.Sprintf("Hello from basicSubController.\nRead-only visits count: %d", count)
 }

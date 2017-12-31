@@ -8,6 +8,6 @@
 
 ![](https://github.com/kataras/explore/raw/master/iris/hero/hero-2-monokai.png)
 
-## References
+## 3. Per-Request - Dynamic Dependencies
 
-- [explore](https://github.com/kataras/explore)
+![](https://github.com/kataras/explore/raw/master/iris/hero/hero-3-monokai.png)

@@ -318,7 +318,7 @@ func WithCharset(charset string) Configurator {
 // WithPostMaxMemory sets the maximum post data size
 // that a client can send to the server, this differs
 // from the overral request body size which can be modified
-// by the `context#SetMaxRequestBodySize` or `iris#LimitRequestBodySize.
+// by the `context#SetMaxRequestBodySize` or `iris#LimitRequestBodySize`.
 //
 // Defaults to 32MB or 32 << 20 if you prefer.
 func WithPostMaxMemory(limit int64) Configurator {
@@ -478,7 +478,7 @@ type Configuration struct {
 	// PostMaxMemory sets the maximum post data size
 	// that a client can send to the server, this differs
 	// from the overral request body size which can be modified
-	// by the `context#SetMaxRequestBodySize` or `iris#LimitRequestBodySize.
+	// by the `context#SetMaxRequestBodySize` or `iris#LimitRequestBodySize`.
 	//
 	// Defaults to 32MB or 32 << 20 if you prefer.
 	PostMaxMemory int64 `json:"postMaxMemory" yaml:"PostMaxMemory" toml:"PostMaxMemory"`
@@ -601,7 +601,7 @@ func (c Configuration) GetCharset() string {
 // GetPostMaxMemory returns the maximum configured post data size
 // that a client can send to the server, this differs
 // from the overral request body size which can be modified
-// by the `context#SetMaxRequestBodySize` or `iris#LimitRequestBodySize.
+// by the `context#SetMaxRequestBodySize` or `iris#LimitRequestBodySize`.
 //
 // Defaults to 32MB or 32 << 20 if you prefer.
 func (c Configuration) GetPostMaxMemory() int64 {

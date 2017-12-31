@@ -112,6 +112,11 @@ Navigate through examples for a better understanding.
     * [per-route](routing/writing-a-middleware/per-route/main.go)
     * [globally](routing/writing-a-middleware/globally/main.go)
 
+### hero
+
+- [Basic](hero/basic/main.go)
+- [Overview](hero/overview)
+
 ### MVC
 
 ![](mvc/web_mvc_diagram.png)
@@ -313,7 +318,8 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 
 - [Bind JSON](http_request/read-json/main.go)
 - [Bind Form](http_request/read-form/main.go)
-- [Upload/Read Files](http_request/upload-files/main.go)
+- [Upload/Read File](http_request/upload-file/main.go)
+- [Upload multiple files with an easy way](http_request/upload-files/main.go)
 
 > The `context.Request()` returns the same *http.Request you already know, these examples show some places where the  Context uses this object. Besides that you can use it as you did before iris.
 

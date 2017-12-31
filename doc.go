@@ -1,4 +1,4 @@
-// Copyright (c) 2017 The Iris Authors. All rights reserved.
+// Copyright (c) 2017-2018 The Iris Authors. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -35,7 +35,7 @@ Source code and other details for the project are available at GitHub:
 
 Current Version
 
-8.5.8
+10.0.0
 
 Installation
 
