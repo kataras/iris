@@ -19,12 +19,12 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 # Mo, 01 Jenuary 2018 | v10.0.0
 
-We must thanks [Mrs. Diana](https://www.instagram.com/merry.dii/) for our awesome new [logo](https://iris-go.com/images/logo.svg)!
+We must thanks [Mrs. Diana](https://www.instagram.com/merry.dii/) for our awesome new [logo](https://iris-go.com/images/icon.svg)!
 
 You can [contact](mailto:Kovalenkodiana8@gmail.com) her for any  design-related enquiries or explore and send a direct message via [instagram](https://www.instagram.com/merry.dii/).
 
 <p align="center">
-<img width="145px" src="https://iris-go.com/images/logo.svg?v=10" />
+<img width="145px" src="https://iris-go.com/images/icon.svg" />
 </p>
 
 At this version we have many internal improvements but just two major changes and one big feature, called **hero**.
