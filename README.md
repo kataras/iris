@@ -2,7 +2,7 @@
 
 <img align="right" width="170px" src="https://iris-go.com/images/logo.svg" title="logo created by @merry.dii" />
 
-[![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=flat-square)](https://travis-ci.org/kataras/iris) <!-- [![release](https://img.shields.io/github/release/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/releases)--> [![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=flat-square)](http://goreportcard.com/report/kataras/iris) [![github closed issues](https://img.shields.io/github/issues-closed-raw/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/issues?q=is%3Aissue+is%3Aclosed) [![chat](https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square)](https://kataras.rocket.chat/channel/iris) [![view examples](https://img.shields.io/badge/learn%20by-examples-0077b3.svg?style=flat-square)](https://github.com/kataras/iris/tree/master/_examples) [![release](https://img.shields.io/badge/release%20-v10.0-0077b3.svg?style=flat-square)](https://github.com/kataras/iris/releases)
+[![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=flat-square)](https://travis-ci.org/kataras/iris)<!-- [![release](https://img.shields.io/github/release/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/releases)--> [![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=flat-square)](http://goreportcard.com/report/kataras/iris)<!--[![github closed issues](https://img.shields.io/github/issues-closed-raw/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/issues?q=is%3Aissue+is%3Aclosed)--> [![chat](https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square)](https://kataras.rocket.chat/channel/iris) [![view examples](https://img.shields.io/badge/learn%20by-examples-0077b3.svg?style=flat-square)](https://github.com/kataras/iris/tree/master/_examples) [![release](https://img.shields.io/badge/release%20-v10.0-0077b3.svg?style=flat-square)](https://github.com/kataras/iris/releases)
 
 Iris is a fast, simple yet fully featured and very efficient web framework for Go.
 
@@ -41,9 +41,10 @@ _Updated at: [Tuesday, 21 November 2017](_benchmarks/README_UNIX.md)_
 
 ## Support
 
-- [HISTORY](HISTORY.md) file is your best friend, it contains information about all the new features for the current release, you can even search for [older versions](https://github.com/kataras/iris/releases)
+- [HISTORY](HISTORY.md#mo-01-jenuary-2018--v1000) file is your best friend, it contains information about the latest features and changes
 - Did you happen to find a bug? Post it at [github issues](https://github.com/kataras/iris/issues)
 - Do you have any questions or need to speak with someone experienced to solve a problem at real-time? Join us to the [community chat](https://chat.iris-go.com)
+- Complete our form-based user experience report by clicking [here](https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link) 
 - Do you like the framework? Tweet something about it! The People have spoken:
 
 <a href="https://twitter.com/gelnior/status/769100480706379776"> 
@@ -81,15 +82,11 @@ _Updated at: [Tuesday, 21 November 2017](_benchmarks/README_UNIX.md)_
     <img src="https://comments.iris-go.com/comment33_2_mini.png" width="350px">
 </a>
 
-<a href="https://twitter.com/sgryphon/status/912073318928232448"> 
-    <img src="https://comments.iris-go.com/comment40.png" width="350px">
-</a>
-
 <a href="https://twitter.com/ferarias/status/902468752364773376"> 
     <img src="https://comments.iris-go.com/comment41.png" width="350px">
 </a>
 
-For more information about contributing to the Iris project please check the [CONTRIBUTING.md](CONTRIBUTING.md) file.
+> For more information about contributing to the Iris project please check the [CONTRIBUTING.md](CONTRIBUTING.md) file.
 
 [List of all Contributors](https://github.com/kataras/iris/graphs/contributors)
 
@@ -103,6 +100,7 @@ First of all, the most correct way to begin with a web framework is to learn the
 
 ### Iris starter kits
 
+<!-- table form 
 | Description | Link |
 | -----------|-------------|
 | Hasura hub starter project with a ready to deploy golang helloworld webapp with IRIS! | https://hasura.io/hub/project/hasura/hello-golang-iris |
@@ -113,6 +111,16 @@ First of all, the most correct way to begin with a web framework is to learn the
 | Self-hosted Localization Management Platform built with Iris and Angular | https://github.com/iris-contrib/parrot |
 | Iris + Docker and Kubernetes | https://github.com/iris-contrib/cloud-native-go |
 | Quickstart for Iris with Nanobox | https://guides.nanobox.io/golang/iris/from-scratch |
+-->
+
+1. [A basic web app built in Iris for Go](https://github.com/gauravtiwari/go_iris_app)
+2. [A mini social-network created with the awesome Iris💖💖](https://github.com/iris-contrib/Iris-Mini-Social-Network)
+3. [Iris isomorphic react/hot reloadable/redux/css-modules starter kit](https://github.com/iris-contrib/iris-starter-kit)
+4. [Demo project with react using typescript and Iris](https://github.com/ionutvilie/react-ts)
+5. [Self-hosted Localization Management Platform built with Iris and Angular](https://github.com/iris-contrib/parrot)
+6. [Iris + Docker and Kubernetes](https://github.com/iris-contrib/cloud-native-go)
+7. [Quickstart for Iris with Nanobox](https://guides.nanobox.io/golang/iris/from-scratch)
+8. [A Hasura starter project with a ready to deploy Golang hello-world web app with IRIS](https://hasura.io/hub/project/hasura/hello-golang-iris)
 
 > Did you build something similar? Let us [know](https://github.com/kataras/iris/pulls)!
 

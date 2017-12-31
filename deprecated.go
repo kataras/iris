@@ -12,6 +12,7 @@ import (
 // https://github.com/kataras/iris/blob/master/HISTORY.md#mo-01-jenuary-2018--v10
 func (app *Application) Controller(relPath string, c interface{}, _ ...interface{}) []*router.Route {
 	name := mvc.NameOf(c)
+
 	panic(fmt.Errorf(`"Controller" method is DEPRECATED, use the "mvc" subpackage instead.
 
         PREVIOUSLY YOU USED TO CODE IT LIKE THIS:

@@ -57,7 +57,7 @@ type ConfigurationReadOnly interface {
 	// GetPostMaxMemory returns the maximum configured post data size
 	// that a client can send to the server, this differs
 	// from the overral request body size which can be modified
-	// by the `context#SetMaxRequestBodySize` or `iris#LimitRequestBodySize.
+	// by the `context#SetMaxRequestBodySize` or `iris#LimitRequestBodySize`.
 	//
 	// Defaults to 32MB or 32 << 20 if you prefer.
 	GetPostMaxMemory() int64
