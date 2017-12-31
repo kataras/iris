@@ -29,7 +29,7 @@ You can [contact](mailto:Kovalenkodiana8@gmail.com) her for any  design-related 
 
 At this version we have many internal improvements but just two major changes and one big feature, called **hero**.
 
-> The new version adds 75 plus new commits, read them if you are developing a web framework based on Iris. Why v10? 9 was skipped for undefined reasons.
+> The new version adds 75 plus new commits, the PR is located [here](https://github.com/kataras/iris/pull/848) read the internal changes if you are developing a web framework based on Iris. Why 9 was skipped? Because.
 
 ## Hero
 
