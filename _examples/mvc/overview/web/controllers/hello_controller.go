@@ -25,7 +25,7 @@ var helloView = mvc.View{
 // `mvc.Result` is just an interface with a `Dispatch` function.
 // `mvc.Response` and `mvc.View` are the built'n result type dispatchers
 // you can even create custom response dispatchers by
-// implementing the `github.com/kataras/iris/mvc#Result` interface.
+// implementing the `github.com/kataras/iris/hero#Result` interface.
 func (c *HelloController) Get() mvc.Result {
 	return helloView
 }

@@ -2,10 +2,16 @@ package controllers
 
 import "github.com/kataras/iris/mvc"
 
-type AboutController struct{ mvc.Controller }
+type AboutController struct{}
 
-func (c *AboutController) Get() {
-	c.Data["Title"] = "About"
-	c.Data["Message"] = "Your application description page."
-	c.Tmpl = "about.html"
+var aboutView = mvc.View{
+	Name: "about.html",
+	Data: map[string]interface{}{
+		"Title":   "About",
+		"Message": "Your application description page..",
+	},
+}
+
+func (c *AboutController) Get() mvc.View {
+	return aboutView
 }

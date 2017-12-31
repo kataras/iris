@@ -2,9 +2,13 @@ package controllers
 
 import "github.com/kataras/iris/mvc"
 
-type IndexController struct{ mvc.Controller }
+type IndexController struct{}
 
-func (c *IndexController) Get() {
-	c.Data["Title"] = "Home Page"
-	c.Tmpl = "index.html"
+var indexView = mvc.View{
+	Name: "index.html",
+	Data: map[string]interface{}{"Title": "Home Page"},
+}
+
+func (c *IndexController) Get() mvc.View {
+	return indexView
 }
