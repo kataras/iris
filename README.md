@@ -1,4 +1,4 @@
-# Iris web framework
+# Iris Web Framework
 
 <img align="right" width="170px" src="https://iris-go.com/images/icon.svg?v=10" title="logo created by @merry.dii" />
 
@@ -17,6 +17,71 @@ Learn what [others say about Iris](#support) and [star](https://github.com/katar
 Thank you to all our backers! [Become a backer](https://opencollective.com/iris#backer)
 
 <a href="https://opencollective.com/iris#backers" target="_blank"><img src="https://opencollective.com/iris/backers.svg?width=890"></a>
+
+```sh
+$ cat example.go
+```
+
+```go
+package main
+
+import "github.com/kataras/iris"
+
+func main() {
+    app := iris.New()
+    // Load all templates from the "./views" folder
+    // where extension is ".html" and parse them
+    // using the standard `html/template` package.
+    app.RegisterView(iris.HTML("./views", ".html"))
+
+    // Method:    GET
+    // Resource:  http://localhost:8080
+    app.Get("/", func(ctx iris.Context) {
+        // Bind: {{.message}} with "Hello world!"
+        ctx.ViewData("message", "Hello world!")
+        // Render template file: ./views/hello.html
+        ctx.View("hello.html")
+    })
+
+    // Method:    GET
+    // Resource:  http://localhost:8080/user/42
+    //
+    // Need to use a custom regexp instead?
+    // Easy,
+    // just mark the parameter's type to 'string'
+    // which accepts anything and make use of
+    // its `regexp` macro function, i.e:
+    // app.Get("/user/{id:string regexp(^[0-9]+$)}")
+    app.Get("/user/{id:long}", func(ctx iris.Context) {
+        userID, _ := ctx.Params().GetInt64("id")
+        ctx.Writef("User ID: %d", userID)
+    })
+
+    // Start the server using a network address.
+    app.Run(iris.Addr(":8080"))
+}
+```
+
+> Learn more about path parameter's types by clicking [here](_examples/routing/dynamic-path/main.go#L31)
+
+```html
+<!-- file: ./views/hello.html -->
+<html>
+<head>
+    <title>Hello Page</title>
+</head>
+<body>
+    <h1>{{.message}}</h1>
+</body>
+</html>
+```
+
+```sh
+$ go run example.go
+Now listening on: http://localhost:8080
+Application Started. Press CTRL+C to shut down.
+_
+```
 
 ## Installation
 
