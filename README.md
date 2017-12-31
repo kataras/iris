@@ -163,7 +163,7 @@ First of all, the most correct way to begin with a web framework is to learn the
 
 - Navigate through **100+1** **[examples](_examples)** and some [iris starter kits](#iris-starter-kits) we crafted for you
 - Read the [godocs](https://godoc.org/github.com/kataras/iris) for any details
-- Prepare a cup of coffee or tea, whatever pleasures you the most, and read some [articles](#articles) we found for you
+- Prepare a cup of coffee or tea, whatever pleases you the most, and read some [articles](#articles) we found for you
 
 ### Iris starter kits
 

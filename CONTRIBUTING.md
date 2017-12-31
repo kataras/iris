@@ -47,6 +47,7 @@ Instructions can be found at: https://github.com/kataras/iris/issues/796
 
 Write an article about Iris in https://medium.com , https://dev.to or if you're being a hackathon at https://hackernoon.com, some examples:
 
+* [A Hasura starter project with a ready to deploy Golang hello-world web app with IRIS](bit.ly/2lmKaAZ)
 * [Top 6 web frameworks for Go as of 2017](https://blog.usejournal.com/top-6-web-frameworks-for-go-as-of-2017-23270e059c4b)
 * [Iris Go Framework + MongoDB](https://medium.com/go-language/iris-go-framework-mongodb-552e349eab9c)
 * [How to build a file upload form using DropzoneJS and Go](https://hackernoon.com/how-to-build-a-file-upload-form-using-dropzonejs-and-go-8fb9f258a991)
