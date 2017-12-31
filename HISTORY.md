@@ -171,6 +171,15 @@ func(ctx iris.Context) {
 Item's name: {{.Name}}
 ```
 
+## context#YAML
+
+Add a new `context#YAML` function, it renders a yaml from a structured value.
+
+```go
+// YAML marshals the "v" using the yaml marshaler and renders its result to the client.
+func YAML(v interface{}) (int, error)
+```
+
 ## Session#GetString
 
 `sessions/session#GetString` can now return a filled value even if the stored value is a type of integer, just like the memstore, the context's temp store, the context's path parameters and the context's url parameters.
