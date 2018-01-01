@@ -19,7 +19,7 @@ func main() {
 	// http://localhost:8080
 	// http://localhost:8080/other
 	//
-	// refresh every 10 second and you'll see different time output.
+	// refresh every 10 seconds and you'll see different time output.
 	app.Run(iris.Addr(":8080"))
 }
 
