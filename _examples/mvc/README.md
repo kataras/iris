@@ -141,5 +141,6 @@ If you're new to back-end web development read about the MVC architectural patte
 - [Login showcase - Plus Repository and Service layers](login) **UPDATED**
 - [Singleton](singleton) **NEW**
 - [Websocket Controller](websocket) **NEW**
+- [Register Middleware](middleware) **NEW**
 
 Folder structure guidelines can be found at the [_examples/#structuring](https://github.com/kataras/iris/tree/master/_examples/#structuring) section.
