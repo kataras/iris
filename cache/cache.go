@@ -7,18 +7,17 @@ Example code:
 		 	"time"
 
 		 	"github.com/kataras/iris"
-		 	"github.com/kataras/iris/context"
 		 	"github.com/kataras/iris/cache"
 		 )
 
 		 func main(){
 		 	app := iris.Default()
-		 	cachedHandler := cache.WrapHandler(h, 2 *time.Minute)
-		 	app.Get("/hello", cachedHandler)
+		 	middleware := cache.Handler(2 *time.Minute)
+		 	app.Get("/hello", middleware, h)
 		 	app.Run(iris.Addr(":8080"))
 		 }
 
-		 func h(ctx context.Context) {
+		 func h(ctx iris.Context) {
 		 	ctx.HTML("<h1> Hello, this should be cached. Every 2 minutes it will be refreshed, check your browser's inspector</h1>")
 		 }
 */
@@ -32,38 +31,21 @@ import (
 	"github.com/kataras/iris/context"
 )
 
-// Cache accepts two parameters
-// first is the context.Handler which you want to cache its result
-// the second is, optional, the cache Entry's expiration duration
+// Cache accepts the cache expiration duration
 // if the expiration <=2 seconds then expiration is taken by the "cache-control's maxage" header
 // returns context.Handler, which you can use as your default router or per-route handler
 //
 // All types of response can be cached, templates, json, text, anything.
 //
 // You can add validators with this function.
-func Cache(bodyHandler context.Handler, expiration time.Duration) *client.Handler {
-	return client.NewHandler(bodyHandler, expiration)
-}
-
-// WrapHandler accepts two parameters
-// first is the context.Handler which you want to cache its result
-// the second is, optional, the cache Entry's expiration duration
-// if the expiration <=2 seconds then expiration is taken by the "cache-control's maxage" header
-// returns context.Handler, which you can use as your default router or per-route handler
-//
-// All types of response can be cached, templates, json, text, anything.
-//
-// it returns a context.Handler, for more options use the `Cache`
-func WrapHandler(bodyHandler context.Handler, expiration time.Duration) context.Handler {
-	return Cache(bodyHandler, expiration).ServeHTTP
+func Cache(expiration time.Duration) *client.Handler {
+	return client.NewHandler(expiration)
 }
 
 // Handler accepts one single parameter:
-// the cache Entry's expiration duration
+// the cache expiration duration
 // if the expiration <=2 seconds then expiration is taken by the "cache-control's maxage" header
 // returns context.Handler.
-//
-// It's the same as Cache and WrapHandler but it sets the "bodyHandler" to the next handler in the chain.
 //
 // All types of response can be cached, templates, json, text, anything.
 //
@@ -71,7 +53,7 @@ func WrapHandler(bodyHandler context.Handler, expiration time.Duration) context.
 //
 // Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/#caching
 func Handler(expiration time.Duration) context.Handler {
-	h := WrapHandler(nil, expiration)
+	h := Cache(expiration).ServeHTTP
 	return h
 }
 
