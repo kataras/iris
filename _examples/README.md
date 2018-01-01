@@ -259,6 +259,7 @@ Follow the examples below,
 - [Login showcase - Plus Repository and Service layers](mvc/login) **UPDATED**
 - [Singleton](mvc/singleton) **NEW**
 - [Websocket Controller](mvc/websocket) **NEW**
+- [Register Middleware](middleware) **NEW**
 - [Vue.js Todo MVC](tutorial/vuejs-todo-mvc) **NEW**
 
 ### Subdomains
