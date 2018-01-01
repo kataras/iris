@@ -23,10 +23,10 @@ var (
 	errTestFailed   = errors.New("expected the main handler to be executed %d times instead of %d")
 )
 
-func runTest(e *httpexpect.Expect, counterPtr *uint32, expectedBodyStr string, nocache string) error {
-	e.GET("/").Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)
+func runTest(e *httpexpect.Expect, path string, counterPtr *uint32, expectedBodyStr string, nocache string) error {
+	e.GET(path).Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)
 	time.Sleep(cacheDuration / 5) // lets wait for a while, cache should be saved and ready
-	e.GET("/").Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)
+	e.GET(path).Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)
 	counter := atomic.LoadUint32(counterPtr)
 	if counter > 1 {
 		// n should be 1 because it doesn't changed after the first call
@@ -35,19 +35,19 @@ func runTest(e *httpexpect.Expect, counterPtr *uint32, expectedBodyStr string, n
 	time.Sleep(cacheDuration)
 
 	// cache should be cleared now
-	e.GET("/").Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)
+	e.GET(path).Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)
 	time.Sleep(cacheDuration / 5)
 	// let's call again , the cache should be saved
-	e.GET("/").Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)
+	e.GET(path).Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)
 	counter = atomic.LoadUint32(counterPtr)
 	if counter != 2 {
 		return errTestFailed.Format(2, counter)
 	}
 
-	// we have cache response saved for the "/" path, we have some time more here, but here
+	// we have cache response saved for the path, we have some time more here, but here
 	// we will make the requestS with some of the deniers options
-	e.GET("/").WithHeader("max-age", "0").Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)
-	e.GET("/").WithHeader("Authorization", "basic or anything").Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)
+	e.GET(path).WithHeader("max-age", "0").Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)
+	e.GET(path).WithHeader("Authorization", "basic or anything").Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)
 	counter = atomic.LoadUint32(counterPtr)
 	if counter != 4 {
 		return errTestFailed.Format(4, counter)
@@ -71,8 +71,8 @@ func runTest(e *httpexpect.Expect, counterPtr *uint32, expectedBodyStr string, n
 			return errTestFailed.Format(6, counter)
 		}
 
-		// let's call again the "/", the expiration is not passed so  it should be cached
-		e.GET("/").Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)
+		// let's call again the path the expiration is not passed so  it should be cached
+		e.GET(path).Expect().Status(http.StatusOK).Body().Equal(expectedBodyStr)
 		counter = atomic.LoadUint32(counterPtr)
 		if counter != 6 {
 			return errTestFailed.Format(6, counter)
@@ -88,19 +88,19 @@ func TestNoCache(t *testing.T) {
 	app := iris.New()
 	var n uint32
 
-	app.Get("/", cache.WrapHandler(func(ctx context.Context) {
+	app.Get("/", cache.Handler(cacheDuration), func(ctx context.Context) {
 		atomic.AddUint32(&n, 1)
 		ctx.Write([]byte(expectedBodyStr))
-	}, cacheDuration))
+	})
 
-	app.Get("/nocache", cache.WrapHandler(func(ctx context.Context) {
+	app.Get("/nocache", cache.Handler(cacheDuration), func(ctx context.Context) {
 		cache.NoCache(ctx) // <----
 		atomic.AddUint32(&n, 1)
 		ctx.Write([]byte(expectedBodyStr))
-	}, cacheDuration))
+	})
 
 	e := httptest.New(t, app)
-	if err := runTest(e, &n, expectedBodyStr, "/nocache"); err != nil {
+	if err := runTest(e, "/", &n, expectedBodyStr, "/nocache"); err != nil {
 		t.Fatalf(t.Name()+": %v", err)
 	}
 
@@ -117,9 +117,23 @@ func TestCache(t *testing.T) {
 		ctx.Write([]byte(expectedBodyStr))
 	})
 
+	var (
+		n2               uint32
+		expectedBodyStr2 = "This is the other"
+	)
+
+	app.Get("/other", func(ctx context.Context) {
+		atomic.AddUint32(&n2, 1)
+		ctx.Write([]byte(expectedBodyStr2))
+	})
+
 	e := httptest.New(t, app)
-	if err := runTest(e, &n, expectedBodyStr, ""); err != nil {
+	if err := runTest(e, "/", &n, expectedBodyStr, ""); err != nil {
 		t.Fatalf(t.Name()+": %v", err)
+	}
+
+	if err := runTest(e, "/other", &n2, expectedBodyStr2, ""); err != nil {
+		t.Fatalf(t.Name()+" other: %v", err)
 	}
 
 }
@@ -138,10 +152,10 @@ func TestCacheValidator(t *testing.T) {
 		ctx.Write([]byte(expectedBodyStr))
 	}
 
-	validCache := cache.Cache(h, cacheDuration)
-	app.Get("/", validCache.ServeHTTP)
+	validCache := cache.Cache(cacheDuration)
+	app.Get("/", validCache.ServeHTTP, h)
 
-	managedCache := cache.Cache(h, cacheDuration)
+	managedCache := cache.Cache(cacheDuration)
 	managedCache.AddRule(rule.Validator([]rule.PreValidator{
 		func(ctx context.Context) bool {
 			if ctx.Request().URL.Path == "/invalid" {
@@ -151,12 +165,7 @@ func TestCacheValidator(t *testing.T) {
 		},
 	}, nil))
 
-	managedCache2 := cache.Cache(func(ctx context.Context) {
-		atomic.AddUint32(&n, 1)
-		ctx.Header("DONT", "DO not cache that response even if it was claimed")
-		ctx.Write([]byte(expectedBodyStr))
-
-	}, cacheDuration)
+	managedCache2 := cache.Cache(cacheDuration)
 	managedCache2.AddRule(rule.Validator(nil,
 		[]rule.PostValidator{
 			func(ctx context.Context) bool {
@@ -168,10 +177,15 @@ func TestCacheValidator(t *testing.T) {
 		},
 	))
 
-	app.Get("/valid", validCache.ServeHTTP)
+	app.Get("/valid", validCache.ServeHTTP, h)
 
-	app.Get("/invalid", managedCache.ServeHTTP)
-	app.Get("/invalid2", managedCache2.ServeHTTP)
+	app.Get("/invalid", managedCache.ServeHTTP, h)
+	app.Get("/invalid2", managedCache2.ServeHTTP, func(ctx context.Context) {
+		atomic.AddUint32(&n, 1)
+		ctx.Header("DONT", "DO not cache that response even if it was claimed")
+		ctx.Write([]byte(expectedBodyStr))
+
+	})
 
 	e := httptest.New(t, app)
 

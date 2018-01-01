@@ -3,6 +3,7 @@ package main
 import (
 	"io/ioutil"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -35,6 +36,7 @@ func (r resource) loadFromBase(dir string) string {
 	}
 
 	result := string(b)
+
 	return result
 }
 
