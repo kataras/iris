@@ -4,13 +4,13 @@
 
 [![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=flat-square)](https://travis-ci.org/kataras/iris)<!-- [![release](https://img.shields.io/github/release/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/releases)--> [![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=flat-square)](http://goreportcard.com/report/kataras/iris)<!--[![github closed issues](https://img.shields.io/github/issues-closed-raw/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/issues?q=is%3Aissue+is%3Aclosed)--> [![chat](https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square)](https://kataras.rocket.chat/channel/iris) [![view examples](https://img.shields.io/badge/learn%20by-examples-0077b3.svg?style=flat-square)](_examples/) [![release](https://img.shields.io/badge/release%20-v10.0-0077b3.svg?style=flat-square)](https://github.com/kataras/iris/releases)
 
-Iris是一个超快、简单并且高效的Go语言Web开发框架。
+Iris 是一款超快、简洁高效的 Go语言 Web开发框架。
 
-Iris功能很强大，使用又很简单，它将会是你下一个网站、API服务或者分布式应用基础框架的不二之选。
+Iris 功能强大、使用简单，它将会是你下一个网站、API服务或者分布式应用基础框架的不二之选。
 
-看看[别人是如何评价Iris](#support)，同时欢迎各位[成为Iris星探](https://github.com/kataras/iris/stargazers)，或者关注[Iris facebook主页](https://facebook.com/iris.framework)。
+看看[别人是如何评价Iris](#support)，同时欢迎各位为 Iris 点亮 [Star](https://github.com/kataras/iris/stargazers)，或者关注[Iris facebook主页](https://facebook.com/iris.framework)。
 
-## Backers
+## 支持者
 
 感谢所有的支持者! [成为一个支持者](https://opencollective.com/iris#backer)
 
@@ -27,17 +27,17 @@ import "github.com/kataras/iris"
 
 func main() {
     app := iris.New()
-    // 从"./views"目录加载HTML模板
-    // 模板解析html后缀文件
-    // 此方式是用`html/template`标准包(Iris的模板引擎)
+    // 从 "./views" 目录加载HTML模板
+    // 模板解析 html 后缀文件
+    // 此方式使用 `html/template` 标准包 (Iris 的模板引擎)
     app.RegisterView(iris.HTML("./views", ".html"))
 
     // HTTP方法： GET
     // 路径：     http://localhost:8080
     app.Get("/", func(ctx iris.Context) {
-        // {{.message}} 和 "Hello world!" 字串绑定
+        // {{.message}} 和 "Hello world!" 字符串变量绑定
         ctx.ViewData("message", "Hello world!")
-        // 映射HTML模板文件路径 ./views/hello.html
+        // 映射 HTML 模板文件路径 ./views/hello.html
         ctx.View("hello.html")
     })
 
@@ -80,20 +80,20 @@ _
 
 ## 安装
 
-唯一的要求是 [Go Programming Language](https://golang.org/dl/)
+请确保安装 [Go Programming Language](https://golang.org/dl/)
 
 ```sh
 $ go get -u github.com/kataras/iris
 ```
 
-Iris使用[vendor](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo) 包依赖管理方式。vendor包管理的方式可以有效处理包依赖更新问题
+Iris 使用 [vendor](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo) 包依赖管理方式。vendor 包管理的方式可以有效处理包依赖更新问题
 
 [![Iris vs .NET Core(C#) vs Node.js (Express)](https://iris-go.com/images/benchmark-new-gray.png)](_benchmarks/README_UNIX.md)
 
-_更新于: [2017年11月21日星期二](_benchmarks/README_UNIX.md)_
+_更新于: [2018年1月2日星期二](_benchmarks/README_UNIX.md)_
 
 <details>
-<summary>来自第三方来源的其他网络框架的基准</summary>
+<summary>来自第三方的其他网络框架的基准测试</summary>
 
 ![Comparison with other frameworks](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png)
 
@@ -102,10 +102,10 @@ _更新于: [2017年11月21日星期二](_benchmarks/README_UNIX.md)_
 ## 支持
 
 - [HISTORY](HISTORY.md#mo-01-jenuary-2018--v1000)文件是您最好的朋友，它包含有关最新功能和更改的信息
-- 你碰巧找到了一个错误？ 张贴在 [github issues](https://github.com/kataras/iris/issues)
+- 你碰巧找到了一个错误？ 请提交 [github issues](https://github.com/kataras/iris/issues)
 - 您是否有任何疑问或需要与有经验的人士交谈以实时解决问题？ [加入我们的聊天](https://chat.iris-go.com)
 - [点击这里完成我们基于表单的用户体验报告](https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link) 
-- 你喜欢这个框架吗？ Tweet关于它的一些事情！ 人民已经说了:
+- 你喜欢这个框架吗？ Twitter 上关于 Iris 的评价:
 
 <a href="https://twitter.com/gelnior/status/769100480706379776"> 
     <img src="https://comments.iris-go.com/comment27_mini.png" width="350px">
@@ -148,7 +148,7 @@ _更新于: [2017年11月21日星期二](_benchmarks/README_UNIX.md)_
 
 <br/><br/>
 
-[如何贡献代码](CONTRIBUTING.md) 文件。
+[如何贡献代码](CONTRIBUTING.md)
 
 [贡献者列表](https://github.com/kataras/iris/graphs/contributors)
 
@@ -156,11 +156,11 @@ _更新于: [2017年11月21日星期二](_benchmarks/README_UNIX.md)_
 
 首先，从Web框架开始的最正确的方法是学习编程语言和标准的`http`功能的基础知识，如果您的web应用程序是一个非常简单的个人项目，没有性能和可维护性要求，您可能想要 只需使用标准软件包即可。 之后，遵循指导原则:
 
-- 浏览 **100+1** **[例子](_examples)** 和一[些入门套件](#iris-starter-kits) 我们为你制作
+- 浏览 **100+1** **[例子](_examples)** 和 我们提供的 [一些入门经验](#iris-starter-kits)
 - 阅读 [godocs](https://godoc.org/github.com/kataras/iris) 任何细节
-- 准备一杯咖啡或茶，无论你喜欢什么，并阅读我们为你找到的一[些文章](#articles)
+- 准备一杯咖啡或茶，无论你喜欢什么，并阅读我们为你找到的 [一些文章](#articles)
 
-### Iris starter kits
+### Iris 入门
 
 <!-- table form 
 | Description | Link |
@@ -184,13 +184,13 @@ _更新于: [2017年11月21日星期二](_benchmarks/README_UNIX.md)_
 7. [Quickstart for Iris with Nanobox](https://guides.nanobox.io/golang/iris/from-scratch)
 8. [A Hasura starter project with a ready to deploy Golang hello-world web app with IRIS](https://hasura.io/hub/project/hasura/hello-golang-iris)
 
-> 你有类似的东西吗？ [让我们知道](https://github.com/kataras/iris/pulls)!
+> 你有类似的经验吗？ [请提交给我们](https://github.com/kataras/iris/pulls)!
 
-### Middleware
+### 中间件
 
-Iris拥有大量的处理程序[[1]](middleware/)[[2]](https://github.com/iris-contrib/middleware)，可以与您的Web应用程序并排使用。 不过，您并不局限于此 - 您可以自由使用与[net/http](https://golang.org/pkg/net/http/)软件包兼容的任何第三方中间件，[_examples/convert-handlers](_examples/convert-handlers) 将向您显示方式。
+Iris 拥有大量的中间件 [[1]](middleware/)[[2]](https://github.com/iris-contrib/middleware) 供您的 Web 应用程序使用。 不过，您并不局限于此 - 您可以自由使用与[net/http](https://golang.org/pkg/net/http/)软件包兼容的任何第三方中间件，[_examples/convert-handlers](_examples/convert-handlers) 将向您显示方式。
 
-### 用品
+### 相关文章
 
 * [A Todo MVC Application using Iris and Vue.js](https://dev.to/kataras/a-todo-mvc-application-using-iris-and-vuejs-1hn9)
 * [A Hasura starter project with a ready to deploy Golang hello-world web app with IRIS](bit.ly/2lmKaAZ)
@@ -205,9 +205,9 @@ Iris拥有大量的处理程序[[1]](middleware/)[[2]](https://github.com/iris-c
 * [Deploying a Iris Golang app in hasura](https://medium.com/@HasuraHQ/deploy-an-iris-golang-app-with-backend-apis-in-minutes-25a559bf530b)
 * [A URL Shortener Service using Go, Iris and Bolt](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
 
-### 受雇用
+### 相关工作
 
-有很多公司和初创公司寻找具有虹膜经验的Go网站开发者，我们每天都在寻找你，我们通过[facebook page](https://www.facebook.com/iris.framework)发布这些信息，就像页面得到通知一样，我们已经发布了一些信息。
+有很多公司和初创公司寻找具有 Iris 经验的 Go 网站开发者，我们每天都在寻找你，我们通过[facebook page](https://www.facebook.com/iris.framework)发布这些信息，就像页面得到通知一样，我们已经发布了一些信息。
 
 ### 赞助商
 
@@ -216,8 +216,8 @@ Iris拥有大量的处理程序[[1]](middleware/)[[2]](https://github.com/iris-c
 <a href="https://opencollective.com/iris/sponsor/0/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/0/avatar.svg"></a>
 <a href="https://opencollective.com/iris/sponsor/1/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/1/avatar.svg"></a>
 
-## 执照
+## 授权协议
 
-Iris is licensed under the [3-Clause BSD License](LICENSE). 虹膜是100％免费和开源软件。
+Iris is licensed under the [3-Clause BSD License](LICENSE). Iris 是 100％ 免费和开源软件。
 
 有关许可证的任何问题，[请发送电子邮件](mailto:kataras2006@hotmail.com?subject=Iris%20License)。
