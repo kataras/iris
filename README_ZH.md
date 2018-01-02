@@ -8,11 +8,11 @@ Iris 是一款超快、简洁高效的 Go语言 Web开发框架。
 
 Iris 功能强大、使用简单，它将会是你下一个网站、API服务或者分布式应用基础框架的不二之选。
 
-看看[别人是如何评价Iris](#support)，同时欢迎各位为 Iris 点亮 [Star](https://github.com/kataras/iris/stargazers)，或者关注[Iris facebook主页](https://facebook.com/iris.framework)。
+看看[别人是如何评价 Iris](#support)，同时欢迎各位点亮 Iris [Star](https://github.com/kataras/iris/stargazers)，或者关注 [Iris facebook 主页](https://facebook.com/iris.framework)。
 
 ## 支持者
 
-感谢所有的支持者! [成为一个支持者](https://opencollective.com/iris#backer)
+感谢所有的支持者! [支持我们](https://opencollective.com/iris#backer)
 
 <a href="https://opencollective.com/iris#backers" target="_blank"><img src="https://opencollective.com/iris/backers.svg?width=890"></a>
 
@@ -32,8 +32,8 @@ func main() {
     // 此方式使用 `html/template` 标准包 (Iris 的模板引擎)
     app.RegisterView(iris.HTML("./views", ".html"))
 
-    // HTTP方法： GET
-    // 路径：     http://localhost:8080
+    // 方法：GET
+    // 路径：http://localhost:8080
     app.Get("/", func(ctx iris.Context) {
         // {{.message}} 和 "Hello world!" 字符串变量绑定
         ctx.ViewData("message", "Hello world!")
@@ -41,11 +41,10 @@ func main() {
         ctx.View("hello.html")
     })
 
-    // HTTP方法:    GET
-    // 路径:  http://localhost:8080/user/42
+    //方法：GET
+    //路径：http://localhost:8080/user/42
     //
-    // 想在路径中用正则吗？
-    // 如下所示
+    // 正则表达式
     // app.Get("/user/{id:string regexp(^[0-9]+$)}")
     app.Get("/user/{id:long}", func(ctx iris.Context) {
         userID, _ := ctx.Params().GetInt64("id")
@@ -101,7 +100,7 @@ _更新于: [2018年1月2日星期二](_benchmarks/README_UNIX.md)_
 
 ## 支持
 
-- [HISTORY](HISTORY.md#mo-01-jenuary-2018--v1000)文件是您最好的朋友，它包含有关最新功能和更改的信息
+- [HISTORY](HISTORY.md#mo-01-jenuary-2018--v1000) 文件是您最好的朋友，它包含有关最新功能和更改的信息
 - 你碰巧找到了一个错误？ 请提交 [github issues](https://github.com/kataras/iris/issues)
 - 您是否有任何疑问或需要与有经验的人士交谈以实时解决问题？ [加入我们的聊天](https://chat.iris-go.com)
 - [点击这里完成我们基于表单的用户体验报告](https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link) 
@@ -154,11 +153,11 @@ _更新于: [2018年1月2日星期二](_benchmarks/README_UNIX.md)_
 
 ## 学习
 
-首先，从Web框架开始的最正确的方法是学习编程语言和标准的`http`功能的基础知识，如果您的web应用程序是一个非常简单的个人项目，没有性能和可维护性要求，您可能想要 只需使用标准软件包即可。 之后，遵循指导原则:
+首先，从 Web 框架开始的最正确的方法是学习 Golang 标准库 [net/http](https://golang.org/pkg/net/http/ "net/http") 的基础知识，如果您的 web 应用程序是一个非常简单的个人项目，没有性能和可维护性要求，您可能只需使用标准库即可。 之后，遵循以下指导原则：
 
-- 浏览 **100+1** **[例子](_examples)** 和 我们提供的 [一些入门经验](#iris-starter-kits)
-- 阅读 [godocs](https://godoc.org/github.com/kataras/iris) 任何细节
-- 准备一杯咖啡或茶，无论你喜欢什么，并阅读我们为你找到的 [一些文章](#articles)
+- 浏览 **100+** **[例子](_examples)** 和 我们提供的 [一些入门经验](#iris-starter-kits)
+- 通过 [godocs](https://godoc.org/github.com/kataras/iris) 阅读细节
+- 准备一杯咖啡或茶，无论你喜欢什么，并阅读我们为你推荐的 [一些文章](#articles)
 
 ### Iris 入门
 
@@ -184,11 +183,11 @@ _更新于: [2018年1月2日星期二](_benchmarks/README_UNIX.md)_
 7. [Quickstart for Iris with Nanobox](https://guides.nanobox.io/golang/iris/from-scratch)
 8. [A Hasura starter project with a ready to deploy Golang hello-world web app with IRIS](https://hasura.io/hub/project/hasura/hello-golang-iris)
 
-> 你有类似的经验吗？ [请提交给我们](https://github.com/kataras/iris/pulls)!
+> 如果你有类似的使用经验吗 [请提交给我们](https://github.com/kataras/iris/pulls)!
 
 ### 中间件
 
-Iris 拥有大量的中间件 [[1]](middleware/)[[2]](https://github.com/iris-contrib/middleware) 供您的 Web 应用程序使用。 不过，您并不局限于此 - 您可以自由使用与[net/http](https://golang.org/pkg/net/http/)软件包兼容的任何第三方中间件，[_examples/convert-handlers](_examples/convert-handlers) 将向您显示方式。
+Iris 拥有大量的中间件 [[1]](middleware/)[[2]](https://github.com/iris-contrib/middleware) 供您的 Web 应用程序使用。 不过，您并不局限于此，您可以自由使用与 [net/http](https://golang.org/pkg/net/http/) 包兼容的任何第三方中间件，相关示例 [_examples/convert-handlers](_examples/convert-handlers) 。
 
 ### 相关文章
 
@@ -205,19 +204,19 @@ Iris 拥有大量的中间件 [[1]](middleware/)[[2]](https://github.com/iris-co
 * [Deploying a Iris Golang app in hasura](https://medium.com/@HasuraHQ/deploy-an-iris-golang-app-with-backend-apis-in-minutes-25a559bf530b)
 * [A URL Shortener Service using Go, Iris and Bolt](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
 
-### 相关工作
+### 工作机会
 
-有很多公司和初创公司寻找具有 Iris 经验的 Go 网站开发者，我们每天都在寻找你，我们通过[facebook page](https://www.facebook.com/iris.framework)发布这些信息，就像页面得到通知一样，我们已经发布了一些信息。
+有很多公司都在寻找具有 Iris 经验的 Go 网站开发者，我们通过 [facebook page](https://www.facebook.com/iris.framework) 发布这些招聘信息。
 
-### 赞助商
+### 赞助
 
-感谢所有赞助商! (请通过成为赞助商来请求贵公司支持这个开源项目)
+感谢所有赞助者! (希望贵公司赞助支持这个开源项目)
 
 <a href="https://opencollective.com/iris/sponsor/0/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/0/avatar.svg"></a>
 <a href="https://opencollective.com/iris/sponsor/1/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/1/avatar.svg"></a>
 
 ## 授权协议
 
-Iris is licensed under the [3-Clause BSD License](LICENSE). Iris 是 100％ 免费和开源软件。
+Iris 授权基于 [3-Clause BSD License](LICENSE). Iris 是 100％ 免费和开源软件。
 
-有关许可证的任何问题，[请发送电子邮件](mailto:kataras2006@hotmail.com?subject=Iris%20License)。
+有关授权的任何问题，[请发送电子邮件](mailto:kataras2006@hotmail.com?subject=Iris%20License)。
