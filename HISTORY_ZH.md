@@ -84,7 +84,7 @@ With this version you can register **any controller's methods as routes manually
 
 ## context#PostMaxMemory
 
-移除旧版本的常量 `context.DefaultMaxMemory` 替换为配置 `WithPostMaxMemory`.
+移除旧版本的常量 `context.DefaultMaxMemory` 替换为配置 `WithPostMaxMemory` 方法.
 
 ```go
 // WithPostMaxMemory sets the maximum post data size
@@ -92,7 +92,7 @@ With this version you can register **any controller's methods as routes manually
 // from the overral request body size which can be modified
 // by the `context#SetMaxRequestBodySize` or `iris#LimitRequestBodySize`.
 //
-// Defaults to 32MB or 32 << 20 if you prefer.
+// 默认值为 32MB 或者 32 << 20
 func WithPostMaxMemory(limit int64) Configurator
 ```
 
@@ -149,8 +149,8 @@ func (ctx *context) UploadFormFiles(
 
 ## context#View
 
-Just a minor addition, add a second optional variadic argument to the `context#view` method to accept a single value for template binding.
-When you just want one value and not key-value pairs, you used to use an empty string on the `ViewData`, which is fine, especially if you preload these from a previous handler/middleware in the request handlers chain.
+这里有个小更新，增加可选的第二个参数，用来绑定模版变量。
+当只有一个模版变量，之前是在 `ViewData` 上绑定一个空字符串，现在可以预先绑定模版变量到指定模版。
 
 ```go
 func(ctx iris.Context) {
@@ -168,7 +168,7 @@ func(ctx iris.Context) {
 ```
 
 ```html
-Item's name: {{.Name}}
+html 模版中调用: {{.Name}}
 ```
 
 ## context#YAML
@@ -176,10 +176,10 @@ Item's name: {{.Name}}
 新增 `context#YAML` 函数, 解析结构体到 yaml。
 
 ```go
-// YAML marshals the "v" using the yaml marshaler and renders its result to the client.
+//使用 yaml 包的 Marshal 的方法解析，并发送到客户端。
 func YAML(v interface{}) (int, error)
 ```
 
 ## Session#GetString
 
-`sessions/session#GetString` can now return a filled value even if the stored value is a type of integer, just like the memstore, the context's temp store, the context's path parameters and the context's url parameters.
+`sessions/session#GetString` 可以获取 session 的变量值（可以是 integer 类型），就像内存缓存、Context 上下文储存的值。
