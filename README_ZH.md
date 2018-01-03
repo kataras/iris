@@ -6,7 +6,9 @@
 
 Iris 是一款超快、简洁高效的 Go语言 Web开发框架。
 
-Iris 功能强大、使用简单，它将会是你下一个网站、API服务或者分布式应用基础框架的不二之选。
+Iris 功能强大、使用简单，它将会是你下一个网站、API 服务或者分布式应用基础框架的不二之选。
+
+总之，是一款与 express.js 旗鼓相当的 Go 语言框架。
 
 看看[别人是如何评价 Iris](#support)，同时欢迎各位点亮 Iris [Star](https://github.com/kataras/iris/stargazers)，或者关注 [Iris facebook 主页](https://facebook.com/iris.framework)。
 
@@ -44,8 +46,8 @@ func main() {
     //方法：GET
     //路径：http://localhost:8080/user/42
     //
-    // 正则表达式
-    // app.Get("/user/{id:string regexp(^[0-9]+$)}")
+    // 使用正则表达式必须设置参数类型为 string
+    // app.Get("/user/{id:string regexp(^[0-9]+$)}")
     app.Get("/user/{id:long}", func(ctx iris.Context) {
         userID, _ := ctx.Params().GetInt64("id")
         ctx.Writef("User ID: %d", userID)
@@ -89,7 +91,7 @@ Iris 使用 [vendor](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9Mx
 
 [![Iris vs .NET Core(C#) vs Node.js (Express)](https://iris-go.com/images/benchmark-new-gray.png)](_benchmarks/README_UNIX.md)
 
-_更新于: [2018年1月2日星期二](_benchmarks/README_UNIX.md)_
+_更新于: [2017年11月21日星期二](_benchmarks/README_UNIX.md)_
 
 <details>
 <summary>来自第三方的其他网络框架的基准测试</summary>
@@ -145,7 +147,6 @@ _更新于: [2018年1月2日星期二](_benchmarks/README_UNIX.md)_
     <img src="https://comments.iris-go.com/comment41.png" width="350px">
 </a>
 
-<br/><br/>
 
 [如何贡献代码](CONTRIBUTING.md)
 
