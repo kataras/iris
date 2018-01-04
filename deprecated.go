@@ -9,7 +9,7 @@ import (
 
 // Controller method is DEPRECATED, use the "mvc" subpackage instead, i.e
 // import "github.com/kataras/iris/mvc" and read its docs among with its new features at:
-// https://github.com/kataras/iris/blob/master/HISTORY.md#mo-01-jenuary-2018--v10
+// https://github.com/kataras/iris/blob/master/HISTORY.md#mo-01-jenuary-2018--v1000
 func (app *Application) Controller(relPath string, c interface{}, _ ...interface{}) []*router.Route {
 	name := mvc.NameOf(c)
 
