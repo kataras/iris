@@ -1,4 +1,4 @@
-# History/Changelog
+# History/Changelog <a href="HISTORY_ZH.md"> <img width="20px" src="https://iris-go.com/images/flag-china.svg?v=10" /></a>
 
 ### Looking for free and real-time support?
 
