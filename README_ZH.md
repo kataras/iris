@@ -4,9 +4,11 @@
 
 [![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=flat-square)](https://travis-ci.org/kataras/iris)<!-- [![release](https://img.shields.io/github/release/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/releases)--> [![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=flat-square)](http://goreportcard.com/report/kataras/iris)<!--[![github closed issues](https://img.shields.io/github/issues-closed-raw/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/issues?q=is%3Aissue+is%3Aclosed)--> [![chat](https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square)](https://kataras.rocket.chat/channel/iris) [![view examples](https://img.shields.io/badge/learn%20by-examples-0077b3.svg?style=flat-square)](_examples/) [![release](https://img.shields.io/badge/release%20-v10.0-0077b3.svg?style=flat-square)](https://github.com/kataras/iris/releases)
 
-Iris 是一款超快、简洁高效的 Go语言 Web开发框架。
+Iris 是一款超快、简洁高效的 Go 语言 Web开发框架。
 
-Iris 功能强大、使用简单，它将会是你下一个网站、API服务或者分布式应用基础框架的不二之选。
+Iris 功能强大、使用简单，它将会是你下一个网站、API 服务或者分布式应用基础框架的不二之选。
+
+总之，是一款与 express.js 旗鼓相当的 Go 语言框架。
 
 看看[别人是如何评价 Iris](#support)，同时欢迎各位点亮 Iris [Star](https://github.com/kataras/iris/stargazers)，或者关注 [Iris facebook 主页](https://facebook.com/iris.framework)。
 
@@ -44,8 +46,8 @@ func main() {
     //方法：GET
     //路径：http://localhost:8080/user/42
     //
-    // 正则表达式
-    // app.Get("/user/{id:string regexp(^[0-9]+$)}")
+    // 使用正则表达式必须设置参数类型为 string
+    // app.Get("/user/{id:string regexp(^[0-9]+$)}")
     app.Get("/user/{id:long}", func(ctx iris.Context) {
         userID, _ := ctx.Params().GetInt64("id")
         ctx.Writef("User ID: %d", userID)
@@ -89,7 +91,7 @@ Iris 使用 [vendor](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9Mx
 
 [![Iris vs .NET Core(C#) vs Node.js (Express)](https://iris-go.com/images/benchmark-new-gray.png)](_benchmarks/README_UNIX.md)
 
-_更新于: [2018年1月2日星期二](_benchmarks/README_UNIX.md)_
+_更新于: [2017年11月21日星期二](_benchmarks/README_UNIX.md)_
 
 <details>
 <summary>来自第三方的其他网络框架的基准测试</summary>
@@ -100,7 +102,7 @@ _更新于: [2018年1月2日星期二](_benchmarks/README_UNIX.md)_
 
 ## 支持
 
-- [HISTORY](HISTORY.md#mo-01-jenuary-2018--v1000) 文件是您最好的朋友，它包含有关最新功能和更改的信息
+- [更新记录](HISTORY_ZH.md#mo-01-jenuary-2018--v1000) 是您最好的朋友，它包含有关最新功能和更改的信息
 - 你碰巧找到了一个错误？ 请提交 [github issues](https://github.com/kataras/iris/issues)
 - 您是否有任何疑问或需要与有经验的人士交谈以实时解决问题？ [加入我们的聊天](https://chat.iris-go.com)
 - [点击这里完成我们基于表单的用户体验报告](https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link) 
@@ -145,7 +147,6 @@ _更新于: [2018年1月2日星期二](_benchmarks/README_UNIX.md)_
     <img src="https://comments.iris-go.com/comment41.png" width="350px">
 </a>
 
-<br/><br/>
 
 [如何贡献代码](CONTRIBUTING.md)
 
@@ -189,7 +190,7 @@ _更新于: [2018年1月2日星期二](_benchmarks/README_UNIX.md)_
 
 Iris 拥有大量的中间件 [[1]](middleware/)[[2]](https://github.com/iris-contrib/middleware) 供您的 Web 应用程序使用。 不过，您并不局限于此，您可以自由使用与 [net/http](https://golang.org/pkg/net/http/) 包兼容的任何第三方中间件，相关示例 [_examples/convert-handlers](_examples/convert-handlers) 。
 
-### 相关文章
+### 相关文章（英文）
 
 * [A Todo MVC Application using Iris and Vue.js](https://dev.to/kataras/a-todo-mvc-application-using-iris-and-vuejs-1hn9)
 * [A Hasura starter project with a ready to deploy Golang hello-world web app with IRIS](bit.ly/2lmKaAZ)
