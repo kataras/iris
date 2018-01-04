@@ -35,5 +35,10 @@ func main() {
 		ctx.Writef("Visitor: %#v", visitor)
 	})
 
+	app.Post("/post_value", func(ctx iris.Context) {
+		username := ctx.PostValueDefault("Username", "iris")
+		ctx.Writef("Username: %s", username)
+	})
+
 	app.Run(iris.Addr(":8080"))
 }
