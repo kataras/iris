@@ -1,6 +1,6 @@
-# Веб-фреймворк Iris 
+# Веб-фреймворк Iris <a href="README.md"> <img width="20px" src="https://iris-go.com/images/flag-unitedkingdom.svg?v=10" /></a> <a href="README_ZH.md"><img width="20px" src="https://iris-go.com/images/flag-china.svg?v=10" /></a>
 
-<img align="right" width="170px" src="https://iris-go.com/images/icon.svg?v=10" title="logo created by @merry.dii" />
+<img align="right" width="169px" src="https://iris-go.com/images/icon.svg?v=10" title="logo created by @merry.dii" />
 
 [![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=flat-square)](https://travis-ci.org/kataras/iris)<!-- [![release](https://img.shields.io/github/release/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/releases)--> [![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=flat-square)](http://goreportcard.com/report/kataras/iris)<!--[![github closed issues](https://img.shields.io/github/issues-closed-raw/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/issues?q=is%3Aissue+is%3Aclosed)--> [![chat](https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square)](https://kataras.rocket.chat/channel/iris) [![view examples](https://img.shields.io/badge/learn%20by-examples-0077b3.svg?style=flat-square)](_examples/) [![release](https://img.shields.io/badge/release%20-v10.0-0077b3.svg?style=flat-square)](https://github.com/kataras/iris/releases)
 
@@ -8,7 +8,7 @@ Iris - это быстрая, простая, но полнофункциона�
 
 Iris предоставляет красиво выразительную и удобную основу для вашего следующего веб-сайта или API.
 
-Наконец, настоящий эквивалент выражения для языка программирования Go.
+Наконец, настоящий эквивалент expressjs для языка программирования Go.
 
 Узнайте, что [другие говорят об Iris](#support), и [запустите](https://github.com/kataras/iris/stargazers) этот github-хранилище, чтобы оставаться в курсе последних событий [актуальными](https://facebook.com/iris.framework).
 
