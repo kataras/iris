@@ -1663,8 +1663,10 @@ func (ctx *context) form() (form map[string][]string, found bool) {
 		return form, true
 	}
 
-	if form := ctx.request.MultipartForm.Value; len(form) > 0 {
-		return form, true
+	if m := ctx.request.MultipartForm; m != nil {
+		if len(m.Value) > 0 {
+			return m.Value, true
+		}
 	}
 
 	return nil, false
@@ -1855,46 +1857,6 @@ func uploadTo(fh *multipart.FileHeader, destDirectory string) (int64, error) {
 
 	return io.Copy(out, src)
 }
-
-/* Good idea of mine but it doesn't work of course...
-// Go can't use `io.ReadCloser` function return value the same
-// as with other function that returns a `multipart.File`, even if
-// multipart.File is an `io.ReadCloser`.
-// So comment all those and implement a function inside the context itself.
-//
-// Copiable is the interface which should be completed
-// by files or not that intend to be used inside the `context#CopyFile`.
-// This interface allows testing file uploads to your http test as well.
-//
-// See `CopyFile` for more.
-// type Copiable interface {
-// 	Open() (io.ReadCloser, error)
-// }
-//
-
-
-// CopyFile copies a `context#Copiable` "file", that can be acquired by the second argument of
-// a `context.FormFile` (*multipart.FileHeader) as well, to the "dest".
-//
-// Returns the copied length as int64 and
-// an error if file is not exist, or new file can't be created or closed at the end.
-func CopyFile(file Copiable, dest string) (int64, error) {
-	src, err := fileOpen()
-	if err != nil {
-		return 0, err
-	}
-	defer src.Close()
-
-	out, err := os.Create(dest)
-	if err != nil {
-		return 0, err
-	}
-	defer out.Close()
-
-	return io.Copy(out, src)
-}
-
-*/
 
 // Redirect sends a redirect response to the client
 // to a specific url or relative path.
