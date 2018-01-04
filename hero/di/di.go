@@ -1,3 +1,5 @@
+// Package di provides dependency injection for the Iris Hero and Iris MVC new features.
+// It's used internally by "hero" and "mvc" packages directly.
 package di
 
 import "reflect"
