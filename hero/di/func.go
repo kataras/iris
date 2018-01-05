@@ -145,6 +145,8 @@ func (s *FuncInjector) addValue(inputIndex int, value reflect.Value) bool {
 	return false
 }
 
+// Retry used to add missing dependencies, i.e path parameter built'n bindings if not already exists
+// in the `hero.Handler`, once, only for that func injector.
 func (s *FuncInjector) Retry(retryFn func(inIndex int, inTyp reflect.Type) (reflect.Value, bool)) bool {
 	for _, missing := range s.lost {
 		if missing.found {

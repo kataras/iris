@@ -58,10 +58,15 @@ func IsZero(v reflect.Value) bool {
 	return v.Interface() == zero.Interface()
 }
 
+// IndirectValue returns the reflect.Value that "v" points to.
+// If "v" is a nil pointer, Indirect returns a zero Value.
+// If "v" is not a pointer, Indirect returns v.
 func IndirectValue(v reflect.Value) reflect.Value {
 	return reflect.Indirect(v)
 }
 
+// ValueOf returns the reflect.Value of "o".
+// If "o" is already a reflect.Value returns "o".
 func ValueOf(o interface{}) reflect.Value {
 	if v, ok := o.(reflect.Value); ok {
 		return v
@@ -70,6 +75,8 @@ func ValueOf(o interface{}) reflect.Value {
 	return reflect.ValueOf(o)
 }
 
+// ValuesOf same as `ValueOf` but accepts a slice of
+// somethings and returns a slice of reflect.Value.
 func ValuesOf(valuesAsInterface []interface{}) (values []reflect.Value) {
 	for _, v := range valuesAsInterface {
 		values = append(values, ValueOf(v))
@@ -77,6 +84,9 @@ func ValuesOf(valuesAsInterface []interface{}) (values []reflect.Value) {
 	return
 }
 
+// IndirectType returns the value of a pointer-type "typ".
+// If "typ" is a pointer, array, chan, map or slice it returns its Elem,
+// otherwise returns the typ as it's.
 func IndirectType(typ reflect.Type) reflect.Type {
 	switch typ.Kind() {
 	case reflect.Ptr, reflect.Array, reflect.Chan, reflect.Map, reflect.Slice:
