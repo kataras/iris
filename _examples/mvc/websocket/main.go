@@ -10,7 +10,7 @@ import (
 
 func main() {
 	app := iris.New()
-	// load templaes.
+	// load templates.
 	app.RegisterView(iris.HTML("./views", ".html"))
 
 	// render the ./views/index.html.
