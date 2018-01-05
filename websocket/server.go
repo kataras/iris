@@ -259,7 +259,7 @@ func (s *Server) join(roomName string, connID string) {
 // LeaveAll kicks out a connection from ALL of its joined rooms
 func (s *Server) LeaveAll(connID string) {
 	s.mu.Lock()
-	for name, _ := range s.rooms {
+	for name := range s.rooms {
 		s.leave(name, connID)
 	}
 	s.mu.Unlock()
