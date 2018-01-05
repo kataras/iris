@@ -81,7 +81,7 @@ type Config struct {
 	// guarantee that compression will be supported. Currently only "no context
 	// takeover" modes are supported.
 	//
-	// Defauls to false and it should be remain as it is, unless special requirements.
+	// Defaults to false and it should be remain as it is, unless special requirements.
 	EnableCompression bool
 
 	// Subprotocols specifies the server's supported protocols in order of

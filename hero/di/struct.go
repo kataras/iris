@@ -5,10 +5,18 @@ import (
 	"reflect"
 )
 
+// Scope is the struct injector's struct value scope/permant state.
+// See `Stateless` and `Singleton`.
 type Scope uint8
 
 const (
+	// Stateless is the scope that the struct should be different on each binding,
+	// think it like `Request Scoped`, per-request struct for mvc.
 	Stateless Scope = iota
+	// Singleton is the scope that the struct is the same
+	// between calls, it has no dynamic dependencies or
+	// any unexported fields that is not seted on creation,
+	// so it doesn't need to be created on each call/request.
 	Singleton
 )
 
@@ -169,6 +177,9 @@ func (s *StructInjector) String() (trace string) {
 	return
 }
 
+// Inject accepts a destination struct and any optional context value(s),
+// hero and mvc takes only one context value and this is the `context.Contex`.
+// It applies the bindings to the "dest" struct. It calls the InjectElem.
 func (s *StructInjector) Inject(dest interface{}, ctx ...reflect.Value) {
 	if dest == nil {
 		return
@@ -178,6 +189,7 @@ func (s *StructInjector) Inject(dest interface{}, ctx ...reflect.Value) {
 	s.InjectElem(v, ctx...)
 }
 
+// InjectElem same as `Inject` but accepts a reflect.Value and bind the necessary fields directly.
 func (s *StructInjector) InjectElem(destElem reflect.Value, ctx ...reflect.Value) {
 	for _, f := range s.fields {
 		f.Object.Assign(ctx, func(v reflect.Value) {
@@ -186,6 +198,12 @@ func (s *StructInjector) InjectElem(destElem reflect.Value, ctx ...reflect.Value
 	}
 }
 
+// Acquire returns a new value of the struct or
+// the same struct that is used for resolving the dependencies.
+// If the scope is marked as singleton then it returns the first instance,
+// otherwise it creates new and returns it.
+//
+// See `Singleton` and `Stateless` for more.
 func (s *StructInjector) Acquire() reflect.Value {
 	if s.Scope == Singleton {
 		return s.initRef
@@ -193,6 +211,10 @@ func (s *StructInjector) Acquire() reflect.Value {
 	return reflect.New(s.elemType)
 }
 
+// AcquireSlice same as `Acquire` but it returns a slice of
+// values structs, this can be used when a struct is passed as an input parameter
+// on a function, again if singleton then it returns a pre-created slice which contains
+// the first struct value given by the struct injector's user.
 func (s *StructInjector) AcquireSlice() []reflect.Value {
 	if s.Scope == Singleton {
 		return s.initRefAsSlice
