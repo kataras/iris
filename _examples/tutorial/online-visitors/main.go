@@ -13,7 +13,7 @@ func main() {
 	// app := iris.New()
 	app := iris.Default()
 
-	// load templaes
+	// load templates
 	app.RegisterView(iris.HTML("./templates", ".html").Reload(true))
 	// setup the websocket server
 	ws := websocket.New(websocket.Config{})
