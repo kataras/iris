@@ -14,7 +14,7 @@
 
 ## Yποστηρικτές
 
-Eυχαριστούμε όλους τους υποστηρικτές μας! [Γίνετε ένας από αυτούς](https://opencollective.com/iris#backer)
+Eυχαριστούμε όλους τους υποστηρικτές μας! 🙏 [Γίνετε ένας από αυτούς](https://opencollective.com/iris#backer)
 
 <a href="https://opencollective.com/iris#backers" target="_blank"><img src="https://opencollective.com/iris/backers.svg?width=890"></a>
 
