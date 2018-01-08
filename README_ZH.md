@@ -14,7 +14,7 @@ Iris 功能强大、使用简单，它将会是你下一个网站、API 服务�
 
 ## 支持者
 
-感谢所有的支持者! [支持我们](https://opencollective.com/iris#backer)
+感谢所有的支持者! 🙏 [支持我们](https://opencollective.com/iris#backer)
 
 <a href="https://opencollective.com/iris#backers" target="_blank"><img src="https://opencollective.com/iris/backers.svg?width=890"></a>
 

@@ -149,7 +149,7 @@ Example can be found [here](_examples/http_request/upload-files/main.go).
 
 ## context#View
 
-Just a minor addition, add a second optional variadic argument to the `context#view` method to accept a single value for template binding.
+Just a minor addition, add a second optional variadic argument to the `context#View` method to accept a single value for template binding.
 When you just want one value and not key-value pairs, you used to use an empty string on the `ViewData`, which is fine, especially if you preload these from a previous handler/middleware in the request handlers chain.
 
 ```go

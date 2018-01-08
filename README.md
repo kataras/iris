@@ -14,7 +14,7 @@ Learn what [others say about Iris](#support) and [star](https://github.com/katar
 
 ## Backers
 
-Thank you to all our backers! [Become a backer](https://opencollective.com/iris#backer)
+Thank you to all our backers! 🙏 [Become a backer](https://opencollective.com/iris#backer)
 
 <a href="https://opencollective.com/iris#backers" target="_blank"><img src="https://opencollective.com/iris/backers.svg?width=890"></a>
 

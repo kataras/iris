@@ -14,7 +14,7 @@ Iris предоставляет красиво выразительную и у�
 
 ## Сторонники
 
-Спасибо всем, кто поддерживал нас! [Поддержать нас](https://opencollective.com/iris#backer)
+Спасибо всем, кто поддерживал нас! 🙏 [Поддержать нас](https://opencollective.com/iris#backer)
 
 <a href="https://opencollective.com/iris#backers" target="_blank"><img src="https://opencollective.com/iris/backers.svg?width=890"></a>
 
