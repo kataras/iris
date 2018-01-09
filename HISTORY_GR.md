@@ -24,7 +24,7 @@
 Μπορείτε να [επικοινωνήσετε](mailto:Kovalenkodiana8@gmail.com) μαζί της για οποιεσδήποτε σχετικές με το σχεδιασμό εργασίες ή να της στείλειτε ένα άμεσο μήνυμα μέσω [instagram](https://www.instagram.com/merry.dii/).
 
 <p align="center">
-<img width="145px" src="https://iris-go.com/images/icon.svg?v=10" />
+<img width="145px" src="https://iris-go.com/images/icon.svg?v=a" />
 </p>
 
 Σε αυτή την έκδοση έχουμε πολλές εσωτερικές βελτιώσεις αλλά μόνο δύο μεγάλες αλλαγές και ένα μεγάλο χαρακτηριστικό, που ονομάζεται **hero**.

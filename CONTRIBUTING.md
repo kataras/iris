@@ -1,6 +1,6 @@
 # Contributing
 
-First of all read our [Code of Conduct](https://github.com/kataras/iris/tree/master/CODE_OF_CONDUCT.md).
+First of all read our [Code of Conduct](https://github.com/kataras/iris/blob/master/CODE_OF_CONDUCT.md).
 
 ## PR
 
@@ -16,7 +16,7 @@ First of all read our [Code of Conduct](https://github.com/kataras/iris/tree/mas
 
 ## Donate
 
-Help this project to continue deliver awesome and unique features with the higher code quality as possible by donating any amount via [PayPal](https://www.paypal.me/kataras) or [BTC](https://iris-go.com/v8/donate)!
+Help this project to continue deliver awesome and unique features with the higher code quality as possible by donating any amount via [PayPal](https://www.paypal.me/kataras) or [BTC](https://iris-go.com/donate)!
 
 | Name | Amount | Membership |
 | -----------|--------|--------|
@@ -47,7 +47,7 @@ Instructions can be found at: https://github.com/kataras/iris/issues/796
 
 Write an article about Iris in https://medium.com , https://dev.to or if you're being a hackathon at https://hackernoon.com, some examples:
 
-* [A Todo MVC Application using Iris and Vue.js](https://dev.to/kataras/a-todo-mvc-application-using-iris-and-vuejs-1hn9)
+* [A Todo MVC Application using Iris and Vue.js](https://hackernoon.com/a-todo-mvc-application-using-iris-and-vue-js-5019ff870064)
 * [A Hasura starter project with a ready to deploy Golang hello-world web app with IRIS](bit.ly/2lmKaAZ)
 * [Top 6 web frameworks for Go as of 2017](https://blog.usejournal.com/top-6-web-frameworks-for-go-as-of-2017-23270e059c4b)
 * [Iris Go Framework + MongoDB](https://medium.com/go-language/iris-go-framework-mongodb-552e349eab9c)
