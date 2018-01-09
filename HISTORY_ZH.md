@@ -24,7 +24,7 @@
 如果有设计相关的需求，你可以[发邮件](mailto:Kovalenkodiana8@gmail.com)给他，或者通过 [instagram](https://www.instagram.com/merry.dii/) 给他发信息。
 
 <p align="center">
-<img width="145px" src="https://iris-go.com/images/icon.svg?v=10" />
+<img width="145px" src="https://iris-go.com/images/icon.svg?v=a" />
 </p>
 
 在这个版本中，有许多内部优化改进，但只有两个重大变更和新增一个叫做 **hero** 的特性。

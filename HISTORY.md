@@ -24,7 +24,7 @@ We must thanks [Mrs. Diana](https://www.instagram.com/merry.dii/) for our awesom
 You can [contact](mailto:Kovalenkodiana8@gmail.com) her for any  design-related enquiries or explore and send a direct message via [instagram](https://www.instagram.com/merry.dii/).
 
 <p align="center">
-<img width="145px" src="https://iris-go.com/images/icon.svg?v=10" />
+<img width="145px" src="https://iris-go.com/images/icon.svg?v=a" />
 </p>
 
 At this version we have many internal improvements but just two major changes and one big feature, called **hero**.
