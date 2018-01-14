@@ -1,5 +1,15 @@
 # FAQ
 
+## [![iris](https://img.shields.io/badge/iris-powered-2196f3.svg?style=for-the-badge)](https://github.com/kataras/iris)
+
+Add a `badge` to your open-source projects powered by [Iris](https://iris-go.com) by pasting the below code snippet to the project repo's README.md:
+
+```md
+[![iris](https://img.shields.io/badge/iris-powered-2196f3.svg?style=for-the-badge)](https://github.com/kataras/iris)
+```
+
+> The badge is optionally, of course, it is just a simple and fast way to support Iris. The badge is work of a third-party, taken from https://github.com/blob-go/blob-go which was published by our friend @clover113 and we loved it<3
+
 ## How to upgrade
 
 ```sh

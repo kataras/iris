@@ -17,6 +17,31 @@
 
 **Πώς να αναβαθμίσετε**: Ανοίξτε την γραμμή εντολών σας και εκτελέστε αυτήν την εντολή: `go get -u github.com/kataras/iris`  ή αφήστε το αυτόματο updater να το κάνει αυτό για σας.
 
+# Mo, 15 Jenuary 2018 | v10.0.1
+
+- διόρθωση του cache handler που δεν δούλευε όπως έπρεπε όταν γινόταν εγγραφή σε πάνω από ένα handler, παλιότερα ήταν ένα cache handler προς ένα route handler, τώρα το ίδιο handler μπορεί να καταχωρηθεί σε όσα route handlers θέλετε https://github.com/kataras/iris/pull/852, όπως είχε αναφερθεί στο https://github.com/kataras/iris/issues/850
+- συγχώνευση PR https://github.com/kataras/iris/pull/862
+- απαγόρευση της ταυτόχρονης προσπέλασης του `ExecuteWriter -> Load` όταν το `view#Engine##Reload` είναι true, όπως είχε ζητηθεί στο https://github.com/kataras/iris/issues/872
+
+## Νέοι Υποστηρικτές
+
+1. https://opencollective.com/cetin-basoz
+
+## Νέες Μεταφράσεις
+
+1. Aναβαθμίσεις για την Κινέζικη μετάφραση README_ZH.md (νέο) και HISTORY_ZH.md  από @Zeno-Code μέσω του https://github.com/kataras/iris/pull/858
+2. Το Ρώσικο README_RU.md μεταφράστηκε από την @merrydii μέσω του https://github.com/kataras/iris/pull/857
+3. Τα Ελληνικά README_GR.md και HISTORY_GR.md μεταφράστηκαν μέσω των https://github.com/kataras/iris/commit/8c4e17c2a5433c36c148a51a945c4dc35fbe502a#diff-74b06c740d860f847e7b577ad58ddde0 και https://github.com/kataras/iris/commit/bb5a81c540b34eaf5c6c8e993f644a0e66a78fb8
+
+## Νέα Παραδείγματα
+
+1. [MVC - Register Middleware](_examples/mvc/middleware)
+
+## Νέα Άρθρα
+
+1. [A Todo MVC Application using Iris and Vue.js](https://hackernoon.com/a-todo-mvc-application-using-iris-and-vue-js-5019ff870064)
+2. [A Hasura starter project with a ready to deploy Golang hello-world web app with IRIS](bit.ly/2lmKaAZ)
+
 # Mo, 01 Jenuary 2018 | v10.0.0
 
 Πρέπει να ευχαριστήσουμε την [Κυρία Diana](https://www.instagram.com/merry.dii/) για το νέο μας [λογότυπο](https://iris-go.com/images/icon.svg)!

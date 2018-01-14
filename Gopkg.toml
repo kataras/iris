@@ -63,8 +63,8 @@
   name = "github.com/ryanuber/columnize"
 
 [[constraint]]
+  branch = "v1.2.0"
   name = "github.com/satori/go.uuid"
-  revision = "5bf94b69c6b68ee1b541973bb8e1144db23a194b"
 
 [[constraint]]
   branch = "master"
