@@ -106,7 +106,7 @@ type DjangoEngine struct {
 	namesFn   func() []string                   // for embedded, in combination with directory & extension
 	reload    bool
 	//
-	rmu sync.RWMutex // locks for filters and globals
+	rmu sync.RWMutex // locks for filters, globals and `ExecuteWiter` when `reload` is true.
 	// filters for pongo2, map[name of the filter] the filter function . The filters are auto register
 	filters map[string]FilterFunction
 	// globals share context fields between templates. https://github.com/flosch/pongo2/issues/35
@@ -147,6 +147,10 @@ func (s *DjangoEngine) Binary(assetFn func(name string) ([]byte, error), namesFn
 // Reload if setted to true the templates are reloading on each render,
 // use it when you're in development and you're boring of restarting
 // the whole app when you edit a template file.
+//
+// Note that if `true` is passed then only one `View -> ExecuteWriter` will be render each time,
+// no concurrent access across clients, use it only on development status.
+// It's good to be used side by side with the https://github.com/kataras/rizla reloader for go source files.
 func (s *DjangoEngine) Reload(developmentMode bool) *DjangoEngine {
 	s.reload = developmentMode
 	return s
@@ -373,8 +377,12 @@ func (s *DjangoEngine) fromCache(relativeName string) *pongo2.Template {
 // ExecuteWriter executes a templates and write its results to the w writer
 // layout here is useless.
 func (s *DjangoEngine) ExecuteWriter(w io.Writer, filename string, layout string, bindingData interface{}) error {
-	// reload the templates if reload configuration field is true
+	// re-parse the templates if reload is enabled.
 	if s.reload {
+		// locks to fix #872, it's the simplest solution and the most correct,
+		// to execute writers with "wait list", one at a time.
+		s.rmu.Lock()
+		defer s.rmu.Unlock()
 		if err := s.Load(); err != nil {
 			return err
 		}

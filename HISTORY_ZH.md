@@ -17,6 +17,10 @@
 
 **如何升级**: 打开命令行执行以下命令: `go get -u github.com/kataras/iris` 或者等待自动更新。
 
+# Mo, 15 Jenuary 2018 | v10.0.1
+
+Translation is missing for this specific history entry, please navigate through [english version of HISTORY.md](HISTORY.md#mo-15-jenuary-2018--v1001) instead or check back later on.
+
 # 2018 元旦 | v10.0.0 版本发布
 
 我们必须感谢 [Mrs. Diana](https://www.instagram.com/merry.dii/) 帮我们绘制的漂亮 [logo](https://iris-go.com/images/icon.svg)!
