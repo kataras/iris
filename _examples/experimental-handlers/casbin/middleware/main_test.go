@@ -9,7 +9,7 @@ import (
 
 func TestCasbinMiddleware(t *testing.T) {
 	app := newApp()
-	e := httptest.New(t, app, httptest.Debug(true))
+	e := httptest.New(t, app, httptest.Debug(false))
 
 	type ttcasbin struct {
 		username string
