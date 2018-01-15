@@ -21,7 +21,7 @@
 
 该版本暂未发现重大问题，但如果你使用 [cache](cache) 包的话，这里有些更新或许正好解决某些问题。
 
-- 修复缓存在控制器多个方法中生效，返回相同内容问题 https://github.com/kataras/iris/pull/852, 问题报告：https://github.com/kataras/iris/issues/850
+- 修复缓存在同一控制器多个方法中，返回相同内容问题 https://github.com/kataras/iris/pull/852, 问题报告：https://github.com/kataras/iris/issues/850
 - 问题修正 https://github.com/kataras/iris/pull/862
 - 当 `view#Engine##Reload` 为 true，`ExecuteWriter -> Load` 不能同时使用问题，相关问题 ：https://github.com/kataras/iris/issues/872
 - 由Iris提供支持的开源项目的徽章, 学习如何将徽章添加到您的开源项目中 [FAQ.md](FAQ.md)
