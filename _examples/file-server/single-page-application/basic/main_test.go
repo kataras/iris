@@ -3,7 +3,6 @@ package main
 import (
 	"io/ioutil"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
