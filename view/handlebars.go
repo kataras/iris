@@ -22,9 +22,8 @@ type HandlebarsEngine struct {
 	reload    bool                              // if true, each time the ExecuteWriter is called the templates will be reloaded.
 	// parser configuration
 	layout        string
-	rmu           sync.RWMutex // locks for helpers
+	rmu           sync.RWMutex // locks for helpers and `ExecuteWiter` when `reload` is true.
 	helpers       map[string]interface{}
-	mu            sync.Mutex // locks for template files load
 	templateCache map[string]*raymond.Template
 }
 
@@ -66,6 +65,10 @@ func (s *HandlebarsEngine) Binary(assetFn func(name string) ([]byte, error), nam
 // Reload if setted to true the templates are reloading on each render,
 // use it when you're in development and you're boring of restarting
 // the whole app when you edit a template file.
+//
+// Note that if `true` is passed then only one `View -> ExecuteWriter` will be render each time,
+// no concurrent access across clients, use it only on development status.
+// It's good to be used side by side with the https://github.com/kataras/rizla reloader for go source files.
 func (s *HandlebarsEngine) Reload(developmentMode bool) *HandlebarsEngine {
 	s.reload = developmentMode
 	return s
@@ -123,8 +126,7 @@ func (s *HandlebarsEngine) loadDirectory() error {
 
 	// the render works like {{ render "myfile.html" theContext.PartialContext}}
 	// instead of the html/template engine which works like {{ render "myfile.html"}} and accepts the parent binding, with handlebars we can't do that because of lack of runtime helpers (dublicate error)
-	s.mu.Lock()
-	defer s.mu.Unlock()
+
 	var templateErr error
 	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if info == nil || info.IsDir() {
@@ -181,9 +183,6 @@ func (s *HandlebarsEngine) loadAssets() error {
 	}
 	var templateErr error
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	names := namesFn()
 	for _, path := range names {
 		if !strings.HasPrefix(path, virtualDirectory) {
@@ -219,14 +218,11 @@ func (s *HandlebarsEngine) loadAssets() error {
 }
 
 func (s *HandlebarsEngine) fromCache(relativeName string) *raymond.Template {
-	s.mu.Lock()
 	tmpl, ok := s.templateCache[relativeName]
-	if ok {
-		s.mu.Unlock()
-		return tmpl
+	if !ok {
+		return nil
 	}
-	s.mu.Unlock()
-	return nil
+	return tmpl
 }
 
 func (s *HandlebarsEngine) executeTemplateBuf(name string, binding interface{}) (string, error) {
@@ -238,8 +234,12 @@ func (s *HandlebarsEngine) executeTemplateBuf(name string, binding interface{}) 
 
 // ExecuteWriter executes a template and writes its result to the w writer.
 func (s *HandlebarsEngine) ExecuteWriter(w io.Writer, filename string, layout string, bindingData interface{}) error {
-	// reload the templates if reload configuration field is true
+	// re-parse the templates if reload is enabled.
 	if s.reload {
+		// locks to fix #872, it's the simplest solution and the most correct,
+		// to execute writers with "wait list", one at a time.
+		s.rmu.Lock()
+		defer s.rmu.Unlock()
 		if err := s.Load(); err != nil {
 			return err
 		}
