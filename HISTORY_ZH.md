@@ -17,9 +17,33 @@
 
 **如何升级**: 打开命令行执行以下命令: `go get -u github.com/kataras/iris` 或者等待自动更新。
 
-# Mo, 15 Jenuary 2018 | v10.0.1
+# 2018 1月15号 | v10.0.1 版本更新
 
-Translation is missing for this specific history entry, please navigate through [english version of HISTORY.md](HISTORY.md#mo-15-jenuary-2018--v1001) instead or check back later on.
+该版本暂未发现重大问题，但如果你使用 [cache](cache) 包的话，这里有些更新或许正好解决某些问题。
+
+- 修复缓存在同一控制器多个方法中，返回相同内容问题 https://github.com/kataras/iris/pull/852, 问题报告：https://github.com/kataras/iris/issues/850
+- 问题修正 https://github.com/kataras/iris/pull/862
+- 当 `view#Engine##Reload` 为 true，`ExecuteWriter -> Load` 不能同时使用问题，相关问题 ：https://github.com/kataras/iris/issues/872
+- 由Iris提供支持的开源项目的徽章, 学习如何将徽章添加到您的开源项目中 [FAQ.md](FAQ.md)
+
+## 新增捐助
+
+1. https://opencollective.com/cetin-basoz
+
+## 新增翻译
+
+1. 中文版 README_ZH.md and HISTORY_ZH.md 由 @Zeno-Code 翻译 https://github.com/kataras/iris/pull/858
+2. 俄语版 README_RU.md 由 @merrydii 翻译 https://github.com/kataras/iris/pull/857
+3. 希腊版 README_GR.md and HISTORY_GR.md https://github.com/kataras/iris/commit/8c4e17c2a5433c36c148a51a945c4dc35fbe502a#diff-74b06c740d860f847e7b577ad58ddde0 and https://github.com/kataras/iris/commit/bb5a81c540b34eaf5c6c8e993f644a0e66a78fb8
+
+## 新增示例
+
+1. [MVC - Register Middleware](_examples/mvc/middleware)
+
+## 新增文章
+
+1. [A Todo MVC Application using Iris and Vue.js](https://hackernoon.com/a-todo-mvc-application-using-iris-and-vue-js-5019ff870064)
+2. [A Hasura starter project with a ready to deploy Golang hello-world web app with IRIS](bit.ly/2lmKaAZ)
 
 # 2018 元旦 | v10.0.0 版本发布
 
@@ -65,6 +89,8 @@ Translation is missing for this specific history entry, please navigate through 
 ## MVC
 
 You have to understand the `hero` package in order to use the `mvc`, because `mvc` uses the `hero` internally for the controller's methods you use as routes, the same rules applied to those controller's methods of yours as well.
+
+如果要使用 `mvc` ，必须先理解 `hero` 包，因为`mvc`在内部使用`hero`作为路由控制器的方法，同样的规则也适用于你的控制器的方法。
 
 With this version you can register **any controller's methods as routes manually**, you can **get a route based on a method name and change its `Name` (useful for reverse routing inside templates)**, you can use any **dependencies** registered from `hero.Register` or `mvc.New(iris.Party).Register` per mvc application or per-controller, **you can still use `BeginRequest` and `EndRequest`**, you can catch **`BeforeActivation(b mvc.BeforeActivation)` to add dependencies per controller and `AfterActivation(a mvc.AfterActivation)` to make any post-validations**, **singleton controllers when no dynamic dependencies are used**, **Websocket controller, as simple as a `websocket.Connection` dependency** and more...
 
