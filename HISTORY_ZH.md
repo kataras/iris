@@ -1,4 +1,4 @@
-# 更新记录 <a href="HISTORY.md"> <img width="20px" src="https://iris-go.com/images/flag-unitedkingdom.svg?v=10" /></a>
+# 更新记录 <a href="HISTORY.md"> <img width="20px" src="https://iris-go.com/images/flag-unitedkingdom.svg?v=10" /></a> <a href="HISTORY_GR.md"> <img width="20px" src="https://iris-go.com/images/flag-greece.svg?v=10" /></a>
 
 ### 想得到免费即时的支持?
 
@@ -17,6 +17,10 @@
 
 **如何升级**: 打开命令行执行以下命令: `go get -u github.com/kataras/iris` 或者等待自动更新。
 
+# Mo, 15 Jenuary 2018 | v10.0.1
+
+Translation is missing for this specific history entry, please navigate through [english version of HISTORY.md](HISTORY.md#mo-15-jenuary-2018--v1001) instead or check back later on.
+
 # 2018 元旦 | v10.0.0 版本发布
 
 我们必须感谢 [Mrs. Diana](https://www.instagram.com/merry.dii/) 帮我们绘制的漂亮 [logo](https://iris-go.com/images/icon.svg)!
@@ -24,7 +28,7 @@
 如果有设计相关的需求，你可以[发邮件](mailto:Kovalenkodiana8@gmail.com)给他，或者通过 [instagram](https://www.instagram.com/merry.dii/) 给他发信息。
 
 <p align="center">
-<img width="145px" src="https://iris-go.com/images/icon.svg?v=10" />
+<img width="145px" src="https://iris-go.com/images/icon.svg?v=a" />
 </p>
 
 在这个版本中，有许多内部优化改进，但只有两个重大变更和新增一个叫做 **hero** 的特性。

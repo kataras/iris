@@ -11,7 +11,7 @@ It doesn't always contain the "best ways" but it does cover each important featu
 - [Hello world!](hello-world/main.go)
 - [Glimpse](overview/main.go)
 - [Tutorial: Online Visitors](tutorial/online-visitors/main.go)
-- [Tutorial: A Todo MVC Application using Iris and Vue.js](https://dev.to/kataras/a-todo-mvc-application-using-iris-and-vuejs-1hn9)
+- [Tutorial: A Todo MVC Application using Iris and Vue.js](https://hackernoon.com/a-todo-mvc-application-using-iris-and-vue-js-5019ff870064)
 - [Tutorial: URL Shortener using BoltDB](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
 - [Tutorial: How to turn your Android Device into a fully featured Web Server (**MUST**)](https://twitter.com/ThePracticalDev/status/892022594031017988)
 - [POC: Convert the medium-sized project "Parrot" from native to Iris](https://github.com/iris-contrib/parrot)

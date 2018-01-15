@@ -119,6 +119,12 @@ func newApp() *iris.Application {
 		ctx.Write(b)
 	})
 
+	app.HandleMany("POST PUT", "/postvalue", func(ctx iris.Context) {
+		name := ctx.PostValueDefault("name", "iris")
+		headervale := ctx.GetHeader("headername")
+		ctx.Writef("Hello %s | %s", name, headervale)
+	})
+
 	return app
 }
 
@@ -152,11 +158,13 @@ func main() {
 		http://mysubdomain.localhost:8080/
 
 		// PUT
+		http://localhost:8080/postvalue
 		http://localhost:8080/games/42/players/93
 		http://localhost:8080/games/42/clans/clan/93
 
 		// POST
 		http://localhost:8080/
+		http://localhost:8080/postvalue
 		http://localhost:8080/games/42/clans
 		http://localhost:8080/games/42/players
 		http://localhost:8080/games/42/clans/93/leave

@@ -1,6 +1,6 @@
 # Iris Web Framework <a href="README.md"> <img width="20px" src="https://iris-go.com/images/flag-unitedkingdom.svg?v=10" /></a> <a href="README_ZH.md"> <img width="20px" src="https://iris-go.com/images/flag-china.svg?v=10" /></a> <a href="README_RU.md"><img width="20px" src="https://iris-go.com/images/flag-russia.svg?v=10" /></a>
 
-<img align="right" width="169px" src="https://iris-go.com/images/icon.svg?v=10" title="logo created by @merry.dii" />
+<img align="right" width="169px" src="https://iris-go.com/images/icon.svg?v=a" title="logo created by @merry.dii" />
 
 [![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=flat-square)](https://travis-ci.org/kataras/iris)<!-- [![release](https://img.shields.io/github/release/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/releases)--> [![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=flat-square)](http://goreportcard.com/report/kataras/iris)<!--[![github closed issues](https://img.shields.io/github/issues-closed-raw/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/issues?q=is%3Aissue+is%3Aclosed)--> [![chat](https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square)](https://kataras.rocket.chat/channel/iris) [![view examples](https://img.shields.io/badge/learn%20by-examples-0077b3.svg?style=flat-square)](_examples/) [![release](https://img.shields.io/badge/release%20-v10.0-0077b3.svg?style=flat-square)](https://github.com/kataras/iris/releases)
 
@@ -10,11 +10,11 @@
 
 Επιτέλους, ένα πραγματικά ισάξιο (και με το παραπάνω) expressjs web framework για τη γλώσσα προγραμματισμού Go.
 
-Μάθετε τι [λένε οι άλλοι για το Iris](#support) και [δώστε ένα αστέρι](https://github.com/kataras/iris/stargazers) στο github repository για να μένετε [πάντα ενημερωμένοι](https://facebook.com/iris.framework).
+Μάθετε τι [λένε οι άλλοι για το Iris](#%CE%A5%CF%80%CE%BF%CF%83%CF%84%CE%AE%CF%81%CE%B9%CE%BE%CE%B7) και [δώστε ένα αστέρι](https://github.com/kataras/iris/stargazers) στο github repository για να μένετε [πάντα ενημερωμένοι](https://facebook.com/iris.framework).
 
 ## Yποστηρικτές
 
-Eυχαριστούμε όλους τους υποστηρικτές μας! [Γίνετε ένας από αυτούς](https://opencollective.com/iris#backer)
+Eυχαριστούμε όλους τους υποστηρικτές μας! 🙏 [Γίνετε ένας από αυτούς](https://opencollective.com/iris#backer)
 
 <a href="https://opencollective.com/iris#backers" target="_blank"><img src="https://opencollective.com/iris/backers.svg?width=890"></a>
 
@@ -47,10 +47,10 @@ func main() {
     // Method:    GET
     // Resource:  http://localhost:8080/user/42
     //
-    // Χρειάζεται να δηλώσετε ένα regex expression;
+    // Θέλετε να χρησημοποιήσετε regex expressions;
     // Εύκολο,
-    // απλά δηλώστε τον τύπο της παραμέτρου εως 'string'
-    // το οποίο δέχετε κάθε τιμή και κάντε χρήση
+    // απλά δηλώστε τον τύπο της παραμέτρου ως 'string'
+    // ο οποίος δέχετε κάθε τιμή και κάντε χρήση
     // της `regexp` macro function, για παράδειγμα:
     // app.Get("/user/{id:string regexp(^[0-9]+$)}")
     app.Get("/user/{id:long}", func(ctx iris.Context) {
@@ -108,8 +108,8 @@ _Η τελευταία ενημέρωση έγινε την [Τρίτη, 21 Νο
 
 ## Υποστήριξη
 
-- To [HISTORY](HISTORY.md#mo-01-jenuary-2018--v1000) αρχείο είναι ο καλύτερος σας φίλος, περιέχει πληροφορίες σχετικά με τις τελευταίες λειτουργίες(features) και αλλαγές
-- Μήπως τυχαίνει να βρήκατε κανα bug; Δημοσιεύστε το στα [github issues](https://github.com/kataras/iris/issues)
+- To [HISTORY](HISTORY_GR.md#mo-15-jenuary-2018--v1001) αρχείο είναι ο καλύτερος σας φίλος, περιέχει πληροφορίες σχετικά με τις τελευταίες λειτουργίες(features) και αλλαγές
+- Μήπως τυχαίνει να βρήκατε κάποιο bug; Δημοσιεύστε το στα [github issues](https://github.com/kataras/iris/issues)
 - Έχετε οποιεσδήποτε ερωτήσεις ή πρέπει να μιλήσετε με κάποιον έμπειρο για την επίλυση ενός προβλήματος σε πραγματικό χρόνο; Ελάτε μαζί μας στην [συνομιλία κοινότητας](https://chat.iris-go.com)
 - Συμπληρώστε την αναφορά εμπειρίας χρήστη κάνοντας κλικ [εδώ](https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link)
 - Σας αρέσει το Iris; Τιτιβίστε κάτι για αυτό! Άνθρωποι από ολόκληρο τον πλανήτη έχουνε μιλήσει για αυτό ακριβώς:
@@ -161,11 +161,11 @@ _Η τελευταία ενημέρωση έγινε την [Τρίτη, 21 Νο
 
 ## Μάθηση
 
-Πρώτα απ 'όλα, ο πιο σωστός τρόπος για να ξεκινήσετε με ένα web framework είναι να μάθετε τα βασικά της γλώσσας προγραμματισμού και των τυπικών της δυνατοτήτων `http`, αν η εφαρμογή σας είναι ένα πολύ απλό προσωπικό έργο χωρίς απαιτήσεις επιδόσεων και συντηρησιμότητας, ίσως θα θέλετε να προχωρήστε μόνο με τα τυπικά πακέτα, αν οχι ακολουθήστε τις εξης οδηγίες:
+Πρώτα απ 'όλα, ο πιο σωστός τρόπος για να ξεκινήσετε με ένα web framework είναι να μάθετε τα βασικά της γλώσσας προγραμματισμού και των τυπικών της δυνατοτήτων `http`, αν η εφαρμογή σας είναι ένα πολύ απλό προσωπικό έργο χωρίς απαιτήσεις επιδόσεων και συντηρησιμότητας, ίσως να θέλετε να προχωρήσετε μόνο με τα τυπικά πακέτα, εαν οχι τότε ακολουθήστε τις παρακάτω οδηγίες:
 
 - Πλοηγηθείτε μέσω των **100+1** **[παραδειγμάτων](_examples)** και μερικές [απλές εφαρμογές για αρχάριους](#iris-starter-kits) που δημιουργήσαμε για εσάς
 - Διαβάστε τα [godocs](https://godoc.org/github.com/kataras/iris) για οποιαδήποτε λεπτομέρεια
-- Ετοιμάστε ένα φλιτζάνι καφέ ή τσάι, ό, τι σας ευχαριστεί περισσότερο και διαβάστε κάποια [άρθρα](#articles) που βρήκαμε για εσάς
+- Ετοιμάστε ένα φλιτζάνι καφέ ή τσάι, ό,τι σας ευχαριστεί περισσότερο και διαβάστε κάποια [άρθρα](#articles) που βρήκαμε για εσάς
 
 ### Iris starter kits
 
@@ -201,7 +201,7 @@ _Η τελευταία ενημέρωση έγινε την [Τρίτη, 21 Νο
 
 ### Articles
 
-* [A Todo MVC Application using Iris and Vue.js](https://dev.to/kataras/a-todo-mvc-application-using-iris-and-vuejs-1hn9)
+* [A Todo MVC Application using Iris and Vue.js](https://hackernoon.com/a-todo-mvc-application-using-iris-and-vue-js-5019ff870064)
 * [A Hasura starter project with a ready to deploy Golang hello-world web app with IRIS](bit.ly/2lmKaAZ)
 * [Top 6 web frameworks for Go as of 2017](https://blog.usejournal.com/top-6-web-frameworks-for-go-as-of-2017-23270e059c4b)
 * [Iris Go Framework + MongoDB](https://medium.com/go-language/iris-go-framework-mongodb-552e349eab9c)
