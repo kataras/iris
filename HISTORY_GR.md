@@ -22,6 +22,7 @@
 - διόρθωση του cache handler που δεν δούλευε όπως έπρεπε όταν γινόταν εγγραφή σε πάνω από ένα handler, παλιότερα ήταν ένα cache handler προς ένα route handler, τώρα το ίδιο handler μπορεί να καταχωρηθεί σε όσα route handlers θέλετε https://github.com/kataras/iris/pull/852, όπως είχε αναφερθεί στο https://github.com/kataras/iris/issues/850
 - συγχώνευση PR https://github.com/kataras/iris/pull/862
 - απαγόρευση της ταυτόχρονης προσπέλασης του `ExecuteWriter -> Load` όταν το `view#Engine##Reload` είναι true, όπως είχε ζητηθεί στο https://github.com/kataras/iris/issues/872
+- αναβάθμιση του ενσωματωμένου πακέτου `golang/crypto` για να εφαρμοστεί η επιδιόρθωση για το [tls-sni challenge disabled](https://letsencrypt.status.io/pages/incident/55957a99e800baa4470002da/5a55777ed9a9c1024c00b241) https://github.com/golang/crypto/commit/13931e22f9e72ea58bb73048bc752b48c6d4d4ac (**σχετικό με το iris.AutoTLS**)
 
 ## Νέοι Υποστηρικτές
 
