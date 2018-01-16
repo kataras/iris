@@ -559,7 +559,7 @@ func TLS(addr string, certFile, keyFile string, hostConfigs ...host.Configurator
 // certifications created on the fly by the "autocert" golang/x package,
 // so localhost may not be working, use it at "production" machine.
 //
-// Addr should have the form of [host]:port, i.e mydomain.com:443 or :443.
+// Addr should have the form of [host]:port, i.e mydomain.com:443.
 //
 // The whitelisted domains are separated by whitespace in "domain" argument,
 // i.e "iris-go.com", can be different than "addr".
@@ -572,9 +572,8 @@ func TLS(addr string, certFile, keyFile string, hostConfigs ...host.Configurator
 //
 // For an "e-mail" use a non-public one, letsencrypt needs that for your own security.
 //
-// Note: If domain is not empty and the server's port was "443" then
-// it will start a new server, automatically for you, which will redirect all
-// http versions to their https as well.
+// Note: `AutoTLS` will start a new server for you
+// which will redirect all http versions to their https, including subdomains as well.
 //
 // Last argument is optional, it accepts one or more
 // `func(*host.Configurator)` that are being executed
@@ -586,7 +585,7 @@ func TLS(addr string, certFile, keyFile string, hostConfigs ...host.Configurator
 // Look at the `ConfigureHost` too.
 //
 // Usage:
-// app.Run(iris.AutoTLS(":443", "example.com", "mail@example.com"))
+// app.Run(iris.AutoTLS("iris-go.com:443", "iris-go.com www.iris-go.com", "mail@example.com"))
 //
 // See `Run` and `core/host/Supervisor#ListenAndServeAutoTLS` for more.
 func AutoTLS(
