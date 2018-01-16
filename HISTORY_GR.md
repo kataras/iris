@@ -17,6 +17,17 @@
 
 **Πώς να αναβαθμίσετε**: Ανοίξτε την γραμμή εντολών σας και εκτελέστε αυτήν την εντολή: `go get -u github.com/kataras/iris`  ή αφήστε το αυτόματο updater να το κάνει αυτό για σας.
 
+# Tu, 16 Jenuary 2018 | v10.0.2
+
+## Ασφάλεια | `iris.AutoTLS`
+
+**Όλοι οι servers πρέπει να αναβαθμιστούν σε αυτήν την έκδοση**, περιέχει διορθώσεις για το _tls-sni challenge_ το οποίο απενεργοποιήθηκε μερικές μέρες πριν από το letsencrypt.org το οποίο προκάλεσε σχεδόν όλα τα golang https-ενεργποιημένα servers να να μην είναι σε θέση να λειτουργήσουν, έτσι υποστήριξη για το _http-01 challenge_ προστέθηκε σαν αναπλήρωση. Πλέον ο διακομιστής δοκιμάζει όλες τις διαθέσιμες προκλήσεις(challeneges) letsencrypt.
+
+Διαβάστε περισσότερα:
+
+- https://letsencrypt.status.io/pages/incident/55957a99e800baa4470002da/5a55777ed9a9c1024c00b241
+- https://github.com/golang/crypto/commit/13931e22f9e72ea58bb73048bc752b48c6d4d4ac
+
 # Mo, 15 Jenuary 2018 | v10.0.1
 
 - διόρθωση του cache handler που δεν δούλευε όπως έπρεπε όταν γινόταν εγγραφή σε πάνω από ένα handler, παλιότερα ήταν ένα cache handler προς ένα route handler, τώρα το ίδιο handler μπορεί να καταχωρηθεί σε όσα route handlers θέλετε https://github.com/kataras/iris/pull/852, όπως είχε αναφερθεί στο https://github.com/kataras/iris/issues/850

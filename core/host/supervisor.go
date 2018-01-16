@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"net"
 	"net/http"
-	"net/url"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -285,9 +284,10 @@ func (su *Supervisor) ListenAndServeTLS(certFile string, keyFile string) error {
 // stores and retrieves previously-obtained certificates.
 // If empty, certs will only be cached for the lifetime of the auto tls manager.
 //
-// Note: If domain is not empty and the server's port was "443" then
-// it will start a new server, automatically for you, which will redirect all
-// http versions to their https as well.
+// Note: The domain should be like "iris-go.com www.iris-go.com",
+// the e-mail like "kataras2006@hotmail.com" and the cacheDir like "letscache"
+// The `ListenAndServeAutoTLS` will start a new server for you,
+// which will redirect all http versions to their https, including subdomains as well.
 func (su *Supervisor) ListenAndServeAutoTLS(domain string, email string, cacheDir string) error {
 	var (
 		cache      autocert.Cache
@@ -310,7 +310,25 @@ func (su *Supervisor) ListenAndServeAutoTLS(domain string, email string, cacheDi
 		Cache:      cache,
 	}
 
-	cfg := &tls.Config{
+	srv2 := &http.Server{
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 60 * time.Second,
+		Addr:         ":http",
+		Handler:      autoTLSManager.HTTPHandler(nil), // nil for redirect.
+	}
+
+	// register a shutdown callback to this
+	// supervisor in order to close the "secondary redirect server" as well.
+	su.RegisterOnShutdown(func() {
+		// give it some time to close itself...
+		timeout := 5 * time.Second
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		defer cancel()
+		srv2.Shutdown(ctx)
+	})
+	go srv2.ListenAndServe()
+
+	su.Server.TLSConfig = &tls.Config{
 		GetCertificate:           autoTLSManager.GetCertificate,
 		MinVersion:               tls.VersionTLS10,
 		PreferServerCipherSuites: true,
@@ -318,40 +336,6 @@ func (su *Supervisor) ListenAndServeAutoTLS(domain string, email string, cacheDi
 			tls.X25519,
 		},
 	}
-
-	su.Server.TLSConfig = cfg
-
-	// Redirect all http://$path requests to their
-	// https://$path versions if a specific domain is passed on
-	// and the port was 443.
-	if hostPolicy != nil && netutil.ResolvePort(su.Server.Addr) == 443 {
-		// find the first domain if more than one.
-		spaceIdx := strings.IndexByte(domain, ' ')
-		if spaceIdx != -1 {
-			domain = domain[0:spaceIdx]
-		}
-		// create the url for the secured server.
-		target, err := url.Parse("https://" + domain)
-		if err != nil {
-			return err
-		}
-
-		// create the redirect server.
-		redirectSrv := NewRedirection(":80", target, -1)
-		// register a shutdown callback to this
-		// supervisor in order to close the "secondary redirect server" as well.
-		su.RegisterOnShutdown(func() {
-			// give it some time to close itself...
-			timeout := 5 * time.Second
-			ctx, cancel := context.WithTimeout(context.Background(), timeout)
-			defer cancel()
-			redirectSrv.Shutdown(ctx)
-		})
-
-		// start that redirect server using a different goroutine.
-		go redirectSrv.ListenAndServe()
-	}
-
 	return su.ListenAndServeTLS("", "")
 }
 
