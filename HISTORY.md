@@ -17,6 +17,17 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris` or let the automatic updater do that for you.
 
+# Tu, 16 Jenuary 2018 | v10.0.2
+
+## Security | `iris.AutoTLS`
+
+**Every server should be upgraded to this version**, it contains fixes for the _tls-sni challenge disabled_ some days ago by letsencrypt.org which caused almost every https-enabled golang server to be unable to be functional, therefore support for the _http-01 challenge type_ added. Now the server is testing all available letsencrypt challenges.
+
+Read more at:
+
+- https://letsencrypt.status.io/pages/incident/55957a99e800baa4470002da/5a55777ed9a9c1024c00b241
+- https://github.com/golang/crypto/commit/13931e22f9e72ea58bb73048bc752b48c6d4d4ac
+
 # Mo, 15 Jenuary 2018 | v10.0.1
 
 Not any serious problems were found to be resolved here but one, the first one which is important for devs that used the [cache](cache) package.
