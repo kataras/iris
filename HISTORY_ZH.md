@@ -17,9 +17,16 @@
 
 **如何升级**: 打开命令行执行以下命令: `go get -u github.com/kataras/iris` 或者等待自动更新。
 
-# Tu, 16 Jenuary 2018 | v10.0.2
+# 2018 1月16号 | v10.0.2 版本更新
 
-Translation is not available yet, please take a look at the [english version of this history entry](https://github.com/kataras/iris/blob/master/HISTORY.md#tu-16-jenuary-2018--v1002) instead.
+## 安全更新 | `iris.AutoTLS`
+
+**建议升级**, 包含几天前修复了 letsencrypt.org 禁用 tls-sni 的问题，这导致几乎每个启用了 https 的 golang 服务器都无法正常工作，因此支持添加了 http-01 类型。 现在服务器会尝试所有可用的 letsencrypt 类型。
+
+更多相关资讯:
+
+- https://letsencrypt.status.io/pages/incident/55957a99e800baa4470002da/5a55777ed9a9c1024c00b241
+- https://github.com/golang/crypto/commit/13931e22f9e72ea58bb73048bc752b48c6d4d4ac
 
 # 2018 1月15号 | v10.0.1 版本更新
 
@@ -148,8 +155,7 @@ func main() {
 新方法可以多文件上传, 应用于常见的上传操作, 它是一个非常有用的函数。
 
 ```go
-// UploadFormFiles uploads any received file(s) from the client
-// to the system physical location "destDirectory".
+// UploadFormFiles 将所有接收到的文件从客户端上传到系统物理位置 destDirectory。
 //
 // The second optional argument "before" gives caller the chance to
 // modify the *miltipart.FileHeader before saving to the disk,
