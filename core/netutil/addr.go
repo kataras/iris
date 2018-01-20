@@ -195,8 +195,8 @@ func ResolvePort(addr string) int {
 	return 80
 }
 
-// ResolveScheme returns "https://" if "isTLS" receiver is true,
-// otherwise "http://".
+// ResolveScheme returns "https" if "isTLS" receiver is true,
+// otherwise "http".
 func ResolveScheme(isTLS bool) string {
 	if isTLS {
 		return SchemeHTTPS

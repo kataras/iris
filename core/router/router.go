@@ -114,12 +114,12 @@ type WrapperFunc func(w http.ResponseWriter, r *http.Request, firstNextIsTheRout
 //
 // Before build.
 func (router *Router) WrapRouter(wrapperFunc WrapperFunc) {
-	router.mu.Lock()
-	defer router.mu.Unlock()
-
 	if wrapperFunc == nil {
 		return
 	}
+
+	router.mu.Lock()
+	defer router.mu.Unlock()
 
 	if router.wrapperFunc != nil {
 		// wrap into one function, from bottom to top, end to begin.
