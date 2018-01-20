@@ -129,7 +129,10 @@ func hasSubdomain(s string) bool {
 	// if not start with "/" then it should be something else,
 	// we don't assume anything else but subdomain.
 	slashIdx := strings.IndexByte(s, '/')
-	return slashIdx > 0 || s[0] == SubdomainPrefix[0] || (len(s) >= 2 && s[0:2] == SubdomainWildcardIndicator)
+	return slashIdx > 0 || // for route paths
+		s[0] == SubdomainPrefix[0] || // for route paths
+		(len(s) >= 2 && s[0:2] == SubdomainWildcardIndicator) || // for party rel path or route paths
+		(len(s) >= 2 && slashIdx != 0 && s[len(s)-1] == '.') // for party rel, i.e www., or subsub.www.
 }
 
 // splitSubdomainAndPath checks if the path has subdomain and if it's

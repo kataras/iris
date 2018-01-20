@@ -705,7 +705,7 @@ var ErrServerClosed = http.ErrServerClosed
 // `Listener`, `Server`, `Addr`, `TLS`, `AutoTLS` and `Raw`.
 func (app *Application) Run(serve Runner, withOrWithout ...Configurator) error {
 	// first Build because it doesn't need anything from configuration,
-	// this give the user the chance to modify the router inside a configurator as well.
+	// this gives the user the chance to modify the router inside a configurator as well.
 	if err := app.Build(); err != nil {
 		return errors.PrintAndReturnErrors(err, app.logger.Errorf)
 	}

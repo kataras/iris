@@ -44,6 +44,11 @@ func newApp() *iris.Application {
 	// First argument is the 'from' and second is the 'to/target'.
 	app.SubdomainRedirect(app, www)
 
+	// SubdomainRedirect works for multi-level subdomains as well:
+	// subsub := www.Subdomain("subsub") // subsub.www.mydomain.com
+	// subsub.Get("/", func(ctx iris.Context) { ctx.Writef("subdomain is: " + ctx.Subdomain()) })
+	// app.SubdomainRedirect(subsub, www)
+	//
 	// If you need to redirect any subdomain to 'www' then:
 	// app.SubdomainRedirect(app.WildcardSubdomain(), www)
 	// If you need to redirect from a subdomain to the root domain then:
