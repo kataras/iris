@@ -111,6 +111,14 @@ func NewAPIBuilder() *APIBuilder {
 	return api
 }
 
+// GetRelPath returns the current party's relative path.
+// i.e:
+// if r := app.Party("/users"), then the `r.GetRelPath()` is the "/users".
+// if r := app.Party("www.") or app.Subdomain("www") then the `r.GetRelPath()` is the "www.".
+func (api *APIBuilder) GetRelPath() string {
+	return api.relativePath
+}
+
 // GetReport returns an error may caused by party's methods.
 func (api *APIBuilder) GetReport() error {
 	return api.reporter.Return()
@@ -292,7 +300,7 @@ func (api *APIBuilder) PartyFunc(relativePath string, partyBuilderFunc func(p Pa
 // this specific "subdomain".
 //
 // If called from a child party then the subdomain will be prepended to the path instead of appended.
-// So if app.Subdomain("admin.").Subdomain("panel.") then the result is: "panel.admin.".
+// So if app.Subdomain("admin").Subdomain("panel") then the result is: "panel.admin.".
 func (api *APIBuilder) Subdomain(subdomain string, middleware ...context.Handler) Party {
 	if api.relativePath == SubdomainWildcardIndicator {
 		// cannot concat wildcard subdomain with something else
@@ -300,6 +308,12 @@ func (api *APIBuilder) Subdomain(subdomain string, middleware ...context.Handler
 			api.relativePath, subdomain)
 		return api
 	}
+	if l := len(subdomain); l < 1 {
+		return api
+	} else if subdomain[l-1] != '.' {
+		subdomain += "."
+	}
+
 	return api.Party(subdomain, middleware...)
 }
 

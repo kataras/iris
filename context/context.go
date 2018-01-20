@@ -366,6 +366,8 @@ type Context interface {
 	// Subdomain returns the subdomain of this request, if any.
 	// Note that this is a fast method which does not cover all cases.
 	Subdomain() (subdomain string)
+	// IsWWW returns true if the current subdomain (if any) is www.
+	IsWWW() bool
 	// RemoteAddr tries to parse and return the real client's request IP.
 	//
 	// Based on allowed headers names that can be modified from Configuration.RemoteAddrHeaders.
@@ -1311,11 +1313,16 @@ func (ctx *context) RequestPath(escape bool) string {
 // 	return false
 // } no, it will not work because map is a random peek data structure.
 
-// Host returns the host part of the current url.
+// Host returns the host part of the current URI.
 func (ctx *context) Host() string {
-	h := ctx.request.URL.Host
+	return GetHost(ctx.request)
+}
+
+// GetHost returns the host part of the current URI.
+func GetHost(r *http.Request) string {
+	h := r.URL.Host
 	if h == "" {
-		h = ctx.request.Host
+		h = r.Host
 	}
 	return h
 }
@@ -1336,6 +1343,18 @@ func (ctx *context) Subdomain() (subdomain string) {
 	}
 
 	return
+}
+
+// IsWWW returns true if the current subdomain (if any) is www.
+func (ctx *context) IsWWW() bool {
+	host := ctx.Host()
+	if index := strings.IndexByte(host, '.'); index > 0 {
+		// if it has a subdomain and it's www then return true.
+		if subdomain := host[0:index]; !strings.Contains(ctx.Application().ConfigurationReadOnly().GetVHost(), subdomain) {
+			return subdomain == "www"
+		}
+	}
+	return false
 }
 
 // RemoteAddr tries to parse and return the real client's request IP.

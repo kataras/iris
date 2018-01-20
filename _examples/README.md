@@ -10,6 +10,7 @@ It doesn't always contain the "best ways" but it does cover each important featu
 
 - [Hello world!](hello-world/main.go)
 - [Glimpse](overview/main.go)
+- [WWW](www/main.go)
 - [Tutorial: Online Visitors](tutorial/online-visitors/main.go)
 - [Tutorial: A Todo MVC Application using Iris and Vue.js](https://hackernoon.com/a-todo-mvc-application-using-iris-and-vue-js-5019ff870064)
 - [Tutorial: URL Shortener using BoltDB](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
@@ -267,7 +268,8 @@ Follow the examples below,
 - [Single](subdomains/single/main.go)
 - [Multi](subdomains/multi/main.go)
 - [Wildcard](subdomains/wildcard/main.go)
-- [WWW](subdomains/www/main.go) 
+- [WWW](subdomains/www/main.go)
+- [Redirect fast](subdomains/redirect/main.go)
 
 ### Convert `http.Handler/HandlerFunc`
 

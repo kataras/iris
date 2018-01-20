@@ -735,7 +735,7 @@ func WithConfiguration(c Configuration) Configurator {
 
 		if v := c.RemoteAddrHeaders; len(v) > 0 {
 			if main.RemoteAddrHeaders == nil {
-				main.RemoteAddrHeaders = make(map[string]bool)
+				main.RemoteAddrHeaders = make(map[string]bool, len(v))
 			}
 			for key, value := range v {
 				main.RemoteAddrHeaders[key] = value
@@ -744,7 +744,7 @@ func WithConfiguration(c Configuration) Configurator {
 
 		if v := c.Other; len(v) > 0 {
 			if main.Other == nil {
-				main.Other = make(map[string]interface{})
+				main.Other = make(map[string]interface{}, len(v))
 			}
 			for key, value := range v {
 				main.Other[key] = value

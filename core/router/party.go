@@ -14,6 +14,11 @@ import (
 //
 // Look the "APIBuilder" for its implementation.
 type Party interface {
+	// GetRelPath returns the current party's relative path.
+	// i.e:
+	// if r := app.Party("/users"), then the `r.GetRelPath()` is the "/users".
+	// if r := app.Party("www.") or app.Subdomain("www") then the `r.GetRelPath()` is the "www.".
+	GetRelPath() string
 	// GetReporter returns the reporter for adding errors
 	GetReporter() *errors.Reporter
 	// Macros returns the macro map which is responsible
