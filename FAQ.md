@@ -63,7 +63,7 @@ You can find all type aliases and their original package import statements at th
 
 ## Active development mode
 
-Iris may have reached version 8, but we're not stopping there. We have many feature ideas on our board that we're anxious to add and other innovative web development solutions that we're planning to build into Iris.
+Iris may have reached version 10, but we're not stopping there. We have many feature ideas on our board that we're anxious to add and other innovative web development solutions that we're planning to build into Iris.
 
 ## Can I find a job if I learn how to use Iris?
 
