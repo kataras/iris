@@ -17,7 +17,7 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris` or let the automatic updater do that for you.
 
-# Tu, 16 Jenuary 2018 | v10.0.2
+# Tu, 16 January 2018 | v10.0.2
 
 ## Security | `iris.AutoTLS`
 
@@ -28,7 +28,7 @@ Read more at:
 - https://letsencrypt.status.io/pages/incident/55957a99e800baa4470002da/5a55777ed9a9c1024c00b241
 - https://github.com/golang/crypto/commit/13931e22f9e72ea58bb73048bc752b48c6d4d4ac
 
-# Mo, 15 Jenuary 2018 | v10.0.1
+# Mo, 15 January 2018 | v10.0.1
 
 Not any serious problems were found to be resolved here but one, the first one which is important for devs that used the [cache](cache) package.
 
@@ -57,7 +57,7 @@ Not any serious problems were found to be resolved here but one, the first one w
 1. [A Todo MVC Application using Iris and Vue.js](https://hackernoon.com/a-todo-mvc-application-using-iris-and-vue-js-5019ff870064)
 2. [A Hasura starter project with a ready to deploy Golang hello-world web app with IRIS](bit.ly/2lmKaAZ)
 
-# Mo, 01 Jenuary 2018 | v10.0.0
+# Mo, 01 January 2018 | v10.0.0
 
 We must thanks [Mrs. Diana](https://www.instagram.com/merry.dii/) for our awesome new [logo](https://iris-go.com/images/icon.svg)!
 
