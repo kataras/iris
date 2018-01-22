@@ -66,6 +66,8 @@ var emptyHandler = func(ctx context.Context) {
 	ctx.StopExecution()
 }
 
+///TODO: debug this and re-run the parallel tests on larger scale,
+// because I think we have a bug here when `core/router#StaticWeb` is used after this middleware.
 func (h *Handler) ServeHTTP(ctx context.Context) {
 	// check for pre-cache validators, if at least one of them return false
 	// for this specific request, then skip the whole cache
@@ -83,10 +85,16 @@ func (h *Handler) ServeHTTP(ctx context.Context) {
 		return
 	}
 
+	scheme := "http"
+	if ctx.Request().TLS != nil {
+		scheme = "https"
+	}
+
 	var (
 		response *entry.Response
 		valid    = false
-		key      = ctx.Path()
+		// unique per subdomains and paths with different url query.
+		key = scheme + ctx.Host() + ctx.Request().URL.RequestURI()
 	)
 
 	h.mu.RLock()
@@ -99,6 +107,9 @@ func (h *Handler) ServeHTTP(ctx context.Context) {
 		response, valid = e.Response()
 	} else {
 		// create the entry now.
+		// fmt.Printf("create new cache entry\n")
+		// fmt.Printf("key: %s\n", key)
+
 		e = entry.NewEntry(h.expiration)
 		h.mu.Lock()
 		h.entries[key] = e
@@ -132,6 +143,11 @@ func (h *Handler) ServeHTTP(ctx context.Context) {
 		// given expiration was not valid then check for GetMaxAge &
 		// update the response & release the recorder
 		e.Reset(recorder.StatusCode(), recorder.Header().Get(cfg.ContentTypeHeader), body, GetMaxAge(ctx.Request()))
+
+		// fmt.Printf("reset cache entry\n")
+		// fmt.Printf("key: %s\n", key)
+		// fmt.Printf("content type: %s\n", recorder.Header().Get(cfg.ContentTypeHeader))
+		// fmt.Printf("body len: %d\n", len(body))
 		return
 	}
 
@@ -139,4 +155,9 @@ func (h *Handler) ServeHTTP(ctx context.Context) {
 	ctx.ContentType(response.ContentType())
 	ctx.StatusCode(response.StatusCode())
 	ctx.Write(response.Body())
+
+	// fmt.Printf("key: %s\n", key)
+	// fmt.Printf("write content type: %s\n", response.ContentType())
+	// fmt.Printf("write body len: %d\n", len(response.Body()))
+
 }

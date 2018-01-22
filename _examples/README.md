@@ -294,7 +294,7 @@ Follow the examples below,
 - [The `url` tmpl func](view/template_html_4/main.go)
 - [Inject Data Between Handlers](view/context-view-data/main.go)
 - [Embedding Templates Into App Executable File](view/embedding-templates-into-app/main.go)
-
+- [Write to a custom `io.Writer`](view/write-to)
 
 You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [hero templates](https://github.com/shiyanhui/hero/hero) files too, simply by using the `context#ResponseWriter`, take a look at the [http_responsewriter/quicktemplate](http_responsewriter/quicktemplate) and [http_responsewriter/herotemplate](http_responsewriter/herotemplate) examples.
 
