@@ -12,7 +12,7 @@ func main() {
 	app.Use(recover.New())
 
 	i := 0
-	// let's simmilate a panic every next request
+	// let's simulate a panic every next request
 	app.Get("/", func(ctx iris.Context) {
 		i++
 		if i%2 == 0 {
