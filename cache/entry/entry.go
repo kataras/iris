@@ -13,6 +13,11 @@ type Entry struct {
 	// ExpiresAt is the time which this cache will not be available
 	expiresAt time.Time
 
+	// when `Reset` this value is reseting to time.Now(),
+	// it's used to send the "Last-Modified" header,
+	// some clients may need it.
+	LastModified time.Time
+
 	// Response the response should be served to the client
 	response *Response
 	// but we need the key to invalidate manually...xmm
@@ -78,10 +83,23 @@ func (e *Entry) ChangeLifetime(fdur LifeChanger) {
 	}
 }
 
+// CopyHeaders clones headers "src" to "dst" .
+func CopyHeaders(dst map[string][]string, src map[string][]string) {
+	if dst == nil || src == nil {
+		return
+	}
+
+	for k, vv := range src {
+		v := make([]string, len(vv))
+		copy(v, vv)
+		dst[k] = v
+	}
+}
+
 // Reset called each time the entry is expired
 // and the handler calls this after the original handler executed
 // to re-set the response with the new handler's content result
-func (e *Entry) Reset(statusCode int, contentType string,
+func (e *Entry) Reset(statusCode int, headers map[string][]string,
 	body []byte, lifeChanger LifeChanger) {
 
 	if e.response == nil {
@@ -91,8 +109,10 @@ func (e *Entry) Reset(statusCode int, contentType string,
 		e.response.statusCode = statusCode
 	}
 
-	if contentType != "" {
-		e.response.contentType = contentType
+	if len(headers) > 0 {
+		newHeaders := make(map[string][]string, len(headers))
+		CopyHeaders(newHeaders, headers)
+		e.response.headers = newHeaders
 	}
 
 	e.response.body = body
@@ -101,5 +121,8 @@ func (e *Entry) Reset(statusCode int, contentType string,
 	if lifeChanger != nil {
 		e.ChangeLifetime(lifeChanger)
 	}
-	e.expiresAt = time.Now().Add(e.life)
+
+	now := time.Now()
+	e.expiresAt = now.Add(e.life)
+	e.LastModified = now
 }

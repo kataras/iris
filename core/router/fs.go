@@ -823,7 +823,7 @@ func serveFile(ctx context.Context, fs http.FileSystem, name string, redirect bo
 	// and the binary data inside "f".
 	detectOrWriteContentType(ctx, d.Name(), f)
 
-	return "", 200
+	return "", http.StatusOK
 }
 
 // toHTTPError returns a non-specific HTTP error message and status code
