@@ -360,11 +360,32 @@ var (
 	//
 	// A shortcut for the `handlerconv#FromStd`.
 	FromStd = handlerconv.FromStd
-	// Cache is a middleware providing cache functionalities
+	// Cache is a middleware providing server-side cache functionalities
 	// to the next handlers, can be used as: `app.Get("/", iris.Cache, aboutHandler)`.
+	// It should be used after Static methods.
+	// See `context#Cache304` for an alternative, faster way.
 	//
 	// Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/#caching
 	Cache = cache.Handler
+	// Cache304 sends a `StatusNotModified` (304) whenever
+	// the "If-Modified-Since" request header (time) is before the
+	// time.Now() + expiresEvery (always compared to their UTC values).
+	// Use this, which is a shortcut of the, `context#Cache304` instead of the "github.com/kataras/iris/cache" or iris.Cache
+	// for better performance.
+	// Clients that are compatible with the http RCF (all browsers are and tools like postman)
+	// will handle the caching.
+	// The only disadvantage of using that instead of server-side caching
+	// is that this method will send a 304 status code instead of 200,
+	// So, if you use it side by side with other micro services
+	// you have to check for that status code as well for a valid response.
+	//
+	// Developers are free to extend this method's behavior
+	// by watching system directories changes manually and use of the `ctx.WriteWithExpiration`
+	// with a "modtime" based on the file modified date,
+	// simillary to the `StaticWeb`(StaticWeb sends an OK(200) and browser disk caching instead of 304).
+	//
+	// A shortcut of the `context#Cache304`.
+	Cache304 = context.Cache304
 )
 
 // SPA  accepts an "assetHandler" which can be the result of an
