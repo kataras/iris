@@ -47,7 +47,7 @@ func TestSubdomainWWW(t *testing.T) {
 
 		req := e.Request(test.method, test.path)
 		if subdomain := test.subdomain; subdomain != "" {
-			req = req.WithURL("http://" + subdomain + "." + host)
+			req.WithURL("http://" + subdomain + "." + host)
 		}
 
 		req.Expect().
