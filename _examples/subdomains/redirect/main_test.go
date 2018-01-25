@@ -24,10 +24,7 @@ func TestSubdomainRedirectWWW(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		req := e.GET(test.path)
-		// req.WithURL("http://www." + root)
-
-		req.Expect().Status(httptest.StatusOK).Body().Equal(test.response)
+		e.GET(test.path).Expect().Status(httptest.StatusOK).Body().Equal(test.response)
 	}
 
 }

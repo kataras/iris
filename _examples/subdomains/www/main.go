@@ -30,19 +30,19 @@ func newApp() *iris.Application {
 
 	www := app.Party("www.")
 	{
+		// Just to show how you can get all routes and copy them to another
+		// party or subdomain:
+		// Get all routes that are registered so far, including all "Parties" and subdomains:
+		currentRoutes := app.GetRoutes()
+		// Register them to the www subdomain/vhost as well:
+		for _, r := range currentRoutes {
+			www.Handle(r.Method, r.Tmpl().Src, r.Handlers...)
+		}
+
 		// http://www.mydomain.com/hi
 		www.Get("/hi", func(ctx iris.Context) {
 			ctx.Writef("hi from www.mydomain.com")
 		})
-
-		// Just to show how you can get all routes and copy them to another
-		// party or subdomain:
-		// Get all routes that are registered so far, including all "Parties" but subdomains:
-		currentRoutes := app.GetRoutes()
-		// Register them to the www subdomain/vhost as well:
-		for _, r := range currentRoutes {
-			www.Handle(r.Method, r.Path, r.Handlers...)
-		}
 	}
 	// See also the "subdomains/redirect" to register redirect router wrappers between subdomains,
 	// i.e mydomain.com to www.mydomain.com (like facebook does for SEO reasons(;)).

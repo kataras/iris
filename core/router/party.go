@@ -211,15 +211,19 @@ type Party interface {
 	// Returns the GET *Route.
 	StaticWeb(requestPath string, systemPath string) *Route
 
-	// Layout oerrides the parent template layout with a more specific layout for this Party
-	// returns this Party, to continue as normal
+	// Layout overrides the parent template layout with a more specific layout for this Party.
+	// It returns the current Party.
+	//
+	// The "tmplLayoutFile" should be a relative path to the templates dir.
 	// Usage:
+	//
 	// app := iris.New()
+	// app.RegisterView(iris.$VIEW_ENGINE("./views", ".$extension"))
 	// my := app.Party("/my").Layout("layouts/mylayout.html")
-	// 	{
-	// 		my.Get("/", func(ctx context.Context) {
-	// 			ctx.MustRender("page1.html", nil)
-	// 		})
-	// 	}
+	// 	my.Get("/", func(ctx iris.Context) {
+	// 		ctx.View("page1.html")
+	// 	})
+	//
+	// Examples: https://github.com/kataras/iris/tree/master/_examples/view
 	Layout(tmplLayoutFile string) Party
 }
