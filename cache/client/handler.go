@@ -163,7 +163,7 @@ func (h *Handler) ServeHTTP(ctx context.Context) {
 
 	// if it's valid then just write the cached results
 	entry.CopyHeaders(ctx.ResponseWriter().Header(), response.Headers())
-	context.SetLastModified(ctx, e.LastModified)
+	ctx.SetLastModified(e.LastModified)
 	ctx.StatusCode(response.StatusCode())
 	ctx.Write(response.Body())
 

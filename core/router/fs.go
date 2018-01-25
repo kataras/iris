@@ -411,7 +411,7 @@ func detectOrWriteContentType(ctx context.Context, name string, content io.ReadS
 // content must be seeked to the beginning of the file.
 // The sizeFunc is called at most once. Its error, if any, is sent in the HTTP response.
 func serveContent(ctx context.Context, name string, modtime time.Time, sizeFunc func() (int64, error), content io.ReadSeeker) (string, int) /* we could use the TransactionErrResult but prefer not to create new objects for each of the errors on static file handlers*/ {
-	context.SetLastModified(ctx, modtime)
+	ctx.SetLastModified(modtime)
 	done, rangeReq := checkPreconditions(ctx, modtime)
 	if done {
 		return "", http.StatusNotModified
@@ -651,15 +651,15 @@ func checkPreconditions(ctx context.Context, modtime time.Time) (done bool, rang
 	switch checkIfNoneMatch(ctx) {
 	case condFalse:
 		if ctx.Method() == http.MethodGet || ctx.Method() == http.MethodHead {
-			context.WriteNotModified(ctx)
+			ctx.WriteNotModified()
 			return true, ""
 		}
 		ctx.StatusCode(http.StatusPreconditionFailed)
 		return true, ""
 
 	case condNone:
-		if modified, err := context.CheckIfModifiedSince(ctx, modtime); !modified && err == nil {
-			context.WriteNotModified(ctx)
+		if modified, err := ctx.CheckIfModifiedSince(modtime); !modified && err == nil {
+			ctx.WriteNotModified()
 			return true, ""
 		}
 	}
@@ -785,11 +785,11 @@ func serveFile(ctx context.Context, fs http.FileSystem, name string, redirect bo
 		if !showList {
 			return "", http.StatusForbidden
 		}
-		if modified, err := context.CheckIfModifiedSince(ctx, d.ModTime()); !modified && err == nil {
-			context.WriteNotModified(ctx)
+		if modified, err := ctx.CheckIfModifiedSince(d.ModTime()); !modified && err == nil {
+			ctx.WriteNotModified()
 			return "", http.StatusNotModified
 		}
-		ctx.Header("Last-Modified", d.ModTime().UTC().Format(ctx.Application().ConfigurationReadOnly().GetTimeFormat()))
+		ctx.SetLastModified(d.ModTime())
 		return dirList(ctx, f)
 	}
 
@@ -801,7 +801,7 @@ func serveFile(ctx context.Context, fs http.FileSystem, name string, redirect bo
 	}
 
 	// else, set the last modified as "serveContent" does.
-	context.SetLastModified(ctx, d.ModTime())
+	ctx.SetLastModified(d.ModTime())
 
 	// write the file to the response writer.
 	contents, err := ioutil.ReadAll(f)
