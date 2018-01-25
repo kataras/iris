@@ -891,18 +891,6 @@ type Context interface {
 
 var _ Context = (*context)(nil)
 
-// Next calls all the next handler from the handlers chain,
-// it should be used inside a middleware.
-func Next(ctx Context) {
-	if ctx.IsStopped() {
-		return
-	}
-	if n, handlers := ctx.HandlerIndex(-1)+1, ctx.Handlers(); n < len(handlers) {
-		ctx.HandlerIndex(n)
-		handlers[n](ctx)
-	}
-}
-
 // Do calls the SetHandlers(handlers)
 // and executes the first handler,
 // handlers should not be empty.
@@ -1159,17 +1147,38 @@ func (ctx *context) HandlerName() string {
 	return HandlerName(ctx.handlers[ctx.currentHandlerIndex])
 }
 
-// Do sets the handler index to zero, executes the first handler
-// and the rest of the Handlers if ctx.Next() was called.
-// func (ctx *context) Do() {
-// 	ctx.currentHandlerIndex = 0
-// 	ctx.handlers[0](ctx) // it calls this *context
-// } // -> replaced with inline on router.go
+// Next is the function that executed when `ctx.Next()` is called.
+// It can be changed to a customized one if needed (very advanced usage).
+//
+// See `DefaultNext` for more information about this and why it's exported like this.
+var Next = DefaultNext ///TODO: add an example for this usecase, i.e describe handlers and skip only file handlers.
+
+// DefaultNext is the default function that executed on each middleware if `ctx.Next()`
+// is called.
+//
+// DefaultNext calls the next handler from the handlers chain by registration order,
+// it should be used inside a middleware.
+//
+// It can be changed to a customized one if needed (very advanced usage).
+//
+// Developers are free to customize the whole or part of the Context's implementation
+// by implementing a new `context.Context` (see https://github.com/kataras/iris/tree/master/_examples/routing/custom-context)
+// or by just override the `context.Next` package-level field, `context.DefaultNext` is exported
+// in order to be able for developers to merge your customized version one with the default behavior as well.
+func DefaultNext(ctx Context) {
+	if ctx.IsStopped() {
+		return
+	}
+	if n, handlers := ctx.HandlerIndex(-1)+1, ctx.Handlers(); n < len(handlers) {
+		ctx.HandlerIndex(n)
+		handlers[n](ctx)
+	}
+}
 
 // Next calls all the next handler from the handlers chain,
 // it should be used inside a middleware.
 //
-// Note: Custom context should override this method in order to be able to pass its own context.context implementation.
+// Note: Custom context should override this method in order to be able to pass its own context.Context implementation.
 func (ctx *context) Next() { // or context.Next(ctx)
 	Next(ctx)
 }
@@ -2046,29 +2055,111 @@ var (
 	varyHeaderKey               = "Vary"
 )
 
-// staticCachePassed checks the IfModifiedSince header and
-// returns true if (client-side) duration has expired
-func (ctx *context) staticCachePassed(modtime time.Time) bool {
-	if t, err := time.Parse(ctx.Application().ConfigurationReadOnly().GetTimeFormat(), ctx.GetHeader(ifModifiedSinceHeaderKey)); err == nil && modtime.Before(t.Add(StaticCacheDuration)) {
-		ctx.writer.Header().Del(contentTypeHeaderKey)
-		ctx.writer.Header().Del(contentLengthHeaderKey)
-		ctx.StatusCode(http.StatusNotModified)
-		return true
+var unixEpochTime = time.Unix(0, 0)
+
+// IsZeroTime reports whether t is obviously unspecified (either zero or Unix()=0).
+func IsZeroTime(t time.Time) bool {
+	return t.IsZero() || t.Equal(unixEpochTime)
+}
+
+// ParseTime parses a time header (such as the Date: header),
+// trying each forth formats (or three if Application's configuration's TimeFormat is defaulted)
+// that are allowed by HTTP/1.1:
+// Application's configuration's TimeFormat or/and http.TimeFormat,
+// time.RFC850, and time.ANSIC.
+//
+// Look `context#FormatTime` for the opossite operation (Time to string).
+var ParseTime = func(ctx Context, text string) (t time.Time, err error) {
+	t, err = time.Parse(ctx.Application().ConfigurationReadOnly().GetTimeFormat(), text)
+	if err != nil {
+		return http.ParseTime(text)
 	}
-	return false
+
+	return
+}
+
+// FormatTime returns a textual representation of the time value formatted
+// according to the Application's configuration's TimeFormat field
+// which defines the format.
+//
+// Look `context#ParseTime` for the opossite operation (string to Time).
+var FormatTime = func(ctx Context, t time.Time) string {
+	return t.Format(ctx.Application().ConfigurationReadOnly().GetTimeFormat())
+}
+
+// SetLastModified sets the "Last-Modified" based on the "modtime" input.
+// If "modtime" is zero then it does nothing.
+//
+// It's mostly internally on core/router and context packages.
+func SetLastModified(ctx Context, modtime time.Time) {
+	if !IsZeroTime(modtime) {
+		ctx.Header(lastModifiedHeaderKey, FormatTime(ctx, modtime)) // or modtime.UTC()?
+	}
+}
+
+// CheckIfModifiedSince checks if the response is modified since the "modtime".
+// Note that it has nothing to do with server-side caching.
+// It does those checks by checking if the "If-Modified-Since" request header
+// sent by client or a previous server response header
+// (e.g with WriteWithExpiration or StaticEmbedded or Favicon etc.)
+// is a valid one and it's before the "modtime".
+//
+// A check for !modtime && err == nil is necessary to make sure that
+// it's not modified since, because it may return false but without even
+// had the chance to check the client-side (request) header due to some errors,
+// like the HTTP Method is not "GET" or "HEAD" or if the "modtime" is zero
+// or if parsing time from the header failed.
+//
+// It's mostly used internally, e.g. `context#WriteWithExpiration`.
+func CheckIfModifiedSince(ctx Context, modtime time.Time) (bool, error) {
+	if method := ctx.Method(); method != http.MethodGet && method != http.MethodHead {
+		return false, errors.New("skip: method")
+	}
+	ims := ctx.GetHeader(ifModifiedSinceHeaderKey)
+	if ims == "" || IsZeroTime(modtime) {
+		return false, errors.New("skip: zero time")
+	}
+	t, err := ParseTime(ctx, ims)
+	if err != nil {
+		return false, errors.New("skip: " + err.Error())
+	}
+	// sub-second precision, so
+	// use mtime < t+1s instead of mtime <= t to check for unmodified.
+	if modtime.Before(t.Add(1 * time.Second)) {
+		return false, nil
+	}
+	return true, nil
+}
+
+// WriteNotModified sends a 304 "Not Modified" status code to the client,
+// it makes sure that the content type, the content length headers
+// and any "ETag" are removed before the response sent.
+//
+// It's mostly used internally on core/router/fs.go and context methods.
+func WriteNotModified(ctx Context) {
+	// RFC 7232 section 4.1:
+	// a sender SHOULD NOT generate representation metadata other than the
+	// above listed fields unless said metadata exists for the purpose of
+	// guiding cache updates (e.g.," Last-Modified" might be useful if the
+	// response does not have an ETag field).
+	h := ctx.ResponseWriter().Header()
+	delete(h, contentTypeHeaderKey)
+	delete(h, contentLengthHeaderKey)
+	if h.Get("Etag") != "" {
+		delete(h, lastModifiedHeaderKey)
+	}
+	ctx.StatusCode(http.StatusNotModified)
 }
 
 // WriteWithExpiration like Write but it sends with an expiration datetime
 // which is refreshed every package-level `StaticCacheDuration` field.
 func (ctx *context) WriteWithExpiration(body []byte, modtime time.Time) (int, error) {
-
-	if ctx.staticCachePassed(modtime) {
+	if modified, err := CheckIfModifiedSince(ctx, modtime); !modified && err == nil {
+		WriteNotModified(ctx)
 		return 0, nil
 	}
 
-	modtimeFormatted := modtime.UTC().Format(ctx.Application().ConfigurationReadOnly().GetTimeFormat())
-	ctx.Header(lastModifiedHeaderKey, modtimeFormatted)
-
+	SetLastModified(ctx, modtime)
 	return ctx.writer.Write(body)
 }
 
@@ -2658,16 +2749,13 @@ const (
 // You can define your own "Content-Type" header also, after this function call
 // Doesn't implements resuming (by range), use ctx.SendFile instead
 func (ctx *context) ServeContent(content io.ReadSeeker, filename string, modtime time.Time, gzipCompression bool) error {
-	if t, err := time.Parse(ctx.Application().ConfigurationReadOnly().GetTimeFormat(), ctx.GetHeader(ifModifiedSinceHeaderKey)); err == nil && modtime.Before(t.Add(1*time.Second)) {
-		ctx.writer.Header().Del(contentTypeHeaderKey)
-		ctx.writer.Header().Del(contentLengthHeaderKey)
-		ctx.StatusCode(http.StatusNotModified)
+	if modified, err := CheckIfModifiedSince(ctx, modtime); !modified && err == nil {
+		WriteNotModified(ctx)
 		return nil
 	}
 
 	ctx.ContentType(filename)
-	ctx.writer.Header().Set(lastModifiedHeaderKey, modtime.UTC().Format(ctx.Application().ConfigurationReadOnly().GetTimeFormat()))
-	ctx.StatusCode(http.StatusOK)
+	SetLastModified(ctx, modtime)
 	var out io.Writer
 	if gzipCompression && ctx.ClientSupportsGzip() {
 		ctx.writer.Header().Add(varyHeaderKey, acceptEncodingHeaderKey)
@@ -2680,7 +2768,7 @@ func (ctx *context) ServeContent(content io.ReadSeeker, filename string, modtime
 		out = ctx.writer
 	}
 	_, err := io.Copy(out, content)
-	return errServeContent.With(err)
+	return errServeContent.With(err) ///TODO: add an int64 as return value for the content length written like other writers or let it as it's in order to keep the stable api?
 }
 
 // ServeFile serves a view file, to send a file ( zip for example) to the client you should use the SendFile(serverfilename,clientfilename)

@@ -81,6 +81,22 @@ func GetCustomStructWithError(ctx iris.Context) (s testCustomStruct, err error) 
 	return
 }
 
+type err struct {
+	Status  int    `json:"status_code"`
+	Message string `json:"message"`
+}
+
+func (e err) Dispatch(ctx iris.Context) {
+	// write the status code based on the err's StatusCode.
+	ctx.StatusCode(e.Status)
+	// send to the client the whole object as json
+	ctx.JSON(e)
+}
+
+func GetCustomErrorAsDispatcher() err {
+	return err{iris.StatusBadRequest, "this is my error as json"}
+}
+
 func TestFuncResult(t *testing.T) {
 	app := iris.New()
 	h := New()
@@ -102,6 +118,7 @@ func TestFuncResult(t *testing.T) {
 	app.Get("/custom/struct/with/status/not/ok", h.Handler(GetCustomStructWithStatusNotOk))
 	app.Get("/custom/struct/with/content/type", h.Handler(GetCustomStructWithContentType))
 	app.Get("/custom/struct/with/error", h.Handler(GetCustomStructWithError))
+	app.Get("/custom/error/as/dispatcher", h.Handler(GetCustomErrorAsDispatcher))
 
 	e := httptest.New(t, app)
 
@@ -149,4 +166,10 @@ func TestFuncResult(t *testing.T) {
 		// the content should be not JSON it should be the status code's text
 		// it will fire the error's text
 		Body().Equal("omit return of testCustomStruct and fire error")
+
+	e.GET("/custom/error/as/dispatcher").Expect().
+		Status(iris.StatusBadRequest). // the default status code if error is not nil
+		// the content should be not JSON it should be the status code's text
+		// it will fire the error's text
+		JSON().Equal(err{iris.StatusBadRequest, "this is my error as json"})
 }

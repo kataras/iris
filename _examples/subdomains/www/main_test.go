@@ -41,13 +41,13 @@ func TestSubdomainWWW(t *testing.T) {
 	}
 
 	host := "localhost:1111"
-	e := httptest.New(t, app, httptest.URL("http://"+host))
+	e := httptest.New(t, app, httptest.URL("http://"+host), httptest.Debug(false))
 
 	for _, test := range tests {
 
 		req := e.Request(test.method, test.path)
 		if subdomain := test.subdomain; subdomain != "" {
-			req.WithURL("http://" + subdomain + "." + host)
+			req = req.WithURL("http://" + subdomain + "." + host)
 		}
 
 		req.Expect().

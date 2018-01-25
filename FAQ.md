@@ -10,6 +10,14 @@ Add a `badge` to your open-source projects powered by [Iris](https://iris-go.com
 
 > The badge is optionally, of course, it is just a simple and fast way to support Iris. The badge is work of a third-party, taken from https://github.com/blob-go/blob-go which was published by our friend @clover113 and we loved it<3
 
+## Editors & IDEs Extensions
+
+### Visual Studio Code <a href="https://marketplace.visualstudio.com/items?itemName=kataras2006.iris"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/Visual_Studio_Code_1.18_icon.svg/2000px-Visual_Studio_Code_1.18_icon.svg.png" height="20px" width="20px" /></a>
+
+<https://marketplace.visualstudio.com/items?itemName=kataras2006.iris>
+
+> Please feel free to list your own Iris extension(s) here by [PR](https://github.com/kataras/iris/pulls)
+
 ## How to upgrade
 
 ```sh
@@ -18,7 +26,7 @@ go get -u github.com/kataras/iris
 
 ## Learning
 
-More than 50 practical examples, tutorials and articles at:
+More than 100 practical examples, tutorials and articles at:
 
 - https://github.com/kataras/iris/tree/master/_examples
 - https://github.com/iris-contrib/examples
