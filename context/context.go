@@ -1366,6 +1366,8 @@ func (ctx *context) IsWWW() bool {
 	return false
 }
 
+const xForwardedForHeaderKey = "X-Forwarded-For"
+
 // RemoteAddr tries to parse and return the real client's request IP.
 //
 // Based on allowed headers names that can be modified from Configuration.RemoteAddrHeaders.
@@ -1377,14 +1379,13 @@ func (ctx *context) IsWWW() bool {
 //      `Configuration.WithRemoteAddrHeader(...)`,
 //      `Configuration.WithoutRemoteAddrHeader(...)` for more.
 func (ctx *context) RemoteAddr() string {
-
 	remoteHeaders := ctx.Application().ConfigurationReadOnly().GetRemoteAddrHeaders()
 
 	for headerName, enabled := range remoteHeaders {
 		if enabled {
 			headerValue := ctx.GetHeader(headerName)
 			// exception needed for 'X-Forwarded-For' only , if enabled.
-			if headerName == "X-Forwarded-For" {
+			if headerName == xForwardedForHeaderKey {
 				idx := strings.IndexByte(headerValue, ',')
 				if idx >= 0 {
 					headerValue = headerValue[0:idx]
