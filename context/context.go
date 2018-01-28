@@ -639,6 +639,39 @@ type Context interface {
 	//
 	// Returns the number of bytes written and any write error encountered.
 	WriteString(body string) (int, error)
+
+	// SetLastModified sets the "Last-Modified" based on the "modtime" input.
+	// If "modtime" is zero then it does nothing.
+	//
+	// It's mostly internally on core/router and context packages.
+	//
+	// Note that modtime.UTC() is being used instead of just modtime, so
+	// you don't have to know the internals in order to make that works.
+	SetLastModified(modtime time.Time)
+	// CheckIfModifiedSince checks if the response is modified since the "modtime".
+	// Note that it has nothing to do with server-side caching.
+	// It does those checks by checking if the "If-Modified-Since" request header
+	// sent by client or a previous server response header
+	// (e.g with WriteWithExpiration or StaticEmbedded or Favicon etc.)
+	// is a valid one and it's before the "modtime".
+	//
+	// A check for !modtime && err == nil is necessary to make sure that
+	// it's not modified since, because it may return false but without even
+	// had the chance to check the client-side (request) header due to some errors,
+	// like the HTTP Method is not "GET" or "HEAD" or if the "modtime" is zero
+	// or if parsing time from the header failed.
+	//
+	// It's mostly used internally, e.g. `context#WriteWithExpiration`.
+	//
+	// Note that modtime.UTC() is being used instead of just modtime, so
+	// you don't have to know the internals in order to make that works.
+	CheckIfModifiedSince(modtime time.Time) (bool, error)
+	// WriteNotModified sends a 304 "Not Modified" status code to the client,
+	// it makes sure that the content type, the content length headers
+	// and any "ETag" are removed before the response sent.
+	//
+	// It's mostly used internally on core/router/fs.go and context methods.
+	WriteNotModified()
 	// WriteWithExpiration like Write but it sends with an expiration datetime
 	// which is refreshed every package-level `StaticCacheDuration` field.
 	WriteWithExpiration(body []byte, modtime time.Time) (int, error)
@@ -909,6 +942,35 @@ func Do(ctx Context, handlers Handlers) {
 var LimitRequestBodySize = func(maxRequestBodySizeBytes int64) Handler {
 	return func(ctx Context) {
 		ctx.SetMaxRequestBodySize(maxRequestBodySizeBytes)
+		ctx.Next()
+	}
+}
+
+// Cache304 sends a `StatusNotModified` (304) whenever
+// the "If-Modified-Since" request header (time) is before the
+// time.Now() + expiresEvery (always compared to their UTC values).
+// Use this `context#Cache304` instead of the "github.com/kataras/iris/cache" or iris.Cache
+// for better performance.
+// Clients that are compatible with the http RCF (all browsers are and tools like postman)
+// will handle the caching.
+// The only disadvantage of using that instead of server-side caching
+// is that this method will send a 304 status code instead of 200,
+// So, if you use it side by side with other micro services
+// you have to check for that status code as well for a valid response.
+//
+// Developers are free to extend this method's behavior
+// by watching system directories changes manually and use of the `ctx.WriteWithExpiration`
+// with a "modtime" based on the file modified date,
+// simillary to the `StaticWeb`(StaticWeb sends an OK(200) and browser disk caching instead of 304).
+var Cache304 = func(expiresEvery time.Duration) Handler {
+	return func(ctx Context) {
+		now := time.Now()
+		if modified, err := ctx.CheckIfModifiedSince(now.Add(-expiresEvery)); !modified && err == nil {
+			ctx.WriteNotModified()
+			return
+		}
+
+		ctx.SetLastModified(now)
 		ctx.Next()
 	}
 }
@@ -2092,9 +2154,9 @@ var FormatTime = func(ctx Context, t time.Time) string {
 // If "modtime" is zero then it does nothing.
 //
 // It's mostly internally on core/router and context packages.
-func SetLastModified(ctx Context, modtime time.Time) {
+func (ctx *context) SetLastModified(modtime time.Time) {
 	if !IsZeroTime(modtime) {
-		ctx.Header(lastModifiedHeaderKey, FormatTime(ctx, modtime)) // or modtime.UTC()?
+		ctx.Header(lastModifiedHeaderKey, FormatTime(ctx, modtime.UTC())) // or modtime.UTC()?
 	}
 }
 
@@ -2112,7 +2174,7 @@ func SetLastModified(ctx Context, modtime time.Time) {
 // or if parsing time from the header failed.
 //
 // It's mostly used internally, e.g. `context#WriteWithExpiration`.
-func CheckIfModifiedSince(ctx Context, modtime time.Time) (bool, error) {
+func (ctx *context) CheckIfModifiedSince(modtime time.Time) (bool, error) {
 	if method := ctx.Method(); method != http.MethodGet && method != http.MethodHead {
 		return false, errors.New("skip: method")
 	}
@@ -2126,7 +2188,7 @@ func CheckIfModifiedSince(ctx Context, modtime time.Time) (bool, error) {
 	}
 	// sub-second precision, so
 	// use mtime < t+1s instead of mtime <= t to check for unmodified.
-	if modtime.Before(t.Add(1 * time.Second)) {
+	if modtime.UTC().Before(t.Add(1 * time.Second)) {
 		return false, nil
 	}
 	return true, nil
@@ -2137,7 +2199,7 @@ func CheckIfModifiedSince(ctx Context, modtime time.Time) (bool, error) {
 // and any "ETag" are removed before the response sent.
 //
 // It's mostly used internally on core/router/fs.go and context methods.
-func WriteNotModified(ctx Context) {
+func (ctx *context) WriteNotModified() {
 	// RFC 7232 section 4.1:
 	// a sender SHOULD NOT generate representation metadata other than the
 	// above listed fields unless said metadata exists for the purpose of
@@ -2155,12 +2217,12 @@ func WriteNotModified(ctx Context) {
 // WriteWithExpiration like Write but it sends with an expiration datetime
 // which is refreshed every package-level `StaticCacheDuration` field.
 func (ctx *context) WriteWithExpiration(body []byte, modtime time.Time) (int, error) {
-	if modified, err := CheckIfModifiedSince(ctx, modtime); !modified && err == nil {
-		WriteNotModified(ctx)
+	if modified, err := ctx.CheckIfModifiedSince(modtime); !modified && err == nil {
+		ctx.WriteNotModified()
 		return 0, nil
 	}
 
-	SetLastModified(ctx, modtime)
+	ctx.SetLastModified(modtime)
 	return ctx.writer.Write(body)
 }
 
@@ -2750,13 +2812,13 @@ const (
 // You can define your own "Content-Type" header also, after this function call
 // Doesn't implements resuming (by range), use ctx.SendFile instead
 func (ctx *context) ServeContent(content io.ReadSeeker, filename string, modtime time.Time, gzipCompression bool) error {
-	if modified, err := CheckIfModifiedSince(ctx, modtime); !modified && err == nil {
-		WriteNotModified(ctx)
+	if modified, err := ctx.CheckIfModifiedSince(modtime); !modified && err == nil {
+		ctx.WriteNotModified()
 		return nil
 	}
 
 	ctx.ContentType(filename)
-	SetLastModified(ctx, modtime)
+	ctx.SetLastModified(modtime)
 	var out io.Writer
 	if gzipCompression && ctx.ClientSupportsGzip() {
 		ctx.writer.Header().Add(varyHeaderKey, acceptEncodingHeaderKey)

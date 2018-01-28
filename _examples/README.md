@@ -382,6 +382,7 @@ The `httptest` package is your way for end-to-end HTTP testing, it uses the http
 iris cache library lives on its own [package](https://github.com/kataras/iris/tree/master/cache).
 
 - [Simple](cache/simple/main.go)
+- [Client-Side (304)](cache/client-side/main.go) - part of the iris context core
 
 > You're free to use your own favourite caching package if you'd like so.
 
