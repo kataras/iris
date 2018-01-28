@@ -39,7 +39,7 @@ func main() {
 }
 
 func getSignupForm(ctx iris.Context) {
-	// views/signup.html just needs a {{ .csrfField }} template tag for
+	// views/user/signup.html just needs a {{ .csrfField }} template tag for
 	// csrf.TemplateField to inject the CSRF token into. Easy!
 	ctx.ViewData(csrf.TemplateTag, csrf.TemplateField(ctx))
 	ctx.View("user/signup.html")

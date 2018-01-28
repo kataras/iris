@@ -1,4 +1,7 @@
-/* Package cache provides cache capabilities with rich support of options and rules.
+/* Package cache provides server-side caching capabilities with rich support of options and rules.
+
+Use it for server-side caching, see the `iris#Cache304` for an alternative approach that
+may fit your needs most.
 
 Example code:
 
@@ -37,6 +40,9 @@ import (
 //
 // All types of response can be cached, templates, json, text, anything.
 //
+// Use it for server-side caching, see the `iris#Cache304` for an alternative approach that
+// may fit your needs most.
+//
 // You can add validators with this function.
 func Cache(expiration time.Duration) *client.Handler {
 	return client.NewHandler(expiration)
@@ -48,6 +54,9 @@ func Cache(expiration time.Duration) *client.Handler {
 // returns context.Handler.
 //
 // All types of response can be cached, templates, json, text, anything.
+//
+// Use it for server-side caching, see the `iris#Cache304` for an alternative approach that
+// may fit your needs most.
 //
 // it returns a context.Handler which can be used as a middleware, for more options use the `Cache`.
 //
