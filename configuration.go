@@ -460,13 +460,14 @@ type Configuration struct {
 	DisableBodyConsumptionOnUnmarshal bool `json:"disableBodyConsumptionOnUnmarshal,omitempty" yaml:"DisableBodyConsumptionOnUnmarshal" toml:"DisableBodyConsumptionOnUnmarshal"`
 
 	// DisableAutoFireStatusCode if true then it turns off the http error status code handler automatic execution
-	// from "context.StatusCode(>=400)" and instead app should manually call the "context.FireStatusCode(>=400)".
+	// from (`context.StatusCodeNotSuccessful`, defaults to < 200 || >= 400).
+	// If that is false then for a direct error firing, then call the "context#FireStatusCode(statusCode)" manually.
 	//
 	// By-default a custom http error handler will be fired when "context.StatusCode(code)" called,
-	// code should be >=400 in order to be received as an "http error handler".
+	// code should be equal with the result of the the `context.StatusCodeNotSuccessful` in order to be received as an "http error handler".
 	//
 	// Developer may want this option to setted as true in order to manually call the
-	// error handlers when needed via "context.FireStatusCode(>=400)".
+	// error handlers when needed via "context#FireStatusCode(< 200 || >= 400)".
 	// HTTP Custom error handlers are being registered via app.OnErrorCode(code, handler)".
 	//
 	// Defaults to false.

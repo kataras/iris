@@ -1042,6 +1042,21 @@ func (ctx *context) BeginRequest(w http.ResponseWriter, r *http.Request) {
 	ctx.writer.BeginResponse(w)
 }
 
+// StatusCodeNotSuccessful defines if a specific "statusCode" is not
+// a valid status code for a successful response.
+// It defaults to < 200 || >= 400
+//
+// Read more at `iris#DisableAutoFireStatusCode`, `iris/core/router#ErrorCodeHandler`
+// and `iris/core/router#OnAnyErrorCode` for relative information.
+//
+// Do NOT change it.
+//
+// It's exported for extreme situations--special needs only, when the Iris server and the client
+// is not following the RFC: https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
+var StatusCodeNotSuccessful = func(statusCode int) bool {
+	return statusCode < 200 || statusCode >= 400
+}
+
 // EndRequest is executing once after a response to the request was sent and this context is useless or released.
 //
 // To follow the iris' flow, developer should:
@@ -1049,7 +1064,7 @@ func (ctx *context) BeginRequest(w http.ResponseWriter, r *http.Request) {
 // 2. release the response writer
 // and any other optional steps, depends on dev's application type.
 func (ctx *context) EndRequest() {
-	if ctx.GetStatusCode() >= 400 &&
+	if StatusCodeNotSuccessful(ctx.GetStatusCode()) &&
 		!ctx.Application().ConfigurationReadOnly().GetDisableAutoFireStatusCode() {
 		// author's note:
 		// if recording, the error handler can handle

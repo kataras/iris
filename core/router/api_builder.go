@@ -686,16 +686,6 @@ func (api *APIBuilder) StaticWeb(requestPath string, systemPath string) *Route {
 
 	handler := func(ctx context.Context) {
 		h(ctx)
-		// if ctx.GetStatusCode() >= 200 && ctx.GetStatusCode() < 400 {
-		// 	// re-check the content type here for any case,
-		// 	// although the new code does it automatically but it's good to have it here.
-		// 	if _, exists := ctx.ResponseWriter().Header()["Content-Type"]; !exists {
-		// 		if fname := ctx.Params().Get(paramName); fname != "" {
-		// 			cType := TypeByFilename(fname)
-		// 			ctx.ContentType(cType)
-		// 		}
-		// 	}
-		// }
 	}
 
 	requestPath = joinPath(requestPath, WildcardParam(paramName))
@@ -703,7 +693,7 @@ func (api *APIBuilder) StaticWeb(requestPath string, systemPath string) *Route {
 }
 
 // OnErrorCode registers an error http status code
-// based on the "statusCode" >= 400.
+// based on the "statusCode" < 200 || >= 400 (came from `context.StatusCodeNotSuccessful`).
 // The handler is being wrapepd by a generic
 // handler which will try to reset
 // the body if recorder was enabled
@@ -718,55 +708,16 @@ func (api *APIBuilder) OnErrorCode(statusCode int, handlers ...context.Handler) 
 }
 
 // OnAnyErrorCode registers a handler which called when error status code written.
-// Same as `OnErrorCode` but registers all http error codes.
-// See: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
+// Same as `OnErrorCode` but registers all http error codes based on the `context.StatusCodeNotSuccessful`
+// which defaults to < 200 || >= 400 for an error code, any previos error code will be overriden,
+// so call it first if you want to use any custom handler for a specific error status code.
+//
+// Read more at: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
 func (api *APIBuilder) OnAnyErrorCode(handlers ...context.Handler) {
-	// we could register all >=400 and <=511 but this way
-	// could override custom status codes that iris developers can register for their
-	//  web apps whenever needed.
-	// There fore these are the hard coded http error statuses:
-	var errStatusCodes = []int{
-		http.StatusBadRequest,
-		http.StatusUnauthorized,
-		http.StatusPaymentRequired,
-		http.StatusForbidden,
-		http.StatusNotFound,
-		http.StatusMethodNotAllowed,
-		http.StatusNotAcceptable,
-		http.StatusProxyAuthRequired,
-		http.StatusRequestTimeout,
-		http.StatusConflict,
-		http.StatusGone,
-		http.StatusLengthRequired,
-		http.StatusPreconditionFailed,
-		http.StatusRequestEntityTooLarge,
-		http.StatusRequestURITooLong,
-		http.StatusUnsupportedMediaType,
-		http.StatusRequestedRangeNotSatisfiable,
-		http.StatusExpectationFailed,
-		http.StatusTeapot,
-		http.StatusUnprocessableEntity,
-		http.StatusLocked,
-		http.StatusFailedDependency,
-		http.StatusUpgradeRequired,
-		http.StatusPreconditionRequired,
-		http.StatusTooManyRequests,
-		http.StatusRequestHeaderFieldsTooLarge,
-		http.StatusUnavailableForLegalReasons,
-		http.StatusInternalServerError,
-		http.StatusNotImplemented,
-		http.StatusBadGateway,
-		http.StatusServiceUnavailable,
-		http.StatusGatewayTimeout,
-		http.StatusHTTPVersionNotSupported,
-		http.StatusVariantAlsoNegotiates,
-		http.StatusInsufficientStorage,
-		http.StatusLoopDetected,
-		http.StatusNotExtended,
-		http.StatusNetworkAuthenticationRequired}
-
-	for _, statusCode := range errStatusCodes {
-		api.OnErrorCode(statusCode, handlers...)
+	for code := 100; code <= 511; code++ {
+		if context.StatusCodeNotSuccessful(code) {
+			api.OnErrorCode(code, handlers...)
+		}
 	}
 }
 

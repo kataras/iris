@@ -254,7 +254,7 @@ func (w *fsHandler) Build() context.Handler {
 				gzipEnabled)
 
 			// check for any http errors after the file handler executed
-			if prevStatusCode >= 400 { // error found (404 or 400 or 500 usually)
+			if context.StatusCodeNotSuccessful(prevStatusCode) { // error found (404 or 400 or 500 usually)
 				if writer, ok := ctx.ResponseWriter().(*context.GzipResponseWriter); ok && writer != nil {
 					writer.ResetBody()
 					writer.Disable()

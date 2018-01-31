@@ -611,7 +611,8 @@ func main(){
     app := iris.New()
     app.OnErrorCode(iris.StatusNotFound, notFound)
     app.OnErrorCode(iris.StatusInternalServerError, internalServerError)
-    // to register a handler for all status codes >=400:
+    // to register a handler for all "error" status codes(context.StatusCodeNotSuccessful)
+    // defaults to < 200 || >= 400:
     // app.OnAnyErrorCode(handler)
     app.Get("/", index)
     app.Run(iris.Addr(":8080"))

@@ -20,7 +20,7 @@ func (err TransactionErrResult) Error() string {
 
 // IsFailure returns true if this is an actual error
 func (err TransactionErrResult) IsFailure() bool {
-	return err.StatusCode >= 400
+	return StatusCodeNotSuccessful(err.StatusCode)
 }
 
 // NewTransactionErrResult returns a new transaction result with the given error message,

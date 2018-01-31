@@ -21,7 +21,7 @@ func newApp() *iris.Application {
 	})
 
 	// or just serve index.html as it is:
-	// app.Get("/", func(ctx iris.Context) {
+	// app.Get("/{f:path}", func(ctx iris.Context) {
 	// 	ctx.ServeFile("index.html", false)
 	// })
 
