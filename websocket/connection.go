@@ -174,6 +174,9 @@ type (
 		On(string, MessageFunc)
 		// Join registers this connection to a room, if it doesn't exist then it creates a new. One room can have one or more connections. One connection can be joined to many rooms. All connections are joined to a room specified by their `ID` automatically.
 		Join(string)
+		// IsJoined returns true when this connection is joined to the room, otherwise false.
+		// It Takes the room name as its input parameter.
+		IsJoined(roomName string) bool
 		// Leave removes this connection entry from a room
 		// Returns true if the connection has actually left from the particular room.
 		Leave(string) bool
@@ -504,6 +507,10 @@ func (c *connection) On(event string, cb MessageFunc) {
 
 func (c *connection) Join(roomName string) {
 	c.server.Join(roomName, c.id)
+}
+
+func (c *connection) IsJoined(roomName string) bool {
+	return c.server.IsJoined(roomName, c.id)
 }
 
 func (c *connection) Leave(roomName string) bool {
