@@ -1553,8 +1553,7 @@ func (ctx *context) ContentType(cType string) {
 	// if doesn't contain a charset already then append it
 	if !strings.Contains(cType, "charset") {
 		if cType != ContentBinaryHeaderValue {
-			charset := ctx.Application().ConfigurationReadOnly().GetCharset()
-			cType += "; charset=" + charset
+			cType += "; charset=" + ctx.Application().ConfigurationReadOnly().GetCharset()
 		}
 	}
 
@@ -1940,6 +1939,7 @@ func (ctx *context) UploadFormFiles(destDirectory string, before ...func(Context
 					n += n0
 				}
 			}
+			return n, nil
 		}
 	}
 
