@@ -254,7 +254,7 @@ func (w *fsHandler) Build() context.Handler {
 				gzipEnabled)
 
 			// check for any http errors after the file handler executed
-			if prevStatusCode >= 400 { // error found (404 or 400 or 500 usually)
+			if context.StatusCodeNotSuccessful(prevStatusCode) { // error found (404 or 400 or 500 usually)
 				if writer, ok := ctx.ResponseWriter().(*context.GzipResponseWriter); ok && writer != nil {
 					writer.ResetBody()
 					writer.Disable()
@@ -411,7 +411,7 @@ func detectOrWriteContentType(ctx context.Context, name string, content io.ReadS
 // content must be seeked to the beginning of the file.
 // The sizeFunc is called at most once. Its error, if any, is sent in the HTTP response.
 func serveContent(ctx context.Context, name string, modtime time.Time, sizeFunc func() (int64, error), content io.ReadSeeker) (string, int) /* we could use the TransactionErrResult but prefer not to create new objects for each of the errors on static file handlers*/ {
-	setLastModified(ctx, modtime)
+	ctx.SetLastModified(modtime)
 	done, rangeReq := checkPreconditions(ctx, modtime)
 	if done {
 		return "", http.StatusNotModified
@@ -515,6 +515,17 @@ func serveContent(ctx context.Context, name string, modtime time.Time, sizeFunc 
 	return "", code
 }
 
+func etagEmptyOrStrongMatch(rangeValue string, etagValue string) bool {
+	etag, _ := scanETag(rangeValue)
+	if etag != "" {
+		if etagStrongMatch(etag, etagValue) {
+			return true
+		}
+		return false
+	}
+	return true
+}
+
 // scanETag determines if a syntactically valid ETag is present at s. If so,
 // the ETag and remaining text after consuming ETag is returned. Otherwise,
 // it returns "", "".
@@ -595,22 +606,6 @@ func checkIfMatch(ctx context.Context) condResult {
 	return condFalse
 }
 
-func checkIfUnmodifiedSince(ctx context.Context, modtime time.Time) condResult {
-	ius := ctx.GetHeader("If-Unmodified-Since")
-	if ius == "" || isZeroTime(modtime) {
-		return condNone
-	}
-	if t, err := http.ParseTime(ius); err == nil {
-		// The Date-Modified header truncates sub-second precision, so
-		// use mtime < t+1s instead of mtime <= t to check for unmodified.
-		if modtime.Before(t.Add(1 * time.Second)) {
-			return condTrue
-		}
-		return condFalse
-	}
-	return condNone
-}
-
 func checkIfNoneMatch(ctx context.Context) condResult {
 	inm := ctx.GetHeader("If-None-Match")
 	if inm == "" {
@@ -640,86 +635,6 @@ func checkIfNoneMatch(ctx context.Context) condResult {
 	return condTrue
 }
 
-func checkIfModifiedSince(ctx context.Context, modtime time.Time) condResult {
-	if ctx.Method() != http.MethodGet && ctx.Method() != http.MethodHead {
-		return condNone
-	}
-	ims := ctx.GetHeader("If-Modified-Since")
-	if ims == "" || isZeroTime(modtime) {
-		return condNone
-	}
-	t, err := http.ParseTime(ims)
-	if err != nil {
-		return condNone
-	}
-	// The Date-Modified header truncates sub-second precision, so
-	// use mtime < t+1s instead of mtime <= t to check for unmodified.
-	if modtime.Before(t.Add(1 * time.Second)) {
-		return condFalse
-	}
-	return condTrue
-}
-
-func checkIfRange(ctx context.Context, modtime time.Time) condResult {
-	if ctx.Method() != http.MethodGet {
-		return condNone
-	}
-	ir := ctx.GetHeader("If-Range")
-	if ir == "" {
-		return condNone
-	}
-	etag, _ := scanETag(ir)
-	if etag != "" {
-		if etagStrongMatch(etag, ctx.ResponseWriter().Header().Get("Etag")) {
-			return condTrue
-		}
-		return condFalse
-
-	}
-	// The If-Range value is typically the ETag value, but it may also be
-	// the modtime date. See golang.org/issue/8367.
-	if modtime.IsZero() {
-		return condFalse
-	}
-	t, err := http.ParseTime(ir)
-	if err != nil {
-		return condFalse
-	}
-	if t.Unix() == modtime.Unix() {
-		return condTrue
-	}
-	return condFalse
-}
-
-var unixEpochTime = time.Unix(0, 0)
-
-// isZeroTime reports whether t is obviously unspecified (either zero or Unix()=0).
-func isZeroTime(t time.Time) bool {
-	return t.IsZero() || t.Equal(unixEpochTime)
-}
-
-func setLastModified(ctx context.Context, modtime time.Time) {
-	if !isZeroTime(modtime) {
-		ctx.Header(lastModifiedHeaderKey, modtime.UTC().Format(ctx.Application().ConfigurationReadOnly().GetTimeFormat()))
-	}
-}
-
-func writeNotModified(ctx context.Context) {
-	// RFC 7232 section 4.1:
-	// a sender SHOULD NOT generate representation metadata other than the
-	// above listed fields unless said metadata exists for the purpose of
-	// guiding cache updates (e.g., Last-Modified might be useful if the
-	// response does not have an ETag field).
-	h := ctx.ResponseWriter().Header()
-	delete(h, contentTypeHeaderKey)
-
-	delete(h, contentLengthHeaderKey)
-	if h.Get("Etag") != "" {
-		delete(h, "Last-Modified")
-	}
-	ctx.StatusCode(http.StatusNotModified)
-}
-
 // checkPreconditions evaluates request preconditions and reports whether a precondition
 // resulted in sending StatusNotModified or StatusPreconditionFailed.
 func checkPreconditions(ctx context.Context, modtime time.Time) (done bool, rangeHeader string) {
@@ -736,26 +651,70 @@ func checkPreconditions(ctx context.Context, modtime time.Time) (done bool, rang
 	switch checkIfNoneMatch(ctx) {
 	case condFalse:
 		if ctx.Method() == http.MethodGet || ctx.Method() == http.MethodHead {
-			writeNotModified(ctx)
+			ctx.WriteNotModified()
 			return true, ""
 		}
 		ctx.StatusCode(http.StatusPreconditionFailed)
 		return true, ""
 
 	case condNone:
-		if checkIfModifiedSince(ctx, modtime) == condFalse {
-			writeNotModified(ctx)
+		if modified, err := ctx.CheckIfModifiedSince(modtime); !modified && err == nil {
+			ctx.WriteNotModified()
 			return true, ""
 		}
 	}
 
 	rangeHeader = ctx.GetHeader("Range")
 	if rangeHeader != "" {
-		if checkIfRange(ctx, modtime) == condFalse {
+		if checkIfRange(ctx, etagEmptyOrStrongMatch, modtime) == condFalse {
 			rangeHeader = ""
 		}
 	}
 	return false, rangeHeader
+}
+
+func checkIfUnmodifiedSince(ctx context.Context, modtime time.Time) condResult {
+	ius := ctx.GetHeader("If-Unmodified-Since")
+	if ius == "" || context.IsZeroTime(modtime) {
+		return condNone
+	}
+	if t, err := context.ParseTime(ctx, ius); err == nil {
+		// The Date-Modified header truncates sub-second precision, so
+		// use mtime < t+1s instead of mtime <= t to check for unmodified.
+		if modtime.Before(t.Add(1 * time.Second)) {
+			return condTrue
+		}
+		return condFalse
+	}
+	return condNone
+}
+
+func checkIfRange(ctx context.Context, etagEmptyOrStrongMatch func(ifRangeValue string, etagValue string) bool, modtime time.Time) condResult {
+	if ctx.Method() != http.MethodGet {
+		return condNone
+	}
+	ir := ctx.GetHeader("If-Range")
+	if ir == "" {
+		return condNone
+	}
+
+	if etagEmptyOrStrongMatch(ir, ctx.GetHeader("Etag")) {
+		return condTrue
+	}
+
+	// The If-Range value is typically the ETag value, but it may also be
+	// the modtime date. See golang.org/issue/8367.
+	if modtime.IsZero() {
+		return condFalse
+	}
+	t, err := context.ParseTime(ctx, ir)
+	if err != nil {
+		return condFalse
+	}
+	if t.Unix() == modtime.Unix() {
+		return condTrue
+	}
+	return condFalse
 }
 
 // name is '/'-separated, not filepath.Separator.
@@ -826,11 +785,11 @@ func serveFile(ctx context.Context, fs http.FileSystem, name string, redirect bo
 		if !showList {
 			return "", http.StatusForbidden
 		}
-		if checkIfModifiedSince(ctx, d.ModTime()) == condFalse {
-			writeNotModified(ctx)
+		if modified, err := ctx.CheckIfModifiedSince(d.ModTime()); !modified && err == nil {
+			ctx.WriteNotModified()
 			return "", http.StatusNotModified
 		}
-		ctx.Header("Last-Modified", d.ModTime().UTC().Format(ctx.Application().ConfigurationReadOnly().GetTimeFormat()))
+		ctx.SetLastModified(d.ModTime())
 		return dirList(ctx, f)
 	}
 
@@ -842,7 +801,7 @@ func serveFile(ctx context.Context, fs http.FileSystem, name string, redirect bo
 	}
 
 	// else, set the last modified as "serveContent" does.
-	setLastModified(ctx, d.ModTime())
+	ctx.SetLastModified(d.ModTime())
 
 	// write the file to the response writer.
 	contents, err := ioutil.ReadAll(f)
@@ -864,7 +823,7 @@ func serveFile(ctx context.Context, fs http.FileSystem, name string, redirect bo
 	// and the binary data inside "f".
 	detectOrWriteContentType(ctx, d.Name(), f)
 
-	return "", 200
+	return "", http.StatusOK
 }
 
 // toHTTPError returns a non-specific HTTP error message and status code

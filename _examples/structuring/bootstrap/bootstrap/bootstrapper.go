@@ -64,7 +64,8 @@ func (b *Bootstrapper) SetupWebsockets(endpoint string, onConnection websocket.C
 	})
 }
 
-// SetupErrorHandlers prepares the http error handlers (>=400).
+// SetupErrorHandlers prepares the http error handlers
+// `(context.StatusCodeNotSuccessful`,  which defaults to < 200 || >= 400 but you can change it).
 func (b *Bootstrapper) SetupErrorHandlers() {
 	b.OnAnyErrorCode(func(ctx iris.Context) {
 		err := iris.Map{

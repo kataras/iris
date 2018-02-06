@@ -267,7 +267,8 @@ Follow the examples below,
 - [Single](subdomains/single/main.go)
 - [Multi](subdomains/multi/main.go)
 - [Wildcard](subdomains/wildcard/main.go)
-- [WWW](subdomains/www/main.go) 
+- [WWW](subdomains/www/main.go)
+- [Redirect fast](subdomains/redirect/main.go)
 
 ### Convert `http.Handler/HandlerFunc`
 
@@ -293,7 +294,7 @@ Follow the examples below,
 - [The `url` tmpl func](view/template_html_4/main.go)
 - [Inject Data Between Handlers](view/context-view-data/main.go)
 - [Embedding Templates Into App Executable File](view/embedding-templates-into-app/main.go)
-
+- [Write to a custom `io.Writer`](view/write-to)
 
 You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [hero templates](https://github.com/shiyanhui/hero/hero) files too, simply by using the `context#ResponseWriter`, take a look at the [http_responsewriter/quicktemplate](http_responsewriter/quicktemplate) and [http_responsewriter/herotemplate](http_responsewriter/herotemplate) examples.
 
@@ -381,6 +382,7 @@ The `httptest` package is your way for end-to-end HTTP testing, it uses the http
 iris cache library lives on its own [package](https://github.com/kataras/iris/tree/master/cache).
 
 - [Simple](cache/simple/main.go)
+- [Client-Side (304)](cache/client-side/main.go) - part of the iris context core
 
 > You're free to use your own favourite caching package if you'd like so.
 

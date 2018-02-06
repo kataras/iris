@@ -111,6 +111,14 @@ func NewAPIBuilder() *APIBuilder {
 	return api
 }
 
+// GetRelPath returns the current party's relative path.
+// i.e:
+// if r := app.Party("/users"), then the `r.GetRelPath()` is the "/users".
+// if r := app.Party("www.") or app.Subdomain("www") then the `r.GetRelPath()` is the "www.".
+func (api *APIBuilder) GetRelPath() string {
+	return api.relativePath
+}
+
 // GetReport returns an error may caused by party's methods.
 func (api *APIBuilder) GetReport() error {
 	return api.reporter.Return()
@@ -292,7 +300,7 @@ func (api *APIBuilder) PartyFunc(relativePath string, partyBuilderFunc func(p Pa
 // this specific "subdomain".
 //
 // If called from a child party then the subdomain will be prepended to the path instead of appended.
-// So if app.Subdomain("admin.").Subdomain("panel.") then the result is: "panel.admin.".
+// So if app.Subdomain("admin").Subdomain("panel") then the result is: "panel.admin.".
 func (api *APIBuilder) Subdomain(subdomain string, middleware ...context.Handler) Party {
 	if api.relativePath == SubdomainWildcardIndicator {
 		// cannot concat wildcard subdomain with something else
@@ -300,6 +308,12 @@ func (api *APIBuilder) Subdomain(subdomain string, middleware ...context.Handler
 			api.relativePath, subdomain)
 		return api
 	}
+	if l := len(subdomain); l < 1 {
+		return api
+	} else if subdomain[l-1] != '.' {
+		subdomain += "."
+	}
+
 	return api.Party(subdomain, middleware...)
 }
 
@@ -615,7 +629,6 @@ func (api *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
 		return api.Favicon(path.Join(favPath, "favicon.ico"))
 	}
 
-	cType := TypeByFilename(favPath)
 	// copy the bytes here in order to cache and not read the ico on each request.
 	cacheFav := make([]byte, fi.Size())
 	if _, err = f.Read(cacheFav); err != nil {
@@ -627,25 +640,14 @@ func (api *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
 			Format(favPath, "favicon: couldn't read the data bytes for file: "+err.Error()))
 		return nil
 	}
-	modtime := ""
+
+	modtime := time.Now()
+	cType := TypeByFilename(favPath)
 	h := func(ctx context.Context) {
-		if modtime == "" {
-			modtime = fi.ModTime().UTC().Format(ctx.Application().ConfigurationReadOnly().GetTimeFormat())
-		}
-		if t, err := time.Parse(ctx.Application().ConfigurationReadOnly().GetTimeFormat(), ctx.GetHeader(ifModifiedSinceHeaderKey)); err == nil && fi.ModTime().Before(t.Add(StaticCacheDuration)) {
-
-			ctx.ResponseWriter().Header().Del(contentTypeHeaderKey)
-			ctx.ResponseWriter().Header().Del(contentLengthHeaderKey)
-			ctx.StatusCode(http.StatusNotModified)
-			return
-		}
-
-		ctx.ResponseWriter().Header().Set(contentTypeHeaderKey, cType)
-		ctx.ResponseWriter().Header().Set(lastModifiedHeaderKey, modtime)
-		ctx.StatusCode(http.StatusOK)
-		if _, err := ctx.Write(cacheFav); err != nil {
-			// ctx.Application().Logger().Infof("error while trying to serve the favicon: %s", err.Error())
+		ctx.ContentType(cType)
+		if _, err := ctx.WriteWithExpiration(cacheFav, modtime); err != nil {
 			ctx.StatusCode(http.StatusInternalServerError)
+			ctx.Application().Logger().Debugf("while trying to serve the favicon: %s", err.Error())
 		}
 	}
 
@@ -684,16 +686,6 @@ func (api *APIBuilder) StaticWeb(requestPath string, systemPath string) *Route {
 
 	handler := func(ctx context.Context) {
 		h(ctx)
-		if ctx.GetStatusCode() >= 200 && ctx.GetStatusCode() < 400 {
-			// re-check the content type here for any case,
-			// although the new code does it automatically but it's good to have it here.
-			if _, exists := ctx.ResponseWriter().Header()["Content-Type"]; !exists {
-				if fname := ctx.Params().Get(paramName); fname != "" {
-					cType := TypeByFilename(fname)
-					ctx.ContentType(cType)
-				}
-			}
-		}
 	}
 
 	requestPath = joinPath(requestPath, WildcardParam(paramName))
@@ -701,7 +693,7 @@ func (api *APIBuilder) StaticWeb(requestPath string, systemPath string) *Route {
 }
 
 // OnErrorCode registers an error http status code
-// based on the "statusCode" >= 400.
+// based on the "statusCode" < 200 || >= 400 (came from `context.StatusCodeNotSuccessful`).
 // The handler is being wrapepd by a generic
 // handler which will try to reset
 // the body if recorder was enabled
@@ -716,55 +708,16 @@ func (api *APIBuilder) OnErrorCode(statusCode int, handlers ...context.Handler) 
 }
 
 // OnAnyErrorCode registers a handler which called when error status code written.
-// Same as `OnErrorCode` but registers all http error codes.
-// See: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
+// Same as `OnErrorCode` but registers all http error codes based on the `context.StatusCodeNotSuccessful`
+// which defaults to < 200 || >= 400 for an error code, any previous error code will be overridden,
+// so call it first if you want to use any custom handler for a specific error status code.
+//
+// Read more at: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
 func (api *APIBuilder) OnAnyErrorCode(handlers ...context.Handler) {
-	// we could register all >=400 and <=511 but this way
-	// could override custom status codes that iris developers can register for their
-	//  web apps whenever needed.
-	// There fore these are the hard coded http error statuses:
-	var errStatusCodes = []int{
-		http.StatusBadRequest,
-		http.StatusUnauthorized,
-		http.StatusPaymentRequired,
-		http.StatusForbidden,
-		http.StatusNotFound,
-		http.StatusMethodNotAllowed,
-		http.StatusNotAcceptable,
-		http.StatusProxyAuthRequired,
-		http.StatusRequestTimeout,
-		http.StatusConflict,
-		http.StatusGone,
-		http.StatusLengthRequired,
-		http.StatusPreconditionFailed,
-		http.StatusRequestEntityTooLarge,
-		http.StatusRequestURITooLong,
-		http.StatusUnsupportedMediaType,
-		http.StatusRequestedRangeNotSatisfiable,
-		http.StatusExpectationFailed,
-		http.StatusTeapot,
-		http.StatusUnprocessableEntity,
-		http.StatusLocked,
-		http.StatusFailedDependency,
-		http.StatusUpgradeRequired,
-		http.StatusPreconditionRequired,
-		http.StatusTooManyRequests,
-		http.StatusRequestHeaderFieldsTooLarge,
-		http.StatusUnavailableForLegalReasons,
-		http.StatusInternalServerError,
-		http.StatusNotImplemented,
-		http.StatusBadGateway,
-		http.StatusServiceUnavailable,
-		http.StatusGatewayTimeout,
-		http.StatusHTTPVersionNotSupported,
-		http.StatusVariantAlsoNegotiates,
-		http.StatusInsufficientStorage,
-		http.StatusLoopDetected,
-		http.StatusNotExtended,
-		http.StatusNetworkAuthenticationRequired}
-
-	for _, statusCode := range errStatusCodes {
-		api.OnErrorCode(statusCode, handlers...)
+	for code := 100; code <= 511; code++ {
+		if context.StatusCodeNotSuccessful(code) {
+			api.OnErrorCode(code, handlers...)
+		}
 	}
 }
 
@@ -777,16 +730,20 @@ func (api *APIBuilder) FireErrorCode(ctx context.Context) {
 	api.errorCodeHandlers.Fire(ctx)
 }
 
-// Layout oerrides the parent template layout with a more specific layout for this Party
-// returns this Party, to continue as normal
+// Layout overrides the parent template layout with a more specific layout for this Party.
+// It returns the current Party.
+//
+// The "tmplLayoutFile" should be a relative path to the templates dir.
 // Usage:
+//
 // app := iris.New()
+// app.RegisterView(iris.$VIEW_ENGINE("./views", ".$extension"))
 // my := app.Party("/my").Layout("layouts/mylayout.html")
-// 	{
-// 		my.Get("/", func(ctx context.Context) {
-// 			ctx.MustRender("page1.html", nil)
-// 		})
-// 	}
+// 	my.Get("/", func(ctx iris.Context) {
+// 		ctx.View("page1.html")
+// 	})
+//
+// Examples: https://github.com/kataras/iris/tree/master/_examples/view
 func (api *APIBuilder) Layout(tmplLayoutFile string) Party {
 	api.Use(func(ctx context.Context) {
 		ctx.ViewLayout(tmplLayoutFile)
@@ -797,14 +754,14 @@ func (api *APIBuilder) Layout(tmplLayoutFile string) Party {
 }
 
 // joinHandlers uses to create a copy of all Handlers and return them in order to use inside the node
-func joinHandlers(Handlers1 context.Handlers, Handlers2 context.Handlers) context.Handlers {
-	nowLen := len(Handlers1)
-	totalLen := nowLen + len(Handlers2)
-	// create a new slice of Handlers in order to store all handlers, the already handlers(Handlers) and the new
+func joinHandlers(h1 context.Handlers, h2 context.Handlers) context.Handlers {
+	nowLen := len(h1)
+	totalLen := nowLen + len(h2)
+	// create a new slice of Handlers in order to merge the "h1" and "h2"
 	newHandlers := make(context.Handlers, totalLen)
-	//copy the already Handlers to the just created
-	copy(newHandlers, Handlers1)
-	//start from there we finish, and store the new Handlers too
-	copy(newHandlers[nowLen:], Handlers2)
+	// copy the already Handlers to the just created
+	copy(newHandlers, h1)
+	// start from there we finish, and store the new Handlers too
+	copy(newHandlers[nowLen:], h2)
 	return newHandlers
 }

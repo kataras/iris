@@ -42,6 +42,7 @@ func New(c Config) context.Handler {
 		config.Realm = c.Realm
 	}
 	config.Users = c.Users
+	config.Expires = c.Expires
 
 	b := &basicAuthMiddleware{config: config}
 	b.init()

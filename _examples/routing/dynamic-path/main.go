@@ -98,7 +98,7 @@ func main() {
 	//
 	// {param:string equal(iris)} , "iris" will be the argument here:
 	// app.Macros().String.RegisterFunc("equal", func(argument string) func(paramValue string) bool {
-	//  return func(paramValue string){ return argument == paramValue }
+	// 	return func(paramValue string) bool { return argument == paramValue }
 	// })
 
 	// you can use the "string" type which is valid for a single path parameter that can be anything.
