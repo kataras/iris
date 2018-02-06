@@ -187,6 +187,41 @@ func Default() *Application {
 	return app
 }
 
+// WWW creates and returns a "www." subdomain.
+// The difference from `app.Subdomain("www")` or `app.Party("www.")` is that the `app.WWW()` method
+// wraps the router so all http(s)://mydomain.com will be redirect to http(s)://www.mydomain.com.
+// Other subdomains can be registered using the app: `sub := app.Subdomain("mysubdomain")`,
+// child subdomains can be registered using the www := app.WWW(); www.Subdomain("wwwchildSubdomain").
+func (app *Application) WWW() router.Party {
+	return app.SubdomainRedirect(app, app.Subdomain("www"))
+}
+
+// SubdomainRedirect registers a router wrapper which
+// redirects(StatusMovedPermanently) a (sub)domain to another subdomain or to the root domain as fast as possible,
+// before the router's try to execute route's handler(s).
+//
+// It receives two arguments, they are the from and to/target locations,
+// 'from' can be a wildcard subdomain as well (app.WildcardSubdomain())
+// 'to' is not allowed to be a wildcard for obvious reasons,
+// 'from' can be the root domain(app) when the 'to' is not the root domain and visa-versa.
+//
+// Usage:
+// www := app.Subdomain("www") <- same as app.Party("www.")
+// app.SubdomainRedirect(app, www)
+// This will redirect all http(s)://mydomain.com/%anypath% to http(s)://www.mydomain.com/%anypath%.
+//
+// One or more subdomain redirects can be used to the same app instance.
+//
+// If you need more information about this implementation then you have to navigate through
+// the `core/router#NewSubdomainRedirectWrapper` function instead.
+//
+// Example: https://github.com/kataras/iris/tree/master/_examples/subdomains/redirect
+func (app *Application) SubdomainRedirect(from, to router.Party) router.Party {
+	sd := router.NewSubdomainRedirectWrapper(app.ConfigurationReadOnly().GetVHost, from.GetRelPath(), to.GetRelPath())
+	app.WrapRouter(sd)
+	return to
+}
+
 // Configure can called when modifications to the framework instance needed.
 // It accepts the framework instance
 // and returns an error which if it's not nil it's printed to the logger.
@@ -325,11 +360,32 @@ var (
 	//
 	// A shortcut for the `handlerconv#FromStd`.
 	FromStd = handlerconv.FromStd
-	// Cache is a middleware providing cache functionalities
+	// Cache is a middleware providing server-side cache functionalities
 	// to the next handlers, can be used as: `app.Get("/", iris.Cache, aboutHandler)`.
+	// It should be used after Static methods.
+	// See `context#Cache304` for an alternative, faster way.
 	//
 	// Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/#caching
 	Cache = cache.Handler
+	// Cache304 sends a `StatusNotModified` (304) whenever
+	// the "If-Modified-Since" request header (time) is before the
+	// time.Now() + expiresEvery (always compared to their UTC values).
+	// Use this, which is a shortcut of the, `context#Cache304` instead of the "github.com/kataras/iris/cache" or iris.Cache
+	// for better performance.
+	// Clients that are compatible with the http RCF (all browsers are and tools like postman)
+	// will handle the caching.
+	// The only disadvantage of using that instead of server-side caching
+	// is that this method will send a 304 status code instead of 200,
+	// So, if you use it side by side with other micro services
+	// you have to check for that status code as well for a valid response.
+	//
+	// Developers are free to extend this method's behavior
+	// by watching system directories changes manually and use of the `ctx.WriteWithExpiration`
+	// with a "modtime" based on the file modified date,
+	// simillary to the `StaticWeb`(StaticWeb sends an OK(200) and browser disk caching instead of 304).
+	//
+	// A shortcut of the `context#Cache304`.
+	Cache304 = context.Cache304
 )
 
 // SPA  accepts an "assetHandler" which can be the result of an
@@ -670,7 +726,7 @@ var ErrServerClosed = http.ErrServerClosed
 // `Listener`, `Server`, `Addr`, `TLS`, `AutoTLS` and `Raw`.
 func (app *Application) Run(serve Runner, withOrWithout ...Configurator) error {
 	// first Build because it doesn't need anything from configuration,
-	//  this give the user the chance to modify the router inside a configurator as well.
+	// this gives the user the chance to modify the router inside a configurator as well.
 	if err := app.Build(); err != nil {
 		return errors.PrintAndReturnErrors(err, app.logger.Errorf)
 	}

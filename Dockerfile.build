@@ -1,4 +1,4 @@
-FROM golang:1.9-alpine
+FROM golang:1.9.3-alpine
 
 RUN apk update && apk upgrade && apk add --no-cache bash git
 RUN go get github.com/iris-contrib/cloud-native-go

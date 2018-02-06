@@ -9,7 +9,7 @@ import (
 
 func TestCasbinWrapper(t *testing.T) {
 	app := newApp()
-	e := httptest.New(t, app, httptest.Debug(true))
+	e := httptest.New(t, app)
 
 	type ttcasbin struct {
 		username string
@@ -43,7 +43,6 @@ func TestCasbinWrapper(t *testing.T) {
 		check(e, tt.method, tt.path, tt.username, tt.status)
 	}
 
-	println("ADMIN ROLES")
 	ttAdmin := []ttcasbin{
 		{"cathrin", "/dataset1/item", "GET", 200},
 		{"cathrin", "/dataset1/item", "POST", 200},
@@ -57,7 +56,6 @@ func TestCasbinWrapper(t *testing.T) {
 		check(e, tt.method, tt.path, tt.username, tt.status)
 	}
 
-	println("ADMIN ROLE FOR cathrin DELETED")
 	Enforcer.DeleteRolesForUser("cathrin")
 
 	ttAdminDeleted := []ttcasbin{

@@ -256,6 +256,28 @@ func (s *Server) join(roomName string, connID string) {
 	s.rooms[roomName] = append(s.rooms[roomName], connID)
 }
 
+// IsJoined reports if a specific room has a specific connection into its values.
+// First parameter is the room name, second is the connection's id.
+//
+// It returns true when the "connID" is joined to the "roomName".
+func (s *Server) IsJoined(roomName string, connID string) bool {
+	s.mu.RLock()
+	room := s.rooms[roomName]
+	s.mu.RUnlock()
+
+	if room == nil {
+		return false
+	}
+
+	for _, connid := range room {
+		if connID == connid {
+			return true
+		}
+	}
+
+	return false
+}
+
 // LeaveAll kicks out a connection from ALL of its joined rooms
 func (s *Server) LeaveAll(connID string) {
 	s.mu.Lock()

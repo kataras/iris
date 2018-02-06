@@ -7,6 +7,10 @@ import (
 	"github.com/kataras/iris/context"
 )
 
+func statusCodeSuccessful(statusCode int) bool {
+	return !context.StatusCodeNotSuccessful(statusCode)
+}
+
 // ErrorCodeHandler is the entry
 // of the list of all http error code handlers.
 type ErrorCodeHandler struct {
@@ -21,7 +25,7 @@ type ErrorCodeHandler struct {
 func (ch *ErrorCodeHandler) Fire(ctx context.Context) {
 	// if we can reset the body
 	if w, ok := ctx.IsRecording(); ok {
-		if w.StatusCode() < 400 { // if not an error status code
+		if statusCodeSuccessful(w.StatusCode()) { // if not an error status code
 			w.WriteHeader(ch.StatusCode) // then set it manually here, otherwise it should be setted via ctx.StatusCode(...)
 		}
 		// reset if previous content and it's recorder, keep the status code.
@@ -109,14 +113,14 @@ func (s *ErrorCodeHandlers) Get(statusCode int) *ErrorCodeHandler {
 }
 
 // Register registers an error http status code
-// based on the "statusCode" >= 400.
+// based on the "statusCode" < 200 || >= 400 (`context.StatusCodeNotSuccessful`).
 // The handler is being wrapepd by a generic
 // handler which will try to reset
 // the body if recorder was enabled
 // and/or disable the gzip if gzip response recorder
 // was active.
 func (s *ErrorCodeHandlers) Register(statusCode int, handlers ...context.Handler) *ErrorCodeHandler {
-	if statusCode < 400 {
+	if statusCodeSuccessful(statusCode) {
 		return nil
 	}
 
@@ -145,7 +149,7 @@ func (s *ErrorCodeHandlers) Register(statusCode int, handlers ...context.Handler
 // then it creates & registers a new trivial handler on the-fly.
 func (s *ErrorCodeHandlers) Fire(ctx context.Context) {
 	statusCode := ctx.GetStatusCode()
-	if statusCode < 400 {
+	if statusCodeSuccessful(statusCode) {
 		return
 	}
 	ch := s.Get(statusCode)

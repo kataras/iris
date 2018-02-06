@@ -17,18 +17,22 @@
 
 **Πώς να αναβαθμίσετε**: Ανοίξτε την γραμμή εντολών σας και εκτελέστε αυτήν την εντολή: `go get -u github.com/kataras/iris`  ή αφήστε το αυτόματο updater να το κάνει αυτό για σας.
 
-# Tu, 16 Jenuary 2018 | v10.0.2
+# Tu, 06 February 2018 | v10.1.0
+
+This history entry is not yet translated to Chinese. Please read [the english version instead](https://github.com/kataras/iris/blob/master/HISTORY.md#tu-06-february-2018--v1010).
+
+# Tu, 16 January 2018 | v10.0.2
 
 ## Ασφάλεια | `iris.AutoTLS`
 
-**Όλοι οι servers πρέπει να αναβαθμιστούν σε αυτήν την έκδοση**, περιέχει διορθώσεις για το _tls-sni challenge_ το οποίο απενεργοποιήθηκε μερικές μέρες πριν από το letsencrypt.org το οποίο προκάλεσε σχεδόν όλα τα golang https-ενεργποιημένα servers να να μην είναι σε θέση να λειτουργήσουν, έτσι υποστήριξη για το _http-01 challenge_ προστέθηκε σαν αναπλήρωση. Πλέον ο διακομιστής δοκιμάζει όλες τις διαθέσιμες προκλήσεις(challeneges) letsencrypt.
+**Όλοι οι servers πρέπει να αναβαθμιστούν σε αυτήν την έκδοση**, περιέχει διορθώσεις για το _tls-sni challenge_ το οποίο απενεργοποιήθηκε μερικές μέρες πριν από το letsencrypt.org το οποίο προκάλεσε σχεδόν όλα τα golang https-ενεργποιημένα servers να να μην είναι σε θέση να λειτουργήσουν, έτσι υποστήριξη για το _http-01 challenge_ προστέθηκε σαν αναπλήρωση. Πλέον ο διακομιστής δοκιμάζει όλες τις διαθέσιμες προκλήσεις(challenges) letsencrypt.
 
 Διαβάστε περισσότερα:
 
 - https://letsencrypt.status.io/pages/incident/55957a99e800baa4470002da/5a55777ed9a9c1024c00b241
 - https://github.com/golang/crypto/commit/13931e22f9e72ea58bb73048bc752b48c6d4d4ac
 
-# Mo, 15 Jenuary 2018 | v10.0.1
+# Mo, 15 January 2018 | v10.0.1
 
 - διόρθωση του cache handler που δεν δούλευε όπως έπρεπε όταν γινόταν εγγραφή σε πάνω από ένα handler, παλιότερα ήταν ένα cache handler προς ένα route handler, τώρα το ίδιο handler μπορεί να καταχωρηθεί σε όσα route handlers θέλετε https://github.com/kataras/iris/pull/852, όπως είχε αναφερθεί στο https://github.com/kataras/iris/issues/850
 - συγχώνευση PR https://github.com/kataras/iris/pull/862
@@ -54,7 +58,7 @@
 1. [A Todo MVC Application using Iris and Vue.js](https://hackernoon.com/a-todo-mvc-application-using-iris-and-vue-js-5019ff870064)
 2. [A Hasura starter project with a ready to deploy Golang hello-world web app with IRIS](bit.ly/2lmKaAZ)
 
-# Mo, 01 Jenuary 2018 | v10.0.0
+# Mo, 01 January 2018 | v10.0.0
 
 Πρέπει να ευχαριστήσουμε την [Κυρία Diana](https://www.instagram.com/merry.dii/) για το νέο μας [λογότυπο](https://iris-go.com/images/icon.svg)!
 

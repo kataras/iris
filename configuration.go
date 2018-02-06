@@ -330,10 +330,16 @@ func WithPostMaxMemory(limit int64) Configurator {
 // WithRemoteAddrHeader enables or adds a new or existing request header name
 // that can be used to validate the client's real IP.
 //
-// Existing values are:
-// "X-Real-Ip":             false,
-// "X-Forwarded-For":       false,
-// "CF-Connecting-IP": false
+// By-default no "X-" header is consired safe to be used for retrieving the
+// client's IP address, because those headers can manually change by
+// the client. But sometimes are useful e.g., when behind a proxy
+// you want to enable the "X-Forwarded-For" or when cloudflare
+// you want to enable the "CF-Connecting-IP", inneed you
+// can allow the `ctx.RemoteAddr()` to use any header
+// that the client may sent.
+//
+// Defaults to an empty map but an example usage is:
+// WithRemoteAddrHeader("X-Forwarded-For")
 //
 // Look `context.RemoteAddr()` for more.
 func WithRemoteAddrHeader(headerName string) Configurator {
@@ -346,12 +352,12 @@ func WithRemoteAddrHeader(headerName string) Configurator {
 }
 
 // WithoutRemoteAddrHeader disables an existing request header name
-// that can be used to validate the client's real IP.
+// that can be used to validate and parse the client's real IP.
 //
-// Existing values are:
-// "X-Real-Ip":             false,
-// "X-Forwarded-For":       false,
-// "CF-Connecting-IP": false
+//
+// Keep note that RemoteAddrHeaders is already defaults to an empty map
+// so you don't have to call this Configurator if you didn't
+// add allowed headers via configuration or via `WithRemoteAddrHeader` before.
 //
 // Look `context.RemoteAddr()` for more.
 func WithoutRemoteAddrHeader(headerName string) Configurator {
@@ -454,13 +460,14 @@ type Configuration struct {
 	DisableBodyConsumptionOnUnmarshal bool `json:"disableBodyConsumptionOnUnmarshal,omitempty" yaml:"DisableBodyConsumptionOnUnmarshal" toml:"DisableBodyConsumptionOnUnmarshal"`
 
 	// DisableAutoFireStatusCode if true then it turns off the http error status code handler automatic execution
-	// from "context.StatusCode(>=400)" and instead app should manually call the "context.FireStatusCode(>=400)".
+	// from (`context.StatusCodeNotSuccessful`, defaults to < 200 || >= 400).
+	// If that is false then for a direct error firing, then call the "context#FireStatusCode(statusCode)" manually.
 	//
 	// By-default a custom http error handler will be fired when "context.StatusCode(code)" called,
-	// code should be >=400 in order to be received as an "http error handler".
+	// code should be equal with the result of the the `context.StatusCodeNotSuccessful` in order to be received as an "http error handler".
 	//
 	// Developer may want this option to setted as true in order to manually call the
-	// error handlers when needed via "context.FireStatusCode(>=400)".
+	// error handlers when needed via "context#FireStatusCode(< 200 || >= 400)".
 	// HTTP Custom error handlers are being registered via app.OnErrorCode(code, handler)".
 	//
 	// Defaults to false.
@@ -511,13 +518,22 @@ type Configuration struct {
 	//
 	// Defaults to "iris.viewData"
 	ViewDataContextKey string `json:"viewDataContextKey,omitempty" yaml:"ViewDataContextKey" toml:"ViewDataContextKey"`
-	// RemoteAddrHeaders returns the allowed request headers names
+	// RemoteAddrHeaders are the allowed request headers names
 	// that can be valid to parse the client's IP based on.
+	// By-default no "X-" header is consired safe to be used for retrieving the
+	// client's IP address, because those headers can manually change by
+	// the client. But sometimes are useful e.g., when behind a proxy
+	// you want to enable the "X-Forwarded-For" or when cloudflare
+	// you want to enable the "CF-Connecting-IP", inneed you
+	// can allow the `ctx.RemoteAddr()` to use any header
+	// that the client may sent.
 	//
-	// Defaults to:
-	// "X-Real-Ip":             false,
-	// "X-Forwarded-For":       false,
-	// "CF-Connecting-IP": false
+	// Defaults to an empty map but an example usage is:
+	// RemoteAddrHeaders {
+	//	"X-Real-Ip":             true,
+	//  "X-Forwarded-For":       true,
+	// 	"CF-Connecting-IP": 	 true,
+	//	}
 	//
 	// Look `context.RemoteAddr()` for more.
 	RemoteAddrHeaders map[string]bool `json:"remoteAddrHeaders,omitempty" yaml:"RemoteAddrHeaders" toml:"RemoteAddrHeaders"`
@@ -637,11 +653,20 @@ func (c Configuration) GetViewDataContextKey() string {
 
 // GetRemoteAddrHeaders returns the allowed request headers names
 // that can be valid to parse the client's IP based on.
+// By-default no "X-" header is consired safe to be used for retrieving the
+// client's IP address, because those headers can manually change by
+// the client. But sometimes are useful e.g., when behind a proxy
+// you want to enable the "X-Forwarded-For" or when cloudflare
+// you want to enable the "CF-Connecting-IP", inneed you
+// can allow the `ctx.RemoteAddr()` to use any header
+// that the client may sent.
 //
-// Defaults to:
-// "X-Real-Ip":             false,
-// "X-Forwarded-For":       false,
-// "CF-Connecting-IP": false
+// Defaults to an empty map but an example usage is:
+// RemoteAddrHeaders {
+//	"X-Real-Ip":             true,
+//  "X-Forwarded-For":       true,
+// 	"CF-Connecting-IP": 	 true,
+//	}
 //
 // Look `context.RemoteAddr()` for more.
 func (c Configuration) GetRemoteAddrHeaders() map[string]bool {
@@ -735,7 +760,7 @@ func WithConfiguration(c Configuration) Configurator {
 
 		if v := c.RemoteAddrHeaders; len(v) > 0 {
 			if main.RemoteAddrHeaders == nil {
-				main.RemoteAddrHeaders = make(map[string]bool)
+				main.RemoteAddrHeaders = make(map[string]bool, len(v))
 			}
 			for key, value := range v {
 				main.RemoteAddrHeaders[key] = value
@@ -744,7 +769,7 @@ func WithConfiguration(c Configuration) Configurator {
 
 		if v := c.Other; len(v) > 0 {
 			if main.Other == nil {
-				main.Other = make(map[string]interface{})
+				main.Other = make(map[string]interface{}, len(v))
 			}
 			for key, value := range v {
 				main.Other[key] = value
@@ -777,12 +802,8 @@ func DefaultConfiguration() Configuration {
 		TranslateLanguageContextKey: "iris.language",
 		ViewLayoutContextKey:        "iris.viewLayout",
 		ViewDataContextKey:          "iris.viewData",
-		RemoteAddrHeaders: map[string]bool{
-			"X-Real-Ip":        false,
-			"X-Forwarded-For":  false,
-			"CF-Connecting-IP": false,
-		},
-		EnableOptimizations: false,
-		Other:               make(map[string]interface{}),
+		RemoteAddrHeaders:           make(map[string]bool),
+		EnableOptimizations:         false,
+		Other:                       make(map[string]interface{}),
 	}
 }
