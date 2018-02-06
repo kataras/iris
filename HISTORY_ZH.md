@@ -28,7 +28,7 @@
 详情：
 
 - 更新上游 vendor/golang/crypto 包到最新版本, 我们总是跟进依赖关系的任何修复和有意义的更新.
-- [不在gzip响应的WriteString和Writef上强制设置内容类型（如果已经存在的话）](https://github.com/kataras/iris/commit/af79aad11932f1a4fcbf7ebe28274b96675d0000)
+- [改进：不在gzip响应的WriteString和Writef上强制设置内容类型（如果已经存在的话）](https://github.com/kataras/iris/commit/af79aad11932f1a4fcbf7ebe28274b96675d0000)
 - [新增：websocket/Connection#IsJoined](https://github.com/kataras/iris/commit/cb9e30948c8f1dd099f5168218d110765989992e)
 - [修复：#897](https://github.com/kataras/iris/commit/21cb572b638e82711910745cfae3c52d836f01f9)
 - [新增：context#StatusCodeNotSuccessful 变量用来定制 rfc2616-sec10](https://github.com/kataras/iris/commit/c56b7a3f04d953a264dfff15dadd2b4407d62a6f)
