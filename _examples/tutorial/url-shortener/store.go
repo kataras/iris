@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 
-	"github.com/boltdb/bolt"
+	"github.com/coreos/bbolt"
 )
 
 // Panic panics, change it if you don't want to panic on critical INITIALIZE-ONLY-ERRORS
