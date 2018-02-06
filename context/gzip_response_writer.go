@@ -117,7 +117,9 @@ func (w *GzipResponseWriter) Write(contents []byte) (int, error) {
 func (w *GzipResponseWriter) Writef(format string, a ...interface{}) (n int, err error) {
 	n, err = fmt.Fprintf(w, format, a...)
 	if err == nil {
-		w.ResponseWriter.Header().Set(contentTypeHeaderKey, ContentTextHeaderValue)
+		if w.ResponseWriter.Header()[contentTypeHeaderKey] == nil {
+			w.ResponseWriter.Header().Set(contentTypeHeaderKey, ContentTextHeaderValue)
+		}
 	}
 
 	return
@@ -128,7 +130,10 @@ func (w *GzipResponseWriter) Writef(format string, a ...interface{}) (n int, err
 func (w *GzipResponseWriter) WriteString(s string) (n int, err error) {
 	n, err = w.Write([]byte(s))
 	if err == nil {
-		w.ResponseWriter.Header().Set(contentTypeHeaderKey, ContentTextHeaderValue)
+		if w.ResponseWriter.Header()[contentTypeHeaderKey] == nil {
+			w.ResponseWriter.Header().Set(contentTypeHeaderKey, ContentTextHeaderValue)
+		}
+
 	}
 	return
 }
