@@ -17,9 +17,28 @@
 
 **如何升级**: 打开命令行执行以下命令: `go get -u github.com/kataras/iris` 或者等待自动更新。
 
-# Tu, 06 February 2018 | v10.1.0
+# 2018 2月6号 | v10.1.0 版本更新
 
-This history entry is not yet translated to Chinese. Please read [the english version instead](https://github.com/kataras/iris/blob/master/HISTORY.md#tu-06-february-2018--v1010).
+新特性：
+
+- 多级域名跳转, 相关示例 [here](https://github.com/kataras/iris/blob/master/_examples/subdomains/redirect/main.go)
+- 缓存中间件携带 `304` 状态码, 缓存期间的请求，服务器只响应状态, 相关示例 [here](https://github.com/kataras/iris/blob/master/_examples/cache/client-side/main.go)
+- `websocket/Connection#IsJoined(roomName string)` 新增方法，检查用户是否加入房间。 未加入的连接不能发送消息，此检查是可选的.
+
+详情：
+
+- 更新上游 vendor/golang/crypto 包到最新版本, 我们总是跟进依赖关系的任何修复和有意义的更新.
+- [改进：不在gzip响应的WriteString和Writef上强制设置内容类型（如果已经存在的话）](https://github.com/kataras/iris/commit/af79aad11932f1a4fcbf7ebe28274b96675d0000)
+- [新增：websocket/Connection#IsJoined](https://github.com/kataras/iris/commit/cb9e30948c8f1dd099f5168218d110765989992e)
+- [修复：#897](https://github.com/kataras/iris/commit/21cb572b638e82711910745cfae3c52d836f01f9)
+- [新增：context#StatusCodeNotSuccessful 变量用来定制 rfc2616-sec10](https://github.com/kataras/iris/commit/c56b7a3f04d953a264dfff15dadd2b4407d62a6f)
+- [修复：示例 routing/dynamic-path/main.go#L101](https://github.com/kataras/iris/commit/0fbf1d45f7893cb1393759b7362444f3d381d182)
+- [新增：缓存中间件 `iris.Cache304`](https://github.com/kataras/iris/commit/1722355870174cecbc12f7beff8514b058b3b912)
+- [修复：示例  csrf](https://github.com/kataras/iris/commit/a39e3d7d6cf528e51e6c7e32a884a8d9f2fadc0b)
+- [取消：Configuration.RemoteAddrHeaders 默认值](https://github.com/kataras/iris/commit/47108dc5a147a8b23de61bef86fe9327f0781396)
+- [新增：vscode 扩展链接和徽章](https://github.com/kataras/iris/commit/6f594c0a7c641cc98bd683163fffbf5fa5fc8de6)
+- [新增：`app.View` 示例 用于解析和编写HTTP之外的模板（类似于上下文＃视图)](_examples/view/write-to)
+- [新增：支持多级域名跳转](https://github.com/kataras/iris/commit/12d7df113e611a75088c2a72774dab749d2c7685).
 
 # 2018 1月16号 | v10.0.2 版本更新
 
