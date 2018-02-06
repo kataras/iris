@@ -709,7 +709,7 @@ func (api *APIBuilder) OnErrorCode(statusCode int, handlers ...context.Handler) 
 
 // OnAnyErrorCode registers a handler which called when error status code written.
 // Same as `OnErrorCode` but registers all http error codes based on the `context.StatusCodeNotSuccessful`
-// which defaults to < 200 || >= 400 for an error code, any previos error code will be overriden,
+// which defaults to < 200 || >= 400 for an error code, any previous error code will be overridden,
 // so call it first if you want to use any custom handler for a specific error status code.
 //
 // Read more at: http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
