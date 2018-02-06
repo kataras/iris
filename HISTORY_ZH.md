@@ -35,7 +35,7 @@
 - [修复：示例 routing/dynamic-path/main.go#L101](https://github.com/kataras/iris/commit/0fbf1d45f7893cb1393759b7362444f3d381d182)
 - [新增：缓存中间件 `iris.Cache304`](https://github.com/kataras/iris/commit/1722355870174cecbc12f7beff8514b058b3b912)
 - [修复：示例  csrf](https://github.com/kataras/iris/commit/a39e3d7d6cf528e51e6c7e32a884a8d9f2fadc0b)
-- [un-default the Configuration.RemoteAddrHeaders](https://github.com/kataras/iris/commit/47108dc5a147a8b23de61bef86fe9327f0781396)
+- [取消：Configuration.RemoteAddrHeaders 默认值](https://github.com/kataras/iris/commit/47108dc5a147a8b23de61bef86fe9327f0781396)
 - [新增：vscode 扩展链接和徽章](https://github.com/kataras/iris/commit/6f594c0a7c641cc98bd683163fffbf5fa5fc8de6)
 - [新增：`app.View` 示例 用于解析和编写HTTP之外的模板（类似于上下文＃视图)](_examples/view/write-to)
 - [新增：支持多级域名跳转](https://github.com/kataras/iris/commit/12d7df113e611a75088c2a72774dab749d2c7685).
