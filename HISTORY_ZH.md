@@ -17,6 +17,10 @@
 
 **如何升级**: 打开命令行执行以下命令: `go get -u github.com/kataras/iris` 或者等待自动更新。
 
+# Th, 08 February 2018 | v10.2.0
+
+This history entry is not yet translated to Chinese. Please read [the english version instead](https://github.com/kataras/iris/blob/master/HISTORY.md#th-08-february-2018--v1020).
+
 # 2018 2月6号 | v10.1.0 版本更新
 
 新特性：
