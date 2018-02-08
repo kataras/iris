@@ -118,7 +118,7 @@ func TestMiddlewareByUseDoneAndUseGlobalDef(t *testing.T) {
 	testResponse(t, app, "/mypath")
 }
 
-func TestMiddlewareByUseGlobalUseAndDoneDef(t *testing.T) {
+func TestMiddlewareByUseGlobalUseAndDoneGlobalDef(t *testing.T) {
 	app := iris.New()
 
 	app.UseGlobal(firstUseGlobalHandler)
@@ -127,7 +127,7 @@ func TestMiddlewareByUseGlobalUseAndDoneDef(t *testing.T) {
 
 	app.Get("/mypath", mainHandler)
 
-	app.Done(firstDoneHandler, secondDoneHandler)
+	app.DoneGlobal(firstDoneHandler, secondDoneHandler)
 
 	testResponse(t, app, "/mypath")
 }

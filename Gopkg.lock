@@ -158,7 +158,7 @@
   version = "v1.0.0"
 
 [[projects]]
-  name = "github.com/russross/blackfriday"
+  name = "gopkg.in/russross/blackfriday.v2"
   packages = ["."]
   revision = "cadec560ec52d93835bf2f15bd794700d3a2473b"
   version = "v2.0.0"

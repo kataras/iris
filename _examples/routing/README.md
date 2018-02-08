@@ -383,6 +383,7 @@ import "github.com/kataras/iris"
 
 func main() {
     app := iris.New()
+    // or app.Use(before) and app.Done(after).
     app.Get("/", before, mainHandler, after)
     app.Run(iris.Addr(":8080"))
 }
@@ -433,17 +434,21 @@ import "github.com/kataras/iris"
 
 func main() {
     app := iris.New()
-    // register the "before" handler as the first handler which will be executed
-    // on all domain's routes.
-    // or use the `UseGlobal` to register a middleware which will fire across subdomains.
-    app.Use(before)
-    // register the "after" handler as the last handler which will be executed
-    // after all domain's routes' handler(s).
-    app.Done(after)
 
     // register our routes.
     app.Get("/", indexHandler)
     app.Get("/contact", contactHandler)
+
+    // Order of those calls doesn't matter, `UseGlobal` and `DoneGlobal`
+    // are applied to existing routes and future routes.
+    //
+    // Remember: the `Use` and `Done` are applied to the current party's and its children,
+    // so if we used the `app.Use/Don`e before the routes registration
+    // it would work like UseGlobal/DoneGlobal in this case, because the `app` is the root party.
+    //
+    // See `app.Party/PartyFunc` for more.
+    app.UseGlobal(before)
+    app.DoneGlobal(after)
 
     app.Run(iris.Addr(":8080"))
 }

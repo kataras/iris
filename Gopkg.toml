@@ -55,8 +55,8 @@
   name = "github.com/microcosm-cc/bluemonday"
 
 [[constraint]]
-  name = "github.com/russross/blackfriday"
-  version = "2.0.0"
+  branch = "v2"
+  name = "gopkg.in/russross/blackfriday.v2"
 
 [[constraint]]
   branch = "master"

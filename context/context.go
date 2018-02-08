@@ -26,7 +26,7 @@ import (
 	formbinder "github.com/iris-contrib/formBinder"
 	"github.com/json-iterator/go"
 	"github.com/microcosm-cc/bluemonday"
-	"github.com/russross/blackfriday"
+	"gopkg.in/russross/blackfriday.v2"
 	"gopkg.in/yaml.v2"
 
 	"github.com/kataras/iris/core/errors"
