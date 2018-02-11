@@ -17,6 +17,27 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris` or let the automatic updater do that for you.
 
+# Th, 08 February 2018 | v10.2.0
+
+A new minor version family because it contains a **BREAKING CHANGE** and a new `Party#Reset` function.
+
+### Party#Done behavior change & new Party#DoneGlobal introduced
+
+As correctly pointed out by @likakuli at https://github.com/kataras/iris/issues/901, the old `Done` registered
+handlers globally instead of party's and its children routes, this was not by accident because `Done` was introduced
+before the `UseGlobal` idea and it didn't change for the shake of stability. Now it's time to move on, the new `Done` should be called before the routes that they care about those done handlers and the **new** `DoneGlobal` works like the old `Done`; order doesn't matter and it appends those done handlers
+to the current registered routes and the future, globally (to all subdomains, parties every route in the Application).
+
+The [routing/writing-a-middleware](_examples/routing/writing-a-middleware) examples are updated, read those to understand what's going on, although if you used iris before and you know the vocabulary we use you don't have to, the `DoneGlobal` and `Done` are clearly separated.
+
+### Party#Reset
+
+A new `Party#Reset()` function introduced in order to be able to clear parent's Party's begin and done handlers that are registered via `Use` and `Done` at a previous state, nothing crazy about this, it just clears the `middleware` and `doneHandlers` of the current Party instance, see `core/router#APIBuilder` for more.
+
+### Update your codebase
+
+Just replace all existing `.Done(` with `.DoneGlobal(` using a rich code editor (like the [VSCode](https://marketplace.visualstudio.com/items?itemName=kataras2006.iris)) which supports `find and replace all` and you're ready to Go:)
+
 # Tu, 06 February 2018 | v10.1.0
 
 New Features:

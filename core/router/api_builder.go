@@ -85,10 +85,10 @@ type APIBuilder struct {
 	// even before the `middleware` handlers, and in the same time keep the order
 	// of handlers registration, so the same type of handlers are being called in order.
 	beginGlobalHandlers context.Handlers
-	// the per-party routes registry (useful for `Done` and `UseGlobal` only)
-	apiRoutes []*Route
-	// the per-party done handlers, order
-	// of handlers registration matters.
+
+	// the per-party done handlers, order matters.
+	doneHandlers context.Handlers
+	// global done handlers, order doesn't matter
 	doneGlobalHandlers context.Handlers
 	// the per-party
 	relativePath string
@@ -164,10 +164,8 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 	// global begin handlers -> middleware that are registered before route registration
 	// -> handlers that are passed to this Handle function.
 	routeHandlers := joinHandlers(api.middleware, handlers)
-	// -> done handlers after all
-	if len(api.doneGlobalHandlers) > 0 {
-		routeHandlers = append(routeHandlers, api.doneGlobalHandlers...) // register the done middleware, if any
-	}
+	// -> done handlers
+	routeHandlers = joinHandlers(routeHandlers, api.doneHandlers)
 
 	// here we separate the subdomain and relative path
 	subdomain, path := splitSubdomainAndPath(fullpath)
@@ -178,14 +176,15 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 		return nil
 	}
 
-	// Add UseGlobal Handlers
+	// Add UseGlobal & DoneGlobal Handlers
 	r.use(api.beginGlobalHandlers)
+	r.done(api.doneGlobalHandlers)
 
 	// global
 	api.routes.register(r)
 
 	// per -party, used for done handlers
-	api.apiRoutes = append(api.apiRoutes, r)
+	// api.apiRoutes = append(api.apiRoutes, r)
 
 	return r
 }
@@ -270,6 +269,7 @@ func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) P
 		reporter:            api.reporter,
 		// per-party/children
 		middleware:   middleware,
+		doneHandlers: api.doneHandlers,
 		relativePath: fullpath,
 	}
 }
@@ -379,22 +379,14 @@ func (api *APIBuilder) Use(handlers ...context.Handler) {
 	api.middleware = append(api.middleware, handlers...)
 }
 
-// Done appends to the very end, Handler(s) to the current Party's routes and child routes
-// The difference from .Use is that this/or these Handler(s) are being always running last.
-func (api *APIBuilder) Done(handlers ...context.Handler) {
-	for _, r := range api.routes.routes {
-		r.done(handlers) // append the handlers to the existing routes
-	}
-	// set as done handlers for the next routes as well.
-	api.doneGlobalHandlers = append(api.doneGlobalHandlers, handlers...)
-}
-
-// UseGlobal registers handlers that should run before all routes,
-// including all parties, subdomains
-// and other middleware that were registered before or will be after.
+// UseGlobal registers handlers that should run at the very beginning.
+// It prepends those handler(s) to all routes,
+// including all parties, subdomains.
 // It doesn't care about call order, it will prepend the handlers to all
 // existing routes and the future routes that may being registered.
 //
+// The difference from `.DoneGLobal` is that this/or these Handler(s) are being always running first.
+// Use of `ctx.Next()` of those handler(s) is necessary to call the main handler or the next middleware.
 // It's always a good practise to call it right before the `Application#Run` function.
 func (api *APIBuilder) UseGlobal(handlers ...context.Handler) {
 	for _, r := range api.routes.routes {
@@ -402,6 +394,42 @@ func (api *APIBuilder) UseGlobal(handlers ...context.Handler) {
 	}
 	// set as begin handlers for the next routes as well.
 	api.beginGlobalHandlers = append(api.beginGlobalHandlers, handlers...)
+}
+
+// Done appends to the very end, Handler(s) to the current Party's routes and child routes.
+//
+// Call order matters, it should be called right before the routes that they care about these handlers.
+//
+// The difference from .Use is that this/or these Handler(s) are being always running last.
+func (api *APIBuilder) Done(handlers ...context.Handler) {
+	api.doneHandlers = append(api.doneHandlers, handlers...)
+}
+
+// DoneGlobal registers handlers that should run at the very end.
+// It appends those handler(s) to all routes,
+// including all parties, subdomains.
+// It doesn't care about call order, it will append the handlers to all
+// existing routes and the future routes that may being registered.
+//
+// The difference from `.UseGlobal` is that this/or these Handler(s) are being always running last.
+// Use of `ctx.Next()` at the previous handler is necessary.
+// It's always a good practise to call it right before the `Application#Run` function.
+func (api *APIBuilder) DoneGlobal(handlers ...context.Handler) {
+	for _, r := range api.routes.routes {
+		r.done(handlers) // append the handlers to the existing routes
+	}
+	// set as done handlers for the next routes as well.
+	api.doneGlobalHandlers = append(api.doneGlobalHandlers, handlers...)
+}
+
+// Reset removes all the begin and done handlers that may derived from the parent party via `Use` & `Done`,
+// note that the `Reset` will not reset the handlers that are registered via `UseGlobal` & `DoneGlobal`.
+//
+// Returns this Party.
+func (api *APIBuilder) Reset() Party {
+	api.middleware = api.middleware[0:0]
+	api.doneHandlers = api.doneHandlers[0:0]
+	return api
 }
 
 // None registers an "offline" route
