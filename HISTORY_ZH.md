@@ -17,9 +17,23 @@
 
 **如何升级**: 打开命令行执行以下命令: `go get -u github.com/kataras/iris` 或者等待自动更新。
 
-# Th, 08 February 2018 | v10.2.0
+# 2018 2月8号 | v10.2.0 版本更新
 
-This history entry is not yet translated to Chinese. Please read [the english version instead](https://github.com/kataras/iris/blob/master/HISTORY.md#th-08-february-2018--v1020).
+新的小版本， 因为它包含一个 **破坏性变动** 和一个新功能 `Party#Reset`
+
+### Party#Done 特性变动 和 新增 Party#DoneGlobal 介绍
+
+正如 @likakuli 指出的那样 https://github.com/kataras/iris/issues/901, 以前 `Done` 注册的处理器，在全局范围内会替代子处理器，因为在引入 `UseGlobal` 这概念之前，缺少稳定性. 现在是时候了, 新的 `Done` 应该在相关的路由之前调用， **新增** `DoneGlobal` 之前的`Done` 使用相同; 顺序无关紧要，他只是结束处理附加到当前的注册程序, 全局性的 (所有子域名，分组).
+
+[routing/writing-a-middleware](_examples/routing/writing-a-middleware) 路由中间件示例更新, 列举了使用方式变化, 如果之前使用过 Iris ,并熟悉内置函数方法名称，请区分 `DoneGlobal` 和 `Done` 的不同.
+
+### Party#Reset
+
+新增 `Party#Reset()` 函数，以便重置上级分组通过 `Use` 和 `Done` 注册的处理方法, 没有什么特别之处，它只是清除当前分组实例的 `middleware` 和 `doneHandlers`，详情参见 `core/router#APIBuilder`.
+
+### 更新方法
+
+只需要将现有的 `.Done` 替换为 `.DoneGlobal` 就可以了。
 
 # 2018 2月6号 | v10.1.0 版本更新
 
