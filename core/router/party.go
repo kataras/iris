@@ -53,17 +53,21 @@ type Party interface {
 	// this specific "subdomain".
 	//
 	// If called from a child party then the subdomain will be prepended to the path instead of appended.
-	// So if app.Subdomain("admin.").Subdomain("panel.") then the result is: "panel.admin.".
+	// So if app.Subdomain("admin").Subdomain("panel") then the result is: "panel.admin.".
 	Subdomain(subdomain string, middleware ...context.Handler) Party
 
 	// Use appends Handler(s) to the current Party's routes and child routes.
 	// If the current Party is the root, then it registers the middleware to all child Parties' routes too.
 	Use(middleware ...context.Handler)
 
-	// Done appends to the very end, Handler(s) to the current Party's routes and child routes
+	// Done appends to the very end, Handler(s) to the current Party's routes and child routes.
 	// The difference from .Use is that this/or these Handler(s) are being always running last.
 	Done(handlers ...context.Handler)
-
+	// Reset removes all the begin and done handlers that may derived from the parent party via `Use` & `Done`,
+	// note that the `Reset` will not reset the handlers that are registered via `UseGlobal` & `DoneGlobal`.
+	//
+	// Returns this Party.
+	Reset() Party
 	// Handle registers a route to the server's router.
 	// if empty method is passed then handler(s) are being registered to all methods, same as .Any.
 	//
