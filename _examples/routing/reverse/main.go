@@ -32,6 +32,9 @@ func main() {
 	// http://localhost:8080/reverse_myroute
 	// http://localhost:8080/execute_myroute
 	// http://localhost:8080/anything/any/path/here
+	//
+	// See view/template_html_4 example for more reverse routing examples
+	// using the reverse router component and the {{url}} and {{urlpath}} template functions.
 	app.Run(iris.Addr(":8080"))
 
-} // See view/template_html_4 example for more.
+}
