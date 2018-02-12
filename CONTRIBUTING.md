@@ -77,24 +77,15 @@ If you want to be part of this and you've time for collaboration, please open a 
 
 All new contributors of that book will receive prizes!
 
-## Financial contributions
-
-We also welcome financial contributions in full transparency on our [open collective](https://opencollective.com/iris).
-Anyone can file an expense. If the expense makes sense for the development of the community, it will be "merged" in the ledger of our open collective by the core contributors and the person who filed the expense will be reimbursed.
-
-## Credits
-
-
 ### Contributors
 
-Thank you to all the people who have already contributed to iris!
-<a href="graphs/contributors"><img src="https://opencollective.com/iris/contributors.svg?width=890" /></a>
+Thank you to all the people who have already <a href="graphs/contributors">contributed</a> to Iris!
 
 ### Backers
 
-Thank you to all our backers! [Become a backer](https://opencollective.com/iris#backer)
+Thank you to all our backers! [Become a backer](https://iris-go.com/donate)
 
-<a href="https://opencollective.com/iris#backers" target="_blank"><img src="https://opencollective.com/iris/backers.svg?width=890"></a>
+<a href="https://iris-go.com/donate"><img src="https://iris-go.com/backers.svg?v=1"/></a>
 
 ### Sponsors
 
