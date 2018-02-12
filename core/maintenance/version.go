@@ -19,34 +19,25 @@ const (
 // CheckForUpdates checks for any available updates
 // and asks for the user if want to update now or not.
 func CheckForUpdates(ft bool) {
-	has := true
-	if ft {
-		has, ft = hasInternetConnection()
-	}
-
 	v := version.Acquire()
 	updateAvailale := v.Compare(Version) == version.Smaller
 
 	if updateAvailale {
 		if confirmUpdate(v) {
-			canUpdate := (has && ft && ask()) || !has || !ft
-			if canUpdate {
-				installVersion()
-			}
+			installVersion()
+			return
 		}
 	}
 }
 
 func confirmUpdate(v version.Version) bool {
-	// on help? when asking for installing the new update
-	// and when answering "No".
+	// on help? when asking for installing the new update.
 	ignoreUpdatesMsg := "Would you like to ignore future updates? Disable the version checker via:\napp.Run(..., iris.WithoutVersionChecker)"
 
 	// if update available ask for update action.
 	shouldUpdateNowMsg :=
-		fmt.Sprintf("A new version is available online[%s < %s].\nRelease notes: %s.\nUpdate now?",
-			Version, v.String(),
-			v.ChangelogURL)
+		fmt.Sprintf("A new version is available online[%s > %s]. Type '?' for help.\nRelease notes: %s.\nUpdate now?",
+			v.String(), Version, v.ChangelogURL)
 
 	var confirmUpdate bool
 	survey.AskOne(&survey.Confirm{
