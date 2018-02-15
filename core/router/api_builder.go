@@ -617,6 +617,12 @@ func (api *APIBuilder) StaticEmbeddedHandler(vdir string, assetFn func(name stri
 // Examples: https://github.com/kataras/iris/tree/master/_examples/file-server
 func (api *APIBuilder) StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) *Route {
 	fullpath := joinPath(api.relativePath, requestPath)
+	// if subdomain,
+	// here we get the full path of the path only,
+	// because a subdomain can have parties as well
+	// and we need that path to call the `StripPrefix`.
+	_, fullpath = splitSubdomainAndPath(fullpath)
+
 	requestPath = joinPath(fullpath, WildcardParam("file"))
 
 	h := api.StaticEmbeddedHandler(vdir, assetFn, namesFn)
@@ -625,6 +631,7 @@ func (api *APIBuilder) StaticEmbedded(requestPath string, vdir string, assetFn f
 		h = StripPrefix(fullpath, h)
 	}
 
+	// it handles the subdomain(root Party) of this party as well, if any.
 	return api.registerResourceRoute(requestPath, h)
 }
 
@@ -705,19 +712,24 @@ func (api *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
 //
 // Returns the GET *Route.
 func (api *APIBuilder) StaticWeb(requestPath string, systemPath string) *Route {
-
 	paramName := "file"
 
 	fullpath := joinPath(api.relativePath, requestPath)
+	// if subdomain,
+	// here we get the full path of the path only,
+	// because a subdomain can have parties as well
+	// and we need that path to call the `StripPrefix`.
+	_, fullpath = splitSubdomainAndPath(fullpath)
 
-	h := StripPrefix(fullpath, NewStaticHandlerBuilder(systemPath).Listing(false).Build())
+	requestPath = joinPath(fullpath, WildcardParam(paramName))
+	h := NewStaticHandlerBuilder(systemPath).Listing(false).Build()
 
-	handler := func(ctx context.Context) {
-		h(ctx)
+	if fullpath != "/" {
+		h = StripPrefix(fullpath, h)
 	}
 
-	requestPath = joinPath(requestPath, WildcardParam(paramName))
-	return api.registerResourceRoute(requestPath, handler)
+	// it handles the subdomain(root Party) of this party as well, if any.
+	return api.registerResourceRoute(requestPath, h)
 }
 
 // OnErrorCode registers an error http status code
