@@ -17,6 +17,10 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris` or let the automatic updater do that for you.
 
+# Th, 15 February 2018 | v10.2.1
+
+Fix subdomains' `StaticEmbedded` & `StaticWeb` not found errors, as reported by [@speedwheel](https://github.com/speedwheel) via [facebook page's chat](https://facebook.com/iris.framework).
+
 # Th, 08 February 2018 | v10.2.0
 
 A new minor version family because it contains a **BREAKING CHANGE** and a new `Party#Reset` function.
