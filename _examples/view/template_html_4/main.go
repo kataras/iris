@@ -56,6 +56,12 @@ func main() {
 		}
 	})
 
+	// simple path so you can test it without host mapping and subdomains,
+	// at view it make uses of {{urlpath ...}}
+	// in order to showcase you that you can use it
+	// if you don't want the entire scheme and host to be part of the url.
+	app.Get("/mypath7/{paramfirst}/{paramsecond}/static/{paramthird}", emptyHandler).Name = "my-page7"
+
 	// http://127.0.0.1:8080
 	app.Run(iris.Addr(host))
 }
