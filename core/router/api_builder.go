@@ -114,6 +114,14 @@ func NewAPIBuilder() *APIBuilder {
 	return api
 }
 
+// ConfigureParty configures this party like `iris.Application#Configure`
+// That allows middlewares focused on the Party like CORS middleware
+func (api *APIBuilder) ConfigureParty(conf ...PartyConfigurator) {
+	for _, h := range conf {
+		h(api)
+	}
+}
+
 // GetRelPath returns the current party's relative path.
 // i.e:
 // if r := app.Party("/users"), then the `r.GetRelPath()` is the "/users".
