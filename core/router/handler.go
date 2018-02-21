@@ -33,8 +33,9 @@ type tree struct {
 }
 
 type routerHandler struct {
-	trees []*tree
-	hosts bool // true if at least one route contains a Subdomain.
+	trees         []*tree
+	hosts         bool // true if at least one route contains a Subdomain.
+	fallbackStack *FallbackStack
 }
 
 var _ RequestHandler = &routerHandler{}
@@ -82,6 +83,8 @@ func NewDefaultHandler() RequestHandler {
 type RoutesProvider interface { // api builder
 	GetRoutes() []*Route
 	GetRoute(routeName string) *Route
+
+	FallBackStack() *FallbackStack
 }
 
 func (h *routerHandler) Build(provider RoutesProvider) error {
@@ -242,5 +245,5 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 		}
 	}
 
-	ctx.StatusCode(http.StatusNotFound)
+	ctx.Do(h.fallbackStack.list())
 }
