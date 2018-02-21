@@ -273,7 +273,7 @@ func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) P
 		// per-party/children
 		middleware:    middleware,
 		doneHandlers:  api.doneHandlers,
-		fallbackStack: api.fallbackStack,
+		fallbackStack: api.fallbackStack.Fork(),
 		relativePath:  fullpath,
 	}
 }
@@ -426,13 +426,19 @@ func (api *APIBuilder) DoneGlobal(handlers ...context.Handler) {
 	api.doneGlobalHandlers = append(api.doneGlobalHandlers, handlers...)
 }
 
-// Fallback appends Handler(s) to the current Party's fallback stack.
+// Fallback appends Handler(s) to the current fallback stack.
 // Handler(s) is(are) called from Fallback stack when no route found and before sending NotFound status.
 // Therefore Handler(s) in Fallback stack could send another thing than NotFound status,
 //   if `Context.Next()` method is not called.
 // Done & DoneGlobal Handlers are not called.
 func (api *APIBuilder) Fallback(middleware ...context.Handler) {
-	api.fallbackStack.add(middleware)
+	api.fallbackStack.Add(middleware)
+}
+
+// FallBackStack returns Fallback stack, this is implementation of interface RoutesProvider
+//   that is used in Router building by the RequestHandler.
+func (api *APIBuilder) GetFallBackStack() *FallbackStack {
+	return api.fallbackStack
 }
 
 // Reset removes all the begin and done handlers that may derived from the parent party via `Use` & `Done`,

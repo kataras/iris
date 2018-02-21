@@ -905,6 +905,9 @@ type Context interface {
 	// It's for extreme use cases, 99% of the times will never be useful for you.
 	Exec(method string, path string)
 
+	// RouteExists checks if a route exists
+	RouteExists(method string, path string) bool
+
 	// Application returns the iris app instance which belongs to this context.
 	// Worth to notice that this function returns an interface
 	// of the Application, which contains methods that are safe
@@ -3128,6 +3131,11 @@ func (ctx *context) Exec(method string, path string) {
 		// 	ctx.Values().Set(key, value)
 		// })
 	}
+}
+
+// RouteExists checks if a route exists
+func (ctx *context) RouteExists(method string, path string) bool {
+	return ctx.Application().RouteExists(method, path, ctx)
 }
 
 // Application returns the iris app instance which belongs to this context.
