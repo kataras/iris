@@ -60,6 +60,13 @@ type Party interface {
 	// If the current Party is the root, then it registers the middleware to all child Parties' routes too.
 	Use(middleware ...context.Handler)
 
+	// Fallback appends Handler(s) to the current Party's fallback stack.
+	// Handler(s) is(are) called from Fallback stack when no route found and before sending NotFound status.
+	// Therefore Handler(s) in Fallback stack could send another thing than NotFound status,
+	//   if `Context.Next()` method is not called.
+	// Done Handler(s) is(are) not called.
+	Fallback(middleware ...context.Handler)
+
 	// Done appends to the very end, Handler(s) to the current Party's routes and child routes.
 	// The difference from .Use is that this/or these Handler(s) are being always running last.
 	Done(handlers ...context.Handler)
