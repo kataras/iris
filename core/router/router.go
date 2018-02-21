@@ -147,6 +147,11 @@ func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	router.mainHandler(w, r)
 }
 
+// RouteExists checks if a route exists
+func (router *Router) RouteExists(method, path string, ctx context.Context) bool {
+	return router.requestHandler.RouteExists(method, path, ctx)
+}
+
 type wrapper struct {
 	router      http.HandlerFunc // http.HandlerFunc to catch the CURRENT state of its .ServeHTTP on case of future change.
 	wrapperFunc func(http.ResponseWriter, *http.Request, http.HandlerFunc)
