@@ -9,11 +9,18 @@ import (
 // Party is here to separate the concept of
 // api builder and the sub api builder.
 
+// PartyConfigurator is handler for configuring a party (it works with iris.Application)
+type PartyConfigurator func(party Party)
+
 // Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
 // Party could also be named as 'Join' or 'Node' or 'Group' , Party chosen because it is fun.
 //
 // Look the "APIBuilder" for its implementation.
 type Party interface {
+	// ConfigureParty configures this party like `iris.Application#Configure`
+	// That allows middlewares focused on the Party like CORS middleware
+	ConfigureParty(...PartyConfigurator)
+
 	// GetRelPath returns the current party's relative path.
 	// i.e:
 	// if r := app.Party("/users"), then the `r.GetRelPath()` is the "/users".
