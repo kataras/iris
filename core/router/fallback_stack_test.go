@@ -94,8 +94,7 @@ func TestFallbackStackCall(t *testing.T) {
 	// setup fallback handler
 	app.Fallback(func(ctx context.Context) {
 		if ctx.Method() != "GET" {
-			ctx.Next()
-
+			ctx.NextOrNotFound() //	it checks if we have next, otherwise fire 404 not found.
 			return
 		}
 

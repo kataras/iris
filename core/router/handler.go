@@ -38,6 +38,11 @@ type routerHandler struct {
 	trees         []*tree
 	hosts         bool // true if at least one route contains a Subdomain.
 	fallbackStack *FallbackStack
+	// on build: true if fallbackStack.Size() > 0,
+	// reduces the checks because fallbackStack is NEVER nil (api_builder.go always initializes it).
+	// If re-checked needed (serve-time fallback handler added)
+	// then a re-build/refresh of the application's router is necessary, as with every handler.
+	hasFallbackHandlers bool
 }
 
 var _ RequestHandler = &routerHandler{}
@@ -93,6 +98,7 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 	registeredRoutes := provider.GetRoutes()
 	h.trees = h.trees[0:0] // reset, inneed when rebuilding.
 	h.fallbackStack = provider.GetFallBackStack()
+	h.hasFallbackHandlers = h.fallbackStack.Size() > 0
 
 	// sort, subdomains goes first.
 	sort.Slice(registeredRoutes, func(i, j int) bool {
@@ -248,11 +254,12 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 		}
 	}
 
-	if h.fallbackStack == nil {
-		ctx.StatusCode(http.StatusNotFound)
-	} else {
+	if h.hasFallbackHandlers {
 		ctx.Do(h.fallbackStack.List())
+		return
 	}
+
+	ctx.StatusCode(http.StatusNotFound)
 }
 
 // RouteExists checks if a route exists
