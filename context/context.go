@@ -3097,7 +3097,7 @@ func (ctx *context) Exec(method string, path string) {
 
 		// backup the request path information
 		backupPath := ctx.Path()
-		bakcupMethod := ctx.Method()
+		backupMethod := ctx.Method()
 		// don't backupValues := ctx.Values().ReadOnly()
 
 		// [sessions stays]
@@ -3120,7 +3120,7 @@ func (ctx *context) Exec(method string, path string) {
 		// set the request back to its previous state
 		req.RequestURI = backupPath
 		req.URL.Path = backupPath
-		req.Method = bakcupMethod
+		req.Method = backupMethod
 
 		// don't fill the values in order to be able to communicate from and to.
 		// // fill the values as they were before
