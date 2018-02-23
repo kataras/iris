@@ -5,6 +5,9 @@ import "github.com/kataras/iris"
 func main() {
 	app := iris.New()
 
+	// add a fallback handler to process requests that would not be declared in the router.
+	app.Fallback(fallbackHandler)
+
 	// this works as expected now,
 	// will handle *all* expect DELETE requests, even if there is no routes.
 	app.Get("/action/{p}", h)
