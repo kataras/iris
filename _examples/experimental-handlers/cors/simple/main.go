@@ -5,19 +5,16 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/core/router"
 
 	"github.com/iris-contrib/middleware/cors"
 )
 
 func main() {
-
 	app := iris.New()
 
 	// `crs := cors.NewAllowAllPartyMiddleware()`, or:
 	crs := cors.NewPartyMiddleware(cors.Options{
 		AllowedOrigins:   []string{"*"}, // allows everything, use that to change the hosts.
-		AllowedMethods:   router.AllMethods[:],
 		AllowCredentials: true,
 	})
 
