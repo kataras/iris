@@ -90,6 +90,8 @@ type APIBuilder struct {
 	doneHandlers context.Handlers
 	// global done handlers, order doesn't matter
 	doneGlobalHandlers context.Handlers
+	// fallback stack, LIFO order
+	fallbackStack *FallbackStack
 	// the per-party
 	relativePath string
 }
@@ -106,9 +108,18 @@ func NewAPIBuilder() *APIBuilder {
 		reporter:          errors.NewReporter(),
 		relativePath:      "/",
 		routes:            new(repository),
+		fallbackStack:     NewFallbackStack(),
 	}
 
 	return api
+}
+
+// ConfigureParty configures this party like `iris.Application#Configure`
+// That allows middlewares focused on the Party like CORS middleware
+func (api *APIBuilder) ConfigureParty(conf ...PartyConfigurator) {
+	for _, h := range conf {
+		h(api)
+	}
 }
 
 // GetRelPath returns the current party's relative path.
@@ -268,9 +279,10 @@ func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) P
 		doneGlobalHandlers:  api.doneGlobalHandlers,
 		reporter:            api.reporter,
 		// per-party/children
-		middleware:   middleware,
-		doneHandlers: api.doneHandlers,
-		relativePath: fullpath,
+		middleware:    middleware,
+		doneHandlers:  api.doneHandlers,
+		fallbackStack: api.fallbackStack.Fork(),
+		relativePath:  fullpath,
 	}
 }
 
@@ -420,6 +432,21 @@ func (api *APIBuilder) DoneGlobal(handlers ...context.Handler) {
 	}
 	// set as done handlers for the next routes as well.
 	api.doneGlobalHandlers = append(api.doneGlobalHandlers, handlers...)
+}
+
+// Fallback appends Handler(s) to the current fallback stack.
+// Handler(s) is(are) called from Fallback stack when no route found and before sending NotFound status.
+// Therefore Handler(s) in Fallback stack could send another thing than NotFound status,
+//   if `Context.Next()` method is not called.
+// Done & DoneGlobal Handlers are not called.
+func (api *APIBuilder) Fallback(middleware ...context.Handler) {
+	api.fallbackStack.Add(middleware)
+}
+
+// FallBackStack returns Fallback stack, this is implementation of interface RoutesProvider
+//   that is used in Router building by the RequestHandler.
+func (api *APIBuilder) GetFallBackStack() *FallbackStack {
+	return api.fallbackStack
 }
 
 // Reset removes all the begin and done handlers that may derived from the parent party via `Use` & `Done`,

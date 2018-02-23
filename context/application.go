@@ -48,4 +48,7 @@ type Application interface {
 	// If a handler is not already registered,
 	// then it creates & registers a new trivial handler on the-fly.
 	FireErrorCode(ctx Context)
+
+	// RouteExists checks if a route exists
+	RouteExists(method string, path string, ctx Context) bool
 }
