@@ -90,7 +90,7 @@ type APIBuilder struct {
 	doneHandlers context.Handlers
 	// global done handlers, order doesn't matter
 	doneGlobalHandlers context.Handlers
-	// fallback stack, LIFO order
+	// fallback stack, LIFO order, initialized on first `Fallback`.
 	fallbackStack *FallbackStack
 	// the per-party
 	relativePath string
@@ -437,13 +437,13 @@ func (api *APIBuilder) DoneGlobal(handlers ...context.Handler) {
 // Fallback appends Handler(s) to the current fallback stack.
 // Handler(s) is(are) called from Fallback stack when no route found and before sending NotFound status.
 // Therefore Handler(s) in Fallback stack could send another thing than NotFound status,
-//   if `Context.Next()` method is not called.
+//   if `context.NextOrNotFound()` method is not called.
 // Done & DoneGlobal Handlers are not called.
 func (api *APIBuilder) Fallback(middleware ...context.Handler) {
 	api.fallbackStack.Add(middleware)
 }
 
-// FallBackStack returns Fallback stack, this is implementation of interface RoutesProvider
+// GetFallBackStack returns Fallback stack, this is implementation of interface RoutesProvider
 //   that is used in Router building by the RequestHandler.
 func (api *APIBuilder) GetFallBackStack() *FallbackStack {
 	return api.fallbackStack

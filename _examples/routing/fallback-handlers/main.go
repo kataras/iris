@@ -1,14 +1,12 @@
 package main
 
-import (
-	"github.com/kataras/iris"
-)
+import "github.com/kataras/iris"
 
 func main() {
 	app := iris.New()
 
 	// this works as expected now,
-	// will handle *all* expect DELETE requests, even if there is no routes
+	// will handle *all* expect DELETE requests, even if there is no routes.
 	app.Get("/action/{p}", h)
 
 	app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed))
@@ -20,8 +18,7 @@ func h(ctx iris.Context) {
 
 func fallbackHandler(ctx iris.Context) {
 	if ctx.Method() == "DELETE" {
-		ctx.Next()
-
+		ctx.NextOrNotFound()
 		return
 	}
 
