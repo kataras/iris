@@ -44,6 +44,18 @@ type (
 	TagParser func(doc *Parser, start *Token, arguments *Parser) (INodeTag, *Error)
 )
 
+// AsValue converts any given value to a view.Value.
+// Usually being used within own functions passed to a template
+// through a Context or within filter functions.
+func AsValue(i interface{}) *Value {
+	return (*Value)(pongo2.AsValue(i))
+}
+
+// AsSafeValue works like AsValue, but does not apply the 'escape' filter.
+func AsSafeValue(i interface{}) *Value {
+	return (*Value)(pongo2.AsSafeValue(i))
+}
+
 // GetValue returns the `Value` as *pongo2.Value type.
 // This method was added by balthild at https://github.com/kataras/iris/pull/765
 func (value *Value) GetValue() *pongo2.Value {
