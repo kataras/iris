@@ -1,16 +1,12 @@
 package router
 
-import (
-	"net/http"
-
-	"github.com/kataras/iris/context"
-)
+import "github.com/kataras/iris/context"
 
 // FallbackStack is a stack (with LIFO calling order) for fallback handlers
 // A fallback handler(s) is(are) called from Fallback stack
 //   when no route found and before sending NotFound status.
 // Therefore Handler(s) in Fallback stack could send another thing than NotFound status,
-//   if `Context.Next()` method is not called.
+//   if `context#NextOrNotFound()` method is not called.
 // Done & DoneGlobal Handlers are not called.
 type FallbackStack struct {
 	parent   *FallbackStack
@@ -65,14 +61,5 @@ func (stk *FallbackStack) List() context.Handlers {
 	return res
 }
 
-// NewFallbackStack create a new Fallback stack with as first entry
-//   a handler which send NotFound status (the default)
-func NewFallbackStack() *FallbackStack {
-	return &FallbackStack{
-		handlers: context.Handlers{
-			func(ctx context.Context) {
-				ctx.StatusCode(http.StatusNotFound)
-			},
-		},
-	}
-}
+// NewFallbackStack create a new empty Fallback stack.
+func NewFallbackStack() *FallbackStack { return &FallbackStack{} }
