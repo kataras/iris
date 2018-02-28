@@ -9,6 +9,7 @@ import (
 
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/errors"
+	"github.com/kataras/iris/core/router/handlers"
 	"github.com/kataras/iris/core/router/macro"
 )
 
@@ -91,7 +92,12 @@ type APIBuilder struct {
 	// global done handlers, order doesn't matter
 	doneGlobalHandlers context.Handlers
 	// fallback stack, LIFO order, initialized on first `Fallback`.
-	fallbackStack *FallbackStack
+	// fallback stack contains fallback handler(s) that is(are) called
+	//   when no route found and before sending NotFound status.
+	// Therefore Handler(s) in Fallback stack could send another thing than NotFound status,
+	//   if `context#NextOrNotFound()` method is not called.
+	// Done & DoneGlobal Handlers are not called.
+	fallbackStack handlers.Stack
 	// the per-party
 	relativePath string
 }
@@ -108,7 +114,6 @@ func NewAPIBuilder() *APIBuilder {
 		reporter:          errors.NewReporter(),
 		relativePath:      "/",
 		routes:            new(repository),
-		fallbackStack:     NewFallbackStack(),
 	}
 
 	return api
@@ -438,15 +443,9 @@ func (api *APIBuilder) DoneGlobal(handlers ...context.Handler) {
 // Handler(s) is(are) called from Fallback stack when no route found and before sending NotFound status.
 // Therefore Handler(s) in Fallback stack could send another thing than NotFound status,
 //   if `context.NextOrNotFound()` method is not called.
-// Done & DoneGlobal Handlers are not called.
+// Done & DoneGlobal Handlers are called after these fallback handlers.
 func (api *APIBuilder) Fallback(middleware ...context.Handler) {
 	api.fallbackStack.Add(middleware)
-}
-
-// GetFallBackStack returns Fallback stack, this is implementation of interface RoutesProvider
-//   that is used in Router building by the RequestHandler.
-func (api *APIBuilder) GetFallBackStack() *FallbackStack {
-	return api.fallbackStack
 }
 
 // Reset removes all the begin and done handlers that may derived from the parent party via `Use` & `Done`,

@@ -1,20 +1,15 @@
-package router
+package handlers
 
 import "github.com/kataras/iris/context"
 
-// FallbackStack is a stack (with LIFO calling order) for fallback handlers
-// A fallback handler(s) is(are) called from Fallback stack
-//   when no route found and before sending NotFound status.
-// Therefore Handler(s) in Fallback stack could send another thing than NotFound status,
-//   if `context#NextOrNotFound()` method is not called.
-// Done & DoneGlobal Handlers are not called.
-type FallbackStack struct {
-	parent   *FallbackStack
+// Stack is a stack (with LIFO calling order) for handlers
+type Stack struct {
+	parent   *Stack
 	handlers context.Handlers
 }
 
 // _size is a terminal recursive method for computing size the stack
-func (stk *FallbackStack) _size(i int) int {
+func (stk *Stack) _size(i int) int {
 	res := i + len(stk.handlers)
 
 	if stk.parent == nil {
@@ -25,7 +20,7 @@ func (stk *FallbackStack) _size(i int) int {
 }
 
 // populate is a recursive method for concatenating handlers to `list` parameter
-func (stk *FallbackStack) populate(list context.Handlers) {
+func (stk *Stack) populate(list context.Handlers) {
 	n := copy(list, stk.handlers)
 
 	if stk.parent != nil {
@@ -34,12 +29,17 @@ func (stk *FallbackStack) populate(list context.Handlers) {
 }
 
 // Size gives the size of the full stack hierarchy
-func (stk *FallbackStack) Size() int {
+func (stk *Stack) Size() int {
 	return stk._size(0)
 }
 
+// IsEmpty equals to `stk.Size() == 0`
+func (stk *Stack) IsEmpty() bool {
+	return (len(stk.handlers) == 0) && ((stk.parent == nil) || stk.parent.IsEmpty())
+}
+
 // Add appends handlers to the beginning of the stack to have a LIFO calling order
-func (stk *FallbackStack) Add(h context.Handlers) {
+func (stk *Stack) Add(h context.Handlers) {
 	stk.handlers = append(stk.handlers, h...)
 
 	copy(stk.handlers[len(h):], stk.handlers)
@@ -47,19 +47,16 @@ func (stk *FallbackStack) Add(h context.Handlers) {
 }
 
 // Fork make a new stack from this stack, and so create a stack child (leaf from a tree of stacks)
-func (stk *FallbackStack) Fork() *FallbackStack {
-	return &FallbackStack{
+func (stk *Stack) Fork() Stack {
+	return Stack{
 		parent: stk,
 	}
 }
 
 // List concatenate all handlers in stack hierarchy
-func (stk *FallbackStack) List() context.Handlers {
+func (stk *Stack) List() context.Handlers {
 	res := make(context.Handlers, stk.Size())
 	stk.populate(res)
 
 	return res
 }
-
-// NewFallbackStack create a new empty Fallback stack.
-func NewFallbackStack() *FallbackStack { return &FallbackStack{} }

@@ -5,12 +5,18 @@ import (
 	"strings"
 
 	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/core/router/handlers"
 	"github.com/kataras/iris/core/router/macro"
 )
 
 // Route contains the information about a registered Route.
 // If any of the following fields are changed then the
 // caller should Refresh the router.
+// There are special routes which are used for fallback mechanism:
+// - Party Route: which is used to store fallback handlers executed when no route is found in a Party,
+// - Global Fallback Route: which is used to store fallback handlers executed when no route is found in application.
+// If no route found in all Parties, so Global Fallback Route is used as fallback route.
+// Global Fallback Route is not stored with others routes but is stored in a special field in internal structures.
 type Route struct {
 	Name      string          // "userRoute"
 	Method    string          // "GET"
@@ -30,15 +36,17 @@ type Route struct {
 	// FormattedPath all dynamic named parameters (if any) replaced with %v,
 	// used by Application to validate param values of a Route based on its name.
 	FormattedPath string
+
+	// If Fallback stack is present (not nil), so the route is a Party Route.
+	// If Fallback stack is nil, so the node represents a normal route.
+	// Party Route will contains middlewares in handlers which will be called before fallback handlers.
+	fallbackStack *handlers.Stack
 }
 
-// NewRoute returns a new route based on its method,
-// subdomain, the path (unparsed or original),
-// handlers and the macro container which all routes should share.
-// It parses the path based on the "macros",
-// handlers are being changed to validate the macros at serve time, if needed.
-func NewRoute(method, subdomain, unparsedPath, mainHandlerName string,
-	handlers context.Handlers, macros *macro.Map) (*Route, error) {
+func newRoute(method, subdomain, unparsedPath, mainHandlerName string,
+	handlers context.Handlers,
+	macros *macro.Map,
+	fallbackStack *handlers.Stack) (*Route, error) {
 
 	tmpl, err := macro.Parse(unparsedPath, macros)
 	if err != nil {
@@ -59,12 +67,26 @@ func NewRoute(method, subdomain, unparsedPath, mainHandlerName string,
 		Method:          method,
 		Subdomain:       subdomain,
 		tmpl:            tmpl,
+		fallbackStack:   fallbackStack,
 		Path:            path,
 		Handlers:        handlers,
 		MainHandlerName: mainHandlerName,
 		FormattedPath:   formattedPath,
 	}
+
 	return route, nil
+}
+
+// NewRoute returns a new route based on its method,
+// subdomain, the path (unparsed or original),
+// handlers and the macro container which all routes should share.
+// It parses the path based on the "macros",
+// handlers are being changed to validate the macros at serve time, if needed.
+func NewRoute(method, subdomain, unparsedPath, mainHandlerName string,
+	handlers context.Handlers, macros *macro.Map) (*Route, error) {
+
+	// For a normal route, there is not Fallback stack
+	return newRoute(method, subdomain, unparsedPath, mainHandlerName, handlers, macros, nil)
 }
 
 // use adds explicit begin handlers(middleware) to this route,
@@ -100,6 +122,10 @@ func (r *Route) BuildHandlers() {
 	if len(r.beginHandlers) > 0 {
 		r.Handlers = append(r.beginHandlers, r.Handlers...)
 		r.beginHandlers = r.beginHandlers[0:0]
+	}
+
+	if (r.fallbackStack != nil) && (!r.fallbackStack.IsEmpty()) {
+		r.Handlers = append(r.Handlers, r.fallbackStack.List()...)
 	}
 
 	if len(r.doneHandlers) > 0 {

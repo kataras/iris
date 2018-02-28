@@ -1,18 +1,15 @@
-package router_test
+package handlers
 
 import (
 	"testing"
 
-	"github.com/kataras/iris"
 	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/router"
-	"github.com/kataras/iris/httptest"
 )
 
-func TestFallbackStackAdd(t *testing.T) {
+func TestStackAdd(t *testing.T) {
 	l := make([]string, 0)
 
-	stk := &router.FallbackStack{}
+	stk := &Stack{}
 	stk.Add(context.Handlers{
 		func(context.Context) {
 			l = append(l, "POS1")
@@ -38,10 +35,10 @@ func TestFallbackStackAdd(t *testing.T) {
 	}
 }
 
-func TestFallbackStackFork(t *testing.T) {
+func TestStackFork(t *testing.T) {
 	l := make([]string, 0)
 
-	stk := &router.FallbackStack{}
+	stk := &Stack{}
 
 	stk.Add(context.Handlers{
 		func(context.Context) {
@@ -80,32 +77,4 @@ func TestFallbackStackFork(t *testing.T) {
 	if (l[0] != "POS4") || (l[1] != "POS3") || (l[2] != "POS2") || (l[3] != "POS1") {
 		t.Fatal("Bad positions: ", l)
 	}
-}
-
-func TestFallbackStackCall(t *testing.T) {
-	// build the api
-	app := iris.New()
-
-	// setup an existing routes
-	app.Handle("GET", "/route", func(ctx context.Context) {
-		ctx.WriteString("ROUTED")
-	})
-
-	// setup fallback handler
-	app.Fallback(func(ctx context.Context) {
-		if ctx.Method() != "GET" {
-			ctx.NextOrNotFound() //	it checks if we have next, otherwise fire 404 not found.
-			return
-		}
-
-		ctx.WriteString("FALLBACK")
-	})
-
-	// run the tests
-	e := httptest.New(t, app, httptest.Debug(false))
-
-	e.Request("GET", "/route").Expect().Status(iris.StatusOK).Body().Equal("ROUTED")
-	e.Request("POST", "/route").Expect().Status(iris.StatusNotFound)
-	e.Request("POST", "/noroute").Expect().Status(iris.StatusNotFound)
-	e.Request("GET", "/noroute").Expect().Status(iris.StatusOK).Body().Equal("FALLBACK")
 }

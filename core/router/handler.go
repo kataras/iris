@@ -11,6 +11,7 @@ import (
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/errors"
 	"github.com/kataras/iris/core/netutil"
+	"github.com/kataras/iris/core/router/handlers"
 	"github.com/kataras/iris/core/router/node"
 )
 
@@ -37,7 +38,7 @@ type tree struct {
 type routerHandler struct {
 	trees         []*tree
 	hosts         bool // true if at least one route contains a Subdomain.
-	fallbackStack *FallbackStack
+	fallbackStack *handlers.Stack
 	// on build: true if fallbackStack.Size() > 0,
 	// reduces the checks because fallbackStack is NEVER nil (api_builder.go always initializes it).
 	// If re-checked needed (serve-time fallback handler added)
@@ -75,7 +76,7 @@ func (h *routerHandler) addRoute(r *Route) error {
 		t = &tree{Method: method, Subdomain: subdomain, Nodes: &n}
 		h.trees = append(h.trees, t)
 	}
-	return t.Nodes.Add(routeName, path, handlers)
+	return t.Nodes.Add(routeName, path, handlers, r.fallbackStack)
 }
 
 // NewDefaultHandler returns the handler which is responsible
@@ -90,14 +91,12 @@ func NewDefaultHandler() RequestHandler {
 type RoutesProvider interface { // api builder
 	GetRoutes() []*Route
 	GetRoute(routeName string) *Route
-
-	GetFallBackStack() *FallbackStack
 }
 
 func (h *routerHandler) Build(provider RoutesProvider) error {
 	registeredRoutes := provider.GetRoutes()
 	h.trees = h.trees[0:0] // reset, inneed when rebuilding.
-	h.fallbackStack = provider.GetFallBackStack()
+	h.fallbackStack = handlers.NewStack()
 	h.hasFallbackHandlers = h.fallbackStack.Size() > 0
 
 	// sort, subdomains goes first.
@@ -188,6 +187,9 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 		}
 	}
 
+	var fallbackMiddlewares context.Handlers
+	var fallbackStack *handlers.Stack
+
 	for i := range h.trees {
 		t := h.trees[i]
 		if method != t.Method {
@@ -225,7 +227,14 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 				continue
 			}
 		}
-		routeName, handlers := t.Nodes.Find(path, ctx.Params())
+
+		routeName, handlers, stack := t.Nodes.Find(path, ctx.Params())
+		if fallbackStack != nil {
+			fallbackMiddlewares, fallbackStack = handlers, stack
+
+			continue
+		}
+
 		if len(handlers) > 0 {
 			ctx.SetCurrentRouteName(routeName)
 			ctx.Do(handlers)
