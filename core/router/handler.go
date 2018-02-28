@@ -1,6 +1,9 @@
 package router
 
 import (
+	"bytes"
+	"fmt"
+
 	"html"
 	"net/http"
 	"sort"
@@ -11,7 +14,6 @@ import (
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/errors"
 	"github.com/kataras/iris/core/netutil"
-	"github.com/kataras/iris/core/router/handlers"
 	"github.com/kataras/iris/core/router/node"
 )
 
@@ -36,17 +38,25 @@ type tree struct {
 }
 
 type routerHandler struct {
-	trees         []*tree
-	hosts         bool // true if at least one route contains a Subdomain.
-	fallbackStack *handlers.Stack
-	// on build: true if fallbackStack.Size() > 0,
-	// reduces the checks because fallbackStack is NEVER nil (api_builder.go always initializes it).
-	// If re-checked needed (serve-time fallback handler added)
-	// then a re-build/refresh of the application's router is necessary, as with every handler.
-	hasFallbackHandlers bool
+	trees            []*tree
+	hosts            bool // true if at least one route contains a Subdomain.
+	fallbackHandlers context.Handlers
 }
 
 var _ RequestHandler = &routerHandler{}
+
+// String shows router representation
+func (h *routerHandler) String() string {
+	var out bytes.Buffer
+
+	for _, t := range h.trees {
+		fmt.Fprintf(&out, "[%s] %s", t.Method, t.Subdomain)
+		fmt.Fprintln(&out)
+		fmt.Fprintln(&out, t.Nodes)
+	}
+
+	return out.String()
+}
 
 func (h *routerHandler) getTree(method, subdomain string) *tree {
 	for i := range h.trees {
@@ -68,6 +78,12 @@ func (h *routerHandler) addRoute(r *Route) error {
 		handlers  = r.Handlers
 	)
 
+	if r.isSpecial && (handlers != nil) {
+		handlers = append(handlers, func(ctx context.Context) {
+			ctx.NotFound()
+		})
+	}
+
 	t := h.getTree(method, subdomain)
 
 	if t == nil {
@@ -76,7 +92,7 @@ func (h *routerHandler) addRoute(r *Route) error {
 		t = &tree{Method: method, Subdomain: subdomain, Nodes: &n}
 		h.trees = append(h.trees, t)
 	}
-	return t.Nodes.Add(routeName, path, handlers, r.fallbackStack)
+	return t.Nodes.Add(routeName, path, handlers, r.isSpecial)
 }
 
 // NewDefaultHandler returns the handler which is responsible
@@ -91,13 +107,19 @@ func NewDefaultHandler() RequestHandler {
 type RoutesProvider interface { // api builder
 	GetRoutes() []*Route
 	GetRoute(routeName string) *Route
+	GetGlobalFallbackHandlers() context.Handlers
 }
 
 func (h *routerHandler) Build(provider RoutesProvider) error {
 	registeredRoutes := provider.GetRoutes()
 	h.trees = h.trees[0:0] // reset, inneed when rebuilding.
-	h.fallbackStack = handlers.NewStack()
-	h.hasFallbackHandlers = h.fallbackStack.Size() > 0
+
+	fallbackHandlers := provider.GetGlobalFallbackHandlers()
+	if fallbackHandlers != nil {
+		h.fallbackHandlers = append(fallbackHandlers, func(ctx context.Context) {
+			ctx.NotFound()
+		})
+	}
 
 	// sort, subdomains goes first.
 	sort.Slice(registeredRoutes, func(i, j int) bool {
@@ -187,12 +209,14 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 		}
 	}
 
-	var fallbackMiddlewares context.Handlers
-	var fallbackStack *handlers.Stack
+	var fallbackHandlers context.Handlers
 
 	for i := range h.trees {
 		t := h.trees[i]
-		if method != t.Method {
+
+		switch t.Method {
+		case method, "ANY": // Party Routes use ANY
+		default:
 			continue
 		}
 
@@ -228,9 +252,11 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 			}
 		}
 
-		routeName, handlers, stack := t.Nodes.Find(path, ctx.Params())
-		if fallbackStack != nil {
-			fallbackMiddlewares, fallbackStack = handlers, stack
+		routeName, handlers, special := t.Nodes.Find(path, ctx.Params())
+		if special {
+			if (fallbackHandlers == nil) || (t.Method != "ANY") {
+				fallbackHandlers = handlers
+			}
 
 			continue
 		}
@@ -263,19 +289,27 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 		}
 	}
 
-	if h.hasFallbackHandlers {
-		ctx.Do(h.fallbackStack.List())
+	if fallbackHandlers != nil {
+		ctx.Do(fallbackHandlers)
 		return
 	}
 
-	ctx.StatusCode(http.StatusNotFound)
+	if h.fallbackHandlers != nil {
+		ctx.Do(h.fallbackHandlers)
+		return
+	}
+
+	ctx.NotFound()
 }
 
 // RouteExists checks if a route exists
 func (h *routerHandler) RouteExists(method, path string, ctx context.Context) bool {
 	for i := range h.trees {
 		t := h.trees[i]
-		if method != t.Method {
+
+		switch t.Method {
+		case method, "ANY": // Party Routes use ANY
+		default:
 			continue
 		}
 
@@ -311,8 +345,8 @@ func (h *routerHandler) RouteExists(method, path string, ctx context.Context) bo
 			}
 		}
 
-		_, handlers := t.Nodes.Find(path, ctx.Params())
-		if len(handlers) > 0 {
+		_, handlers, special := t.Nodes.Find(path, ctx.Params())
+		if (!special) && (len(handlers) > 0) {
 			// found
 			return true
 		}

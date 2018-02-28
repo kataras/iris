@@ -9,7 +9,6 @@ import (
 
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/errors"
-	"github.com/kataras/iris/core/router/handlers"
 	"github.com/kataras/iris/core/router/macro"
 )
 
@@ -17,6 +16,12 @@ const (
 	// MethodNone is a Virtual method
 	// to store the "offline" routes.
 	MethodNone = "NONE"
+
+	// Global Fallback Route Name
+	GLOBAL_FALLBALCK_ROUTE_NAME = "#GLOBAL-FALLBACK"
+
+	// Prefix for Party Routes
+	PARTY_ROUTE_NAME_PREFIX = "#PARTY"
 )
 
 var (
@@ -48,6 +53,11 @@ func (r *repository) register(route *Route) {
 
 func (r *repository) get(routeName string) *Route {
 	for _, r := range r.routes {
+		// Only get "normal" routes (non-special routes) can be reversed
+		if r.isSpecial {
+			continue
+		}
+
 		if r.Name == routeName {
 			return r
 		}
@@ -91,13 +101,19 @@ type APIBuilder struct {
 	doneHandlers context.Handlers
 	// global done handlers, order doesn't matter
 	doneGlobalHandlers context.Handlers
-	// fallback stack, LIFO order, initialized on first `Fallback`.
-	// fallback stack contains fallback handler(s) that is(are) called
-	//   when no route found and before sending NotFound status.
-	// Therefore Handler(s) in Fallback stack could send another thing than NotFound status,
-	//   if `context#NextOrNotFound()` method is not called.
-	// Done & DoneGlobal Handlers are not called.
-	fallbackStack handlers.Stack
+	// fallback handlers are called when no route found and before sending NotFound status.
+	// Therefore fallback handlers could send another thing than NotFound status,
+	// if `context#Next()` method is not called.
+	// Middlewares (Use, UseGlobal), and Done (Done and DoneGlobal) handlers are executed,
+	// Done handlers, if present, are executed before sending NotFound status.
+	// If no Done Handler call `context.Next()`, so the NotFound status is not sent.
+	fallbackHandlers context.Handlers
+	// Global Fallback Route is a special route used to aggregate handlers which wiil be executed
+	// when no route is found in all route lists (included Party Routes)
+	globalFallbackRoute *Route
+	// Fallback Route is a the fallback route for this APIBuilder.
+	// Global Fallback Route is the fallback route for Application
+	fallbackRoute *Route
 	// the per-party
 	relativePath string
 }
@@ -108,12 +124,26 @@ var _ RoutesProvider = &APIBuilder{} // passed to the default request handler (r
 // NewAPIBuilder creates & returns a new builder
 // which is responsible to build the API and the router handler.
 func NewAPIBuilder() *APIBuilder {
+	reporter := errors.NewReporter()
+	macros := defaultMacros()
+
+	globalFallbackRoute, err := NewRoute("ANY", "", "/", GLOBAL_FALLBALCK_ROUTE_NAME, nil, macros)
+	if err != nil {
+		reporter.Add("%v -> %s", err, GLOBAL_FALLBALCK_ROUTE_NAME)
+
+		panic(reporter)
+	}
+
+	globalFallbackRoute.SetName(GLOBAL_FALLBALCK_ROUTE_NAME).special()
+
 	api := &APIBuilder{
-		macros:            defaultMacros(),
-		errorCodeHandlers: defaultErrorCodeHandlers(),
-		reporter:          errors.NewReporter(),
-		relativePath:      "/",
-		routes:            new(repository),
+		macros:              macros,
+		errorCodeHandlers:   defaultErrorCodeHandlers(),
+		reporter:            reporter,
+		relativePath:        "/",
+		routes:              new(repository),
+		globalFallbackRoute: globalFallbackRoute,
+		fallbackRoute:       globalFallbackRoute,
 	}
 
 	return api
@@ -180,8 +210,6 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 	// global begin handlers -> middleware that are registered before route registration
 	// -> handlers that are passed to this Handle function.
 	routeHandlers := joinHandlers(api.middleware, handlers)
-	// -> done handlers
-	routeHandlers = joinHandlers(routeHandlers, api.doneHandlers)
 
 	// here we separate the subdomain and relative path
 	subdomain, path := splitSubdomainAndPath(fullpath)
@@ -192,8 +220,9 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 		return nil
 	}
 
-	// Add UseGlobal & DoneGlobal Handlers
+	// Add UseGlobal, DoneGlobal & Done Handlers
 	r.use(api.beginGlobalHandlers)
+	r.done(api.doneHandlers) // done handler here allows add more handlers to route before router building
 	r.done(api.doneGlobalHandlers)
 
 	// global
@@ -275,6 +304,31 @@ func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) P
 	// append the parent's + child's handlers
 	middleware := joinHandlers(api.middleware, handlers)
 
+	/////////////////////////////
+	// name for special route (Party Route Name)
+	name := PARTY_ROUTE_NAME_PREFIX + strings.Replace(fullpath, "/", "-", -1)
+
+	// here we separate the subdomain and relative path
+	subdomain, path := splitSubdomainAndPath(fullpath)
+
+	// creates special route (Party Route)
+	fallbackRoute, err := NewRoute("ANY", subdomain, path, name, middleware, api.macros)
+	if err != nil { // template path parser errors:
+		api.reporter.Add("%v -> Party %s:%s", err, subdomain, path)
+
+		return nil
+	}
+
+	// Add UseGlobal, DoneGlobal & Fallback Handlers
+	fallbackRoute.use(api.beginGlobalHandlers)
+	fallbackRoute.done(api.doneHandlers)
+	fallbackRoute.done(api.doneGlobalHandlers)
+	fallbackRoute.fallback(api.fallbackHandlers)
+
+	// register Party Route
+	api.routes.register(fallbackRoute.SetName(name).special())
+	/////////////////////////////
+
 	return &APIBuilder{
 		// global/api builder
 		macros:              api.macros,
@@ -284,10 +338,12 @@ func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) P
 		doneGlobalHandlers:  api.doneGlobalHandlers,
 		reporter:            api.reporter,
 		// per-party/children
-		middleware:    middleware,
-		doneHandlers:  api.doneHandlers,
-		fallbackStack: api.fallbackStack.Fork(),
-		relativePath:  fullpath,
+		middleware:   middleware,
+		doneHandlers: api.doneHandlers,
+		relativePath: fullpath,
+		// fallback routes
+		globalFallbackRoute: api.globalFallbackRoute,
+		fallbackRoute:       fallbackRoute,
 	}
 }
 
@@ -356,6 +412,11 @@ func (api *APIBuilder) Macros() *macro.Map {
 	return api.macros
 }
 
+// GetGlobalFallbackHandlers gives all handler to be executed when no route was found (normal & Party routes)
+func (api *APIBuilder) GetGlobalFallbackHandlers() context.Handlers {
+    return api.globalFallbackRoute.BuildHandlers()
+}
+
 // GetRoutes returns the routes information,
 // some of them can be changed at runtime some others not.
 //
@@ -409,6 +470,10 @@ func (api *APIBuilder) UseGlobal(handlers ...context.Handler) {
 	for _, r := range api.routes.routes {
 		r.use(handlers) // prepend the handlers to the existing routes
 	}
+
+	// prepend the handlers to the Global Fallback Route
+	api.globalFallbackRoute.use(handlers)
+
 	// set as begin handlers for the next routes as well.
 	api.beginGlobalHandlers = append(api.beginGlobalHandlers, handlers...)
 }
@@ -435,21 +500,33 @@ func (api *APIBuilder) DoneGlobal(handlers ...context.Handler) {
 	for _, r := range api.routes.routes {
 		r.done(handlers) // append the handlers to the existing routes
 	}
+
+	// append the handlers to the Global Fallback Route
+	api.globalFallbackRoute.done(handlers)
+
 	// set as done handlers for the next routes as well.
 	api.doneGlobalHandlers = append(api.doneGlobalHandlers, handlers...)
 }
 
-// Fallback appends Handler(s) to the current fallback stack.
-// Handler(s) is(are) called from Fallback stack when no route found and before sending NotFound status.
-// Therefore Handler(s) in Fallback stack could send another thing than NotFound status,
-//   if `context.NextOrNotFound()` method is not called.
-// Done & DoneGlobal Handlers are called after these fallback handlers.
-func (api *APIBuilder) Fallback(middleware ...context.Handler) {
-	api.fallbackStack.Add(middleware)
+// Fallback registers Handlers that are called when no route found and before sending NotFound status.
+// Therefore Fallback Handlers could send another thing than NotFound status,
+//   if `context.Next()` method is not called.
+// Middlewares (Use, UseGlobal), and Done (Done and DoneGlobal) handlers are executed,
+// Done handlers, if present, are executed before sending NotFound status.
+// If no Done Handler call `context.Next()`, so the NotFound status is not sent.
+func (api *APIBuilder) Fallback(handlers ...context.Handler) {
+	if api.fallbackRoute != nil {
+		// append the handlers to the Fallback Route
+		api.fallbackRoute.fallback(handlers)
+	}
+
+	// set as done handlers for the next routes as well.
+	api.fallbackHandlers = append(api.fallbackHandlers, handlers...)
 }
 
 // Reset removes all the begin and done handlers that may derived from the parent party via `Use` & `Done`,
 // note that the `Reset` will not reset the handlers that are registered via `UseGlobal` & `DoneGlobal`.
+// And also, it will not reset begin and done handlers in already registered routes in this APIBuilder.
 //
 // Returns this Party.
 func (api *APIBuilder) Reset() Party {
