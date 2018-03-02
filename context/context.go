@@ -309,20 +309,6 @@ type Context interface {
 	//
 	// Note: Custom context should override this method in order to be able to pass its own context.Context implementation.
 	Next()
-	// NextOr checks if chain has a next handler, if so then it executes it
-	// otherwise it sets a new chain assigned to this Context based on the given handler(s)
-	// and executes its first handler.
-	//
-	// Returns true if next handler exists and executed, otherwise false.
-	//
-	// Note that if no next handler found and handlers are missing then
-	// it sends a Status Not Found (404) to the client and it stops the execution.
-	NextOr(handlers ...Handler) bool
-	// NextOrNotFound checks if chain has a next handler, if so then it executes it
-	// otherwise it sends a Status Not Found (404) to the client and stops the execution.
-	//
-	// Returns true if next handler exists and executed, otherwise false.
-	NextOrNotFound() bool
 	// NextHandler returns (it doesn't execute) the next handler from the handlers chain.
 	//
 	// Use .Skip() to skip this handler if needed to execute the next of this returning handler.
@@ -1275,38 +1261,6 @@ func DefaultNext(ctx Context) {
 func (ctx *context) Next() { // or context.Next(ctx)
 	Next(ctx)
 }
-
-// NextOr checks if chain has a next handler, if so then it executes it
-// otherwise it sets a new chain assigned to this Context based on the given handler(s)
-// and executes its first handler.
-//
-// Returns true if next handler exists and executed, otherwise false.
-//
-// Note that if no next handler found and handlers are missing then
-// it sends a Status Not Found (404) to the client and it stops the execution.
-func (ctx *context) NextOr(handlers ...Handler) bool {
-	if next := ctx.NextHandler(); next != nil {
-		next(ctx)
-		ctx.Skip() // skip this handler from the chain.
-		return true
-	}
-
-	if len(handlers) == 0 {
-		ctx.NotFound()
-		ctx.StopExecution()
-		return false
-	}
-
-	ctx.Do(handlers)
-
-	return false
-}
-
-// NextOrNotFound checks if chain has a next handler, if so then it executes it
-// otherwise it sends a Status Not Found (404) to the client and stops the execution.
-//
-// Returns true if next handler exists and executed, otherwise false.
-func (ctx *context) NextOrNotFound() bool { return ctx.NextOr() }
 
 // NextHandler returns (it doesn't execute) the next handler from the handlers chain.
 //

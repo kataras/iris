@@ -21,7 +21,7 @@ type Route struct {
 	Method    string          // "GET"
 	Subdomain string          // "admin."
 	tmpl      *macro.Template // Tmpl().Src: "/api/user/{id:int}"
-	Path      string          // "/api/user/:id"
+	Path      string          // "/api/user/{id}"
 	// temp storage, they're appended to the Handlers on build.
 	// Execution happens before Handlers, can be empty.
 	beginHandlers context.Handlers
@@ -190,8 +190,13 @@ func (r *Route) BuildHandlers() context.Handlers {
 }
 
 // String returns the form of METHOD, SUBDOMAIN, TMPL PATH.
-func (r Route) String() string {
-	return fmt.Sprintf("%s %s%s", r.Method, r.Subdomain, r.Tmpl().Src)
+func (r *Route) String() string {
+	special := ""
+	if r.isSpecial {
+		special = " (*)"
+	}
+
+	return fmt.Sprintf("%s %s%s%s", r.Method, r.Subdomain, r.Tmpl().Src, special)
 }
 
 // Tmpl returns the path template, i

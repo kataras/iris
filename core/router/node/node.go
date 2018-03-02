@@ -17,10 +17,6 @@ type tNodeResult struct {
 	params []string
 }
 
-func (nr *tNodeResult) String() string {
-	return fmt.Sprintf("RES:{%s p=%s}", nr.node, nr.params)
-}
-
 type node struct {
 	s                 string
 	routeName         string
@@ -89,43 +85,6 @@ func (n *node) toString(indent string) string {
 	desc := fmt.Sprintf("%s[%s] %s%s", indent, root+wildcard+special, n.s, suffix)
 
 	return desc + fmt.Sprintln() + children
-}
-
-// toString show node representation
-func (n *node) String() string {
-	root, wildcard, special := " ", " ", " "
-
-	if n.root {
-		root = "R"
-	}
-
-	if n.rootWildcard {
-		wildcard = "W"
-	}
-
-	if n.fallbackHandlers != nil {
-		special = "S"
-	}
-
-	suffix := ""
-
-	if n.routeName != "" {
-		suffix = "name:" + n.routeName
-	}
-
-	if len(n.paramNames) > 0 {
-		suffix += " params:{" + strings.Join(n.paramNames, ", ") + "}"
-	}
-
-	if n.wildcardParamName != "" {
-		suffix += " wildcard-param:" + n.wildcardParamName
-	}
-
-	if suffix != "" {
-		suffix = " (" + suffix + ")"
-	}
-
-	return fmt.Sprintf("[%s] %s%s", root+wildcard+special, n.s, suffix)
 }
 
 // Nodes a conversion type for []*node.
@@ -398,7 +357,7 @@ loop:
 func (nodes *Nodes) Find(path string, params *context.RequestParams) (string, context.Handlers, bool) {
 	var r tNodeResult
 
-	result := nodes.findChild(path, nil, nil, &r, "")
+	result := nodes.findChild(path, nil, nil, &r)
 
 	if result != nil {
 		n, paramValues := result.node, result.params
@@ -445,27 +404,21 @@ func (nodes *Nodes) Find(path string, params *context.RequestParams) (string, co
 func (nodes *Nodes) Exists(path string) bool {
 	var r tNodeResult
 
-	result := nodes.findChild(path, nil, nil, &r, "")
+	result := nodes.findChild(path, nil, nil, &r)
 
 	return (result != nil) && (result.node.fallbackHandlers == nil) && (len(result.node.handlers) > 0)
 }
 
-func (nodes Nodes) findChild(path string, params []string, parent, result *tNodeResult, indent string) *tNodeResult {
+func (nodes Nodes) findChild(path string, params []string, parent, result *tNodeResult) *tNodeResult {
 	for _, n := range nodes {
-		fmt.Println(indent+"> Node:", n, " - Path:", path, " - Params:", params, " - Parent:", parent)
-
 		if n.s == ":" {
-			fmt.Println(indent + "      - PASS001")
 			paramEnd := strings.IndexByte(path, '/')
 			if paramEnd == -1 {
-				fmt.Println(indent + "      - PASS002")
 				if len(n.handlers) == 0 {
-					fmt.Println(indent+"      - PASS003:", parent)
 					return parent
 				}
 
 				result.node, result.params = n, append(params, path)
-				fmt.Println(indent+"      - PASS003b:", result)
 
 				return result
 			}
@@ -476,10 +429,9 @@ func (nodes Nodes) findChild(path string, params []string, parent, result *tNode
 					node:   n,
 					params: params,
 				}
-				fmt.Println(indent+"      - PASS004:", parent)
 			}
 
-			return n.childrenNodes.findChild(path[paramEnd:], params, parent, result, indent+"   ")
+			return n.childrenNodes.findChild(path[paramEnd:], params, parent, result)
 		}
 
 		// println("n.s: " + n.s)
@@ -492,18 +444,15 @@ func (nodes Nodes) findChild(path string, params []string, parent, result *tNode
 		// if n.s == "//" && n.root && n.wildcardParamName != "" {
 		// but this will slow down, so we have a static field on the node itself:
 		if n.rootWildcard {
-			fmt.Println(indent+"      - PASS005:", path)
 			// println("return from n.rootWildcard")
 			// single root wildcard
 			if len(path) < 2 {
-				fmt.Println(indent+"      - PASS006:", path)
 				// do not remove that, it seems useless but it's not,
 				// we had an error while production, this fixes that.
 				path = "/" + path
 			}
 
 			result.node, result.params = n, append(params, path[1:])
-			fmt.Println(indent+"      - PASS007:", result)
 
 			return result
 		}
@@ -519,15 +468,12 @@ func (nodes Nodes) findChild(path string, params []string, parent, result *tNode
 			// we could have /other/ as n.s so
 			// we must do this check, remember:
 			// now wildcards live on their own nodes
-			fmt.Println(indent+"      - PASS008:", path, " /// ", n.s)
 			if len(path) == len(n.s)-1 {
 				// then it's like:
 				// path = /other2
 				// ns = /other2/
-				fmt.Println(indent+"      - PASS009:", n.s[0:len(n.s)-1])
 				if path == n.s[0:len(n.s)-1] {
 					result.node, result.params = n, params
-					fmt.Println(indent+"      - PASS010:", result)
 
 					return result
 				}
@@ -536,10 +482,8 @@ func (nodes Nodes) findChild(path string, params []string, parent, result *tNode
 			// othwerwise path = /other2/dsadas
 			// ns= /other2/
 			if strings.HasPrefix(path, n.s) {
-				fmt.Println(indent + "      - PASS011")
 				if len(path) > len(n.s)+1 {
 					result.node, result.params = n, append(params, path[len(n.s):]) // without slash
-					fmt.Println(indent+"      - PASS012:", result)
 
 					return result
 				}
@@ -547,23 +491,18 @@ func (nodes Nodes) findChild(path string, params []string, parent, result *tNode
 
 		}
 
-		fmt.Println(indent+"      - PASS013:", path, " prefix ", n.s)
 		if !strings.HasPrefix(path, n.s) {
-			fmt.Println(indent + "      - PASS014")
 			// fmt.Printf("---here root: %v, n.s: "+n.s+" and path: "+path+" is dynamic: %v , wildcardParamName: %s, children len: %v \n", n.root, n.isDynamic(), n.wildcardParamName, len(n.childrenNodes))
 			// println(path + " n.s: " + n.s + " continue...")
 			continue
 		}
 
 		if len(path) == len(n.s) {
-			fmt.Println(indent + "      - PASS015")
 			if len(n.handlers) == 0 {
-				fmt.Println(indent+"      - PASS016:", parent)
 				return parent
 			}
 
 			result.node, result.params = n, params
-			fmt.Println(indent+"      - PASS017:", result)
 
 			return result
 		}
@@ -573,11 +512,9 @@ func (nodes Nodes) findChild(path string, params []string, parent, result *tNode
 				node:   n,
 				params: params,
 			}
-			fmt.Println(indent+"      - PASS018:", parent)
 		}
 
-        fmt.Println(indent+"      - PASSXXX:", parent)
-		child := n.childrenNodes.findChild(path[len(n.s):], params, parent, result, indent+"   ")
+		child := n.childrenNodes.findChild(path[len(n.s):], params, parent, result)
 
 		// print("childParamNames len: ")
 		// println(len(childParamNames))
@@ -587,14 +524,11 @@ func (nodes Nodes) findChild(path string, params []string, parent, result *tNode
 		// }
 
 		if (child != nil) && (len(child.node.handlers) > 0) {
-			fmt.Println(indent+"      - PASS019:", child)
 			return child
 		}
 
 		if n.s[len(n.s)-1] == '/' && !(n.root && (n.s == "/" || len(n.childrenNodes) > 0)) {
-			fmt.Println(indent + "      - PASS020")
 			if len(n.handlers) == 0 {
-				fmt.Println(indent+"      - PASS021:", parent)
 				return parent
 			}
 
@@ -606,12 +540,10 @@ func (nodes Nodes) findChild(path string, params []string, parent, result *tNode
 			// print("return n, append(params, path[len(n.s) | params: ")
 			// println(path[len(n.s):])
 			result.node, result.params = n, append(params, path[len(n.s):])
-			fmt.Println(indent+"      - PASS022:", result)
 
 			return result
 		}
 	}
-	fmt.Println(indent+"      - PASS023:", parent)
 
 	return parent
 }

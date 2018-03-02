@@ -21,7 +21,7 @@ const (
 	GLOBAL_FALLBALCK_ROUTE_NAME = "#GLOBAL-FALLBACK"
 
 	// Prefix for Party Routes
-	PARTY_ROUTE_NAME_PREFIX = "#PARTY"
+	PARTY_ROUTE_NAME_PREFIX = "#PARTY:"
 )
 
 var (
@@ -306,7 +306,7 @@ func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) P
 
 	/////////////////////////////
 	// name for special route (Party Route Name)
-	name := PARTY_ROUTE_NAME_PREFIX + strings.Replace(fullpath, "/", "-", -1)
+	name := PARTY_ROUTE_NAME_PREFIX + fullpath
 
 	// here we separate the subdomain and relative path
 	subdomain, path := splitSubdomainAndPath(fullpath)
@@ -414,7 +414,7 @@ func (api *APIBuilder) Macros() *macro.Map {
 
 // GetGlobalFallbackHandlers gives all handler to be executed when no route was found (normal & Party routes)
 func (api *APIBuilder) GetGlobalFallbackHandlers() context.Handlers {
-    return api.globalFallbackRoute.BuildHandlers()
+	return api.globalFallbackRoute.BuildHandlers()
 }
 
 // GetRoutes returns the routes information,
