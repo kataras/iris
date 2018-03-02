@@ -43,7 +43,44 @@ func (n *node) isDynamic() bool {
 	return n.s == ":" || n.wildcardParamName != "" || n.rootWildcard
 }
 
-// toString show node representation
+// String shows node simple representation (without children)
+func (n *node) String() string {
+	root, wildcard, special := " ", " ", " "
+
+	if n.root {
+		root = "R"
+	}
+
+	if n.rootWildcard {
+		wildcard = "W"
+	}
+
+	if n.fallbackHandlers != nil {
+		special = "S"
+	}
+
+	suffix := ""
+
+	if n.routeName != "" {
+		suffix = "name:" + n.routeName
+	}
+
+	if len(n.paramNames) > 0 {
+		suffix += " params:{" + strings.Join(n.paramNames, ", ") + "}"
+	}
+
+	if n.wildcardParamName != "" {
+		suffix += " wildcard-param:" + n.wildcardParamName
+	}
+
+	if suffix != "" {
+		suffix = " (" + suffix + ")"
+	}
+
+	return fmt.Sprintf("[%s] %s%s", root+wildcard+special, n.s, suffix)
+}
+
+// toString show node representation (with chiltren to show tree)
 func (n *node) toString(indent string) string {
 	root, wildcard, special := " ", " ", " "
 
@@ -357,7 +394,7 @@ loop:
 func (nodes *Nodes) Find(path string, params *context.RequestParams) (string, context.Handlers, bool) {
 	var r tNodeResult
 
-	result := nodes.findChild(path, nil, nil, &r)
+	result := nodes.findChild(path, nil, nil, &r, "")
 
 	if result != nil {
 		n, paramValues := result.node, result.params
@@ -404,7 +441,7 @@ func (nodes *Nodes) Find(path string, params *context.RequestParams) (string, co
 func (nodes *Nodes) Exists(path string) bool {
 	var r tNodeResult
 
-	result := nodes.findChild(path, nil, nil, &r)
+	result := nodes.findChild(path, nil, nil, &r, "")
 
 	return (result != nil) && (result.node.fallbackHandlers == nil) && (len(result.node.handlers) > 0)
 }

@@ -37,6 +37,16 @@ type tree struct {
 	Nodes     *node.Nodes
 }
 
+func (t *tree) String() string {
+	var out bytes.Buffer
+
+	fmt.Fprintf(&out, "[%s] %s", t.Method, t.Subdomain)
+	fmt.Fprintln(&out)
+	fmt.Fprintln(&out, t.Nodes)
+
+	return out.String()
+}
+
 type routerHandler struct {
 	trees            []*tree
 	hosts            bool // true if at least one route contains a Subdomain.
@@ -47,15 +57,13 @@ var _ RequestHandler = &routerHandler{}
 
 // String shows router representation
 func (h *routerHandler) String() string {
-	var out bytes.Buffer
+    res := ""
 
 	for _, t := range h.trees {
-		fmt.Fprintf(&out, "[%s] %s", t.Method, t.Subdomain)
-		fmt.Fprintln(&out)
-		fmt.Fprintln(&out, t.Nodes)
+        res += t.String()
 	}
 
-	return out.String()
+	return res
 }
 
 func (h *routerHandler) getTree(method, subdomain string) *tree {
@@ -210,9 +218,11 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 	}
 
 	var fallbackHandlers context.Handlers
+	fmt.Println("HANDLE")
 
 	for i := range h.trees {
 		t := h.trees[i]
+		fmt.Println("NODE:", t, " (", method, ")")
 
 		switch t.Method {
 		case method, "ANY": // Party Routes use ANY
@@ -253,6 +263,7 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 		}
 
 		routeName, handlers, special := t.Nodes.Find(path, ctx.Params())
+		fmt.Println(" - FIND for", path, ":", routeName, "/", special)
 		if special {
 			if (fallbackHandlers == nil) || (t.Method != "ANY") {
 				fallbackHandlers = handlers
@@ -267,9 +278,9 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 			// found
 			return
 		}
-		// not found or method not allowed.
-		break
 	}
+
+	fmt.Println(" - HANDLER", fallbackHandlers)
 
 	if ctx.Application().ConfigurationReadOnly().GetFireMethodNotAllowed() {
 		for i := range h.trees {
@@ -289,10 +300,14 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 		}
 	}
 
+	fmt.Println(" - AFTER")
+
 	if fallbackHandlers != nil {
 		ctx.Do(fallbackHandlers)
 		return
 	}
+
+	fmt.Println(" - FALLBACK:", h.fallbackHandlers)
 
 	if h.fallbackHandlers != nil {
 		ctx.Do(h.fallbackHandlers)
