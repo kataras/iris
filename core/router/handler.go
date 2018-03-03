@@ -57,10 +57,10 @@ var _ RequestHandler = &routerHandler{}
 
 // String shows router representation
 func (h *routerHandler) String() string {
-    res := ""
+	res := ""
 
 	for _, t := range h.trees {
-        res += t.String()
+		res += t.String()
 	}
 
 	return res
@@ -218,11 +218,9 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 	}
 
 	var fallbackHandlers context.Handlers
-	fmt.Println("HANDLE")
 
 	for i := range h.trees {
 		t := h.trees[i]
-		fmt.Println("NODE:", t, " (", method, ")")
 
 		switch t.Method {
 		case method, "ANY": // Party Routes use ANY
@@ -263,7 +261,6 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 		}
 
 		routeName, handlers, special := t.Nodes.Find(path, ctx.Params())
-		fmt.Println(" - FIND for", path, ":", routeName, "/", special)
 		if special {
 			if (fallbackHandlers == nil) || (t.Method != "ANY") {
 				fallbackHandlers = handlers
@@ -279,8 +276,6 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 			return
 		}
 	}
-
-	fmt.Println(" - HANDLER", fallbackHandlers)
 
 	if ctx.Application().ConfigurationReadOnly().GetFireMethodNotAllowed() {
 		for i := range h.trees {
@@ -300,14 +295,10 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 		}
 	}
 
-	fmt.Println(" - AFTER")
-
 	if fallbackHandlers != nil {
 		ctx.Do(fallbackHandlers)
 		return
 	}
-
-	fmt.Println(" - FALLBACK:", h.fallbackHandlers)
 
 	if h.fallbackHandlers != nil {
 		ctx.Do(h.fallbackHandlers)

@@ -8,7 +8,7 @@ import (
 
 	"github.com/iris-contrib/middleware/cors"
 )
-
+ 
 func main() {
 	app := iris.New()
 

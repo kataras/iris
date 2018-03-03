@@ -446,8 +446,9 @@ func (nodes *Nodes) Exists(path string) bool {
 	return (result != nil) && (result.node.fallbackHandlers == nil) && (len(result.node.handlers) > 0)
 }
 
-func (nodes Nodes) findChild(path string, params []string, parent, result *tNodeResult) *tNodeResult {
+func (nodes Nodes) findChild(path string, params []string, parent, result *tNodeResult, indent string) *tNodeResult {
 	for _, n := range nodes {
+
 		if n.s == ":" {
 			paramEnd := strings.IndexByte(path, '/')
 			if paramEnd == -1 {
@@ -468,7 +469,7 @@ func (nodes Nodes) findChild(path string, params []string, parent, result *tNode
 				}
 			}
 
-			return n.childrenNodes.findChild(path[paramEnd:], params, parent, result)
+			return n.childrenNodes.findChild(path[paramEnd:], params, parent, result, indent+"   ")
 		}
 
 		// println("n.s: " + n.s)
@@ -551,7 +552,7 @@ func (nodes Nodes) findChild(path string, params []string, parent, result *tNode
 			}
 		}
 
-		child := n.childrenNodes.findChild(path[len(n.s):], params, parent, result)
+		child := n.childrenNodes.findChild(path[len(n.s):], params, parent, result, indent+"   ")
 
 		// print("childParamNames len: ")
 		// println(len(childParamNames))
@@ -560,7 +561,7 @@ func (nodes Nodes) findChild(path string, params []string, parent, result *tNode
 		// 	println("childParamsNames[0] = " + childParamNames[0])
 		// }
 
-		if (child != nil) && (len(child.node.handlers) > 0) {
+		if (child != nil) && ((child.node.fallbackHandlers != nil) || (len(child.node.handlers) > 0)) {
 			return child
 		}
 
