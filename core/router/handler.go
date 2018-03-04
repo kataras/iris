@@ -356,9 +356,6 @@ func (h *routerHandler) RouteExists(method, path string, ctx context.Context) bo
 			// found
 			return true
 		}
-
-		// not found or method not allowed.
-		break
 	}
 
 	return false
