@@ -172,6 +172,14 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 			r.URL.Path = path
 			url := r.URL.String()
 
+			// Fixes https://github.com/kataras/iris/issues/921
+			// This is caused for security reasons, imagine a payment shop,
+			// you can't just permantly redirect a POST request, so just 307 (RFC 7231, 6.4.7).
+			if method == http.MethodPost || method == http.MethodPut {
+				ctx.Redirect(url, http.StatusTemporaryRedirect)
+				return
+			}
+
 			ctx.Redirect(url, http.StatusMovedPermanently)
 
 			// RFC2616 recommends that a short note "SHOULD" be included in the
