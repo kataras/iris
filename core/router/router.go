@@ -1,6 +1,7 @@
 package router
 
 import (
+	"fmt"
 	"net/http"
 	"sync"
 
@@ -27,6 +28,12 @@ type Router struct {
 
 // NewRouter returns a new empty Router.
 func NewRouter() *Router { return &Router{} }
+
+// RequestHandlerRepresention get a request handler representation
+func (router *Router) RequestHandlerRepresention() string {
+	// calls the method `routerHandler#String()`
+	return fmt.Sprint(router.requestHandler)
+}
 
 // RefreshRouter re-builds the router. Should be called when a route's state
 // changed (i.e Method changed at serve-time).

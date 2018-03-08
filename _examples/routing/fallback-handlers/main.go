@@ -21,7 +21,7 @@ func h(ctx iris.Context) {
 
 func fallbackHandler(ctx iris.Context) {
 	if ctx.Method() == iris.MethodDelete {
-		ctx.NextOrNotFound()
+		ctx.Next()
 		return
 	}
 

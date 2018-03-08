@@ -11,12 +11,17 @@ import (
 // Route contains the information about a registered Route.
 // If any of the following fields are changed then the
 // caller should Refresh the router.
+// There are special routes which are used for fallback mechanism:
+// - Party Route: which is used to store fallback handlers executed when no route is found in a Party,
+// - Global Fallback Route: which is used to store fallback handlers executed when no route is found in application.
+// If no route found in all Parties, so Global Fallback Route is used as fallback route.
+// Global Fallback Route is not stored with others routes but is stored in a special field in internal structures.
 type Route struct {
 	Name      string          // "userRoute"
 	Method    string          // "GET"
 	Subdomain string          // "admin."
 	tmpl      *macro.Template // Tmpl().Src: "/api/user/{id:int}"
-	Path      string          // "/api/user/:id"
+	Path      string          // "/api/user/{id}"
 	// temp storage, they're appended to the Handlers on build.
 	// Execution happens before Handlers, can be empty.
 	beginHandlers context.Handlers
@@ -30,6 +35,20 @@ type Route struct {
 	// FormattedPath all dynamic named parameters (if any) replaced with %v,
 	// used by Application to validate param values of a Route based on its name.
 	FormattedPath string
+
+	// beginHandlerIndex keep tracking of the position to add new fallback handlers.
+	// Even if Begin Handlers is add in beginHandlers, new begin handlers can be added after this route is built.
+	// Therefore, without this index, new begin handler, would be prepended to all handlers.
+	beginHandlerIndex int
+	// fallbackHandlerIndex keep tracking of the position to add new fallback handlers.
+	// Fallback handler is normal handlers (neither a begin nor a done handler) for a special route.
+	// But new fallback handlers can be added after this route is built.
+	fallbackHandlerIndex int
+
+	// If true, so the route is a special route (Party Route or the Global Fallback Route).
+	// If false, so the node represents a normal route.
+	// Special route will contain middlewares in handlers which will be called before fallback handlers.
+	isSpecial bool
 }
 
 // NewRoute returns a new route based on its method,
@@ -55,16 +74,25 @@ func NewRoute(method, subdomain, unparsedPath, mainHandlerName string,
 	formattedPath := formatPath(path)
 
 	route := &Route{
-		Name:            defaultName,
-		Method:          method,
-		Subdomain:       subdomain,
-		tmpl:            tmpl,
-		Path:            path,
-		Handlers:        handlers,
-		MainHandlerName: mainHandlerName,
-		FormattedPath:   formattedPath,
+		Name:                 defaultName,
+		Method:               method,
+		Subdomain:            subdomain,
+		tmpl:                 tmpl,
+		Path:                 path,
+		Handlers:             handlers,
+		MainHandlerName:      mainHandlerName,
+		FormattedPath:        formattedPath,
+		fallbackHandlerIndex: len(handlers),
 	}
+
 	return route, nil
+}
+
+// special declare this route as a special route (a Party Route or the Global Fallback Route)
+func (r *Route) special() *Route {
+	r.isSpecial = true
+
+	return r
 }
 
 // use adds explicit begin handlers(middleware) to this route,
@@ -80,7 +108,7 @@ func (r *Route) use(handlers context.Handlers) {
 	r.beginHandlers = append(r.beginHandlers, handlers...)
 }
 
-// use adds explicit done handlers to this route.
+// done adds explicit done handlers to this route.
 // It's being called internally, it's useless for outsiders
 // because `Handlers` field is exported.
 // The callers of this function are: `APIBuilder#UseGlobal` and `APIBuilder#Done`.
@@ -93,12 +121,59 @@ func (r *Route) done(handlers context.Handlers) {
 	r.doneHandlers = append(r.doneHandlers, handlers...)
 }
 
+// fallback adds explicit fallback handlers to this route.
+// It's being called internally, it's useless for outsiders
+// because `Handlers` field is exported.
+// The only caller of this function are: `APIBuilder#Fallback` .
+func (r *Route) fallback(handlers context.Handlers) {
+	if (len(handlers) == 0) && (!r.isSpecial) {
+		return
+	}
+
+	r.Handlers = append(r.Handlers, handlers...)
+	if len(r.Handlers) != r.fallbackHandlerIndex {
+		start := r.fallbackHandlerIndex
+		r.fallbackHandlerIndex += len(handlers)
+
+		copy(r.Handlers[r.fallbackHandlerIndex:], r.Handlers[start:])
+		copy(r.Handlers[start:], handlers)
+	}
+}
+
+// SetName set route name in a continious call style
+func (r *Route) SetName(name string) *Route {
+	r.Name = name
+
+	return r
+}
+
 // BuildHandlers is executed automatically by the router handler
 // at the `Application#Build` state. Do not call it manually, unless
 // you were defined your own request mux handler.
-func (r *Route) BuildHandlers() {
-	if len(r.beginHandlers) > 0 {
+func (r *Route) BuildHandlers() context.Handlers {
+	beginHandlerCount := len(r.beginHandlers)
+	if beginHandlerCount > 0 {
+		// Update fallback handler index
+		r.fallbackHandlerIndex += beginHandlerCount
+
+		// Prepend new begin handlers
 		r.Handlers = append(r.beginHandlers, r.Handlers...)
+
+		// Start index for begin handlers before build
+		start := r.beginHandlerIndex
+
+		// Update begin handler index
+		r.beginHandlerIndex += beginHandlerCount
+
+		// If begin handler is in the middle (not at the head of handler list)
+		if start > 0 {
+			// So move old begin handler to the head of handler list
+			copy(r.Handlers, r.Handlers[beginHandlerCount:r.beginHandlerIndex])
+
+			// And move new begin handler to their right place
+			copy(r.Handlers[start:], r.beginHandlers)
+		}
+
 		r.beginHandlers = r.beginHandlers[0:0]
 	}
 
@@ -106,12 +181,22 @@ func (r *Route) BuildHandlers() {
 		r.Handlers = append(r.Handlers, r.doneHandlers...)
 		r.doneHandlers = r.doneHandlers[0:0]
 	} // note: no mutex needed, this should be called in-sync when server is not running of course.
+
+	if len(r.Handlers) == 0 {
+		return nil
+	}
+
+	return r.Handlers
 }
 
 // String returns the form of METHOD, SUBDOMAIN, TMPL PATH.
-func (r Route) String() string {
-	return fmt.Sprintf("%s %s%s",
-		r.Method, r.Subdomain, r.Tmpl().Src)
+func (r *Route) String() string {
+	special := ""
+	if r.isSpecial {
+		special = " (*)"
+	}
+
+	return fmt.Sprintf("%s %s%s%s", r.Method, r.Subdomain, r.Tmpl().Src, special)
 }
 
 // Tmpl returns the path template, i
@@ -129,6 +214,13 @@ func (r Route) Tmpl() macro.Template {
 // IsOnline returns true if the route is marked as "online" (state).
 func (r Route) IsOnline() bool {
 	return r.Method != MethodNone
+}
+
+// IsSpecial returns:
+// - true, so the route is a special route (Party Route or the Global Fallback Route).
+// - false, so the node represents a normal route.
+func (r Route) IsSpecial() bool {
+	return r.isSpecial
 }
 
 // formats the parsed to the underline path syntax.
