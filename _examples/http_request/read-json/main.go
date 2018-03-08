@@ -11,16 +11,18 @@ type Company struct {
 }
 
 func MyHandler(ctx iris.Context) {
-	c := &Company{}
-	if err := ctx.ReadJSON(c); err != nil {
+	var c Company
+
+	if err := ctx.ReadJSON(&c); err != nil {
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.WriteString(err.Error())
 		return
 	}
 
-	ctx.Writef("Received: %#v\n", c)
+	ctx.Writef("Received: %#+v\n", c)
 }
 
+// simple json stuff, read more at https://golang.org/pkg/encoding/json
 type Person struct {
 	Name string `json:"name"`
 	Age  int    `json:"age"`
@@ -55,9 +57,9 @@ func main() {
 			"Other": "Something here"
 		}
 	*/
-	// and Content-Type to application/json
+	// and Content-Type to application/json (optionally but good practise)
 	//
 	// The response should be:
-	// Received: &main.Company{Name:"iris-Go", City:"New York", Other:"Something here"}
-	app.Run(iris.Addr(":8080"))
+	// Received: main.Company{Name:"iris-Go", City:"New York", Other:"Something here"}
+	app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed), iris.WithOptimizations)
 }
