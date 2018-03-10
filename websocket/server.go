@@ -147,6 +147,9 @@ func New(cfg Config) *Server {
 func (s *Server) Handler() context.Handler {
 	return func(ctx context.Context) {
 		c := s.Upgrade(ctx)
+		if c.Err() != nil {
+			return
+		}
 		// NOTE TO ME: fire these first BEFORE startReader and startPinger
 		// in order to set the events and any messages to send
 		// the startPinger will send the OK to the client and only
