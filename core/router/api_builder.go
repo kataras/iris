@@ -42,6 +42,12 @@ type repository struct {
 }
 
 func (r *repository) register(route *Route) {
+	for _, r := range r.routes {
+		if r.String() == route.String() {
+			return // do not register any duplicates, the sooner the better.
+		}
+	}
+
 	r.routes = append(r.routes, route)
 }
 
@@ -90,14 +96,17 @@ type APIBuilder struct {
 	doneHandlers context.Handlers
 	// global done handlers, order doesn't matter
 	doneGlobalHandlers context.Handlers
-	// fallback stack, LIFO order, initialized on first `Fallback`.
-	fallbackStack *FallbackStack
 	// the per-party
 	relativePath string
+	// allowMethods are filled with the `AllowMethods` func.
+	// They are used to create new routes
+	// per any party's (and its children) routes registered
+	// if the method "x" wasn't registered already via  the `Handle` (and its extensions like `Get`, `Post`...).
+	allowMethods []string
 }
 
-var _ Party = &APIBuilder{}
-var _ RoutesProvider = &APIBuilder{} // passed to the default request handler (routerHandler)
+var _ Party = (*APIBuilder)(nil)
+var _ RoutesProvider = (*APIBuilder)(nil) // passed to the default request handler (routerHandler)
 
 // NewAPIBuilder creates & returns a new builder
 // which is responsible to build the API and the router handler.
@@ -108,18 +117,9 @@ func NewAPIBuilder() *APIBuilder {
 		reporter:          errors.NewReporter(),
 		relativePath:      "/",
 		routes:            new(repository),
-		fallbackStack:     NewFallbackStack(),
 	}
 
 	return api
-}
-
-// ConfigureParty configures this party like `iris.Application#Configure`
-// That allows middlewares focused on the Party like CORS middleware
-func (api *APIBuilder) ConfigureParty(conf ...PartyConfigurator) {
-	for _, h := range conf {
-		h(api)
-	}
 }
 
 // GetRelPath returns the current party's relative path.
@@ -138,6 +138,16 @@ func (api *APIBuilder) GetReport() error {
 // GetReporter returns the reporter for adding errors
 func (api *APIBuilder) GetReporter() *errors.Reporter {
 	return api.reporter
+}
+
+// AllowMethods will re-register the future routes that will be registered
+// via `Handle`, `Get`, `Post`, ... to the given "methods" on that Party and its children "Parties",
+// duplicates are not registered.
+//
+// Call of `AllowMethod` will override any previous allow methods.
+func (api *APIBuilder) AllowMethods(methods ...string) Party {
+	api.allowMethods = methods
+	return api
 }
 
 // Handle registers a route to the server's api.
@@ -181,23 +191,30 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 	// here we separate the subdomain and relative path
 	subdomain, path := splitSubdomainAndPath(fullpath)
 
-	r, err := NewRoute(method, subdomain, path, possibleMainHandlerName, routeHandlers, api.macros)
-	if err != nil { // template path parser errors:
-		api.reporter.Add("%v -> %s:%s:%s", err, method, subdomain, path)
-		return nil
+	// if allowMethods are empty, then simply register with the passed, main, method.
+	methods := append(api.allowMethods, method)
+
+	var (
+		route *Route // the latest one is this route registered, see methods append.
+		err   error  // not used outside of loop scope.
+	)
+
+	for _, m := range methods {
+		route, err = NewRoute(m, subdomain, path, possibleMainHandlerName, routeHandlers, api.macros)
+		if err != nil { // template path parser errors:
+			api.reporter.Add("%v -> %s:%s:%s", err, method, subdomain, path)
+			return nil // fail on first error.
+		}
+
+		// Add UseGlobal & DoneGlobal Handlers
+		route.use(api.beginGlobalHandlers)
+		route.done(api.doneGlobalHandlers)
+
+		// global
+		api.routes.register(route)
 	}
 
-	// Add UseGlobal & DoneGlobal Handlers
-	r.use(api.beginGlobalHandlers)
-	r.done(api.doneGlobalHandlers)
-
-	// global
-	api.routes.register(r)
-
-	// per -party, used for done handlers
-	// api.apiRoutes = append(api.apiRoutes, r)
-
-	return r
+	return route
 }
 
 // HandleMany works like `Handle` but can receive more than one
@@ -270,6 +287,10 @@ func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) P
 	// append the parent's + child's handlers
 	middleware := joinHandlers(api.middleware, handlers)
 
+	// the allow methods per party and its children.
+	allowMethods := make([]string, len(api.allowMethods))
+	copy(allowMethods, api.allowMethods)
+
 	return &APIBuilder{
 		// global/api builder
 		macros:              api.macros,
@@ -279,10 +300,10 @@ func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) P
 		doneGlobalHandlers:  api.doneGlobalHandlers,
 		reporter:            api.reporter,
 		// per-party/children
-		middleware:    middleware,
-		doneHandlers:  api.doneHandlers,
-		fallbackStack: api.fallbackStack.Fork(),
-		relativePath:  fullpath,
+		middleware:   middleware,
+		doneHandlers: api.doneHandlers[0:],
+		relativePath: fullpath,
+		allowMethods: allowMethods,
 	}
 }
 
@@ -432,21 +453,6 @@ func (api *APIBuilder) DoneGlobal(handlers ...context.Handler) {
 	}
 	// set as done handlers for the next routes as well.
 	api.doneGlobalHandlers = append(api.doneGlobalHandlers, handlers...)
-}
-
-// Fallback appends Handler(s) to the current fallback stack.
-// Handler(s) is(are) called from Fallback stack when no route found and before sending NotFound status.
-// Therefore Handler(s) in Fallback stack could send another thing than NotFound status,
-//   if `context.NextOrNotFound()` method is not called.
-// Done & DoneGlobal Handlers are not called.
-func (api *APIBuilder) Fallback(middleware ...context.Handler) {
-	api.fallbackStack.Add(middleware)
-}
-
-// GetFallBackStack returns Fallback stack, this is implementation of interface RoutesProvider
-//   that is used in Router building by the RequestHandler.
-func (api *APIBuilder) GetFallBackStack() *FallbackStack {
-	return api.fallbackStack
 }
 
 // Reset removes all the begin and done handlers that may derived from the parent party via `Use` & `Done`,

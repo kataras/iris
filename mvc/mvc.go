@@ -176,13 +176,6 @@ func (app *Application) Handle(controller interface{}) *Application {
 	return app
 }
 
-// Fallback is an alias to `app.Router.Fallback(handlers...)`
-//
-// See `core/router#Party.Fallback`
-func (app *Application) Fallback(handlers ...context.Handler) {
-	app.Router.Fallback(handlers...)
-}
-
 // Clone returns a new mvc Application which has the dependencies
 // of the current mvc Mpplication's dependencies.
 //

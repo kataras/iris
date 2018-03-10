@@ -147,9 +147,10 @@ func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	router.mainHandler(w, r)
 }
 
-// RouteExists checks if a route exists
-func (router *Router) RouteExists(method, path string, ctx context.Context) bool {
-	return router.requestHandler.RouteExists(method, path, ctx)
+// RouteExists reports whether a particular route exists
+// It will search from the current subdomain of context's host, if not inside the root domain.
+func (router *Router) RouteExists(ctx context.Context, method, path string) bool {
+	return router.requestHandler.RouteExists(ctx, method, path)
 }
 
 type wrapper struct {
