@@ -49,6 +49,7 @@ type Application interface {
 	// then it creates & registers a new trivial handler on the-fly.
 	FireErrorCode(ctx Context)
 
-	// RouteExists checks if a route exists
-	RouteExists(method string, path string, ctx Context) bool
+	// RouteExists reports whether a particular route exists
+	// It will search from the current subdomain of context's host, if not inside the root domain.
+	RouteExists(ctx Context, method, path string) bool
 }

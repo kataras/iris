@@ -6,21 +6,11 @@ import (
 	"github.com/kataras/iris/core/router/macro"
 )
 
-// Party is here to separate the concept of
-// api builder and the sub api builder.
-
-// PartyConfigurator is handler for configuring a party (it works with iris.Application)
-type PartyConfigurator func(party Party)
-
 // Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
 // Party could also be named as 'Join' or 'Node' or 'Group' , Party chosen because it is fun.
 //
 // Look the "APIBuilder" for its implementation.
 type Party interface {
-	// ConfigureParty configures this party like `iris.Application#Configure`
-	// That allows middlewares focused on the Party like CORS middleware
-	ConfigureParty(...PartyConfigurator)
-
 	// GetRelPath returns the current party's relative path.
 	// i.e:
 	// if r := app.Party("/users"), then the `r.GetRelPath()` is the "/users".
@@ -67,13 +57,6 @@ type Party interface {
 	// If the current Party is the root, then it registers the middleware to all child Parties' routes too.
 	Use(middleware ...context.Handler)
 
-	// Fallback appends Handler(s) to the current Party's fallback stack.
-	// Handler(s) is(are) called from Fallback stack when no route found and before sending NotFound status.
-	// Therefore Handler(s) in Fallback stack could send another thing than NotFound status,
-	//   if `Context.Next()` method is not called.
-	// Done Handler(s) is(are) not called.
-	Fallback(middleware ...context.Handler)
-
 	// Done appends to the very end, Handler(s) to the current Party's routes and child routes.
 	// The difference from .Use is that this/or these Handler(s) are being always running last.
 	Done(handlers ...context.Handler)
@@ -82,6 +65,14 @@ type Party interface {
 	//
 	// Returns this Party.
 	Reset() Party
+
+	// AllowMethods will re-register the future routes that will be registered
+	// via `Handle`, `Get`, `Post`, ... to the given "methods" on that Party and its children "Parties",
+	// duplicates are not registered.
+	//
+	// Call of `AllowMethod` will override any previous allow methods.
+	AllowMethods(methods ...string) Party
+
 	// Handle registers a route to the server's router.
 	// if empty method is passed then handler(s) are being registered to all methods, same as .Any.
 	//
