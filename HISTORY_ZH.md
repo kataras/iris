@@ -17,6 +17,10 @@
 
 **如何升级**: 打开命令行执行以下命令: `go get -u github.com/kataras/iris` 或者等待自动更新。
 
+# Sa, 10 March 2018 | v10.3.0
+
+This history entry is not translated yet to the Chinese language yet, please refer to the original [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#sa-10-march-2018--v1030) instead.
+
 # 2018 2月15号 | v10.2.1 版本更新
 
 修正 子域名 (subdomain) 的 `StaticEmbedded` 和 `StaticWeb` 不存在错误, 由 [@speedwheel](https://github.com/speedwheel) 通过 [facebook page's chat](https://facebook.com/iris.framework) 反馈。
