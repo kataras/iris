@@ -1,2 +1,0 @@
-sessions\sessiondb\badger\vendor\github.com\dgraph-io\badger\vendor\golang.org\x\sys
-sessions\sessiondb\boltdb\vendor\golang.org\x\sys
