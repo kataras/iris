@@ -107,19 +107,13 @@
   branch = "master"
   name = "github.com/kataras/golog"
   packages = ["."]
-  revision = "2ed680e7b1f34147164fa8073373e14fce02ac30"
+  revision = "dd676348ce75fa471fbbcd1bbbd131d00179756a"
 
 [[projects]]
   branch = "master"
   name = "github.com/kataras/pio"
   packages = [".","terminal"]
   revision = "825e39f34365e7db2c9fbc3692c16220e3bd7418"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/kataras/survey"
-  packages = ["."]
-  revision = "20e139a6d2469769ae88e0a3579ba5df71839ca7"
 
 [[projects]]
   name = "github.com/klauspost/compress"
@@ -251,7 +245,7 @@
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "2d6f6f883a06fc0d5f4b14a81e4c28705ea64c15"
+  revision = "c28acc882ebcbfbe8ce9f0f14b9ac26ee138dd51"
 
 [[projects]]
   branch = "master"

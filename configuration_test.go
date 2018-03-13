@@ -30,7 +30,7 @@ func TestConfigurationStatic(t *testing.T) {
 
 	afterNew = *app.config
 
-	if app.config.DisableBodyConsumptionOnUnmarshal == false {
+	if !app.config.DisableBodyConsumptionOnUnmarshal {
 		t.Fatalf("Passing a Configuration field as Option fails, expected DisableBodyConsumptionOnUnmarshal to be true but was false")
 	}
 

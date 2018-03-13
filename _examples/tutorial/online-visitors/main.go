@@ -58,15 +58,11 @@ func (v *pageView) increment() {
 }
 
 func (v *pageView) decrement() {
-	oldCount := v.count
-	if oldCount > 0 {
-		atomic.StoreUint64(&v.count, oldCount-1)
-	}
+	atomic.AddUint64(&v.count, ^uint64(0))
 }
 
 func (v *pageView) getCount() uint64 {
-	val := atomic.LoadUint64(&v.count)
-	return val
+	return atomic.LoadUint64(&v.count)
 }
 
 type (

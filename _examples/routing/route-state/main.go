@@ -8,7 +8,7 @@ func main() {
 	app := iris.New()
 
 	none := app.None("/invisible/{username}", func(ctx iris.Context) {
-		ctx.Writef("Hello %s with method: %s", ctx.Values().GetString("username"), ctx.Method())
+		ctx.Writef("Hello %s with method: %s", ctx.Params().Get("username"), ctx.Method())
 
 		if from := ctx.Values().GetString("from"); from != "" {
 			ctx.Writef("\nI see that you're coming from %s", from)

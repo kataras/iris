@@ -6,9 +6,6 @@ import (
 	"github.com/kataras/iris/core/router/macro"
 )
 
-// Party is here to separate the concept of
-// api builder and the sub api builder.
-
 // Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
 // Party could also be named as 'Join' or 'Node' or 'Group' , Party chosen because it is fun.
 //
@@ -68,6 +65,14 @@ type Party interface {
 	//
 	// Returns this Party.
 	Reset() Party
+
+	// AllowMethods will re-register the future routes that will be registered
+	// via `Handle`, `Get`, `Post`, ... to the given "methods" on that Party and its children "Parties",
+	// duplicates are not registered.
+	//
+	// Call of `AllowMethod` will override any previous allow methods.
+	AllowMethods(methods ...string) Party
+
 	// Handle registers a route to the server's router.
 	// if empty method is passed then handler(s) are being registered to all methods, same as .Any.
 	//

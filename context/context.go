@@ -15,7 +15,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -49,20 +48,24 @@ type (
 	//
 	// Note: This is totally optionally, the default decoders
 	// for ReadJSON is the encoding/json and for ReadXML is the encoding/xml.
+	//
+	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-custom-per-type/main.go
 	BodyDecoder interface {
 		Decode(data []byte) error
 	}
 
-	// Unmarshaler is the interface implemented by types that can unmarshal any raw data
-	// TIP INFO: Any v object which implements the BodyDecoder can be override the unmarshaler.
+	// Unmarshaler is the interface implemented by types that can unmarshal any raw data.
+	// TIP INFO: Any pointer to a value which implements the BodyDecoder can be override the unmarshaler.
 	Unmarshaler interface {
-		Unmarshal(data []byte, v interface{}) error
+		Unmarshal(data []byte, outPtr interface{}) error
 	}
 
 	// UnmarshalerFunc a shortcut for the Unmarshaler interface
 	//
 	// See 'Unmarshaler' and 'BodyDecoder' for more.
-	UnmarshalerFunc func(data []byte, v interface{}) error
+	//
+	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-custom-via-unmarshaler/main.go
+	UnmarshalerFunc func(data []byte, outPtr interface{}) error
 )
 
 // Unmarshal parses the X-encoded data and stores the result in the value pointed to by v.
@@ -310,7 +313,21 @@ type Context interface {
 	//
 	// Note: Custom context should override this method in order to be able to pass its own context.Context implementation.
 	Next()
-	// NextHandler returns(but it is NOT executes) the next handler from the handlers chain.
+	// NextOr checks if chain has a next handler, if so then it executes it
+	// otherwise it sets a new chain assigned to this Context based on the given handler(s)
+	// and executes its first handler.
+	//
+	// Returns true if next handler exists and executed, otherwise false.
+	//
+	// Note that if no next handler found and handlers are missing then
+	// it sends a Status Not Found (404) to the client and it stops the execution.
+	NextOr(handlers ...Handler) bool
+	// NextOrNotFound checks if chain has a next handler, if so then it executes it
+	// otherwise it sends a Status Not Found (404) to the client and stops the execution.
+	//
+	// Returns true if next handler exists and executed, otherwise false.
+	NextOrNotFound() bool
+	// NextHandler returns (it doesn't execute) the next handler from the handlers chain.
 	//
 	// Use .Skip() to skip this handler if needed to execute the next of this returning handler.
 	NextHandler() Handler
@@ -550,6 +567,8 @@ type Context interface {
 	//
 	// The default form's memory maximum size is 32MB, it can be changed by the
 	//  `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
+	//
+	// Example: https://github.com/kataras/iris/tree/master/_examples/http_request/upload-file
 	FormFile(key string) (multipart.File, *multipart.FileHeader, error)
 	// UploadFormFiles uploads any received file(s) from the client
 	// to the system physical location "destDirectory".
@@ -574,6 +593,9 @@ type Context interface {
 	//  `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
 	//
 	// See `FormFile` to a more controlled to receive a file.
+	//
+	//
+	// Example: https://github.com/kataras/iris/tree/master/_examples/http_request/upload-files
 	UploadFormFiles(destDirectory string, before ...func(Context, *multipart.FileHeader)) (n int64, err error)
 
 	//  +------------------------------------------------------------+
@@ -596,16 +618,24 @@ type Context interface {
 	// should be called before reading the request body from the client.
 	SetMaxRequestBodySize(limitOverBytes int64)
 
-	// UnmarshalBody reads the request's body and binds it to a value or pointer of any type
+	// UnmarshalBody reads the request's body and binds it to a value or pointer of any type.
 	// Examples of usage: context.ReadJSON, context.ReadXML.
-	UnmarshalBody(v interface{}, unmarshaler Unmarshaler) error
-	// ReadJSON reads JSON from request's body and binds it to a value of any json-valid type.
-	ReadJSON(jsonObject interface{}) error
-	// ReadXML reads XML from request's body and binds it to a value of any xml-valid type.
-	ReadXML(xmlObject interface{}) error
+	//
+	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-custom-via-unmarshaler/main.go
+	UnmarshalBody(outPtr interface{}, unmarshaler Unmarshaler) error
+	// ReadJSON reads JSON from request's body and binds it to a pointer of a value of any json-valid type.
+	//
+	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-json/main.go
+	ReadJSON(jsonObjectPtr interface{}) error
+	// ReadXML reads XML from request's body and binds it to a pointer of a value of any xml-valid type.
+	//
+	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-xml/main.go
+	ReadXML(xmlObjectPtr interface{}) error
 	// ReadForm binds the formObject  with the form data
 	// it supports any kind of struct.
-	ReadForm(formObject interface{}) error
+	//
+	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-form/main.go
+	ReadForm(formObjectPtr interface{}) error
 
 	//  +------------------------------------------------------------+
 	//  | Body (raw) Writers                                         |
@@ -880,7 +910,7 @@ type Context interface {
 	// TransactionsSkipped returns true if the transactions skipped or canceled at all.
 	TransactionsSkipped() bool
 
-	// Exec calls the framewrok's ServeCtx
+	// Exec calls the `context/Application#ServeCtx`
 	// based on this context but with a changed method and path
 	// like it was requested by the user, but it is not.
 	//
@@ -903,7 +933,11 @@ type Context interface {
 	// Context's Values and the Session are kept in order to be able to communicate via the result route.
 	//
 	// It's for extreme use cases, 99% of the times will never be useful for you.
-	Exec(method string, path string)
+	Exec(method, path string)
+
+	// RouteExists reports whether a particular route exists
+	// It will search from the current subdomain of context's host, if not inside the root domain.
+	RouteExists(method, path string) bool
 
 	// Application returns the iris app instance which belongs to this context.
 	// Worth to notice that this function returns an interface
@@ -1260,7 +1294,39 @@ func (ctx *context) Next() { // or context.Next(ctx)
 	Next(ctx)
 }
 
-// NextHandler returns, but it doesn't executes, the next handler from the handlers chain.
+// NextOr checks if chain has a next handler, if so then it executes it
+// otherwise it sets a new chain assigned to this Context based on the given handler(s)
+// and executes its first handler.
+//
+// Returns true if next handler exists and executed, otherwise false.
+//
+// Note that if no next handler found and handlers are missing then
+// it sends a Status Not Found (404) to the client and it stops the execution.
+func (ctx *context) NextOr(handlers ...Handler) bool {
+	if next := ctx.NextHandler(); next != nil {
+		next(ctx)
+		ctx.Skip() // skip this handler from the chain.
+		return true
+	}
+
+	if len(handlers) == 0 {
+		ctx.NotFound()
+		ctx.StopExecution()
+		return false
+	}
+
+	ctx.Do(handlers)
+
+	return false
+}
+
+// NextOrNotFound checks if chain has a next handler, if so then it executes it
+// otherwise it sends a Status Not Found (404) to the client and stops the execution.
+//
+// Returns true if next handler exists and executed, otherwise false.
+func (ctx *context) NextOrNotFound() bool { return ctx.NextOr() }
+
+// NextHandler returns (it doesn't execute) the next handler from the handlers chain.
 //
 // Use .Skip() to skip this handler if needed to execute the next of this returning handler.
 func (ctx *context) NextHandler() Handler {
@@ -1884,6 +1950,8 @@ func (ctx *context) PostValues(name string) []string {
 //
 // The default form's memory maximum size is 32MB, it can be changed by the
 // `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
+//
+// Example: https://github.com/kataras/iris/tree/master/_examples/http_request/upload-file
 func (ctx *context) FormFile(key string) (multipart.File, *multipart.FileHeader, error) {
 	// we don't have access to see if the request is body stream
 	// and then the ParseMultipartForm can be useless
@@ -1917,6 +1985,8 @@ func (ctx *context) FormFile(key string) (multipart.File, *multipart.FileHeader,
 //  `iris#WithPostMaxMemory` configurator at main configuration passed on `app.Run`'s second argument.
 //
 // See `FormFile` to a more controlled to receive a file.
+//
+// Example: https://github.com/kataras/iris/tree/master/_examples/http_request/upload-files
 func (ctx *context) UploadFormFiles(destDirectory string, before ...func(Context, *multipart.FileHeader)) (n int64, err error) {
 	err = ctx.request.ParseMultipartForm(ctx.Application().ConfigurationReadOnly().GetPostMaxMemory())
 	if err != nil {
@@ -2008,7 +2078,9 @@ func (ctx *context) SetMaxRequestBodySize(limitOverBytes int64) {
 
 // UnmarshalBody reads the request's body and binds it to a value or pointer of any type
 // Examples of usage: context.ReadJSON, context.ReadXML.
-func (ctx *context) UnmarshalBody(v interface{}, unmarshaler Unmarshaler) error {
+//
+// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-custom-via-unmarshaler/main.go
+func (ctx *context) UnmarshalBody(outPtr interface{}, unmarshaler Unmarshaler) error {
 	if ctx.request.Body == nil {
 		return errors.New("unmarshal: empty body")
 	}
@@ -2028,18 +2100,19 @@ func (ctx *context) UnmarshalBody(v interface{}, unmarshaler Unmarshaler) error 
 	// in this case the v should be a pointer also,
 	// but this is up to the user's custom Decode implementation*
 	//
-	// See 'BodyDecoder' for more
-	if decoder, isDecoder := v.(BodyDecoder); isDecoder {
+	// See 'BodyDecoder' for more.
+	if decoder, isDecoder := outPtr.(BodyDecoder); isDecoder {
 		return decoder.Decode(rawData)
 	}
 
-	// check if v is already a pointer, if yes then pass as it's
-	if reflect.TypeOf(v).Kind() == reflect.Ptr {
-		return unmarshaler.Unmarshal(rawData, v)
-	}
-	// finally, if the v doesn't contains a self-body decoder and it's not a pointer
-	// use the custom unmarshaler to bind the body
-	return unmarshaler.Unmarshal(rawData, &v)
+	// // check if v is already a pointer, if yes then pass as it's
+	// if reflect.TypeOf(v).Kind() == reflect.Ptr {
+	// 	return unmarshaler.Unmarshal(rawData, v)
+	// } <- no need for that, ReadJSON is documented enough to receive a pointer,
+	// we don't need to reduce the performance here by using the reflect.TypeOf method.
+
+	// f the v doesn't contains a self-body decoder use the custom unmarshaler to bind the body.
+	return unmarshaler.Unmarshal(rawData, outPtr)
 }
 
 func (ctx *context) shouldOptimize() bool {
@@ -2047,6 +2120,8 @@ func (ctx *context) shouldOptimize() bool {
 }
 
 // ReadJSON reads JSON from request's body and binds it to a value of any json-valid type.
+//
+// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-json/main.go
 func (ctx *context) ReadJSON(jsonObject interface{}) error {
 	var unmarshaler = json.Unmarshal
 	if ctx.shouldOptimize() {
@@ -2056,6 +2131,8 @@ func (ctx *context) ReadJSON(jsonObject interface{}) error {
 }
 
 // ReadXML reads XML from request's body and binds it to a value of any xml-valid type.
+//
+// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-xml/main.go
 func (ctx *context) ReadXML(xmlObject interface{}) error {
 	return ctx.UnmarshalBody(xmlObject, UnmarshalerFunc(xml.Unmarshal))
 }
@@ -2066,6 +2143,8 @@ var (
 
 // ReadForm binds the formObject  with the form data
 // it supports any kind of struct.
+//
+// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-form/main.go
 func (ctx *context) ReadForm(formObject interface{}) error {
 	values := ctx.FormValues()
 	if values == nil {
@@ -3086,48 +3165,57 @@ func (ctx *context) TransactionsSkipped() bool {
 //
 // It's for extreme use cases, 99% of the times will never be useful for you.
 func (ctx *context) Exec(method string, path string) {
-	if path != "" {
-		if method == "" {
-			method = "GET"
-		}
-
-		// backup the handlers
-		backupHandlers := ctx.Handlers()[0:]
-		backupPos := ctx.HandlerIndex(-1)
-
-		// backup the request path information
-		backupPath := ctx.Path()
-		bakcupMethod := ctx.Method()
-		// don't backupValues := ctx.Values().ReadOnly()
-
-		// [sessions stays]
-		// [values stays]
-		// reset handlers
-		ctx.SetHandlers(nil)
-
-		req := ctx.Request()
-		// set the request to be align with the 'againstRequestPath'
-		req.RequestURI = path
-		req.URL.Path = path
-		req.Method = method
-		// execute the route from the (internal) context router
-		// this way we keep the sessions and the values
-		ctx.Application().ServeHTTPC(ctx)
-
-		// set back the old handlers and the last known index
-		ctx.SetHandlers(backupHandlers)
-		ctx.HandlerIndex(backupPos)
-		// set the request back to its previous state
-		req.RequestURI = backupPath
-		req.URL.Path = backupPath
-		req.Method = bakcupMethod
-
-		// don't fill the values in order to be able to communicate from and to.
-		// // fill the values as they were before
-		// backupValues.Visit(func(key string, value interface{}) {
-		// 	ctx.Values().Set(key, value)
-		// })
+	if path == "" {
+		return
 	}
+
+	if method == "" {
+		method = "GET"
+	}
+
+	// backup the handlers
+	backupHandlers := ctx.Handlers()[0:]
+	backupPos := ctx.HandlerIndex(-1)
+
+	// backup the request path information
+	backupPath := ctx.Path()
+	backupMethod := ctx.Method()
+	// don't backupValues := ctx.Values().ReadOnly()
+
+	// [values stays]
+	// reset handlers
+	ctx.SetHandlers(nil)
+
+	req := ctx.Request()
+	// set the request to be align with the 'againstRequestPath'
+	req.RequestURI = path
+	req.URL.Path = path
+	req.Method = method
+	req.Host = req.Host
+
+	// execute the route from the (internal) context router
+	// this way we keep the sessions and the values
+	ctx.Application().ServeHTTPC(ctx)
+
+	// set back the old handlers and the last known index
+	ctx.SetHandlers(backupHandlers)
+	ctx.HandlerIndex(backupPos)
+	// set the request back to its previous state
+	req.RequestURI = backupPath
+	req.URL.Path = backupPath
+	req.Method = backupMethod
+
+	// don't fill the values in order to be able to communicate from and to.
+	// // fill the values as they were before
+	// backupValues.Visit(func(key string, value interface{}) {
+	// 	ctx.Values().Set(key, value)
+	// })
+}
+
+// RouteExists reports whether a particular route exists
+// It will search from the current subdomain of context's host, if not inside the root domain.
+func (ctx *context) RouteExists(method, path string) bool {
+	return ctx.Application().RouteExists(ctx, method, path)
 }
 
 // Application returns the iris app instance which belongs to this context.
