@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/kataras/iris/core/netutil"
+	"github.com/kataras/iris/core/router/macro/interpreter/lexer"
 )
 
 const (
@@ -73,30 +74,91 @@ func joinPath(path1 string, path2 string) string {
 // iteratively until no further processing can be done:
 //
 //	1. Replace multiple slashes with a single slash.
-//	3. Eliminate each inner .. path name element (the parent directory)
-//	   along with the non-.. element that precedes it.
-//	4. Eliminate .. elements that begin a rooted path:
-//	   that is, replace "/.." by "/" at the beginning of a path.
+//  2. Replace '\' with '/'
+//  3. Replace "\\" with '/'
+//  4. Ignore anything inside '{' and '}'
+//  5. Makes sure that prefixed with '/'
+//  6. Remove trailing '/'.
 //
 // The returned path ends in a slash only if it is the root "/".
 func cleanPath(s string) string {
+	// note that we don't care about the performance here, it's before the server ran.
 	if s == "" || s == "." {
 		return "/"
 	}
 
-	// remove suffix "/"
+	// remove suffix "/".
 	if lidx := len(s) - 1; s[lidx] == '/' {
 		s = s[:lidx]
 	}
 
-	// prefix with "/"
+	// prefix with "/".
 	s = prefix(s, "/")
 
-	// remove the os specific dir sep
-	s = strings.Replace(s, "\\", "/", -1)
+	// If you're learning go through Iris I will ask you to ignore the
+	// following part, it's not the recommending way to do that,
+	// but it's understable to me.
+	var (
+		insideMacro = false
+		i           = -1
+	)
 
-	// use std path to clean the path
-	s = path.Clean(s)
+	for {
+		i++
+		if len(s) <= i {
+			break
+		}
+
+		if s[i] == lexer.Begin {
+			insideMacro = true
+			continue
+		}
+
+		if s[i] == lexer.End {
+			insideMacro = false
+			continue
+		}
+
+		// when inside {} then don't try to clean it.
+		if !insideMacro {
+			if s[i] == '/' {
+				if len(s)-1 >= i+1 && s[i+1] == '/' { // we have "//".
+					bckp := s
+					s = bckp[:i] + "/"
+					// forward two, we ignore the second "/" in the raw.
+					i = i + 2
+					if len(bckp)-1 >= i {
+						s += bckp[i:]
+					}
+				}
+				// if we have just a single slash then continue.
+				continue
+			}
+
+			if s[i] == '\\' { // this will catch "\\" and "\".
+				bckp := s
+				s = bckp[:i] + "/"
+
+				if len(bckp)-1 >= i+1 {
+					s += bckp[i+1:]
+					i++
+				}
+
+				if len(s)-1 > i && s[i] == '\\' {
+					bckp := s
+					s = bckp[:i]
+					if len(bckp)-1 >= i+2 {
+						s = bckp[:i-1] + bckp[i+1:]
+						i++
+					}
+				}
+
+				continue
+			}
+
+		}
+
+	}
 
 	return s
 }

@@ -180,7 +180,7 @@ func (e Entry) BoolDefault(def bool) (bool, error) {
 // respects the immutable.
 func (e Entry) Value() interface{} {
 	if e.immutable {
-		// take its value, no pointer even if setted with a rreference.
+		// take its value, no pointer even if setted with a reference.
 		vv := reflect.Indirect(reflect.ValueOf(e.ValueRaw))
 
 		// return copy of that slice

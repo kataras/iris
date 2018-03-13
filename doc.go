@@ -35,7 +35,7 @@ Source code and other details for the project are available at GitHub:
 
 Current Version
 
-10.0.0
+10.3.0
 
 Installation
 
@@ -1121,7 +1121,7 @@ Example code:
 
 
 
-View engine supports bundled(https://github.com/jteeuwen/go-bindata) template files too.
+View engine supports bundled(https://github.com/shuLhan/go-bindata) template files too.
 go-bindata gives you two functions, asset and assetNames,
 these can be setted to each of the template engines using the `.Binary` func.
 
@@ -1133,7 +1133,7 @@ Example code:
 
     func main() {
         app := iris.New()
-        // $ go get -u github.com/jteeuwen/go-bindata/...
+        // $ go get -u github.com/shuLhan/go-bindata/...
         // $ go-bindata ./templates/...
         // $ go build
         // $ ./embedding-templates-into-app

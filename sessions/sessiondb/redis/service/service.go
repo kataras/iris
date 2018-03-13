@@ -128,10 +128,9 @@ func (r *Service) GetBytes(key string) ([]byte, error) {
 func (r *Service) Delete(key string) error {
 	c := r.pool.Get()
 	defer c.Close()
-	if _, err := c.Do("DEL", r.Config.Prefix+key); err != nil {
-		return err
-	}
-	return nil
+
+	_, err := c.Do("DEL", r.Config.Prefix+key)
+	return err
 }
 
 func dial(network string, addr string, pass string) (redis.Conn, error) {

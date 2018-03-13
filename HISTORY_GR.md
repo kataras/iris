@@ -17,6 +17,10 @@
 
 **Πώς να αναβαθμίσετε**: Ανοίξτε την γραμμή εντολών σας και εκτελέστε αυτήν την εντολή: `go get -u github.com/kataras/iris`  ή αφήστε το αυτόματο updater να το κάνει αυτό για σας.
 
+# Sa, 10 March 2018 | v10.3.0
+
+This history entry is not translated yet to the Greek language yet, please refer to the original [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#sa-10-march-2018--v1030) instead.
+
 # Th, 15 February 2018 | v10.2.1
 
 Διόρθωση το οποίο αφορά 404 not found errors στα αρχεία που σερβίρονται από τα `StaticEmbedded` και `StaticWeb` των υποτομεών(subdomains), όπως αναφέρθηκε πριν λίγο από τον [@speedwheel](https://github.com/speedwheel) μέσω [της σελίδας μας στο facebook](https://facebook.com/iris.framework).

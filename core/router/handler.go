@@ -22,6 +22,8 @@ type RequestHandler interface {
 	HandleRequest(context.Context)
 	// Build  should builds the handler, it's being called on router's BuildRouter.
 	Build(provider RoutesProvider) error
+	// RouteExists reports whether a particular route exists.
+	RouteExists(ctx context.Context, method, path string) bool
 }
 
 type tree struct {
@@ -160,6 +162,14 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 			r.URL.Path = path
 			url := r.URL.String()
 
+			// Fixes https://github.com/kataras/iris/issues/921
+			// This is caused for security reasons, imagine a payment shop,
+			// you can't just permantly redirect a POST request, so just 307 (RFC 7231, 6.4.7).
+			if method == http.MethodPost || method == http.MethodPut {
+				ctx.Redirect(url, http.StatusTemporaryRedirect)
+				return
+			}
+
 			ctx.Redirect(url, http.StatusMovedPermanently)
 
 			// RFC2616 recommends that a short note "SHOULD" be included in the
@@ -243,4 +253,58 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 	}
 
 	ctx.StatusCode(http.StatusNotFound)
+}
+
+// RouteExists reports whether a particular route exists
+// It will search from the current subdomain of context's host, if not inside the root domain.
+func (h *routerHandler) RouteExists(ctx context.Context, method, path string) bool {
+	for i := range h.trees {
+		t := h.trees[i]
+		if method != t.Method {
+			continue
+		}
+
+		if h.hosts && t.Subdomain != "" {
+			requestHost := ctx.Host()
+			if netutil.IsLoopbackSubdomain(requestHost) {
+				// this fixes a bug when listening on
+				// 127.0.0.1:8080 for example
+				// and have a wildcard subdomain and a route registered to root domain.
+				continue // it's not a subdomain, it's something like 127.0.0.1 probably
+			}
+			// it's a dynamic wildcard subdomain, we have just to check if ctx.subdomain is not empty
+			if t.Subdomain == SubdomainWildcardIndicator {
+				// mydomain.com -> invalid
+				// localhost -> invalid
+				// sub.mydomain.com -> valid
+				// sub.localhost -> valid
+				serverHost := ctx.Application().ConfigurationReadOnly().GetVHost()
+				if serverHost == requestHost {
+					continue // it's not a subdomain, it's a full domain (with .com...)
+				}
+
+				dotIdx := strings.IndexByte(requestHost, '.')
+				slashIdx := strings.IndexByte(requestHost, '/')
+				if dotIdx > 0 && (slashIdx == -1 || slashIdx > dotIdx) {
+					// if "." was found anywhere but not at the first path segment (host).
+				} else {
+					continue
+				}
+				// continue to that, any subdomain is valid.
+			} else if !strings.HasPrefix(requestHost, t.Subdomain) { // t.Subdomain contains the dot.
+				continue
+			}
+		}
+
+		_, handlers := t.Nodes.Find(path, ctx.Params())
+		if len(handlers) > 0 {
+			// found
+			return true
+		}
+
+		// not found or method not allowed.
+		break
+	}
+
+	return false
 }

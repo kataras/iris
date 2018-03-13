@@ -4,6 +4,38 @@ import (
 	"testing"
 )
 
+func TestCleanPath(t *testing.T) {
+	tests := []struct {
+		path     string
+		expected string
+	}{
+		{"noslashPrefix",
+			"/noslashPrefix"},
+		{"slashSuffix/",
+			"/slashSuffix"},
+		{"noSlashPrefixAndslashSuffix/",
+			"/noSlashPrefixAndslashSuffix"},
+		// don't do any clean up inside {},
+		// fixes #927.
+		{"/total/{year:string regexp(\\d{4})}",
+			"/total/{year:string regexp(\\d{4})}"},
+		{"/total/{year:string regexp(\\d{4})}/more",
+			"/total/{year:string regexp(\\d{4})}/more"},
+		{"/total/{year:string regexp(\\d{4})}/more/{s:string regexp(\\d{7})}",
+			"/total/{year:string regexp(\\d{4})}/more/{s:string regexp(\\d{7})}"},
+		{"/single_no_params",
+			"/single_no_params"},
+		{"/single/{id:int}",
+			"/single/{id:int}"},
+	}
+
+	for i, tt := range tests {
+		if expected, got := tt.expected, cleanPath(tt.path); expected != got {
+			t.Fatalf("[%d] - expected path '%s' but got '%s'", i, expected, got)
+		}
+	}
+}
+
 func TestSplitPath(t *testing.T) {
 	tests := []struct {
 		path     string
@@ -50,8 +82,8 @@ func TestSplitSubdomainAndPath(t *testing.T) {
 	}{
 		{"admin./users/42", "admin.", "/users/42"},
 		{"//api/users\\42", "", "/api/users/42"},
-		{"admin./users/\\42", "admin.", "/users/42"},
-		{"*./users/\\42", "*.", "/users/42"},
+		{"admin./users//42", "admin.", "/users/42"},
+		{"*./users/42/", "*.", "/users/42"},
 	}
 
 	for i, tt := range tests {

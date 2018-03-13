@@ -1,6 +1,7 @@
 package main
 
 import (
+	"regexp"
 	"strconv"
 
 	"github.com/kataras/iris"
@@ -139,6 +140,24 @@ func main() {
 		friendid, _ := ctx.Params().GetInt("friendid")
 		ctx.Writef("Hello id: %d looking for friend id: ", id, friendid)
 	}) // this will throw e 504 error code instead of 404 if all route's macros not passed.
+
+	// Another example using a custom regexp and any custom logic.
+	latLonExpr := "^-?[0-9]{1,3}(?:\\.[0-9]{1,10})?$"
+	latLonRegex, err := regexp.Compile(latLonExpr)
+	if err != nil {
+		panic(err)
+	}
+
+	app.Macros().String.RegisterFunc("coordinate", func() func(paramName string) (ok bool) {
+		// MatchString is a type of func(string) bool, so we can return that as it's.
+		return latLonRegex.MatchString
+	})
+
+	app.Get("/coordinates/{lat:string coordinate() else 502}/{lon:string coordinate() else 502}", func(ctx iris.Context) {
+		ctx.Writef("Lat: %s | Lon: %s", ctx.Params().Get("lat"), ctx.Params().Get("lon"))
+	})
+
+	//
 
 	// http://localhost:8080/game/a-zA-Z/level/0-9
 	// remember, alphabetical is lowercase or uppercase letters only.
