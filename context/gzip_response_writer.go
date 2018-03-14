@@ -108,7 +108,7 @@ func (w *GzipResponseWriter) EndResponse() {
 func (w *GzipResponseWriter) Write(contents []byte) (int, error) {
 	// save the contents to serve them (only gzip data here)
 	w.chunks = append(w.chunks, contents...)
-	return len(w.chunks), nil
+	return len(contents), nil
 }
 
 // Writef formats according to a format specifier and writes to the response.
