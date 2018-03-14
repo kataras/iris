@@ -627,18 +627,6 @@ func (api *APIBuilder) StaticContent(reqPath string, cType string, content []byt
 	return api.registerResourceRoute(reqPath, h)
 }
 
-// StaticEmbeddedHandler returns a Handler which can serve
-// embedded into executable files.
-//
-//
-// Examples: https://github.com/kataras/iris/tree/master/_examples/file-server
-func (api *APIBuilder) StaticEmbeddedHandler(vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) context.Handler {
-	// Notes:
-	// This doesn't need to be APIBuilder's scope,
-	// but we'll keep it here for consistently.
-	return StaticEmbeddedHandler(vdir, assetFn, namesFn)
-}
-
 // StaticEmbedded  used when files are distributed inside the app executable, using go-bindata mostly
 // First parameter is the request path, the path which the files in the vdir will be served to, for example "/static"
 // Second parameter is the (virtual) directory path, for example "./assets"
@@ -647,8 +635,25 @@ func (api *APIBuilder) StaticEmbeddedHandler(vdir string, assetFn func(name stri
 //
 // Returns the GET *Route.
 //
-// Examples: https://github.com/kataras/iris/tree/master/_examples/file-server
+// Example: https://github.com/kataras/iris/tree/master/_examples/file-server/embedding-files-into-app
 func (api *APIBuilder) StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) *Route {
+	return api.staticEmbedded(requestPath, vdir, assetFn, namesFn, false)
+}
+
+// StaticEmbeddedGzip registers a route which can serve embedded gziped files
+// that are embedded using the https://github.com/kataras/bindata tool and only.
+// It's 8 times faster than the `StaticEmbeddedHandler` with `go-bindata` but
+// it sends gzip response only, so the client must be aware that is expecting a gzip body
+// (browsers and most modern browsers do that, so you can use it without fair).
+//
+//
+// Example: https://github.com/kataras/iris/tree/master/_examples/file-server/embedding-gziped-files-into-app
+func (api *APIBuilder) StaticEmbeddedGzip(requestPath string, vdir string, gzipAssetFn func(name string) ([]byte, error), gzipNamesFn func() []string) *Route {
+	return api.staticEmbedded(requestPath, vdir, gzipAssetFn, gzipNamesFn, true)
+}
+
+// look fs.go#StaticEmbeddedHandler
+func (api *APIBuilder) staticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string, assetsGziped bool) *Route {
 	fullpath := joinPath(api.relativePath, requestPath)
 	// if subdomain,
 	// here we get the full path of the path only,
@@ -656,9 +661,10 @@ func (api *APIBuilder) StaticEmbedded(requestPath string, vdir string, assetFn f
 	// and we need that path to call the `StripPrefix`.
 	_, fullpath = splitSubdomainAndPath(fullpath)
 
-	requestPath = joinPath(fullpath, WildcardParam("file"))
+	paramName := "file"
+	requestPath = joinPath(requestPath, WildcardParam(paramName))
 
-	h := api.StaticEmbeddedHandler(vdir, assetFn, namesFn)
+	h := StaticEmbeddedHandler(vdir, assetFn, namesFn, assetsGziped)
 
 	if fullpath != "/" {
 		h = StripPrefix(fullpath, h)
@@ -745,16 +751,17 @@ func (api *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
 //
 // Returns the GET *Route.
 func (api *APIBuilder) StaticWeb(requestPath string, systemPath string) *Route {
-	paramName := "file"
-
 	fullpath := joinPath(api.relativePath, requestPath)
+
 	// if subdomain,
 	// here we get the full path of the path only,
 	// because a subdomain can have parties as well
 	// and we need that path to call the `StripPrefix`.
 	_, fullpath = splitSubdomainAndPath(fullpath)
 
-	requestPath = joinPath(fullpath, WildcardParam(paramName))
+	paramName := "file"
+	requestPath = joinPath(requestPath, WildcardParam(paramName))
+
 	h := NewStaticHandlerBuilder(systemPath).Listing(false).Build()
 
 	if fullpath != "/" {

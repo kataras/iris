@@ -17,9 +17,13 @@
 
 **Πώς να αναβαθμίσετε**: Ανοίξτε την γραμμή εντολών σας και εκτελέστε αυτήν την εντολή: `go get -u github.com/kataras/iris`  ή αφήστε το αυτόματο updater να το κάνει αυτό για σας.
 
+# We, 14 March 2018 | v10.4.0
+
+This history entry is not translated yet to the Greek language yet, please refer to the english version of the [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#we-14-march-2018--v1040) instead.
+
 # Sa, 10 March 2018 | v10.3.0
 
-This history entry is not translated yet to the Greek language yet, please refer to the original [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#sa-10-march-2018--v1030) instead.
+This history entry is not translated yet to the Greek language yet, please refer to the english version of the [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#sa-10-march-2018--v1030) instead.
 
 # Th, 15 February 2018 | v10.2.1
 

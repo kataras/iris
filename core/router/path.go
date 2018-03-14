@@ -73,7 +73,7 @@ func joinPath(path1 string, path2 string) string {
 // cleanPath applies the following rules
 // iteratively until no further processing can be done:
 //
-//	1. Replace multiple slashes with a single slash.
+//  1. Replace multiple slashes with a single slash.
 //  2. Replace '\' with '/'
 //  3. Replace "\\" with '/'
 //  4. Ignore anything inside '{' and '}'
@@ -87,7 +87,7 @@ func cleanPath(s string) string {
 		return "/"
 	}
 
-	// remove suffix "/".
+	// remove suffix "/", if it's root "/" then it will add it as a prefix below.
 	if lidx := len(s) - 1; s[lidx] == '/' {
 		s = s[:lidx]
 	}

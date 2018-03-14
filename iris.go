@@ -346,6 +346,18 @@ var (
 	//
 	// Examples: https://github.com/kataras/iris/tree/master/_examples/file-server
 	StaticEmbeddedHandler = router.StaticEmbeddedHandler
+	// StripPrefix returns a handler that serves HTTP requests
+	// by removing the given prefix from the request URL's Path
+	// and invoking the handler h. StripPrefix handles a
+	// request for a path that doesn't begin with prefix by
+	// replying with an HTTP 404 not found error.
+	//
+	// Usage:
+	// fileserver := Party#StaticHandler("./static_files", false, false)
+	// h := iris.StripPrefix("/static", fileserver)
+	// app.Get("/static/{f:path}", h)
+	// app.Head("/static/{f:path}", h)
+	StripPrefix = router.StripPrefix
 	// Gzip is a middleware which enables writing
 	// using gzip compression, if client supports.
 	//

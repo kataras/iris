@@ -21,12 +21,11 @@ import (
 	"github.com/kataras/iris/context"
 )
 
-// StaticEmbeddedHandler returns a Handler which can serve
-// embedded into executable files.
-//
+// StaticEmbeddedHandler returns a Handler which can serve embedded files
+// that are embedded using the go-bindata tool(assetsGziped = false) or the kataras/bindata tool (assetsGziped = true).
 //
 // Examples: https://github.com/kataras/iris/tree/master/_examples/file-server
-func StaticEmbeddedHandler(vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) context.Handler {
+func StaticEmbeddedHandler(vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string, assetsGziped bool) context.Handler {
 	// Depends on the command the user gave to the go-bindata
 	// the assset path (names) may be or may not be prepended with a slash.
 	// What we do: we remove the ./ from the vdir which should be
@@ -63,6 +62,7 @@ func StaticEmbeddedHandler(vdir string, assetFn func(name string) ([]byte, error
 
 	modtime := time.Now()
 	h := func(ctx context.Context) {
+
 		reqPath := strings.TrimPrefix(ctx.Request().URL.Path, "/"+vdir)
 		// i.e : /css/main.css
 
@@ -80,9 +80,17 @@ func StaticEmbeddedHandler(vdir string, assetFn func(name string) ([]byte, error
 
 			buf, err := assetFn(path) // remove the first slash
 
+			if assetsGziped {
+				// this will add the "Vary" : "Accept-Encoding"
+				// and 					"Content-Encoding": "gzip"
+				// headers.
+				context.AddGzipHeaders(ctx.ResponseWriter())
+			}
+
 			if err != nil {
 				continue
 			}
+
 			ctx.ContentType(cType)
 			if _, err := ctx.WriteWithExpiration(buf, modtime); err != nil {
 				ctx.StatusCode(http.StatusInternalServerError)
@@ -93,7 +101,6 @@ func StaticEmbeddedHandler(vdir string, assetFn func(name string) ([]byte, error
 
 		// not found or error
 		ctx.NotFound()
-
 	}
 
 	return h
@@ -140,6 +147,7 @@ type fsHandler struct {
 	// user options, only directory is required.
 	directory       http.Dir
 	listDirectories bool
+	gzip            bool
 	// these are init on the Build() call
 	filesystem http.FileSystem
 	once       sync.Once
@@ -183,18 +191,17 @@ func NewStaticHandlerBuilder(dir string) StaticHandlerBuilder {
 	}
 }
 
-// Gzip if enable is true then gzip compression is enabled for this static directory
-// Defaults to false
+// Gzip if enable is true then gzip compression is enabled for this static directory.
+//
+// Defaults to false.
 func (w *fsHandler) Gzip(enable bool) StaticHandlerBuilder {
-	w.begin = append(w.begin, func(ctx context.Context) {
-		ctx.Gzip(true)
-		ctx.Next()
-	})
+	w.gzip = enable
 	return w
 }
 
 // Listing turn on/off the 'show files and directories'.
-// Defaults to false
+//
+// Defaults to false.
 func (w *fsHandler) Listing(listDirectoriesOnOff bool) StaticHandlerBuilder {
 	w.listDirectories = listDirectoriesOnOff
 	return w
@@ -243,9 +250,15 @@ func (w *fsHandler) Build() context.Handler {
 
 			// Note the request.url.path is changed but request.RequestURI is not
 			// so on custom errors we use the requesturi instead.
-			// this can be changed
+			// this can be changed.
 
-			_, gzipEnabled := ctx.ResponseWriter().(*context.GzipResponseWriter)
+			// take the gzip setting.
+			gzipEnabled := w.gzip
+			if !gzipEnabled {
+				// if false then check if the dev did something like `ctx.Gzip(true)`.
+				_, gzipEnabled = ctx.ResponseWriter().(*context.GzipResponseWriter)
+			}
+
 			_, prevStatusCode := serveFile(ctx,
 				w.filesystem,
 				path.Clean(upath),
@@ -272,15 +285,10 @@ func (w *fsHandler) Build() context.Handler {
 				return
 			}
 
-			// go to the next middleware
+			// go to the next middleware, if any.
 			ctx.Next()
 		}
-		if len(w.begin) > 0 {
-			handlers := append(w.begin[0:], fileserver)
-			w.handler = func(ctx context.Context) {
-				ctx.Do(handlers)
-			}
-		}
+
 		w.handler = fileserver
 	})
 
@@ -294,10 +302,10 @@ func (w *fsHandler) Build() context.Handler {
 // replying with an HTTP 404 not found error.
 //
 // Usage:
-// fileserver := iris.StaticHandler("./static_files", false, false)
+// fileserver := Party#StaticHandler("./static_files", false, false)
 // h := router.StripPrefix("/static", fileserver)
-// app.Get("/static", h)
-//
+// app.Get("/static/{f:path}", h)
+// app.Head("/static/{f:path}", h)
 func StripPrefix(prefix string, h context.Handler) context.Handler {
 	if prefix == "" {
 		return h
@@ -821,7 +829,7 @@ func serveFile(ctx context.Context, fs http.FileSystem, name string, redirect bo
 
 	// try to find and send the correct content type based on the filename
 	// and the binary data inside "f".
-	detectOrWriteContentType(ctx, d.Name(), f)
+	// detectOrWriteContentType(ctx, d.Name(), f)
 
 	return "", http.StatusOK
 }

@@ -9,6 +9,8 @@ func TestCleanPath(t *testing.T) {
 		path     string
 		expected string
 	}{
+		{"/",
+			"/"},
 		{"noslashPrefix",
 			"/noslashPrefix"},
 		{"slashSuffix/",

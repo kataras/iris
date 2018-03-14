@@ -89,7 +89,7 @@
   branch = "master"
   name = "github.com/iris-contrib/httpexpect"
   packages = ["."]
-  revision = "65e93247e7071782e760f82086e8b677cca0c78a"
+  revision = "ebe99fcebbcedf6e7916320cce24c3e1832766ac"
 
 [[projects]]
   branch = "master"
