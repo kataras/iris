@@ -2208,6 +2208,7 @@ var (
 	contentDispositionHeaderKey = "Content-Disposition"
 	cacheControlHeaderKey       = "Cache-Control"
 	contentEncodingHeaderKey    = "Content-Encoding"
+	gzipHeaderValue             = "gzip"
 	acceptEncodingHeaderKey     = "Accept-Encoding"
 	varyHeaderKey               = "Vary"
 )
@@ -2360,7 +2361,7 @@ func (ctx *context) StreamWriter(writer func(w io.Writer) bool) {
 func (ctx *context) ClientSupportsGzip() bool {
 	if h := ctx.GetHeader(acceptEncodingHeaderKey); h != "" {
 		for _, v := range strings.Split(h, ";") {
-			if strings.Contains(v, "gzip") { // we do Contains because sometimes browsers has the q=, we don't use it atm. || strings.Contains(v,"deflate"){
+			if strings.Contains(v, gzipHeaderValue) { // we do Contains because sometimes browsers has the q=, we don't use it atm. || strings.Contains(v,"deflate"){
 				return true
 			}
 		}
@@ -2915,8 +2916,10 @@ func (ctx *context) ServeContent(content io.ReadSeeker, filename string, modtime
 	ctx.SetLastModified(modtime)
 	var out io.Writer
 	if gzipCompression && ctx.ClientSupportsGzip() {
-		ctx.writer.Header().Add(varyHeaderKey, acceptEncodingHeaderKey)
-		ctx.Header(contentEncodingHeaderKey, "gzip")
+		AddGzipHeaders(ctx.writer)
+
+		// ctx.writer.Header().Add(varyHeaderKey, acceptEncodingHeaderKey)
+		// ctx.Header(contentEncodingHeaderKey,gzipHeaderValue)
 
 		gzipWriter := acquireGzipWriter(ctx.writer)
 		defer releaseGzipWriter(gzipWriter)
@@ -3191,7 +3194,6 @@ func (ctx *context) Exec(method string, path string) {
 	req.RequestURI = path
 	req.URL.Path = path
 	req.Method = method
-	req.Host = req.Host
 
 	// execute the route from the (internal) context router
 	// this way we keep the sessions and the values

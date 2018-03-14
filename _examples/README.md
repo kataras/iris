@@ -310,6 +310,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 - [Favicon](file-server/favicon/main.go)
 - [Basic](file-server/basic/main.go)
 - [Embedding Files Into App Executable File](file-server/embedding-files-into-app/main.go)
+- [Embedding Gziped Files Into App Executable File](file-server/embedding-gziped-files-into-app/main.go) **NEW**
 - [Send/Force-Download Files](file-server/send-files/main.go)
 - Single Page Applications
     * [single Page Application](file-server/single-page-application/basic/main.go)

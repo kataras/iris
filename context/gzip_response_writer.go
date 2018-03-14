@@ -165,17 +165,23 @@ func (w *GzipResponseWriter) WriteNow(contents []byte) (int, error) {
 		// Or a better idea, acquire and adapt the gzip writer on-time when is not disabled.
 		// So that is not needed any more:
 		// w.gzipWriter.Reset(noop)
+
 		return w.ResponseWriter.Write(contents)
 	}
 
-	w.ResponseWriter.Header().Add(varyHeaderKey, "Accept-Encoding")
-	w.ResponseWriter.Header().Add(contentEncodingHeaderKey, "gzip")
-
+	AddGzipHeaders(w.ResponseWriter)
 	// if not `WriteNow` but "Content-Length" header
 	// is exists, then delete it before `.Write`
 	// Content-Length should not be there.
 	// no, for now at least: w.ResponseWriter.Header().Del(contentLengthHeaderKey)
 	return writeGzip(w.ResponseWriter, contents)
+}
+
+// AddGzipHeaders just adds the headers "Vary" to "Accept-Encoding"
+// and "Content-Encoding" to "gzip".
+func AddGzipHeaders(w ResponseWriter) {
+	w.Header().Add(varyHeaderKey, acceptEncodingHeaderKey)
+	w.Header().Add(contentEncodingHeaderKey, gzipHeaderValue)
 }
 
 // FlushResponse validates the response headers in order to be compatible with the gzip written data
