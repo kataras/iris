@@ -829,7 +829,7 @@ func serveFile(ctx context.Context, fs http.FileSystem, name string, redirect bo
 
 	// try to find and send the correct content type based on the filename
 	// and the binary data inside "f".
-	// detectOrWriteContentType(ctx, d.Name(), f)
+	detectOrWriteContentType(ctx, d.Name(), f)
 
 	return "", http.StatusOK
 }
