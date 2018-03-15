@@ -14,6 +14,24 @@ import (
 
 type resource string
 
+// content types that are used in the ./assets,
+// we could use the detectContentType that iris do but it's better
+// to do it manually so we can test if that returns the correct result on embedding files.
+func (r resource) contentType() string {
+	switch filepath.Ext(r.String()) {
+	case ".js":
+		return "application/javascript"
+	case ".css":
+		return "text/css"
+	case ".ico":
+		return "image/x-icon"
+	case ".html":
+		return "text/html"
+	default:
+		return "text/plain"
+	}
+}
+
 func (r resource) String() string {
 	return string(r)
 }
@@ -66,6 +84,7 @@ func TestEmbeddingGzipFilesIntoApp(t *testing.T) {
 		rawContents := u.loadFromBase("./assets")
 
 		response := e.GET(url).Expect()
+		response.ContentType(u.contentType(), app.ConfigurationReadOnly().GetCharset())
 
 		if expected, got := response.Raw().StatusCode, httptest.StatusOK; expected != got {
 			t.Fatalf("[%d] of '%s': expected %d status code but got %d", i, url, expected, got)
