@@ -85,7 +85,9 @@ func (w *ResponseRecorder) EndResponse() {
 // possible to maximize compatibility.
 func (w *ResponseRecorder) Write(contents []byte) (int, error) {
 	w.chunks = append(w.chunks, contents...)
-	return len(w.chunks), nil
+	// Remember that we should not return all the written length within `Write`:
+	// see https://github.com/kataras/iris/pull/931
+	return len(contents), nil
 }
 
 // Writef formats according to a format specifier and writes to the response.
