@@ -42,6 +42,14 @@ func StaticEmbeddedHandler(vdir string, assetFn func(name string) ([]byte, error
 		if vdir[0] == '/' || vdir[0] == os.PathSeparator { // second check for /something, (or ./something if we had dot on 0 it will be removed
 			vdir = vdir[1:]
 		}
+
+		// check for trailing slashes because new users may be do that by mistake
+		// although all examples are showing the correct way but you never know
+		// i.e "./assets/" is not correct, if was inside "./assets".
+		// remove last "/".
+		if trailingSlashIdx := len(vdir) - 1; vdir[trailingSlashIdx] == '/' {
+			vdir = vdir[0:trailingSlashIdx]
+		}
 	}
 
 	// collect the names we are care for,
