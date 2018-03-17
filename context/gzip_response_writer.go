@@ -117,8 +117,8 @@ func (w *GzipResponseWriter) Write(contents []byte) (int, error) {
 func (w *GzipResponseWriter) Writef(format string, a ...interface{}) (n int, err error) {
 	n, err = fmt.Fprintf(w, format, a...)
 	if err == nil {
-		if w.ResponseWriter.Header()[contentTypeHeaderKey] == nil {
-			w.ResponseWriter.Header().Set(contentTypeHeaderKey, ContentTextHeaderValue)
+		if w.ResponseWriter.Header()[ContentTypeHeaderKey] == nil {
+			w.ResponseWriter.Header().Set(ContentTypeHeaderKey, ContentTextHeaderValue)
 		}
 	}
 
@@ -130,8 +130,8 @@ func (w *GzipResponseWriter) Writef(format string, a ...interface{}) (n int, err
 func (w *GzipResponseWriter) WriteString(s string) (n int, err error) {
 	n, err = w.Write([]byte(s))
 	if err == nil {
-		if w.ResponseWriter.Header()[contentTypeHeaderKey] == nil {
-			w.ResponseWriter.Header().Set(contentTypeHeaderKey, ContentTextHeaderValue)
+		if w.ResponseWriter.Header()[ContentTypeHeaderKey] == nil {
+			w.ResponseWriter.Header().Set(ContentTypeHeaderKey, ContentTextHeaderValue)
 		}
 
 	}
@@ -180,8 +180,8 @@ func (w *GzipResponseWriter) WriteNow(contents []byte) (int, error) {
 // AddGzipHeaders just adds the headers "Vary" to "Accept-Encoding"
 // and "Content-Encoding" to "gzip".
 func AddGzipHeaders(w ResponseWriter) {
-	w.Header().Add(varyHeaderKey, acceptEncodingHeaderKey)
-	w.Header().Add(contentEncodingHeaderKey, gzipHeaderValue)
+	w.Header().Add(VaryHeaderKey, AcceptEncodingHeaderKey)
+	w.Header().Add(ContentEncodingHeaderKey, GzipHeaderValue)
 }
 
 // FlushResponse validates the response headers in order to be compatible with the gzip written data

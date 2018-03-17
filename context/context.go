@@ -1602,8 +1602,6 @@ func (ctx *context) Header(name string, value string) {
 	ctx.writer.Header().Add(name, value)
 }
 
-const contentTypeHeaderKey = "Content-Type"
-
 // ContentType sets the response writer's header key "Content-Type" to the 'cType'.
 func (ctx *context) ContentType(cType string) {
 	if cType == "" {
@@ -1623,13 +1621,13 @@ func (ctx *context) ContentType(cType string) {
 		}
 	}
 
-	ctx.writer.Header().Set(contentTypeHeaderKey, cType)
+	ctx.writer.Header().Set(ContentTypeHeaderKey, cType)
 }
 
 // GetContentType returns the response writer's header value of "Content-Type"
 // which may, setted before with the 'ContentType'.
 func (ctx *context) GetContentType() string {
-	return ctx.writer.Header().Get(contentTypeHeaderKey)
+	return ctx.writer.Header().Get(ContentTypeHeaderKey)
 }
 
 // StatusCode sets the status code header to the response.
@@ -2198,19 +2196,29 @@ func (ctx *context) WriteString(body string) (n int, err error) {
 	return ctx.writer.WriteString(body)
 }
 
-var (
-	// StaticCacheDuration expiration duration for INACTIVE file handlers, it's the only one global configuration
-	// which can be changed.
-	StaticCacheDuration = 20 * time.Second
+const (
+	// ContentTypeHeaderKey is the header key of "Content-Type".
+	ContentTypeHeaderKey = "Content-Type"
 
-	lastModifiedHeaderKey       = "Last-Modified"
-	ifModifiedSinceHeaderKey    = "If-Modified-Since"
-	contentDispositionHeaderKey = "Content-Disposition"
-	cacheControlHeaderKey       = "Cache-Control"
-	contentEncodingHeaderKey    = "Content-Encoding"
-	gzipHeaderValue             = "gzip"
-	acceptEncodingHeaderKey     = "Accept-Encoding"
-	varyHeaderKey               = "Vary"
+	// LastModifiedHeaderKey is the header key of "Last-Modified".
+	LastModifiedHeaderKey = "Last-Modified"
+	// IfModifiedSinceHeaderKey is the header key of "If-Modified-Since".
+	IfModifiedSinceHeaderKey = "If-Modified-Since"
+	// CacheControlHeaderKey is the header key of "Cache-Control".
+	CacheControlHeaderKey = "Cache-Control"
+
+	// ContentDispositionHeaderKey is the header key of "Content-Disposition".
+	ContentDispositionHeaderKey = "Content-Disposition"
+	// ContentLengthHeaderKey is the header key of "Content-Length"
+	ContentLengthHeaderKey = "Content-Length"
+	// ContentEncodingHeaderKey is the header key of "Content-Encoding".
+	ContentEncodingHeaderKey = "Content-Encoding"
+	// GzipHeaderValue is the header value of "gzip".
+	GzipHeaderValue = "gzip"
+	// AcceptEncodingHeaderKey is the header key of "Accept-Encoding".
+	AcceptEncodingHeaderKey = "Accept-Encoding"
+	// VaryHeaderKey is the header key of "Vary".
+	VaryHeaderKey = "Vary"
 )
 
 var unixEpochTime = time.Unix(0, 0)
@@ -2251,7 +2259,7 @@ var FormatTime = func(ctx Context, t time.Time) string {
 // It's mostly internally on core/router and context packages.
 func (ctx *context) SetLastModified(modtime time.Time) {
 	if !IsZeroTime(modtime) {
-		ctx.Header(lastModifiedHeaderKey, FormatTime(ctx, modtime.UTC())) // or modtime.UTC()?
+		ctx.Header(LastModifiedHeaderKey, FormatTime(ctx, modtime.UTC())) // or modtime.UTC()?
 	}
 }
 
@@ -2273,7 +2281,7 @@ func (ctx *context) CheckIfModifiedSince(modtime time.Time) (bool, error) {
 	if method := ctx.Method(); method != http.MethodGet && method != http.MethodHead {
 		return false, errors.New("skip: method")
 	}
-	ims := ctx.GetHeader(ifModifiedSinceHeaderKey)
+	ims := ctx.GetHeader(IfModifiedSinceHeaderKey)
 	if ims == "" || IsZeroTime(modtime) {
 		return false, errors.New("skip: zero time")
 	}
@@ -2301,10 +2309,10 @@ func (ctx *context) WriteNotModified() {
 	// guiding cache updates (e.g.," Last-Modified" might be useful if the
 	// response does not have an ETag field).
 	h := ctx.ResponseWriter().Header()
-	delete(h, contentTypeHeaderKey)
-	delete(h, contentLengthHeaderKey)
+	delete(h, ContentTypeHeaderKey)
+	delete(h, ContentLengthHeaderKey)
 	if h.Get("Etag") != "" {
-		delete(h, lastModifiedHeaderKey)
+		delete(h, LastModifiedHeaderKey)
 	}
 	ctx.StatusCode(http.StatusNotModified)
 }
@@ -2359,9 +2367,9 @@ func (ctx *context) StreamWriter(writer func(w io.Writer) bool) {
 
 // ClientSupportsGzip retruns true if the client supports gzip compression.
 func (ctx *context) ClientSupportsGzip() bool {
-	if h := ctx.GetHeader(acceptEncodingHeaderKey); h != "" {
+	if h := ctx.GetHeader(AcceptEncodingHeaderKey); h != "" {
 		for _, v := range strings.Split(h, ";") {
-			if strings.Contains(v, gzipHeaderValue) { // we do Contains because sometimes browsers has the q=, we don't use it atm. || strings.Contains(v,"deflate"){
+			if strings.Contains(v, GzipHeaderValue) { // we do Contains because sometimes browsers has the q=, we don't use it atm. || strings.Contains(v,"deflate"){
 				return true
 			}
 		}
@@ -2896,11 +2904,6 @@ var (
 	errServeContent = errors.New("while trying to serve content to the client. Trace %s")
 )
 
-const (
-	// contentLengthHeaderKey represents the header["Content-Length"]
-	contentLengthHeaderKey = "Content-Length"
-)
-
 // ServeContent serves content, headers are autoset
 // receives three parameters, it's low-level function, instead you can use .ServeFile(string,bool)/SendFile(string,string)
 //
@@ -2917,9 +2920,6 @@ func (ctx *context) ServeContent(content io.ReadSeeker, filename string, modtime
 	var out io.Writer
 	if gzipCompression && ctx.ClientSupportsGzip() {
 		AddGzipHeaders(ctx.writer)
-
-		// ctx.writer.Header().Add(varyHeaderKey, acceptEncodingHeaderKey)
-		// ctx.Header(contentEncodingHeaderKey,gzipHeaderValue)
 
 		gzipWriter := acquireGzipWriter(ctx.writer)
 		defer releaseGzipWriter(gzipWriter)
@@ -2958,7 +2958,7 @@ func (ctx *context) ServeFile(filename string, gzipCompression bool) error {
 //
 // Use this instead of ServeFile to 'force-download' bigger files to the client.
 func (ctx *context) SendFile(filename string, destinationName string) error {
-	ctx.writer.Header().Set(contentDispositionHeaderKey, "attachment;filename="+destinationName)
+	ctx.writer.Header().Set(ContentDispositionHeaderKey, "attachment;filename="+destinationName)
 	return ctx.ServeFile(filename, false)
 }
 
@@ -3032,7 +3032,7 @@ var maxAgeExp = regexp.MustCompile(`maxage=(\d+)`)
 // seconds as int64
 // if header not found or parse failed then it returns -1.
 func (ctx *context) MaxAge() int64 {
-	header := ctx.GetHeader(cacheControlHeaderKey)
+	header := ctx.GetHeader(CacheControlHeaderKey)
 	if header == "" {
 		return -1
 	}
