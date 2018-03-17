@@ -375,14 +375,38 @@ var (
 	// Cache is a middleware providing server-side cache functionalities
 	// to the next handlers, can be used as: `app.Get("/", iris.Cache, aboutHandler)`.
 	// It should be used after Static methods.
-	// See `context#Cache304` for an alternative, faster way.
+	// See `iris#Cache304` for an alternative, faster way.
 	//
 	// Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/#caching
 	Cache = cache.Handler
+	// NoCache is a middleware which overrides the Cache-Control, Pragma and Expires headers
+	// in order to disable the cache during the browser's back and forward feature.
+	//
+	// A good use of this middleware is on HTML routes; to refresh the page even on "back" and "forward" browser's arrow buttons.
+	//
+	// See `iris#StaticCache` for the opposite behavior.
+	//
+	// A shortcut of the `cache#NoCache`
+	NoCache = cache.NoCache
+	// StaticCache middleware for caching static files by sending the "Cache-Control" and "Expires" headers to the client.
+	// It accepts a single input parameter, the "cacheDur", a time.Duration that it's used to calculate the expiration.
+	//
+	// If "cacheDur" <=0 then it returns the `NoCache` middleware instaed to disable the caching between browser's "back" and "forward" actions.
+	//
+	// Usage: `app.Use(iris.StaticCache(24 * time.Hour))` or `app.Use(iris.Staticcache(-1))`.
+	// A middleware, which is a simple Handler can be called inside another handler as well, example:
+	// cacheMiddleware := iris.StaticCache(...)
+	// func(ctx iris.Context){
+	//  cacheMiddleware(ctx)
+	//  [...]
+	// }
+	//
+	// A shortcut of the `cache#StaticCache`
+	StaticCache = cache.StaticCache
 	// Cache304 sends a `StatusNotModified` (304) whenever
 	// the "If-Modified-Since" request header (time) is before the
 	// time.Now() + expiresEvery (always compared to their UTC values).
-	// Use this, which is a shortcut of the, `context#Cache304` instead of the "github.com/kataras/iris/cache" or iris.Cache
+	// Use this, which is a shortcut of the, `chache#Cache304` instead of the "github.com/kataras/iris/cache" or iris.Cache
 	// for better performance.
 	// Clients that are compatible with the http RCF (all browsers are and tools like postman)
 	// will handle the caching.
@@ -394,10 +418,10 @@ var (
 	// Developers are free to extend this method's behavior
 	// by watching system directories changes manually and use of the `ctx.WriteWithExpiration`
 	// with a "modtime" based on the file modified date,
-	// simillary to the `StaticWeb`(StaticWeb sends an OK(200) and browser disk caching instead of 304).
+	// simillary to the `StaticWeb`(which sends status OK(200) and browser disk caching instead of 304).
 	//
-	// A shortcut of the `context#Cache304`.
-	Cache304 = context.Cache304
+	// A shortcut of the `cache#Cache304`.
+	Cache304 = cache.Cache304
 )
 
 // SPA  accepts an "assetHandler" which can be the result of an

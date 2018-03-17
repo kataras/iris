@@ -65,9 +65,3 @@ func Handler(expiration time.Duration) context.Handler {
 	h := Cache(expiration).ServeHTTP
 	return h
 }
-
-var (
-	// NoCache disables the cache for a particular request,
-	// can be used as a middleware or called manually from the handler.
-	NoCache = client.NoCache
-)
