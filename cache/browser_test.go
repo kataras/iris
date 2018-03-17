@@ -1,13 +1,15 @@
 package cache_test
 
 import (
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/cache"
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/httptest"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/kataras/iris/cache"
+
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/httptest"
 )
 
 func TestNoCache(t *testing.T) {
