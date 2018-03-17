@@ -980,35 +980,6 @@ var LimitRequestBodySize = func(maxRequestBodySizeBytes int64) Handler {
 	}
 }
 
-// Cache304 sends a `StatusNotModified` (304) whenever
-// the "If-Modified-Since" request header (time) is before the
-// time.Now() + expiresEvery (always compared to their UTC values).
-// Use this `context#Cache304` instead of the "github.com/kataras/iris/cache" or iris.Cache
-// for better performance.
-// Clients that are compatible with the http RCF (all browsers are and tools like postman)
-// will handle the caching.
-// The only disadvantage of using that instead of server-side caching
-// is that this method will send a 304 status code instead of 200,
-// So, if you use it side by side with other micro services
-// you have to check for that status code as well for a valid response.
-//
-// Developers are free to extend this method's behavior
-// by watching system directories changes manually and use of the `ctx.WriteWithExpiration`
-// with a "modtime" based on the file modified date,
-// simillary to the `StaticWeb`(StaticWeb sends an OK(200) and browser disk caching instead of 304).
-var Cache304 = func(expiresEvery time.Duration) Handler {
-	return func(ctx Context) {
-		now := time.Now()
-		if modified, err := ctx.CheckIfModifiedSince(now.Add(-expiresEvery)); !modified && err == nil {
-			ctx.WriteNotModified()
-			return
-		}
-
-		ctx.SetLastModified(now)
-		ctx.Next()
-	}
-}
-
 // Gzip is a middleware which enables writing
 // using gzip compression, if client supports.
 var Gzip = func(ctx Context) {
