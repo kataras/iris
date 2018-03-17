@@ -517,8 +517,8 @@ func serveContent(ctx context.Context, name string, modtime time.Time, sizeFunc 
 			}()
 		}
 		ctx.Header("Accept-Ranges", "bytes")
-		if ctx.ResponseWriter().Header().Get(contentEncodingHeaderKey) == "" {
-			ctx.Header(contentLengthHeaderKey, strconv.FormatInt(sendSize, 10))
+		if ctx.ResponseWriter().Header().Get(context.ContentEncodingHeaderKey) == "" {
+			ctx.Header(context.ContentLengthHeaderKey, strconv.FormatInt(sendSize, 10))
 		}
 	}
 
