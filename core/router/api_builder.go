@@ -549,23 +549,6 @@ func (api *APIBuilder) Any(relativePath string, handlers ...context.Handler) (ro
 	return
 }
 
-// StaticCacheDuration expiration duration for INACTIVE file handlers, it's the only one global configuration
-// which can be changed.
-var StaticCacheDuration = 20 * time.Second
-
-const (
-	lastModifiedHeaderKey       = "Last-Modified"
-	ifModifiedSinceHeaderKey    = "If-Modified-Since"
-	contentDispositionHeaderKey = "Content-Disposition"
-	cacheControlHeaderKey       = "Cache-Control"
-	contentEncodingHeaderKey    = "Content-Encoding"
-	acceptEncodingHeaderKey     = "Accept-Encoding"
-	// contentLengthHeaderKey represents the header["Content-Length"]
-	contentLengthHeaderKey = "Content-Length"
-	contentTypeHeaderKey   = "Content-Type"
-	varyHeaderKey          = "Vary"
-)
-
 func (api *APIBuilder) registerResourceRoute(reqPath string, h context.Handler) *Route {
 	api.Head(reqPath, h)
 	return api.Get(reqPath, h)

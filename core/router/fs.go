@@ -68,7 +68,7 @@ func StaticEmbeddedHandler(vdir string, assetFn func(name string) ([]byte, error
 		names = append(names, path)
 	}
 
-	modtime := time.Now()
+	// modtime := time.Now()
 	h := func(ctx context.Context) {
 
 		reqPath := strings.TrimPrefix(ctx.Request().URL.Path, "/"+vdir)
@@ -100,7 +100,7 @@ func StaticEmbeddedHandler(vdir string, assetFn func(name string) ([]byte, error
 			}
 
 			ctx.ContentType(cType)
-			if _, err := ctx.WriteWithExpiration(buf, modtime); err != nil {
+			if _, err := ctx.Write(buf); err != nil {
 				ctx.StatusCode(http.StatusInternalServerError)
 				ctx.StopExecution()
 			}
@@ -517,8 +517,8 @@ func serveContent(ctx context.Context, name string, modtime time.Time, sizeFunc 
 			}()
 		}
 		ctx.Header("Accept-Ranges", "bytes")
-		if ctx.ResponseWriter().Header().Get(contentEncodingHeaderKey) == "" {
-			ctx.Header(contentLengthHeaderKey, strconv.FormatInt(sendSize, 10))
+		if ctx.ResponseWriter().Header().Get(context.ContentEncodingHeaderKey) == "" {
+			ctx.Header(context.ContentLengthHeaderKey, strconv.FormatInt(sendSize, 10))
 		}
 	}
 
