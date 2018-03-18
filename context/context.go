@@ -2177,6 +2177,8 @@ const (
 	IfModifiedSinceHeaderKey = "If-Modified-Since"
 	// CacheControlHeaderKey is the header key of "Cache-Control".
 	CacheControlHeaderKey = "Cache-Control"
+	// ETagHeaderKey is the header key of "ETag".
+	ETagHeaderKey = "ETag"
 
 	// ContentDispositionHeaderKey is the header key of "Content-Disposition".
 	ContentDispositionHeaderKey = "Content-Disposition"
@@ -2282,7 +2284,7 @@ func (ctx *context) WriteNotModified() {
 	h := ctx.ResponseWriter().Header()
 	delete(h, ContentTypeHeaderKey)
 	delete(h, ContentLengthHeaderKey)
-	if h.Get("Etag") != "" {
+	if h.Get(ETagHeaderKey) != "" {
 		delete(h, LastModifiedHeaderKey)
 	}
 	ctx.StatusCode(http.StatusNotModified)

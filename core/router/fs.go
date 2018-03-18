@@ -68,7 +68,7 @@ func StaticEmbeddedHandler(vdir string, assetFn func(name string) ([]byte, error
 		names = append(names, path)
 	}
 
-	modtime := time.Now()
+	// modtime := time.Now()
 	h := func(ctx context.Context) {
 
 		reqPath := strings.TrimPrefix(ctx.Request().URL.Path, "/"+vdir)
@@ -100,7 +100,7 @@ func StaticEmbeddedHandler(vdir string, assetFn func(name string) ([]byte, error
 			}
 
 			ctx.ContentType(cType)
-			if _, err := ctx.WriteWithExpiration(buf, modtime); err != nil {
+			if _, err := ctx.Write(buf); err != nil {
 				ctx.StatusCode(http.StatusInternalServerError)
 				ctx.StopExecution()
 			}

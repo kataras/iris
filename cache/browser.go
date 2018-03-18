@@ -68,6 +68,46 @@ var StaticCache = func(cacheDur time.Duration) context.Handler {
 	}
 }
 
+const ifNoneMatchHeaderKey = "If-None-Match"
+
+// ETag is another browser & server cache request-response feature.
+// It can be used side by side with the `StaticCache`, usually `StaticCache` middleware should go first.
+// This should be used on routes that serves static files only.
+// The key of the `ETag` is the `ctx.Request().URL.Path`, invalidation of the not modified cache method
+// can be made by other request handler as well.
+//
+// In typical usage, when a URL is retrieved, the web server will return the resource's current
+// representation along with its corresponding ETag value,
+// which is placed in an HTTP response header "ETag" field:
+//
+// ETag: "/mypath"
+//
+// The client may then decide to cache the representation, along with its ETag.
+// Later, if the client wants to retrieve the same URL resource again,
+// it will first determine whether the local cached version of the URL has expired
+// (through the Cache-Control (`StaticCache` method) and the Expire headers).
+// If the URL has not expired, it will retrieve the local cached resource.
+// If it determined that the URL has expired (is stale), then the client will contact the server
+// and send its previously saved copy of the ETag along with the request in a "If-None-Match" field.
+//
+// Usage with combination of `StaticCache`:
+// assets := app.Party("/assets", cache.StaticCache(24 * time.Hour), ETag)
+// assets.StaticWeb("/", "./assets") or StaticEmbedded("/", "./assets") or StaticEmbeddedGzip("/", "./assets").
+//
+// Similar to `Cache304` but it doesn't depends on any "modified date", it uses just the ETag and If-None-Match headers.
+//
+// Read more at: https://developer.mozilla.org/en-US/docs/Web/HTTP/Caching and
+// https://en.wikipedia.org/wiki/HTTP_ETag
+var ETag = func(ctx context.Context) {
+	key := ctx.Request().URL.Path
+	ctx.Header(context.ETagHeaderKey, key)
+	if match := ctx.GetHeader(ifNoneMatchHeaderKey); match == key {
+		ctx.WriteNotModified()
+		return
+	}
+	ctx.Next()
+}
+
 // Cache304 sends a `StatusNotModified` (304) whenever
 // the "If-Modified-Since" request header (time) is before the
 // time.Now() + expiresEvery (always compared to their UTC values).
@@ -83,7 +123,8 @@ var StaticCache = func(cacheDur time.Duration) context.Handler {
 // Developers are free to extend this method's behavior
 // by watching system directories changes manually and use of the `ctx.WriteWithExpiration`
 // with a "modtime" based on the file modified date,
-// simillary to the `Party#StaticWeb` (which sends status OK(200) and browser disk caching instead of 304).
+// can be used on Party's that contains a static handler,
+// i.e `StaticWeb`, `StaticEmbedded` or even `StaticEmbeddedGzip`.
 var Cache304 = func(expiresEvery time.Duration) context.Handler {
 	return func(ctx context.Context) {
 		now := time.Now()

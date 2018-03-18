@@ -76,3 +76,28 @@ func TestCache304(t *testing.T) {
 	r = e.GET("/").Expect().Status(httptest.StatusOK)
 	r.Body().Equal("send")
 }
+func TestETag(t *testing.T) {
+	t.Parallel()
+
+	app := iris.New()
+	n := "_"
+	app.Get("/", cache.ETag, func(ctx iris.Context) {
+		ctx.WriteString(n)
+		n += "_"
+	})
+
+	// the first and last test writes the content with status OK without cache,
+	// the rest tests the cache headers and status 304 and return, so body should be "".
+	e := httptest.New(t, app)
+
+	r := e.GET("/").Expect().Status(httptest.StatusOK)
+	r.Header("ETag").Equal("/") // test if header setted.
+	r.Body().Equal("_")
+
+	e.GET("/").WithHeader("ETag", "/").WithHeader("If-None-Match", "/").Expect().
+		Status(httptest.StatusNotModified).Body().Equal("") // browser is responsible, no the test engine.
+
+	r = e.GET("/").Expect().Status(httptest.StatusOK)
+	r.Header("ETag").Equal("/") // test if header setted.
+	r.Body().Equal("__")
+}
