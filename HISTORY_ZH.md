@@ -17,9 +17,31 @@
 
 **如何升级**: 打开命令行执行以下命令: `go get -u github.com/kataras/iris` 或者等待自动更新。
 
-# We, 14 March 2018 | v10.4.0
+# 2018 3月14日 | v10.4.0 版本更新
 
-This history entry is not translated yet to the Chinese language yet, please refer to the english version of the [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#we-14-march-2018--v1040) instead.
+- 修正 `APIBuilder, Party#StaticWeb` 和 `APIBuilder, Party#StaticEmbedded` 子分组内的前缀错误
+- 保留 `iris, core/router#StaticEmbeddedHandler` 并移除 `core/router/APIBuilder#StaticEmbeddedHandler`,  (`Handler` 后缀) 这是全局性的，与 `Party` `APIBuilder` 无关。
+- 修正 路径 `{}` 中的路径清理 (我们已经在 [解释器](core/router/macro/interpreter) 级别转义了这些字符， 但是一些符号仍然被更高级别的API构建器删除) , 例如 `\\` 字符串的宏函数正则表达式内容 [927](https://github.com/kataras/iris/issues/927) by [commit e85b113476eeefffbc7823297cc63cd152ebddfd](https://github.com/kataras/iris/commit/e85b113476eeefffbc7823297cc63cd152ebddfd)
+- 同步 `golang.org/x/sys/unix`
+
+## 重要变更
+
+我们使用新工具将静态文件的速度提高了8倍, <https://github.com/kataras/bindata> 这是 go-bindata 的一个分支，对我们来说，一些不必要的东西被移除了，并且包含一些提高性能的补充。
+
+## Reqs/sec 使用 [shuLhan/go-bindata](https://github.com/shuLhan/go-bindata) 和 备选方案对比
+
+![go-bindata](https://github.com/kataras/bindata/raw/master/go-bindata-benchmark.png)
+
+## Reqs/sec 使用 [kataras/bindata](https://github.com/kataras/bindata)
+
+![bindata](https://github.com/kataras/bindata/raw/master/bindata-benchmark.png)
+
+**新增** 方法 `Party#StaticEmbeddedGzip` 与 `Party#StaticEmbedded` 参数相同. 不同处在于 **新增** `StaticEmbeddedGzip` 从 `bindata` 接收 `GzipAsset` 和 `GzipAssetNames` (go get -u github.com/kataras/bindata/cmd/bindata).
+
+你可以在同个文件夹里同时使用 `bindata` 和 `go-bindata` 工具, 第一个用于嵌入静态文件 (javascript, css, ...) 第二个用于静态编译模板!
+
+完整示例: [_examples/file-server/embedding-gziped-files-into-app/main.go](_examples/file-server/embedding-gziped-files-into-app/main.go).
+
 
 # 2018 3月10号 | v10.3.0 版本更新
 
