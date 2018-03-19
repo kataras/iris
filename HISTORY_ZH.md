@@ -17,6 +17,10 @@
 
 **如何升级**: 打开命令行执行以下命令: `go get -u github.com/kataras/iris` 或者等待自动更新。
 
+# We, 14 March 2018 | v10.4.0
+
+This history entry is not translated yet to the Chinese language yet, please refer to the english version of the [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#we-14-march-2018--v1040) instead.
+
 # 2018 3月10号 | v10.3.0 版本更新
 
 - 只有一项 API 更改 [Application/Context/Router#RouteExists](https://godoc.org/github.com/kataras/iris/core/router#Router.RouteExists), 将 `Context` 作为第一参数，而不是最后一个。

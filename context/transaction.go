@@ -114,7 +114,7 @@ func (t *Transaction) Complete(err error) {
 				reason = errWstatus.Reason
 			}
 			// get the content type used on this transaction
-			if cTypeH := t.context.ResponseWriter().Header().Get(contentTypeHeaderKey); cTypeH != "" {
+			if cTypeH := t.context.ResponseWriter().Header().Get(ContentTypeHeaderKey); cTypeH != "" {
 				cType = cTypeH
 			}
 

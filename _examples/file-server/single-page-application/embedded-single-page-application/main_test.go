@@ -12,6 +12,17 @@ import (
 
 type resource string
 
+func (r resource) contentType() string {
+	switch filepath.Ext(r.String()) {
+	case ".js":
+		return "application/javascript"
+	case ".css":
+		return "text/css"
+	default:
+		return "text/html"
+	}
+}
+
 func (r resource) String() string {
 	return string(r)
 }
@@ -59,6 +70,7 @@ func TestSPAEmbedded(t *testing.T) {
 
 		e.GET(url).Expect().
 			Status(httptest.StatusOK).
+			ContentType(u.contentType(), app.ConfigurationReadOnly().GetCharset()).
 			Body().Equal(contents)
 	}
 }

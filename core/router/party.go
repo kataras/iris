@@ -188,7 +188,15 @@ type Party interface {
 	//
 	// Example: https://github.com/kataras/iris/tree/master/_examples/file-server/embedding-files-into-app
 	StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) *Route
-
+	// StaticEmbeddedGzip registers a route which can serve embedded gziped files
+	// that are embedded using the https://github.com/kataras/bindata tool and only.
+	// It's 8 times faster than the `StaticEmbeddedHandler` with `go-bindata` but
+	// it sends gzip response only, so the client must be aware that is expecting a gzip body
+	// (browsers and most modern browsers do that, so you can use it without fair).
+	//
+	//
+	// Example: https://github.com/kataras/iris/tree/master/_examples/file-server/embedding-gziped-files-into-app
+	StaticEmbeddedGzip(requestPath string, vdir string, gzipAssetFn func(name string) ([]byte, error), gzipNamesFn func() []string) *Route
 	// Favicon serves static favicon
 	// accepts 2 parameters, second is optional
 	// favPath (string), declare the system directory path of the __.ico

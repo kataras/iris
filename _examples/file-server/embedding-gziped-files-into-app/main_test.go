@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"io/ioutil"
 	"path/filepath"
 	"runtime"
@@ -8,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/kataras/iris/httptest"
+	"github.com/klauspost/compress/gzip"
 )
 
 type resource string
@@ -50,7 +52,6 @@ func (r resource) loadFromBase(dir string) string {
 	if err != nil {
 		panic(fullpath + " failed with error: " + err.Error())
 	}
-
 	result := string(b)
 
 	if runtime.GOOS != "windows" {
@@ -68,7 +69,7 @@ var urls = []resource{
 // if bindata's values matches with the assets/... contents
 // and secondly if the StaticEmbedded had successfully registered
 // the routes and gave the correct response.
-func TestEmbeddingFilesIntoApp(t *testing.T) {
+func TestEmbeddingGzipFilesIntoApp(t *testing.T) {
 	app := newApp()
 	e := httptest.New(t, app)
 
@@ -78,13 +79,28 @@ func TestEmbeddingFilesIntoApp(t *testing.T) {
 		urls = urls[0 : len(urls)-1]
 	}
 
-	for _, u := range urls {
+	for i, u := range urls {
 		url := u.String()
-		contents := u.loadFromBase("./assets")
+		rawContents := u.loadFromBase("./assets")
 
-		e.GET(url).Expect().
-			Status(httptest.StatusOK).
-			ContentType(u.contentType(), app.ConfigurationReadOnly().GetCharset()).
-			Body().Equal(contents)
+		response := e.GET(url).Expect()
+		response.ContentType(u.contentType(), app.ConfigurationReadOnly().GetCharset())
+
+		if expected, got := response.Raw().StatusCode, httptest.StatusOK; expected != got {
+			t.Fatalf("[%d] of '%s': expected %d status code but got %d", i, url, expected, got)
+		}
+
+		func() {
+			reader, err := gzip.NewReader(bytes.NewBuffer(response.Content))
+			defer reader.Close()
+			if err != nil {
+				t.Fatalf("[%d] of '%s': %v", i, url, err)
+			}
+			buf := new(bytes.Buffer)
+			reader.WriteTo(buf)
+			if rawContents != buf.String() {
+				t.Fatalf("[%d] of '%s': expected body:\n%s but got:\n%s", i, url, rawContents, buf.String())
+			}
+		}()
 	}
 }

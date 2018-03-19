@@ -22,7 +22,7 @@ func newApp() *iris.Application {
 		ctx.View("index.html")
 	})
 
-	assetHandler := app.StaticEmbeddedHandler("./public", Asset, AssetNames)
+	assetHandler := iris.StaticEmbeddedHandler("./public", Asset, AssetNames, false) // keep that false if you use the `go-bindata` tool.
 	// as an alternative of SPA you can take a look at the /routing/dynamic-path/root-wildcard
 	// example too
 	// or

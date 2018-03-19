@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/kataras/iris/cache"
+	"github.com/kataras/iris/cache/client"
 	"github.com/kataras/iris/cache/client/rule"
 
 	"github.com/kataras/iris"
@@ -84,7 +85,7 @@ func runTest(e *httpexpect.Expect, path string, counterPtr *uint32, expectedBody
 	return nil
 }
 
-func TestNoCache(t *testing.T) {
+func TestClientNoCache(t *testing.T) {
 	app := iris.New()
 	var n uint32
 
@@ -94,7 +95,7 @@ func TestNoCache(t *testing.T) {
 	})
 
 	app.Get("/nocache", cache.Handler(cacheDuration), func(ctx context.Context) {
-		cache.NoCache(ctx) // <----
+		client.NoCache(ctx) // <----
 		atomic.AddUint32(&n, 1)
 		ctx.Write([]byte(expectedBodyStr))
 	})
