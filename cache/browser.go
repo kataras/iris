@@ -11,7 +11,7 @@ import (
 // CacheControlHeaderValue is the header value of the
 // "Cache-Control": "private, no-cache, max-age=0, must-revalidate, no-store, proxy-revalidate, s-maxage=0".
 //
-// It can be overriden.
+// It can be overridden.
 var CacheControlHeaderValue = "private, no-cache, max-age=0, must-revalidate, no-store, proxy-revalidate, s-maxage=0"
 
 const (
