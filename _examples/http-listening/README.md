@@ -5,7 +5,7 @@
 You can start the server(s) listening to any type of `net.Listener` or even `http.Server` instance.
 The method for initialization of the server should be passed at the end, via `Run` function.
 
-The most common method that Go developers are use to serve their servers are
+The most common method that Go developers use to serve their servers are
 by passing a network address with form of "hostname:ip". With Iris
 we use the `iris.Addr` which is an `iris.Runner` type
 
