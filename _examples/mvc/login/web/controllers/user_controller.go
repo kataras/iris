@@ -38,7 +38,7 @@ type UserController struct {
 const userIDKey = "UserID"
 
 func (c *UserController) getCurrentUserID() int64 {
-	userID, _ := c.Session.GetInt64Default(userIDKey, 0)
+	userID := c.Session.GetInt64Default(userIDKey, 0)
 	return userID
 }
 
