@@ -85,65 +85,116 @@ func (e Entry) StringTrim() string {
 	return strings.TrimSpace(e.String())
 }
 
-// ErrIntParse returns an error message when int parse failed
-// it's not statical error, it depends on the failed value.
-var ErrIntParse = errors.New("unable to find or parse the integer, found: %#v")
+var errFindParse = errors.New("unable to find the %s with key: %s")
 
 // IntDefault returns the entry's value as int.
-// If not found returns "def".
+// If not found returns "def" and a non-nil error.
 func (e Entry) IntDefault(def int) (int, error) {
 	v := e.ValueRaw
 	if v == nil {
-		return def, nil
+		return def, errFindParse.Format("int", e.Key)
 	}
 	if vint, ok := v.(int); ok {
 		return vint, nil
-	} else if vstring, sok := v.(string); sok {
-		if vstring == "" {
-			return def, nil
+	} else if vstring, sok := v.(string); sok && vstring != "" {
+		vint, err := strconv.Atoi(vstring)
+		if err != nil {
+			return def, err
 		}
-		return strconv.Atoi(vstring)
+
+		return vint, nil
 	}
 
-	return def, nil
+	return def, errFindParse.Format("int", e.Key)
 }
 
 // Int64Default returns the entry's value as int64.
-// If not found returns "def".
+// If not found returns "def" and a non-nil error.
 func (e Entry) Int64Default(def int64) (int64, error) {
 	v := e.ValueRaw
 	if v == nil {
-		return def, nil
+		return def, errFindParse.Format("int64", e.Key)
 	}
+
 	if vint64, ok := v.(int64); ok {
 		return vint64, nil
-	} else if vstring, sok := v.(string); sok {
-		if vstring == "" {
-			return def, nil
-		}
+	}
+
+	if vint, ok := v.(int); ok {
+		return int64(vint), nil
+	}
+
+	if vstring, sok := v.(string); sok {
 		return strconv.ParseInt(vstring, 10, 64)
 	}
 
-	return def, nil
+	return def, errFindParse.Format("int64", e.Key)
 }
 
 // Float64Default returns the entry's value as float64.
-// If not found returns "def".
+// If not found returns "def" and a non-nil error.
 func (e Entry) Float64Default(def float64) (float64, error) {
 	v := e.ValueRaw
+
 	if v == nil {
-		return def, nil
-	}
-	if vfloat64, ok := v.(float64); ok {
-		return vfloat64, nil
-	} else if vstring, sok := v.(string); sok {
-		if vstring == "" {
-			return def, nil
-		}
-		return strconv.ParseFloat(vstring, 64)
+		return def, errFindParse.Format("float64", e.Key)
 	}
 
-	return def, nil
+	if vfloat32, ok := v.(float32); ok {
+		return float64(vfloat32), nil
+	}
+
+	if vfloat64, ok := v.(float64); ok {
+		return vfloat64, nil
+	}
+
+	if vint, ok := v.(int); ok {
+		return float64(vint), nil
+	}
+
+	if vstring, sok := v.(string); sok {
+		vfloat64, err := strconv.ParseFloat(vstring, 64)
+		if err != nil {
+			return def, err
+		}
+
+		return vfloat64, nil
+	}
+
+	return def, errFindParse.Format("float64", e.Key)
+}
+
+// Float32Default returns the entry's value as float32.
+// If not found returns "def" and a non-nil error.
+func (e Entry) Float32Default(key string, def float32) (float32, error) {
+	v := e.ValueRaw
+
+	if v == nil {
+		return def, errFindParse.Format("float32", e.Key)
+	}
+
+	if vfloat32, ok := v.(float32); ok {
+		return vfloat32, nil
+	}
+
+	if vfloat64, ok := v.(float64); ok {
+		return float32(vfloat64), nil
+	}
+
+	if vint, ok := v.(int); ok {
+		return float32(vint), nil
+	}
+
+	if vstring, sok := v.(string); sok {
+		vfloat32, err := strconv.ParseFloat(vstring, 32)
+		if err != nil {
+			return def, err
+		}
+
+		return float32(vfloat32), nil
+	}
+
+	return def, errFindParse.Format("float32", e.Key)
 }
 
 // BoolDefault returns the user's value as bool.
@@ -151,11 +202,11 @@ func (e Entry) Float64Default(def float64) (float64, error) {
 // or "0" or "f" or "F" or "FALSE" or "false" or "False".
 // Any other value returns an error.
 //
-// If not found returns "def".
+// If not found returns "def" and a non-nil error.
 func (e Entry) BoolDefault(def bool) (bool, error) {
 	v := e.ValueRaw
 	if v == nil {
-		return def, nil
+		return def, errFindParse.Format("bool", e.Key)
 	}
 
 	if vBoolean, ok := v.(bool); ok {
@@ -163,7 +214,11 @@ func (e Entry) BoolDefault(def bool) (bool, error) {
 	}
 
 	if vString, ok := v.(string); ok {
-		return strconv.ParseBool(vString)
+		b, err := strconv.ParseBool(vString)
+		if err != nil {
+			return def, err
+		}
+		return b, nil
 	}
 
 	if vInt, ok := v.(int); ok {
@@ -173,7 +228,7 @@ func (e Entry) BoolDefault(def bool) (bool, error) {
 		return false, nil
 	}
 
-	return def, nil
+	return def, errFindParse.Format("bool", e.Key)
 }
 
 // Value returns the value of the entry,
@@ -347,66 +402,64 @@ func (r *Store) GetStringTrim(name string) string {
 	return strings.TrimSpace(r.GetString(name))
 }
 
-// GetIntDefault returns the entry's value as int, based on its key.
-// If not found returns "def".
-func (r *Store) GetIntDefault(key string, def int) (int, error) {
+// GetInt returns the entry's value as int, based on its key.
+// If not found returns -1 and a non-nil error.
+func (r *Store) GetInt(key string) (int, error) {
 	v := r.GetEntry(key)
 	if v == nil {
-		return def, nil
+		return 0, errFindParse.Format("int", key)
 	}
-	return v.IntDefault(def)
+	return v.IntDefault(-1)
 }
 
-// GetInt returns the entry's value as int, based on its key.
-// If not found returns 0.
-func (r *Store) GetInt(key string) (int, error) {
-	return r.GetIntDefault(key, 0)
+// GetIntDefault returns the entry's value as int, based on its key.
+// If not found returns "def".
+func (r *Store) GetIntDefault(key string, def int) int {
+	if v, err := r.GetInt(key); err == nil {
+		return v
+	}
+
+	return def
+}
+
+// GetInt64 returns the entry's value as int64, based on its key.
+// If not found returns -1 and a non-nil error.
+func (r *Store) GetInt64(key string) (int64, error) {
+	v := r.GetEntry(key)
+	if v == nil {
+		return -1, errFindParse.Format("int64", key)
+	}
+	return v.Int64Default(-1)
 }
 
 // GetInt64Default returns the entry's value as int64, based on its key.
 // If not found returns "def".
-func (r *Store) GetInt64Default(key string, def int64) (int64, error) {
-	v := r.GetEntry(key)
-	if v == nil {
-		return def, nil
+func (r *Store) GetInt64Default(key string, def int64) int64 {
+	if v, err := r.GetInt64(key); err == nil {
+		return v
 	}
-	return v.Int64Default(def)
+
+	return def
 }
 
-// GetInt64 returns the entry's value as int64, based on its key.
-// If not found returns 0.0.
-func (r *Store) GetInt64(key string) (int64, error) {
-	return r.GetInt64Default(key, 0.0)
+// GetFloat64 returns the entry's value as float64, based on its key.
+// If not found returns -1 and a non nil error.
+func (r *Store) GetFloat64(key string) (float64, error) {
+	v := r.GetEntry(key)
+	if v == nil {
+		return -1, errFindParse.Format("float64", key)
+	}
+	return v.Float64Default(-1)
 }
 
 // GetFloat64Default returns the entry's value as float64, based on its key.
 // If not found returns "def".
-func (r *Store) GetFloat64Default(key string, def float64) (float64, error) {
-	v := r.GetEntry(key)
-	if v == nil {
-		return def, nil
+func (r *Store) GetFloat64Default(key string, def float64) float64 {
+	if v, err := r.GetFloat64(key); err == nil {
+		return v
 	}
-	return v.Float64Default(def)
-}
 
-// GetFloat64 returns the entry's value as float64, based on its key.
-// If not found returns 0.0.
-func (r *Store) GetFloat64(key string) (float64, error) {
-	return r.GetFloat64Default(key, 0.0)
-}
-
-// GetBoolDefault returns the user's value as bool, based on its key.
-// a string which is "1" or "t" or "T" or "TRUE" or "true" or "True"
-// or "0" or "f" or "F" or "FALSE" or "false" or "False".
-// Any other value returns an error.
-//
-// If not found returns "def".
-func (r *Store) GetBoolDefault(key string, def bool) (bool, error) {
-	v := r.GetEntry(key)
-	if v == nil {
-		return def, nil
-	}
-	return v.BoolDefault(def)
+	return def
 }
 
 // GetBool returns the user's value as bool, based on its key.
@@ -414,9 +467,27 @@ func (r *Store) GetBoolDefault(key string, def bool) (bool, error) {
 // or "0" or "f" or "F" or "FALSE" or "false" or "False".
 // Any other value returns an error.
 //
-// If not found returns false.
+// If not found returns false and a non-nil error.
 func (r *Store) GetBool(key string) (bool, error) {
-	return r.GetBoolDefault(key, false)
+	v := r.GetEntry(key)
+	if v == nil {
+		return false, errFindParse.Format("bool", key)
+	}
+
+	return v.BoolDefault(false)
+}
+
+// GetBoolDefault returns the user's value as bool, based on its key.
+// a string which is "1" or "t" or "T" or "TRUE" or "true" or "True"
+// or "0" or "f" or "F" or "FALSE" or "false" or "False".
+//
+// If not found returns "def".
+func (r *Store) GetBoolDefault(key string, def bool) bool {
+	if v, err := r.GetBool(key); err == nil {
+		return v
+	}
+
+	return def
 }
 
 // Remove deletes an entry linked to that "key",

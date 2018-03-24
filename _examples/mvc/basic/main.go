@@ -97,6 +97,6 @@ type basicSubController struct {
 }
 
 func (c *basicSubController) Get() string {
-	count, _ := c.Session.GetIntDefault("count", 1)
+	count := c.Session.GetIntDefault("count", 1)
 	return fmt.Sprintf("Hello from basicSubController.\nRead-only visits count: %d", count)
 }

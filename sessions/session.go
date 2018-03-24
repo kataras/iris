@@ -122,12 +122,6 @@ func (s *Session) peekFlashMessage(key string) (*flashMessage, bool) {
 // GetString same as Get but returns its string representation,
 // if key doesn't exist then it returns an empty string.
 func (s *Session) GetString(key string) string {
-	return s.GetStringDefault(key, "")
-}
-
-// GetStringDefault same as Get but returns its string representation,
-// if key doesn't exist then it returns the "defaultValue".
-func (s *Session) GetStringDefault(key string, defaultValue string) string {
 	if value := s.Get(key); value != nil {
 		if v, ok := value.(string); ok {
 			return v
@@ -140,6 +134,16 @@ func (s *Session) GetStringDefault(key string, defaultValue string) string {
 		if v, ok := value.(int64); ok {
 			return strconv.FormatInt(v, 10)
 		}
+	}
+
+	return ""
+}
+
+// GetStringDefault same as Get but returns its string representation,
+// if key doesn't exist then it returns the "defaultValue".
+func (s *Session) GetStringDefault(key string, defaultValue string) string {
+	if v := s.GetString(key); v != "" {
+		return v
 	}
 
 	return defaultValue
@@ -166,14 +170,8 @@ func (s *Session) GetFlashStringDefault(key string, defaultValue string) string 
 var errFindParse = errors.New("Unable to find the %s with key: %s. Found? %#v")
 
 // GetInt same as `Get` but returns its int representation,
-// if key doesn't exist then it returns -1.
+// if key doesn't exist then it returns -1 and a non-nil error.
 func (s *Session) GetInt(key string) (int, error) {
-	return s.GetIntDefault(key, -1)
-}
-
-// GetIntDefault same as `Get` but returns its int representation,
-// if key doesn't exist then it returns the "defaultValue".
-func (s *Session) GetIntDefault(key string, defaultValue int) (int, error) {
 	v := s.Get(key)
 
 	if vint, ok := v.(int); ok {
@@ -184,14 +182,23 @@ func (s *Session) GetIntDefault(key string, defaultValue int) (int, error) {
 		return strconv.Atoi(vstring)
 	}
 
-	return defaultValue, errFindParse.Format("int", key, v)
+	return -1, errFindParse.Format("int", key, v)
+}
+
+// GetIntDefault same as `Get` but returns its int representation,
+// if key doesn't exist then it returns the "defaultValue".
+func (s *Session) GetIntDefault(key string, defaultValue int) int {
+	if v, err := s.GetInt(key); err == nil {
+		return v
+	}
+	return defaultValue
 }
 
 // Increment increments the stored int value saved as "key" by +"n".
 // If value doesn't exist on that "key" then it creates one with the "n" as its value.
 // It returns the new, incremented, value.
 func (s *Session) Increment(key string, n int) (newValue int) {
-	newValue, _ = s.GetIntDefault(key, 0)
+	newValue = s.GetIntDefault(key, 0)
 	newValue += n
 	s.Set(key, newValue)
 	return
@@ -201,21 +208,15 @@ func (s *Session) Increment(key string, n int) (newValue int) {
 // If value doesn't exist on that "key" then it creates one with the "n" as its value.
 // It returns the new, decremented, value even if it's less than zero.
 func (s *Session) Decrement(key string, n int) (newValue int) {
-	newValue, _ = s.GetIntDefault(key, 0)
+	newValue = s.GetIntDefault(key, 0)
 	newValue -= n
 	s.Set(key, newValue)
 	return
 }
 
 // GetInt64 same as `Get` but returns its int64 representation,
-// if key doesn't exist then it returns -1.
+// if key doesn't exist then it returns -1 and a non-nil error.
 func (s *Session) GetInt64(key string) (int64, error) {
-	return s.GetInt64Default(key, -1)
-}
-
-// GetInt64Default same as `Get` but returns its int64 representation,
-// if key doesn't exist it returns the "defaultValue".
-func (s *Session) GetInt64Default(key string, defaultValue int64) (int64, error) {
 	v := s.Get(key)
 
 	if vint64, ok := v.(int64); ok {
@@ -230,18 +231,22 @@ func (s *Session) GetInt64Default(key string, defaultValue int64) (int64, error)
 		return strconv.ParseInt(vstring, 10, 64)
 	}
 
-	return defaultValue, errFindParse.Format("int64", key, v)
+	return -1, errFindParse.Format("int64", key, v)
+}
+
+// GetInt64Default same as `Get` but returns its int64 representation,
+// if key doesn't exist it returns the "defaultValue".
+func (s *Session) GetInt64Default(key string, defaultValue int64) int64 {
+	if v, err := s.GetInt64(key); err == nil {
+		return v
+	}
+
+	return defaultValue
 }
 
 // GetFloat32 same as `Get` but returns its float32 representation,
-// if key doesn't exist then it returns -1.
+// if key doesn't exist then it returns -1 and a non-nil error.
 func (s *Session) GetFloat32(key string) (float32, error) {
-	return s.GetFloat32Default(key, -1)
-}
-
-// GetFloat32Default same as `Get` but returns its float32 representation,
-// if key doesn't exist then it returns the "defaultValue".
-func (s *Session) GetFloat32Default(key string, defaultValue float32) (float32, error) {
 	v := s.Get(key)
 
 	if vfloat32, ok := v.(float32); ok {
@@ -264,18 +269,22 @@ func (s *Session) GetFloat32Default(key string, defaultValue float32) (float32, 
 		return float32(vfloat64), nil
 	}
 
-	return defaultValue, errFindParse.Format("float32", key, v)
+	return -1, errFindParse.Format("float32", key, v)
+}
+
+// GetFloat32Default same as `Get` but returns its float32 representation,
+// if key doesn't exist then it returns the "defaultValue".
+func (s *Session) GetFloat32Default(key string, defaultValue float32) float32 {
+	if v, err := s.GetFloat32(key); err == nil {
+		return v
+	}
+
+	return defaultValue
 }
 
 // GetFloat64 same as `Get` but returns its float64 representation,
-// if key doesn't exist then it returns -1.
+// if key doesn't exist then it returns -1 and a non-nil error.
 func (s *Session) GetFloat64(key string) (float64, error) {
-	return s.GetFloat64Default(key, -1)
-}
-
-// GetFloat64Default same as `Get` but returns its float64 representation,
-// if key doesn't exist then it returns the "defaultValue".
-func (s *Session) GetFloat64Default(key string, defaultValue float64) (float64, error) {
 	v := s.Get(key)
 
 	if vfloat32, ok := v.(float32); ok {
@@ -294,27 +303,65 @@ func (s *Session) GetFloat64Default(key string, defaultValue float64) (float64, 
 		return strconv.ParseFloat(vstring, 32)
 	}
 
-	return defaultValue, errFindParse.Format("float64", key, v)
+	return -1, errFindParse.Format("float64", key, v)
+}
+
+// GetFloat64Default same as `Get` but returns its float64 representation,
+// if key doesn't exist then it returns the "defaultValue".
+func (s *Session) GetFloat64Default(key string, defaultValue float64) float64 {
+	if v, err := s.GetFloat64(key); err == nil {
+		return v
+	}
+
+	return defaultValue
 }
 
 // GetBoolean same as `Get` but returns its boolean representation,
-// if key doesn't exist then it returns false.
+// if key doesn't exist then it returns false and a non-nil error.
 func (s *Session) GetBoolean(key string) (bool, error) {
-	return s.GetBooleanDefault(key, false)
-}
-
-// GetBooleanDefault same as `Get` but returns its boolean representation,
-// if key doesn't exist then it returns the "defaultValue".
-func (s *Session) GetBooleanDefault(key string, defaultValue bool) (bool, error) {
 	v := s.Get(key)
+	if v == nil {
+		return false, errFindParse.Format("bool", key, "nil")
+	}
+
 	// here we could check for "true", "false" and 0 for false and 1 for true
 	// but this may cause unexpected behavior from the developer if they expecting an error
 	// so we just check if bool, if yes then return that bool, otherwise return false and an error.
 	if vb, ok := v.(bool); ok {
 		return vb, nil
 	}
+	if vstring, ok := v.(string); ok {
+		return strconv.ParseBool(vstring)
+	}
 
-	return defaultValue, errFindParse.Format("bool", key, v)
+	return false, errFindParse.Format("bool", key, v)
+}
+
+// GetBooleanDefault same as `Get` but returns its boolean representation,
+// if key doesn't exist then it returns the "defaultValue".
+func (s *Session) GetBooleanDefault(key string, defaultValue bool) bool {
+	/*
+		Note that here we can't do more than duplicate the GetBoolean's code, because of the "false".
+	*/
+	v := s.Get(key)
+	if v == nil {
+		return defaultValue
+	}
+
+	// here we could check for "true", "false" and 0 for false and 1 for true
+	// but this may cause unexpected behavior from the developer if they expecting an error
+	// so we just check if bool, if yes then return that bool, otherwise return false and an error.
+	if vb, ok := v.(bool); ok {
+		return vb
+	}
+
+	if vstring, ok := v.(string); ok {
+		if b, err := strconv.ParseBool(vstring); err == nil {
+			return b
+		}
+	}
+
+	return defaultValue
 }
 
 // GetAll returns a copy of all session's values.
