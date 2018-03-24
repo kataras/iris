@@ -17,6 +17,27 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris` or let the automatic updater do that for you.
 
+# Sa, 24 March 2018 | v10.5.0
+
+### New
+
+Add new client cache (helpers) middlewares for even faster static file servers. Read more [there](https://github.com/kataras/iris/pull/935).
+
+### Breaking Change
+
+Change the `Value<T>Default(<T>, error)` to `Value<T>Default(key, defaultValue) <T>`  like `ctx.PostValueIntDefault` or `ctx.Values().GetIntDefault` or `sessions/session#GetIntDefault`.
+The proposal was made by @jefurry at https://github.com/kataras/iris/issues/937.
+
+#### How to align your existing codebase
+
+Just remove the second return value from these calls.
+
+Nothing too special or hard to change here, think that in our 100+ [_examples](_examples) we had only two of them.
+
+For example: at [_examples/mvc/basic/main.go line 100](_examples/mvc/basic/main.go#L100) the `count,_ := c.Session.GetIntDefault("count", 1)` **becomes now:** `count := c.Session.GetIntDefault("count", 1)`.
+
+> Remember that if you can't upgrade then just don't, we dont have any security fixes in this release, but at some point you will have to upgrade for your own good, we always add new features that you will love to embrace!
+
 # We, 14 March 2018 | v10.4.0
 
 - fix `APIBuilder, Party#StaticWeb` and `APIBuilder, Party#StaticEmbedded` wrong strip prefix inside children parties

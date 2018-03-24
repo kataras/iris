@@ -179,7 +179,7 @@ func (r RequestParams) GetIntUnslashed(key string) (int, error) {
 
 	}
 
-	return -1, memstore.ErrIntParse.Format(v)
+	return -1, fmt.Errorf("unable to find int for '%s'", key)
 }
 
 // Len returns the full length of the parameters.
@@ -522,36 +522,36 @@ type Context interface {
 	// PostValueTrim returns the parsed form data from POST, PATCH,
 	// or PUT body parameters based on a "name",  without trailing spaces.
 	PostValueTrim(name string) string
-	// PostValueIntDefault returns the parsed form data from POST, PATCH,
-	// or PUT body parameters based on a "name", as int.
-	//
-	// If not found returns the "def".
-	PostValueIntDefault(name string, def int) (int, error)
 	// PostValueInt returns the parsed form data from POST, PATCH,
 	// or PUT body parameters based on a "name", as int.
 	//
-	// If not found returns 0.
+	// If not found returns -1 and a non-nil error.
 	PostValueInt(name string) (int, error)
-	// PostValueInt64Default returns the parsed form data from POST, PATCH,
-	// or PUT body parameters based on a "name", as int64.
+	// PostValueIntDefault returns the parsed form data from POST, PATCH,
+	// or PUT body parameters based on a "name", as int.
 	//
-	// If not found returns the "def".
-	PostValueInt64Default(name string, def int64) (int64, error)
+	// If not found returns or parse errors the "def".
+	PostValueIntDefault(name string, def int) int
 	// PostValueInt64 returns the parsed form data from POST, PATCH,
 	// or PUT body parameters based on a "name", as float64.
 	//
-	// If not found returns 0.0.
+	// If not found returns -1 and a no-nil error.
 	PostValueInt64(name string) (int64, error)
+	// PostValueInt64Default returns the parsed form data from POST, PATCH,
+	// or PUT body parameters based on a "name", as int64.
+	//
+	// If not found or parse errors returns the "def".
+	PostValueInt64Default(name string, def int64) int64
 	// PostValueInt64Default returns the parsed form data from POST, PATCH,
 	// or PUT body parameters based on a "name", as float64.
 	//
-	// If not found returns the "def".
-	PostValueFloat64Default(name string, def float64) (float64, error)
-	/// PostValueInt64Default returns the parsed form data from POST, PATCH,
+	// If not found returns -1 and a non-nil error.
+	PostValueFloat64(name string) (float64, error)
+	// PostValueInt64Default returns the parsed form data from POST, PATCH,
 	// or PUT body parameters based on a "name", as float64.
 	//
-	// If not found returns 0.0.
-	PostValueFloat64(name string) (float64, error)
+	// If not found or parse errors returns the "def".
+	PostValueFloat64Default(name string, def float64) float64
 	// PostValueInt64Default returns the parsed form data from POST, PATCH,
 	// or PUT body parameters based on a "name", as bool.
 	//
@@ -1836,54 +1836,64 @@ func (ctx *context) PostValueTrim(name string) string {
 	return strings.TrimSpace(ctx.PostValue(name))
 }
 
-// PostValueIntDefault returns the parsed form data from POST, PATCH,
-// or PUT body parameters based on a "name", as int.
-//
-// If not found returns the "def".
-func (ctx *context) PostValueIntDefault(name string, def int) (int, error) {
-	v := ctx.PostValue(name)
-	if v == "" {
-		return def, nil
-	}
-	return strconv.Atoi(v)
-}
+var errUnableToFindPostValue = errors.New("unable to find post value '%s'")
 
 // PostValueInt returns the parsed form data from POST, PATCH,
 // or PUT body parameters based on a "name", as int.
 //
-// If not found returns 0.
+// If not found returns -1 and a non-nil error.
 func (ctx *context) PostValueInt(name string) (int, error) {
-	return ctx.PostValueIntDefault(name, 0)
-}
-
-// PostValueInt64Default returns the parsed form data from POST, PATCH,
-// or PUT body parameters based on a "name", as int64.
-//
-// If not found returns the "def".
-func (ctx *context) PostValueInt64Default(name string, def int64) (int64, error) {
 	v := ctx.PostValue(name)
 	if v == "" {
-		return def, nil
+		return -1, errUnableToFindPostValue.Format(name)
 	}
-	return strconv.ParseInt(v, 10, 64)
+	return strconv.Atoi(v)
+}
+
+// PostValueIntDefault returns the parsed form data from POST, PATCH,
+// or PUT body parameters based on a "name", as int.
+//
+// If not found or parse errors returns the "def".
+func (ctx *context) PostValueIntDefault(name string, def int) int {
+	if v, err := ctx.PostValueInt(name); err == nil {
+		return v
+	}
+
+	return def
 }
 
 // PostValueInt64 returns the parsed form data from POST, PATCH,
 // or PUT body parameters based on a "name", as float64.
 //
-// If not found returns 0.0.
+// If not found returns -1 and a non-nil error.
 func (ctx *context) PostValueInt64(name string) (int64, error) {
-	return ctx.PostValueInt64Default(name, 0.0)
+	v := ctx.PostValue(name)
+	if v == "" {
+		return -1, errUnableToFindPostValue.Format(name)
+	}
+	return strconv.ParseInt(v, 10, 64)
+}
+
+// PostValueInt64Default returns the parsed form data from POST, PATCH,
+// or PUT body parameters based on a "name", as int64.
+//
+// If not found or parse errors returns the "def".
+func (ctx *context) PostValueInt64Default(name string, def int64) int64 {
+	if v, err := ctx.PostValueInt64(name); err == nil {
+		return v
+	}
+
+	return def
 }
 
 // PostValueInt64Default returns the parsed form data from POST, PATCH,
 // or PUT body parameters based on a "name", as float64.
 //
-// If not found returns the "def".
-func (ctx *context) PostValueFloat64Default(name string, def float64) (float64, error) {
+// If not found returns -1 and a non-nil error.
+func (ctx *context) PostValueFloat64(name string) (float64, error) {
 	v := ctx.PostValue(name)
 	if v == "" {
-		return def, nil
+		return -1, errUnableToFindPostValue.Format(name)
 	}
 	return strconv.ParseFloat(v, 64)
 }
@@ -1891,9 +1901,13 @@ func (ctx *context) PostValueFloat64Default(name string, def float64) (float64, 
 // PostValueInt64Default returns the parsed form data from POST, PATCH,
 // or PUT body parameters based on a "name", as float64.
 //
-// If not found returns 0.0.
-func (ctx *context) PostValueFloat64(name string) (float64, error) {
-	return ctx.PostValueFloat64Default(name, 0.0)
+// If not found or parse errors returns the "def".
+func (ctx *context) PostValueFloat64Default(name string, def float64) float64 {
+	if v, err := ctx.PostValueFloat64(name); err == nil {
+		return v
+	}
+
+	return def
 }
 
 // PostValueInt64Default returns the parsed form data from POST, PATCH,
@@ -1901,7 +1915,12 @@ func (ctx *context) PostValueFloat64(name string) (float64, error) {
 //
 // If not found or value is false, then it returns false, otherwise true.
 func (ctx *context) PostValueBool(name string) (bool, error) {
-	return strconv.ParseBool(ctx.PostValue(name))
+	v := ctx.PostValue(name)
+	if v == "" {
+		return false, errUnableToFindPostValue.Format(name)
+	}
+
+	return strconv.ParseBool(v)
 }
 
 // PostValues returns all the parsed form data from POST, PATCH,

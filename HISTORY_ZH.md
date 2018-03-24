@@ -17,6 +17,10 @@
 
 **如何升级**: 打开命令行执行以下命令: `go get -u github.com/kataras/iris` 或者等待自动更新。
 
+# Sa, 24 March 2018 | v10.5.0
+
+This history entry is not translated yet to the Chinese language yet, please refer to the english version of the [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#sa-24-march-2018--v1050) instead.
+
 # 2018 3月14日 | v10.4.0 版本更新
 
 - 修正 `APIBuilder, Party#StaticWeb` 和 `APIBuilder, Party#StaticEmbedded` 子分组内的前缀错误
