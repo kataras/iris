@@ -31,7 +31,7 @@ func TestNoCache(t *testing.T) {
 
 func TestStaticCache(t *testing.T) {
 	t.Parallel()
-	// test change the time format, which is not reccomended but can be done.
+	// test change the time format, which is not recommended but can be done.
 	app := iris.New().Configure(iris.WithTimeFormat("02 Jan 2006 15:04:05 GMT"))
 
 	cacheDur := 30 * (24 * time.Hour)
