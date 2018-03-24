@@ -35,7 +35,7 @@ Source code and other details for the project are available at GitHub:
 
 Current Version
 
-10.4.0
+10.5.0
 
 Installation
 
