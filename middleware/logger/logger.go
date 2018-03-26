@@ -70,19 +70,37 @@ func (l *requestLoggerMiddleware) ServeHTTP(ctx context.Context) {
 	}
 
 	var message interface{}
-	if ctxKey := l.config.MessageContextKey; ctxKey != "" {
-		message = ctx.Values().Get(ctxKey)
+	if ctxKeys := l.config.MessageContextKeys; len(ctxKeys) > 0 {
+		for _, key := range ctxKeys {
+			msg := ctx.Values().Get(key)
+			if message == nil {
+				message = msg
+			} else {
+				message = fmt.Sprintf(" %v %v", message, msg)
+			}
+		}
+	}
+	var headerMessage interface{}
+	if headerKeys := l.config.MessageHeaderKeys; len(headerKeys) > 0 {
+		for _, key := range headerKeys {
+			msg := ctx.GetHeader(key)
+			if headerMessage == nil {
+				headerMessage = msg
+			} else {
+				headerMessage = fmt.Sprintf(" %v %v", headerMessage, msg)
+			}
+		}
 	}
 
 	// print the logs
 	if logFunc := l.config.LogFunc; logFunc != nil {
-		logFunc(endTime, latency, status, ip, method, path, message)
+		logFunc(endTime, latency, status, ip, method, path, message, headerMessage)
 		return
 	}
 
 	if l.config.Columns {
 		endTimeFormatted := endTime.Format("2006/01/02 - 15:04:05")
-		output := Columnize(endTimeFormatted, latency, status, ip, method, path, message)
+		output := Columnize(endTimeFormatted, latency, status, ip, method, path, message, headerMessage)
 		ctx.Application().Logger().Printer.Output.Write([]byte(output))
 		return
 	}
@@ -91,18 +109,27 @@ func (l *requestLoggerMiddleware) ServeHTTP(ctx context.Context) {
 	if message != nil {
 		line += fmt.Sprintf(" %v", message)
 	}
+
+	if headerMessage != nil {
+		line += fmt.Sprintf(" %v", headerMessage)
+	}
 	ctx.Application().Logger().Info(line)
 }
 
 // Columnize formats the given arguments as columns and returns the formatted output,
 // note that it appends a new line to the end.
-func Columnize(nowFormatted string, latency time.Duration, status, ip, method, path string, message interface{}) string {
+func Columnize(nowFormatted string, latency time.Duration, status, ip, method, path string, message interface{}, headerMessage interface{}) string {
 
 	titles := "Time | Status | Latency | IP | Method | Path"
 	line := fmt.Sprintf("%s | %v | %4v | %s | %s | %s", nowFormatted, status, latency, ip, method, path)
 	if message != nil {
 		titles += " | Message"
 		line += fmt.Sprintf(" | %v", message)
+	}
+
+	if headerMessage != nil {
+		titles += " | HeaderMessage"
+		line += fmt.Sprintf(" | %v", headerMessage)
 	}
 
 	outputC := []string{

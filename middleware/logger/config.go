@@ -37,7 +37,7 @@ type Config struct {
 	// Defaults to false.
 	Columns bool
 
-	// MessageContextKey if not empty,
+	// MessageContextKeys if not empty,
 	// the middleware will try to fetch
 	// the contents with `ctx.Values().Get(MessageContextKey)`
 	// and if available then these contents will be
@@ -46,12 +46,23 @@ type Config struct {
 	// a new column will be added named 'Message'.
 	//
 	// Defaults to empty.
-	MessageContextKey string
+	MessageContextKeys []string
+
+	// MessageHeaderKeys if not empty,
+	// the middleware will try to fetch
+	// the contents with `ctx.Values().Get(MessageHeaderKey)`
+	// and if available then these contents will be
+	// appended as part of the logs (with `%v`, in order to be able to set a struct too),
+	// if Columns field was setted to true then
+	// a new column will be added named 'HeaderMessage'.
+	//
+	// Defaults to empty.
+	MessageHeaderKeys []string
 
 	// LogFunc is the writer which logs are written to,
 	// if missing the logger middleware uses the app.Logger().Infof instead.
 	// Note that message argument can be empty.
-	LogFunc func(now time.Time, latency time.Duration, status, ip, method, path string, message interface{})
+	LogFunc func(now time.Time, latency time.Duration, status, ip, method, path string, message interface{}, headerMessage interface{})
 	// Skippers used to skip the logging i.e by `ctx.Path()` and serve
 	// the next/main handler immediately.
 	Skippers []SkipperFunc
@@ -66,15 +77,14 @@ type Config struct {
 // LogFunc and Skippers to nil as well.
 func DefaultConfig() Config {
 	return Config{
-		Status:            true,
-		IP:                true,
-		Method:            true,
-		Path:              true,
-		Columns:           false,
-		MessageContextKey: "",
-		LogFunc:           nil,
-		Skippers:          nil,
-		skip:              nil,
+		Status:   true,
+		IP:       true,
+		Method:   true,
+		Path:     true,
+		Columns:  false,
+		LogFunc:  nil,
+		Skippers: nil,
+		skip:     nil,
 	}
 }
 
