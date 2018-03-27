@@ -8,7 +8,6 @@ import (
 	"runtime"
 
 	"github.com/BurntSushi/toml"
-	"github.com/kataras/golog"
 	"gopkg.in/yaml.v2"
 
 	"github.com/kataras/iris/context"
@@ -17,8 +16,6 @@ import (
 
 const globalConfigurationKeyword = "~"
 
-var globalConfigurationExisted = false
-
 // homeConfigurationFilename returns the physical location of the global configuration(yaml or toml) file.
 // This is useful when we run multiple iris servers that share the same
 // configuration, even with custom values at its "Other" field.
@@ -26,28 +23,6 @@ var globalConfigurationExisted = false
 // which targets to $HOME or %HOMEDRIVE%+%HOMEPATH% + "iris" + the given "ext".
 func homeConfigurationFilename(ext string) string {
 	return filepath.Join(homeDir(), "iris"+ext)
-}
-
-func init() {
-	filename := homeConfigurationFilename(".yml")
-	c, err := parseYAML(filename)
-	if err != nil {
-		// this error will be occurred the first time that the configuration
-		// file doesn't exist.
-		// Create the YAML-ONLY global configuration file now using the default configuration 'c'.
-		// This is useful when we run multiple iris servers that share the same
-		// configuration, even with custom values at its "Other" field.
-		out, err := yaml.Marshal(&c)
-
-		if err == nil {
-			err = ioutil.WriteFile(filename, out, os.FileMode(0666))
-		}
-		if err != nil {
-			golog.Debugf("error while writing the global configuration field at: %s. Trace: %v\n", filename, err)
-		}
-	} else {
-		globalConfigurationExisted = true
-	}
 }
 
 func homeDir() (home string) {

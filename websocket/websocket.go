@@ -53,7 +53,7 @@ Example code:
 		app.Get("/echo", ws.Handler())
 
 		// serve the javascript built'n client-side library,
-		// see weboskcets.html script tags, this path is used.
+		// see websockets.html script tags, this path is used.
 		app.Any("/iris-ws.js", func(ctx context.Context) {
 			ctx.Write(websocket.ClientSource)
 		})
