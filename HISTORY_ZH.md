@@ -17,9 +17,25 @@
 
 **如何升级**: 打开命令行执行以下命令: `go get -u github.com/kataras/iris` 或者等待自动更新。
 
-# Sa, 24 March 2018 | v10.5.0
+# 2018 3月 24日 | v10.5.0 版本更新
 
-This history entry is not translated yet to the Chinese language yet, please refer to the english version of the [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#sa-24-march-2018--v1050) instead.
+### 新增
+
+新增 缓存中间件客户端，更快的静态文件服务器. 详情 [点击](https://github.com/kataras/iris/pull/935).
+
+### 破坏式更新
+
+改变 `Value<T>Default(<T>, error)` 为 `Value<T>Default(key, defaultValue) <T>`  如同 `ctx.PostValueIntDefault` 或 `ctx.Values().GetIntDefault` 或 `sessions/session#GetIntDefault` 或 `context#URLParamIntDefault`.
+由 @jefurry 提出 https://github.com/kataras/iris/issues/937.
+
+#### 如何升级现有代码
+
+只需要移除第二个返回值即可.
+
+示例:  [_examples/mvc/basic/main.go line 100](_examples/mvc/basic/main.go#L100)  `count,_ := c.Session.GetIntDefault("count", 1)` **变更为:** `count := c.Session.GetIntDefault("count", 1)`.
+
+> 请记住，如果您无法升级，那么就不要这样做，我们在此版本中没有任何安全修复程序，但在某些时候建议您最好进行升级，我们总是会添加您喜欢的新功能！
+
 
 # 2018 3月14日 | v10.4.0 版本更新
 
