@@ -36,7 +36,7 @@ func setupWebsocket(app *iris.Application) {
 	app.Get("/echo", ws.Handler())
 
 	// serve the javascript built'n client-side library,
-	// see weboskcets.html script tags, this path is used.
+	// see websockets.html script tags, this path is used.
 	app.Any("/iris-ws.js", func(ctx iris.Context) {
 		ctx.Write(websocket.ClientSource)
 	})
