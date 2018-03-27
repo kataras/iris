@@ -18,7 +18,7 @@ const (
 
 // CheckForUpdates checks for any available updates
 // and asks for the user if want to update now or not.
-func CheckForUpdates(ft bool) {
+func CheckForUpdates() {
 	v := version.Acquire()
 	updateAvailale := v.Compare(Version) == version.Smaller
 

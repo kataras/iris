@@ -456,39 +456,35 @@ type Context interface {
 
 	// URLParam returns true if the url parameter exists, otherwise false.
 	URLParamExists(name string) bool
-	// URLParamDefault returns the get parameter from a request, if not found then "def" is returned.
+	// URLParamDefault returns the get parameter from a request,
+	// if not found then "def" is returned.
 	URLParamDefault(name string, def string) string
-	// URLParam returns the get parameter from a request , if any.
+	// URLParam returns the get parameter from a request, if any.
 	URLParam(name string) string
-	// URLParamTrim returns the url query parameter with trailing white spaces removed from a request,
-	// returns an error if parse failed.
+	// URLParamTrim returns the url query parameter with trailing white spaces removed from a request.
 	URLParamTrim(name string) string
-	// URLParamTrim returns the escaped url query parameter from a request,
-	// returns an error if parse failed.
+	// URLParamTrim returns the escaped url query parameter from a request.
 	URLParamEscape(name string) string
-	// URLParamIntDefault returns the url query parameter as int value from a request,
-	// if not found then "def" is returned.
-	// Returns an error if parse failed.
-	URLParamIntDefault(name string, def int) (int, error)
 	// URLParamInt returns the url query parameter as int value from a request,
-	// returns an error if parse failed.
+	// returns -1 and an error if parse failed.
 	URLParamInt(name string) (int, error)
-	// URLParamInt64Default returns the url query parameter as int64 value from a request,
-	// if not found then "def" is returned.
-	// Returns an error if parse failed.
-	URLParamInt64Default(name string, def int64) (int64, error)
+	// URLParamIntDefault returns the url query parameter as int value from a request,
+	// if not found or parse failed then "def" is returned.
+	URLParamIntDefault(name string, def int) int
 	// URLParamInt64 returns the url query parameter as int64 value from a request,
-	// returns an error if parse failed.
+	// returns -1 and an error if parse failed.
 	URLParamInt64(name string) (int64, error)
-	// URLParamFloat64Default returns the url query parameter as float64 value from a request,
-	// if not found then "def" is returned.
-	// Returns an error if parse failed.
-	URLParamFloat64Default(name string, def float64) (float64, error)
+	// URLParamInt64Default returns the url query parameter as int64 value from a request,
+	// if not found or parse failed then "def" is returned.
+	URLParamInt64Default(name string, def int64) int64
 	// URLParamFloat64 returns the url query parameter as float64 value from a request,
-	// returns an error if parse failed.
+	// returns -1 and an error if parse failed.
 	URLParamFloat64(name string) (float64, error)
+	// URLParamFloat64Default returns the url query parameter as float64 value from a request,
+	// if not found or parse failed then "def" is returned.
+	URLParamFloat64Default(name string, def float64) float64
 	// URLParamBool returns the url query parameter as boolean value from a request,
-	// returns an error if parse failed.
+	// returns an error if parse failed or not found.
 	URLParamBool(name string) (bool, error)
 	// URLParams returns a map of GET query parameters separated by comma if more than one
 	// it returns an empty map if nothing found.
@@ -1641,79 +1637,103 @@ func (ctx *context) URLParamExists(name string) bool {
 
 // URLParamDefault returns the get parameter from a request, if not found then "def" is returned.
 func (ctx *context) URLParamDefault(name string, def string) string {
-	v := ctx.request.URL.Query().Get(name)
-	if v == "" {
-		return def
+	if v := ctx.request.URL.Query().Get(name); v != "" {
+		return v
 	}
-	return v
+
+	return def
 }
 
-// URLParam returns the get parameter from a request , if any.
+// URLParam returns the get parameter from a request, if any.
 func (ctx *context) URLParam(name string) string {
 	return ctx.URLParamDefault(name, "")
 }
 
-// URLParamTrim returns the url query parameter with trailing white spaces removed from a request,
-// returns an error if parse failed.
+// URLParamTrim returns the url query parameter with trailing white spaces removed from a request.
 func (ctx *context) URLParamTrim(name string) string {
 	return strings.TrimSpace(ctx.URLParam(name))
 }
 
-// URLParamTrim returns the escaped url query parameter from a request,
-// returns an error if parse failed.
+// URLParamTrim returns the escaped url query parameter from a request.
 func (ctx *context) URLParamEscape(name string) string {
 	return DecodeQuery(ctx.URLParam(name))
 }
 
-// URLParamIntDefault returns the url query parameter as int value from a request,
-// if not found then "def" is returned.
-// Returns an error if parse failed.
-func (ctx *context) URLParamIntDefault(name string, def int) (int, error) {
-	v := ctx.URLParam(name)
-	if v == "" {
-		return def, nil
-	}
-	return strconv.Atoi(v)
-}
+var errURLParamNotFound = errors.New("url param '%s' does not exist")
 
 // URLParamInt returns the url query parameter as int value from a request,
-// returns an error if parse failed.
+// returns -1 and an error if parse failed or not found.
 func (ctx *context) URLParamInt(name string) (int, error) {
-	return ctx.URLParamIntDefault(name, 0)
+	if v := ctx.URLParam(name); v != "" {
+		n, err := strconv.Atoi(v)
+		if err != nil {
+			return -1, err
+		}
+		return n, nil
+	}
+
+	return -1, errURLParamNotFound.Format(name)
 }
 
-// URLParamInt64Default returns the url query parameter as int64 value from a request,
-// if not found then "def" is returned.
-// Returns an error if parse failed.
-func (ctx *context) URLParamInt64Default(name string, def int64) (int64, error) {
-	v := ctx.URLParam(name)
-	if v == "" {
-		return def, nil
+// URLParamIntDefault returns the url query parameter as int value from a request,
+// if not found or parse failed then "def" is returned.
+func (ctx *context) URLParamIntDefault(name string, def int) int {
+	v, err := ctx.URLParamInt(name)
+	if err != nil {
+		return def
 	}
-	return strconv.ParseInt(v, 10, 64)
+
+	return v
 }
 
 // URLParamInt64 returns the url query parameter as int64 value from a request,
-// returns an error if parse failed.
+// returns -1 and an error if parse failed or not found.
 func (ctx *context) URLParamInt64(name string) (int64, error) {
-	return ctx.URLParamInt64Default(name, 0.0)
+	if v := ctx.URLParam(name); v != "" {
+		n, err := strconv.ParseInt(v, 10, 64)
+		if err != nil {
+			return -1, err
+		}
+		return n, nil
+	}
+
+	return -1, errURLParamNotFound.Format(name)
 }
 
-// URLParamFloat64Default returns the url query parameter as float64 value from a request,
-// if not found then "def" is returned.
-// Returns an error if parse failed.
-func (ctx *context) URLParamFloat64Default(name string, def float64) (float64, error) {
-	v := ctx.URLParam(name)
-	if v == "" {
-		return def, nil
+// URLParamInt64Default returns the url query parameter as int64 value from a request,
+// if not found or parse failed then "def" is returned.
+func (ctx *context) URLParamInt64Default(name string, def int64) int64 {
+	v, err := ctx.URLParamInt64(name)
+	if err != nil {
+		return def
 	}
-	return strconv.ParseFloat(v, 64)
+
+	return v
 }
 
 // URLParamFloat64 returns the url query parameter as float64 value from a request,
-// returns an error if parse failed.
+// returns an error and -1 if parse failed.
 func (ctx *context) URLParamFloat64(name string) (float64, error) {
-	return ctx.URLParamFloat64Default(name, 0.0)
+	if v := ctx.URLParam(name); v != "" {
+		n, err := strconv.ParseFloat(v, 64)
+		if err != nil {
+			return -1, err
+		}
+		return n, nil
+	}
+
+	return -1, errURLParamNotFound.Format(name)
+}
+
+// URLParamFloat64Default returns the url query parameter as float64 value from a request,
+// if not found or parse failed then "def" is returned.
+func (ctx *context) URLParamFloat64Default(name string, def float64) float64 {
+	v, err := ctx.URLParamFloat64(name)
+	if err != nil {
+		return def
+	}
+
+	return v
 }
 
 // URLParamBool returns the url query parameter as boolean value from a request,

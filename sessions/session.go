@@ -320,6 +320,10 @@ func (s *Session) GetFloat64Default(key string, defaultValue float64) float64 {
 // if key doesn't exist then it returns false and a non-nil error.
 func (s *Session) GetBoolean(key string) (bool, error) {
 	v := s.Get(key)
+	if v == nil {
+		return false, errFindParse.Format("bool", key, "nil")
+	}
+
 	// here we could check for "true", "false" and 0 for false and 1 for true
 	// but this may cause unexpected behavior from the developer if they expecting an error
 	// so we just check if bool, if yes then return that bool, otherwise return false and an error.
@@ -340,6 +344,10 @@ func (s *Session) GetBooleanDefault(key string, defaultValue bool) bool {
 		Note that here we can't do more than duplicate the GetBoolean's code, because of the "false".
 	*/
 	v := s.Get(key)
+	if v == nil {
+		return defaultValue
+	}
+
 	// here we could check for "true", "false" and 0 for false and 1 for true
 	// but this may cause unexpected behavior from the developer if they expecting an error
 	// so we just check if bool, if yes then return that bool, otherwise return false and an error.

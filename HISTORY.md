@@ -25,7 +25,7 @@ Add new client cache (helpers) middlewares for even faster static file servers. 
 
 ### Breaking Change
 
-Change the `Value<T>Default(<T>, error)` to `Value<T>Default(key, defaultValue) <T>`  like `ctx.PostValueIntDefault` or `ctx.Values().GetIntDefault` or `sessions/session#GetIntDefault`.
+Change the `Value<T>Default(<T>, error)` to `Value<T>Default(key, defaultValue) <T>`  like `ctx.PostValueIntDefault` or `ctx.Values().GetIntDefault` or `sessions/session#GetIntDefault` or `context#URLParamIntDefault`.
 The proposal was made by @jefurry at https://github.com/kataras/iris/issues/937.
 
 #### How to align your existing codebase
