@@ -22,7 +22,10 @@ func main() {
 
 		// if !empty then its contents derives from `ctx.Values().Get("logger_message")
 		// will be added to the logs.
-		MessageContextKey: "logger_message",
+		MessageContextKeys: []string{"logger_message"},
+
+		// if !empty then its contents derives from `ctx.GetHeader("User-Agent")
+		MessageHeaderKeys: []string{"User-Agent"},
 	})
 
 	app.Use(customLogger)
