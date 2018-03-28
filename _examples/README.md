@@ -1,30 +1,30 @@
-# Examples
+# 示例
 
-Please do learn how [net/http](https://golang.org/pkg/net/http/) std package works, first.
+请先学习如何使用 [net/http](https://golang.org/pkg/net/http/) 
 
-This folder provides easy to understand code snippets on how to get started with [iris](https://github.com/kataras/iris) micro web framework.
+这里包含大部分 [iris](https://github.com/kataras/iris) 网络微框架的简单使用示例
 
-It doesn't always contain the "best ways" but it does cover each important feature that will make you so excited to GO with iris!
+这些示例不一定是最优解，但涵盖了 Iris 的大部分重要功能。
 
-### Overview
+### 概览
 
 - [Hello world!](hello-world/main.go)
-- [Glimpse](overview/main.go)
-- [Tutorial: Online Visitors](tutorial/online-visitors/main.go)
-- [Tutorial: A Todo MVC Application using Iris and Vue.js](https://hackernoon.com/a-todo-mvc-application-using-iris-and-vue-js-5019ff870064)
-- [Tutorial: URL Shortener using BoltDB](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
-- [Tutorial: How to turn your Android Device into a fully featured Web Server (**MUST**)](https://twitter.com/ThePracticalDev/status/892022594031017988)
+- [基础](overview/main.go)
+- [教程: 在线人数](tutorial/online-visitors/main.go)
+- [教程: A Todo MVC Application using Iris and Vue.js](https://hackernoon.com/a-todo-mvc-application-using-iris-and-vue-js-5019ff870064)
+- [教程: 结合 BoltDB 生成短网址](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
+- [教程: 用安卓设备搭建服务器 (**MUST**)](https://twitter.com/ThePracticalDev/status/892022594031017988)
 - [POC: Convert the medium-sized project "Parrot" from native to Iris](https://github.com/iris-contrib/parrot)
 - [POC: Isomorphic react/hot reloadable/redux/css-modules starter kit](https://github.com/kataras/iris-starter-kit)
-- [Tutorial: DropzoneJS Uploader](tutorial/dropzonejs)
-- [Tutorial: Caddy](tutorial/caddy)
-- [Tutorial:Iris Go Framework + MongoDB](https://medium.com/go-language/iris-go-framework-mongodb-552e349eab9c)
+- [教程: DropzoneJS 上传](tutorial/dropzonejs)
+- [教程: Caddy 服务器使用](tutorial/caddy)
+- [教程: Iris + MongoDB](https://medium.com/go-language/iris-go-framework-mongodb-552e349eab9c)
 
-### Structuring
+### 目录结构
 
-Nothing stops you from using your favorite folder structure. Iris is a low level web framework, it has got MVC first-class support but it doesn't limit your folder structure, this is your choice.
+Iris 是个底层框架, 对 MVC 模式有很好的支持，但不限制文件夹结构，你可以随意组织你的代码。
 
-Structuring depends on your own needs. We can't tell you how to design your own application for sure but you're free to take a closer look to the examples below; you may find something useful that you can borrow for your app;
+如何组织代码取决于你的需求. 我们无法告诉你如何设计程序，但你可以仔细查看下面的示例，也许有些片段可以直接放到你的程序里。
 
 - [Bootstrapper](structuring/bootstrap)
 - [MVC with Repository and Service layer Overview](structuring/mvc-plus-repository-and-service-layers)
