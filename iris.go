@@ -771,7 +771,7 @@ func (app *Application) Run(serve Runner, withOrWithout ...Configurator) error {
 	app.logger.Debugf("Application: running using %d host(s)", len(app.Hosts)+1)
 
 	if !app.config.DisableVersionChecker {
-		go maintenance.Start(globalConfigurationExisted)
+		go maintenance.Start()
 	}
 
 	// this will block until an error(unless supervisor's DeferFlow called from a Task).
