@@ -27,37 +27,37 @@ Iris 是个底层框架, 对 MVC 模式有很好的支持，但不限制文件�
 
 如何组织代码取决于你的需求. 我们无法告诉你如何设计程序，但你可以仔细查看下面的示例，也许有些片段可以直接放到你的程序里。
 
-- [Bootstrapper](structuring/bootstrap)
-- [MVC with Repository and Service layer Overview](structuring/mvc-plus-repository-and-service-layers)
-- [Login (MVC with Single Responsibility package)](structuring/login-mvc-single-responsibility-package)
-- [Login (MVC with Datamodels, Datasource, Repository and Service layer)](structuring/login-mvc)
+- [引导模式架构](structuring/bootstrap)
+- [MVC 存储层与服务层](structuring/mvc-plus-repository-and-service-layers)
+- [登录演示 (MVC 使用独立包组织)](structuring/login-mvc-single-responsibility-package)
+- [登录演示 (MVC 数据模型, 数据源, 存储 和 服务层)](structuring/login-mvc)
 
-### HTTP Listening
+### HTTP 监听
 
-- [Common, with address](http-listening/listen-addr/main.go)
-    * [omit server errors](http-listening/listen-addr/omit-server-errors/main.go)
+- [基础用法](http-listening/listen-addr/main.go)
+    * [忽略错误信息](http-listening/listen-addr/omit-server-errors/main.go)
 - [UNIX socket file](http-listening/listen-unix/main.go)
 - [TLS](http-listening/listen-tls/main.go)
-- [Letsencrypt (Automatic Certifications)](http-listening/listen-letsencrypt/main.go)
-- [Notify on shutdown](http-listening/notify-on-shutdown/main.go)
-- Custom TCP Listener
-    * [common net.Listener](http-listening/custom-listener/main.go)
+- [Letsencrypt (自动认证)](http-listening/listen-letsencrypt/main.go)
+- [进程关闭通知](http-listening/notify-on-shutdown/main.go)
+- 自定义 TCP 监听器
+    * [通用 net.Listener](http-listening/custom-listener/main.go)
     * [SO_REUSEPORT for unix systems](http-listening/custom-listener/unix-reuseport/main.go)
-- Custom HTTP Server
-    * [easy way](http-listening/custom-httpserver/easy-way/main.go)
+- 自定义 HTTP 服务
+    * [easy way](http-listening/custom-httpserver/easy-way/main.go)
     * [std way](http-listening/custom-httpserver/std-way/main.go)
-    * [multi server instances](http-listening/custom-httpserver/multi/main.go)
-- Graceful Shutdown
-    * [using the `RegisterOnInterrupt`](http-listening/graceful-shutdown/default-notifier/main.go)
-    * [using a custom notifier](http-listening/graceful-shutdown/custom-notifier/main.go)
+    * [多个服务示例](http-listening/custom-httpserver/multi/main.go)
+- 优雅关闭
+    * [使用 `RegisterOnInterrupt`](http-listening/graceful-shutdown/default-notifier/main.go)
+    * [自定义通知](http-listening/graceful-shutdown/custom-notifier/main.go)
 
-### Configuration
+### 配置
 
-- [Functional](configuration/functional/main.go)
-- [From Configuration Struct](configuration/from-configuration-structure/main.go)
-- [Import from YAML file](configuration/from-yaml-file/main.go)
-    * [Share Configuration between multiple instances](configuration/from-yaml-file/shared-configuration/main.go)
-- [Import from TOML file](configuration/from-toml-file/main.go)
+- [基本配置方式](configuration/functional/main.go)
+- [Struct 方式配置](configuration/from-configuration-structure/main.go)
+- [导入 YAML 配置文件](configuration/from-yaml-file/main.go)
+    * [多实例共享配置](configuration/from-yaml-file/shared-configuration/main.go)
+- [导入 TOML 配置文件](configuration/from-toml-file/main.go)
 
 ### Routing, Grouping, Dynamic Path Parameters, "Macros" and Custom Context
 
@@ -113,10 +113,10 @@ Navigate through examples for a better understanding.
     * [per-route](routing/writing-a-middleware/per-route/main.go)
     * [globally](routing/writing-a-middleware/globally/main.go)
 
-### hero
+### hero (输出的一种高效包装模式)
 
-- [Basic](hero/basic/main.go)
-- [Overview](hero/overview)
+- [基础](hero/basic/main.go)
+- [概览](hero/overview)
 
 ### MVC
 
