@@ -118,7 +118,7 @@ Navigate through examples for a better understanding.
 - [基础](hero/basic/main.go)
 - [概览](hero/overview)
 
-### MVC
+### MVC 模式
 
 ![](mvc/web_mvc_diagram.png)
 
@@ -246,7 +246,7 @@ func(c *ExampleController) Get() string |
 
 where [mvc.Result](https://github.com/kataras/iris/blob/master/mvc/func_result.go) is an interface which contains only that function: `Dispatch(ctx iris.Context)`.
 
-## Using Iris MVC for code reuse
+## Iris MVC 模式代码复用
 
 By creating components that are independent of one another, developers are able to reuse components quickly and easily in other applications. The same (or similar) view for one application can be refactored for another application with different data because the view is simply handling how the data is being displayed to the user.
 
@@ -263,13 +263,13 @@ Follow the examples below,
 - [Register Middleware](mvc/middleware) **NEW**
 - [Vue.js Todo MVC](tutorial/vuejs-todo-mvc) **NEW**
 
-### Subdomains
+### 子域名
 
-- [Single](subdomains/single/main.go)
-- [Multi](subdomains/multi/main.go)
-- [Wildcard](subdomains/wildcard/main.go)
+- [单域名](subdomains/single/main.go)
+- [多域名](subdomains/multi/main.go)
+- [通配符](subdomains/wildcard/main.go)
 - [WWW](subdomains/www/main.go)
-- [Redirect fast](subdomains/redirect/main.go)
+- [快速跳转](subdomains/redirect/main.go)
 
 ### Convert `http.Handler/HandlerFunc`
 
@@ -277,9 +277,9 @@ Follow the examples below,
 - [From http.Handler or http.HandlerFunc](convert-handlers/nethttp/main.go)
 - [From func(http.HandlerFunc) http.HandlerFunc](convert-handlers/real-usecase-raven/writing-middleware/main.go)
 
-### View
+### 视图
 
-| Engine | Declaration |
+| 模板引擎 | 调用声明 |
 | -----------|-------------|
 | template/html | `iris.HTML(...)`       |
 | django        | `iris.Django(...)`     |
@@ -299,14 +299,14 @@ Follow the examples below,
 
 You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [hero templates](https://github.com/shiyanhui/hero/hero) files too, simply by using the `context#ResponseWriter`, take a look at the [http_responsewriter/quicktemplate](http_responsewriter/quicktemplate) and [http_responsewriter/herotemplate](http_responsewriter/herotemplate) examples.
 
-### Authentication
+### 认证
 
 - [Basic Authentication](authentication/basicauth/main.go)
 - [OAUth2](authentication/oauth2/main.go)
 - [JWT](experimental-handlers/jwt/main.go)
 - [Sessions](#sessions)
 
-### File Server
+### 文件服务器
 
 - [Favicon](file-server/favicon/main.go)
 - [Basic](file-server/basic/main.go)
@@ -421,16 +421,14 @@ The package is designed to work with raw websockets although its API is similar 
 - [Custom Raw Go Client](websocket/custom-go-client/main.go)
 - [Third-Party socket.io](websocket/third-party-socketio/main.go)
 
-> You're free to use your own favourite websockets package if you'd like so.
+> 如果你愿意，你可以自由使用你自己喜欢的websockets包。
 
-### Typescript Automation Tools
+### Typescript 自动化工具
 
-typescript automation tools have their own repository: [https://github.com/kataras/iris/tree/master/typescript](https://github.com/kataras/iris/tree/master/typescript) **it contains examples**
+Typescript 自动化工具独立库： [https://github.com/kataras/iris/tree/master/typescript](https://github.com/kataras/iris/tree/master/typescript) **包含相关示例**
 
-> I'd like to tell you that you can use your favourite but I don't think you will find such a thing anywhere else.
+### 老兄
 
-### Hey, You
+进一步学习可通过 [godocs](https://godoc.org/github.com/kataras/iris) 和 https://docs.iris-go.com
 
-Developers should read the [godocs](https://godoc.org/github.com/kataras/iris) and https://docs.iris-go.com for a better understanding.
-
-Psst, I almost forgot; do not forget to [star or watch](https://github.com/kataras/iris/stargazers) the project in order to stay updated with the latest tech trends, it never takes more than a second!
+不要忘记点赞 [star or watch](https://github.com/kataras/iris/stargazers) 这个项目会一直跟进最新趋势。
