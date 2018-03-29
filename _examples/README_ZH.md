@@ -59,28 +59,28 @@ Iris 是个底层框架, 对 MVC 模式有很好的支持，但不限制文件�
     * [多实例共享配置](configuration/from-yaml-file/shared-configuration/main.go)
 - [导入 TOML 配置文件](configuration/from-toml-file/main.go)
 
-### Routing, Grouping, Dynamic Path Parameters, "Macros" and Custom Context
+### 路由、路由分组、路径动态参数、路由参数处理宏 、 自定义上下文
 
 * `app.Get("{userid:int min(1)}", myHandler)`
 * `app.Post("{asset:path}", myHandler)`
 * `app.Put("{custom:string regexp([a-z]+)}", myHandler)`
 
-Note: unlike other routers you'd seen, iris' router can handle things like these:
+提示: 不同于其他路由处理, iris 路由可以处理以下各种情况:
 ```go
-// Matches all GET requests prefixed with "/assets/"
+// 匹配静态前缀 "/assets/" 的各种请求
 app.Get("/assets/{asset:path}", assetsWildcardHandler)
 
-// Matches only GET "/"
+// 只匹配 GET "/"
 app.Get("/", indexHandler)
-// Matches only GET "/about"
+// 只匹配 GET "/about"
 app.Get("/about", aboutHandler)
 
-// Matches all GET requests prefixed with "/profile/"
-// and followed by a single path part
+// 匹配前缀为 "/profile/" 的所有 GET 请求
+// 接着是其余部分的匹配
 app.Get("/profile/{username:string}", userHandler)
-// Matches only GET "/profile/me" because 
-// it does not conflict with /profile/{username:string}
-// or the root wildcard {root:path}
+// 只匹配 "/profile/me" GET 请求，
+// 这和 /profile/{username:string} 
+// 或跟通配符 {root:path} 不冲突
 app.Get("/profile/me", userHandler)
 
 // Matches all GET requests prefixed with /users/
