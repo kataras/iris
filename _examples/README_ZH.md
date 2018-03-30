@@ -368,32 +368,32 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 - [Tollboothic](experimental-handlers/tollboothic/limit-handler/main.go)
 - [Cross-Site Request Forgery Protection](experimental-handlers/csrf/main.go)
 
-#### More
+#### 更多
 
 https://github.com/kataras/iris/tree/master/middleware#third-party-handlers
 
-### Automated API Documentation
+### 自动 API 文档
 
 - [yaag](apidoc/yaag/main.go)
 
-### Testing
+### 测试
 
 The `httptest` package is your way for end-to-end HTTP testing, it uses the httpexpect library created by our friend, [gavv](https://github.com/gavv).
 
 [Example](testing/httptest/main_test.go)
 
-### Caching
+### 缓存
 
-iris cache library lives on its own [package](https://github.com/kataras/iris/tree/master/cache).
+Iris 独立缓存包 [package](https://github.com/kataras/iris/tree/master/cache).
 
-- [Simple](cache/simple/main.go)
-- [Client-Side (304)](cache/client-side/main.go) - part of the iris context core
+- [简单示例](cache/simple/main.go)
+- [客户端 (304)](cache/client-side/main.go) - context 方法
 
-> You're free to use your own favourite caching package if you'd like so.
+> 可以随意使用自定义的缓存包。
 
 ### Sessions
 
-iris session manager lives on its own [package](https://github.com/kataras/iris/tree/master/sessions).
+Iris session 管理独立包 [package](https://github.com/kataras/iris/tree/master/sessions).
 
 - [Overview](sessions/overview/main.go)
 - [Standalone](sessions/standalone/main.go)
@@ -406,7 +406,7 @@ iris session manager lives on its own [package](https://github.com/kataras/iris/
     * [LevelDB](sessions/database/leveldb/main.go)
     * [Redis](sessions/database/redis/main.go)
 
-> You're free to use your own favourite sessions package if you'd like so.
+> 可以随意使用自定义的 Session 管理包。
 
 ### Websockets
 
@@ -427,7 +427,7 @@ The package is designed to work with raw websockets although its API is similar 
 
 Typescript 自动化工具独立库： [https://github.com/kataras/iris/tree/master/typescript](https://github.com/kataras/iris/tree/master/typescript) **包含相关示例**
 
-### 老兄
+### 大兄弟
 
 进一步学习可通过 [godocs](https://godoc.org/github.com/kataras/iris) 和 https://docs.iris-go.com
 
