@@ -308,6 +308,7 @@ func (su *Supervisor) ListenAndServeAutoTLS(domain string, email string, cacheDi
 		HostPolicy: hostPolicy,
 		Email:      email,
 		Cache:      cache,
+		ForceRSA:   true,
 	}
 
 	srv2 := &http.Server{
@@ -329,11 +330,15 @@ func (su *Supervisor) ListenAndServeAutoTLS(domain string, email string, cacheDi
 	go srv2.ListenAndServe()
 
 	su.Server.TLSConfig = &tls.Config{
-		GetCertificate:           autoTLSManager.GetCertificate,
 		MinVersion:               tls.VersionTLS10,
+		GetCertificate:           autoTLSManager.GetCertificate,
 		PreferServerCipherSuites: true,
+		// Keep the defaults.
 		CurvePreferences: []tls.CurveID{
 			tls.X25519,
+			tls.CurveP256,
+			tls.CurveP384,
+			tls.CurveP521,
 		},
 	}
 	return su.ListenAndServeTLS("", "")
