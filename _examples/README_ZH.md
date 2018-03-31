@@ -83,35 +83,35 @@ app.Get("/profile/{username:string}", userHandler)
 // 或跟通配符 {root:path} 不冲突
 app.Get("/profile/me", userHandler)
 
-// Matches all GET requests prefixed with /users/
-// and followed by a number which should be equal or bigger than 1
+// 匹配所有前缀为 /users/ 的 GET 请求
+// 参数为数字，且 >= 1
 app.Get("/user/{userid:int min(1)}", getUserHandler)
-// Matches all requests DELETE prefixed with /users/
-// and following by a number which should be equal or bigger than 1
+// 匹配所有前缀为 /users/ 的 DELETE 请求
+// 参数为数字，且 >= 1
 app.Delete("/user/{userid:int min(1)}", deleteUserHandler)
 
-// Matches all GET requests except "/", "/about", anything starts with "/assets/" etc...
-// because it does not conflict with the rest of the routes.
+// 匹配所有 GET 请求，除了 "/", "/about", 或其他以 "/assets/" 开头
+// 因为它不会与其他路线冲突。
 app.Get("{root:path}", rootWildcardHandler)
 ```
 
-Navigate through examples for a better understanding.
+可以浏览以下示例，以便更好理解
 
-- [Overview](routing/overview/main.go)
-- [Basic](routing/basic/main.go)
-- [Controllers](mvc)
-- [Custom HTTP Errors](routing/http-errors/main.go)
-- [Dynamic Path](routing/dynamic-path/main.go)
-    * [root level wildcard path](routing/dynamic-path/root-wildcard/main.go)
-- [Reverse routing](routing/reverse/main.go)
-- [Custom wrapper](routing/custom-wrapper/main.go)
-- Custom Context
-    * [method overriding](routing/custom-context/method-overriding/main.go)
-    * [new implementation](routing/custom-context/new-implementation/main.go)
-- [Route State](routing/route-state/main.go)
-- [Writing a middleware](routing/writing-a-middleware)
-    * [per-route](routing/writing-a-middleware/per-route/main.go)
-    * [globally](routing/writing-a-middleware/globally/main.go)
+- [概览](routing/overview/main.go)
+- [基本使用](routing/basic/main.go)
+- [控制器](mvc)
+- [自定义 HTTP 错误](routing/http-errors/main.go)
+- [动态路径](routing/dynamic-path/main.go)
+    * [根级通配符路径](routing/dynamic-path/root-wildcard/main.go)
+- [反向路由](routing/reverse/main.go)
+- [自定义包装](routing/custom-wrapper/main.go)
+- 自定义上下文
+    * [方法重写](routing/custom-context/method-overriding/main.go)
+    * [新实现方式](routing/custom-context/new-implementation/main.go)
+- [路由状态](routing/route-state/main.go)
+- [中间件定义](routing/writing-a-middleware)
+    * [路由前](routing/writing-a-middleware/per-route/main.go)
+    * [全局](routing/writing-a-middleware/globally/main.go)
 
 ### hero (输出的一种高效包装模式)
 
@@ -122,13 +122,11 @@ Navigate through examples for a better understanding.
 
 ![](mvc/web_mvc_diagram.png)
 
-Iris has **first-class support for the MVC (Model View Controller) pattern**, you'll not find
-these stuff anywhere else in the Go world.
+Iris **对 MVC (Model View Controller) 有一流的支持**, 在 Go 社区里是独一无二的。
 
-Iris web framework supports Request data, Models, Persistence Data and Binding
-with the fastest possible execution.
+Iris 支持快速的请求数据，模型，持久性数据和绑定。
 
-**Characteristics**
+**特点**
 
 All HTTP Methods are supported, for example if want to serve `GET`
 then the controller should have a function named `Get()`,
@@ -252,7 +250,7 @@ By creating components that are independent of one another, developers are able 
 
 If you're new to back-end web development read about the MVC architectural pattern first, a good start is that [wikipedia article](https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93controller).
 
-Follow the examples below,
+参考下面的示例
 
 - [Hello world](mvc/hello-world/main.go) **UPDATED**
 - [Session Controller](mvc/session-controller/main.go) **UPDATED**
@@ -271,7 +269,7 @@ Follow the examples below,
 - [WWW](subdomains/www/main.go)
 - [快速跳转](subdomains/redirect/main.go)
 
-### Convert `http.Handler/HandlerFunc`
+### 改造 `http.Handler/HandlerFunc`
 
 - [From func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)](convert-handlers/negroni-like/main.go)
 - [From http.Handler or http.HandlerFunc](convert-handlers/nethttp/main.go)
@@ -345,7 +343,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 
 - [Using xorm(Mysql, MyMysql, Postgres, Tidb, **SQLite**, MsSql, MsSql, Oracle)](orm/xorm/main.go)
 
-### Miscellaneous
+### 其他
 
 - [Request Logger](http_request/request-logger/main.go)
     * [log requests to a file](http_request/request-logger/request-logger-file/main.go)
@@ -355,7 +353,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 - [Internal Application File Logger](miscellaneous/file-logger/main.go)
 - [Google reCAPTCHA](miscellaneous/recaptcha/main.go) 
 
-### Experimental Handlers
+### 试验性质处理器
 
 - [Casbin wrapper](experimental-handlers/casbin/wrapper/main.go)
 - [Casbin middleware](experimental-handlers/casbin/middleware/main.go)
