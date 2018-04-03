@@ -31,8 +31,9 @@ type Error struct {
 // New creates and returns an Error with a pre-defined user output message
 // all methods below that doesn't accept a pointer receiver because actually they are not changing the original message
 func New(errMsg string) Error {
+	uidv4, _ := uuid.NewV4() // skip error.
 	return Error{
-		ID:      uuid.NewV4().String(),
+		ID:      uidv4.String(),
 		Message: Prefix + errMsg,
 	}
 }
