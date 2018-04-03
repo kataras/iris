@@ -164,10 +164,10 @@
   revision = "abc90934186a77966e2beeac62ed966aac0561d5"
 
 [[projects]]
-  branch = "v1.2.0"
+  branch = "master"
   name = "github.com/satori/go.uuid"
   packages = ["."]
-  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
+  revision = "36e9d2ebbde5e3f13ab2e25625fd453271d6522e"
 
 [[projects]]
   branch = "master"
