@@ -147,7 +147,7 @@ func (s *Sessions) Destroy(ctx context.Context) {
 	if cookieValue == "" { // nothing to destroy
 		return
 	}
-	RemoveCookie(ctx, s.config.Cookie, s.config.AllowReclaim)
+	RemoveCookie(ctx, s.config)
 
 	s.provider.Destroy(cookieValue)
 }
