@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/gob"
 	"io"
-	"sync"
 
 	"github.com/kataras/iris/core/memstore"
 )
@@ -96,42 +95,21 @@ type SyncPayload struct {
 	Store RemoteStore
 }
 
-var spPool = sync.Pool{New: func() interface{} { return SyncPayload{} }}
-
-func acquireSyncPayload(session *Session, action Action) SyncPayload {
-	p := spPool.Get().(SyncPayload)
-	p.SessionID = session.sid
-
-	// clone the life time, except the timer.
-	// lifetime := LifeTime{
-	// 	Time:             session.lifetime.Time,
-	// 	OriginalDuration: session.lifetime.OriginalDuration,
-	// }
-
-	// lifetime := acquireLifetime(session.lifetime.OriginalDuration, nil)
-
-	p.Store = RemoteStore{
-		Values:   session.values,
-		Lifetime: session.lifetime,
+func newSyncPayload(session *Session, action Action) SyncPayload {
+	return SyncPayload{
+		SessionID: session.sid,
+		Action:    action,
+		Store: RemoteStore{
+			Values:   session.values,
+			Lifetime: session.lifetime,
+		},
 	}
-
-	p.Action = action
-	return p
-}
-
-func releaseSyncPayload(p SyncPayload) {
-	p.Value.Key = ""
-	p.Value.ValueRaw = nil
-
-	// releaseLifetime(p.Store.Lifetime)
-	spPool.Put(p)
 }
 
 func syncDatabases(databases []Database, payload SyncPayload) {
 	for i, n := 0, len(databases); i < n; i++ {
 		databases[i].Sync(payload)
 	}
-	releaseSyncPayload(payload)
 }
 
 // RemoteStore is a helper which is a wrapper
