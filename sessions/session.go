@@ -366,11 +366,11 @@ func (s *Session) GetBooleanDefault(key string, defaultValue bool) bool {
 
 // GetAll returns a copy of all session's values.
 func (s *Session) GetAll() map[string]interface{} {
-	items := make(map[string]interface{}, len(s.values))
+	items := make(map[string]interface{}, s.values.Len())
 	s.mu.RLock()
-	for _, kv := range s.values {
-		items[kv.Key] = kv.Value()
-	}
+	s.values.Visit(func(key string, value interface{}) {
+		items[key] = value
+	})
 	s.mu.RUnlock()
 	return items
 }
@@ -394,7 +394,6 @@ func (s *Session) VisitAll(cb func(k string, v interface{})) {
 }
 
 func (s *Session) set(key string, value interface{}, immutable bool) {
-	action := ActionCreate // defaults to create, means the first insert.
 
 	isFirst := s.values.Len() == 0
 	entry, isNew := s.values.Save(key, value, immutable)
@@ -403,25 +402,25 @@ func (s *Session) set(key string, value interface{}, immutable bool) {
 	s.isNew = false
 	s.mu.Unlock()
 
-	if !isFirst {
-		// we could use s.isNew
-		// which is setted at sessions.go#Start when values are empty
-		// but here we want the specific key-value pair's state.
-		if isNew {
-			action = ActionInsert
-		} else {
-			action = ActionUpdate
+	if len(s.provider.databases) > 0 {
+		action := ActionCreate // defaults to create, means the first insert.
+		if !isFirst {
+			// we could use s.isNew
+			// which is setted at sessions.go#Start when values are empty
+			// but here we want the specific key-value pair's state.
+			if isNew {
+				action = ActionInsert
+			} else {
+				action = ActionUpdate
+			}
 		}
+
+		p := newSyncPayload(s, action)
+		p.Value = entry
+
+		syncDatabases(s.provider.databases, p)
 	}
 
-	/// TODO: remove the expireAt pointer, wtf, we could use zero time instead,
-	// that was not my commit so I will ask for permission first...
-	// rename the expireAt to expiresAt, it seems to make more sense to me
-
-	p := acquireSyncPayload(s, action)
-	p.Value = entry
-
-	syncDatabases(s.provider.databases, p)
 }
 
 // Set fills the session with an entry "value", based on its "key".
@@ -475,9 +474,11 @@ func (s *Session) Delete(key string) bool {
 	}
 	s.mu.Unlock()
 
-	p := acquireSyncPayload(s, ActionDelete)
-	p.Value = memstore.Entry{Key: key}
-	syncDatabases(s.provider.databases, p)
+	if len(s.provider.databases) > 0 {
+		p := newSyncPayload(s, ActionDelete)
+		p.Value = memstore.Entry{Key: key}
+		syncDatabases(s.provider.databases, p)
+	}
 
 	return removed
 }
@@ -496,8 +497,10 @@ func (s *Session) Clear() {
 	s.isNew = false
 	s.mu.Unlock()
 
-	p := acquireSyncPayload(s, ActionClear)
-	syncDatabases(s.provider.databases, p)
+	if len(s.provider.databases) > 0 {
+		p := newSyncPayload(s, ActionClear)
+		syncDatabases(s.provider.databases, p)
+	}
 }
 
 // ClearFlashes removes all flash messages.

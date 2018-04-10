@@ -17,7 +17,7 @@ func main() {
 		i := 0
 		// goroutine in order to no block and just wait,
 		// goroutine is OPTIONAL and not a very good option but it depends on the needs
-		// Look the streaming_simple_2 for an alternative code style
+		// Look the /alternative route for an alternative code style
 		// Send the response in chunks and wait for a second between each chunk.
 		go ctx.StreamWriter(func(w io.Writer) bool {
 			i++
