@@ -97,10 +97,12 @@ func (p *provider) newSession(sid string, expires time.Duration) *Session {
 }
 
 func (p *provider) loadSessionFromDB(sid string) (memstore.Store, LifeTime) {
-	var store memstore.Store
-	var lifetime LifeTime
+	var (
+		store         memstore.Store
+		lifetime      LifeTime
+		firstValidIdx = 1
+	)
 
-	firstValidIdx := 1
 	for i, n := 0, len(p.databases); i < n; i++ {
 		storeDB := p.databases[i].Load(sid)
 		if storeDB.Lifetime.HasExpired() { // if expired then skip this db
@@ -120,10 +122,15 @@ func (p *provider) loadSessionFromDB(sid string) (memstore.Store, LifeTime) {
 			// else append this database's key-value pairs
 			// to the store
 			storeDB.Values.Visit(func(key string, value interface{}) {
-				store.Set(key, value)
+				store.Save(key, value, false)
 			})
 		}
 	}
+
+	// default to memstore if no other store given.
+	// if store == nil {
+	// 	store = &memstore.Store{}
+	// }
 
 	// Note: if one database and it's being expired then the lifetime will be zero(unlimited)
 	// this by itself is wrong but on the `newSession` we make check of this case too and update the lifetime
@@ -200,5 +207,7 @@ func (p *provider) DestroyAll() {
 
 func (p *provider) deleteSession(sess *Session) {
 	delete(p.sessions, sess.sid)
-	syncDatabases(p.databases, acquireSyncPayload(sess, ActionDestroy))
+	if len(p.databases) > 0 {
+		syncDatabases(p.databases, newSyncPayload(sess, ActionDestroy))
+	}
 }
