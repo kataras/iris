@@ -152,7 +152,7 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 	path := ctx.Path()
 	if !ctx.Application().ConfigurationReadOnly().GetDisablePathCorrection() {
 
-		if len(path) > 1 && strings.HasSuffix(path, '/') {
+		if len(path) > 1 && strings.HasSuffix(path, "/") {
 			// Remove trailing slash and client-permanent rule for redirection,
 			// if confgiuration allows that and path has an extra slash.
 
