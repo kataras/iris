@@ -152,13 +152,14 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 	path := ctx.Path()
 	if !ctx.Application().ConfigurationReadOnly().GetDisablePathCorrection() {
 
-		if len(path) > 1 && path[len(path)-1] == '/' {
-			// Remove trailing slash and client-permant rule for redirection,
+		if len(path) > 1 && strings.HasSuffix(path, "/") {
+			// Remove trailing slash and client-permanent rule for redirection,
 			// if confgiuration allows that and path has an extra slash.
 
 			// update the new path and redirect.
 			r := ctx.Request()
-			path = path[:len(path)-1]
+			// use Trim to ensure there is no open redirect due to two leading slashes
+			path = "/" + strings.Trim(path, "/")
 			r.URL.Path = path
 			url := r.URL.String()
 
