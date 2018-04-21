@@ -11,40 +11,43 @@ import (
 func main() {
 	app := iris.New()
 
-	timeWaitForCloseStream := 4 * time.Second
-
 	app.Get("/", func(ctx iris.Context) {
+		ctx.ContentType("text/html")
+		ctx.Header("Transfer-Encoding", "chunked")
 		i := 0
-		// goroutine in order to no block and just wait,
-		// goroutine is OPTIONAL and not a very good option but it depends on the needs
-		// Look the /alternative route for an alternative code style
-		// Send the response in chunks and wait for a second between each chunk.
-		go ctx.StreamWriter(func(w io.Writer) bool {
-			i++
-			fmt.Fprintf(w, "this is a message number %d\n", i) // write
-			time.Sleep(time.Second)                            // imaginary delay
-			if i == 4 {
+		ints := []int{1, 2, 3, 5, 7, 9, 11, 13, 15, 17, 23, 29}
+		// Send the response in chunks and wait for half a second between each chunk.
+		ctx.StreamWriter(func(w io.Writer) bool {
+			fmt.Fprintf(w, "Message number %d<br>", ints[i])
+			time.Sleep(500 * time.Millisecond) // simulate delay.
+			if i == len(ints)-1 {
 				return false // close and flush
 			}
+			i++
 			return true // continue write
 		})
-
-		// when this handler finished the client should be see the stream writer's contents
-		// simulate a job here...
-		time.Sleep(timeWaitForCloseStream)
 	})
 
-	app.Get("/alternative", func(ctx iris.Context) {
-		// Send the response in chunks and wait for a second between each chunk.
-		ctx.StreamWriter(func(w io.Writer) bool {
-			for i := 1; i <= 4; i++ {
-				fmt.Fprintf(w, "this is a message number %d\n", i) // write
-				time.Sleep(time.Second)
-			}
+	type messageNumber struct {
+		Number int `json:"number"`
+	}
 
-			// when this handler finished the client should be see the stream writer's contents
-			return false // stop and flush the contents
-		})
+	app.Get("/alternative", func(ctx iris.Context) {
+		ctx.ContentType("application/json")
+		ctx.Header("Transfer-Encoding", "chunked")
+		i := 0
+		ints := []int{1, 2, 3, 5, 7, 9, 11, 13, 15, 17, 23, 29}
+		// Send the response in chunks and wait for half a second between each chunk.
+		for {
+			ctx.JSON(messageNumber{Number: ints[i]})
+			ctx.WriteString("\n")
+			time.Sleep(500 * time.Millisecond) // simulate delay.
+			if i == len(ints)-1 {
+				break
+			}
+			i++
+			ctx.ResponseWriter().Flush()
+		}
 	})
 
 	app.Run(iris.Addr(":8080"))
