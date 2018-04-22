@@ -2,7 +2,6 @@ package sessions
 
 import (
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/kataras/iris/context"
@@ -44,37 +43,7 @@ func (s *Sessions) updateCookie(ctx context.Context, sid string, expires time.Du
 
 	cookie.Value = sid
 	cookie.Path = "/"
-	if !s.config.DisableSubdomainPersistence {
-
-		requestDomain := ctx.Host()
-		if portIdx := strings.IndexByte(requestDomain, ':'); portIdx > 0 {
-			requestDomain = requestDomain[0:portIdx]
-		}
-		if IsValidCookieDomain(requestDomain) {
-
-			// RFC2109, we allow level 1 subdomains, but no further
-			// if we have localhost.com , we want the localhost.cos.
-			// so if we have something like: mysubdomain.localhost.com we want the localhost here
-			// if we have mysubsubdomain.mysubdomain.localhost.com we want the .mysubdomain.localhost.com here
-			// slow things here, especially the 'replace' but this is a good and understable( I hope) way to get the be able to set cookies from subdomains & domain with 1-level limit
-			if dotIdx := strings.LastIndexByte(requestDomain, '.'); dotIdx > 0 {
-				// is mysubdomain.localhost.com || mysubsubdomain.mysubdomain.localhost.com
-				s := requestDomain[0:dotIdx] // set mysubdomain.localhost || mysubsubdomain.mysubdomain.localhost
-				if secondDotIdx := strings.LastIndexByte(s, '.'); secondDotIdx > 0 {
-					//is mysubdomain.localhost ||  mysubsubdomain.mysubdomain.localhost
-					s = s[secondDotIdx+1:] // set to localhost || mysubdomain.localhost
-				}
-				// replace the s with the requestDomain before the domain's siffux
-				subdomainSuff := strings.LastIndexByte(requestDomain, '.')
-				if subdomainSuff > len(s) { // if it is actual exists as subdomain suffix
-					requestDomain = strings.Replace(requestDomain, requestDomain[0:subdomainSuff], s, 1) // set to localhost.com || mysubdomain.localhost.com
-				}
-			}
-			// finally set the .localhost.com (for(1-level) || .mysubdomain.localhost.com (for 2-level subdomain allow)
-			cookie.Domain = "." + requestDomain // . to allow persistence
-		}
-	}
-
+	cookie.Domain = formatCookieDomain(ctx, s.config.DisableSubdomainPersistence)
 	cookie.HttpOnly = true
 	// MaxAge=0 means no 'Max-Age' attribute specified.
 	// MaxAge<0 means delete cookie now, equivalently 'Max-Age: 0'
@@ -107,7 +76,7 @@ func (s *Sessions) Start(ctx context.Context) *Session {
 		sid := s.config.SessionIDGenerator()
 
 		sess := s.provider.Init(sid, s.config.Expires)
-		sess.isNew = sess.values.Len() == 0
+		sess.isNew = s.provider.db.Len(sid) == 0
 
 		s.updateCookie(ctx, sid, s.config.Expires)
 
@@ -138,6 +107,20 @@ func (s *Sessions) UpdateExpiration(ctx context.Context, expires time.Duration) 
 	}
 }
 
+// DestroyListener is the form of a destroy listener.
+// Look `OnDestroy` for more.
+type DestroyListener func(sid string)
+
+// OnDestroy registers one or more destroy listeners.
+// A destroy listener is fired when a session has been removed entirely from the server (the entry) and client-side (the cookie).
+// Note that if a destroy listener is blocking, then the session manager will delay respectfully,
+// use a goroutine inside the listener to avoid that behavior.
+func (s *Sessions) OnDestroy(listeners ...DestroyListener) {
+	for _, ln := range listeners {
+		s.provider.registerDestroyListener(ln)
+	}
+}
+
 // Destroy remove the session data and remove the associated cookie.
 func (s *Sessions) Destroy(ctx context.Context) {
 	cookieValue := GetCookie(ctx, s.config.Cookie)
@@ -147,7 +130,7 @@ func (s *Sessions) Destroy(ctx context.Context) {
 	if cookieValue == "" { // nothing to destroy
 		return
 	}
-	RemoveCookie(ctx, s.config.Cookie, s.config.AllowReclaim)
+	RemoveCookie(ctx, s.config)
 
 	s.provider.Destroy(cookieValue)
 }

@@ -35,7 +35,7 @@ Source code and other details for the project are available at GitHub:
 
 Current Version
 
-10.5.0
+10.6.0
 
 Installation
 
@@ -1279,23 +1279,35 @@ Example Code:
         "github.com/kataras/iris"
 
         "github.com/kataras/iris/sessions"
-        "github.com/kataras/iris/sessions/sessiondb/boltdb" // <- IMPORTANT
+        "github.com/kataras/iris/sessions/sessiondb/redis"
+        "github.com/kataras/iris/sessions/sessiondb/redis/service"
     )
 
+    // tested with redis version 3.0.503.
+    // for windows see: https://github.com/ServiceStack/redis-windows
     func main() {
-        db, _ := boltdb.New("./sessions/sessions.db", 0666, "users")
-        // use different go routines to sync the database
-        db.Async(true)
+        // replace with your running redis' server settings:
+        db := redis.New(service.Config{
+            Network:     service.DefaultRedisNetwork,
+            Addr:        service.DefaultRedisAddr,
+            Password:    "",
+            Database:    "",
+            MaxIdle:     0,
+            MaxActive:   0,
+            IdleTimeout: service.DefaultRedisIdleTimeout,
+            Prefix:      ""}) // optionally configure the bridge between your redis server
 
-        // close and unlock the database when control+C/cmd+C pressed
+        // close connection when control+C/cmd+C
         iris.RegisterOnInterrupt(func() {
             db.Close()
         })
 
+        defer db.Close() // close the database connection if application errored.
+
         sess := sessions.New(sessions.Config{
             Cookie:  "sessionscookieid",
-            Expires: 45 * time.Minute, // <=0 means unlimited life
-        })
+            Expires: 45 * time.Minute}, // <=0 means unlimited life. Defaults to 0.
+        )
 
         //
         // IMPORTANT:
@@ -1314,7 +1326,7 @@ Example Code:
             s.Set("name", "iris")
 
             //test if setted here
-            ctx.Writef("All ok session setted to: %s", s.GetString("name"))
+            ctx.Writef("All ok session value of the 'name' is: %s", s.GetString("name"))
         })
 
         app.Get("/set/{key}/{value}", func(ctx iris.Context) {
@@ -1324,14 +1336,14 @@ Example Code:
             s.Set(key, value)
 
             // test if setted here
-            ctx.Writef("All ok session setted to: %s", s.GetString(key))
+            ctx.Writef("All ok session value of the '%s' is: %s", key, s.GetString(key))
         })
 
         app.Get("/get", func(ctx iris.Context) {
             // get a specific key, as string, if no found returns just an empty string
             name := sess.Start(ctx).GetString("name")
 
-            ctx.Writef("The name on the /set was: %s", name)
+            ctx.Writef("The 'name' on the /set was: %s", name)
         })
 
         app.Get("/get/{key}", func(ctx iris.Context) {
@@ -1361,13 +1373,13 @@ Example Code:
             sess.ShiftExpiration(ctx)
         })
 
-        app.Run(iris.Addr(":8080"))
+        app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed))
     }
 
 
 More examples:
 
-    https://github.com/kataras/iris/tree/master/sessions
+    https://github.com/kataras/iris/tree/master/_examples/sessions
 
 
 Websockets
