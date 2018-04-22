@@ -17,17 +17,6 @@
 
 **如何升级**: 打开命令行执行以下命令: `go get -u github.com/kataras/iris` 或者等待自动更新。
 
-# 2018 3月 24日 | v10.5.0 版本更新
-
-### 新增
-
-新增 缓存中间件客户端，更快的静态文件服务器. 详情 [点击](https://github.com/kataras/iris/pull/935).
-
-### 破坏式更新
-
-改变 `Value<T>Default(<T>, error)` 为 `Value<T>Default(key, defaultValue) <T>`  如同 `ctx.PostValueIntDefault` 或 `ctx.Values().GetIntDefault` 或 `sessions/session#GetIntDefault` 或 `context#URLParamIntDefault`.
-由 @jefurry 提出 https://github.com/kataras/iris/issues/937.
-
 #### 如何升级现有代码
 
 只需要移除第二个返回值即可.
@@ -43,6 +32,17 @@
 - 修正 无法销毁子域名 session 问题 由 @Chengyumeng 提交: https://github.com/kataras/iris/pull/964.
 - 添加 `OnDestroy(sid string)` 当 session 销毁时注册监听器 相关细节: https://github.com/kataras/iris/commit/d17d7fecbe4937476d00af7fda1c138c1ac6f34d.
 - sessions 现在与注册数据库完全同步。 这涉及到很多内部改动，但 **这不影响你当前项目代码**. 我们只保留了 `badger` 和 `redis` 作为底部支持。 相关细节: https://github.com/kataras/iris/commit/f2c3a5f0cef62099fd4d77c5ccb14f654ddbfb5c 
+
+# 2018 3月 24日 | v10.5.0 版本更新
+
+### 新增
+
+新增 缓存中间件客户端，更快的静态文件服务器. 详情 [点击](https://github.com/kataras/iris/pull/935).
+
+### 破坏式更新
+
+改变 `Value<T>Default(<T>, error)` 为 `Value<T>Default(key, defaultValue) <T>`  如同 `ctx.PostValueIntDefault` 或 `ctx.Values().GetIntDefault` 或 `sessions/session#GetIntDefault` 或 `context#URLParamIntDefault`.
+由 @jefurry 提出 https://github.com/kataras/iris/issues/937.
 
 # 2018 3月14日 | v10.4.0 版本更新
 
