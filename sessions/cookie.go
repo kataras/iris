@@ -41,20 +41,22 @@ func AddCookie(ctx context.Context, cookie *http.Cookie, reclaim bool) {
 
 // RemoveCookie deletes a cookie by it's name/key
 // If "purge" is true then it removes the, temp, cookie from the request as well.
-func RemoveCookie(ctx context.Context, name string, purge bool) {
-	c, err := ctx.Request().Cookie(name)
+func RemoveCookie(ctx context.Context, config Config) {
+	cookie, err := ctx.Request().Cookie(config.Cookie)
 	if err != nil {
 		return
 	}
 
-	c.Expires = CookieExpireDelete
+	cookie.Expires = CookieExpireDelete
 	// MaxAge<0 means delete cookie now, equivalently 'Max-Age: 0'
-	c.MaxAge = -1
-	c.Value = ""
-	c.Path = "/"
-	AddCookie(ctx, c, purge)
+	cookie.MaxAge = -1
+	cookie.Value = ""
+	cookie.Path = "/"
+	cookie.Domain = formatCookieDomain(ctx, config.DisableSubdomainPersistence)
 
-	if purge {
+	AddCookie(ctx, cookie, config.AllowReclaim)
+
+	if config.AllowReclaim {
 		// delete request's cookie also, which is temporary available.
 		ctx.Request().Header.Set("Cookie", "")
 	}
@@ -88,4 +90,40 @@ func IsValidCookieDomain(domain string) bool {
 	}
 
 	return true
+}
+
+func formatCookieDomain(ctx context.Context, disableSubdomainPersistence bool) string {
+	if disableSubdomainPersistence {
+		return ""
+	}
+
+	requestDomain := ctx.Host()
+	if portIdx := strings.IndexByte(requestDomain, ':'); portIdx > 0 {
+		requestDomain = requestDomain[0:portIdx]
+	}
+
+	if !IsValidCookieDomain(requestDomain) {
+		return ""
+	}
+
+	// RFC2109, we allow level 1 subdomains, but no further
+	// if we have localhost.com , we want the localhost.cos.
+	// so if we have something like: mysubdomain.localhost.com we want the localhost here
+	// if we have mysubsubdomain.mysubdomain.localhost.com we want the .mysubdomain.localhost.com here
+	// slow things here, especially the 'replace' but this is a good and understable( I hope) way to get the be able to set cookies from subdomains & domain with 1-level limit
+	if dotIdx := strings.LastIndexByte(requestDomain, '.'); dotIdx > 0 {
+		// is mysubdomain.localhost.com || mysubsubdomain.mysubdomain.localhost.com
+		s := requestDomain[0:dotIdx] // set mysubdomain.localhost || mysubsubdomain.mysubdomain.localhost
+		if secondDotIdx := strings.LastIndexByte(s, '.'); secondDotIdx > 0 {
+			//is mysubdomain.localhost ||  mysubsubdomain.mysubdomain.localhost
+			s = s[secondDotIdx+1:] // set to localhost || mysubdomain.localhost
+		}
+		// replace the s with the requestDomain before the domain's siffux
+		subdomainSuff := strings.LastIndexByte(requestDomain, '.')
+		if subdomainSuff > len(s) { // if it is actual exists as subdomain suffix
+			requestDomain = strings.Replace(requestDomain, requestDomain[0:subdomainSuff], s, 1) // set to localhost.com || mysubdomain.localhost.com
+		}
+	}
+	// finally set the .localhost.com (for(1-level) || .mysubdomain.localhost.com (for 2-level subdomain allow)
+	return "." + requestDomain // . to allow persistence
 }
