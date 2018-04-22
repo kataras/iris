@@ -12,9 +12,10 @@ type (
 		// we don't use RWMutex because all actions have read and write at the same action function.
 		// (or write to a *Session's value which is race if we don't lock)
 		// narrow locks are fasters but are useless here.
-		mu       sync.Mutex
-		sessions map[string]*Session
-		db       Database
+		mu               sync.Mutex
+		sessions         map[string]*Session
+		db               Database
+		destroyListeners []DestroyListener
 	}
 )
 
@@ -108,6 +109,19 @@ func (p *provider) Read(sid string, expires time.Duration) *Session {
 	return p.Init(sid, expires) // if not found create new
 }
 
+func (p *provider) registerDestroyListener(ln DestroyListener) {
+	if ln == nil {
+		return
+	}
+	p.destroyListeners = append(p.destroyListeners, ln)
+}
+
+func (p *provider) fireDestroy(sid string) {
+	for _, ln := range p.destroyListeners {
+		ln(sid)
+	}
+}
+
 // Destroy destroys the session, removes all sessions and flash values,
 // the session itself and updates the registered session databases,
 // this called from sessionManager which removes the client's cookie also.
@@ -131,6 +145,9 @@ func (p *provider) DestroyAll() {
 }
 
 func (p *provider) deleteSession(sess *Session) {
-	delete(p.sessions, sess.sid)
-	p.db.Release(sess.sid)
+	sid := sess.sid
+
+	delete(p.sessions, sid)
+	p.db.Release(sid)
+	p.fireDestroy(sid)
 }
