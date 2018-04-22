@@ -1,16 +1,11 @@
 package sessions
 
 import (
-	"bytes"
-	"encoding/gob"
-	"io"
+	"sync"
+	"time"
 
 	"github.com/kataras/iris/core/memstore"
 )
-
-func init() {
-	gob.Register(RemoteStore{})
-}
 
 // Database is the interface which all session databases should implement
 // By design it doesn't support any type of cookie session like other frameworks.
@@ -18,137 +13,81 @@ func init() {
 // The scope of the database is to store somewhere the sessions in order to
 // keep them after restarting the server, nothing more.
 //
-// Synchronization are made automatically, you can register more than one session database
-// but the first non-empty Load return data will be used as the session values.
+// Synchronization are made automatically, you can register one using `UseDatabase`.
 //
-//
-// Note: Expiration on Load is up to the database, meaning that:
-// the database can decide how to retrieve and parse the expiration datetime
-//
-// I'll try to explain you the flow:
-//
-// .Start -> if session database attached then load from that storage and save to the memory, otherwise load from memory. The load from database is done once on the initialize of each session.
-// .Get (important) -> load from memory,
-//                     if database attached then it already loaded the values
-//                     from database on the .Start action, so it will
-//                     retrieve the data from the memory (fast)
-// .Set -> set to the memory, if database attached then update the storage
-// .Delete -> clear from memory, if database attached then update the storage
-// .Destroy -> destroy from memory and client cookie,
-//             if database attached then update the storage with empty values,
-//             empty values means delete the storage with that specific session id.
-// Using everything else except memory is slower than memory but database is
-// fetched once at each session and its updated on every Set, Delete,
-// Destroy at call-time.
-// All other external sessions managers out there work different than Iris one as far as I know,
-// you may find them more suited to your application, it depends.
+// Look the `sessiondb` folder for databases implementations.
 type Database interface {
-	Load(sid string) RemoteStore
-	Sync(p SyncPayload)
+	// Acquire receives a session's lifetime from the database,
+	// if the return value is LifeTime{} then the session manager sets the life time based on the expiration duration lives in configuration.
+	Acquire(sid string, expires time.Duration) LifeTime
+	// Set sets a key value of a specific session.
+	// The "immutable" input argument depends on the store, it may not implement it at all.
+	Set(sid string, lifetime LifeTime, key string, value interface{}, immutable bool)
+	// Get retrieves a session value based on the key.
+	Get(sid string, key string) interface{}
+	// Visit loops through all session keys and values.
+	Visit(sid string, cb func(key string, value interface{}))
+	// Len returns the length of the session's entries (keys).
+	Len(sid string) int
+	// Delete removes a session key value based on its key.
+	Delete(sid string, key string) (deleted bool)
+	// Clear removes all session key values but it keeps the session entry.
+	Clear(sid string)
+	// Release destroys the session, it clears and removes the session entry,
+	// session manager will create a new session ID on the next request after this call.
+	Release(sid string)
 }
 
-// New Idea, it should work faster for the most databases needs
-// the only minus is that the databases is coupled with this package, they
-// should import the kataras/iris/sessions package, but we don't use any
-// database by-default so that's ok here.
-
-// Action reports the specific action that the memory store
-// sends to the database.
-type Action uint32
-
-const (
-	// ActionCreate occurs when add a key-value pair
-	// on the database session entry for the first time.
-	ActionCreate Action = iota
-	// ActionInsert occurs when add a key-value pair
-	// on the database session entry.
-	ActionInsert
-	// ActionUpdate occurs when modify an existing key-value pair
-	// on the database session entry.
-	ActionUpdate
-	// ActionDelete occurs when delete a specific value from
-	// a specific key from the database session entry.
-	ActionDelete
-	// ActionClear occurs when clear all values but keep the database session entry.
-	ActionClear
-	// ActionDestroy occurs when destroy,
-	// destroy is the action when clear all and remove the session entry from the database.
-	ActionDestroy
-)
-
-// SyncPayload reports the state of the session inside a database sync action.
-type SyncPayload struct {
-	SessionID string
-
-	Action Action
-	// on insert it contains the new key and the value
-	// on update it contains the existing key and the new value
-	// on delete it contains the key (the value is nil)
-	// on clear it contains nothing (empty key, value is nil)
-	// on destroy it contains nothing (empty key, value is nil)
-	Value memstore.Entry
-	// Store contains the whole memory store, this store
-	// contains the current, updated from memory calls,
-	// session data (keys and values). This way
-	// the database has access to the whole session's data
-	// every time.
-	Store RemoteStore
+type mem struct {
+	values map[string]*memstore.Store
+	mu     sync.RWMutex
 }
 
-func newSyncPayload(session *Session, action Action) SyncPayload {
-	return SyncPayload{
-		SessionID: session.sid,
-		Action:    action,
-		Store: RemoteStore{
-			Values:   session.values,
-			Lifetime: session.lifetime,
-		},
-	}
+var _ Database = (*mem)(nil)
+
+func newMemDB() Database { return &mem{values: make(map[string]*memstore.Store)} }
+
+func (s *mem) Acquire(sid string, expires time.Duration) LifeTime {
+	s.mu.Lock()
+	s.values[sid] = new(memstore.Store)
+	s.mu.Unlock()
+	return LifeTime{}
 }
 
-func syncDatabases(databases []Database, payload SyncPayload) {
-	for i, n := 0, len(databases); i < n; i++ {
-		databases[i].Sync(payload)
-	}
+// immutable depends on the store, it may not implement it at all.
+func (s *mem) Set(sid string, lifetime LifeTime, key string, value interface{}, immutable bool) {
+	s.mu.RLock()
+	s.values[sid].Save(key, value, immutable)
+	s.mu.RUnlock()
 }
 
-// RemoteStore is a helper which is a wrapper
-// for the store, it can be used as the session "table" which will be
-// saved to the session database.
-type RemoteStore struct {
-	// Values contains the whole memory store, this store
-	// contains the current, updated from memory calls,
-	// session data (keys and values). This way
-	// the database has access to the whole session's data
-	// every time.
-	Values memstore.Store
-	// on insert it contains the expiration datetime
-	// on update it contains the new expiration datetime(if updated or the old one)
-	// on delete it will be zero
-	// on clear it will be zero
-	// on destroy it will be zero
-	Lifetime LifeTime
+func (s *mem) Get(sid string, key string) interface{} {
+	return s.values[sid].Get(key)
 }
 
-// Serialize returns the byte representation of this RemoteStore.
-func (s RemoteStore) Serialize() ([]byte, error) {
-	w := new(bytes.Buffer)
-	err := encode(s, w)
-	return w.Bytes(), err
+func (s *mem) Visit(sid string, cb func(key string, value interface{})) {
+	s.values[sid].Visit(cb)
 }
 
-// encode accepts a store and writes
-// as series of bytes to the "w" writer.
-func encode(s RemoteStore, w io.Writer) error {
-	enc := gob.NewEncoder(w)
-	err := enc.Encode(s)
-	return err
+func (s *mem) Len(sid string) int {
+	return s.values[sid].Len()
 }
 
-// DecodeRemoteStore accepts a series of bytes and returns
-// the store.
-func DecodeRemoteStore(b []byte) (store RemoteStore, err error) {
-	dec := gob.NewDecoder(bytes.NewBuffer(b))
-	err = dec.Decode(&store)
+func (s *mem) Delete(sid string, key string) (deleted bool) {
+	s.mu.RLock()
+	deleted = s.values[sid].Remove(key)
+	s.mu.RUnlock()
 	return
+}
+
+func (s *mem) Clear(sid string) {
+	s.mu.RLock()
+	s.values[sid].Reset()
+	s.mu.RUnlock()
+}
+
+func (s *mem) Release(sid string) {
+	s.mu.Lock()
+	delete(s.values, sid)
+	s.mu.Unlock()
 }

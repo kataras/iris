@@ -107,7 +107,7 @@ func (s *Sessions) Start(ctx context.Context) *Session {
 		sid := s.config.SessionIDGenerator()
 
 		sess := s.provider.Init(sid, s.config.Expires)
-		sess.isNew = sess.values.Len() == 0
+		sess.isNew = s.provider.db.Len(sid) == 0
 
 		s.updateCookie(ctx, sid, s.config.Expires)
 

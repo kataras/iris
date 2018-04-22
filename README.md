@@ -16,7 +16,7 @@ Learn what [others say about Iris](#support) and [star](https://github.com/katar
 
 Thank you to all our backers! 🙏 [Become a backer](https://iris-go.com/donate)
 
-<a href="https://iris-go.com/donate" target="_blank"><img src="https://iris-go.com/backers.svg?v=1"/></a>
+<a href="https://iris-go.com/donate" target="_blank"><img src="https://iris-go.com/backers.svg?v=2"/></a>
 
 ```sh
 $ cat example.go
@@ -215,13 +215,6 @@ Iris, unlike others, is 100% compatible with the standards and that's why the ma
 ### Get hired
 
 There are many companies and start-ups looking for Go web developers with Iris experience as requirement, we are searching for you every day and we post those information via our [facebook page](https://www.facebook.com/iris.framework), like the page to get notified, we have already posted some of them.
-
-### Sponsors
-
-Thank you to all our sponsors! (please ask your company to also support this open source project by [becoming a sponsor](https://opencollective.com/iris#sponsor))
-
-<a href="https://opencollective.com/iris/sponsor/0/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/0/avatar.svg"></a>
-<a href="https://opencollective.com/iris/sponsor/1/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/1/avatar.svg"></a>
 
 ## License
 

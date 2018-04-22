@@ -16,7 +16,7 @@
 
 Eυχαριστούμε όλους τους υποστηρικτές μας! 🙏 [Γίνετε ένας από αυτούς](https://iris-go.com/donate)
 
-<a href="https://iris-go.com/donate" target="_blank"><img src="https://iris-go.com/backers.svg?v=1"/></a>
+<a href="https://iris-go.com/donate" target="_blank"><img src="https://iris-go.com/backers.svg?v=2"/></a>
 
 ```sh
 $ cat example.go
@@ -217,13 +217,6 @@ _Η τελευταία ενημέρωση έγινε την [Τρίτη, 21 Νο
 ### Προσληφθείτε
 
 Υπάρχουν πολλές νεοσύστατες εταιρείες που αναζητούν Go web developers με εμπειρία Iris ως απαίτηση, ψάχνουμε καθημερινά και δημοσιεύουμε αυτές τις πληροφορίες μέσω της [σελίδας μας στο facebook](https://www.facebook.com/iris.framework), κάντε like για να λαμβάνετε ειδοποιήσεις, έχουμε ήδη δημοσιεύσει ορισμένες από αυτές(τις θέσεις εργασίας).
-
-### Χορηγοί
-
-Ευχαριστούμε όλους τους χορηγούς μας! (παρακαλώ ρωτήστε την εταιρία σας να υποστηρίξει επίσης αυτό το έργο ανοιχτού κώδικα με το [να γίνει χορηγός](https://opencollective.com/iris#sponsor))
-
-<a href="https://opencollective.com/iris/sponsor/0/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/0/avatar.svg"></a>
-<a href="https://opencollective.com/iris/sponsor/1/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/1/avatar.svg"></a>
 
 ## License
 

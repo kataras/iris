@@ -12,9 +12,6 @@ Some trivial examples,
 - [Flash Messages](https://github.com/kataras/iris/blob/master/_examples/sessions/flash-messages/main.go)
 - [Databases](https://github.com/kataras/iris/tree/master/_examples/sessions/database)
     * [BadgerDB](https://github.com/kataras/iris/blob/master/_examples/sessions/database/badger/main.go) **fastest**
-    * [File](https://github.com/kataras/iris/blob/master/_examples/sessions/database/file/main.go)
-    * [BoltDB](https://github.com/kataras/iris/blob/master/_examples/sessions/database/boltdb/main.go)
-    * [LevelDB](https://github.com/kataras/iris/blob/master/_examples/sessions/database/leveldb/main.go)
     * [Redis](https://github.com/kataras/iris/blob/master/_examples/sessions/database/redis/main.go)
 
 ## Overview

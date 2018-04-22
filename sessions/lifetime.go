@@ -63,3 +63,9 @@ func (lt *LifeTime) HasExpired() bool {
 
 	return lt.Time.Before(time.Now())
 }
+
+// DurationUntilExpiration returns the duration until expires, it can return negative number if expired,
+// a call to `HasExpired` may be useful before calling this `Dur` function.
+func (lt *LifeTime) DurationUntilExpiration() time.Duration {
+	return time.Until(lt.Time)
+}
