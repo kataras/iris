@@ -43,7 +43,7 @@ func (s *Sessions) updateCookie(ctx context.Context, sid string, expires time.Du
 
 	cookie.Value = sid
 	cookie.Path = "/"
-	cookie.Domain = FormatCookieDomain(ctx, s.config.DisableSubdomainPersistence)
+	cookie.Domain = formatCookieDomain(ctx, s.config.DisableSubdomainPersistence)
 	cookie.HttpOnly = true
 	// MaxAge=0 means no 'Max-Age' attribute specified.
 	// MaxAge<0 means delete cookie now, equivalently 'Max-Age: 0'
