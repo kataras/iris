@@ -1,9 +1,10 @@
 package service
 
 import (
+	"fmt"
 	"time"
 
-	"github.com/garyburd/redigo/redis"
+	"github.com/gomodule/redigo/redis"
 	"github.com/kataras/iris/core/errors"
 )
 
@@ -44,7 +45,7 @@ func (r *Service) CloseConnection() error {
 
 // Set sets a key-value to the redis store.
 // The expiration is setted by the MaxAgeSeconds.
-func (r *Service) Set(key string, value interface{}, secondsLifetime int) (err error) {
+func (r *Service) Set(key string, value interface{}, secondsLifetime int64) (err error) {
 	c := r.pool.Get()
 	defer c.Close()
 	if c.Err() != nil {
@@ -81,6 +82,23 @@ func (r *Service) Get(key string) (interface{}, error) {
 	return redisVal, nil
 }
 
+// TTL returns the seconds to expire, if the key has expiration and error if action failed.
+// Read more at: https://redis.io/commands/ttl
+func (r *Service) TTL(key string) (seconds int64, hasExpiration bool, ok bool) {
+	c := r.pool.Get()
+	defer c.Close()
+	redisVal, err := c.Do("TTL", r.Config.Prefix+key)
+	if err != nil {
+		return -2, false, false
+	}
+	seconds = redisVal.(int64)
+	// if -1 means the key has unlimited life time.
+	hasExpiration = seconds == -1
+	// if -2 means key does not exist.
+	ok = (c.Err() != nil || seconds == -2)
+	return
+}
+
 // GetAll returns all redis entries using the "SCAN" command (2.8+).
 func (r *Service) GetAll() (interface{}, error) {
 	c := r.pool.Get()
@@ -100,6 +118,48 @@ func (r *Service) GetAll() (interface{}, error) {
 	}
 
 	return redisVal, nil
+}
+
+// GetKeys returns all redis keys using the "SCAN" with MATCH command.
+// Read more at:  https://redis.io/commands/scan#the-match-option.
+func (r *Service) GetKeys(prefix string) ([]string, error) {
+	c := r.pool.Get()
+	defer c.Close()
+	if err := c.Err(); err != nil {
+		return nil, err
+	}
+
+	if err := c.Send("SCAN", 0, "MATCH", r.Config.Prefix+prefix+"*", "COUNT", 9999999999); err != nil {
+		return nil, err
+	}
+
+	if err := c.Flush(); err != nil {
+		return nil, err
+	}
+
+	reply, err := c.Receive()
+	if err != nil || reply == nil {
+		return nil, err
+	}
+
+	// it returns []interface, with two entries, the first one is "0" and the second one is a slice of the keys as []interface{uint8....}.
+
+	if keysInterface, ok := reply.([]interface{}); ok {
+		if len(keysInterface) == 2 {
+			// take the second, it must contain the slice of keys.
+			if keysSliceAsBytes, ok := keysInterface[1].([]interface{}); ok {
+				keys := make([]string, len(keysSliceAsBytes), len(keysSliceAsBytes))
+				for i, k := range keysSliceAsBytes {
+					keys[i] = fmt.Sprintf("%s", k)
+				}
+
+				return keys, nil
+			}
+
+		}
+	}
+
+	return nil, nil
 }
 
 // GetBytes returns value, err by its key

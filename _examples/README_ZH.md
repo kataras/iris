@@ -399,10 +399,7 @@ Iris session 管理独立包 [package](https://github.com/kataras/iris/tree/mast
 - [Secure Cookie](sessions/securecookie/main.go)
 - [Flash Messages](sessions/flash-messages/main.go)
 - [Databases](sessions/database)
-    * [File](sessions/database/file/main.go)
-    * [BoltDB](sessions/database/boltdb/main.go)
     * [Badger](sessions/database/badger/main.go)
-    * [LevelDB](sessions/database/leveldb/main.go)
     * [Redis](sessions/database/redis/main.go)
 
 > 可以随意使用自定义的 Session 管理包。

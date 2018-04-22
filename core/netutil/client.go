@@ -9,7 +9,7 @@ import (
 )
 
 // Client returns a new http.Client using
-// the "timeout" for open connection and read-write operations.
+// the "timeout" for open connection.
 func Client(timeout time.Duration) *http.Client {
 	transport := http.Transport{
 		Dial: func(network string, addr string) (net.Conn, error) {
@@ -17,9 +17,6 @@ func Client(timeout time.Duration) *http.Client {
 			if err != nil {
 				golog.Debugf("%v", err)
 				return nil, err
-			}
-			if err = conn.SetDeadline(time.Now().Add(timeout)); err != nil {
-				golog.Debugf("%v", err)
 			}
 			return conn, err
 		},

@@ -16,7 +16,7 @@ Iris 功能强大、使用简单，它将会是你下一个网站、API 服务�
 
 感谢所有的支持者! 🙏 [支持我们](https://iris-go.com/donate)
 
-<a href="https://iris-go.com/donate" target="_blank"><img src="https://iris-go.com/backers.svg?v=1"/></a>
+<a href="https://iris-go.com/donate" target="_blank"><img src="https://iris-go.com/backers.svg?v=2"/></a>
 
 ```sh
 $ cat example.go
@@ -208,13 +208,6 @@ Iris 拥有大量的中间件 [[1]](middleware/)[[2]](https://github.com/iris-co
 ### 工作机会
 
 有很多公司都在寻找具有 Iris 经验的 Go 网站开发者，我们通过 [facebook page](https://www.facebook.com/iris.framework) 发布这些招聘信息。
-
-### 赞助
-
-感谢所有赞助者! (希望贵公司赞助支持这个开源项目)
-
-<a href="https://opencollective.com/iris/sponsor/0/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/0/avatar.svg"></a>
-<a href="https://opencollective.com/iris/sponsor/1/website" target="_blank"><img src="https://opencollective.com/iris/sponsor/1/avatar.svg"></a>
 
 ## 授权协议
 

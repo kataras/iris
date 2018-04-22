@@ -400,10 +400,7 @@ iris session manager lives on its own [package](https://github.com/kataras/iris/
 - [Secure Cookie](sessions/securecookie/main.go)
 - [Flash Messages](sessions/flash-messages/main.go)
 - [Databases](sessions/database)
-    * [File](sessions/database/file/main.go)
-    * [BoltDB](sessions/database/boltdb/main.go)
     * [Badger](sessions/database/badger/main.go)
-    * [LevelDB](sessions/database/leveldb/main.go)
     * [Redis](sessions/database/redis/main.go)
 
 > You're free to use your own favourite sessions package if you'd like so.
