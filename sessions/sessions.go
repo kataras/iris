@@ -107,6 +107,20 @@ func (s *Sessions) UpdateExpiration(ctx context.Context, expires time.Duration) 
 	}
 }
 
+// DestroyListener is the form of a destroy listener.
+// Look `OnDestroy` for more.
+type DestroyListener func(sid string)
+
+// OnDestroy registers one or more destroy listeners.
+// A destroy listener is fired when a session has been removed entirely from the server (the entry) and client-side (the cookie).
+// Note that if a destroy listener is blocking, then the session manager will delay respectfully,
+// use a goroutine inside the listener to avoid that behavior.
+func (s *Sessions) OnDestroy(listeners ...DestroyListener) {
+	for _, ln := range listeners {
+		s.provider.registerDestroyListener(ln)
+	}
+}
+
 // Destroy remove the session data and remove the associated cookie.
 func (s *Sessions) Destroy(ctx context.Context) {
 	cookieValue := GetCookie(ctx, s.config.Cookie)
