@@ -37,6 +37,10 @@
 > 请记住，如果您无法升级，那么就不要这样做，我们在此版本中没有任何安全修复程序，但在某些时候建议您最好进行升级，我们总是会添加您喜欢的新功能！
 
 
+# Su, 22 April 2018 | v10.6.0
+
+This history entry is not translated yet to the Chinese language yet, please refer to the english version of the [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#su-22-april-2018--v1060) instead.
+
 # 2018 3月14日 | v10.4.0 版本更新
 
 - 修正 `APIBuilder, Party#StaticWeb` 和 `APIBuilder, Party#StaticEmbedded` 子分组内的前缀错误
