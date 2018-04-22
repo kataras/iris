@@ -52,7 +52,7 @@ func RemoveCookie(ctx context.Context, config Config) {
 	cookie.MaxAge = -1
 	cookie.Value = ""
 	cookie.Path = "/"
-	cookie.Domain = FormatCookieDomain(ctx, config.DisableSubdomainPersistence)
+	cookie.Domain = formatCookieDomain(ctx, config.DisableSubdomainPersistence)
 
 	AddCookie(ctx, cookie, config.AllowReclaim)
 
@@ -92,36 +92,38 @@ func IsValidCookieDomain(domain string) bool {
 	return true
 }
 
-func FormatCookieDomain(ctx context.Context, DisableSubdomainPersistence bool) string {
-	if !DisableSubdomainPersistence {
+func formatCookieDomain(ctx context.Context, disableSubdomainPersistence bool) string {
+	if disableSubdomainPersistence {
+		return ""
+	}
 
-		requestDomain := ctx.Host()
-		if portIdx := strings.IndexByte(requestDomain, ':'); portIdx > 0 {
-			requestDomain = requestDomain[0:portIdx]
+	requestDomain := ctx.Host()
+	if portIdx := strings.IndexByte(requestDomain, ':'); portIdx > 0 {
+		requestDomain = requestDomain[0:portIdx]
+	}
+
+	if !IsValidCookieDomain(requestDomain) {
+		return ""
+	}
+
+	// RFC2109, we allow level 1 subdomains, but no further
+	// if we have localhost.com , we want the localhost.cos.
+	// so if we have something like: mysubdomain.localhost.com we want the localhost here
+	// if we have mysubsubdomain.mysubdomain.localhost.com we want the .mysubdomain.localhost.com here
+	// slow things here, especially the 'replace' but this is a good and understable( I hope) way to get the be able to set cookies from subdomains & domain with 1-level limit
+	if dotIdx := strings.LastIndexByte(requestDomain, '.'); dotIdx > 0 {
+		// is mysubdomain.localhost.com || mysubsubdomain.mysubdomain.localhost.com
+		s := requestDomain[0:dotIdx] // set mysubdomain.localhost || mysubsubdomain.mysubdomain.localhost
+		if secondDotIdx := strings.LastIndexByte(s, '.'); secondDotIdx > 0 {
+			//is mysubdomain.localhost ||  mysubsubdomain.mysubdomain.localhost
+			s = s[secondDotIdx+1:] // set to localhost || mysubdomain.localhost
 		}
-		if IsValidCookieDomain(requestDomain) {
-
-			// RFC2109, we allow level 1 subdomains, but no further
-			// if we have localhost.com , we want the localhost.cos.
-			// so if we have something like: mysubdomain.localhost.com we want the localhost here
-			// if we have mysubsubdomain.mysubdomain.localhost.com we want the .mysubdomain.localhost.com here
-			// slow things here, especially the 'replace' but this is a good and understable( I hope) way to get the be able to set cookies from subdomains & domain with 1-level limit
-			if dotIdx := strings.LastIndexByte(requestDomain, '.'); dotIdx > 0 {
-				// is mysubdomain.localhost.com || mysubsubdomain.mysubdomain.localhost.com
-				s := requestDomain[0:dotIdx] // set mysubdomain.localhost || mysubsubdomain.mysubdomain.localhost
-				if secondDotIdx := strings.LastIndexByte(s, '.'); secondDotIdx > 0 {
-					//is mysubdomain.localhost ||  mysubsubdomain.mysubdomain.localhost
-					s = s[secondDotIdx+1:] // set to localhost || mysubdomain.localhost
-				}
-				// replace the s with the requestDomain before the domain's siffux
-				subdomainSuff := strings.LastIndexByte(requestDomain, '.')
-				if subdomainSuff > len(s) { // if it is actual exists as subdomain suffix
-					requestDomain = strings.Replace(requestDomain, requestDomain[0:subdomainSuff], s, 1) // set to localhost.com || mysubdomain.localhost.com
-				}
-			}
-			// finally set the .localhost.com (for(1-level) || .mysubdomain.localhost.com (for 2-level subdomain allow)
-			return "." + requestDomain // . to allow persistence
+		// replace the s with the requestDomain before the domain's siffux
+		subdomainSuff := strings.LastIndexByte(requestDomain, '.')
+		if subdomainSuff > len(s) { // if it is actual exists as subdomain suffix
+			requestDomain = strings.Replace(requestDomain, requestDomain[0:subdomainSuff], s, 1) // set to localhost.com || mysubdomain.localhost.com
 		}
 	}
-	return ""
+	// finally set the .localhost.com (for(1-level) || .mysubdomain.localhost.com (for 2-level subdomain allow)
+	return "." + requestDomain // . to allow persistence
 }
