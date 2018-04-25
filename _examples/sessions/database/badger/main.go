@@ -24,7 +24,7 @@ func main() {
 
 	sess := sessions.New(sessions.Config{
 		Cookie:  "sessionscookieid",
-		Expires: 45 * time.Second, // <=0 means unlimited life. Defaults to 0.
+		Expires: 45 * time.Minute, // <=0 means unlimited life. Defaults to 0.
 	})
 
 	//

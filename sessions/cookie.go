@@ -1,6 +1,7 @@
 package sessions
 
 import (
+	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -26,13 +27,10 @@ func GetCookie(ctx context.Context, name string) string {
 	}
 
 	return c.Value
-
-	// return ctx.GetCookie(name)
 }
 
 // AddCookie adds a cookie
 func AddCookie(ctx context.Context, cookie *http.Cookie, reclaim bool) {
-	// http.SetCookie(ctx.ResponseWriter(), cookie)
 	if reclaim {
 		ctx.Request().AddCookie(cookie)
 	}
@@ -65,7 +63,7 @@ func RemoveCookie(ctx context.Context, config Config) {
 // IsValidCookieDomain returns true if the receiver is a valid domain to set
 // valid means that is recognised as 'domain' by the browser, so it(the cookie) can be shared with subdomains also
 func IsValidCookieDomain(domain string) bool {
-	if domain == "0.0.0.0" || domain == "127.0.0.1" {
+	if net.IP([]byte(domain)).IsLoopback() {
 		// for these type of hosts, we can't allow subdomains persistence,
 		// the web browser doesn't understand the mysubdomain.0.0.0.0 and mysubdomain.127.0.0.1 mysubdomain.32.196.56.181. as scorrectly ubdomains because of the many dots
 		// so don't set a cookie domain here, let browser handle this

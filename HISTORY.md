@@ -17,6 +17,12 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris` or let the automatic updater do that for you.
 
+# We, 25 April 2018 | v10.6.1
+
+- Re-implement the [BoltDB](https://github.com/coreos/bbolt) as built'n back-end storage for sessions(`sessiondb`) using the latest features: [/sessions/sessiondb/boltdb/database.go](sessions/sessiondb/boltdb/database.go), example can be found at [/_examples/sessions/database/boltdb/main.go](_examples/sessions/database/boltdb/main.go).
+- Fix a minor issue on [Badger sessiondb example](_examples/sessions/database/badger/main.go). Its `sessions.Config { Expires }` field was `2 *time.Second`, it's `45 *time.Minute` now.
+- Other minor improvements to the badger sessiondb.
+
 # Su, 22 April 2018 | v10.6.0
 
 - Fix open redirect by @wozz via PR: https://github.com/kataras/iris/pull/972.
