@@ -17,6 +17,12 @@
 
 **如何升级**: 打开命令行执行以下命令: `go get -u github.com/kataras/iris` 或者等待自动更新。
 
+# 2018 4月25日 | v10.6.1 版本更新
+
+- 用最新版 BoltDB 重新实现 session (`sessiondb`) 存储：[/sessions/sessiondb/boltdb/database.go](sessions/sessiondb/boltdb/database.go), 相关示例 [/_examples/sessions/database/boltdb/main.go](_examples/sessions/database/boltdb/main.go).
+- 修正 一个小问题 on [Badger sessiondb example](_examples/sessions/database/badger/main.go). `sessions.Config { Expires }` 字段由 `2 *time.Second` 调整为 `45 *time.Minute` .
+- badger sessiondb 其他小改进.
+
 # 2018 4月22日 | v10.6.0 版本更新
 
 - 修正 重定向问题 由 @wozz 提交: https://github.com/kataras/iris/pull/972.
