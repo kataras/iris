@@ -149,6 +149,10 @@ type (
 		// Its connection-relative operations are safe for use.
 		Server() *Server
 
+		// Write writes a raw websocket message with a specific type to the client
+		// used by ping messages and any CloseMessage types.
+		Write(websocketMessageType int, data []byte) error
+
 		// Context returns the (upgraded) context.Context of this connection
 		// avoid using it, you normally don't need it,
 		// websocket has everything you need to authenticate the user BUT if it's necessary
@@ -240,6 +244,8 @@ type (
 
 var _ Connection = &connection{}
 
+const CloseMessage = websocket.CloseMessage
+
 func newConnection(ctx context.Context, s *Server, underlineConn UnderlineConnection, id string) *connection {
 	c := &connection{
 		underline:                underlineConn,
@@ -271,9 +277,9 @@ func (c *connection) Err() error {
 	return c.err
 }
 
-// write writes a raw websocket message with a specific type to the client
+// Write writes a raw websocket message with a specific type to the client
 // used by ping messages and any CloseMessage types.
-func (c *connection) write(websocketMessageType int, data []byte) error {
+func (c *connection) Write(websocketMessageType int, data []byte) error {
 	// for any-case the app tries to write from different goroutines,
 	// we must protect them because they're reporting that as bug...
 	c.writerMu.Lock()
@@ -295,7 +301,7 @@ func (c *connection) write(websocketMessageType int, data []byte) error {
 // writeDefault is the same as write but the message type is the configured by c.messageType
 // if BinaryMessages is enabled then it's raw []byte as you expected to work with protobufs
 func (c *connection) writeDefault(data []byte) {
-	c.write(c.messageType, data)
+	c.Write(c.messageType, data)
 }
 
 const (
@@ -332,7 +338,7 @@ func (c *connection) startPinger() {
 			//fire all OnPing methods
 			c.fireOnPing()
 			// try to ping the client, if failed then it disconnects
-			err := c.write(websocket.PingMessage, []byte{})
+			err := c.Write(websocket.PingMessage, []byte{})
 			if err != nil {
 				// must stop to exit the loop and finish the go routine
 				break
