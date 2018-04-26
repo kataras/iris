@@ -11,7 +11,8 @@ Some trivial examples,
 - [Secure Cookie](https://github.com/kataras/iris/blob/master/_examples/sessions/securecookie/main.go)
 - [Flash Messages](https://github.com/kataras/iris/blob/master/_examples/sessions/flash-messages/main.go)
 - [Databases](https://github.com/kataras/iris/tree/master/_examples/sessions/database)
-    * [BadgerDB](https://github.com/kataras/iris/blob/master/_examples/sessions/database/badger/main.go) **fastest**
+    * [Badger](https://github.com/kataras/iris/blob/master/_examples/sessions/database/badger/main.go) **fastest**
+    * [BoltDB](https://github.com/kataras/iris/blob/master/_examples/sessions/database/boltdb/main.go)
     * [Redis](https://github.com/kataras/iris/blob/master/_examples/sessions/database/redis/main.go)
 
 ## Overview
