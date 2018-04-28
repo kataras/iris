@@ -432,6 +432,10 @@ type Context interface {
 	// which may, setted before with the 'ContentType'.
 	GetContentType() string
 
+	// GetContentLength returns the request's header value of "Content-Length".
+	// Returns 0 if header was unable to be found or its value was not a valid number.
+	GetContentLength() int64
+
 	// StatusCode sets the status code header to the response.
 	// Look .GetStatusCode too.
 	StatusCode(statusCode int)
@@ -1597,6 +1601,16 @@ func (ctx *context) GetContentType() string {
 	return ctx.writer.Header().Get(ContentTypeHeaderKey)
 }
 
+// GetContentLength returns the request's header value of "Content-Length".
+// Returns 0 if header was unable to be found or its value was not a valid number.
+func (ctx *context) GetContentLength() int64 {
+	if v := ctx.GetHeader(ContentLengthHeaderKey); v != "" {
+		n, _ := strconv.ParseInt(v, 10, 64)
+		return n
+	}
+	return 0
+}
+
 // StatusCode sets the status code header to the response.
 // Look .GetStatusCode & .FireStatusCode too.
 //
@@ -1966,7 +1980,10 @@ func (ctx *context) FormFile(key string) (multipart.File, *multipart.FileHeader,
 	// here but do it in order to apply the post limit,
 	// the internal request.FormFile will not do it if that's filled
 	// and it's not a stream body.
-	ctx.request.ParseMultipartForm(ctx.Application().ConfigurationReadOnly().GetPostMaxMemory())
+	if err := ctx.request.ParseMultipartForm(ctx.Application().ConfigurationReadOnly().GetPostMaxMemory()); err != nil {
+		return nil, nil, err
+	}
+
 	return ctx.request.FormFile(key)
 }
 
