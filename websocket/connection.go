@@ -133,6 +133,8 @@ type (
 	MessageFunc interface{}
 	// PingFunc is the callback which fires each ping
 	PingFunc func()
+	// PongFunc is the callback which fires on pong message received
+	PongFunc func()
 	// Connection is the front-end API that you will use to communicate with the client side
 	Connection interface {
 		// Emitter implements EmitMessage & Emit
@@ -165,6 +167,8 @@ type (
 		OnError(ErrorFunc)
 		// OnPing  registers a callback which fires on each ping
 		OnPing(PingFunc)
+		// OnPong  registers a callback which fires on pong message received
+		OnPong(PongFunc)
 		// FireOnError can be used to send a custom error message to the connection
 		//
 		// It does nothing more than firing the OnError listeners. It doesn't send anything to the client.
@@ -221,6 +225,7 @@ type (
 		onRoomLeaveListeners     []LeaveRoomFunc
 		onErrorListeners         []ErrorFunc
 		onPingListeners          []PingFunc
+		onPongListeners          []PongFunc
 		onNativeMessageListeners []NativeMessageFunc
 		onEventListeners         map[string][]MessageFunc
 		started                  bool
@@ -256,6 +261,7 @@ func newConnection(ctx context.Context, s *Server, underlineConn UnderlineConnec
 		onErrorListeners:         make([]ErrorFunc, 0),
 		onNativeMessageListeners: make([]NativeMessageFunc, 0),
 		onEventListeners:         make(map[string][]MessageFunc, 0),
+		onPongListeners:          make([]PongFunc, 0),
 		started:                  false,
 		ctx:                      ctx,
 		server:                   s,
@@ -354,6 +360,13 @@ func (c *connection) fireOnPing() {
 	}
 }
 
+func (c *connection) fireOnPong() {
+	// fire the onPongListeners
+	for i := range c.onPongListeners {
+		c.onPongListeners[i]()
+	}
+}
+
 func (c *connection) startReader() {
 	conn := c.underline
 	hasReadTimeout := c.server.config.ReadTimeout > 0
@@ -363,6 +376,8 @@ func (c *connection) startReader() {
 		if hasReadTimeout {
 			conn.SetReadDeadline(time.Now().Add(c.server.config.ReadTimeout))
 		}
+		//fire all OnPong methods
+		go c.fireOnPong()
 
 		return nil
 	})
@@ -471,6 +486,10 @@ func (c *connection) OnError(cb ErrorFunc) {
 
 func (c *connection) OnPing(cb PingFunc) {
 	c.onPingListeners = append(c.onPingListeners, cb)
+}
+
+func (c *connection) OnPong(cb PongFunc) {
+	c.onPongListeners = append(c.onPongListeners, cb)
 }
 
 func (c *connection) FireOnError(errorMessage string) {
