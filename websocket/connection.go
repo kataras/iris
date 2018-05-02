@@ -511,6 +511,7 @@ func (c *connection) To(to string) Emitter {
 	} else if to == c.id {
 		return c.self
 	}
+
 	// is an emitter to another client/connection
 	return newEmitter(c, to)
 }
