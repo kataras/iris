@@ -17,6 +17,11 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris` or let the automatic updater do that for you.
 
+# Tu, 01 May 2018 | v10.6.2
+
+- Websocket: added OnPong to Connection via PR: https://github.com/kataras/iris/pull/988
+- Websocket: `OnError` accepts a `func(error)` now instead of `func(string)`, as requested at: https://github.com/kataras/iris/issues/987
+
 # We, 25 April 2018 | v10.6.1
 
 - Re-implement the [BoltDB](https://github.com/coreos/bbolt) as built'n back-end storage for sessions(`sessiondb`) using the latest features: [/sessions/sessiondb/boltdb/database.go](sessions/sessiondb/boltdb/database.go), example can be found at [/_examples/sessions/database/boltdb/main.go](_examples/sessions/database/boltdb/main.go).

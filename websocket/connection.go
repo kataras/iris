@@ -125,7 +125,7 @@ type (
 	// (because websocket server automatically leaves from all joined rooms)
 	LeaveRoomFunc func(roomName string)
 	// ErrorFunc is the callback which fires whenever an error occurs
-	ErrorFunc (func(string))
+	ErrorFunc (func(error))
 	// NativeMessageFunc is the callback for native websocket messages, receives one []byte parameter which is the raw client's message
 	NativeMessageFunc func([]byte)
 	// MessageFunc is the second argument to the Emitter's Emit functions.
@@ -172,7 +172,7 @@ type (
 		// FireOnError can be used to send a custom error message to the connection
 		//
 		// It does nothing more than firing the OnError listeners. It doesn't send anything to the client.
-		FireOnError(errorMessage string)
+		FireOnError(err error)
 		// To defines on what "room" (see Join) the server should send a message
 		// returns an Emmiter(`EmitMessage` & `Emit`) to send messages.
 		To(string) Emitter
@@ -249,6 +249,11 @@ type (
 
 var _ Connection = &connection{}
 
+// CloseMessage denotes a close control message. The optional message
+// payload contains a numeric code and text. Use the FormatCloseMessage
+// function to format a close message payload.
+//
+// Use the `Connection#Disconnect` instead.
 const CloseMessage = websocket.CloseMessage
 
 func newConnection(ctx context.Context, s *Server, underlineConn UnderlineConnection, id string) *connection {
@@ -395,7 +400,7 @@ func (c *connection) startReader() {
 		_, data, err := conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
-				c.FireOnError(err.Error())
+				c.FireOnError(err)
 			}
 			break
 		} else {
@@ -492,9 +497,9 @@ func (c *connection) OnPong(cb PongFunc) {
 	c.onPongListeners = append(c.onPongListeners, cb)
 }
 
-func (c *connection) FireOnError(errorMessage string) {
+func (c *connection) FireOnError(err error) {
 	for _, cb := range c.onErrorListeners {
-		cb(errorMessage)
+		cb(err)
 	}
 }
 
