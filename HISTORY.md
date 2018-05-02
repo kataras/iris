@@ -17,6 +17,12 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris` or let the automatic updater do that for you.
 
+# We, 02 May 2018 | v10.6.3
+
+**Every server should be upgraded to this version**, it contains an important, but easy, fix for the `websocket/Connection#Emit##To`.
+
+- Websocket: fix https://github.com/kataras/iris/issues/991
+
 # Tu, 01 May 2018 | v10.6.2
 
 - Websocket: added OnPong to Connection via PR: https://github.com/kataras/iris/pull/988
