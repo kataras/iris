@@ -91,7 +91,7 @@ func (nodes *Nodes) Add(routeName string, path string, handlers context.Handlers
 }
 
 func (nodes *Nodes) add(routeName, path string, paramNames []string, handlers context.Handlers, root bool) (err error) {
-
+	// println("[add] route name: " + routeName)
 	// println("[add] adding path: " + path)
 
 	// wraia etsi doulevei ara
@@ -173,7 +173,6 @@ loop:
 				root: n.root,
 			}
 
-			// fmt.Printf("%#v\n", n)
 			// println("2. change n and return  " + n.s[:i] + " and " + path[i:])
 			return
 		}
@@ -219,6 +218,7 @@ loop:
 			}
 
 			pathToAdd := path[len(n.s):]
+			// println("4. nodes.Add route name: " + routeName)
 			// println("4. nodes.Add path: " + pathToAdd)
 			err = n.childrenNodes.add(routeName, pathToAdd, paramNames, handlers, false)
 			return err
@@ -233,6 +233,7 @@ loop:
 		}
 		n.paramNames = paramNames
 		n.handlers = handlers
+		n.routeName = routeName
 		return
 	}
 
@@ -289,6 +290,7 @@ func (nodes Nodes) Find(path string, params *context.RequestParams) (string, con
 				params.Set(n.wildcardParamName, lastWildcardVal)
 			}
 		}
+
 		return n.routeName, n.handlers
 	}
 
