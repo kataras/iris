@@ -106,7 +106,7 @@ _Updated at: [Tuesday, 21 November 2017](_benchmarks/README_UNIX.md)_
 
 ## Support
 
-- [HISTORY](HISTORY.md#we-02-may-2018--v1063) file is your best friend, it contains information about the latest features and changes
+- [HISTORY](HISTORY.md#we-09-may-2018--v1064) file is your best friend, it contains information about the latest features and changes
 - Did you happen to find a bug? Post it at [github issues](https://github.com/kataras/iris/issues)
 - Do you have any questions or need to speak with someone experienced to solve a problem at real-time? Join us to the [community chat](https://chat.iris-go.com)
 - Complete our form-based user experience report by clicking [here](https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link)
