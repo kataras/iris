@@ -62,7 +62,11 @@ func (s *mem) Set(sid string, lifetime LifeTime, key string, value interface{}, 
 }
 
 func (s *mem) Get(sid string, key string) interface{} {
-	return s.values[sid].Get(key)
+	s.mu.RLock()
+	v := s.values[sid].Get(key)
+	s.mu.RUnlock()
+
+	return v
 }
 
 func (s *mem) Visit(sid string, cb func(key string, value interface{})) {
@@ -70,7 +74,11 @@ func (s *mem) Visit(sid string, cb func(key string, value interface{})) {
 }
 
 func (s *mem) Len(sid string) int {
-	return s.values[sid].Len()
+	s.mu.RLock()
+	n := s.values[sid].Len()
+	s.mu.RUnlock()
+
+	return n
 }
 
 func (s *mem) Delete(sid string, key string) (deleted bool) {
@@ -81,9 +89,9 @@ func (s *mem) Delete(sid string, key string) (deleted bool) {
 }
 
 func (s *mem) Clear(sid string) {
-	s.mu.RLock()
+	s.mu.Lock()
 	s.values[sid].Reset()
-	s.mu.RUnlock()
+	s.mu.Unlock()
 }
 
 func (s *mem) Release(sid string) {
