@@ -214,17 +214,17 @@ Iris, tidak seperti yang lain, 100% compatible dengan standards dan maka dari it
 
 ### Video Courses
 
-* [Daily Coding - Web Framework Golang: Iris Framework]( https://www.youtube.com/watch?v=BmOLFQ29J3s) by WarnabiruTV, sumber: youtube, biaya: **FREE**
-* [Tutorial Golang MVC dengan Iris Framework & Mongo DB](https://www.youtube.com/watch?v=uXiNYhJqh2I&list=PLMrwI6jIZn-1tzskocnh1pptKhVmWdcbS) (19 parts so far) by Musobar Media, sumber: youtube, biaya: **FREE**
-* [Go/Golang 27 - Iris framework : Routage de base](https://www.youtube.com/watch?v=rQxRoN6ub78) by stephgdesign, sumber: youtube, biaya: **FREE**
-* [Go/Golang 28 - Iris framework : Templating](https://www.youtube.com/watch?v=nOKYV073S2Y) by stephgdesignn, sumber: youtube, biaya: **FREE**
-* [Go/Golang 29 - Iris framework : Paramètres](https://www.youtube.com/watch?v=K2FsprfXs1E) by stephgdesign, sumber: youtube, biaya: **FREE**
-* [Go/Golang 30 - Iris framework : Les middelwares](https://www.youtube.com/watch?v=BLPy1So6bhE) by stephgdesign, sumber: youtube, biaya: **FREE**
-* [Go/Golang 31 - Iris framework : Les sessions](https://www.youtube.com/watch?v=RnBwUrwgEZ8) by stephgdesign, sumber: youtube, biaya: **FREE**
+* [Daily Coding - Web Framework Golang: Iris Framework]( https://www.youtube.com/watch?v=BmOLFQ29J3s) by WarnabiruTV, sumber: youtube, biaya: **GRATIS**
+* [Tutorial Golang MVC dengan Iris Framework & Mongo DB](https://www.youtube.com/watch?v=uXiNYhJqh2I&list=PLMrwI6jIZn-1tzskocnh1pptKhVmWdcbS) (19 parts so far) by Musobar Media, sumber: youtube, biaya: **GRATIS**
+* [Go/Golang 27 - Iris framework : Routage de base](https://www.youtube.com/watch?v=rQxRoN6ub78) by stephgdesign, sumber: youtube, biaya: **GRATIS**
+* [Go/Golang 28 - Iris framework : Templating](https://www.youtube.com/watch?v=nOKYV073S2Y) by stephgdesignn, sumber: youtube, biaya: **GRATIS**
+* [Go/Golang 29 - Iris framework : Paramètres](https://www.youtube.com/watch?v=K2FsprfXs1E) by stephgdesign, sumber: youtube, biaya: **GRATIS**
+* [Go/Golang 30 - Iris framework : Les middelwares](https://www.youtube.com/watch?v=BLPy1So6bhE) by stephgdesign, sumber: youtube, biaya: **GRATIS**
+* [Go/Golang 31 - Iris framework : Les sessions](https://www.youtube.com/watch?v=RnBwUrwgEZ8) by stephgdesign, sumber: youtube, biaya: **GRATIS**
 
 ### Get hired
 
-Ada beberapa perusahaan dan start-ups yang mencari web developer Go yang memiliki pengalaman menggunakn Iris, kami mencarikan untuk anda setiap hari dan kami post informasi tersebut melalui [facebook page](https://www.facebook.com/iris.framework) kami, like page kami untuk mendapatkan notifikasi, kami sudah mempost beberapa dari mereka.
+Ada beberapa perusahaan dan start-up yang mencari web developer Go yang memiliki pengalaman menggunakn Iris, kami mencarikan untuk anda setiap hari dan kami post informasi tersebut melalui [facebook page](https://www.facebook.com/iris.framework) kami, like page kami untuk mendapatkan notifikasi, kami sudah mempost beberapa dari mereka.
 
 ## License
 
