@@ -94,8 +94,9 @@ type APIBuilder struct {
 
 	// the per-party done handlers, order matters.
 	doneHandlers context.Handlers
-	// global done handlers, order doesn't matter
+	// global done handlers, order doesn't matter.
 	doneGlobalHandlers context.Handlers
+
 	// the per-party
 	relativePath string
 	// allowMethods are filled with the `AllowMethods` func.
@@ -103,6 +104,9 @@ type APIBuilder struct {
 	// per any party's (and its children) routes registered
 	// if the method "x" wasn't registered already via  the `Handle` (and its extensions like `Get`, `Post`...).
 	allowMethods []string
+
+	// the per-party (and its children) execution rules for begin, main and done handlers.
+	handlerExecutionRules ExecutionRules
 }
 
 var _ Party = (*APIBuilder)(nil)
@@ -150,6 +154,34 @@ func (api *APIBuilder) AllowMethods(methods ...string) Party {
 	return api
 }
 
+// SetExecutionRules alters the execution flow of the route handlers outside of the handlers themselves.
+//
+// For example, if for some reason the desired result is the (done or all) handlers to be executed no matter what
+// even if no `ctx.Next()` is called in the previous handlers, including the begin(`Use`),
+// the main(`Handle`) and the done(`Done`) handlers themselves, then:
+// Party#SetExecutionRules(iris.ExecutionRules {
+//   Begin: iris.ExecutionOptions{Force: true},
+//   Main:  iris.ExecutionOptions{Force: true},
+//   Done:  iris.ExecutionOptions{Force: true},
+// })
+//
+// Note that if : true then the only remained way to "break" the handler chain is by `ctx.StopExecution()` now that `ctx.Next()` does not matter.
+//
+// These rules are per-party, so if a `Party` creates a child one then the same rules will be applied to that as well.
+// Reset of these rules (before `Party#Handle`) can be done with `Party#SetExecutionRules(iris.ExecutionRules{})`.
+//
+// The most common scenario for its use can be found inside Iris MVC Applications;
+// when we want the `Done` handlers of that specific mvc app's `Party`
+// to be executed but we don't want to add `ctx.Next()` on the `OurController#EndRequest`.
+//
+// Returns this Party.
+//
+// Example: https://github.com/kataras/iris/tree/master/_examples/mvc/middleware/without-ctx-next
+func (api *APIBuilder) SetExecutionRules(executionRules ExecutionRules) Party {
+	api.handlerExecutionRules = executionRules
+	return api
+}
+
 // Handle registers a route to the server's api.
 // if empty method is passed then handler(s) are being registered to all methods, same as .Any.
 //
@@ -179,14 +211,28 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 		return nil
 	}
 
-	// before join the middleware + handlers + done handlers.
-	possibleMainHandlerName := context.HandlerName(handlers[0])
+	// note: this can not change the caller's handlers as they're but the entry values(handlers)
+	// of `middleware`, `doneHandlers` and `handlers` can.
+	// So if we just put `api.middleware` or `api.doneHandlers`
+	// then the next `Party` will have those updated handlers
+	// but dev may change the rules for that child Party, so we have to make clones of them here.
+	var (
+		beginHandlers = joinHandlers(api.middleware, context.Handlers{})
+		doneHandlers  = joinHandlers(api.doneHandlers, context.Handlers{})
+	)
+
+	mainHandlers := context.Handlers(handlers)
+	// before join the middleware + handlers + done handlers and apply the execution rules.
+	possibleMainHandlerName := context.HandlerName(mainHandlers[0])
+
+	// TODO: for UseGlobal/DoneGlobal that doesn't work.
+	applyExecutionRules(api.handlerExecutionRules, &beginHandlers, &doneHandlers, &mainHandlers)
 
 	// global begin handlers -> middleware that are registered before route registration
 	// -> handlers that are passed to this Handle function.
-	routeHandlers := joinHandlers(api.middleware, handlers)
+	routeHandlers := joinHandlers(beginHandlers, mainHandlers)
 	// -> done handlers
-	routeHandlers = joinHandlers(routeHandlers, api.doneHandlers)
+	routeHandlers = joinHandlers(routeHandlers, doneHandlers)
 
 	// here we separate the subdomain and relative path
 	subdomain, path := splitSubdomainAndPath(fullpath)
@@ -300,10 +346,11 @@ func (api *APIBuilder) Party(relativePath string, handlers ...context.Handler) P
 		doneGlobalHandlers:  api.doneGlobalHandlers,
 		reporter:            api.reporter,
 		// per-party/children
-		middleware:   middleware,
-		doneHandlers: api.doneHandlers[0:],
-		relativePath: fullpath,
-		allowMethods: allowMethods,
+		middleware:            middleware,
+		doneHandlers:          api.doneHandlers[0:],
+		relativePath:          fullpath,
+		allowMethods:          allowMethods,
+		handlerExecutionRules: api.handlerExecutionRules,
 	}
 }
 
@@ -456,12 +503,14 @@ func (api *APIBuilder) DoneGlobal(handlers ...context.Handler) {
 }
 
 // Reset removes all the begin and done handlers that may derived from the parent party via `Use` & `Done`,
-// note that the `Reset` will not reset the handlers that are registered via `UseGlobal` & `DoneGlobal`.
+// and the execution rules.
+// Note that the `Reset` will not reset the handlers that are registered via `UseGlobal` & `DoneGlobal`.
 //
 // Returns this Party.
 func (api *APIBuilder) Reset() Party {
 	api.middleware = api.middleware[0:0]
 	api.doneHandlers = api.doneHandlers[0:0]
+	api.handlerExecutionRules = ExecutionRules{}
 	return api
 }
 
