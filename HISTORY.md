@@ -1,4 +1,4 @@
-# History/Changelog <a href="HISTORY_ZH.md"> <img width="20px" src="https://iris-go.com/images/flag-china.svg?v=10" /></a> <a href="HISTORY_GR.md"> <img width="20px" src="https://iris-go.com/images/flag-greece.svg?v=10" /></a>
+# History/Changelog <a href="HISTORY_ZH.md"> <img width="20px" src="https://iris-go.com/images/flag-china.svg?v=10" /></a><a href="HISTORY_ID.md"> <img width="20px" src="https://iris-go.com/images/flag-indonesia.svg?v=10" /></a><a href="HISTORY_GR.md"> <img width="20px" src="https://iris-go.com/images/flag-greece.svg?v=10" /></a>
 
 ### Looking for free and real-time support?
 
@@ -17,6 +17,103 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris` or let the automatic updater do that for you.
 
+# Mo, 21 May 2018 | v10.6.5
+
+First of all, special thanks to [@haritsfahreza](https://github.com/haritsfahreza) for translating the entire Iris' README page & Changelogs to the Bahasa Indonesia language via PR: [#1000](https://github.com/kataras/iris/pull/1000)!
+
+## New Feature: `Execution Rules`
+
+From the begin of the Iris' journey we used to use the `ctx.Next()` inside handlers in order to call the next handler in the route's registered handlers chain, otherwise the "next handler" would never be executed.
+
+We could always "force-break" that handlers chain using the `ctx.StopExecution()` to indicate that any future `ctx.Next()` calls will do nothing.
+
+These things will never change, they were designed in the lower possible level of the Iris' high-performant and unique router and they're working like a charm:)
+
+We have introduced `Iris MVC Applications` two years later. Iris is the first and the only one Go web framework with a realistic point-view and feature-rich MVC architectural pattern support without sacrifices, always with speed in mind (handlers vs mvc have almost the same speed here!!!).
+
+A bit later we introduced another two unique features, `Hero Handlers and Service/Dynamic Bindings` (see the very bottom of this HISTORY page).
+You loved it, you're using it a lot, just take a look at the recent github issues the community raised about MVC and etc.
+
+Two recent discussions/support were about calling `Done` handlers inside MVC applications, you could simply do that by implementing the optional `BaseController` as examples shown, i.e:
+
+```go
+func (c *myController) BeginRequest(ctx iris.Context) {}
+func (c *myController) EndRequest(ctx iris.Context) {
+    ctx.Next() // Call of any `Done` handlers.
+}
+```
+
+But for some reason you found that confused. This is where the new feature comes: **The option to change the default behavior of handlers execution's rules PER PARTY**.
+
+For example, we want to run all handlers(begin, main and done handlers) with the order you register but without the need of the `ctx.Next()` (in that case the only remained way to stop the lifecycle of an http request when next handlers are registered is to use the `ctx.StopExecution()` which, does not allow the next handler(s) to be executed even if `ctx.Next()` called in some place later on, but you're already know this, I hope :)).
+
+```go
+package main
+
+import (
+    "github.com/kataras/iris"
+    "github.com/kataras/iris/mvc"
+)
+
+func main() {
+    app := iris.New()
+    app.Get("/", func(ctx iris.Context) { ctx.Redirect("/example") })
+
+    m := mvc.New(app.Party("/example"))
+
+    // IMPORTANT
+    // the new feature, all options can be filled with Force:true, they are all play nice together.
+    m.Router.SetExecutionRules(iris.ExecutionRules{
+        // Begin:  <- from `Use[all]` to `Handle[last]` future route handlers, execute all, execute all even if `ctx.Next()` is missing.
+        // Main:   <- all `Handle` future route handlers, execute all >> >>.
+        Done: iris.ExecutionOptions{Force: true}, // <- from `Handle[last]` to `Done[all]` future route handlers, execute all >> >>.
+    })
+    m.Router.Done(doneHandler)
+    // m.Router.Done(...)
+    // ...
+    //
+
+    m.Handle(&exampleController{})
+
+    app.Run(iris.Addr(":8080"))
+}
+
+func doneHandler(ctx iris.Context) {
+    ctx.WriteString("\nFrom Done Handler")
+}
+
+type exampleController struct{}
+
+func (c *exampleController) Get() string {
+    return "From Main Handler"
+    // Note that here we don't binding the `Context`, and we don't call its `Next()`
+    // function in order to call the `doneHandler`,
+    // this is done automatically for us because we changed the execution rules with the `SetExecutionRules`.
+    //
+    // Therefore, the final output is:
+    // From Main Handler
+    // From Done Handler
+}
+```
+
+Example at: [_examples/mvc/middleware/without-ctx-next](_examples/mvc/middleware/without-ctx-next).
+
+This feature can be applied to any type of application, the example is an MVC Application because many of you asked for this exactly flow the past days.
+
+## Thank you
+
+Thank you for your honest support once again, your posts are the heart of this framework.
+
+Don't forget to [star](https://github.com/kataras/iris/stargazers) the Iris' github repository whenever you can and spread the world about its potentials!
+
+Be part of this,
+
+- complete our User Experience Report: https://goo.gl/forms/lnRbVgA6ICTkPyk02
+- join to our Community live chat: https://kataras.rocket.chat/channel/iris
+- connect to our [new facebook group](https://www.facebook.com/iris.framework) to get notifications about new job opportunities relatively to Iris!
+
+Sincerely,
+[Gerasimos Maropoulos](https://twitter.com/MakisMaropoulos).
 
 # We, 09 May 2018 | v10.6.4
 

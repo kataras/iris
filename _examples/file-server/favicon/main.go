@@ -8,10 +8,10 @@ func main() {
 	app := iris.New()
 
 	// This will serve the ./static/favicons/favicon.ico to: localhost:8080/favicon.ico
-	app.Favicon("./static/favicons/favicon.ico.ico")
+	app.Favicon("./static/favicons/favicon.ico")
 
-	// app.Favicon("./static/favicons/favicon.ico.ico", "/favicon_16_16.ico")
-	// This will serve the ./static/favicons/favicon.ico.ico to: localhost:8080/favicon_16_16.ico
+	// app.Favicon("./static/favicons/favicon.\\.ico", "/favicon_16_16.ico")
+	// This will serve the ./static/favicons/favicon.ico to: localhost:8080/favicon_16_16.ico
 
 	app.Get("/", func(ctx iris.Context) {
 		ctx.HTML(`<a href="/favicon.ico"> press here to see the favicon.ico</a>.

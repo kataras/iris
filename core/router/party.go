@@ -61,7 +61,8 @@ type Party interface {
 	// The difference from .Use is that this/or these Handler(s) are being always running last.
 	Done(handlers ...context.Handler)
 	// Reset removes all the begin and done handlers that may derived from the parent party via `Use` & `Done`,
-	// note that the `Reset` will not reset the handlers that are registered via `UseGlobal` & `DoneGlobal`.
+	// and the execution rules.
+	// Note that the `Reset` will not reset the handlers that are registered via `UseGlobal` & `DoneGlobal`.
 	//
 	// Returns this Party.
 	Reset() Party
@@ -73,6 +74,30 @@ type Party interface {
 	// Call of `AllowMethod` will override any previous allow methods.
 	AllowMethods(methods ...string) Party
 
+	// SetExecutionRules alters the execution flow of the route handlers outside of the handlers themselves.
+	//
+	// For example, if for some reason the desired result is the (done or all) handlers to be executed no matter what
+	// even if no `ctx.Next()` is called in the previous handlers, including the begin(`Use`),
+	// the main(`Handle`) and the done(`Done`) handlers themselves, then:
+	// Party#SetExecutionRules(iris.ExecutionRules {
+	//   Begin: iris.ExecutionOptions{Force: true},
+	//   Main:  iris.ExecutionOptions{Force: true},
+	//   Done:  iris.ExecutionOptions{Force: true},
+	// })
+	//
+	// Note that if : true then the only remained way to "break" the handler chain is by `ctx.StopExecution()` now that `ctx.Next()` does not matter.
+	//
+	// These rules are per-party, so if a `Party` creates a child one then the same rules will be applied to that as well.
+	// Reset of these rules (before `Party#Handle`) can be done with `Party#SetExecutionRules(iris.ExecutionRules{})`.
+	//
+	// The most common scenario for its use can be found inside Iris MVC Applications;
+	// when we want the `Done` handlers of that specific mvc app's `Party`
+	// to be executed but we don't want to add `ctx.Next()` on the `OurController#EndRequest`.
+	//
+	// Returns this Party.
+	//
+	// Example: https://github.com/kataras/iris/tree/master/_examples/mvc/middleware/without-ctx-next
+	SetExecutionRules(executionRules ExecutionRules) Party
 	// Handle registers a route to the server's router.
 	// if empty method is passed then handler(s) are being registered to all methods, same as .Any.
 	//
