@@ -6,86 +6,81 @@ package jade
 
 import (
 	"bytes"
-	"fmt"
+	"io"
 )
 
-var textFormat = "%s" // Changed to "%q" in tests for better error messages.
+// var textFormat = "%s" // Changed to "%q" in tests for better error messages.
 
 // A Node is an element in the parse tree. The interface is trivial.
 // The interface contains an unexported method so that only
 // types local to this package can satisfy it.
-type node interface {
-	Type() nodeType
-	position() psn // byte position of start of node in full original input string
+type Node interface {
+	Type() NodeType
 	String() string
-
+	WriteIn(io.Writer)
 	// Copy does a deep copy of the Node and all its components.
 	// To avoid type assertions, some XxxNodes also have specialized
 	// CopyXxx methods that return *XxxNode.
-	Copy() node
-
+	Copy() Node
+	Position() Pos // byte position of start of node in full original input string
 	// tree returns the containing *Tree.
 	// It is unexported so all implementations of Node are in this package.
-	tree() *tree
-	tp() itemType
-}
-
-// Type returns itself and provides an easy default implementation
-// for embedding in a Node. Embedded in all non-trivial Nodes.
-func (t nodeType) Type() nodeType {
-	return t
+	tree() *Tree
 }
 
 // Pos represents a byte position in the original input text from which
 // this template was parsed.
-type psn int
+type Pos int
 
-func (p psn) position() psn {
+func (p Pos) Position() Pos {
 	return p
 }
 
-// listNode holds a sequence of nodes.
-type listNode struct {
-	nodeType
-	psn
-	tr    *tree
-	Nodes []node // The element nodes in lexical order.
+// Nodes.
+
+// ListNode holds a sequence of nodes.
+type ListNode struct {
+	NodeType
+	Pos
+	tr    *Tree
+	Nodes []Node // The element nodes in lexical order.
+	tab   int
 }
 
-func (t *tree) newList(pos psn) *listNode {
-	return &listNode{tr: t, nodeType: nodeList, psn: pos}
+func (t *Tree) newList(pos Pos) *ListNode {
+	return &ListNode{tr: t, NodeType: NodeList, Pos: pos, tab: t.tab}
 }
 
-func (l *listNode) append(n node) {
+func (l *ListNode) append(n Node) {
 	l.Nodes = append(l.Nodes, n)
 }
 
-func (l *listNode) tree() *tree {
+func (l *ListNode) tree() *Tree {
 	return l.tr
 }
-func (l *listNode) tp() itemType {
-	return 0
-}
 
-func (l *listNode) String() string {
+func (l *ListNode) String() string {
 	b := new(bytes.Buffer)
-	for _, n := range l.Nodes {
-		fmt.Fprint(b, n)
-	}
+	l.WriteIn(b)
 	return b.String()
 }
+func (l *ListNode) WriteIn(b io.Writer) {
+	for _, n := range l.Nodes {
+		n.WriteIn(b)
+	}
+}
 
-func (l *listNode) CopyList() *listNode {
+func (l *ListNode) CopyList() *ListNode {
 	if l == nil {
 		return l
 	}
-	n := l.tr.newList(l.psn)
+	n := l.tr.newList(l.Pos)
 	for _, elem := range l.Nodes {
 		n.append(elem.Copy())
 	}
 	return n
 }
 
-func (l *listNode) Copy() node {
+func (l *ListNode) Copy() Node {
 	return l.CopyList()
 }

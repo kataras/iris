@@ -3,257 +3,554 @@ package jade
 import (
 	"bytes"
 	"fmt"
+	"go/parser"
+	"html"
+	"io"
+	"log"
 	"regexp"
 	"strings"
 )
 
-// NodeType identifies the type of a parse tree node.
-type nodeType int
-
-const (
-	nodeList nodeType = iota
-	nodeText
-	nodeTag
-	nodeAttr
-	nodeDoctype
-)
-
-func indentToString(nesting, indent int, fromConf bool) string {
-	if PrettyOutput {
-		idt := new(bytes.Buffer)
-		if fromConf {
-			for i := 0; i < nesting; i++ {
-				idt.WriteString(OutputIndent)
-			}
-		} else {
-			for i := 0; i < indent; i++ {
-				idt.WriteByte(' ')
-			}
-		}
-		return idt.String()
-	}
-	return ""
+type TagNode struct {
+	NodeType
+	Pos
+	tr       *Tree
+	Nodes    []Node
+	AttrName []string
+	AttrCode []string
+	TagName  string
+	tagType  itemType
+	tab      int
 }
 
-type nestNode struct {
-	nodeType
-	psn
-	tr    *tree
-	Nodes []node
-
-	typ     itemType
-	Tag     string
-	Indent  int
-	Nesting int
-
-	id    string
-	class []string
+func (t *Tree) newTag(pos Pos, name string, tagType itemType) *TagNode {
+	return &TagNode{tr: t, NodeType: NodeTag, Pos: pos, TagName: name, tagType: tagType, tab: t.tab}
 }
 
-func (t *tree) newNest(pos psn, tag string, tp itemType, idt, nst int) *nestNode {
-	return &nestNode{tr: t, nodeType: nodeTag, psn: pos, Tag: tag, typ: tp, Indent: idt, Nesting: nst}
+func (l *TagNode) append(n Node) {
+	l.Nodes = append(l.Nodes, n)
 }
 
-func (nn *nestNode) append(n node) {
-	nn.Nodes = append(nn.Nodes, n)
-}
-func (nn *nestNode) tree() *tree {
-	return nn.tr
-}
-func (nn *nestNode) tp() itemType {
-	return nn.typ
+func (l *TagNode) tree() *Tree {
+	return l.tr
 }
 
-func (nn *nestNode) String() string {
-	b := new(bytes.Buffer)
-	idt := indentToString(nn.Nesting, nn.Indent, nestIndent)
-
-	if PrettyOutput && nn.typ != itemInlineTag && nn.typ != itemInlineVoidTag {
-		idt = "\n" + idt
-	}
-
-	beginFormat := idt + "<%s"
-	endFormat := "</%s>"
-
-	switch nn.typ {
-	case itemDiv:
-		nn.Tag = "div"
-	case itemInlineTag, itemInlineVoidTag:
-		beginFormat = "<%s"
-	case itemComment:
-		nn.Tag = "--"
-		beginFormat = idt + "<!%s "
-		endFormat = " %s>"
-	case itemAction, itemActionEnd:
-		beginFormat = idt + "{{ %s }}"
-	case itemBlock:
-		beginFormat = idt + "{{ block \"%s\" . }}"
-	case itemDefine:
-		beginFormat = idt + "{{ define \"%s\" }}"
-	case itemTemplate:
-		beginFormat = idt + "{{ template \"%s\" }}"
-	}
-
-	if len(nn.Nodes) > 1 || (len(nn.Nodes) == 1 && nn.Nodes[0].tp() != itemEndAttr) {
-		endEl := nn.Nodes[len(nn.Nodes)-1].tp()
-		if endEl != itemInlineText && endEl != itemInlineAction && endEl != itemInlineTag {
-			endFormat = idt + endFormat
+func (l *TagNode) attr(a, b string) {
+	for k, v := range l.AttrName {
+		if v == a {
+			l.AttrCode[k] = fmt.Sprintf(tag__arg_add, l.AttrCode[k], b)
+			return
 		}
 	}
 
-	fmt.Fprintf(b, beginFormat, nn.Tag)
+	l.AttrName = append(l.AttrName, a)
+	l.AttrCode = append(l.AttrCode, b)
+}
 
-	if len(nn.id) > 0 {
-		fmt.Fprintf(b, " id=\"%s\"", nn.id)
+func codeStrFmt(a string) (string, bool) {
+	var (
+		str   = []rune(a)
+		lng   = len(str)
+		first = str[0]
+		last  = str[lng-1]
+		unesc = false
+	)
+	if first == 'ߐ' { // FIXME temporarily ߐ - [AttrEqualUn] Unescaped flag set in parseAttributes()
+		str = append(str[:0], str[1:]...)
+		lng -= 1
+		first = str[0]
+		last = str[lng-1]
+		unesc = true
 	}
-	if len(nn.class) > 0 {
-		fmt.Fprintf(b, " class=\"%s\"", strings.Join(nn.class, " "))
+	switch first {
+	case '"', '\'':
+		if first == last {
+			for k, v := range str[1 : lng-1] {
+				if v == first && str[k] != '\\' {
+					return "", false
+				}
+			}
+			if unesc {
+				return string(str[1 : lng-1]), true
+			}
+			return html.EscapeString(string(str[1 : lng-1])), true
+		}
+	case '`':
+		if first == last {
+			if !strings.ContainsAny(string(str[1:lng-1]), "`") {
+				if unesc {
+					return string(str[1 : lng-1]), true
+				}
+				return html.EscapeString(string(str[1 : lng-1])), true
+			}
+		}
 	}
-	for _, n := range nn.Nodes {
-		fmt.Fprint(b, n)
+	return "", false
+}
+
+func query(a string) (string, bool) {
+	var (
+		re    = regexp.MustCompile(`^(.+)\?(.+):(.+)$`)
+		match = re.FindStringSubmatch(a)
+	)
+	if len(match) == 4 {
+		for _, v := range match[1:4] {
+			if _, err := parser.ParseExpr(v); err != nil {
+				return "", false
+			}
+		}
+		return "qf(" + match[1] + ", " + match[2] + ", " + match[3] + ")", true
 	}
-	switch nn.typ {
-	case itemActionEnd, itemDefine, itemBlock:
-		fmt.Fprint(b, idt+"{{ end }}")
-	case itemTag, itemDiv, itemInlineTag, itemComment:
-		fmt.Fprintf(b, endFormat, nn.Tag)
-	}
+	return "", false
+}
+
+func (l *TagNode) String() string {
+	var b = new(bytes.Buffer)
+	l.WriteIn(b)
 	return b.String()
 }
-
-func (nn *nestNode) CopyNest() *nestNode {
-	if nn == nil {
-		return nn
+func (l *TagNode) WriteIn(b io.Writer) {
+	var (
+		attr = new(bytes.Buffer)
+	)
+	if len(l.AttrName) > 0 {
+		fmt.Fprint(attr, tag__arg_bgn)
+		for k, name := range l.AttrName {
+			if arg, ok := codeStrFmt(l.AttrCode[k]); ok {
+				fmt.Fprintf(attr, tag__arg_str, name, arg)
+			} else if !golang_mode {
+				fmt.Fprintf(attr, tag__arg, name, l.AttrCode[k])
+			} else if _, err := parser.ParseExpr(l.AttrCode[k]); err == nil {
+				fmt.Fprintf(attr, tag__arg, name, l.Pos, l.AttrCode[k])
+			} else if arg, ok := query(l.AttrCode[k]); ok {
+				fmt.Fprintf(attr, tag__arg, name, l.Pos, arg)
+			} else {
+				log.Fatalln("Error tag attribute value ==> ", l.AttrCode[k])
+			}
+		}
+		fmt.Fprint(attr, tag__arg_end)
 	}
-	n := nn.tr.newNest(nn.psn, nn.Tag, nn.typ, nn.Indent, nn.Nesting)
-	for _, elem := range nn.Nodes {
+	switch l.tagType {
+	case itemTagVoid:
+		fmt.Fprintf(b, tag__void, l.TagName, attr)
+	case itemTagVoidInline:
+		fmt.Fprintf(b, tag__void, l.TagName, attr)
+	default:
+		fmt.Fprintf(b, tag__bgn, l.TagName, attr)
+		for _, inner := range l.Nodes {
+			inner.WriteIn(b)
+		}
+		fmt.Fprintf(b, tag__end, l.TagName)
+	}
+}
+
+func (l *TagNode) CopyTag() *TagNode {
+	if l == nil {
+		return l
+	}
+	n := l.tr.newTag(l.Pos, l.TagName, l.tagType)
+	n.tab = l.tab
+	n.AttrCode = l.AttrCode
+	n.AttrName = l.AttrName
+	for _, elem := range l.Nodes {
 		n.append(elem.Copy())
 	}
 	return n
 }
-func (nn *nestNode) Copy() node {
-	return nn.CopyNest()
+
+func (l *TagNode) Copy() Node {
+	return l.CopyTag()
 }
 
-var doctype = map[string]string{
-	"xml":           `<?xml version="1.0" encoding="utf-8" ?>`,
-	"html":          `<!DOCTYPE html>`,
-	"5":             `<!DOCTYPE html>`,
-	"1.1":           `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">`,
-	"xhtml":         `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">`,
-	"basic":         `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML Basic 1.1//EN" "http://www.w3.org/TR/xhtml-basic/xhtml-basic11.dtd">`,
-	"mobile":        `<!DOCTYPE html PUBLIC "-//WAPFORUM//DTD XHTML Mobile 1.2//EN" "http://www.openmobilealliance.org/tech/DTD/xhtml-mobile12.dtd">`,
-	"strict":        `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">`,
-	"frameset":      `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Frameset//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd">`,
-	"transitional":  `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">`,
-	"4":             `<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">`,
-	"4strict":       `<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">`,
-	"4frameset":     `<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Frameset//EN" "http://www.w3.org/TR/html4/frameset.dtd"> `,
-	"4transitional": `<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">`,
+//
+//
+
+type CondNode struct {
+	NodeType
+	Pos
+	tr       *Tree
+	Nodes    []Node
+	cond     string
+	condType itemType
+	tab      int
 }
 
-type doctypeNode struct {
-	nodeType
-	psn
-	tr      *tree
-	Doctype string
+func (t *Tree) newCond(pos Pos, cond string, condType itemType) *CondNode {
+	return &CondNode{tr: t, NodeType: NodeCond, Pos: pos, cond: cond, condType: condType, tab: t.tab}
 }
 
-func (t *tree) newDoctype(pos psn, dt string) *doctypeNode {
-	return &doctypeNode{tr: t, nodeType: nodeDoctype, psn: pos, Doctype: dt}
+func (l *CondNode) append(n Node) {
+	l.Nodes = append(l.Nodes, n)
 }
 
-func (d *doctypeNode) String() string {
-	if dt, ok := doctype[d.Doctype]; ok {
-		return fmt.Sprintf("\n%s", dt)
-	}
-	return fmt.Sprintf("\n<!DOCTYPE html>")
-}
-
-func (d *doctypeNode) tp() itemType {
-	return itemDoctype
-}
-func (d *doctypeNode) tree() *tree {
-	return d.tr
-}
-func (d *doctypeNode) Copy() node {
-	return &doctypeNode{tr: d.tr, nodeType: nodeDoctype, psn: d.psn, Doctype: d.Doctype}
-}
-
-// lineNode holds plain text.
-type lineNode struct {
-	nodeType
-	psn
-	tr *tree
-
-	Text    []byte // The text; may span newlines.
-	typ     itemType
-	Indent  int
-	Nesting int
-}
-
-func (t *tree) newLine(pos psn, text string, tp itemType, idt, nst int) *lineNode {
-	return &lineNode{tr: t, nodeType: nodeText, psn: pos, Text: []byte(text), typ: tp, Indent: idt, Nesting: nst}
-}
-
-func (l *lineNode) String() string {
-	idt := indentToString(l.Nesting, l.Indent, lineIndent)
-	rex := regexp.MustCompile("[!#]{(.+?)}")
-
-	switch l.typ {
-	case itemInlineAction:
-		return fmt.Sprintf("{{%s }}", l.Text)
-	case itemInlineText:
-		return fmt.Sprintf("%s", rex.ReplaceAll(l.Text, []byte("{{$1}}")))
-	default:
-		return fmt.Sprintf("\n"+idt+"%s", rex.ReplaceAll(l.Text, []byte("{{$1}}")))
-	}
-}
-
-func (l *lineNode) tp() itemType {
-	return l.typ
-}
-func (l *lineNode) tree() *tree {
+func (l *CondNode) tree() *Tree {
 	return l.tr
 }
-func (l *lineNode) Copy() node {
-	return &lineNode{tr: l.tr, nodeType: nodeText, psn: l.psn, Text: append([]byte{}, l.Text...), typ: l.typ, Indent: l.Indent, Nesting: l.Nesting}
-}
 
-type attrNode struct {
-	nodeType
-	psn
-	tr   *tree
-	Attr string
-	typ  itemType
+func (l *CondNode) String() string {
+	var b = new(bytes.Buffer)
+	l.WriteIn(b)
+	return b.String()
 }
-
-func (t *tree) newAttr(pos psn, attr string, tp itemType) *attrNode {
-	return &attrNode{tr: t, nodeType: nodeAttr, psn: pos, Attr: attr, typ: tp}
-}
-
-func (a *attrNode) String() string {
-	switch a.typ {
-	case itemEndAttr:
-		return fmt.Sprintf("%s", a.Attr)
-	case itemAttr:
-		return fmt.Sprintf("=%s", a.Attr)
-	case itemAttrN:
-		return fmt.Sprintf("=\"%s\"", a.Attr)
-	case itemAttrVoid:
-		return fmt.Sprintf(" %s=\"%s\"", a.Attr, a.Attr)
+func (l *CondNode) WriteIn(b io.Writer) {
+	switch l.condType {
+	case itemIf:
+		fmt.Fprintf(b, cond__if, l.cond)
+	case itemUnless:
+		fmt.Fprintf(b, cond__unless, l.cond)
+	case itemCase:
+		fmt.Fprintf(b, cond__case, l.cond)
+	case itemWhile:
+		fmt.Fprintf(b, cond__while, l.cond)
+	case itemFor, itemEach:
+		if k, v, name, ok := l.parseForArgs(); ok {
+			fmt.Fprintf(b, cond__for, k, v, name)
+		} else {
+			fmt.Fprintf(b, "\n{{ Error malformed each: %s }}", l.cond)
+		}
+	case itemForIfNotContain:
+		if k, v, name, ok := l.parseForArgs(); ok {
+			fmt.Fprintf(b, cond__for_if, name, k, v, name)
+		} else {
+			fmt.Fprintf(b, "\n{{ Error malformed each: %s }}", l.cond)
+		}
 	default:
-		return fmt.Sprintf(" %s", a.Attr)
+		fmt.Fprintf(b, "{{ Error Cond %s }}", l.cond)
+	}
+
+	for _, n := range l.Nodes {
+		n.WriteIn(b)
+	}
+
+	fmt.Fprint(b, cond__end)
+}
+
+func (l *CondNode) parseForArgs() (k, v, name string, ok bool) {
+	sp := strings.SplitN(l.cond, " in ", 2)
+	if len(sp) != 2 {
+		return
+	}
+	name = strings.Trim(sp[1], " ")
+	re := regexp.MustCompile(`^(\w+)\s*,\s*(\w+)$`)
+	kv := re.FindAllStringSubmatch(strings.Trim(sp[0], " "), -1)
+	if len(kv) == 1 && len(kv[0]) == 3 {
+		k = kv[0][2]
+		v = kv[0][1]
+		ok = true
+		return
+	}
+	r2 := regexp.MustCompile(`^\w+$`)
+	kv2 := r2.FindAllString(strings.Trim(sp[0], " "), -1)
+	if len(kv2) == 1 {
+		k = "_"
+		v = kv2[0]
+		ok = true
+		return
+	}
+	return
+}
+
+func (l *CondNode) CopyCond() *CondNode {
+	if l == nil {
+		return l
+	}
+	n := l.tr.newCond(l.Pos, l.cond, l.condType)
+	n.tab = l.tab
+	for _, elem := range l.Nodes {
+		n.append(elem.Copy())
+	}
+	return n
+}
+
+func (l *CondNode) Copy() Node {
+	return l.CopyCond()
+}
+
+//
+//
+
+type CodeNode struct {
+	NodeType
+	Pos
+	tr       *Tree
+	codeType itemType
+	Code     []byte // The text; may span newlines.
+	tab      int
+}
+
+func (t *Tree) newCode(pos Pos, text string, codeType itemType) *CodeNode {
+	return &CodeNode{tr: t, NodeType: NodeCode, Pos: pos, Code: []byte(text), codeType: codeType, tab: t.tab}
+}
+
+func (t *CodeNode) String() string {
+	var b = new(bytes.Buffer)
+	t.WriteIn(b)
+	return b.String()
+}
+func (t *CodeNode) WriteIn(b io.Writer) {
+	switch t.codeType {
+	case itemCode:
+		fmt.Fprintf(b, code__longcode, t.Code)
+	case itemCodeBuffered:
+		if !golang_mode {
+			fmt.Fprintf(b, code__buffered, t.Code)
+		} else if cb, ok := codeStrFmt(string(t.Code)); ok {
+			fmt.Fprintf(b, code__buffered, t.Pos, `"`+cb+`"`)
+		} else {
+			fmt.Fprintf(b, code__buffered, t.Pos, t.Code)
+		}
+	case itemCodeUnescaped:
+		fmt.Fprintf(b, code__unescaped, t.Code)
+	case itemElse:
+		fmt.Fprintf(b, code__else)
+	case itemElseIf:
+		fmt.Fprintf(b, code__else_if, t.Code)
+	case itemForElse:
+		fmt.Fprintf(b, code__for_else)
+	case itemCaseWhen:
+		fmt.Fprintf(b, code__case_when, t.Code)
+	case itemCaseDefault:
+		fmt.Fprintf(b, code__case_def)
+	case itemMixinBlock:
+		fmt.Fprintf(b, code__mix_block)
+	default:
+		fmt.Fprintf(b, "{{ Error Code %s }}", t.Code)
 	}
 }
 
-func (a *attrNode) tp() itemType {
-	return a.typ
-}
-func (a *attrNode) tree() *tree {
-	return a.tr
+func (t *CodeNode) tree() *Tree {
+	return t.tr
 }
 
-func (a *attrNode) Copy() node {
-	return &attrNode{tr: a.tr, nodeType: nodeAttr, psn: a.psn, Attr: a.Attr, typ: a.typ}
+func (t *CodeNode) Copy() Node {
+	return &CodeNode{tr: t.tr, NodeType: NodeCode, Pos: t.Pos, codeType: t.codeType, Code: append([]byte{}, t.Code...), tab: t.tab}
+}
+
+//
+//
+
+type BlockNode struct {
+	NodeType
+	Pos
+	tr        *Tree
+	blockType itemType
+	Name      string
+	tab       int
+}
+
+func (t *Tree) newBlock(pos Pos, name string, textType itemType) *BlockNode {
+	return &BlockNode{tr: t, NodeType: NodeBlock, Pos: pos, Name: name, blockType: textType, tab: t.tab}
+}
+
+func (t *BlockNode) String() string {
+	var b = new(bytes.Buffer)
+	t.WriteIn(b)
+	return b.String()
+}
+func (t *BlockNode) WriteIn(b io.Writer) {
+	var (
+		out_blk         = t.tr.block[t.Name]
+		out_pre, ok_pre = t.tr.block[t.Name+"_prepend"]
+		out_app, ok_app = t.tr.block[t.Name+"_append"]
+	)
+	if ok_pre {
+		out_pre.WriteIn(b)
+	}
+	out_blk.WriteIn(b)
+
+	if ok_app {
+		out_app.WriteIn(b)
+	}
+}
+
+func (t *BlockNode) tree() *Tree {
+	return t.tr
+}
+
+func (t *BlockNode) Copy() Node {
+	return &BlockNode{tr: t.tr, NodeType: NodeBlock, Pos: t.Pos, blockType: t.blockType, Name: t.Name, tab: t.tab}
+}
+
+//
+//
+
+type TextNode struct {
+	NodeType
+	Pos
+	tr       *Tree
+	textType itemType
+	Text     []byte // The text; may span newlines.
+	tab      int
+}
+
+func (t *Tree) newText(pos Pos, text string, textType itemType) *TextNode {
+	return &TextNode{tr: t, NodeType: NodeText, Pos: pos, Text: []byte(text), textType: textType, tab: t.tab}
+}
+
+func (t *TextNode) String() string {
+	var b = new(bytes.Buffer)
+	t.WriteIn(b)
+	return b.String()
+}
+func (t *TextNode) WriteIn(b io.Writer) {
+	switch t.textType {
+	case itemComment:
+		fmt.Fprintf(b, text__comment, t.Text)
+	default:
+		fmt.Fprintf(b, text__str, t.Text)
+	}
+}
+
+func (t *TextNode) tree() *Tree {
+	return t.tr
+}
+
+func (t *TextNode) Copy() Node {
+	return &TextNode{tr: t.tr, NodeType: NodeText, Pos: t.Pos, textType: t.textType, Text: append([]byte{}, t.Text...), tab: t.tab}
+}
+
+//
+//
+
+type MixinNode struct {
+	NodeType
+	Pos
+	tr        *Tree
+	Nodes     []Node
+	AttrName  []string
+	AttrCode  []string
+	AttrRest  []string
+	MixinName string
+	block     string
+	tagType   itemType
+	tab       int
+}
+
+func (t *Tree) newMixin(pos Pos) *MixinNode {
+	return &MixinNode{tr: t, NodeType: NodeMixin, Pos: pos, tab: t.tab}
+}
+
+func (l *MixinNode) append(n Node) {
+	l.Nodes = append(l.Nodes, n)
+}
+
+func (l *MixinNode) attr(a, b string) {
+	l.AttrName = append(l.AttrName, a)
+	l.AttrCode = append(l.AttrCode, b)
+}
+
+func (l *MixinNode) tree() *Tree {
+	return l.tr
+}
+
+func (l *MixinNode) String() string {
+	var b = new(bytes.Buffer)
+	l.WriteIn(b)
+	return b.String()
+}
+func (l *MixinNode) WriteIn(b io.Writer) {
+	var (
+		attr = new(bytes.Buffer)
+		an   = len(l.AttrName)
+		rest = len(l.AttrRest)
+	)
+
+	if an > 0 {
+		fmt.Fprintf(attr, mixin__var_bgn)
+		fmt.Fprintf(attr, mixin__var_block, l.block)
+		if rest > 0 {
+			fmt.Fprintf(attr, mixin__var_rest, strings.TrimLeft(l.AttrName[an-1], "."), l.AttrRest)
+			l.AttrName = l.AttrName[:an-1]
+		}
+		for k, name := range l.AttrName {
+			fmt.Fprintf(attr, mixin__var, name, l.AttrCode[k])
+		}
+		fmt.Fprintf(attr, mixin__var_end)
+	}
+
+	fmt.Fprintf(b, mixin__bgn, attr)
+	for _, n := range l.Nodes {
+		n.WriteIn(b)
+	}
+	fmt.Fprintf(b, mixin__end)
+}
+
+func (l *MixinNode) CopyMixin() *MixinNode {
+	if l == nil {
+		return l
+	}
+	n := l.tr.newMixin(l.Pos)
+	n.tab = l.tab
+	for _, elem := range l.Nodes {
+		n.append(elem.Copy())
+	}
+	return n
+}
+
+func (l *MixinNode) Copy() Node {
+	return l.CopyMixin()
+}
+
+//
+//
+
+type DoctypeNode struct {
+	NodeType
+	Pos
+	tr      *Tree
+	doctype string
+}
+
+func (t *Tree) newDoctype(pos Pos, text string) *DoctypeNode {
+	doc := ""
+	txt := strings.Trim(text, " ")
+	if len(txt) > 0 {
+		sls := strings.SplitN(txt, " ", 2)
+		switch sls[0] {
+		case "5", "html":
+			doc = `<!DOCTYPE html%s>`
+		case "xml":
+			doc = `<?xml version="1.0" encoding="utf-8"%s ?>`
+		case "1.1", "xhtml":
+			doc = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd"%s>`
+		case "basic":
+			doc = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML Basic 1.1//EN" "http://www.w3.org/TR/xhtml-basic/xhtml-basic11.dtd"%s>`
+		case "strict":
+			doc = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"%s>`
+		case "frameset":
+			doc = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Frameset//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd"%s>`
+		case "transitional":
+			doc = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"%s>`
+		case "mobile":
+			doc = `<!DOCTYPE html PUBLIC "-//WAPFORUM//DTD XHTML Mobile 1.2//EN" "http://www.openmobilealliance.org/tech/DTD/xhtml-mobile12.dtd"%s>`
+		case "4", "4strict":
+			doc = `<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"%s>`
+		case "4frameset":
+			doc = `<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Frameset//EN" "http://www.w3.org/TR/html4/frameset.dtd"%s>`
+		case "4transitional":
+			doc = `<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"%s>`
+		}
+		if doc == "" {
+			doc = fmt.Sprintf("<!DOCTYPE %s>", txt)
+		} else if doc != "" && len(sls) == 2 {
+			doc = fmt.Sprintf(doc, " "+sls[1])
+		} else {
+			doc = fmt.Sprintf(doc, "")
+		}
+	} else {
+		doc = `<!DOCTYPE html>`
+	}
+	return &DoctypeNode{tr: t, NodeType: NodeDoctype, Pos: pos, doctype: doc}
+}
+func (d *DoctypeNode) String() string {
+	return fmt.Sprintf(text__str, d.doctype)
+}
+func (d *DoctypeNode) WriteIn(b io.Writer) {
+	b.Write([]byte(d.doctype))
+}
+func (d *DoctypeNode) tree() *Tree {
+	return d.tr
+}
+func (d *DoctypeNode) Copy() Node {
+	return &DoctypeNode{tr: d.tr, NodeType: NodeDoctype, Pos: d.Pos, doctype: d.doctype}
 }

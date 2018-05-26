@@ -294,6 +294,10 @@ If you're new to back-end web development read about the MVC architectural patte
 - [Inject Data Between Handlers](view/context-view-data/main.go)
 - [Embedding Templates Into App Executable File](view/embedding-templates-into-app/main.go)
 - [Write to a custom `io.Writer`](view/write-to)
+- [Greeting with Pug (Jade)`](view/template_pug_0)
+- [Pug (Jade) Actions`](view/template_pug_1)
+- [Pug (Jade) Includes`](view/template_pug_2)
+- [Pug (Jade) Extends`](view/template_pug_3)
 
 You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [hero templates](https://github.com/shiyanhui/hero/hero) files too, simply by using the `context#ResponseWriter`, take a look at the [http_responsewriter/quicktemplate](http_responsewriter/quicktemplate) and [http_responsewriter/herotemplate](http_responsewriter/herotemplate) examples.
 

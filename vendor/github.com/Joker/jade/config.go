@@ -1,142 +1,193 @@
 package jade
 
+//go:generate stringer -type=itemType,NodeType -trimprefix=item -output=config_string.go
+
+var TabSize = 4
+
 var (
-	// Pretty print if true
-	PrettyOutput = true
+	golang_mode  = false
+	tag__bgn     = "<%s%s>"
+	tag__end     = "</%s>"
+	tag__void    = "<%s%s/>"
+	tag__arg     = ` %s="{{ print %s }}"`
+	tag__arg_str = ` %s="%s"`
+	tag__arg_add = `%s " " %s`
+	tag__arg_bgn = ""
+	tag__arg_end = ""
 
-	// Output indent strring for pretty print
-	OutputIndent = "    "
+	cond__if     = "{{ if %s }}"
+	cond__unless = "{{ if not %s }}"
+	cond__case   = "{{/* switch %s */}}"
+	cond__while  = "{{ range %s }}"
+	cond__for    = "{{/* %s, %s */}}{{ range %s }}"
+	cond__end    = "{{ end }}"
 
-	// Tabulation size of parse file
-	TabSize = 4
+	cond__for_if   = "{{ if gt len %s 0 }}{{/* %s, %s */}}{{ range %s }}"
+	code__for_else = "{{ end }}{{ else }}"
 
-	// Left go-template delim
-	LeftDelim = "{{"
+	code__longcode  = "{{/* %s */}}"
+	code__buffered  = "{{ %s }}"
+	code__unescaped = "{{ %s }}"
+	code__else      = "{{ else }}"
+	code__else_if   = "{{ else if %s }}"
+	code__case_when = "{{/* case %s: */}}"
+	code__case_def  = "{{/* default: */}}"
+	code__mix_block = "{{/* block */}}"
 
-	// Right go-template delim
-	RightDelim = "}}"
+	text__str     = "%s"
+	text__comment = "<!--%s -->"
+
+	mixin__bgn       = "\n%s"
+	mixin__end       = ""
+	mixin__var_bgn   = "{{/* var ("
+	mixin__var       = " %s = %s "
+	mixin__var_rest  = " %s = %#v "
+	mixin__var_block = " block = `%s` "
+	mixin__var_end   = ") */}}\n"
 )
+
+type itemType int8
 
 const (
-	nestIndent = true
-	lineIndent = false
+	itemError itemType = iota // error occurred; value is text of error
+	itemEOF
 
-	tabComment  = "//-"
-	htmlComment = "//"
+	itemEndL
+	itemIdent
+	itemEmptyLine // empty line
 
-	interDelim      = "#{"
-	unEscInterDelim = "!{"
-	rightInterDelim = "}"
+	itemText // plain text
+
+	itemComment // html comment
+	itemHTMLTag // html <tag>
+	itemDoctype // Doctype tag
+
+	itemDiv           // html div for . or #
+	itemTag           // html tag
+	itemTagInline     // inline tags
+	itemTagEnd        // for <tag />
+	itemTagVoid       // self-closing tags
+	itemTagVoidInline // inline + self-closing tags
+
+	itemID    // id    attribute
+	itemClass // class attribute
+
+	itemAttrStart
+	itemAttrEnd
+	itemAttr
+	itemAttrSpace
+	itemAttrComma
+	itemAttrEqual
+	itemAttrEqualUn
+
+	itemFilter
+	itemFilterText
+
+	// itemKeyword // used only to delimit the keywords
+
+	itemInclude
+	itemExtends
+	itemBlock
+	itemBlockAppend
+	itemBlockPrepend
+	itemMixin
+	itemMixinCall
+	itemMixinBlock
+
+	itemCode
+	itemCodeBuffered
+	itemCodeUnescaped
+
+	itemIf
+	itemElse
+	itemElseIf
+	itemUnless
+
+	itemEach
+	itemWhile
+	itemFor
+	itemForIfNotContain
+	itemForElse
+
+	itemCase
+	itemCaseWhen
+	itemCaseDefault
 )
 
-var itemToStr = map[itemType]string{
-	itemError:         "itemError",
-	itemEOF:           "itemEOF",
-	itemEndL:          "itemEndL",
-	itemEndTag:        "itemEndTag",
-	itemEndAttr:       "itemEndAttr",
-	itemIdentSpace:    "itemIdentSpace",
-	itemIdentTab:      "itemIdentTab",
-	itemTag:           "itemTag",
-	itemDiv:           "itemDiv",
-	itemInlineTag:     "itemInlineTag",
-	itemVoidTag:       "itemVoidTag",
-	itemInlineVoidTag: "itemInlineVoidTag",
-	itemComment:       "itemComment",
-	itemID:            "itemID",
-	itemClass:         "itemClass",
-	itemAttr:          "itemAttr",
-	itemAttrN:         "itemAttrN",
-	itemAttrName:      "itemAttrName",
-	itemAttrVoid:      "itemAttrVoid",
-	itemParentIdent:   "itemParentIdent",
-	itemChildIdent:    "itemChildIdent",
-	itemText:          "itemText",
-	itemEmptyLine:     "itemEmptyLine",
-	itemInlineText:    "itemInlineText",
-	itemHTMLTag:       "itemHTMLTag",
-	itemDoctype:       "itemDoctype",
-	itemBlank:         "itemBlank",
-	itemFilter:        "itemFilter",
-	itemAction:        "itemAction",
-	itemActionEnd:     "itemActionEnd",
-	itemInlineAction:  "itemInlineAction",
-	itemExtends:       "itemExtends",
-	itemDefine:        "itemDefine",
-	itemBlock:         "itemBlock",
-	itemElse:          "itemElse",
-	itemEnd:           "itemEnd",
-	itemIf:            "itemIf",
-	itemRange:         "itemRange",
-	itemNil:           "itemNil",
-	itemTemplate:      "itemTemplate",
-	itemWith:          "itemWith",
-}
-
 var key = map[string]itemType{
-	"area":    itemVoidTag,
-	"base":    itemVoidTag,
-	"col":     itemVoidTag,
-	"command": itemVoidTag,
-	"embed":   itemVoidTag,
-	"hr":      itemVoidTag,
-	"input":   itemVoidTag,
-	"keygen":  itemVoidTag,
-	"link":    itemVoidTag,
-	"meta":    itemVoidTag,
-	"param":   itemVoidTag,
-	"source":  itemVoidTag,
-	"track":   itemVoidTag,
-	"wbr":     itemVoidTag,
-
-	"template": itemAction,
-	"end":      itemAction,
-	"include":  itemAction,
-
+	"include": itemInclude,
 	"extends": itemExtends,
 	"block":   itemBlock,
-	"mixin":   itemDefine,
+	"append":  itemBlockAppend,
+	"prepend": itemBlockPrepend,
+	"mixin":   itemMixin,
 
-	// "define": 	itemDefine,
-	// "block":  itemActionEnd,
-	"define": itemActionEnd,
+	"if":      itemIf,
+	"else":    itemElse,
+	"unless":  itemUnless,
+	"for":     itemFor,
+	"each":    itemEach,
+	"while":   itemWhile,
+	"case":    itemCase,
+	"when":    itemCaseWhen,
+	"default": itemCaseDefault,
 
-	"if":     itemActionEnd,
-	"else":   itemActionEnd,
-	"range":  itemActionEnd,
-	"with":   itemActionEnd,
-	"each":   itemActionEnd,
-	"for":    itemActionEnd,
-	"while":  itemActionEnd,
-	"unless": itemActionEnd,
-	"case":   itemActionEnd,
+	"doctype": itemDoctype,
 
-	// "if": 		itemIf,
-	// "else": 		itemElse,
-	// "end": 		itemEnd,
-	// "range": 	itemRange,
-	// "with": 		itemWith,
-	// "nil": 		itemNil,
-	// "template": 	itemTemplate,
+	"a":       itemTagInline,
+	"abbr":    itemTagInline,
+	"acronym": itemTagInline,
+	"b":       itemTagInline,
+	"code":    itemTagInline,
+	"em":      itemTagInline,
+	"font":    itemTagInline,
+	"i":       itemTagInline,
+	"ins":     itemTagInline,
+	"kbd":     itemTagInline,
+	"map":     itemTagInline,
+	"samp":    itemTagInline,
+	"small":   itemTagInline,
+	"span":    itemTagInline,
+	"strong":  itemTagInline,
+	"sub":     itemTagInline,
+	"sup":     itemTagInline,
 
-	"a":       itemInlineTag,
-	"abbr":    itemInlineTag,
-	"acronym": itemInlineTag,
-	"b":       itemInlineTag,
-	"code":    itemInlineTag,
-	"em":      itemInlineTag,
-	"font":    itemInlineTag,
-	"i":       itemInlineTag,
-	"ins":     itemInlineTag,
-	"kbd":     itemInlineTag,
-	"map":     itemInlineTag,
-	"samp":    itemInlineTag,
-	"small":   itemInlineTag,
-	"span":    itemInlineTag,
-	"strong":  itemInlineTag,
-	"sub":     itemInlineTag,
-	"sup":     itemInlineTag,
+	"area":    itemTagVoid,
+	"base":    itemTagVoid,
+	"col":     itemTagVoid,
+	"command": itemTagVoid,
+	"embed":   itemTagVoid,
+	"hr":      itemTagVoid,
+	"input":   itemTagVoid,
+	"keygen":  itemTagVoid,
+	"link":    itemTagVoid,
+	"meta":    itemTagVoid,
+	"param":   itemTagVoid,
+	"source":  itemTagVoid,
+	"track":   itemTagVoid,
+	"wbr":     itemTagVoid,
 
-	"br":  itemInlineVoidTag,
-	"img": itemInlineVoidTag,
+	"br":  itemTagVoidInline,
+	"img": itemTagVoidInline,
 }
+
+// NodeType identifies the type of a parse tree node.
+type NodeType int
+
+// Type returns itself and provides an easy default implementation
+// for embedding in a Node. Embedded in all non-trivial Nodes.
+func (t NodeType) Type() NodeType {
+	return t
+}
+
+const (
+	NodeText NodeType = iota
+	NodeList
+	NodeTag
+	NodeCode
+	NodeCond
+	NodeString
+	NodeDoctype
+	NodeMixin
+	NodeBlock
+)

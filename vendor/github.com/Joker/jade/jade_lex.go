@@ -4,334 +4,316 @@ import (
 	"strings"
 )
 
-type mode int
-
-const (
-	mInterpolation mode = iota
-	mInText
-	mBrText
-	mExtends
-)
-const (
-	stText int = iota
-	stInlineText
-)
-
-// itemType identifies the type of lex items.
-type itemType int
-
-const (
-	itemError itemType = iota // error occurred; value is text of error
-	itemEOF
-	itemEndL
-	itemEndTag
-	itemEndAttr
-
-	itemIdentSpace
-	itemIdentTab
-
-	itemTag           // html tag
-	itemDiv           // html div for . or #
-	itemInlineTag     // inline tags
-	itemVoidTag       // self-closing tags
-	itemInlineVoidTag // inline + self-closing tags
-	itemComment
-
-	itemID       // id    attribute
-	itemClass    // class attribute
-	itemAttr     // html  attribute value
-	itemAttrN    // html  attribute value without quotes
-	itemAttrName // html  attribute name
-	itemAttrVoid // html  attribute without value
-
-	itemParentIdent // Ident for 'tag:'
-	itemChildIdent  // Ident for ']'
-	itemText        // plain text
-	itemEmptyLine   // empty line
-	itemInlineText
-	itemHTMLTag // html <tag>
-
-	itemDoctype // Doctype tag
-	itemBlank
-	itemFilter
-	itemAction       // from go template {{...}}
-	itemActionEnd    // from go template {{...}} {{end}}
-	itemInlineAction // title= .titleName
-
-	itemExtends
-	itemDefine
-	itemBlock
-
-	itemElse
-	itemEnd
-	itemIf
-	itemRange
-	itemNil
-	itemTemplate
-	itemWith
-)
-
-// run runs the state machine for the lexer.
-func (l *lexer) run() {
-	for l.state = lexTags; l.state != nil; {
-		l.state = l.state(l)
+func lexIndents(l *lexer) stateFn {
+	d := l.indents()
+	if d == -1 {
+		l.depth = 0
+		l.emit(itemEmptyLine)
+	} else {
+		l.depth = d
+		l.emit(itemIdent)
 	}
+	return lexTags
 }
-
-func lexDoc(l *lexer) stateFn {
-	switch l.next() {
-	case eof:
-		l.backup()
-		l.emit(itemDoctype)
-		l.next()
-		l.emit(itemEOF)
-		return nil
-	case '\r', '\n':
-		l.backup()
-		l.emit(itemDoctype)
-		return lexTags
-	default:
-		l.toFirstCh()
-		if !isAlphaNumeric(l.peek()) {
-			return l.errorf("lexDoc: expected Letter or Digit")
-		}
-		l.toWordEmit(itemDoctype)
-		return lexAfterTag
-	}
-}
-
-func (l *lexer) toFirstCh() {
+func (l *lexer) indents() (depth int) {
 	for {
 		switch l.next() {
-		case ' ', '\t':
-
+		case ' ':
+			depth += 1
+		case '\t':
+			depth += TabSize
+		case '\r':
+			// skip
+		case '\n':
+			return -1
 		default:
 			l.backup()
-			l.ignore()
 			return
 		}
 	}
 }
 
-func lexComment(l *lexer) stateFn {
-	l.next()
-	l.next()
-	l.emit(itemComment)
-	return lexAfterTag
-}
-
-func lexCommentSkip(l *lexer) stateFn {
-	l.next()
-	l.next()
-	l.next()
-	l.emit(itemBlank)
-	return lexLongText
-}
-
-func lexIndents(l *lexer) stateFn {
-	l.previous = l.parenDepth
-	l.parenDepth = 0
-Loop:
-	for {
-		switch l.next() {
-		case ' ':
-			l.emit(itemIdentSpace)
-			l.parenDepth++
-		case '\t':
-			l.emit(itemIdentTab)
-			l.parenDepth += TabSize
-		case '\r', '\n':
-			if l.parenDepth < l.previous {
-				l.parenDepth = l.previous
-			}
-			l.backup()
-			l.emit(itemEmptyLine)
-			break Loop
-		default:
-			l.backup()
-			break Loop
+func lexEndLine(l *lexer) stateFn {
+	switch r := l.next(); {
+	case r == '\r':
+		if l.next() == '\n' {
+			l.emit(itemEndL)
+			return lexIndents
 		}
+		return l.errorf("lexTags: standalone '\\r' ")
+	case r == '\n':
+		l.emit(itemEndL)
+		return lexIndents
+	case r == eof:
+		l.depth = 0
+		l.emit(itemEOF)
+		return nil
+	default:
+		return l.errorf("lexEndLine: unexpected token %#U `%s`", r, string(r))
 	}
-	if l.env[mInText] > 0 {
-		l.env[mBrText] = stText
-		return lexLongText
-	}
-	return lexTags
 }
 
 // lexTags scans tags.
 func lexTags(l *lexer) stateFn {
-	if strings.HasPrefix(l.input[l.pos:], l.leftDelim) {
-		return lexAction
-	}
-	if strings.HasPrefix(l.input[l.pos:], tabComment) {
-		return lexCommentSkip
-	}
-	if strings.HasPrefix(l.input[l.pos:], htmlComment) {
-		return lexComment
-	}
-	if strings.HasPrefix(l.input[l.pos:], "doctype") {
-		l.start += 7
-		l.pos = l.start
-		return lexDoc
-	}
-	if strings.HasPrefix(l.input[l.pos:], "!!!") {
-		l.start += 3
-		l.pos = l.start
-		return lexDoc
-	}
-
 	switch r := l.next(); {
-	case r == eof:
-		l.emit(itemEOF)
-		return nil
-	case r == '\r':
-		return lexTags
-	case r == '\n':
-		l.emit(itemEndL)
-		return lexIndents
+
+	case isEndOfLine(r), r == eof:
+		l.backup()
+		return lexEndLine
 	case r == ' ' || r == '\t':
 		l.backup()
 		return lexIndents
-
+	//
+	//
 	case r == '.':
-		l.emit(itemDiv)
-		return lexClass
+		n := l.skipSpaces()
+		if n == 0 {
+			l.emit(itemDiv)
+			return lexClass
+		}
+		if n == -1 {
+			l.ignore()
+			return lexLongText
+		}
+		return l.errorf("lexTags: class name cannot start with a space.")
 	case r == '#':
 		l.emit(itemDiv)
 		return lexID
-	case r == '|':
-		l.ignore()
-		l.env[mBrText] = stText
-		return lexText
 	case r == ':':
 		l.ignore()
-		return lexFilter
-	case r == '<':
-		return lexHTMLTag
-	case r == '+':
-		l.ignore()
-		l.toFirstCh()
-		l.toWordEmit(itemTemplate)
-		l.toEndL(itemEmptyLine)
-		return lexIndents
-	case r == '-':
-		// l.toFirstCh()
-		sp := l.peek()
-		if sp == '\r' || sp == '\n' {
-			l.emit(itemComment)
-			return lexLongText
+		if l.emitWordByType(itemFilter) {
+			return lexFilter
+		}
+		return l.errorf("lexTags: expect filter name")
+	case r == '|':
+		r = l.next()
+		if r != ' ' {
+			l.backup()
 		}
 		l.ignore()
-		return lexActionEndL
-	case r == '=' || r == '$':
+		return lexText
+	case r == '<':
+		l.emitLineByType(itemHTMLTag)
+		return lexEndLine
+	case r == '+':
+		l.skipSpaces()
 		l.ignore()
-		return lexActionEndL
+		if l.emitWordByType(itemMixinCall) {
+			return lexAfterTag
+		}
+		return l.errorf("lexTags: expect mixin name")
+	case r == '/':
+		return lexComment
+	case r == '-':
+		l.ignore()
+		return lexCode
+	case r == '=':
+		l.skipSpaces()
+		l.ignore()
+		l.emitLineByType(itemCodeBuffered)
+		return lexEndLine
 	case r == '!':
-		if l.next() == '=' {
+		np := l.next()
+		if np == '=' {
+			l.skipSpaces()
 			l.ignore()
-			return lexActionEndL
+			l.emitLineByType(itemCodeUnescaped)
+			return lexEndLine
+		}
+		if np == '!' && l.next() == '!' && l.depth == 0 {
+			if l.skipSpaces() != -1 {
+				l.ignore()
+				l.emitLineByType(itemDoctype)
+				return lexEndLine
+			}
 		}
 		return l.errorf("expect '=' after '!'")
 	case isAlphaNumeric(r):
 		l.backup()
 		return lexTagName
-
 	default:
-		return l.errorf("lexTags: %#U", r)
+		return l.errorf("lexTags: unexpected token %#U `%s`", r, string(r))
 	}
 }
 
-func lexAfterTag(l *lexer) stateFn {
-	switch r := l.next(); {
-	case r == eof:
-		l.emit(itemEOF)
-		return nil
-	case r == '(':
-		l.ignore()
-		return lexAttr
-	case r == '/':
-		l.emit(itemEndTag)
-		return lexAfterTag
-	case r == ':':
-		l.ignore()
-		for isSpace(l.peek()) {
-			l.next()
-		}
-		l.emit(itemParentIdent)
-		return lexTags
-	case r == ' ' || r == '\t':
-		l.ignore()
-		l.env[mBrText] = stInlineText
-		return lexText
-	case r == ']':
-		if l.env[mInterpolation] > 0 {
-			l.ignore()
-			l.emit(itemInlineText)
-			l.emit(itemChildIdent)
-			l.env[mInterpolation]--
-			l.env[mBrText] = stInlineText
-			return lexLongText
-		}
-		return l.errorf("lexAfterTag: %#U", r)
-	case r == '=':
-		l.ignore()
-		return lexInlineAction
-	case r == '!':
-		if l.next() == '=' {
-			l.ignore()
-			return lexInlineAction
-		}
-		return l.errorf("expect '=' after '!'")
-	case r == '#':
-		l.ignore()
-		return lexID
-	case r == '.':
-		sp := l.peek()
-		l.ignore()
-		if sp == ' ' {
-			l.next()
-			l.ignore()
-			return lexLongText
-		}
-		if sp == '\r' || sp == '\n' {
-			return lexLongText
-		}
-		return lexClass
-	case r == '\r':
-		l.next()
-		l.emit(itemEndL)
-		return lexIndents
-	case r == '\n':
-		l.emit(itemEndL)
-		return lexIndents
-	default:
-		return l.errorf("lexAfterTag: %#U", r)
-	}
-}
+//
+//
 
 func lexID(l *lexer) stateFn {
-	if !isAlphaNumeric(l.peek()) {
-		return l.errorf("lexID: expect id name")
+	if l.emitWordByType(itemID) {
+		return lexAfterTag
 	}
-	l.toWordEmit(itemID)
-	return lexAfterTag
+	return l.errorf("lexID: expect id name")
 }
-
 func lexClass(l *lexer) stateFn {
-	if !isAlphaNumeric(l.peek()) {
-		return l.errorf("lexClass: expect class name")
+	if l.emitWordByType(itemClass) {
+		return lexAfterTag
 	}
-	l.toWordEmit(itemClass)
-	return lexAfterTag
+	return l.errorf("lexClass: expect class name")
 }
 
 func lexFilter(l *lexer) stateFn {
-	if !isAlphaNumeric(l.peek()) {
-		return l.errorf("lexFilter: expect filter name")
+	l.multiline()
+	l.emit(itemFilterText)
+	return lexIndents
+}
+
+func lexCode(l *lexer) stateFn {
+	if l.skipSpaces() == -1 {
+		l.multiline()
+		l.emit(itemCode)
+		return lexIndents
+	} else {
+		l.ignore()
+		l.emitLineByType(itemCode)
+		return lexEndLine
 	}
-	l.toWordEmit(itemFilter)
-	return lexLongText
+}
+func lexComment(l *lexer) stateFn {
+	sp := l.next()
+	tp := l.peek()
+	if sp == '/' {
+		if tp == '-' {
+			l.multiline()
+			l.ignore()
+			return lexIndents
+		} else {
+			l.ignore()
+			l.multiline()
+			l.emit(itemComment)
+			return lexIndents
+		}
+	}
+	return l.errorf("lexComment: unexpected token '%#U' expect '/'", sp)
+}
+
+//
+//
+
+func lexText(l *lexer) stateFn {
+	if l.skipSpaces() == -1 {
+		l.ignore()
+		return lexEndLine
+	}
+	return text(l)
+}
+func lexLongText(l *lexer) stateFn {
+	l.longtext = true
+	return text(l)
+}
+func text(l *lexer) stateFn {
+	for {
+		switch r := l.next(); {
+		case r == '\\':
+			l.next()
+			continue
+		case r == '#':
+			sp := l.peek()
+			if sp == '[' {
+				l.backup()
+				if l.pos > l.start {
+					l.emit(itemText)
+				}
+				l.next()
+				l.next()
+				l.skipSpaces()
+				l.interpolation += 1
+				l.depth += 1
+				// l.emit(itemInterpolation)
+				l.ignore()
+				return lexTags
+			}
+			if sp == '{' {
+				l.interpol(itemCodeBuffered)
+			}
+		case r == '$':
+			sp := l.peek()
+			if sp == '{' {
+				l.interpol(itemCodeBuffered)
+			}
+		case r == '!':
+			sp := l.peek()
+			if sp == '{' {
+				l.interpol(itemCodeUnescaped)
+			}
+		case r == ']':
+			if l.interpolation > 0 {
+				l.backup()
+				if l.pos > l.start {
+					l.emit(itemText)
+				}
+				l.next()
+				// l.emit(itemInterpolationEnd)
+				l.ignore()
+				l.interpolation -= 1
+				l.depth -= 1
+			}
+		case r == eof:
+			l.backup()
+			l.emit(itemText)
+			return lexEndLine
+		case r == '\n':
+			if l.longtext {
+				var (
+					indent int
+					pos    Pos
+				)
+				l.backup()
+				pos = l.pos
+				l.next()
+				indent = l.indents()
+				if indent != -1 {
+					if indent < l.depth {
+						l.pos = pos
+						if l.pos > l.start {
+							l.emit(itemText)
+						}
+						l.longtext = false
+						return lexIndents
+					}
+				} else {
+					l.backup()
+				}
+			} else {
+				l.backup()
+				if l.pos > l.start {
+					l.emit(itemText)
+				}
+				return lexIndents
+			}
+		}
+	}
+}
+func (l *lexer) interpol(item itemType) {
+	l.backup()
+	if l.pos > l.start {
+		l.emit(itemText)
+	}
+	l.next()
+	l.next()
+	l.skipSpaces()
+	l.ignore()
+Loop:
+	for {
+		switch r := l.next(); {
+		case r == '`':
+			l.toStopRune('`', false)
+		case r == '"':
+			l.toStopRune('"', false)
+		case r == '\'':
+			l.toStopRune('\'', false)
+		case r == '\n', r == eof:
+			l.backup()
+			l.errorf("interpolation error: expect '}'")
+			return
+		case r == '}':
+			break Loop
+		}
+	}
+	l.backup()
+	l.emit(item)
+	l.next()
+	l.ignore()
 }
 
 func lexTagName(l *lexer) stateFn {
@@ -342,53 +324,71 @@ func lexTagName(l *lexer) stateFn {
 		default:
 			l.backup()
 			word := l.input[l.start:l.pos]
-			switch key[word] {
-			case itemExtends:
-				if l.env[mInterpolation] > 0 {
-					l.errorf("lexTagName: Tag Interpolation error (no itemExtends)")
+			if w, ok := key[word]; ok {
+				switch w {
+				case itemElse:
+					l.emit(w)
+					l.skipSpaces()
+					l.ignore()
+					return lexTags
+				case itemDoctype, itemExtends:
+					if l.depth == 0 {
+						ss := l.skipSpaces()
+						l.ignore()
+						if ss != -1 {
+							l.emitLineByType(w)
+						} else if w == itemDoctype {
+							l.emit(w)
+						} else {
+							return l.errorf("lexTagName: itemExtends need path ")
+						}
+						return lexEndLine
+					} else {
+						l.emit(itemTag)
+					}
+				case itemBlock:
+					sp := l.skipSpaces()
+					l.ignore()
+					if sp == -1 {
+						l.emit(itemMixinBlock)
+					} else if strings.HasPrefix(l.input[l.pos:], "prepend ") {
+						l.toStopRune(' ', true)
+						l.skipSpaces()
+						l.ignore()
+						l.emitLineByType(itemBlockPrepend)
+					} else if strings.HasPrefix(l.input[l.pos:], "append ") {
+						l.toStopRune(' ', true)
+						l.skipSpaces()
+						l.ignore()
+						l.emitLineByType(itemBlockAppend)
+					} else {
+						l.emitLineByType(itemBlock)
+					}
+					return lexEndLine
+				case itemBlockAppend, itemBlockPrepend,
+					itemIf, itemUnless, itemCase,
+					itemEach, itemWhile, itemFor,
+					itemInclude:
+
+					l.skipSpaces()
+					l.ignore()
+					l.emitLineByType(w)
+					return lexEndLine
+				case itemMixin:
+					l.skipSpaces()
+					l.ignore()
+					l.emitWordByType(w)
+					return lexAfterTag
+				case itemCaseWhen:
+					l.skipSpaces()
+					l.ignore()
+					l.toStopRune(':', true)
+					l.emit(w)
+					return lexAfterTag
+				default:
+					l.emit(w)
 				}
-				l.env[mExtends] = 1
-				l.toEndL(itemExtends)
-				return lexAfterTag
-			case itemBlock:
-				if l.env[mInterpolation] > 0 {
-					l.errorf("lexTagName: Tag Interpolation error (no itemBlock)")
-				}
-				l.toFirstCh()
-				if l.env[mExtends] == 1 {
-					l.toWordEmit(itemDefine)
-				} else {
-					l.toWordEmit(itemBlock)
-				}
-				return lexAfterTag
-			case itemDefine:
-				if l.env[mInterpolation] > 0 {
-					l.errorf("lexTagName: Tag Interpolation error (no itemDefine)")
-				}
-				l.toFirstCh()
-				l.toWordEmit(itemDefine)
-				return lexAfterTag
-			case itemAction:
-				if l.env[mInterpolation] > 0 {
-					l.errorf("lexTagName: Tag Interpolation error (no itemAction)")
-				}
-				if l.toEndL(itemAction) {
-					return lexIndents
-				}
-				return nil
-			case itemActionEnd:
-				if l.env[mInterpolation] > 0 {
-					l.errorf("lexTagName: Tag Interpolation error (no itemActionEnd)")
-				}
-				if l.toEndL(itemActionEnd) {
-					return lexIndents
-				}
-				return nil
-			case itemVoidTag,
-				itemInlineVoidTag,
-				itemInlineTag:
-				l.emit(key[word])
-			default:
+			} else {
 				l.emit(itemTag)
 			}
 			return lexAfterTag
@@ -396,270 +396,266 @@ func lexTagName(l *lexer) stateFn {
 	}
 }
 
+func lexAfterTag(l *lexer) stateFn {
+	switch r := l.next(); {
+	case r == '(':
+		l.emit(itemAttrStart)
+		return lexAttr
+	case r == '/':
+		l.emit(itemTagEnd)
+		return lexAfterTag
+	case r == ':':
+		l.skipSpaces()
+		l.ignore()
+		l.depth += 1
+		return lexTags
+	case r == ' ' || r == '\t':
+		l.ignore()
+		l.depth += 1
+		return lexText
+	case r == ']':
+		if l.interpolation > 0 {
+			l.ignore()
+			if l.pos > l.start {
+				l.emit(itemText)
+			}
+			l.interpolation -= 1
+			l.depth -= 1
+			if l.longtext {
+				return lexLongText
+			} else {
+				return lexText
+			}
+		}
+		return l.errorf("lexAfterTag: %#U", r)
+	case r == '=':
+		l.skipSpaces()
+		l.ignore()
+		l.depth += 1
+		l.emitLineByType(itemCodeBuffered)
+		return lexEndLine
+	case r == '!':
+		if l.next() == '=' {
+			l.skipSpaces()
+			l.ignore()
+			l.depth += 1
+			l.emitLineByType(itemCodeUnescaped)
+			return lexEndLine
+		}
+		return l.errorf("expect '=' after '!'")
+	case r == '#':
+		l.ignore()
+		return lexID
+	case r == '&':
+		l.toStopRune(')', false)
+		l.ignore() // TODO: now ignore div(data-bar="foo")&attributes({'data-foo': 'baz'})
+		return lexAfterTag
+	case r == '.':
+		switch l.skipSpaces() {
+		case 0:
+			l.ignore()
+			return lexClass
+		case -1:
+			if sp := l.next(); sp != eof {
+				l.ignore()
+				l.depth += 1
+				return lexLongText
+			}
+			return lexEndLine
+		default:
+			l.ignore()
+			l.depth += 1
+			return lexText
+		}
+	case isEndOfLine(r), r == eof:
+		l.backup()
+		return lexEndLine
+	default:
+		return l.errorf("lexAfterTag: %#U", r)
+	}
+}
+
+//
+//
+
 func lexAttr(l *lexer) stateFn {
+	b1, b2, b3 := 0, 0, 0
 	for {
 		switch r := l.next(); {
-		case isAlphaNumeric(r):
-			l.backup()
-			l.ignore()
-			return lexAttrName
+		case r == '"' || r == '\'':
+			l.toStopRune(r, false)
+		case r == '`':
+			for {
+				r = l.next()
+				if r == '`' {
+					break
+				}
+			}
+		case r == '(':
+			b1 += 1
 		case r == ')':
-			l.ignore()
-			return lexAfterTag
-		case r == ' ' || r == ',' || r == '\t':
+			b1 -= 1
+			if b1 == -1 {
+				if b2 != 0 || b3 != 0 {
+					return l.errorf("lexAttrName: mismatched bracket")
+				}
+				l.backup()
+				if l.pos > l.start {
+					l.emit(itemAttr)
+				}
+				l.next()
+				l.emit(itemAttrEnd)
+				return lexAfterTag
+			}
+		case r == '[':
+			b2 += 1
+		case r == ']':
+			b2 -= 1
+			if b2 == -1 {
+				return l.errorf("lexAttrName: mismatched bracket '['")
+			}
+		case r == '{':
+			b3 += 1
+		case r == '}':
+			b3 -= 1
+			if b3 == -1 {
+				return l.errorf("lexAttrName: mismatched bracket '{'")
+			}
+		case r == ' ' || r == '\t':
+			l.backup()
+			if l.pos > l.start {
+				l.emit(itemAttr)
+			}
+			l.skipSpaces()
+			l.emit(itemAttrSpace)
+		case r == '=':
+			if l.peek() == '=' {
+				l.toStopRune(' ', true)
+				l.emit(itemAttr)
+				continue
+			}
+			l.backup()
+			l.emit(itemAttr)
+			l.next()
+			l.emit(itemAttrEqual)
+		case r == '!':
+			if l.peek() == '=' {
+				l.backup()
+				l.emit(itemAttr)
+				l.next()
+				l.next()
+				l.emit(itemAttrEqualUn)
+			}
+		case r == ',' || r == '\n':
+			if b1 == 0 && b2 == 0 && b3 == 0 {
+				l.backup()
+				if l.pos > l.start {
+					l.emit(itemAttr)
+				}
+				l.next()
+				l.emit(itemAttrComma)
+			}
 		case r == eof:
 			return l.errorf("lexAttr: expected ')'")
 		}
 	}
 }
-func lexAttrName(l *lexer) stateFn {
-	for {
-		switch r := l.next(); {
-		case isAlphaNumeric(r):
-			// absorb.
-		case r == '=':
-			word := l.input[l.start:l.pos]
-			switch {
-			case word == "id=":
-				l.ignore()
-				return lexAttrID
-			case word == "class=":
-				l.ignore()
-				return lexAttrClass
-			default:
-				l.backup()
-				l.emit(itemAttrName)
-				l.next()
-				l.ignore()
-				return lexAttrVal
-			}
-		case r == ' ' || r == ',' || r == ')' || r == '\r' || r == '\n':
-			l.backup()
-			l.emit(itemAttrVoid)
-			return lexAttr
-		default:
-			return l.errorf("lexAttrName: expected '=' or ' ' %#U", r)
-		}
-	}
-}
-func lexAttrID(l *lexer) stateFn {
-	stopCh := l.next()
-	if stopCh == '"' || stopCh == '\'' {
-		l.ignore()
-		l.toStopCh(stopCh, itemID, true)
-	} else {
-		l.toStopSpace(itemID)
-	}
-	return lexAttr
-}
-func lexAttrClass(l *lexer) stateFn {
-	stopCh := l.next()
-	if stopCh == '"' || stopCh == '\'' {
-		l.ignore()
-		l.toStopCh(stopCh, itemClass, true)
-	} else {
-		l.toStopSpace(itemClass)
-	}
-	return lexAttr
-}
-func lexAttrVal(l *lexer) stateFn {
-	stopCh := l.next()
-	if stopCh == '"' || stopCh == '\'' {
-		l.toStopCh(stopCh, itemAttr, false)
-	} else {
-		l.toStopSpace(itemAttrN)
-	}
-	return lexAttr
-}
-func (l *lexer) toStopCh(stopCh rune, item itemType, backup bool) {
-	for {
-		switch r := l.next(); {
-		case r == stopCh:
-			if backup {
-				l.backup()
-			}
-			l.emit(item)
-			return
-		case r == eof || r == '\r' || r == '\n':
-			l.errorf("toStopCh: expected '%#U' %#U", stopCh, r)
-			return
-		}
-	}
-}
-func (l *lexer) toStopSpace(item itemType) {
-	var bracket int
-	for {
-		switch r := l.next(); {
-		case r == '(':
-			bracket++
-		case r == ')':
-			if bracket == 0 {
-				l.backup()
-				l.emit(item)
-				return
-			}
-			if bracket > 0 {
-				bracket--
-			}
-		case r == ' ' || r == ',' || r == '\r' || r == '\n':
-			l.backup()
-			l.emit(item)
-			return
-		case r == eof:
-			l.errorf("toStopCh: expected ')' %#U", r)
-			return
-		}
-	}
-}
-func (l *lexer) toWordEmit(item itemType) {
+
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+
+func (l *lexer) emitWordByType(item itemType) bool {
 	for {
 		if !isAlphaNumeric(l.next()) {
 			l.backup()
 			break
 		}
 	}
-	l.emit(item)
+	if l.pos > l.start {
+		l.emit(item)
+		return true
+	}
+	return false
 }
 
-func lexLongText(l *lexer) stateFn {
-	if l.env[mInText] == 0 {
-		if l.parenDepth == 0 { // for tags indent = 0
-			l.env[mInText] = 1
-			return lexText
-		}
-		l.env[mInText] = l.parenDepth
-		l.env[mBrText] = stInlineText
-		return lexText
-	}
-
-	if l.env[mInText] < l.parenDepth {
-		return lexText
-	}
-
-	l.env[mInText] = 0
-	return lexIndents
-}
-func lexText(l *lexer) stateFn {
-	var item itemType
-	switch l.env[mBrText] {
-	case stText:
-		item = itemText
-	case stInlineText:
-		item = itemInlineText
-	default:
-		l.errorf("lexText: expected 'l.env[mBrText]'")
-	}
+func (l *lexer) emitLineByType(item itemType) bool {
+	var r rune
 	for {
-		switch r := l.next(); {
-		case r == '#':
-			sp := l.peek()
-			if sp == '[' {
-				l.env[mInterpolation]++
-				l.backup()
-				l.emit(item)
-				l.next()
-				l.next()
-				l.emit(itemParentIdent)
-				return lexTags
-			}
-		case r == ']':
-			if l.env[mInterpolation] > 0 {
-				l.backup()
-				if l.pos > l.start {
-					l.emit(item)
-				}
-				l.next()
-				l.emit(itemChildIdent)
-				l.env[mInterpolation]--
-			}
-		case r == '\n', r == '\r':
+		r = l.next()
+		if r == '\n' || r == '\r' || r == eof {
 			l.backup()
 			if l.pos > l.start {
 				l.emit(item)
+				return true
 			}
-			l.next()
-			if r == '\r' {
-				l.next()
-			}
-			l.emit(itemEndL)
-			if l.env[mInterpolation] > 0 {
-				l.errorf("toEndText: expected ']' (no closing bracket found)")
-			}
-			return lexIndents
-		case r == eof:
-			if l.pos > l.start {
-				l.emit(item)
-			}
-			l.emit(itemEOF)
-			return nil
-		}
-	}
-}
-
-func lexHTMLTag(l *lexer) stateFn {
-	if l.toEndL(itemHTMLTag) {
-		return lexIndents
-	}
-	return nil
-}
-
-func lexActionEndL(l *lexer) stateFn {
-	if l.toEndL(itemAction) {
-		return lexIndents
-	}
-	return nil
-}
-
-func lexInlineAction(l *lexer) stateFn {
-	if l.toEndL(itemInlineAction) {
-		return lexIndents
-	}
-	return nil
-}
-
-func (l *lexer) toEndL(item itemType) bool {
-Loop:
-	for {
-		switch r := l.next(); {
-		case r == eof:
-			if l.pos > l.start {
-				l.emit(item)
-			}
-			l.emit(itemEOF)
 			return false
-		case r == '\r':
+		}
+	}
+}
+
+//
+
+func (l *lexer) skipSpaces() (out int) {
+	for {
+		switch l.next() {
+		case ' ', '\t':
+			out += 1
+		case '\n', eof:
 			l.backup()
-			if l.pos > l.start {
-				l.emit(item)
+			return -1
+		default:
+			l.backup()
+			return
+		}
+	}
+}
+
+func (l *lexer) toStopRune(stopRune rune, backup bool) {
+	for {
+		switch r := l.next(); {
+		case r == stopRune:
+			if backup {
+				l.backup()
 			}
-			l.next()
-			break Loop
+			return
+		case r == eof || r == '\r' || r == '\n':
+			l.backup()
+			return
+		}
+	}
+}
+
+func (l *lexer) multiline() {
+	var (
+		indent int
+		pos    Pos
+	)
+	for {
+		switch r := l.next(); {
 		case r == '\n':
 			l.backup()
-			if l.pos > l.start {
-				l.emit(item)
+			pos = l.pos
+			l.next()
+			indent = l.indents()
+			if indent != -1 {
+				if indent <= l.depth {
+					l.pos = pos
+					return
+				}
+			} else {
+				l.backup()
 			}
-			break Loop
+		case r == eof:
+			l.backup()
+			return
 		}
 	}
-	l.next()
-	l.emit(itemEndL)
-	return true
-}
-
-func lexAction(l *lexer) stateFn {
-	l.next()
-	l.next()
-	l.ignore()
-	for {
-		l.next()
-		if strings.HasPrefix(l.input[l.pos:], l.rightDelim) {
-			break
-		}
-	}
-	l.emit(itemAction)
-	l.next()
-	l.next()
-	l.ignore()
-	return lexAfterTag
 }

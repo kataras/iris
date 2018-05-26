@@ -2,6 +2,8 @@
 package jade
 
 import (
+	"bytes"
+	"io"
 	"io/ioutil"
 	"path/filepath"
 )
@@ -30,33 +32,27 @@ Trivial usage:
 
 Output:
 
-	<!DOCTYPE html>
-	<html>
-	    <body>
-	        <p>Hello world!</p>
-	    </body>
-	</html>
+	<!DOCTYPE html><html><body><p>Hello world!</p></body></html>
 */
 func Parse(name, text string) (string, error) {
-	outTpl, err := newTree(name).Parse(text, LeftDelim, RightDelim, make(map[string]*tree))
+	outTpl, err := New(name).Parse(text)
 	if err != nil {
 		return "", err
 	}
-	return outTpl.String(), nil
+	b := new(bytes.Buffer)
+	outTpl.WriteIn(b)
+	return b.String(), nil
 }
 
 // ParseFile parse the jade template file in given filename
 func ParseFile(filename string) (string, error) {
-	b, err := ioutil.ReadFile(filename)
+	bs, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return "", err
 	}
-	s := string(b)
-	name := filepath.Base(filename)
-
-	return Parse(name, s)
+	return Parse(filepath.Base(filename), string(bs))
 }
 
-func (t *tree) String() string {
-	return t.Root.String()
+func (t *Tree) WriteIn(b io.Writer) {
+	t.Root.WriteIn(b)
 }
