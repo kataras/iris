@@ -243,7 +243,7 @@ func(c *ExampleController) Get() string |
                                 mvc.Result or (mvc.Result, error)
 ```
 
-where [mvc.Result](https://github.com/kataras/iris/blob/master/mvc/func_result.go) is an interface which contains only that function: `Dispatch(ctx iris.Context)`.
+where [mvc.Result](https://github.com/kataras/iris/blob/master/mvc/go19.go#L10) is an [interface](https://github.com/kataras/iris/blob/master/hero/func_result.go#L18) which contains only that function: `Dispatch(ctx iris.Context)`.
 
 ## Using Iris MVC for code reuse
 
@@ -295,6 +295,10 @@ Follow the examples below,
 - [Inject Data Between Handlers](view/context-view-data/main.go)
 - [Embedding Templates Into App Executable File](view/embedding-templates-into-app/main.go)
 - [Write to a custom `io.Writer`](view/write-to)
+- [Greeting with Pug (Jade)`](view/template_pug_0)
+- [Pug (Jade) Actions`](view/template_pug_1)
+- [Pug (Jade) Includes`](view/template_pug_2)
+- [Pug (Jade) Extends`](view/template_pug_3)
 
 You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [hero templates](https://github.com/shiyanhui/hero/hero) files too, simply by using the `context#ResponseWriter`, take a look at the [http_responsewriter/quicktemplate](http_responsewriter/quicktemplate) and [http_responsewriter/herotemplate](http_responsewriter/herotemplate) examples.
 
