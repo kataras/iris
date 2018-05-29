@@ -10,7 +10,7 @@ Irisは表現力豊かなウェブサイトやAPIの基礎構造をいとも簡�
 
 Go言語におけるExpressjsと言っても過言ではないでしょう。
 
-[皆様の声](#support)をご覧ください。このレポジトリを[star](https://github.com/kataras/iris/stargazers)し、[最新情報](https://facebook.com/iris.framework)を受け取ってください。
+[皆様の声](#支援)をご覧ください。このレポジトリを[star](https://github.com/kataras/iris/stargazers)し、[最新情報](https://facebook.com/iris.framework)を受け取ってください。
 
 ## 支援者
 
@@ -91,7 +91,7 @@ _
 $ go get -u github.com/kataras/iris
 ```
 
-Irisは[vendor directory](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo)機能の利点を活かしています。　You get truly reproducible builds, as this method guards against upstream renames and deletes.
+Irisは[vendor directory](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo)機能の利点を活かしています。これが上流レポジトリの変更や削除を防ぐため、再現可能なビルドを実現します。
 
 [![Iris vs .NET Core(C#) vs Node.js (Express)](https://iris-go.com/images/benchmark-new-gray.png)](_benchmarks/README_UNIX.md)
 
@@ -108,9 +108,9 @@ _Updated at: [Tuesday, 21 November 2017](_benchmarks/README_UNIX.md)_
 
 - [HISTORY](HISTORY.md#mo-21-may-2018--v1065)ファイルはあなたの友達です。このファイルには機能に関する最新の情報や変更点が記載されています。
 - バグを発見しましたか？[github issues](https://github.com/kataras/iris/issues)に投稿をお願い致します。
-- 質問がありますか？　または、問題をリアルタイムで解決するため熟練者に相談する必要がありますか？[community chat](https://chat.iris-go.com)に参加してください。
+- 質問がありますか？または、問題をリアルタイムで解決するため熟練者に相談する必要がありますか？[community chat](https://chat.iris-go.com)に参加してください。
 - [here](https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link)をクリックしてユーザーとしての体験を報告してください。
-- フレームワークを愛していますか?それならばツイートしましょう! 人々はこのようにツイートしています:
+- フレームワークを愛していますか?それならばツイートしましょう!人々はこのようにツイートしています:
 
 <a href="https://twitter.com/gelnior/status/769100480706379776"> 
     <img src="https://comments.iris-go.com/comment27_mini.png" width="350px">
@@ -159,11 +159,11 @@ Irisプロジェクトに貢献して頂ける方は、[CONTRIBUTING.md](CONTRIB
 
 ## 学習する
 
-ウェブフレームワークで開発を行う時には、まず言語の基本を学ぶこと、標準的なhttpで何ができるのか知るることが重要です。あなたのアプリケーションが個人的なものでとてもシンプル、パフォーマンスとメンテナンス性にそこまでこだわらない場合、標準パッケージでの開発が推奨されます。以下のガイドラインを参照してください。
+ウェブフレームワークで開発を行う時には、まず言語の基本を学ぶこと、標準的なhttpで何ができるのか知るることが重要です。あなたのアプリケーションが個人的なものでとてもシンプル、パフォーマンスとメンテナンス性にそこまで拘らない場合、標準パッケージでの開発が推奨されます。以下のガイドラインを参照してください。
 
-- **100+1** **[examples](_examples)** や[Iris starter kits](#iris-starter-kits) を学習する
+- **100+1** **[examples](_examples)** や[Irisスターターキット](#Irisスターターキット)を学習する
 - より詳しく知るために[godocs](https://godoc.org/github.com/kataras/iris)を読む
-- 一息ついて、私たちが発見した　[記事](#articles)を読む
+- 一息ついて、私たちが発見した[記事](#記事)を読む
 
 ### Irisスターターキット
 
@@ -193,9 +193,9 @@ Irisプロジェクトに貢献して頂ける方は、[CONTRIBUTING.md](CONTRIB
 
 ### ミドルウェア
 
-Irisはあなたのウェブアプリケーションにご使用いただけるhandlers[[1]](middleware/)[[2]](https://github.com/iris-contrib/middleware) を多く有しています。　さらに、[net/http](https://golang.org/pkg/net/http/)と互換性のある外部のミドルウェアもご使用いただけます。 [_examples/convert-handlers](_examples/convert-handlers) を参照してください。
+Irisはあなたのウェブアプリケーションにご使用いただけるハンドラー[[1]](middleware/)[[2]](https://github.com/iris-contrib/middleware)を多く有しています。さらに、[net/http](https://golang.org/pkg/net/http/)と互換性のある外部のミドルウェアもご使用いただけます。[examples/convert-handlers](_examples/convert-handlers)を参照してください。
 
-Irisは他のフレームワークと異なり、１００％互換性があります。故に、米国の有名なテレビ局を含め、大企業のの大半がGoをワークフローに取り入れています。Irisは常にGo言語の最新版リリースに対応し、Goの作成者によって開発されている標準的な`net/http`パッケージに沿っています。 
+Irisは他のフレームワークと異なり、標準パッケージと１００％互換性があります。故に、米国の有名なテレビ局を含め、大企業のの大半がGoをワークフローに取り入れています。Irisは常にGo言語の最新版リリースに対応し、Goの作成者によって開発されている標準的な`net/http`パッケージに沿っています。 
 
 ### 記事
 
