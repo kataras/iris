@@ -12,9 +12,9 @@ Finally, a real expressjs equivalent for the Go Programming Language.
 
 Learn what [others say about Iris](#support) and [star](https://github.com/kataras/iris/stargazers) this github repository to stay [up to date](https://facebook.com/iris.framework).
 
-## Backers
+## 支援者
 
-Thank you to all our backers! 🙏 [Become a backer](https://iris-go.com/donate)
+支援者の方々、ありがとうございます! 🙏 [支援者になるには](https://iris-go.com/donate)
 
 <a href="https://iris-go.com/donate" target="_blank"><img src="https://iris-go.com/backers.svg?v=2"/></a>
 
@@ -104,13 +104,13 @@ _Updated at: [Tuesday, 21 November 2017](_benchmarks/README_UNIX.md)_
 
 </details>
 
-## Support
+## 支援
 
-- [HISTORY](HISTORY.md#mo-21-may-2018--v1065) file is your best friend, it contains information about the latest features and changes
-- Did you happen to find a bug? Post it at [github issues](https://github.com/kataras/iris/issues)
-- Do you have any questions or need to speak with someone experienced to solve a problem at real-time? Join us to the [community chat](https://chat.iris-go.com)
-- Complete our form-based user experience report by clicking [here](https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link)
-- Do you like the framework? Tweet something about it! The People have spoken:
+- [HISTORY](HISTORY.md#mo-21-may-2018--v1065) ファイルはあなたの友達です。このファイルには機能に関する最新の情報や変更点が記載されています。
+- バグを発見しましたか？[github issues](https://github.com/kataras/iris/issues)に投稿をお願い致します。
+- 質問がありますか？　または、問題をリアルタイムで解決するため熟練者に相談する必要がありますか？ [community chat](https://chat.iris-go.com)に参加してください。
+- [here](https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link)をクリックしてユーザーとしての体験を報告してください。
+- フレームワークを愛していますか? それならばツイートしましょう! 人々はこのようにツイートしています:
 
 <a href="https://twitter.com/gelnior/status/769100480706379776"> 
     <img src="https://comments.iris-go.com/comment27_mini.png" width="350px">
@@ -153,13 +153,13 @@ _Updated at: [Tuesday, 21 November 2017](_benchmarks/README_UNIX.md)_
 
 <br/><br/>
 
-For more information about contributing to the Iris project please check the [CONTRIBUTING.md](CONTRIBUTING.md) file.
+Iris　プロジェクトに貢献して頂ける方は、[CONTRIBUTING.md](CONTRIBUTING.md) をお読みください.
 
-[List of all Contributors](https://github.com/kataras/iris/graphs/contributors)
+[全貢献者リスト](https://github.com/kataras/iris/graphs/contributors)
 
-## Learn
+## 学習する
 
-First of all, the most correct way to begin with a web framework is to learn the basics of the programming language and the standard `http` capabilities, if your web application is a very simple personal project without performance and maintainability requirements you may want to proceed just with the standard packages. After that follow the guidelines:
+ウェブフレームワークで開発を行う時には、まず言語の基本を学ぶこと、標準的なhttpで何ができるのか知るることが重要です。あなたのアプリケーションが個人的なものでとてもシンプル、パフォーマンスとメンテナンス性にそこまでこだわらない場合、標準パッケージでの開発が推奨されます。以下のガイドラインを参照してください。
 
 - Navigate through **100+1** **[examples](_examples)** and some [iris starter kits](#iris-starter-kits) we crafted for you
 - Read the [godocs](https://godoc.org/github.com/kataras/iris) for any details
