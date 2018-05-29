@@ -4,17 +4,17 @@
 
 [![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=flat-square)](https://travis-ci.org/kataras/iris)<!-- [![release](https://img.shields.io/github/release/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/releases)--> [![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=flat-square)](http://goreportcard.com/report/kataras/iris) [![vscode-iris](https://img.shields.io/badge/ext%20-vscode-0c77e3.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=kataras2006.iris)<!--[![github closed issues](https://img.shields.io/github/issues-closed-raw/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/issues?q=is%3Aissue+is%3Aclosed)--> [![chat](https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square)](https://kataras.rocket.chat/channel/iris) [![view examples](https://img.shields.io/badge/learn%20by-examples-0077b3.svg?style=flat-square)](https://iris-go.com/v10/recipe) [![release](https://img.shields.io/badge/release%20-v10.6-0077b3.svg?style=flat-square)](https://github.com/kataras/iris/releases)
 
-Irisはシンプルで高速、にも関わらず充実した機能を有する効率的なGo言語のウェブフレームワークです。
+Irisはシンプルで高速、それにも関わらず充実した機能を有する効率的なGo言語のウェブフレームワークです。
 
 Irisは表現力豊かなウェブサイトやAPIの基礎構造をいとも簡単に提供します。
 
 Go言語におけるExpressjsと言っても過言ではないでしょう。
 
-[皆様の声](#支援)をご覧ください。このレポジトリを[star](https://github.com/kataras/iris/stargazers)し、[最新情報](https://facebook.com/iris.framework)を受け取ってください。
+[皆様の声](#支援)をご覧ください。このレポジトリを[Star](https://github.com/kataras/iris/stargazers)し、[最新情報](https://facebook.com/iris.framework)を受け取りましょう。
 
 ## 支援者
 
-支援者の方々、ありがとうございます! 🙏 [支援者になるには](https://iris-go.com/donate)
+支援者の方々、ありがとうございます! 🙏 [支援者になる](https://iris-go.com/donate)
 
 <a href="https://iris-go.com/donate" target="_blank"><img src="https://iris-go.com/backers.svg?v=2"/></a>
 
@@ -106,11 +106,11 @@ _Updated at: [Tuesday, 21 November 2017](_benchmarks/README_UNIX.md)_
 
 ## 支援
 
-- [HISTORY](HISTORY.md#mo-21-may-2018--v1065)ファイルはあなたの友達です。このファイルには機能に関する最新の情報や変更点が記載されています。
+- [HISTORY](HISTORY.md#mo-21-may-2018--v1065)ファイルはあなたの友人です。このファイルには、機能に関する最新の情報や変更点が記載されています。
 - バグを発見しましたか？[github issues](https://github.com/kataras/iris/issues)に投稿をお願い致します。
-- 質問がありますか？または、問題をリアルタイムで解決するため熟練者に相談する必要がありますか？[community chat](https://chat.iris-go.com)に参加してください。
-- [here](https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link)をクリックしてユーザーとしての体験を報告してください。
-- フレームワークを愛していますか?それならばツイートしましょう!人々はこのようにツイートしています:
+- 質問がありますか？または問題を即時に解決するため、熟練者に相談する必要がありますか？[community chat](https://chat.iris-go.com)に参加しましょう。
+- [here](https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link)をクリックしてユーザーとしての体験を報告しましょう。
+- フレームワークを愛していますか?それならばツイートしましょう!他の人はこのようにツイートしています:
 
 <a href="https://twitter.com/gelnior/status/769100480706379776"> 
     <img src="https://comments.iris-go.com/comment27_mini.png" width="350px">
@@ -159,7 +159,7 @@ Irisプロジェクトに貢献して頂ける方は、[CONTRIBUTING.md](CONTRIB
 
 ## 学習する
 
-ウェブフレームワークで開発を行う時には、まず言語の基本を学ぶこと、標準的なhttpで何ができるのか知るることが重要です。あなたのアプリケーションが個人的なものでとてもシンプル、パフォーマンスとメンテナンス性にそこまで拘らない場合、標準パッケージでの開発が推奨されます。以下のガイドラインを参照してください。
+ウェブフレームワークで開発を行う時には、まず言語の基本を学ぶこと、標準的なhttpで何ができるのか知ることが重要です。あなたのアプリケーションが個人的なもので、とてもシンプル、パフォーマンスとメンテナンス性にそこまで拘らない場合、標準パッケージでの開発が推奨されます。以下のガイドラインを参照してください。
 
 - **100+1** **[examples](_examples)** や[Irisスターターキット](#Irisスターターキット)を学習する
 - より詳しく知るために[godocs](https://godoc.org/github.com/kataras/iris)を読む
@@ -224,7 +224,7 @@ Irisは他のフレームワークと異なり、標準パッケージと１０�
 
 ### 雇用
 
-多くの企業やスタートアップがIrisの使用経験があるGo言語開発者を探しています。私たちは募集情報を毎日検索し、[facebook page](https://www.facebook.com/iris.framework)に投稿しています。既に投稿されている情報をご覧ください。通知を受け取るには、Likeをお願い致します。
+多くの企業やスタートアップがIrisの使用経験を有するGo言語開発者を探しています。私たちは募集情報を毎日検索し、[facebook page](https://www.facebook.com/iris.framework)に投稿しています。既に投稿されている情報をご覧ください。Likeを押して通知を受け取りましょう。
 
 ## ライセンス
 
