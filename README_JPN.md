@@ -1,20 +1,20 @@
-# Iris Web Framework <a href="README_ZH.md"> <img width="20px" src="https://iris-go.com/images/flag-china.svg?v=10" /></a> <a href="README_RU.md"><img width="20px" src="https://iris-go.com/images/flag-russia.svg?v=10" /></a> <a href="README_ID.md"> <img width="20px" src="https://iris-go.com/images/flag-indonesia.svg?v=10" /></a> <a href="README_GR.md"><img width="20px" src="https://iris-go.com/images/flag-greece.svg?v=10" /></a>
+# Iris ウェブフレームワーク <a href="README_ZH.md"> <img width="20px" src="https://iris-go.com/images/flag-china.svg?v=10" /></a> <a href="README_RU.md"><img width="20px" src="https://iris-go.com/images/flag-russia.svg?v=10" /></a> <a href="README_ID.md"> <img width="20px" src="https://iris-go.com/images/flag-indonesia.svg?v=10" /></a> <a href="README_GR.md"><img width="20px" src="https://iris-go.com/images/flag-greece.svg?v=10" /></a>
 
 <a href="https://iris-go.com"> <img align="right" width="169px" src="https://iris-go.com/images/icon.svg?v=a" title="logo created by @merry.dii" /> </a>
 
 [![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=flat-square)](https://travis-ci.org/kataras/iris)<!-- [![release](https://img.shields.io/github/release/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/releases)--> [![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=flat-square)](http://goreportcard.com/report/kataras/iris) [![vscode-iris](https://img.shields.io/badge/ext%20-vscode-0c77e3.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=kataras2006.iris)<!--[![github closed issues](https://img.shields.io/github/issues-closed-raw/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/issues?q=is%3Aissue+is%3Aclosed)--> [![chat](https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square)](https://kataras.rocket.chat/channel/iris) [![view examples](https://img.shields.io/badge/learn%20by-examples-0077b3.svg?style=flat-square)](https://iris-go.com/v10/recipe) [![release](https://img.shields.io/badge/release%20-v10.6-0077b3.svg?style=flat-square)](https://github.com/kataras/iris/releases)
 
-Iris is a fast, simple yet fully featured and very efficient web framework for Go.
+Irisはシンプルで高速、にも関わらず充実した機能を有する効率的なGo言語のウェブフレームワークです。
 
-Iris provides a beautifully expressive and easy to use foundation for your next website or API.
+Irisは表現力豊かなウェブサイトやAPIの基礎構造をいとも簡単に提供します。
 
-Finally, a real expressjs equivalent for the Go Programming Language.
+Go言語におけるExpressjsと言っても過言ではないでしょう。
 
-Learn what [others say about Iris](#support) and [star](https://github.com/kataras/iris/stargazers) this github repository to stay [up to date](https://facebook.com/iris.framework).
+[皆様の声](#支援)をご覧ください。このレポジトリを[star](https://github.com/kataras/iris/stargazers)し、[最新情報](https://facebook.com/iris.framework)を受け取ってください。
 
-## Backers
+## 支援者
 
-Thank you to all our backers! 🙏 [Become a backer](https://iris-go.com/donate)
+支援者の方々、ありがとうございます! 🙏 [支援者になるには](https://iris-go.com/donate)
 
 <a href="https://iris-go.com/donate" target="_blank"><img src="https://iris-go.com/backers.svg?v=2"/></a>
 
@@ -62,7 +62,7 @@ func main() {
 }
 ```
 
-> Learn more about path parameter's types by clicking [here](_examples/routing/dynamic-path/main.go#L31)
+> [here](_examples/routing/dynamic-path/main.go#L31)をクリックしてパスパラメータについて学ぶ
 
 ```html
 <!-- file: ./views/hello.html -->
@@ -83,34 +83,34 @@ Application Started. Press CTRL+C to shut down.
 _
 ```
 
-## Installation
+## インストール
 
-The only requirement is the [Go Programming Language](https://golang.org/dl/)
+[Go Programming Language](https://golang.org/dl/)をインストールしていることが唯一の前提条件です。
 
 ```sh
 $ go get -u github.com/kataras/iris
 ```
 
-Iris takes advantage of the [vendor directory](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo) feature. You get truly reproducible builds, as this method guards against upstream renames and deletes.
+Irisは[vendor directory](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo)機能の利点を活かしています。これが上流レポジトリの変更や削除を防ぐため、再現可能なビルドを実現します。
 
 [![Iris vs .NET Core(C#) vs Node.js (Express)](https://iris-go.com/images/benchmark-new-gray.png)](_benchmarks/README_UNIX.md)
 
 _Updated at: [Tuesday, 21 November 2017](_benchmarks/README_UNIX.md)_
 
 <details>
-<summary>Benchmarks from third-party source over the rest web frameworks</summary>
+<summary>他のウェブフレームワークとの比較</summary>
 
 ![Comparison with other frameworks](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png)
 
 </details>
 
-## Support
+## 支援
 
-- [HISTORY](HISTORY.md#mo-21-may-2018--v1065) file is your best friend, it contains information about the latest features and changes
-- Did you happen to find a bug? Post it at [github issues](https://github.com/kataras/iris/issues)
-- Do you have any questions or need to speak with someone experienced to solve a problem at real-time? Join us to the [community chat](https://chat.iris-go.com)
-- Complete our form-based user experience report by clicking [here](https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link)
-- Do you like the framework? Tweet something about it! The People have spoken:
+- [HISTORY](HISTORY.md#mo-21-may-2018--v1065)ファイルはあなたの友達です。このファイルには機能に関する最新の情報や変更点が記載されています。
+- バグを発見しましたか？[github issues](https://github.com/kataras/iris/issues)に投稿をお願い致します。
+- 質問がありますか？または、問題をリアルタイムで解決するため熟練者に相談する必要がありますか？[community chat](https://chat.iris-go.com)に参加してください。
+- [here](https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link)をクリックしてユーザーとしての体験を報告してください。
+- フレームワークを愛していますか?それならばツイートしましょう!人々はこのようにツイートしています:
 
 <a href="https://twitter.com/gelnior/status/769100480706379776"> 
     <img src="https://comments.iris-go.com/comment27_mini.png" width="350px">
@@ -153,19 +153,19 @@ _Updated at: [Tuesday, 21 November 2017](_benchmarks/README_UNIX.md)_
 
 <br/><br/>
 
-For more information about contributing to the Iris project please check the [CONTRIBUTING.md](CONTRIBUTING.md) file.
+Irisプロジェクトに貢献して頂ける方は、[CONTRIBUTING.md](CONTRIBUTING.md) をお読みください.
 
-[List of all Contributors](https://github.com/kataras/iris/graphs/contributors)
+[全貢献者リスト](https://github.com/kataras/iris/graphs/contributors)
 
-## Learn
+## 学習する
 
-First of all, the most correct way to begin with a web framework is to learn the basics of the programming language and the standard `http` capabilities, if your web application is a very simple personal project without performance and maintainability requirements you may want to proceed just with the standard packages. After that follow the guidelines:
+ウェブフレームワークで開発を行う時には、まず言語の基本を学ぶこと、標準的なhttpで何ができるのか知るることが重要です。あなたのアプリケーションが個人的なものでとてもシンプル、パフォーマンスとメンテナンス性にそこまで拘らない場合、標準パッケージでの開発が推奨されます。以下のガイドラインを参照してください。
 
-- Navigate through **100+1** **[examples](_examples)** and some [iris starter kits](#iris-starter-kits) we crafted for you
-- Read the [godocs](https://godoc.org/github.com/kataras/iris) for any details
-- Prepare a cup of coffee or tea, whatever pleases you the most, and read some [articles](#articles) we found for you
+- **100+1** **[examples](_examples)** や[Irisスターターキット](#Irisスターターキット)を学習する
+- より詳しく知るために[godocs](https://godoc.org/github.com/kataras/iris)を読む
+- 一息ついて、私たちが発見した[記事](#記事)を読む
 
-### Iris starter kits
+### Irisスターターキット
 
 <!-- table form 
 | Description | Link |
@@ -189,15 +189,15 @@ First of all, the most correct way to begin with a web framework is to learn the
 7. [Quickstart for Iris with Nanobox](https://guides.nanobox.io/golang/iris/from-scratch)
 8. [A Hasura starter project with a ready to deploy Golang hello-world web app with IRIS](https://hasura.io/hub/project/hasura/hello-golang-iris)
 
-> Did you build something similar? Let us [know](https://github.com/kataras/iris/pulls)!
+> 似たようなものを開発しましたか？ [私たちにも教えてください！](https://github.com/kataras/iris/pulls)
 
-### Middleware
+### ミドルウェア
 
-Iris has a great collection of handlers[[1]](middleware/)[[2]](https://github.com/iris-contrib/middleware) that you can use side by side with your web apps. However you are not limited to them - you are free to use any third-party middleware that is compatible with the [net/http](https://golang.org/pkg/net/http/) package, [_examples/convert-handlers](_examples/convert-handlers) will show you the way.
+Irisはあなたのウェブアプリケーションにご使用いただけるハンドラー[[1]](middleware/)[[2]](https://github.com/iris-contrib/middleware)を多く有しています。さらに、[net/http](https://golang.org/pkg/net/http/)と互換性のある外部のミドルウェアもご使用いただけます。[examples/convert-handlers](_examples/convert-handlers)を参照してください。
 
-Iris, unlike others, is 100% compatible with the standards and that's why the majority of the big companies that adapt Go to their workflow, like a very famous US Television Network, trust Iris; it's up-to-date and it will be always aligned with the std `net/http` package which is modernized by the Go Authors on each new release of the Go Programming Language.
+Irisは他のフレームワークと異なり、標準パッケージと１００％互換性があります。故に、米国の有名なテレビ局を含め、大企業のの大半がGoをワークフローに取り入れています。Irisは常にGo言語の最新版リリースに対応し、Goの作成者によって開発されている標準的な`net/http`パッケージに沿っています。 
 
-### Articles
+### 記事
 
 * [A Todo MVC Application using Iris and Vue.js](https://hackernoon.com/a-todo-mvc-application-using-iris-and-vue-js-5019ff870064)
 * [A Hasura starter project with a ready to deploy Golang hello-world web app with IRIS](https://bit.ly/2lmKaAZ)
@@ -212,7 +212,7 @@ Iris, unlike others, is 100% compatible with the standards and that's why the ma
 * [Deploying a Iris Golang app in hasura](https://medium.com/@HasuraHQ/deploy-an-iris-golang-app-with-backend-apis-in-minutes-25a559bf530b)
 * [A URL Shortener Service using Go, Iris and Bolt](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
 
-### Video Courses
+### 動画
 
 * [Daily Coding - Web Framework Golang: Iris Framework]( https://www.youtube.com/watch?v=BmOLFQ29J3s) by WarnabiruTV, source: youtube, cost: **FREE**
 * [Tutorial Golang MVC dengan Iris Framework & Mongo DB](https://www.youtube.com/watch?v=uXiNYhJqh2I&list=PLMrwI6jIZn-1tzskocnh1pptKhVmWdcbS) (19 parts so far) by Musobar Media, source: youtube, cost: **FREE**
@@ -222,12 +222,12 @@ Iris, unlike others, is 100% compatible with the standards and that's why the ma
 * [Go/Golang 30 - Iris framework : Les middelwares](https://www.youtube.com/watch?v=BLPy1So6bhE) by stephgdesign, source: youtube, cost: **FREE**
 * [Go/Golang 31 - Iris framework : Les sessions](https://www.youtube.com/watch?v=RnBwUrwgEZ8) by stephgdesign, source: youtube, cost: **FREE**
 
-### Get hired
+### 雇用
 
-There are many companies and start-ups looking for Go web developers with Iris experience as requirement, we are searching for you every day and we post those information via our [facebook page](https://www.facebook.com/iris.framework), like the page to get notified, we have already posted some of them.
+多くの企業やスタートアップがIrisの使用経験があるGo言語開発者を探しています。私たちは募集情報を毎日検索し、[facebook page](https://www.facebook.com/iris.framework)に投稿しています。既に投稿されている情報をご覧ください。通知を受け取るには、Likeをお願い致します。
 
-## License
+## ライセンス
 
-Iris is licensed under the [3-Clause BSD License](LICENSE). Iris is 100% free and open-source software.
+Iris[3-Clause BSD License](LICENSE)に基いています。Irisは完全無料のオープンソースソフトウェアです。
 
-For any questions regarding the license please send [e-mail](mailto:kataras2006@hotmail.com?subject=Iris%20License).
+ライセンスに関するご質問は[e-mail](mailto:kataras2006@hotmail.com?subject=Iris%20License)までご連絡ください。
