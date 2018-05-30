@@ -30,6 +30,12 @@ type Config struct {
 	// Defaults to true.
 	Path bool
 
+	// Query will append the URL Query to the Path.
+	// Path should be true too.
+	//
+	// Defaults to false.
+	Query bool
+
 	// Columns will display the logs as a formatted columns-rows text (bool).
 	// If custom `LogFunc` has been provided then this field is useless and users should
 	// use the `Columinize` function of the logger to get the output result as columns.
@@ -81,6 +87,7 @@ func DefaultConfig() Config {
 		IP:       true,
 		Method:   true,
 		Path:     true,
+		Query:    false,
 		Columns:  false,
 		LogFunc:  nil,
 		Skippers: nil,

@@ -66,7 +66,11 @@ func (l *requestLoggerMiddleware) ServeHTTP(ctx context.Context) {
 	}
 
 	if l.config.Path {
-		path = ctx.Path()
+		if l.config.Query {
+			path = ctx.Request().URL.RequestURI()
+		} else {
+			path = ctx.Path()
+		}
 	}
 
 	var message interface{}
