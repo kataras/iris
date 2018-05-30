@@ -17,6 +17,8 @@ func main() {
 		Method: true,
 		// Path displays the request path
 		Path: true,
+		// Query appends the url query to the Path.
+		Query: true,
 
 		//Columns: true,
 
