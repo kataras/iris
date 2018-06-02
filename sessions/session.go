@@ -176,6 +176,14 @@ func (s *Session) GetInt(key string) (int, error) {
 		return vint, nil
 	}
 
+	if vfloat64, ok := v.(float64); ok {
+		return int(vfloat64), nil
+	}
+
+	if vint64, ok := v.(int64); ok {
+		return int(vint64), nil
+	}
+
 	if vstring, sok := v.(string); sok {
 		return strconv.Atoi(vstring)
 	}
@@ -221,6 +229,10 @@ func (s *Session) GetInt64(key string) (int64, error) {
 		return vint64, nil
 	}
 
+	if vfloat64, ok := v.(float64); ok {
+		return int64(vfloat64), nil
+	}
+
 	if vint, ok := v.(int); ok {
 		return int64(vint), nil
 	}
@@ -259,6 +271,10 @@ func (s *Session) GetFloat32(key string) (float32, error) {
 		return float32(vint), nil
 	}
 
+	if vint64, ok := v.(int64); ok {
+		return float32(vint64), nil
+	}
+
 	if vstring, sok := v.(string); sok {
 		vfloat64, err := strconv.ParseFloat(vstring, 32)
 		if err != nil {
@@ -295,6 +311,10 @@ func (s *Session) GetFloat64(key string) (float64, error) {
 
 	if vint, ok := v.(int); ok {
 		return float64(vint), nil
+	}
+
+	if vint64, ok := v.(int64); ok {
+		return float64(vint64), nil
 	}
 
 	if vstring, sok := v.(string); sok {
