@@ -444,6 +444,24 @@ var (
 	//
 	// A shortcut for the `context#CookieHTTPOnly`.
 	CookieHTTPOnly = context.CookieHTTPOnly
+	// CookieEncode is a `CookieOption`.
+	// Provides encoding functionality when adding a cookie.
+	// Accepts a `context#CookieEncoder` and sets the cookie's value to the encoded value.
+	// Users of that is the `context#SetCookie` and `context#SetCookieKV`.
+	//
+	// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/securecookie
+	//
+	// A shortcut for the `context#CookieEncode`.
+	CookieEncode = context.CookieEncode
+	// CookieDecode is a `CookieOption`.
+	// Provides decoding functionality when retrieving a cookie.
+	// Accepts a `context#CookieDecoder` and sets the cookie's value to the decoded value before return by the `GetCookie`.
+	// User of that is the `context#GetCookie`.
+	//
+	// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/securecookie
+	//
+	// A shortcut for the `context#CookieDecode`.
+	CookieDecode = context.CookieDecode
 )
 
 // SPA  accepts an "assetHandler" which can be the result of an
