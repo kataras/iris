@@ -394,6 +394,10 @@ Iris 独立缓存包 [package](https://github.com/kataras/iris/tree/master/cache
 
 > 可以随意使用自定义的缓存包。
 
+### Cookies
+
+- [Basic](cookies/basic/main.go)
+
 ### Sessions
 
 Iris session 管理独立包 [package](https://github.com/kataras/iris/tree/master/sessions).

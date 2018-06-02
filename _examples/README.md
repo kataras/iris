@@ -395,6 +395,10 @@ iris cache library lives on its own [package](https://github.com/kataras/iris/tr
 
 > You're free to use your own favourite caching package if you'd like so.
 
+### Cookies
+
+- [Basic](cookies/basic/main.go)
+
 ### Sessions
 
 iris session manager lives on its own [package](https://github.com/kataras/iris/tree/master/sessions).

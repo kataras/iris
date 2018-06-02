@@ -71,4 +71,14 @@ type (
 	//
 	// See `ExecutionRules` and `core/router/Party#SetExecutionRules` for more.
 	ExecutionOptions = router.ExecutionOptions
+
+	// CookieOption is the type of function that is accepted on
+	// context's methods like `SetCookieKV`, `RemoveCookie` and `SetCookie`
+	// as their (last) variadic input argument to amend the end cookie's form.
+	//
+	// Any custom or built'n `CookieOption` is valid,
+	// see `CookiePath`, `CookieCleanPath`, `CookieExpires` and `CookieHTTPOnly` for more.
+	//
+	// An alias for the `context/Context#CookieOption`.
+	CookieOption = context.CookieOption
 )
