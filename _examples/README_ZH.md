@@ -397,6 +397,7 @@ Iris 独立缓存包 [package](https://github.com/kataras/iris/tree/master/cache
 ### Cookies
 
 - [Basic](cookies/basic/main.go)
+- [Encode/Decode (securecookie)](cookies/securecookie/main.go)
 
 ### Sessions
 

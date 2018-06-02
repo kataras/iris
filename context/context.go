@@ -3058,6 +3058,64 @@ func CookieHTTPOnly(httpOnly bool) CookieOption {
 	}
 }
 
+type (
+	// CookieEncoder should encode the cookie value.
+	// Should accept as first argument the cookie name
+	// and as second argument the cookie value ptr.
+	// Should return an encoded value or an empty one if encode operation failed.
+	// Should return an error if encode operation failed.
+	//
+	// Note: Errors are not printed, so you have to know what you're doing,
+	// and remember: if you use AES it only supports key sizes of 16, 24 or 32 bytes.
+	// You either need to provide exactly that amount or you derive the key from what you type in.
+	//
+	// See `CookieDecoder` too.
+	CookieEncoder func(cookieName string, value interface{}) (string, error)
+	// CookieDecoder should decode the cookie value.
+	// Should accept as first argument the cookie name,
+	// as second argument the encoded cookie value and as third argument the decoded value ptr.
+	// Should return a decoded value or an empty one if decode operation failed.
+	// Should return an error if decode operation failed.
+	//
+	// Note: Errors are not printed, so you have to know what you're doing,
+	// and remember: if you use AES it only supports key sizes of 16, 24 or 32 bytes.
+	// You either need to provide exactly that amount or you derive the key from what you type in.
+	//
+	// See `CookieEncoder` too.
+	CookieDecoder func(cookieName string, cookieValue string, v interface{}) error
+)
+
+// CookieEncode is a `CookieOption`.
+// Provides encoding functionality when adding a cookie.
+// Accepts a `CookieEncoder` and sets the cookie's value to the encoded value.
+// Users of that is the `SetCookie` and `SetCookieKV`.
+//
+// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/securecookie
+func CookieEncode(encode CookieEncoder) CookieOption {
+	return func(c *http.Cookie) {
+		newVal, err := encode(c.Name, c.Value)
+		if err != nil {
+			c.Value = ""
+		} else {
+			c.Value = newVal
+		}
+	}
+}
+
+// CookieDecode is a `CookieOption`.
+// Provides decoding functionality when retrieving a cookie.
+// Accepts a `CookieDecoder` and sets the cookie's value to the decoded value before return by the `GetCookie`.
+// User of that is the `GetCookie`.
+//
+// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/securecookie
+func CookieDecode(decode CookieDecoder) CookieOption {
+	return func(c *http.Cookie) {
+		if err := decode(c.Name, c.Value, &c.Value); err != nil {
+			c.Value = ""
+		}
+	}
+}
+
 // SetCookie adds a cookie.
 // Use of the "options" is not required, they can be used to amend the "cookie".
 //
@@ -3111,19 +3169,6 @@ func (ctx *context) GetCookie(name string, options ...CookieOption) string {
 		return ""
 	}
 
-	// TODO:
-	// Q: Why named as `CookieOption` and not like `CookieInterceptor`?
-	// A: Because an interceptor would be able to modify the cookie AND stop the 'x' operation, but we don't want to cancel anything.
-	//
-	// Q: Why "Cookie Options" here?
-	// A: Because of the future suport of cookie encoding like I did with sessions.
-	//    Two impl ideas:
-	//     - Do it so each caller of `GetCookie/SetCookieKV/SetCookie` can have each own encoding or share one, no limit.
-	//     - Do it so every of the above three methods will use the same encoding, therefore to the Application's level, limit per Iris app.
-	//    We'll see...
-	//
-	// Finally, I should not forget to add links for the new translated READMEs(2) and push a new version with the minor changes so far,
-	// API is stable, so relax and do it on the next commit tomorrow, need sleep.
 	for _, opt := range options {
 		opt(cookie)
 	}

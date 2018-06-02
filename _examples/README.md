@@ -398,6 +398,7 @@ iris cache library lives on its own [package](https://github.com/kataras/iris/tr
 ### Cookies
 
 - [Basic](cookies/basic/main.go)
+- [Encode/Decode (securecookie)](cookies/securecookie/main.go)
 
 ### Sessions
 
