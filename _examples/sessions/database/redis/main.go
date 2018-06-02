@@ -66,6 +66,24 @@ func main() {
 		ctx.Writef("All ok session value of the '%s' is: %s", key, s.GetString(key))
 	})
 
+	app.Get("/set/int/{key}/{value}", func(ctx iris.Context) {
+		key := ctx.Params().Get("key")
+		value, _ := ctx.Params().GetInt("value")
+		s := sess.Start(ctx)
+		// set session values
+		s.Set(key, value)
+		valueSet := s.Get(key)
+		// test if setted here
+		ctx.Writef("All ok session value of the '%s' is: %v", key, valueSet)
+	})
+
+	app.Get("/get/{key}", func(ctx iris.Context) {
+		key := ctx.Params().Get("key")
+		value := sess.Start(ctx).Get(key)
+
+		ctx.Writef("The '%s' on the /set was: %v", key, value)
+	})
+
 	app.Get("/get", func(ctx iris.Context) {
 		// get a specific key, as string, if no found returns just an empty string
 		name := sess.Start(ctx).GetString("name")
