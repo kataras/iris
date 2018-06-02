@@ -854,18 +854,41 @@ type Context interface {
 	//  | Cookies                                                    |
 	//  +------------------------------------------------------------+
 
-	// SetCookie adds a cookie
-	SetCookie(cookie *http.Cookie)
-	// SetCookieKV adds a cookie, receives just a name(string) and a value(string)
+	// SetCookie adds a cookie.
+	// Use of the "options" is not required, they can be used to amend the "cookie".
 	//
-	// If you use this method, it expires at 2 hours
-	// use ctx.SetCookie or http.SetCookie if you want to change more fields.
-	SetCookieKV(name, value string)
+	// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
+	SetCookie(cookie *http.Cookie, options ...CookieOption)
+	// SetCookieKV adds a cookie, requires the name(string) and the value(string).
+	//
+	// By default it expires at 2 hours and it's added to the root path,
+	// use the `CookieExpires` and `CookiePath` to modify them.
+	// Alternatively: ctx.SetCookie(&http.Cookie{...})
+	//
+	// If you want to set custom the path:
+	// ctx.SetCookieKV(name, value, iris.CookiePath("/custom/path/cookie/will/be/stored"))
+	//
+	// If you want to be visible only to current request path:
+	// ctx.SetCookieKV(name, value, iris.CookieCleanPath/iris.CookiePath(""))
+	// More:
+	//                              iris.CookieExpires(time.Duration)
+	//                              iris.CookieHTTPOnly(false)
+	//
+	// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
+	SetCookieKV(name, value string, options ...CookieOption)
 	// GetCookie returns cookie's value by it's name
 	// returns empty string if nothing was found.
-	GetCookie(name string) string
-	// RemoveCookie deletes a cookie by it's name.
-	RemoveCookie(name string)
+	//
+	// If you want more than the value then:
+	// cookie, err := ctx.Request().Cookie("name")
+	//
+	// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
+	GetCookie(name string, options ...CookieOption) string
+	// RemoveCookie deletes a cookie by it's name and path = "/".
+	// Tip: change the cookie's path to the current one by: RemoveCookie("name", iris.CookieCleanPath)
+	//
+	// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
+	RemoveCookie(name string, options ...CookieOption)
 	// VisitAllCookies takes a visitor which loops
 	// on each (request's) cookies' name and value.
 	VisitAllCookies(visitor func(name string, value string))
@@ -1233,7 +1256,7 @@ func (ctx *context) HandlerName() string {
 // It can be changed to a customized one if needed (very advanced usage).
 //
 // See `DefaultNext` for more information about this and why it's exported like this.
-var Next = DefaultNext ///TODO: add an example for this usecase, i.e describe handlers and skip only file handlers.
+var Next = DefaultNext
 
 // DefaultNext is the default function that executed on each middleware if `ctx.Next()`
 // is called.
@@ -2992,57 +3015,144 @@ func (ctx *context) SendFile(filename string, destinationName string) error {
 }
 
 //  +------------------------------------------------------------+
-//  | Cookies, Session and Flashes                               |
+//  | Cookies                                                    |
 //  +------------------------------------------------------------+
 
-// SetCookie adds a cookie
-func (ctx *context) SetCookie(cookie *http.Cookie) {
+// CookieOption is the type of function that is accepted on
+// context's methods like `SetCookieKV`, `RemoveCookie` and `SetCookie`
+// as their (last) variadic input argument to amend the end cookie's form.
+//
+// Any custom or built'n `CookieOption` is valid,
+// see `CookiePath`, `CookieCleanPath`, `CookieExpires` and `CookieHTTPOnly` for more.
+type CookieOption func(*http.Cookie)
+
+// CookiePath is a `CookieOption`.
+// Use it to change the cookie's Path field.
+func CookiePath(path string) CookieOption {
+	return func(c *http.Cookie) {
+		c.Path = path
+	}
+}
+
+// CookieCleanPath is a `CookieOption`.
+// Use it to clear the cookie's Path field, exactly the same as `CookiePath("")`.
+func CookieCleanPath(c *http.Cookie) {
+	c.Path = ""
+}
+
+// CookieExpires is a `CookieOption`.
+// Use it to change the cookie's Expires and MaxAge fields by passing the lifetime of the cookie.
+func CookieExpires(durFromNow time.Duration) CookieOption {
+	return func(c *http.Cookie) {
+		c.Expires = time.Now().Add(durFromNow)
+		c.MaxAge = int(durFromNow.Seconds())
+	}
+}
+
+// CookieHTTPOnly is a `CookieOption`.
+// Use it to set the cookie's HttpOnly field to false or true.
+// HttpOnly field defaults to true for `RemoveCookie` and `SetCookieKV`.
+func CookieHTTPOnly(httpOnly bool) CookieOption {
+	return func(c *http.Cookie) {
+		c.HttpOnly = httpOnly
+	}
+}
+
+// SetCookie adds a cookie.
+// Use of the "options" is not required, they can be used to amend the "cookie".
+//
+// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
+func (ctx *context) SetCookie(cookie *http.Cookie, options ...CookieOption) {
+	for _, opt := range options {
+		opt(cookie)
+	}
+
 	http.SetCookie(ctx.writer, cookie)
 }
 
-var (
-	// SetCookieKVExpiration is 2 hours by-default
-	// you can change it or simple, use the SetCookie for more control.
-	SetCookieKVExpiration = time.Duration(120) * time.Minute
-)
-
-// SetCookieKV adds a cookie, receives just a name(string) and a value(string)
+// SetCookieKV adds a cookie, requires the name(string) and the value(string).
 //
-// If you use this method, it expires at 2 hours
-// use ctx.SetCookie or http.SetCookie if you want to change more fields.
-func (ctx *context) SetCookieKV(name, value string) {
+// By default it expires at 2 hours and it's added to the root path,
+// use the `CookieExpires` and `CookiePath` to modify them.
+// Alternatively: ctx.SetCookie(&http.Cookie{...})
+//
+// If you want to set custom the path:
+// ctx.SetCookieKV(name, value, iris.CookiePath("/custom/path/cookie/will/be/stored"))
+//
+// If you want to be visible only to current request path:
+// (note that client should be responsible for that if server sent an empty cookie's path, all browsers are compatible)
+// ctx.SetCookieKV(name, value, iris.CookieCleanPath/iris.CookiePath(""))
+// More:
+//                              iris.CookieExpires(time.Duration)
+//                              iris.CookieHTTPOnly(false)
+//
+// Examples: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
+func (ctx *context) SetCookieKV(name, value string, options ...CookieOption) {
 	c := &http.Cookie{}
+	c.Path = "/"
 	c.Name = name
 	c.Value = url.QueryEscape(value)
 	c.HttpOnly = true
 	c.Expires = time.Now().Add(SetCookieKVExpiration)
 	c.MaxAge = int(SetCookieKVExpiration.Seconds())
-	ctx.SetCookie(c)
+	ctx.SetCookie(c, options...)
 }
 
 // GetCookie returns cookie's value by it's name
 // returns empty string if nothing was found.
-func (ctx *context) GetCookie(name string) string {
+//
+// If you want more than the value then:
+// cookie, err := ctx.Request().Cookie("name")
+//
+// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
+func (ctx *context) GetCookie(name string, options ...CookieOption) string {
 	cookie, err := ctx.request.Cookie(name)
 	if err != nil {
 		return ""
 	}
+
+	// TODO:
+	// Q: Why named as `CookieOption` and not like `CookieInterceptor`?
+	// A: Because an interceptor would be able to modify the cookie AND stop the 'x' operation, but we don't want to cancel anything.
+	//
+	// Q: Why "Cookie Options" here?
+	// A: Because of the future suport of cookie encoding like I did with sessions.
+	//    Two impl ideas:
+	//     - Do it so each caller of `GetCookie/SetCookieKV/SetCookie` can have each own encoding or share one, no limit.
+	//     - Do it so every of the above three methods will use the same encoding, therefore to the Application's level, limit per Iris app.
+	//    We'll see...
+	//
+	// Finally, I should not forget to add links for the new translated READMEs(2) and push a new version with the minor changes so far,
+	// API is stable, so relax and do it on the next commit tomorrow, need sleep.
+	for _, opt := range options {
+		opt(cookie)
+	}
+
 	value, _ := url.QueryUnescape(cookie.Value)
 	return value
 }
 
-// RemoveCookie deletes a cookie by it's name.
-func (ctx *context) RemoveCookie(name string) {
+// SetCookieKVExpiration is 2 hours by-default
+// you can change it or simple, use the SetCookie for more control.
+//
+// See `SetCookieKVExpiration` and `CookieExpires` for more.
+var SetCookieKVExpiration = time.Duration(120) * time.Minute
+
+// RemoveCookie deletes a cookie by it's name and path = "/".
+// Tip: change the cookie's path to the current one by: RemoveCookie("name", iris.CookieCleanPath)
+//
+// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
+func (ctx *context) RemoveCookie(name string, options ...CookieOption) {
 	c := &http.Cookie{}
 	c.Name = name
 	c.Value = ""
-	c.Path = "/"
+	c.Path = "/" // if user wants to change it, use of the CookieOption `CookiePath` is required if not `ctx.SetCookie`.
 	c.HttpOnly = true
-	// RFC says 1 second, but let's do it 1 minute to make sure is working
+	// RFC says 1 second, but let's do it 1  to make sure is working
 	exp := time.Now().Add(-time.Duration(1) * time.Minute)
 	c.Expires = exp
 	c.MaxAge = -1
-	ctx.SetCookie(c)
+	ctx.SetCookie(c, options...)
 	// delete request's cookie also, which is temporary available.
 	ctx.request.Header.Set("Cookie", "")
 }

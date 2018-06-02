@@ -422,6 +422,28 @@ var (
 	//
 	// A shortcut of the `cache#Cache304`.
 	Cache304 = cache.Cache304
+
+	// CookiePath is a `CookieOption`.
+	// Use it to change the cookie's Path field.
+	//
+	// A shortcut for the `context#CookiePath`.
+	CookiePath = context.CookiePath
+	// CookieCleanPath is a `CookieOption`.
+	// Use it to clear the cookie's Path field, exactly the same as `CookiePath("")`.
+	//
+	// A shortcut for the `context#CookieCleanPath`.
+	CookieCleanPath = context.CookieCleanPath
+	// CookieExpires is a `CookieOption`.
+	// Use it to change the cookie's Expires and MaxAge fields by passing the lifetime of the cookie.
+	//
+	// A shortcut for the `context#CookieExpires`.
+	CookieExpires = context.CookieExpires
+	// CookieHTTPOnly is a `CookieOption`.
+	// Use it to set the cookie's HttpOnly field to false or true.
+	// HttpOnly field defaults to true for `RemoveCookie` and `SetCookieKV`.
+	//
+	// A shortcut for the `context#CookieHTTPOnly`.
+	CookieHTTPOnly = context.CookieHTTPOnly
 )
 
 // SPA  accepts an "assetHandler" which can be the result of an
