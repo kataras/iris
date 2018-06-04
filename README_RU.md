@@ -1,4 +1,4 @@
-# Iris Web Framework <a href="README.md"> <img width="20px" src="https://iris-go.com/images/flag-unitedkingdom.svg?v=10" /></a> <a href="README_ZH.md"><img width="20px" src="https://iris-go.com/images/flag-china.svg?v=10" /></a> <a href="README_ID.md"> <img width="20px" src="https://iris-go.com/images/flag-indonesia.svg?v=10" /></a> <a href="README_GR.md"><img width="20px" src="https://iris-go.com/images/flag-greece.svg?v=10" /></a>
+# Iris Web Framework <a href="README.md"> <img width="20px" src="https://iris-go.com/images/flag-unitedkingdom.svg?v=10" /></a> <a href="README_ZH.md"><img width="20px" src="https://iris-go.com/images/flag-china.svg?v=10" /></a> <a href="README_ID.md"> <img width="20px" src="https://iris-go.com/images/flag-indonesia.svg?v=10" /></a> <a href="README_GR.md"><img width="20px" src="https://iris-go.com/images/flag-greece.svg?v=10" /></a> <a href="README_PT_BR.md"><img width="20px" src="https://iris-go.com/images/flag-pt-br.svg?v=10" /></a> <a href="README_JPN.md"><img width="20px" src="https://iris-go.com/images/flag-japan.svg?v=10" /></a>
 
 <a href="https://iris-go.com"> <img align="right" width="169px" src="https://iris-go.com/images/icon.svg?v=a" title="logo created by @merry.dii" /> </a>
 
@@ -106,7 +106,7 @@ _Обновлено: [Вторник, 21 ноября 2017 г.](_benchmarks/READ
 
 ## Поддержка
 
-- Файл [HISTORY](HISTORY_RU.md#mo-21-may-2018--v1065) - ваш лучший друг, он содержит информацию о последних особенностях и всех изменениях
+- Файл [HISTORY](HISTORY.md#tu-05-june-2018--v1066) - ваш лучший друг, он содержит информацию о последних особенностях и всех изменениях
 - Вы случайно обнаружили ошибку? Опубликуйте ее на [Github вопросы](https://github.com/kataras/iris/issues)
 - У Вас есть какие-либо вопросы или Вам нужно поговорить с кем-то, кто бы смог решить Вашу проблему в режиме реального времени? Присоединяйтесь к нам в [чате сообщества](https://chat.iris-go.com)
 - Заполните наш отчет о пользовательском опыте на основе формы, нажав [здесь](https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link) 

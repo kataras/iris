@@ -1,4 +1,4 @@
-# Iris ウェブフレームワーク <a href="README_ZH.md"> <img width="20px" src="https://iris-go.com/images/flag-china.svg?v=10" /></a> <a href="README_RU.md"><img width="20px" src="https://iris-go.com/images/flag-russia.svg?v=10" /></a> <a href="README_ID.md"> <img width="20px" src="https://iris-go.com/images/flag-indonesia.svg?v=10" /></a> <a href="README_GR.md"><img width="20px" src="https://iris-go.com/images/flag-greece.svg?v=10" /></a>
+# Iris ウェブフレームワーク <a href="README.md"> <img width="20px" src="https://iris-go.com/images/flag-unitedkingdom.svg?v=10" /></a> <a href="README_ZH.md"> <img width="20px" src="https://iris-go.com/images/flag-china.svg?v=10" /></a> <a href="README_RU.md"><img width="20px" src="https://iris-go.com/images/flag-russia.svg?v=10" /></a> <a href="README_ID.md"> <img width="20px" src="https://iris-go.com/images/flag-indonesia.svg?v=10" /></a> <a href="README_GR.md"><img width="20px" src="https://iris-go.com/images/flag-greece.svg?v=10" /></a> <a href="README_PT_BR.md"><img width="20px" src="https://iris-go.com/images/flag-pt-br.svg?v=10" /></a>
 
 <a href="https://iris-go.com"> <img align="right" width="169px" src="https://iris-go.com/images/icon.svg?v=a" title="logo created by @merry.dii" /> </a>
 
@@ -106,7 +106,7 @@ _Updated at: [Tuesday, 21 November 2017](_benchmarks/README_UNIX.md)_
 
 ## 支援
 
-- [HISTORY](HISTORY.md#mo-21-may-2018--v1065)ファイルはあなたの友人です。このファイルには、機能に関する最新の情報や変更点が記載されています。
+- [HISTORY](HISTORY.md#tu-05-june-2018--v1066)ファイルはあなたの友人です。このファイルには、機能に関する最新の情報や変更点が記載されています。
 - バグを発見しましたか？[github issues](https://github.com/kataras/iris/issues)に投稿をお願い致します。
 - 質問がありますか？または問題を即時に解決するため、熟練者に相談する必要がありますか？[community chat](https://chat.iris-go.com)に参加しましょう。
 - [here](https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link)をクリックしてユーザーとしての体験を報告しましょう。
@@ -167,7 +167,7 @@ Irisプロジェクトに貢献して頂ける方は、[CONTRIBUTING.md](CONTRIB
 
 ### Irisスターターキット
 
-<!-- table form 
+<!-- table form
 | Description | Link |
 | -----------|-------------|
 | Hasura hub starter project with a ready to deploy golang helloworld webapp with IRIS! | https://hasura.io/hub/project/hasura/hello-golang-iris |

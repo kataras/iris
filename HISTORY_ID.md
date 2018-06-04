@@ -17,6 +17,10 @@ Developers tidak diwajibkan untuk melakukan upgrade apabila mereka tidak membutu
 
 **Cara Upgrade**: Bukan command-line anda dan eksekuis perintah ini: `go get -u github.com/kataras/iris` atau biarkan updater otomatis melakukannya untuk anda.
 
+# Tu, 05 June 2018 | v10.6.6
+
+This history entry is not translated yet to the Indonesian language yet, please refer to the english version of the [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#tu-05-june-2018--v1066) instead.
+
 # Mo, 21 May 2018 | v10.6.5
 
 This history entry is not translated yet to the Bahasa Indonesia language yet, please refer to the english version of the [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#mo-21-may-2018--v1065) instead.
