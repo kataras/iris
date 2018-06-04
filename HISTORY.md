@@ -17,6 +17,21 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris` or let the automatic updater do that for you.
 
+# Tu, 05 June 2018 | v10.6.6
+
+- **view/pug**: update vendor for Pug (Jade) parser and add [Iris + Pug examples](https://github.com/kataras/iris/tree/master/_examples#view) via [this commit](https://github.com/kataras/iris/commit/e0171cbed69efecba199ef547aa5e7063e18b27a), relative to [issue #1003](https://github.com/kataras/iris/issues/1003) opened by [@DjLeChuck](https://github.com/DjLeChuck)
+- **middleware/logger**: new configuration field, defaults to false: `Query bool`, if true prints the full path, including the URL query as requested at [issue #1017](https://github.com/kataras/iris/issues/1017) by [@andr33z](https://github.com/andr33z). Example [here](https://github.com/kataras/iris/blob/master/_examples/http_request/request-logger/main.go#L21). Implemented by [this commit](https://github.com/kataras/iris/commit/a7364876e0d1b8bd60acf94f17f6d1341b16c617)
+- **cookies**: some minor but helpful additions, like `CookieOption` relative to [issue #1018](https://github.com/kataras/iris/issues/1018) asked by [@dibyendu](https://github.com/dibyendu). [Cookies examples added](https://github.com/kataras/iris/tree/master/_examples/cookies) too. Implemented by [this commit](https://github.com/kataras/iris/commit/574414a64ed3d8736c836d476e6304d915f4a511)
+- **cookies**: ability to set custom cookie encoders to encode the cookie's value before sent by `context#SetCookie` and `context#SetCookieKV` and cookie decoders to decode the cookie's value when retrieving from `context#GetCookie`. That was the second and final part relative to a community's question at: [issue #1018](https://github.com/kataras/iris/issues/1018). Implemented by [this commit](https://github.com/kataras/iris/commit/f708c6098faec7c4e2232c791380cdff7a26960b)
+- **fix**: [issue #1020](https://github.com/kataras/iris/issues/1020) via [this commit](https://github.com/kataras/iris/commit/3d30ccef05703246b716a14dda14d2f28294dbd2), redis database stores the int as float64, don't change that native behavior, just grab it nicely.
+
+## Translations (2)
+
+- [README_PT_BR.md](README_PT_BR.md) for Brazilian Portuguese language via [this PR](https://github.com/kataras/iris/pull/1008) thanks to [@gschri](https://github.com/gschri)
+- [README_JPN.md](README_JPN.md) for Japanese language via [this PR](https://github.com/kataras/iris/pull/1015) thanks to [@tkhkokd](https://github.com/tkhkokd).
+
+Thank you both for your contribution. We all looking forward for the HISTORY translations as well!!!
+
 # Mo, 21 May 2018 | v10.6.5
 
 First of all, special thanks to [@haritsfahreza](https://github.com/haritsfahreza) for translating the entire Iris' README page & Changelogs to the Bahasa Indonesia language via PR: [#1000](https://github.com/kataras/iris/pull/1000)!
