@@ -15,7 +15,7 @@ type connectionKV struct {
 
 type connections []connectionKV
 
-func (cs *connections) add(key string, value *connection) {
+func (cs *connections) add(key string, value *connection, lock sync.RWMutex) {
 	args := *cs
 	n := len(args)
 	// check if already id/key exist, if yes replace the conn
@@ -27,6 +27,12 @@ func (cs *connections) add(key string, value *connection) {
 		}
 	}
 
+	// Thread-safe modification of the connections slice
+	// although the multi-threaded modifications to it will not behave like maps
+	lock.Lock()
+	defer lock.Unlock()
+	args = *cs
+	n = len(args)
 	c := cap(args)
 	// make the connections slice bigger and put the conn
 	if c > n {
@@ -59,7 +65,9 @@ func (cs *connections) get(key string) *connection {
 // returns the connection which removed and a bool value of found or not
 // the connection is useful to fire the disconnect events, we use that form in order to
 // make work things faster without the need of get-remove, just -remove should do the job.
-func (cs *connections) remove(key string) (*connection, bool) {
+func (cs *connections) remove(key string, lock sync.RWMutex) (*connection, bool) {
+	lock.Lock()
+	defer lock.Unlock()
 	args := *cs
 	n := len(args)
 	for i := 0; i < n; i++ {
@@ -197,7 +205,7 @@ func (s *Server) handleConnection(ctx context.Context, websocketConn UnderlineCo
 	// create the new connection
 	c := newConnection(ctx, s, websocketConn, cid)
 	// add the connection to the Server's list
-	s.connections.add(cid, c)
+	s.connections.add(cid, c, s.mu)
 
 	// join to itself
 	s.Join(c.ID(), c.ID())
@@ -422,7 +430,7 @@ func (s *Server) Disconnect(connID string) (err error) {
 	s.LeaveAll(connID)
 
 	// remove the connection from the list
-	if c, ok := s.connections.remove(connID); ok {
+	if c, ok := s.connections.remove(connID, s.mu); ok {
 		if !c.disconnected {
 			c.disconnected = true
 
