@@ -201,7 +201,7 @@ func (s *Server) handleConnection(ctx context.Context, websocketConn UnderlineCo
 	// although the multi-threaded modifications to it will not behave like maps
 	// add the connection to the Server's list
 	s.mu.Lock()
-	s.connections.add(cid, c, s.mu)
+	s.connections.add(cid, c)
 	s.mu.Unlock()
 
 	// join to itself
