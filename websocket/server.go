@@ -428,7 +428,7 @@ func (s *Server) Disconnect(connID string) (err error) {
 
 	// remove the connection from the list
 	s.mu.Lock()
-	c, ok := s.connections.remove(connID, s.mu)
+	c, ok := s.connections.remove(connID)
 	s.mu.Unlock()
 	if ok {
 		if !c.disconnected {
