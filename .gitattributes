@@ -9,3 +9,5 @@ _benchmarks/* linguist-documentation
 # git config --global core.autocrlf input
 # https://help.github.com/articles/dealing-with-line-endings/#per-repository-settings
 * text=auto
+# ignore perms
+# git config core.filemode false
