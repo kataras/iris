@@ -62,7 +62,7 @@ import (
 
 var (
     cookieNameForSessionID = "mycookiesessionnameid"
-    sess                   = sessions.New(sessions.Config{Cookie: cookieNameForSessionID})
+    sess                   = sessions.New(sessions.Config{Cookie: cookieNameForSessionID, AllowReclaim: true})
 )
 
 func secret(ctx iris.Context) {

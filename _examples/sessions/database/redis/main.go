@@ -32,8 +32,10 @@ func main() {
 	defer db.Close() // close the database connection if application errored.
 
 	sess := sessions.New(sessions.Config{
-		Cookie:  "sessionscookieid",
-		Expires: 45 * time.Minute}, // <=0 means unlimited life. Defaults to 0.
+		Cookie:       "sessionscookieid",
+		Expires:      45 * time.Minute, // <=0 means unlimited life. Defaults to 0.
+		AllowReclaim: true,
+	},
 	)
 
 	//
