@@ -24,9 +24,10 @@ func newApp() *iris.Application {
 	secureCookie := securecookie.New(hashKey, blockKey)
 
 	mySessions := sessions.New(sessions.Config{
-		Cookie: cookieName,
-		Encode: secureCookie.Encode,
-		Decode: secureCookie.Decode,
+		Cookie:       cookieName,
+		Encode:       secureCookie.Encode,
+		Decode:       secureCookie.Decode,
+		AllowReclaim: true,
 	})
 
 	app.Get("/", func(ctx iris.Context) {

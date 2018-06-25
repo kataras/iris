@@ -8,7 +8,7 @@ import (
 
 func main() {
 	app := iris.New()
-	sess := sessions.New(sessions.Config{Cookie: "myappsessionid"})
+	sess := sessions.New(sessions.Config{Cookie: "myappsessionid", AllowReclaim: true})
 
 	app.Get("/set", func(ctx iris.Context) {
 		s := sess.Start(ctx)
