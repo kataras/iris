@@ -116,6 +116,12 @@
   revision = "825e39f34365e7db2c9fbc3692c16220e3bd7418"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/kataras/survey"
+  packages = [".","terminal","core"]
+  revision = "00934ae069eda15df26fa427ac393e67e239380c"
+
+[[projects]]
   name = "github.com/klauspost/compress"
   packages = ["flate","gzip"]
   revision = "6c8db69c4b49dd4df1fff66996cf556176d0b9bf"
