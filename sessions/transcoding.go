@@ -20,7 +20,7 @@ type (
 
 // DefaultTranscoder is the default transcoder across databases, it's the JSON by default.
 // Change it if you want a different serialization/deserialization inside your session databases (when `UseDatabase` is used).
-var DefaultTranscoder = defaultTranscoder{}
+var DefaultTranscoder Transcoder = defaultTranscoder{}
 
 type defaultTranscoder struct{}
 
