@@ -9,6 +9,7 @@ It doesn't always contain the "best ways" but it does cover each important featu
 ### Overview
 
 - [Hello world!](hello-world/main.go)
+- [Hello WebAssemply!](webassembly/basic/main.go) **NEW**
 - [Glimpse](overview/main.go)
 - [Tutorial: Online Visitors](tutorial/online-visitors/main.go)
 - [Tutorial: A Todo MVC Application using Iris and Vue.js](https://hackernoon.com/a-todo-mvc-application-using-iris-and-vue-js-5019ff870064)
