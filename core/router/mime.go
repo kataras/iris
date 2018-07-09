@@ -536,6 +536,7 @@ var types = map[string]string{
 	".onetmp":    "application/onenote",
 	".onepkg":    "application/onenote",
 	".xpi":       "application/x-xpinstall",
+	".wasm":      "application/wasm",
 }
 
 func init() {

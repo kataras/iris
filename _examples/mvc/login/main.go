@@ -71,6 +71,11 @@ func main() {
 	// http://localhost:8080/noexist
 	// and all controller's methods like
 	// http://localhost:8080/users/1
+	// http://localhost:8080/user/register
+	// http://localhost:8080/user/login
+	// http://localhost:8080/user/me
+	// http://localhost:8080/user/logout
+	// basic auth: "admin", "password", see "./middleware/basicauth.go" source file.
 	app.Run(
 		// Starts the web server at localhost:8080
 		iris.Addr("localhost:8080"),

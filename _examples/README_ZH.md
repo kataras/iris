@@ -10,6 +10,7 @@
 ### 概览
 
 - [Hello world!](hello-world/main.go)
+- [Hello WebAssemply!](webassembly/basic/main.go) **NEW**
 - [基础](overview/main.go)
 - [教程: 在线人数](tutorial/online-visitors/main.go)
 - [教程: A Todo MVC Application using Iris and Vue.js](https://hackernoon.com/a-todo-mvc-application-using-iris-and-vue-js-5019ff870064)
