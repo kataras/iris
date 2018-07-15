@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/satori/go.uuid"
 	"net/url"
+
+	"github.com/satori/go.uuid"
 )
 
 // Generator the type to generate keys(short urls)

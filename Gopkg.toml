@@ -43,7 +43,7 @@
   name = "github.com/kataras/golog"
 
 [[constraint]]
-  branch = "master"
+  branch = "v2"
   name = "github.com/kataras/survey"
 
 [[constraint]]
@@ -63,8 +63,8 @@
   name = "github.com/ryanuber/columnize"
 
 [[constraint]]
-  branch = "master"
-  name = "github.com/satori/go.uuid"
+  branch = "v2"
+  name = "github.com/iris-contrib/go.uuid"
 
 [[constraint]]
   branch = "master"

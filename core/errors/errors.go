@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/satori/go.uuid"
+	"github.com/iris-contrib/go.uuid"
 )
 
 var (

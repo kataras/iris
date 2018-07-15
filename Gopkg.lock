@@ -116,7 +116,7 @@
   revision = "825e39f34365e7db2c9fbc3692c16220e3bd7418"
 
 [[projects]]
-  branch = "master"
+  branch = "v2"
   name = "github.com/kataras/survey"
   packages = [".","terminal","core"]
   revision = "00934ae069eda15df26fa427ac393e67e239380c"
@@ -170,8 +170,8 @@
   revision = "abc90934186a77966e2beeac62ed966aac0561d5"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/satori/go.uuid"
+  branch = "v2"
+  name = "github.com/iris-contrib/go.uuid"
   packages = ["."]
   revision = "36e9d2ebbde5e3f13ab2e25625fd453271d6522e"
 
