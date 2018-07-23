@@ -31,7 +31,7 @@ func (c *VisitController) Get() string {
 	visits := c.Session.Increment("visits", 1)
 	// write the current, updated visits.
 	since := time.Now().Sub(c.StartTime).Seconds()
-	return fmt.Sprintf("%d visit from my current session in %0.1f seconds of server's up-time",
+	return fmt.Sprintf("%d visit(s) from my current session in %0.1f seconds of server's up-time",
 		visits, since)
 }
 

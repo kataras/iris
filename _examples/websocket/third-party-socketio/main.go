@@ -40,5 +40,5 @@ func main() {
 	// http://localhost:8080
 	app.StaticWeb("/", "./public")
 
-	app.Run(iris.Addr("localhost:8080"))
+	app.Run(iris.Addr("localhost:8080"), iris.WithoutPathCorrection)
 }
