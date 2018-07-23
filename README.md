@@ -19,7 +19,7 @@ Thank you to all our backers! 🙏 [Become a backer](https://iris-go.com/donate)
 <a href="https://iris-go.com/donate" target="_blank"><img src="https://iris-go.com/backers.svg?v=2"/></a>
 
 ```sh
-$ cat example.go
+$ cat _examples/cookies/basic/main.go
 ```
 
 ```go
@@ -27,57 +27,102 @@ package main
 
 import "github.com/kataras/iris"
 
-func main() {
+func newApp() *iris.Application {
     app := iris.New()
-    // Load all templates from the "./views" folder
-    // where extension is ".html" and parse them
-    // using the standard `html/template` package.
-    app.RegisterView(iris.HTML("./views", ".html"))
 
-    // Method:    GET
-    // Resource:  http://localhost:8080
-    app.Get("/", func(ctx iris.Context) {
-        // Bind: {{.message}} with "Hello world!"
-        ctx.ViewData("message", "Hello world!")
-        // Render template file: ./views/hello.html
-        ctx.View("hello.html")
+    // Set A Cookie.
+    app.Get("/cookies/{name}/{value}", func(ctx iris.Context) {
+        name := ctx.Params().Get("name")
+        value := ctx.Params().Get("value")
+
+        ctx.SetCookieKV(name, value)
+
+        ctx.Writef("cookie added: %s = %s", name, value)
     })
 
-    // Method:    GET
-    // Resource:  http://localhost:8080/user/42
-    //
-    // Need to use a custom regexp instead?
-    // Easy,
-    // just mark the parameter's type to 'string'
-    // which accepts anything and make use of
-    // its `regexp` macro function, i.e:
-    // app.Get("/user/{id:string regexp(^[0-9]+$)}")
-    app.Get("/user/{id:long}", func(ctx iris.Context) {
-        userID, _ := ctx.Params().GetInt64("id")
-        ctx.Writef("User ID: %d", userID)
+    // Retrieve A Cookie.
+    app.Get("/cookies/{name}", func(ctx iris.Context) {
+        name := ctx.Params().Get("name")
+
+        value := ctx.GetCookie(name)
+
+        ctx.WriteString(value)
     })
 
-    // Start the server using a network address.
+    // Delete A Cookie.
+    app.Delete("/cookies/{name}", func(ctx iris.Context) {
+        name := ctx.Params().Get("name")
+
+        ctx.RemoveCookie(name)
+
+        ctx.Writef("cookie %s removed", name)
+    })
+
+    return app
+}
+
+func main() {
+    app := newApp()
+
+    // GET:    http://localhost:8080/cookies/my_name/my_value
+    // GET:    http://localhost:8080/cookies/my_name
+    // DELETE: http://localhost:8080/cookies/my_name
     app.Run(iris.Addr(":8080"))
 }
 ```
 
-> Learn more about path parameter's types by clicking [here](_examples/routing/dynamic-path/main.go#L31)
+* Alternatively, use a regular `http.Cookie`: `ctx.SetCookie(&http.Cookie{...})`
+* If you want to set custom the path: `ctx.SetCookieKV(name, value, iris.CookiePath("/custom/path/cookie/will/be/stored"))`.
+* If you want to be available only to the current request path: `ctx.SetCookieKV(name, value, iris.CookieCleanPath /* or iris.CookiePath("") */)`
+    * `iris.CookieExpires(time.Duration)`
+    * `iris.CookieHTTPOnly(false)`
+* `ctx.Request().Cookie(name)` is also available, it's the `net/http` approach
+* Learn more about path parameter's types by clicking [here](_examples/routing/dynamic-path/main.go#L31).
 
-```html
-<!-- file: ./views/hello.html -->
-<html>
-<head>
-    <title>Hello Page</title>
-</head>
-<body>
-    <h1>{{.message}}</h1>
-</body>
-</html>
+### Testing your Application? Easy with Iris
+
+```go
+package main
+
+import (
+    "fmt"
+    "testing"
+
+    "github.com/kataras/iris/httptest"
+)
+
+// go test -v -run=TestCookiesBasic$
+func TestCookiesBasic(t *testing.T) {
+    app := newApp()
+    e := httptest.New(t, app, httptest.URL("http://example.com"))
+
+    cookieName, cookieValue := "my_cookie_name", "my_cookie_value"
+
+    // Test Set A Cookie.
+    t1 := e.GET(fmt.Sprintf("/cookies/%s/%s", cookieName, cookieValue)).Expect().Status(httptest.StatusOK)
+    t1.Cookie(cookieName).Value().Equal(cookieValue) // validate cookie's existence, it should be there now.
+    t1.Body().Contains(cookieValue)
+
+    path := fmt.Sprintf("/cookies/%s", cookieName)
+
+    // Test Retrieve A Cookie.
+    t2 := e.GET(path).Expect().Status(httptest.StatusOK)
+    t2.Body().Equal(cookieValue)
+
+    // Test Remove A Cookie.
+    t3 := e.DELETE(path).Expect().Status(httptest.StatusOK)
+    t3.Body().Contains(cookieName)
+
+    t4 := e.GET(path).Expect().Status(httptest.StatusOK)
+    t4.Cookies().Empty()
+    t4.Body().Empty()
+}
 ```
 
+### Serve your Application
+
 ```sh
-$ go run example.go
+$ go run main.go
 Now listening on: http://localhost:8080
 Application Started. Press CTRL+C to shut down.
 _

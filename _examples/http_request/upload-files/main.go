@@ -34,7 +34,7 @@ func main() {
 	app.Post("/upload", func(ctx iris.Context) {
 		//
 		// UploadFormFiles
-		// uploads any number of incoming files (multiple property on the form input).
+		// uploads any number of incoming files ("multiple" property on the form input).
 		//
 
 		// second argument is totally optionally,
