@@ -8,7 +8,6 @@ import (
 
 func main() {
 	app := iris.New()
-	// use this recover(y) middleware
 	app.Use(recover.New())
 
 	i := 0
