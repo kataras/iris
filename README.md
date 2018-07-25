@@ -12,11 +12,139 @@ Finally, a real expressjs equivalent for the Go Programming Language.
 
 Learn what [others say about Iris](#support) and [star](https://github.com/kataras/iris/stargazers) this github repository to stay [up to date](https://facebook.com/iris.framework).
 
-## Backers
+## Installation
 
-Thank you to all our backers! 🙏 [Become a backer](https://iris-go.com/donate)
+The only requirement is the [Go Programming Language](https://golang.org/dl/)
 
-<a href="https://iris-go.com/donate" target="_blank"><img src="https://iris-go.com/backers.svg?v=2"/></a>
+```sh
+$ go get -u github.com/kataras/iris
+```
+
+Iris takes advantage of the [vendor directory](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo) feature. You get truly reproducible builds, as this method guards against upstream renames and deletes.
+
+[![Iris vs .NET Core(C#) vs Node.js (Express)](https://iris-go.com/images/benchmark-new-gray.png)](_benchmarks/README_UNIX.md)
+
+_Updated at: [Tuesday, 21 November 2017](_benchmarks/README_UNIX.md)_
+
+<details>
+<summary>Benchmarks from third-party source over the rest web frameworks</summary>
+
+![Comparison with other frameworks](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png)
+
+</details>
+
+## Philosophy
+
+The Iris philosophy is to provide robust tooling for HTTP, making it a great solution for single page applications, web sites, hybrids, or public HTTP APIs. Keep note that, so far, iris is the fastest web framework ever created in terms of performance.
+
+Iris does not force you to use any specific ORM or template engine. With support for the most used template engines, you can quickly craft the perfect application.
+
+## Quick start
+ 
+```sh
+$ cat example.go
+```
+
+```go
+package main
+
+import "github.com/kataras/iris"
+
+func main() {
+    app := iris.Default()
+    app.Get("/ping", func(ctx iris.Context) {
+        ctx.JSON(iris.Map{
+            "message": "pong",
+        })
+    })
+
+    // Listen and serve on http://localhost:8080.
+    app.Run(iris.Addr(":8080"))
+}
+```
+
+```
+$ go run example.go
+Now listening on: http://localhost:8080
+Application Started. Press CTRL+C to shut down.
+_
+```
+
+### Using Get, Post, Put, Patch, Delete and Options
+
+```go
+func main() {
+    // Creates an application with default middleware:
+    // logger and recovery (crash-free) middleware.
+    app := iris.Default()
+
+    app.Get("/someGet", getting)
+    app.Post("/somePost", posting)
+    app.Put("/somePut", putting)
+    app.Delete("/someDelete", deleting)
+    app.Patch("/somePatch", patching)
+    app.Head("/someHead", head)
+    app.Options("/someOptions", options)
+
+    app.Run(iris.Addr(":8080"))
+}
+```
+
+### Parameters in path
+
+```go
+func main() {
+    app := iris.Default()
+
+    // This handler will match /user/kataras but will not match neither /user/ or /user.
+    app.Get("/user/{name}", func(ctx iris.Context) {
+        name := ctx.Params().Get("name")
+        ctx.Writef("Hello %s", name)
+    })
+
+    // This handles the /user/kataras/42
+    // and fires 400 bad request if /user/kataras/string.
+    // The "else 400" is optionally:
+    // by-default it will fire 404 not found if alphanumeric instead
+    // of number passed on the "age" parameter.
+    app.Get("/user/{name:string}/{age:int else 400}", func(ctx iris.Context) {
+        name := ctx.Params().Get("name")
+        age, _ := ctx.Params().GetInt("age")
+        ctx.Writef("%s is %d years old", name, age)
+    })
+
+    // However, this one will match /action/{user}/star and also /action/{user}/stars
+    // or even /action/{user}/likes/page/2.
+    // It should match anything after the /action/{user}/
+    // except the /action/{user}/static which is handled by the below route.
+    app.Get("/action/{user:string}/{action:path}", func(ctx iris.Context) {
+        user := ctx.Params().Get("user")
+        action := ctx.Params().Get("action")
+        ctx.Writef("user: %s | action: %s", user, action)
+    })
+
+    // Unlike other frameworks and routers,
+    // Iris is smart enough to understand that this is not the previous,
+    // wildcard of type path route, it should only match the /action/{user}/static.
+    app.Get("/action/{user:string}/static", func(ctx iris.Context) {
+        user := ctx.Params().Get("user")
+        ctx.Writef("static path for user: %s", user)
+    })
+
+
+    // http://localhost:8080/user/kataras
+    // http://localhost:8080/user/kataras/25
+    // http://localhost:8080/action/kataras/upgrade
+    // http://localhost:8080/action/kataras/static
+    app.Run(iris.Addr(":8080"))
+}
+```
+
+> If parameter type is missing then the defaults to `string`, therefore `{name:string}` and `{name}` do the same exactly
+
+> Learn more about path parameter's types by navigating [here](_examples/routing/dynamic-path/main.go#L31)
+
+### Cookies
 
 ```sh
 $ cat _examples/cookies/basic/main.go
@@ -79,7 +207,7 @@ func main() {
 * `ctx.Request().Cookie(name)` is also available, it's the `net/http` approach
 * Learn more about path parameter's types by clicking [here](_examples/routing/dynamic-path/main.go#L31).
 
-### Testing your Application? Easy with Iris
+### Testing
 
 ```go
 package main
@@ -118,89 +246,6 @@ func TestCookiesBasic(t *testing.T) {
     t4.Body().Empty()
 }
 ```
-
-### Serve your Application
-
-```sh
-$ go run main.go
-Now listening on: http://localhost:8080
-Application Started. Press CTRL+C to shut down.
-_
-```
-
-## Installation
-
-The only requirement is the [Go Programming Language](https://golang.org/dl/)
-
-```sh
-$ go get -u github.com/kataras/iris
-```
-
-Iris takes advantage of the [vendor directory](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo) feature. You get truly reproducible builds, as this method guards against upstream renames and deletes.
-
-[![Iris vs .NET Core(C#) vs Node.js (Express)](https://iris-go.com/images/benchmark-new-gray.png)](_benchmarks/README_UNIX.md)
-
-_Updated at: [Tuesday, 21 November 2017](_benchmarks/README_UNIX.md)_
-
-<details>
-<summary>Benchmarks from third-party source over the rest web frameworks</summary>
-
-![Comparison with other frameworks](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png)
-
-</details>
-
-## Support
-
-- [HISTORY](HISTORY.md#tu-05-june-2018--v1066) file is your best friend, it contains information about the latest features and changes
-- Did you happen to find a bug? Post it at [github issues](https://github.com/kataras/iris/issues)
-- Do you have any questions or need to speak with someone experienced to solve a problem at real-time? Join us to the [community chat](https://chat.iris-go.com)
-- Complete our form-based user experience report by clicking [here](https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link)
-- Do you like the framework? Tweet something about it! The People have spoken:
-
-<a href="https://twitter.com/gelnior/status/769100480706379776"> 
-    <img src="https://comments.iris-go.com/comment27_mini.png" width="350px">
-</a>
-
-<a href="https://twitter.com/MeAlex07/status/822799954188075008"> 
-    <img src="https://comments.iris-go.com/comment28_mini.png" width="350px">
-</a>
-
-<a href="https://twitter.com/_mgale/status/818591490305761280"> 
-    <img src="https://comments.iris-go.com/comment29_mini.png" width="350px">
-</a>
-<a href="https://twitter.com/VeayoX/status/813273328550973440"> 
-    <img src="https://comments.iris-go.com/comment30_mini.png" width="350px">
-</a>
-
-<a href="https://twitter.com/pvsukale/status/745328224876408832"> 
-    <img src="https://comments.iris-go.com/comment31_mini.png" width="350px">
-</a>
-
-<a href="https://twitter.com/blainsmith/status/745338092211560453"> 
-    <img src="https://comments.iris-go.com/comment32_mini.png" width="350px">
-</a>
-
-<a href="https://twitter.com/tjbyte/status/758287014210867200"> 
-    <img src="https://comments.iris-go.com/comment33_mini.png" width="350px">
-</a>
-
-<a href="https://twitter.com/tangzero/status/751050577220698112"> 
-    <img src="https://comments.iris-go.com/comment34_mini.png" width="350px">
-</a>
-
-<a href="https://twitter.com/tjbyte/status/758287244947972096"> 
-    <img src="https://comments.iris-go.com/comment33_2_mini.png" width="350px">
-</a>
-
-<a href="https://twitter.com/ferarias/status/902468752364773376"> 
-    <img src="https://comments.iris-go.com/comment41.png" width="350px">
-</a>
-
-<br/><br/>
-
-For more information about contributing to the Iris project please check the [CONTRIBUTING.md](CONTRIBUTING.md) file.
-
-[List of all Contributors](https://github.com/kataras/iris/graphs/contributors)
 
 ## Learn
 
@@ -259,17 +304,78 @@ Iris, unlike others, is 100% compatible with the standards and that's why the ma
 
 ### Video Courses
 
-* [Daily Coding - Web Framework Golang: Iris Framework]( https://www.youtube.com/watch?v=BmOLFQ29J3s) by WarnabiruTV, source: youtube, cost: **FREE**
-* [Tutorial Golang MVC dengan Iris Framework & Mongo DB](https://www.youtube.com/watch?v=uXiNYhJqh2I&list=PLMrwI6jIZn-1tzskocnh1pptKhVmWdcbS) (19 parts so far) by Musobar Media, source: youtube, cost: **FREE**
-* [Go/Golang 27 - Iris framework : Routage de base](https://www.youtube.com/watch?v=rQxRoN6ub78) by stephgdesign, source: youtube, cost: **FREE**
-* [Go/Golang 28 - Iris framework : Templating](https://www.youtube.com/watch?v=nOKYV073S2Y) by stephgdesignn, source: youtube, cost: **FREE**
-* [Go/Golang 29 - Iris framework : Paramètres](https://www.youtube.com/watch?v=K2FsprfXs1E) by stephgdesign, source: youtube, cost: **FREE**
-* [Go/Golang 30 - Iris framework : Les middelwares](https://www.youtube.com/watch?v=BLPy1So6bhE) by stephgdesign, source: youtube, cost: **FREE**
-* [Go/Golang 31 - Iris framework : Les sessions](https://www.youtube.com/watch?v=RnBwUrwgEZ8) by stephgdesign, source: youtube, cost: **FREE**
+| Name | Producer |
+| -----------|-------------|
+| [Daily Coding - Web Framework Golang: Iris Framework](https://www.youtube.com/watch?v=BmOLFQ29J3s) | [WarnabiruTV](https://www.youtube.com/user/panahbiru) |
+| [Playlist: Tutorial Golang MVC Iris Framework](https://www.youtube.com/watch?v=uXiNYhJqh2I&list=PLMrwI6jIZn-1tzskocnh1pptKhVmWdcbS) | [Musobar Media](https://www.youtube.com/channel/UCqOBKU-JXrM86FTt7Xzwdxw) |
+| [Go/Golang 27 - Iris framework : Routage de base](https://www.youtube.com/watch?v=rQxRoN6ub78) | [stephgdesign](https://www.youtube.com/user/stephgdesign) |
+| [Go/Golang 28 - Iris framework : Templating](https://www.youtube.com/watch?v=nOKYV073S2Y) | [stephgdesign](https://www.youtube.com/user/stephgdesign) |
+| [Go/Golang 29 - Iris framework : Paramètres](https://www.youtube.com/watch?v=K2FsprfXs1E) | [stephgdesign](https://www.youtube.com/user/stephgdesign) |
+| [Go/Golang 30 - Iris framework : Les middelwares](https://www.youtube.com/watch?v=BLPy1So6bhE) | [stephgdesign](https://www.youtube.com/user/stephgdesign) |
+| [Go/Golang 31 - Iris framework : Les sessions](https://www.youtube.com/watch?v=RnBwUrwgEZ8) | [stephgdesign](https://www.youtube.com/user/stephgdesign) |
+
+## Support
+
+- [HISTORY](HISTORY.md#tu-05-june-2018--v1066) file is your best friend, it contains information about the latest features and changes
+- Did you happen to find a bug? Post it at [github issues](https://github.com/kataras/iris/issues)
+- Do you have any questions or need to speak with someone experienced to solve a problem at real-time? Join us to the [community chat](https://chat.iris-go.com)
+- Complete our form-based user experience report by clicking [here](https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link)
+- Do you like the framework? Tweet something about it! The People have spoken:
+
+<a href="https://twitter.com/gelnior/status/769100480706379776"> 
+    <img src="https://comments.iris-go.com/comment27_mini.png" width="350px">
+</a>
+
+<a href="https://twitter.com/MeAlex07/status/822799954188075008"> 
+    <img src="https://comments.iris-go.com/comment28_mini.png" width="350px">
+</a>
+
+<a href="https://twitter.com/_mgale/status/818591490305761280"> 
+    <img src="https://comments.iris-go.com/comment29_mini.png" width="350px">
+</a>
+<a href="https://twitter.com/VeayoX/status/813273328550973440"> 
+    <img src="https://comments.iris-go.com/comment30_mini.png" width="350px">
+</a>
+
+<a href="https://twitter.com/pvsukale/status/745328224876408832"> 
+    <img src="https://comments.iris-go.com/comment31_mini.png" width="350px">
+</a>
+
+<a href="https://twitter.com/blainsmith/status/745338092211560453"> 
+    <img src="https://comments.iris-go.com/comment32_mini.png" width="350px">
+</a>
+
+<a href="https://twitter.com/tjbyte/status/758287014210867200"> 
+    <img src="https://comments.iris-go.com/comment33_mini.png" width="350px">
+</a>
+
+<a href="https://twitter.com/tangzero/status/751050577220698112"> 
+    <img src="https://comments.iris-go.com/comment34_mini.png" width="350px">
+</a>
+
+<a href="https://twitter.com/tjbyte/status/758287244947972096"> 
+    <img src="https://comments.iris-go.com/comment33_2_mini.png" width="350px">
+</a>
+
+<a href="https://twitter.com/ferarias/status/902468752364773376"> 
+    <img src="https://comments.iris-go.com/comment41.png" width="350px">
+</a>
+
+<br/><br/>
+
+For more information about contributing to the Iris project please check the [CONTRIBUTING.md](CONTRIBUTING.md) file.
+
+[List of all Contributors](https://github.com/kataras/iris/graphs/contributors)
 
 ### Get hired
 
 There are many companies and start-ups looking for Go web developers with Iris experience as requirement, we are searching for you every day and we post those information via our [facebook page](https://www.facebook.com/iris.framework), like the page to get notified, we have already posted some of them.
+
+### Backers
+
+Thank you to all our backers! 🙏 [Become a backer](https://iris-go.com/donate)
+
+<a href="https://iris-go.com/donate" target="_blank"><img src="https://iris-go.com/backers.svg?v=2"/></a>
 
 ## License
 
