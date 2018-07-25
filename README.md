@@ -140,9 +140,9 @@ func main() {
 }
 ```
 
-> If parameter type is missing then the defaults to `string`, therefore `{name:string}` and `{name}` do the same exactly
+> If parameter type is missing then defaults to `string`, therefore `{name:string}` and `{name}` do the same exactly thing.
 
-> Learn more about path parameter's types by navigating [here](_examples/routing/dynamic-path/main.go#L31)
+> Learn more about path parameter's types by navigating [here](_examples/routing/dynamic-path/main.go#L31).
 
 ### Cookies
 
