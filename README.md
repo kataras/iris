@@ -33,6 +33,25 @@ _Updated at: [Tuesday, 21 November 2017](_benchmarks/README_UNIX.md)_
 
 </details>
 
+<details>
+<summary>Known issues for code editors and IDEs at general</summary>
+
+### VS Code
+
+For some reason the latest [vscode-go language extension](https://github.com/Microsoft/vscode-go) does not provide enough intelligence for the `iris.Context` type alias (input parameters documentation and definition navigation).
+Probably you have already experienced this issue with other Go libraries too, it is not an iris-specific issue, it is a general issue for all Golang type aliases.
+
+Therefore if you use [VS Code](https://code.visualstudio.com/) and you need these editor's features, import the original path; add an extra import statement of the original path of the `Context`, that will do it:
+
+```go
+import (
+    "github.com/kataras/iris"
+    "github.com/kataras/iris/context" // <- HERE
+)
+```
+
+</details>
+
 ## Philosophy
 
 The Iris philosophy is to provide robust tooling for HTTP, making it a great solution for single page applications, web sites, hybrids, or public HTTP APIs. Keep note that, so far, iris is the fastest web framework ever created in terms of performance.

@@ -10,7 +10,12 @@ import (
 	"time"
 
 	"github.com/kataras/golog"
+
 	"github.com/kataras/iris"
+	// Note:
+	// For some reason the latest vscode-go language extension does not provide enough intelligence (parameters documentation and go to definition features)
+	// for the `iris.Context` alias, therefore if you use VS Code, import the original import path of the `Context`, that will do it:
+	"github.com/kataras/iris/context"
 )
 
 // A Broker holds open client connections,
@@ -73,7 +78,7 @@ func (b *Broker) listen() {
 	}
 }
 
-func (b *Broker) ServeHTTP(ctx iris.Context) {
+func (b *Broker) ServeHTTP(ctx context.Context) {
 	// Make sure that the writer supports flushing.
 	//
 	flusher, ok := ctx.ResponseWriter().(http.Flusher)
@@ -84,7 +89,7 @@ func (b *Broker) ServeHTTP(ctx iris.Context) {
 	}
 
 	// Set the headers related to event streaming, you can omit the "application/json" if you send plain text.
-	// If you developer a go client, you must have: "Accept" : "application/json, text/event-stream" header as well.
+	// If you develop a go client, you must have: "Accept" : "application/json, text/event-stream" header as well.
 	ctx.ContentType("application/json, text/event-stream")
 	ctx.Header("Cache-Control", "no-cache")
 	ctx.Header("Connection", "keep-alive")
