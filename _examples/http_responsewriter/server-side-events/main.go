@@ -6,11 +6,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/kataras/golog"
-
 	"github.com/kataras/iris"
 	// Note:
 	// For some reason the latest vscode-go language extension does not provide enough intelligence (parameters documentation and go to definition features)
@@ -80,10 +78,10 @@ func (b *Broker) listen() {
 
 func (b *Broker) ServeHTTP(ctx context.Context) {
 	// Make sure that the writer supports flushing.
-	//
-	flusher, ok := ctx.ResponseWriter().(http.Flusher)
+
+	flusher, ok := ctx.ResponseWriter().Flusher()
 	if !ok {
-		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.StatusCode(iris.StatusHTTPVersionNotSupported)
 		ctx.WriteString("Streaming unsupported!")
 		return
 	}
@@ -102,19 +100,27 @@ func (b *Broker) ServeHTTP(ctx context.Context) {
 	// Signal the broker that we have a new connection.
 	b.newClients <- messageChan
 
-	// Remove this client from the map of connected clients
-	// when this handler exits.
-	defer func() {
-		b.closingClients <- messageChan
-	}()
+	// Listen to connection close or when the entire request handler chain exits and un-register messageChan.
+	// using the `ctx.ResponseWriter().CloseNotifier()` and `defer` for this single handler of the route:
+	/*
+		notifier, ok := ctx.ResponseWriter().CloseNotifier()
+		if ok {
+			go func() {
+				<-notifier.CloseNotify()
+				b.closingClients <- messageChan
+			}()
+		}
 
-	// Listen to connection close and un-register messageChan.
-	notify := ctx.ResponseWriter().(http.CloseNotifier).CloseNotify()
-
-	go func() {
-		<-notify
+		defer func() {
+			b.closingClients <- messageChan
+		}()
+	*/
+	// or by using the `ctx.OnClose`, which will take care all of the above for you:
+	ctx.OnClose(func() {
+		// Remove this client from the map of connected clients
+		// when this handler exits.
 		b.closingClients <- messageChan
-	}()
+	})
 
 	// block waiting for messages broadcast on this connection's messageChan.
 	for {
@@ -164,5 +170,5 @@ func main() {
 	// TIP: If you make use of it inside a web frontend application
 	// then checkout the "optional.sse.js.html" to use the javascript's API for SSE,
 	// it will also remove the browser's "loading" indicator while receiving those event messages.
-	app.Run(iris.Addr(":8080"))
+	app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed))
 }

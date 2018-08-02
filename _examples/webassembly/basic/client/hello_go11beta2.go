@@ -1,4 +1,5 @@
 // +build go1.11beta2
+
 package main
 
 import (
