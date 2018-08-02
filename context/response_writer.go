@@ -83,6 +83,21 @@ type ResponseWriter interface {
 
 	// WiteTo writes a response writer (temp: status code, headers and body) to another response writer
 	WriteTo(ResponseWriter)
+
+	// Flusher indicates if `Flush` is supported by the client.
+	//
+	// The default HTTP/1.x and HTTP/2 ResponseWriter implementations
+	// support Flusher, but ResponseWriter wrappers may not. Handlers
+	// should always test for this ability at runtime.
+	//
+	// Note that even for ResponseWriters that support Flush,
+	// if the client is connected through an HTTP proxy,
+	// the buffered data may not reach the client until the response
+	// completes.
+	Flusher() (http.Flusher, bool)
+
+	// CloseNotifier indicates if the protocol supports the underline connection closure notification.
+	CloseNotifier() (http.CloseNotifier, bool)
 }
 
 //  +------------------------------------------------------------+
@@ -296,21 +311,25 @@ func (w *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	return nil, nil, errors.New("hijack is not supported by this ResponseWriter")
 }
 
+// Flusher indicates if `Flush` is supported by the client.
+//
+// The default HTTP/1.x and HTTP/2 ResponseWriter implementations
+// support Flusher, but ResponseWriter wrappers may not. Handlers
+// should always test for this ability at runtime.
+//
+// Note that even for ResponseWriters that support Flush,
+// if the client is connected through an HTTP proxy,
+// the buffered data may not reach the client until the response
+// completes.
+func (w *responseWriter) Flusher() (http.Flusher, bool) {
+	flusher, canFlush := w.ResponseWriter.(http.Flusher)
+	return flusher, canFlush
+}
+
 // Flush sends any buffered data to the client.
 func (w *responseWriter) Flush() {
-	// The Flusher interface is implemented by ResponseWriters that allow
-	// an HTTP handler to flush buffered data to the client.
-	//
-	// The default HTTP/1.x and HTTP/2 ResponseWriter implementations
-	// support Flusher, but ResponseWriter wrappers may not. Handlers
-	// should always test for this ability at runtime.
-	//
-	// Note that even for ResponseWriters that support Flush,
-	// if the client is connected through an HTTP proxy,
-	// the buffered data may not reach the client until the response
-	// completes.
-	if fl, isFlusher := w.ResponseWriter.(http.Flusher); isFlusher {
-		fl.Flush()
+	if flusher, ok := w.Flusher(); ok {
+		flusher.Flush()
 	}
 }
 
@@ -349,6 +368,12 @@ func (w *responseWriter) Push(target string, opts *http.PushOptions) error {
 	return ErrPushNotSupported
 }
 
+// CloseNotifier indicates if the protocol supports the underline connection closure notification.
+func (w *responseWriter) CloseNotifier() (http.CloseNotifier, bool) {
+	notifier, supportsCloseNotify := w.ResponseWriter.(http.CloseNotifier)
+	return notifier, supportsCloseNotify
+}
+
 // CloseNotify returns a channel that receives at most a
 // single value (true) when the client connection has gone
 // away.
@@ -368,9 +393,10 @@ func (w *responseWriter) Push(target string, opts *http.PushOptions) error {
 // is a problem, use HTTP/2 or only use CloseNotify on methods
 // such as POST.
 func (w *responseWriter) CloseNotify() <-chan bool {
-	if notifier, supportsCloseNotify := w.ResponseWriter.(http.CloseNotifier); supportsCloseNotify {
+	if notifier, ok := w.CloseNotifier(); ok {
 		return notifier.CloseNotify()
 	}
+
 	ch := make(chan bool, 1)
 	return ch
 }

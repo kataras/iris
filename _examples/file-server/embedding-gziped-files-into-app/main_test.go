@@ -55,7 +55,7 @@ func (r resource) loadFromBase(dir string) string {
 	result := string(b)
 
 	if runtime.GOOS != "windows" {
-		result = strings.Replace(result, "\n", "\r\n", -1)
+		// result = strings.Replace(result, "\n", "\r\n", -1)
 	}
 	return result
 }
@@ -98,8 +98,11 @@ func TestEmbeddingGzipFilesIntoApp(t *testing.T) {
 			}
 			buf := new(bytes.Buffer)
 			reader.WriteTo(buf)
-			if rawContents != buf.String() {
-				t.Fatalf("[%d] of '%s': expected body:\n%s but got:\n%s", i, url, rawContents, buf.String())
+			if expected, got := rawContents, buf.String(); expected != got {
+				// t.Fatalf("[%d] of '%s': expected body:\n%s but got:\n%s", i, url, expected, got)
+				// let's reduce the output here...
+				// they are big files, no need to check for length here.
+				t.Fatalf("[%d] %s, expected body to look like: '%s...%s' but got '%s...%s'", i, url, expected[:40], expected[len(rawContents)-40:], got[:40], got[len(got)-40:])
 			}
 		}()
 	}

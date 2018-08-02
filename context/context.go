@@ -340,6 +340,32 @@ type Context interface {
 	// IsStopped checks and returns true if the current position of the Context is 255,
 	// means that the StopExecution() was called.
 	IsStopped() bool
+	// OnConnectionClose registers the "cb" function which will fire (on its own goroutine, no need to be registered goroutine by the end-dev)
+	// when the underlying connection has gone away.
+	//
+	// This mechanism can be used to cancel long operations on the server
+	// if the client has disconnected before the response is ready.
+	//
+	// It depends on the `http#CloseNotify`.
+	// CloseNotify may wait to notify until Request.Body has been
+	// fully read.
+	//
+	// After the main Handler has returned, there is no guarantee
+	// that the channel receives a value.
+	//
+	// Finally, it reports whether the protocol supports pipelines (HTTP/1.1 with pipelines disabled is not supported).
+	// The "cb" will not fire for sure if the output value is false.
+	//
+	// Note that you can register only one callback for the entire request handler chain/per route.
+	//
+	// Look the `ResponseWriter#CloseNotifier` for more.
+	OnConnectionClose(fnGoroutine func()) bool
+	// OnClose registers the callback function "cb" to the underline connection closing event using the `Context#OnConnectionClose`
+	// and also in the end of the request handler using the `ResponseWriter#SetBeforeFlush`.
+	// Note that you can register only one callback for the entire request handler chain/per route.
+	//
+	// Look the `Context#OnConnectionClose` and `ResponseWriter#SetBeforeFlush` for more.
+	OnClose(cb func())
 
 	//  +------------------------------------------------------------+
 	//  | Current "user/request" storage                             |
@@ -1353,6 +1379,76 @@ func (ctx *context) StopExecution() {
 // means that the StopExecution() was called.
 func (ctx *context) IsStopped() bool {
 	return ctx.currentHandlerIndex == stopExecutionIndex
+}
+
+// OnConnectionClose registers the "cb" function which will fire (on its own goroutine, no need to be registered goroutine by the end-dev)
+// when the underlying connection has gone away.
+//
+// This mechanism can be used to cancel long operations on the server
+// if the client has disconnected before the response is ready.
+//
+// It depends on the `http#CloseNotify`.
+// CloseNotify may wait to notify until Request.Body has been
+// fully read.
+//
+// After the main Handler has returned, there is no guarantee
+// that the channel receives a value.
+//
+// Finally, it reports whether the protocol supports pipelines (HTTP/1.1 with pipelines disabled is not supported).
+// The "cb" will not fire for sure if the output value is false.
+//
+// Note that you can register only one callback for the entire request handler chain/per route.
+//
+// Look the `ResponseWriter#CloseNotifier` for more.
+func (ctx *context) OnConnectionClose(cb func()) bool {
+	// Note that `ctx.ResponseWriter().CloseNotify()` can already do the same
+	// but it returns a channel which will never fire if it the protocol version is not compatible,
+	// here we don't want to allocate an empty channel, just skip it.
+	notifier, ok := ctx.writer.CloseNotifier()
+	if !ok {
+		return false
+	}
+
+	notify := notifier.CloseNotify()
+	go func() {
+		<-notify
+		if cb != nil {
+			cb()
+		}
+	}()
+
+	return true
+}
+
+// OnClose registers the callback function "cb" to the underline connection closing event using the `Context#OnConnectionClose`
+// and also in the end of the request handler using the `ResponseWriter#SetBeforeFlush`.
+// Note that you can register only one callback for the entire request handler chain/per route.
+//
+// Look the `Context#OnConnectionClose` and `ResponseWriter#SetBeforeFlush` for more.
+func (ctx *context) OnClose(cb func()) {
+	if cb == nil {
+		return
+	}
+
+	// Register the on underline connection close handler first.
+	ctx.OnConnectionClose(cb)
+
+	// Author's notes:
+	// This is fired on `ctx.ResponseWriter().FlushResponse()` which is fired by the framework automatically, internally, on the end of request handler(s),
+	// it is not fired on the underline streaming function of the writer: `ctx.ResponseWriter().Flush()` (which can be fired more than one if streaming is supported by the client).
+	// The `FlushResponse` is called only once, so add the "cb" here, no need to add done request handlers each time `OnClose` is called by the end-dev.
+	//
+	// Don't allow more than one because we don't allow that on `OnConnectionClose` too:
+	// old := ctx.writer.GetBeforeFlush()
+	// if old != nil {
+	// 	ctx.writer.SetBeforeFlush(func() {
+	// 		old()
+	// 		cb()
+	// 	})
+	// 	return
+	// }
+
+	ctx.writer.SetBeforeFlush(cb)
 }
 
 //  +------------------------------------------------------------+

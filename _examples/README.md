@@ -6,6 +6,57 @@ This folder provides easy to understand code snippets on how to get started with
 
 It doesn't always contain the "best ways" but it does cover each important feature that will make you so excited to GO with iris!
 
+## Running the examples
+
+1. Install the Go Programming Language, version 1.9+ from [here](https://golang.org/dl).
+2. Install Iris: `go get -u github.com/kataras/iris`
+3. Install any external packages that required by the examples
+
+<details>
+<summary>External packages</summary>
+
+```bash
+cd _examples && go get ./...
+# or
+go get github.com/iris-contrib/middleware/...
+go get github.com/betacraft/yaag/irisyaag
+go get github.com/markbates/goth/...
+go get github.com/getsentry/raven-go/...
+go get github.com/casbin/casbin
+go get github.com/markbates/goth/...
+go get github.com/aws/aws-sdk-go/...
+go get github.com/getsentry/raven-go/...
+go get github.com/casbin/casbin
+go get github.com/aws/aws-sdk-go/...
+go get github.com/prometheus/client_golang/...
+go get github.com/didip/tollbooth
+go get github.com/valyala/quicktemplate
+go get github.com/shiyanhui/hero
+go get github.com/go-xorm/xorm
+go get github.com/nfnt/resize
+go get github.com/prometheus/client_golang/...
+go get github.com/didip/tollbooth
+go get github.com/valyala/quicktemplate
+go get github.com/shiyanhui/hero
+go get github.com/go-xorm/xorm
+go get github.com/nfnt/resize
+go get github.com/dgrijalva/jwt-go
+go get github.com/newrelic/go-agent
+go get github.com/valyala/tcplisten
+go get github.com/kataras/bindata/cmd/bindata
+```
+
+</details>
+
+And execute
+
+```sh
+$ cd $GOPATH/src/github.com/kataras/iris/_examples/overview
+$ go run main.go
+```
+
+> Test the examples by opening a terminal window and execute: `GOCACHE=off && cd _examples && go test -v ./...`
+
 ### Overview
 
 - [Hello world!](hello-world/main.go)
