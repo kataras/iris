@@ -7,7 +7,7 @@ import (
 	"github.com/r3labs/sse"
 )
 
-// First of all install the sse third-party package (you can use other if you don't like this approach)
+// First of all install the sse third-party package (you can use other if you don't like this approach or go ahead to the "sse" example)
 // $ go get -u github.com/r3labs/sse
 func main() {
 	app := iris.New()

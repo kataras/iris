@@ -1,5 +1,5 @@
-// Package main shows how to send continuous event messages to the clients through server side events via a broker.
-// Read more at:
+// Package main shows how to send continuous event messages to the clients through SSE via a broker.
+// Read details at: https://www.w3schools.com/htmL/html5_serversentevents.asp and
 // https://robots.thoughtbot.com/writing-a-server-sent-events-server-in-go
 package main
 
@@ -57,7 +57,6 @@ func (b *Broker) listen() {
 			// A new client has connected.
 			// Register their message channel.
 			b.clients[s] = true
-
 			golog.Infof("Client added. %d registered clients", len(b.clients))
 
 		case s := <-b.closingClients:
@@ -72,6 +71,7 @@ func (b *Broker) listen() {
 			for clientMessageChan := range b.clients {
 				clientMessageChan <- event
 			}
+
 		}
 	}
 }
@@ -100,33 +100,18 @@ func (b *Broker) ServeHTTP(ctx context.Context) {
 	// Signal the broker that we have a new connection.
 	b.newClients <- messageChan
 
-	// Listen to connection close or when the entire request handler chain exits and un-register messageChan.
-	// using the `ctx.ResponseWriter().CloseNotifier()` and `defer` for this single handler of the route:
-	/*
-		notifier, ok := ctx.ResponseWriter().CloseNotifier()
-		if ok {
-			go func() {
-				<-notifier.CloseNotify()
-				b.closingClients <- messageChan
-			}()
-		}
-
-		defer func() {
-			b.closingClients <- messageChan
-		}()
-	*/
-	// or by using the `ctx.OnClose`, which will take care all of the above for you:
+	// Listen to connection close and when the entire request handler chain exits(this handler here) and un-register messageChan.
 	ctx.OnClose(func() {
 		// Remove this client from the map of connected clients
 		// when this handler exits.
 		b.closingClients <- messageChan
 	})
 
-	// block waiting for messages broadcast on this connection's messageChan.
+	// Block waiting for messages broadcast on this connection's messageChan.
 	for {
 		// Write to the ResponseWriter.
 		// Server Sent Events compatible.
-		ctx.Writef("data:%s\n\n", <-messageChan)
+		ctx.Writef("data: %s\n\n", <-messageChan)
 		// or json: data:{obj}.
 
 		// Flush the data immediatly instead of buffering it for later.
@@ -139,6 +124,30 @@ type event struct {
 	Message   string `json:"message"`
 }
 
+const script = `<script type="text/javascript">
+if(typeof(EventSource) !== "undefined") {
+	console.log("server-sent events supported");
+	var client = new EventSource("http://localhost:8080/events");
+	var index = 1;
+	client.onmessage = function (evt) {
+		console.log(evt);
+		// it's not required that you send and receive JSON, you can just output the "evt.data" as well.
+		dataJSON = JSON.parse(evt.data)
+		var table = document.getElementById("messagesTable");
+		var row = table.insertRow(index);
+		var cellTimestamp = row.insertCell(0);
+		var cellMessage = row.insertCell(1);
+		cellTimestamp.innerHTML = dataJSON.timestamp;
+		cellMessage.innerHTML = dataJSON.message;
+		index++;
+
+		window.scrollTo(0,document.body.scrollHeight);
+	};
+} else {
+	document.getElementById("header").innerHTML = "<h2>SSE not supported by this client-protocol</h2>";
+}
+</script>`
+
 func main() {
 	broker := NewBroker()
 
@@ -149,26 +158,38 @@ func main() {
 			now := time.Now()
 			evt := event{
 				Timestamp: now.Unix(),
-				Message:   fmt.Sprintf("the time is %v", now.Format(time.RFC1123)),
+				Message:   fmt.Sprintf("Hello at %s", now.Format(time.RFC1123)),
 			}
+
 			evtBytes, err := json.Marshal(evt)
 			if err != nil {
-				golog.Errorf("receiving event failure: %v", err)
+				golog.Error(err)
 				continue
 			}
 
-			golog.Infof("Receiving event")
 			broker.Notifier <- evtBytes
 		}
 	}()
 
-	// Iris web server.
 	app := iris.New()
-	app.Get("/", broker.ServeHTTP)
+	app.Get("/", func(ctx iris.Context) {
+		ctx.HTML(
+			`<html><head><title>SSE</title>` + script + `</head>
+				<body>
+					<h1 id="header">Waiting for messages...</h1>
+					<table id="messagesTable" border="1">
+						<tr>
+							<th>Timestamp (server)</th>
+							<th>Message</th>
+						</tr>
+					</table>
+				</body>
+			 </html>`)
+	})
+
+	app.Get("/events", broker.ServeHTTP)
 
 	// http://localhost:8080
-	// TIP: If you make use of it inside a web frontend application
-	// then checkout the "optional.sse.js.html" to use the javascript's API for SSE,
-	// it will also remove the browser's "loading" indicator while receiving those event messages.
+	// http://localhost:8080/events
 	app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed))
 }
