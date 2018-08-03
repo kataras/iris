@@ -172,7 +172,7 @@ func main() {
 	}()
 
 	app := iris.New()
-	app.Get("/", func(ctx iris.Context) {
+	app.Get("/", func(ctx context.Context) {
 		ctx.HTML(
 			`<html><head><title>SSE</title>` + script + `</head>
 				<body>
