@@ -446,7 +446,7 @@ type Context interface {
 	// Keep note that this checks the "User-Agent" request header.
 	IsMobile() bool
 	//  +------------------------------------------------------------+
-	//  | Response Headers helpers                                   |
+	//  | Headers helpers                                            |
 	//  +------------------------------------------------------------+
 
 	// Header adds a header to the response writer.
@@ -457,16 +457,18 @@ type Context interface {
 	// GetContentType returns the response writer's header value of "Content-Type"
 	// which may, setted before with the 'ContentType'.
 	GetContentType() string
+	// GetContentType returns the request's header value of "Content-Type".
+	GetContentTypeRequested() string
 
 	// GetContentLength returns the request's header value of "Content-Length".
 	// Returns 0 if header was unable to be found or its value was not a valid number.
 	GetContentLength() int64
 
 	// StatusCode sets the status code header to the response.
-	// Look .GetStatusCode too.
+	// Look .`GetStatusCode` too.
 	StatusCode(statusCode int)
 	// GetStatusCode returns the current status code of the response.
-	// Look StatusCode too.
+	// Look `StatusCode` too.
 	GetStatusCode() int
 
 	// Redirect sends a redirect response to the client
@@ -501,6 +503,9 @@ type Context interface {
 	// URLParamIntDefault returns the url query parameter as int value from a request,
 	// if not found or parse failed then "def" is returned.
 	URLParamIntDefault(name string, def int) int
+	// URLParamInt32Default returns the url query parameter as int32 value from a request,
+	// if not found or parse failed then "def" is returned.
+	URLParamInt32Default(name string, def int32) int32
 	// URLParamInt64 returns the url query parameter as int64 value from a request,
 	// returns -1 and an error if parse failed.
 	URLParamInt64(name string) (int64, error)
@@ -648,6 +653,10 @@ type Context interface {
 	// Examples of usage: context.ReadJSON, context.ReadXML.
 	//
 	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-custom-via-unmarshaler/main.go
+	//
+	// UnmarshalBody does not check about gzipped data.
+	// Do not rely on compressed data incoming to your server. The main reason is: https://en.wikipedia.org/wiki/Zip_bomb
+	// However you are still free to read the `ctx.Request().Body io.Reader` manually.
 	UnmarshalBody(outPtr interface{}, unmarshaler Unmarshaler) error
 	// ReadJSON reads JSON from request's body and binds it to a pointer of a value of any json-valid type.
 	//
@@ -1720,6 +1729,11 @@ func (ctx *context) GetContentType() string {
 	return ctx.writer.Header().Get(ContentTypeHeaderKey)
 }
 
+// GetContentType returns the request's header value of "Content-Type".
+func (ctx *context) GetContentTypeRequested() string {
+	return ctx.GetHeader(ContentTypeHeaderKey)
+}
+
 // GetContentLength returns the request's header value of "Content-Length".
 // Returns 0 if header was unable to be found or its value was not a valid number.
 func (ctx *context) GetContentLength() int64 {
@@ -1817,6 +1831,21 @@ func (ctx *context) URLParamIntDefault(name string, def int) int {
 	}
 
 	return v
+}
+
+// URLParamInt32Default returns the url query parameter as int32 value from a request,
+// if not found or parse failed then "def" is returned.
+func (ctx *context) URLParamInt32Default(name string, def int32) int32 {
+	if v := ctx.URLParam(name); v != "" {
+		n, err := strconv.ParseInt(v, 10, 32)
+		if err != nil {
+			return def
+		}
+
+		return int32(n)
+	}
+
+	return def
 }
 
 // URLParamInt64 returns the url query parameter as int64 value from a request,
@@ -2224,6 +2253,10 @@ func (ctx *context) SetMaxRequestBodySize(limitOverBytes int64) {
 // Examples of usage: context.ReadJSON, context.ReadXML.
 //
 // Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-custom-via-unmarshaler/main.go
+//
+// UnmarshalBody does not check about gzipped data.
+// Do not rely on compressed data incoming to your server. The main reason is: https://en.wikipedia.org/wiki/Zip_bomb
+// However you are still free to read the `ctx.Request().Body io.Reader` manually.
 func (ctx *context) UnmarshalBody(outPtr interface{}, unmarshaler Unmarshaler) error {
 	if ctx.request.Body == nil {
 		return errors.New("unmarshal: empty body")

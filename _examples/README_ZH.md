@@ -21,6 +21,7 @@
 - [教程: DropzoneJS 上传](tutorial/dropzonejs)
 - [教程: Caddy 服务器使用](tutorial/caddy)
 - [教程: Iris + MongoDB](https://medium.com/go-language/iris-go-framework-mongodb-552e349eab9c)
+- [教程: API for Apache Kafka](tutorial/api-for-apache-kafka) **NEW**
 
 ### 目录结构
 

@@ -71,6 +71,7 @@ $ go run main.go
 - [Tutorial: DropzoneJS Uploader](tutorial/dropzonejs)
 - [Tutorial: Caddy](tutorial/caddy)
 - [Tutorial:Iris Go Framework + MongoDB](https://medium.com/go-language/iris-go-framework-mongodb-552e349eab9c)
+- [Tutorial: API for Apache Kafka](tutorial/api-for-apache-kafka) **NEW**
 
 ### Structuring
 
