@@ -271,6 +271,12 @@
   packages = ["."]
   revision = "eb3733d160e74a9c7e442f435eb3bea458e1d19f"
 
+[[projects]]
+  branch = "master"
+  name = "github.com/Shopify/goreferrer"
+  packages = ["."]
+  revision = "aad8439df3bf67adb025382ee2e5f46a72fc9456"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1

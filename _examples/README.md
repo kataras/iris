@@ -384,6 +384,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 - [Read Custom via Unmarshaler](http_request/read-custom-via-unmarshaler/main.go)
 - [Upload/Read File](http_request/upload-file/main.go)
 - [Upload multiple files with an easy way](http_request/upload-files/main.go)
+- [Extract referrer from "referer" header or URL query parameter](http_request/extract-referer/main.go) **NEW**
 
 > The `context.Request()` returns the same *http.Request you already know, these examples show some places where the  Context uses this object. Besides that you can use it as you did before iris.
 

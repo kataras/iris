@@ -21,15 +21,16 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/kataras/iris/core/errors"
+	"github.com/kataras/iris/core/memstore"
+
+	"github.com/Shopify/goreferrer"
 	"github.com/fatih/structs"
 	formbinder "github.com/iris-contrib/formBinder"
 	"github.com/json-iterator/go"
 	"github.com/microcosm-cc/bluemonday"
 	"gopkg.in/russross/blackfriday.v2"
 	"gopkg.in/yaml.v2"
-
-	"github.com/kataras/iris/core/errors"
-	"github.com/kataras/iris/core/memstore"
 )
 
 type (
@@ -445,6 +446,10 @@ type Context interface {
 	//
 	// Keep note that this checks the "User-Agent" request header.
 	IsMobile() bool
+	// GetReferrer extracts and returns the information from the "Referer" header as specified
+	// in https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy
+	// or by the URL query parameter "referer".
+	GetReferrer() Referrer
 	//  +------------------------------------------------------------+
 	//  | Headers helpers                                            |
 	//  +------------------------------------------------------------+
@@ -1685,6 +1690,84 @@ var isMobileRegex = regexp.MustCompile(`(?i)(android|avantgo|blackberry|bolt|boo
 func (ctx *context) IsMobile() bool {
 	s := ctx.GetHeader("User-Agent")
 	return isMobileRegex.MatchString(s)
+}
+
+type (
+	// Referrer contains the extracted information from the `GetReferrer`
+	//
+	// The structure contains struct tags for JSON, form, XML, YAML and TOML.
+	// Look the `GetReferrer() Referrer` and `goreferrer` external package.
+	Referrer struct {
+		Type       ReferrerType             `json:"type" form:"referrer_type" xml:"Type" yaml:"Type" toml:"Type"`
+		Label      string                   `json:"label" form:"referrer_form" xml:"Label" yaml:"Label" toml:"Label"`
+		URL        string                   `json:"url" form:"referrer_url" xml:"URL" yaml:"URL" toml:"URL"`
+		Subdomain  string                   `json:"subdomain" form:"referrer_subdomain" xml:"Subdomain" yaml:"Subdomain" toml:"Subdomain"`
+		Domain     string                   `json:"domain" form:"referrer_domain" xml:"Domain" yaml:"Domain" toml:"Domain"`
+		Tld        string                   `json:"tld" form:"referrer_tld" xml:"Tld" yaml:"Tld" toml:"Tld"`
+		Path       string                   `jsonn:"path" form:"referrer_path" xml:"Path" yaml:"Path" toml:"Path"`
+		Query      string                   `json:"query" form:"referrer_query" xml:"Query" yaml:"Query" toml:"GoogleType"`
+		GoogleType ReferrerGoogleSearchType `json:"googleType" form:"referrer_google_type" xml:"GoogleType" yaml:"GoogleType" toml:"GoogleType"`
+	}
+
+	// ReferrerType is the goreferrer enum for a referrer type (indirect, direct, email, search, social).
+	ReferrerType int
+
+	// ReferrerGoogleSearchType is the goreferrer enum for a google search type (organic, adwords).
+	ReferrerGoogleSearchType int
+)
+
+// Contains the available values of the goreferrer enums.
+const (
+	ReferrerInvalid ReferrerType = iota
+	ReferrerIndirect
+	ReferrerDirect
+	ReferrerEmail
+	ReferrerSearch
+	ReferrerSocial
+
+	ReferrerNotGoogleSearch ReferrerGoogleSearchType = iota
+	ReferrerGoogleOrganicSearch
+	ReferrerGoogleAdwords
+)
+
+func (gs ReferrerGoogleSearchType) String() string {
+	return goreferrer.GoogleSearchType(gs).String()
+}
+
+func (r ReferrerType) String() string {
+	return goreferrer.ReferrerType(r).String()
+}
+
+// unnecessary but good to know the default values upfront.
+var emptyReferrer = Referrer{Type: ReferrerInvalid, GoogleType: ReferrerNotGoogleSearch}
+
+// GetReferrer extracts and returns the information from the "Referer" header as specified
+// in https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy
+// or by the URL query parameter "referer".
+func (ctx *context) GetReferrer() Referrer {
+	// the underline net/http follows the https://tools.ietf.org/html/rfc7231#section-5.5.2,
+	// so there is nothing special left to do.
+	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy
+	refURL := ctx.GetHeader("Referer")
+	if refURL == "" {
+		refURL = ctx.URLParam("referer")
+	}
+
+	if ref := goreferrer.DefaultRules.Parse(refURL); ref.Type > goreferrer.Invalid {
+		return Referrer{
+			Type:       ReferrerType(ref.Type),
+			Label:      ref.Label,
+			URL:        ref.URL,
+			Subdomain:  ref.Subdomain,
+			Domain:     ref.Domain,
+			Tld:        ref.Tld,
+			Path:       ref.Path,
+			Query:      ref.Query,
+			GoogleType: ReferrerGoogleSearchType(ref.GoogleType),
+		}
+	}
+
+	return emptyReferrer
 }
 
 //  +------------------------------------------------------------+
