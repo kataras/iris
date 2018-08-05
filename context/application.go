@@ -42,6 +42,11 @@ type Application interface {
 	// Look core/router/APIBuilder#GetRoute for more.
 	GetRouteReadOnly(routeName string) RouteReadOnly
 
+	// GetRoutesReadOnly returns the registered "read-only" routes.
+	//
+	// Look core/router/APIBuilder#GetRoutes for more.
+	GetRoutesReadOnly() []RouteReadOnly
+
 	// FireErrorCode executes an error http status code handler
 	// based on the context's status code.
 	//

@@ -114,7 +114,7 @@ func (r Route) String() string {
 		r.Method, r.Subdomain, r.Tmpl().Src)
 }
 
-// Tmpl returns the path template, i
+// Tmpl returns the path template,
 // it contains the parsed template
 // for the route's path.
 // May contain zero named parameters.
@@ -248,4 +248,12 @@ func (rd routeReadOnlyWrapper) Path() string {
 
 func (rd routeReadOnlyWrapper) Trace() string {
 	return rd.Route.Trace()
+}
+
+func (rd routeReadOnlyWrapper) Tmpl() macro.Template {
+	return rd.Route.Tmpl()
+}
+
+func (rd routeReadOnlyWrapper) MainHandlerName() string {
+	return rd.Route.MainHandlerName
 }

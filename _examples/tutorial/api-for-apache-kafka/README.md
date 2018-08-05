@@ -9,6 +9,8 @@ Read [the fully functional example](src/main.go).
 
 ## Screens
 
+![](0_docs.png)
+
 ![](1_create_topic.png)
 
 ![](2_list_topics.png)

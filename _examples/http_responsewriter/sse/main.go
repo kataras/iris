@@ -114,7 +114,7 @@ func (b *Broker) ServeHTTP(ctx context.Context) {
 		ctx.Writef("data: %s\n\n", <-messageChan)
 		// or json: data:{obj}.
 
-		// Flush the data immediatly instead of buffering it for later.
+		// Flush the data immediately instead of buffering it for later.
 		flusher.Flush()
 	}
 }

@@ -1,5 +1,7 @@
 package context
 
+import "github.com/kataras/iris/core/router/macro"
+
 // RouteReadOnly allows decoupled access to the current route
 // inside the context.
 type RouteReadOnly interface {
@@ -29,4 +31,15 @@ type RouteReadOnly interface {
 
 	// ResolvePath returns the formatted path's %v replaced with the args.
 	ResolvePath(args ...string) string
+
+	// Tmpl returns the path template,
+	// it contains the parsed template
+	// for the route's path.
+	// May contain zero named parameters.
+	//
+	// Available after the build state, i.e a request handler or Iris Configurator.
+	Tmpl() macro.Template
+
+	// MainHandlerName returns the first registered handler for the route.
+	MainHandlerName() string
 }
