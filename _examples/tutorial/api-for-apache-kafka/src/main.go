@@ -65,10 +65,58 @@ func main() {
 		}
 	}
 
+	app.Get("/", docsHandler)
+
+	// GET      : http://localhost:8080
 	// POST, GET: http://localhost:8080/api/v1/topics
 	// POST     : http://localhost:8080/apiv1/topics/{topic}/produce?key=my-key
 	// GET      : http://localhost:8080/apiv1/topics/{topic}/consume?partition=0&offset=0 (these url query parameters are optional)
 	app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed))
+}
+
+// simple use-case, you can use templates and views obviously, see the "_examples/views" examples.
+func docsHandler(ctx iris.Context) {
+	ctx.ContentType("text/html") // or ctx.HTML(fmt.Sprintf(...))
+	ctx.Writef(`<!DOCTYPE html>
+	<html>
+		<head>
+			<style>
+				th, td {
+					border: 1px solid black;
+					padding: 15px;
+					text-align: left;
+				}
+			</style>
+		</head>`)
+	defer ctx.Writef("</html>")
+
+	ctx.Writef("<body>")
+	defer ctx.Writef("</body>")
+
+	ctx.Writef(`
+	<table>
+		<tr>
+			<th>Method</th>
+			<th>Path</th>
+			<th>Handler</th>
+		</tr>
+	`)
+	defer ctx.Writef(`</table>`)
+
+	registeredRoutes := ctx.Application().GetRoutesReadOnly()
+	for _, r := range registeredRoutes {
+		if r.Path() == "/" { // don't list the root, current one.
+			continue
+		}
+
+		ctx.Writef(`
+			<tr>
+				<td>%s</td>
+				<td>%s%s</td>
+				<td>%s</td>
+			</tr>
+		`, r.Method(), ctx.Host(), r.Path(), r.MainHandlerName())
+	}
 }
 
 type httpError struct {

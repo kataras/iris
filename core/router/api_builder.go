@@ -437,6 +437,7 @@ func (api *APIBuilder) GetRoute(routeName string) *Route {
 // One note: "routeName" should be case-sensitive. Used by the context to get the current route.
 // It returns an interface instead to reduce wrong usage and to keep the decoupled design between
 // the context and the routes.
+// Look `GetRoutesReadOnly` to fetch a list of all registered routes.
 //
 // Look `GetRoute` for more.
 func (api *APIBuilder) GetRouteReadOnly(routeName string) context.RouteReadOnly {
@@ -445,6 +446,24 @@ func (api *APIBuilder) GetRouteReadOnly(routeName string) context.RouteReadOnly 
 		return nil
 	}
 	return routeReadOnlyWrapper{r}
+}
+
+// GetRoutesReadOnly returns the registered routes with "read-only" access,
+// you cannot and you should not change any of these routes' properties on request state,
+// you can use the `GetRoutes()` for that instead.
+//
+// It returns interface-based slice instead of the real ones in order to apply
+// safe fetch between context(request-state) and the builded application.
+//
+// Look `GetRouteReadOnly` too.
+func (api *APIBuilder) GetRoutesReadOnly() []context.RouteReadOnly {
+	routes := api.GetRoutes()
+	readOnlyRoutes := make([]context.RouteReadOnly, len(routes))
+	for i, r := range routes {
+		readOnlyRoutes[i] = routeReadOnlyWrapper{r}
+	}
+
+	return readOnlyRoutes
 }
 
 // Use appends Handler(s) to the current Party's routes and child routes.
