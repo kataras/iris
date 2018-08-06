@@ -26,7 +26,11 @@ type (
 		// these are filled from the config.Users map at the startup
 		auth             encodedUsers
 		realmHeaderValue string
-		expireEnabled    bool // if the config.Expires is a valid date, default disabled
+
+		// The below can be removed but they are here because on the future we may add dynamic options for those two fields,
+		// it is a bit faster to check the b.$bool as well.
+		expireEnabled     bool // if the config.Expires is a valid date, default is disabled.
+		askHandlerEnabled bool // if the config.OnAsk is not nil, defaults to false.
 	}
 )
 
@@ -43,6 +47,7 @@ func New(c Config) context.Handler {
 	}
 	config.Users = c.Users
 	config.Expires = c.Expires
+	config.OnAsk = c.OnAsk
 
 	b := &basicAuthMiddleware{config: config}
 	b.init()
@@ -72,9 +77,8 @@ func (b *basicAuthMiddleware) init() {
 	// set the auth realm header's value
 	b.realmHeaderValue = "Basic realm=" + strconv.Quote(b.config.Realm)
 
-	if b.config.Expires > 0 {
-		b.expireEnabled = true
-	}
+	b.expireEnabled = b.config.Expires > 0
+	b.askHandlerEnabled = b.config.OnAsk != nil
 }
 
 func (b *basicAuthMiddleware) findAuth(headerValue string) (auth *encodedUser, found bool) {
@@ -96,6 +100,9 @@ func (b *basicAuthMiddleware) findAuth(headerValue string) (auth *encodedUser, f
 func (b *basicAuthMiddleware) askForCredentials(ctx context.Context) {
 	ctx.Header("WWW-Authenticate", b.realmHeaderValue)
 	ctx.StatusCode(iris.StatusUnauthorized)
+	if b.askHandlerEnabled {
+		b.config.OnAsk(ctx)
+	}
 }
 
 // Serve the actual middleware
