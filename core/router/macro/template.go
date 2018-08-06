@@ -13,21 +13,21 @@ import (
 // path,  i.e the min as param name and  1 as the param argument.
 type Template struct {
 	// Src is the original template given by the client
-	Src    string
-	Params []TemplateParam
+	Src    string          `json:"src"`
+	Params []TemplateParam `json:"params"`
 }
 
 // TemplateParam is the parsed macro parameter's template
 // they are being used to describe the param's syntax result.
 type TemplateParam struct {
-	Src string // the unparsed param'false source
+	Src string `json:"src"` // the unparsed param'false source
 	// Type is not useful anywhere here but maybe
 	// it's useful on host to decide how to convert the path template to specific router's syntax
-	Type          ast.ParamType
-	Name          string
-	ErrCode       int
-	TypeEvaluator EvaluatorFunc
-	Funcs         []EvaluatorFunc
+	Type          ast.ParamType   `json:"type"`
+	Name          string          `json:"name"`
+	ErrCode       int             `json:"errCode"`
+	TypeEvaluator EvaluatorFunc   `json:"-"`
+	Funcs         []EvaluatorFunc `json:"-"`
 }
 
 // Parse takes a full route path and a macro map (macro map contains the macro types with their registered param functions)

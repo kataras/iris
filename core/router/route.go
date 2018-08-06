@@ -12,24 +12,24 @@ import (
 // If any of the following fields are changed then the
 // caller should Refresh the router.
 type Route struct {
-	Name      string          // "userRoute"
-	Method    string          // "GET"
-	Subdomain string          // "admin."
+	Name      string          `json:"name"`      // "userRoute"
+	Method    string          `json:"method"`    // "GET"
+	Subdomain string          `json:"subdomain"` // "admin."
 	tmpl      *macro.Template // Tmpl().Src: "/api/user/{id:int}"
-	Path      string          // "/api/user/:id"
 	// temp storage, they're appended to the Handlers on build.
 	// Execution happens before Handlers, can be empty.
 	beginHandlers context.Handlers
 	// Handlers are the main route's handlers, executed by order.
 	// Cannot be empty.
-	Handlers        context.Handlers
-	MainHandlerName string
+	Handlers        context.Handlers `json:"-"`
+	MainHandlerName string           `json:"mainHandlerName"`
 	// temp storage, they're appended to the Handlers on build.
 	// Execution happens after Begin and main Handler(s), can be empty.
 	doneHandlers context.Handlers
+	Path         string `json:"path"` // "/api/user/:id"
 	// FormattedPath all dynamic named parameters (if any) replaced with %v,
 	// used by Application to validate param values of a Route based on its name.
-	FormattedPath string
+	FormattedPath string `json:"formattedPath"`
 }
 
 // NewRoute returns a new route based on its method,
