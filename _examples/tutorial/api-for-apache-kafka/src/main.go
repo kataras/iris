@@ -46,6 +46,12 @@ func init() {
 	config.Producer.Retry.Max = 10 // Retry up to 10 times to produce the message.
 	config.Producer.Return.Successes = true
 
+	// for SASL/basic plain text authentication: config.Net.SASL.
+	// config.Net.SASL.Enable = true
+	// config.Net.SASL.Handshake = false
+	// config.Net.SASL.User = "myuser"
+	// config.Net.SASL.Password = "mypass"
+
 	config.Consumer.Return.Errors = true
 }
 
