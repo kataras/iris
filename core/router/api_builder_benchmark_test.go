@@ -1,6 +1,7 @@
 package router
 
 import (
+	"bytes"
 	"math/rand"
 	"strings"
 	"testing"
@@ -44,7 +45,8 @@ func randStringBytesMaskImprSrc(n int) string {
 // END.
 
 func genPaths(routesLength, minCharLength, maxCharLength int) []string {
-	b := new(strings.Builder)
+	// b := new(strings.Builder)
+	b := new(bytes.Buffer)
 	paths := make([]string, routesLength)
 	pathStart := '/'
 	for i := 0; i < routesLength; i++ {
