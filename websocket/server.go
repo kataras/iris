@@ -196,8 +196,13 @@ func (s *Server) handleConnection(ctx context.Context, websocketConn UnderlineCo
 	cid := s.config.IDGenerator(ctx)
 	// create the new connection
 	c := newConnection(ctx, s, websocketConn, cid)
+	
+	// Thread-safe modification of the connections slice
+	// although the multi-threaded modifications to it will not behave like maps
 	// add the connection to the Server's list
+	s.mu.Lock()
 	s.connections.add(cid, c)
+	s.mu.Unlock()
 
 	// join to itself
 	s.Join(c.ID(), c.ID())
@@ -422,7 +427,10 @@ func (s *Server) Disconnect(connID string) (err error) {
 	s.LeaveAll(connID)
 
 	// remove the connection from the list
-	if c, ok := s.connections.remove(connID); ok {
+	s.mu.Lock()
+	c, ok := s.connections.remove(connID)
+	s.mu.Unlock()
+	if ok {
 		if !c.disconnected {
 			c.disconnected = true
 
