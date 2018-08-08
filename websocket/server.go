@@ -37,7 +37,7 @@ type (
 		config                Config
 		connections           sync.Map            // key = the Connection ID.
 		rooms                 map[string][]string // by default a connection is joined to a room which has the connection id as its name
-		mu                    sync.RWMutex        // for rooms and connections, they should be in-sync between them as well.
+		mu                    sync.RWMutex        // for rooms.
 		onConnectionListeners []ConnectionFunc
 		//connectionPool        sync.Pool // sadly we can't make this because the websocket connection is live until is closed.
 		upgrader websocket.Upgrader
@@ -373,26 +373,26 @@ func (s *Server) emitMessage(from, to string, data []byte) {
 			connID, ok := k.(string)
 			if !ok {
 				// should never happen.
-				return false
+				return true
 			}
 
 			if to != All && to != connID { // if it's not suppose to send to all connections (including itself)
 				if to == Broadcast && from == connID { // if broadcast to other connections except this
 					// here we do the opossite of previous block,
 					// just skip this connection when it's suppose to send the message to all connections except the sender.
-					return false
+					return true
 				}
 
 			}
 
 			// not necessary cast.
 			conn, ok := v.(*connection)
-			if !ok {
-				return false
+			if ok {
+				// send to the client(s) when the top validators passed
+				conn.writeDefault(data)
 			}
-			// send to the client(s) when the top validators passed
-			conn.writeDefault(data)
-			return true
+
+			return ok
 		})
 	}
 }
