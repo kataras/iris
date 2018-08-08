@@ -87,6 +87,30 @@ func main() {
 $ go run example.go
 ```
 
+## Dependency Injection
+
+The package [hero](hero) contains features for binding any object or functions that `handlers` can use, these are called dependencies.
+
+With Iris you get truly safe bindings thanks to the [hero](_examples/hero) [package](hero). It is blazing-fast, near to raw handlers performance because Iris calculates everything before even server goes online!
+
+Below you will see some screenshots I prepared for you in order to be easier to understand:
+
+### 1. Path Parameters - Built'n Dependencies
+
+![](https://github.com/kataras/explore/raw/master/iris/hero/hero-1-monokai.png)
+
+### 2. Services - Static Dependencies
+
+![](https://github.com/kataras/explore/raw/master/iris/hero/hero-2-monokai.png)
+
+### 3. Per-Request - Dynamic Dependencies
+
+![](https://github.com/kataras/explore/raw/master/iris/hero/hero-3-monokai.png)
+
+`hero funcs` are very easy to understand and when you start using them **you never go back**.
+
+> With Iris you also get real and [blazing-fast](_benchmarks) [MVC support](_examples/mvc) which uses "hero" under the hoods.
+
 ## API Examples
 
 ### Using Get, Post, Put, Patch, Delete and Options
@@ -451,9 +475,12 @@ func main() {
 
     // Navigate to http://localhost:8080/ping
     // and open the ./logs{TODAY}.txt file.
-    if err := app.Run(iris.Addr(":8080"), iris.WithoutBanner, iris.WithoutServerError(iris.ErrServerClosed)); err != nil {
-        app.Logger().Warn("Shutdown with error: " + err.Error())
-    }
+    app.Run(
+        iris.Addr(":8080"),
+        iris.WithoutBanner,
+        iris.WithoutVersionChecker,
+        iris.WithoutServerError(iris.ErrServerClosed),
+    )
 }
 ```
 
@@ -613,11 +640,12 @@ func setupWebsocket(app *iris.Application) {
     ws.OnConnection(handleConnection)
 
     // register the server on an endpoint.
-    // see the inline javascript code in the websockets.html, this endpoint is used to connect to the server.
+    // see the inline javascript code in the websockets.html,
+    // this endpoint is used to connect to the server.
     app.Get("/echo", ws.Handler())
     // serve the javascript built'n client-side library,
     // see websockets.html script tags, this path is used.
-    app.Any("/iris-ws.js",websocket.ClientHandler())
+    app.Any("/iris-ws.js", websocket.ClientHandler())
 }
 
 func handleConnection(c websocket.Connection) {
@@ -639,7 +667,8 @@ func handleConnection(c websocket.Connection) {
 <!-- the message's input -->
 <input id="input" type="text" />
 
-<!-- when clicked then an iris websocket event will be sent to the server, at this example we registered the 'chat' -->
+<!-- when clicked then an iris websocket event will be sent to the server,
+at this example we registered the 'chat' -->
 <button onclick="send()">Send</button>
 
 <!-- the messages will be shown here -->
@@ -673,7 +702,7 @@ func handleConnection(c websocket.Connection) {
 
     function send() {
         addMessage("Me: " + input.value); // write ourselves
-        socket.Emit("chat", input.value);// send chat event data to the websocket server
+        socket.Emit("chat", input.value); // send chat event data to the websocket server
         input.value = ""; // clear the input
     }
 
