@@ -482,7 +482,7 @@ type User struct {
     Age            uint8      `json:"age" validate:"gte=0,lte=130"`
     Email          string     `json:"email" validate:"required,email"`
     FavouriteColor string     `json:"favColor" validate:"hexcolor|rgb|rgba"`
-    Addresses      []*Address `json:"addresses" validate:"required,dive,required"` // a person can have a home and cottage...
+    Addresses      []*Address `json:"addresses" validate:"required,dive,required"`
 }
 
 // Address houses a users address information.
@@ -511,7 +511,8 @@ func main() {
             // Handle error.
         }
 
-        // Returns InvalidValidationError for bad validation input, nil or ValidationErrors ( []FieldError )
+        // Returns InvalidValidationError for bad validation input,
+        // nil or ValidationErrors ( []FieldError )
         err := validate.Struct(user)
         if err != nil {
 
@@ -529,8 +530,8 @@ func main() {
                 fmt.Println()
                 fmt.Println(err.Namespace())
                 fmt.Println(err.Field())
-                fmt.Println(err.StructNamespace()) // Can differ when a custom TagNameFunc is registered or.
-                fmt.Println(err.StructField())     // By passing alt name to ReportError like below.
+                fmt.Println(err.StructNamespace())
+                fmt.Println(err.StructField())
                 fmt.Println(err.Tag())
                 fmt.Println(err.ActualTag())
                 fmt.Println(err.Kind())
@@ -574,6 +575,115 @@ func UserStructLevelValidation(sl validator.StructLevel) {
     }]
 }
 ```
+
+### Websockets
+
+```go
+package main
+
+import (
+    "fmt"
+
+    "github.com/kataras/iris"
+    "github.com/kataras/iris/websocket"
+)
+
+func main() {
+    app := iris.New()
+
+    app.Get("/", func(ctx iris.Context) {
+        ctx.ServeFile("websockets.html", false) // second parameter: enable gzip?
+    })
+
+    setupWebsocket(app)
+
+    // x2
+    // http://localhost:8080
+    // http://localhost:8080
+    // write something, press submit, see the result.
+    app.Run(iris.Addr(":8080"))
+}
+
+func setupWebsocket(app *iris.Application) {
+    // create our echo websocket server
+    ws := websocket.New(websocket.Config{
+        ReadBufferSize:  1024,
+        WriteBufferSize: 1024,
+    })
+    ws.OnConnection(handleConnection)
+
+    // register the server on an endpoint.
+    // see the inline javascript code in the websockets.html, this endpoint is used to connect to the server.
+    app.Get("/echo", ws.Handler())
+    // serve the javascript built'n client-side library,
+    // see websockets.html script tags, this path is used.
+    app.Any("/iris-ws.js",websocket.ClientHandler())
+}
+
+func handleConnection(c websocket.Connection) {
+	// Read events from browser
+    c.On("chat", func(msg string) {
+        // Print the message to the console, c.Context() is the iris's http context.
+        fmt.Printf("%s sent: %s\n", c.Context().RemoteAddr(), msg)
+        // Write message back to the client message owner with:
+        // c.Emit("chat", msg)
+        // Write message to all except this client with:
+        c.To(websocket.Broadcast).Emit("chat", msg)
+    })
+}
+```
+
+**websockets.html**
+
+```html
+<!-- the message's input -->
+<input id="input" type="text" />
+
+<!-- when clicked then an iris websocket event will be sent to the server, at this example we registered the 'chat' -->
+<button onclick="send()">Send</button>
+
+<!-- the messages will be shown here -->
+<pre id="output"></pre>
+<!-- import the iris client-side library for browser-->
+<script src="/iris-ws.js"></script>
+
+<script>
+    var scheme = document.location.protocol == "https:" ? "wss" : "ws";
+    var port = document.location.port ? (":" + document.location.port) : "";
+    // see app.Get("/echo", ws.Handler()) on main.go
+    var wsURL = scheme + "://" + document.location.hostname + port+"/echo";
+
+    var input = document.getElementById("input");
+    var output = document.getElementById("output");
+
+    // Ws comes from the auto-served '/iris-ws.js'
+    var socket = new Ws(wsURL)
+    socket.OnConnect(function () {
+        output.innerHTML += "Status: Connected\n";
+    });
+
+    socket.OnDisconnect(function () {
+        output.innerHTML += "Status: Disconnected\n";
+    });
+
+    // read events from the server
+    socket.On("chat", function (msg) {
+        addMessage(msg);
+    });
+
+    function send() {
+        addMessage("Me: " + input.value); // write ourselves
+        socket.Emit("chat", input.value);// send chat event data to the websocket server
+        input.value = ""; // clear the input
+    }
+
+    function addMessage(msg) {
+        output.innerHTML += msg + "\n";
+    }
+</script>
+```
+
+Navigate to the [_examples/websocket](_examples/websocket) folder for more.
 
 ### Cookies
 
