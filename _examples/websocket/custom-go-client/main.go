@@ -18,6 +18,8 @@ import (
 // WS is the current websocket connection
 var WS *xwebsocket.Conn
 
+// $ go run main.go server
+// $ go run main.go client
 func main() {
 	if len(os.Args) == 2 && strings.ToLower(os.Args[1]) == "server" {
 		ServerLoop()
