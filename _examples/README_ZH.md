@@ -119,6 +119,8 @@ app.Get("{root:path}", rootWildcardHandler)
 
 - [基础](hero/basic/main.go)
 - [概览](hero/overview)
+- [Sessions](hero/sessions) **NEW**
+- [Yet another dependency injection example and good practises at general](hero/smart-contract/main.go) **NEW**
 
 ### MVC 模式
 
