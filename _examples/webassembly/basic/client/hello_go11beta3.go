@@ -1,4 +1,4 @@
-// +build go1.11beta2
+// +build go1.11beta3
 
 package main
 
