@@ -6,7 +6,7 @@ import (
 
 /*
 You need to build the hello.wasm first, download the go1.11 and execute the below command:
-$ cd client && GOARCH=wasm GOOS=js /home/$yourname/go1.11beta1/bin/go build -o hello.wasm hello_go11beta2.go
+$ cd client && GOARCH=wasm GOOS=js /home/$yourname/go1.11beta3/bin/go build -o hello.wasm hello_go11beta3.go
 */
 
 func main() {

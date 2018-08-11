@@ -17,6 +17,52 @@
 
 **Πώς να αναβαθμίσετε**: Ανοίξτε την γραμμή εντολών σας και εκτελέστε αυτήν την εντολή: `go get -u github.com/kataras/iris`  ή αφήστε το αυτόματο updater να το κάνει αυτό για σας.
 
+# Sat, 11 August 2018 | v10.7.0
+
+Είμαι στην πραγματικά ευχάριστη θέση να σας ανακοινώσω το πρώτο στάδιο της σταθερής κυκλοφορίας της έκδοσης **10.7** του Iris Web Framework.
+
+Η έκδοση 10.7.0 είναι μέρος των [επίσημων διανομών μας](https://github.com/kataras/iris/releases).
+
+Αυτή η έκδοση δεν περιέχει αλλαγές που μπορούν να αλλάξουν ριζικά τα υπάρχοντα προγράμματα που χτίστηκαν με βάση παλιότερες εκδόσεις του Iris. Οι προγραμματιστές μπορούν να αναβαθμίσουν με απόλυτη ασφάλεια.
+
+Διαβάστε παρακάτω τις αλλαγές και τις βελτιώσεις στον εσωτερικό άβυσσο του Iris. Επιπλέον έχουμε ακόμα περισσότερα παραδείγματα για αρχάριους στην κοινότητα μας.
+
+## Νέα παραδείγματα
+
+- [Iris + WebAssemply = 💓](_examples/webassembly/basic/main.go) **προυποθέτει την έκδοση go11.beta και αφεξ**
+- [Server-Sent Events](_examples/http_responsewriter/sse/main.go)
+- [Struct Validation on context.ReadJSON](_examples/http_request/read-json-struct-validation/main.go)
+- [Extract referrer from "referer" header or URL query parameter](_examples/http_request/extract-referer/main.go)
+- [Hero Sessions](_examples/hero/sessions)
+- [Yet another dependency injection example with hero](_examples/hero/smart-contract/main.go)
+- [Writing an API for the Apache Kafka](_examples/tutorial/api-for-apache-kafka)
+
+> Επίσης, όλα τα "sessions" παραδείγματα έχουν προσαρμοστεί ώστε να περιέχουν την επιλογή `AllowReclaim: true`
+
+## kataras/iris/websocket
+
+- Αλλαγή του "connection list" από απλή λίστα σε `sync.Map`, έγινε με: [αυτό](https://github.com/kataras/iris/commit/5f16704f45bedd767527eadf411cf9bc0f8edaee) και [αυτό το commit](https://github.com/kataras/iris/commit/16b30e8eed1406c61abc01282120870bd9fa31d8)
+- Προσθήκη του `iris-ws.js` αρχείου στο διάσημο CDN https://cdnjs.com με [αυτό το PR](https://github.com/kataras/iris/pull/1053) από τον [Dibyendu Das](https://github.com/dibyendu)
+
+## kataras/iris/core/router
+
+- Προσθήκη κάποιων `json` field tags και νέα functions όπως τα `ChangeMethod`, `SetStatusOffline` και `RestoreStatus` στη `Route` δομή, προσοχή, για να υσχίσουν αυτών των ειδών οι αλλαγές προυποθέτουν από εσας το κάλεσμα του `Router/Application.RefreshRouter()`. (δεν συνιστάται απόλυτα αλλά είναι χρήσιμο για ειδικά κατασκευασμένες ιστοσελίδες τρίτων που μπορεί να υπάρχουν εκει έξω για διαχείριση ενός Web Server που χτίστηκε με Iris)
+- Προσθήκη του `GetRoutesReadOnly` function στην `APIBuilder` δομή
+
+## kataras/iris/context
+
+- Προσθήκη των `GetReferrer`, `GetContentTypeRequested` και `URLParamInt32Default` functions
+- Εισαγωγή των `Trace`, `Tmpl` και `MainHandlerName` functions στη διεπαφή(interface) `RouteReadOnly`
+- Προσθήκη του `OnConnectionClose` function, χρησημοποείται για να καλεί κάποιο function όταν η "underline tcp connection" διακοπεί, εξαιρετικά χρήσιμο για SSE ή και άλλες παρόμοιες υλοποιήσεις μέσα σε έναν Iris Handler -- και του `OnClose` function το οποίο είναι σαν να καλείτε τα `OnConnectionClose(myFunc)` και `defer myFunc()` στον ίδιο Iris Handler [*](https://github.com/kataras/iris/commit/6898c2f755a0e22aa42e3b1799e29c857777a6f9)
+
+Αυτή η έκδοση περιέχει επίσης κάποιες δευτερεύουσες γραμματικής και τυπογραφικού λάθους διορθώσεις και πιό ευανάγνωστα σχόλια για το [godoc](https://godoc.org/github.com/kataras/iris).
+
+## Βιομηχανία
+
+Βρίσκομαι στην ευχάριστη αυτή θέση να σας ανακοινώσω ότι το Iris έχει επιλεγεί ως το κύριο αναπτυξιακό kit(main development kit) για οκτώ μεσαίου ως μεγάλου μεγέθους εταιρείες  και μια νέα πολύ ελπιδοφόρα startup με βάση την Ινδία.
+
+Θέλω να σας ευχαριστήσω όλους, **καθέ μία και έναν ξεχωριστά**, για την αδιάκοπη αυτή υποστήριξη και την εμπιστοσύνη που μου δείξατε όλα αυτά τα χρόνια, ειδικά φέτος, παρά τις φήμες και τις διάφορες δυσφήσεις που είχαμε υποστεί αδίκως από τον ανελέητο ανταγωνισμό.
+
 # Tu, 05 June 2018 | v10.6.6
 
 This history entry is not translated yet to the Greek language yet, please refer to the english version of the [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#tu-05-june-2018--v1066) instead.

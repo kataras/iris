@@ -12,10 +12,11 @@ import (
 // If any of the following fields are changed then the
 // caller should Refresh the router.
 type Route struct {
-	Name      string          `json:"name"`      // "userRoute"
-	Method    string          `json:"method"`    // "GET"
-	Subdomain string          `json:"subdomain"` // "admin."
-	tmpl      *macro.Template // Tmpl().Src: "/api/user/{id:int}"
+	Name       string          `json:"name"`   // "userRoute"
+	Method     string          `json:"method"` // "GET"
+	methodBckp string          // if Method changed to something else (which is possible at runtime as well, via RefreshRouter) then this field will be filled with the old one.
+	Subdomain  string          `json:"subdomain"` // "admin."
+	tmpl       *macro.Template // Tmpl().Src: "/api/user/{id:int}"
 	// temp storage, they're appended to the Handlers on build.
 	// Execution happens before Handlers, can be empty.
 	beginHandlers context.Handlers
@@ -57,6 +58,7 @@ func NewRoute(method, subdomain, unparsedPath, mainHandlerName string,
 	route := &Route{
 		Name:            defaultName,
 		Method:          method,
+		methodBckp:      method,
 		Subdomain:       subdomain,
 		tmpl:            tmpl,
 		Path:            path,
@@ -91,6 +93,33 @@ func (r *Route) done(handlers context.Handlers) {
 		return
 	}
 	r.doneHandlers = append(r.doneHandlers, handlers...)
+}
+
+// ChangeMethod will try to change the HTTP Method of this route instance.
+// A call of `RefreshRouter` is required after this type of change in order to change to be really applied.
+func (r *Route) ChangeMethod(newMethod string) bool {
+	if newMethod != r.Method {
+		r.methodBckp = r.Method
+		r.Method = newMethod
+		return true
+	}
+
+	return false
+}
+
+// SetStatusOffline will try make this route unavailable.
+// A call of `RefreshRouter` is required after this type of change in order to change to be really applied.
+func (r *Route) SetStatusOffline() bool {
+	return r.ChangeMethod(MethodNone)
+}
+
+// RestoreStatus will try to restore the status of this route instance, i.e if `SetStatusOffline` called on a "GET" route,
+// then this function will make this route available with "GET" HTTP Method.
+// Note if that you want to set status online for an offline registered route then you should call the `ChangeMethod` instead.
+// It will return true if the status restored, otherwise false.
+// A call of `RefreshRouter` is required after this type of change in order to change to be really applied.
+func (r *Route) RestoreStatus() bool {
+	return r.ChangeMethod(r.methodBckp)
 }
 
 // BuildHandlers is executed automatically by the router handler
