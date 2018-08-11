@@ -1,4 +1,4 @@
-// iris provides some basic middleware, most for your learning courve.
+// iris provides some basic middleware, most for your learning curve.
 // You can use any net/http compatible middleware with iris.FromStd wrapper.
 //
 // JWT net/http video tutorial for golang newcomers: https://www.youtube.com/watch?v=dgJFeqeXVKw
@@ -43,4 +43,4 @@ func main() {
 
 	app.Get("/ping", myHandler)
 	app.Run(iris.Addr("localhost:3001"))
-} // don't forget to look ../jwt_test.go to seee how to set your own custom claims
+} // don't forget to look ../jwt_test.go to see how to set your own custom claims
