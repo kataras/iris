@@ -90,21 +90,28 @@ func (s *Sessions) Start(ctx context.Context) *Session {
 
 // ShiftExpiration move the expire date of a session to a new date
 // by using session default timeout configuration.
-func (s *Sessions) ShiftExpiration(ctx context.Context) {
-	s.UpdateExpiration(ctx, s.config.Expires)
+// It will return `ErrNotImplemented` if a database is used and it does not support this feature, yet.
+func (s *Sessions) ShiftExpiration(ctx context.Context) error {
+	return s.UpdateExpiration(ctx, s.config.Expires)
 }
 
 // UpdateExpiration change expire date of a session to a new date
 // by using timeout value passed by `expires` receiver.
-func (s *Sessions) UpdateExpiration(ctx context.Context, expires time.Duration) {
+// It will return `ErrNotFound` when trying to update expiration on a non-existence or not valid session entry.
+// It will return `ErrNotImplemented` if a database is used and it does not support this feature, yet.
+func (s *Sessions) UpdateExpiration(ctx context.Context, expires time.Duration) error {
 	cookieValue := s.decodeCookieValue(GetCookie(ctx, s.config.Cookie))
-
-	if cookieValue != "" {
-		// we should also allow it to expire when the browser closed
-		if s.provider.UpdateExpiration(cookieValue, expires) || expires == -1 {
-			s.updateCookie(ctx, cookieValue, expires)
-		}
+	if cookieValue == "" {
+		return ErrNotFound
 	}
+
+	// we should also allow it to expire when the browser closed
+	err := s.provider.UpdateExpiration(cookieValue, expires)
+	if err == nil || expires == -1 {
+		s.updateCookie(ctx, cookieValue, expires)
+	}
+
+	return err
 }
 
 // DestroyListener is the form of a destroy listener.

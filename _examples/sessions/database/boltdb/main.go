@@ -89,8 +89,19 @@ func main() {
 	})
 
 	app.Get("/update", func(ctx iris.Context) {
-		// updates expire date with a new date
-		sess.ShiftExpiration(ctx)
+		// updates resets the expiration based on the session's `Expires` field.
+		if err := sess.ShiftExpiration(ctx); err != nil {
+			if sessions.ErrNotFound.Equal(err) {
+				ctx.StatusCode(iris.StatusNotFound)
+			} else if sessions.ErrNotImplemented.Equal(err) {
+				ctx.StatusCode(iris.StatusNotImplemented)
+			} else {
+				ctx.StatusCode(iris.StatusNotModified)
+			}
+
+			ctx.Writef("%v", err)
+			ctx.Application().Logger().Error(err)
+		}
 	})
 
 	app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed))

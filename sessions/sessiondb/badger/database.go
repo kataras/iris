@@ -102,6 +102,12 @@ func (db *Database) Acquire(sid string, expires time.Duration) sessions.LifeTime
 	return sessions.LifeTime{} // session manager will handle the rest.
 }
 
+// OnUpdateExpiration not implemented here, yet.
+// Note that this error will not be logged, callers should catch it manually.
+func (db *Database) OnUpdateExpiration(sid string, newExpires time.Duration) error {
+	return sessions.ErrNotImplemented
+}
+
 var delim = byte('_')
 
 func makePrefix(sid string) []byte {
