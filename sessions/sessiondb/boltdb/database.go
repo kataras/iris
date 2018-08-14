@@ -210,6 +210,12 @@ func (db *Database) Acquire(sid string, expires time.Duration) (lifetime session
 	return
 }
 
+// OnUpdateExpiration not implemented here, yet.
+// Note that this error will not be logged, callers should catch it manually.
+func (db *Database) OnUpdateExpiration(sid string, newExpires time.Duration) error {
+	return sessions.ErrNotImplemented
+}
+
 func makeKey(key string) []byte {
 	return []byte(key)
 }

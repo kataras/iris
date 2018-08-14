@@ -3,6 +3,8 @@ package sessions
 import (
 	"sync"
 	"time"
+
+	"github.com/kataras/iris/core/errors"
 )
 
 type (
@@ -76,23 +78,32 @@ func (p *provider) Init(sid string, expires time.Duration) *Session {
 	return newSession
 }
 
-// UpdateExpiration update expire date of a session.
-// if expires > 0 then it updates the destroy task.
-// if expires <=0 then it does nothing, to destroy a session call the `Destroy` func instead.
-func (p *provider) UpdateExpiration(sid string, expires time.Duration) bool {
+// ErrNotFound can be returned when calling `UpdateExpiration` on a non-existing or invalid session entry.
+// It can be matched directly, i.e: `isErrNotFound := sessions.ErrNotFound.Equal(err)`.
+var ErrNotFound = errors.New("not found")
+
+// UpdateExpiration resets the expiration of a session.
+// if expires > 0 then it will try to update the expiration and destroy task is delayed.
+// if expires <= 0 then it does nothing it returns nil, to destroy a session call the `Destroy` func instead.
+//
+// If the session is not found, it returns a `NotFound` error,  this can only happen when you restart the server and you used the memory-based storage(default),
+// because the call of the provider's `UpdateExpiration` is always called when the client has a valid session cookie.
+//
+// If a backend database is used then it may return an `ErrNotImplemented` error if the underline database does not support this operation.
+func (p *provider) UpdateExpiration(sid string, expires time.Duration) error {
 	if expires <= 0 {
-		return false
+		return nil
 	}
 
 	p.mu.Lock()
 	sess, found := p.sessions[sid]
 	p.mu.Unlock()
 	if !found {
-		return false
+		return ErrNotFound
 	}
 
 	sess.Lifetime.Shift(expires)
-	return true
+	return p.db.OnUpdateExpiration(sid, expires)
 }
 
 // Read returns the store which sid parameter belongs

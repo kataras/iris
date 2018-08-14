@@ -55,6 +55,12 @@ func (db *Database) Acquire(sid string, expires time.Duration) sessions.LifeTime
 	return sessions.LifeTime{Time: time.Now().Add(time.Duration(seconds) * time.Second)}
 }
 
+// OnUpdateExpiration will re-set the database's session's entry ttl.
+// https://redis.io/commands/expire#refreshing-expires
+func (db *Database) OnUpdateExpiration(sid string, newExpires time.Duration) error {
+	return db.redis.UpdateTTLMany(sid, int64(newExpires.Seconds()))
+}
+
 const delim = "_"
 
 func makeKey(sid, key string) string {

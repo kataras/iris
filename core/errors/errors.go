@@ -48,11 +48,17 @@ func NewFromErr(err error) *Error {
 	return &errp
 }
 
-// Equal returns true if "e" and "e2" are matched, by their IDs.
-// It will always returns true if the "e2" is a children of "e"
+// Equal returns true if "e" and "to" are matched, by their IDs if it's a core/errors type otherwise it tries to match their error messages.
+// It will always returns true if the "to" is a children of "e"
 // or the error messages are exactly the same, otherwise false.
-func (e Error) Equal(e2 Error) bool {
-	return e.ID == e2.ID || e.Error() == e2.Error()
+func (e Error) Equal(to error) bool {
+	if e2, ok := to.(Error); ok {
+		return e.ID == e2.ID
+	} else if e2, ok := to.(*Error); ok {
+		return e.ID == e2.ID
+	}
+
+	return e.Error() == to.Error()
 }
 
 // Empty returns true if the "e" Error has no message on its stack.

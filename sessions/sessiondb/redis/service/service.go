@@ -99,6 +99,65 @@ func (r *Service) TTL(key string) (seconds int64, hasExpiration bool, ok bool) {
 	return
 }
 
+func (r *Service) updateTTLConn(c redis.Conn, key string, newSecondsLifeTime int64) error {
+	reply, err := c.Do("EXPIRE", r.Config.Prefix+key, newSecondsLifeTime)
+	if err != nil {
+		return err
+	}
+
+	// https://redis.io/commands/expire#return-value
+	//
+	// 1 if the timeout was set.
+	// 0 if key does not exist.
+	if hadTTLOrExists, ok := reply.(int); ok {
+		if hadTTLOrExists == 1 {
+			return nil
+		} else if hadTTLOrExists == 0 {
+			return fmt.Errorf("unable to update expiration, the key '%s' was stored without ttl", key)
+		} // do not check for -1.
+	}
+
+	return nil
+}
+
+// UpdateTTL will update the ttl of a key.
+// Using the "EXPIRE" command.
+// Read more at: https://redis.io/commands/expire#refreshing-expires
+func (r *Service) UpdateTTL(key string, newSecondsLifeTime int64) error {
+	c := r.pool.Get()
+	defer c.Close()
+	err := c.Err()
+	if err != nil {
+		return err
+	}
+
+	return r.updateTTLConn(c, key, newSecondsLifeTime)
+}
+
+// UpdateTTLMany like `UpdateTTL` but for all keys starting with that "prefix",
+// it is a bit faster operation if you need to update all sessions keys (although it can be even faster if we used hash but this will limit other features),
+// look the `sessions/Database#OnUpdateExpiration` for example.
+func (r *Service) UpdateTTLMany(prefix string, newSecondsLifeTime int64) error {
+	c := r.pool.Get()
+	defer c.Close()
+	if err := c.Err(); err != nil {
+		return err
+	}
+
+	keys, err := r.getKeysConn(c, prefix)
+	if err != nil {
+		return err
+	}
+
+	for _, key := range keys {
+		if err = r.updateTTLConn(c, key, newSecondsLifeTime); err != nil { // fail on first error.
+			return err
+		}
+	}
+
+	return err
+}
+
 // GetAll returns all redis entries using the "SCAN" command (2.8+).
 func (r *Service) GetAll() (interface{}, error) {
 	c := r.pool.Get()
@@ -120,15 +179,7 @@ func (r *Service) GetAll() (interface{}, error) {
 	return redisVal, nil
 }
 
-// GetKeys returns all redis keys using the "SCAN" with MATCH command.
-// Read more at:  https://redis.io/commands/scan#the-match-option.
-func (r *Service) GetKeys(prefix string) ([]string, error) {
-	c := r.pool.Get()
-	defer c.Close()
-	if err := c.Err(); err != nil {
-		return nil, err
-	}
-
+func (r *Service) getKeysConn(c redis.Conn, prefix string) ([]string, error) {
 	if err := c.Send("SCAN", 0, "MATCH", r.Config.Prefix+prefix+"*", "COUNT", 9999999999); err != nil {
 		return nil, err
 	}
@@ -155,11 +206,22 @@ func (r *Service) GetKeys(prefix string) ([]string, error) {
 
 				return keys, nil
 			}
-
 		}
 	}
 
 	return nil, nil
+}
+
+// GetKeys returns all redis keys using the "SCAN" with MATCH command.
+// Read more at:  https://redis.io/commands/scan#the-match-option.
+func (r *Service) GetKeys(prefix string) ([]string, error) {
+	c := r.pool.Get()
+	defer c.Close()
+	if err := c.Err(); err != nil {
+		return nil, err
+	}
+
+	return r.getKeysConn(c, prefix)
 }
 
 // GetBytes returns value, err by its key
