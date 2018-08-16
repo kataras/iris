@@ -3,7 +3,6 @@ package service
 import (
 	"fmt"
 	"time"
-
 	"github.com/gomodule/redigo/redis"
 	"github.com/kataras/iris/core/errors"
 )
@@ -84,7 +83,7 @@ func (r *Service) Get(key string) (interface{}, error) {
 
 // TTL returns the seconds to expire, if the key has expiration and error if action failed.
 // Read more at: https://redis.io/commands/ttl
-func (r *Service) TTL(key string) (seconds int64, hasExpiration bool, ok bool) {
+func (r *Service) TTL(key string) (seconds int64, hasExpiration bool, found bool) {
 	c := r.pool.Get()
 	defer c.Close()
 	redisVal, err := c.Do("TTL", r.Config.Prefix+key)
@@ -93,14 +92,15 @@ func (r *Service) TTL(key string) (seconds int64, hasExpiration bool, ok bool) {
 	}
 	seconds = redisVal.(int64)
 	// if -1 means the key has unlimited life time.
-	hasExpiration = seconds == -1
+	hasExpiration = seconds > -1
 	// if -2 means key does not exist.
-	ok = (c.Err() != nil || seconds == -2)
+	found = ! (c.Err() != nil || seconds == -2)
 	return
 }
 
 func (r *Service) updateTTLConn(c redis.Conn, key string, newSecondsLifeTime int64) error {
 	reply, err := c.Do("EXPIRE", r.Config.Prefix+key, newSecondsLifeTime)
+
 	if err != nil {
 		return err
 	}
