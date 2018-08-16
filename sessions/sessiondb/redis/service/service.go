@@ -201,7 +201,7 @@ func (r *Service) getKeysConn(c redis.Conn, prefix string) ([]string, error) {
 			if keysSliceAsBytes, ok := keysInterface[1].([]interface{}); ok {
 				keys := make([]string, len(keysSliceAsBytes), len(keysSliceAsBytes))
 				for i, k := range keysSliceAsBytes {
-					keys[i] = fmt.Sprintf("%s", k)
+					keys[i] = fmt.Sprintf("%s", k)[len(r.Config.Prefix):]
 				}
 
 				return keys, nil
