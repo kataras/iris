@@ -43,6 +43,7 @@ func (lt *LifeTime) Revive(onExpire func()) {
 // Shift resets the lifetime based on "d".
 func (lt *LifeTime) Shift(d time.Duration) {
 	if d > 0 && lt.timer != nil {
+		lt.Time = time.Now().Add(d)
 		lt.timer.Reset(d)
 	}
 }
