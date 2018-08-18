@@ -32,8 +32,7 @@ type Database interface {
 	//
 	// Check of error is required, if error returned then the rest session's keys are not proceed.
 	//
-	// Currently only "redis" database is designed to use that event.
-	// If A database is not support this feature then a `ErrNotImplemented` will be returned instead.
+	// If a database does not support this feature then an `ErrNotImplemented` will be returned instead.
 	OnUpdateExpiration(sid string, newExpires time.Duration) error
 	// Set sets a key value of a specific session.
 	// The "immutable" input argument depends on the store, it may not implement it at all.
