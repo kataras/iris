@@ -197,6 +197,33 @@ func (e Entry) Float32Default(key string, def float32) (float32, error) {
 	return def, errFindParse.Format("float32", e.Key)
 }
 
+// Uint64Default returns the entry's value as uint64.
+// If not found returns "def" and a non-nil error.
+func (e Entry) Uint64Default(def uint64) (uint64, error) {
+	v := e.ValueRaw
+	if v == nil {
+		return def, errFindParse.Format("uint64", e.Key)
+	}
+
+	if vuint64, ok := v.(uint64); ok {
+		return vuint64, nil
+	}
+
+	if vint64, ok := v.(int64); ok {
+		return uint64(vint64), nil
+	}
+
+	if vint, ok := v.(int); ok {
+		return uint64(vint), nil
+	}
+
+	if vstring, sok := v.(string); sok {
+		return strconv.ParseUint(vstring, 10, 64)
+	}
+
+	return def, errFindParse.Format("uint64", e.Key)
+}
+
 // BoolDefault returns the user's value as bool.
 // a string which is "1" or "t" or "T" or "TRUE" or "true" or "True"
 // or "0" or "f" or "F" or "FALSE" or "false" or "False".
@@ -416,6 +443,26 @@ func (r *Store) GetInt(key string) (int, error) {
 // If not found returns "def".
 func (r *Store) GetIntDefault(key string, def int) int {
 	if v, err := r.GetInt(key); err == nil {
+		return v
+	}
+
+	return def
+}
+
+// GetUint64 returns the entry's value as uint64, based on its key.
+// If not found returns 0 and a non-nil error.
+func (r *Store) GetUint64(key string) (uint64, error) {
+	v := r.GetEntry(key)
+	if v == nil {
+		return 0, errFindParse.Format("uint64", key)
+	}
+	return v.Uint64Default(0)
+}
+
+// GetUint64Default returns the entry's value as uint64, based on its key.
+// If not found returns "def".
+func (r *Store) GetUint64Default(key string, def uint64) uint64 {
+	if v, err := r.GetUint64(key); err == nil {
 		return v
 	}
 
