@@ -142,18 +142,31 @@ func (r RequestParams) GetDecoded(key string) string {
 }
 
 // GetInt returns the path parameter's value as int, based on its key.
+// It checks for all available types of int, including int64, strings etc.
+// It will return -1 and a non-nil error if parameter wasn't found.
 func (r RequestParams) GetInt(key string) (int, error) {
 	return r.store.GetInt(key)
 }
 
 // GetInt64 returns the path paramete's value as int64, based on its key.
+// It checks for all available types of int, including int, strings etc.
+// It will return -1 and a non-nil error if parameter wasn't found.
 func (r RequestParams) GetInt64(key string) (int64, error) {
 	return r.store.GetInt64(key)
 }
 
 // GetFloat64 returns a path parameter's value based as float64 on its route's dynamic path key.
+// It checks for all available types of int, including float64, int, strings etc.
+// It will return -1 and a non-nil error if parameter wasn't found.
 func (r RequestParams) GetFloat64(key string) (float64, error) {
 	return r.store.GetFloat64(key)
+}
+
+// GetUint64 returns the path paramete's value as uint64, based on its key.
+// It checks for all available types of int, including int, uint64, int64, strings etc.
+// It will return 0 and a non-nil error if parameter wasn't found.
+func (r RequestParams) GetUint64(key string) (uint64, error) {
+	return r.store.GetUint64(key)
 }
 
 // GetBool returns the path parameter's value as bool, based on its key.
