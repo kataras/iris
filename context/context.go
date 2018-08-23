@@ -162,7 +162,14 @@ func (r RequestParams) GetFloat64(key string) (float64, error) {
 	return r.store.GetFloat64(key)
 }
 
-// GetUint64 returns the path paramete's value as uint64, based on its key.
+// GetUint8 returns the path parameter's value as uint8, based on its key.
+// It checks for all available types of int, including int, string.
+// It will return 0 and a non-nil error if parameter wasn't found.
+func (r RequestParams) GetUint8(key string) (uint8, error) {
+	return r.store.GetUint8(key)
+}
+
+// GetUint64 returns the path parameter's value as uint64, based on its key.
 // It checks for all available types of int, including int, uint64, int64, strings etc.
 // It will return 0 and a non-nil error if parameter wasn't found.
 func (r RequestParams) GetUint64(key string) (uint64, error) {

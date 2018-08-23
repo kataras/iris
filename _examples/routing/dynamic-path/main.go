@@ -48,6 +48,13 @@ func main() {
 	// -9223372036854775808 to 9223372036854775807
 	//
 	// +------------------------+
+	// | {param:uint8}          |
+	// +------------------------+
+	// uint8 type
+	// 0 to 255
+	//
+	//
+	// +------------------------+
 	// | {param:uint64}         |
 	// +------------------------+
 	// uint64 type
@@ -145,6 +152,12 @@ func main() {
 		friendid, _ := ctx.Params().GetInt("friendid")
 		ctx.Writef("Hello id: %d looking for friend id: ", id, friendid)
 	}) // this will throw e 504 error code instead of 404 if all route's macros not passed.
+
+	// :uint8 0 to 255.
+	app.Get("/ages/{age:uint8 else 400}", func(ctx iris.Context) {
+		age, _ := ctx.Params().GetUint8("age")
+		ctx.Writef("age selected: %d", age)
+	})
 
 	// Another example using a custom regexp and any custom logic.
 	latLonExpr := "^-?[0-9]{1,3}(?:\\.[0-9]{1,10})?$"

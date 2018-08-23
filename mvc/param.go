@@ -47,6 +47,11 @@ func makeFuncParamGetter(paramType ast.ParamType, paramName string) reflect.Valu
 			v, _ := ctx.Params().GetInt64(paramName)
 			return v
 		}
+	case ast.ParamTypeUint8:
+		fn = func(ctx context.Context) uint8 {
+			v, _ := ctx.Params().GetUint8(paramName)
+			return v
+		}
 	case ast.ParamTypeUint64:
 		fn = func(ctx context.Context) uint64 {
 			v, _ := ctx.Params().GetUint64(paramName)

@@ -197,6 +197,39 @@ func (e Entry) Float32Default(key string, def float32) (float32, error) {
 	return def, errFindParse.Format("float32", e.Key)
 }
 
+// Uint8Default returns the entry's value as uint8.
+// If not found returns "def" and a non-nil error.
+func (e Entry) Uint8Default(def uint8) (uint8, error) {
+	v := e.ValueRaw
+	if v == nil {
+		return def, errFindParse.Format("uint8", e.Key)
+	}
+
+	if vuint8, ok := v.(uint8); ok {
+		return vuint8, nil
+	}
+
+	if vint, ok := v.(int); ok {
+		if vint < 0 || vint > 255 {
+			return def, errFindParse.Format("uint8", e.Key)
+		}
+		return uint8(vint), nil
+	}
+
+	if vstring, sok := v.(string); sok {
+		vuint64, err := strconv.ParseUint(vstring, 10, 8)
+		if err != nil {
+			return def, err
+		}
+		if vuint64 > 255 {
+			return def, errFindParse.Format("uint8", e.Key)
+		}
+		return uint8(vuint64), nil
+	}
+
+	return def, errFindParse.Format("uint8", e.Key)
+}
+
 // Uint64Default returns the entry's value as uint64.
 // If not found returns "def" and a non-nil error.
 func (e Entry) Uint64Default(def uint64) (uint64, error) {
@@ -443,6 +476,26 @@ func (r *Store) GetInt(key string) (int, error) {
 // If not found returns "def".
 func (r *Store) GetIntDefault(key string, def int) int {
 	if v, err := r.GetInt(key); err == nil {
+		return v
+	}
+
+	return def
+}
+
+// GetUint8 returns the entry's value as uint8, based on its key.
+// If not found returns 0 and a non-nil error.
+func (r *Store) GetUint8(key string) (uint8, error) {
+	v := r.GetEntry(key)
+	if v == nil {
+		return 0, errFindParse.Format("uint8", key)
+	}
+	return v.Uint8Default(0)
+}
+
+// GetUint8Default returns the entry's value as uint8, based on its key.
+// If not found returns "def".
+func (r *Store) GetUint8Default(key string, def uint8) uint8 {
+	if v, err := r.GetUint8(key); err == nil {
 		return v
 	}
 

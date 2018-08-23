@@ -26,6 +26,10 @@ const (
 	// Allows only -9223372036854775808 to 9223372036854775807.
 	// Declaration: /mypath/{myparam:int64} or {myparam:long}
 	ParamTypeInt64
+	// ParamTypeUint8 a number type.
+	// Allows only 0 to 255.
+	// Declaration: /mypath/{myparam:uint8}
+	ParamTypeUint8
 	// ParamTypeUint64 a number type.
 	// Allows only 0 to 18446744073709551615.
 	// Declaration: /mypath/{myparam:uint64}
@@ -88,6 +92,8 @@ func (pt ParamType) Kind() reflect.Kind {
 		return reflect.Int
 	case ParamTypeInt64:
 		return reflect.Int64
+	case ParamTypeUint8:
+		return reflect.Uint8
 	case ParamTypeUint64:
 		return reflect.Uint64
 	case ParamTypeBoolean:
@@ -105,6 +111,8 @@ func ValidKind(k reflect.Kind) bool {
 	case reflect.Int:
 		fallthrough
 	case reflect.Int64:
+		fallthrough
+	case reflect.Uint8:
 		fallthrough
 	case reflect.Uint64:
 		fallthrough
@@ -128,6 +136,7 @@ var paramTypes = map[string]ParamType{
 	"int":    ParamTypeNumber, // same as number.
 	"long":   ParamTypeInt64,
 	"int64":  ParamTypeInt64, // same as long.
+	"uint8":  ParamTypeUint8,
 	"uint64": ParamTypeUint64,
 
 	"boolean": ParamTypeBoolean,
@@ -149,6 +158,7 @@ var paramTypes = map[string]ParamType{
 // "string"
 // "number" or "int"
 // "long" or "int64"
+// "uint8"
 // "uint64"
 // "boolean" or "bool"
 // "alphabetical"
@@ -179,6 +189,8 @@ func LookupParamTypeFromStd(goType string) ParamType {
 		return ParamTypeNumber
 	case "int64":
 		return ParamTypeInt64
+	case "uint8":
+		return ParamTypeUint8
 	case "uint64":
 		return ParamTypeUint64
 	case "bool":
