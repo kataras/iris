@@ -37,6 +37,7 @@ func registerBuiltinsMacroFuncs(out *macro.Map) {
 	registerStringMacroFuncs(out.String)
 	registerNumberMacroFuncs(out.Number)
 	registerInt64MacroFuncs(out.Int64)
+	registerUint8MacroFuncs(out.Uint8)
 	registerUint64MacroFuncs(out.Uint64)
 	registerAlphabeticalMacroFuncs(out.Alphabetical)
 	registerFileMacroFuncs(out.File)
@@ -169,6 +170,51 @@ func registerInt64MacroFuncs(out *macro.Macro) {
 			}
 
 			if n < min || n > max {
+				return false
+			}
+			return true
+		}
+	})
+}
+
+// Uint8
+// 0 to 255.
+func registerUint8MacroFuncs(out *macro.Macro) {
+	// checks if the param value's uint8 representation is
+	// bigger or equal than 'min'
+	out.RegisterFunc("min", func(min uint8) macro.EvaluatorFunc {
+		return func(paramValue string) bool {
+			n, err := strconv.ParseUint(paramValue, 10, 8)
+			if err != nil {
+				return false
+			}
+
+			return uint8(n) >= min
+		}
+	})
+
+	// checks if the param value's uint8 representation is
+	// smaller or equal than 'max'
+	out.RegisterFunc("max", func(max uint8) macro.EvaluatorFunc {
+		return func(paramValue string) bool {
+			n, err := strconv.ParseUint(paramValue, 10, 8)
+			if err != nil {
+				return false
+			}
+			return uint8(n) <= max
+		}
+	})
+
+	// checks if the param value's uint8 representation is
+	// between min and max, including 'min' and 'max'
+	out.RegisterFunc("range", func(min, max uint8) macro.EvaluatorFunc {
+		return func(paramValue string) bool {
+			n, err := strconv.ParseUint(paramValue, 10, 8)
+			if err != nil {
+				return false
+			}
+
+			if v := uint8(n); v < min || v > max {
 				return false
 			}
 			return true

@@ -271,6 +271,9 @@ type Map struct {
 	// int64 as int64 type
 	// -9223372036854775808 to 9223372036854775807.
 	Int64 *Macro
+	// uint8 as uint8 type
+	// 0 to 255.
+	Uint8 *Macro
 	// uint64 as uint64 type
 	// 0 to 18446744073709551615.
 	Uint64 *Macro
@@ -313,6 +316,7 @@ func NewMap() *Map {
 			// if err == strconv.ErrRange...
 			return err == nil
 		}), //("^-[1-9]|-?[1-9][0-9]{1,14}|-?1000000000000000|-?10000000000000000|-?100000000000000000|-?[1-9]000000000000000000|-?9[0-2]00000000000000000|-?92[0-2]0000000000000000|-?922[0-3]000000000000000|-?9223[0-3]00000000000000|-?92233[0-7]0000000000000|-?922337[0-2]000000000000|-?92233720[0-3]0000000000|-?922337203[0-6]000000000|-?9223372036[0-8]00000000|-?92233720368[0-5]0000000|-?922337203685[0-4]000000|-?9223372036854[0-7]00000|-?92233720368547[0-7]0000|-?922337203685477[0-5]000|-?922337203685477[56]000|[0-9]$")),
+		Uint8: newMacro(MustNewEvaluatorFromRegexp("^([0-9]|[1-8][0-9]|9[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$")),
 		Uint64: newMacro(func(paramValue string) bool {
 			if !simpleNumberEvalutator(paramValue) {
 				return false
@@ -346,6 +350,8 @@ func (m *Map) Lookup(typ ast.ParamType) *Macro {
 		return m.Number
 	case ast.ParamTypeInt64:
 		return m.Int64
+	case ast.ParamTypeUint8:
+		return m.Uint8
 	case ast.ParamTypeUint64:
 		return m.Uint64
 	case ast.ParamTypeBoolean:

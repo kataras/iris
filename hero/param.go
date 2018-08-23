@@ -46,6 +46,13 @@ func resolveParam(currentParamIndex int, typ reflect.Type) (reflect.Value, bool)
 
 			return v
 		}
+	case reflect.Uint8:
+		fn = func(ctx context.Context) uint8 {
+			entry, _ := ctx.Params().GetEntryAt(currentParamIndex)
+			v, _ := entry.Uint8Default(0)
+
+			return v
+		}
 	case reflect.Uint64:
 		fn = func(ctx context.Context) uint64 {
 			entry, _ := ctx.Params().GetEntryAt(currentParamIndex)

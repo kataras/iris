@@ -142,6 +142,37 @@ func TestInt64EvaluatorRaw(t *testing.T) {
 	}
 }
 
+func TestUint8EvaluatorRaw(t *testing.T) {
+	f := NewMap()
+
+	tests := []struct {
+		pass  bool
+		input string
+	}{
+		{false, "astring"},                                 // 0
+		{false, "astringwith_numb3rS_and_symbol$"},         // 1
+		{false, "-9223372036854775808"},                    // 2
+		{false, "main.css"},                                // 3
+		{false, "/assets/main.css"},                        // 4
+		{false, "92233720368547758079223372036854775807"},  // 5
+		{false, "9223372036854775808 9223372036854775808"}, // 6
+		{false, "-1"},                                      // 7
+		{false, "-0"},                                      // 8
+		{false, "+1"},                                      // 9
+		{false, "18446744073709551615"},                    // 10
+		{false, "9223372036854775807"},                     // 11
+		{false, "021"},                                     // 12 - no leading zeroes are allowed.
+		{false, "300"},                                     // 13
+		{true, "0"},                                        // 14
+		{true, "255"},                                      // 15
+		{true, "21"},                                       // 16
+	}
+
+	for i, tt := range tests {
+		testEvaluatorRaw(t, f.Uint8, tt.input, tt.pass, i)
+	}
+}
+
 func TestUint64EvaluatorRaw(t *testing.T) {
 	f := NewMap()
 
