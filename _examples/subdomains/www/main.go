@@ -13,11 +13,11 @@ func newApp() *iris.Application {
 
 	app.PartyFunc("/api/users", func(r iris.Party) {
 		r.Get("/", info)
-		r.Get("/{id:int}", info)
+		r.Get("/{id:uint64}", info)
 
 		r.Post("/", info)
 
-		r.Put("/{id:int}", info)
+		r.Put("/{id:uint64}", info)
 	}) /* <- same as:
 	 usersAPI := app.Party("/api/users")
 	 {  // those brackets are just syntactic-sugar things.

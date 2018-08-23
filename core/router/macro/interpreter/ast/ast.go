@@ -16,20 +16,27 @@ const (
 	// ParamTypeString 	is the string type.
 	// If parameter type is missing then it defaults to String type.
 	// Allows anything
-	// Declaration: /mypath/{myparam:string} or /mypath{myparam}
+	// Declaration: /mypath/{myparam:string} or {myparam}
 	ParamTypeString
-	// ParamTypeInt is the integer, a number type.
-	// Allows only positive numbers (0-9)
-	// Declaration: /mypath/{myparam:int}
-	ParamTypeInt
-	// ParamTypeLong is the integer, a number type.
-	// Allows only positive numbers (0-9)
-	// Declaration: /mypath/{myparam:long}
-	ParamTypeLong
+
+	// ParamTypeNumber is the integer, a number type.
+	// Allows both positive and negative numbers, any number of digits.
+	// Declaration: /mypath/{myparam:number} or {myparam:int} for backwards-compatibility
+	ParamTypeNumber
+
+	// ParamTypeInt64 is a number type.
+	// Allows only -9223372036854775808 to 9223372036854775807.
+	// Declaration: /mypath/{myparam:int64} or {myparam:long}
+	ParamTypeInt64
+	// ParamTypeUint64 a number type.
+	// Allows only 0 to 18446744073709551615.
+	// Declaration: /mypath/{myparam:uint64}
+	ParamTypeUint64
+
 	// ParamTypeBoolean is the bool type.
 	// Allows only "1" or "t" or "T" or "TRUE" or "true" or "True"
 	// or "0" or "f" or "F" or "FALSE" or "false" or "False".
-	// Declaration: /mypath/{myparam:boolean}
+	// Declaration: /mypath/{myparam:bool} or {myparam:boolean}
 	ParamTypeBoolean
 	// ParamTypeAlphabetical is the  alphabetical/letter type type.
 	// Allows letters only (upper or lowercase)
@@ -79,10 +86,12 @@ func (pt ParamType) Kind() reflect.Kind {
 		fallthrough
 	case ParamTypeString:
 		return reflect.String
-	case ParamTypeInt:
+	case ParamTypeNumber:
 		return reflect.Int
-	case ParamTypeLong:
+	case ParamTypeInt64:
 		return reflect.Int64
+	case ParamTypeUint64:
+		return reflect.Uint64
 	case ParamTypeBoolean:
 		return reflect.Bool
 	}
@@ -99,6 +108,8 @@ func ValidKind(k reflect.Kind) bool {
 		fallthrough
 	case reflect.Int64:
 		fallthrough
+	case reflect.Uint64:
+		fallthrough
 	case reflect.Bool:
 		return true
 	default:
@@ -113,10 +124,17 @@ func (pt ParamType) Assignable(k reflect.Kind) bool {
 }
 
 var paramTypes = map[string]ParamType{
-	"string":       ParamTypeString,
-	"int":          ParamTypeInt,
-	"long":         ParamTypeLong,
-	"boolean":      ParamTypeBoolean,
+	"string": ParamTypeString,
+
+	"number": ParamTypeNumber,
+	"int":    ParamTypeNumber, // same as number.
+	"long":   ParamTypeInt64,
+	"int64":  ParamTypeInt64, // same as long.
+	"uint64": ParamTypeUint64,
+
+	"boolean": ParamTypeBoolean,
+	"bool":    ParamTypeBoolean, // same as boolean.
+
 	"alphabetical": ParamTypeAlphabetical,
 	"file":         ParamTypeFile,
 	"path":         ParamTypePath,
@@ -131,8 +149,10 @@ var paramTypes = map[string]ParamType{
 // representation of a parameter type.
 // Available:
 // "string"
-// "int"
-// "long"
+// "number" or "int"
+// "long" or "int64"
+// "uint64"
+// "boolean" or "bool"
 // "alphabetical"
 // "file"
 // "path"
@@ -149,17 +169,20 @@ func LookupParamType(ident string) ParamType {
 // make sure that caller resolves these types before this call.
 //
 // string matches to string
-// int matches to int
-// int64 matches to long
-// bool matches to boolean
+// int matches to int/number
+// int64 matches to int64/long
+// uint64 matches to uint64
+// bool matches to bool/boolean
 func LookupParamTypeFromStd(goType string) ParamType {
 	switch goType {
 	case "string":
 		return ParamTypeString
 	case "int":
-		return ParamTypeInt
+		return ParamTypeNumber
 	case "int64":
-		return ParamTypeLong
+		return ParamTypeInt64
+	case "uint64":
+		return ParamTypeUint64
 	case "bool":
 		return ParamTypeBoolean
 	default:

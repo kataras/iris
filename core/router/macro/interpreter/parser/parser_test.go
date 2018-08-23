@@ -30,7 +30,7 @@ func TestParseParamError(t *testing.T) {
 	//
 
 	// success
-	input2 := "{id:int range(1,5) else 404}"
+	input2 := "{id:uint64 range(1,5) else 404}"
 	p.Reset(input2)
 	_, err = p.Parse()
 
@@ -47,9 +47,9 @@ func TestParseParam(t *testing.T) {
 	}{
 		{true,
 			ast.ParamStatement{
-				Src:  "{id:int min(1) max(5) else 404}",
+				Src:  "{id:number min(1) max(5) else 404}",
 				Name: "id",
-				Type: ast.ParamTypeInt,
+				Type: ast.ParamTypeNumber,
 				Funcs: []ast.ParamFunc{
 					{
 						Name: "min",
@@ -63,9 +63,9 @@ func TestParseParam(t *testing.T) {
 
 		{true,
 			ast.ParamStatement{
-				Src:  "{id:int range(1,5)}",
+				Src:  "{id:number range(1,5)}",
 				Name: "id",
-				Type: ast.ParamTypeInt,
+				Type: ast.ParamTypeNumber,
 				Funcs: []ast.ParamFunc{
 					{
 						Name: "range",
@@ -106,18 +106,18 @@ func TestParseParam(t *testing.T) {
 				Type:      ast.ParamTypeUnExpected,
 				ErrorCode: 404,
 			}}, // 5
-		{false, // false because it will give an error of unexpeced token type with value 2
+		{true,
 			ast.ParamStatement{
 				Src:       "{myparam2}",
-				Name:      "myparam", // expected "myparam" because we don't allow integers to the parameter names.
+				Name:      "myparam2", // we now allow integers to the parameter names.
 				Type:      ast.ParamTypeString,
 				ErrorCode: 404,
 			}}, // 6
 		{true,
 			ast.ParamStatement{
-				Src:  "{id:int even()}", // test param funcs without any arguments (LPAREN peek for RPAREN)
+				Src:  "{id:number even()}", // test param funcs without any arguments (LPAREN peek for RPAREN)
 				Name: "id",
-				Type: ast.ParamTypeInt,
+				Type: ast.ParamTypeNumber,
 				Funcs: []ast.ParamFunc{
 					{
 						Name: "even"},
@@ -126,18 +126,32 @@ func TestParseParam(t *testing.T) {
 			}}, // 7
 		{true,
 			ast.ParamStatement{
-				Src:       "{id:long else 404}",
+				Src:       "{id:int64 else 404}",
 				Name:      "id",
-				Type:      ast.ParamTypeLong,
+				Type:      ast.ParamTypeInt64,
 				ErrorCode: 404,
 			}}, // 8
 		{true,
 			ast.ParamStatement{
-				Src:       "{has:boolean else 404}",
+				Src:       "{id:long else 404}", // backwards-compatible test.
+				Name:      "id",
+				Type:      ast.ParamTypeInt64,
+				ErrorCode: 404,
+			}}, // 9
+		{true,
+			ast.ParamStatement{
+				Src:       "{has:bool else 404}",
 				Name:      "has",
 				Type:      ast.ParamTypeBoolean,
 				ErrorCode: 404,
-			}}, // 9
+			}}, // 10
+		{true,
+			ast.ParamStatement{
+				Src:       "{has:boolean else 404}", // backwards-compatible test.
+				Name:      "has",
+				Type:      ast.ParamTypeBoolean,
+				ErrorCode: 404,
+			}}, // 11
 
 	}
 
@@ -167,11 +181,11 @@ func TestParse(t *testing.T) {
 		valid              bool
 		expectedStatements []ast.ParamStatement
 	}{
-		{"/api/users/{id:int min(1) max(5) else 404}", true,
+		{"/api/users/{id:number min(1) max(5) else 404}", true,
 			[]ast.ParamStatement{{
-				Src:  "{id:int min(1) max(5) else 404}",
+				Src:  "{id:number min(1) max(5) else 404}",
 				Name: "id",
-				Type: ast.ParamTypeInt,
+				Type: ast.ParamTypeNumber,
 				Funcs: []ast.ParamFunc{
 					{
 						Name: "min",
@@ -183,11 +197,11 @@ func TestParse(t *testing.T) {
 				ErrorCode: 404,
 			},
 			}}, // 0
-		{"/admin/{id:int range(1,5)}", true,
+		{"/admin/{id:uint64 range(1,5)}", true,
 			[]ast.ParamStatement{{
-				Src:  "{id:int range(1,5)}",
+				Src:  "{id:uint64 range(1,5)}", // test alternative (backwards-compatibility) "int"
 				Name: "id",
-				Type: ast.ParamTypeInt,
+				Type: ast.ParamTypeUint64,
 				Funcs: []ast.ParamFunc{
 					{
 						Name: "range",
@@ -233,10 +247,10 @@ func TestParse(t *testing.T) {
 				ErrorCode: 404,
 			},
 			}}, // 5
-		{"/p2/{myparam2}", false, // false because it will give an error of unexpeced token type with value 2
+		{"/p2/{myparam2}", true,
 			[]ast.ParamStatement{{
 				Src:       "{myparam2}",
-				Name:      "myparam", // expected "myparam" because we don't allow integers to the parameter names.
+				Name:      "myparam2", // we now allow integers to the parameter names.
 				Type:      ast.ParamTypeString,
 				ErrorCode: 404,
 			},

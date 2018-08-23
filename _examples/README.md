@@ -104,7 +104,7 @@ Structuring depends on your own needs. We can't tell you how to design your own 
 
 ### Routing, Grouping, Dynamic Path Parameters, "Macros" and Custom Context
 
-* `app.Get("{userid:int min(1)}", myHandler)`
+* `app.Get("{userid:number min(1)}", myHandler)`
 * `app.Post("{asset:path}", myHandler)`
 * `app.Put("{custom:string regexp([a-z]+)}", myHandler)`
 
@@ -128,10 +128,10 @@ app.Get("/profile/me", userHandler)
 
 // Matches all GET requests prefixed with /users/
 // and followed by a number which should be equal or bigger than 1
-app.Get("/user/{userid:int min(1)}", getUserHandler)
+app.Get("/user/{userid:number min(1)}", getUserHandler)
 // Matches all requests DELETE prefixed with /users/
 // and following by a number which should be equal or bigger than 1
-app.Delete("/user/{userid:int min(1)}", deleteUserHandler)
+app.Delete("/user/{userid:number min(1)}", deleteUserHandler)
 
 // Matches all GET requests except "/", "/about", anything starts with "/assets/" etc...
 // because it does not conflict with the rest of the routes.

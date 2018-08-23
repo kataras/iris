@@ -29,12 +29,12 @@ func main() {
 	app.Get("/donate", donateHandler, donateFinishHandler)
 
 	// Pssst, don't forget dynamic-path example for more "magic"!
-	app.Get("/api/users/{userid:int min(1)}", func(ctx iris.Context) {
-		userID, err := ctx.Params().GetInt("userid")
+	app.Get("/api/users/{userid:uint64 min(1)}", func(ctx iris.Context) {
+		userID, err := ctx.Params().GetUint64("userid")
 
 		if err != nil {
 			ctx.Writef("error while trying to parse userid parameter," +
-				"this will never happen if :int is being used because if it's not integer it will fire Not Found automatically.")
+				"this will never happen if :uint64 is being used because if it's not a valid uint64 it will fire Not Found automatically.")
 			ctx.StatusCode(iris.StatusBadRequest)
 			return
 		}
@@ -103,7 +103,7 @@ func main() {
 				ctx.Writef("All users")
 			})
 			// http://v1.localhost:8080/api/users/42
-			usersAPI.Get("/{userid:int}", func(ctx iris.Context) {
+			usersAPI.Get("/{userid:number}", func(ctx iris.Context) {
 				ctx.Writef("user with id: %s", ctx.Params().Get("userid"))
 			})
 		}

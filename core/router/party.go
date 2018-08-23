@@ -110,10 +110,10 @@ type Party interface {
 	// otherwise use `Party` which can handle many paths with different handlers and middlewares.
 	//
 	// Usage:
-	// 	app.HandleMany(iris.MethodGet, "/user /user/{id:int} /user/me", userHandler)
+	// 	app.HandleMany(iris.MethodGet, "/user /user/{id:uint64} /user/me", userHandler)
 	// At the other side, with `Handle` we've had to write:
 	// 	app.Handle(iris.MethodGet, "/user", userHandler)
-	// 	app.Handle(iris.MethodGet, "/user/{id:int}", userHandler)
+	// 	app.Handle(iris.MethodGet, "/user/{id:uint64}", userHandler)
 	// 	app.Handle(iris.MethodGet, "/user/me", userHandler)
 	//
 	// This method is used behind the scenes at the `Controller` function

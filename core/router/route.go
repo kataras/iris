@@ -16,7 +16,7 @@ type Route struct {
 	Method     string          `json:"method"` // "GET"
 	methodBckp string          // if Method changed to something else (which is possible at runtime as well, via RefreshRouter) then this field will be filled with the old one.
 	Subdomain  string          `json:"subdomain"` // "admin."
-	tmpl       *macro.Template // Tmpl().Src: "/api/user/{id:int}"
+	tmpl       *macro.Template // Tmpl().Src: "/api/user/{id:uint64}"
 	// temp storage, they're appended to the Handlers on build.
 	// Execution happens before Handlers, can be empty.
 	beginHandlers context.Handlers
@@ -198,7 +198,7 @@ func formatPath(path string) string {
 
 // StaticPath returns the static part of the original, registered route path.
 // if /user/{id} it will return /user
-// if /user/{id}/friend/{friendid:int} it will return /user too
+// if /user/{id}/friend/{friendid:uint64} it will return /user too
 // if /assets/{filepath:path} it will return /assets.
 func (r Route) StaticPath() string {
 	src := r.tmpl.Src

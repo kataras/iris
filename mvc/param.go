@@ -37,14 +37,19 @@ func makeFuncParamGetter(paramType ast.ParamType, paramName string) reflect.Valu
 	var fn interface{}
 
 	switch paramType {
-	case ast.ParamTypeInt:
+	case ast.ParamTypeNumber:
 		fn = func(ctx context.Context) int {
 			v, _ := ctx.Params().GetInt(paramName)
 			return v
 		}
-	case ast.ParamTypeLong:
+	case ast.ParamTypeInt64:
 		fn = func(ctx context.Context) int64 {
 			v, _ := ctx.Params().GetInt64(paramName)
+			return v
+		}
+	case ast.ParamTypeUint64:
+		fn = func(ctx context.Context) uint64 {
+			v, _ := ctx.Params().GetUint64(paramName)
 			return v
 		}
 	case ast.ParamTypeBoolean:

@@ -120,11 +120,11 @@ func (p *ParamParser) Parse() (*ast.ParamStatement, error) {
 
 		switch t.Type {
 		case token.LBRACE:
-			// name, alphabetical and _, param names are not allowed to contain any number.
+			// can accept only letter or number only.
 			nextTok := l.NextToken()
 			stmt.Name = nextTok.Literal
 		case token.COLON:
-			// type
+			// type can accept both letters and numbers but not symbols ofc.
 			nextTok := l.NextToken()
 			paramType := ast.LookupParamType(nextTok.Literal)
 			if paramType == ast.ParamTypeUnExpected {
