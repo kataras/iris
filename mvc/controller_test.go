@@ -365,7 +365,8 @@ func (c *testControllerRelPathFromFunc) EndRequest(ctx context.Context) {
 }
 
 func (c *testControllerRelPathFromFunc) Get()                         {}
-func (c *testControllerRelPathFromFunc) GetBy(int64)                  {}
+func (c *testControllerRelPathFromFunc) GetBy(uint64)                 {}
+func (c *testControllerRelPathFromFunc) GetRatioBy(int64)             {}
 func (c *testControllerRelPathFromFunc) GetAnythingByWildcard(string) {}
 
 func (c *testControllerRelPathFromFunc) GetLogin()  {}
@@ -388,8 +389,10 @@ func TestControllerRelPathFromFunc(t *testing.T) {
 	e.GET("/").Expect().Status(iris.StatusOK).
 		Body().Equal("GET:/")
 
-	e.GET("/42").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/42")
+	e.GET("/18446744073709551615").Expect().Status(iris.StatusOK).
+		Body().Equal("GET:/18446744073709551615")
+	e.GET("/ratio/-42").Expect().Status(iris.StatusOK).
+		Body().Equal("GET:/ratio/-42")
 	e.GET("/something/true").Expect().Status(iris.StatusOK).
 		Body().Equal("GET:/something/true")
 	e.GET("/something/false").Expect().Status(iris.StatusOK).

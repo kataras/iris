@@ -68,7 +68,7 @@ func main() {
 	usersRoutes := app.Party("/users", logThisMiddleware)
 	{
 		// Method GET: http://localhost:8080/users/42
-		usersRoutes.Get("/{id:int min(1)}", getUserByID)
+		usersRoutes.Get("/{id:number min(1)}", getUserByID)
 		// Method POST: http://localhost:8080/users/create
 		usersRoutes.Post("/create", createUser)
 	}

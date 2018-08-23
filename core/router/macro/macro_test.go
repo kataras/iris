@@ -64,9 +64,9 @@ func TestGoodParamFuncName(t *testing.T) {
 	}
 }
 
-func testEvaluatorRaw(macroEvaluator *Macro, input string, pass bool, i int, t *testing.T) {
+func testEvaluatorRaw(t *testing.T, macroEvaluator *Macro, input string, pass bool, i int) {
 	if got := macroEvaluator.Evaluator(input); pass != got {
-		t.Fatalf("tests[%d] - expecting %v but got %v", i, pass, got)
+		t.Fatalf("%s - tests[%d] - expecting %v but got %v", t.Name(), i, pass, got)
 	}
 }
 
@@ -86,26 +86,86 @@ func TestStringEvaluatorRaw(t *testing.T) {
 	} // 0
 
 	for i, tt := range tests {
-		testEvaluatorRaw(f.String, tt.input, tt.pass, i, t)
+		testEvaluatorRaw(t, f.String, tt.input, tt.pass, i)
 	}
 }
 
-func TestIntEvaluatorRaw(t *testing.T) {
+func TestNumberEvaluatorRaw(t *testing.T) {
 	f := NewMap()
 
 	tests := []struct {
 		pass  bool
 		input string
 	}{
-		{false, "astring"},                         // 0
-		{false, "astringwith_numb3rS_and_symbol$"}, // 1
-		{true, "32321"},                            // 2
-		{false, "main.css"},                        // 3
-		{false, "/assets/main.css"},                // 4
+		{false, "astring"},                                // 0
+		{false, "astringwith_numb3rS_and_symbol$"},        // 1
+		{true, "32321"},                                   // 2
+		{true, "18446744073709551615"},                    // 3
+		{true, "-18446744073709551615"},                   // 4
+		{true, "-18446744073709553213213213213213121615"}, // 5
+		{false, "42 18446744073709551615"},                // 6
+		{false, "--42"},                                   // 7
+		{false, "+42"},                                    // 9
+		{false, "main.css"},                               // 9
+		{false, "/assets/main.css"},                       // 10
 	}
 
 	for i, tt := range tests {
-		testEvaluatorRaw(f.Int, tt.input, tt.pass, i, t)
+		testEvaluatorRaw(t, f.Number, tt.input, tt.pass, i)
+	}
+}
+
+func TestInt64EvaluatorRaw(t *testing.T) {
+	f := NewMap()
+
+	tests := []struct {
+		pass  bool
+		input string
+	}{
+		{false, "astring"},                                 // 0
+		{false, "astringwith_numb3rS_and_symbol$"},         // 1
+		{false, "18446744073709551615"},                    // 2
+		{false, "92233720368547758079223372036854775807"},  // 3
+		{false, "9223372036854775808 9223372036854775808"}, // 4
+		{false, "main.css"},                                // 5
+		{false, "/assets/main.css"},                        // 6
+		{true, "9223372036854775807"},                      // 7
+		{true, "-9223372036854775808"},                     // 8
+		{true, "-0"},                                       // 9
+		{true, "1"},                                        // 10
+		{true, "-042"},                                     // 11
+		{true, "142"},                                      // 12
+	}
+
+	for i, tt := range tests {
+		testEvaluatorRaw(t, f.Int64, tt.input, tt.pass, i)
+	}
+}
+
+func TestUint64EvaluatorRaw(t *testing.T) {
+	f := NewMap()
+
+	tests := []struct {
+		pass  bool
+		input string
+	}{
+		{false, "astring"},                                 // 0
+		{false, "astringwith_numb3rS_and_symbol$"},         // 1
+		{false, "-9223372036854775808"},                    // 2
+		{false, "main.css"},                                // 3
+		{false, "/assets/main.css"},                        // 4
+		{false, "92233720368547758079223372036854775807"},  // 5
+		{false, "9223372036854775808 9223372036854775808"}, // 6
+		{false, "-1"},                                      // 7
+		{false, "-0"},                                      // 8
+		{false, "+1"},                                      // 9
+		{true, "18446744073709551615"},                     // 10
+		{true, "9223372036854775807"},                      // 11
+		{true, "0"},                                        // 12
+	}
+
+	for i, tt := range tests {
+		testEvaluatorRaw(t, f.Uint64, tt.input, tt.pass, i)
 	}
 }
 
@@ -124,7 +184,7 @@ func TestAlphabeticalEvaluatorRaw(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		testEvaluatorRaw(f.Alphabetical, tt.input, tt.pass, i, t)
+		testEvaluatorRaw(t, f.Alphabetical, tt.input, tt.pass, i)
 	}
 }
 
@@ -143,7 +203,7 @@ func TestFileEvaluatorRaw(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		testEvaluatorRaw(f.File, tt.input, tt.pass, i, t)
+		testEvaluatorRaw(t, f.File, tt.input, tt.pass, i)
 	}
 }
 
@@ -163,7 +223,7 @@ func TestPathEvaluatorRaw(t *testing.T) {
 	}
 
 	for i, tt := range pathTests {
-		testEvaluatorRaw(f.Path, tt.input, tt.pass, i, t)
+		testEvaluatorRaw(t, f.Path, tt.input, tt.pass, i)
 	}
 }
 
@@ -182,5 +242,5 @@ func TestPathEvaluatorRaw(t *testing.T) {
 
 // 	// 	p.Params = append(p.)
 
-// 	testEvaluatorRaw(m.String, p.Src, false, 0, t)
+// 	testEvaluatorRaw(t, m.String, p.Src, false, 0)
 // }

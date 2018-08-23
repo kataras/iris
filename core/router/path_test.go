@@ -27,8 +27,8 @@ func TestCleanPath(t *testing.T) {
 			"/total/{year:string regexp(\\d{4})}/more/{s:string regexp(\\d{7})}"},
 		{"/single_no_params",
 			"/single_no_params"},
-		{"/single/{id:int}",
-			"/single/{id:int}"},
+		{"/single/{id:uint64}",
+			"/single/{id:uint64}"},
 	}
 
 	for i, tt := range tests {
@@ -45,14 +45,16 @@ func TestSplitPath(t *testing.T) {
 	}{
 		{"/v2/stores/{id:string format(uuid)} /v3",
 			[]string{"/v2/stores/{id:string format(uuid)}", "/v3"}},
-		{"/user/{id:int} /admin/{id:int}",
-			[]string{"/user/{id:int}", "/admin/{id:int}"}},
+		{"/user/{id:uint64} /admin/{id:uint64}",
+			[]string{"/user/{id:uint64}", "/admin/{id:uint64}"}},
+		{"/users/{id:int} /admins/{id:int64}",
+			[]string{"/users/{id:int}", "/admins/{id:int64}"}},
 		{"/user /admin",
 			[]string{"/user", "/admin"}},
 		{"/single_no_params",
 			[]string{"/single_no_params"}},
-		{"/single/{id:int}",
-			[]string{"/single/{id:int}"}},
+		{"/single/{id:number}",
+			[]string{"/single/{id:number}"}},
 	}
 
 	equalSlice := func(s1 []string, s2 []string) bool {

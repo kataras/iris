@@ -14,15 +14,14 @@ func main() {
 	// we've seen static routes, group of routes, subdomains, wildcard subdomains, a small example of parameterized path
 	// with a single known paramete and custom http errors, now it's time to see wildcard parameters and macros.
 
-	// iris, like net/http std package registers route's handlers
+	// Iris, like net/http std package registers route's handlers
 	// by a Handler, the iris' type of handler is just a func(ctx iris.Context)
 	// where context comes from github.com/kataras/iris/context.
-	// Until go 1.9 you will have to import that package too, after go 1.9 this will be not be necessary.
 	//
-	// iris has the easiest and the most powerful routing process you have ever meet.
+	// Iris has the easiest and the most powerful routing process you have ever meet.
 	//
 	// At the same time,
-	// iris has its own interpeter(yes like a programming language)
+	// Iris has its own interpeter(yes like a programming language)
 	// for route's path syntax and their dynamic path parameters parsing and evaluation,
 	// We call them "macros" for shortcut.
 	// How? It calculates its needs and if not any special regexp needed then it just
@@ -36,21 +35,27 @@ func main() {
 	// string type
 	// anything
 	//
-	//  +------------------------+
-	//  | {param:int}            |
-	//  +------------------------+
+	//  +-------------------------------+
+	//  | {param:int} or {param:number} |
+	//  +-------------------------------+
 	// int type
-	// only numbers (0-9)
+	// both positive and negative numbers, any number of digits (ctx.Params().GetInt will limit the digits based on the host arch)
 	//
-	// +------------------------+
-	// | {param:long}           |
-	// +------------------------+
+	// +-------------------------------+
+	// | {param:int64} or {param:long} |
+	// +-------------------------------+
 	// int64 type
-	// only numbers (0-9)
+	// -9223372036854775808 to 9223372036854775807
 	//
 	// +------------------------+
-	// | {param:boolean}        |
+	// | {param:uint64}         |
 	// +------------------------+
+	// uint64 type
+	// 0 to 18446744073709551615
+	//
+	// +---------------------------------+
+	// | {param:bool} or {param:boolean} |
+	// +---------------------------------+
 	// bool type
 	// only "1" or "t" or "T" or "TRUE" or "true" or "True"
 	// or "0" or "f" or "F" or "FALSE" or "false" or "False"
@@ -89,7 +94,7 @@ func main() {
 	// you are able to register your own too!.
 	//
 	// Register a named path parameter function:
-	// app.Macros().Int.RegisterFunc("min", func(argument int) func(paramValue string) bool {
+	// app.Macros().Number.RegisterFunc("min", func(argument int) func(paramValue string) bool {
 	//  [...]
 	//  return true/false -> true means valid.
 	// })
@@ -107,12 +112,12 @@ func main() {
 		ctx.Writef("Hello %s", ctx.Params().Get("name"))
 	}) // type is missing = {name:string}
 
-	// Let's register our first macro attached to int macro type.
+	// Let's register our first macro attached to number macro type.
 	// "min" = the function
 	// "minValue" = the argument of the function
 	// func(string) bool = the macro's path parameter evaluator, this executes in serve time when
-	// a user requests a path which contains the :int macro type with the min(...) macro parameter function.
-	app.Macros().Int.RegisterFunc("min", func(minValue int) func(string) bool {
+	// a user requests a path which contains the :number macro type with the min(...) macro parameter function.
+	app.Macros().Number.RegisterFunc("min", func(minValue int) func(string) bool {
 		// do anything before serve here [...]
 		// at this case we don't need to do anything
 		return func(paramValue string) bool {
@@ -127,7 +132,7 @@ func main() {
 	// http://localhost:8080/profile/id>=1
 	// this will throw 404 even if it's found as route on : /profile/0, /profile/blabla, /profile/-1
 	// macro parameter functions are optional of course.
-	app.Get("/profile/{id:int min(1)}", func(ctx iris.Context) {
+	app.Get("/profile/{id:number min(1)}", func(ctx iris.Context) {
 		// second parameter is the error but it will always nil because we use macros,
 		// the validaton already happened.
 		id, _ := ctx.Params().GetInt("id")
@@ -135,8 +140,8 @@ func main() {
 	})
 
 	// to change the error code per route's macro evaluator:
-	app.Get("/profile/{id:int min(1)}/friends/{friendid:int min(1) else 504}", func(ctx iris.Context) {
-		id, _ := ctx.Params().GetInt("id")
+	app.Get("/profile/{id:number min(1)}/friends/{friendid:number min(1) else 504}", func(ctx iris.Context) {
+		id, _ := ctx.Params().GetInt("id") // or GetUint64.
 		friendid, _ := ctx.Params().GetInt("friendid")
 		ctx.Writef("Hello id: %d looking for friend id: ", id, friendid)
 	}) // this will throw e 504 error code instead of 404 if all route's macros not passed.
@@ -159,9 +164,9 @@ func main() {
 
 	//
 
-	// http://localhost:8080/game/a-zA-Z/level/0-9
+	// http://localhost:8080/game/a-zA-Z/level/42
 	// remember, alphabetical is lowercase or uppercase letters only.
-	app.Get("/game/{name:alphabetical}/level/{level:int}", func(ctx iris.Context) {
+	app.Get("/game/{name:alphabetical}/level/{level:number}", func(ctx iris.Context) {
 		ctx.Writef("name: %s | level: %s", ctx.Params().Get("name"), ctx.Params().Get("level"))
 	})
 
@@ -197,10 +202,9 @@ func main() {
 	// if  "/mypath/{myparam:path}" then the parameter has two names, one is the "*" and the other is the user-defined "myparam".
 
 	// WARNING:
-	// A path parameter name should contain only alphabetical letters. Symbols like  '_' and numbers are NOT allowed.
+	// A path parameter name should contain only alphabetical letters or digits. Symbols like  '_' are NOT allowed.
 	// Last, do not confuse `ctx.Params()` with `ctx.Values()`.
-	// Path parameter's values goes to `ctx.Params()` and context's local storage
-	// that can be used to communicate between handlers and middleware(s) goes to
-	// `ctx.Values()`.
+	// Path parameter's values can be retrieved from `ctx.Params()`,
+	// context's local storage that can be used to communicate between handlers and middleware(s) can be stored to `ctx.Values()`.
 	app.Run(iris.Addr(":8080"))
 }

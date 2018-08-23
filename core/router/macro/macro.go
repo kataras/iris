@@ -214,14 +214,17 @@ type Map struct {
 	// string type
 	// anything
 	String *Macro
-	// uint type
-	// only positive numbers (+0-9)
-	// it could be uint/uint32 but we keep int for simplicity
-	Int *Macro
-	// long an int64 type
-	// only positive numbers (+0-9)
-	// it could be uint64 but we keep int64 for simplicity
-	Long *Macro
+
+	// int type
+	// both positive and negative numbers, any number of digits.
+	Number *Macro
+	// int64 as int64 type
+	// -9223372036854775808 to 9223372036854775807.
+	Int64 *Macro
+	// uint64 as uint64 type
+	// 0 to 18446744073709551615.
+	Uint64 *Macro
+
 	// boolean as bool type
 	// a string which is "1" or "t" or "T" or "TRUE" or "true" or "True"
 	// or "0" or "f" or "F" or "FALSE" or "false" or "False".
@@ -247,11 +250,26 @@ type Map struct {
 //
 // Learn more at:  https://github.com/kataras/iris/tree/master/_examples/routing/dynamic-path
 func NewMap() *Map {
+	simpleNumberEvalutator := MustNewEvaluatorFromRegexp("^-?[0-9]+$")
 	return &Map{
 		// it allows everything, so no need for a regexp here.
 		String: newMacro(func(string) bool { return true }),
-		Int:    newMacro(MustNewEvaluatorFromRegexp("^[0-9]+$")),
-		Long:   newMacro(MustNewEvaluatorFromRegexp("^[0-9]+$")),
+		Number: newMacro(simpleNumberEvalutator), //"^(-?0\\.[0-9]*[1-9]+[0-9]*$)|(^-?[1-9]+[0-9]*((\\.[0-9]*[1-9]+[0-9]*$)|(\\.[0-9]+)))|(^-?[1-9]+[0-9]*$)|(^0$){1}")), //("^-?[0-9]+$")),
+		Int64: newMacro(func(paramValue string) bool {
+			if !simpleNumberEvalutator(paramValue) {
+				return false
+			}
+			_, err := strconv.ParseInt(paramValue, 10, 64)
+			// if err == strconv.ErrRange...
+			return err == nil
+		}), //("^-[1-9]|-?[1-9][0-9]{1,14}|-?1000000000000000|-?10000000000000000|-?100000000000000000|-?[1-9]000000000000000000|-?9[0-2]00000000000000000|-?92[0-2]0000000000000000|-?922[0-3]000000000000000|-?9223[0-3]00000000000000|-?92233[0-7]0000000000000|-?922337[0-2]000000000000|-?92233720[0-3]0000000000|-?922337203[0-6]000000000|-?9223372036[0-8]00000000|-?92233720368[0-5]0000000|-?922337203685[0-4]000000|-?9223372036854[0-7]00000|-?92233720368547[0-7]0000|-?922337203685477[0-5]000|-?922337203685477[56]000|[0-9]$")),
+		Uint64: newMacro(func(paramValue string) bool {
+			if !simpleNumberEvalutator(paramValue) {
+				return false
+			}
+			_, err := strconv.ParseUint(paramValue, 10, 64)
+			return err == nil
+		}), //("^[0-9]|[1-9][0-9]{1,14}|1000000000000000|10000000000000000|100000000000000000|1000000000000000000|1[0-8]000000000000000000|18[0-4]00000000000000000|184[0-4]0000000000000000|1844[0-6]000000000000000|18446[0-7]00000000000000|184467[0-4]0000000000000|1844674[0-4]000000000000|184467440[0-7]0000000000|1844674407[0-3]000000000|18446744073[0-7]00000000|1844674407370000000[0-9]|18446744073709[0-5]00000|184467440737095[0-5]0000|1844674407370955[0-2]000$")),
 		Boolean: newMacro(func(paramValue string) bool {
 			// a simple if statement is faster than regex ^(true|false|True|False|t|0|f|FALSE|TRUE)$
 			// in this case.
@@ -270,14 +288,16 @@ func NewMap() *Map {
 
 // Lookup returns the specific Macro from the map
 // based on the parameter type.
-// i.e if ast.ParamTypeInt then it will return the m.Int.
+// i.e if ast.ParamTypeNumber then it will return the m.Number.
 // Returns the m.String if not matched.
 func (m *Map) Lookup(typ ast.ParamType) *Macro {
 	switch typ {
-	case ast.ParamTypeInt:
-		return m.Int
-	case ast.ParamTypeLong:
-		return m.Long
+	case ast.ParamTypeNumber:
+		return m.Number
+	case ast.ParamTypeInt64:
+		return m.Int64
+	case ast.ParamTypeUint64:
+		return m.Uint64
 	case ast.ParamTypeBoolean:
 		return m.Boolean
 	case ast.ParamTypeAlphabetical:

@@ -145,6 +145,14 @@ func main() {
         ctx.Writef("Hello %s", name)
     })
 
+    // This handler will match /users/42
+    // but will not match /users/-1 because uint should be bigger than zero
+    // neither /users or /users/.
+    app.Get("/users/{id:uint64}", func(ctx iris.Context) {
+        id, _ := ctx.Params().GetUint64("id")
+        ctx.Writef("User with ID: %d", id)
+    })
+
     // However, this one will match /user/john/ and also /user/john/send.
     app.Post("/user/{name:string}/{action:path}", func(ctx iris.Context) {
         name := ctx.Params().Get("name")

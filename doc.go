@@ -119,7 +119,7 @@ Example code:
         usersRoutes := app.Party("/users", logThisMiddleware)
         {
             // Method GET: http://localhost:8080/users/42
-            usersRoutes.Get("/{id:int min(1)}", getUserByID)
+            usersRoutes.Get("/{id:uint64 min(1)}", getUserByID)
             // Method POST: http://localhost:8080/users/create
             usersRoutes.Post("/create", createUser)
         }
@@ -146,7 +146,7 @@ Example code:
     }
 
     func getUserByID(ctx iris.Context) {
-        userID := ctx.Params().Get("id") // Or convert directly using: .Values().GetInt/GetInt64 etc...
+        userID := ctx.Params().Get("id") // Or convert directly using: .Values().GetInt/GetUint64/GetInt64 etc...
         // your own db fetch here instead of user :=...
         user := User{Username: "username" + userID}
 
@@ -489,9 +489,9 @@ Example code:
     users := app.Party("/users", myAuthMiddlewareHandler)
 
     // http://myhost.com/users/42/profile
-    users.Get("/{id:int}/profile", userProfileHandler)
+    users.Get("/{id:uint64}/profile", userProfileHandler)
     // http://myhost.com/users/messages/1
-    users.Get("/inbox/{id:int}", userMessageHandler)
+    users.Get("/inbox/{id:number}", userMessageHandler)
 
 
 Custom HTTP Errors
@@ -548,12 +548,12 @@ Example code:
         app.Get("/donate", donateHandler, donateFinishHandler)
 
         // Pssst, don't forget dynamic-path example for more "magic"!
-        app.Get("/api/users/{userid:int min(1)}", func(ctx iris.Context) {
-            userID, err := ctx.Params().GetInt("userid")
+        app.Get("/api/users/{userid:uint64 min(1)}", func(ctx iris.Context) {
+            userID, err := ctx.Params().GetUint64("userid")
 
             if err != nil {
                 ctx.Writef("error while trying to parse userid parameter," +
-                    "this will never happen if :int is being used because if it's not integer it will fire Not Found automatically.")
+                    "this will never happen if :number is being used because if it's not integer it will fire Not Found automatically.")
                 ctx.StatusCode(iris.StatusBadRequest)
                 return
             }
@@ -622,8 +622,8 @@ Example code:
                     ctx.Writef("All users")
                 })
                 // http://v1.localhost:8080/api/users/42
-                usersAPI.Get("/{userid:int}", func(ctx iris.Context) {
-                    ctx.Writef("user with id: %s", ctx.Params().Get("userid"))
+                usersAPI.Get("/{userid:uint64}", func(ctx iris.Context) {
+                    ctx.Writef("user with id: %s", ctx.Params().GetUint64("userid"))
                 })
             }
         }
@@ -711,21 +711,27 @@ Standard macro types for parameters:
     string type
     anything
 
-    +------------------------+
-    | {param:int}            |
-    +------------------------+
+    +-------------------------------+
+    | {param:number} or {param:int} |
+    +-------------------------------+
     int type
-    only numbers (0-9)
+    both positive and negative numbers, any number of digits (ctx.Params().GetInt will limit the digits based on the host arch)
 
-    +------------------------+
-    | {param:long}           |
-    +------------------------+
+    +-------------------------------+
+    | {param:long} or {param:int64} |
+    +-------------------------------+
     int64 type
-    only numbers (0-9)
+    -9223372036854775808 to 9223372036854775807
 
     +------------------------+
-    | {param:boolean}        |
+    | {param:uint64}         |
     +------------------------+
+    uint64 type
+    0 to 18446744073709551615
+
+    +---------------------------------+
+    | {param:bool} or {param:boolean} |
+    +---------------------------------+
     bool type
     only "1" or "t" or "T" or "TRUE" or "true" or "True"
     or "0" or "f" or "F" or "FALSE" or "false" or "False"
@@ -761,7 +767,7 @@ If a function not found on that type then the "string"'s types functions are bei
 i.e:
 
 
-    {param:int min(3)}
+    {param:number min(3)}
 
 
 Besides the fact that iris provides the basic types and some default "macro funcs"
@@ -770,7 +776,7 @@ you are able to register your own too!.
 Register a named path parameter function:
 
 
-    app.Macros().Int.RegisterFunc("min", func(argument int) func(paramValue string) bool {
+    app.Macros().Number.RegisterFunc("min", func(argument int) func(paramValue string) bool {
         [...]
         return true/false -> true means valid.
     })
@@ -792,12 +798,12 @@ Example Code:
 		ctx.Writef("Hello %s", ctx.Params().Get("name"))
 	}) // type is missing = {name:string}
 
-	// Let's register our first macro attached to int macro type.
+	// Let's register our first macro attached to number macro type.
 	// "min" = the function
 	// "minValue" = the argument of the function
 	// func(string) bool = the macro's path parameter evaluator, this executes in serve time when
-	// a user requests a path which contains the :int macro type with the min(...) macro parameter function.
-	app.Macros().Int.RegisterFunc("min", func(minValue int) func(string) bool {
+	// a user requests a path which contains the number macro type with the min(...) macro parameter function.
+	app.Macros().Number.RegisterFunc("min", func(minValue int) func(string) bool {
 		// do anything before serve here [...]
 		// at this case we don't need to do anything
 		return func(paramValue string) bool {
@@ -812,21 +818,21 @@ Example Code:
 	// http://localhost:8080/profile/id>=1
 	// this will throw 404 even if it's found as route on : /profile/0, /profile/blabla, /profile/-1
 	// macro parameter functions are optional of course.
-	app.Get("/profile/{id:int min(1)}", func(ctx iris.Context) {
+	app.Get("/profile/{id:uint64 min(1)}", func(ctx iris.Context) {
 		// second parameter is the error but it will always nil because we use macros,
 		// the validaton already happened.
-		id, _ := ctx.Params().GetInt("id")
+		id, _ := ctx.Params().GetUint64("id")
 		ctx.Writef("Hello id: %d", id)
 	})
 
 	// to change the error code per route's macro evaluator:
-	app.Get("/profile/{id:int min(1)}/friends/{friendid:int min(1) else 504}", func(ctx iris.Context) {
-		id, _ := ctx.Params().GetInt("id")
-		friendid, _ := ctx.Params().GetInt("friendid")
+	app.Get("/profile/{id:uint64 min(1)}/friends/{friendid:uint64 min(1) else 504}", func(ctx iris.Context) {
+		id, _ := ctx.Params().GetUint64("id")
+		friendid, _ := ctx.Params().GetUint64("friendid")
 		ctx.Writef("Hello id: %d looking for friend id: ", id, friendid)
 	}) // this will throw e 504 error code instead of 404 if all route's macros not passed.
 
-	// http://localhost:8080/game/a-zA-Z/level/0-9
+	// http://localhost:8080/game/a-zA-Z/level/42
 	// remember, alphabetical is lowercase or uppercase letters only.
 	app.Get("/game/{name:alphabetical}/level/{level:int}", func(ctx iris.Context) {
 		ctx.Writef("name: %s | level: %s", ctx.Params().Get("name"), ctx.Params().Get("level"))
@@ -854,11 +860,6 @@ Example Code:
 	app.Run(iris.Addr(":8080"))
 }
 
-
-
-A path parameter name should contain only alphabetical letters, symbols, containing '_' and numbers are NOT allowed.
-If route failed to be registered, the app will panic without any warnings
-if you didn't catch the second return value(error) on .Handle/.Get....
 
 Last, do not confuse ctx.Values() with ctx.Params().
 Path parameter's values goes to ctx.Params() and context's local storage

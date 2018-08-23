@@ -35,8 +35,9 @@ func registerBuiltinsMacroFuncs(out *macro.Map) {
 	//
 	// these can be overridden by the user, later on.
 	registerStringMacroFuncs(out.String)
-	registerIntMacroFuncs(out.Int)
-	registerIntMacroFuncs(out.Long)
+	registerNumberMacroFuncs(out.Number)
+	registerInt64MacroFuncs(out.Int64)
+	registerUint64MacroFuncs(out.Uint64)
 	registerAlphabeticalMacroFuncs(out.Alphabetical)
 	registerFileMacroFuncs(out.File)
 	registerPathMacroFuncs(out.Path)
@@ -87,9 +88,9 @@ func registerStringMacroFuncs(out *macro.Macro) {
 	})
 }
 
-// Int
-// only numbers (0-9)
-func registerIntMacroFuncs(out *macro.Macro) {
+// Number
+// positive and negative numbers, number of digits depends on the arch.
+func registerNumberMacroFuncs(out *macro.Macro) {
 	// checks if the param value's int representation is
 	// bigger or equal than 'min'
 	out.RegisterFunc("min", func(min int) macro.EvaluatorFunc {
@@ -119,6 +120,94 @@ func registerIntMacroFuncs(out *macro.Macro) {
 	out.RegisterFunc("range", func(min, max int) macro.EvaluatorFunc {
 		return func(paramValue string) bool {
 			n, err := strconv.Atoi(paramValue)
+			if err != nil {
+				return false
+			}
+
+			if n < min || n > max {
+				return false
+			}
+			return true
+		}
+	})
+}
+
+// Int64
+// -9223372036854775808 to 9223372036854775807.
+func registerInt64MacroFuncs(out *macro.Macro) {
+	// checks if the param value's int64 representation is
+	// bigger or equal than 'min'
+	out.RegisterFunc("min", func(min int64) macro.EvaluatorFunc {
+		return func(paramValue string) bool {
+			n, err := strconv.ParseInt(paramValue, 10, 64)
+			if err != nil {
+				return false
+			}
+			return n >= min
+		}
+	})
+
+	// checks if the param value's int64 representation is
+	// smaller or equal than 'max'
+	out.RegisterFunc("max", func(max int64) macro.EvaluatorFunc {
+		return func(paramValue string) bool {
+			n, err := strconv.ParseInt(paramValue, 10, 64)
+			if err != nil {
+				return false
+			}
+			return n <= max
+		}
+	})
+
+	// checks if the param value's int64 representation is
+	// between min and max, including 'min' and 'max'
+	out.RegisterFunc("range", func(min, max int64) macro.EvaluatorFunc {
+		return func(paramValue string) bool {
+			n, err := strconv.ParseInt(paramValue, 10, 64)
+			if err != nil {
+				return false
+			}
+
+			if n < min || n > max {
+				return false
+			}
+			return true
+		}
+	})
+}
+
+// Uint64
+// 0 to 18446744073709551615.
+func registerUint64MacroFuncs(out *macro.Macro) {
+	// checks if the param value's uint64 representation is
+	// bigger or equal than 'min'
+	out.RegisterFunc("min", func(min uint64) macro.EvaluatorFunc {
+		return func(paramValue string) bool {
+			n, err := strconv.ParseUint(paramValue, 10, 64)
+			if err != nil {
+				return false
+			}
+			return n >= min
+		}
+	})
+
+	// checks if the param value's uint64 representation is
+	// smaller or equal than 'max'
+	out.RegisterFunc("max", func(max uint64) macro.EvaluatorFunc {
+		return func(paramValue string) bool {
+			n, err := strconv.ParseUint(paramValue, 10, 64)
+			if err != nil {
+				return false
+			}
+			return n <= max
+		}
+	})
+
+	// checks if the param value's uint64 representation is
+	// between min and max, including 'min' and 'max'
+	out.RegisterFunc("range", func(min, max uint64) macro.EvaluatorFunc {
+		return func(paramValue string) bool {
+			n, err := strconv.ParseUint(paramValue, 10, 64)
 			if err != nil {
 				return false
 			}

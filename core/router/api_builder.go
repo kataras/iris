@@ -270,10 +270,10 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 // otherwise use `Party` which can handle many paths with different handlers and middlewares.
 //
 // Usage:
-// 	app.HandleMany("GET", "/user /user/{id:int} /user/me", genericUserHandler)
+// 	app.HandleMany("GET", "/user /user/{id:uint64} /user/me", genericUserHandler)
 // At the other side, with `Handle` we've had to write:
 // 	app.Handle("GET", "/user", userHandler)
-// 	app.Handle("GET", "/user/{id:int}", userByIDHandler)
+// 	app.Handle("GET", "/user/{id:uint64}", userByIDHandler)
 // 	app.Handle("GET", "/user/me", userMeHandler)
 //
 // This method is used behind the scenes at the `Controller` function
