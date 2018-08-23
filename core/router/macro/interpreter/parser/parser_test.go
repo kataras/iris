@@ -53,10 +53,10 @@ func TestParseParam(t *testing.T) {
 				Funcs: []ast.ParamFunc{
 					{
 						Name: "min",
-						Args: []ast.ParamFuncArg{1}},
+						Args: []string{"1"}},
 					{
 						Name: "max",
-						Args: []ast.ParamFuncArg{5}},
+						Args: []string{"5"}},
 				},
 				ErrorCode: 404,
 			}}, // 0
@@ -69,7 +69,7 @@ func TestParseParam(t *testing.T) {
 				Funcs: []ast.ParamFunc{
 					{
 						Name: "range",
-						Args: []ast.ParamFuncArg{1, 5}},
+						Args: []string{"1", "5"}},
 				},
 				ErrorCode: 404,
 			}}, // 1
@@ -81,7 +81,7 @@ func TestParseParam(t *testing.T) {
 				Funcs: []ast.ParamFunc{
 					{
 						Name: "contains",
-						Args: []ast.ParamFuncArg{"."}},
+						Args: []string{"."}},
 				},
 				ErrorCode: 404,
 			}}, // 2
@@ -189,10 +189,10 @@ func TestParse(t *testing.T) {
 				Funcs: []ast.ParamFunc{
 					{
 						Name: "min",
-						Args: []ast.ParamFuncArg{1}},
+						Args: []string{"1"}},
 					{
 						Name: "max",
-						Args: []ast.ParamFuncArg{5}},
+						Args: []string{"5"}},
 				},
 				ErrorCode: 404,
 			},
@@ -205,7 +205,7 @@ func TestParse(t *testing.T) {
 				Funcs: []ast.ParamFunc{
 					{
 						Name: "range",
-						Args: []ast.ParamFuncArg{1, 5}},
+						Args: []string{"1", "5"}},
 				},
 				ErrorCode: 404,
 			},
@@ -218,7 +218,7 @@ func TestParse(t *testing.T) {
 				Funcs: []ast.ParamFunc{
 					{
 						Name: "contains",
-						Args: []ast.ParamFuncArg{"."}},
+						Args: []string{"."}},
 				},
 				ErrorCode: 404,
 			},

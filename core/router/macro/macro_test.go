@@ -16,7 +16,7 @@ func TestGoodParamFunc(t *testing.T) {
 		}
 	}
 
-	good2 := func(min int, max int) func(string) bool {
+	good2 := func(min uint64, max uint64) func(string) bool {
 		return func(paramValue string) bool {
 			return true
 		}
@@ -244,3 +244,37 @@ func TestPathEvaluatorRaw(t *testing.T) {
 
 // 	testEvaluatorRaw(t, m.String, p.Src, false, 0)
 // }
+
+func TestConvertBuilderFunc(t *testing.T) {
+	fn := func(min uint64, slice []string) func(string) bool {
+		return func(paramValue string) bool {
+			if expected, got := "ok", paramValue; expected != got {
+				t.Fatalf("paramValue is not the expected one: %s vs %s", expected, got)
+			}
+
+			if expected, got := uint64(1), min; expected != got {
+				t.Fatalf("min argument is not the expected one: %d vs %d", expected, got)
+			}
+
+			if expected, got := []string{"name1", "name2"}, slice; len(expected) == len(got) {
+				if expected, got := "name1", slice[0]; expected != got {
+					t.Fatalf("slice argument[%d] does not contain the expected value: %s vs %s", 0, expected, got)
+				}
+
+				if expected, got := "name2", slice[1]; expected != got {
+					t.Fatalf("slice argument[%d] does not contain the expected value: %s vs %s", 1, expected, got)
+				}
+			} else {
+				t.Fatalf("slice argument is not the expected one, the length is difference: %d vs %d", len(expected), len(got))
+			}
+
+			return true
+		}
+	}
+
+	evalFunc := convertBuilderFunc(fn)
+
+	if !evalFunc([]string{"1", "[name1,name2]"})("ok") {
+		t.Fatalf("failed, it should fail already")
+	}
+}

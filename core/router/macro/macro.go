@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"regexp"
 	"strconv"
+	"strings"
 	"unicode"
 
 	"github.com/kataras/iris/core/router/macro/interpreter/ast"
@@ -95,7 +96,7 @@ func convertBuilderFunc(fn interface{}) ParamEvaluatorBuilder {
 
 	numFields := typFn.NumIn()
 
-	return func(args []ast.ParamFuncArg) EvaluatorFunc {
+	return func(args []string) EvaluatorFunc {
 		if len(args) != numFields {
 			// no variadics support, for now.
 			panic("args should be the same len as numFields")
@@ -105,11 +106,60 @@ func convertBuilderFunc(fn interface{}) ParamEvaluatorBuilder {
 			field := typFn.In(i)
 			arg := args[i]
 
-			if field.Kind() != reflect.TypeOf(arg).Kind() {
-				panic("fields should have the same type")
+			// try to convert the string literal as we get it from the parser.
+			var (
+				v   interface{}
+				err error
+			)
+
+			// try to get the value based on the expected type.
+			switch field.Kind() {
+			case reflect.Int:
+				v, err = strconv.Atoi(arg)
+			case reflect.Int8:
+				v, err = strconv.ParseInt(arg, 10, 8)
+			case reflect.Int16:
+				v, err = strconv.ParseInt(arg, 10, 16)
+			case reflect.Int32:
+				v, err = strconv.ParseInt(arg, 10, 32)
+			case reflect.Int64:
+				v, err = strconv.ParseInt(arg, 10, 64)
+			case reflect.Uint8:
+				v, err = strconv.ParseUint(arg, 10, 8)
+			case reflect.Uint16:
+				v, err = strconv.ParseUint(arg, 10, 16)
+			case reflect.Uint32:
+				v, err = strconv.ParseUint(arg, 10, 32)
+			case reflect.Uint64:
+				v, err = strconv.ParseUint(arg, 10, 64)
+			case reflect.Float32:
+				v, err = strconv.ParseFloat(arg, 32)
+			case reflect.Float64:
+				v, err = strconv.ParseFloat(arg, 64)
+			case reflect.Bool:
+				v, err = strconv.ParseBool(arg)
+			case reflect.Slice:
+				if len(arg) > 1 {
+					if arg[0] == '[' && arg[len(arg)-1] == ']' {
+						// it is a single argument but as slice.
+						v = strings.Split(arg[1:len(arg)-1], ",") // only string slices.
+					}
+				}
+
+			default:
+				v = arg
 			}
 
-			argValues = append(argValues, reflect.ValueOf(arg))
+			if err != nil {
+				panic(fmt.Sprintf("on field index: %d: %v", i, err))
+			}
+
+			argValue := reflect.ValueOf(v)
+			if expected, got := field.Kind(), argValue.Kind(); expected != got {
+				panic(fmt.Sprintf("fields should have the same type: [%d] expected %s but got %s", i, expected, got))
+			}
+
+			argValues = append(argValues, argValue)
 		}
 
 		evalFn := reflect.ValueOf(fn).Call(argValues)[0].Interface()
@@ -149,7 +199,7 @@ type (
 	// and returns an EvaluatorFunc, its job
 	// is to make the macros to be registered
 	// by user at the most generic possible way.
-	ParamEvaluatorBuilder func([]ast.ParamFuncArg) EvaluatorFunc
+	ParamEvaluatorBuilder func([]string) EvaluatorFunc
 
 	// ParamFunc represents the parsed
 	// parameter function, it holds

@@ -82,10 +82,16 @@ const (
 	DefaultParamType = ast.ParamTypeString
 )
 
-func parseParamFuncArg(t token.Token) (a ast.ParamFuncArg, err error) {
-	if t.Type == token.INT {
-		return ast.ParamFuncArgToInt(t.Literal)
-	}
+// func parseParamFuncArg(t token.Token) (a ast.ParamFuncArg, err error) {
+// 	if t.Type == token.INT {
+// 		return ast.ParamFuncArgToInt(t.Literal)
+// 	}
+// 	// act all as strings here, because of int vs int64 vs uint64 and etc.
+// 	return t.Literal, nil
+// }
+
+func parseParamFuncArg(t token.Token) (a string, err error) {
+	// act all as strings here, because of int vs int64 vs uint64 and etc.
 	return t.Literal, nil
 }
 
@@ -143,25 +149,14 @@ func (p *ParamParser) Parse() (*ast.ParamStatement, error) {
 
 			argValTok := l.NextDynamicToken() // catch anything from "(" and forward, until ")", because we need to
 			// be able to use regex expression as a macro type's func argument too.
-			argVal, err := parseParamFuncArg(argValTok)
-			if err != nil {
-				p.appendErr("[%d:%d] expected param func argument to be a string or number but got %s", t.Start, t.End, argValTok.Literal)
-				continue
-			}
 
 			// fmt.Printf("argValTok: %#v\n", argValTok)
 			// fmt.Printf("argVal: %#v\n", argVal)
-			lastParamFunc.Args = append(lastParamFunc.Args, argVal)
+			lastParamFunc.Args = append(lastParamFunc.Args, argValTok.Literal)
 
 		case token.COMMA:
 			argValTok := l.NextToken()
-			argVal, err := parseParamFuncArg(argValTok)
-			if err != nil {
-				p.appendErr("[%d:%d] expected param func argument to be a string or number type but got %s", t.Start, t.End, argValTok.Literal)
-				continue
-			}
-
-			lastParamFunc.Args = append(lastParamFunc.Args, argVal)
+			lastParamFunc.Args = append(lastParamFunc.Args, argValTok.Literal)
 		case token.RPAREN:
 			stmt.Funcs = append(stmt.Funcs, lastParamFunc)
 			lastParamFunc = ast.ParamFunc{} // reset
