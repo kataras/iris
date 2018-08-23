@@ -1,9 +1,7 @@
 package ast
 
 import (
-	"fmt"
 	"reflect"
-	"strconv"
 )
 
 // ParamType is a specific uint8 type
@@ -206,24 +204,6 @@ type ParamStatement struct {
 	ErrorCode int         // 404
 }
 
-// ParamFuncArg represents a single parameter function's argument
-type ParamFuncArg interface{}
-
-// ParamFuncArgToInt converts and returns
-// any type of "a", to an integer.
-func ParamFuncArgToInt(a ParamFuncArg) (int, error) {
-	switch a.(type) {
-	case int:
-		return a.(int), nil
-	case string:
-		return strconv.Atoi(a.(string))
-	case int64:
-		return int(a.(int64)), nil
-	default:
-		return -1, fmt.Errorf("unexpected function argument type: %q", a)
-	}
-}
-
 // ParamFunc holds the name of a parameter's function
 // and its arguments (values)
 // A param func is declared with:
@@ -233,6 +213,6 @@ func ParamFuncArgToInt(a ParamFuncArg) (int, error) {
 // the 1 and 5 are the two param function arguments
 // range(1,5)
 type ParamFunc struct {
-	Name string         // range
-	Args []ParamFuncArg // [1,5]
+	Name string   // range
+	Args []string // ["1","5"]
 }

@@ -112,16 +112,16 @@ func main() {
 		ctx.Writef("Hello %s", ctx.Params().Get("name"))
 	}) // type is missing = {name:string}
 
-	// Let's register our first macro attached to number macro type.
+	// Let's register our first macro attached to uint64 macro type.
 	// "min" = the function
 	// "minValue" = the argument of the function
 	// func(string) bool = the macro's path parameter evaluator, this executes in serve time when
-	// a user requests a path which contains the :number macro type with the min(...) macro parameter function.
-	app.Macros().Number.RegisterFunc("min", func(minValue int) func(string) bool {
+	// a user requests a path which contains the :uint64 macro parameter type with the min(...) macro parameter function.
+	app.Macros().Uint64.RegisterFunc("min", func(minValue uint64) func(string) bool {
 		// do anything before serve here [...]
 		// at this case we don't need to do anything
 		return func(paramValue string) bool {
-			n, err := strconv.Atoi(paramValue)
+			n, err := strconv.ParseUint(paramValue, 10, 64)
 			if err != nil {
 				return false
 			}
@@ -129,10 +129,10 @@ func main() {
 		}
 	})
 
-	// http://localhost:8080/profile/id>=1
+	// http://localhost:8080/profile/id>=20
 	// this will throw 404 even if it's found as route on : /profile/0, /profile/blabla, /profile/-1
 	// macro parameter functions are optional of course.
-	app.Get("/profile/{id:number min(1)}", func(ctx iris.Context) {
+	app.Get("/profile/{id:uint64 min(20)}", func(ctx iris.Context) {
 		// second parameter is the error but it will always nil because we use macros,
 		// the validaton already happened.
 		id, _ := ctx.Params().GetInt("id")
@@ -140,7 +140,7 @@ func main() {
 	})
 
 	// to change the error code per route's macro evaluator:
-	app.Get("/profile/{id:number min(1)}/friends/{friendid:number min(1) else 504}", func(ctx iris.Context) {
+	app.Get("/profile/{id:uint64 min(1)}/friends/{friendid:uint64 min(1) else 504}", func(ctx iris.Context) {
 		id, _ := ctx.Params().GetInt("id") // or GetUint64.
 		friendid, _ := ctx.Params().GetInt("friendid")
 		ctx.Writef("Hello id: %d looking for friend id: ", id, friendid)
