@@ -190,7 +190,7 @@ latLonRegex, _ := regexp.Compile(latLonExpr)
 // MatchString is a type of func(string) bool, so we use it as it is.
 app.Macros().String.RegisterFunc("coordinate", latLonRegex.MatchString)
 
-app.Get("/coordinates/{lat:string coordinate() else 400}/{lon:string coordinate() else 400}", func(ctx iris.Context) {
+app.Get("/coordinates/{lat:string coordinate()}/{lon:string coordinate()}", func(ctx iris.Context) {
     ctx.Writef("Lat: %s | Lon: %s", ctx.Params().Get("lat"), ctx.Params().Get("lon"))
 })
 ```
@@ -205,7 +205,7 @@ app.Macros().String.RegisterFunc("range", func(minLength, maxLength int) func(st
     }
 })
 
-app.Get("/limitchar/{name:string range(1,200)}", func(ctx iris.Context) {
+app.Get("/limitchar/{name:string range(1,200) else 400}", func(ctx iris.Context) {
     name := ctx.Params().Get("name")
     ctx.Writef(`Hello %s | the name should be between 1 and 200 characters length
     otherwise this handler will not be executed`, name)
