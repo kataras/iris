@@ -87,30 +87,6 @@ func main() {
 $ go run example.go
 ```
 
-## Dependency Injection
-
-The package [hero](hero) contains features for binding any object or functions that `handlers` can use, these are called dependencies.
-
-With Iris you get truly safe bindings thanks to the [hero](_examples/hero) [package](hero). It is blazing-fast, near to raw handlers performance because Iris calculates everything before even server goes online!
-
-Below you will see some screenshots I prepared for you in order to be easier to understand:
-
-### 1. Path Parameters - Built'n Dependencies
-
-![](https://github.com/kataras/explore/raw/master/iris/hero/hero-1-monokai.png)
-
-### 2. Services - Static Dependencies
-
-![](https://github.com/kataras/explore/raw/master/iris/hero/hero-2-monokai.png)
-
-### 3. Per-Request - Dynamic Dependencies
-
-![](https://github.com/kataras/explore/raw/master/iris/hero/hero-3-monokai.png)
-
-`hero funcs` are very easy to understand and when you start using them **you never go back**.
-
-> With Iris you also get real and [blazing-fast](_benchmarks) [MVC support](_examples/mvc) which uses "hero" under the hoods.
-
 ## API Examples
 
 ### Using Get, Post, Put, Patch, Delete and Options
@@ -269,6 +245,31 @@ func main() {
 > If parameter type is missing then defaults to `string`, therefore `{name:string}` and `{name}` do the same exactly thing.
 
 > Learn more about path parameter's types by navigating [here](_examples/routing/dynamic-path/main.go#L31).
+
+
+### Dependency Injection
+
+The package [hero](hero) contains features for binding any object or functions that `handlers` can use, these are called dependencies.
+
+With Iris you get truly safe bindings thanks to the [hero](_examples/hero) [package](hero). It is blazing-fast, near to raw handlers performance because Iris calculates everything before even server goes online!
+
+Below you will see some screenshots I prepared for you in order to be easier to understand:
+
+#### 1. Path Parameters - Built'n Dependencies
+
+![](https://github.com/kataras/explore/raw/master/iris/hero/hero-1-monokai.png)
+
+#### 2. Services - Static Dependencies
+
+![](https://github.com/kataras/explore/raw/master/iris/hero/hero-2-monokai.png)
+
+#### 3. Per-Request - Dynamic Dependencies
+
+![](https://github.com/kataras/explore/raw/master/iris/hero/hero-3-monokai.png)
+
+`hero funcs` are very easy to understand and when you start using them **you never go back**.
+
+> With Iris you also get real and [blazing-fast](_benchmarks) [MVC support](_examples/mvc) which uses "hero" under the hoods.
 
 ### Querystring parameters
 
