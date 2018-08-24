@@ -159,20 +159,56 @@ func main() {
 		ctx.Writef("age selected: %d", age)
 	})
 
-	// Another example using a custom regexp and any custom logic.
+	// Another example using a custom regexp or any custom logic.
+
+	// Register your custom argument-less macro function to the :string param type.
 	latLonExpr := "^-?[0-9]{1,3}(?:\\.[0-9]{1,10})?$"
 	latLonRegex, err := regexp.Compile(latLonExpr)
 	if err != nil {
 		panic(err)
 	}
 
-	app.Macros().String.RegisterFunc("coordinate", func() func(paramName string) (ok bool) {
-		// MatchString is a type of func(string) bool, so we can return that as it's.
-		return latLonRegex.MatchString
-	})
+	// MatchString is a type of func(string) bool, so we use it as it is.
+	app.Macros().String.RegisterFunc("coordinate", latLonRegex.MatchString)
 
 	app.Get("/coordinates/{lat:string coordinate() else 502}/{lon:string coordinate() else 502}", func(ctx iris.Context) {
 		ctx.Writef("Lat: %s | Lon: %s", ctx.Params().Get("lat"), ctx.Params().Get("lon"))
+	})
+
+	//
+
+	// Another one is by using a custom body.
+	app.Macros().String.RegisterFunc("range", func(minLength, maxLength int) func(string) bool {
+		return func(paramValue string) bool {
+			return len(paramValue) >= minLength && len(paramValue) <= maxLength
+		}
+	})
+
+	app.Get("/limitchar/{name:string range(1,200)}", func(ctx iris.Context) {
+		name := ctx.Params().Get("name")
+		ctx.Writef(`Hello %s | the name should be between 1 and 200 characters length
+		otherwise this handler will not be executed`, name)
+	})
+
+	//
+
+	// Register your custom macro function which accepts a slice of strings `[...,...]`.
+	app.Macros().String.RegisterFunc("has", func(validNames []string) func(string) bool {
+		return func(paramValue string) bool {
+			for _, validName := range validNames {
+				if validName == paramValue {
+					return true
+				}
+			}
+
+			return false
+		}
+	})
+
+	app.Get("/static_validation/{name:string has([kataras,gerasimos,maropoulos]}", func(ctx iris.Context) {
+		name := ctx.Params().Get("name")
+		ctx.Writef(`Hello %s | the name should be "kataras" or "gerasimos" or "maropoulos"
+		otherwise this handler will not be executed`, name)
 	})
 
 	//
