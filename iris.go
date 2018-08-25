@@ -58,13 +58,13 @@ const (
 	StatusAlreadyReported      = 208 // RFC 5842, 7.1
 	StatusIMUsed               = 226 // RFC 3229, 10.4.1
 
-	StatusMultipleChoices   = 300 // RFC 7231, 6.4.1
-	StatusMovedPermanently  = 301 // RFC 7231, 6.4.2
-	StatusFound             = 302 // RFC 7231, 6.4.3
-	StatusSeeOther          = 303 // RFC 7231, 6.4.4
-	StatusNotModified       = 304 // RFC 7232, 4.1
-	StatusUseProxy          = 305 // RFC 7231, 6.4.5
-	_                       = 306 // RFC 7231, 6.4.6 (Unused)
+	StatusMultipleChoices  = 300 // RFC 7231, 6.4.1
+	StatusMovedPermanently = 301 // RFC 7231, 6.4.2
+	StatusFound            = 302 // RFC 7231, 6.4.3
+	StatusSeeOther         = 303 // RFC 7231, 6.4.4
+	StatusNotModified      = 304 // RFC 7232, 4.1
+	StatusUseProxy         = 305 // RFC 7231, 6.4.5
+
 	StatusTemporaryRedirect = 307 // RFC 7231, 6.4.7
 	StatusPermanentRedirect = 308 // RFC 7538, 3
 
@@ -87,6 +87,7 @@ const (
 	StatusRequestedRangeNotSatisfiable = 416 // RFC 7233, 4.4
 	StatusExpectationFailed            = 417 // RFC 7231, 6.5.14
 	StatusTeapot                       = 418 // RFC 7168, 2.3.3
+	StatusMisdirectedRequest           = 421 // RFC 7540, 9.1.2
 	StatusUnprocessableEntity          = 422 // RFC 4918, 11.2
 	StatusLocked                       = 423 // RFC 4918, 11.3
 	StatusFailedDependency             = 424 // RFC 4918, 11.4
