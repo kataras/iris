@@ -32,7 +32,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Manifest represnts the contents of the MANIFEST file in a Badger store.
+// Manifest represents the contents of the MANIFEST file in a Badger store.
 //
 // The MANIFEST file describes the startup state of the db -- all LSM files and what level they're
 // at.
@@ -112,16 +112,23 @@ func (m *Manifest) clone() Manifest {
 
 // openOrCreateManifestFile opens a Badger manifest file if it exists, or creates on if
 // one doesn’t.
-func openOrCreateManifestFile(dir string) (ret *manifestFile, result Manifest, err error) {
-	return helpOpenOrCreateManifestFile(dir, manifestDeletionsRewriteThreshold)
+func openOrCreateManifestFile(dir string, readOnly bool) (ret *manifestFile, result Manifest, err error) {
+	return helpOpenOrCreateManifestFile(dir, readOnly, manifestDeletionsRewriteThreshold)
 }
 
-func helpOpenOrCreateManifestFile(dir string, deletionsThreshold int) (ret *manifestFile, result Manifest, err error) {
+func helpOpenOrCreateManifestFile(dir string, readOnly bool, deletionsThreshold int) (ret *manifestFile, result Manifest, err error) {
 	path := filepath.Join(dir, ManifestFilename)
-	fp, err := y.OpenExistingSyncedFile(path, false) // We explicitly sync in addChanges, outside the lock.
+	var flags uint32
+	if readOnly {
+		flags |= y.ReadOnly
+	}
+	fp, err := y.OpenExistingFile(path, flags) // We explicitly sync in addChanges, outside the lock.
 	if err != nil {
 		if !os.IsNotExist(err) {
 			return nil, Manifest{}, err
+		}
+		if readOnly {
+			return nil, Manifest{}, fmt.Errorf("no manifest found, required for read-only db")
 		}
 		m := createManifest()
 		fp, netCreations, err := helpRewrite(dir, &m)
@@ -144,12 +151,13 @@ func helpOpenOrCreateManifestFile(dir string, deletionsThreshold int) (ret *mani
 		return nil, Manifest{}, err
 	}
 
-	// Truncate file so we don't have a half-written entry at the end.
-	if err := fp.Truncate(truncOffset); err != nil {
-		_ = fp.Close()
-		return nil, Manifest{}, err
+	if !readOnly {
+		// Truncate file so we don't have a half-written entry at the end.
+		if err := fp.Truncate(truncOffset); err != nil {
+			_ = fp.Close()
+			return nil, Manifest{}, err
+		}
 	}
-
 	if _, err = fp.Seek(0, io.SeekEnd); err != nil {
 		_ = fp.Close()
 		return nil, Manifest{}, err
@@ -256,7 +264,7 @@ func helpRewrite(dir string, m *Manifest) (*os.File, int, error) {
 	if err := os.Rename(rewritePath, manifestPath); err != nil {
 		return nil, 0, err
 	}
-	fp, err = y.OpenExistingSyncedFile(manifestPath, false)
+	fp, err = y.OpenExistingFile(manifestPath, 0)
 	if err != nil {
 		return nil, 0, err
 	}

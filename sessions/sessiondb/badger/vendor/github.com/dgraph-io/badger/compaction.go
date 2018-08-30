@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"math"
 	"sync"
 
 	"golang.org/x/net/trace"
@@ -37,7 +38,7 @@ type keyRange struct {
 var infRange = keyRange{inf: true}
 
 func (r keyRange) String() string {
-	return fmt.Sprintf("[left=%q, right=%q, inf=%v]", r.left, r.right, r.inf)
+	return fmt.Sprintf("[left=%x, right=%x, inf=%v]", r.left, r.right, r.inf)
 }
 
 func (r keyRange) equals(dst keyRange) bool {
@@ -75,7 +76,10 @@ func getKeyRange(tables []*table.Table) keyRange {
 			biggest = tables[i].Biggest()
 		}
 	}
-	return keyRange{left: smallest, right: biggest}
+	return keyRange{
+		left:  y.KeyWithTs(y.ParseKey(smallest), math.MaxUint64),
+		right: y.KeyWithTs(y.ParseKey(biggest), 0),
+	}
 }
 
 type levelCompactStatus struct {

@@ -341,6 +341,7 @@ func (itr *Iterator) next() {
 		}
 		itr.bi = block.NewIterator()
 		itr.bi.SeekToFirst()
+		itr.err = itr.bi.Error()
 		return
 	}
 
@@ -368,6 +369,7 @@ func (itr *Iterator) prev() {
 		}
 		itr.bi = block.NewIterator()
 		itr.bi.SeekToLast()
+		itr.err = itr.bi.Error()
 		return
 	}
 

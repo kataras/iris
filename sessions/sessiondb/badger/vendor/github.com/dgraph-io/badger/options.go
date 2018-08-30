@@ -46,8 +46,11 @@ type Options struct {
 	// How should LSM tree be accessed.
 	TableLoadingMode options.FileLoadingMode
 
-	// How should value log be accessed
+	// How should value log be accessed.
 	ValueLogLoadingMode options.FileLoadingMode
+
+	// How many versions to keep per key.
+	NumVersionsToKeep int
 
 	// 3. Flags that user might want to review
 	// ----------------------------------------
@@ -73,6 +76,10 @@ type Options struct {
 	// Size of single value log file.
 	ValueLogFileSize int64
 
+	// Max number of entries a value log file can hold (approximately). A value log file would be
+	// determined by the smaller of its file size and max entries.
+	ValueLogMaxEntries uint32
+
 	// Number of compaction workers to run concurrently.
 	NumCompactors int
 
@@ -86,6 +93,15 @@ type Options struct {
 
 	maxBatchCount int64 // max entries in batch
 	maxBatchSize  int64 // max batch size in bytes
+
+	// Open the DB as read-only. With this set, multiple processes can
+	// open the same Badger DB. Note: if the DB being opened had crashed
+	// before and has vlog data to be replayed, ReadOnly will cause Open
+	// to fail with an appropriate message.
+	ReadOnly bool
+
+	// Truncate value log to delete corrupt data, if any. Would not truncate if ReadOnly is set.
+	Truncate bool
 }
 
 // DefaultOptions sets a list of recommended options for good performance.
@@ -105,8 +121,24 @@ var DefaultOptions = Options{
 	NumLevelZeroTablesStall: 10,
 	NumMemtables:            5,
 	SyncWrites:              true,
+	NumVersionsToKeep:       1,
 	// Nothing to read/write value log using standard File I/O
 	// MemoryMap to mmap() the value log files
-	ValueLogFileSize: 1 << 30,
-	ValueThreshold:   20,
+	ValueLogFileSize:   1 << 30,
+	ValueLogMaxEntries: 1000000,
+	ValueThreshold:     32,
+	Truncate:           false,
+}
+
+// LSMOnlyOptions follows from DefaultOptions, but sets a higher ValueThreshold so values would
+// be colocated with the LSM tree, with value log largely acting as a write-ahead log only. These
+// options would reduce the disk usage of value log, and make Badger act like a typical LSM tree.
+var LSMOnlyOptions = Options{}
+
+func init() {
+	LSMOnlyOptions = DefaultOptions
+
+	LSMOnlyOptions.ValueThreshold = 65500      // Max value length which fits in uint16.
+	LSMOnlyOptions.ValueLogFileSize = 64 << 20 // Allow easy space reclamation.
+	LSMOnlyOptions.ValueLogLoadingMode = options.FileIO
 }

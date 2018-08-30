@@ -1,6 +1,6 @@
 // +build !windows,!plan9,!solaris
 
-package bolt
+package bbolt
 
 import (
 	"fmt"

@@ -1,4 +1,4 @@
-// +build !dragonfly,!freebsd,!windows,!darwin
+// +build !dragonfly,!freebsd,!windows
 
 /*
  * Copyright 2017 Dgraph Labs, Inc. and Contributors
@@ -18,8 +18,8 @@
 
 package y
 
-import "syscall"
+import "golang.org/x/sys/unix"
 
 func init() {
-	datasyncFileFlag = syscall.O_DSYNC
+	datasyncFileFlag = unix.O_DSYNC
 }

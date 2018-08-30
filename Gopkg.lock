@@ -277,6 +277,24 @@
   packages = ["."]
   revision = "aad8439df3bf67adb025382ee2e5f46a72fc9456"
 
+[[projects]]
+  branch = "master"
+  name = "github.com/dgraph-io/badger"
+  packages = ["."]
+  revision = "391b6d3b93e6014fe8c2971fcc0c1266e47dbbd9"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/etcd-io/bbolt"
+  packages = ["."]
+  revision = "acbc2c426a444a65e0cbfdcbb3573857bf18b465"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/gomodule/redigo"
+  packages = ["internal","redis"]
+  revision = "2cd21d9966bf7ff9ae091419744f0b3fb0fecace"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1

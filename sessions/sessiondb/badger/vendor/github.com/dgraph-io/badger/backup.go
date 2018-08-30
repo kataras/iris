@@ -1,9 +1,26 @@
+/*
+ * Copyright 2017 Dgraph Labs, Inc. and Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package badger
 
 import (
 	"bufio"
 	"encoding/binary"
 	"io"
+	"log"
 	"sync"
 
 	"github.com/dgraph-io/badger/y"
@@ -36,6 +53,8 @@ func (db *DB) Backup(w io.Writer, since uint64) (uint64, error) {
 		opts := DefaultIteratorOptions
 		opts.AllVersions = true
 		it := txn.NewIterator(opts)
+		defer it.Close()
+
 		for it.Rewind(); it.Valid(); it.Next() {
 			item := it.Item()
 			if item.Version() < since {
@@ -44,7 +63,8 @@ func (db *DB) Backup(w io.Writer, since uint64) (uint64, error) {
 			}
 			val, err := item.Value()
 			if err != nil {
-				return err
+				log.Printf("Key [%x]. Error while fetching value [%v]\n", item.Key(), err)
+				continue
 			}
 
 			entry := &protos.KVPair{
@@ -68,7 +88,7 @@ func (db *DB) Backup(w io.Writer, since uint64) (uint64, error) {
 
 // Load reads a protobuf-encoded list of all entries from a reader and writes
 // them to the database. This can be used to restore the database from a backup
-// made by calling DB.Dump().
+// made by calling DB.Backup().
 //
 // DB.Load() should be called on a database that is not running any other
 // concurrent transactions while it is running.
@@ -124,12 +144,17 @@ func (db *DB) Load(r io.Reader) error {
 			UserMeta:  e.UserMeta[0],
 			ExpiresAt: e.ExpiresAt,
 		})
+		// Update nextCommit, memtable stores this timestamp in badger head
+		// when flushed.
+		if e.Version >= db.orc.commitTs() {
+			db.orc.nextCommit = e.Version + 1
+		}
 
 		if len(entries) == 1000 {
 			if err := batchSetAsyncIfNoErr(entries); err != nil {
 				return err
 			}
-			entries = entries[:0]
+			entries = make([]*Entry, 0, 1000)
 		}
 	}
 
@@ -145,6 +170,7 @@ func (db *DB) Load(r io.Reader) error {
 	case err := <-errChan:
 		return err
 	default:
+		db.orc.curRead = db.orc.commitTs() - 1
 		return nil
 	}
 }

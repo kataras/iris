@@ -17,6 +17,71 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris` or let the automatic updater do that for you.
 
+# Whenever | v11.0.0
+
+## Breaking changes
+
+- Remove the "Configurator" `WithoutVersionChecker` and the configuration field `DisableVersionChecker`
+- `:int` (or its new alias `:number`) macro route path parameter type **can accept negative numbers now**. Recommendation: `:int` should be replaced with the more generic numeric parameter type `:number` if possible (although it will stay for backwards-compatibility)
+
+## Routing
+
+- `:number` parameter type as an alias to the old `:int` which can accept any numeric path segment now, both negative and positive numbers and without digits limitation
+- Add `:int64` parameter type and `ctx.Params().GetInt64`
+- Add `:uint8` parameter type and `ctx.Params().GetUint8`
+- Add `:uint64` parameter type and `ctx.Params().GetUint64`
+- `:bool` parameter type as an alias for `:boolean`
+
+Here is the full list of the built'n parameter types that we support now, including their validations/path segment rules.
+
+| Param Type | Go Type | Validation |
+| -----------|---------|------------|
+| `:string` | string | anything |
+| `:number` | uint, uint8, uint16, uint32, uint64, int, int8, int32, int64 | positive or negative number, any number of digits |
+| `:int64` | int64 | -9223372036854775808 to 9223372036854775807 |
+| `:uint8` | uint8 | 0 to 255 |
+| `:uint64` | uint64 | 0 to 18446744073709551615 |
+| `:bool` | bool | "1" or "t" or "T" or "TRUE" or "true" or "True" or "0" or "f" or "F" or "FALSE" or "false" or "False" |
+| `:alphabetical` | string | lowercase or uppercase letters |
+| `:file` | string | lowercase or uppercase letters, numbers, underscore (_), dash (-), point (.) and no spaces or other special characters that are not valid for filenames |
+| `:path` | string | anything, can be separated by slashes (path segments) but should be the last part of the route path |
+
+**Usage**:
+
+```go
+app.Get("/users/{id:uint64}", func(ctx iris.Context){
+    id, _ := ctx.Params().GetUint64("id")
+    // [...]
+})
+```
+
+| Built'n Func | Param Types |
+| -----------|---------------|
+| `regexp`(expr string) | :string |
+| `prefix`(prefix string) | :string |
+| `suffix`(suffix string) | :string |
+| `contains`(s string) | :string |
+| `min`(minValue int or int8 or int16 or int32 or int64 or uint8 or uint16 or uint32 or uint64  or float32 or float64) | :string(char length), :number, :int64, :uint8, :uint64  |
+| `max`(maxValue int or int8 or int16 or int32 or int64 or uint8 or uint16 or uint32 or uint64  or float32 or float64) | :string(char length), :number, :int64, :uint8, :uint64 |
+| `range`(minValue, maxValue int or int8 or int16 or int32 or int64 or uint8 or uint16 or uint32 or uint64 or float32 or float64) | :number, :int64, :uint8, :uint64 |
+
+**Usage**:
+
+```go
+app.Get("/profile/{name:alphabetical max(255)}", func(ctx iris.Context){
+    name := ctx.Params().Get("name")
+    // len(name) <=255 otherwise this route will fire 404 Not Found
+    // and this handler will not be executed at all.
+})
+```
+
+## Vendoring
+
+- Rename the vendor `sessions/sessiondb/vendor/...bbolt` from `coreos/bbolt` to `etcd-io/bbolt` and update to v1.3.1, based on [that](https://github.com/etcd-io/bbolt/releases/tag/v1.3.1-etcd.7)
+- Update the vendor `sessions/sessiondb/vendor/...badger` to v1.5.3
+
+> More to come, maybe it will be removed eventually.
+
 # Sat, 11 August 2018 | v10.7.0
 
 I am overjoyed to announce stage 1 of the the Iris Web framework **10.7 stable release is now available**.

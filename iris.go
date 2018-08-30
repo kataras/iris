@@ -17,7 +17,6 @@ import (
 	// core packages, needed to build the application
 	"github.com/kataras/iris/core/errors"
 	"github.com/kataras/iris/core/host"
-	"github.com/kataras/iris/core/maintenance"
 	"github.com/kataras/iris/core/netutil"
 	"github.com/kataras/iris/core/router"
 	// handlerconv conversions
@@ -34,7 +33,7 @@ import (
 
 var (
 	// Version is the current version number of the Iris Web Framework.
-	Version = maintenance.Version
+	Version = "11.0.0"
 )
 
 // HTTP status codes as registered with IANA.
@@ -810,10 +809,6 @@ func (app *Application) Run(serve Runner, withOrWithout ...Configurator) error {
 
 	app.Configure(withOrWithout...)
 	app.logger.Debugf("Application: running using %d host(s)", len(app.Hosts)+1)
-
-	if !app.config.DisableVersionChecker {
-		go maintenance.Start()
-	}
 
 	// this will block until an error(unless supervisor's DeferFlow called from a Task).
 	err := serve(app)

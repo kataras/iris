@@ -212,7 +212,7 @@ func (b *Builder) Finish() []byte {
 		}
 		kl := int(binary.BigEndian.Uint16(klen[:]))
 		if cap(key) < kl {
-			key = make([]byte, 2*kl)
+			key = make([]byte, 2*int(kl)) // 2 * uint16 will overflow
 		}
 		key = key[:kl]
 		y.Check2(b.keyBuf.Read(key))

@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/coreos/bbolt"
+	"github.com/etcd-io/bbolt"
 	"github.com/kataras/golog"
 	"github.com/kataras/iris/core/errors"
 	"github.com/kataras/iris/sessions"
@@ -25,7 +25,7 @@ type Database struct {
 	// Service is the underline BoltDB database connection,
 	// it's initialized at `New` or `NewFromDB`.
 	// Can be used to get stats.
-	Service *bolt.DB
+	Service *bbolt.DB
 }
 
 var errPathMissing = errors.New("path is required")
@@ -51,8 +51,8 @@ func New(path string, fileMode os.FileMode) (*Database, error) {
 		return nil, err
 	}
 
-	service, err := bolt.Open(path, fileMode,
-		&bolt.Options{Timeout: 20 * time.Second},
+	service, err := bbolt.Open(path, fileMode,
+		&bbolt.Options{Timeout: 20 * time.Second},
 	)
 
 	if err != nil {
@@ -64,10 +64,10 @@ func New(path string, fileMode os.FileMode) (*Database, error) {
 }
 
 // NewFromDB same as `New` but accepts an already-created custom boltdb connection instead.
-func NewFromDB(service *bolt.DB, bucketName string) (*Database, error) {
+func NewFromDB(service *bbolt.DB, bucketName string) (*Database, error) {
 	bucket := []byte(bucketName)
 
-	service.Update(func(tx *bolt.Tx) (err error) {
+	service.Update(func(tx *bbolt.Tx) (err error) {
 		_, err = tx.CreateBucketIfNotExists(bucket)
 		return
 	})
@@ -78,15 +78,15 @@ func NewFromDB(service *bolt.DB, bucketName string) (*Database, error) {
 	return db, db.cleanup()
 }
 
-func (db *Database) getBucket(tx *bolt.Tx) *bolt.Bucket {
+func (db *Database) getBucket(tx *bbolt.Tx) *bbolt.Bucket {
 	return tx.Bucket(db.table)
 }
 
-func (db *Database) getBucketForSession(tx *bolt.Tx, sid string) *bolt.Bucket {
+func (db *Database) getBucketForSession(tx *bbolt.Tx, sid string) *bbolt.Bucket {
 	b := db.getBucket(tx).Bucket([]byte(sid))
 	if b == nil {
 		// session does not exist, it shouldn't happen, session bucket creation happens once at `Acquire`,
-		// no need to accept the `bolt.bucket.CreateBucketIfNotExists`'s performance cost.
+		// no need to accept the `bbolt.bucket.CreateBucketIfNotExists`'s performance cost.
 		golog.Debugf("unreachable session access for '%s'", sid)
 	}
 
@@ -105,7 +105,7 @@ func getExpirationBucketName(bsid []byte) []byte {
 
 // Cleanup removes any invalid(have expired) session entries on initialization.
 func (db *Database) cleanup() error {
-	return db.Service.Update(func(tx *bolt.Tx) error {
+	return db.Service.Update(func(tx *bbolt.Tx) error {
 		b := db.getBucket(tx)
 		c := b.Cursor()
 		// loop through all buckets, find one with expiration.
@@ -151,7 +151,7 @@ var expirationKey = []byte("exp") // it can be random.
 // if the return value is LifeTime{} then the session manager sets the life time based on the expiration duration lives in configuration.
 func (db *Database) Acquire(sid string, expires time.Duration) (lifetime sessions.LifeTime) {
 	bsid := []byte(sid)
-	err := db.Service.Update(func(tx *bolt.Tx) (err error) {
+	err := db.Service.Update(func(tx *bbolt.Tx) (err error) {
 		root := db.getBucket(tx)
 
 		if expires > 0 { // should check or create the expiration bucket.
@@ -218,7 +218,7 @@ func (db *Database) OnUpdateExpiration(sid string, newExpires time.Duration) err
 		return err
 	}
 
-	err = db.Service.Update(func(tx *bolt.Tx) error {
+	err = db.Service.Update(func(tx *bbolt.Tx) error {
 		expirationName := getExpirationBucketName([]byte(sid))
 		root := db.getBucket(tx)
 		b := root.Bucket(expirationName)
@@ -250,7 +250,7 @@ func (db *Database) Set(sid string, lifetime sessions.LifeTime, key string, valu
 		return
 	}
 
-	err = db.Service.Update(func(tx *bolt.Tx) error {
+	err = db.Service.Update(func(tx *bbolt.Tx) error {
 		b := db.getBucketForSession(tx, sid)
 		if b == nil {
 			return nil
@@ -270,7 +270,7 @@ func (db *Database) Set(sid string, lifetime sessions.LifeTime, key string, valu
 
 // Get retrieves a session value based on the key.
 func (db *Database) Get(sid string, key string) (value interface{}) {
-	err := db.Service.View(func(tx *bolt.Tx) error {
+	err := db.Service.View(func(tx *bbolt.Tx) error {
 		b := db.getBucketForSession(tx, sid)
 		if b == nil {
 			return nil
@@ -293,7 +293,7 @@ func (db *Database) Get(sid string, key string) (value interface{}) {
 
 // Visit loops through all session keys and values.
 func (db *Database) Visit(sid string, cb func(key string, value interface{})) {
-	db.Service.View(func(tx *bolt.Tx) error {
+	db.Service.View(func(tx *bbolt.Tx) error {
 		b := db.getBucketForSession(tx, sid)
 		if b == nil {
 			return nil
@@ -314,7 +314,7 @@ func (db *Database) Visit(sid string, cb func(key string, value interface{})) {
 
 // Len returns the length of the session's entries (keys).
 func (db *Database) Len(sid string) (n int) {
-	db.Service.View(func(tx *bolt.Tx) error {
+	db.Service.View(func(tx *bbolt.Tx) error {
 		b := db.getBucketForSession(tx, sid)
 		if b == nil {
 			return nil
@@ -329,7 +329,7 @@ func (db *Database) Len(sid string) (n int) {
 
 // Delete removes a session key value based on its key.
 func (db *Database) Delete(sid string, key string) (deleted bool) {
-	err := db.Service.Update(func(tx *bolt.Tx) error {
+	err := db.Service.Update(func(tx *bbolt.Tx) error {
 		b := db.getBucketForSession(tx, sid)
 		if b == nil {
 			return sessions.ErrNotFound
@@ -343,7 +343,7 @@ func (db *Database) Delete(sid string, key string) (deleted bool) {
 
 // Clear removes all session key values but it keeps the session entry.
 func (db *Database) Clear(sid string) {
-	db.Service.Update(func(tx *bolt.Tx) error {
+	db.Service.Update(func(tx *bbolt.Tx) error {
 		b := db.getBucketForSession(tx, sid)
 		if b == nil {
 			return nil
@@ -358,7 +358,7 @@ func (db *Database) Clear(sid string) {
 // Release destroys the session, it clears and removes the session entry,
 // session manager will create a new session ID on the next request after this call.
 func (db *Database) Release(sid string) {
-	db.Service.Update(func(tx *bolt.Tx) error {
+	db.Service.Update(func(tx *bbolt.Tx) error {
 		// delete the session bucket.
 		b := db.getBucket(tx)
 		bsid := []byte(sid)

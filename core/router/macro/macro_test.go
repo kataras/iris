@@ -105,7 +105,7 @@ func TestNumberEvaluatorRaw(t *testing.T) {
 		{true, "-18446744073709553213213213213213121615"}, // 5
 		{false, "42 18446744073709551615"},                // 6
 		{false, "--42"},                                   // 7
-		{false, "+42"},                                    // 9
+		{false, "+42"},                                    // 8
 		{false, "main.css"},                               // 9
 		{false, "/assets/main.css"},                       // 10
 	}

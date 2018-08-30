@@ -1,4 +1,4 @@
-package bolt
+package bbolt
 
 import (
 	"errors"
@@ -147,7 +147,7 @@ func (db *DB) Path() string {
 
 // GoString returns the Go string representation of the database.
 func (db *DB) GoString() string {
-	return fmt.Sprintf("bolt.DB{path:%q}", db.path)
+	return fmt.Sprintf("bbolt.DB{path:%q}", db.path)
 }
 
 // String returns the string representation of the database.
@@ -454,8 +454,8 @@ func (db *DB) Close() error {
 	db.metalock.Lock()
 	defer db.metalock.Unlock()
 
-	db.mmaplock.RLock()
-	defer db.mmaplock.RUnlock()
+	db.mmaplock.Lock()
+	defer db.mmaplock.Unlock()
 
 	return db.close()
 }
@@ -483,7 +483,7 @@ func (db *DB) close() error {
 		if !db.readOnly {
 			// Unlock the file.
 			if err := funlock(db); err != nil {
-				log.Printf("bolt.Close(): funlock error: %s", err)
+				log.Printf("bbolt.Close(): funlock error: %s", err)
 			}
 		}
 
@@ -890,7 +890,7 @@ func (db *DB) meta() *meta {
 
 	// This should never be reached, because both meta1 and meta0 were validated
 	// on mmap() and we do fsync() on every write.
-	panic("bolt.DB.meta(): invalid meta pages")
+	panic("bbolt.DB.meta(): invalid meta pages")
 }
 
 // allocate returns a contiguous block of memory starting at a given page.
