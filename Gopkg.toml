@@ -43,10 +43,6 @@
   name = "github.com/kataras/golog"
 
 [[constraint]]
-  branch = "v2"
-  name = "github.com/kataras/survey"
-
-[[constraint]]
   name = "github.com/klauspost/compress"
   version = "1.2.1"
 
