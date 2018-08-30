@@ -77,13 +77,12 @@ func TestConfigurationOptions(t *testing.T) {
 func TestConfigurationOptionsDeep(t *testing.T) {
 	charset := "MYCHARSET"
 
-	app := New().Configure(WithCharset(charset), WithoutBodyConsumptionOnUnmarshal, WithoutBanner, WithoutVersionChecker)
+	app := New().Configure(WithCharset(charset), WithoutBodyConsumptionOnUnmarshal, WithoutBanner)
 
 	expected := DefaultConfiguration()
 	expected.Charset = charset
 	expected.DisableBodyConsumptionOnUnmarshal = true
 	expected.DisableStartupLog = true
-	expected.DisableVersionChecker = true
 
 	has := *app.config
 
@@ -142,7 +141,6 @@ func TestConfigurationYAML(t *testing.T) {
 	}()
 
 	yamlConfigurationContents := `
-DisableVersionChecker: true
 DisablePathCorrection: false
 EnablePathEscape: false
 FireMethodNotAllowed: true
@@ -164,10 +162,6 @@ Other:
 	app := New().Configure(WithConfiguration(YAML(filename)))
 
 	c := app.config
-
-	if expected := true; c.DisableVersionChecker != expected {
-		t.Fatalf("error on TestConfigurationYAML: Expected DisableVersionChecker %v but got %v", expected, c.DisableVersionChecker)
-	}
 
 	if expected := false; c.DisablePathCorrection != expected {
 		t.Fatalf("error on TestConfigurationYAML: Expected DisablePathCorrection %v but got %v", expected, c.DisablePathCorrection)
@@ -241,7 +235,6 @@ func TestConfigurationTOML(t *testing.T) {
 	}()
 
 	tomlConfigurationContents := `
-DisableVersionChecker = true
 EnablePathEscape = false
 FireMethodNotAllowed = true
 EnableOptimizations = true
@@ -264,10 +257,6 @@ Charset = "UTF-8"
 	app := New().Configure(WithConfiguration(TOML(filename)))
 
 	c := app.config
-
-	if expected := true; c.DisableVersionChecker != expected {
-		t.Fatalf("error on TestConfigurationTOML: Expected DisableVersionChecker %v but got %v", expected, c.DisableVersionChecker)
-	}
 
 	if expected := false; c.DisablePathCorrection != expected {
 		t.Fatalf("error on TestConfigurationTOML: Expected DisablePathCorrection %v but got %v", expected, c.DisablePathCorrection)

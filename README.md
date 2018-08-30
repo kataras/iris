@@ -588,7 +588,6 @@ func main() {
     app.Run(
         iris.Addr(":8080"),
         iris.WithoutBanner,
-        iris.WithoutVersionChecker,
         iris.WithoutServerError(iris.ErrServerClosed),
     )
 }

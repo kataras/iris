@@ -68,5 +68,5 @@ func main() {
 	// 3. refresh the page some times
 	// 4. close the browser
 	// 5. re-open the browser and re-play 2.
-	app.Run(iris.Addr(":8080"), iris.WithoutVersionChecker)
+	app.Run(iris.Addr(":8080"))
 }

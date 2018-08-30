@@ -24,7 +24,7 @@ func main() {
 
 	mvc.New(app).Handle(new(controllers.HomeController))
 
-	app.Run(iris.Addr(":5000"), iris.WithoutVersionChecker)
+	app.Run(iris.Addr(":5000"))
 }
 
 type err struct {
