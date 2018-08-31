@@ -80,7 +80,8 @@ app.Get("/profile/{name:alphabetical max(255)}", func(ctx iris.Context){
 - Rename the vendor `sessions/sessiondb/vendor/...bbolt` from `coreos/bbolt` to `etcd-io/bbolt` and update to v1.3.1, based on [that](https://github.com/etcd-io/bbolt/releases/tag/v1.3.1-etcd.7)
 - Update the vendor `sessions/sessiondb/vendor/...badger` to v1.5.3
 
-> More to come, maybe it will be removed eventually.
+I believe it is soon to adapt the new [go modules](https://github.com/golang/go/wiki/Modules#table-of-contents) inside Iris, the new `go mod` command may change until go 1.12, it is still an experimental feature.
+The [vendor](https://github.com/kataras/iris/tree/v11/vendor) folder will be kept until most the majority of Go developers get acquainted with the new `go modules`.  The `go.mod` and `go.sum` files will come at `iris v12` (or `go 1.12`), we could do that on this version as well but I don't want to have half-things, versioning should be passed on import path as well and that is a large breaking change to go with it right now, so it will probably have a new path such as `github.com/kataras/iris/v12` based on a `git tag` like every Iris release (we are lucky here because we used semantic versioning from day zero). No folder re-structure inside the root git repository to split versions will ever happen, so backwards-compatibility will be not enabled by-default although it's easy for anyone to grab any version from older [releases](https://github.com/kataras/iris/releases) or branch and target that.
 
 # Sat, 11 August 2018 | v10.7.0
 

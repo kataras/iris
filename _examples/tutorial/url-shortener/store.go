@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 
-	"github.com/etcd-io/bbolt"
+	bolt "github.com/etcd-io/bbolt"
 )
 
 // Panic panics, change it if you don't want to panic on critical INITIALIZE-ONLY-ERRORS
@@ -28,17 +28,17 @@ var (
 // Only one table/bucket which contains the urls, so it's not a fully Database,
 // it works only with single bucket because that all we need.
 type DB struct {
-	db *bbolt.DB
+	db *bolt.DB
 }
 
 var _ Store = &DB{}
 
 // openDatabase open a new database connection
 // and returns its instance.
-func openDatabase(stumb string) *bbolt.DB {
+func openDatabase(stumb string) *bolt.DB {
 	// Open the data(base) file in the current working directory.
 	// It will be created if it doesn't exist.
-	db, err := bbolt.Open(stumb, 0600, nil)
+	db, err := bolt.Open(stumb, 0600, nil)
 	if err != nil {
 		Panic(err)
 	}
@@ -48,7 +48,7 @@ func openDatabase(stumb string) *bbolt.DB {
 		tableURLs,
 	}
 
-	db.Update(func(tx *bbolt.Tx) (err error) {
+	db.Update(func(tx *bolt.Tx) (err error) {
 		for _, table := range tables {
 			_, err = tx.CreateBucketIfNotExists(table)
 			if err != nil {
@@ -73,7 +73,7 @@ func NewDB(stumb string) *DB {
 // Set sets a shorten url and its key
 // Note: Caller is responsible to generate a key.
 func (d *DB) Set(key string, value string) error {
-	return d.db.Update(func(tx *bbolt.Tx) error {
+	return d.db.Update(func(tx *bolt.Tx) error {
 		b, err := tx.CreateBucketIfNotExists(tableURLs)
 		// Generate ID for the url
 		// Note: we could use that instead of a random string key
@@ -106,7 +106,7 @@ func (d *DB) Set(key string, value string) error {
 
 // Clear clears all the database entries for the table urls.
 func (d *DB) Clear() error {
-	return d.db.Update(func(tx *bbolt.Tx) error {
+	return d.db.Update(func(tx *bolt.Tx) error {
 		return tx.DeleteBucket(tableURLs)
 	})
 }
@@ -116,7 +116,7 @@ func (d *DB) Clear() error {
 // Returns an empty string if not found.
 func (d *DB) Get(key string) (value string) {
 	keyB := []byte(key)
-	d.db.Update(func(tx *bbolt.Tx) error {
+	d.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(tableURLs)
 		if b == nil {
 			return nil
@@ -138,7 +138,7 @@ func (d *DB) Get(key string) (value string) {
 // GetByValue returns all keys for a specific (original) url value.
 func (d *DB) GetByValue(value string) (keys []string) {
 	valueB := []byte(value)
-	d.db.Update(func(tx *bbolt.Tx) error {
+	d.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(tableURLs)
 		if b == nil {
 			return nil
@@ -159,7 +159,7 @@ func (d *DB) GetByValue(value string) (keys []string) {
 
 // Len returns all the "shorted" urls length
 func (d *DB) Len() (num int) {
-	d.db.View(func(tx *bbolt.Tx) error {
+	d.db.View(func(tx *bolt.Tx) error {
 
 		// Assume bucket exists and has keys
 		b := tx.Bucket(tableURLs)
