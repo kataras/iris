@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -10,10 +11,69 @@ import (
 	"github.com/kataras/iris/core/router/macro/interpreter/token"
 )
 
+var (
+	// paramTypeString 	is the string type.
+	// If parameter type is missing then it defaults to String type.
+	// Allows anything
+	// Declaration: /mypath/{myparam:string} or {myparam}
+	paramTypeString = ast.ParamType{Indent: "string", GoType: reflect.String, Default: true}
+	// ParamTypeNumber is the integer, a number type.
+	// Allows both positive and negative numbers, any number of digits.
+	// Declaration: /mypath/{myparam:number} or {myparam:int} for backwards-compatibility
+	paramTypeNumber = ast.ParamType{Indent: "number", Aliases: []string{"int"}, GoType: reflect.Int}
+	// ParamTypeInt64 is a number type.
+	// Allows only -9223372036854775808 to 9223372036854775807.
+	// Declaration: /mypath/{myparam:int64} or {myparam:long}
+	paramTypeInt64 = ast.ParamType{Indent: "int64", Aliases: []string{"long"}, GoType: reflect.Int64}
+	// ParamTypeUint8 a number type.
+	// Allows only 0 to 255.
+	// Declaration: /mypath/{myparam:uint8}
+	paramTypeUint8 = ast.ParamType{Indent: "uint8", GoType: reflect.Uint8}
+	// ParamTypeUint64 a number type.
+	// Allows only 0 to 18446744073709551615.
+	// Declaration: /mypath/{myparam:uint64}
+	paramTypeUint64 = ast.ParamType{Indent: "uint64", GoType: reflect.Uint64}
+	// ParamTypeBool is the bool type.
+	// Allows only "1" or "t" or "T" or "TRUE" or "true" or "True"
+	// or "0" or "f" or "F" or "FALSE" or "false" or "False".
+	// Declaration: /mypath/{myparam:bool} or {myparam:boolean}
+	paramTypeBool = ast.ParamType{Indent: "bool", Aliases: []string{"boolean"}, GoType: reflect.Bool}
+	// ParamTypeAlphabetical is the  alphabetical/letter type type.
+	// Allows letters only (upper or lowercase)
+	// Declaration:  /mypath/{myparam:alphabetical}
+	paramTypeAlphabetical = ast.ParamType{Indent: "alphabetical", GoType: reflect.String}
+	// ParamTypeFile  is the file single path type.
+	// Allows:
+	// letters (upper or lowercase)
+	// numbers (0-9)
+	// underscore (_)
+	// dash (-)
+	// point (.)
+	// no spaces! or other character
+	// Declaration: /mypath/{myparam:file}
+	paramTypeFile = ast.ParamType{Indent: "file", GoType: reflect.String}
+	// ParamTypePath is the multi path (or wildcard) type.
+	// Allows anything, should be the last part
+	// Declaration: /mypath/{myparam:path}
+	paramTypePath = ast.ParamType{Indent: "path", GoType: reflect.String, End: true}
+)
+
+// DefaultParamTypes are the built'n parameter types.
+var DefaultParamTypes = []ast.ParamType{
+	paramTypeString,
+	paramTypeNumber, paramTypeInt64, paramTypeUint8, paramTypeUint64,
+	paramTypeBool,
+	paramTypeAlphabetical, paramTypeFile, paramTypePath,
+}
+
 // Parse takes a route "fullpath"
 // and returns its param statements
 // and an error on failure.
-func Parse(fullpath string) ([]*ast.ParamStatement, error) {
+func Parse(fullpath string, paramTypes ...ast.ParamType) ([]*ast.ParamStatement, error) {
+	if len(paramTypes) == 0 {
+		paramTypes = DefaultParamTypes
+	}
+
 	pathParts := strings.SplitN(fullpath, "/", -1)
 	p := new(ParamParser)
 	statements := make([]*ast.ParamStatement, 0)
@@ -28,14 +88,14 @@ func Parse(fullpath string) ([]*ast.ParamStatement, error) {
 		}
 
 		p.Reset(s)
-		stmt, err := p.Parse()
+		stmt, err := p.Parse(paramTypes)
 		if err != nil {
 			// exit on first error
 			return nil, err
 		}
 		// if we have param type path but it's not the last path part
-		if stmt.Type == ast.ParamTypePath && i < len(pathParts)-1 {
-			return nil, fmt.Errorf("param type 'path' should be lived only inside the last path segment, but was inside: %s", s)
+		if stmt.Type.End && i < len(pathParts)-1 {
+			return nil, fmt.Errorf("param type '%s' should be lived only inside the last path segment, but was inside: %s", stmt.Type, s)
 		}
 
 		statements = append(statements, stmt)
@@ -77,9 +137,6 @@ const (
 	// per-parameter. An error code can be setted via
 	// the "else" keyword inside a route's path.
 	DefaultParamErrorCode = 404
-	// DefaultParamType when parameter type is missing use this param type, defaults to string
-	// and it should be remains unless earth split in two.
-	DefaultParamType = ast.ParamTypeString
 )
 
 // func parseParamFuncArg(t token.Token) (a ast.ParamFuncArg, err error) {
@@ -102,14 +159,14 @@ func (p ParamParser) Error() error {
 	return nil
 }
 
-// Parse parses the p.src and returns its param statement
+// Parse parses the p.src based on the given param types and returns its param statement
 // and an error on failure.
-func (p *ParamParser) Parse() (*ast.ParamStatement, error) {
+func (p *ParamParser) Parse(paramTypes []ast.ParamType) (*ast.ParamStatement, error) {
 	l := lexer.New(p.src)
 
 	stmt := &ast.ParamStatement{
 		ErrorCode: DefaultParamErrorCode,
-		Type:      DefaultParamType,
+		Type:      ast.GetDefaultParamType(paramTypes...),
 		Src:       p.src,
 	}
 
@@ -132,8 +189,8 @@ func (p *ParamParser) Parse() (*ast.ParamStatement, error) {
 		case token.COLON:
 			// type can accept both letters and numbers but not symbols ofc.
 			nextTok := l.NextToken()
-			paramType := ast.LookupParamType(nextTok.Literal)
-			if paramType == ast.ParamTypeUnExpected {
+			paramType, found := ast.LookupParamType(nextTok.Literal, paramTypes...)
+			if !found {
 				p.appendErr("[%d:%d] unexpected parameter type: %s", t.Start, t.End, nextTok.Literal)
 			}
 			stmt.Type = paramType
