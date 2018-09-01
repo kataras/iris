@@ -16,7 +16,7 @@ func TestParseParamError(t *testing.T) {
 	input := "{id" + string(illegalChar) + "int range(1,5) else 404}"
 	p := NewParamParser(input)
 
-	_, err := p.Parse()
+	_, err := p.Parse(DefaultParamTypes)
 
 	if err == nil {
 		t.Fatalf("expecting not empty error on input '%s'", input)
@@ -32,12 +32,22 @@ func TestParseParamError(t *testing.T) {
 	// success
 	input2 := "{id:uint64 range(1,5) else 404}"
 	p.Reset(input2)
-	_, err = p.Parse()
+	_, err = p.Parse(DefaultParamTypes)
 
 	if err != nil {
 		t.Fatalf("expecting empty error on input '%s', but got: %s", input2, err.Error())
 	}
 	//
+}
+
+// mustLookupParamType same as `ast.LookupParamType` but it panics if "indent" does not match with a valid Param Type.
+func mustLookupParamType(indent string) ast.ParamType {
+	pt, found := ast.LookupParamType(indent, DefaultParamTypes...)
+	if !found {
+		panic("param type '" + indent + "' is not part of the provided param types")
+	}
+
+	return pt
 }
 
 func TestParseParam(t *testing.T) {
@@ -49,7 +59,7 @@ func TestParseParam(t *testing.T) {
 			ast.ParamStatement{
 				Src:  "{id:number min(1) max(5) else 404}",
 				Name: "id",
-				Type: ast.ParamTypeNumber,
+				Type: mustLookupParamType("number"),
 				Funcs: []ast.ParamFunc{
 					{
 						Name: "min",
@@ -65,7 +75,7 @@ func TestParseParam(t *testing.T) {
 			ast.ParamStatement{
 				Src:  "{id:number range(1,5)}",
 				Name: "id",
-				Type: ast.ParamTypeNumber,
+				Type: mustLookupParamType("number"),
 				Funcs: []ast.ParamFunc{
 					{
 						Name: "range",
@@ -77,7 +87,7 @@ func TestParseParam(t *testing.T) {
 			ast.ParamStatement{
 				Src:  "{file:path contains(.)}",
 				Name: "file",
-				Type: ast.ParamTypePath,
+				Type: mustLookupParamType("path"),
 				Funcs: []ast.ParamFunc{
 					{
 						Name: "contains",
@@ -89,14 +99,14 @@ func TestParseParam(t *testing.T) {
 			ast.ParamStatement{
 				Src:       "{username:alphabetical}",
 				Name:      "username",
-				Type:      ast.ParamTypeAlphabetical,
+				Type:      mustLookupParamType("alphabetical"),
 				ErrorCode: 404,
 			}}, // 3
 		{true,
 			ast.ParamStatement{
 				Src:       "{myparam}",
 				Name:      "myparam",
-				Type:      ast.ParamTypeString,
+				Type:      mustLookupParamType("string"),
 				ErrorCode: 404,
 			}}, // 4
 		{false,
@@ -110,14 +120,14 @@ func TestParseParam(t *testing.T) {
 			ast.ParamStatement{
 				Src:       "{myparam2}",
 				Name:      "myparam2", // we now allow integers to the parameter names.
-				Type:      ast.ParamTypeString,
+				Type:      ast.GetDefaultParamType(DefaultParamTypes...),
 				ErrorCode: 404,
 			}}, // 6
 		{true,
 			ast.ParamStatement{
 				Src:  "{id:number even()}", // test param funcs without any arguments (LPAREN peek for RPAREN)
 				Name: "id",
-				Type: ast.ParamTypeNumber,
+				Type: mustLookupParamType("number"),
 				Funcs: []ast.ParamFunc{
 					{
 						Name: "even"},
@@ -128,37 +138,44 @@ func TestParseParam(t *testing.T) {
 			ast.ParamStatement{
 				Src:       "{id:int64 else 404}",
 				Name:      "id",
-				Type:      ast.ParamTypeInt64,
+				Type:      mustLookupParamType("int64"),
 				ErrorCode: 404,
 			}}, // 8
 		{true,
 			ast.ParamStatement{
 				Src:       "{id:long else 404}", // backwards-compatible test.
 				Name:      "id",
-				Type:      ast.ParamTypeInt64,
+				Type:      mustLookupParamType("int64"),
 				ErrorCode: 404,
 			}}, // 9
 		{true,
 			ast.ParamStatement{
-				Src:       "{has:bool else 404}",
-				Name:      "has",
-				Type:      ast.ParamTypeBoolean,
+				Src:       "{id:long else 404}",
+				Name:      "id",
+				Type:      mustLookupParamType("long"), // backwards-compatible test of LookupParamType.
 				ErrorCode: 404,
 			}}, // 10
 		{true,
 			ast.ParamStatement{
-				Src:       "{has:boolean else 404}", // backwards-compatible test.
+				Src:       "{has:bool else 404}",
 				Name:      "has",
-				Type:      ast.ParamTypeBoolean,
+				Type:      mustLookupParamType("bool"),
 				ErrorCode: 404,
 			}}, // 11
+		{true,
+			ast.ParamStatement{
+				Src:       "{has:boolean else 404}", // backwards-compatible test.
+				Name:      "has",
+				Type:      mustLookupParamType("bool"),
+				ErrorCode: 404,
+			}}, // 12
 
 	}
 
 	p := new(ParamParser)
 	for i, tt := range tests {
 		p.Reset(tt.expectedStatement.Src)
-		resultStmt, err := p.Parse()
+		resultStmt, err := p.Parse(DefaultParamTypes)
 
 		if tt.valid && err != nil {
 			t.Fatalf("tests[%d] - error %s", i, err.Error())
@@ -185,7 +202,7 @@ func TestParse(t *testing.T) {
 			[]ast.ParamStatement{{
 				Src:  "{id:number min(1) max(5) else 404}",
 				Name: "id",
-				Type: ast.ParamTypeNumber,
+				Type: paramTypeNumber,
 				Funcs: []ast.ParamFunc{
 					{
 						Name: "min",
@@ -201,7 +218,7 @@ func TestParse(t *testing.T) {
 			[]ast.ParamStatement{{
 				Src:  "{id:uint64 range(1,5)}", // test alternative (backwards-compatibility) "int"
 				Name: "id",
-				Type: ast.ParamTypeUint64,
+				Type: paramTypeUint64,
 				Funcs: []ast.ParamFunc{
 					{
 						Name: "range",
@@ -214,7 +231,7 @@ func TestParse(t *testing.T) {
 			[]ast.ParamStatement{{
 				Src:  "{file:path contains(.)}",
 				Name: "file",
-				Type: ast.ParamTypePath,
+				Type: paramTypePath,
 				Funcs: []ast.ParamFunc{
 					{
 						Name: "contains",
@@ -227,7 +244,7 @@ func TestParse(t *testing.T) {
 			[]ast.ParamStatement{{
 				Src:       "{username:alphabetical}",
 				Name:      "username",
-				Type:      ast.ParamTypeAlphabetical,
+				Type:      paramTypeAlphabetical,
 				ErrorCode: 404,
 			},
 			}}, // 3
@@ -235,7 +252,7 @@ func TestParse(t *testing.T) {
 			[]ast.ParamStatement{{
 				Src:       "{myparam}",
 				Name:      "myparam",
-				Type:      ast.ParamTypeString,
+				Type:      paramTypeString,
 				ErrorCode: 404,
 			},
 			}}, // 4
@@ -251,7 +268,7 @@ func TestParse(t *testing.T) {
 			[]ast.ParamStatement{{
 				Src:       "{myparam2}",
 				Name:      "myparam2", // we now allow integers to the parameter names.
-				Type:      ast.ParamTypeString,
+				Type:      paramTypeString,
 				ErrorCode: 404,
 			},
 			}}, // 6
@@ -259,7 +276,7 @@ func TestParse(t *testing.T) {
 			[]ast.ParamStatement{{
 				Src:       "{file:path}",
 				Name:      "file",
-				Type:      ast.ParamTypePath,
+				Type:      paramTypePath,
 				ErrorCode: 404,
 			},
 			}}, // 7

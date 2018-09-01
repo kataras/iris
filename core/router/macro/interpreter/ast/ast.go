@@ -2,154 +2,63 @@ package ast
 
 import (
 	"reflect"
+	"strings"
 )
 
-// ParamType is a specific uint8 type
-// which holds the parameter types' type.
-type ParamType uint8
+// ParamType holds the necessary information about a parameter type.
+type ParamType struct {
+	Indent  string   // the name of the parameter type.
+	Aliases []string // any aliases, can be empty.
 
-const (
-	// ParamTypeUnExpected is an unexpected parameter type.
-	ParamTypeUnExpected ParamType = iota
-	// ParamTypeString 	is the string type.
-	// If parameter type is missing then it defaults to String type.
-	// Allows anything
-	// Declaration: /mypath/{myparam:string} or {myparam}
-	ParamTypeString
+	GoType reflect.Kind // the go type useful for "mvc" and "hero" bindings.
 
-	// ParamTypeNumber is the integer, a number type.
-	// Allows both positive and negative numbers, any number of digits.
-	// Declaration: /mypath/{myparam:number} or {myparam:int} for backwards-compatibility
-	ParamTypeNumber
+	Default bool // if true then empty type param will target this and its functions will be available to the rest of the param type's funcs.
+	End     bool // if true then it should be declared at the end of a route path and can accept any trailing path segment as one parameter.
 
-	// ParamTypeInt64 is a number type.
-	// Allows only -9223372036854775808 to 9223372036854775807.
-	// Declaration: /mypath/{myparam:int64} or {myparam:long}
-	ParamTypeInt64
-	// ParamTypeUint8 a number type.
-	// Allows only 0 to 255.
-	// Declaration: /mypath/{myparam:uint8}
-	ParamTypeUint8
-	// ParamTypeUint64 a number type.
-	// Allows only 0 to 18446744073709551615.
-	// Declaration: /mypath/{myparam:uint64}
-	ParamTypeUint64
+	invalid bool // only true if returned by the parser via `LookupParamType`.
+}
 
-	// ParamTypeBoolean is the bool type.
-	// Allows only "1" or "t" or "T" or "TRUE" or "true" or "True"
-	// or "0" or "f" or "F" or "FALSE" or "false" or "False".
-	// Declaration: /mypath/{myparam:bool} or {myparam:boolean}
-	ParamTypeBoolean
-	// ParamTypeAlphabetical is the  alphabetical/letter type type.
-	// Allows letters only (upper or lowercase)
-	// Declaration:  /mypath/{myparam:alphabetical}
-	ParamTypeAlphabetical
-	// ParamTypeFile  is the file single path type.
-	// Allows:
-	// letters (upper or lowercase)
-	// numbers (0-9)
-	// underscore (_)
-	// dash (-)
-	// point (.)
-	// no spaces! or other character
-	// Declaration: /mypath/{myparam:file}
-	ParamTypeFile
-	// ParamTypePath is the multi path (or wildcard) type.
-	// Allows anything, should be the last part
-	// Declaration: /mypath/{myparam:path}
-	ParamTypePath
-)
+// ParamTypeUnExpected is the unexpected parameter type.
+var ParamTypeUnExpected = ParamType{invalid: true}
 
 func (pt ParamType) String() string {
-	for k, v := range paramTypes {
-		if v == pt {
-			return k
-		}
-	}
-
-	return "unexpected"
-}
-
-// Not because for a single reason
-// a string may be a
-// ParamTypeString or a ParamTypeFile
-// or a ParamTypePath or ParamTypeAlphabetical.
-//
-// func ParamTypeFromStd(k reflect.Kind) ParamType {
-
-// Kind returns the std kind of this param type.
-func (pt ParamType) Kind() reflect.Kind {
-	switch pt {
-	case ParamTypeAlphabetical:
-		fallthrough
-	case ParamTypeFile:
-		fallthrough
-	case ParamTypePath:
-		fallthrough
-	case ParamTypeString:
-		return reflect.String
-	case ParamTypeNumber:
-		return reflect.Int
-	case ParamTypeInt64:
-		return reflect.Int64
-	case ParamTypeUint8:
-		return reflect.Uint8
-	case ParamTypeUint64:
-		return reflect.Uint64
-	case ParamTypeBoolean:
-		return reflect.Bool
-	}
-	return reflect.Invalid // 0
-}
-
-// ValidKind will return true if at least one param type is supported
-// for this std kind.
-func ValidKind(k reflect.Kind) bool {
-	switch k {
-	case reflect.String:
-		fallthrough
-	case reflect.Int:
-		fallthrough
-	case reflect.Int64:
-		fallthrough
-	case reflect.Uint8:
-		fallthrough
-	case reflect.Uint64:
-		fallthrough
-	case reflect.Bool:
-		return true
-	default:
-		return false
-	}
+	return pt.Indent
 }
 
 // Assignable returns true if the "k" standard type
 // is assignabled to this ParamType.
 func (pt ParamType) Assignable(k reflect.Kind) bool {
-	return pt.Kind() == k
+	return pt.GoType == k
 }
 
-var paramTypes = map[string]ParamType{
-	"string": ParamTypeString,
+// GetDefaultParamType accepts a list of ParamType and returns its default.
+// If no `Default` specified:
+// and len(paramTypes) > 0 then it will return the first one,
+// otherwise it returns a "string" parameter type.
+func GetDefaultParamType(paramTypes ...ParamType) ParamType {
+	for _, pt := range paramTypes {
+		if pt.Default == true {
+			return pt
+		}
+	}
 
-	"number": ParamTypeNumber,
-	"int":    ParamTypeNumber, // same as number.
-	"long":   ParamTypeInt64,
-	"int64":  ParamTypeInt64, // same as long.
-	"uint8":  ParamTypeUint8,
-	"uint64": ParamTypeUint64,
+	if len(paramTypes) > 0 {
+		return paramTypes[0]
+	}
 
-	"boolean": ParamTypeBoolean,
-	"bool":    ParamTypeBoolean, // same as boolean.
+	return ParamType{Indent: "string", GoType: reflect.String, Default: true}
+}
 
-	"alphabetical": ParamTypeAlphabetical,
-	"file":         ParamTypeFile,
-	"path":         ParamTypePath,
-	// could be named also:
-	// "tail":
-	// "wild"
-	// "wildcard"
+// ValidKind will return true if at least one param type is supported
+// for this std kind.
+func ValidKind(k reflect.Kind, paramTypes ...ParamType) bool {
+	for _, pt := range paramTypes {
+		if pt.GoType == k {
+			return true
+		}
+	}
 
+	return false
 }
 
 // LookupParamType accepts the string
@@ -164,11 +73,20 @@ var paramTypes = map[string]ParamType{
 // "alphabetical"
 // "file"
 // "path"
-func LookupParamType(ident string) ParamType {
-	if typ, ok := paramTypes[ident]; ok {
-		return typ
+func LookupParamType(indent string, paramTypes ...ParamType) (ParamType, bool) {
+	for _, pt := range paramTypes {
+		if pt.Indent == indent {
+			return pt, true
+		}
+
+		for _, alias := range pt.Aliases {
+			if alias == indent {
+				return pt, true
+			}
+		}
 	}
-	return ParamTypeUnExpected
+
+	return ParamTypeUnExpected, false
 }
 
 // LookupParamTypeFromStd accepts the string representation of a standard go type.
@@ -181,23 +99,15 @@ func LookupParamType(ident string) ParamType {
 // int64 matches to int64/long
 // uint64 matches to uint64
 // bool matches to bool/boolean
-func LookupParamTypeFromStd(goType string) ParamType {
-	switch goType {
-	case "string":
-		return ParamTypeString
-	case "int":
-		return ParamTypeNumber
-	case "int64":
-		return ParamTypeInt64
-	case "uint8":
-		return ParamTypeUint8
-	case "uint64":
-		return ParamTypeUint64
-	case "bool":
-		return ParamTypeBoolean
-	default:
-		return ParamTypeUnExpected
+func LookupParamTypeFromStd(goType string, paramTypes ...ParamType) (ParamType, bool) {
+	goType = strings.ToLower(goType)
+	for _, pt := range paramTypes {
+		if strings.ToLower(pt.GoType.String()) == goType {
+			return pt, true
+		}
 	}
+
+	return ParamTypeUnExpected, false
 }
 
 // ParamStatement is a struct
