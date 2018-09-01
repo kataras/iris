@@ -26,7 +26,7 @@ func fetch() (*version.Version, string) {
 	defer r.Body.Close()
 
 	if r.StatusCode >= 400 {
-		golog.Debugf("Internet connection is missing, updater is unable to fetch the latest Iris version\n", err)
+		golog.Debugf("Internet connection is missing, updater is unable to fetch the latest Iris version\n%v", err)
 		return nil, ""
 	}
 
