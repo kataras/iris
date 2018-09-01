@@ -87,30 +87,6 @@ func main() {
 $ go run example.go
 ```
 
-## Dependency Injection
-
-The package [hero](hero) contains features for binding any object or functions that `handlers` can use, these are called dependencies.
-
-With Iris you get truly safe bindings thanks to the [hero](_examples/hero) [package](hero). It is blazing-fast, near to raw handlers performance because Iris calculates everything before even server goes online!
-
-Below you will see some screenshots I prepared for you in order to be easier to understand:
-
-### 1. Path Parameters - Built'n Dependencies
-
-![](https://github.com/kataras/explore/raw/master/iris/hero/hero-1-monokai.png)
-
-### 2. Services - Static Dependencies
-
-![](https://github.com/kataras/explore/raw/master/iris/hero/hero-2-monokai.png)
-
-### 3. Per-Request - Dynamic Dependencies
-
-![](https://github.com/kataras/explore/raw/master/iris/hero/hero-3-monokai.png)
-
-`hero funcs` are very easy to understand and when you start using them **you never go back**.
-
-> With Iris you also get real and [blazing-fast](_benchmarks) [MVC support](_examples/mvc) which uses "hero" under the hoods.
-
 ## API Examples
 
 ### Using Get, Post, Put, Patch, Delete and Options
@@ -135,6 +111,105 @@ func main() {
 
 ### Parameters in path
 
+| Param Type | Go Type | Validation | Retrieve Helper |
+| -----------------|------|-------------|------|
+| `:string` | string | anything | `Params().Get` |
+| `:int` | uint, uint8, uint16, uint32, uint64, int, int8, int32, int64 | positive number, no digits limit | `Params().GetInt/Int64`...|
+| `:long` | int64 | -9223372036854775808 to 9223372036854775807 | `Params().GetInt64` |
+| `:boolean` | bool | "1" or "t" or "T" or "TRUE" or "true" or "True" or "0" or "f" or "F" or "FALSE" or "false" or "False" | `Params().GetBool` |
+| `:alphabetical` | string | lowercase or uppercase letters | `Params().Get` |
+| `:file` | string | lowercase or uppercase letters, numbers, underscore (_), dash (-), point (.) and no spaces or other special characters that are not valid for filenames | `Params().Get` |
+| `:path` | string | anything, can be separated by slashes (path segments) but should be the last part of the route path | `Params().Get` | 
+
+**Usage**:
+
+```go
+app.Get("/users/{id:int64}", func(ctx iris.Context){
+    id, _ := ctx.Params().GetInt64("id")
+    // [...]
+})
+```
+
+| Built'n Func | Param Types |
+| -----------|---------------|
+| `regexp`(expr string) | :string |
+| `prefix`(prefix string) | :string |
+| `suffix`(suffix string) | :string |
+| `contains`(s string) | :string |
+| `min`(minValue int or int8 or int16 or int32 or int64 or uint8 or uint16 or uint32 or uint64  or float32 or float64) | :string(char length), :int, :int64 |
+| `max`(maxValue int or int8 or int16 or int32 or int64 or uint8 or uint16 or uint32 or uint64  or float32 or float64) | :string(char length), :int, :int64 |
+| `range`(minValue, maxValue int or int8 or int16 or int32 or int64 or uint8 or uint16 or uint32 or uint64 or float32 or float64) | :int, :int64 |
+
+**Usage**:
+
+```go
+app.Get("/profile/{name:alphabetical max(255)}", func(ctx iris.Context){
+    name := ctx.Params().Get("name")
+    // len(name) <=255 otherwise this route will fire 404 Not Found
+    // and this handler will not be executed at all.
+})
+```
+
+**Do It Yourself**:
+
+The `RegisterFunc` can accept any function that returns a `func(paramValue string) bool`.
+Or just a `func(string) bool`.
+If the validation fails then it will fire `404` or whatever status code the `else` keyword has.
+
+```go
+latLonExpr := "^-?[0-9]{1,3}(?:\\.[0-9]{1,10})?$"
+latLonRegex, _ := regexp.Compile(latLonExpr)
+
+// Register your custom argument-less macro function to the :string param type.
+// MatchString is a type of func(string) bool, so we use it as it is.
+app.Macros().String.RegisterFunc("coordinate", latLonRegex.MatchString)
+
+app.Get("/coordinates/{lat:string coordinate()}/{lon:string coordinate()}", func(ctx iris.Context) {
+    ctx.Writef("Lat: %s | Lon: %s", ctx.Params().Get("lat"), ctx.Params().Get("lon"))
+})
+```
+
+Register your custom macro function which accepts two int arguments.
+
+```go
+
+app.Macros().String.RegisterFunc("range", func(minLength, maxLength int) func(string) bool {
+    return func(paramValue string) bool {
+        return len(paramValue) >= minLength && len(paramValue) <= maxLength
+    }
+})
+
+app.Get("/limitchar/{name:string range(1,200) else 400}", func(ctx iris.Context) {
+    name := ctx.Params().Get("name")
+    ctx.Writef(`Hello %s | the name should be between 1 and 200 characters length
+    otherwise this handler will not be executed`, name)
+})
+```
+
+Register your custom macro function which accepts a slice of strings `[...,...]`.
+
+```go
+app.Macros().String.RegisterFunc("has", func(validNames []string) func(string) bool {
+    return func(paramValue string) bool {
+        for _, validName := range validNames {
+            if validName == paramValue {
+                return true
+            }
+        }
+
+        return false
+    }
+})
+
+app.Get("/static_validation/{name:string has([kataras,gerasimos,maropoulos]}", func(ctx iris.Context) {
+    name := ctx.Params().Get("name")
+    ctx.Writef(`Hello %s | the name should be "kataras" or "gerasimos" or "maropoulos"
+    otherwise this handler will not be executed`, name)
+})
+```
+
+**Example Code**:
+
 ```go
 func main() {
     app := iris.Default()
@@ -143,6 +218,14 @@ func main() {
     app.Get("/user/{name}", func(ctx iris.Context) {
         name := ctx.Params().Get("name")
         ctx.Writef("Hello %s", name)
+    })
+
+    // This handler will match /users/42
+    // but will not match
+    // neither /users or /users/.
+    app.Get("/users/{id:int64}", func(ctx iris.Context) {
+        id, _ := ctx.Params().GetUint64("id")
+        ctx.Writef("User with ID: %d", id)
     })
 
     // However, this one will match /user/john/ and also /user/john/send.
@@ -160,6 +243,30 @@ func main() {
 > If parameter type is missing then defaults to `string`, therefore `{name:string}` and `{name}` do the same exactly thing.
 
 > Learn more about path parameter's types by navigating [here](_examples/routing/dynamic-path/main.go#L31).
+
+### Dependency Injection
+
+The package [hero](hero) contains features for binding any object or functions that `handlers` can use, these are called dependencies.
+
+With Iris you get truly safe bindings thanks to the [hero](_examples/hero) [package](hero). It is blazing-fast, near to raw handlers performance because Iris calculates everything before even server goes online!
+
+Below you will see some screenshots I prepared for you in order to be easier to understand:
+
+#### 1. Path Parameters - Built'n Dependencies
+
+![](https://github.com/kataras/explore/raw/master/iris/hero/hero-1-monokai.png)
+
+#### 2. Services - Static Dependencies
+
+![](https://github.com/kataras/explore/raw/master/iris/hero/hero-2-monokai.png)
+
+#### 3. Per-Request - Dynamic Dependencies
+
+![](https://github.com/kataras/explore/raw/master/iris/hero/hero-3-monokai.png)
+
+`hero funcs` are very easy to understand and when you start using them **you never go back**.
+
+> With Iris you also get real and [blazing-fast](_benchmarks) [MVC support](_examples/mvc) which uses "hero" under the hoods.
 
 ### Querystring parameters
 
