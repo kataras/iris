@@ -118,8 +118,8 @@ func YAML(filename string) Configuration {
 // see `WithGlobalConfiguration` for more information.
 //
 // Usage:
-// app.Configure(iris.WithConfiguration(iris.YAML("myconfig.tml"))) or
-// app.Run([iris.Runner], iris.WithConfiguration(iris.YAML("myconfig.tml"))).
+// app.Configure(iris.WithConfiguration(iris.TOML("myconfig.tml"))) or
+// app.Run([iris.Runner], iris.WithConfiguration(iris.TOML("myconfig.tml"))).
 func TOML(filename string) Configuration {
 	c := DefaultConfiguration()
 
