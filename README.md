@@ -230,7 +230,8 @@ func main() {
         ctx.Writef("User with ID: %d", id)
     })
 
-    // However, this one will match /user/john/ and also /user/john/send.
+    // However, this one will match /user/john/send and also /user/john/everything/else/here
+    // but will not match /user/john neither /user/john/.
     app.Post("/user/{name:string}/{action:path}", func(ctx iris.Context) {
         name := ctx.Params().Get("name")
         action := ctx.Params().Get("action")
