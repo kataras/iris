@@ -223,8 +223,8 @@ func main() {
 	// This handler will match /users/42
 	// but will not match
 	// neither /users or /users/.
-	app.Get("/users/{id:int}", func(ctx iris.Context) {
-		id, _ := ctx.Params().GetUint64("id")
+	app.Get("/users/{id:long}", func(ctx iris.Context) {
+		id, _ := ctx.Params().GetInt64("id")
 		ctx.Writef("User with ID: %d", id)
 	})
 
