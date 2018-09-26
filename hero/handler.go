@@ -5,17 +5,29 @@ import (
 	"reflect"
 	"runtime"
 
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/core/memstore"
 	"github.com/kataras/iris/hero/di"
 
 	"github.com/kataras/golog"
-	"github.com/kataras/iris/context"
 )
 
-var contextTyp = reflect.TypeOf((*context.Context)(nil)).Elem()
+var (
+	contextTyp  = reflect.TypeOf((*context.Context)(nil)).Elem()
+	memstoreTyp = reflect.TypeOf(memstore.Store{})
+)
 
 // IsContext returns true if the "inTyp" is a type of Context.
 func IsContext(inTyp reflect.Type) bool {
 	return inTyp.Implements(contextTyp)
+}
+
+// IsExpectingStore returns true if the "inTyp" is a type of memstore.Store.
+func IsExpectingStore(inTyp reflect.Type) bool {
+	print("di/handler.go: " + inTyp.String() + " vs " + memstoreTyp.String() + " : ")
+	println(inTyp == memstoreTyp)
+
+	return inTyp == memstoreTyp
 }
 
 // checks if "handler" is context.Handler: func(context.Context).
@@ -70,7 +82,7 @@ func makeHandler(handler interface{}, values ...reflect.Value) (context.Handler,
 		// is invalid when input len and values are not match
 		// or their types are not match, we will take look at the
 		// second statement, here we will re-try it
-		// using binders for path parameters: string, int, int64, bool.
+		// using binders for path parameters: string, int, int64, uint8, uint64, bool and so on.
 		// We don't have access to the path, so neither to the macros here,
 		// but in mvc. So we have to do it here.
 		if valid = funcInjector.Retry(new(params).resolve); !valid {

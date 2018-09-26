@@ -1,43 +1,68 @@
 package ast
 
-import (
-	"reflect"
-	"strings"
+type (
+	// ParamType holds the necessary information about a parameter type for the parser to lookup for.
+	ParamType interface {
+		// The name of the parameter type.
+		// Indent should contain the characters for the parser.
+		Indent() string
+	}
+
+	// MasterParamType if implemented and its `Master()` returns true then empty type param will be translated to this param type.
+	// Also its functions will be available to the rest of the macro param type's funcs.
+	//
+	// Only one Master is allowed.
+	MasterParamType interface {
+		ParamType
+		Master() bool
+	}
+
+	// TrailingParamType if implemented and its `Trailing()` returns true
+	// then it should be declared at the end of a route path and can accept any trailing path segment as one parameter.
+	TrailingParamType interface {
+		ParamType
+		Trailing() bool
+	}
+
+	// AliasParamType if implemeneted nad its `Alias()` returns a non-empty string
+	// then the param type can be written with that string literal too.
+	AliasParamType interface {
+		ParamType
+		Alias() string
+	}
 )
 
-// ParamType holds the necessary information about a parameter type.
-type ParamType struct {
-	Indent  string   // the name of the parameter type.
-	Aliases []string // any aliases, can be empty.
-
-	GoType reflect.Kind // the go type useful for "mvc" and "hero" bindings.
-
-	Default bool // if true then empty type param will target this and its functions will be available to the rest of the param type's funcs.
-	End     bool // if true then it should be declared at the end of a route path and can accept any trailing path segment as one parameter.
-
-	invalid bool // only true if returned by the parser via `LookupParamType`.
+// IsMaster returns true if the "pt" param type is a master one.
+func IsMaster(pt ParamType) bool {
+	p, ok := pt.(MasterParamType)
+	return ok && p.Master()
 }
 
-// ParamTypeUnExpected is the unexpected parameter type.
-var ParamTypeUnExpected = ParamType{invalid: true}
-
-func (pt ParamType) String() string {
-	return pt.Indent
+// IsTrailing returns true if the "pt" param type is a marked as trailing,
+// which should accept more than one path segment when in the end.
+func IsTrailing(pt ParamType) bool {
+	p, ok := pt.(TrailingParamType)
+	return ok && p.Trailing()
 }
 
-// Assignable returns true if the "k" standard type
-// is assignabled to this ParamType.
-func (pt ParamType) Assignable(k reflect.Kind) bool {
-	return pt.GoType == k
+// HasAlias returns any alias of the "pt" param type.
+// If alias is empty or not found then it returns false as its second output argument.
+func HasAlias(pt ParamType) (string, bool) {
+	if p, ok := pt.(AliasParamType); ok {
+		alias := p.Alias()
+		return alias, len(alias) > 0
+	}
+
+	return "", false
 }
 
-// GetDefaultParamType accepts a list of ParamType and returns its default.
-// If no `Default` specified:
+// GetMasterParamType accepts a list of ParamType and returns its master.
+// If no `Master` specified:
 // and len(paramTypes) > 0 then it will return the first one,
-// otherwise it returns a "string" parameter type.
-func GetDefaultParamType(paramTypes ...ParamType) ParamType {
+// otherwise it returns nil.
+func GetMasterParamType(paramTypes ...ParamType) ParamType {
 	for _, pt := range paramTypes {
-		if pt.Default == true {
+		if IsMaster(pt) {
 			return pt
 		}
 	}
@@ -46,24 +71,12 @@ func GetDefaultParamType(paramTypes ...ParamType) ParamType {
 		return paramTypes[0]
 	}
 
-	return ParamType{Indent: "string", GoType: reflect.String, Default: true}
-}
-
-// ValidKind will return true if at least one param type is supported
-// for this std kind.
-func ValidKind(k reflect.Kind, paramTypes ...ParamType) bool {
-	for _, pt := range paramTypes {
-		if pt.GoType == k {
-			return true
-		}
-	}
-
-	return false
+	return nil
 }
 
 // LookupParamType accepts the string
 // representation of a parameter type.
-// Available:
+// Example:
 // "string"
 // "number" or "int"
 // "long" or "int64"
@@ -73,41 +86,20 @@ func ValidKind(k reflect.Kind, paramTypes ...ParamType) bool {
 // "alphabetical"
 // "file"
 // "path"
-func LookupParamType(indent string, paramTypes ...ParamType) (ParamType, bool) {
+func LookupParamType(indentOrAlias string, paramTypes ...ParamType) (ParamType, bool) {
 	for _, pt := range paramTypes {
-		if pt.Indent == indent {
+		if pt.Indent() == indentOrAlias {
 			return pt, true
 		}
 
-		for _, alias := range pt.Aliases {
-			if alias == indent {
+		if alias, has := HasAlias(pt); has {
+			if alias == indentOrAlias {
 				return pt, true
 			}
 		}
 	}
 
-	return ParamTypeUnExpected, false
-}
-
-// LookupParamTypeFromStd accepts the string representation of a standard go type.
-// It returns a ParamType, but it may differs for example
-// the alphabetical, file, path and string are all string go types, so
-// make sure that caller resolves these types before this call.
-//
-// string matches to string
-// int matches to int/number
-// int64 matches to int64/long
-// uint64 matches to uint64
-// bool matches to bool/boolean
-func LookupParamTypeFromStd(goType string, paramTypes ...ParamType) (ParamType, bool) {
-	goType = strings.ToLower(goType)
-	for _, pt := range paramTypes {
-		if strings.ToLower(pt.GoType.String()) == goType {
-			return pt, true
-		}
-	}
-
-	return ParamTypeUnExpected, false
+	return nil, false
 }
 
 // ParamStatement is a struct

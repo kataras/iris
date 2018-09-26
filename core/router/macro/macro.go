@@ -7,8 +7,6 @@ import (
 	"strconv"
 	"strings"
 	"unicode"
-
-	"github.com/kataras/iris/core/router/macro/interpreter/ast"
 )
 
 // EvaluatorFunc is the signature for both param types and param funcs.
@@ -108,53 +106,78 @@ func convertBuilderFunc(fn interface{}) ParamEvaluatorBuilder {
 
 			// try to convert the string literal as we get it from the parser.
 			var (
-				v   interface{}
-				err error
+				val interface{}
+
+				panicIfErr = func(err error) {
+					if err != nil {
+						panic(fmt.Sprintf("on field index: %d: %v", i, err))
+					}
+				}
 			)
 
 			// try to get the value based on the expected type.
 			switch field.Kind() {
 			case reflect.Int:
-				v, err = strconv.Atoi(arg)
+				v, err := strconv.Atoi(arg)
+				panicIfErr(err)
+				val = v
 			case reflect.Int8:
-				v, err = strconv.ParseInt(arg, 10, 8)
+				v, err := strconv.ParseInt(arg, 10, 8)
+				panicIfErr(err)
+				val = int8(v)
 			case reflect.Int16:
-				v, err = strconv.ParseInt(arg, 10, 16)
+				v, err := strconv.ParseInt(arg, 10, 16)
+				panicIfErr(err)
+				val = int16(v)
 			case reflect.Int32:
-				v, err = strconv.ParseInt(arg, 10, 32)
+				v, err := strconv.ParseInt(arg, 10, 32)
+				panicIfErr(err)
+				val = int32(v)
 			case reflect.Int64:
-				v, err = strconv.ParseInt(arg, 10, 64)
+				v, err := strconv.ParseInt(arg, 10, 64)
+				panicIfErr(err)
+				val = v
 			case reflect.Uint8:
-				v, err = strconv.ParseUint(arg, 10, 8)
+				v, err := strconv.ParseUint(arg, 10, 8)
+				panicIfErr(err)
+				val = uint8(v)
 			case reflect.Uint16:
-				v, err = strconv.ParseUint(arg, 10, 16)
+				v, err := strconv.ParseUint(arg, 10, 16)
+				panicIfErr(err)
+				val = uint16(v)
 			case reflect.Uint32:
-				v, err = strconv.ParseUint(arg, 10, 32)
+				v, err := strconv.ParseUint(arg, 10, 32)
+				panicIfErr(err)
+				val = uint32(v)
 			case reflect.Uint64:
-				v, err = strconv.ParseUint(arg, 10, 64)
+				v, err := strconv.ParseUint(arg, 10, 64)
+				panicIfErr(err)
+				val = v
 			case reflect.Float32:
-				v, err = strconv.ParseFloat(arg, 32)
+				v, err := strconv.ParseFloat(arg, 32)
+				panicIfErr(err)
+				val = float32(v)
 			case reflect.Float64:
-				v, err = strconv.ParseFloat(arg, 64)
+				v, err := strconv.ParseFloat(arg, 64)
+				panicIfErr(err)
+				val = v
 			case reflect.Bool:
-				v, err = strconv.ParseBool(arg)
+				v, err := strconv.ParseBool(arg)
+				panicIfErr(err)
+				val = v
 			case reflect.Slice:
 				if len(arg) > 1 {
 					if arg[0] == '[' && arg[len(arg)-1] == ']' {
 						// it is a single argument but as slice.
-						v = strings.Split(arg[1:len(arg)-1], ",") // only string slices.
+						val = strings.Split(arg[1:len(arg)-1], ",") // only string slices.
 					}
 				}
 
 			default:
-				v = arg
+				val = arg
 			}
 
-			if err != nil {
-				panic(fmt.Sprintf("on field index: %d: %v", i, err))
-			}
-
-			argValue := reflect.ValueOf(v)
+			argValue := reflect.ValueOf(val)
 			if expected, got := field.Kind(), argValue.Kind(); expected != got {
 				panic(fmt.Sprintf("fields should have the same type: [%d] expected %s but got %s", i, expected, got))
 			}
@@ -190,6 +213,11 @@ type (
 	// and it can register param functions
 	// to that macro which maps to a parameter type.
 	Macro struct {
+		indent   string
+		alias    string
+		master   bool
+		trailing bool
+
 		Evaluator EvaluatorFunc
 		funcs     []ParamFunc
 	}
@@ -212,9 +240,39 @@ type (
 	}
 )
 
-func newMacro(evaluator EvaluatorFunc) *Macro {
-	return &Macro{Evaluator: evaluator}
+// NewMacro creates and returns a Macro that can be used as a registry for
+// a new customized parameter type and its functions.
+func NewMacro(indent, alias string, master, trailing bool, evaluator EvaluatorFunc) *Macro {
+	return &Macro{
+		indent:   indent,
+		alias:    alias,
+		master:   master,
+		trailing: trailing,
+
+		Evaluator: evaluator,
+	}
 }
+
+func (m *Macro) Indent() string {
+	return m.indent
+}
+
+func (m *Macro) Alias() string {
+	return m.alias
+}
+
+func (m *Macro) Master() bool {
+	return m.master
+}
+
+func (m *Macro) Trailing() bool {
+	return m.trailing
+}
+
+// func (m *Macro) SetParamResolver(fn func(memstore.Entry) interface{}) *Macro {
+// 	m.ParamResolver = fn
+// 	return m
+// }
 
 // RegisterFunc registers a parameter function
 // to that macro.
@@ -222,9 +280,11 @@ func newMacro(evaluator EvaluatorFunc) *Macro {
 // and the function body, which should return an EvaluatorFunc
 // a bool (it will be converted to EvaluatorFunc later on),
 // i.e RegisterFunc("min", func(minValue int) func(paramValue string) bool){})
-func (m *Macro) RegisterFunc(funcName string, fn interface{}) {
+func (m *Macro) RegisterFunc(funcName string, fn interface{}) *Macro {
 	fullFn := convertBuilderFunc(fn)
 	m.registerFunc(funcName, fullFn)
+
+	return m
 }
 
 func (m *Macro) registerFunc(funcName string, fullFn ParamEvaluatorBuilder) {
@@ -255,114 +315,4 @@ func (m *Macro) getFunc(funcName string) ParamEvaluatorBuilder {
 		}
 	}
 	return nil
-}
-
-// Map contains the default macros mapped to their types.
-// This is the manager which is used by the caller to register custom
-// parameter functions per param-type (String, Int, Long, Boolean, Alphabetical, File, Path).
-type Map struct {
-	// string type
-	// anything
-	String *Macro
-
-	// int type
-	// both positive and negative numbers, any number of digits.
-	Number *Macro
-	// int64 as int64 type
-	// -9223372036854775808 to 9223372036854775807.
-	Int64 *Macro
-	// uint8 as uint8 type
-	// 0 to 255.
-	Uint8 *Macro
-	// uint64 as uint64 type
-	// 0 to 18446744073709551615.
-	Uint64 *Macro
-
-	// boolean as bool type
-	// a string which is "1" or "t" or "T" or "TRUE" or "true" or "True"
-	// or "0" or "f" or "F" or "FALSE" or "false" or "False".
-	Boolean *Macro
-	// alphabetical/letter type
-	// letters only (upper or lowercase)
-	Alphabetical *Macro
-	// file type
-	// letters (upper or lowercase)
-	// numbers (0-9)
-	// underscore (_)
-	// dash (-)
-	// point (.)
-	// no spaces! or other character
-	File *Macro
-	// path type
-	// anything, should be the last part
-	Path *Macro
-}
-
-// NewMap returns a new macro Map with default
-// type evaluators.
-//
-// Learn more at:  https://github.com/kataras/iris/tree/master/_examples/routing/dynamic-path
-func NewMap() *Map {
-	simpleNumberEvalutator := MustNewEvaluatorFromRegexp("^-?[0-9]+$")
-	return &Map{
-		// it allows everything, so no need for a regexp here.
-		String: newMacro(func(string) bool { return true }),
-		Number: newMacro(simpleNumberEvalutator), //"^(-?0\\.[0-9]*[1-9]+[0-9]*$)|(^-?[1-9]+[0-9]*((\\.[0-9]*[1-9]+[0-9]*$)|(\\.[0-9]+)))|(^-?[1-9]+[0-9]*$)|(^0$){1}")), //("^-?[0-9]+$")),
-		Int64: newMacro(func(paramValue string) bool {
-			if !simpleNumberEvalutator(paramValue) {
-				return false
-			}
-			_, err := strconv.ParseInt(paramValue, 10, 64)
-			// if err == strconv.ErrRange...
-			return err == nil
-		}), //("^-[1-9]|-?[1-9][0-9]{1,14}|-?1000000000000000|-?10000000000000000|-?100000000000000000|-?[1-9]000000000000000000|-?9[0-2]00000000000000000|-?92[0-2]0000000000000000|-?922[0-3]000000000000000|-?9223[0-3]00000000000000|-?92233[0-7]0000000000000|-?922337[0-2]000000000000|-?92233720[0-3]0000000000|-?922337203[0-6]000000000|-?9223372036[0-8]00000000|-?92233720368[0-5]0000000|-?922337203685[0-4]000000|-?9223372036854[0-7]00000|-?92233720368547[0-7]0000|-?922337203685477[0-5]000|-?922337203685477[56]000|[0-9]$")),
-		Uint8: newMacro(MustNewEvaluatorFromRegexp("^([0-9]|[1-8][0-9]|9[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$")),
-		Uint64: newMacro(func(paramValue string) bool {
-			if !simpleNumberEvalutator(paramValue) {
-				return false
-			}
-			_, err := strconv.ParseUint(paramValue, 10, 64)
-			return err == nil
-		}), //("^[0-9]|[1-9][0-9]{1,14}|1000000000000000|10000000000000000|100000000000000000|1000000000000000000|1[0-8]000000000000000000|18[0-4]00000000000000000|184[0-4]0000000000000000|1844[0-6]000000000000000|18446[0-7]00000000000000|184467[0-4]0000000000000|1844674[0-4]000000000000|184467440[0-7]0000000000|1844674407[0-3]000000000|18446744073[0-7]00000000|1844674407370000000[0-9]|18446744073709[0-5]00000|184467440737095[0-5]0000|1844674407370955[0-2]000$")),
-		Boolean: newMacro(func(paramValue string) bool {
-			// a simple if statement is faster than regex ^(true|false|True|False|t|0|f|FALSE|TRUE)$
-			// in this case.
-			_, err := strconv.ParseBool(paramValue)
-			return err == nil
-		}),
-		Alphabetical: newMacro(MustNewEvaluatorFromRegexp("^[a-zA-Z ]+$")),
-		File:         newMacro(MustNewEvaluatorFromRegexp("^[a-zA-Z0-9_.-]*$")),
-		// it allows everything, we have String and Path as different
-		// types because I want to give the opportunity to the user
-		// to organise the macro functions based on wildcard or single dynamic named path parameter.
-		// Should be the last.
-		Path: newMacro(func(string) bool { return true }),
-	}
-}
-
-// Lookup returns the specific Macro from the map
-// based on the parameter type.
-// i.e if ast.ParamTypeNumber then it will return the m.Number.
-// Returns the m.String if not matched.
-func (m *Map) Lookup(typ ast.ParamType) *Macro {
-	switch typ {
-	case ast.ParamTypeNumber:
-		return m.Number
-	case ast.ParamTypeInt64:
-		return m.Int64
-	case ast.ParamTypeUint8:
-		return m.Uint8
-	case ast.ParamTypeUint64:
-		return m.Uint64
-	case ast.ParamTypeBoolean:
-		return m.Boolean
-	case ast.ParamTypeAlphabetical:
-		return m.Alphabetical
-	case ast.ParamTypeFile:
-		return m.File
-	case ast.ParamTypePath:
-		return m.Path
-	default:
-		return m.String
-	}
 }

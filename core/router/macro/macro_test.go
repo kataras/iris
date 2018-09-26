@@ -71,8 +71,6 @@ func testEvaluatorRaw(t *testing.T, macroEvaluator *Macro, input string, pass bo
 }
 
 func TestStringEvaluatorRaw(t *testing.T) {
-	f := NewMap()
-
 	tests := []struct {
 		pass  bool
 		input string
@@ -86,13 +84,11 @@ func TestStringEvaluatorRaw(t *testing.T) {
 	} // 0
 
 	for i, tt := range tests {
-		testEvaluatorRaw(t, f.String, tt.input, tt.pass, i)
+		testEvaluatorRaw(t, String, tt.input, tt.pass, i)
 	}
 }
 
 func TestNumberEvaluatorRaw(t *testing.T) {
-	f := NewMap()
-
 	tests := []struct {
 		pass  bool
 		input string
@@ -111,13 +107,11 @@ func TestNumberEvaluatorRaw(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		testEvaluatorRaw(t, f.Number, tt.input, tt.pass, i)
+		testEvaluatorRaw(t, Number, tt.input, tt.pass, i)
 	}
 }
 
 func TestInt64EvaluatorRaw(t *testing.T) {
-	f := NewMap()
-
 	tests := []struct {
 		pass  bool
 		input string
@@ -138,13 +132,11 @@ func TestInt64EvaluatorRaw(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		testEvaluatorRaw(t, f.Int64, tt.input, tt.pass, i)
+		testEvaluatorRaw(t, Int64, tt.input, tt.pass, i)
 	}
 }
 
 func TestUint8EvaluatorRaw(t *testing.T) {
-	f := NewMap()
-
 	tests := []struct {
 		pass  bool
 		input string
@@ -169,13 +161,11 @@ func TestUint8EvaluatorRaw(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		testEvaluatorRaw(t, f.Uint8, tt.input, tt.pass, i)
+		testEvaluatorRaw(t, Uint8, tt.input, tt.pass, i)
 	}
 }
 
 func TestUint64EvaluatorRaw(t *testing.T) {
-	f := NewMap()
-
 	tests := []struct {
 		pass  bool
 		input string
@@ -196,13 +186,11 @@ func TestUint64EvaluatorRaw(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		testEvaluatorRaw(t, f.Uint64, tt.input, tt.pass, i)
+		testEvaluatorRaw(t, Uint64, tt.input, tt.pass, i)
 	}
 }
 
 func TestAlphabeticalEvaluatorRaw(t *testing.T) {
-	f := NewMap()
-
 	tests := []struct {
 		pass  bool
 		input string
@@ -215,13 +203,11 @@ func TestAlphabeticalEvaluatorRaw(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		testEvaluatorRaw(t, f.Alphabetical, tt.input, tt.pass, i)
+		testEvaluatorRaw(t, Alphabetical, tt.input, tt.pass, i)
 	}
 }
 
 func TestFileEvaluatorRaw(t *testing.T) {
-	f := NewMap()
-
 	tests := []struct {
 		pass  bool
 		input string
@@ -234,13 +220,11 @@ func TestFileEvaluatorRaw(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		testEvaluatorRaw(t, f.File, tt.input, tt.pass, i)
+		testEvaluatorRaw(t, File, tt.input, tt.pass, i)
 	}
 }
 
 func TestPathEvaluatorRaw(t *testing.T) {
-	f := NewMap()
-
 	pathTests := []struct {
 		pass  bool
 		input string
@@ -254,27 +238,9 @@ func TestPathEvaluatorRaw(t *testing.T) {
 	}
 
 	for i, tt := range pathTests {
-		testEvaluatorRaw(t, f.Path, tt.input, tt.pass, i)
+		testEvaluatorRaw(t, Path, tt.input, tt.pass, i)
 	}
 }
-
-// func TestMapRegisterFunc(t *testing.T) {
-// 	m := NewMap()
-// 	m.String.RegisterFunc("prefix", func(prefix string) EvaluatorFunc {
-// 		return func(paramValue string) bool {
-// 			return strings.HasPrefix(paramValue, prefix)
-// 		}
-// 	})
-
-// 	p, err := Parse("/user/@iris")
-// 	if err != nil {
-// 		t.Fatalf(err)
-// 	}
-
-// 	// 	p.Params = append(p.)
-
-// 	testEvaluatorRaw(t, m.String, p.Src, false, 0)
-// }
 
 func TestConvertBuilderFunc(t *testing.T) {
 	fn := func(min uint64, slice []string) func(string) bool {
