@@ -25,6 +25,7 @@ type TemplateParam struct {
 	// it's useful on host to decide how to convert the path template to specific router's syntax
 	Type          ast.ParamType   `json:"type"`
 	Name          string          `json:"name"`
+	Index         int             `json:"index"`
 	ErrCode       int             `json:"errCode"`
 	TypeEvaluator EvaluatorFunc   `json:"-"`
 	Funcs         []EvaluatorFunc `json:"-"`
@@ -34,15 +35,20 @@ type TemplateParam struct {
 // and returns a new Template.
 // It builds all the parameter functions for that template
 // and their evaluators, it's the api call that makes use the interpeter's parser -> lexer.
-func Parse(src string, macros *Map) (*Template, error) {
-	params, err := parser.Parse(src)
+func Parse(src string, macros Macros) (*Template, error) {
+	types := make([]ast.ParamType, len(macros))
+	for i, m := range macros {
+		types[i] = m
+	}
+
+	params, err := parser.Parse(src, types)
 	if err != nil {
 		return nil, err
 	}
 	t := new(Template)
 	t.Src = src
 
-	for _, p := range params {
+	for idx, p := range params {
 		funcMap := macros.Lookup(p.Type)
 		typEval := funcMap.Evaluator
 
@@ -50,17 +56,23 @@ func Parse(src string, macros *Map) (*Template, error) {
 			Src:           p.Src,
 			Type:          p.Type,
 			Name:          p.Name,
+			Index:         idx,
 			ErrCode:       p.ErrorCode,
 			TypeEvaluator: typEval,
 		}
+
 		for _, paramfn := range p.Funcs {
 			tmplFn := funcMap.getFunc(paramfn.Name)
-			if tmplFn == nil { // if not find on this type, check for String's which is for global funcs too
-				tmplFn = macros.String.getFunc(paramfn.Name)
-				if tmplFn == nil { // if not found then just skip this param
+			if tmplFn == nil { // if not find on this type, check for Master's which is for global funcs too.
+				if m := macros.GetMaster(); m != nil {
+					tmplFn = m.getFunc(paramfn.Name)
+				}
+
+				if tmplFn == nil { // if not found then just skip this param.
 					continue
 				}
 			}
+
 			evalFn := tmplFn(paramfn.Args)
 			if evalFn == nil {
 				continue

@@ -164,7 +164,7 @@ latLonRegex, _ := regexp.Compile(latLonExpr)
 
 // Register your custom argument-less macro function to the :string param type.
 // MatchString is a type of func(string) bool, so we use it as it is.
-app.Macros().String.RegisterFunc("coordinate", latLonRegex.MatchString)
+app.Macros().Get("string").RegisterFunc("coordinate", latLonRegex.MatchString)
 
 app.Get("/coordinates/{lat:string coordinate()}/{lon:string coordinate()}", func(ctx iris.Context) {
     ctx.Writef("Lat: %s | Lon: %s", ctx.Params().Get("lat"), ctx.Params().Get("lon"))
@@ -175,7 +175,7 @@ Register your custom macro function which accepts two int arguments.
 
 ```go
 
-app.Macros().String.RegisterFunc("range", func(minLength, maxLength int) func(string) bool {
+app.Macros().Get("string").RegisterFunc("range", func(minLength, maxLength int) func(string) bool {
     return func(paramValue string) bool {
         return len(paramValue) >= minLength && len(paramValue) <= maxLength
     }
@@ -191,7 +191,7 @@ app.Get("/limitchar/{name:string range(1,200) else 400}", func(ctx iris.Context)
 Register your custom macro function which accepts a slice of strings `[...,...]`.
 
 ```go
-app.Macros().String.RegisterFunc("has", func(validNames []string) func(string) bool {
+app.Macros().Get("string").RegisterFunc("has", func(validNames []string) func(string) bool {
     return func(paramValue string) bool {
         for _, validName := range validNames {
             if validName == paramValue {

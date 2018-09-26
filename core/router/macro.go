@@ -1,294 +1,14 @@
 package router
 
 import (
+	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/errors"
 	"github.com/kataras/iris/core/router/macro"
 	"github.com/kataras/iris/core/router/macro/interpreter/ast"
 )
-
-// defaultMacros returns a new macro map which
-// contains the default router's named param types functions.
-func defaultMacros() *macro.Map {
-	macros := macro.NewMap()
-	// registers the String and Int default macro funcs
-	// user can add or override of his own funcs later on
-	// i.e:
-	// app.Macro.String.RegisterFunc("equal", func(eqWith string) func(string) bool {
-	//	return func(paramValue string) bool {
-	//	   return eqWith == paramValue
-	//  }})
-	registerBuiltinsMacroFuncs(macros)
-
-	return macros
-}
-
-func registerBuiltinsMacroFuncs(out *macro.Map) {
-	// register the String which is the default type if not
-	// parameter type is specified or
-	// if a given parameter into path given but the func doesn't exist on the
-	// parameter type's function list.
-	//
-	// these can be overridden by the user, later on.
-	registerStringMacroFuncs(out.String)
-	registerNumberMacroFuncs(out.Number)
-	registerInt64MacroFuncs(out.Int64)
-	registerUint8MacroFuncs(out.Uint8)
-	registerUint64MacroFuncs(out.Uint64)
-	registerAlphabeticalMacroFuncs(out.Alphabetical)
-	registerFileMacroFuncs(out.File)
-	registerPathMacroFuncs(out.Path)
-}
-
-// String
-// anything one part
-func registerStringMacroFuncs(out *macro.Macro) {
-	// this can be used everywhere, it's to help users to define custom regexp expressions
-	// on all macros
-	out.RegisterFunc("regexp", func(expr string) macro.EvaluatorFunc {
-		regexpEvaluator := macro.MustNewEvaluatorFromRegexp(expr)
-		return regexpEvaluator
-	})
-
-	// checks if param value starts with the 'prefix' arg
-	out.RegisterFunc("prefix", func(prefix string) macro.EvaluatorFunc {
-		return func(paramValue string) bool {
-			return strings.HasPrefix(paramValue, prefix)
-		}
-	})
-
-	// checks if param value ends with the 'suffix' arg
-	out.RegisterFunc("suffix", func(suffix string) macro.EvaluatorFunc {
-		return func(paramValue string) bool {
-			return strings.HasSuffix(paramValue, suffix)
-		}
-	})
-
-	// checks if param value contains the 's' arg
-	out.RegisterFunc("contains", func(s string) macro.EvaluatorFunc {
-		return func(paramValue string) bool {
-			return strings.Contains(paramValue, s)
-		}
-	})
-
-	// checks if param value's length is at least 'min'
-	out.RegisterFunc("min", func(min int) macro.EvaluatorFunc {
-		return func(paramValue string) bool {
-			return len(paramValue) >= min
-		}
-	})
-	// checks if param value's length is not bigger than 'max'
-	out.RegisterFunc("max", func(max int) macro.EvaluatorFunc {
-		return func(paramValue string) bool {
-			return max >= len(paramValue)
-		}
-	})
-}
-
-// Number
-// positive and negative numbers, number of digits depends on the arch.
-func registerNumberMacroFuncs(out *macro.Macro) {
-	// checks if the param value's int representation is
-	// bigger or equal than 'min'
-	out.RegisterFunc("min", func(min int) macro.EvaluatorFunc {
-		return func(paramValue string) bool {
-			n, err := strconv.Atoi(paramValue)
-			if err != nil {
-				return false
-			}
-			return n >= min
-		}
-	})
-
-	// checks if the param value's int representation is
-	// smaller or equal than 'max'
-	out.RegisterFunc("max", func(max int) macro.EvaluatorFunc {
-		return func(paramValue string) bool {
-			n, err := strconv.Atoi(paramValue)
-			if err != nil {
-				return false
-			}
-			return n <= max
-		}
-	})
-
-	// checks if the param value's int representation is
-	// between min and max, including 'min' and 'max'
-	out.RegisterFunc("range", func(min, max int) macro.EvaluatorFunc {
-		return func(paramValue string) bool {
-			n, err := strconv.Atoi(paramValue)
-			if err != nil {
-				return false
-			}
-
-			if n < min || n > max {
-				return false
-			}
-			return true
-		}
-	})
-}
-
-// Int64
-// -9223372036854775808 to 9223372036854775807.
-func registerInt64MacroFuncs(out *macro.Macro) {
-	// checks if the param value's int64 representation is
-	// bigger or equal than 'min'
-	out.RegisterFunc("min", func(min int64) macro.EvaluatorFunc {
-		return func(paramValue string) bool {
-			n, err := strconv.ParseInt(paramValue, 10, 64)
-			if err != nil {
-				return false
-			}
-			return n >= min
-		}
-	})
-
-	// checks if the param value's int64 representation is
-	// smaller or equal than 'max'
-	out.RegisterFunc("max", func(max int64) macro.EvaluatorFunc {
-		return func(paramValue string) bool {
-			n, err := strconv.ParseInt(paramValue, 10, 64)
-			if err != nil {
-				return false
-			}
-			return n <= max
-		}
-	})
-
-	// checks if the param value's int64 representation is
-	// between min and max, including 'min' and 'max'
-	out.RegisterFunc("range", func(min, max int64) macro.EvaluatorFunc {
-		return func(paramValue string) bool {
-			n, err := strconv.ParseInt(paramValue, 10, 64)
-			if err != nil {
-				return false
-			}
-
-			if n < min || n > max {
-				return false
-			}
-			return true
-		}
-	})
-}
-
-// Uint8
-// 0 to 255.
-func registerUint8MacroFuncs(out *macro.Macro) {
-	// checks if the param value's uint8 representation is
-	// bigger or equal than 'min'
-	out.RegisterFunc("min", func(min uint8) macro.EvaluatorFunc {
-		return func(paramValue string) bool {
-			n, err := strconv.ParseUint(paramValue, 10, 8)
-			if err != nil {
-				return false
-			}
-
-			return uint8(n) >= min
-		}
-	})
-
-	// checks if the param value's uint8 representation is
-	// smaller or equal than 'max'
-	out.RegisterFunc("max", func(max uint8) macro.EvaluatorFunc {
-		return func(paramValue string) bool {
-			n, err := strconv.ParseUint(paramValue, 10, 8)
-			if err != nil {
-				return false
-			}
-			return uint8(n) <= max
-		}
-	})
-
-	// checks if the param value's uint8 representation is
-	// between min and max, including 'min' and 'max'
-	out.RegisterFunc("range", func(min, max uint8) macro.EvaluatorFunc {
-		return func(paramValue string) bool {
-			n, err := strconv.ParseUint(paramValue, 10, 8)
-			if err != nil {
-				return false
-			}
-
-			if v := uint8(n); v < min || v > max {
-				return false
-			}
-			return true
-		}
-	})
-}
-
-// Uint64
-// 0 to 18446744073709551615.
-func registerUint64MacroFuncs(out *macro.Macro) {
-	// checks if the param value's uint64 representation is
-	// bigger or equal than 'min'
-	out.RegisterFunc("min", func(min uint64) macro.EvaluatorFunc {
-		return func(paramValue string) bool {
-			n, err := strconv.ParseUint(paramValue, 10, 64)
-			if err != nil {
-				return false
-			}
-			return n >= min
-		}
-	})
-
-	// checks if the param value's uint64 representation is
-	// smaller or equal than 'max'
-	out.RegisterFunc("max", func(max uint64) macro.EvaluatorFunc {
-		return func(paramValue string) bool {
-			n, err := strconv.ParseUint(paramValue, 10, 64)
-			if err != nil {
-				return false
-			}
-			return n <= max
-		}
-	})
-
-	// checks if the param value's uint64 representation is
-	// between min and max, including 'min' and 'max'
-	out.RegisterFunc("range", func(min, max uint64) macro.EvaluatorFunc {
-		return func(paramValue string) bool {
-			n, err := strconv.ParseUint(paramValue, 10, 64)
-			if err != nil {
-				return false
-			}
-
-			if n < min || n > max {
-				return false
-			}
-			return true
-		}
-	})
-}
-
-// Alphabetical
-// letters only (upper or lowercase)
-func registerAlphabeticalMacroFuncs(out *macro.Macro) {
-
-}
-
-// File
-// letters (upper or lowercase)
-// numbers (0-9)
-// underscore (_)
-// dash (-)
-// point (.)
-// no spaces! or other character
-func registerFileMacroFuncs(out *macro.Macro) {
-
-}
-
-// Path
-// File+slashes(anywhere)
-// should be the latest param, it's the wildcard
-func registerPathMacroFuncs(out *macro.Macro) {
-
-}
 
 // compileRoutePathAndHandlers receives a route info and returns its parsed/"compiled" path
 // and the new handlers (prepend all the macro's handler, if any).
@@ -325,9 +45,9 @@ func convertTmplToNodePath(tmpl *macro.Template) (string, error) {
 	// then the tmpl.Params will be filled,
 	// so no any further check needed
 	for i, p := range tmpl.Params {
-		if p.Type == ast.ParamTypePath {
+		if ast.IsTrailing(p.Type) {
 			if i != len(tmpl.Params)-1 {
-				return "", errors.New("parameter type \"ParamTypePath\" should be putted to the very last of a path")
+				return "", fmt.Errorf("parameter type \"%s\" should be putted to the very last of a path", p.Type.Indent())
 			}
 			routePath = strings.Replace(routePath, p.Src, WildcardParam(p.Name), 1)
 		} else {
@@ -338,7 +58,7 @@ func convertTmplToNodePath(tmpl *macro.Template) (string, error) {
 	return routePath, nil
 }
 
-// note: returns nil if not needed, the caller(router) should be check for that before adding that on route's Middleware
+// Note: returns nil if not needed, the caller(router) should check for that before adding that on route's Middleware.
 func convertTmplToHandler(tmpl *macro.Template) context.Handler {
 
 	needMacroHandler := false
@@ -347,7 +67,7 @@ func convertTmplToHandler(tmpl *macro.Template) context.Handler {
 	// 1. if we don't have, then we don't need to add a handler before the main route's handler (as I said, no performance if macro is not really used)
 	// 2. if we don't have any named params then we don't need a handler too.
 	for _, p := range tmpl.Params {
-		if len(p.Funcs) == 0 && (p.Type == ast.ParamTypeUnExpected || p.Type == ast.ParamTypeString || p.Type == ast.ParamTypePath) && p.ErrCode == http.StatusNotFound {
+		if len(p.Funcs) == 0 && (ast.IsMaster(p.Type) || ast.IsTrailing(p.Type)) && p.ErrCode == http.StatusNotFound {
 		} else {
 			// println("we need handler for: " + tmpl.Src)
 			needMacroHandler = true
