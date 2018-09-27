@@ -114,7 +114,7 @@ func main() {
 | Param Type | Go Type | Validation | Retrieve Helper |
 | -----------------|------|-------------|------|
 | `:string` | string | anything | `Params().Get` |
-| `:number` | uint, uint8, uint16, uint32, uint64, int, int8, int32, int64 | positive or negative number, any number of digits | `Params().GetInt/Int64`...|
+| `:int` | uint, uint8, uint16, uint32, uint64, int, int8, int32, int64 | positive or negative number, depends on the arch | `Params().GetInt`...|
 | `:int64` | int64 | -9223372036854775808 to 9223372036854775807 | `Params().GetInt64` |
 | `:uint8` | uint8 | 0 to 255 | `Params().GetUint8` |
 | `:uint64` | uint64 | 0 to 18446744073709551615 | `Params().GetUint64` |
@@ -127,7 +127,7 @@ func main() {
 
 ```go
 app.Get("/users/{id:uint64}", func(ctx iris.Context){
-    id, _ := ctx.Params().GetUint64("id")
+    id := ctx.Params().GetUint64Default("id", 0)
     // [...]
 })
 ```
@@ -226,7 +226,7 @@ func main() {
     // but will not match /users/-1 because uint should be bigger than zero
     // neither /users or /users/.
     app.Get("/users/{id:uint64}", func(ctx iris.Context) {
-        id, _ := ctx.Params().GetUint64("id")
+        id := ctx.Params().GetUint64Default("id", 0)
         ctx.Writef("User with ID: %d", id)
     })
 

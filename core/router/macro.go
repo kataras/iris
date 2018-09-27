@@ -3,6 +3,7 @@ package router
 import (
 	"fmt"
 	"net/http"
+	"reflect"
 	"strings"
 
 	"github.com/kataras/iris/context"
@@ -83,24 +84,37 @@ func convertTmplToHandler(tmpl *macro.Template) context.Handler {
 		return func(ctx context.Context) {
 			for _, p := range tmpl.Params {
 				paramValue := ctx.Params().Get(p.Name)
-				// first, check for type evaluator
-				if !p.TypeEvaluator(paramValue) {
+				if p.TypeEvaluator == nil {
+					// allow.
+					ctx.Next()
+					return
+				}
+
+				// first, check for type evaluator.
+				newValue, passed := p.TypeEvaluator(paramValue)
+				if !passed {
 					ctx.StatusCode(p.ErrCode)
 					ctx.StopExecution()
 					return
 				}
 
-				// then check for all of its functions
-				for _, evalFunc := range p.Funcs {
-					if !evalFunc(paramValue) {
-						ctx.StatusCode(p.ErrCode)
-						ctx.StopExecution()
-						return
+				if len(p.Funcs) > 0 {
+					paramIn := []reflect.Value{reflect.ValueOf(newValue)}
+					// then check for all of its functions
+					for _, evalFunc := range p.Funcs {
+						// or make it as func(interface{}) bool and pass directly the "newValue"
+						// but that would not be as easy for end-developer, so keep that "slower":
+						if !evalFunc.Call(paramIn)[0].Interface().(bool) { // i.e func(paramValue int) bool
+							ctx.StatusCode(p.ErrCode)
+							ctx.StopExecution()
+							return
+						}
 					}
 				}
 
+				ctx.Params().Store.Set(p.Name, newValue)
 			}
-			// if all passed, just continue
+			// if all passed, just continue.
 			ctx.Next()
 		}
 	}(*tmpl)

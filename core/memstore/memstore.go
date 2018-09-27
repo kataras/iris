@@ -6,6 +6,7 @@
 package memstore
 
 import (
+	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
@@ -67,9 +68,17 @@ func (e Entry) GetByKindOrNil(k reflect.Kind) interface{} {
 // If not found returns "def".
 func (e Entry) StringDefault(def string) string {
 	v := e.ValueRaw
+	if v == nil {
+		return def
+	}
 
 	if vString, ok := v.(string); ok {
 		return vString
+	}
+
+	val := fmt.Sprintf("%v", v)
+	if val != "" {
+		return val
 	}
 
 	return def
@@ -105,6 +114,20 @@ func (e Entry) IntDefault(def int) (int, error) {
 		return val, nil
 	case int:
 		return vv, nil
+	case int8:
+		return int(vv), nil
+	case int32:
+		return int(vv), nil
+	case int64:
+		return int(vv), nil
+	case uint:
+		return int(vv), nil
+	case uint8:
+		return int(vv), nil
+	case uint32:
+		return int(vv), nil
+	case uint64:
+		return int(vv), nil
 	}
 
 	return def, errFindParse.Format("int", e.Key)
@@ -123,6 +146,10 @@ func (e Entry) Int64Default(def int64) (int64, error) {
 		return strconv.ParseInt(vv, 10, 64)
 	case int64:
 		return vv, nil
+	case int32:
+		return int64(vv), nil
+	case int8:
+		return int64(vv), nil
 	case int:
 		return int64(vv), nil
 	}
@@ -150,6 +177,12 @@ func (e Entry) Float64Default(def float64) (float64, error) {
 	case float64:
 		return vv, nil
 	case int:
+		return float64(vv), nil
+	case int64:
+		return float64(vv), nil
+	case uint:
+		return float64(vv), nil
+	case uint64:
 		return float64(vv), nil
 	}
 

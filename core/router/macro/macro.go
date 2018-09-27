@@ -12,14 +12,51 @@ import (
 // EvaluatorFunc is the signature for both param types and param funcs.
 // It should accepts the param's value as string
 // and return true if validated otherwise false.
-type EvaluatorFunc func(paramValue string) bool
+// type EvaluatorFunc func(paramValue string) bool
+// type BinderFunc func(paramValue string) interface{}
 
-// NewEvaluatorFromRegexp accepts a regexp "expr" expression
-// and returns an EvaluatorFunc based on that regexp.
-// the regexp is compiled before return.
+type (
+	ParamEvaluator func(paramValue string) (interface{}, bool)
+	// FuncEvaluator interface{} // i.e func(paramValue int) bool
+)
+
+var goodEvaluatorFuncs = []reflect.Type{
+	reflect.TypeOf(func(string) (interface{}, bool) { return nil, false }),
+	reflect.TypeOf(ParamEvaluator(func(string) (interface{}, bool) { return nil, false })),
+}
+
+func goodParamFunc(typ reflect.Type) bool {
+	if typ.Kind() == reflect.Func { // it should be a func which returns a func (see below check).
+		if typ.NumOut() == 1 {
+			typOut := typ.Out(0)
+			if typOut.Kind() != reflect.Func {
+				return false
+			}
+
+			if typOut.NumOut() == 2 { // if it's a type of EvaluatorFunc, used for param evaluator.
+				for _, fType := range goodEvaluatorFuncs {
+					if typOut == fType {
+						return true
+					}
+				}
+				return false
+			}
+
+			if typOut.NumIn() == 1 && typOut.NumOut() == 1 { // if it's a type of func(paramValue [int,string...]) bool, used for param funcs.
+				return typOut.Out(0).Kind() == reflect.Bool
+			}
+		}
+	}
+
+	return false
+}
+
+// Regexp accepts a regexp "expr" expression
+// and returns its MatchString.
+// The regexp is compiled before return.
 //
 // Returns a not-nil error on regexp compile failure.
-func NewEvaluatorFromRegexp(expr string) (EvaluatorFunc, error) {
+func Regexp(expr string) (func(string) bool, error) {
 	if expr == "" {
 		return nil, fmt.Errorf("empty regex expression")
 	}
@@ -37,34 +74,14 @@ func NewEvaluatorFromRegexp(expr string) (EvaluatorFunc, error) {
 	return r.MatchString, nil
 }
 
-// MustNewEvaluatorFromRegexp same as NewEvaluatorFromRegexp
+// MustRegexp same as Regexp
 // but it panics on the "expr" parse failure.
-func MustNewEvaluatorFromRegexp(expr string) EvaluatorFunc {
-	r, err := NewEvaluatorFromRegexp(expr)
+func MustRegexp(expr string) func(string) bool {
+	r, err := Regexp(expr)
 	if err != nil {
 		panic(err)
 	}
 	return r
-}
-
-var (
-	goodParamFuncReturnType  = reflect.TypeOf(func(string) bool { return false })
-	goodParamFuncReturnType2 = reflect.TypeOf(EvaluatorFunc(func(string) bool { return false }))
-)
-
-func goodParamFunc(typ reflect.Type) bool {
-	// should be a func
-	// which returns a func(string) bool
-	if typ.Kind() == reflect.Func {
-		if typ.NumOut() == 1 {
-			typOut := typ.Out(0)
-			if typOut == goodParamFuncReturnType || typOut == goodParamFuncReturnType2 {
-				return true
-			}
-		}
-	}
-
-	return false
 }
 
 // goodParamFuncName reports whether the function name is a valid identifier.
@@ -85,7 +102,7 @@ func goodParamFuncName(name string) bool {
 
 // the convertBuilderFunc return value is generating at boot time.
 // convertFunc converts an interface to a valid full param function.
-func convertBuilderFunc(fn interface{}) ParamEvaluatorBuilder {
+func convertBuilderFunc(fn interface{}) ParamFuncBuilder {
 
 	typFn := reflect.TypeOf(fn)
 	if !goodParamFunc(typFn) {
@@ -94,7 +111,7 @@ func convertBuilderFunc(fn interface{}) ParamEvaluatorBuilder {
 
 	numFields := typFn.NumIn()
 
-	return func(args []string) EvaluatorFunc {
+	return func(args []string) reflect.Value {
 		if len(args) != numFields {
 			// no variadics support, for now.
 			panic("args should be the same len as numFields")
@@ -179,24 +196,25 @@ func convertBuilderFunc(fn interface{}) ParamEvaluatorBuilder {
 
 			argValue := reflect.ValueOf(val)
 			if expected, got := field.Kind(), argValue.Kind(); expected != got {
-				panic(fmt.Sprintf("fields should have the same type: [%d] expected %s but got %s", i, expected, got))
+				panic(fmt.Sprintf("func's input arguments should have the same type: [%d] expected %s but got %s", i, expected, got))
 			}
 
 			argValues = append(argValues, argValue)
 		}
 
-		evalFn := reflect.ValueOf(fn).Call(argValues)[0].Interface()
+		evalFn := reflect.ValueOf(fn).Call(argValues)[0]
 
-		var evaluator EvaluatorFunc
-		// check for typed and not typed
-		if _v, ok := evalFn.(EvaluatorFunc); ok {
-			evaluator = _v
-		} else if _v, ok = evalFn.(func(string) bool); ok {
-			evaluator = _v
-		}
-		return func(paramValue string) bool {
-			return evaluator(paramValue)
-		}
+		// var evaluator EvaluatorFunc
+		// // check for typed and not typed
+		// if _v, ok := evalFn.(EvaluatorFunc); ok {
+		// 	evaluator = _v
+		// } else if _v, ok = evalFn.(func(string) bool); ok {
+		// 	evaluator = _v
+		// }
+		// return func(paramValue interface{}) bool {
+		// 	return evaluator(paramValue)
+		// }
+		return evalFn
 	}
 }
 
@@ -218,16 +236,16 @@ type (
 		master   bool
 		trailing bool
 
-		Evaluator EvaluatorFunc
+		Evaluator ParamEvaluator
 		funcs     []ParamFunc
 	}
 
-	// ParamEvaluatorBuilder is a func
+	// ParamFuncBuilder is a func
 	// which accepts a param function's arguments (values)
-	// and returns an EvaluatorFunc, its job
+	// and returns a function as value, its job
 	// is to make the macros to be registered
 	// by user at the most generic possible way.
-	ParamEvaluatorBuilder func([]string) EvaluatorFunc
+	ParamFuncBuilder func([]string) reflect.Value // the func
 
 	// ParamFunc represents the parsed
 	// parameter function, it holds
@@ -236,13 +254,13 @@ type (
 	// the evaluator func.
 	ParamFunc struct {
 		Name string
-		Func ParamEvaluatorBuilder
+		Func ParamFuncBuilder
 	}
 )
 
 // NewMacro creates and returns a Macro that can be used as a registry for
 // a new customized parameter type and its functions.
-func NewMacro(indent, alias string, master, trailing bool, evaluator EvaluatorFunc) *Macro {
+func NewMacro(indent, alias string, master, trailing bool, evaluator ParamEvaluator) *Macro {
 	return &Macro{
 		indent:   indent,
 		alias:    alias,
@@ -287,7 +305,7 @@ func (m *Macro) RegisterFunc(funcName string, fn interface{}) *Macro {
 	return m
 }
 
-func (m *Macro) registerFunc(funcName string, fullFn ParamEvaluatorBuilder) {
+func (m *Macro) registerFunc(funcName string, fullFn ParamFuncBuilder) {
 	if !goodParamFuncName(funcName) {
 		return
 	}
@@ -305,7 +323,7 @@ func (m *Macro) registerFunc(funcName string, fullFn ParamEvaluatorBuilder) {
 	})
 }
 
-func (m *Macro) getFunc(funcName string) ParamEvaluatorBuilder {
+func (m *Macro) getFunc(funcName string) ParamFuncBuilder {
 	for _, fn := range m.funcs {
 		if fn.Name == funcName {
 			if fn.Func == nil {

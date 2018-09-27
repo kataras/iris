@@ -1,6 +1,7 @@
 package context
 
 import (
+	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
@@ -33,7 +34,7 @@ func (r *RequestParams) GetEntry(key string) memstore.Entry {
 // by the key-value params.
 func (r *RequestParams) Visit(visitor func(key string, value string)) {
 	r.Store.Visit(func(k string, v interface{}) {
-		visitor(k, v.(string)) // always string here.
+		visitor(k, fmt.Sprintf("%v", v)) // always string here.
 	})
 }
 

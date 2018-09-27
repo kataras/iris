@@ -2,7 +2,6 @@ package main
 
 import (
 	"regexp"
-	"strconv"
 
 	"github.com/kataras/iris"
 )
@@ -122,17 +121,12 @@ func main() {
 	// Let's register our first macro attached to uint64 macro type.
 	// "min" = the function
 	// "minValue" = the argument of the function
-	// func(string) bool = the macro's path parameter evaluator, this executes in serve time when
+	// func(uint64) bool = our func's evaluator, this executes in serve time when
 	// a user requests a path which contains the :uint64 macro parameter type with the min(...) macro parameter function.
-	app.Macros().Uint64.RegisterFunc("min", func(minValue uint64) func(string) bool {
-		// do anything before serve here [...]
-		// at this case we don't need to do anything
-		return func(paramValue string) bool {
-			n, err := strconv.ParseUint(paramValue, 10, 64)
-			if err != nil {
-				return false
-			}
-			return n >= minValue
+	app.Macros().Get("uint64").RegisterFunc("min", func(minValue uint64) func(uint64) bool {
+		// type of "paramValue" should match the type of the internal macro's evaluator function, which in this case is "uint64".
+		return func(paramValue uint64) bool {
+			return paramValue >= minValue
 		}
 	})
 
@@ -142,14 +136,14 @@ func main() {
 	app.Get("/profile/{id:uint64 min(20)}", func(ctx iris.Context) {
 		// second parameter is the error but it will always nil because we use macros,
 		// the validaton already happened.
-		id, _ := ctx.Params().GetInt("id")
+		id := ctx.Params().GetUint64Default("id", 0)
 		ctx.Writef("Hello id: %d", id)
 	})
 
 	// to change the error code per route's macro evaluator:
 	app.Get("/profile/{id:uint64 min(1)}/friends/{friendid:uint64 min(1) else 504}", func(ctx iris.Context) {
-		id, _ := ctx.Params().GetInt("id") // or GetUint64.
-		friendid, _ := ctx.Params().GetInt("friendid")
+		id := ctx.Params().GetUint64Default("id", 0)
+		friendid := ctx.Params().GetUint64Default("friendid", 0)
 		ctx.Writef("Hello id: %d looking for friend id: ", id, friendid)
 	}) // this will throw e 504 error code instead of 404 if all route's macros not passed.
 
@@ -169,7 +163,7 @@ func main() {
 	}
 
 	// MatchString is a type of func(string) bool, so we use it as it is.
-	app.Macros().String.RegisterFunc("coordinate", latLonRegex.MatchString)
+	app.Macros().Get("string").RegisterFunc("coordinate", latLonRegex.MatchString)
 
 	app.Get("/coordinates/{lat:string coordinate() else 502}/{lon:string coordinate() else 502}", func(ctx iris.Context) {
 		ctx.Writef("Lat: %s | Lon: %s", ctx.Params().Get("lat"), ctx.Params().Get("lon"))
@@ -178,7 +172,7 @@ func main() {
 	//
 
 	// Another one is by using a custom body.
-	app.Macros().String.RegisterFunc("range", func(minLength, maxLength int) func(string) bool {
+	app.Macros().Get("string").RegisterFunc("range", func(minLength, maxLength int) func(string) bool {
 		return func(paramValue string) bool {
 			return len(paramValue) >= minLength && len(paramValue) <= maxLength
 		}
@@ -193,7 +187,7 @@ func main() {
 	//
 
 	// Register your custom macro function which accepts a slice of strings `[...,...]`.
-	app.Macros().String.RegisterFunc("has", func(validNames []string) func(string) bool {
+	app.Macros().Get("string").RegisterFunc("has", func(validNames []string) func(string) bool {
 		return func(paramValue string) bool {
 			for _, validName := range validNames {
 				if validName == paramValue {

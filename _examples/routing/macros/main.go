@@ -16,37 +16,49 @@ func main() {
 	app.Logger().SetLevel("debug")
 
 	// Let's see how we can register a custom macro such as ":uint32"  or ":small" for its alias (optionally) for Uint32 types.
-	app.Macros().Register("uint32", "small", false, false, func(paramValue string) bool {
-		_, err := strconv.ParseUint(paramValue, 10, 32)
-		return err == nil
-	}).
-		RegisterFunc("min", func(min uint32) func(string) bool {
-			return func(paramValue string) bool {
-				n, err := strconv.ParseUint(paramValue, 10, 32)
-				if err != nil {
-					return false
-				}
+	// app.Macros().Register("uint32", "small", false, false, func(paramValue string) bool {
+	// 	_, err := strconv.ParseUint(paramValue, 10, 32)
+	// 	return err == nil
+	// }).
+	// 	RegisterFunc("min", func(min uint32) func(string) bool {
+	// 		return func(paramValue string) bool {
+	// 			n, err := strconv.ParseUint(paramValue, 10, 32)
+	// 			if err != nil {
+	// 				return false
+	// 			}
 
-				return uint32(n) >= min
+	// 			return uint32(n) >= min
+	// 		}
+	// 	})
+
+	/* TODO:
+	   somehow define one-time how the parameter should be parsed to a particular type (go std or custom)
+	   tip: we can change the original value from string to X using the entry's.ValueRaw
+	   ^ Done 27 sep 2018.
+	*/
+
+	app.Macros().Register("uint32", "small", false, false, func(paramValue string) (interface{}, bool) {
+		v, err := strconv.ParseUint(paramValue, 10, 32)
+		return uint32(v), err == nil
+	}).
+		RegisterFunc("min", func(min uint32) func(uint32) bool {
+			return func(paramValue uint32) bool {
+				return paramValue >= min
 			}
 		})
 
-		/* TODO:
-		   somehow define one-time how the parameter should be parsed to a particular type (go std or custom)
-		   tip: we can change the original value from string to X using the entry's.ValueRaw
-		*/
-
+	// optionally, only when mvc or hero features are used for this custom macro/parameter type.
 	context.ParamResolvers[reflect.Uint32] = func(paramIndex int) interface{} {
-		// return func(store memstore.Store) uint32 {
-		// 	param, _ := store.GetEntryAt(paramIndex)
+		/* both works but second is faster, we omit the duplication of the type conversion over and over  as of 27 Sep of 2018 (this patch)*/
+		// return func(ctx context.Context) uint32 {
+		// 	param := ctx.Params().GetEntryAt(paramIndex)
 		// 	paramValueAsUint32, _ := strconv.ParseUint(param.String(), 10, 32)
 		// 	return uint32(paramValueAsUint32)
 		// }
 		return func(ctx context.Context) uint32 {
-			param := ctx.Params().GetEntryAt(paramIndex)
-			paramValueAsUint32, _ := strconv.ParseUint(param.String(), 10, 32)
-			return uint32(paramValueAsUint32)
-		}
+			return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint32)
+		} /* TODO: find a way to automative it based on the macro's first return value type, if thats the case then we must not return nil even if not found,
+		we must return a value i.e 0 for int for its interface{} */
 	}
 	//
 
@@ -54,11 +66,11 @@ func main() {
 		return fmt.Sprintf("Value of the parameter is: %d\n", paramValue)
 	}))
 
-	app.Get("test_uint64/{myparam:uint64}", handler)
+	app.Get("test_uint64/{myparam:uint64 min(5)}", func(ctx context.Context) {
+		// works: ctx.Writef("Value of the parameter is: %s\n", ctx.Params().Get("myparam"))
+		// but better and faster because the macro converts the string to uint64 automatically:
+		ctx.Writef("Value of the parameter is: %d\n", ctx.Params().GetUint64Default("myparam", 0))
+	})
 
 	app.Run(iris.Addr(":8080"))
-}
-
-func handler(ctx context.Context) {
-	ctx.Writef("Value of the parameter is: %s\n", ctx.Params().Get("myparam"))
 }
