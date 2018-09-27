@@ -154,6 +154,10 @@ func convertBuilderFunc(fn interface{}) ParamFuncBuilder {
 				v, err := strconv.ParseInt(arg, 10, 64)
 				panicIfErr(err)
 				val = v
+			case reflect.Uint:
+				v, err := strconv.ParseUint(arg, 10, strconv.IntSize)
+				panicIfErr(err)
+				val = uint(v)
 			case reflect.Uint8:
 				v, err := strconv.ParseUint(arg, 10, 8)
 				panicIfErr(err)
@@ -245,7 +249,7 @@ type (
 	// and returns a function as value, its job
 	// is to make the macros to be registered
 	// by user at the most generic possible way.
-	ParamFuncBuilder func([]string) reflect.Value // the func
+	ParamFuncBuilder func([]string) reflect.Value // the func(<T>) bool
 
 	// ParamFunc represents the parsed
 	// parameter function, it holds

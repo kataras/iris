@@ -46,12 +46,13 @@ var (
 		})
 
 	simpleNumberEval = MustRegexp("^-?[0-9]+$")
-	// Int or int type
+	// Int or number type
 	// both positive and negative numbers, actual value can be min-max int64 or min-max int32 depends on the arch.
 	Int = NewMacro("int", "number", false, false, func(paramValue string) (interface{}, bool) {
 		if !simpleNumberEval(paramValue) {
 			return nil, false
 		}
+
 		v, err := strconv.Atoi(paramValue)
 		if err != nil {
 			return nil, false
@@ -81,12 +82,100 @@ var (
 			}
 		})
 
+	// Int8 type
+	// -128 to 127.
+	Int8 = NewMacro("int8", "", false, false, func(paramValue string) (interface{}, bool) {
+		if !simpleNumberEval(paramValue) {
+			return nil, false
+		}
+
+		v, err := strconv.ParseInt(paramValue, 10, 8)
+		if err != nil {
+			return nil, false
+		}
+		return int8(v), true
+	}).
+		RegisterFunc("min", func(min int8) func(int8) bool {
+			return func(paramValue int8) bool {
+				return paramValue >= min
+			}
+		}).
+		RegisterFunc("max", func(max int8) func(int8) bool {
+			return func(paramValue int8) bool {
+				return paramValue <= max
+			}
+		}).
+		RegisterFunc("range", func(min, max int8) func(int8) bool {
+			return func(paramValue int8) bool {
+				return !(paramValue < min || paramValue > max)
+			}
+		})
+
+	// Int16 type
+	// -32768 to 32767.
+	Int16 = NewMacro("int16", "", false, false, func(paramValue string) (interface{}, bool) {
+		if !simpleNumberEval(paramValue) {
+			return nil, false
+		}
+
+		v, err := strconv.ParseInt(paramValue, 10, 16)
+		if err != nil {
+			return nil, false
+		}
+		return int16(v), true
+	}).
+		RegisterFunc("min", func(min int16) func(int16) bool {
+			return func(paramValue int16) bool {
+				return paramValue >= min
+			}
+		}).
+		RegisterFunc("max", func(max int16) func(int16) bool {
+			return func(paramValue int16) bool {
+				return paramValue <= max
+			}
+		}).
+		RegisterFunc("range", func(min, max int16) func(int16) bool {
+			return func(paramValue int16) bool {
+				return !(paramValue < min || paramValue > max)
+			}
+		})
+
+	// Int32 type
+	// -2147483648 to 2147483647.
+	Int32 = NewMacro("int32", "", false, false, func(paramValue string) (interface{}, bool) {
+		if !simpleNumberEval(paramValue) {
+			return nil, false
+		}
+
+		v, err := strconv.ParseInt(paramValue, 10, 32)
+		if err != nil {
+			return nil, false
+		}
+		return int32(v), true
+	}).
+		RegisterFunc("min", func(min int32) func(int32) bool {
+			return func(paramValue int32) bool {
+				return paramValue >= min
+			}
+		}).
+		RegisterFunc("max", func(max int32) func(int32) bool {
+			return func(paramValue int32) bool {
+				return paramValue <= max
+			}
+		}).
+		RegisterFunc("range", func(min, max int32) func(int32) bool {
+			return func(paramValue int32) bool {
+				return !(paramValue < min || paramValue > max)
+			}
+		})
+
 	// Int64 as int64 type
 	// -9223372036854775808 to 9223372036854775807.
 	Int64 = NewMacro("int64", "long", false, false, func(paramValue string) (interface{}, bool) {
 		if !simpleNumberEval(paramValue) {
 			return nil, false
 		}
+
 		v, err := strconv.ParseInt(paramValue, 10, 64)
 		if err != nil { // if err == strconv.ErrRange...
 			return nil, false
@@ -111,6 +200,39 @@ var (
 		// between min and max, including 'min' and 'max'.
 		RegisterFunc("range", func(min, max int64) func(int64) bool {
 			return func(paramValue int64) bool {
+				return !(paramValue < min || paramValue > max)
+			}
+		})
+
+	// Uint as uint type
+	// actual value can be min-max uint64 or min-max uint32 depends on the arch.
+	// if x64: 0 to 18446744073709551615
+	// if x32: 0 to 4294967295 and etc.
+	Uint = NewMacro("uint", "", false, false, func(paramValue string) (interface{}, bool) {
+		v, err := strconv.ParseUint(paramValue, 10, strconv.IntSize) // 32,64...
+		if err != nil {
+			return nil, false
+		}
+		return uint(v), true
+	}).
+		// checks if the param value's int representation is
+		// bigger or equal than 'min'
+		RegisterFunc("min", func(min uint) func(uint) bool {
+			return func(paramValue uint) bool {
+				return paramValue >= min
+			}
+		}).
+		// checks if the param value's int representation is
+		// smaller or equal than 'max'.
+		RegisterFunc("max", func(max uint) func(uint) bool {
+			return func(paramValue uint) bool {
+				return paramValue <= max
+			}
+		}).
+		// checks if the param value's int representation is
+		// between min and max, including 'min' and 'max'.
+		RegisterFunc("range", func(min, max uint) func(uint) bool {
+			return func(paramValue uint) bool {
 				return !(paramValue < min || paramValue > max)
 			}
 		})
@@ -151,12 +273,59 @@ var (
 			}
 		})
 
+	// Uint16 as uint16 type
+	// 0 to 65535.
+	Uint16 = NewMacro("uint16", "", false, false, func(paramValue string) (interface{}, bool) {
+		v, err := strconv.ParseUint(paramValue, 10, 16)
+		if err != nil {
+			return nil, false
+		}
+		return uint16(v), true
+	}).
+		RegisterFunc("min", func(min uint16) func(uint16) bool {
+			return func(paramValue uint16) bool {
+				return paramValue >= min
+			}
+		}).
+		RegisterFunc("max", func(max uint16) func(uint16) bool {
+			return func(paramValue uint16) bool {
+				return paramValue <= max
+			}
+		}).
+		RegisterFunc("range", func(min, max uint16) func(uint16) bool {
+			return func(paramValue uint16) bool {
+				return !(paramValue < min || paramValue > max)
+			}
+		})
+
+	// Uint32 as uint32 type
+	// 0 to 4294967295.
+	Uint32 = NewMacro("uint32", "", false, false, func(paramValue string) (interface{}, bool) {
+		v, err := strconv.ParseUint(paramValue, 10, 32)
+		if err != nil {
+			return nil, false
+		}
+		return uint32(v), true
+	}).
+		RegisterFunc("min", func(min uint32) func(uint32) bool {
+			return func(paramValue uint32) bool {
+				return paramValue >= min
+			}
+		}).
+		RegisterFunc("max", func(max uint32) func(uint32) bool {
+			return func(paramValue uint32) bool {
+				return paramValue <= max
+			}
+		}).
+		RegisterFunc("range", func(min, max uint32) func(uint32) bool {
+			return func(paramValue uint32) bool {
+				return !(paramValue < min || paramValue > max)
+			}
+		})
+
 	// Uint64 as uint64 type
 	// 0 to 18446744073709551615.
 	Uint64 = NewMacro("uint64", "", false, false, func(paramValue string) (interface{}, bool) {
-		if !simpleNumberEval(paramValue) {
-			return nil, false
-		}
 		v, err := strconv.ParseUint(paramValue, 10, 64)
 		if err != nil {
 			return nil, false
@@ -234,8 +403,14 @@ var (
 	Defaults = &Macros{
 		String,
 		Int,
+		Int8,
+		Int16,
+		Int32,
 		Int64,
+		Uint,
 		Uint8,
+		Uint16,
+		Uint32,
 		Uint64,
 		Bool,
 		Alphabetical,

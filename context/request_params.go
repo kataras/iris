@@ -91,32 +91,59 @@ var (
 		},
 		reflect.Int: func(paramIndex int) interface{} {
 			return func(ctx Context) int {
-				v, _ := ctx.Params().GetEntryAt(paramIndex).IntDefault(0)
-				return v
+				// v, _ := ctx.Params().GetEntryAt(paramIndex).IntDefault(0)
+				// return v
+				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(int)
+			}
+		},
+		reflect.Int8: func(paramIndex int) interface{} {
+			return func(ctx Context) int8 {
+				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(int8)
+			}
+		},
+		reflect.Int16: func(paramIndex int) interface{} {
+			return func(ctx Context) int16 {
+				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(int16)
+			}
+		},
+		reflect.Int32: func(paramIndex int) interface{} {
+			return func(ctx Context) int32 {
+				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(int32)
 			}
 		},
 		reflect.Int64: func(paramIndex int) interface{} {
 			return func(ctx Context) int64 {
-				v, _ := ctx.Params().GetEntryAt(paramIndex).Int64Default(0)
-				return v
+				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(int64)
+			}
+		},
+		reflect.Uint: func(paramIndex int) interface{} {
+			return func(ctx Context) uint {
+				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint)
 			}
 		},
 		reflect.Uint8: func(paramIndex int) interface{} {
 			return func(ctx Context) uint8 {
-				v, _ := ctx.Params().GetEntryAt(paramIndex).Uint8Default(0)
-				return v
+				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint8)
+			}
+		},
+		reflect.Uint16: func(paramIndex int) interface{} {
+			return func(ctx Context) uint16 {
+				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint16)
+			}
+		},
+		reflect.Uint32: func(paramIndex int) interface{} {
+			return func(ctx Context) uint32 {
+				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint32)
 			}
 		},
 		reflect.Uint64: func(paramIndex int) interface{} {
 			return func(ctx Context) uint64 {
-				v, _ := ctx.Params().GetEntryAt(paramIndex).Uint64Default(0)
-				return v
+				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint64)
 			}
 		},
 		reflect.Bool: func(paramIndex int) interface{} {
 			return func(ctx Context) bool {
-				v, _ := ctx.Params().GetEntryAt(paramIndex).BoolDefault(false)
-				return v
+				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(bool)
 			}
 		},
 	}
