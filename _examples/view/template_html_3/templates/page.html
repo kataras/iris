@@ -1,0 +1,25 @@
+<a href="{{urlpath "my-page1"}}">/mypath</a>
+<br />
+<br />
+
+<a href="{{urlpath "my-page2" "theParam1" "theParam2"}}">/mypath2/{paramfirst}/{paramsecond}</a>
+<br />
+<br />
+
+<a href="{{urlpath "my-page3" "theParam1" "theParam2AfterStatic"}}">/mypath3/{paramfirst}/statichere/{paramsecond}</a>
+<br />
+<br />
+
+<a href="{{urlpath "my-page4" "theParam1" "theparam2AfterStatic"  "otherParam"  "matchAnything"}}">
+  /mypath4/{paramfirst}/statichere/{paramsecond}/{otherparam}/{something:path}</a>
+<br />
+<br />
+
+<a href="{{urlpath "my-page5" "theParam1" "theParam2Afterstatichere" "otherParam"  "matchAnythingAfterStatic"}}">
+  /mypath5/{paramfirst}/statichere/{paramsecond}/{otherparam}/anything/{anything:path}</a>
+<br />
+<br />
+
+<a href={{urlpath "my-page6" .ParamsAsArray }}>
+  /mypath6/{paramfirst}/{paramsecond}/statichere/{paramThirdAfterStatic}
+</a>

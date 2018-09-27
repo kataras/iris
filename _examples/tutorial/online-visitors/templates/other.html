@@ -1,0 +1,29 @@
+<html>
+
+<head>
+    <title>Different page, different results</title>
+    <style>
+        #online_views {
+            font-weight: bold;
+            font-size: 18px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <span id="online_views">1 online view</span>
+
+
+    <script type="text/javascript">
+      /* take the page source from our passed struct  on .Render */
+      var PAGE_SOURCE = {{ .PageID }}
+    </script>
+
+    <script src="/iris-ws.js"></script>
+
+    <script src="/js/visitors.js"></script>
+
+</body>
+
+</html>
