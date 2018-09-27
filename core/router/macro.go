@@ -83,7 +83,6 @@ func convertTmplToHandler(tmpl *macro.Template) context.Handler {
 	return func(tmpl macro.Template) context.Handler {
 		return func(ctx context.Context) {
 			for _, p := range tmpl.Params {
-				paramValue := ctx.Params().Get(p.Name)
 				if p.TypeEvaluator == nil {
 					// allow.
 					ctx.Next()
@@ -91,7 +90,7 @@ func convertTmplToHandler(tmpl *macro.Template) context.Handler {
 				}
 
 				// first, check for type evaluator.
-				newValue, passed := p.TypeEvaluator(paramValue)
+				newValue, passed := p.TypeEvaluator(ctx.Parms().Get(p.Name))
 				if !passed {
 					ctx.StatusCode(p.ErrCode)
 					ctx.StopExecution()
