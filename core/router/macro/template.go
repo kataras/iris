@@ -1,6 +1,8 @@
 package macro
 
 import (
+	"reflect"
+
 	"github.com/kataras/iris/core/router/macro/interpreter/ast"
 	"github.com/kataras/iris/core/router/macro/interpreter/parser"
 )
@@ -27,8 +29,8 @@ type TemplateParam struct {
 	Name          string          `json:"name"`
 	Index         int             `json:"index"`
 	ErrCode       int             `json:"errCode"`
-	TypeEvaluator EvaluatorFunc   `json:"-"`
-	Funcs         []EvaluatorFunc `json:"-"`
+	TypeEvaluator ParamEvaluator  `json:"-"`
+	Funcs         []reflect.Value `json:"-"`
 }
 
 // Parse takes a full route path and a macro map (macro map contains the macro types with their registered param functions)
@@ -74,7 +76,7 @@ func Parse(src string, macros Macros) (*Template, error) {
 			}
 
 			evalFn := tmplFn(paramfn.Args)
-			if evalFn == nil {
+			if evalFn.IsNil() || !evalFn.IsValid() || evalFn.Kind() != reflect.Func {
 				continue
 			}
 			tmplParam.Funcs = append(tmplParam.Funcs, evalFn)

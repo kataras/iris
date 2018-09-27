@@ -2,6 +2,7 @@ package macro
 
 import (
 	"reflect"
+	"strconv"
 	"testing"
 )
 
@@ -64,9 +65,25 @@ func TestGoodParamFuncName(t *testing.T) {
 	}
 }
 
-func testEvaluatorRaw(t *testing.T, macroEvaluator *Macro, input string, pass bool, i int) {
-	if got := macroEvaluator.Evaluator(input); pass != got {
-		t.Fatalf("%s - tests[%d] - expecting %v but got %v", t.Name(), i, pass, got)
+func testEvaluatorRaw(t *testing.T, macroEvaluator *Macro, input string, expectedType reflect.Kind, pass bool, i int) {
+	if macroEvaluator.Evaluator == nil && pass {
+		return // if not evaluator defined then it should allow everything.
+	}
+	value, passed := macroEvaluator.Evaluator(input)
+	if pass != passed {
+		t.Fatalf("%s - tests[%d] - expecting[pass] %v but got %v", t.Name(), i, pass, passed)
+	}
+
+	if !passed {
+		return
+	}
+
+	if value == nil && expectedType != reflect.Invalid {
+		t.Fatalf("%s - tests[%d] - expecting[value] to not be nil", t.Name(), i)
+	}
+
+	if v := reflect.ValueOf(value); v.Kind() != expectedType {
+		t.Fatalf("%s - tests[%d] - expecting[value.Kind] %v but got %v", t.Name(), i, expectedType, v.Kind())
 	}
 }
 
@@ -84,30 +101,32 @@ func TestStringEvaluatorRaw(t *testing.T) {
 	} // 0
 
 	for i, tt := range tests {
-		testEvaluatorRaw(t, String, tt.input, tt.pass, i)
+		testEvaluatorRaw(t, String, tt.input, reflect.String, tt.pass, i)
 	}
 }
 
-func TestNumberEvaluatorRaw(t *testing.T) {
+func TestIntEvaluatorRaw(t *testing.T) {
+	x64 := strconv.IntSize == 64
+
 	tests := []struct {
 		pass  bool
 		input string
 	}{
-		{false, "astring"},                                // 0
-		{false, "astringwith_numb3rS_and_symbol$"},        // 1
-		{true, "32321"},                                   // 2
-		{true, "18446744073709551615"},                    // 3
-		{true, "-18446744073709551615"},                   // 4
-		{true, "-18446744073709553213213213213213121615"}, // 5
-		{false, "42 18446744073709551615"},                // 6
-		{false, "--42"},                                   // 7
-		{false, "+42"},                                    // 8
-		{false, "main.css"},                               // 9
-		{false, "/assets/main.css"},                       // 10
+		{false, "astring"},                                 // 0
+		{false, "astringwith_numb3rS_and_symbol$"},         // 1
+		{true, "32321"},                                    // 2
+		{x64, "9223372036854775807" /*max int64*/},         // 3
+		{x64, "-9223372036854775808" /*min int64 */},       // 4
+		{false, "-18446744073709553213213213213213121615"}, // 5
+		{false, "42 18446744073709551615"},                 // 6
+		{false, "--42"},                                    // 7
+		{false, "+42"},                                     // 8
+		{false, "main.css"},                                // 9
+		{false, "/assets/main.css"},                        // 10
 	}
 
 	for i, tt := range tests {
-		testEvaluatorRaw(t, Number, tt.input, tt.pass, i)
+		testEvaluatorRaw(t, Int, tt.input, reflect.Int, tt.pass, i)
 	}
 }
 
@@ -132,7 +151,7 @@ func TestInt64EvaluatorRaw(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		testEvaluatorRaw(t, Int64, tt.input, tt.pass, i)
+		testEvaluatorRaw(t, Int64, tt.input, reflect.Int64, tt.pass, i)
 	}
 }
 
@@ -161,7 +180,7 @@ func TestUint8EvaluatorRaw(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		testEvaluatorRaw(t, Uint8, tt.input, tt.pass, i)
+		testEvaluatorRaw(t, Uint8, tt.input, reflect.Uint8, tt.pass, i)
 	}
 }
 
@@ -186,7 +205,7 @@ func TestUint64EvaluatorRaw(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		testEvaluatorRaw(t, Uint64, tt.input, tt.pass, i)
+		testEvaluatorRaw(t, Uint64, tt.input, reflect.Uint64, tt.pass, i)
 	}
 }
 
@@ -203,7 +222,7 @@ func TestAlphabeticalEvaluatorRaw(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		testEvaluatorRaw(t, Alphabetical, tt.input, tt.pass, i)
+		testEvaluatorRaw(t, Alphabetical, tt.input, reflect.String, tt.pass, i)
 	}
 }
 
@@ -220,7 +239,7 @@ func TestFileEvaluatorRaw(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		testEvaluatorRaw(t, File, tt.input, tt.pass, i)
+		testEvaluatorRaw(t, File, tt.input, reflect.String, tt.pass, i)
 	}
 }
 
@@ -238,7 +257,7 @@ func TestPathEvaluatorRaw(t *testing.T) {
 	}
 
 	for i, tt := range pathTests {
-		testEvaluatorRaw(t, Path, tt.input, tt.pass, i)
+		testEvaluatorRaw(t, Path, tt.input, reflect.String, tt.pass, i)
 	}
 }
 
@@ -270,8 +289,7 @@ func TestConvertBuilderFunc(t *testing.T) {
 	}
 
 	evalFunc := convertBuilderFunc(fn)
-
-	if !evalFunc([]string{"1", "[name1,name2]"})("ok") {
+	if !evalFunc([]string{"1", "[name1,name2]"}).Call([]reflect.Value{reflect.ValueOf("ok")})[0].Interface().(bool) {
 		t.Fatalf("failed, it should fail already")
 	}
 }

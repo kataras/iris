@@ -6,28 +6,18 @@ import (
 	"runtime"
 
 	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/memstore"
 	"github.com/kataras/iris/hero/di"
 
 	"github.com/kataras/golog"
 )
 
 var (
-	contextTyp  = reflect.TypeOf((*context.Context)(nil)).Elem()
-	memstoreTyp = reflect.TypeOf(memstore.Store{})
+	contextTyp = reflect.TypeOf((*context.Context)(nil)).Elem()
 )
 
 // IsContext returns true if the "inTyp" is a type of Context.
 func IsContext(inTyp reflect.Type) bool {
 	return inTyp.Implements(contextTyp)
-}
-
-// IsExpectingStore returns true if the "inTyp" is a type of memstore.Store.
-func IsExpectingStore(inTyp reflect.Type) bool {
-	print("di/handler.go: " + inTyp.String() + " vs " + memstoreTyp.String() + " : ")
-	println(inTyp == memstoreTyp)
-
-	return inTyp == memstoreTyp
 }
 
 // checks if "handler" is context.Handler: func(context.Context).
