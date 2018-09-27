@@ -90,7 +90,7 @@ func convertTmplToHandler(tmpl *macro.Template) context.Handler {
 				}
 
 				// first, check for type evaluator.
-				newValue, passed := p.TypeEvaluator(ctx.Parms().Get(p.Name))
+				newValue, passed := p.TypeEvaluator(ctx.Params().Get(p.Name))
 				if !passed {
 					ctx.StatusCode(p.ErrCode)
 					ctx.StopExecution()
