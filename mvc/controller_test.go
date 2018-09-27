@@ -377,8 +377,10 @@ func (c *testControllerRelPathFromFunc) GetAdminLogin() {}
 
 func (c *testControllerRelPathFromFunc) PutSomethingIntoThis() {}
 
-func (c *testControllerRelPathFromFunc) GetSomethingBy(bool)                {}
-func (c *testControllerRelPathFromFunc) GetSomethingByBy(string, int)       {}
+func (c *testControllerRelPathFromFunc) GetSomethingBy(bool) {}
+
+func (c *testControllerRelPathFromFunc) GetSomethingByBy(string, int) {}
+
 func (c *testControllerRelPathFromFunc) GetSomethingNewBy(string, int)      {} // two input arguments, one By which is the latest word.
 func (c *testControllerRelPathFromFunc) GetSomethingByElseThisBy(bool, int) {} // two input arguments
 

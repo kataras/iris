@@ -85,8 +85,7 @@ func convertTmplToHandler(tmpl *macro.Template) context.Handler {
 			for _, p := range tmpl.Params {
 				if p.TypeEvaluator == nil {
 					// allow.
-					ctx.Next()
-					return
+					continue
 				}
 
 				// first, check for type evaluator.
