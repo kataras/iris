@@ -2,8 +2,6 @@ package router
 
 import (
 	"fmt"
-	"net/http"
-	"reflect"
 	"strings"
 
 	"github.com/kataras/iris/context"
@@ -61,21 +59,20 @@ func convertTmplToNodePath(tmpl *macro.Template) (string, error) {
 
 // Note: returns nil if not needed, the caller(router) should check for that before adding that on route's Middleware.
 func convertTmplToHandler(tmpl *macro.Template) context.Handler {
-
-	needMacroHandler := false
-
 	// check if we have params like: {name:string} or {name} or {anything:path} without else keyword or any functions used inside these params.
 	// 1. if we don't have, then we don't need to add a handler before the main route's handler (as I said, no performance if macro is not really used)
 	// 2. if we don't have any named params then we don't need a handler too.
+
+	needsMacroHandler := false
 	for _, p := range tmpl.Params {
-		if len(p.Funcs) == 0 && (ast.IsMaster(p.Type) || ast.IsTrailing(p.Type)) && p.ErrCode == http.StatusNotFound {
-		} else {
-			// println("we need handler for: " + tmpl.Src)
-			needMacroHandler = true
+		if p.CanEval() {
+			// if at least one needs it, then create the handler.
+			needsMacroHandler = true
+			break
 		}
 	}
 
-	if !needMacroHandler {
+	if !needsMacroHandler {
 		// println("we don't need handler for: " + tmpl.Src)
 		return nil
 	}
@@ -83,38 +80,19 @@ func convertTmplToHandler(tmpl *macro.Template) context.Handler {
 	return func(tmpl macro.Template) context.Handler {
 		return func(ctx context.Context) {
 			for _, p := range tmpl.Params {
-				if p.TypeEvaluator == nil {
-					// allow.
-					continue
+				if !p.CanEval() {
+					// println(p.Src + " no need to evaluate anything")
+					continue // allow.
 				}
 
-				// first, check for type evaluator.
-				newValue, passed := p.TypeEvaluator(ctx.Params().Get(p.Name))
-				if !passed {
+				if !p.Eval(ctx.Params().Get(p.Name), ctx.Params().Set) {
 					ctx.StatusCode(p.ErrCode)
 					ctx.StopExecution()
 					return
 				}
-
-				if len(p.Funcs) > 0 {
-					paramIn := []reflect.Value{reflect.ValueOf(newValue)}
-					// then check for all of its functions
-					for _, evalFunc := range p.Funcs {
-						// or make it as func(interface{}) bool and pass directly the "newValue"
-						// but that would not be as easy for end-developer, so keep that "slower":
-						if !evalFunc.Call(paramIn)[0].Interface().(bool) { // i.e func(paramValue int) bool
-							ctx.StatusCode(p.ErrCode)
-							ctx.StopExecution()
-							return
-						}
-					}
-				}
-
-				ctx.Params().Store.Set(p.Name, newValue)
 			}
 			// if all passed, just continue.
 			ctx.Next()
 		}
 	}(*tmpl)
-
 }

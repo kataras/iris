@@ -1,6 +1,7 @@
 package macro
 
 import (
+	"github.com/kataras/iris/core/memstore"
 	"reflect"
 
 	"github.com/kataras/iris/core/router/macro/interpreter/ast"
@@ -31,6 +32,61 @@ type TemplateParam struct {
 	ErrCode       int             `json:"errCode"`
 	TypeEvaluator ParamEvaluator  `json:"-"`
 	Funcs         []reflect.Value `json:"-"`
+
+	stringInFuncs []func(string) bool
+	canEval       bool
+}
+
+func (p TemplateParam) preComputed() TemplateParam {
+	for _, pfn := range p.Funcs {
+		if fn, ok := pfn.Interface().(func(string) bool); ok {
+			p.stringInFuncs = append(p.stringInFuncs, fn)
+		}
+	}
+
+	// if true then it should be execute the type parameter or its functions
+	// else it can be ignored,
+	// i.e {myparam} or {myparam:string} or {myparam:path} ->
+	// their type evaluator is nil because they don't do any checks and they don't change
+	// the default parameter value's type (string) so no need for any work).
+	p.canEval = p.TypeEvaluator != nil || len(p.Funcs) > 0 || p.ErrCode != parser.DefaultParamErrorCode
+
+	return p
+}
+
+func (p *TemplateParam) CanEval() bool {
+	return p.canEval
+}
+
+// paramChanger is the same form of context's Params().Set
+func (p *TemplateParam) Eval(paramValue string, paramChanger func(key string, newValue interface{}) (memstore.Entry, bool)) bool {
+	if p.TypeEvaluator == nil {
+		for _, fn := range p.stringInFuncs {
+			if !fn(paramValue) {
+				return false
+			}
+		}
+		return true
+	}
+
+	newValue, passed := p.TypeEvaluator(paramValue)
+	if !passed {
+		return false
+	}
+
+	if len(p.Funcs) > 0 {
+		paramIn := []reflect.Value{reflect.ValueOf(newValue)}
+		for _, evalFunc := range p.Funcs {
+			// or make it as func(interface{}) bool and pass directly the "newValue"
+			// but that would not be as easy for end-developer, so keep that "slower":
+			if !evalFunc.Call(paramIn)[0].Interface().(bool) { // i.e func(paramValue int) bool
+				return false
+			}
+		}
+	}
+
+	paramChanger(p.Name, newValue)
+	return true
 }
 
 // Parse takes a full route path and a macro map (macro map contains the macro types with their registered param functions)
@@ -82,7 +138,7 @@ func Parse(src string, macros Macros) (*Template, error) {
 			tmplParam.Funcs = append(tmplParam.Funcs, evalFn)
 		}
 
-		t.Params = append(t.Params, tmplParam)
+		t.Params = append(t.Params, tmplParam.preComputed())
 	}
 
 	return t, nil
