@@ -10,7 +10,7 @@ import (
 var (
 	// String type
 	// Allows anything (single path segment, as everything except the `Path`).
-	String = NewMacro("string", "", true, false, nil). // if nil allows everything.
+	String = NewMacro("string", "", true, false, nil).
 		RegisterFunc("regexp", func(expr string) func(string) bool {
 			return MustRegexp(expr)
 		}).

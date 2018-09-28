@@ -65,6 +65,24 @@ func main() {
 		return fmt.Sprintf("Value of the parameters are: %s:%d\n", myparam1, myparam2)
 	}))
 
+	app.Get("/test_string/{myparam1}/{myparam2 prefix(a)}", func(ctx context.Context) {
+		var (
+			myparam1 = ctx.Params().Get("myparam1")
+			myparam2 = ctx.Params().Get("myparam2")
+		)
+
+		ctx.Writef("myparam1: %s | myparam2: %s", myparam1, myparam2)
+	})
+
+	app.Get("/test_string2/{myparam1}/{myparam2}", func(ctx context.Context) {
+		var (
+			myparam1 = ctx.Params().Get("myparam1")
+			myparam2 = ctx.Params().Get("myparam2")
+		)
+
+		ctx.Writef("myparam1: %s | myparam2: %s", myparam1, myparam2)
+	})
+
 	app.Get("test_uint64/{myparam1:string}/{myparam2:uint64}", func(ctx context.Context) {
 		// works: ctx.Writef("Value of the parameter is: %s\n", ctx.Params().Get("myparam"))
 		// but better and faster because the macro converts the string to uint64 automatically:
