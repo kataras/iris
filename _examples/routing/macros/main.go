@@ -83,7 +83,7 @@ func main() {
 		ctx.Writef("myparam1: %s | myparam2: %s", myparam1, myparam2)
 	})
 
-	app.Get("test_uint64/{myparam1:string}/{myparam2:uint64}", func(ctx context.Context) {
+	app.Get("/test_uint64/{myparam1:string}/{myparam2:uint64}", func(ctx context.Context) {
 		// works: ctx.Writef("Value of the parameter is: %s\n", ctx.Params().Get("myparam"))
 		// but better and faster because the macro converts the string to uint64 automatically:
 		println("type of myparam2 (should be uint64) is: " + reflect.ValueOf(ctx.Params().GetEntry("myparam2").ValueRaw).Kind().String())

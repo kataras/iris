@@ -4,7 +4,7 @@ import (
 	"reflect"
 
 	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/router/macro"
+	"github.com/kataras/iris/macro"
 )
 
 func getPathParamsForInput(params []macro.TemplateParam, funcIn ...reflect.Type) (values []reflect.Value) {

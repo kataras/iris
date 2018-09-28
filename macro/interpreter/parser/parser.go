@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kataras/iris/core/router/macro/interpreter/ast"
-	"github.com/kataras/iris/core/router/macro/interpreter/lexer"
-	"github.com/kataras/iris/core/router/macro/interpreter/token"
+	"github.com/kataras/iris/macro/interpreter/ast"
+	"github.com/kataras/iris/macro/interpreter/lexer"
+	"github.com/kataras/iris/macro/interpreter/token"
 )
 
 // Parse takes a route "fullpath"
@@ -39,7 +39,7 @@ func Parse(fullpath string, paramTypes []ast.ParamType) ([]*ast.ParamStatement, 
 		}
 		// if we have param type path but it's not the last path part
 		if ast.IsTrailing(stmt.Type) && i < len(pathParts)-1 {
-			return nil, fmt.Errorf("param type '%s' should be lived only inside the last path segment, but was inside: %s", stmt.Type, s)
+			return nil, fmt.Errorf("%s: parameter type \"%s\" should be registered to the very last of a path", s, stmt.Type.Indent())
 		}
 
 		statements = append(statements, stmt)

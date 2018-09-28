@@ -1,11 +1,11 @@
 package macro
 
 import (
-	"github.com/kataras/iris/core/memstore"
 	"reflect"
 
-	"github.com/kataras/iris/core/router/macro/interpreter/ast"
-	"github.com/kataras/iris/core/router/macro/interpreter/parser"
+	"github.com/kataras/iris/core/memstore"
+	"github.com/kataras/iris/macro/interpreter/ast"
+	"github.com/kataras/iris/macro/interpreter/parser"
 )
 
 // Template contains a route's path full parsed template.
@@ -59,7 +59,9 @@ func (p *TemplateParam) CanEval() bool {
 }
 
 // paramChanger is the same form of context's Params().Set
-func (p *TemplateParam) Eval(paramValue string, paramChanger func(key string, newValue interface{}) (memstore.Entry, bool)) bool {
+// we could accept a memstore.Store or even context.RequestParams
+// but this form has been chosed in order to test easier and fully decoupled from a request when necessary.
+func (p *TemplateParam) Eval(paramValue string, paramChanger memstore.ValueSetter) bool {
 	if p.TypeEvaluator == nil {
 		for _, fn := range p.stringInFuncs {
 			if !fn(paramValue) {
@@ -85,7 +87,7 @@ func (p *TemplateParam) Eval(paramValue string, paramChanger func(key string, ne
 		}
 	}
 
-	paramChanger(p.Name, newValue)
+	paramChanger.Set(p.Name, newValue)
 	return true
 }
 
@@ -107,8 +109,8 @@ func Parse(src string, macros Macros) (*Template, error) {
 	t.Src = src
 
 	for idx, p := range params {
-		funcMap := macros.Lookup(p.Type)
-		typEval := funcMap.Evaluator
+		m := macros.Lookup(p.Type)
+		typEval := m.Evaluator
 
 		tmplParam := TemplateParam{
 			Src:           p.Src,
@@ -120,7 +122,7 @@ func Parse(src string, macros Macros) (*Template, error) {
 		}
 
 		for _, paramfn := range p.Funcs {
-			tmplFn := funcMap.getFunc(paramfn.Name)
+			tmplFn := m.getFunc(paramfn.Name)
 			if tmplFn == nil { // if not find on this type, check for Master's which is for global funcs too.
 				if m := macros.GetMaster(); m != nil {
 					tmplFn = m.getFunc(paramfn.Name)
