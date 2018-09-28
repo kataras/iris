@@ -7,7 +7,9 @@ import (
 	"strings"
 
 	"github.com/kataras/iris/core/netutil"
-	"github.com/kataras/iris/core/router/macro/interpreter/lexer"
+	"github.com/kataras/iris/macro"
+	"github.com/kataras/iris/macro/interpreter/ast"
+	"github.com/kataras/iris/macro/interpreter/lexer"
 )
 
 const (
@@ -29,6 +31,28 @@ func WildcardParam(name string) string {
 		return ""
 	}
 	return prefix(name, WildcardParamStart)
+}
+
+func convertTmplToNodePath(tmpl *macro.Template) string {
+	routePath := tmpl.Src
+	if len(tmpl.Params) > 0 {
+		if routePath[len(routePath)-1] == '/' {
+			routePath = routePath[0 : len(routePath)-2] // remove the last "/" if macro syntax instead of underline's.
+		}
+	}
+
+	// if it has started with {} and it's valid
+	// then the tmpl.Params will be filled,
+	// so no any further check needed.
+	for _, p := range tmpl.Params {
+		if ast.IsTrailing(p.Type) {
+			routePath = strings.Replace(routePath, p.Src, WildcardParam(p.Name), 1)
+		} else {
+			routePath = strings.Replace(routePath, p.Src, Param(p.Name), 1)
+		}
+	}
+
+	return routePath
 }
 
 func prefix(s string, prefix string) string {

@@ -9,7 +9,7 @@ import (
 	"unicode"
 
 	"github.com/kataras/iris/core/router"
-	"github.com/kataras/iris/core/router/macro"
+	"github.com/kataras/iris/macro"
 )
 
 const (

@@ -15,6 +15,11 @@ import (
 )
 
 type (
+	// ValueSetter is the interface which can be accepted as a generic solution of RequestParams or memstore when Set is the only requirement,
+	// i.e internally on macro/template/TemplateParam#Eval:paramChanger.
+	ValueSetter interface {
+		Set(key string, newValue interface{}) (Entry, bool)
+	}
 	// Entry is the entry of the context storage Store - .Values()
 	Entry struct {
 		Key       string
@@ -25,6 +30,8 @@ type (
 	// Store is a collection of key-value entries with immutability capabilities.
 	Store []Entry
 )
+
+var _ ValueSetter = (*Store)(nil)
 
 // GetByKindOrNil will try to get this entry's value of "k" kind,
 // if value is not that kind it will NOT try to convert it the "k", instead

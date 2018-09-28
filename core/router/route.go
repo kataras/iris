@@ -5,7 +5,8 @@ import (
 	"strings"
 
 	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/router/macro"
+	"github.com/kataras/iris/macro"
+	"github.com/kataras/iris/macro/handler"
 )
 
 // Route contains the information about a registered Route.
@@ -46,9 +47,11 @@ func NewRoute(method, subdomain, unparsedPath, mainHandlerName string,
 		return nil, err
 	}
 
-	path, handlers, err := compileRoutePathAndHandlers(handlers, tmpl)
-	if err != nil {
-		return nil, err
+	path := convertTmplToNodePath(tmpl)
+	// prepend the macro handler to the route, now,
+	// right before the register to the tree, so APIBuilder#UseGlobal will work as expected.
+	if macroEvaluatorHandler, ok := handler.MakeHandler(tmpl); ok {
+		handlers = append(context.Handlers{macroEvaluatorHandler}, handlers...)
 	}
 
 	path = cleanPath(path) // maybe unnecessary here but who cares in this moment
