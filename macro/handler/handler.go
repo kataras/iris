@@ -11,10 +11,9 @@ import (
 // If the template does not contain any dynamic attributes and a special handler is NOT required
 // then it returns a nil handler and false as its second output value,
 // the caller should check those two values before any further action.
-func MakeHandler(tmpl *macro.Template) (context.Handler, bool) {
-	needsMacroHandler := len(tmpl.Params) > 0
-	if !needsMacroHandler {
-		return nil, false
+func MakeHandler(tmpl *macro.Template) (handler context.Handler, needsMacroHandler bool) {
+	if len(tmpl.Params) == 0 {
+		return
 	}
 
 	// check if we have params like: {name:string} or {name} or {anything:path} without else keyword or any functions used inside these params.
@@ -29,10 +28,10 @@ func MakeHandler(tmpl *macro.Template) (context.Handler, bool) {
 	}
 
 	if !needsMacroHandler {
-		return nil, false
+		return
 	}
 
-	handler := func(ctx context.Context) {
+	handler = func(ctx context.Context) {
 		for _, p := range tmpl.Params {
 			if !p.CanEval() {
 				continue // allow.
@@ -48,5 +47,5 @@ func MakeHandler(tmpl *macro.Template) (context.Handler, bool) {
 		ctx.Next()
 	}
 
-	return handler, true
+	return
 }
