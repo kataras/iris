@@ -47,7 +47,7 @@ func NewRoute(method, subdomain, unparsedPath, mainHandlerName string,
 		return nil, err
 	}
 
-	path := convertTmplToNodePath(tmpl)
+	path := convertMacroTmplToNodePath(tmpl)
 	// prepend the macro handler to the route, now,
 	// right before the register to the tree, so APIBuilder#UseGlobal will work as expected.
 	if macroEvaluatorHandler, ok := handler.MakeHandler(tmpl); ok {

@@ -48,6 +48,8 @@ var (
 	simpleNumberEval = MustRegexp("^-?[0-9]+$")
 	// Int or number type
 	// both positive and negative numbers, actual value can be min-max int64 or min-max int32 depends on the arch.
+	// If x64: -9223372036854775808 to 9223372036854775807.
+	// If x32: -2147483648 to 2147483647 and etc..
 	Int = NewMacro("int", "number", false, false, func(paramValue string) (interface{}, bool) {
 		if !simpleNumberEval(paramValue) {
 			return nil, false
@@ -206,8 +208,8 @@ var (
 
 	// Uint as uint type
 	// actual value can be min-max uint64 or min-max uint32 depends on the arch.
-	// if x64: 0 to 18446744073709551615
-	// if x32: 0 to 4294967295 and etc.
+	// If x64: 0 to 18446744073709551615.
+	// If x32: 0 to 4294967295 and etc.
 	Uint = NewMacro("uint", "", false, false, func(paramValue string) (interface{}, bool) {
 		v, err := strconv.ParseUint(paramValue, 10, strconv.IntSize) // 32,64...
 		if err != nil {

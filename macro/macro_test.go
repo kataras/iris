@@ -115,8 +115,8 @@ func TestIntEvaluatorRaw(t *testing.T) {
 		{false, "astring"},                                 // 0
 		{false, "astringwith_numb3rS_and_symbol$"},         // 1
 		{true, "32321"},                                    // 2
-		{x64, "9223372036854775807" /*max int64*/},         // 3
-		{x64, "-9223372036854775808" /*min int64 */},       // 4
+		{x64, "9223372036854775807" /* max int64 */},       // 3
+		{x64, "-9223372036854775808" /* min int64 */},      // 4
 		{false, "-18446744073709553213213213213213121615"}, // 5
 		{false, "42 18446744073709551615"},                 // 6
 		{false, "--42"},                                    // 7
@@ -127,6 +127,83 @@ func TestIntEvaluatorRaw(t *testing.T) {
 
 	for i, tt := range tests {
 		testEvaluatorRaw(t, Int, tt.input, reflect.Int, tt.pass, i)
+	}
+}
+
+func TestInt8EvaluatorRaw(t *testing.T) {
+	tests := []struct {
+		pass  bool
+		input string
+	}{
+		{false, "astring"},                         // 0
+		{false, "astringwith_numb3rS_and_symbol$"}, // 1
+		{false, "32321"},                           // 2
+		{true, "127" /* max int8 */},               // 3
+		{true, "-128" /* min int8 */},              // 4
+		{false, "128"},                             // 5
+		{false, "-129"},                            // 6
+		{false, "-18446744073709553213213213213213121615"}, // 7
+		{false, "42 18446744073709551615"},                 // 8
+		{false, "--42"},                                    // 9
+		{false, "+42"},                                     // 10
+		{false, "main.css"},                                // 11
+		{false, "/assets/main.css"},                        // 12
+	}
+
+	for i, tt := range tests {
+		testEvaluatorRaw(t, Int8, tt.input, reflect.Int8, tt.pass, i)
+	}
+}
+
+func TestInt16EvaluatorRaw(t *testing.T) {
+	tests := []struct {
+		pass  bool
+		input string
+	}{
+		{false, "astring"},                         // 0
+		{false, "astringwith_numb3rS_and_symbol$"}, // 1
+		{true, "32321"},                            // 2
+		{true, "32767" /* max int16 */},            // 3
+		{true, "-32768" /* min int16 */},           // 4
+		{false, "-32769"},                          // 5
+		{false, "32768"},                           // 6
+		{false, "-18446744073709553213213213213213121615"}, // 7
+		{false, "42 18446744073709551615"},                 // 8
+		{false, "--42"},                                    // 9
+		{false, "+42"},                                     // 10
+		{false, "main.css"},                                // 11
+		{false, "/assets/main.css"},                        // 12
+	}
+
+	for i, tt := range tests {
+		testEvaluatorRaw(t, Int16, tt.input, reflect.Int16, tt.pass, i)
+	}
+}
+
+func TestInt32EvaluatorRaw(t *testing.T) {
+	tests := []struct {
+		pass  bool
+		input string
+	}{
+		{false, "astring"},                         // 0
+		{false, "astringwith_numb3rS_and_symbol$"}, // 1
+		{true, "32321"},                            // 2
+		{true, "1"},                                // 3
+		{true, "42"},                               // 4
+		{true, "2147483647" /* max int32 */},       // 5
+		{true, "-2147483648" /* min int32 */},      // 6
+		{false, "-2147483649"},                     // 7
+		{false, "2147483648"},                      // 8
+		{false, "-18446744073709553213213213213213121615"}, // 9
+		{false, "42 18446744073709551615"},                 // 10
+		{false, "--42"},                                    // 11
+		{false, "+42"},                                     // 12
+		{false, "main.css"},                                // 13
+		{false, "/assets/main.css"},                        // 14
+	}
+
+	for i, tt := range tests {
+		testEvaluatorRaw(t, Int32, tt.input, reflect.Int32, tt.pass, i)
 	}
 }
 
@@ -152,6 +229,35 @@ func TestInt64EvaluatorRaw(t *testing.T) {
 
 	for i, tt := range tests {
 		testEvaluatorRaw(t, Int64, tt.input, reflect.Int64, tt.pass, i)
+	}
+}
+
+func TestUintEvaluatorRaw(t *testing.T) {
+	x64 := strconv.IntSize == 64
+
+	tests := []struct {
+		pass  bool
+		input string
+	}{
+		{false, "astring"},                             // 0
+		{false, "astringwith_numb3rS_and_symbol$"},     // 1
+		{true, "32321"},                                // 2
+		{true, "1"},                                    // 3
+		{true, "42"},                                   // 4
+		{x64, "18446744073709551615" /* max uint64 */}, // 5
+		{true, "4294967295" /* max uint32 */},          // 6
+		{false, "-2147483649"},                         // 7
+		{true, "2147483648"},                           // 8
+		{false, "-18446744073709553213213213213213121615"}, // 9
+		{false, "42 18446744073709551615"},                 // 10
+		{false, "--42"},                                    // 11
+		{false, "+42"},                                     // 12
+		{false, "main.css"},                                // 13
+		{false, "/assets/main.css"},                        // 14
+	}
+
+	for i, tt := range tests {
+		testEvaluatorRaw(t, Uint, tt.input, reflect.Uint, tt.pass, i)
 	}
 }
 
@@ -181,6 +287,58 @@ func TestUint8EvaluatorRaw(t *testing.T) {
 
 	for i, tt := range tests {
 		testEvaluatorRaw(t, Uint8, tt.input, reflect.Uint8, tt.pass, i)
+	}
+}
+
+func TestUint16EvaluatorRaw(t *testing.T) {
+	tests := []struct {
+		pass  bool
+		input string
+	}{
+		{false, "astring"},                         // 0
+		{false, "astringwith_numb3rS_and_symbol$"}, // 1
+		{true, "32321"},                            // 2
+		{true, "65535" /* max uint16 */},           // 3
+		{true, "0" /* min uint16 */},               // 4
+		{false, "-32769"},                          // 5
+		{true, "32768"},                            // 6
+		{false, "-18446744073709553213213213213213121615"}, // 7
+		{false, "42 18446744073709551615"},                 // 8
+		{false, "--42"},                                    // 9
+		{false, "+42"},                                     // 10
+		{false, "main.css"},                                // 11
+		{false, "/assets/main.css"},                        // 12
+	}
+
+	for i, tt := range tests {
+		testEvaluatorRaw(t, Uint16, tt.input, reflect.Uint16, tt.pass, i)
+	}
+}
+
+func TestUint32EvaluatorRaw(t *testing.T) {
+	tests := []struct {
+		pass  bool
+		input string
+	}{
+		{false, "astring"},                         // 0
+		{false, "astringwith_numb3rS_and_symbol$"}, // 1
+		{true, "32321"},                            // 2
+		{true, "1"},                                // 3
+		{true, "42"},                               // 4
+		{true, "4294967295" /* max uint32*/},       // 5
+		{true, "0" /* min uint32 */},               // 6
+		{false, "-2147483649"},                     // 7
+		{true, "2147483648"},                       // 8
+		{false, "-18446744073709553213213213213213121615"}, // 9
+		{false, "42 18446744073709551615"},                 // 10
+		{false, "--42"},                                    // 11
+		{false, "+42"},                                     // 12
+		{false, "main.css"},                                // 13
+		{false, "/assets/main.css"},                        // 14
+	}
+
+	for i, tt := range tests {
+		testEvaluatorRaw(t, Uint32, tt.input, reflect.Uint32, tt.pass, i)
 	}
 }
 
