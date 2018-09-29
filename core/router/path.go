@@ -33,7 +33,7 @@ func WildcardParam(name string) string {
 	return prefix(name, WildcardParamStart)
 }
 
-func convertTmplToNodePath(tmpl *macro.Template) string {
+func convertMacroTmplToNodePath(tmpl *macro.Template) string {
 	routePath := tmpl.Src
 	if len(tmpl.Params) > 0 {
 		if routePath[len(routePath)-1] == '/' {
