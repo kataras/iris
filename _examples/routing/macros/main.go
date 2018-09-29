@@ -72,7 +72,7 @@ func main() {
 		)
 
 		ctx.Writef("myparam1: %s | myparam2: %s", myparam1, myparam2)
-	})
+	}, func(ctx context.Context) {})
 
 	app.Get("/test_string2/{myparam1}/{myparam2}", func(ctx context.Context) {
 		var (

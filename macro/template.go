@@ -95,18 +95,17 @@ func (p *TemplateParam) Eval(paramValue string, paramChanger memstore.ValueSette
 // and returns a new Template.
 // It builds all the parameter functions for that template
 // and their evaluators, it's the api call that makes use the interpeter's parser -> lexer.
-func Parse(src string, macros Macros) (*Template, error) {
+func Parse(src string, macros Macros) (Template, error) {
 	types := make([]ast.ParamType, len(macros))
 	for i, m := range macros {
 		types[i] = m
 	}
 
+	tmpl := Template{Src: src}
 	params, err := parser.Parse(src, types)
 	if err != nil {
-		return nil, err
+		return tmpl, err
 	}
-	t := new(Template)
-	t.Src = src
 
 	for idx, p := range params {
 		m := macros.Lookup(p.Type)
@@ -140,8 +139,8 @@ func Parse(src string, macros Macros) (*Template, error) {
 			tmplParam.Funcs = append(tmplParam.Funcs, evalFn)
 		}
 
-		t.Params = append(t.Params, tmplParam.preComputed())
+		tmpl.Params = append(tmpl.Params, tmplParam.preComputed())
 	}
 
-	return t, nil
+	return tmpl, nil
 }
