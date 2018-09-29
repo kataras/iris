@@ -6,7 +6,7 @@ import (
 	"github.com/kataras/iris/macro"
 )
 
-func TestMakeHandlerNeeds(t *testing.T) {
+func TestCanMakeHandler(t *testing.T) {
 	tests := []struct {
 		src          string
 		needsHandler bool
@@ -29,13 +29,13 @@ func TestMakeHandlerNeeds(t *testing.T) {
 		if err != nil {
 			t.Fatalf("[%d] '%s' failed to be parsed: %v", i, tt.src, err)
 		}
-		if _, got := MakeHandler(tmpl); got != tt.needsHandler {
+
+		if got := CanMakeHandler(tmpl); got != tt.needsHandler {
 			if tt.needsHandler {
 				t.Fatalf("[%d] '%s' expected to be able to generate an evaluator handler instead of a nil one", i, tt.src)
 			} else {
 				t.Fatalf("[%d] '%s' should not need an evaluator handler", i, tt.src)
 			}
-
 		}
 	}
 }

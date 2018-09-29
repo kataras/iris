@@ -7,11 +7,11 @@ import (
 	"github.com/kataras/iris/macro"
 )
 
-// MakeHandler creates and returns a handler from a macro template, the handler evaluates each of the parameters if necessary at all.
+// CanMakeHandler reports whether a macro template needs a special macro's evaluator handler to be validated
+// before procceed to the next handler(s).
 // If the template does not contain any dynamic attributes and a special handler is NOT required
-// then it returns a nil handler and false as its second output value,
-// the caller should check those two values before any further action.
-func MakeHandler(tmpl *macro.Template) (handler context.Handler, needsMacroHandler bool) {
+// then it returns false.
+func CanMakeHandler(tmpl macro.Template) (needsMacroHandler bool) {
 	if len(tmpl.Params) == 0 {
 		return
 	}
@@ -27,11 +27,18 @@ func MakeHandler(tmpl *macro.Template) (handler context.Handler, needsMacroHandl
 		}
 	}
 
-	if !needsMacroHandler {
-		return
+	return
+}
+
+// MakeHandler creates and returns a handler from a macro template, the handler evaluates each of the parameters if necessary at all.
+// If the template does not contain any dynamic attributes and a special handler is NOT required
+// then it returns a nil handler.
+func MakeHandler(tmpl macro.Template) context.Handler {
+	if !CanMakeHandler(tmpl) {
+		return nil
 	}
 
-	handler = func(ctx context.Context) {
+	return func(ctx context.Context) {
 		for _, p := range tmpl.Params {
 			if !p.CanEval() {
 				continue // allow.
@@ -46,6 +53,4 @@ func MakeHandler(tmpl *macro.Template) (handler context.Handler, needsMacroHandl
 		// if all passed, just continue.
 		ctx.Next()
 	}
-
-	return
 }
