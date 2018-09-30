@@ -2,6 +2,7 @@ package websocket
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"net"
 	"strconv"
@@ -580,7 +581,14 @@ func (c *connection) Wait() {
 	c.startReader()
 }
 
+// ErrAlreadyDisconnected can be reported on the `Connection#Disconnect` function whenever the caller tries to close the
+// connection when it is already closed by the client or the caller previously.
+var ErrAlreadyDisconnected = errors.New("already disconnected")
+
 func (c *connection) Disconnect() error {
+	if c == nil || c.disconnected {
+		return ErrAlreadyDisconnected
+	}
 	return c.server.Disconnect(c.ID())
 }
 
