@@ -39,7 +39,7 @@ func getPathParamsForInput(params []macro.TemplateParam, funcIn ...reflect.Type)
 		if len(funcIn) <= i {
 			return
 		}
-		funcDep, ok := context.ParamResolverByKindAndIndex(funcIn[i].Kind(), param.Index)
+		funcDep, ok := context.ParamResolverByTypeAndIndex(funcIn[i], param.Index)
 		if !ok {
 			continue
 		}
