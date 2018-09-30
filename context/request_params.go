@@ -83,65 +83,65 @@ func (r RequestParams) GetIntUnslashed(key string) (int, bool) {
 }
 
 var (
-	ParamResolvers = map[reflect.Kind]func(paramIndex int) interface{}{
-		reflect.String: func(paramIndex int) interface{} {
+	ParamResolvers = map[reflect.Type]func(paramIndex int) interface{}{
+		reflect.TypeOf(""): func(paramIndex int) interface{} {
 			return func(ctx Context) string {
 				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(string)
 			}
 		},
-		reflect.Int: func(paramIndex int) interface{} {
+		reflect.TypeOf(int(1)): func(paramIndex int) interface{} {
 			return func(ctx Context) int {
 				// v, _ := ctx.Params().GetEntryAt(paramIndex).IntDefault(0)
 				// return v
 				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(int)
 			}
 		},
-		reflect.Int8: func(paramIndex int) interface{} {
+		reflect.TypeOf(int8(1)): func(paramIndex int) interface{} {
 			return func(ctx Context) int8 {
 				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(int8)
 			}
 		},
-		reflect.Int16: func(paramIndex int) interface{} {
+		reflect.TypeOf(int16(1)): func(paramIndex int) interface{} {
 			return func(ctx Context) int16 {
 				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(int16)
 			}
 		},
-		reflect.Int32: func(paramIndex int) interface{} {
+		reflect.TypeOf(int32(1)): func(paramIndex int) interface{} {
 			return func(ctx Context) int32 {
 				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(int32)
 			}
 		},
-		reflect.Int64: func(paramIndex int) interface{} {
+		reflect.TypeOf(int64(1)): func(paramIndex int) interface{} {
 			return func(ctx Context) int64 {
 				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(int64)
 			}
 		},
-		reflect.Uint: func(paramIndex int) interface{} {
+		reflect.TypeOf(uint(1)): func(paramIndex int) interface{} {
 			return func(ctx Context) uint {
 				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint)
 			}
 		},
-		reflect.Uint8: func(paramIndex int) interface{} {
+		reflect.TypeOf(uint8(1)): func(paramIndex int) interface{} {
 			return func(ctx Context) uint8 {
 				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint8)
 			}
 		},
-		reflect.Uint16: func(paramIndex int) interface{} {
+		reflect.TypeOf(uint16(1)): func(paramIndex int) interface{} {
 			return func(ctx Context) uint16 {
 				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint16)
 			}
 		},
-		reflect.Uint32: func(paramIndex int) interface{} {
+		reflect.TypeOf(uint32(1)): func(paramIndex int) interface{} {
 			return func(ctx Context) uint32 {
 				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint32)
 			}
 		},
-		reflect.Uint64: func(paramIndex int) interface{} {
+		reflect.TypeOf(uint64(1)): func(paramIndex int) interface{} {
 			return func(ctx Context) uint64 {
 				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint64)
 			}
 		},
-		reflect.Bool: func(paramIndex int) interface{} {
+		reflect.TypeOf(true): func(paramIndex int) interface{} {
 			return func(ctx Context) bool {
 				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(bool)
 			}
@@ -149,16 +149,16 @@ var (
 	}
 )
 
-// ParamResolverByKindAndIndex will return a function that can be used to bind path parameter's exact value by its Go std type
+// ParamResolverByTypeAndIndex will return a function that can be used to bind path parameter's exact value by its Go std type
 // and the parameter's index based on the registered path.
-// Usage: nameResolver := ParamResolverByKindAndKey(reflect.String, 0)
+// Usage: nameResolver := ParamResolverByKindAndKey(reflect.TypeOf(""), 0)
 // Inside a Handler:      nameResolver.Call(ctx)[0]
 //        it will return the reflect.Value Of the exact type of the parameter(based on the path parameters and macros).
 // It is only useful for dynamic binding of the parameter, it is used on "hero" package and it should be modified
 // only when Macros are modified in such way that the default selections for the available go std types are not enough.
 //
 // Returns empty value and false if "k" does not match any valid parameter resolver.
-func ParamResolverByKindAndIndex(k reflect.Kind, paramIndex int) (reflect.Value, bool) {
+func ParamResolverByTypeAndIndex(typ reflect.Type, paramIndex int) (reflect.Value, bool) {
 	/* NO:
 	// This could work but its result is not exact type, so direct binding is not possible.
 	resolver := m.ParamResolver
@@ -178,7 +178,7 @@ func ParamResolverByKindAndIndex(k reflect.Kind, paramIndex int) (reflect.Value,
 	//
 	*/
 
-	r, ok := ParamResolvers[k]
+	r, ok := ParamResolvers[typ]
 	if !ok || r == nil {
 		return reflect.Value{}, false
 	}

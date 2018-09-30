@@ -1,12 +1,14 @@
+// Package main shows how you can register a custom parameter type and macro functions that belongs to it.
 package main
 
 import (
 	"fmt"
 	"reflect"
+	"sort"
+	"strings"
 
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/context"
-	// "github.com/kataras/iris/core/memstore"
 	"github.com/kataras/iris/hero"
 )
 
@@ -14,80 +16,60 @@ func main() {
 	app := iris.New()
 	app.Logger().SetLevel("debug")
 
-	// Let's see how we can register a custom macro such as ":uint32"  or ":small" for its alias (optionally) for Uint32 types.
-	// app.Macros().Register("uint32", "small", false, false, func(paramValue string) bool {
-	// 	_, err := strconv.ParseUint(paramValue, 10, 32)
-	// 	return err == nil
-	// }).
-	// 	RegisterFunc("min", func(min uint32) func(string) bool {
-	// 		return func(paramValue string) bool {
-	// 			n, err := strconv.ParseUint(paramValue, 10, 32)
-	// 			if err != nil {
-	// 				return false
-	// 			}
+	app.Macros().Register("slice", "", false, true, func(paramValue string) (interface{}, bool) {
+		return strings.Split(paramValue, "/"), true
+	}).RegisterFunc("contains", func(expectedItems []string) func(paramValue []string) bool {
+		sort.Strings(expectedItems)
+		return func(paramValue []string) bool {
+			if len(paramValue) != len(expectedItems) {
+				return false
+			}
 
-	// 			return uint32(n) >= min
-	// 		}
-	// 	})
+			sort.Strings(paramValue)
+			for i := 0; i < len(paramValue); i++ {
+				if paramValue[i] != expectedItems[i] {
+					return false
+				}
+			}
 
-	/* TODO:
-	   somehow define one-time how the parameter should be parsed to a particular type (go std or custom)
-	   tip: we can change the original value from string to X using the entry's.ValueRaw
-	   ^ Done 27 sep 2018.
-	*/
-
-	// app.Macros().Register("uint32", "small", false, false, func(paramValue string) (interface{}, bool) {
-	// 	v, err := strconv.ParseUint(paramValue, 10, 32)
-	// 	return uint32(v), err == nil
-	// }).
-	// 	RegisterFunc("min", func(min uint32) func(uint32) bool {
-	// 		return func(paramValue uint32) bool {
-	// 			return paramValue >= min
-	// 		}
-	// 	})
-
-	// // optionally, only when mvc or hero features are used for this custom macro/parameter type.
-	// context.ParamResolvers[reflect.Uint32] = func(paramIndex int) interface{} {
-	// 	/* both works but second is faster, we omit the duplication of the type conversion over and over  as of 27 Sep of 2018 (this patch)*/
-	// 	// return func(ctx context.Context) uint32 {
-	// 	// 	param := ctx.Params().GetEntryAt(paramIndex)
-	// 	// 	paramValueAsUint32, _ := strconv.ParseUint(param.String(), 10, 32)
-	// 	// 	return uint32(paramValueAsUint32)
-	// 	// }
-	// 	return func(ctx context.Context) uint32 {
-	// 		return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint32)
-	// 	} /* TODO: find a way to automative it based on the macro's first return value type, if thats the case then we must not return nil even if not found,
-	// 	we must return a value i.e 0 for int for its interface{} */
-	// }
-	// //
-
-	app.Get("/test_uint32/{myparam1:string}/{myparam2:uint32 min(10)}", hero.Handler(func(myparam1 string, myparam2 uint32) string {
-		return fmt.Sprintf("Value of the parameters are: %s:%d\n", myparam1, myparam2)
-	}))
-
-	app.Get("/test_string/{myparam1}/{myparam2 prefix(a)}", func(ctx context.Context) {
-		var (
-			myparam1 = ctx.Params().Get("myparam1")
-			myparam2 = ctx.Params().Get("myparam2")
-		)
-
-		ctx.Writef("myparam1: %s | myparam2: %s", myparam1, myparam2)
-	}, func(ctx context.Context) {})
-
-	app.Get("/test_string2/{myparam1}/{myparam2}", func(ctx context.Context) {
-		var (
-			myparam1 = ctx.Params().Get("myparam1")
-			myparam2 = ctx.Params().Get("myparam2")
-		)
-
-		ctx.Writef("myparam1: %s | myparam2: %s", myparam1, myparam2)
+			return true
+		}
 	})
 
-	app.Get("/test_uint64/{myparam1:string}/{myparam2:uint64}", func(ctx context.Context) {
-		// works: ctx.Writef("Value of the parameter is: %s\n", ctx.Params().Get("myparam"))
-		// but better and faster because the macro converts the string to uint64 automatically:
-		println("type of myparam2 (should be uint64) is: " + reflect.ValueOf(ctx.Params().GetEntry("myparam2").ValueRaw).Kind().String())
-		ctx.Writef("Value of the parameters are: %s:%d\n", ctx.Params().Get("myparam1"), ctx.Params().GetUint64Default("myparam2", 0))
+	// In order to use your new param type inside MVC controller's function input argument or a hero function input argument
+	// you have to tell the Iris what type it is, the `ValueRaw` of the parameter is the same type
+	// as you defined it above with the func(paramValue string) (interface{}, bool).
+	// The new value and its type(from string to your new custom type) it is stored only once now,
+	// you don't have to do any conversions for simple cases like this.
+	context.ParamResolvers[reflect.TypeOf([]string{})] = func(paramIndex int) interface{} {
+		return func(ctx context.Context) []string {
+			// When you want to retrieve a parameter with a value type that it is not supported by-default, such as ctx.Params().GetInt
+			// then you can use the `GetEntry` or `GetEntryAt` and cast its underline `ValueRaw` to the desired type.
+			// The type should be the same as the macro's evaluator function (last argument on the Macros#Register) return value.
+			return ctx.Params().GetEntryAt(paramIndex).ValueRaw.([]string)
+		}
+	}
+
+	/*
+		http://localhost:8080/test_slice_hero/myvaluei1/myavlue2 ->
+		myparam's value (a trailing path parameter type) is: []string{"myvaluei1", "myavlue2"}
+	*/
+	app.Get("/test_slice_hero/{myparam:slice}", hero.Handler(func(myparam []string) string {
+		return fmt.Sprintf("myparam's value (a trailing path parameter type) is: %#v\n", myparam)
+	}))
+
+	/*
+		http://localhost:8080/test_slice_contains/notcontains1/value2 ->
+		(404) Not Found
+
+		http://localhost:8080/test_slice_contains/value1/value2 ->
+		myparam's value (a trailing path parameter type) is: []string{"value1", "value2"}
+	*/
+	app.Get("/test_slice_contains/{myparam:slice contains([value1,value2])}", func(ctx context.Context) {
+		// When it is not a built'n function available to retrieve your value with the type you want, such as ctx.Params().GetInt
+		// then you can use the `GetEntry.ValueRaw` to get the real value, which is set-ed by your macro above.
+		myparam := ctx.Params().GetEntry("myparam").ValueRaw.([]string)
+		ctx.Writef("myparam's value (a trailing path parameter type) is: %#v\n", myparam)
 	})
 
 	app.Run(iris.Addr(":8080"))

@@ -10,10 +10,10 @@ import (
 var (
 	// String type
 	// Allows anything (single path segment, as everything except the `Path`).
+	// Its functions can be used by the rest of the macros and param types whenever not available function by name is used.
+	// Because of its "master" boolean value to true (third parameter).
 	String = NewMacro("string", "", true, false, nil).
-		RegisterFunc("regexp", func(expr string) func(string) bool {
-			return MustRegexp(expr)
-		}).
+		RegisterFunc("regexp", MustRegexp).
 		// checks if param value starts with the 'prefix' arg
 		RegisterFunc("prefix", func(prefix string) func(string) bool {
 			return func(paramValue string) bool {
@@ -431,21 +431,22 @@ func (ms *Macros) Register(indent, alias string, isMaster, isTrailing bool, eval
 }
 
 func (ms *Macros) register(macro *Macro) bool {
-	if macro.Indent() == "" || macro.Evaluator == nil {
+	if macro.Indent() == "" {
 		return false
 	}
 
 	cp := *ms
 
 	for _, m := range cp {
-
 		// can't add more than one with the same ast characteristics.
 		if macro.Indent() == m.Indent() {
 			return false
 		}
 
-		if macro.Alias() == m.Alias() || macro.Alias() == m.Indent() {
-			return false
+		if alias := macro.Alias(); alias != "" {
+			if alias == m.Alias() || alias == m.Indent() {
+				return false
+			}
 		}
 
 		if macro.Master() && m.Master() {

@@ -19,7 +19,7 @@ type params struct {
 
 func (p *params) resolve(index int, typ reflect.Type) (reflect.Value, bool) {
 	currentParamIndex := p.next
-	v, ok := context.ParamResolverByKindAndIndex(typ.Kind(), currentParamIndex)
+	v, ok := context.ParamResolverByTypeAndIndex(typ, currentParamIndex)
 
 	p.next = p.next + 1
 	return v, ok
