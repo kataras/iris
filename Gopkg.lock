@@ -275,7 +275,7 @@
   branch = "master"
   name = "github.com/dgraph-io/badger"
   packages = ["."]
-  revision = "391b6d3b93e6014fe8c2971fcc0c1266e47dbbd9"
+  revision = "99233d725dbdd26d156c61b2f42ae1671b794656"
 
 [[projects]]
   branch = "master"
