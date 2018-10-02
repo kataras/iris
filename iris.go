@@ -761,7 +761,7 @@ func (app *Application) Build() error {
 			// create the request handler, the default routing handler
 			routerHandler := router.NewDefaultHandler()
 
-			rp.Describe("router: %v", app.Router.BuildRouter(app.ContextPool, routerHandler, app.APIBuilder))
+			rp.Describe("router: %v", app.Router.BuildRouter(app.ContextPool, routerHandler, app.APIBuilder, false))
 			// re-build of the router from outside can be done with;
 			// app.RefreshRouter()
 		}

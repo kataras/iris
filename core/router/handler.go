@@ -17,10 +17,9 @@ import (
 // RequestHandler the middle man between acquiring a context and releasing it.
 // By-default is the router algorithm.
 type RequestHandler interface {
-	// HandleRequest is same as context.Handler but its usage is only about routing,
-	// separate the concept here.
+	// HandleRequest should handle the request based on the Context.
 	HandleRequest(context.Context)
-	// Build  should builds the handler, it's being called on router's BuildRouter.
+	// Build should builds the handler, it's being called on router's BuildRouter.
 	Build(provider RoutesProvider) error
 	// RouteExists reports whether a particular route exists.
 	RouteExists(ctx context.Context, method, path string) bool
