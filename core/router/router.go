@@ -31,7 +31,7 @@ func NewRouter() *Router { return &Router{} }
 // RefreshRouter re-builds the router. Should be called when a route's state
 // changed (i.e Method changed at serve-time).
 func (router *Router) RefreshRouter() error {
-	return router.BuildRouter(router.cPool, router.requestHandler, router.routesProvider)
+	return router.BuildRouter(router.cPool, router.requestHandler, router.routesProvider, true)
 }
 
 // BuildRouter builds the router based on
@@ -41,7 +41,7 @@ func (router *Router) RefreshRouter() error {
 // its wrapper.
 //
 // Use of RefreshRouter to re-build the router if needed.
-func (router *Router) BuildRouter(cPool *context.Pool, requestHandler RequestHandler, routesProvider RoutesProvider) error {
+func (router *Router) BuildRouter(cPool *context.Pool, requestHandler RequestHandler, routesProvider RoutesProvider, force bool) error {
 
 	if requestHandler == nil {
 		return errors.New("router: request handler is nil")
@@ -60,9 +60,23 @@ func (router *Router) BuildRouter(cPool *context.Pool, requestHandler RequestHan
 	defer router.mu.Unlock()
 
 	// store these for RefreshRouter's needs.
-	router.cPool = cPool
-	router.requestHandler = requestHandler
-	router.routesProvider = routesProvider
+	if force {
+		router.cPool = cPool
+		router.requestHandler = requestHandler
+		router.routesProvider = routesProvider
+	} else {
+		if router.cPool == nil {
+			router.cPool = cPool
+		}
+
+		if router.requestHandler == nil {
+			router.requestHandler = requestHandler
+		}
+
+		if router.routesProvider == nil && routesProvider != nil {
+			router.routesProvider = routesProvider
+		}
+	}
 
 	// the important
 	router.mainHandler = func(w http.ResponseWriter, r *http.Request) {
