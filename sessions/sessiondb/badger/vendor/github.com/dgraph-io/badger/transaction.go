@@ -40,7 +40,10 @@ type oracle struct {
 	writeLock  sync.Mutex
 	nextCommit uint64
 
-	readMark y.WaterMark
+	// Either of these is used to determine which versions can be permanently
+	// discarded during compaction.
+	discardTs uint64      // Used by ManagedDB.
+	readMark  y.WaterMark // Used by DB.
 
 	// commits stores a key fingerprint and latest commit counter for it.
 	// refCount is used to clear out commits map to avoid a memory blowup.
@@ -79,6 +82,23 @@ func (o *oracle) commitTs() uint64 {
 	o.Lock()
 	defer o.Unlock()
 	return o.nextCommit
+}
+
+// Any deleted or invalid versions at or below ts would be discarded during
+// compaction to reclaim disk space in LSM tree and thence value log.
+func (o *oracle) setDiscardTs(ts uint64) {
+	o.Lock()
+	defer o.Unlock()
+	o.discardTs = ts
+}
+
+func (o *oracle) discardAtOrBelow() uint64 {
+	if o.isManaged {
+		o.Lock()
+		defer o.Unlock()
+		return o.discardTs
+	}
+	return o.readMark.MinReadTs()
 }
 
 // hasConflict must be called while having a lock.

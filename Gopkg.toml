@@ -80,7 +80,7 @@
 
 [[constraint]]
   name = "github.com/dgraph-io/badger"
-  version = "1.5.3"
+  version = "1.5.4"
 
 [[constraint]]
   name = "github.com/etcd-io/bbolt"

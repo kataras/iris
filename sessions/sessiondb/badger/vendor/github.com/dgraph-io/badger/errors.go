@@ -96,6 +96,10 @@ var (
 	// ErrTruncateNeeded is returned when the value log gets corrupt, and requires truncation of
 	// corrupt data to allow Badger to run properly.
 	ErrTruncateNeeded = errors.New("Value log truncate required to run DB. This might result in data loss.")
+
+	// ErrBlockedWrites is returned if the user called DropAll. During the process of dropping all
+	// data from Badger, we stop accepting new writes, by returning this error.
+	ErrBlockedWrites = errors.New("Writes are blocked possibly due to DropAll")
 )
 
 // Key length can't be more than uint16, as determined by table::header.

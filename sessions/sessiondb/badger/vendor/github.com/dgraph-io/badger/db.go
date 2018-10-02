@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/dgraph-io/badger/options"
@@ -72,6 +73,8 @@ type DB struct {
 	vptr      valuePointer // less than or equal to a pointer to the last vlog value put into mt
 	writeCh   chan *request
 	flushChan chan flushTask // For flushing memtables.
+
+	blockWrites int32
 
 	orc *oracle
 }
@@ -622,6 +625,9 @@ func (db *DB) writeRequests(reqs []*request) error {
 }
 
 func (db *DB) sendToWriteCh(entries []*Entry) (*request, error) {
+	if atomic.LoadInt32(&db.blockWrites) == 1 {
+		return nil, ErrBlockedWrites
+	}
 	var count, size int64
 	for _, e := range entries {
 		size += int64(e.estimateSize(db.opt.ValueThreshold))
@@ -850,7 +856,12 @@ func (db *DB) flushMemtable(lc *y.Closer) error {
 
 		// Update s.imm. Need a lock.
 		db.Lock()
-		y.AssertTrue(ft.mt == db.imm[0]) //For now, single threaded.
+		// This is a single-threaded operation. ft.mt corresponds to the head of
+		// db.imm list. Once we flush it, we advance db.imm. The next ft.mt
+		// which would arrive here would match db.imm[0], because we acquire a
+		// lock over DB when pushing to flushChan.
+		// TODO: This logic is dirty AF. Any change and this could easily break.
+		y.AssertTrue(ft.mt == db.imm[0])
 		db.imm = db.imm[1:]
 		ft.mt.DecrRef() // Return memory.
 		db.Unlock()
@@ -905,7 +916,6 @@ func (db *DB) calculateSize() {
 		_, vlogSize = totalSize(db.opt.ValueDir)
 	}
 	y.VlogSize.Set(db.opt.Dir, newInt(vlogSize))
-
 }
 
 func (db *DB) updateSize(lc *y.Closer) {
@@ -1079,6 +1089,16 @@ func (db *DB) GetSequence(key []byte, bandwidth uint64) (*Sequence, error) {
 
 func (db *DB) Tables() []TableInfo {
 	return db.lc.getTableInfo()
+}
+
+// MaxBatchCount returns max possible entries in batch
+func (db *DB) MaxBatchCount() int64 {
+	return db.opt.maxBatchCount
+}
+
+// MaxBatchCount returns max possible batch size
+func (db *DB) MaxBatchSize() int64 {
+	return db.opt.maxBatchSize
 }
 
 // MergeOperator represents a Badger merge operator.
