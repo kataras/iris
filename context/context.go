@@ -2414,6 +2414,9 @@ var (
 	errReadBody = errors.New("while trying to read %s from the request body. Trace %s")
 )
 
+// ErrEmptyForm will be thrown from `context#ReadForm` when empty request data.
+var ErrEmptyForm = errors.New("form data: empty")
+
 // ReadForm binds the formObject  with the form data
 // it supports any kind of struct.
 //
@@ -2421,7 +2424,7 @@ var (
 func (ctx *context) ReadForm(formObject interface{}) error {
 	values := ctx.FormValues()
 	if values == nil {
-		return errors.New("An empty form passed on ReadForm")
+		return ErrEmptyForm
 	}
 
 	// or dec := formbinder.NewDecoder(&formbinder.DecoderOptions{TagName: "form"})
