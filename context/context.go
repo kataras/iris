@@ -560,7 +560,8 @@ type Context interface {
 	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-xml/main.go
 	ReadXML(xmlObjectPtr interface{}) error
 	// ReadForm binds the formObject  with the form data
-	// it supports any kind of struct.
+	// it supports any kind of type, including custom structs.
+	// It will return nothing if request data are empty.
 	//
 	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-form/main.go
 	ReadForm(formObjectPtr interface{}) error
@@ -2289,17 +2290,15 @@ var (
 	errReadBody = errors.New("while trying to read %s from the request body. Trace %s")
 )
 
-// ErrEmptyForm will be thrown from `context#ReadForm` when empty request data.
-var ErrEmptyForm = errors.New("form data: empty")
-
 // ReadForm binds the formObject  with the form data
-// it supports any kind of struct.
+// it supports any kind of type, including custom structs.
+// It will return nothing if request data are empty.
 //
 // Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-form/main.go
 func (ctx *context) ReadForm(formObject interface{}) error {
 	values := ctx.FormValues()
-	if values == nil {
-		return ErrEmptyForm
+	if len(values) == 0 {
+		return nil
 	}
 
 	// or dec := formbinder.NewDecoder(&formbinder.DecoderOptions{TagName: "form"})
