@@ -53,11 +53,11 @@ func (s *AmberEngine) Binary(assetFn func(name string) ([]byte, error), namesFn 
 	return s
 }
 
-// Reload will, when passed `true`, reload the template on each render.
-// This makes it easier when developing an app, because the entire app
-// will not need to be restarted when a single template file is edited.
+// Reload if setted to true the templates are reloading on each render,
+// use it when you're in development and you're boring of restarting
+// the whole app when you edit a template file.
 //
-// Note that if `true` is passed then only one `View -> ExecuteWriter` will render each time,
+// Note that if `true` is passed then only one `View -> ExecuteWriter` will be render each time,
 // no concurrent access across clients, use it only on development status.
 // It's good to be used side by side with the https://github.com/kataras/rizla reloader for go source files.
 func (s *AmberEngine) Reload(developmentMode bool) *AmberEngine {
@@ -77,7 +77,7 @@ func (s *AmberEngine) AddFunc(funcName string, funcBody interface{}) {
 }
 
 // Load parses the templates to the engine.
-// It is also responsible to add the necessary global functions.
+// It's alos responsible to add the necessary global functions.
 //
 // Returns an error if something bad happens, user is responsible to catch it.
 func (s *AmberEngine) Load() error {
@@ -198,7 +198,7 @@ func (s *AmberEngine) fromCache(relativeName string) *template.Template {
 }
 
 // ExecuteWriter executes a template and writes its result to the w writer.
-// Layout here is useless.
+// layout here is useless.
 func (s *AmberEngine) ExecuteWriter(w io.Writer, filename string, layout string, bindingData interface{}) error {
 	// re-parse the templates if reload is enabled.
 	if s.reload {
