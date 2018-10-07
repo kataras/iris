@@ -20,6 +20,7 @@ import (
 	"github.com/kataras/iris/core/maintenance"
 	"github.com/kataras/iris/core/netutil"
 	"github.com/kataras/iris/core/router"
+
 	// handlerconv conversions
 	"github.com/kataras/iris/core/handlerconv"
 	// cache conversions
@@ -222,7 +223,7 @@ func (app *Application) SubdomainRedirect(from, to router.Party) router.Party {
 	return to
 }
 
-// Configure can called when modifications to the framework instance needed.
+// Configure can be called when modifications to the framework instance are needed.
 // It accepts the framework instance
 // and returns an error which if it's not nil it's printed to the logger.
 // See configuration.go for more.
@@ -359,7 +360,7 @@ var (
 	// app.Head("/static/{f:path}", h)
 	StripPrefix = router.StripPrefix
 	// Gzip is a middleware which enables writing
-	// using gzip compression, if client supports.
+	// using gzip compression, if the client supports it.
 	//
 	// A shortcut for the `context#Gzip`.
 	Gzip = context.Gzip
@@ -464,10 +465,10 @@ var (
 	CookieDecode = context.CookieDecode
 )
 
-// SPA  accepts an "assetHandler" which can be the result of an
+// SPA (Single Page Application) accepts an "assetHandler" which can be the result of an
 // app.StaticHandler or app.StaticEmbeddedHandler.
 // Use that when you want to navigate from /index.html to / automatically
-// it's a helper function which just makes some checks based on the `IndexNames` and `AssetValidators`
+// It is a helper function which just makes some checks based on the `IndexNames` and `AssetValidators`
 // before the assetHandler call.
 //
 // Example: https://github.com/kataras/iris/tree/master/_examples/file-server/single-page-application
@@ -477,19 +478,19 @@ func (app *Application) SPA(assetHandler context.Handler) *router.SPABuilder {
 	return s
 }
 
-// ConfigureHost accepts one or more `host#Configuration`, these configurators functions
-// can access the host created by `app.Run`,
-// they're being executed when application is ready to being served to the public.
+// ConfigureHost accepts one or more `host#Configuration`. These configurators functions
+// can access the host created by `app.Run`.
+// They are executed when application is ready to be served to the public.
 //
-// It's an alternative way to interact with a host that is automatically created by
+// This provides an alternative way to interact with a host that is automatically created by
 // `app.Run`.
 //
 // These "configurators" can work side-by-side with the `iris#Addr, iris#Server, iris#TLS, iris#AutoTLS, iris#Listener`
 // final arguments("hostConfigs") too.
 //
 // Note that these application's host "configurators" will be shared with the rest of
-// the hosts that this app will may create (using `app.NewHost`), meaning that
-// `app.NewHost` will execute these "configurators" everytime that is being called as well.
+// the hosts that this app may create (using `app.NewHost`), meaning that
+// `app.NewHost` will execute these "configurators" everytime that is called as well.
 //
 // These "configurators" should be registered before the `app.Run` or `host.Serve/Listen` functions.
 func (app *Application) ConfigureHost(configurators ...host.Configurator) *Application {
@@ -499,9 +500,9 @@ func (app *Application) ConfigureHost(configurators ...host.Configurator) *Appli
 	return app
 }
 
-// NewHost accepts a standar *http.Server object,
+// NewHost accepts a standard *http.Server object,
 // completes the necessary missing parts of that "srv"
-// and returns a new, ready-to-use, host (supervisor).
+// and returns a new ready-to-use, host (supervisor).
 func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 	app.mu.Lock()
 	defer app.mu.Unlock()
@@ -570,7 +571,7 @@ func (app *Application) NewHost(srv *http.Server) *host.Supervisor {
 var RegisterOnInterrupt = host.RegisterOnInterrupt
 
 // Shutdown gracefully terminates all the application's server hosts.
-// Returns an error on the first failure, otherwise nil.
+// Returns an error on the first failure, or otherwise nil.
 func (app *Application) Shutdown(ctx stdContext.Context) error {
 	for i, su := range app.Hosts {
 		app.logger.Debugf("Host[%d]: Shutdown now", i)
@@ -582,13 +583,13 @@ func (app *Application) Shutdown(ctx stdContext.Context) error {
 	return nil
 }
 
-// Runner is just an interface which accepts the framework instance
+// Runner is an interface which accepts the framework instance
 // and returns an error.
 //
 // It can be used to register a custom runner with `Run` in order
 // to set the framework's server listen action.
 //
-// Currently Runner is being used to declare the built'n server listeners.
+// Currently Runner is used to declare the built'n server listeners.
 //
 // See `Run` for more.
 type Runner func(*Application) error
@@ -596,11 +597,11 @@ type Runner func(*Application) error
 // Listener can be used as an argument for the `Run` method.
 // It can start a server with a custom net.Listener via server's `Serve`.
 //
-// Second argument is optional, it accepts one or more
-// `func(*host.Configurator)` that are being executed
+// Second argument is optional; it accepts one or more
+// `func(*host.Configurator)` which are executed
 // on that specific host that this function will create to start the server.
-// Via host configurators you can configure the back-end host supervisor,
-// i.e to add events for shutdown, serve or error.
+// With host configurators you can configure the back-end host supervisor,
+// e.g. to add events for shutdown, serve or error.
 // An example of this use case can be found at:
 // https://github.com/kataras/iris/blob/master/_examples/http-listening/notify-on-shutdown/main.go
 // Look at the `ConfigureHost` too.
@@ -619,10 +620,10 @@ func Listener(l net.Listener, hostConfigs ...host.Configurator) Runner {
 // It can start a server with a *http.Server.
 //
 // Second argument is optional, it accepts one or more
-// `func(*host.Configurator)` that are being executed
+// `func(*host.Configurator)` which are executed
 // on that specific host that this function will create to start the server.
-// Via host configurators you can configure the back-end host supervisor,
-// i.e to add events for shutdown, serve or error.
+// With host configurators you can configure the back-end host supervisor,
+// e.g. to add events for shutdown, serve or error.
 // An example of this use case can be found at:
 // https://github.com/kataras/iris/blob/master/_examples/http-listening/notify-on-shutdown/main.go
 // Look at the `ConfigureHost` too.
@@ -643,10 +644,10 @@ func Server(srv *http.Server, hostConfigs ...host.Configurator) Runner {
 // Addr should have the form of [host]:port, i.e localhost:8080 or :8080.
 //
 // Second argument is optional, it accepts one or more
-// `func(*host.Configurator)` that are being executed
+// `func(*host.Configurator)` which are executed
 // on that specific host that this function will create to start the server.
-// Via host configurators you can configure the back-end host supervisor,
-// i.e to add events for shutdown, serve or error.
+// With host configurators you can configure the back-end host supervisor,
+// e.g. to add events for shutdown, serve or error.
 // An example of this use case can be found at:
 // https://github.com/kataras/iris/blob/master/_examples/http-listening/notify-on-shutdown/main.go
 // Look at the `ConfigureHost` too.
@@ -663,16 +664,16 @@ func Addr(addr string, hostConfigs ...host.Configurator) Runner {
 // TLS can be used as an argument for the `Run` method.
 // It will start the Application's secure server.
 //
-// Use it like you used to use the http.ListenAndServeTLS function.
+// Use it like you would the http.ListenAndServeTLS function.
 //
 // Addr should have the form of [host]:port, i.e localhost:443 or :443.
 // CertFile & KeyFile should be filenames with their extensions.
 //
 // Second argument is optional, it accepts one or more
-// `func(*host.Configurator)` that are being executed
+// `func(*host.Configurator)` which are executed
 // on that specific host that this function will create to start the server.
-// Via host configurators you can configure the back-end host supervisor,
-// i.e to add events for shutdown, serve or error.
+// Wia host configurators you can configure the back-end host supervisor,
+// e.g. to add events for shutdown, serve or error.
 // An example of this use case can be found at:
 // https://github.com/kataras/iris/blob/master/_examples/http-listening/notify-on-shutdown/main.go
 // Look at the `ConfigureHost` too.
@@ -688,8 +689,8 @@ func TLS(addr string, certFile, keyFile string, hostConfigs ...host.Configurator
 
 // AutoTLS can be used as an argument for the `Run` method.
 // It will start the Application's secure server using
-// certifications created on the fly by the "autocert" golang/x package,
-// so localhost may not be working, use it at "production" machine.
+// certificates created on the fly by the "autocert" golang/x package,
+// so localhost may not work. Use it on a "production" machine.
 //
 // Addr should have the form of [host]:port, i.e mydomain.com:443.
 //
@@ -708,10 +709,10 @@ func TLS(addr string, certFile, keyFile string, hostConfigs ...host.Configurator
 // which will redirect all http versions to their https, including subdomains as well.
 //
 // Last argument is optional, it accepts one or more
-// `func(*host.Configurator)` that are being executed
+// `func(*host.Configurator)` which are executed
 // on that specific host that this function will create to start the server.
-// Via host configurators you can configure the back-end host supervisor,
-// i.e to add events for shutdown, serve or error.
+// Wia host configurators you can configure the back-end host supervisor,
+// e.g. to add events for shutdown, serve or error.
 // An example of this use case can be found at:
 // https://github.com/kataras/iris/blob/master/_examples/http-listening/notify-on-shutdown/main.go
 // Look at the `ConfigureHost` too.
@@ -732,12 +733,12 @@ func AutoTLS(
 }
 
 // Raw can be used as an argument for the `Run` method.
-// It accepts any (listen) function that returns an error,
-// this function should be block and return an error
-// only when the server exited or a fatal error caused.
+// It accepts any (listen) function that returns an error.
+// This function should be blocking and return an error
+// only when the server exited or a fatal error occurred.
 //
-// With this option you're not limited to the servers
-// that iris can run by-default.
+// With this option you're not limited to the server schemas
+// that iris can run by default.
 //
 // See `Run` for more.
 func Raw(f func() error) Runner {
@@ -789,9 +790,9 @@ var ErrServerClosed = http.ErrServerClosed
 
 // Run builds the framework and starts the desired `Runner` with or without configuration edits.
 //
-// Run should be called only once per Application instance, it blocks like http.Server.
+// Run should be called only once per Application instance because it is blocking like http.Server.
 //
-// If more than one server needed to run on the same iris instance
+// If more than one server are needed to run on the same iris instance,
 // then create a new host and run it manually by `go NewHost(*http.Server).Serve/ListenAndServe` etc...
 // or use an already created host:
 // h := NewHost(*http.Server)

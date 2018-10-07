@@ -62,9 +62,9 @@ func (s *HandlebarsEngine) Binary(assetFn func(name string) ([]byte, error), nam
 	return s
 }
 
-// Reload if setted to true the templates are reloading on each render,
-// use it when you're in development and you're boring of restarting
-// the whole app when you edit a template file.
+// Reload will, when passed `true`, reload the template on each render.
+// This makes it easier when developing an app, because the entire app
+// will not need to be restarted when a single template file is edited.
 //
 // Note that if `true` is passed then only one `View -> ExecuteWriter` will be render each time,
 // no concurrent access across clients, use it only on development status.

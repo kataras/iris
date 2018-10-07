@@ -9,8 +9,8 @@ import (
 )
 
 type (
-	// ConnectionFunc is the callback which fires when a client/connection is connected to the Server.
-	// Receives one parameter which is the Connection
+	// ConnectionFunc is a callback which executes when a connection is made to the Server.
+	// Receives one parameter, the Connection.
 	ConnectionFunc func(Connection)
 
 	// websocketRoomPayload is used as payload from the connection to the Server
@@ -28,7 +28,7 @@ type (
 
 	// Server is the websocket Server's implementation.
 	//
-	// It listens for websocket clients (either from the javascript client-side or from any websocket implementation).
+	// It listens for websocket clients.
 	// See `OnConnection` , to register a single event which will handle all incoming connections and
 	// the `Handler` which builds the upgrader handler that you can register to a route based on an Endpoint.
 	//
@@ -52,9 +52,9 @@ type (
 func New(cfg Config) *Server {
 	cfg = cfg.Validate()
 	return &Server{
-		config:      cfg,
-		connections: sync.Map{}, // ready-to-use, this is not necessary.
-		rooms:       make(map[string][]string),
+		config:                cfg,
+		connections:           sync.Map{}, // ready-to-use, this is not necessary.
+		rooms:                 make(map[string][]string),
 		onConnectionListeners: make([]ConnectionFunc, 0),
 		upgrader: websocket.Upgrader{
 			HandshakeTimeout:  cfg.HandshakeTimeout,
@@ -69,11 +69,10 @@ func New(cfg Config) *Server {
 }
 
 // Handler builds the handler based on the configuration and returns it.
-// It should be called once per Server, its result should be passed
-// as a middleware to an iris route which will be responsible
-// to register the websocket's endpoint.
+// It should be called once per Server, and its result should be passed
+// as a middleware to an iris route which will register the websocket's endpoint.
 //
-// Endpoint is the path which the websocket Server will listen for clients/connections.
+// Endpoint is the path where the websocket Server will listen for clients/connections.
 //
 // To serve the built'n javascript client-side library look the `websocket.ClientHandler`.
 func (s *Server) Handler() context.Handler {
@@ -108,7 +107,7 @@ func (s *Server) Handler() context.Handler {
 // response and the return `Connection.Err()` is filled with that error.
 //
 // For a more high-level function use the `Handler()` and `OnConnecton` events.
-// This one does not starts the connection's writer and reader, so after your `On/OnMessage` events registration
+// This one does not start the connection's writer and reader, so after your `On/OnMessage` events registration
 // the caller has to call the `Connection#Wait` function, otherwise the connection will be not handled.
 func (s *Server) Upgrade(ctx context.Context) Connection {
 	conn, err := s.upgrader.Upgrade(ctx.ResponseWriter(), ctx.Request(), ctx.ResponseWriter().Header())
@@ -176,13 +175,13 @@ func (s *Server) handleConnection(ctx context.Context, websocketConn UnderlineCo
     this id with a database field (using config.IDGenerator).
 */
 
-// OnConnection is the main event you, as developer, will work with each of the websocket connections.
+// OnConnection is the main event you, as a developer, will work with for each of the websocket connections.
 func (s *Server) OnConnection(cb ConnectionFunc) {
 	s.onConnectionListeners = append(s.onConnectionListeners, cb)
 }
 
 // IsConnected returns true if the connection with that ID is connected to the Server
-// useful when you have defined a custom connection id generator (based on a database)
+// It can be useful when you have defined a custom connection id generator (based on a database)
 // and you want to check if that connection is already connected (on multiple tabs)
 func (s *Server) IsConnected(connID string) bool {
 	_, found := s.getConnection(connID)
@@ -320,7 +319,7 @@ func (s *Server) GetConnection(connID string) Connection {
 	return conn
 }
 
-// GetConnectionsByRoom returns a list of Connection
+// GetConnectionsByRoom returns a list of Connections
 // which are joined to this room.
 func (s *Server) GetConnectionsByRoom(roomName string) []Connection {
 	var conns []Connection
@@ -341,15 +340,15 @@ func (s *Server) GetConnectionsByRoom(roomName string) []Connection {
 	return conns
 }
 
-// emitMessage is the main 'router' of the messages coming from the connection
-// this is the main function which writes the RAW websocket messages to the client.
-// It sends them(messages) to the correct room (self, broadcast or to specific client)
+// emitMessage is the main 'router' of the messages coming from the connection.
+// This is the main function which writes the RAW websocket messages to the client.
+// It sends messages to the correct room (self, broadcast or to a specific client)
 //
-// You don't have to use this generic method, exists only for extreme
-// apps which you have an external goroutine with a list of custom connection list.
+// You don't have to use this generic method, it exists only for extreme
+// apps where you may have an external goroutine with a list of custom connections.
 //
 // You SHOULD use connection.EmitMessage/Emit/To().Emit/EmitMessage instead.
-// let's keep it unexported for the best.
+// Let's keep it unexported for the best.
 func (s *Server) emitMessage(from, to string, data []byte) {
 	if to != All && to != Broadcast {
 		if s.rooms[to] != nil {
@@ -398,11 +397,11 @@ func (s *Server) emitMessage(from, to string, data []byte) {
 }
 
 // Disconnect force-disconnects a websocket connection based on its connection.ID()
-// What it does?
-// 1. remove the connection from the list
-// 2. leave from all joined rooms
-// 3. fire the disconnect callbacks, if any
-// 4. close the underline connection and return its error, if any.
+// It does the following:
+// 		1. Removes the connection from the list
+// 		2. Leaves all joined rooms
+// 		3. Invokes disconnect callbacks, if any
+// 		4. Closes the underlying connection and return its error, if any.
 //
 // You can use the connection.Disconnect() instead.
 func (s *Server) Disconnect(connID string) (err error) {
