@@ -11,7 +11,7 @@ import (
 	"github.com/valyala/bytebufferpool"
 )
 
-// The same values are exists on client side also
+// The same values exist on the client side also
 const (
 	websocketStringMessageType websocketMessageType = iota
 	websocketIntMessageType

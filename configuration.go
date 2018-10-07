@@ -8,7 +8,6 @@ import (
 	"runtime"
 
 	"github.com/BurntSushi/toml"
-	"gopkg.in/yaml.v2"
 
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/errors"

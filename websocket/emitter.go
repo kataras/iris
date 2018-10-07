@@ -1,7 +1,7 @@
 package websocket
 
 const (
-	// All is the string which the Emitter use to send a message to all.
+	// All is the string which the Emitter uses to send a message to all.
 	All = ""
 	// Broadcast is the string which the Emitter use to send a message to all except this connection.
 	Broadcast = ";to;all;except;me;"

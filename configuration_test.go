@@ -6,8 +6,6 @@ import (
 	"reflect"
 	"testing"
 	"time"
-
-	"gopkg.in/yaml.v2"
 )
 
 // $ go test -v -run TestConfiguration*
