@@ -21,7 +21,8 @@ const (
 var (
 	// AllMethods contains the valid http methods:
 	// "GET", "POST", "PUT", "DELETE", "CONNECT", "HEAD",
-	// "PATCH", "OPTIONS", "TRACE".
+	// "PATCH", "OPTIONS", "TRACE","COPY", "LINK", "UNLINK",
+	// "PURGE", "LOCK", "UNLOCK", "PROPFIND", "VIEW" .
 	AllMethods = [...]string{
 		"GET",
 		"POST",
@@ -32,6 +33,14 @@ var (
 		"PATCH",
 		"OPTIONS",
 		"TRACE",
+		"COPY",
+		"LINK",
+		"UNLINK",
+		"PURGE",
+		"LOCK",
+		"UNLOCK",
+		"PROPFIND",
+		"VIEW",
 	}
 )
 
