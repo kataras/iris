@@ -636,7 +636,7 @@ func main() {
 
     // Register validation for 'User'
     // NOTE: only have to register a non-pointer type for 'User', validator
-    // interanlly dereferences during it's type checks.
+    // internally dereferences during it's type checks.
     validate.RegisterStructValidation(UserStructLevelValidation, User{})
 
     app := iris.New()
