@@ -13,7 +13,7 @@ type (
 	// ParamEvaluator is the signature for param type evaluator.
 	// It accepts the param's value as string and returns
 	// the <T> value (which its type is used for the input argument of the parameter functions, if any)
-	// and a true value for passed, otherwise nil and false shoudl be returned.
+	// and a true value for passed, otherwise nil and false should be returned.
 	ParamEvaluator func(paramValue string) (interface{}, bool)
 )
 
