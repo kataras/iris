@@ -16,6 +16,13 @@ type RequestParams struct {
 	memstore.Store
 }
 
+// Set inserts a value to the key-value storage.
+//
+// See `SetImmutable` and `Get` too.
+func (r *RequestParams) Set(key, value string) {
+	r.Store.Set(key, value)
+}
+
 // GetEntryAt will return the parameter's internal store's `Entry` based on the index.
 // If not found it will return an emptry `Entry`.
 func (r *RequestParams) GetEntryAt(index int) memstore.Entry {

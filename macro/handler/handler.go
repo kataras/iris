@@ -44,7 +44,7 @@ func MakeHandler(tmpl macro.Template) context.Handler {
 				continue // allow.
 			}
 
-			if !p.Eval(ctx.Params().Get(p.Name), ctx.Params()) {
+			if !p.Eval(ctx.Params().Get(p.Name), &ctx.Params().Store) {
 				ctx.StatusCode(p.ErrCode)
 				ctx.StopExecution()
 				return

@@ -491,7 +491,7 @@ Example code:
     // http://myhost.com/users/42/profile
     users.Get("/{id:uint64}/profile", userProfileHandler)
     // http://myhost.com/users/messages/1
-    users.Get("/inbox/{id:number}", userMessageHandler)
+    users.Get("/inbox/{id:int}", userMessageHandler)
 
 
 Custom HTTP Errors
@@ -553,7 +553,7 @@ Example code:
 
             if err != nil {
                 ctx.Writef("error while trying to parse userid parameter," +
-                    "this will never happen if :number is being used because if it's not integer it will fire Not Found automatically.")
+                    "this will never happen if :int is being used because if it's not integer it will fire Not Found automatically.")
                 ctx.StatusCode(iris.StatusBadRequest)
                 return
             }
@@ -709,25 +709,61 @@ Standard macro types for parameters:
     | {param:string}         |
     +------------------------+
     string type
-    anything
+    anything (single path segmnent)
 
     +-------------------------------+
-    | {param:number} or {param:int} |
+    | {param:int}                   |
     +-------------------------------+
     int type
-    both positive and negative numbers, any number of digits (ctx.Params().GetInt will limit the digits based on the host arch)
+    -9223372036854775808 to 9223372036854775807 (x64) or -2147483648 to 2147483647 (x32), depends on the host arch
 
-    +-------------------------------+
-    | {param:long} or {param:int64} |
-    +-------------------------------+
+    +------------------------+
+    | {param:int8}           |
+    +------------------------+
+    int8 type
+    -128 to 127
+
+    +------------------------+
+    | {param:int16}          |
+    +------------------------+
+    int16 type
+    -32768 to 32767
+
+    +------------------------+
+    | {param:int32}          |
+    +------------------------+
+    int32 type
+    -2147483648 to 2147483647
+
+    +------------------------+
+    | {param:int64}          |
+    +------------------------+
     int64 type
     -9223372036854775808 to 9223372036854775807
+
+    +------------------------+
+    | {param:uint}           |
+    +------------------------+
+    uint type
+    0 to 18446744073709551615 (x64) or 0 to 4294967295 (x32)
 
     +------------------------+
     | {param:uint8}          |
     +------------------------+
     uint8 type
     0 to 255
+
+    +------------------------+
+    | {param:uint16}         |
+    +------------------------+
+    uint16 type
+    0 to 65535
+
+    +------------------------+
+    | {param:uint32}          |
+    +------------------------+
+    uint32 type
+    0 to 4294967295
 
     +------------------------+
     | {param:uint64}         |
@@ -763,8 +799,8 @@ Standard macro types for parameters:
     | {param:path}           |
     +------------------------+
     path type
-    anything, should be the last part, more than one path segment,
-    i.e: /path1/path2/path3 , ctx.Params().Get("param") == "/path1/path2/path3"
+    anything, should be the last part, can be more than one path segment,
+    i.e: "/test/*param" and request: "/test/path1/path2/path3" , ctx.Params().Get("param") == "path1/path2/path3"
 
 if type is missing then parameter's type is defaulted to string, so
 {param} == {param:string}.
@@ -773,7 +809,7 @@ If a function not found on that type then the "string"'s types functions are bei
 i.e:
 
 
-    {param:number min(3)}
+    {param:int min(3)}
 
 
 Besides the fact that iris provides the basic types and some default "macro funcs"
@@ -782,16 +818,18 @@ you are able to register your own too!.
 Register a named path parameter function:
 
 
-    app.Macros().Number.RegisterFunc("min", func(argument int) func(paramValue string) bool {
-        [...]
-        return true/false -> true means valid.
+    app.Macros().Get("int").RegisterFunc("min", func(argument int) func(paramValue int) bool {
+        return func(paramValue int) bool {
+            [...]
+            return true/false -> true means valid.
+        }
     })
 
 at the func(argument ...) you can have any standard type, it will be validated before the server starts
 so don't care about performance here, the only thing it runs at serve time is the returning func(paramValue string) bool.
 
     {param:string equal(iris)} , "iris" will be the argument here:
-    app.Macros().String.RegisterFunc("equal", func(argument string) func(paramValue string) bool {
+    app.Macros().Get("string").RegisterFunc("equal", func(argument string) func(paramValue string) bool {
         return func(paramValue string){ return argument == paramValue }
     })
 
@@ -804,20 +842,16 @@ Example Code:
 		ctx.Writef("Hello %s", ctx.Params().Get("name"))
 	}) // type is missing = {name:string}
 
-	// Let's register our first macro attached to number macro type.
+	// Let's register our first macro attached to int macro type.
 	// "min" = the function
 	// "minValue" = the argument of the function
-	// func(string) bool = the macro's path parameter evaluator, this executes in serve time when
-	// a user requests a path which contains the number macro type with the min(...) macro parameter function.
-	app.Macros().Number.RegisterFunc("min", func(minValue int) func(string) bool {
+	// func(<T>) bool = the macro's path parameter evaluator, this executes in serve time when
+	// a user requests a path which contains the int macro type with the min(...) macro parameter function.
+	app.Macros().Get("int").RegisterFunc("min", func(minValue int) func(int) bool {
 		// do anything before serve here [...]
 		// at this case we don't need to do anything
-		return func(paramValue string) bool {
-			n, err := strconv.Atoi(paramValue)
-			if err != nil {
-				return false
-			}
-			return n >= minValue
+		return func(paramValue int) bool {
+			return paramValue >= minValue
 		}
 	})
 

@@ -63,7 +63,7 @@ Iris 是个底层框架, 对 MVC 模式有很好的支持，但不限制文件�
 
 ### 路由、路由分组、路径动态参数、路由参数处理宏 、 自定义上下文
 
-* `app.Get("{userid:number min(1)}", myHandler)`
+* `app.Get("{userid:int min(1)}", myHandler)`
 * `app.Post("{asset:path}", myHandler)`
 * `app.Put("{custom:string regexp([a-z]+)}", myHandler)`
 
@@ -87,10 +87,10 @@ app.Get("/profile/me", userHandler)
 
 // 匹配所有前缀为 /users/ 的 GET 请求
 // 参数为数字，且 >= 1
-app.Get("/user/{userid:number min(1)}", getUserHandler)
+app.Get("/user/{userid:int min(1)}", getUserHandler)
 // 匹配所有前缀为 /users/ 的 DELETE 请求
 // 参数为数字，且 >= 1
-app.Delete("/user/{userid:number min(1)}", deleteUserHandler)
+app.Delete("/user/{userid:int min(1)}", deleteUserHandler)
 
 // 匹配所有 GET 请求，除了 "/", "/about", 或其他以 "/assets/" 开头
 // 因为它不会与其他路线冲突。
@@ -108,7 +108,6 @@ app.Get("{root:path}", rootWildcardHandler)
 - [Write your own custom parameter types](routing/macros/main.go) **NEW**
 - [反向路由](routing/reverse/main.go)
 - [Custom Router (high-level)](routing/custom-high-level-router/main.go) **NEW**
-- [Custom Router (low-level)](routing/custom-low-level-router/main.go) **NEW**
 - [自定义包装](routing/custom-wrapper/main.go)
 - 自定义上下文
     * [方法重写](routing/custom-context/method-overriding/main.go)

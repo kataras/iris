@@ -12,14 +12,6 @@ import (
 	"github.com/kataras/iris/macro/interpreter/lexer"
 )
 
-const (
-	// ParamStart the character in string representation where the underline router starts its dynamic named parameter.
-	ParamStart = ":"
-	// WildcardParamStart the character in string representation where the underline router starts its dynamic wildcard
-	// path parameter.
-	WildcardParamStart = "*"
-)
-
 // Param receives a parameter name prefixed with the ParamStart symbol.
 func Param(name string) string {
 	return prefix(name, ParamStart)
@@ -35,10 +27,8 @@ func WildcardParam(name string) string {
 
 func convertMacroTmplToNodePath(tmpl macro.Template) string {
 	routePath := tmpl.Src
-	if len(tmpl.Params) > 0 {
-		if routePath[len(routePath)-1] == '/' {
-			routePath = routePath[0 : len(routePath)-2] // remove the last "/" if macro syntax instead of underline's.
-		}
+	if len(routePath) > 1 && routePath[len(routePath)-1] == '/' {
+		routePath = routePath[0 : len(routePath)-1] // remove any last "/"
 	}
 
 	// if it has started with {} and it's valid

@@ -1,4 +1,4 @@
-// +build go1.11
+// +build js
 
 package main
 

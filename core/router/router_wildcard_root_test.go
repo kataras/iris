@@ -122,20 +122,25 @@ func TestRouterWildcardRootMany(t *testing.T) {
 
 func TestRouterWildcardRootManyAndRootStatic(t *testing.T) {
 	var tt = []testRoute{
-		// all routes will be handlded by "h" because we added wildcard to root,
+		// routes that may return 404 will be handled by the below route ("h" handler) because we added wildcard to root,
 		// this feature is very important and can remove noumerous of previous hacks on our apps.
+		//
+		// Static paths and parameters have priority over wildcard, all three types can be registered in the same path prefix.
+		//
+		// Remember, all of those routes are registered don't be tricked by the visual appearance of the below test blocks.
 		{"GET", "/{p:path}", h, []testRouteRequest{
 			{"GET", "", "/other2almost/some", iris.StatusOK, same_as_request_path},
 		}},
 		{"GET", "/static/{p:path}", h, []testRouteRequest{
-			{"GET", "", "/static", iris.StatusOK, same_as_request_path},
+			{"GET", "", "/static", iris.StatusOK, same_as_request_path}, // HERE<- IF NOT FOUND THEN BACKWARDS TO WILDCARD IF THERE IS ONE, HMM.
 			{"GET", "", "/static/something/here", iris.StatusOK, same_as_request_path},
 		}},
 		{"GET", "/", h, []testRouteRequest{
 			{"GET", "", "/", iris.StatusOK, same_as_request_path},
 		}},
 		{"GET", "/other/{paramother:path}", h2, []testRouteRequest{
-			{"GET", "", "/other", iris.StatusForbidden, same_as_request_path},
+			// OK and not h2 because of the root wildcard.
+			{"GET", "", "/other", iris.StatusOK, same_as_request_path},
 			{"GET", "", "/other/wildcard", iris.StatusForbidden, same_as_request_path},
 			{"GET", "", "/other/wildcard/here", iris.StatusForbidden, same_as_request_path},
 		}},
@@ -145,6 +150,7 @@ func TestRouterWildcardRootManyAndRootStatic(t *testing.T) {
 		}},
 		{"GET", "/other2/static", h3, []testRouteRequest{
 			{"GET", "", "/other2/static", iris.StatusOK, prefix_static_path_following_by_request_path},
+			// h2(Forbiddenn) instead of h3 OK because it will be handled by the /other2/{paramothersecond:path}'s handler which gives 403.
 			{"GET", "", "/other2/staticed", iris.StatusForbidden, same_as_request_path},
 		}},
 	}
@@ -165,6 +171,7 @@ func testTheRoutes(t *testing.T, tests []testRoute, debug bool) {
 	// run the tests
 	for _, tt := range tests {
 		for _, req := range tt.requests {
+			// t.Logf("req: %s:%s\n", tt.method, tt.path)
 			method := req.method
 			if method == "" {
 				method = tt.method

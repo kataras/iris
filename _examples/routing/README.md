@@ -152,25 +152,61 @@ Standard macro types for route path parameters
 | {param:string}         |
 +------------------------+
 string type
-anything
+anything (single path segmnent)
 
 +-------------------------------+
-| {param:number} or {param:int} |
+| {param:int}                   |
 +-------------------------------+
 int type
-both positive and negative numbers, any number of digits (ctx.Params().GetInt will limit the digits based on the host arch)
+-9223372036854775808 to 9223372036854775807 (x64) or -2147483648 to 2147483647 (x32), depends on the host arch
 
-+-------------------------------+
-| {param:long} or {param:int64} |
-+-------------------------------+
++------------------------+
+| {param:int8}           |
++------------------------+
+int8 type
+-128 to 127
+
++------------------------+
+| {param:int16}          |
++------------------------+
+int16 type
+-32768 to 32767
+
++------------------------+
+| {param:int32}          |
++------------------------+
+int32 type
+-2147483648 to 2147483647
+
++------------------------+
+| {param:int64}          |
++------------------------+
 int64 type
 -9223372036854775808 to 9223372036854775807
+
++------------------------+
+| {param:uint}           |
++------------------------+
+uint type
+0 to 18446744073709551615 (x64) or 0 to 4294967295 (x32)
 
 +------------------------+
 | {param:uint8}          |
 +------------------------+
 uint8 type
 0 to 255
+
++------------------------+
+| {param:uint16}         |
++------------------------+
+uint16 type
+0 to 65535
+
++------------------------+
+| {param:uint32}          |
++------------------------+
+uint32 type
+0 to 4294967295
 
 +------------------------+
 | {param:uint64}         |
@@ -206,8 +242,8 @@ no spaces ! or other character
 | {param:path}           |
 +------------------------+
 path type
-anything, should be the last part, more than one path segment,
-i.e: /path1/path2/path3 , ctx.Params().Get("param") == "/path1/path2/path3"
+anything, should be the last part, can be more than one path segment,
+i.e: "/test/*param" and request: "/test/path1/path2/path3" , ctx.Params().Get("param") == "path1/path2/path3"
 ```
 
 If type is missing then parameter's type is defaulted to string, so
@@ -221,21 +257,24 @@ you are able to register your own too!.
 Register a named path parameter function
 
 ```go
-app.Macros().Number.RegisterFunc("min", func(argument int) func(paramValue string) bool {
+app.Macros().Get("int").RegisterFunc("min", func(argument int) func(paramValue int) bool {
     // [...]
-    return true 
-    // -> true means valid, false means invalid fire 404 or if "else 500" is appended to the macro syntax then internal server error.
+    return func(paramValue int) bool {
+         // -> true means valid, false means invalid fire 404
+         // or if "else 500" is appended to the macro syntax then internal server error.
+        return true 
+    }
 })
 ```
 
-At the `func(argument ...)` you can have any standard type, it will be validated before the server starts so don't care about any performance cost there, the only thing it runs at serve time is the returning `func(paramValue string) bool`.
+At the `func(argument ...)` you can have any standard type, it will be validated before the server starts so don't care about any performance cost there, the only thing it runs at serve time is the returning `func(paramValue <T>) bool`.
 
 ```go
 {param:string equal(iris)}
 ```
 The "iris" will be the argument here:
 ```go
-app.Macros().String.RegisterFunc("equal", func(argument string) func(paramValue string) bool {
+app.Macros().Get("string").RegisterFunc("equal", func(argument string) func(paramValue string) bool {
     return func(paramValue string){ return argument == paramValue }
 })
 ```
@@ -249,20 +288,16 @@ app.Get("/username/{name}", func(ctx iris.Context) {
     ctx.Writef("Hello %s", ctx.Params().Get("name"))
 }) // type is missing = {name:string}
 
-// Let's register our first macro attached to number macro type.
+// Let's register our first macro attached to int macro type.
 // "min" = the function
 // "minValue" = the argument of the function
-// func(string) bool = the macro's path parameter evaluator, this executes in serve time when
-// a user requests a path which contains the :number macro type with the min(...) macro parameter function.
-app.Macros().Number.RegisterFunc("min", func(minValue int) func(string) bool {
+// func(<T>) bool = the macro's path parameter evaluator, this executes in serve time when
+// a user requests a path which contains the :int macro type with the min(...) macro parameter function.
+app.Macros().Get("int").RegisterFunc("min", func(minValue int) func(int) bool {
     // do anything before serve here [...]
     // at this case we don't need to do anything
-    return func(paramValue string) bool {
-        n, err := strconv.Atoi(paramValue)
-        if err != nil {
-            return false
-        }
-        return n >= minValue
+    return func(paramValue int) bool {
+        return paramValue >= minValue
     }
 })
 
@@ -789,6 +824,32 @@ type Context interface {
     // IsStopped checks and returns true if the current position of the Context is 255,
     // means that the StopExecution() was called.
     IsStopped() bool
+    // OnConnectionClose registers the "cb" function which will fire (on its own goroutine, no need to be registered goroutine by the end-dev)
+    // when the underlying connection has gone away.
+    //
+    // This mechanism can be used to cancel long operations on the server
+    // if the client has disconnected before the response is ready.
+    //
+    // It depends on the `http#CloseNotify`.
+    // CloseNotify may wait to notify until Request.Body has been
+    // fully read.
+    //
+    // After the main Handler has returned, there is no guarantee
+    // that the channel receives a value.
+    //
+    // Finally, it reports whether the protocol supports pipelines (HTTP/1.1 with pipelines disabled is not supported).
+    // The "cb" will not fire for sure if the output value is false.
+    //
+    // Note that you can register only one callback for the entire request handler chain/per route.
+    //
+    // Look the `ResponseWriter#CloseNotifier` for more.
+    OnConnectionClose(fnGoroutine func()) bool
+    // OnClose registers the callback function "cb" to the underline connection closing event using the `Context#OnConnectionClose`
+    // and also in the end of the request handler using the `ResponseWriter#SetBeforeFlush`.
+    // Note that you can register only one callback for the entire request handler chain/per route.
+    //
+    // Look the `Context#OnConnectionClose` and `ResponseWriter#SetBeforeFlush` for more.
+    OnClose(cb func())
 
     //  +------------------------------------------------------------+
     //  | Current "user/request" storage                             |
@@ -868,8 +929,12 @@ type Context interface {
     //
     // Keep note that this checks the "User-Agent" request header.
     IsMobile() bool
+    // GetReferrer extracts and returns the information from the "Referer" header as specified
+    // in https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy
+    // or by the URL query parameter "referer".
+    GetReferrer() Referrer
     //  +------------------------------------------------------------+
-    //  | Response Headers helpers                                   |
+    //  | Headers helpers                                            |
     //  +------------------------------------------------------------+
 
     // Header adds a header to the response writer.
@@ -880,16 +945,18 @@ type Context interface {
     // GetContentType returns the response writer's header value of "Content-Type"
     // which may, setted before with the 'ContentType'.
     GetContentType() string
+    // GetContentType returns the request's header value of "Content-Type".
+    GetContentTypeRequested() string
 
     // GetContentLength returns the request's header value of "Content-Length".
     // Returns 0 if header was unable to be found or its value was not a valid number.
     GetContentLength() int64
 
     // StatusCode sets the status code header to the response.
-    // Look .GetStatusCode too.
+    // Look .`GetStatusCode` too.
     StatusCode(statusCode int)
     // GetStatusCode returns the current status code of the response.
-    // Look StatusCode too.
+    // Look `StatusCode` too.
     GetStatusCode() int
 
     // Redirect sends a redirect response to the client
@@ -924,6 +991,9 @@ type Context interface {
     // URLParamIntDefault returns the url query parameter as int value from a request,
     // if not found or parse failed then "def" is returned.
     URLParamIntDefault(name string, def int) int
+    // URLParamInt32Default returns the url query parameter as int32 value from a request,
+    // if not found or parse failed then "def" is returned.
+    URLParamInt32Default(name string, def int32) int32
     // URLParamInt64 returns the url query parameter as int64 value from a request,
     // returns -1 and an error if parse failed.
     URLParamInt64(name string) (int64, error)
@@ -1071,6 +1141,10 @@ type Context interface {
     // Examples of usage: context.ReadJSON, context.ReadXML.
     //
     // Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-custom-via-unmarshaler/main.go
+    //
+    // UnmarshalBody does not check about gzipped data.
+    // Do not rely on compressed data incoming to your server. The main reason is: https://en.wikipedia.org/wiki/Zip_bomb
+    // However you are still free to read the `ctx.Request().Body io.Reader` manually.
     UnmarshalBody(outPtr interface{}, unmarshaler Unmarshaler) error
     // ReadJSON reads JSON from request's body and binds it to a pointer of a value of any json-valid type.
     //
@@ -1081,7 +1155,8 @@ type Context interface {
     // Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-xml/main.go
     ReadXML(xmlObjectPtr interface{}) error
     // ReadForm binds the formObject  with the form data
-    // it supports any kind of struct.
+    // it supports any kind of type, including custom structs.
+    // It will return nothing if request data are empty.
     //
     // Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-form/main.go
     ReadForm(formObjectPtr interface{}) error
