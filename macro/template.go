@@ -54,14 +54,23 @@ func (p TemplateParam) preComputed() TemplateParam {
 	return p
 }
 
+// CanEval returns true if this "p" TemplateParam should be evaluated in serve time.
+// It is computed before server ran and it is used to determinate if a route needs to build a macro handler (middleware).
 func (p *TemplateParam) CanEval() bool {
 	return p.canEval
 }
 
-// paramChanger is the same form of context's Params().Set
+// Eval is the most critical part of the TEmplateParam.
+// It is responsible to return "passed:true" or "not passed:false"
+// if the "paramValue" is the correct type of the registered parameter type
+// and all functions, if any, are passed.
+// "paramChanger" is the same form of context's Params().Set
 // we could accept a memstore.Store or even context.RequestParams
 // but this form has been chosed in order to test easier and fully decoupled from a request when necessary.
-func (p *TemplateParam) Eval(paramValue string, paramChanger memstore.ValueSetter) bool {
+//
+// It is called from the converted macro handler (middleware)
+// from the higher-level component of "kataras/iris/macro/handler#MakeHandler".
+func (p *TemplateParam) Eval(paramValue string, paramSetter memstore.ValueSetter) bool {
 	if p.TypeEvaluator == nil {
 		for _, fn := range p.stringInFuncs {
 			if !fn(paramValue) {
@@ -87,7 +96,7 @@ func (p *TemplateParam) Eval(paramValue string, paramChanger memstore.ValueSette
 		}
 	}
 
-	paramChanger.Set(p.Name, newValue)
+	paramSetter.Set(p.Name, newValue)
 	return true
 }
 

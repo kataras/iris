@@ -402,6 +402,9 @@ var (
 	// Should be living in the latest path segment of a route path.
 	Path = NewMacro("path", "", false, true, nil)
 
+	// Defaults contains the defaults macro and parameters types for the router.
+	//
+	// Read https://github.com/kataras/iris/tree/master/_examples/routing/macros for more details.
 	Defaults = &Macros{
 		String,
 		Int,
@@ -420,8 +423,18 @@ var (
 	}
 )
 
+// Macros is just a type of a slice of *Macro
+// which is responsible to register and search for macros based on the indent(parameter type).
 type Macros []*Macro
 
+// Register registers a custom Macro.
+// The "indent" should not be empty and should be unique, it is the parameter type's name, i.e "string".
+// The "alias" is optionally and it should be unique, it is the alias of the parameter type.
+// "isMaster" and "isTrailing" is for default parameter type and wildcard respectfully.
+// The "evaluator" is the function that is converted to an Iris handler which is executed every time
+// before the main chain of a route's handlers that contains this macro of the specific parameter type.
+//
+// Read https://github.com/kataras/iris/tree/master/_examples/routing/macros for more details.
 func (ms *Macros) Register(indent, alias string, isMaster, isTrailing bool, evaluator ParamEvaluator) *Macro {
 	macro := NewMacro(indent, alias, isMaster, isTrailing, evaluator)
 	if ms.register(macro) {
@@ -460,6 +473,7 @@ func (ms *Macros) register(macro *Macro) bool {
 	return true
 }
 
+// Unregister removes a macro and its parameter type from the list.
 func (ms *Macros) Unregister(indent string) bool {
 	cp := *ms
 
@@ -477,6 +491,7 @@ func (ms *Macros) Unregister(indent string) bool {
 	return false
 }
 
+// Lookup returns the responsible macro for a parameter type, it can return nil.
 func (ms *Macros) Lookup(pt ast.ParamType) *Macro {
 	if m := ms.Get(pt.Indent()); m != nil {
 		return m
@@ -491,6 +506,7 @@ func (ms *Macros) Lookup(pt ast.ParamType) *Macro {
 	return nil
 }
 
+// Get returns the responsible macro for a parameter type, it can return nil.
 func (ms *Macros) Get(indentOrAlias string) *Macro {
 	if indentOrAlias == "" {
 		return nil
@@ -509,6 +525,8 @@ func (ms *Macros) Get(indentOrAlias string) *Macro {
 	return nil
 }
 
+// GetMaster returns the default macro and its parameter type,
+// by default it will return the `String` macro which is responsible for the "string" parameter type.
 func (ms *Macros) GetMaster() *Macro {
 	for _, m := range *ms {
 		if m.Master() {
@@ -519,6 +537,8 @@ func (ms *Macros) GetMaster() *Macro {
 	return nil
 }
 
+// GetTrailings returns the macros that have support for wildcards parameter types.
+// By default it will return the `Path` macro which is responsible for the "path" parameter type.
 func (ms *Macros) GetTrailings() (macros []*Macro) {
 	for _, m := range *ms {
 		if m.Trailing() {
