@@ -90,6 +90,18 @@ func (r RequestParams) GetIntUnslashed(key string) (int, bool) {
 }
 
 var (
+	// ParamResolvers is the global param resolution for a parameter type for a specific go std or custom type.
+	//
+	// Key is the specific type, which should be unique.
+	// The value is a function which accepts the parameter index
+	// and it should return the value as the parameter type evaluator expects it.
+	// i.e [reflect.TypeOf("string")] = func(paramIndex int) interface{} {
+	//     return func(ctx Context) <T> {
+	//         return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(<T>)
+	//     }
+	// }
+	//
+	// Read https://github.com/kataras/iris/tree/master/_examples/routing/macros for more details.
 	ParamResolvers = map[reflect.Type]func(paramIndex int) interface{}{
 		reflect.TypeOf(""): func(paramIndex int) interface{} {
 			return func(ctx Context) string {

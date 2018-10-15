@@ -9,15 +9,12 @@ import (
 	"unicode"
 )
 
-// EvaluatorFunc is the signature for both param types and param funcs.
-// It should accepts the param's value as string
-// and return true if validated otherwise false.
-// type EvaluatorFunc func(paramValue string) bool
-// type BinderFunc func(paramValue string) interface{}
-
 type (
+	// ParamEvaluator is the signature for param type evaluator.
+	// It accepts the param's value as string and returns
+	// the <T> value (which its type is used for the input argument of the parameter functions, if any)
+	// and a true value for passed, otherwise nil and false shoudl be returned.
 	ParamEvaluator func(paramValue string) (interface{}, bool)
-	// FuncEvaluator interface{} // i.e func(paramValue int) bool
 )
 
 var goodEvaluatorFuncs = []reflect.Type{
@@ -275,18 +272,25 @@ func NewMacro(indent, alias string, master, trailing bool, evaluator ParamEvalua
 	}
 }
 
+// Indent returns the name of the parameter type.
 func (m *Macro) Indent() string {
 	return m.indent
 }
 
+// Alias returns the alias of the parameter type, if any.
 func (m *Macro) Alias() string {
 	return m.alias
 }
 
+// Master returns true if that macro's parameter type is the
+// default one if not :type is followed by a parameter type inside the route path.
 func (m *Macro) Master() bool {
 	return m.master
 }
 
+// Trailing returns true if that macro's parameter type
+// is wildcard and can accept one or more path segments as one parameter value.
+// A wildcard should be registered in the last path segment only.
 func (m *Macro) Trailing() bool {
 	return m.trailing
 }
