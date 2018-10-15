@@ -95,7 +95,7 @@ func TestParseParam(t *testing.T) {
 	}{
 		{true,
 			ast.ParamStatement{
-				Src:  "{id:number min(1) max(5) else 404}",
+				Src:  "{id:int min(1) max(5) else 404}",
 				Name: "id",
 				Type: mustLookupParamType("number"),
 				Funcs: []ast.ParamFunc{
@@ -111,6 +111,7 @@ func TestParseParam(t *testing.T) {
 
 		{true,
 			ast.ParamStatement{
+				// test alias of int.
 				Src:  "{id:number range(1,5)}",
 				Name: "id",
 				Type: mustLookupParamType("number"),
@@ -163,7 +164,7 @@ func TestParseParam(t *testing.T) {
 			}}, // 6
 		{true,
 			ast.ParamStatement{
-				Src:  "{id:number even()}", // test param funcs without any arguments (LPAREN peek for RPAREN)
+				Src:  "{id:int even()}", // test param funcs without any arguments (LPAREN peek for RPAREN)
 				Name: "id",
 				Type: mustLookupParamType("number"),
 				Funcs: []ast.ParamFunc{
@@ -236,9 +237,9 @@ func TestParse(t *testing.T) {
 		valid              bool
 		expectedStatements []ast.ParamStatement
 	}{
-		{"/api/users/{id:number min(1) max(5) else 404}", true,
+		{"/api/users/{id:int min(1) max(5) else 404}", true,
 			[]ast.ParamStatement{{
-				Src:  "{id:number min(1) max(5) else 404}",
+				Src:  "{id:int min(1) max(5) else 404}",
 				Name: "id",
 				Type: paramTypeNumber,
 				Funcs: []ast.ParamFunc{

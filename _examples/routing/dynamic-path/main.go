@@ -35,7 +35,7 @@ func main() {
 	// anything
 	//
 	//  +-------------------------------+
-	//  | {param:int} or {param:number} |
+	//  | {param:int} or {param:int} |
 	//  +-------------------------------+
 	// int type
 	// both positive and negative numbers, any number of digits (ctx.Params().GetInt will limit the digits based on the host arch)
@@ -209,7 +209,7 @@ func main() {
 
 	// http://localhost:8080/game/a-zA-Z/level/42
 	// remember, alphabetical is lowercase or uppercase letters only.
-	app.Get("/game/{name:alphabetical}/level/{level:number}", func(ctx iris.Context) {
+	app.Get("/game/{name:alphabetical}/level/{level:int}", func(ctx iris.Context) {
 		ctx.Writef("name: %s | level: %s", ctx.Params().Get("name"), ctx.Params().Get("level"))
 	})
 

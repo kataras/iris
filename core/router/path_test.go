@@ -53,8 +53,8 @@ func TestSplitPath(t *testing.T) {
 			[]string{"/user", "/admin"}},
 		{"/single_no_params",
 			[]string{"/single_no_params"}},
-		{"/single/{id:number}",
-			[]string{"/single/{id:number}"}},
+		{"/single/{id:int}",
+			[]string{"/single/{id:int}"}},
 	}
 
 	equalSlice := func(s1 []string, s2 []string) bool {

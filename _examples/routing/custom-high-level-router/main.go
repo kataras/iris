@@ -37,7 +37,7 @@ func (r *customRouter) HandleRequest(ctx context.Context) {
 	parts := strings.Split(path, "/")[1:]
 	staticPath := "/" + parts[0]
 	for _, route := range r.provider.GetRoutes() {
-		if strings.HasPrefix(route.Path, staticPath) {
+		if strings.HasPrefix(route.Path, staticPath) && route.Method == ctx.Method() {
 			paramParts := parts[1:]
 			for _, paramValue := range paramParts {
 				for _, p := range route.Tmpl().Params {

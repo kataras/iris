@@ -56,7 +56,7 @@ func genPaths(routesLength, minCharLength, maxCharLength int) []string {
 		b.WriteString(randStringBytesMaskImprSrc(pathSegmentCharsLength))
 		b.WriteString("/{name:string}/") // sugar.
 		b.WriteString(randStringBytesMaskImprSrc(pathSegmentCharsLength))
-		b.WriteString("/{age:number}/end")
+		b.WriteString("/{age:int}/end")
 		paths[i] = b.String()
 
 		b.Reset()

@@ -113,7 +113,7 @@ func main() {
 
 | Param Type | Go Type | Validation | Retrieve Helper |
 | -----------------|------|-------------|------|
-| `:string` | string | anything | `Params().Get` |
+| `:string` | string | anything (single path segment) | `Params().Get` |
 | `:int` | int | -9223372036854775808 to 9223372036854775807 (x64) or -2147483648 to 2147483647 (x32), depends on the host arch | `Params().GetInt` |
 | `:int8` | int8 | -128 to 127 | `Params().GetInt8` |
 | `:int16` | int16 | -32768 to 32767 | `Params().GetInt16` |

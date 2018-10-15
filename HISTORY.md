@@ -22,29 +22,41 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 ## Breaking changes
 
 - Remove the "Configurator" `WithoutVersionChecker` and the configuration field `DisableVersionChecker`
-- `:int` (or its new alias `:number`) macro route path parameter type **can accept negative numbers now**. Recommendation: `:int` should be replaced with the more generic numeric parameter type `:number` if possible (although it will stay for backwards-compatibility)
+- `:int` (or its new alias `:number`) macro route path parameter type **can accept negative numbers now**. Recommendation: `:int` should be replaced with the more generic numeric parameter type `:int` if possible (although it will stay for backwards-compatibility)
 
 ## Routing
 
-- `:number` parameter type as an alias to the old `:int` which can accept any numeric path segment now, both negative and positive numbers and without digits limitation
+- `:int` parameter type as an alias to the old `:int` which can accept any numeric path segment now, both negative and positive numbers
+- Add `:int8` parameter type and `ctx.Params().GetInt8`
+- Add `:int16` parameter type and `ctx.Params().GetInt16`
+- Add `:int32` parameter type and `ctx.Params().GetInt32`
 - Add `:int64` parameter type and `ctx.Params().GetInt64`
+- Add `:uint` parameter type and `ctx.Params().GetUint`
 - Add `:uint8` parameter type and `ctx.Params().GetUint8`
+- Add `:uint16` parameter type and `ctx.Params().GetUint16`
+- Add `:uint32` parameter type and `ctx.Params().GetUint32`
 - Add `:uint64` parameter type and `ctx.Params().GetUint64`
-- `:bool` parameter type as an alias for `:boolean`
+- Add alias `:bool` for the `:boolean` parameter type
 
 Here is the full list of the built'n parameter types that we support now, including their validations/path segment rules.
 
-| Param Type | Go Type | Validation |
-| -----------|---------|------------|
-| `:string` | string | anything |
-| `:number` | uint, uint8, uint16, uint32, uint64, int, int8, int32, int64 | positive or negative number, any number of digits |
-| `:int64` | int64 | -9223372036854775808 to 9223372036854775807 |
-| `:uint8` | uint8 | 0 to 255 |
-| `:uint64` | uint64 | 0 to 18446744073709551615 |
-| `:bool` | bool | "1" or "t" or "T" or "TRUE" or "true" or "True" or "0" or "f" or "F" or "FALSE" or "false" or "False" |
-| `:alphabetical` | string | lowercase or uppercase letters |
-| `:file` | string | lowercase or uppercase letters, numbers, underscore (_), dash (-), point (.) and no spaces or other special characters that are not valid for filenames |
-| `:path` | string | anything, can be separated by slashes (path segments) but should be the last part of the route path |
+| Param Type | Go Type | Validation | Retrieve Helper |
+| -----------------|------|-------------|------|
+| `:string` | string | anything (single path segment) | `Params().Get` |
+| `:int` | int | -9223372036854775808 to 9223372036854775807 (x64) or -2147483648 to 2147483647 (x32), depends on the host arch | `Params().GetInt` |
+| `:int8` | int8 | -128 to 127 | `Params().GetInt8` |
+| `:int16` | int16 | -32768 to 32767 | `Params().GetInt16` |
+| `:int32` | int32 | -2147483648 to 2147483647 | `Params().GetInt32` |
+| `:int64` | int64 | -9223372036854775808 to 9223372036854775807 | `Params().GetInt64` |
+| `:uint` | uint | 0 to 18446744073709551615 (x64) or 0 to 4294967295 (x32), depends on the host arch | `Params().GetUint` |
+| `:uint8` | uint8 | 0 to 255 | `Params().GetUint8` |
+| `:uint16` | uint16 | 0 to 65535 | `Params().GetUint16` |
+| `:uint32` | uint32 | 0 to 4294967295 | `Params().GetUint32` |
+| `:uint64` | uint64 | 0 to 18446744073709551615 | `Params().GetUint64` |
+| `:bool` | bool | "1" or "t" or "T" or "TRUE" or "true" or "True" or "0" or "f" or "F" or "FALSE" or "false" or "False" | `Params().GetBool` |
+| `:alphabetical` | string | lowercase or uppercase letters | `Params().Get` |
+| `:file` | string | lowercase or uppercase letters, numbers, underscore (_), dash (-), point (.) and no spaces or other special characters that are not valid for filenames | `Params().Get` |
+| `:path` | string | anything, can be separated by slashes (path segments) but should be the last part of the route path | `Params().Get` | 
 
 **Usage**:
 
@@ -61,9 +73,9 @@ app.Get("/users/{id:uint64}", func(ctx iris.Context){
 | `prefix`(prefix string) | :string |
 | `suffix`(suffix string) | :string |
 | `contains`(s string) | :string |
-| `min`(minValue int or int8 or int16 or int32 or int64 or uint8 or uint16 or uint32 or uint64  or float32 or float64) | :string(char length), :number, :int64, :uint8, :uint64  |
-| `max`(maxValue int or int8 or int16 or int32 or int64 or uint8 or uint16 or uint32 or uint64  or float32 or float64) | :string(char length), :number, :int64, :uint8, :uint64 |
-| `range`(minValue, maxValue int or int8 or int16 or int32 or int64 or uint8 or uint16 or uint32 or uint64 or float32 or float64) | :number, :int64, :uint8, :uint64 |
+| `min`(minValue int or int8 or int16 or int32 or int64 or uint8 or uint16 or uint32 or uint64  or float32 or float64) | :string(char length), :int, :int8, :int16, :int32, :int64, :uint, :uint8, :uint16, :uint32, :uint64  |
+| `max`(maxValue int or int8 or int16 or int32 or int64 or uint8 or uint16 or uint32 or uint64 or float32 or float64) | :string(char length), :int, :int8, :int16, :int32, :int64, :uint, :uint8, :uint16, :uint32, :uint64 |
+| `range`(minValue, maxValue int or int8 or int16 or int32 or int64 or uint8 or uint16 or uint32 or uint64 or float32 or float64) | :int, :int8, :int16, :int32, :int64, :uint, :uint8, :uint16, :uint32, :uint64 |
 
 **Usage**:
 
