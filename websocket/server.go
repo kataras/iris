@@ -357,7 +357,7 @@ func (s *Server) emitMessage(from, to string, data []byte) {
 		s.mu.RUnlock()
 		if room != nil {
 			// it suppose to send the message to a specific room/or a user inside its own room
-			for _, connectionIDInsideRoom := range s.rooms[to] {
+			for _, connectionIDInsideRoom := range room {
 				if c, ok := s.getConnection(connectionIDInsideRoom); ok {
 					c.writeDefault(data) //send the message to the client(s)
 				} else {
