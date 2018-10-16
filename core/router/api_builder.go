@@ -12,17 +12,15 @@ import (
 	"github.com/kataras/iris/macro"
 )
 
-const (
-	// MethodNone is a Virtual method
-	// to store the "offline" routes.
-	MethodNone = "NONE"
-)
+// MethodNone is a Virtual method
+// to store the "offline" routes.
+const MethodNone = "NONE"
 
 var (
 	// AllMethods contains the valid http methods:
 	// "GET", "POST", "PUT", "DELETE", "CONNECT", "HEAD",
 	// "PATCH", "OPTIONS", "TRACE".
-	AllMethods = [...]string{
+	AllMethods = []string{
 		"GET",
 		"POST",
 		"PUT",

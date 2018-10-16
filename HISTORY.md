@@ -22,9 +22,15 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 ## Breaking changes
 
 - Remove the "Configurator" `WithoutVersionChecker` and the configuration field `DisableVersionChecker`
-- `:int` (or its new alias `:number`) macro route path parameter type **can accept negative numbers now**. Recommendation: `:int` should be replaced with the more generic numeric parameter type `:int` if possible (although it will stay for backwards-compatibility)
+- `:int` parameter type **can accept negative numbers now**.
+- `app.Macros().String/Int/Uint64/Path...RegisterFunc` should be replaced to: `app.Macros().Get("string" or "int" or "uint64" or "path" when "path" is the ":path" parameter type).RegisterFunc`, because you can now add custom macros and parameter types as well, see [here](_examples/routing/macros).
+- `RegisterFunc("min", func(paramValue string) bool {...})` should be replaced to `RegisterFunc("min", func(paramValue <T>) bool {...})`, the `paramValue` argument is now stored in the exact type the macro's type evaluator inits it, i.e `uint64` or `int` and so on, therefore you don't have to convert the parameter value each time (this should make your handlers with macro functions activated even faster now) 
 
 ## Routing
+
+The `github.com/kataras/iris/core/router.AllMethods` is now a variable that can be altered by end-developers, so things like `app.Any` can register to custom methods as well, as requested at: https://github.com/kataras/iris/issues/1102. For example, import that package and do `router.AllMethods = append(router.AllMethods, "LINK")` in your `main` or `init` function.
+
+The old `github.com/kataras/iris/core/router/macro` package was moved to `guthub.com/kataras/iris/macro` to allow end-developers to add custom parameter types and macros, it supports all go standard types by default as you will see below.
 
 - `:int` parameter type as an alias to the old `:int` which can accept any numeric path segment now, both negative and positive numbers
 - Add `:int8` parameter type and `ctx.Params().GetInt8`
