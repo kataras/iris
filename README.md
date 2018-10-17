@@ -1,3 +1,9 @@
+# ⚡️ The upcoming release is in-progress
+
+Please stay tuned by following its changelog before its official release. Click [here](https://github.com/kataras/iris/blob/v11/HISTORY.md#whenever--v1100) to read more about the upcoming release, version 11.
+
+> And, for the craziest of us, click [here](https://github.com/kataras/iris/compare/v10.7.0...v11) 🔥 to find out the commits and the code changes since current v10 
+
 # Iris Web Framework <a href="README_ZH.md"> <img width="20px" src="https://iris-go.com/images/flag-china.svg?v=10" /></a> <a href="README_RU.md"><img width="20px" src="https://iris-go.com/images/flag-russia.svg?v=10" /></a> <a href="README_ID.md"> <img width="20px" src="https://iris-go.com/images/flag-indonesia.svg?v=10" /></a> <a href="README_GR.md"><img width="20px" src="https://iris-go.com/images/flag-greece.svg?v=10" /></a> <a href="README_PT_BR.md"><img width="20px" src="https://iris-go.com/images/flag-pt-br.svg?v=10" /></a> <a href="README_JPN.md"><img width="20px" src="https://iris-go.com/images/flag-japan.svg?v=10" /></a>
 
 <a href="https://iris-go.com"> <img align="right" width="169px" src="https://iris-go.com/images/icon.svg?v=a" title="logo created by @merry.dii" /> </a>
