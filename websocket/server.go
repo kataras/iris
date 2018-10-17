@@ -52,9 +52,9 @@ type (
 func New(cfg Config) *Server {
 	cfg = cfg.Validate()
 	return &Server{
-		config:      cfg,
-		connections: sync.Map{}, // ready-to-use, this is not necessary.
-		rooms:       make(map[string][]string),
+		config:                cfg,
+		connections:           sync.Map{}, // ready-to-use, this is not necessary.
+		rooms:                 make(map[string][]string),
 		onConnectionListeners: make([]ConnectionFunc, 0),
 		upgrader: websocket.Upgrader{
 			HandshakeTimeout:  cfg.HandshakeTimeout,
@@ -352,9 +352,12 @@ func (s *Server) GetConnectionsByRoom(roomName string) []Connection {
 // let's keep it unexported for the best.
 func (s *Server) emitMessage(from, to string, data []byte) {
 	if to != All && to != Broadcast {
-		if s.rooms[to] != nil {
+		s.mu.RLock()
+		room := s.rooms[to]
+		s.mu.RUnlock()
+		if room != nil {
 			// it suppose to send the message to a specific room/or a user inside its own room
-			for _, connectionIDInsideRoom := range s.rooms[to] {
+			for _, connectionIDInsideRoom := range room {
 				if c, ok := s.getConnection(connectionIDInsideRoom); ok {
 					c.writeDefault(data) //send the message to the client(s)
 				} else {
