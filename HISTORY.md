@@ -28,6 +28,87 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 ## Routing
 
+I wrote a [new router implementation](https://github.com/kataras/muxie#philosophy) for our Iris internal(low-level) routing mechanism, it is good to know that this was the second time we have updated the router internals without a single breaking change after the v6, thanks to the very well-writen and designed-first code we have for the high-level path syntax component called [macro interpreter](macro/interpreter).
+
+The new router supports things like **closest wildcard resolution**.
+
+> If the name doesn't sound good to you it is because I named that feature myself, I don't know any other framework or router that supports a thing like that so be gentle:)
+
+Previously you couldn't register routes like: `/{myparam:path}` and `/static` and `/{myparam:string}` and `/{myparam:string}/static` and `/static/{myparam:string}` all in one path prefix without a "decision handler". And generally if you had a wildcard it was possible to add (a single) static part and (a single) named parameter but not without performance cost and limits, why only one? (one is better than nothing: look the Iris' alternatives) We struggle to overcome our own selves, now you **can definitely do it without a bit of performance cost**, and surely we hand't imagine the wildcard to **catch all if nothing else found** without huge routing performance cost, the wildcard(`:path`) meant ONLY: "accept one or more path segments and put them into the declared parameter" so if you had register a dynamic single-path-segment named parameter like `:string, :int, :uint, :alphabetical...` in between those path segments it wouldn't work. The **closest wildcard resolution** offers you the opportunity to design your APIs even better via custom handlers and error handlers like `404 not found` to path prefixes for your API's groups, now you can do it without any custom code for path resolution inside a "decision handler" or a middleware.
+
+Code worths 1000 words, now it is possible to define your routes like this without any issues:
+
+```go
+package main
+
+import (
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
+)
+
+func main() {
+	app := iris.New()
+
+	// matches everyhing if nothing else found,
+	// so you can use it for custom 404 root-level/main pages!
+	app.Get("/{p:path}", func(ctx context.Context) {
+		path := ctx.Params().Get("p")
+		// gives the path without the first "/".
+		ctx.Writef("Site Custom 404 Error Message\nPage of: '%s' not found", path)
+	})
+
+	app.Get("/", indexHandler)
+
+	// request: http://localhost:8080/profile
+	// response: "Profile Index"
+	app.Get("/profile", func(ctx context.Context) {
+		ctx.Writef("Profile Index")
+	})
+
+	// request: http://localhost:8080/profile/kataras
+	// response: "Profile of username: 'kataras'"
+	app.Get("/profile/{username}", func(ctx context.Context) {
+		username := ctx.Params().Get("username")
+		ctx.Writef("Profile of username: '%s'", username)
+	})
+
+	// request: http://localhost:8080/profile/settings
+	// response: "Profile personal settings"
+	app.Get("/profile/settings", func(ctx context.Context) {
+		ctx.Writef("Profile personal settings")
+	})
+
+	// request: http://localhost:8080/profile/settings/security
+	// response: "Profile personal security settings"
+	app.Get("/profile/settings/security", func(ctx context.Context) {
+		ctx.Writef("Profile personal security settings")
+	})
+
+	// matches everyhing /profile/*somethng_here*
+	// if no other route matches the path semgnet after the
+	// /profile or /profile/
+	//
+	// So, you can use it for custom 404 profile pages
+	// side-by-side to your root wildcard without issues!
+	// For example:
+	// request: http://localhost:8080/profile/kataras/what
+	// response:
+	// Profile Page Custom 404 Error Message
+	// Profile Page of: 'kataras/what' was unable to be found
+	app.Get("/profile/{p:path}", func(ctx context.Context) {
+		path := ctx.Params().Get("p")
+		ctx.Writef("Profile Page Custom 404 Error Message\nProfile Page of: '%s' not found", path)
+	})
+
+	app.Run(iris.Addr(":8080"))
+}
+
+func indexHandler(ctx context.Context) {
+	ctx.HTML("This is the <strong>index page</strong>")
+}
+
+``` 
+
 The `github.com/kataras/iris/core/router.AllMethods` is now a variable that can be altered by end-developers, so things like `app.Any` can register to custom methods as well, as requested at: https://github.com/kataras/iris/issues/1102. For example, import that package and do `router.AllMethods = append(router.AllMethods, "LINK")` in your `main` or `init` function.
 
 The old `github.com/kataras/iris/core/router/macro` package was moved to `guthub.com/kataras/iris/macro` to allow end-developers to add custom parameter types and macros, it supports all go standard types by default as you will see below.
@@ -48,7 +129,7 @@ Here is the full list of the built'n parameter types that we support now, includ
 
 | Param Type | Go Type | Validation | Retrieve Helper |
 | -----------------|------|-------------|------|
-| `:string` | string | anything (single path segment) | `Params().Get` |
+| `:string` | string | the default if param type is missing, anything (single path segment) | `Params().Get` |
 | `:int` | int | -9223372036854775808 to 9223372036854775807 (x64) or -2147483648 to 2147483647 (x32), depends on the host arch | `Params().GetInt` |
 | `:int8` | int8 | -128 to 127 | `Params().GetInt8` |
 | `:int16` | int16 | -32768 to 32767 | `Params().GetInt16` |
