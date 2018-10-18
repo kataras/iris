@@ -2864,12 +2864,10 @@ func (ctx *context) JSON(v interface{}, opts ...JSON) (n int, err error) {
 		options = opts[0]
 	}
 
-	optimize := ctx.shouldOptimize()
-
 	ctx.ContentType(ContentJSONHeaderValue)
 
 	if options.StreamingJSON {
-		if optimize {
+		if ctx.shouldOptimize() {
 			var jsoniterConfig = jsoniter.Config{
 				EscapeHTML:    !options.UnescapeHTML,
 				IndentionStep: 4,
@@ -2890,7 +2888,7 @@ func (ctx *context) JSON(v interface{}, opts ...JSON) (n int, err error) {
 		return ctx.writer.Written(), err
 	}
 
-	n, err = WriteJSON(ctx.writer, v, options, optimize)
+	n, err = WriteJSON(ctx.writer, v, options, ctx.shouldOptimize())
 	if err != nil {
 		ctx.StatusCode(http.StatusInternalServerError)
 		return 0, err
