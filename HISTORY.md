@@ -25,6 +25,7 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 - `:int` parameter type **can accept negative numbers now**.
 - `app.Macros().String/Int/Uint64/Path...RegisterFunc` should be replaced to: `app.Macros().Get("string" or "int" or "uint64" or "path" when "path" is the ":path" parameter type).RegisterFunc`, because you can now add custom macros and parameter types as well, see [here](_examples/routing/macros).
 - `RegisterFunc("min", func(paramValue string) bool {...})` should be replaced to `RegisterFunc("min", func(paramValue <T>) bool {...})`, the `paramValue` argument is now stored in the exact type the macro's type evaluator inits it, i.e `uint64` or `int` and so on, therefore you don't have to convert the parameter value each time (this should make your handlers with macro functions activated even faster now) 
+- The `Context#ReadForm` will no longer return an error if it has no value to read from the request, we let those checks to the caller and validators as requested at: https://github.com/kataras/iris/issues/1095 by [@haritsfahreza](https://github.com/haritsfahreza)
 
 ## Routing
 
@@ -42,69 +43,69 @@ Code worths 1000 words, now it is possible to define your routes like this witho
 package main
 
 import (
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
+    "github.com/kataras/iris"
+    "github.com/kataras/iris/context"
 )
 
 func main() {
-	app := iris.New()
+    app := iris.New()
 
-	// matches everyhing if nothing else found,
-	// so you can use it for custom 404 root-level/main pages!
-	app.Get("/{p:path}", func(ctx context.Context) {
-		path := ctx.Params().Get("p")
-		// gives the path without the first "/".
-		ctx.Writef("Site Custom 404 Error Message\nPage of: '%s' not found", path)
-	})
+    // matches everyhing if nothing else found,
+    // so you can use it for custom 404 root-level/main pages!
+    app.Get("/{p:path}", func(ctx context.Context) {
+        path := ctx.Params().Get("p")
+        // gives the path without the first "/".
+        ctx.Writef("Site Custom 404 Error Message\nPage of: '%s' not found", path)
+    })
 
-	app.Get("/", indexHandler)
+    app.Get("/", indexHandler)
 
-	// request: http://localhost:8080/profile
-	// response: "Profile Index"
-	app.Get("/profile", func(ctx context.Context) {
-		ctx.Writef("Profile Index")
-	})
+    // request: http://localhost:8080/profile
+    // response: "Profile Index"
+    app.Get("/profile", func(ctx context.Context) {
+        ctx.Writef("Profile Index")
+    })
 
-	// request: http://localhost:8080/profile/kataras
-	// response: "Profile of username: 'kataras'"
-	app.Get("/profile/{username}", func(ctx context.Context) {
-		username := ctx.Params().Get("username")
-		ctx.Writef("Profile of username: '%s'", username)
-	})
+    // request: http://localhost:8080/profile/kataras
+    // response: "Profile of username: 'kataras'"
+    app.Get("/profile/{username}", func(ctx context.Context) {
+        username := ctx.Params().Get("username")
+        ctx.Writef("Profile of username: '%s'", username)
+    })
 
-	// request: http://localhost:8080/profile/settings
-	// response: "Profile personal settings"
-	app.Get("/profile/settings", func(ctx context.Context) {
-		ctx.Writef("Profile personal settings")
-	})
+    // request: http://localhost:8080/profile/settings
+    // response: "Profile personal settings"
+    app.Get("/profile/settings", func(ctx context.Context) {
+        ctx.Writef("Profile personal settings")
+    })
 
-	// request: http://localhost:8080/profile/settings/security
-	// response: "Profile personal security settings"
-	app.Get("/profile/settings/security", func(ctx context.Context) {
-		ctx.Writef("Profile personal security settings")
-	})
+    // request: http://localhost:8080/profile/settings/security
+    // response: "Profile personal security settings"
+    app.Get("/profile/settings/security", func(ctx context.Context) {
+        ctx.Writef("Profile personal security settings")
+    })
 
-	// matches everyhing /profile/*somethng_here*
-	// if no other route matches the path semgnet after the
-	// /profile or /profile/
-	//
-	// So, you can use it for custom 404 profile pages
-	// side-by-side to your root wildcard without issues!
-	// For example:
-	// request: http://localhost:8080/profile/kataras/what
-	// response:
-	// Profile Page Custom 404 Error Message
-	// Profile Page of: 'kataras/what' was unable to be found
-	app.Get("/profile/{p:path}", func(ctx context.Context) {
-		path := ctx.Params().Get("p")
-		ctx.Writef("Profile Page Custom 404 Error Message\nProfile Page of: '%s' not found", path)
-	})
+    // matches everyhing /profile/*somethng_here*
+    // if no other route matches the path semgnet after the
+    // /profile or /profile/
+    //
+    // So, you can use it for custom 404 profile pages
+    // side-by-side to your root wildcard without issues!
+    // For example:
+    // request: http://localhost:8080/profile/kataras/what
+    // response:
+    // Profile Page Custom 404 Error Message
+    // Profile Page of: 'kataras/what' was unable to be found
+    app.Get("/profile/{p:path}", func(ctx context.Context) {
+        path := ctx.Params().Get("p")
+        ctx.Writef("Profile Page Custom 404 Error Message\nProfile Page of: '%s' not found", path)
+    })
 
-	app.Run(iris.Addr(":8080"))
+    app.Run(iris.Addr(":8080"))
 }
 
 func indexHandler(ctx context.Context) {
-	ctx.HTML("This is the <strong>index page</strong>")
+    ctx.HTML("This is the <strong>index page</strong>")
 }
 
 ``` 
