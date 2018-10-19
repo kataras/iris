@@ -5,6 +5,7 @@ os:
 go:
   - "go1.9"
   - "go1.10"
+  - "go1.11"
 go_import_path: github.com/kataras/iris
 # we disable test caching via GOCACHE=off
 env:
