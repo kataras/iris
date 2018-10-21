@@ -27,7 +27,7 @@ Many articles have been written, in the past, that lead developers not to use a 
 You’ll need two dependencies:
 
 1. Vue.js, for our client-side requirements. Download it from [here](https://vuejs.org/), latest v2.
-2. The Iris Web Framework, for our server-side requirements. Can be found [here](https://github.com/kataras/iris), latest v10.
+2. The Iris Web Framework, for our server-side requirements. Can be found [here](https://github.com/kataras/iris), latest v11.
 
 > If you have Go already installed then just execute `go get -u github.com/kataras/iris` to install the Iris Web Framework.
 
