@@ -45,7 +45,7 @@ func (tn *trieNode) hasChild(s string) bool {
 
 func (tn *trieNode) getChild(s string) *trieNode {
 	if tn.children == nil {
-		tn.children = make(map[string]*trieNode)
+		return nil
 	}
 
 	return tn.children[s]
@@ -87,6 +87,7 @@ type trie struct {
 	// if true then it will handle any path if not other parent wildcard exists,
 	// so even 404 (on http services) is up to it, see trie#insert.
 	hasRootWildcard bool
+	hasRootSlash    bool
 
 	method string
 	// subdomain is empty for default-hostname routes,
@@ -117,6 +118,10 @@ func (tr *trie) insert(path, routeName string, handlers context.Handlers) {
 	input := slowPathSplit(path)
 
 	n := tr.root
+	if path == pathSep {
+		tr.hasRootSlash = true
+	}
+
 	var paramKeys []string
 
 	for _, s := range input {
@@ -170,7 +175,15 @@ func (tr *trie) search(q string, params *context.RequestParams) *trieNode {
 	end := len(q)
 
 	if end == 0 || (end == 1 && q[0] == pathSepB) {
-		return tr.root.getChild(pathSep)
+		// fixes only root wildcard but no / registered at.
+		if tr.hasRootSlash {
+			return tr.root.getChild(pathSep)
+		} else if tr.hasRootWildcard {
+			// no need to going through setting parameters, this one has not but it is wildcard.
+			return tr.root.getChild(WildcardParamStart)
+		}
+
+		return nil
 	}
 
 	n := tr.root
