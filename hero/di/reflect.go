@@ -54,6 +54,7 @@ func IsZero(v reflect.Value) bool {
 		// if can't interface, i.e return value from unexported field or method then return false
 		return false
 	}
+
 	zero := reflect.Zero(v.Type())
 	return v.Interface() == zero.Interface()
 }
@@ -62,7 +63,10 @@ func IsZero(v reflect.Value) bool {
 // If "v" is a nil pointer, Indirect returns a zero Value.
 // If "v" is not a pointer, Indirect returns v.
 func IndirectValue(v reflect.Value) reflect.Value {
-	return reflect.Indirect(v)
+	if k := v.Kind(); k == reflect.Ptr { //|| k == reflect.Interface {
+		return v.Elem()
+	}
+	return v
 }
 
 // ValueOf returns the reflect.Value of "o".
@@ -123,6 +127,11 @@ func equalTypes(got reflect.Type, expected reflect.Type) bool {
 		// fmt.Printf("expected interface = %s and got to set on the arg is: %s\n", expected.String(), got.String())
 		return got.Implements(expected)
 	}
+
+	// if got.String() == "interface {}"  {
+	// 	return true
+	// }
+
 	return false
 }
 
@@ -161,7 +170,6 @@ func lookupFields(elemTyp reflect.Type, skipUnexported bool, parentIndex []int) 
 
 	for i, n := 0, elemTyp.NumField(); i < n; i++ {
 		f := elemTyp.Field(i)
-
 		if IndirectType(f.Type).Kind() == reflect.Struct &&
 			!structFieldIgnored(f) {
 			fields = append(fields, lookupFields(f.Type, skipUnexported, append(parentIndex, i))...)

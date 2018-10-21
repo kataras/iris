@@ -6,10 +6,11 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/coreos/bbolt"
-	"github.com/kataras/golog"
 	"github.com/kataras/iris/core/errors"
 	"github.com/kataras/iris/sessions"
+
+	bolt "github.com/etcd-io/bbolt"
+	"github.com/kataras/golog"
 )
 
 // DefaultFileMode used as the default database's "fileMode"

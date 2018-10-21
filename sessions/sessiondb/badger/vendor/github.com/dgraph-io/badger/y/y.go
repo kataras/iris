@@ -31,6 +31,15 @@ import (
 // and encountering the end of slice.
 var ErrEOF = errors.New("End of mapped region")
 
+const (
+	// Sync indicates that O_DSYNC should be set on the underlying file,
+	// ensuring that data writes do not return until the data is flushed
+	// to disk.
+	Sync = 1 << iota
+	// ReadOnly opens the underlying file on a read-only basis.
+	ReadOnly
+)
+
 var (
 	// This is O_DSYNC (datasync) on platforms that support it -- see file_unix.go
 	datasyncFileFlag = 0x0
@@ -39,13 +48,17 @@ var (
 	CastagnoliCrcTable = crc32.MakeTable(crc32.Castagnoli)
 )
 
-// OpenExistingSyncedFile opens an existing file, errors if it doesn't exist.
-func OpenExistingSyncedFile(filename string, sync bool) (*os.File, error) {
-	flags := os.O_RDWR
-	if sync {
-		flags |= datasyncFileFlag
+// OpenExistingFile opens an existing file, errors if it doesn't exist.
+func OpenExistingFile(filename string, flags uint32) (*os.File, error) {
+	openFlags := os.O_RDWR
+	if flags&ReadOnly != 0 {
+		openFlags = os.O_RDONLY
 	}
-	return os.OpenFile(filename, flags, 0)
+
+	if flags&Sync != 0 {
+		openFlags |= datasyncFileFlag
+	}
+	return os.OpenFile(filename, openFlags, 0)
 }
 
 // CreateSyncedFile creates a new file (using O_EXCL), errors if it already existed.

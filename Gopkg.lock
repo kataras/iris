@@ -116,12 +116,6 @@
   revision = "825e39f34365e7db2c9fbc3692c16220e3bd7418"
 
 [[projects]]
-  branch = "v2"
-  name = "github.com/kataras/survey"
-  packages = [".","terminal","core"]
-  revision = "00934ae069eda15df26fa427ac393e67e239380c"
-
-[[projects]]
   name = "github.com/klauspost/compress"
   packages = ["flate","gzip"]
   revision = "6c8db69c4b49dd4df1fff66996cf556176d0b9bf"
@@ -276,6 +270,24 @@
   name = "github.com/Shopify/goreferrer"
   packages = ["."]
   revision = "aad8439df3bf67adb025382ee2e5f46a72fc9456"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/dgraph-io/badger"
+  packages = ["."]
+  revision = "99233d725dbdd26d156c61b2f42ae1671b794656"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/etcd-io/bbolt"
+  packages = ["."]
+  revision = "acbc2c426a444a65e0cbfdcbb3573857bf18b465"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/gomodule/redigo"
+  packages = ["internal","redis"]
+  revision = "2cd21d9966bf7ff9ae091419744f0b3fb0fecace"
 
 [solve-meta]
   analyzer-name = "dep"

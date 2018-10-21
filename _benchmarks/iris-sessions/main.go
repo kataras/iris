@@ -24,9 +24,7 @@ func main() {
 	 app.Delete("/del", delHandler)
 	*/
 
-	// 24 August 2017: Iris has a built'n version updater but we don't need it
-	// when benchmarking...
-	app.Run(iris.Addr(":5000"), iris.WithoutVersionChecker)
+	app.Run(iris.Addr(":5000"))
 }
 
 // Set and Get

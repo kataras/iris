@@ -35,11 +35,11 @@ Source code and other details for the project are available at GitHub:
 
 Current Version
 
-10.7.0
+11.0.0
 
 Installation
 
-The only requirement is the Go Programming Language, at least version 1.8 but 1.10 and above is highly recommended.
+The only requirement is the Go Programming Language, at least version 1.8 but 1.11.1 and above is highly recommended.
 
     $ go get -u github.com/kataras/iris
 
@@ -119,7 +119,7 @@ Example code:
         usersRoutes := app.Party("/users", logThisMiddleware)
         {
             // Method GET: http://localhost:8080/users/42
-            usersRoutes.Get("/{id:int min(1)}", getUserByID)
+            usersRoutes.Get("/{id:uint64 min(1)}", getUserByID)
             // Method POST: http://localhost:8080/users/create
             usersRoutes.Post("/create", createUser)
         }
@@ -146,7 +146,7 @@ Example code:
     }
 
     func getUserByID(ctx iris.Context) {
-        userID := ctx.Params().Get("id") // Or convert directly using: .Values().GetInt/GetInt64 etc...
+        userID := ctx.Params().Get("id") // Or convert directly using: .Values().GetInt/GetUint64/GetInt64 etc...
         // your own db fetch here instead of user :=...
         user := User{Username: "username" + userID}
 
@@ -489,7 +489,7 @@ Example code:
     users := app.Party("/users", myAuthMiddlewareHandler)
 
     // http://myhost.com/users/42/profile
-    users.Get("/{id:int}/profile", userProfileHandler)
+    users.Get("/{id:uint64}/profile", userProfileHandler)
     // http://myhost.com/users/messages/1
     users.Get("/inbox/{id:int}", userMessageHandler)
 
@@ -548,8 +548,8 @@ Example code:
         app.Get("/donate", donateHandler, donateFinishHandler)
 
         // Pssst, don't forget dynamic-path example for more "magic"!
-        app.Get("/api/users/{userid:int min(1)}", func(ctx iris.Context) {
-            userID, err := ctx.Params().GetInt("userid")
+        app.Get("/api/users/{userid:uint64 min(1)}", func(ctx iris.Context) {
+            userID, err := ctx.Params().GetUint64("userid")
 
             if err != nil {
                 ctx.Writef("error while trying to parse userid parameter," +
@@ -622,8 +622,8 @@ Example code:
                     ctx.Writef("All users")
                 })
                 // http://v1.localhost:8080/api/users/42
-                usersAPI.Get("/{userid:int}", func(ctx iris.Context) {
-                    ctx.Writef("user with id: %s", ctx.Params().Get("userid"))
+                usersAPI.Get("/{userid:uint64}", func(ctx iris.Context) {
+                    ctx.Writef("user with id: %s", ctx.Params().GetUint64("userid"))
                 })
             }
         }
@@ -709,23 +709,71 @@ Standard macro types for parameters:
     | {param:string}         |
     +------------------------+
     string type
-    anything
+    anything (single path segmnent)
 
-    +------------------------+
-    | {param:int}            |
-    +------------------------+
+    +-------------------------------+
+    | {param:int}                   |
+    +-------------------------------+
     int type
-    only numbers (0-9)
+    -9223372036854775808 to 9223372036854775807 (x64) or -2147483648 to 2147483647 (x32), depends on the host arch
 
     +------------------------+
-    | {param:long}           |
+    | {param:int8}           |
+    +------------------------+
+    int8 type
+    -128 to 127
+
+    +------------------------+
+    | {param:int16}          |
+    +------------------------+
+    int16 type
+    -32768 to 32767
+
+    +------------------------+
+    | {param:int32}          |
+    +------------------------+
+    int32 type
+    -2147483648 to 2147483647
+
+    +------------------------+
+    | {param:int64}          |
     +------------------------+
     int64 type
-    only numbers (0-9)
+    -9223372036854775808 to 9223372036854775807
 
     +------------------------+
-    | {param:boolean}        |
+    | {param:uint}           |
     +------------------------+
+    uint type
+    0 to 18446744073709551615 (x64) or 0 to 4294967295 (x32)
+
+    +------------------------+
+    | {param:uint8}          |
+    +------------------------+
+    uint8 type
+    0 to 255
+
+    +------------------------+
+    | {param:uint16}         |
+    +------------------------+
+    uint16 type
+    0 to 65535
+
+    +------------------------+
+    | {param:uint32}          |
+    +------------------------+
+    uint32 type
+    0 to 4294967295
+
+    +------------------------+
+    | {param:uint64}         |
+    +------------------------+
+    uint64 type
+    0 to 18446744073709551615
+
+    +---------------------------------+
+    | {param:bool} or {param:boolean} |
+    +---------------------------------+
     bool type
     only "1" or "t" or "T" or "TRUE" or "true" or "True"
     or "0" or "f" or "F" or "FALSE" or "false" or "False"
@@ -751,8 +799,8 @@ Standard macro types for parameters:
     | {param:path}           |
     +------------------------+
     path type
-    anything, should be the last part, more than one path segment,
-    i.e: /path1/path2/path3 , ctx.Params().Get("param") == "/path1/path2/path3"
+    anything, should be the last part, can be more than one path segment,
+    i.e: "/test/*param" and request: "/test/path1/path2/path3" , ctx.Params().Get("param") == "path1/path2/path3"
 
 if type is missing then parameter's type is defaulted to string, so
 {param} == {param:string}.
@@ -770,16 +818,18 @@ you are able to register your own too!.
 Register a named path parameter function:
 
 
-    app.Macros().Int.RegisterFunc("min", func(argument int) func(paramValue string) bool {
-        [...]
-        return true/false -> true means valid.
+    app.Macros().Get("int").RegisterFunc("min", func(argument int) func(paramValue int) bool {
+        return func(paramValue int) bool {
+            [...]
+            return true/false -> true means valid.
+        }
     })
 
 at the func(argument ...) you can have any standard type, it will be validated before the server starts
 so don't care about performance here, the only thing it runs at serve time is the returning func(paramValue string) bool.
 
     {param:string equal(iris)} , "iris" will be the argument here:
-    app.Macros().String.RegisterFunc("equal", func(argument string) func(paramValue string) bool {
+    app.Macros().Get("string").RegisterFunc("equal", func(argument string) func(paramValue string) bool {
         return func(paramValue string){ return argument == paramValue }
     })
 
@@ -795,38 +845,34 @@ Example Code:
 	// Let's register our first macro attached to int macro type.
 	// "min" = the function
 	// "minValue" = the argument of the function
-	// func(string) bool = the macro's path parameter evaluator, this executes in serve time when
-	// a user requests a path which contains the :int macro type with the min(...) macro parameter function.
-	app.Macros().Int.RegisterFunc("min", func(minValue int) func(string) bool {
+	// func(<T>) bool = the macro's path parameter evaluator, this executes in serve time when
+	// a user requests a path which contains the int macro type with the min(...) macro parameter function.
+	app.Macros().Get("int").RegisterFunc("min", func(minValue int) func(int) bool {
 		// do anything before serve here [...]
 		// at this case we don't need to do anything
-		return func(paramValue string) bool {
-			n, err := strconv.Atoi(paramValue)
-			if err != nil {
-				return false
-			}
-			return n >= minValue
+		return func(paramValue int) bool {
+			return paramValue >= minValue
 		}
 	})
 
 	// http://localhost:8080/profile/id>=1
 	// this will throw 404 even if it's found as route on : /profile/0, /profile/blabla, /profile/-1
 	// macro parameter functions are optional of course.
-	app.Get("/profile/{id:int min(1)}", func(ctx iris.Context) {
+	app.Get("/profile/{id:uint64 min(1)}", func(ctx iris.Context) {
 		// second parameter is the error but it will always nil because we use macros,
 		// the validaton already happened.
-		id, _ := ctx.Params().GetInt("id")
+		id, _ := ctx.Params().GetUint64("id")
 		ctx.Writef("Hello id: %d", id)
 	})
 
 	// to change the error code per route's macro evaluator:
-	app.Get("/profile/{id:int min(1)}/friends/{friendid:int min(1) else 504}", func(ctx iris.Context) {
-		id, _ := ctx.Params().GetInt("id")
-		friendid, _ := ctx.Params().GetInt("friendid")
+	app.Get("/profile/{id:uint64 min(1)}/friends/{friendid:uint64 min(1) else 504}", func(ctx iris.Context) {
+		id, _ := ctx.Params().GetUint64("id")
+		friendid, _ := ctx.Params().GetUint64("friendid")
 		ctx.Writef("Hello id: %d looking for friend id: ", id, friendid)
 	}) // this will throw e 504 error code instead of 404 if all route's macros not passed.
 
-	// http://localhost:8080/game/a-zA-Z/level/0-9
+	// http://localhost:8080/game/a-zA-Z/level/42
 	// remember, alphabetical is lowercase or uppercase letters only.
 	app.Get("/game/{name:alphabetical}/level/{level:int}", func(ctx iris.Context) {
 		ctx.Writef("name: %s | level: %s", ctx.Params().Get("name"), ctx.Params().Get("level"))
@@ -854,11 +900,6 @@ Example Code:
 	app.Run(iris.Addr(":8080"))
 }
 
-
-
-A path parameter name should contain only alphabetical letters, symbols, containing '_' and numbers are NOT allowed.
-If route failed to be registered, the app will panic without any warnings
-if you didn't catch the second return value(error) on .Handle/.Get....
 
 Last, do not confuse ctx.Values() with ctx.Params().
 Path parameter's values goes to ctx.Params() and context's local storage

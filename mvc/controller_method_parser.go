@@ -4,11 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"unicode"
 
 	"github.com/kataras/iris/core/router"
-	"github.com/kataras/iris/core/router/macro/interpreter/ast"
+	"github.com/kataras/iris/macro"
 )
 
 const (
@@ -95,47 +96,25 @@ func (l *methodLexer) peekPrev() (w string) {
 	return w
 }
 
-var posWords = map[int]string{
-	0:  "",
-	1:  "first",
-	2:  "second",
-	3:  "third",
-	4:  "forth",
-	5:  "five",
-	6:  "sixth",
-	7:  "seventh",
-	8:  "eighth",
-	9:  "ninth",
-	10: "tenth",
-	11: "eleventh",
-	12: "twelfth",
-	13: "thirteenth",
-	14: "fourteenth",
-	15: "fifteenth",
-	16: "sixteenth",
-	17: "seventeenth",
-	18: "eighteenth",
-	19: "nineteenth",
-	20: "twentieth",
-}
-
 func genParamKey(argIdx int) string {
-	return "arg" + posWords[argIdx] // argfirst, argsecond...
+	return "param" + strconv.Itoa(argIdx) // param0, param1, param2...
 }
 
 type methodParser struct {
-	lexer *methodLexer
-	fn    reflect.Method
+	lexer  *methodLexer
+	fn     reflect.Method
+	macros macro.Macros
 }
 
-func parseMethod(fn reflect.Method, skipper func(string) bool) (method, path string, err error) {
+func parseMethod(macros macro.Macros, fn reflect.Method, skipper func(string) bool) (method, path string, err error) {
 	if skipper(fn.Name) {
 		return "", "", errSkip
 	}
 
 	p := &methodParser{
-		fn:    fn,
-		lexer: newMethodLexer(fn.Name),
+		fn:     fn,
+		lexer:  newMethodLexer(fn.Name),
+		macros: macros,
 	}
 	return p.parse()
 }
@@ -211,34 +190,45 @@ func (p *methodParser) parsePathParam(path string, w string, funcArgPos int) (st
 
 	var (
 		paramKey  = genParamKey(funcArgPos) // argfirst, argsecond...
-		paramType = ast.ParamTypeString     // default string
+		m         = p.macros.GetMaster()    // default (String by-default)
+		trailings = p.macros.GetTrailings()
 	)
 
 	// string, int...
-	goType := typ.In(funcArgPos).Name()
+	goType := typ.In(funcArgPos).Kind()
 	nextWord := p.lexer.peekNext()
 
 	if nextWord == tokenWildcard {
 		p.lexer.skip() // skip the Wildcard word.
-		paramType = ast.ParamTypePath
-	} else if pType := ast.LookupParamTypeFromStd(goType); pType != ast.ParamTypeUnExpected {
-		// it's not wildcard, so check base on our available macro types.
-		paramType = pType
-	} else {
-		if typ.NumIn() > funcArgPos {
-			// has more input arguments but we are not in the correct
-			// index now, maybe the first argument was an `iris/context.Context`
-			// so retry with the "funcArgPos" incremented.
-			//
-			// the "funcArgPos" will be updated to the caller as well
-			// because we return it among the path and the error.
-			return p.parsePathParam(path, w, funcArgPos+1)
+		if len(trailings) == 0 {
+			return "", 0, errors.New("no trailing path parameter found")
 		}
-		return "", 0, errors.New("invalid syntax for " + p.fn.Name)
+		m = trailings[0]
+	} else {
+		// validMacros := p.macros.LookupForGoType(goType)
+
+		// instead of mapping with a reflect.Kind which has its limitation,
+		// we map the param types with a go type as a string,
+		// so custom structs such as "user" can be mapped to a macro with indent || alias == "user".
+		m = p.macros.Get(strings.ToLower(goType.String()))
+
+		if m == nil {
+			if typ.NumIn() > funcArgPos {
+				// has more input arguments but we are not in the correct
+				// index now, maybe the first argument was an `iris/context.Context`
+				// so retry with the "funcArgPos" incremented.
+				//
+				// the "funcArgPos" will be updated to the caller as well
+				// because we return it among the path and the error.
+				return p.parsePathParam(path, w, funcArgPos+1)
+			}
+
+			return "", 0, fmt.Errorf("invalid syntax: the standard go type: %s found in controller's function: %s at position: %d does not match any valid macro", goType, p.fn.Name, funcArgPos)
+		}
 	}
 
 	// /{argfirst:path}, /{argfirst:long}...
-	path += fmt.Sprintf("/{%s:%s}", paramKey, paramType.String())
+	path += fmt.Sprintf("/{%s:%s}", paramKey, m.Indent())
 
 	if nextWord == "" && typ.NumIn() > funcArgPos+1 {
 		// By is the latest word but func is expected
