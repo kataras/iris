@@ -168,11 +168,12 @@ func (tr *trie) insert(path, routeName string, handlers context.Handlers) {
 
 func (tr *trie) search(q string, params *context.RequestParams) *trieNode {
 	end := len(q)
-	n := tr.root
-	if end == 1 && q[0] == pathSepB {
-		return n.getChild(pathSep)
+
+	if end == 0 || (end == 1 && q[0] == pathSepB) {
+		return tr.root.getChild(pathSep)
 	}
 
+	n := tr.root
 	start := 1
 	i := 1
 	var paramValues []string
