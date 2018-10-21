@@ -132,9 +132,8 @@ func (s *FuncInjector) addValue(inputIndex int, value reflect.Value) bool {
 	}
 
 	if b.IsAssignable(inTyp) {
-		// println(inTyp.String() + " is assignable to " + val.Type().String())
 		// fmt.Printf("binded input index: %d for type: %s and value: %v with pointer: %v\n",
-		// 	i, b.Type.String(), value.String(), val.Pointer())
+		// 	i, b.Type.String(), inTyp.String(), inTyp.Pointer())
 		s.inputs = append(s.inputs, &targetFuncInput{
 			InputIndex: inputIndex,
 			Object:     &b,
@@ -194,8 +193,8 @@ func (s *FuncInjector) Inject(in *[]reflect.Value, ctx ...reflect.Value) {
 	args := *in
 	for _, input := range s.inputs {
 		input.Object.Assign(ctx, func(v reflect.Value) {
-			// fmt.Printf("assign input index: %d for value: %v\n",
-			// 	input.InputIndex, v.String())
+			// fmt.Printf("assign input index: %d for value: %v of type: %s\n",
+			// 	input.InputIndex, v.String(), v.Type().Name())
 			args[input.InputIndex] = v
 		})
 

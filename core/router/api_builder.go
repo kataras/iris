@@ -9,20 +9,18 @@ import (
 
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/errors"
-	"github.com/kataras/iris/core/router/macro"
+	"github.com/kataras/iris/macro"
 )
 
-const (
-	// MethodNone is a Virtual method
-	// to store the "offline" routes.
-	MethodNone = "NONE"
-)
+// MethodNone is a Virtual method
+// to store the "offline" routes.
+const MethodNone = "NONE"
 
 var (
 	// AllMethods contains the valid http methods:
 	// "GET", "POST", "PUT", "DELETE", "CONNECT", "HEAD",
 	// "PATCH", "OPTIONS", "TRACE".
-	AllMethods = [...]string{
+	AllMethods = []string{
 		"GET",
 		"POST",
 		"PUT",
@@ -68,7 +66,7 @@ func (r *repository) getAll() []*Route {
 // and child routers.
 type APIBuilder struct {
 	// the api builder global macros registry
-	macros *macro.Map
+	macros *macro.Macros
 	// the api builder global handlers per status code registry (used for custom http errors)
 	errorCodeHandlers *ErrorCodeHandlers
 	// the api builder global routes repository
@@ -116,7 +114,7 @@ var _ RoutesProvider = (*APIBuilder)(nil) // passed to the default request handl
 // which is responsible to build the API and the router handler.
 func NewAPIBuilder() *APIBuilder {
 	api := &APIBuilder{
-		macros:            defaultMacros(),
+		macros:            macro.Defaults,
 		errorCodeHandlers: defaultErrorCodeHandlers(),
 		reporter:          errors.NewReporter(),
 		relativePath:      "/",
@@ -246,7 +244,7 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 	)
 
 	for _, m := range methods {
-		route, err = NewRoute(m, subdomain, path, possibleMainHandlerName, routeHandlers, api.macros)
+		route, err = NewRoute(m, subdomain, path, possibleMainHandlerName, routeHandlers, *api.macros)
 		if err != nil { // template path parser errors:
 			api.reporter.Add("%v -> %s:%s:%s", err, method, subdomain, path)
 			return nil // fail on first error.
@@ -270,10 +268,10 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 // otherwise use `Party` which can handle many paths with different handlers and middlewares.
 //
 // Usage:
-// 	app.HandleMany("GET", "/user /user/{id:int} /user/me", genericUserHandler)
+// 	app.HandleMany("GET", "/user /user/{id:uint64} /user/me", genericUserHandler)
 // At the other side, with `Handle` we've had to write:
 // 	app.Handle("GET", "/user", userHandler)
-// 	app.Handle("GET", "/user/{id:int}", userByIDHandler)
+// 	app.Handle("GET", "/user/{id:uint64}", userByIDHandler)
 // 	app.Handle("GET", "/user/me", userMeHandler)
 //
 // This method is used behind the scenes at the `Controller` function
@@ -411,11 +409,11 @@ func (api *APIBuilder) WildcardSubdomain(middleware ...context.Handler) Party {
 	return api.Subdomain(SubdomainWildcardIndicator, middleware...)
 }
 
-// Macros returns the macro map which is responsible
-// to register custom macro functions for all routes.
+// Macros returns the macro collection that is responsible
+// to register custom macros with their own parameter types and their macro functions for all routes.
 //
 // Learn more at:  https://github.com/kataras/iris/tree/master/_examples/routing/dynamic-path
-func (api *APIBuilder) Macros() *macro.Map {
+func (api *APIBuilder) Macros() *macro.Macros {
 	return api.macros
 }
 

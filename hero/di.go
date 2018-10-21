@@ -8,6 +8,17 @@ import (
 
 func init() {
 	di.DefaultHijacker = func(fieldOrFuncInput reflect.Type) (*di.BindObject, bool) {
+		// if IsExpectingStore(fieldOrFuncInput) {
+		// 	return &di.BindObject{
+		// 		Type:     memstoreTyp,
+		// 		BindType: di.Dynamic,
+		// 		ReturnValue: func(ctxValue []reflect.Value) reflect.Value {
+		// 			// return ctxValue[0].MethodByName("Params").Call(di.EmptyIn)[0]
+		// 			return ctxValue[0].MethodByName("Params").Call(di.EmptyIn)[0].Field(0) // the Params' memstore.Store.
+		// 		},
+		// 	}, true
+		// }
+
 		if !IsContext(fieldOrFuncInput) {
 			return nil, false
 		}

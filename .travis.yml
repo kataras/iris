@@ -3,13 +3,14 @@ os:
   - linux
   - osx
 go:
-  - "go1.9"
-  - "go1.10"
+  - 1.9.x
+  - 1.10.x
+  - 1.11.x
 go_import_path: github.com/kataras/iris
 # we disable test caching via GOCACHE=off
-env:
-  global:
-    - GOCACHE=off
+# env:
+#  global:
+#    - GOCACHE=off
 install:
   - go get ./... # for iris-contrib/httpexpect, kataras/golog
 script:

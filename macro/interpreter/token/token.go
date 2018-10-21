@@ -13,7 +13,7 @@ type Token struct {
 
 // /about/{fullname:alphabetical}
 // /profile/{anySpecialName:string}
-// {id:int range(1,5) else 404}
+// {id:uint64 range(1,5) else 404}
 // /admin/{id:int eq(1) else 402}
 // /file/{filepath:file else 405}
 const (

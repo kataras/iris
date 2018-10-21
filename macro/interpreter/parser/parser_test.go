@@ -6,8 +6,46 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kataras/iris/core/router/macro/interpreter/ast"
+	"github.com/kataras/iris/macro/interpreter/ast"
 )
+
+type simpleParamType string
+
+func (pt simpleParamType) Indent() string { return string(pt) }
+
+type masterParamType simpleParamType
+
+func (pt masterParamType) Indent() string { return string(pt) }
+func (pt masterParamType) Master() bool   { return true }
+
+type wildcardParamType string
+
+func (pt wildcardParamType) Indent() string { return string(pt) }
+func (pt wildcardParamType) Trailing() bool { return true }
+
+type aliasedParamType []string
+
+func (pt aliasedParamType) Indent() string { return string(pt[0]) }
+func (pt aliasedParamType) Alias() string  { return pt[1] }
+
+var (
+	paramTypeString       = masterParamType("string")
+	paramTypeNumber       = aliasedParamType{"number", "int"}
+	paramTypeInt64        = aliasedParamType{"int64", "long"}
+	paramTypeUint8        = simpleParamType("uint8")
+	paramTypeUint64       = simpleParamType("uint64")
+	paramTypeBool         = aliasedParamType{"bool", "boolean"}
+	paramTypeAlphabetical = simpleParamType("alphabetical")
+	paramTypeFile         = simpleParamType("file")
+	paramTypePath         = wildcardParamType("path")
+)
+
+var testParamTypes = []ast.ParamType{
+	paramTypeString,
+	paramTypeNumber, paramTypeInt64, paramTypeUint8, paramTypeUint64,
+	paramTypeBool,
+	paramTypeAlphabetical, paramTypeFile, paramTypePath,
+}
 
 func TestParseParamError(t *testing.T) {
 	// fail
@@ -16,7 +54,7 @@ func TestParseParamError(t *testing.T) {
 	input := "{id" + string(illegalChar) + "int range(1,5) else 404}"
 	p := NewParamParser(input)
 
-	_, err := p.Parse()
+	_, err := p.Parse(testParamTypes)
 
 	if err == nil {
 		t.Fatalf("expecting not empty error on input '%s'", input)
@@ -30,14 +68,24 @@ func TestParseParamError(t *testing.T) {
 	//
 
 	// success
-	input2 := "{id:int range(1,5) else 404}"
+	input2 := "{id:uint64 range(1,5) else 404}"
 	p.Reset(input2)
-	_, err = p.Parse()
+	_, err = p.Parse(testParamTypes)
 
 	if err != nil {
 		t.Fatalf("expecting empty error on input '%s', but got: %s", input2, err.Error())
 	}
 	//
+}
+
+// mustLookupParamType same as `ast.LookupParamType` but it panics if "indent" does not match with a valid Param Type.
+func mustLookupParamType(indent string) ast.ParamType {
+	pt, found := ast.LookupParamType(indent, testParamTypes...)
+	if !found {
+		panic("param type '" + indent + "' is not part of the provided param types")
+	}
+
+	return pt
 }
 
 func TestParseParam(t *testing.T) {
@@ -49,27 +97,28 @@ func TestParseParam(t *testing.T) {
 			ast.ParamStatement{
 				Src:  "{id:int min(1) max(5) else 404}",
 				Name: "id",
-				Type: ast.ParamTypeInt,
+				Type: mustLookupParamType("number"),
 				Funcs: []ast.ParamFunc{
 					{
 						Name: "min",
-						Args: []ast.ParamFuncArg{1}},
+						Args: []string{"1"}},
 					{
 						Name: "max",
-						Args: []ast.ParamFuncArg{5}},
+						Args: []string{"5"}},
 				},
 				ErrorCode: 404,
 			}}, // 0
 
 		{true,
 			ast.ParamStatement{
-				Src:  "{id:int range(1,5)}",
+				// test alias of int.
+				Src:  "{id:number range(1,5)}",
 				Name: "id",
-				Type: ast.ParamTypeInt,
+				Type: mustLookupParamType("number"),
 				Funcs: []ast.ParamFunc{
 					{
 						Name: "range",
-						Args: []ast.ParamFuncArg{1, 5}},
+						Args: []string{"1", "5"}},
 				},
 				ErrorCode: 404,
 			}}, // 1
@@ -77,11 +126,11 @@ func TestParseParam(t *testing.T) {
 			ast.ParamStatement{
 				Src:  "{file:path contains(.)}",
 				Name: "file",
-				Type: ast.ParamTypePath,
+				Type: mustLookupParamType("path"),
 				Funcs: []ast.ParamFunc{
 					{
 						Name: "contains",
-						Args: []ast.ParamFuncArg{"."}},
+						Args: []string{"."}},
 				},
 				ErrorCode: 404,
 			}}, // 2
@@ -89,35 +138,35 @@ func TestParseParam(t *testing.T) {
 			ast.ParamStatement{
 				Src:       "{username:alphabetical}",
 				Name:      "username",
-				Type:      ast.ParamTypeAlphabetical,
+				Type:      mustLookupParamType("alphabetical"),
 				ErrorCode: 404,
 			}}, // 3
 		{true,
 			ast.ParamStatement{
 				Src:       "{myparam}",
 				Name:      "myparam",
-				Type:      ast.ParamTypeString,
+				Type:      mustLookupParamType("string"),
 				ErrorCode: 404,
 			}}, // 4
 		{false,
 			ast.ParamStatement{
 				Src:       "{myparam_:thisianunexpected}",
 				Name:      "myparam_",
-				Type:      ast.ParamTypeUnExpected,
+				Type:      nil,
 				ErrorCode: 404,
 			}}, // 5
-		{false, // false because it will give an error of unexpeced token type with value 2
+		{true,
 			ast.ParamStatement{
 				Src:       "{myparam2}",
-				Name:      "myparam", // expected "myparam" because we don't allow integers to the parameter names.
-				Type:      ast.ParamTypeString,
+				Name:      "myparam2", // we now allow integers to the parameter names.
+				Type:      ast.GetMasterParamType(testParamTypes...),
 				ErrorCode: 404,
 			}}, // 6
 		{true,
 			ast.ParamStatement{
 				Src:  "{id:int even()}", // test param funcs without any arguments (LPAREN peek for RPAREN)
 				Name: "id",
-				Type: ast.ParamTypeInt,
+				Type: mustLookupParamType("number"),
 				Funcs: []ast.ParamFunc{
 					{
 						Name: "even"},
@@ -126,25 +175,46 @@ func TestParseParam(t *testing.T) {
 			}}, // 7
 		{true,
 			ast.ParamStatement{
-				Src:       "{id:long else 404}",
+				Src:       "{id:int64 else 404}",
 				Name:      "id",
-				Type:      ast.ParamTypeLong,
+				Type:      mustLookupParamType("int64"),
 				ErrorCode: 404,
 			}}, // 8
 		{true,
 			ast.ParamStatement{
-				Src:       "{has:boolean else 404}",
-				Name:      "has",
-				Type:      ast.ParamTypeBoolean,
+				Src:       "{id:long else 404}", // backwards-compatible test.
+				Name:      "id",
+				Type:      mustLookupParamType("int64"),
 				ErrorCode: 404,
 			}}, // 9
+		{true,
+			ast.ParamStatement{
+				Src:       "{id:long else 404}",
+				Name:      "id",
+				Type:      mustLookupParamType("int64"), // backwards-compatible test of LookupParamType.
+				ErrorCode: 404,
+			}}, // 10
+		{true,
+			ast.ParamStatement{
+				Src:       "{has:bool else 404}",
+				Name:      "has",
+				Type:      mustLookupParamType("bool"),
+				ErrorCode: 404,
+			}}, // 11
+		{true,
+			ast.ParamStatement{
+				Src:       "{has:boolean else 404}", // backwards-compatible test.
+				Name:      "has",
+				Type:      mustLookupParamType("bool"),
+				ErrorCode: 404,
+			}}, // 12
 
 	}
 
 	p := new(ParamParser)
 	for i, tt := range tests {
 		p.Reset(tt.expectedStatement.Src)
-		resultStmt, err := p.Parse()
+		resultStmt, err := p.Parse(testParamTypes)
 
 		if tt.valid && err != nil {
 			t.Fatalf("tests[%d] - error %s", i, err.Error())
@@ -171,27 +241,27 @@ func TestParse(t *testing.T) {
 			[]ast.ParamStatement{{
 				Src:  "{id:int min(1) max(5) else 404}",
 				Name: "id",
-				Type: ast.ParamTypeInt,
+				Type: paramTypeNumber,
 				Funcs: []ast.ParamFunc{
 					{
 						Name: "min",
-						Args: []ast.ParamFuncArg{1}},
+						Args: []string{"1"}},
 					{
 						Name: "max",
-						Args: []ast.ParamFuncArg{5}},
+						Args: []string{"5"}},
 				},
 				ErrorCode: 404,
 			},
 			}}, // 0
-		{"/admin/{id:int range(1,5)}", true,
+		{"/admin/{id:uint64 range(1,5)}", true,
 			[]ast.ParamStatement{{
-				Src:  "{id:int range(1,5)}",
+				Src:  "{id:uint64 range(1,5)}",
 				Name: "id",
-				Type: ast.ParamTypeInt,
+				Type: paramTypeUint64,
 				Funcs: []ast.ParamFunc{
 					{
 						Name: "range",
-						Args: []ast.ParamFuncArg{1, 5}},
+						Args: []string{"1", "5"}},
 				},
 				ErrorCode: 404,
 			},
@@ -200,11 +270,11 @@ func TestParse(t *testing.T) {
 			[]ast.ParamStatement{{
 				Src:  "{file:path contains(.)}",
 				Name: "file",
-				Type: ast.ParamTypePath,
+				Type: paramTypePath,
 				Funcs: []ast.ParamFunc{
 					{
 						Name: "contains",
-						Args: []ast.ParamFuncArg{"."}},
+						Args: []string{"."}},
 				},
 				ErrorCode: 404,
 			},
@@ -213,7 +283,7 @@ func TestParse(t *testing.T) {
 			[]ast.ParamStatement{{
 				Src:       "{username:alphabetical}",
 				Name:      "username",
-				Type:      ast.ParamTypeAlphabetical,
+				Type:      paramTypeAlphabetical,
 				ErrorCode: 404,
 			},
 			}}, // 3
@@ -221,7 +291,7 @@ func TestParse(t *testing.T) {
 			[]ast.ParamStatement{{
 				Src:       "{myparam}",
 				Name:      "myparam",
-				Type:      ast.ParamTypeString,
+				Type:      paramTypeString,
 				ErrorCode: 404,
 			},
 			}}, // 4
@@ -229,15 +299,15 @@ func TestParse(t *testing.T) {
 			[]ast.ParamStatement{{
 				Src:       "{myparam_:thisianunexpected}",
 				Name:      "myparam_",
-				Type:      ast.ParamTypeUnExpected,
+				Type:      nil,
 				ErrorCode: 404,
 			},
 			}}, // 5
-		{"/p2/{myparam2}", false, // false because it will give an error of unexpeced token type with value 2
+		{"/p2/{myparam2}", true,
 			[]ast.ParamStatement{{
 				Src:       "{myparam2}",
-				Name:      "myparam", // expected "myparam" because we don't allow integers to the parameter names.
-				Type:      ast.ParamTypeString,
+				Name:      "myparam2", // we now allow integers to the parameter names.
+				Type:      paramTypeString,
 				ErrorCode: 404,
 			},
 			}}, // 6
@@ -245,13 +315,13 @@ func TestParse(t *testing.T) {
 			[]ast.ParamStatement{{
 				Src:       "{file:path}",
 				Name:      "file",
-				Type:      ast.ParamTypePath,
+				Type:      paramTypePath,
 				ErrorCode: 404,
 			},
 			}}, // 7
 	}
 	for i, tt := range tests {
-		statements, err := Parse(tt.path)
+		statements, err := Parse(tt.path, testParamTypes)
 
 		if tt.valid && err != nil {
 			t.Fatalf("tests[%d] - error %s", i, err.Error())

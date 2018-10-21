@@ -4,8 +4,7 @@ import (
 	"reflect"
 
 	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/router/macro"
-	"github.com/kataras/iris/core/router/macro/interpreter/ast"
+	"github.com/kataras/iris/macro"
 )
 
 func getPathParamsForInput(params []macro.TemplateParam, funcIn ...reflect.Type) (values []reflect.Value) {
@@ -13,51 +12,40 @@ func getPathParamsForInput(params []macro.TemplateParam, funcIn ...reflect.Type)
 		return
 	}
 
-	consumedParams := make(map[int]bool, 0)
-	for _, in := range funcIn {
-		for j, p := range params {
-			if _, consumed := consumedParams[j]; consumed {
-				continue
-			}
-			paramType := p.Type
-			paramName := p.Name
-			// 	fmt.Printf("%s input arg type vs %s param type\n", in.Kind().String(), p.Type.Kind().String())
-			if paramType.Assignable(in.Kind()) {
-				consumedParams[j] = true
-				// fmt.Printf("param.go: bind path param func for paramName = '%s' and paramType = '%s'\n", paramName, paramType.String())
-				values = append(values, makeFuncParamGetter(paramType, paramName))
-			}
+	// consumedParams := make(map[int]bool, 0)
+	// for _, in := range funcIn {
+	// 	for j, p := range params {
+	// 		if _, consumed := consumedParams[j]; consumed {
+	// 			continue
+	// 		}
+
+	// 		// 	fmt.Printf("%s input arg type vs %s param type\n", in.Kind().String(), p.Type.Kind().String())
+	// 		if m := macros.Lookup(p.Type); m != nil && m.GoType == in.Kind() {
+	// 			consumedParams[j] = true
+	// 			// fmt.Printf("param.go: bind path param func for paramName = '%s' and paramType = '%s'\n", paramName, paramType.String())
+	// 			funcDep, ok := context.ParamResolverByKindAndIndex(m.GoType, p.Index)
+	// 			//	funcDep, ok := context.ParamResolverByKindAndKey(in.Kind(), paramName)
+	// 			if !ok {
+	// 				// here we can add a logger about invalid parameter type although it should never happen here
+	// 				// unless the end-developer modified the macro/macros with a special type but not the context/ParamResolvers.
+	// 				continue
+	// 			}
+	// 			values = append(values, funcDep)
+	// 		}
+	// 	}
+	// }
+
+	for i, param := range params {
+		if len(funcIn) <= i {
+			return
 		}
+		funcDep, ok := context.ParamResolverByTypeAndIndex(funcIn[i], param.Index)
+		if !ok {
+			continue
+		}
+
+		values = append(values, funcDep)
 	}
 
 	return
-}
-
-func makeFuncParamGetter(paramType ast.ParamType, paramName string) reflect.Value {
-	var fn interface{}
-
-	switch paramType {
-	case ast.ParamTypeInt:
-		fn = func(ctx context.Context) int {
-			v, _ := ctx.Params().GetInt(paramName)
-			return v
-		}
-	case ast.ParamTypeLong:
-		fn = func(ctx context.Context) int64 {
-			v, _ := ctx.Params().GetInt64(paramName)
-			return v
-		}
-	case ast.ParamTypeBoolean:
-		fn = func(ctx context.Context) bool {
-			v, _ := ctx.Params().GetBool(paramName)
-			return v
-		}
-	default:
-		// string, path...
-		fn = func(ctx context.Context) string {
-			return ctx.Params().Get(paramName)
-		}
-	}
-
-	return reflect.ValueOf(fn)
 }

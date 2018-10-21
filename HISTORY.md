@@ -17,6 +17,174 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris` or let the automatic updater do that for you.
 
+# Su, 21 October 2018 | v11.0.0
+
+For the craziest of us, click [here](https://github.com/kataras/iris/compare/v10.7.0...v11) 🔥 to find out the commits and the code changes since our previous release.
+
+## Breaking changes
+
+- Remove the "Configurator" `WithoutVersionChecker` and the configuration field `DisableVersionChecker`
+- `:int` parameter type **can accept negative numbers now**.
+- `app.Macros().String/Int/Uint64/Path...RegisterFunc` should be replaced to: `app.Macros().Get("string" or "int" or "uint64" or "path" when "path" is the ":path" parameter type).RegisterFunc`, because you can now add custom macros and parameter types as well, see [here](_examples/routing/macros).
+- `RegisterFunc("min", func(paramValue string) bool {...})` should be replaced to `RegisterFunc("min", func(paramValue <T>) bool {...})`, the `paramValue` argument is now stored in the exact type the macro's type evaluator inits it, i.e `uint64` or `int` and so on, therefore you don't have to convert the parameter value each time (this should make your handlers with macro functions activated even faster now) 
+- The `Context#ReadForm` will no longer return an error if it has no value to read from the request, we let those checks to the caller and validators as requested at: https://github.com/kataras/iris/issues/1095 by [@haritsfahreza](https://github.com/haritsfahreza)
+
+## Routing
+
+I wrote a [new router implementation](https://github.com/kataras/muxie#philosophy) for our Iris internal(low-level) routing mechanism, it is good to know that this was the second time we have updated the router internals without a single breaking change after the v6, thanks to the very well-writen and designed-first code we have for the high-level path syntax component called [macro interpreter](macro/interpreter).
+
+The new router supports things like **closest wildcard resolution**.
+
+> If the name doesn't sound good to you it is because I named that feature myself, I don't know any other framework or router that supports a thing like that so be gentle:)
+
+Previously you couldn't register routes like: `/{myparam:path}` and `/static` and `/{myparam:string}` and `/{myparam:string}/static` and `/static/{myparam:string}` all in one path prefix without a "decision handler". And generally if you had a wildcard it was possible to add (a single) static part and (a single) named parameter but not without performance cost and limits, why only one? (one is better than nothing: look the Iris' alternatives) We struggle to overcome our own selves, now you **can definitely do it without a bit of performance cost**, and surely we hand't imagine the wildcard to **catch all if nothing else found** without huge routing performance cost, the wildcard(`:path`) meant ONLY: "accept one or more path segments and put them into the declared parameter" so if you had register a dynamic single-path-segment named parameter like `:string, :int, :uint, :alphabetical...` in between those path segments it wouldn't work. The **closest wildcard resolution** offers you the opportunity to design your APIs even better via custom handlers and error handlers like `404 not found` to path prefixes for your API's groups, now you can do it without any custom code for path resolution inside a "decision handler" or a middleware.
+
+Code worths 1000 words, now it is possible to define your routes like this without any issues:
+
+```go
+package main
+
+import (
+    "github.com/kataras/iris"
+    "github.com/kataras/iris/context"
+)
+
+func main() {
+    app := iris.New()
+
+    // matches everyhing if nothing else found,
+    // so you can use it for custom 404 root-level/main pages!
+    app.Get("/{p:path}", func(ctx context.Context) {
+        path := ctx.Params().Get("p")
+        // gives the path without the first "/".
+        ctx.Writef("Site Custom 404 Error Message\nPage of: '%s' not found", path)
+    })
+
+    app.Get("/", indexHandler)
+
+    // request: http://localhost:8080/profile
+    // response: "Profile Index"
+    app.Get("/profile", func(ctx context.Context) {
+        ctx.Writef("Profile Index")
+    })
+
+    // request: http://localhost:8080/profile/kataras
+    // response: "Profile of username: 'kataras'"
+    app.Get("/profile/{username}", func(ctx context.Context) {
+        username := ctx.Params().Get("username")
+        ctx.Writef("Profile of username: '%s'", username)
+    })
+
+    // request: http://localhost:8080/profile/settings
+    // response: "Profile personal settings"
+    app.Get("/profile/settings", func(ctx context.Context) {
+        ctx.Writef("Profile personal settings")
+    })
+
+    // request: http://localhost:8080/profile/settings/security
+    // response: "Profile personal security settings"
+    app.Get("/profile/settings/security", func(ctx context.Context) {
+        ctx.Writef("Profile personal security settings")
+    })
+
+    // matches everyhing /profile/*somethng_here*
+    // if no other route matches the path semgnet after the
+    // /profile or /profile/
+    //
+    // So, you can use it for custom 404 profile pages
+    // side-by-side to your root wildcard without issues!
+    // For example:
+    // request: http://localhost:8080/profile/kataras/what
+    // response:
+    // Profile Page Custom 404 Error Message
+    // Profile Page of: 'kataras/what' was unable to be found
+    app.Get("/profile/{p:path}", func(ctx context.Context) {
+        path := ctx.Params().Get("p")
+        ctx.Writef("Profile Page Custom 404 Error Message\nProfile Page of: '%s' not found", path)
+    })
+
+    app.Run(iris.Addr(":8080"))
+}
+
+func indexHandler(ctx context.Context) {
+    ctx.HTML("This is the <strong>index page</strong>")
+}
+
+``` 
+
+The `github.com/kataras/iris/core/router.AllMethods` is now a variable that can be altered by end-developers, so things like `app.Any` can register to custom methods as well, as requested at: https://github.com/kataras/iris/issues/1102. For example, import that package and do `router.AllMethods = append(router.AllMethods, "LINK")` in your `main` or `init` function.
+
+The old `github.com/kataras/iris/core/router/macro` package was moved to `guthub.com/kataras/iris/macro` to allow end-developers to add custom parameter types and macros, it supports all go standard types by default as you will see below.
+
+- `:int` parameter type as an alias to the old `:int` which can accept any numeric path segment now, both negative and positive numbers
+- Add `:int8` parameter type and `ctx.Params().GetInt8`
+- Add `:int16` parameter type and `ctx.Params().GetInt16`
+- Add `:int32` parameter type and `ctx.Params().GetInt32`
+- Add `:int64` parameter type and `ctx.Params().GetInt64`
+- Add `:uint` parameter type and `ctx.Params().GetUint`
+- Add `:uint8` parameter type and `ctx.Params().GetUint8`
+- Add `:uint16` parameter type and `ctx.Params().GetUint16`
+- Add `:uint32` parameter type and `ctx.Params().GetUint32`
+- Add `:uint64` parameter type and `ctx.Params().GetUint64`
+- Add alias `:bool` for the `:boolean` parameter type
+
+Here is the full list of the built'n parameter types that we support now, including their validations/path segment rules.
+
+| Param Type | Go Type | Validation | Retrieve Helper |
+| -----------------|------|-------------|------|
+| `:string` | string | the default if param type is missing, anything (single path segment) | `Params().Get` |
+| `:int` | int | -9223372036854775808 to 9223372036854775807 (x64) or -2147483648 to 2147483647 (x32), depends on the host arch | `Params().GetInt` |
+| `:int8` | int8 | -128 to 127 | `Params().GetInt8` |
+| `:int16` | int16 | -32768 to 32767 | `Params().GetInt16` |
+| `:int32` | int32 | -2147483648 to 2147483647 | `Params().GetInt32` |
+| `:int64` | int64 | -9223372036854775808 to 9223372036854775807 | `Params().GetInt64` |
+| `:uint` | uint | 0 to 18446744073709551615 (x64) or 0 to 4294967295 (x32), depends on the host arch | `Params().GetUint` |
+| `:uint8` | uint8 | 0 to 255 | `Params().GetUint8` |
+| `:uint16` | uint16 | 0 to 65535 | `Params().GetUint16` |
+| `:uint32` | uint32 | 0 to 4294967295 | `Params().GetUint32` |
+| `:uint64` | uint64 | 0 to 18446744073709551615 | `Params().GetUint64` |
+| `:bool` | bool | "1" or "t" or "T" or "TRUE" or "true" or "True" or "0" or "f" or "F" or "FALSE" or "false" or "False" | `Params().GetBool` |
+| `:alphabetical` | string | lowercase or uppercase letters | `Params().Get` |
+| `:file` | string | lowercase or uppercase letters, numbers, underscore (_), dash (-), point (.) and no spaces or other special characters that are not valid for filenames | `Params().Get` |
+| `:path` | string | anything, can be separated by slashes (path segments) but should be the last part of the route path | `Params().Get` | 
+
+**Usage**:
+
+```go
+app.Get("/users/{id:uint64}", func(ctx iris.Context){
+    id, _ := ctx.Params().GetUint64("id")
+    // [...]
+})
+```
+
+| Built'n Func | Param Types |
+| -----------|---------------|
+| `regexp`(expr string) | :string |
+| `prefix`(prefix string) | :string |
+| `suffix`(suffix string) | :string |
+| `contains`(s string) | :string |
+| `min`(minValue int or int8 or int16 or int32 or int64 or uint8 or uint16 or uint32 or uint64  or float32 or float64) | :string(char length), :int, :int8, :int16, :int32, :int64, :uint, :uint8, :uint16, :uint32, :uint64  |
+| `max`(maxValue int or int8 or int16 or int32 or int64 or uint8 or uint16 or uint32 or uint64 or float32 or float64) | :string(char length), :int, :int8, :int16, :int32, :int64, :uint, :uint8, :uint16, :uint32, :uint64 |
+| `range`(minValue, maxValue int or int8 or int16 or int32 or int64 or uint8 or uint16 or uint32 or uint64 or float32 or float64) | :int, :int8, :int16, :int32, :int64, :uint, :uint8, :uint16, :uint32, :uint64 |
+
+**Usage**:
+
+```go
+app.Get("/profile/{name:alphabetical max(255)}", func(ctx iris.Context){
+    name := ctx.Params().Get("name")
+    // len(name) <=255 otherwise this route will fire 404 Not Found
+    // and this handler will not be executed at all.
+})
+```
+
+## Vendoring
+
+- Rename the vendor `sessions/sessiondb/vendor/...bbolt` from `coreos/bbolt` to `etcd-io/bbolt` and update to v1.3.1, based on [that](https://github.com/etcd-io/bbolt/releases/tag/v1.3.1-etcd.7)
+- Update the vendor `sessions/sessiondb/vendor/...badger` to v1.5.3
+
+I believe it is soon to adapt the new [go modules](https://github.com/golang/go/wiki/Modules#table-of-contents) inside Iris, the new `go mod` command may change until go 1.12, it is still an experimental feature.
+The [vendor](https://github.com/kataras/iris/tree/master/vendor) folder will be kept until the majority of Go developers get acquainted with the new `go modules`.  The `go.mod` and `go.sum` files will come at `iris v12` (or `go 1.12`), we could do that on this version as well but I don't want to have half-things, versioning should be passed on import path as well and that is a large breaking change to go with it right now, so it will probably have a new path such as `github.com/kataras/iris/v12` based on a `git tag` like every Iris release (we are lucky here because we used semantic versioning from day zero). No folder re-structure inside the root git repository to split versions will ever happen, so backwards-compatibility for older go versions(before go 1.9.3) and iris versions will be not enabled by-default although it's easy for anyone to grab any version from older [releases](https://github.com/kataras/iris/releases) or branch and target that.
+
 # Sat, 11 August 2018 | v10.7.0
 
 I am overjoyed to announce stage 1 of the the Iris Web framework **10.7 stable release is now available**.
@@ -228,7 +396,7 @@ For example: at [_examples/mvc/basic/main.go line 100](_examples/mvc/basic/main.
 
 - fix `APIBuilder, Party#StaticWeb` and `APIBuilder, Party#StaticEmbedded` wrong strip prefix inside children parties
 - keep the `iris, core/router#StaticEmbeddedHandler` and remove the `core/router/APIBuilder#StaticEmbeddedHandler`,  (note the `Handler` suffix) it's global and has nothing to do with the `Party` or the `APIBuilder`
-- fix high path cleaning between `{}` (we already escape those contents at the [interpreter](core/router/macro/interpreter) level but some symbols are still removed by the higher-level api builder) , i.e `\\` from the string's macro function `regex` contents as reported at [927](https://github.com/kataras/iris/issues/927) by [commit e85b113476eeefffbc7823297cc63cd152ebddfd](https://github.com/kataras/iris/commit/e85b113476eeefffbc7823297cc63cd152ebddfd)
+- fix high path cleaning between `{}` (we already escape those contents at the [interpreter](macro/interpreter) level but some symbols are still removed by the higher-level api builder) , i.e `\\` from the string's macro function `regex` contents as reported at [927](https://github.com/kataras/iris/issues/927) by [commit e85b113476eeefffbc7823297cc63cd152ebddfd](https://github.com/kataras/iris/commit/e85b113476eeefffbc7823297cc63cd152ebddfd)
 - sync the `golang.org/x/sys/unix` vendor
 
 ## The most important

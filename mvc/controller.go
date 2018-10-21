@@ -7,9 +7,9 @@ import (
 
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/router"
-	"github.com/kataras/iris/core/router/macro"
 	"github.com/kataras/iris/hero"
 	"github.com/kataras/iris/hero/di"
+	"github.com/kataras/iris/macro"
 
 	"github.com/kataras/golog"
 )
@@ -247,7 +247,7 @@ func (c *ControllerActivator) parseMethods() {
 }
 
 func (c *ControllerActivator) parseMethod(m reflect.Method) {
-	httpMethod, httpPath, err := parseMethod(m, c.isReservedMethod)
+	httpMethod, httpPath, err := parseMethod(*c.router.Macros(), m, c.isReservedMethod)
 	if err != nil {
 		if err != errSkip {
 			c.addErr(fmt.Errorf("MVC: fail to parse the route path and HTTP method for '%s.%s': %v", c.fullName, m.Name, err))
@@ -283,7 +283,7 @@ func (c *ControllerActivator) Handle(method, path, funcName string, middleware .
 	}
 
 	// parse a route template which contains the parameters organised.
-	tmpl, err := macro.Parse(path, c.router.Macros())
+	tmpl, err := macro.Parse(path, *c.router.Macros())
 	if err != nil {
 		c.addErr(fmt.Errorf("MVC: fail to parse the path for '%s.%s': %v", c.fullName, funcName, err))
 		return nil
@@ -338,6 +338,7 @@ func (c *ControllerActivator) handlerOf(m reflect.Method, funcDependencies []ref
 	}
 
 	// fmt.Printf("for %s | values: %s\n", funcName, funcDependencies)
+
 	funcInjector := di.Func(m.Func, funcDependencies...)
 	// fmt.Printf("actual injector's inputs length: %d\n", funcInjector.Length)
 	if funcInjector.Has {
@@ -396,6 +397,11 @@ func (c *ControllerActivator) handlerOf(m reflect.Method, funcDependencies []ref
 			in := make([]reflect.Value, n, n)
 			in[0] = ctrl
 			funcInjector.Inject(&in, ctxValue)
+
+			// for idxx, inn := range in {
+			// 	println("controller.go: execution: in.Value = "+inn.String()+" and in.Type = "+inn.Type().Kind().String()+" of index: ", idxx)
+			// }
+
 			hero.DispatchFuncResult(ctx, call(in))
 			return
 		}

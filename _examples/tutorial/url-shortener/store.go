@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 
-	"github.com/coreos/bbolt"
+	bolt "github.com/etcd-io/bbolt"
 )
 
 // Panic panics, change it if you don't want to panic on critical INITIALIZE-ONLY-ERRORS

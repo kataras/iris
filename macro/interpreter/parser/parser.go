@@ -5,15 +5,19 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kataras/iris/core/router/macro/interpreter/ast"
-	"github.com/kataras/iris/core/router/macro/interpreter/lexer"
-	"github.com/kataras/iris/core/router/macro/interpreter/token"
+	"github.com/kataras/iris/macro/interpreter/ast"
+	"github.com/kataras/iris/macro/interpreter/lexer"
+	"github.com/kataras/iris/macro/interpreter/token"
 )
 
 // Parse takes a route "fullpath"
 // and returns its param statements
-// and an error on failure.
-func Parse(fullpath string) ([]*ast.ParamStatement, error) {
+// or an error if failed.
+func Parse(fullpath string, paramTypes []ast.ParamType) ([]*ast.ParamStatement, error) {
+	if len(paramTypes) == 0 {
+		return nil, fmt.Errorf("empty parameter types")
+	}
+
 	pathParts := strings.SplitN(fullpath, "/", -1)
 	p := new(ParamParser)
 	statements := make([]*ast.ParamStatement, 0)
@@ -28,14 +32,14 @@ func Parse(fullpath string) ([]*ast.ParamStatement, error) {
 		}
 
 		p.Reset(s)
-		stmt, err := p.Parse()
+		stmt, err := p.Parse(paramTypes)
 		if err != nil {
 			// exit on first error
 			return nil, err
 		}
 		// if we have param type path but it's not the last path part
-		if stmt.Type == ast.ParamTypePath && i < len(pathParts)-1 {
-			return nil, fmt.Errorf("param type 'path' should be lived only inside the last path segment, but was inside: %s", s)
+		if ast.IsTrailing(stmt.Type) && i < len(pathParts)-1 {
+			return nil, fmt.Errorf("%s: parameter type \"%s\" should be registered to the very last of a path", s, stmt.Type.Indent())
 		}
 
 		statements = append(statements, stmt)
@@ -77,15 +81,18 @@ const (
 	// per-parameter. An error code can be setted via
 	// the "else" keyword inside a route's path.
 	DefaultParamErrorCode = 404
-	// DefaultParamType when parameter type is missing use this param type, defaults to string
-	// and it should be remains unless earth split in two.
-	DefaultParamType = ast.ParamTypeString
 )
 
-func parseParamFuncArg(t token.Token) (a ast.ParamFuncArg, err error) {
-	if t.Type == token.INT {
-		return ast.ParamFuncArgToInt(t.Literal)
-	}
+// func parseParamFuncArg(t token.Token) (a ast.ParamFuncArg, err error) {
+// 	if t.Type == token.INT {
+// 		return ast.ParamFuncArgToInt(t.Literal)
+// 	}
+// 	// act all as strings here, because of int vs int64 vs uint64 and etc.
+// 	return t.Literal, nil
+// }
+
+func parseParamFuncArg(t token.Token) (a string, err error) {
+	// act all as strings here, because of int vs int64 vs uint64 and etc.
 	return t.Literal, nil
 }
 
@@ -96,14 +103,14 @@ func (p ParamParser) Error() error {
 	return nil
 }
 
-// Parse parses the p.src and returns its param statement
+// Parse parses the p.src based on the given param types and returns its param statement
 // and an error on failure.
-func (p *ParamParser) Parse() (*ast.ParamStatement, error) {
+func (p *ParamParser) Parse(paramTypes []ast.ParamType) (*ast.ParamStatement, error) {
 	l := lexer.New(p.src)
 
 	stmt := &ast.ParamStatement{
 		ErrorCode: DefaultParamErrorCode,
-		Type:      DefaultParamType,
+		Type:      ast.GetMasterParamType(paramTypes...),
 		Src:       p.src,
 	}
 
@@ -120,14 +127,15 @@ func (p *ParamParser) Parse() (*ast.ParamStatement, error) {
 
 		switch t.Type {
 		case token.LBRACE:
-			// name, alphabetical and _, param names are not allowed to contain any number.
+			// can accept only letter or number only.
 			nextTok := l.NextToken()
 			stmt.Name = nextTok.Literal
 		case token.COLON:
-			// type
+			// type can accept both letters and numbers but not symbols ofc.
 			nextTok := l.NextToken()
-			paramType := ast.LookupParamType(nextTok.Literal)
-			if paramType == ast.ParamTypeUnExpected {
+			paramType, found := ast.LookupParamType(nextTok.Literal, paramTypes...)
+
+			if !found {
 				p.appendErr("[%d:%d] unexpected parameter type: %s", t.Start, t.End, nextTok.Literal)
 			}
 			stmt.Type = paramType
@@ -143,25 +151,14 @@ func (p *ParamParser) Parse() (*ast.ParamStatement, error) {
 
 			argValTok := l.NextDynamicToken() // catch anything from "(" and forward, until ")", because we need to
 			// be able to use regex expression as a macro type's func argument too.
-			argVal, err := parseParamFuncArg(argValTok)
-			if err != nil {
-				p.appendErr("[%d:%d] expected param func argument to be a string or number but got %s", t.Start, t.End, argValTok.Literal)
-				continue
-			}
 
 			// fmt.Printf("argValTok: %#v\n", argValTok)
 			// fmt.Printf("argVal: %#v\n", argVal)
-			lastParamFunc.Args = append(lastParamFunc.Args, argVal)
+			lastParamFunc.Args = append(lastParamFunc.Args, argValTok.Literal)
 
 		case token.COMMA:
 			argValTok := l.NextToken()
-			argVal, err := parseParamFuncArg(argValTok)
-			if err != nil {
-				p.appendErr("[%d:%d] expected param func argument to be a string or number type but got %s", t.Start, t.End, argValTok.Literal)
-				continue
-			}
-
-			lastParamFunc.Args = append(lastParamFunc.Args, argVal)
+			lastParamFunc.Args = append(lastParamFunc.Args, argValTok.Literal)
 		case token.RPAREN:
 			stmt.Funcs = append(stmt.Funcs, lastParamFunc)
 			lastParamFunc = ast.ParamFunc{} // reset

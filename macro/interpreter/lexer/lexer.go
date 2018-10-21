@@ -1,7 +1,7 @@
 package lexer
 
 import (
-	"github.com/kataras/iris/core/router/macro/interpreter/token"
+	"github.com/kataras/iris/macro/interpreter/token"
 )
 
 // Lexer helps us to read/scan characters of a source and resolve their token types.
@@ -179,7 +179,7 @@ func (l *Lexer) skipWhitespace() {
 
 func (l *Lexer) readIdentifier() string {
 	pos := l.pos
-	for isLetter(l.ch) {
+	for isLetter(l.ch) || isDigit(l.ch) {
 		l.readChar()
 	}
 	return l.input[pos:l.pos]

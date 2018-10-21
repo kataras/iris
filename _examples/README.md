@@ -146,8 +146,10 @@ Navigate through examples for a better understanding.
 - [Custom HTTP Errors](routing/http-errors/main.go)
 - [Dynamic Path](routing/dynamic-path/main.go)
     * [root level wildcard path](routing/dynamic-path/root-wildcard/main.go)
+- [Write your own custom parameter types](routing/macros/main.go) **NEW**
 - [Reverse routing](routing/reverse/main.go)
-- [Custom wrapper](routing/custom-wrapper/main.go)
+- [Custom Router (high-level)](routing/custom-high-level-router/main.go) **NEW**
+- [Custom Wrapper](routing/custom-wrapper/main.go)
 - Custom Context
     * [method overriding](routing/custom-context/method-overriding/main.go)
     * [new implementation](routing/custom-context/new-implementation/main.go)

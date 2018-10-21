@@ -74,7 +74,7 @@ func main() {
 	}
 
 	// Listen for incoming HTTP/1.x & HTTP/2 clients on localhost port 8080.
-	app.Run(iris.Addr(":8080"), iris.WithCharset("UTF-8"), iris.WithoutVersionChecker)
+	app.Run(iris.Addr(":8080"), iris.WithCharset("UTF-8"))
 }
 
 func logThisMiddleware(ctx iris.Context) {

@@ -105,7 +105,9 @@ app.Get("{root:path}", rootWildcardHandler)
 - [自定义 HTTP 错误](routing/http-errors/main.go)
 - [动态路径](routing/dynamic-path/main.go)
     * [根级通配符路径](routing/dynamic-path/root-wildcard/main.go)
+- [Write your own custom parameter types](routing/macros/main.go) **NEW**
 - [反向路由](routing/reverse/main.go)
+- [Custom Router (high-level)](routing/custom-high-level-router/main.go) **NEW**
 - [自定义包装](routing/custom-wrapper/main.go)
 - 自定义上下文
     * [方法重写](routing/custom-context/method-overriding/main.go)
