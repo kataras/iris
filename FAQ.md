@@ -30,7 +30,7 @@ More than 100 practical examples, tutorials and articles at:
 
 - https://github.com/kataras/iris/tree/master/_examples
 - https://github.com/iris-contrib/examples
-- https://iris-go.com/v10/recipe
+- https://iris-go.com/v11/recipe
 - https://docs.iris-go.com (in-progress)
 - https://godoc.org/github.com/kataras/iris
 

@@ -17,7 +17,7 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris` or let the automatic updater do that for you.
 
-# Whenever | v11.0.0
+# Su, 21 October 2018 | v11.0.0
 
 ## Breaking changes
 
