@@ -19,6 +19,8 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 # Su, 21 October 2018 | v11.0.0
 
+For the craziest of us, click [here](https://github.com/kataras/iris/compare/v10.7.0...v11) 🔥 to find out the commits and the code changes since our previous release.
+
 ## Breaking changes
 
 - Remove the "Configurator" `WithoutVersionChecker` and the configuration field `DisableVersionChecker`
