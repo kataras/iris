@@ -1,6 +1,6 @@
 {
   "name": "expressjs-app",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "app.js",
   "scripts": {
@@ -9,7 +9,7 @@
   "author": "Gerasimos (Makis) Maropoulos <kataras2006@hotmail.com>",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.16.0",
+    "express": "^4.16.4",
     "throng": "4.0.0"
   }
 }
