@@ -22,17 +22,6 @@ $ go get -u github.com/kataras/iris
 
 Iris takes advantage of the [vendor directory](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo) feature. You get truly reproducible builds, as this method guards against upstream renames and deletes.
 
-[![Iris vs .NET Core(C#) vs Node.js (Express)](_benchmarks/benchmarks_graph_22_october_2018_gray.png)](_benchmarks/README.md)
-
-_Updated at: [Monday, 22 October 2018](_benchmarks/README.md)_
-
-<details>
-<summary>Benchmarks from third-party source over the rest web frameworks</summary>
-
-![Comparison with other frameworks](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png)
-
-</details>
-
 <details>
 <summary>Known issues for code editors and IDEs at general</summary>
 
@@ -51,6 +40,22 @@ import (
 ```
 
 </details>
+
+## Benchmarks
+
+### Iris vs .NET Core vs Expressjs
+
+[![Iris vs .NET Core(C#) vs Node.js (Express)](_benchmarks/benchmarks_graph_22_october_2018_gray.png)](_benchmarks/README.md)
+
+_Updated at: [Monday, 22 October 2018](_benchmarks/README.md)_
+
+### Iris vs the rest Go web frameworks and routers vs any other alternative
+
+[![](_benchmarks/benchmarks_third_party_source_snapshot_go_23_october_2018.png)](https://github.com/the-benchmarker/web-frameworks#full-table)
+
+As shown in the benchmarks (from a [third-party source](https://github.com/the-benchmarker)), Iris is the fastest open-source Go web framework in the planet. The net/http 100% compatible router [muxie](https://github.com/kataras/muxie) I've created some weeks ago is also trending there with amazing results, fastest net/http router ever created as well. View the results at:
+
+https://github.com/the-benchmarker/web-frameworks#full-table
 
 ## Philosophy
 
