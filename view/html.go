@@ -44,6 +44,9 @@ var emptyFuncs = template.FuncMap{
 	"yield": func() (string, error) {
 		return "", fmt.Errorf("yield was called, yet no layout defined")
 	},
+	"part": func() (string, error) {
+		return "", fmt.Errorf("block was called, yet no layout defined")
+	},
 	"partial": func() (string, error) {
 		return "", fmt.Errorf("block was called, yet no layout defined")
 	},
@@ -387,6 +390,15 @@ func (s *HTMLEngine) layoutFuncsFor(name string, binding interface{}) {
 		"yield": func() (template.HTML, error) {
 			buf, err := s.executeTemplateBuf(name, binding)
 			// Return safe HTML here since we are rendering our own template.
+			return template.HTML(buf.String()), err
+		},
+		"part": func(partName string) (template.HTML, error) {
+			nameTemp := strings.Replace(name, ".html", "", -1)
+			fullPartName := fmt.Sprintf("%s-%s", nameTemp, partName)
+			buf, err := s.executeTemplateBuf(fullPartName, binding)
+			if err != nil {
+				return "", nil
+			}
 			return template.HTML(buf.String()), err
 		},
 		"current": func() (string, error) {
