@@ -17,6 +17,32 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris` or let the automatic updater do that for you.
 
+# Su, 28 October 2018 | v11.0.1
+
+- Update benchmarks: https://github.com/kataras/iris/commit/d1b47b1ec65ae77a2ca7485e510386f4a5456ac4
+- Add link for third-party source benchmarks: https://github.com/kataras/iris/commit/64e80a7ee5c23ed938ddc8b68d181a25420c7653
+- Add optionally custom low-level websocket message data prefix as requested at: https://github.com/kataras/iris/issues/1113 by [@jjhesk](https://github.com/jjhesk). Example:
+
+```go
+app := iris.New()
+
+// [...]
+wsServer := websocket.New(websocket.Config{
+    // [...]
+    EvtMessagePrefix: []byte("my-custom-prefix:"),
+})
+
+// [...]
+
+// serve the javascript built'n client-side library,
+// see websockets.html script tags, this path is used.
+app.Any("/iris-ws.js", func(ctx iris.Context) {
+    ctx.Write(wsServer.ClientSource)
+})
+
+// [...]
+```
+
 # Su, 21 October 2018 | v11.0.0
 
 For the craziest of us, click [here](https://github.com/kataras/iris/compare/v10.7.0...v11) 🔥 to find out the commits and the code changes since our previous release.

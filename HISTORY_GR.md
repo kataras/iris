@@ -17,9 +17,13 @@
 
 **Πώς να αναβαθμίσετε**: Ανοίξτε την γραμμή εντολών σας και εκτελέστε αυτήν την εντολή: `go get -u github.com/kataras/iris`  ή αφήστε το αυτόματο updater να το κάνει αυτό για σας.
 
+# Su, 28 October 2018 | v11.0.1
+
+Πατήστε [εδώ](https://github.com/kataras/iris/blob/master/HISTORY.md#su-28-october-2018--v1101) για να διαβάσετε στα αγγλικά τις αλλαγές και το νέο feature που φέρνει το τελευταίο patch για την έκδοση 11.
+
 # Su, 21 October 2018 | v11.0.0
 
-Πατήστε [εδώ](https://github.com/kataras/iris/blob/master/HISTORY.md#su-21-october-2018--v11) για να διαβάσετε στα αγγλικά τις αλλαγές και τα νέα features που φέρνει νεότερη έκδοση του Iris, version 11.
+Πατήστε [εδώ](https://github.com/kataras/iris/blob/master/HISTORY.md#su-21-october-2018--v1100) για να διαβάσετε στα αγγλικά τις αλλαγές και τα νέα features που φέρνει νεότερη έκδοση του Iris, version 11.
 
 # Sat, 11 August 2018 | v10.7.0
 

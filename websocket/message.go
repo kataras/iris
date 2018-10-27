@@ -1,179 +1,181 @@
 package websocket
 
 import (
+	"bytes"
+	"encoding/binary"
 	"encoding/json"
-	"math/rand"
 	"strconv"
-	"strings"
-	"time"
 
 	"github.com/kataras/iris/core/errors"
 	"github.com/valyala/bytebufferpool"
 )
 
-// The same values are exists on client side also
-const (
-	websocketStringMessageType websocketMessageType = iota
-	websocketIntMessageType
-	websocketBoolMessageType
-	websocketBytesMessageType
-	websocketJSONMessageType
-)
-
-const (
-	websocketMessagePrefix          = "iris-websocket-message:"
-	websocketMessageSeparator       = ";"
-	websocketMessagePrefixLen       = len(websocketMessagePrefix)
-	websocketMessageSeparatorLen    = len(websocketMessageSeparator)
-	websocketMessagePrefixAndSepIdx = websocketMessagePrefixLen + websocketMessageSeparatorLen - 1
-	websocketMessagePrefixIdx       = websocketMessagePrefixLen - 1
-	websocketMessageSeparatorIdx    = websocketMessageSeparatorLen - 1
-)
-
-var (
-	websocketMessageSeparatorByte = websocketMessageSeparator[0]
-	websocketMessageBuffer        = bytebufferpool.Pool{}
-	websocketMessagePrefixBytes   = []byte(websocketMessagePrefix)
-)
-
 type (
-	websocketMessageType uint8
+	messageType uint8
 )
 
-func (m websocketMessageType) String() string {
+func (m messageType) String() string {
 	return strconv.Itoa(int(m))
 }
 
-func (m websocketMessageType) Name() string {
-	if m == websocketStringMessageType {
+func (m messageType) Name() string {
+	switch m {
+	case messageTypeString:
 		return "string"
-	} else if m == websocketIntMessageType {
+	case messageTypeInt:
 		return "int"
-	} else if m == websocketBoolMessageType {
+	case messageTypeBool:
 		return "bool"
-	} else if m == websocketBytesMessageType {
+	case messageTypeBytes:
 		return "[]byte"
-	} else if m == websocketJSONMessageType {
+	case messageTypeJSON:
 		return "json"
+	default:
+		return "Invalid(" + m.String() + ")"
 	}
-
-	return "Invalid(" + m.String() + ")"
-
 }
+
+// The same values are exists on client side too.
+const (
+	messageTypeString messageType = iota
+	messageTypeInt
+	messageTypeBool
+	messageTypeBytes
+	messageTypeJSON
+)
+
+const (
+	messageSeparator = ";"
+)
+
+var messageSeparatorByte = messageSeparator[0]
+
+type messageSerializer struct {
+	prefix []byte
+
+	prefixLen       int
+	separatorLen    int
+	prefixAndSepIdx int
+	prefixIdx       int
+	separatorIdx    int
+
+	buf *bytebufferpool.Pool
+}
+
+func newMessageSerializer(messagePrefix []byte) *messageSerializer {
+	return &messageSerializer{
+		prefix:          messagePrefix,
+		prefixLen:       len(messagePrefix),
+		separatorLen:    len(messageSeparator),
+		prefixAndSepIdx: len(messagePrefix) + len(messageSeparator) - 1,
+		prefixIdx:       len(messagePrefix) - 1,
+		separatorIdx:    len(messageSeparator) - 1,
+
+		buf: new(bytebufferpool.Pool),
+	}
+}
+
+var (
+	boolTrueB  = []byte("true")
+	boolFalseB = []byte("false")
+)
 
 // websocketMessageSerialize serializes a custom websocket message from websocketServer to be delivered to the client
 // returns the  string form of the message
 // Supported data types are: string, int, bool, bytes and JSON.
-func websocketMessageSerialize(event string, data interface{}) (string, error) {
-	var msgType websocketMessageType
-	var dataMessage string
+func (ms *messageSerializer) serialize(event string, data interface{}) ([]byte, error) {
+	b := ms.buf.Get()
+	b.Write(ms.prefix)
+	b.WriteString(event)
+	b.WriteByte(messageSeparatorByte)
 
-	if s, ok := data.(string); ok {
-		msgType = websocketStringMessageType
-		dataMessage = s
-	} else if i, ok := data.(int); ok {
-		msgType = websocketIntMessageType
-		dataMessage = strconv.Itoa(i)
-	} else if b, ok := data.(bool); ok {
-		msgType = websocketBoolMessageType
-		dataMessage = strconv.FormatBool(b)
-	} else if by, ok := data.([]byte); ok {
-		msgType = websocketBytesMessageType
-		dataMessage = string(by)
-	} else {
+	switch v := data.(type) {
+	case string:
+		b.WriteString(messageTypeString.String())
+		b.WriteByte(messageSeparatorByte)
+		b.WriteString(v)
+	case int:
+		b.WriteString(messageTypeInt.String())
+		b.WriteByte(messageSeparatorByte)
+		binary.Write(b, binary.LittleEndian, v)
+	case bool:
+		b.WriteString(messageTypeBool.String())
+		b.WriteByte(messageSeparatorByte)
+		if v {
+			b.Write(boolTrueB)
+		} else {
+			b.Write(boolFalseB)
+		}
+	case []byte:
+		b.WriteString(messageTypeBytes.String())
+		b.WriteByte(messageSeparatorByte)
+		b.Write(v)
+	default:
 		//we suppose is json
 		res, err := json.Marshal(data)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
-		msgType = websocketJSONMessageType
-		dataMessage = string(res)
+		b.WriteString(messageTypeJSON.String())
+		b.WriteByte(messageSeparatorByte)
+		b.Write(res)
 	}
 
-	b := websocketMessageBuffer.Get()
-	b.WriteString(websocketMessagePrefix)
-	b.WriteString(event)
-	b.WriteString(websocketMessageSeparator)
-	b.WriteString(msgType.String())
-	b.WriteString(websocketMessageSeparator)
-	b.WriteString(dataMessage)
-	dataMessage = b.String()
-	websocketMessageBuffer.Put(b)
+	message := b.Bytes()
+	ms.buf.Put(b)
 
-	return dataMessage, nil
-
+	return message, nil
 }
 
 var errInvalidTypeMessage = errors.New("Type %s is invalid for message: %s")
 
-// websocketMessageDeserialize deserializes a custom websocket message from the client
+// deserialize deserializes a custom websocket message from the client
 // ex: iris-websocket-message;chat;4;themarshaledstringfromajsonstruct will return 'hello' as string
 // Supported data types are: string, int, bool, bytes and JSON.
-func websocketMessageDeserialize(event string, websocketMessage string) (message interface{}, err error) {
-	t, formaterr := strconv.Atoi(websocketMessage[websocketMessagePrefixAndSepIdx+len(event)+1 : websocketMessagePrefixAndSepIdx+len(event)+2]) // in order to iris-websocket-message;user;-> 4
-	if formaterr != nil {
-		return nil, formaterr
-	}
-	_type := websocketMessageType(t)
-	_message := websocketMessage[websocketMessagePrefixAndSepIdx+len(event)+3:] // in order to iris-websocket-message;user;4; -> themarshaledstringfromajsonstruct
-
-	if _type == websocketStringMessageType {
-		message = string(_message)
-	} else if _type == websocketIntMessageType {
-		message, err = strconv.Atoi(_message)
-	} else if _type == websocketBoolMessageType {
-		message, err = strconv.ParseBool(_message)
-	} else if _type == websocketBytesMessageType {
-		message = []byte(_message)
-	} else if _type == websocketJSONMessageType {
-		err = json.Unmarshal([]byte(_message), &message)
-	} else {
-		return nil, errInvalidTypeMessage.Format(_type.Name(), websocketMessage)
+func (ms *messageSerializer) deserialize(event []byte, websocketMessage []byte) (interface{}, error) {
+	dataStartIdx := ms.prefixAndSepIdx + len(event) + 3
+	if len(websocketMessage) <= dataStartIdx {
+		return nil, errors.New("websocket invalid message: " + string(websocketMessage))
 	}
 
-	return
+	typ, err := strconv.Atoi(string(websocketMessage[ms.prefixAndSepIdx+len(event)+1 : ms.prefixAndSepIdx+len(event)+2])) // in order to iris-websocket-message;user;-> 4
+	if err != nil {
+		return nil, err
+	}
+
+	data := websocketMessage[dataStartIdx:] // in order to iris-websocket-message;user;4; -> themarshaledstringfromajsonstruct
+
+	switch messageType(typ) {
+	case messageTypeString:
+		return string(data), nil
+	case messageTypeInt:
+		msg, err := strconv.Atoi(string(data))
+		if err != nil {
+			return nil, err
+		}
+		return msg, nil
+	case messageTypeBool:
+		if bytes.Equal(data, boolTrueB) {
+			return true, nil
+		}
+		return false, nil
+	case messageTypeBytes:
+		return data, nil
+	case messageTypeJSON:
+		var msg interface{}
+		err := json.Unmarshal(data, &msg)
+		return msg, err
+	default:
+		return nil, errInvalidTypeMessage.Format(messageType(typ).Name(), websocketMessage)
+	}
 }
 
 // getWebsocketCustomEvent return empty string when the websocketMessage is native message
-func getWebsocketCustomEvent(websocketMessage string) string {
-	if len(websocketMessage) < websocketMessagePrefixAndSepIdx {
-		return ""
+func (ms *messageSerializer) getWebsocketCustomEvent(websocketMessage []byte) []byte {
+	if len(websocketMessage) < ms.prefixAndSepIdx {
+		return nil
 	}
-	s := websocketMessage[websocketMessagePrefixAndSepIdx:]
-	evt := s[:strings.IndexByte(s, websocketMessageSeparatorByte)]
+	s := websocketMessage[ms.prefixAndSepIdx:]
+	evt := s[:bytes.IndexByte(s, messageSeparatorByte)]
 	return evt
-}
-
-const (
-	letterBytes   = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	letterIdxBits = 6                    // 6 bits to represent a letter index
-	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
-	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
-)
-
-var src = rand.NewSource(time.Now().UnixNano())
-
-// random takes a parameter (int) and returns random slice of byte
-// ex: var randomstrbytes []byte; randomstrbytes = utils.Random(32)
-func random(n int) []byte {
-	b := make([]byte, n)
-	// A src.Int63() generates 63 random bits, enough for letterIdxMax characters!
-	for i, cache, remain := n-1, src.Int63(), letterIdxMax; i >= 0; {
-		if remain == 0 {
-			cache, remain = src.Int63(), letterIdxMax
-		}
-		if idx := int(cache & letterIdxMask); idx < len(letterBytes) {
-			b[i] = letterBytes[idx]
-			i--
-		}
-		cache >>= letterIdxBits
-		remain--
-	}
-
-	return b
-}
-
-// randomString accepts a number(10 for example) and returns a random string using simple but fairly safe random algorithm
-func randomString(n int) string {
-	return string(random(n))
 }
