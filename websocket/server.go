@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"bytes"
 	"sync"
 
 	"github.com/kataras/iris/context"
@@ -34,7 +35,15 @@ type (
 	//
 	// To serve the built'n javascript client-side library look the `websocket.ClientHandler`.
 	Server struct {
-		config                Config
+		config Config
+		// ClientSource contains the javascript side code
+		// for the iris websocket communication
+		// based on the configuration's `EvtMessagePrefix`.
+		//
+		// Use a route to serve this file on a specific path, i.e
+		// app.Any("/iris-ws.js", func(ctx iris.Context) { ctx.Write(mywebsocketServer.ClientSource) })
+		ClientSource          []byte
+		messageSerializer     *messageSerializer
 		connections           sync.Map            // key = the Connection ID.
 		rooms                 map[string][]string // by default a connection is joined to a room which has the connection id as its name
 		mu                    sync.RWMutex        // for rooms.
@@ -53,6 +62,8 @@ func New(cfg Config) *Server {
 	cfg = cfg.Validate()
 	return &Server{
 		config:                cfg,
+		ClientSource:          bytes.Replace(ClientSource, []byte(DefaultEvtMessageKey), cfg.EvtMessagePrefix, -1),
+		messageSerializer:     newMessageSerializer(cfg.EvtMessagePrefix),
 		connections:           sync.Map{}, // ready-to-use, this is not necessary.
 		rooms:                 make(map[string][]string),
 		onConnectionListeners: make([]ConnectionFunc, 0),

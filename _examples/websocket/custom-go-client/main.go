@@ -89,7 +89,7 @@ func SendMessage(serverID, to, method, message string) error {
 func SendtBytes(serverID, to, method string, message []byte) error {
 	// look https://github.com/kataras/iris/blob/master/websocket/message.go , client.go and client.js
 	// to understand the buffer line:
-	buffer := []byte(fmt.Sprintf("iris-websocket-message:%v;0;%v;%v;", method, serverID, to))
+	buffer := []byte(fmt.Sprintf("%s%v;0;%v;%v;", websocket.DefaultEvtMessageKey, method, serverID, to))
 	buffer = append(buffer, message...)
 	_, err := WS.Write(buffer)
 	if err != nil {

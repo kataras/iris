@@ -7,7 +7,7 @@ import (
 )
 
 // ClientHandler is the handler which serves the javascript client-side
-// library. It uses a small cache based on the iris/context.StaticCacheDuration.
+// library. It uses a small cache based on the iris/context.WriteWithExpiration.
 func ClientHandler() context.Handler {
 	modNow := time.Now()
 	return func(ctx context.Context) {
@@ -20,12 +20,12 @@ func ClientHandler() context.Handler {
 	}
 }
 
-// ClientSource the client-side javascript raw source code
+// ClientSource the client-side javascript raw source code.
 var ClientSource = []byte(`var websocketStringMessageType = 0;
 var websocketIntMessageType = 1;
 var websocketBoolMessageType = 2;
 var websocketJSONMessageType = 4;
-var websocketMessagePrefix = "iris-websocket-message:";
+var websocketMessagePrefix = "` + DefaultEvtMessageKey + `";
 var websocketMessageSeparator = ";";
 var websocketMessagePrefixLen = websocketMessagePrefix.length;
 var websocketMessageSeparatorLen = websocketMessageSeparator.length;

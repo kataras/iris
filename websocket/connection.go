@@ -415,15 +415,15 @@ func (c *connection) startReader() {
 // messageReceived checks the incoming message and fire the nativeMessage listeners or the event listeners (ws custom message)
 func (c *connection) messageReceived(data []byte) {
 
-	if bytes.HasPrefix(data, websocketMessagePrefixBytes) {
-		customData := string(data)
+	if bytes.HasPrefix(data, c.server.config.EvtMessagePrefix) {
 		//it's a custom ws message
-		receivedEvt := getWebsocketCustomEvent(customData)
-		listeners := c.onEventListeners[receivedEvt]
-		if listeners == nil { // if not listeners for this event exit from here
-			return
+		receivedEvt := c.server.messageSerializer.getWebsocketCustomEvent(data)
+		listeners, ok := c.onEventListeners[string(receivedEvt)]
+		if !ok || len(listeners) == 0 {
+			return // if not listeners for this event exit from here
 		}
-		customMessage, err := websocketMessageDeserialize(receivedEvt, customData)
+
+		customMessage, err := c.server.messageSerializer.deserialize(receivedEvt, data)
 		if customMessage == nil || err != nil {
 			return
 		}

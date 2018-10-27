@@ -34,10 +34,10 @@ func (e *emitter) EmitMessage(nativeMessage []byte) error {
 }
 
 func (e *emitter) Emit(event string, data interface{}) error {
-	message, err := websocketMessageSerialize(event, data)
+	message, err := e.conn.server.messageSerializer.serialize(event, data)
 	if err != nil {
 		return err
 	}
-	e.EmitMessage([]byte(message))
+	e.EmitMessage(message)
 	return nil
 }
