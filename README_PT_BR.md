@@ -106,7 +106,7 @@ _Atualizado em : [Terça, 21 de Novembro de 2017](_benchmarks/README_UNIX.md)_
 
 ## Apoie
 
-- [HISTORY](HISTORY.md#su-21-october-2018--v1100) o arquivo HISTORY é o seu melhor amigo, ele contém informações sobre as últimas features e mudanças.
+- [HISTORY](HISTORY.md#tu-30-october-2018--v1102) o arquivo HISTORY é o seu melhor amigo, ele contém informações sobre as últimas features e mudanças.
 - Econtrou algum bug ? Poste-o nas [issues](https://github.com/kataras/iris/issues)
 - Possui alguma dúvida ou gostaria de falar com alguém experiente para resolver seu problema em tempo real ? Junte-se ao [chat da nossa comunidade](https://chat.iris-go.com).
 - Complete nosso formulário de experiência do usuário clicando [aqui](https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link)

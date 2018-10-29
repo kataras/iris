@@ -102,7 +102,7 @@ _更新于: [2017年11月21日星期二](_benchmarks/README_UNIX.md)_
 
 ## 支持
 
-- [更新记录](HISTORY_ZH.md#sat-11-august-2018--v1070) 是您最好的朋友，它包含有关最新功能和更改的信息
+- [更新记录](HISTORY_ZH.md#tu-30-october-2018--v1102) 是您最好的朋友，它包含有关最新功能和更改的信息
 - 你碰巧找到了一个错误？ 请提交 [github issues](https://github.com/kataras/iris/issues)
 - 您是否有任何疑问或需要与有经验的人士交谈以实时解决问题？ [加入我们的聊天](https://chat.iris-go.com)
 - [点击这里完成我们基于表单的用户体验报告](https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link) 
