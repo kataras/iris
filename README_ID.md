@@ -106,7 +106,7 @@ _Diperbarui pada: [Tuesday, 21 November 2017](_benchmarks/README_UNIX.md)_
 
 ## Dukungan
 
-- File [HISTORY](HISTORY_ID.md#su-21-october-2018--v1100) adalah sahabat anda, file tersebut memiliki informasi terkait fitur dan perubahan terbaru
+- File [HISTORY](HISTORY_ID.md#tu-30-october-2018--v1102) adalah sahabat anda, file tersebut memiliki informasi terkait fitur dan perubahan terbaru
 - Apakah anda menemukan bug? Laporkan itu melalui [github issues](https://github.com/kataras/iris/issues)
 - Apakah anda memiliki pertanyaan atau butuh untuk bicara kepada seseorang yang sudah berpengalaman untuk menyelesaikan masalah secara langsung? Gabung bersama kami di [community chat](https://chat.iris-go.com)
 - Lengkapi laporan user-experience berbasis formulir kami dengan tekan [disini](https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link)

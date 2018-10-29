@@ -17,6 +17,10 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris` or let the automatic updater do that for you.
 
+# Tu, 30 October 2018 | v11.0.2
+
+Fix [memstore](core/memstore/memstore.go) overflows when build 32 bit app, reported and fixed by [@bouroo](https://github.com/bouroo) at: https://github.com/kataras/iris/issues/1118
+
 # Su, 28 October 2018 | v11.0.1
 
 - Update benchmarks: https://github.com/kataras/iris/commit/d1b47b1ec65ae77a2ca7485e510386f4a5456ac4
