@@ -267,7 +267,7 @@ func (e Entry) UintDefault(def uint) (uint, error) {
 	}
 
 	x64 := strconv.IntSize == 64
-	var maxValue uint = math.MaxUint32
+	var maxValue uint64 = math.MaxUint32
 	if x64 {
 		maxValue = math.MaxUint64
 	}
@@ -436,7 +436,9 @@ func (e Entry) Uint32Default(def uint32) (uint32, error) {
 			return def, errFindParse.Format("uint32", e.Key)
 		}
 		return uint32(vv), nil
-	case int:
+	case int32:
+		return uint32(vv), nil
+	case int64:
 		if vv < 0 || vv > math.MaxUint32 {
 			return def, errFindParse.Format("uint32", e.Key)
 		}
@@ -464,11 +466,6 @@ func (e Entry) Uint64Default(def uint64) (uint64, error) {
 			return def, errFindParse.Format("uint64", e.Key)
 		}
 		return uint64(val), nil
-	case uint:
-		if vv > math.MaxUint64 {
-			return def, errFindParse.Format("uint64", e.Key)
-		}
-		return uint64(vv), nil
 	case uint8:
 		return uint64(vv), nil
 	case uint16:
