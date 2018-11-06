@@ -19,7 +19,6 @@ type Tree struct {
 	lex       *lexer
 	token     [3]item // three-token lookahead for parser.
 	peekCount int
-	tab       int // depth of focus
 
 	mixin map[string]*MixinNode
 	block map[string]*ListNode
@@ -127,10 +126,10 @@ func (t *Tree) recover(errp *error) {
 	}
 }
 
-func (t *Tree) Parse(text string) (tree *Tree, err error) {
+func (t *Tree) Parse(text []byte) (tree *Tree, err error) {
 	defer t.recover(&err)
 	t.lex = lex(t.Name, text)
-	t.text = text
+	t.text = string(text)
 	t.topParse()
 	t.lex = nil
 	return t, nil

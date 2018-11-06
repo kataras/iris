@@ -1,23 +1,32 @@
 package main
 
-// go get -u github.com/iris-contrib/middleware/...
-
 import (
 	"github.com/kataras/iris"
-
-	"github.com/iris-contrib/middleware/cors"
 )
 
 func main() {
 	app := iris.New()
 
-	crs := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"}, // allows everything, use that to change the hosts.
-		AllowCredentials: true,
-	})
+	crs := func(ctx iris.Context) {
+		ctx.Header("Access-Control-Allow-Origin", "*")
+		ctx.Header("Access-Control-Allow-Credentials", "true")
+		ctx.Header("Access-Control-Allow-Headers", "Access-Control-Allow-Origin,Content-Type")
+		ctx.Next()
+	} // or	"github.com/iris-contrib/middleware/cors"
 
 	v1 := app.Party("/api/v1", crs).AllowMethods(iris.MethodOptions) // <- important for the preflight.
 	{
+		v1.Post("/mailer", func(ctx iris.Context) {
+			var any iris.Map
+			err := ctx.ReadJSON(&any)
+			if err != nil {
+				ctx.WriteString(err.Error())
+				ctx.StatusCode(iris.StatusBadRequest)
+				return
+			}
+			ctx.Application().Logger().Infof("received %#+v", any)
+		})
+
 		v1.Get("/home", func(ctx iris.Context) {
 			ctx.WriteString("Hello from /home")
 		})
@@ -35,5 +44,5 @@ func main() {
 		})
 	}
 
-	app.Run(iris.Addr("localhost:8080"))
+	app.Run(iris.Addr(":80"))
 }

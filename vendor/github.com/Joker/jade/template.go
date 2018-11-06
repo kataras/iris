@@ -34,7 +34,7 @@ Output:
 
 	<!DOCTYPE html><html><body><p>Hello world!</p></body></html>
 */
-func Parse(name, text string) (string, error) {
+func Parse(name string, text []byte) (string, error) {
 	outTpl, err := New(name).Parse(text)
 	if err != nil {
 		return "", err
@@ -50,7 +50,7 @@ func ParseFile(filename string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return Parse(filepath.Base(filename), string(bs))
+	return Parse(filepath.Base(filename), bs)
 }
 
 func (t *Tree) WriteIn(b io.Writer) {
