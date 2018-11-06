@@ -185,14 +185,15 @@ padrão. Feito isso, você pode seguir as seguintes diretrizes:
 | Quickstart do Iris com Nanobox | https://guides.nanobox.io/golang/iris/from-scratch |
 -->
 
-1. [Web app básico utilizando o Iris](https://github.com/gauravtiwari/go_iris_app)
-2. [Uma mini rede social criada com o incrível Iris💖💖] (https://github.com/iris-contrib/Iris-Mini-Social-Network)
-3. [Iris isomorphic react/hot reloadable/redux/css-modules starter kit](https://github.com/iris-contrib/iris-starter-kit)
-4. [Projeto demo usando react com typescript e Iris](https://github.com/ionutvilie/react-ts)
-5. [Plataforma de Gerenciamento de Localização auto hospedada criada com Iris e Angular](https://github.com/iris-contrib/parrot)
-6. [Iris + Docker e Kubernetes](https://github.com/iris-contrib/cloud-native-go)
-7. [Quickstart do Iris com Nanobox](https://guides.nanobox.io/golang/iris/from-scratch)
-8. [Um projeto Hasura para iniciantes pronto para o deply com um app Golang hello-world utilizando o IRIS](https://hasura.io/hub/project/hasura/hello-golang-iris)
+1. [A basic CRUD API in golang with Iris](https://github.com/jebzmos4/Iris-golang)
+2. [Web app básico utilizando o Iris](https://github.com/gauravtiwari/go_iris_app)
+3. [Uma mini rede social criada com o incrível Iris💖💖] (https://github.com/iris-contrib/Iris-Mini-Social-Network)
+4. [Iris isomorphic react/hot reloadable/redux/css-modules starter kit](https://github.com/iris-contrib/iris-starter-kit)
+5. [Projeto demo usando react com typescript e Iris](https://github.com/ionutvilie/react-ts)
+6. [Plataforma de Gerenciamento de Localização auto hospedada criada com Iris e Angular](https://github.com/iris-contrib/parrot)
+7. [Iris + Docker e Kubernetes](https://github.com/iris-contrib/cloud-native-go)
+8. [Quickstart do Iris com Nanobox](https://guides.nanobox.io/golang/iris/from-scratch)
+9. [Um projeto Hasura para iniciantes pronto para o deply com um app Golang hello-world utilizando o IRIS](https://hasura.io/hub/project/hasura/hello-golang-iris)
 
 > Voce criou algo parecido ? [Informe-nos](https://github.com/kataras/iris/pulls)!
 
@@ -204,6 +205,7 @@ Iris, ao contrário dos demais, é 100% compatível com os padrões e esse é o 
 
 ### Artigos
 
+* [CRUD REST API in Iris (a framework for golang)](https://medium.com/@jebzmos4/crud-rest-api-in-iris-a-framework-for-golang-a5d33652401e)
 * [Um aplicação Todo utilizando Iris e Vue.js](https://hackernoon.com/a-todo-mvc-application-using-iris-and-vue-js-5019ff870064)
 * [Um projeto Hasura para iniciantes pronto para o deply com um app Golang hello-world utilizando o IRIS](https://bit.ly/2lmKaAZ)
 * [Top 6 frameworks web do Go em 2017](https://blog.usejournal.com/top-6-web-frameworks-for-go-as-of-2017-23270e059c4b)
