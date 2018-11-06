@@ -3,7 +3,7 @@ module github.com/kataras/iris
 require (
 	github.com/AndreasBriese/bbloom v0.0.0-20180913140656-343706a395b7 // indirect
 	github.com/BurntSushi/toml v0.3.1
-	github.com/Joker/jade v0.7.0
+	github.com/Joker/jade v1.0.0
 	github.com/Shopify/goreferrer v0.0.0-20180807163728-b9777dc9f9cc
 	github.com/ajg/form v0.0.0-20160822230020-523a5da1a92f // indirect
 	github.com/aymerick/raymond v2.0.2+incompatible
@@ -59,7 +59,7 @@ require (
 	github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82 // indirect
 	github.com/yudai/pp v2.0.1+incompatible // indirect
 	golang.org/x/crypto v0.0.0-20180927165925-5295e8364332
-	golang.org/x/net v0.0.0-20180926154720-4dfa2610cdf3 // indirect
+	golang.org/x/net v0.0.0-20181102091132-c10e9556a7bc // indirect
 	golang.org/x/sys v0.0.0-20180928133829-e4b3c5e90611 // indirect
 	gopkg.in/ini.v1 v1.38.3 // indirect
 	gopkg.in/mgo.v2 v2.0.0-20180705113604-9856a29383ce // indirect

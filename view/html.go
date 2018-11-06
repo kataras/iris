@@ -32,7 +32,7 @@ type (
 		funcs       map[string]interface{}
 
 		//
-		middleware func(name string, contents string) (string, error)
+		middleware func(name string, contents []byte) (string, error)
 		Templates  *template.Template
 		//
 	}
@@ -266,7 +266,7 @@ func (s *HTMLEngine) loadDirectory() error {
 				tmpl := s.Templates.New(name)
 				tmpl.Option(s.options...)
 				if s.middleware != nil {
-					contents, err = s.middleware(name, contents)
+					contents, err = s.middleware(name, buf)
 				}
 				if err != nil {
 					templateErr = err
@@ -364,7 +364,7 @@ func (s *HTMLEngine) loadAssets() error {
 			tmpl.Option(s.options...)
 
 			if s.middleware != nil {
-				contents, err = s.middleware(name, contents)
+				contents, err = s.middleware(name, buf)
 				if err != nil {
 					templateErr = fmt.Errorf("%v for name '%s'", err, name)
 					continue

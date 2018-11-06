@@ -235,7 +235,7 @@ type (
 		broadcast Emitter // pre-defined emitter that sends message to all except this
 		all       Emitter // pre-defined emitter which sends message to all clients
 
-		// access to the Context, use with causion, you can't use response writer as you imagine.
+		// access to the Context, use with caution, you can't use response writer as you imagine.
 		ctx    context.Context
 		values ConnectionValues
 		server *Server
