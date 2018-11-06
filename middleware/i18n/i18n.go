@@ -19,10 +19,8 @@ type i18nMiddleware struct {
 func (i *i18nMiddleware) ServeHTTP(ctx context.Context) {
 	wasByCookie := false
 
-	language := i.config.Default
-
 	langKey := ctx.Application().ConfigurationReadOnly().GetTranslateLanguageContextKey()
-	language = ctx.Values().GetString(langKey)
+	language := ctx.Values().GetString(langKey)
 	if language == "" {
 		// try to get by url parameter
 		language = ctx.URLParam(i.config.URLParameter)
@@ -50,6 +48,7 @@ func (i *i18nMiddleware) ServeHTTP(ctx context.Context) {
 		if !wasByCookie {
 			ctx.SetCookieKV(langKey, language)
 		}
+
 		if language == "" {
 			language = i.config.Default
 		}
