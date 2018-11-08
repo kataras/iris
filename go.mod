@@ -63,6 +63,6 @@ require (
 	golang.org/x/sys v0.0.0-20180928133829-e4b3c5e90611 // indirect
 	gopkg.in/ini.v1 v1.38.3 // indirect
 	gopkg.in/mgo.v2 v2.0.0-20180705113604-9856a29383ce // indirect
-	gopkg.in/russross/blackfriday.v2 v2.0.0+incompatible
+	gopkg.in/russross/blackfriday.v2 v2.0.1+incompatible
 	gopkg.in/yaml.v2 v2.2.1
 )
