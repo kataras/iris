@@ -17,6 +17,64 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris` or let the automatic updater do that for you.
 
+# Fr, 09 November 2018 | v11.0.4
+
+Add `Configuration.DisablePathCorrectionRedirection` - `iris.WithoutPathCorrectionRedirection` to support
+direct handler execution of the matching route without the last `'/'` instead of sending a redirect response when `DisablePathCorrection` is set to false(default behavior).
+
+Usage:
+
+For example, CORS needs the allow origin headers in redirect response as well,
+however is not possible from the router to know what headers a route's handler will send to the client.
+So the best option we have is to just execute the handler itself instead of sending a redirect response.
+Add the `app.Run(..., iris.WithoutPathCorrectionRedirection)` on the server side if you wish
+to directly fire the handler instead of redirection (which is the default behavior)
+on request paths like `"$yourdomain/v1/mailer/"` when `"/v1/mailer"` route handler is registered.
+
+Example Code:
+
+```go
+package main
+
+import "github.com/kataras/iris"
+
+
+func main() {
+    app := iris.New()
+
+    crs := func(ctx iris.Context) {
+        ctx.Header("Access-Control-Allow-Origin", "*")
+        ctx.Header("Access-Control-Allow-Credentials", "true")
+        ctx.Header("Access-Control-Allow-Headers",
+            "Access-Control-Allow-Origin,Content-Type")
+        ctx.Next()
+    }
+
+    v1 := app.Party("/api/v1", crs).AllowMethods(iris.MethodOptions)
+    {
+        v1.Post("/mailer", func(ctx iris.Context) {
+            var any iris.Map
+            err := ctx.ReadJSON(&any)
+            if err != nil {
+                ctx.WriteString(err.Error())
+                ctx.StatusCode(iris.StatusBadRequest)
+                return
+            }
+            ctx.Application().Logger().Infof("received %#+v", any)
+        })
+    }
+
+    //                        HERE:
+    app.Run(iris.Addr(":80"), iris.WithoutPathCorrectionRedirection)
+}
+```
+
+# Tu, 06 November 2018 | v11.0.3
+
+- add "part" html view engine's tmpl function: [15bb55d](https://github.com/kataras/iris/commit/15bb55d85eac378bbe0c98c10ffea938cc05fe4d)
+
+- update pug engine's vendor: [c20bc3b](https://github.com/kataras/iris/commit/c20bc3bceef158ef99931e609123fa0aca2a918c)
+
 # Tu, 30 October 2018 | v11.0.2
 
 Fix [memstore](core/memstore/memstore.go) overflows when build 32 bit app, reported and fixed by [@bouroo](https://github.com/bouroo) at: https://github.com/kataras/iris/issues/1118

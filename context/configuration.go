@@ -20,6 +20,11 @@ type ConfigurationReadOnly interface {
 	// (permant)redirects the client to the correct path /home.
 	GetDisablePathCorrection() bool
 
+	// GetDisablePathCorrectionRedirection returns the Configuration#DisablePathCorrectionRedirection field.
+	// If DisablePathCorrectionRedirection set to true then it will fire the handler of the matching route without
+	// the last slash ("/") instead of send a redirection status.
+	GetDisablePathCorrectionRedirection() bool
+
 	// GetEnablePathEscape is the configuration.EnablePathEscape,
 	// returns true when its escapes the path, the named parameters (if any).
 	GetEnablePathEscape() bool

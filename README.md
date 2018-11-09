@@ -1013,7 +1013,7 @@ Iris, unlike others, is 100% compatible with the standards and that's why the ma
 
 ## Support
 
-- [HISTORY](HISTORY.md#tu-30-october-2018--v1102) file is your best friend, it contains information about the latest features and changes
+- [HISTORY](HISTORY.md#fr-09-november-2018--v1104) file is your best friend, it contains information about the latest features and changes
 - Did you happen to find a bug? Post it at [github issues](https://github.com/kataras/iris/issues)
 - Do you have any questions or need to speak with someone experienced to solve a problem at real-time? Join us to the [community chat](https://chat.iris-go.com)
 - Complete our form-based user experience report by clicking [here](https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link)
