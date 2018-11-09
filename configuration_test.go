@@ -142,6 +142,7 @@ func TestConfigurationYAML(t *testing.T) {
 
 	yamlConfigurationContents := `
 DisablePathCorrection: false
+DisablePathCorrectionRedirection: true
 EnablePathEscape: false
 FireMethodNotAllowed: true
 EnableOptimizations: true
@@ -165,6 +166,10 @@ Other:
 
 	if expected := false; c.DisablePathCorrection != expected {
 		t.Fatalf("error on TestConfigurationYAML: Expected DisablePathCorrection %v but got %v", expected, c.DisablePathCorrection)
+	}
+
+	if expected := true; c.DisablePathCorrectionRedirection != expected {
+		t.Fatalf("error on TestConfigurationYAML: Expected DisablePathCorrectionRedirection %v but got %v", expected, c.DisablePathCorrectionRedirection)
 	}
 
 	if expected := false; c.EnablePathEscape != expected {
@@ -235,6 +240,7 @@ func TestConfigurationTOML(t *testing.T) {
 	}()
 
 	tomlConfigurationContents := `
+DisablePathCorrectionRedirection = true
 EnablePathEscape = false
 FireMethodNotAllowed = true
 EnableOptimizations = true
@@ -260,6 +266,10 @@ Charset = "UTF-8"
 
 	if expected := false; c.DisablePathCorrection != expected {
 		t.Fatalf("error on TestConfigurationTOML: Expected DisablePathCorrection %v but got %v", expected, c.DisablePathCorrection)
+	}
+
+	if expected := true; c.DisablePathCorrectionRedirection != expected {
+		t.Fatalf("error on TestConfigurationTOML: Expected DisablePathCorrectionRedirection %v but got %v", expected, c.DisablePathCorrectionRedirection)
 	}
 
 	if expected := false; c.EnablePathEscape != expected {

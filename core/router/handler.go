@@ -152,30 +152,35 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 			r := ctx.Request()
 			// use Trim to ensure there is no open redirect due to two leading slashes
 			path = "/" + strings.Trim(path, "/")
-			r.URL.Path = path
-			url := r.URL.String()
 
-			// Fixes https://github.com/kataras/iris/issues/921
-			// This is caused for security reasons, imagine a payment shop,
-			// you can't just permantly redirect a POST request, so just 307 (RFC 7231, 6.4.7).
-			if method == http.MethodPost || method == http.MethodPut {
-				ctx.Redirect(url, http.StatusTemporaryRedirect)
+			r.URL.Path = path
+			if !ctx.Application().ConfigurationReadOnly().GetDisablePathCorrectionRedirection() {
+				// do redirect, else continue with the modified path without the last "/".
+				url := r.URL.String()
+
+				// Fixes https://github.com/kataras/iris/issues/921
+				// This is caused for security reasons, imagine a payment shop,
+				// you can't just permantly redirect a POST request, so just 307 (RFC 7231, 6.4.7).
+				if method == http.MethodPost || method == http.MethodPut {
+					ctx.Redirect(url, http.StatusTemporaryRedirect)
+					return
+				}
+
+				ctx.Redirect(url, http.StatusMovedPermanently)
+
+				// RFC2616 recommends that a short note "SHOULD" be included in the
+				// response because older user agents may not understand 301/307.
+				// Shouldn't send the response for POST or HEAD; that leaves GET.
+				if method == http.MethodGet {
+					note := "<a href=\"" +
+						html.EscapeString(url) +
+						"\">Moved Permanently</a>.\n"
+
+					ctx.ResponseWriter().WriteString(note)
+				}
 				return
 			}
 
-			ctx.Redirect(url, http.StatusMovedPermanently)
-
-			// RFC2616 recommends that a short note "SHOULD" be included in the
-			// response because older user agents may not understand 301/307.
-			// Shouldn't send the response for POST or HEAD; that leaves GET.
-			if method == http.MethodGet {
-				note := "<a href=\"" +
-					html.EscapeString(url) +
-					"\">Moved Permanently</a>.\n"
-
-				ctx.ResponseWriter().WriteString(note)
-			}
-			return
 		}
 	}
 
