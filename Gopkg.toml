@@ -52,7 +52,7 @@
 
 [[constraint]]
   branch = "v2"
-  name = "gopkg.in/russross/blackfriday.v2"
+  name = "github.com/russross/blackfriday"
 
 [[constraint]]
   branch = "master"
