@@ -800,7 +800,7 @@ Standard macro types for parameters:
     +------------------------+
     path type
     anything, should be the last part, can be more than one path segment,
-    i.e: "/test/*param" and request: "/test/path1/path2/path3" , ctx.Params().Get("param") == "path1/path2/path3"
+    i.e: "/test/{param:path}" and request: "/test/path1/path2/path3" , ctx.Params().Get("param") == "path1/path2/path3"
 
 if type is missing then parameter's type is defaulted to string, so
 {param} == {param:string}.
