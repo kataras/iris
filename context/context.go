@@ -29,7 +29,7 @@ import (
 	formbinder "github.com/iris-contrib/formBinder"
 	"github.com/json-iterator/go"
 	"github.com/microcosm-cc/bluemonday"
-	"gopkg.in/russross/blackfriday.v2"
+	"github.com/russross/blackfriday"
 	"gopkg.in/yaml.v2"
 )
 
