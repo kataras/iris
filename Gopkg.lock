@@ -152,10 +152,10 @@
   version = "v1.0.0"
 
 [[projects]]
-  name = "github.com/russross/blackfriday"
+  branch = "master"
+  name = "github.com/iris-contrib/blackfriday"
   packages = ["."]
-  revision = "d3b5b032dc8e8927d31a5071b56e14c89f045135"
-  version = "v2.0.1"
+  revision = "fd09ab28f1e13c6be7fef337a9ec91dc8bd4c4d9"
 
 [[projects]]
   branch = "master"
