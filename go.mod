@@ -20,7 +20,9 @@ require (
 	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20180825215210-0210a2f0f73c // indirect
 	github.com/gorilla/websocket v1.4.0
+	github.com/hashicorp/go-version v1.0.0
 	github.com/imkira/go-interpol v1.1.0 // indirect
+	github.com/iris-contrib/blackfriday v0.0.0-20181110223730-fd09ab28f1e1
 	github.com/iris-contrib/formBinder v0.0.0-20171010160137-ad9fb86c356f
 	github.com/iris-contrib/go.uuid v2.0.0+incompatible
 	github.com/iris-contrib/httpexpect v0.0.0-20180314041918-ebe99fcebbce
@@ -44,10 +46,8 @@ require (
 	github.com/onsi/gomega v1.4.2 // indirect
 	github.com/pkg/errors v0.8.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/russross/blackfriday v2.0.0+incompatible
 	github.com/ryanuber/columnize v2.1.0+incompatible
 	github.com/sergi/go-diff v1.0.0 // indirect
-	github.com/shurcooL/sanitized_anchor_name v0.0.0-20170918181015-86672fcb3f95 // indirect
 	github.com/smartystreets/assertions v0.0.0-20180927180507-b2de0cb4f26d // indirect
 	github.com/smartystreets/goconvey v0.0.0-20180222194500-ef6db91d284a // indirect
 	github.com/stretchr/testify v1.2.2 // indirect

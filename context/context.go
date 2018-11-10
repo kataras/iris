@@ -26,10 +26,10 @@ import (
 
 	"github.com/Shopify/goreferrer"
 	"github.com/fatih/structs"
+	"github.com/iris-contrib/blackfriday"
 	formbinder "github.com/iris-contrib/formBinder"
 	"github.com/json-iterator/go"
 	"github.com/microcosm-cc/bluemonday"
-	"github.com/russross/blackfriday"
 	"gopkg.in/yaml.v2"
 )
 
