@@ -51,12 +51,12 @@
   name = "github.com/microcosm-cc/bluemonday"
 
 [[constraint]]
-  branch = "v2"
-  name = "github.com/russross/blackfriday"
+  branch = "master"
+  name = "github.com/ryanuber/columnize"
 
 [[constraint]]
   branch = "master"
-  name = "github.com/ryanuber/columnize"
+  name = "github.com/iris-contrib/blackfriday"
 
 [[constraint]]
   branch = "v2"
