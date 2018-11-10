@@ -119,7 +119,7 @@ For the craziest of us, click [here](https://github.com/kataras/iris/compare/v10
 
 ## Routing
 
-I wrote a [new router implementation](https://github.com/kataras/muxie#philosophy) for our Iris internal(low-level) routing mechanism, it is good to know that this was the second time we have updated the router internals without a single breaking change after the v6, thanks to the very well-writen and designed-first code we have for the high-level path syntax component called [macro interpreter](macro/interpreter).
+I wrote a [new router implementation](https://github.com/kataras/muxie#philosophy) for our Iris internal(low-level) routing mechanism, it is good to know that this was the second time we have updated the router internals without a single breaking change after the v6, thanks to the very well-written and designed-first code we have for the high-level path syntax component called [macro interpreter](macro/interpreter).
 
 The new router supports things like **closest wildcard resolution**.
 
