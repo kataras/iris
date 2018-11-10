@@ -12,6 +12,10 @@ type DeprecationOptions struct {
 	DeprecationInfo string
 }
 
+func (opts DeprecationOptions) ShouldHandle() bool {
+	return opts.WarnMessage != "" || !opts.DeprecationDate.IsZero() || opts.DeprecationInfo != ""
+}
+
 var DefaultDeprecationOptions = DeprecationOptions{
 	WarnMessage: "WARNING! You are using a deprecated version of this API.",
 }

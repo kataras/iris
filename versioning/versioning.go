@@ -8,7 +8,7 @@ import (
 
 type Map map[string]context.Handler
 
-func Handler(versions Map) context.Handler {
+func NewMatcher(versions Map) context.Handler {
 	constraintsHandlers, notFoundHandler := buildConstraints(versions)
 
 	return func(ctx context.Context) {
@@ -32,6 +32,9 @@ func Handler(versions Map) context.Handler {
 			}
 		}
 
+		// pass the not matched version so the not found handler can have knowedge about it.
+		// ctx.Values().Set(Key, versionString)
+		// or let a manual cal of GetVersion(ctx) do that instead.
 		notFoundHandler(ctx)
 	}
 }
@@ -68,14 +71,14 @@ func buildConstraints(versionsHandler Map) (constraintsHandlers []*constraintsHa
 	// >= 3.0, < 4.0.
 	// I can make it ordered but I do NOT like the final API of it:
 	/*
-		app.Get("/api/user", Handler( // accepts an array, ordered, see last elem.
+		app.Get("/api/user", NewMatcher( // accepts an array, ordered, see last elem.
 			V("1.0", vHandler("v1 here")),
 			V("2.0", vHandler("v2 here")),
 			V("< 4.0", vHandler("v3.x here")),
 		))
 		instead we have:
 
-		app.Get("/api/user", Handler(Map{ // accepts a map, unordered, see last elem.
+		app.Get("/api/user", NewMatcher(Map{ // accepts a map, unordered, see last elem.
 			"1.0":           Deprecated(vHandler("v1 here")),
 			"2.0":           vHandler("v2 here"),
 			">= 3.0, < 4.0": vHandler("v3.x here"),

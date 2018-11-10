@@ -27,8 +27,9 @@ var NotFoundHandler = func(ctx context.Context) {
 		This is the appropriate response when the server does not
 		recognize the request method and is not capable of supporting it for any resource.
 	*/
-	ctx.WriteString("version not found")
+
 	ctx.StatusCode(501)
+	ctx.WriteString("version not found")
 }
 
 func GetVersion(ctx context.Context) string {
