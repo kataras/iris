@@ -17,8 +17,9 @@ type (
 	}
 
 	Group struct {
-		version string
-		routes  []vroute
+		version      string
+		extraMethods []string
+		routes       []vroute
 
 		deprecation DeprecationOptions
 	}
@@ -46,19 +47,38 @@ func (g *Group) Deprecated(options DeprecationOptions) *Group {
 	return g
 }
 
-// Handle registers a versioned route to the group.
-//
-// See `Concat` and `RegisterGroups` for more.
-func (g *Group) Handle(method string, registeredPath string, handler context.Handler) {
-	if g.deprecation.ShouldHandle() { // if `Deprecated` called first.
-		handler = Deprecated(handler, g.deprecation)
+func (g *Group) AllowMethods(methods ...string) *Group {
+	g.extraMethods = append(g.extraMethods, methods...)
+	return g
+}
+
+func (g *Group) addVRoute(method, path string, handler context.Handler) {
+	for _, r := range g.routes { // check if already exists.
+		if r.method == method && r.path == path {
+			return
+		}
 	}
 
 	g.routes = append(g.routes, vroute{
 		method:   method,
-		path:     registeredPath,
+		path:     path,
 		versions: Map{g.version: handler},
 	})
+}
+
+// Handle registers a versioned route to the group.
+//
+// See `Concat` and `RegisterGroups` for more.
+func (g *Group) Handle(method string, path string, handler context.Handler) {
+	if g.deprecation.ShouldHandle() { // if `Deprecated` called first.
+		handler = Deprecated(handler, g.deprecation)
+	}
+
+	methods := append(g.extraMethods, method)
+
+	for _, method := range methods {
+		g.addVRoute(method, path, handler)
+	}
 }
 
 // None registers an "offline" versioned route

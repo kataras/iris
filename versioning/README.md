@@ -58,9 +58,75 @@ userAPI.Get("/", myMiddleware, versioning.NewMatcher(versioning.Map{
 }))
 ```
 
-## Grouping versioned routes
+### Deprecation
 
-Impl & tests done, example not. **TODO**
+Using the `versioning.Deprecated(handler iris.Handler, options versioning.DeprecationOptions) iris.Handler` function you can mark a specific handler version as deprecated.
+
+
+```go
+v10Handler := versioning.Deprecated(sendHandler(v10Response), versioning.DeprecationOptions{
+    // if empty defaults to: "WARNING! You are using a deprecated version of this API."
+    WarnMessage string 
+    DeprecationDate time.Time
+    DeprecationInfo string
+})
+
+userAPI.Get("/", versioning.NewMatcher(versioning.Map{
+    "1.0": v10Handler,
+    // [...]
+}))
+```
+
+This will make the handler to send these headers to the client:
+
+- `"X-API-Warn": options.WarnMessage`
+- `"X-API-Deprecation-Date": context.FormatTime(ctx, options.DeprecationDate))`
+- `"X-API-Deprecation-Info": options.DeprecationInfo`
+
+> versioning.DefaultDeprecationOptions can be passed instead if you don't care about Date and Info.
+
+## Grouping routes by version
+
+Grouping routes by version is possible as well.
+
+Using the `versioning.NewGroup(version string) *versioning.Group` function you can create a group to register your versioned routes.
+The `versioning.RegisterGroups(r iris.Party, groups ...*versioning.Group)` must be called in the end in order to register the routes to a specific `Party`.
+
+```go
+app := iris.New()
+
+userAPI := app.Party("/api/user")
+// [... static serving, middlewares and etc goes here].
+
+userAPIV10 := versioning.NewGroup("1.0")
+userAPIV10.Get("/", sendHandler(v10Response))
+
+userAPIV2 := versioning.NewGroup(">= 2, < 3")
+userAPIV2.Get("/", sendHandler(v2Response))
+userAPIV2.Post("/", sendHandler(v2Response))
+userAPIV2.Put("/other", sendHandler(v2Response))
+
+versioning.RegisterGroups(userAPI, userAPIV10, userAPIV2)
+```
+
+### Deprecation for Group
+
+Just call the `Deprecated(versioning.DeprecationOptions)` on the group you want to notify your API consumers that this specific version is deprecated.
+
+```go
+userAPIV10 := versioning.NewGroup("1.0").Deprecated(versioning.DefaultDeprecationOptions)
+```
+
+### Version not found for Groups
+
+In order to register a custom version not found handler you have to use the `versioning.Concat` first, which gives you the API to add a version not found handler.
+
+```go
+versioning.Concat(userAPIV10, userAPIV2).NotFound(func(ctx iris.Context) {
+    ctx.StatusCode(iris.StatusNotFound)
+    ctx.Writef("unknown version %s", versioning.GetVersion(ctx))
+}).For(userAPI)
+```
 
 ## Compare version manually from inside your handlers
 

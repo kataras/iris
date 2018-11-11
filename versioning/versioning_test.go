@@ -86,7 +86,7 @@ func TestNewGroup(t *testing.T) {
 	userAPIV2.Post("/", sendHandler(v2Response))
 	userAPIV2.Put("/other", sendHandler(v2Response))
 
-	// versioning.Concat(userAPIV10, userAPIV2)
+	// versioning.Concat(userAPIV10, userAPIV2).
 	// 	NotFound(func(ctx iris.Context) {
 	// 		ctx.StatusCode(iris.StatusNotFound)
 	// 		ctx.Writef("unknown version %s", versioning.GetVersion(ctx))
