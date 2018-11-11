@@ -6,6 +6,24 @@ import (
 	"github.com/hashicorp/go-version"
 )
 
+func If(v string, is string) bool {
+	ver, err := version.NewVersion(v)
+	if err != nil {
+		return false
+	}
+
+	constraints, err := version.NewConstraint(is)
+	if err != nil {
+		return false
+	}
+
+	return constraints.Check(ver)
+}
+
+func Match(ctx context.Context, expectedVersion string) bool {
+	return If(GetVersion(ctx), expectedVersion)
+}
+
 type Map map[string]context.Handler
 
 func NewMatcher(versions Map) context.Handler {
@@ -18,15 +36,15 @@ func NewMatcher(versions Map) context.Handler {
 			return
 		}
 
-		version, err := version.NewVersion(versionString)
+		ver, err := version.NewVersion(versionString)
 		if err != nil {
 			notFoundHandler(ctx)
 			return
 		}
 
 		for _, ch := range constraintsHandlers {
-			if ch.constraints.Check(version) {
-				ctx.Header("X-API-Version", version.String())
+			if ch.constraints.Check(ver) {
+				ctx.Header("X-API-Version", ver.String())
 				ch.handler(ctx)
 				return
 			}
