@@ -289,6 +289,12 @@
   packages = ["internal","redis"]
   revision = "2cd21d9966bf7ff9ae091419744f0b3fb0fecace"
 
+[[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/go-version"
+  packages = ["."]
+  revision = "b5a281d3160aa11950a6182bd9a9dc2cb1e02d50"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1

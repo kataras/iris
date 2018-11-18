@@ -158,6 +158,11 @@ Navigate through examples for a better understanding.
     * [per-route](routing/writing-a-middleware/per-route/main.go)
     * [globally](routing/writing-a-middleware/globally/main.go)
 
+### Versioning
+
+- [How it works](https://github.com/kataras/iris/blob/master/versioning/README.md)
+- [Example](versioning/main.go)
+
 ### hero
 
 - [Basic](hero/basic/main.go)

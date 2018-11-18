@@ -20,6 +20,7 @@ require (
 	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20180825215210-0210a2f0f73c // indirect
 	github.com/gorilla/websocket v1.4.0
+	github.com/hashicorp/go-version v1.0.0
 	github.com/imkira/go-interpol v1.1.0 // indirect
 	github.com/iris-contrib/blackfriday v2.0.0+incompatible
 	github.com/iris-contrib/formBinder v0.0.0-20171010160137-ad9fb86c356f

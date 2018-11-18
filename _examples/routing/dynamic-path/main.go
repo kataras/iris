@@ -28,23 +28,47 @@ func main() {
 	// otherwise it pre-compiles the regexp and adds the necessary middleware(s).
 	//
 	// Standard macro types for parameters:
-	//  +------------------------+
-	//  | {param:string}         |
-	//  +------------------------+
+	// +------------------------+
+	// | {param:string}         |
+	// +------------------------+
 	// string type
-	// anything
+	// anything (single path segmnent)
 	//
-	//  +-------------------------------+
-	//  | {param:int} or {param:int} |
-	//  +-------------------------------+
+	// +-------------------------------+
+	// | {param:int}                   |
+	// +-------------------------------+
 	// int type
-	// both positive and negative numbers, any number of digits (ctx.Params().GetInt will limit the digits based on the host arch)
+	// -9223372036854775808 to 9223372036854775807 (x64) or -2147483648 to 2147483647 (x32), depends on the host arch
 	//
-	// +-------------------------------+
-	// | {param:int64} or {param:long} |
-	// +-------------------------------+
+	// +------------------------+
+	// | {param:int8}           |
+	// +------------------------+
+	// int8 type
+	// -128 to 127
+	//
+	// +------------------------+
+	// | {param:int16}          |
+	// +------------------------+
+	// int16 type
+	// -32768 to 32767
+	//
+	// +------------------------+
+	// | {param:int32}          |
+	// +------------------------+
+	// int32 type
+	// -2147483648 to 2147483647
+	//
+	// +------------------------+
+	// | {param:int64}          |
+	// +------------------------+
 	// int64 type
 	// -9223372036854775808 to 9223372036854775807
+	//
+	// +------------------------+
+	// | {param:uint}           |
+	// +------------------------+
+	// uint type
+	// 0 to 18446744073709551615 (x64) or 0 to 4294967295 (x32)
 	//
 	// +------------------------+
 	// | {param:uint8}          |
@@ -52,6 +76,17 @@ func main() {
 	// uint8 type
 	// 0 to 255
 	//
+	// +------------------------+
+	// | {param:uint16}         |
+	// +------------------------+
+	// uint16 type
+	// 0 to 65535
+	//
+	// +------------------------+
+	// | {param:uint32}          |
+	// +------------------------+
+	// uint32 type
+	// 0 to 4294967295
 	//
 	// +------------------------+
 	// | {param:uint64}         |
@@ -66,15 +101,15 @@ func main() {
 	// only "1" or "t" or "T" or "TRUE" or "true" or "True"
 	// or "0" or "f" or "F" or "FALSE" or "false" or "False"
 	//
-	//  +------------------------+
-	//  | {param:alphabetical}   |
-	//  +------------------------+
+	// +------------------------+
+	// | {param:alphabetical}   |
+	// +------------------------+
 	// alphabetical/letter type
 	// letters only (upper or lowercase)
 	//
-	//  +------------------------+
-	//  | {param:file}           |
-	//  +------------------------+
+	// +------------------------+
+	// | {param:file}           |
+	// +------------------------+
 	// file type
 	// letters (upper or lowercase)
 	// numbers (0-9)
@@ -83,12 +118,12 @@ func main() {
 	// point (.)
 	// no spaces ! or other character
 	//
-	//  +------------------------+
-	//  | {param:path}           |
-	//  +------------------------+
+	// +------------------------+
+	// | {param:path}           |
+	// +------------------------+
 	// path type
-	// anything, should be the last part, more than one path segment,
-	// i.e: /path1/path2/path3 , ctx.Params().Get("param") == "/path1/path2/path3"
+	// anything, should be the last part, can be more than one path segment,
+	// i.e: "/test/{param:path}" and request: "/test/path1/path2/path3" , ctx.Params().Get("param") == "path1/path2/path3"
 	//
 	// if type is missing then parameter's type is defaulted to string, so
 	// {param} == {param:string}.
