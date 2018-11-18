@@ -1,0 +1,1 @@
+Head over to the [kataras/iris/versioning/README.md](https://github.com/kataras/iris/blob/master/versioning/README.md) instead.
