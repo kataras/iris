@@ -90,7 +90,7 @@ This will make the handler to send these headers to the client:
 Grouping routes by version is possible as well.
 
 Using the `versioning.NewGroup(version string) *versioning.Group` function you can create a group to register your versioned routes.
-The `versioning.RegisterGroups(r iris.Party, groups ...*versioning.Group)` must be called in the end in order to register the routes to a specific `Party`.
+The `versioning.RegisterGroups(r iris.Party, versionNotFoundHandler iris.Handler, groups ...*versioning.Group)` must be called in the end in order to register the routes to a specific `Party`.
 
 ```go
 app := iris.New()
@@ -106,8 +106,10 @@ userAPIV2.Get("/", sendHandler(v2Response))
 userAPIV2.Post("/", sendHandler(v2Response))
 userAPIV2.Put("/other", sendHandler(v2Response))
 
-versioning.RegisterGroups(userAPI, userAPIV10, userAPIV2)
+versioning.RegisterGroups(userAPI, versioning.NotFoundHandler, userAPIV10, userAPIV2)
 ```
+
+> A middleware can be registered to the actual `iris.Party` only, using the methods we learnt above, i.e by using the `versioning.Match` in order to detect what code/handler you want to be executed when "x" or no version is requested.
 
 ### Deprecation for Group
 
@@ -115,17 +117,6 @@ Just call the `Deprecated(versioning.DeprecationOptions)` on the group you want 
 
 ```go
 userAPIV10 := versioning.NewGroup("1.0").Deprecated(versioning.DefaultDeprecationOptions)
-```
-
-### Version not found for Groups
-
-In order to register a custom version not found handler you have to use the `versioning.Concat` first, which gives you the API to add a version not found handler.
-
-```go
-versioning.Concat(userAPIV10, userAPIV2).NotFound(func(ctx iris.Context) {
-    ctx.StatusCode(iris.StatusNotFound)
-    ctx.Writef("unknown version %s", versioning.GetVersion(ctx))
-}).For(userAPI)
 ```
 
 ## Compare version manually from inside your handlers

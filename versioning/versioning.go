@@ -6,6 +6,8 @@ import (
 	"github.com/hashicorp/go-version"
 )
 
+// If reports whether the "version" is matching to the "is".
+// the "is" can be a constraint like ">= 1, < 3".
 func If(v string, is string) bool {
 	ver, err := version.NewVersion(v)
 	if err != nil {
@@ -20,12 +22,22 @@ func If(v string, is string) bool {
 	return constraints.Check(ver)
 }
 
+// Match acts exactly the same as `If` does but instead it accepts
+// a Context, so it can be called by a handler to determinate the requested version.
 func Match(ctx context.Context, expectedVersion string) bool {
 	return If(GetVersion(ctx), expectedVersion)
 }
 
+// Map is a map of versions targets to a handlers,
+// a handler per version or constraint, the key can be something like ">1, <=2" or just "1".
 type Map map[string]context.Handler
 
+// NewMatcher creates a single handler which decides what handler
+// should be executed based on the requested version.
+//
+// Use the `NewGroup` if you want to add many routes under a specific version.
+//
+// See `Map` and `NewGroup` too.
 func NewMatcher(versions Map) context.Handler {
 	constraintsHandlers, notFoundHandler := buildConstraints(versions)
 
