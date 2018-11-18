@@ -1,13 +1,11 @@
 package versioning
 
 import (
+	"net/http"
+
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/router"
 )
-
-func RegisterGroups(r router.Party, groups ...*Group) []*router.Route {
-	return Concat(groups...).For(r)
-}
 
 type (
 	vroute struct {
@@ -16,6 +14,8 @@ type (
 		versions Map
 	}
 
+	// Group is a group of version-based routes.
+	// One version per one or more routes.
 	Group struct {
 		version      string
 		extraMethods []string
@@ -25,6 +25,9 @@ type (
 	}
 )
 
+// NewGroup returns a ptr to Group based on the given "version".
+//
+// See `Handle` and `RegisterGroups` for more.
 func NewGroup(version string) *Group {
 	return &Group{
 		version: version,
@@ -33,7 +36,7 @@ func NewGroup(version string) *Group {
 
 // Deprecated marks this group and all its versioned routes
 // as deprecated versions of that endpoint.
-// It can be called in the end just before `Concat` or `RegisterGroups`
+// It can be called in the end just before `RegisterGroups`
 // or first by `NewGroup(...).Deprecated(...)`. It returns itself.
 func (g *Group) Deprecated(options DeprecationOptions) *Group {
 	// if `Deprecated` is called in the end.
@@ -47,13 +50,16 @@ func (g *Group) Deprecated(options DeprecationOptions) *Group {
 	return g
 }
 
+// AllowMethods can be called before `Handle/Get/Post...`
+// to tell the underline router that all routes should be registered
+// to these "methods" as well.
 func (g *Group) AllowMethods(methods ...string) *Group {
 	g.extraMethods = append(g.extraMethods, methods...)
 	return g
 }
 
 func (g *Group) addVRoute(method, path string, handler context.Handler) {
-	for _, r := range g.routes { // check if already exists.
+	for _, r := range g.routes { // check if route already exists.
 		if r.method == method && r.path == path {
 			return
 		}
@@ -67,8 +73,10 @@ func (g *Group) addVRoute(method, path string, handler context.Handler) {
 }
 
 // Handle registers a versioned route to the group.
+// A call of `RegisterGroups` is necessary in order to register the actual routes
+// when the group is complete.
 //
-// See `Concat` and `RegisterGroups` for more.
+// `RegisterGroups` for more.
 func (g *Group) Handle(method string, path string, handler context.Handler) {
 	if g.deprecation.ShouldHandle() { // if `Deprecated` called first.
 		handler = Deprecated(handler, g.deprecation)
@@ -89,47 +97,47 @@ func (g *Group) None(path string, handler context.Handler) {
 
 // Get registers a versioned route for the Get http method.
 func (g *Group) Get(path string, handler context.Handler) {
-	g.Handle("GET", path, handler)
+	g.Handle(http.MethodGet, path, handler)
 }
 
 // Post registers a versioned route for the Post http method.
 func (g *Group) Post(path string, handler context.Handler) {
-	g.Handle("POST", path, handler)
+	g.Handle(http.MethodPost, path, handler)
 }
 
 // Put registers a versioned route for the Put http method
 func (g *Group) Put(path string, handler context.Handler) {
-	g.Handle("PUT", path, handler)
+	g.Handle(http.MethodPut, path, handler)
 }
 
 // Delete registers a versioned route for the Delete http method.
 func (g *Group) Delete(path string, handler context.Handler) {
-	g.Handle("DELETE", path, handler)
+	g.Handle(http.MethodDelete, path, handler)
 }
 
 // Connect registers a versioned route for the Connect http method.
 func (g *Group) Connect(path string, handler context.Handler) {
-	g.Handle("CONNECT", path, handler)
+	g.Handle(http.MethodConnect, path, handler)
 }
 
 // Head registers a versioned route for the Head http method.
 func (g *Group) Head(path string, handler context.Handler) {
-	g.Handle("HEAD", path, handler)
+	g.Handle(http.MethodHead, path, handler)
 }
 
 // Options registers a versioned route for the Options http method.
 func (g *Group) Options(path string, handler context.Handler) {
-	g.Handle("OPTIONS", path, handler)
+	g.Handle(http.MethodOptions, path, handler)
 }
 
 // Patch registers a versioned route for the Patch http method.
 func (g *Group) Patch(path string, handler context.Handler) {
-	g.Handle("PATCH", path, handler)
+	g.Handle(http.MethodPatch, path, handler)
 }
 
 // Trace registers a versioned route for the Trace http method.
 func (g *Group) Trace(path string, handler context.Handler) {
-	g.Handle("TRACE", path, handler)
+	g.Handle(http.MethodTrace, path, handler)
 }
 
 // Any registers a versioned route for ALL of the http methods
@@ -146,49 +154,31 @@ func (g *Group) Any(registeredPath string, handler context.Handler) {
 	g.Trace(registeredPath, handler)
 }
 
-type Groups struct {
-	routes []vroute
-
-	notFoundHandler context.Handler
-}
-
-func Concat(groups ...*Group) *Groups {
+// RegisterGroups registers one or more groups to an `iris.Party` or to the root router.
+// See `NewGroup` and `NotFoundHandler` too.
+func RegisterGroups(r router.Party, notFoundHandler context.Handler, groups ...*Group) (actualRoutes []*router.Route) {
 	var total []vroute
-
 	for _, g := range groups {
 	inner:
 		for _, r := range g.routes {
 			for i, tr := range total {
 				if tr.method == r.method && tr.path == r.path {
-					for k, v := range r.versions {
-						total[i].versions[k] = v
-					}
+					total[i].versions[g.version] = r.versions[g.version]
 					continue inner
 				}
 			}
-		}
 
-		total = append(total, g.routes...)
+			total = append(total, r)
+		}
 	}
 
-	return &Groups{total, NotFoundHandler}
-}
-
-func (g *Groups) NotFound(handler context.Handler) *Groups {
-	g.notFoundHandler = handler
-	return g
-}
-
-func (g *Groups) For(r router.Party) (totalRoutesRegistered []*router.Route) {
-	for _, vr := range g.routes {
-		if g.notFoundHandler != nil {
-			vr.versions[NotFound] = g.notFoundHandler
+	for _, vr := range total {
+		if notFoundHandler != nil {
+			vr.versions[NotFound] = notFoundHandler
 		}
 
-		// fmt.Printf("Method: %s | Path: %s | Versions: %#+v\n", vr.method, vr.path, vr.versions)
-		route := r.Handle(vr.method, vr.path,
-			NewMatcher(vr.versions))
-		totalRoutesRegistered = append(totalRoutesRegistered, route)
+		route := r.Handle(vr.method, vr.path, NewMatcher(vr.versions))
+		actualRoutes = append(actualRoutes, route)
 	}
 
 	return

@@ -79,25 +79,40 @@ func TestNewGroup(t *testing.T) {
 	// [... static serving, middlewares and etc goes here].
 
 	userAPIV10 := versioning.NewGroup("1.0").Deprecated(versioning.DefaultDeprecationOptions)
-	userAPIV10.Get("/", sendHandler(v10Response))
+	// V10middlewareResponse := "m1"
+	// userAPIV10.Use(func(ctx iris.Context) {
+	// 	println("exec userAPIV10.Use - midl1")
+	// 	sendHandler(V10middlewareResponse)(ctx)
+	// 	ctx.Next()
+	// })
+	// userAPIV10.Use(func(ctx iris.Context) {
+	// 	println("exec userAPIV10.Use - midl2")
+	// 	sendHandler(V10middlewareResponse + "midl2")(ctx)
+	// 	ctx.Next()
+	// })
+	// userAPIV10.Use(func(ctx iris.Context) {
+	// 	println("exec userAPIV10.Use - midl3")
+	// 	ctx.Next()
+	// })
 
+	userAPIV10.Get("/", sendHandler(v10Response))
 	userAPIV2 := versioning.NewGroup(">= 2, < 3")
+	// V2middlewareResponse := "m2"
+	// userAPIV2.Use(func(ctx iris.Context) {
+	// 	println("exec userAPIV2.Use - midl1")
+	// 	sendHandler(V2middlewareResponse)(ctx)
+	// 	ctx.Next()
+	// })
+	// userAPIV2.Use(func(ctx iris.Context) {
+	// 	println("exec userAPIV2.Use - midl2")
+	// 	ctx.Next()
+	// })
+
 	userAPIV2.Get("/", sendHandler(v2Response))
 	userAPIV2.Post("/", sendHandler(v2Response))
 	userAPIV2.Put("/other", sendHandler(v2Response))
 
-	// versioning.Concat(userAPIV10, userAPIV2).
-	// 	NotFound(func(ctx iris.Context) {
-	// 		ctx.StatusCode(iris.StatusNotFound)
-	// 		ctx.Writef("unknown version %s", versioning.GetVersion(ctx))
-	// 	}).
-	// For(userAPI)
-	// This is legal too:
-	// For(app.PartyFunc("/api/user", func(r iris.Party) {
-	// 	// [... static serving, middlewares and etc goes here].
-	// }))
-
-	versioning.RegisterGroups(userAPI, userAPIV10, userAPIV2)
+	versioning.RegisterGroups(userAPI, versioning.NotFoundHandler, userAPIV10, userAPIV2)
 
 	e := httptest.New(t, app)
 
