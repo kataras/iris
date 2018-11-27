@@ -292,7 +292,7 @@ func (r *Service) Connect() {
 		c.Addr = DefaultRedisAddr
 	}
 
-	pool := &redis.Pool{IdleTimeout: DefaultRedisIdleTimeout, MaxIdle: c.MaxIdle, MaxActive: c.MaxActive}
+	pool := &redis.Pool{IdleTimeout: c.IdleTimeout, MaxIdle: c.MaxIdle, MaxActive: c.MaxActive}
 	pool.TestOnBorrow = func(c redis.Conn, t time.Time) error {
 		_, err := c.Do("PING")
 		return err
