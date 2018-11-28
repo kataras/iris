@@ -3428,7 +3428,7 @@ func (ctx *context) TransactionsSkipped() bool {
 	return false
 }
 
-// Exec calls the framewrok's ServeCtx
+// Exec calls the framewrok's ServeHTTPC
 // based on this context but with a changed method and path
 // like it was requested by the user, but it is not.
 //
@@ -3461,41 +3461,36 @@ func (ctx *context) Exec(method string, path string) {
 	}
 
 	// backup the handlers
-	backupHandlers := ctx.Handlers()[0:]
-	backupPos := ctx.HandlerIndex(-1)
+	backupHandlers := ctx.handlers[0:]
+	backupPos := ctx.currentHandlerIndex
 
+	req := ctx.request
 	// backup the request path information
-	backupPath := ctx.Path()
-	backupMethod := ctx.Method()
+	backupPath := req.URL.Path
+	backupMethod := req.Method
 	// don't backupValues := ctx.Values().ReadOnly()
-
-	// [values stays]
-	// reset handlers
-	ctx.SetHandlers(nil)
-
-	req := ctx.Request()
 	// set the request to be align with the 'againstRequestPath'
 	req.RequestURI = path
 	req.URL.Path = path
 	req.Method = method
 
+	// [values stays]
+	// reset handlers
+	ctx.handlers = ctx.handlers[0:0]
+	ctx.currentHandlerIndex = 0
+
 	// execute the route from the (internal) context router
 	// this way we keep the sessions and the values
 	ctx.Application().ServeHTTPC(ctx)
 
-	// set back the old handlers and the last known index
-	ctx.SetHandlers(backupHandlers)
-	ctx.HandlerIndex(backupPos)
 	// set the request back to its previous state
 	req.RequestURI = backupPath
 	req.URL.Path = backupPath
 	req.Method = backupMethod
 
-	// don't fill the values in order to be able to communicate from and to.
-	// // fill the values as they were before
-	// backupValues.Visit(func(key string, value interface{}) {
-	// 	ctx.Values().Set(key, value)
-	// })
+	// set back the old handlers and the last known index
+	ctx.handlers = backupHandlers
+	ctx.currentHandlerIndex = backupPos
 }
 
 // RouteExists reports whether a particular route exists
