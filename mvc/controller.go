@@ -77,7 +77,7 @@ type ControllerActivator struct {
 
 	// the already-registered routes, key = the controller's function name.
 	// End-devs can change some properties of the *Route on the `BeforeActivator` by using the
-	// `GetRoute(functionName)`. It's also protects for duplicatations.
+	// `GetRoute(functionName)`. It's a shield against duplications as well.
 	routes map[string]*router.Route
 
 	// the bindings that comes from the Engine and the controller's filled fields if any.
