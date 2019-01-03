@@ -28,8 +28,8 @@ require (
 	github.com/iris-contrib/i18n v0.0.0-20171121225848-987a633949d0
 	github.com/json-iterator/go v1.1.5
 	github.com/juju/errors v0.0.0-20181012004132-a4583d0a56ea // indirect
-	github.com/kataras/golog v0.0.0-20180321173939-03be10146386
-	github.com/kataras/pio v0.0.0-20180511174041-a9733b5b6b83 // indirect
+	github.com/kataras/golog v0.0.0-20180321173939-03be10146386 // indirect
+	github.com/kataras/pio v0.0.0-20190103105442-ea782b38602d // indirect
 	github.com/klauspost/compress v1.4.1
 	github.com/klauspost/cpuid v1.2.0 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.1
