@@ -2286,9 +2286,12 @@ func (ctx *context) ReadXML(xmlObject interface{}) error {
 	return ctx.UnmarshalBody(xmlObject, UnmarshalerFunc(xml.Unmarshal))
 }
 
-var (
-	errReadBody = errors.New("while trying to read %s from the request body. Trace %s")
-)
+// IsErrPath can be used at `context#ReadForm`.
+// It reports whether the incoming error is type of `formbinder.ErrPath`,
+// which can be ignored when server allows unknown post values to be sent by the client.
+//
+// A shortcut for the `formbinder#IsErrPath`.
+var IsErrPath = formbinder.IsErrPath
 
 // ReadForm binds the formObject  with the form data
 // it supports any kind of type, including custom structs.
@@ -2304,7 +2307,7 @@ func (ctx *context) ReadForm(formObject interface{}) error {
 	// or dec := formbinder.NewDecoder(&formbinder.DecoderOptions{TagName: "form"})
 	// somewhere at the app level. I did change the tagName to "form"
 	// inside its source code, so it's not needed for now.
-	return errReadBody.With(formbinder.Decode(values, formObject))
+	return formbinder.Decode(values, formObject)
 }
 
 //  +------------------------------------------------------------+

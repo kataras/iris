@@ -22,7 +22,7 @@ require (
 	github.com/hashicorp/go-version v1.0.0
 	github.com/imkira/go-interpol v1.1.0 // indirect
 	github.com/iris-contrib/blackfriday v2.0.0+incompatible
-	github.com/iris-contrib/formBinder v0.0.0-20171010160137-ad9fb86c356f
+	github.com/iris-contrib/formBinder v0.0.0-20190104093907-fbd5963f41e1
 	github.com/iris-contrib/go.uuid v2.0.0+incompatible
 	github.com/iris-contrib/httpexpect v0.0.0-20180314041918-ebe99fcebbce
 	github.com/iris-contrib/i18n v0.0.0-20171121225848-987a633949d0
