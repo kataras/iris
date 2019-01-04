@@ -1,13 +1,15 @@
+// Package basicauth provides http basic authentication via middleware. See _examples/authentication/basicauth
 package basicauth
+
+// test file: ../../_examples/authentication/basicauth/main_test.go
 
 import (
 	"encoding/base64"
 	"strconv"
-
 	"time"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/config"
+	"github.com/kataras/iris/context"
 )
 
 type (
@@ -20,45 +22,47 @@ type (
 	encodedUsers []encodedUser
 
 	basicAuthMiddleware struct {
-		config config.BasicAuth
+		config Config
 		// these are filled from the config.Users map at the startup
 		auth             encodedUsers
 		realmHeaderValue string
-		expireEnabled    bool // if the config.Expires is a valid date, default disabled
+
+		// The below can be removed but they are here because on the future we may add dynamic options for those two fields,
+		// it is a bit faster to check the b.$bool as well.
+		expireEnabled     bool // if the config.Expires is a valid date, default is disabled.
+		askHandlerEnabled bool // if the config.OnAsk is not nil, defaults to false.
 	}
 )
 
 //
 
-// New takes one parameter, the config.BasicAuth returns a HandlerFunc
-// use: iris.UseFunc(New(...)), iris.Get(...,New(...),...)
-func New(c config.BasicAuth) iris.HandlerFunc {
-	return NewHandler(c).Serve
-}
+// New accepts basicauth.Config and returns a new Handler
+// which will ask the client for basic auth (username, password),
+// validate that and if valid continues to the next handler, otherwise
+// throws a StatusUnauthorized http error code.
+func New(c Config) context.Handler {
+	config := DefaultConfig()
+	if c.Realm != "" {
+		config.Realm = c.Realm
+	}
+	config.Users = c.Users
+	config.Expires = c.Expires
+	config.OnAsk = c.OnAsk
 
-// NewHandler takes one parameter, the config.BasicAuth returns a Handler
-// use: iris.Use(NewHandler(...)), iris.Get(...,iris.HandlerFunc(NewHandler(...)),...)
-func NewHandler(c config.BasicAuth) iris.Handler {
-	b := &basicAuthMiddleware{config: config.DefaultBasicAuth().MergeSingle(c)}
+	b := &basicAuthMiddleware{config: config}
 	b.init()
-	return b
+	return b.Serve
 }
 
-// Default takes one parameter, the users returns a HandlerFunc
-// use: iris.UseFunc(Default(...)), iris.Get(...,Default(...),...)
-func Default(users map[string]string) iris.HandlerFunc {
-	return DefaultHandler(users).Serve
-}
-
-// DefaultHandler takes one parameter, the users returns a Handler
-// use: iris.Use(DefaultHandler(...)), iris.Get(...,iris.HandlerFunc(Default(...)),...)
-func DefaultHandler(users map[string]string) iris.Handler {
-	c := config.DefaultBasicAuth()
+// Default accepts only the users and returns a new Handler
+// which will ask the client for basic auth (username, password),
+// validate that and if valid continues to the next handler, otherwise
+// throws a StatusUnauthorized http error code.
+func Default(users map[string]string) context.Handler {
+	c := DefaultConfig()
 	c.Users = users
-	return NewHandler(c)
+	return New(c)
 }
-
-//
 
 func (b *basicAuthMiddleware) init() {
 	// pass the encoded users from the user's config's Users value
@@ -67,15 +71,14 @@ func (b *basicAuthMiddleware) init() {
 	for k, v := range b.config.Users {
 		fullUser := k + ":" + v
 		header := "Basic " + base64.StdEncoding.EncodeToString([]byte(fullUser))
-		b.auth = append(b.auth, encodedUser{HeaderValue: header, Username: k, logged: false, expires: config.CookieExpireNever})
+		b.auth = append(b.auth, encodedUser{HeaderValue: header, Username: k, logged: false, expires: DefaultExpireTime})
 	}
 
 	// set the auth realm header's value
 	b.realmHeaderValue = "Basic realm=" + strconv.Quote(b.config.Realm)
 
-	if b.config.Expires > 0 {
-		b.expireEnabled = true
-	}
+	b.expireEnabled = b.config.Expires > 0
+	b.askHandlerEnabled = b.config.OnAsk != nil
 }
 
 func (b *basicAuthMiddleware) findAuth(headerValue string) (auth *encodedUser, found bool) {
@@ -94,64 +97,36 @@ func (b *basicAuthMiddleware) findAuth(headerValue string) (auth *encodedUser, f
 	return
 }
 
-func (b *basicAuthMiddleware) askForCredentials(ctx *iris.Context) {
-	ctx.SetHeader("WWW-Authenticate", b.realmHeaderValue)
-	ctx.SetStatusCode(iris.StatusUnauthorized)
+func (b *basicAuthMiddleware) askForCredentials(ctx context.Context) {
+	ctx.Header("WWW-Authenticate", b.realmHeaderValue)
+	ctx.StatusCode(iris.StatusUnauthorized)
+	if b.askHandlerEnabled {
+		b.config.OnAsk(ctx)
+	}
 }
 
 // Serve the actual middleware
-func (b *basicAuthMiddleware) Serve(ctx *iris.Context) {
+func (b *basicAuthMiddleware) Serve(ctx context.Context) {
 
-	if auth, found := b.findAuth(ctx.RequestHeader("Authorization")); !found {
-		/* I spent time for nothing
-		if b.banEnabled && auth != nil { // this propably never work
-
-			if auth.tries == b.config.MaxTries {
-				auth.bannedTime = time.Now()
-				auth.unbanTime = time.Now().Add(b.config.BanDuration) // set the unban time
-				auth.tries++                                          // we plus them in order to check if already banned later
-				// client is banned send a forbidden status and don't continue
-				ctx.SetStatusCode(iris.StatusForbidden)
-				return
-			} else if auth.tries > b.config.MaxTries { // it's already banned, so check the ban duration with the bannedTime
-				if time.Now().After(auth.unbanTime) { // here we unban the client
-					auth.tries = 0
-					auth.bannedTime = config.CookieExpireNever
-					auth.unbanTime = config.CookieExpireNever
-					// continue and askCredentials as normal
-				} else {
-					// client is banned send a forbidden status and don't continue
-					ctx.SetStatusCode(iris.StatusForbidden)
-					return
-				}
-
-			}
-		}
-		if auth != nil {
-			auth.tries++
-		}*/
-
+	auth, found := b.findAuth(ctx.GetHeader("Authorization"))
+	if !found {
 		b.askForCredentials(ctx)
+		ctx.StopExecution()
+		return
 		// don't continue to the next handler
-	} else {
-		// all ok set the context's value in order to be getable from the next handler
-		ctx.Set(b.config.ContextKey, auth.Username)
-		if b.expireEnabled {
-
-			if auth.logged == false {
-				auth.expires = time.Now().Add(b.config.Expires)
-				auth.logged = true
-			}
-
-			if time.Now().After(auth.expires) {
-				b.askForCredentials(ctx) // ask for authentication again
-				return
-			}
-
+	}
+	// all ok
+	if b.expireEnabled {
+		if auth.logged == false {
+			auth.expires = time.Now().Add(b.config.Expires)
+			auth.logged = true
 		}
 
-		//auth.tries = 0
-		ctx.Next() // continue
+		if time.Now().After(auth.expires) {
+			b.askForCredentials(ctx) // ask for authentication again
+			ctx.StopExecution()
+			return
+		}
 	}
-
+	ctx.Next() // continue
 }

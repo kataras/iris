@@ -1,100 +1,145 @@
+// Package logger provides request logging via middleware. See _examples/http_request/request-logger
 package logger
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/config"
-	"github.com/kataras/iris/logger"
+	"github.com/kataras/iris/context"
+
+	"github.com/ryanuber/columnize"
 )
 
-// Options are the options of the logger middlweare
-// contains 5 bools
-// Status, IP, Method, Path, EnableColors
-// if set to true then these will print
-type Options struct {
-	// Status displays status code (bool)
-	Status bool
-	// IP displays request's remote address (bool)
-	IP bool
-	// Method displays the http method (bool)
-	Method bool
-	// Path displays the request path (bool)
-	Path bool
-	// EnableColors defaults to false
-	EnableColors bool
+type requestLoggerMiddleware struct {
+	config Config
 }
 
-// DefaultOptions returns an options which all properties are true
-func DefaultOptions() Options {
-	return Options{true, true, true, true, false}
-}
+// New creates and returns a new request logger middleware.
+// Do not confuse it with the framework's Logger.
+// This is for the http requests.
+//
+// Receives an optional configuation.
+func New(cfg ...Config) context.Handler {
+	c := DefaultConfig()
+	if len(cfg) > 0 {
+		c = cfg[0]
+	}
+	c.buildSkipper()
+	l := &requestLoggerMiddleware{config: c}
 
-type loggerMiddleware struct {
-	*logger.Logger
-	options Options
+	return l.ServeHTTP
 }
 
 // Serve serves the middleware
-func (l *loggerMiddleware) Serve(ctx *iris.Context) {
+func (l *requestLoggerMiddleware) ServeHTTP(ctx context.Context) {
+	// skip logs and serve the main request immediately
+	if l.config.skip != nil {
+		if l.config.skip(ctx) {
+			ctx.Next()
+			return
+		}
+	}
+
 	//all except latency to string
-	var date, status, ip, method, path string
+	var status, ip, method, path string
 	var latency time.Duration
 	var startTime, endTime time.Time
-	path = ctx.PathString()
-	method = ctx.MethodString()
-
 	startTime = time.Now()
 
 	ctx.Next()
+
 	//no time.Since in order to format it well after
 	endTime = time.Now()
-	date = endTime.Format("01/02 - 15:04:05")
 	latency = endTime.Sub(startTime)
 
-	if l.options.Status {
-		status = strconv.Itoa(ctx.Response.StatusCode())
+	if l.config.Status {
+		status = strconv.Itoa(ctx.GetStatusCode())
 	}
 
-	if l.options.IP {
+	if l.config.IP {
 		ip = ctx.RemoteAddr()
 	}
 
-	if !l.options.Method {
-		method = ""
+	if l.config.Method {
+		method = ctx.Method()
 	}
 
-	if !l.options.Path {
-		path = ""
+	if l.config.Path {
+		if l.config.Query {
+			path = ctx.Request().URL.RequestURI()
+		} else {
+			path = ctx.Path()
+		}
 	}
 
-	//finally print the logs
-	l.printf("%s %v %4v %s %s %s \n", date, status, latency, ip, method, path)
+	var message interface{}
+	if ctxKeys := l.config.MessageContextKeys; len(ctxKeys) > 0 {
+		for _, key := range ctxKeys {
+			msg := ctx.Values().Get(key)
+			if message == nil {
+				message = msg
+			} else {
+				message = fmt.Sprintf(" %v %v", message, msg)
+			}
+		}
+	}
+	var headerMessage interface{}
+	if headerKeys := l.config.MessageHeaderKeys; len(headerKeys) > 0 {
+		for _, key := range headerKeys {
+			msg := ctx.GetHeader(key)
+			if headerMessage == nil {
+				headerMessage = msg
+			} else {
+				headerMessage = fmt.Sprintf(" %v %v", headerMessage, msg)
+			}
+		}
+	}
 
+	// print the logs
+	if logFunc := l.config.LogFunc; logFunc != nil {
+		logFunc(endTime, latency, status, ip, method, path, message, headerMessage)
+		return
+	}
+
+	if l.config.Columns {
+		endTimeFormatted := endTime.Format("2006/01/02 - 15:04:05")
+		output := Columnize(endTimeFormatted, latency, status, ip, method, path, message, headerMessage)
+		ctx.Application().Logger().Printer.Output.Write([]byte(output))
+		return
+	}
+	// no new line, the framework's logger is responsible how to render each log.
+	line := fmt.Sprintf("%v %4v %s %s %s", status, latency, ip, method, path)
+	if message != nil {
+		line += fmt.Sprintf(" %v", message)
+	}
+
+	if headerMessage != nil {
+		line += fmt.Sprintf(" %v", headerMessage)
+	}
+	ctx.Application().Logger().Info(line)
 }
 
-func (l *loggerMiddleware) printf(format string, a ...interface{}) {
-	if l.options.EnableColors {
-		l.Logger.Otherf(format, a...)
-	} else {
-		l.Logger.Printf(format, a...)
-	}
-}
+// Columnize formats the given arguments as columns and returns the formatted output,
+// note that it appends a new line to the end.
+func Columnize(nowFormatted string, latency time.Duration, status, ip, method, path string, message interface{}, headerMessage interface{}) string {
 
-// New returns the logger middleware as HandlerFunc with the default settings if second parameter is not passed
-func New(theLogger *logger.Logger, options ...Options) iris.HandlerFunc {
-	if theLogger == nil {
-		theLogger = logger.New(config.DefaultLogger())
+	titles := "Time | Status | Latency | IP | Method | Path"
+	line := fmt.Sprintf("%s | %v | %4v | %s | %s | %s", nowFormatted, status, latency, ip, method, path)
+	if message != nil {
+		titles += " | Message"
+		line += fmt.Sprintf(" | %v", message)
 	}
 
-	l := &loggerMiddleware{Logger: theLogger}
-
-	if len(options) > 0 {
-		l.options = options[0]
-	} else {
-		l.options = DefaultOptions()
+	if headerMessage != nil {
+		titles += " | HeaderMessage"
+		line += fmt.Sprintf(" | %v", headerMessage)
 	}
 
-	return l.Serve
+	outputC := []string{
+		titles,
+		line,
+	}
+	output := columnize.SimpleFormat(outputC) + "\n"
+	return output
 }

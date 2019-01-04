@@ -1,118 +1,164 @@
 package sessions
 
 import (
-	"container/list"
 	"sync"
 	"time"
 
-	"github.com/kataras/iris/sessions/store"
+	"github.com/kataras/iris/core/errors"
 )
-
-// IProvider the type which Provider must implement
-type IProvider interface {
-	Name() string
-	Init(string) (store.IStore, error)
-	Read(string) (store.IStore, error)
-	Destroy(string) error
-	Update(string) error
-	GC(time.Duration)
-}
 
 type (
-	// Provider implements the IProvider
-	// contains the temp sessions memory, the store and some options for the cookies
-	Provider struct {
-		name               string
-		mu                 sync.Mutex
-		sessions           map[string]*list.Element // underline TEMPORARY memory store
-		list               *list.List               // for GC
-		NewStore           func(sessionId string, cookieLifeDuration time.Duration) store.IStore
-		OnDestroy          func(store store.IStore) // this is called when .Destroy
-		cookieLifeDuration time.Duration
+	// provider contains the sessions and external databases (load and update).
+	// It's the session memory manager
+	provider struct {
+		// we don't use RWMutex because all actions have read and write at the same action function.
+		// (or write to a *Session's value which is race if we don't lock)
+		// narrow locks are fasters but are useless here.
+		mu               sync.Mutex
+		sessions         map[string]*Session
+		db               Database
+		destroyListeners []DestroyListener
 	}
 )
 
-var _ IProvider = &Provider{}
-
-// NewProvider returns a new empty Provider
-func NewProvider(name string) *Provider {
-	provider := &Provider{name: name, list: list.New()}
-	provider.sessions = make(map[string]*list.Element, 0)
-	return provider
+// newProvider returns a new sessions provider
+func newProvider() *provider {
+	return &provider{
+		sessions: make(map[string]*Session, 0),
+		db:       newMemDB(),
+	}
 }
 
-// Init creates the store for the first time for this session and returns it
-func (p *Provider) Init(sid string) (store.IStore, error) {
-	p.mu.Lock()
-
-	newSessionStore := p.NewStore(sid, p.cookieLifeDuration)
-
-	elem := p.list.PushBack(newSessionStore)
-	p.sessions[sid] = elem
+// RegisterDatabase sets a session database.
+func (p *provider) RegisterDatabase(db Database) {
+	p.mu.Lock() // for any case
+	p.db = db
 	p.mu.Unlock()
-	return newSessionStore, nil
 }
 
-// Read returns the store which sid parameter is belongs
-func (p *Provider) Read(sid string) (store.IStore, error) {
-	if elem, found := p.sessions[sid]; found {
-		return elem.Value.(store.IStore), nil
-	}
-	// if not found
-	sessionStore, err := p.Init(sid)
-	return sessionStore, err
-
-}
-
-// Destroy always returns a nil error, for now.
-func (p *Provider) Destroy(sid string) error {
-	if elem, found := p.sessions[sid]; found {
-		elem.Value.(store.IStore).Destroy()
-		delete(p.sessions, sid)
-		p.list.Remove(elem)
+// newSession returns a new session from sessionid
+func (p *provider) newSession(sid string, expires time.Duration) *Session {
+	onExpire := func() {
+		p.Destroy(sid)
 	}
 
-	return nil
+	lifetime := p.db.Acquire(sid, expires)
+
+	// simple and straight:
+	if !lifetime.IsZero() {
+		// if stored time is not zero
+		// start a timer based on the stored time, if not expired.
+		lifetime.Revive(onExpire)
+	} else {
+		// Remember:  if db not exist or it has been expired
+		// then the stored time will be zero(see loadSessionFromDB) and the values will be empty.
+		//
+		// Even if the database has an unlimited session (possible by a previous app run)
+		// priority to the "expires" is given,
+		// again if <=0 then it does nothing.
+		lifetime.Begin(expires, onExpire)
+	}
+
+	sess := &Session{
+		sid:      sid,
+		provider: p,
+		flashes:  make(map[string]*flashMessage),
+		Lifetime: lifetime,
+	}
+
+	return sess
 }
 
-// Update updates the lastAccessedTime, and moves the memory place element to the front
-// always returns a nil error, for now
-func (p *Provider) Update(sid string) error {
+// Init creates the session  and returns it
+func (p *provider) Init(sid string, expires time.Duration) *Session {
+	newSession := p.newSession(sid, expires)
 	p.mu.Lock()
-
-	if elem, found := p.sessions[sid]; found {
-		elem.Value.(store.IStore).SetLastAccessedTime(time.Now())
-		p.list.MoveToFront(elem)
-	}
-
+	p.sessions[sid] = newSession
 	p.mu.Unlock()
-	return nil
+	return newSession
 }
 
-// GC clears the memory
-func (p *Provider) GC(duration time.Duration) {
+// ErrNotFound can be returned when calling `UpdateExpiration` on a non-existing or invalid session entry.
+// It can be matched directly, i.e: `isErrNotFound := sessions.ErrNotFound.Equal(err)`.
+var ErrNotFound = errors.New("not found")
+
+// UpdateExpiration resets the expiration of a session.
+// if expires > 0 then it will try to update the expiration and destroy task is delayed.
+// if expires <= 0 then it does nothing it returns nil, to destroy a session call the `Destroy` func instead.
+//
+// If the session is not found, it returns a `NotFound` error,  this can only happen when you restart the server and you used the memory-based storage(default),
+// because the call of the provider's `UpdateExpiration` is always called when the client has a valid session cookie.
+//
+// If a backend database is used then it may return an `ErrNotImplemented` error if the underline database does not support this operation.
+func (p *provider) UpdateExpiration(sid string, expires time.Duration) error {
+	if expires <= 0 {
+		return nil
+	}
+
 	p.mu.Lock()
-	p.cookieLifeDuration = duration
-	defer p.mu.Unlock() //let's defer it and trust the go
+	sess, found := p.sessions[sid]
+	p.mu.Unlock()
+	if !found {
+		return ErrNotFound
+	}
 
-	for {
-		elem := p.list.Back()
-		if elem == nil {
-			break
-		}
+	sess.Lifetime.Shift(expires)
+	return p.db.OnUpdateExpiration(sid, expires)
+}
 
-		// if the time has passed. session was expired, then delete the session and its memory place
-		if (elem.Value.(store.IStore).LastAccessedTime().Unix() + duration.Nanoseconds()) < time.Now().Unix() {
-			p.list.Remove(elem)
-			delete(p.sessions, elem.Value.(store.IStore).ID())
+// Read returns the store which sid parameter belongs
+func (p *provider) Read(sid string, expires time.Duration) *Session {
+	p.mu.Lock()
+	if sess, found := p.sessions[sid]; found {
+		sess.runFlashGC() // run the flash messages GC, new request here of existing session
+		p.mu.Unlock()
 
-		} else {
-			break
-		}
+		return sess
+	}
+	p.mu.Unlock()
+
+	return p.Init(sid, expires) // if not found create new
+}
+
+func (p *provider) registerDestroyListener(ln DestroyListener) {
+	if ln == nil {
+		return
+	}
+	p.destroyListeners = append(p.destroyListeners, ln)
+}
+
+func (p *provider) fireDestroy(sid string) {
+	for _, ln := range p.destroyListeners {
+		ln(sid)
 	}
 }
 
-// Name the provider's name, example: 'memory' or 'redis'
-func (p *Provider) Name() string {
-	return p.name
+// Destroy destroys the session, removes all sessions and flash values,
+// the session itself and updates the registered session databases,
+// this called from sessionManager which removes the client's cookie also.
+func (p *provider) Destroy(sid string) {
+	p.mu.Lock()
+	if sess, found := p.sessions[sid]; found {
+		p.deleteSession(sess)
+	}
+	p.mu.Unlock()
+}
+
+// DestroyAll removes all sessions
+// from the server-side memory (and database if registered).
+// Client's session cookie will still exist but it will be reseted on the next request.
+func (p *provider) DestroyAll() {
+	p.mu.Lock()
+	for _, sess := range p.sessions {
+		p.deleteSession(sess)
+	}
+	p.mu.Unlock()
+}
+
+func (p *provider) deleteSession(sess *Session) {
+	sid := sess.sid
+
+	delete(p.sessions, sid)
+	p.db.Release(sid)
+	p.fireDestroy(sid)
 }

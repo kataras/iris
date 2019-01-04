@@ -1,0 +1,9 @@
+example.com {
+	header / Server "Iris"
+	proxy / example.com:9091 # localhost:9091
+}
+
+api.example.com {
+	header / Server "Iris"
+	proxy / api.example.com:9092 # localhost:9092
+}

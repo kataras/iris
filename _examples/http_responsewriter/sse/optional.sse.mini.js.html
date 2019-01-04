@@ -1,0 +1,17 @@
+<!-- you can just put that to your favourite browser -->
+<html>
+
+<head>
+    <title>SSE (javascript side)</title>
+
+    <script type="text/javascript">
+        var client = new EventSource("http://localhost:8080/events")
+        client.onmessage = function (evt) {
+            console.log(evt)
+        }
+    </script>
+</head>
+<body>
+    <h1>Open the browser's console(F12) and watch for incoming event messages</h1>
+</body>
+</html>
