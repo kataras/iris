@@ -463,6 +463,12 @@ var (
 	//
 	// A shortcut for the `context#CookieDecode`.
 	CookieDecode = context.CookieDecode
+	// IsErrPath can be used at `context#ReadForm`.
+	// It reports whether the incoming error is type of `formbinder.ErrPath`,
+	// which can be ignored when server allows unknown post values to be sent by the client.
+	//
+	// A shortcut for the `context#IsErrPath`.
+	IsErrPath = context.IsErrPath
 )
 
 // SPA  accepts an "assetHandler" which can be the result of an
