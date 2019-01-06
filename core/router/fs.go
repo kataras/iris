@@ -773,14 +773,14 @@ func serveFile(ctx context.Context, fs http.FileSystem, name string, redirect bo
 		}
 	}
 
-	// redirect if the directory name doesn't end in a slash
-	if d.IsDir() {
-		url := ctx.Request().URL.Path
-		if url[len(url)-1] != '/' {
-			localRedirect(ctx, path.Base(url)+"/")
-			return "", http.StatusMovedPermanently
-		}
-	}
+	//// redirect if the directory name doesn't end in a slash
+	//if d.IsDir() {
+	//	url := ctx.Request().URL.Path
+	//	if url[len(url)-1] != '/' {
+	//		localRedirect(ctx, path.Base(url)+"/")
+	//		return "", http.StatusMovedPermanently
+	//	}
+	//}
 
 	// use contents of index.html for directory, if present
 	if d.IsDir() {
