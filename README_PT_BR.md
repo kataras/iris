@@ -186,15 +186,16 @@ padrão. Feito isso, você pode seguir as seguintes diretrizes:
 -->
 
 1. [snowlyg/IrisApiProject: Iris + gorm + jwt + sqlite3](https://github.com/snowlyg/IrisApiProject)
-2. [jebzmos4/Iris-golang: A basic CRUD API in golang with Iris](https://github.com/jebzmos4/Iris-golang)
-3. [gauravtiwari/go_iris_app: Web app básico utilizando o Iris](https://github.com/gauravtiwari/go_iris_app)
-4. [Uma mini rede social criada com o incrível Iris💖💖](https://github.com/iris-contrib/Iris-Mini-Social-Network)
-5. [Iris isomorphic react/hot reloadable/redux/css-modules starter kit](https://github.com/iris-contrib/iris-starter-kit)
-6. [ionutvilie/react-ts: Projeto demo usando react com typescript e Iris](https://github.com/ionutvilie/react-ts)
-7. [Plataforma de Gerenciamento de Localização auto hospedada criada com Iris e Angular](https://github.com/iris-contrib/parrot)
-8. [Iris + Docker e Kubernetes](https://github.com/iris-contrib/cloud-native-go)
-9. [nanobox.io: Quickstart do Iris com Nanobox](https://guides.nanobox.io/golang/iris/from-scratch)
-10. [hasura.io: Um projeto Hasura para iniciantes pronto para o deply com um app Golang hello-world utilizando o IRIS](https://hasura.io/hub/project/hasura/hello-golang-iris)
+2. [yz124/superstar: Iris + xorm to implement the star library](https://github.com/yz124/superstar) **NEW-Chinese**
+3. [jebzmos4/Iris-golang: A basic CRUD API in golang with Iris](https://github.com/jebzmos4/Iris-golang)
+4. [gauravtiwari/go_iris_app: Web app básico utilizando o Iris](https://github.com/gauravtiwari/go_iris_app)
+5. [Uma mini rede social criada com o incrível Iris💖💖](https://github.com/iris-contrib/Iris-Mini-Social-Network)
+6. [Iris isomorphic react/hot reloadable/redux/css-modules starter kit](https://github.com/iris-contrib/iris-starter-kit)
+7. [ionutvilie/react-ts: Projeto demo usando react com typescript e Iris](https://github.com/ionutvilie/react-ts)
+8. [Plataforma de Gerenciamento de Localização auto hospedada criada com Iris e Angular](https://github.com/iris-contrib/parrot)
+9. [Iris + Docker e Kubernetes](https://github.com/iris-contrib/cloud-native-go)
+10. [nanobox.io: Quickstart do Iris com Nanobox](https://guides.nanobox.io/golang/iris/from-scratch)
+11. [hasura.io: Um projeto Hasura para iniciantes pronto para o deply com um app Golang hello-world utilizando o IRIS](https://hasura.io/hub/project/hasura/hello-golang-iris)
 
 > Voce criou algo parecido ? [Informe-nos](https://github.com/kataras/iris/pulls)!
 
