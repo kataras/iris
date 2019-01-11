@@ -17,6 +17,10 @@
 
 **Πώς να αναβαθμίσετε**: Ανοίξτε την γραμμή εντολών σας και εκτελέστε αυτήν την εντολή: `go get -u github.com/kataras/iris`  ή αφήστε το αυτόματο updater να το κάνει αυτό για σας.
 
+# Fr, 11 January 2019 | v11.1.1
+
+Πατήστε [εδώ](https://github.com/kataras/iris/blob/master/HISTORY.md#fr-11-january-2019--v1111) για να διαβάσετε στα αγγλικά.
+
 # Su, 18 November 2018 | v11.1.0
 
 Πατήστε [εδώ](https://github.com/kataras/iris/blob/master/HISTORY.md#su-18-november-2018--v1110) για να διαβάσετε στα αγγλικά για το νέο "versioning" feature.
