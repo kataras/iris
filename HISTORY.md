@@ -21,8 +21,8 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 Happy new year! This is a minor release, contains mostly bug fixes.
 
-Strage that we don't have major features in this release, right? Don't worry, I am not out of ideas (at least not yet!).
-I have some features in-mind but lately I do not have the time to humanize them for you due to my new position in [Netdata Inc.](https://github.com/netdata/netdata), so be patient and [stay-tuned](https://github.com/kataras/iris/stargazers). Read the current changelog below:
+Strange that we don't have major features in this release, right? Don't worry, I am not out of ideas (at least not yet!).
+I have some features in-mind but lately I do not have the time to humanize those ideas for you due to my new position in [Netdata Inc.](https://github.com/netdata/netdata), so be patient and [stay-tuned](https://github.com/kataras/iris/stargazers). Read the current changelog below:
 
 - session/redis: fix unused service config var. IdleTimeout witch was replaced by default values. [#1140](https://github.com/kataras/iris/pull/1140) ([@d7561985](https://github.com/d7561985))
 
@@ -43,7 +43,7 @@ Doc updates:
 
 - fix link for httpexpect in README. [#1148](https://github.com/kataras/iris/pull/1148) ([@drenel18](https://github.com/drenel18))
 
-- translate _examples/README.md into Chinese. [#1156](https://github.com/kataras/iris/pull/1156) ([fduxiao](https://github.com/fduxiao))
+- translate _examples/README.md into Chinese. [#1156](https://github.com/kataras/iris/pull/1156) ([@fduxiao](https://github.com/fduxiao))
 
 - add https://github.com/snowlyg/IrisApiProject to starter kits (Chinese). [ea12533871253afc34e40e36ba658b51955ea82d](https://github.com/kataras/iris/commit/ea12533871253afc34e40e36ba658b51955ea82d)
 
