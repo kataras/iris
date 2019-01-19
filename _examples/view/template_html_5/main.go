@@ -11,7 +11,7 @@ func main() {
 	// TIP: append .Reload(true) to reload the templates on each request.
 
 	app.Get("/home", func(ctx iris.Context) {
-		ctx.ViewData("title", "Home page");
+		ctx.ViewData("title", "Home page")
 		ctx.View("home.html")
 		// Note that: you can pass "layout" : "otherLayout.html" to bypass the config's Layout property
 		// or view.NoLayout to disable layout on this render action.

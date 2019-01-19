@@ -115,7 +115,7 @@ func (e *Entry) Reset(statusCode int, headers map[string][]string,
 		e.response.headers = newHeaders
 	}
 
-	e.response.body = make([]byte,len(body))
+	e.response.body = make([]byte, len(body))
 	copy(e.response.body, body)
 	// check if a given life changer provided
 	// and if it does then execute the change life time
