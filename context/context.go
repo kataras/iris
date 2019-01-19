@@ -292,7 +292,6 @@ type Context interface {
 	// RequestPath returns the full request path,
 	// based on the 'escape'.
 	RequestPath(escape bool) string
-
 	// Host returns the host part of the current url.
 	Host() string
 	// Subdomain returns the subdomain of this request, if any.
@@ -300,6 +299,9 @@ type Context interface {
 	Subdomain() (subdomain string)
 	// IsWWW returns true if the current subdomain (if any) is www.
 	IsWWW() bool
+	// FullRqeuestURI returns the full URI,
+	// including the scheme, the host and the relative requested path/resource.
+	FullRequestURI() string
 	// RemoteAddr tries to parse and return the real client's request IP.
 	//
 	// Based on allowed headers names that can be modified from Configuration.RemoteAddrHeaders.
@@ -1465,11 +1467,11 @@ func (ctx *context) Host() string {
 
 // GetHost returns the host part of the current URI.
 func GetHost(r *http.Request) string {
-	h := r.URL.Host
-	if h == "" {
-		h = r.Host
+	if host := r.Host; host != "" {
+		return host
 	}
-	return h
+
+	return r.URL.Host
 }
 
 // Subdomain returns the subdomain of this request, if any.
@@ -1500,6 +1502,24 @@ func (ctx *context) IsWWW() bool {
 		}
 	}
 	return false
+}
+
+// FullRqeuestURI returns the full URI,
+// including the scheme, the host and the relative requested path/resource.
+func (ctx *context) FullRequestURI() string {
+	scheme := ctx.request.URL.Scheme
+	if scheme == "" {
+		if ctx.request.TLS != nil {
+			scheme = "https:"
+		} else {
+			scheme = "http:"
+		}
+	}
+
+	host := ctx.Host()
+	path := ctx.Path()
+
+	return scheme + "//" + host + path
 }
 
 const xForwardedForHeaderKey = "X-Forwarded-For"
