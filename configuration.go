@@ -222,19 +222,19 @@ var WithoutInterruptHandler = func(app *Application) {
 	app.config.DisableInterruptHandler = true
 }
 
-// WithoutVersionChecker will disable the version checker and updater.
-// The Iris server will be not
-// receive automatic updates if you pass this
-// to the `Run` function. Use it only while you're ready for Production environment.
-var WithoutVersionChecker = func(app *Application) {
-	app.config.DisableVersionChecker = true
-}
-
 // WithoutPathCorrection disables the PathCorrection setting.
 //
 // See `Configuration`.
 var WithoutPathCorrection = func(app *Application) {
 	app.config.DisablePathCorrection = true
+}
+
+// WithoutPathCorrectionRedirection disables the PathCorrectionRedirection setting.
+//
+// See `Configuration`.
+var WithoutPathCorrectionRedirection = func(app *Application) {
+	app.config.DisablePathCorrection = false
+	app.config.DisablePathCorrectionRedirection = true
 }
 
 // WithoutBodyConsumptionOnUnmarshal disables BodyConsumptionOnUnmarshal setting.
@@ -388,18 +388,23 @@ type Configuration struct {
 	// Defaults to false.
 	DisableInterruptHandler bool `json:"disableInterruptHandler,omitempty" yaml:"DisableInterruptHandler" toml:"DisableInterruptHandler"`
 
-	// DisableVersionChecker if true then process will be not be notified for any available updates.
-	//
-	// Defaults to false.
-	DisableVersionChecker bool `json:"disableVersionChecker,omitempty" yaml:"DisableVersionChecker" toml:"DisableVersionChecker"`
-
-	// DisablePathCorrection corrects and redirects the requested path to the registered path
+	// DisablePathCorrection corrects and redirects or executes directly the handler of
+	// the requested path to the registered path
 	// for example, if /home/ path is requested but no handler for this Route found,
 	// then the Router checks if /home handler exists, if yes,
-	// (permant)redirects the client to the correct path /home
+	// (permant)redirects the client to the correct path /home.
+	//
+	// See `DisablePathCorrectionRedirection` to enable direct handler execution instead of redirection.
 	//
 	// Defaults to false.
 	DisablePathCorrection bool `json:"disablePathCorrection,omitempty" yaml:"DisablePathCorrection" toml:"DisablePathCorrection"`
+
+	// DisablePathCorrectionRedirection works whenever configuration.DisablePathCorrection is set to false
+	// and if DisablePathCorrectionRedirection set to true then it will fire the handler of the matching route without
+	// the last slash ("/") instead of send a redirection status.
+	//
+	// Defaults to false.
+	DisablePathCorrectionRedirection bool `json:"disablePathCorrectionRedirection,omitempty" yaml:"DisablePathCorrectionRedirection" toml:"DisablePathCorrectionRedirection"`
 
 	// EnablePathEscape when is true then its escapes the path, the named parameters (if any).
 	// Change to false it if you want something like this https://github.com/kataras/iris/issues/135 to work
@@ -540,6 +545,13 @@ func (c Configuration) GetDisablePathCorrection() bool {
 	return c.DisablePathCorrection
 }
 
+// GetDisablePathCorrectionRedirection returns the Configuration#DisablePathCorrectionRedirection field.
+// If DisablePathCorrectionRedirection set to true then it will fire the handler of the matching route without
+// the last slash ("/") instead of send a redirection status.
+func (c Configuration) GetDisablePathCorrectionRedirection() bool {
+	return c.DisablePathCorrectionRedirection
+}
+
 // GetEnablePathEscape is the Configuration#EnablePathEscape,
 // returns true when its escapes the path, the named parameters (if any).
 func (c Configuration) GetEnablePathEscape() bool {
@@ -677,12 +689,12 @@ func WithConfiguration(c Configuration) Configurator {
 			main.DisableInterruptHandler = v
 		}
 
-		if v := c.DisableVersionChecker; v {
-			main.DisableVersionChecker = v
-		}
-
 		if v := c.DisablePathCorrection; v {
 			main.DisablePathCorrection = v
+		}
+
+		if v := c.DisablePathCorrectionRedirection; v {
+			main.DisablePathCorrectionRedirection = v
 		}
 
 		if v := c.EnablePathEscape; v {
@@ -758,7 +770,6 @@ func DefaultConfiguration() Configuration {
 	return Configuration{
 		DisableStartupLog:                 false,
 		DisableInterruptHandler:           false,
-		DisableVersionChecker:             false,
 		DisablePathCorrection:             false,
 		EnablePathEscape:                  false,
 		FireMethodNotAllowed:              false,

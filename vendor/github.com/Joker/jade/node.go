@@ -44,11 +44,10 @@ type ListNode struct {
 	Pos
 	tr    *Tree
 	Nodes []Node // The element nodes in lexical order.
-	tab   int
 }
 
 func (t *Tree) newList(pos Pos) *ListNode {
-	return &ListNode{tr: t, NodeType: NodeList, Pos: pos, tab: t.tab}
+	return &ListNode{tr: t, NodeType: NodeList, Pos: pos}
 }
 
 func (l *ListNode) append(n Node) {

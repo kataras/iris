@@ -18,13 +18,13 @@ type TagNode struct {
 	Nodes    []Node
 	AttrName []string
 	AttrCode []string
+	AttrUesc []bool
 	TagName  string
 	tagType  itemType
-	tab      int
 }
 
 func (t *Tree) newTag(pos Pos, name string, tagType itemType) *TagNode {
-	return &TagNode{tr: t, NodeType: NodeTag, Pos: pos, TagName: name, tagType: tagType, tab: t.tab}
+	return &TagNode{tr: t, NodeType: NodeTag, Pos: pos, TagName: name, tagType: tagType}
 }
 
 func (l *TagNode) append(n Node) {
@@ -35,8 +35,9 @@ func (l *TagNode) tree() *Tree {
 	return l.tr
 }
 
-func (l *TagNode) attr(a, b string) {
+func (l *TagNode) attr(a, b string, c bool) {
 	for k, v := range l.AttrName {
+		// add to existing attribute
 		if v == a {
 			l.AttrCode[k] = fmt.Sprintf(tag__arg_add, l.AttrCode[k], b)
 			return
@@ -45,23 +46,29 @@ func (l *TagNode) attr(a, b string) {
 
 	l.AttrName = append(l.AttrName, a)
 	l.AttrCode = append(l.AttrCode, b)
+	l.AttrUesc = append(l.AttrUesc, c)
 }
 
-func codeStrFmt(a string) (string, bool) {
+func (l *TagNode) ifAttrArgBollean() {
+	for k, v := range l.AttrCode {
+		if v == "true" {
+			l.AttrCode[k] = `"` + l.AttrName[k] + `"`
+		} else if v == "false" {
+			l.AttrName = append(l.AttrName[:k], l.AttrName[k+1:]...)
+			l.AttrCode = append(l.AttrCode[:k], l.AttrCode[k+1:]...)
+			l.AttrUesc = append(l.AttrUesc[:k], l.AttrUesc[k+1:]...)
+		}
+	}
+}
+
+func ifAttrArgString(a string, unesc bool) (string, bool) {
 	var (
 		str   = []rune(a)
 		lng   = len(str)
 		first = str[0]
 		last  = str[lng-1]
-		unesc = false
 	)
-	if first == 'ߐ' { // FIXME temporarily ߐ - [AttrEqualUn] Unescaped flag set in parseAttributes()
-		str = append(str[:0], str[1:]...)
-		lng -= 1
-		first = str[0]
-		last = str[lng-1]
-		unesc = true
-	}
+
 	switch first {
 	case '"', '\'':
 		if first == last {
@@ -113,17 +120,31 @@ func (l *TagNode) WriteIn(b io.Writer) {
 	var (
 		attr = new(bytes.Buffer)
 	)
+	l.ifAttrArgBollean()
+
 	if len(l.AttrName) > 0 {
 		fmt.Fprint(attr, tag__arg_bgn)
 		for k, name := range l.AttrName {
-			if arg, ok := codeStrFmt(l.AttrCode[k]); ok {
+			if arg, ok := ifAttrArgString(l.AttrCode[k], l.AttrUesc[k]); ok {
 				fmt.Fprintf(attr, tag__arg_str, name, arg)
+
 			} else if !golang_mode {
-				fmt.Fprintf(attr, tag__arg, name, l.AttrCode[k])
+				fmt.Fprintf(attr, tag__arg_esc, name, l.AttrCode[k])
+
 			} else if _, err := parser.ParseExpr(l.AttrCode[k]); err == nil {
-				fmt.Fprintf(attr, tag__arg, name, l.Pos, l.AttrCode[k])
+				if l.AttrUesc[k] {
+					fmt.Fprintf(attr, tag__arg_une, name, l.Pos, l.AttrCode[k])
+				} else {
+					fmt.Fprintf(attr, tag__arg_esc, name, l.Pos, l.AttrCode[k])
+				}
+
 			} else if arg, ok := query(l.AttrCode[k]); ok {
-				fmt.Fprintf(attr, tag__arg, name, l.Pos, arg)
+				if l.AttrUesc[k] {
+					fmt.Fprintf(attr, tag__arg_une, name, l.Pos, arg)
+				} else {
+					fmt.Fprintf(attr, tag__arg_esc, name, l.Pos, arg)
+				}
+
 			} else {
 				log.Fatalln("Error tag attribute value ==> ", l.AttrCode[k])
 			}
@@ -149,9 +170,9 @@ func (l *TagNode) CopyTag() *TagNode {
 		return l
 	}
 	n := l.tr.newTag(l.Pos, l.TagName, l.tagType)
-	n.tab = l.tab
 	n.AttrCode = l.AttrCode
 	n.AttrName = l.AttrName
+	n.AttrUesc = l.AttrUesc
 	for _, elem := range l.Nodes {
 		n.append(elem.Copy())
 	}
@@ -172,11 +193,10 @@ type CondNode struct {
 	Nodes    []Node
 	cond     string
 	condType itemType
-	tab      int
 }
 
 func (t *Tree) newCond(pos Pos, cond string, condType itemType) *CondNode {
-	return &CondNode{tr: t, NodeType: NodeCond, Pos: pos, cond: cond, condType: condType, tab: t.tab}
+	return &CondNode{tr: t, NodeType: NodeCond, Pos: pos, cond: cond, condType: condType}
 }
 
 func (l *CondNode) append(n Node) {
@@ -255,7 +275,6 @@ func (l *CondNode) CopyCond() *CondNode {
 		return l
 	}
 	n := l.tr.newCond(l.Pos, l.cond, l.condType)
-	n.tab = l.tab
 	for _, elem := range l.Nodes {
 		n.append(elem.Copy())
 	}
@@ -275,11 +294,10 @@ type CodeNode struct {
 	tr       *Tree
 	codeType itemType
 	Code     []byte // The text; may span newlines.
-	tab      int
 }
 
 func (t *Tree) newCode(pos Pos, text string, codeType itemType) *CodeNode {
-	return &CodeNode{tr: t, NodeType: NodeCode, Pos: pos, Code: []byte(text), codeType: codeType, tab: t.tab}
+	return &CodeNode{tr: t, NodeType: NodeCode, Pos: pos, Code: []byte(text), codeType: codeType}
 }
 
 func (t *CodeNode) String() string {
@@ -289,18 +307,24 @@ func (t *CodeNode) String() string {
 }
 func (t *CodeNode) WriteIn(b io.Writer) {
 	switch t.codeType {
-	case itemCode:
-		fmt.Fprintf(b, code__longcode, t.Code)
 	case itemCodeBuffered:
 		if !golang_mode {
 			fmt.Fprintf(b, code__buffered, t.Code)
-		} else if cb, ok := codeStrFmt(string(t.Code)); ok {
-			fmt.Fprintf(b, code__buffered, t.Pos, `"`+cb+`"`)
+			return
+		}
+		if code, ok := ifAttrArgString(string(t.Code), false); ok {
+			fmt.Fprintf(b, code__buffered, t.Pos, `"`+code+`"`)
 		} else {
 			fmt.Fprintf(b, code__buffered, t.Pos, t.Code)
 		}
 	case itemCodeUnescaped:
-		fmt.Fprintf(b, code__unescaped, t.Code)
+		if !golang_mode {
+			fmt.Fprintf(b, code__unescaped, t.Code)
+			return
+		}
+		fmt.Fprintf(b, code__unescaped, t.Pos, t.Code)
+	case itemCode:
+		fmt.Fprintf(b, code__longcode, t.Code)
 	case itemElse:
 		fmt.Fprintf(b, code__else)
 	case itemElseIf:
@@ -323,7 +347,7 @@ func (t *CodeNode) tree() *Tree {
 }
 
 func (t *CodeNode) Copy() Node {
-	return &CodeNode{tr: t.tr, NodeType: NodeCode, Pos: t.Pos, codeType: t.codeType, Code: append([]byte{}, t.Code...), tab: t.tab}
+	return &CodeNode{tr: t.tr, NodeType: NodeCode, Pos: t.Pos, codeType: t.codeType, Code: append([]byte{}, t.Code...)}
 }
 
 //
@@ -335,11 +359,10 @@ type BlockNode struct {
 	tr        *Tree
 	blockType itemType
 	Name      string
-	tab       int
 }
 
 func (t *Tree) newBlock(pos Pos, name string, textType itemType) *BlockNode {
-	return &BlockNode{tr: t, NodeType: NodeBlock, Pos: pos, Name: name, blockType: textType, tab: t.tab}
+	return &BlockNode{tr: t, NodeType: NodeBlock, Pos: pos, Name: name, blockType: textType}
 }
 
 func (t *BlockNode) String() string {
@@ -368,7 +391,7 @@ func (t *BlockNode) tree() *Tree {
 }
 
 func (t *BlockNode) Copy() Node {
-	return &BlockNode{tr: t.tr, NodeType: NodeBlock, Pos: t.Pos, blockType: t.blockType, Name: t.Name, tab: t.tab}
+	return &BlockNode{tr: t.tr, NodeType: NodeBlock, Pos: t.Pos, blockType: t.blockType, Name: t.Name}
 }
 
 //
@@ -380,11 +403,10 @@ type TextNode struct {
 	tr       *Tree
 	textType itemType
 	Text     []byte // The text; may span newlines.
-	tab      int
 }
 
-func (t *Tree) newText(pos Pos, text string, textType itemType) *TextNode {
-	return &TextNode{tr: t, NodeType: NodeText, Pos: pos, Text: []byte(text), textType: textType, tab: t.tab}
+func (t *Tree) newText(pos Pos, text []byte, textType itemType) *TextNode {
+	return &TextNode{tr: t, NodeType: NodeText, Pos: pos, Text: text, textType: textType}
 }
 
 func (t *TextNode) String() string {
@@ -406,7 +428,7 @@ func (t *TextNode) tree() *Tree {
 }
 
 func (t *TextNode) Copy() Node {
-	return &TextNode{tr: t.tr, NodeType: NodeText, Pos: t.Pos, textType: t.textType, Text: append([]byte{}, t.Text...), tab: t.tab}
+	return &TextNode{tr: t.tr, NodeType: NodeText, Pos: t.Pos, textType: t.textType, Text: append([]byte{}, t.Text...)}
 }
 
 //
@@ -421,20 +443,22 @@ type MixinNode struct {
 	AttrCode  []string
 	AttrRest  []string
 	MixinName string
-	block     string
+	block     []Node
 	tagType   itemType
-	tab       int
 }
 
 func (t *Tree) newMixin(pos Pos) *MixinNode {
-	return &MixinNode{tr: t, NodeType: NodeMixin, Pos: pos, tab: t.tab}
+	return &MixinNode{tr: t, NodeType: NodeMixin, Pos: pos}
 }
 
 func (l *MixinNode) append(n Node) {
 	l.Nodes = append(l.Nodes, n)
 }
+func (l *MixinNode) appendToBlock(n Node) {
+	l.block = append(l.block, n)
+}
 
-func (l *MixinNode) attr(a, b string) {
+func (l *MixinNode) attr(a, b string, c bool) {
 	l.AttrName = append(l.AttrName, a)
 	l.AttrCode = append(l.AttrCode, b)
 }
@@ -457,7 +481,6 @@ func (l *MixinNode) WriteIn(b io.Writer) {
 
 	if an > 0 {
 		fmt.Fprintf(attr, mixin__var_bgn)
-		fmt.Fprintf(attr, mixin__var_block, l.block)
 		if rest > 0 {
 			fmt.Fprintf(attr, mixin__var_rest, strings.TrimLeft(l.AttrName[an-1], "."), l.AttrRest)
 			l.AttrName = l.AttrName[:an-1]
@@ -467,8 +490,18 @@ func (l *MixinNode) WriteIn(b io.Writer) {
 		}
 		fmt.Fprintf(attr, mixin__var_end)
 	}
-
 	fmt.Fprintf(b, mixin__bgn, attr)
+
+	if len(l.block) > 0 {
+		b.Write([]byte(mixin__var_block_bgn))
+		for _, n := range l.block {
+			n.WriteIn(b)
+		}
+		b.Write([]byte(mixin__var_block_end))
+	} else {
+		b.Write([]byte(mixin__var_block))
+	}
+
 	for _, n := range l.Nodes {
 		n.WriteIn(b)
 	}
@@ -480,7 +513,6 @@ func (l *MixinNode) CopyMixin() *MixinNode {
 		return l
 	}
 	n := l.tr.newMixin(l.Pos)
-	n.tab = l.tab
 	for _, elem := range l.Nodes {
 		n.append(elem.Copy())
 	}
@@ -546,7 +578,8 @@ func (d *DoctypeNode) String() string {
 	return fmt.Sprintf(text__str, d.doctype)
 }
 func (d *DoctypeNode) WriteIn(b io.Writer) {
-	b.Write([]byte(d.doctype))
+	fmt.Fprintf(b, text__str, d.doctype)
+	// b.Write([]byte(d.doctype))
 }
 func (d *DoctypeNode) tree() *Tree {
 	return d.tr

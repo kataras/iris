@@ -77,13 +77,12 @@ func TestConfigurationOptions(t *testing.T) {
 func TestConfigurationOptionsDeep(t *testing.T) {
 	charset := "MYCHARSET"
 
-	app := New().Configure(WithCharset(charset), WithoutBodyConsumptionOnUnmarshal, WithoutBanner, WithoutVersionChecker)
+	app := New().Configure(WithCharset(charset), WithoutBodyConsumptionOnUnmarshal, WithoutBanner)
 
 	expected := DefaultConfiguration()
 	expected.Charset = charset
 	expected.DisableBodyConsumptionOnUnmarshal = true
 	expected.DisableStartupLog = true
-	expected.DisableVersionChecker = true
 
 	has := *app.config
 
@@ -142,8 +141,8 @@ func TestConfigurationYAML(t *testing.T) {
 	}()
 
 	yamlConfigurationContents := `
-DisableVersionChecker: true
 DisablePathCorrection: false
+DisablePathCorrectionRedirection: true
 EnablePathEscape: false
 FireMethodNotAllowed: true
 EnableOptimizations: true
@@ -165,12 +164,12 @@ Other:
 
 	c := app.config
 
-	if expected := true; c.DisableVersionChecker != expected {
-		t.Fatalf("error on TestConfigurationYAML: Expected DisableVersionChecker %v but got %v", expected, c.DisableVersionChecker)
-	}
-
 	if expected := false; c.DisablePathCorrection != expected {
 		t.Fatalf("error on TestConfigurationYAML: Expected DisablePathCorrection %v but got %v", expected, c.DisablePathCorrection)
+	}
+
+	if expected := true; c.DisablePathCorrectionRedirection != expected {
+		t.Fatalf("error on TestConfigurationYAML: Expected DisablePathCorrectionRedirection %v but got %v", expected, c.DisablePathCorrectionRedirection)
 	}
 
 	if expected := false; c.EnablePathEscape != expected {
@@ -241,7 +240,7 @@ func TestConfigurationTOML(t *testing.T) {
 	}()
 
 	tomlConfigurationContents := `
-DisableVersionChecker = true
+DisablePathCorrectionRedirection = true
 EnablePathEscape = false
 FireMethodNotAllowed = true
 EnableOptimizations = true
@@ -265,12 +264,12 @@ Charset = "UTF-8"
 
 	c := app.config
 
-	if expected := true; c.DisableVersionChecker != expected {
-		t.Fatalf("error on TestConfigurationTOML: Expected DisableVersionChecker %v but got %v", expected, c.DisableVersionChecker)
-	}
-
 	if expected := false; c.DisablePathCorrection != expected {
 		t.Fatalf("error on TestConfigurationTOML: Expected DisablePathCorrection %v but got %v", expected, c.DisablePathCorrection)
+	}
+
+	if expected := true; c.DisablePathCorrectionRedirection != expected {
+		t.Fatalf("error on TestConfigurationTOML: Expected DisablePathCorrectionRedirection %v but got %v", expected, c.DisablePathCorrectionRedirection)
 	}
 
 	if expected := false; c.EnablePathEscape != expected {

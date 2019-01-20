@@ -1,6 +1,6 @@
 package context
 
-import "github.com/kataras/iris/core/router/macro"
+import "github.com/kataras/iris/macro"
 
 // RouteReadOnly allows decoupled access to the current route
 // inside the context.
@@ -25,7 +25,7 @@ type RouteReadOnly interface {
 
 	// StaticPath returns the static part of the original, registered route path.
 	// if /user/{id} it will return /user
-	// if /user/{id}/friend/{friendid:int} it will return /user too
+	// if /user/{id}/friend/{friendid:uint64} it will return /user too
 	// if /assets/{filepath:path} it will return /assets.
 	StaticPath() string
 

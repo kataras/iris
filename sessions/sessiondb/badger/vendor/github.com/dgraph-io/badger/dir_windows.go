@@ -57,7 +57,11 @@ type directoryLockGuard struct {
 }
 
 // AcquireDirectoryLock acquires exclusive access to a directory.
-func acquireDirectoryLock(dirPath string, pidFileName string) (*directoryLockGuard, error) {
+func acquireDirectoryLock(dirPath string, pidFileName string, readOnly bool) (*directoryLockGuard, error) {
+	if readOnly {
+		return nil, ErrWindowsNotSupported
+	}
+
 	// Convert to absolute path so that Release still works even if we do an unbalanced
 	// chdir in the meantime.
 	absLockFilePath, err := filepath.Abs(filepath.Join(dirPath, pidFileName))

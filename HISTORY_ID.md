@@ -17,6 +17,30 @@ Developers tidak diwajibkan untuk melakukan upgrade apabila mereka tidak membutu
 
 **Cara Upgrade**: Bukan command-line anda dan eksekuis perintah ini: `go get -u github.com/kataras/iris` atau biarkan updater otomatis melakukannya untuk anda.
 
+# Fr, 11 January 2019 | v11.1.1
+
+This history entry is not translated yet to the Indonesian language yet, please refer to the english version of the [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#fr-11-january-2019--v1111) instead.
+
+# Su, 18 November 2018 | v11.1.0
+
+This history entry is not translated yet to the Indonesian language yet, please refer to the english version of the [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#su-18-november-2018--v1110) instead.
+
+# Fr, 09 November 2018 | v11.0.4
+
+This history entry is not translated yet to the Indonesian language yet, please refer to the english version of the [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#fr-09-november-2018--v1104) instead.
+
+# Tu, 30 October 2018 | v11.0.2
+
+This history entry is not translated yet to the Indonesian language yet, please refer to the english version of the [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#tu-30-october-2018--v1102) instead.
+
+# Su, 28 October 2018 | v11.0.1
+
+This history entry is not translated yet to the Indonesian language yet, please refer to the english version of the [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#su-28-october-2018--v1101) instead.
+
+# Su, 21 October 2018 | v11.0.0
+
+This history entry is not translated yet to the Indonesian language yet, please refer to the english version of the [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#su-21-october-2018--v1100) instead.
+
 # Sat, 11 August 2018 | v10.7.0
 
 This history entry is not translated yet to the Indonesian language yet, please refer to the english version of the [HISTORY entry](https://github.com/kataras/iris/blob/master/HISTORY.md#sat-11-august-2018--v1070) instead.
@@ -83,7 +107,7 @@ For example: at [_examples/mvc/basic/main.go line 100](_examples/mvc/basic/main.
 
 - fix `APIBuilder, Party#StaticWeb` and `APIBuilder, Party#StaticEmbedded` wrong strip prefix inside children parties
 - keep the `iris, core/router#StaticEmbeddedHandler` and remove the `core/router/APIBuilder#StaticEmbeddedHandler`,  (note the `Handler` suffix) it's global and has nothing to do with the `Party` or the `APIBuilder`
-- fix high path cleaning between `{}` (we already escape those contents at the [interpreter](core/router/macro/interpreter) level but some symbols are still removed by the higher-level api builder) , i.e `\\` from the string's macro function `regex` contents as reported at [927](https://github.com/kataras/iris/issues/927) by [commit e85b113476eeefffbc7823297cc63cd152ebddfd](https://github.com/kataras/iris/commit/e85b113476eeefffbc7823297cc63cd152ebddfd)
+- fix high path cleaning between `{}` (we already escape those contents at the [interpreter](macro/interpreter) level but some symbols are still removed by the higher-level api builder) , i.e `\\` from the string's macro function `regex` contents as reported at [927](https://github.com/kataras/iris/issues/927) by [commit e85b113476eeefffbc7823297cc63cd152ebddfd](https://github.com/kataras/iris/commit/e85b113476eeefffbc7823297cc63cd152ebddfd)
 - sync the `golang.org/x/sys/unix` vendor
 
 ## The most important

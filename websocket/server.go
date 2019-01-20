@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"bytes"
 	"sync"
 
 	"github.com/kataras/iris/context"
@@ -34,7 +35,15 @@ type (
 	//
 	// To serve the built'n javascript client-side library look the `websocket.ClientHandler`.
 	Server struct {
-		config                Config
+		config Config
+		// ClientSource contains the javascript side code
+		// for the iris websocket communication
+		// based on the configuration's `EvtMessagePrefix`.
+		//
+		// Use a route to serve this file on a specific path, i.e
+		// app.Any("/iris-ws.js", func(ctx iris.Context) { ctx.Write(mywebsocketServer.ClientSource) })
+		ClientSource          []byte
+		messageSerializer     *messageSerializer
 		connections           sync.Map            // key = the Connection ID.
 		rooms                 map[string][]string // by default a connection is joined to a room which has the connection id as its name
 		mu                    sync.RWMutex        // for rooms.
@@ -52,9 +61,11 @@ type (
 func New(cfg Config) *Server {
 	cfg = cfg.Validate()
 	return &Server{
-		config:      cfg,
-		connections: sync.Map{}, // ready-to-use, this is not necessary.
-		rooms:       make(map[string][]string),
+		config:                cfg,
+		ClientSource:          bytes.Replace(ClientSource, []byte(DefaultEvtMessageKey), cfg.EvtMessagePrefix, -1),
+		messageSerializer:     newMessageSerializer(cfg.EvtMessagePrefix),
+		connections:           sync.Map{}, // ready-to-use, this is not necessary.
+		rooms:                 make(map[string][]string),
 		onConnectionListeners: make([]ConnectionFunc, 0),
 		upgrader: websocket.Upgrader{
 			HandshakeTimeout:  cfg.HandshakeTimeout,
@@ -352,9 +363,12 @@ func (s *Server) GetConnectionsByRoom(roomName string) []Connection {
 // let's keep it unexported for the best.
 func (s *Server) emitMessage(from, to string, data []byte) {
 	if to != All && to != Broadcast {
-		if s.rooms[to] != nil {
+		s.mu.RLock()
+		room := s.rooms[to]
+		s.mu.RUnlock()
+		if room != nil {
 			// it suppose to send the message to a specific room/or a user inside its own room
-			for _, connectionIDInsideRoom := range s.rooms[to] {
+			for _, connectionIDInsideRoom := range room {
 				if c, ok := s.getConnection(connectionIDInsideRoom); ok {
 					c.writeDefault(data) //send the message to the client(s)
 				} else {

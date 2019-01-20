@@ -6,10 +6,11 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/coreos/bbolt"
-	"github.com/kataras/golog"
 	"github.com/kataras/iris/core/errors"
 	"github.com/kataras/iris/sessions"
+
+	bolt "github.com/etcd-io/bbolt"
+	"github.com/kataras/golog"
 )
 
 // DefaultFileMode used as the default database's "fileMode"
@@ -173,7 +174,8 @@ func (db *Database) Acquire(sid string, expires time.Duration) (lifetime session
 					return err
 				}
 
-				if err := b.Put(expirationKey, timeBytes); err == nil {
+				err = b.Put(expirationKey, timeBytes)
+				if err == nil {
 					// create the session bucket now, so the rest of the calls can be easly get the bucket without any further checks.
 					_, err = root.CreateBucket(bsid)
 				}
@@ -365,11 +367,7 @@ func (db *Database) Release(sid string) {
 		// try to delete the associated expiration bucket, if exists, ignore error.
 		b.DeleteBucket(getExpirationBucketName(bsid))
 
-		if err := b.DeleteBucket(bsid); err != nil {
-			return err
-		}
-
-		return nil
+		return b.DeleteBucket(bsid)
 	})
 }
 

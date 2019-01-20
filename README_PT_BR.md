@@ -2,7 +2,7 @@
 
 <a href="https://iris-go.com"> <img align="right" width="169px" src="https://iris-go.com/images/icon.svg?v=a" title="logo created by @merry.dii" /> </a>
 
-[![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=flat-square)](https://travis-ci.org/kataras/iris)<!-- [![release](https://img.shields.io/github/release/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/releases)--> [![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=flat-square)](http://goreportcard.com/report/kataras/iris) [![vscode-iris](https://img.shields.io/badge/ext%20-vscode-0c77e3.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=kataras2006.iris)<!--[![github closed issues](https://img.shields.io/github/issues-closed-raw/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/issues?q=is%3Aissue+is%3Aclosed)--> [![chat](https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square)](https://kataras.rocket.chat/channel/iris) [![view examples](https://img.shields.io/badge/learn%20by-examples-0077b3.svg?style=flat-square)](https://iris-go.com/v10/recipe) [![release](https://img.shields.io/badge/release%20-v10.7-0077b3.svg?style=flat-square)](https://github.com/kataras/iris/releases)
+[![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=flat-square)](https://travis-ci.org/kataras/iris)<!-- [![release](https://img.shields.io/github/release/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/releases)--> [![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=flat-square)](http://goreportcard.com/report/kataras/iris) [![vscode-iris](https://img.shields.io/badge/ext%20-vscode-0c77e3.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=kataras2006.iris)<!--[![github closed issues](https://img.shields.io/github/issues-closed-raw/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/issues?q=is%3Aissue+is%3Aclosed)--> [![chat](https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square)](https://kataras.rocket.chat/channel/iris) [![view examples](https://img.shields.io/badge/learn%20by-examples-0077b3.svg?style=flat-square)](https://github.com/kataras/iris/tree/master/_examples/routing) [![release](https://img.shields.io/badge/release%20-v11.1-0077b3.svg?style=flat-square)](https://github.com/kataras/iris/releases)
 
 Iris é um framework rápido, simples porém completo e muito eficiente para a linguagem Go.
 
@@ -106,7 +106,7 @@ _Atualizado em : [Terça, 21 de Novembro de 2017](_benchmarks/README_UNIX.md)_
 
 ## Apoie
 
-- [HISTORY](HISTORY.md#sat-11-august-2018--v1070) o arquivo HISTORY é o seu melhor amigo, ele contém informações sobre as últimas features e mudanças.
+- [HISTORY](HISTORY.md#fr-11-january-2019--v1111) o arquivo HISTORY é o seu melhor amigo, ele contém informações sobre as últimas features e mudanças.
 - Econtrou algum bug ? Poste-o nas [issues](https://github.com/kataras/iris/issues)
 - Possui alguma dúvida ou gostaria de falar com alguém experiente para resolver seu problema em tempo real ? Junte-se ao [chat da nossa comunidade](https://chat.iris-go.com).
 - Complete nosso formulário de experiência do usuário clicando [aqui](https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link)
@@ -185,14 +185,17 @@ padrão. Feito isso, você pode seguir as seguintes diretrizes:
 | Quickstart do Iris com Nanobox | https://guides.nanobox.io/golang/iris/from-scratch |
 -->
 
-1. [Web app básico utilizando o Iris](https://github.com/gauravtiwari/go_iris_app)
-2. [Uma mini rede social criada com o incrível Iris💖💖] (https://github.com/iris-contrib/Iris-Mini-Social-Network)
-3. [Iris isomorphic react/hot reloadable/redux/css-modules starter kit](https://github.com/iris-contrib/iris-starter-kit)
-4. [Projeto demo usando react com typescript e Iris](https://github.com/ionutvilie/react-ts)
-5. [Plataforma de Gerenciamento de Localização auto hospedada criada com Iris e Angular](https://github.com/iris-contrib/parrot)
-6. [Iris + Docker e Kubernetes](https://github.com/iris-contrib/cloud-native-go)
-7. [Quickstart do Iris com Nanobox](https://guides.nanobox.io/golang/iris/from-scratch)
-8. [Um projeto Hasura para iniciantes pronto para o deply com um app Golang hello-world utilizando o IRIS](https://hasura.io/hub/project/hasura/hello-golang-iris)
+1. [snowlyg/IrisApiProject: Iris + gorm + jwt + sqlite3](https://github.com/snowlyg/IrisApiProject)
+2. [yz124/superstar: Iris + xorm to implement the star library](https://github.com/yz124/superstar) **NEW-Chinese**
+3. [jebzmos4/Iris-golang: A basic CRUD API in golang with Iris](https://github.com/jebzmos4/Iris-golang)
+4. [gauravtiwari/go_iris_app: Web app básico utilizando o Iris](https://github.com/gauravtiwari/go_iris_app)
+5. [Uma mini rede social criada com o incrível Iris💖💖](https://github.com/iris-contrib/Iris-Mini-Social-Network)
+6. [Iris isomorphic react/hot reloadable/redux/css-modules starter kit](https://github.com/iris-contrib/iris-starter-kit)
+7. [ionutvilie/react-ts: Projeto demo usando react com typescript e Iris](https://github.com/ionutvilie/react-ts)
+8. [Plataforma de Gerenciamento de Localização auto hospedada criada com Iris e Angular](https://github.com/iris-contrib/parrot)
+9. [Iris + Docker e Kubernetes](https://github.com/iris-contrib/cloud-native-go)
+10. [nanobox.io: Quickstart do Iris com Nanobox](https://guides.nanobox.io/golang/iris/from-scratch)
+11. [hasura.io: Um projeto Hasura para iniciantes pronto para o deply com um app Golang hello-world utilizando o IRIS](https://hasura.io/hub/project/hasura/hello-golang-iris)
 
 > Voce criou algo parecido ? [Informe-nos](https://github.com/kataras/iris/pulls)!
 
@@ -204,6 +207,7 @@ Iris, ao contrário dos demais, é 100% compatível com os padrões e esse é o 
 
 ### Artigos
 
+* [CRUD REST API in Iris (a framework for golang)](https://medium.com/@jebzmos4/crud-rest-api-in-iris-a-framework-for-golang-a5d33652401e)
 * [Um aplicação Todo utilizando Iris e Vue.js](https://hackernoon.com/a-todo-mvc-application-using-iris-and-vue-js-5019ff870064)
 * [Um projeto Hasura para iniciantes pronto para o deply com um app Golang hello-world utilizando o IRIS](https://bit.ly/2lmKaAZ)
 * [Top 6 frameworks web do Go em 2017](https://blog.usejournal.com/top-6-web-frameworks-for-go-as-of-2017-23270e059c4b)

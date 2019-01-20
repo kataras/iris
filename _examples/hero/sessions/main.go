@@ -34,7 +34,6 @@ func main() {
 
 	app.Run(
 		iris.Addr(":8080"),
-		iris.WithoutVersionChecker,
 		iris.WithoutServerError(iris.ErrServerClosed),
 	)
 }

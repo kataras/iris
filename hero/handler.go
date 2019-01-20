@@ -5,13 +5,15 @@ import (
 	"reflect"
 	"runtime"
 
+	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/hero/di"
 
 	"github.com/kataras/golog"
-	"github.com/kataras/iris/context"
 )
 
-var contextTyp = reflect.TypeOf((*context.Context)(nil)).Elem()
+var (
+	contextTyp = reflect.TypeOf((*context.Context)(nil)).Elem()
+)
 
 // IsContext returns true if the "inTyp" is a type of Context.
 func IsContext(inTyp reflect.Type) bool {
@@ -70,7 +72,7 @@ func makeHandler(handler interface{}, values ...reflect.Value) (context.Handler,
 		// is invalid when input len and values are not match
 		// or their types are not match, we will take look at the
 		// second statement, here we will re-try it
-		// using binders for path parameters: string, int, int64, bool.
+		// using binders for path parameters: string, int, int64, uint8, uint64, bool and so on.
 		// We don't have access to the path, so neither to the macros here,
 		// but in mvc. So we have to do it here.
 		if valid = funcInjector.Retry(new(params).resolve); !valid {

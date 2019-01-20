@@ -26,10 +26,10 @@ import (
 
 	"github.com/Shopify/goreferrer"
 	"github.com/fatih/structs"
+	"github.com/iris-contrib/blackfriday"
 	formbinder "github.com/iris-contrib/formBinder"
 	"github.com/json-iterator/go"
 	"github.com/microcosm-cc/bluemonday"
-	"gopkg.in/russross/blackfriday.v2"
 	"gopkg.in/yaml.v2"
 )
 
@@ -74,131 +74,6 @@ type (
 // slices, and pointers as necessary.
 func (u UnmarshalerFunc) Unmarshal(data []byte, v interface{}) error {
 	return u(data, v)
-}
-
-// RequestParams is a key string - value string storage which
-// context's request dynamic path params are being kept.
-// Empty if the route is static.
-type RequestParams struct {
-	store memstore.Store
-}
-
-// Set adds a key-value pair to the path parameters values
-// it's being called internally so it shouldn't be used as a local storage by the user, use `ctx.Values()` instead.
-func (r *RequestParams) Set(key, value string) {
-	r.store.Set(key, value)
-}
-
-// Visit accepts a visitor which will be filled
-// by the key-value params.
-func (r *RequestParams) Visit(visitor func(key string, value string)) {
-	r.store.Visit(func(k string, v interface{}) {
-		visitor(k, v.(string)) // always string here.
-	})
-}
-
-var emptyEntry memstore.Entry
-
-// GetEntryAt returns the internal Entry of the memstore based on its index,
-// the stored index by the router.
-// If not found then it returns a zero Entry and false.
-func (r RequestParams) GetEntryAt(index int) (memstore.Entry, bool) {
-	if len(r.store) > index {
-		return r.store[index], true
-	}
-	return emptyEntry, false
-}
-
-// GetEntry returns the internal Entry of the memstore based on its "key".
-// If not found then it returns a zero Entry and false.
-func (r RequestParams) GetEntry(key string) (memstore.Entry, bool) {
-	// we don't return the pointer here, we don't want to give the end-developer
-	// the strength to change the entry that way.
-	if e := r.store.GetEntry(key); e != nil {
-		return *e, true
-	}
-	return emptyEntry, false
-}
-
-// Get returns a path parameter's value based on its route's dynamic path key.
-func (r RequestParams) Get(key string) string {
-	return r.store.GetString(key)
-}
-
-// GetTrim returns a path parameter's value without trailing spaces based on its route's dynamic path key.
-func (r RequestParams) GetTrim(key string) string {
-	return strings.TrimSpace(r.Get(key))
-}
-
-// GetEscape returns a path parameter's double-url-query-escaped value based on its route's dynamic path key.
-func (r RequestParams) GetEscape(key string) string {
-	return DecodeQuery(DecodeQuery(r.Get(key)))
-}
-
-// GetDecoded returns a path parameter's double-url-query-escaped value based on its route's dynamic path key.
-// same as `GetEscape`.
-func (r RequestParams) GetDecoded(key string) string {
-	return r.GetEscape(key)
-}
-
-// GetInt returns the path parameter's value as int, based on its key.
-// It checks for all available types of int, including int64, strings etc.
-// It will return -1 and a non-nil error if parameter wasn't found.
-func (r RequestParams) GetInt(key string) (int, error) {
-	return r.store.GetInt(key)
-}
-
-// GetInt64 returns the path paramete's value as int64, based on its key.
-// It checks for all available types of int, including int, strings etc.
-// It will return -1 and a non-nil error if parameter wasn't found.
-func (r RequestParams) GetInt64(key string) (int64, error) {
-	return r.store.GetInt64(key)
-}
-
-// GetFloat64 returns a path parameter's value based as float64 on its route's dynamic path key.
-// It checks for all available types of int, including float64, int, strings etc.
-// It will return -1 and a non-nil error if parameter wasn't found.
-func (r RequestParams) GetFloat64(key string) (float64, error) {
-	return r.store.GetFloat64(key)
-}
-
-// GetUint64 returns the path paramete's value as uint64, based on its key.
-// It checks for all available types of int, including int, uint64, int64, strings etc.
-// It will return 0 and a non-nil error if parameter wasn't found.
-func (r RequestParams) GetUint64(key string) (uint64, error) {
-	return r.store.GetUint64(key)
-}
-
-// GetBool returns the path parameter's value as bool, based on its key.
-// a string which is "1" or "t" or "T" or "TRUE" or "true" or "True"
-// or "0" or "f" or "F" or "FALSE" or "false" or "False".
-// Any other value returns an error.
-func (r RequestParams) GetBool(key string) (bool, error) {
-	return r.store.GetBool(key)
-}
-
-// GetIntUnslashed same as Get but it removes the first slash if found.
-// Usage: Get an id from a wildcard path.
-//
-// Returns -1 with an error if the parameter couldn't be found.
-func (r RequestParams) GetIntUnslashed(key string) (int, error) {
-	v := r.Get(key)
-	if v != "" {
-		if len(v) > 1 {
-			if v[0] == '/' {
-				v = v[1:]
-			}
-		}
-		return strconv.Atoi(v)
-
-	}
-
-	return -1, fmt.Errorf("unable to find int for '%s'", key)
-}
-
-// Len returns the full length of the parameters.
-func (r RequestParams) Len() int {
-	return r.store.Len()
 }
 
 // Context is the midle-man server's "object" for the clients.
@@ -279,7 +154,7 @@ type Context interface {
 	// HandlerIndex sets the current index of the
 	// current context's handlers chain.
 	// If -1 passed then it just returns the
-	// current handler index without change the current index.rns that index, useless return value.
+	// current handler index without change the current index.
 	//
 	// Look Handlers(), Next() and StopExecution() too.
 	HandlerIndex(n int) (currentIndex int)
@@ -685,7 +560,8 @@ type Context interface {
 	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-xml/main.go
 	ReadXML(xmlObjectPtr interface{}) error
 	// ReadForm binds the formObject  with the form data
-	// it supports any kind of struct.
+	// it supports any kind of type, including custom structs.
+	// It will return nothing if request data are empty.
 	//
 	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-form/main.go
 	ReadForm(formObjectPtr interface{}) error
@@ -1116,7 +992,7 @@ func NewContext(app Application) Context {
 func (ctx *context) BeginRequest(w http.ResponseWriter, r *http.Request) {
 	ctx.handlers = nil           // will be filled by router.Serve/HTTP
 	ctx.values = ctx.values[0:0] // >>      >>     by context.Values().Set
-	ctx.params.store = ctx.params.store[0:0]
+	ctx.params.Store = ctx.params.Store[0:0]
 	ctx.request = r
 	ctx.currentHandlerIndex = 0
 	ctx.writer = AcquireResponseWriter()
@@ -2410,24 +2286,28 @@ func (ctx *context) ReadXML(xmlObject interface{}) error {
 	return ctx.UnmarshalBody(xmlObject, UnmarshalerFunc(xml.Unmarshal))
 }
 
-var (
-	errReadBody = errors.New("while trying to read %s from the request body. Trace %s")
-)
+// IsErrPath can be used at `context#ReadForm`.
+// It reports whether the incoming error is type of `formbinder.ErrPath`,
+// which can be ignored when server allows unknown post values to be sent by the client.
+//
+// A shortcut for the `formbinder#IsErrPath`.
+var IsErrPath = formbinder.IsErrPath
 
 // ReadForm binds the formObject  with the form data
-// it supports any kind of struct.
+// it supports any kind of type, including custom structs.
+// It will return nothing if request data are empty.
 //
 // Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-form/main.go
 func (ctx *context) ReadForm(formObject interface{}) error {
 	values := ctx.FormValues()
-	if values == nil {
-		return errors.New("An empty form passed on ReadForm")
+	if len(values) == 0 {
+		return nil
 	}
 
 	// or dec := formbinder.NewDecoder(&formbinder.DecoderOptions{TagName: "form"})
 	// somewhere at the app level. I did change the tagName to "form"
 	// inside its source code, so it's not needed for now.
-	return errReadBody.With(formbinder.Decode(values, formObject))
+	return formbinder.Decode(values, formObject)
 }
 
 //  +------------------------------------------------------------+
@@ -2987,12 +2867,10 @@ func (ctx *context) JSON(v interface{}, opts ...JSON) (n int, err error) {
 		options = opts[0]
 	}
 
-	optimize := ctx.shouldOptimize()
-
 	ctx.ContentType(ContentJSONHeaderValue)
 
 	if options.StreamingJSON {
-		if optimize {
+		if ctx.shouldOptimize() {
 			var jsoniterConfig = jsoniter.Config{
 				EscapeHTML:    !options.UnescapeHTML,
 				IndentionStep: 4,
@@ -3013,7 +2891,7 @@ func (ctx *context) JSON(v interface{}, opts ...JSON) (n int, err error) {
 		return ctx.writer.Written(), err
 	}
 
-	n, err = WriteJSON(ctx.writer, v, options, optimize)
+	n, err = WriteJSON(ctx.writer, v, options, ctx.shouldOptimize())
 	if err != nil {
 		ctx.StatusCode(http.StatusInternalServerError)
 		return 0, err
@@ -3553,7 +3431,7 @@ func (ctx *context) TransactionsSkipped() bool {
 	return false
 }
 
-// Exec calls the framewrok's ServeCtx
+// Exec calls the framewrok's ServeHTTPC
 // based on this context but with a changed method and path
 // like it was requested by the user, but it is not.
 //
@@ -3586,41 +3464,36 @@ func (ctx *context) Exec(method string, path string) {
 	}
 
 	// backup the handlers
-	backupHandlers := ctx.Handlers()[0:]
-	backupPos := ctx.HandlerIndex(-1)
+	backupHandlers := ctx.handlers[0:]
+	backupPos := ctx.currentHandlerIndex
 
+	req := ctx.request
 	// backup the request path information
-	backupPath := ctx.Path()
-	backupMethod := ctx.Method()
+	backupPath := req.URL.Path
+	backupMethod := req.Method
 	// don't backupValues := ctx.Values().ReadOnly()
-
-	// [values stays]
-	// reset handlers
-	ctx.SetHandlers(nil)
-
-	req := ctx.Request()
 	// set the request to be align with the 'againstRequestPath'
 	req.RequestURI = path
 	req.URL.Path = path
 	req.Method = method
 
+	// [values stays]
+	// reset handlers
+	ctx.handlers = ctx.handlers[0:0]
+	ctx.currentHandlerIndex = 0
+
 	// execute the route from the (internal) context router
 	// this way we keep the sessions and the values
 	ctx.Application().ServeHTTPC(ctx)
 
-	// set back the old handlers and the last known index
-	ctx.SetHandlers(backupHandlers)
-	ctx.HandlerIndex(backupPos)
 	// set the request back to its previous state
 	req.RequestURI = backupPath
 	req.URL.Path = backupPath
 	req.Method = backupMethod
 
-	// don't fill the values in order to be able to communicate from and to.
-	// // fill the values as they were before
-	// backupValues.Visit(func(key string, value interface{}) {
-	// 	ctx.Values().Set(key, value)
-	// })
+	// set back the old handlers and the last known index
+	ctx.handlers = backupHandlers
+	ctx.currentHandlerIndex = backupPos
 }
 
 // RouteExists reports whether a particular route exists

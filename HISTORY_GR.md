@@ -17,9 +17,33 @@
 
 **Πώς να αναβαθμίσετε**: Ανοίξτε την γραμμή εντολών σας και εκτελέστε αυτήν την εντολή: `go get -u github.com/kataras/iris`  ή αφήστε το αυτόματο updater να το κάνει αυτό για σας.
 
+# Fr, 11 January 2019 | v11.1.1
+
+Πατήστε [εδώ](https://github.com/kataras/iris/blob/master/HISTORY.md#fr-11-january-2019--v1111) για να διαβάσετε στα αγγλικά.
+
+# Su, 18 November 2018 | v11.1.0
+
+Πατήστε [εδώ](https://github.com/kataras/iris/blob/master/HISTORY.md#su-18-november-2018--v1110) για να διαβάσετε στα αγγλικά για το νέο "versioning" feature.
+
+# Fr, 09 November 2018 | v11.0.4
+
+Πατήστε [εδώ](https://github.com/kataras/iris/blob/master/HISTORY.md#fr-09-november-2018--v1104) για να διαβάσετε στα αγγλικά τις αλλαγές που φέρνει το τελευταίο patch για την έκδοση 11.
+
+# Tu, 30 October 2018 | v11.0.2
+
+Πατήστε [εδώ](https://github.com/kataras/iris/blob/master/HISTORY.md#tu-30-october-2018--v1102) για να διαβάσετε στα αγγλικά μια σημαντική διόρθωση για τα x32 machines που φέρνει το τελευταίο patch για την έκδοση 11.
+
+# Su, 28 October 2018 | v11.0.1
+
+Πατήστε [εδώ](https://github.com/kataras/iris/blob/master/HISTORY.md#su-28-october-2018--v1101) για να διαβάσετε στα αγγλικά τις αλλαγές και το νέο feature που φέρνει το τελευταίο patch για την έκδοση 11.
+
+# Su, 21 October 2018 | v11.0.0
+
+Πατήστε [εδώ](https://github.com/kataras/iris/blob/master/HISTORY.md#su-21-october-2018--v1100) για να διαβάσετε στα αγγλικά τις αλλαγές και τα νέα features που φέρνει νεότερη έκδοση του Iris, version 11.
+
 # Sat, 11 August 2018 | v10.7.0
 
-Είμαι στην πραγματικά ευχάριστη θέση να σας ανακοινώσω το πρώτο στάδιο της σταθερής κυκλοφορίας της έκδοσης **10.7** του Iris Web Framework.
+Είμαι στην, πραγματικά, ευχάριστη θέση να σας ανακοινώσω το πρώτο στάδιο της σταθερής κυκλοφορίας της έκδοσης **10.7** του Iris Web Framework.
 
 Η έκδοση 10.7.0 είναι μέρος των [επίσημων διανομών μας](https://github.com/kataras/iris/releases).
 

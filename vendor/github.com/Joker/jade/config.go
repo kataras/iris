@@ -9,7 +9,8 @@ var (
 	tag__bgn     = "<%s%s>"
 	tag__end     = "</%s>"
 	tag__void    = "<%s%s/>"
-	tag__arg     = ` %s="{{ print %s }}"`
+	tag__arg_esc = ` %s="{{ print %s }}"`
+	tag__arg_une = ` %s="{{ print %s }}"`
 	tag__arg_str = ` %s="%s"`
 	tag__arg_add = `%s " " %s`
 	tag__arg_bgn = ""
@@ -37,13 +38,15 @@ var (
 	text__str     = "%s"
 	text__comment = "<!--%s -->"
 
-	mixin__bgn       = "\n%s"
-	mixin__end       = ""
-	mixin__var_bgn   = "{{/* var ("
-	mixin__var       = " %s = %s "
-	mixin__var_rest  = " %s = %#v "
-	mixin__var_block = " block = `%s` "
-	mixin__var_end   = ") */}}\n"
+	mixin__bgn           = "\n%s"
+	mixin__end           = ""
+	mixin__var_bgn       = ""
+	mixin__var           = "{{ $%s := %s }}"
+	mixin__var_rest      = "{{ $%s := %#v }}"
+	mixin__var_end       = "\n"
+	mixin__var_block_bgn = ""
+	mixin__var_block     = ""
+	mixin__var_block_end = ""
 )
 
 type itemType int8

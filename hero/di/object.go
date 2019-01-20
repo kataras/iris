@@ -101,6 +101,11 @@ func MakeReturnValue(fn reflect.Value, goodFunc TypeChecker) (func([]reflect.Val
 		if !v.IsValid() {
 			return zeroOutVal
 		}
+		// if v.String() == "<interface {} Value>" {
+		// 	println("di/object.go: " + v.String())
+		// 	// println("di/object.go: because it's interface{} it should be returned as: " + v.Elem().Type().String() + " and its value: " + v.Elem().Interface().(string))
+		// 	return v.Elem()
+		// }
 		return v
 	}
 

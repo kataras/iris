@@ -13,15 +13,15 @@
 - [Hello WebAssemply!](webassembly/basic/main.go) **NEW**
 - [基础](overview/main.go)
 - [教程: 在线人数](tutorial/online-visitors/main.go)
-- [教程: A Todo MVC Application using Iris and Vue.js](https://hackernoon.com/a-todo-mvc-application-using-iris-and-vue-js-5019ff870064)
+- [教程: 一个“待完成”MVC Application基于Iris和Vue.js](https://hackernoon.com/a-todo-mvc-application-using-iris-and-vue-js-5019ff870064)
 - [教程: 结合 BoltDB 生成短网址](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
 - [教程: 用安卓设备搭建服务器 (**MUST**)](https://twitter.com/ThePracticalDev/status/892022594031017988)
-- [POC: Convert the medium-sized project "Parrot" from native to Iris](https://github.com/iris-contrib/parrot)
-- [POC: Isomorphic react/hot reloadable/redux/css-modules starter kit](https://github.com/kataras/iris-starter-kit)
+- [POC: 把中等项目"Parrot"从原生转换到Iris](https://github.com/iris-contrib/parrot)
+- [POC: 同构react/hot reloadable/redux/css-modules的起始工具包](https://github.com/kataras/iris-starter-kit)
 - [教程: DropzoneJS 上传](tutorial/dropzonejs)
 - [教程: Caddy 服务器使用](tutorial/caddy)
 - [教程: Iris + MongoDB](https://medium.com/go-language/iris-go-framework-mongodb-552e349eab9c)
-- [教程: API for Apache Kafka](tutorial/api-for-apache-kafka) **NEW**
+- [教程: Apache Kafka的API](tutorial/api-for-apache-kafka) **NEW**
 
 ### 目录结构
 
@@ -38,16 +38,16 @@ Iris 是个底层框架, 对 MVC 模式有很好的支持，但不限制文件�
 
 - [基础用法](http-listening/listen-addr/main.go)
     * [忽略错误信息](http-listening/listen-addr/omit-server-errors/main.go)
-- [UNIX socket file](http-listening/listen-unix/main.go)
+- [UNIX socket文件](http-listening/listen-unix/main.go)
 - [TLS](http-listening/listen-tls/main.go)
 - [Letsencrypt (自动认证)](http-listening/listen-letsencrypt/main.go)
 - [进程关闭通知](http-listening/notify-on-shutdown/main.go)
 - 自定义 TCP 监听器
     * [通用 net.Listener](http-listening/custom-listener/main.go)
-    * [SO_REUSEPORT for unix systems](http-listening/custom-listener/unix-reuseport/main.go)
-- 自定义 HTTP 服务
-    * [easy way](http-listening/custom-httpserver/easy-way/main.go)
-    * [std way](http-listening/custom-httpserver/std-way/main.go)
+    * [unix系统的SO_REUSEPORT](http-listening/custom-listener/unix-reuseport/main.go)
+- 自定义 HTTP 服务  
+    * [简单方式](http-listening/custom-httpserver/easy-way/main.go)
+    * [标准方式](http-listening/custom-httpserver/std-way/main.go)
     * [多个服务示例](http-listening/custom-httpserver/multi/main.go)
 - 优雅关闭
     * [使用 `RegisterOnInterrupt`](http-listening/graceful-shutdown/default-notifier/main.go)
@@ -105,7 +105,9 @@ app.Get("{root:path}", rootWildcardHandler)
 - [自定义 HTTP 错误](routing/http-errors/main.go)
 - [动态路径](routing/dynamic-path/main.go)
     * [根级通配符路径](routing/dynamic-path/root-wildcard/main.go)
+- [编写你自己的参数类型](routing/macros/main.go) **NEW**
 - [反向路由](routing/reverse/main.go)
+- [自定义路由(高层级)](routing/custom-high-level-router/main.go) **NEW**
 - [自定义包装](routing/custom-wrapper/main.go)
 - 自定义上下文
     * [方法重写](routing/custom-context/method-overriding/main.go)
@@ -120,7 +122,7 @@ app.Get("{root:path}", rootWildcardHandler)
 - [基础](hero/basic/main.go)
 - [概览](hero/overview)
 - [Sessions](hero/sessions) **NEW**
-- [Yet another dependency injection example and good practises at general](hero/smart-contract/main.go) **NEW**
+- [另一种依赖注入的例子和通常的较好实践](hero/smart-contract/main.go) **NEW**
 
 ### MVC 模式
 
@@ -132,11 +134,10 @@ Iris 支持快速的请求数据，模型，持久性数据和绑定。
 
 **特点**
 
-All HTTP Methods are supported, for example if want to serve `GET`
-then the controller should have a function named `Get()`,
-you can define more than one method function to serve in the same Controller.
+支持所有的HTTP访问方式，例如，如果想要处理`GET`请求，那么控制器应该有一个叫做`Get()`的函数
+你可以在同一个控制器上面定义不止一个请求处理函数(method function).
 
-Serve custom controller's struct's methods as handlers with custom paths(even with regex parametermized path) via the `BeforeActivation` custom event callback, per-controller. Example:
+通过`BeforeActivation`对每个控制器自定义事件回调，使自定义控制器的结构方法(struct's methods)处理自定义路径(甚至是包含参数是正则表达式的路径)，例如：
 
 ```go
 import (
@@ -160,12 +161,12 @@ type MyController struct {}
 
 func (m *MyController) BeforeActivation(b mvc.BeforeActivation) {
     // b.Dependencies().Add/Remove
-    // b.Router().Use/UseGlobal/Done // and any standard API call you already know
+    // b.Router().Use/UseGlobal/Done // 以及任何你已经知道的标准API调用
 
-    // 1-> Method
-    // 2-> Path
-    // 3-> The controller's function name to be parsed as handler
-    // 4-> Any handlers that should run before the MyCustomHandler
+    // 1-> 方法
+    // 2-> 路径
+    // 3-> 被解释成handler的控制器函数名称
+    // 4-> 在MyCustomHandler之前需要执行的其他handler
     b.Handle("GET", "/something/{id:long}", "MyCustomHandler", anyMiddleware...)
 }
 
@@ -176,37 +177,35 @@ func (m *MyController) Get() string { return "Hey" }
 func (m *MyController) MyCustomHandler(id int64) string { return "MyCustomHandler says Hey" }
 ```
 
-Persistence data inside your Controller struct (share data between requests)
-by defining services to the Dependencies or have a `Singleton` controller scope.
+通过定义依赖项服务或者有一个`单一(Singleton)`控制器范畴来持久化你控制器结构中的数据(多次请求间共享的数据)
+  
+在控制器间共享依赖或者把他们注册到上层MVC应用，以及
+在一个控制器内部可以修改每一个控制器在`BeforeActivation`可选事件回调上的依赖项的能力。
+即 `func(c *MyController) BeforeActivation(b mvc.BeforeActivation) { b.Dependencies().Add/Remove(...) }`.
 
-Share the dependencies between controllers or register them on a parent MVC Application, and ability
-to modify dependencies per-controller on the `BeforeActivation` optional event callback inside a Controller,
-i.e `func(c *MyController) BeforeActivation(b mvc.BeforeActivation) { b.Dependencies().Add/Remove(...) }`.
+访问`Context`作为一个控制器的域(field)（不需要手动绑定）即`Ctx iris.Context`，或者通过一个方法的输入参数，即`func(ctx iris.Context, otherArguments...)`。  
 
-Access to the `Context` as a controller's field(no manual binding is neede) i.e `Ctx iris.Context` or via a method's input argument, i.e `func(ctx iris.Context, otherArguments...)`.
+你控制器结构中的模型（在模型函数中设置并且由视图来渲染）
+你可以通过一个控制器的方法来返回模型或者设置一个请求生命周期的域
 
-Models inside your Controller struct (set-ed at the Method function and rendered by the View).
-You can return models from a controller's method or set a field in the request lifecycle
-and return that field to another method, in the same request lifecycle.
+并且在同一个生命周期中把这个域返回给另一个方法。
 
-Flow as you used to, mvc application has its own `Router` which is a type of `iris/router.Party`, the standard iris api.
-`Controllers` can be registered to any `Party`, including Subdomains, the Party's begin and done handlers work as expected.
+正如你之前所熟知的流程，mvc应用程序有它自己的以标准iris API `iris/router.Party`作为类型的`路由(router)`。
+`控制器`可以被注册到任意`集合(party)`，包括子域名，这个集合会像所预料那样开始完成处理器工作。
 
-Optional `BeginRequest(ctx)` function to perform any initialization before the method execution,
-useful to call middlewares or when many methods use the same collection of data.
+可额外调用`BeginRequest(ctx)`在任何方法被执行前进行初始化，对于调用中间层(middlewares)或者使用同一组数据的多个方法而言十分有效
 
-Optional `EndRequest(ctx)` function to perform any finalization after any method executed.
+同样可调用`EndRequest(ctx)`在任何方法执行后做完成工作(finalization)
 
-Inheritance, recursively, see for example our `mvc.SessionController`, it has the `Session *sessions.Session` and `Manager *sessions.Sessions` as embedded fields
-which are filled by its `BeginRequest`, [here](https://github.com/kataras/iris/blob/master/mvc/session_controller.go).
-This is just an example, you could use the `sessions.Session` which returned from the manager's `Start` as a dynamic dependency to the MVC Application, i.e
-`mvcApp.Register(sessions.New(sessions.Config{Cookie: "iris_session_id"}).Start)`.
+递归继承参考我们`mvc.SessionController`的例子，它以`Session *sessions.Session`和`Manager *sessions.Sessions`作为嵌入域，由它的`BeginRequest`来传递，看[这里](https://github.com/kataras/iris/blob/master/mvc/session_controller.go)  
 
-Access to the dynamic path parameters via the controller's methods' input arguments, no binding is needed.
-When you use the Iris' default syntax to parse handlers from a controller, you need to suffix the methods
-with the `By` word, uppercase is a new sub path. Example:
+这只是一个例子，你可以使用`sessions.Session`，它作为一个MVC应用的动态依赖从管理者的`Start`返回，即
+`mvcApp.Register(sessions.New(sessions.Config{Cookie: "iris_session_id"}).Start)`.  
 
-If `mvc.New(app.Party("/user")).Handle(new(user.Controller))`
+通过控制器方法的输入参数来访问动态路径参数，不需要绑定。
+当你需要使用Iris的默认语法从一个控制器里来解析一个handler，你需要在这个方法前加上`By`， 大写表示一个新的子路径。例如：
+
+如果是 `mvc.New(app.Party("/user")).Handle(new(user.Controller))`
 
 - `func(*Controller) Get()` - `GET:/user`.
 - `func(*Controller) Post()` - `POST:/user`.
@@ -217,17 +216,17 @@ If `mvc.New(app.Party("/user")).Handle(new(user.Controller))`
 - `func(*Controller) GetBy(id int64)` - `GET:/user/{param:long}`
 - `func(*Controller) PostBy(id int64)` - `POST:/user/{param:long}`
 
-If `mvc.New(app.Party("/profile")).Handle(new(profile.Controller))`
+如果是 `mvc.New(app.Party("/profile")).Handle(new(profile.Controller))`
 
 - `func(*Controller) GetBy(username string)` - `GET:/profile/{param:string}`
 
-If `mvc.New(app.Party("/assets")).Handle(new(file.Controller))`
+如果是 `mvc.New(app.Party("/assets")).Handle(new(file.Controller))`
 
 - `func(*Controller) GetByWildard(path string)` - `GET:/assets/{param:path}`
 
-    Supported types for method functions receivers: int, int64, bool and string.
+    支持的函数接收者类型是：int, int64, bool and string。
 
-Response via output arguments, optionally, i.e
+可以通过输出参数来响应，即
 
 ```go
 func(c *ExampleController) Get() string |
@@ -246,13 +245,13 @@ func(c *ExampleController) Get() string |
                                 mvc.Result or (mvc.Result, error)
 ```
 
-where [mvc.Result](https://github.com/kataras/iris/blob/master/mvc/func_result.go) is an interface which contains only that function: `Dispatch(ctx iris.Context)`.
+其中[mvc.Result](https://github.com/kataras/iris/blob/master/mvc/func_result.go)是一个仅包含`Dispatch(ctx iris.Context)`的接口
 
 ## Iris MVC 模式代码复用
 
-By creating components that are independent of one another, developers are able to reuse components quickly and easily in other applications. The same (or similar) view for one application can be refactored for another application with different data because the view is simply handling how the data is being displayed to the user.
+通过创建互相独立的组建，开发者可以简单快捷地在别的应用里面复用组建。 一个应用同样的（或相似的）视图使用不同的数据可以被重构给另一个应用，因为视图仅仅处理数据怎么展示给用户。
 
-If you're new to back-end web development read about the MVC architectural pattern first, a good start is that [wikipedia article](https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93controller).
+如果你是一个新的web后端开发者，请先阅读MVC架构模式，一个不错的入门是[wikipedia article](https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93controller).
 
 参考下面的示例
 
@@ -289,21 +288,23 @@ If you're new to back-end web development read about the MVC architectural patte
 | amber         | `iris.Amber(...)`      |
 | pug(jade)     | `iris.Pug(...)`        |
 
-- [Overview](view/overview/main.go)
+- [Overview概览](view/overview/main.go)
 - [Hi](view/template_html_0/main.go)
-- [A simple Layout](view/template_html_1/main.go)
-- [Layouts: `yield` and `render` tmpl funcs](view/template_html_2/main.go)
-- [The `urlpath` tmpl func](view/template_html_3/main.go)
-- [The `url` tmpl func](view/template_html_4/main.go)
-- [Inject Data Between Handlers](view/context-view-data/main.go)
-- [Embedding Templates Into App Executable File](view/embedding-templates-into-app/main.go)
-- [Write to a custom `io.Writer`](view/write-to)
-- [Greeting with Pug (Jade)`](view/template_pug_0)
-- [Pug (Jade) Actions`](view/template_pug_1)
-- [Pug (Jade) Includes`](view/template_pug_2)
-- [Pug (Jade) Extends`](view/template_pug_3)
+- [A simple Layout简单层](view/template_html_1/main.go)
+- [Layouts: `yield` and `render` tmpl funcs 视图层`生产`以及`渲染`模版函数](view/template_html_2/main.go)
+- [The `urlpath` tmpl func`urlpath`模版函数](view/template_html_3/main.go)
+- [The `url` tmpl func`url`模版函数](view/template_html_4/main.go)
+- [Inject Data Between Handlers在处理器间注入数据](view/context-view-data/main.go)
+- [Embedding Templates Into App Executable File在应用程序可执行文件中嵌入模版](view/embedding-templates-into-app/main.go)
+- [Write to a custom `io.Writer`自定义`io.Writer`](view/write-to)
+- [Greeting with `Pug (Jade)`使用`Pug (Jade)`](view/template_pug_0)
+- [`Pug (Jade) Actions`](view/template_pug_1)
+- [`Pug (Jade) Includes`](view/template_pug_2)
+- [`Pug (Jade) Extends`](view/template_pug_3)
 
 You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [hero templates](https://github.com/shiyanhui/hero/hero) files too, simply by using the `context#ResponseWriter`, take a look at the [http_responsewriter/quicktemplate](http_responsewriter/quicktemplate) and [http_responsewriter/herotemplate](http_responsewriter/herotemplate) examples.
+只要使用`context#ResponseWriter`，你可以服务[quicktemplate](https://github.com/valyala/quicktemplate)和[hero templates](https://github.com/shiyanhui/hero/hero)文件。
+看这the [http_responsewriter/quicktemplate](http_responsewriter/quicktemplate)和[http_responsewriter/herotemplate](http_responsewriter/herotemplate)的例子
 
 ### 认证
 
@@ -315,53 +316,56 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 ### 文件服务器
 
 - [Favicon](file-server/favicon/main.go)
-- [Basic](file-server/basic/main.go)
-- [Embedding Files Into App Executable File](file-server/embedding-files-into-app/main.go)
-- [Embedding Gziped Files Into App Executable File](file-server/embedding-gziped-files-into-app/main.go) **NEW**
-- [Send/Force-Download Files](file-server/send-files/main.go)
-- Single Page Applications
-    * [single Page Application](file-server/single-page-application/basic/main.go)
-    * [embedded Single Page Application](file-server/single-page-application/embedded-single-page-application/main.go)
-    * [embedded Single Page Application with other routes](file-server/single-page-application/embedded-single-page-application-with-other-routes/main.go)
+- [基础操作](file-server/basic/main.go)
+- [把文件嵌入应用的可执行文件](file-server/embedding-files-into-app/main.go)
+- [嵌入Gzip压缩的文件到可咨询文件](file-server/embedding-gziped-files-into-app/main.go) **NEW**
+- [上传/(强制)下载文件](file-server/send-files/main.go)
+- 单页面应用(Single Page Applications)
+    * [单页面应用](file-server/single-page-application/basic/main.go)
+    * [嵌入式(embedded)单页面应用](file-server/single-page-application/embedded-single-page-application/main.go)
+    * [使用额外路由的嵌入式单页面应用](file-server/single-page-application/embedded-single-page-application-with-other-routes/main.go)
 
-### How to Read from `context.Request() *http.Request`
+### 如何读取`context.Request() *http.Request`
 
-- [Read JSON](http_request/read-json/main.go)
-- [Read XML](http_request/read-xml/main.go)
-- [Read Form](http_request/read-form/main.go)
-- [Read Custom per type](http_request/read-custom-per-type/main.go)
-- [Read Custom via Unmarshaler](http_request/read-custom-via-unmarshaler/main.go)
-- [Upload/Read File](http_request/upload-file/main.go)
-- [Upload multiple files with an easy way](http_request/upload-files/main.go)
+- [读取JSON](http_request/read-json/main.go)
+- [读取XML](http_request/read-xml/main.go)
+- [读取Form](http_request/read-form/main.go)
+- [读取每个类型的自定义结果Custom per type](http_request/read-custom-per-type/main.go)
+- [通过Unmarshaler读取Custom](http_request/read-custom-via-unmarshaler/main.go)
+- [上传/读取文件Upload/Read File](http_request/upload-file/main.go)
+- [简单上传多个文件Upload multiple files with an easy way](http_request/upload-files/main.go)
 
 > The `context.Request()` returns the same *http.Request you already know, these examples show some places where the  Context uses this object. Besides that you can use it as you did before iris.
+> `context.Request()`返回你已知的同一*http.Request， 这些例子给出了Context使用这个对象的地方。 除此以外你可以在使用iris之前那样子使用它
 
-### How to Write to `context.ResponseWriter() http.ResponseWriter`
+### 如何写入`context.ResponseWriter() http.ResponseWriter`
 
-- [Write `valyala/quicktemplate` templates](http_responsewriter/quicktemplate)
-- [Write `shiyanhui/hero` templates](http_responsewriter/herotemplate)
+- [`valyala/quicktemplate`模版](http_responsewriter/quicktemplate)
+- [`shiyanhui/hero`模版](http_responsewriter/herotemplate)
 - [Text, Markdown, HTML, JSON, JSONP, XML, Binary](http_responsewriter/write-rest/main.go)
-- [Write Gzip](http_responsewriter/write-gzip/main.go)
-- [Stream Writer](http_responsewriter/stream-writer/main.go)
-- [Transactions](http_responsewriter/transactions/main.go)
+- [写入Gzip压缩](http_responsewriter/write-gzip/main.go)
+- [流输出Stream Writer](http_responsewriter/stream-writer/main.go)
+- [数据传递Transactions](http_responsewriter/transactions/main.go)
 - [SSE](http_responsewriter/sse/main.go) **NEW**
-- [SSE (third-party package usage for server sent events)](http_responsewriter/sse-third-party/main.go)
+- [SSE (third-party package usage for server sent events第三方库SSE)](http_responsewriter/sse-third-party/main.go)
 
 > The `context/context#ResponseWriter()` returns an enchament version of a http.ResponseWriter, these examples show some places where the Context uses this object. Besides that you can use it as you did before iris.
 
+> `context.Request()`返回了一个http.ResponseWriter的迷醉(魔幻)版本， 这些例子给出了Context使用这个对象的地方。 除此以外你可以在使用iris之前那样子使用它
+
 ### ORM
 
-- [Using xorm(Mysql, MyMysql, Postgres, Tidb, **SQLite**, MsSql, MsSql, Oracle)](orm/xorm/main.go)
+- [使用 xorm(Mysql, MyMysql, Postgres, Tidb, **SQLite**, MsSql, MsSql, Oracle)](orm/xorm/main.go)
 
 ### 其他
 
-- [Request Logger](http_request/request-logger/main.go)
-    * [log requests to a file](http_request/request-logger/request-logger-file/main.go)
-- [Localization and Internationalization](miscellaneous/i18n/main.go)
-- [Recovery](miscellaneous/recover/main.go)
-- [Profiling (pprof)](miscellaneous/pprof/main.go)
-- [Internal Application File Logger](miscellaneous/file-logger/main.go)
-- [Google reCAPTCHA](miscellaneous/recaptcha/main.go) 
+- [请求记录器](http_request/request-logger/main.go)
+    * [将请求记录到文件](http_request/request-logger/request-logger-file/main.go)
+- [本地化和多语言支持](miscellaneous/i18n/main.go)
+- [恢复](miscellaneous/recover/main.go)
+- [性能报告Profiling (pprof)](miscellaneous/pprof/main.go)
+- [内部文件记录Internal Application File Logger](miscellaneous/file-logger/main.go)
+- [Google验证码Google reCAPTCHA](miscellaneous/recaptcha/main.go) 
 
 ### 试验性质处理器
 
@@ -372,9 +376,9 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 - [JWT](experimental-handlers/jwt/main.go)
 - [Newrelic](experimental-handlers/newrelic/simple/main.go)
 - [Prometheus](experimental-handlers/prometheus/simple/main.go)
-- [Secure](experimental-handlers/secure/simple/main.go)
+- [安全](experimental-handlers/secure/simple/main.go)
 - [Tollboothic](experimental-handlers/tollboothic/limit-handler/main.go)
-- [Cross-Site Request Forgery Protection](experimental-handlers/csrf/main.go)
+- [跨站点伪造请求（CSRF）防护](experimental-handlers/csrf/main.go)
 
 #### 更多
 
@@ -387,8 +391,9 @@ https://github.com/kataras/iris/tree/master/middleware#third-party-handlers
 ### 测试
 
 The `httptest` package is your way for end-to-end HTTP testing, it uses the httpexpect library created by our friend, [gavv](https://github.com/gavv).
+`httptest`包是你用于端对端HTTP测试的，它使用我们朋友[gavv](https://github.com/gavv)创建的httpexpect库
 
-[Example](testing/httptest/main_test.go)
+[例子](testing/httptest/main_test.go)
 
 ### 缓存
 
@@ -401,18 +406,18 @@ Iris 独立缓存包 [package](https://github.com/kataras/iris/tree/master/cache
 
 ### Cookies
 
-- [Basic](cookies/basic/main.go)
-- [Encode/Decode (securecookie)](cookies/securecookie/main.go)
+- [基础](cookies/basic/main.go)
+- [加密/解密 (安全cookie)](cookies/securecookie/main.go)
 
 ### Sessions
 
 Iris session 管理独立包 [package](https://github.com/kataras/iris/tree/master/sessions).
 
-- [Overview](sessions/overview/main.go)
-- [Standalone](sessions/standalone/main.go)
-- [Secure Cookie](sessions/securecookie/main.go)
-- [Flash Messages](sessions/flash-messages/main.go)
-- [Databases](sessions/database)
+- [概览](sessions/overview/main.go)
+- [独立使用](sessions/standalone/main.go)
+- [安全cookie](sessions/securecookie/main.go)
+- [临时消息](sessions/flash-messages/main.go)
+- [数据库](sessions/database)
     * [Badger](sessions/database/badger/main.go)
     * [Redis](sessions/database/redis/main.go)
 
@@ -420,16 +425,17 @@ Iris session 管理独立包 [package](https://github.com/kataras/iris/tree/mast
 
 ### Websockets
 
-iris websocket library lives on its own [package](https://github.com/kataras/iris/tree/master/websocket).
+iris websocket库依赖于它自己的[包](https://github.com/kataras/iris/tree/master/websocket).  
 
-The package is designed to work with raw websockets although its API is similar to the famous [socket.io](https://socket.io). I have read an article recently and I felt very contented about my decision to design a **fast** websocket-**only** package for Iris and not a backwards socket.io-like package. You can read that article by following this link: https://medium.com/@ivanderbyl/why-you-don-t-need-socket-io-6848f1c871cd.
+设计这个包的目的是处理原始websockets，虽然它的API和著名的[socket.io](https://socket.io)很像。我最近读了一片文章，并且对我
+决定给iris设计一个**快速的**websocket**限定**包并且不是一个向后传递类socket.io的包。你可以阅读这个链接里的文章https://medium.com/@ivanderbyl/why-you-don-t-need-socket-io-6848f1c871cd。
 
-- [Chat](websocket/chat/main.go)
-- [Native Messages](websocket/native-messages/main.go)
-- [Connection List](websocket/connectionlist/main.go)
-- [TLS Enabled](websocket/secure/main.go)
-- [Custom Raw Go Client](websocket/custom-go-client/main.go)
-- [Third-Party socket.io](websocket/third-party-socketio/main.go)
+- [聊天](websocket/chat/main.go)
+- [原生消息](websocket/native-messages/main.go)
+- [连接列表](websocket/connectionlist/main.go)
+- [TLS支持](websocket/secure/main.go)
+- [自定义原始Go客户端](websocket/custom-go-client/main.go)
+- [第三方socket.io](websocket/third-party-socketio/main.go)
 
 > 如果你愿意，你可以自由使用你自己喜欢的websockets包。
 

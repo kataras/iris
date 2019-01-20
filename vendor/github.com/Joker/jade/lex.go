@@ -143,10 +143,10 @@ func (l *lexer) drain() {
 }
 
 // lex creates a new scanner for the input string.
-func lex(name, input string) *lexer {
+func lex(name string, input []byte) *lexer {
 	l := &lexer{
 		name:  name,
-		input: input,
+		input: string(input),
 		items: make(chan item),
 		line:  1,
 	}

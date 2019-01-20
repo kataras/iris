@@ -365,7 +365,9 @@ func (c *testControllerRelPathFromFunc) EndRequest(ctx context.Context) {
 }
 
 func (c *testControllerRelPathFromFunc) Get()                         {}
-func (c *testControllerRelPathFromFunc) GetBy(int64)                  {}
+func (c *testControllerRelPathFromFunc) GetBy(uint64)                 {}
+func (c *testControllerRelPathFromFunc) GetUint8RatioBy(uint8)        {}
+func (c *testControllerRelPathFromFunc) GetInt64RatioBy(int64)        {}
 func (c *testControllerRelPathFromFunc) GetAnythingByWildcard(string) {}
 
 func (c *testControllerRelPathFromFunc) GetLogin()  {}
@@ -375,8 +377,10 @@ func (c *testControllerRelPathFromFunc) GetAdminLogin() {}
 
 func (c *testControllerRelPathFromFunc) PutSomethingIntoThis() {}
 
-func (c *testControllerRelPathFromFunc) GetSomethingBy(bool)                {}
-func (c *testControllerRelPathFromFunc) GetSomethingByBy(string, int)       {}
+func (c *testControllerRelPathFromFunc) GetSomethingBy(bool) {}
+
+func (c *testControllerRelPathFromFunc) GetSomethingByBy(string, int) {}
+
 func (c *testControllerRelPathFromFunc) GetSomethingNewBy(string, int)      {} // two input arguments, one By which is the latest word.
 func (c *testControllerRelPathFromFunc) GetSomethingByElseThisBy(bool, int) {} // two input arguments
 
@@ -388,8 +392,13 @@ func TestControllerRelPathFromFunc(t *testing.T) {
 	e.GET("/").Expect().Status(iris.StatusOK).
 		Body().Equal("GET:/")
 
-	e.GET("/42").Expect().Status(iris.StatusOK).
-		Body().Equal("GET:/42")
+	e.GET("/18446744073709551615").Expect().Status(iris.StatusOK).
+		Body().Equal("GET:/18446744073709551615")
+	e.GET("/uint8/ratio/255").Expect().Status(iris.StatusOK).
+		Body().Equal("GET:/uint8/ratio/255")
+	e.GET("/uint8/ratio/256").Expect().Status(iris.StatusNotFound)
+	e.GET("/int64/ratio/-42").Expect().Status(iris.StatusOK).
+		Body().Equal("GET:/int64/ratio/-42")
 	e.GET("/something/true").Expect().Status(iris.StatusOK).
 		Body().Equal("GET:/something/true")
 	e.GET("/something/false").Expect().Status(iris.StatusOK).

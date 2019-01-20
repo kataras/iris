@@ -7,11 +7,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/kataras/golog"
 	"github.com/kataras/iris/core/errors"
 	"github.com/kataras/iris/sessions"
 
 	"github.com/dgraph-io/badger"
+	"github.com/kataras/golog"
 )
 
 // DefaultFileMode used as the default database's "fileMode"
@@ -144,7 +144,13 @@ func (db *Database) Get(sid string, key string) (value interface{}) {
 		if err != nil {
 			return err
 		}
-		// item.ValueCopy
+
+		// return item.Value(func(valueBytes []byte) {
+		// 	if err := sessions.DefaultTranscoder.Unmarshal(valueBytes, &value); err != nil {
+		// 		golog.Error(err)
+		// 	}
+		// })
+
 		valueBytes, err := item.Value()
 		if err != nil {
 			return err
@@ -173,13 +179,25 @@ func (db *Database) Visit(sid string, cb func(key string, value interface{})) {
 
 	for iter.Rewind(); iter.ValidForPrefix(prefix); iter.Next() {
 		item := iter.Item()
+		var value interface{}
+
+		// err := item.Value(func(valueBytes []byte) {
+		// 	if err := sessions.DefaultTranscoder.Unmarshal(valueBytes, &value); err != nil {
+		// 		golog.Error(err)
+		// 	}
+		// })
+
+		// if err != nil {
+		// 	golog.Error(err)
+		// 	continue
+		// }
+
 		valueBytes, err := item.Value()
 		if err != nil {
 			golog.Error(err)
 			continue
 		}
 
-		var value interface{}
 		if err = sessions.DefaultTranscoder.Unmarshal(valueBytes, &value); err != nil {
 			golog.Error(err)
 			continue

@@ -1,8 +1,12 @@
+# ⚡️ Update: community-driven version 11.1.0
+
+Click [here](HISTORY.md#su-18-november-2018--v1110) to read about the versioning API that the most recent version of Iris brings to you.
+
 # Iris Web Framework <a href="README_ZH.md"> <img width="20px" src="https://iris-go.com/images/flag-china.svg?v=10" /></a> <a href="README_RU.md"><img width="20px" src="https://iris-go.com/images/flag-russia.svg?v=10" /></a> <a href="README_ID.md"> <img width="20px" src="https://iris-go.com/images/flag-indonesia.svg?v=10" /></a> <a href="README_GR.md"><img width="20px" src="https://iris-go.com/images/flag-greece.svg?v=10" /></a> <a href="README_PT_BR.md"><img width="20px" src="https://iris-go.com/images/flag-pt-br.svg?v=10" /></a> <a href="README_JPN.md"><img width="20px" src="https://iris-go.com/images/flag-japan.svg?v=10" /></a>
 
 <a href="https://iris-go.com"> <img align="right" width="169px" src="https://iris-go.com/images/icon.svg?v=a" title="logo created by @merry.dii" /> </a>
 
-[![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=flat-square)](https://travis-ci.org/kataras/iris)<!-- [![release](https://img.shields.io/github/release/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/releases)--> [![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=flat-square)](http://goreportcard.com/report/kataras/iris) [![vscode-iris](https://img.shields.io/badge/ext%20-vscode-0c77e3.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=kataras2006.iris)<!--[![github closed issues](https://img.shields.io/github/issues-closed-raw/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/issues?q=is%3Aissue+is%3Aclosed)--> [![chat](https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square)](https://kataras.rocket.chat/channel/iris) [![view examples](https://img.shields.io/badge/learn%20by-examples-0077b3.svg?style=flat-square)](https://iris-go.com/v10/recipe) [![release](https://img.shields.io/badge/release%20-v10.7-0077b3.svg?style=flat-square)](https://github.com/kataras/iris/releases)
+[![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=flat-square)](https://travis-ci.org/kataras/iris)<!-- [![release](https://img.shields.io/github/release/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/releases)--> [![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=flat-square)](http://goreportcard.com/report/kataras/iris) [![vscode-iris](https://img.shields.io/badge/ext%20-vscode-0c77e3.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=kataras2006.iris)<!--[![github closed issues](https://img.shields.io/github/issues-closed-raw/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/issues?q=is%3Aissue+is%3Aclosed)--> [![chat](https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square)](https://kataras.rocket.chat/channel/iris) [![view examples](https://img.shields.io/badge/routing%20by-example-0077b3.svg?style=flat-square)](https://github.com/kataras/iris/tree/master/_examples/routing) [![release](https://img.shields.io/badge/release%20-v11.1-0077b3.svg?style=flat-square)](https://github.com/kataras/iris/releases)
 
 Iris is a fast, simple yet fully featured and very efficient web framework for Go.
 
@@ -22,17 +26,6 @@ $ go get -u github.com/kataras/iris
 
 Iris takes advantage of the [vendor directory](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo) feature. You get truly reproducible builds, as this method guards against upstream renames and deletes.
 
-[![Iris vs .NET Core(C#) vs Node.js (Express)](https://iris-go.com/images/benchmark-new-gray.png)](_benchmarks/README_UNIX.md)
-
-_Updated at: [Tuesday, 21 November 2017](_benchmarks/README_UNIX.md)_
-
-<details>
-<summary>Benchmarks from third-party source over the rest web frameworks</summary>
-
-![Comparison with other frameworks](https://raw.githubusercontent.com/smallnest/go-web-framework-benchmark/4db507a22c964c9bc9774c5b31afdc199a0fe8b7/benchmark.png)
-
-</details>
-
 <details>
 <summary>Known issues for code editors and IDEs at general</summary>
 
@@ -51,6 +44,22 @@ import (
 ```
 
 </details>
+
+## Benchmarks
+
+### Iris vs .NET Core vs Expressjs
+
+[![Iris vs .NET Core(C#) vs Node.js (Express)](_benchmarks/benchmarks_graph_22_october_2018_gray.png)](_benchmarks/README.md)
+
+_Updated at: [Monday, 22 October 2018](_benchmarks/README.md)_
+
+### Iris vs the rest Go web frameworks and routers vs any other alternative
+
+[![](_benchmarks/benchmarks_third_party_source_snapshot_go_23_october_2018.png)](https://github.com/the-benchmarker/web-frameworks#full-table)
+
+As shown in the benchmarks (from a [third-party source](https://github.com/the-benchmarker)), Iris is the fastest open-source Go web framework in the planet. The net/http 100% compatible router [muxie](https://github.com/kataras/muxie) I've created some weeks ago is also trending there with amazing results, fastest net/http router ever created as well. View the results at:
+
+https://github.com/the-benchmarker/web-frameworks#full-table
 
 ## Philosophy
 
@@ -87,6 +96,35 @@ func main() {
 $ go run example.go
 ```
 
+## Iris starter kits
+
+<!-- table form
+| Description | Link |
+| -----------|-------------|
+| Hasura hub starter project with a ready to deploy golang helloworld webapp with IRIS! | https://hasura.io/hub/project/hasura/hello-golang-iris |
+| A basic web app built in Iris for Go |https://github.com/gauravtiwari/go_iris_app |
+| A mini social-network created with the awesome Iris💖💖 | https://github.com/iris-contrib/Iris-Mini-Social-Network |
+| Iris isomorphic react/hot reloadable/redux/css-modules starter kit | https://github.com/iris-contrib/iris-starter-kit |
+| Demo project with react using typescript and Iris | https://github.com/ionutvilie/react-ts |
+| Self-hosted Localization Management Platform built with Iris and Angular | https://github.com/iris-contrib/parrot |
+| Iris + Docker and Kubernetes | https://github.com/iris-contrib/cloud-native-go |
+| Quickstart for Iris with Nanobox | https://guides.nanobox.io/golang/iris/from-scratch |
+-->
+
+1. [snowlyg/IrisApiProject: Iris + gorm + jwt + sqlite3](https://github.com/snowlyg/IrisApiProject) **NEW-Chinese**
+2. [yz124/superstar: Iris + xorm to implement the star library](https://github.com/yz124/superstar) **NEW-Chinese**
+3. [jebzmos4/Iris-golang: A basic CRUD API in golang with Iris](https://github.com/jebzmos4/Iris-golang)
+4. [gauravtiwari/go_iris_app: A basic web app built in Iris for Go](https://github.com/gauravtiwari/go_iris_app)
+5. [A mini social-network created with the awesome Iris💖💖](https://github.com/iris-contrib/Iris-Mini-Social-Network)
+6. [Iris isomorphic react/hot reloadable/redux/css-modules starter kit](https://github.com/iris-contrib/iris-starter-kit)
+7. [ionutvilie/react-ts: Demo project with react using typescript and Iris](https://github.com/ionutvilie/react-ts)
+8. [Self-hosted Localization Management Platform built with Iris and Angular](https://github.com/iris-contrib/parrot)
+9. [Iris + Docker and Kubernetes](https://github.com/iris-contrib/cloud-native-go)
+10. [nanobox.io: Quickstart for Iris with Nanobox](https://guides.nanobox.io/golang/iris/from-scratch)
+11. [hasura.io: A Hasura starter project with a ready to deploy Golang hello-world web app with IRIS](https://hasura.io/hub/project/hasura/hello-golang-iris)
+
+> Did you build something similar? Let us [know](https://github.com/kataras/iris/pulls)!
+
 ## API Examples
 
 ### Using Get, Post, Put, Patch, Delete and Options
@@ -113,10 +151,18 @@ func main() {
 
 | Param Type | Go Type | Validation | Retrieve Helper |
 | -----------------|------|-------------|------|
-| `:string` | string | anything | `Params().Get` |
-| `:int` | uint, uint8, uint16, uint32, uint64, int, int8, int32, int64 | positive number, no digits limit | `Params().GetInt/Int64`...|
-| `:long` | int64 | -9223372036854775808 to 9223372036854775807 | `Params().GetInt64` |
-| `:boolean` | bool | "1" or "t" or "T" or "TRUE" or "true" or "True" or "0" or "f" or "F" or "FALSE" or "false" or "False" | `Params().GetBool` |
+| `:string` | string | anything (single path segment) | `Params().Get` |
+| `:int` | int | -9223372036854775808 to 9223372036854775807 (x64) or -2147483648 to 2147483647 (x32), depends on the host arch | `Params().GetInt` |
+| `:int8` | int8 | -128 to 127 | `Params().GetInt8` |
+| `:int16` | int16 | -32768 to 32767 | `Params().GetInt16` |
+| `:int32` | int32 | -2147483648 to 2147483647 | `Params().GetInt32` |
+| `:int64` | int64 | -9223372036854775808 to 9223372036854775807 | `Params().GetInt64` |
+| `:uint` | uint | 0 to 18446744073709551615 (x64) or 0 to 4294967295 (x32), depends on the host arch | `Params().GetUint` |
+| `:uint8` | uint8 | 0 to 255 | `Params().GetUint8` |
+| `:uint16` | uint16 | 0 to 65535 | `Params().GetUint16` |
+| `:uint32` | uint32 | 0 to 4294967295 | `Params().GetUint32` |
+| `:uint64` | uint64 | 0 to 18446744073709551615 | `Params().GetUint64` |
+| `:bool` | bool | "1" or "t" or "T" or "TRUE" or "true" or "True" or "0" or "f" or "F" or "FALSE" or "false" or "False" | `Params().GetBool` |
 | `:alphabetical` | string | lowercase or uppercase letters | `Params().Get` |
 | `:file` | string | lowercase or uppercase letters, numbers, underscore (_), dash (-), point (.) and no spaces or other special characters that are not valid for filenames | `Params().Get` |
 | `:path` | string | anything, can be separated by slashes (path segments) but should be the last part of the route path | `Params().Get` | 
@@ -124,8 +170,8 @@ func main() {
 **Usage**:
 
 ```go
-app.Get("/users/{id:int64}", func(ctx iris.Context){
-    id, _ := ctx.Params().GetInt64("id")
+app.Get("/users/{id:uint64}", func(ctx iris.Context){
+    id := ctx.Params().GetUint64Default("id", 0)
     // [...]
 })
 ```
@@ -136,9 +182,9 @@ app.Get("/users/{id:int64}", func(ctx iris.Context){
 | `prefix`(prefix string) | :string |
 | `suffix`(suffix string) | :string |
 | `contains`(s string) | :string |
-| `min`(minValue int or int8 or int16 or int32 or int64 or uint8 or uint16 or uint32 or uint64  or float32 or float64) | :string(char length), :int, :int64 |
-| `max`(maxValue int or int8 or int16 or int32 or int64 or uint8 or uint16 or uint32 or uint64  or float32 or float64) | :string(char length), :int, :int64 |
-| `range`(minValue, maxValue int or int8 or int16 or int32 or int64 or uint8 or uint16 or uint32 or uint64 or float32 or float64) | :int, :int64 |
+| `min`(minValue int or int8 or int16 or int32 or int64 or uint8 or uint16 or uint32 or uint64  or float32 or float64) | :string(char length), :int, :int8, :int16, :int32, :int64, :uint, :uint8, :uint16, :uint32, :uint64  |
+| `max`(maxValue int or int8 or int16 or int32 or int64 or uint8 or uint16 or uint32 or uint64 or float32 or float64) | :string(char length), :int, :int8, :int16, :int32, :int64, :uint, :uint8, :uint16, :uint32, :uint64 |
+| `range`(minValue, maxValue int or int8 or int16 or int32 or int64 or uint8 or uint16 or uint32 or uint64 or float32 or float64) | :int, :int8, :int16, :int32, :int64, :uint, :uint8, :uint16, :uint32, :uint64 |
 
 **Usage**:
 
@@ -162,7 +208,7 @@ latLonRegex, _ := regexp.Compile(latLonExpr)
 
 // Register your custom argument-less macro function to the :string param type.
 // MatchString is a type of func(string) bool, so we use it as it is.
-app.Macros().String.RegisterFunc("coordinate", latLonRegex.MatchString)
+app.Macros().Get("string").RegisterFunc("coordinate", latLonRegex.MatchString)
 
 app.Get("/coordinates/{lat:string coordinate()}/{lon:string coordinate()}", func(ctx iris.Context) {
     ctx.Writef("Lat: %s | Lon: %s", ctx.Params().Get("lat"), ctx.Params().Get("lon"))
@@ -173,7 +219,7 @@ Register your custom macro function which accepts two int arguments.
 
 ```go
 
-app.Macros().String.RegisterFunc("range", func(minLength, maxLength int) func(string) bool {
+app.Macros().Get("string").RegisterFunc("range", func(minLength, maxLength int) func(string) bool {
     return func(paramValue string) bool {
         return len(paramValue) >= minLength && len(paramValue) <= maxLength
     }
@@ -189,7 +235,7 @@ app.Get("/limitchar/{name:string range(1,200) else 400}", func(ctx iris.Context)
 Register your custom macro function which accepts a slice of strings `[...,...]`.
 
 ```go
-app.Macros().String.RegisterFunc("has", func(validNames []string) func(string) bool {
+app.Macros().Get("string").RegisterFunc("has", func(validNames []string) func(string) bool {
     return func(paramValue string) bool {
         for _, validName := range validNames {
             if validName == paramValue {
@@ -201,7 +247,7 @@ app.Macros().String.RegisterFunc("has", func(validNames []string) func(string) b
     }
 })
 
-app.Get("/static_validation/{name:string has([kataras,gerasimos,maropoulos]}", func(ctx iris.Context) {
+app.Get("/static_validation/{name:string has([kataras,gerasimos,maropoulos])}", func(ctx iris.Context) {
     name := ctx.Params().Get("name")
     ctx.Writef(`Hello %s | the name should be "kataras" or "gerasimos" or "maropoulos"
     otherwise this handler will not be executed`, name)
@@ -212,38 +258,39 @@ app.Get("/static_validation/{name:string has([kataras,gerasimos,maropoulos]}", f
 
 ```go
 func main() {
-	app := iris.Default()
+    app := iris.Default()
 
-	// This handler will match /user/john but will not match neither /user/ or /user.
-	app.Get("/user/{name}", func(ctx iris.Context) {
-		name := ctx.Params().Get("name")
-		ctx.Writef("Hello %s", name)
-	})
+    // This handler will match /user/john but will not match neither /user/ or /user.
+    app.Get("/user/{name}", func(ctx iris.Context) {
+        name := ctx.Params().Get("name")
+        ctx.Writef("Hello %s", name)
+    })
 
-	// This handler will match /users/42
-	// but will not match
-	// neither /users or /users/.
-	app.Get("/users/{id:long}", func(ctx iris.Context) {
-		id, _ := ctx.Params().GetInt64("id")
-		ctx.Writef("User with ID: %d", id)
-	})
+    // This handler will match /users/42
+    // but will not match /users/-1 because uint should be bigger than zero
+    // neither /users or /users/.
+    app.Get("/users/{id:uint64}", func(ctx iris.Context) {
+        id := ctx.Params().GetUint64Default("id", 0)
+        ctx.Writef("User with ID: %d", id)
+    })
 
-	// This handler will match /user/john/send
-	// but will not match /user/john/
-	app.Post("/user/{name:string}/{action:path}", func(ctx iris.Context) {
-		name := ctx.Params().Get("name")
-		action := ctx.Params().Get("action")
-		message := name + " is " + action
-		ctx.WriteString(message)
-	})
+    // However, this one will match /user/john/send and also /user/john/everything/else/here
+    // but will not match /user/john neither /user/john/.
+    app.Post("/user/{name:string}/{action:path}", func(ctx iris.Context) {
+        name := ctx.Params().Get("name")
+        action := ctx.Params().Get("action")
+        message := name + " is " + action
+        ctx.WriteString(message)
+    })
 
-	app.Run(iris.Addr(":8080"))
+    app.Run(iris.Addr(":8080"))
 }
 ```
 
 > If parameter type is missing then defaults to `string`, therefore `{name:string}` and `{name}` do the same exactly thing.
 
 > Learn more about path parameter's types by navigating [here](_examples/routing/dynamic-path/main.go#L31).
+
 
 ### Dependency Injection
 
@@ -586,7 +633,6 @@ func main() {
     app.Run(
         iris.Addr(":8080"),
         iris.WithoutBanner,
-        iris.WithoutVersionChecker,
         iris.WithoutServerError(iris.ErrServerClosed),
     )
 }
@@ -636,7 +682,7 @@ func main() {
 
     // Register validation for 'User'
     // NOTE: only have to register a non-pointer type for 'User', validator
-    // interanlly dereferences during it's type checks.
+    // internally dereferences during it's type checks.
     validate.RegisterStructValidation(UserStructLevelValidation, User{})
 
     app := iris.New()
@@ -938,32 +984,7 @@ First of all, the most correct way to begin with a web framework is to learn the
 - Navigate through **100+1** **[examples](_examples)** and some [iris starter kits](#iris-starter-kits) we crafted for you
 - Read the [godocs](https://godoc.org/github.com/kataras/iris) for any details
 - Prepare a cup of coffee or tea, whatever pleases you the most, and read some [articles](#articles) we found for you
-
-### Iris starter kits
-
-<!-- table form
-| Description | Link |
-| -----------|-------------|
-| Hasura hub starter project with a ready to deploy golang helloworld webapp with IRIS! | https://hasura.io/hub/project/hasura/hello-golang-iris |
-| A basic web app built in Iris for Go |https://github.com/gauravtiwari/go_iris_app |
-| A mini social-network created with the awesome Iris💖💖 | https://github.com/iris-contrib/Iris-Mini-Social-Network |
-| Iris isomorphic react/hot reloadable/redux/css-modules starter kit | https://github.com/iris-contrib/iris-starter-kit |
-| Demo project with react using typescript and Iris | https://github.com/ionutvilie/react-ts |
-| Self-hosted Localization Management Platform built with Iris and Angular | https://github.com/iris-contrib/parrot |
-| Iris + Docker and Kubernetes | https://github.com/iris-contrib/cloud-native-go |
-| Quickstart for Iris with Nanobox | https://guides.nanobox.io/golang/iris/from-scratch |
--->
-
-1. [A basic web app built in Iris for Go](https://github.com/gauravtiwari/go_iris_app)
-2. [A mini social-network created with the awesome Iris💖💖](https://github.com/iris-contrib/Iris-Mini-Social-Network)
-3. [Iris isomorphic react/hot reloadable/redux/css-modules starter kit](https://github.com/iris-contrib/iris-starter-kit)
-4. [Demo project with react using typescript and Iris](https://github.com/ionutvilie/react-ts)
-5. [Self-hosted Localization Management Platform built with Iris and Angular](https://github.com/iris-contrib/parrot)
-6. [Iris + Docker and Kubernetes](https://github.com/iris-contrib/cloud-native-go)
-7. [Quickstart for Iris with Nanobox](https://guides.nanobox.io/golang/iris/from-scratch)
-8. [A Hasura starter project with a ready to deploy Golang hello-world web app with IRIS](https://hasura.io/hub/project/hasura/hello-golang-iris)
-
-> Did you build something similar? Let us [know](https://github.com/kataras/iris/pulls)!
+- Run some of our [starter kits](#iris-starter-kits)
 
 ### Middleware
 
@@ -973,6 +994,7 @@ Iris, unlike others, is 100% compatible with the standards and that's why the ma
 
 ### Articles
 
+* [CRUD REST API in Iris (a framework for golang)](https://medium.com/@jebzmos4/crud-rest-api-in-iris-a-framework-for-golang-a5d33652401e)
 * [A Todo MVC Application using Iris and Vue.js](https://hackernoon.com/a-todo-mvc-application-using-iris-and-vue-js-5019ff870064)
 * [A Hasura starter project with a ready to deploy Golang hello-world web app with IRIS](https://bit.ly/2lmKaAZ)
 * [Top 6 web frameworks for Go as of 2017](https://blog.usejournal.com/top-6-web-frameworks-for-go-as-of-2017-23270e059c4b)
@@ -998,7 +1020,7 @@ Iris, unlike others, is 100% compatible with the standards and that's why the ma
 
 ## Support
 
-- [HISTORY](HISTORY.md#sat-11-august-2018--v1070) file is your best friend, it contains information about the latest features and changes
+- [HISTORY](HISTORY.md#fr-11-january-2019--v1111) file is your best friend, it contains information about the latest features and changes
 - Did you happen to find a bug? Post it at [github issues](https://github.com/kataras/iris/issues)
 - Do you have any questions or need to speak with someone experienced to solve a problem at real-time? Join us to the [community chat](https://chat.iris-go.com)
 - Complete our form-based user experience report by clicking [here](https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link)

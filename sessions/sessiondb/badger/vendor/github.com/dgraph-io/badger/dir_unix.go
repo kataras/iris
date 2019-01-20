@@ -35,11 +35,14 @@ type directoryLockGuard struct {
 	f *os.File
 	// The absolute path to our pid file.
 	path string
+	// Was this a shared lock for a read-only database?
+	readOnly bool
 }
 
-// acquireDirectoryLock gets an exclusive lock on the directory (using flock).  It writes our pid
-// to dirPath/pidFileName for convenience.
-func acquireDirectoryLock(dirPath string, pidFileName string) (*directoryLockGuard, error) {
+// acquireDirectoryLock gets a lock on the directory (using flock). If
+// this is not read-only, it will also write our pid to
+// dirPath/pidFileName for convenience.
+func acquireDirectoryLock(dirPath string, pidFileName string, readOnly bool) (*directoryLockGuard, error) {
 	// Convert to absolute path so that Release still works even if we do an unbalanced
 	// chdir in the meantime.
 	absPidFilePath, err := filepath.Abs(filepath.Join(dirPath, pidFileName))
@@ -50,7 +53,12 @@ func acquireDirectoryLock(dirPath string, pidFileName string) (*directoryLockGua
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot open directory %q", dirPath)
 	}
-	err = unix.Flock(int(f.Fd()), unix.LOCK_EX|unix.LOCK_NB)
+	opts := unix.LOCK_EX | unix.LOCK_NB
+	if readOnly {
+		opts = unix.LOCK_SH | unix.LOCK_NB
+	}
+
+	err = unix.Flock(int(f.Fd()), opts)
 	if err != nil {
 		f.Close()
 		return nil, errors.Wrapf(err,
@@ -58,22 +66,27 @@ func acquireDirectoryLock(dirPath string, pidFileName string) (*directoryLockGua
 			dirPath)
 	}
 
-	// Yes, we happily overwrite a pre-existing pid file.  We're the only badger process using this
-	// directory.
-	err = ioutil.WriteFile(absPidFilePath, []byte(fmt.Sprintf("%d\n", os.Getpid())), 0666)
-	if err != nil {
-		f.Close()
-		return nil, errors.Wrapf(err,
-			"Cannot write pid file %q", absPidFilePath)
+	if !readOnly {
+		// Yes, we happily overwrite a pre-existing pid file.  We're the
+		// only read-write badger process using this directory.
+		err = ioutil.WriteFile(absPidFilePath, []byte(fmt.Sprintf("%d\n", os.Getpid())), 0666)
+		if err != nil {
+			f.Close()
+			return nil, errors.Wrapf(err,
+				"Cannot write pid file %q", absPidFilePath)
+		}
 	}
-
-	return &directoryLockGuard{f, absPidFilePath}, nil
+	return &directoryLockGuard{f, absPidFilePath, readOnly}, nil
 }
 
 // Release deletes the pid file and releases our lock on the directory.
 func (guard *directoryLockGuard) release() error {
-	// It's important that we remove the pid file first.
-	err := os.Remove(guard.path)
+	var err error
+	if !guard.readOnly {
+		// It's important that we remove the pid file first.
+		err = os.Remove(guard.path)
+	}
+
 	if closeErr := guard.f.Close(); err == nil {
 		err = closeErr
 	}

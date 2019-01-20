@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"time"
+
 	"github.com/gomodule/redigo/redis"
 	"github.com/kataras/iris/core/errors"
 )
@@ -94,7 +95,7 @@ func (r *Service) TTL(key string) (seconds int64, hasExpiration bool, found bool
 	// if -1 means the key has unlimited life time.
 	hasExpiration = seconds > -1
 	// if -2 means key does not exist.
-	found = ! (c.Err() != nil || seconds == -2)
+	found = !(c.Err() != nil || seconds == -2)
 	return
 }
 
@@ -291,7 +292,7 @@ func (r *Service) Connect() {
 		c.Addr = DefaultRedisAddr
 	}
 
-	pool := &redis.Pool{IdleTimeout: DefaultRedisIdleTimeout, MaxIdle: c.MaxIdle, MaxActive: c.MaxActive}
+	pool := &redis.Pool{IdleTimeout: c.IdleTimeout, MaxIdle: c.MaxIdle, MaxActive: c.MaxActive}
 	pool.TestOnBorrow = func(c redis.Conn, t time.Time) error {
 		_, err := c.Do("PING")
 		return err

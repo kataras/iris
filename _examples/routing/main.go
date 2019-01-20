@@ -35,25 +35,25 @@ func registerGamesRoutes(app *iris.Application) {
 	{ // braces are optional of course, it's just a style of code
 
 		// "GET" method
-		games.Get("/{gameID:int}/clans", h)
-		games.Get("/{gameID:int}/clans/clan/{clanPublicID:int}", h)
-		games.Get("/{gameID:int}/clans/search", h)
+		games.Get("/{gameID:uint64}/clans", h)
+		games.Get("/{gameID:uint64}/clans/clan/{clanPublicID:uint64}", h)
+		games.Get("/{gameID:uint64}/clans/search", h)
 
 		// "PUT" method
-		games.Put("/{gameID:int}/players/{clanPublicID:int}", h)
-		games.Put("/{gameID:int}/clans/clan/{clanPublicID:int}", h)
+		games.Put("/{gameID:uint64}/players/{clanPublicID:uint64}", h)
+		games.Put("/{gameID:uint64}/clans/clan/{clanPublicID:uint64}", h)
 		// remember: "clanPublicID" should not be changed to other routes with the same prefix.
 		// "POST" method
-		games.Post("/{gameID:int}/clans", h)
-		games.Post("/{gameID:int}/players", h)
-		games.Post("/{gameID:int}/clans/{clanPublicID:int}/leave", h)
-		games.Post("/{gameID:int}/clans/{clanPublicID:int}/memberships/application", h)
-		games.Post("/{gameID:int}/clans/{clanPublicID:int}/memberships/application/{action}", h) // {action} == {action:string}
-		games.Post("/{gameID:int}/clans/{clanPublicID:int}/memberships/invitation", h)
-		games.Post("/{gameID:int}/clans/{clanPublicID:int}/memberships/invitation/{action}", h)
-		games.Post("/{gameID:int}/clans/{clanPublicID:int}/memberships/delete", h)
-		games.Post("/{gameID:int}/clans/{clanPublicID:int}/memberships/promote", h)
-		games.Post("/{gameID:int}/clans/{clanPublicID:int}/memberships/demote", h)
+		games.Post("/{gameID:uint64}/clans", h)
+		games.Post("/{gameID:uint64}/players", h)
+		games.Post("/{gameID:uint64}/clans/{clanPublicID:uint64}/leave", h)
+		games.Post("/{gameID:uint64}/clans/{clanPublicID:uint64}/memberships/application", h)
+		games.Post("/{gameID:uint64}/clans/{clanPublicID:uint64}/memberships/application/{action}", h) // {action} == {action:string}
+		games.Post("/{gameID:uint64}/clans/{clanPublicID:uint64}/memberships/invitation", h)
+		games.Post("/{gameID:uint64}/clans/{clanPublicID:uint64}/memberships/invitation/{action}", h)
+		games.Post("/{gameID:uint64}/clans/{clanPublicID:uint64}/memberships/delete", h)
+		games.Post("/{gameID:uint64}/clans/{clanPublicID:uint64}/memberships/promote", h)
+		games.Post("/{gameID:uint64}/clans/{clanPublicID:uint64}/memberships/demote", h)
 
 		gamesCh := games.Party("/challenge")
 		{

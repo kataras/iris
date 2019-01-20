@@ -60,7 +60,7 @@ func TestProxy(t *testing.T) {
 		t.Fatalf("%v while creating tcp4 listener for new tls local test listener", err)
 	}
 	// main server
-	go app.Run(iris.Listener(httptest.NewLocalTLSListener(l)), iris.WithoutVersionChecker, iris.WithoutStartupLog)
+	go app.Run(iris.Listener(httptest.NewLocalTLSListener(l)), iris.WithoutStartupLog)
 
 	e := httptest.NewInsecure(t, httptest.URL("http://"+listener.Addr().String()))
 	e.GET("/").Expect().Status(iris.StatusOK).Body().Equal(expectedIndex)

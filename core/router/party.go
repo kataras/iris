@@ -3,7 +3,7 @@ package router
 import (
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/errors"
-	"github.com/kataras/iris/core/router/macro"
+	"github.com/kataras/iris/macro"
 )
 
 // Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
@@ -18,11 +18,11 @@ type Party interface {
 	GetRelPath() string
 	// GetReporter returns the reporter for adding errors
 	GetReporter() *errors.Reporter
-	// Macros returns the macro map which is responsible
-	// to register custom macro functions for all routes.
+	// Macros returns the macro collection that is responsible
+	// to register custom macros with their own parameter types and their macro functions for all routes.
 	//
 	// Learn more at:  https://github.com/kataras/iris/tree/master/_examples/routing/dynamic-path
-	Macros() *macro.Map
+	Macros() *macro.Macros
 
 	// Party groups routes which may have the same prefix and share same handlers,
 	// returns that new rich subrouter.
@@ -110,10 +110,10 @@ type Party interface {
 	// otherwise use `Party` which can handle many paths with different handlers and middlewares.
 	//
 	// Usage:
-	// 	app.HandleMany(iris.MethodGet, "/user /user/{id:int} /user/me", userHandler)
+	// 	app.HandleMany(iris.MethodGet, "/user /user/{id:uint64} /user/me", userHandler)
 	// At the other side, with `Handle` we've had to write:
 	// 	app.Handle(iris.MethodGet, "/user", userHandler)
-	// 	app.Handle(iris.MethodGet, "/user/{id:int}", userHandler)
+	// 	app.Handle(iris.MethodGet, "/user/{id:uint64}", userHandler)
 	// 	app.Handle(iris.MethodGet, "/user/me", userHandler)
 	//
 	// This method is used behind the scenes at the `Controller` function

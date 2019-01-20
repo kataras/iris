@@ -11,40 +11,30 @@ import (
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/errors"
 	"github.com/kataras/iris/core/netutil"
-	"github.com/kataras/iris/core/router/node"
 )
 
 // RequestHandler the middle man between acquiring a context and releasing it.
 // By-default is the router algorithm.
 type RequestHandler interface {
-	// HandleRequest is same as context.Handler but its usage is only about routing,
-	// separate the concept here.
+	// HandleRequest should handle the request based on the Context.
 	HandleRequest(context.Context)
-	// Build  should builds the handler, it's being called on router's BuildRouter.
+	// Build should builds the handler, it's being called on router's BuildRouter.
 	Build(provider RoutesProvider) error
 	// RouteExists reports whether a particular route exists.
 	RouteExists(ctx context.Context, method, path string) bool
 }
 
-type tree struct {
-	Method string
-	// subdomain is empty for default-hostname routes,
-	// ex: mysubdomain.
-	Subdomain string
-	Nodes     *node.Nodes
-}
-
 type routerHandler struct {
-	trees []*tree
+	trees []*trie
 	hosts bool // true if at least one route contains a Subdomain.
 }
 
 var _ RequestHandler = &routerHandler{}
 
-func (h *routerHandler) getTree(method, subdomain string) *tree {
+func (h *routerHandler) getTree(method, subdomain string) *trie {
 	for i := range h.trees {
 		t := h.trees[i]
-		if t.Method == method && t.Subdomain == subdomain {
+		if t.method == method && t.subdomain == subdomain {
 			return t
 		}
 	}
@@ -64,12 +54,14 @@ func (h *routerHandler) addRoute(r *Route) error {
 	t := h.getTree(method, subdomain)
 
 	if t == nil {
-		n := node.Nodes{}
+		n := newTrieNode()
 		// first time we register a route to this method with this subdomain
-		t = &tree{Method: method, Subdomain: subdomain, Nodes: &n}
+		t = &trie{method: method, subdomain: subdomain, root: n}
 		h.trees = append(h.trees, t)
 	}
-	return t.Nodes.Add(routeName, path, handlers)
+
+	t.insert(path, routeName, handlers)
+	return nil
 }
 
 // NewDefaultHandler returns the handler which is responsible
@@ -160,40 +152,45 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 			r := ctx.Request()
 			// use Trim to ensure there is no open redirect due to two leading slashes
 			path = "/" + strings.Trim(path, "/")
-			r.URL.Path = path
-			url := r.URL.String()
 
-			// Fixes https://github.com/kataras/iris/issues/921
-			// This is caused for security reasons, imagine a payment shop,
-			// you can't just permantly redirect a POST request, so just 307 (RFC 7231, 6.4.7).
-			if method == http.MethodPost || method == http.MethodPut {
-				ctx.Redirect(url, http.StatusTemporaryRedirect)
+			r.URL.Path = path
+			if !ctx.Application().ConfigurationReadOnly().GetDisablePathCorrectionRedirection() {
+				// do redirect, else continue with the modified path without the last "/".
+				url := r.URL.String()
+
+				// Fixes https://github.com/kataras/iris/issues/921
+				// This is caused for security reasons, imagine a payment shop,
+				// you can't just permantly redirect a POST request, so just 307 (RFC 7231, 6.4.7).
+				if method == http.MethodPost || method == http.MethodPut {
+					ctx.Redirect(url, http.StatusTemporaryRedirect)
+					return
+				}
+
+				ctx.Redirect(url, http.StatusMovedPermanently)
+
+				// RFC2616 recommends that a short note "SHOULD" be included in the
+				// response because older user agents may not understand 301/307.
+				// Shouldn't send the response for POST or HEAD; that leaves GET.
+				if method == http.MethodGet {
+					note := "<a href=\"" +
+						html.EscapeString(url) +
+						"\">Moved Permanently</a>.\n"
+
+					ctx.ResponseWriter().WriteString(note)
+				}
 				return
 			}
 
-			ctx.Redirect(url, http.StatusMovedPermanently)
-
-			// RFC2616 recommends that a short note "SHOULD" be included in the
-			// response because older user agents may not understand 301/307.
-			// Shouldn't send the response for POST or HEAD; that leaves GET.
-			if method == http.MethodGet {
-				note := "<a href=\"" +
-					html.EscapeString(url) +
-					"\">Moved Permanently</a>.\n"
-
-				ctx.ResponseWriter().WriteString(note)
-			}
-			return
 		}
 	}
 
 	for i := range h.trees {
 		t := h.trees[i]
-		if method != t.Method {
+		if method != t.method {
 			continue
 		}
 
-		if h.hosts && t.Subdomain != "" {
+		if h.hosts && t.subdomain != "" {
 			requestHost := ctx.Host()
 			if netutil.IsLoopbackSubdomain(requestHost) {
 				// this fixes a bug when listening on
@@ -202,7 +199,7 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 				continue // it's not a subdomain, it's something like 127.0.0.1 probably
 			}
 			// it's a dynamic wildcard subdomain, we have just to check if ctx.subdomain is not empty
-			if t.Subdomain == SubdomainWildcardIndicator {
+			if t.subdomain == SubdomainWildcardIndicator {
 				// mydomain.com -> invalid
 				// localhost -> invalid
 				// sub.mydomain.com -> valid
@@ -220,14 +217,14 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 					continue
 				}
 				// continue to that, any subdomain is valid.
-			} else if !strings.HasPrefix(requestHost, t.Subdomain) { // t.Subdomain contains the dot.
+			} else if !strings.HasPrefix(requestHost, t.subdomain) { // t.subdomain contains the dot.
 				continue
 			}
 		}
-		routeName, handlers := t.Nodes.Find(path, ctx.Params())
-		if len(handlers) > 0 {
-			ctx.SetCurrentRouteName(routeName)
-			ctx.Do(handlers)
+		n := t.search(path, ctx.Params())
+		if n != nil {
+			ctx.SetCurrentRouteName(n.RouteName)
+			ctx.Do(n.Handlers)
 			// found
 			return
 		}
@@ -238,15 +235,12 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 	if ctx.Application().ConfigurationReadOnly().GetFireMethodNotAllowed() {
 		for i := range h.trees {
 			t := h.trees[i]
-			// a bit slower than previous implementation but @kataras let me to apply this change
-			// because it's more reliable.
-			//
 			// if `Configuration#FireMethodNotAllowed` is kept as defaulted(false) then this function will not
 			// run, therefore performance kept as before.
-			if t.Nodes.Exists(path) {
+			if h.subdomainAndPathAndMethodExists(ctx, t, "", path) {
 				// RCF rfc2616 https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
 				// The response MUST include an Allow header containing a list of valid methods for the requested resource.
-				ctx.Header("Allow", t.Method)
+				ctx.Header("Allow", t.method)
 				ctx.StatusCode(http.StatusMethodNotAllowed)
 				return
 			}
@@ -256,55 +250,55 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 	ctx.StatusCode(http.StatusNotFound)
 }
 
+func (h *routerHandler) subdomainAndPathAndMethodExists(ctx context.Context, t *trie, method, path string) bool {
+	if method != "" && method != t.method {
+		return false
+	}
+
+	if h.hosts && t.subdomain != "" {
+		requestHost := ctx.Host()
+		if netutil.IsLoopbackSubdomain(requestHost) {
+			// this fixes a bug when listening on
+			// 127.0.0.1:8080 for example
+			// and have a wildcard subdomain and a route registered to root domain.
+			return false // it's not a subdomain, it's something like 127.0.0.1 probably
+		}
+		// it's a dynamic wildcard subdomain, we have just to check if ctx.subdomain is not empty
+		if t.subdomain == SubdomainWildcardIndicator {
+			// mydomain.com -> invalid
+			// localhost -> invalid
+			// sub.mydomain.com -> valid
+			// sub.localhost -> valid
+			serverHost := ctx.Application().ConfigurationReadOnly().GetVHost()
+			if serverHost == requestHost {
+				return false // it's not a subdomain, it's a full domain (with .com...)
+			}
+
+			dotIdx := strings.IndexByte(requestHost, '.')
+			slashIdx := strings.IndexByte(requestHost, '/')
+			if dotIdx > 0 && (slashIdx == -1 || slashIdx > dotIdx) {
+				// if "." was found anywhere but not at the first path segment (host).
+			} else {
+				return false
+			}
+			// continue to that, any subdomain is valid.
+		} else if !strings.HasPrefix(requestHost, t.subdomain) { // t.subdomain contains the dot.
+			return false
+		}
+	}
+
+	n := t.search(path, ctx.Params())
+	return n != nil
+}
+
 // RouteExists reports whether a particular route exists
 // It will search from the current subdomain of context's host, if not inside the root domain.
 func (h *routerHandler) RouteExists(ctx context.Context, method, path string) bool {
 	for i := range h.trees {
 		t := h.trees[i]
-		if method != t.Method {
-			continue
-		}
-
-		if h.hosts && t.Subdomain != "" {
-			requestHost := ctx.Host()
-			if netutil.IsLoopbackSubdomain(requestHost) {
-				// this fixes a bug when listening on
-				// 127.0.0.1:8080 for example
-				// and have a wildcard subdomain and a route registered to root domain.
-				continue // it's not a subdomain, it's something like 127.0.0.1 probably
-			}
-			// it's a dynamic wildcard subdomain, we have just to check if ctx.subdomain is not empty
-			if t.Subdomain == SubdomainWildcardIndicator {
-				// mydomain.com -> invalid
-				// localhost -> invalid
-				// sub.mydomain.com -> valid
-				// sub.localhost -> valid
-				serverHost := ctx.Application().ConfigurationReadOnly().GetVHost()
-				if serverHost == requestHost {
-					continue // it's not a subdomain, it's a full domain (with .com...)
-				}
-
-				dotIdx := strings.IndexByte(requestHost, '.')
-				slashIdx := strings.IndexByte(requestHost, '/')
-				if dotIdx > 0 && (slashIdx == -1 || slashIdx > dotIdx) {
-					// if "." was found anywhere but not at the first path segment (host).
-				} else {
-					continue
-				}
-				// continue to that, any subdomain is valid.
-			} else if !strings.HasPrefix(requestHost, t.Subdomain) { // t.Subdomain contains the dot.
-				continue
-			}
-		}
-
-		_, handlers := t.Nodes.Find(path, ctx.Params())
-		if len(handlers) > 0 {
-			// found
+		if h.subdomainAndPathAndMethodExists(ctx, t, method, path) {
 			return true
 		}
-
-		// not found or method not allowed.
-		break
 	}
 
 	return false

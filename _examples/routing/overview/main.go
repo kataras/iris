@@ -68,8 +68,8 @@ func main() {
 
 	// GET: http://localhost:8080/users/42
 	// **/users/42 and /users/help works after iris version 7.0.5**
-	usersRoutes.Get("/{id:int}", func(ctx iris.Context) {
-		id, _ := ctx.Params().GetInt("id")
+	usersRoutes.Get("/{id:uint64}", func(ctx iris.Context) {
+		id, _ := ctx.Params().GetUint64("id")
 		ctx.Writef("get user by id: %d", id)
 	})
 
@@ -80,15 +80,15 @@ func main() {
 	})
 
 	// PUT: http://localhost:8080/users
-	usersRoutes.Put("/{id:int}", func(ctx iris.Context) {
-		id, _ := ctx.Params().GetInt("id") // or .Get to get its string represatantion.
+	usersRoutes.Put("/{id:uint64}", func(ctx iris.Context) {
+		id, _ := ctx.Params().GetUint64("id") // or .Get to get its string represatantion.
 		username := ctx.PostValue("username")
 		ctx.Writef("update user for id= %d and new username= %s", id, username)
 	})
 
 	// DELETE: http://localhost:8080/users/42
-	usersRoutes.Delete("/{id:int}", func(ctx iris.Context) {
-		id, _ := ctx.Params().GetInt("id")
+	usersRoutes.Delete("/{id:uint64}", func(ctx iris.Context) {
+		id, _ := ctx.Params().GetUint64("id")
 		ctx.Writef("delete user by id: %d", id)
 	})
 

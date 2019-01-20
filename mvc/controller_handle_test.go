@@ -37,6 +37,7 @@ type testControllerHandle struct {
 func (c *testControllerHandle) BeforeActivation(b BeforeActivation) {
 	b.Handle("GET", "/histatic", "HiStatic")
 	b.Handle("GET", "/hiservice", "HiService")
+	b.Handle("GET", "/hiservice/{ps:string}", "HiServiceBy")
 	b.Handle("GET", "/hiparam/{ps:string}", "HiParamBy")
 	b.Handle("GET", "/hiparamempyinput/{ps:string}", "HiParamEmptyInputBy")
 }
@@ -84,6 +85,10 @@ func (c *testControllerHandle) HiService() string {
 	return c.Service.Say("hi")
 }
 
+func (c *testControllerHandle) HiServiceBy(v string) string {
+	return c.Service.Say("hi with param: " + v)
+}
+
 func (c *testControllerHandle) HiParamBy(v string) string {
 	return v
 }
@@ -116,7 +121,8 @@ func TestControllerHandle(t *testing.T) {
 	// and can be used in a user-defined, dynamic "mvc handler".
 	e.GET("/hiservice").Expect().Status(httptest.StatusOK).
 		Body().Equal("service: hi")
-
+	e.GET("/hiservice/value").Expect().Status(httptest.StatusOK).
+		Body().Equal("service: hi with param: value")
 	// this worked with a temporary variadic on the resolvemethodfunc which is not
 	// correct design, I should split the path and params with the rest of implementation
 	// in order a simple template.Src can be given.

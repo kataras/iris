@@ -2,7 +2,6 @@ package main
 
 import (
 	"regexp"
-	"strconv"
 
 	"github.com/kataras/iris"
 )
@@ -14,15 +13,14 @@ func main() {
 	// we've seen static routes, group of routes, subdomains, wildcard subdomains, a small example of parameterized path
 	// with a single known paramete and custom http errors, now it's time to see wildcard parameters and macros.
 
-	// iris, like net/http std package registers route's handlers
+	// Iris, like net/http std package registers route's handlers
 	// by a Handler, the iris' type of handler is just a func(ctx iris.Context)
 	// where context comes from github.com/kataras/iris/context.
-	// Until go 1.9 you will have to import that package too, after go 1.9 this will be not be necessary.
 	//
-	// iris has the easiest and the most powerful routing process you have ever meet.
+	// Iris has the easiest and the most powerful routing process you have ever meet.
 	//
 	// At the same time,
-	// iris has its own interpeter(yes like a programming language)
+	// Iris has its own interpeter(yes like a programming language)
 	// for route's path syntax and their dynamic path parameters parsing and evaluation,
 	// We call them "macros" for shortcut.
 	// How? It calculates its needs and if not any special regexp needed then it just
@@ -30,40 +28,88 @@ func main() {
 	// otherwise it pre-compiles the regexp and adds the necessary middleware(s).
 	//
 	// Standard macro types for parameters:
-	//  +------------------------+
-	//  | {param:string}         |
-	//  +------------------------+
+	// +------------------------+
+	// | {param:string}         |
+	// +------------------------+
 	// string type
-	// anything
+	// anything (single path segmnent)
 	//
-	//  +------------------------+
-	//  | {param:int}            |
-	//  +------------------------+
+	// +-------------------------------+
+	// | {param:int}                   |
+	// +-------------------------------+
 	// int type
-	// only numbers (0-9)
+	// -9223372036854775808 to 9223372036854775807 (x64) or -2147483648 to 2147483647 (x32), depends on the host arch
 	//
 	// +------------------------+
-	// | {param:long}           |
+	// | {param:int8}           |
+	// +------------------------+
+	// int8 type
+	// -128 to 127
+	//
+	// +------------------------+
+	// | {param:int16}          |
+	// +------------------------+
+	// int16 type
+	// -32768 to 32767
+	//
+	// +------------------------+
+	// | {param:int32}          |
+	// +------------------------+
+	// int32 type
+	// -2147483648 to 2147483647
+	//
+	// +------------------------+
+	// | {param:int64}          |
 	// +------------------------+
 	// int64 type
-	// only numbers (0-9)
+	// -9223372036854775808 to 9223372036854775807
 	//
 	// +------------------------+
-	// | {param:boolean}        |
+	// | {param:uint}           |
 	// +------------------------+
+	// uint type
+	// 0 to 18446744073709551615 (x64) or 0 to 4294967295 (x32)
+	//
+	// +------------------------+
+	// | {param:uint8}          |
+	// +------------------------+
+	// uint8 type
+	// 0 to 255
+	//
+	// +------------------------+
+	// | {param:uint16}         |
+	// +------------------------+
+	// uint16 type
+	// 0 to 65535
+	//
+	// +------------------------+
+	// | {param:uint32}          |
+	// +------------------------+
+	// uint32 type
+	// 0 to 4294967295
+	//
+	// +------------------------+
+	// | {param:uint64}         |
+	// +------------------------+
+	// uint64 type
+	// 0 to 18446744073709551615
+	//
+	// +---------------------------------+
+	// | {param:bool} or {param:boolean} |
+	// +---------------------------------+
 	// bool type
 	// only "1" or "t" or "T" or "TRUE" or "true" or "True"
 	// or "0" or "f" or "F" or "FALSE" or "false" or "False"
 	//
-	//  +------------------------+
-	//  | {param:alphabetical}   |
-	//  +------------------------+
+	// +------------------------+
+	// | {param:alphabetical}   |
+	// +------------------------+
 	// alphabetical/letter type
 	// letters only (upper or lowercase)
 	//
-	//  +------------------------+
-	//  | {param:file}           |
-	//  +------------------------+
+	// +------------------------+
+	// | {param:file}           |
+	// +------------------------+
 	// file type
 	// letters (upper or lowercase)
 	// numbers (0-9)
@@ -72,12 +118,12 @@ func main() {
 	// point (.)
 	// no spaces ! or other character
 	//
-	//  +------------------------+
-	//  | {param:path}           |
-	//  +------------------------+
+	// +------------------------+
+	// | {param:path}           |
+	// +------------------------+
 	// path type
-	// anything, should be the last part, more than one path segment,
-	// i.e: /path1/path2/path3 , ctx.Params().Get("param") == "/path1/path2/path3"
+	// anything, should be the last part, can be more than one path segment,
+	// i.e: "/test/{param:path}" and request: "/test/path1/path2/path3" , ctx.Params().Get("param") == "path1/path2/path3"
 	//
 	// if type is missing then parameter's type is defaulted to string, so
 	// {param} == {param:string}.
@@ -89,7 +135,7 @@ func main() {
 	// you are able to register your own too!.
 	//
 	// Register a named path parameter function:
-	// app.Macros().Int.RegisterFunc("min", func(argument int) func(paramValue string) bool {
+	// app.Macros().Number.RegisterFunc("min", func(argument int) func(paramValue string) bool {
 	//  [...]
 	//  return true/false -> true means valid.
 	// })
@@ -107,51 +153,52 @@ func main() {
 		ctx.Writef("Hello %s", ctx.Params().Get("name"))
 	}) // type is missing = {name:string}
 
-	// Let's register our first macro attached to int macro type.
+	// Let's register our first macro attached to uint64 macro type.
 	// "min" = the function
 	// "minValue" = the argument of the function
-	// func(string) bool = the macro's path parameter evaluator, this executes in serve time when
-	// a user requests a path which contains the :int macro type with the min(...) macro parameter function.
-	app.Macros().Int.RegisterFunc("min", func(minValue int) func(string) bool {
-		// do anything before serve here [...]
-		// at this case we don't need to do anything
-		return func(paramValue string) bool {
-			n, err := strconv.Atoi(paramValue)
-			if err != nil {
-				return false
-			}
-			return n >= minValue
+	// func(uint64) bool = our func's evaluator, this executes in serve time when
+	// a user requests a path which contains the :uint64 macro parameter type with the min(...) macro parameter function.
+	app.Macros().Get("uint64").RegisterFunc("min", func(minValue uint64) func(uint64) bool {
+		// type of "paramValue" should match the type of the internal macro's evaluator function, which in this case is "uint64".
+		return func(paramValue uint64) bool {
+			return paramValue >= minValue
 		}
 	})
 
-	// http://localhost:8080/profile/id>=1
+	// http://localhost:8080/profile/id>=20
 	// this will throw 404 even if it's found as route on : /profile/0, /profile/blabla, /profile/-1
 	// macro parameter functions are optional of course.
-	app.Get("/profile/{id:int min(1)}", func(ctx iris.Context) {
+	app.Get("/profile/{id:uint64 min(20)}", func(ctx iris.Context) {
 		// second parameter is the error but it will always nil because we use macros,
 		// the validaton already happened.
-		id, _ := ctx.Params().GetInt("id")
+		id := ctx.Params().GetUint64Default("id", 0)
 		ctx.Writef("Hello id: %d", id)
 	})
 
 	// to change the error code per route's macro evaluator:
-	app.Get("/profile/{id:int min(1)}/friends/{friendid:int min(1) else 504}", func(ctx iris.Context) {
-		id, _ := ctx.Params().GetInt("id")
-		friendid, _ := ctx.Params().GetInt("friendid")
+	app.Get("/profile/{id:uint64 min(1)}/friends/{friendid:uint64 min(1) else 504}", func(ctx iris.Context) {
+		id := ctx.Params().GetUint64Default("id", 0)
+		friendid := ctx.Params().GetUint64Default("friendid", 0)
 		ctx.Writef("Hello id: %d looking for friend id: ", id, friendid)
 	}) // this will throw e 504 error code instead of 404 if all route's macros not passed.
 
-	// Another example using a custom regexp and any custom logic.
+	// :uint8 0 to 255.
+	app.Get("/ages/{age:uint8 else 400}", func(ctx iris.Context) {
+		age, _ := ctx.Params().GetUint8("age")
+		ctx.Writef("age selected: %d", age)
+	})
+
+	// Another example using a custom regexp or any custom logic.
+
+	// Register your custom argument-less macro function to the :string param type.
 	latLonExpr := "^-?[0-9]{1,3}(?:\\.[0-9]{1,10})?$"
 	latLonRegex, err := regexp.Compile(latLonExpr)
 	if err != nil {
 		panic(err)
 	}
 
-	app.Macros().String.RegisterFunc("coordinate", func() func(paramName string) (ok bool) {
-		// MatchString is a type of func(string) bool, so we can return that as it's.
-		return latLonRegex.MatchString
-	})
+	// MatchString is a type of func(string) bool, so we use it as it is.
+	app.Macros().Get("string").RegisterFunc("coordinate", latLonRegex.MatchString)
 
 	app.Get("/coordinates/{lat:string coordinate() else 502}/{lon:string coordinate() else 502}", func(ctx iris.Context) {
 		ctx.Writef("Lat: %s | Lon: %s", ctx.Params().Get("lat"), ctx.Params().Get("lon"))
@@ -159,7 +206,43 @@ func main() {
 
 	//
 
-	// http://localhost:8080/game/a-zA-Z/level/0-9
+	// Another one is by using a custom body.
+	app.Macros().Get("string").RegisterFunc("range", func(minLength, maxLength int) func(string) bool {
+		return func(paramValue string) bool {
+			return len(paramValue) >= minLength && len(paramValue) <= maxLength
+		}
+	})
+
+	app.Get("/limitchar/{name:string range(1,200)}", func(ctx iris.Context) {
+		name := ctx.Params().Get("name")
+		ctx.Writef(`Hello %s | the name should be between 1 and 200 characters length
+		otherwise this handler will not be executed`, name)
+	})
+
+	//
+
+	// Register your custom macro function which accepts a slice of strings `[...,...]`.
+	app.Macros().Get("string").RegisterFunc("has", func(validNames []string) func(string) bool {
+		return func(paramValue string) bool {
+			for _, validName := range validNames {
+				if validName == paramValue {
+					return true
+				}
+			}
+
+			return false
+		}
+	})
+
+	app.Get("/static_validation/{name:string has([kataras,gerasimos,maropoulos])}", func(ctx iris.Context) {
+		name := ctx.Params().Get("name")
+		ctx.Writef(`Hello %s | the name should be "kataras" or "gerasimos" or "maropoulos"
+		otherwise this handler will not be executed`, name)
+	})
+
+	//
+
+	// http://localhost:8080/game/a-zA-Z/level/42
 	// remember, alphabetical is lowercase or uppercase letters only.
 	app.Get("/game/{name:alphabetical}/level/{level:int}", func(ctx iris.Context) {
 		ctx.Writef("name: %s | level: %s", ctx.Params().Get("name"), ctx.Params().Get("level"))
@@ -197,10 +280,9 @@ func main() {
 	// if  "/mypath/{myparam:path}" then the parameter has two names, one is the "*" and the other is the user-defined "myparam".
 
 	// WARNING:
-	// A path parameter name should contain only alphabetical letters. Symbols like  '_' and numbers are NOT allowed.
+	// A path parameter name should contain only alphabetical letters or digits. Symbols like  '_' are NOT allowed.
 	// Last, do not confuse `ctx.Params()` with `ctx.Values()`.
-	// Path parameter's values goes to `ctx.Params()` and context's local storage
-	// that can be used to communicate between handlers and middleware(s) goes to
-	// `ctx.Values()`.
+	// Path parameter's values can be retrieved from `ctx.Params()`,
+	// context's local storage that can be used to communicate between handlers and middleware(s) can be stored to `ctx.Values()`.
 	app.Run(iris.Addr(":8080"))
 }

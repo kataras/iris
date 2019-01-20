@@ -733,10 +733,10 @@ func checkIfRange(ctx context.Context, etagEmptyOrStrongMatch func(ifRangeValue 
 	return condFalse
 }
 
+const indexPage = "/index.html"
+
 // name is '/'-separated, not filepath.Separator.
 func serveFile(ctx context.Context, fs http.FileSystem, name string, redirect bool, showList bool, gzip bool) (string, int) {
-	const indexPage = "/index.html"
-
 	// redirect .../index.html to .../
 	// can't use Redirect() because that would make the path absolute,
 	// which would be a problem running under StripPrefix

@@ -17,7 +17,6 @@ import (
 	// core packages, needed to build the application
 	"github.com/kataras/iris/core/errors"
 	"github.com/kataras/iris/core/host"
-	"github.com/kataras/iris/core/maintenance"
 	"github.com/kataras/iris/core/netutil"
 	"github.com/kataras/iris/core/router"
 	// handlerconv conversions
@@ -34,7 +33,7 @@ import (
 
 var (
 	// Version is the current version number of the Iris Web Framework.
-	Version = maintenance.Version
+	Version = "11.1.1"
 )
 
 // HTTP status codes as registered with IANA.
@@ -58,13 +57,13 @@ const (
 	StatusAlreadyReported      = 208 // RFC 5842, 7.1
 	StatusIMUsed               = 226 // RFC 3229, 10.4.1
 
-	StatusMultipleChoices   = 300 // RFC 7231, 6.4.1
-	StatusMovedPermanently  = 301 // RFC 7231, 6.4.2
-	StatusFound             = 302 // RFC 7231, 6.4.3
-	StatusSeeOther          = 303 // RFC 7231, 6.4.4
-	StatusNotModified       = 304 // RFC 7232, 4.1
-	StatusUseProxy          = 305 // RFC 7231, 6.4.5
-	_                       = 306 // RFC 7231, 6.4.6 (Unused)
+	StatusMultipleChoices  = 300 // RFC 7231, 6.4.1
+	StatusMovedPermanently = 301 // RFC 7231, 6.4.2
+	StatusFound            = 302 // RFC 7231, 6.4.3
+	StatusSeeOther         = 303 // RFC 7231, 6.4.4
+	StatusNotModified      = 304 // RFC 7232, 4.1
+	StatusUseProxy         = 305 // RFC 7231, 6.4.5
+
 	StatusTemporaryRedirect = 307 // RFC 7231, 6.4.7
 	StatusPermanentRedirect = 308 // RFC 7538, 3
 
@@ -87,9 +86,11 @@ const (
 	StatusRequestedRangeNotSatisfiable = 416 // RFC 7233, 4.4
 	StatusExpectationFailed            = 417 // RFC 7231, 6.5.14
 	StatusTeapot                       = 418 // RFC 7168, 2.3.3
+	StatusMisdirectedRequest           = 421 // RFC 7540, 9.1.2
 	StatusUnprocessableEntity          = 422 // RFC 4918, 11.2
 	StatusLocked                       = 423 // RFC 4918, 11.3
 	StatusFailedDependency             = 424 // RFC 4918, 11.4
+	StatusTooEarly                     = 425 // RFC 8470, 5.2.
 	StatusUpgradeRequired              = 426 // RFC 7231, 6.5.15
 	StatusPreconditionRequired         = 428 // RFC 6585, 3
 	StatusTooManyRequests              = 429 // RFC 6585, 4
@@ -462,6 +463,12 @@ var (
 	//
 	// A shortcut for the `context#CookieDecode`.
 	CookieDecode = context.CookieDecode
+	// IsErrPath can be used at `context#ReadForm`.
+	// It reports whether the incoming error is type of `formbinder.ErrPath`,
+	// which can be ignored when server allows unknown post values to be sent by the client.
+	//
+	// A shortcut for the `context#IsErrPath`.
+	IsErrPath = context.IsErrPath
 )
 
 // SPA  accepts an "assetHandler" which can be the result of an
@@ -761,7 +768,7 @@ func (app *Application) Build() error {
 			// create the request handler, the default routing handler
 			routerHandler := router.NewDefaultHandler()
 
-			rp.Describe("router: %v", app.Router.BuildRouter(app.ContextPool, routerHandler, app.APIBuilder))
+			rp.Describe("router: %v", app.Router.BuildRouter(app.ContextPool, routerHandler, app.APIBuilder, false))
 			// re-build of the router from outside can be done with;
 			// app.RefreshRouter()
 		}
@@ -809,10 +816,6 @@ func (app *Application) Run(serve Runner, withOrWithout ...Configurator) error {
 
 	app.Configure(withOrWithout...)
 	app.logger.Debugf("Application: running using %d host(s)", len(app.Hosts)+1)
-
-	if !app.config.DisableVersionChecker {
-		go maintenance.Start()
-	}
 
 	// this will block until an error(unless supervisor's DeferFlow called from a Task).
 	err := serve(app)
