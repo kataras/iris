@@ -166,18 +166,18 @@ func (s *Server) handleConnection(ctx context.Context, websocketConn UnderlineCo
 
 /* Notes:
    We use the id as the signature of the connection because with the custom IDGenerator
-	 the developer can share this ID with a database field, so we want to give the oportunnity to handle
-	 his/her websocket connections without even use the connection itself.
+     the developer can share this ID with a database field, so we want to give the opportunnity to handle
+     his/her websocket connections without even use the connection itself.
 
-	 Another question may be:
-	 Q: Why you use Server as the main actioner for all of the connection actions?
-	 	  For example the Server.Disconnect(connID) manages the connection internal fields, is this code-style correct?
-	 A: It's the correct code-style for these type of applications and libraries, Server manages all, the connnection's functions
-	 should just do some internal checks (if needed) and push the action to its parent, which is the Server, the Server is able to
-	 remove a connection, the rooms of its connected and all these things, so in order to not split the logic, we have the main logic
-	 here, in the Server, and let the connection with some exported functions whose exists for the per-connection action user's code-style.
+     Another question may be:
+     Q: Why you use Server as the main actioner for all of the connection actions?
+          For example the Server.Disconnect(connID) manages the connection internal fields, is this code-style correct?
+     A: It's the correct code-style for these type of applications and libraries, Server manages all, the connnection's functions
+     should just do some internal checks (if needed) and push the action to its parent, which is the Server, the Server is able to
+     remove a connection, the rooms of its connected and all these things, so in order to not split the logic, we have the main logic
+     here, in the Server, and let the connection with some exported functions whose exists for the per-connection action user's code-style.
 
-	 Ok my english are s** I can feel it, but these comments are mostly for me.
+     Ok my english are s** I can feel it, but these comments are mostly for me.
 */
 
 /*
@@ -426,7 +426,6 @@ func (s *Server) Disconnect(connID string) (err error) {
 
 	// remove the connection from the list.
 	if conn, ok := s.getConnection(connID); ok {
-		conn.disconnected = true
 		// fire the disconnect callbacks, if any.
 		conn.fireDisconnect()
 		// close the underline connection and return its error, if any.
