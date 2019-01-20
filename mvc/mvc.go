@@ -1,10 +1,14 @@
 package mvc
 
 import (
+	"strings"
+
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/router"
 	"github.com/kataras/iris/hero"
 	"github.com/kataras/iris/hero/di"
+
+	"github.com/kataras/golog"
 )
 
 var (
@@ -37,6 +41,7 @@ var (
 type Application struct {
 	Dependencies di.Values
 	Router       router.Party
+	Controllers  []*ControllerActivator
 }
 
 func newApp(subRouter router.Party, values di.Values) *Application {
@@ -105,7 +110,19 @@ func (app *Application) Configure(configurators ...func(*Application)) *Applicat
 //
 // Example: `.Register(loggerService{prefix: "dev"}, func(ctx iris.Context) User {...})`.
 func (app *Application) Register(values ...interface{}) *Application {
+	if len(values) > 0 && app.Dependencies.Len() == 0 && len(app.Controllers) > 0 {
+		allControllerNamesSoFar := make([]string, len(app.Controllers))
+		for i := range app.Controllers {
+			allControllerNamesSoFar[i] = app.Controllers[i].Name()
+		}
+
+		golog.Warnf(`mvc.Application#Register called after mvc.Application#Handle.
+The controllers[%s] may miss required dependencies.
+Set the Logger's Level to "debug" to view the active dependencies per controller.`, strings.Join(allControllerNamesSoFar, ","))
+	}
+
 	app.Dependencies.Add(values...)
+
 	return app
 }
 
@@ -173,6 +190,8 @@ func (app *Application) Handle(controller interface{}) *Application {
 	}); okAfter {
 		after.AfterActivation(c)
 	}
+
+	app.Controllers = append(app.Controllers, c)
 	return app
 }
 
