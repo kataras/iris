@@ -6,7 +6,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/GoLandr/iris/_examples/mvc/overview/datamodels"
+	"github.com/kataras/iris/_examples/mvc/overview/datamodels"
 )
 
 // Query represents the visitor and action queries.

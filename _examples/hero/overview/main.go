@@ -3,14 +3,14 @@
 package main
 
 import (
-	"github.com/GoLandr/iris/_examples/hero/overview/datasource"
-	"github.com/GoLandr/iris/_examples/hero/overview/repositories"
-	"github.com/GoLandr/iris/_examples/hero/overview/services"
-	"github.com/GoLandr/iris/_examples/hero/overview/web/middleware"
-	"github.com/GoLandr/iris/_examples/hero/overview/web/routes"
+	"github.com/kataras/iris/_examples/hero/overview/datasource"
+	"github.com/kataras/iris/_examples/hero/overview/repositories"
+	"github.com/kataras/iris/_examples/hero/overview/services"
+	"github.com/kataras/iris/_examples/hero/overview/web/middleware"
+	"github.com/kataras/iris/_examples/hero/overview/web/routes"
 
 	"github.com/kataras/iris"
-	"github.com/GoLandr/iris/hero"
+	"github.com/kataras/iris/hero"
 )
 
 func main() {

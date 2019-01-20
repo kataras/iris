@@ -5,7 +5,7 @@ import (
 
 	"github.com/kataras/iris"
 
-	"github.com/GoLandr/iris/_examples/structuring/bootstrap/bootstrap"
+	"github.com/kataras/iris/_examples/structuring/bootstrap/bootstrap"
 )
 
 // New returns a new handler which adds some headers and view data

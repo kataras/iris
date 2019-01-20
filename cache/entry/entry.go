@@ -3,7 +3,7 @@ package entry
 import (
 	"time"
 
-	"github.com/GoLandr/iris/cache/cfg"
+	"github.com/kataras/iris/cache/cfg"
 )
 
 // Entry is the cache entry

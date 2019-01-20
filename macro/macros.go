@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/GoLandr/iris/macro/interpreter/ast"
+	"github.com/kataras/iris/macro/interpreter/ast"
 )
 
 var (
@@ -404,7 +404,7 @@ var (
 
 	// Defaults contains the defaults macro and parameters types for the router.
 	//
-	// Read https://github.com/GoLandr/iris/tree/master/_examples/routing/macros for more details.
+	// Read https://github.com/kataras/iris/tree/master/_examples/routing/macros for more details.
 	Defaults = &Macros{
 		String,
 		Int,
@@ -434,7 +434,7 @@ type Macros []*Macro
 // The "evaluator" is the function that is converted to an Iris handler which is executed every time
 // before the main chain of a route's handlers that contains this macro of the specific parameter type.
 //
-// Read https://github.com/GoLandr/iris/tree/master/_examples/routing/macros for more details.
+// Read https://github.com/kataras/iris/tree/master/_examples/routing/macros for more details.
 func (ms *Macros) Register(indent, alias string, isMaster, isTrailing bool, evaluator ParamEvaluator) *Macro {
 	macro := NewMacro(indent, alias, isMaster, isTrailing, evaluator)
 	if ms.register(macro) {

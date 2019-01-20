@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/kataras/iris"
-	"github.com/GoLandr/iris/middleware/logger"
+	"github.com/kataras/iris/middleware/logger"
 
 	"github.com/kataras/golog"
 )
@@ -53,7 +53,7 @@ func main() {
 		fmt.Fprintln(logFile, jsonStr)
 
 		/* Example output:
-		{"datetime":"2018/10/31 13:13","level":"[INFO]","message":"My server started","source":"c:/mygopath/src/github.com/GoLandr/iris/_examples/http_request/request-logger/request-logger-file-json/main.go#71"}
+		{"datetime":"2018/10/31 13:13","level":"[INFO]","message":"My server started","source":"c:/mygopath/src/github.com/kataras/iris/_examples/http_request/request-logger/request-logger-file-json/main.go#71"}
 		*/
 		return true
 	})

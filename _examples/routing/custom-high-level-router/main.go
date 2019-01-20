@@ -4,8 +4,8 @@ import (
 	"strings"
 
 	"github.com/kataras/iris"
-	"github.com/GoLandr/iris/context"
-	"github.com/GoLandr/iris/core/router"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/core/router"
 )
 
 /* A Router should contain all three of the following methods:
@@ -18,7 +18,7 @@ import (
 
 For a more detailed, complete and useful example
 you can take a look at the iris' router itself which is located at:
-https://github.com/GoLandr/iris/tree/master/core/router/handler.go
+https://github.com/kataras/iris/tree/master/core/router/handler.go
 which completes this exact interface, the `router#RequestHandler`.
 */
 type customRouter struct {

@@ -2,7 +2,7 @@
 
 package mvc
 
-import "github.com/GoLandr/iris/hero"
+import "github.com/kataras/iris/hero"
 
 type (
 

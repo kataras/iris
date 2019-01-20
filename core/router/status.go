@@ -4,7 +4,7 @@ import (
 	"net/http" // just for status codes
 	"sync"
 
-	"github.com/GoLandr/iris/context"
+	"github.com/kataras/iris/context"
 )
 
 func statusCodeSuccessful(statusCode int) bool {

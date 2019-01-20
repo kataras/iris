@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/GoLandr/iris/core/errors"
+	"github.com/kataras/iris/core/errors"
 	"golang.org/x/crypto/acme/autocert"
 )
 

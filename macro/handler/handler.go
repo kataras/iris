@@ -3,8 +3,8 @@
 package handler
 
 import (
-	"github.com/GoLandr/iris/context"
-	"github.com/GoLandr/iris/macro"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/macro"
 )
 
 // CanMakeHandler reports whether a macro template needs a special macro's evaluator handler to be validated

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/GoLandr/iris/core/router"
-	"github.com/GoLandr/iris/macro"
+	"github.com/kataras/iris/core/router"
+	"github.com/kataras/iris/macro"
 )
 
 const (

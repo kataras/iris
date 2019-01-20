@@ -3,7 +3,7 @@ package versioning
 import (
 	"time"
 
-	"github.com/GoLandr/iris/context"
+	"github.com/kataras/iris/context"
 )
 
 // DeprecationOptions describes the deprecation headers key-values.

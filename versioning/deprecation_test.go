@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/kataras/iris"
-	"github.com/GoLandr/iris/httptest"
-	"github.com/GoLandr/iris/versioning"
+	"github.com/kataras/iris/httptest"
+	"github.com/kataras/iris/versioning"
 )
 
 func TestDeprecated(t *testing.T) {

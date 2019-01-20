@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/kataras/iris"
 
-	"github.com/GoLandr/iris/middleware/pprof"
+	"github.com/kataras/iris/middleware/pprof"
 )
 
 func main() {

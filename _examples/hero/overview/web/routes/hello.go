@@ -5,7 +5,7 @@ package routes
 import (
 	"errors"
 
-	"github.com/GoLandr/iris/hero"
+	"github.com/kataras/iris/hero"
 )
 
 var helloView = hero.View{
@@ -21,7 +21,7 @@ var helloView = hero.View{
 // `hero.Result` is just an interface with a `Dispatch` function.
 // `hero.Response` and `hero.View` are the built'n result type dispatchers
 // you can even create custom response dispatchers by
-// implementing the `github.com/GoLandr/iris/hero#Result` interface.
+// implementing the `github.com/kataras/iris/hero#Result` interface.
 func Hello() hero.Result {
 	return helloView
 }

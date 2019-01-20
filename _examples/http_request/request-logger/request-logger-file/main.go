@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/kataras/iris"
-	"github.com/GoLandr/iris/middleware/logger"
+	"github.com/kataras/iris/middleware/logger"
 )
 
 const deleteFileOnExit = true

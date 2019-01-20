@@ -2,7 +2,7 @@ package routes
 
 import (
 	"github.com/kataras/iris"
-	"github.com/GoLandr/iris/sessions"
+	"github.com/kataras/iris/sessions"
 )
 
 // Index will increment a simple int version based on the visits that this user/session did.

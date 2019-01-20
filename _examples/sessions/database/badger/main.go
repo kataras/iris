@@ -5,8 +5,8 @@ import (
 
 	"github.com/kataras/iris"
 
-	"github.com/GoLandr/iris/sessions"
-	"github.com/GoLandr/iris/sessions/sessiondb/badger"
+	"github.com/kataras/iris/sessions"
+	"github.com/kataras/iris/sessions/sessiondb/badger"
 )
 
 func main() {

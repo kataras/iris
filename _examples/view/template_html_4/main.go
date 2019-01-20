@@ -3,7 +3,7 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/GoLandr/iris/core/router"
+	"github.com/kataras/iris/core/router"
 )
 
 const (

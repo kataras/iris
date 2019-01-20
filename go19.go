@@ -3,9 +3,9 @@
 package iris
 
 import (
-	"github.com/GoLandr/iris/context"
-	"github.com/GoLandr/iris/core/host"
-	"github.com/GoLandr/iris/core/router"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/core/host"
+	"github.com/kataras/iris/core/router"
 )
 
 type (
@@ -25,7 +25,7 @@ type (
 	//
 	// See 'context#UnmarshalBody` for more.
 	//
-	// Example: https://github.com/GoLandr/iris/blob/master/_examples/http_request/read-custom-via-unmarshaler/main.go
+	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-custom-via-unmarshaler/main.go
 	UnmarshalerFunc = context.UnmarshalerFunc
 	// A Handler responds to an HTTP request.
 	// It writes reply headers and data to the Context.ResponseWriter() and then return.
@@ -65,7 +65,7 @@ type (
 	// })
 	//
 	// See `core/router/Party#SetExecutionRules` for more.
-	// Example: https://github.com/GoLandr/iris/tree/master/_examples/mvc/middleware/without-ctx-next
+	// Example: https://github.com/kataras/iris/tree/master/_examples/mvc/middleware/without-ctx-next
 	ExecutionRules = router.ExecutionRules
 	// ExecutionOptions is a set of default behaviors that can be changed in order to customize the execution flow of the routes' handlers with ease.
 	//

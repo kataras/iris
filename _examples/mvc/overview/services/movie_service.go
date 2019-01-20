@@ -3,8 +3,8 @@
 package services
 
 import (
-	"github.com/GoLandr/iris/_examples/mvc/overview/datamodels"
-	"github.com/GoLandr/iris/_examples/mvc/overview/repositories"
+	"github.com/kataras/iris/_examples/mvc/overview/datamodels"
+	"github.com/kataras/iris/_examples/mvc/overview/repositories"
 )
 
 // MovieService handles some of the CRUID operations of the movie datamodel.

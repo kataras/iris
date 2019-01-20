@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/kataras/iris"
-	"github.com/GoLandr/iris/context"
-	"github.com/GoLandr/iris/httptest"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/httptest"
 )
 
 func TestRouteExists(t *testing.T) {

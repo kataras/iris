@@ -2,4 +2,3 @@
 _authortools
 /_examples/**/node_modules
 .directory
-\.idea/

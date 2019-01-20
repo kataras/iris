@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/GoLandr/iris/context"
-	"github.com/GoLandr/iris/core/netutil"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/core/netutil"
 )
 
 type subdomainRedirectWrapper struct {
@@ -58,7 +58,7 @@ func pathIsWildcard(partyRelPath string) bool {
 // NewSubdomainRedirectWrapper may return nil if not allowed input arguments values were received
 // but in that case, the `WrapRouter` will, simply, ignore that wrapper.
 //
-// Example: https://github.com/GoLandr/iris/tree/master/_examples/subdomains/redirect
+// Example: https://github.com/kataras/iris/tree/master/_examples/subdomains/redirect
 func NewSubdomainRedirectWrapper(rootDomainGetter func() string, from, to string) WrapperFunc {
 	// we can return nil,
 	// because if wrapper is nil then it's not be used on the `router#WrapRouter`.

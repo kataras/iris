@@ -1,10 +1,10 @@
 package mvc
 
 import (
-	"github.com/GoLandr/iris/context"
-	"github.com/GoLandr/iris/core/router"
-	"github.com/GoLandr/iris/hero"
-	"github.com/GoLandr/iris/hero/di"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/core/router"
+	"github.com/kataras/iris/hero"
+	"github.com/kataras/iris/hero/di"
 )
 
 var (
@@ -152,7 +152,7 @@ func (app *Application) Register(values ...interface{}) *Application {
 // Result or (Result, error)
 // where Get is an HTTP Method func.
 //
-// Examples at: https://github.com/GoLandr/iris/tree/master/_examples/mvc
+// Examples at: https://github.com/kataras/iris/tree/master/_examples/mvc
 func (app *Application) Handle(controller interface{}) *Application {
 	// initialize the controller's activator, nothing too magical so far.
 	c := newControllerActivator(app.Router, controller, app.Dependencies)

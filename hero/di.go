@@ -3,7 +3,7 @@ package hero
 import (
 	"reflect"
 
-	"github.com/GoLandr/iris/hero/di"
+	"github.com/kataras/iris/hero/di"
 )
 
 func init() {

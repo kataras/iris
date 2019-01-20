@@ -4,7 +4,7 @@ import (
 	"io"
 	"path/filepath"
 
-	"github.com/GoLandr/iris/core/errors"
+	"github.com/kataras/iris/core/errors"
 )
 
 // View is responsible to

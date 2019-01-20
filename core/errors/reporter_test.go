@@ -4,7 +4,7 @@ package errors_test
 import (
 	"testing"
 
-	"github.com/GoLandr/iris/core/errors"
+	"github.com/kataras/iris/core/errors"
 )
 
 func TestReporterAdd(t *testing.T) {

@@ -5,7 +5,7 @@ import (
 
 	"github.com/kataras/iris"
 
-	"github.com/GoLandr/iris/core/host"
+	"github.com/kataras/iris/core/host"
 )
 
 func main() {

@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/GoLandr/iris/core/errors"
+	"github.com/kataras/iris/core/errors"
 )
 
 type (

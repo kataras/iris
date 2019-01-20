@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/GoLandr/iris/macro/interpreter/ast"
+	"github.com/kataras/iris/macro/interpreter/ast"
 )
 
 type simpleParamType string

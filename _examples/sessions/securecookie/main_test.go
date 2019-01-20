@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/kataras/iris"
-	"github.com/GoLandr/iris/httptest"
+	"github.com/kataras/iris/httptest"
 )
 
 func TestSessionsEncodeDecode(t *testing.T) {

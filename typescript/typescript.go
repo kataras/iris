@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/GoLandr/iris/typescript/npm"
+	"github.com/kataras/iris/typescript/npm"
 )
 
 type (

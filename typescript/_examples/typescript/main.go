@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/kataras/iris"
 
-	"github.com/GoLandr/iris/typescript"
+	"github.com/kataras/iris/typescript"
 )
 
 // NOTE: Some machines don't allow to install typescript automatically, so if you don't have typescript installed

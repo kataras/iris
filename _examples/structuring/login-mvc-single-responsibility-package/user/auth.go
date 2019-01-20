@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/kataras/iris"
-	"github.com/GoLandr/iris/mvc"
-	"github.com/GoLandr/iris/sessions"
+	"github.com/kataras/iris/mvc"
+	"github.com/kataras/iris/sessions"
 )
 
 const sessionIDKey = "UserID"

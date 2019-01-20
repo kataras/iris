@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"github.com/GoLandr/iris/_examples/structuring/bootstrap/bootstrap"
+	"github.com/kataras/iris/_examples/structuring/bootstrap/bootstrap"
 )
 
 // Configure registers the necessary routes to the app.

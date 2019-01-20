@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/iris-contrib/i18n"
-	"github.com/GoLandr/iris/context"
+	"github.com/kataras/iris/context"
 )
 
 // test file: ../../_examples/miscellaneous/i18n/main_test.go

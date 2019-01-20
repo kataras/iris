@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/GoLandr/iris/httptest"
+	"github.com/kataras/iris/httptest"
 )
 
 type resource string

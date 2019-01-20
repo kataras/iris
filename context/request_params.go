@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/GoLandr/iris/core/memstore"
+	"github.com/kataras/iris/core/memstore"
 )
 
 // RequestParams is a key string - value string storage which
@@ -101,7 +101,7 @@ var (
 	//     }
 	// }
 	//
-	// Read https://github.com/GoLandr/iris/tree/master/_examples/routing/macros for more details.
+	// Read https://github.com/kataras/iris/tree/master/_examples/routing/macros for more details.
 	ParamResolvers = map[reflect.Type]func(paramIndex int) interface{}{
 		reflect.TypeOf(""): func(paramIndex int) interface{} {
 			return func(ctx Context) string {

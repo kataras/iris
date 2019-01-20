@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	"github.com/GoLandr/iris/httptest"
+	"github.com/kataras/iris/httptest"
 )
 
 func TestReadXML(t *testing.T) {

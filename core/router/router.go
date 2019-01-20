@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/GoLandr/iris/context"
-	"github.com/GoLandr/iris/core/errors"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/core/errors"
 )
 
 // Router is the "director".

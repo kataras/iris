@@ -1,7 +1,7 @@
 package router
 
 import (
-	"github.com/GoLandr/iris/context"
+	"github.com/kataras/iris/context"
 )
 
 // ExecutionRules gives control to the execution of the route handlers outside of the handlers themselves.

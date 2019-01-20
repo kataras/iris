@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/GoLandr/iris/context"
-	"github.com/GoLandr/iris/macro"
-	"github.com/GoLandr/iris/macro/handler"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/macro"
+	"github.com/kataras/iris/macro/handler"
 )
 
 // Route contains the information about a registered Route.

@@ -1,6 +1,6 @@
 package controllers
 
-import "github.com/GoLandr/iris/mvc"
+import "github.com/kataras/iris/mvc"
 
 type HomeController struct{}
 

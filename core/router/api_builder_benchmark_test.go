@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/GoLandr/iris/context"
+	"github.com/kataras/iris/context"
 )
 
 //

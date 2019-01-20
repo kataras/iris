@@ -5,7 +5,7 @@ package datasource
 import (
 	"errors"
 
-	"github.com/GoLandr/iris/_examples/mvc/login/datamodels"
+	"github.com/kataras/iris/_examples/mvc/login/datamodels"
 )
 
 // Engine is from where to fetch the data, in this case the users.

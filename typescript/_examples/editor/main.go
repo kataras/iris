@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/kataras/iris"
 
-	"github.com/GoLandr/iris/typescript/editor"
+	"github.com/kataras/iris/typescript/editor"
 )
 
 func main() {

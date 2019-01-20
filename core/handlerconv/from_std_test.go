@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/kataras/iris"
-	"github.com/GoLandr/iris/context"
-	"github.com/GoLandr/iris/core/handlerconv"
-	"github.com/GoLandr/iris/httptest"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/core/handlerconv"
+	"github.com/kataras/iris/httptest"
 )
 
 func TestFromStd(t *testing.T) {

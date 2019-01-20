@@ -5,9 +5,9 @@ import (
 
 	"github.com/kataras/iris"
 
-	"github.com/GoLandr/iris/sessions"
-	"github.com/GoLandr/iris/sessions/sessiondb/redis"
-	"github.com/GoLandr/iris/sessions/sessiondb/redis/service"
+	"github.com/kataras/iris/sessions"
+	"github.com/kataras/iris/sessions/sessiondb/redis"
+	"github.com/kataras/iris/sessions/sessiondb/redis/service"
 )
 
 // tested with redis version 3.0.503.

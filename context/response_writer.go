@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/GoLandr/iris/core/errors"
+	"github.com/kataras/iris/core/errors"
 )
 
 // ResponseWriter interface is used by the context to serve an HTTP handler to

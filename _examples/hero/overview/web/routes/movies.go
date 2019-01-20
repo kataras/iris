@@ -5,8 +5,8 @@ package routes
 import (
 	"errors"
 
-	"github.com/GoLandr/iris/_examples/hero/overview/datamodels"
-	"github.com/GoLandr/iris/_examples/hero/overview/services"
+	"github.com/kataras/iris/_examples/hero/overview/datamodels"
+	"github.com/kataras/iris/_examples/hero/overview/services"
 
 	"github.com/kataras/iris"
 )

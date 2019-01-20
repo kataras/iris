@@ -1,7 +1,7 @@
 package rule
 
 import (
-	"github.com/GoLandr/iris/context"
+	"github.com/kataras/iris/context"
 )
 
 // chainedRule is a Rule with next Rule

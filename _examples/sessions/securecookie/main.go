@@ -8,7 +8,7 @@ package main
 import (
 	"github.com/kataras/iris"
 
-	"github.com/GoLandr/iris/sessions"
+	"github.com/kataras/iris/sessions"
 
 	"github.com/gorilla/securecookie"
 )

@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/GoLandr/iris/mvc"
+	"github.com/kataras/iris/mvc"
 )
 
 func main() {

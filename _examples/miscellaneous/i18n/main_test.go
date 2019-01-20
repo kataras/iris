@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/GoLandr/iris/httptest"
+	"github.com/kataras/iris/httptest"
 )
 
 func TestI18n(t *testing.T) {

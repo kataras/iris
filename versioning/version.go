@@ -3,7 +3,7 @@ package versioning
 import (
 	"strings"
 
-	"github.com/GoLandr/iris/context"
+	"github.com/kataras/iris/context"
 )
 
 const (

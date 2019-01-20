@@ -70,8 +70,8 @@ import (
 	"time"
 
 	"github.com/kataras/iris"
-	"github.com/GoLandr/iris/cache"
-	"github.com/GoLandr/iris/mvc"
+	"github.com/kataras/iris/cache"
+	"github.com/kataras/iris/mvc"
 )
 
 var cacheHandler = cache.Handler(10 * time.Second)
