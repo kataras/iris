@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/hero"
+	"github.com/GoLandr/iris/hero"
 )
 
 func main() {

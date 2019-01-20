@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kataras/iris/httptest"
+	"github.com/GoLandr/iris/httptest"
 )
 
 type testRoute struct {

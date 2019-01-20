@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/sessions"
+	"github.com/GoLandr/iris/sessions"
 )
 
 type businessModel struct {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/websocket"
+	"github.com/GoLandr/iris/websocket"
 )
 
 func main() {

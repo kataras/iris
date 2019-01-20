@@ -3,8 +3,8 @@ package main
 import (
 	"github.com/kataras/iris"
 
-	"github.com/kataras/iris/middleware/logger"
-	"github.com/kataras/iris/middleware/recover"
+	"github.com/GoLandr/iris/middleware/logger"
+	"github.com/GoLandr/iris/middleware/recover"
 )
 
 func main() {

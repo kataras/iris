@@ -197,12 +197,12 @@ func (s *HTMLEngine) Load() error {
 	// }()
 
 	if s.assetFn != nil && s.namesFn != nil {
-		// NOT NECESSARY "fix" of https://github.com/kataras/iris/issues/784,
+		// NOT NECESSARY "fix" of https://github.com/GoLandr/iris/issues/784,
 		// IT'S BAD CODE WRITTEN WE KEEP HERE ONLY FOR A REMINDER
 		// for any future questions.
 		//
 		// if strings.HasPrefix(s.directory, "../") {
-		// 	// this and some more additions are fixes for https://github.com/kataras/iris/issues/784
+		// 	// this and some more additions are fixes for https://github.com/GoLandr/iris/issues/784
 		// 	// however, the dev SHOULD
 		// 	// run the go-bindata command from the "$dir" parent directory
 		// 	// and just use the ./$dir in the declaration,
@@ -309,7 +309,7 @@ func (s *HTMLEngine) loadAssets() error {
 
 	for _, path := range names {
 		// if filepath.IsAbs(virtualDirectory) {
-		// 	// fixes https://github.com/kataras/iris/issues/784
+		// 	// fixes https://github.com/GoLandr/iris/issues/784
 		// 	// we take the absolute fullpath of the template file.
 		// 	pathFileAbs, err := filepath.Abs(path)
 		// 	if err != nil {
@@ -342,7 +342,7 @@ func (s *HTMLEngine) loadAssets() error {
 			// cpath, err := filepath.Abs(".")
 			// if err == nil {
 			// 	// set the path as relative to "path" of the current working dir.
-			// 	// fixes https://github.com/kataras/iris/issues/784
+			// 	// fixes https://github.com/GoLandr/iris/issues/784
 			// 	rpath, err := filepath.Rel(cpath, path)
 			// 	// fix view: Asset  not found for path ''
 			// 	if err == nil && rpath != "" {

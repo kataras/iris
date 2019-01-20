@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kataras/iris/macro/interpreter/ast"
-	"github.com/kataras/iris/macro/interpreter/lexer"
-	"github.com/kataras/iris/macro/interpreter/token"
+	"github.com/GoLandr/iris/macro/interpreter/ast"
+	"github.com/GoLandr/iris/macro/interpreter/lexer"
+	"github.com/GoLandr/iris/macro/interpreter/token"
 )
 
 // Parse takes a route "fullpath"

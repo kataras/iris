@@ -6,16 +6,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kataras/iris/cache"
-	"github.com/kataras/iris/cache/client"
-	"github.com/kataras/iris/cache/client/rule"
+	"github.com/GoLandr/iris/cache"
+	"github.com/GoLandr/iris/cache/client"
+	"github.com/GoLandr/iris/cache/client/rule"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/errors"
+	"github.com/GoLandr/iris/context"
+	"github.com/GoLandr/iris/core/errors"
 
 	"github.com/iris-contrib/httpexpect"
-	"github.com/kataras/iris/httptest"
+	"github.com/GoLandr/iris/httptest"
 )
 
 var (

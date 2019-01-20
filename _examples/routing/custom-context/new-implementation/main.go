@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/sessions"
+	"github.com/GoLandr/iris/sessions"
 )
 
 // Owner is our application structure, it contains the methods or fields we need,

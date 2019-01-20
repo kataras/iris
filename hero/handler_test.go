@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/httptest"
+	"github.com/GoLandr/iris/httptest"
 
-	. "github.com/kataras/iris/hero"
+	. "github.com/GoLandr/iris/hero"
 )
 
 // dynamic func

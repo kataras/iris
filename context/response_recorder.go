@@ -86,7 +86,7 @@ func (w *ResponseRecorder) EndResponse() {
 func (w *ResponseRecorder) Write(contents []byte) (int, error) {
 	w.chunks = append(w.chunks, contents...)
 	// Remember that we should not return all the written length within `Write`:
-	// see https://github.com/kataras/iris/pull/931
+	// see https://github.com/GoLandr/iris/pull/931
 	return len(contents), nil
 }
 

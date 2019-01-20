@@ -17,7 +17,7 @@ func main() {
 	//
 	// Third receiver should contains the route's handler(s), they are executed by order.
 	app.Handle("GET", "/", func(ctx iris.Context) {
-		// navigate to the middle of $GOPATH/src/github.com/kataras/iris/context/context.go
+		// navigate to the middle of $GOPATH/src/github.com/GoLandr/iris/context/context.go
 		// to overview all context's method (there a lot of them, read that and you will learn how iris works too)
 		ctx.HTML("Hello from " + ctx.Path()) // Hello from /
 	})

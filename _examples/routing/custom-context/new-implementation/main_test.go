@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	"github.com/kataras/iris/httptest"
+	"github.com/GoLandr/iris/httptest"
 )
 
 func TestCustomContextNewImpl(t *testing.T) {

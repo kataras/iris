@@ -13,7 +13,7 @@ import (
 	// Note:
 	// For some reason the latest vscode-go language extension does not provide enough intelligence (parameters documentation and go to definition features)
 	// for the `iris.Context` alias, therefore if you use VS Code, import the original import path of the `Context`, that will do it:
-	"github.com/kataras/iris/context"
+	"github.com/GoLandr/iris/context"
 )
 
 // A Broker holds open client connections,

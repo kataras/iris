@@ -2,7 +2,7 @@ package user
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/mvc"
+	"github.com/GoLandr/iris/mvc"
 )
 
 var (

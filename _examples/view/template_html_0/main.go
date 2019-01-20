@@ -43,7 +43,7 @@ func hi(ctx iris.Context) {
 /*
 Note:
 
-In case you're wondering, the code behind the view engines derives from the "github.com/kataras/iris/view" package,
+In case you're wondering, the code behind the view engines derives from the "github.com/GoLandr/iris/view" package,
 access to the engines' variables can be granded by "github.com/kataras/iris" package too.
 
     iris.HTML(...) is a shortcut of view.HTML(...)

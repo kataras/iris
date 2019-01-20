@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/kataras/golog"
-	"github.com/kataras/iris/sessions"
-	"github.com/kataras/iris/sessions/sessiondb/redis/service"
+	"github.com/GoLandr/iris/sessions"
+	"github.com/GoLandr/iris/sessions/sessiondb/redis/service"
 )
 
 // Database the redis back-end session database for the sessions.

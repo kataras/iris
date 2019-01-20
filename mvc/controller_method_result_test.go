@@ -5,10 +5,10 @@ import (
 	"testing"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/httptest"
+	"github.com/GoLandr/iris/context"
+	"github.com/GoLandr/iris/httptest"
 
-	. "github.com/kataras/iris/mvc"
+	. "github.com/GoLandr/iris/mvc"
 )
 
 type testControllerMethodResult struct {

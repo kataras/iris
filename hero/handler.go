@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"runtime"
 
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/hero/di"
+	"github.com/GoLandr/iris/context"
+	"github.com/GoLandr/iris/hero/di"
 
 	"github.com/kataras/golog"
 )

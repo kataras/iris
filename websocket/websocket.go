@@ -2,11 +2,11 @@
 
 Source code and other details for the project are available at GitHub:
 
-   https://github.com/kataras/iris/tree/master/websocket
+   https://github.com/GoLandr/iris/tree/master/websocket
 
 Installation
 
-    $ go get -u github.com/kataras/iris/websocket
+    $ go get -u github.com/GoLandr/iris/websocket
 
 
 Example code:
@@ -18,9 +18,9 @@ Example code:
 		"fmt"
 
 		"github.com/kataras/iris"
-		"github.com/kataras/iris/context"
+		"github.com/GoLandr/iris/context"
 
-		"github.com/kataras/iris/websocket"
+		"github.com/GoLandr/iris/websocket"
 	)
 
 	func main() {

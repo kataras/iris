@@ -13,22 +13,22 @@ import (
 	"github.com/kataras/golog"
 
 	// context for the handlers
-	"github.com/kataras/iris/context"
+	"github.com/GoLandr/iris/context"
 	// core packages, needed to build the application
-	"github.com/kataras/iris/core/errors"
-	"github.com/kataras/iris/core/host"
-	"github.com/kataras/iris/core/netutil"
-	"github.com/kataras/iris/core/router"
+	"github.com/GoLandr/iris/core/errors"
+	"github.com/GoLandr/iris/core/host"
+	"github.com/GoLandr/iris/core/netutil"
+	"github.com/GoLandr/iris/core/router"
 	// handlerconv conversions
-	"github.com/kataras/iris/core/handlerconv"
+	"github.com/GoLandr/iris/core/handlerconv"
 	// cache conversions
-	"github.com/kataras/iris/cache"
+	"github.com/GoLandr/iris/cache"
 	// view
-	"github.com/kataras/iris/view"
+	"github.com/GoLandr/iris/view"
 	// middleware used in Default method
 
-	requestLogger "github.com/kataras/iris/middleware/logger"
-	"github.com/kataras/iris/middleware/recover"
+	requestLogger "github.com/GoLandr/iris/middleware/logger"
+	"github.com/GoLandr/iris/middleware/recover"
 )
 
 var (
@@ -216,7 +216,7 @@ func (app *Application) WWW() router.Party {
 // If you need more information about this implementation then you have to navigate through
 // the `core/router#NewSubdomainRedirectWrapper` function instead.
 //
-// Example: https://github.com/kataras/iris/tree/master/_examples/subdomains/redirect
+// Example: https://github.com/GoLandr/iris/tree/master/_examples/subdomains/redirect
 func (app *Application) SubdomainRedirect(from, to router.Party) router.Party {
 	sd := router.NewSubdomainRedirectWrapper(app.ConfigurationReadOnly().GetVHost, from.GetRelPath(), to.GetRelPath())
 	app.WrapRouter(sd)
@@ -345,7 +345,7 @@ var (
 	// embedded into executable files.
 	//
 	//
-	// Examples: https://github.com/kataras/iris/tree/master/_examples/file-server
+	// Examples: https://github.com/GoLandr/iris/tree/master/_examples/file-server
 	StaticEmbeddedHandler = router.StaticEmbeddedHandler
 	// StripPrefix returns a handler that serves HTTP requests
 	// by removing the given prefix from the request URL's Path
@@ -378,7 +378,7 @@ var (
 	// It should be used after Static methods.
 	// See `iris#Cache304` for an alternative, faster way.
 	//
-	// Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/#caching
+	// Examples can be found at: https://github.com/GoLandr/iris/tree/master/_examples/#caching
 	Cache = cache.Handler
 	// NoCache is a middleware which overrides the Cache-Control, Pragma and Expires headers
 	// in order to disable the cache during the browser's back and forward feature.
@@ -407,7 +407,7 @@ var (
 	// Cache304 sends a `StatusNotModified` (304) whenever
 	// the "If-Modified-Since" request header (time) is before the
 	// time.Now() + expiresEvery (always compared to their UTC values).
-	// Use this, which is a shortcut of the, `chache#Cache304` instead of the "github.com/kataras/iris/cache" or iris.Cache
+	// Use this, which is a shortcut of the, `chache#Cache304` instead of the "github.com/GoLandr/iris/cache" or iris.Cache
 	// for better performance.
 	// Clients that are compatible with the http RCF (all browsers are and tools like postman)
 	// will handle the caching.
@@ -450,7 +450,7 @@ var (
 	// Accepts a `context#CookieEncoder` and sets the cookie's value to the encoded value.
 	// Users of that is the `context#SetCookie` and `context#SetCookieKV`.
 	//
-	// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/securecookie
+	// Example: https://github.com/GoLandr/iris/tree/master/_examples/cookies/securecookie
 	//
 	// A shortcut for the `context#CookieEncode`.
 	CookieEncode = context.CookieEncode
@@ -459,7 +459,7 @@ var (
 	// Accepts a `context#CookieDecoder` and sets the cookie's value to the decoded value before return by the `GetCookie`.
 	// User of that is the `context#GetCookie`.
 	//
-	// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/securecookie
+	// Example: https://github.com/GoLandr/iris/tree/master/_examples/cookies/securecookie
 	//
 	// A shortcut for the `context#CookieDecode`.
 	CookieDecode = context.CookieDecode
@@ -477,7 +477,7 @@ var (
 // it's a helper function which just makes some checks based on the `IndexNames` and `AssetValidators`
 // before the assetHandler call.
 //
-// Example: https://github.com/kataras/iris/tree/master/_examples/file-server/single-page-application
+// Example: https://github.com/GoLandr/iris/tree/master/_examples/file-server/single-page-application
 func (app *Application) SPA(assetHandler context.Handler) *router.SPABuilder {
 	s := router.NewSPABuilder(assetHandler)
 	app.APIBuilder.HandleMany("GET HEAD", "/{f:path}", s.Handler)
@@ -609,7 +609,7 @@ type Runner func(*Application) error
 // Via host configurators you can configure the back-end host supervisor,
 // i.e to add events for shutdown, serve or error.
 // An example of this use case can be found at:
-// https://github.com/kataras/iris/blob/master/_examples/http-listening/notify-on-shutdown/main.go
+// https://github.com/GoLandr/iris/blob/master/_examples/http-listening/notify-on-shutdown/main.go
 // Look at the `ConfigureHost` too.
 //
 // See `Run` for more.
@@ -631,7 +631,7 @@ func Listener(l net.Listener, hostConfigs ...host.Configurator) Runner {
 // Via host configurators you can configure the back-end host supervisor,
 // i.e to add events for shutdown, serve or error.
 // An example of this use case can be found at:
-// https://github.com/kataras/iris/blob/master/_examples/http-listening/notify-on-shutdown/main.go
+// https://github.com/GoLandr/iris/blob/master/_examples/http-listening/notify-on-shutdown/main.go
 // Look at the `ConfigureHost` too.
 //
 // See `Run` for more.
@@ -655,7 +655,7 @@ func Server(srv *http.Server, hostConfigs ...host.Configurator) Runner {
 // Via host configurators you can configure the back-end host supervisor,
 // i.e to add events for shutdown, serve or error.
 // An example of this use case can be found at:
-// https://github.com/kataras/iris/blob/master/_examples/http-listening/notify-on-shutdown/main.go
+// https://github.com/GoLandr/iris/blob/master/_examples/http-listening/notify-on-shutdown/main.go
 // Look at the `ConfigureHost` too.
 //
 // See `Run` for more.
@@ -681,7 +681,7 @@ func Addr(addr string, hostConfigs ...host.Configurator) Runner {
 // Via host configurators you can configure the back-end host supervisor,
 // i.e to add events for shutdown, serve or error.
 // An example of this use case can be found at:
-// https://github.com/kataras/iris/blob/master/_examples/http-listening/notify-on-shutdown/main.go
+// https://github.com/GoLandr/iris/blob/master/_examples/http-listening/notify-on-shutdown/main.go
 // Look at the `ConfigureHost` too.
 //
 // See `Run` for more.
@@ -720,7 +720,7 @@ func TLS(addr string, certFile, keyFile string, hostConfigs ...host.Configurator
 // Via host configurators you can configure the back-end host supervisor,
 // i.e to add events for shutdown, serve or error.
 // An example of this use case can be found at:
-// https://github.com/kataras/iris/blob/master/_examples/http-listening/notify-on-shutdown/main.go
+// https://github.com/GoLandr/iris/blob/master/_examples/http-listening/notify-on-shutdown/main.go
 // Look at the `ConfigureHost` too.
 //
 // Usage:

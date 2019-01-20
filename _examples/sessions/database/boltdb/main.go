@@ -6,8 +6,8 @@ import (
 
 	"github.com/kataras/iris"
 
-	"github.com/kataras/iris/sessions"
-	"github.com/kataras/iris/sessions/sessiondb/boltdb"
+	"github.com/GoLandr/iris/sessions"
+	"github.com/GoLandr/iris/sessions/sessiondb/boltdb"
 )
 
 func main() {

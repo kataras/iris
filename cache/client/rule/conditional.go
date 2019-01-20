@@ -1,7 +1,7 @@
 package rule
 
 import (
-	"github.com/kataras/iris/context"
+	"github.com/GoLandr/iris/context"
 )
 
 // Conditional is a Rule witch adds a predicate in order to its methods to execute

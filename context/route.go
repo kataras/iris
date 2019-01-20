@@ -1,6 +1,6 @@
 package context
 
-import "github.com/kataras/iris/macro"
+import "github.com/GoLandr/iris/macro"
 
 // RouteReadOnly allows decoupled access to the current route
 // inside the context.

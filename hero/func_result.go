@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/hero/di"
+	"github.com/GoLandr/iris/context"
+	"github.com/GoLandr/iris/hero/di"
 
 	"github.com/fatih/structs"
 )
@@ -14,7 +14,7 @@ import (
 // All types that complete this interface
 // can be returned as values from the method functions.
 //
-// Example at: https://github.com/kataras/iris/tree/master/_examples/hero/overview.
+// Example at: https://github.com/GoLandr/iris/tree/master/_examples/hero/overview.
 type Result interface {
 	// Dispatch should sends the response to the context's response writer.
 	Dispatch(ctx context.Context)
@@ -28,7 +28,7 @@ var defaultFailureResponse = Response{Code: DefaultErrStatusCode}
 // otherwise it returns the "failure" response if any,
 // if not then a 400 bad request is being sent.
 //
-// Example usage at: https://github.com/kataras/iris/blob/master/hero/func_result_test.go.
+// Example usage at: https://github.com/GoLandr/iris/blob/master/hero/func_result_test.go.
 func Try(fn func() Result, failure ...Result) Result {
 	var failed bool
 	var actionResponse Result
@@ -384,7 +384,7 @@ func (r Response) Dispatch(ctx context.Context) {
 // wraps the template file name, layout, (any) view data, status code and error.
 // It's smart enough to complete the request and send the correct response to the client.
 //
-// Example at: https://github.com/kataras/iris/blob/master/_examples/hero/overview/web/controllers/hello_controller.go.
+// Example at: https://github.com/GoLandr/iris/blob/master/_examples/hero/overview/web/controllers/hello_controller.go.
 type View struct {
 	Name   string
 	Layout string

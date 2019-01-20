@@ -341,7 +341,7 @@ Example Code:
 Second, and probably easier way is to use the `host.Configurator`.
 
 Note that this method requires an extra import statement of
-"github.com/kataras/iris/core/host" when using go < 1.9,
+"github.com/GoLandr/iris/core/host" when using go < 1.9,
 if you're targeting on go1.9 then you can use the `iris#Supervisor`
 and omit the extra host import.
 
@@ -360,7 +360,7 @@ Example Code:
         "time"
 
         "github.com/kataras/iris"
-        "github.com/kataras/iris/core/host"
+        "github.com/GoLandr/iris/core/host"
     )
 
     func main() {
@@ -407,7 +407,7 @@ Example Code:
 
 Read more about listening and gracefully shutdown by navigating to:
 
-    https://github.com/kataras/iris/tree/master/_examples/#http-listening
+    https://github.com/GoLandr/iris/tree/master/_examples/#http-listening
 
 
 Routing
@@ -536,7 +536,7 @@ Example code:
         //
         // Third receiver should contains the route's handler(s), they are executed by order.
         app.Handle("GET", "/", func(ctx iris.Context) {
-            // navigate to the middle of $GOPATH/src/github.com/kataras/iris/context/context.go
+            // navigate to the middle of $GOPATH/src/github.com/GoLandr/iris/context/context.go
             // to overview all context's method (there a lot of them, read that and you will learn how iris works too)
             ctx.HTML("Hello from " + ctx.Path()) // Hello from /
         })
@@ -691,7 +691,7 @@ with a single known parameter and custom http errors, now it's time to see wildc
 
 iris, like net/http std package registers route's handlers
 by a Handler, the iris' type of handler is just a func(ctx iris.Context)
-where context comes from github.com/kataras/iris/context.
+where context comes from github.com/GoLandr/iris/context.
 
 Iris has the easiest and the most powerful routing process you have ever meet.
 
@@ -940,7 +940,7 @@ Static Files
     //
     // Returns the GET *Route.
     //
-    // Example: https://github.com/kataras/iris/tree/master/_examples/file-server/embedding-files-into-app
+    // Example: https://github.com/GoLandr/iris/tree/master/_examples/file-server/embedding-files-into-app
     StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) (*Route, error)
 
     // Favicon serves static favicon
@@ -1003,7 +1003,7 @@ Example code:
         app.Run(iris.Addr(":8080"))
     }
 
-More examples can be found here: https://github.com/kataras/iris/tree/master/_examples/beginner/file-server
+More examples can be found here: https://github.com/GoLandr/iris/tree/master/_examples/beginner/file-server
 
 
 Middleware Ecosystem
@@ -1196,7 +1196,7 @@ Example code:
     }
 
 
-A real example can be found here: https://github.com/kataras/iris/tree/master/_examples/view/embedding-templates-into-app.
+A real example can be found here: https://github.com/GoLandr/iris/tree/master/_examples/view/embedding-templates-into-app.
 
 Enable auto-reloading of templates on each request. Useful while developers are in dev mode
 as they no neeed to restart their app on every template edit.
@@ -1210,7 +1210,7 @@ Example code:
 
 Note:
 
-In case you're wondering, the code behind the view engines derives from the "github.com/kataras/iris/view" package,
+In case you're wondering, the code behind the view engines derives from the "github.com/GoLandr/iris/view" package,
 access to the engines' variables can be granded by "github.com/kataras/iris" package too.
 
     iris.HTML(...) is a shortcut of view.HTML(...)
@@ -1219,7 +1219,7 @@ access to the engines' variables can be granded by "github.com/kataras/iris" pac
     iris.Handlebars(...) >> >>      view.Handlebars(...)
     iris.Amber(...)      >> >>      view.Amber(...)
 
-Each one of these template engines has different options located here: https://github.com/kataras/iris/tree/master/view .
+Each one of these template engines has different options located here: https://github.com/GoLandr/iris/tree/master/view .
 
 
 Sessions
@@ -1244,7 +1244,7 @@ Example code:
     import (
         "github.com/kataras/iris"
 
-        "github.com/kataras/iris/sessions"
+        "github.com/GoLandr/iris/sessions"
     )
 
     var (
@@ -1295,7 +1295,7 @@ Example code:
 Running the example:
 
 
-    $ go get github.com/kataras/iris/sessions
+    $ go get github.com/GoLandr/iris/sessions
     $ go run main.go
 
     $ curl -s http://localhost:8080/secret
@@ -1319,9 +1319,9 @@ Example Code:
 
         "github.com/kataras/iris"
 
-        "github.com/kataras/iris/sessions"
-        "github.com/kataras/iris/sessions/sessiondb/redis"
-        "github.com/kataras/iris/sessions/sessiondb/redis/service"
+        "github.com/GoLandr/iris/sessions"
+        "github.com/GoLandr/iris/sessions/sessiondb/redis"
+        "github.com/GoLandr/iris/sessions/sessiondb/redis/service"
     )
 
     // tested with redis version 3.0.503.
@@ -1420,7 +1420,7 @@ Example Code:
 
 More examples:
 
-    https://github.com/kataras/iris/tree/master/_examples/sessions
+    https://github.com/GoLandr/iris/tree/master/_examples/sessions
 
 
 Websockets
@@ -1437,7 +1437,7 @@ Example Server Code:
 
         "github.com/kataras/iris"
 
-        "github.com/kataras/iris/websocket"
+        "github.com/GoLandr/iris/websocket"
     )
 
     func main() {
@@ -1527,7 +1527,7 @@ Example Client(javascript) Code:
 Running the example:
 
 
-    $ go get github.com/kataras/iris/websocket
+    $ go get github.com/GoLandr/iris/websocket
     $ go run main.go
     $ start http://localhost:8080
 
@@ -1543,10 +1543,10 @@ Example Code:
 
     import (
         "github.com/kataras/iris"
-        "github.com/kataras/iris/mvc"
+        "github.com/GoLandr/iris/mvc"
 
-        "github.com/kataras/iris/middleware/logger"
-        "github.com/kataras/iris/middleware/recover"
+        "github.com/GoLandr/iris/middleware/logger"
+        "github.com/GoLandr/iris/middleware/recover"
     )
 
     func main() {
@@ -1656,7 +1656,7 @@ via the `BeforeActivation` custom event callback, per-controller. Example:
 
     import (
         "github.com/kataras/iris"
-        "github.com/kataras/iris/mvc"
+        "github.com/GoLandr/iris/mvc"
     )
 
     func main() {
@@ -1794,7 +1794,7 @@ and it will be sent to the client as expected.
 * if `mvc.Result` then it executes its `Dispatch` function, so good design patters can be used to split the model's logic where needed.
 
 Examples with good patterns to follow but not intend to be used in production of course can be found at:
-https://github.com/kataras/iris/tree/master/_examples/#mvc.
+https://github.com/GoLandr/iris/tree/master/_examples/#mvc.
 
 
 Using Iris MVC for code reuse
@@ -1816,11 +1816,11 @@ If you enjoy what you just saw and want to learn more, please follow the below l
 
 Examples:
 
-    https://github.com/kataras/iris/tree/master/_examples
+    https://github.com/GoLandr/iris/tree/master/_examples
 
 Middleware:
 
-    https://github.com/kataras/iris/tree/master/middleware
+    https://github.com/GoLandr/iris/tree/master/middleware
     https://github.com/iris-contrib/middleware
 
 Home Page:

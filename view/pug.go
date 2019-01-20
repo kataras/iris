@@ -12,10 +12,10 @@ import (
 // Read more about the Jade Go Template: https://github.com/Joker/jade
 //
 // Examples:
-// https://github.com/kataras/iris/tree/master/_examples/view/template_pug_0
-// https://github.com/kataras/iris/tree/master/_examples/view/template_pug_1
-// https://github.com/kataras/iris/tree/master/_examples/view/template_pug_2
-// https://github.com/kataras/iris/tree/master/_examples/view/template_pug_3
+// https://github.com/GoLandr/iris/tree/master/_examples/view/template_pug_0
+// https://github.com/GoLandr/iris/tree/master/_examples/view/template_pug_1
+// https://github.com/GoLandr/iris/tree/master/_examples/view/template_pug_2
+// https://github.com/GoLandr/iris/tree/master/_examples/view/template_pug_3
 func Pug(directory, extension string) *HTMLEngine {
 	s := HTML(directory, extension)
 	s.middleware = jade.Parse

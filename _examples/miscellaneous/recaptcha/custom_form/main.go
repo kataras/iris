@@ -5,7 +5,7 @@ import (
 
 	"github.com/kataras/iris"
 
-	"github.com/kataras/iris/middleware/recaptcha"
+	"github.com/GoLandr/iris/middleware/recaptcha"
 )
 
 // keys should be obtained by https://www.google.com/recaptcha

@@ -10,9 +10,9 @@ import (
 	"testing"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
+	"github.com/GoLandr/iris/context"
 
-	"github.com/kataras/iris/httptest"
+	"github.com/GoLandr/iris/httptest"
 )
 
 // test registering of below handlers

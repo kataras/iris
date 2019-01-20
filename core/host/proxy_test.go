@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/host"
-	"github.com/kataras/iris/httptest"
+	"github.com/GoLandr/iris/context"
+	"github.com/GoLandr/iris/core/host"
+	"github.com/GoLandr/iris/httptest"
 )
 
 func TestProxy(t *testing.T) {

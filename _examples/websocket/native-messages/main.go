@@ -5,7 +5,7 @@ import (
 
 	"github.com/kataras/iris"
 
-	"github.com/kataras/iris/websocket"
+	"github.com/GoLandr/iris/websocket"
 )
 
 /* Native messages no need to import the iris-ws.js to the ./templates.client.html

@@ -9,7 +9,7 @@ import (
 	"reflect"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
+	"github.com/GoLandr/iris/context"
 )
 
 // Create your own custom Context, put any fields you wanna need.

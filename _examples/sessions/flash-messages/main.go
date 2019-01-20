@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/kataras/iris"
 
-	"github.com/kataras/iris/sessions"
+	"github.com/GoLandr/iris/sessions"
 )
 
 func main() {

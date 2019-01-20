@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"github.com/kataras/iris/_examples/http_responsewriter/quicktemplate/templates"
+	"github.com/GoLandr/iris/_examples/http_responsewriter/quicktemplate/templates"
 
 	"github.com/kataras/iris"
 )

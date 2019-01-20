@@ -1,9 +1,9 @@
 package router
 
 import (
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/core/errors"
-	"github.com/kataras/iris/macro"
+	"github.com/GoLandr/iris/context"
+	"github.com/GoLandr/iris/core/errors"
+	"github.com/GoLandr/iris/macro"
 )
 
 // Party is just a group joiner of routes which have the same prefix and share same middleware(s) also.
@@ -21,7 +21,7 @@ type Party interface {
 	// Macros returns the macro collection that is responsible
 	// to register custom macros with their own parameter types and their macro functions for all routes.
 	//
-	// Learn more at:  https://github.com/kataras/iris/tree/master/_examples/routing/dynamic-path
+	// Learn more at:  https://github.com/GoLandr/iris/tree/master/_examples/routing/dynamic-path
 	Macros() *macro.Macros
 
 	// Party groups routes which may have the same prefix and share same handlers,
@@ -96,7 +96,7 @@ type Party interface {
 	//
 	// Returns this Party.
 	//
-	// Example: https://github.com/kataras/iris/tree/master/_examples/mvc/middleware/without-ctx-next
+	// Example: https://github.com/GoLandr/iris/tree/master/_examples/mvc/middleware/without-ctx-next
 	SetExecutionRules(executionRules ExecutionRules) Party
 	// Handle registers a route to the server's router.
 	// if empty method is passed then handler(s) are being registered to all methods, same as .Any.
@@ -211,7 +211,7 @@ type Party interface {
 	//
 	// Returns the GET *Route.
 	//
-	// Example: https://github.com/kataras/iris/tree/master/_examples/file-server/embedding-files-into-app
+	// Example: https://github.com/GoLandr/iris/tree/master/_examples/file-server/embedding-files-into-app
 	StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) *Route
 	// StaticEmbeddedGzip registers a route which can serve embedded gziped files
 	// that are embedded using the https://github.com/kataras/bindata tool and only.
@@ -220,7 +220,7 @@ type Party interface {
 	// (browsers and most modern browsers do that, so you can use it without fair).
 	//
 	//
-	// Example: https://github.com/kataras/iris/tree/master/_examples/file-server/embedding-gziped-files-into-app
+	// Example: https://github.com/GoLandr/iris/tree/master/_examples/file-server/embedding-gziped-files-into-app
 	StaticEmbeddedGzip(requestPath string, vdir string, gzipAssetFn func(name string) ([]byte, error), gzipNamesFn func() []string) *Route
 	// Favicon serves static favicon
 	// accepts 2 parameters, second is optional
@@ -266,6 +266,6 @@ type Party interface {
 	// 		ctx.View("page1.html")
 	// 	})
 	//
-	// Examples: https://github.com/kataras/iris/tree/master/_examples/view
+	// Examples: https://github.com/GoLandr/iris/tree/master/_examples/view
 	Layout(tmplLayoutFile string) Party
 }

@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/middleware/i18n"
+	"github.com/GoLandr/iris/middleware/i18n"
 )
 
 func newApp() *iris.Application {

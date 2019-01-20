@@ -8,7 +8,7 @@ import (
 
 	"github.com/kataras/iris"
 
-	"github.com/kataras/iris/websocket"
+	"github.com/GoLandr/iris/websocket"
 )
 
 type clientPage struct {

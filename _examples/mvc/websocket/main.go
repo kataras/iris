@@ -4,8 +4,8 @@ import (
 	"sync/atomic"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/mvc"
-	"github.com/kataras/iris/websocket"
+	"github.com/GoLandr/iris/mvc"
+	"github.com/GoLandr/iris/websocket"
 )
 
 func main() {

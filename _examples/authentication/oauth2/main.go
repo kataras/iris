@@ -26,7 +26,7 @@ import (
 
 	"github.com/kataras/iris"
 
-	"github.com/kataras/iris/sessions"
+	"github.com/GoLandr/iris/sessions"
 
 	"github.com/gorilla/securecookie" // optionally, used for session's encoder/decoder
 

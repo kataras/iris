@@ -3,7 +3,7 @@ package websocket
 import (
 	"time"
 
-	"github.com/kataras/iris/context"
+	"github.com/GoLandr/iris/context"
 )
 
 // ClientHandler is the handler which serves the javascript client-side
