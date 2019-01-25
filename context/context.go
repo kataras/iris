@@ -275,7 +275,8 @@ type Context interface {
 	// that can be used to share information between handlers and middleware.
 	Values() *memstore.Store
 	// Translate is the i18n (localization) middleware's function,
-	// it calls the Get("translate") to return the translated value.
+	// it calls the Values().Get(ctx.Application().ConfigurationReadOnly().GetTranslateFunctionContextKey())
+	// to execute the translate function and return the localized text value.
 	//
 	// Example: https://github.com/kataras/iris/tree/master/_examples/miscellaneous/i18n
 	Translate(format string, args ...interface{}) string
@@ -1180,6 +1181,9 @@ func (ctx *context) Proceed(h Handler) bool {
 
 // HandlerName returns the current handler's name, helpful for debugging.
 func (ctx *context) HandlerName() string {
+	if name := ctx.currentRouteName; name != "" {
+		return name
+	}
 	return HandlerName(ctx.handlers[ctx.currentHandlerIndex])
 }
 
@@ -1380,7 +1384,8 @@ func (ctx *context) Values() *memstore.Store {
 }
 
 // Translate is the i18n (localization) middleware's function,
-// it calls the Get("translate") to return the translated value.
+// it calls the Values().Get(ctx.Application().ConfigurationReadOnly().GetTranslateFunctionContextKey())
+// to execute the translate function and return the localized text value.
 //
 // Example: https://github.com/kataras/iris/tree/master/_examples/miscellaneous/i18n
 func (ctx *context) Translate(format string, args ...interface{}) string {
