@@ -130,7 +130,7 @@ func NewDecoder(opts *DecoderOptions) *Decoder {
 func (dec *Decoder) Decode(vs url.Values, dst interface{}) error {
 	main := reflect.ValueOf(dst)
 	if main.Kind() != reflect.Ptr {
-		return newError(fmt.Errorf("formam: the value passed for decode is not a pointer but a %v", main.Kind()))
+		return newError(fmt.Errorf("form: the value passed for decode is not a pointer but a %v", main.Kind()))
 	}
 	dec.main = main.Elem()
 	dec.formValues = vs
@@ -141,7 +141,7 @@ func (dec *Decoder) Decode(vs url.Values, dst interface{}) error {
 func Decode(vs url.Values, dst interface{}) error {
 	main := reflect.ValueOf(dst)
 	if main.Kind() != reflect.Ptr {
-		return newError(fmt.Errorf("formam: the value passed for decode is not a pointer but a %v", main.Kind()))
+		return newError(fmt.Errorf("form: the value passed for decode is not a pointer but a %v", main.Kind()))
 	}
 	dec := &Decoder{
 		main:       main.Elem(),
@@ -303,13 +303,13 @@ func (dec *Decoder) walk() error {
 		case reflect.Array:
 			index, err := strconv.Atoi(dec.bracket)
 			if err != nil {
-				return newError(fmt.Errorf("formam: the index of array is not a number in the field \"%v\" of path \"%v\"", dec.field, dec.path))
+				return newError(fmt.Errorf("form: the index of array is not a number in the field \"%v\" of path \"%v\"", dec.field, dec.path))
 			}
 			dec.curr = dec.curr.Index(index)
 		case reflect.Slice:
 			index, err := strconv.Atoi(dec.bracket)
 			if err != nil {
-				return newError(fmt.Errorf("formam: the index of slice is not a number in the field \"%v\" of path \"%v\"", dec.field, dec.path))
+				return newError(fmt.Errorf("form: the index of slice is not a number in the field \"%v\" of path \"%v\"", dec.field, dec.path))
 			}
 			if dec.curr.Len() <= index {
 				dec.expandSlice(index + 1)
@@ -318,7 +318,7 @@ func (dec *Decoder) walk() error {
 		case reflect.Map:
 			dec.walkInMap(dec.bracket)
 		default:
-			return newError(fmt.Errorf("formam: the field \"%v\" in path \"%v\" has a index for array but it is a %v", dec.field, dec.path, dec.curr.Kind()))
+			return newError(fmt.Errorf("form: the field \"%v\" in path \"%v\" has a index for array but it is a %v", dec.field, dec.path, dec.curr.Kind()))
 		}
 	}
 	dec.field = ""
@@ -388,7 +388,7 @@ func (dec *Decoder) decode() error {
 			// has index, so to decode value by index indicated
 			index, err := strconv.Atoi(dec.bracket)
 			if err != nil {
-				return newError(fmt.Errorf("formam: the index of array is not a number in the field \"%v\" of path \"%v\"", dec.field, dec.path))
+				return newError(fmt.Errorf("form: the index of array is not a number in the field \"%v\" of path \"%v\"", dec.field, dec.path))
 			}
 			dec.curr = dec.curr.Index(index)
 			return dec.decode()
@@ -409,7 +409,7 @@ func (dec *Decoder) decode() error {
 			// has index, so to decode value by index indicated
 			index, err := strconv.Atoi(dec.bracket)
 			if err != nil {
-				return newError(fmt.Errorf("formam: the index of slice is not a number in the field \"%v\" of path \"%v\"", dec.field, dec.path))
+				return newError(fmt.Errorf("form: the index of slice is not a number in the field \"%v\" of path \"%v\"", dec.field, dec.path))
 			}
 			if dec.curr.Len() <= index {
 				dec.expandSlice(index + 1)
@@ -421,19 +421,19 @@ func (dec *Decoder) decode() error {
 		dec.curr.SetString(dec.value)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		if num, err := strconv.ParseInt(dec.value, 10, 64); err != nil {
-			return newError(fmt.Errorf("formam: the value of field \"%v\" in path \"%v\" should be a valid signed integer number", dec.field, dec.path))
+			return newError(fmt.Errorf("form: the value of field \"%v\" in path \"%v\" should be a valid signed integer number", dec.field, dec.path))
 		} else {
 			dec.curr.SetInt(num)
 		}
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
 		if num, err := strconv.ParseUint(dec.value, 10, 64); err != nil {
-			return newError(fmt.Errorf("formam: the value of field \"%v\" in path \"%v\" should be a valid unsigned integer number", dec.field, dec.path))
+			return newError(fmt.Errorf("form: the value of field \"%v\" in path \"%v\" should be a valid unsigned integer number", dec.field, dec.path))
 		} else {
 			dec.curr.SetUint(num)
 		}
 	case reflect.Float32, reflect.Float64:
 		if num, err := strconv.ParseFloat(dec.value, dec.curr.Type().Bits()); err != nil {
-			return newError(fmt.Errorf("formam: the value of field \"%v\" in path \"%v\" should be a valid float number", dec.field, dec.path))
+			return newError(fmt.Errorf("form: the value of field \"%v\" in path \"%v\" should be a valid float number", dec.field, dec.path))
 		} else {
 			dec.curr.SetFloat(num)
 		}
@@ -444,7 +444,7 @@ func (dec *Decoder) decode() error {
 		case "false", "off", "0":
 			dec.curr.SetBool(false)
 		default:
-			return newError(fmt.Errorf("formam: the value of field \"%v\" in path \"%v\" is not a valid boolean", dec.field, dec.path))
+			return newError(fmt.Errorf("form: the value of field \"%v\" in path \"%v\" is not a valid boolean", dec.field, dec.path))
 		}
 	case reflect.Interface:
 		dec.curr.Set(reflect.ValueOf(dec.value))
@@ -464,13 +464,13 @@ func (dec *Decoder) decode() error {
 				}
 			}
 			if err != nil {
-				return newError(fmt.Errorf("formam: the value of field \"%v\" in path \"%v\" is not a valid datetime", dec.field, dec.path))
+				return newError(fmt.Errorf("form: the value of field \"%v\" in path \"%v\" is not a valid datetime", dec.field, dec.path))
 			}
 			dec.curr.Set(reflect.ValueOf(t))
 		case url.URL:
 			u, err := url.Parse(dec.value)
 			if err != nil {
-				return newError(fmt.Errorf("formam: the value of field \"%v\" in path \"%v\" is not a valid url", dec.field, dec.path))
+				return newError(fmt.Errorf("form: the value of field \"%v\" in path \"%v\" is not a valid url", dec.field, dec.path))
 			}
 			dec.curr.Set(reflect.ValueOf(*u))
 		default:
@@ -485,17 +485,42 @@ func (dec *Decoder) decode() error {
 					return nil
 				}
 			*/
-			return newError(fmt.Errorf("formam: not supported type for field \"%v\" in path \"%v\"", dec.field, dec.path))
+			return newError(fmt.Errorf("form: not supported type for field \"%v\" in path \"%v\"", dec.field, dec.path))
 		}
 	default:
-		return newError(fmt.Errorf("formam: not supported type for field \"%v\" in path \"%v\"", dec.field, dec.path))
+		return newError(fmt.Errorf("form: not supported type for field \"%v\" in path \"%v\"", dec.field, dec.path))
 	}
 
 	return nil
 }
 
+// IsErrPath reports whether the incoming error is type of `ErrPath`, which can be ignored
+// when server allows unknown post values to be sent by the client.
+func IsErrPath(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	_, ok := err.(ErrPath)
+	return ok
+}
+
+// ErrPath describes an error that can be ignored if server allows unknown post values to be sent on server.
+type ErrPath struct {
+	field string
+}
+
+func (err ErrPath) Error() string {
+	return fmt.Sprintf("form: not found the field \"%s\"", err.field)
+}
+
+// Field returns the unknown posted request field.
+func (err ErrPath) Field() string {
+	return err.field
+}
+
 // findField finds a field by its name, if it is not found,
-// then retry the search examining the tag "formam" of every field of struct
+// then retry the search examining the tag "form" of every field of struct
 func (dec *Decoder) findStructField() error {
 	var anon reflect.Value
 
@@ -520,7 +545,7 @@ func (dec *Decoder) findStructField() error {
 			anon = dec.curr
 			dec.curr = tmp
 		} else if dec.field == field.Tag.Get(dec.opts.TagName) {
-			// is not found yet, then retry by its tag name "formam"
+			// is not found yet, then retry by its tag name "form"
 			dec.curr = dec.curr.Field(i)
 			return nil
 		}
@@ -530,7 +555,7 @@ func (dec *Decoder) findStructField() error {
 		return nil
 	}
 
-	return newError(fmt.Errorf("formam: not found the field \"%v\" in the path \"%v\"", dec.field, dec.path))
+	return ErrPath{field: dec.field}
 }
 
 // expandSlice expands the length and capacity of the current slice

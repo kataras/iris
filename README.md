@@ -112,15 +112,16 @@ $ go run example.go
 -->
 
 1. [snowlyg/IrisApiProject: Iris + gorm + jwt + sqlite3](https://github.com/snowlyg/IrisApiProject) **NEW-Chinese**
-2. [jebzmos4/Iris-golang: A basic CRUD API in golang with Iris](https://github.com/jebzmos4/Iris-golang)
-3. [gauravtiwari/go_iris_app: A basic web app built in Iris for Go](https://github.com/gauravtiwari/go_iris_app)
-4. [A mini social-network created with the awesome Iris💖💖](https://github.com/iris-contrib/Iris-Mini-Social-Network)
-5. [Iris isomorphic react/hot reloadable/redux/css-modules starter kit](https://github.com/iris-contrib/iris-starter-kit)
-6. [ionutvilie/react-ts: Demo project with react using typescript and Iris](https://github.com/ionutvilie/react-ts)
-7. [Self-hosted Localization Management Platform built with Iris and Angular](https://github.com/iris-contrib/parrot)
-8. [Iris + Docker and Kubernetes](https://github.com/iris-contrib/cloud-native-go)
-9. [nanobox.io: Quickstart for Iris with Nanobox](https://guides.nanobox.io/golang/iris/from-scratch)
-10. [hasura.io: A Hasura starter project with a ready to deploy Golang hello-world web app with IRIS](https://hasura.io/hub/project/hasura/hello-golang-iris)
+2. [yz124/superstar: Iris + xorm to implement the star library](https://github.com/yz124/superstar) **NEW-Chinese**
+3. [jebzmos4/Iris-golang: A basic CRUD API in golang with Iris](https://github.com/jebzmos4/Iris-golang)
+4. [gauravtiwari/go_iris_app: A basic web app built in Iris for Go](https://github.com/gauravtiwari/go_iris_app)
+5. [A mini social-network created with the awesome Iris💖💖](https://github.com/iris-contrib/Iris-Mini-Social-Network)
+6. [Iris isomorphic react/hot reloadable/redux/css-modules starter kit](https://github.com/iris-contrib/iris-starter-kit)
+7. [ionutvilie/react-ts: Demo project with react using typescript and Iris](https://github.com/ionutvilie/react-ts)
+8. [Self-hosted Localization Management Platform built with Iris and Angular](https://github.com/iris-contrib/parrot)
+9. [Iris + Docker and Kubernetes](https://github.com/iris-contrib/cloud-native-go)
+10. [nanobox.io: Quickstart for Iris with Nanobox](https://guides.nanobox.io/golang/iris/from-scratch)
+11. [hasura.io: A Hasura starter project with a ready to deploy Golang hello-world web app with IRIS](https://hasura.io/hub/project/hasura/hello-golang-iris)
 
 > Did you build something similar? Let us [know](https://github.com/kataras/iris/pulls)!
 
@@ -246,7 +247,7 @@ app.Macros().Get("string").RegisterFunc("has", func(validNames []string) func(st
     }
 })
 
-app.Get("/static_validation/{name:string has([kataras,gerasimos,maropoulos]}", func(ctx iris.Context) {
+app.Get("/static_validation/{name:string has([kataras,gerasimos,maropoulos])}", func(ctx iris.Context) {
     name := ctx.Params().Get("name")
     ctx.Writef(`Hello %s | the name should be "kataras" or "gerasimos" or "maropoulos"
     otherwise this handler will not be executed`, name)
@@ -1019,7 +1020,7 @@ Iris, unlike others, is 100% compatible with the standards and that's why the ma
 
 ## Support
 
-- [HISTORY](HISTORY.md#su-18-november-2018--v1110) file is your best friend, it contains information about the latest features and changes
+- [HISTORY](HISTORY.md#fr-11-january-2019--v1111) file is your best friend, it contains information about the latest features and changes
 - Did you happen to find a bug? Post it at [github issues](https://github.com/kataras/iris/issues)
 - Do you have any questions or need to speak with someone experienced to solve a problem at real-time? Join us to the [community chat](https://chat.iris-go.com)
 - Complete our form-based user experience report by clicking [here](https://docs.google.com/forms/d/e/1FAIpQLSdCxZXPANg_xHWil4kVAdhmh7EBBHQZ_4_xSZVDL-oCC_z5pA/viewform?usp=sf_link)

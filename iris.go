@@ -33,7 +33,7 @@ import (
 
 var (
 	// Version is the current version number of the Iris Web Framework.
-	Version = "11.1.0"
+	Version = "11.1.1"
 )
 
 // HTTP status codes as registered with IANA.
@@ -463,6 +463,12 @@ var (
 	//
 	// A shortcut for the `context#CookieDecode`.
 	CookieDecode = context.CookieDecode
+	// IsErrPath can be used at `context#ReadForm`.
+	// It reports whether the incoming error is type of `formbinder.ErrPath`,
+	// which can be ignored when server allows unknown post values to be sent by the client.
+	//
+	// A shortcut for the `context#IsErrPath`.
+	IsErrPath = context.IsErrPath
 )
 
 // SPA  accepts an "assetHandler" which can be the result of an

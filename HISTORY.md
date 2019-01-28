@@ -17,6 +17,38 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get -u github.com/kataras/iris` or let the automatic updater do that for you.
 
+# Fr, 11 January 2019 | v11.1.1
+
+Happy new year! This is a minor release, contains mostly bug fixes.
+
+Strange that we don't have major features in this release, right? Don't worry, I am not out of ideas (at least not yet!).
+I have some features in-mind but lately I do not have the time to humanize those ideas for you due to my new position in [Netdata Inc.](https://github.com/netdata/netdata), so be patient and [stay-tuned](https://github.com/kataras/iris/stargazers). Read the current changelog below:
+
+- session/redis: fix unused service config var. IdleTimeout witch was replaced by default values. [#1140](https://github.com/kataras/iris/pull/1140) ([@d7561985](https://github.com/d7561985))
+
+- fix [#1141](https://github.com/kataras/iris/issues/1141) and [#1142](https://github.com/kataras/iris/issues/1142). [2bd7a8e88777766d1f4cac7562feec304112d2b1](https://github.com/kataras/iris/commit/2bd7a8e88777766d1f4cac7562feec304112d2b1) (@kataras)
+
+- fix cache corruption due to recorder reuse. [#1146](https://github.com/kataras/iris/pull/1146) ([@Slamper](https://github.com/Slamper))
+
+- add `StatusTooEarly`, compatible with: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/425#Browser_compatibility. [31b2913447aa9e41e16a3eb33eb0019427e15cea](https://github.com/kataras/iris/commit/31b2913447aa9e41e16a3eb33eb0019427e15cea) (@kataras)
+
+- fix [#1164](https://github.com/kataras/iris/issues/1164). [701e8e46c20395f87fa34bf9fabd145074c7b78c](https://github.com/kataras/iris/commit/701e8e46c20395f87fa34bf9fabd145074c7b78c) (@kataras)
+
+- `context#ReadForm` can skip unkown fields by `IsErrPath(err)`, fixes: [#1157](https://github.com/kataras/iris/issues/1157). [1607bb5113568af6a34142f23bfa44903205b314](https://github.com/kataras/iris/commit/1607bb5113568af6a34142f23bfa44903205b314) (@kataras)
+
+
+Doc updates:
+
+- fix grammar and misspell. [5069e9afd8700d20dfd04cdc008efd671b5d0b40](https://github.com/kataras/iris/commit/5069e9afd8700d20dfd04cdc008efd671b5d0b40) (@kataras)
+
+- fix link for httpexpect in README. [#1148](https://github.com/kataras/iris/pull/1148) ([@drenel18](https://github.com/drenel18))
+
+- translate _examples/README.md into Chinese. [#1156](https://github.com/kataras/iris/pull/1156) ([@fduxiao](https://github.com/fduxiao))
+
+- add https://github.com/snowlyg/IrisApiProject to starter kits (Chinese). [ea12533871253afc34e40e36ba658b51955ea82d](https://github.com/kataras/iris/commit/ea12533871253afc34e40e36ba658b51955ea82d)
+
+- add https://github.com/yz124/superstar to starter kits (Chinese). [0e734ff8445f07482c28881347c1e564dc5aab9c](https://github.com/kataras/iris/commit/0e734ff8445f07482c28881347c1e564dc5aab9c)
+
 # Su, 18 November 2018 | v11.1.0
 
 PR: https://github.com/kataras/iris/pull/1130
