@@ -114,6 +114,18 @@ type Context interface {
 
 	// Request returns the original *http.Request, as expected.
 	Request() *http.Request
+	// ResetRequest sets the Context's Request,
+	// It is useful to store the new request created by a std *http.Request#WithContext() into Iris' Context.
+	// Use `ResetRequest` when for some reason you want to make a full
+	// override of the *http.Request.
+	// Note that: when you just want to change one of each fields you can use the Request() which returns a pointer to Request,
+	// so the changes will have affect without a full override.
+	// Usage: you use a native http handler which uses the standard "context" package
+	// to get values instead of the Iris' Context#Values():
+	// r := c.Request()
+	// stdCtx := context.WithValue(r.Context(), key, val)
+	// ctx.ResetRequest(r.WithContext(stdCtx)).
+	ResetRequest(r *http.Request)
 
 	// SetCurrentRouteName sets the route's name internally,
 	// in order to be able to find the correct current "read-only" Route when
@@ -1066,6 +1078,21 @@ func (ctx *context) ResetResponseWriter(newResponseWriter ResponseWriter) {
 // Request returns the original *http.Request, as expected.
 func (ctx *context) Request() *http.Request {
 	return ctx.request
+}
+
+// ResetRequest sets the Context's Request,
+// It is useful to store the new request created by a std *http.Request#WithContext() into Iris' Context.
+// Use `ResetRequest` when for some reason you want to make a full
+// override of the *http.Request.
+// Note that: when you just want to change one of each fields you can use the Request() which returns a pointer to Request,
+// so the changes will have affect without a full override.
+// Usage: you use a native http handler which uses the standard "context" package
+// to get values instead of the Iris' Context#Values():
+// r := c.Request()
+// stdCtx := context.WithValue(r.Context(), key, val)
+// ctx.ResetRequest(r.WithContext(stdCtx)).
+func (ctx *context) ResetRequest(r *http.Request) {
+	ctx.request = r
 }
 
 // SetCurrentRouteName sets the route's name internally,
