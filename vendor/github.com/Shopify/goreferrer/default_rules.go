@@ -15,22 +15,22 @@ func init() {
 	DefaultRules = RuleSet{
 		DomainRules: domainRules,
 		UaRules: map[string]UaRule{
-			"Twitter": UaRule{
+			"Twitter": {
 				Url:    "twitter://twitter.com",
 				Domain: "twitter",
 				Tld:    "com",
 			},
-			"Pinterest": UaRule{
+			"Pinterest": {
 				Url:    "pinterest://pinterest.com",
 				Domain: "pinterest",
 				Tld:    "com",
 			},
-			"Facebook": UaRule{
+			"Facebook": {
 				Url:    "facebook://facebook.com",
 				Domain: "facebook",
 				Tld:    "com",
 			},
-			"FBAV": UaRule{
+			"FBAV": {
 				Url:    "facebook://facebook.com",
 				Domain: "facebook",
 				Tld:    "com",

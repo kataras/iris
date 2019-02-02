@@ -375,7 +375,7 @@ var (
 		{'z', 'h', '-', 'm', 'i', 'n'}:                          -6, // zh-min
 
 		// CLDR-specific tag.
-		{'r', 'o', 'o', 't'}:                                    0,  // root
+		{'r', 'o', 'o', 't'}: 0, // root
 		{'e', 'n', '-', 'u', 's', '-', 'p', 'o', 's', 'i', 'x'}: -7, // en_US_POSIX"
 	}
 
