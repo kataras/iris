@@ -122,7 +122,7 @@ type Context interface {
 	// so the changes will have affect without a full override.
 	// Usage: you use a native http handler which uses the standard "context" package
 	// to get values instead of the Iris' Context#Values():
-	// r := c.Request()
+	// r := ctx.Request()
 	// stdCtx := context.WithValue(r.Context(), key, val)
 	// ctx.ResetRequest(r.WithContext(stdCtx)).
 	ResetRequest(r *http.Request)
@@ -1088,7 +1088,7 @@ func (ctx *context) Request() *http.Request {
 // so the changes will have affect without a full override.
 // Usage: you use a native http handler which uses the standard "context" package
 // to get values instead of the Iris' Context#Values():
-// r := c.Request()
+// r := ctx.Request()
 // stdCtx := context.WithValue(r.Context(), key, val)
 // ctx.ResetRequest(r.WithContext(stdCtx)).
 func (ctx *context) ResetRequest(r *http.Request) {
