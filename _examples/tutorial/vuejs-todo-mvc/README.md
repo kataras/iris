@@ -1,5 +1,7 @@
 # A Todo MVC Application using Iris and Vue.js
 
+## Hackernoon Article: https://twitter.com/vuejsdevelopers/status/954805901789224960
+
 Vue.js is a front-end framework for building web applications using javascript. It has a blazing fast Virtual DOM renderer.
 
 Iris is a back-end framework for building web applications using The Go Programming Language (disclaimer: author here). It's one of the fastest and featured web frameworks out there. We wanna use this to serve our "todo service".
