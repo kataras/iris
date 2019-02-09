@@ -478,6 +478,9 @@ iris websocket library lives on its own [package](https://github.com/kataras/iri
 The package is designed to work with raw websockets although its API is similar to the famous [socket.io](https://socket.io). I have read an article recently and I felt very contented about my decision to design a **fast** websocket-**only** package for Iris and not a backwards socket.io-like package. You can read that article by following this link: https://medium.com/@ivanderbyl/why-you-don-t-need-socket-io-6848f1c871cd.
 
 - [Chat](websocket/chat/main.go)
+- [Chat with Iris Go Client Side](websocket/go-client) **NEW**
+    * [Server](websocket/go-client/server/main.go)
+    * [Client](websocket/go-client/client/main.go)
 - [Native Messages](websocket/native-messages/main.go)
 - [Connection List](websocket/connectionlist/main.go)
 - [TLS Enabled](websocket/secure/main.go)

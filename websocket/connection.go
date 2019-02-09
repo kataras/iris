@@ -400,7 +400,7 @@ func (c *connection) startReader() {
 
 		_, data, err := conn.ReadMessage()
 		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				c.FireOnError(err)
 			}
 			break
