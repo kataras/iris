@@ -1,233 +1,214 @@
 package websocket
 
 import (
-	"time"
+	"bytes"
+	"strconv"
+	"strings"
+	"sync"
+	"sync/atomic"
 
-	"github.com/kataras/iris/context"
+	"github.com/gorilla/websocket"
 )
 
-// ClientHandler is the handler which serves the javascript client-side
-// library. It uses a small cache based on the iris/context.WriteWithExpiration.
-func ClientHandler() context.Handler {
-	modNow := time.Now()
-	return func(ctx context.Context) {
-		ctx.ContentType("application/javascript")
-		if _, err := ctx.WriteWithExpiration(ClientSource, modNow); err != nil {
-			ctx.StatusCode(500)
-			ctx.StopExecution()
-			// ctx.Application().Logger().Infof("error while serving []byte via StaticContent: %s", err.Error())
+// Dial opens a new client connection to a WebSocket.
+func Dial(url, evtMessagePrefix string) (ws *ClientConn, err error) {
+	if !strings.HasPrefix(url, "ws://") {
+		url = "ws://" + url
+	}
+
+	conn, _, err := websocket.DefaultDialer.Dial(url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewClientConn(conn, evtMessagePrefix), nil
+}
+
+type ClientConn struct {
+	underline   UnderlineConnection // TODO make it using gorilla's one, because the 'startReader' will not know when to stop otherwise, we have a fixed length currently...
+	messageType int
+	serializer  *messageSerializer
+
+	onErrorListeners         []ErrorFunc
+	onDisconnectListeners    []DisconnectFunc
+	onNativeMessageListeners []NativeMessageFunc
+	onEventListeners         map[string][]MessageFunc
+
+	writerMu sync.Mutex
+
+	disconnected uint32
+}
+
+func NewClientConn(conn UnderlineConnection, evtMessagePrefix string) *ClientConn {
+	if evtMessagePrefix == "" {
+		evtMessagePrefix = DefaultEvtMessageKey
+	}
+
+	c := &ClientConn{
+		underline:  conn,
+		serializer: newMessageSerializer([]byte(evtMessagePrefix)),
+
+		onErrorListeners:         make([]ErrorFunc, 0),
+		onDisconnectListeners:    make([]DisconnectFunc, 0),
+		onNativeMessageListeners: make([]NativeMessageFunc, 0),
+		onEventListeners:         make(map[string][]MessageFunc, 0),
+	}
+
+	c.SetBinaryMessages(false)
+
+	go c.startReader()
+
+	return c
+}
+
+func (c *ClientConn) SetBinaryMessages(binaryMessages bool) {
+	if binaryMessages {
+		c.messageType = websocket.BinaryMessage
+	} else {
+		c.messageType = websocket.TextMessage
+	}
+}
+
+func (c *ClientConn) startReader() {
+	defer c.Disconnect()
+
+	for {
+		_, data, err := c.underline.ReadMessage()
+		if err != nil {
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				c.FireOnError(err)
+			}
+
+			break
+		} else {
+			c.messageReceived(data)
 		}
 	}
 }
 
-// ClientSource the client-side javascript raw source code.
-var ClientSource = []byte(`var websocketStringMessageType = 0;
-var websocketIntMessageType = 1;
-var websocketBoolMessageType = 2;
-var websocketJSONMessageType = 4;
-var websocketMessagePrefix = "` + DefaultEvtMessageKey + `";
-var websocketMessageSeparator = ";";
-var websocketMessagePrefixLen = websocketMessagePrefix.length;
-var websocketMessageSeparatorLen = websocketMessageSeparator.length;
-var websocketMessagePrefixAndSepIdx = websocketMessagePrefixLen + websocketMessageSeparatorLen - 1;
-var websocketMessagePrefixIdx = websocketMessagePrefixLen - 1;
-var websocketMessageSeparatorIdx = websocketMessageSeparatorLen - 1;
-var Ws = (function () {
-    //
-    function Ws(endpoint, protocols) {
-        var _this = this;
-        // events listeners
-        this.connectListeners = [];
-        this.disconnectListeners = [];
-        this.nativeMessageListeners = [];
-        this.messageListeners = {};
-        if (!window["WebSocket"]) {
-            return;
-        }
-        if (endpoint.indexOf("ws") == -1) {
-            endpoint = "ws://" + endpoint;
-        }
-        if (protocols != null && protocols.length > 0) {
-            this.conn = new WebSocket(endpoint, protocols);
-        }
-        else {
-            this.conn = new WebSocket(endpoint);
-        }
-        this.conn.onopen = (function (evt) {
-            _this.fireConnect();
-            _this.isReady = true;
-            return null;
-        });
-        this.conn.onclose = (function (evt) {
-            _this.fireDisconnect();
-            return null;
-        });
-        this.conn.onmessage = (function (evt) {
-            _this.messageReceivedFromConn(evt);
-        });
-    }
-    //utils
-    Ws.prototype.isNumber = function (obj) {
-        return !isNaN(obj - 0) && obj !== null && obj !== "" && obj !== false;
-    };
-    Ws.prototype.isString = function (obj) {
-        return Object.prototype.toString.call(obj) == "[object String]";
-    };
-    Ws.prototype.isBoolean = function (obj) {
-        return typeof obj === 'boolean' ||
-            (typeof obj === 'object' && typeof obj.valueOf() === 'boolean');
-    };
-    Ws.prototype.isJSON = function (obj) {
-        return typeof obj === 'object';
-    };
-    //
-    // messages
-    Ws.prototype._msg = function (event, websocketMessageType, dataMessage) {
-        return websocketMessagePrefix + event + websocketMessageSeparator + String(websocketMessageType) + websocketMessageSeparator + dataMessage;
-    };
-    Ws.prototype.encodeMessage = function (event, data) {
-        var m = "";
-        var t = 0;
-        if (this.isNumber(data)) {
-            t = websocketIntMessageType;
-            m = data.toString();
-        }
-        else if (this.isBoolean(data)) {
-            t = websocketBoolMessageType;
-            m = data.toString();
-        }
-        else if (this.isString(data)) {
-            t = websocketStringMessageType;
-            m = data.toString();
-        }
-        else if (this.isJSON(data)) {
-            //propably json-object
-            t = websocketJSONMessageType;
-            m = JSON.stringify(data);
-        }
-        else if (data !== null && typeof(data) !== "undefined" ) {
-            // if it has a second parameter but it's not a type we know, then fire this:
-            console.log("unsupported type of input argument passed, try to not include this argument to the 'Emit'");
-        }
-        return this._msg(event, t, m);
-    };
-    Ws.prototype.decodeMessage = function (event, websocketMessage) {
-        //iris-websocket-message;user;4;themarshaledstringfromajsonstruct
-        var skipLen = websocketMessagePrefixLen + websocketMessageSeparatorLen + event.length + 2;
-        if (websocketMessage.length < skipLen + 1) {
-            return null;
-        }
-        var websocketMessageType = parseInt(websocketMessage.charAt(skipLen - 2));
-        var theMessage = websocketMessage.substring(skipLen, websocketMessage.length);
-        if (websocketMessageType == websocketIntMessageType) {
-            return parseInt(theMessage);
-        }
-        else if (websocketMessageType == websocketBoolMessageType) {
-            return Boolean(theMessage);
-        }
-        else if (websocketMessageType == websocketStringMessageType) {
-            return theMessage;
-        }
-        else if (websocketMessageType == websocketJSONMessageType) {
-            return JSON.parse(theMessage);
-        }
-        else {
-            return null; // invalid
-        }
-    };
-    Ws.prototype.getWebsocketCustomEvent = function (websocketMessage) {
-        if (websocketMessage.length < websocketMessagePrefixAndSepIdx) {
-            return "";
-        }
-        var s = websocketMessage.substring(websocketMessagePrefixAndSepIdx, websocketMessage.length);
-        var evt = s.substring(0, s.indexOf(websocketMessageSeparator));
-        return evt;
-    };
-    Ws.prototype.getCustomMessage = function (event, websocketMessage) {
-        var eventIdx = websocketMessage.indexOf(event + websocketMessageSeparator);
-        var s = websocketMessage.substring(eventIdx + event.length + websocketMessageSeparator.length + 2, websocketMessage.length);
-        return s;
-    };
-    //
-    // Ws Events
-    // messageReceivedFromConn this is the func which decides
-    // if it's a native websocket message or a custom qws message
-    // if native message then calls the fireNativeMessage
-    // else calls the fireMessage
-    //
-    // remember iris gives you the freedom of native websocket messages if you don't want to use this client side at all.
-    Ws.prototype.messageReceivedFromConn = function (evt) {
-        //check if qws message
-        var message = evt.data;
-        if (message.indexOf(websocketMessagePrefix) != -1) {
-            var event_1 = this.getWebsocketCustomEvent(message);
-            if (event_1 != "") {
-                // it's a custom message
-                this.fireMessage(event_1, this.getCustomMessage(event_1, message));
-                return;
-            }
-        }
-        // it's a native websocket message
-        this.fireNativeMessage(message);
-    };
-    Ws.prototype.OnConnect = function (fn) {
-        if (this.isReady) {
-            fn();
-        }
-        this.connectListeners.push(fn);
-    };
-    Ws.prototype.fireConnect = function () {
-        for (var i = 0; i < this.connectListeners.length; i++) {
-            this.connectListeners[i]();
-        }
-    };
-    Ws.prototype.OnDisconnect = function (fn) {
-        this.disconnectListeners.push(fn);
-    };
-    Ws.prototype.fireDisconnect = function () {
-        for (var i = 0; i < this.disconnectListeners.length; i++) {
-            this.disconnectListeners[i]();
-        }
-    };
-    Ws.prototype.OnMessage = function (cb) {
-        this.nativeMessageListeners.push(cb);
-    };
-    Ws.prototype.fireNativeMessage = function (websocketMessage) {
-        for (var i = 0; i < this.nativeMessageListeners.length; i++) {
-            this.nativeMessageListeners[i](websocketMessage);
-        }
-    };
-    Ws.prototype.On = function (event, cb) {
-        if (this.messageListeners[event] == null || this.messageListeners[event] == undefined) {
-            this.messageListeners[event] = [];
-        }
-        this.messageListeners[event].push(cb);
-    };
-    Ws.prototype.fireMessage = function (event, message) {
-        for (var key in this.messageListeners) {
-            if (this.messageListeners.hasOwnProperty(key)) {
-                if (key == event) {
-                    for (var i = 0; i < this.messageListeners[key].length; i++) {
-                        this.messageListeners[key][i](message);
-                    }
-                }
-            }
-        }
-    };
-    //
-    // Ws Actions
-    Ws.prototype.Disconnect = function () {
-        this.conn.close();
-    };
-    // EmitMessage sends a native websocket message
-    Ws.prototype.EmitMessage = function (websocketMessage) {
-        this.conn.send(websocketMessage);
-    };
-    // Emit sends an iris-custom websocket message
-    Ws.prototype.Emit = function (event, data) {
-        var messageStr = this.encodeMessage(event, data);
-        this.EmitMessage(messageStr);
-    };
-    return Ws;
-}());
-`)
+func (c *ClientConn) messageReceived(data []byte) error {
+	if bytes.HasPrefix(data, c.serializer.prefix) {
+		// is a custom iris message.
+		receivedEvt := c.serializer.getWebsocketCustomEvent(data)
+		listeners, ok := c.onEventListeners[string(receivedEvt)]
+		if !ok || len(listeners) == 0 {
+			return nil // if not listeners for this event exit from here
+		}
+
+		customMessage, err := c.serializer.deserialize(receivedEvt, data)
+		if customMessage == nil || err != nil {
+			return err
+		}
+
+		for i := range listeners {
+			if fn, ok := listeners[i].(func()); ok { // its a simple func(){} callback
+				fn()
+			} else if fnString, ok := listeners[i].(func(string)); ok {
+
+				if msgString, is := customMessage.(string); is {
+					fnString(msgString)
+				} else if msgInt, is := customMessage.(int); is {
+					// here if server side waiting for string but client side sent an int, just convert this int to a string
+					fnString(strconv.Itoa(msgInt))
+				}
+
+			} else if fnInt, ok := listeners[i].(func(int)); ok {
+				fnInt(customMessage.(int))
+			} else if fnBool, ok := listeners[i].(func(bool)); ok {
+				fnBool(customMessage.(bool))
+			} else if fnBytes, ok := listeners[i].(func([]byte)); ok {
+				fnBytes(customMessage.([]byte))
+			} else {
+				listeners[i].(func(interface{}))(customMessage)
+			}
+
+		}
+	} else {
+		// it's native websocket message
+		for i := range c.onNativeMessageListeners {
+			c.onNativeMessageListeners[i](data)
+		}
+	}
+
+	return nil
+}
+
+func (c *ClientConn) OnMessage(cb NativeMessageFunc) {
+	c.onNativeMessageListeners = append(c.onNativeMessageListeners, cb)
+}
+
+func (c *ClientConn) On(event string, cb MessageFunc) {
+	if c.onEventListeners[event] == nil {
+		c.onEventListeners[event] = make([]MessageFunc, 0)
+	}
+
+	c.onEventListeners[event] = append(c.onEventListeners[event], cb)
+}
+
+func (c *ClientConn) OnError(cb ErrorFunc) {
+	c.onErrorListeners = append(c.onErrorListeners, cb)
+}
+
+func (c *ClientConn) FireOnError(err error) {
+	for _, cb := range c.onErrorListeners {
+		cb(err)
+	}
+}
+
+func (c *ClientConn) OnDisconnect(cb DisconnectFunc) {
+	c.onDisconnectListeners = append(c.onDisconnectListeners, cb)
+}
+
+func (c *ClientConn) Disconnect() error {
+	if c == nil || !atomic.CompareAndSwapUint32(&c.disconnected, 0, 1) {
+		return ErrAlreadyDisconnected
+	}
+
+	err := c.underline.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+	if err != nil {
+		err = c.underline.Close()
+	}
+
+	if err == nil {
+		for i := range c.onDisconnectListeners {
+			c.onDisconnectListeners[i]()
+		}
+	}
+
+	return err
+}
+
+func (c *ClientConn) EmitMessage(nativeMessage []byte) error {
+	return c.writeDefault(nativeMessage)
+}
+
+func (c *ClientConn) Emit(event string, data interface{}) error {
+	b, err := c.serializer.serialize(event, data)
+	if err != nil {
+		return err
+	}
+
+	return c.EmitMessage(b)
+}
+
+// Write writes a raw websocket message with a specific type to the client
+// used by ping messages and any CloseMessage types.
+func (c *ClientConn) Write(websocketMessageType int, data []byte) error {
+	// for any-case the app tries to write from different goroutines,
+	// we must protect them because they're reporting that as bug...
+	c.writerMu.Lock()
+	// .WriteMessage same as NextWriter and close (flush)
+	err := c.underline.WriteMessage(websocketMessageType, data)
+	c.writerMu.Unlock()
+	if err != nil {
+		// if failed then the connection is off, fire the disconnect
+		c.Disconnect()
+	}
+	return err
+}
+
+// writeDefault is the same as write but the message type is the configured by c.messageType
+// if BinaryMessages is enabled then it's raw []byte as you expected to work with protobufs
+func (c *ClientConn) writeDefault(data []byte) error {
+	return c.Write(c.messageType, data)
+}

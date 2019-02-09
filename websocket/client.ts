@@ -1,4 +1,4 @@
-// export to client.go:ClientSource []byte
+// export to client.js.go:ClientSource []byte
 
 const websocketStringMessageType = 0;
 const websocketIntMessageType = 1;
