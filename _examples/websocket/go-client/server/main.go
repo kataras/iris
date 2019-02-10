@@ -11,8 +11,6 @@ import (
 func main() {
 	app := iris.New()
 	ws := websocket.New(websocket.Config{})
-	app.Get("/socket", ws.Handler())
-
 	ws.OnConnection(func(c websocket.Connection) {
 		go func() {
 			<-time.After(20 * time.Second)
@@ -27,6 +25,8 @@ func main() {
 			fmt.Printf("Connection with ID: %s has been disconnected!\n", c.ID())
 		})
 	})
+
+	app.Get("/socket", ws.Handler())
 
 	app.Run(iris.Addr(":8080"))
 }

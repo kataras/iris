@@ -3,6 +3,7 @@ package websocket
 import (
 	"bytes"
 	"sync"
+	"sync/atomic"
 
 	"github.com/kataras/iris/context"
 
@@ -149,7 +150,7 @@ func (s *Server) handleConnection(ctx context.Context, websocketConn UnderlineCo
 	// use the config's id generator (or the default) to create a websocket client/connection id
 	cid := s.config.IDGenerator(ctx)
 	// create the new connection
-	c := newConnection(ctx, s, websocketConn, cid)
+	c := newServerConnection(ctx, s, websocketConn, cid)
 	// add the connection to the Server's list
 	s.addConnection(c)
 
@@ -397,7 +398,7 @@ func (s *Server) Disconnect(connID string) (err error) {
 
 	// remove the connection from the list.
 	if conn, ok := s.getConnection(connID); ok {
-		conn.disconnected = true
+		atomic.StoreUint32(&conn.disconnected, 1)
 		// fire the disconnect callbacks, if any.
 		conn.fireDisconnect()
 		// close the underline connection and return its error, if any.

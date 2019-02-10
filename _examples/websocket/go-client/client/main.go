@@ -21,21 +21,21 @@ $ go run main.go
 >> hi!
 */
 func main() {
-	conn, err := websocket.Dial(url, websocket.DefaultEvtMessageKey)
+	c, err := websocket.Dial(url, websocket.ConnectionConfig{})
 	if err != nil {
 		panic(err)
 	}
 
-	conn.OnError(func(err error) {
+	c.OnError(func(err error) {
 		fmt.Printf("error: %v", err)
 	})
 
-	conn.OnDisconnect(func() {
-		fmt.Println("Server was force-closed[see ../server/main.go#L19] this connection after 20 seconds, therefore I am disconnected.")
+	c.OnDisconnect(func() {
+		fmt.Println("Server was force-closed[see ../server/main.go#L17] this connection after 20 seconds, therefore I am disconnected.")
 		os.Exit(0)
 	})
 
-	conn.On("chat", func(message string) {
+	c.On("chat", func(message string) {
 		fmt.Printf("\n%s\n", message)
 	})
 
@@ -51,7 +51,7 @@ func main() {
 			break
 		}
 
-		conn.Emit("chat", msgToSend)
+		c.Emit("chat", msgToSend)
 	}
 
 	fmt.Println("Terminated.")
