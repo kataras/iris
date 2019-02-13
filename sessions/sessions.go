@@ -35,14 +35,14 @@ func (s *Sessions) UseDatabase(db Database) {
 }
 
 // updateCookie gains the ability of updating the session browser cookie to any method which wants to update it
-func (s *Sessions) updateCookie(ctx context.Context, sid string, expires time.Duration) {
+func (s *Sessions) updateCookie(ctx context.Context, sid string, path string,expires time.Duration) {
 	cookie := &http.Cookie{}
 
 	// The RFC makes no mention of encoding url value, so here I think to encode both sessionid key and the value using the safe(to put and to use as cookie) url-encoding
 	cookie.Name = s.config.Cookie
 
 	cookie.Value = sid
-	cookie.Path = "/"
+	cookie.Path = path
 	cookie.Domain = formatCookieDomain(ctx, s.config.DisableSubdomainPersistence)
 	cookie.HttpOnly = true
 	// MaxAge=0 means no 'Max-Age' attribute specified.
