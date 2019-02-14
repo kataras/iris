@@ -15,16 +15,15 @@ const (
 	DefaultWebsocketWriteTimeout = 0
 	// DefaultWebsocketReadTimeout 0, no timeout
 	DefaultWebsocketReadTimeout = 0
-	// DefaultWebsocketPongTimeout 60 * time.Second
-	DefaultWebsocketPongTimeout = 60 * time.Second
-	// DefaultWebsocketPingPeriod (DefaultPongTimeout * 9) / 10
-	DefaultWebsocketPingPeriod = (DefaultWebsocketPongTimeout * 9) / 10
-	// DefaultWebsocketMaxMessageSize 1024
-	DefaultWebsocketMaxMessageSize = 1024
-	// DefaultWebsocketReadBufferSize 4096
-	DefaultWebsocketReadBufferSize = 4096
-	// DefaultWebsocketWriterBufferSize 4096
-	DefaultWebsocketWriterBufferSize = 4096
+	// DefaultWebsocketPingPeriod is 0 but
+	// could be 10 * time.Second.
+	DefaultWebsocketPingPeriod = 0
+	// DefaultWebsocketMaxMessageSize 0
+	DefaultWebsocketMaxMessageSize = 0
+	// DefaultWebsocketReadBufferSize 0
+	DefaultWebsocketReadBufferSize = 0
+	// DefaultWebsocketWriterBufferSize 0
+	DefaultWebsocketWriterBufferSize = 0
 	// DefaultEvtMessageKey is the default prefix of the underline websocket events
 	// that are being established under the hoods.
 	//
@@ -76,11 +75,9 @@ type Config struct {
 	// 0 means no timeout.
 	// Default value is 0
 	ReadTimeout time.Duration
-	// PongTimeout allowed to read the next pong message from the connection.
-	// Default value is 60 * time.Second
-	PongTimeout time.Duration
-	// PingPeriod send ping messages to the connection within this period. Must be less than PongTimeout.
-	// Default value is 60 *time.Second
+	// PingPeriod send ping messages to the connection repeatedly after this period.
+	// The value should be close to the ReadTimeout to avoid issues.
+	// Default value is 0.
 	PingPeriod time.Duration
 	// MaxMessageSize max message size allowed from connection.
 	// Default value is 1024
@@ -89,12 +86,13 @@ type Config struct {
 	// compatible if you wanna use the Connection's EmitMessage to send a custom binary data to the client, like a native server-client communication.
 	// Default value is false
 	BinaryMessages bool
-	// ReadBufferSize is the buffer size for the connection reader.
-	// Default value is 4096
-	ReadBufferSize int
-	// WriteBufferSize is the buffer size for the connection writer.
-	// Default value is 4096
-	WriteBufferSize int
+	// ReadBufferSize and WriteBufferSize specify I/O buffer sizes. If a buffer
+	// size is zero, then buffers allocated by the HTTP server are used. The
+	// I/O buffer sizes do not limit the size of the messages that can be sent
+	// or received.
+	//
+	// Default value is 0.
+	ReadBufferSize, WriteBufferSize int
 	// EnableCompression specify if the server should attempt to negotiate per
 	// message compression (RFC 7692). Setting this value to true does not
 	// guarantee that compression will be supported. Currently only "no context
@@ -119,10 +117,6 @@ func (c Config) Validate() Config {
 
 	if c.ReadTimeout < 0 {
 		c.ReadTimeout = DefaultWebsocketReadTimeout
-	}
-
-	if c.PongTimeout < 0 {
-		c.PongTimeout = DefaultWebsocketPongTimeout
 	}
 
 	if c.PingPeriod <= 0 {

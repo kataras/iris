@@ -44,7 +44,6 @@ type (
 		// Use a route to serve this file on a specific path, i.e
 		// app.Any("/iris-ws.js", func(ctx iris.Context) { ctx.Write(mywebsocketServer.ClientSource) })
 		ClientSource          []byte
-		messageSerializer     *messageSerializer
 		connections           map[string]*connection // key = the Connection ID.
 		rooms                 map[string][]string    // by default a connection is joined to a room which has the connection id as its name
 		mu                    sync.RWMutex           // for rooms and connections.
@@ -64,7 +63,6 @@ func New(cfg Config) *Server {
 	return &Server{
 		config:                cfg,
 		ClientSource:          bytes.Replace(ClientSource, []byte(DefaultEvtMessageKey), cfg.EvtMessagePrefix, -1),
-		messageSerializer:     newMessageSerializer(cfg.EvtMessagePrefix),
 		connections:           make(map[string]*connection),
 		rooms:                 make(map[string][]string),
 		onConnectionListeners: make([]ConnectionFunc, 0),
