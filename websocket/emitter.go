@@ -34,7 +34,7 @@ func (e *emitter) EmitMessage(nativeMessage []byte) error {
 }
 
 func (e *emitter) Emit(event string, data interface{}) error {
-	message, err := e.conn.server.messageSerializer.serialize(event, data)
+	message, err := e.conn.serializer.serialize(event, data)
 	if err != nil {
 		return err
 	}
