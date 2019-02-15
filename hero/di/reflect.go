@@ -59,6 +59,13 @@ func IsZero(v reflect.Value) bool {
 	return v.Interface() == zero.Interface()
 }
 
+var errTyp = reflect.TypeOf((*error)(nil)).Elem()
+
+// IsError returns true if "typ" is type of `error`.
+func IsError(typ reflect.Type) bool {
+	return typ.Implements(errTyp)
+}
+
 // IndirectValue returns the reflect.Value that "v" points to.
 // If "v" is a nil pointer, Indirect returns a zero Value.
 // If "v" is not a pointer, Indirect returns v.
