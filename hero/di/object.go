@@ -77,8 +77,10 @@ func MakeReturnValue(fn reflect.Value, goodFunc TypeChecker) (func([]reflect.Val
 		return nil, typ, errBad
 	}
 
-	// invalid if not returns one single value.
-	if typ.NumOut() != 1 {
+	n := typ.NumOut()
+
+	// invalid if not returns one single value or two values but the second is not an error.
+	if !(n == 1 || (n == 2 && IsError(typ.Out(1)))) {
 		return nil, typ, errBad
 	}
 
@@ -88,19 +90,36 @@ func MakeReturnValue(fn reflect.Value, goodFunc TypeChecker) (func([]reflect.Val
 		}
 	}
 
-	outTyp := typ.Out(0)
-	zeroOutVal := reflect.New(outTyp).Elem()
+	firstOutTyp := typ.Out(0)
+	firstZeroOutVal := reflect.New(firstOutTyp).Elem()
 
 	bf := func(ctxValue []reflect.Value) reflect.Value {
 		results := fn.Call(ctxValue)
-		if len(results) == 0 {
-			return zeroOutVal
-		}
 
 		v := results[0]
-		if !v.IsValid() {
-			return zeroOutVal
+		if !v.IsValid() { // check the first value, second is error.
+			return firstZeroOutVal
 		}
+
+		if n == 2 {
+			// two, second is always error.
+			errVal := results[1]
+			if !errVal.IsNil() {
+				// error is not nil, do something with it.
+				if ctx, ok := ctxValue[0].Interface().(interface {
+					StatusCode(int)
+					WriteString(string) (int, error)
+					StopExecution()
+				}); ok {
+					ctx.StatusCode(400)
+					ctx.WriteString(errVal.Interface().(error).Error())
+					ctx.StopExecution()
+				}
+
+				return firstZeroOutVal
+			}
+		}
+
 		// if v.String() == "<interface {} Value>" {
 		// 	println("di/object.go: " + v.String())
 		// 	// println("di/object.go: because it's interface{} it should be returned as: " + v.Elem().Type().String() + " and its value: " + v.Elem().Interface().(string))
@@ -109,7 +128,7 @@ func MakeReturnValue(fn reflect.Value, goodFunc TypeChecker) (func([]reflect.Val
 		return v
 	}
 
-	return bf, outTyp, nil
+	return bf, firstOutTyp, nil
 }
 
 // IsAssignable checks if "to" type can be used as "b.Value/ReturnValue".
