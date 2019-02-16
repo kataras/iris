@@ -81,7 +81,7 @@ var (
 )
 
 // websocketMessageSerialize serializes a custom websocket message from websocketServer to be delivered to the client
-// returns the  string form of the message
+// returns the string form of the message
 // Supported data types are: string, int, bool, bytes and JSON.
 func (ms *messageSerializer) serialize(event string, data interface{}) ([]byte, error) {
 	b := ms.buf.Get()
@@ -114,6 +114,7 @@ func (ms *messageSerializer) serialize(event string, data interface{}) ([]byte, 
 		//we suppose is json
 		res, err := json.Marshal(data)
 		if err != nil {
+			ms.buf.Put(b)
 			return nil, err
 		}
 		b.WriteString(messageTypeJSON.String())

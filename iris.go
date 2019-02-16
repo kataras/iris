@@ -33,7 +33,7 @@ import (
 
 var (
 	// Version is the current version number of the Iris Web Framework.
-	Version = "11.1.1"
+	Version = "11.2.0"
 )
 
 // HTTP status codes as registered with IANA.
@@ -341,6 +341,24 @@ var (
 	//
 	// A shortcut for the `context#LimitRequestBodySize`.
 	LimitRequestBodySize = context.LimitRequestBodySize
+	// NewConditionalHandler returns a single Handler which can be registered
+	// as a middleware.
+	// Filter is just a type of Handler which returns a boolean.
+	// Handlers here should act like middleware, they should contain `ctx.Next` to proceed
+	// to the next handler of the chain. Those "handlers" are registered to the per-request context.
+	//
+	//
+	// It checks the "filter" and if passed then
+	// it, correctly, executes the "handlers".
+	//
+	// If passed, this function makes sure that the Context's information
+	// about its per-request handler chain based on the new "handlers" is always updated.
+	//
+	// If not passed, then simply the Next handler(if any) is executed and "handlers" are ignored.
+	// Example can be found at: _examples/routing/conditional-chain.
+	//
+	// A shortcut for the `context#NewConditionalHandler`.
+	NewConditionalHandler = context.NewConditionalHandler
 	// StaticEmbeddedHandler returns a Handler which can serve
 	// embedded into executable files.
 	//

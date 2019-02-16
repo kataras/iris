@@ -398,6 +398,10 @@ func (c *ControllerActivator) handlerOf(m reflect.Method, funcDependencies []ref
 			in[0] = ctrl
 			funcInjector.Inject(&in, ctxValue)
 
+			if ctx.IsStopped() {
+				return // stop as soon as possible, although it would stop later on if `ctx.StopExecution` called.
+			}
+
 			// for idxx, inn := range in {
 			// 	println("controller.go: execution: in.Value = "+inn.String()+" and in.Type = "+inn.Type().Kind().String()+" of index: ", idxx)
 			// }

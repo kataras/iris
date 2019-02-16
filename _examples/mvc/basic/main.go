@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/kataras/iris"
+	"github.com/kataras/iris/middleware/recover"
 	"github.com/kataras/iris/sessions"
 
 	"github.com/kataras/iris/mvc"
@@ -11,6 +12,7 @@ import (
 
 func main() {
 	app := iris.New()
+	app.Use(recover.New())
 	app.Logger().SetLevel("debug")
 	mvc.Configure(app.Party("/basic"), basicMVC)
 

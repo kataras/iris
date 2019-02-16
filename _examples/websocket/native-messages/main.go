@@ -27,8 +27,8 @@ func main() {
 	app.RegisterView(iris.HTML("./templates", ".html")) // select the html engine to serve templates
 
 	ws := websocket.New(websocket.Config{
-	// to enable binary messages (useful for protobuf):
-	// BinaryMessages: true,
+		// to enable binary messages (useful for protobuf):
+		// BinaryMessages: true,
 	})
 
 	// register the server on an endpoint.

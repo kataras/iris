@@ -4,11 +4,6 @@ Source code and other details for the project are available at GitHub:
 
    https://github.com/kataras/iris/tree/master/websocket
 
-Installation
-
-    $ go get -u github.com/kataras/iris/websocket
-
-
 Example code:
 
 

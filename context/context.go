@@ -114,6 +114,18 @@ type Context interface {
 
 	// Request returns the original *http.Request, as expected.
 	Request() *http.Request
+	// ResetRequest sets the Context's Request,
+	// It is useful to store the new request created by a std *http.Request#WithContext() into Iris' Context.
+	// Use `ResetRequest` when for some reason you want to make a full
+	// override of the *http.Request.
+	// Note that: when you just want to change one of each fields you can use the Request() which returns a pointer to Request,
+	// so the changes will have affect without a full override.
+	// Usage: you use a native http handler which uses the standard "context" package
+	// to get values instead of the Iris' Context#Values():
+	// r := ctx.Request()
+	// stdCtx := context.WithValue(r.Context(), key, val)
+	// ctx.ResetRequest(r.WithContext(stdCtx)).
+	ResetRequest(r *http.Request)
 
 	// SetCurrentRouteName sets the route's name internally,
 	// in order to be able to find the correct current "read-only" Route when
@@ -275,7 +287,8 @@ type Context interface {
 	// that can be used to share information between handlers and middleware.
 	Values() *memstore.Store
 	// Translate is the i18n (localization) middleware's function,
-	// it calls the Get("translate") to return the translated value.
+	// it calls the Values().Get(ctx.Application().ConfigurationReadOnly().GetTranslateFunctionContextKey())
+	// to execute the translate function and return the localized text value.
 	//
 	// Example: https://github.com/kataras/iris/tree/master/_examples/miscellaneous/i18n
 	Translate(format string, args ...interface{}) string
@@ -292,7 +305,6 @@ type Context interface {
 	// RequestPath returns the full request path,
 	// based on the 'escape'.
 	RequestPath(escape bool) string
-
 	// Host returns the host part of the current url.
 	Host() string
 	// Subdomain returns the subdomain of this request, if any.
@@ -300,6 +312,9 @@ type Context interface {
 	Subdomain() (subdomain string)
 	// IsWWW returns true if the current subdomain (if any) is www.
 	IsWWW() bool
+	// FullRqeuestURI returns the full URI,
+	// including the scheme, the host and the relative requested path/resource.
+	FullRequestURI() string
 	// RemoteAddr tries to parse and return the real client's request IP.
 	//
 	// Based on allowed headers names that can be modified from Configuration.RemoteAddrHeaders.
@@ -1065,6 +1080,21 @@ func (ctx *context) Request() *http.Request {
 	return ctx.request
 }
 
+// ResetRequest sets the Context's Request,
+// It is useful to store the new request created by a std *http.Request#WithContext() into Iris' Context.
+// Use `ResetRequest` when for some reason you want to make a full
+// override of the *http.Request.
+// Note that: when you just want to change one of each fields you can use the Request() which returns a pointer to Request,
+// so the changes will have affect without a full override.
+// Usage: you use a native http handler which uses the standard "context" package
+// to get values instead of the Iris' Context#Values():
+// r := ctx.Request()
+// stdCtx := context.WithValue(r.Context(), key, val)
+// ctx.ResetRequest(r.WithContext(stdCtx)).
+func (ctx *context) ResetRequest(r *http.Request) {
+	ctx.request = r
+}
+
 // SetCurrentRouteName sets the route's name internally,
 // in order to be able to find the correct current "read-only" Route when
 // end-developer calls the `GetCurrentRoute()` function.
@@ -1178,6 +1208,9 @@ func (ctx *context) Proceed(h Handler) bool {
 
 // HandlerName returns the current handler's name, helpful for debugging.
 func (ctx *context) HandlerName() string {
+	if name := ctx.currentRouteName; name != "" {
+		return name
+	}
 	return HandlerName(ctx.handlers[ctx.currentHandlerIndex])
 }
 
@@ -1378,7 +1411,8 @@ func (ctx *context) Values() *memstore.Store {
 }
 
 // Translate is the i18n (localization) middleware's function,
-// it calls the Get("translate") to return the translated value.
+// it calls the Values().Get(ctx.Application().ConfigurationReadOnly().GetTranslateFunctionContextKey())
+// to execute the translate function and return the localized text value.
 //
 // Example: https://github.com/kataras/iris/tree/master/_examples/miscellaneous/i18n
 func (ctx *context) Translate(format string, args ...interface{}) string {
@@ -1465,11 +1499,11 @@ func (ctx *context) Host() string {
 
 // GetHost returns the host part of the current URI.
 func GetHost(r *http.Request) string {
-	h := r.URL.Host
-	if h == "" {
-		h = r.Host
+	if host := r.Host; host != "" {
+		return host
 	}
-	return h
+
+	return r.URL.Host
 }
 
 // Subdomain returns the subdomain of this request, if any.
@@ -1500,6 +1534,24 @@ func (ctx *context) IsWWW() bool {
 		}
 	}
 	return false
+}
+
+// FullRqeuestURI returns the full URI,
+// including the scheme, the host and the relative requested path/resource.
+func (ctx *context) FullRequestURI() string {
+	scheme := ctx.request.URL.Scheme
+	if scheme == "" {
+		if ctx.request.TLS != nil {
+			scheme = "https:"
+		} else {
+			scheme = "http:"
+		}
+	}
+
+	host := ctx.Host()
+	path := ctx.Path()
+
+	return scheme + "//" + host + path
 }
 
 const xForwardedForHeaderKey = "X-Forwarded-For"

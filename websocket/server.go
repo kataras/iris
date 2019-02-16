@@ -3,6 +3,7 @@ package websocket
 import (
 	"bytes"
 	"sync"
+	"sync/atomic"
 
 	"github.com/GoLandr/iris/context"
 
@@ -43,10 +44,9 @@ type (
 		// Use a route to serve this file on a specific path, i.e
 		// app.Any("/iris-ws.js", func(ctx iris.Context) { ctx.Write(mywebsocketServer.ClientSource) })
 		ClientSource          []byte
-		messageSerializer     *messageSerializer
-		connections           sync.Map            // key = the Connection ID.
-		rooms                 map[string][]string // by default a connection is joined to a room which has the connection id as its name
-		mu                    sync.RWMutex        // for rooms.
+		connections           map[string]*connection // key = the Connection ID.
+		rooms                 map[string][]string    // by default a connection is joined to a room which has the connection id as its name
+		mu                    sync.RWMutex           // for rooms and connections.
 		onConnectionListeners []ConnectionFunc
 		//connectionPool        sync.Pool // sadly we can't make this because the websocket connection is live until is closed.
 		upgrader websocket.Upgrader
@@ -63,8 +63,7 @@ func New(cfg Config) *Server {
 	return &Server{
 		config:                cfg,
 		ClientSource:          bytes.Replace(ClientSource, []byte(DefaultEvtMessageKey), cfg.EvtMessagePrefix, -1),
-		messageSerializer:     newMessageSerializer(cfg.EvtMessagePrefix),
-		connections:           sync.Map{}, // ready-to-use, this is not necessary.
+		connections:           make(map[string]*connection),
 		rooms:                 make(map[string][]string),
 		onConnectionListeners: make([]ConnectionFunc, 0),
 		upgrader: websocket.Upgrader{
@@ -133,19 +132,14 @@ func (s *Server) Upgrade(ctx context.Context) Connection {
 }
 
 func (s *Server) addConnection(c *connection) {
-	s.connections.Store(c.id, c)
+	s.mu.Lock()
+	s.connections[c.id] = c
+	s.mu.Unlock()
 }
 
 func (s *Server) getConnection(connID string) (*connection, bool) {
-	if cValue, ok := s.connections.Load(connID); ok {
-		// this cast is not necessary,
-		// we know that we always save a connection, but for good or worse let it be here.
-		if conn, ok := cValue.(*connection); ok {
-			return conn, ok
-		}
-	}
-
-	return nil, false
+	c, ok := s.connections[connID]
+	return c, ok
 }
 
 // wrapConnection wraps an underline connection to an iris websocket connection.
@@ -154,7 +148,7 @@ func (s *Server) handleConnection(ctx context.Context, websocketConn UnderlineCo
 	// use the config's id generator (or the default) to create a websocket client/connection id
 	cid := s.config.IDGenerator(ctx)
 	// create the new connection
-	c := newConnection(ctx, s, websocketConn, cid)
+	c := newServerConnection(ctx, s, websocketConn, cid)
 	// add the connection to the Server's list
 	s.addConnection(c)
 
@@ -290,34 +284,24 @@ func (s *Server) leave(roomName string, connID string) (left bool) {
 
 // GetTotalConnections returns the number of total connections
 func (s *Server) GetTotalConnections() (n int) {
-	s.connections.Range(func(k, v interface{}) bool {
-		n++
-		return true
-	})
+	s.mu.RLock()
+	n = len(s.connections)
+	s.mu.RUnlock()
 
-	return n
+	return
 }
 
 // GetConnections returns all connections
 func (s *Server) GetConnections() []Connection {
-	// first call of Range to get the total length, we don't want to use append or manually grow the list here for many reasons.
-	length := s.GetTotalConnections()
-	conns := make([]Connection, length, length)
+	s.mu.RLock()
+	conns := make([]Connection, len(s.connections))
 	i := 0
-	// second call of Range.
-	s.connections.Range(func(k, v interface{}) bool {
-		conn, ok := v.(*connection)
-		if !ok {
-			// if for some reason (should never happen), the value is not stored as *connection
-			// then stop the iteration and don't continue insertion of the result connections
-			// in order to avoid any issues while end-dev will try to iterate a nil entry.
-			return false
-		}
-		conns[i] = conn
+	for _, c := range s.connections {
+		conns[i] = c
 		i++
-		return true
-	})
+	}
 
+	s.mu.RUnlock()
 	return conns
 }
 
@@ -339,10 +323,8 @@ func (s *Server) GetConnectionsByRoom(roomName string) []Connection {
 	if connIDs, found := s.rooms[roomName]; found {
 		for _, connID := range connIDs {
 			// existence check is not necessary here.
-			if cValue, ok := s.connections.Load(connID); ok {
-				if conn, ok := cValue.(*connection); ok {
-					conns = append(conns, conn)
-				}
+			if conn, ok := s.connections[connID]; ok {
+				conns = append(conns, conn)
 			}
 		}
 	}
@@ -382,32 +364,20 @@ func (s *Server) emitMessage(from, to string, data []byte) {
 			}
 		}
 	} else {
+		s.mu.RLock()
 		// it suppose to send the message to all opened connections or to all except the sender.
-		s.connections.Range(func(k, v interface{}) bool {
-			connID, ok := k.(string)
-			if !ok {
-				// should never happen.
-				return true
-			}
-
-			if to != All && to != connID { // if it's not suppose to send to all connections (including itself)
-				if to == Broadcast && from == connID { // if broadcast to other connections except this
+		for _, conn := range s.connections {
+			if to != All && to != conn.id { // if it's not suppose to send to all connections (including itself)
+				if to == Broadcast && from == conn.id { // if broadcast to other connections except this
 					// here we do the opossite of previous block,
 					// just skip this connection when it's suppose to send the message to all connections except the sender.
-					return true
+					continue
 				}
-
 			}
 
-			// not necessary cast.
-			conn, ok := v.(*connection)
-			if ok {
-				// send to the client(s) when the top validators passed
-				conn.writeDefault(data)
-			}
-
-			return ok
-		})
+			conn.writeDefault(data)
+		}
+		s.mu.RUnlock()
 	}
 }
 
@@ -426,12 +396,18 @@ func (s *Server) Disconnect(connID string) (err error) {
 
 	// remove the connection from the list.
 	if conn, ok := s.getConnection(connID); ok {
+<<<<<<< HEAD
+=======
+		atomic.StoreUint32(&conn.disconnected, 1)
+>>>>>>> v11.2.0
 		// fire the disconnect callbacks, if any.
 		conn.fireDisconnect()
 		// close the underline connection and return its error, if any.
 		err = conn.underline.Close()
 
-		s.connections.Delete(connID)
+		s.mu.Lock()
+		delete(s.connections, conn.id)
+		s.mu.Unlock()
 	}
 
 	return
