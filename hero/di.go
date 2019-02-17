@@ -36,7 +36,8 @@ func init() {
 	}
 
 	di.DefaultTypeChecker = func(fn reflect.Type) bool {
-		// valid if that single input arg is a typeof context.Context.
-		return fn.NumIn() == 1 && IsContext(fn.In(0))
+		// valid if that single input arg is a typeof context.Context
+		// or first argument is context.Context and second argument is a variadic, which is ignored (i.e new sessions#Start).
+		return (fn.NumIn() == 1 || (fn.NumIn() == 2 && fn.IsVariadic())) && IsContext(fn.In(0))
 	}
 }
