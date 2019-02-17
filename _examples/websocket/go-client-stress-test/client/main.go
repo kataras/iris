@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kataras/iris/websocket"
+	"github.com/kataras/iris/websocket2"
 )
 
 var (
@@ -46,7 +46,7 @@ func main() {
 
 func connect(wg *sync.WaitGroup, alive time.Duration) {
 
-	c, err := websocket.Dial(url, websocket.ConnectionConfig{})
+	c, err := websocket.Dial(nil, url, websocket.ConnectionConfig{})
 	if err != nil {
 		panic(err)
 	}
