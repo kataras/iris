@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/websocket"
+	"github.com/kataras/iris/websocket2"
 )
 
 const totalClients = 1200
