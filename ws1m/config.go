@@ -18,8 +18,6 @@ const (
 	// DefaultWebsocketPingPeriod is 0 but
 	// could be 10 * time.Second.
 	DefaultWebsocketPingPeriod = 0
-	// DefaultWebsocketMaxMessageSize 0
-	DefaultWebsocketMaxMessageSize = 0
 	// DefaultWebsocketReadBufferSize 0
 	DefaultWebsocketReadBufferSize = 0
 	// DefaultWebsocketWriterBufferSize 0
@@ -79,9 +77,6 @@ type Config struct {
 	// The value should be close to the ReadTimeout to avoid issues.
 	// Default value is 0.
 	PingPeriod time.Duration
-	// MaxMessageSize max message size allowed from connection.
-	// Default value is 1024
-	MaxMessageSize int64
 	// BinaryMessages set it to true in order to denotes binary data messages instead of utf-8 text
 	// compatible if you wanna use the Connection's EmitMessage to send a custom binary data to the client, like a native server-client communication.
 	// Default value is false
@@ -121,10 +116,6 @@ func (c Config) Validate() Config {
 
 	if c.PingPeriod <= 0 {
 		c.PingPeriod = DefaultWebsocketPingPeriod
-	}
-
-	if c.MaxMessageSize <= 0 {
-		c.MaxMessageSize = DefaultWebsocketMaxMessageSize
 	}
 
 	if c.ReadBufferSize <= 0 {

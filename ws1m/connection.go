@@ -12,30 +12,29 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/gorilla/websocket"
 	"github.com/kataras/iris/context"
+
+	"github.com/gobwas/ws"
+	"github.com/gobwas/ws/wsutil"
 )
 
+// Operation codes defined by specification.
+// See https://tools.ietf.org/html/rfc6455#section-5.2
 const (
 	// TextMessage denotes a text data message. The text message payload is
 	// interpreted as UTF-8 encoded text data.
-	TextMessage = websocket.TextMessage
-
+	TextMessage ws.OpCode = ws.OpText
 	// BinaryMessage denotes a binary data message.
-	BinaryMessage = websocket.BinaryMessage
-
-	// CloseMessage denotes a close control message. The optional message
-	// payload contains a numeric code and text. Use the FormatCloseMessage
-	// function to format a close message payload.
-	CloseMessage = websocket.CloseMessage
+	BinaryMessage ws.OpCode = ws.OpBinary
+	// CloseMessage denotes a close control message.
+	CloseMessage ws.OpCode = ws.OpClose
 
 	// PingMessage denotes a ping control message. The optional message payload
 	// is UTF-8 encoded text.
-	PingMessage = websocket.PingMessage
-
+	PingMessage ws.OpCode = ws.OpPing
 	// PongMessage denotes a ping control message. The optional message payload
 	// is UTF-8 encoded text.
-	PongMessage = websocket.PongMessage
+	PongMessage ws.OpCode = ws.OpPong
 )
 
 type (
@@ -219,7 +218,7 @@ type (
 		Emitter
 		// Write writes a raw websocket message with a specific type to the client
 		// used by ping messages and any CloseMessage types.
-		Write(websocketMessageType int, data []byte) error
+		Write(websocketMessageType ws.OpCode, data []byte) error
 		// OnMessage registers a callback which fires when native websocket message received
 		OnMessage(NativeMessageFunc)
 		// On registers a callback to a particular event which is fired when a message to this event is received
@@ -243,9 +242,9 @@ type (
 
 	connection struct {
 		err                error
-		underline          UnderlineConnection
+		underline          net.Conn
 		config             ConnectionConfig
-		defaultMessageType int
+		defaultMessageType ws.OpCode
 		serializer         *messageSerializer
 		id                 string
 
@@ -281,17 +280,17 @@ var _ Connection = &connection{}
 
 // WrapConnection wraps the underline websocket connection into a new iris websocket connection.
 // The caller should call the `connection#Wait` (which blocks) to enable its read and write functionality.
-func WrapConnection(underlineConn UnderlineConnection, cfg ConnectionConfig) Connection {
-	return newConnection(underlineConn, cfg)
+func WrapConnection(conn net.Conn, cfg ConnectionConfig) Connection {
+	return newConnection(conn, cfg)
 }
 
-func newConnection(underlineConn UnderlineConnection, cfg ConnectionConfig) *connection {
+func newConnection(conn net.Conn, cfg ConnectionConfig) *connection {
 	cfg = cfg.Validate()
 	c := &connection{
-		underline:                underlineConn,
+		underline:                conn,
 		config:                   cfg,
 		serializer:               newMessageSerializer(cfg.EvtMessagePrefix),
-		defaultMessageType:       websocket.TextMessage,
+		defaultMessageType:       TextMessage,
 		onErrorListeners:         make([]ErrorFunc, 0),
 		onPingListeners:          make([]PingFunc, 0),
 		onPongListeners:          make([]PongFunc, 0),
@@ -302,19 +301,18 @@ func newConnection(underlineConn UnderlineConnection, cfg ConnectionConfig) *con
 	}
 
 	if cfg.BinaryMessages {
-		c.defaultMessageType = websocket.BinaryMessage
+		c.defaultMessageType = BinaryMessage
 	}
 
 	return c
 }
 
-func newServerConnection(ctx context.Context, s *Server, underlineConn UnderlineConnection, id string) *connection {
-	c := newConnection(underlineConn, ConnectionConfig{
+func newServerConnection(ctx context.Context, s *Server, conn net.Conn, id string) *connection {
+	c := newConnection(conn, ConnectionConfig{
 		EvtMessagePrefix:  s.config.EvtMessagePrefix,
 		WriteTimeout:      s.config.WriteTimeout,
 		ReadTimeout:       s.config.ReadTimeout,
 		PingPeriod:        s.config.PingPeriod,
-		MaxMessageSize:    s.config.MaxMessageSize,
 		BinaryMessages:    s.config.BinaryMessages,
 		ReadBufferSize:    s.config.ReadBufferSize,
 		WriteBufferSize:   s.config.WriteBufferSize,
@@ -339,9 +337,20 @@ func (c *connection) Err() error {
 	return c.err
 }
 
+// IsClient returns true if that connection is from client.
+func (c *connection) getState() ws.State {
+	if c.server != nil {
+		// server-side.
+		return ws.StateServerSide
+	}
+
+	// else return client-side.
+	return ws.StateClientSide
+}
+
 // Write writes a raw websocket message with a specific type to the client
 // used by ping messages and any CloseMessage types.
-func (c *connection) Write(websocketMessageType int, data []byte) error {
+func (c *connection) Write(websocketMessageType ws.OpCode, data []byte) error {
 	// for any-case the app tries to write from different goroutines,
 	// we must protect them because they're reporting that as bug...
 	c.writerMu.Lock()
@@ -350,8 +359,7 @@ func (c *connection) Write(websocketMessageType int, data []byte) error {
 		c.underline.SetWriteDeadline(time.Now().Add(writeTimeout))
 	}
 
-	// .WriteMessage same as NextWriter and close (flush)
-	err := c.underline.WriteMessage(websocketMessageType, data)
+	err := wsutil.WriteMessage(c.underline, c.getState(), websocketMessageType, data)
 	c.writerMu.Unlock()
 	if err != nil {
 		// if failed then the connection is off, fire the disconnect
@@ -366,29 +374,7 @@ func (c *connection) writeDefault(data []byte) error {
 	return c.Write(c.defaultMessageType, data)
 }
 
-const (
-	// WriteWait is 1 second at the internal implementation,
-	// same as here but this can be changed at the future*
-	WriteWait = 1 * time.Second
-)
-
 func (c *connection) startPinger() {
-
-	// this is the default internal handler, we just change the writeWait because of the actions we must do before
-	// the server sends the ping-pong.
-
-	pingHandler := func(message string) error {
-		err := c.underline.WriteControl(websocket.PongMessage, []byte(message), time.Now().Add(WriteWait))
-		if err == websocket.ErrCloseSent {
-			return nil
-		} else if e, ok := err.(net.Error); ok && e.Temporary() {
-			return nil
-		}
-		return err
-	}
-
-	c.underline.SetPingHandler(pingHandler)
-
 	if c.config.PingPeriod > 0 {
 		go func() {
 			for {
@@ -397,14 +383,18 @@ func (c *connection) startPinger() {
 					// verifies if already disconected.
 					return
 				}
-				//fire all OnPing methods
-				c.fireOnPing()
+
 				// try to ping the client, if failed then it disconnects.
-				err := c.Write(websocket.PingMessage, []byte{})
-				if err != nil {
+				err := c.Write(PingMessage, []byte{})
+				if err != nil && !c.isErrClosed(err) {
+					c.FireOnError(err)
 					// must stop to exit the loop and exit from the routine.
 					return
 				}
+
+				//fire all OnPing methods
+				c.fireOnPing()
+
 			}
 		}()
 	}
@@ -424,37 +414,52 @@ func (c *connection) fireOnPong() {
 	}
 }
 
+func (c *connection) isErrClosed(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	_, is := err.(wsutil.ClosedError)
+	if is {
+		return true
+	}
+
+	if opErr, is := err.(*net.OpError); is {
+		if opErr.Err == io.EOF {
+			return false
+		}
+
+		if atomic.LoadUint32(&c.disconnected) == 0 {
+			c.Disconnect()
+		}
+
+		return true
+	}
+
+	return err != io.EOF
+}
+
 func (c *connection) startReader() {
-	conn := c.underline
 	hasReadTimeout := c.config.ReadTimeout > 0
 
-	conn.SetReadLimit(c.config.MaxMessageSize)
-	conn.SetPongHandler(func(s string) error {
-		if hasReadTimeout {
-			conn.SetReadDeadline(time.Now().Add(c.config.ReadTimeout))
-		}
-		//fire all OnPong methods
-		go c.fireOnPong()
-
-		return nil
-	})
-
-	defer func() {
-		c.Disconnect()
-	}()
-
 	for {
+		if c == nil || c.underline == nil || atomic.LoadUint32(&c.disconnected) > 0 {
+			return
+		}
+
 		if hasReadTimeout {
 			// set the read deadline based on the configuration
-			conn.SetReadDeadline(time.Now().Add(c.config.ReadTimeout))
+			c.underline.SetReadDeadline(time.Now().Add(c.config.ReadTimeout))
 		}
 
-		_, data, err := conn.ReadMessage()
-		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure, websocket.CloseNormalClosure) {
-				c.FireOnError(err)
-			}
+		data, code, err := wsutil.ReadData(c.underline, c.getState())
+		if code == CloseMessage || c.isErrClosed(err) {
+			c.Disconnect()
 			return
+		}
+
+		if err != nil {
+			c.FireOnError(err)
 		}
 
 		c.messageReceived(data)
@@ -656,14 +661,13 @@ func (c *connection) Disconnect() error {
 		return c.server.Disconnect(c.ID())
 	}
 
-	err := c.underline.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
-	if err != nil {
-		err = c.underline.Close()
-	}
+	err := c.Write(CloseMessage, nil)
 
 	if err == nil {
 		c.fireDisconnect()
 	}
+
+	c.underline.Close()
 
 	return err
 }
@@ -732,9 +736,6 @@ type ConnectionConfig struct {
 	// The value should be close to the ReadTimeout to avoid issues.
 	// Default value is 0
 	PingPeriod time.Duration
-	// MaxMessageSize max message size allowed from connection.
-	// Default value is 0. Unlimited but it is recommended to be 1024 for medium to large messages.
-	MaxMessageSize int64
 	// BinaryMessages set it to true in order to denotes binary data messages instead of utf-8 text
 	// compatible if you wanna use the Connection's EmitMessage to send a custom binary data to the client, like a native server-client communication.
 	// Default value is false
@@ -773,10 +774,6 @@ func (c ConnectionConfig) Validate() ConnectionConfig {
 		c.PingPeriod = DefaultWebsocketPingPeriod
 	}
 
-	if c.MaxMessageSize <= 0 {
-		c.MaxMessageSize = DefaultWebsocketMaxMessageSize
-	}
-
 	if c.ReadBufferSize <= 0 {
 		c.ReadBufferSize = DefaultWebsocketReadBufferSize
 	}
@@ -790,29 +787,29 @@ func (c ConnectionConfig) Validate() ConnectionConfig {
 
 // ErrBadHandshake is returned when the server response to opening handshake is
 // invalid.
-var ErrBadHandshake = websocket.ErrBadHandshake
+var ErrBadHandshake = ws.ErrHandshakeBadConnection
 
-// DialContext creates a new client connection.
+// Dial creates a new client connection.
 //
 // The context will be used in the request and in the Dialer.
 //
-// If the WebSocket handshake fails, `ErrBadHandshake` is returned.
+// If the WebSocket handshake fails, `ErrHandshakeBadConnection` is returned.
 //
 // The "url" input parameter is the url to connect to the server, it should be
 // the ws:// (or wss:// if secure) + the host + the endpoint of the
 // open socket of the server, i.e ws://localhost:8080/my_websocket_endpoint.
 //
 // Custom dialers can be used by wrapping the iris websocket connection via `websocket.WrapConnection`.
-func DialContext(ctx stdContext.Context, url string, cfg ConnectionConfig) (ClientConnection, error) {
+func Dial(ctx stdContext.Context, url string, cfg ConnectionConfig) (ClientConnection, error) {
 	if ctx == nil {
 		ctx = stdContext.Background()
 	}
 
-	if !strings.HasPrefix(url, "ws://") || !strings.HasPrefix(url, "wss://") {
+	if !strings.HasPrefix(url, "ws://") && !strings.HasPrefix(url, "wss://") {
 		url = "ws://" + url
 	}
 
-	conn, _, err := websocket.DefaultDialer.DialContext(ctx, url, nil)
+	conn, _, _, err := ws.DefaultDialer.Dial(ctx, url)
 	if err != nil {
 		return nil, err
 	}
@@ -821,9 +818,4 @@ func DialContext(ctx stdContext.Context, url string, cfg ConnectionConfig) (Clie
 	go clientConn.Wait()
 
 	return clientConn, nil
-}
-
-// Dial creates a new client connection by calling `DialContext` with a background context.
-func Dial(url string, cfg ConnectionConfig) (ClientConnection, error) {
-	return DialContext(stdContext.Background(), url, cfg)
 }

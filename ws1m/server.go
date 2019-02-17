@@ -2,12 +2,14 @@ package websocket
 
 import (
 	"bytes"
+	"net"
 	"sync"
 	"sync/atomic"
 
 	"github.com/kataras/iris/context"
 
-	"github.com/gorilla/websocket"
+	"github.com/gobwas/ws"
+	"time"
 )
 
 type (
@@ -48,8 +50,9 @@ type (
 		rooms                 map[string][]string    // by default a connection is joined to a room which has the connection id as its name
 		mu                    sync.RWMutex           // for rooms and connections.
 		onConnectionListeners []ConnectionFunc
+		connectionPool        Pool //replace with new kind of pool
 		//connectionPool        sync.Pool // sadly we can't make this because the websocket connection is live until is closed.
-		upgrader websocket.Upgrader
+		upgrader ws.HTTPUpgrader
 	}
 )
 
@@ -66,15 +69,7 @@ func New(cfg Config) *Server {
 		connections:           make(map[string]*connection),
 		rooms:                 make(map[string][]string),
 		onConnectionListeners: make([]ConnectionFunc, 0),
-		upgrader: websocket.Upgrader{
-			HandshakeTimeout:  cfg.HandshakeTimeout,
-			ReadBufferSize:    cfg.ReadBufferSize,
-			WriteBufferSize:   cfg.WriteBufferSize,
-			Error:             cfg.Error,
-			CheckOrigin:       cfg.CheckOrigin,
-			Subprotocols:      cfg.Subprotocols,
-			EnableCompression: cfg.EnableCompression,
-		},
+		upgrader:              ws.DefaultHTTPUpgrader, // ws.DefaultUpgrader,
 	}
 }
 
@@ -86,12 +81,13 @@ func New(cfg Config) *Server {
 // Endpoint is the path which the websocket Server will listen for clients/connections.
 //
 // To serve the built'n javascript client-side library look the `websocket.ClientHandler`.
-func (s *Server) Handler() context.Handler {
+func (s *Server) HandlerV1() context.Handler {
 	return func(ctx context.Context) {
 		c := s.Upgrade(ctx)
 		if c.Err() != nil {
 			return
 		}
+
 		// NOTE TO ME: fire these first BEFORE startReader and startPinger
 		// in order to set the events and any messages to send
 		// the startPinger will send the OK to the client and only
@@ -105,6 +101,38 @@ func (s *Server) Handler() context.Handler {
 
 		// start the ping and the messages reader
 		c.Wait()
+	}
+}
+//based on 1M design
+//epoller
+//
+func (s *Server) HandlerV2() context.Handler {
+	return func(ctx context.Context) {
+		for {
+			// Try to accept incoming connection inside free pool worker.
+			// If there no free workers for 1ms, do not accept anything and try later.
+			// This will help us to prevent many self-ddos or out of resource limit cases.
+			err := s.connectionPool.ScheduleTimeout(time.Millisecond, func() {
+				conn := ln.Accept()
+				_ = ws.Upgrade(conn)
+
+				// Wrap WebSocket connection with our Channel struct.
+				// This will help us to handle/send our app's packets.
+				ch := NewChannel(conn)
+
+				// Wait for incoming bytes from connection.
+				poller.Start(conn, netpoll.EventRead, func() {
+					// Do not cross the resource limits.
+					pool.Schedule(func() {
+						// Read and handle incoming packet(s).
+						ch.Recevie()
+					})
+				})
+			})
+			if err != nil {
+				time.Sleep(time.Millisecond)
+			}
+		}
 	}
 }
 
@@ -121,7 +149,7 @@ func (s *Server) Handler() context.Handler {
 // This one does not starts the connection's writer and reader, so after your `On/OnMessage` events registration
 // the caller has to call the `Connection#Wait` function, otherwise the connection will be not handled.
 func (s *Server) Upgrade(ctx context.Context) Connection {
-	conn, err := s.upgrader.Upgrade(ctx.ResponseWriter(), ctx.Request(), ctx.ResponseWriter().Header())
+	conn, _, _, err := s.upgrader.Upgrade(ctx.Request(), ctx.ResponseWriter())
 	if err != nil {
 		ctx.Application().Logger().Warnf("websocket error: %v\n", err)
 		ctx.StatusCode(503) // Status Service Unavailable
@@ -144,11 +172,11 @@ func (s *Server) getConnection(connID string) (*connection, bool) {
 
 // wrapConnection wraps an underline connection to an iris websocket connection.
 // It does NOT starts its writer, reader and event mux, the caller is responsible for that.
-func (s *Server) handleConnection(ctx context.Context, websocketConn UnderlineConnection) *connection {
+func (s *Server) handleConnection(ctx context.Context, conn net.Conn) *connection {
 	// use the config's id generator (or the default) to create a websocket client/connection id
 	cid := s.config.IDGenerator(ctx)
 	// create the new connection
-	c := newServerConnection(ctx, s, websocketConn, cid)
+	c := newServerConnection(ctx, s, conn, cid)
 	// add the connection to the Server's list
 	s.addConnection(c)
 
@@ -160,18 +188,18 @@ func (s *Server) handleConnection(ctx context.Context, websocketConn UnderlineCo
 
 /* Notes:
    We use the id as the signature of the connection because with the custom IDGenerator
-     the developer can share this ID with a database field, so we want to give the opportunnity to handle
-     his/her websocket connections without even use the connection itself.
+	 the developer can share this ID with a database field, so we want to give the oportunnity to handle
+	 his/her websocket connections without even use the connection itself.
 
-     Another question may be:
-     Q: Why you use Server as the main actioner for all of the connection actions?
-          For example the Server.Disconnect(connID) manages the connection internal fields, is this code-style correct?
-     A: It's the correct code-style for these type of applications and libraries, Server manages all, the connnection's functions
-     should just do some internal checks (if needed) and push the action to its parent, which is the Server, the Server is able to
-     remove a connection, the rooms of its connected and all these things, so in order to not split the logic, we have the main logic
-     here, in the Server, and let the connection with some exported functions whose exists for the per-connection action user's code-style.
+	 Another question may be:
+	 Q: Why you use Server as the main actioner for all of the connection actions?
+	 	  For example the Server.Disconnect(connID) manages the connection internal fields, is this code-style correct?
+	 A: It's the correct code-style for these type of applications and libraries, Server manages all, the connnection's functions
+	 should just do some internal checks (if needed) and push the action to its parent, which is the Server, the Server is able to
+	 remove a connection, the rooms of its connected and all these things, so in order to not split the logic, we have the main logic
+	 here, in the Server, and let the connection with some exported functions whose exists for the per-connection action user's code-style.
 
-     Ok my english are s** I can feel it, but these comments are mostly for me.
+	 Ok my english are s** I can feel it, but these comments are mostly for me.
 */
 
 /*
@@ -396,17 +424,16 @@ func (s *Server) Disconnect(connID string) (err error) {
 
 	// remove the connection from the list.
 	if conn, ok := s.getConnection(connID); ok {
-
 		atomic.StoreUint32(&conn.disconnected, 1)
 
 		// fire the disconnect callbacks, if any.
 		conn.fireDisconnect()
-		// close the underline connection and return its error, if any.
-		err = conn.underline.Close()
 
 		s.mu.Lock()
 		delete(s.connections, conn.id)
 		s.mu.Unlock()
+
+		err = conn.underline.Close()
 	}
 
 	return
