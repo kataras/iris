@@ -10,7 +10,7 @@ import (
 	"github.com/kataras/iris/websocket2"
 )
 
-const totalClients = 1200
+const totalClients = 100000
 
 func main() {
 	app := iris.New()

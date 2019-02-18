@@ -45,9 +45,9 @@ type (
 		// Use a route to serve this file on a specific path, i.e
 		// app.Any("/iris-ws.js", func(ctx iris.Context) { ctx.Write(mywebsocketServer.ClientSource) })
 		ClientSource          []byte
-		connections           map[string]*connection // key = the Connection ID.
-		rooms                 map[string][]string    // by default a connection is joined to a room which has the connection id as its name
-		mu                    sync.RWMutex           // for rooms and connections.
+		connections           sync.Map            // key = the Connection ID. // key = the Connection ID.
+		rooms                 map[string][]string // by default a connection is joined to a room which has the connection id as its name
+		mu                    sync.RWMutex        // for rooms.
 		onConnectionListeners []ConnectionFunc
 		//connectionPool        sync.Pool // sadly we can't make this because the websocket connection is live until is closed.
 		upgrader ws.HTTPUpgrader
@@ -64,7 +64,7 @@ func New(cfg Config) *Server {
 	return &Server{
 		config:                cfg,
 		ClientSource:          bytes.Replace(ClientSource, []byte(DefaultEvtMessageKey), cfg.EvtMessagePrefix, -1),
-		connections:           make(map[string]*connection),
+		connections:           sync.Map{}, // ready-to-use, this is not necessary.
 		rooms:                 make(map[string][]string),
 		onConnectionListeners: make([]ConnectionFunc, 0),
 		upgrader:              ws.DefaultHTTPUpgrader, // ws.DefaultUpgrader,
@@ -126,14 +126,19 @@ func (s *Server) Upgrade(ctx context.Context) Connection {
 }
 
 func (s *Server) addConnection(c *connection) {
-	s.mu.Lock()
-	s.connections[c.id] = c
-	s.mu.Unlock()
+	s.connections.Store(c.id, c)
 }
 
 func (s *Server) getConnection(connID string) (*connection, bool) {
-	c, ok := s.connections[connID]
-	return c, ok
+	if cValue, ok := s.connections.Load(connID); ok {
+		// this cast is not necessary,
+		// we know that we always save a connection, but for good or worse let it be here.
+		if conn, ok := cValue.(*connection); ok {
+			return conn, ok
+		}
+	}
+
+	return nil, false
 }
 
 // wrapConnection wraps an underline connection to an iris websocket connection.
@@ -278,24 +283,34 @@ func (s *Server) leave(roomName string, connID string) (left bool) {
 
 // GetTotalConnections returns the number of total connections
 func (s *Server) GetTotalConnections() (n int) {
-	s.mu.RLock()
-	n = len(s.connections)
-	s.mu.RUnlock()
+	s.connections.Range(func(k, v interface{}) bool {
+		n++
+		return true
+	})
 
 	return
 }
 
 // GetConnections returns all connections
 func (s *Server) GetConnections() []Connection {
-	s.mu.RLock()
-	conns := make([]Connection, len(s.connections))
+	// first call of Range to get the total length, we don't want to use append or manually grow the list here for many reasons.
+	length := s.GetTotalConnections()
+	conns := make([]Connection, length, length)
 	i := 0
-	for _, c := range s.connections {
-		conns[i] = c
+	// second call of Range.
+	s.connections.Range(func(k, v interface{}) bool {
+		conn, ok := v.(*connection)
+		if !ok {
+			// if for some reason (should never happen), the value is not stored as *connection
+			// then stop the iteration and don't continue insertion of the result connections
+			// in order to avoid any issues while end-dev will try to iterate a nil entry.
+			return false
+		}
+		conns[i] = conn
 		i++
-	}
+		return true
+	})
 
-	s.mu.RUnlock()
 	return conns
 }
 
@@ -317,8 +332,10 @@ func (s *Server) GetConnectionsByRoom(roomName string) []Connection {
 	if connIDs, found := s.rooms[roomName]; found {
 		for _, connID := range connIDs {
 			// existence check is not necessary here.
-			if conn, ok := s.connections[connID]; ok {
-				conns = append(conns, conn)
+			if cValue, ok := s.connections.Load(connID); ok {
+				if conn, ok := cValue.(*connection); ok {
+					conns = append(conns, conn)
+				}
 			}
 		}
 	}
@@ -358,20 +375,32 @@ func (s *Server) emitMessage(from, to string, data []byte) {
 			}
 		}
 	} else {
-		s.mu.RLock()
 		// it suppose to send the message to all opened connections or to all except the sender.
-		for _, conn := range s.connections {
-			if to != All && to != conn.id { // if it's not suppose to send to all connections (including itself)
-				if to == Broadcast && from == conn.id { // if broadcast to other connections except this
-					// here we do the opossite of previous block,
-					// just skip this connection when it's suppose to send the message to all connections except the sender.
-					continue
-				}
+		s.connections.Range(func(k, v interface{}) bool {
+			connID, ok := k.(string)
+			if !ok {
+				// should never happen.
+				return true
 			}
 
-			conn.writeDefault(data)
-		}
-		s.mu.RUnlock()
+			if to != All && to != connID { // if it's not suppose to send to all connections (including itself)
+				if to == Broadcast && from == connID { // if broadcast to other connections except this
+					// here we do the opossite of previous block,
+					// just skip this connection when it's suppose to send the message to all connections except the sender.
+					return true
+				}
+
+			}
+
+			// not necessary cast.
+			conn, ok := v.(*connection)
+			if ok {
+				// send to the client(s) when the top validators passed
+				conn.writeDefault(data)
+			}
+
+			return ok
+		})
 	}
 }
 
@@ -395,9 +424,7 @@ func (s *Server) Disconnect(connID string) (err error) {
 		// fire the disconnect callbacks, if any.
 		conn.fireDisconnect()
 
-		s.mu.Lock()
-		delete(s.connections, conn.id)
-		s.mu.Unlock()
+		s.connections.Delete(connID)
 
 		err = conn.underline.Close()
 	}
