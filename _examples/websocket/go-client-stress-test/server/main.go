@@ -7,7 +7,8 @@ import (
 	"time"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/websocket2"
+	// _ "github.com/kataras/iris/websocket2"
+	"../../../../ws1m"
 )
 
 const totalClients = 100000
@@ -18,7 +19,7 @@ func main() {
 	// websocket.Config{PingPeriod: ((60 * time.Second) * 9) / 10}
 	ws := websocket.New(websocket.Config{})
 	ws.OnConnection(handleConnection)
-	app.Get("/socket", ws.Handler())
+	app.Get("/socket", ws.HandlerV2())
 
 	go func() {
 		t := time.NewTicker(2 * time.Second)
@@ -40,7 +41,8 @@ func main() {
 			}
 		}
 	}()
-
+	go badlogictesting(ws)
+	go simulate_ping(ws)
 	app.Run(iris.Addr(":8080"))
 }
 
@@ -50,6 +52,7 @@ func handleConnection(c websocket.Connection) {
 	c.On("chat", func(message string) {
 		c.To(websocket.Broadcast).Emit("chat", c.ID()+": "+message)
 	})
+	generateUser(c)
 }
 
 var count uint64

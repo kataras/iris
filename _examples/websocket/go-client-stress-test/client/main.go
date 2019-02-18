@@ -8,8 +8,9 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"github.com/kataras/iris/websocket2"
+	// _ "github.com/kataras/iris/websocket2"
+	"../../../../ws1m"
+	//"github.com/kataras/iris/websocket"
 )
 
 var (
@@ -30,7 +31,6 @@ var (
 func collectError(op string, err error) {
 	errMu.Lock()
 	defer errMu.Unlock()
-
 	switch op {
 	case "disconnect":
 		disconnectErrors = append(disconnectErrors, err)

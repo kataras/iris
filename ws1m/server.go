@@ -9,8 +9,8 @@ import (
 	"github.com/kataras/iris/context"
 
 	"github.com/gobwas/ws"
-	"time"
 	"github.com/mailru/easygo/netpoll"
+	"time"
 )
 
 type (
@@ -114,9 +114,9 @@ func (s *Server) HandlerV1() context.Handler {
 	}
 }
 
+
 //based on 1M design
 //epoller
-//
 func (s *Server) HandlerV2() context.Handler {
 	return func(ctx context.Context) {
 		for {
@@ -124,21 +124,18 @@ func (s *Server) HandlerV2() context.Handler {
 			// If there no free workers for 1ms, do not accept anything and try later.
 			// This will help us to prevent many self-ddos or out of resource limit cases.
 			err := s.connectionPool.ScheduleTimeout(time.Millisecond, func() {
-				conn := ln.Accept()
-				_ = ws.Upgrade(conn)
-
+				//conn := ln.Accept()
+				conn := s.Upgrade(ctx)
+				//	_ = ws.Upgrade(conn)
 				// Wrap WebSocket connection with our Channel struct.
 				// This will help us to handle/send our app's packets.
-				ch := NewChannel(conn)
-
-				// Wait for incoming bytes from connection.
-				s.poller.Start(conn, netpoll.EventRead, func() {
-					// Do not cross the resource limits.
-					s.connectionPool.Schedule(func() {
-						// Read and handle incoming packet(s).
-						ch.Recevie()
-					})
-				})
+				//	ch := NewChannel(conn)
+				// fire the on connection event callbacks, if any
+				for i := range s.onConnectionListeners {
+					s.onConnectionListeners[i](conn)
+				}
+				// start the ping and the messages reader
+				conn.Wait()
 			})
 			if err != nil {
 				time.Sleep(time.Millisecond)
