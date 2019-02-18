@@ -5,6 +5,7 @@ import (
 	stdContext "context"
 	"errors"
 	"io"
+	"io/ioutil"
 	"net"
 	"strconv"
 	"strings"
@@ -267,6 +268,9 @@ type (
 		ctx    context.Context
 		values ConnectionValues
 		server *Server
+
+		writer *wsutil.Writer
+
 		// #119 , websocket writers are not protected by locks inside the gorilla's websocket code
 		// so we must protect them otherwise we're getting concurrent connection error on multi writers in the same time.
 		writerMu sync.Mutex
@@ -303,6 +307,8 @@ func newConnection(conn net.Conn, cfg ConnectionConfig) *connection {
 	if cfg.BinaryMessages {
 		c.defaultMessageType = BinaryMessage
 	}
+
+	// c.writer = wsutil.NewWriter(conn, c.getState(), c.defaultMessageType)
 
 	return c
 }
@@ -350,17 +356,26 @@ func (c *connection) getState() ws.State {
 
 // Write writes a raw websocket message with a specific type to the client
 // used by ping messages and any CloseMessage types.
-func (c *connection) Write(websocketMessageType ws.OpCode, data []byte) error {
+func (c *connection) Write(websocketMessageType ws.OpCode, data []byte) (err error) {
 	// for any-case the app tries to write from different goroutines,
 	// we must protect them because they're reporting that as bug...
 	c.writerMu.Lock()
+	defer c.writerMu.Unlock()
 	if writeTimeout := c.config.WriteTimeout; writeTimeout > 0 {
 		// set the write deadline based on the configuration
 		c.underline.SetWriteDeadline(time.Now().Add(writeTimeout))
 	}
 
-	err := wsutil.WriteMessage(c.underline, c.getState(), websocketMessageType, data)
-	c.writerMu.Unlock()
+	// 2.
+	// if websocketMessageType != c.defaultMessageType {
+	// 	err = wsutil.WriteMessage(c.underline, c.getState(), websocketMessageType, data)
+	// } else {
+	// 	_, err = c.writer.Write(data)
+	// 	c.writer.Flush()
+	// }
+
+	err = wsutil.WriteMessage(c.underline, c.getState(), websocketMessageType, data)
+
 	if err != nil {
 		// if failed then the connection is off, fire the disconnect
 		c.Disconnect()
@@ -440,29 +455,125 @@ func (c *connection) isErrClosed(err error) bool {
 }
 
 func (c *connection) startReader() {
+	defer c.Disconnect()
+
 	hasReadTimeout := c.config.ReadTimeout > 0
 
-	for {
-		if c == nil || c.underline == nil || atomic.LoadUint32(&c.disconnected) > 0 {
-			return
-		}
+	controlHandler := wsutil.ControlFrameHandler(c.underline, c.getState())
+	rd := wsutil.Reader{
+		Source:          c.underline,
+		State:           c.getState(),
+		CheckUTF8:       false,
+		SkipHeaderCheck: false,
+		OnIntermediate:  controlHandler,
+	}
 
+	for {
 		if hasReadTimeout {
 			// set the read deadline based on the configuration
 			c.underline.SetReadDeadline(time.Now().Add(c.config.ReadTimeout))
 		}
 
-		data, code, err := wsutil.ReadData(c.underline, c.getState())
-		if code == CloseMessage || c.isErrClosed(err) {
-			c.Disconnect()
+		hdr, err := rd.NextFrame()
+		if err != nil {
+			return
+		}
+		if hdr.OpCode.IsControl() {
+			if err := controlHandler(hdr, &rd); err != nil {
+				return
+			}
+			continue
+		}
+
+		if hdr.OpCode&TextMessage == 0 && hdr.OpCode&BinaryMessage == 0 {
+			if err := rd.Discard(); err != nil {
+				return
+			}
+			continue
+		}
+
+		data, err := ioutil.ReadAll(&rd)
+		if err != nil {
 			return
 		}
 
-		if err != nil {
-			c.FireOnError(err)
-		}
-
 		c.messageReceived(data)
+
+		// 4.
+		// var buf bytes.Buffer
+		// data, code, err := wsutil.ReadData(struct {
+		// 	io.Reader
+		// 	io.Writer
+		// }{c.underline, &buf}, c.getState())
+		// if err != nil {
+		// 	if _, closed := err.(*net.OpError); closed && code == 0 {
+		// 		c.Disconnect()
+		// 		return
+		// 	} else if _, closed = err.(wsutil.ClosedError); closed {
+		// 		c.Disconnect()
+		// 		return
+		// 		// > 1200 conns but I don't know why yet:
+		// 	} else if err == ws.ErrProtocolOpCodeReserved || err == ws.ErrProtocolNonZeroRsv {
+		// 		c.Disconnect()
+		// 		return
+		// 	} else if err == io.EOF || err == io.ErrUnexpectedEOF {
+		// 		c.Disconnect()
+		// 		return
+		// 	}
+
+		// 	c.FireOnError(err)
+		// }
+
+		// c.messageReceived(data)
+
+		// 2.
+		// header, err := reader.NextFrame()
+		// if err != nil {
+		// 	println("next frame err: " + err.Error())
+		// 	return
+		// }
+
+		// if header.OpCode == ws.OpClose { // io.EOF.
+		// 	return
+		// }
+		// payload := make([]byte, header.Length)
+		// _, err = io.ReadFull(reader, payload)
+		// if err != nil {
+		// 	return
+		// }
+
+		// if header.Masked {
+		// 	ws.Cipher(payload, header.Mask, 0)
+		// }
+
+		// c.messageReceived(payload)
+
+		// data, code, err := wsutil.ReadData(c.underline, c.getState())
+		// // if code == CloseMessage || c.isErrClosed(err) {
+		// // 	c.Disconnect()
+		// // 	return
+		// // }
+
+		// if err != nil {
+		// 	if _, closed := err.(*net.OpError); closed && code == 0 {
+		// 		c.Disconnect()
+		// 		return
+		// 	} else if _, closed = err.(wsutil.ClosedError); closed {
+		// 		c.Disconnect()
+		// 		return
+		// 		// > 1200 conns but I don't know why yet:
+		// 	} else if err == ws.ErrProtocolOpCodeReserved || err == ws.ErrProtocolNonZeroRsv {
+		// 		c.Disconnect()
+		// 		return
+		// 	} else if err == io.EOF || err == io.ErrUnexpectedEOF {
+		// 		c.Disconnect()
+		// 		return
+		// 	}
+
+		// 	c.FireOnError(err)
+		// }
+
+		// c.messageReceived(data)
 	}
 
 }
@@ -801,6 +912,16 @@ var ErrBadHandshake = ws.ErrHandshakeBadConnection
 //
 // Custom dialers can be used by wrapping the iris websocket connection via `websocket.WrapConnection`.
 func Dial(ctx stdContext.Context, url string, cfg ConnectionConfig) (ClientConnection, error) {
+	c, err := dial(ctx, url, cfg)
+	if err != nil {
+		time.Sleep(1 * time.Second)
+		c, err = dial(ctx, url, cfg)
+	}
+
+	return c, err
+}
+
+func dial(ctx stdContext.Context, url string, cfg ConnectionConfig) (ClientConnection, error) {
 	if ctx == nil {
 		ctx = stdContext.Background()
 	}

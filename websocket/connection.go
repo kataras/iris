@@ -808,7 +808,7 @@ func DialContext(ctx stdContext.Context, url string, cfg ConnectionConfig) (Clie
 		ctx = stdContext.Background()
 	}
 
-	if !strings.HasPrefix(url, "ws://") || !strings.HasPrefix(url, "wss://") {
+	if !strings.HasPrefix(url, "ws://") && !strings.HasPrefix(url, "wss://") {
 		url = "ws://" + url
 	}
 
