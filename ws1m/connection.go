@@ -28,7 +28,6 @@ const (
 	BinaryMessage ws.OpCode = ws.OpBinary
 	// CloseMessage denotes a close control message.
 	CloseMessage ws.OpCode = ws.OpClose
-
 	// PingMessage denotes a ping control message. The optional message payload
 	// is UTF-8 encoded text.
 	PingMessage ws.OpCode = ws.OpPing

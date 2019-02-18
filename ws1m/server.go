@@ -10,6 +10,7 @@ import (
 
 	"github.com/gobwas/ws"
 	"time"
+	"github.com/mailru/easygo/netpoll"
 )
 
 type (
@@ -53,6 +54,7 @@ type (
 		connectionPool        Pool //replace with new kind of pool
 		//connectionPool        sync.Pool // sadly we can't make this because the websocket connection is live until is closed.
 		upgrader ws.HTTPUpgrader
+		poller   netpoll.Poller
 	}
 )
 
@@ -63,6 +65,13 @@ type (
 // To serve the built'n javascript client-side library look the `websocket.ClientHandler`.
 func New(cfg Config) *Server {
 	cfg = cfg.Validate()
+
+	var err error
+	etpoller, err := netpoll.New(nil)
+	if err != nil {
+		panic(err)
+	}
+
 	return &Server{
 		config:                cfg,
 		ClientSource:          bytes.Replace(ClientSource, []byte(DefaultEvtMessageKey), cfg.EvtMessagePrefix, -1),
@@ -70,6 +79,7 @@ func New(cfg Config) *Server {
 		rooms:                 make(map[string][]string),
 		onConnectionListeners: make([]ConnectionFunc, 0),
 		upgrader:              ws.DefaultHTTPUpgrader, // ws.DefaultUpgrader,
+		poller:                etpoller,
 	}
 }
 
@@ -103,6 +113,7 @@ func (s *Server) HandlerV1() context.Handler {
 		c.Wait()
 	}
 }
+
 //based on 1M design
 //epoller
 //
@@ -121,9 +132,9 @@ func (s *Server) HandlerV2() context.Handler {
 				ch := NewChannel(conn)
 
 				// Wait for incoming bytes from connection.
-				poller.Start(conn, netpoll.EventRead, func() {
+				s.poller.Start(conn, netpoll.EventRead, func() {
 					// Do not cross the resource limits.
-					pool.Schedule(func() {
+					s.connectionPool.Schedule(func() {
 						// Read and handle incoming packet(s).
 						ch.Recevie()
 					})

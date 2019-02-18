@@ -3,3 +3,5 @@ _authortools
 /_examples/**/node_modules
 .directory
 \.idea/
+
+ws1m/\.DS_Store
