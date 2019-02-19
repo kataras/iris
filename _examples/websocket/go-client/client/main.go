@@ -21,8 +21,7 @@ $ go run main.go
 >> hi!
 */
 func main() {
-	// `websocket.DialContext` is also available.
-	c, err := websocket.Dial(url, websocket.ConnectionConfig{})
+	c, err := websocket.Dial(nil, url, websocket.ConnectionConfig{})
 	if err != nil {
 		panic(err)
 	}

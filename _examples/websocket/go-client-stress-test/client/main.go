@@ -2,8 +2,9 @@ package main
 
 import (
 	"bufio"
-	"fmt"
+	"log"
 	"math/rand"
+	"net"
 	"os"
 	"sync"
 	"sync/atomic"
@@ -13,11 +14,11 @@ import (
 )
 
 var (
-	url = "ws://localhost:8080/socket"
+	url = "ws://localhost:8080"
 	f   *os.File
 )
 
-const totalClients = 100000
+const totalClients = 16000 // max depends on the OS.
 
 var connectionFailures uint64
 
@@ -41,6 +42,7 @@ func collectError(op string, err error) {
 }
 
 func main() {
+	log.Println("--------======Running tests...==========--------------")
 	var err error
 	f, err = os.Open("./test.data")
 	if err != nil {
@@ -67,27 +69,27 @@ func main() {
 		wg.Add(1)
 		waitTime := time.Duration(rand.Intn(10)) * time.Millisecond
 		time.Sleep(waitTime)
-		go connect(wg, 10*time.Second+waitTime)
+		go connect(wg, 9*time.Second+waitTime)
 	}
 
 	for i := 0; i < totalClients/4; i++ {
 		wg.Add(1)
-		waitTime := time.Duration(rand.Intn(20)) * time.Millisecond
+		waitTime := time.Duration(rand.Intn(5)) * time.Millisecond
 		time.Sleep(waitTime)
-		go connect(wg, 25*time.Second+waitTime)
+		go connect(wg, 14*time.Second+waitTime)
 	}
 
 	wg.Wait()
-	fmt.Println("--------================--------------")
-	fmt.Printf("execution time [%s]", time.Since(start))
-	fmt.Println()
+
+	log.Printf("execution time [%s]", time.Since(start))
+	log.Println()
 
 	if connectionFailures > 0 {
-		fmt.Printf("Finished with %d/%d connection failures. Please close the server-side manually.\n", connectionFailures, totalClients)
+		log.Printf("Finished with %d/%d connection failures. Please close the server-side manually.\n", connectionFailures, totalClients)
 	}
 
 	if n := len(connectErrors); n > 0 {
-		fmt.Printf("Finished with %d connect errors:\n", n)
+		log.Printf("Finished with %d connect errors:\n", n)
 		var lastErr error
 		var sameC int
 
@@ -96,36 +98,44 @@ func main() {
 				if lastErr.Error() == err.Error() {
 					sameC++
 					continue
+				} else {
+					_, ok := lastErr.(*net.OpError)
+					if ok {
+						if _, ok = err.(*net.OpError); ok {
+							sameC++
+							continue
+						}
+					}
 				}
 			}
 
 			if sameC > 0 {
-				fmt.Printf("and %d more like this...\n", sameC)
+				log.Printf("and %d more like this...\n", sameC)
 				sameC = 0
 				continue
 			}
 
-			fmt.Printf("[%d] - %v\n", i+1, err)
+			log.Printf("[%d] - %v\n", i+1, err)
 			lastErr = err
 		}
 	}
 
 	if n := len(disconnectErrors); n > 0 {
-		fmt.Printf("Finished with %d disconnect errors\n", n)
+		log.Printf("Finished with %d disconnect errors\n", n)
 		for i, err := range disconnectErrors {
 			if err == websocket.ErrAlreadyDisconnected {
 				continue
 			}
 
-			fmt.Printf("[%d] - %v\n", i+1, err)
+			log.Printf("[%d] - %v\n", i+1, err)
 		}
 	}
 
 	if connectionFailures == 0 && len(connectErrors) == 0 && len(disconnectErrors) == 0 {
-		fmt.Println("ALL OK.")
+		log.Println("ALL OK.")
 	}
 
-	fmt.Println("--------================--------------")
+	log.Println("--------================--------------")
 }
 
 func connect(wg *sync.WaitGroup, alive time.Duration) {
@@ -138,17 +148,17 @@ func connect(wg *sync.WaitGroup, alive time.Duration) {
 	}
 
 	c.OnError(func(err error) {
-		fmt.Printf("error: %v", err)
+		log.Printf("error: %v", err)
 	})
 
 	disconnected := false
 	c.OnDisconnect(func() {
-		fmt.Printf("I am disconnected after [%s].\n", alive)
+		// log.Printf("I am disconnected after [%s].\n", alive)
 		disconnected = true
 	})
 
 	c.On("chat", func(message string) {
-		fmt.Printf("\n%s\n", message)
+		// log.Printf("\n%s\n", message)
 	})
 
 	go func() {

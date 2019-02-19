@@ -197,11 +197,6 @@ type (
 		// Note: the callback(s) called right before the server deletes the connection from the room
 		// so the connection theoretical can still send messages to its room right before it is being disconnected.
 		OnLeave(roomLeaveCb LeaveRoomFunc)
-		// Wait starts the pinger and the messages reader,
-		// it's named as "Wait" because it should be called LAST,
-		// after the "On" events IF server's `Upgrade` is used,
-		// otherise you don't have to call it because the `Handler()` does it automatically.
-		Wait()
 		// SetValue sets a key-value pair on the connection's mem store.
 		SetValue(key string, value interface{})
 		// GetValue gets a value by its key from the connection's mem store.
@@ -239,6 +234,11 @@ type (
 		// Disconnect disconnects the client, close the underline websocket conn and removes it from the conn list
 		// returns the error, if any, from the underline connection
 		Disconnect() error
+		// Wait starts the pinger and the messages reader,
+		// it's named as "Wait" because it should be called LAST,
+		// after the "On" events IF server's `Upgrade` is used,
+		// otherise you don't have to call it because the `Handler()` does it automatically.
+		Wait()
 	}
 
 	connection struct {
@@ -792,7 +792,7 @@ func (c ConnectionConfig) Validate() ConnectionConfig {
 // invalid.
 var ErrBadHandshake = websocket.ErrBadHandshake
 
-// DialContext creates a new client connection.
+// Dial creates a new client connection.
 //
 // The context will be used in the request and in the Dialer.
 //
@@ -803,7 +803,7 @@ var ErrBadHandshake = websocket.ErrBadHandshake
 // open socket of the server, i.e ws://localhost:8080/my_websocket_endpoint.
 //
 // Custom dialers can be used by wrapping the iris websocket connection via `websocket.WrapConnection`.
-func DialContext(ctx stdContext.Context, url string, cfg ConnectionConfig) (ClientConnection, error) {
+func Dial(ctx stdContext.Context, url string, cfg ConnectionConfig) (ClientConnection, error) {
 	if ctx == nil {
 		ctx = stdContext.Background()
 	}
@@ -821,9 +821,4 @@ func DialContext(ctx stdContext.Context, url string, cfg ConnectionConfig) (Clie
 	go clientConn.Wait()
 
 	return clientConn, nil
-}
-
-// Dial creates a new client connection by calling `DialContext` with a background context.
-func Dial(url string, cfg ConnectionConfig) (ClientConnection, error) {
-	return DialContext(stdContext.Background(), url, cfg)
 }
