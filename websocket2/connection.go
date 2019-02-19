@@ -197,11 +197,7 @@ type (
 		// Note: the callback(s) called right before the server deletes the connection from the room
 		// so the connection theoretical can still send messages to its room right before it is being disconnected.
 		OnLeave(roomLeaveCb LeaveRoomFunc)
-		// Wait starts the pinger and the messages reader,
-		// it's named as "Wait" because it should be called LAST,
-		// after the "On" events IF server's `Upgrade` is used,
-		// otherise you don't have to call it because the `Handler()` does it automatically.
-		Wait()
+
 		// SetValue sets a key-value pair on the connection's mem store.
 		SetValue(key string, value interface{})
 		// GetValue gets a value by its key from the connection's mem store.
@@ -239,6 +235,11 @@ type (
 		// Disconnect disconnects the client, close the underline websocket conn and removes it from the conn list
 		// returns the error, if any, from the underline connection
 		Disconnect() error
+		// Wait starts the pinger and the messages reader,
+		// it's named as "Wait" because it should be called LAST,
+		// after the "On" events IF server's `Upgrade` is used,
+		// otherise you don't have to call it because the `Handler()` does it automatically.
+		Wait() error
 	}
 
 	connection struct {
@@ -454,7 +455,7 @@ func (c *connection) isErrClosed(err error) bool {
 	return err != io.EOF
 }
 
-func (c *connection) startReader() {
+func (c *connection) startReader() error {
 	defer c.Disconnect()
 
 	hasReadTimeout := c.config.ReadTimeout > 0
@@ -476,25 +477,25 @@ func (c *connection) startReader() {
 
 		hdr, err := rd.NextFrame()
 		if err != nil {
-			return
+			return err
 		}
 		if hdr.OpCode.IsControl() {
 			if err := controlHandler(hdr, &rd); err != nil {
-				return
+				return err
 			}
 			continue
 		}
 
 		if hdr.OpCode&TextMessage == 0 && hdr.OpCode&BinaryMessage == 0 {
 			if err := rd.Discard(); err != nil {
-				return
+				return err
 			}
 			continue
 		}
 
 		data, err := ioutil.ReadAll(&rd)
 		if err != nil {
-			return
+			return err
 		}
 
 		c.messageReceived(data)
@@ -575,7 +576,6 @@ func (c *connection) startReader() {
 
 		// c.messageReceived(data)
 	}
-
 }
 
 // messageReceived checks the incoming message and fire the nativeMessage listeners or the event listeners (ws custom message)
@@ -747,16 +747,16 @@ func (c *connection) fireOnLeave(roomName string) {
 // it's named as "Wait" because it should be called LAST,
 // after the "On" events IF server's `Upgrade` is used,
 // otherise you don't have to call it because the `Handler()` does it automatically.
-func (c *connection) Wait() {
+func (c *connection) Wait() error {
 	if c.started {
-		return
+		return nil
 	}
 	c.started = true
 	// start the ping
 	c.startPinger()
 
 	// start the messages reader
-	c.startReader()
+	return c.startReader()
 }
 
 // ErrAlreadyDisconnected can be reported on the `Connection#Disconnect` function whenever the caller tries to close the
@@ -912,13 +912,7 @@ var ErrBadHandshake = ws.ErrHandshakeBadConnection
 //
 // Custom dialers can be used by wrapping the iris websocket connection via `websocket.WrapConnection`.
 func Dial(ctx stdContext.Context, url string, cfg ConnectionConfig) (ClientConnection, error) {
-	c, err := dial(ctx, url, cfg)
-	if err != nil {
-		time.Sleep(1 * time.Second)
-		c, err = dial(ctx, url, cfg)
-	}
-
-	return c, err
+	return dial(ctx, url, cfg)
 }
 
 func dial(ctx stdContext.Context, url string, cfg ConnectionConfig) (ClientConnection, error) {

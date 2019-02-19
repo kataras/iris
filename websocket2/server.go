@@ -50,7 +50,8 @@ type (
 		mu                    sync.RWMutex        // for rooms.
 		onConnectionListeners []ConnectionFunc
 		//connectionPool        sync.Pool // sadly we can't make this because the websocket connection is live until is closed.
-		upgrader ws.HTTPUpgrader
+		httpUpgrader ws.HTTPUpgrader
+		tcpUpgrader  ws.Upgrader
 	}
 )
 
@@ -67,7 +68,8 @@ func New(cfg Config) *Server {
 		connections:           sync.Map{}, // ready-to-use, this is not necessary.
 		rooms:                 make(map[string][]string),
 		onConnectionListeners: make([]ConnectionFunc, 0),
-		upgrader:              ws.DefaultHTTPUpgrader, // ws.DefaultUpgrader,
+		httpUpgrader:          ws.DefaultHTTPUpgrader, // ws.DefaultUpgrader,
+		tcpUpgrader:           ws.DefaultUpgrader,
 	}
 }
 
@@ -115,7 +117,7 @@ func (s *Server) Handler() context.Handler {
 // This one does not starts the connection's writer and reader, so after your `On/OnMessage` events registration
 // the caller has to call the `Connection#Wait` function, otherwise the connection will be not handled.
 func (s *Server) Upgrade(ctx context.Context) Connection {
-	conn, _, _, err := s.upgrader.Upgrade(ctx.Request(), ctx.ResponseWriter())
+	conn, _, _, err := s.httpUpgrader.Upgrade(ctx.Request(), ctx.ResponseWriter())
 	if err != nil {
 		ctx.Application().Logger().Warnf("websocket error: %v\n", err)
 		ctx.StatusCode(503) // Status Service Unavailable
@@ -123,6 +125,37 @@ func (s *Server) Upgrade(ctx context.Context) Connection {
 	}
 
 	return s.handleConnection(ctx, conn)
+}
+
+func (s *Server) ZeroUpgrade(conn net.Conn) Connection {
+	_, err := s.tcpUpgrader.Upgrade(conn)
+	if err != nil {
+		return &connection{err: err}
+	}
+
+	return s.handleConnection(nil, conn)
+}
+
+func (s *Server) HandleConn(conn net.Conn) error {
+	c := s.ZeroUpgrade(conn)
+	if c.Err() != nil {
+		return c.Err()
+	}
+
+	// NOTE TO ME: fire these first BEFORE startReader and startPinger
+	// in order to set the events and any messages to send
+	// the startPinger will send the OK to the client and only
+	// then the client is able to send and receive from Server
+	// when all things are ready and only then. DO NOT change this order.
+
+	// fire the on connection event callbacks, if any
+	for i := range s.onConnectionListeners {
+		s.onConnectionListeners[i](c)
+	}
+
+	// start the ping and the messages reader
+	c.Wait()
+	return nil
 }
 
 func (s *Server) addConnection(c *connection) {
@@ -292,12 +325,7 @@ func (s *Server) GetTotalConnections() (n int) {
 }
 
 // GetConnections returns all connections
-func (s *Server) GetConnections() []Connection {
-	// first call of Range to get the total length, we don't want to use append or manually grow the list here for many reasons.
-	length := s.GetTotalConnections()
-	conns := make([]Connection, length, length)
-	i := 0
-	// second call of Range.
+func (s *Server) GetConnections() (conns []Connection) {
 	s.connections.Range(func(k, v interface{}) bool {
 		conn, ok := v.(*connection)
 		if !ok {
@@ -306,12 +334,11 @@ func (s *Server) GetConnections() []Connection {
 			// in order to avoid any issues while end-dev will try to iterate a nil entry.
 			return false
 		}
-		conns[i] = conn
-		i++
+		conns = append(conns, conn)
 		return true
 	})
 
-	return conns
+	return
 }
 
 // GetConnection returns single connection
