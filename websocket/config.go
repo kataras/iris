@@ -1,8 +1,8 @@
 package websocket
 
 import (
-	"math/rand"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/kataras/iris/context"
@@ -33,19 +33,18 @@ const (
 )
 
 var (
-	// DefaultIDGenerator returns a random unique for a new connection.
+	// DefaultIDGenerator returns a random unique string for a new connection.
 	// Used when config.IDGenerator is nil.
 	DefaultIDGenerator = func(context.Context) string {
 		id, err := uuid.NewV4()
 		if err != nil {
-			return randomString(64)
+			return strconv.FormatInt(time.Now().Unix(), 10)
 		}
 		return id.String()
 	}
 )
 
-// Config the websocket server configuration
-// all of these are optional.
+// Config contains the websocket server's configuration, optional.
 type Config struct {
 	// IDGenerator used to create (and later on, set)
 	// an ID for each incoming websocket connections (clients).
@@ -157,38 +156,4 @@ func (c Config) Validate() Config {
 	}
 
 	return c
-}
-
-const (
-	letterBytes   = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	letterIdxBits = 6                    // 6 bits to represent a letter index
-	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
-	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
-)
-
-var src = rand.NewSource(time.Now().UnixNano())
-
-// random takes a parameter (int) and returns random slice of byte
-// ex: var randomstrbytes []byte; randomstrbytes = utils.Random(32)
-func random(n int) []byte {
-	b := make([]byte, n)
-	// A src.Int63() generates 63 random bits, enough for letterIdxMax characters!
-	for i, cache, remain := n-1, src.Int63(), letterIdxMax; i >= 0; {
-		if remain == 0 {
-			cache, remain = src.Int63(), letterIdxMax
-		}
-		if idx := int(cache & letterIdxMask); idx < len(letterBytes) {
-			b[i] = letterBytes[idx]
-			i--
-		}
-		cache >>= letterIdxBits
-		remain--
-	}
-
-	return b
-}
-
-// randomString accepts a number(10 for example) and returns a random string using simple but fairly safe random algorithm
-func randomString(n int) string {
-	return string(random(n))
 }

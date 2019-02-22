@@ -10,7 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/kataras/iris/websocket2"
+	"github.com/kataras/iris/websocket"
 )
 
 var (
@@ -19,6 +19,7 @@ var (
 )
 
 const totalClients = 16000 // max depends on the OS.
+const verbose = true
 
 var connectionFailures uint64
 
@@ -42,7 +43,7 @@ func collectError(op string, err error) {
 }
 
 func main() {
-	log.Println("--------======Running tests...==========--------------")
+	log.Println("--Running...")
 	var err error
 	f, err = os.Open("./test.data")
 	if err != nil {
@@ -85,11 +86,11 @@ func main() {
 	log.Println()
 
 	if connectionFailures > 0 {
-		log.Printf("Finished with %d/%d connection failures. Please close the server-side manually.\n", connectionFailures, totalClients)
+		log.Printf("Finished with %d/%d connection failures.", connectionFailures, totalClients)
 	}
 
 	if n := len(connectErrors); n > 0 {
-		log.Printf("Finished with %d connect errors:\n", n)
+		log.Printf("Finished with %d connect errors: ", n)
 		var lastErr error
 		var sameC int
 
@@ -123,7 +124,7 @@ func main() {
 	if n := len(disconnectErrors); n > 0 {
 		log.Printf("Finished with %d disconnect errors\n", n)
 		for i, err := range disconnectErrors {
-			if err == websocket.ErrAlreadyDisconnected {
+			if err == websocket.ErrAlreadyDisconnected && i > 0 {
 				continue
 			}
 
@@ -135,7 +136,7 @@ func main() {
 		log.Println("ALL OK.")
 	}
 
-	log.Println("--------================--------------")
+	log.Println("--Finished.")
 }
 
 func connect(wg *sync.WaitGroup, alive time.Duration) {
@@ -153,12 +154,17 @@ func connect(wg *sync.WaitGroup, alive time.Duration) {
 
 	disconnected := false
 	c.OnDisconnect(func() {
-		// log.Printf("I am disconnected after [%s].\n", alive)
+		if verbose {
+			log.Printf("I am disconnected after [%s].\n", alive)
+		}
+
 		disconnected = true
 	})
 
 	c.On("chat", func(message string) {
-		// log.Printf("\n%s\n", message)
+		if verbose {
+			log.Printf("\n%s\n", message)
+		}
 	})
 
 	go func() {
