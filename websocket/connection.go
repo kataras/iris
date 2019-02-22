@@ -4,7 +4,6 @@ import (
 	"bytes"
 	stdContext "context"
 	"errors"
-	"io"
 	"net"
 	"strconv"
 	"strings"
@@ -91,50 +90,6 @@ func (r *ConnectionValues) Get(key string) interface{} {
 // Reset clears the values
 func (r *ConnectionValues) Reset() {
 	*r = (*r)[:0]
-}
-
-// UnderlineConnection is the underline connection, nothing to think about,
-// it's used internally mostly but can be used for extreme cases with other libraries.
-type UnderlineConnection interface {
-	// SetWriteDeadline sets the write deadline on the underlying network
-	// connection. After a write has timed out, the websocket state is corrupt and
-	// all future writes will return an error. A zero value for t means writes will
-	// not time out.
-	SetWriteDeadline(t time.Time) error
-	// SetReadDeadline sets the read deadline on the underlying network connection.
-	// After a read has timed out, the websocket connection state is corrupt and
-	// all future reads will return an error. A zero value for t means reads will
-	// not time out.
-	SetReadDeadline(t time.Time) error
-	// SetReadLimit sets the maximum size for a message read from the peer. If a
-	// message exceeds the limit, the connection sends a close frame to the peer
-	// and returns ErrReadLimit to the application.
-	SetReadLimit(limit int64)
-	// SetPongHandler sets the handler for pong messages received from the peer.
-	// The appData argument to h is the PONG frame application data. The default
-	// pong handler does nothing.
-	SetPongHandler(h func(appData string) error)
-	// SetPingHandler sets the handler for ping messages received from the peer.
-	// The appData argument to h is the PING frame application data. The default
-	// ping handler sends a pong to the peer.
-	SetPingHandler(h func(appData string) error)
-	// WriteControl writes a control message with the given deadline. The allowed
-	// message types are CloseMessage, PingMessage and PongMessage.
-	WriteControl(messageType int, data []byte, deadline time.Time) error
-	// WriteMessage is a helper method for getting a writer using NextWriter,
-	// writing the message and closing the writer.
-	WriteMessage(messageType int, data []byte) error
-	// ReadMessage is a helper method for getting a reader using NextReader and
-	// reading from that reader to a buffer.
-	ReadMessage() (messageType int, p []byte, err error)
-	// NextWriter returns a writer for the next message to send. The writer's Close
-	// method flushes the complete message to the network.
-	//
-	// There can be at most one open writer on a connection. NextWriter closes the
-	// previous writer if the application has not already done so.
-	NextWriter(messageType int) (io.WriteCloser, error)
-	// Close closes the underlying network connection without sending or waiting for a close frame.
-	Close() error
 }
 
 // -------------------------------------------------------------------------------------
@@ -239,11 +194,12 @@ type (
 		// after the "On" events IF server's `Upgrade` is used,
 		// otherise you don't have to call it because the `Handler()` does it automatically.
 		Wait()
+		UnderlyingConn() *websocket.Conn
 	}
 
 	connection struct {
 		err                error
-		underline          UnderlineConnection
+		underline          *websocket.Conn
 		config             ConnectionConfig
 		defaultMessageType int
 		serializer         *messageSerializer
@@ -281,11 +237,11 @@ var _ Connection = &connection{}
 
 // WrapConnection wraps the underline websocket connection into a new iris websocket connection.
 // The caller should call the `connection#Wait` (which blocks) to enable its read and write functionality.
-func WrapConnection(underlineConn UnderlineConnection, cfg ConnectionConfig) Connection {
+func WrapConnection(underlineConn *websocket.Conn, cfg ConnectionConfig) Connection {
 	return newConnection(underlineConn, cfg)
 }
 
-func newConnection(underlineConn UnderlineConnection, cfg ConnectionConfig) *connection {
+func newConnection(underlineConn *websocket.Conn, cfg ConnectionConfig) *connection {
 	cfg = cfg.Validate()
 	c := &connection{
 		underline:                underlineConn,
@@ -308,7 +264,7 @@ func newConnection(underlineConn UnderlineConnection, cfg ConnectionConfig) *con
 	return c
 }
 
-func newServerConnection(ctx context.Context, s *Server, underlineConn UnderlineConnection, id string) *connection {
+func newServerConnection(ctx context.Context, s *Server, underlineConn *websocket.Conn, id string) *connection {
 	c := newConnection(underlineConn, ConnectionConfig{
 		EvtMessagePrefix:  s.config.EvtMessagePrefix,
 		WriteTimeout:      s.config.WriteTimeout,
@@ -332,6 +288,10 @@ func newServerConnection(ctx context.Context, s *Server, underlineConn Underline
 	c.all = newEmitter(c, All)
 
 	return c
+}
+
+func (c *connection) UnderlyingConn() *websocket.Conn {
+	return c.underline
 }
 
 // Err is not nil if the upgrader failed to upgrade http to websocket connection.

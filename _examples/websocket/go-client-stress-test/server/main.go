@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/websocket2"
+	"github.com/kataras/iris/websocket"
 )
 
 const totalClients = 16000 // max depends on the OS.
-const http = true
+const verbose = true
 
 func main() {
 
@@ -62,32 +62,9 @@ func main() {
 		}
 	}()
 
-	if http {
-		app := iris.New()
-		app.Get("/", ws.Handler())
-		app.Run(iris.Addr(":8080"))
-		return
-	}
-
-	// ln, err := net.Listen("tcp", ":8080")
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// defer ln.Close()
-	// for {
-	// 	conn, err := ln.Accept()
-	// 	if err != nil {
-	// 		panic(err)
-	// 	}
-
-	// 	go func() {
-	// 		err = ws.HandleConn(conn)
-	// 		if err != nil {
-	// 			panic(err)
-	// 		}
-	// 	}()
-	// }
+	app := iris.New()
+	app.Get("/", ws.Handler())
+	app.Run(iris.Addr(":8080"))
 
 }
 
@@ -103,7 +80,9 @@ var count uint64
 
 func handleDisconnect(c websocket.Connection) {
 	atomic.AddUint64(&count, 1)
-	// log.Printf("client [%s] disconnected!\n", c.ID())
+	if verbose {
+		log.Printf("client [%s] disconnected!\n", c.ID())
+	}
 }
 
 func handleErr(c websocket.Connection, err error) {
