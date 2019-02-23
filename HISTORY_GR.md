@@ -201,7 +201,7 @@ This history entry is not yet translated to Greek. Please read [the english vers
 
 Παρακάτω θα δείτε μερικά στιγμιότυπα που ετοιμάσαμε για εσάς, ώστε να γίνουν πιο κατανοητά τα παραπάνω:
 
-### 1. Παράμετροι διαδρομής - Ενσωματωμένες Εξαρτήσεις (Built'n Dependencies)
+### 1. Παράμετροι διαδρομής - Ενσωματωμένες Εξαρτήσεις (Builtin Dependencies)
 
 ![](https://github.com/kataras/explore/raw/master/iris/hero/hero-1-monokai.png)
 

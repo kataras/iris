@@ -41,6 +41,9 @@ type ResponseWriter interface {
 	// Here is the place which we can make the last checks or do a cleanup.
 	EndResponse()
 
+	// IsHijacked reports whether this response writer's connection is hijacked.
+	IsHijacked() bool
+
 	// Writef formats according to a format specifier and writes to the response.
 	//
 	// Returns the number of bytes written and any write error encountered.
@@ -193,6 +196,15 @@ func (w *responseWriter) tryWriteHeader() {
 		w.written = StatusCodeWritten
 		w.ResponseWriter.WriteHeader(w.statusCode)
 	}
+}
+
+// IsHijacked reports whether this response writer's connection is hijacked.
+func (w *responseWriter) IsHijacked() bool {
+	// Note:
+	// A zero-byte `ResponseWriter.Write` on a hijacked connection will
+	// return `http.ErrHijacked` without any other side effects.
+	_, err := w.ResponseWriter.Write(nil)
+	return err == http.ErrHijacked
 }
 
 // Write writes to the client

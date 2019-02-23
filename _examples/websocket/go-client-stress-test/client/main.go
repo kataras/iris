@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"log"
 	"math/rand"
 	"net"
@@ -19,7 +20,7 @@ var (
 )
 
 const totalClients = 16000 // max depends on the OS.
-const verbose = true
+const verbose = false
 
 var connectionFailures uint64
 
@@ -43,7 +44,7 @@ func collectError(op string, err error) {
 }
 
 func main() {
-	log.Println("--Running...")
+	log.Println("-- Running...")
 	var err error
 	f, err = os.Open("./test.data")
 	if err != nil {
@@ -63,7 +64,7 @@ func main() {
 		wg.Add(1)
 		waitTime := time.Duration(rand.Intn(5)) * time.Millisecond
 		time.Sleep(waitTime)
-		go connect(wg, 7*time.Second+waitTime)
+		go connect(wg, 14*time.Second+waitTime)
 	}
 
 	for i := 0; i < totalClients/4; i++ {
@@ -77,7 +78,7 @@ func main() {
 		wg.Add(1)
 		waitTime := time.Duration(rand.Intn(5)) * time.Millisecond
 		time.Sleep(waitTime)
-		go connect(wg, 14*time.Second+waitTime)
+		go connect(wg, 7*time.Second+waitTime)
 	}
 
 	wg.Wait()
@@ -136,16 +137,19 @@ func main() {
 		log.Println("ALL OK.")
 	}
 
-	log.Println("--Finished.")
+	log.Println("-- Finished.")
 }
 
-func connect(wg *sync.WaitGroup, alive time.Duration) {
-	c, err := websocket.Dial(nil, url, websocket.ConnectionConfig{})
+func connect(wg *sync.WaitGroup, alive time.Duration) error {
+	ctx, cancel := context.WithTimeout(context.Background(), alive)
+	defer cancel()
+
+	c, err := websocket.Dial(ctx, url, websocket.ConnectionConfig{})
 	if err != nil {
 		atomic.AddUint64(&connectionFailures, 1)
 		collectError("connect", err)
 		wg.Done()
-		return
+		return err
 	}
 
 	c.OnError(func(err error) {
@@ -167,23 +171,28 @@ func connect(wg *sync.WaitGroup, alive time.Duration) {
 		}
 	})
 
-	go func() {
-		time.Sleep(alive)
-		if err := c.Disconnect(); err != nil {
-			collectError("disconnect", err)
-		}
+	if alive > 0 {
+		go func() {
+			time.Sleep(alive)
+			if err := c.Disconnect(); err != nil {
+				collectError("disconnect", err)
+			}
 
-		wg.Done()
-	}()
+			wg.Done()
+		}()
+
+	}
 
 	scanner := bufio.NewScanner(f)
 	for !disconnected {
-		if !scanner.Scan() || scanner.Err() != nil {
-			break
+		if !scanner.Scan() {
+			return scanner.Err()
 		}
 
 		if text := scanner.Text(); len(text) > 1 {
 			c.Emit("chat", text)
 		}
 	}
+
+	return nil
 }

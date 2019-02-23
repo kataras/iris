@@ -38,7 +38,7 @@ I have some features in-mind but lately I do not have the time to humanize those
 
 - fix [#1164](https://github.com/kataras/iris/issues/1164). [701e8e46c20395f87fa34bf9fabd145074c7b78c](https://github.com/kataras/iris/commit/701e8e46c20395f87fa34bf9fabd145074c7b78c) (@kataras)
 
-- `context#ReadForm` can skip unkown fields by `IsErrPath(err)`, fixes: [#1157](https://github.com/kataras/iris/issues/1157). [1607bb5113568af6a34142f23bfa44903205b314](https://github.com/kataras/iris/commit/1607bb5113568af6a34142f23bfa44903205b314) (@kataras)
+- `context#ReadForm` can skip unknown fields by `IsErrPath(err)`, fixes: [#1157](https://github.com/kataras/iris/issues/1157). [1607bb5113568af6a34142f23bfa44903205b314](https://github.com/kataras/iris/commit/1607bb5113568af6a34142f23bfa44903205b314) (@kataras)
 
 
 Doc updates:
@@ -281,7 +281,7 @@ wsServer := websocket.New(websocket.Config{
 
 // [...]
 
-// serve the javascript built'n client-side library,
+// serve the javascript builtin client-side library,
 // see websockets.html script tags, this path is used.
 app.Any("/iris-ws.js", func(ctx iris.Context) {
     ctx.Write(wsServer.ClientSource)
@@ -401,7 +401,7 @@ The old `github.com/kataras/iris/core/router/macro` package was moved to `guthub
 - Add `:uint64` parameter type and `ctx.Params().GetUint64`
 - Add alias `:bool` for the `:boolean` parameter type
 
-Here is the full list of the built'n parameter types that we support now, including their validations/path segment rules.
+Here is the full list of the builtin parameter types that we support now, including their validations/path segment rules.
 
 | Param Type | Go Type | Validation | Retrieve Helper |
 | -----------------|------|-------------|------|
@@ -430,7 +430,7 @@ app.Get("/users/{id:uint64}", func(ctx iris.Context){
 })
 ```
 
-| Built'n Func | Param Types |
+| Builtin Func | Param Types |
 | -----------|---------------|
 | `regexp`(expr string) | :string |
 | `prefix`(prefix string) | :string |
@@ -633,7 +633,7 @@ Sincerely,
 
 # We, 25 April 2018 | v10.6.1
 
-- Re-implement the [BoltDB](https://github.com/coreos/bbolt) as built'n back-end storage for sessions(`sessiondb`) using the latest features: [/sessions/sessiondb/boltdb/database.go](sessions/sessiondb/boltdb/database.go), example can be found at [/_examples/sessions/database/boltdb/main.go](_examples/sessions/database/boltdb/main.go).
+- Re-implement the [BoltDB](https://github.com/coreos/bbolt) as builtin back-end storage for sessions(`sessiondb`) using the latest features: [/sessions/sessiondb/boltdb/database.go](sessions/sessiondb/boltdb/database.go), example can be found at [/_examples/sessions/database/boltdb/main.go](_examples/sessions/database/boltdb/main.go).
 - Fix a minor issue on [Badger sessiondb example](_examples/sessions/database/badger/main.go). Its `sessions.Config { Expires }` field was `2 *time.Second`, it's `45 *time.Minute` now.
 - Other minor improvements to the badger sessiondb.
 
@@ -642,7 +642,7 @@ Sincerely,
 - Fix open redirect by @wozz via PR: https://github.com/kataras/iris/pull/972.
 - Fix when destroy session can't remove cookie in subdomain by @Chengyumeng via PR: https://github.com/kataras/iris/pull/964.
 - Add `OnDestroy(sid string)` on sessions for registering a listener when a session is destroyed with commit: https://github.com/kataras/iris/commit/d17d7fecbe4937476d00af7fda1c138c1ac6f34d.
-- Finally, sessions are in full-sync with the registered database now. That required a lot of internal code changed but **zero code change requirements by your side**. We kept only `badger` and `redis` as the back-end built'n supported sessions storages, they are enough. Made with commit: https://github.com/kataras/iris/commit/f2c3a5f0cef62099fd4d77c5ccb14f654ddbfb5c relative to many issues that you've requested it.
+- Finally, sessions are in full-sync with the registered database now. That required a lot of internal code changed but **zero code change requirements by your side**. We kept only `badger` and `redis` as the back-end builtin supported sessions storages, they are enough. Made with commit: https://github.com/kataras/iris/commit/f2c3a5f0cef62099fd4d77c5ccb14f654ddbfb5c relative to many issues that you've requested it.
 
 # Sa, 24 March 2018 | v10.5.0
 
@@ -840,7 +840,7 @@ The new package [hero](hero) contains features for binding any object or functio
 
 Below you will see some screenshots we prepared for you in order to be easier to understand:
 
-### 1. Path Parameters - Built'n Dependencies
+### 1. Path Parameters - Builtin Dependencies
 
 ![](https://github.com/kataras/explore/raw/master/iris/hero/hero-1-monokai.png)
 

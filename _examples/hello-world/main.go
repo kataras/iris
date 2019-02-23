@@ -10,7 +10,7 @@ import (
 func main() {
 	app := iris.New()
 	app.Logger().SetLevel("debug")
-	// Optionally, add two built'n handlers
+	// Optionally, add two builtin handlers
 	// that can recover from any http-relative panics
 	// and log the requests to the terminal.
 	app.Use(recover.New())

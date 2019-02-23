@@ -3177,7 +3177,7 @@ func (ctx *context) SendFile(filename string, destinationName string) error {
 // context's methods like `SetCookieKV`, `RemoveCookie` and `SetCookie`
 // as their (last) variadic input argument to amend the end cookie's form.
 //
-// Any custom or built'n `CookieOption` is valid,
+// Any custom or builtin `CookieOption` is valid,
 // see `CookiePath`, `CookieCleanPath`, `CookieExpires` and `CookieHTTPOnly` for more.
 type CookieOption func(*http.Cookie)
 

@@ -176,7 +176,7 @@ app.Get("/users/{id:uint64}", func(ctx iris.Context){
 })
 ```
 
-| Built'n Func | Param Types |
+| Builtin Func | Param Types |
 | -----------|---------------|
 | `regexp`(expr string) | :string |
 | `prefix`(prefix string) | :string |
@@ -300,7 +300,7 @@ With Iris you get truly safe bindings thanks to the [hero](_examples/hero) [pack
 
 Below you will see some screenshots I prepared for you in order to be easier to understand:
 
-#### 1. Path Parameters - Built'n Dependencies
+#### 1. Path Parameters - Builtin Dependencies
 
 ![](https://github.com/kataras/explore/raw/master/iris/hero/hero-1-monokai.png)
 
@@ -797,7 +797,7 @@ func setupWebsocket(app *iris.Application) {
     // see the inline javascript code in the websockets.html,
     // this endpoint is used to connect to the server.
     app.Get("/echo", ws.Handler())
-    // serve the javascript built'n client-side library,
+    // serve the javascript builtin client-side library,
     // see websockets.html script tags, this path is used.
     app.Any("/iris-ws.js", websocket.ClientHandler())
 }

@@ -613,7 +613,7 @@ func (app *Application) Shutdown(ctx stdContext.Context) error {
 // It can be used to register a custom runner with `Run` in order
 // to set the framework's server listen action.
 //
-// Currently Runner is being used to declare the built'n server listeners.
+// Currently `Runner` is being used to declare the builtin server listeners.
 //
 // See `Run` for more.
 type Runner func(*Application) error
