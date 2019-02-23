@@ -42,55 +42,7 @@ type (
 		key   []byte
 		value interface{}
 	}
-	// ConnectionValues is the temporary connection's memory store
-	ConnectionValues []connectionValue
 )
-
-// Set sets a value based on the key
-func (r *ConnectionValues) Set(key string, value interface{}) {
-	args := *r
-	n := len(args)
-	for i := 0; i < n; i++ {
-		kv := &args[i]
-		if string(kv.key) == key {
-			kv.value = value
-			return
-		}
-	}
-
-	c := cap(args)
-	if c > n {
-		args = args[:n+1]
-		kv := &args[n]
-		kv.key = append(kv.key[:0], key...)
-		kv.value = value
-		*r = args
-		return
-	}
-
-	kv := connectionValue{}
-	kv.key = append(kv.key[:0], key...)
-	kv.value = value
-	*r = append(args, kv)
-}
-
-// Get returns a value based on its key
-func (r *ConnectionValues) Get(key string) interface{} {
-	args := *r
-	n := len(args)
-	for i := 0; i < n; i++ {
-		kv := &args[i]
-		if string(kv.key) == key {
-			return kv.value
-		}
-	}
-	return nil
-}
-
-// Reset clears the values
-func (r *ConnectionValues) Reset() {
-	*r = (*r)[:0]
-}
 
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
@@ -135,7 +87,7 @@ type (
 		// then  you use it to receive user information, for example: from headers
 		Context() context.Context
 		// To defines on what "room" (see Join) the server should send a message
-		// returns an Emmiter(`EmitMessage` & `Emit`) to send messages.
+		// returns an Emitter(`EmitMessage` & `Emit`) to send messages.
 		To(string) Emitter
 		// Join registers this connection to a room, if it doesn't exist then it creates a new. One room can have one or more connections. One connection can be joined to many rooms. All connections are joined to a room specified by their `ID` automatically.
 		Join(string)
@@ -152,16 +104,6 @@ type (
 		// Note: the callback(s) called right before the server deletes the connection from the room
 		// so the connection theoretical can still send messages to its room right before it is being disconnected.
 		OnLeave(roomLeaveCb LeaveRoomFunc)
-		// SetValue sets a key-value pair on the connection's mem store.
-		SetValue(key string, value interface{})
-		// GetValue gets a value by its key from the connection's mem store.
-		GetValue(key string) interface{}
-		// GetValueArrString gets a value as []string by its key from the connection's mem store.
-		GetValueArrString(key string) []string
-		// GetValueString gets a value as string by its key from the connection's mem store.
-		GetValueString(key string) string
-		// GetValueInt gets a value as integer by its key from the connection's mem store.
-		GetValueInt(key string) int
 	}
 
 	// ClientConnection is the client-side connection interface. Server shares some of its methods but the underline actions differs.
@@ -223,7 +165,6 @@ type (
 
 		// access to the Context, use with caution, you can't use response writer as you imagine.
 		ctx    context.Context
-		values ConnectionValues
 		server *Server
 		// #119 , websocket writers are not protected by locks inside the gorilla's websocket code
 		// so we must protect them otherwise we're getting concurrent connection error on multi writers in the same time.
@@ -355,7 +296,7 @@ func (c *connection) startPinger() {
 			for {
 				time.Sleep(c.config.PingPeriod)
 				if c == nil || atomic.LoadUint32(&c.disconnected) > 0 {
-					// verifies if already disconected.
+					// verifies if already disconnected.
 					return
 				}
 				//fire all OnPing methods
@@ -483,10 +424,6 @@ func (c *connection) Context() context.Context {
 	return c.ctx
 }
 
-func (c *connection) Values() ConnectionValues {
-	return c.values
-}
-
 func (c *connection) fireDisconnect() {
 	for i := range c.onDisconnectListeners {
 		c.onDisconnectListeners[i]()
@@ -591,7 +528,7 @@ func (c *connection) fireOnLeave(roomName string) {
 // Wait starts the pinger and the messages reader,
 // it's named as "Wait" because it should be called LAST,
 // after the "On" events IF server's `Upgrade` is used,
-// otherise you don't have to call it because the `Handler()` does it automatically.
+// otherwise you don't have to call it because the `Handler()` does it automatically.
 func (c *connection) Wait() {
 	// if c.server != nil && c.server.config.MaxConcurrentConnections > 0 {
 	// 	defer func() {
@@ -635,47 +572,6 @@ func (c *connection) Disconnect() error {
 	}
 
 	return err
-}
-
-// mem per-conn store
-
-func (c *connection) SetValue(key string, value interface{}) {
-	c.values.Set(key, value)
-}
-
-func (c *connection) GetValue(key string) interface{} {
-	return c.values.Get(key)
-}
-
-func (c *connection) GetValueArrString(key string) []string {
-	if v := c.values.Get(key); v != nil {
-		if arrString, ok := v.([]string); ok {
-			return arrString
-		}
-	}
-	return nil
-}
-
-func (c *connection) GetValueString(key string) string {
-	if v := c.values.Get(key); v != nil {
-		if s, ok := v.(string); ok {
-			return s
-		}
-	}
-	return ""
-}
-
-func (c *connection) GetValueInt(key string) int {
-	if v := c.values.Get(key); v != nil {
-		if i, ok := v.(int); ok {
-			return i
-		} else if s, ok := v.(string); ok {
-			if iv, err := strconv.Atoi(s); err == nil {
-				return iv
-			}
-		}
-	}
-	return 0
 }
 
 // ConnectionConfig is the base configuration for both server and client connections.
