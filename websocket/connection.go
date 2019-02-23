@@ -192,8 +192,9 @@ type (
 		// Wait starts the pinger and the messages reader,
 		// it's named as "Wait" because it should be called LAST,
 		// after the "On" events IF server's `Upgrade` is used,
-		// otherise you don't have to call it because the `Handler()` does it automatically.
+		// otherwise you don't have to call it because the `Handler()` does it automatically.
 		Wait()
+		// UnderlyingConn returns the underline gorilla websocket connection.
 		UnderlyingConn() *websocket.Conn
 	}
 
@@ -592,6 +593,14 @@ func (c *connection) fireOnLeave(roomName string) {
 // after the "On" events IF server's `Upgrade` is used,
 // otherise you don't have to call it because the `Handler()` does it automatically.
 func (c *connection) Wait() {
+	// if c.server != nil && c.server.config.MaxConcurrentConnections > 0 {
+	// 	defer func() {
+	// 		go func() {
+	// 			c.server.threads <- struct{}{}
+	// 		}()
+	// 	}()
+	// }
+
 	if c.started {
 		return
 	}

@@ -21,7 +21,7 @@ type (
 	// See `OnConnection` , to register a single event which will handle all incoming connections and
 	// the `Handler` which builds the upgrader handler that you can register to a route based on an Endpoint.
 	//
-	// To serve the built'n javascript client-side library look the `websocket.ClientHandler`.
+	// To serve the builtin javascript client-side library look the `websocket.ClientHandler`.
 	Server struct {
 		config Config
 		// ClientSource contains the javascript side code
@@ -44,10 +44,11 @@ type (
 // See `OnConnection` , to register a single event which will handle all incoming connections and
 // the `Handler` which builds the upgrader handler that you can register to a route based on an Endpoint.
 //
-// To serve the built'n javascript client-side library look the `websocket.ClientHandler`.
+// To serve the builtin javascript client-side library look the `websocket.ClientHandler`.
 func New(cfg Config) *Server {
 	cfg = cfg.Validate()
-	return &Server{
+
+	s := &Server{
 		config:                cfg,
 		ClientSource:          bytes.Replace(ClientSource, []byte(DefaultEvtMessageKey), cfg.EvtMessagePrefix, -1),
 		connections:           sync.Map{}, // ready-to-use, this is not necessary.
@@ -63,6 +64,8 @@ func New(cfg Config) *Server {
 			EnableCompression: cfg.EnableCompression,
 		},
 	}
+
+	return s
 }
 
 // Handler builds the handler based on the configuration and returns it.
@@ -72,7 +75,7 @@ func New(cfg Config) *Server {
 //
 // Endpoint is the path which the websocket Server will listen for clients/connections.
 //
-// To serve the built'n javascript client-side library look the `websocket.ClientHandler`.
+// To serve the builtin javascript client-side library look the `websocket.ClientHandler`.
 func (s *Server) Handler() context.Handler {
 	return func(ctx context.Context) {
 		c := s.Upgrade(ctx)
@@ -104,14 +107,14 @@ func (s *Server) Handler() context.Handler {
 // If the upgrade fails, then Upgrade replies to the client with an HTTP error
 // response and the return `Connection.Err()` is filled with that error.
 //
-// For a more high-level function use the `Handler()` and `OnConnecton` events.
+// For a more high-level function use the `Handler()` and `OnConnection` events.
 // This one does not starts the connection's writer and reader, so after your `On/OnMessage` events registration
 // the caller has to call the `Connection#Wait` function, otherwise the connection will be not handled.
 func (s *Server) Upgrade(ctx context.Context) Connection {
 	conn, err := s.upgrader.Upgrade(ctx.ResponseWriter(), ctx.Request(), ctx.ResponseWriter().Header())
 	if err != nil {
 		ctx.Application().Logger().Warnf("websocket error: %v\n", err)
-		ctx.StatusCode(503) // Status Service Unavailable
+		// ctx.StatusCode(503) // Status Service Unavailable
 		return &connection{err: err}
 	}
 
@@ -149,29 +152,6 @@ func (s *Server) handleConnection(ctx context.Context, websocketConn *websocket.
 
 	return c
 }
-
-/* Notes:
-   We use the id as the signature of the connection because with the custom IDGenerator
-	 the developer can share this ID with a database field, so we want to give the oportunnity to handle
-	 his/her websocket connections without even use the connection itself.
-
-	 Another question may be:
-	 Q: Why you use Server as the main actioner for all of the connection actions?
-	 	  For example the Server.Disconnect(connID) manages the connection internal fields, is this code-style correct?
-	 A: It's the correct code-style for these type of applications and libraries, Server manages all, the connnection's functions
-	 should just do some internal checks (if needed) and push the action to its parent, which is the Server, the Server is able to
-	 remove a connection, the rooms of its connected and all these things, so in order to not split the logic, we have the main logic
-	 here, in the Server, and let the connection with some exported functions whose exists for the per-connection action user's code-style.
-
-	 Ok my english are s** I can feel it, but these comments are mostly for me.
-*/
-
-/*
-   connection actions, same as the connection's method,
-    but these methods accept the connection ID,
-    which is useful when the developer maps
-    this id with a database field (using config.IDGenerator).
-*/
 
 // OnConnection is the main event you, as developer, will work with each of the websocket connections.
 func (s *Server) OnConnection(cb ConnectionFunc) {

@@ -40,7 +40,7 @@ func setupWebsocket(app *iris.Application) {
 	// see the inline javascript code in the websockets.html, this endpoint is used to connect to the server.
 	app.Get("/echo", ws.Handler())
 
-	// serve the javascript built'n client-side library,
+	// serve the javascript builtin client-side library,
 	// see websockets.html script tags, this path is used.
 	app.Any("/iris-ws.js", func(ctx iris.Context) {
 		ctx.Write(ws.ClientSource)
