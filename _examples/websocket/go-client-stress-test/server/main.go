@@ -32,9 +32,11 @@ func main() {
 			dur = 24 * time.Second
 		}
 		t := time.NewTicker(dur)
-		defer t.Stop()
-		defer os.Exit(0)
-		defer runtime.Goexit()
+		defer func() {
+			t.Stop()
+			printMemUsage()
+			os.Exit(0)
+		}()
 
 		var started bool
 		for {
@@ -70,7 +72,11 @@ func main() {
 	}()
 
 	app := iris.New()
-	app.Get("/", ws.Handler())
+	app.Get("/", func(ctx iris.Context) {
+		c := ws.Upgrade(ctx)
+		handleConnection(c)
+		c.Wait()
+	})
 	app.Run(iris.Addr(endpoint), iris.WithoutServerError(iris.ErrServerClosed))
 }
 
@@ -100,5 +106,19 @@ func handleDisconnect(c websocket.Connection) {
 }
 
 func handleErr(c websocket.Connection, err error) {
-	log.Printf("client [%s] errored: %v\n", c.ID(), err)
+	log.Printf("client [%s] errorred: %v\n", c.ID(), err)
+}
+
+func toMB(b uint64) uint64 {
+	return b / 1024 / 1024
+}
+
+func printMemUsage() {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	log.Printf("Alloc = %v MiB", toMB(m.Alloc))
+	log.Printf("\tTotalAlloc = %v MiB", toMB(m.TotalAlloc))
+	log.Printf("\tSys = %v MiB", toMB(m.Sys))
+	log.Printf("\tNumGC = %v\n", m.NumGC)
+	log.Printf("\tNumGoRoutines = %d\n", runtime.NumGoroutine())
 }
