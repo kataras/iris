@@ -1,39 +1,18 @@
-package websocket
+package ws1m
 
 import (
 	"bytes"
-	stdContext "context"
 	"errors"
 	"io"
 	"net"
 	"strconv"
-	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
+	"github.com/gorilla/websocket"
+
+	"go.uber.org/atomic"
 	"github.com/kataras/iris/context"
-
-	"github.com/gobwas/ws"
-	"github.com/gobwas/ws/wsutil"
-)
-
-// Operation codes defined by specification.
-// See https://tools.ietf.org/html/rfc6455#section-5.2
-const (
-	// TextMessage denotes a text data message. The text message payload is
-	// interpreted as UTF-8 encoded text data.
-	TextMessage ws.OpCode = ws.OpText
-	// BinaryMessage denotes a binary data message.
-	BinaryMessage ws.OpCode = ws.OpBinary
-	// CloseMessage denotes a close control message.
-	CloseMessage ws.OpCode = ws.OpClose
-	// PingMessage denotes a ping control message. The optional message payload
-	// is UTF-8 encoded text.
-	PingMessage ws.OpCode = ws.OpPing
-	// PongMessage denotes a ping control message. The optional message payload
-	// is UTF-8 encoded text.
-	PongMessage ws.OpCode = ws.OpPong
 )
 
 type (
@@ -159,27 +138,51 @@ type (
 	PingFunc func()
 	// PongFunc is the callback which fires on pong message received
 	PongFunc func()
-	// Connection is the front-end API that you will use to communicate with the client side,
-	// it is the server-side connection.
+	// Connection is the front-end API that you will use to communicate with the client side
 	Connection interface {
-		ClientConnection
+		// Emitter implements EmitMessage & Emit
+		Emitter
 		// Err is not nil if the upgrader failed to upgrade http to websocket connection.
 		Err() error
+
 		// ID returns the connection's identifier
 		ID() string
+
 		// Server returns the websocket server instance
 		// which this connection is listening to.
 		//
 		// Its connection-relative operations are safe for use.
 		Server() *Server
+
+		// Write writes a raw websocket message with a specific type to the client
+		// used by ping messages and any CloseMessage types.
+		Write(websocketMessageType int, data []byte) error
+
 		// Context returns the (upgraded) context.Context of this connection
 		// avoid using it, you normally don't need it,
 		// websocket has everything you need to authenticate the user BUT if it's necessary
 		// then  you use it to receive user information, for example: from headers
 		Context() context.Context
+
+		// OnDisconnect registers a callback which is fired when this connection is closed by an error or manual
+		OnDisconnect(DisconnectFunc)
+		// OnError registers a callback which fires when this connection occurs an error
+		OnError(ErrorFunc)
+		// OnPing  registers a callback which fires on each ping
+		OnPing(PingFunc)
+		// OnPong  registers a callback which fires on pong message received
+		OnPong(PongFunc)
+		// FireOnError can be used to send a custom error message to the connection
+		//
+		// It does nothing more than firing the OnError listeners. It doesn't send anything to the client.
+		FireOnError(err error)
 		// To defines on what "room" (see Join) the server should send a message
 		// returns an Emmiter(`EmitMessage` & `Emit`) to send messages.
 		To(string) Emitter
+		// OnMessage registers a callback which fires when native websocket message received
+		OnMessage(NativeMessageFunc)
+		// On registers a callback to a particular event which is fired when a message to this event is received
+		On(string, MessageFunc)
 		// Join registers this connection to a room, if it doesn't exist then it creates a new. One room can have one or more connections. One connection can be joined to many rooms. All connections are joined to a room specified by their `ID` automatically.
 		Join(string)
 		// IsJoined returns true when this connection is joined to the room, otherwise false.
@@ -200,6 +203,9 @@ type (
 		// after the "On" events IF server's `Upgrade` is used,
 		// otherise you don't have to call it because the `Handler()` does it automatically.
 		Wait()
+		// Disconnect disconnects the client, close the underline websocket conn and removes it from the conn list
+		// returns the error, if any, from the underline connection
+		Disconnect() error
 		// SetValue sets a key-value pair on the connection's mem store.
 		SetValue(key string, value interface{})
 		// GetValue gets a value by its key from the connection's mem store.
@@ -212,51 +218,20 @@ type (
 		GetValueInt(key string) int
 	}
 
-	// ClientConnection is the client-side connection interface. Server shares some of its methods but the underline actions differs.
-	ClientConnection interface {
-		Emitter
-		// Write writes a raw websocket message with a specific type to the client
-		// used by ping messages and any CloseMessage types.
-		Write(websocketMessageType ws.OpCode, data []byte) error
-		// OnMessage registers a callback which fires when native websocket message received
-		OnMessage(NativeMessageFunc)
-		// On registers a callback to a particular event which is fired when a message to this event is received
-		On(string, MessageFunc)
-		// OnError registers a callback which fires when this connection occurs an error
-		OnError(ErrorFunc)
-		// OnPing  registers a callback which fires on each ping
-		OnPing(PingFunc)
-		// OnPong  registers a callback which fires on pong message received
-		OnPong(PongFunc)
-		// FireOnError can be used to send a custom error message to the connection
-		//
-		// It does nothing more than firing the OnError listeners. It doesn't send anything to the client.
-		FireOnError(err error)
-		// OnDisconnect registers a callback which is fired when this connection is closed by an error or manual
-		OnDisconnect(DisconnectFunc)
-		// Disconnect disconnects the client, close the underline websocket conn and removes it from the conn list
-		// returns the error, if any, from the underline connection
-		Disconnect() error
-	}
-
 	connection struct {
-		err                error
-		underline          net.Conn
-		config             ConnectionConfig
-		defaultMessageType ws.OpCode
-		serializer         *messageSerializer
-		id                 string
-
+		err                      error
+		underline                UnderlineConnection
+		id                       string
+		messageType              int
+		disconnected             atomic.Bool
+		onDisconnectListeners    []DisconnectFunc
+		onRoomLeaveListeners     []LeaveRoomFunc
 		onErrorListeners         []ErrorFunc
 		onPingListeners          []PingFunc
 		onPongListeners          []PongFunc
 		onNativeMessageListeners []NativeMessageFunc
 		onEventListeners         map[string][]MessageFunc
-		onRoomLeaveListeners     []LeaveRoomFunc
-		onDisconnectListeners    []DisconnectFunc
-		disconnected             uint32
-
-		started bool
+		started                  bool
 		// these were  maden for performance only
 		self      Emitter // pre-defined emitter than sends message to its self client
 		broadcast Emitter // pre-defined emitter that sends message to all except this
@@ -272,57 +247,41 @@ type (
 		// same exists for reader look here: https://godoc.org/github.com/gorilla/websocket#hdr-Control_Messages
 		// but we only use one reader in one goroutine, so we are safe.
 		// readerMu sync.Mutex
+
+		emitMu             sync.Mutex
+		onEventListenersMu sync.RWMutex
+		mSerializerMu      sync.RWMutex
 	}
 )
 
 var _ Connection = &connection{}
 
-// WrapConnection wraps the underline websocket connection into a new iris websocket connection.
-// The caller should call the `connection#Wait` (which blocks) to enable its read and write functionality.
-func WrapConnection(conn net.Conn, cfg ConnectionConfig) Connection {
-	return newConnection(conn, cfg)
-}
+// CloseMessage denotes a close control message. The optional message
+// payload contains a numeric code and text. Use the FormatCloseMessage
+// function to format a close message payload.
+//
+// Use the `Connection#Disconnect` instead.
+const CloseMessage = websocket.CloseMessage
 
-func newConnection(conn net.Conn, cfg ConnectionConfig) *connection {
-	cfg = cfg.Validate()
+func newConnection(ctx context.Context, s *Server, underlineConn UnderlineConnection, id string) *connection {
 	c := &connection{
-		underline:                conn,
-		config:                   cfg,
-		serializer:               newMessageSerializer(cfg.EvtMessagePrefix),
-		defaultMessageType:       TextMessage,
+		underline:                underlineConn,
+		id:                       id,
+		messageType:              websocket.TextMessage,
+		onDisconnectListeners:    make([]DisconnectFunc, 0),
+		onRoomLeaveListeners:     make([]LeaveRoomFunc, 0),
 		onErrorListeners:         make([]ErrorFunc, 0),
-		onPingListeners:          make([]PingFunc, 0),
-		onPongListeners:          make([]PongFunc, 0),
 		onNativeMessageListeners: make([]NativeMessageFunc, 0),
 		onEventListeners:         make(map[string][]MessageFunc, 0),
-		onDisconnectListeners:    make([]DisconnectFunc, 0),
-		disconnected:             0,
+		onPongListeners:          make([]PongFunc, 0),
+		started:                  false,
+		ctx:                      ctx,
+		server:                   s,
 	}
 
-	if cfg.BinaryMessages {
-		c.defaultMessageType = BinaryMessage
+	if s.config.BinaryMessages {
+		c.messageType = websocket.BinaryMessage
 	}
-
-	return c
-}
-
-func newServerConnection(ctx context.Context, s *Server, conn net.Conn, id string) *connection {
-	c := newConnection(conn, ConnectionConfig{
-		EvtMessagePrefix:  s.config.EvtMessagePrefix,
-		WriteTimeout:      s.config.WriteTimeout,
-		ReadTimeout:       s.config.ReadTimeout,
-		PingPeriod:        s.config.PingPeriod,
-		BinaryMessages:    s.config.BinaryMessages,
-		ReadBufferSize:    s.config.ReadBufferSize,
-		WriteBufferSize:   s.config.WriteBufferSize,
-		EnableCompression: s.config.EnableCompression,
-	})
-
-	c.id = id
-	c.server = s
-	c.ctx = ctx
-	c.onRoomLeaveListeners = make([]LeaveRoomFunc, 0)
-	c.started = false
 
 	c.self = newEmitter(c, c.id)
 	c.broadcast = newEmitter(c, Broadcast)
@@ -336,30 +295,24 @@ func (c *connection) Err() error {
 	return c.err
 }
 
-// IsClient returns true if that connection is from client.
-func (c *connection) getState() ws.State {
-	if c.server != nil {
-		// server-side.
-		return ws.StateServerSide
-	}
-
-	// else return client-side.
-	return ws.StateClientSide
-}
-
 // Write writes a raw websocket message with a specific type to the client
 // used by ping messages and any CloseMessage types.
-func (c *connection) Write(websocketMessageType ws.OpCode, data []byte) error {
+func (c *connection) Write(websocketMessageType int, data []byte) error {
 	// for any-case the app tries to write from different goroutines,
 	// we must protect them because they're reporting that as bug...
-	c.writerMu.Lock()
-	if writeTimeout := c.config.WriteTimeout; writeTimeout > 0 {
+	c.mSerializerMu.Lock()
+	writeTimeout := c.server.config.WriteTimeout
+	//c.mSerializerMu.Unlock()
+
+	if writeTimeout > 0 {
 		// set the write deadline based on the configuration
 		c.underline.SetWriteDeadline(time.Now().Add(writeTimeout))
 	}
-
-	err := wsutil.WriteMessage(c.underline, c.getState(), websocketMessageType, data)
-	c.writerMu.Unlock()
+	// .WriteMessage same as NextWriter and close (flush)
+	//c.mSerializerMu.Lock()
+	err := c.underline.WriteMessage(websocketMessageType, data)
+	//	println("writen message now..")
+	c.mSerializerMu.Unlock()
 	if err != nil {
 		// if failed then the connection is off, fire the disconnect
 		c.Disconnect()
@@ -367,36 +320,61 @@ func (c *connection) Write(websocketMessageType ws.OpCode, data []byte) error {
 	return err
 }
 
+/*
+func (c *connection) serialize(event string, message interface{}) ([]byte, error) {
+	c.mSerializerMu.Lock()
+	b, err := c.underline.Writ.serialize(event, message)
+	c.mSerializerMu.Unlock()
+	return b, err
+}*/
+
 // writeDefault is the same as write but the message type is the configured by c.messageType
 // if BinaryMessages is enabled then it's raw []byte as you expected to work with protobufs
-func (c *connection) writeDefault(data []byte) error {
-	return c.Write(c.defaultMessageType, data)
+func (c *connection) writeDefault(data []byte) {
+	c.Write(c.messageType, data)
 }
 
+const (
+	// WriteWait is 1 second at the internal implementation,
+	// same as here but this can be changed at the future*
+	WriteWait = 30 * time.Second
+)
+
 func (c *connection) startPinger() {
-	if c.config.PingPeriod > 0 {
-		go func() {
-			for {
-				time.Sleep(c.config.PingPeriod)
-				if c == nil || atomic.LoadUint32(&c.disconnected) > 0 {
-					// verifies if already disconected.
-					return
-				}
 
-				// try to ping the client, if failed then it disconnects.
-				err := c.Write(PingMessage, []byte{})
-				if err != nil && !c.isErrClosed(err) {
-					c.FireOnError(err)
-					// must stop to exit the loop and exit from the routine.
-					return
-				}
+	// this is the default internal handler, we just change the writeWait because of the actions we must do before
+	// the server sends the ping-pong.
 
-				//fire all OnPing methods
-				c.fireOnPing()
-
-			}
-		}()
+	pingHandler := func(message string) error {
+		err := c.underline.WriteControl(websocket.PongMessage, []byte(message), time.Now().Add(WriteWait))
+		if err == websocket.ErrCloseSent {
+			return nil
+		} else if e, ok := err.(net.Error); ok && e.Temporary() {
+			return nil
+		}
+		return err
 	}
+
+	c.underline.SetPingHandler(pingHandler)
+
+	go func() {
+		for {
+			// using sleep avoids the ticker error that causes a memory leak
+			time.Sleep(c.server.config.PingPeriod)
+			if c.disconnected.Load() {
+				// verifies if already disconected
+				break
+			}
+			//fire all OnPing methods
+			c.fireOnPing()
+			// try to ping the client, if failed then it disconnects
+			err := c.Write(websocket.PingMessage, []byte{})
+			if err != nil {
+				// must stop to exit the loop and finish the go routine
+				break
+			}
+		}
+	}()
 }
 
 func (c *connection) fireOnPing() {
@@ -413,55 +391,41 @@ func (c *connection) fireOnPong() {
 	}
 }
 
-func (c *connection) isErrClosed(err error) bool {
-	if err == nil {
-		return false
-	}
-
-	_, is := err.(wsutil.ClosedError)
-	if is {
-		return true
-	}
-
-	if opErr, is := err.(*net.OpError); is {
-		if opErr.Err == io.EOF {
-			return false
-		}
-
-		if atomic.LoadUint32(&c.disconnected) == 0 {
-			c.Disconnect()
-		}
-
-		return true
-	}
-
-	return err != io.EOF
-}
-
 func (c *connection) startReader() {
-	hasReadTimeout := c.config.ReadTimeout > 0
+	conn := c.underline
+	hasReadTimeout := c.server.config.ReadTimeout > 0
+
+	conn.SetReadLimit(c.server.config.MaxMessageSize)
+	conn.SetPongHandler(func(s string) error {
+		if hasReadTimeout {
+			conn.SetReadDeadline(time.Now().Add(c.server.config.ReadTimeout))
+		}
+		//fire all OnPong methods
+		go c.fireOnPong()
+
+		return nil
+	})
+
+	defer func() {
+		c.Disconnect()
+	}()
 
 	for {
-		if c == nil || c.underline == nil || atomic.LoadUint32(&c.disconnected) > 0 {
-			return
-		}
-
 		if hasReadTimeout {
 			// set the read deadline based on the configuration
-			c.underline.SetReadDeadline(time.Now().Add(c.config.ReadTimeout))
+			conn.SetReadDeadline(time.Now().Add(c.server.config.ReadTimeout))
 		}
 
-		data, code, err := wsutil.ReadData(c.underline, c.getState())
-		if code == CloseMessage || c.isErrClosed(err) {
-			c.Disconnect()
-			return
-		}
-
+		_, data, err := conn.ReadMessage()
 		if err != nil {
-			c.FireOnError(err)
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
+				c.FireOnError(err)
+			}
+			break
+		} else {
+			c.messageReceived(data)
 		}
 
-		c.messageReceived(data)
 	}
 
 }
@@ -469,20 +433,24 @@ func (c *connection) startReader() {
 // messageReceived checks the incoming message and fire the nativeMessage listeners or the event listeners (ws custom message)
 func (c *connection) messageReceived(data []byte) {
 
-	if bytes.HasPrefix(data, c.config.EvtMessagePrefix) {
+	if bytes.HasPrefix(data, c.server.config.EvtMessagePrefix) {
 		//it's a custom ws message
-		receivedEvt := c.serializer.getWebsocketCustomEvent(data)
-		listeners, ok := c.onEventListeners[string(receivedEvt)]
+		receivedEvt := c.server.messageSerializer.getWebsocketCustomEvent(data)
+		listeners, ok := c.getEventFunction(receivedEvt)
 		if !ok || len(listeners) == 0 {
 			return // if not listeners for this event exit from here
 		}
 
-		customMessage, err := c.serializer.deserialize(receivedEvt, data)
+		customMessage, err := c.server.messageSerializer.deserialize(receivedEvt, data)
+
+		//	customMessage, err := c.serializer.deserialize(receivedEvt, data)
+
 		if customMessage == nil || err != nil {
 			return
 		}
 
 		for i := range listeners {
+			c.onEventListenersMu.RLock()
 			if fn, ok := listeners[i].(func()); ok { // its a simple func(){} callback
 				fn()
 			} else if fnString, ok := listeners[i].(func(string)); ok {
@@ -503,8 +471,10 @@ func (c *connection) messageReceived(data []byte) {
 			} else {
 				listeners[i].(func(interface{}))(customMessage)
 			}
-
+			c.onEventListenersMu.RUnlock()
 		}
+
+		println("📶 message recv", c.id, string(data))
 	} else {
 		// it's native websocket message
 		for i := range c.onNativeMessageListeners {
@@ -572,35 +542,52 @@ func (c *connection) To(to string) Emitter {
 }
 
 func (c *connection) EmitMessage(nativeMessage []byte) error {
-	if c.server != nil {
-		return c.self.EmitMessage(nativeMessage)
-	}
-	return c.writeDefault(nativeMessage)
+	return c.self.EmitMessage(nativeMessage)
 }
 
 func (c *connection) Emit(event string, message interface{}) error {
-	if c.server != nil {
-		return c.self.Emit(event, message)
-	}
-
-	b, err := c.serializer.serialize(event, message)
-	if err != nil {
-		return err
-	}
-
-	return c.EmitMessage(b)
+	return c.self.Emit(event, message)
 }
 
 func (c *connection) OnMessage(cb NativeMessageFunc) {
 	c.onNativeMessageListeners = append(c.onNativeMessageListeners, cb)
 }
 
+func (c *connection) getEventFunction(event []byte) ([]MessageFunc, bool) {
+	c.onEventListenersMu.RLock()
+	//	println("📪 锁 R getEventFunction", c.id)
+	//var present bool
+	fn, present := c.onEventListeners[string(event)]
+	c.onEventListenersMu.RUnlock()
+	//	println("📭 开锁 R getEventFunction", c.id)
+	return fn, present
+}
 func (c *connection) On(event string, cb MessageFunc) {
-	if c.onEventListeners[event] == nil {
-		c.onEventListeners[event] = make([]MessageFunc, 0)
+	var present bool
+	c.onEventListenersMu.RLock()
+	//--println("📪 锁 R  Add EVENT", c.id)
+	if _, present = c.onEventListeners[event]; !present {
+		c.onEventListenersMu.RUnlock()
+		//--	println("📭 开锁 R  Add EVENT", c.id)
+		c.onEventListenersMu.Lock()
+		//--	println("📪 锁  Add EVENT", c.id)
+		if _, present = c.onEventListeners[event]; !present {
+			// Insert the newly created *memorySource.
+			c.onEventListeners[event] = make([]MessageFunc, 0)
+			c.onEventListeners[event] = append(c.onEventListeners[event], cb)
+		}
+		c.onEventListenersMu.Unlock()
+		//--	println("📭 开锁  Add EVENT", c.id)
+	} else {
+		c.onEventListenersMu.RUnlock()
+		//--	println("📭 开锁 R  Add EVENT", c.id)
+		c.onEventListenersMu.Lock()
+		//--	println("📪 锁  Add EVENT", c.id)
+		c.onEventListeners[event] = append(c.onEventListeners[event], cb)
+		c.onEventListenersMu.Unlock()
+		//--	println("📭 开锁  Add EVENT", c.id)
 	}
-
-	c.onEventListeners[event] = append(c.onEventListeners[event], cb)
+	println("📐 => setup event ", c.id, event)
 }
 
 func (c *connection) Join(roomName string) {
@@ -642,7 +629,6 @@ func (c *connection) Wait() {
 	c.started = true
 	// start the ping
 	c.startPinger()
-
 	// start the messages reader
 	c.startReader()
 }
@@ -652,23 +638,10 @@ func (c *connection) Wait() {
 var ErrAlreadyDisconnected = errors.New("already disconnected")
 
 func (c *connection) Disconnect() error {
-	if c == nil || !atomic.CompareAndSwapUint32(&c.disconnected, 0, 1) {
+	if c == nil || c.disconnected.Load() {
 		return ErrAlreadyDisconnected
 	}
-
-	if c.server != nil {
-		return c.server.Disconnect(c.ID())
-	}
-
-	err := c.Write(CloseMessage, nil)
-
-	if err == nil {
-		c.fireDisconnect()
-	}
-
-	c.underline.Close()
-
-	return err
+	return c.server.Disconnect(c.ID())
 }
 
 // mem per-conn store
@@ -710,111 +683,4 @@ func (c *connection) GetValueInt(key string) int {
 		}
 	}
 	return 0
-}
-
-// ConnectionConfig is the base configuration for both server and client connections.
-// Clients must use `ConnectionConfig` in order to `Dial`, server's connection configuration is set by the `Config` structure.
-type ConnectionConfig struct {
-	// EvtMessagePrefix is the prefix of the underline websocket events that are being established under the hoods.
-	// This prefix is visible only to the javascript side (code) and it has nothing to do
-	// with the message that the end-user receives.
-	// Do not change it unless it is absolutely necessary.
-	//
-	// If empty then defaults to []byte("iris-websocket-message:").
-	// Should match with the server's EvtMessagePrefix.
-	EvtMessagePrefix []byte
-	// WriteTimeout time allowed to write a message to the connection.
-	// 0 means no timeout.
-	// Default value is 0
-	WriteTimeout time.Duration
-	// ReadTimeout time allowed to read a message from the connection.
-	// 0 means no timeout.
-	// Default value is 0
-	ReadTimeout time.Duration
-	// PingPeriod send ping messages to the connection repeatedly after this period.
-	// The value should be close to the ReadTimeout to avoid issues.
-	// Default value is 0
-	PingPeriod time.Duration
-	// BinaryMessages set it to true in order to denotes binary data messages instead of utf-8 text
-	// compatible if you wanna use the Connection's EmitMessage to send a custom binary data to the client, like a native server-client communication.
-	// Default value is false
-	BinaryMessages bool
-	// ReadBufferSize is the buffer size for the connection reader.
-	// Default value is 4096
-	ReadBufferSize int
-	// WriteBufferSize is the buffer size for the connection writer.
-	// Default value is 4096
-	WriteBufferSize int
-	// EnableCompression specify if the server should attempt to negotiate per
-	// message compression (RFC 7692). Setting this value to true does not
-	// guarantee that compression will be supported. Currently only "no context
-	// takeover" modes are supported.
-	//
-	// Defaults to false and it should be remain as it is, unless special requirements.
-	EnableCompression bool
-}
-
-// Validate validates the connection configuration.
-func (c ConnectionConfig) Validate() ConnectionConfig {
-	if len(c.EvtMessagePrefix) == 0 {
-		c.EvtMessagePrefix = []byte(DefaultEvtMessageKey)
-	}
-
-	// 0 means no timeout.
-	if c.WriteTimeout < 0 {
-		c.WriteTimeout = DefaultWebsocketWriteTimeout
-	}
-
-	if c.ReadTimeout < 0 {
-		c.ReadTimeout = DefaultWebsocketReadTimeout
-	}
-
-	if c.PingPeriod <= 0 {
-		c.PingPeriod = DefaultWebsocketPingPeriod
-	}
-
-	if c.ReadBufferSize <= 0 {
-		c.ReadBufferSize = DefaultWebsocketReadBufferSize
-	}
-
-	if c.WriteBufferSize <= 0 {
-		c.WriteBufferSize = DefaultWebsocketWriterBufferSize
-	}
-
-	return c
-}
-
-// ErrBadHandshake is returned when the server response to opening handshake is
-// invalid.
-var ErrBadHandshake = ws.ErrHandshakeBadConnection
-
-// Dial creates a new client connection.
-//
-// The context will be used in the request and in the Dialer.
-//
-// If the WebSocket handshake fails, `ErrHandshakeBadConnection` is returned.
-//
-// The "url" input parameter is the url to connect to the server, it should be
-// the ws:// (or wss:// if secure) + the host + the endpoint of the
-// open socket of the server, i.e ws://localhost:8080/my_websocket_endpoint.
-//
-// Custom dialers can be used by wrapping the iris websocket connection via `websocket.WrapConnection`.
-func Dial(ctx stdContext.Context, url string, cfg ConnectionConfig) (ClientConnection, error) {
-	if ctx == nil {
-		ctx = stdContext.Background()
-	}
-
-	if !strings.HasPrefix(url, "ws://") && !strings.HasPrefix(url, "wss://") {
-		url = "ws://" + url
-	}
-
-	conn, _, _, err := ws.DefaultDialer.Dial(ctx, url)
-	if err != nil {
-		return nil, err
-	}
-
-	clientConn := WrapConnection(conn, cfg)
-	go clientConn.Wait()
-
-	return clientConn, nil
 }

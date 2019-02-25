@@ -1,71 +1,30 @@
-package websocket
 
-import (
-	"fmt"
-	"time"
-)
+package ws1m
 
-// ErrScheduleTimeout returned by Pool to indicate that there no free
-// goroutines during some period of time.
-var ErrScheduleTimeout = fmt.Errorf("schedule error: timed out")
+import "sync"
 
-// Pool contains logic of goroutine reuse.
+// A Pool is a type-safe wrapper around a sync.Pool.
 type Pool struct {
-	sem  chan struct{}
-	work chan func()
+	p *sync.Pool
 }
 
-// NewPool creates new goroutine pool with given size. It also creates a work
-// queue of given size. Finally, it spawns given amount of goroutines
-// immediately.
-func NewPool(size, queue, spawn int) *Pool {
-	if spawn <= 0 && queue > 0 {
-		panic("dead queue configuration detected")
-	}
-	if spawn > size {
-		panic("spawn > workers")
-	}
-	p := &Pool{
-		sem:  make(chan struct{}, size),
-		work: make(chan func(), queue),
-	}
-	for i := 0; i < spawn; i++ {
-		p.sem <- struct{}{}
-		go p.worker(func() {})
-	}
-
-	return p
+// NewPool constructs a new Pool.
+func NewPool() Pool {
+	return Pool{p: &sync.Pool{
+		New: func() interface{} {
+			return &Buffer{bs: make([]byte, 0, _size)}
+		},
+	}}
 }
 
-// Schedule schedules task to be executed over pool's workers.
-func (p *Pool) Schedule(task func()) {
-	p.schedule(task, nil)
+// Get retrieves a Buffer from the pool, creating one if necessary.
+func (p Pool) Get() *Buffer {
+	buf := p.p.Get().(*Buffer)
+	buf.Reset()
+	buf.pool = p
+	return buf
 }
 
-// ScheduleTimeout schedules task to be executed over pool's workers.
-// It returns ErrScheduleTimeout when no free workers met during given timeout.
-func (p *Pool) ScheduleTimeout(timeout time.Duration, task func()) error {
-	return p.schedule(task, time.After(timeout))
-}
-
-func (p *Pool) schedule(task func(), timeout <-chan time.Time) error {
-	select {
-	case <-timeout:
-		return ErrScheduleTimeout
-	case p.work <- task:
-		return nil
-	case p.sem <- struct{}{}:
-		go p.worker(task)
-		return nil
-	}
-}
-
-func (p *Pool) worker(task func()) {
-	defer func() { <-p.sem }()
-
-	task()
-
-	for task := range p.work {
-		task()
-	}
+func (p Pool) put(buf *Buffer) {
+	p.p.Put(buf)
 }

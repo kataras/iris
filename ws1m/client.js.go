@@ -1,4 +1,4 @@
-package websocket
+package ws1m
 
 import (
 	"time"

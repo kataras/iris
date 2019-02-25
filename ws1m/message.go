@@ -1,13 +1,14 @@
-package websocket
+package ws1m
 
 import (
 	"bytes"
 	"encoding/binary"
 	"encoding/json"
 	"strconv"
-
-	"github.com/kataras/iris/core/errors"
 	"github.com/valyala/bytebufferpool"
+	"sync"
+	"runtime"
+	"github.com/kataras/iris/core/errors"
 )
 
 type (
@@ -58,11 +59,14 @@ type messageSerializer struct {
 	prefixAndSepIdx int
 	prefixIdx       int
 	separatorIdx    int
-
-	buf *bytebufferpool.Pool
+	wg              sync.WaitGroup
+	buf             *bytebufferpool.Pool
+	//bufpr *io.PipeReader
+	//bufpw *io.PipeWriter
 }
 
 func newMessageSerializer(messagePrefix []byte) *messageSerializer {
+	//pr, pw := io.Pipe()
 	return &messageSerializer{
 		prefix:          messagePrefix,
 		prefixLen:       len(messagePrefix),
@@ -72,6 +76,9 @@ func newMessageSerializer(messagePrefix []byte) *messageSerializer {
 		separatorIdx:    len(messageSeparator) - 1,
 
 		buf: new(bytebufferpool.Pool),
+		//bufpr: pr,
+		//bufpw: pw,
+		wg: sync.WaitGroup{},
 	}
 }
 
@@ -81,9 +88,78 @@ var (
 )
 
 // websocketMessageSerialize serializes a custom websocket message from websocketServer to be delivered to the client
-// returns the string form of the message
+// returns the  string form of the message
 // Supported data types are: string, int, bool, bytes and JSON.
 func (ms *messageSerializer) serialize(event string, data interface{}) ([]byte, error) {
+	//after a series break point check.. (jjhesk) found that this is the best approach..
+	//
+	// to prevent race condition.
+	// because there are two loops running and one is reading and another one writing. the writings always comes first
+	// at any conditions.
+	runtime.Gosched()
+	// need to prevent the out going messages comes first
+	b := NewPool().Get()
+	//ms.wg.Add(1)
+	//go func(b *Buffer, event string, data interface{}, w *sync.WaitGroup) {
+	b.AppendString(string(ms.prefix))
+	b.AppendString(event)
+	b.AppendString(messageSeparator)
+	switch v := data.(type) {
+	case string:
+		b.AppendString(messageTypeString.String())
+		b.AppendString(messageSeparator)
+		b.AppendString(v)
+		//println("string <---------------")
+	case int:
+		b.AppendString(messageTypeInt.String())
+		b.AppendString(messageSeparator)
+		binary.Write(b, binary.LittleEndian, v)
+	//	println("int <---------------")
+	case bool:
+		b.AppendString(messageTypeBool.String())
+		b.AppendString(messageSeparator)
+		if v {
+			b.Write(boolTrueB)
+		} else {
+			b.Write(boolFalseB)
+		}
+	//	println("bool <---------------")
+	case []byte:
+		b.AppendString(messageTypeBytes.String())
+		b.AppendString(messageSeparator)
+		b.Write(v)
+	//	println("byte <---------------")
+	default:
+		//we suppose is json
+		res, err := json.Marshal(data)
+		if err != nil {
+			//return nil, err
+		}
+		b.AppendString(messageTypeJSON.String())
+		b.AppendString(messageSeparator)
+		b.Write(res)
+	}
+	//	w.Done()
+	//}(b, event, data, &ms.wg)
+
+	//ms.wg.Wait()
+	//	message := b.Bytes()
+	//  ms.buf.Put(b)
+
+	// println("🎦  " + b.String())
+
+	//b.Free()
+
+
+	//todo: check for better perf and try to recycle it if that allocate too much space under stress testing
+	return b.Bytes(), nil
+}
+
+// websocketMessageSerialize serializes a custom websocket message from websocketServer to be delivered to the client
+// returns the  string form of the message
+// Supported data types are: string, int, bool, bytes and JSON.
+func (ms *messageSerializer) serialize0(event string, data interface{}) ([]byte, error) {
+
 	b := ms.buf.Get()
 	b.Write(ms.prefix)
 	b.WriteString(event)
@@ -114,7 +190,6 @@ func (ms *messageSerializer) serialize(event string, data interface{}) ([]byte, 
 		//we suppose is json
 		res, err := json.Marshal(data)
 		if err != nil {
-			ms.buf.Put(b)
 			return nil, err
 		}
 		b.WriteString(messageTypeJSON.String())
@@ -125,6 +200,7 @@ func (ms *messageSerializer) serialize(event string, data interface{}) ([]byte, 
 	message := b.Bytes()
 	ms.buf.Put(b)
 
+	// println("🎦  " + string(message))
 	return message, nil
 }
 

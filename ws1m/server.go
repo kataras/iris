@@ -1,16 +1,11 @@
-package websocket
+package ws1m
 
 import (
 	"bytes"
-	"net"
 	"sync"
-	"sync/atomic"
 
+	"github.com/gorilla/websocket"
 	"github.com/kataras/iris/context"
-
-	"github.com/gobwas/ws"
-	"github.com/mailru/easygo/netpoll"
-	"time"
 )
 
 type (
@@ -47,14 +42,19 @@ type (
 		// Use a route to serve this file on a specific path, i.e
 		// app.Any("/iris-ws.js", func(ctx iris.Context) { ctx.Write(mywebsocketServer.ClientSource) })
 		ClientSource          []byte
+		messageSerializer     *messageSerializer
+		//it is confirmed that using hash map gets the highest performance under pressure
+		//lets remain using hash map for managing that
 		connections           map[string]*connection // key = the Connection ID.
+
+
 		rooms                 map[string][]string    // by default a connection is joined to a room which has the connection id as its name
-		mu                    sync.RWMutex           // for rooms and connections.
 		onConnectionListeners []ConnectionFunc
-		connectionPool        Pool //replace with new kind of pool
 		//connectionPool        sync.Pool // sadly we can't make this because the websocket connection is live until is closed.
-		upgrader ws.HTTPUpgrader
-		poller   netpoll.Poller
+		upgrader websocket.Upgrader
+		//todo: to invesgating better messaging order solution if that takes out and what will cause breaking other parts.
+		cLock    sync.RWMutex
+		mu       sync.RWMutex // for rooms.
 	}
 )
 
@@ -65,21 +65,22 @@ type (
 // To serve the built'n javascript client-side library look the `websocket.ClientHandler`.
 func New(cfg Config) *Server {
 	cfg = cfg.Validate()
-
-	var err error
-	etpoller, err := netpoll.New(nil)
-	if err != nil {
-		panic(err)
-	}
-
 	return &Server{
 		config:                cfg,
 		ClientSource:          bytes.Replace(ClientSource, []byte(DefaultEvtMessageKey), cfg.EvtMessagePrefix, -1),
+		messageSerializer:     newMessageSerializer(cfg.EvtMessagePrefix),
 		connections:           make(map[string]*connection),
 		rooms:                 make(map[string][]string),
 		onConnectionListeners: make([]ConnectionFunc, 0),
-		upgrader:              ws.DefaultHTTPUpgrader, // ws.DefaultUpgrader,
-		poller:                etpoller,
+		upgrader: websocket.Upgrader{
+			HandshakeTimeout:  cfg.HandshakeTimeout,
+			ReadBufferSize:    cfg.ReadBufferSize,
+			WriteBufferSize:   cfg.WriteBufferSize,
+			Error:             cfg.Error,
+			CheckOrigin:       cfg.CheckOrigin,
+			Subprotocols:      cfg.Subprotocols,
+			EnableCompression: cfg.EnableCompression,
+		},
 	}
 }
 
@@ -91,10 +92,14 @@ func New(cfg Config) *Server {
 // Endpoint is the path which the websocket Server will listen for clients/connections.
 //
 // To serve the built'n javascript client-side library look the `websocket.ClientHandler`.
-func (s *Server) HandlerV1() context.Handler {
+func (s *Server) HandlerV1(h func()) context.Handler {
 	return func(ctx context.Context) {
+		ctx.Application().Logger().Infof("confirm path: %s", ctx.Path(), " and upgrade tcp connection .... ")
 		c := s.Upgrade(ctx)
+		//c := s.UpgradeGobwas(ctx)
+		println("👍 [OK] confirm upgrade success.")
 		if c.Err() != nil {
+			println("there is error:: ", c.Err().Error())
 			return
 		}
 
@@ -108,42 +113,12 @@ func (s *Server) HandlerV1() context.Handler {
 		for i := range s.onConnectionListeners {
 			s.onConnectionListeners[i](c)
 		}
-
+		//response to the health checker.
+		h()
 		// start the ping and the messages reader
 		c.Wait()
 	}
 }
-
-
-//based on 1M design
-//epoller
-func (s *Server) HandlerV2() context.Handler {
-	return func(ctx context.Context) {
-		for {
-			// Try to accept incoming connection inside free pool worker.
-			// If there no free workers for 1ms, do not accept anything and try later.
-			// This will help us to prevent many self-ddos or out of resource limit cases.
-			err := s.connectionPool.ScheduleTimeout(time.Millisecond, func() {
-				//conn := ln.Accept()
-				conn := s.Upgrade(ctx)
-				//	_ = ws.Upgrade(conn)
-				// Wrap WebSocket connection with our Channel struct.
-				// This will help us to handle/send our app's packets.
-				//	ch := NewChannel(conn)
-				// fire the on connection event callbacks, if any
-				for i := range s.onConnectionListeners {
-					s.onConnectionListeners[i](conn)
-				}
-				// start the ping and the messages reader
-				conn.Wait()
-			})
-			if err != nil {
-				time.Sleep(time.Millisecond)
-			}
-		}
-	}
-}
-
 // Upgrade upgrades the HTTP Server connection to the WebSocket protocol.
 //
 // The responseHeader is included in the response to the client's upgrade
@@ -157,7 +132,7 @@ func (s *Server) HandlerV2() context.Handler {
 // This one does not starts the connection's writer and reader, so after your `On/OnMessage` events registration
 // the caller has to call the `Connection#Wait` function, otherwise the connection will be not handled.
 func (s *Server) Upgrade(ctx context.Context) Connection {
-	conn, _, _, err := s.upgrader.Upgrade(ctx.Request(), ctx.ResponseWriter())
+	conn, err := s.upgrader.Upgrade(ctx.ResponseWriter(), ctx.Request(), ctx.ResponseWriter().Header())
 	if err != nil {
 		ctx.Application().Logger().Warnf("websocket error: %v\n", err)
 		ctx.StatusCode(503) // Status Service Unavailable
@@ -168,23 +143,58 @@ func (s *Server) Upgrade(ctx context.Context) Connection {
 }
 
 func (s *Server) addConnection(c *connection) {
-	s.mu.Lock()
-	s.connections[c.id] = c
-	s.mu.Unlock()
+	//	var _ *connection
+	var present bool
+	s.cLock.RLock()
+	//--println("🐣 lock add connection", c.id)
+	if _, present = s.connections[c.id]; !present {
+		// The source wasn't found, so we'll create it.
+		s.cLock.RUnlock()
+		s.cLock.Lock()
+		if _, present = s.connections[c.id]; !present {
+			// Insert the newly created *memorySource.
+			s.connections[c.id] = c
+		}
+		s.cLock.Unlock()
+	} else {
+		s.cLock.RUnlock()
+	}
+	//--println("🐥 unlock add connection", c.id)
+}
+
+func (s *Server) remove_connection(conn *connection) {
+	s.cLock.Lock()
+	//--println("🐣 lock remove_connection", conn.id)
+	delete(s.connections, conn.id)
+	s.cLock.Unlock()
+	//--println("🐥 unlock remove_connection", conn.id)
+}
+
+func (s *Server) count_connections() int {
+	s.cLock.Lock()
+	//--println("🐣 lock count_connections")
+	h := len(s.connections)
+	s.cLock.Unlock()
+	//--println("🐥 unlock count_connections")
+	return h
 }
 
 func (s *Server) getConnection(connID string) (*connection, bool) {
+	s.cLock.RLock()
+	//--println("🐣 lock get connection", connID)
 	c, ok := s.connections[connID]
+	s.cLock.RUnlock()
+	//--println("🐥 unlock get connection", connID)
 	return c, ok
 }
 
 // wrapConnection wraps an underline connection to an iris websocket connection.
 // It does NOT starts its writer, reader and event mux, the caller is responsible for that.
-func (s *Server) handleConnection(ctx context.Context, conn net.Conn) *connection {
+func (s *Server) handleConnection(ctx context.Context, websocketConn UnderlineConnection) *connection {
 	// use the config's id generator (or the default) to create a websocket client/connection id
 	cid := s.config.IDGenerator(ctx)
 	// create the new connection
-	c := newServerConnection(ctx, s, conn, cid)
+	c := newConnection(ctx, s, websocketConn, cid)
 	// add the connection to the Server's list
 	s.addConnection(c)
 
@@ -320,24 +330,22 @@ func (s *Server) leave(roomName string, connID string) (left bool) {
 
 // GetTotalConnections returns the number of total connections
 func (s *Server) GetTotalConnections() (n int) {
-	s.mu.RLock()
-	n = len(s.connections)
-	s.mu.RUnlock()
-
-	return
+	return s.count_connections()
 }
 
 // GetConnections returns all connections
 func (s *Server) GetConnections() []Connection {
-	s.mu.RLock()
-	conns := make([]Connection, len(s.connections))
+	count := s.count_connections()
+	conns := make([]Connection, count)
 	i := 0
+	s.cLock.RLock()
+	//println("🐣 lock GetConnections:: loaded ", count)
 	for _, c := range s.connections {
 		conns[i] = c
 		i++
 	}
-
-	s.mu.RUnlock()
+	s.cLock.RUnlock()
+	//println("🐥 unlock GetConnections:: loaded ", count)
 	return conns
 }
 
@@ -355,7 +363,7 @@ func (s *Server) GetConnection(connID string) Connection {
 // which are joined to this room.
 func (s *Server) GetConnectionsByRoom(roomName string) []Connection {
 	var conns []Connection
-	s.mu.RLock()
+	s.cLock.RLock()
 	if connIDs, found := s.rooms[roomName]; found {
 		for _, connID := range connIDs {
 			// existence check is not necessary here.
@@ -364,9 +372,7 @@ func (s *Server) GetConnectionsByRoom(roomName string) []Connection {
 			}
 		}
 	}
-
-	s.mu.RUnlock()
-
+	s.cLock.RUnlock()
 	return conns
 }
 
@@ -400,9 +406,12 @@ func (s *Server) emitMessage(from, to string, data []byte) {
 			}
 		}
 	} else {
-		s.mu.RLock()
+		//s.cLock.RLock()
+		println("🦊 lock emit message", string(data))
 		// it suppose to send the message to all opened connections or to all except the sender.
-		for _, conn := range s.connections {
+		connections := s.GetConnections()
+		for _, connec := range connections {
+			conn := connec.(*connection)
 			if to != All && to != conn.id { // if it's not suppose to send to all connections (including itself)
 				if to == Broadcast && from == conn.id { // if broadcast to other connections except this
 					// here we do the opossite of previous block,
@@ -410,10 +419,9 @@ func (s *Server) emitMessage(from, to string, data []byte) {
 					continue
 				}
 			}
-
 			conn.writeDefault(data)
 		}
-		s.mu.RUnlock()
+		//s.cLock.RUnlock()
 	}
 }
 
@@ -432,15 +440,12 @@ func (s *Server) Disconnect(connID string) (err error) {
 
 	// remove the connection from the list.
 	if conn, ok := s.getConnection(connID); ok {
-		atomic.StoreUint32(&conn.disconnected, 1)
+		conn.disconnected.Store(true)
+		//atomic.StoreUint32(&conn.disconnected, 1)
 
 		// fire the disconnect callbacks, if any.
 		conn.fireDisconnect()
-
-		s.mu.Lock()
-		delete(s.connections, conn.id)
-		s.mu.Unlock()
-
+		s.remove_connection(conn)
 		err = conn.underline.Close()
 	}
 
