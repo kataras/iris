@@ -97,12 +97,19 @@ func (c *testControllerHandle) HiParamEmptyInputBy() string {
 	return "empty in but served with ctx.Params.Get('ps')=" + c.Ctx.Params().Get("ps")
 }
 
+type testSmallController struct{}
+
+// test ctx + id in the same time.
+func (c *testSmallController) GetHiParamEmptyInputWithCtxBy(ctx context.Context, id string) string {
+	return "empty in but served with ctx.Params.Get('param2')= " + ctx.Params().Get("param2") + " == id == " + id
+}
+
 func TestControllerHandle(t *testing.T) {
 	app := iris.New()
-
 	m := New(app)
 	m.Register(&TestServiceImpl{prefix: "service:"})
 	m.Handle(new(testControllerHandle))
+	m.Handle(new(testSmallController))
 
 	e := httptest.New(t, app)
 
@@ -130,4 +137,6 @@ func TestControllerHandle(t *testing.T) {
 		Body().Equal("value")
 	e.GET("/hiparamempyinput/value").Expect().Status(httptest.StatusOK).
 		Body().Equal("empty in but served with ctx.Params.Get('ps')=value")
+	e.GET("/hi/param/empty/input/with/ctx/value").Expect().Status(httptest.StatusOK).
+		Body().Equal("empty in but served with ctx.Params.Get('param2')= value == id == value")
 }
