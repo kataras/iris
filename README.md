@@ -1,6 +1,8 @@
 # ⚡️ Stay tuned for updates: upcoming version 11.2.0
 
-Click [here](https://github.com/kataras/iris/pull/1175) to watch the progress of the upcoming release and the new features that it brings into game.
+Click [here](https://github.com/kataras/iris/pull/1175) to watch the progress of the upcoming release and the new features that it brings into game. 
+
+@kataras: I was sick for almost a month, but this wasn't kept me from pushing some progress for the upcoming release. the v11.2.0 will contain a breaking change on the websockets usage, there is no other way to improve it. That one has its own repository for testing and experimentation, click [here](https://github.com/kataras/fastws/tree/master/_examples/advanced/ws) to watch the progress of the new Iris websocket capabilities and features if you can't wait more.
 
 # Iris Web Framework <a href="README_ZH.md"> <img width="20px" src="https://iris-go.com/images/flag-china.svg?v=10" /></a> <a href="README_RU.md"><img width="20px" src="https://iris-go.com/images/flag-russia.svg?v=10" /></a> <a href="README_ID.md"> <img width="20px" src="https://iris-go.com/images/flag-indonesia.svg?v=10" /></a> <a href="README_GR.md"><img width="20px" src="https://iris-go.com/images/flag-greece.svg?v=10" /></a> <a href="README_PT_BR.md"><img width="20px" src="https://iris-go.com/images/flag-pt-br.svg?v=10" /></a> <a href="README_JPN.md"><img width="20px" src="https://iris-go.com/images/flag-japan.svg?v=10" /></a>
 
@@ -8,7 +10,7 @@ Click [here](https://github.com/kataras/iris/pull/1175) to watch the progress of
 
 [![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=flat-square)](https://travis-ci.org/kataras/iris)<!-- [![release](https://img.shields.io/github/release/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/releases)--> [![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=flat-square)](http://goreportcard.com/report/kataras/iris) [![vscode-iris](https://img.shields.io/badge/ext%20-vscode-0c77e3.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=kataras2006.iris)<!--[![github closed issues](https://img.shields.io/github/issues-closed-raw/kataras/iris.svg?style=flat-square)](https://github.com/kataras/iris/issues?q=is%3Aissue+is%3Aclosed)--> [![chat](https://img.shields.io/badge/community-%20chat-00BCD4.svg?style=flat-square)](https://kataras.rocket.chat/channel/iris) [![view examples](https://img.shields.io/badge/routing%20by-example-0077b3.svg?style=flat-square)](https://github.com/kataras/iris/tree/master/_examples/routing) [![release](https://img.shields.io/badge/release%20-v11.1-0077b3.svg?style=flat-square)](https://github.com/kataras/iris/releases)
 
-Iris is a fast, simple yet fully featured and very efficient web framework for Go.
+Iris is a fast, simple yet fully featured and very efficient web framework for Go. Routing is powered by the [muxie](https://github.com/kataras/muxie#philosophy) project.
 
 Iris provides a beautifully expressive and easy to use foundation for your next website or API.
 
@@ -34,13 +36,11 @@ Check below the features and the hard work that we putted to improve how the int
 
 _Updated at: [Monday, 22 October 2018](_benchmarks/README.md)_
 
-### Iris vs the rest Go web frameworks and routers vs any other alternative
+### Third-party
 
-[![](_benchmarks/benchmarks_third_party_source_snapshot_go_23_october_2018.png)](https://github.com/the-benchmarker/web-frameworks#full-table)
+[![](_benchmarks/benchmarks_third_party_source_snapshot_go_23_october_2018.png)](https://github.com/iris-contrib/third-party-benchmarks#full-table)
 
-As shown in the benchmarks (from a [third-party source](https://github.com/the-benchmarker)), Iris is the fastest open-source Go web framework in the planet. The net/http 100% compatible router [muxie](https://github.com/kataras/muxie) I've created some weeks ago is also trending there with amazing results, fastest net/http router ever created as well. View the results at:
-
-https://github.com/the-benchmarker/web-frameworks#full-table
+> Last updated at: 01 March of 2019. Click to the image to view all results. You can run this in your own hardware by following the [steps here](https://github.com/iris-contrib/third-party-benchmarks#usage).
 
 ## Philosophy
 
