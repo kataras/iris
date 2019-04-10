@@ -277,9 +277,9 @@ func main() {
 
 The package [hero](hero) contains features for binding any object or functions that `handlers` can use, these are called dependencies.
 
-With Iris you get truly safe bindings thanks to the [hero](_examples/hero) [package](hero). It is blazing-fast, near to raw handlers performance because Iris calculates everything before even server goes online!
+With Iris you get truly safe bindings thanks to the [hero](_examples/hero) [package](hero). It is blazing-fast, near to raw handlers performance because Iris calculates everything before the server even goes online!
 
-Below you will see some screenshots I prepared for you in order to be easier to understand:
+Below you will see some screenshots I prepared to facilitate understanding:
 
 #### 1. Path Parameters - Built'n Dependencies
 
