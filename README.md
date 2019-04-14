@@ -33,6 +33,7 @@ Check below the features and the hard work that we putted to improve how the int
 ### Iris vs .NET Core vs Expressjs
 
 [![Iris vs .NET Core(C#) vs Node.js (Express)](_benchmarks/benchmarks_graph_22_october_2018_gray.png)](_benchmarks/README.md)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fkataras%2Firis.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fkataras%2Firis?ref=badge_shield)
 
 _Updated at: [Monday, 22 October 2018](_benchmarks/README.md)_
 
@@ -1106,3 +1107,6 @@ For more information about contributing to the Iris project please check the [CO
 Iris is licensed under the [3-Clause BSD License](LICENSE). Iris is 100% free and open-source software.
 
 For any questions regarding the license please send [e-mail](mailto:kataras2006@hotmail.com?subject=Iris%20License).
+
+
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fkataras%2Firis.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fkataras%2Firis?ref=badge_large)
