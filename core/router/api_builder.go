@@ -858,7 +858,7 @@ func (api *APIBuilder) OnAnyErrorCode(handlers ...context.Handler) {
 // based on the context's status code.
 //
 // If a handler is not already registered,
-// then it creates & registers a new trivial handler on the-fly.
+// it creates and registers a new trivial handler on the-fly.
 func (api *APIBuilder) FireErrorCode(ctx context.Context) {
 	api.errorCodeHandlers.Fire(ctx)
 }

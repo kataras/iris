@@ -27,7 +27,7 @@ var (
 	HeroDependencies = true
 )
 
-// Application is the high-level compoment of the "mvc" package.
+// Application is the high-level component of the "mvc" package.
 // It's the API that you will be using to register controllers among with their
 // dependencies that your controllers may expecting.
 // It contains the Router(iris.Party) in order to be able to register
@@ -42,6 +42,7 @@ type Application struct {
 	Dependencies di.Values
 	Router       router.Party
 	Controllers  []*ControllerActivator
+	ErrorHandler hero.ErrorHandler
 }
 
 func newApp(subRouter router.Party, values di.Values) *Application {
@@ -99,7 +100,7 @@ func (app *Application) Configure(configurators ...func(*Application)) *Applicat
 // The value can be a single struct value-instance or a function
 // which has one input and one output, the input should be
 // an `iris.Context` and the output can be any type, that output type
-// will be binded to the controller's field, if matching or to the
+// will be bind-ed to the controller's field, if matching or to the
 // controller's methods, if matching.
 //
 // These dependencies "values" can be changed per-controller as well,
@@ -172,7 +173,7 @@ Set the Logger's Level to "debug" to view the active dependencies per controller
 // Examples at: https://github.com/kataras/iris/tree/master/_examples/mvc
 func (app *Application) Handle(controller interface{}) *Application {
 	// initialize the controller's activator, nothing too magical so far.
-	c := newControllerActivator(app.Router, controller, app.Dependencies)
+	c := newControllerActivator(app.Router, controller, app.Dependencies, app.ErrorHandler)
 
 	// check the controller's "BeforeActivation" or/and "AfterActivation" method(s) between the `activate`
 	// call, which is simply parses the controller's methods, end-dev can register custom controller's methods
@@ -195,12 +196,22 @@ func (app *Application) Handle(controller interface{}) *Application {
 	return app
 }
 
+// HandleError registers a `hero.ErrorHandlerFunc` which will be fired when
+// application's controllers' functions returns an non-nil error.
+// Each controller can override it by implementing the `hero.ErrorHandler`.
+func (app *Application) HandleError(errHandler hero.ErrorHandlerFunc) *Application {
+	app.ErrorHandler = errHandler
+	return app
+}
+
 // Clone returns a new mvc Application which has the dependencies
-// of the current mvc Mpplication's dependencies.
+// of the current mvc Application's `Dependencies` and its `ErrorHandler`.
 //
 // Example: `.Clone(app.Party("/path")).Handle(new(TodoSubController))`.
 func (app *Application) Clone(party router.Party) *Application {
-	return newApp(party, app.Dependencies.Clone())
+	cloned := newApp(party, app.Dependencies.Clone())
+	cloned.ErrorHandler = app.ErrorHandler
+	return cloned
 }
 
 // Party returns a new child mvc Application based on the current path + "relativePath".
