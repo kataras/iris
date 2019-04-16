@@ -419,6 +419,7 @@ var (
 		Uint64,
 		Bool,
 		Alphabetical,
+		File,
 		Path,
 	}
 )

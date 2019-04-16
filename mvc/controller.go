@@ -29,7 +29,7 @@ type shared interface {
 	Handle(httpMethod, path, funcName string, middleware ...context.Handler) *router.Route
 }
 
-// BeforeActivation is being used as the onle one input argument of a
+// BeforeActivation is being used as the only one input argument of a
 // `func(c *Controller) BeforeActivation(b mvc.BeforeActivation) {}`.
 //
 // It's being called before the controller's dependencies binding to the fields or the input arguments
@@ -42,11 +42,11 @@ type BeforeActivation interface {
 	Dependencies() *di.Values
 }
 
-// AfterActivation is being used as the onle one input argument of a
+// AfterActivation is being used as the only one input argument of a
 // `func(c *Controller) AfterActivation(a mvc.AfterActivation) {}`.
 //
 // It's being called after the `BeforeActivation`,
-// and after controller's dependencies binded to the fields or the input arguments but before server ran.
+// and after controller's dependencies bind-ed to the fields or the input arguments but before server ran.
 //
 // It's being used to customize a controller if needed inside the controller itself,
 // it's called once per application.
@@ -81,9 +81,11 @@ type ControllerActivator struct {
 	routes map[string]*router.Route
 
 	// the bindings that comes from the Engine and the controller's filled fields if any.
-	// Can be binded to the the new controller's fields and method that is fired
+	// Can be bind-ed to the the new controller's fields and method that is fired
 	// on incoming requests.
 	dependencies di.Values
+
+	errorHandler hero.ErrorHandler
 
 	// initialized on the first `Handle`.
 	injector *di.StructInjector
@@ -101,7 +103,7 @@ func NameOf(v interface{}) string {
 	return fullname
 }
 
-func newControllerActivator(router router.Party, controller interface{}, dependencies []reflect.Value) *ControllerActivator {
+func newControllerActivator(router router.Party, controller interface{}, dependencies []reflect.Value, errorHandler hero.ErrorHandler) *ControllerActivator {
 	typ := reflect.TypeOf(controller)
 
 	c := &ControllerActivator{
@@ -121,6 +123,7 @@ func newControllerActivator(router router.Party, controller interface{}, depende
 		routes: whatReservedMethods(typ),
 		// CloneWithFieldsOf: include the manual fill-ed controller struct's fields to the dependencies.
 		dependencies: di.Values(dependencies).CloneWithFieldsOf(controller),
+		errorHandler: errorHandler,
 	}
 
 	return c
@@ -326,7 +329,7 @@ func (c *ControllerActivator) handlerOf(m reflect.Method, funcDependencies []ref
 	// Remember:
 	// The `Handle->handlerOf` can be called from `BeforeActivation` event
 	// then, the c.injector is nil because
-	// we may not have the dependencies binded yet.
+	// we may not have the dependencies bind-ed yet.
 	// To solve this we're doing a check on the FIRST `Handle`,
 	// if c.injector is nil, then set it with the current bindings,
 	// these bindings can change after, so first add dependencies and after register routes.
@@ -346,24 +349,27 @@ func (c *ControllerActivator) handlerOf(m reflect.Method, funcDependencies []ref
 	}
 
 	var (
-		implementsBase        = isBaseController(c.Type)
-		hasBindableFields     = c.injector.CanInject
-		hasBindableFuncInputs = funcInjector.Has
+		implementsBase         = isBaseController(c.Type)
+		implementsErrorHandler = isErrorHandler(c.Type)
+		hasBindableFields      = c.injector.CanInject
+		hasBindableFuncInputs  = funcInjector.Has
+		funcHasErrorOut        = hasErrorOutArgs(m)
 
 		call = m.Func.Call
 	)
 
-	if !implementsBase && !hasBindableFields && !hasBindableFuncInputs {
+	if !implementsBase && !hasBindableFields && !hasBindableFuncInputs && !implementsErrorHandler {
 		return func(ctx context.Context) {
-			hero.DispatchFuncResult(ctx, call(c.injector.AcquireSlice()))
+			hero.DispatchFuncResult(ctx, c.errorHandler, call(c.injector.AcquireSlice()))
 		}
 	}
 
 	n := m.Type.NumIn()
 	return func(ctx context.Context) {
 		var (
-			ctrl     = c.injector.Acquire()
-			ctxValue reflect.Value
+			ctrl         = c.injector.Acquire()
+			ctxValue     reflect.Value
+			errorHandler = c.errorHandler
 		)
 
 		// inject struct fields first before the BeginRequest and EndRequest, if any,
@@ -388,6 +394,10 @@ func (c *ControllerActivator) handlerOf(m reflect.Method, funcDependencies []ref
 			defer b.EndRequest(ctx)
 		}
 
+		if funcHasErrorOut && implementsErrorHandler {
+			errorHandler = ctrl.Interface().(hero.ErrorHandler)
+		}
+
 		if hasBindableFuncInputs {
 			// means that ctxValue is not initialized before by the controller's struct injector.
 			if !hasBindableFields {
@@ -406,11 +416,11 @@ func (c *ControllerActivator) handlerOf(m reflect.Method, funcDependencies []ref
 			// 	println("controller.go: execution: in.Value = "+inn.String()+" and in.Type = "+inn.Type().Kind().String()+" of index: ", idxx)
 			// }
 
-			hero.DispatchFuncResult(ctx, call(in))
+			hero.DispatchFuncResult(ctx, errorHandler, call(in))
 			return
 		}
 
-		hero.DispatchFuncResult(ctx, ctrl.Method(m.Index).Call(emptyIn))
+		hero.DispatchFuncResult(ctx, errorHandler, ctrl.Method(m.Index).Call(emptyIn))
 	}
 
 }

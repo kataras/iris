@@ -59,7 +59,7 @@ func makeHandler(handler interface{}, values ...reflect.Value) (context.Handler,
 
 	if n == 0 {
 		h := func(ctx context.Context) {
-			DispatchFuncResult(ctx, fn.Call(di.EmptyIn))
+			DispatchFuncResult(ctx, nil, fn.Call(di.EmptyIn))
 		}
 
 		return h, nil
@@ -91,7 +91,7 @@ func makeHandler(handler interface{}, values ...reflect.Value) (context.Handler,
 		// in := make([]reflect.Value, n, n)
 		// funcInjector.Inject(&in, reflect.ValueOf(ctx))
 		// DispatchFuncResult(ctx, fn.Call(in))
-		DispatchFuncResult(ctx, funcInjector.Call(reflect.ValueOf(ctx)))
+		DispatchFuncResult(ctx, nil, funcInjector.Call(reflect.ValueOf(ctx)))
 	}
 
 	return h, nil
