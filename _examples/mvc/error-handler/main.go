@@ -26,18 +26,13 @@ func main() {
 	app.Run(iris.Addr(":8080"))
 }
 
-func basicMVC(app *mvc.Application) {
-	// GET: http://localhost:8080
-	app.Handle(new(myController))
-}
-
 type myController struct {
 }
 
 // overriddes the mvcApp.HandleError function.
-// func (c *myController) HandleError(ctx iris.Context, err error) {
-// 	ctx.HTML(fmt.Sprintf("<i>%s</i>", err.Error()))
-// }
+func (c *myController) HandleError(ctx iris.Context, err error) {
+	ctx.HTML(fmt.Sprintf("<i>%s</i>", err.Error()))
+}
 
 func (c *myController) Get() error {
 	return fmt.Errorf("error here")
