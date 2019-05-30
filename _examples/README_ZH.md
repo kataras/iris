@@ -430,10 +430,11 @@ iris websocket库依赖于它自己的[包](https://github.com/kataras/iris/tree
 设计这个包的目的是处理原始websockets，虽然它的API和著名的[socket.io](https://socket.io)很像。我最近读了一片文章，并且对我
 决定给iris设计一个**快速的**websocket**限定**包并且不是一个向后传递类socket.io的包。你可以阅读这个链接里的文章https://medium.com/@ivanderbyl/why-you-don-t-need-socket-io-6848f1c871cd。
 
-- [聊天](websocket/chat/main.go)
-- [Chat with Iris Go Client Side](websocket/go-client) **NEW**
-    * [Server](websocket/go-client/server/main.go)
-    * [Client](websocket/go-client/client/main.go)
+- [Basic](websocket/basic) **NEW**
+    * [Server](websocket/basic/server.go)
+    * [Go Client](websocket/basic/go-client/client.go)
+    * [Browser Client](websocket/basic/browser/index.html)
+    * [Browser NPM Client (browserify)](websocket/basic/browserify/app.js)
 - [原生消息](websocket/native-messages/main.go)
 - [连接列表](websocket/connectionlist/main.go)
 - [TLS支持](websocket/secure/main.go)

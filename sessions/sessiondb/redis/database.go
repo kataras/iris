@@ -61,10 +61,8 @@ func (db *Database) OnUpdateExpiration(sid string, newExpires time.Duration) err
 	return db.redis.UpdateTTLMany(sid, int64(newExpires.Seconds()))
 }
 
-const delim = "_"
-
-func makeKey(sid, key string) string {
-	return sid + delim + key
+func (db *Database) makeKey(sid, key string) string {
+	return sid + db.redis.Config.Delim + key
 }
 
 // Set sets a key value of a specific session.
@@ -76,14 +74,14 @@ func (db *Database) Set(sid string, lifetime sessions.LifeTime, key string, valu
 		return
 	}
 
-	if err = db.redis.Set(makeKey(sid, key), valueBytes, int64(lifetime.DurationUntilExpiration().Seconds())); err != nil {
+	if err = db.redis.Set(db.makeKey(sid, key), valueBytes, int64(lifetime.DurationUntilExpiration().Seconds())); err != nil {
 		golog.Debug(err)
 	}
 }
 
 // Get retrieves a session value based on the key.
 func (db *Database) Get(sid string, key string) (value interface{}) {
-	db.get(makeKey(sid, key), &value)
+	db.get(db.makeKey(sid, key), &value)
 	return
 }
 
@@ -100,7 +98,7 @@ func (db *Database) get(key string, outPtr interface{}) {
 }
 
 func (db *Database) keys(sid string) []string {
-	keys, err := db.redis.GetKeys(sid + delim)
+	keys, err := db.redis.GetKeys(sid + db.redis.Config.Delim)
 	if err != nil {
 		golog.Debugf("unable to get all redis keys of session '%s': %v", sid, err)
 		return nil
@@ -126,7 +124,7 @@ func (db *Database) Len(sid string) (n int) {
 
 // Delete removes a session key value based on its key.
 func (db *Database) Delete(sid string, key string) (deleted bool) {
-	err := db.redis.Delete(makeKey(sid, key))
+	err := db.redis.Delete(db.makeKey(sid, key))
 	if err != nil {
 		golog.Error(err)
 	}

@@ -51,7 +51,7 @@ $ go run main.go
 ### Overview
 
 - [Hello world!](hello-world/main.go)
-- [Hello WebAssemply!](webassembly/basic/main.go) **NEW**
+- [Hello WebAssemply!](webassembly/basic/main.go)
 - [Glimpse](overview/main.go)
 - [Tutorial: Online Visitors](tutorial/online-visitors/main.go)
 - [Tutorial: A Todo MVC Application using Iris and Vue.js](https://hackernoon.com/a-todo-mvc-application-using-iris-and-vue-js-5019ff870064)
@@ -62,7 +62,7 @@ $ go run main.go
 - [Tutorial: DropzoneJS Uploader](tutorial/dropzonejs)
 - [Tutorial: Caddy](tutorial/caddy)
 - [Tutorial:Iris Go Framework + MongoDB](https://medium.com/go-language/iris-go-framework-mongodb-552e349eab9c)
-- [Tutorial: API for Apache Kafka](tutorial/api-for-apache-kafka) **NEW**
+- [Tutorial: API for Apache Kafka](tutorial/api-for-apache-kafka)
 
 ### Structuring
 
@@ -146,9 +146,9 @@ Navigate through examples for a better understanding.
 - [Custom HTTP Errors](routing/http-errors/main.go)
 - [Dynamic Path](routing/dynamic-path/main.go)
     * [root level wildcard path](routing/dynamic-path/root-wildcard/main.go)
-- [Write your own custom parameter types](routing/macros/main.go) **NEW**
+- [Write your own custom parameter types](routing/macros/main.go)
 - [Reverse routing](routing/reverse/main.go)
-- [Custom Router (high-level)](routing/custom-high-level-router/main.go) **NEW**
+- [Custom Router (high-level)](routing/custom-high-level-router/main.go)
 - [Custom Wrapper](routing/custom-wrapper/main.go)
 - Custom Context
     * [method overriding](routing/custom-context/method-overriding/main.go)
@@ -167,7 +167,7 @@ Navigate through examples for a better understanding.
 
 - [Basic](hero/basic/main.go)
 - [Overview](hero/overview)
-- [Sessions](hero/sessions) **NEW**
+- [Sessions](hero/sessions)
 - [Yet another dependency injection example and good practises at general](hero/smart-contract/main.go) **NEW**
 
 ### MVC
@@ -306,14 +306,15 @@ If you're new to back-end web development read about the MVC architectural patte
 
 Follow the examples below,
 
-- [Hello world](mvc/hello-world/main.go) **UPDATED**
-- [Session Controller](mvc/session-controller/main.go) **UPDATED**
-- [Overview - Plus Repository and Service layers](mvc/overview) **UPDATED**
-- [Login showcase - Plus Repository and Service layers](mvc/login) **UPDATED**
-- [Singleton](mvc/singleton) **NEW**
-- [Websocket Controller](mvc/websocket) **NEW**
-- [Register Middleware](mvc/middleware) **NEW**
-- [Vue.js Todo MVC](tutorial/vuejs-todo-mvc) **NEW**
+- [Hello world](mvc/hello-world/main.go)
+- [Regexp](mvc/regexp/main.go) **NEW**
+- [Session Controller](mvc/session-controller/main.go)
+- [Overview - Plus Repository and Service layers](mvc/overview)
+- [Login showcase - Plus Repository and Service layers](mvc/login)
+- [Singleton](mvc/singleton)
+- [Websocket Controller](mvc/websocket)
+- [Register Middleware](mvc/middleware)
+- [Vue.js Todo MVC](tutorial/vuejs-todo-mvc)
 
 ### Subdomains
 
@@ -367,7 +368,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 - [Favicon](file-server/favicon/main.go)
 - [Basic](file-server/basic/main.go)
 - [Embedding Files Into App Executable File](file-server/embedding-files-into-app/main.go)
-- [Embedding Gziped Files Into App Executable File](file-server/embedding-gziped-files-into-app/main.go) **NEW**
+- [Embedding Gziped Files Into App Executable File](file-server/embedding-gziped-files-into-app/main.go)
 - [Send/Force-Download Files](file-server/send-files/main.go)
 - Single Page Applications
     * [single Page Application](file-server/single-page-application/basic/main.go)
@@ -384,7 +385,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 - [Read Custom via Unmarshaler](http_request/read-custom-via-unmarshaler/main.go)
 - [Upload/Read File](http_request/upload-file/main.go)
 - [Upload multiple files with an easy way](http_request/upload-files/main.go)
-- [Extract referrer from "referer" header or URL query parameter](http_request/extract-referer/main.go) **NEW**
+- [Extract referrer from "referer" header or URL query parameter](http_request/extract-referer/main.go)
 
 > The `context.Request()` returns the same *http.Request you already know, these examples show some places where the  Context uses this object. Besides that you can use it as you did before iris.
 
@@ -396,7 +397,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 - [Write Gzip](http_responsewriter/write-gzip/main.go)
 - [Stream Writer](http_responsewriter/stream-writer/main.go)
 - [Transactions](http_responsewriter/transactions/main.go)
-- [SSE](http_responsewriter/sse/main.go) **NEW**
+- [SSE](http_responsewriter/sse/main.go)
 - [SSE (third-party package usage for server sent events)](http_responsewriter/sse-third-party/main.go)
 
 > The `context/context#ResponseWriter()` returns an enchament version of a http.ResponseWriter, these examples show some places where the Context uses this object. Besides that you can use it as you did before iris.
@@ -473,14 +474,15 @@ iris session manager lives on its own [package](https://github.com/kataras/iris/
 
 ### Websockets
 
-iris websocket library lives on its own [package](https://github.com/kataras/iris/tree/master/websocket).
+iris websocket library lives on its own [package](https://github.com/kataras/iris/tree/master/websocket) which depends on the [kataras/neffos](https://github.com/kataras/neffos) external package.
 
 The package is designed to work with raw websockets although its API is similar to the famous [socket.io](https://socket.io). I have read an article recently and I felt very contented about my decision to design a **fast** websocket-**only** package for Iris and not a backwards socket.io-like package. You can read that article by following this link: https://medium.com/@ivanderbyl/why-you-don-t-need-socket-io-6848f1c871cd.
 
-- [Chat](websocket/chat/main.go)
-- [Chat with Iris Go Client Side](websocket/go-client) **NEW**
-    * [Server](websocket/go-client/server/main.go)
-    * [Client](websocket/go-client/client/main.go)
+- [Basic](websocket/basic) **NEW**
+    * [Server](websocket/basic/server.go)
+    * [Go Client](websocket/basic/go-client/client.go)
+    * [Browser Client](websocket/basic/browser/index.html)
+    * [Browser NPM Client (browserify)](websocket/basic/browserify/app.js)
 - [Native Messages](websocket/native-messages/main.go)
 - [Connection List](websocket/connectionlist/main.go)
 - [TLS Enabled](websocket/secure/main.go)

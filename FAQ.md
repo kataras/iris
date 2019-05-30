@@ -62,8 +62,7 @@ Available type aliases;
 | Go 1.8 | Go 1.8 usage | Go 1.9 usage (optionally) |
 | -----------|--------|--------|
 | `import "github.com/kataras/iris/context"` | `func(context.Context) {}`, `context.Handler`, `context.Map` |  `func(iris.Context) {}`, `iris.Handler`,  `iris.Map` |
-| `import "github.com/kataras/iris/mvc"` | `type MyController struct { mvc.Controller }` , `mvc.SessionController` | `type MyController struct { iris.Controller }`, `iris.SessionController` |
-| `import "github.com/kataras/iris/core/router"` | `app.PartyFunc("/users", func(p router.Party) {})` |  `app.PartyFunc("/users", func(p iris.Party) {})` |
+| `import "github.com/kataras/iris/core/router"` | `app.PartyFunc("/users", func(p router.Party) {})`, `router.ExecutionOptions`, `router.ExecutionRules` |  `app.PartyFunc("/users", func(p iris.Party) {})`, `iris.ExecutionOptions`, `iris.ExecutionRules` |
 | `import "github.com/kataras/iris/core/host"` | `app.ConfigureHost(func(s *host.Supervisor) {})` | `app.ConfigureHost(func(s *iris.Supervisor) {})` |
 
 You can find all type aliases and their original package import statements at the [./context.go file](context.go).
@@ -72,7 +71,7 @@ You can find all type aliases and their original package import statements at th
 
 ## Active development mode
 
-Iris may have reached version 10, but we're not stopping there. We have many feature ideas on our board that we're anxious to add and other innovative web development solutions that we're planning to build into Iris.
+Iris may have reached version 11, but we're not stopping there. We have many feature ideas on our board that we're anxious to add and other innovative web development solutions that we're planning to build into Iris.
 
 ## Can I find a job if I learn how to use Iris?
 
@@ -81,30 +80,9 @@ open for Iris-specific developers the time we speak.
 
 Go to our facebook page, like it and receive notifications about new job offers, we already have couple of them stay at the top of the page: https://www.facebook.com/iris.framework
 
-<!--
-## Can Iris be used in production after Dubai purchase?
-
-Yes, now more than ever.
-
-https://github.com/kataras/iris/issues/711
-
--------
-
-UPDATE which I could mention by the beginning of the Decemember of 2017:
-
-Nothing keeps for ever, and we should move on to greater things.
-
-As you probably know, I was hired to develop an inside Iris version for a Dubai-based startup company's specific requirements in the same time I was developing the open-source Iris repository with your help this time as well!
-
-As our first deal was to end this agreement via last-time negotiatations by the end of the current year (2017), the
-agreement ended unofficially at 22 Novemember of 2017 (officially some weeks later, paper work), and after a week I came back to Greece as you may understood from the regularly commits and improvements to the public repository that I pushed.
- -->
-
 ## Do we have a community Chat?
 
 Yes, https://chat.iris-go.com
-
-https://github.com/kataras/iris/issues/646
 
 ## How is the development of Iris supported?
 

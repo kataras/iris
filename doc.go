@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019 The Iris Authors. All rights reserved.
+// Copyright (c) 2017-2018 The Iris Authors. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -27,10 +27,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*
-Package iris implements the highest realistic performance, easy to learn Go web framework.
-Iris provides a beautifully expressive and easy to use foundation for your next website, API, or distributed app.
-Low-level handlers compatible with `net/http` and high-level fastest MVC implementation and handlers dependency injection.
-Easy to learn for new gophers and advanced features for experienced, it goes as far as you dive into it!
+Package iris provides a beautifully expressive and easy to use foundation for your next website, API, or distributed app.
 
 Source code and other details for the project are available at GitHub:
 
@@ -38,7 +35,7 @@ Source code and other details for the project are available at GitHub:
 
 Current Version
 
-11.2.0
+11.1.1
 
 Installation
 
@@ -1471,7 +1468,7 @@ Example Server Code:
         // see the inline javascript code i the websockets.html, this endpoint is used to connect to the server.
         app.Get("/echo", ws.Handler())
 
-        // serve the javascript builtin client-side library,
+        // serve the javascript built-in client-side library,
         // see websockets.html script tags, this path is used.
         app.Any("/iris-ws.js", func(ctx iris.Context) {
             ctx.Write(websocket.ClientSource)
@@ -1554,7 +1551,7 @@ Example Code:
 
     func main() {
         app := iris.New()
-        // Optionally, add two builtin handlers
+        // Optionally, add two built-in handlers
         // that can recover from any http-relative panics
         // and log the requests to the terminal.
         app.Use(recover.New())
