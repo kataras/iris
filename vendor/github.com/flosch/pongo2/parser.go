@@ -163,7 +163,7 @@ func (p *Parser) Count() int {
 
 // Returns tokens[i] or NIL (if i >= len(tokens))
 func (p *Parser) Get(i int) *Token {
-	if i < len(p.tokens) {
+	if i < len(p.tokens) && i >= 0 {
 		return p.tokens[i]
 	}
 	return nil

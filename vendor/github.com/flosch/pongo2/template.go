@@ -3,6 +3,7 @@ package pongo2
 import (
 	"bytes"
 	"io"
+	"strings"
 
 	"github.com/juju/errors"
 )
@@ -46,6 +47,10 @@ type Template struct {
 
 	// Output
 	root *nodeDocument
+
+	// Options allow you to change the behavior of template-engine.
+	// You can change the options before calling the Execute method.
+	Options *Options
 }
 
 func newTemplateString(set *TemplateSet, tpl []byte) (*Template, error) {
@@ -64,7 +69,10 @@ func newTemplate(set *TemplateSet, name string, isTplString bool, tpl []byte) (*
 		size:           len(strTpl),
 		blocks:         make(map[string]*NodeWrapper),
 		exportedMacros: make(map[string]*tagMacroNode),
+		Options:        newOptions(),
 	}
+	// Copy all settings from another Options.
+	t.Options.Update(set.Options)
 
 	// Tokenize it
 	tokens, err := lex(name, strTpl)
@@ -87,7 +95,35 @@ func newTemplate(set *TemplateSet, name string, isTplString bool, tpl []byte) (*
 	return t, nil
 }
 
-func (tpl *Template) execute(context Context, writer TemplateWriter) error {
+func (tpl *Template) newContextForExecution(context Context) (*Template, *ExecutionContext, error) {
+	if tpl.Options.TrimBlocks || tpl.Options.LStripBlocks {
+		// Issue #94 https://github.com/flosch/pongo2/issues/94
+		// If an application configures pongo2 template to trim_blocks,
+		// the first newline after a template tag is removed automatically (like in PHP).
+		prev := &Token{
+			Typ: TokenHTML,
+			Val: "\n",
+		}
+
+		for _, t := range tpl.tokens {
+			if tpl.Options.LStripBlocks {
+				if prev.Typ == TokenHTML && t.Typ != TokenHTML && t.Val == "{%" {
+					prev.Val = strings.TrimRight(prev.Val, "\t ")
+				}
+			}
+
+			if tpl.Options.TrimBlocks {
+				if prev.Typ != TokenHTML && t.Typ == TokenHTML && prev.Val == "%}" {
+					if len(t.Val) > 0 && t.Val[0] == '\n' {
+						t.Val = t.Val[1:len(t.Val)]
+					}
+				}
+			}
+
+			prev = t
+		}
+	}
+
 	// Determine the parent to be executed (for template inheritance)
 	parent := tpl
 	for parent.parent != nil {
@@ -105,14 +141,14 @@ func (tpl *Template) execute(context Context, writer TemplateWriter) error {
 			// Check for context name syntax
 			err := newContext.checkForValidIdentifiers()
 			if err != nil {
-				return err
+				return parent, nil, err
 			}
 
 			// Check for clashes with macro names
 			for k := range newContext {
 				_, has := tpl.exportedMacros[k]
 				if has {
-					return &Error{
+					return parent, nil, &Error{
 						Filename:  tpl.name,
 						Sender:    "execution",
 						OrigError: errors.Errorf("context key name '%s' clashes with macro '%s'", k, k),
@@ -124,6 +160,15 @@ func (tpl *Template) execute(context Context, writer TemplateWriter) error {
 
 	// Create operational context
 	ctx := newExecutionContext(parent, newContext)
+
+	return parent, ctx, nil
+}
+
+func (tpl *Template) execute(context Context, writer TemplateWriter) error {
+	parent, ctx, err := tpl.newContextForExecution(context)
+	if err != nil {
+		return err
+	}
 
 	// Run the selected document
 	if err := parent.root.Execute(ctx, writer); err != nil {
@@ -191,4 +236,42 @@ func (tpl *Template) Execute(context Context) (string, error) {
 
 	return buffer.String(), nil
 
+}
+
+func (tpl *Template) ExecuteBlocks(context Context, blocks []string) (map[string]string, error) {
+	var parents []*Template
+	result := make(map[string]string)
+
+	parent := tpl
+	for parent != nil {
+		parents = append(parents, parent)
+		parent = parent.parent
+	}
+
+	for _, t := range parents {
+		buffer := bytes.NewBuffer(make([]byte, 0, int(float64(t.size)*1.3)))
+		_, ctx, err := t.newContextForExecution(context)
+		if err != nil {
+			return nil, err
+		}
+		for _, blockName := range blocks {
+			if _, ok := result[blockName]; ok {
+				continue
+			}
+			if blockWrapper, ok := t.blocks[blockName]; ok {
+				bErr := blockWrapper.Execute(ctx, buffer)
+				if bErr != nil {
+					return nil, bErr
+				}
+				result[blockName] = buffer.String()
+				buffer.Reset()
+			}
+		}
+		// We have found all blocks
+		if len(blocks) == len(result) {
+			break
+		}
+	}
+
+	return result, nil
 }

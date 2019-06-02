@@ -74,7 +74,7 @@ import (
 ## Quick start
  
 ```sh
-# assume the following codes in example.go file
+# assume the following code in example.go file
 $ cat example.go
 ```
 
