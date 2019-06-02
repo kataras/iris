@@ -12,21 +12,26 @@ const namespace = "default"
 // if namespace is empty then simply websocket.Events{...} can be used instead.
 var serverEvents = websocket.Namespaces{
 	namespace: websocket.Events{
-		websocket.OnNamespaceConnected: func(c *websocket.NSConn, msg websocket.Message) error {
-			log.Printf("[%s] connected to namespace [%s]", c, msg.Namespace)
+		websocket.OnNamespaceConnected: func(nsConn *websocket.NSConn, msg websocket.Message) error {
+			log.Printf("[%s] connected to namespace [%s] with IP [%s]",
+				nsConn, msg.Namespace,
+				// with `GetContext` you can retrieve the Iris' `Context`, alternatively
+				// you can use the `nsConn.Conn.Socket().Request()` to get the raw `*http.Request`.
+				websocket.GetContext(nsConn.Conn).RemoteAddr())
 			return nil
 		},
-		websocket.OnNamespaceDisconnect: func(c *websocket.NSConn, msg websocket.Message) error {
-			log.Printf("[%s] disconnected from namespace [%s]", c, msg.Namespace)
+		websocket.OnNamespaceDisconnect: func(nsConn *websocket.NSConn, msg websocket.Message) error {
+			log.Printf("[%s] disconnected from namespace [%s]", nsConn, msg.Namespace)
 			return nil
 		},
-		"chat": func(c *websocket.NSConn, msg websocket.Message) error {
-			log.Printf("[%s] sent: %s", c.Conn.ID(), string(msg.Body))
+		"chat": func(nsConn *websocket.NSConn, msg websocket.Message) error {
+			// room.String() returns -> NSConn.String() returns -> Conn.String() returns -> Conn.ID()
+			log.Printf("[%s] sent: %s", nsConn, string(msg.Body))
 
 			// Write message back to the client message owner with:
-			// c.Emit("chat", msg)
+			// nsConn.Emit("chat", msg)
 			// Write message to all except this client with:
-			c.Conn.Server().Broadcast(c, msg)
+			nsConn.Conn.Server().Broadcast(nsConn, msg)
 			return nil
 		},
 	},
