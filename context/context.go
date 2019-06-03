@@ -154,7 +154,7 @@ type Context interface {
 	// HandlerIndex sets the current index of the
 	// current context's handlers chain.
 	// If -1 passed then it just returns the
-	// current handler index without change the current index.rns that index, useless return value.
+	// current handler index without change the current index.
 	//
 	// Look Handlers(), Next() and StopExecution() too.
 	HandlerIndex(n int) (currentIndex int)
