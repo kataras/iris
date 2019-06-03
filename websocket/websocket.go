@@ -79,7 +79,24 @@ var (
 	// with the exact same incoming Message's Namespace (and Room if specified)
 	// except its body which would be the given "body".
 	Reply = neffos.Reply
+	// Object marshals the "v" value and returns a Message's Body.
+	// The "v" serialized value can be customized by implementing a `Marshal() ([]byte, error) ` method,
+	// otherwise the default one will be used instead ( see `SetDefaultMarshaler` and `SetDefaultUnmarshaler`).
+	// Errors are pushed to the result, use the object's Marshal method to catch those when necessary.
+	Object = neffos.Object
 )
+
+// SetDefaultMarshaler changes the default json marshaler.
+// See `Object` package-level function and `Message.Object` method for more.
+func SetDefaultMarshaler(fn func(v interface{}) ([]byte, error)) {
+	neffos.DefaultMarshaler = fn
+}
+
+// SetDefaultUnmarshaler changes the default json unmarshaler.
+// See `Object` package-level function and `Message.Object` method for more.
+func SetDefaultUnmarshaler(fn func(data []byte, v interface{}) error) {
+	neffos.DefaultUnmarshaler = fn
+}
 
 // Handler returns an Iris handler to be served in a route of an Iris application.
 func Handler(s *neffos.Server) context.Handler {
