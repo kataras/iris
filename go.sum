@@ -28,8 +28,8 @@ github.com/json-iterator/go v1.1.6 h1:MrUvLMLTMxbqFJ9kzlvat/rYZqZnW3u4wkLzWTaFwK
 github.com/json-iterator/go v1.1.6/go.mod h1:+SdeFBvtyEkXs7REEP0seUULqWtbJapLOCVDaaPEHmU=
 github.com/kataras/golog v0.0.0-20180321173939-03be10146386 h1:VT6AeCHO/mc+VedKBMhoqb5eAK8B1i9F6nZl7EGlHvA=
 github.com/kataras/golog v0.0.0-20180321173939-03be10146386/go.mod h1:PcaEvfvhGsqwXZ6S3CgCbmjcp+4UDUh2MIfF2ZEul8M=
-github.com/kataras/neffos v0.0.0-20190603085547-9fba63259400 h1:4Vmw9gER3G+QRYFP9Kt8KK01kwVfAE+EoXgiuCzn4oI=
-github.com/kataras/neffos v0.0.0-20190603085547-9fba63259400/go.mod h1:XfxmcgJUtbPmzK9wPLE7ybFHXoCqZKGptaW1frrxFhw=
+github.com/kataras/neffos v0.0.0-20190606200227-c8dd500b4cdf h1:rHFU6nupBNP5RejMwghFnhjUoOFXAYxmE07s4f5aeXQ=
+github.com/kataras/neffos v0.0.0-20190606200227-c8dd500b4cdf/go.mod h1:XfxmcgJUtbPmzK9wPLE7ybFHXoCqZKGptaW1frrxFhw=
 github.com/kataras/pio v0.0.0-20190103105442-ea782b38602d h1:V5Rs9ztEWdp58oayPq/ulmlqJJZeJP6pP79uP3qjcao=
 github.com/kataras/pio v0.0.0-20190103105442-ea782b38602d/go.mod h1:NV88laa9UiiDuX9AhMbDPkGYSPugBOV6yTZB1l2K9Z0=
 github.com/microcosm-cc/bluemonday v1.0.2 h1:5lPfLTTAvAbtS0VqT+94yOtFnGfUWYyx0+iToC3Os3s=

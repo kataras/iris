@@ -1473,7 +1473,7 @@ func DecodeURL(uri string) string {
 // based on the 'escape'.
 func (ctx *context) RequestPath(escape bool) string {
 	if escape {
-		return DecodeQuery(ctx.request.URL.EscapedPath())
+		return ctx.request.URL.EscapedPath() // DecodeQuery(ctx.request.URL.EscapedPath())
 	}
 	return ctx.request.URL.Path // RawPath returns empty, requesturi can be used instead also.
 }
