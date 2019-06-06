@@ -22,13 +22,13 @@ require (
 	github.com/hashicorp/go-version v1.0.0
 	github.com/imkira/go-interpol v1.1.0 // indirect
 	github.com/iris-contrib/blackfriday v2.0.0+incompatible
-	github.com/iris-contrib/formBinder v0.0.0-20190104093907-fbd5963f41e1 // indirect
+	github.com/iris-contrib/formBinder v0.0.0-20190104093907-fbd5963f41e1
 	github.com/iris-contrib/go.uuid v2.0.0+incompatible
 	github.com/iris-contrib/httpexpect v0.0.0-20180314041918-ebe99fcebbce
 	github.com/iris-contrib/i18n v0.0.0-20171121225848-987a633949d0
 	github.com/json-iterator/go v1.1.5
 	github.com/juju/errors v0.0.0-20181012004132-a4583d0a56ea // indirect
-	github.com/kataras/golog v0.0.0-20180321173939-03be10146386 // indirect
+	github.com/kataras/golog v0.0.0-20180321173939-03be10146386
 	github.com/kataras/pio v0.0.0-20190103105442-ea782b38602d // indirect
 	github.com/klauspost/compress v1.4.1
 	github.com/klauspost/cpuid v1.2.0 // indirect
