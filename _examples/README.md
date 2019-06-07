@@ -482,7 +482,6 @@ The package is designed to work with raw websockets although its API is similar 
 - [Connection List](websocket/connectionlist/main.go)
 - [TLS Enabled](websocket/secure/main.go)
 - [Custom Raw Go Client](websocket/custom-go-client/main.go)
-- [Third-Party socket.io](websocket/third-party-socketio/main.go)
 
 > You're free to use your own favourite websockets package if you'd like so.
 
