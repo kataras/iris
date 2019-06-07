@@ -92,7 +92,7 @@ func testSessions(t *testing.T, sess *sessions.Sessions, app *iris.Application) 
 	d := e.GET("/destroy").Expect().Status(iris.StatusOK)
 	d.JSON().Object().Empty()
 	// 	This removed: d.Cookies().Empty(). Reason:
-	// httpexpect counts the cookies setted or deleted at the response time, but cookie is not removed, to be really removed needs to SetExpire(now-1second) so,
+	// httpexpect counts the cookies set or deleted at the response time, but cookie is not removed, to be really removed needs to SetExpire(now-1second) so,
 	// test if the cookies removed on the next request, like the browser's behavior.
 	e.GET("/after_destroy").Expect().Status(iris.StatusOK).Cookies().Empty()
 	// set and clear again

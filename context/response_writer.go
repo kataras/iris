@@ -67,7 +67,7 @@ type ResponseWriter interface {
 
 	// SetBeforeFlush registers the unique callback which called exactly before the response is flushed to the client.
 	SetBeforeFlush(cb func())
-	// GetBeforeFlush returns (not execute) the before flush callback, or nil if not setted by SetBeforeFlush.
+	// GetBeforeFlush returns (not execute) the before flush callback, or nil if not set by SetBeforeFlush.
 	GetBeforeFlush() func()
 	// FlushResponse should be called only once before EndResponse.
 	// it tries to send the status code if not sent already

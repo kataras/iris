@@ -26,7 +26,7 @@ func (ch *ErrorCodeHandler) Fire(ctx context.Context) {
 	// if we can reset the body
 	if w, ok := ctx.IsRecording(); ok {
 		if statusCodeSuccessful(w.StatusCode()) { // if not an error status code
-			w.WriteHeader(ch.StatusCode) // then set it manually here, otherwise it should be setted via ctx.StatusCode(...)
+			w.WriteHeader(ch.StatusCode) // then set it manually here, otherwise it should be set via ctx.StatusCode(...)
 		}
 		// reset if previous content and it's recorder, keep the status code.
 		w.ClearHeaders()

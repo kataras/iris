@@ -156,7 +156,7 @@ func (s *DjangoEngine) Binary(assetFn func(name string) ([]byte, error), namesFn
 	return s
 }
 
-// Reload if setted to true the templates are reloading on each render,
+// Reload if set to true the templates are reloading on each render,
 // use it when you're in development and you're boring of restarting
 // the whole app when you edit a template file.
 //
@@ -241,7 +241,7 @@ func (s *DjangoEngine) Load() error {
 	if err != nil {
 		return err
 	}
-	// change the directory field configuration, load happens after directory has been setted, so we will not have any problems here.
+	// change the directory field configuration, load happens after directory has been set, so we will not have any problems here.
 	s.directory = dir
 	return s.loadDirectory()
 }

@@ -127,7 +127,7 @@ func ResolveAddr(addr string) string {
 		if a[portIdx:] == ":https" {
 			a = defaultServerHostname + ":443"
 		} else {
-			// if contains only :port	,then the : is the first letter, so we dont have setted a hostname, lets set it
+			// if contains only :port	,then the : is the first letter, so we dont have set a hostname, lets set it
 			a = defaultServerHostname + a
 		}
 	}

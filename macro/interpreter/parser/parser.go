@@ -78,7 +78,7 @@ func (p *ParamParser) appendErr(format string, a ...interface{}) {
 
 const (
 	// DefaultParamErrorCode is the default http error code, 404 not found,
-	// per-parameter. An error code can be setted via
+	// per-parameter. An error code can be set via
 	// the "else" keyword inside a route's path.
 	DefaultParamErrorCode = 404
 )

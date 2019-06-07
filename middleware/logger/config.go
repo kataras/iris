@@ -48,7 +48,7 @@ type Config struct {
 	// the contents with `ctx.Values().Get(MessageContextKey)`
 	// and if available then these contents will be
 	// appended as part of the logs (with `%v`, in order to be able to set a struct too),
-	// if Columns field was setted to true then
+	// if Columns field was set to true then
 	// a new column will be added named 'Message'.
 	//
 	// Defaults to empty.
@@ -59,7 +59,7 @@ type Config struct {
 	// the contents with `ctx.Values().Get(MessageHeaderKey)`
 	// and if available then these contents will be
 	// appended as part of the logs (with `%v`, in order to be able to set a struct too),
-	// if Columns field was setted to true then
+	// if Columns field was set to true then
 	// a new column will be added named 'HeaderMessage'.
 	//
 	// Defaults to empty.

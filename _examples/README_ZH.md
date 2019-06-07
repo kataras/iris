@@ -435,7 +435,6 @@ iris websocket库依赖于它自己的[包](https://github.com/kataras/iris/tree
 - [连接列表](websocket/connectionlist/main.go)
 - [TLS支持](websocket/secure/main.go)
 - [自定义原始Go客户端](websocket/custom-go-client/main.go)
-- [第三方socket.io](websocket/third-party-socketio/main.go)
 
 > 如果你愿意，你可以自由使用你自己喜欢的websockets包。
 

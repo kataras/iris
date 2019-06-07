@@ -1164,7 +1164,7 @@ Example code:
 
 View engine supports bundled(https://github.com/shuLhan/go-bindata) template files too.
 go-bindata gives you two functions, asset and assetNames,
-these can be setted to each of the template engines using the `.Binary` func.
+these can be set to each of the template engines using the `.Binary` func.
 
 Example code:
 
@@ -1366,7 +1366,7 @@ Example Code:
             //set session values
             s.Set("name", "iris")
 
-            //test if setted here
+            //test if set here
             ctx.Writef("All ok session value of the 'name' is: %s", s.GetString("name"))
         })
 
@@ -1376,7 +1376,7 @@ Example Code:
             // set session values
             s.Set(key, value)
 
-            // test if setted here
+            // test if set here
             ctx.Writef("All ok session value of the '%s' is: %s", key, s.GetString(key))
         })
 

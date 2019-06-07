@@ -13,7 +13,7 @@ func main() {
 	app.Get("/set", func(ctx iris.Context) {
 		s := sess.Start(ctx)
 		s.SetFlash("name", "iris")
-		ctx.Writef("Message setted, is available for the next request")
+		ctx.Writef("Message set, is available for the next request")
 	})
 
 	app.Get("/get", func(ctx iris.Context) {

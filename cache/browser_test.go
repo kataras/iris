@@ -91,13 +91,13 @@ func TestETag(t *testing.T) {
 	e := httptest.New(t, app)
 
 	r := e.GET("/").Expect().Status(httptest.StatusOK)
-	r.Header("ETag").Equal("/") // test if header setted.
+	r.Header("ETag").Equal("/") // test if header set.
 	r.Body().Equal("_")
 
 	e.GET("/").WithHeader("ETag", "/").WithHeader("If-None-Match", "/").Expect().
 		Status(httptest.StatusNotModified).Body().Equal("") // browser is responsible, no the test engine.
 
 	r = e.GET("/").Expect().Status(httptest.StatusOK)
-	r.Header("ETag").Equal("/") // test if header setted.
+	r.Header("ETag").Equal("/") // test if header set.
 	r.Body().Equal("__")
 }
