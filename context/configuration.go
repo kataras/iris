@@ -41,7 +41,7 @@ type ConfigurationReadOnly interface {
 	// is disabled.
 	//
 	// By-default io.ReadAll` is used to read the body from the `context.Request.Body which is an `io.ReadCloser`,
-	// if this field setted to true then a new buffer will be created to read from and the request body.
+	// if this field set to true then a new buffer will be created to read from and the request body.
 	// The body will not be changed and existing data before the
 	// context.UnmarshalBody/ReadJSON/ReadXML will be not consumed.
 	GetDisableBodyConsumptionOnUnmarshal() bool

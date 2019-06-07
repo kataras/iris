@@ -62,7 +62,7 @@ func (r *URIBuilder) ContentType(s string) *URIBuilder {
 }
 
 // String returns the full url which should be passed to get a cache entry response back
-// (it could be setted by server too but we need some client-freedom on the requested key)
+// (it could be set by server too but we need some client-freedom on the requested key)
 // in order to be sure that the registered cache entries are unique among different clients with the same key
 // note1: we do it manually*,
 // note2: on fasthttp that is not required because the query args added as expected but we will use it there too to be align with net/http

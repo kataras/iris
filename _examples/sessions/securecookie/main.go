@@ -39,8 +39,8 @@ func newApp() *iris.Application {
 		s := mySessions.Start(ctx)
 		s.Set("name", "iris")
 
-		//test if setted here
-		ctx.Writef("All ok session setted to: %s", s.GetString("name"))
+		//test if set here
+		ctx.Writef("All ok session set to: %s", s.GetString("name"))
 	})
 
 	app.Get("/get", func(ctx iris.Context) {
