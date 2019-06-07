@@ -943,7 +943,7 @@ type Context interface {
     // ContentType sets the response writer's header key "Content-Type" to the 'cType'.
     ContentType(cType string)
     // GetContentType returns the response writer's header value of "Content-Type"
-    // which may, setted before with the 'ContentType'.
+    // which may, set before with the 'ContentType'.
     GetContentType() string
     // GetContentType returns the request's header value of "Content-Type".
     GetContentTypeRequested() string
@@ -1236,7 +1236,7 @@ type Context interface {
     //
     // This function may be used in the following cases:
     //
-    //     * if response body is too big (more than iris.LimitRequestBodySize(if setted)).
+    //     * if response body is too big (more than iris.LimitRequestBodySize(if set)).
     //     * if response body is streamed from slow external sources.
     //     * if response body must be streamed to the client in chunks.
     //     (aka `http server push`).
@@ -1276,7 +1276,7 @@ type Context interface {
     // is being called afterwards, in the same request.
     // Useful when need to set or/and change a layout based on the previous handlers in the chain.
     //
-    // Note that the 'layoutTmplFile' argument can be setted to iris.NoLayout || view.NoLayout
+    // Note that the 'layoutTmplFile' argument can be set to iris.NoLayout || view.NoLayout
     // to disable the layout for a specific view render action,
     // it disables the engine's configuration's layout property.
     //

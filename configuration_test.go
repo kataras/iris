@@ -61,7 +61,7 @@ func TestConfigurationOptions(t *testing.T) {
 		t.Fatalf("Expected configuration DisableStartupLog to be: %#v but got: %#v", disableBanner, got)
 	}
 
-	// now check if other default values are setted (should be setted automatically)
+	// now check if other default values are set (should be set automatically)
 
 	expected := DefaultConfiguration()
 	expected.Charset = charset

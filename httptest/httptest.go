@@ -47,7 +47,7 @@ func (c Configuration) Set(main *Configuration) {
 }
 
 var (
-	// URL if setted then it sets the httptest's BaseURL.
+	// URL if set then it sets the httptest's BaseURL.
 	// Defaults to empty string "".
 	URL = func(schemeAndHost string) OptionSet {
 		return func(c *Configuration) {

@@ -360,7 +360,7 @@ func WithOtherValue(key string, val interface{}) Configurator {
 // these can be passed via options also, look at the top of this file(configuration.go).
 // Configuration is a valid OptionSetter.
 type Configuration struct {
-	// vhost is private and setted only with .Run method, it cannot be changed after the first set.
+	// vhost is private and set only with .Run method, it cannot be changed after the first set.
 	// It can be retrieved by the context if needed (i.e router for subdomains)
 	vhost string
 
@@ -377,11 +377,11 @@ type Configuration struct {
 	// Defaults to an empty slice.
 	IgnoreServerErrors []string `json:"ignoreServerErrors,omitempty" yaml:"IgnoreServerErrors" toml:"IgnoreServerErrors"`
 
-	// DisableStartupLog if setted to true then it turns off the write banner on server startup.
+	// DisableStartupLog if set to true then it turns off the write banner on server startup.
 	//
 	// Defaults to false.
 	DisableStartupLog bool `json:"disableStartupLog,omitempty" yaml:"DisableStartupLog" toml:"DisableStartupLog"`
-	// DisableInterruptHandler if setted to true then it disables the automatic graceful server shutdown
+	// DisableInterruptHandler if set to true then it disables the automatic graceful server shutdown
 	// when control/cmd+C pressed.
 	// Turn this to true if you're planning to handle this by your own via a custom host.Task.
 	//
@@ -430,11 +430,11 @@ type Configuration struct {
 	FireMethodNotAllowed bool `json:"fireMethodNotAllowed,omitempty" yaml:"FireMethodNotAllowed" toml:"FireMethodNotAllowed"`
 
 	// DisableBodyConsumptionOnUnmarshal manages the reading behavior of the context's body readers/binders.
-	// If setted to true then it
+	// If set to true then it
 	// disables the body consumption by the `context.UnmarshalBody/ReadJSON/ReadXML`.
 	//
 	// By-default io.ReadAll` is used to read the body from the `context.Request.Body which is an `io.ReadCloser`,
-	// if this field setted to true then a new buffer will be created to read from and the request body.
+	// if this field set to true then a new buffer will be created to read from and the request body.
 	// The body will not be changed and existing data before the
 	// context.UnmarshalBody/ReadJSON/ReadXML will be not consumed.
 	DisableBodyConsumptionOnUnmarshal bool `json:"disableBodyConsumptionOnUnmarshal,omitempty" yaml:"DisableBodyConsumptionOnUnmarshal" toml:"DisableBodyConsumptionOnUnmarshal"`
@@ -446,7 +446,7 @@ type Configuration struct {
 	// By-default a custom http error handler will be fired when "context.StatusCode(code)" called,
 	// code should be equal with the result of the the `context.StatusCodeNotSuccessful` in order to be received as an "http error handler".
 	//
-	// Developer may want this option to setted as true in order to manually call the
+	// Developer may want this option to set as true in order to manually call the
 	// error handlers when needed via "context#FireStatusCode(< 200 || >= 400)".
 	// HTTP Custom error handlers are being registered via app.OnErrorCode(code, handler)".
 	//
@@ -575,7 +575,7 @@ func (c Configuration) GetFireMethodNotAllowed() bool {
 // is disabled.
 //
 // By-default io.ReadAll` is used to read the body from the `context.Request.Body which is an `io.ReadCloser`,
-// if this field setted to true then a new buffer will be created to read from and the request body.
+// if this field set to true then a new buffer will be created to read from and the request body.
 // The body will not be changed and existing data before the
 // context.UnmarshalBody/ReadJSON/ReadXML will be not consumed.
 func (c Configuration) GetDisableBodyConsumptionOnUnmarshal() bool {

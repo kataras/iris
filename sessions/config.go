@@ -17,7 +17,7 @@ type Encoding interface {
 	// Encode the cookie value if not nil.
 	// Should accept as first argument the cookie name (config.Name)
 	//         as second argument the server's generated session id.
-	// Should return the new session id, if error the session id setted to empty which is invalid.
+	// Should return the new session id, if error the session id set to empty which is invalid.
 	//
 	// Note: Errors are not printed, so you have to know what you're doing,
 	// and remember: if you use AES it only supports key sizes of 16, 24 or 32 bytes.
@@ -47,10 +47,10 @@ type (
 		Cookie string
 
 		// CookieSecureTLS set to true if server is running over TLS
-		// and you need the session's cookie "Secure" field to be setted true.
+		// and you need the session's cookie "Secure" field to be set true.
 		//
 		// Note: The user should fill the Decode configuation field in order for this to work.
-		// Recommendation: You don't need this to be setted to true, just fill the Encode and Decode fields
+		// Recommendation: You don't need this to be set to true, just fill the Encode and Decode fields
 		// with a third-party library like secure cookie, example is provided at the _examples folder.
 		//
 		// Defaults to false.
@@ -67,7 +67,7 @@ type (
 		// Encode the cookie value if not nil.
 		// Should accept as first argument the cookie name (config.Cookie)
 		//         as second argument the server's generated session id.
-		// Should return the new session id, if error the session id setted to empty which is invalid.
+		// Should return the new session id, if error the session id set to empty which is invalid.
 		//
 		// Note: Errors are not printed, so you have to know what you're doing,
 		// and remember: if you use AES it only supports key sizes of 16, 24 or 32 bytes.

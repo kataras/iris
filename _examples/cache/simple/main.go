@@ -61,7 +61,7 @@ func main() {
 	app.Logger().SetLevel("debug")
 	app.Get("/", cache.Handler(10*time.Second), writeMarkdown)
 	// saves its content on the first request and serves it instead of re-calculating the content.
-	// After 10 seconds it will be cleared and resetted.
+	// After 10 seconds it will be cleared and reset.
 
 	app.Run(iris.Addr(":8080"))
 }
