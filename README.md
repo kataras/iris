@@ -971,40 +971,39 @@ Iris, unlike others, is 100% compatible with the standards and that's why the ma
 
 | Description | Link | Author | Year |
 | -----------|-------------|-------------|-----|
-| Installing Iris | https://www.youtube.com/watch?v=BmOLFQ29J3s | WarnabiruTV | 2018 |
-| Iris & Mongo DB Complete | https://www.youtube.com/watch?v=uXiNYhJqh2I&index=1&list=PLMrwI6jIZn-1tzskocnh1pptKhVmWdcbS | Musobar Media | 2018 |
-| Quick Start with Iris | https://www.youtube.com/watch?v=x5OSXX9vitU&list=PLJ39kWiJXSizebElabidQeVaKeJuY6b4I | J-Secur1ty | **2019** |
-| Getting Started with Iris | https://www.youtube.com/watch?v=rQxRoN6ub78&index=27&list=PLidHThAppdAH4y0DeEf-dGjB-xITVKszL | stephgdesign | 2018 |
+| Installing Iris | https://bit.ly/2KhgB1J | WarnabiruTV | 2018 |
+| Iris & Mongo DB Complete | https://bit.ly/2IcXZOu | Musobar Media | 2018 |
+| Quick Start with Iris | https://bit.ly/2wQIrJw | J-Secur1ty | **2019** |
+| Getting Started with Iris | https://bit.ly/2XGafMv | stephgdesign | 2018 |
 
 ### Articles
 
-* [CRUD REST API in Iris (a framework for golang)](https://medium.com/@jebzmos4/crud-rest-api-in-iris-a-framework-for-golang-a5d33652401e)
-* [A Todo MVC Application using Iris and Vue.js](https://hackernoon.com/a-todo-mvc-application-using-iris-and-vue-js-5019ff870064)
-* [A Hasura starter project with a ready to deploy Golang hello-world web app with IRIS](https://bit.ly/2lmKaAZ)
-* [Top 6 web frameworks for Go as of 2017](https://blog.usejournal.com/top-6-web-frameworks-for-go-as-of-2017-23270e059c4b)
-* [Iris Go Framework + MongoDB](https://medium.com/go-language/iris-go-framework-mongodb-552e349eab9c)
-* [How to build a file upload form using DropzoneJS and Go](https://hackernoon.com/how-to-build-a-file-upload-form-using-dropzonejs-and-go-8fb9f258a991)
-* [How to display existing files on server using DropzoneJS and Go](https://hackernoon.com/how-to-display-existing-files-on-server-using-dropzonejs-and-go-53e24b57ba19)
-* [Iris, a modular web framework](https://medium.com/@corebreaker/iris-web-cd684b4685c7)
-* [Go vs .NET Core in terms of HTTP performance](https://medium.com/@kataras/go-vs-net-core-in-terms-of-http-performance-7535a61b67b8)
-* [Iris Go vs .NET Core Kestrel in terms of HTTP performance](https://hackernoon.com/iris-go-vs-net-core-kestrel-in-terms-of-http-performance-806195dc93d5)
-* [How to Turn an Android Device into a Web Server](https://twitter.com/ThePracticalDev/status/892022594031017988)
-* [Deploying a Iris Golang app in hasura](https://medium.com/@HasuraHQ/deploy-an-iris-golang-app-with-backend-apis-in-minutes-25a559bf530b)
-* [A URL Shortener Service using Go, Iris and Bolt](https://medium.com/@kataras/a-url-shortener-service-using-go-iris-and-bolt-4182f0b00ae7)
+* [A URL Shortener Service using Go, Iris and Bolt (Updated)](https://bit.ly/2KeP6pE)
+* [CRUD REST API in Iris (a framework for golang)](https://bit.ly/2X9EsXl)
+* [A Todo MVC Application using Iris and Vue.js](https://bit.ly/2KgEarI)
+* [A Hasura starter project with a ready to deploy Golang hello-world web app with IRIS](https://bit.ly/2Kfdsjf)
+* [Top 6 web frameworks for Go as of 2017](https://bit.ly/2wMi9YY)
+* [Iris Go Framework + MongoDB](https://bit.ly/2WDOsZF)
+* [How to build a file upload form using DropzoneJS and Go](https://bit.ly/2IdigmZ)
+* [How to display existing files on server using DropzoneJS and Go](https://bit.ly/2IBQ7Vv)
+* [Iris, a modular web framework](https://bit.ly/2KHm6q0)
+* [Go vs .NET Core in terms of HTTP performance](https://bit.ly/2Kh7ezl)
+* [Iris Go vs .NET Core Kestrel in terms of HTTP performance](https://bit.ly/2WBqucu)
+* [How to Turn an Android Device into a Web Server](https://bit.ly/2Icl5EM)
 
 ## Iris starter kits
 
-1. [snowlyg/IrisApiProject: Iris + gorm + jwt + sqlite3](https://github.com/snowlyg/IrisApiProject) **NEW-Chinese**
-2. [yz124/superstar: Iris + xorm to implement the star library](https://github.com/yz124/superstar) **NEW-Chinese**
-3. [jebzmos4/Iris-golang: A basic CRUD API in golang with Iris](https://github.com/jebzmos4/Iris-golang)
-4. [gauravtiwari/go_iris_app: A basic web app built in Iris for Go](https://github.com/gauravtiwari/go_iris_app)
-5. [A mini social-network created with the awesome Iris💖💖](https://github.com/iris-contrib/Iris-Mini-Social-Network)
-6. [Iris isomorphic react/hot reloadable/redux/css-modules starter kit](https://github.com/iris-contrib/iris-starter-kit)
-7. [ionutvilie/react-ts: Demo project with react using typescript and Iris](https://github.com/ionutvilie/react-ts)
-8. [Self-hosted Localization Management Platform built with Iris and Angular](https://github.com/iris-contrib/parrot)
-9. [Iris + Docker and Kubernetes](https://github.com/iris-contrib/cloud-native-go)
-10. [nanobox.io: Quickstart for Iris with Nanobox](https://guides.nanobox.io/golang/iris/from-scratch)
-11. [hasura.io: A Hasura starter project with a ready to deploy Golang hello-world web app with IRIS](https://hasura.io/hub/project/hasura/hello-golang-iris)
+1. [snowlyg/IrisApiProject: Iris + gorm + jwt + sqlite3](https://bit.ly/2IaL1R6) **NEW-Chinese**
+2. [yz124/superstar: Iris + xorm to implement the star library](https://bit.ly/2WF4ZfK) **NEW-Chinese**
+3. [jebzmos4/Iris-golang: A basic CRUD API in golang with Iris](https://bit.ly/2XFyESo)
+4. [gauravtiwari/go_iris_app: A basic web app built in Iris for Go](https://bit.ly/2XFVYQ4)
+5. [A mini social-network created with the awesome Iris💖💖](https://bit.ly/2KJvZn7)
+6. [Iris isomorphic react/hot reloadable/redux/css-modules starter kit](https://bit.ly/2ReoGoH)
+7. [ionutvilie/react-ts: Demo project with react using typescript and Iris](https://bit.ly/2wZA52B)
+8. [Self-hosted Localization Management Platform built with Iris and Angular](https://bit.ly/2F9iYzM)
+9. [Iris + Docker and Kubernetes](https://bit.ly/2WGlXKL)
+10. [nanobox.io: Quickstart for Iris with Nanobox](https://bit.ly/2wMkdjG)
+11. [hasura.io: A Hasura starter project with a ready to deploy Golang hello-world web app with IRIS](https://bit.ly/2Kfdsjf)
 
 ## Support
 
