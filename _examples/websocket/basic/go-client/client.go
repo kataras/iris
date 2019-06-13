@@ -24,20 +24,15 @@ const (
 var clientEvents = websocket.Namespaces{
 	namespace: websocket.Events{
 		websocket.OnNamespaceConnected: func(c *websocket.NSConn, msg websocket.Message) error {
-			log.Printf("[%s] connected to namespace [%s]", c, msg.Namespace)
+			log.Printf("connected to namespace: %s", msg.Namespace)
 			return nil
 		},
 		websocket.OnNamespaceDisconnect: func(c *websocket.NSConn, msg websocket.Message) error {
-			log.Printf("[%s] disconnected from namespace [%s]", c, msg.Namespace)
+			log.Printf("disconnected from namespace: %s", msg.Namespace)
 			return nil
 		},
 		"chat": func(c *websocket.NSConn, msg websocket.Message) error {
-			log.Printf("[%s] sent: %s", c.Conn.ID(), string(msg.Body))
-
-			// Write message back to the client message owner with:
-			// c.Emit("chat", msg)
-			// Write message to all except this client with:
-			c.Conn.Server().Broadcast(c, msg)
+			log.Printf("%s", string(msg.Body))
 			return nil
 		},
 	},
@@ -57,6 +52,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	c.Emit("chat", []byte("Hello from Go client side!"))
 
 	fmt.Fprint(os.Stdout, ">> ")
 	scanner := bufio.NewScanner(os.Stdin)

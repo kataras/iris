@@ -40,7 +40,7 @@ var serverEvents = websocket.Namespaces{
 func main() {
 	app := iris.New()
 	websocketServer := websocket.New(
-		websocket.DefaultGorillaUpgrader, /*DefaultGobwasUpgrader can be used as well*/
+		websocket.DefaultGorillaUpgrader, /* DefaultGobwasUpgrader can be used too. */
 		serverEvents)
 
 	// serves the endpoint of ws://localhost:8080/echo
@@ -54,5 +54,5 @@ func main() {
 	// serves the npm browser websocket client usage example.
 	app.StaticWeb("/browserify", "./browserify")
 
-	app.Run(iris.Addr(":8080"))
+	app.Run(iris.Addr(":8080"), iris.WithoutServerError(iris.ErrServerClosed))
 }

@@ -6,6 +6,7 @@ var port = document.location.port ? ":" + document.location.port : "";
 var wsURL = scheme + "://" + document.location.hostname + port + "/echo";
 
 var outputTxt = document.getElementById("output");
+
 function addMessage(msg) {
   outputTxt.innerHTML += msg + "\n";
 }
@@ -16,6 +17,8 @@ function handleError(reason) {
 }
 
 function handleNamespaceConnectedConn(nsConn) {
+  nsConn.emit("chat", "Hello from browser(ify) client-side!");
+
   const inputTxt = document.getElementById("input");
   const sendBtn = document.getElementById("sendBtn");
 
@@ -50,6 +53,7 @@ async function runExample() {
     // and put the `handleNamespaceConnectedConn` inside `_OnNamespaceConnected` callback instead.
     // const nsConn = await conn.connect("default");
     // handleNamespaceConnectedConn(nsConn);
+    // nsConn.emit(...); handleNamespaceConnectedConn(nsConn);
     conn.connect("default");
 
   } catch (err) {
@@ -58,4 +62,3 @@ async function runExample() {
 }
 
 runExample();
-
