@@ -10,7 +10,7 @@
      However, `neffos.(min.)js` is a NPM package too so alternatively,
      you can use it as dependency on your package.json and all nodejs-npm tooling become available:
      see the "browserify" example for more-->
-<script src="https://cdn.jsdelivr.net/npm/neffos.js@0.1.8/dist/neffos.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/neffos.js@0.1.12/dist/neffos.min.js"></script>
 <script>
     // `neffos` global variable is available now.
     var scheme = document.location.protocol == "https:" ? "wss" : "ws";
@@ -28,6 +28,8 @@
     }
 
     function handleNamespaceConnectedConn(nsConn) {
+        nsConn.emit("Hello from browser client side!");
+
         let inputTxt = document.getElementById("input");
         let sendBtn = document.getElementById("sendBtn");
 
@@ -62,7 +64,7 @@
             // You can either wait to conenct or just conn.connect("connect")
             // and put the `handleNamespaceConnectedConn` inside `_OnNamespaceConnected` callback instead.
             // const nsConn = await conn.connect("default");
-            // handleNamespaceConnectedConn(nsConn);
+            // nsConn.emit(...); handleNamespaceConnectedConn(nsConn);
             conn.connect("default");
 
         } catch (err) {

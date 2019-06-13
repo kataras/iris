@@ -1,0 +1,8 @@
+{
+    "name": "neffos.js.example.nodejsclient",
+    "version": "0.0.1",
+    "main": "client.js",
+    "dependencies": {
+        "neffos.js": "latest"
+    }
+}
