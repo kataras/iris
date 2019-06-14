@@ -82,7 +82,7 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 	registeredRoutes := provider.GetRoutes()
 	h.trees = h.trees[0:0] // reset, inneed when rebuilding.
 
-	// sort, subdomains goes first.
+	// sort, subdomains go first.
 	sort.Slice(registeredRoutes, func(i, j int) bool {
 		first, second := registeredRoutes[i], registeredRoutes[j]
 		lsub1 := len(first.Subdomain)

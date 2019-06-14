@@ -28,7 +28,8 @@ type Route struct {
 	// temp storage, they're appended to the Handlers on build.
 	// Execution happens after Begin and main Handler(s), can be empty.
 	doneHandlers context.Handlers
-	Path         string `json:"path"` // "/api/user/:id"
+
+	Path string `json:"path"` // "/api/user/{id:uint64}"
 	// FormattedPath all dynamic named parameters (if any) replaced with %v,
 	// used by Application to validate param values of a Route based on its name.
 	FormattedPath string `json:"formattedPath"`
