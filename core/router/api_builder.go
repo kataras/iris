@@ -798,7 +798,9 @@ func (api *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
 //
 // As a special case, the returned file server redirects any request
 // ending in "/index.html" to the same path, without the final
-// "index.html".
+// "/index.html", if `index.html` should be served then register a
+// new route for it, i.e
+// `app.Get("/static", func(ctx iris.Context){ ctx.ServeFile("./static/index.html", false) })`.
 //
 // StaticWeb calls the `StripPrefix(fullpath, NewStaticHandlerBuilder(systemPath).Listing(false).Build())`.
 //

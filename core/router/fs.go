@@ -127,7 +127,7 @@ func StaticEmbeddedHandler(vdir string, assetFn func(name string) ([]byte, error
 // fileserver := iris.StaticHandler("./static_files", false, false)
 // h := router.StripPrefix("/static", fileserver)
 // /* http://mydomain.com/static/css/style.css */
-// app.Get("/static", h)
+// app.Get("/static/{file:path}", h)
 // ...
 //
 func StaticHandler(systemPath string, showList bool, gzip bool) context.Handler {

@@ -73,6 +73,7 @@ func IndirectValue(v reflect.Value) reflect.Value {
 	if k := v.Kind(); k == reflect.Ptr { //|| k == reflect.Interface {
 		return v.Elem()
 	}
+
 	return v
 }
 
@@ -104,6 +105,17 @@ func IndirectType(typ reflect.Type) reflect.Type {
 		return typ.Elem()
 	}
 	return typ
+}
+
+// IsNil same as `reflect.IsNil` but a bit safer to use, returns false if not a correct type.
+func IsNil(v reflect.Value) bool {
+	k := v.Kind()
+	switch k {
+	case reflect.Chan, reflect.Func, reflect.Map, reflect.Ptr, reflect.UnsafePointer, reflect.Interface, reflect.Slice:
+		return v.IsNil()
+	default:
+		return false
+	}
 }
 
 func goodVal(v reflect.Value) bool {
