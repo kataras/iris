@@ -334,7 +334,7 @@ func DispatchFuncResult(ctx context.Context, errorHandler ErrorHandler, values [
 			if custom == nil {
 				// if it's a pointer to struct/map.
 
-				if di.IsNil(v) {
+				if di.IsNil(v) && contentType == "" {
 					// if just a ptr to struct with no content type given
 					// then try to get the previous response writer's content type,
 					// and if that is empty too then force-it to application/json
