@@ -28,10 +28,17 @@ var (
 	// See examples for more.
 	New = neffos.New
 
-	// GorillaDialer is a gorilla/websocket dialer with all fields set to the default values.
-	GorillaDialer = gorilla.DefaultDialer
-	// GobwasDialer is a gobwas/ws dialer with all fields set to the default values.
-	GobwasDialer = gobwas.DefaultDialer
+	// GorillaDialer is a `Dialer` type for the gorilla/websocket subprotocol implementation.
+	// Should be used on `Dial` to create a new client/client-side connection.
+	GorillaDialer = gorilla.Dialer
+	// GobwasDialer is a `Dialer` type for the gobwas/ws subprotocol implementation.
+	// Should be used on `Dial` to create a new client/client-side connection.
+	GobwasDialer = gobwas.Dialer
+
+	// DefaultGorillaDialer is a gorilla/websocket dialer with all fields set to the default values.
+	DefaultGorillaDialer = gorilla.DefaultDialer
+	// DefaultGobwasDialer is a gobwas/ws dialer with all fields set to the default values.
+	DefaultGobwasDialer = gobwas.DefaultDialer
 	// Dial establishes a new websocket client connection.
 	// Context "ctx" is used for handshake timeout.
 	// Dialer "dial" can be either `GorillaDialer` or `GobwasDialer`,

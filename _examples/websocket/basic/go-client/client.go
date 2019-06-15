@@ -42,7 +42,7 @@ func main() {
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(dialAndConnectTimeout))
 	defer cancel()
 
-	client, err := websocket.Dial(ctx, websocket.GorillaDialer, endpoint, clientEvents)
+	client, err := websocket.Dial(ctx, websocket.DefaultGorillaDialer, endpoint, clientEvents)
 	if err != nil {
 		panic(err)
 	}
