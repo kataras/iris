@@ -71,6 +71,7 @@ type APIBuilder struct {
 	errorCodeHandlers *ErrorCodeHandlers
 	// the api builder global routes repository
 	routes *repository
+
 	// the api builder global route path reverser object
 	// used by the view engine but it can be used anywhere.
 	reverser *RoutePathReverser
@@ -615,9 +616,12 @@ func (api *APIBuilder) Any(relativePath string, handlers ...context.Handler) (ro
 	return
 }
 
-func (api *APIBuilder) registerResourceRoute(reqPath string, h context.Handler) *Route {
-	api.Head(reqPath, h)
-	return api.Get(reqPath, h)
+func (api *APIBuilder) registerResourceRoute(target, reqPath string, h context.Handler) *Route {
+	head := api.Head(reqPath, h)
+	head.StaticTarget = target
+	get := api.Get(reqPath, h)
+	get.StaticTarget = target
+	return get
 }
 
 // StaticHandler returns a new Handler which is ready
@@ -673,7 +677,7 @@ func (api *APIBuilder) StaticContent(reqPath string, cType string, content []byt
 		}
 	}
 
-	return api.registerResourceRoute(reqPath, h)
+	return api.registerResourceRoute(StaticContentTarget, reqPath, h)
 }
 
 // StaticEmbedded  used when files are distributed inside the app executable, using go-bindata mostly
@@ -724,7 +728,7 @@ func (api *APIBuilder) staticEmbedded(requestPath string, vdir string, assetFn f
 	}
 
 	// it handles the subdomain(root Party) of this party as well, if any.
-	return api.registerResourceRoute(requestPath, h)
+	return api.registerResourceRoute(vdir, requestPath, h)
 }
 
 // errDirectoryFileNotFound returns an error with message: 'Directory or file %s couldn't found. Trace: +error trace'
@@ -783,7 +787,7 @@ func (api *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
 		reqPath = requestPath[0]
 	}
 
-	return api.registerResourceRoute(reqPath, h)
+	return api.registerResourceRoute(favPath, reqPath, h)
 }
 
 // StaticWeb returns a handler that serves HTTP requests
@@ -824,7 +828,7 @@ func (api *APIBuilder) StaticWeb(requestPath string, systemPath string) *Route {
 	}
 
 	// it handles the subdomain(root Party) of this party as well, if any.
-	return api.registerResourceRoute(requestPath, h)
+	return api.registerResourceRoute(systemPath, requestPath, h)
 }
 
 // OnErrorCode registers an error http status code

@@ -33,7 +33,20 @@ type Route struct {
 	// FormattedPath all dynamic named parameters (if any) replaced with %v,
 	// used by Application to validate param values of a Route based on its name.
 	FormattedPath string `json:"formattedPath"`
+
+	// StaticTarget if not empty, refers to the system (or virtual if embedded) directory
+	// that this route is serving static files/resources from
+	// or to a single static filename if this route created via `APIBuilder#Favicon`
+	// or to a `StaticContentTarget` type if this rotue created by `APIBuilder#StaticContent`.
+	//
+	// If a route is serving static files via `APIBuilder`
+	// there are two routes with the same dir/filename set to this field,
+	// one for "HEAD" and the other for the "GET" http method.
+	StaticTarget string
 }
+
+// StaticContentTarget used whenever a `Route#StaticTarget` refers to a raw []byte static content instead of a directory or a file.
+const StaticContentTarget = "content"
 
 // NewRoute returns a new route based on its method,
 // subdomain, the path (unparsed or original),
