@@ -4,15 +4,25 @@ package websocket
 
 import (
 	"github.com/kataras/neffos"
+	"github.com/kataras/neffos/gobwas"
+	"github.com/kataras/neffos/gorilla"
 )
 
 type (
+	// Dialer is the definition type of a dialer, gorilla or gobwas or custom.
+	// It is the second parameter of the `Dial` function.
+	Dialer = neffos.Dialer
+	// GorillaDialerOptions is just an alias for the `gobwas/ws.Dialer` struct type.
+	GorillaDialerOptions = gorilla.Options
+	// GobwasDialerOptions is just an alias for the `gorilla/websocket.Dialer` struct type.
+	GobwasDialerOptions = gobwas.Options
+
 	// Conn describes the main websocket connection's functionality.
 	// Its `Connection` will return a new `NSConn` instance.
 	// Each connection can connect to one or more declared namespaces.
 	// Each `NSConn` can join to multiple rooms.
 	Conn = neffos.Conn
-	// NSConn describes a connected connection to a specific namespace,
+	// NSConn describes a connection connected to a specific namespace,
 	// it emits with the `Message.Namespace` filled and it can join to multiple rooms.
 	// A single `Conn` can be connected to one or more namespaces,
 	// each connected namespace is described by this structure.
