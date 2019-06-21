@@ -21,15 +21,15 @@ var (
 	// "GET", "POST", "PUT", "DELETE", "CONNECT", "HEAD",
 	// "PATCH", "OPTIONS", "TRACE".
 	AllMethods = []string{
-		"GET",
-		"POST",
-		"PUT",
-		"DELETE",
-		"CONNECT",
-		"HEAD",
-		"PATCH",
-		"OPTIONS",
-		"TRACE",
+		http.MethodGet,
+		http.MethodPost,
+		http.MethodPut,
+		http.MethodDelete,
+		http.MethodConnect,
+		http.MethodHead,
+		http.MethodPatch,
+		http.MethodOptions,
+		http.MethodTrace,
 	}
 )
 
@@ -37,20 +37,71 @@ var (
 // all the routes.
 type repository struct {
 	routes []*Route
+	pos    map[string]int
 }
 
-func (r *repository) register(route *Route) {
-	for _, r := range r.routes {
-		if r.String() == route.String() {
-			return // do not register any duplicates, the sooner the better.
+func (repo *repository) remove(route *Route) bool {
+	for i, r := range repo.routes {
+		if r == route {
+			return repo.removeByIndex(i)
 		}
 	}
 
-	r.routes = append(r.routes, route)
+	return false
 }
 
-func (r *repository) get(routeName string) *Route {
-	for _, r := range r.routes {
+func (repo *repository) removeByPath(tmplPath string) bool {
+	if repo.pos != nil {
+		if idx, ok := repo.pos[tmplPath]; ok {
+			return repo.removeByIndex(idx)
+		}
+	}
+
+	return false
+}
+
+func (repo *repository) removeByName(routeName string) bool {
+	for i, r := range repo.routes {
+		if r.Name == routeName {
+			return repo.removeByIndex(i)
+		}
+	}
+
+	return false
+}
+
+func (repo *repository) removeByIndex(idx int) bool {
+	n := len(repo.routes)
+
+	if n == 0 {
+		return false
+	}
+
+	if idx >= n {
+		return false
+	}
+
+	if n == 1 && idx == 0 {
+		repo.routes = repo.routes[0:0]
+		repo.pos = nil
+		return true
+	}
+
+	r := repo.routes[idx]
+	if r == nil {
+		return false
+	}
+
+	repo.routes = append(repo.routes[:idx], repo.routes[idx+1:]...)
+	if repo.pos != nil {
+		delete(repo.pos, r.Path)
+	}
+
+	return true
+}
+
+func (repo *repository) get(routeName string) *Route {
+	for _, r := range repo.routes {
 		if r.Name == routeName {
 			return r
 		}
@@ -58,8 +109,37 @@ func (r *repository) get(routeName string) *Route {
 	return nil
 }
 
-func (r *repository) getAll() []*Route {
-	return r.routes
+func (repo *repository) getByPath(tmplPath string) *Route {
+	if repo.pos != nil {
+		if idx, ok := repo.pos[tmplPath]; ok {
+			if len(repo.routes) > idx {
+				return repo.routes[idx]
+			}
+		}
+	}
+
+	return nil
+}
+
+func (repo *repository) getAll() []*Route {
+	return repo.routes
+}
+
+func (repo *repository) register(route *Route) {
+	for i, r := range repo.routes {
+		if route.Equal(r) {
+			// replace existing with the latest one.
+			repo.routes = append(repo.routes[:i], repo.routes[i+1:]...)
+			continue
+		}
+	}
+
+	repo.routes = append(repo.routes, route)
+	if repo.pos == nil {
+		repo.pos = make(map[string]int)
+	}
+
+	repo.pos[route.tmpl.Src] = len(repo.routes) - 1
 }
 
 // APIBuilder the visible API for constructing the router
@@ -181,17 +261,13 @@ func (api *APIBuilder) SetExecutionRules(executionRules ExecutionRules) Party {
 	return api
 }
 
-// Handle registers a route to the server's api.
-// if empty method is passed then handler(s) are being registered to all methods, same as .Any.
-//
-// Returns a *Route, app will throw any errors later on.
-func (api *APIBuilder) Handle(method string, relativePath string, handlers ...context.Handler) *Route {
+func (api *APIBuilder) createRoutes(methods []string, relativePath string, handlers ...context.Handler) []*Route {
 	// if relativePath[0] != '/' {
 	// 	return nil, errors.New("path should start with slash and should not be empty")
 	// }
 
-	if method == "" || method == "ALL" || method == "ANY" { // then use like it was .Any
-		return api.Any(relativePath, handlers...)[0]
+	if len(methods) == 0 || methods[0] == "ALL" || methods[0] == "ANY" { // then use like it was .Any
+		return api.Any(relativePath, handlers...)
 	}
 
 	// no clean path yet because of subdomain indicator/separator which contains a dot.
@@ -206,7 +282,7 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 
 	fullpath := api.relativePath + relativePath // for now, keep the last "/" if any,  "/xyz/"
 	if len(handlers) == 0 {
-		api.reporter.Add("missing handlers for route %s: %s", method, fullpath)
+		api.reporter.Add("missing handlers for route %s: %s", strings.Join(methods, ", "), fullpath)
 		return nil
 	}
 
@@ -222,7 +298,8 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 
 	mainHandlers := context.Handlers(handlers)
 	// before join the middleware + handlers + done handlers and apply the execution rules.
-	possibleMainHandlerName := context.HandlerName(mainHandlers[0])
+
+	possibleMainHandlerName := context.MainHandlerName(mainHandlers)
 
 	// TODO: for UseGlobal/DoneGlobal that doesn't work.
 	applyExecutionRules(api.handlerExecutionRules, &beginHandlers, &doneHandlers, &mainHandlers)
@@ -237,24 +314,36 @@ func (api *APIBuilder) Handle(method string, relativePath string, handlers ...co
 	subdomain, path := splitSubdomainAndPath(fullpath)
 
 	// if allowMethods are empty, then simply register with the passed, main, method.
-	methods := append(api.allowMethods, method)
+	methods = append(api.allowMethods, methods...)
 
-	var (
-		route *Route // the latest one is this route registered, see methods append.
-		err   error  // not used outside of loop scope.
-	)
+	routes := make([]*Route, len(methods), len(methods))
 
-	for _, m := range methods {
-		route, err = NewRoute(m, subdomain, path, possibleMainHandlerName, routeHandlers, *api.macros)
+	for i, m := range methods {
+		route, err := NewRoute(m, subdomain, path, possibleMainHandlerName, routeHandlers, *api.macros)
 		if err != nil { // template path parser errors:
-			api.reporter.Add("%v -> %s:%s:%s", err, method, subdomain, path)
-			return nil // fail on first error.
+			api.reporter.Add("%v -> %s:%s:%s", err, m, subdomain, path)
+			continue
 		}
 
 		// Add UseGlobal & DoneGlobal Handlers
-		route.use(api.beginGlobalHandlers)
-		route.done(api.doneGlobalHandlers)
+		route.Use(api.beginGlobalHandlers...)
+		route.Done(api.doneGlobalHandlers...)
 
+		routes[i] = route
+	}
+
+	return routes
+}
+
+// Handle registers a route to the server's api.
+// if empty method is passed then handler(s) are being registered to all methods, same as .Any.
+//
+// Returns a *Route, app will throw any errors later on.
+func (api *APIBuilder) Handle(method string, relativePath string, handlers ...context.Handler) *Route {
+	routes := api.createRoutes([]string{method}, relativePath, handlers...)
+
+	var route *Route // the last one is returned.
+	for _, route = range routes {
 		// global
 		api.routes.register(route)
 	}
@@ -299,6 +388,61 @@ func (api *APIBuilder) HandleMany(methodOrMulti string, relativePathorMulti stri
 		}
 	}
 	return
+}
+
+// HandleDir registers a handler that serves HTTP requests
+// with the contents of a file system (physical or embedded).
+//
+// first parameter  : the route path
+// second parameter : the system or the embedded directory that needs to be served
+// third parameter  : not required, the directory options, set fields is optional.
+//
+// for more options look router.FileServer.
+//
+//     api.HandleDir("/static", "./assets",  DirOptions {ShowList: true, Gzip: true, IndexName: "index.html"})
+//
+// Returns the GET *Route.
+//
+// Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/file-server
+func (api *APIBuilder) HandleDir(requestPath, directory string, opts ...DirOptions) (getRoute *Route) {
+	options := getDirOptions(opts...)
+
+	h := FileServer(directory, options)
+
+	// if subdomain, we get the full path of the path only,
+	// because a subdomain can have parties as well
+	// and we need that path to call the `StripPrefix`.
+	if _, fullpath := splitSubdomainAndPath(joinPath(api.relativePath, requestPath)); fullpath != "/" {
+		h = StripPrefix(fullpath, h)
+
+	}
+
+	requestPath = joinPath(requestPath, WildcardFileParam())
+	routes := api.createRoutes([]string{http.MethodGet, http.MethodHead}, requestPath, h)
+	getRoute = routes[0]
+	// we get all index, including sub directories even if those
+	// are already managed by the static handler itself.
+	staticSites := context.GetStaticSites(directory, getRoute.StaticPath(), options.IndexName)
+	for _, s := range staticSites {
+		// if the end-dev did manage that index route manually already
+		// then skip the auto-registration.
+		//
+		// Also keep note that end-dev is still able to replace this route and manage by him/herself
+		// later on by a simple `Handle/Get/` call, refer to `repository#register`.
+		if api.GetRouteByPath(s.RequestPath) != nil {
+			continue
+		}
+
+		routes = append(routes, api.createRoutes([]string{http.MethodGet}, s.RequestPath, h)...)
+		getRoute.StaticSites = append(getRoute.StaticSites, s)
+	}
+
+	for _, route := range routes {
+		route.MainHandlerName = `HandleDir(directory: "` + directory + `")`
+		api.routes.register(route)
+	}
+
+	return getRoute
 }
 
 // Party groups routes which may have the same prefix and share same handlers,
@@ -432,19 +576,9 @@ func (api *APIBuilder) GetRoute(routeName string) *Route {
 	return api.routes.get(routeName)
 }
 
-// GetRouteReadOnly returns the registered "read-only" route based on its name, otherwise nil.
-// One note: "routeName" should be case-sensitive. Used by the context to get the current route.
-// It returns an interface instead to reduce wrong usage and to keep the decoupled design between
-// the context and the routes.
-// Look `GetRoutesReadOnly` to fetch a list of all registered routes.
-//
-// Look `GetRoute` for more.
-func (api *APIBuilder) GetRouteReadOnly(routeName string) context.RouteReadOnly {
-	r := api.GetRoute(routeName)
-	if r == nil {
-		return nil
-	}
-	return routeReadOnlyWrapper{r}
+// GetRouteByPath returns the registered route based on the template path (`Route.Tmpl().Src`).
+func (api *APIBuilder) GetRouteByPath(tmplPath string) *Route {
+	return api.routes.getByPath(tmplPath)
 }
 
 // GetRoutesReadOnly returns the registered routes with "read-only" access,
@@ -463,6 +597,31 @@ func (api *APIBuilder) GetRoutesReadOnly() []context.RouteReadOnly {
 	}
 
 	return readOnlyRoutes
+}
+
+// GetRouteReadOnly returns the registered "read-only" route based on its name, otherwise nil.
+// One note: "routeName" should be case-sensitive. Used by the context to get the current route.
+// It returns an interface instead to reduce wrong usage and to keep the decoupled design between
+// the context and the routes.
+// Look `GetRoutesReadOnly` to fetch a list of all registered routes.
+//
+// Look `GetRoute` for more.
+func (api *APIBuilder) GetRouteReadOnly(routeName string) context.RouteReadOnly {
+	r := api.GetRoute(routeName)
+	if r == nil {
+		return nil
+	}
+	return routeReadOnlyWrapper{r}
+}
+
+// GetRouteReadOnlyByPath returns the registered read-only route based on the template path (`Route.Tmpl().Src`).
+func (api *APIBuilder) GetRouteReadOnlyByPath(tmplPath string) context.RouteReadOnly {
+	r := api.GetRouteByPath(tmplPath)
+	if r == nil {
+		return nil
+	}
+
+	return routeReadOnlyWrapper{r}
 }
 
 // Use appends Handler(s) to the current Party's routes and child routes.
@@ -488,7 +647,7 @@ func (api *APIBuilder) Use(handlers ...context.Handler) {
 // It's always a good practise to call it right before the `Application#Run` function.
 func (api *APIBuilder) UseGlobal(handlers ...context.Handler) {
 	for _, r := range api.routes.routes {
-		r.use(handlers) // prepend the handlers to the existing routes
+		r.Use(handlers...) // prepend the handlers to the existing routes
 	}
 	// set as begin handlers for the next routes as well.
 	api.beginGlobalHandlers = append(api.beginGlobalHandlers, handlers...)
@@ -514,7 +673,7 @@ func (api *APIBuilder) Done(handlers ...context.Handler) {
 // It's always a good practise to call it right before the `Application#Run` function.
 func (api *APIBuilder) DoneGlobal(handlers ...context.Handler) {
 	for _, r := range api.routes.routes {
-		r.done(handlers) // append the handlers to the existing routes
+		r.Done(handlers...) // append the handlers to the existing routes
 	}
 	// set as done handlers for the next routes as well.
 	api.doneGlobalHandlers = append(api.doneGlobalHandlers, handlers...)
@@ -616,51 +775,9 @@ func (api *APIBuilder) Any(relativePath string, handlers ...context.Handler) (ro
 	return
 }
 
-func (api *APIBuilder) registerResourceRoute(target, reqPath string, h context.Handler) *Route {
-	head := api.Head(reqPath, h)
-	head.StaticTarget = target
-	get := api.Get(reqPath, h)
-	get.StaticTarget = target
-	return get
-}
-
-// StaticHandler returns a new Handler which is ready
-// to serve all kind of static files.
-//
-// Note:
-// The only difference from package-level `StaticHandler`
-// is that this `StaticHandler`` receives a request path which
-// is appended to the party's relative path and stripped here.
-//
-// Usage:
-// app := iris.New()
-// ...
-// mySubdomainFsServer := app.Party("mysubdomain.")
-// h := mySubdomainFsServer.StaticHandler("./static_files", false, false)
-// /* http://mysubdomain.mydomain.com/static/css/style.css */
-// mySubdomainFsServer.Get("/static", h)
-// ...
-//
-func (api *APIBuilder) StaticHandler(systemPath string, showList bool, gzip bool) context.Handler {
-	// Note: this doesn't need to be here but we'll keep it for consistently
-	return StaticHandler(systemPath, showList, gzip)
-}
-
-// StaticServe serves a directory as web resource.
-// Same as `StaticWeb`.
-// DEPRECATED; use `StaticWeb` or `StaticHandler` (for more options) instead.
-func (api *APIBuilder) StaticServe(systemPath string, requestPath ...string) *Route {
-	var reqPath string
-
-	if len(requestPath) == 0 {
-		reqPath = strings.Replace(systemPath, string(os.PathSeparator), "/", -1) // replaces any \ to /
-		reqPath = strings.Replace(reqPath, "//", "/", -1)                        // for any case, replaces // to /
-		reqPath = strings.Replace(reqPath, ".", "", -1)                          // replace any dots (./mypath -> /mypath)
-	} else {
-		reqPath = requestPath[0]
-	}
-
-	return api.StaticWeb(reqPath, systemPath)
+func (api *APIBuilder) registerResourceRoute(reqPath string, h context.Handler) *Route {
+	api.Head(reqPath, h)
+	return api.Get(reqPath, h)
 }
 
 // StaticContent registers a GET and HEAD method routes to the requestPath
@@ -677,58 +794,7 @@ func (api *APIBuilder) StaticContent(reqPath string, cType string, content []byt
 		}
 	}
 
-	return api.registerResourceRoute(StaticContentTarget, reqPath, h)
-}
-
-// StaticEmbedded  used when files are distributed inside the app executable, using go-bindata mostly
-// First parameter is the request path, the path which the files in the vdir will be served to, for example "/static"
-// Second parameter is the (virtual) directory path, for example "./assets" (no trailing slash),
-// Third parameter is the Asset function
-// Forth parameter is the AssetNames function.
-//
-// Returns the GET *Route.
-//
-// Example: https://github.com/kataras/iris/tree/master/_examples/file-server/embedding-files-into-app
-func (api *APIBuilder) StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) *Route {
-	return api.staticEmbedded(requestPath, vdir, assetFn, namesFn, false)
-}
-
-// StaticEmbeddedGzip registers a route which can serve embedded gziped files
-// that are embedded using the https://github.com/kataras/bindata tool and only.
-// It's 8 times faster than the `StaticEmbeddedHandler` with `go-bindata` but
-// it sends gzip response only, so the client must be aware that is expecting a gzip body
-// (browsers and most modern browsers do that, so you can use it without fair).
-//
-// First parameter is the request path, the path which the files in the vdir will be served to, for example "/static"
-// Second parameter is the (virtual) directory path, for example "./assets" (no trailing slash),
-// Third parameter is the GzipAsset function
-// Forth parameter is the GzipAssetNames function.
-//
-// Example: https://github.com/kataras/iris/tree/master/_examples/file-server/embedding-gziped-files-into-app
-func (api *APIBuilder) StaticEmbeddedGzip(requestPath string, vdir string, gzipAssetFn func(name string) ([]byte, error), gzipNamesFn func() []string) *Route {
-	return api.staticEmbedded(requestPath, vdir, gzipAssetFn, gzipNamesFn, true)
-}
-
-// look fs.go#StaticEmbeddedHandler
-func (api *APIBuilder) staticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string, assetsGziped bool) *Route {
-	fullpath := joinPath(api.relativePath, requestPath)
-	// if subdomain,
-	// here we get the full path of the path only,
-	// because a subdomain can have parties as well
-	// and we need that path to call the `StripPrefix`.
-	_, fullpath = splitSubdomainAndPath(fullpath)
-
-	paramName := "file"
-	requestPath = joinPath(requestPath, WildcardParam(paramName))
-
-	h := StaticEmbeddedHandler(vdir, assetFn, namesFn, assetsGziped)
-
-	if fullpath != "/" {
-		h = StripPrefix(fullpath, h)
-	}
-
-	// it handles the subdomain(root Party) of this party as well, if any.
-	return api.registerResourceRoute(vdir, requestPath, h)
+	return api.registerResourceRoute(reqPath, h)
 }
 
 // errDirectoryFileNotFound returns an error with message: 'Directory or file %s couldn't found. Trace: +error trace'
@@ -787,48 +853,7 @@ func (api *APIBuilder) Favicon(favPath string, requestPath ...string) *Route {
 		reqPath = requestPath[0]
 	}
 
-	return api.registerResourceRoute(favPath, reqPath, h)
-}
-
-// StaticWeb returns a handler that serves HTTP requests
-// with the contents of the file system rooted at directory.
-//
-// first parameter: the route path
-// second parameter: the system directory
-//
-// for more options look router.StaticHandler.
-//
-//     api.StaticWeb("/static", "./static")
-//
-// As a special case, the returned file server redirects any request
-// ending in "/index.html" to the same path, without the final
-// "/index.html", if `index.html` should be served then register a
-// new route for it, i.e
-// `app.Get("/static", func(ctx iris.Context){ ctx.ServeFile("./static/index.html", false) })`.
-//
-// StaticWeb calls the `StripPrefix(fullpath, NewStaticHandlerBuilder(systemPath).Listing(false).Build())`.
-//
-// Returns the GET *Route.
-func (api *APIBuilder) StaticWeb(requestPath string, systemPath string) *Route {
-	fullpath := joinPath(api.relativePath, requestPath)
-
-	// if subdomain,
-	// here we get the full path of the path only,
-	// because a subdomain can have parties as well
-	// and we need that path to call the `StripPrefix`.
-	_, fullpath = splitSubdomainAndPath(fullpath)
-
-	paramName := "file"
-	requestPath = joinPath(requestPath, WildcardParam(paramName))
-
-	h := NewStaticHandlerBuilder(systemPath).Listing(false).Build()
-
-	if fullpath != "/" {
-		h = StripPrefix(fullpath, h)
-	}
-
-	// it handles the subdomain(root Party) of this party as well, if any.
-	return api.registerResourceRoute(systemPath, requestPath, h)
+	return api.registerResourceRoute(reqPath, h)
 }
 
 // OnErrorCode registers an error http status code

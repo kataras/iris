@@ -64,7 +64,7 @@ func (r *Reporter) AddErr(err error) bool {
 	}
 
 	if stackErr, ok := err.(StackError); ok {
-		r.addStack(stackErr.Stack())
+		r.addStack("", stackErr.Stack())
 	} else {
 		r.mu.Lock()
 		r.wrapper = r.wrapper.AppendErr(err)
@@ -108,7 +108,7 @@ func (r *Reporter) Describe(format string, err error) {
 		return
 	}
 	if stackErr, ok := err.(StackError); ok {
-		r.addStack(stackErr.Stack())
+		r.addStack(format, stackErr.Stack())
 		return
 	}
 
@@ -126,12 +126,15 @@ func (r *Reporter) Stack() []Error {
 	return r.wrapper.Stack
 }
 
-func (r *Reporter) addStack(stack []Error) {
+func (r *Reporter) addStack(format string, stack []Error) {
 	for _, e := range stack {
 		if e.Error() == "" {
 			continue
 		}
 		r.mu.Lock()
+		if format != "" {
+			e = New(format).Format(e)
+		}
 		r.wrapper = r.wrapper.AppendErr(e)
 		r.mu.Unlock()
 	}

@@ -14,7 +14,7 @@ import (
 func main() {
 	app := iris.New()
 
-	app.StaticWeb("/scripts", "./www") // serve the scripts
+	app.HandleDir("/scripts", "./www") // serve the scripts
 
 	app.Get("/", func(ctx iris.Context) {
 		ctx.ServeFile("./www/index.html", false)

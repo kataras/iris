@@ -3,6 +3,7 @@ package context
 import (
 	"reflect"
 	"runtime"
+	"strings"
 )
 
 // A Handler responds to an HTTP request.
@@ -26,13 +27,33 @@ type Handler func(Context)
 // See `Handler` for more.
 type Handlers []Handler
 
-// HandlerName returns the name, the handler function informations.
-// Same as `context.HandlerName`.
+// HandlerName returns the handler's function name.
+// See `context.HandlerName` to get function name of the current running handler in the chain.
 func HandlerName(h Handler) string {
 	pc := reflect.ValueOf(h).Pointer()
-	// l, n := runtime.FuncForPC(pc).FileLine(pc)
-	// return fmt.Sprintf("%s:%d", l, n)
 	return runtime.FuncForPC(pc).Name()
+}
+
+// HandlerFileLine returns the handler's file and line information.
+// See `context.HandlerFileLine` to get the file, line of the current running handler in the chain.
+func HandlerFileLine(h Handler) (file string, line int) {
+	pc := reflect.ValueOf(h).Pointer()
+	return runtime.FuncForPC(pc).FileLine(pc)
+}
+
+// MainHandlerName tries to find the main handler than end-developer
+// registered on the provided chain of handlers and returns its function name.
+func MainHandlerName(handlers Handlers) (name string) {
+	for i := 0; i < len(handlers); i++ {
+		name = HandlerName(handlers[i])
+		if !strings.HasPrefix(name, "github.com/kataras/iris") ||
+			strings.HasPrefix(name, "github.com/kataras/iris/core/router.StripPrefix") ||
+			strings.HasPrefix(name, "github.com/kataras/iris/core/router.FileServer") {
+			break
+		}
+	}
+
+	return
 }
 
 // Filter is just a type of func(Handler) bool which reports whether an action must be performed

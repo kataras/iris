@@ -23,7 +23,7 @@ func main() {
 	app.Any("/iris-ws.js", websocket.ClientHandler())
 
 	// register static assets request path and system directory
-	app.StaticWeb("/js", "./static/assets/js")
+	app.HandleDir("/js", "./static/assets/js")
 
 	h := func(ctx iris.Context) {
 		ctx.ViewData("", page{PageID: "index page"})

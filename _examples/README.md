@@ -149,7 +149,7 @@ Navigate through examples for a better understanding.
 - [Write your own custom parameter types](routing/macros/main.go)
 - [Reverse routing](routing/reverse/main.go)
 - [Custom Router (high-level)](routing/custom-high-level-router/main.go)
-- [Custom Wrapper](routing/custom-wrapper/main.go)
+- [Custom Wrapper](routing/custom-wrapper/main.go) **UPDATED**
 - Custom Context
     * [method overriding](routing/custom-context/method-overriding/main.go)
     * [new implementation](routing/custom-context/new-implementation/main.go)
@@ -366,14 +366,14 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 ### File Server
 
 - [Favicon](file-server/favicon/main.go)
-- [Basic](file-server/basic/main.go)
-- [Embedding Files Into App Executable File](file-server/embedding-files-into-app/main.go)
-- [Embedding Gziped Files Into App Executable File](file-server/embedding-gziped-files-into-app/main.go)
+- [Basic](file-server/basic/main.go) **UPDATED**
+- [Embedding Files Into App Executable File](file-server/embedding-files-into-app/main.go) **UPDATED**
+- [Embedding Gziped Files Into App Executable File](file-server/embedding-gziped-files-into-app/main.go) **UPDATED**
 - [Send/Force-Download Files](file-server/send-files/main.go)
 - Single Page Applications
-    * [single Page Application](file-server/single-page-application/basic/main.go)
-    * [embedded Single Page Application](file-server/single-page-application/embedded-single-page-application/main.go)
-    * [embedded Single Page Application with other routes](file-server/single-page-application/embedded-single-page-application-with-other-routes/main.go)
+    * [single Page Application](file-server/single-page-application/basic/main.go) **UPDATED**
+    * [embedded Single Page Application](file-server/single-page-application/embedded-single-page-application/main.go) **UPDATED**
+    * [embedded Single Page Application with other routes](file-server/single-page-application/embedded-single-page-application-with-other-routes/main.go) **UPDATED**
 
 ### How to Read from `context.Request() *http.Request`
 

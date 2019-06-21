@@ -8,7 +8,7 @@ Article is coming soon, follow and stay tuned
 Read [the fully functional example](main.go).
 
 ```sh
-$ go get -u github.com/mongodb/mongo-go-driver
+$ go get -u go.mongodb.org/mongo-driver/...
 $ go get -u github.com/joho/godotenv
 ```
 

@@ -71,8 +71,6 @@ func parseLifeChanger(ctx context.Context) entry.LifeChanger {
 	}
 }
 
-///TODO: debug this and re-run the parallel tests on larger scale,
-// because I think we have a bug here when `core/router#StaticWeb` is used after this middleware.
 func (h *Handler) ServeHTTP(ctx context.Context) {
 	// check for pre-cache validators, if at least one of them return false
 	// for this specific request, then skip the whole cache

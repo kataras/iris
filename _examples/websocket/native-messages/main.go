@@ -35,7 +35,7 @@ func main() {
 	// see the inline javascript code i the websockets.html, this endpoint is used to connect to the server.
 	app.Get("/my_endpoint", ws.Handler())
 
-	app.StaticWeb("/js", "./static/js") // serve our custom javascript code
+	app.HandleDir("/js", "./static/js") // serve our custom javascript code
 
 	app.Get("/", func(ctx iris.Context) {
 		ctx.ViewData("", clientPage{"Client Page", "localhost:8080"})

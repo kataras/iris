@@ -124,7 +124,7 @@ func main() {
 	app := iris.New()
 	app.RegisterView(iris.HTML("./views", ".html"))
 
-	app.StaticWeb("/public", "./public")
+	app.HandleDir("/public", "./public")
 
 	app.Get("/", func(ctx iris.Context) {
 		ctx.View("upload.html")

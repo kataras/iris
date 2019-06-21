@@ -359,12 +359,8 @@ var (
 	//
 	// A shortcut for the `context#NewConditionalHandler`.
 	NewConditionalHandler = context.NewConditionalHandler
-	// StaticEmbeddedHandler returns a Handler which can serve
-	// embedded into executable files.
-	//
-	//
-	// Examples: https://github.com/kataras/iris/tree/master/_examples/file-server
-	StaticEmbeddedHandler = router.StaticEmbeddedHandler
+
+	FileServer = router.FileServer
 	// StripPrefix returns a handler that serves HTTP requests
 	// by removing the given prefix from the request URL's Path
 	// and invoking the handler h. StripPrefix handles a
@@ -372,7 +368,7 @@ var (
 	// replying with an HTTP 404 not found error.
 	//
 	// Usage:
-	// fileserver := Party#StaticHandler("./static_files", false, false)
+	// fileserver := iris.FileServer("./static_files", DirOptions {...})
 	// h := iris.StripPrefix("/static", fileserver)
 	// app.Get("/static/{f:path}", h)
 	// app.Head("/static/{f:path}", h)
@@ -437,7 +433,7 @@ var (
 	// Developers are free to extend this method's behavior
 	// by watching system directories changes manually and use of the `ctx.WriteWithExpiration`
 	// with a "modtime" based on the file modified date,
-	// simillary to the `StaticWeb`(which sends status OK(200) and browser disk caching instead of 304).
+	// simillary to the `HandleDir`(which sends status OK(200) and browser disk caching instead of 304).
 	//
 	// A shortcut of the `cache#Cache304`.
 	Cache304 = cache.Cache304
@@ -488,19 +484,6 @@ var (
 	// A shortcut for the `context#IsErrPath`.
 	IsErrPath = context.IsErrPath
 )
-
-// SPA  accepts an "assetHandler" which can be the result of an
-// app.StaticHandler or app.StaticEmbeddedHandler.
-// Use that when you want to navigate from /index.html to / automatically
-// it's a helper function which just makes some checks based on the `IndexNames` and `AssetValidators`
-// before the assetHandler call.
-//
-// Example: https://github.com/kataras/iris/tree/master/_examples/file-server/single-page-application
-func (app *Application) SPA(assetHandler context.Handler) *router.SPABuilder {
-	s := router.NewSPABuilder(assetHandler)
-	app.APIBuilder.HandleMany("GET HEAD", "/{f:path}", s.Handler)
-	return s
-}
 
 // ConfigureHost accepts one or more `host#Configuration`, these configurators functions
 // can access the host created by `app.Run`,

@@ -38,7 +38,7 @@ func main() {
 
 	// serve the index.html and the javascript libraries at
 	// http://localhost:8080
-	app.StaticWeb("/", "./public")
+	app.HandleDir("/", "./public")
 
 	app.Run(iris.Addr("localhost:8080"), iris.WithoutPathCorrection)
 }

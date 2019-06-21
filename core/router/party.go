@@ -120,6 +120,39 @@ type Party interface {
 	// in order to handle more than one paths for the same controller instance.
 	HandleMany(method string, relativePath string, handlers ...context.Handler) []*Route
 
+	// HandleDir registers a handler that serves HTTP requests
+	// with the contents of a file system (physical or embedded).
+	//
+	// first parameter  : the route path
+	// second parameter : the system or the embedded directory that needs to be served
+	// third parameter  : not required, the directory options, set fields is optional.
+	//
+	// for more options look router.FileServer.
+	//
+	//     api.HandleDir("/static", "./assets",  DirOptions {ShowList: true, Gzip: true, IndexName: "index.html"})
+	//
+	// Returns the GET *Route.
+	//
+	// Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/file-server
+	HandleDir(requestPath, directory string, opts ...DirOptions) *Route
+	// StaticWeb is DEPRECATED. Use HandleDir(requestPath, directory) instead.
+	StaticWeb(requestPath string, directory string) *Route
+	// StaticHandler is DEPRECATED.
+	// Use iris.FileServer(directory, iris.DirOptions{ShowList: true, Gzip: true}) instead.
+	//
+	// Example https://github.com/kataras/iris/tree/master/_examples/file-server/basic
+	StaticHandler(directory string, showList bool, gzip bool) context.Handler
+	// StaticEmbedded is DEPRECATED.
+	// Use HandleDir(requestPath, directory, iris.DirOptions{Asset: Asset, AssetInfo: AssetInfo, AssetNames: AssetNames}) instead.
+	//
+	// Example: https://github.com/kataras/iris/tree/master/_examples/file-server/embedding-files-into-app
+	StaticEmbedded(requestPath string, directory string, assetFn func(name string) ([]byte, error), namesFn func() []string) *Route
+	// StaticEmbeddedGzip is DEPRECATED.
+	// Use HandleDir(requestPath, directory, iris.DirOptions{Gzip: true, Asset: Asset, AssetInfo: AssetInfo, AssetNames: AssetNames}) instead.
+	//
+	// Example: https://github.com/kataras/iris/tree/master/_examples/file-server/embedding-gziped-files-into-app
+	StaticEmbeddedGzip(requestPath string, directory string, assetFn func(name string) ([]byte, error), namesFn func() []string) *Route
+
 	// None registers an "offline" route
 	// see context.ExecRoute(routeName) and
 	// party.Routes().Online(handleResultregistry.*Route, "GET") and
@@ -167,61 +200,11 @@ type Party interface {
 	// Any registers a route for ALL of the http methods
 	// (Get,Post,Put,Head,Patch,Options,Connect,Delete).
 	Any(registeredPath string, handlers ...context.Handler) []*Route
-
-	// StaticHandler returns a new Handler which is ready
-	// to serve all kind of static files.
-	//
-	// Note:
-	// The only difference from package-level `StaticHandler`
-	// is that this `StaticHandler` receives a request path which
-	// is appended to the party's relative path and stripped here.
-	//
-	// Usage:
-	// app := iris.New()
-	// ...
-	// mySubdomainFsServer := app.Party("mysubdomain.")
-	// h := mySubdomainFsServer.StaticHandler("./static_files", false, false)
-	// /* http://mysubdomain.mydomain.com/static/css/style.css */
-	// mySubdomainFsServer.Get("/static", h)
-	// ...
-	//
-	StaticHandler(systemPath string, showList bool, gzip bool) context.Handler
-
-	// StaticServe serves a directory as web resource
-	// it's the simpliest form of the Static* functions
-	// Almost same usage as StaticWeb
-	// accepts only one required parameter which is the systemPath,
-	// the same path will be used to register the GET and HEAD method routes.
-	// If second parameter is empty, otherwise the requestPath is the second parameter
-	// it uses gzip compression (compression on each request, no file cache).
-	//
-	// Returns the GET *Route.
-	StaticServe(systemPath string, requestPath ...string) *Route
 	// StaticContent registers a GET and HEAD method routes to the requestPath
 	// that are ready to serve raw static bytes, memory cached.
 	//
 	// Returns the GET *Route.
 	StaticContent(requestPath string, cType string, content []byte) *Route
-
-	// StaticEmbedded  used when files are distributed inside the app executable, using go-bindata mostly
-	// First parameter is the request path, the path which the files in the vdir will be served to, for example "/static"
-	// Second parameter is the (virtual) directory path, for example "./assets"
-	// Third parameter is the Asset function
-	// Forth parameter is the AssetNames function.
-	//
-	// Returns the GET *Route.
-	//
-	// Example: https://github.com/kataras/iris/tree/master/_examples/file-server/embedding-files-into-app
-	StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) *Route
-	// StaticEmbeddedGzip registers a route which can serve embedded gziped files
-	// that are embedded using the https://github.com/kataras/bindata tool and only.
-	// It's 8 times faster than the `StaticEmbeddedHandler` with `go-bindata` but
-	// it sends gzip response only, so the client must be aware that is expecting a gzip body
-	// (browsers and most modern browsers do that, so you can use it without fair).
-	//
-	//
-	// Example: https://github.com/kataras/iris/tree/master/_examples/file-server/embedding-gziped-files-into-app
-	StaticEmbeddedGzip(requestPath string, vdir string, gzipAssetFn func(name string) ([]byte, error), gzipNamesFn func() []string) *Route
 	// Favicon serves static favicon
 	// accepts 2 parameters, second is optional
 	// favPath (string), declare the system directory path of the __.ico
@@ -234,24 +217,6 @@ type Party interface {
 	//
 	// Returns the GET *Route.
 	Favicon(favPath string, requestPath ...string) *Route
-	// StaticWeb returns a handler that serves HTTP requests
-	// with the contents of the file system rooted at directory.
-	//
-	// first parameter: the route path
-	// second parameter: the system directory
-	//
-	// for more options look router.StaticHandler.
-	//
-	//     router.StaticWeb("/static", "./static")
-	//
-	// As a special case, the returned file server redirects any request
-	// ending in "/index.html" to the same path, without the final
-	// "index.html".
-	//
-	// StaticWeb calls the `StripPrefix(fullpath, NewStaticHandlerBuilder(systemPath).Listing(false).Build())`.
-	//
-	// Returns the GET *Route.
-	StaticWeb(requestPath string, systemPath string) *Route
 
 	// Layout overrides the parent template layout with a more specific layout for this Party.
 	// It returns the current Party.

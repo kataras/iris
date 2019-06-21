@@ -918,66 +918,19 @@ Run
 Static Files
 
 
-    // StaticServe serves a directory as web resource
-    // it's the simpliest form of the Static* functions
-    // Almost same usage as StaticWeb
-    // accepts only one required parameter which is the systemPath,
-    // the same path will be used to register the GET and HEAD method routes.
-    // If second parameter is empty, otherwise the requestPath is the second parameter
-    // it uses gzip compression (compression on each request, no file cache).
+    // HandleDir registers a handler that serves HTTP requests
+    // with the contents of a file system (physical or embedded).
+    //
+    // first parameter  : the route path
+    // second parameter : the system or the embedded directory that needs to be served
+    // third parameter  : not required, the directory options, set fields is optional.
+    //
+    // for more options look router.FileServer.
+    //
+    //     api.HandleDir("/static", "./assets",  DirOptions {ShowList: true, Gzip: true, IndexName: "index.html"})
     //
     // Returns the GET *Route.
-    StaticServe(systemPath string, requestPath ...string) (*Route, error)
-
-    // StaticContent registers a GET and HEAD method routes to the requestPath
-    // that are ready to serve raw static bytes, memory cached.
-    //
-    // Returns the GET *Route.
-    StaticContent(reqPath string, cType string, content []byte) (*Route, error)
-
-    // StaticEmbedded  used when files are distributed inside the app executable, using go-bindata mostly
-    // First parameter is the request path, the path which the files in the vdir will be served to, for example "/static"
-    // Second parameter is the (virtual) directory path, for example "./assets"
-    // Third parameter is the Asset function
-    // Forth parameter is the AssetNames function.
-    //
-    // Returns the GET *Route.
-    //
-    // Example: https://github.com/kataras/iris/tree/master/_examples/file-server/embedding-files-into-app
-    StaticEmbedded(requestPath string, vdir string, assetFn func(name string) ([]byte, error), namesFn func() []string) (*Route, error)
-
-    // Favicon serves static favicon
-    // accepts 2 parameters, second is optional
-    // favPath (string), declare the system directory path of the __.ico
-    // requestPath (string), it's the route's path, by default this is the "/favicon.ico" because some browsers tries to get this by default first,
-    // you can declare your own path if you have more than one favicon (desktop, mobile and so on)
-    //
-    // this func will add a route for you which will static serve the /yuorpath/yourfile.ico to the /yourfile.ico
-    // (nothing special that you can't handle by yourself).
-    // Note that you have to call it on every favicon you have to serve automatically (desktop, mobile and so on).
-    //
-    // Returns the GET *Route.
-    Favicon(favPath string, requestPath ...string) (*Route, error)
-
-    // StaticWeb returns a handler that serves HTTP requests
-    // with the contents of the file system rooted at directory.
-    //
-    // first parameter: the route path
-    // second parameter: the system directory
-    // third OPTIONAL parameter: the exception routes
-    //      (= give priority to these routes instead of the static handler)
-    // for more options look app.StaticHandler.
-    //
-    //     app.StaticWeb("/static", "./static")
-    //
-    // As a special case, the returned file server redirects any request
-    // ending in "/index.html" to the same path, without the final
-    // "index.html".
-    //
-    // StaticWeb calls the StaticHandler(systemPath, listingDirectories: false, gzip: false ).
-    //
-    // Returns the GET *Route.
-    StaticWeb(requestPath string, systemPath string, exceptRoutes ...*Route) (*Route, error)
+    HandleDir(requestPath, directory string, opts ...DirOptions) (getRoute *Route)
 
 
 Example code:
@@ -990,19 +943,40 @@ Example code:
     func main() {
         app := iris.New()
 
-        // This will serve the ./static/favicons/ion_32_32.ico to: localhost:8080/favicon.ico
-        app.Favicon("./static/favicons/ion_32_32.ico")
+        app.Favicon("./assets/favicon.ico")
 
-        // app.Favicon("./static/favicons/ion_32_32.ico", "/favicon_48_48.ico")
-        // This will serve the ./static/favicons/ion_32_32.ico to: localhost:8080/favicon_48_48.ico
+        // first parameter is the request path
+        // second is the system directory
+        //
+        // app.HandleDir("/css", "./assets/css")
+        // app.HandleDir("/js", "./assets/js")
 
-        app.Get("/", func(ctx iris.Context) {
-            ctx.HTML(`<a href="/favicon.ico"> press here to see the favicon.ico</a>.
-            At some browsers like chrome, it should be visible at the top-left side of the browser's window,
-            because some browsers make requests to the /favicon.ico automatically,
-            so iris serves your favicon in that path too (you can change it).`)
-        }) // if favicon doesn't show to you, try to clear your browser's cache.
+        app.HandleDir("/static", "./assets", iris.DirOptions{
+            // Defaults to "/index.html", if request path is ending with IndexName
+            // then it redirects to ../ which another handler is handling it,
+            // that another handler, called index handler, is auto-registered by the framework
+            // if end developer does not managed to handle it by hand.
+            IndexName: "/index.html",
+            // When files should served under compression.
+            Gzip: false,
+            // List the files inside the current requested directory if `IndexName` not found.
+            ShowList: false,
+            // If `ShowList` is true then this function will be used instead of the default one to show the list of files of a current requested directory(dir).
+            // DirList: func(ctx context.Context, dirName string, dir http.File) error { ... }
+            //
+            // Optional validator that loops through each requested resource.
+            // AssetValidator:  func(ctx iris.Context, name string) bool { ... }
+        })
+        // You can also register any index handler manually, order of registration does not matter:
+        // app.Get("/static", [...custom middleware...], func(ctx iris.Context) {
+        //  [...custom code...]
+        // 	ctx.ServeFile("./assets/index.html", false)
+        // })
 
+        // http://localhost:8080/static
+        // http://localhost:8080/static/css/main.css
+        // http://localhost:8080/static/js/jquery-2.1.1.js
+        // http://localhost:8080/static/favicon.ico
         app.Run(iris.Addr(":8080"))
     }
 
