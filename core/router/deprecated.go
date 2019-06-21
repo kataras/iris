@@ -21,13 +21,21 @@ func getCaller() (string, int) {
 
 	for {
 		frame, more := frames.Next()
+		file := frame.File
 
-		if (!strings.Contains(frame.File, "github.com/kataras/iris") ||
-			strings.Contains(frame.File, "github.com/kataras/iris/_examples") ||
-			strings.Contains(frame.File, "github.com/iris-contrib/examples") ||
-			(strings.Contains(frame.File, "github.com/kataras/iris/core/router") && !strings.Contains(frame.File, "deprecated.go"))) &&
-			!strings.HasSuffix(frame.Func.Name(), ".getCaller") && !strings.Contains(frame.File, "/go/src/testing") {
-			return frame.File, frame.Line
+		splitAfterPart := "/src/"
+		if (!strings.Contains(file, "github.com/kataras/iris") ||
+			strings.Contains(file, "github.com/kataras/iris/_examples") ||
+			strings.Contains(file, "github.com/iris-contrib/examples") ||
+			(strings.Contains(file, "github.com/kataras/iris/core/router") && !strings.Contains(file, "deprecated.go"))) &&
+			!strings.HasSuffix(frame.Func.Name(), ".getCaller") && !strings.Contains(file, "/go/src/testing") {
+
+			// remove the $GOPATH.
+			n := strings.Index(file, splitAfterPart)
+			if n != -1 {
+				file = file[n+len(splitAfterPart):]
+			}
+			return file, frame.Line
 		}
 
 		if !more {

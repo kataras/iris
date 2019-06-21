@@ -100,9 +100,8 @@ type embeddedFileSystem struct {
 	vdir     string
 	dirNames map[string]*embeddedDir // embedded tools doesn't give that info, so we initialize it in order to support `ShowList` on embedded files as well.
 
-	asset      func(name string) ([]byte, error)
-	assetInfo  func(name string) (os.FileInfo, error)
-	assetNames []string
+	asset     func(name string) ([]byte, error)
+	assetInfo func(name string) (os.FileInfo, error)
 }
 
 var _ http.FileSystem = (*embeddedFileSystem)(nil)
@@ -263,13 +262,14 @@ func FileServer(directory string, opts ...DirOptions) context.Handler {
 			vdir:     vdir,
 			dirNames: dirNames,
 
-			asset:      asset,
-			assetInfo:  assetInfo,
-			assetNames: names,
+			asset:     asset,
+			assetInfo: assetInfo,
 		}
-	} else if !DirectoryExists(directory) {
-		panic("FileServer: system directory: " + directory + " does not exist")
 	}
+	// Let it for now.
+	// else if !DirectoryExists(directory) {
+	// 	panic("FileServer: system directory: " + directory + " does not exist")
+	// }
 
 	plainStatusCode := func(ctx context.Context, statusCode int) {
 		if writer, ok := ctx.ResponseWriter().(*context.GzipResponseWriter); ok && writer != nil {
