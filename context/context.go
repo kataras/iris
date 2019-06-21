@@ -209,6 +209,12 @@ type Context interface {
 	Proceed(Handler) bool
 	// HandlerName returns the current handler's name, helpful for debugging.
 	HandlerName() string
+	// HandlerFileLine returns the current running handler's function source file and line information.
+	// Useful mostly when debugging.
+	HandlerFileLine() (file string, line int)
+	// RouteName returns the route name that this handler is running on.
+	// Note that it will return empty on not found handlers.
+	RouteName() string
 	// Next calls all the next handler from the handlers chain,
 	// it should be used inside a middleware.
 	//
@@ -626,7 +632,7 @@ type Context interface {
 	// Note that it has nothing to do with server-side caching.
 	// It does those checks by checking if the "If-Modified-Since" request header
 	// sent by client or a previous server response header
-	// (e.g with WriteWithExpiration or StaticEmbedded or Favicon etc.)
+	// (e.g with WriteWithExpiration or HandleDir or Favicon etc.)
 	// is a valid one and it's before the "modtime".
 	//
 	// A check for !modtime && err == nil is necessary to make sure that
@@ -775,7 +781,7 @@ type Context interface {
 	// You can define your own "Content-Type" with `context#ContentType`, before this function call.
 	//
 	// This function doesn't support resuming (by range),
-	// use ctx.SendFile or router's `StaticWeb` instead.
+	// use ctx.SendFile or router's `HandleDir` instead.
 	ServeContent(content io.ReadSeeker, filename string, modtime time.Time, gzipCompression bool) error
 	// ServeFile serves a file (to send a file, a zip for example to the client you should use the `SendFile` instead)
 	// receives two parameters
@@ -785,7 +791,7 @@ type Context interface {
 	// You can define your own "Content-Type" with `context#ContentType`, before this function call.
 	//
 	// This function doesn't support resuming (by range),
-	// use ctx.SendFile or router's `StaticWeb` instead.
+	// use ctx.SendFile or router's `HandleDir` instead.
 	//
 	// Use it when you want to serve dynamic files to the client.
 	ServeFile(filename string, gzipCompression bool) error
@@ -1208,10 +1214,19 @@ func (ctx *context) Proceed(h Handler) bool {
 
 // HandlerName returns the current handler's name, helpful for debugging.
 func (ctx *context) HandlerName() string {
-	if name := ctx.currentRouteName; name != "" {
-		return name
-	}
 	return HandlerName(ctx.handlers[ctx.currentHandlerIndex])
+}
+
+// HandlerFileLine returns the current running handler's function source file and line information.
+// Useful mostly when debugging.
+func (ctx *context) HandlerFileLine() (file string, line int) {
+	return HandlerFileLine(ctx.handlers[ctx.currentHandlerIndex])
+}
+
+// RouteName returns the route name that this handler is running on.
+// Note that it will return empty on not found handlers.
+func (ctx *context) RouteName() string {
+	return ctx.currentRouteName
 }
 
 // Next is the function that executed when `ctx.Next()` is called.
@@ -2476,7 +2491,7 @@ func (ctx *context) SetLastModified(modtime time.Time) {
 // Note that it has nothing to do with server-side caching.
 // It does those checks by checking if the "If-Modified-Since" request header
 // sent by client or a previous server response header
-// (e.g with WriteWithExpiration or StaticEmbedded or Favicon etc.)
+// (e.g with WriteWithExpiration or HandleDir or Favicon etc.)
 // is a valid one and it's before the "modtime".
 //
 // A check for !modtime && err == nil is necessary to make sure that
@@ -3122,7 +3137,10 @@ func (ctx *context) ServeContent(content io.ReadSeeker, filename string, modtime
 		return nil
 	}
 
-	ctx.ContentType(filename)
+	if ctx.GetContentType() == "" {
+		ctx.ContentType(filename)
+	}
+
 	ctx.SetLastModified(modtime)
 	var out io.Writer
 	if gzipCompression && ctx.ClientSupportsGzip() {
@@ -3150,7 +3168,7 @@ func (ctx *context) ServeContent(content io.ReadSeeker, filename string, modtime
 func (ctx *context) ServeFile(filename string, gzipCompression bool) error {
 	f, err := os.Open(filename)
 	if err != nil {
-		return fmt.Errorf("%d", 404)
+		return fmt.Errorf("%d", http.StatusNotFound)
 	}
 	defer f.Close()
 	fi, _ := f.Stat()

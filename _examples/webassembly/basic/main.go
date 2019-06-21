@@ -14,7 +14,7 @@ func main() {
 
 	// we could serve your assets like this the shake of the example,
 	// never include the .go files there in production.
-	app.StaticWeb("/", "./client")
+	app.HandleDir("/", "./client")
 
 	app.Get("/", func(ctx iris.Context) {
 		ctx.ServeFile("./client/hello.html", false) // true for gzip.

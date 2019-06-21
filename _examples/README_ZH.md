@@ -10,7 +10,7 @@
 ### 概览
 
 - [Hello world!](hello-world/main.go)
-- [Hello WebAssemply!](webassembly/basic/main.go) **NEW**
+- [Hello WebAssemply!](webassembly/basic/main.go)
 - [基础](overview/main.go)
 - [教程: 在线人数](tutorial/online-visitors/main.go)
 - [教程: 一个“待完成”MVC Application基于Iris和Vue.js](https://hackernoon.com/a-todo-mvc-application-using-iris-and-vue-js-5019ff870064)
@@ -21,7 +21,7 @@
 - [教程: DropzoneJS 上传](tutorial/dropzonejs)
 - [教程: Caddy 服务器使用](tutorial/caddy)
 - [教程: Iris + MongoDB](https://medium.com/go-language/iris-go-framework-mongodb-552e349eab9c)
-- [教程: Apache Kafka的API](tutorial/api-for-apache-kafka) **NEW**
+- [教程: Apache Kafka的API](tutorial/api-for-apache-kafka)
 
 ### 目录结构
 
@@ -105,10 +105,10 @@ app.Get("{root:path}", rootWildcardHandler)
 - [自定义 HTTP 错误](routing/http-errors/main.go)
 - [动态路径](routing/dynamic-path/main.go)
     * [根级通配符路径](routing/dynamic-path/root-wildcard/main.go)
-- [编写你自己的参数类型](routing/macros/main.go) **NEW**
+- [编写你自己的参数类型](routing/macros/main.go)
 - [反向路由](routing/reverse/main.go)
-- [自定义路由(高层级)](routing/custom-high-level-router/main.go) **NEW**
-- [自定义包装](routing/custom-wrapper/main.go)
+- [自定义路由(高层级)](routing/custom-high-level-router/main.go)
+- [自定义包装](routing/custom-wrapper/main.go) **更新**
 - 自定义上下文
     * [方法重写](routing/custom-context/method-overriding/main.go)
     * [新实现方式](routing/custom-context/new-implementation/main.go)
@@ -121,8 +121,8 @@ app.Get("{root:path}", rootWildcardHandler)
 
 - [基础](hero/basic/main.go)
 - [概览](hero/overview)
-- [Sessions](hero/sessions) **NEW**
-- [另一种依赖注入的例子和通常的较好实践](hero/smart-contract/main.go) **NEW**
+- [Sessions](hero/sessions)
+- [另一种依赖注入的例子和通常的较好实践](hero/smart-contract/main.go) **新**
 
 ### MVC 模式
 
@@ -255,14 +255,14 @@ func(c *ExampleController) Get() string |
 
 参考下面的示例
 
-- [Hello world](mvc/hello-world/main.go) **UPDATED**
-- [Session Controller](mvc/session-controller/main.go) **UPDATED**
-- [Overview - Plus Repository and Service layers](mvc/overview) **UPDATED**
-- [Login showcase - Plus Repository and Service layers](mvc/login) **UPDATED**
-- [Singleton](mvc/singleton) **NEW**
-- [Websocket Controller](mvc/websocket) **NEW**
-- [Register Middleware](mvc/middleware) **NEW**
-- [Vue.js Todo MVC](tutorial/vuejs-todo-mvc) **NEW**
+- [Hello world](mvc/hello-world/main.go) **更新**
+- [Session Controller](mvc/session-controller/main.go) **更新**
+- [Overview - Plus Repository and Service layers](mvc/overview) **更新**
+- [Login showcase - Plus Repository and Service layers](mvc/login) **更新**
+- [Singleton](mvc/singleton) **新**
+- [Websocket Controller](mvc/websocket) **新**
+- [Register Middleware](mvc/middleware) **新**
+- [Vue.js Todo MVC](tutorial/vuejs-todo-mvc) **新**
 
 ### 子域名
 
@@ -316,14 +316,14 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 ### 文件服务器
 
 - [Favicon](file-server/favicon/main.go)
-- [基础操作](file-server/basic/main.go)
-- [把文件嵌入应用的可执行文件](file-server/embedding-files-into-app/main.go)
-- [嵌入Gzip压缩的文件到可咨询文件](file-server/embedding-gziped-files-into-app/main.go) **NEW**
+- [基础操作](file-server/basic/main.go) **更新**
+- [把文件嵌入应用的可执行文件](file-server/embedding-files-into-app/main.go) **更新**
+- [嵌入Gzip压缩的文件到可咨询文件](file-server/embedding-gziped-files-into-app/main.go) **更新**
 - [上传/(强制)下载文件](file-server/send-files/main.go)
 - 单页面应用(Single Page Applications)
-    * [单页面应用](file-server/single-page-application/basic/main.go)
-    * [嵌入式(embedded)单页面应用](file-server/single-page-application/embedded-single-page-application/main.go)
-    * [使用额外路由的嵌入式单页面应用](file-server/single-page-application/embedded-single-page-application-with-other-routes/main.go)
+    * [单页面应用](file-server/single-page-application/basic/main.go) **更新**
+    * [嵌入式(embedded)单页面应用](file-server/single-page-application/embedded-single-page-application/main.go) **更新**
+    * [使用额外路由的嵌入式单页面应用](file-server/single-page-application/embedded-single-page-application-with-other-routes/main.go) **更新**
 
 ### 如何读取`context.Request() *http.Request`
 
@@ -346,7 +346,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 - [写入Gzip压缩](http_responsewriter/write-gzip/main.go)
 - [流输出Stream Writer](http_responsewriter/stream-writer/main.go)
 - [数据传递Transactions](http_responsewriter/transactions/main.go)
-- [SSE](http_responsewriter/sse/main.go) **NEW**
+- [SSE](http_responsewriter/sse/main.go)
 - [SSE (third-party package usage for server sent events第三方库SSE)](http_responsewriter/sse-third-party/main.go)
 
 > The `context/context#ResponseWriter()` returns an enchament version of a http.ResponseWriter, these examples show some places where the Context uses this object. Besides that you can use it as you did before iris.
@@ -430,7 +430,7 @@ iris websocket库依赖于它自己的[包](https://github.com/kataras/iris/tree
 设计这个包的目的是处理原始websockets，虽然它的API和著名的[socket.io](https://socket.io)很像。我最近读了一片文章，并且对我
 决定给iris设计一个**快速的**websocket**限定**包并且不是一个向后传递类socket.io的包。你可以阅读这个链接里的文章https://medium.com/@ivanderbyl/why-you-don-t-need-socket-io-6848f1c871cd。
 
-- [Basic](websocket/basic) **NEW**
+- [Basic](websocket/basic) **新**
     * [Server](websocket/basic/server.go)
     * [Go Client](websocket/basic/go-client/client.go)
     * [Browser Client](websocket/basic/browser/index.html)

@@ -1,6 +1,6 @@
 package main
 
-// go get -u github.com/mongodb/mongo-go-driver
+// go get -u go.mongodb.org/mongo-driver
 // go get -u github.com/joho/godotenv
 
 import (
@@ -19,7 +19,7 @@ import (
 
 	"github.com/kataras/iris"
 
-	"github.com/mongodb/mongo-go-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 const version = "0.0.1"

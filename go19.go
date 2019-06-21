@@ -62,8 +62,8 @@ type (
 	// Look the `core/router#APIBuilder` for its implementation.
 	//
 	// A shortcut for the `core/router#Party`, useful when `PartyFunc` is being used.
-	Party = router.Party
-
+	Party      = router.Party
+	DirOptions = router.DirOptions
 	// ExecutionRules gives control to the execution of the route handlers outside of the handlers themselves.
 	// Usage:
 	// Party#SetExecutionRules(ExecutionRules {

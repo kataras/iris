@@ -32,7 +32,7 @@ func main() {
 		ctx.Write(websocket.ClientSource)
 	})
 
-	app.StaticWeb("/js", "./static/js")
+	app.HandleDir("/js", "./static/js")
 	app.Get("/", func(ctx iris.Context) {
 		// send our custom javascript source file before client really asks for that
 		// using the go v1.8's HTTP/2 Push.

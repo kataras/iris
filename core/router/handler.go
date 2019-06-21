@@ -76,11 +76,14 @@ func NewDefaultHandler() RequestHandler {
 type RoutesProvider interface { // api builder
 	GetRoutes() []*Route
 	GetRoute(routeName string) *Route
+	// GetStaticSites() []*StaticSite
+	// Macros() *macro.Macros
 }
 
 func (h *routerHandler) Build(provider RoutesProvider) error {
-	registeredRoutes := provider.GetRoutes()
 	h.trees = h.trees[0:0] // reset, inneed when rebuilding.
+	rp := errors.NewReporter()
+	registeredRoutes := provider.GetRoutes()
 
 	// sort, subdomains go first.
 	sort.Slice(registeredRoutes, func(i, j int) bool {
@@ -111,10 +114,7 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 
 		// the rest are handled inside the node
 		return lsub1 > lsub2
-
 	})
-
-	rp := errors.NewReporter()
 
 	for _, r := range registeredRoutes {
 		// build the r.Handlers based on begin and done handlers, if any.
@@ -133,6 +133,7 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 			rp.Add("%v -> %s", err, r.String())
 			continue
 		}
+
 		golog.Debugf(r.Trace())
 	}
 

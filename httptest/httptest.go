@@ -89,7 +89,7 @@ func New(t *testing.T, app *iris.Application, setters ...OptionSetter) *httpexpe
 	app.Logger().SetLevel(conf.LogLevel)
 
 	if err := app.Build(); err != nil {
-		if conf.Debug && (conf.LogLevel == "disable" || conf.LogLevel == "disabled") {
+		if conf.LogLevel != "disable" && conf.LogLevel != "disabled" {
 			app.Logger().Println(err.Error())
 			return nil
 		}

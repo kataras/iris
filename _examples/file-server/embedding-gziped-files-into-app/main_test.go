@@ -67,7 +67,7 @@ var urls = []resource{
 }
 
 // if bindata's values matches with the assets/... contents
-// and secondly if the StaticEmbedded had successfully registered
+// and secondly if the HandleDir had successfully registered
 // the routes and gave the correct response.
 func TestEmbeddingGzipFilesIntoApp(t *testing.T) {
 	app := newApp()

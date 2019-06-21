@@ -49,7 +49,7 @@ func newApp(db *DB) *iris.Application {
 	app.RegisterView(tmpl)
 
 	// Serve static files (css)
-	app.StaticWeb("/static", "./resources")
+	app.HandleDir("/static", "./resources")
 
 	indexHandler := func(ctx iris.Context) {
 		ctx.ViewData("URL_COUNT", db.Len())
