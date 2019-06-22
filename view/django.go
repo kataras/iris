@@ -88,7 +88,7 @@ func (dal *tDjangoAssetLoader) Get(path string) (io.Reader, error) {
 	return bytes.NewBuffer(res), nil
 }
 
-// DjangoEngine contains the amber view engine structure.
+// DjangoEngine contains the django view engine structure.
 type DjangoEngine struct {
 	// files configuration
 	directory string
@@ -106,7 +106,7 @@ type DjangoEngine struct {
 	templateCache map[string]*pongo2.Template
 }
 
-var _ Engine = &DjangoEngine{}
+var _ Engine = (*DjangoEngine)(nil)
 
 // Django creates and returns a new amber view engine.
 func Django(directory, extension string) *DjangoEngine {
@@ -195,7 +195,7 @@ func (s *DjangoEngine) RegisterTag(tagName string, fn TagParser) error {
 }
 
 // Load parses the templates to the engine.
-// It's alos responsible to add the necessary global functions.
+// It is responsible to add the necessary global functions.
 //
 // Returns an error if something bad happens, user is responsible to catch it.
 func (s *DjangoEngine) Load() error {

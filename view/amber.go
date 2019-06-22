@@ -25,7 +25,7 @@ type AmberEngine struct {
 	templateCache map[string]*template.Template
 }
 
-var _ Engine = &AmberEngine{}
+var _ Engine = (*AmberEngine)(nil)
 
 // Amber creates and returns a new amber view engine.
 func Amber(directory, extension string) *AmberEngine {
@@ -77,7 +77,7 @@ func (s *AmberEngine) AddFunc(funcName string, funcBody interface{}) {
 }
 
 // Load parses the templates to the engine.
-// It's alos responsible to add the necessary global functions.
+// It is responsible to add the necessary global functions.
 //
 // Returns an error if something bad happens, user is responsible to catch it.
 func (s *AmberEngine) Load() error {
