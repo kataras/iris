@@ -1069,7 +1069,7 @@ Example code:
 View Engine
 
 
-Iris supports 5 template engines out-of-the-box, developers can still use any external golang template engine,
+Iris supports 6 template engines out-of-the-box, developers can still use any external golang template engine,
 as `context/context#ResponseWriter()` is an `io.Writer`.
 
 All of these five template engines have common features with common API,
@@ -1090,6 +1090,8 @@ like Layout, Template Funcs, Party-specific layout, partial rendering and more.
       Amber,
       its template parser is the github.com/eknkc/amber
 
+      Jet,
+      its template parser is the github.com/CloudyKit/jet
 
 Example code:
 
@@ -1105,6 +1107,7 @@ Example code:
         // - pug(jade)      | iris.Pug(...)
         // - handlebars     | iris.Handlebars(...)
         // - amber          | iris.Amber(...)
+        // - jet            | iris.Jet(...)
 
         tmpl := iris.HTML("./templates", ".html")
         tmpl.Reload(true) // reload templates on each request (development mode)
@@ -1195,6 +1198,7 @@ access to the engines' variables can be granded by "github.com/kataras/iris" pac
     iris.Pug(...)        >> >>      view.Pug(...)
     iris.Handlebars(...) >> >>      view.Handlebars(...)
     iris.Amber(...)      >> >>      view.Amber(...)
+    iris.Jet(...)        >> >>      view.Jet(...)
 
 Each one of these template engines has different options located here: https://github.com/kataras/iris/tree/master/view .
 

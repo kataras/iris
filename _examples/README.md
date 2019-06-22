@@ -339,6 +339,7 @@ Follow the examples below,
 | handlebars    | `iris.Handlebars(...)` |
 | amber         | `iris.Amber(...)`      |
 | pug(jade)     | `iris.Pug(...)`        |
+| jet           | `iris.Jet(...)`        |
 
 - [Overview](view/overview/main.go)
 - [Hi](view/template_html_0/main.go)
@@ -353,6 +354,8 @@ Follow the examples below,
 - [Pug (Jade) Actions`](view/template_pug_1)
 - [Pug (Jade) Includes`](view/template_pug_2)
 - [Pug (Jade) Extends`](view/template_pug_3)
+- [Jet](/view/template_jet_0) **NEW**
+- [Jet Embedded](view/template_jet_1_embedded) **NEW**
 
 You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [hero templates](https://github.com/shiyanhui/hero/hero) files too, simply by using the `context#ResponseWriter`, take a look at the [http_responsewriter/quicktemplate](http_responsewriter/quicktemplate) and [http_responsewriter/herotemplate](http_responsewriter/herotemplate) examples.
 
