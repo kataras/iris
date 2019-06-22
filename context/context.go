@@ -2790,7 +2790,7 @@ func (ctx *context) View(filename string, optionalViewModel ...interface{}) erro
 		bindingData = ctx.values.Get(cfg.GetViewDataContextKey())
 	}
 
-	err := ctx.Application().View(ctx.writer, filename, layout, bindingData)
+	err := ctx.Application().View(ctx, filename, layout, bindingData)
 	if err != nil {
 		ctx.StatusCode(http.StatusInternalServerError)
 		ctx.StopExecution()

@@ -286,20 +286,23 @@ func (app *Application) Logger() *golog.Logger {
 
 var (
 	// HTML view engine.
-	// Conversion for the view.HTML.
+	// Shortcut of the kataras/iris/view.HTML.
 	HTML = view.HTML
 	// Django view engine.
-	// Conversion for the view.Django.
+	// Shortcut of the kataras/iris/view.Django.
 	Django = view.Django
 	// Handlebars view engine.
-	// Conversion for the view.Handlebars.
+	// Shortcut of the kataras/iris/view.Handlebars.
 	Handlebars = view.Handlebars
 	// Pug view engine.
-	// Conversion for the view.Pug.
+	// Shortcut of the kataras/iris/view.Pug.
 	Pug = view.Pug
 	// Amber view engine.
-	// Conversion for the view.Amber.
+	// Shortcut of the kataras/iris/view.Amber.
 	Amber = view.Amber
+	// Jet view engine.
+	// Shortcut of the kataras/iris/view.Jet.
+	Jet = view.Jet
 )
 
 // NoLayout to disable layout for a particular template file

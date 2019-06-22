@@ -7,12 +7,6 @@ import (
 func main() {
 	app := iris.New() // defaults to these
 
-	// - standard html  | iris.HTML(...)
-	// - django         | iris.Django(...)
-	// - pug(jade)      | iris.Pug(...)
-	// - handlebars     | iris.Handlebars(...)
-	// - amber          | iris.Amber(...)
-
 	tmpl := iris.HTML("./templates", ".html")
 	tmpl.Reload(true) // reload templates on each request (development mode)
 	// default template funcs are:

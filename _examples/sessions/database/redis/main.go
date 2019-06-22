@@ -32,7 +32,7 @@ func main() {
 
 	sess := sessions.New(sessions.Config{
 		Cookie:       "sessionscookieid",
-		Expires:      0, // defauls to 0: unlimited life. Another good value is: 45 * time.Minute,
+		Expires:      0, // defaults to 0: unlimited life. Another good value is: 45 * time.Minute,
 		AllowReclaim: true,
 	})
 
