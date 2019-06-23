@@ -103,6 +103,24 @@ func convertBuilderFunc(fn interface{}) ParamFuncBuilder {
 
 	typFn := reflect.TypeOf(fn)
 	if !goodParamFunc(typFn) {
+		// it's not a function which returns a function,
+		// it's not a a func(compileArgs) func(requestDynamicParamValue) bool
+		// but it's a func(requestDynamicParamValue) bool, such as regexp.Compile.MatchString
+		if typFn.NumIn() == 1 && typFn.In(0).Kind() == reflect.String && typFn.NumOut() == 1 && typFn.Out(0).Kind() == reflect.Bool {
+			fnV := reflect.ValueOf(fn)
+			// let's convert it to a ParamFuncBuilder which its combile route arguments are empty and not used at all.
+			// the below return function runs on each route that this param type function is used in order to validate the function,
+			// if that param type function is used wrongly it will be panic like the rest,
+			// indeed the only check is the len of arguments not > 0, no types of values or conversions,
+			// so we return it as soon as possible.
+			return func(args []string) reflect.Value {
+				if n := len(args); n > 0 {
+					panic(fmt.Sprintf("%T does not allow any input arguments from route but got [len=%d,values=%s]", fn, n, strings.Join(args, ", ")))
+				}
+				return fnV
+			}
+		}
+
 		return nil
 	}
 
@@ -111,7 +129,7 @@ func convertBuilderFunc(fn interface{}) ParamFuncBuilder {
 	return func(args []string) reflect.Value {
 		if len(args) != numFields {
 			// no variadics support, for now.
-			panic("args should be the same len as numFields")
+			panic(fmt.Sprintf("args(len=%d) should be the same len as numFields(%d) for: %s", len(args), numFields, typFn))
 		}
 		var argValues []reflect.Value
 		for i := 0; i < numFields; i++ {
@@ -308,7 +326,11 @@ func (m *Macro) Trailing() bool {
 // i.e RegisterFunc("min", func(minValue int) func(paramValue string) bool){})
 func (m *Macro) RegisterFunc(funcName string, fn interface{}) *Macro {
 	fullFn := convertBuilderFunc(fn)
-	m.registerFunc(funcName, fullFn)
+
+	// if it's not valid then not register it at all.
+	if fullFn != nil {
+		m.registerFunc(funcName, fullFn)
+	}
 
 	return m
 }
