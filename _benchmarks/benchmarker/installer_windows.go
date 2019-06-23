@@ -22,3 +22,7 @@ func installDotnet(b bundle) error {
 	// Right click on the ./scripts/dotnet-install.ps1 and check the "unblock" property, save and exit the dialog.
 	return powershell("./scripts/dotnet-install.ps1", b.parseArguments()...)
 }
+
+func installNode(b bundle) error {
+	return powershell("./scripts/node-install.ps1", b.parseArguments()...)
+}
