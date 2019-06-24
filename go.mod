@@ -9,11 +9,11 @@ require (
 	github.com/aymerick/raymond v2.0.2+incompatible
 	github.com/eknkc/amber v0.0.0-20171010120322-cdade1c07385
 	github.com/fatih/structs v1.1.0
-	github.com/flosch/pongo2 v0.0.0-20190505152737-8914e1cf9164
+	github.com/flosch/pongo2 v0.0.0-20190505152737-8914e1cf9164 // vendor removed.
 	github.com/iris-contrib/blackfriday v2.0.0+incompatible
 	github.com/iris-contrib/formBinder v0.0.0-20190104093907-fbd5963f41e1
 	github.com/iris-contrib/go.uuid v2.0.0+incompatible
-	github.com/json-iterator/go v1.1.6
+	github.com/json-iterator/go v1.1.6 // vendor removed.
 	github.com/kataras/golog v0.0.0-20180321173939-03be10146386
 	github.com/kataras/neffos v0.0.1
 	github.com/kataras/pio v0.0.0-20190103105442-ea782b38602d // indirect
