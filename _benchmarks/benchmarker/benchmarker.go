@@ -10,16 +10,35 @@ import (
 	"github.com/kataras/golog"
 )
 
+var debug = false
+
+var logger = golog.Default
+
+func init() {
+	if len(os.Args) > 1 && os.Args[1] == "debug" {
+		debug = true
+	}
+
+	if debug {
+		logger.SetLevel("debug")
+	}
+}
+
 var bundles = []bundle{
 	{
 		names:            []string{"dotnet"},
-		installDir:       "./dotnet_bin",
+		installDir:       "./platforms/dotnet",
 		installArguments: []string{"-NoPath", "-InstallDir", "$installDir", "-Channel", "Current", "-Version", "3.0.100-preview6-012264"},
 	},
 	{
 		names:            []string{"node", "npm"},
-		installDir:       "./node_bin",
+		installDir:       "./platforms/node", // do no change that.
 		installArguments: []string{"$installDir", "12.4.0"},
+	},
+	{
+		names:            []string{"git"},
+		installDir:       "./platforms/git",
+		installArguments: []string{"-InstallDir", "$installDir"},
 	},
 }
 
@@ -30,6 +49,8 @@ func install(b bundle) error {
 			return installDotnet(b)
 		case "node", "nodejs", "npm":
 			return installNode(b)
+		case "git":
+			return installGit(b)
 		}
 	}
 
@@ -68,24 +89,30 @@ type platform struct {
 	executable string
 }
 
-func (p *platform) exec(args ...string) string {
+func (p *platform) text(args ...string) string {
 	cmd := exec.Command(p.executable, args...)
 	b, err := cmd.Output()
 	if err != nil {
-		golog.Error(err)
+		logger.Error(err)
 		return ""
 	}
 
 	return string(b)
 }
 
-func (p *platform) attach(args ...string) error {
+func (p *platform) exec(args ...string) error {
 	cmd := exec.Command(p.executable, args...)
-	attachCmd(cmd)
 	return cmd.Run()
 }
 
-func attachCmd(cmd *exec.Cmd) {
+func (p *platform) attach(logLevel string, args ...string) error {
+	cmd := exec.Command(p.executable, args...)
+	attachCmd(logLevel, cmd)
+	return cmd.Run()
+}
+
+func attachCmd(logLevel string, cmd *exec.Cmd) {
+	level := golog.ParseLevel(logLevel)
 	outputReader, err := cmd.StdoutPipe()
 	if err == nil {
 		outputScanner := bufio.NewScanner(outputReader)
@@ -93,7 +120,7 @@ func attachCmd(cmd *exec.Cmd) {
 		go func() {
 			defer outputReader.Close()
 			for outputScanner.Scan() {
-				golog.Println(outputScanner.Text())
+				logger.Log(level, outputScanner.Text())
 			}
 		}()
 
@@ -103,7 +130,7 @@ func attachCmd(cmd *exec.Cmd) {
 			go func() {
 				defer errReader.Close()
 				for errScanner.Scan() {
-					golog.Println(errScanner.Text())
+					logger.Log(level, errScanner.Text())
 				}
 			}()
 		}
@@ -114,6 +141,7 @@ func getPlatform(name string) (p *platform) {
 	for _, b := range bundles {
 		for _, bName := range b.names {
 			if bName == name {
+
 				// temporarily set the path env to the installation directories
 				// in order the exec.LookPath to check for programs there too.
 				pathEnv := os.Getenv("PATH")
@@ -123,21 +151,30 @@ func getPlatform(name string) (p *platform) {
 					}
 				}
 
+				pathEnv += b.installDir + "/bin;"
 				pathEnv += b.installDir
+
 				os.Setenv("PATH", pathEnv)
 				executable, err := exec.LookPath(name)
 				if err != nil {
-					golog.Debugf("%s executable couldn't be found from PATH. Trying to install it...", name)
+					logger.Infof("%s executable couldn't be retrieved by PATH or PATHTEXT. Installation started...", name)
 
 					err = install(b)
 					if err != nil {
-						golog.Fatalf("unable to auto-install %s, please do it yourself: %v", name, err)
+						logger.Fatalf("unable to auto-install %s, please do it yourself: %v", name, err)
 					}
 
-					executable = b.installDir + "/" + name
-
 					if runtime.GOOS == "windows" {
-						executable += ".exe"
+						name += ".exe"
+					}
+
+					// first check for installDir/bin/+name before the installDir/+name to
+					// find the installed executable (we could return it from our scripts but we don't).
+					binExecutable := b.installDir + "/bin/" + name
+					if _, err = os.Stat(binExecutable); err == nil {
+						executable = binExecutable
+					} else {
+						executable = b.installDir + "/" + name
 					}
 				}
 
@@ -148,22 +185,26 @@ func getPlatform(name string) (p *platform) {
 		}
 	}
 
-	golog.Fatalf("%s not found", name)
+	logger.Fatalf("%s not found", name)
 	return nil
 }
 
 func main() {
-	golog.SetLevel("debug")
-
 	dotnet := getPlatform("dotnet")
-	dotnetVersion := dotnet.exec("--version")
-	golog.Infof("Dotnet version: %s", dotnetVersion)
+	dotnetVersion := dotnet.text("--version")
+	logger.Info("Dotnet version: ", dotnetVersion)
 
 	node := getPlatform("node")
-	nodeVersion := node.exec("--version")
-	golog.Infof("Nodejs version: %s", nodeVersion)
+	nodeVersion := node.text("--version")
+	logger.Info("Nodejs version: ", nodeVersion)
 
 	npm := getPlatform("npm")
-	npmVersion := npm.exec("--version")
-	golog.Infof("NPM version: %s", npmVersion)
+	npmVersion := npm.text("--version")
+	logger.Info("NPM version: ", npmVersion)
+
+	git := getPlatform("git")
+	gitVersion := git.text("--version")
+	logger.Info("Git version: ", gitVersion)
+
+	os.Stdin.Read(make([]byte, 0))
 }

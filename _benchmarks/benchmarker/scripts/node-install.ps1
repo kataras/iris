@@ -1,38 +1,51 @@
-$INSTALL_DIR=$args[0]
+[cmdletbinding()]
+$Install_Dir=$args[0]
 $VERSION=$args[1]
-# param([String]$VERSION="12.4.0",[String]$INSTALL_DIR="../nodejs_bin")
 
-If(!(test-path $INSTALL_DIR))
+$Install_Dir=[System.IO.Path]::GetFullPath($Install_Dir)
+
+If(!(test-path $Install_Dir))
 {
-      New-Item -ItemType Directory -Force -Path $INSTALL_DIR
+      New-Item -ItemType Directory -Force -Path $Install_Dir
+}
+
+function Say($str) {
+    Write-Host "node-install: $str"
 }
 
 $url = "https://nodejs.org/dist/v$VERSION/node-v$VERSION-x64.msi"
 
 # i.e https://nodejs.org/dist/v10.16.0/node-v10.16.0-x64.msi
-write-host "`n----------------------------"
-write-host "  downloading node            "
-write-host "----------------------------`n"
-write-host "url : $url"
+# Say "----------------------------"
+# Say "  downloading node          "
+# Say "----------------------------"
+# Say "url : $url"
 
 $filename = "node.msi"
-$node_msi = "$INSTALL_DIR\$filename"
+$node_msi = "$Install_Dir\$filename"
 $start_time = Get-Date
 $wc = New-Object System.Net.WebClient
 $wc.DownloadFile($url, $node_msi)
-write-Output "Download of $filename finished at: $((Get-Date).Subtract($start_time).Seconds) second(s)"
+# Say "Download of $filename finished at: $((Get-Date).Subtract($start_time).Seconds) second(s)"
 
-write-host "`n----------------------------"
-write-host " installing node              "
-write-host "----------------------------`n"
+# Say "---------------------------"
+# Say "  installing node           "
+# Say "---------------------------"
 
-$node_msi = $node_msi.substring(2)
+# Say $node_msi
 
-$INSTALL_DIR=[System.IO.Path]::GetFullPath($INSTALL_DIR)
-write-host "installation directory: $INSTALL_DIR"
+# $Install_Dir = $Install_Dir.replace("\","/")
 
-$params = '/i', "$node_msi",
-          'INSTALLDIR="$INSTALL_DIR"',
-          '/qn',
-          '/norestart'
-$p = Start-Process 'msiexec.exe' -ArgumentList $params -Wait -PassThru
+# Say "installation directory: $Install_Dir"
+
+# $params = '/i', "$node_msi",
+#           'INSTALLDIR="$Install_Dir"',
+#           '/qn',
+#           '/norestart'
+#           # '/log $Install_Dir\install.log'
+
+# $p = Start-Process 'msiexec.exe' -ArgumentList $params -PassThru -Wait
+
+# Start-Process 'msiexec.exe' -ArgumentList '/i', "$node_msi", "INSTALLDIR=$Install_Dir", '/norestart' -Wait -PassThru
+
+Start-Process -Wait 'msiexec.exe' -ArgumentList '/i', $node_msi, "INSTALLDIR=$Install_Dir", '/passive'
