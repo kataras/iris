@@ -7,7 +7,7 @@ import (
 )
 
 func sh(script string, args ...string) error {
-	return (&platform{"bin/sh"}).attach(append([]string{script}, args...)...)
+	return (&platform{"bin/sh"}).attach("debug", append([]string{script}, args...)...)
 }
 
 func installDotnet(b bundle) error {

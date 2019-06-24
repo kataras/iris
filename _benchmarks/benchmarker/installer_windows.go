@@ -2,8 +2,12 @@
 
 package main
 
+import "errors"
+
+var errUnableToInstall = errors.New("unable to install")
+
 func powershell(script string, args ...string) error {
-	return (&platform{"powershell"}).attach(append([]string{script}, args...)...)
+	return (&platform{"powershell"}).attach("debug", append([]string{script}, args...)...)
 }
 
 func installDotnet(b bundle) error {
@@ -20,9 +24,15 @@ func installDotnet(b bundle) error {
 	// Unblock-File + script
 	// Solution (requires manual action):
 	// Right click on the ./scripts/dotnet-install.ps1 and check the "unblock" property, save and exit the dialog.
+	//
+	// -ExecutionPolicy Bypass? (not tested)
 	return powershell("./scripts/dotnet-install.ps1", b.parseArguments()...)
 }
 
 func installNode(b bundle) error {
 	return powershell("./scripts/node-install.ps1", b.parseArguments()...)
+}
+
+func installGit(b bundle) error {
+	return powershell("./scripts/git-install.ps1", b.parseArguments()...)
 }
