@@ -34,7 +34,6 @@ var (
 	// GobwasDialer is a `Dialer` type for the gobwas/ws subprotocol implementation.
 	// Should be used on `Dial` to create a new client/client-side connection.
 	GobwasDialer = gobwas.Dialer
-
 	// DefaultGorillaDialer is a gorilla/websocket dialer with all fields set to the default values.
 	DefaultGorillaDialer = gorilla.DefaultDialer
 	// DefaultGobwasDialer is a gobwas/ws dialer with all fields set to the default values.
@@ -49,6 +48,14 @@ var (
 	//
 	// See examples for more.
 	Dial = neffos.Dial
+
+	// IsTryingToReconnect reports whether the "err" is from a client
+	// that was trying to reconnect to the websocket server,
+	// the first output parameter is the number of total reconnection retries,
+	// including the previous failures and the succeed last one.
+	//
+	// Use it on registered callbacks for `Server#OnUpgradeError`.
+	IsTryingToReconnect = neffos.IsTryingToReconnect
 
 	// OnNamespaceConnect is the event name which its callback is fired right before namespace connect,
 	// if non-nil error then the remote connection's `Conn.Connect` will fail and send that error text.
