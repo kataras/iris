@@ -40,6 +40,15 @@ var bundles = []bundle{
 		installDir:       "./platforms/git",
 		installArguments: []string{"-InstallDir", "$installDir"},
 	},
+	{
+		names:            []string{"go"}, // get-only, at least for now.
+		installDir:       "./platforms/go",
+		installArguments: []string{"-InstallDir", "$installDir"},
+	},
+	{
+		names:      []string{"bombardier"},
+		installDir: "./platforms/bombardier",
+	},
 }
 
 func install(b bundle) error {
@@ -51,6 +60,8 @@ func install(b bundle) error {
 			return installNode(b)
 		case "git":
 			return installGit(b)
+		case "bombardier":
+			return installBombardier(b)
 		}
 	}
 
@@ -91,7 +102,7 @@ type platform struct {
 
 func (p *platform) text(args ...string) string {
 	cmd := exec.Command(p.executable, args...)
-	b, err := cmd.Output()
+	b, err := cmd.CombinedOutput()
 	if err != nil {
 		logger.Error(err)
 		return ""
@@ -111,7 +122,7 @@ func (p *platform) attach(logLevel string, args ...string) error {
 	return cmd.Run()
 }
 
-func attachCmd(logLevel string, cmd *exec.Cmd) {
+func attachCmd(logLevel string, cmd *exec.Cmd) *exec.Cmd {
 	level := golog.ParseLevel(logLevel)
 	outputReader, err := cmd.StdoutPipe()
 	if err == nil {
@@ -130,11 +141,21 @@ func attachCmd(logLevel string, cmd *exec.Cmd) {
 			go func() {
 				defer errReader.Close()
 				for errScanner.Scan() {
-					logger.Log(level, errScanner.Text())
+					logger.Log(level, errScanner.Text()) // don't print at error.
 				}
 			}()
 		}
 	}
+
+	return cmd
+}
+
+func resolveFilename(name string) string {
+	if runtime.GOOS == "windows" {
+		name += ".exe"
+	}
+
+	return name
 }
 
 func getPlatform(name string) (p *platform) {
@@ -164,10 +185,7 @@ func getPlatform(name string) (p *platform) {
 						logger.Fatalf("unable to auto-install %s, please do it yourself: %v", name, err)
 					}
 
-					if runtime.GOOS == "windows" {
-						name += ".exe"
-					}
-
+					name = resolveFilename(name)
 					// first check for installDir/bin/+name before the installDir/+name to
 					// find the installed executable (we could return it from our scripts but we don't).
 					binExecutable := b.installDir + "/bin/" + name
@@ -206,5 +224,30 @@ func main() {
 	gitVersion := git.text("--version")
 	logger.Info("Git version: ", gitVersion)
 
-	os.Stdin.Read(make([]byte, 0))
+	golang := getPlatform("go")
+	goVersion := golang.text("version")
+	logger.Info("Go version: ", goVersion)
+
+	bombardier := getPlatform("bombardier")
+	bombardierVersion := bombardier.text("--version")
+	logger.Info("Bombardier version: ", bombardierVersion)
+}
+
+func installBombardier(b bundle) error {
+	const (
+		repo          = "github.com/codesenberg/bombardier"
+		latestVersion = "1.2.4"
+	)
+
+	dst := filepath.Join(os.Getenv("GOPATH"), "/src", repo)
+	os.RemoveAll(dst) // remove any copy that $GOPATH may have.
+
+	if err := getPlatform("git").exec("clone", "https://"+repo, dst); err != nil {
+		return err
+	}
+
+	executable := resolveFilename(b.names[0])
+	executableOutput := filepath.Join(b.installDir, executable)
+
+	return getPlatform("go").attach("info", "build", "-ldflags", "-X main.version="+latestVersion, "-o", executableOutput, dst)
 }

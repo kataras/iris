@@ -685,6 +685,25 @@ The `iris.Context` source code can be found [here](https://github.com/kataras/ir
 // context.Context is very extensible and developers can override
 // its methods if that is actually needed.
 type Context interface {
+    // BeginRequest is executing once for each request
+    // it should prepare the (new or acquired from pool) context's fields for the new request.
+    //
+    // To follow the iris' flow, developer should:
+    // 1. reset handlers to nil
+    // 2. reset values to empty
+    // 3. reset sessions to nil
+    // 4. reset response writer to the http.ResponseWriter
+    // 5. reset request to the *http.Request
+    // and any other optional steps, depends on dev's application type.
+    BeginRequest(http.ResponseWriter, *http.Request)
+    // EndRequest is executing once after a response to the request was sent and this context is useless or released.
+    //
+    // To follow the iris' flow, developer should:
+    // 1. flush the response writer's result
+    // 2. release the response writer
+    // and any other optional steps, depends on dev's application type.
+    EndRequest()
+
     // ResponseWriter returns an http.ResponseWriter compatible response writer, as expected.
     ResponseWriter() ResponseWriter
     // ResetResponseWriter should change or upgrade the Context's ResponseWriter.
@@ -692,6 +711,18 @@ type Context interface {
 
     // Request returns the original *http.Request, as expected.
     Request() *http.Request
+    // ResetRequest sets the Context's Request,
+    // It is useful to store the new request created by a std *http.Request#WithContext() into Iris' Context.
+    // Use `ResetRequest` when for some reason you want to make a full
+    // override of the *http.Request.
+    // Note that: when you just want to change one of each fields you can use the Request() which returns a pointer to Request,
+    // so the changes will have affect without a full override.
+    // Usage: you use a native http handler which uses the standard "context" package
+    // to get values instead of the Iris' Context#Values():
+    // r := ctx.Request()
+    // stdCtx := context.WithValue(r.Context(), key, val)
+    // ctx.ResetRequest(r.WithContext(stdCtx)).
+    ResetRequest(r *http.Request)
 
     // SetCurrentRouteName sets the route's name internally,
     // in order to be able to find the correct current "read-only" Route when
@@ -732,7 +763,7 @@ type Context interface {
     // HandlerIndex sets the current index of the
     // current context's handlers chain.
     // If -1 passed then it just returns the
-    // current handler index without change the current index.rns that index, useless return value.
+    // current handler index without change the current index.
     //
     // Look Handlers(), Next() and StopExecution() too.
     HandlerIndex(n int) (currentIndex int)
@@ -775,6 +806,12 @@ type Context interface {
     Proceed(Handler) bool
     // HandlerName returns the current handler's name, helpful for debugging.
     HandlerName() string
+    // HandlerFileLine returns the current running handler's function source file and line information.
+    // Useful mostly when debugging.
+    HandlerFileLine() (file string, line int)
+    // RouteName returns the route name that this handler is running on.
+    // Note that it will return empty on not found handlers.
+    RouteName() string
     // Next calls all the next handler from the handlers chain,
     // it should be used inside a middleware.
     //
@@ -853,7 +890,8 @@ type Context interface {
     // that can be used to share information between handlers and middleware.
     Values() *memstore.Store
     // Translate is the i18n (localization) middleware's function,
-    // it calls the Get("translate") to return the translated value.
+    // it calls the Values().Get(ctx.Application().ConfigurationReadOnly().GetTranslateFunctionContextKey())
+    // to execute the translate function and return the localized text value.
     //
     // Example: https://github.com/kataras/iris/tree/master/_examples/miscellaneous/i18n
     Translate(format string, args ...interface{}) string
@@ -870,7 +908,6 @@ type Context interface {
     // RequestPath returns the full request path,
     // based on the 'escape'.
     RequestPath(escape bool) string
-
     // Host returns the host part of the current url.
     Host() string
     // Subdomain returns the subdomain of this request, if any.
@@ -878,6 +915,9 @@ type Context interface {
     Subdomain() (subdomain string)
     // IsWWW returns true if the current subdomain (if any) is www.
     IsWWW() bool
+    // FullRqeuestURI returns the full URI,
+    // including the scheme, the host and the relative requested path/resource.
+    FullRequestURI() string
     // RemoteAddr tries to parse and return the real client's request IP.
     //
     // Based on allowed headers names that can be modified from Configuration.RemoteAddrHeaders.
@@ -1189,7 +1229,7 @@ type Context interface {
     // Note that it has nothing to do with server-side caching.
     // It does those checks by checking if the "If-Modified-Since" request header
     // sent by client or a previous server response header
-    // (e.g with WriteWithExpiration or StaticEmbedded or Favicon etc.)
+    // (e.g with WriteWithExpiration or HandleDir or Favicon etc.)
     // is a valid one and it's before the "modtime".
     //
     // A check for !modtime && err == nil is necessary to make sure that

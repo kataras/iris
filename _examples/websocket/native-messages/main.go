@@ -1,20 +1,12 @@
 package main
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/kataras/iris"
 
 	"github.com/kataras/iris/websocket"
 )
-
-/* Native messages no need to import the iris-ws.js to the ./templates.client.html
-Use of: OnMessage and EmitMessage.
-
-
-NOTICE: IF YOU HAVE RAN THE PREVIOUS EXAMPLES YOU HAVE TO CLEAR YOUR BROWSER's CACHE
-BECAUSE chat.js is different than the CACHED. OTHERWISE YOU WILL GET Ws is undefined from the browser's console, because it will use the cached.
-*/
 
 type clientPage struct {
 	Title string
@@ -26,36 +18,43 @@ func main() {
 
 	app.RegisterView(iris.HTML("./templates", ".html")) // select the html engine to serve templates
 
-	ws := websocket.New(websocket.Config{
-		// to enable binary messages (useful for protobuf):
-		// BinaryMessages: true,
+	// Almost all features of neffos are disabled because no custom message can pass
+	// when app expects to accept and send only raw websocket native messages.
+	// When only allow native messages is a fact?
+	// When the registered namespace is just one and it's empty
+	// and contains only one registered event which is the `OnNativeMessage`.
+	// When `Events{...}` is used instead of `Namespaces{ "namespaceName": Events{...}}`
+	// then the namespace is empty "".
+	ws := websocket.New(websocket.DefaultGorillaUpgrader, websocket.Events{
+		websocket.OnNativeMessage: func(nsConn *websocket.NSConn, msg websocket.Message) error {
+			log.Printf("Server got: %s from [%s]", msg.Body, nsConn.Conn.ID())
+
+			nsConn.Conn.Server().Broadcast(nsConn, msg)
+			return nil
+		},
 	})
+
+	ws.OnConnect = func(c *websocket.Conn) error {
+		log.Printf("[%s] Connected to server!", c.ID())
+		return nil
+	}
+
+	ws.OnDisconnect = func(c *websocket.Conn) {
+		log.Printf("[%s] Disconnected from server", c.ID())
+	}
+
+	app.HandleDir("/js", "./static/js") // serve our custom javascript code.
 
 	// register the server on an endpoint.
 	// see the inline javascript code i the websockets.html, this endpoint is used to connect to the server.
-	app.Get("/my_endpoint", ws.Handler())
-
-	app.HandleDir("/js", "./static/js") // serve our custom javascript code
+	app.Get("/my_endpoint", websocket.Handler(ws))
 
 	app.Get("/", func(ctx iris.Context) {
-		ctx.ViewData("", clientPage{"Client Page", "localhost:8080"})
-		ctx.View("client.html")
+		ctx.View("client.html", clientPage{"Client Page", "localhost:8080"})
 	})
 
-	ws.OnConnection(func(c websocket.Connection) {
-
-		c.OnMessage(func(data []byte) {
-			message := string(data)
-			c.To(websocket.Broadcast).EmitMessage([]byte("Message from: " + c.ID() + "-> " + message)) // broadcast to all clients except this
-			c.EmitMessage([]byte("Me: " + message))                                                    // writes to itself
-		})
-
-		c.OnDisconnect(func() {
-			fmt.Printf("\nConnection with ID: %s has been disconnected!", c.ID())
-		})
-
-	})
-
+	// Target some browser windows/tabs to http://localhost:8080 and send some messages,
+	// see the static/js/chat.js,
+	// note that the client is using only the browser's native WebSocket API instead of the neffos one.
 	app.Run(iris.Addr(":8080"))
-
 }

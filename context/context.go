@@ -2602,11 +2602,11 @@ func (ctx *context) ClientSupportsGzip() bool {
 }
 
 var (
-	errClientDoesNotSupportGzip = errors.New("client doesn't supports gzip compression")
+	errClientDoesNotSupportGzip = errors.New("client doesn't support gzip compression")
 )
 
 // WriteGzip accepts bytes, which are compressed to gzip format and sent to the client.
-// returns the number of bytes written and an error ( if the client doesn' supports gzip compression)
+// returns the number of bytes written and an error ( if the client doesn't support gzip compression)
 //
 // You may re-use this function in the same handler
 // to write more data many times without any troubles.
@@ -2624,7 +2624,7 @@ func (ctx *context) TryWriteGzip(b []byte) (int, error) {
 	n, err := ctx.WriteGzip(b)
 	if err != nil {
 		// check if the error came from gzip not allowed and not the writer itself
-		if _, ok := err.(*errors.Error); ok {
+		if _, ok := err.(errors.Error); ok {
 			// client didn't supported gzip, write them uncompressed:
 			return ctx.writer.Write(b)
 		}
