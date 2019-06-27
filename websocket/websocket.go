@@ -49,12 +49,10 @@ var (
 	// See examples for more.
 	Dial = neffos.Dial
 
-	// IsTryingToReconnect reports whether the "err" is from a client
-	// that was trying to reconnect to the websocket server,
-	// the first output parameter is the number of total reconnection retries,
-	// including the previous failures and the succeed last one.
+	// IsTryingToReconnect reports whether the returning "err" from the `Server#Upgrade`
+	// is from a client that was trying to reconnect to the websocket server.
 	//
-	// Use it on registered callbacks for `Server#OnUpgradeError`.
+	// Look the `Conn#WasReconnected` and `Conn#ReconnectTries` too.
 	IsTryingToReconnect = neffos.IsTryingToReconnect
 
 	// OnNamespaceConnect is the event name which its callback is fired right before namespace connect,

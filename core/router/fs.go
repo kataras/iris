@@ -19,6 +19,8 @@ import (
 
 const indexName = "/index.html"
 
+// DirOptions contains the optional settings that
+// `FileServer` and `Party#HandleDir` can use to serve files and assets.
 type DirOptions struct {
 	// Defaults to "/index.html", if request path is ending with **/*/$IndexName
 	// then it redirects to **/*(/) which another handler is handling it,
@@ -163,6 +165,12 @@ func (f *embeddedDir) Readdir(count int) ([]os.FileInfo, error) {
 	return f.list, nil
 }
 
+// FileServer returns a Handler which serves files from a specific system, phyisical, directory
+// or an embedded one.
+// The first parameter is the directory, relative to the executable program.
+// The second optional parameter is any optional settings that the caller can use.
+//
+// See `Party#HandleDir` too.
 // Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/file-server
 func FileServer(directory string, opts ...DirOptions) context.Handler {
 	if directory == "" {

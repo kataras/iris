@@ -1,7 +1,6 @@
 package router
 
 import (
-	"html"
 	"net/http"
 	"sort"
 	"strings"
@@ -168,17 +167,6 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 				}
 
 				ctx.Redirect(url, http.StatusMovedPermanently)
-
-				// RFC2616 recommends that a short note "SHOULD" be included in the
-				// response because older user agents may not understand 301/307.
-				// Shouldn't send the response for POST or HEAD; that leaves GET.
-				if method == http.MethodGet {
-					note := "<a href=\"" +
-						html.EscapeString(url) +
-						"\">Moved Permanently</a>.\n"
-
-					ctx.ResponseWriter().WriteString(note)
-				}
 				return
 			}
 
