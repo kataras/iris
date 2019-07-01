@@ -5,26 +5,29 @@ import (
 
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/websocket"
+
+	"github.com/kataras/neffos"
 )
 
 const namespace = "default"
 
-// if namespace is empty then simply websocket.Events{...} can be used instead.
-var serverEvents = websocket.Namespaces{
-	namespace: websocket.Events{
-		websocket.OnNamespaceConnected: func(nsConn *websocket.NSConn, msg websocket.Message) error {
+// if namespace is empty then simply neffos.Events{...} can be used instead.
+var serverEvents = neffos.Namespaces{
+	namespace: neffos.Events{
+		neffos.OnNamespaceConnected: func(nsConn *neffos.NSConn, msg neffos.Message) error {
+			// with `websocket.GetContext` you can retrieve the Iris' `Context`.
+			ctx := websocket.GetContext(nsConn.Conn)
+
 			log.Printf("[%s] connected to namespace [%s] with IP [%s]",
 				nsConn, msg.Namespace,
-				// with `GetContext` you can retrieve the Iris' `Context`, alternatively
-				// you can use the `nsConn.Conn.Socket().Request()` to get the raw `*http.Request`.
-				websocket.GetContext(nsConn.Conn).RemoteAddr())
+				ctx.RemoteAddr())
 			return nil
 		},
-		websocket.OnNamespaceDisconnect: func(nsConn *websocket.NSConn, msg websocket.Message) error {
+		neffos.OnNamespaceDisconnect: func(nsConn *neffos.NSConn, msg neffos.Message) error {
 			log.Printf("[%s] disconnected from namespace [%s]", nsConn, msg.Namespace)
 			return nil
 		},
-		"chat": func(nsConn *websocket.NSConn, msg websocket.Message) error {
+		"chat": func(nsConn *neffos.NSConn, msg neffos.Message) error {
 			// room.String() returns -> NSConn.String() returns -> Conn.String() returns -> Conn.ID()
 			log.Printf("[%s] sent: %s", nsConn, string(msg.Body))
 
@@ -39,7 +42,7 @@ var serverEvents = websocket.Namespaces{
 
 func main() {
 	app := iris.New()
-	websocketServer := websocket.New(
+	websocketServer := neffos.New(
 		websocket.DefaultGorillaUpgrader, /* DefaultGobwasUpgrader can be used too. */
 		serverEvents)
 
