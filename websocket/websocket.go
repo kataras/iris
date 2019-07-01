@@ -27,6 +27,9 @@ var (
 	//
 	// See examples for more.
 	New = neffos.New
+	// DefaultIDGenerator returns a universal unique identifier for a new connection.
+	// It's the default `IDGenerator` for `Server`.
+	DefaultIDGenerator = neffos.DefaultIDGenerator
 
 	// GorillaDialer is a `Dialer` type for the gorilla/websocket subprotocol implementation.
 	// Should be used on `Dial` to create a new client/client-side connection.
