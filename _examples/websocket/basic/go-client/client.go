@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/kataras/iris/websocket"
+
+	"github.com/kataras/neffos"
 )
 
 const (
@@ -21,17 +23,17 @@ const (
 // this can be shared with the server.go's.
 // `NSConn.Conn` has the `IsClient() bool` method which can be used to
 // check if that's is a client or a server-side callback.
-var clientEvents = websocket.Namespaces{
-	namespace: websocket.Events{
-		websocket.OnNamespaceConnected: func(c *websocket.NSConn, msg websocket.Message) error {
+var clientEvents = neffos.Namespaces{
+	namespace: neffos.Events{
+		neffos.OnNamespaceConnected: func(c *neffos.NSConn, msg neffos.Message) error {
 			log.Printf("connected to namespace: %s", msg.Namespace)
 			return nil
 		},
-		websocket.OnNamespaceDisconnect: func(c *websocket.NSConn, msg websocket.Message) error {
+		neffos.OnNamespaceDisconnect: func(c *neffos.NSConn, msg neffos.Message) error {
 			log.Printf("disconnected from namespace: %s", msg.Namespace)
 			return nil
 		},
-		"chat": func(c *websocket.NSConn, msg websocket.Message) error {
+		"chat": func(c *neffos.NSConn, msg neffos.Message) error {
 			log.Printf("%s", string(msg.Body))
 			return nil
 		},
@@ -42,7 +44,7 @@ func main() {
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(dialAndConnectTimeout))
 	defer cancel()
 
-	client, err := websocket.Dial(ctx, websocket.DefaultGorillaDialer, endpoint, clientEvents)
+	client, err := neffos.Dial(ctx, websocket.DefaultGorillaDialer, endpoint, clientEvents)
 	if err != nil {
 		panic(err)
 	}

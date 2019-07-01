@@ -477,7 +477,9 @@ iris session manager lives on its own [package](https://github.com/kataras/iris/
 
 ### Websockets
 
-iris websocket library lives on its own [package](https://github.com/kataras/iris/tree/master/websocket) which depends on the [kataras/neffos](https://github.com/kataras/neffos) external package.
+[WebSocket](https://wikipedia.org/wiki/WebSocket) is a protocol that enables two-way persistent communication channels over TCP connections. It is used for applications such as chat, stock tickers, games, anywhere you want real-time functionality in a web application.
+
+Iris websocket library is now merged with the [neffos real-time framework](https://github.com/kataras/neffos) and Iris-specific helpers live on the [iris/websocket](https://github.com/kataras/iris/tree/master/websocket) subpackage. Learn neffos from its [wiki](https://github.com/kataras/neffos#learning-neffos) and have a look some of the [Iris websocket examples](websocket/).
 
 The package is designed to work with raw websockets although its API is similar to the famous [socket.io](https://socket.io). I have read an article recently and I felt very contented about my decision to design a **fast** websocket-**only** package for Iris and not a backwards socket.io-like package. You can read that article by following this link: https://medium.com/@ivanderbyl/why-you-don-t-need-socket-io-6848f1c871cd.
 
@@ -486,13 +488,8 @@ The package is designed to work with raw websockets although its API is similar 
     * [Go Client](websocket/basic/go-client/client.go)
     * [Browser Client](websocket/basic/browser/index.html)
     * [Browser NPM Client (browserify)](websocket/basic/browserify/app.js)
-- [Native Messages](websocket/native-messages/main.go)
-- [Connection List](websocket/connectionlist/main.go)
-- [TLS Enabled](websocket/secure/main.go)
-- [Custom Raw Go Client](websocket/custom-go-client/main.go)
-- [Third-Party socket.io](websocket/third-party-socketio/main.go)
-
-> You're free to use your own favourite websockets package if you'd like so.
+- [Native Messages](websocket/native-messages/main.go) **UPDATED**
+- [TLS Enabled](websocket/secure/README.md)
 
 ### Typescript Automation Tools
 
