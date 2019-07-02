@@ -365,6 +365,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 - [OAUth2](authentication/oauth2/main.go)
 - [JWT](experimental-handlers/jwt/main.go)
 - [Sessions](#sessions)
+- [Request Authentication](authentication/request/main.go) **NEW**
 
 ### File Server
 

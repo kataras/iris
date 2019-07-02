@@ -494,7 +494,7 @@ Example code:
     // http://myhost.com/users/42/profile
     users.Get("/{id:uint64}/profile", userProfileHandler)
     // http://myhost.com/users/messages/1
-    users.Get("/inbox/{id:int}", userMessageHandler)
+    users.Get("/messages/{id:int}", userMessageHandler)
 
 
 Custom HTTP Errors
