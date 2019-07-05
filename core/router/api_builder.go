@@ -397,7 +397,7 @@ func (api *APIBuilder) HandleMany(methodOrMulti string, relativePathorMulti stri
 // second parameter : the system or the embedded directory that needs to be served
 // third parameter  : not required, the directory options, set fields is optional.
 //
-// for more options look router.FileServer.
+// Alternatively, to get just the handler for that look the FileServer function instead.
 //
 //     api.HandleDir("/static", "./assets",  DirOptions {ShowList: true, Gzip: true, IndexName: "index.html"})
 //

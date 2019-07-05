@@ -3,7 +3,7 @@
 Iris supports 6 template engines out-of-the-box, developers can still use any external golang template engine,
 as `context/context#ResponseWriter()` is an `io.Writer`.
 
-All of these five template engines have common features with common API,
+All of these six template engines have common features with common API,
 like Layout, Template Funcs, Party-specific layout, partial rendering and more.
 
 - The standard html, its template parser is the [golang.org/pkg/html/template/](https://golang.org/pkg/html/template/)

@@ -8,7 +8,8 @@ import (
 )
 
 var (
-	// Change that to your owns, usally you have an ECDSA private key
+	// Change that to your own key.
+	// Usually you have an ECDSA private key
 	// per identify, let's say a user, stored in a database
 	// or somewhere else and you use its public key
 	// to sign a user's payload and when this client
@@ -17,11 +18,9 @@ var (
 	// with the user's public key.
 	//
 	// Use the crypto.MustGenerateKey to generate a random key
-	// or import
-	// the "github.com/kataras/iris/crypto/sign"
-	// and use its
-	// sign.ParsePrivateKey/ParsePublicKey(theKey []byte)
-	// to convert data or local file to an *ecdsa.PrivateKey.
+	// or
+	// crypto.ParsePrivateKey to convert data or local file to an *ecdsa.PrivateKey.
+	// and `crypto.ParsePublicKey` if you only have access to the public one.
 	testPrivateKey = crypto.MustGenerateKey()
 	testPublicKey  = &testPrivateKey.PublicKey
 )
@@ -34,7 +33,7 @@ type testPayloadStructure struct {
 // The Iris crypto package offers
 // authentication (with optional encryption in top of) and verification
 // of raw []byte data with `crypto.Marshal/Unmarshal` functions
-// and JSON payloads with `crypto.SignJSON/VerifyJSON functions.
+// and JSON payloads with `crypto.SignJSON/VerifyJSON` functions.
 //
 // Let's use the `SignJSON` and `VerifyJSON` here as an example,
 // as this is the most common scenario for a web application.
