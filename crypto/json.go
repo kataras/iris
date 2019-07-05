@@ -53,11 +53,11 @@ func SignJSON(privateKey *ecdsa.PrivateKey, r io.Reader) (Ticket, error) {
 // VerifyJSON verifies the incoming JSON request,
 // by reading the "r" which should decodes to a `Ticket`.
 // The `Ticket` is verified against the given "publicKey", the `Ticket#Signature` and
-// `Ticket#Payload` data (original request's payload data which was signed by `SignPayload`).
+// `Ticket#Payload` data (original request's payload data which was signed by `SignJSON`).
 //
-// Returns true wether the verification succeed or not.
+// Returns true whether the verification succeed or not.
 // The "toPayloadPtr" should be a pointer to a value of the same payload structure the client signed on.
-// If and only if the verification succeed the payload value is filled from the `Ticket#Payload` raw data.
+// If and only if the verification succeed the payload value is filled from the `Ticket.Payload` raw data.
 //
 // Check for both output arguments in order to:
 // 1. verification (true/false and error) and

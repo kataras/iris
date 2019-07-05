@@ -28,8 +28,10 @@ var (
 	// See examples for more.
 	New = neffos.New
 	// DefaultIDGenerator returns a universal unique identifier for a new connection.
-	// It's the default `IDGenerator` for `Server`.
-	DefaultIDGenerator = neffos.DefaultIDGenerator
+	// It's the default `IDGenerator` if missing.
+	DefaultIDGenerator = func(ctx context.Context) string {
+		return neffos.DefaultIDGenerator(ctx.ResponseWriter(), ctx.Request())
+	}
 
 	// GorillaDialer is a `Dialer` type for the gorilla/websocket subprotocol implementation.
 	// Should be used on `Dial` to create a new client/client-side connection.
@@ -113,16 +115,37 @@ func SetDefaultUnmarshaler(fn func(data []byte, v interface{}) error) {
 	neffos.DefaultUnmarshaler = fn
 }
 
+// IDGenerator is an iris-specific IDGenerator for new connections.
+type IDGenerator func(context.Context) string
+
 // Handler returns an Iris handler to be served in a route of an Iris application.
-func Handler(s *neffos.Server) context.Handler {
-	return func(ctx context.Context) {
-		s.Upgrade(ctx.ResponseWriter(), ctx.Request(), func(socket neffos.Socket) neffos.Socket {
-			return &socketWrapper{
-				Socket: socket,
-				ctx:    ctx,
-			}
-		})
+// Accepts the neffos websocket server as its first input argument
+// and optionally an Iris-specific `IDGenerator` as its second one.
+func Handler(s *neffos.Server, IDGenerator ...IDGenerator) context.Handler {
+	idGen := DefaultIDGenerator
+	if len(IDGenerator) > 0 {
+		idGen = IDGenerator[0]
 	}
+
+	return func(ctx context.Context) {
+		if ctx.IsStopped() {
+			return
+		}
+		Upgrade(ctx, idGen(ctx), s)
+	}
+}
+
+// Upgrade upgrades the request and returns a new websocket Conn.
+// Use `Handler` for higher-level implementation instead.
+func Upgrade(ctx context.Context, customID string, s *neffos.Server) *neffos.Conn {
+	conn, _ := s.Upgrade(ctx.ResponseWriter(), ctx.Request(), func(socket neffos.Socket) neffos.Socket {
+		return &socketWrapper{
+			Socket: socket,
+			ctx:    ctx,
+		}
+	}, customID)
+
+	return conn
 }
 
 type socketWrapper struct {

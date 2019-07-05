@@ -28,7 +28,7 @@ import (
 	"github.com/fatih/structs"
 	"github.com/iris-contrib/blackfriday"
 	formbinder "github.com/iris-contrib/formBinder"
-	"github.com/json-iterator/go"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/microcosm-cc/bluemonday"
 	"gopkg.in/yaml.v2"
 )
@@ -826,7 +826,7 @@ type Context interface {
 	//
 	// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
 	SetCookieKV(name, value string, options ...CookieOption)
-	// GetCookie returns cookie's value by it's name
+	// GetCookie returns cookie's value by its name
 	// returns empty string if nothing was found.
 	//
 	// If you want more than the value then:
@@ -834,12 +834,12 @@ type Context interface {
 	//
 	// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
 	GetCookie(name string, options ...CookieOption) string
-	// RemoveCookie deletes a cookie by it's name and path = "/".
+	// RemoveCookie deletes a cookie by its name and path = "/".
 	// Tip: change the cookie's path to the current one by: RemoveCookie("name", iris.CookieCleanPath)
 	//
 	// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
 	RemoveCookie(name string, options ...CookieOption)
-	// VisitAllCookies takes a visitor which loops
+	// VisitAllCookies accepts a visitor function which is called
 	// on each (request's) cookies' name and value.
 	VisitAllCookies(visitor func(name string, value string))
 
@@ -3233,7 +3233,7 @@ func CookieHTTPOnly(httpOnly bool) CookieOption {
 
 type (
 	// CookieEncoder should encode the cookie value.
-	// Should accept as first argument the cookie name
+	// Should accept the cookie's name as its first argument
 	// and as second argument the cookie value ptr.
 	// Should return an encoded value or an empty one if encode operation failed.
 	// Should return an error if encode operation failed.
@@ -3245,7 +3245,7 @@ type (
 	// See `CookieDecoder` too.
 	CookieEncoder func(cookieName string, value interface{}) (string, error)
 	// CookieDecoder should decode the cookie value.
-	// Should accept as first argument the cookie name,
+	// Should accept the cookie's name as its first argument,
 	// as second argument the encoded cookie value and as third argument the decoded value ptr.
 	// Should return a decoded value or an empty one if decode operation failed.
 	// Should return an error if decode operation failed.
@@ -3329,7 +3329,7 @@ func (ctx *context) SetCookieKV(name, value string, options ...CookieOption) {
 	ctx.SetCookie(c, options...)
 }
 
-// GetCookie returns cookie's value by it's name
+// GetCookie returns cookie's value by its name
 // returns empty string if nothing was found.
 //
 // If you want more than the value then:
@@ -3350,13 +3350,13 @@ func (ctx *context) GetCookie(name string, options ...CookieOption) string {
 	return value
 }
 
-// SetCookieKVExpiration is 2 hours by-default
+// SetCookieKVExpiration is 365 days by-default
 // you can change it or simple, use the SetCookie for more control.
 //
 // See `SetCookieKVExpiration` and `CookieExpires` for more.
-var SetCookieKVExpiration = time.Duration(120) * time.Minute
+var SetCookieKVExpiration = time.Duration(8760) * time.Hour
 
-// RemoveCookie deletes a cookie by it's name and path = "/".
+// RemoveCookie deletes a cookie by its name and path = "/".
 // Tip: change the cookie's path to the current one by: RemoveCookie("name", iris.CookieCleanPath)
 //
 // Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
@@ -3375,7 +3375,7 @@ func (ctx *context) RemoveCookie(name string, options ...CookieOption) {
 	ctx.request.Header.Set("Cookie", "")
 }
 
-// VisitAllCookies takes a visitor which loops
+// VisitAllCookies takes a visitor function which is called
 // on each (request's) cookies' name and value.
 func (ctx *context) VisitAllCookies(visitor func(name string, value string)) {
 	for _, cookie := range ctx.request.Cookies() {

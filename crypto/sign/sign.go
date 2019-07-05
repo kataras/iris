@@ -20,7 +20,7 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
-// MustGenerateKey generates a public and private key pair.
+// MustGenerateKey generates a private and public  key pair.
 // It panics if any error occurred.
 func MustGenerateKey() *ecdsa.PrivateKey {
 	privateKey, err := GenerateKey()
@@ -31,7 +31,7 @@ func MustGenerateKey() *ecdsa.PrivateKey {
 	return privateKey
 }
 
-// GenerateKey generates a public and private key pair.
+// GenerateKey generates a private and public key pair.
 func GenerateKey() (*ecdsa.PrivateKey, error) {
 	return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 }

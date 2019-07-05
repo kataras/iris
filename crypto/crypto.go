@@ -9,9 +9,13 @@ import (
 )
 
 var (
-	// MustGenerateKey generates an ecdsa public and private key pair.
+	// MustGenerateKey generates an ecdsa private and public key pair.
 	// It panics if any error occurred.
 	MustGenerateKey = sign.MustGenerateKey
+	// ParsePrivateKey accepts a pem x509-encoded private key and decodes to *ecdsa.PrivateKey.
+	ParsePrivateKey = sign.ParsePrivateKey
+	// ParsePublicKey accepts a pem x509-encoded public key and decodes to *ecdsa.PrivateKey.
+	ParsePublicKey = sign.ParsePublicKey
 
 	// MustGenerateAESKey generates an aes key.
 	// It panics if any error occurred.
@@ -79,9 +83,9 @@ func Decrypt(aesKey, additionalData []byte) Decryption {
 // Returns non-nil error if any error occurred.
 //
 // Usage:
-// data, _ := ioutil.ReadAll(r.Body)
+// data, _ := ioutil.ReadAll(ctx.Request().Body)
 // signedData, err := crypto.Marshal(testPrivateKey, data, nil)
-// w.Write(signedData)
+// ctx.Write(signedData)
 // Or if data should be encrypted:
 // signedEncryptedData, err := crypto.Marshal(testPrivateKey, data, crypto.Encrypt(aesKey, nil))
 func Marshal(privateKey *ecdsa.PrivateKey, data []byte, encrypt Encryption) ([]byte, error) {
