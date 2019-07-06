@@ -7,8 +7,14 @@ import (
 	"github.com/kataras/iris/websocket"
 
 	"github.com/kataras/neffos"
+
+	// Used when "enableJWT" constant is true:
+	"github.com/dgrijalva/jwt-go"
+	jwtmiddleware "github.com/iris-contrib/middleware/jwt"
 )
 
+// values should match with the client sides as well.
+const enableJWT = true
 const namespace = "default"
 
 // if namespace is empty then simply neffos.Events{...} can be used instead.
@@ -46,8 +52,45 @@ func main() {
 		websocket.DefaultGorillaUpgrader, /* DefaultGobwasUpgrader can be used too. */
 		serverEvents)
 
+	j := jwtmiddleware.New(jwtmiddleware.Config{
+		// Extract by the "token" url,
+		// so the client should dial with ws://localhost:8080/echo?token=$token
+		Extractor: jwtmiddleware.FromParameter("token"),
+
+		ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
+			return []byte("My Secret"), nil
+		},
+		// When set, the middleware verifies that tokens are signed with the specific signing algorithm
+		// If the signing method is not constant the ValidationKeyGetter callback can be used to implement additional checks
+		// Important to avoid security issues described here: https://auth0.com/blog/2015/03/31/critical-vulnerabilities-in-json-web-token-libraries/
+		SigningMethod: jwt.SigningMethodHS256,
+	})
+
 	// serves the endpoint of ws://localhost:8080/echo
-	app.Get("/echo", websocket.Handler(websocketServer))
+	websocketRoute := app.Get("/echo", websocket.Handler(websocketServer))
+
+	if enableJWT {
+		// Register the jwt middleware (on handshake):
+		websocketRoute.Use(j.Serve)
+		// OR
+		//
+		// Check for token through the jwt middleware
+		// on websocket connection or on any event:
+		/*
+			websocketServer.OnConnect = func(c *neffos.Conn) error {
+				ctx := websocket.GetContext(c)
+				if err := j.CheckJWT(ctx); err != nil {
+					// will send the above error on the client
+					// and will not allow it to connect to the websocket server at all.
+					return err
+				}
+
+				log.Printf("[%s] connected to the server", c.ID())
+
+				return nil
+			}
+		*/
+	}
 
 	// serves the browser-based websocket client.
 	app.Get("/", func(ctx iris.Context) {

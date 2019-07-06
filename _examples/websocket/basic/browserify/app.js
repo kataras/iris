@@ -5,6 +5,17 @@ var port = document.location.port ? ":" + document.location.port : "";
 
 var wsURL = scheme + "://" + document.location.hostname + port + "/echo";
 
+const enableJWT = true;
+if (enableJWT) {
+  // This is just a signature and a payload of an example content, 
+  // please replace this with your logic.
+  //
+  // Add a random letter in front of the token to make it
+  // invalid and see that this client is not allowed to dial the websocket server.
+  const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjozMjEzMjF9.8waEX7-vPKACa-Soi1pQvW3Rl8QY-SUFcHKTLZI4mvU";
+  wsURL += "?token=" + token;
+}
+
 var outputTxt = document.getElementById("output");
 
 function addMessage(msg) {
