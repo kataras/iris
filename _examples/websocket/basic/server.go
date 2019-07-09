@@ -68,7 +68,7 @@ func main() {
 
 	// serves the endpoint of ws://localhost:8080/echo
 	websocketRoute := app.Get("/echo", websocket.Handler(websocketServer))
-	j.Get()
+
 	if enableJWT {
 		// Register the jwt middleware (on handshake):
 		websocketRoute.Use(j.Serve)

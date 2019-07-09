@@ -86,12 +86,12 @@ func (c *websocketController) OnNamespaceConnected(msg neffos.Message) error {
 	// visits++
 	newCount := increment()
 
-	// This will call the "OnVisit" event on all clients, including the current
+	// This will call the "OnVisit" event on all clients, including the current one,
 	// with the 'newCount' variable.
 	//
 	// There are many ways that u can do it and faster, for example u can just send a new visitor
 	// and client can increment itself, but here we are just "showcasing" the websocket controller.
-	c.Conn.Server().Broadcast(c, neffos.Message{
+	c.Conn.Server().Broadcast(nil, neffos.Message{
 		Namespace: msg.Namespace,
 		Event:     "OnVisit",
 		Body:      []byte(fmt.Sprintf("%d", newCount)),
