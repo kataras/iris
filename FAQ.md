@@ -24,6 +24,8 @@ Add a `badge` to your open-source projects powered by [Iris](https://iris-go.com
 go get -u github.com/kataras/iris
 ```
 
+Go installed version 1.12 and above is required.
+
 ## Learning
 
 More than 100 practical examples, tutorials and articles at:
@@ -38,36 +40,6 @@ More than 100 practical examples, tutorials and articles at:
 > [Stay tuned](https://github.com/kataras/iris/stargazers), community prepares even more tutorials.
 
 Want to help and join to the greatest community? Describe your skills and push your own sections at: https://github.com/kataras/build-a-better-web-together/issues/new
-
-### common errors that new gophers may meet
-
-#### type aliases
-
-| build error | reason | solution |
-| -----------|--------|--------|
-| `undefined iris.Context` | caused of using the **optional type alias** `iris.Context` instead of the `context.Context` when building with Go 1.8 | import the original package `github.com/kataras/iris/context` and declare as `func(context.Context){})` **or** download and install the [latest go version](https://golang.org/dl) _recommended_ |
-
-Type alias is a new feature, introduced at Go version 1.9, so if you want to use Iris' type aliases you have to build using the latest Go version. Nothing really changes for your application if you use type alias or not, Iris' type aliases helps you to omit import statements -- to reduce lines of code, nothing more.
-
-**Details...**
-
-Go version 1.9 introduced the [type alias](https://golang.org/doc/go1.9#language) feature.
-
-Iris uses the `type alias` feature to help you writing less code by omitting some package imports. The examples and documentation are written using Go 1.9 as well.
-
-If you build your Go app with Go 1.9 you can, optionally, use all Iris web framework's features by importing one single package, the `github.com/kataras/iris`.
-
-Available type aliases;
-
-| Go 1.8 | Go 1.8 usage | Go 1.9 usage (optionally) |
-| -----------|--------|--------|
-| `import "github.com/kataras/iris/context"` | `func(context.Context) {}`, `context.Handler`, `context.Map` |  `func(iris.Context) {}`, `iris.Handler`,  `iris.Map` |
-| `import "github.com/kataras/iris/core/router"` | `app.PartyFunc("/users", func(p router.Party) {})`, `router.ExecutionOptions`, `router.ExecutionRules` |  `app.PartyFunc("/users", func(p iris.Party) {})`, `iris.ExecutionOptions`, `iris.ExecutionRules` |
-| `import "github.com/kataras/iris/core/host"` | `app.ConfigureHost(func(s *host.Supervisor) {})` | `app.ConfigureHost(func(s *iris.Supervisor) {})` |
-
-You can find all type aliases and their original package import statements at the [./context.go file](context.go).
-
-> Remember; this doesn't mean that you have to use those type aliases, you can still import the original packages as you did with Go version 1.8, it's up to you.
 
 ## Active development mode
 

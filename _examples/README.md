@@ -363,7 +363,6 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 
 - [Basic Authentication](authentication/basicauth/main.go)
 - [OAUth2](authentication/oauth2/main.go)
-- [Request Auth](request/main.go)  **NEW**
 - [Request Auth(JWT)](experimental-handlers/jwt/main.go)
 - [Sessions](#sessions)
 

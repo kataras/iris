@@ -44,13 +44,13 @@ Iris does not force you to use any specific ORM or template engine. With support
 
 ## Installation
 
-The only requirement is the [Go Programming Language](https://golang.org/dl/)
+The only requirement is the [Go Programming Language](https://golang.org/dl/).
 
 ```sh
 $ go get -u github.com/kataras/iris
 ```
 
-Iris takes advantage of the [vendor directory](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo) feature. You get truly reproducible builds, as this method guards against upstream renames and deletes.
+Iris takes advantage of the [vendor directory](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo) feature. You get truly reproducible builds, as this method guards against upstream renames and deletes. The minimum required Go version to use Iris is go1.12. 
 
 <details>
 <summary>Known issues for code editors and IDEs at general</summary>
