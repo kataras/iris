@@ -87,6 +87,7 @@ Structuring depends on your own needs. We can't tell you how to design your own 
     * [common net.Listener](http-listening/custom-listener/main.go)
     * [SO_REUSEPORT for unix systems](http-listening/custom-listener/unix-reuseport/main.go)
 - Custom HTTP Server
+    * [HTTP/3 Quic](http-listening/http3-quic) **NEW**
     * [easy way](http-listening/custom-httpserver/easy-way/main.go)
     * [std way](http-listening/custom-httpserver/std-way/main.go)
     * [multi server instances](http-listening/custom-httpserver/multi/main.go)
