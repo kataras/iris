@@ -134,3 +134,5 @@ func main() {
 // You can read more examples and run testable code
 // at the `iris/crypto`, `iris/crypto/sign`
 // and `iris/crypto/gcm` packages themselves.
+//
+// See experimental-handlers/jwt example to use JWT for request authentication instead.

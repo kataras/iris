@@ -39,7 +39,8 @@ type (
 	// i.e on `OnNamespaceConnect` it will abort a remote namespace connection.
 	// See examples for more.
 	MessageHandlerFunc = neffos.MessageHandlerFunc
-
+	// ConnHandler is the interface which namespaces and events can be retrieved through.
+	ConnHandler = neffos.ConnHandler
 	// Events completes the `ConnHandler` interface.
 	// It is a map which its key is the event name
 	// and its value the event's callback.
@@ -63,6 +64,11 @@ type (
 	//
 	// See `New` and `Dial`.
 	WithTimeout = neffos.WithTimeout
+	// Struct completes the `ConnHandler` interface.
+	// It uses a structure to register a specific namespace and its events.
+	Struct = neffos.Struct
+	// StructInjector can be used to customize the value creation that can is used on serving events.
+	StructInjector = neffos.StructInjector
 	// The Message is the structure which describes the incoming and outcoming data.
 	// Emitter's "body" argument is the `Message.Body` field.
 	// Emitter's return non-nil error is the `Message.Err` field.

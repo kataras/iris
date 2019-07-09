@@ -1,6 +1,8 @@
 package di
 
-import "reflect"
+import (
+	"reflect"
+)
 
 // EmptyIn is just an empty slice of reflect.Value.
 var EmptyIn = []reflect.Value{}
@@ -164,6 +166,13 @@ func structFieldIgnored(f reflect.StructField) bool {
 	return s == "true" // if has an ignore tag then ignore it.
 }
 
+// for controller's fields only. Explicit set a stateless to a field
+// in order to make the controller a Stateless one even if no other dynamic dependencies exist.
+func structFieldStateless(f reflect.StructField) bool {
+	s := f.Tag.Get("stateless")
+	return s == "true"
+}
+
 type field struct {
 	Type   reflect.Type
 	Name   string // the actual name.
@@ -190,7 +199,7 @@ func lookupFields(elemTyp reflect.Type, skipUnexported bool, parentIndex []int) 
 	for i, n := 0, elemTyp.NumField(); i < n; i++ {
 		f := elemTyp.Field(i)
 		if IndirectType(f.Type).Kind() == reflect.Struct &&
-			!structFieldIgnored(f) {
+			!structFieldIgnored(f) && !structFieldStateless(f) {
 			fields = append(fields, lookupFields(f.Type, skipUnexported, append(parentIndex, i))...)
 			continue
 		}
@@ -230,7 +239,8 @@ func LookupNonZeroFieldsValues(v reflect.Value, skipUnexported bool) (bindValues
 
 	for _, f := range fields {
 		if fieldVal := elem.FieldByIndex(f.Index); /*f.Type.Kind() == reflect.Ptr &&*/
-		!IsZero(fieldVal) {
+		goodVal(fieldVal) && !IsZero(fieldVal) {
+			// fmt.Printf("[%d][field index = %d] append to bindValues: %s = %s\n", i, f.Index[0], f.Name, fieldVal.String())
 			bindValues = append(bindValues, fieldVal)
 		}
 	}

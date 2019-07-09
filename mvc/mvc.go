@@ -1,12 +1,14 @@
 package mvc
 
 import (
+	"reflect"
 	"strings"
 
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/router"
 	"github.com/kataras/iris/hero"
 	"github.com/kataras/iris/hero/di"
+	"github.com/kataras/iris/websocket"
 
 	"github.com/kataras/golog"
 )
@@ -172,6 +174,52 @@ Set the Logger's Level to "debug" to view the active dependencies per controller
 //
 // Examples at: https://github.com/kataras/iris/tree/master/_examples/mvc
 func (app *Application) Handle(controller interface{}) *Application {
+	app.handle(controller)
+	return app
+}
+
+// HandleWebsocket handles a websocket specific controller.
+// Its exported methods are the events.
+// If a "Namespace" field or method exists then namespace is set, otherwise empty namespace.
+// Note that a websocket controller is registered and ran under a specific connection connected to a namespace
+// and it cannot send HTTP responses on that state.
+// However all static and dynamic dependency injection features are working, as expected, like any regular MVC Controller.
+func (app *Application) HandleWebsocket(controller interface{}) {
+	c := app.handle(controller)
+	c.markAsWebsocket()
+}
+
+var _ websocket.ConnHandler = (*Application)(nil)
+
+// GetNamespaces completes the websocket ConnHandler interface.
+// It returns a collection of namespace and events that
+// were registered through `HandleWebsocket` controllers.
+func (app *Application) GetNamespaces() websocket.Namespaces {
+	makeInjector := func(injector *di.StructInjector) websocket.StructInjector {
+		return func(_ reflect.Type, nsConn *websocket.NSConn) reflect.Value {
+			v := injector.Acquire()
+			if injector.CanInject {
+				injector.InjectElem(v.Elem(), reflect.ValueOf(websocket.GetContext(nsConn.Conn)))
+			}
+			return v
+		}
+	}
+
+	var websocketControllers []websocket.ConnHandler
+
+	for _, c := range app.Controllers {
+		if c.servesWebsocket {
+			wsInjector := makeInjector(c.injector)
+			s := websocket.NewStruct(c.Value).SetInjector(wsInjector)
+			websocketControllers = append(websocketControllers, s)
+
+		}
+	}
+
+	return websocket.JoinConnHandlers(websocketControllers...).GetNamespaces()
+}
+
+func (app *Application) handle(controller interface{}) *ControllerActivator {
 	// initialize the controller's activator, nothing too magical so far.
 	c := newControllerActivator(app.Router, controller, app.Dependencies, app.ErrorHandler)
 
@@ -193,7 +241,7 @@ func (app *Application) Handle(controller interface{}) *Application {
 	}
 
 	app.Controllers = append(app.Controllers, c)
-	return app
+	return c
 }
 
 // HandleError registers a `hero.ErrorHandlerFunc` which will be fired when

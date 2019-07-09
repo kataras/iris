@@ -53,13 +53,15 @@ var (
 	//
 	// See examples for more.
 	Dial = neffos.Dial
-
 	// IsTryingToReconnect reports whether the returning "err" from the `Server#Upgrade`
 	// is from a client that was trying to reconnect to the websocket server.
 	//
 	// Look the `Conn#WasReconnected` and `Conn#ReconnectTries` too.
 	IsTryingToReconnect = neffos.IsTryingToReconnect
-
+	// NewStruct returns the `Struct` Conn Handler based on ptr value.
+	NewStruct = neffos.NewStruct
+	// JoinConnHandlers combines two or more ConnHandlers as one.
+	JoinConnHandlers = neffos.JoinConnHandlers
 	// OnNamespaceConnect is the event name which its callback is fired right before namespace connect,
 	// if non-nil error then the remote connection's `Conn.Connect` will fail and send that error text.
 	// Connection is not ready to emit data to the namespace.

@@ -23,7 +23,7 @@ func myHandler(ctx iris.Context) {
 	ctx.Writef("This is an authenticated request\n")
 	ctx.Writef("Claim content:\n")
 
-	ctx.Writef("%s", user.Signature)
+	ctx.Writef("%#+v\n", user.Claims)
 }
 
 func main() {
@@ -42,5 +42,12 @@ func main() {
 	app.Use(jwtHandler.Serve)
 
 	app.Get("/ping", myHandler)
+
+	// Example request:
+	//  curl -X GET -H\
+	// "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjozMjEzMjF9.8waEX7-vPKACa-Soi1pQvW3Rl8QY-SUFcHKTLZI4mvU"\
+	// http://localhost:3001/ping
+	//
+	//Read more at: https://jwt.io/
 	app.Run(iris.Addr("localhost:3001"))
-} // don't forget to look ../jwt_test.go to see how to set your own custom claims
+}
