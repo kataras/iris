@@ -68,7 +68,7 @@ func main() {
 
 	// serves the endpoint of ws://localhost:8080/echo
 	websocketRoute := app.Get("/echo", websocket.Handler(websocketServer))
-
+	j.Get()
 	if enableJWT {
 		// Register the jwt middleware (on handshake):
 		websocketRoute.Use(j.Serve)
@@ -76,20 +76,25 @@ func main() {
 		//
 		// Check for token through the jwt middleware
 		// on websocket connection or on any event:
-		/*
-			websocketServer.OnConnect = func(c *neffos.Conn) error {
-				ctx := websocket.GetContext(c)
-				if err := j.CheckJWT(ctx); err != nil {
-					// will send the above error on the client
-					// and will not allow it to connect to the websocket server at all.
-					return err
-				}
+		/* websocketServer.OnConnect = func(c *neffos.Conn) error {
+		ctx := websocket.GetContext(c)
+		if err := j.CheckJWT(ctx); err != nil {
+			// will send the above error on the client
+			// and will not allow it to connect to the websocket server at all.
+			return err
+		}
 
-				log.Printf("[%s] connected to the server", c.ID())
+		user := ctx.Values().Get("jwt").(*jwt.Token)
+		// or just: user := j.Get(ctx)
 
-				return nil
-			}
-		*/
+		log.Printf("This is an authenticated request\n")
+		log.Printf("Claim content:")
+		log.Printf("%#+v\n", user.Claims)
+
+		log.Printf("[%s] connected to the server", c.ID())
+
+		return nil
+		} */
 	}
 
 	// serves the browser-based websocket client.

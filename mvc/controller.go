@@ -87,8 +87,11 @@ type ControllerActivator struct {
 
 	errorHandler hero.ErrorHandler
 
-	// initialized on the first `Handle`.
+	// initialized on the first `Handle` or immediately when "servesWebsocket" is true.
 	injector *di.StructInjector
+
+	// true if this controller listens and serves to websocket events.
+	servesWebsocket bool
 }
 
 // NameOf returns the package name + the struct type's name,
@@ -143,6 +146,11 @@ func whatReservedMethods(typ reflect.Type) map[string]*router.Route {
 	}
 
 	return routes
+}
+
+func (c *ControllerActivator) markAsWebsocket() {
+	c.servesWebsocket = true
+	c.attachInjector()
 }
 
 // Dependencies returns the write and read access of the dependencies that are
@@ -325,6 +333,21 @@ func (c *ControllerActivator) Handle(method, path, funcName string, middleware .
 
 var emptyIn = []reflect.Value{}
 
+func (c *ControllerActivator) attachInjector() {
+	if c.injector == nil {
+		c.injector = di.Struct(c.Value, c.dependencies...)
+		if !c.servesWebsocket {
+			golog.Debugf("MVC Controller [%s] [Scope=%s]", c.fullName, c.injector.Scope)
+		} else {
+			golog.Debugf("MVC Websocket Controller [%s]", c.fullName)
+		}
+
+		if c.injector.Has {
+			golog.Debugf("Dependencies:\n%s", c.injector.String())
+		}
+	}
+}
+
 func (c *ControllerActivator) handlerOf(m reflect.Method, funcDependencies []reflect.Value) context.Handler {
 	// Remember:
 	// The `Handle->handlerOf` can be called from `BeforeActivation` event
@@ -333,12 +356,7 @@ func (c *ControllerActivator) handlerOf(m reflect.Method, funcDependencies []ref
 	// To solve this we're doing a check on the FIRST `Handle`,
 	// if c.injector is nil, then set it with the current bindings,
 	// these bindings can change after, so first add dependencies and after register routes.
-	if c.injector == nil {
-		c.injector = di.Struct(c.Value, c.dependencies...)
-		if c.injector.Has {
-			golog.Debugf("MVC dependencies of '%s':\n%s", c.fullName, c.injector.String())
-		}
-	}
+	c.attachInjector()
 
 	// fmt.Printf("for %s | values: %s\n", funcName, funcDependencies)
 

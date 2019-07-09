@@ -401,7 +401,7 @@ type Configuration struct {
 
 	// DisablePathCorrectionRedirection works whenever configuration.DisablePathCorrection is set to false
 	// and if DisablePathCorrectionRedirection set to true then it will fire the handler of the matching route without
-	// the last slash ("/") instead of send a redirection status.
+	// the trailing slash ("/") instead of send a redirection status.
 	//
 	// Defaults to false.
 	DisablePathCorrectionRedirection bool `json:"disablePathCorrectionRedirection,omitempty" yaml:"DisablePathCorrectionRedirection" toml:"DisablePathCorrectionRedirection"`
