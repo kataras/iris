@@ -42,7 +42,7 @@ Current Version
 
 Installation
 
-The only requirement is the Go Programming Language, at least version 1.8 but 1.11.1 and above is highly recommended.
+The only requirement is the Go Programming Language, at least version 1.12.
 
     $ go get -u github.com/kataras/iris
 
