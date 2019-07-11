@@ -64,6 +64,7 @@ func New(party router.Party) *Application {
 	if HeroDependencies {
 		values = hero.Dependencies().Clone()
 	}
+
 	return newApp(party, values)
 }
 
@@ -195,6 +196,10 @@ var _ websocket.ConnHandler = (*Application)(nil)
 // It returns a collection of namespace and events that
 // were registered through `HandleWebsocket` controllers.
 func (app *Application) GetNamespaces() websocket.Namespaces {
+	if golog.Default.Level == golog.DebugLevel {
+		websocket.EnableDebug(golog.Default)
+	}
+
 	makeInjector := func(injector *di.StructInjector) websocket.StructInjector {
 		return func(_ reflect.Type, nsConn *websocket.NSConn) reflect.Value {
 			v := injector.Acquire()
@@ -212,7 +217,6 @@ func (app *Application) GetNamespaces() websocket.Namespaces {
 			wsInjector := makeInjector(c.injector)
 			s := websocket.NewStruct(c.Value).SetInjector(wsInjector)
 			websocketControllers = append(websocketControllers, s)
-
 		}
 	}
 

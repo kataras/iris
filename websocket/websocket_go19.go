@@ -6,6 +6,7 @@ import (
 	"github.com/kataras/neffos"
 	"github.com/kataras/neffos/gobwas"
 	"github.com/kataras/neffos/gorilla"
+	"github.com/kataras/neffos/stackexchange/redis"
 )
 
 type (
@@ -76,4 +77,16 @@ type (
 	// when incoming native message then the `Message.Event` is the `OnNativeMessage`,
 	// native messages are allowed only when an empty namespace("") and its `OnNativeMessage` callback are present.
 	Message = neffos.Message
+	// StackExchange is an optional interface
+	// that can be used to change the way neffos
+	// sends messages to its clients, i.e
+	// communication between multiple neffos servers.
+	//
+	// See `NewRedisStackExchange` to create a new redis StackExchange.
+	StackExchange = neffos.StackExchange
+	// RedisStackExchange is a `neffos.StackExchange` for redis.
+	RedisStackExchange = redis.StackExchange
+	// RedisConfig is used on the `NewRedisStackExchange` package-level function.
+	// Can be used to customize the redis client dialer.
+	RedisConfig = redis.Config
 )

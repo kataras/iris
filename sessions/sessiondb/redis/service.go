@@ -335,22 +335,20 @@ func (r *Service) GetKeys(prefix string) ([]string, error) {
 	return r.getKeys(prefix)
 }
 
-// GetBytes returns value, err by its key
-// you can use utils.Deserialize((.GetBytes("yourkey"),&theobject{})
-//returns nil and a filled error if something wrong happens
-func (r *Service) GetBytes(key string) ([]byte, error) {
-	var redisVal []byte
-	mn := radix.MaybeNil{Rcv: &redisVal}
-	err := r.pool.Do(radix.Cmd(&mn, "GET", r.Config.Prefix+key))
-	if err != nil {
-		return nil, err
-	}
-	if mn.Nil {
-		return nil, ErrKeyNotFound.Format(key)
-	}
+// // GetBytes returns bytes representation of a value based on given "key".
+// func (r *Service) GetBytes(key string) ([]byte, error) {
+// 	var redisVal []byte
+// 	mn := radix.MaybeNil{Rcv: &redisVal}
+// 	err := r.pool.Do(radix.Cmd(&mn, "GET", r.Config.Prefix+key))
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	if mn.Nil {
+// 		return nil, ErrKeyNotFound.Format(key)
+// 	}
 
-	return redisVal, nil
-}
+// 	return redisVal, nil
+// }
 
 // Delete removes redis entry by specific key
 func (r *Service) Delete(key string) error {

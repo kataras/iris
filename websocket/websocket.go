@@ -4,11 +4,17 @@ import (
 	"github.com/kataras/iris/context"
 
 	"github.com/kataras/neffos"
+
 	"github.com/kataras/neffos/gobwas"
 	"github.com/kataras/neffos/gorilla"
+	"github.com/kataras/neffos/stackexchange/redis"
 )
 
 var (
+	// EnableDebug enables debug mode for websocket module,
+	// for MVC this is done automatically
+	// when the app's logger level is set to "debug".
+	EnableDebug = neffos.EnableDebug
 	// GorillaUpgrader is an upgrader type for the gorilla/websocket subprotocol implementation.
 	// Should be used on `New` to construct the websocket server.
 	GorillaUpgrader = gorilla.Upgrader
@@ -32,6 +38,9 @@ var (
 	DefaultIDGenerator = func(ctx context.Context) string {
 		return neffos.DefaultIDGenerator(ctx.ResponseWriter(), ctx.Request())
 	}
+	// NewRedisStackExchange returns a new redis StackExchange.
+	// The "channel" input argument is the channel prefix for publish and subscribe.
+	NewRedisStackExchange = redis.NewStackExchange
 
 	// GorillaDialer is a `Dialer` type for the gorilla/websocket subprotocol implementation.
 	// Should be used on `Dial` to create a new client/client-side connection.

@@ -5,8 +5,6 @@ import (
 
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/websocket"
-
-	"github.com/kataras/neffos"
 )
 
 type clientPage struct {
@@ -26,8 +24,8 @@ func main() {
 	// and contains only one registered event which is the `OnNativeMessage`.
 	// When `Events{...}` is used instead of `Namespaces{ "namespaceName": Events{...}}`
 	// then the namespace is empty "".
-	ws := neffos.New(websocket.DefaultGorillaUpgrader, neffos.Events{
-		neffos.OnNativeMessage: func(nsConn *neffos.NSConn, msg neffos.Message) error {
+	ws := websocket.New(websocket.DefaultGorillaUpgrader, websocket.Events{
+		websocket.OnNativeMessage: func(nsConn *websocket.NSConn, msg websocket.Message) error {
 			log.Printf("Server got: %s from [%s]", msg.Body, nsConn.Conn.ID())
 
 			nsConn.Conn.Server().Broadcast(nsConn, msg)
@@ -35,12 +33,12 @@ func main() {
 		},
 	})
 
-	ws.OnConnect = func(c *neffos.Conn) error {
+	ws.OnConnect = func(c *websocket.Conn) error {
 		log.Printf("[%s] Connected to server!", c.ID())
 		return nil
 	}
 
-	ws.OnDisconnect = func(c *neffos.Conn) {
+	ws.OnDisconnect = func(c *websocket.Conn) {
 		log.Printf("[%s] Disconnected from server", c.ID())
 	}
 
