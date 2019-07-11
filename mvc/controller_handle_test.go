@@ -40,6 +40,13 @@ func (c *testControllerHandle) BeforeActivation(b BeforeActivation) {
 	b.Handle("GET", "/hiservice/{ps:string}", "HiServiceBy")
 	b.Handle("GET", "/hiparam/{ps:string}", "HiParamBy")
 	b.Handle("GET", "/hiparamempyinput/{ps:string}", "HiParamEmptyInputBy")
+	b.HandleMany("GET", "/custom/{ps:string} /custom2/{ps:string}", "CustomWithParameter")
+	// if dynamic path exist
+	// then longest path should be registered first
+	// and the controller's method if wants to add path parameters
+	// dependency injection then they should accept the longest path parameters.
+	// See `testControllerHandle.CustomWithParameters`.
+	b.HandleMany("GET", "/custom3/{ps:string}/{pssecond:string} /custom3/{ps:string}", "CustomWithParameters")
 }
 
 // test `GetRoute` for custom routes.
@@ -97,6 +104,16 @@ func (c *testControllerHandle) HiParamEmptyInputBy() string {
 	return "empty in but served with ctx.Params.Get('ps')=" + c.Ctx.Params().Get("ps")
 }
 
+func (c *testControllerHandle) CustomWithParameter(param1 string) string {
+	return param1
+}
+
+func (c *testControllerHandle) CustomWithParameters(param1, param2 string) string {
+	// it returns empty string for requested path: /custom3/value1,
+	// see BeforeActivation.
+	return param1 + param2
+}
+
 type testSmallController struct{}
 
 // test ctx + id in the same time.
@@ -137,6 +154,15 @@ func TestControllerHandle(t *testing.T) {
 		Body().Equal("value")
 	e.GET("/hiparamempyinput/value").Expect().Status(httptest.StatusOK).
 		Body().Equal("empty in but served with ctx.Params.Get('ps')=value")
+	e.GET("/custom/value1").Expect().Status(httptest.StatusOK).
+		Body().Equal("value1")
+	e.GET("/custom2/value2").Expect().Status(httptest.StatusOK).
+		Body().Equal("value2")
+	e.GET("/custom3/value1/value2").Expect().Status(httptest.StatusOK).
+		Body().Equal("value1value2")
+	e.GET("/custom3/value1").Expect().Status(httptest.StatusOK).
+		Body().Equal("value1")
+
 	e.GET("/hi/param/empty/input/with/ctx/value").Expect().Status(httptest.StatusOK).
 		Body().Equal("empty in but served with ctx.Params.Get('param2')= value == id == value")
 }
