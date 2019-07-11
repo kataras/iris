@@ -36,6 +36,7 @@ func basicMVC(app *mvc.Application) {
 
 	// GET: http://localhost:8080/basic
 	// GET: http://localhost:8080/basic/custom
+	// GET: http://localhost:8080/basic/custom2
 	app.Handle(new(basicController))
 
 	// All dependencies of the parent *mvc.Application
@@ -73,7 +74,7 @@ type basicController struct {
 }
 
 func (c *basicController) BeforeActivation(b mvc.BeforeActivation) {
-	b.Handle("GET", "/custom", "Custom")
+	b.HandleMany("GET", "/custom /custom2", "Custom")
 }
 
 func (c *basicController) AfterActivation(a mvc.AfterActivation) {

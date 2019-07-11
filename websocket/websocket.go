@@ -4,7 +4,6 @@ import (
 	"github.com/kataras/iris/context"
 
 	"github.com/kataras/neffos"
-
 	"github.com/kataras/neffos/gobwas"
 	"github.com/kataras/neffos/gorilla"
 	"github.com/kataras/neffos/stackexchange/redis"
