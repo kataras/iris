@@ -41,6 +41,7 @@ func getPathParamsForInput(params []macro.TemplateParam, funcIn ...reflect.Type)
 			if _, ok := consumed[j]; ok {
 				continue
 			}
+
 			funcDep, ok := context.ParamResolverByTypeAndIndex(in, param.Index)
 			if !ok {
 				continue
