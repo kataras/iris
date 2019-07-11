@@ -15,7 +15,7 @@ require (
 	github.com/iris-contrib/go.uuid v2.0.0+incompatible
 	github.com/json-iterator/go v1.1.6 // vendor removed.
 	github.com/kataras/golog v0.0.0-20180321173939-03be10146386
-	github.com/kataras/neffos v0.0.5
+	github.com/kataras/neffos v0.0.6
 	github.com/kataras/pio v0.0.0-20190103105442-ea782b38602d // indirect
 	github.com/microcosm-cc/bluemonday v1.0.2
 	github.com/ryanuber/columnize v2.1.0+incompatible

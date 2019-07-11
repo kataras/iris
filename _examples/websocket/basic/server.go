@@ -6,8 +6,6 @@ import (
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/websocket"
 
-	"github.com/kataras/neffos"
-
 	// Used when "enableJWT" constant is true:
 	"github.com/dgrijalva/jwt-go"
 	jwtmiddleware "github.com/iris-contrib/middleware/jwt"
@@ -17,10 +15,10 @@ import (
 const enableJWT = true
 const namespace = "default"
 
-// if namespace is empty then simply neffos.Events{...} can be used instead.
-var serverEvents = neffos.Namespaces{
-	namespace: neffos.Events{
-		neffos.OnNamespaceConnected: func(nsConn *neffos.NSConn, msg neffos.Message) error {
+// if namespace is empty then simply websocket.Events{...} can be used instead.
+var serverEvents = websocket.Namespaces{
+	namespace: websocket.Events{
+		websocket.OnNamespaceConnected: func(nsConn *websocket.NSConn, msg websocket.Message) error {
 			// with `websocket.GetContext` you can retrieve the Iris' `Context`.
 			ctx := websocket.GetContext(nsConn.Conn)
 
@@ -29,11 +27,11 @@ var serverEvents = neffos.Namespaces{
 				ctx.RemoteAddr())
 			return nil
 		},
-		neffos.OnNamespaceDisconnect: func(nsConn *neffos.NSConn, msg neffos.Message) error {
+		websocket.OnNamespaceDisconnect: func(nsConn *websocket.NSConn, msg websocket.Message) error {
 			log.Printf("[%s] disconnected from namespace [%s]", nsConn, msg.Namespace)
 			return nil
 		},
-		"chat": func(nsConn *neffos.NSConn, msg neffos.Message) error {
+		"chat": func(nsConn *websocket.NSConn, msg websocket.Message) error {
 			// room.String() returns -> NSConn.String() returns -> Conn.String() returns -> Conn.ID()
 			log.Printf("[%s] sent: %s", nsConn, string(msg.Body))
 
@@ -48,7 +46,7 @@ var serverEvents = neffos.Namespaces{
 
 func main() {
 	app := iris.New()
-	websocketServer := neffos.New(
+	websocketServer := websocket.New(
 		websocket.DefaultGorillaUpgrader, /* DefaultGobwasUpgrader can be used too. */
 		serverEvents)
 
@@ -76,7 +74,7 @@ func main() {
 		//
 		// Check for token through the jwt middleware
 		// on websocket connection or on any event:
-		/* websocketServer.OnConnect = func(c *neffos.Conn) error {
+		/* websocketServer.OnConnect = func(c *websocket.Conn) error {
 		ctx := websocket.GetContext(c)
 		if err := j.CheckJWT(ctx); err != nil {
 			// will send the above error on the client

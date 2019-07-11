@@ -7,17 +7,11 @@ import (
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/mvc"
 	"github.com/kataras/iris/websocket"
-
-	"github.com/kataras/neffos"
 )
 
 func main() {
 	app := iris.New()
 	app.Logger().SetLevel("debug")
-
-	// optionally enable debug messages to the neffos real-time framework
-	// and print them through the iris' logger.
-	neffos.EnableDebug(app.Logger())
 
 	// load templates.
 	app.RegisterView(iris.HTML("./views", ".html"))
@@ -33,7 +27,7 @@ func main() {
 	)
 	m.HandleWebsocket(&websocketController{Namespace: "default", Age: 42, Otherstring: "other string"})
 
-	websocketServer := neffos.New(websocket.DefaultGorillaUpgrader, m)
+	websocketServer := websocket.New(websocket.DefaultGorillaUpgrader, m)
 
 	websocketAPI.Get("/", websocket.Handler(websocketServer))
 	// http://localhost:8080
@@ -51,10 +45,10 @@ func decrement() uint64 {
 }
 
 type websocketController struct {
-	*neffos.NSConn `stateless:"true"`
-	Namespace      string
-	Age            int
-	Otherstring    string
+	*websocket.NSConn `stateless:"true"`
+	Namespace         string
+	Age               int
+	Otherstring       string
 
 	Logger LoggerService
 }
@@ -64,13 +58,13 @@ type websocketController struct {
 // 	return "default"
 // }
 
-func (c *websocketController) OnNamespaceDisconnect(msg neffos.Message) error {
+func (c *websocketController) OnNamespaceDisconnect(msg websocket.Message) error {
 	c.Logger.Log("Disconnected")
 	// visits--
 	newCount := decrement()
 	// This will call the "OnVisit" event on all clients, except the current one,
 	// (it can't because it's left but for any case use this type of design)
-	c.Conn.Server().Broadcast(nil, neffos.Message{
+	c.Conn.Server().Broadcast(nil, websocket.Message{
 		Namespace: msg.Namespace,
 		Event:     "OnVisit",
 		Body:      []byte(fmt.Sprintf("%d", newCount)),
@@ -79,7 +73,7 @@ func (c *websocketController) OnNamespaceDisconnect(msg neffos.Message) error {
 	return nil
 }
 
-func (c *websocketController) OnNamespaceConnected(msg neffos.Message) error {
+func (c *websocketController) OnNamespaceConnected(msg websocket.Message) error {
 	// println("Broadcast prefix is: " + c.BroadcastPrefix)
 	c.Logger.Log("Connected")
 
@@ -91,7 +85,7 @@ func (c *websocketController) OnNamespaceConnected(msg neffos.Message) error {
 	//
 	// There are many ways that u can do it and faster, for example u can just send a new visitor
 	// and client can increment itself, but here we are just "showcasing" the websocket controller.
-	c.Conn.Server().Broadcast(nil, neffos.Message{
+	c.Conn.Server().Broadcast(nil, websocket.Message{
 		Namespace: msg.Namespace,
 		Event:     "OnVisit",
 		Body:      []byte(fmt.Sprintf("%d", newCount)),
@@ -100,7 +94,7 @@ func (c *websocketController) OnNamespaceConnected(msg neffos.Message) error {
 	return nil
 }
 
-func (c *websocketController) OnChat(msg neffos.Message) error {
+func (c *websocketController) OnChat(msg websocket.Message) error {
 	ctx := websocket.GetContext(c.Conn)
 
 	ctx.Application().Logger().Infof("[IP: %s] [ID: %s]  broadcast to other clients the message [%s]",
