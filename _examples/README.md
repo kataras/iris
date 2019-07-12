@@ -387,6 +387,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 - [Read Form](http_request/read-form/main.go)
 - [Read Custom per type](http_request/read-custom-per-type/main.go)
 - [Read Custom via Unmarshaler](http_request/read-custom-via-unmarshaler/main.go)
+- [Read Many times](http_request/read-many/main.go)
 - [Upload/Read File](http_request/upload-file/main.go)
 - [Upload multiple files with an easy way](http_request/upload-files/main.go)
 - [Extract referrer from "referer" header or URL query parameter](http_request/extract-referer/main.go)
