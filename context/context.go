@@ -563,6 +563,12 @@ type Context interface {
 	// should be called before reading the request body from the client.
 	SetMaxRequestBodySize(limitOverBytes int64)
 
+	// GetBody reads and returns the request body.
+	// The default behavior for the http request reader is to consume the data readen
+	// but you can change that behavior by passing the `WithoutBodyConsumptionOnUnmarshal` iris option.
+	//
+	// However, whenever you can use the `ctx.Request().Body` instead.
+	GetBody() ([]byte, error)
 	// UnmarshalBody reads the request's body and binds it to a value or pointer of any type.
 	// Examples of usage: context.ReadJSON, context.ReadXML.
 	//
@@ -2010,11 +2016,34 @@ func (ctx *context) form() (form map[string][]string, found bool) {
 		}
 	*/
 
+	var (
+		bodyCopy []byte
+		keepBody = ctx.Application().ConfigurationReadOnly().GetDisableBodyConsumptionOnUnmarshal()
+	)
+
+	if keepBody {
+		// on POST, PUT and PATCH it will read the form values from request body otherwise from URL queries.
+		if m := ctx.Method(); m == "POST" || m == "PUT" || m == "PATCH" {
+			body, err := ioutil.ReadAll(ctx.request.Body)
+			if err != nil {
+				return nil, false
+			}
+
+			bodyCopy = body
+		} else { // else we don't need this behavior.
+			keepBody = false
+		}
+	}
+
 	// ParseMultipartForm calls `request.ParseForm` automatically
 	// therefore we don't need to call it here, although it doesn't hurt.
 	// After one call to ParseMultipartForm or ParseForm,
 	// subsequent calls have no effect, are idempotent.
 	ctx.request.ParseMultipartForm(ctx.Application().ConfigurationReadOnly().GetPostMaxMemory())
+
+	if keepBody {
+		ctx.request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyCopy))
+	}
 
 	if form := ctx.request.Form; len(form) > 0 {
 		return form, true
@@ -2288,6 +2317,26 @@ func (ctx *context) SetMaxRequestBodySize(limitOverBytes int64) {
 	ctx.request.Body = http.MaxBytesReader(ctx.writer, ctx.request.Body, limitOverBytes)
 }
 
+// GetBody reads and returns the request body.
+// The default behavior for the http request reader is to consume the data readen
+// but you can change that behavior by passing the `WithoutBodyConsumptionOnUnmarshal` iris option.
+//
+// However, whenever you can use the `ctx.Request().Body` instead.
+func (ctx *context) GetBody() ([]byte, error) {
+	data, err := ioutil.ReadAll(ctx.request.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if ctx.Application().ConfigurationReadOnly().GetDisableBodyConsumptionOnUnmarshal() {
+		// * remember, Request.Body has no Bytes(), we have to consume them first
+		// and after re-set them to the body, this is the only solution.
+		ctx.request.Body = ioutil.NopCloser(bytes.NewBuffer(data))
+	}
+
+	return data, nil
+}
+
 // UnmarshalBody reads the request's body and binds it to a value or pointer of any type
 // Examples of usage: context.ReadJSON, context.ReadXML.
 //
@@ -2301,15 +2350,9 @@ func (ctx *context) UnmarshalBody(outPtr interface{}, unmarshaler Unmarshaler) e
 		return errors.New("unmarshal: empty body")
 	}
 
-	rawData, err := ioutil.ReadAll(ctx.request.Body)
+	rawData, err := ctx.GetBody()
 	if err != nil {
 		return err
-	}
-
-	if ctx.Application().ConfigurationReadOnly().GetDisableBodyConsumptionOnUnmarshal() {
-		// * remember, Request.Body has no Bytes(), we have to consume them first
-		// and after re-set them to the body, this is the only solution.
-		ctx.request.Body = ioutil.NopCloser(bytes.NewBuffer(rawData))
 	}
 
 	// check if the v contains its own decode
