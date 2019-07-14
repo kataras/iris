@@ -6,6 +6,7 @@ import (
 	"github.com/kataras/neffos"
 	"github.com/kataras/neffos/gobwas"
 	"github.com/kataras/neffos/gorilla"
+	"github.com/kataras/neffos/stackexchange/nats"
 	"github.com/kataras/neffos/stackexchange/redis"
 )
 
@@ -37,9 +38,18 @@ var (
 	DefaultIDGenerator = func(ctx context.Context) string {
 		return neffos.DefaultIDGenerator(ctx.ResponseWriter(), ctx.Request())
 	}
+
 	// NewRedisStackExchange returns a new redis StackExchange.
 	// The "channel" input argument is the channel prefix for publish and subscribe.
 	NewRedisStackExchange = redis.NewStackExchange
+	// NewNatsStackExchange returns a new nats StackExchange.
+	// The "url" input argument is the connection string of your nats server.
+	// The second variadic input argument can be used to use custom `nats.Option`s
+	// such as authentication and more nats servers addresses.
+	NewNatsStackExchange = nats.NewStackExchange
+	// WithNatsOptions can be used as the second input argument of `NewNatsStackExchange`
+	// to declare a struct-based configuration for the nats server(s).
+	WithNatsOptions = nats.With
 
 	// GorillaDialer is a `Dialer` type for the gorilla/websocket subprotocol implementation.
 	// Should be used on `Dial` to create a new client/client-side connection.
