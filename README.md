@@ -1,8 +1,12 @@
 # ⚡️ Stay tuned for updates: upcoming version 11.2.0
 
-Click [here](https://github.com/kataras/iris/pull/1175) to watch the progress of the upcoming release and the new features that it brings into game. 
+Click [here](https://github.com/kataras/iris/pull/1175) to watch the progress of the upcoming release and the new features that it brings into game.
 
-@kataras: I was sick for almost a month, but this wasn't kept me from pushing some progress for the upcoming release. the v11.2.0 will contain a breaking change on the websockets usage, there is no other way to improve it. That one has its own repository for testing and experimentation to implement a faster and even more higher level websocket server and client written in Go which developers will be able select between [gorilla/websocket](https://github.com/gorilla/websocket) and [gobwas/ws](https://github.com/gobwas/ws) for the underline protocol communication and eventually will live into Iris, click [here](https://github.com/kataras/ws) to watch the progress of the new Iris websocket capabilities and features if you can't wait more.
+## NOTE for v11.1.x users
+
+New users, please do not use the obsolete version of `kataras/iris/websocket` package. As we've noticed from January, it will be fully replaced for the best in the upcoming release.
+
+New and old users, the next version of `kataras/iris/websocket` will contain Iris-specific helpers and features for the [neffos websocket framework](https://github.com/kataras/neffos). Make yourself a grace and begin to learn it as soon as possible, as it contains a lot of features that the old version couldn't handle, e.g. serve millions of active connections, adapters for gobwas/ws and gorilla/websocket protocol implementations, scaling-out using nats or redis, broadcasting to namespaces, rooms or individuals and more.
 
 # Iris Web Framework <a href="README_ZH.md"> <img width="20px" src="https://iris-go.com/images/flag-china.svg?v=10" /></a> <a href="README_RU.md"><img width="20px" src="https://iris-go.com/images/flag-russia.svg?v=10" /></a> <a href="README_ID.md"> <img width="20px" src="https://iris-go.com/images/flag-indonesia.svg?v=10" /></a> <a href="README_GR.md"><img width="20px" src="https://iris-go.com/images/flag-greece.svg?v=10" /></a> <a href="README_PT_BR.md"><img width="20px" src="https://iris-go.com/images/flag-pt-br.svg?v=10" /></a> <a href="README_JPN.md"><img width="20px" src="https://iris-go.com/images/flag-japan.svg?v=10" /></a>
 
