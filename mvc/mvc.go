@@ -41,10 +41,11 @@ var (
 //
 // See `mvc#New` for more.
 type Application struct {
-	Dependencies di.Values
-	Router       router.Party
-	Controllers  []*ControllerActivator
-	ErrorHandler hero.ErrorHandler
+	Dependencies         di.Values
+	Router               router.Party
+	Controllers          []*ControllerActivator
+	websocketControllers []websocket.ConnHandler
+	ErrorHandler         hero.ErrorHandler
 }
 
 func newApp(subRouter router.Party, values di.Values) *Application {
@@ -185,9 +186,23 @@ func (app *Application) Handle(controller interface{}) *Application {
 // Note that a websocket controller is registered and ran under a specific connection connected to a namespace
 // and it cannot send HTTP responses on that state.
 // However all static and dynamic dependency injection features are working, as expected, like any regular MVC Controller.
-func (app *Application) HandleWebsocket(controller interface{}) {
+func (app *Application) HandleWebsocket(controller interface{}) *websocket.Struct {
 	c := app.handle(controller)
 	c.markAsWebsocket()
+
+	websocketController := websocket.NewStruct(c.Value).SetInjector(makeInjector(c.injector))
+	app.websocketControllers = append(app.websocketControllers, websocketController)
+	return websocketController
+}
+
+func makeInjector(injector *di.StructInjector) websocket.StructInjector {
+	return func(_ reflect.Type, nsConn *websocket.NSConn) reflect.Value {
+		v := injector.Acquire()
+		if injector.CanInject {
+			injector.InjectElem(v.Elem(), reflect.ValueOf(websocket.GetContext(nsConn.Conn)))
+		}
+		return v
+	}
 }
 
 var _ websocket.ConnHandler = (*Application)(nil)
@@ -200,27 +215,7 @@ func (app *Application) GetNamespaces() websocket.Namespaces {
 		websocket.EnableDebug(golog.Default)
 	}
 
-	makeInjector := func(injector *di.StructInjector) websocket.StructInjector {
-		return func(_ reflect.Type, nsConn *websocket.NSConn) reflect.Value {
-			v := injector.Acquire()
-			if injector.CanInject {
-				injector.InjectElem(v.Elem(), reflect.ValueOf(websocket.GetContext(nsConn.Conn)))
-			}
-			return v
-		}
-	}
-
-	var websocketControllers []websocket.ConnHandler
-
-	for _, c := range app.Controllers {
-		if c.servesWebsocket {
-			wsInjector := makeInjector(c.injector)
-			s := websocket.NewStruct(c.Value).SetInjector(wsInjector)
-			websocketControllers = append(websocketControllers, s)
-		}
-	}
-
-	return websocket.JoinConnHandlers(websocketControllers...).GetNamespaces()
+	return websocket.JoinConnHandlers(app.websocketControllers...).GetNamespaces()
 }
 
 func (app *Application) handle(controller interface{}) *ControllerActivator {
