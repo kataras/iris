@@ -16,6 +16,7 @@ after_script:
   # examples
   - cd ./_examples
   - go get ./...
+  - go get github.com/casbin/casbin@v2.0.0
   - go test -v -cover ./...
   - cd ../
   # typescript examples
