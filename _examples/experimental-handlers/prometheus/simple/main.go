@@ -8,7 +8,7 @@ import (
 
 	prometheusMiddleware "github.com/iris-contrib/middleware/prometheus"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
@@ -31,7 +31,7 @@ func main() {
 		ctx.Writef("Slept for %d milliseconds", sleep)
 	})
 
-	app.Get("/metrics", iris.FromStd(prometheus.Handler()))
+	app.Get("/metrics", iris.FromStd(promhttp.Handler()))
 
 	// http://localhost:8080/
 	// http://localhost:8080/anotfound

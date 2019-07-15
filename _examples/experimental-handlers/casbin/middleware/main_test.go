@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	"github.com/iris-contrib/httpexpect"
+	"github.com/gavv/httpexpect"
 	"github.com/kataras/iris/httptest"
 )
 

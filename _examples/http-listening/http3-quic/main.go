@@ -8,7 +8,10 @@ import (
 
 /*
 	$ go get -u github.com/lucas-clemente/quic-go/...
+	# or if you're using GO MODULES:
+	$ go get github.com/lucas-clemente/quic-go@master
 */
+
 func main() {
 	app := iris.New()
 

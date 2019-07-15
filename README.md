@@ -912,7 +912,7 @@ func main() {
 
 ### Testing
 
-Iris offers an incredible support for the [httpexpect](https://github.com/iris-contrib/httpexpect), a Testing Framework for web applications. However, you are able to use the standard Go's `net/http/httptest` package as well but in this example we will use the `kataras/iris/httptest`.
+Iris offers an incredible support for the [httpexpect](https://github.com/gavv/httpexpect), a Testing Framework for web applications. However, you are able to use the standard Go's `net/http/httptest` package as well but in this example we will use the `kataras/iris/httptest`.
 
 ```go
 package main

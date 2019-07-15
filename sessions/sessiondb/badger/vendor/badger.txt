@@ -1,5 +1,0 @@
-02 Oct 2018
------------
-Keep this vendor because go modules uses the v1.5.4 which is the latest published release(~19 Sep 2018)
-while the master repo will be used if host's golang version is lower than 1.11 or inside $GOPATH, which
-has a breaking change on the `item.Value` input & output values, see the comments inside this `database.go`.

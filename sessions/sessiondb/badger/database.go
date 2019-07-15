@@ -14,6 +14,13 @@ import (
 	"github.com/kataras/golog"
 )
 
+/*
+	Badger has been updated to 1.6.0 - 2019-07-01
+	which contains a lot of breaking changes
+	that are adapted correctly here.
+	2019-07-14
+*/
+
 // DefaultFileMode used as the default database's "fileMode"
 // for creating the sessions directory path, opening and write the session file.
 var (
@@ -52,9 +59,7 @@ func New(directoryPath string) (*Database, error) {
 		return nil, err
 	}
 
-	opts := badger.DefaultOptions
-	opts.Dir = directoryPath
-	opts.ValueDir = directoryPath
+	opts := badger.DefaultOptions(directoryPath)
 
 	service, err := badger.Open(opts)
 
@@ -78,7 +83,7 @@ func NewFromDB(service *badger.DB) *Database {
 // if the return value is LifeTime{} then the session manager sets the life time based on the expiration duration lives in configuration.
 func (db *Database) Acquire(sid string, expires time.Duration) sessions.LifeTime {
 	txn := db.Service.NewTransaction(true)
-	defer txn.Commit(nil)
+	defer txn.Commit()
 
 	bsid := makePrefix(sid)
 	item, err := txn.Get(bsid)
@@ -91,7 +96,8 @@ func (db *Database) Acquire(sid string, expires time.Duration) sessions.LifeTime
 	if err != nil {
 		if err == badger.ErrKeyNotFound {
 			// create it and set the expiration, we don't care about the value there.
-			err = txn.SetWithTTL(bsid, bsid, expires)
+			err = txn.SetEntry(badger.NewEntry(bsid, bsid).WithTTL(expires))
+
 		}
 	}
 
@@ -129,7 +135,7 @@ func (db *Database) Set(sid string, lifetime sessions.LifeTime, key string, valu
 
 	err = db.Service.Update(func(txn *badger.Txn) error {
 		dur := lifetime.DurationUntilExpiration()
-		return txn.SetWithTTL(makeKey(sid, key), valueBytes, dur)
+		return txn.SetEntry(badger.NewEntry(makeKey(sid, key), valueBytes).WithTTL(dur))
 	})
 
 	if err != nil {
@@ -145,18 +151,9 @@ func (db *Database) Get(sid string, key string) (value interface{}) {
 			return err
 		}
 
-		// return item.Value(func(valueBytes []byte) {
-		// 	if err := sessions.DefaultTranscoder.Unmarshal(valueBytes, &value); err != nil {
-		// 		golog.Error(err)
-		// 	}
-		// })
-
-		valueBytes, err := item.Value()
-		if err != nil {
-			return err
-		}
-
-		return sessions.DefaultTranscoder.Unmarshal(valueBytes, &value)
+		return item.Value(func(valueBytes []byte) error {
+			return sessions.DefaultTranscoder.Unmarshal(valueBytes, &value)
+		})
 	})
 
 	if err != nil && err != badger.ErrKeyNotFound {
@@ -192,13 +189,11 @@ func (db *Database) Visit(sid string, cb func(key string, value interface{})) {
 		// 	continue
 		// }
 
-		valueBytes, err := item.Value()
-		if err != nil {
-			golog.Error(err)
-			continue
-		}
+		err := item.Value(func(valueBytes []byte) error {
+			return sessions.DefaultTranscoder.Unmarshal(valueBytes, &value)
+		})
 
-		if err = sessions.DefaultTranscoder.Unmarshal(valueBytes, &value); err != nil {
+		if err != nil {
 			golog.Error(err)
 			continue
 		}
@@ -236,9 +231,9 @@ func (db *Database) Delete(sid string, key string) (deleted bool) {
 	err := txn.Delete(makeKey(sid, key))
 	if err != nil {
 		golog.Error(err)
+		return false
 	}
-	txn.Commit(nil)
-	return err == nil
+	return txn.Commit() == nil
 }
 
 // Clear removes all session key values but it keeps the session entry.
@@ -246,7 +241,7 @@ func (db *Database) Clear(sid string) {
 	prefix := makePrefix(sid)
 
 	txn := db.Service.NewTransaction(true)
-	defer txn.Commit(nil)
+	defer txn.Commit()
 
 	iter := txn.NewIterator(iterOptionsNoValues)
 	defer iter.Close()
@@ -264,7 +259,7 @@ func (db *Database) Release(sid string) {
 	// and remove the $sid.
 	txn := db.Service.NewTransaction(true)
 	txn.Delete([]byte(sid))
-	txn.Commit(nil)
+	txn.Commit()
 }
 
 // Close shutdowns the badger connection.
