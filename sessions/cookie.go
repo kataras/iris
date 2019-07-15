@@ -115,6 +115,7 @@ func formatCookieDomain(ctx context.Context, disableSubdomainPersistence bool) s
 			requestDomain = requestDomain[dotIdx+1:]
 		}
 	}
+
 	// finally set the .localhost.com (for(1-level) || .mysubdomain.localhost.com (for 2-level subdomain allow)
 	return "." + requestDomain // . to allow persistence
 }
