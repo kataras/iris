@@ -15,7 +15,7 @@ func ExampleParty_StaticWeb() {
 
 	fmt.Print(err)
 	// Output: StaticWeb is DEPRECATED and it will be removed eventually.
-	// Source: github.com/kataras/iris/core/router/deprecated_example_test.go:9
+	// Source: ./deprecated_example_test.go:9
 	// Use .HandleDir("/static", "./assets") instead.
 }
 
@@ -30,7 +30,7 @@ func ExampleParty_StaticHandler() {
 
 	fmt.Print(err)
 	// Output: StaticHandler is DEPRECATED and it will be removed eventually.
-	// Source: github.com/kataras/iris/core/router/deprecated_example_test.go:24
+	// Source: ./deprecated_example_test.go:24
 	// Use iris.FileServer("./assets", iris.DirOptions{ShowList: false, Gzip: true}) instead.
 }
 
@@ -46,7 +46,7 @@ func ExampleParty_StaticEmbedded() {
 	fmt.Print(err)
 	// Output: StaticEmbedded is DEPRECATED and it will be removed eventually.
 	// It is also miss the AssetInfo bindata function, which is required now.
-	// Source: github.com/kataras/iris/core/router/deprecated_example_test.go:39
+	// Source: ./deprecated_example_test.go:39
 	// Use .HandleDir("/static", "./assets", iris.DirOptions{Asset: Asset, AssetInfo: AssetInfo, AssetNames: AssetNames}) instead.
 }
 
@@ -62,6 +62,6 @@ func ExampleParty_StaticEmbeddedGzip() {
 	fmt.Print(err)
 	// Output: StaticEmbeddedGzip is DEPRECATED and it will be removed eventually.
 	// It is also miss the AssetInfo bindata function, which is required now.
-	// Source: github.com/kataras/iris/core/router/deprecated_example_test.go:55
+	// Source: ./deprecated_example_test.go:55
 	// Use .HandleDir("/static", "./assets", iris.DirOptions{Gzip: true, Asset: Asset, AssetInfo: AssetInfo, AssetNames: AssetNames}) instead.
 }

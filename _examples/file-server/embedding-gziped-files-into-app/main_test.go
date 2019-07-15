@@ -89,9 +89,10 @@ func TestEmbeddingGzipFilesIntoApp(t *testing.T) {
 		if expected, got := response.Raw().StatusCode, httptest.StatusOK; expected != got {
 			t.Fatalf("[%d] of '%s': expected %d status code but got %d", i, url, expected, got)
 		}
+		rawBody := response.Body().Raw()
 
 		func() {
-			reader, err := gzip.NewReader(bytes.NewBuffer(response.Content))
+			reader, err := gzip.NewReader(strings.NewReader(rawBody))
 			defer reader.Close()
 			if err != nil {
 				t.Fatalf("[%d] of '%s': %v", i, url, err)

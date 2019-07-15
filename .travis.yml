@@ -10,7 +10,7 @@ go_import_path: github.com/kataras/iris
 #  global:
 #    - GOCACHE=off
 install:
-  - go get ./... # for iris-contrib/httpexpect, kataras/golog
+  - go get ./...
 script:
   - go test -v -cover ./...
 after_script:

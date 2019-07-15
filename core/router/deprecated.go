@@ -1,6 +1,8 @@
 package router
 
 import (
+	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -18,23 +20,21 @@ func getCaller() (string, int) {
 	var pcs [32]uintptr
 	n := runtime.Callers(1, pcs[:])
 	frames := runtime.CallersFrames(pcs[:n])
-
+	wd, _ := os.Getwd()
 	for {
 		frame, more := frames.Next()
 		file := frame.File
 
-		splitAfterPart := "/src/"
-		if (!strings.Contains(file, "github.com/kataras/iris") ||
-			strings.Contains(file, "github.com/kataras/iris/_examples") ||
-			strings.Contains(file, "github.com/iris-contrib/examples") ||
-			(strings.Contains(file, "github.com/kataras/iris/core/router") && !strings.Contains(file, "deprecated.go"))) &&
+		if (!strings.Contains(file, "/kataras/iris") ||
+			strings.Contains(file, "/kataras/iris/_examples") ||
+			strings.Contains(file, "/iris-contrib/examples") ||
+			(strings.Contains(file, "/kataras/iris/core/router") && !strings.Contains(file, "deprecated.go"))) &&
 			!strings.HasSuffix(frame.Func.Name(), ".getCaller") && !strings.Contains(file, "/go/src/testing") {
 
-			// remove the $GOPATH.
-			n := strings.Index(file, splitAfterPart)
-			if n != -1 {
-				file = file[n+len(splitAfterPart):]
+			if relFile, err := filepath.Rel(wd, file); err == nil {
+				file = "./" + relFile
 			}
+
 			return file, frame.Line
 		}
 

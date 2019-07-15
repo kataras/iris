@@ -33,7 +33,7 @@ type Config struct {
 	Database string
 	// MaxActive. Defaults to 10.
 	MaxActive int
-	// Timeout for connect, write and read, defautls to 30 seconds, 0 means no timeout.
+	// Timeout for connect, write and read, defaults to 30 seconds, 0 means no timeout.
 	Timeout time.Duration
 	// Prefix "myprefix-for-this-website". Defaults to "".
 	Prefix string
