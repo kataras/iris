@@ -20,6 +20,7 @@ import (
 	"github.com/kataras/iris"
 
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const version = "0.0.1"
@@ -35,7 +36,8 @@ func init() {
 }
 
 func main() {
-	client, err := mongo.Connect(context.Background(), env.DSN)
+	clientOptions := options.Client().SetHosts([]string{env.DSN})
+	client, err := mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
 		log.Fatal(err)
 	}
