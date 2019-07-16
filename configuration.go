@@ -356,6 +356,63 @@ func WithOtherValue(key string, val interface{}) Configurator {
 	}
 }
 
+// WithTunnel is the `iris.Configurator` for the `iris.Configuration.Tunnel` field.
+// It requires the "name" which is used to create on server ran and terminate on server shutdown
+// the ngrok http(s) tunnel for an Iris app.
+// Its second variadic input argument can accept one or more functions
+// that accept a pointer to TunnelConfiguration value which can be used
+// for further customization of the tunnel configuration one.
+// Alternatively use the `iris.WithConfiguration(iris.Configuration{Tunnel: iris.TunnelConfiguration{ ...}}}`.
+func WithTunnel(name string, tunnelConfigurator ...func(*TunnelConfiguration)) Configurator {
+	conf := &TunnelConfiguration{Name: name}
+
+	for _, tc := range tunnelConfigurator {
+		if tc != nil {
+			tc(conf)
+		}
+	}
+
+	return func(app *Application) {
+		app.config.Tunnel = *conf
+		// TODO: do the work here if the vhost is set (when this configurator is set through app.Run)
+		// or find a way to do it when `app.Configure` is used instead, probably it will go inside app.Run though.
+	}
+}
+
+// TunnelConfiguration contains configuration
+// for the optional tunneling through ngrok feature.
+type TunnelConfiguration struct {
+	// Name is the only one required field,
+	// it is used to create and close tunnels, e.g. "MyApp".
+	// If this field is not empty then ngrok tunnels will be created
+	// when the iris app is up and running.
+	Name string `json:"name" yaml:"Name" toml:"Name"`
+	// Usernamem and Password fields are optionally and are used
+	// to authenticate the ngrok tunnel access.
+	Username string `json:"username,omitempty" yaml:"Username" toml:"Username"`
+	Password string `json:"password,omitemmpty" yaml:"Password" toml:"Password"`
+
+	// Bin is the system binary path of the ngrok executable file.
+	// If it's empty then the framework will try to find it through system env variables.
+	Bin string `json:"bin,omitempty" yaml:"Bin" toml:"Bin"`
+	// Addr is basically optionally as it will be set through
+	// Iris built-in Runners, however, if `iris.Raw` is used
+	// then this field should be set of form 'hostname:port'
+	// because framework cannot be aware
+	// of the address you used to run the server on this custom runner.
+	Addr string `json:"addr,omitempty" yaml:"Addr" toml:"Addr"`
+	// WebUIAddr is the web interface address of an already-running ngrok instance.
+	// Iris will try to fetch the default web interface address(http://127.0.0.1:4040)
+	// to determinate if a ngrok instance is running before try to start it manually.
+	// However if a custom web interface address is used,
+	// this field must be set e.g. http://127.0.0.1:5050.
+	WebInterface string `json:"webInterface" yaml:"WebInterface" toml:"WebInterface"`
+}
+
+func (tc *TunnelConfiguration) isEnabled() bool {
+	return tc != nil && tc.Name != ""
+}
+
 // Configuration the whole configuration for an iris instance
 // these can be passed via options also, look at the top of this file(configuration.go).
 // Configuration is a valid OptionSetter.
@@ -363,6 +420,12 @@ type Configuration struct {
 	// vhost is private and setted only with .Run method, it cannot be changed after the first set.
 	// It can be retrieved by the context if needed (i.e router for subdomains)
 	vhost string
+
+	// TunnelConfiguration can be optionally set
+	// to enable ngrok http(s) tunneling for this Iris app instance.
+	// If iris logger's level is set to "debug" then it will print out
+	// ngrok tunneling info messages too.
+	Tunnel TunnelConfiguration `json:"tunnel,omitempty" yaml:"Tunnel" toml"Tunnel"`
 
 	// IgnoreServerErrors will cause to ignore the matched "errors"
 	// from the main application's `Run` function.
@@ -676,6 +739,10 @@ func (c Configuration) GetOther() map[string]interface{} {
 func WithConfiguration(c Configuration) Configurator {
 	return func(app *Application) {
 		main := app.config
+
+		if c.Tunnel.isEnabled() {
+			main.Tunnel = c.Tunnel
+		}
 
 		if v := c.IgnoreServerErrors; len(v) > 0 {
 			main.IgnoreServerErrors = append(main.IgnoreServerErrors, v...)
