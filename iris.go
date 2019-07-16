@@ -19,6 +19,7 @@ import (
 	"github.com/kataras/iris/core/host"
 	"github.com/kataras/iris/core/netutil"
 	"github.com/kataras/iris/core/router"
+
 	// handlerconv conversions
 	"github.com/kataras/iris/core/handlerconv"
 	// cache conversions
@@ -231,7 +232,9 @@ func (app *Application) SubdomainRedirect(from, to router.Party) router.Party {
 // Returns itself in order to be used like `app:= New().Configure(...)`
 func (app *Application) Configure(configurators ...Configurator) *Application {
 	for _, cfg := range configurators {
-		cfg(app)
+		if cfg != nil {
+			cfg(app)
+		}
 	}
 
 	return app
