@@ -12,7 +12,7 @@
   <!-- -->
   <script src="https://unpkg.com/director@1.2.8/build/director.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/neffos.js@latest/dist/neffos.min.js"></script>
-  <!-- -->
+
   <style>
     [v-cloak] {
       display: none;
@@ -24,20 +24,22 @@
   <section class="todoapp">
     <header class="header">
       <h1>todos</h1>
-      <input class="new-todo" autofocus autocomplete="off" placeholder="What needs to be done?" v-model="newTodo" @keyup.enter="addTodo">
+      <input class="new-todo" autofocus autocomplete="off" placeholder="What needs to be done?" v-model="newTodo"
+        @keyup.enter="addTodo">
     </header>
     <section class="main" v-show="todos.length" v-cloak>
       <input class="toggle-all" type="checkbox" v-model="allDone">
       <ul class="todo-list">
-        <li v-for="todo in filteredTodos" class="todo" :key="todo.id" :class="{ completed: todo.completed, editing: todo == editedTodo }">
+        <li v-for="todo in filteredTodos" class="todo" :key="todo.id"
+          :class="{ completed: todo.completed, editing: todo == editedTodo }">
           <div class="view">
-             <!-- v-model="todo.completed" -->
+            <!-- v-model="todo.completed" -->
             <input class="toggle" type="checkbox" @click="completeTodo(todo)">
             <label @dblclick="editTodo(todo)">{{ todo.title }}</label>
             <button class="destroy" @click="removeTodo(todo)"></button>
           </div>
-          <input class="edit" type="text" v-model="todo.title" v-todo-focus="todo == editedTodo" @blur="doneEdit(todo)" @keyup.enter="doneEdit(todo)"
-            @keyup.esc="cancelEdit(todo)">
+          <input class="edit" type="text" v-model="todo.title" v-todo-focus="todo == editedTodo" @blur="doneEdit(todo)"
+            @keyup.enter="doneEdit(todo)" @keyup.esc="cancelEdit(todo)">
         </li>
       </ul>
     </section>
