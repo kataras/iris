@@ -78,6 +78,7 @@ Structuring depends on your own needs. We can't tell you how to design your own 
 ### HTTP Listening
 
 - [Common, with address](http-listening/listen-addr/main.go)
+    * [public domain address](http-listening/listen-addr-public/main.go) **NEW**
     * [omit server errors](http-listening/listen-addr/omit-server-errors/main.go)
 - [UNIX socket file](http-listening/listen-unix/main.go)
 - [TLS](http-listening/listen-tls/main.go)

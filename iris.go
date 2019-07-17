@@ -2,11 +2,14 @@ package iris
 
 import (
 	// std packages
+
 	stdContext "context"
+	"fmt"
 	"io"
 	"log"
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -365,7 +368,14 @@ var (
 	//
 	// A shortcut for the `context#NewConditionalHandler`.
 	NewConditionalHandler = context.NewConditionalHandler
-
+	// FileServer returns a Handler which serves files from a specific system, phyisical, directory
+	// or an embedded one.
+	// The first parameter is the directory, relative to the executable program.
+	// The second optional parameter is any optional settings that the caller can use.
+	//
+	// See `Party#HandleDir` too.
+	// Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/file-server
+	// A shortcut for the `router.FileServer`.
 	FileServer = router.FileServer
 	// StripPrefix returns a handler that serves HTTP requests
 	// by removing the given prefix from the request URL's Path
@@ -586,6 +596,14 @@ var RegisterOnInterrupt = host.RegisterOnInterrupt
 // Shutdown gracefully terminates all the application's server hosts.
 // Returns an error on the first failure, otherwise nil.
 func (app *Application) Shutdown(ctx stdContext.Context) error {
+	for _, t := range app.config.Tunneling.Tunnels {
+		if t.Name == "" {
+			continue
+		}
+
+		app.config.Tunneling.stopTunnel(t)
+	}
+
 	for i, su := range app.Hosts {
 		app.logger.Debugf("Host[%d]: Shutdown now", i)
 		if err := su.Shutdown(ctx); err != nil {
@@ -822,6 +840,8 @@ func (app *Application) Run(serve Runner, withOrWithout ...Configurator) error {
 	}
 
 	app.Configure(withOrWithout...)
+	app.tryStartTunneling()
+
 	app.logger.Debugf("Application: running using %d host(s)", len(app.Hosts)+1)
 
 	// this will block until an error(unless supervisor's DeferFlow called from a Task).
@@ -831,4 +851,56 @@ func (app *Application) Run(serve Runner, withOrWithout ...Configurator) error {
 	}
 
 	return err
+}
+
+// https://ngrok.com/docs
+func (app *Application) tryStartTunneling() {
+	if !app.config.Tunneling.isEnabled() {
+		return
+	}
+
+	hostIndex := 0
+
+	app.ConfigureHost(func(su *host.Supervisor) {
+		su.RegisterOnServe(func(h host.TaskHost) {
+			tc := app.config.Tunneling
+			if tc.WebInterface == "" {
+				tc.WebInterface = "http://127.0.0.1:4040"
+			}
+
+			if len(tc.Tunnels) > hostIndex {
+				t := tc.Tunnels[hostIndex]
+				if t.Name == "" {
+					t.Name = fmt.Sprintf("iris-app-%d-%s", hostIndex+1, time.Now().Format(app.config.TimeFormat))
+				}
+
+				if t.Addr == "" {
+					t.Addr = su.Server.Addr
+				}
+
+				var publicAddr string
+				err := tc.startTunnel(t, &publicAddr)
+				if err != nil {
+					app.Logger().Errorf("Host: tunneling error: %v", err)
+					return
+				}
+
+				// to make subdomains resolution still based on this new remote, public addresses.
+				app.config.vhost = publicAddr[strings.Index(publicAddr, "://")+3:]
+
+				// app.logger.Debugf("Host: new virtual host is %s", app.config.vhost)
+				// app.Logger().Printer.Output.Write([]byte("))
+
+				// directLog := []byte(fmt.Sprintf("| Public Address: %s |\n", publicAddr))
+				// box := bytes.Repeat([]byte("="), len(directLog))
+				// directLog = append(append(box, []byte("\n")...), append(directLog, append(box, []byte("\n")...)...)...)
+				directLog := []byte(fmt.Sprintf("⬝ Public Address: %s\n", publicAddr))
+				app.Logger().Printer.Output.Write(directLog)
+
+			}
+
+			hostIndex++
+		})
+	})
+
 }

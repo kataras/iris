@@ -62,7 +62,10 @@ type (
 	// Look the `core/router#APIBuilder` for its implementation.
 	//
 	// A shortcut for the `core/router#Party`, useful when `PartyFunc` is being used.
-	Party      = router.Party
+	Party = router.Party
+	// DirOptions contains the optional settings that
+	// `FileServer` and `Party#HandleDir` can use to serve files and assets.
+	// A shortcut for the `router.DirOptions`, useful when `FileServer` or `HandleDir` is being used.
 	DirOptions = router.DirOptions
 	// ExecutionRules gives control to the execution of the route handlers outside of the handlers themselves.
 	// Usage:
