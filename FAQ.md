@@ -24,7 +24,7 @@ Add a `badge` to your open-source projects powered by [Iris](https://iris-go.com
 go get -u github.com/kataras/iris
 ```
 
-Go installed version 1.12 and above is required.
+Go version 1.12 and above is required.
 
 ## Learning
 
@@ -60,4 +60,4 @@ Yes, https://chat.iris-go.com
 
 By normal people, like you, who help us by donating small or large amounts of money.
 
-Help this project deliver awesome and unique features with the highest possible code quality by donating any amount via [PayPal](https://www.paypal.me/kataras). Your name will be published [here](https://iris-go.com/donate) after your approval via e-mail.
+Help this project deliver awesome and unique features with the highest possible code quality by donating any amount via [PayPal](https://www.paypal.me/kataras). Your name will be published [here](https://iris-go.com) after your approval via e-mail.

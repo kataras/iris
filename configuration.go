@@ -461,7 +461,18 @@ func (tc TunnelingConfiguration) startTunnel(t Tunnel, publicAddr *string) error
 
 	if !tc.isNgrokRunning() {
 		ngrokBin := "ngrok" // environment binary.
-		if tc.Bin != "" {
+
+		if tc.Bin == "" {
+			_, err := exec.LookPath(ngrokBin)
+			if err != nil {
+				ngrokEnvVar, found := os.LookupEnv("NGROK")
+				if !found {
+					return fmt.Errorf(`"ngrok" executable not found, please install it from: https://ngrok.com/download`)
+				}
+
+				ngrokBin = ngrokEnvVar
+			}
+		} else {
 			ngrokBin = tc.Bin
 		}
 
