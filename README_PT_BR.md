@@ -91,8 +91,6 @@ O único pré requisito é a [Linguagem de Programação GO](https://golang.org/
 $ go get -u github.com/kataras/iris
 ```
 
-Iris lança mão da [pasta vendor](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo). Dessa forma você conseguirá obter builds reprodutíveis já que esse método impede que nomes no branch upstream sejam renomeados ou deletados.
-
 [![Iris vs .NET Core(C#) vs Node.js (Express)](https://iris-go.com/images/benchmark-new-gray.png)](_benchmarks/README_UNIX.md)
 
 _Atualizado em : [Terça, 21 de Novembro de 2017](_benchmarks/README_UNIX.md)_

@@ -314,7 +314,7 @@ Follow the examples below,
 - [Overview - Plus Repository and Service layers](mvc/overview)
 - [Login showcase - Plus Repository and Service layers](mvc/login)
 - [Singleton](mvc/singleton)
-- [Websocket Controller](mvc/websocket)
+- [Websocket Controller](mvc/websocket) **UPDATED**
 - [Register Middleware](mvc/middleware)
 - [Vue.js Todo MVC](tutorial/vuejs-todo-mvc)
 
