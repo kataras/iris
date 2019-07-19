@@ -47,27 +47,20 @@ Iris does not force you to use any specific ORM or template engine. With support
 The only requirement is the [Go Programming Language](https://golang.org/dl/), version 1.12 and above.
 
 ```sh
-$ go get github.com/kataras/iris
+$ go get github.com/kataras/iris@v11.2.0
 ```
 
-<details>
-<summary>Known issues for code editors and IDEs at general</summary>
+Or inside your `go.mod` file:
 
-### VS Code
+```sh
+module your_project_name
 
-For some reason the latest [vscode-go language extension](https://github.com/Microsoft/vscode-go) does not provide enough intelligence for the `iris.Context` type alias (input parameters documentation and definition navigation).
-Probably you have already experienced this issue with other Go libraries too, it is not an iris-specific issue, it is a general issue for all Golang type aliases.
+go 1.12
 
-Therefore if you use [VS Code](https://code.visualstudio.com/) and you need these editor's features, import the original path; add an extra import statement of the original path of the `Context`, that will do it:
-
-```go
-import (
-    "github.com/kataras/iris"
-    "github.com/kataras/iris/context" // <- HERE
+require (
+    github.com/kataras/iris v11.2.0
 )
 ```
-
-</details>
 
 ## Quick start
  
