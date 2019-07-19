@@ -91,8 +91,6 @@ Satu - satunya persyaratan adalah [Go Programming Language](https://golang.org/d
 $ go get -u github.com/kataras/iris
 ```
 
-Iris mengambil keuntungan dari fitur [vendor directory](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo). Anda mendapatkan build yang benar - benar dapat direproduksi, karena metode ini menjaga terhadap penggantian nama dan penghapusan di upstream.
-
 [![Iris vs .NET Core(C#) vs Node.js (Express)](https://iris-go.com/images/benchmark-new-gray.png)](_benchmarks/README_UNIX.md)
 
 _Diperbarui pada: [Tuesday, 21 November 2017](_benchmarks/README_UNIX.md)_

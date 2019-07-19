@@ -91,8 +91,6 @@ _
 $ go get -u github.com/kataras/iris
 ```
 
-Irisは[vendor directory](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo)機能の利点を活かしています。これが上流レポジトリの変更や削除を防ぐため、再現可能なビルドを実現します。
-
 [![Iris vs .NET Core(C#) vs Node.js (Express)](https://iris-go.com/images/benchmark-new-gray.png)](_benchmarks/README_UNIX.md)
 
 _Updated at: [Tuesday, 21 November 2017](_benchmarks/README_UNIX.md)_

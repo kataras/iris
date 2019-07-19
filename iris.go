@@ -859,8 +859,6 @@ func (app *Application) tryStartTunneling() {
 		return
 	}
 
-	hostIndex := 0
-
 	app.ConfigureHost(func(su *host.Supervisor) {
 		su.RegisterOnServe(func(h host.TaskHost) {
 			tc := app.config.Tunneling
@@ -868,10 +866,9 @@ func (app *Application) tryStartTunneling() {
 				tc.WebInterface = "http://127.0.0.1:4040"
 			}
 
-			if len(tc.Tunnels) > hostIndex {
-				t := tc.Tunnels[hostIndex]
+			for tunnIdx, t := range tc.Tunnels {
 				if t.Name == "" {
-					t.Name = fmt.Sprintf("iris-app-%d-%s", hostIndex+1, time.Now().Format(app.config.TimeFormat))
+					t.Name = fmt.Sprintf("iris-app-%d-%s", tunnIdx+1, time.Now().Format(app.config.TimeFormat))
 				}
 
 				if t.Addr == "" {
@@ -888,19 +885,9 @@ func (app *Application) tryStartTunneling() {
 				// to make subdomains resolution still based on this new remote, public addresses.
 				app.config.vhost = publicAddr[strings.Index(publicAddr, "://")+3:]
 
-				// app.logger.Debugf("Host: new virtual host is %s", app.config.vhost)
-				// app.Logger().Printer.Output.Write([]byte("))
-
-				// directLog := []byte(fmt.Sprintf("| Public Address: %s |\n", publicAddr))
-				// box := bytes.Repeat([]byte("="), len(directLog))
-				// directLog = append(append(box, []byte("\n")...), append(directLog, append(box, []byte("\n")...)...)...)
 				directLog := []byte(fmt.Sprintf("⬝ Public Address: %s\n", publicAddr))
 				app.Logger().Printer.Output.Write(directLog)
-
 			}
-
-			hostIndex++
 		})
 	})
-
 }

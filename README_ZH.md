@@ -87,8 +87,6 @@ _
 $ go get -u github.com/kataras/iris
 ```
 
-Iris 使用 [vendor](https://docs.google.com/document/d/1Bz5-UB7g2uPBdOx-rw5t9MxJwkfpx90cqG9AFL0JAYo) 包依赖管理方式。vendor 包管理的方式可以有效处理包依赖更新问题
-
 [![Iris vs .NET Core(C#) vs Node.js (Express)](https://iris-go.com/images/benchmark-new-gray.png)](_benchmarks/README_UNIX.md)
 
 _更新于: [2017年11月21日星期二](_benchmarks/README_UNIX.md)_

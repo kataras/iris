@@ -21,7 +21,7 @@ require (
 	github.com/iris-contrib/i18n v0.0.0-20171121225848-987a633949d0
 	github.com/json-iterator/go v1.1.6
 	github.com/kataras/golog v0.0.0-20190624001437-99c81de45f40
-	github.com/kataras/neffos v0.0.7
+	github.com/kataras/neffos v0.0.8
 	github.com/kataras/pio v0.0.0-20190103105442-ea782b38602d // indirect
 	github.com/mediocregopher/radix/v3 v3.3.0
 	github.com/microcosm-cc/bluemonday v1.0.2
