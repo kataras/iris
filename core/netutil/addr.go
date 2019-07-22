@@ -159,12 +159,14 @@ func ResolveVHost(addr string) string {
 	}
 
 	if idx := strings.IndexByte(addr, ':'); idx == 0 {
-		// only port, then return the localhost hostname
-		return "localhost" + addr[idx:]
+		// only port, then return the 0.0.0.0
+		return "0.0.0.0" + addr[idx:]
 	}
 
 	// with ':' in order to not replace the ipv6 loopback addresses
-	addr = strings.Replace(addr, "0.0.0.0:", "localhost:", 1)
+	// addr = strings.Replace(addr, "0.0.0.0:", "localhost:", 1)
+	// some users are confusing from the log output ^.
+
 	port := ResolvePort(addr)
 	if port == 80 || port == 443 {
 		return ResolveHostname(addr)
