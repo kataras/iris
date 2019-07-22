@@ -2,7 +2,7 @@
 
 [![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=for-the-badge)](https://travis-ci.org/kataras/iris) [![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=for-the-badge)](https://goreportcard.com/report/github.com/kataras/iris)<!--[![godocs](https://img.shields.io/badge/go-%20docs-488AC7.svg?style=for-the-badge)](https://godoc.org/github.com/kataras/iris)--> [![view examples](https://img.shields.io/badge/learn%20by-examples-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/tree/master/_examples) [![chat](https://img.shields.io/gitter/room/iris_go/community.svg?color=blue&logo=gitter&style=for-the-badge)](https://gitter.im/iris_go/community) [![release](https://img.shields.io/badge/release%20-v11.2-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/releases)
 
-Το Iris είναι ένα γρήγορο, απλό αλλά και πλήρως λειτουργικό και πολύ αποδοτικό web framework για τη Go. Παρέχει ένα εκφραστικό και εύχρηστο υπόβαθρο για την επόμενη ιστοσελίδα σας ή το API.
+Το Iris είναι ένα γρήγορο, απλό αλλά και πλήρως λειτουργικό και πολύ αποδοτικό web framework για τη Go γλώσσα προγραμματισμού. Παρέχει ένα εκφραστικό και εύχρηστο υπόβαθρο για την επόμενη ιστοσελίδα σας.
 
 Μάθετε τι [λένε οι άλλοι για το Iris](https://iris-go.com/testimonials/) και δώστε ένα **αστεράκι** στο GitHub.
 
@@ -49,19 +49,19 @@ $ go run example.go
 
 Το Iris περιέχει εκτενείς και λεπτομερείς **[wiki](https://github.com/kataras/iris/wiki)** καθιστώντας το εύκολο στην εκμάθηση.
 
-Για λεπτομερέστερη τεχνική τεκμηρίωση μπορείτε να κατευθυνθείτε προς τα [godocs](https://godoc.org/github.com/kataras/iris) μας. Και για εκτελέσιμο κώδικα μπορείτε πάντα να επισκεφθείτε τa [παραδείγματα](_examples/).
+Για λεπτομερέστερη τεχνική τεκμηρίωση μπορείτε να κατευθυνθείτε προς τα [godocs](https://godoc.org/github.com/kataras/iris) μας. Και για εκτελέσιμο κώδικα μπορείτε πάντα να επισκέπτεστε τα [παραδείγματα](_examples/).
 
 ### Σας αρέσει να διαβάζετε ενώ ταξιδεύετε;
 
-Μπορείτε να [ζητήσετε](https://bit.ly/iris-req-book) σήμερα την PDF έκδοση και την online πρόσβαση στο **Ηλεκτρονικό Βιβλίο(E-Book)** και να συμμετάσχετε στην ανάπτυξη του Iris.
+Μπορείτε να [ζητήσετε](https://bit.ly/iris-req-book) σήμερα την PDF έκδοση και την online πρόσβαση στο Ηλεκτρονικό μας **Βιβλίο(E-Book)** και να συμμετάσχετε στην ανάπτυξη του Iris.
 
 [![https://iris-go.com/images/iris-book-overview.png](https://iris-go.com/images/iris-book-overview.png)](https://bit.ly/iris-req-book)
 
 ## Συνεισφορά
 
-Θα θέλαμε να δούμε τη συμβολή σας στο Iris Web Framework! Για περισσότερες πληροφορίες σχετικά με τη συμβολή στο έργο Iris, δείτε το αρχείο [CONTRIBUTING.md](CONTRIBUTING.md).
+Θα θέλαμε να δούμε τη συμβολή σας στο Iris Web Framework! Για περισσότερες πληροφορίες σχετικά με το πως μπορείτε να συμβάλετε, δείτε το [CONTRIBUTING.md](CONTRIBUTING.md) αρχείο.
 
-[Κατάλογος όλων των συνεισφορών](https://github.com/kataras/iris/graphs/contributors)
+[Κατάλογος όλων των συνεισφορών](https://github.com/kataras/iris/graphs/contributors).
 
 ## Αδυναμίες Ασφάλειας
 
