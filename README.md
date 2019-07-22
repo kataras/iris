@@ -2,14 +2,15 @@
 
 [![build status](https://img.shields.io/travis/kataras/iris/master.svg?style=for-the-badge)](https://travis-ci.org/kataras/iris) [![report card](https://img.shields.io/badge/report%20card-a%2B-ff3333.svg?style=for-the-badge)](https://goreportcard.com/report/github.com/kataras/iris)<!--[![godocs](https://img.shields.io/badge/go-%20docs-488AC7.svg?style=for-the-badge)](https://godoc.org/github.com/kataras/iris)--> [![view examples](https://img.shields.io/badge/learn%20by-examples-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/tree/master/_examples) [![chat](https://img.shields.io/gitter/room/iris_go/community.svg?color=blue&logo=gitter&style=for-the-badge)](https://gitter.im/iris_go/community) [![release](https://img.shields.io/badge/release%20-v11.2-0077b3.svg?style=for-the-badge)](https://github.com/kataras/iris/releases)
 
-<a href="https://iris-go.com"> <img align="right" width="95px" src="https://iris-go.com/images/icon.svg?v=a" title="logo created by @merry.dii" /> </a>
-
 Iris is a fast, simple yet fully featured and very efficient web framework for Go. It provides a beautifully expressive and easy to use foundation for your next website or API.
 
 Learn what [others say about Iris](https://iris-go.com/testimonials/) and **star** this github repository.
 
-## Quick start
- 
+## Learning Iris
+
+<details>
+<summary>Qick start</summary>
+
 ```sh
 # assume the following code in example.go file
 $ cat example.go
@@ -37,15 +38,31 @@ func main() {
 $ go run example.go
 ```
 
+> Routing is powered by [muxie](https://github.com/kataras/muxie), the most powerful and fastest trie-based software written in Go.
 
+</details>
 
-Routing is powered by the [muxie](https://github.com/kataras/muxie#philosophy) project.
+Iris contains extensive and thorough **[wiki](https://github.com/kataras/iris/wiki)** making it easy to get started with the framework.
 
-### Get hired
+For a more detailed technical documentation you can head over to our [godocs](https://godoc.org/github.com/kataras/iris). And for executable code you can always visit the [_examples](_examples/) repository's subdirectory.
 
-There are many companies and start-ups looking for Go web developers with Iris experience as requirement, we are searching for you every day and we post those information via our [facebook page](https://www.facebook.com/iris.framework), like the page to get notified, we have already posted some of them.
+### Do you like to read while traveling?
 
-### Author
+You can [request](https://bit.ly/iris-req-book) a PDF version and online access of the **E-Book** today and be participated in the development of Iris.
+
+[![https://iris-go.com/images/iris-book-overview.png](https://iris-go.com/images/iris-book-overview.png)](https://bit.ly/iris-req-book)
+
+## Contributing
+
+We'd love to see your contribution to the Iris Web Framework! For more information about contributing to the Iris project please check the [CONTRIBUTING.md](CONTRIBUTING.md) file.
+
+[List of all Contributors](https://github.com/kataras/iris/graphs/contributors)
+
+## Security Vulnerabilities
+
+If you discover a security vulnerability within Iris, please send an e-mail to [iris-go@outlook.com](mailto:iris-go@outlook.com). All security vulnerabilities will be promptly addressed.
+
+## Author
 
 <table>
 <tr>
@@ -65,6 +82,8 @@ Gerasimos Maropoulos
 
 ## License
 
-Iris is licensed under the [3-Clause BSD License](LICENSE). Iris is 100% free and open-source software.
+The project name "Iris" was insipired by the Greek mythology[*](https://en.wikipedia.org/wiki/Iris_(mythology)).
 
-For any questions regarding the license please send [e-mail](mailto:kataras2006@hotmail.com?subject=Iris%20License).
+Iris Web Framework is free and open-source software licensed under the [3-Clause BSD License](LICENSE).
+
+For any questions regarding the license please send [e-mail](mailto:iris-go@outlook.com?subject=Iris%20License).
