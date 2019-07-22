@@ -424,7 +424,7 @@ var (
 	//
 	// If "cacheDur" <=0 then it returns the `NoCache` middleware instaed to disable the caching between browser's "back" and "forward" actions.
 	//
-	// Usage: `app.Use(iris.StaticCache(24 * time.Hour))` or `app.Use(iris.Staticcache(-1))`.
+	// Usage: `app.Use(iris.StaticCache(24 * time.Hour))` or `app.Use(iris.StaticCache(-1))`.
 	// A middleware, which is a simple Handler can be called inside another handler as well, example:
 	// cacheMiddleware := iris.StaticCache(...)
 	// func(ctx iris.Context){
@@ -449,7 +449,7 @@ var (
 	// Developers are free to extend this method's behavior
 	// by watching system directories changes manually and use of the `ctx.WriteWithExpiration`
 	// with a "modtime" based on the file modified date,
-	// simillary to the `HandleDir`(which sends status OK(200) and browser disk caching instead of 304).
+	// similar to the `HandleDir`(which sends status OK(200) and browser disk caching instead of 304).
 	//
 	// A shortcut of the `cache#Cache304`.
 	Cache304 = cache.Cache304
@@ -499,6 +499,21 @@ var (
 	//
 	// A shortcut for the `context#IsErrPath`.
 	IsErrPath = context.IsErrPath
+)
+
+// Contains the enum values of the `Context.GetReferrer()` method,
+// shortcuts of the context subpackage.
+const (
+	ReferrerInvalid  = context.ReferrerInvalid
+	ReferrerIndirect = context.ReferrerIndirect
+	ReferrerDirect   = context.ReferrerDirect
+	ReferrerEmail    = context.ReferrerEmail
+	ReferrerSearch   = context.ReferrerSearch
+	ReferrerSocial   = context.ReferrerSocial
+
+	ReferrerNotGoogleSearch     = context.ReferrerNotGoogleSearch
+	ReferrerGoogleOrganicSearch = context.ReferrerGoogleOrganicSearch
+	ReferrerGoogleAdwords       = context.ReferrerGoogleAdwords
 )
 
 // ConfigureHost accepts one or more `host#Configuration`, these configurators functions

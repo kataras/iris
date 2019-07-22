@@ -7,8 +7,7 @@ import (
 	"github.com/kataras/iris/websocket"
 
 	// Used when "enableJWT" constant is true:
-	"github.com/dgrijalva/jwt-go"
-	jwtmiddleware "github.com/iris-contrib/middleware/jwt"
+	"github.com/iris-contrib/middleware/jwt"
 )
 
 // values should match with the client sides as well.
@@ -50,17 +49,22 @@ func main() {
 		websocket.DefaultGorillaUpgrader, /* DefaultGobwasUpgrader can be used too. */
 		serverEvents)
 
-	j := jwtmiddleware.New(jwtmiddleware.Config{
+	j := jwt.New(jwt.Config{
 		// Extract by the "token" url,
 		// so the client should dial with ws://localhost:8080/echo?token=$token
-		Extractor: jwtmiddleware.FromParameter("token"),
+		Extractor: jwt.FromParameter("token"),
 
 		ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
 			return []byte("My Secret"), nil
 		},
-		// When set, the middleware verifies that tokens are signed with the specific signing algorithm
-		// If the signing method is not constant the ValidationKeyGetter callback can be used to implement additional checks
-		// Important to avoid security issues described here: https://auth0.com/blog/2015/03/31/critical-vulnerabilities-in-json-web-token-libraries/
+
+		// When set, the middleware verifies that tokens are signed
+		// with the specific signing algorithm
+		// If the signing method is not constant the
+		// `Config.ValidationKeyGetter` callback field can be used
+		// to implement additional checks
+		// Important to avoid security issues described here:
+		// https://auth0.com/blog/2015/03/31/critical-vulnerabilities-in-json-web-token-libraries/
 		SigningMethod: jwt.SigningMethodHS256,
 	})
 

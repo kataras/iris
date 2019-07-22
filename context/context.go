@@ -658,8 +658,9 @@ type Context interface {
 	//
 	// It's mostly used internally on core/router/fs.go and context methods.
 	WriteNotModified()
-	// WriteWithExpiration like Write but it sends with an expiration datetime
-	// which is refreshed every package-level `StaticCacheDuration` field.
+	// WriteWithExpiration works like `Write` but it will check if a resource is modified,
+	// based on the "modtime" input argument,
+	// otherwise sends a 304 status code in order to let the client-side render the cached content.
 	WriteWithExpiration(body []byte, modtime time.Time) (int, error)
 	// StreamWriter registers the given stream writer for populating
 	// response body.
@@ -1672,10 +1673,10 @@ type (
 	}
 
 	// ReferrerType is the goreferrer enum for a referrer type (indirect, direct, email, search, social).
-	ReferrerType int
+	ReferrerType = goreferrer.ReferrerType
 
 	// ReferrerGoogleSearchType is the goreferrer enum for a google search type (organic, adwords).
-	ReferrerGoogleSearchType int
+	ReferrerGoogleSearchType = goreferrer.GoogleSearchType
 )
 
 // Contains the available values of the goreferrer enums.
@@ -1691,14 +1692,6 @@ const (
 	ReferrerGoogleOrganicSearch
 	ReferrerGoogleAdwords
 )
-
-func (gs ReferrerGoogleSearchType) String() string {
-	return goreferrer.GoogleSearchType(gs).String()
-}
-
-func (r ReferrerType) String() string {
-	return goreferrer.ReferrerType(r).String()
-}
 
 // unnecessary but good to know the default values upfront.
 var emptyReferrer = Referrer{Type: ReferrerInvalid, GoogleType: ReferrerNotGoogleSearch}
@@ -2584,8 +2577,9 @@ func (ctx *context) WriteNotModified() {
 	ctx.StatusCode(http.StatusNotModified)
 }
 
-// WriteWithExpiration like Write but it sends with an expiration datetime
-// which is refreshed every package-level `StaticCacheDuration` field.
+// WriteWithExpiration works like `Write` but it will check if a resource is modified,
+// based on the "modtime" input argument,
+// otherwise sends a 304 status code in order to let the client-side render the cached content.
 func (ctx *context) WriteWithExpiration(body []byte, modtime time.Time) (int, error) {
 	if modified, err := ctx.CheckIfModifiedSince(modtime); !modified && err == nil {
 		ctx.WriteNotModified()

@@ -34,31 +34,23 @@ import (
 	"github.com/kataras/iris/context"
 )
 
-// Cache accepts the cache expiration duration
-// if the expiration <=2 seconds then expiration is taken by the "cache-control's maxage" header
-// returns context.Handler, which you can use as your default router or per-route handler
+// Cache accepts the cache expiration duration.
+// If the "expiration" input argument is invalid, <=2 seconds,
+// then expiration is taken by the "cache-control's maxage" header.
+// Returns a Handler structure which you can use to customize cache furher.
 //
 // All types of response can be cached, templates, json, text, anything.
 //
 // Use it for server-side caching, see the `iris#Cache304` for an alternative approach that
-// may fit your needs most.
+// may be more suited to your needs.
 //
 // You can add validators with this function.
 func Cache(expiration time.Duration) *client.Handler {
 	return client.NewHandler(expiration)
 }
 
-// Handler accepts one single parameter:
-// the cache expiration duration
-// if the expiration <=2 seconds then expiration is taken by the "cache-control's maxage" header
-// returns context.Handler.
-//
-// All types of response can be cached, templates, json, text, anything.
-//
-// Use it for server-side caching, see the `iris#Cache304` for an alternative approach that
-// may fit your needs most.
-//
-// it returns a context.Handler which can be used as a middleware, for more options use the `Cache`.
+// Handler like `Cache` but returns an Iris Handler to be used as a middleware.
+// For more options use the `Cache`.
 //
 // Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/#caching
 func Handler(expiration time.Duration) context.Handler {
