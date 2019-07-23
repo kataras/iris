@@ -26,5 +26,4 @@ func main() {
 
 	// start the server (HTTPS) on port 443, this is a blocking func
 	app.Run(iris.TLS("127.0.0.1:443", "mycert.cert", "mykey.key"))
-
 }
