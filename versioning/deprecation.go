@@ -36,7 +36,6 @@ func Deprecated(handler context.Handler, options DeprecationOptions) context.Han
 	}
 
 	return func(ctx context.Context) {
-		handler(ctx)
 		ctx.Header("X-API-Warn", options.WarnMessage)
 
 		if !options.DeprecationDate.IsZero() {
@@ -46,5 +45,7 @@ func Deprecated(handler context.Handler, options DeprecationOptions) context.Han
 		if options.DeprecationInfo != "" {
 			ctx.Header("X-API-Deprecation-Info", options.DeprecationInfo)
 		}
+
+		handler(ctx)
 	}
 }

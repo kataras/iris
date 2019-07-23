@@ -1,6 +1,6 @@
 package hero
 
-// It's so easy, no need to be lived anywhere as built'n.. users should understand
+// It's so easy, no need to be lived anywhere as builtin.. users should understand
 // how easy it's by using it.
 
 // // Session is a binder that will fill a *sessions.Session function input argument

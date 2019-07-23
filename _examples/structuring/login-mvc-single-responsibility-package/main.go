@@ -18,7 +18,7 @@ func main() {
 
 	app.RegisterView(iris.HTML("./views", ".html").Layout("shared/layout.html"))
 
-	app.StaticWeb("/public", "./public")
+	app.HandleDir("/public", "./public")
 
 	mvc.Configure(app, configureMVC)
 

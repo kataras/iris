@@ -1,4 +1,4 @@
-Built'n Handlers
+Builtin Handlers
 ------------
 
 | Middleware | Example |

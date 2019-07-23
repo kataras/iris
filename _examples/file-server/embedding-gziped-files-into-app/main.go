@@ -16,12 +16,13 @@ import (
 func newApp() *iris.Application {
 	app := iris.New()
 
-	// Note the `GzipAsset` and `GzipAssetNames` are different from `go-bindata`'s `Asset` and `AssetNames,
-	// that means that you can use both `go-bindata` and `bindata` tools,
-	// the `go-bindata` can be used for the view engine's `Binary` method
-	// and the `bindata` with the `StaticEmbeddedGzip` (x8 times faster than the StaticEmbeded with `go-bindata`).
-	app.StaticEmbeddedGzip("/static", "./assets", GzipAsset, GzipAssetNames)
-
+	// Note the `GzipAsset` and `GzipAssetNames` are different from `go-bindata`'s `Asset`,
+	// do not set the `Gzip` option to true, it's already managed by the kataras/bindata.
+	app.HandleDir("/static", "./assets", iris.DirOptions{
+		Asset:      GzipAsset,
+		AssetInfo:  GzipAssetInfo,
+		AssetNames: GzipAssetNames,
+	})
 	return app
 }
 

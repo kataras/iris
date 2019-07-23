@@ -54,14 +54,10 @@ func (b *Bootstrapper) SetupSessions(expires time.Duration, cookieHashKey, cooki
 }
 
 // SetupWebsockets prepares the websocket server.
-func (b *Bootstrapper) SetupWebsockets(endpoint string, onConnection websocket.ConnectionFunc) {
-	ws := websocket.New(websocket.Config{})
-	ws.OnConnection(onConnection)
+func (b *Bootstrapper) SetupWebsockets(endpoint string, handler websocket.ConnHandler) {
+	ws := websocket.New(websocket.DefaultGorillaUpgrader, handler)
 
-	b.Get(endpoint, ws.Handler())
-	b.Any("/iris-ws.js", func(ctx iris.Context) {
-		ctx.Write(websocket.ClientSource)
-	})
+	b.Get(endpoint, websocket.Handler(ws))
 }
 
 // SetupErrorHandlers prepares the http error handlers
@@ -112,7 +108,7 @@ func (b *Bootstrapper) Bootstrap() *Bootstrapper {
 
 	// static files
 	b.Favicon(StaticAssets + Favicon)
-	b.StaticWeb(StaticAssets[1:len(StaticAssets)-1], StaticAssets)
+	b.HandleDir(StaticAssets[1:len(StaticAssets)-1], StaticAssets)
 
 	// middleware, after static files
 	b.Use(recover.New())

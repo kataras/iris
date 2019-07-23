@@ -63,10 +63,10 @@ func newApp() *iris.Application {
 func main() {
 	app := newApp()
 
-	// 1. open the browser (no in private mode)
+	// 1. open the browser
 	// 2. navigate to http://localhost:8080
 	// 3. refresh the page some times
 	// 4. close the browser
-	// 5. re-open the browser and re-play 2.
+	// 5. re-open the browser (if it wasn't in private mode) and re-play 2.
 	app.Run(iris.Addr(":8080"))
 }

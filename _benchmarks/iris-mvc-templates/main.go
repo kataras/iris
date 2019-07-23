@@ -19,7 +19,7 @@ const (
 func main() {
 	app := iris.New()
 	app.RegisterView(iris.HTML("./views", ".html").Layout("shared/layout.html"))
-	app.StaticWeb("/public", publicDir)
+	app.HandleDir("/public", publicDir)
 	app.OnAnyErrorCode(onError)
 
 	mvc.New(app).Handle(new(controllers.HomeController))

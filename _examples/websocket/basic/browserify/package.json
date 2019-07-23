@@ -1,0 +1,16 @@
+{
+    "name": "neffos.js.example.browserify",
+    "version": "0.0.1",
+    "scripts": {
+        "browserify": "browserify ./app.js -o ./bundle.js",
+        "minifyES6": "minify ./bundle.js --outFile ./bundle.js",
+        "build": "npm run-script browserify && npm run-script minifyES6"
+    },
+    "dependencies": {
+        "neffos.js": "latest"
+    },
+    "devDependencies": {
+        "browserify": "^16.2.3",
+        "babel-minify": "^0.5.0"
+    }
+}

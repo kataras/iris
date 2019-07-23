@@ -32,7 +32,7 @@ import (
 // for the main_test.go.
 func newApp() *iris.Application {
 	app := iris.New()
-	// Optionally, add two built'n handlers
+	// Optionally, add two builtin handlers
 	// that can recover from any http-relative panics
 	// and log the requests to the terminal.
 	app.Use(recover.New())

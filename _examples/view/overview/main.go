@@ -5,11 +5,6 @@ import "github.com/kataras/iris"
 func main() {
 	app := iris.New()
 
-	// - standard html  | iris.HTML(...)
-	// - django         | iris.Django(...)
-	// - pug(jade)      | iris.Pug(...)
-	// - handlebars     | iris.Handlebars(...)
-	// - amber          | iris.Amber(...)
 	// with default template funcs:
 	//
 	// - {{ urlpath "mynamedroute" "pathParameter_ifneeded" }}

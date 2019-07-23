@@ -14,8 +14,14 @@ import (
 // See `file-server/embedding-gziped-files-into-app` example as well.
 func newApp() *iris.Application {
 	app := iris.New()
+	app.Logger().SetLevel("debug")
 
-	app.StaticEmbedded("/static", "./assets", Asset, AssetNames)
+	app.HandleDir("/static", "./assets", iris.DirOptions{
+		Asset:      Asset,
+		AssetInfo:  AssetInfo,
+		AssetNames: AssetNames,
+		ShowList:   true,
+	})
 
 	return app
 }

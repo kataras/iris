@@ -1,7 +1,6 @@
 package router
 
 import (
-	"html"
 	"net/http"
 	"sort"
 	"strings"
@@ -76,13 +75,16 @@ func NewDefaultHandler() RequestHandler {
 type RoutesProvider interface { // api builder
 	GetRoutes() []*Route
 	GetRoute(routeName string) *Route
+	// GetStaticSites() []*StaticSite
+	// Macros() *macro.Macros
 }
 
 func (h *routerHandler) Build(provider RoutesProvider) error {
-	registeredRoutes := provider.GetRoutes()
 	h.trees = h.trees[0:0] // reset, inneed when rebuilding.
+	rp := errors.NewReporter()
+	registeredRoutes := provider.GetRoutes()
 
-	// sort, subdomains goes first.
+	// sort, subdomains go first.
 	sort.Slice(registeredRoutes, func(i, j int) bool {
 		first, second := registeredRoutes[i], registeredRoutes[j]
 		lsub1 := len(first.Subdomain)
@@ -111,10 +113,7 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 
 		// the rest are handled inside the node
 		return lsub1 > lsub2
-
 	})
-
-	rp := errors.NewReporter()
 
 	for _, r := range registeredRoutes {
 		// build the r.Handlers based on begin and done handlers, if any.
@@ -133,6 +132,7 @@ func (h *routerHandler) Build(provider RoutesProvider) error {
 			rp.Add("%v -> %s", err, r.String())
 			continue
 		}
+
 		golog.Debugf(r.Trace())
 	}
 
@@ -167,17 +167,6 @@ func (h *routerHandler) HandleRequest(ctx context.Context) {
 				}
 
 				ctx.Redirect(url, http.StatusMovedPermanently)
-
-				// RFC2616 recommends that a short note "SHOULD" be included in the
-				// response because older user agents may not understand 301/307.
-				// Shouldn't send the response for POST or HEAD; that leaves GET.
-				if method == http.MethodGet {
-					note := "<a href=\"" +
-						html.EscapeString(url) +
-						"\">Moved Permanently</a>.\n"
-
-					ctx.ResponseWriter().WriteString(note)
-				}
 				return
 			}
 

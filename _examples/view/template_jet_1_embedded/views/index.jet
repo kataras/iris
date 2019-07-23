@@ -1,0 +1,16 @@
+{{extends "layouts/application.jet"}}
+{{import "includes/blocks.jet"}}
+
+{{block documentBody()}}
+  <h1>Embedded example</h1>
+
+  <nav>
+    {{yield menu()}}
+  </nav>
+
+  {{include "includes/_partial.jet"}}
+
+  {{if !includeIfExists("doesNotExist.jet")}}
+    <p>Shows how !includeIfExists works: doesNotExist.jet was not included because it doesn't exist.</p>
+  {{end}}
+{{end}}

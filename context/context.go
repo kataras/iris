@@ -28,7 +28,7 @@ import (
 	"github.com/fatih/structs"
 	"github.com/iris-contrib/blackfriday"
 	formbinder "github.com/iris-contrib/formBinder"
-	"github.com/json-iterator/go"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/microcosm-cc/bluemonday"
 	"gopkg.in/yaml.v2"
 )
@@ -114,6 +114,18 @@ type Context interface {
 
 	// Request returns the original *http.Request, as expected.
 	Request() *http.Request
+	// ResetRequest sets the Context's Request,
+	// It is useful to store the new request created by a std *http.Request#WithContext() into Iris' Context.
+	// Use `ResetRequest` when for some reason you want to make a full
+	// override of the *http.Request.
+	// Note that: when you just want to change one of each fields you can use the Request() which returns a pointer to Request,
+	// so the changes will have affect without a full override.
+	// Usage: you use a native http handler which uses the standard "context" package
+	// to get values instead of the Iris' Context#Values():
+	// r := ctx.Request()
+	// stdCtx := context.WithValue(r.Context(), key, val)
+	// ctx.ResetRequest(r.WithContext(stdCtx)).
+	ResetRequest(r *http.Request)
 
 	// SetCurrentRouteName sets the route's name internally,
 	// in order to be able to find the correct current "read-only" Route when
@@ -197,6 +209,12 @@ type Context interface {
 	Proceed(Handler) bool
 	// HandlerName returns the current handler's name, helpful for debugging.
 	HandlerName() string
+	// HandlerFileLine returns the current running handler's function source file and line information.
+	// Useful mostly when debugging.
+	HandlerFileLine() (file string, line int)
+	// RouteName returns the route name that this handler is running on.
+	// Note that it will return empty on not found handlers.
+	RouteName() string
 	// Next calls all the next handler from the handlers chain,
 	// it should be used inside a middleware.
 	//
@@ -275,7 +293,8 @@ type Context interface {
 	// that can be used to share information between handlers and middleware.
 	Values() *memstore.Store
 	// Translate is the i18n (localization) middleware's function,
-	// it calls the Get("translate") to return the translated value.
+	// it calls the Values().Get(ctx.Application().ConfigurationReadOnly().GetTranslateFunctionContextKey())
+	// to execute the translate function and return the localized text value.
 	//
 	// Example: https://github.com/kataras/iris/tree/master/_examples/miscellaneous/i18n
 	Translate(format string, args ...interface{}) string
@@ -292,7 +311,6 @@ type Context interface {
 	// RequestPath returns the full request path,
 	// based on the 'escape'.
 	RequestPath(escape bool) string
-
 	// Host returns the host part of the current url.
 	Host() string
 	// Subdomain returns the subdomain of this request, if any.
@@ -300,6 +318,9 @@ type Context interface {
 	Subdomain() (subdomain string)
 	// IsWWW returns true if the current subdomain (if any) is www.
 	IsWWW() bool
+	// FullRqeuestURI returns the full URI,
+	// including the scheme, the host and the relative requested path/resource.
+	FullRequestURI() string
 	// RemoteAddr tries to parse and return the real client's request IP.
 	//
 	// Based on allowed headers names that can be modified from Configuration.RemoteAddrHeaders.
@@ -542,6 +563,12 @@ type Context interface {
 	// should be called before reading the request body from the client.
 	SetMaxRequestBodySize(limitOverBytes int64)
 
+	// GetBody reads and returns the request body.
+	// The default behavior for the http request reader is to consume the data readen
+	// but you can change that behavior by passing the `WithoutBodyConsumptionOnUnmarshal` iris option.
+	//
+	// However, whenever you can use the `ctx.Request().Body` instead.
+	GetBody() ([]byte, error)
 	// UnmarshalBody reads the request's body and binds it to a value or pointer of any type.
 	// Examples of usage: context.ReadJSON, context.ReadXML.
 	//
@@ -611,7 +638,7 @@ type Context interface {
 	// Note that it has nothing to do with server-side caching.
 	// It does those checks by checking if the "If-Modified-Since" request header
 	// sent by client or a previous server response header
-	// (e.g with WriteWithExpiration or StaticEmbedded or Favicon etc.)
+	// (e.g with WriteWithExpiration or HandleDir or Favicon etc.)
 	// is a valid one and it's before the "modtime".
 	//
 	// A check for !modtime && err == nil is necessary to make sure that
@@ -631,8 +658,9 @@ type Context interface {
 	//
 	// It's mostly used internally on core/router/fs.go and context methods.
 	WriteNotModified()
-	// WriteWithExpiration like Write but it sends with an expiration datetime
-	// which is refreshed every package-level `StaticCacheDuration` field.
+	// WriteWithExpiration works like `Write` but it will check if a resource is modified,
+	// based on the "modtime" input argument,
+	// otherwise sends a 304 status code in order to let the client-side render the cached content.
 	WriteWithExpiration(body []byte, modtime time.Time) (int, error)
 	// StreamWriter registers the given stream writer for populating
 	// response body.
@@ -760,7 +788,7 @@ type Context interface {
 	// You can define your own "Content-Type" with `context#ContentType`, before this function call.
 	//
 	// This function doesn't support resuming (by range),
-	// use ctx.SendFile or router's `StaticWeb` instead.
+	// use ctx.SendFile or router's `HandleDir` instead.
 	ServeContent(content io.ReadSeeker, filename string, modtime time.Time, gzipCompression bool) error
 	// ServeFile serves a file (to send a file, a zip for example to the client you should use the `SendFile` instead)
 	// receives two parameters
@@ -770,7 +798,7 @@ type Context interface {
 	// You can define your own "Content-Type" with `context#ContentType`, before this function call.
 	//
 	// This function doesn't support resuming (by range),
-	// use ctx.SendFile or router's `StaticWeb` instead.
+	// use ctx.SendFile or router's `HandleDir` instead.
 	//
 	// Use it when you want to serve dynamic files to the client.
 	ServeFile(filename string, gzipCompression bool) error
@@ -805,7 +833,7 @@ type Context interface {
 	//
 	// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
 	SetCookieKV(name, value string, options ...CookieOption)
-	// GetCookie returns cookie's value by it's name
+	// GetCookie returns cookie's value by its name
 	// returns empty string if nothing was found.
 	//
 	// If you want more than the value then:
@@ -813,12 +841,12 @@ type Context interface {
 	//
 	// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
 	GetCookie(name string, options ...CookieOption) string
-	// RemoveCookie deletes a cookie by it's name and path = "/".
+	// RemoveCookie deletes a cookie by its name and path = "/".
 	// Tip: change the cookie's path to the current one by: RemoveCookie("name", iris.CookieCleanPath)
 	//
 	// Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
 	RemoveCookie(name string, options ...CookieOption)
-	// VisitAllCookies takes a visitor which loops
+	// VisitAllCookies accepts a visitor function which is called
 	// on each (request's) cookies' name and value.
 	VisitAllCookies(visitor func(name string, value string))
 
@@ -1065,6 +1093,21 @@ func (ctx *context) Request() *http.Request {
 	return ctx.request
 }
 
+// ResetRequest sets the Context's Request,
+// It is useful to store the new request created by a std *http.Request#WithContext() into Iris' Context.
+// Use `ResetRequest` when for some reason you want to make a full
+// override of the *http.Request.
+// Note that: when you just want to change one of each fields you can use the Request() which returns a pointer to Request,
+// so the changes will have affect without a full override.
+// Usage: you use a native http handler which uses the standard "context" package
+// to get values instead of the Iris' Context#Values():
+// r := ctx.Request()
+// stdCtx := context.WithValue(r.Context(), key, val)
+// ctx.ResetRequest(r.WithContext(stdCtx)).
+func (ctx *context) ResetRequest(r *http.Request) {
+	ctx.request = r
+}
+
 // SetCurrentRouteName sets the route's name internally,
 // in order to be able to find the correct current "read-only" Route when
 // end-developer calls the `GetCurrentRoute()` function.
@@ -1179,6 +1222,18 @@ func (ctx *context) Proceed(h Handler) bool {
 // HandlerName returns the current handler's name, helpful for debugging.
 func (ctx *context) HandlerName() string {
 	return HandlerName(ctx.handlers[ctx.currentHandlerIndex])
+}
+
+// HandlerFileLine returns the current running handler's function source file and line information.
+// Useful mostly when debugging.
+func (ctx *context) HandlerFileLine() (file string, line int) {
+	return HandlerFileLine(ctx.handlers[ctx.currentHandlerIndex])
+}
+
+// RouteName returns the route name that this handler is running on.
+// Note that it will return empty on not found handlers.
+func (ctx *context) RouteName() string {
+	return ctx.currentRouteName
 }
 
 // Next is the function that executed when `ctx.Next()` is called.
@@ -1378,7 +1433,8 @@ func (ctx *context) Values() *memstore.Store {
 }
 
 // Translate is the i18n (localization) middleware's function,
-// it calls the Get("translate") to return the translated value.
+// it calls the Values().Get(ctx.Application().ConfigurationReadOnly().GetTranslateFunctionContextKey())
+// to execute the translate function and return the localized text value.
 //
 // Example: https://github.com/kataras/iris/tree/master/_examples/miscellaneous/i18n
 func (ctx *context) Translate(format string, args ...interface{}) string {
@@ -1465,11 +1521,11 @@ func (ctx *context) Host() string {
 
 // GetHost returns the host part of the current URI.
 func GetHost(r *http.Request) string {
-	h := r.URL.Host
-	if h == "" {
-		h = r.Host
+	if host := r.Host; host != "" {
+		return host
 	}
-	return h
+
+	return r.URL.Host
 }
 
 // Subdomain returns the subdomain of this request, if any.
@@ -1500,6 +1556,24 @@ func (ctx *context) IsWWW() bool {
 		}
 	}
 	return false
+}
+
+// FullRqeuestURI returns the full URI,
+// including the scheme, the host and the relative requested path/resource.
+func (ctx *context) FullRequestURI() string {
+	scheme := ctx.request.URL.Scheme
+	if scheme == "" {
+		if ctx.request.TLS != nil {
+			scheme = "https:"
+		} else {
+			scheme = "http:"
+		}
+	}
+
+	host := ctx.Host()
+	path := ctx.Path()
+
+	return scheme + "//" + host + path
 }
 
 const xForwardedForHeaderKey = "X-Forwarded-For"
@@ -1599,10 +1673,10 @@ type (
 	}
 
 	// ReferrerType is the goreferrer enum for a referrer type (indirect, direct, email, search, social).
-	ReferrerType int
+	ReferrerType = goreferrer.ReferrerType
 
 	// ReferrerGoogleSearchType is the goreferrer enum for a google search type (organic, adwords).
-	ReferrerGoogleSearchType int
+	ReferrerGoogleSearchType = goreferrer.GoogleSearchType
 )
 
 // Contains the available values of the goreferrer enums.
@@ -1618,14 +1692,6 @@ const (
 	ReferrerGoogleOrganicSearch
 	ReferrerGoogleAdwords
 )
-
-func (gs ReferrerGoogleSearchType) String() string {
-	return goreferrer.GoogleSearchType(gs).String()
-}
-
-func (r ReferrerType) String() string {
-	return goreferrer.ReferrerType(r).String()
-}
 
 // unnecessary but good to know the default values upfront.
 var emptyReferrer = Referrer{Type: ReferrerInvalid, GoogleType: ReferrerNotGoogleSearch}
@@ -1943,11 +2009,34 @@ func (ctx *context) form() (form map[string][]string, found bool) {
 		}
 	*/
 
+	var (
+		bodyCopy []byte
+		keepBody = ctx.Application().ConfigurationReadOnly().GetDisableBodyConsumptionOnUnmarshal()
+	)
+
+	if keepBody {
+		// on POST, PUT and PATCH it will read the form values from request body otherwise from URL queries.
+		if m := ctx.Method(); m == "POST" || m == "PUT" || m == "PATCH" {
+			body, err := ioutil.ReadAll(ctx.request.Body)
+			if err != nil {
+				return nil, false
+			}
+
+			bodyCopy = body
+		} else { // else we don't need this behavior.
+			keepBody = false
+		}
+	}
+
 	// ParseMultipartForm calls `request.ParseForm` automatically
 	// therefore we don't need to call it here, although it doesn't hurt.
 	// After one call to ParseMultipartForm or ParseForm,
 	// subsequent calls have no effect, are idempotent.
 	ctx.request.ParseMultipartForm(ctx.Application().ConfigurationReadOnly().GetPostMaxMemory())
+
+	if keepBody {
+		ctx.request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyCopy))
+	}
 
 	if form := ctx.request.Form; len(form) > 0 {
 		return form, true
@@ -2221,6 +2310,26 @@ func (ctx *context) SetMaxRequestBodySize(limitOverBytes int64) {
 	ctx.request.Body = http.MaxBytesReader(ctx.writer, ctx.request.Body, limitOverBytes)
 }
 
+// GetBody reads and returns the request body.
+// The default behavior for the http request reader is to consume the data readen
+// but you can change that behavior by passing the `WithoutBodyConsumptionOnUnmarshal` iris option.
+//
+// However, whenever you can use the `ctx.Request().Body` instead.
+func (ctx *context) GetBody() ([]byte, error) {
+	data, err := ioutil.ReadAll(ctx.request.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if ctx.Application().ConfigurationReadOnly().GetDisableBodyConsumptionOnUnmarshal() {
+		// * remember, Request.Body has no Bytes(), we have to consume them first
+		// and after re-set them to the body, this is the only solution.
+		ctx.request.Body = ioutil.NopCloser(bytes.NewBuffer(data))
+	}
+
+	return data, nil
+}
+
 // UnmarshalBody reads the request's body and binds it to a value or pointer of any type
 // Examples of usage: context.ReadJSON, context.ReadXML.
 //
@@ -2234,15 +2343,9 @@ func (ctx *context) UnmarshalBody(outPtr interface{}, unmarshaler Unmarshaler) e
 		return errors.New("unmarshal: empty body")
 	}
 
-	rawData, err := ioutil.ReadAll(ctx.request.Body)
+	rawData, err := ctx.GetBody()
 	if err != nil {
 		return err
-	}
-
-	if ctx.Application().ConfigurationReadOnly().GetDisableBodyConsumptionOnUnmarshal() {
-		// * remember, Request.Body has no Bytes(), we have to consume them first
-		// and after re-set them to the body, this is the only solution.
-		ctx.request.Body = ioutil.NopCloser(bytes.NewBuffer(rawData))
 	}
 
 	// check if the v contains its own decode
@@ -2424,7 +2527,7 @@ func (ctx *context) SetLastModified(modtime time.Time) {
 // Note that it has nothing to do with server-side caching.
 // It does those checks by checking if the "If-Modified-Since" request header
 // sent by client or a previous server response header
-// (e.g with WriteWithExpiration or StaticEmbedded or Favicon etc.)
+// (e.g with WriteWithExpiration or HandleDir or Favicon etc.)
 // is a valid one and it's before the "modtime".
 //
 // A check for !modtime && err == nil is necessary to make sure that
@@ -2474,8 +2577,9 @@ func (ctx *context) WriteNotModified() {
 	ctx.StatusCode(http.StatusNotModified)
 }
 
-// WriteWithExpiration like Write but it sends with an expiration datetime
-// which is refreshed every package-level `StaticCacheDuration` field.
+// WriteWithExpiration works like `Write` but it will check if a resource is modified,
+// based on the "modtime" input argument,
+// otherwise sends a 304 status code in order to let the client-side render the cached content.
 func (ctx *context) WriteWithExpiration(body []byte, modtime time.Time) (int, error) {
 	if modified, err := ctx.CheckIfModifiedSince(modtime); !modified && err == nil {
 		ctx.WriteNotModified()
@@ -2535,11 +2639,11 @@ func (ctx *context) ClientSupportsGzip() bool {
 }
 
 var (
-	errClientDoesNotSupportGzip = errors.New("client doesn't supports gzip compression")
+	errClientDoesNotSupportGzip = errors.New("client doesn't support gzip compression")
 )
 
 // WriteGzip accepts bytes, which are compressed to gzip format and sent to the client.
-// returns the number of bytes written and an error ( if the client doesn' supports gzip compression)
+// returns the number of bytes written and an error ( if the client doesn't support gzip compression)
 //
 // You may re-use this function in the same handler
 // to write more data many times without any troubles.
@@ -2557,7 +2661,7 @@ func (ctx *context) TryWriteGzip(b []byte) (int, error) {
 	n, err := ctx.WriteGzip(b)
 	if err != nil {
 		// check if the error came from gzip not allowed and not the writer itself
-		if _, ok := err.(*errors.Error); ok {
+		if _, ok := err.(errors.Error); ok {
 			// client didn't supported gzip, write them uncompressed:
 			return ctx.writer.Write(b)
 		}
@@ -2723,7 +2827,7 @@ func (ctx *context) View(filename string, optionalViewModel ...interface{}) erro
 		bindingData = ctx.values.Get(cfg.GetViewDataContextKey())
 	}
 
-	err := ctx.Application().View(ctx.writer, filename, layout, bindingData)
+	err := ctx.Application().View(ctx, filename, layout, bindingData)
 	if err != nil {
 		ctx.StatusCode(http.StatusInternalServerError)
 		ctx.StopExecution()
@@ -3070,7 +3174,10 @@ func (ctx *context) ServeContent(content io.ReadSeeker, filename string, modtime
 		return nil
 	}
 
-	ctx.ContentType(filename)
+	if ctx.GetContentType() == "" {
+		ctx.ContentType(filename)
+	}
+
 	ctx.SetLastModified(modtime)
 	var out io.Writer
 	if gzipCompression && ctx.ClientSupportsGzip() {
@@ -3098,7 +3205,7 @@ func (ctx *context) ServeContent(content io.ReadSeeker, filename string, modtime
 func (ctx *context) ServeFile(filename string, gzipCompression bool) error {
 	f, err := os.Open(filename)
 	if err != nil {
-		return fmt.Errorf("%d", 404)
+		return fmt.Errorf("%d", http.StatusNotFound)
 	}
 	defer f.Close()
 	fi, _ := f.Stat()
@@ -3125,7 +3232,7 @@ func (ctx *context) SendFile(filename string, destinationName string) error {
 // context's methods like `SetCookieKV`, `RemoveCookie` and `SetCookie`
 // as their (last) variadic input argument to amend the end cookie's form.
 //
-// Any custom or built'n `CookieOption` is valid,
+// Any custom or builtin `CookieOption` is valid,
 // see `CookiePath`, `CookieCleanPath`, `CookieExpires` and `CookieHTTPOnly` for more.
 type CookieOption func(*http.Cookie)
 
@@ -3163,7 +3270,7 @@ func CookieHTTPOnly(httpOnly bool) CookieOption {
 
 type (
 	// CookieEncoder should encode the cookie value.
-	// Should accept as first argument the cookie name
+	// Should accept the cookie's name as its first argument
 	// and as second argument the cookie value ptr.
 	// Should return an encoded value or an empty one if encode operation failed.
 	// Should return an error if encode operation failed.
@@ -3175,7 +3282,7 @@ type (
 	// See `CookieDecoder` too.
 	CookieEncoder func(cookieName string, value interface{}) (string, error)
 	// CookieDecoder should decode the cookie value.
-	// Should accept as first argument the cookie name,
+	// Should accept the cookie's name as its first argument,
 	// as second argument the encoded cookie value and as third argument the decoded value ptr.
 	// Should return a decoded value or an empty one if decode operation failed.
 	// Should return an error if decode operation failed.
@@ -3259,7 +3366,7 @@ func (ctx *context) SetCookieKV(name, value string, options ...CookieOption) {
 	ctx.SetCookie(c, options...)
 }
 
-// GetCookie returns cookie's value by it's name
+// GetCookie returns cookie's value by its name
 // returns empty string if nothing was found.
 //
 // If you want more than the value then:
@@ -3280,13 +3387,13 @@ func (ctx *context) GetCookie(name string, options ...CookieOption) string {
 	return value
 }
 
-// SetCookieKVExpiration is 2 hours by-default
+// SetCookieKVExpiration is 365 days by-default
 // you can change it or simple, use the SetCookie for more control.
 //
 // See `SetCookieKVExpiration` and `CookieExpires` for more.
-var SetCookieKVExpiration = time.Duration(120) * time.Minute
+var SetCookieKVExpiration = time.Duration(8760) * time.Hour
 
-// RemoveCookie deletes a cookie by it's name and path = "/".
+// RemoveCookie deletes a cookie by its name and path = "/".
 // Tip: change the cookie's path to the current one by: RemoveCookie("name", iris.CookieCleanPath)
 //
 // Example: https://github.com/kataras/iris/tree/master/_examples/cookies/basic
@@ -3305,7 +3412,7 @@ func (ctx *context) RemoveCookie(name string, options ...CookieOption) {
 	ctx.request.Header.Set("Cookie", "")
 }
 
-// VisitAllCookies takes a visitor which loops
+// VisitAllCookies takes a visitor function which is called
 // on each (request's) cookies' name and value.
 func (ctx *context) VisitAllCookies(visitor func(name string, value string)) {
 	for _, cookie := range ctx.request.Cookies() {

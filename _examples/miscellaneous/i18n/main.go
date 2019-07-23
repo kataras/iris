@@ -59,6 +59,19 @@ func newApp() *iris.Application {
 			"key2", fromSecondFileValue)
 	})
 
+	// using in inside your templates:
+	view := iris.HTML("./templates", ".html")
+	app.RegisterView(view)
+
+	app.Get("/templates", func(ctx iris.Context) {
+		ctx.View("index.html", iris.Map{
+			"tr": ctx.Translate,
+		})
+		// it will return "hello, iris"
+		// when {{call .tr "hi" "iris"}}
+	})
+	//
+
 	return app
 }
 

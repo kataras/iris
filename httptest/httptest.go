@@ -5,8 +5,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/iris-contrib/httpexpect"
 	"github.com/kataras/iris"
+
+	"github.com/gavv/httpexpect"
 )
 
 type (
@@ -88,7 +89,7 @@ func New(t *testing.T, app *iris.Application, setters ...OptionSetter) *httpexpe
 	app.Logger().SetLevel(conf.LogLevel)
 
 	if err := app.Build(); err != nil {
-		if conf.Debug && (conf.LogLevel == "disable" || conf.LogLevel == "disabled") {
+		if conf.LogLevel != "disable" && conf.LogLevel != "disabled" {
 			app.Logger().Println(err.Error())
 			return nil
 		}

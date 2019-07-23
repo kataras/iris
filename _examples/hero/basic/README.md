@@ -1,6 +1,6 @@
 # hero: basic
 
-## 1. Path Parameters - Built'n Dependencies
+## 1. Path Parameters - Builtin Dependencies
 
 ![](https://github.com/kataras/explore/raw/master/iris/hero/hero-1-monokai.png)
 
