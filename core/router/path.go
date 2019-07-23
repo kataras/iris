@@ -25,6 +25,15 @@ func WildcardParam(name string) string {
 	return prefix(name, WildcardParamStart)
 }
 
+// WildcardFileParam wraps a named parameter "file" with the trailing "path" macro parameter type.
+// At build state this "file" parameter is prefixed with the request handler's `WildcardParamStart`.
+// Created mostly for routes that serve static files to be visibly collected by
+// the `Application#GetRouteReadOnly` via the `Route.Tmpl().Src` instead of
+// the underline request handler's representation (`Route.Path()`).
+func WildcardFileParam() string {
+	return "{file:path}"
+}
+
 func convertMacroTmplToNodePath(tmpl macro.Template) string {
 	routePath := tmpl.Src
 	if len(routePath) > 1 && routePath[len(routePath)-1] == '/' {

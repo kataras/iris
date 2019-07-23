@@ -19,7 +19,7 @@ var helloView = hero.View{
 // Hello will return a predefined view with bind data.
 //
 // `hero.Result` is just an interface with a `Dispatch` function.
-// `hero.Response` and `hero.View` are the built'n result type dispatchers
+// `hero.Response` and `hero.View` are the builtin result type dispatchers
 // you can even create custom response dispatchers by
 // implementing the `github.com/kataras/iris/hero#Result` interface.
 func Hello() hero.Result {

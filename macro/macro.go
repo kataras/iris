@@ -100,7 +100,6 @@ func goodParamFuncName(name string) bool {
 // the convertBuilderFunc return value is generating at boot time.
 // convertFunc converts an interface to a valid full param function.
 func convertBuilderFunc(fn interface{}) ParamFuncBuilder {
-
 	typFn := reflect.TypeOf(fn)
 	if !goodParamFunc(typFn) {
 		// it's not a function which returns a function,

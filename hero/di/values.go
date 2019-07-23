@@ -29,7 +29,22 @@ func (bv Values) CloneWithFieldsOf(s interface{}) Values {
 
 	// add the manual filled fields to the dependencies.
 	filledFieldValues := LookupNonZeroFieldsValues(ValueOf(s), true)
+
+	for i, filled := range filledFieldValues {
+		for _, v := range values {
+			// do NOT keep duplicate equal values (09-Jul-2019).
+			if reflect.DeepEqual(v, filled) {
+				if last := len(filledFieldValues) - 1; last > i {
+					filledFieldValues = append(filledFieldValues[:i], filledFieldValues[i+1:]...)
+				} else {
+					filledFieldValues = filledFieldValues[0:last]
+				}
+				break
+			}
+		}
+	}
 	values = append(values, filledFieldValues...)
+
 	return values
 }
 

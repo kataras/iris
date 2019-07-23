@@ -28,10 +28,18 @@ type Route struct {
 	// temp storage, they're appended to the Handlers on build.
 	// Execution happens after Begin and main Handler(s), can be empty.
 	doneHandlers context.Handlers
-	Path         string `json:"path"` // "/api/user/:id"
+
+	Path string `json:"path"` // the underline router's representation, i.e "/api/user/:id"
 	// FormattedPath all dynamic named parameters (if any) replaced with %v,
 	// used by Application to validate param values of a Route based on its name.
 	FormattedPath string `json:"formattedPath"`
+
+	// StaticSites if not empty, refers to the system (or virtual if embedded) directory
+	// and sub directories that this "GET" route was registered to serve files and folders
+	// that contain index.html (a site). The index handler may registered by other
+	// route, manually or automatic by the framework,
+	// get the route by `Application#GetRouteByPath(staticSite.RequestPath)`.
+	StaticSites []context.StaticSite `json:"staticSites"`
 }
 
 // NewRoute returns a new route based on its method,
@@ -55,7 +63,7 @@ func NewRoute(method, subdomain, unparsedPath, mainHandlerName string,
 		handlers = append(context.Handlers{macroEvaluatorHandler}, handlers...)
 	}
 
-	path = cleanPath(path) // maybe unnecessary here but who cares in this moment
+	path = cleanPath(path) // maybe unnecessary here.
 	defaultName := method + subdomain + tmpl.Src
 	formattedPath := formatPath(path)
 
@@ -73,26 +81,26 @@ func NewRoute(method, subdomain, unparsedPath, mainHandlerName string,
 	return route, nil
 }
 
-// use adds explicit begin handlers(middleware) to this route,
-// It's being called internally, it's useless for outsiders
-// because `Handlers` field is exported.
-// The callers of this function are: `APIBuilder#UseGlobal` and `APIBuilder#Done`.
+// Use adds explicit begin handlers to this route.
+// Alternatively the end-dev can prepend to the `Handlers` field.
+// Should be used before the `BuildHandlers` which is
+// called by the framework itself on `Application#Run` (build state).
 //
-// BuildHandlers should be called to build the route's `Handlers`.
-func (r *Route) use(handlers context.Handlers) {
+// Used internally at  `APIBuilder#UseGlobal` -> `beginGlobalHandlers` -> `APIBuilder#Handle`.
+func (r *Route) Use(handlers ...context.Handler) {
 	if len(handlers) == 0 {
 		return
 	}
 	r.beginHandlers = append(r.beginHandlers, handlers...)
 }
 
-// use adds explicit done handlers to this route.
-// It's being called internally, it's useless for outsiders
-// because `Handlers` field is exported.
-// The callers of this function are: `APIBuilder#UseGlobal` and `APIBuilder#Done`.
+// Done adds explicit finish handlers to this route.
+// Alternatively the end-dev can append to the `Handlers` field.
+// Should be used before the `BuildHandlers` which is
+// called by the framework itself on `Application#Run` (build state).
 //
-// BuildHandlers should be called to build the route's `Handlers`.
-func (r *Route) done(handlers context.Handlers) {
+// Used internally at  `APIBuilder#DoneGlobal` -> `doneGlobalHandlers` -> `APIBuilder#Handle`.
+func (r *Route) Done(handlers ...context.Handler) {
 	if len(handlers) == 0 {
 		return
 	}
@@ -145,6 +153,13 @@ func (r *Route) BuildHandlers() {
 func (r Route) String() string {
 	return fmt.Sprintf("%s %s%s",
 		r.Method, r.Subdomain, r.Tmpl().Src)
+}
+
+// Equal compares the method, subdomaind and the
+// underline representation of the route's path,
+// instead of the `String` function which returns the front representation.
+func (r *Route) Equal(other *Route) bool {
+	return r.Method == other.Method && r.Subdomain == other.Subdomain && r.Path == other.Path
 }
 
 // Tmpl returns the path template,
@@ -221,12 +236,12 @@ func (r Route) StaticPath() string {
 	if bidx == -1 || len(src) <= bidx {
 		return src // no dynamic part found
 	}
-	if bidx == 0 { // found at first index,
-		// but never happens because of the prepended slash
+	if bidx <= 1 { // found at first{...} or second index (/{...}),
+		// although first index should never happen because of the prepended slash.
 		return "/"
 	}
 
-	return src[:bidx]
+	return src[:bidx-1] // (/static/{...} -> /static)
 }
 
 // ResolvePath returns the formatted path's %v replaced with the args.
@@ -258,10 +273,15 @@ func (r Route) Trace() string {
 	}
 	printfmt += fmt.Sprintf(" %s ", r.Tmpl().Src)
 
+	mainHandlerName := r.MainHandlerName
+	if !strings.HasSuffix(mainHandlerName, ")") {
+		mainHandlerName += "()"
+	}
+
 	if l := r.RegisteredHandlersLen(); l > 1 {
-		printfmt += fmt.Sprintf("-> %s() and %d more", r.MainHandlerName, l-1)
+		printfmt += fmt.Sprintf("-> %s and %d more", mainHandlerName, l-1)
 	} else {
-		printfmt += fmt.Sprintf("-> %s()", r.MainHandlerName)
+		printfmt += fmt.Sprintf("-> %s", mainHandlerName)
 	}
 
 	// printfmt := fmt.Sprintf("%s: %s >> %s", r.Method, r.Subdomain+r.Tmpl().Src, r.MainHandlerName)
@@ -301,4 +321,8 @@ func (rd routeReadOnlyWrapper) Tmpl() macro.Template {
 
 func (rd routeReadOnlyWrapper) MainHandlerName() string {
 	return rd.Route.MainHandlerName
+}
+
+func (rd routeReadOnlyWrapper) StaticSites() []context.StaticSite {
+	return rd.Route.StaticSites
 }

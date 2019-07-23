@@ -102,14 +102,24 @@ var (
 	// }
 	//
 	// Read https://github.com/kataras/iris/tree/master/_examples/routing/macros for more details.
+	// Checks for total available request parameters length
+	// and parameter index based on the hero/mvc function added
+	// in order to support the MVC.HandleMany("GET", "/path/{ps}/{pssecond} /path/{ps}")
+	// when on the second requested path, the 'pssecond' should be empty.
 	ParamResolvers = map[reflect.Type]func(paramIndex int) interface{}{
 		reflect.TypeOf(""): func(paramIndex int) interface{} {
 			return func(ctx Context) string {
+				if ctx.Params().Len() <= paramIndex {
+					return ""
+				}
 				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(string)
 			}
 		},
 		reflect.TypeOf(int(1)): func(paramIndex int) interface{} {
 			return func(ctx Context) int {
+				if ctx.Params().Len() <= paramIndex {
+					return 0
+				}
 				// v, _ := ctx.Params().GetEntryAt(paramIndex).IntDefault(0)
 				// return v
 				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(int)
@@ -117,51 +127,81 @@ var (
 		},
 		reflect.TypeOf(int8(1)): func(paramIndex int) interface{} {
 			return func(ctx Context) int8 {
+				if ctx.Params().Len() <= paramIndex {
+					return 0
+				}
 				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(int8)
 			}
 		},
 		reflect.TypeOf(int16(1)): func(paramIndex int) interface{} {
 			return func(ctx Context) int16 {
+				if ctx.Params().Len() <= paramIndex {
+					return 0
+				}
 				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(int16)
 			}
 		},
 		reflect.TypeOf(int32(1)): func(paramIndex int) interface{} {
 			return func(ctx Context) int32 {
+				if ctx.Params().Len() <= paramIndex {
+					return 0
+				}
 				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(int32)
 			}
 		},
 		reflect.TypeOf(int64(1)): func(paramIndex int) interface{} {
 			return func(ctx Context) int64 {
+				if ctx.Params().Len() <= paramIndex {
+					return 0
+				}
 				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(int64)
 			}
 		},
 		reflect.TypeOf(uint(1)): func(paramIndex int) interface{} {
 			return func(ctx Context) uint {
+				if ctx.Params().Len() <= paramIndex {
+					return 0
+				}
 				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint)
 			}
 		},
 		reflect.TypeOf(uint8(1)): func(paramIndex int) interface{} {
 			return func(ctx Context) uint8 {
+				if ctx.Params().Len() <= paramIndex {
+					return 0
+				}
 				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint8)
 			}
 		},
 		reflect.TypeOf(uint16(1)): func(paramIndex int) interface{} {
 			return func(ctx Context) uint16 {
+				if ctx.Params().Len() <= paramIndex {
+					return 0
+				}
 				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint16)
 			}
 		},
 		reflect.TypeOf(uint32(1)): func(paramIndex int) interface{} {
 			return func(ctx Context) uint32 {
+				if ctx.Params().Len() <= paramIndex {
+					return 0
+				}
 				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint32)
 			}
 		},
 		reflect.TypeOf(uint64(1)): func(paramIndex int) interface{} {
 			return func(ctx Context) uint64 {
+				if ctx.Params().Len() <= paramIndex {
+					return 0
+				}
 				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(uint64)
 			}
 		},
 		reflect.TypeOf(true): func(paramIndex int) interface{} {
 			return func(ctx Context) bool {
+				if ctx.Params().Len() <= paramIndex {
+					return false
+				}
 				return ctx.Params().GetEntryAt(paramIndex).ValueRaw.(bool)
 			}
 		},

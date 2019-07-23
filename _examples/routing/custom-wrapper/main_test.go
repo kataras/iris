@@ -56,4 +56,6 @@ func TestCustomWrapper(t *testing.T) {
 			Status(httptest.StatusOK).
 			Body().Equal(contents)
 	}
+
+	e.GET("/other/something").Expect().Status(httptest.StatusOK)
 }

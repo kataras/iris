@@ -1,14 +1,15 @@
 package main
 
 import (
+	"strings"
+
 	"github.com/kataras/iris/_examples/tutorial/vuejs-todo-mvc/src/todo"
 	"github.com/kataras/iris/_examples/tutorial/vuejs-todo-mvc/src/web/controllers"
 
 	"github.com/kataras/iris"
+	"github.com/kataras/iris/mvc"
 	"github.com/kataras/iris/sessions"
 	"github.com/kataras/iris/websocket"
-
-	"github.com/kataras/iris/mvc"
 )
 
 func main() {
@@ -19,23 +20,15 @@ func main() {
 	// no need for any server-side template here,
 	// actually if you're going to just use vue without any
 	// back-end services, you can just stop afer this line and start the server.
-	app.StaticWeb("/", "./public")
+	app.HandleDir("/", "./public")
 
 	// configure the http sessions.
 	sess := sessions.New(sessions.Config{
 		Cookie: "iris_session",
 	})
 
-	// configure the websocket server.
-	ws := websocket.New(websocket.Config{})
-
-	// create a sub router and register the client-side library for the iris websockets,
-	// you could skip it but iris websockets supports socket.io-like API.
+	// create a sub router and register the http controllers.
 	todosRouter := app.Party("/todos")
-	// http://localhost:8080/todos/iris-ws.js
-	// serve the javascript client library to communicate with
-	// the iris high level websocket event system.
-	todosRouter.Any("/iris-ws.js", websocket.ClientHandler())
 
 	// create our mvc application targeted to /todos relative sub path.
 	todosApp := mvc.New(todosRouter)
@@ -44,11 +37,27 @@ func main() {
 	todosApp.Register(
 		todo.NewMemoryService(),
 		sess.Start,
-		ws.Upgrade,
 	)
 
+	todosController := new(controllers.TodoController)
 	// controllers registration here...
-	todosApp.Handle(new(controllers.TodoController))
+	todosApp.Handle(todosController)
+
+	// Create a sub mvc app for websocket controller.
+	// Inherit the parent's dependencies.
+	todosWebsocketApp := todosApp.Party("/sync")
+	todosWebsocketApp.HandleWebsocket(todosController).
+		SetNamespace("todos").
+		SetEventMatcher(func(methodName string) (string, bool) {
+			return strings.ToLower(methodName), true
+		})
+
+	websocketServer := websocket.New(websocket.DefaultGorillaUpgrader, todosWebsocketApp)
+	idGenerator := func(ctx iris.Context) string {
+		id := sess.Start(ctx).ID()
+		return id
+	}
+	todosWebsocketApp.Router.Get("/", websocket.Handler(websocketServer, idGenerator))
 
 	// start the web server at http://localhost:8080
 	app.Run(iris.Addr(":8080"))

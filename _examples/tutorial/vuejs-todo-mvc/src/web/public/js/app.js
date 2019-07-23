@@ -1,15 +1,24 @@
 // Full spec-compliant TodoMVC with Iris
 // and hash-based routing in ~200 effective lines of JavaScript.
 
-var socket = new Ws("ws://localhost:8080/todos/sync");
+var ws;
 
-socket.On("saved", function () {
-  // console.log("receive: on saved");
-  fetchTodos(function (items) {
-    app.todos = items
-  });
-});
+((async () => {
+  const events = {
+    todos: {
+      saved: function (ns, msg) {
+        app.todos = msg.unmarshal()
+        // or make a new http fetch
+        // fetchTodos(function (items) {
+        //   app.todos = msg.unmarshal()
+        // });
+      }
+    }
+  };
 
+  const conn = await neffos.dial("ws://localhost:8080/todos/sync", events);
+  ws = await conn.connect("todos");
+})()).catch(console.error);
 
 function fetchTodos(onComplete) {
   axios.get("/todos").then(response => {
@@ -38,7 +47,7 @@ var todoStorage = {
         return;
       }
       // console.log("send: save");
-      socket.Emit("save")
+      ws.emit("save")
     });
   }
 }
@@ -202,4 +211,4 @@ window.addEventListener('hashchange', onHashChange)
 onHashChange()
 
 // mount
-app.$mount('.todoapp')
+app.$mount('.todoapp');

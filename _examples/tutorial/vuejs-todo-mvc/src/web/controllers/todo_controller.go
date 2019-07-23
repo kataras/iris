@@ -14,6 +14,8 @@ type TodoController struct {
 	Service todo.Service
 
 	Session *sessions.Session
+
+	NS *websocket.NSConn
 }
 
 // BeforeActivation called once before the server ran, and before
@@ -51,15 +53,14 @@ func (c *TodoController) Post(newItems []todo.Item) PostItemResponse {
 	return PostItemResponse{Success: true}
 }
 
-func (c *TodoController) GetSync(conn websocket.Connection) {
-	// join to the session in order to send "saved"
-	// events only to a single user, that means
-	// that if user has opened more than one browser window/tab
-	// of the same session then the changes will be reflected to one another.
-	conn.Join(c.Session.ID())
-	conn.On("save", func() { // "save" event from client.
-		conn.To(c.Session.ID()).Emit("saved", nil) // fire a "saved" event to the rest of the clients w.
+func (c *TodoController) Save(msg websocket.Message) error {
+	id := c.Session.ID()
+	c.NS.Conn.Server().Broadcast(nil, websocket.Message{
+		Namespace: msg.Namespace,
+		Event:     "saved",
+		To:        id,
+		Body:      websocket.Marshal(c.Service.Get(id)),
 	})
 
-	conn.Wait()
+	return nil
 }

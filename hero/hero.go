@@ -7,7 +7,7 @@ import (
 	"github.com/kataras/iris/context"
 )
 
-// def is the default herp value which can be used for dependencies share.
+// def is the default hero value which can be used for dependencies share.
 var def = New()
 
 // Hero contains the Dependencies which will be binded

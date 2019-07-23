@@ -22,10 +22,22 @@ func getLayout(layout string, globalLayout string) string {
 
 // Engine is the interface which all view engines should be implemented in order to be registered inside iris.
 type Engine interface {
-	// Load should load the templates from a directory of by binary(assets/go-bindata).
+	// Load should load the templates from a physical system directory or by an embedded one (assets/go-bindata).
 	Load() error
 	// ExecuteWriter should execute a template by its filename with an optional layout and bindingData.
 	ExecuteWriter(w io.Writer, filename string, layout string, bindingData interface{}) error
 	// Ext should return the final file extension which this view engine is responsible to render.
 	Ext() string
+}
+
+type namedEngine interface {
+	String() string
+}
+
+func getEngineName(e Engine) string {
+	if n, ok := e.(namedEngine); ok {
+		return n.String()
+	}
+
+	return ""
 }

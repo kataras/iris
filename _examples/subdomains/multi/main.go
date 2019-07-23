@@ -11,8 +11,8 @@ func main() {
 	 * Setup static files
 	 */
 
-	app.StaticWeb("/assets", "./public/assets")
-	app.StaticWeb("/upload_resources", "./public/upload_resources")
+	app.HandleDir("/assets", "./public/assets")
+	app.HandleDir("/upload_resources", "./public/upload_resources")
 
 	dashboard := app.Party("dashboard.")
 	{
