@@ -1,10 +1,16 @@
 package mvc
 
 import (
+	"reflect"
+	"strings"
+
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/core/router"
 	"github.com/kataras/iris/hero"
 	"github.com/kataras/iris/hero/di"
+	"github.com/kataras/iris/websocket"
+
+	"github.com/kataras/golog"
 )
 
 var (
@@ -23,7 +29,7 @@ var (
 	HeroDependencies = true
 )
 
-// Application is the high-level compoment of the "mvc" package.
+// Application is the high-level component of the "mvc" package.
 // It's the API that you will be using to register controllers among with their
 // dependencies that your controllers may expecting.
 // It contains the Router(iris.Party) in order to be able to register
@@ -35,8 +41,11 @@ var (
 //
 // See `mvc#New` for more.
 type Application struct {
-	Dependencies di.Values
-	Router       router.Party
+	Dependencies         di.Values
+	Router               router.Party
+	Controllers          []*ControllerActivator
+	websocketControllers []websocket.ConnHandler
+	ErrorHandler         hero.ErrorHandler
 }
 
 func newApp(subRouter router.Party, values di.Values) *Application {
@@ -56,6 +65,7 @@ func New(party router.Party) *Application {
 	if HeroDependencies {
 		values = hero.Dependencies().Clone()
 	}
+
 	return newApp(party, values)
 }
 
@@ -94,7 +104,7 @@ func (app *Application) Configure(configurators ...func(*Application)) *Applicat
 // The value can be a single struct value-instance or a function
 // which has one input and one output, the input should be
 // an `iris.Context` and the output can be any type, that output type
-// will be binded to the controller's field, if matching or to the
+// will be bind-ed to the controller's field, if matching or to the
 // controller's methods, if matching.
 //
 // These dependencies "values" can be changed per-controller as well,
@@ -105,7 +115,19 @@ func (app *Application) Configure(configurators ...func(*Application)) *Applicat
 //
 // Example: `.Register(loggerService{prefix: "dev"}, func(ctx iris.Context) User {...})`.
 func (app *Application) Register(values ...interface{}) *Application {
+	if len(values) > 0 && app.Dependencies.Len() == 0 && len(app.Controllers) > 0 {
+		allControllerNamesSoFar := make([]string, len(app.Controllers))
+		for i := range app.Controllers {
+			allControllerNamesSoFar[i] = app.Controllers[i].Name()
+		}
+
+		golog.Warnf(`mvc.Application#Register called after mvc.Application#Handle.
+The controllers[%s] may miss required dependencies.
+Set the Logger's Level to "debug" to view the active dependencies per controller.`, strings.Join(allControllerNamesSoFar, ","))
+	}
+
 	app.Dependencies.Add(values...)
+
 	return app
 }
 
@@ -154,8 +176,51 @@ func (app *Application) Register(values ...interface{}) *Application {
 //
 // Examples at: https://github.com/kataras/iris/tree/master/_examples/mvc
 func (app *Application) Handle(controller interface{}) *Application {
+	app.handle(controller)
+	return app
+}
+
+// HandleWebsocket handles a websocket specific controller.
+// Its exported methods are the events.
+// If a "Namespace" field or method exists then namespace is set, otherwise empty namespace.
+// Note that a websocket controller is registered and ran under a specific connection connected to a namespace
+// and it cannot send HTTP responses on that state.
+// However all static and dynamic dependency injection features are working, as expected, like any regular MVC Controller.
+func (app *Application) HandleWebsocket(controller interface{}) *websocket.Struct {
+	c := app.handle(controller)
+	c.markAsWebsocket()
+
+	websocketController := websocket.NewStruct(c.Value).SetInjector(makeInjector(c.injector))
+	app.websocketControllers = append(app.websocketControllers, websocketController)
+	return websocketController
+}
+
+func makeInjector(injector *di.StructInjector) websocket.StructInjector {
+	return func(_ reflect.Type, nsConn *websocket.NSConn) reflect.Value {
+		v := injector.Acquire()
+		if injector.CanInject {
+			injector.InjectElem(v.Elem(), reflect.ValueOf(websocket.GetContext(nsConn.Conn)))
+		}
+		return v
+	}
+}
+
+var _ websocket.ConnHandler = (*Application)(nil)
+
+// GetNamespaces completes the websocket ConnHandler interface.
+// It returns a collection of namespace and events that
+// were registered through `HandleWebsocket` controllers.
+func (app *Application) GetNamespaces() websocket.Namespaces {
+	if golog.Default.Level == golog.DebugLevel {
+		websocket.EnableDebug(golog.Default)
+	}
+
+	return websocket.JoinConnHandlers(app.websocketControllers...).GetNamespaces()
+}
+
+func (app *Application) handle(controller interface{}) *ControllerActivator {
 	// initialize the controller's activator, nothing too magical so far.
-	c := newControllerActivator(app.Router, controller, app.Dependencies)
+	c := newControllerActivator(app.Router, controller, app.Dependencies, app.ErrorHandler)
 
 	// check the controller's "BeforeActivation" or/and "AfterActivation" method(s) between the `activate`
 	// call, which is simply parses the controller's methods, end-dev can register custom controller's methods
@@ -173,15 +238,27 @@ func (app *Application) Handle(controller interface{}) *Application {
 	}); okAfter {
 		after.AfterActivation(c)
 	}
+
+	app.Controllers = append(app.Controllers, c)
+	return c
+}
+
+// HandleError registers a `hero.ErrorHandlerFunc` which will be fired when
+// application's controllers' functions returns an non-nil error.
+// Each controller can override it by implementing the `hero.ErrorHandler`.
+func (app *Application) HandleError(errHandler hero.ErrorHandlerFunc) *Application {
+	app.ErrorHandler = errHandler
 	return app
 }
 
 // Clone returns a new mvc Application which has the dependencies
-// of the current mvc Mpplication's dependencies.
+// of the current mvc Application's `Dependencies` and its `ErrorHandler`.
 //
 // Example: `.Clone(app.Party("/path")).Handle(new(TodoSubController))`.
 func (app *Application) Clone(party router.Party) *Application {
-	return newApp(party, app.Dependencies.Clone())
+	cloned := newApp(party, app.Dependencies.Clone())
+	cloned.ErrorHandler = app.ErrorHandler
+	return cloned
 }
 
 // Party returns a new child mvc Application based on the current path + "relativePath".

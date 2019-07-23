@@ -27,6 +27,8 @@ type HandlebarsEngine struct {
 	templateCache map[string]*raymond.Template
 }
 
+var _ Engine = (*HandlebarsEngine)(nil)
+
 // Handlebars creates and returns a new handlebars view engine.
 func Handlebars(directory, extension string) *HandlebarsEngine {
 	s := &HandlebarsEngine{
@@ -95,7 +97,7 @@ func (s *HandlebarsEngine) AddFunc(funcName string, funcBody interface{}) {
 }
 
 // Load parses the templates to the engine.
-// It's alos responsible to add the necessary global functions.
+// It is responsible to add the necessary global functions.
 //
 // Returns an error if something bad happens, user is responsible to catch it.
 func (s *HandlebarsEngine) Load() error {

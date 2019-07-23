@@ -1,9 +1,5 @@
 package main
 
-/// TODO: remove this on the "master" branch, or even replace it
-// with the "iris-mvc" (the new implementatioin is even faster, close to handlers version,
-// with bindings or without).
-
 import (
 	"github.com/kataras/iris/_benchmarks/iris-mvc/controllers"
 

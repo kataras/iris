@@ -100,6 +100,9 @@ func (l *requestLoggerMiddleware) ServeHTTP(ctx context.Context) {
 	if logFunc := l.config.LogFunc; logFunc != nil {
 		logFunc(endTime, latency, status, ip, method, path, message, headerMessage)
 		return
+	} else if logFuncCtx := l.config.LogFuncCtx; logFuncCtx != nil {
+		logFuncCtx(ctx, latency)
+		return
 	}
 
 	if l.config.Columns {

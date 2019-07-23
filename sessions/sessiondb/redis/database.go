@@ -1,36 +1,39 @@
 package redis
 
 import (
-	"runtime"
 	"time"
 
-	"github.com/kataras/golog"
 	"github.com/kataras/iris/sessions"
-	"github.com/kataras/iris/sessions/sessiondb/redis/service"
+
+	"github.com/kataras/golog"
 )
 
 // Database the redis back-end session database for the sessions.
 type Database struct {
-	redis *service.Service
+	redis *Service
 }
 
 var _ sessions.Database = (*Database)(nil)
 
 // New returns a new redis database.
-func New(cfg ...service.Config) *Database {
-	db := &Database{redis: service.New(cfg...)}
-	db.redis.Connect()
+func New(cfg ...Config) *Database {
+	service := newService(cfg...)
+	if err := service.Connect(); err != nil {
+		panic(err)
+	}
+
+	db := &Database{redis: service}
 	_, err := db.redis.PingPong()
 	if err != nil {
 		golog.Debugf("error connecting to redis: %v", err)
 		return nil
 	}
-	runtime.SetFinalizer(db, closeDB)
+	// runtime.SetFinalizer(db, closeDB)
 	return db
 }
 
 // Config returns the configuration for the redis server bridge, you can change them.
-func (db *Database) Config() *service.Config {
+func (db *Database) Config() *Config {
 	return db.redis.Config
 }
 
@@ -39,6 +42,7 @@ func (db *Database) Config() *service.Config {
 func (db *Database) Acquire(sid string, expires time.Duration) sessions.LifeTime {
 	seconds, hasExpiration, found := db.redis.TTL(sid)
 	if !found {
+		// fmt.Printf("db.Acquire expires: %s. Seconds: %v\n", expires, expires.Seconds())
 		// not found, create an entry with ttl and return an empty lifetime, session manager will do its job.
 		if err := db.redis.Set(sid, sid, int64(expires.Seconds())); err != nil {
 			golog.Debug(err)
@@ -61,10 +65,8 @@ func (db *Database) OnUpdateExpiration(sid string, newExpires time.Duration) err
 	return db.redis.UpdateTTLMany(sid, int64(newExpires.Seconds()))
 }
 
-const delim = "_"
-
-func makeKey(sid, key string) string {
-	return sid + delim + key
+func (db *Database) makeKey(sid, key string) string {
+	return sid + db.redis.Config.Delim + key
 }
 
 // Set sets a key value of a specific session.
@@ -76,14 +78,16 @@ func (db *Database) Set(sid string, lifetime sessions.LifeTime, key string, valu
 		return
 	}
 
-	if err = db.redis.Set(makeKey(sid, key), valueBytes, int64(lifetime.DurationUntilExpiration().Seconds())); err != nil {
+	// fmt.Println("database.Set")
+	// fmt.Printf("lifetime.DurationUntilExpiration(): %s. Seconds: %v\n", lifetime.DurationUntilExpiration(), lifetime.DurationUntilExpiration().Seconds())
+	if err = db.redis.Set(db.makeKey(sid, key), valueBytes, int64(lifetime.DurationUntilExpiration().Seconds())); err != nil {
 		golog.Debug(err)
 	}
 }
 
 // Get retrieves a session value based on the key.
 func (db *Database) Get(sid string, key string) (value interface{}) {
-	db.get(makeKey(sid, key), &value)
+	db.get(db.makeKey(sid, key), &value)
 	return
 }
 
@@ -100,7 +104,7 @@ func (db *Database) get(key string, outPtr interface{}) {
 }
 
 func (db *Database) keys(sid string) []string {
-	keys, err := db.redis.GetKeys(sid + delim)
+	keys, err := db.redis.GetKeys(sid)
 	if err != nil {
 		golog.Debugf("unable to get all redis keys of session '%s': %v", sid, err)
 		return nil
@@ -126,7 +130,7 @@ func (db *Database) Len(sid string) (n int) {
 
 // Delete removes a session key value based on its key.
 func (db *Database) Delete(sid string, key string) (deleted bool) {
-	err := db.redis.Delete(makeKey(sid, key))
+	err := db.redis.Delete(db.makeKey(sid, key))
 	if err != nil {
 		golog.Error(err)
 	}

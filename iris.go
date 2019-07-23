@@ -2,11 +2,14 @@ package iris
 
 import (
 	// std packages
+
 	stdContext "context"
+	"fmt"
 	"io"
 	"log"
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -19,6 +22,7 @@ import (
 	"github.com/kataras/iris/core/host"
 	"github.com/kataras/iris/core/netutil"
 	"github.com/kataras/iris/core/router"
+
 	// handlerconv conversions
 	"github.com/kataras/iris/core/handlerconv"
 	// cache conversions
@@ -33,7 +37,7 @@ import (
 
 var (
 	// Version is the current version number of the Iris Web Framework.
-	Version = "11.1.1"
+	Version = "11.2.0"
 )
 
 // HTTP status codes as registered with IANA.
@@ -231,7 +235,9 @@ func (app *Application) SubdomainRedirect(from, to router.Party) router.Party {
 // Returns itself in order to be used like `app:= New().Configure(...)`
 func (app *Application) Configure(configurators ...Configurator) *Application {
 	for _, cfg := range configurators {
-		cfg(app)
+		if cfg != nil {
+			cfg(app)
+		}
 	}
 
 	return app
@@ -286,20 +292,23 @@ func (app *Application) Logger() *golog.Logger {
 
 var (
 	// HTML view engine.
-	// Conversion for the view.HTML.
+	// Shortcut of the kataras/iris/view.HTML.
 	HTML = view.HTML
 	// Django view engine.
-	// Conversion for the view.Django.
+	// Shortcut of the kataras/iris/view.Django.
 	Django = view.Django
 	// Handlebars view engine.
-	// Conversion for the view.Handlebars.
+	// Shortcut of the kataras/iris/view.Handlebars.
 	Handlebars = view.Handlebars
 	// Pug view engine.
-	// Conversion for the view.Pug.
+	// Shortcut of the kataras/iris/view.Pug.
 	Pug = view.Pug
 	// Amber view engine.
-	// Conversion for the view.Amber.
+	// Shortcut of the kataras/iris/view.Amber.
 	Amber = view.Amber
+	// Jet view engine.
+	// Shortcut of the kataras/iris/view.Jet.
+	Jet = view.Jet
 )
 
 // NoLayout to disable layout for a particular template file
@@ -341,12 +350,33 @@ var (
 	//
 	// A shortcut for the `context#LimitRequestBodySize`.
 	LimitRequestBodySize = context.LimitRequestBodySize
-	// StaticEmbeddedHandler returns a Handler which can serve
-	// embedded into executable files.
+	// NewConditionalHandler returns a single Handler which can be registered
+	// as a middleware.
+	// Filter is just a type of Handler which returns a boolean.
+	// Handlers here should act like middleware, they should contain `ctx.Next` to proceed
+	// to the next handler of the chain. Those "handlers" are registered to the per-request context.
 	//
 	//
-	// Examples: https://github.com/kataras/iris/tree/master/_examples/file-server
-	StaticEmbeddedHandler = router.StaticEmbeddedHandler
+	// It checks the "filter" and if passed then
+	// it, correctly, executes the "handlers".
+	//
+	// If passed, this function makes sure that the Context's information
+	// about its per-request handler chain based on the new "handlers" is always updated.
+	//
+	// If not passed, then simply the Next handler(if any) is executed and "handlers" are ignored.
+	// Example can be found at: _examples/routing/conditional-chain.
+	//
+	// A shortcut for the `context#NewConditionalHandler`.
+	NewConditionalHandler = context.NewConditionalHandler
+	// FileServer returns a Handler which serves files from a specific system, phyisical, directory
+	// or an embedded one.
+	// The first parameter is the directory, relative to the executable program.
+	// The second optional parameter is any optional settings that the caller can use.
+	//
+	// See `Party#HandleDir` too.
+	// Examples can be found at: https://github.com/kataras/iris/tree/master/_examples/file-server
+	// A shortcut for the `router.FileServer`.
+	FileServer = router.FileServer
 	// StripPrefix returns a handler that serves HTTP requests
 	// by removing the given prefix from the request URL's Path
 	// and invoking the handler h. StripPrefix handles a
@@ -354,7 +384,7 @@ var (
 	// replying with an HTTP 404 not found error.
 	//
 	// Usage:
-	// fileserver := Party#StaticHandler("./static_files", false, false)
+	// fileserver := iris.FileServer("./static_files", DirOptions {...})
 	// h := iris.StripPrefix("/static", fileserver)
 	// app.Get("/static/{f:path}", h)
 	// app.Head("/static/{f:path}", h)
@@ -394,7 +424,7 @@ var (
 	//
 	// If "cacheDur" <=0 then it returns the `NoCache` middleware instaed to disable the caching between browser's "back" and "forward" actions.
 	//
-	// Usage: `app.Use(iris.StaticCache(24 * time.Hour))` or `app.Use(iris.Staticcache(-1))`.
+	// Usage: `app.Use(iris.StaticCache(24 * time.Hour))` or `app.Use(iris.StaticCache(-1))`.
 	// A middleware, which is a simple Handler can be called inside another handler as well, example:
 	// cacheMiddleware := iris.StaticCache(...)
 	// func(ctx iris.Context){
@@ -419,7 +449,7 @@ var (
 	// Developers are free to extend this method's behavior
 	// by watching system directories changes manually and use of the `ctx.WriteWithExpiration`
 	// with a "modtime" based on the file modified date,
-	// simillary to the `StaticWeb`(which sends status OK(200) and browser disk caching instead of 304).
+	// similar to the `HandleDir`(which sends status OK(200) and browser disk caching instead of 304).
 	//
 	// A shortcut of the `cache#Cache304`.
 	Cache304 = cache.Cache304
@@ -471,18 +501,20 @@ var (
 	IsErrPath = context.IsErrPath
 )
 
-// SPA  accepts an "assetHandler" which can be the result of an
-// app.StaticHandler or app.StaticEmbeddedHandler.
-// Use that when you want to navigate from /index.html to / automatically
-// it's a helper function which just makes some checks based on the `IndexNames` and `AssetValidators`
-// before the assetHandler call.
-//
-// Example: https://github.com/kataras/iris/tree/master/_examples/file-server/single-page-application
-func (app *Application) SPA(assetHandler context.Handler) *router.SPABuilder {
-	s := router.NewSPABuilder(assetHandler)
-	app.APIBuilder.HandleMany("GET HEAD", "/{f:path}", s.Handler)
-	return s
-}
+// Contains the enum values of the `Context.GetReferrer()` method,
+// shortcuts of the context subpackage.
+const (
+	ReferrerInvalid  = context.ReferrerInvalid
+	ReferrerIndirect = context.ReferrerIndirect
+	ReferrerDirect   = context.ReferrerDirect
+	ReferrerEmail    = context.ReferrerEmail
+	ReferrerSearch   = context.ReferrerSearch
+	ReferrerSocial   = context.ReferrerSocial
+
+	ReferrerNotGoogleSearch     = context.ReferrerNotGoogleSearch
+	ReferrerGoogleOrganicSearch = context.ReferrerGoogleOrganicSearch
+	ReferrerGoogleAdwords       = context.ReferrerGoogleAdwords
+)
 
 // ConfigureHost accepts one or more `host#Configuration`, these configurators functions
 // can access the host created by `app.Run`,
@@ -579,6 +611,14 @@ var RegisterOnInterrupt = host.RegisterOnInterrupt
 // Shutdown gracefully terminates all the application's server hosts.
 // Returns an error on the first failure, otherwise nil.
 func (app *Application) Shutdown(ctx stdContext.Context) error {
+	for _, t := range app.config.Tunneling.Tunnels {
+		if t.Name == "" {
+			continue
+		}
+
+		app.config.Tunneling.stopTunnel(t)
+	}
+
 	for i, su := range app.Hosts {
 		app.logger.Debugf("Host[%d]: Shutdown now", i)
 		if err := su.Shutdown(ctx); err != nil {
@@ -595,7 +635,7 @@ func (app *Application) Shutdown(ctx stdContext.Context) error {
 // It can be used to register a custom runner with `Run` in order
 // to set the framework's server listen action.
 //
-// Currently Runner is being used to declare the built'n server listeners.
+// Currently `Runner` is being used to declare the builtin server listeners.
 //
 // See `Run` for more.
 type Runner func(*Application) error
@@ -815,6 +855,8 @@ func (app *Application) Run(serve Runner, withOrWithout ...Configurator) error {
 	}
 
 	app.Configure(withOrWithout...)
+	app.tryStartTunneling()
+
 	app.logger.Debugf("Application: running using %d host(s)", len(app.Hosts)+1)
 
 	// this will block until an error(unless supervisor's DeferFlow called from a Task).
@@ -824,4 +866,43 @@ func (app *Application) Run(serve Runner, withOrWithout ...Configurator) error {
 	}
 
 	return err
+}
+
+// https://ngrok.com/docs
+func (app *Application) tryStartTunneling() {
+	if !app.config.Tunneling.isEnabled() {
+		return
+	}
+
+	app.ConfigureHost(func(su *host.Supervisor) {
+		su.RegisterOnServe(func(h host.TaskHost) {
+			tc := app.config.Tunneling
+			if tc.WebInterface == "" {
+				tc.WebInterface = "http://127.0.0.1:4040"
+			}
+
+			for tunnIdx, t := range tc.Tunnels {
+				if t.Name == "" {
+					t.Name = fmt.Sprintf("iris-app-%d-%s", tunnIdx+1, time.Now().Format(app.config.TimeFormat))
+				}
+
+				if t.Addr == "" {
+					t.Addr = su.Server.Addr
+				}
+
+				var publicAddr string
+				err := tc.startTunnel(t, &publicAddr)
+				if err != nil {
+					app.Logger().Errorf("Host: tunneling error: %v", err)
+					return
+				}
+
+				// to make subdomains resolution still based on this new remote, public addresses.
+				app.config.vhost = publicAddr[strings.Index(publicAddr, "://")+3:]
+
+				directLog := []byte(fmt.Sprintf("⬝ Public Address: %s\n", publicAddr))
+				app.Logger().Printer.Output.Write(directLog)
+			}
+		})
+	})
 }

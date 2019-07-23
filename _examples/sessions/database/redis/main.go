@@ -7,22 +7,21 @@ import (
 
 	"github.com/kataras/iris/sessions"
 	"github.com/kataras/iris/sessions/sessiondb/redis"
-	"github.com/kataras/iris/sessions/sessiondb/redis/service"
 )
 
 // tested with redis version 3.0.503.
 // for windows see: https://github.com/ServiceStack/redis-windows
 func main() {
 	// replace with your running redis' server settings:
-	db := redis.New(service.Config{
-		Network:     "tcp",
-		Addr:        "127.0.0.1:6379",
-		Password:    "",
-		Database:    "",
-		MaxIdle:     0,
-		MaxActive:   0,
-		IdleTimeout: time.Duration(5) * time.Minute,
-		Prefix:      ""}) // optionally configure the bridge between your redis server
+	db := redis.New(redis.Config{
+		Network:   "tcp",
+		Addr:      "127.0.0.1:6379",
+		Timeout:   time.Duration(30) * time.Second,
+		MaxActive: 10,
+		Password:  "",
+		Database:  "",
+		Prefix:    "",
+	}) // optionally configure the bridge between your redis server.
 
 	// close connection when control+C/cmd+C
 	iris.RegisterOnInterrupt(func() {
@@ -33,10 +32,9 @@ func main() {
 
 	sess := sessions.New(sessions.Config{
 		Cookie:       "sessionscookieid",
-		Expires:      45 * time.Minute, // <=0 means unlimited life. Defaults to 0.
+		Expires:      0, // defaults to 0: unlimited life. Another good value is: 45 * time.Minute,
 		AllowReclaim: true,
-	},
-	)
+	})
 
 	//
 	// IMPORTANT:
@@ -45,6 +43,7 @@ func main() {
 
 	// the rest of the code stays the same.
 	app := iris.New()
+	// app.Logger().SetLevel("debug")
 
 	app.Get("/", func(ctx iris.Context) {
 		ctx.Writef("You should navigate to the /set, /get, /delete, /clear,/destroy instead")

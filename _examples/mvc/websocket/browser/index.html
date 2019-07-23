@@ -1,0 +1,106 @@
+<html>
+
+<head>
+    <title>Online visitors MVC example</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: -apple-system, "San Francisco", "Helvetica Neue", "Noto", "Roboto", "Calibri Light", sans-serif;
+            color: #212121;
+            font-size: 1.0em;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 750px;
+            margin: auto;
+            padding: 15px;
+        }
+
+        #online_visitors {
+            font-weight: bold;
+            font-size: 18px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <span id="online_visitors">1 online visitor</span>
+    </div>
+
+    <!-- the message's input -->
+    <input id="input" type="text" />
+
+    <!-- when clicked then a websocket event will be sent to the server, at this example we registered the 'chat' -->
+    <button id="sendBtn" disabled>Send</button>
+
+    <!-- the messages will be shown here -->
+    <pre id="output"></pre>
+    <!-- import the iris client-side library for browser from a CDN or locally.
+     However, `neffos.(min.)js` is a NPM package too so alternatively,
+     you can use it as dependency on your package.json and all nodejs-npm tooling become available:
+     see the "browserify" example for more-->
+    <script src="https://cdn.jsdelivr.net/npm/neffos.js@latest/dist/neffos.min.js"></script>
+    <script type="text/javascript">
+        const wsURL = "ws://localhost:8080/websocket"
+        var outputTxt = document.getElementById("output");
+        function addMessage(msg) {
+            outputTxt.innerHTML += msg + "\n";
+        }
+
+        async function runExample() {
+            try {
+                const conn = await neffos.dial(wsURL, {
+                    default: { // "default" namespace.
+                        _OnNamespaceConnected: function (nsConn, msg) {
+                            if (nsConn.conn.wasReconnected()) {
+                                addMessage("re-connected after " + nsConn.conn.reconnectTries.toString() + " trie(s)");
+                            }
+
+                            let inputTxt = document.getElementById("input");
+                            let sendBtn = document.getElementById("sendBtn");
+
+                            sendBtn.disabled = false;
+                            sendBtn.onclick = function () {
+                                const input = inputTxt.value;
+                                inputTxt.value = "";
+                                nsConn.emit("OnChat", input);
+                                addMessage("Me: " + input);
+                            };
+
+                            addMessage("connected to namespace: " + msg.Namespace);
+                        },
+                        _OnNamespaceDisconnect: function (nsConn, msg) {
+                            addMessage("disconnected from namespace: " + msg.Namespace);
+                        },
+                        OnChat: function (nsConn, msg) { // "OnChat" event.
+                            console.log(msg);
+
+                            addMessage(msg.Body);
+                        },
+                        OnVisit: function (nsConn, msg) {
+                            const newCount = Number(msg.Body); // or parseInt.
+                            console.log("visit websocket event with newCount of: ", newCount);
+
+                            var text = "1 online visitor";
+                            if (newCount > 1) {
+                                text = newCount + " online visitors";
+                            }
+                            document.getElementById("online_visitors").innerHTML = text;
+                        },
+                    }
+                });
+
+                conn.connect("default");
+            } catch (err) {
+                console.log(err)
+            }
+        }
+
+        runExample();
+    </script>
+
+</body>
+
+</html>

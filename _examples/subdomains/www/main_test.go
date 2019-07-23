@@ -41,7 +41,7 @@ func TestSubdomainWWW(t *testing.T) {
 	}
 
 	host := "localhost:1111"
-	e := httptest.New(t, app, httptest.URL("http://"+host), httptest.Debug(false))
+	e := httptest.New(t, app, httptest.Debug(false))
 
 	for _, test := range tests {
 

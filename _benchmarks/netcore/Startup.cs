@@ -25,7 +25,7 @@ namespace netcore
             services.AddRouting();
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             var routeBuilder = new RouteBuilder(app);
             routeBuilder.MapGet("api/values/{id}", context =>{

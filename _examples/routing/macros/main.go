@@ -52,7 +52,7 @@ func main() {
 
 	/*
 		http://localhost:8080/test_slice_hero/myvaluei1/myavlue2 ->
-		myparam's value (a trailing path parameter type) is: []string{"myvaluei1", "myavlue2"}
+		myparam's value (a trailing path parameter type) is: []string{"myvalue1", "myavlue2"}
 	*/
 	app.Get("/test_slice_hero/{myparam:slice}", hero.Handler(func(myparam []string) string {
 		return fmt.Sprintf("myparam's value (a trailing path parameter type) is: %#v\n", myparam)
@@ -66,7 +66,7 @@ func main() {
 		myparam's value (a trailing path parameter type) is: []string{"value1", "value2"}
 	*/
 	app.Get("/test_slice_contains/{myparam:slice contains([value1,value2])}", func(ctx context.Context) {
-		// When it is not a built'n function available to retrieve your value with the type you want, such as ctx.Params().GetInt
+		// When it is not a builtin function available to retrieve your value with the type you want, such as ctx.Params().GetInt
 		// then you can use the `GetEntry.ValueRaw` to get the real value, which is set-ed by your macro above.
 		myparam := ctx.Params().GetEntry("myparam").ValueRaw.([]string)
 		ctx.Writef("myparam's value (a trailing path parameter type) is: %#v\n", myparam)

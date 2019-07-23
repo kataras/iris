@@ -8,7 +8,7 @@ import (
 
 func main() {
 	app := iris.New()
-	app.StaticWeb("/scripts", "./www/scripts") // serve the scripts
+	app.HandleDir("/scripts", "./www/scripts") // serve the scripts
 	// when you edit a typescript file from the alm-tools
 	// it compiles it to javascript, have fun!
 

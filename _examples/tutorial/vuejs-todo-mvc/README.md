@@ -1,5 +1,7 @@
 # A Todo MVC Application using Iris and Vue.js
 
+## Hackernoon Article: https://twitter.com/vuejsdevelopers/status/954805901789224960
+
 Vue.js is a front-end framework for building web applications using javascript. It has a blazing fast Virtual DOM renderer.
 
 Iris is a back-end framework for building web applications using The Go Programming Language (disclaimer: author here). It's one of the fastest and featured web frameworks out there. We wanna use this to serve our "todo service".
@@ -498,7 +500,7 @@ func main() {
     // no need for any server-side template here,
     // actually if you're going to just use vue without any
     // back-end services, you can just stop afer this line and start the server.
-    app.StaticWeb("/", "./public")
+    app.HandleDir("/", "./public")
 
     // configure the http sessions.
     sess := sessions.New(sessions.Config{

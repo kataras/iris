@@ -70,7 +70,7 @@ func GetCustomStructWithContentType() (testCustomStruct, string) {
 	return testCustomStruct{"Iris", 2}, "text/xml"
 }
 
-func GetCustomStructWithError(ctx iris.Context) (s testCustomStruct, err error) {
+func GetCustomStructWithError(ctx context.Context) (s testCustomStruct, err error) {
 	s = testCustomStruct{"Iris", 2}
 	if ctx.URLParamExists("err") {
 		err = errors.New("omit return of testCustomStruct and fire error")
@@ -86,7 +86,7 @@ type err struct {
 	Message string `json:"message"`
 }
 
-func (e err) Dispatch(ctx iris.Context) {
+func (e err) Dispatch(ctx context.Context) {
 	// write the status code based on the err's StatusCode.
 	ctx.StatusCode(e.Status)
 	// send to the client the whole object as json
@@ -95,6 +95,22 @@ func (e err) Dispatch(ctx iris.Context) {
 
 func GetCustomErrorAsDispatcher() err {
 	return err{iris.StatusBadRequest, "this is my error as json"}
+}
+
+func GetCustomTypedNilEmptyResponse() iris.Map {
+	return nil
+}
+
+func GetCustomTypedPtrNilEmptyResponse() *iris.Map {
+	return nil
+}
+
+func GetCustomMapNilEmptyResponse() map[string]interface{} {
+	return nil
+}
+
+func GetCustomPtrStructNilEmptyResponse() *testCustomStruct {
+	return nil
 }
 
 func TestFuncResult(t *testing.T) {
@@ -119,6 +135,11 @@ func TestFuncResult(t *testing.T) {
 	app.Get("/custom/struct/with/content/type", h.Handler(GetCustomStructWithContentType))
 	app.Get("/custom/struct/with/error", h.Handler(GetCustomStructWithError))
 	app.Get("/custom/error/as/dispatcher", h.Handler(GetCustomErrorAsDispatcher))
+
+	app.Get("/custom/nil/typed", h.Handler(GetCustomTypedNilEmptyResponse))
+	app.Get("/custom/nil/typed/ptr", h.Handler(GetCustomTypedPtrNilEmptyResponse))
+	app.Get("/custom/nil/map", h.Handler(GetCustomMapNilEmptyResponse))
+	app.Get("/custom/nil/struct", h.Handler(GetCustomPtrStructNilEmptyResponse))
 
 	e := httptest.New(t, app)
 
@@ -172,4 +193,14 @@ func TestFuncResult(t *testing.T) {
 		// the content should be not JSON it should be the status code's text
 		// it will fire the error's text
 		JSON().Equal(err{iris.StatusBadRequest, "this is my error as json"})
+
+	// its result is nil should give an empty response but content-type is set correctly.
+	e.GET("/custom/nil/typed").Expect().
+		Status(iris.StatusOK).ContentType(context.ContentJSONHeaderValue).Body().Empty()
+	e.GET("/custom/nil/typed/ptr").Expect().
+		Status(iris.StatusOK).ContentType(context.ContentJSONHeaderValue).Body().Empty()
+	e.GET("/custom/nil/map").Expect().
+		Status(iris.StatusOK).ContentType(context.ContentJSONHeaderValue).Body().Empty()
+	e.GET("/custom/nil/struct").Expect().
+		Status(iris.StatusOK).ContentType(context.ContentJSONHeaderValue).Body().Empty()
 }

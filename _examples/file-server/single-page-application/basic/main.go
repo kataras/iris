@@ -20,15 +20,7 @@ func newApp() *iris.Application {
 		ctx.View("index.html")
 	})
 
-	// or just serve index.html as it is:
-	// app.Get("/{f:path}", func(ctx iris.Context) {
-	// 	ctx.ServeFile("index.html", false)
-	// })
-
-	assetHandler := app.StaticHandler("./public", false, false)
-	// as an alternative of SPA you can take a look at the /routing/dynamic-path/root-wildcard
-	// example too
-	app.SPA(assetHandler)
+	app.HandleDir("/", "./public")
 
 	return app
 }

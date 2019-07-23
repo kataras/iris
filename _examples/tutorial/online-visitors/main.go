@@ -1,12 +1,20 @@
 package main
 
 import (
+	"fmt"
 	"sync/atomic"
 
 	"github.com/kataras/iris"
 
 	"github.com/kataras/iris/websocket"
 )
+
+var events = websocket.Namespaces{
+	"default": websocket.Events{
+		websocket.OnRoomJoined: onRoomJoined,
+		websocket.OnRoomLeft:   onRoomLeft,
+	},
+}
 
 func main() {
 	// init the web application instance
@@ -16,14 +24,12 @@ func main() {
 	// load templates
 	app.RegisterView(iris.HTML("./templates", ".html").Reload(true))
 	// setup the websocket server
-	ws := websocket.New(websocket.Config{})
-	ws.OnConnection(HandleWebsocketConnection)
+	ws := websocket.New(websocket.DefaultGorillaUpgrader, events)
 
-	app.Get("/my_endpoint", ws.Handler())
-	app.Any("/iris-ws.js", websocket.ClientHandler())
+	app.Get("/my_endpoint", websocket.Handler(ws))
 
 	// register static assets request path and system directory
-	app.StaticWeb("/js", "./static/assets/js")
+	app.HandleDir("/js", "./static/assets/js")
 
 	h := func(ctx iris.Context) {
 		ctx.ViewData("", page{PageID: "index page"})
@@ -114,48 +120,54 @@ func (v *pageViews) Reset() {
 
 var v pageViews
 
-// HandleWebsocketConnection handles the online viewers per example(gist source)
-func HandleWebsocketConnection(c websocket.Connection) {
+func viewsCountBytes(viewsCount uint64) []byte {
+	// * there are other methods to convert uint64 to []byte
+	return []byte(fmt.Sprintf("%d", viewsCount))
+}
 
-	c.On("watch", func(pageSource string) {
-		v.Add(pageSource)
-		// join the socket to a room linked with the page source
-		c.Join(pageSource)
+func onRoomJoined(ns *websocket.NSConn, msg websocket.Message) error {
+	// the roomName here is the source.
+	pageSource := string(msg.Room)
 
-		viewsCount := v.Get(pageSource).getCount()
-		if viewsCount == 0 {
-			viewsCount++ // count should be always > 0 here
-		}
-		c.To(pageSource).Emit("watch", viewsCount)
+	v.Add(pageSource)
+
+	viewsCount := v.Get(pageSource).getCount()
+	if viewsCount == 0 {
+		viewsCount++ // count should be always > 0 here
+	}
+
+	// fire the "onNewVisit" client event
+	// on each connection joined to this room (source page)
+	// and notify of the new visit,
+	// including this connection (see nil on first input arg).
+	ns.Conn.Server().Broadcast(nil, websocket.Message{
+		Namespace: msg.Namespace,
+		Room:      pageSource,
+		Event:     "onNewVisit", // fire the "onNewVisit" client event.
+		Body:      viewsCountBytes(viewsCount),
 	})
 
-	c.OnLeave(func(roomName string) {
-		if roomName != c.ID() { // if the roomName  it's not the connection iself
-			// the roomName here is the source, this is the only room(except the connection's ID room) which we join the users to.
-			pageV := v.Get(roomName)
-			if pageV == nil {
-				return // for any case that this room is not a pageView source
-			}
-			// decrement -1 the specific counter for this page source.
-			pageV.decrement()
-			// 1. open 30 tabs.
-			// 2. close the browser.
-			// 3. re-open the browser
-			// 4. should be  v.getCount() = 1
-			// in order to achieve the previous flow we should decrement exactly when the user disconnects
-			// but emit the result a little after, on a goroutine
-			// getting all connections within this room and emit the online views one by one.
-			// note:
-			// we can also add a time.Sleep(2-3 seconds) inside the goroutine at the future if we don't need 'real-time' updates.
-			go func(currentConnID string) {
-				for _, conn := range c.Server().GetConnectionsByRoom(roomName) {
-					if conn.ID() != currentConnID {
-						conn.Emit("watch", pageV.getCount())
-					}
+	return nil
+}
 
-				}
-			}(c.ID())
-		}
+func onRoomLeft(ns *websocket.NSConn, msg websocket.Message) error {
+	// the roomName here is the source.
+	pageV := v.Get(msg.Room)
+	if pageV == nil {
+		return nil // for any case that this room is not a pageView source
+	}
+	// decrement -1 the specific counter for this page source.
+	pageV.decrement()
 
+	// fire the "onNewVisit" client event
+	// on each connection joined to this room (source page)
+	// and notify of the new, decremented by one, visits count.
+	ns.Conn.Server().Broadcast(nil, websocket.Message{
+		Namespace: msg.Namespace,
+		Room:      msg.Room,
+		Event:     "onNewVisit",
+		Body:      viewsCountBytes(pageV.getCount()),
 	})
+
+	return nil
 }

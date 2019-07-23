@@ -20,6 +20,23 @@ type Result interface {
 	Dispatch(ctx context.Context)
 }
 
+type (
+	// ErrorHandler is the optional interface to handle errors per hero func,
+	// see `mvc/Application#HandleError` for MVC application-level error handler registration too.
+	ErrorHandler interface {
+		HandleError(ctx context.Context, err error)
+	}
+
+	// ErrorHandlerFunc implements the `ErrorHandler`.
+	// It describes the type defnition for an error handler.
+	ErrorHandlerFunc func(ctx context.Context, err error)
+)
+
+// HandleError fires when the `DispatchFuncResult` returns a non-nil error.
+func (fn ErrorHandlerFunc) HandleError(ctx context.Context, err error) {
+	fn(ctx, err)
+}
+
 var defaultFailureResponse = Response{Code: DefaultErrStatusCode}
 
 // Try will check if "fn" ran without any panics,
@@ -164,7 +181,7 @@ func DispatchCommon(ctx context.Context,
 // Result or (Result, error) and so on...
 //
 // where Get is an HTTP METHOD.
-func DispatchFuncResult(ctx context.Context, values []reflect.Value) {
+func DispatchFuncResult(ctx context.Context, errorHandler ErrorHandler, values []reflect.Value) {
 	if len(values) == 0 {
 		return
 	}
@@ -194,7 +211,6 @@ func DispatchFuncResult(ctx context.Context, values []reflect.Value) {
 	)
 
 	for _, v := range values {
-
 		// order of these checks matters
 		// for example, first  we need to check for status code,
 		// secondly the string (for content type and content)...
@@ -293,22 +309,49 @@ func DispatchFuncResult(ctx context.Context, values []reflect.Value) {
 			// it's raw content, get the latest
 			content = value
 		case compatibleErr:
-			if value != nil { // it's always not nil but keep it here.
-				err = value
-				if statusCode < 400 {
-					statusCode = DefaultErrStatusCode
-				}
-				break // break on first error, error should be in the end but we
-				// need to know break the dispatcher if any error.
-				// at the end; we don't want to write anything to the response if error is not nil.
+			if value == nil || di.IsNil(v) {
+				continue
 			}
+
+			if errorHandler != nil {
+				errorHandler.HandleError(ctx, value)
+				break
+			}
+
+			err = value
+			if statusCode < 400 {
+				statusCode = DefaultErrStatusCode
+			}
+			break // break on first error, error should be in the end but we
+			// need to know break the dispatcher if any error.
+			// at the end; we don't want to write anything to the response if error is not nil.
+
 		default:
 			// else it's a custom struct or a dispatcher, we'll decide later
 			// because content type and status code matters
 			// do that check in order to be able to correctly dispatch:
 			// (customStruct, error) -> customStruct filled and error is nil
-			if custom == nil && f != nil {
-				custom = f
+			if custom == nil {
+				// if it's a pointer to struct/map.
+
+				if di.IsNil(v) {
+					// if just a ptr to struct with no content type given
+					// then try to get the previous response writer's content type,
+					// and if that is empty too then force-it to application/json
+					// as the default content type we use for structs/maps.
+					if contentType == "" {
+						contentType = ctx.GetContentType()
+						if contentType == "" {
+							contentType = context.ContentJSONHeaderValue
+						}
+					}
+
+					continue
+				}
+
+				if value != nil {
+					custom = value // content type will be take care later on.
+				}
 			}
 		}
 	}

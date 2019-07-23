@@ -35,17 +35,17 @@ func main() {
 	//	    maps to ./public/assets/css/bootstrap.min.css file at system location.
 	// GET: http://localhost:8080/assets/js/react.min.js
 	//      maps to ./public/assets/js/react.min.js file at system location.
-	app.StaticWeb("/assets", "./public/assets")
+	app.HandleDir("/assets", "./public/assets")
 
 	/* OR
 
 	// GET: http://localhost:8080/js/react.min.js
 	// 		maps to ./public/assets/js/react.min.js file at system location.
-	app.StaticWeb("/js", "./public/assets/js")
+	app.HandleDir("/js", "./public/assets/js")
 
 	// GET: http://localhost:8080/css/bootstrap.min.css
 	// 		maps to ./public/assets/css/bootstrap.min.css file at system location.
-	app.StaticWeb("/css", "./public/assets/css")
+	app.HandleDir("/css", "./public/assets/css")
 
 	*/
 
