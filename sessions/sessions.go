@@ -78,7 +78,7 @@ func (s *Sessions) Start(ctx context.Context, cookieOptions ...context.CookieOpt
 	cookieValue := s.decodeCookieValue(GetCookie(ctx, s.config.Cookie))
 
 	if cookieValue == "" { // cookie doesn't exists, let's generate a session and add set a cookie
-		sid := s.config.SessionIDGenerator()
+		sid := s.config.SessionIDGenerator(ctx)
 
 		sess := s.provider.Init(sid, s.config.Expires)
 		sess.isNew = s.provider.db.Len(sid) == 0
