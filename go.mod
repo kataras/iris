@@ -16,7 +16,7 @@ require (
 	github.com/gavv/httpexpect v2.0.0+incompatible
 	github.com/hashicorp/go-version v1.2.0 // indirect
 	github.com/iris-contrib/blackfriday v2.0.0+incompatible
-	github.com/iris-contrib/formBinder v0.0.0-20190104093907-fbd5963f41e1
+	github.com/iris-contrib/formBinder v5.0.0+incompatible
 	github.com/iris-contrib/go.uuid v2.0.0+incompatible
 	github.com/iris-contrib/i18n v0.0.0-20171121225848-987a633949d0
 	github.com/json-iterator/go v1.1.6
