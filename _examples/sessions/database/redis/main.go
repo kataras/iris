@@ -53,7 +53,7 @@ func main() {
 		//set session values
 		s.Set("name", "iris")
 
-		//test if setted here
+		//test if set here
 		ctx.Writef("All ok session value of the 'name' is: %s", s.GetString("name"))
 	})
 
@@ -63,7 +63,7 @@ func main() {
 		// set session values
 		s.Set(key, value)
 
-		// test if setted here
+		// test if set here
 		ctx.Writef("All ok session value of the '%s' is: %s", key, s.GetString(key))
 	})
 
@@ -74,7 +74,7 @@ func main() {
 		// set session values
 		s.Set(key, value)
 		valueSet := s.Get(key)
-		// test if setted here
+		// test if set here
 		ctx.Writef("All ok session value of the '%s' is: %v", key, valueSet)
 	})
 

@@ -44,8 +44,8 @@ func main() {
 		s := sess.Start(ctx)
 		s.Set("name", "iris")
 
-		//test if setted here.
-		ctx.Writef("All ok session setted to: %s", s.GetString("name"))
+		//test if set here.
+		ctx.Writef("All ok session set to: %s", s.GetString("name"))
 
 		// Set will set the value as-it-is,
 		// if it's a slice or map

@@ -155,7 +155,7 @@ var RequestTransactionScope = TransactionScopeFunc(func(maybeErr TransactionErrR
 
 		// we need to register a beforeResponseFlush event here in order
 		// to execute last the FireStatusCode
-		// (which will reset the whole response's body, status code and headers setted from normal flow or other transactions too)
+		// (which will reset the whole response's body, status code and headers set from normal flow or other transactions too)
 		ctx.ResponseWriter().SetBeforeFlush(func() {
 			// we need to re-take the context's response writer
 			// because inside here the response writer is changed to the original's

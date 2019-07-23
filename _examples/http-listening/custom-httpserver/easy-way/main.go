@@ -17,7 +17,7 @@ func main() {
 		ctx.Writef("Hello from %s", ctx.Path())
 	})
 
-	// Any custom fields here. Handler and ErrorLog are setted to the server automatically
+	// Any custom fields here. Handler and ErrorLog are set to the server automatically
 	srv := &http.Server{Addr: ":8080"}
 
 	// http://localhost:8080/

@@ -78,7 +78,7 @@ type (
 	// 2. Dir:     string, Dir set the root, where to search for typescript files/project. Default "./"
 	// 3. Ignore:  string, comma separated ignore typescript files/project from these directories. Default "" (node_modules are always ignored)
 	// 4. Tsconfig:  &typescript.Tsconfig{}, here you can set all compilerOptions if no tsconfig.json exists inside the 'Dir'
-	// 5. Editor: 	typescript.Editor("username","password"), if setted then alm-tools browser-based typescript IDE will be available. Defailt is nil
+	// 5. Editor: 	typescript.Editor("username","password"), if set then alm-tools browser-based typescript IDE will be available. Defailt is nil
 	Config struct {
 		// Bin the path of the tsc binary file
 		// if empty then the plugin tries to find it
