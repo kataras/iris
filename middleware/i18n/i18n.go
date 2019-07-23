@@ -102,7 +102,7 @@ func New(c Config) context.Handler {
 			}
 		}
 	}
-	// if not default language setted then set to the first of the i.config.Languages
+	// if not default language set then set to the first of the i.config.Languages
 	if c.Default == "" {
 		c.Default = firstlanguage
 	}

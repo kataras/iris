@@ -16,7 +16,7 @@ var (
 	RequestCacheTimeout   = 5 * time.Second
 )
 
-// NoCacheHeader is the static header key which is setted to the response when NoCache is called,
+// NoCacheHeader is the static header key which is set to the response when NoCache is called,
 // used inside nethttp and fhttp Skippers.
 var NoCacheHeader = "X-No-Cache"
 
