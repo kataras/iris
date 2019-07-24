@@ -308,7 +308,7 @@ iris cache library lives on its own [package](https://github.com/kataras/iris/tr
 iris session manager lives on its own [package](https://github.com/kataras/iris/tree/master/sessions).
 
 - [Overview](sessions/overview/main.go)
-- [Standalone](sessions/standalone/main.go)
+- [Middleware](sessions/middleware/main.go)
 - [Secure Cookie](sessions/securecookie/main.go)
 - [Flash Messages](sessions/flash-messages/main.go)
 - [Databases](sessions/database)

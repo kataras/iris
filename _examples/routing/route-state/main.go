@@ -28,6 +28,12 @@ func main() {
 	})
 
 	app.Get("/execute", func(ctx iris.Context) {
+		if !none.IsOnline() {
+			ctx.Values().Set("from", "/execute with offline access")
+			ctx.Exec("NONE", "/invisible/iris")
+			return
+		}
+
 		// same as navigating to "http://localhost:8080/invisible/iris" when /change has being invoked and route state changed
 		// from "offline" to "online"
 		ctx.Values().Set("from", "/execute") // values and session can be shared when calling Exec from a "foreign" context.

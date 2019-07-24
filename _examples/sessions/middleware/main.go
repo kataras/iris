@@ -26,26 +26,33 @@ func main() {
 		// if you want to invalid cookies on different subdomains
 		// of the same host, then enable it.
 		// Defaults to false.
-		DisableSubdomainPersistence: true,
-		// AllowReclaim will allow to
-		// Destroy and Start a session in the same request handler.
-		// All it does is that it removes the cookie for both `Request` and `ResponseWriter` while `Destroy`
-		// or add a new cookie to `Request` while `Start`.
-		//
-		// Defaults to false.
-		AllowReclaim: true,
+		DisableSubdomainPersistence: false,
 	})
+
+	app.Use(sess.Handler()) // session is always non-nil inside handlers now.
 
 	app.Get("/", func(ctx iris.Context) {
-		ctx.Writef("You should navigate to the /set, /get, /delete, /clear,/destroy instead")
+		session := sessions.Get(ctx) // same as sess.Start(ctx, cookieOptions...)
+		if session.Len() == 0 {
+			ctx.HTML(`no session values stored yet. Navigate to: <a href="/set">set page</a>`)
+			return
+		}
+
+		ctx.HTML("<ul>")
+		session.Visit(func(key string, value interface{}) {
+			ctx.HTML("<li> %s = %v </li>", key, value)
+		})
+
+		ctx.HTML("</ul>")
 	})
+
+	//set session values.
 	app.Get("/set", func(ctx iris.Context) {
-		//set session values.
-		s := sess.Start(ctx)
-		s.Set("name", "iris")
+		session := sessions.Get(ctx)
+		session.Set("name", "iris")
 
 		//test if set here.
-		ctx.Writef("All ok session set to: %s", s.GetString("name"))
+		ctx.Writef("All ok session set to: %s", session.GetString("name"))
 
 		// Set will set the value as-it-is,
 		// if it's a slice or map
@@ -56,22 +63,32 @@ func main() {
 		// Read more about muttable and immutable go types: https://stackoverflow.com/a/8021081
 	})
 
+	app.Get("/set/{key}/{value}", func(ctx iris.Context) {
+		key, value := ctx.Params().Get("key"), ctx.Params().Get("value")
+
+		session := sessions.Get(ctx)
+		session.Set(key, value)
+
+		// test if set here
+		ctx.Writef("All ok session value of the '%s' is: %s", key, session.GetString(key))
+	})
+
 	app.Get("/get", func(ctx iris.Context) {
 		// get a specific value, as string,
 		// if not found then it returns just an empty string.
-		name := sess.Start(ctx).GetString("name")
+		name := sessions.Get(ctx).GetString("name")
 
 		ctx.Writef("The name on the /set was: %s", name)
 	})
 
 	app.Get("/delete", func(ctx iris.Context) {
 		// delete a specific key
-		sess.Start(ctx).Delete("name")
+		sessions.Get(ctx).Delete("name")
 	})
 
 	app.Get("/clear", func(ctx iris.Context) {
 		// removes all entries.
-		sess.Start(ctx).Clear()
+		sessions.Get(ctx).Clear()
 	})
 
 	app.Get("/update", func(ctx iris.Context) {
@@ -81,13 +98,15 @@ func main() {
 
 	app.Get("/destroy", func(ctx iris.Context) {
 		//destroy, removes the entire session data and cookie
-		sess.Destroy(ctx)
+		// sess.Destroy(ctx)
+		// or
+		sessions.Get(ctx).Destroy()
 	})
 	// Note about Destroy:
 	//
 	// You can destroy a session outside of a handler too, using the:
-	// mySessions.DestroyByID
-	// mySessions.DestroyAll
+	// sess.DestroyByID
+	// sess.DestroyAll
 
 	// remember: slices and maps are muttable by-design
 	// The `SetImmutable` makes sure that they will be stored and received
@@ -97,9 +116,9 @@ func main() {
 	// Read more about muttable and immutable go types: https://stackoverflow.com/a/8021081
 	app.Get("/set_immutable", func(ctx iris.Context) {
 		business := []businessModel{{Name: "Edward"}, {Name: "value 2"}}
-		s := sess.Start(ctx)
-		s.SetImmutable("businessEdit", business)
-		businessGet := s.Get("businessEdit").([]businessModel)
+		session := sessions.Get(ctx)
+		session.SetImmutable("businessEdit", business)
+		businessGet := session.Get("businessEdit").([]businessModel)
 
 		// try to change it, if we used `Set` instead of `SetImmutable` this
 		// change will affect the underline array of the session's value "businessEdit", but now it will not.
@@ -108,7 +127,7 @@ func main() {
 	})
 
 	app.Get("/get_immutable", func(ctx iris.Context) {
-		valSlice := sess.Start(ctx).Get("businessEdit")
+		valSlice := sessions.Get(ctx).Get("businessEdit")
 		if valSlice == nil {
 			ctx.HTML("please navigate to the <a href='/set_immutable'>/set_immutable</a> first")
 			return

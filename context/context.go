@@ -768,9 +768,9 @@ type Context interface {
 	// Binary writes out the raw bytes as binary data.
 	Binary(data []byte) (int, error)
 	// Text writes out a string as plain text.
-	Text(text string) (int, error)
+	Text(format string, args ...interface{}) (int, error)
 	// HTML writes out a string as text/html.
-	HTML(htmlContents string) (int, error)
+	HTML(format string, args ...interface{}) (int, error)
 	// JSON marshals the given interface object and writes the JSON response.
 	JSON(v interface{}, options ...JSON) (int, error)
 	// JSONP marshals the given interface object and writes the JSON response.
@@ -2876,15 +2876,15 @@ func (ctx *context) Binary(data []byte) (int, error) {
 }
 
 // Text writes out a string as plain text.
-func (ctx *context) Text(text string) (int, error) {
+func (ctx *context) Text(format string, args ...interface{}) (int, error) {
 	ctx.ContentType(ContentTextHeaderValue)
-	return ctx.writer.WriteString(text)
+	return ctx.Writef(format, args...)
 }
 
 // HTML writes out a string as text/html.
-func (ctx *context) HTML(htmlContents string) (int, error) {
+func (ctx *context) HTML(format string, args ...interface{}) (int, error) {
 	ctx.ContentType(ContentHTMLHeaderValue)
-	return ctx.writer.WriteString(htmlContents)
+	return ctx.Writef(format, args...)
 }
 
 // JSON contains the options for the JSON (Context's) Renderer.
