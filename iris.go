@@ -37,7 +37,7 @@ import (
 
 var (
 	// Version is the current version number of the Iris Web Framework.
-	Version = "11.2.0"
+	Version = "11.2.1"
 )
 
 // HTTP status codes as registered with IANA.
