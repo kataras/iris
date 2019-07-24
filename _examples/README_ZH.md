@@ -331,6 +331,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
 - [读取JSON](http_request/read-json/main.go)
 - [读取XML](http_request/read-xml/main.go)
 - [读取Form](http_request/read-form/main.go)
+- [读取Query](http_request/read-query/main.go) **更新**
 - [读取每个类型的自定义结果Custom per type](http_request/read-custom-per-type/main.go)
 - [通过Unmarshaler读取Custom](http_request/read-custom-via-unmarshaler/main.go)
 - [上传/读取文件Upload/Read File](http_request/upload-file/main.go)
