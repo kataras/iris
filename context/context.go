@@ -3003,6 +3003,7 @@ func (ctx *context) JSON(v interface{}, opts ...JSON) (n int, err error) {
 		}
 
 		if err != nil {
+			ctx.Application().Logger().Debugf("JSON: %v", err)
 			ctx.StatusCode(http.StatusInternalServerError) // it handles the fallback to normal mode here which also removes the gzip headers.
 			return 0, err
 		}
@@ -3011,6 +3012,7 @@ func (ctx *context) JSON(v interface{}, opts ...JSON) (n int, err error) {
 
 	n, err = WriteJSON(ctx.writer, v, options, ctx.shouldOptimize())
 	if err != nil {
+		ctx.Application().Logger().Debugf("JSON: %v", err)
 		ctx.StatusCode(http.StatusInternalServerError)
 		return 0, err
 	}
@@ -3073,6 +3075,7 @@ func (ctx *context) JSONP(v interface{}, opts ...JSONP) (int, error) {
 
 	n, err := WriteJSONP(ctx.writer, v, options, ctx.shouldOptimize())
 	if err != nil {
+		ctx.Application().Logger().Debugf("JSONP: %v", err)
 		ctx.StatusCode(http.StatusInternalServerError)
 		return 0, err
 	}
@@ -3118,6 +3121,7 @@ func (ctx *context) XML(v interface{}, opts ...XML) (int, error) {
 
 	n, err := WriteXML(ctx.writer, v, options)
 	if err != nil {
+		ctx.Application().Logger().Debugf("XML: %v", err)
 		ctx.StatusCode(http.StatusInternalServerError)
 		return 0, err
 	}
@@ -3150,6 +3154,7 @@ func (ctx *context) Markdown(markdownB []byte, opts ...Markdown) (int, error) {
 
 	n, err := WriteMarkdown(ctx.writer, markdownB, options)
 	if err != nil {
+		ctx.Application().Logger().Debugf("Markdown: %v", err)
 		ctx.StatusCode(http.StatusInternalServerError)
 		return 0, err
 	}
@@ -3161,6 +3166,7 @@ func (ctx *context) Markdown(markdownB []byte, opts ...Markdown) (int, error) {
 func (ctx *context) YAML(v interface{}) (int, error) {
 	out, err := yaml.Marshal(v)
 	if err != nil {
+		ctx.Application().Logger().Debugf("YAML: %v", err)
 		ctx.StatusCode(http.StatusInternalServerError)
 		return 0, err
 	}
