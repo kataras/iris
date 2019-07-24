@@ -77,7 +77,7 @@ func (s *Sessions) updateCookie(ctx context.Context, sid string, expires time.Du
 func (s *Sessions) Start(ctx context.Context, cookieOptions ...context.CookieOption) *Session {
 	cookieValue := s.decodeCookieValue(GetCookie(ctx, s.config.Cookie))
 
-	if cookieValue == "" { // cookie doesn't exists, let's generate a session and add set a cookie
+	if cookieValue == "" { // cookie doesn't exist, let's generate a session and set a cookie.
 		sid := s.config.SessionIDGenerator(ctx)
 
 		sess := s.provider.Init(sid, s.config.Expires)
@@ -88,9 +88,35 @@ func (s *Sessions) Start(ctx context.Context, cookieOptions ...context.CookieOpt
 		return sess
 	}
 
-	sess := s.provider.Read(cookieValue, s.config.Expires)
+	return s.provider.Read(cookieValue, s.config.Expires)
+}
 
-	return sess
+const contextSessionKey = "_iris_session"
+
+// Handler returns a sessions middleware to register on application routes.
+func (s *Sessions) Handler(cookieOptions ...context.CookieOption) context.Handler {
+	return func(ctx context.Context) {
+		session := s.Start(ctx, cookieOptions...)
+		ctx.Values().Set(contextSessionKey, session)
+		ctx.Next()
+	}
+}
+
+// Get returns a *Session from the same request life cycle,
+// can be used inside a chain of handlers of a route.
+//
+// The `Sessions.Start` should be called previously,
+// e.g. register the `Sessions.Handler` as middleware.
+// Then call `Get` package-level function as many times as you want.
+// The `Sessions.Start` can be called more than one time in the same request life cycle as well.
+func Get(ctx context.Context) *Session {
+	if v := ctx.Values().Get(contextSessionKey); v != nil {
+		if sess, ok := v.(*Session); ok {
+			return sess
+		}
+	}
+
+	return nil
 }
 
 // StartWithPath same as `Start` but it explicitly accepts the cookie path option.

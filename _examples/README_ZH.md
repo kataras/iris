@@ -416,7 +416,7 @@ Iris 独立缓存包 [package](https://github.com/kataras/iris/tree/master/cache
 Iris session 管理独立包 [package](https://github.com/kataras/iris/tree/master/sessions).
 
 - [概览](sessions/overview/main.go)
-- [独立使用](sessions/standalone/main.go)
+- [中间件](sessions/middleware/main.go)
 - [安全cookie](sessions/securecookie/main.go)
 - [临时消息](sessions/flash-messages/main.go)
 - [数据库](sessions/database)

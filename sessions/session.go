@@ -411,6 +411,11 @@ func (s *Session) Visit(cb func(k string, v interface{})) {
 	s.provider.db.Visit(s.sid, cb)
 }
 
+// Len returns the total number of stored values in this session.
+func (s *Session) Len() int {
+	return s.provider.db.Len(s.sid)
+}
+
 func (s *Session) set(key string, value interface{}, immutable bool) {
 	s.provider.db.Set(s.sid, s.Lifetime, key, value, immutable)
 
