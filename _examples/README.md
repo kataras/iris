@@ -225,6 +225,7 @@ You can serve [quicktemplate](https://github.com/valyala/quicktemplate) and [her
     * [Struct Validation](http_request/read-json-struct-validation/main.go)
 - [Read XML](http_request/read-xml/main.go)
 - [Read Form](http_request/read-form/main.go)
+- [Read Query](http_request/read-query/main.go) **NEW**
 - [Read Custom per type](http_request/read-custom-per-type/main.go)
 - [Read Custom via Unmarshaler](http_request/read-custom-via-unmarshaler/main.go)
 - [Read Many times](http_request/read-many/main.go)
