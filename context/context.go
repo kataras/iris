@@ -27,7 +27,7 @@ import (
 	"github.com/Shopify/goreferrer"
 	"github.com/fatih/structs"
 	"github.com/iris-contrib/blackfriday"
-	formbinder "github.com/iris-contrib/formBinder"
+	"github.com/iris-contrib/schema"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/microcosm-cc/bluemonday"
 	"gopkg.in/yaml.v2"
@@ -589,10 +589,14 @@ type Context interface {
 	// ReadForm binds the formObject  with the form data
 	// it supports any kind of type, including custom structs.
 	// It will return nothing if request data are empty.
+	// The struct field tag is "form".
 	//
 	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-form/main.go
-	ReadForm(formObjectPtr interface{}) error
-
+	ReadForm(formObject interface{}) error
+	// ReadQuery binds the "ptr" with the url query string. The struct field tag is "url".
+	//
+	// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-query/main.go
+	ReadQuery(ptr interface{}) error
 	//  +------------------------------------------------------------+
 	//  | Body (raw) Writers                                         |
 	//  +------------------------------------------------------------+
@@ -2389,16 +2393,17 @@ func (ctx *context) ReadXML(xmlObject interface{}) error {
 	return ctx.UnmarshalBody(xmlObject, UnmarshalerFunc(xml.Unmarshal))
 }
 
-// IsErrPath can be used at `context#ReadForm`.
-// It reports whether the incoming error is type of `formbinder.ErrPath`,
-// which can be ignored when server allows unknown post values to be sent by the client.
+// IsErrPath can be used at `context#ReadForm` and `context#ReadQuery`.
+// It reports whether the incoming error
+// can be ignored when server allows unknown post values to be sent by the client.
 //
-// A shortcut for the `formbinder#IsErrPath`.
-var IsErrPath = formbinder.IsErrPath
+// A shortcut for the `schema#IsErrPath`.
+var IsErrPath = schema.IsErrPath
 
 // ReadForm binds the formObject  with the form data
 // it supports any kind of type, including custom structs.
 // It will return nothing if request data are empty.
+// The struct field tag is "form".
 //
 // Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-form/main.go
 func (ctx *context) ReadForm(formObject interface{}) error {
@@ -2407,10 +2412,19 @@ func (ctx *context) ReadForm(formObject interface{}) error {
 		return nil
 	}
 
-	// or dec := formbinder.NewDecoder(&formbinder.DecoderOptions{TagName: "form"})
-	// somewhere at the app level. I did change the tagName to "form"
-	// inside its source code, so it's not needed for now.
-	return formbinder.Decode(values, formObject)
+	return schema.DecodeForm(values, formObject)
+}
+
+// ReadQuery binds the "ptr" with the url query string. The struct field tag is "url".
+//
+// Example: https://github.com/kataras/iris/blob/master/_examples/http_request/read-query/main.go
+func (ctx *context) ReadQuery(ptr interface{}) error {
+	values := ctx.request.URL.Query()
+	if len(values) == 0 {
+		return nil
+	}
+
+	return schema.DecodeQuery(values, ptr)
 }
 
 //  +------------------------------------------------------------+
@@ -2989,6 +3003,7 @@ func (ctx *context) JSON(v interface{}, opts ...JSON) (n int, err error) {
 		}
 
 		if err != nil {
+			ctx.Application().Logger().Debugf("JSON: %v", err)
 			ctx.StatusCode(http.StatusInternalServerError) // it handles the fallback to normal mode here which also removes the gzip headers.
 			return 0, err
 		}
@@ -2997,6 +3012,7 @@ func (ctx *context) JSON(v interface{}, opts ...JSON) (n int, err error) {
 
 	n, err = WriteJSON(ctx.writer, v, options, ctx.shouldOptimize())
 	if err != nil {
+		ctx.Application().Logger().Debugf("JSON: %v", err)
 		ctx.StatusCode(http.StatusInternalServerError)
 		return 0, err
 	}
@@ -3059,6 +3075,7 @@ func (ctx *context) JSONP(v interface{}, opts ...JSONP) (int, error) {
 
 	n, err := WriteJSONP(ctx.writer, v, options, ctx.shouldOptimize())
 	if err != nil {
+		ctx.Application().Logger().Debugf("JSONP: %v", err)
 		ctx.StatusCode(http.StatusInternalServerError)
 		return 0, err
 	}
@@ -3104,6 +3121,7 @@ func (ctx *context) XML(v interface{}, opts ...XML) (int, error) {
 
 	n, err := WriteXML(ctx.writer, v, options)
 	if err != nil {
+		ctx.Application().Logger().Debugf("XML: %v", err)
 		ctx.StatusCode(http.StatusInternalServerError)
 		return 0, err
 	}
@@ -3136,6 +3154,7 @@ func (ctx *context) Markdown(markdownB []byte, opts ...Markdown) (int, error) {
 
 	n, err := WriteMarkdown(ctx.writer, markdownB, options)
 	if err != nil {
+		ctx.Application().Logger().Debugf("Markdown: %v", err)
 		ctx.StatusCode(http.StatusInternalServerError)
 		return 0, err
 	}
@@ -3147,6 +3166,7 @@ func (ctx *context) Markdown(markdownB []byte, opts ...Markdown) (int, error) {
 func (ctx *context) YAML(v interface{}) (int, error) {
 	out, err := yaml.Marshal(v)
 	if err != nil {
+		ctx.Application().Logger().Debugf("YAML: %v", err)
 		ctx.StatusCode(http.StatusInternalServerError)
 		return 0, err
 	}

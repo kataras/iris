@@ -21,6 +21,11 @@ Developers are not forced to upgrade if they don't really need it. Upgrade whene
 
 **How to upgrade**: Open your command-line and execute this command: `go get github.com/kataras/iris@v11.2.0`.
 
+# We, 24 July 2019 | v11.2.1
+
+- https://github.com/kataras/iris/issues/1298
+- https://github.com/kataras/iris/issues/1207
+
 # Tu, 23 July 2019 | v11.2.0
 
 Read about the new release at: https://dev.to/kataras/iris-version-11-2-released-22bc
