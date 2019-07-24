@@ -37,11 +37,11 @@ func (ctx *MyContext) Next() {
 // Override any context's method you want...
 // [...]
 
-func (ctx *MyContext) HTML(htmlContents string) (int, error) {
+func (ctx *MyContext) HTML(format string, args ...interface{}) (int, error) {
 	ctx.Application().Logger().Infof("Executing .HTML function from MyContext")
 
 	ctx.ContentType("text/html")
-	return ctx.WriteString(htmlContents)
+	return ctx.Writef(format, args...)
 }
 
 func main() {
