@@ -8,9 +8,11 @@ func main() {
 	app := iris.New()
 
 	app.Post("/", logAllBody, logJSON, logFormValues, func(ctx iris.Context) {
-		body, err := ctx.GetBody()
+		// body, err := ioutil.ReadAll(ctx.Request().Body) once or
+		body, err := ctx.GetBody() // as many times as you need.
 		if err != nil {
-			ctx.Writef("error while reading the requested body: %v", err)
+			ctx.StatusCode(iris.StatusInternalServerError)
+			ctx.WriteString(err.Error())
 			return
 		}
 
